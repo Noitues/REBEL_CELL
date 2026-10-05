@@ -85,20 +85,26 @@ const SCRIM_BLUR_PX := 6
 ## Heat FLAGGED band (§2.8): between WARN and HARM.
 const HEAT_FLAGGED := Color("#FF7A1A")
 
-const FONT_MARKER := "res://assets/fonts/PermanentMarker-Regular.ttf"
+## ART_BIBLE v2 §2.9 grease pencil face: Permanent Marker, rendered as wax, for plans and
+## threats only (never UI chrome, body text or numbers).
+const FONT_PENCIL := "res://assets/fonts/PermanentMarker-Regular.ttf"
+## §2.9 sticker / display face: Anton (stickers, titles, stamps, bare live numbers).
 const FONT_DISPLAY := "res://assets/fonts/Anton-Regular.ttf"
+## §2.9 terminal face: Share Tech Mono (the Cell's systems).
 const FONT_MONO := "res://assets/fonts/ShareTechMono-Regular.ttf"
 ## ART_BIBLE §2.9 body face: IBM Plex Sans Condensed (OFL) for text blocks over 3 lines and
 ## tooltips; the Medium weight for emphasis (RichTextLabel bold).
 const FONT_BODY := "res://assets/fonts/IBMPlexSansCondensed-Regular.ttf"
 const FONT_BODY_MEDIUM := "res://assets/fonts/IBMPlexSansCondensed-Medium.ttf"
+## ART_BIBLE §2.9 corp paper face: Courier Prime (OFL) Regular for fields, Bold for titles.
+const FONT_PAPER := "res://assets/fonts/CourierPrime-Regular.ttf"
+const FONT_PAPER_BOLD := "res://assets/fonts/CourierPrime-Bold.ttf"
 ## Every face the game ships.
-const FONT_FACES: Array[String] = [FONT_MARKER, FONT_DISPLAY, FONT_MONO, FONT_BODY, FONT_BODY_MEDIUM]
+const FONT_FACES: Array[String] = [FONT_PENCIL, FONT_DISPLAY, FONT_MONO, FONT_BODY, FONT_BODY_MEDIUM, FONT_PAPER, FONT_PAPER_BOLD]
 ## The MSDF switch every face's tracked `.import` file carries (ART_BIBLE §2.9: every face
-## imports as MSDF). ART-0 E keeps it off: MSDF changes the faces' line metrics, which moved
-## main's multi-line text (and broke three layout checks); ART-1 turns it on with the
-## layouts it moves (flip this and `multichannel_signed_distance_field` in each .import).
-const FONTS_MSDF := false
+## imports as MSDF). On since ART-1 1A (with the layouts it moved: whole lines are measured
+## with `UiTheme.line_px`, MSDF heights are fractional).
+const FONTS_MSDF := true
 ## The MSDF field range each face imports with (6-8 px outlines stay inside the field).
 const FONTS_MSDF_RANGE := 16
 
@@ -308,8 +314,27 @@ static func font(path: String) -> Font:
 	return f
 
 
+## The Cell's own lettering on its fixed objects (the role the zine marker held: verbs, tags,
+## stamps, name plates, card names): ART_BIBLE v2 §2.9 gives that role to the sticker face,
+## Anton (ART-1 1A; Permanent Marker is now grease pencil only, `pencil()`). The screens move
+## to their v2 components (stickers, terminals) in ART-2..12.
 static func marker() -> Font:
-	return font(FONT_MARKER)
+	return font(FONT_DISPLAY)
+
+
+## The grease pencil face (§2.9): Permanent Marker, for plans and threats drawn as wax.
+static func pencil() -> Font:
+	return font(FONT_PENCIL)
+
+
+## The corp paper face (§2.9): Courier Prime Regular, typewriter fields.
+static func paper() -> Font:
+	return font(FONT_PAPER)
+
+
+## The corp paper face's Bold: document titles.
+static func paper_bold() -> Font:
+	return font(FONT_PAPER_BOLD)
 
 
 static func display() -> Font:

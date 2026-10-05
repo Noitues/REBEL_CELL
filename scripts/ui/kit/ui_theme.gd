@@ -95,6 +95,14 @@ static func line_spacing_px(font: Font, step: int, px: int) -> int:
 	return roundi(px * line_height(step) - font.get_height(px))
 
 
+## The height one laid-out line of `font` at `px` takes in a Label or RichTextLabel (px): the
+## ascent and descent each rounded up, as the text server lays lines. With MSDF faces
+## (ART-1 1A) `Font.get_height` is fractional (Share Tech Mono 30 px: 34.375, laid out at 35),
+## so code that pages or sizes text by lines measures with this, never get_height.
+static func line_px(font: Font, px: int) -> float:
+	return ceilf(font.get_ascent(px)) + ceilf(font.get_descent(px))
+
+
 ## Tracking in pixels for a tracking fraction (TRACKING_*) at `px`, for
 ## FontVariation.spacing_glyph.
 static func tracking_px(tracking: float, px: int) -> int:

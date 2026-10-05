@@ -266,9 +266,9 @@ func test_track_label_tracks_anton_and_mono_caps_only() -> void:
 	assert_eq(caps.get_theme_font(&"font"), Palette.mono(), "mixed-case mono: the tracking comes off")
 	var marker: Label = add_child_autofree(Label.new())
 	marker.text = "TAG"
-	marker.add_theme_font_override(&"font", Palette.marker())
+	marker.add_theme_font_override(&"font", Palette.pencil())
 	UiTheme.track_label(marker)
-	assert_eq(marker.get_theme_font(&"font"), Palette.marker(), "other faces are left alone")
+	assert_eq(marker.get_theme_font(&"font"), Palette.pencil(), "other faces are left alone")
 	UiTheme.track_label(null)
 
 

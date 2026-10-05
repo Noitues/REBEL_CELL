@@ -77,6 +77,13 @@ func more_below() -> bool:
 func overflows() -> bool:
 	var bar := scroll.get_v_scroll_bar()
 	var reserved := room.custom_minimum_size.y if room != null else 0.0
+	# ART-1 1A: a view held at its least height (a list inside a scrolling column: the raid's
+	# NODE ORDERS at 2.0) does not give the room out of its own height, the column grows
+	# instead; its page without the room is that least height. Measured against page + room
+	# the two states disagreed (room -> no overflow -> no room -> overflow) and the layout
+	# flipped every frame until the process crashed (signal 11, with MSDF metrics).
+	if reserved > 0.0 and _base_min > 0.0 and scroll.size.y <= scroll.custom_minimum_size.y + 0.5:
+		return bar.max_value > _base_min + 1.0
 	return bar.max_value > bar.page + reserved + 1.0
 
 
