@@ -197,6 +197,16 @@ names follow the display words; no aliases, no migrations.
   their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
   folder for a clean title screen.
 
+### 2026-10-05 — Designer rulings: D15–D17 defaults; Sonnet for mechanical tasks
+1. **D15–D17 confirmed at their plan defaults** (plan §3.1): D15 combat HUD v4 result chips beside each HP
+   replace the forecast tags and NEXT plates — the chip is the preview, GDD 2.10 still holds; D16 every
+   card-caused effect stems from the card's slap and dissolve on the target wheel, never from the hand;
+   D17 boss fight backdrop = the corp HQ, regular fights at the target Site, fight won → the building's
+   lights turn Cell colours. GDD 2.10 / 9.2 wording follows in Group 2's DECISIONS entries.
+2. **Agent models:** mechanical tasks (renames and sweeps, docs landing, test re-pointing, lint-baseline
+   and merge follow-ups, wording-only docs) run on Sonnet; visual, rules-sensitive and judgment work
+   (shaders, view ports, the city, merges touching ANIM motion, the audit) stay on Opus.
+
 ### 2026-10-05 — Designer ruling: groups in parallel, fast checks only, done within days
 The designer asked to start ART-2 (Group 2) in parallel with Group 1, to skip every non-fast test run and
 the audit until **all** art groups are done, and to finish M14 within a few days. From now:
