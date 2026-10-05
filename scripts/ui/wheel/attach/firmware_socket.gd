@@ -23,15 +23,15 @@ const PIP := 0.07
 const LED_GLOW := 2.2
 const LED_GLOW_ALPHA := 0.35
 ## The effect glyph's size (share of the half size).
-const GLYPH := 0.46
+const GLYPH := 0.62
 ## Facet shading.
 const FACET_LIGHT := 0.28
 const FACET_DARK := 0.35
 
 
 ## Draws the die of `fw` at `at` (local to `ci`), `size` px wide, its pins toward `core`.
-## `flash` (0..1) lights LED, lip and pins in the rarity colour (the trigger cue's FLARE, ART-3).
-static func draw_die(ci: CanvasItem, at: Vector2, size: float, core: Vector2, fw: FirmwareData, flash: float = 0.0) -> void:
+## The effect glyph goes on `glyphs` (1C's atlas). `flash` (0..1) lights LED, lip and pins in the rarity colour (the trigger cue's FLARE, ART-3).
+static func draw_die(ci: CanvasItem, glyphs: GlyphBatch, at: Vector2, size: float, core: Vector2, fw: FirmwareData, flash: float = 0.0) -> void:
 	var h := size * 0.5
 	var inward := (core - at).normalized() if core != at else Vector2.DOWN
 	var theta := atan2(-inward.x, inward.y)  # local +y (the pins) points at the core
@@ -67,7 +67,11 @@ static func draw_die(ci: CanvasItem, at: Vector2, size: float, core: Vector2, fw
 			ci.draw_circle(Vector2((k - (pips - 1) * 0.5) * h * 0.24, -h * 0.55), h * PIP, Palette.TEXT_HI)
 	ci.draw_set_transform(Vector2.ZERO)
 	if not simple and fw != null:
-		AttachStyle.draw_firmware_glyph(ci, fw.id, at + inward * h * 0.08, h * GLYPH, Palette.TEXT_HI)
+		var g := AttachStyle.firmware_glyph(fw.id)
+		if glyphs != null and GlyphBatch.has_glyph(g):
+			glyphs.add(g, at + inward * h * 0.08, h * GLYPH * 2.0)
+		else:
+			AttachStyle.draw_firmware_glyph(ci, fw.id, at + inward * h * 0.08, h * GLYPH, Palette.TEXT_HI)
 
 
 ## A regular-ish octagon of half size `h` (corners cut by CORNER), centred on the origin.

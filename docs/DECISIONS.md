@@ -41,9 +41,12 @@ arena_lab.tscn` (windowed only; fixtures typical / worst, bloom, hover, won, per
 - **Seams.** `scripts/ui/wheel/attach/` holds every attachment: `WheelAttachments` (one child of each
   WheelView, three layers in the §3.21 z-order: `FirmwareLayer` 5, `DroneDock` 10–12,
   `CardPreviewOverlay` 14), `MiniWheel`, `FirmwareSocket`, `DaemonRack`, and `AttachStyle`, the one
-  place that picks tokens, glyphs and faces (switching to 1A / 1B / 1C is an edit there; firmware's
-  18 effect glyphs are drawn shapes until 1C's atlas carries them, the Daemon sigils stay
-  `DaemonSigil`). Geometry is in master units of the round 41 stack (the slices end at 360), read
+  place that picks tokens, glyphs and faces. After merging 1A / 1C: rarity from
+  `Palette.RARITY_COLORS` / `RARITY_PIPS`, Daemon phosphors from `Palette.DAEMON_FAMILY_COLORS`, every
+  glyph (slice, `fw_<id>`, `daemon_<id>`) from 1C's atlas through `GlyphBatch` (a child of each
+  immediate-mode layer carrying `GlyphIcon`'s shader material; drawn firmware / sigil shapes remain only
+  as the fallback for a name the atlas lacks), the rack plate is `UiTheme.terminal_box()` (TerminalPanel).
+  1B's materials are not in yet: plates are flat token fills. Geometry is in master units of the round 41 stack (the slices end at 360), read
   from the view, so it follows 2A's new wheel. The backdrop is `scripts/ui/arena/` (`CombatBackdrop`,
   `BackdropCatalog`, `shaders/arena/combat_backdrop.gdshader`); `BackdropCatalog` is the seam ART-5's
   real city swaps.
@@ -54,7 +57,12 @@ arena_lab.tscn` (windowed only; fixtures typical / worst, bloom, hover, won, per
   `combat_scene.gd`:** the backdrop built over the (now hidden) WireframeBackground with
   `wheel_source = _views`; `arena_backdrop.play_won(instant)` in `_hold_victory`;
   `DaemonRack.mount(_player_view, daemon_row)` and the right-column DaemonRow hidden (it stays the
-  rack's data source and the pad inspect text).
+  rack's data source and the pad inspect text). Tests ported (a superseded look, not a dropped rule):
+  `test_horizontal_pass22` "past the values" becomes "outside the rim"; `test_anim_r2_combat`
+  `_check_satellites` skips the slice-value boxes on attached wheels (values move into 2A's read block;
+  the tag check stays); `test_anim_r4_city` checks the Heat banner against the rack instead of the
+  hidden row. The HP-block rules of passes 23 / 24 hold: a band slides along its slice, else steps out,
+  to keep off the HP number, NEXT and LAST TURN plates.
 - **Satellites and drones (§3.11, §3.21).** Collapsed by default: one band per slice outside the
   frame (master 414 + 6, 34 deep, floored at 15 px x text scale), as long as its tiles need, a tile
   per drone with its current effect (the slice its own needle reads: glyph + value) and its HP, on a
@@ -74,8 +82,10 @@ arena_lab.tscn` (windowed only; fixtures typical / worst, bloom, hover, won, per
   view has no CombatState (`per_combat_uses`); slice proposed below.
 - **Daemon rack (§3.13).** The CRT plate on the left edge of the operative's wheel view, vertically on
   the wheel, "DAEMONS" over 40 px tiles (x text scale), 6 at most, the last saying "+N" past six;
-  sigil in its phosphor colour (`DaemonSigil.color_of` until the trigger families exist as data),
-  rarity on the bezel, idle scan bar (`daemon_rack_scan`, 2.4 s, phase per slot) and heartbeat LED.
+  sigil (atlas) in its family phosphor (§2.6; DaemonData has no family field, so `AttachStyle.daemon_family`
+  reads it from what fires the Daemon: Perfect, NULL slice, card / nudge = action, combat end / rack /
+  netrun = run, raid = heat, else turn), rarity on the bezel; the wheel lays out right of the rack
+  (`left_reserve`), idle scan bar (`daemon_rack_scan`, 2.4 s, phase per slot) and heartbeat LED.
   Fire cue is ART-3's (`fire_slot` seam).
 - **Card-play preview (§3.17).** Fed only by `WheelView.ghost_rotation`, which the combat scene sets
   from `engine.preview(action)` (the forecast's path): landing slots = the slices under the needles at

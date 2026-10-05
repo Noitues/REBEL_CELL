@@ -53,6 +53,8 @@ const AIM_RING := 4.0
 const AIM_WIDTH := 3.0
 
 var host: WheelAttachments = null
+## The atlas glyphs this layer queues while it draws (1C).
+var glyphs: GlyphBatch
 ## Per-slot bloom 0..1 (eased by BLOOM_MOTION).
 var bloom: Dictionary = {}
 ## Lab and tests: every slice bloomed.
@@ -61,6 +63,8 @@ var force_bloom: bool = false
 
 func _init() -> void:
 	name = "DroneDock"
+	glyphs = GlyphBatch.make()
+	add_child(glyphs)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
@@ -250,6 +254,7 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
+	glyphs.clear()
 	if host == null or not host.live():
 		return
 	var v := host.view
@@ -275,7 +280,7 @@ func _draw() -> void:
 		if b > 0.0:
 			var at: Vector2 = (e["tile"] as Vector2).lerp(e["mini"], b)
 			var rm := float(e["mini_r"]) * lerpf(BLOOM_FROM, 1.0, b) * pulse
-			MiniWheel.draw(self, at, rm, float(e["up"]), sat, v.lookup, col, b, hp)
+			MiniWheel.draw(self, glyphs, at, rm, float(e["up"]), sat, v.lookup, col, b, hp)
 		_draw_aim(e, b)
 
 
@@ -321,7 +326,7 @@ func _draw_band(list: Array[Dictionary], slot: int, col: Color, alpha: float) ->
 			tangent = -tangent  # glyph, value, HP read left to right (top to bottom)
 		var step := maxf(depth * TILE_STEP, ts * 1.4)
 		if land != null:
-			AttachStyle.draw_slice_glyph(self, at - tangent * step, depth * TILE_GLYPH, land.slice_type)
+			AttachStyle.draw_slice_glyph(glyphs, at - tangent * step, depth * TILE_GLYPH * 2.0, land, alpha)
 			if land.base_output > 0:
 				AttachStyle.draw_centred(self, AttachStyle.value_font(), at, str(land.base_output), ts, Color(Palette.TEXT_HI, alpha), 2)
 		AttachStyle.draw_centred(self, AttachStyle.label_font(), at + tangent * step, str(hp), ts, Color(Palette.GAIN, alpha), 2)

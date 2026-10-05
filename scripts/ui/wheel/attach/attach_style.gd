@@ -11,21 +11,43 @@ const MASTER_RIM := 360.0
 const MASTER_FRAME := 414.0
 
 
-## Rarity colour (§2.7): common cool white, uncommon cyan, rare gold; a boss part in Cell pink.
+## Rarity colour (§2.7, 1A tokens): common cool white, uncommon cyan, rare gold; a boss part in
+## Cell pink.
 static func rarity_color(rarity: int) -> Color:
-	match rarity:
-		RC.Rarity.UNCOMMON:
-			return Palette.NET_CYAN
-		RC.Rarity.RARE:
-			return Palette.RESIST_GOLD
-		RC.Rarity.BOSS:
-			return Palette.CELL_PINK
-	return Palette.TEXT_HI
+	if rarity == RC.Rarity.BOSS:
+		return Palette.CELL_PINK
+	return Palette.RARITY_COLORS[clampi(rarity, 0, Palette.RARITY_COLORS.size() - 1)]
 
 
 ## Rarity pips (§2.7): 1, 2, 3 (a boss part shows 3).
 static func rarity_pips(rarity: int) -> int:
-	return clampi(rarity + 1, 1, 3)
+	return Palette.RARITY_PIPS[clampi(rarity, 0, Palette.RARITY_PIPS.size() - 1)]
+
+
+## A Daemon's trigger family (§2.6) from what fires it (presentation only; DaemonData has no
+## family field): perfect, null, turn, action, run or heat.
+static func daemon_family(d: DaemonData) -> StringName:
+	if d != null:
+		for te in d.triggered_effects:
+			if te == null:
+				continue
+			match te.trigger:
+				RC.Trigger.ON_PERFECT:
+					return &"perfect"
+				RC.Trigger.ON_NULL_SLICE:
+					return &"null"
+				RC.Trigger.ON_CARD_PLAYED, RC.Trigger.ON_NUDGE:
+					return &"action"
+				RC.Trigger.ON_COMBAT_END, RC.Trigger.ON_SERVER_RACK_CAPTURE, RC.Trigger.ON_NETRUN_COMPLETE:
+					return &"run"
+				RC.Trigger.ON_RAID_START:
+					return &"heat"
+	return &"turn"
+
+
+## A Daemon's phosphor (§2.6 family colour).
+static func daemon_color(d: DaemonData) -> Color:
+	return Palette.DAEMON_FAMILY_COLORS.get(daemon_family(d), Palette.DAEMON_TURN)
 
 
 ## A wheel's frame colour (§3.11 ownership tint): the Cell's pink, else the enemy's corporation.
@@ -51,9 +73,28 @@ static func slice_color(type: int) -> Color:
 	return Palette.slice_color(type)
 
 
-## A slice glyph (white glyph on the screens, §3.4): SliceIcon until 1C's atlas lands.
-static func draw_slice_glyph(ci: CanvasItem, at: Vector2, r: float, type: int) -> void:
-	SliceIcon.draw_icon(ci, at, r, type, Palette.TEXT_HI)
+## The atlas glyph of a slice (1C: its own, else its program's), of a firmware (`fw_<id>`) and of a
+## Daemon (`daemon_<id>`).
+static func slice_glyph(slice: SliceData) -> StringName:
+	return GlyphIcon.table().glyph_for_slice(slice)
+
+
+static func type_glyph(type: int) -> StringName:
+	return GlyphIcon.table().glyph_for(GlyphTableData.key_for_slice_type(type))
+
+
+static func firmware_glyph(id: StringName) -> StringName:
+	return StringName("fw_" + String(id))
+
+
+static func daemon_glyph(id: StringName) -> StringName:
+	return StringName("daemon_" + String(id))
+
+
+## Queues a slice's glyph (white, ink outline, §3.4) on `batch`, box `box` px centred on `at`.
+static func draw_slice_glyph(batch: GlyphBatch, at: Vector2, box: float, slice: SliceData, alpha: float = 1.0) -> void:
+	if batch != null and slice != null:
+		batch.add(slice_glyph(slice), at, box, alpha)
 
 
 ## The value face (big numbers) and the terminal face (labels, tabs).
@@ -111,8 +152,7 @@ static func sector(c: Vector2, r0: float, r1: float, a0: float, a1: float, steps
 	return out
 
 
-## The effect glyph of firmware `id` (§3.9, 18 glyphs, never a slice glyph), drawn upright in `r`.
-## Drawn shapes until 1C's atlas carries them.
+## Drawn stand-in for firmware `id`'s effect glyph, used only when the atlas (1C) has no `fw_<id>`.
 static func draw_firmware_glyph(ci: CanvasItem, id: StringName, at: Vector2, r: float, col: Color) -> void:
 	var w := maxf(1.2, r * 0.18)
 	match id:

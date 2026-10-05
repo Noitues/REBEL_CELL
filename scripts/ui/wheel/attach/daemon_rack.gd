@@ -36,6 +36,8 @@ var view: WheelView = null
 ## Per-slot fire flash 0..1 (ART-3's trigger cue sets it).
 var fire: Dictionary = {}
 var _clock: float = 0.0
+## The sigil glyphs (1C's atlas), one batch per phosphor colour.
+var _batches: Dictionary = {}
 
 
 ## Puts a rack beside `v` (on its left edge) reading `row`, and returns it.
@@ -85,6 +87,11 @@ func tile_rect(k: int) -> Rect2:
 func _process(delta: float) -> void:
 	var n := ids().size()
 	visible = n > 0 and view != null and view.combatant != null
+	# The wheel keeps clear of the rack: it lays out right of it (§3.1 "beside the player wheel").
+	var reserve := plate_rect(n).end.x + GAP if visible else 0.0
+	if view != null and not is_equal_approx(view.left_reserve, reserve):
+		view.left_reserve = reserve
+		view.queue_redraw()
 	if not visible:
 		return
 	var r := plate_rect(n)
@@ -108,12 +115,13 @@ func _get_tooltip(at_position: Vector2) -> String:
 
 
 func _draw() -> void:
+	for b in _batches.values():
+		(b as GlyphBatch).clear()
 	var list := ids()
 	if list.is_empty():
 		return
 	var ts := Settings.text_scale
-	draw_rect(Rect2(Vector2.ZERO, size), Palette.TERMINAL_BG)
-	draw_rect(Rect2(Vector2.ZERO, size), Palette.TERMINAL_EDGE, false, 1.5)
+	draw_style_box(UiTheme.terminal_box(), Rect2(Vector2.ZERO, size))
 	AttachStyle.draw_centred(self, AttachStyle.label_font(), Vector2(size.x * 0.5, PAD + HEADER * ts * 0.45), tr("DAEMONS"), roundi(HEADER_PX * ts), Palette.TERMINAL_TEXT)
 	var shown := mini(list.size(), MAX_TILES)
 	for k in shown:
@@ -121,14 +129,18 @@ func _draw() -> void:
 		var id: StringName = list[k]
 		var d := source.lookup.get_content(id) as DaemonData if source.lookup != null else null
 		var rarity: int = d.rarity if d != null else RC.Rarity.COMMON
-		var phos := DaemonSigil.color_of(id)
+		var phos := AttachStyle.daemon_color(d)
 		var f := float(fire.get(k, 0.0))
 		draw_rect(r, AttachStyle.glass(0.95))
 		draw_rect(r.grow(-2.0), Color(phos, GLOW_ALPHA + 0.5 * f))
 		if k == shown - 1 and list.size() > MAX_TILES:
 			AttachStyle.draw_centred(self, AttachStyle.value_font(), r.get_center(), "+%d" % (list.size() - MAX_TILES + 1), roundi(TILE * ts * 0.4), Palette.TERMINAL_TEXT, 2)
 		else:
-			DaemonSigil.draw_sigil(self, r.get_center(), r.size.x * SIGIL, id, rarity)
+			var g := AttachStyle.daemon_glyph(id)
+			if GlyphBatch.has_glyph(g):
+				_batch(phos).add(g, r.get_center(), r.size.x * SIGIL * 2.0)
+			else:
+				DaemonSigil.draw_sigil(self, r.get_center(), r.size.x * SIGIL, id, rarity)
 		# Idle: the scan bar rolls down the tile, each slot on its own phase; the LED beats with it.
 		var phase := fposmod(_clock + float(k) / MAX_TILES, 1.0)
 		if Motion.live(SCAN_MOTION):
@@ -137,3 +149,13 @@ func _draw() -> void:
 		var beat := 1.0 if phase < 0.12 or not Motion.live(SCAN_MOTION) else LED_DIM
 		draw_circle(r.position + Vector2(r.size.x - r.size.x * LED * 2.0, r.size.y * LED * 2.0), r.size.x * LED, Color(phos, beat))
 		draw_rect(r, AttachStyle.rarity_color(rarity), false, 1.5)
+
+
+## The glyph batch that draws sigils in phosphor `col` (made on first use).
+func _batch(col: Color) -> GlyphBatch:
+	var key := col.to_html()
+	if not _batches.has(key):
+		var b := GlyphBatch.make(col)
+		add_child(b)
+		_batches[key] = b
+	return _batches[key]

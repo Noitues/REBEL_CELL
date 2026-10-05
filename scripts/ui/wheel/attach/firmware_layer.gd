@@ -14,12 +14,16 @@ const SMALL_RIM := 100.0
 const SMALL_SCALE := 0.9
 
 var host: WheelAttachments = null
+## The atlas glyphs this layer queues while it draws (1C).
+var glyphs: GlyphBatch
 ## Per-slot trigger flash 0..1 (the trigger cue's FLARE: ART-3 sets it through `flash_slot`).
 var flashes: Dictionary = {}
 
 
 func _init() -> void:
 	name = "FirmwareSockets"
+	glyphs = GlyphBatch.make()
+	add_child(glyphs)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
@@ -47,6 +51,7 @@ func socket(slot: int) -> Dictionary:
 
 
 func _draw() -> void:
+	glyphs.clear()
 	if host == null or not host.live():
 		return
 	var c := host.shown()
@@ -55,4 +60,4 @@ func _draw() -> void:
 		if s.is_empty():
 			continue
 		var fw := host.view.lookup.get_content(StringName(s["id"])) as FirmwareData
-		FirmwareSocket.draw_die(self, s["at"], float(s["size"]), host.center(), fw, float(flashes.get(slot, 0.0)))
+		FirmwareSocket.draw_die(self, glyphs, s["at"], float(s["size"]), host.center(), fw, float(flashes.get(slot, 0.0)))

@@ -37,8 +37,8 @@ const OUTLINE_ALPHA := 0.9
 
 ## Draws `sat`'s mini-wheel centred on `c`, radius `rm`; `up` is the screen angle that reads as its
 ## top (away from the host); `col` the owner's frame colour; `alpha` its opacity (the bloom);
-## `hp` the HP shown (it rolls in a replay).
-static func draw(ci: CanvasItem, c: Vector2, rm: float, up: float, sat: CombatantState, lookup: ContentLookup, col: Color, alpha: float, hp: float) -> void:
+## `hp` the HP shown (it rolls in a replay); its glyphs go on `glyphs` (1C's atlas).
+static func draw(ci: CanvasItem, glyphs: GlyphBatch, c: Vector2, rm: float, up: float, sat: CombatantState, lookup: ContentLookup, col: Color, alpha: float, hp: float) -> void:
 	if sat == null or sat.wheel == null or alpha <= 0.0:
 		return
 	var w := sat.wheel
@@ -63,7 +63,7 @@ static func draw(ci: CanvasItem, c: Vector2, rm: float, up: float, sat: Combatan
 		var at := c + Vector2(cos(mid), sin(mid)) * rm * READ_AT
 		var text := str(slice.base_output) if slice.base_output > 0 else ""
 		var gx := -rm * GLYPH_GAP if text != "" else 0.0
-		SliceIcon.draw_icon(ci, at + Vector2(gx, 0), rm * GLYPH_R, slice.slice_type, Color(Palette.TEXT_HI, alpha))
+		AttachStyle.draw_slice_glyph(glyphs, at + Vector2(gx, 0), rm * GLYPH_R * 2.0, slice, alpha)
 		if text != "":
 			AttachStyle.draw_centred(ci, AttachStyle.value_font(), at + Vector2(rm * GLYPH_GAP * 1.1, 0), text, vs, Color(Palette.TEXT_HI, alpha), 2)
 	# Collar in the owner's colour, with a hairline at the slices' edge.

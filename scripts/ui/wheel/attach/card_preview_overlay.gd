@@ -39,6 +39,8 @@ const LABEL_PX := 13
 const LABEL_OUT := 18.0
 
 var host: WheelAttachments = null
+## The atlas glyphs this layer queues while it draws (1C).
+var glyphs: GlyphBatch
 ## 0..1: the ghost's presence.
 var shown_amount: float = 0.0
 ## 0..1: where the chevron chase is (loops).
@@ -51,6 +53,8 @@ var committed: bool = false
 
 func _init() -> void:
 	name = "CardPreview"
+	glyphs = GlyphBatch.make()
+	add_child(glyphs)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
@@ -108,6 +112,7 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
+	glyphs.clear()
 	if host == null or not host.live() or ghost.is_empty() or shown_amount <= 0.0:
 		return
 	var v := host.view
@@ -209,7 +214,7 @@ func _draw_ghost_blade(center: Vector2, rim: float, a: float, index: int, count:
 	if slice != null and slice.base_output > 0:
 		AttachStyle.draw_centred(self, AttachStyle.value_font(), win, str(slice.base_output), fs, col, 2)
 	elif slice != null:
-		AttachStyle.draw_slice_glyph(self, win, ws * 0.6, slice.slice_type)
+		AttachStyle.draw_slice_glyph(glyphs, win, ws * 1.3, slice, alpha)
 	if count > 1:
 		AttachStyle.draw_centred(self, AttachStyle.label_font(), win + dir.orthogonal() * ws * 1.6, str(index + 1), LABEL_PX, col, 2)
 
