@@ -33,6 +33,23 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — CI sharded (ready to re-enable after M14)
+Follows "CI paused for M14". The workflow is rebuilt but still `workflow_dispatch` only; the push and
+pull_request triggers sit in a commented block in `.github/workflows/ci.yml` to restore after ART-12.
+- **Six GUT shards**, one matrix job each, via the new `tools/run_tests.py --shard K/N` (same longest-first
+  balancing on the manifest's measured times as `-j N`; shards disjoint and complete; tested in
+  `tools/test_run_tests.py`). Each shard runs in 2 local processes (`-j 2`, suited to a 4-core runner).
+  Reason: 1752 s of measured script time / 6 = ~292 s per shard; assuming runners 3x slower than the dev PC
+  that is about 7-8 min with 2 processes, about 10 min with setup and import, against a 25 min job limit
+  (the old 30 min single process needed about 1 h on a runner). More shards would only add import overhead.
+- **Separate `fast-checks` job** (schema smoke test judged by its "SCHEMA SMOKE TEST: PASS" output because
+  Godot can exit 139 afterwards, content validation, text export diff); `export` needs it and all shards.
+- **Caches**: the Godot download and `.godot/` (keyed on `project.godot`, `addons/`, `assets/`, `*.import`);
+  `--import` still runs each time. The Godot download cache is best effort (unverified on a real runner).
+- A failing shard uploads its `gut.log` and `results.xml` as an artifact.
+- Not yet run on GitHub: the timing figures are estimates; check them on the first manual run and adjust
+  `SHARDS`/`-j`. If the repo is private the runner has 2 cores, so use `-j 1` and more shards.
+
 ### 2026-10-05 — Art direction — ART-1 1C glyph pipeline
 The production glyph atlas, its shader and an id → glyph table (ART_BIBLE 3.5, 5.2, 6.2; plan 5.3).
 Nothing is swapped into the wheel views yet (ART-2).
