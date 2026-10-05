@@ -98,6 +98,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-2 2B (wheel attachments and the arena): the won backdrop, the drone bloom, the card-play
 	# preview's chevrons and ghosts, the Daemon rack's idle scan.
 	&"backdrop_won_lights", &"drone_bloom", &"preview_chevron_chase", &"preview_ghost", &"daemon_rack_scan",
+	# ART-0 F (ported from art-pass W2 / W8a): the pad focus scale, the refused state, and a
+	# modal's open and close (PageTransition.open_modal / close_modal).
+	&"focus_scale", &"button_refused", &"modal_in", &"modal_out",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.

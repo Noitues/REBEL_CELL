@@ -728,7 +728,7 @@ func _show_note(vp: Vector2) -> void:
 	if note_span(note_label.size) > room:
 		# Still too wide at the smallest lettering: the words wrap inside the room.
 		var a := deg_to_rad(absf(NOTE_TILT))
-		note_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		note_label.autowrap_mode = TextServer.AUTOWRAP_WORD  # ART-0 F (§4.3.3): never mid-word
 		var w := floorf((room - note_label.size.y * sin(a)) / cos(a))
 		note_label.custom_minimum_size = Vector2(w, 0.0)
 		note_label.size = Vector2(w, 0.0)

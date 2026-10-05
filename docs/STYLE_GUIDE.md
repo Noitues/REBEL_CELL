@@ -550,8 +550,9 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   does (a helper of their own would eat it for a fraction of a second). Left out, each for
   its reason (`test_anim_r6_rules` keeps this list and the code in step): hover and focus
   states that hold while hovered or focused (`buy_button`'s flap, `crew_card`'s tilt,
-  `focus_tip`), answers to the press itself (`map_legend`'s fold, `pad_prompts`, `ram_bar`'s
-  ticks and refusals), ambient loops with nothing to complete (`neon_city`,
+  `focus_tip`, `ui_focus`'s pad focus scale), answers to the press itself (`map_legend`'s
+  fold, `pad_prompts`, `ram_bar`'s ticks and refusals, the refused flash of `kit_state` and
+  `refusal_mark`), ambient loops with nothing to complete (`neon_city`,
   `wireframe_background`, `zine_stamp`'s breathing, `tutorial_overlay`'s Next pulse), a
   reading time (`toast`; the Heat poster and the HQ's raid numbers joined the rule in
   ANIM-R6 city), pieces

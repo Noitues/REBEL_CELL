@@ -183,7 +183,7 @@ func show_section(name: String) -> void:
 		"Controls":
 			_body.add_child(_labelled(tr(GLYPH_HEADING)))
 			_body.add_child(glyph_option)
-			_body.add_child(_labelled(tr("Click a key, then press the new one. Cards stay on 1-9.")))
+			_body.add_child(_labelled(UiTip.for_input(tr("Click a key, then press the new one. Cards stay on 1-9."), tr("Press a key, then press the new one. Cards stay on 1-9."))))
 			var grid := GridContainer.new()
 			grid.columns = 4
 			_body.add_child(grid)
@@ -198,7 +198,7 @@ func show_section(name: String) -> void:
 				_key_buttons[action] = b
 			_bind_note = _labelled("")
 			_bind_note.name = "BindNote"
-			_bind_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			UiWrap.whole_words(_bind_note)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
 			_bind_note.custom_minimum_size.x = BIND_NOTE_WIDTH
 			_body.add_child(_bind_note)
 			var reset := Button.new()

@@ -64,6 +64,13 @@ static func apply(theme: Theme) -> void:
 			if sb is StyleBoxFlat:
 				done[sb] = true
 				_box(sb as StyleBoxFlat, box_name, is_button)
+			elif sb is StyleBoxBrackets:
+				# ART-0 F (ported from art-pass W2 / W9): the focus brackets, solid FOCUS and
+				# thickened for 3 m (HC_FOCUS_BORDER).
+				done[sb] = true
+				var br := sb as StyleBoxBrackets
+				br.color = FOCUS
+				br.thickness = float(HC_FOCUS_BORDER)
 		for color_name in theme.get_color_list(type):
 			var c := _color(color_name, theme.get_color(color_name, type))
 			theme.set_color(color_name, type, c)
