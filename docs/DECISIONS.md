@@ -6107,14 +6107,18 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 
-- **Card pictograms with no glyph yet (2026-10-05, ART-1 1C):** four card effect types have no glyph in
+- **Glyph concept slice after M14 (designer, 2026-10-05, from the two ART-1 1C questions below):** draw
+  glyphs for Heat, Cycles, Schematics and custom effects, and redraw the 16 px twins in the Firmware /
+  Daemon set; both defaults hold for M14 (pending stand-in; twins allow-listed). Scheduled with the other
+  post-M14 concept slice (the Cell's own crest).
+- ~~**Card pictograms with no glyph yet (2026-10-05, ART-1 1C):**~~ resolved: default (see the glyph concept slice above). Original note: four card effect types have no glyph in
   the bible's set: `effect_modify_heat` (Heat up/down), `effect_gain_cycles` (Cycles),
   `effect_gain_schematics` (Schematics) and `effect_custom` (a custom handler's own effect; the card
   shows its tag). Default: they map to the `pending` stand-in (a neutral rounded square, bible 3.5's
   "rounded square = neutral" badge shape, not new art) in `content/config/glyph_table.tres`, and the cards
   keep their word tags. Say if you want glyphs drawn for Heat, Cycles and Schematics (they would join
   the atlas and the 16 px check).
-- **16 px twins in the Firmware / Daemon set (2026-10-05, ART-1 1C):** the 16 px rule (bible 5.2) run over
+- ~~**16 px twins in the Firmware / Daemon set (2026-10-05, ART-1 1C):**~~ resolved: default (see the glyph concept slice above). Original note: the 16 px rule (bible 5.2) run over
   the whole atlas (114 glyphs) finds 15 pairs above 0.68 besides the bible's known borderlines
   (CITATION / Phantom 0.69, CLEANSE / BLOCK 0.68). They all involve the round 33/34 Firmware and
   Daemon glyphs or the Ghost core, which were never scored against the round 17 set: Ghost core /
@@ -6126,7 +6130,8 @@ and annotated in the GDD where it changes a rule.
   `twin_exceptions`, so any new twin fails `test_the_16_px_rule_holds_over_the_whole_atlas`; most
   never share a context (chips, Daemon tiles, card pictos). Say if any should be redrawn.
 
-- **D11 Heat bands: is a fifth band wanted? (2026-10-05, ART-0 B part 2):** the plan's "old FLAGGED →
+- ~~**D11 Heat bands: is a fifth band wanted? (2026-10-05, ART-0 B part 2):**~~ resolved: five bands
+  (DECISIONS "Designer rulings: SANDBOX / TROJAN / NULL and five Heat bands"; built by B3). Original note: the plan's "old FLAGGED →
   HUNTED, old NOTICED → FLAGGED, new NOTICED = a couple of alarms" comes from the concept rounds
   (DIRECTION_REVIEW round 21: the combat backdrop's intensity dialled down a band). ART_BIBLE v2 §2.8
   and §3.15 already state the result: COOL 0–24, NOTICED 25+ (three alarm beacons on side buildings,
