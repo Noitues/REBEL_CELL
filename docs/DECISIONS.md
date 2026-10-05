@@ -332,6 +332,14 @@ names follow the display words; no aliases, no migrations.
   their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
   folder for a clean title screen.
 
+### 2026-10-05 — CI paused for M14 (designer: "stop those CI failures")
+GitHub CI (`.github/workflows/ci.yml`) ran the whole suite in one process on every push to main; with
+M14's frequent pushes each run outran the 30-minute job limit and was cancelled (reported as failures),
+and the runs queued behind each other. The trigger is now `workflow_dispatch` only (run by hand from the
+Actions tab), with a concurrency group that cancels a superseded run. Restore `push: [main]` and
+`pull_request` after ART-12, together with the one M14 full-suite run; consider sharding the CI suite
+(`tools/run_tests.py -j 4`) instead of single-process GUT so it fits the limit.
+
 ### 2026-10-05 — Designer rulings: D15–D17 defaults; Sonnet for mechanical tasks
 1. **D15–D17 confirmed at their plan defaults** (plan §3.1): D15 combat HUD v4 result chips beside each HP
    replace the forecast tags and NEXT plates — the chip is the preview, GDD 2.10 still holds; D16 every
