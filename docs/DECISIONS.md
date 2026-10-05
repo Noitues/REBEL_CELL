@@ -86,6 +86,471 @@ Appendix C items 1 and 12. Defaults accepted unless noted.
     and uses the Site markers' white bolt over a greyed marker, so DOWN reads the same at
     every zoom.
 
+### M13 art pass (art-pass branch, superseded in part)
+The DECISIONS entries the M13 art pass wrote on the `art-pass` branch (W1–W10, WF, W9s, W9F;
+tag `art-m13-final` = `f80f393`), brought over **verbatim** by ART-0a so main keeps the record
+(ported from art-pass 9a62cec). Only their heading level changed (### → ####) so they sit
+under this heading. They implement **ART_BIBLE v1.0** (`docs/ART_BIBLE_v1.md`, plan
+`docs/art_history/ART_PLAN_M13.md`): the zine / neon / cyberdeck look is **superseded** by
+ART_BIBLE v2 (DECISIONS 2026-10-05 pause point 0, rulings 2 and 4); their direction-agnostic
+infrastructure is ported in part by ART-0 salvage S1–S5. Where an entry names `art-pass` file
+paths, tests or numbers, they describe that branch, not main.
+
+#### 2026-09-28 — Art pass (branch `art-pass`): designer rulings and orchestration
+Governed by `docs/ART_BIBLE.md` v1.0; plan in `docs/ART_PLAN.md`. Presentation only.
+1. **Branch:** the whole art effort lives on `art-pass` (from `8ddfa86`), merged into `main`
+   at a date the designer picks. Workstreams branch from it as `art/w<n>-<slug>`; only the
+   orchestrator merges them back. Commit and push `art-pass` regularly.
+2. **Q1 card art (§16.1):** about 30 base illustrations tinted per type, plus unique art for
+   rares and class cards. Briefs are written per effect family first.
+3. **Q2 class accents (§16.2):** the §7.1 proposals are accepted as the token values.
+4. **Q3 body face (§16.3):** IBM Plex Sans Condensed (OFL) is added for text blocks over 3 lines.
+5. **Q4 HQ (§16.4):** the full DECK frame (monitor bezel, keyboard edge, cables).
+6. **Q5 text scale:** the `Settings.text_scale` range goes up to 2.0 (an additive settings
+   change; old settings files load unchanged).
+7. **Q6 vector and concept art:** agents author SVG for baked art (logo, signs, badges,
+   landmark glyphs). Concept images for painted-art briefs are made as **pixel art and vector
+   concepts drawn by script** (Pillow/SVG, deterministic). They live under
+   `docs/art_review/<W>/concepts/` and are never shipped as game assets without the
+   designer's approval.
+8. **Autonomy:** the designer reviews in parallel and asked not to be asked. The
+   orchestrator answers open questions itself, logs each here citing the bible section, and
+   keeps the bible's §16 list current.
+9. **Review output:** every workstream writes its before/after stills, strips, contact sheets
+   and a `README.md` (what changed, the §14 checklist, decisions, known gaps) to
+   `docs/art_review/W<n>/`.
+
+#### 2026-09-28 — Art pass wave 1: W1 foundation, W6 VFX, W10 visual QA (merged into `art-pass`)
+Review folders: `docs/art_review/W1/`, `W6/` and `W10/`. The baseline "before" pack is `W10/baseline/`; its full matrix is only local (git-ignored).
+
+**W1 foundation (§3–§5, §15).**
+- **Tokens and helpers:** the semantic, corp and class tokens, `hp_color`/`heat_color`/`contrast`/`over`, `CorpPattern`, `UiTheme.font_px` with the type scale and spacing tokens, and the IBM Plex body face with a `BodyText` variation. Views migrate their own call sites later.
+- **MSDF:** on for every face, with `msdf_pixel_range` 16 so that 6–8 px outlines stay inside the field. The font `.import` files are force-tracked (`*.import` is git-ignored), and a test fails if MSDF is lost.
+- **Numbers:**
+  - Heat bands come from the config's MAJOR Heat levels; no copied numbers.
+  - HP at exactly 50% is GAIN, and at exactly 25% it is WARN.
+  - An unknown class gets the `TEXT_MID` accent.
+  - Tracking is stored as a fraction of the font size.
+- **Proposal for the bible (not applied):** +2% tracking rounds to 0 px below `heading`. §4.2's tracking could be given in px per step instead.
+- **Orchestrator follow-up:**
+  - The now-scaled HotButton pushed raid setup past 1280 px at 1.6. At `STEP_ICONS_SCALE` and above, Back to HQ now shows its icon only, with its words in the tooltip (the same pattern as the Grid's step buttons). The pass-12 width check asserts again instead of pending.
+  - A wrapping row was tried first. It pushed the defence cards 1 px off screen, so it was rejected.
+
+**W6 VFX (§8, §13).**
+- **Reduce effects:** one `reduce_effects` global shader uniform, set by `Fx` from Settings, is read by every shader. The script-side zeroing stays too.
+- **Removed and added:** `glow.gdshader` was unused and is removed. The new library shaders (`glass_blur`, `crt_overlay`, `paper_burn`, `glitch_dissolve`, `marker_stroke`, `halftone`) aren't yet wired into screens; W2, W7 and W8 do that.
+- **Tier schema:** `UiMotionEntryData.tier` (T0–T4, default T1) is a schema change, logged here and covered by the smoke test. The limits live in `VfxTier`.
+- **Flashes:**
+  - `Fx.flash` defaults to T3, so a full-screen flash must pass T4 explicitly. It does nothing under reduce effects.
+  - The stored `screen_flash` 0.45 and `victory_flash` 0.8 are clamped at runtime to 0.4 (T4) and 0.7 (T3).
+  - Perfect and boss phase are now wheel-local bursts (`wheel_burst_perfect` 0.5 s, `wheel_burst_phase` 0.9 s, 70% peak).
+- **Tier assignment:**
+  - T0: loops and ambience.
+  - T1: hover, focus and UI moves.
+  - T2: hits, stamps, drops, buys, refusals and `raid_move`.
+  - T3: Perfect, kill, phase, Heat band, claim, influence and VICTORY/DEFEAT.
+  - T4: jack transitions and `screen_flash`.
+- **Tier duration caps:** these bind only effects the FX layers draw. UI motion keeps §10's budgets; the 30 entries longer than their tier's VFX duration are listed in `W6/README.md`.
+- **Proposal for the bible (not applied):** state in §8 that the duration column is for drawn effects only.
+- **Hit shapes:** DEPLOY uses the attack slash. DEFEND and SHIELD share the hex plates. The crit's shattered glass replaces the star burst.
+- **Orchestrator follow-ups:**
+  - `Palette.AUTO` names the "use the element's own colour" default, so the static lint stays at zero for `combat_fx_layer.gd`.
+  - `wheel_burst(..., pattern)` fills the phase ring with the boss corp's `CorpPattern`. W3 passes the pattern from `combat_scene`.
+  - The shader lab's glass tint uses `Palette.SCRIM`.
+  - Degenerate hit polygons (a slash on its first frame, a zero-size glow) are skipped. They raised a timing-dependent `indices.is_empty()` engine error in `test_anim_r3_combat`.
+- **Open for W3:**
+  - Miss static isn't triggered yet (`_land` needs `hit_vfx(..., HIT_MISS)`).
+  - `slice_hit` should be called with the attacker's slice type.
+  - `hit_shake` 3 px is over T2's 2 px; route it through `Fx.shake_px`.
+  - `WheelView`'s hit flash goes through `Fx.request_flash`.
+  - The attack slash is thin at its peak; scale hit size with damage.
+
+**W10 visual QA (§13, §14).**
+- **Harness:** `tools/visual_qa/` has 43 screens reached through clean states. Grey and deutan filters are made with Pillow by default (`--filter-mode shader` renders in-engine). Text scale is written straight into Settings, past the 1.6 clamp, until W9 raises the range.
+- **Lint gate:** the static lint (`test_visual_lint_static.gd`, baseline `tools/visual_qa/lint_baseline.json`) fails when any file gains literal colours or font sizes. It never rises unless given `--reset`.
+- **Runtime lint:** a report, not a gate, because it needs a renderer. It treats "from UiTheme" as a §4.2 step × text scale.
+- **Top runtime lint offenders** (each owner's to-do list):
+  - `terminal_window` fixed 14/15 px (W8);
+  - the `fx.gd` "SAVED" label (fixed 14 px, contrast 1.6–2.9:1; W2);
+  - `route_legend` shrinking to 9.8 px (W8b);
+  - `crew_card` (W5);
+  - clipped dialogue and `zine_note` text (W8).
+- **Harness dependencies:** the harness calls some private members (`_panel`, `_show_current`, `_preview_card`, …). Screen owners keep them, or add public capture hooks.
+- **City bake bug:** freeing a scene mid-bake raised a script error at `city_bake_cache.gd:183` (`_stop`). This goes to W7. It's likely also fixed by the ANIM-R5 city branch.
+
+#### 2026-09-29 — Art pass W9s: accessibility settings (merged into `art-pass`)
+Review folder: `docs/art_review/W9/`. The text-scale 2.0 breakage table there is W3's and W8's to-do list.
+- **Text scale (Q5):** `Settings.TEXT_SCALE_MAX` is 2.0. The 12 layout test scripts that don't fit at 2.0 yet check up to `LayoutScales.VERIFIED_MAX` (1.6, in `tests/helpers`). W8 raises that to `TEXT_SCALE_MAX` screen by screen, and the art pass isn't done until it equals 2.0.
+- **Colour-blind (§12):** "remap corp and semantic hues" is done as a global LMS daltonize **correction** in linear light, on canvas layer 127, because Palette values are compile-time constants.
+  - Patterns and glyphs stay the primary cue.
+  - `off` means no layer at all.
+  - W10's simulation filter sits above it, at 128.
+  - Proposal for the bible (not applied): say "correct" instead of "remap".
+- **High contrast:** `HighContrast.apply(theme)` makes filled theme boxes #000, keeps each state's tint as an opaque 2 px edge, and sets text to `TEXT_HI`, focus to 4 px `FOCUS`, disabled to `TEXT_MID`, and button edges to 3 px.
+  - Views with their own `_draw` or colour overrides (paper, HUD tags, wheels, cards) must read `Settings.high_contrast` in their own workstreams: W2, W3, W4, W5, W8.
+  - Proposal for the bible (not applied): state how PAPER looks in high contrast.
+- **Reduce motion** is independent of reduce effects. It works through `Motion.camera_moves_allowed()`, `parallax_allowed()` and `page_transition_style()` (slide or fade). Consumers are W7 (city camera) and W8 (page transitions, map framing).
+- **Resolve speed:** `x1`/`x2`/`instant`, via `Motion.resolve_time_scale()` and `resolve_instant()`.
+  - Holding `resolve_fast_forward` (Shift / right stick) runs at 4×.
+  - W3 wires it and must exempt the action from MotionSkip's "a press completes the motion" rule.
+- **Pad glyph set:** `auto`/`xbox`/`playstation`/`switch`/`deck`. Auto-detect matches substrings of the joy name; Sony counts as PlayStation, and anything unknown is xbox.
+- **Steam Deck:** the first-run default is `text_scale` 1.2 (`TEXT_SCALE_STEAM_DECK`). Test runs skip the device probe unless one is injected.
+- **Deviation:** items 4–7 share one commit, because they share Settings' declarations.
+
+#### 2026-09-29 — Art pass W2: component library (merged into `art-pass`)
+Review folder: `docs/art_review/W2/`. The component lab is `tools/design_lab/components_lab.tscn`.
+
+**Focus (§6, §12)**
+- `FOCUS` corner brackets (`StyleBoxBrackets`) replace the acid ring theme-wide.
+- The 1.03 scale plays for **pad focus only**; mouse and keys get the brackets. Headless stays at 1.0.
+- A focused plain row or menu line also colours its words `FOCUS`.
+- High contrast thickens the brackets to 4 px. Orchestrator integration fix: `HighContrast.apply` now handles `StyleBoxBrackets`.
+
+**Buttons (§6.4, §3.7, §4.2)**
+- Only the named variants (Primary/`HotButton`, Secondary, Tertiary, Danger) size to label + 32 px. A plain `Button` keeps its 10 px row padding, because widening every button broke the HQ crew at 1.6.
+- `MenuItem` text is at `body`, not `label`: at `label` the HQ menu pushed past the crew's two columns at 1.6.
+- Disabled labels use `TEXT_MID`, because `DISABLED` is 3.9:1 on glass. The lock is a corner badge, so the button size doesn't change.
+- `ConfirmDialog`: Yes is Danger, No is Secondary.
+
+**Toast (§6.7)**
+- The hold is the longer of 2.5 s and the stamp reading rule. `toast_note_hold` is retired but kept, because tests name it.
+- The toast's tape is tilted; the note itself stays square.
+- `Toast.spot` keeps the toast off usable controls and the prompt bar.
+
+**Tooltips (§6.8):** 36 columns at every scale. `UiTip.for_input` replaces stray "click"/"drag" in pad text.
+
+**Pad glyphs and colours (§12, §3.6)**
+- Glyph auto-detect uses the first pad's name and falls back to Xbox.
+- Glyph colours come from the §3.3 tokens.
+- Asset and Daemon hues no longer use corp hues.
+
+**Proposals for the bible (not applied):**
+- Say "pad focus" for the 1.03 scale.
+- Name `TEXT_MID` as the disabled label colour.
+
+**To do for owners:**
+- W3/W4/W8: switch `Palette.STATUS_GLYPHS` users to `StatIcon.draw_status`:
+  - `combat_scene.gd` 2413, 2450, 2536, 2572, 3737
+  - `wheel_view.gd` 1754, 1768
+  - `zine_card.gd` 631
+  - `codex.gd` 162
+- W8/W3: replace the native controls with kit components. The call-site list is in `docs/art_review/W2/README.md`.
+- W8: use `IconMark.attach(b, StatIcon.TRASH)` on real Delete buttons (the Danger X texture doesn't scale).
+- W3: the RESPIN sticker's words overrun at 1.6.
+
+#### 2026-09-29 — Art pass W5: characters (merged into `art-pass`)
+Review folder: `docs/art_review/W5/`. Briefs are in `docs/art_briefs/characters/` (24). Concepts are in `W5/concepts/`: 47 pixel-art busts, not game assets.
+
+**Operatives (§7.1)**
+- Eight class silhouettes and props in `Palette.class_accent`.
+- The operative's tint is the accent lightened or darkened by 7%. At 12%, a dark Overclocker drifted towards Breaker's pink.
+- Four expressions (`PortraitArt.Expr`; `Expression` is a native class name):
+  - hurt adds two `HARM` scratches and a crack;
+  - triumphant raises a fist;
+  - flatlined greys everything, with a flat line.
+- The closest class pair (Rigger/Botnet) differs by a mask distance of 0.142. The test's floor is 0.12.
+
+**Polaroids and dossiers**
+- The Polaroid caption is the rank ("RANK n", or "R n" when compact), so the name isn't repeated.
+- Polaroid handwriting is set at `label` and steps down only to fit, never below `caption`.
+- Dossier stats are icon + number fields, read-only from the campaign.
+
+**Stamps:** FLATLINED stamps and low-HP glitch bars use `HARM` (they were pink). "ON <SITE>" stamps are ink.
+
+**Enemies and bosses (§7.2)**
+- Enemies fill the body with their corp's `CorpPattern`. Bosses also get a pattern halo.
+- `Hologram` shows a bust, or a boss at 40% of the screen height dimmed to 0.5 behind its wheel.
+  - The intro is T4. Under reduce effects it's a cross-fade.
+  - The `crt_overlay` settings are scan 0.18, roll 0.12, flicker 0.02.
+- Enemies with no corp (the summoned drones and the Mirror templates) get no brief of their own.
+- Text under 12 px in the WIRE and MUGSHOT looks was removed rather than enlarged.
+
+**Proposal for the bible (not applied):** §4.1 says handwriting is never under 16 px. That can't hold on the 60 px compact Polaroid, so suggest "16 px where the frame allows".
+
+**Orchestrator merge:** W2's and W5's appended motion entries were combined, and `ui_motion.tres` was rebuilt from W2's version plus W5's three hologram entries.
+
+#### 2026-09-29 — Art pass W4: cards (merged into `art-pass`)
+Review folder: `docs/art_review/W4/`. Briefs are in `docs/art_briefs/cards/`: 35 effect families and 12 unique cards. Concepts are pixel art, in `W4/concepts/`.
+- **§6.3 faces.** Hand-size cards (112×148, unchanged) show a compact face: gem, title, 60% art and the band, with no rules text. Screens that must show every word (Modem, loot, deck view, detail at 288×320) show the full face.
+- **No ellipsis anywhere (§4.3).** When text doesn't fit, the full face steps down in this order:
+  1. the text shrinks one step;
+  2. the art shrinks (floor 15%);
+  3. the band is dropped;
+  4. the card grows taller.
+
+  Tested on all 71 cards at 1.0, 1.6 and 2.0.
+- **Card type drives the card colour.** It comes from the first effect:
+  - WHEEL (paper): moves wheels.
+  - SYSTEM (black): defence, resources and buffs.
+  - HACK (pink): damage, corrupt/parasite, breach, resistance strip and RAM drain.
+
+  The colour no longer depends on hand position.
+- **Riso stand-ins (§7.3).** Two inks, INK + `CELL_PINK`: key screen at 45°, spot at 15°, about 1.4% off register. Rares and class cards vary by a hash of the card id. Renders are cached, 2 per frame.
+- **Art override.** `CardData.art`, an existing field that wasn't used, is now the final-art override. **No schema change.**
+- **Rarity (§6.3).** Common is photocopy grain, uncommon a glossy die-cut sticker, rare/boss holographic foil (`shaders/foil.gdshader`, static under reduce effects). In greyscale, rarity also reads by pip (dot/diamond/star) and edge.
+- **Cost gem** is `NOTE_YELLOW` (`CELL_ACID` is reserved for focus). A RAM refusal pulses `HARM`.
+- **Motion constants.** Hover is 12 px + ×1.12 on `card_hover` timing. The ghost scale is 0.6. Both are named constants; there are no new motion ids.
+- **Detail view (§2).** The paper card is taped *beside* a glass notes panel, never inside it. The notes never repeat the face text.
+- **Orchestrator decision on W4's open gap.** In greyscale, paper and pink stock are hard to tell apart. Because §3.1 says colour is never alone, HACK stock gets a light diagonal hatch. This goes to W3/W8 as a follow-up: `zine_card.gd` is W4's file, and W4 has finished, so the orchestrator will apply it.
+- **Orchestrator test fix.** `test_horizontal_pass19` now sets keyboard input itself. Earlier scripts in its shard leave the pad active, and the new shard layout exposed that (the hint showed "[LB]").
+
+#### 2026-09-29 — Art pass W7: city (merged into `art-pass`)
+Review folder: `docs/art_review/W7/`, with frame times in `perf.md`.
+
+**How it's built (§9.1, §13)**
+- HDR 2D stays off. All the lighting is done in shaders, in one city composite with no screen copy: per-ink glow, three haze bands, wet streets, rim light, searchlights and territory light.
+- The per-context grade is parametric (contrast, saturation, warmth, lift, dim and corp lean), not a LUT texture. Its values live in `content/config/city_look.tres`, a new `CityLookData` schema: logged, smoke-tested and self-validating.
+
+**Dim and progress**
+- A context's dim is the total darkening. The screen's own `NeonCity.dim` veil counts towards it, so combat is never darkened twice.
+- Bible tension: §9.1 gives a 35% combat dim, but combat's existing veil is 0.55. The context total rules.
+- Default campaign progress is the claimed + cleared weight over the corp's Site count, taken from `CityInfluence`.
+- A city that follows the campaign reads Heat, territory and progress read-only. Explicit setters win.
+
+**Territory (§9.3):** a lasting 40% wash as a `CELL_TURF` hatch, a hatch on claimed roofs, 3 spray tags per Site, and ground lean 0.06. This replaces the khaki.
+
+**Blinks and life timing**
+- Window and beacon blinks are floored at 3 s in the shader.
+- Life timings live in `city_look.tres`, not `ui_motion.tres`.
+- Bible tension: §8 wants a T0 period of ≥ 3 s, but §9.3 wants the FLAGGED rim flicker at ≤ 1 Hz. The flicker is a §9.3 state signal and is off under reduce effects, so it's kept at ≤ 1 Hz.
+
+**Reduce effects:** no aircraft or drones, billboards hold on frame 0, searchlights stand still and the rim flicker is off.
+
+**Performance (§13)**
+- `crt_overlay` isn't used on the city, because it would add a second full-screen pass.
+- Frame time goes up 12% (combat), 22% (grid) and 23% (title), missing the plan's 15% relative budget. **Orchestrator ruling: accepted.** The absolute cost is +0.2–0.8 ms of GPU at 1080p, and the worst scene is 4.9 ms (about 200 fps), well inside §13's 60 fps target.
+- There are quality tiers 0/1/2, default 2. The Steam Deck first-run default should be tier 1; W9's final sweep adds that to `apply_first_run_defaults`. The Deck itself hasn't been measured.
+
+**Bake fix:** the `city_bake_cache.gd` freed-painter bug (W10's finding) is fixed with `_alive_painter`. The ANIM-R5 city branch doesn't touch `_stop`. `git merge-tree` shows W7's `neon_city.gd` and `city_bake_cache.gd` hooks auto-merging with that branch.
+
+**Screen hookups (to do)**
+- W8b: `set_map_mode` on Grid, Route and Raid, and calm zones on the HQ and event pages.
+- W8a: calm zones on the title panels.
+- W3: `set_context(&"combat")` in place of `city.dim = 0.55`.
+- Audio: sirens can hook `CityAtmosphere.state.hunted()`.
+
+**Orchestrator tool:** new `tools/visual_qa/merge_shared_json.py` resolves the recurring merge conflicts in `tests/test_manifest.json` (the union) and `lint_baseline.json` (a three-way minimum).
+
+#### 2026-09-29 — Art pass W3: wheels and combat (merged into `art-pass`)
+Review folder: `docs/art_review/W3/` (40 before/after sheets, class and corp bezel sheets, strips); the README lists 17 decisions.
+
+**Wheels (§6.1, §7.1)**
+- **Ownership by bezel:** the operative's bezel is stickered paper with a `CELL_PINK` rim and the Polaroid inset. The enemy's is its corp hue with the `CorpPattern` and a notched edge, and the W5 bust sits above it. `FOCUS` brackets mean target only.
+- **Classes:** the eight bezels/hubs are pairwise distinct (tested). Ghost and Botnet move on a T0 loop.
+- **HP arc:** 12 px on `hp_color`, a hatched `HARM` ghost, a two-stage drain, a heartbeat below 25%, and a 30% dim at 0.
+- **HP number:** it sits under the arc on **every** wheel, not only on multi-needle bosses, so it's never under a needle.
+- **Boss:** 120% with a taped nameplate, phase pips, the W5 hologram behind it and a T4 `BossIntro`. At a phase change the new needle draws on.
+
+**The hub (§6.1, §4.3.4)**
+- One stamp at a time (`HubQueue`).
+- The hub's words each get their own row, in this order: inset, name, core, status. A row steps down to caption, then folds into the hub's tooltip. The inner ring's names run along its band, as 3-letter tags when they don't fit.
+- W3 was sent back once for overlapping hub lines. It is fixed, and a test covers all 8 classes plus a boss at 1.0/1.6/2.0.
+
+**Forecast and numbers (§6.2)**
+- The "YOU TAKE/TAKES/BLOCKED" chips are gone from the operative's tag. One net line under its HP ("−3 ♥ (7 − 4)") equals the real result.
+- Chips are `body`, not `label`, so one row holds the damage chips.
+- Numbers: one per hit, `HARM` for a full hit or `WARN` with "7 − 4" for a partly blocked one. Overkill reads "(12 capped)". A fully guarded hit keeps its "0" equation, off the HP number.
+
+**Layout and scale (§11, §12)**
+- The NEXT plate reads "NEXT TURN 56". The bible's "−56" is read as a separator.
+- "≤12% of the screen" is measured by area.
+- Wheel lettering stops growing at 1.3, and the HP number stays at its 1.0 size, so wheels keep ≥70% of their size at 1.6/2.0.
+
+**Resolve speed and dev pickers**
+- Resolve speed works through `Engine.time_scale` during the replay. Instant shows the end state, and fast-forward is exempt from MotionSkip.
+- The dev picker (TilePicker/Stepper) shows only when combat runs standalone.
+
+**Open requests**
+- W8b: the top bar is squeezed at 2.0.
+- W5 (orchestrator follow-up): the Polaroid caption is clipped at 2.0 ("BREAKE").
+- W6: `CombatFxLayer.stamp` could draw a StatIcon by status.
+- W1: paper-ink variants of GAIN/HARM (OutcomeRow darkens them locally).
+- W2: `StickerButton` grows very large at 2.0.
+
+These go to the final sweep (W9/W10) unless a screen wave takes them first.
+
+#### 2026-09-29 — Art pass W8a: title family and shared glass (merged into `art-pass`)
+Review folder: `docs/art_review/W8a/`. It includes a 43-screen regression sheet at 1.0 mouse.
+
+**Baked art (§4.3 rule 5)**
+- The logo and the NEVER SLEEP / TRUST NO ONE scrawls are original path-drawn SVGs (`tools/art/w8a_svgs.py`), rasterised at the size they're drawn.
+- The scrawls are solid marker graffiti. They were sent back once because the first version was a hollow outline.
+- The NEVER SLEEP subtitle shows in every locale except English.
+
+**Title (§11)**
+- The profile readout stays, but as a GLASS "UPLINK" of icon + number fields, so the page keeps exactly one PAPER note.
+- The Continue glyphs are ink on the pink primary.
+
+**Options (§6.5, §5.3)**
+- A picker tile is a short name plus a meta line. A toggle has a short label with its description as a caption underneath.
+- Every section is built once and shown at the largest section's size, capped by the room available. Its scroll view keeps side room for the pad focus scale and brackets. It was sent back once for clipping at 1.6, and a test now covers every row, tab, scale and input.
+
+**Pause (§5.3):** narrow around its lines, and `MENU_SIZE` wide only while Options or the Codex are open.
+
+**Shared APIs**
+- `PageTransition.enter`, `open_modal`, `close_modal` and `after_modals`.
+- `TerminalWindow.scroll_body` and `ZinePanel.scroll_content` (FitScroll + ScrollHint), and `empty_share()`.
+
+**Orchestrator grant.** In `netrun_scene.gd` (W8c's file), LEAVE THE MODEM now sits `SP_M` under the REMOVE A CARD spinner instead of at the fixed `LEAVE_AT` y. Placing it under the window put it off screen at 1.6. W8c keeps this rule.
+
+**Open items for W2 (final sweep)**
+- `FitScroll`/`ScrollHint` can crash when content measures thousands of px tall for one frame.
+- `TilePicker` should wrap long tile names.
+
+**Known gap:** high contrast doesn't restyle the custom-drawn paper pieces (case files, receipts, badges). This goes to the W9 sweep.
+
+#### 2026-09-29 — Art pass WF: kit follow-ups (merged into `art-pass`)
+Review folder: `docs/art_review/WF/`. This pass closes the open requests that W1, W2, W3, W5, W6, W8a and W9s logged against the shared kit.
+- **FitScroll / ScrollHint:** a content height above 4096 px × text scale is treated as a pre-layout measure. It is waited out for up to 3 frames, then clamped. The crash itself still needs a windowed confirmation.
+- **TilePicker:** names wrap at word boundaries onto up to 2 lines, stepping label → body → caption. After that the tiles grow, keeping one tile size per picker.
+- **StickerButton:** the words yield before the sticker takes more than 0.2 of the page width. This is opt-in via `max_share`, and combat opts in.
+- **Hand size (orchestrator):** `combat_scene.HAND_SCALE_MAX` is 1.15. Once the stickers were capped, the hand grew into their room at 2.0 and pushed the wheels under their 70% floor (§12).
+- **Polaroid caption:** it steps down to caption, then abbreviates ("R n"; a name becomes first word + initials), then condenses to 70%. It never goes under 12 px and never clips.
+- **Combat stamps:** `CombatFxLayer.stamp(..., icon)` now draws a StatIcon, and combat status stamps pass theirs.
+- **New tokens (ART_BIBLE §3.3 row added):** `HARM_INK` #AB2E22 and `GAIN_INK` #396739. Both reach ≥ 4.8:1 on PAPER, PAPER_ALT, NOTE_PAPER and NOTE_YELLOW. They don't cover STICKER_PINK or NOTE_PINK. OutcomeRow, the CrewCard FLATLINED stamp, CaseFileCard's LOST and the toast's refusal mark use them.
+- **High contrast on PAPER (ART_BIBLE §12 line added):** paper keeps its stock, words go INK at 7:1, edges are 2 px opaque INK, and tape and fills are opaque (`PaperInk`). This is applied to CaseFileCard, RunReceipt, AchievementBadge, Polaroid, Toast and CrewCard. CrewCard used to turn black; the orchestrator applied the change.
+- **Steam Deck:** first run sets `Settings.city_quality` to 1 (additive setting; −1 means the look's default).
+- **Tracking (ART_BIBLE §4.2 line updated):** tracking is now px per type step, via `UiTheme.TRACKING_PX`.
+  - Anton: +1 at caption–title, +2 at heading/display, +3 at hero.
+  - Mono caps: +1 at caption–label, +2 at title/heading, +3 at display, +4 at hero.
+
+  No view calls `tracked()` yet; the W9 sweep does that.
+- **Bug fixed on the way:** `RunReceipt.fields` raised a script error on the Stats page's run history.
+
+#### 2026-09-29 — Art pass W8c: netrun pages and run end (merged into `art-pass`)
+Review folder: `docs/art_review/W8c/` (28 before/after sheets, a FLATLINED T4 strip, a shred no-reflow strip). Its README lists 24 decisions; the main ones follow.
+
+**Loot (§11)**
+- "Hover size" means at least `HOVER_SCALE`, filling the modal's row up to 1.4×.
+- The picked card is stamped TAKEN (T2) before it flies.
+
+**Modem (§4.2, §5.3, §6.7)**
+- Chip tiles letter at text scale × 15/12, so W4's caption step draws at `body`.
+- Two columns up to text scale 1.15, then one scrolling column. Known gap: its CARDS window is more than 25% empty at 1.6/2.0 (W9 sweep).
+- BUY/SHRED stickers are always buttons, and the sign carries no decorative notes.
+- Unaffordable means the paper is kept, with a DISABLED edge, a lock and "NEED n · HAVE m".
+
+**Raid interlude (critique 28):** the asset is picked once per interlude, and each node row has its own "Deploy here".
+
+**Events (§11):** a leading "SPEAKER:" is dropped from the event title and story, so the speaker plate is the only mention.
+
+**Run failed (§11, §8 T4)**
+- The grey is a desaturate-and-dim shader inside the run-end page, because W7 has no grey context. W9 sweep: add a `flatline` context to CityAtmosphere so it also covers the subtitle band.
+- The sequence is `run_end_flatline` (2.4 s, skippable). Under reduce effects the end state shows at once.
+
+**Overlaps with the unmerged ANIM-R5 netrun branch, to resolve at its merge**
+- B1: shares `EventText` and `VC_CHARS_AFTER_SHAPING`.
+- B3: keep `RunEndStage` and feed its `end_fate()`/`heat_reason()` into `stage.fate_label`.
+- B5: the loot hold is extended by the stamp.
+- B9: `_ahead_row` keeps its node names.
+- B11: keep `SlotPicker` and take its SOCKET_TIP words.
+- B4: `words_typing()` must ignore `RunEndStage`'s `Typing.META` tween.
+
+**Open requests, for W8b or the W9 sweep**
+- A generic `PageTransition.settle` hook: today the run end rides `Typing.META`.
+- The price on UPGRADE and the marker circle reveal in `spinner_view.gd`.
+- DeckView's "Left click / Right click" wording, and it running off the canvas at 2.0.
+- The top bar is two rows at 2.0 (W8b).
+
+#### 2026-09-29 — Art pass W8b: HQ, new campaign, Grid, raid, maps, top bar (merged into `art-pass`)
+Review folder: `docs/art_review/W8b/`. It holds 64 before/after sheets, strips of the ring swap and the crew stamp, and the README with the §14 checklist.
+
+**Top bar and subtitles (§6.9, §5.2)**
+- The top bar is always one row. Its height depends only on the text scale. Values step down instead of wrapping.
+- From text scale 1.3, the tag labels, the page title and VIEW LOADOUT fold into tooltips.
+- CARDS and DAEMONS show `FOCUS` brackets while a matching item is dragged (`HudBar.watch_drops`).
+- The subtitle band is two lines above 1.0.
+
+**Screens (§2, ruling Q4, §5.3)**
+- The HQ gets the full DECK frame (`DeckFrame`, `DeckMonitor`). Other pages don't; they use the city's map mode.
+- The raid setup re-lays out at text scale 1.3 and again at 1.8, so START DEFENSE is the one primary on its first screen.
+
+**Words, maps and raid (§4.3 rule 3, §11, §10.2)**
+- Wrapping is whole-word only (`AUTOWRAP_WORD`, including UiWrap). A chip grows rather than breaking a word.
+- The raid map shows no tier pips. Its zoom floor is 0.36, or 0.2 at big text.
+- Home hits that land together fly as one summed number.
+
+**Edits outside W8b's files (minimal):** `raid_fx_layer.gd` and `ui_wrap.gd`.
+
+**Handed to the final sweep (W9F)**
+- Calls to add in `netrun_scene.gd`:
+  - `hud.watch_drops(drops)`;
+  - `route_legend.set_opened(...)` in `cycle_target`;
+  - interlude START DEFENSE as `UiTheme.PRIMARY` with PLAY;
+  - `city_overlay.corp_id` in the grid-zoom view.
+- `crew_card.gd:107/126` uses WORD_SMART, which splits "BREAKE/R" at 2.0.
+- The Polaroid's "R0" caption overlaps.
+- The `spinner_view` hub name clips ("BREAKER COR").
+- `dialogue.gd` `_fit_page` can shrink text below caption.
+- The W10 runtime lint should measure scaled subtrees on screen and not measure contrast through modal scrims.
+- The empty subtitle band is tall at 2.0.
+
+#### 2026-09-29 — Art pass W8d: campaign end (merged into `art-pass`)
+Review folder: `docs/art_review/W8d/`. It has 8 before/after sheets, the WON and LOST T4 strips, and the landmark art sheet.
+
+**WON (§11)**
+- The target corp's landmark (a new 200×300 SVG per corp) tips 20° and sinks 10%, so its shape still reads.
+- It is then crossed out by two `CELL_PINK` `marker_stroke` strikes at ±48°, followed by baked overspray.
+- CORP DOWN appears in `GAIN` at hero size.
+- The crew wall shows survivors TRIUMPHANT and the dead FLATLINED. The cards are taped, with fixed tilts within ±4°.
+- The city leans from its current campaign progress to 1.0 (`city_lean` signal). A new campaign resets it to 0.
+
+**LOST (§11)**
+- The Cell's hexagon (a ring with an upward chevron) cracks in `INK` from the top, then the halves part.
+- CELL BURNED appears in `HARM`.
+- The grey reuses W8c's run-end grade.
+- Survivors on the wall are HURT and the dead FLATLINED.
+
+**Contrast (§2):** a full-stage GlassScrim sits behind the stage, because the stamp met the lit city at under 3:1.
+
+**Story text (§4.2, §5.3)**
+- Story text is folded at word boundaries to 70 characters. Plex is narrow, so a width limit alone let about 85 characters through.
+- At 1.0 a long story scrolls inside its paper. At 1.6 and 2.0 the page stacks and scrolls; never a scroll inside a scroll.
+- The full ICE records sentence is the receipt's tooltip.
+
+**Motion:** `campaign_end_won` and `campaign_end_lost` (T4, 2.4 s, skippable).
+
+**Merge note for main:** `main` has its own ANIM-R5 `show_end` (`81f1a5f`). When art-pass merges into main, keep `CampaignEndStage`.
+
+**Open, for the W9F sweep**
+- `CityAtmosphere.clear_campaign_progress()` is missing.
+- The grey and the scrim don't cover the subtitle band or the prompt strip (the same as W8c).
+- The runtime lint should clip by scroll view.
+
+#### 2026-09-29 — Art pass W9F: final accessibility sweep (merged into `art-pass`)
+Review folder: `docs/art_review/W9F/`. It holds contact sheets of all 53 screens at 2.0 mouse, 2.0 pad, 1.0, grey, deutan, high contrast, reduce effects and reduce motion, plus the final runtime lint and the §12/§14 table (every item passes, with evidence).
+
+**Text scale 2.0 is the verified maximum.** `LayoutScales` is gone, so every layout test now runs at `Settings.TEXT_SCALE_MAX`.
+
+**Runtime lint findings at 2.0, mouse / pad:**
+
+| Finding | Before | After |
+|---|---|---|
+| Font | 33 / 36 | 0 / 0 |
+| Overlap | 34 / 71 | 0 / 4 |
+| Clipped | 2 / 2 | 3 / 3 |
+| Contrast | 76 / 101 | 7 / 5 |
+
+Before covers 43 screens; after covers 53. The remaining findings are low-confidence (a mid-fade sticker, high-contrast button edges) or by design (the codex MORE BELOW tag).
+
+**Decisions made in the sweep:**
+- **§4.3.3:** a word that can't fit makes its label grow to the longest word. A width-driven font step-down was tried first and dropped: it looped the layout, and once filled the disk.
+- **§5.2 / §10.5:** an empty subtitle band holds one line and grows once per screen, when the first line arrives.
+- **§9 / §11:** `flatline` is an additive `CityLookData` context with an optional `lean` grade key. This is a schema change, covered by the smoke test. `CityAtmosphere.blend_context(ctx, mix)` and `clear_campaign_progress()` are new; a new campaign clears the lean. FLATLINED and campaign LOST both grey the whole city. The campaign end's scrim is HQ-level, full screen.
+- **Motion settling:** `PageTransition.settle` calls `settle_motion()`, and the end stages no longer ride `Typing.META`.
+- **Critique `55`:** the button reads "UPGRADE · n CYCLES", with NEED/HAVE in `HARM` when short. The marker circle draws on (`upgrade_circle_draw`).
+- **§5.2.4 / §12 in fights:** the pad prompt bar sits in the status row with caption-size verbs. The Settings button hides on pad, and SEND IT draws its button glyph.
+- **§12:** reduce motion also removes shake and turns the jack zoom into a cross-fade.
+- **§6.10:** the raid playout and report map keys fold above 1.3.
+- **§3.7:** the subtitle paper's speaker name is ink (pink read 2.3:1), and the pad prompt bar gets glass behind it.
+- **Whole-word wrapping:** no `WORD_SMART` or `ARBITRARY` remains anywhere in `scripts/**` (tested). All mouse-worded strings have pad variants, and FocusTip filters out mouse words on pad.
+- **Tracking:** `UiTheme.track_label` is applied to Anton and to mono caps labels.
+
+**Open for the designer:**
+- On a pad at 2.0, the SAVED toast can sit over an event's story for 2.5 s.
+- Text drawn in `_draw` isn't linted, only checked by eye.
+- Colour-blind support stays a daltonize correction (ART_BIBLE §12 says "remap").
+
 ### 2026-09-28 — Test suite: bounded waits
 Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
 frame count, the wall clock) before asserting kept flaking under parallel shards (a few
