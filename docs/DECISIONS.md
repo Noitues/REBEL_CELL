@@ -148,6 +148,18 @@ names follow the display words; no aliases, no migrations.
   their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
   folder for a clean title screen.
 
+### 2026-10-05 — Designer rulings: SANDBOX / TROJAN / NULL and five Heat bands
+1. **Default accepted:** the remaining slice programs follow ART_BIBLE v2 §3 (rounds 32–34): SHIELD →
+   **SANDBOX**, DEPLOY → **TROJAN**, MISS → **NULL**, display and internal names alike (ruling 5 of pause
+   point 0). The names-for-M14 entry's "SANDBOX, TROJAN, NULL unchanged" meant "these program words are
+   already settled", not "keep SHIELD / DEPLOY / MISS".
+2. **Changed: five Heat bands.** The game is balanced around the five Heat levels the rules already have
+   (GDD 4.3: below 25, MAJOR 25 / 50 / 75, PURGE 100), so the bands follow them: **COOL** 0–24,
+   **NOTICED** 25–49, **FLAGGED** 50–74, **HUNTED** 75–99, **PURGE** 100. Thresholds unchanged; no new
+   threshold. ART_BIBLE v2 (four bands, §2.8 / §3.15) is updated later to match ("art can be updated
+   later"); until then the PURGE band reuses HUNTED's look with its own word. Supersedes the D11 wording
+   about a new NOTICED band below 25 and area B's four-band call.
+
 ### 2026-10-05 — Designer ruling: reduce effects as a project-wide shader global
 Asked after area E merged (E made `reduce_effects` a per-material uniform set by `ShaderReduce`, because
 M13's global lives in `project.godot`, a designer file). Ruling: add the global to `project.godot`

@@ -261,6 +261,10 @@ ladder unlocks separately; a new corporation may start at (global best − 5).
 ### 4.3 Heat
 - One campaign-wide meter, 0–100.
 - **Thresholds:** MINOR every 10, MAJOR at 25/50/75, PURGE at 100.
+- **Bands** (DECISIONS 2026-10-05, "five Heat bands"): COOL 0–24, NOTICED 25–49, FLAGGED 50–74,
+  HUNTED 75–99, PURGE 100.
+- **Bands** (DECISIONS 2026-10-05, "five Heat bands"): COOL 0–24, NOTICED 25–49, FLAGGED 50–74,
+  HUNTED 75–99, PURGE 100.
   - **Events** (raids, complications) fire the *first time* a threshold is crossed, never
     again.
   - **Modifiers** apply only *while* Heat is at or above the threshold.
