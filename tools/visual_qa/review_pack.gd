@@ -69,6 +69,8 @@ const MID_DRAG_FRAMES := 10
 const HEAT_FROM := 20
 const HEAT_TO := 30
 const HEAT_BAND_FRAMES := 20
+## Schematics a raid or claim screen gets to spend (the HQ demos' budget).
+const DEMO_SCHEMATICS := 100
 ## The accessibility settings the axes switch (ART-0 C ports them; absent on older builds).
 const AXIS_SETTINGS: Array[StringName] = [&"high_contrast", &"reduce_motion", &"colorblind_mode"]
 
@@ -382,6 +384,9 @@ func _reset() -> void:
 	_clear_scenes()
 	for i in 3:
 		await get_tree().process_frame
+	# Every screen starts from a cold city cache, as a fresh launch does: bakes of the scenes
+	# just freed (mid-build, or held by their views) never block the next screen's bake.
+	CityBakeCache.shutdown()
 	get_tree().paused = false
 	Dialogue.clear()
 	Engine.time_scale = 1.0
@@ -497,7 +502,7 @@ func _first_link() -> StringName:
 func _prepare_raid(deploy: bool) -> void:
 	var c := RunManager.campaign
 	var first := _first_link()
-	DemoSetup.set_schematics(c, 100)
+	DemoSetup.set_schematics(c, DEMO_SCHEMATICS)
 	CampaignRules.claim(c, RunManager.corporation, RunManager.config(), RunManager.lookup(), first, &"firewall_relay")
 	var armory: Array[StringName] = [&"turret", &"ice_lock", &"decoy"]
 	DemoSetup.set_armory(c, armory)
@@ -760,6 +765,7 @@ func _s_grid_influence() -> void:
 	await _grid(hq)
 	var c := RunManager.campaign
 	var corp := RunManager.corporation
+	DemoSetup.set_schematics(c, DEMO_SCHEMATICS)  # the claim's price (the HQ demos' budget)
 	for sd in RunManager.launchable_sites():
 		if not c.grid.is_claimed(sd.id):
 			CampaignRules.on_run_completed(c, corp, RunManager.config(), hq._demo_run(sd.id))
