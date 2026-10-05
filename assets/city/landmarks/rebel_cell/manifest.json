@@ -1,0 +1,213 @@
+{
+ "about": "ART-5 5b landmark (bible 4.4). Built by tools/art_pipeline/city/build_landmarks_v1.py; do not edit by hand.",
+ "corp": "rebel_cell",
+ "version": "v1",
+ "source_commit": "2a1fda14b3cd053d2be19f2f983e632508c8f022",
+ "source_scripts": [
+  "tools/art_pipeline/city/landmark_spec_v1.py",
+  "tools/art_pipeline/city/landmark_build_v1.py",
+  "tools/art_pipeline/city/landmark_district_v1.py",
+  "tools/art_pipeline/city/landmark_crest_v1.py",
+  "tools/art_pipeline/city/landmark_post_v1.py",
+  "tools/art_pipeline/city/gltf_anim_v1.py",
+  "tools/art_pipeline/city/build_landmarks_v1.py",
+  "tools/art_pipeline/city/concept_r31/target_corps.py",
+  "tools/art_pipeline/city/concept_r31/heroes24.py",
+  "tools/art_pipeline/city/concept_r31/heroes25.py",
+  "tools/art_pipeline/city/concept_r31/heroes26.py",
+  "tools/art_pipeline/city/concept_r31/heroes27.py",
+  "tools/art_pipeline/city/concept_r31/heroes28.py",
+  "tools/art_pipeline/city/concept_r31/heroes29.py",
+  "tools/art_pipeline/city/concept_r31/heroes30.py",
+  "tools/art_pipeline/city/concept_r31/heroes31.py"
+ ],
+ "concept_source": "art-concepts-r43 (art-pass 097a6c0 round 31 builders; d14b8f6 round 34 crest)",
+ "coordinates": {
+  "units": "1 glTF unit = 1 BU; 1 lot = 6 BU",
+  "up": "+Y",
+  "frame": "glTF x = lot x, glTF z = lot y (CityIsoCamera.lot_to_world), origin = centre of the job's lot rectangle at ground level",
+  "front": "as the concept built them: HQs are symmetric or face the iso camera's side (+x, +z); Meridian's gate faces +x and its rail yard runs along x at z = -34 / -40 (the round 31 combat camera looks from -z); a Site's front faces +z (lot +y: screen lower-left, as in the locked Site renders)"
+ },
+ "materials": {
+  "note": "COLOR_0 is linear: rgb = base colour x the per-triangle tone jitter (0.86-1.12) for toon roles; alpha = a part id (toon roles: write it to ROUGHNESS 0.5-1.0 for material-edge ink) or a window's own seeded value (window roles)",
+  "lm_toon": "3-band toon (spike city_building light(): ramp shadow / mid / lit on N.L, edges 0.118 / 0.363)",
+  "lm_toon_lines": "lm_toon, darkened toward (8, 6, 12)/255 by 0.55 x reveal q (REBEL_CELL detail-line buildings)",
+  "lm_lit": "lm_toon + emission 0.42 x colour (floodlit towers)",
+  "lm_neon": "emissive colour x neon gain (night 1.0, day 0.75)",
+  "lm_window": "emissive colour x window gain (night 1.0; day 0.55 mixed 0.55 toward dark glass (0.10, 0.14, 0.20))",
+  "lm_window_ring": "lm_window, visible while alpha > reveal q (+/- 0.12 flicker band at the front): the blackout ring",
+  "lm_window_lines": "lm_window, visible while alpha < (1 - q) x 0.85: lit detail lines before the reveal",
+  "lm_window_fist_home": "red fist windows, home look (70 % density baked)",
+  "lm_window_fist_dispatch": "red fist windows, DISPATCH look (90 %, glitch rows, a few white); show instead of _home",
+  "lm_beam": "additive translucent light cone, emission colour x 0.22",
+  "lm_sign": "flat emissive sign colour (corp sign colour)"
+ },
+ "settings": {
+  "lot_bu": 6.0,
+  "hq_lots": 10,
+  "site_lots": 6,
+  "site_scale": 0.8,
+  "site_rot_deg": 0.0,
+  "camera": {
+   "yaw": 135.0,
+   "pitch": 40.0
+  }
+ },
+ "landmarks": [
+  {
+   "job": "rebel_cell_district",
+   "file": "rebel_cell_district.glb",
+   "kind": "district",
+   "what": "The Cell's district: a normal street grid whose window lights draw the tucked-thumb fist in red, with the blackout ring and the reveal",
+   "references": [
+    "city/round34_rebel_cell/map_A_home.jpg",
+    "city/round34_rebel_cell/map_fist_reveal.frames.jpg"
+   ],
+   "states": [
+    "home",
+    "dispatch"
+   ],
+   "seed": 3870,
+   "triangles": 53858,
+   "roles": {
+    "lm_toon": 1,
+    "lm_neon": 1,
+    "lm_window": 1,
+    "lm_toon_lines": 1,
+    "lm_window_ring": 1,
+    "lm_window_lines": 1,
+    "lm_window_fist_home": 1,
+    "lm_window_fist_dispatch": 1
+   },
+   "animation": null,
+   "bounds_gltf": {
+    "min": [
+     -96.0,
+     0.0,
+     -96.035
+    ],
+    "max": [
+     96.06,
+     72.33,
+     96.0
+    ]
+   },
+   "footprint": {
+    "lots": [
+     32,
+     32
+    ],
+    "bu": [
+     192.0,
+     192.0
+    ],
+    "overhang_bu": 0.06,
+    "note": "origin = centre of the lot rectangle on the ground; the model may overhang its rectangle by overhang_bu (lamps, rails, steps); the city should keep that margin clear of tall buildings"
+   },
+   "state_nodes": [],
+   "reference_camera": {
+    "kind": "iso",
+    "yaw": 135.0,
+    "pitch": 40.0,
+    "ortho": 300.0,
+    "target_up_bu": 37.5
+   },
+   "exporter": {
+    "export_format": "GLB",
+    "export_yup": true,
+    "export_apply": false,
+    "export_texcoords": false,
+    "export_normals": true,
+    "export_materials": "EXPORT",
+    "export_cameras": false,
+    "export_lights": false,
+    "export_animations": false,
+    "export_extras": false,
+    "export_vertex_color": "ACTIVE",
+    "export_all_vertex_colors": false,
+    "export_tangents": false,
+    "export_attributes": false,
+    "export_active_vertex_color_when_no_material": true,
+    "export_shared_accessors": true
+   },
+   "blender": "5.2.2 LTS"
+  },
+  {
+   "job": "rebel_cell_crest",
+   "file": "rebel_cell_crest_mask.png",
+   "kind": "mask",
+   "what": "The round 34 crest rule for the CityModel window shader: project a window's world position onto the iso screen plane (X = dot(p, right), Y = dot(p, up); camera yaw 135, pitch 40) relative to the palm's ground point, then sample. R = home zone, G = DISPATCH zone (0 outside, 128 detail line = no windows, 255 = red fist window), B = blackout ring weight.",
+   "mask": {
+    "width_px": 512,
+    "height_px": 454,
+    "screen_rect_bu": {
+     "x_min": -150.04,
+     "x_max": 150.04,
+     "y_min": -95.6,
+     "y_max": 170.6
+    },
+    "v_axis": "image row 0 = screen y_max (up)",
+    "crest_h_bu": 110.0,
+    "crest_lift_bu": 37.5,
+    "right_godot": [
+     0.707107,
+     0.0,
+     -0.707107
+    ],
+    "up_godot": [
+     -0.454519,
+     0.766044,
+     -0.454519
+    ]
+   },
+   "reveal": {
+    "q_per_frame": [
+     0.0,
+     0.0,
+     0.0,
+     0.1,
+     0.22,
+     0.36,
+     0.5,
+     0.64,
+     0.78,
+     0.9,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "seconds_per_frame": 0.2,
+    "rule": "q 0 = the sector fully lit (ring windows at 0.9 density, detail lines lit), 1 = revealed: ring windows off where their value < q (flicker within 0.12 of the front), detail-line windows off, detail-line buildings darkened 0.55 x q toward (8, 6, 12)/255, the red fist steady"
+   },
+   "window_density": {
+    "home": 0.7,
+    "dispatch": 0.9
+   },
+   "red_srgb": {
+    "home": [
+     200,
+     58,
+     56
+    ],
+    "dispatch": [
+     240,
+     24,
+     36
+    ]
+   }
+  }
+ ],
+ "files": [
+  {
+   "path": "assets/city/landmarks/rebel_cell/rebel_cell_district.glb",
+   "bytes": 4087844,
+   "sha256": "c5affd22527f7ae54ae9562dda98d5ba4c8c2766fe1ba611923efe4fb4f28f09"
+  },
+  {
+   "path": "assets/city/landmarks/rebel_cell/rebel_cell_crest_mask.png",
+   "bytes": 17500,
+   "sha256": "06045632bb02cc889935d95e50210b469e34654c3b4d146e6a666802ed48370d"
+  }
+ ]
+}
