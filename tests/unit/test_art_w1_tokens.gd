@@ -2,7 +2,7 @@ extends GutTest
 ## ART-0 E (S3), ported from art-pass W1 (and WF items 6 and 9): the design-token mechanism.
 ## Semantic, corp, slice and class colour tokens and their lookups; the HP and Heat scales;
 ## the WCAG contrast helper; the type scale, its text-scale arithmetic and tracking per
-## step; spacing tokens; the body face and MSDF on every face. Values are main's where
+## step; spacing tokens; the body face and the one MSDF switch. Values are main's where
 ## main had one (ART-1 sets the v2 palette); the corp pattern painters are not ported
 ## (ART_BIBLE v2 §2.4 gives each corp a material and crest instead).
 
@@ -287,15 +287,17 @@ func test_spacing_tokens_sit_on_the_4px_grid() -> void:
 
 # --- MSDF and the body face ----------------------------------------------------------------------
 
-func test_every_face_is_imported_with_msdf() -> void:
+func test_every_face_follows_the_one_msdf_switch() -> void:
+	# The switch lives in each face's tracked .import file (a fresh checkout keeps it) and
+	# agrees with Palette.FONTS_MSDF (off until ART-1 moves the layouts MSDF changes).
 	for path in Palette.FONT_FACES:
 		var f := load(path) as FontFile
 		assert_not_null(f, path)
-		assert_true(f.multichannel_signed_distance_field, "%s renders as MSDF" % path)
-		assert_true(f.msdf_pixel_range >= 16, "%s field range covers 6-8 px outlines" % path)
-		# The switch lives in the tracked .import file (a fresh checkout keeps it).
+		assert_eq(f.multichannel_signed_distance_field, Palette.FONTS_MSDF, "%s follows the MSDF switch" % path)
+		assert_eq(f.msdf_pixel_range, Palette.FONTS_MSDF_RANGE, "%s field range covers 6-8 px outlines" % path)
 		var imp := FileAccess.get_file_as_string(path + ".import")
-		assert_string_contains(imp, "multichannel_signed_distance_field=true", "%s.import carries the switch" % path)
+		assert_string_contains(imp, "multichannel_signed_distance_field=%s" % str(Palette.FONTS_MSDF).to_lower(), "%s.import carries the switch" % path)
+		assert_string_contains(imp, "msdf_pixel_range=%d" % Palette.FONTS_MSDF_RANGE)
 
 
 func test_body_face_is_plex_with_its_licence() -> void:

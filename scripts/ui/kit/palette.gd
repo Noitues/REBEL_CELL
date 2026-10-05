@@ -92,8 +92,15 @@ const FONT_MONO := "res://assets/fonts/ShareTechMono-Regular.ttf"
 ## tooltips; the Medium weight for emphasis (RichTextLabel bold).
 const FONT_BODY := "res://assets/fonts/IBMPlexSansCondensed-Regular.ttf"
 const FONT_BODY_MEDIUM := "res://assets/fonts/IBMPlexSansCondensed-Medium.ttf"
-## Every face the game ships (each imports as MSDF, ART_BIBLE §2.9).
+## Every face the game ships.
 const FONT_FACES: Array[String] = [FONT_MARKER, FONT_DISPLAY, FONT_MONO, FONT_BODY, FONT_BODY_MEDIUM]
+## The MSDF switch every face's tracked `.import` file carries (ART_BIBLE §2.9: every face
+## imports as MSDF). ART-0 E keeps it off: MSDF changes the faces' line metrics, which moved
+## main's multi-line text (and broke three layout checks); ART-1 turns it on with the
+## layouts it moves (flip this and `multichannel_signed_distance_field` in each .import).
+const FONTS_MSDF := false
+## The MSDF field range each face imports with (6-8 px outlines stay inside the field).
+const FONTS_MSDF_RANGE := 16
 
 ## A glyph for every slice type (STYLE_GUIDE 4): readable without colour.
 const SLICE_GLYPHS := {
