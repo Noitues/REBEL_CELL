@@ -58,6 +58,33 @@ work), read `docs/handoff/m14_resume/<area>.md` from that branch, then continue 
 | Asset parity: combat + foundations | (rules + DECISIONS reuse ruling) | worktree-agent-ab68662e2190e33b2 | inventory `docs/handoff/m14_asset_parity/combat.md` |
 | Asset parity: city + screens | same | worktree-agent-a70306033acfdedd2 | also fixes test_anim_r6_rules MotionSkip registration (rubber_stamp, route_overlay) |
 | 12s skins (ART-12) | art_12 | worktree-agent-a00c6982b0b32d285 | |
+### Checkpoints at pause (all 9 answered; each wrote `docs/handoff/m14_resume/<area>.md` on its branch)
+| Area | Final commit | Must do first on resume |
+|---|---|---|
+| 3A | 34a8f0c | wire the BREACHED bit burst (6484926, not imported); DECISIONS source table; also take 4C's P3 "raid setup SAVED stamp almost invisible"; then hand back → 6w raid on the city |
+| 4A | 6f610d1 | re-run own scripts (2.0 wedge overlap rework untested), re-export strings, fast checks, hand back |
+| 4C | f65bd36 | fix the title verbs column overlapping MORE by ~2 px at 2.0 (`test_art10_menus`); re-capture crops (taken before the concept-art switch) |
+| 5e | 6e1793a | reduce motion: the view reports zero ambience under reduce motion, so 40 % traffic never shows — fix per its notes; wire Cell reveal / DISPATCH fist / Site landmarks; then motion on the live Grid, markers, ×2 spread, TARGET, roof-props export |
+| 7w | 1f5cc3e | merge main (buildings fix); its Solace capture showed flat blocks — re-check after merge; 1080p frame time |
+| 8w | 1e61251 | compound validator fails for the DISPATCH canyon (two rooftop slot pairs 18 px / 1 px apart, min 50) — fix `hq_compound_spec.py`; then Godot seams, HQ-run page, Central Server gate, D17 swap |
+| parity combat | f4b4081 | nothing imported/compiled/run yet: import, fix, test; evade token + drone sticker not drawn yet; inventory doc + DECISIONS |
+| parity city/screens | 19fc530 | import + campaign-end tests; billboards and 3D car/chopper/drone models; inventory doc; strings re-export ("Gold key") |
+| 12s skins | 994a126 | test_art12_skins 7/9 last run (one test reads the wrong panel); re-export strings (dropped verdigris); captures; DECISIONS |
+Known red on main's full tier (fixed on branches, land with them): test_anim_r6_rules (rubber_stamp / route_overlay
+— parity city/screens fixed it; 1B's inline tween in vinyl_sticker.gd and Group 2's `p * 2.0` in fx_draw.gd still
+need a fix — give to parity combat), test_anim_r2_combat (fx_draw.gd).
+
+### Calls to make on resume (orchestrator, under the standing rulings; log each in DECISIONS)
+- 5e ×2 Site spread pushes many Sites out of their corp's territory (Meridian 24/32, Halcyon 26/32, Rebel_Cell
+  17/32): default — aim each corp's layout into its own territory (presentation only; verify sweeps).
+- 5e: keep 5d's markers drawn by the Grid overlay (already correct, tested) instead of moving them to
+  SiteMarkerLayer — accept. Grid stays night (no day rule); DISPATCH's fist shows in the REBEL_CELL campaign — accept.
+- parity: Exploit marker = the v4 script's single gold key (approved art wins over the bible's "keyring"); corp
+  seals use the round 6 emblems the seal script builds — accept (art pass is correct). Card kinds: violet "other"
+  cards drawn as SYSTEM — log as an open question; WEAK sticker amber per concept — accept.
+- 8w: keycards carry baked English text (concept generator) — log a translation open question; Central Server name
+  "DISPATCH" vs concept "DISPATCH CORE" — follow the concept (art pass is correct), rename the display string.
+- 3A: the Compiler Rack has no concept glyph (uses picto_ram) — add to the post-M14 glyph concept slice.
 Branches that had no commits at pause still need the resume file; if an agent never answered, read its
 worktree's `git status` / log and brief the new agent from that.
 
