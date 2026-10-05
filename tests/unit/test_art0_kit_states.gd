@@ -97,8 +97,8 @@ func test_the_refused_state_lasts_its_entry_and_is_a_t2_motion() -> void:
 	h.add_child(s)
 	s.refuse()
 	assert_true(KitState.refused(s))
-	var until := float(s.get_meta(KitState.META_REFUSED))
-	assert_almost_eq(until - Time.get_ticks_msec(), e.duration * KitState.MSEC, 50.0, "for the entry's seconds")
+	assert_almost_eq(KitState.refused_progress(s), 0.0, 0.25, "it has just started (its length is the entry's seconds)")
+	assert_eq(KitState.refused_progress(autofree(StickerButton.new("X"))), 1.0, "never refused: over")
 
 
 func test_hover_lifts_2_and_pressed_drops_1_without_resizing() -> void:
@@ -215,7 +215,7 @@ func test_focus_scale_is_1_03_about_the_centre_and_never_reflows() -> void:
 	var rect_b := b.get_rect()
 	var size_a := a.size
 	a.grab_focus()
-	await _frames(1)
+	await _frames(1)  # fixed-wait-ok: reduce effects is on, so the scale is its end state at once
 	assert_almost_eq(a.scale.x, Motion.amplitude(UiFocus.SCALE_MOTION), 0.001, "1.03 on focus")
 	assert_almost_eq(Motion.amplitude(UiFocus.SCALE_MOTION), 1.03, 0.0001)
 	assert_eq(Motion.entry(UiFocus.SCALE_MOTION).tier, UiMotionEntryData.Tier.T1_FEEDBACK, "a T1 motion")
@@ -223,10 +223,10 @@ func test_focus_scale_is_1_03_about_the_centre_and_never_reflows() -> void:
 	assert_eq(a.pivot_offset, a.size * 0.5, "about its centre")
 	assert_eq(b.get_rect(), rect_b, "its neighbour never moves")
 	box.queue_sort()
-	await _frames(1)
+	await _frames(1)  # fixed-wait-ok: the sort, not a motion (reduce effects: end state at once)
 	assert_almost_eq(a.scale.x, 1.03, 0.001, "kept through a container sort")
 	b.grab_focus()
-	await _frames(1)
+	await _frames(1)  # fixed-wait-ok: reduce effects is on, so the scale is its end state at once
 	assert_almost_eq(a.scale.x, 1.0, 0.001, "back to rest when focus leaves")
 	assert_almost_eq(b.scale.x, 1.03, 0.001)
 	b.release_focus()
