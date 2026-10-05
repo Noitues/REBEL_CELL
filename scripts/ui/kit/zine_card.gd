@@ -11,7 +11,7 @@ enum Variant { PAPER, BLACK, PINK }
 ## Selection marks drawn over the card.
 enum Mark { NONE, CROSS, CIRCLE }
 ## STICKER: the zine card (hand, loot). CHIP / CARD_TILE: shop tiles (reference: the
-## Modem's microchips and card builder) with an icon, a name and a Cycle price.
+## Mainframe's microchips and card builder) with an icon, a name and a Cycle price.
 enum Look { STICKER, CHIP, CARD_TILE, SLICE_TILE }
 
 var card_title: String = ""
@@ -80,7 +80,7 @@ const BODY_TOP := 58.0
 ## word fits; never under FIT_MIN_TEXT px (past that the focus tip carries the rest).
 ## Off for the combat hand (its cards keep their layout).
 var fit_whole: bool = false
-## ANIM-R1 M11: a Modem item bought on this visit: its place stays, dimmed and stamped SOLD.
+## ANIM-R1 M11: a Mainframe item bought on this visit: its place stays, dimmed and stamped SOLD.
 var sold_stub: bool = false
 const SOLD_WORD := "SOLD" # TR
 const SOLD_FONT := 22
@@ -191,7 +191,7 @@ func scaled(s: float) -> ZineCard:
 
 
 ## A fresh copy of how this card or tile looks (no buy sticker, no hotkey, not pressable):
-## the ghost and the flying copies of a dragged Modem, loot or deck item (ANIM-4b).
+## the ghost and the flying copies of a dragged Mainframe, loot or deck item (ANIM-4b).
 func ghost_copy() -> ZineCard:
 	var g := ZineCard.new(card_title, cost, description, 0)
 	g.variant = variant

@@ -79,7 +79,7 @@ enum EffectTarget { SELF, OWN_WHEEL, TARGET_WHEEL, POINTER_TARGET, ALL_ENEMIES, 
 enum SlicePick { UNDER_POINTER, RANDOM_NON_MISS, CHOSEN }
 
 # --- Netrun map ---
-enum InfilNodeType { ROUTER, TERMINAL, MODEM, SERVER_RACK }
+enum InfilNodeType { ROUTER, TERMINAL, MAINFRAME, SERVER_RACK }
 
 # --- City Grid & network ---
 enum SiteObjective { NONE, EXPLOIT, HEAT_REDUCTION, RECLAIM, BOSS }

@@ -7,7 +7,7 @@ extends GutTest
 ## outcome where it struck, ALL BLOCKED on impact, the forecast kept and ticked, the aim's
 ## multiplier, one hit at a time into the HP, guards as glyphs, the icon row, the real
 ## wheel breaking with a skull, the next step's action after a win, the card gone before
-## its spin, the words (A6); the Modem's first focus and sign, flights of fresh copies,
+## its spin, the words (A6); the Mainframe's first focus and sign, flights of fresh copies,
 ## loot falling within its window, the empty-set mark, the swap chips' pictogram, every
 ## event choice's icons, discards off the stickers (A7).
 
@@ -923,7 +923,7 @@ func test_the_tape_never_clips_the_tag() -> void:
 
 # --- A7: screens -----------------------------------------------------------------------------------------
 
-func test_the_modem_first_focus_is_the_first_item() -> void:
+func test_the_mainframe_first_focus_is_the_first_item() -> void:
 	for rich in [true, false]:
 		var scene := await _netrun()
 		Settings.set_pad_active(true)
@@ -938,21 +938,21 @@ func test_the_modem_first_focus_is_the_first_item() -> void:
 		await _close(scene)
 
 
-func test_the_modem_sign_is_whole_before_its_warm_up_ends() -> void:
-	var sign := ModemSign.new()
+func test_the_mainframe_sign_is_whole_before_its_warm_up_ends() -> void:
+	var sign := MainframeSign.new()
 	add_child_autofree(sign)
-	var lit_at := ModemSign.strike_share() + ModemSign.flicker_share()
+	var lit_at := MainframeSign.strike_share() + MainframeSign.flicker_share()
 	assert_lt(lit_at, 0.8, "every tube holds lit well before the warm-up ends")
 	sign.warm = lit_at + 0.01
 	for id in 12:
 		assert_eq(sign.tube(id), 1.0, "tube %d is lit" % id)
-	sign.warm = ModemSign.strike_share() * 0.5 + ModemSign.flicker_share()
+	sign.warm = MainframeSign.strike_share() * 0.5 + MainframeSign.flicker_share()
 	var lit := 0
 	for id in 6:
 		if sign.tube(id) >= 1.0:
 			lit += 1
 	assert_gt(lit, 1, "half-way, more than one letter is lit (a still showed one: it read as broken)")
-	assert_lte(Motion.entry(&"modem_sign_warmup").duration, 0.5, "a shorter warm-up")
+	assert_lte(Motion.entry(&"mainframe_sign_warmup").duration, 0.5, "a shorter warm-up")
 
 
 func test_a_flying_card_is_a_fresh_copy_and_loot_falls_within_its_window() -> void:

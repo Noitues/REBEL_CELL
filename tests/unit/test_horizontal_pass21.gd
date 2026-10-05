@@ -4,7 +4,7 @@ extends GutTest
 ## their way from the side; random resolve picks show odds; the preview after a
 ## reshuffling card equals the result; HITS counts landed damage; tags and HP stay in view
 ## and the toast sits over the hand; last-turn lines; plain words; card pictograms; the
-## Modem spinner runs the same way round; old keybinds are dropped.
+## Mainframe spinner runs the same way round; old keybinds are dropped.
 
 const SCENE := "res://scenes/combat/combat_scene.tscn"
 
@@ -227,7 +227,7 @@ func test_every_card_draws_what_it_does() -> void:
 			assert_false(p.is_empty(), "%s has pictograms" % id)
 
 
-func test_the_modem_spinner_runs_the_same_way_as_combat() -> void:
+func test_the_mainframe_spinner_runs_the_same_way_as_combat() -> void:
 	var breaker := ContentRegistry.get_content(&"breaker") as ClassData
 	var ids: Array[StringName] = []
 	var fw: Array[StringName] = []

@@ -2,7 +2,7 @@ class_name CyberType
 extends RefCounted
 ## A drawn "cybernetic" display face: letters as chamfered strokes on a 4x6 grid (circuit
 ## traces, 45-degree corners), with optional traces branching off the strokes and ending in
-## round solder pads. Used for neon signs (MODEM, CYBER SHOP). Covers the letters the signs
+## round solder pads. Used for neon signs (MAINFRAME, CYBER SHOP). Covers the letters the signs
 ## need plus a few spares; unknown characters draw as a gap.
 
 const W := 4.0

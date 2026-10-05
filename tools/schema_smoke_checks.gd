@@ -353,7 +353,7 @@ func _h2() -> int:
 	return fails + _h11()
 
 
-## Horizontal pass 11: config ICE caps, Modem stock, emergency rookie, max_ice_level().
+## Horizontal pass 11: config ICE caps, Mainframe stock, emergency rookie, max_ice_level().
 func _h11() -> int:
 	var fails := 0
 	var cfg := CampaignConfigData.new()
@@ -433,4 +433,21 @@ func _anim1() -> int:
 			missing += 1
 	print("ANIM-1: ui_motion.tres entries ", shipped.entries.size() if shipped != null else -1, " missing ", missing)
 	if shipped == null or missing != 0 or shipped.validate().size() != 0: fails += 1
+	return fails + _art0()
+
+
+## ART-0 names pass (ruling 6.5): the shop node is the Mainframe, in the config field
+## (CampaignConfigData.map_mainframe_layers) and the node-type enum; the old field is gone.
+func _art0() -> int:
+	var fails := 0
+	var cfg := CampaignConfigData.new()
+	var shipped: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	var names := {}
+	for p in cfg.get_property_list():
+		names[String(p["name"])] = true
+	print("ART-0: map_mainframe_layers ", cfg.map_mainframe_layers, " shipped ", shipped.map_mainframe_layers if shipped != null else Vector2i(-1, -1),
+		" MAINFRAME ", RC.InfilNodeType.MAINFRAME)
+	if not names.has("map_mainframe_layers") or names.has("map_" + "mo" + "dem_layers"): fails += 1
+	if shipped == null or shipped.map_mainframe_layers != Vector2i(3, 5): fails += 1
+	if RC.InfilNodeType.keys().has("MO" + "DEM"): fails += 1
 	return fails

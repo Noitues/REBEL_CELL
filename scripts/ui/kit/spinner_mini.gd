@@ -3,7 +3,7 @@ extends Control
 ## The running operative's spinner in small (Animation pass ANIM-4b): its slots as wedges
 ## in their slice colours with the slice icons, a cyan square where a Firmware chip is
 ## socketed, and SPINNER under it. Each slot has a pad (`pad(k)`) with the slot's name as
-## its tooltip: the drop targets of a microchip or a slice upgrade dragged in the Modem,
+## its tooltip: the drop targets of a microchip or a slice upgrade dragged in the Mainframe,
 ## and of a Firmware chip taken from the loot. Not a focus stop (the pad's carry reticle
 ## reaches the slots); view only: it shows the slots, never changes them.
 

@@ -2,7 +2,7 @@ class_name NetrunMapView
 extends Control
 ## The netrun map as a wireframe graph (GDD 9.1, STYLE_GUIDE 1): layers left to right,
 ## edges in net_cyan, nodes as glowing wireframe shapes with a glyph per type (Router
-## ring, Elite Router double ring, Terminal square, Modem diamond, Server Rack hexagon),
+## ring, Elite Router double ring, Terminal square, Mainframe diamond, Server Rack hexagon),
 ## the current node in cell_pink, reachable nodes in cell_acid, visited nodes dimmed,
 ## Heat cost labelled. Emits node_clicked; the scene decides what a click means.
 
@@ -10,7 +10,7 @@ signal node_clicked(node_id: StringName)
 
 const NODE_RADIUS := 18.0
 const TYPE_NAMES := {RC.InfilNodeType.ROUTER: "Router", RC.InfilNodeType.TERMINAL: "Terminal",
-	RC.InfilNodeType.MODEM: "Modem", RC.InfilNodeType.SERVER_RACK: "Server Rack"}
+	RC.InfilNodeType.MAINFRAME: "Mainframe", RC.InfilNodeType.SERVER_RACK: "Server Rack"}
 
 var map: MapGraph = null
 var current_id: StringName = &""
@@ -109,7 +109,7 @@ func _draw() -> void:
 					draw_arc(p, NODE_RADIUS - 6, 0, TAU, 32, col, 1.5)
 			RC.InfilNodeType.TERMINAL:
 				draw_rect(Rect2(p - Vector2(NODE_RADIUS, NODE_RADIUS), Vector2(NODE_RADIUS * 2, NODE_RADIUS * 2)), col, false, 1.5)
-			RC.InfilNodeType.MODEM:
+			RC.InfilNodeType.MAINFRAME:
 				draw_polyline(PackedVector2Array([p + Vector2(0, -NODE_RADIUS), p + Vector2(NODE_RADIUS, 0), p + Vector2(0, NODE_RADIUS), p + Vector2(-NODE_RADIUS, 0), p + Vector2(0, -NODE_RADIUS)]), col, 1.5)
 			RC.InfilNodeType.SERVER_RACK:
 				var pts := PackedVector2Array()
@@ -123,7 +123,7 @@ func _draw() -> void:
 				glyph = "◈" if node["elite"] else "○"
 			RC.InfilNodeType.TERMINAL:
 				glyph = "▭"
-			RC.InfilNodeType.MODEM:
+			RC.InfilNodeType.MAINFRAME:
 				glyph = "◇"
 			RC.InfilNodeType.SERVER_RACK:
 				glyph = "⬢"

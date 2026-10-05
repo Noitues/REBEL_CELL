@@ -5,7 +5,7 @@ extends GutTest
 ## together; a menu never drops a fast Enter or a click on a line (E3); hits fly one at a
 ## time in their side's colour and every HP change has a number of exactly its size, the
 ## result holding before the respin (E4); a break flashes its own wheel, VICTORY lands on
-## the enemies' side, the result reads before the break (E5); the Modem's chip and Daemon
+## the enemies' side, the result reads before the break (E5); the Mainframe's chip and Daemon
 ## tiles show their whole text (seeds 1-6, English and pseudolocalised, 1.0 / 1.3 / 1.6) and
 ## a slice shows one price (E6); the entering plate never hides the forecast, chips shrink
 ## before they fold, satellites keep off the values (E7); loot keeps its tip off Skip and its
@@ -551,9 +551,9 @@ func test_the_result_reads_before_the_break_which_flashes_its_own_wheel() -> voi
 	await _close(scene)
 
 
-# --- E6: the Modem at big text ----------------------------------------------------------------------
+# --- E6: the Mainframe at big text ----------------------------------------------------------------------
 
-func test_modem_tiles_show_their_whole_text_over_seeds_languages_and_sizes() -> void:
+func test_mainframe_tiles_show_their_whole_text_over_seeds_languages_and_sizes() -> void:
 	var failures: Array[String] = []
 	var tiles := 0
 	for pseudo in [false, true]:

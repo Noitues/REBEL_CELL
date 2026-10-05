@@ -327,7 +327,7 @@ func test_b_during_a_shred_landing_only_ends_the_landing() -> void:
 	assert_false(is_instance_valid(layer) and layer.busy(), "B ends the landing")
 	await _frames(2)
 	assert_null(scene.get_node_or_null("DeckView"), "the viewer closes as REMOVE closes it")
-	assert_eq(RunManager.netrun.run.phase, RunState.Phase.SHOP, "and the Modem stays: B did nothing else")
+	assert_eq(RunManager.netrun.run.phase, RunState.Phase.SHOP, "and the Mainframe stays: B did nothing else")
 	holder.queue_free()
 	await _frames(2)
 

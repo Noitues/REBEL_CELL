@@ -453,9 +453,9 @@ func test_stat_tags_keep_their_words_at_big_text() -> void:
 	await _frames(2)
 	var scene := _netrun()
 	await _frames()
-	for screen in ["route", "modem", "event"]:
+	for screen in ["route", "mainframe", "event"]:
 		match screen:
-			"modem":
+			"mainframe":
 				_shop(scene)
 			"event":
 				_event(scene)

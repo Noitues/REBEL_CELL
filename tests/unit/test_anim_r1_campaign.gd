@@ -6,7 +6,7 @@ extends GutTest
 ## at fight scale and still ends on the resolved campaign; territory changes leave a
 ## lasting mark; the Heat pulse is small and the number and banner carry it; the route's
 ## choice labels follow the move; the jack lands on a built screen; the event's choices
-## wait for its words; nothing is cut; the Modem keeps its tiles in place after a buy.
+## wait for its words; nothing is cut; the Mainframe keeps its tiles in place after a buy.
 
 const HQ := "res://scenes/hq/hq_scene.tscn"
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
@@ -565,9 +565,9 @@ func test_outcome_rows_wrap_inside_their_choice_at_big_text() -> void:
 	await _close(scene)
 
 
-# --- M10 / M11: the Modem and loot -----------------------------------------------------------------------------
+# --- M10 / M11: the Mainframe and loot -----------------------------------------------------------------------------
 
-func test_modem_items_show_their_whole_text_and_keep_their_places_after_a_buy() -> void:
+func test_mainframe_items_show_their_whole_text_and_keep_their_places_after_a_buy() -> void:
 	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		var scene := _scene(NETRUN)

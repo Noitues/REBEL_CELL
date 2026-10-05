@@ -6,7 +6,7 @@ extends GutTest
 ## and title agreeing with the verdict (B5); the route's kept bake let go at the run's end
 ## (B6); the toast's hold at a slow speed, the landing pulse's delay and its lab demo on the
 ## real bar (B7); one wording for the socket list (B8); the combat end demo in context (B9);
-## the loot window naming what paid out, RAM with its icon (B10); the Modem's glyphs (B11);
+## the loot window naming what paid out, RAM with its icon (B10); the Mainframe's glyphs (B11);
 ## the event's story off the subtitle bar and its outcome stamped on its own page (B12); the
 ## jack's destination large with its tier (B13); a twin route choice that says what it is
 ## (B14).
@@ -356,7 +356,7 @@ func test_the_lab_demo_plays_the_pops_on_the_real_bar() -> void:
 
 # --- B8 / B10: the loot's words ----------------------------------------------------------------
 
-func test_the_loot_names_what_paid_out_and_its_socket_list_as_the_modem_does() -> void:
+func test_the_loot_names_what_paid_out_and_its_socket_list_as_the_mainframe_does() -> void:
 	var scene := await _netrun()
 	var s := RunManager.netrun
 	DemoSetup.offer_loot(s, [CHIP], "firmware")
@@ -364,7 +364,7 @@ func test_the_loot_names_what_paid_out_and_its_socket_list_as_the_modem_does() -
 	await _frames(2)
 	var word := scene._panel.find_child("SocketWord", true, false) as Label
 	assert_not_null(word, "the chip's slot list has its words")
-	assert_eq(word.text, tr("Chips go into:"), "the Modem's words (it said Socket into slot:)")
+	assert_eq(word.text, tr("Chips go into:"), "the Mainframe's words (it said Socket into slot:)")
 	var win := scene._panel.find_child("LootWindow", true, false) as TerminalWindow
 	assert_false(win.title.contains(tr("RACK BREACHED")), "no Rack breached before any node: '%s'" % win.title)
 	var script: GDScript = load("res://scripts/ui/netrun_scene.gd")
@@ -391,17 +391,17 @@ func test_ram_on_a_card_has_its_icon() -> void:
 		assert_true(StatIcon.ALL.has(k), "%s is an icon" % k)
 
 
-# --- B11: the Modem's glyphs ------------------------------------------------------------------------
+# --- B11: the Mainframe's glyphs ------------------------------------------------------------------------
 
-func test_the_modem_says_what_it_does_with_glyphs() -> void:
-	assert_eq(ModemSign.SIGN_GLYPH, StatIcon.SHOP, "a shop bag on the sign")
-	assert_eq(ModemSign.NOTE_GLYPHS, [StatIcon.CART, StatIcon.SHRED] as Array[StringName], "a cart on BUY, a shredder on SHRED")
+func test_the_mainframe_says_what_it_does_with_glyphs() -> void:
+	assert_eq(MainframeSign.SIGN_GLYPH, StatIcon.SHOP, "a shop bag on the sign")
+	assert_eq(MainframeSign.NOTE_GLYPHS, [StatIcon.CART, StatIcon.SHRED] as Array[StringName], "a cart on BUY, a shredder on SHRED")
 	var scene := await _netrun()
 	DemoSetup.open_shop(RunManager.netrun)
 	scene._show_current()
 	await _frames(2)
 	var icon := scene._panel.find_child("LeaveIcon", true, false) as IconMark
-	assert_not_null(icon, "LEAVE THE MODEM has its exit glyph")
+	assert_not_null(icon, "LEAVE MAINFRAME has its exit glyph")
 	assert_eq(icon.kind, StatIcon.EXIT)
 	await _close(scene)
 

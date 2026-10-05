@@ -7,11 +7,11 @@ extends RefCounted
 ## through the session's own steps where there is one. Never called by the game's own flow
 ## or its rules; the tests call it to reach a state quickly too. Pure: no Node, no scene.
 
-## The Cycles `--demo-shop` opens the Modem with.
+## The Cycles `--demo-shop` opens the Mainframe with.
 const SHOP_CYCLES := 120
 
 
-## Opens the Modem on the run's node with `cycles` Cycles in hand (the session's own stock).
+## Opens the Mainframe on the run's node with `cycles` Cycles in hand (the session's own stock).
 static func open_shop(s: NetrunSession, cycles: int = SHOP_CYCLES) -> void:
 	if s == null:
 		return

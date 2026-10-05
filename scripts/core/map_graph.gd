@@ -58,8 +58,8 @@ static func make_id(layer: int, index: int) -> StringName:
 
 ## Structural checks: layer sizes, edges only to the next layer, 1-2 edges per node,
 ## no crossing edges, every node reachable from layer 1 and able to reach the last
-## layer, and the GDD guarantees (layer 1 Routers, Rack at each rack layer, a Modem in
-## the modem band, one final node). Returns the problems found.
+## layer, and the GDD guarantees (layer 1 Routers, Rack at each rack layer, a Mainframe in
+## the mainframe band, one final node). Returns the problems found.
 func validate(config: CampaignConfigData) -> PackedStringArray:
 	var errors := PackedStringArray()
 	if layers.size() != config.map_layers:
@@ -115,13 +115,13 @@ func validate(config: CampaignConfigData) -> PackedStringArray:
 				racks += 1
 		if racks != 1:
 			errors.append("Layer %d has %d Server Racks, expected 1." % [rack_layer, racks])
-	var modems := 0
-	for layer_number in range(config.map_modem_layers.x, config.map_modem_layers.y + 1):
+	var mainframes := 0
+	for layer_number in range(config.map_mainframe_layers.x, config.map_mainframe_layers.y + 1):
 		for node in nodes_in_layer(layer_number):
-			if node["type"] == RC.InfilNodeType.MODEM:
-				modems += 1
-	if modems < 1:
-		errors.append("No Modem in layers %d-%d." % [config.map_modem_layers.x, config.map_modem_layers.y])
+			if node["type"] == RC.InfilNodeType.MAINFRAME:
+				mainframes += 1
+	if mainframes < 1:
+		errors.append("No Mainframe in layers %d-%d." % [config.map_mainframe_layers.x, config.map_mainframe_layers.y])
 	return errors
 
 

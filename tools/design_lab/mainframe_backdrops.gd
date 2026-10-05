@@ -1,8 +1,8 @@
 extends Control
-## Design lab: the MODEM CYBER SHOP sign on the city backdrop. Neon border with rounded
-## corners, MODEM in the drawn cybernetic face (pink) with circuit traces, CYBER SHOP in
+## Design lab: the MAINFRAME CYBER SHOP sign on the city backdrop. Neon border with rounded
+## corners, MAINFRAME in the drawn cybernetic face (pink) with circuit traces, CYBER SHOP in
 ## the same face (cyan), BUY / SELL / TRADE as sticky notes.
-## Run: godot --path . res://tools/design_lab/modem_backdrops.tscn -- --store=1|2|3
+## Run: godot --path . res://tools/design_lab/mainframe_backdrops.tscn -- --store=1|2|3
 
 var store: int = 1
 var art: Control
@@ -30,7 +30,7 @@ func _draw_art() -> void:
 		_:
 			_sign_stacked(Vector2(330, 150))
 	art.draw_rect(Rect2(0, 0, 1280, 30), Color(0, 0, 0, 0.9))
-	art.draw_string(Palette.mono(), Vector2(12, 21), ["", "SIGN 1  WIDE PANEL", "SIGN 2  VERTICAL BLADE (left edge of the Modem screen)", "SIGN 3  STACKED BADGE"][store], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.CELL_ACID)
+	art.draw_string(Palette.mono(), Vector2(12, 21), ["", "SIGN 1  WIDE PANEL", "SIGN 2  VERTICAL BLADE (left edge of the Mainframe screen)", "SIGN 3  STACKED BADGE"][store], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.CELL_ACID)
 
 
 ## A rounded neon tube border (glow passes, then the core).
@@ -65,19 +65,19 @@ func _stickies(at: Vector2, gap: float) -> void:
 	_sticky(at + Vector2(gap * 2, -4), "TRADE", Palette.NOTE_PAPER, -0.04)
 
 
-## SIGN 1: one wide panel, MODEM big, CYBER SHOP under it, stickies along the bottom edge.
+## SIGN 1: one wide panel, MAINFRAME big, CYBER SHOP under it, stickies along the bottom edge.
 func _sign_horizontal(at: Vector2) -> void:
 	var u := 17.0
 	var r := Rect2(at, Vector2(780, 330))
 	_rounded_border(r, 34, Palette.CELL_PINK)
-	var mw := CyberType.width("MODEM", u)
-	CyberType.draw_text(art, at + Vector2((r.size.x - mw) * 0.5, 44), "MODEM", u, Palette.CELL_PINK, 4.0)
+	var mw := CyberType.width("MAINFRAME", u)
+	CyberType.draw_text(art, at + Vector2((r.size.x - mw) * 0.5, 44), "MAINFRAME", u, Palette.CELL_PINK, 4.0)
 	var cw := CyberType.width("CYBER SHOP", 7.0)
 	CyberType.draw_text(art, at + Vector2((r.size.x - cw) * 0.5, 186), "CYBER SHOP", 7.0, Palette.NET_CYAN, 2.4, false)
 	_stickies(at + Vector2(210, 310), 180)
 
 
-## SIGN 2 (revised): the tall blade for the left edge of the Modem screen. MODEM
+## SIGN 2 (revised): the tall blade for the left edge of the Mainframe screen. MAINFRAME
 ## stacked down it and CYBER SHOP (cyan) at its foot, both inside the pink border, both
 ## sprouting circuit traces; traces also run off the border; BUY and SELL sticky notes
 ## overlap the bottom-right corner.
@@ -88,7 +88,7 @@ func _sign_vertical(at: Vector2) -> void:
 	_board_traces(r.grow(-14), Palette.CELL_PINK, 90)
 	_border_traces(r, Palette.CELL_PINK)
 	for i in 5:
-		var ch := "MODEM"[i]
+		var ch := "MAINFRAME"[i]
 		CyberType.draw_text(art, at + Vector2((r.size.x - 4.0 * u) * 0.5, 28 + i * 84), ch, u, Palette.CELL_PINK, 3.5, i == 0 or i == 4, 1.0)
 	var cu := 4.8
 	for k in 2:
@@ -150,13 +150,13 @@ func _border_traces(r: Rect2, col: Color) -> void:
 			art.draw_circle(b, 1.4, Palette.NIGHT_SKY)
 
 
-## SIGN 3: a stacked badge, MODEM in a rounded box, CYBER SHOP on its own rounded strip
+## SIGN 3: a stacked badge, MAINFRAME in a rounded box, CYBER SHOP on its own rounded strip
 ## below, stickies fanned to the right.
 func _sign_stacked(at: Vector2) -> void:
 	var u := 13.0
 	var top := Rect2(at, Vector2(470, 170))
 	_rounded_border(top, 40, Palette.CELL_PINK)
-	CyberType.draw_text(art, at + Vector2((top.size.x - CyberType.width("MODEM", u)) * 0.5, 44), "MODEM", u, Palette.CELL_PINK, 3.5)
+	CyberType.draw_text(art, at + Vector2((top.size.x - CyberType.width("MAINFRAME", u)) * 0.5, 44), "MAINFRAME", u, Palette.CELL_PINK, 3.5)
 	var strip := Rect2(at + Vector2(40, 196), Vector2(390, 80))
 	_rounded_border(strip, 36, Palette.NET_CYAN)
 	CyberType.draw_text(art, strip.position + Vector2((strip.size.x - CyberType.width("CYBER SHOP", 5.2)) * 0.5, 24), "CYBER SHOP", 5.2, Palette.NET_CYAN, 2.2, false)

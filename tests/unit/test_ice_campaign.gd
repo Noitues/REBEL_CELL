@@ -99,7 +99,7 @@ func test_ice_8_adds_5_heat_to_deaths_and_ice_16_adds_5_to_exploits() -> void:
 	assert_eq(c16.heat - before, roundi(15 * 1.1), "Exploit: (10 + ICE 16) x ICE 1 gain")
 
 
-func test_ice_4_raises_every_modem_price_by_10_percent() -> void:
+func test_ice_4_raises_every_mainframe_price_by_10_percent() -> void:
 	var c := _campaign(4)
 	var s := NetrunSession.start(_resolver, c, c.roster[0].id, 1, &"t1_a", 3)
 	assert_eq(s.card_removal_price(), 55)

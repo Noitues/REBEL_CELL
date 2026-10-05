@@ -34,7 +34,7 @@ var combat: Dictionary = {}
 ## Queue of offers: {"kind": "card"|"firmware"|"daemon", "options": [ids]}.
 var pending_rewards: Array[Dictionary] = []
 var event_id: StringName = &""
-## Modem stock: {"cards": [ids], "firmware": [ids], "daemons": [ids], "slices": [ids],
+## Mainframe stock: {"cards": [ids], "firmware": [ids], "daemons": [ids], "slices": [ids],
 ## "removal_price": int}.
 var shop: Dictionary = {}
 var combats_won: int = 0

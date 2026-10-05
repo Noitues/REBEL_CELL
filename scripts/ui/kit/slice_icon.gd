@@ -3,7 +3,7 @@ extends RefCounted
 ## Drawn icons for wheel slices (STYLE_GUIDE 4: a glyph on every slice, readable without
 ## colour): attack blade, crit starburst, defend shield, shield hex, evade dodge arrows,
 ## heal cross, afflict drip, deploy drone, miss dashed X. Shared by the combat wheels, the
-## spinner view and the Modem's slice tiles. Draw on any CanvasItem.
+## spinner view and the Mainframe's slice tiles. Draw on any CanvasItem.
 
 
 ## How icons sit on a slice (design review, `--demo-iconstyle=N`):

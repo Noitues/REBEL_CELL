@@ -1,6 +1,6 @@
 extends GutTest
 ## Animation pass ANIM-4b (drag and drop in the run): every drag makes exactly the state
-## change its button path makes (Modem cards, microchips, Daemons, slice upgrades on the
+## change its button path makes (Mainframe cards, microchips, Daemons, slice upgrades on the
 ## page and in the UPGRADE viewer, the shredder in the REMOVE viewer, loot, event rewards,
 ## raid interlude assets); a refused or cancelled drop changes nothing and the item glides
 ## home; keys and the pad reach every target; a click picks up and a click drops; reduce
@@ -141,14 +141,14 @@ func _taking_slot(layer: DropLayer, source: Control) -> int:
 
 # --- Each drag = its button path ---------------------------------------------------------------
 
-func test_modem_cards_and_daemons_dropped_on_their_tags_match_buy() -> void:
+func test_mainframe_cards_and_daemons_dropped_on_their_tags_match_buy() -> void:
 	for pair in [["Stickers", "deck"], ["Daemons", "daemons"]]:
 		var hashes := []
 		for use_drag in [false, true]:
 			var scene := _netrun()
 			await _shop(scene)
 			var item := _item(scene, String(pair[0]), 0) as ZineCard
-			assert_not_null(item, "the Modem sells a %s" % pair[0])
+			assert_not_null(item, "the Mainframe sells a %s" % pair[0])
 			if use_drag:
 				assert_eq(_drag(scene.drops, item, String(pair[1])), "dropped")
 			else:
@@ -206,7 +206,7 @@ func test_a_slice_upgrade_dropped_on_a_slot_matches_the_upgrade_viewer() -> void
 				assert_null(scene.get_node_or_null("SpinnerView"), "the viewer closed as UPGRADE closes it")
 		hashes.append(_hash())
 		await _close(scene)
-	assert_eq(hashes[1], hashes[0], "the slice dropped on the Modem's spinner = UPGRADE")
+	assert_eq(hashes[1], hashes[0], "the slice dropped on the Mainframe's spinner = UPGRADE")
 	assert_eq(hashes[2], hashes[0], "the slice dropped on the viewer's slot = UPGRADE")
 
 
@@ -430,7 +430,7 @@ func test_a_chip_on_a_slot_it_does_not_fit_is_refused_with_the_rule_in_names() -
 		assert_false(reason.contains(id), "no raw id in '%s'" % reason)
 		if reason != "":
 			refused += 1
-			assert_string_contains(reason, TextDb.t(fw, "display_name"), "the chip named as the Modem names it")
+			assert_string_contains(reason, TextDb.t(fw, "display_name"), "the chip named as the Mainframe names it")
 			var before := _hash()
 			assert_eq(scene.drops.drop_on("slot:%d" % k), "refused")
 			assert_eq(_hash(), before, "a refused slot changes nothing")
@@ -511,7 +511,7 @@ func test_keys_and_pad_reach_every_target_and_drop_like_the_mouse() -> void:
 	scene.drops._input(_press(&"ui_cancel"))
 	assert_eq(scene.drops.mode, DropLayer.Mode.IDLE, "B puts it back")
 	assert_eq(_hash(), before)
-	assert_eq(RunManager.netrun.run.phase, RunState.Phase.SHOP, "and does not leave the Modem")
+	assert_eq(RunManager.netrun.run.phase, RunState.Phase.SHOP, "and does not leave the Mainframe")
 	await _close(scene)
 
 
@@ -630,7 +630,7 @@ func test_motion_plays_live_and_input_completes_it() -> void:
 	await _frames(2)
 	assert_null(scene.get_node_or_null("DeckView"), "and the viewer closes, as REMOVE closes it")
 	assert_false(is_instance_valid(layer), "the layer frees itself")
-	assert_not_null(scene.get_viewport().gui_get_focus_owner(), "focus is back on the Modem")
+	assert_not_null(scene.get_viewport().gui_get_focus_owner(), "focus is back on the Mainframe")
 	await _close(scene)
 
 
@@ -679,7 +679,7 @@ func test_the_new_pieces_keep_the_layout_at_each_text_size() -> void:
 		var remove_win := scene._panel.find_child("RemoveCard", true, false).get_parent().get_parent().get_parent() as Control
 		assert_true(remove_win.get_global_rect().grow(0.5).encloses(mini.get_global_rect()), "the spinner sits in the REMOVE A CARD window at %.1f" % scale)
 		assert_true(SCREEN.encloses(mini.get_global_rect()), "on screen at %.1f" % scale)
-		for id in ["LeaveModem", "LeaveIcon", "Wallet", "RemoveCard"]:
+		for id in ["LeaveMainframe", "LeaveIcon", "Wallet", "RemoveCard"]:
 			var other := (scene._panel.find_child(id, true, false) as Control).get_global_rect()
 			assert_false(mini.get_global_rect().intersects(other), "the spinner covers no %s at %.1f" % [id, scale])
 		for k in 6:

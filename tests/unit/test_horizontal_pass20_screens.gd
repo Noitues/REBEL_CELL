@@ -2,7 +2,7 @@ extends GutTest
 ## H20 screens (GAP_ANALYSIS H20; DECISIONS "H20 screens"): no text logs on the HQ, Grid,
 ## raid setup and netrun end (badges, cards and the map instead; refusals as toasts); real
 ## tooltips; subtitles clear of every control at text scale 1.0 and 1.6; pad focus held by
-## the Modem / HQ modals; raid targets by pad; the Modem's per-slot price; key hints that
+## the Mainframe / HQ modals; raid targets by pad; the Mainframe's per-slot price; key hints that
 ## follow the device; names instead of ids; per-operative loadout and faces; the kit
 ## leftovers; demo slots keep a private profile.
 
@@ -338,7 +338,7 @@ func test_subtitles_never_cover_controls_on_any_screen() -> void:
 		hq.open_settings()
 		var shop := _shop_scene()
 		await _frames()
-		await _assert_clear(shop, "Modem")
+		await _assert_clear(shop, "Mainframe")
 		var title := _open(TITLE)
 		title.show_codex()
 		await _frames()
@@ -375,7 +375,7 @@ func _assert_modal(view: Control, label: String) -> void:
 		assert_true(view.is_ancestor_of(c), "%s: the pad can't reach %s '%s' behind the modal" % [label, c.get_class(), c.get("text")])
 
 
-func test_modem_modals_hold_focus_and_give_it_back() -> void:
+func test_mainframe_modals_hold_focus_and_give_it_back() -> void:
 	var scene := _shop_scene()
 	await _frames()
 	var shred := scene._panel.find_child("RemoveCard", true, false) as Control
@@ -401,7 +401,7 @@ func test_modem_modals_hold_focus_and_give_it_back() -> void:
 	await _frames()
 	for n in _all(scene._panel):
 		if n is Control:
-			assert_ne((n as Control).focus_behavior_recursive, Control.FOCUS_BEHAVIOR_DISABLED, "the Modem takes focus again after the modals")
+			assert_ne((n as Control).focus_behavior_recursive, Control.FOCUS_BEHAVIOR_DISABLED, "the Mainframe takes focus again after the modals")
 
 
 func test_a_modal_keeps_hotkeys_from_the_route_behind_it() -> void:
@@ -432,7 +432,7 @@ func test_hq_viewers_hold_focus_too() -> void:
 	await _assert_modal(hq.get_node("DaemonTray"), "HQ DaemonTray")
 
 
-# --- #13 the Modem's per-slot price ----------------------------------------------------------
+# --- #13 the Mainframe's per-slot price ----------------------------------------------------------
 
 func test_upgrade_a_slice_shows_the_picked_slots_own_price() -> void:
 	var scene := _shop_scene()
@@ -619,9 +619,9 @@ func test_every_operative_has_its_own_face() -> void:
 
 # --- #24 kit leftovers, #25 demo profile ------------------------------------------------------
 
-func test_modem_sign_and_unused_kit_classes() -> void:
-	assert_false(ModemSign.NOTES.has("SELL"), "the Modem sells nothing back")
-	assert_eq(ModemSign.PINK, Palette.CELL_PINK)
+func test_mainframe_sign_and_unused_kit_classes() -> void:
+	assert_false(MainframeSign.NOTES.has("SELL"), "the Mainframe sells nothing back")
+	assert_eq(MainframeSign.PINK, Palette.CELL_PINK)
 	for f in ["raid_board_view", "drip_label", "neon_sign", "neon_tag", "screen_header"]:
 		assert_false(FileAccess.file_exists("res://scripts/ui/kit/%s.gd" % f), "%s removed" % f)
 

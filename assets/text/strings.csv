@@ -462,8 +462,8 @@ Cycle Price,Cycle Price
 Cycle target,Cycle target
 Cycles,Cycles
 Cycles in hand when the run ended.,Cycles in hand when the run ended.
-Cycles you have to spend in the Modem. Runs and events pay them; they don't leave the run.,Cycles you have to spend in the Modem. Runs and events pay them; they don't leave the run.
-"Cycles: this run's money, spent in the Modem.","Cycles: this run's money, spent in the Modem."
+Cycles you have to spend in the Mainframe. Runs and events pay them; they don't leave the run.,Cycles you have to spend in the Mainframe. Runs and events pay them; they don't leave the run.
+"Cycles: this run's money, spent in the Mainframe.","Cycles: this run's money, spent in the Mainframe."
 DAEMON,DAEMON
 DAEMONS,DAEMONS
 DAMAGE %s,DAMAGE %s
@@ -843,17 +843,17 @@ Heat stops at its limit,Heat stops at its limit
 Heat the run added (campaign Heat is now %d).,Heat the run added (campaign Heat is now %d).
 Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules.,Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules.
 Heat: the corporation's attention. Thresholds bring raids and harder rules.,Heat: the corporation's attention. Thresholds bring raids and harder rules.
-HeatThresholdData.heat_10.event_text,The next netrun's Modem carries one item fewer.
+HeatThresholdData.heat_10.event_text,The next netrun's Mainframe carries one item fewer.
 HeatThresholdData.heat_100.event_text,PURGE: the corporation sends the largest raid of the campaign.
 HeatThresholdData.heat_20.event_text,An extra elite patrols the next netrun.
 HeatThresholdData.heat_25.event_text,"A raid is queued. While Heat stays at 25 or more, elites are more frequent."
-HeatThresholdData.heat_30.event_text,The next netrun's Modem carries one item fewer.
+HeatThresholdData.heat_30.event_text,The next netrun's Mainframe carries one item fewer.
 HeatThresholdData.heat_40.event_text,An extra elite patrols the next netrun.
 HeatThresholdData.heat_50.event_text,"A raid is queued. While Heat stays at 50 or more, every enemy gains +1 resistance."
-HeatThresholdData.heat_60.event_text,The next netrun's Modem carries one item fewer.
+HeatThresholdData.heat_60.event_text,The next netrun's Mainframe carries one item fewer.
 HeatThresholdData.heat_70.event_text,An extra elite patrols the next netrun.
 HeatThresholdData.heat_75.event_text,"A raid is queued. While Heat stays at 75 or more, raids are 25% stronger."
-HeatThresholdData.heat_80.event_text,The next netrun's Modem carries one item fewer.
+HeatThresholdData.heat_80.event_text,The next netrun's Mainframe carries one item fewer.
 HeatThresholdData.heat_90.event_text,An extra elite patrols the next netrun.
 Home integrity before and after the raid.,Home integrity before and after the raid.
 Home server,Home server
@@ -946,7 +946,7 @@ JACK OUT,JACK OUT
 JACKED OUT,JACKED OUT
 Key,Key
 LAST TURN: ,LAST TURN: 
-LEAVE THE MODEM,LEAVE THE MODEM
+LEAVE MAINFRAME,LEAVE MAINFRAME
 LEFT,LEFT
 LETHAL,LETHAL
 LETHAL: this turn takes it to 0 HP.,LETHAL: this turn takes it to 0 HP.
@@ -964,7 +964,7 @@ Language,Language
 Language (translations from assets/text/strings.csv),Language (translations from assets/text/strings.csv)
 Leave,Leave
 Leave REBEL_CELL (asks first).,Leave REBEL_CELL (asks first).
-Leave the Modem and go back to the route.,Leave the Modem and go back to the route.
+Leave the Mainframe and go back to the route.,Leave the Mainframe and go back to the route.
 Left click,Left click
 Lexicon,Lexicon
 LineSetData.barks_botnet.lines.0,Perfect Deploy. Something of mine is inside theirs now.
@@ -1339,17 +1339,17 @@ Living operatives in the Cell.,Living operatives in the Cell.
 Load,Load
 Load the campaign in slot %s.,Load the campaign in slot %s.
 Loadout,Loadout
+MAINFRAME,MAINFRAME
+MAINFRAME SHOP,MAINFRAME SHOP
 MAP KEY,MAP KEY
 MICROCHIPS,MICROCHIPS
 MISS,MISS
-MODEM,MODEM
-MODEM CYBER SHOP,MODEM CYBER SHOP
 MORE BELOW,MORE BELOW
+Mainframe,Mainframe
+Mainframe: the cyber shop,Mainframe: the cyber shop
+"Mainframe: the cyber shop (cards, Firmware, Daemons, slices, card removal).","Mainframe: the cyber shop (cards, Firmware, Daemons, slices, card removal)."
 Map legend on the city views,Map legend on the city views
 Master volume,Master volume
-Modem,Modem
-Modem: the cyber shop,Modem: the cyber shop
-"Modem: the cyber shop (cards, Firmware, Daemons, slices, card removal).","Modem: the cyber shop (cards, Firmware, Daemons, slices, card removal)."
 Move it to %s.,Move it to %s.
 Music volume,Music volume
 NEED %d · HAVE %d,NEED %d · HAVE %d
@@ -1763,7 +1763,7 @@ Share this code: Start from code on the new campaign screen starts this campaign
 "Shield %d: soaks damage, lasts.","Shield %d: soaks damage, lasts."
 Shop,Shop
 Shop Stock,Shop Stock
-Shop: spend Cycles (Modem),Shop: spend Cycles (Modem)
+Shop: spend Cycles (Mainframe),Shop: spend Cycles (Mainframe)
 Show frame rate,Show frame rate
 Site,Site
 "Site (hexagon, its tier inside): a corporate server on the Grid; clear it, then claim it for your network.","Site (hexagon, its tier inside): a corporate server on the Grid; clear it, then claim it for your network."

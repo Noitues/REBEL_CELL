@@ -2,7 +2,7 @@ class_name DropLayer
 extends Control
 ## Drag and drop between places (Animation pass ANIM-4): the HQ, the City Grid, the raid
 ## setup and the loadout view move items (defence assets, operatives, recruits, boosts,
-## ring segments) onto targets; since ANIM-4b the netrun too (Modem purchases, deck cards
+## ring segments) onto targets; since ANIM-4b the netrun too (Mainframe purchases, deck cards
 ## onto the shredder, loot, event rewards, raid assets). A full-screen layer over its screen: it knows the
 ## screen's drop targets, draws their pulses, the pad reticle and the no-entry mark, and
 ## flies copies of the items (land, glide home). View only: a drop is an intent; the layer

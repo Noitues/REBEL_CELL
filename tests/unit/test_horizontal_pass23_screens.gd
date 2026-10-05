@@ -183,7 +183,7 @@ func _loot(scene: Control) -> void:
 
 # --- S1 the SAVED stamp -----------------------------------------------------------------------
 
-## The screens themselves (raid setup, route, Modem at 1.0 and 1.6) are checked where the
+## The screens themselves (raid setup, route, Mainframe at 1.0 and 1.6) are checked where the
 ## stamp really lands after each autosave, keyboard and pad: test_horizontal_pass24_screens
 ## test_the_saved_stamp_is_placed_on_the_page_it_lands_on (Test suite optimization).
 func test_a_control_in_the_corner_moves_the_saved_stamp() -> void:
@@ -392,7 +392,7 @@ func test_the_route_key_lists_the_routes_node_kinds_clear_of_the_nodes() -> void
 		await _close(scene)
 
 
-# --- S8 the Modem -------------------------------------------------------------------------------------
+# --- S8 the Mainframe -------------------------------------------------------------------------------------
 
 func test_every_shop_item_has_a_price_words_and_a_buy_button() -> void:
 	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
@@ -515,7 +515,7 @@ func test_the_event_title_is_clear_of_the_subtitle_band_and_an_empty_band_hides(
 		Dialogue.clear()
 		_shop(scene)
 		await _frames()
-		assert_false(Dialogue.bar.visible, "no empty strip on the Modem")
+		assert_false(Dialogue.bar.visible, "no empty strip on the Mainframe")
 		await _close(scene)
 
 
@@ -564,7 +564,7 @@ func test_pad_prompts_on_hq_raid_route_shop_and_loot() -> void:
 	assert_string_contains(_prompts(scene), "B  Leave")
 	scene._unhandled_input(ev)
 	await _frames()
-	assert_ne(RunManager.netrun.run.phase, RunState.Phase.SHOP, "B leaves the Modem")
+	assert_ne(RunManager.netrun.run.phase, RunState.Phase.SHOP, "B leaves the Mainframe")
 	_loot(scene)
 	await _frames()
 	assert_string_contains(_prompts(scene), "A  Take")

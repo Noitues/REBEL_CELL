@@ -174,7 +174,7 @@ func _run() -> void:
 	RunManager.netrun.run.cycles = 120
 	RunManager.netrun._open_shop()
 	net._show_current()
-	await _shot("modem", "A shop node.")
+	await _shot("mainframe", "A shop node.")
 	var run := RunManager.netrun.run
 	run.event_id = &"ev_leash_on_the_floor"
 	run.phase = RunState.Phase.EVENT

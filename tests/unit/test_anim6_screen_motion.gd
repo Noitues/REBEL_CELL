@@ -4,7 +4,7 @@ extends GutTest
 ## (glass slides, paper drops) and focus lands on its first control when it ends, and the
 ## pad walks on from there; a press mid-entrance completes it; subtitles type in but read
 ## whole at once headless, with the instant setting, and page as before; a top bar tag
-## bumps only when its value changed; a Modem purchase and a loot pick fly to their icon and
+## bumps only when its value changed; a Mainframe purchase and a loot pick fly to their icon and
 ## the state is the purchase's; motion never changes game state; the end-state layout is
 ## the instant layout at text scale 1.0, 1.3 and 1.6; a settings change animates nothing.
 
@@ -168,12 +168,12 @@ func _assert_instant(why: String) -> void:
 	stats.items = [["CYCLES", "50", ""]]
 	assert_eq(stats.bumping().size(), 0, "%s: no bump" % why)
 	assert_eq(stats.shown_value(0), "50")
-	# Drips, the Modem sign, loot, flights, subtitles.
+	# Drips, the Mainframe sign, loot, flights, subtitles.
 	var drip := DripButton.new("GUT DRIP", "", DripButton.DRIP_PINK, 32, DripButton.SEND_IT_DRIPS)
 	holder.add_child(drip)
 	drip.grow_in()
 	assert_eq(drip.grow, 1.0, "%s: drips full" % why)
-	var sign := ModemSign.new()
+	var sign := MainframeSign.new()
 	holder.add_child(sign)
 	sign.warm_up()
 	assert_false(sign.warming(), "%s: the sign is lit" % why)
@@ -211,7 +211,7 @@ func test_a_screen_enters_and_focus_lands_on_its_first_control() -> void:
 	_live()
 	_to_shop(scene)
 	var page: Control = scene._panel
-	assert_true(PageTransition.running(page), "the Modem slides in")
+	assert_true(PageTransition.running(page), "the Mainframe slides in")
 	assert_eq(PageTransition.look_of(page), PageTransition.Look.GLASS)
 	assert_false(page.is_ancestor_of(_focus_owner()) if _focus_owner() != null else false, "focus waits for the entrance")
 	var took := await _until(func() -> bool: return not PageTransition.running(page))
@@ -255,7 +255,7 @@ func test_paper_drops_and_a_refresh_does_not_reenter() -> void:
 	assert_eq(PageTransition.look_of(scene._panel), PageTransition.Look.PAPER, "the event's note is paper")
 	assert_true(PageTransition.running(scene._panel))
 	PageTransition.settle(scene)
-	# The same screen rebuilt (as the Modem after a purchase) just shows.
+	# The same screen rebuilt (as the Mainframe after a purchase) just shows.
 	scene._show_current()
 	assert_false(PageTransition.running(scene._panel), "a refresh does not slide in again")
 
@@ -366,9 +366,9 @@ func test_a_tag_bumps_only_when_its_value_changed() -> void:
 	assert_eq(stats.tag_rects(), rects, "a bump never moves the tags")
 
 
-# --- Modem and loot flights ------------------------------------------------------------------------
+# --- Mainframe and loot flights ------------------------------------------------------------------------
 
-func test_a_modem_purchase_flies_and_the_state_is_the_purchase() -> void:
+func test_a_mainframe_purchase_flies_and_the_state_is_the_purchase() -> void:
 	var scene := await _netrun()
 	_live()
 	_to_shop(scene)
@@ -388,7 +388,7 @@ func test_a_modem_purchase_flies_and_the_state_is_the_purchase() -> void:
 	assert_eq(s.run.cycles, cycles - price, "paid")
 	assert_eq(s.run.operative.deck.size(), deck + 1, "the card is in the deck")
 	assert_true(s.run.operative.deck.has(card_id))
-	assert_true(scene._panel.find_child("ModemSign", true, false).warming() == false, "the Modem does not warm up again")
+	assert_true(scene._panel.find_child("MainframeSign", true, false).warming() == false, "the Mainframe does not warm up again")
 	var took := await _until(func() -> bool: return FlightFx.active_count(scene) == 0)
 	_assert_in_time(took, SETTLE_WAIT, "the flight")
 	assert_eq(FlightFx.active_count(scene), 0, "the flight ends")
@@ -449,7 +449,7 @@ func test_screen_motion_never_changes_game_state() -> void:
 	# Replay every screen motion over the same state.
 	scene._shown_screen = ""
 	scene._show_current()
-	(scene._panel.find_child("ModemSign", true, false) as ModemSign).warm_up()
+	(scene._panel.find_child("MainframeSign", true, false) as MainframeSign).warm_up()
 	scene.hud.stats.items = [["CYCLES", "1", ""]]
 	scene._refresh_status()
 	Dialogue.say(RC.Voice.DISPATCH, "No state changes here.")

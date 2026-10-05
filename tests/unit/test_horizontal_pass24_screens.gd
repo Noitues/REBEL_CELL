@@ -1,14 +1,14 @@
 extends GutTest
 ## H24 screens (DECISIONS "H24 screens"): the code's words exported for translators; no
-## "%+d" in a translated line; every word on the HQ, raid setup, route, Modem, event, loot
+## "%+d" in a translated line; every word on the HQ, raid setup, route, Mainframe, event, loot
 ## and title screens translated, once; the late-campaign raid map framed with its key clear
 ## of the nodes; B-back only from a pad; the SAVED stamp placed on the page it lands on; the
 ## subtitle pager's first page carries words; the event's choices inside the screen with a
-## mark for "no change"; the Modem's text, icons and buy stickers apart; every crew dossier
+## mark for "no change"; the Mainframe's text, icons and buy stickers apart; every crew dossier
 ## reachable at big text; the route's nodes clear of its column, its colours explained and
 ## its choices told apart; the title's Continue line; the raid setup's defence cards and
 ## words; screen-tied subtitles ending with their screen; the top bar's captions; the whole
-## text of loot and Modem items on focus.
+## text of loot and Mainframe items on focus.
 
 const HQ := "res://scenes/hq/hq_scene.tscn"
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
@@ -454,8 +454,8 @@ func test_route_shop_event_loot_words_are_translated_once() -> void:
 	assert_true(String(scene.hud._title).begins_with(PSEUDO_PREFIX), "NETRUN // ROUTE translated")
 	_shop(scene)
 	await _frames(4)
-	_assert_once(scene, "Modem")
-	var sign := scene._panel.find_child("ModemSign", true, false) as ModemSign
+	_assert_once(scene, "Mainframe")
+	var sign := scene._panel.find_child("MainframeSign", true, false) as MainframeSign
 	for w in sign.shown_words():
 		assert_true(w.begins_with(PSEUDO_PREFIX), "the sign's '%s'" % w)
 	var shred := scene._panel.find_child("RemoveCard", true, false) as ZineCard
@@ -464,7 +464,7 @@ func test_route_shop_event_loot_words_are_translated_once() -> void:
 	var slices: Node = scene._panel.find_child("Slices", true, false)
 	for t in slices.get_children():
 		assert_true((t as ZineCard).card_title.begins_with(PSEUDO_PREFIX), "slice '%s'" % (t as ZineCard).card_title)
-	assert_true(String(scene.hud._title).begins_with(PSEUDO_PREFIX), "the Modem's title")
+	assert_true(String(scene.hud._title).begins_with(PSEUDO_PREFIX), "the Mainframe's title")
 	_event(scene)
 	await _frames(4)
 	_assert_once(scene, "event")
@@ -610,7 +610,7 @@ func test_a_keyboard_esc_never_leaves_when_settings_is_rebound() -> void:
 	await _frames()
 	scene._unhandled_input(esc)
 	await _frames()
-	assert_eq(RunManager.netrun.run.phase, RunState.Phase.SHOP, "a keyboard's Esc stays in the Modem")
+	assert_eq(RunManager.netrun.run.phase, RunState.Phase.SHOP, "a keyboard's Esc stays in the Mainframe")
 	scene._unhandled_input(pad)
 	await _frames()
 	assert_ne(RunManager.netrun.run.phase, RunState.Phase.SHOP, "a pad's B leaves it")
@@ -669,7 +669,7 @@ func test_the_saved_stamp_is_placed_on_the_page_it_lands_on() -> void:
 			_shop(scene)
 			await _frames()
 			RunManager.autosave()
-			await _assert_saved_clear(scene, "Modem")
+			await _assert_saved_clear(scene, "Mainframe")
 			await _close(scene)
 	Settings.set_pad_active(false)
 
@@ -739,7 +739,7 @@ func NetrunScene_EVENT_RIGHT_GAP() -> float:
 	return load("res://scripts/ui/netrun_scene.gd").EVENT_RIGHT_GAP
 
 
-# --- S10 the Modem's tiles -------------------------------------------------------------------------
+# --- S10 the Mainframe's tiles -------------------------------------------------------------------------
 
 func _parts_apart(card: ZineCard, what: String) -> void:
 	var inside := Rect2(Vector2.ZERO, card.size).grow(0.5)
@@ -771,7 +771,7 @@ func _parts_apart(card: ZineCard, what: String) -> void:
 		assert_false(icon.intersects(buy), "%s: the icon %s under the sticker %s" % [what, icon, buy])
 
 
-func test_modem_text_icons_and_stickers_never_overlap() -> void:
+func test_mainframe_text_icons_and_stickers_never_overlap() -> void:
 	for scale in SCALES:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
@@ -946,7 +946,7 @@ func test_a_screen_line_ends_when_its_screen_is_left() -> void:
 	assert_eq(Dialogue.shown_scope(), "route", "the jack-in line shows on the route")
 	_shop(scene)
 	await _frames(2)
-	assert_ne(Dialogue.shown_scope(), "route", "gone on the Modem")
+	assert_ne(Dialogue.shown_scope(), "route", "gone on the Mainframe")
 	assert_string_contains(Dialogue.current_text(), "Heat went up.", "the news line plays on")
 	Dialogue.say(RC.Voice.DISPATCH, "On the event.", 0.0, &"", false, "event")
 	_event(scene)
@@ -993,7 +993,7 @@ func test_the_top_bar_says_whose_numbers_it_shows() -> void:
 
 # --- S17 the whole text on hover and focus -------------------------------------------------------------------
 
-func test_loot_and_modem_cards_show_their_whole_text_on_focus() -> void:
+func test_loot_and_mainframe_cards_show_their_whole_text_on_focus() -> void:
 	var scene := _netrun()
 	await _frames()
 	Settings.set_pad_active(true)

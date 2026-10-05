@@ -1,15 +1,15 @@
-class_name ModemSign
+class_name MainframeSign
 extends Control
-## The Modem's vertical neon sign (left edge of the shop): a rounded pink border, a dense
-## printed-circuit board inside it with traces running in from the border, MODEM stacked
+## The Mainframe's vertical neon sign (left edge of the shop): a rounded pink border, a dense
+## printed-circuit board inside it with traces running in from the border, MAINFRAME stacked
 ## in the drawn cybernetic face (pink) and CYBER SHOP under it (cyan), both sprouting
-## traces, and BUY / SHRED sticky notes overlapping the bottom-right corner (the Modem
+## traces, and BUY / SHRED sticky notes overlapping the bottom-right corner (the Mainframe
 ## sells and removes cards; nothing is sold back, H20). Decoration.
 
 const PINK := Palette.CELL_PINK
 ## The sticky notes' lettering (px; a longer translation shrinks to fit).
 const STICKY_FONT := 24
-## The sticky notes: what the Modem does (keys, translated when drawn).
+## The sticky notes: what the Mainframe does (keys, translated when drawn).
 const NOTES: Array[String] = ["BUY", "SHRED"] # TR
 ## ANIM-R6 B11: a sticky note's width and its glyph's radius (px), the sign's bag (its radius,
 ## its top inside the border, its glow's size and alpha), and the bag's tube id (warm-up).
@@ -26,23 +26,23 @@ const SIGN_GLYPH := StatIcon.SHOP
 const NOTE_GLYPHS: Array[StringName] = [StatIcon.CART, StatIcon.SHRED]
 ## The sign's words (keys; H24 S3: drawn in the player's language, in the cybernetic face
 ## when it has every letter, else in the display font).
-const WORD_MODEM := "MODEM" # TR
+const WORD_MAINFRAME := "MAINFRAME" # TR
 const WORD_CYBER := "CYBER" # TR
 const WORD_SHOP := "SHOP" # TR
 
 
-## Animation pass ANIM-6 (ANIMATION_HANDOFF 4.19): on entering the Modem the neon tubes warm
-## up (`modem_sign_warmup`: each tube flickers on at its own, hash-picked moments, then
+## Animation pass ANIM-6 (ANIMATION_HANDOFF 4.19): on entering the Mainframe the neon tubes warm
+## up (`mainframe_sign_warmup`: each tube flickers on at its own, hash-picked moments, then
 ## holds) and the circuit traces light up one after another with CYBER SHOP last
-## (`modem_trace`). 1 = lit (the rest state; reduce effects and headless stay there).
+## (`mainframe_trace`). 1 = lit (the rest state; reduce effects and headless stay there).
 var warm: float = 1.0
 var trace: float = 1.0
 var _tweens: Array[Tween] = []
 ## Flicker steps across the warm-up, and the alpha of an unlit tube.
 const WARM_STEPS := 14
 const TUBE_OFF_ALPHA := 0.12
-## ANIM-R3 A7 / ANIM-R4 C5: every tube strikes within `modem_sign_strike` of the warm-up,
-## flickers for `modem_sign_flicker` after it (lit at a flicker step with this chance: a
+## ANIM-R3 A7 / ANIM-R4 C5: every tube strikes within `mainframe_sign_strike` of the warm-up,
+## flickers for `mainframe_sign_flicker` after it (lit at a flicker step with this chance: a
 ## drawing threshold, not motion), then holds.
 const FLICKER_ON := 0.6
 ## Tube ids for the warm-up hash: the border, then each letter.
@@ -69,26 +69,26 @@ func complete_motion() -> void:
 	settle()
 
 
-## Warms the sign up from dark (entering the Modem).
+## Warms the sign up from dark (entering the Mainframe).
 func warm_up() -> void:
 	settle()
 	_strike = strike_share()
 	_flicker = flicker_share()
-	if Motion.live(&"modem_sign_warmup"):
-		var e := Motion.entry(&"modem_sign_warmup")
+	if Motion.live(&"mainframe_sign_warmup"):
+		var e := Motion.entry(&"mainframe_sign_warmup")
 		warm = 0.0
 		var tw := create_tween()
 		tw.tween_method(func(v: float) -> void:
 			warm = v
-			queue_redraw(), 0.0, 1.0, Motion.seconds(&"modem_sign_warmup")).set_delay(Motion.delay_of(&"modem_sign_warmup")).set_ease(e.ease).set_trans(e.trans)
+			queue_redraw(), 0.0, 1.0, Motion.seconds(&"mainframe_sign_warmup")).set_delay(Motion.delay_of(&"mainframe_sign_warmup")).set_ease(e.ease).set_trans(e.trans)
 		_tweens.append(tw)
-	if Motion.live(&"modem_trace"):
-		var te := Motion.entry(&"modem_trace")
+	if Motion.live(&"mainframe_trace"):
+		var te := Motion.entry(&"mainframe_trace")
 		trace = 0.0
 		var tt := create_tween()
 		tt.tween_method(func(v: float) -> void:
 			trace = v
-			queue_redraw(), 0.0, 1.0, Motion.seconds(&"modem_trace")).set_delay(Motion.delay_of(&"modem_trace")).set_ease(te.ease).set_trans(te.trans)
+			queue_redraw(), 0.0, 1.0, Motion.seconds(&"mainframe_trace")).set_delay(Motion.delay_of(&"mainframe_trace")).set_ease(te.ease).set_trans(te.trans)
 		_tweens.append(tt)
 	queue_redraw()
 
@@ -146,7 +146,7 @@ func _draw() -> void:
 	StatIcon.draw(self, bag_at, BAG_R, SIGN_GLYPH, bag_col)
 	# The name stacked letter by letter down the sign (as many rows as it has letters), under
 	# the bag.
-	var name_word := tr(WORD_MODEM).to_upper()
+	var name_word := tr(WORD_MAINFRAME).to_upper()
 	var n := maxi(1, name_word.length())
 	var head := BAG_TOP + BAG_R * 2.0
 	var step := (r.size.y - 160.0 - head) / float(maxi(5, n))
@@ -263,14 +263,14 @@ func _sticky(at: Vector2, text: String, paper: Color, tilt: float, glyph: String
 
 ## The sign's words as drawn, in the player's language (tests).
 func shown_words() -> PackedStringArray:
-	return PackedStringArray([tr(WORD_MODEM), tr(WORD_CYBER), tr(WORD_SHOP), tr(NOTES[0]), tr(NOTES[1])])
+	return PackedStringArray([tr(WORD_MAINFRAME), tr(WORD_CYBER), tr(WORD_SHOP), tr(NOTES[0]), tr(NOTES[1])])
 
 
-## ANIM-R4 C5: each tube strikes within this share of the warm-up (`modem_sign_strike`).
+## ANIM-R4 C5: each tube strikes within this share of the warm-up (`mainframe_sign_strike`).
 static func strike_share() -> float:
-	return clampf(Motion.amplitude(&"modem_sign_strike"), 0.0, 1.0)
+	return clampf(Motion.amplitude(&"mainframe_sign_strike"), 0.0, 1.0)
 
 
-## ANIM-R4 C5: a struck tube flickers for this share of the warm-up (`modem_sign_flicker`).
+## ANIM-R4 C5: a struck tube flickers for this share of the warm-up (`mainframe_sign_flicker`).
 static func flicker_share() -> float:
-	return clampf(Motion.amplitude(&"modem_sign_flicker"), 0.0, 1.0)
+	return clampf(Motion.amplitude(&"mainframe_sign_flicker"), 0.0, 1.0)

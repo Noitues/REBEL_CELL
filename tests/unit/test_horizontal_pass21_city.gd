@@ -199,7 +199,7 @@ func test_node_icons_are_distinct_and_the_legend_draws_them() -> void:
 			shapes[str(CityMapOverlay.icon_shape(kind, Vector2.ZERO, 10.0))] = kind
 		assert_eq(shapes.size(), kinds.size(), "each kind on a map has its own silhouette: %s" % [kinds])
 	assert_eq(CityMapOverlay.route_kind(RC.InfilNodeType.ROUTER, true), CityMapOverlay.KIND_ELITE)
-	assert_eq(CityMapOverlay.route_kind(RC.InfilNodeType.MODEM, false), CityMapOverlay.KIND_SHOP)
+	assert_eq(CityMapOverlay.route_kind(RC.InfilNodeType.MAINFRAME, false), CityMapOverlay.KIND_SHOP)
 	assert_eq(CityMapOverlay.route_kind(RC.InfilNodeType.SERVER_RACK, false), CityMapOverlay.KIND_RACK)
 	assert_true(CityMapOverlay.ICON_RADIUS >= 12.0, "icons read at a glance")
 	# The legend's icon rows are exactly the Grid's kinds, drawn by the map's painter.

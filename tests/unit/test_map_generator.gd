@@ -62,12 +62,12 @@ func test_guarantees_hold_on_a_sample() -> void:
 			if node["type"] == RC.InfilNodeType.SERVER_RACK:
 				racks_l4 += 1
 		assert_eq(racks_l4, 1, "one Rack in layer 4 (seed %d)" % seed)
-		var modems := 0
+		var mainframes := 0
 		for layer in range(3, 6):
 			for node in g.nodes_in_layer(layer):
-				if node["type"] == RC.InfilNodeType.MODEM:
-					modems += 1
-		assert_true(modems >= 1, "a Modem in layers 3-5 (seed %d)" % seed)
+				if node["type"] == RC.InfilNodeType.MAINFRAME:
+					mainframes += 1
+		assert_true(mainframes >= 1, "a Mainframe in layers 3-5 (seed %d)" % seed)
 		for layer in range(3, 7):
 			var elites := 0
 			for node in g.nodes_in_layer(layer):
@@ -89,7 +89,7 @@ func test_terminals_are_about_a_quarter_of_the_free_nodes() -> void:
 	for seed in 200:
 		var g := _generate(seed)
 		for node in g.all_nodes():
-			if node["layer"] == 1 or node["layer"] == _cfg.map_layers or node["elite"] or node["type"] == RC.InfilNodeType.MODEM:
+			if node["layer"] == 1 or node["layer"] == _cfg.map_layers or node["elite"] or node["type"] == RC.InfilNodeType.MAINFRAME:
 				continue
 			candidates += 1
 			if node["type"] == RC.InfilNodeType.TERMINAL:

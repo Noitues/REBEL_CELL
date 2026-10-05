@@ -2040,7 +2040,7 @@ static func snap_region(region: Rect2) -> Rect2:
 
 
 ## ANIM-R2 R1: the bake region the default frame (the district's HQ at `hq_anchor`, no zoom,
-## no pan) shows at `view_size` (the Modem, event and loot backdrops, a fight's arena).
+## no pan) shows at `view_size` (the Mainframe, event and loot backdrops, a fight's arena).
 func frame_region(view_size: Vector2) -> Rect2:
 	var focus := hq_of(district) + Vector2(HQ_LOTS * 0.5, HQ_LOTS * 0.5) if district != &"" else Vector2.ZERO
 	var anchor := Vector2(view_size.x * hq_anchor.x, view_size.y * hq_anchor.y) if district != &"" else view_size * 0.5
@@ -2069,7 +2069,7 @@ func _note_frame_size() -> void:
 
 
 ## ANIM-R2 R1: bakes, ahead, the default frame at every size in `sizes` and every size it was
-## drawn at lately (one region enclosing them all): a fight's arena, the Modem, event and
+## drawn at lately (one region enclosing them all): a fight's arena, the Mainframe, event and
 ## loot pages open on their city. Returns prebake's key.
 func prebake_frames(sizes: Array[Vector2], outlive: bool = false) -> String:
 	var all: Array[Vector2] = sizes.duplicate()

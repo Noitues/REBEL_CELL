@@ -11,7 +11,7 @@ All numbers are tuning placeholders unless marked **locked**. Numeric tuning liv
 30-tick wheel (was 24) · Miss precision tier removed · jitter replaced by spin resistance ·
 Hubs, Inner Rings, satellites, multiple pointers added · three-layer progression (profile /
 campaign / netrun) · City Grid campaign map · Heat redefined as a campaign meter · Ranks,
-stationing, Armory · Exploit-based Mainframe gate · economy, ICE difficulty, narrative, UX,
+stationing, Armory · Exploit-based Mainframe Gate (name pending, D5) · economy, ICE difficulty, narrative, UX,
 audio and visual baseline defined · vertical-slice content defined (Appendix A).
 
 ---
@@ -569,7 +569,7 @@ Enemy HP per tier: base × 1.6^(tier−1); enemy damage (slice output) per tier:
 1.2^(tier−1) (split 2026-09-24 after simulation, see DECISIONS.md). Rewards: base ×
 1.7^(tier−1).
 
-### 11.7 Mainframe Gate: Exploits
+### 11.7 Mainframe Gate (name pending, D5): Exploits
 Minimum **3 Exploits** to attempt the breach. Each extra Exploit weakens the boss further.
 | Exploit | Effect on the final breach |
 |---|---|

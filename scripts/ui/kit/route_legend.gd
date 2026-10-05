@@ -10,7 +10,7 @@ extends TerminalWindow
 const MEANINGS := {CityMapOverlay.KIND_FIGHT: "Fight: win it for Cycles and loot", # TR
 	CityMapOverlay.KIND_ELITE: "Elite fight: harder, better loot", # TR
 	CityMapOverlay.KIND_EVENT: "Event: a choice, and its price", # TR
-	CityMapOverlay.KIND_SHOP: "Shop: spend Cycles (Modem)", # TR
+	CityMapOverlay.KIND_SHOP: "Shop: spend Cycles (Mainframe)", # TR
 	CityMapOverlay.KIND_RACK: "Rack: fight, then bank Schematics and assets"} # TR
 ## H24 S12: what the route's node colours mean (the key said nothing of blue vs green):
 ## [colour key, words]; the colours are route_graph's.

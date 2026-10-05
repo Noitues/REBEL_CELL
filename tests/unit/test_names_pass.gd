@@ -85,6 +85,13 @@ func test_no_player_string_uses_the_old_raid_words() -> void:
 	assert_eq(hits, [] as Array[String], "TAKEN / DOWN / CELL HOLDS / BREACHED replace the old raid words (ruling 6.2)")
 
 
+func test_no_player_string_or_content_names_the_old_shop_node() -> void:
+	var hits: Array[String] = []
+	for s in _csv_strings() + _content_strings():
+		if SHOP_OLD.search(s) != null:
+			hits.append(s)
+	assert_eq(hits, [] as Array[String], "the shop node is the Mainframe (ruling 6.5)")
+
 
 
 ## Ruling 5: ids, enums, file and class names follow the words; no alias is kept.
@@ -92,10 +99,15 @@ func test_no_code_file_or_path_keeps_an_old_name() -> void:
 	var hits: Array[String] = []
 	for root in CODE_ROOTS:
 		for path in _files(root, CODE_EXTS):
+			if SHOP_OLD.search(path) != null:
+				hits.append(path)
+				continue
 			var lines := FileAccess.get_file_as_string(path).split("\n")
 			for i in lines.size():
 				var line := lines[i]
-				if _raid_hit(line) and _raid_identifier(line):
+				if SHOP_OLD.search(line) != null:
+					hits.append("%s:%d" % [path, i + 1])
+				elif _raid_hit(line) and _raid_identifier(line):
 					hits.append("%s:%d" % [path, i + 1])
 	assert_eq(hits, [] as Array[String], "the old names are gone from the code (ruling 5)")
 

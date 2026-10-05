@@ -1,6 +1,6 @@
 class_name PadPrompts
 extends HBoxContainer
-## Button prompts for a pad player (H23 S11: the Modem, loot, raid setup, route and HQ
+## Button prompts for a pad player (H23 S11: the Mainframe, loot, raid setup, route and HQ
 ## showed none): "A  Buy   B  Leave   Menu  Settings" in a row of its own at the foot of the
 ## screen, so it covers no control. Each prompt names the pad button bound to its action
 ## (Settings.key_text) and is relabelled when the device or the binds change

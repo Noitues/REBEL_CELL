@@ -70,7 +70,7 @@ heat = 10
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "The next netrun's Modem carries one item fewer."
+event_text = "The next netrun's Mainframe carries one item fewer."
 
 [sub_resource type="Resource" id="ht_20"]
 script = ExtResource("2_ht")
@@ -98,7 +98,7 @@ heat = 30
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "The next netrun's Modem carries one item fewer."
+event_text = "The next netrun's Mainframe carries one item fewer."
 
 [sub_resource type="Resource" id="ht_40"]
 script = ExtResource("2_ht")
@@ -126,7 +126,7 @@ heat = 60
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "The next netrun's Modem carries one item fewer."
+event_text = "The next netrun's Mainframe carries one item fewer."
 
 [sub_resource type="Resource" id="ht_70"]
 script = ExtResource("2_ht")
@@ -154,7 +154,7 @@ heat = 80
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "The next netrun's Modem carries one item fewer."
+event_text = "The next netrun's Mainframe carries one item fewer."
 
 [sub_resource type="Resource" id="ht_90"]
 script = ExtResource("2_ht")
@@ -440,7 +440,7 @@ map_layers = 7
 map_nodes_min = 2
 map_nodes_max = 4
 rack_layers = PackedInt32Array(4, 7)
-map_modem_layers = Vector2i(3, 5)
+map_mainframe_layers = Vector2i(3, 5)
 map_elite_layers = Vector2i(3, 6)
 map_elites_per_layer = 1
 map_terminal_ratio = 0.25

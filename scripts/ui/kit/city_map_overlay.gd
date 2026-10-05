@@ -94,7 +94,7 @@ const KIND_TIER := "tier"
 ## Plain names of the kinds (tooltips built here when a node has no tip; translated where
 ## the tip is built, ANIM-R4 H7).
 const KIND_NAMES := {KIND_FIGHT: "Router: a fight", KIND_ELITE: "Elite Router: a harder fight", # TR
-	KIND_SHOP: "Modem: the cyber shop", KIND_EVENT: "Terminal: an event with choices", # TR
+	KIND_SHOP: "Mainframe: the cyber shop", KIND_EVENT: "Terminal: an event with choices", # TR
 	KIND_RACK: "Server Rack: the Site's guardian", KIND_BOSS: "Boss Site: the corporation's core", # TR
 	KIND_EXPLOIT: "Exploit Site", KIND_HEAT: "Heat reduction Site", KIND_HOME: "Your home Site (CORE)", # TR
 	KIND_TIER: "Site"} # TR
@@ -111,7 +111,7 @@ const TIP_OUT := "Out of reach from here." # TR
 const TIP_RAID := "Raid: %s." # TR
 const TIP_THREATS := "Threats here: %s." # TR
 ## H24 K5: each kind's icon is a silhouette and a symbol, and no two kinds share either
-## silhouette or both (the Modem shop was the Exploit's diamond, the Heat reduction Site
+## silhouette or both (the Mainframe shop was the Exploit's diamond, the Heat reduction Site
 ## ICE's snowflake). A symbol named like a StatIcon is drawn by StatIcon, so a map icon
 ## and the tag for the same thing match (the Exploit's diamond, the shop's bag).
 const KIND_SHAPES := {KIND_FIGHT: "circle", KIND_ELITE: "star8", KIND_SHOP: "tag", KIND_EVENT: "square",
@@ -121,7 +121,7 @@ const KIND_SYMBOLS := {KIND_FIGHT: "crossed_blades", KIND_ELITE: "crossed_blades
 	KIND_EVENT: "question", KIND_RACK: "server_blades", KIND_BOSS: "star", KIND_EXPLOIT: "exploits",
 	KIND_HEAT: "cooling", KIND_HOME: "door", KIND_TIER: "tier_number"}
 ## H23 #6: the one word naming each kind (it leads every node tooltip).
-const KIND_WORDS := {KIND_FIGHT: "Router", KIND_ELITE: "Elite Router", KIND_SHOP: "Modem", KIND_EVENT: "Terminal", # TR
+const KIND_WORDS := {KIND_FIGHT: "Router", KIND_ELITE: "Elite Router", KIND_SHOP: "Mainframe", KIND_EVENT: "Terminal", # TR
 	KIND_RACK: "Server Rack", KIND_BOSS: "Boss", KIND_EXPLOIT: "Exploit", KIND_HEAT: "Heat reduction", # TR
 	KIND_HOME: "CORE", KIND_TIER: "Site"} # TR
 ## Icon radius on screen (px, undoing the city's zoom), for normal and big nodes, and
@@ -357,7 +357,7 @@ static func route_kind(node_type: int, elite: bool) -> String:
 			return KIND_ELITE if elite else KIND_FIGHT
 		RC.InfilNodeType.TERMINAL:
 			return KIND_EVENT
-		RC.InfilNodeType.MODEM:
+		RC.InfilNodeType.MAINFRAME:
 			return KIND_SHOP
 		RC.InfilNodeType.SERVER_RACK:
 			return KIND_RACK

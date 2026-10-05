@@ -9,7 +9,7 @@ extends RefCounted
 ## - **The consume rule**: a press that completes a motion is consumed and does nothing
 ##   else. The helper ends its motion (the end state shows at once) and marks the event
 ##   handled, so no control, page or scene behind it sees the press (a B that ends a
-##   viewer's landing never also leaves the Modem; a click that ends SEND IT's replay never
+##   viewer's landing never also leaves the Mainframe; a click that ends SEND IT's replay never
 ##   ends a second turn). A press when no motion plays is untouched.
 ##
 ## Every helper that ends its motion on a press uses this: the combat replay skip, DropLayer,
@@ -58,7 +58,7 @@ extends RefCounted
 ##   helper that consumes by hand still does. A
 ##   helper a PauseMenu covers is left alone (its motion plays on).
 ## - **Short motions join too (ANIM-R6 D7, `register_passive`)**: a short motion that
-##   answers the player (the top bar's bumps and rolls, the MODEM sign's warm-up, SEND IT's
+##   answers the player (the top bar's bumps and rolls, the MAINFRAME sign's warm-up, SEND IT's
 ##   drips and squash, a card dealing or fanning in, a wheel's spin after a card) joins GROUP
 ##   and completes with any press another helper takes, but takes no press of its own: a
 ##   key pressed while a tag bumps must still do what it does (a helper of its own would

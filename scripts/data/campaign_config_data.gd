@@ -31,7 +31,7 @@ extends Resource
 @export var cycles_router_range: Vector2i = Vector2i(15, 25)
 
 @export_group("Shop")
-## Modem shop prices in Cycles (11.2), inclusive [min, max] ranges.
+## Mainframe shop prices in Cycles (11.2), inclusive [min, max] ranges.
 @export var card_price_range: Vector2i = Vector2i(50, 75)
 @export var firmware_price_range: Vector2i = Vector2i(75, 150)
 @export var daemon_price_range: Vector2i = Vector2i(150, 250)
@@ -40,7 +40,7 @@ extends Resource
 @export var card_removal_increment: int = 25
 @export var slice_overwrite_price: int = 100
 @export var miss_slice_overwrite_price: int = 150
-## Slice catalogue a Modem draws its overwrite offers from (designer ruling 2026-09-24).
+## Slice catalogue a Mainframe draws its overwrite offers from (designer ruling 2026-09-24).
 @export var shop_slices: Array[SliceData] = []
 @export var shop_slice_choices: int = 3
 
@@ -90,8 +90,8 @@ extends Resource
 @export var map_nodes_max: int = 4
 ## Layers (1-based) holding a Server Rack. The last one is the run's final node.
 @export var rack_layers: PackedInt32Array = PackedInt32Array([4, 7])
-## At least one Modem somewhere in these layers (inclusive band).
-@export var map_modem_layers: Vector2i = Vector2i(3, 5)
+## At least one Mainframe somewhere in these layers (inclusive band).
+@export var map_mainframe_layers: Vector2i = Vector2i(3, 5)
 ## About this many Elite Routers per layer in this band (4.2 guarantees).
 @export var map_elite_layers: Vector2i = Vector2i(3, 6)
 @export var map_elites_per_layer: int = 1
@@ -148,7 +148,7 @@ extends Resource
 ## ICE selectable on a fresh profile, and how far past its best win a corporation unlocks.
 @export var ice_base_cap: int = 3
 @export var ice_unlock_step: int = 3
-## Modem stock (GDD 4.4): cards, Firmware and Daemons offered per visit.
+## Mainframe stock (GDD 4.4): cards, Firmware and Daemons offered per visit.
 @export var shop_card_stock: int = 3
 @export var shop_firmware_stock: int = 2
 @export var shop_daemon_stock: int = 1

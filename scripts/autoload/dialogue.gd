@@ -112,9 +112,9 @@ func add_set(set: LineSetData) -> void:
 
 ## The subtitle bar in its place outside combat: the screen's SubtitleStrip (H21 #11: a
 ## band of its own under the top bar that no control and no stat tag sits in; the H20 top
-## band hid the stats, the money in the Modem), else DEFAULT_DOCK. The speaker's name
+## band hid the stats, the money in the Mainframe), else DEFAULT_DOCK. The speaker's name
 ## inline, paged to the lines that fit (H20: the old bottom bar covered raid asset cards,
-## LEAVE THE MODEM, crew Loadout buttons, Grid rows and menu buttons).
+## LEAVE MAINFRAME, crew Loadout buttons, Grid rows and menu buttons).
 func dock_default() -> void:
 	# ANIM-R5 B2: the lines that fit are counted at the text size's own font (a page shrunk
 	# for the old dock must not count them).

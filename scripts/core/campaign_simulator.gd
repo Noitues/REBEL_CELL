@@ -8,9 +8,9 @@ extends RefCounted
 ## living operatives, scrub Heat at 70+; claim one Firewall Relay next to home when rich;
 ## launch the highest-ranked operative at the breach when open, else an Exploit Site,
 ## else a Heat objective at Heat 50+, else the deepest Site its Rank allows (ties by id).
-## In a run: avoid elites below half HP, visit a Modem with 75+ Cycles, take the first
+## In a run: avoid elites below half HP, visit a Mainframe with 75+ Cycles, take the first
 ## card while the deck is under 16, socket Firmware (never Heat-costing Burner) in the first slot that fits, take
-## Daemons, pick the last (safest) event choice, remove Bug cards at Modems.
+## Daemons, pick the last (safest) event choice, remove Bug cards at Mainframes.
 
 ## GDD 11.8 time budget per netrun and per raid, for the hour estimate.
 const MINUTES_PER_RUN := 15.0
@@ -251,7 +251,7 @@ func _pick_node(s: NetrunSession) -> StringName:
 		match int(node["type"]):
 			RC.InfilNodeType.SERVER_RACK:
 				key = 50
-			RC.InfilNodeType.MODEM:
+			RC.InfilNodeType.MAINFRAME:
 				key = 60 if s.run.cycles >= 75 else 10
 			RC.InfilNodeType.TERMINAL:
 				key = 30 if hp_low else 20
