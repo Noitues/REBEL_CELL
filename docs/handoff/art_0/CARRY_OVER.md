@@ -3,7 +3,7 @@
 | From | Item | Goes to |
 |---|---|---|
 | E (S3) | Turn MSDF on (`Palette.FONTS_MSDF`), retune the layouts it moves (`test_horizontal_pass21_screens` radio lines, `test_anim_r5_netrun` page split) and find the signal-11 crash in `test_anim_r5_city` `test_your_nodes_never_ends_in_a_cut_row` (raid YOUR NODES at 1.6) seen with MSDF on | Group 1 (ART-1 faces) |
-| E (S4) | Combat `hit_shake` is 3 px, above the T2 limit of 2 px | Group 2 (ART-3 FX) |
+| E (S4) | Combat `hit_shake` is 3 px, above the T2 limit of 2 px (2C: 2 px); ART-0 audit E1 clamps every Motion.shake to its tier (`heat_letters_shake` T3, `precision_weak` 2 px) | done (2C + ART-0 audit fixes) |
 | E (S4) | `reduce_effects` as a project-wide shader global: designer approved 2026-10-05; done in ART-0 area E2 (done, merged c926168) | ART-0 E2 (done) |
 | E (S3) | CLASS_ACCENTS still hold M13 values; corp hues are main's | Group 1 (ART-1 palette v2, ART_BIBLE v2 App. C #4, #5) |
 | F | On a pad, the 1.03 focus scale on full-width Options rows moves words about 18 px and pushes the brackets past the panel edge | ART-10 (`UiFocus.META_NO_SCALE` or narrower rows) |

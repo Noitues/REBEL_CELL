@@ -33,6 +33,74 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-0 audit fixes
+Fixes every finding of `docs/handoff/m14_audit/ART-0_horizontal.md` (3 P2, 12 P3); nothing deferred.
+- **E1 (P2) shakes held to their tier.** `Motion.shake` plays `Motion.shake_px(id)`, the amplitude
+  clamped by `VfxTier.clamp_shake(VfxTier.of(id), …)`; `Fx.shake_px` delegates to it. Data made honest
+  too: `heat_letters_shake` is T3 (a Heat crossing is a moment, like `heat_number_pop` and
+  `heat_banner`; keeps 3 px), `precision_weak` 4 → 2 px (T2); `hit_shake` stays 2 px (2C). Not a shake
+  in the bible's sense, left as is: `drop_reject`'s 6 px wiggle of the small no-entry mark (the
+  refused-target glyph moving, not the scene). Tests `test_every_shake_fits_its_tier` (every id the
+  scripts pass to Motion.shake), `test_motion_shake_clamps_an_amplitude_over_its_tier`.
+- **E2 (P2) one-shots fit their tier; holds and loops are marked.** Schema: `UiMotionEntryData.kind`
+  { ONE_SHOT (default), HOLD, LOOP } (smoke-checked in `_art0_tier`); `VfxTier.fits` holds only
+  one-shots to `MAX_SECONDS`. HOLD (what the duration measures is a stay or a wait): `saved_stamp`,
+  `toast`, `toast_note_hold`, `resolve_sequence` (a budget), `combat_end_hold`, `jack_arrival_wait`,
+  `asset_drop_wait`, and the readable floats `ram_spend_float`, `ram_refill_float`, `forecast_change`.
+  LOOP: `drop_zone_pulse`, `pointer_orbit`, `ram_pending_blink`, `send_it_ready`, `route_target_pulse`,
+  `tutorial_next_pulse`. Retiered T1 → T2 (short outcomes, not 0.25 s feedback): `wheel_spin`,
+  `wheel_respin`, `inner_ring_turn`, `enemy_turn_spin`, `pointer_migrate`, `site_outline_draw`,
+  `map_camera_ease`, `route_pulse`, `visited_dim`, `loot_fan`, `count_up`, `number_roll`, `drip_grow`,
+  `drip_halo`, `minimap_pulse`, `flight_land_pulse`; `city_bake_fade` T0 (the backdrop). `buy_fly`
+  and `loot_pick` 0.7 → 0.6 s (the bible names buy_fly a T2 outcome; ANIM-R5's floor 0.6 holds).
+  Tests `test_every_one_shot_entry_fits_its_tier`,
+  `test_holds_and_loops_are_marked_and_only_one_shots_are_held_to_the_duration`.
+- **E3 shader rule everywhere.** `test_vfx_tiers` scans every `*.gdshader` outside `addons/`
+  (subfolders of `shaders/`, `assets/`, `tools/`): game shaders include rc_common; any shader with
+  TIME freezes it through `rc_time` / `rc_live`. Fixed on the way: the two animated city-spike
+  shaders (`tools/spike/city/shaders/city_car`, `city_post`) and `glyph_sdf` now include rc_common.
+  Test `test_the_shader_scan_reaches_every_folder`.
+- **B1 (P2) the Heat glitch is built.** `HeatGlitchLayer` (`scripts/ui/fx/`) + `shaders/heat_glitch.gdshader`,
+  in the combat scene between the backdrop (city + Heat lights) and the UI root, so wheels, FX and HUD
+  draw above it: the bible's protect mask (wheel discs <= 35 %) is met at 0 %. Grows with the band per
+  round 18-22 (COOL dip + line jitter; NOTICED tears; FLAGGED roll + macroblocks; HUNTED hold slip,
+  RGB split, scanlines; PURGE = HUNTED). Off by default; exempt from VfxTier (Settings.VFX_TIER_EXEMPT,
+  nothing clamps it); flash limiter on: no luminance dip and no roll brightening; option off: the
+  static corp edge tint at HUNTED+ only (§5.5), in the fight's corporation colour (Heat's HEAT_B when
+  none). CALL: **off under reduce effects** (the brief); §5.5 had "tears only at NOTICED strength, one
+  burst per 3 s" — reduce effects means no tears anywhere else (§5.4), so off is the simpler reading.
+  Timing: `ui_motion.tres` `heat_glitch` (LOOP; duration = a glitch state's hold, amplitude = the
+  edge tint's alpha; REQUIRED_IDS, motion-lab demo `fx_glitch`); per band
+  `CampaignConfigData.heat_glitch_period / _burst / _tears / _blocks` (schema, smoke-checked,
+  validated); px sizes are the view's named constants (round 18 table). Verified windowed (lab fight,
+  every band, the off tint). Test script `tests/unit/test_heat_glitch.gd` (fast tier).
+- **B2 names sweep narrowed.** The quoted-key form of the old raid word counts only in a raid context
+  (a raid file, or one that builds raid outcome dictionaries); `ui_theme.gd`,
+  `type_chrome_sheet.gd` and `test_w9_accessibility_settings.gd` write `"disabled":` plainly again.
+  Test `test_a_control_state_key_is_not_a_raid_word_but_a_raid_outcome_key_is`.
+- **B3 Hub Breach reads LOCKDOWN.** BREACHED stays the home server falling (ruling 6.2); the Hub
+  Breach log line ("<name> hub in LOCKDOWN for N turn(s)") and the hub line's " (LOCKDOWN)" take the
+  bible's word (§3.3, Appendix C #11). Seen, not changed: the netrun loot title "RACK BREACHED" (a
+  Server Rack, not home; the audit confirmed it). Test `test_a_hub_breach_says_lockdown_not_breached`.
+- **B4 saves folder.** `CampaignConfigData.max_replays` (50; 0 = no cap; schema, smoke-checked):
+  `SaveService.write_replay` prunes the oldest; replay names lead with the zero-padded wall-clock ms
+  so they sort oldest first. `export_presets.cfg` excludes `saves/*` in all three presets. Tests
+  `test_the_replay_folder_is_capped_and_drops_the_oldest`,
+  `test_netrun_rewind_and_resumed_fights_replay_to_the_same_hash` (netrun plain / with a rewind /
+  saved and resumed through JSON, two seeds each).
+- **B5 + O1 stale lines.** Part 2's "enum keeps SHIELD / DEPLOY / MISS" and D11 "no band changes" are
+  struck and marked superseded; "the glitch comes in ART-3 / ART-5" annotated; the SANDBOX question
+  struck as resolved; the cut-off duplicate D11 question line removed.
+- **C1 + D2 named colours.** `Palette.HC_BG` (#000) is high contrast's background; the colour lint
+  also counts `Color.WHITE` / `BLACK` / `TRANSPARENT` and the like; all 22 uses in `scripts/ui` now
+  read `Palette.NO_TINT` (multiplier white: shader carriers, masks, modulates), `CLEAR`, `WHITE_HOT`
+  (victory disc flash, white-hot bits) or `HC_BG`; values unchanged. Test
+  `test_named_colour_constants_are_palette_tokens`.
+- **D1 no slack.** Baseline lowered to today's counts (`ui_theme.gd` colour 24 → 12);
+  `test_the_baseline_has_no_slack` fails when a count drops without the baseline following.
+- **O2** `.github/workflows/ci.yml` fast-checks runs `python3 tools/test_run_tests.py` (triggers stay manual).
+- **O3** `docs/timeline/.gdignore`.
+
 ### 2026-10-05 — Art direction — ART-9 4B dialogue and portraits
 ART_BIBLE v2 §4.11 (dialogue A), §4.12 (portraits v2), DECISIONS "Designer ruling: DISPATCH
 text"; references `round31_reward_event/dialogue.jpg`, `round38_portraits/*`,
