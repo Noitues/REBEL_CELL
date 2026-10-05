@@ -80,3 +80,61 @@ Builds on round 40 (untouched). The blended dock, the replace animation and para
 ## Weakest parts
 - **The worst case is tall.** It is legible at r = 220 but crowds anything placed above the wheel.
 - **The sub-needle and firmware socket are small** next to the tier III border at sheet scale.
+
+---
+
+# Combat fit check: `combat_worst_case.png` and `combat_typical.png`
+
+Both screens use the locked round 31 layout:
+- player wheel at (481, 490), r = 220;
+- boss (The Manifest) at (1438, 520), r = 236;
+- the round 31 backdrop and HUD, with the HUD drawn on top as in the game.
+
+Each HUD panel that hides wheel content is outlined in red with the share of its area covered. The off-screen figure is the share of the wheel extras (everything outside the frames) that falls past the screen edge. Both come from `scripts/combat41.py worst|typical`.
+
+**Worst case.** Both wheels carry, on every slice:
+- 2 drones (12 per wheel);
+- a parasite (attached, and popped on the needle slice);
+- a status with a ×N tab (×2 to ×5).
+
+The player also has tiers I to III, the inner ring with extensions on every slice, firmware sockets on every slice and a sub-needle. The boss is at tier III. Bosses have no inner ring or firmware, so those are player-only.
+
+**Typical.** The player has 1 drone, 1 firmware chip and 1 status. The boss has 1 drone, 1 status and 1 parasite (attached).
+
+## Verdict
+**Typical fits.** 0 % is off-screen and no HUD panel hides anything. The one issue: the boss's single drone sits at the screen's right edge, and its pointer tab clips.
+
+**Worst case does not fit.**
+
+| Measure | Result |
+|---|---|
+| Wheel extras off-screen | 6 % |
+| Nudge buttons hidden | 71 % |
+| CELL-9 sticker hidden | 69 % |
+| Player HP + NEXT hidden | 66 % |
+| Boss HP + NEXT hidden | 57 % |
+| Both forecast tags hidden | 50 % |
+| Buttons + SEND IT hidden | 40 % |
+| Hand hidden | 21 % |
+| Status bar hidden | 17 % |
+
+What clips or becomes unreadable:
+- **Between the wheels**, the two drone halos interleave, so you can't tell which wheel a drone belongs to.
+- **The popped parasite on the boss** covers the boss nameplate banner.
+- **At the top**, drones run off-screen. On the player wheel, the drones above the needle also collide with the forecast tag.
+- **Slice values stay readable**, because the read block is always on top. But 6 status badges, ×N tabs and firmware chips per wheel turn the rim into noise.
+- **Drone values (3/5)** at this scale are about 14 px. They are readable one at a time, but not as a set of 24.
+
+## Mitigations (proposed, in priority order)
+1. **Collapse drones into a count badge past one per slice, or past four per wheel.**
+   - A slice with 2 drones shows one drone plus a "×2" pip.
+   - When a wheel has more than 4 drones, the rest collapse into a single docked "DRONES ×8" pod at the rim's free side.
+   - Hovering a slice expands its drones.
+2. **Hide the parasite until it's relevant.** Show only a 6-unit-thin tinted rim stripe (no glyphs) while the needle is elsewhere. Pop it up when the needle settles on it, or when a card preview lands there. This is the same rule as round 41 §2, made stricter.
+3. **Scale rule: the wheel extras budget.** Measure the radius of the extras. Past 1.6 × R_OUT, scale the whole wheel group down, to a minimum of 0.8 × r. Also slide the forecast tag and HP/NEXT plate outward along the wheel's free diagonal.
+4. **Status: one corner badge per slice, with the highest stack shown.** Show the full list on hover and in the forecast chip. Hide ×N tabs at r < 150.
+5. **Firmware: show the chip only on the slice under the needle and on hover.** The other slices get a 3-pin LED dot.
+6. **Ownership tint.** Each drone collar is tinted with its owner's frame colour, so interleaved drones still read as player or boss.
+7. **Hard limits** (an open question for the designer): no more than 2 drones per slice, and no more than 6 drones and 2 parasites per wheel.
+
+These open questions should go into `DECISIONS.md` under "Open questions for the designer".
