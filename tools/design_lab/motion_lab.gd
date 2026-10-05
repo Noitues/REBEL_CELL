@@ -148,14 +148,51 @@ const DEMOS := {
 	# ART-0 E (ported from art-pass W6): the wheel-local T3 bursts on the fight's wheels (the
 	# Perfect's on the operative's, a boss phase's on an enemy's in the corp hue).
 	&"wheel_burst_perfect": ["scene", "perfect"], &"wheel_burst_phase": ["scene", "phase_burst"],
+	# ART-2 2B (wheel attachments and the arena): on the live fight's wheels and backdrop.
+	&"backdrop_won_lights": ["scene", "arena_won"], &"drone_bloom": ["scene", "attach_bloom"],
+	&"preview_chevron_chase": ["scene", "attach_preview"], &"preview_ghost": ["scene", "attach_preview"],
+	&"daemon_rack_scan": ["scene", "attach_rack"],
+	# ART-2 2C (ART_BIBLE v2 §3.15, §3.18, §3.20): each effect on the fight's real wheels, through
+	# the scene's own _play_beat where a beat plays it (CombatBeatFx), else the FX layer's call.
+	&"card_peel": ["scene", "play_fx"], &"card_slap_ring": ["scene", "play_fx"],
+	&"hit_shards": ["scene", "fx_hit"], &"hit_crit_streaks": ["scene", "fx_crit"], &"hit_blocked_wall": ["scene", "fx_blocked"],
+	&"block_wall": ["scene", "fx_block"], &"shield_hex": ["scene", "fx_shield"], &"heal_inflow": ["scene", "fx_heal"],
+	&"evade_token": ["scene", "fx_evade"], &"corrupt_apply": ["scene", "fx_corrupt"], &"corrupt_tick": ["scene", "fx_corrupt_tick"],
+	&"drone_deploy": ["scene", "fx_drone"], &"drone_attack": ["scene", "fx_drone_attack"], &"drone_destroyed": ["scene", "fx_drone_down"],
+	&"enemy_defeated_bits": ["scene", "fx_defeat"], &"phase_change_bits": ["scene", "fx_phase"], &"respin_bits": ["scene", "fx_respin"],
+	&"nudge_resist_bits": ["scene", "fx_resist"], &"ram_gain_bits": ["scene", "fx_ram"], &"temp_label": ["scene", "fx_label"],
+	&"daemon_trigger": ["scene", "fx_daemon"], &"firmware_trigger": ["scene", "fx_firmware"],
+	&"heat_city_beacon": ["scene", "fx_heat"], &"heat_city_sweep": ["scene", "fx_heat"],
+
+	# ART-1 1B material kit: each entry on a fresh real piece (KitDemo: a VinylSticker, a
+	# CrtTerminalPanel, a GreasePencilMark, a DecryptedHoloPanel, a LightSpill, BinaryBits).
+	&"crt_type_on": ["kit", "crt_type_on"], &"crt_caret_blink": ["kit", "crt_caret_blink"], &"crt_hex_scroll": ["kit", "crt_hex_scroll"],
+	&"sticker_slap": ["kit", "sticker_slap"], &"sticker_peel": ["kit", "sticker_peel"], &"sticker_dissolve": ["kit", "sticker_dissolve"],
+	&"sticker_gloss_sweep": ["kit", "sticker_gloss_sweep"], &"sticker_corner_flutter": ["kit", "sticker_corner_flutter"],
+	&"sticker_hover": ["kit", "sticker_hover"], &"sticker_press": ["kit", "sticker_press"],
+	&"pencil_write_on": ["kit", "pencil_write_on"], &"pencil_wipe": ["kit", "pencil_wipe"], &"pencil_glint": ["kit", "pencil_glint"],
+	&"holo_bands": ["kit", "holo_bands"], &"light_spill_breathe": ["kit", "light_spill_breathe"], &"bits_flight": ["kit", "bits_flight"],
 	# ART-0 F (ported from art-pass W2 / W8a): kit behaviour on the real pieces (a native
 	# button's pad focus, a refused sticker, a confirm opened and closed as a modal).
 	&"focus_scale": ["screen", "kit_focus"], &"button_refused": ["screen", "kit_refused"],
 	&"modal_in": ["screen", "modal_open"], &"modal_out": ["screen", "modal_close"],
+	# ART-2 2A: the wheel stack.
+	&"wheel_screen_loop": ["view", "screens"], &"wheel_telemetry_scroll": ["view", "telemetry"], &"precision_latch": ["view", "perfect_latch"], &"precision_word": ["view", "landing_word"], &"precision_stutter": ["view", "weak_stutter"], &"hub_defeat_drain": ["view", "defeat_drain"], &"hub_lockdown_drain": ["view", "lockdown"],
+
+	# ART-11 4D: the campaign lost lock (RansomLock over the stage), the audit dossier
+	# (AuditDossier), each the real piece.
+	&"ransom_glitch": ["screen", "ransom"], &"ransom_wipe": ["screen", "ransom"], &"ransom_padlock": ["screen", "ransom"],
+	&"ransom_notice_in": ["screen", "ransom"], &"ransom_verb_stamp": ["screen", "ransom"], &"ransom_sticker_curl": ["screen", "ransom"],
+	&"ransom_sticker_drop": ["screen", "ransom"], &"ransom_sticker_stagger": ["screen", "ransom"], &"ransom_countdown": ["screen", "ransom"],
+	&"ransom_wipe_hold": ["screen", "ransom"], &"ransom_cut": ["screen", "ransom"],
+	&"dossier_open": ["screen", "dossier_file"], &"dossier_stamp": ["screen", "dossier_file"], &"dossier_note": ["screen", "dossier_file"],
+	&"dossier_note_stagger": ["screen", "dossier_file"],
 	# ART-9 4B: the portrait feeds (idle, talking, stationed) and DISPATCH's voice trace.
 	&"portrait_feed": ["screen", "feed"], &"portrait_blink": ["screen", "feed"], &"portrait_talk": ["screen", "feed"],
 	&"dispatch_trace": ["screen", "feed"],
 }
+## ART-11 4D: the lock demo's nodes on the stage (px from its top-left; the first is home).
+const RANSOM_NODES: Array[Vector2] = [Vector2(450, 300), Vector2(250, 180), Vector2(640, 170), Vector2(180, 430), Vector2(700, 420)]
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
 ## subtitle demo says, and how long the frames between a menu's focus moves are (s).
@@ -200,6 +237,8 @@ const REFUSAL_TEXT := "NEED 40 CYCLES"
 const TOAST_TEXT := "NOT ENOUGH RAM"
 ## Beat demos: the amount a made beat carries.
 const DEMO_BEAT_AMOUNT := 6
+## ART-2 2C: the Heat band the Heat city demo shows (HUNTED: police lights and searchlights).
+const DEMO_HEAT_BAND := 3
 
 ## ANIM-R5 HQ demos: the demo campaign's Schematics and the raid demo's defences (a turret
 ## shoots, a decoy draws fire, an ICE lock holds).
@@ -558,6 +597,8 @@ func _play() -> void:
 		"hq", "netrun":
 			_play_context(String(demo[0]), String(demo[1]))
 			length = CONTEXT_LOOP
+		"kit":
+			length = maxf(_play_kit(StringName(demo[1])), LOOP_HOLD)
 	_show_values()
 	if _loop:
 		_replay_later(maxf(length, 0.0) + LOOP_GAP)
@@ -573,6 +614,24 @@ func _replay_later(seconds: float) -> void:
 # --- Combat demos (ANIM-2 / ANIM-3) --------------------------------------------------------
 
 # --- Screen demos (ANIM-6) -------------------------------------------------------------------
+
+## ART-1 1B: a material-kit motion on a fresh real piece (KitDemo) over the stage. Returns
+## its length (s).
+func _play_kit(id: StringName) -> float:
+	_show_scene(false)
+	if _screen_host != null:
+		_screen_host.queue_free()
+	_screen_host = Control.new()
+	_screen_host.name = "KitDemo"
+	_screen_host.position = Vector2(PANEL_W, 0)
+	_screen_host.size = Vector2(1280 - PANEL_W, 720)
+	add_child(_screen_host)
+	var bg := ColorRect.new()
+	bg.color = Palette.DESK_DARK
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_screen_host.add_child(bg)
+	return KitDemo.play(id, _screen_host)
+
 
 ## A screen motion on a fresh piece over the stage (the stage's own pieces hide). Returns
 ## its length (s).
@@ -830,6 +889,49 @@ func _play_screen(what: String) -> void:
 				await get_tree().create_timer(Motion.seconds(&"modal_in") + LOOP_GAP).timeout
 				if is_instance_valid(m):
 					PageTransition.close_modal(m)
+		"ransom":
+			# ART-11 4D: Halcyon's lock over the stage: tearing, the wipe, padlocks on five nodes,
+			# the notice and its verb, the countdown, the stickers curling and dropping, the cut.
+			var lock := RansomLock.new()
+			_screen_host.add_child(lock)
+			var host := _screen_host
+			lock.nodes_provider = func() -> Array:
+				var pts: Array = []
+				if is_instance_valid(host):
+					for i in RANSOM_NODES.size():
+						pts.append({"at": host.global_position + RANSOM_NODES[i], "home": i == 0})
+				return pts
+			var specs: Array[Dictionary] = [{"text": "CELL DEFENSE"}, {"asset": &"turret", "text": "TURRET"}, {"asset": &"ice_lock", "text": "ICE LOCK"},
+				{"asset": &"decoy", "text": "DECOY"}, {"text": "REBEL_CELL", "fill": VinylSticker.Fill.PINK, "size": UiTheme.TITLE}]
+			lock.setup(&"halcyon", "Halcyon Civic", 0, 50, specs)
+			length = lock.motion_end() + Motion.seconds(RansomLock.HOLD) + Motion.seconds(RansomLock.CUT)
+		"dossier_file":
+			# ART-11 4D: a lost campaign's audit dossier opening, stamped, its notes slapping on.
+			var f := DossierFacts.new()
+			f.corporation_id = &"halcyon"
+			f.corporation_name = "Halcyon Civic"
+			f.cell_number = 3
+			f.runs_started = 8
+			f.deaths = 2
+			f.raids_won = 3
+			f.raids_lost = 1
+			f.held = 3
+			f.down = 1
+			f.taken = 1
+			f.home_max = 50
+			f.heat = 82
+			f.heat_max = 100
+			f.heat_marks.assign([25, 50, 75])
+			f.heat_levels.assign([25, 50, 75])
+			f.crew.assign([{"id": &"op_1", "name": "Vex", "class_id": &"breaker", "class_name": "Breaker", "rank": 3, "alive": true, "runs": 7, "post": "Firewall Relay"},
+				{"id": &"op_2", "name": "Ash", "class_id": &"ghost", "class_name": "Ghost", "rank": 2, "alive": false, "runs": 4, "post": ""}])
+			f.most_troublesome = f.crew[0]
+			f.next_ice = 2
+			var prints: Array[Dictionary] = [{"caption": "HOME SERVER - 0/50"}, {"caption": "NODES AT THE END"}]
+			var dossier := AuditDossier.new(f, prints)
+			dossier.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			_screen_host.add_child(dossier)
+			length = dossier.motion_end()
 		"city":
 			var city := NeonCity.new()
 			city.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1098,6 +1200,21 @@ func _play_view(what: String) -> float:
 			get_tree().create_timer(Motion.seconds(_id) * 3.0).timeout.connect(card.release_focus)
 		"press":
 			(_pieces["send"] as DripButton).press_motion()
+		"screens":
+			_wheel.disc.run_screens()
+		"telemetry":
+			_wheel.queue_redraw()
+		"perfect_latch":
+			_wheel.play_precision(RC.PrecisionTier.PERFECT, 0)
+		"landing_word":
+			_wheel.play_precision(RC.PrecisionTier.GOOD, 0)
+		"weak_stutter":
+			_wheel.play_precision(RC.PrecisionTier.WEAK, 0)
+		"defeat_drain":
+			_wheel.play_defeat_drain()
+		"lockdown":
+			_wheel.lockdown_level = 1.0
+			_wheel.play_lockdown_drain()
 		"ready":
 			var send := _pieces["send"] as DripButton
 			send.glyph = true
@@ -1121,6 +1238,42 @@ func _show_scene(on: bool) -> void:
 
 ## A motion in a live combat scene (a fresh fight each time, laid out for SCENE_SETTLE
 ## frames before the motion starts).
+## ART-2 2B demos on the live fight (lab only: the fight's state is dressed directly): a drone's
+## band blooms, a spin card's animated preview, the Daemon rack's idle scan, the won backdrop.
+func _play_attach(what: String) -> void:
+	var st: CombatState = _scene.engine.state()
+	var pv: WheelView = _scene._player_view
+	match what:
+		"attach_bloom":
+			if st.drones.is_empty():
+				var d := EffectInterpreter.make_combatant(_scene.engine.content(LAB_DRONE) as EnemyData, &"lab_drone", true)
+				d.is_player = true
+				d.host_id = st.player.id
+				d.dock_slot = 1
+				st.drones.append(d)
+			_scene._refresh(st)
+			pv.attachments.dock.force_bloom = false
+			await get_tree().process_frame
+			pv.attachments.dock.force_bloom = true
+		"attach_preview":
+			st.hand[0] = LAB_SPIN_CARD
+			_scene._refresh(st)
+			_scene._preview_card(0)
+		"attach_rack":
+			st.daemon_ids.clear()
+			st.daemon_ids.append_array(LAB_DAEMONS)
+			_scene._refresh(st)
+		"arena_won":
+			_scene.arena_backdrop.won = 0.0
+			_scene.arena_backdrop.play_won()
+
+
+## The ART-2 2B demos' drone, spin card and Daemons.
+const LAB_DRONE := &"botnet_drone"
+const LAB_SPIN_CARD := &"heavy_spin"
+const LAB_DAEMONS: Array[StringName] = [&"clean_signal", &"cascade", &"botnet_seed"]
+
+
 func _play_scene(what: String) -> void:
 	_show_scene(true)
 	_clear_screen()
@@ -1134,6 +1287,8 @@ func _play_scene(what: String) -> void:
 	var enemy: StringName = _scene.engine.state().enemies[0].id
 	var ev: WheelView = _scene._view_of(enemy)
 	match what:
+		"attach_bloom", "attach_preview", "attach_rack", "arena_won":
+			_play_attach(what)
 		"send":
 			_scene.end_turn()
 		"send_hit", "send_kill":
@@ -1319,6 +1474,78 @@ func _play_scene(what: String) -> void:
 				if view != null:
 					view.shown_state = s.get_combatant(id).duplicate_state()
 			_scene._play_beat(b, s, s)
+		"fx_hit", "fx_crit", "fx_blocked", "fx_block", "fx_shield", "fx_heal", "fx_evade", "fx_corrupt", "fx_corrupt_tick":
+			_fx_beat(what, enemy)
+		_:
+			_fx_call(what, ev)
+
+
+## ART-2 2C: an effect a beat plays, as a SEND IT plays it (the scene's own _play_beat and
+## CombatBeatFx): a hit (crit, blocked), the operative's block / shield / heal, an evaded
+## hit, CORRUPTED put on the enemy's slice and its tick.
+func _fx_beat(what: String, enemy: StringName) -> void:
+	var s: CombatState = _scene.engine.state()
+	var pl: StringName = s.player.id
+	var mine := what in ["fx_block", "fx_shield", "fx_heal"]
+	var b := _beat("block" if mine and what != "fx_heal" else ("heal" if what == "fx_heal" else ("status" if what == "fx_corrupt" else "damage")),
+		pl, pl if mine else enemy)
+	match what:
+		"fx_shield":
+			b["kind"] = "shield"
+		"fx_heal":
+			b["hp_after"] = s.player.hp
+		"fx_evade":
+			b["kind"] = "evaded"
+			b["source"] = enemy
+			b["target"] = pl
+		"fx_corrupt_tick":
+			b["kind"] = "corrupted"
+			b["hp_after"] = maxi(0, s.get_combatant(enemy).hp - DEMO_BEAT_AMOUNT)
+		"fx_hit", "fx_crit", "fx_blocked":
+			b["hp_after"] = maxi(0, s.get_combatant(enemy).hp - DEMO_BEAT_AMOUNT)
+			b["crit"] = what == "fx_crit"
+			if what == "fx_blocked":
+				b["blocked"] = DEMO_BEAT_AMOUNT
+				b["raw"] = DEMO_BEAT_AMOUNT * 2
+	for id in [pl, enemy]:
+		var view: WheelView = _scene._view_of(id)
+		if view != null:
+			view.shown_state = s.get_combatant(id).duplicate_state()
+	_scene._play_beat(b, s, s)
+
+
+## ART-2 2C: an effect the FX layer plays from a scene call (a drone, the defeat, a phase, a
+## respin, a resisted nudge, RAM gain, a label, a trigger, the Heat city) on the live fight.
+func _fx_call(what: String, ev: WheelView) -> void:
+	var fx: CombatFxLayer = _scene.fx_layer
+	var pv: WheelView = _scene._player_view
+	match what:
+		"fx_drone":
+			fx.drone_deploy(pv.global_center() + Vector2(pv.disc_radius() * 1.1, -pv.disc_radius() * 0.6), pv.global_center(), Palette.SLICE_TROJAN)
+		"fx_drone_attack":
+			fx.drone_attack(pv.global_center() + Vector2(pv.disc_radius() * 1.1, -pv.disc_radius() * 0.6), Palette.SLICE_TROJAN)
+		"fx_drone_down":
+			fx.drone_destroyed(ev.global_center() + Vector2(-ev.disc_radius() * 1.1, -ev.disc_radius() * 0.6), Palette.SLICE_TROJAN)
+		"fx_defeat":
+			fx.shards(ev.slice_pieces(), tr("DELETED"))
+			ev.play_break()
+		"fx_phase":
+			fx.wheel_burst(ev.global_center(), ev.disc_radius(), CombatFxLayer.BURST_PHASE, Palette.CORP_SOLACE, ev.hp_ring_spot())
+			fx.temp_label(ev.global_center(), tr("PHASE %d") % 2, Palette.RESIST_GOLD)
+		"fx_respin":
+			fx.respin_bits(CombatBeatFx.ram_pips(_scene.ram_note, 0, DEMO_RAM_SPEND), pv.global_center(), tr("RESPIN"))
+		"fx_resist":
+			fx.nudge_resist(ev.pointer_spot(0), tr("RESIST"))
+		"fx_ram":
+			fx.ram_gain(Vector2(_scene.get_global_rect().get_center().x, _scene.get_global_rect().position.y), CombatBeatFx.ram_pips(_scene.ram_note, 0, DEMO_RAM_SPEND))
+		"fx_label":
+			fx.temp_label(ev.global_center(), tr("EVADED"), Palette.GAIN)
+		"fx_daemon":
+			fx.trigger_fx(_scene.daemon_row.get_global_rect().get_center(), pv.global_center(), Palette.NEON_VIOLET, &"daemon_trigger")
+		"fx_firmware":
+			fx.trigger_fx(pv.global_center() + Vector2(0, pv.hub_radius() * 0.5), pv.slot_spot(0), Palette.RESIST_GOLD, &"firmware_trigger")
+		"fx_heat":
+			_scene.heat_city.set_band(DEMO_HEAT_BAND, ev.global_center())
 
 
 

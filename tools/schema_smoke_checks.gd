@@ -6,7 +6,7 @@ extends RefCounted
 
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
-	return _batch1() + _batch2() + _batch3() + _art1_glyphs()
+	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art8_hq_compound()
 
 
 func _mk_effect(t, target, amount := 0, scope := RC.RingScope.OUTER, mult := 1.0) -> EffectData:
@@ -496,6 +496,22 @@ func _art0() -> int:
 	# ART-0 B3: five Heat bands on the existing thresholds (MAJOR 25 / 50 / 75 and PURGE 100).
 	print("ART-0 B3: heat_band_levels ", shipped.heat_band_levels() if shipped != null else [])
 	if shipped == null or shipped.heat_band_levels() != ([25, 50, 75, 100] as Array[int]): fails += 1
+	return fails + _art2c()
+
+
+## ART-2 2C: CampaignConfigData's Combat FX group (shard severity, the Heat city's counts).
+func _art2c() -> int:
+	var fails := 0
+	var cfg := CampaignConfigData.new()
+	var shipped: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("ART-2 2C: shards ", cfg.fx_shard_base, " +", cfg.fx_shard_per_dmg, " max ", cfg.fx_shard_max, " glyph ", cfg.fx_glyph_px_base, " +", cfg.fx_glyph_px_per_dmg,
+		" max ", cfg.fx_glyph_px_max, " heat city ", cfg.heat_city_side_beacons, cfg.heat_city_police_lights)
+	if cfg.fx_shard_count(7) != 18 or cfg.fx_shard_count(0, true) != 40 or not is_equal_approx(cfg.fx_glyph_px(100), 38.0): fails += 1
+	if cfg.heat_city_police_lights.size() != 5 or cfg.heat_city_police_lights[3] != 13 or cfg.heat_city_side_beacons[1] != 3: fails += 1
+	if shipped == null or not shipped.validate().is_empty(): fails += 1
+	var bad := CampaignConfigData.new()
+	bad.heat_city_side_beacons = PackedInt32Array([1, 2])
+	if bad.validate().is_empty(): fails += 1
 	return fails
 
 
@@ -522,4 +538,36 @@ func _art1_glyphs() -> int:
 	print("ART-1 1C: glyph table save=", err, " ids ", back.ids if back != null else {}, " box ", back.box_px if back != null else -1)
 	if err != OK or back == null or back.glyph_for(&"type_shim") != &"slice_shim" or not back.is_pending(&"effect_custom") or back.box_px != 90: fails += 1
 	if back == null or back.cell_region(&"pending") != Rect2(128, 0, 128, 128): fails += 1
+	return fails
+
+
+## ART-8 8p: HqCompoundLayoutData (the HQ-run node -> compound position table): an empty one
+## reports its three gaps; every shipped one validates with one row per layer before the
+## final one; a save keeps the slots, the Central Server and the entry.
+func _art8_hq_compound() -> int:
+	var fails := 0
+	var empty := HqCompoundLayoutData.new()
+	var ee := empty.validate()
+	print("ART-8 8p: empty HQ compound layout errors (expect 3: corporation, asset_dir, slots): ", ee)
+	if ee.size() != 3: fails += 1
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	for corp in [&"meridian", &"solace", &"halcyon", &"orbital", &"rebel_cell"]:
+		var l := load("res://content/city/hq_compounds/%s.tres" % corp) as HqCompoundLayoutData
+		var le := l.validate() if l != null else PackedStringArray(["missing"])
+		print("ART-8 8p: %s layout errors %s rows %d slots %d" % [corp, le, l.layer_rows() if l != null else -1, l.slots_per_layer if l != null else -1])
+		if le.size() != 0 or l.id != HqCompoundLayoutData.id_for(corp): fails += 1
+		if l == null or l.layer_rows() != cfg.map_layers - 1 or l.slots_per_layer != cfg.map_nodes_max: fails += 1
+	var t := HqCompoundLayoutData.new()
+	t.corporation_id = &"smoke"
+	t.id = HqCompoundLayoutData.id_for(&"smoke")
+	t.asset_dir = "res://assets/city/hq_compounds/smoke"
+	t.slots_per_layer = 2
+	t.layer_slots = PackedVector3Array([Vector3(1, 2, 3), Vector3(4, 5, 6), Vector3(7, 8, 9), Vector3(10, 11, 12)])
+	t.central_server = Vector3(0, 30, 0)
+	t.entry = Vector3(40, 0, 0)
+	var err := ResourceSaver.save(t, "user://smoke_hq_compound.tres")
+	var back: HqCompoundLayoutData = load("user://smoke_hq_compound.tres")
+	print("ART-8 8p: layout save=", err, " rows ", back.layer_rows() if back != null else -1, " L2S1 ", back.slot_position(2, 1) if back != null else Vector3.ZERO)
+	if err != OK or back == null or back.validate().size() != 0 or back.layer_rows() != 2 or back.slot_position(2, 1) != Vector3(10, 11, 12): fails += 1
+	if back == null or back.central_server != Vector3(0, 30, 0) or back.entry != Vector3(40, 0, 0): fails += 1
 	return fails

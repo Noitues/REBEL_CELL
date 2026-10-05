@@ -1,4 +1,7 @@
 class_name HudStats
+## ART-2 2D (ART_BIBLE v2 §4.13 "terminal resource strip"): the tags are terminal plates now
+## (dark CRT glass, a cyan edge, the name in mono caps over the icon and the value in Anton),
+## no tilt, no tape; the layout, fitting, bumps and refusals below are unchanged.
 extends Control
 ## Ransom-note stat tags for the top bar: each stat on its own taped paper tag (paper,
 ## pink, yellow), a marker name and the value in Anton, tilted a little. Decoration of
@@ -42,7 +45,9 @@ const VALUE_SIZE := 22
 const SUFFIX_SIZE := 11
 ## What a tag shows for a number that doesn't exist yet (no best ICE): never "none".
 const NO_VALUE := "—"
-const PAPERS: Array[Color] = [Color("#E9DFC6"), Color("#F5AFCB"), Color("#F2DC7A"), Color("#F2EEE4")]
+## ART-2 2D: each tag's edge in turn (the plates read as one strip; the colour is never the
+## only cue: the name and icon say what each is).
+const EDGES: Array[Color] = [HudSkin.TERMINAL_EDGE, HudSkin.TERMINAL_EDGE, HudSkin.TERMINAL_EDGE, HudSkin.TERMINAL_EDGE]
 
 ## [[name, value, suffix, tooltip, icon kind], ...] (tooltip and icon optional: the icon
 ## defaults to StatIcon.kind_for(name)).
@@ -411,7 +416,7 @@ func tag_rects() -> Array[Rect2]:
 ## Width of a tag fitted to its words at scale 1.0: the longer of the name and the icon
 ## with its value (H22 #14).
 func _fitted_tag_width(it: Array) -> float:
-	var name_w := Palette.marker().get_string_size(tr(String(it[0])), HORIZONTAL_ALIGNMENT_LEFT, -1, NAME_SIZE).x + NAME_SLACK
+	var name_w := HudSkin.mono().get_string_size(tr(String(it[0])).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, NAME_SIZE).x + NAME_SLACK
 	return maxf(PAD + name_w + PAD, _compact_tag_width(it))
 
 
@@ -427,7 +432,7 @@ func _compact_tag_width(it: Array) -> float:
 	var value := String(it[1])
 	var w := Palette.display().get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, VALUE_SIZE).x
 	if it.size() > 2 and String(it[2]) != "":
-		w += 2.0 + Palette.marker().get_string_size(String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, SUFFIX_SIZE).x
+		w += 2.0 + HudSkin.mono().get_string_size(String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, SUFFIX_SIZE).x
 	return PAD + ICON_R * 2.0 + 5.0 + w + PAD
 
 
@@ -588,13 +593,9 @@ func _draw() -> void:
 	for i in mini(items.size(), _rects.size()):
 		var it: Array = items[i]
 		var box := _rects[i]
-		var tilt := (-2.0 if i % 2 == 0 else 2.5) * PI / 180.0
-		draw_set_transform(box.get_center(), tilt, Vector2.ONE * _bump_scale(String(it[0])))
+		draw_set_transform(box.get_center(), 0.0, Vector2.ONE * _bump_scale(String(it[0])))
 		var r := Rect2(-box.size * 0.5, box.size)
-		draw_rect(Rect2(r.position + Vector2(3, 4), r.size), Palette.SHADOW)
-		draw_rect(r, PAPERS[i % PAPERS.size()])
-		draw_rect(r, Color(Palette.INK, 0.45), false, 1.0)
-		draw_rect(Rect2(Vector2(-13, r.position.y - 5), Vector2(26, 9)), Palette.NOTE_TAPE)
+		HudSkin.draw_terminal_panel(self, r, EDGES[i % EDGES.size()], HudSkin.TERMINAL_BG)
 		var value := shown_value(i)
 		var vs := roundi(VALUE_SIZE * s)
 		var icon_c: Vector2
@@ -603,14 +604,14 @@ func _draw() -> void:
 			icon_c = r.position + Vector2(PAD + ICON_R, COMPACT_H * 0.5) * s
 			value_at = r.position + Vector2(PAD + ICON_R * 2.0 + 5.0, COMPACT_H * 0.5 + VALUE_SIZE * 0.36) * s
 		else:
-			draw_string(Palette.marker(), r.position + Vector2(PAD, 14) * s, tag_name(i), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 10.0 * s, roundi(NAME_SIZE * s), Palette.INK)
+			draw_string(HudSkin.mono(), r.position + Vector2(PAD, 14) * s, tag_name(i).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 10.0 * s, roundi(NAME_SIZE * s), HudSkin.TERMINAL_TEXT)
 			icon_c = r.position + Vector2(PAD + ICON_R, 30) * s
 			value_at = r.position + Vector2(PAD + ICON_R * 2.0 + 5.0, 38) * s
-		StatIcon.draw(self, icon_c, ICON_R * s, icon_of(i), Palette.INK)
-		draw_string(Palette.display(), value_at, value, HORIZONTAL_ALIGNMENT_LEFT, -1, vs, Palette.INK)
+		StatIcon.draw(self, icon_c, ICON_R * s, icon_of(i), HudSkin.TERMINAL_TEXT)
+		draw_string(Palette.display(), value_at, value, HORIZONTAL_ALIGNMENT_LEFT, -1, vs, HudSkin.TERMINAL_HI)
 		if it.size() > 2 and String(it[2]) != "":
 			var vw := Palette.display().get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, vs).x
-			draw_string(Palette.marker(), value_at + Vector2(vw + 2.0 * s, -1.0 * s), String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(SUFFIX_SIZE * s), Palette.INK)
+			draw_string(HudSkin.mono(), value_at + Vector2(vw + 2.0 * s, -1.0 * s), String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(SUFFIX_SIZE * s), HudSkin.TERMINAL_TEXT)
 		if _refused_tag != "" and String(it[0]) == _refused_tag:
 			# ANIM-R2 E9: a refusal for want of this (Cycles): the tag flashes red and
 			# "PRICE > MONEY" shows under it.

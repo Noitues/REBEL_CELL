@@ -580,7 +580,7 @@ func test_the_forecast_and_the_turn_wait_for_the_replay() -> void:
 		flips_before += (v as WheelView).tag_flips
 	scene.end_turn()
 	assert_not_null(scene._seq)
-	assert_true(scene._status.text.contains(str(turn)), "the status line still shows the turn played")
+	assert_true(scene.banner_text().contains(str(turn)), "the status line still shows the turn played")
 	for v in scene._views():
 		var wv: WheelView = v
 		assert_true(wv.intent.is_empty(), "%s: no forecast during the replay" % wv.combatant.display_name)
@@ -588,13 +588,14 @@ func test_the_forecast_and_the_turn_wait_for_the_replay() -> void:
 	# Played out: the forecast flips in, the turn counter moves on.
 	await BoundedWait.until(get_tree(), func() -> bool: return scene._seq == null, scene.motion_seconds_left() + BoundedWait.SLACK)
 	assert_null(scene._seq, "the replay ends by itself")
-	assert_true(scene._status.text.contains(str(scene.engine.state().turn)), "the TURN counter changes when the replay ends")
+	assert_true(scene.banner_text().contains(str(scene.engine.state().turn)), "the TURN counter changes when the replay ends")
 	# Counted, not caught mid-flip: under load one frame can outlast the whole flip. The
 	# flips start on a redraw, so wait for them (bounded) rather than two frames.
+	# ART-2 2D (D15): the forecast flips in on the result chips.
 	var flips := func() -> int:
 		var n := 0
 		for v in scene._views():
-			n += (v as WheelView).tag_flips
+			n += scene.chip_row((v as WheelView).combatant.id).flips
 		return n
 	await BoundedWait.until(get_tree(), func() -> bool: return flips.call() > flips_before, BoundedWait.motion_limit([&"intent_flip"]))
 	for v in scene._views():

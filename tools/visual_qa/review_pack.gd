@@ -135,6 +135,7 @@ const SCREENS := [
 	["jack_in", "_s_jack_in", "The jack-in transition, its cover up."],
 	["pause_netrun", "_s_pause_netrun", "The pause menu over a netrun's route."],
 	["pause_fight", "_s_pause_fight", "The pause menu over a fight."],
+	["pause_fight_quit", "_s_pause_fight_quit", "ART-2 2D: the quit confirm (the dialog kit) over a fight's pause menu."],
 ]
 
 var out_dir := ""
@@ -1209,6 +1210,20 @@ func _s_pause_fight() -> void:
 	await _settle(combat.get_parent())
 
 
+## ART-2 2D: the pause menu's Quit to desktop opens its confirm (nothing is confirmed).
+func _s_pause_fight_quit() -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	combat.open_settings()
+	await _settle(combat.get_parent())
+	for b in get_tree().root.find_children("*", "Button", true, false):
+		if (b as Button).text == tr("Quit to desktop"):
+			(b as Button).pressed.emit()
+			break
+	await _settle(combat.get_parent())
+
+
 # --- Runtime lint export -----------------------------------------------------------------
 
 ## Every visible text Control on screen with its screen rect, the rect its text covers,
@@ -1226,7 +1241,9 @@ func _lint_export(screen: String, size: Vector2i) -> Dictionary:
 	return {"screen": screen, "text_scale": text_scale, "viewport": [size.x, size.y],
 		"floor_px": roundi(12 * text_scale), "controls": out, "custom_draw": _custom_draw,
 		"type_steps": theme_consts.get("STEPS", []),
-		"hero": [theme_consts.get("HERO", 0), theme_consts.get("HERO_MAX", 0)]}
+		"hero": [theme_consts.get("HERO", 0), theme_consts.get("HERO_MAX", 0)],
+		# ART-1 1B: the grease pencil rule (no UI over a stroke, pencil above all UI).
+		"pencil": PencilLint.violations(get_tree().root)}
 
 
 func _walk(n: Node, out: Array, screen_rect: Rect2) -> void:

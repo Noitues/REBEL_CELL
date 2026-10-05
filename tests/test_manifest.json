@@ -145,6 +145,10 @@
 			"seconds": 30.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_art2_hud.gd": {
+			"seconds": 40.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_anim_r5_rules.gd": {
 			"seconds": 1.3,
 			"tier": "full"
@@ -497,6 +501,10 @@
 			"seconds": 0.1,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art1_material_kit.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art_w1_tokens.gd": {
 			"seconds": 2.0,
 			"tier": "fast"
@@ -513,12 +521,24 @@
 			"seconds": 6.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art2_wheel_stack.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_vfx_tiers.gd": {
 			"seconds": 3.0,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_w9_accessibility_settings.gd": {
 			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_art2_attachments.gd": {
+			"seconds": 12.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_art2_cards_fx.gd": {
+			"seconds": 8.0,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_art1_glyphs.gd": {
@@ -531,6 +551,14 @@
 		},
 		"res://tests/unit/test_art9_portraits_dialogue.gd": {
 			"seconds": 6.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_hq_compound_layout.gd": {
+			"seconds": 1.5,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_art11_campaign_end.gd": {
+			"seconds": 12.0,
 			"tier": "fast"
 		}
 	}

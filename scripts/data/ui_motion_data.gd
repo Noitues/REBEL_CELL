@@ -95,9 +95,34 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-0 E (ported from art-pass W6, ART_BIBLE v2 5.3): the wheel-local T3 bursts that
 	# retire the full-screen Perfect and boss-phase flashes.
 	&"wheel_burst_perfect", &"wheel_burst_phase",
+	# ART-2 2B (wheel attachments and the arena): the won backdrop, the drone bloom, the card-play
+	# preview's chevrons and ghosts, the Daemon rack's idle scan.
+	&"backdrop_won_lights", &"drone_bloom", &"preview_chevron_chase", &"preview_ghost", &"daemon_rack_scan",
+	# ART-2 2C (ART_BIBLE v2 §3.15, §3.18, §3.20): the sticker card's peel and slap, the 0/1
+	# shards, the locked effect set, temporary labels, triggers and the Heat city.
+	&"card_peel", &"card_slap_ring", &"hit_shards", &"hit_crit_streaks", &"hit_blocked_wall", &"block_wall", &"shield_hex",
+	&"heal_inflow", &"evade_token", &"corrupt_apply", &"corrupt_tick", &"drone_deploy", &"drone_attack", &"drone_destroyed",
+	&"enemy_defeated_bits", &"phase_change_bits", &"respin_bits", &"nudge_resist_bits", &"ram_gain_bits", &"temp_label",
+	&"daemon_trigger", &"firmware_trigger", &"heat_city_beacon", &"heat_city_sweep",
+
+	# ART-1 1B material kit (ART_BIBLE v2 1.2, 6.3; round 3 combined_v2 lifecycle): the CRT
+	# terminal, the vinyl sticker, the grease pencil, the holo, the light spill and the bits.
+	&"crt_type_on", &"crt_caret_blink", &"crt_hex_scroll",
+	&"sticker_slap", &"sticker_peel", &"sticker_dissolve", &"sticker_gloss_sweep", &"sticker_corner_flutter",
+	&"sticker_hover", &"sticker_press",
+	&"pencil_write_on", &"pencil_wipe", &"pencil_glint",
+	&"holo_bands", &"light_spill_breathe", &"bits_flight",
 	# ART-0 F (ported from art-pass W2 / W8a): the pad focus scale, the refused state, and a
 	# modal's open and close (PageTransition.open_modal / close_modal).
 	&"focus_scale", &"button_refused", &"modal_in", &"modal_out",
+	# ART-2 2A (the wheel stack): the screens' loop, the telemetry scroll, the precision landings, the hub states.
+	&"wheel_screen_loop", &"wheel_telemetry_scroll", &"precision_latch", &"precision_word", &"precision_stutter", &"hub_defeat_drain", &"hub_lockdown_drain",
+
+	# ART-11 4D (ART_BIBLE v2 §4.8): the campaign lost lock (RansomLock), the audit dossier
+	# (AuditDossier); the run end's verdict slaps with 1B's sticker_slap.
+	&"ransom_glitch", &"ransom_wipe", &"ransom_padlock", &"ransom_notice_in", &"ransom_verb_stamp", &"ransom_sticker_curl",
+	&"ransom_sticker_drop", &"ransom_sticker_stagger", &"ransom_countdown", &"ransom_wipe_hold", &"ransom_cut",
+	&"dossier_open", &"dossier_stamp", &"dossier_note", &"dossier_note_stagger",
 	# ART-9 4B (ART_BIBLE v2 §4.11 / §4.12): the portrait feed's live clock, its blink and
 	# talking mouth, DISPATCH's voice trace (PortraitFeed).
 	&"portrait_feed", &"portrait_blink", &"portrait_talk", &"dispatch_trace",
@@ -119,6 +144,8 @@ const OFF_PARTS: Dictionary = {
 	&"drag_ghost_tilt": 0.0, &"hit_freeze": 0.0, &"stamp_fade_in": 0.0,
 	# ANIM-R6 city: the gap between raid steps and the raid volley's stagger (a share).
 	&"raid_step_gap": 0.0, &"raid_shot_stagger": 0.0,
+	# ART-11 4D: the lock's sticker stagger and the dossier's note stagger (off = together).
+	&"ransom_sticker_stagger": 0.0, &"dossier_note_stagger": 0.0,
 }
 ## ANIM-R5: tunings of another entry (see OFF_PARTS): never switched off.
 const ALWAYS_ON: Array[StringName] = [&"drag_ghost_tilt_speed", &"send_it_drips_share", &"heat_pulse_rise",

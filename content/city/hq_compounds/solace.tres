@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="HqCompoundLayoutData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/hq_compound_layout_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hq_compound_solace"
+corporation_id = &"solace"
+asset_dir = "res://assets/city/hq_compounds/solace"
+slots_per_layer = 4
+layer_slots = PackedVector3Array(-11.103, 18.854, 10.263, 1.423, 24.563, 15.053, -1.423, 24.563, -15.053, 11.103, 18.854, -10.263, -12.766, 37.251, 8.102, -14.185, 31.542, -5.233, 14.185, 31.542, 5.233, 12.766, 37.251, -8.102, 1.777, 44.229, 15.015, -13.014, 49.938, -7.697, 13.014, 49.938, 7.697, -1.777, 44.229, -15.015, -12.572, 56.916, 8.4, -0.949, 62.626, 15.09, 0.949, 62.626, -15.09, 12.572, 56.916, -8.4, -13.876, 75.314, 6.005, -13.192, 69.604, -7.388, 13.192, 69.604, 7.388, 13.876, 75.314, -6.005, -0.594, 82.292, 15.108, -11.65, 88.001, -9.638, 11.65, 88.001, 9.638, 0.594, 82.292, -15.108)
+central_server = Vector3(-13.334, 111.3, -2.112)
+entry = Vector3(16.0, 3.7, 16.0)
