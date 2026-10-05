@@ -85,19 +85,27 @@ func _clear() -> void:
 ## A campaign against `corp` with five claimed nodes of every type (a turret, an ICE lock and
 ## an operative on them), weak spots so a raid takes and downs nodes, and a raid queued.
 func _campaign(corp_id: StringName, home_integrity: int = -1, defended: bool = true) -> void:
+	var p := RunManager.profile
+	for u in [&"unlock_meridian", &"unlock_halcyon", &"unlock_orbital", &"unlock_rebel_cell"]:
+		if not p.unlocks.has(u):
+			p.unlocks.append(u)
 	RunManager.new_campaign(7, corp_id)
 	var c := RunManager.campaign
 	var corp := RunManager.corporation
 	c.schematics = 500
 	var claimed := 0
-	for s in CampaignRules.launchable_sites(c, corp, RunManager.config()):
-		if claimed >= NODE_TYPES.size():
+	var guard := 0
+	while claimed < NODE_TYPES.size() and guard < 20:
+		guard += 1
+		var open := CampaignRules.launchable_sites(c, corp, RunManager.config())
+		if open.is_empty():
 			break
 		var run := RunState.new()
-		run.site_id = s.id
+		run.site_id = open[0].id
 		CampaignRules.on_run_completed(c, corp, RunManager.config(), run)
-		CampaignRules.claim(c, corp, RunManager.config(), RunManager.lookup(), s.id, NODE_TYPES[claimed])
+		CampaignRules.claim(c, corp, RunManager.config(), RunManager.lookup(), open[0].id, NODE_TYPES[claimed])
 		claimed += 1
+	print("raid_lab: %s, %d nodes claimed" % [corp.id, c.grid.claimed_ids().size()])
 	var ids := c.grid.claimed_ids()
 	if defended and ids.size() > 1:
 		c.armory = [&"turret", &"ice_lock", &"decoy", &"turret"]
