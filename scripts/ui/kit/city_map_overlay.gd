@@ -44,6 +44,11 @@ signal markers_changed
 ## H24 K4: the pointer moved onto node `id` (&"" when it left every node), so a screen can
 ## light the matching row of its list.
 signal node_hovered(id: StringName)
+## ART-5 5a (on the 3D city): the wheel over the map (`at`: canvas px, `notches` > 0 zooms
+## out) and a drag on the map's empty ground (`delta`: canvas px) ask the page to move the
+## camera (CityGridControls); the map never moves it itself.
+signal zoom_requested(at: Vector2, notches: float)
+signal pan_requested(delta: Vector2)
 
 ## TRACE: roof outlines and solid street paths. PILLARS: light pillars and floating
 ## badges, flowing dashed paths. ISOLATE: the rest of the city greyed out.
@@ -303,6 +308,11 @@ var token_radius: float = 0.0
 ## is in (they kept running toward CORE after "Raid over" and on the report).
 var packets: bool = true
 var _blocked_rects: Array[Rect2] = []
+## ART-5 5a: a drag on the empty map pans (canvas px where it was last; INF: none) once it
+## moved DRAG_PAN_MIN px.
+const DRAG_PAN_MIN := 4.0
+var _drag_at: Vector2 = Vector2.INF
+var _drag_live: bool = false
 var _blocked_controls: Array[Control] = []
 
 
@@ -619,7 +629,30 @@ func _relayout() -> void:
 			_routes.append(_route(_lots[e["a"]], _lots[e["b"]]))
 		else:
 			_routes.append(PackedVector2Array())
+	_feed_decal()
 	queue_redraw()
+
+
+## ART-5 5a: true while this map lies on the 3D city: its links and node discs are the
+## city's network ground decal (CityNetworkData, x-ray through buildings), so this layer
+## draws no veil and no static link strokes; the flow (dashes, packets, chevrons), the
+## icons, labels and selection stay here, over the city.
+func on_ground_decal() -> bool:
+	return city != null and city.city3d
+
+
+## ART-5 5a: hands the 3D city this map's network (read-only: the graph as laid out here).
+func _feed_decal() -> void:
+	if city == null or city.view3d == null:
+		return
+	city.view3d.set_network(network_data())
+
+
+## ART-5 5a: this map's network as the decal's buffers (the nodes on their lots, the links
+## along their street routes).
+func network_data() -> CityNetworkData:
+	return CityNetworkData.from_graph(CityView3D.CONFIG, nodes, edges, func(id: StringName) -> Vector2i: return lot_of(id),
+		func(k: int) -> PackedVector2Array: return _routes[k] if k < _routes.size() else PackedVector2Array())
 
 
 ## Nearest street lot to a building lot (its "front door").
@@ -706,16 +739,34 @@ func _to_local(p: Vector2) -> Vector2:
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		_point_at(node_at(event.position))
+		if on_ground_decal() and _drag_at != Vector2.INF:
+			var g: Vector2 = get_global_transform_with_canvas() * (event as InputEventMouseMotion).position
+			if _drag_live or g.distance_to(_drag_at) >= DRAG_PAN_MIN:
+				_drag_live = true
+				pan_requested.emit(g - _drag_at)
+				_drag_at = g
+				accept_event()
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var id := node_at(event.position)
 		if id != &"":
 			node_clicked.emit(id)
 			accept_event()
+		elif on_ground_decal():
+			_drag_at = get_global_transform_with_canvas() * (event as InputEventMouseButton).position
+			_drag_live = false
+	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_drag_at = Vector2.INF
+		_drag_live = false
+	if on_ground_decal() and event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		zoom_requested.emit(get_global_transform_with_canvas() * (event as InputEventMouseButton).position, -1.0 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0)
+		accept_event()
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_MOUSE_EXIT:
 		_point_at(&"")
+	elif what == NOTIFICATION_EXIT_TREE and city != null and city.view3d != null and is_instance_valid(city.view3d):
+		city.view3d.set_network(null)
 
 
 ## H24 K4: the pointer is over node `id` now: tell the screen when that changes.
@@ -942,6 +993,10 @@ func _draw() -> void:
 	if city == null or nodes.is_empty():
 		return
 	_c = self
+	if on_ground_decal():
+		# ART-5 5a: the city shows at full strength (round 39); the links are its ground decal.
+		city.draw_marks_on(self, true, false)
+		return
 	match look:
 		Look.ISOLATE:
 			draw_rect(Rect2(-size, size * 3.0), Color(0.02, 0.02, 0.04, 0.62))

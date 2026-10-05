@@ -77,6 +77,24 @@ func test_picking_through_chunks_equals_testing_every_prism() -> void:
 	assert_gt(hits, 6, "most pixels hit a building")
 
 
+func test_every_prism_of_a_chunk_lands_in_one_family_buffer() -> void:
+	var inks := CityMeshKit.ink_palette(model.prisms)
+	assert_lte(inks.size(), 16)
+	for key in model.keys():
+		var idx: PackedInt32Array = model.chunks[key]["prisms"]
+		var fams := CityMeshKit.families_of(cfg, model.prisms, idx)
+		var total := 0
+		for fk: int in fams:
+			var ids: PackedInt32Array = fams[fk]
+			total += ids.size()
+			var buf := CityMeshKit.instance_buffer(cfg, model.prisms, ids, inks)
+			assert_eq(buf.size(), ids.size() * CityMeshKit.INSTANCE_FLOATS)
+			var t := CityMeshKit.instance_transform(model.prisms[ids[0]]["poly"], model.prisms[ids[0]]["y0"], model.prisms[ids[0]]["h"])
+			assert_almost_eq(Vector3(buf[3], buf[7], buf[11]), t.origin, Vector3.ONE * 0.0001, "row-major transform, origin last")
+			assert_almost_eq(buf[1], t.basis.y.x, 0.0001)
+		assert_eq(total, idx.size(), "chunk %s: every prism in a family" % key)
+
+
 func test_top_at_is_the_tallest_roof_on_the_lot() -> void:
 	var pr := model.prisms[model.prisms.size() / 2]
 	var cell: Rect2i = pr["cell"]

@@ -233,8 +233,30 @@ var net_mode: bool = false
 var anim_t: float = 0.0
 ## Where the corporation HQ stands, as a fraction of the screen (ground point).
 var hq_anchor: Vector2 = Vector2(0.8, 0.8)
+## ART-5 5a: the unified 3D city draws this city (bible §4.1): the camera, placement and
+## overlays stay this control's (grid_to_local, roof_of, nearest_building, is_street, the
+## maps on it), projected the way the 3D camera projects (yaw 135°, pitch 40°: the ground's
+## rows step `tile_b()` instead of the 2:1 TILE_B; roofs at the 3D height), and the picture
+## is CityView3D's (no bake). The layout drops the fist roads (round 34 lock). Headless it
+## keeps the projection and the placement (the tests measure the same maps); nothing draws.
+var city3d: bool = false:
+	set(v):
+		if v == city3d:
+			return
+		city3d = v
+		fist_roads = not v
+		_sync_city3d()
+## The Cell's district etches the fist in its roads (the 2D city); the 3D city keeps the
+## normal street grid (bible §4.4, round 34). Part of the placement's key.
+var fist_roads: bool = true
+## The 3D city drawn in city-3D mode (null headless or off).
+var view3d: CityView3D = null
+## The view band the 3D city holds (CityView3D.band_lock; -1: by zoom).
+var band_lock: int = -1
 
 var _fx: Control
+## The live layer's shader material (off in city-3D mode: the 3D city is not scanned).
+var _live_material: ShaderMaterial
 var _built_for: Vector2 = Vector2.ZERO
 ## The camera inputs of the last draw that placed the roofs (see `camera_settled`).
 var _drawn_camera: Array = []
@@ -374,8 +396,9 @@ func _init() -> void:
 	_view.name = "CityView"
 	_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_view.material = ShaderMaterial.new()
-	(_view.material as ShaderMaterial).shader = LIVE_SHADER
+	_live_material = ShaderMaterial.new()
+	_live_material.shader = LIVE_SHADER
+	_view.material = _live_material
 	_view.draw.connect(_draw_view)
 	add_child(_view)
 	# ANIM-R2 R1: the sky over a bake that just landed, fading out (`city_bake_fade`): the
@@ -472,7 +495,7 @@ func _apply_effects() -> void:
 	var sm := material as ShaderMaterial
 	sm.set_shader_parameter("scan_strength", 0.07 if live else 0.0)
 	sm.set_shader_parameter("flicker", 0.012 if live else 0.0)
-	var vm := _view.material as ShaderMaterial
+	var vm := _live_material
 	vm.set_shader_parameter("scan_strength", 0.07 if live else 0.0)
 	vm.set_shader_parameter("flicker", 0.012 if live else 0.0)
 	for layer in [_lights_layer, _beacons_layer]:
@@ -515,7 +538,7 @@ func set_influence(inf: Dictionary) -> void:
 
 ## True while this city draws the shared baked image (not headless, not a painter).
 func is_baked() -> bool:
-	return use_bake and not _painter and CityBakeCache.can_bake()
+	return not _painter and (city3d or (use_bake and CityBakeCache.can_bake()))
 
 
 ## Re-reads the followed campaign's influence (re-bakes only if it changed).
@@ -568,8 +591,8 @@ func showing_current_look() -> bool:
 ## (not a stand-in of another region, not the sky while one bakes), or the city draws
 ## procedurally.
 func view_covered() -> bool:
-	if not is_baked():
-		return true
+	if not is_baked() or city3d:
+		return true  # ART-5 5a: the 3D city covers its view (no bake to wait for)
 	var key := CityBakeCache.find(look_key(), view_rect())
 	return key != "" and not CityBakeCache.entry(key).has("failed")
 
@@ -1069,6 +1092,8 @@ func grid_to_local(x: float, y: float) -> Vector2:
 ## it is asked, so a map draws its nodes on its first frame, long before the image lands.
 func roof_of(i: int, j: int) -> Dictionary:
 	var rec: Dictionary = _placement().placed_roof(Vector2i(i, j)) if is_baked() else _roofs.get(Vector2i(i, j), {})
+	if city3d and not rec.is_empty():
+		return _roof_3d(rec)
 	if rec.is_empty() or _shift == Vector2.ZERO:
 		return rec
 	# Baked: the roofs are stored in the image's space; move them under the camera.
@@ -1117,12 +1142,12 @@ func _apply_pan_margin() -> void:
 
 ## Grid space (lots) to screen.
 func _iso(x: float, y: float) -> Vector2:
-	return Vector2(_ox + (x - y) * TILE_A, _oy + (x + y) * TILE_B)
+	return Vector2(_ox + (x - y) * TILE_A, _oy + (x + y) * tile_b())
 
 
 func _grid_of(p: Vector2) -> Vector2:
 	var d := (p.x - _ox) / TILE_A
-	var s := (p.y - _oy) / TILE_B
+	var s := (p.y - _oy) / tile_b()
 	return Vector2((s + d) * 0.5, (s - d) * 0.5)
 
 
@@ -1141,7 +1166,7 @@ func _camera() -> void:
 		focus = focus_grid
 		anchor = size * focus_anchor
 	_ox = anchor.x - (focus.x - focus.y) * TILE_A
-	_oy = anchor.y - (focus.x + focus.y) * TILE_B
+	_oy = anchor.y - (focus.x + focus.y) * tile_b()
 
 
 ## Works the camera out now from focus, anchor and size (ANIM-5: the camera rig reads the
@@ -1153,6 +1178,110 @@ func update_camera() -> void:
 	if is_baked():
 		_shift = Vector2(_ox, _oy)
 		_drawn_camera = _camera_key()
+
+
+## ART-5 5a: the ground rows' step (local px per lot along i + j): the 2:1 TILE_B, or in
+## city-3D mode TILE_A x sin(pitch) (the 3D camera's ground).
+func tile_b() -> float:
+	return TILE_A * sin(deg_to_rad(CityView3D.CONFIG.pitch_deg)) if city3d else TILE_B
+
+
+## ART-5 5a: local px per world unit (BU) in city-3D mode (a lot step along i is TILE_A).
+static func px_per_bu() -> float:
+	var cfg: CityConfig = CityView3D.CONFIG
+	return TILE_A / (cfg.lot_bu * absf(sin(deg_to_rad(cfg.yaw_deg))))
+
+
+## ART-5 5a: local px a building's height px rises in city-3D mode (the 2D city's height
+## px in BU, seen at the 3D pitch).
+static func height_k3d() -> float:
+	var cfg: CityConfig = CityView3D.CONFIG
+	return cfg.height_px_bu * cos(deg_to_rad(cfg.pitch_deg)) * px_per_bu()
+
+
+## ART-5 5a: the 3D camera of this city's frame (viewport = this control's size, local
+## px): `project` of a lot's world point is its `grid_to_local`.
+func iso_camera() -> CityIsoCamera:
+	var cfg: CityConfig = CityView3D.CONFIG
+	_camera()
+	var g := _grid_of(size * 0.5)
+	var ortho := maxf(size.x, 1.0) / px_per_bu()
+	return CityIsoCamera.make(cfg, CityIsoCamera.lot_to_world(cfg, g), ortho, size.max(Vector2.ONE))
+
+
+## ART-5 5a: a placement roof record (painter space, the 2:1 iso at the origin) under the
+## current camera in city-3D mode: each roof point back on its lot, raised to the 3D height.
+func _roof_3d(rec: Dictionary) -> Dictionary:
+	var roof: PackedVector2Array = rec["roof"]
+	var base: Vector2 = rec["base"]
+	var c := Vector2.ZERO
+	for q in roof:
+		c += q
+	c /= maxf(1.0, roof.size())
+	# The roof floats over its cell's centre: its lift is the height (painter px).
+	var z := maxf(0.0, base.y - c.y)
+	var k := tile_b() / TILE_B
+	var kz := height_k3d()
+	var out := rec.duplicate()
+	var pts := PackedVector2Array()
+	for q in roof:
+		pts.append(Vector2(_ox + q.x, _oy + (q.y + z) * k - z * kz))
+	out["roof"] = pts
+	out["base"] = Vector2(_ox + base.x, _oy + base.y * k)
+	return out
+
+
+## ART-5 5a: enters or leaves city-3D mode: the placement is laid out again (the fist
+## roads), the 3D city is made (where it can draw) or freed, and the spread's mask takes the
+## ground's step.
+func _sync_city3d() -> void:
+	_free_placement()
+	_fronts = {}
+	_covers = {}
+	_want = {}
+	_baked_key = ""
+	if _front_layer != null:
+		for layer in [_old_layer, _front_layer]:
+			((layer as Control).material as ShaderMaterial).set_shader_parameter("tile", Vector2(TILE_A, tile_b()))
+	if city3d and view3d == null and CityView3D.can_render():
+		view3d = CityView3D.new()
+		view3d.name = "City3D"
+		view3d.city_seed = city_seed
+		add_child(view3d)
+	elif not city3d and view3d != null:
+		view3d.queue_free()
+		view3d = null
+	if _view != null:
+		_view.material = null if city3d else _live_material
+	refresh()
+
+
+## ART-5 5a: the 3D city under this frame: its viewport sized to the screen pixels this
+## control covers (the rig's ease left out), its camera this frame's.
+func _draw_view_3d() -> void:
+	_view.draw_rect(Rect2(Vector2.ZERO, size), Color(CityView3D.CONFIG.sky, 1.0))
+	if size.x < 2.0 or size.y < 2.0:
+		return
+	_camera()
+	_shift = Vector2(_ox, _oy)
+	_placer_stale = true
+	if _front_layer.visible:
+		(_front_layer.material as ShaderMaterial).set_shader_parameter("cam", Vector2(_ox, _oy))
+	var inf := _followed_influence()
+	if CityInfluence.signature(inf) != CityInfluence.signature(influence):
+		influence = inf
+	# A territory change marks the map and spreads over the 3D city at once (no bake).
+	_note_seen()
+	if view3d != null:
+		var stretch := get_viewport().get_final_transform().get_scale().x if is_inside_tree() else 1.0
+		view3d.band_lock = band_lock
+		view3d.set_view_size(Vector2i((size * scale.x * stretch).round()))
+		view3d.set_iso(iso_camera())
+		_view.draw_texture_rect(view3d.get_texture(), Rect2(Vector2.ZERO, size), false)
+	_built_for = size
+	_drawn_camera = _camera_key()
+	_fx.queue_redraw()
+	rebuilt.emit()
 
 
 ## World px (camera-free iso space) of grid point (x, y).
@@ -1229,6 +1358,7 @@ func _twin() -> NeonCity:
 	p._painter = true
 	p.city_seed = city_seed
 	p.district = district
+	p.fist_roads = fist_roads
 	p.net_mode = net_mode
 	p.ink_set = ink_set
 	p.face_texture = face_texture
@@ -1266,6 +1396,9 @@ func _draw() -> void:
 ## in over the sky (`city_bake_fade`).
 func _draw_view() -> void:
 	if not is_baked():
+		return
+	if city3d:
+		_draw_view_3d()
 		return
 	_view.draw_rect(Rect2(Vector2.ZERO, size), Palette.NIGHT_SKY)
 	if size.x < 2.0 or size.y < 2.0:
@@ -1981,7 +2114,7 @@ func free_chunks() -> void:
 ## `creep` (>= 0) names another Heat creep than the city's (the look after a raid's Heat while
 ## the playout still holds the old one).
 func prebake(region: Rect2, inf: Variant = null, outlive: bool = false, creep: float = -1.0) -> String:
-	if not is_baked() or not is_inside_tree():
+	if not is_baked() or not is_inside_tree() or city3d:
 		return ""
 	var held: Dictionary = (_followed_influence() if inf == null else inf as Dictionary).duplicate(true)
 	if is_visible_in_tree() and not view_covered():
@@ -2216,7 +2349,7 @@ func _placement() -> NeonCity:
 	names.sort()
 	for k in names:
 		cult.append([String(k), String(cultures[k])])
-	var key := var_to_str([city_seed, String(district), cult])
+	var key := var_to_str([city_seed, String(district), cult, fist_roads])
 	if _placer == null or key != _placer_key:
 		_free_placement()
 		_placer = _twin()
@@ -2432,7 +2565,7 @@ func _build_fist() -> void:
 	_fist_segs.clear()
 	_fist_hull.clear()
 	_fist_cache.clear()
-	if not _hq_rects.has(FIST_TERRITORY):
+	if not fist_roads or not _hq_rects.has(FIST_TERRITORY):
 		_fist_box = Rect2()
 		return
 	var hr: Rect2i = _hq_rects[FIST_TERRITORY]

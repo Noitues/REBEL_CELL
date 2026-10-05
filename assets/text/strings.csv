@@ -480,6 +480,7 @@ DFRG,DFRG
 DISPATCH,DISPATCH
 DOWN,DOWN
 DOWN: repair the node on the Grid.,DOWN: repair the node on the Grid.
+DRAG / WASD,DRAG / WASD
 DRAW %d,DRAW %d
 DTOR,DTOR
 Daemon,Daemon
@@ -1359,6 +1360,7 @@ Loadout,Loadout
 MAINFRAME,MAINFRAME
 MAINFRAME SHOP,MAINFRAME SHOP
 MAP KEY,MAP KEY
+MINIMAP,MINIMAP
 MORE BELOW,MORE BELOW
 Mainframe,Mainframe
 Mainframe: the cyber shop,Mainframe: the cyber shop
@@ -2881,6 +2883,7 @@ hunted,hunted
 in a run,in a run
 install,install
 it costs you %s,it costs you %s
+lime = you   red = target   box = view,lime = you   red = target   box = view
 link,link
 lo-fi loop: HQ,lo-fi loop: HQ
 loot_socket,loot_socket
