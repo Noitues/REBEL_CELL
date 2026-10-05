@@ -272,8 +272,10 @@ are not ported (the brief: re-captured / re-seeded).
   go under %TEMP%; a pack inside the project gets a `.gdignore` (review packs land later in
   `docs/art_review/ART-n/`). The driver refuses to start with < 5 GB free.
 - **Runtime lint type steps:** the "override is not a type step" half of the font rule reads
-  the build's `UiTheme.STEPS` (exported by the harness); main has none until ART-0 E ports the
-  step machinery, so that half is skipped and only the 12 px x scale floor is checked.
+  the build's `UiTheme.STEPS` (exported by the harness); a build without them skips that half
+  (main before ART-0 E); since E merged, the steps are read and checked.
+- **Lint baseline re-taken after merging main with E** (tokens and type steps): unchanged,
+  205 lines in 41 files (E moved no literal out of `scripts/ui/**` views; ART-1…12 do).
 - **Harness robustness on main:** main's views hold the bake they draw (ANIM-R6), so "no bake
   running" never holds: a screen waits for every visible city to show its current look,
   covered and faded in (at most 20 s real time, then a warning naming the city; a fight's
