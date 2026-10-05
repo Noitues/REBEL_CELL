@@ -145,7 +145,7 @@ trans = 7
 amplitude = 10.0
 tier = 2
 
-; Weak stutter: 4 steps across `duration`, amplitude = px
+; Weak stutter: 4 steps across `duration`, amplitude = px (ART-0 audit E1: 2 px, T2's shake limit; was 4)
 [sub_resource type="Resource" id="m_precision_weak"]
 script = ExtResource("1_entry")
 id = &"precision_weak"
@@ -153,7 +153,7 @@ duration = 0.12
 delay = 0.0
 ease = 1
 trans = 0
-amplitude = 4.0
+amplitude = 2.0
 tier = 2
 
 ; NULL wheel blink: dips to amplitude alpha (1/3) and back (2/3)
@@ -384,7 +384,7 @@ trans = 1
 amplitude = 0.25
 tier = 3
 
-; ransom HEAT letters shake once; px
+; ransom HEAT letters shake once; px (ART-0 audit E1: T3, a Heat crossing is a moment like heat_number_pop and heat_banner; was T2 at 3 px)
 [sub_resource type="Resource" id="m_heat_letters_shake"]
 script = ExtResource("1_entry")
 id = &"heat_letters_shake"
@@ -393,7 +393,7 @@ delay = 0.0
 ease = 1
 trans = 0
 amplitude = 3.0
-tier = 2
+tier = 3
 
 ; wanted poster band stamp; scale from
 [sub_resource type="Resource" id="m_poster_stamp"]

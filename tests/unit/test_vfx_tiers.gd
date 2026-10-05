@@ -104,6 +104,66 @@ func test_fx_caps_shake_and_hit_stop_by_tier() -> void:
 	assert_eq(Fx.shake_px(&"hit_shake"), 0.0, "no shake under reduce effects")
 
 
+## ART-0 audit E1: the ids the code passes to Motion.shake (read from the scripts).
+func _shake_ids() -> Array[StringName]:
+	var out: Array[StringName] = []
+	var call := RegEx.create_from_string("Motion\\.shake\\([^,]+,\\s*&\"([a-z0-9_]+)\"")
+	var files := PackedStringArray()
+	_gd_files("res://scripts", files)
+	for path in files:
+		for m in call.search_all(FileAccess.get_file_as_string(path)):
+			var id := StringName(m.get_string(1))
+			if not out.has(id):
+				out.append(id)
+	out.sort()
+	return out
+
+
+func test_every_shake_fits_its_tier() -> void:
+	# ART-0 audit E1 (ART_BIBLE v2 5.3): Motion.shake holds every shake to its tier, and the
+	# shipped amplitudes already fit, so the clamp changes nothing on screen.
+	var ids := _shake_ids()
+	for id in [&"hit_shake", &"heat_letters_shake", &"precision_weak"]:
+		assert_true(ids.has(id), "%s is shaken through Motion.shake" % id)
+	for id in ids:
+		assert_true(Motion.has(id), "%s is in the table" % id)
+		var tier := VfxTier.of(id)
+		assert_true(Motion.amplitude(id) <= VfxTier.MAX_SHAKE_PX[tier] + 0.0001,
+			"%s: %.1f px fits %s's %.0f px" % [id, Motion.amplitude(id), VfxTier.NAMES[tier], VfxTier.MAX_SHAKE_PX[tier]])
+		assert_eq(Motion.shake_px(id), Motion.amplitude(id), "%s plays its own amplitude" % id)
+	assert_eq(Motion.amplitude(&"hit_shake"), 2.0, "a hit shakes 2 px (ART-2 2C)")
+	assert_eq(VfxTier.of(&"hit_shake"), VfxTier.T2)
+
+
+func test_motion_shake_clamps_an_amplitude_over_its_tier() -> void:
+	var table := UiMotionData.new()
+	var loud := UiMotionEntryData.new()
+	loud.id = &"gut_loud_shake"
+	loud.duration = 0.2
+	loud.amplitude = 9.0
+	loud.tier = UiMotionEntryData.Tier.T2_OUTCOME
+	var quiet := UiMotionEntryData.new()
+	quiet.id = &"gut_t1_shake"
+	quiet.duration = 0.2
+	quiet.amplitude = 9.0
+	quiet.tier = UiMotionEntryData.Tier.T1_FEEDBACK
+	table.entries = [loud, quiet]
+	Motion.use_config(table)
+	assert_eq(Motion.shake_px(&"gut_loud_shake"), VfxTier.MAX_SHAKE_PX[VfxTier.T2], "9 px at T2 plays 2 px")
+	assert_eq(Motion.shake_px(&"gut_t1_shake"), 0.0, "no shake below T2")
+	# The real tween: after its first step the node stands at the clamped offset.
+	Motion.force_live = true
+	var node: Node2D = add_child_autofree(Node2D.new())
+	var tw := Motion.shake(node, &"gut_loud_shake")
+	assert_not_null(tw, "it plays")
+	if tw != null:
+		tw.custom_step(0.2 / Motion.SHAKE_STEPS)
+		assert_almost_eq(node.position.x, VfxTier.MAX_SHAKE_PX[VfxTier.T2], 0.05, "the first swing is held to 2 px")
+		tw.custom_step(1.0)
+		assert_almost_eq(node.position.x, 0.0, 0.01, "and it ends where it started")
+	Motion.use_config(null)
+
+
 # --- Fx.flash -------------------------------------------------------------------------------
 
 func test_fx_flash_refuses_full_screen_below_t4() -> void:

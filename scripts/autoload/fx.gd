@@ -538,7 +538,7 @@ func request_flash() -> bool:
 func shake_px(id: StringName) -> float:
 	if not effects_enabled():
 		return 0.0
-	return VfxTier.clamp_shake(VfxTier.of(id), Motion.amplitude(id))
+	return Motion.shake_px(id)
 
 
 ## Heat threshold distortion pulse (GDD 9.4): pulses, never stays on. Rises for
