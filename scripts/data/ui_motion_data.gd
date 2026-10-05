@@ -100,6 +100,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"focus_scale", &"button_refused", &"modal_in", &"modal_out",
 	# ART-2 2A (the wheel stack): the screens' loop, the telemetry scroll, the precision landings, the hub states.
 	&"wheel_screen_loop", &"wheel_telemetry_scroll", &"precision_latch", &"precision_word", &"precision_stutter", &"hub_defeat_drain", &"hub_lockdown_drain",
+	# ART-9 4B (ART_BIBLE v2 §4.11 / §4.12): the portrait feed's live clock, its blink and
+	# talking mouth, DISPATCH's voice trace (PortraitFeed).
+	&"portrait_feed", &"portrait_blink", &"portrait_talk", &"dispatch_trace",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.

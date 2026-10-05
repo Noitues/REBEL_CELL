@@ -38,9 +38,17 @@ const OPERATIVE_TINTS: Array[Color] = [Palette.CELL_PINK, Palette.NET_CYAN, Pale
 ## class sets the kind and the operative id varies hair, visor and tint through a hash
 ## of both (deterministic, no RNG), so two Breakers look different and one operative
 ## looks the same on every screen. An empty `operative_id` gives the class's own face.
+## ART-9 4B: a class with a bust set (PortraitBust) carries `class_id` and `variant` (the
+## operative's rookie, a hash of class and id) and wears its class accent; the subject is
+## drawn as the bust's photo print (`draw`).
 static func operative_subject(class_id: StringName, operative_id: StringName = &"", display_name: String = "") -> Dictionary:
 	var key := String(class_id) if operative_id == &"" else "%s/%s" % [class_id, operative_id]
-	return {"kind": Kind.OPERATIVE, "key": key, "tint": OPERATIVE_TINTS[absi(hash(key)) % OPERATIVE_TINTS.size()], "name": display_name}
+	var subj := {"kind": Kind.OPERATIVE, "key": key, "tint": OPERATIVE_TINTS[absi(hash(key)) % OPERATIVE_TINTS.size()], "name": display_name}
+	if PortraitBust.has_class(class_id):
+		subj["class_id"] = class_id
+		subj["variant"] = PortraitBust.variant_for(class_id, operative_id)
+		subj["tint"] = Palette.class_accent(class_id)
+	return subj
 
 
 ## Draws one operative's portrait into `rect` in the current style (the combat caption
@@ -49,8 +57,12 @@ static func draw_operative(ci: CanvasItem, rect: Rect2, class_id: StringName, op
 	draw(ci, rect, operative_subject(class_id, operative_id, display_name))
 
 
-## Draws `subj` into `rect` in the current style.
+## Draws `subj` into `rect`: an operative with a bust set as its photo print (ART-9 4B,
+## ART_BIBLE v2 §4.12 contexts: the paper views, the Polaroid, the crew chip, the WANTED
+## poster, are the corp's print of the bust); anything else in the current style.
 static func draw(ci: CanvasItem, rect: Rect2, subj: Dictionary) -> void:
+	if subj.has("class_id") and _print(ci, rect, subj):
+		return
 	match style:
 		1:
 			_xerox(ci, rect, subj)
@@ -60,6 +72,22 @@ static func draw(ci: CanvasItem, rect: Rect2, subj: Dictionary) -> void:
 			_mugshot(ci, rect, subj)
 		_:
 			_neon(ci, rect, subj)
+
+
+## ART-9 4B: the operative's bust print fills `rect` (its head and shoulders; a rect wider
+## or taller than the print's square shows more of the cell's height). False without a set.
+static func _print(ci: CanvasItem, rect: Rect2, subj: Dictionary) -> bool:
+	var tex := PortraitBust.print_texture(StringName(subj["class_id"]), int(subj.get("variant", 0)))
+	if tex == null or rect.size.x <= 0.0 or rect.size.y <= 0.0:
+		return false
+	var at := tex as AtlasTexture
+	var cell := at.region
+	# The part of the cell with the rect's aspect, from its top (the head), full width.
+	var h := minf(cell.size.y, cell.size.x * rect.size.y / rect.size.x)
+	var w := cell.size.x if h < cell.size.y else cell.size.y * rect.size.x / rect.size.y
+	var src := Rect2(cell.position + Vector2((cell.size.x - w) * 0.5, 0.0), Vector2(w, h))
+	ci.draw_texture_rect_region(at.atlas, rect, src)
+	return true
 
 
 # --- The subject's shapes (shared by every style) -------------------------------------------

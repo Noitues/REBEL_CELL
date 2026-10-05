@@ -84,6 +84,116 @@ ringlock, skins / scenes18). Decided by the implementer:
   and satellite tokens are left as they were for 2B to replace.
 - No test dropped. Captures: `docs/art_review/ART-2/2A/`.
 
+### 2026-10-05 — Art direction — ART-9 4B dialogue and portraits
+ART_BIBLE v2 §4.11 (dialogue A), §4.12 (portraits v2), DECISIONS "Designer ruling: DISPATCH
+text"; references `round31_reward_event/dialogue.jpg`, `round38_portraits/*`,
+`round39_portraits/portraits_classes_v2.jpg`.
+- **Bust sets, pre-rendered.** `tools/art_gen/portraits/bust_rig.py` + `render_busts.py`
+  (ported from art-pass 9a62cec, round 39 rig with the r39 / r39b / r39c gear) render in
+  headless Blender 5.2: 8 classes x 4 rookie seeds x 4 frames (idle, blink = dead eyes,
+  talk, hurt = grimace + squint), 240x266 cells, one 256-colour atlas per class
+  (`assets/portraits/busts_<class>.png`, 31-47 KB) and the corp's photo print of each rookie
+  (`prints_<class>.jpg`, about 37 KB; desaturated, warmed, grained on a flat backdrop).
+  The rig now draws the same random numbers in every frame of one rookie (the mouth's tilt
+  and the brows are drawn whatever the frame; the mouth's jitter never shifts the shared
+  stream), so blink / talk / hurt are the same face; idle is unchanged from round 39.
+  Pre-rendered rather than a SubViewport per feed: no 3D cost per visible feed; the seed
+  pool is 4 per class (variants), a later pass can raise it by re-running the script.
+- **Which rookie.** `PortraitBust.variant_for(class, operative id)`: a hash of class and id
+  (an empty id, the class's own face / an unhired rookie, is variant 0). No game RNG, no
+  state change (no seed field added to OperativeState), the same face on every screen and in
+  every session. Operative ids repeat between campaigns (op_1...), so a campaign's first
+  Breaker wears the same rookie each time; storing a roster-RNG seed on the operative
+  (round 38 NOTES) is a schema change left for the portrait pass.
+- **One feed.** `PortraitFeed` (kit) + `shaders/portrait_feed.gdshader` with `mode` (idle,
+  talk, hurt, stationed, dead, recruit, print, voice), `tint`, `split`, `tear`, `noise`,
+  `fps_hold` (stationed), a feed clock; the chrome (label strip "● CLASS // CALLSIGN", LED
+  green / red / class / amber / off, HP chip, voice bars, ON <SITE> // 12 fps, NO SIGNAL +
+  red pencil X + FLATLINED, HIRE: 15 SCHEMATICS stamp, cracked glass) is drawn on top. The
+  chrome's words show only where they reach the 12 px floor (roster chips show the LED and
+  the marks). Hurt at HP ≤ 25 % (`set_hp`); the flatlined stay flatlined. Listener dim for
+  dialogue (`set_dimmed`). The print mode is the corp-paper context.
+- **Motion.** New entries `portrait_feed` (clock; rolling bar period 4 s; amplitude = the
+  stationed frame rate, 12 fps), `portrait_blink` (0.14 s every 5 s, phase per operative),
+  `portrait_talk` (0.11 s mouth / bar step), `dispatch_trace` (1.6 s sweep), all T0, in
+  REQUIRED_IDS and the motion lab (`["screen", "feed"]`). Off, under reduce effects or
+  headless the feed is a still in its end state (talking keeps the mouth-open frame,
+  flatlined the dead eyes); nothing waits.
+- **Paper views draw the print.** `PortraitArt.operative_subject` carries `class_id` and
+  `variant` and the class accent for a class with a bust set; `PortraitArt.draw` draws the
+  print (Polaroid, crew chip, WANTED poster, combat Polaroid) so an operative keeps one face
+  everywhere. Enemies, bosses, corp faces keep the M13 drawn styles (no v2 reference).
+  `Polaroid.kia` (campaign audit): the print dimmed and crossed out in pencil red.
+- **Dialogue.** Every subtitle line is on the Cell's CRT terminal (1A `UiTheme.terminal_box`
+  tinted: cyan for the Cell / operatives / narrator, the corp's colour for a corp speaker,
+  DISPATCH red on black glass with its words in a lifted red); the paper strip for
+  non-DISPATCH speakers is gone (ART_BIBLE §1.2: the dialogue feed is CRT). The speaker's
+  feed sits in the bar's left margin (a Node2D holds it so the container never lays it out;
+  the paging measures the words' room after it): an operative's bark shows its own class's
+  bust talking (`say(..., class_id)`; `bark` passes the class, not its base class, so a
+  Wrecker shows a Wrecker), DISPATCH a red voice trace (never a face). Narrator, corp and
+  observer lines have no feed. The feed follows the dock's height (22-120 px at the text
+  size, at most 22 % of the bar's width). Typing, paging, skip and the bar's slide-in are
+  unchanged. 1B's CRT material replaces the panel's look when it lands (seam:
+  `Dialogue.crt_style`).
+- There is no dialogue screen with choices in the game (dialogue.jpg's briefing layout):
+  the portrait lab's `dialogue` page composes it from the real pieces (speaker live,
+  listener dimmed, DISPATCH, the bar) for review; a briefing screen would be a new screen.
+- Lab: `tools/design_lab/portrait_lab.tscn` (one windowed launch, a PNG per page: classes,
+  states, matrix, contexts, dialogue, strip / column at 1.0 / 1.6 / 2.0).
+- Tests: `tests/unit/test_art9_portraits_dialogue.gd` (fast). No M13 test dropped.
+
+### 2026-10-05 — Art direction — ART-1 1D city render spike
+Bible §1.2, §4.1–4.2, §6.1; plan §5.1–5.2; ruling 7 (fidelity first, then optimise). Full report:
+`docs/handoff/art_1/city_spike_report.md`; crops in `docs/art_review/ART-1/1D/` (`.gdignore`d).
+- **Built both ways on one district of the game's own layout:** NeonCity's streets, lots,
+  territories and buildings, seed 7, read by `CityLayoutRecorder` (NeonCity placement mode, nothing
+  drawn, game code untouched): the Halcyon border, 50 lots around lot (34, 22), with 3,710
+  buildings and 2,608 street lots.
+  - (a) Real-time Godot 3D: MultiMesh unit-prism families with jittered facets; the 3-band toon
+    light function; procedural windows, ledges, shopfronts and roof trim; one full-screen post
+    pass porting `post40.finish` (ink from normal, depth and material edges, grime, spill, bloom,
+    fog, haze, rain, grade); a half-resolution ground pass for the see-through band; three sky-lane
+    car tiers; one orthographic `Camera3D`.
+  - (b) Blender 5.2 bake with the concept recipe, plus the post40 port, with 2D car motion on top.
+- **Choice: (a).** It is closer to the references at grid, raid and netrun (read side by side). It
+  is also the only one that gives §4.1's continuous zoom, the see-through band, the LOD swaps and
+  the camera fits without a bake per view and zoom; a whole-city bake at raid density is about
+  220 MB per layer.
+- **Numbers, after optimisation (RX 6700 XT, 1080p, tier 2):** grid / raid / netrun take
+  2.69 / 2.78 / 2.53 ms a frame (GPU 2.31 / 2.22 / 1.95 ms), 31–33 draw calls, 2.2 M primitives,
+  and 106–127 MB of texture memory.
+  - Deck tier 1 at 1280×800 on this PC: 1.81 ms a frame (GPU 1.3–1.4 ms).
+  - The budget (city ≤ 8 ms) is met. The Deck itself is not measured yet; scaling suggests about
+    10–12 ms there, and tier 0's levers are ready in config.
+  - Measured with 3–6 other agents' Godot processes running.
+- **Optimisation round** (config only, frames compared, look unchanged): the tier 2 shadow atlas went
+  from 4096 to 2048, MSAA went off (the ink draws the edges) and the ground pass went to half
+  resolution. Texture memory fell from 210–283 MB to 106–127 MB and frame time by about 0.6 ms.
+- **Calls:**
+  1. The see-through band is lod 1.50–1.595, so the City Grid (ortho 440) is solid and the raid
+     (ortho 380) sits at the locked v3 opacity of 0.68. The bible's 1.45–1.75 with post40's anchors
+     gave the Grid an opacity of 0.83.
+  2. The toon band edges include the concept's world ambient: N·L 0.118 and 0.363.
+  3. The post works on display values, as post40 does. Bloom and spill come from screen mips over a
+     threshold, because Godot has no emission-only pass; Godot's glow is off.
+  4. Sky lanes run over the district's six busiest avenues. Car colours come from the
+     `RngStreams` stream `city_traffic`.
+  5. Round 34 lock: the Cell's district keeps the street grid, with no fist roads. The HQs are
+     stepped stand-ins; the heroes are ART-5's.
+  6. The toon, ink and post shaders are prototypes in `tools/spike/city/shaders/`, because 1B owns
+     `shaders/kit/`. They are to be unified with 1B's material.
+- **Tests:** `tests/unit/test_city3d_spike.gd` (fast tier) covers:
+  - projection round trips and the locked iso;
+  - picking;
+  - LOD, see-through and detail tiers from config;
+  - car tiers with hysteresis;
+  - quality tiers, with the Deck at tier 1;
+  - the deterministic district;
+  - the unit-prism instance mapping (never mirrored);
+  - seeded traffic.
+
+  The render is verified windowed only. No shipped screen changed.
 ### 2026-10-05 — Art direction — ART-1 1A palette, faces, theme
 ART_BIBLE v2 §2.1–2.10, §5.6, §6.4 applied through `Palette` and `UiTheme` only (no screen
 restyled; screens pick it up through the tokens and the theme).
@@ -525,6 +635,18 @@ names follow the display words; no aliases, no migrations.
 - Side effect worth knowing: tools run from source (storyboard, demos, the motion lab) now keep
   their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
   folder for a clean title screen.
+
+### 2026-10-05 — Designer ruling: rolling audits as groups merge; Gantt in the hourly report
+1. **Rolling audits** (partly reverses "no audit until the end"): when an M14 group is merged (ART-0, Group 1,
+   Group 2, Group 3, Group 4), its vertical / horizontal / naive auditors review that group on main while the
+   other groups keep building (report only; rules in `docs/handoff/m14_audit/auditor_common_rules.txt`).
+   Findings go to fix agents by owning area at once (nothing deferred, P3s included). The audit after ART-12
+   remains one loop over all of M14 and should then be small. ART-0 is plumbing with no new look, so it gets
+   the horizontal audit only.
+2. **Hourly report** includes the Gantt of agents and dependencies with the critical path and the current
+   finish estimate.
+Context: the critical-path re-plan (Group 3 wave 2 started early: 5b landmarks, 8p HQ compounds; 5a/5c/5d on
+the city spike's interim pick) moved the estimate from Thursday 18:00 to about Wednesday 12:00.
 
 ### 2026-10-05 — Designer rulings: D10, D13, D14 confirmed; the art pass design is correct
 1. **D10, D13, D14 confirmed** at their plan defaults: title verbs BREACH / DISABLE / OVERTHROW with
@@ -6250,6 +6372,14 @@ and annotated in the GDD where it changes a rule.
   slices at full screen gain (the combat v4 mocks), not ART_BIBLE §3.7's 60 %; say if tier I should
   dim once slice tiers exist. The corp crests are interim recipe renders until the glyph atlas
   carries them.
+- **Unified city: real-time 3D or baked layers? (2026-10-05, ART-1 1D):** the spike recommends
+  real-time Godot 3D. It is closer to the round 39/40 references and is the only option with the
+  continuous zoom and the see-through band, at 2.5–2.8 ms at 1080p on this PC. See
+  `docs/handoff/art_1/city_spike_report.md` and the crops in `docs/art_review/ART-1/1D/`.
+  - Default: ART-5 builds on (a).
+  - Also: the see-through band was moved to lod 1.50–1.595 so that the Grid is solid and the raid
+    sits at 0.68. Say if the bible's 1.45–1.75 was meant literally.
+  - Tier 1 still needs a measurement on a Steam Deck.
 - **ART-1 1A: the Daemon family MISS, the PURGE look, the gunmetal (2026-10-05):** ART_BIBLE v2
   §2.6 calls the family that fires on the Miss slice MISS; the slice is NULL since the
   2026-10-05 ruling, so the token and id follow it (`DAEMON_NULL`, `&"null"`). Say if the family

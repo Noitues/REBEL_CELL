@@ -185,6 +185,10 @@
 			"seconds": 0.5,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_city3d_spike.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_city_geometry_memo.gd": {
 			"seconds": 21.1,
 			"tier": "full"
@@ -523,6 +527,10 @@
 		},
 		"res://tests/unit/test_art1_glyphs.gd": {
 			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_art9_portraits_dialogue.gd": {
+			"seconds": 6.0,
 			"tier": "fast"
 		}
 	}
