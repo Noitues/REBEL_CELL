@@ -193,12 +193,16 @@ Adjacency example: a Firewall Relay next to a Safehouse shares the stationed ope
 bonus.
 
 ### 3.3 Node Loss States
+The raid words are the rules words (DECISIONS 2026-10-05, ruling 6.2): **DOWN** (was Disabled), **TAKEN** (was
+Seized); a node that survives **HOLDS**, a raid the Cell survives ends **CELL HOLDS**, and the
+home server falling is **BREACHED**.
+
 | State | Cause | Recovery |
 |---|---|---|
-| Disabled | Integrity reaches 0 | Repair for 50% of install cost; no bonus until repaired |
-| Seized | A threat is on the node when the raid ends, or a Disabled node is hit again | Site returns to the corporation. A Reclaim netrun (single combat, tiny rewards) makes it claimable again; the node must be reinstalled. A Seized Site next to your territory becomes a raid entry point. |
+| DOWN | Integrity reaches 0 | Repair for 50% of install cost; no bonus until repaired |
+| TAKEN | A threat is on the node when the raid ends, or a DOWN node is hit again | Site returns to the corporation. A Reclaim netrun (single combat, tiny rewards) makes it claimable again; the node must be reinstalled. A TAKEN Site next to your territory becomes a raid entry point. |
 
-A stationed operative on a Seized or Disabled node returns to the reserves unharmed.
+A stationed operative on a TAKEN or DOWN node returns to the reserves unharmed.
 The home server can be patched at HQ for 1 Schematic per integrity point (2026-09-24).
 Cleared and claimed Sites can be **patrolled**: a full netrun for loot, Heat and Rank with no
 objective (2026-09-24, prevents a soft-lock when every Site is used up).
@@ -237,10 +241,10 @@ ladder unlocks separately; a new corporation may start at (global best − 5).
 | Router | Standard combat | 0 |
 | Elite Router | Elite combat | +1 |
 | Terminal | Event (Section 8.7 voices) | 0 |
-| Modem | Shop (Cycles) | 0 |
+| Mainframe | Shop (Cycles) (DECISIONS 2026-10-05, ruling 6.5) | 0 |
 | Server Rack | Elite-strength combat + banking | per 11.5 table |
 
-- Guarantees: layer 1 all Routers; at least one Modem in layers 3–5; about 1 Elite per
+- Guarantees: layer 1 all Routers; at least one Mainframe in layers 3–5; about 1 Elite per
   layer in layers 3–6; Terminals ≈ 25% of remaining nodes.
 - Pacing: about 5 combats of roughly 2 minutes plus events ≈ 15 minutes.
 - **Death:** the operative is permanently lost with everything unbanked (Cycles, cards,
@@ -352,7 +356,7 @@ modify the outer slice. Daemons are run-wide rules. Rule-breaking Daemons are ex
 
 ### 6.3 Acquisition
 Routers: common Firmware · Terminals: events offering Firmware, Daemons or rescued
-operatives · Modems: everything, for Cycles · Server Racks: rare Daemons + Schematics.
+operatives · Mainframes: everything, for Cycles · Server Racks: rare Daemons + Schematics.
 
 ### 6.4 Inner Ring Segments
 Each class starts its standard ring at Rank 1 (Breaker: ×2 / Pierce / —). At Rank 3 the
@@ -368,20 +372,20 @@ Accelerator (nudge cards next turn trigger twice), Echo (outer slice triggers ag
 ### 7.1 Setup Phase (~4 minutes)
 Threat vectors are revealed along Grid links from corporate Sites. The player places and
 repositions defense assets on claimed nodes. Some threats freeze or alter links before
-the raid. Each node shows the **exact projected outcome** if the raid ran now (Holds /
-Disabled / Seized), because resolution is deterministic.
+the raid. Each node shows the **exact projected outcome** if the raid ran now (HOLDS /
+DOWN / TAKEN (DECISIONS 2026-10-05, ruling 6.2)), because resolution is deterministic.
 
 ### 7.2 Resolution (30–60 s playout; 1×/2×/4× and skip)
 Each step:
 1. Threats move along links (edges_per_step), following their routing rule.
 2. ICE Locks hold threats on their node.
 3. Assets fire (range in hops, targeting priority); built-in node defenses fire.
-4. Threats damage the node they're on. A node at 0 becomes **Disabled**; 50% of excess
+4. Threats damage the node they're on. A node at 0 goes **DOWN**; 50% of excess
    damage spreads to adjacent claimed nodes.
 
 The raid ends when every threat is destroyed or has reached home, or after **30 steps**.
-Threats still on a node at the end **Seize** it. Damage reaching the home server reduces
-its integrity; **0 = campaign lost**. A summary shows Disabled/Seized nodes, repair costs
+Threats still on a node at the end leave it **TAKEN**. Damage reaching the home server reduces
+its integrity; **0 = BREACHED, campaign lost**. A survived raid ends **CELL HOLDS**; the summary shows DOWN/TAKEN nodes, repair costs
 and new entry points.
 
 ### 7.3 Armory & Persistence (locked)
@@ -436,7 +440,7 @@ Logistics: automated freight, tariffs, tracking, last-mile drones. Enemies lean 
 Inertia (spin resistance), Tariffs (RAM drain), Conveyors (orbiting pointers) and courier
 drones. Exploits: Intel (shipping manifests), Breach (customs override keys), Virus (rogue
 routing table). Final server: **The Manifest**, which shields itself every turn unless its
-Hub is breached.
+Hub, the **Customs Seal** (was Priority Routing; DECISIONS 2026-10-05, ruling 6.1), is breached.
 
 ### 8.4c Halcyon Civic (M9, DECISIONS.md 2026-09-24)
 Smart-city services: water, power, transit, policing-as-a-service. Enemies issue
@@ -582,7 +586,7 @@ Netrun ≈ 15 min · raid ≈ 5 min · fast campaign 8 runs ≈ 2 h 15 m · aver
 |---|---|
 | 1–5 | Heat gain +10%, one fewer Heat objective Site, more elites, Cycle prices +10%, raid strength +15% |
 | 6–10 | Heat sinks −15%, enemies +1 resistance, deaths +5 Heat, bosses change pointers earlier |
-| 11–15 | Starting Bug card (0 RAM, drains 1 RAM, exhaust; a Modem can remove it), no free nudge on turn 1, repairs cost more, Seized Sites spawn stronger raids |
+| 11–15 | Starting Bug card (0 RAM, drains 1 RAM, exhaust; a Mainframe can remove it), no free nudge on turn 1, repairs cost more, TAKEN Sites spawn stronger raids |
 | 16–20 | Exploits +5 Heat, Purge at 90, final boss +1 pointer, raids gain a second wave |
 
 ---

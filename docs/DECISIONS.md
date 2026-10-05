@@ -30,6 +30,62 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Designer rulings: art reintegration, pause point 0 (resolved by the designer)
+Answered by the designer as a numbered list against `docs/ART_REINTEGRATION_PLAN.md` §1
+(art-pass tag `art-concepts-r43`) plus the ANIM-R7 open question and ART_BIBLE v2
+Appendix C items 1 and 12. Defaults accepted unless noted.
+1. **Changed: M14 first.** The art pass covers so much that ANIM-R7 would iterate on work the
+   art pass makes obsolete. Order: port the art pass (M14, ART-0…ART-12) → re-evaluate every
+   ANIM-R7 finding (`docs/handoff/anim_r7/`) against the ported screens → fix the ones still
+   valid (batches A–E, re-cut) → re-evaluate the horizontal list → H25+ → Queued passes.
+   ANIM-R7 is **paused, not dropped**: each R7 item is re-checked after M14 (nothing deferred).
+2. **Port, don't merge** (plan §2). The art direction takes precedence over existing views
+   where they conflict; conflicts are raised as questions, defaulting to the art direction.
+   Acceptance for M14 as a whole: the look and most of the feel of the art pass are present
+   by the end of the milestone, or M14 has failed. ANIM motion behaviour (MotionSkip, holds,
+   reduce effects = end state, entries in `ui_motion.tres`) is kept and restyled.
+   Tags pushed: `art-m13-final` = `f80f393` (M13 final capture, the last M13 code state),
+   `art-concepts-r43` = `9a62cec` (rounds 1–43, ART_BIBLE v2, the plan, the evolution
+   slideshow and video).
+3. **Curated `docs/art_reference/`** on main; the full concept archive stays on the tag.
+4. **GDD §9 is rewritten** around ART_BIBLE v2 (cel city + CRT screens + vinyl stickers +
+   grease pencil + light spill; "no UI ever covers grease pencil"). Done in ART-0a once the
+   bible lands on main; GDD 9.1 cites this entry.
+5. **Changed: no save or replay compatibility.** Old saves and replays are not preserved.
+   Internal code and content names (enums, ids, file names, class names) are aligned with the
+   new display names; nothing is kept static for compatibility. Saves and replays get a
+   project folder that git ignores (ART-0 S0, see "Art direction — ART-0 saves folder").
+6. **Name collisions:**
+   1. Meridian's RAM-drain slice is **PRIORITY**. The Manifest's hub (was "Priority Routing",
+      `priority_routing`: +4 shield each turn unless breached) is renamed (designer: "suggest a
+      name and run with it"): **Customs Seal** (`customs_seal`): Meridian freight sealed for
+      customs, a seal the Cell has to break (Hub Breach). Rules unchanged.
+   2. **Changed:** the raid words replace the GDD words: **Seized → TAKEN**, **Disabled →
+      DOWN**, **Holds → CELL HOLDS** (the raid result stamp; a node that holds shows HOLDS),
+      and **BREACHED** = the home server (CORE) falls (integrity 0, campaign lost). GDD 3.3,
+      7.1, 7.2 and every rule that names them are updated, then code and content (ruling 5).
+   3. Upgrade tiers are Roman numerals (I–III); Site tiers stay T-numbers (T1–T4).
+   4. VAULT / KEY / SPOOF and the raid node glyphs unify on the round 42 icons.
+   5. **Changed:** the shop node "Modem" is renamed **Mainframe** everywhere (node type, ids,
+      strings, GDD 4.2, 6.3, 11.x). The boss gate formerly "Mainframe Gate" therefore needs
+      its own name: plan D5 already proposes **Central Server** (asked with §3.1).
+   6. The art-pass direction stands: the fist crest is the Cell's mark. Telling the player's
+      Cell apart from the eventual REBEL_CELL corporation is a future concept slice (logged
+      under "Open questions for the designer" so it is not lost).
+7. **Changed: fidelity first, then optimise.** The unified city follows the art pass as the
+   final product; the ART-1 render spike picks the technique that reproduces the reference
+   images most faithfully, then an optimisation round brings it inside the perf budget (plan
+   §5.2) so it renders cleanly. The budget is a gate, not a reason to change the look.
+8. **The G1–G16 mechanic proposals** are re-evaluated with the designer after the art
+   integration. Until then art for them stays in `docs/art_reference/`.
+9. **The R7 overkill wording** ("→ 1 LEFT") is re-evaluated after the art pass (the HP result
+   chip, plan D15, may replace that line).
+10. **Status badges** (ART_BIBLE v2 Appendix C #1): the overlay is the status; a small flat
+    corner badge appears only to carry a ×N stack tab or a ×1.5 / ×0.5 tag.
+11. **Changed** (Appendix C #12): the raid view drops its amber dashed socket for DOWN nodes
+    and uses the Site markers' white bolt over a greyed marker, so DOWN reads the same at
+    every zoom.
+
 ### 2026-09-28 — Test suite: bounded waits
 Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
 frame count, the wall clock) before asserting kept flaking under parallel shards (a few
@@ -4820,6 +4876,15 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+
+- **The Cell's own crest vs the REBEL_CELL corporation (2026-10-05, ruling 6.6):** the art
+  direction gives the Cell the fist crest; telling the player's Cell apart from the eventual
+  REBEL_CELL corporation (art_asset A2) needs a future concept slice. Scheduled after M14.
+- **ANIM-R7 findings and the horizontal list (2026-10-05, rulings 1 and 9):** re-evaluated
+  against the ported screens after M14, then fixed (batches A–E re-cut), including the
+  overkill wording "→ N LEFT".
+- **G1–G16 mechanic proposals (2026-10-05, ruling 8):** re-evaluated with the designer after
+  the art integration (plan §3.2).
 
 - **Motion starting values (Animation pass ANIM-1, 2026-09-27):** the 105 entries in
   `content/config/ui_motion.tres` are guesses inside the handoff's ranges. None has been
