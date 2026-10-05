@@ -78,6 +78,11 @@ var colorblind_mode: StringName = &"off"
 const COLORBLIND_MODES: Array[StringName] = [&"off", &"deutan", &"protan", &"tritan"]
 ## The correction layer while colorblind_mode is not off (null when off: no cost).
 var _colorblind_layer: ColorblindLayer = null
+## ART-12 12s (the M12 box): the palette skin, one of PALETTE_SKINS (PaletteSkins: chrome
+## token values only; semantic colours, pairing cues and layout never change). The theme
+## rebuilds through `changed`.
+var palette_skin: StringName = PaletteSkins.DEFAULT
+const PALETTE_SKINS: Array[StringName] = PaletteSkins.IDS
 ## High contrast (ART_BIBLE §12): opaque panels, light text on #000 at 7:1, solid thick
 ## button and focus edges (HighContrast.apply, hooked at the end of UiTheme.build).
 var high_contrast: bool = false
@@ -297,6 +302,14 @@ func colorblind_layer() -> ColorblindLayer:
 ## The mode the screen is corrected for (&"off" when no layer is up).
 func active_colorblind_mode() -> StringName:
 	return _colorblind_layer.mode if _colorblind_layer != null and is_instance_valid(_colorblind_layer) else &"off"
+
+
+## ART-12 12s: sets the palette skin (one of PALETTE_SKINS; anything else is ignored).
+func set_palette_skin(value: StringName) -> void:
+	if not PALETTE_SKINS.has(value):
+		return
+	palette_skin = value
+	_apply()
 
 
 ## Turns high contrast on or off (the UI theme rebuilds through `changed`).
@@ -661,7 +674,7 @@ func to_dict() -> Dictionary:
 		"show_fps": show_fps, "map_legend": map_legend, "system_log": system_log, "keybinds": keybinds.duplicate(), "tutorial_done": tutorial_done, "assist_mode": assist_mode,
 		"colorblind_mode": String(colorblind_mode), "high_contrast": high_contrast,
 		"reduce_motion": reduce_motion, "resolve_speed": String(resolve_speed), "pad_glyph_set": String(pad_glyph_set),
-		"city_quality": city_quality, "always_show_all_nodes": always_show_all_nodes}
+		"city_quality": city_quality, "always_show_all_nodes": always_show_all_nodes, "palette_skin": String(palette_skin)}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -701,6 +714,8 @@ func from_dict(d: Dictionary) -> void:
 	city_quality = clampi(int(d.get("city_quality", -1)), -1, CITY_QUALITY_MAX)
 	# ART-7 3B (D13): an additive key; a file without it gets the default (off).
 	always_show_all_nodes = bool(d.get("always_show_all_nodes", false))
+	# ART-12 12s: an additive key; a file without it (or with an unknown skin) gets v2.
+	palette_skin = _pick(d.get("palette_skin", ""), PALETTE_SKINS)
 
 
 ## `value` as one of `allowed` (a StringName), or `allowed[0]` (the default) when it isn't.
