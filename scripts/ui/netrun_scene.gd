@@ -1885,14 +1885,17 @@ func _build_route_frame(top: HBoxContainer, spacer: Control, route_col: VBoxCont
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	spacer.name = "RouteMapArea"
 	_route_area = spacer
-	var foot := HBoxContainer.new()
+	# A plain row (no container): the strip never widens the map column at big text; it is
+	# scaled down to the row instead (_fit_route_strip).
+	var foot := Control.new()
 	foot.name = "LegendRoom"
 	foot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	foot.alignment = BoxContainer.ALIGNMENT_CENTER
+	foot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_child(foot)
 	# H23 S7: the route's own key, the node kinds this route has (not the campaign map's).
 	route_legend = RouteLegend.new(RouteLegend.kinds_of(route_graph()["nodes"]), Palette.corp_color(RunManager.campaign.corporation_id))
 	foot.add_child(route_legend)
+	foot.custom_minimum_size.y = route_legend.get_combined_minimum_size().y
 	# The dossier, pinned over the map's top left (corp paper).
 	dossier = OperativeDossier.new()
 	spacer.add_child(dossier)
@@ -1962,8 +1965,28 @@ func _fit_route_strip() -> void:
 	var own := route_legend.get_combined_minimum_size()
 	var k := minf(1.0, (row.size.x - LegendSpot.MARGIN * 2.0) / maxf(1.0, own.x)) if row.size.x > 0.0 else 1.0
 	k = maxf(k, 0.1)
+	route_legend.size = own
 	route_legend.scale = Vector2(k, k)
-	row.custom_minimum_size.y = own.y * k
+	route_legend.position = Vector2(maxf(0.0, (row.size.x - own.x * k) * 0.5), 0.0)
+	if not is_equal_approx(row.custom_minimum_size.y, ceilf(own.y * k)):
+		row.custom_minimum_size.y = ceilf(own.y * k)
+	_fit_node_panel()
+
+
+## The node panel shows only when the ROUTE column has room for it under the window (big
+## text on a small screen: the window's choices come first; the hover tips still say it all).
+func _fit_node_panel() -> void:
+	if node_panel == null or not is_instance_valid(node_panel) or not node_panel.is_inside_tree():
+		return
+	var col := node_panel.get_parent() as Control
+	var win := col.find_child("RouteWindow", false, false) as Control if col != null else null
+	var top := col.get_parent() as Control if col != null else null
+	if win == null or top == null or top.size.y <= 0.0:
+		return
+	var need := win.get_combined_minimum_size().y + node_panel.get_combined_minimum_size().y + DOSSIER_MARGIN * Settings.text_scale * 3.0
+	var fits := need <= top.size.y and node_panel.get_combined_minimum_size().x <= col.size.x + 1.0
+	if node_panel.visible != (fits and not node_panel.data.is_empty()):
+		node_panel.visible = fits and not node_panel.data.is_empty()
 
 
 ## The map area the route is fitted into (screen px): the map area right of the dossier.
@@ -2044,6 +2067,7 @@ func show_node_panel(id: StringName) -> void:
 	if node_panel == null or not is_instance_valid(node_panel):
 		return
 	node_panel.show_node(id, node_panel_data(id))
+	_fit_node_panel()
 
 
 ## The node panel's words for node `id` from the rules and the config ({} for none).

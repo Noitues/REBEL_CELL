@@ -28,8 +28,6 @@ const COLOR_WORDS: Array[String] = ["walked", "next: pick one (numbered)", "not 
 const HOVER_WORDS := "HOVER HERE: SHOW ALL NODES" # TR
 const PAD_WORDS := "OPTIONS > DISPLAY: SHOW ALL NODES" # TR
 const SHOWING_WORDS := "SHOWING ALL NODES" # TR
-## The ring swatch's width at scale 1.0 (px).
-const RING_WIDTH := 2.5
 ## Entry order (the kinds a route can have).
 const ORDER: Array[String] = [CityMapOverlay.KIND_FIGHT, CityMapOverlay.KIND_ELITE, CityMapOverlay.KIND_EVENT,
 	CityMapOverlay.KIND_SHOP, CityMapOverlay.KIND_RACK]
@@ -163,12 +161,10 @@ func _color_row(key: String, words: String, s: float) -> HBoxContainer:
 	swatch.name = "Swatch"
 	swatch.custom_minimum_size = Vector2(side, side)
 	swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var col := color_of(key)
+	# ART-7 3B: the ring as the map draws it, colour and style (never colour alone).
+	swatch.set_meta(&"ring_style", String(RouteOverlay.RING_STYLES.get(key, "")))
 	swatch.draw.connect(func() -> void:
-		var c := swatch.size * 0.5
-		var r := side * 0.36
-		swatch.draw_arc(c, r, 0.0, TAU, 20, Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA), (RING_WIDTH + 2.0) * s, true)
-		swatch.draw_arc(c, r, 0.0, TAU, 20, col, RING_WIDTH * s, true))
+		RouteOverlay.draw_state_ring(swatch, swatch.size * 0.5, side * 0.36, key, s * 0.8))
 	row.add_child(swatch)
 	var l := Label.new()
 	# "next: pick one (numbered)" reads "next" on the strip; the full words are its tooltip.

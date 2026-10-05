@@ -8,14 +8,15 @@ extends Control
 ## ("HEAT 52: HUNTED", §4.3: the number lives here). Paper is what the Cell stole, so it never
 ## carries the Cell's own controls. Folds to a compact file (letterhead, subject, HP, the two
 ## stamps) when the full one would take more than MAX_WIDTH_SHARE of the screen (big text).
-## Drawn with draw calls; the 1B corp paper material replaces the flat stock at merge. View
-## only: `show_file` takes what the scene read.
+## The sheet is 1B's CorpPaperPanel (paper stock shader, the corp letterhead over its rule),
+## drawn behind this file's own ink (fields, mugshot, stamps). View only: `show_file` takes
+## what the scene read.
 
 ## The file at text scale 1.0 (px): width, margins, the letterhead's height, the mugshot's
 ## side, the gap between rows.
 const WIDTH := 252.0
 const MARGIN := 10.0
-const HEAD_H := 44.0
+const HEAD_H := CorpPaperPanel.LETTERHEAD_H
 const MUG := 64.0
 const ROW_GAP := 2.0
 ## Lettering at text scale 1.0 (px): letterhead, its sub line, fields, stamps.
@@ -31,7 +32,7 @@ const STAMP_ALPHA := 0.88
 ## The share of the screen's width the full file may take before it folds to the compact one.
 const MAX_WIDTH_SHARE := 0.24
 ## The paper's own tilt (rad) and its drop shadow (px).
-const PAPER_TILT := -0.012
+const PAPER_TILT := 0.0
 const SHADOW_OFFSET := Vector2(3, 4)
 ## The words (keys).
 const SUBTITLE := "PERSON OF INTEREST // FILE" # TR
@@ -56,11 +57,20 @@ var data: Dictionary = {}
 ## True while the compact file shows (big text on a small screen).
 var compact: bool = false
 var _rows: Array = []
+## 1B's corp paper sheet under the ink (letterhead, stock, shadow).
+var paper: CorpPaperPanel
 
 
 func _init() -> void:
 	name = "OperativeDossier"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	paper = CorpPaperPanel.new()
+	paper.name = "Paper"
+	paper.stamp = ""
+	paper.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	paper.show_behind_parent = true
+	add_child(paper)
+	paper.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	# The words are translated where the file is built; drawn as given.
 	auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	Settings.changed.connect(_relayout)
@@ -70,6 +80,11 @@ func _init() -> void:
 ## Shows the file for `p_data` (see `data`).
 func show_file(p_data: Dictionary) -> void:
 	data = p_data
+	# The letterhead carries the corp's mark word (MERIDIAN, HALCYON): the sheet's letterhead
+	# is one line at a fixed size.
+	var words := String(data.get("corp", "")).to_upper().split(" ", false)
+	paper.corp_name = words[0] if not words.is_empty() else ""
+	paper.corp_color = data.get("corp_color", Palette.CORP_MERIDIAN)
 	_relayout()
 
 
@@ -115,14 +130,14 @@ func _height() -> float:
 	var s := _s()
 	var fs := roundi(FIELD_FONT * s)
 	var lh := _line_h(fs)
-	var h := HEAD_H * s + MARGIN * s
+	var h := HEAD_H + RouteInk.paper_font().get_height(maxi(roundi(SUB_FONT * s), 1)) + MARGIN * s
 	h += maxf(MUG * s if not compact else 0.0, lh * _rows.size())
 	if not compact:
 		h += MARGIN * s + lh * 6.0  # wheel, hub core, deck (label + value each)
 		var station: Array = data.get("station", [])
 		if not station.is_empty():
 			h += MARGIN * s + lh * (1.0 + station.size()) + MARGIN * s
-	h += (STAMP_FONT * s) * 2.2 + MARGIN * s
+	h += (STAMP_FONT * s) * (2.2 if not compact else 3.6) + MARGIN * s
 	return h
 
 
@@ -133,32 +148,14 @@ func _draw() -> void:
 	var w := size.x
 	var h := size.y
 	draw_set_transform(Vector2.ZERO, PAPER_TILT)
-	# The theme's PaperPanel stock (1A: paper, ink keyline, drop shadow); 1B's paper material
-	# goes over it.
-	var stock := get_theme_stylebox(&"panel", UiTheme.PAPER_PANEL)
-	if stock != null:
-		draw_style_box(stock, Rect2(Vector2.ZERO, Vector2(w, h)))
-	else:
-		draw_rect(Rect2(SHADOW_OFFSET, Vector2(w, h)), Palette.SHADOW)
-		draw_rect(Rect2(Vector2.ZERO, Vector2(w, h)), RouteInk.PAPER_STOCK)
-	# The letterhead: a dark band, the corp's name in its colour, the sub line.
-	var head_h := HEAD_H * s
-	draw_rect(Rect2(Vector2.ZERO, Vector2(w, head_h)), Palette.DESK_DARK)
-	var corp_col: Color = data.get("corp_color", Palette.CORP_MERIDIAN)
-	draw_rect(Rect2(Vector2.ZERO, Vector2(3.0 * s, head_h)), corp_col)
-	var lf := RouteInk.letterhead_font()
-	var hfs := roundi(HEAD_FONT * s)
+	var head_h := HEAD_H
 	var pf := RouteInk.paper_font()
 	var sfs := maxi(roundi(SUB_FONT * s), 1)
-	# The corp's mark word large; the rest of its name with SECURITY and the file line small.
-	var words := String(data.get("corp", "")).to_upper().split(" ", false)
-	var mark := words[0] if not words.is_empty() else ""
-	var rest := " ".join(words.slice(1)) if words.size() > 1 else ""
 	var x := MARGIN * s
-	# Row 1: the mark word, large; row 2: the rest of the name with SECURITY // the file line.
-	draw_string(lf, Vector2(x, head_h * 0.08 + lf.get_ascent(hfs)), mark, HORIZONTAL_ALIGNMENT_LEFT, w - x * 2.0, hfs, corp_col)
-	var sub := ("%s // %s" % [(tr(SECURITY) % rest).strip_edges(), tr(SUBTITLE)])
-	draw_string(pf, Vector2(x, head_h - pf.get_descent(sfs) - 3.0 * s), sub, HORIZONTAL_ALIGNMENT_LEFT, w - x * 2.0, sfs, Palette.TEXT_MID)
+	# Under the sheet's letterhead: "<CORP> SECURITY // PERSON OF INTEREST // FILE".
+	var sub := "%s // %s" % [(tr(SECURITY) % "").strip_edges(), tr(SUBTITLE)]
+	draw_string(pf, Vector2(x, head_h + pf.get_ascent(sfs)), sub, HORIZONTAL_ALIGNMENT_LEFT, w - x * 2.0, sfs, RouteInk.PAPER_FIELD)
+	head_h += pf.get_height(sfs)
 	# The mugshot and the fields.
 	var y := head_h + MARGIN * s
 	var fs := roundi(FIELD_FONT * s)
@@ -177,9 +174,13 @@ func _draw() -> void:
 		draw_string(pf, Vector2(fx + label_w, ry), String(row[1]), HORIZONTAL_ALIGNMENT_LEFT, w - fx - label_w - MARGIN * s, fs, RouteInk.PAPER_INK)
 		ry += lh
 	# AT LARGE beside the name (rubber stamp).
-	# AT LARGE by the name, over the short rows' free right side (HP, RAM).
-	var stamp_y := y + lh * minf(3.5, _rows.size() - 0.5)
-	_stamp(Vector2(w - MARGIN * s, stamp_y), tr(AT_LARGE), AT_LARGE_TILT, true)
+	# AT LARGE by the name, over the short rows' free right side (HP, RAM); the compact file
+	# gives it a row of its own above the Heat stamp.
+	if not compact:
+		var stamp_y := y + lh * minf(3.5, _rows.size() - 0.5)
+		_stamp(Vector2(w - MARGIN * s, stamp_y), tr(AT_LARGE), AT_LARGE_TILT, true)
+	else:
+		_stamp(Vector2(w - MARGIN * s, h - MARGIN * s - STAMP_FONT * s * 1.9), tr(AT_LARGE), AT_LARGE_TILT, true)
 	y = maxf(y + (MUG * s if not compact else 0.0), y + lh * _rows.size())
 	if not compact:
 		y += MARGIN * s * 0.5

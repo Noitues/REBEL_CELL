@@ -26,6 +26,13 @@ const STATE_WALKED := "walked"
 const STATE_NEXT := "next"
 const STATE_LATER := "later"
 const STATE_CUT := "cut"
+## Each state's second cue besides its colour (§5.1 never colour alone; the greyscale audit):
+## walked a double ring, selectable a thick solid ring with the glow and its number, not yet a
+## dashed ring, cut off a dotted ring struck through.
+const RING_STYLES := {STATE_WALKED: "double", STATE_NEXT: "solid", STATE_LATER: "dashed", STATE_CUT: "dotted_struck"}
+## Dashes round a dashed ring, dots round a dotted one.
+const RING_DASHES := 12
+const RING_DOTS := 16
 ## A sticker's outer reach, ring included, at text scale 1.0 (screen px); the TARGET's.
 const STICKER_RADIUS := 19.0
 const STICKER_RADIUS_BIG := 23.0
@@ -427,9 +434,38 @@ static func draw_sticker(ci: CanvasItem, kind: String, p: Vector2, r: float, sta
 	StatIcon.draw(ci, p, disc_r * SYMBOL_SHARE, _symbol_of(kind), Color(Palette.PAPER, a))
 	if KIND_SHAPES.has(kind):
 		ci.set_meta(&"icon_id", icon_id(kind))
-	# The state ring with its keyline.
-	ci.draw_arc(p, ring_r, 0, TAU, 40, Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA * a), (RING_WIDTH + KEYLINE_EXTRA) * k)
-	ci.draw_arc(p, ring_r, 0, TAU, 40, Color(ring_col, a), RING_WIDTH * k)
+	draw_state_ring(ci, p, ring_r, state, k, a)
+
+
+## The state ring at radius `ring_r` round `p` in state `state`'s colour AND style
+## (RING_STYLES), over an ink keyline. Shared with the legend strip's swatches.
+static func draw_state_ring(ci: CanvasItem, p: Vector2, ring_r: float, state: String, k: float, a: float = 1.0) -> void:
+	var col := Color(RouteInk.ring_of(state), a)
+	var ink := Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA * a)
+	var w := RING_WIDTH * k
+	match String(RING_STYLES.get(state, "solid")):
+		"double":
+			for rr in [ring_r - w * 0.55, ring_r + w * 0.55]:
+				ci.draw_arc(p, rr, 0, TAU, 40, ink, w * 0.6 + KEYLINE_EXTRA * k * 0.6)
+			for rr in [ring_r - w * 0.55, ring_r + w * 0.55]:
+				ci.draw_arc(p, rr, 0, TAU, 40, col, w * 0.55)
+		"dashed":
+			for q in RING_DASHES:
+				var a0 := TAU * q / RING_DASHES
+				var a1 := a0 + TAU / RING_DASHES * 0.55
+				ci.draw_arc(p, ring_r, a0, a1, 6, ink, w + KEYLINE_EXTRA * k)
+				ci.draw_arc(p, ring_r, a0, a1, 6, col, w)
+		"dotted_struck":
+			for q in RING_DOTS:
+				var d := p + Vector2.from_angle(TAU * q / RING_DOTS) * ring_r
+				ci.draw_circle(d, w * 0.75 + k, ink)
+				ci.draw_circle(d, w * 0.6, col)
+			var s := Vector2(ring_r, -ring_r) * 0.72
+			ci.draw_line(p - s, p + s, ink, w + KEYLINE_EXTRA * k)
+			ci.draw_line(p - s, p + s, col, w)
+		_:
+			ci.draw_arc(p, ring_r, 0, TAU, 40, ink, w * 1.4 + KEYLINE_EXTRA * k)
+			ci.draw_arc(p, ring_r, 0, TAU, 40, col, w * 1.4)
 
 
 ## The StatIcon a route kind's sticker shows.

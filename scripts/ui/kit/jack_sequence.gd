@@ -18,12 +18,10 @@ const LINE_JACK := "> jack --from %s --to %s" # TR
 const LINE_ROUTE := "routing via border link ... ok" # TR
 const LINE_HANDSHAKE := "handshake ... ok" # TR
 const LINE_CONNECTED := "> CONNECTED" # TR
-const TERMINAL_TITLE := "CELL // JACK" # TR
 ## The terminal's width at text scale 1.0 (px), its gap above the link's midpoint (px), and its
 ## lettering (px at text scale 1.0).
 const TERMINAL_W := 380.0
 const TERMINAL_GAP := 30.0
-const TERMINAL_FONT := 15
 ## Rain: lettering (px), the height a bit falls from (px), its white-hot share of its fall.
 const RAIN_FONT := 14
 const RAIN_DROP := 120.0
@@ -54,7 +52,7 @@ var wheel_r: float = 0.0
 var open_t: float = -1.0
 var switched: bool = false
 var skipping: bool = false
-var terminal: TerminalWindow
+var terminal: CrtTerminalPanel
 var _text: Label
 
 
@@ -218,19 +216,24 @@ func _make_terminal(lines: PackedStringArray) -> void:
 	if terminal != null and is_instance_valid(terminal):
 		terminal.queue_free()
 	var s := Settings.text_scale
-	terminal = TerminalWindow.new(TranslationServer.translate(TERMINAL_TITLE), Palette.CELL_ACID)
-	terminal.custom_minimum_size = Vector2(TERMINAL_W * s, 0)
-	_text = Label.new()
-	_text.text = "\n".join(lines)
+	# 1B's CRT terminal (the Cell's own system): glass, scanlines, hex dump, caret; the lines
+	# carry their own ">" prompts and type on this sequence's clock.
+	terminal = CrtTerminalPanel.new()
+	terminal.name = "JackTerminal"
+	terminal.prompt = false
+	terminal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	terminal.text = "\n".join(lines)
+	add_child(terminal)
+	_text = terminal.label
 	_text.set_meta(&"lines", lines)
-	_text.add_theme_font_size_override("font_size", roundi(TERMINAL_FONT * s))
 	_text.add_theme_color_override("font_color", Palette.CELL_ACID)
 	_text.visible_characters = 0
 	_text.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	terminal.body.add_child(_text)
-	add_child(terminal)
-	UiTheme.apply(terminal)  # Fx's layer has no theme of its own
-	terminal.size = terminal.get_combined_minimum_size()
+	# The panel sets its face in _ready; measure with it now (the window is sized before then).
+	_text.add_theme_font_override(&"font", Palette.mono())
+	_text.add_theme_font_size_override(&"font_size", UiTheme.font_px(terminal.text_step))
+	var tsize := _text.get_combined_minimum_size() + CrtTerminalPanel.PAD * 2.0
+	terminal.size = Vector2(maxf(TERMINAL_W * s, tsize.x), tsize.y)
 	var mid := (points[0] + points[points.size() - 1]) * 0.5
 	var vp := get_viewport_rect().size
 	var at := mid - Vector2(terminal.size.x * 0.5, terminal.size.y + TERMINAL_GAP * s)

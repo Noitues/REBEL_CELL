@@ -12,7 +12,7 @@ const HQ := preload("res://scenes/hq/hq_scene.tscn")
 const SLOT := "gut_netrun_states"
 const SETTLE := 20
 const BAKE_FRAMES := 600
-const ALL_STATES := ["start", "underway", "show_all", "heat", "meridian_16", "halcyon_20", "orbital", "jack"]
+const ALL_STATES := ["start", "underway", "show_all", "heat", "meridian_16", "halcyon_20", "orbital", "event", "jack"]
 ## Seconds into the jack-in at which frames are written.
 const JACK_TIMES: Array[float] = [0.6, 1.4, 2.2, 3.0, 3.6, 4.2, 4.8, 5.6, 6.6, 8.0]
 
@@ -139,6 +139,15 @@ func _state(st: String) -> void:
 			await _shot(st)
 		"orbital":
 			var net := await _open_netrun(&"orbital", 1.0)
+			await _settle(net)
+			await _shot(st)
+		"event":
+			# The node's dressed room behind its event page.
+			var net := await _open_netrun(&"meridian", 1.0)
+			await _settle(net)
+			_underway(net)
+			DemoSetup.open_event(RunManager.netrun, &"ev_leash_on_the_floor")
+			net._show_current()
 			await _settle(net)
 			await _shot(st)
 		"jack":
