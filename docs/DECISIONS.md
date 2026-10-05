@@ -30,6 +30,25 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Designer rulings: names for M14 (plan §3.1 D2–D8, D11–D12; resolved by the designer)
+Defaults accepted for all (`docs/ART_REINTEGRATION_PLAN.md` §3.1). Per ruling 5 of "pause point 0" below,
+internal names (enums, ids, files, classes) follow these display names; no compatibility kept.
+1. **D2 slice programs:** ATTACK → **SHIM**, CRIT → **OVERFLOW**, DEFEND → **DEFRAG**, EVADE → **DETOUR**,
+   HEAL → **HOTFIX**, AFFLICT → **INFECT**; SANDBOX, TROJAN, NULL unchanged (concept rounds 32–34).
+2. **D3 Meridian:** JUDGEMENT retired; the RAM-drain slice (was Tariff) is **PRIORITY**; Meridian's CRIT is
+   **AIRMAIL** (round 18).
+3. **D4:** INERTIA → **WEIGHT**; Solace HEAL → **GROWTH** (rounds 14–18).
+4. **D5:** "Mainframe Gate" → **Central Server** (GDD 11.7); per-corporation names The Master Manifest,
+   The Genome Core, The Panopticon, Launch Control as content strings (rounds 33, 35).
+5. **D6:** player-facing **Firmware** everywhere ("Microchips" retired; rounds 33–34).
+6. **D8:** precision tier Partial → **WEAK** (GDD 2.4; round 39).
+7. **D11 Heat bands:** old FLAGGED → **HUNTED**, old NOTICED → **FLAGGED**, new **NOTICED** = a couple of
+   alarms; thresholds unchanged; the screen glitch only as an off-by-default Options extra `heat_glitch`,
+   exempt from VfxTier (rounds 19–22).
+8. **D12:** the respin control reads **RESPIN**, never CHECKPOINT; the undo block shows on UNDO (round 23).
+9. D9 and D18–D20 are covered by the pause-point-0 rulings or are presentation only (agreed). D13–D17 are
+   asked before the batch that needs them (ART-3, ART-4, ART-7).
+
 ### 2026-10-05 — Designer rulings: art reintegration, pause point 0 (resolved by the designer)
 Answered by the designer as a numbered list against `docs/ART_REINTEGRATION_PLAN.md` §1
 (art-pass tag `art-concepts-r43`) plus the ANIM-R7 open question and ART_BIBLE v2
