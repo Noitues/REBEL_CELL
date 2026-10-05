@@ -95,21 +95,29 @@ func test_a_threat_icons_type_comes_from_its_rules() -> void:
 		var t := RunManager.lookup().get_content(id) as ThreatData
 		var want := RaidVehicle.SPECIAL if (t.freezes_edges or t.alters_edges) else (RaidVehicle.FAST if t.edges_per_step >= 2 else RaidVehicle.HEAVY)
 		assert_eq(RaidVehicle.type_of(t), want, "%s: shape = what it does" % id)
-		assert_eq(RaidVehicle.shape(RaidVehicle.type_of(t), Vector2.ZERO, 10.0).size() >= 6, true, "%s: a shape" % id)
+		for corp in CORPORATIONS:
+			for hp in [1.0, 0.6, 0.1]:
+				assert_not_null(RaidVehicle.texture(RaidVehicle.type_of(t), corp, hp), "%s %s: the concept's baked icon (icons22)" % [id, corp])
+	assert_eq(RaidVehicle.hp_step(0.01), 25, "a threat still standing never shows the empty icon")
+	assert_eq(RaidVehicle.hp_step(0.0), 0)
+	var manifest := JSON.parse_string(FileAccess.get_file_as_string("res://assets/raid/icons/manifest.json")) as Dictionary
+	assert_eq(String(manifest["source"]["script"]), "docs/concepts/round22_raid_world/scripts/icons22.py", "the icons come from the concept script")
 
 
 func test_node_health_v2_drains_north_to_south() -> void:
-	var inner := RaidSocket.diamond(Vector2.ZERO, 10.0)
-	var full := RaidSocket.below(inner, inner[0].y)
-	var half := RaidSocket.below(inner, 0.0)
-	var none := RaidSocket.below(inner, inner[2].y + 1.0)
-	assert_eq(full.size(), 4, "full: the whole fill")
-	assert_true(half.size() >= 3, "half: the south part lit")
-	for p in half:
-		assert_true(p.y >= -0.001, "only south of the drain line is lit")
-	assert_eq(none.size(), 0, "empty: nothing lit")
+	# The sockets are the concept's own (netdecal19/21, baked): every node type, every look.
 	for t in [&"relay", &"firewall_relay", &"vault_terminal", &"proxy_relay", &"safehouse", &"compiler_rack", &"home_server"]:
-		assert_ne(RaidSocket.glyph_of(t), "", "%s: a socket glyph (no tag)" % t)
+		var g := RaidSocket.glyph_of(t)
+		for spec: Dictionary in [{"health": 1.0}, {"health": 0.6}, {"health": 0.3}, {"state": RaidSocket.STATE_DOWN},
+				{"state": RaidSocket.STATE_TAKEN}, {"forecast": RaidSocket.STATE_DOWN}, {"forecast": RaidSocket.STATE_TAKEN},
+				{"dock": RaidSocket.DRAG_VALID}, {"dock": RaidSocket.DRAG_INVALID}]:
+			spec["glyph"] = g
+			assert_not_null(RaidSocket.texture(spec), "%s %s: the concept's baked socket" % [t, RaidSocket.image_of(spec)])
+	assert_eq(RaidSocket.hp_step(0.95), 75, "damaged never shows the full fill")
+	assert_eq(RaidSocket.hp_step(1.0), 100)
+	assert_eq(RaidSocket.image_of({"glyph": "relay", "health": 0.5}), "relay_hp050", "the fill drains with health")
+	var manifest := JSON.parse_string(FileAccess.get_file_as_string("res://assets/raid/sockets/manifest.json")) as Dictionary
+	assert_true(str(manifest["source"]["scripts"]).contains("netdecal21.py"), "the sockets come from the concept's health v2 script")
 	assert_eq(RaidSocket.frame_color(RaidSocket.GLYPH_CORE), Palette.CELL_PINK, "CORE pink")
 	assert_eq(RaidSocket.frame_color(RaidSocket.GLYPH_RELAY), Palette.GAIN, "holds green")
 

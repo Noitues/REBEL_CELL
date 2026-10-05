@@ -1,17 +1,18 @@
 class_name RaidGlyphMark
 extends Control
-## ART-6 3A: a node's socket glyph as a small mark beside its row in YOUR NETWORK (round 21
-## terminal "node" rows: the type glyph, never a tag). Draws RaidSocket.draw_glyph.
+## ART-6 3A: a node's socket as a small mark beside its row in YOUR NETWORK (round 21
+## terminal "node" rows: the type glyph, never a tag): the same baked concept socket the map
+## draws (RaidSocket), live or DOWN.
 
-const SIZE := 20.0
+const SIZE := 24.0
 
 var glyph: String = RaidSocket.GLYPH_RELAY
-var col: Color = Palette.GAIN
+var down: bool = false
 
 
-func _init(p_glyph: String = RaidSocket.GLYPH_RELAY, p_col: Color = Palette.GAIN) -> void:
+func _init(p_glyph: String = RaidSocket.GLYPH_RELAY, p_down: bool = false) -> void:
 	glyph = p_glyph
-	col = p_col
+	down = p_down
 	name = "Glyph"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	custom_minimum_size = Vector2.ONE * SIZE * Settings.text_scale
@@ -19,4 +20,12 @@ func _init(p_glyph: String = RaidSocket.GLYPH_RELAY, p_col: Color = Palette.GAIN
 
 
 func _draw() -> void:
-	RaidSocket.draw_glyph(self, glyph, size * 0.5, minf(size.x, size.y) * 0.45, col)
+	var box := minf(size.x, size.y)
+	var r := box * 0.5 * RaidSocket.ART_HALF_PX / (RaidSocket.ART_PX * 0.5 * RaidSocket.HALF.x)
+	var spec := {"glyph": glyph}
+	if down:
+		spec["state"] = RaidSocket.STATE_DOWN
+	# the mark shows the socket alone: no bolt at row size (the chip beside it says DOWN)
+	var tex := RaidSocket.texture(spec)
+	if tex != null:
+		draw_texture_rect(tex, RaidSocket.rect(size * 0.5, r), false)

@@ -3400,7 +3400,7 @@ func _node_order_row(site_id: StringName, projection: RaidResolver.RaidResult, c
 	var picked := site_id == selected_site
 	# ART-6 3A: the node's socket glyph leads its terminal row (no tag: the type is the glyph).
 	var glyph := RaidSocket.GLYPH_CORE if site_id == c.grid.home_site_id else RaidSocket.glyph_of(c.grid.node_type_of(site_id))
-	row.add_child(RaidGlyphMark.new(glyph, RaidSocket.frame_color(glyph) if c.grid.is_active_node(site_id) else Palette.DISABLED))
+	row.add_child(RaidGlyphMark.new(glyph, not c.grid.is_active_node(site_id)))
 	var target := _button(("> %s" if picked else "%s") % site_name(site_id), func() -> void: select_target(site_id))
 	target.name = "Target_%s" % site_id
 	target.custom_minimum_size.x = TARGET_BUTTON_WIDTH
