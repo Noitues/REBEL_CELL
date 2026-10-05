@@ -1,6 +1,6 @@
 # Hand-off prompt: art reintegration orchestrator (M14) and the development cycle revived
 
-Open a new Claude Code session at `C:\Users\noitu\Documents\Godot\rebel_cell` (branch `main`)
+Open a new Claude Code session at `D:\Godot\rebel_cell` (a fresh clone, branch `main`)
 and paste everything below the line. Re-check the facts in "Where things stand" with `git log`
 first: if main or art-pass has moved, update them before acting.
 
@@ -22,12 +22,34 @@ Your job has two parts:
 You coordinate agents. You do not write the batch code yourself. You merge, check, push, report
 and keep the docs true.
 
+## 0. Workspace setup (fresh clone at `D:\Godot\rebel_cell`)
+
+The project root is `D:\Godot\rebel_cell`. All paths below are relative to it unless absolute.
+1. Check the clone: `git remote get-url origin` is `https://github.com/Noitues/REBEL_CELL.git`,
+   the branch is `main`, and it's up to date (`git pull --ff-only`).
+2. The designer copied three untracked files into place. Check they exist; don't stage them:
+   `.claude/HANDOFF.md`, `docs/HANDOFF_H20_MERGE.md`, `docs/art_asset.md`.
+3. Fetch the art pass and add its worktree (read-only until ART-0):
+   ```
+   git fetch origin art-pass --tags
+   git worktree add .claude/worktrees/art-pass art-pass
+   ```
+   The tag `art-pass-concepts-final` marks the preserved state.
+4. Godot first-run import: `godot --headless --path . --import` (redirect output to a file under
+   `%TEMP%`). Then run the three checks once to confirm the clone is green before any work.
+5. **Memory.** This folder has a new Claude Code memory store, so it starts empty. Read the old
+   memory notes from `C:\Users\noitu\.claude\projects\C--Users-noitu-Documents-Godot-rebel-cell\memory\`
+   (`MEMORY.md` and its linked files). Recreate them in this project's memory folder, so future
+   sessions here load them, and update any path that pointed to the old `C:\` checkout.
+6. The old checkout `C:\Users\noitu\Documents\Godot\rebel_cell` and its worktrees stay as they
+   are. Don't modify or delete them.
+
 ## 1. Read first (in this order)
 
 On `main` (the main checkout, read-only for agents):
 1. `CLAUDE.md`: the rules and commands. They are non-negotiable.
-2. The memory index `C:\Users\noitu\.claude\projects\C--Users-noitu-Documents-Godot-rebel-cell\memory\MEMORY.md`
-   and its linked notes: Godot runtime, REBEL_CELL workflow, nothing deferred, art pass branch,
+2. The memory index (recreated in step 0.5; originally
+   `C:\Users\noitu\.claude\projects\C--Users-noitu-Documents-Godot-rebel-cell\memory\MEMORY.md`) and its linked notes: Godot runtime, REBEL_CELL workflow, nothing deferred, art pass branch,
    animation pass status, art ambition feedback.
 3. `.claude/HANDOFF.md`: the paused Animation pass, with its next steps and gotchas.
 4. `docs/handoff/anim_r7/R7_FIX_BATCHES.md`, the three R7 reports beside it, and
@@ -44,7 +66,7 @@ On `main` (the main checkout, read-only for agents):
 7. `docs/HANDOFF_H20_MERGE.md`: the model for a merge followed by a re-review and a fix loop.
    It is a designer file, so never stage it.
 
-In the worktree `C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass` (branch
+In the worktree `D:\Godot\rebel_cell\.claude\worktrees\art-pass` (branch
 `art-pass`, read-only for you until ART-0):
 8. `docs/ART_REINTEGRATION_PLAN.md`: **the plan you execute.**
 9. `docs/ART_BIBLE.md` (v2, rewritten around the locked direction; v1 is `docs/ART_BIBLE_v1.md`):
