@@ -163,6 +163,9 @@ const DEMOS := {
 	&"nudge_resist_bits": ["scene", "fx_resist"], &"ram_gain_bits": ["scene", "fx_ram"], &"temp_label": ["scene", "fx_label"],
 	&"daemon_trigger": ["scene", "fx_daemon"], &"firmware_trigger": ["scene", "fx_firmware"],
 	&"heat_city_beacon": ["scene", "fx_heat"], &"heat_city_sweep": ["scene", "fx_heat"],
+	# ART-0 audit B1: the Heat glitch extra on the live fight at HUNTED (forced on in the lab's
+	# layer only; the player's Settings never change).
+	&"heat_glitch": ["scene", "fx_glitch"],
 
 	# ART-1 1B material kit: each entry on a fresh real piece (KitDemo: a VinylSticker, a
 	# CrtTerminalPanel, a GreasePencilMark, a DecryptedHoloPanel, a LightSpill, BinaryBits).
@@ -1627,6 +1630,10 @@ func _fx_call(what: String, ev: WheelView) -> void:
 			fx.trigger_fx(pv.global_center() + Vector2(0, pv.hub_radius() * 0.5), pv.slot_spot(0), Palette.RESIST_GOLD, &"firmware_trigger")
 		"fx_heat":
 			_scene.heat_city.set_band(DEMO_HEAT_BAND, ev.global_center())
+		"fx_glitch":
+			_scene.heat_city.set_band(DEMO_HEAT_BAND, ev.global_center())
+			_scene.heat_glitch.force_on = true
+			_scene.heat_glitch.set_band(DEMO_HEAT_BAND, _scene._hunting_corp_color())
 
 
 

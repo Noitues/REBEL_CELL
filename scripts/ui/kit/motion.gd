@@ -259,8 +259,15 @@ static func slide_in(node: CanvasItem, from: Vector2, id: StringName) -> Tween:
 	return tw
 
 
-## A horizontal shake of `amplitude` px on a Vector2 `property` (position, or a view's
-## own `shake` offset) in SHAKE_STEPS steps, ending where it started.
+## The shake (px) entry `id` plays: its amplitude held to its VFX tier's limit (ART-0
+## audit E1, ART_BIBLE v2 5.3: none below T2, 2 px at T2, 4 px at T3, none at T4).
+static func shake_px(id: StringName) -> float:
+	return VfxTier.clamp_shake(VfxTier.of(id), amplitude(id))
+
+
+## A horizontal shake of `shake_px(id)` px (the entry's amplitude held to its tier) on a
+## Vector2 `property` (position, or a view's own `shake` offset) in SHAKE_STEPS steps,
+## ending where it started.
 static func shake(node: CanvasItem, id: StringName, property: NodePath = ^"position") -> Tween:
 	var base: Vector2 = _settle(node, property)
 	# ART-0 C (art pass W9F, ART_BIBLE §12): reduce motion shakes nothing (the refusal keeps
@@ -271,7 +278,7 @@ static func shake(node: CanvasItem, id: StringName, property: NodePath = ^"posit
 		return null
 	var e := entry(id)
 	var step := seconds(id) / SHAKE_STEPS
-	var a := Vector2(amplitude(id), 0.0)
+	var a := Vector2(shake_px(id), 0.0)
 	var tw := node.create_tween()
 	tw.tween_interval(delay_of(id))
 	var at := base

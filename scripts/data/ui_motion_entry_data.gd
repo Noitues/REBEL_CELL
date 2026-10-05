@@ -27,6 +27,13 @@ extends Resource
 ## alpha, shake and hit-stop: VfxTier); only T4 may cover the whole screen.
 enum Tier { T0_AMBIENT, T1_FEEDBACK, T2_OUTCOME, T3_MOMENT, T4_CINEMATIC }
 @export var tier: Tier = Tier.T1_FEEDBACK
+## ART-0 audit E2: what `duration` measures. ONE_SHOT: an effect that plays once; it must fit
+## its tier's longest duration (VfxTier.MAX_SECONDS). HOLD: how long something stays or is
+## waited for (a hold, a wait, a budget, a note left up to be read), not an effect's length.
+## LOOP: one period (or half-period) of a motion that repeats while a state lasts. HOLD and
+## LOOP are not held to the tier's duration; their look still follows the tier.
+enum Kind { ONE_SHOT, HOLD, LOOP }
+@export var kind: Kind = Kind.ONE_SHOT
 
 
 ## Problems with this entry (empty when valid).
@@ -38,4 +45,6 @@ func validate() -> PackedStringArray:
 		errors.append("Motion %s: duration and delay must be >= 0." % id)
 	if tier < Tier.T0_AMBIENT or tier > Tier.T4_CINEMATIC:
 		errors.append("Motion %s: tier must be T0..T4." % id)
+	if kind < Kind.ONE_SHOT or kind > Kind.LOOP:
+		errors.append("Motion %s: kind must be ONE_SHOT, HOLD or LOOP." % id)
 	return errors

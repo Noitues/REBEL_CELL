@@ -7,6 +7,7 @@
 // Prototype until 1B's shared toon + ink material lands (the spike shaders are prototypes too).
 shader_type spatial;
 render_mode cull_disabled, specular_disabled;
+#include "res://shaders/lib/rc_common.gdshaderinc"
 
 // 0 toon, 1 toon on a detail line (darkens with the reveal), 2 lit (toon + self-light), 3 neon, 4 window,
 // 5 window in the blackout ring, 6 window on a detail line, 7 red fist window, 8 sign

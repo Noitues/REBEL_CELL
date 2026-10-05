@@ -3451,7 +3451,7 @@ func _hub_lines(c: CombatantState) -> Array[String]:
 	if c.wheel.hub_id != &"":
 		var hub_data := lookup.get_content(c.wheel.hub_id) if lookup != null else null
 		var hub_name: String = TextDb.t(hub_data, "display_name") if hub_data != null and "display_name" in hub_data else String(c.wheel.hub_id)
-		hub_lines.append(hub_name + (tr(" (BREACHED)") if c.is_hub_breached() else ""))
+		hub_lines.append(hub_name + (tr(" (LOCKDOWN)") if c.is_hub_breached() else ""))
 	hub_lines.append_array(extra_lines)
 	return hub_lines
 

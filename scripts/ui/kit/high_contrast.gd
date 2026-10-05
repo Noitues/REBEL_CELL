@@ -20,7 +20,7 @@ extends RefCounted
 ## ART-0 C: the three colours are area E's semantic tokens (TEXT_HI, TEXT_MID, FOCUS).
 
 ## The panel colour behind high-contrast text (§12: "TEXT_HI on #000").
-const BG := Color.BLACK
+const BG := Palette.HC_BG
 ## High-contrast text.
 const TEXT := Palette.TEXT_HI
 ## High-contrast focus.

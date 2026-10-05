@@ -175,6 +175,9 @@ extends Resource
 @export var save_dir_export: String = "user://saves"
 @export var replay_subdir: String = "replays"
 @export var write_replays: bool = true
+## ART-0 audit B4: the most replay files the replay folder keeps; writing one more deletes
+## the oldest (storyboard, demo and harness runs would pile them up). 0 = no cap.
+@export var max_replays: int = 50
 @export_group("Combat FX")
 ## ART-2 2C (ART_BIBLE v2 §3.20, round 18 binary_damage NOTES): a hit's 0/1 shards scale
 ## with the damage it deals: count = base + per_dmg x damage (at most max), glyph px =
@@ -194,6 +197,14 @@ extends Resource
 @export var heat_city_target_beacons: PackedInt32Array = PackedInt32Array([0, 0, 2, 0, 0])
 @export var heat_city_police_lights: PackedInt32Array = PackedInt32Array([0, 0, 0, 13, 13])
 @export var heat_city_target_searchlights: PackedInt32Array = PackedInt32Array([0, 0, 0, 2, 2])
+## ART-0 audit B1 (ART_BIBLE v2 §3.15, §5.5; round 18-22 heat_glitch band table): the Heat
+## glitch Options extra per band (COOL, NOTICED, FLAGGED, HUNTED, PURGE = HUNTED's): seconds
+## between bursts, a burst's seconds, the chromatic tear bands and the macroblocks a burst
+## throws at its peak. Each band adds to the one before; every burst is short and periodic.
+@export var heat_glitch_period: PackedFloat32Array = PackedFloat32Array([3.2, 2.6, 2.0, 1.6, 1.6])
+@export var heat_glitch_burst: PackedFloat32Array = PackedFloat32Array([0.08, 0.16, 0.26, 0.32, 0.32])
+@export var heat_glitch_tears: PackedInt32Array = PackedInt32Array([0, 10, 12, 18, 18])
+@export var heat_glitch_blocks: PackedInt32Array = PackedInt32Array([0, 0, 48, 96, 96])
 
 
 ## ART-2 2C: the 0/1 shard count for a hit of `damage` (a crit takes the most).
@@ -242,6 +253,8 @@ func heat_band_levels() -> Array[int]:
 
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
+	if max_replays < 0:
+		errors.append("max_replays must be >= 0 (0 = no cap).")
 	for arr in [rack_heat_by_tier, rack_schematics_by_tier, raid_schematics_by_tier]:
 		if arr.size() != 4:
 			errors.append("Per-tier arrays need 4 entries.")
@@ -279,6 +292,14 @@ func validate() -> PackedStringArray:
 	for arr in [heat_city_side_beacons, heat_city_side_searchlights, heat_city_target_beacons, heat_city_police_lights, heat_city_target_searchlights]:
 		if arr.size() != 5:
 			errors.append("Heat city counts need 5 entries (one per Heat band).")
+	# ART-0 audit B1: the Heat glitch's table is one entry per band; a burst is shorter than its period.
+	for arr in [heat_glitch_period, heat_glitch_burst, heat_glitch_tears, heat_glitch_blocks]:
+		if arr.size() != 5:
+			errors.append("Heat glitch values need 5 entries (one per Heat band).")
+	if heat_glitch_period.size() == 5 and heat_glitch_burst.size() == 5:
+		for b in 5:
+			if heat_glitch_burst[b] <= 0.0 or heat_glitch_burst[b] >= heat_glitch_period[b]:
+				errors.append("Heat glitch band %d: a burst must be > 0 and shorter than its period." % b)
 	if fx_shard_base < 1 or fx_shard_max < fx_shard_base or fx_glyph_px_max < fx_glyph_px_base:
 		errors.append("FX shard counts / glyph sizes out of order.")
 	return errors

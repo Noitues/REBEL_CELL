@@ -164,7 +164,7 @@ func _sync() -> void:
 
 ## The glass, grown by the glow (the shader's panel rect sits GLOW_PX in).
 func _draw() -> void:
-	draw_rect(_grown(), Color.WHITE)
+	draw_rect(_grown(), Palette.NO_TINT)
 
 
 func _grown() -> Rect2:
@@ -172,7 +172,7 @@ func _grown() -> Rect2:
 
 
 func _draw_over() -> void:
-	_over.draw_rect(_grown(), Color.WHITE)
+	_over.draw_rect(_grown(), Palette.NO_TINT)
 
 
 ## The caret, on the content layer (under the scanlines), once the text has typed on.

@@ -84,7 +84,7 @@ func _init() -> void:
 	_shadow_mat.shader = SHADER
 	_shadow_mat.set_shader_parameter(&"mode", 1)
 	var img := Image.create(4, 4, false, Image.FORMAT_L8)
-	img.fill(Color.WHITE)
+	img.fill(Palette.NO_TINT)
 	_tile = ImageTexture.create_from_image(img)
 	_sync()
 
@@ -178,7 +178,7 @@ func _make_line(mat: ShaderMaterial, w: float) -> Line2D:
 	l.texture = _tile
 	l.antialiased = true
 	l.material = mat
-	l.default_color = Color.WHITE
+	l.default_color = Palette.NO_TINT
 	add_child(l)
 	return l
 

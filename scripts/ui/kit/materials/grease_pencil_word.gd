@@ -92,7 +92,7 @@ func _draw_text(shadow: bool) -> void:
 	var node := _shadow if shadow else _wax
 	var font := Palette.pencil()
 	var px := UiTheme.font_px(text_step)
-	var col := Palette.PENCIL_SHADOW if shadow else Color.WHITE
+	var col := Palette.PENCIL_SHADOW if shadow else Palette.NO_TINT
 	if shadow:
 		col.a = SHADOW_ALPHA
 	var x := 0.0

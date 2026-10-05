@@ -5,6 +5,7 @@
 // mode 0 FAR (dot + line), 1 MEDIUM (translucent box + line), 2 CLOSE (model + thick line).
 shader_type spatial;
 render_mode cull_disabled, specular_disabled, unshaded, blend_mix, depth_draw_opaque;
+#include "res://shaders/lib/rc_common.gdshaderinc"
 
 uniform float gain = 1.0;
 uniform float body_alpha = 1.0;
@@ -14,7 +15,7 @@ uniform vec3 body_color = vec3(0.10, 0.09, 0.14);
 varying flat float v_part;
 
 void vertex() {
-	float s = fract(INSTANCE_CUSTOM.x + TIME * time_scale * INSTANCE_CUSTOM.y);
+	float s = fract(INSTANCE_CUSTOM.x + rc_time(TIME) * time_scale * INSTANCE_CUSTOM.y);
 	if (INSTANCE_CUSTOM.w < 0.0) {
 		s = 1.0 - s;
 		VERTEX.xz = -VERTEX.xz;

@@ -68,6 +68,37 @@ func test_the_fx_layers_effects_fit_their_tier() -> void:
 		assert_lt(VfxTier.of(id), VfxTier.T4, "%s is below T4 (local)" % id)
 
 
+func test_every_one_shot_entry_fits_its_tier() -> void:
+	# ART-0 audit E2: every entry, not a hand-picked few. A one-shot effect runs within its
+	# tier's longest duration; holds, waits and loops say so with their `kind`.
+	var table := load(MOTION_TRES) as UiMotionData
+	var over: Array[String] = []
+	for e in table.entries:
+		assert_true(e.kind >= UiMotionEntryData.Kind.ONE_SHOT and e.kind <= UiMotionEntryData.Kind.LOOP, "%s has a valid kind" % e.id)
+		if e.kind == UiMotionEntryData.Kind.ONE_SHOT and e.duration > VfxTier.MAX_SECONDS[int(e.tier)] + 0.0001:
+			over.append("%s %.2f s > %s's %.2f s" % [e.id, e.duration, VfxTier.NAMES[int(e.tier)], VfxTier.MAX_SECONDS[int(e.tier)]])
+		assert_true(VfxTier.fits(e), "%s fits (or is marked a hold or a loop)" % e.id)
+	assert_eq(over, [] as Array[String], "one-shot effects over their tier")
+
+
+func test_holds_and_loops_are_marked_and_only_one_shots_are_held_to_the_duration() -> void:
+	for id in [&"toast_note_hold", &"combat_end_hold", &"jack_arrival_wait", &"asset_drop_wait", &"resolve_sequence", &"saved_stamp"]:
+		assert_eq(int(Motion.entry(id).kind), UiMotionEntryData.Kind.HOLD, "%s is a hold" % id)
+	for id in [&"drop_zone_pulse", &"ram_pending_blink", &"send_it_ready", &"tutorial_next_pulse", &"pointer_orbit"]:
+		assert_eq(int(Motion.entry(id).kind), UiMotionEntryData.Kind.LOOP, "%s is a loop" % id)
+	assert_eq(int(Motion.entry(&"buy_fly").kind), UiMotionEntryData.Kind.ONE_SHOT, "a flight is an effect")
+	assert_true(Motion.seconds(&"buy_fly") <= VfxTier.MAX_SECONDS[VfxTier.T2] + 0.0001, "buy_fly fits T2 (the bible's example)")
+	var e := UiMotionEntryData.new()
+	e.id = &"gut_kind"
+	e.tier = UiMotionEntryData.Tier.T1_FEEDBACK
+	e.duration = 3.0
+	assert_false(VfxTier.fits(e), "a 3 s one-shot is over T1")
+	e.kind = UiMotionEntryData.Kind.HOLD
+	assert_true(VfxTier.fits(e), "a 3 s hold is not an effect length")
+	e.kind = UiMotionEntryData.Kind.LOOP
+	assert_true(VfxTier.fits(e), "nor is a loop's period")
+
+
 # --- The limits clamp ------------------------------------------------------------------------
 
 func test_the_tier_limits_clamp() -> void:
@@ -102,6 +133,66 @@ func test_fx_caps_shake_and_hit_stop_by_tier() -> void:
 		"the shipped hit-stop already fits its tier (the clamp changes nothing today)")
 	Settings.set_reduce_effects(true)
 	assert_eq(Fx.shake_px(&"hit_shake"), 0.0, "no shake under reduce effects")
+
+
+## ART-0 audit E1: the ids the code passes to Motion.shake (read from the scripts).
+func _shake_ids() -> Array[StringName]:
+	var out: Array[StringName] = []
+	var call := RegEx.create_from_string("Motion\\.shake\\([^,]+,\\s*&\"([a-z0-9_]+)\"")
+	var files := PackedStringArray()
+	_gd_files("res://scripts", files)
+	for path in files:
+		for m in call.search_all(FileAccess.get_file_as_string(path)):
+			var id := StringName(m.get_string(1))
+			if not out.has(id):
+				out.append(id)
+	out.sort()
+	return out
+
+
+func test_every_shake_fits_its_tier() -> void:
+	# ART-0 audit E1 (ART_BIBLE v2 5.3): Motion.shake holds every shake to its tier, and the
+	# shipped amplitudes already fit, so the clamp changes nothing on screen.
+	var ids := _shake_ids()
+	for id in [&"hit_shake", &"heat_letters_shake", &"precision_weak"]:
+		assert_true(ids.has(id), "%s is shaken through Motion.shake" % id)
+	for id in ids:
+		assert_true(Motion.has(id), "%s is in the table" % id)
+		var tier := VfxTier.of(id)
+		assert_true(Motion.amplitude(id) <= VfxTier.MAX_SHAKE_PX[tier] + 0.0001,
+			"%s: %.1f px fits %s's %.0f px" % [id, Motion.amplitude(id), VfxTier.NAMES[tier], VfxTier.MAX_SHAKE_PX[tier]])
+		assert_eq(Motion.shake_px(id), Motion.amplitude(id), "%s plays its own amplitude" % id)
+	assert_eq(Motion.amplitude(&"hit_shake"), 2.0, "a hit shakes 2 px (ART-2 2C)")
+	assert_eq(VfxTier.of(&"hit_shake"), VfxTier.T2)
+
+
+func test_motion_shake_clamps_an_amplitude_over_its_tier() -> void:
+	var table := UiMotionData.new()
+	var loud := UiMotionEntryData.new()
+	loud.id = &"gut_loud_shake"
+	loud.duration = 0.2
+	loud.amplitude = 9.0
+	loud.tier = UiMotionEntryData.Tier.T2_OUTCOME
+	var quiet := UiMotionEntryData.new()
+	quiet.id = &"gut_t1_shake"
+	quiet.duration = 0.2
+	quiet.amplitude = 9.0
+	quiet.tier = UiMotionEntryData.Tier.T1_FEEDBACK
+	table.entries = [loud, quiet]
+	Motion.use_config(table)
+	assert_eq(Motion.shake_px(&"gut_loud_shake"), VfxTier.MAX_SHAKE_PX[VfxTier.T2], "9 px at T2 plays 2 px")
+	assert_eq(Motion.shake_px(&"gut_t1_shake"), 0.0, "no shake below T2")
+	# The real tween: after its first step the node stands at the clamped offset.
+	Motion.force_live = true
+	var node: Node2D = add_child_autofree(Node2D.new())
+	var tw := Motion.shake(node, &"gut_loud_shake")
+	assert_not_null(tw, "it plays")
+	if tw != null:
+		tw.custom_step(0.2 / Motion.SHAKE_STEPS)
+		assert_almost_eq(node.position.x, VfxTier.MAX_SHAKE_PX[VfxTier.T2], 0.05, "the first swing is held to 2 px")
+		tw.custom_step(1.0)
+		assert_almost_eq(node.position.x, 0.0, 0.01, "and it ends where it started")
+	Motion.use_config(null)
 
 
 # --- Fx.flash -------------------------------------------------------------------------------
@@ -276,12 +367,32 @@ func test_raid_effects_have_tiers_and_none_covers_the_screen() -> void:
 
 # --- Shaders: the one reduce_effects control ---------------------------------------------------
 
+# ART-0 audit E3: every *.gdshader in the project except addons/ (res://shaders and its
+# subfolders, assets/, tools/), not only the top level of res://shaders.
 func _shaders() -> PackedStringArray:
 	var out := PackedStringArray()
-	for f in DirAccess.get_files_at(SHADER_DIR):
-		if f.ends_with(".gdshader"):
-			out.append(SHADER_DIR.path_join(f))
+	_collect_shaders("res://", out)
+	out.sort()
 	return out
+
+
+func _collect_shaders(dir: String, out: PackedStringArray) -> void:
+	for f in DirAccess.get_files_at(dir):
+		if f.ends_with(".gdshader"):
+			out.append(dir.path_join(f))
+	for d in DirAccess.get_directories_at(dir):
+		if d.begins_with(".") or (dir == "res://" and d == "addons"):
+			continue
+		_collect_shaders(dir.path_join(d), out)
+
+
+func test_the_shader_scan_reaches_every_folder() -> void:
+	var files := _shaders()
+	for path in [SHADER_DIR.path_join("kit/crt_terminal.gdshader"), "res://assets/glyphs/glyph_sdf.gdshader",
+			"res://tools/visual_qa/cvd_filter.gdshader", "res://shaders/city/city_post.gdshader"]:
+		assert_true(files.has(path), "the scan finds %s" % path)
+	for path in files:
+		assert_false(path.begins_with("res://addons/"), "addons are not ours: %s" % path)
 
 
 func test_the_include_declares_the_one_reduce_effects_control() -> void:
@@ -298,7 +409,10 @@ func test_every_shader_reads_reduce_effects_and_freezes_its_clock() -> void:
 	assert_gt(files.size(), 5, "the game's shaders")
 	for path in files:
 		var src := FileAccess.get_file_as_string(path)
-		assert_true(src.contains("#include \"%s\"" % INCLUDE), "%s includes rc_common (declares the global)" % path)
+		# Game shaders always include rc_common; a harness or spike shader under tools/ must
+		# when it animates (checked below).
+		if not path.begins_with("res://tools/"):
+			assert_true(src.contains("#include \"%s\"" % INCLUDE), "%s includes rc_common (declares the global)" % path)
 		assert_false(src.contains("uniform float reduce_effects"), "%s reads the global, never a uniform of its own" % path)
 		var uses_time := false
 		for line in src.split("\n"):
@@ -309,6 +423,7 @@ func test_every_shader_reads_reduce_effects_and_freezes_its_clock() -> void:
 					"%s: an animated line goes static under reduce effects (%s)" % [path, line.strip_edges()])
 		if uses_time:
 			assert_true(src.contains("rc_live()") or src.contains("rc_time("), "%s reads reduce_effects" % path)
+			assert_true(src.contains("#include \"%s\"" % INCLUDE), "%s animates, so it includes rc_common" % path)
 		var sh := load(path) as Shader
 		assert_not_null(sh, "%s loads" % path)
 	# The jack cover animates on a uniform the script drives (`roll`): it reads it too.
