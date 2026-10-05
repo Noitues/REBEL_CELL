@@ -98,6 +98,10 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-0 F (ported from art-pass W2 / W8a): the pad focus scale, the refused state, and a
 	# modal's open and close (PageTransition.open_modal / close_modal).
 	&"focus_scale", &"button_refused", &"modal_in", &"modal_out",
+	# ART-7 3B (ART_BIBLE v2 4.6): the netrun map's hidden-node reveal and calm Heat, and the
+	# jack-in transition's beats (terminal, link rain, CRT collapse, wheel slap and spin, lens).
+	&"route_node_reveal", &"route_heat_orbit", &"route_searchlight",
+	&"jack_terminal_type", &"jack_link_rain", &"jack_crt_collapse", &"jack_wheel_slap", &"jack_wheel_spin", &"jack_lens",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.
