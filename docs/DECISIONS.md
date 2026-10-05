@@ -33,6 +33,113 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-5 5c city motion
+Agent 5c (ART_BIBLE v2 §4.1 car LOD, §4.2 city motion, §4.3 Heat on maps, §5.3–5.5, §6.1;
+refs round 24 `motion_layers`, round 26 ambient v4, round 37 calm Heat B, round 40 `cars_lod`).
+- **One seam.** The layers (`CityMotionLayers`, `scripts/city3d/`) read the city only through
+  `CityMotionSite` (lot frame, avenues busiest first, roofs, street lots, home, bounds), built by
+  `from_model` (5a's CityModel) or `from_district` (1D's spike). `CityViewMotion` puts them on 5a's
+  `CityView3D`: groups `traffic`, `sky`, `props`, `heat` go to the view's scene layers (traffic,
+  sky and heat also in the ground-only pass, so cars and Heat pools show under see-through
+  buildings); `camera_changed` drives car LOD and sprite sizes, `band_changed` the view
+  (GRID / RAID / NETRUN), `ambient_changed` pauses every layer, the spill goes to `set_spill`.
+  `tools/spike/city/city_spike_motion.gd` keeps a spike host for windowed render checks.
+- **Config.** New schema `CityMotionConfigData` (`scripts/data/`, shipped
+  `content/config/city_motion_config.tres`; smoke check `_art5_city_motion`): counts, sizes,
+  colours, road heights, band rigs, the day look. Every timing is a `ui_motion.tres` entry (all
+  T0, in REQUIRED_IDS, each with a motion-lab demo on a small grid city): `sky_lane_cars`,
+  `street_cars`, `holo_billboard`, `aviation_blink`, `searchlight_sweep`, `chopper_orbit`,
+  `drone_orbit`, `police_strobe`, `alarm_beacon`, `heat_node_light`, `city_light_fade`. NeonCity's
+  `city_traffic` / `beacon_blink` stay with the 2D city (its AWAITING_FIX entries are not hidden).
+- **Sky lanes** (round 26 v4): the 16 road shapes (A double deck, B, C with its flyovers and
+  1.75-turn spiral, F's cloverleaf of four 270° loops, the D×E four-level stack) on the city's own
+  busiest avenues (three per axis, at least 6 lots apart), each a row per direction baked into a
+  float texture (xyz, a = length), uniform by arc length; the car shader moves every vertex along
+  its row, so lines bend through loops and ramps. A loop moves 14–20 whole gaps (seamless). Guide
+  dots per road in its rail colour.
+- **Colours from a derived stream.** Cars and street cars take their lane colour from
+  `RngStreams.make_stream(city_seed, &"city_traffic")`, billboards and aviation phases from
+  `&"city_ambient"`: seeded like RngService streams but never the campaign's own, so a view moves
+  no game state.
+- **Car LOD:** FAR / MEDIUM / CLOSE by ortho (400 / 150) with hysteresis **0.04** (1D's 0.06 kept
+  the raid's 380 on FAR coming from the Grid; the bible and `cars_lod` put the raid on MEDIUM). At
+  management zooms only the lane line drops to 35 %; the car stays full strength. The CLOSE model
+  is a light toon-lit wedge (ToonInkMaterial's bands in the path shader; no ink hull: the cars are
+  drawn after the city's ink pass). Choppers and drones use `ToonInkMaterial` with its ink.
+- **Heat lights** (calm, centred on the hardened nodes' centre, home when none): every hardened
+  node one circling red / blue light on a thin `HEAT_B` ring, drawn through buildings like the
+  network decal; per band COOL nothing, NOTICED 3 alarm beacons, FLAGGED two slow searchlights
+  (calm, lower alpha) + 2 alarms, HUNTED + 13 police strobes, 2 choppers, 6 drones with
+  spotlights and ground pools; **PURGE uses HUNTED's look** (`CityHeatRig.look_of`). Suspicion
+  (round 6) adds 13 strobes, 3 choppers, 5 drones round the Cell's home, day or night.
+- **Day / night.** The layers crossfade (`city_light_fade`) and send the night share up; the host
+  lerps its toon ramp, sky, windows, neon, haze and grade toward the config's day look; by day no
+  rain and no fog at raid zoom (bible 4.2). 5a's CityView3D has no day-look call yet:
+  `CityViewMotion` sets the view's materials directly (asked of 5a below).
+- **Pause / reduce.** Every layer keeps its own clock: covered, unfocused or the host's ambient
+  scale 0 → stopped where it is; reduce effects / headless / entry off → the end state at once
+  (time 0, lights steady on, one billboard panel, searchlights at rest, aircraft parked);
+  **reduce motion pauses every layer in its steady look** and shows the sky lanes' markers
+  without cars (the brief and 5a's ambient scale; bible 5.4's "street traffic at 40 %" is not
+  kept). Quiet windowed runs ignore focus (they never have it). The netrun transit turns the
+  sky-lane cars off (bible 4.1); the CLOSE tier (< 150) therefore only shows outside the netrun
+  band (open question below).
+- **Frame cost** (spike host, this PC, 6 s averages, worst rig HUNTED): 1920×1080 tier 2 grid
+  2.97 ms with the layers vs 2.93 without (GPU +0.03 ms, +46 draws); raid 3.04 vs 2.95. Deck tier 1
+  at 1280×800: grid 2.10 vs 2.04, raid 2.17 vs 2.15. City total within the 8 ms budget.
+- Tests: `tests/unit/test_city_motion.gd` (fast). Captures: `tools/city/city_motion_capture.tscn`
+  (one launch walks 15 states; `--host=spike`; `--mperf`). Crops: `docs/art_review/ART-5/5c/`.
+
+### 2026-10-05 — Art direction — ART-5 5a city model
+Bible §1.2 World, §4.1–4.3, §6.1; 1D's report (`docs/handoff/art_1/city_spike_report.md`, "What
+ART-5 needs"); 1B's material kit. Agent 5a (Group 3 wave 2, M14).
+- **Production classes (from 1D's spike).** `CitySpikeConfig` is renamed `CityConfig` (internal
+  names follow the word; the spike keeps its district in `tools/spike/city/city_spike_config.tres`).
+  The game's values are `content/config/city_config.tres`: the whole city `city_rect` (lots
+  -80..85 on both axes: every territory, HQ and the Sprawl round them), `chunk_lots` 24, building
+  LOD (`lod0_below` 400, `lod2_above` 760, `lod_rows_share`, `lod_cols`), zoom / pan (`grid_ortho`
+  440, `zoom_ortho_min/max`, `zoom_step`, `pan_screens_s`, `band_netrun_below`, `minimap_size`) and
+  the network decal (`net_*`).
+- **`CityModel`** (`scripts/city3d/city_model.gd`): the whole city of the game's own layout
+  (CityLayoutRecorder per chunk, the NeonCity placement code, seed 7): 13,306 buildings, 17,968
+  extrusions, 9,267 street lots, 64 chunks; recorded in 1.4 s headless on one thread, in the game on
+  the worker pool (`CityView3D`, chunks in order, so the model is deterministic). Shared once per
+  process (`CityModel.shared`). Picking tests only the chunks the ray crosses (equal to testing every
+  prism; ~3 ms a pick). The Cell's district keeps the street grid (round 34 lock); the HQs are
+  stepped stand-ins until 5b's landmarks (`hide_stand_in`).
+- **Building families** stay 1D's 12 unit-prism families (4 / 6 / 8 sides × 4 facet-row classes,
+  the bible's "~6" is per side count) — one MultiMesh per family **per chunk**, so frustum culling
+  works; LOD0 / LOD1 / LOD2 meshes (all rows / half the rows and 2 columns / one row: a plain
+  extrusion) swap by camera ortho with the 6 % hysteresis (`CityLod.building_lod`), never by
+  distance. Buffers are written whole (`CityMeshKit.instance_buffer`, 31 ms for the city).
+- **View bands** (`CityLod.band`): GRID at and above the see-through band's top (ortho ≈ 440, 1D's
+  lod 1.595), RAID down to ortho 200, NETRUN below, with hysteresis: the views move onto the city by
+  zoom band, no scene change.
+- **Materials: one seam** (`CityMaterials`). The building and ground shaders moved to
+  `shaders/city/`; their toon bands and banded light spill now come from 1B's kit through a shared
+  include, `shaders/kit/toon_bands.gdshaderinc` (`toon_band_index`, `toon_spill` and the
+  `spill_*` uniforms), so `ToonInkMaterial.set_spill` / `LightSpill.uniforms_3d` drive the city as
+  they drive props. **Small change to 1B's material:** `toon_ink.gdshader` includes that file
+  instead of declaring its spill uniforms and loop itself (same uniforms, same maths). The city's
+  ink stays 1D's depth / normal post pass (1B's note: the inverted hull splits at hard corners on
+  big city meshes); the band edges and ramp colours stay the city's config values.
+- **SEAMS for 5c / 5d / 5b / the views** (`CityView3D`, a SubViewport with its own World3D):
+  - *Scene layers:* `layer(name)` for `ground, network, buildings, landmarks, props, traffic, sky,
+    heat, fx`; `add_to_layer(name, node, ground_pass)` (ground_pass = also drawn in the ground-only
+    pass, render layer 2, seen under see-through buildings); signals `camera_changed(iso)`,
+    `band_changed(band)`, `building_lod_changed(lod)`, `ambient_changed(scale)` and
+    `ambient_scale` (0 when the map is covered, the window unfocused, or reduce effects / reduce
+    motion is on: every ambient layer pauses on it); `set_spill(sources)`; `landmark_slot(corp)`,
+    `hide_stand_in(corp)`.
+  - *Picking (pure, this viewport's pixels):* `pick(p)` → {prism, building, cell, lot, terr, world},
+    `lot_at(p)`, `project(world)`, `unproject(p, height)`, `lot_world(lot, height)`, `top_at(lot)`;
+    the same on `CityModel` with a `CityIsoCamera` for headless tests.
+  - Overlays read the camera only through `CityIsoCamera` (1D's constraint).
+- **Tests:** `tests/unit/test_city3d_model.gd` (fast): the whole-city config and its chunk tiling,
+  the deterministic chunked model, the Cell's grid, picking through chunks = every prism,
+  `top_at`, building LOD and view bands with hysteresis, log-linear zoom about the cursor and pan,
+  the network decal's buffers, CityView3D's layer and picking API, ambient pause.
+
 ### 2026-10-05 — Art direction — ART-8 8p HQ compound prep
 ART_BIBLE v2 §1.2 (World), §4.7 (HQ runs: the compound), §6.1; ART_3_BATCH "Wave 2" 8p; references
 `hq/round43_hq_mechanics/hq_*_compound.jpg`, `hq/round35_netrun/hq_compound.jpg`; 1D's pick (real-time
@@ -6939,6 +7046,11 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **ART-5 5c city motion (defaults implemented):** (1) the netrun transit turns the sky-lane
+  cars off (bible 4.1) while `cars_lod` shows the CLOSE tier at a netrun close-up: CLOSE is built
+  and tested but only shows below ortho 150 outside the netrun band; should the transit show it?
+  (2) reduce motion pauses street traffic (brief) where bible 5.4 says 40 % without streaks.
+  (3) 5a: a public day-look call on CityView3D (CityViewMotion sets the view's materials for now).
 
 - ~~**ART-8 8p: where is DISPATCH's HQ run, and does an HQ run become a map? (2026-10-05):**~~ resolved by the
   standing ruling "the art pass design is correct" (orchestrator, 2026-10-05): the latest lock wins, so DISPATCH's

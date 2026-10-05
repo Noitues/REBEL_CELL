@@ -190,9 +190,25 @@ const DEMOS := {
 	# ART-9 4B: the portrait feeds (idle, talking, stationed) and DISPATCH's voice trace.
 	&"portrait_feed": ["screen", "feed"], &"portrait_blink": ["screen", "feed"], &"portrait_talk": ["screen", "feed"],
 	&"dispatch_trace": ["screen", "feed"],
+	# ART-5 5c: the city's motion layers on a small grid city (CityMotionLayers, in 3D).
+	&"sky_lane_cars": ["screen", "city_motion"], &"street_cars": ["screen", "city_motion"],
+	&"holo_billboard": ["screen", "city_motion"], &"aviation_blink": ["screen", "city_motion"],
+	&"searchlight_sweep": ["screen", "city_motion"], &"chopper_orbit": ["screen", "city_motion"],
+	&"drone_orbit": ["screen", "city_motion"], &"police_strobe": ["screen", "city_motion"],
+	&"alarm_beacon": ["screen", "city_motion"], &"heat_node_light": ["screen", "city_motion"],
+	&"city_light_fade": ["screen", "city_motion"],
 }
 ## ART-11 4D: the lock demo's nodes on the stage (px from its top-left; the first is home).
 const RANSOM_NODES: Array[Vector2] = [Vector2(450, 300), Vector2(250, 180), Vector2(640, 170), Vector2(180, 430), Vector2(700, 420)]
+
+## ART-5 5c city motion demo: the grid city's seed, its hardened nodes (lots), the camera
+## (ortho BU: the MEDIUM car tier; the locked iso yaw and pitch; distance BU).
+const CITY_MOTION_SEED := 7
+const CITY_MOTION_NODES: Array[Vector2] = [Vector2(27, 27), Vector2(33, 29), Vector2(30, 34)]
+const CITY_MOTION_ORTHO := 240.0
+const CITY_MOTION_YAW := 135.0
+const CITY_MOTION_PITCH := 40.0
+const CITY_MOTION_DISTANCE := 900.0
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
 ## subtitle demo says, and how long the frames between a menu's focus moves are (s).
@@ -889,6 +905,9 @@ func _play_screen(what: String) -> void:
 				await get_tree().create_timer(Motion.seconds(&"modal_in") + LOOP_GAP).timeout
 				if is_instance_valid(m):
 					PageTransition.close_modal(m)
+		"city_motion":
+			_city_motion_demo()
+			length = Motion.entry(&"sky_lane_cars").duration
 		"ransom":
 			# ART-11 4D: Halcyon's lock over the stage: tearing, the wipe, padlocks on five nodes,
 			# the notice and its verb, the countdown, the stickers curling and dropping, the cut.
@@ -940,6 +959,49 @@ func _play_screen(what: String) -> void:
 			_screen_host.move_child(_hud, -1)
 			length = Motion.entry(&"hq_sign_flicker").duration
 	print("motion_lab: screen demo %s, %.2f s" % [what, length])
+
+
+## ART-5 5c: the city's motion layers (CityMotionLayers) on a small grid city in a 3D
+## viewport, through the same seam as the real city (CityMotionSite): HUNTED with three
+## hardened nodes and suspicion, every layer on, crossfading from day to night.
+func _city_motion_demo() -> void:
+	var box := SubViewportContainer.new()
+	box.stretch = true
+	box.position = Vector2(0, 80)
+	box.size = Vector2(1280 - PANEL_W, 640)
+	var vp := SubViewport.new()
+	vp.own_world_3d = true
+	box.add_child(vp)
+	_screen_host.add_child(box)
+	var env := Environment.new()
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Palette.NIGHT_SKY
+	var we := WorldEnvironment.new()
+	we.environment = env
+	vp.add_child(we)
+	var site := CityMotionSite.grid()
+	var layers := CityMotionLayers.new()
+	vp.add_child(layers)
+	layers.set_light(CityMotionLayers.Daylight.DAY, true)
+	layers.setup(CityMotionConfigData.shipped(), site, CITY_MOTION_SEED)
+	var nodes: Array[Vector3] = []
+	for lot in CITY_MOTION_NODES:
+		nodes.append(site.lot_to_world(lot))
+	layers.set_heat(CityHeatRig.Band.HUNTED, nodes)
+	layers.set_light(CityMotionLayers.Daylight.NIGHT, true)
+	layers.set_ortho(CITY_MOTION_ORTHO, box.size.x)
+	var cam := Camera3D.new()
+	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
+	cam.size = CITY_MOTION_ORTHO
+	cam.keep_aspect = Camera3D.KEEP_WIDTH
+	cam.far = CITY_MOTION_DISTANCE * 2.0
+	var yaw := deg_to_rad(CITY_MOTION_YAW)
+	var pitch := deg_to_rad(CITY_MOTION_PITCH)
+	# CityIsoCamera's frame: the view runs along (cos yaw cos pitch, -sin pitch, -sin yaw cos pitch).
+	var back := Vector3(-cos(yaw) * cos(pitch), sin(pitch), sin(yaw) * cos(pitch))
+	vp.add_child(cam)
+	cam.look_at_from_position(site.home + back * CITY_MOTION_DISTANCE, site.home, Vector3.UP)
+	cam.make_current()
 
 
 ## ANIM-R5: the jack under reduce effects (its fade, `jack_fade_reduced`): reduce effects

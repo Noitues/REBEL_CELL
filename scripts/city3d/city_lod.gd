@@ -1,6 +1,6 @@
 class_name CityLod
 extends RefCounted
-## ART-1 1D: LOD choices of the unified city, all from CitySpikeConfig (bible §4.1, §6.1;
+## ART-1 1D / ART-5 5a: LOD choices of the unified city, all from CityConfig (bible §4.1, §6.1;
 ## plan §5.2). Visibility by camera ortho, never distance; swaps with hysteresis.
 
 enum CarTier { FAR, MEDIUM, CLOSE }
@@ -9,19 +9,19 @@ enum Detail { CITY, RAID, TRANSIT }
 
 ## Building opacity at zoom `lod` (round 37/40 v3): 1 at the city zoom, the see-through
 ## opacity below the view band.
-static func opacity(cfg: CitySpikeConfig, lod: float) -> float:
+static func opacity(cfg: CityConfig, lod: float) -> float:
 	var k := clampf((lod - cfg.see_through_lod_from) / (cfg.see_through_lod_to - cfg.see_through_lod_from), 0.0, 1.0)
 	return lerpf(cfg.see_through_opacity, 1.0, k)
 
 
 ## Share of the City Grid look (0 = management zoom, 1 = the city): lane and sky-lane
 ## glow follow it.
-static func city_share(cfg: CitySpikeConfig, lod: float) -> float:
+static func city_share(cfg: CityConfig, lod: float) -> float:
 	return clampf((lod - cfg.see_through_lod_from) / (cfg.see_through_lod_to - cfg.see_through_lod_from), 0.0, 1.0)
 
 
 ## The car tier at `ortho`, keeping `current` inside the hysteresis band (-1 = none yet).
-static func car_tier(cfg: CitySpikeConfig, ortho: float, current: int = -1) -> int:
+static func car_tier(cfg: CityConfig, ortho: float, current: int = -1) -> int:
 	var h := cfg.lod_hysteresis
 	var raw := CarTier.MEDIUM
 	if ortho > cfg.car_far_above:
@@ -45,7 +45,7 @@ static func car_tier(cfg: CitySpikeConfig, ortho: float, current: int = -1) -> i
 
 
 ## The building detail tier at `ortho` (same hysteresis rule).
-static func detail(cfg: CitySpikeConfig, ortho: float, current: int = -1) -> int:
+static func detail(cfg: CityConfig, ortho: float, current: int = -1) -> int:
 	var h := cfg.lod_hysteresis
 	var raw := Detail.CITY
 	if ortho <= cfg.detail_transit_below:
@@ -67,8 +67,68 @@ static func detail(cfg: CitySpikeConfig, ortho: float, current: int = -1) -> int
 	return raw
 
 
+## ART-5 5a: the building LOD at `ortho` (0 full facet grid, 1 mass + windows, 2 plain
+## extrusion; bible §6.1), keeping `current` inside the hysteresis band (-1 = none yet).
+static func building_lod(cfg: CityConfig, ortho: float, current: int = -1) -> int:
+	var h := cfg.lod_hysteresis
+	var raw := 1
+	if ortho <= cfg.lod0_below:
+		raw = 0
+	elif ortho > cfg.lod2_above:
+		raw = 2
+	if current < 0 or current == raw:
+		return raw
+	match current:
+		0:
+			if ortho <= cfg.lod0_below * (1.0 + h):
+				return 0
+		2:
+			if ortho > cfg.lod2_above * (1.0 - h):
+				return 2
+		1:
+			if ortho > cfg.lod0_below * (1.0 - h) and ortho <= cfg.lod2_above * (1.0 + h):
+				return 1
+	return raw
+
+
+## ART-5 5a: the view band at `ortho` (the views the one city hosts by zoom, no scene
+## change): Band.GRID at and above the see-through band's top (buildings solid), RAID down
+## to band_netrun_below, NETRUN below it. Same hysteresis rule.
+enum Band { NETRUN, RAID, GRID }
+
+
+static func band(cfg: CityConfig, ortho: float, current: int = -1) -> int:
+	var h := cfg.lod_hysteresis
+	var grid_from := ortho_of_lod(cfg, cfg.see_through_lod_to)
+	var raw := Band.RAID
+	if ortho >= grid_from:
+		raw = Band.GRID
+	elif ortho < cfg.band_netrun_below:
+		raw = Band.NETRUN
+	if current < 0 or current == raw:
+		return raw
+	match current:
+		Band.GRID:
+			if ortho >= grid_from * (1.0 - h):
+				return Band.GRID
+		Band.NETRUN:
+			if ortho < cfg.band_netrun_below * (1.0 + h):
+				return Band.NETRUN
+		Band.RAID:
+			if ortho < grid_from * (1.0 + h) and ortho >= cfg.band_netrun_below * (1.0 - h):
+				return Band.RAID
+	return raw
+
+
+## The ortho whose zoom level (CityIsoCamera.lod_of) is `lod` (its inverse, lod 0..2).
+static func ortho_of_lod(cfg: CityConfig, lod: float) -> float:
+	if lod >= 1.0:
+		return cfg.lod_ortho_raid * pow(cfg.lod_ortho_city / cfg.lod_ortho_raid, lod - 1.0)
+	return cfg.lod_ortho_transit * pow(cfg.lod_ortho_raid / cfg.lod_ortho_transit, lod)
+
+
 ## The render settings of quality tier `tier` (Settings.city_quality; the Deck = 1).
-static func quality(cfg: CitySpikeConfig, city_quality: int) -> Dictionary:
+static func quality(cfg: CityConfig, city_quality: int) -> Dictionary:
 	var t := cfg.tier_for(city_quality)
 	return {"tier": t, "render_scale": cfg.quality_render_scale[t], "shadows": cfg.quality_shadows[t],
 		"shadow_size": cfg.quality_shadow_size[t], "msaa": cfg.quality_msaa[t], "ink": cfg.quality_ink[t],

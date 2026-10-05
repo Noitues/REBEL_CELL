@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="CityConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/city3d/city_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+district_centre = Vector2(2.5, 2.5)
+district_radius = 120.0
+city_rect = Rect2i(-80, -80, 165, 165)
+chunk_lots = 24

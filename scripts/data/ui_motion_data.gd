@@ -126,6 +126,10 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-9 4B (ART_BIBLE v2 §4.11 / §4.12): the portrait feed's live clock, its blink and
 	# talking mouth, DISPATCH's voice trace (PortraitFeed).
 	&"portrait_feed", &"portrait_blink", &"portrait_talk", &"dispatch_trace",
+	# ART-5 5c city motion (CityMotionLayers): the sky lanes, street traffic, billboards, aviation
+	# lights, the Heat / suspicion rig and the day / night crossfade.
+	&"sky_lane_cars", &"street_cars", &"holo_billboard", &"aviation_blink", &"searchlight_sweep", &"chopper_orbit",
+	&"drone_orbit", &"police_strobe", &"alarm_beacon", &"heat_node_light", &"city_light_fade",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.
