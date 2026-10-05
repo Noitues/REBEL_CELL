@@ -1250,3 +1250,48 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 ### Next, after these land
 - Rewrite the ART_BIBLE from this review.
 - Write the Godot implementation plan.
+
+## Decisions from round 42 (2026-10-04)
+
+### Locked
+- **Unified city:** v3 ("ready to lock").
+- **Wheel stack:** the collapsed drones.
+
+### Dropped
+- **The Cell HQ room.** The game to-do list must find other ways to represent the HQ actions: Heat, patching, repairs, recruiting, and the Black Market.
+
+### Round 43 in progress
+
+**Site markers**
+- Customs: a tipping scale.
+- Yours: a rebel fist.
+- T2 keys: a keyring with three keys.
+- Disabled: a circled lightning bolt, in the player colour.
+- Seized: a caution triangle.
+
+**Combat HUD**
+- Nudge buttons sit above the wheels: CCW on the left, CW on the right.
+- The CELL-9 sticker sits above the RAM readout.
+- The forecast and NEXT readouts are removed. A this-turn result number sits next to each HP value, with a tooltip breakdown on hover.
+
+**HQ mechanics**
+- **Meridian:**
+  - the next container is telegraphed;
+  - the train stays one full turn;
+  - the crane moves containers both ways;
+  - links are recreated after each move;
+  - paths run along the walls.
+- **Solace:**
+  - two helix strands, each with its own nodes;
+  - crossovers between the strands;
+  - the camera keeps the player centred;
+  - the goal is to reach the top.
+- **Halcyon:**
+  - a switchback pyramid with rows of 6, 5, 4, 3, 2 and 1 nodes;
+  - shortcuts 4→9, 9→13, 13→17 and 17→20, with at most 2 used;
+  - integrated with the eye-sweep idea.
+- **Orbital:**
+  - a repeating loop where every node must be cleared each lap;
+  - sabotage 3 missiles;
+  - on the 4th lap the path bypasses the platform, and the 4th launch destroys the base.
+- **DISPATCH:** 3–5 out-of-the-box ideas, such as several operatives running at once to hit 3 nodes simultaneously.
