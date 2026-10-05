@@ -284,6 +284,92 @@ default, since confirmed by the designer. Views only: no rule, number or content
   is wanted there). Cards grow on the pointer only (a pad's focus lifts the card without the growth, so the
   focused first card never covers the HP chips). The HUD's numbers stay Anton on boxes / panels, distinct from the
   mono bits.
+
+### 2026-10-05 — Art direction — ART-11 4D campaign end
+ART-11 area 4D (Group 4 brief `docs/handoff/art_4/ART_4_BATCH.md` 4D.1–4D.3; ART_BIBLE v2 §1.2,
+§4.8; refs `docs/art_reference/campaign_end/round20_raid_world/campaign_lost.jpg`,
+`round21_raid_world/campaign_dossier.jpg`, `raid/round23_raid_ui/interactions_gifs/26_home_breached.frames.jpg`;
+generators on tag `art-concepts-r43`: round 20 `lost20.py`, round 21 `dossier21.py`). Presentation only;
+no rule, schema or save change. New views in `scripts/ui/campaign_end/` (one class per file).
+- **4D.1 Campaign lost = option A, ransomware lock (`RansomLock`).** BREACHED is the cause (ruling
+  6.2): a lost campaign (outcome LOST: the home server at 0, after a raid's BREACHED or a run's
+  HOME FELL) shows the lock before the dossier. The winning corporation's house style
+  (`CorpHouseStyle`: hue `corp_color`, accent `corp_secondary`, a dark back, a motif, the head-line
+  face) and verb: PROCESSED (Halcyon), RECLAIMED (Meridian), TREATED (Solace; the concept sheet
+  stamped STERILE, the bible's locked verb list wins), DE-ORBITED (Orbital), OVERWRITTEN (DISPATCH,
+  which signs its own notice and keeps Share Tech Mono, §2.9). The takeover is a screen shader
+  (`shaders/ransom_lock.gdshader`: tearing and RGB split as the home server falls, the wipe with a
+  scan edge recolouring the city in the house hue and motif, the CRT collapse at the cut); a padlock
+  stamps on every node of the Cell's network as the wipe passes it (the HQ mounts the network on the
+  city, zoomed so the locks stand round the notice); the notice (house // NOTICE, reference, seal,
+  head, sub line, HOME SERVER and NODES ENCRYPTED n/N with the progress bar, WIPE IN and the
+  countdown, "decryption is not offered") with the verb stamped on it; the Cell's stickers on the
+  glass (the CELL DEFENSE title, the Armory's defence cards, REBEL_CELL) are never tinted: they curl at
+  a corner and drop off one after another. At zero the countdown holds (`ransom_wipe_hold`, a reading
+  hold), then the CRT collapses and the audit dossier shows. The lock waits (bounded,
+  `END_LOCK_WAIT_FRAMES`) for the city's bake before it starts; its first frame's picture is cropped
+  for the dossier's prints. Hand-off from 3A: the playout's BREACHED mark plays out, `_after_playout`
+  calls `show_end`, and the lock tears that same frame of the city.
+- **4D.2 Campaign summary = the corporation's audit dossier (`AuditDossier`, facts in
+  `DossierFacts`).** A manila folder on a desk, its tab CELL-nn / CLOSED (AT LARGE when won); the cover
+  swings open about the spine. Left: three taped prints (the home server and the network cropped from
+  the lock's picture, else drawn stand-ins; the crew's most troublesome operative; a won campaign's first
+  print is the corporation's boss, OFFLINE), the PERSONNEL // IDENTIFIED OPERATIVES sheet (class bust,
+  name and rank, struck through when DECEASED, AT LARGE (stationed: Site / reserve)), the annex (A:
+  the intercepted story beats by title, their words in its tooltip; B: the profile's record and the
+  next campaign's ICE cap). Right: the typed AUDIT REPORT on the house letterhead (seal, name,
+  division // AUDIT n) with SUBJECT, OPERATIONS, STATUS (the verb, home server BREACHED; AT LARGE when
+  won), ACTIVITY, NETWORK AT CLOSURE and the Heat trace, filed and signed by the house's auditor; CASE
+  CLOSED (AT LARGE when won) stamped over it; four auditor's post-its in blue ballpoint (MOST
+  TROUBLESOME, still at large, the Heat or the boss, the next ICE). Only true facts: the game keeps no
+  Heat history, so the trace runs from 0 through the thresholds the campaign crossed (red dots: the
+  raids they set off) to the Heat at closure; no "days" (runs instead). NEW CAMPAIGN (pink, the verb)
+  and MAIN MENU (yellow, the safe choice and first focus, §2.10: the concept's grey plate is the
+  disabled look) are vinyl stickers on the desk; they emit, the HQ calls. A won campaign is the same
+  file in the corporation's failure: stamp, tab and status AT LARGE.
+- **4D.3 Run end restyled.** The Cell's CRT window (cyan for JACKED OUT, red for a loss) with the
+  verdict as a vinyl sticker slapped on the glass (1B's `sticker_slap`; JACKED OUT yellow, FLATLINED and
+  HOME FELL red) and BACK TO HQ, the screen's one pink sticker verb, under it (one row: the window
+  fits at 2.0); the fate, tags and Heat reason
+  are kept. HOME FELL hands over to the HQ's lock.
+- **Materials (Group 1 merged).** Courier Prime (`Palette.paper` / `paper_bold`, 1A) types the
+  corp paper; the house accent is 1A's `corp_secondary`. 1B's `VinylSticker` is every Cell sticker:
+  the lock's title, defence cards (object stickers framing a `DefenceCardFace`) and REBEL_CELL, whose
+  `fold` (curl) and `lift` the lock drives from its own entries; the run end's verdict (1B's
+  `slap`); the buttons (`VinylButton`: a Button whose rect is the sticker's body, the sticker's
+  REST / HOVER / PRESSED / DISABLED following it, the lime halo on focus). The dossier's flowing
+  sheets (`PaperSheet`) draw 1B's corp paper stock (`CorpPaperPanel.SHADER`); `CorpPaperPanel`
+  itself places its fields by hand, so the container sheets keep their own layout. 4B's v2 portrait
+  prints (`PortraitArt.draw`) fill the prints and the personnel rows, DECEASED with 4B's KIA look
+  (`Polaroid` KIA values: greyed, crossed out in red pencil). Not used, on purpose: `GreasePencilMark`
+  (the bible keeps grease pencil the Cell's own, true-to-the-rules marks, yellow / red; the dossier's
+  marks are the corporation's auditor's, in blue ballpoint, §1.2 corp paper), `BinaryBits` (§1.2: bits
+  for dissolves and damage; the lock's stickers curl and drop, never dissolve, round 20 notes), and
+  `CorpPaperPanel` for the ransom notice (round 20 draws it as the house's screen takeover, not a
+  printed sheet). The campaign end's own stock (manila, report, ballpoint, stamp red, post-its, desk,
+  house backs) is a block of `END_*` tokens in `palette.gd` (Group 1's file, smallest edit, reported);
+  `RubberStamp` (+ `shaders/rubber_stamp.gdshader`), `PostIt`, `DossierPhoto` and `CorpSeal` are 4D's.
+  `TiltBox` holds a tilted piece in a container (a Container resets its children's rotation; a
+  VinylSticker is held by its body, not its shadow pad).
+- **Motion** (`ui_motion.tres`, REQUIRED_IDS, lab demos on the real pieces): `ransom_glitch`,
+  `ransom_wipe`, `ransom_padlock`, `ransom_notice_in`, `ransom_verb_stamp`, `ransom_sticker_curl`,
+  `ransom_sticker_drop`, `ransom_sticker_stagger` (a part), `ransom_countdown`, `ransom_wipe_hold`
+  (a hold), `ransom_cut`, `dossier_open`, `dossier_stamp`, `dossier_note`, `dossier_note_stagger` (a
+  part); the run end's verdict slaps with 1B's `sticker_slap`. One press completes the lock's takeover (every node padlocked, 00:00.00, no
+  sticker left) and the dossier's opening; a press in the lock's hold cuts at once. Reduce effects shows
+  the end state at once and still holds the notice to be read; headless shows no lock (the dossier at
+  once) and never waits. Capture lab `tools/design_lab/campaign_end_lab.tscn` walks every end state for
+  the five corporations in one windowed launch. Old motion kept: `forecast_stamp_resolve` (still the
+  raid's), nothing dropped.
+- **Tests changed (they pinned the superseded look):** `test_anim_r5_city`
+  `test_the_campaign_end_is_a_see_through_page_with_a_verdict_stamp` → `..._is_the_audit_dossier_with_its_stamp`
+  (the ForecastStamp WON / LOST and the display headline are gone; the story and profile stay as
+  EndStory / ProfileFacts); `test_anim_r6_city` C13 (the dossier's motion completes with a press instead
+  of the verdict stamp's pop) and C15 (the won file says AT LARGE instead of the WON stamp's icon);
+  `test_anim_r5_netrun` and `test_horizontal_pass20_screens` (the ResultStamp is a VinylSticker, checked by its words). New:
+  `tests/unit/test_art11_campaign_end.gd`. Dropped: the HQ constants END_STAMP*, END_WINDOW_W,
+  END_HEADLINE*, END_BEAT_TITLE_FONT, END_CAPTION / END_WON / END_LOST and `_land_end_stamp`; the netrun's
+  END_STAMP, END_CAPTION and `end_icon`.
 ### 2026-10-05 — Art direction — ART-2 2B attachments and arena
 ART-2 area 2B (`docs/handoff/art_2/ART_2_BATCH.md`; ART_BIBLE v2 §3.9, §3.11, §3.13, §3.14, §3.17,
 §3.21). Built on main behind seams while Group 1 (1A palette, 1B materials, 1C glyphs, 1D city) and
@@ -6877,6 +6963,15 @@ and annotated in the GDD where it changes a rule.
 - **ART-2 2D: run results on the combat chips (2026-10-05):** the D15 chips carry the wheel's own
   results; the run-wide ones the tag used to list (DRAW, CYCLES, SCHEMATICS, FREE NUDGE NEXT, +N DRONE...)
   are in the operative's breakdown tooltip only. Say if they should get a small row of their own.
+
+- **ART-11 4D: the auditor's ballpoint hand and the dossier's words (2026-10-05):** the bible names
+  "auditor's blue ballpoint post-its" but ships no ballpoint face; the post-its, captions and signature
+  use Permanent Marker (the one handwriting face) small and in ballpoint blue. Say if a ballpoint face
+  (an OFL hand) should be fetched. The auditors' names (A. VANCE, R. OKAFOR, DR. L. MERCER, K. TANAKA,
+  ECHO 00), the divisions and the notices' reference numbers are flavour picked from the concepts (Halcyon's)
+  or made up in their style; the won file's stamp is AT LARGE (the bible says only "campaign won in the
+  same language"). The intercepted story beats show by title (their text in a tooltip) so the open file
+  fits one screen at text scale 1.0; say if the full text should come back (the page then scrolls).
 
 - **Combat backdrop day / night and the REBEL_CELL Site (2026-10-05, ART-2 2B):** the game has no
   clock, so the backdrop alternates by run (odd runs by the cool day). Default applied; say if day
