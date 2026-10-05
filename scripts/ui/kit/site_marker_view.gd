@@ -41,7 +41,7 @@ func _init(p_spec: Dictionary = {}, p_with_pad: bool = false) -> void:
 func set_spec(p_spec: Dictionary) -> void:
 	var old := spec
 	spec = p_spec.duplicate()
-	var needs_disc: bool = not spec.is_empty() and spec.get("status") != SiteMarker.ST_TAKEN and spec.get("kind") != SiteMarker.KIND_BOSS
+	var needs_disc: bool = not spec.is_empty() and spec.get("status") != SiteMarker.ST_TAKEN and spec.get("kind") != SiteMarker.KIND_CENTRAL_SERVER
 	if not needs_disc:
 		if sticker != null:
 			sticker.queue_free()

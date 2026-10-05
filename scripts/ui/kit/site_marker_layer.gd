@@ -100,7 +100,7 @@ func replace() -> void:
 	# No label on grease pencil: the boss's TARGET circle is a blocked area.
 	var blocked: Array[Rect2] = []
 	for id in discs:
-		if specs[id].get("kind") == SiteMarker.KIND_BOSS:
+		if specs[id].get("kind") == SiteMarker.KIND_CENTRAL_SERVER:
 			var t := Vector2(CityMapOverlay.TARGET_RADIUS, CityMapOverlay.TARGET_RADIUS * CityMapOverlay.TARGET_FLAT) + Vector2.ONE * CityMapOverlay.TARGET_WIDTH
 			blocked.append(Rect2(discs[id] + Vector2(0, SiteMarker.PAD_DROP) - t, t * 2.0))
 	label_rects = SiteMarkerLayout.place_labels(discs, shown, sizes, prio, Rect2(Vector2.ZERO, size), blocked)
@@ -126,7 +126,7 @@ func replace() -> void:
 func _place_target() -> void:
 	var boss: StringName = &""
 	for id in discs:
-		if specs[id].get("kind") == SiteMarker.KIND_BOSS:
+		if specs[id].get("kind") == SiteMarker.KIND_CENTRAL_SERVER:
 			boss = id
 	if boss == &"":
 		if target != null:

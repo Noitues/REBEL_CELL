@@ -26,7 +26,7 @@ const KIND_SITE := "site"
 const KIND_EXPLOIT := "exploit"
 const KIND_HEAT := "heat"
 const KIND_CORE := "core"
-const KIND_BOSS := "boss"
+const KIND_CENTRAL_SERVER := "central_server"
 ## Statuses (pad, badge, slip, bolt).
 const ST_CORPORATE := "corporate"
 const ST_CLEARED := "cleared"
@@ -129,7 +129,7 @@ static func spec_for(c: CampaignState, corp_id: StringName, sd: SiteData, select
 			RC.SiteObjective.HEAT_REDUCTION:
 				kind = KIND_HEAT
 			RC.SiteObjective.CENTRAL_SERVER:
-				kind = KIND_BOSS
+				kind = KIND_CENTRAL_SERVER
 	var status := ST_CORPORATE
 	match c.grid.status_of(sd.id):
 		GridState.SiteStatus.CLEARED:
@@ -142,7 +142,7 @@ static func spec_for(c: CampaignState, corp_id: StringName, sd: SiteData, select
 	if status == ST_CLEARED or status == ST_CLAIMED or status == ST_DOWN or kind == KIND_CORE:
 		avail = AV_YOURS
 	var pinned := kind != KIND_SITE or status != ST_CORPORATE or selectable
-	return {"kind": kind, "status": status, "avail": avail, "tier": 0 if kind == KIND_CORE or kind == KIND_BOSS else sd.tier,
+	return {"kind": kind, "status": status, "avail": avail, "tier": 0 if kind == KIND_CORE or kind == KIND_CENTRAL_SERVER else sd.tier,
 		"exploit": int(sd.exploit_type) if kind == KIND_EXPLOIT else int(RC.ExploitType.NONE), "corp": corp_id,
 		"pinned": pinned, "won": status == ST_CLEARED or status == ST_CLAIMED}
 
@@ -166,7 +166,7 @@ static func meaning_key(spec: Dictionary) -> String:
 			return "heat"
 		KIND_CORE:
 			return "core"
-		KIND_BOSS:
+		KIND_CENTRAL_SERVER:
 			return "target"
 	return "next" if spec.get("avail") == AV_NEXT else "notyet"
 
@@ -180,7 +180,7 @@ static func grey_key(spec: Dictionary) -> String:
 		art = "fist"
 	var layer := String({ST_CLEARED: "check", ST_DOWN: "bolt", ST_TAKEN: "slip"}.get(st, "none"))
 	var small: bool = spec.get("avail") == AV_NOT_YET
-	var tone := -1.0 if st == ST_TAKEN or art == KIND_BOSS else snappedf(ring_color(spec).get_luminance(), GREY_TONE_STEP)
+	var tone := -1.0 if st == ST_TAKEN or art == KIND_CENTRAL_SERVER else snappedf(ring_color(spec).get_luminance(), GREY_TONE_STEP)
 	return "%s|%s|%s|%.2f" % [art, layer, "small" if small else "full", tone]
 
 ## Ring tones closer than this read the same in grey.
@@ -343,7 +343,7 @@ static func draw_pad(ci: CanvasItem, spec: Dictionary, at: Vector2, k: float = 1
 ## Everything of the marker but its disc (the vinyl sticker), round disc centre `c`: the
 ## ring, the pips, the corner badge, and the SEIZURE NOTICE slip in the disc's place.
 static func draw_under(ci: CanvasItem, spec: Dictionary, c: Vector2, k: float = 1.0) -> void:
-	if spec.get("kind") == KIND_BOSS:
+	if spec.get("kind") == KIND_CENTRAL_SERVER:
 		return  # the boss is its HQ with the pencil TARGET (no disc, ring or pips)
 	var down: bool = spec.get("status") == ST_DOWN
 	if spec.get("status") == ST_TAKEN:

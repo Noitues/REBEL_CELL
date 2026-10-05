@@ -109,7 +109,7 @@ func test_each_layer_answers_its_question_from_the_state() -> void:
 	var heat := _first(corp, func(sd: SiteData) -> bool: return sd.objective == RC.SiteObjective.HEAT_REDUCTION)
 	assert_eq(specs[heat.id]["kind"], SiteMarker.KIND_HEAT, "Heat objective: the flame")
 	var boss := _first(corp, func(sd: SiteData) -> bool: return sd.objective == RC.SiteObjective.CENTRAL_SERVER)
-	assert_eq(specs[boss.id]["kind"], SiteMarker.KIND_BOSS, "the boss: TARGET")
+	assert_eq(specs[boss.id]["kind"], SiteMarker.KIND_CENTRAL_SERVER, "the boss: TARGET")
 	assert_eq(SiteMarker.pip_count(specs[boss.id]), 0, "the boss has no pips")
 	# Cleared, claimed, DOWN, TAKEN (the state written straight in: the marker only reads it).
 	var a := open[0].id
@@ -361,7 +361,7 @@ func test_the_grid_draws_v4_markers_hides_unselectable_sites_and_lights_won_figh
 		assert_true(n.has("marker"), "%s is a v4 marker" % n["id"])
 		var spec: Dictionary = n["marker"]
 		var shown := overlay.marker_shown(n)
-		if spec["kind"] == SiteMarker.KIND_BOSS:
+		if spec["kind"] == SiteMarker.KIND_CENTRAL_SERVER:
 			continue
 		if shown:
 			assert_not_null(overlay.marker_view(n["id"]), "%s shows its marker" % n["id"])
@@ -384,7 +384,7 @@ func test_the_grid_draws_v4_markers_hides_unselectable_sites_and_lights_won_figh
 	await _frames(3)
 	assert_true(overlay.show_all)
 	for n in overlay.nodes:
-		if n["marker"]["kind"] != SiteMarker.KIND_BOSS:
+		if n["marker"]["kind"] != SiteMarker.KIND_CENTRAL_SERVER:
 			assert_not_null(overlay.marker_view(n["id"]), "SHOW ALL: %s shows" % n["id"])
 	hq.grid_legend.show_all_cell.mouse_exited.emit()
 	await _frames(2)

@@ -887,7 +887,7 @@ func _k() -> float:
 func icon_radius(n: Dictionary) -> float:
 	if n.has("marker"):
 		# ART-5 5d: a Site marker v4 picks within its ring (the boss within its TARGET).
-		if n["marker"].get("kind") == SiteMarker.KIND_BOSS:
+		if n["marker"].get("kind") == SiteMarker.KIND_CENTRAL_SERVER:
 			return TARGET_RADIUS * _k()
 		return SiteMarker.hit_radius(n["marker"], _k())
 	return (ICON_RADIUS_BIG if n.get("big", false) else ICON_RADIUS) * _k()
@@ -903,9 +903,12 @@ func icon_pos(n: Dictionary) -> Vector2:
 ## Site, its tier pips under it (H24 K6: the pips of one icon sat on the icon below).
 func _icon_box(n: Dictionary, p: Vector2) -> Rect2:
 	if n.has("marker"):
-		if n["marker"].get("kind") == SiteMarker.KIND_BOSS:
+		if n["marker"].get("kind") == SiteMarker.KIND_CENTRAL_SERVER:
 			var t := TARGET_RADIUS * _k()
-			return Rect2(p - Vector2(t, t * TARGET_FLAT), Vector2(t, t * TARGET_FLAT) * 2.0)
+			var circle := Rect2(p - Vector2(t, t * TARGET_FLAT), Vector2(t, t * TARGET_FLAT) * 2.0)
+			# The chip over it is part of the boss: labels keep off it and the fit holds it.
+			var chip_h := Palette.mono().get_height(label_font_size()) + (TAG_PAD * 2.0 + BOSS_CHIP_GAP) * _k()
+			return circle.merge(Rect2(circle.position - Vector2(0, chip_h), Vector2(circle.size.x, chip_h)))
 		return SiteMarker.box(n["marker"], p, _k())
 	var r := icon_radius(n)
 	var shape := icon_shape(String(n.get("kind", "")), p, r)
@@ -958,7 +961,7 @@ func _icon_positions() -> Dictionary:
 		if n.has("marker"):
 			# ART-5 5d: the disc floats PAD_DROP over its pad on the roof (the boss's TARGET
 			# circles the roof itself). A hidden Site keeps its spot but pushes no marker aside.
-			base = o["top"] - Vector2(0, 0.0 if n["marker"].get("kind") == SiteMarker.KIND_BOSS else SiteMarker.PAD_DROP * _k())
+			base = o["top"] - Vector2(0, 0.0 if n["marker"].get("kind") == SiteMarker.KIND_CENTRAL_SERVER else SiteMarker.PAD_DROP * _k())
 			if not marker_shown(n):
 				out[n["id"]] = base
 				continue
@@ -1569,7 +1572,7 @@ func _marker_node(n: Dictionary, rec: Dictionary) -> void:
 	if bool(spec.get("won", false)):
 		_won_lights(n["id"], rec)
 	var at := icon_pos(n)
-	if spec.get("kind") == SiteMarker.KIND_BOSS:
+	if spec.get("kind") == SiteMarker.KIND_CENTRAL_SERVER:
 		SiteMarker.draw_pad(_c, spec, top, k * 1.4)
 		_draw_boss_chip(n, at)
 		return
@@ -1617,7 +1620,7 @@ func _draw_boss_chip(n: Dictionary, at: Vector2) -> void:
 	var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var pad := TAG_PAD * k
 	var box := Vector2(w, f.get_height(fs)) + Vector2(pad, pad) * 2.0
-	var circle := _icon_box(n, at)
+	var circle := Rect2(at - Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT) * k, Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT) * 2.0 * k)
 	var r := Rect2(Vector2(at.x - box.x * 0.5, circle.position.y - BOSS_CHIP_GAP * k - box.y), box)
 	# Kept on the map's open part (beside the column), still above the pencil.
 	var area := label_area()
@@ -1640,7 +1643,7 @@ func _sync_markers() -> void:
 		if not n.has("marker") or not marker_shown(n) or _roof(n["id"]).is_empty():
 			continue
 		var spec: Dictionary = n["marker"]
-		if spec.get("kind") == SiteMarker.KIND_BOSS:
+		if spec.get("kind") == SiteMarker.KIND_CENTRAL_SERVER:
 			boss = n
 			continue
 		var v: SiteMarkerView = _marker_views.get(n["id"])

@@ -434,7 +434,7 @@ func marker_spec(key: String) -> Dictionary:
 			s["kind"] = SiteMarker.KIND_HEAT
 			s["avail"] = SiteMarker.AV_NOT_YET
 		"target":
-			s["kind"] = SiteMarker.KIND_BOSS
+			s["kind"] = SiteMarker.KIND_CENTRAL_SERVER
 			s["tier"] = 0
 	return s
 
