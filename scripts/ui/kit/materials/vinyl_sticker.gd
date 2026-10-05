@@ -24,7 +24,7 @@ signal motion_finished(kind: StringName)
 
 enum Shape { WORD, RECT, CIRCLE }
 enum Fill { PINK, RED, YELLOW, HOLO, WHITE, INK }
-enum Stock { GLOSS, KRAFT }
+enum Stock { GLOSS, KRAFT, HOLO }
 enum State { REST, HOVER, PRESSED, DISABLED }
 enum Lift { TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT }
 
@@ -174,6 +174,8 @@ var _base: Control = null
 var _fill: Control = null
 var _mat: ShaderMaterial = null
 var _fill_mat: ShaderMaterial = null
+var _face: Control = null
+var _face_mat: ShaderMaterial = null
 var _tween: Tween = null
 var _tween_kind: StringName = &""
 var _sweep_tween: Tween = null
@@ -201,6 +203,15 @@ func _init() -> void:
 	_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_base.draw.connect(_draw_base)
 	_vp.add_child(_base)
+	# a holo object's foil face (Stock.HOLO), under its content
+	_face_mat = ShaderMaterial.new()
+	_face_mat.shader = FILL_SHADER
+	_face_mat.set_shader_parameter(&"mode", 1)
+	_face = Control.new()
+	_face.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_face.material = _face_mat
+	_face.draw.connect(_draw_face)
+	_vp.add_child(_face)
 	content_root = Control.new()
 	content_root.name = "Content"
 	content_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -234,6 +245,7 @@ func refresh() -> void:
 		return
 	_base.queue_redraw()
 	_fill.queue_redraw()
+	_face.queue_redraw()
 	for c in content_root.get_children():
 		if c is CanvasItem:
 			(c as CanvasItem).queue_redraw()
@@ -248,7 +260,7 @@ func place_center(p: Vector2) -> void:
 # --- Build -------------------------------------------------------------------------------
 
 func _holo() -> bool:
-	return shape == Shape.WORD and fill == Fill.HOLO
+	return (shape == Shape.WORD and fill == Fill.HOLO) or (shape != Shape.WORD and stock == Stock.HOLO)
 
 
 func _rebuild() -> void:
@@ -304,8 +316,8 @@ func _rebuild() -> void:
 	_vp.size = Vector2i(ceili(full.x), ceili(full.y))
 	_base.size = full
 	_fill.size = full
-	content_root.position = body_pos + (Vector2(border_px, border_px) if stock == Stock.GLOSS and shape != Shape.WORD else Vector2.ZERO)
-	content_root.size = body_sz - (Vector2(border_px, border_px) * 2.0 if stock == Stock.GLOSS and shape != Shape.WORD else Vector2.ZERO)
+	content_root.position = body_pos + (Vector2(border_px, border_px) if stock != Stock.KRAFT and shape != Shape.WORD else Vector2.ZERO)
+	content_root.size = body_sz - (Vector2(border_px, border_px) * 2.0 if stock != Stock.KRAFT and shape != Shape.WORD else Vector2.ZERO)
 	body_rect = Rect2(body_pos, body_sz)
 	custom_minimum_size = full
 	size = full
@@ -319,6 +331,10 @@ func _rebuild() -> void:
 	_fill_mat.set_shader_parameter(&"field_size", body_sz)
 	_fill_mat.set_shader_parameter(&"holo_seed", float(seed))
 	_fill_mat.set_shader_parameter(&"holo_drift", HOLO_DRIFT if _holo() else 0.0)
+	_face.size = full
+	_face_mat.set_shader_parameter(&"field_size", body_sz)
+	_face_mat.set_shader_parameter(&"holo_seed", float(seed))
+	_face_mat.set_shader_parameter(&"holo_drift", HOLO_DRIFT if _holo() else 0.0)
 	_sync()
 	refresh()
 	queue_redraw()
@@ -421,6 +437,20 @@ func _draw_word_base() -> void:
 	for g in _glyphs:
 		_glyph(_base, g, Vector2.ZERO, KEYLINE_PX * OUTLINE_PER_REACH, Palette.VINYL_INK)
 	_base.draw_set_transform(Vector2.ZERO, 0.0)
+
+
+## A holo object's foil face: the body inset by the border, drawn through the holo shader.
+func _draw_face() -> void:
+	if shape == Shape.WORD or stock != Stock.HOLO:
+		return
+	var r := body_rect.grow(-border_px * 0.5)
+	if shape == Shape.CIRCLE:
+		_face.draw_circle(r.get_center(), minf(r.size.x, r.size.y) * 0.5, Palette.VINYL_WHITE)
+	else:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Palette.VINYL_WHITE
+		sb.set_corner_radius_all(int(maxf(corner_radius - border_px * 0.5, 2.0)))
+		_face.draw_style_box(sb, r)
 
 
 func _draw_fill() -> void:
