@@ -1534,6 +1534,8 @@ const WON_SPAN := 0.7
 ## (screen px at text scale 1.0).
 const EXPLOIT_FILE_W := 330.0
 const EXPLOIT_FILE_GAP := 12.0
+## The widest share of the map the file may take (its effect line wraps inside).
+const EXPLOIT_FILE_SHARE := 0.32
 ## A locked link's padlock disc (screen px).
 const LOCK_DISC := 11.0
 
@@ -1807,17 +1809,19 @@ func _make_exploit_file(id: StringName, tag: Dictionary) -> DecryptedHoloPanel:
 	head.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	head.text = "%s // %s" % [tag["category"], tag["name"]]
 	head.add_theme_font_override("font", Palette.display())
-	head.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.LABEL))
+	head.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.BODY))
 	head.add_theme_color_override("font_color", Palette.RESIST_GOLD)
+	UiWrap.whole_words(head)
 	col.add_child(head)
 	var eff := Label.new()
 	eff.name = "Effect"
 	eff.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	eff.text = String(tag["effect"])
 	eff.theme_type_variation = UiTheme.BODY_TEXT
-	eff.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.BODY))
+	eff.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
 	UiWrap.whole_words(eff)
-	eff.custom_minimum_size.x = EXPLOIT_FILE_W * Settings.text_scale
+	# A hover file, never a wall over the map: at most EXPLOIT_FILE_SHARE of the map wide.
+	eff.custom_minimum_size.x = minf(EXPLOIT_FILE_W * Settings.text_scale, label_area().size.x * EXPLOIT_FILE_SHARE / _k())
 	col.add_child(eff)
 	var site := Label.new()
 	site.name = "Site"

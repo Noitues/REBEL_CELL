@@ -290,7 +290,11 @@ func test_the_marker_layer_follows_the_camera_hides_and_picks() -> void:
 	cam.pan_px(Vector2(40, 0))
 	layer.replace()
 	assert_almost_eq(absf((layer.discs[hidden[0]] as Vector2).x - before.x), 40.0, 1.0, "markers follow the camera")
+	assert_not_null(layer.target, "the boss has its pencil TARGET")
+	var t := Vector2(CityMapOverlay.TARGET_RADIUS, CityMapOverlay.TARGET_RADIUS * CityMapOverlay.TARGET_FLAT)
+	var pencil := Rect2(layer.target.position - t, t * 2.0)
 	for id in layer.label_rects:
+		assert_false((layer.label_rects[id] as Rect2).intersects(pencil), "no label on the pencil (%s)" % id)
 		for other in layer.discs:
 			assert_false((layer.label_rects[id] as Rect2).intersects(SiteMarker.box(specs[other], layer.discs[other])), "labels clear of markers")
 

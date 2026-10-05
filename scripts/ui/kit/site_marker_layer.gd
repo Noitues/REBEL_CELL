@@ -97,7 +97,13 @@ func replace() -> void:
 			continue
 		sizes[id] = Vector2(f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, f.get_height(fs)) + Vector2(LABEL_PAD, LABEL_PAD) * 2.0 * Settings.text_scale
 		prio[id] = PRIO_SELECTED if id == selected_id else (PRIO_PINNED if bool(specs[id].get("pinned", true)) else PRIO_REST)
-	label_rects = SiteMarkerLayout.place_labels(discs, shown, sizes, prio, Rect2(Vector2.ZERO, size))
+	# No label on grease pencil: the boss's TARGET circle is a blocked area.
+	var blocked: Array[Rect2] = []
+	for id in discs:
+		if specs[id].get("kind") == SiteMarker.KIND_BOSS:
+			var t := Vector2(CityMapOverlay.TARGET_RADIUS, CityMapOverlay.TARGET_RADIUS * CityMapOverlay.TARGET_FLAT) + Vector2.ONE * CityMapOverlay.TARGET_WIDTH
+			blocked.append(Rect2(discs[id] + Vector2(0, SiteMarker.PAD_DROP) - t, t * 2.0))
+	label_rects = SiteMarkerLayout.place_labels(discs, shown, sizes, prio, Rect2(Vector2.ZERO, size), blocked)
 	for id in discs:
 		var v: SiteMarkerView = _views.get(id)
 		if v == null or not is_instance_valid(v):
