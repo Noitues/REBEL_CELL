@@ -1440,21 +1440,16 @@ func _node(n: Dictionary) -> void:
 ## ART-6 3A: the raid's live socket states (site id -> {health, state} overriding a node's
 ## "socket"; the playout's RaidFxLayer sets it so sockets drain and fall as the hits land).
 var socket_live: Callable = Callable()
-## ART-6 3A: the drag preview on a socket (site id -> RaidSocket.DRAG_*; the raid setup sets it
-## while a defence is carried over a node).
-var socket_drag: Dictionary = {}
 
 
 ## ART-6 3A: node `n`'s socket drawing spec (RaidSocket.draw): its "socket" entry, with the
-## playout's live health and state and the drag preview over it.
+## playout's live health and state.
 func socket_spec(n: Dictionary) -> Dictionary:
 	var spec: Dictionary = (n["socket"] as Dictionary).duplicate()
 	if socket_live.is_valid():
 		var live: Variant = socket_live.call(n["id"])
 		if live is Dictionary:
 			spec.merge(live as Dictionary, true)
-	if socket_drag.has(n["id"]):
-		spec["drag"] = socket_drag[n["id"]]
 	if is_dimmed(n["id"]):
 		spec["alpha"] = DIM_ALPHA
 	spec["seed"] = String(n["id"]).hash()

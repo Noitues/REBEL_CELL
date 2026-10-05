@@ -114,14 +114,14 @@ static func rect(c: Vector2, r: float) -> Rect2:
 
 
 ## Draws a socket at `c` (radius `r`, the map icon's) on `ci`. `spec`: glyph (GLYPH_*),
-## state (STATE_*), health (0..1), forecast ("" / STATE_DOWN / STATE_TAKEN), drag (""
+## state (STATE_*), health (0..1), forecast ("" / STATE_DOWN / STATE_TAKEN), dock (""
 ## / DRAG_*), alpha, seed (embers).
 static func draw(ci: CanvasItem, c: Vector2, r: float, spec: Dictionary) -> void:
 	var glyph := String(spec.get("glyph", GLYPH_RELAY))
 	var state := String(spec.get("state", STATE_HOLDS))
 	var health := clampf(float(spec.get("health", 1.0)), 0.0, 1.0)
 	var alpha := float(spec.get("alpha", 1.0))
-	var drag := String(spec.get("drag", ""))
+	var drag := String(spec.get("dock", ""))
 	var col := frame_color(glyph)
 	if state == STATE_DOWN:
 		col = col.lerp(Palette.DISABLED, DOWN_GREY)

@@ -237,7 +237,7 @@ func _draw_sheet(ci: Control) -> void:
 		{"glyph": "relay"}, {"glyph": "firewall"}, {"glyph": "vault"}, {"glyph": "proxy"}, {"glyph": "safehouse"}, {"glyph": "core"},
 		{"glyph": "relay", "health": 0.6}, {"glyph": "relay", "health": 0.25}, {"glyph": "relay", "state": "down", "health": 0.0},
 		{"glyph": "relay", "state": "taken"}, {"glyph": "relay", "forecast": "down"}, {"glyph": "relay", "forecast": "taken"},
-		{"glyph": "relay", "drag": "valid"}, {"glyph": "relay", "drag": "invalid"},
+		{"glyph": "relay", "dock": "valid"}, {"glyph": "relay", "dock": "invalid"},
 	]
 	for i in states_row.size():
 		var c := Vector2(40 + (i % 7) * 62, 40 + (i / 7) * 62)

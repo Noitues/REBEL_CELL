@@ -179,7 +179,7 @@ const DEMOS := {
 	# ART-6 3A (raid presentation): on the HQ's real raid pages.
 	&"raid_mark_write": ["hq", "raid"], &"raid_mark_hold": ["hq", "raid"], &"raid_mark_wipe": ["hq", "raid"],
 	&"raid_breached_write": ["hq", "raid_breached"], &"raid_bits_burst": ["hq", "raid_breached"],
-	&"raid_slow_field": ["hq", "raid"], &"raid_ice_grow": ["hq", "raid_ice"], &"raid_repair_rise": ["hq", "raid"],
+	&"raid_slow_field": ["hq", "raid"], &"raid_ice_grow": ["hq", "raid_ice"], &"raid_repair_rise": ["hq", "raid_repair"],
 	&"raid_route_write": ["hq", "raid_setup"], &"raid_route_wipe": ["hq", "raid"],
 	&"raid_dock_circle": ["hq", "raid_drag"], &"raid_drag_arrow": ["hq", "raid_drag"],
 	# ART-2 2A: the wheel stack.
@@ -1172,7 +1172,7 @@ func _play_context(scene: String, what: String) -> void:
 				var core := c.grid.home_site_id
 				hq.city_overlay.drop_asset(site, Callable(), tr("TURRET"),
 					[{"site": core, "from": DEMO_FORECAST_FROM, "to": DEMO_FORECAST_TO}], hq.threat_road(site))
-		"raid", "raid_ice", "raid_breached":
+		"raid", "raid_ice", "raid_breached", "raid_repair":
 			hq.show_raid()
 			for f in CONTEXT_SETTLE:
 				await get_tree().process_frame
@@ -1229,6 +1229,10 @@ func _defended_site(c: CampaignState) -> StringName:
 
 ## ANIM-R5: the demo campaign the HQ demos play on (the lab's own slot): a Site next to home
 ## cleared and claimed, defended by a turret, a decoy and an ICE lock, and a raid queued.
+## ART-6 3A: the repair demo's Safehouse integrity (of 30: hurt, standing).
+const REPAIR_DEMO_INTEGRITY := 15
+
+
 func _demo_campaign(what: String) -> void:
 	RunManager.new_campaign(DEMO_CAMPAIGN_SEED)
 	var c := RunManager.campaign
@@ -1248,6 +1252,15 @@ func _demo_campaign(what: String) -> void:
 		c.armory = DEMO_DEFENCES.duplicate()  # ART-6 3A: the cards to carry
 	elif what == "raid_breached":
 		c.grid.home_integrity = 1  # ART-6 3A: an undefended home that falls
+	elif what == "raid_repair":
+		# ART-6 3A: a Rigger stationed on a damaged Safehouse patches it as the raid runs.
+		c.grid.sites[first]["node_type"] = "safehouse"
+		c.grid.sites[first]["integrity"] = REPAIR_DEMO_INTEGRITY
+		c.armory = DEMO_DEFENCES.duplicate()
+		for i in DEMO_DEFENCES.size():
+			CampaignRules.deploy_asset(c, RunManager.config(), RunManager.lookup(), 0, first)
+		DemoSetup.only_class(c, RunManager.lookup().get_content(&"rigger") as ClassData)
+		CampaignRules.station(c, RunManager.lookup(), c.living_operatives()[0].id, first)
 	if c.pending_raids.is_empty():
 		CampaignRules.queue_raid(c, corp, RC.RaidTriggerSource.STORY, &"", "motion lab")
 

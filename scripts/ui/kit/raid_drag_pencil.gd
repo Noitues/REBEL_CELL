@@ -225,7 +225,7 @@ func _show_term() -> void:
 		l.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
 		l.add_theme_color_override("font_color", Palette.TERMINAL_TEXT if valid else Palette.HARM)
 		l.custom_minimum_size.x = (TERM_W - CrtTerminalPanel.PAD.x * 2.0) * Settings.text_scale
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		UiWrap.whole_words(l)
 		_term.body.add_child(l)
 	add_child(_term)
 	_term.size = _term.get_combined_minimum_size()

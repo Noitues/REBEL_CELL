@@ -3979,7 +3979,7 @@ func show_raid_summary() -> void:
 		var rec := report.add_row(tr("SITES RECLAIMED"), "%d (%s)" % [reclaimed.size(), ", ".join(reclaimed).to_upper()], Palette.INK, "ReportReclaimed")
 		_tip_label(rec, tr("TAKEN: the corporation took the Site back."))
 	if not down_names.is_empty():
-		var dn := report.add_row(tr("HOSTILE NODES DISABLED"), ", ".join(down_names).to_upper(), Palette.INK, "ReportDown")
+		var dn := report.add_row(tr("HOSTILE NODES DOWN"), ", ".join(down_names).to_upper(), Palette.INK, "ReportDown")
 		_tip_label(dn, tr("DOWN: repair the node on the Grid."))
 	var hb := int(r.get("home_before", 0))
 	var ha := int(r.get("home_after", 0))
