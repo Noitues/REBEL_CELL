@@ -80,8 +80,8 @@ func _init(question: String, yes_text: String = "YES", no_text: String = "CANCEL
 
 ## A vinyl sticker answer with its caption under it (no system word: the caption is the
 ## line under the sticker).
-func _sticker(row: Container, word: String, note: String, paint: Color) -> VinylSticker:
-	var b := VinylSticker.new(word, "", paint, STICKER_FONT)
+func _sticker(row: Container, word: String, note: String, paint: Color) -> SendItSticker:
+	var b := SendItSticker.new(word, "", paint, STICKER_FONT)
 	b.system_word = ""
 	b.system_line = note
 	b.tilt = -2.0

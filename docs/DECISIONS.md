@@ -69,7 +69,7 @@ default, since confirmed by the designer. Views only: no rule, number or content
   "CELL" in the dev fight) overlapping the RAM terminal panel (RamBar restyled: "RAM", the count as a live number,
   cyan pips; every RamBar motion kept). At text 1.6+ the pair moves to the notes column's foot so the hand keeps its
   room. Deck / discard counters of the reference are not built (2C's piles own those spots).
-- **SEND IT** (VinylSticker, a DripButton subclass so every SEND IT motion entry and test API stays): Anton in the
+- **SEND IT** (SendItSticker, a DripButton subclass carrying 1B's VinylSticker art so every SEND IT motion entry and test API stays): Anton in the
   sticker colour, light top, keyline, extrude, white die-cut, rest gloss, hover lift ×1.05 with the gloss sweep
   (`drip_halo`), press squash (`send_it_press`), the shadow snapping in (`send_it_drips`), the first slap
   (`drip_grow`), disabled grey with RESOLVING..., focus a lime die-cut; over the washed-out mono `EXECUTE` with

@@ -1,4 +1,4 @@
-class_name VinylSticker
+class_name SendItSticker
 extends DripButton
 ## ART-2 2D (ART_BIBLE v2 §1.3, §2.10, §4.13; round 22 `send_it_sticker`): a verb as a vinyl
 ## sticker slapped over a washed-out system word in the terminal font: SEND IT over

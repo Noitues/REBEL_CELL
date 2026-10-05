@@ -298,8 +298,8 @@ func test_chip_motion_shows_the_end_state_without_motion() -> void:
 func test_send_it_is_a_vinyl_sticker_and_respin_undo_are_terminal_chips() -> void:
 	var scene := await _combat()
 	var send: Control = scene._end_turn_button
-	assert_true(send is VinylSticker, "SEND IT is the vinyl sticker")
-	assert_eq((send as VinylSticker).system_word, "EXECUTE", "over the system word EXECUTE")
+	assert_true(send is SendItSticker, "SEND IT is the vinyl sticker")
+	assert_eq((send as SendItSticker).system_word, "EXECUTE", "over the system word EXECUTE")
 	assert_true(scene._respin_button is TerminalChip and scene._rewind_button is TerminalChip, "RESPIN / UNDO are terminal chips")
 	var undo: TerminalChip = scene._rewind_button
 	assert_eq(undo.disabled, not scene.engine.can_rewind(), "UNDO is off while blocked")

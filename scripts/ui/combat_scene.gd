@@ -1809,7 +1809,7 @@ func _build_ui() -> void:
 	bottom.add_child(_sticker_box)
 	_build_stickers()
 	# ART-2 2D (§1.3): SEND IT is a pink vinyl sticker over the washed-out EXECUTE.
-	_end_turn_button = VinylSticker.new("SEND IT", "[%s]" % Settings.key_text(&"end_turn"), HudSkin.VINYL_PINK, SEND_IT_FONT)
+	_end_turn_button = SendItSticker.new("SEND IT", "[%s]" % Settings.key_text(&"end_turn"), HudSkin.VINYL_PINK, SEND_IT_FONT)
 	_end_turn_button.name = "SendIt"
 	(_end_turn_button as DripButton).glyph = true  # ANIM-R1 C7: the drawn ▶▶ end-turn mark
 	shown_tip(_end_turn_button, tr("End the turn: every needle resolves at once (defensive, then offensive, then statuses). The tags show the outcome."))
@@ -1818,9 +1818,9 @@ func _build_ui() -> void:
 	_zine_elements.append(_end_turn_button)
 	# ANIM-R3 A6h: once the fight is over, SEND IT, RESPIN and UNDO go and the next step's
 	# action takes their place at once (the netrun names it: LOOT, CONTINUE).
-	_continue_button = VinylSticker.new("CONTINUE", "[%s]" % Settings.key_text(&"end_turn"), HudSkin.VINYL_PINK, CONTINUE_FONT)
-	(_continue_button as VinylSticker).system_word = "PROCEED"
-	(_continue_button as VinylSticker).system_line = "> next_step.exe"
+	_continue_button = SendItSticker.new("CONTINUE", "[%s]" % Settings.key_text(&"end_turn"), HudSkin.VINYL_PINK, CONTINUE_FONT)
+	(_continue_button as SendItSticker).system_word = "PROCEED"
+	(_continue_button as SendItSticker).system_line = "> next_step.exe"
 	_continue_button.name = "Continue"
 	_continue_button.visible = false
 	_continue_button.pressed.connect(_continue_pressed)
