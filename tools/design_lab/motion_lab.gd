@@ -53,7 +53,7 @@ const DEMOS := {
 	&"jack_in": ["jack_in", "stage"], &"jack_out": ["jack_out", "stage"], &"jack_fade_reduced": ["jack_reduced", "stage"],
 	&"wheel_spin": ["view", "turn"], &"wheel_spin_blur": ["view", "turn"], &"wheel_nudge": ["view", "nudge"],
 	&"precision_perfect": ["scene", "perfect"], &"precision_good_ring": ["view", "good"],
-	&"precision_weak": ["shake", "wheel"], &"precision_blink": ["blink", "wheel"], &"precision_miss_static": ["view", "miss"],
+	&"precision_weak": ["shake", "wheel"], &"precision_blink": ["blink", "wheel"], &"precision_null_static": ["view", "null"],
 	&"card_hover": ["view", "hover"], &"card_play": ["scene", "play"], &"card_draw": ["scene", "deal"], &"card_exhaust": ["scene", "exhaust"],
 	&"send_it_press": ["view", "press"], &"send_it_drips": ["view", "press"], &"resolve_pass": ["scene", "send_hit"], &"resolve_pulse": ["view", "pulse"],
 	&"number_float": ["scene", "numbers"], &"number_crit": ["scene", "numbers"], &"hp_lag": ["view", "hp"],
@@ -1024,8 +1024,8 @@ func _play_view(what: String) -> float:
 			_wheel.play_nudge(RC.RingScope.INNER, 1)
 		"good":
 			_wheel.play_good_ring()
-		"miss":
-			_wheel.play_miss_static(0)
+		"null":
+			_wheel.play_null_static(0)
 		"pulse":
 			_wheel.play_pulse(0)
 		"hp":
@@ -1193,7 +1193,7 @@ func _play_scene(what: String) -> void:
 				_scene._cancel_drag(i, CANCEL_AT)
 		"numbers":
 			# ANIM-R4 C6e: a real SEND IT (the ANIM-R2 demo played made-up beats over the live
-			# fight, so its tag read "MISS · half power" while a 14 flew). The operative's hits
+			# fight, so its tag read "NULL · half power" while a 14 flew). The operative's hits
 			# pierce (its ring), so the guarded hit is the enemy's: fights tried until the enemy
 			# hits the operative, who is given a block of a third of that hit (lab only), and the
 			# forecast refreshed, so the tag says what then happens: the raw hit rides, meets

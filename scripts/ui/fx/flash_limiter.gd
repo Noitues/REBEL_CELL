@@ -60,7 +60,7 @@ static func stream_is_safe(times: Array[float], p_max_per_second: int = 3) -> bo
 
 
 ## Event types that would flash the screen (Perfect latch, boss phase, Heat threshold,
-## Miss static burst is not a flash).
+## NULL static burst is not a flash).
 const FLASH_EVENT_TYPES := ["retrigger", "boss_phase", "heat_threshold", "combat_end", "zero_day"]
 
 

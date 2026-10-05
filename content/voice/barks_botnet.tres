@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="l0"]
 script = ExtResource("e1")
 key = "bark:perfect"
-text = "Perfect Deploy. Something of mine is inside theirs now."
+text = "Perfect Trojan. Something of mine is inside theirs now."
 
 [sub_resource type="Resource" id="l1"]
 script = ExtResource("e1")
@@ -15,8 +15,8 @@ text = "The swarm says hello."
 
 [sub_resource type="Resource" id="l2"]
 script = ExtResource("e1")
-key = "bark:miss"
-text = "Miss. The drones will cover."
+key = "bark:null"
+text = "Null. The drones will cover."
 
 [sub_resource type="Resource" id="l3"]
 script = ExtResource("e1")

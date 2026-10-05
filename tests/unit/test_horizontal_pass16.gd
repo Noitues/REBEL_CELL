@@ -1,6 +1,6 @@
 extends GutTest
 ## Horizontal pass 16 fixes (GAP_ANALYSIS H16): a Mirror copy is not a landing (Daemons skip
-## it, it doesn't resolve the Miss) while a Shunt resolution is; a fixed boss layout stops
+## it, it doesn't resolve the NULL) while a Shunt resolution is; a fixed boss layout stops
 ## an earlier orbit; arrow keys can be rebound; the combat pause menu is never clipped by
 ## the netrun scroll; Esc in the pause-menu Codex returns to the menu.
 
@@ -21,13 +21,13 @@ func _frames(n: int = 3) -> void:
 		await get_tree().process_frame
 
 
-## Operative wheel Shim, Shim, Shim, Shim, Shim, Miss; Firmware `fw_id` on slot 0.
+## Operative wheel Shim, Shim, Shim, Shim, Shim, Null; Firmware `fw_id` on slot 0.
 func _session(fw_id: StringName, daemons: Array) -> CombatSession:
 	var atk := CombatFixture.slice(&"h16_atk", RC.SliceType.SHIM, 6)
-	var miss := CombatFixture.slice(&"h16_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
+	var null_slice := CombatFixture.slice(&"h16_null", RC.SliceType.NULL, 0, RC.TargetRule.SELF)
 	var deck: Array[CardData] = [CombatFixture.card(&"h16_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
-	var cls := CombatFixture.operative_class(&"h16_class", 60, CombatFixture.wheel([atk, atk, atk, atk, atk, miss]), deck)
-	var enemy := CombatFixture.enemy(&"h16_dummy", 300, CombatFixture.miss_wheel())
+	var cls := CombatFixture.operative_class(&"h16_class", 60, CombatFixture.wheel([atk, atk, atk, atk, atk, null_slice]), deck)
+	var enemy := CombatFixture.enemy(&"h16_dummy", 300, CombatFixture.null_wheel())
 	var ids := []
 	for d in daemons:
 		ids.append(String(d))
@@ -40,15 +40,15 @@ func test_a_mirror_perfect_fires_a_daemon_once() -> void:
 	var s := _session(&"mirror", [&"kernel_sync"])
 	CombatFixture.land(s.state.player, 0)  # Perfect on slot 0: Mirror copies both neighbours
 	var r := s.apply(CombatAction.end_turn())
-	assert_eq(CombatFixture.events_of(r, "attack").size(), 2, "the landing and its Attack neighbour copy (the other neighbour is the Miss)")
+	assert_eq(CombatFixture.events_of(r, "attack").size(), 2, "the landing and its Attack neighbour copy (the other neighbour is the NULL)")
 	assert_eq(s.state.damage_bonus, 1, "Kernel Sync once for the one Perfect")
 
 
-func test_a_mirror_copy_of_the_miss_does_not_resolve_the_miss() -> void:
+func test_a_mirror_copy_of_the_null_does_not_resolve_the_null() -> void:
 	var s := _session(&"mirror", [])
-	CombatFixture.land(s.state.player, 0)  # slot 5 (the Miss) is a Mirror neighbour of slot 0
+	CombatFixture.land(s.state.player, 0)  # slot 5 (the NULL) is a Mirror neighbour of slot 0
 	s.apply(CombatAction.end_turn())
-	assert_false(s.state.miss_resolved, "only a landing resolves the Miss (Cold Exit)")
+	assert_false(s.state.null_resolved, "only a landing resolves the NULL (Cold Exit)")
 
 
 func test_a_shunt_resolution_counts_as_the_landing() -> void:

@@ -12,7 +12,7 @@ const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const TITLE := "res://scenes/menu/title_scene.tscn"
 const SLOT := "gut_s21_screens"
 const CANVAS := Vector2(1280, 720)
-const LONG_LINE := "Runner, the compliance office has flagged your cell for audit. Keep the needle off the Miss slice, bank the Rack before the auditors land, and do not let the Heat climb past the next threshold or the whole district locks down for a week."
+const LONG_LINE := "Runner, the compliance office has flagged your cell for audit. Keep the needle off the NULL slice, bank the Rack before the auditors land, and do not let the Heat climb past the next threshold or the whole district locks down for a week."
 
 var _text_scale_before: float = 1.0
 var _pad_before: bool = false

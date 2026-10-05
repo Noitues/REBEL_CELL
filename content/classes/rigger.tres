@@ -4,8 +4,8 @@
 [ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="e1"]
 [ext_resource type="Resource" path="res://content/slices/shim_16.tres" id="e2"]
 [ext_resource type="Resource" path="res://content/slices/defrag_6.tres" id="e3"]
-[ext_resource type="Resource" path="res://content/slices/shield_5.tres" id="e4"]
-[ext_resource type="Resource" path="res://content/slices/miss.tres" id="e5"]
+[ext_resource type="Resource" path="res://content/slices/sandbox_5.tres" id="e4"]
+[ext_resource type="Resource" path="res://content/slices/null.tres" id="e5"]
 [ext_resource type="Resource" path="res://content/hub_cores/rig_core.tres" id="e6"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e7"]
 [ext_resource type="Script" path="res://scripts/data/ring_segment_data.gd" id="e8"]
@@ -27,7 +27,7 @@
 [ext_resource type="Resource" path="res://content/cards/torque_wrench.tres" id="e24"]
 [ext_resource type="Resource" path="res://content/cards/hot_swap.tres" id="e25"]
 
-; Rigger (GDD 5.2): 55 HP; Shim, Shim, Defrag, Defrag, Shield, Miss. Station bonus: the node regains 5
+; Rigger (GDD 5.2): 55 HP; Shim, Shim, Defrag, Defrag, Sandbox, Null. Station bonus: the node regains 5
 ; integrity after each wave and when the raid ends (HEAL amount 5, Rank scales it).
 
 [sub_resource type="Resource" id="slot_0"]

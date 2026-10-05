@@ -372,7 +372,7 @@ func _finish_combat() -> void:
 		_die()
 		return
 	run.operative.hp = cs.player.hp
-	run.miss_resolved = run.miss_resolved or cs.miss_resolved
+	run.null_resolved = run.null_resolved or cs.null_resolved
 	# Daemons with ON_COMBAT_END effects (salvage, field repairs) after a won fight.
 	_apply_hook_effects(_run_daemon_hooks(RC.Trigger.ON_COMBAT_END))
 	# Botnet (GDD 5.2): surviving drones ride along to the next fight of the run.
@@ -769,7 +769,7 @@ func card_removal_price() -> int:
 
 func slice_overwrite_price(slot: int) -> int:
 	var slice := lookup.get_content(run.operative.slot_slice_ids[slot]) as SliceData
-	var base := config.miss_slice_overwrite_price if slice.slice_type == RC.SliceType.MISS else config.slice_overwrite_price
+	var base := config.null_slice_overwrite_price if slice.slice_type == RC.SliceType.NULL else config.slice_overwrite_price
 	return roundi(base * _price_scale())
 
 
@@ -816,7 +816,7 @@ func remove_card(deck_index: int) -> Array[Dictionary]:
 	return last_events
 
 
-## Overwrites wheel slot `slot` with shop slice `stock_index` (100 Cycles; 150 for the Miss slot).
+## Overwrites wheel slot `slot` with shop slice `stock_index` (100 Cycles; 150 for the NULL slot).
 func overwrite_slice(slot: int, stock_index: int) -> Array[Dictionary]:
 	last_events = []
 	if run.phase != RunState.Phase.SHOP:

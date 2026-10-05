@@ -3,9 +3,9 @@
 [ext_resource type="Script" path="res://scripts/data/class_data.gd" id="main_script"]
 [ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="e1"]
 [ext_resource type="Resource" path="res://content/slices/shim_16.tres" id="e2"]
-[ext_resource type="Resource" path="res://content/slices/deploy_1.tres" id="e3"]
+[ext_resource type="Resource" path="res://content/slices/trojan_1.tres" id="e3"]
 [ext_resource type="Resource" path="res://content/slices/defrag_8.tres" id="e4"]
-[ext_resource type="Resource" path="res://content/slices/miss.tres" id="e5"]
+[ext_resource type="Resource" path="res://content/slices/null.tres" id="e5"]
 [ext_resource type="Resource" path="res://content/hub_cores/swarm_core.tres" id="e6"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e7"]
 [ext_resource type="Script" path="res://scripts/data/ring_segment_data.gd" id="e8"]
@@ -27,7 +27,7 @@
 [ext_resource type="Resource" path="res://content/cards/spawn_drone.tres" id="e24"]
 [ext_resource type="Resource" path="res://content/cards/parasite_pulse.tres" id="e25"]
 
-; Botnet (GDD 5.2): 45 HP; Shim, Shim, Defrag, Deploy, Deploy, Miss. Station bonus: one free turret on
+; Botnet (GDD 5.2): 45 HP; Shim, Shim, Defrag, Trojan, Trojan, Null. Station bonus: one free turret on
 ; the node for each raid (DEPLOY_DRONE amount 1; config.station_deploy_asset; Rank scales it).
 
 [sub_resource type="Resource" id="slot_0"]

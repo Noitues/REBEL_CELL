@@ -33,6 +33,39 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-0 names pass, part 3
+Applies "2026-10-05 — Designer rulings: SANDBOX / TROJAN / NULL and five Heat bands" (ART-0 B3).
+Internal names follow the display names; no aliases, no migrations (old saves naming `shield_5`,
+`deploy_1` or `miss` fail to load through the existing "can't load" path). `tests/unit/test_names_pass.gd`
+(PART3 table) sweeps player strings and code for the old words.
+- **Slice programs (ruling 1).** `RC.SliceType` is { SHIM, OVERFLOW, DEFRAG, DETOUR, SANDBOX, TROJAN,
+  HOTFIX, INFECT, NULL } (same positions, so content keeps its ints). Content ids and files:
+  `sandbox_5`, `sandbox_8` (were shield_*), `trojan_1` (deploy_1), `null` (miss); display names
+  "Sandbox 5", "Sandbox 8", "Trojan 1", "Null"; their wheel sub-resources (`*_slot_null`, ...),
+  the generators under `tools/content_gen/`. Enums and identifiers that named the slice follow:
+  `RC.SlicePick.RANDOM_NON_NULL`, `RC.Trigger.ON_NULL_SLICE`, `Palette.SLICE_NULL` /
+  `SLICE_TROJAN`, `CombatState.null_resolved` / `RunState.null_resolved` (Cold Exit), the combat
+  event `"null"` (was "miss"), the operative bark trigger `bark:null`, the motion id
+  `precision_null_static` (table, REQUIRED_IDS, motion lab demo `null`), `WheelView.play_null_static`.
+  Schema: `CampaignConfigData.miss_slice_overwrite_price` → `null_slice_overwrite_price` (150) and
+  `mirror_deploy_base` → `mirror_trojan_base` (6), checked in `schema_smoke_checks.gd` `_art0` with
+  the enum's keys.
+- **Words and tags.** Whole words (`Palette.SLICE_WORDS`) SANDBOX / TROJAN / NULL; compact tags
+  (`Palette.SLICE_NAMES`) **SBOX / TRJN / NULL**, four letters like part 2's SHIM / OVFL / DFRG / DTOR /
+  HFIX / INFC, so they take the room those tags already fit in at text size 2.0 (the mono face:
+  test `test_b3_the_new_tags_fit_like_the_others_at_text_size_2`). Player text names the
+  programs the way part 2 does: upper case in rules text ("The NULL slice restores 2 RAM",
+  "DEFRAG and SANDBOX slices", "non-NULL slice", codex "SANDBOX: gains shield."), title case in
+  wheel lists ("Shim, Shim, Defrag, Trojan, Trojan, Null"), the barks "Null. Rerouting power.",
+  "Perfect Trojan. Something of mine is inside theirs now."; GDD 2.3, 2.4, 2.6, 5.2, 6.2, 10,
+  11 and A.3 follow (the v0.9 change line "Miss precision tier removed" is history and stays).
+- **Kept meanings (allow-listed in the sweep).** *Shield* the resource: block / shield, the
+  shield cap 15, "+%d SHIELD", "SHIELD %d", hubs that "gain 4 shield", Shield Wall, Shield Cache,
+  EffectType.GAIN_SHIELD; a SANDBOX slice *gains shield*. *Deploy* the verb: drones and Armory
+  assets ("Deploy armory asset"), EffectType.DEPLOY_DRONE, the `"deploy"` combat event and
+  `bark:deploy` (a drone deployed, by a TROJAN slice or a card). *Miss* in prose: "Miss a payment",
+  "the cameras miss", "make a miss count", the precision rule "no miss tier".
+
 ### 2026-10-05 — Art direction — ART-0 names pass, part 2 (D2–D8, D11–D12)
 Applies "2026-10-05 — Designer rulings: names for M14" (ART-0 area B part 2). Internal names follow
 the display names; no aliases, no migrations. `tests/unit/test_names_pass.gd` (PART2 table) sweeps

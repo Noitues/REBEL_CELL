@@ -8,8 +8,8 @@ var config: CampaignConfigData
 var lookup: ContentLookup
 var fx: EffectInterpreter
 
-const DEFENSIVE_TYPES := [RC.SliceType.DEFRAG, RC.SliceType.SHIELD, RC.SliceType.DETOUR, RC.SliceType.HOTFIX]
-const OFFENSIVE_TYPES := [RC.SliceType.SHIM, RC.SliceType.OVERFLOW, RC.SliceType.DEPLOY]
+const DEFENSIVE_TYPES := [RC.SliceType.DEFRAG, RC.SliceType.SANDBOX, RC.SliceType.DETOUR, RC.SliceType.HOTFIX]
+const OFFENSIVE_TYPES := [RC.SliceType.SHIM, RC.SliceType.OVERFLOW, RC.SliceType.TROJAN]
 const STATUS_TYPES := [RC.SliceType.INFECT]
 ## Where an extra boss pointer goes (ICE 18 BOSS_EXTRA_POINTER): offsets from pointer 0
 ## tried in order, the first free one wins (evenly spaced, GDD 2.1).
@@ -108,7 +108,7 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 			_add_pointers(e, int(overrides.get("boss_extra_pointer", 0)))
 			_trim_pointers(e, int(s.flags["boss_pointer_removal"]))
 			for k in int(overrides.get("boss_corrupt_slices", 0)):
-				var slot := fx.pick_slot(s, e, RC.SlicePick.RANDOM_NON_MISS, {}, rng)
+				var slot := fx.pick_slot(s, e, RC.SlicePick.RANDOM_NON_NULL, {}, rng)
 				if slot >= 0:
 					e.wheel.slice_statuses[slot] = RC.Status.CORRUPTED
 		s.enemies.append(e)
@@ -401,8 +401,8 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 	fx.run_triggers(s, RC.Trigger.ON_RESOLVE, resolve_ctx, _player_listeners(s), rng, events)
 	# Consecutive Perfects are counted on the player's first pointer, before hooks run.
 	for r in resolutions:
-		if r["owner"] == s.player and is_landing(r) and r["slice"].slice_type == RC.SliceType.MISS:
-			s.miss_resolved = true  # any read head, Twin Pointer's included (GDD 6.2 Cold Exit)
+		if r["owner"] == s.player and is_landing(r) and r["slice"].slice_type == RC.SliceType.NULL:
+			s.null_resolved = true  # any read head, Twin Pointer's included (GDD 6.2 Cold Exit)
 		if r["owner"] == s.player and r["pointer_index"] == 0 and is_landing(r):
 			s.consecutive_perfects = s.consecutive_perfects + 1 if r["tier"] == RC.PrecisionTier.PERFECT else 0
 			if r["tier"] == RC.PrecisionTier.PERFECT and int(s.flags.get("steady_hand", 0)) > 0:
@@ -426,7 +426,7 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 			_resolve_pointer(s, r, rng, events)
 	events.append({"type": "pass", "pass": "statuses", "text": "[status pass]"})
 	for r in resolutions:
-		if r["slice"].slice_type in STATUS_TYPES or r["slice"].slice_type == RC.SliceType.MISS:
+		if r["slice"].slice_type in STATUS_TYPES or r["slice"].slice_type == RC.SliceType.NULL:
 			_resolve_pointer(s, r, rng, events)
 	for r in resolutions:
 		if r["status"] == RC.Status.CORRUPTED and is_landing(r):
@@ -714,20 +714,20 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 
 ## Whether resolution `r` stands for its pointer's landing: the landing itself, or the
 ## slice a Shunt resolves instead. A Mirror copy of a neighbour is not (Daemons skip it and
-## it doesn't resolve the Miss for Cold Exit).
+## it doesn't resolve the NULL for Cold Exit).
 static func is_landing(r: Dictionary) -> bool:
 	return not r.get("derived", false) or r.get("landing", false)
 
 
-## ON_SLICE_TRIGGER, then ON_PERFECT on a Perfect and ON_MISS_SLICE on the Miss, for `listeners`.
+## ON_SLICE_TRIGGER, then ON_PERFECT on a Perfect and ON_NULL_SLICE on the NULL, for `listeners`.
 func _landing_triggers(s: CombatState, r: Dictionary, slice: SliceData, ctx: Dictionary, listeners: Array, rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
 	if listeners.is_empty():
 		return
 	fx.run_triggers(s, RC.Trigger.ON_SLICE_TRIGGER, ctx, listeners, rng, events)
 	if r["tier"] == RC.PrecisionTier.PERFECT:
 		fx.run_triggers(s, RC.Trigger.ON_PERFECT, ctx, listeners, rng, events)
-	if slice.slice_type == RC.SliceType.MISS:
-		fx.run_triggers(s, RC.Trigger.ON_MISS_SLICE, ctx, listeners, rng, events)
+	if slice.slice_type == RC.SliceType.NULL:
+		fx.run_triggers(s, RC.Trigger.ON_NULL_SLICE, ctx, listeners, rng, events)
 
 
 func _slice_action(s: CombatState, owner: CombatantState, slice: SliceData, output: int, pierce: bool, ctx: Dictionary, events: Array[Dictionary]) -> void:
@@ -750,24 +750,24 @@ func _slice_action(s: CombatState, owner: CombatantState, slice: SliceData, outp
 				fx.deal_hit(s, owner, victim, output, pierce, true, events, slice.id)
 		RC.SliceType.DEFRAG:
 			fx.gain_block(owner, output, events)
-		RC.SliceType.SHIELD:
+		RC.SliceType.SANDBOX:
 			fx.gain_shield(owner, output, events)
 		RC.SliceType.DETOUR:
 			fx.gain_evade(owner, maxi(1, output), events)
 		RC.SliceType.HOTFIX:
 			fx.heal(owner, output, events)
-		RC.SliceType.DEPLOY:
+		RC.SliceType.TROJAN:
 			_deploy(s, owner, maxi(1, output), int(ctx.get("slice_index", 0)), events)
 		RC.SliceType.INFECT:
 			events.append({"type": "afflict", "attacker": owner.id, "text": "%s %s." % [owner.display_name, _slice_name(slice)]})
-		RC.SliceType.MISS:
-			events.append({"type": "miss", "owner": owner.id, "text": "%s lands on MISS." % owner.display_name})
+		RC.SliceType.NULL:
+			events.append({"type": "null", "owner": owner.id, "text": "%s lands on NULL." % owner.display_name})
 		_:
 			events.append({"type": "unsupported_slice", "slice_type": slice.slice_type,
 				"text": "%s slice type %s is not implemented yet." % [owner.display_name, RC.SliceType.keys()[slice.slice_type]]})
 
 
-## DEPLOY slice (GDD 2.6, 5.2): `count` drones of the Hub's template dock on the wheel,
+## TROJAN slice (GDD 2.6, 5.2): `count` drones of the Hub's template dock on the wheel,
 ## from the resolved slice clockwise, up to the Hub's max_drones.
 func _deploy(s: CombatState, owner: CombatantState, count: int, from_slot: int, events: Array[Dictionary]) -> void:
 	var hub := fx.hub_of(owner.wheel)

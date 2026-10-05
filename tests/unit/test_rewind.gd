@@ -51,8 +51,8 @@ func test_rewind_cannot_cross_the_start_of_turn_checkpoint() -> void:
 func test_random_card_effect_creates_a_checkpoint_mid_turn() -> void:
 	var respin := CombatFixture.card(&"rw_respin", [CombatFixture.effect(RC.EffectType.RESPIN, RC.EffectTarget.OWN_WHEEL, 0, RC.RingScope.WHOLE_WHEEL)], 0, RC.WheelTarget.OWN)
 	var deck: Array[CardData] = [respin, respin, respin]
-	var cls := CombatFixture.operative_class(&"rw_class", 60, CombatFixture.miss_wheel(), deck)
-	var dummy := CombatFixture.enemy(&"rw_dummy", 50, CombatFixture.miss_wheel())
+	var cls := CombatFixture.operative_class(&"rw_class", 60, CombatFixture.null_wheel(), deck)
+	var dummy := CombatFixture.enemy(&"rw_dummy", 50, CombatFixture.null_wheel())
 	var s := CombatSession.start(CombatFixture.resolver([cls, dummy]), cls.id, [dummy.id], 8)
 	s.apply(CombatAction.nudge(&"player", 1))
 	assert_true(s.can_rewind())

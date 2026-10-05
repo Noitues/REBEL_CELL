@@ -60,16 +60,16 @@ func test_rigger_perfect_refunds_ram() -> void:
 	assert_true(gained, "a Perfect gives RAM back")
 
 
-func test_botnet_deploy_slice_docks_a_drone() -> void:
+func test_botnet_trojan_slice_docks_a_drone() -> void:
 	var s := CombatSession.start(_resolver, &"botnet", [&"triage_unit"], 3)
-	CombatFixture.land(s.state.player, 1, 1)  # deploy_1, Good
+	CombatFixture.land(s.state.player, 1, 1)  # trojan_1, Good
 	s.apply(CombatAction.end_turn())
 	assert_eq(s.state.living_drones().size(), 1)
 
 
-func test_botnet_perfect_deploy_plants_a_parasite() -> void:
+func test_botnet_perfect_trojan_plants_a_parasite() -> void:
 	var s := CombatSession.start(_resolver, &"botnet", [&"triage_unit"], 3)
-	CombatFixture.land(s.state.player, 1, 0)  # deploy_1, Perfect
+	CombatFixture.land(s.state.player, 1, 0)  # trojan_1, Perfect
 	var r := s.apply(CombatAction.end_turn())
 	var ev := CombatFixture.events_of(r, "parasite")
 	# The Swarm Core Perfect also resolves the slice again, and hook effects fire once per

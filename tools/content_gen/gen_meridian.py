@@ -100,24 +100,24 @@ r.main = ['id = &"courier_drone"', 'display_name = "Courier Drone"', 'descriptio
 r.write("content/enemies/courier_drone.tres", "Meridian satellite (M8).")
 
 enemy("customs_scanner", "Customs Scanner", "Scans every packet and charges a tariff on the suspicious ones.", 50,
-      ["shim_9", "priority", "defrag_6", "overflow_14", "shim_9", "miss"])
+      ["shim_9", "priority", "defrag_6", "overflow_14", "shim_9", "null"])
 enemy("cargo_hauler", "Cargo Hauler", "Slow, heavy and hard to turn: its weight resists every nudge.", 72,
-      ["defrag_8", "shim_10", "defrag_8", "shim_8_weight", "shield_5", "miss"], passive=2)
+      ["defrag_8", "shim_10", "defrag_8", "shim_8_weight", "sandbox_5", "null"], passive=2)
 enemy("conveyor_warden", "Conveyor Warden", "Its read head rides the conveyor: the pointer orbits 3 ticks a turn.", 54,
-      ["shim_10", "shim_10", "defrag_6", "overflow_16", "priority", "miss"], orbit=3)
+      ["shim_10", "shim_10", "defrag_6", "overflow_16", "priority", "null"], orbit=3)
 enemy("route_optimizer", "Route Optimizer", "Reads two routes at once: pointers at ticks 0 and 15.", 48,
-      ["shim_8", "shim_8", "overflow_14", "defrag_5", "shim_8", "miss"], pointers=(0, 15))
+      ["shim_8", "shim_8", "overflow_14", "defrag_5", "shim_8", "null"], pointers=(0, 15))
 enemy("drone_dispatcher", "Drone Dispatcher", "Launches a courier drone every other turn (up to 2).", 44,
-      ["defrag_5", "shim_8", "defrag_5", "shim_8", "priority", "miss"], spawns=[("courier_drone", 2, 2, -1, 2)])
+      ["defrag_5", "shim_8", "defrag_5", "shim_8", "priority", "null"], spawns=[("courier_drone", 2, 2, -1, 2)])
 enemy("tariff_collector", "Tariff Collector", "Every hit is a fee: attacks drain RAM.", 53,
-      ["shim_7_drain", "shim_7_drain", "defrag_6", "priority", "overflow_12_drain", "miss"])
+      ["shim_7_drain", "shim_7_drain", "defrag_6", "priority", "overflow_12_drain", "null"])
 enemy("port_authority", "Port Authority", "Two readers and a customs wall: resistance 2.", 144,
-      ["shim_12", "defrag_8", "overflow_16", "shim_12", "priority", "miss"], pointers=(0, 15), passive=2, elite=True, cycle=35)
+      ["shim_12", "defrag_8", "overflow_16", "shim_12", "priority", "null"], pointers=(0, 15), passive=2, elite=True, cycle=35)
 enemy("last_mile_enforcer", "Last-Mile Enforcer", "Orbits 2 ticks a turn and brings its own escort drone.", 132,
-      ["shim_14", "shim_14", "defrag_8", "overflow_16", "shield_8", "miss"], orbit=2, elite=True, cycle=35,
+      ["shim_14", "shim_14", "defrag_8", "overflow_16", "sandbox_8", "null"], orbit=2, elite=True, cycle=35,
       spawns=[("courier_drone", 1, 1, 1, 1)])
 enemy("logistics_director", "Logistics Director", "Meridian middle management, guarding the final Rack.", 150,
-      ["shim_10", "defrag_8", "overflow_15", "priority", "shield_5", "miss"], passive=2, elite=True, mini=True, cycle=60,
+      ["shim_10", "defrag_8", "overflow_15", "priority", "sandbox_5", "null"], passive=2, elite=True, mini=True, cycle=60,
       phases=[{"at": 0.5, "behavior": 1, "ticks": (0, 15), "line": "Throughput review: a second reader joins the shift."},
               {"at": 0.25, "behavior": 3, "orbit": 2, "line": "Overtime: the readers start to drift."}])
 
@@ -131,10 +131,10 @@ def boss_hub(r):
 
 
 enemy("the_manifest", "The Manifest", "Meridian's routing core. Every package on the planet passes through it.", 400,
-      ["shim_14", "priority", "defrag_12", "overflow_24", "shim_14", "miss"], boss=True, cycle=0, hub=boss_hub,
+      ["shim_14", "priority", "defrag_12", "overflow_24", "shim_14", "null"], boss=True, cycle=0, hub=boss_hub,
       phases=[{"at": 0.66, "behavior": 1, "ticks": (0, 15), "line": "Load balancing: a second routing head comes online."},
               {"at": 0.33, "behavior": 3, "orbit": 2, "ticks": (0, 15),
-               "wheel": ["overflow_24", "priority", "defrag_12", "overflow_24", "shim_14", "miss"],
+               "wheel": ["overflow_24", "priority", "defrag_12", "overflow_24", "shim_14", "null"],
                "spawns": [("courier_drone", 1, 1, -1, 2)],
                "line": "Peak season: the heads drift, the couriers launch, the second lane goes critical."}],
       comment="The Manifest, Meridian final boss (M8, decision 2026-09-24). 400 HP; hub Customs\nSeal gains 4 shield per turn unless breached; 66%: Multiply (0, 15); 33%: Orbit 2, Crit wheel, 2 courier drones.")

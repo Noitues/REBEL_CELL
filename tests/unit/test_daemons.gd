@@ -4,19 +4,19 @@ extends GutTest
 
 var _atk6: SliceData
 var _crit12: SliceData
-var _miss: SliceData
+var _null: SliceData
 
 
 func before_each() -> void:
 	_atk6 = CombatFixture.slice(&"dm_atk6", RC.SliceType.SHIM, 6)
 	_crit12 = CombatFixture.slice(&"dm_crit12", RC.SliceType.OVERFLOW, 12)
-	_miss = CombatFixture.slice(&"dm_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
+	_null = CombatFixture.slice(&"dm_null", RC.SliceType.NULL, 0, RC.TargetRule.SELF)
 
 
 func _session(daemon_ids: Array) -> CombatSession:
 	var deck: Array[CardData] = [CombatFixture.card(&"dm_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
-	var cls := CombatFixture.operative_class(&"dm_class", 60, CombatFixture.wheel([_crit12, _atk6, _atk6, _atk6, _atk6, _miss]), deck)
-	var dummy := CombatFixture.enemy(&"dm_dummy", 300, CombatFixture.miss_wheel())
+	var cls := CombatFixture.operative_class(&"dm_class", 60, CombatFixture.wheel([_crit12, _atk6, _atk6, _atk6, _atk6, _null]), deck)
+	var dummy := CombatFixture.enemy(&"dm_dummy", 300, CombatFixture.null_wheel())
 	var ids := []
 	for d in daemon_ids:
 		ids.append(String(d))
@@ -47,7 +47,7 @@ func test_clean_signal_fires_on_the_third_consecutive_perfect() -> void:
 	assert_eq(s.state.consecutive_perfects, 0, "a Good landing resets the streak")
 
 
-func test_fault_tolerance_makes_the_miss_slice_hit_for_3() -> void:
+func test_fault_tolerance_makes_the_null_slice_hit_for_3() -> void:
 	var s := _session([&"fault_tolerance"])
 	CombatFixture.land(s.state.player, 5)
 	var r := s.apply(CombatAction.end_turn())
@@ -73,7 +73,7 @@ func test_kernel_sync_adds_1_damage_per_perfect() -> void:
 	assert_eq(CombatFixture.events_of(r, "damage")[0]["amount"], 13, "Overflow 12 + 1 (the second Perfect grants after it hits)")
 
 
-func test_zero_day_turns_a_perfect_miss_into_a_3x_crit() -> void:
+func test_zero_day_turns_a_perfect_null_into_a_3x_crit() -> void:
 	var s := _session([&"zero_day"])
 	CombatFixture.land(s.state.player, 5, 0)
 	var r := s.apply(CombatAction.end_turn())

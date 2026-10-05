@@ -85,12 +85,12 @@ func test_slice_colours_keep_their_values_through_named_constants() -> void:
 	assert_eq(Palette.slice_color(RC.SliceType.SHIM), Palette.CELL_PINK)
 	assert_eq(Palette.slice_color(RC.SliceType.OVERFLOW), Palette.CELL_PINK)
 	assert_eq(Palette.slice_color(RC.SliceType.DEFRAG), Palette.NET_CYAN)
-	assert_eq(Palette.slice_color(RC.SliceType.SHIELD), Palette.NET_CYAN)
+	assert_eq(Palette.slice_color(RC.SliceType.SANDBOX), Palette.NET_CYAN)
 	assert_eq(Palette.slice_color(RC.SliceType.DETOUR), Color("#7BE07B"))
 	assert_eq(Palette.slice_color(RC.SliceType.HOTFIX), Palette.SLICE_HOTFIX)
 	assert_eq(Palette.slice_color(RC.SliceType.INFECT), Color("#C85AFF"))
-	assert_eq(Palette.slice_color(RC.SliceType.DEPLOY), Color("#B08CFF"))
-	assert_eq(Palette.slice_color(RC.SliceType.MISS), Color("#6A6A6A"))
+	assert_eq(Palette.slice_color(RC.SliceType.TROJAN), Color("#B08CFF"))
+	assert_eq(Palette.slice_color(RC.SliceType.NULL), Color("#6A6A6A"))
 
 
 func test_every_class_in_content_has_its_accent() -> void:

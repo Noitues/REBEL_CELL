@@ -69,10 +69,10 @@ func test_subtitles_follow_the_text_scale() -> void:
 
 func test_a_copy_carries_none_of_the_neighbours_statuses() -> void:
 	var atk := CombatFixture.slice(&"h18_atk", RC.SliceType.SHIM, 6)
-	var miss := CombatFixture.slice(&"h18_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
+	var null_slice := CombatFixture.slice(&"h18_null", RC.SliceType.NULL, 0, RC.TargetRule.SELF)
 	var deck: Array[CardData] = [CombatFixture.card(&"h18_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
-	var cls := CombatFixture.operative_class(&"h18_class", 60, CombatFixture.wheel([atk, atk, atk, atk, atk, miss]), deck)
-	var enemy := CombatFixture.enemy(&"h18_dummy", 300, CombatFixture.miss_wheel())
+	var cls := CombatFixture.operative_class(&"h18_class", 60, CombatFixture.wheel([atk, atk, atk, atk, atk, null_slice]), deck)
+	var enemy := CombatFixture.enemy(&"h18_dummy", 300, CombatFixture.null_wheel())
 	var s := CombatSession.start(CombatFixture.resolver([cls, enemy]), cls.id, [enemy.id], 3)
 	s.state.player.wheel.slot_firmware_ids[0] = &"mirror"
 	s.state.player.wheel.slice_statuses[1] = RC.Status.OVERCLOCKED
@@ -87,14 +87,14 @@ func test_a_copy_carries_none_of_the_neighbours_statuses() -> void:
 
 func test_stolen_intent_swaps_no_permanent_status() -> void:
 	var atk := CombatFixture.slice(&"h18_atk", RC.SliceType.SHIM, 6)
-	var miss := CombatFixture.slice(&"h18_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
+	var null_slice := CombatFixture.slice(&"h18_null", RC.SliceType.NULL, 0, RC.TargetRule.SELF)
 	var hit := CombatFixture.slice(&"h18_hit", RC.SliceType.SHIM, 10)
 	var deck: Array[CardData] = [CombatFixture.card(&"h18_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
-	var cls := CombatFixture.operative_class(&"h18_class", 60, CombatFixture.wheel([atk, atk, atk, atk, atk, miss]), deck)
+	var cls := CombatFixture.operative_class(&"h18_class", 60, CombatFixture.wheel([atk, atk, atk, atk, atk, null_slice]), deck)
 	var enemy := CombatFixture.enemy(&"h18_hitter", 300, CombatFixture.wheel([hit, hit, hit, hit, hit, hit]))
 	var s := CombatSession.start(CombatFixture.resolver([cls, enemy]), cls.id, [enemy.id], 3, &"", 0, {"daemon_ids": ["stolen_intent"]})
-	s.state.player.wheel.slot_firmware_ids[5] = &"burner"  # permanent Overclock on the Miss socket
-	CombatFixture.land(s.state.player, 5, 1)  # a Good on the Miss: Stolen Intent swaps it
+	s.state.player.wheel.slot_firmware_ids[5] = &"burner"  # permanent Overclock on the NULL socket
+	CombatFixture.land(s.state.player, 5, 1)  # a Good on the NULL: Stolen Intent swaps it
 	var r := s.apply(CombatAction.end_turn())
 	assert_eq(CombatFixture.events_of(r, "stolen_intent").size(), 1)
 	var mine := CombatFixture.events_of(r, "attack").filter(func(e: Dictionary) -> bool: return e["attacker"] == &"player")

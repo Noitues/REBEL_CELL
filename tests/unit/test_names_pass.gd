@@ -219,4 +219,95 @@ func test_d2_slice_display_names_use_the_program_words() -> void:
 		var s := ContentRegistry.get_content(id) as SliceData
 		if s != null:
 			assert_null(old.search(s.display_name), "%s: %s" % [id, s.display_name])
-	assert_eq(RC.SliceType.keys().slice(0, 9), ["SHIM", "OVERFLOW", "DEFRAG", "DETOUR", "SHIELD", "DEPLOY", "HOTFIX", "INFECT", "MISS"])
+	assert_eq(RC.SliceType.keys().slice(0, 9), ["SHIM", "OVERFLOW", "DEFRAG", "DETOUR", "SANDBOX", "TROJAN", "HOTFIX", "INFECT", "NULL"])
+
+
+# --- Part 3 (DECISIONS "2026-10-05 — Designer rulings: SANDBOX / TROJAN / NULL and five Heat
+# bands", ruling 1; "Art direction — ART-0 names pass, part 3") ------------------------------------
+# Same shape as PART2. Kept meanings, never matched: shield the resource (block / shield, the
+# shield cap, "+4 shield" hubs, Shield Wall, Shield Cache, "+%d SHIELD"), deploy the verb (drones
+# and Armory assets, DEPLOY_DRONE, the "deploy" drone event and bark), miss in prose ("Miss a
+# payment", "the cameras miss", "make a miss count", missing / mission ...).
+
+const PART3: Array = [
+	["SANDBOX slice program",
+		"(?-i)\\bSHD\\b|\\b(Shield|SHIELD) \\d|\\bSHIELD slices?\\b|\\bShield slices?\\b|SliceData\\.shield_",
+		"SliceType\\.SHIELD\\b|(?<![A-Za-z0-9])shield_[58]\\b|slices/shield_",
+		[]],
+	["TROJAN slice program",
+		"(?-i)\\bDEP\\b|\\bDeploy \\d|\\b(DEPLOY|Deploy) slices?\\b|\\bPerfect Deploy\\b|\\bon a Deploy\\b|^DEPLOY$|SliceData\\.deploy_",
+		"SliceType\\.DEPLOY\\b|(?<![A-Za-z0-9])deploy_1\\b|slices/deploy_|SLICE_DEPLOY|mirror_" + "deploy_base",
+		[]],
+	["NULL slice program",
+		"(?-i)\\bMISS\\b|\\bMiss\\b|\\bnon-Miss\\b|SliceData\\.miss\\b",
+		"SliceType\\.MISS\\b|RANDOM_NON_MISS|ON_MISS_SLICE|SLICE_MISS|MISS_X_|slices/miss\\.tres|&\"miss\"|bark:miss|_bark\\(\"miss\"|\"type\": \"miss\"|(?i:miss)_(resolved|static|slot|wheel|slice)|\\bis_miss\\b|\\bnon_miss\\b|\\b(s|fx|cd|dm|dr|fw|g|h1\\d)_miss\\b|(?<![A-Za-z0-9])_miss\\b|slot_miss\\b",
+		["Miss a payment"]],
+]
+
+
+func _entry_player_hits(entry: Array) -> Array[String]:
+	return _part2_player_hits(entry)
+
+
+func test_part3_no_player_string_keeps_an_old_word() -> void:
+	for entry in PART3:
+		assert_eq(_entry_player_hits(entry), [] as Array[String], "%s: the old words are gone from player text" % entry[0])
+
+
+func test_part3_no_code_keeps_an_old_name() -> void:
+	var own := (get_script() as Script).resource_path
+	for entry in PART3:
+		var re := RegEx.create_from_string(String(entry[2]))
+		var hits: Array[String] = []
+		for root in CODE_ROOTS:
+			for path in _files(root, CODE_EXTS):
+				if path == own:
+					continue
+				if re.search(path) != null:
+					hits.append(path)
+					continue
+				var lines := FileAccess.get_file_as_string(path).split("\n")
+				for i in lines.size():
+					if re.search(lines[i]) != null:
+						hits.append("%s:%d" % [path, i + 1])
+		assert_eq(hits, [] as Array[String], "%s: the old names are gone from the code" % entry[0])
+
+
+## The kept meanings stay: the shield resource, the deploy verb, miss in prose.
+func test_part3_the_kept_meanings_stay() -> void:
+	var all := "\n".join(_csv_strings())
+	for kept in ["+%d SHIELD", "Gain 4 shield.", "Shield Wall", "Deploy armory asset", "Miss a payment"]:
+		assert_string_contains(all, kept, "%s keeps its meaning" % kept)
+	assert_true(RC.EffectType.keys().has("DEPLOY_DRONE"), "deploying a drone is a verb, not the program")
+
+
+## Ruling 1: the programs' ids, files, display names, words and tags follow the new words.
+func test_b3_the_slice_programs_are_sandbox_trojan_null() -> void:
+	var want := {&"sandbox_5": ["Sandbox 5", RC.SliceType.SANDBOX], &"sandbox_8": ["Sandbox 8", RC.SliceType.SANDBOX],
+		&"trojan_1": ["Trojan 1", RC.SliceType.TROJAN], &"null": ["Null", RC.SliceType.NULL]}
+	for id in want:
+		var s := ContentRegistry.get_content(id) as SliceData
+		assert_not_null(s, "%s exists" % id)
+		if s != null:
+			assert_eq(s.display_name, want[id][0])
+			assert_eq(s.slice_type, want[id][1])
+			assert_true(ResourceLoader.exists("res://content/slices/%s.tres" % id), "%s's file follows its id" % id)
+	assert_eq(Palette.SLICE_WORDS[RC.SliceType.SANDBOX], "SANDBOX")
+	assert_eq(Palette.SLICE_WORDS[RC.SliceType.TROJAN], "TROJAN")
+	assert_eq(Palette.SLICE_WORDS[RC.SliceType.NULL], "NULL")
+	assert_eq(Palette.SLICE_NAMES[RC.SliceType.SANDBOX], "SBOX")
+	assert_eq(Palette.SLICE_NAMES[RC.SliceType.TROJAN], "TRJN")
+	assert_eq(Palette.SLICE_NAMES[RC.SliceType.NULL], "NULL")
+
+
+## The compact tags SBOX / TRJN / NULL take no more room at text size 2.0 than the part-2 tags
+## (SHIM, OVFL, DFRG, DTOR, HFIX, INFC) the slot lists and shop tiles already fit.
+func test_b3_the_new_tags_fit_like_the_others_at_text_size_2() -> void:
+	var font := Palette.mono()
+	var px := roundi(UiTheme.BASE_SIZE * 2.0)
+	var widest := 0.0
+	for t in [RC.SliceType.SHIM, RC.SliceType.OVERFLOW, RC.SliceType.DEFRAG, RC.SliceType.DETOUR, RC.SliceType.HOTFIX, RC.SliceType.INFECT]:
+		widest = maxf(widest, font.get_string_size(String(Palette.SLICE_NAMES[t]), HORIZONTAL_ALIGNMENT_LEFT, -1, px).x)
+	for t in [RC.SliceType.SANDBOX, RC.SliceType.TROJAN, RC.SliceType.NULL]:
+		var w := font.get_string_size(String(Palette.SLICE_NAMES[t]), HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
+		assert_true(w <= widest + 0.5, "%s is %.1f px at 2.0, the widest part-2 tag %.1f" % [Palette.SLICE_NAMES[t], w, widest])

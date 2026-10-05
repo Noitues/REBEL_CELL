@@ -7,10 +7,10 @@
 [ext_resource type="Resource" path="res://content/slices/defrag_4.tres" id="s_def"]
 [ext_resource type="Resource" path="res://content/slices/hotfix_4.tres" id="s_heal"]
 [ext_resource type="Resource" path="res://content/slices/shim_4.tres" id="s_atk"]
-[ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
+[ext_resource type="Resource" path="res://content/slices/null.tres" id="s_null"]
 [ext_resource type="Resource" path="res://content/enemies/care_drone.tres" id="drone"]
 
-; Care Swarm (GDD A.3): 25 HP; Defrag 4, Hotfix 4, Defrag 4, Hotfix 4, Shim 4, Miss; 3 satellites
+; Care Swarm (GDD A.3): 25 HP; Defrag 4, Hotfix 4, Defrag 4, Hotfix 4, Shim 4, Null; 3 satellites
 ; (4 HP; Shim 3, Shim 3, Defrag 2) docked on random free slots at combat start.
 
 [sub_resource type="Resource" id="slot_def"]
@@ -25,14 +25,14 @@ slice = ExtResource("s_heal")
 script = ExtResource("3")
 slice = ExtResource("s_atk")
 
-[sub_resource type="Resource" id="slot_miss"]
+[sub_resource type="Resource" id="slot_null"]
 script = ExtResource("3")
-slice = ExtResource("s_miss")
+slice = ExtResource("s_null")
 
 [sub_resource type="Resource" id="wheel"]
 script = ExtResource("2")
 slice_count = 6
-slots = Array[ExtResource("3")]([SubResource("slot_def"), SubResource("slot_heal"), SubResource("slot_def"), SubResource("slot_heal"), SubResource("slot_atk"), SubResource("slot_miss")])
+slots = Array[ExtResource("3")]([SubResource("slot_def"), SubResource("slot_heal"), SubResource("slot_def"), SubResource("slot_heal"), SubResource("slot_atk"), SubResource("slot_null")])
 pointer_ticks = PackedInt32Array(0)
 
 [sub_resource type="Resource" id="spawn"]

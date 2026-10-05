@@ -4,28 +4,28 @@ extends GutTest
 var _atk6: SliceData
 var _def5: SliceData
 var _crit12: SliceData
-var _miss: SliceData
+var _null: SliceData
 
 
 func before_each() -> void:
 	_atk6 = CombatFixture.slice(&"fw_atk6", RC.SliceType.SHIM, 6)
 	_def5 = CombatFixture.slice(&"fw_def5", RC.SliceType.DEFRAG, 5, RC.TargetRule.SELF)
 	_crit12 = CombatFixture.slice(&"fw_crit12", RC.SliceType.OVERFLOW, 12)
-	_miss = CombatFixture.slice(&"fw_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
+	_null = CombatFixture.slice(&"fw_null", RC.SliceType.NULL, 0, RC.TargetRule.SELF)
 
 
 func _fw(id: StringName) -> FirmwareData:
 	return ContentRegistry.get_content(id) as FirmwareData
 
 
-## Wheel Overflow, Shim, Defrag, Shim, Shim, Miss with `firmware_id` socketed in slot 1 (Shim 6).
+## Wheel Overflow, Shim, Defrag, Shim, Shim, Null with `firmware_id` socketed in slot 1 (Shim 6).
 func _session(firmware_id: StringName, slot: int = 1) -> CombatSession:
 	var firmware := []
 	firmware.resize(6)
 	firmware[slot] = _fw(firmware_id)
 	var deck: Array[CardData] = [CombatFixture.card(&"fw_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
-	var cls := CombatFixture.operative_class(&"fw_class", 60, CombatFixture.wheel([_crit12, _atk6, _def5, _atk6, _atk6, _miss], null, [0], 0, null, firmware), deck)
-	var dummy := CombatFixture.enemy(&"fw_dummy", 200, CombatFixture.miss_wheel())
+	var cls := CombatFixture.operative_class(&"fw_class", 60, CombatFixture.wheel([_crit12, _atk6, _def5, _atk6, _atk6, _null], null, [0], 0, null, firmware), deck)
+	var dummy := CombatFixture.enemy(&"fw_dummy", 200, CombatFixture.null_wheel())
 	var s := CombatSession.start(CombatFixture.resolver([cls, dummy]), cls.id, [dummy.id], 2)
 	CombatFixture.land(s.state.player, slot)
 	return s
@@ -80,7 +80,7 @@ func test_leech_restores_1_ram_on_good_or_better() -> void:
 func test_leech_only_fits_attack_slices() -> void:
 	var fw := _fw(&"leech")
 	assert_eq(fw.allowed_slice_types, [RC.SliceType.SHIM])
-	var w := CombatFixture.wheel([_crit12, _atk6, _def5, _atk6, _atk6, _miss], null, [0], 0, null, [null, null, fw])
+	var w := CombatFixture.wheel([_crit12, _atk6, _def5, _atk6, _atk6, _null], null, [0], 0, null, [null, null, fw])
 	assert_eq(w.validate().size(), 1, "Leech on a DEF slot fails validation")
 
 

@@ -1,7 +1,7 @@
 extends RefCounted
 ## Stolen Intent (GDD 6.2): once per combat, swap your resolved slice with the enemy's.
 ## Activation rule (implementation decision 2026-09-24): it fires automatically the first
-## time the operative's first pointer would resolve the Miss slice while the target's
+## time the operative's first pointer would resolve the NULL slice while the target's
 ## first pointer resolves something else. Both wheels then resolve the other's slice
 ## with their own precision tier. The preview shows it because it runs inside RESOLVE.
 
@@ -28,7 +28,7 @@ func handle(context: Dictionary, state, _rng: RandomNumberGenerator) -> Array[Di
 		return []
 	var my_slice: SliceData = mine["slice"]
 	var their_slice: SliceData = theirs["slice"]
-	if my_slice.slice_type != RC.SliceType.MISS or their_slice.slice_type == RC.SliceType.MISS:
+	if my_slice.slice_type != RC.SliceType.NULL or their_slice.slice_type == RC.SliceType.NULL:
 		return []
 	mine["slice"] = their_slice
 	theirs["slice"] = my_slice
@@ -41,5 +41,5 @@ func handle(context: Dictionary, state, _rng: RandomNumberGenerator) -> Array[Di
 	mine["stolen"] = true
 	theirs["stolen"] = true
 	state.per_combat_uses["stolen_intent"] = 1
-	return [{"type": "stolen_intent", "text": "Stolen Intent: you take %s's %s; it gets your Miss." % [target.display_name,
+	return [{"type": "stolen_intent", "text": "Stolen Intent: you take %s's %s; it gets your NULL." % [target.display_name,
 		their_slice.display_name if their_slice.display_name != "" else String(their_slice.id)]}]

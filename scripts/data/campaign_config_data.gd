@@ -39,7 +39,7 @@ extends Resource
 ## Added to card_removal_price after each removal.
 @export var card_removal_increment: int = 25
 @export var slice_overwrite_price: int = 100
-@export var miss_slice_overwrite_price: int = 150
+@export var null_slice_overwrite_price: int = 150
 ## Slice catalogue a Mainframe draws its overwrite offers from (designer ruling 2026-09-24).
 @export var shop_slices: Array[SliceData] = []
 @export var shop_slice_choices: int = 3
@@ -136,10 +136,10 @@ extends Resource
 @export var mirror_threat_integrity: float = 1.5
 @export var mirror_threat_damage_bonus: int = 2
 @export var final_final_ice: int = 20
-## Mirror elites' passive resistance; the output a Deploy slice mirrors as (an Attack);
+## Mirror elites' passive resistance; the output a Trojan slice mirrors as (an Attack);
 ## Mirror threat floors (integrity, damage) and the mirrored decoy's speed.
 @export var mirror_resistance: int = 1
-@export var mirror_deploy_base: int = 6
+@export var mirror_trojan_base: int = 6
 @export var mirror_threat_min_integrity: int = 10
 @export var mirror_threat_min_damage: int = 4
 @export var mirror_decoy_speed: int = 2

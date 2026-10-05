@@ -105,20 +105,20 @@ const FONTS_MSDF_RANGE := 16
 ## A glyph for every slice type (STYLE_GUIDE 4): readable without colour.
 const SLICE_GLYPHS := {
 	RC.SliceType.SHIM: "▲", RC.SliceType.OVERFLOW: "✦", RC.SliceType.DEFRAG: "■", RC.SliceType.DETOUR: "◇",
-	RC.SliceType.SHIELD: "⬢", RC.SliceType.DEPLOY: "⬡", RC.SliceType.HOTFIX: "✚", RC.SliceType.INFECT: "◈",
-	RC.SliceType.MISS: "✕",
+	RC.SliceType.SANDBOX: "⬢", RC.SliceType.TROJAN: "⬡", RC.SliceType.HOTFIX: "✚", RC.SliceType.INFECT: "◈",
+	RC.SliceType.NULL: "✕",
 }
 const SLICE_NAMES := {
 	RC.SliceType.SHIM: "SHIM", RC.SliceType.OVERFLOW: "OVFL", RC.SliceType.DEFRAG: "DFRG", RC.SliceType.DETOUR: "DTOR", # TR
-	RC.SliceType.SHIELD: "SHD", RC.SliceType.DEPLOY: "DEP", RC.SliceType.HOTFIX: "HFIX", RC.SliceType.INFECT: "INFC", # TR
-	RC.SliceType.MISS: "MISS", # TR
+	RC.SliceType.SANDBOX: "SBOX", RC.SliceType.TROJAN: "TRJN", RC.SliceType.HOTFIX: "HFIX", RC.SliceType.INFECT: "INFC", # TR
+	RC.SliceType.NULL: "NULL", # TR
 }
 ## Whole words for the tags over the spinners (H21: new players read DEF / AFL / BLK as
 ## noise).
 const SLICE_WORDS := {
 	RC.SliceType.SHIM: "SHIM", RC.SliceType.OVERFLOW: "OVERFLOW", RC.SliceType.DEFRAG: "DEFRAG", RC.SliceType.DETOUR: "DETOUR", # TR
-	RC.SliceType.SHIELD: "SHIELD", RC.SliceType.DEPLOY: "DEPLOY", RC.SliceType.HOTFIX: "HOTFIX", RC.SliceType.INFECT: "INFECT", # TR
-	RC.SliceType.MISS: "MISS", # TR
+	RC.SliceType.SANDBOX: "SANDBOX", RC.SliceType.TROJAN: "TROJAN", RC.SliceType.HOTFIX: "HOTFIX", RC.SliceType.INFECT: "INFECT", # TR
+	RC.SliceType.NULL: "NULL", # TR
 }
 ## A corporation's own word for a program on its wheels (DECISIONS "Designer rulings: names
 ## for M14", D3 / D4): Meridian's OVERFLOW shows as AIRMAIL, Solace's HOTFIX as GROWTH.
@@ -163,26 +163,26 @@ static func corp_color(corporation_id: StringName) -> Color:
 ## ART_BIBLE §2.3 slice colours: the colour means slice type on any wheel, not its owner.
 const SLICE_HOTFIX := Color("#7BE07B")
 const SLICE_INFECT := Color("#C85AFF")
-const SLICE_DEPLOY := Color("#B08CFF")
-const SLICE_MISS := Color("#6A6A6A")
+const SLICE_TROJAN := Color("#B08CFF")
+const SLICE_NULL := Color("#6A6A6A")
 
 
-## The colour of a slice type (§2.3): attack/crit pink, defend/shield cyan, evade/heal
-## green, afflict violet, deploy lilac, miss grey.
+## The colour of a slice type (§2.3): attack/crit pink, defrag/sandbox cyan, evade/heal
+## green, afflict violet, trojan lilac, null grey.
 static func slice_color(type: int) -> Color:
 	match type:
 		RC.SliceType.SHIM, RC.SliceType.OVERFLOW:
 			return CELL_PINK
-		RC.SliceType.DEFRAG, RC.SliceType.SHIELD:
+		RC.SliceType.DEFRAG, RC.SliceType.SANDBOX:
 			return NET_CYAN
 		RC.SliceType.DETOUR, RC.SliceType.HOTFIX:
 			return SLICE_HOTFIX
 		RC.SliceType.INFECT:
 			return SLICE_INFECT
-		RC.SliceType.DEPLOY:
-			return SLICE_DEPLOY
+		RC.SliceType.TROJAN:
+			return SLICE_TROJAN
 		_:
-			return SLICE_MISS
+			return SLICE_NULL
 
 
 ## ART_BIBLE §2.5 class accents, keyed by the class content id (content/classes/*.tres).

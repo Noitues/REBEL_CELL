@@ -76,9 +76,9 @@ func play_spin(ticks: int) -> void:
 		delay += 0.04 + 0.03 * i
 
 
-## Precision feedback (GDD 10): Perfect latch, Good click, Weak stutter, Miss static.
-func play_precision(tier: int, is_miss_slice: bool) -> void:
-	if is_miss_slice:
+## Precision feedback (GDD 10): Perfect latch, Good click, Weak stutter, Null static.
+func play_precision(tier: int, is_null_slice: bool) -> void:
+	if is_null_slice:
 		play_sfx("static")
 	elif tier == RC.PrecisionTier.PERFECT:
 		play_sfx("latch")

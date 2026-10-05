@@ -2754,7 +2754,7 @@ func _show_shop() -> void:
 			tile.with_price(low)
 		# H23 S8: the real prices (the slot you overwrite sets it), said in words.
 		tile.tooltip_text = UiTip.fold(tr("Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).\n") % [tile.price_words(),
-			(tr(": %d for most slots, %d for a pricier one such as the Miss slot; you pick the slot next") % [low, high]) if high > low else "", s.run.cycles] + Codex.describe(sd)
+			(tr(": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next") % [low, high]) if high > low else "", s.run.cycles] + Codex.describe(sd)
 			+ "\n" + tr(String(DRAG_TIPS["slice"])))
 		tile.with_buy(TextDb.mark("BUY"))
 		FocusTip.attach(tile)
@@ -2987,7 +2987,7 @@ func open_overwrite(stock_index: int) -> void:
 	var s := RunManager.netrun
 	var sd := s.lookup.get_content(StringName(String(s.run.shop["slices"][stock_index]))) as SliceData
 	var name_text := "%s %d" % [tr(String(Palette.SLICE_NAMES.get(sd.slice_type, "?"))), sd.base_output] if sd != null else "?"
-	# The price depends on the slot (the Miss slot costs more): the view shows the picked
+	# The price depends on the slot (the NULL slot costs more): the view shows the picked
 	# slot's own price and turns UPGRADE off when it is out of reach (H20).
 	var view := SpinnerView.new(s.run.operative.slot_slice_ids, s.run.operative.slot_firmware_ids, s.lookup, tr("UPGRADE A SLICE // INSTALL %s") % name_text,
 		TextDb.mark("UPGRADE"), RunManager.config().shop_slices)

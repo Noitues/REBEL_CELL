@@ -107,7 +107,7 @@ static func slot_wheel_of(state: CombatState, card: CardData, aimed: CombatantSt
 ## Whether the card has a random effect (Respin, random slice picks): previews show odds.
 static func is_random(card: CardData) -> bool:
 	for e in card.effects:
-		if e != null and (e.type == RC.EffectType.RESPIN or e.slice_pick == RC.SlicePick.RANDOM_NON_MISS):
+		if e != null and (e.type == RC.EffectType.RESPIN or e.slice_pick == RC.SlicePick.RANDOM_NON_NULL):
 			return true
 	return false
 
