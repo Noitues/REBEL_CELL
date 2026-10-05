@@ -241,19 +241,22 @@ milestone (ruling 2), or M14 has failed.
 
 **Shape (designer, 2026-10-05, "Designer ruling: M14 regrouped"):** ART-0, then four groups, then the
 final sweep. Inside a group its batches are built **in parallel** (one agent area each, at most 4–5
-agents); the group gets **one** audit round (vertical / horizontal / naive) and its fix rounds until
+agents); ~~the group gets **one** audit round (vertical / horizontal / naive) and its fix rounds until
 CLEAN, then **one** designer review. The next group's brief may be written while the previous group is
 in audit. Check cadence ("Designer ruling: check cadence for M14"): fast checks per hand-back and merge;
-the full suite ×3 once per group, in isolation, before its audit.
+the full suite ×3 once per group, in isolation, before its audit.~~ **Superseded** (DECISIONS 2026-10-05,
+"one full run, one audit at the end"): each group ends with **one** full-suite run in isolation (two more
+runs only after a failure, to tell flaky from real) and the designer review; there are **no per-group
+audits**: the single vertical / horizontal / naive audit loop runs once, after ART-12, over all of M14.
 - **Group 1 — Foundations:** ART-1 (everything else builds on its kit and the render spike).
 - **Group 2 — Combat:** ART-2 wheel stack, ART-3 cards and FX, ART-4 HUD.
 - **Group 3 — City:** ART-5 unified city, ART-6 raid, ART-7 netrun, ART-8 HQ runs (ART-5's city model
   and render tech land first inside the group; 6–8 build on it).
 - **Group 4 — Screens:** ART-9 shop / rewards / events / dialogue / portraits, ART-10 menus / title /
   settings, ART-11 campaign lost and dossier.
-- **Final:** ART-12 sweep, its audit to CLEAN, "M14 complete".
+- **Final:** ART-12 sweep, then the one M14 audit loop to CLEAN, "M14 complete".
 
-Every batch also meets the common acceptance (plan §4.1): 3 checks green (full suite ×3 once per
+Every batch also meets the common acceptance (plan §4.1): 3 checks green (one full-suite run per
 group, never only the fast tier); new tests in `tests/test_manifest.json`; layout tests at 1.0 / 1.6 / 2.0; reduce
 effects = end state; headless never waits; motion values in `ui_motion.tres` with a lab demo; no
 colour or size literals (tokens); the runtime lint clean; a GAP_ANALYSIS ART-n row; the perf
@@ -269,7 +272,7 @@ budget met in a windowed profile (plan §5.2). Boxes are ticked only as the orch
 - [ ] Audit round ART-R0 to CLEAN.
 
 ### Group 1 — Foundations
-- [ ] Group 1 full suite ×3 in isolation; audit ART-R1 to CLEAN; designer review.
+- [ ] Group 1 full suite (one run) in isolation; designer review.
 
 **ART-1 — Foundations** (palette v2, faces incl. Courier Prime, theme, the material kit, glyph
 pipeline, the render spike)
@@ -282,7 +285,7 @@ pipeline, the render spike)
       it inside the plan §5.2 budget (the budget is a gate, not a reason to change the look).
 
 ### Group 2 — Combat
-- [ ] Group 2 full suite ×3 in isolation; audit ART-R2 (one round for ART-2/3/4) to CLEAN; designer review.
+- [ ] Group 2 full suite (one run) in isolation; designer review.
 
 **ART-2 — Combat wheel stack**
 - [ ] The worst-case clutter fixture renders legibly at 1.0 and 1.6.
@@ -300,7 +303,7 @@ pipeline, the render spike)
 - [ ] Fits at 2.0.
 
 ### Group 3 — City
-- [ ] Group 3 full suite ×3 in isolation; audit ART-R3 (one round for ART-5/6/7/8) to CLEAN; designer review.
+- [ ] Group 3 full suite (one run) in isolation; designer review.
 
 **ART-5 — Unified city model and motion**
 - [ ] Each corporation's Grid capture vs the reference.
@@ -325,7 +328,7 @@ pipeline, the render spike)
       model (D17).
 
 ### Group 4 — Screens
-- [ ] Group 4 full suite ×3 in isolation; audit ART-R4 (one round for ART-9/10/11) to CLEAN; designer review.
+- [ ] Group 4 full suite (one run) in isolation; designer review.
 
 **ART-9 — Shop, rewards, events, dialogue, portraits**
 - [ ] The shop and event sweeps (affordability, outcome rows == deltas) still hold.
@@ -350,7 +353,8 @@ its items)
       contrast × greyscale × colour-blind).
 - [ ] A perf profile on the target PC and the Deck tier.
 - [ ] Skins (the M12 box: procedural palette skins on the v2 tokens).
-- [ ] A last vertical / horizontal / naive audit to CLEAN; "M14 complete" logged in DECISIONS.
+- [ ] **The M14 audit** (the only one): vertical / horizontal / naive over every ART-0…12 change, fix
+      rounds until CLEAN (nothing deferred, P3s included); "M14 complete" logged in DECISIONS.
 
 **After ART-12** (rulings 1, 8, 9; nothing deferred)
 - [ ] **R7 re-evaluation:** every ANIM-R7 finding (`docs/handoff/anim_r7/`) re-checked against the

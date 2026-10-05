@@ -247,6 +247,8 @@ only in `docs/art_reference/` (placeholder library), never in a shipped screen.
 > (ART-5–8), Group 4 Screens (ART-9–11) and the final ART-12. A group's batches are built in parallel,
 > with one audit loop, one full suite ×3 in isolation and one designer review per group (not per
 > batch). See MILESTONES M14.
+> **Then (same day, "Designer ruling: one full run, one audit at the end"):** one full-suite run per group
+> (not ×3), and no per-group audits: one audit loop after ART-12 for all of M14.
 
 ### 4.1 Shape (the same loop as H20–H24 and ANIM-R1…R7)
 
