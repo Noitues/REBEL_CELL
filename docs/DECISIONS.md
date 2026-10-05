@@ -23,7 +23,10 @@ superseded instead.
 - Story paths: 5–6 per corporation, hidden and random; beats unlock in Exploit order.
 - REBEL_CELL (the handler AI) is the final unlock corporation at ICE 10 on all others.
 - ICE difficulty: 20 cumulative levels, ICE 5 is the average-player tuning target.
-- Visual baseline: three worlds (cyberdeck / wireframe / zine), Cell colour hot pink.
+- ~~Visual baseline: three worlds (cyberdeck / wireframe / zine), Cell colour hot pink.~~
+  **Superseded** by "2026-10-05 — Designer rulings: art reintegration, pause point 0", ruling 4:
+  the baseline is ART_BIBLE v2 (cel-shaded low-poly city with ink lines, CRT screens with white
+  glyphs, vinyl stickers, grease pencil, light spill; GDD 9.1). Cell colour stays hot pink.
 - Full voice acting; fully solvable combat preview; rewind with checkpoints at random
   events.
 
