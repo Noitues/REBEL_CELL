@@ -1184,3 +1184,36 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - **Parasite ring:** can latch onto either wheel. It's mainly a boss mechanic inflicted on the player.
 - **Hangar:** decide how damage works with multiple drones.
 - **Status stacking:** show the stack count.
+
+## Decisions from round 40 (2026-10-04)
+
+### Locked
+- **Exploit map:** badges, with the tag shown on hover.
+- **Operatives:** portraits v2.
+- **Hub cores:**
+  - Breaker (spiderweb cracks) and Phantom;
+  - the hub-breach lockdown waterline;
+  - the player defeat drain.
+- **Inner ring:**
+  - the sub-needle;
+  - the two-drone hangar;
+  - status stacks as a ×N tab.
+- **Satellites:**
+  - the blended dock (for now);
+  - the replace animation (green bits).
+- **Parasite ring:** option A, beyond the needle tip.
+- **Raid interactions:** the re-run in the unified city.
+- **Cars by zoom:** the three LOD tiers.
+
+### Standing rule
+- **No UI may ever cover grease pencil.**
+
+### Round 41 in progress
+- **Exploit map:** chip moved off the pencil.
+- **Wheel stack:**
+  - multiple drones on one slice;
+  - the parasite pop-up behaviour: it stays attached while spinning or when not under the needle, and pops up when the needle settles on it;
+  - parasite and drones together;
+  - a combined layer stack covering every per-slice feature, plus priority rules.
+- **Netrun transit v3:** network, cable and power-line runs (straight segments and turns, not a hiking path), with the walked path solid, and a lighter city.
+- **Unified city:** lightened.
