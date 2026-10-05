@@ -1224,3 +1224,29 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 
 ### In progress
 - **Worst-case combat clutter test:** double drones, a parasite and a status on every slice of both wheels, with the inner ring populated. Compared against a typical case, with mitigations.
+
+## Decisions from the clutter test and city v2 (2026-10-04)
+
+### Locked
+- **Parasite slices.**
+
+### Wheel stack (clutter v2 in progress)
+- **Drones:**
+  - smaller and shorter;
+  - no stem when a parasite is present, a small stem otherwise.
+- **Drone collapse:** drones collapse into a thin slice layer showing only their current effect; on hover they bloom to full size with their needle state.
+- **Inner-ring textures:** must render, including the extension into the outer slices.
+- **Re-runs:** the worst case and the typical case again, plus a spin GIF if the worst case fits.
+
+### Unified city
+- **City Grid brightness:** revert the global brightening; the grid returns to its earlier brightness.
+- **Raid and netrun views:** keep their current state, but make the translucent buildings less see-through and less grey.
+
+### New work started (round 42)
+- Site markers: every kind, tier and state.
+- The Cell's HQ room, plus its DISPATCH variant.
+- Unique HQ mechanics for each corp, with de-power and re-form animations.
+
+### Next, after these land
+- Rewrite the ART_BIBLE from this review.
+- Write the Godot implementation plan.
