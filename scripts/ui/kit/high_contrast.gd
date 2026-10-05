@@ -17,22 +17,18 @@ extends RefCounted
 ## outside the theme: they read `Settings.high_contrast` themselves (each ART-n batch
 ## restyles its views with it).
 ##
-## ART-0 C: main has no semantic tokens yet (area E ports them), so the three colours are
-## main's own: PAPER for text, the acid focus ring, and PAPER dimmed for disabled words.
-## Once E's TEXT_HI / TEXT_MID / FOCUS land, these constants point at them.
+## ART-0 C: the three colours are area E's semantic tokens (TEXT_HI, TEXT_MID, FOCUS).
 
 ## The panel colour behind high-contrast text (§12: "TEXT_HI on #000").
 const BG := Color.BLACK
-## High-contrast text (M13: TEXT_HI).
-const TEXT := Palette.PAPER
-## High-contrast focus (main's acid focus ring; M13: FOCUS).
-const FOCUS := Palette.CELL_ACID
-## How far disabled words are dimmed from TEXT (M13: TEXT_MID): still above 4.5:1 on BG.
-const DISABLED_DIM := 0.45
+## High-contrast text.
+const TEXT := Palette.TEXT_HI
+## High-contrast focus.
+const FOCUS := Palette.FOCUS
+## High-contrast disabled words (far above §3.7's 4.5:1 on BG).
+const DISABLED_TEXT := Palette.TEXT_MID
 ## §12: the minimum contrast of theme text in high-contrast mode.
 const HC_MIN_CONTRAST := 7.0
-## §3.7: the minimum contrast of a disabled label.
-const HC_MIN_DISABLED_CONTRAST := 4.5
 ## Edge width of buttons (every state) in high-contrast mode, px.
 const HC_BUTTON_BORDER := 3
 ## Edge width of the focus box in high-contrast mode, px (§6: visible from 3 m).
@@ -52,11 +48,6 @@ const FOCUS_COLORS: Array[StringName] = [&"font_focus_color"]
 const DISABLED_COLORS: Array[StringName] = [&"font_disabled_color", &"font_placeholder_color", &"font_readonly_color"]
 ## Font colour names that are outlines or shadows (made solid black, not text colour).
 const DARK_COLORS: Array[StringName] = [&"font_outline_color", &"font_shadow_color"]
-
-
-## The colour disabled words take in high contrast.
-static func disabled_text() -> Color:
-	return TEXT.darkened(DISABLED_DIM)
 
 
 ## Makes `theme` high contrast in place (see the class notes). Safe to call twice.
@@ -87,13 +78,6 @@ static func text_color(color_name: StringName, current: Color) -> Color:
 ## FILL_BOXES (tests measure text against this).
 static func is_text_box(box_name: StringName) -> bool:
 	return not FILL_BOXES.has(box_name)
-
-
-## The WCAG 2 contrast ratio of two opaque colours (1..21).
-static func contrast(a: Color, b: Color) -> float:
-	var la := a.get_luminance()
-	var lb := b.get_luminance()
-	return (maxf(la, lb) + 0.05) / (minf(la, lb) + 0.05)
 
 
 static func _is_button(theme: Theme, type: StringName) -> bool:
@@ -151,5 +135,5 @@ static func _color(color_name: StringName, current: Color) -> Color:
 	if FOCUS_COLORS.has(color_name):
 		return FOCUS
 	if DISABLED_COLORS.has(color_name):
-		return disabled_text()
+		return DISABLED_TEXT
 	return TEXT

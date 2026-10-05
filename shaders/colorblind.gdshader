@@ -14,8 +14,11 @@
 //   err = rgb - sim;      out = rgb + SHIFT[mode] * err
 // The same maths lives in scripts/ui/fx/colorblind_layer.gd (`correct`) for the tests.
 // mode 1 = deutan, 2 = protan, 3 = tritan; 0 passes the frame through.
-// No animation, so reduce effects changes nothing here.
+// No animation, so reduce effects changes nothing here (rc_common is included for the
+// shared conventions only).
 shader_type canvas_item;
+
+#include "res://shaders/lib/rc_common.gdshaderinc"
 
 uniform sampler2D screen_tex : hint_screen_texture, filter_nearest;
 uniform int mode = 0;

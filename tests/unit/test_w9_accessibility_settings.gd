@@ -173,6 +173,7 @@ func test_correction_layer_sits_above_the_game_and_below_the_review_filter() -> 
 	var layer: ColorblindLayer = autofree(ColorblindLayer.new(&"protan"))
 	assert_eq(layer.rect.mouse_filter, Control.MOUSE_FILTER_IGNORE, "never takes a click")
 	assert_true(ColorblindLayer.SHADER.code.contains("hint_screen_texture"))
+	assert_true(ColorblindLayer.SHADER.code.contains("rc_common.gdshaderinc"), "the shader conventions")
 
 
 func _separation(a: Color, b: Color, mode: StringName) -> float:
@@ -182,12 +183,11 @@ func _separation(a: Color, b: Color, mode: StringName) -> float:
 
 
 func test_the_correction_separates_hues_the_deficiency_merges() -> void:
-	# Red / green pairs for deutan and protan (Solace green vs a harm red, a gain green vs
-	# the harm red: M13's HARM #FF4433 and GAIN #7BE07B, which area E's tokens bring to main),
-	# a blue / green pair for tritan: after the correction, the simulated viewer sees them
+	# Red / green pairs for deutan and protan (Solace green vs harm red, gain vs harm), a
+	# blue / green pair for tritan: after the correction, the simulated viewer sees them
 	# further apart than before.
-	var harm := Color("#FF4433")
-	var gain := Color("#7BE07B")
+	var harm := Palette.HARM
+	var gain := Palette.GAIN
 	var pairs := {&"deutan": [Palette.CORP_SOLACE, harm], &"protan": [gain, harm], &"tritan": [Palette.NET_CYAN, gain]}
 	for mode in pairs:
 		var a: Color = pairs[mode][0]
@@ -213,8 +213,8 @@ func test_high_contrast_theme_reaches_seven_to_one() -> void:
 		assert_eq(sb.shadow_size, 0, "%s has no soft halo" % panel)
 		for label in [&"Label", &"HeaderLabel", &"HudLabel"]:
 			var c := t.get_color(&"font_color", label)
-			assert_gte(HighContrast.contrast(c, sb.bg_color), HighContrast.HC_MIN_CONTRAST, "%s on %s" % [label, panel])
-	assert_gte(HighContrast.contrast(t.get_color(&"default_color", &"RichTextLabel"), HighContrast.BG), HighContrast.HC_MIN_CONTRAST)
+			assert_gte(Palette.contrast(c, sb.bg_color), HighContrast.HC_MIN_CONTRAST, "%s on %s" % [label, panel])
+	assert_gte(Palette.contrast(t.get_color(&"default_color", &"RichTextLabel"), HighContrast.BG), HighContrast.HC_MIN_CONTRAST)
 	var states := {&"normal": &"font_color", &"hover": &"font_hover_color", &"pressed": &"font_pressed_color",
 		&"focus": &"font_focus_color", &"disabled": &"font_disabled_color"}
 	for kind in [&"Button", &"OptionButton", &"HotButton", &"NoteButton", &"MenuItem"]:
@@ -228,8 +228,7 @@ func test_high_contrast_theme_reaches_seven_to_one() -> void:
 				if box != null and box.draw_center and box.bg_color.a > 0.0:
 					bg = box.bg_color
 					assert_eq(bg.a, 1.0, "%s %s is opaque" % [kind, state])
-			var floor_ratio := HighContrast.HC_MIN_DISABLED_CONTRAST if state == &"disabled" else HighContrast.HC_MIN_CONTRAST
-			assert_gte(HighContrast.contrast(fc, bg), floor_ratio, "%s %s text" % [kind, state])
+			assert_gte(Palette.contrast(fc, bg), HighContrast.HC_MIN_CONTRAST, "%s %s text" % [kind, state])
 
 
 func test_high_contrast_gives_buttons_and_focus_a_solid_thick_edge() -> void:
