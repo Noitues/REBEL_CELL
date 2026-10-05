@@ -5,8 +5,8 @@ Stationed on %s."
     none today,    none today
 "  %s (%s) Rank %d, HP %d/%d, deck %d, daemons %d","  %s (%s) Rank %d, HP %d/%d, deck %d, daemons %d"
  %s Heat, %s Heat
- (BREACHED), (BREACHED)
  (INNER RING), (INNER RING)
+ (LOCKDOWN), (LOCKDOWN)
  (leaves %s), (leaves %s)
  (local: REBEL_CELL is built from your profile), (local: REBEL_CELL is built from your profile)
  (run in progress), (run in progress)
