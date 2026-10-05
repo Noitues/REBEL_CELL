@@ -389,7 +389,7 @@ func _collect_shaders(dir: String, out: PackedStringArray) -> void:
 func test_the_shader_scan_reaches_every_folder() -> void:
 	var files := _shaders()
 	for path in [SHADER_DIR.path_join("kit/crt_terminal.gdshader"), "res://assets/glyphs/glyph_sdf.gdshader",
-			"res://tools/visual_qa/cvd_filter.gdshader", "res://tools/spike/city/shaders/city_post.gdshader"]:
+			"res://tools/visual_qa/cvd_filter.gdshader", "res://shaders/city/city_post.gdshader"]:
 		assert_true(files.has(path), "the scan finds %s" % path)
 	for path in files:
 		assert_false(path.begins_with("res://addons/"), "addons are not ours: %s" % path)

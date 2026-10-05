@@ -62,6 +62,12 @@ Fixes every finding of `docs/handoff/m14_audit/ART-0_horizontal.md` (3 P2, 12 P3
   (subfolders of `shaders/`, `assets/`, `tools/`): game shaders include rc_common; any shader with
   TIME freezes it through `rc_time` / `rc_live`. Fixed on the way: the two animated city-spike
   shaders (`tools/spike/city/shaders/city_car`, `city_post`) and `glyph_sdf` now include rc_common.
+  After merging main: the ten static city / landmark shaders main added (`shaders/city/city_building`,
+  `city_glow(_xray)`, `city_ground`, `city_network(_xray)`, `city_pool(_xray)`,
+  `assets/city/landmarks/landmark_beam`, `landmark_toon`) include it too, and rc_common is
+  include-guarded (`RC_COMMON_INCLUDED`) since `city_glow` / `city_pool`'s own includes pull it in;
+  all compiled cleanly in a windowed renderer check. `glyph_batch.gd`'s `Color.WHITE` reads
+  `Palette.NO_TINT`; the lint baseline lowered again to main's counts.
   Test `test_the_shader_scan_reaches_every_folder`.
 - **B1 (P2) the Heat glitch is built.** `HeatGlitchLayer` (`scripts/ui/fx/`) + `shaders/heat_glitch.gdshader`,
   in the combat scene between the backdrop (city + Heat lights) and the UI root, so wheels, FX and HUD

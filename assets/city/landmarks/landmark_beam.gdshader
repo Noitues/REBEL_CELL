@@ -3,6 +3,7 @@
 // They stay out of the depth buffer, so the ink pass never draws them (the concept kept them out of its ink passes).
 shader_type spatial;
 render_mode blend_mix, unshaded, cull_disabled, depth_draw_never, shadows_disabled;
+#include "res://shaders/lib/rc_common.gdshaderinc"
 
 uniform float beam_alpha = 0.22;
 uniform float beam_gain = 1.0;

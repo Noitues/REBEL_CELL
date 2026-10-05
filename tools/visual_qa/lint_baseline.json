@@ -9,7 +9,6 @@
 	],
 	"files": {
 		"res://scripts/ui/combat_scene.gd": {
-			"color": 2,
 			"font_const": 1
 		},
 		"res://scripts/ui/hq_scene.gd": {
@@ -61,7 +60,7 @@
 			"draw_size": 2
 		},
 		"res://scripts/ui/kit/hud_stats.gd": {
-			"color": 2
+			"color": 1
 		},
 		"res://scripts/ui/kit/icon_mark.gd": {
 			"color": 5
@@ -98,10 +97,7 @@
 			"font_override": 1
 		},
 		"res://scripts/ui/kit/ram_bar.gd": {
-			"color": 2
-		},
-		"res://scripts/ui/kit/slice_icon.gd": {
-			"color": 5
+			"color": 1
 		},
 		"res://scripts/ui/kit/spinner_mini.gd": {
 			"color": 1
@@ -140,8 +136,8 @@
 			"color": 2
 		},
 		"res://scripts/ui/wheel_view.gd": {
-			"color": 5,
-			"draw_size": 3,
+			"color": 3,
+			"draw_size": 2,
 			"font_const": 2
 		}
 	}
