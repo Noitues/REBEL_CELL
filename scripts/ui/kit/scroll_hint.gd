@@ -27,6 +27,9 @@ var snap_rows: bool = false
 ## scrolls so the view never jumps).
 var snap_reserve: float = 0.0
 const ROW_SHARE := 1.0 / 3.0
+## ART-0 F (ported from art-pass WF fc477fc): a view taller than this (px at text scale 1.0)
+## is a pre-layout measure, not a page (FitScroll.MAX_VIEW_PX).
+const DEGENERATE_PX := 4096.0
 
 
 func _init(p_scroll: ScrollContainer) -> void:
@@ -114,6 +117,11 @@ var _snap_total: int = 0
 
 func _refresh() -> void:
 	size = get_combined_minimum_size()
+	# ART-0 F (ported from art-pass WF): a view not laid out yet (a pre-layout height past any
+	# real page) says nothing about what is below; its resize calls back in here once it is.
+	if degenerate_view():
+		visible = false
+		return
 	if room != null and is_instance_valid(room):
 		# ANIM-R3 B13: the snap is worked out at most once a frame and SNAP_PASSES times per
 		# content (a new page's content, or the text size), never while the room is still
@@ -161,6 +169,16 @@ func _refresh() -> void:
 		global_position = Vector2(r.get_center().x - size.x * 0.5, r.end.y - size.y - MARGIN.y)
 
 
+## ART-0 F: the view's own least height is now `h` (px): a FitScroll sizing its view to its
+## content says so here, so the snap's room comes out of that height (ANIM-R6 C8) instead of
+## the hint holding the view at the height it had when the tag came.
+func set_view_min(h: float) -> void:
+	_base_min = h
+	var least := maxf(0.0, h - (snap_reserve if room != null and is_instance_valid(room) and room.custom_minimum_size.y > 0.0 else 0.0))
+	if not is_equal_approx(scroll.custom_minimum_size.y, least):
+		scroll.custom_minimum_size.y = least
+
+
 ## ANIM-R3 B13: how far above the view's foot the first row it cuts starts (0 when no row
 ## is cut): the rows are the children of box containers inside the content, each shorter
 ## than ROW_SHARE of the view; the smallest one crossing the foot decides.
@@ -205,3 +223,12 @@ func reset_snap() -> void:
 func scroll_on() -> void:
 	var bar := scroll.get_v_scroll_bar()
 	scroll.scroll_vertical = int(minf(bar.max_value - bar.page, bar.value + bar.page * PAGE_STEP))
+
+
+## ART-0 F (ported from art-pass WF): true while the view has no real layout: a height or
+## scroll range that isn't finite or is past DEGENERATE_PX at the text scale (a wrapped label
+## at width 0 measures thousands of px tall for a frame).
+func degenerate_view() -> bool:
+	var bar := scroll.get_v_scroll_bar()
+	var limit := DEGENERATE_PX * Settings.text_scale
+	return not is_finite(scroll.size.y) or scroll.size.y > limit or not is_finite(bar.max_value)

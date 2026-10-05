@@ -67,6 +67,22 @@ const PANEL_PAD_V := 12
 const GUTTER := 16
 ## Every spacing token, smallest first.
 const SPACING: Array[int] = [SP_XS, SP_S, SP_M, SP_L, SP_XL, SP_XXL]
+# --- Component states (ART_BIBLE v1 §6, kept by v2; ART-0 F, ported from art-pass W2) -------
+## §6 Hover: lift (px) and glow share; Pressed: drop (px) and glow share (KitState reads
+## them for the kit components that draw themselves; the theme's button boxes lift and drop
+## by the same px).
+const HOVER_LIFT := 2
+const PRESS_DROP := 1
+const GLOW_HOVER := 1.2
+const GLOW_PRESSED := 0.8
+## A drawn glow at rest (px, alpha; KitState.draw_box).
+const GLOW_PX := 6
+const GLOW_ALPHA := 0.3
+## Share of the fill that the glow lightens on hover / darkens on press (§6: glow +/-20%).
+const FILL_SHIFT := 0.1
+## The theme types whose "focus" box is the focus brackets (StyleBoxBrackets).
+const BRACKET_FOCUS_TYPES: Array[StringName] = [&"Button", &"OptionButton", &"CheckButton", &"CheckBox",
+	&"NoteButton", &"MenuItem", &"LineEdit", &"LogText"]
 ## The theme type variation for body text: set `theme_type_variation = UiTheme.BODY_TEXT` on
 ## a Label or a RichTextLabel.
 const BODY_TEXT := &"BodyText"
@@ -245,19 +261,32 @@ static func box(bg: Color, edge: Color, border: int = 1, margin_h: float = 10, m
 	return s
 
 
+## A StyleBoxFlat lifted up by `dy` px (negative) or pressed down by `dy` (positive): the box
+## moves, the label moves with it (content margins shift), the minimum size never changes
+## (§6 Hover / Pressed; ART-0 F, ported from art-pass W2).
+static func shifted(sb: StyleBoxFlat, dy: float) -> StyleBoxFlat:
+	sb.expand_margin_top -= dy
+	sb.expand_margin_bottom += dy
+	sb.content_margin_top += dy
+	sb.content_margin_bottom -= dy
+	return sb
+
+
+## The §6 / v2 §2.10 focus box: FOCUS 4-corner brackets, 3 px at 7 px outside the control
+## (a new box per type, so high contrast can thicken each).
+static func focus_box() -> StyleBoxBrackets:
+	return StyleBoxBrackets.new()
+
+
 static func _buttons(t: Theme) -> void:
 	var normal := box(Palette.TERMINAL_BG, Palette.TERMINAL_EDGE)
-	var hover := box(Palette.TERMINAL_BG_HOT, Palette.CELL_PINK)
+	var hover := shifted(box(Palette.TERMINAL_BG_HOT, Palette.CELL_PINK), -HOVER_LIFT)
 	hover.shadow_color = Color(Palette.CELL_PINK, 0.35)
 	hover.shadow_size = 6
-	var pressed := box(Color(Palette.CELL_PINK, 0.55), Palette.CELL_PINK)
+	var pressed := shifted(box(Color(Palette.CELL_PINK, 0.55), Palette.CELL_PINK), PRESS_DROP)
 	var disabled := box(Color(Palette.TERMINAL_BG, 0.55), Color(Palette.TERMINAL_EDGE, 0.25))
-	# Focus draws over the normal box: an acid ring outside the edge, readable on pads.
-	var focus := box(Color(0, 0, 0, 0), Palette.CELL_ACID, 2)
-	focus.draw_center = false
-	focus.set_expand_margin_all(2)
-	focus.shadow_color = Color(Palette.CELL_ACID, 0.25)
-	focus.shadow_size = 5
+	# Focus draws over the normal box: lime corner brackets outside the edge (v2 §2.10).
+	var focus := focus_box()
 	for kind in ["Button", "OptionButton", "CheckButton", "CheckBox"]:
 		t.set_stylebox("normal", kind, normal)
 		t.set_stylebox("hover", kind, hover)
@@ -280,12 +309,12 @@ static func _buttons(t: Theme) -> void:
 	var hot_n := box(Palette.CELL_PINK, Palette.PAPER, 2, 18, 8)
 	hot_n.shadow_color = Color(Palette.CELL_PINK, 0.35)
 	hot_n.shadow_size = 8
-	var hot_h := box(Palette.CELL_PINK.lightened(0.15), Palette.CELL_ACID, 2, 18, 8)
+	var hot_h := shifted(box(Palette.CELL_PINK.lightened(0.15), Palette.CELL_ACID, 2, 18, 8), -HOVER_LIFT)
 	hot_h.shadow_color = Color(Palette.CELL_PINK, 0.6)
 	hot_h.shadow_size = 12
 	t.set_stylebox("normal", hv, hot_n)
 	t.set_stylebox("hover", hv, hot_h)
-	t.set_stylebox("pressed", hv, box(Palette.CELL_PINK.darkened(0.2), Palette.PAPER, 2, 18, 8))
+	t.set_stylebox("pressed", hv, shifted(box(Palette.CELL_PINK.darkened(0.2), Palette.PAPER, 2, 18, 8), PRESS_DROP))
 	t.set_stylebox("disabled", hv, box(Color(Palette.CELL_PINK, 0.18), Color(Palette.CELL_PINK, 0.4), 1, 18, 8))
 	t.set_color("font_disabled_color", hv, Color(Palette.CELL_PINK, 0.5))
 	t.set_color("font_color", hv, Palette.INK)
@@ -301,13 +330,15 @@ static func _buttons(t: Theme) -> void:
 	note_n.shadow_color = Palette.SHADOW
 	note_n.shadow_size = 6
 	note_n.shadow_offset = Vector2(3, 4)
-	var note_h := box(Palette.NOTE_PINK, Palette.CELL_PINK, 2, 16, 12)
+	var note_h := shifted(box(Palette.NOTE_PINK, Palette.CELL_PINK, 2, 16, 12), -HOVER_LIFT)
 	note_h.shadow_color = Color(Palette.CELL_PINK, 0.4)
 	note_h.shadow_size = 10
+	var note_p := shifted(note_h.duplicate() as StyleBoxFlat, HOVER_LIFT + PRESS_DROP)
 	var note_d := box(Color(Palette.NOTE_PAPER, 0.45), Color(Palette.INK, 0.3), 1, 16, 12)
 	t.set_stylebox("normal", nv, note_n)
 	t.set_stylebox("hover", nv, note_h)
-	t.set_stylebox("pressed", nv, note_h)
+	t.set_stylebox("pressed", nv, note_p)
+	t.set_stylebox("focus", nv, focus_box())
 	t.set_stylebox("disabled", nv, note_d)
 	for key in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color", "font_hover_pressed_color"]:
 		t.set_color(key, nv, Palette.INK)
@@ -327,18 +358,16 @@ static func _menu_item(t: Theme, size: int) -> void:
 	var v := "MenuItem"
 	t.set_type_variation(v, "Button")
 	var clear := box(Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0, 12, 5)
-	var hot := box(Color(Palette.CELL_PINK, 0.16), Palette.CELL_PINK, 0, 12, 5)
+	var hot := shifted(box(Color(Palette.CELL_PINK, 0.16), Palette.CELL_PINK, 0, 12, 5), -HOVER_LIFT)
 	hot.border_width_left = 3
-	var pressed := box(Color(Palette.CELL_PINK, 0.4), Palette.CELL_PINK, 0, 12, 5)
+	var pressed := shifted(box(Color(Palette.CELL_PINK, 0.4), Palette.CELL_PINK, 0, 12, 5), PRESS_DROP)
 	pressed.border_width_left = 3
 	t.set_stylebox("normal", v, clear)
 	t.set_stylebox("hover", v, hot)
 	t.set_stylebox("pressed", v, pressed)
 	t.set_stylebox("hover_pressed", v, pressed)
 	t.set_stylebox("disabled", v, clear)
-	var focus := box(Color(Palette.CELL_ACID, 0.08), Palette.CELL_ACID, 0, 12, 5)
-	focus.border_width_left = 3
-	t.set_stylebox("focus", v, focus)
+	t.set_stylebox("focus", v, focus_box())
 	t.set_constant("h_separation", v, 8)
 	t.set_icon("icon", v, chevron())
 	t.set_font_size("font_size", v, size + 2)
@@ -347,9 +376,8 @@ static func _menu_item(t: Theme, size: int) -> void:
 
 static func _fields(t: Theme) -> void:
 	var field := box(Color(0.0, 0.02, 0.06, 0.95), Color(Palette.TERMINAL_EDGE, 0.5), 1, 8, 3)
-	var field_focus := box(Color(0.0, 0.02, 0.06, 0.95), Palette.CELL_ACID, 2, 8, 3)
 	t.set_stylebox("normal", "LineEdit", field)
-	t.set_stylebox("focus", "LineEdit", field_focus)
+	t.set_stylebox("focus", "LineEdit", focus_box())
 	t.set_stylebox("read_only", "LineEdit", field)
 	t.set_color("font_color", "LineEdit", Palette.PAPER)
 	t.set_color("font_placeholder_color", "LineEdit", Color(Palette.TERMINAL_TEXT, 0.35))
@@ -394,7 +422,7 @@ static func _panels(t: Theme) -> void:
 	log_box.border_width_left = 3
 	log_box.border_color = Color(Palette.NET_CYAN, 0.6)
 	t.set_stylebox("normal", lg, log_box)
-	t.set_stylebox("focus", lg, box(Color(0, 0, 0, 0), Palette.CELL_ACID, 2))
+	t.set_stylebox("focus", lg, focus_box())
 	t.set_color("default_color", lg, Color(Palette.TERMINAL_TEXT, 0.9))
 	# Tabs (options, codex): terminal tabs with a pink active underline.
 	var tab := box(Palette.TERMINAL_BG, Color(Palette.TERMINAL_EDGE, 0.4), 1, 10, 4)
@@ -484,6 +512,7 @@ static func release() -> void:
 static func apply(root: Control) -> void:
 	root.theme = build(Settings.text_scale)
 	crt_material()
+	UiFocus.install_on(root)  # ART-0 F (§6): the pad focus scale on this root's viewport
 	_roots.append(weakref(root))
 	if not _listening:
 		_listening = true

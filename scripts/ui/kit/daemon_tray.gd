@@ -65,6 +65,10 @@ func _init(p_ids: Array[StringName], p_lookup: ContentLookup, anchor_x: float, o
 func _ready() -> void:
 	UiFocus.hold(self)  # modal for keys and the pad (H20)
 	UiFocus.focus_first.call_deferred(_strip)
+	# ART-0 F (ported from art-pass W8a, §10): a modal: it opens with the modal motion and a
+	# page change waits for it (PageTransition.after_modals). It closes at once (main's
+	# UiFocus.release, so focus goes back the same frame).
+	PageTransition.open_modal(self)
 
 
 ## The Daemon's card under the strip (`pinned` from a click keeps it while hovering others).
@@ -84,7 +88,7 @@ func show_card(id: StringName, pinned: bool) -> void:
 		head.draw_string(Palette.display(), Vector2(62, 36), (TextDb.t(d, "display_name") if d != null else String(id)).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.PAPER))
 	_card.body.add_child(head)
 	var desc := Label.new()
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(desc)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
 	desc.custom_minimum_size.x = 300
 	desc.text = Codex.describe(d) if d != null else String(id)
 	_card.body.add_child(desc)

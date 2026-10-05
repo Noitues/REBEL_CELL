@@ -68,7 +68,7 @@ func _place() -> void:
 	var room := maxf(1.0, host.size.x - SIDE_GAP * 2.0)
 	size = get_combined_minimum_size()
 	if size.x > room:
-		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		UiWrap.whole_words(label)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
 		label.custom_minimum_size.x = room - (size.x - label.get_combined_minimum_size().x)
 		size = Vector2.ZERO
 		size = get_combined_minimum_size()
