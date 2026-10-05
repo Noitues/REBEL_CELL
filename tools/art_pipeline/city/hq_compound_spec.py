@@ -41,12 +41,15 @@ PORTAL = 31.6        # crane_dyn portal deck (zp 30 + beam)
 KEEP = 37.2          # crane_dyn machinery house roof
 
 
-def screen_x(p):
-    return (p[0] + p[1]) / math.sqrt(2.0)
+def screen_x(p, yaw_deg=YAW_DEG):
+    """How far right on screen a Blender-frame point is at camera yaw `yaw_deg` (CityIsoCamera.right() is Godot
+    (sin yaw, 0, cos yaw) = Blender (sin yaw, -cos yaw)); the city azimuth (135 deg) gives (x + y) / sqrt 2."""
+    a = math.radians(yaw_deg)
+    return p[0] * math.sin(a) - p[1] * math.cos(a)
 
 
-def _rows_sorted(rows):
-    return [sorted(r, key=screen_x) for r in rows]
+def _rows_sorted(rows, yaw_deg=YAW_DEG):
+    return [sorted(r, key=lambda p: screen_x(p, yaw_deg)) for r in rows]
 
 
 def _meridian():
@@ -110,18 +113,39 @@ def _orbital():
                 camera=((0.0, 0.0, 14.0), 125.0), server_name="LAUNCH CONTROL")
 
 
+# ART-8 8w: DISPATCH's HQ run plays in the round 43 Tokyo canyon (DECISIONS, resolved open question), built by
+# build_dispatch_canyon.py from round 34's street34 / cfg28. The canyon frame: local x across the street (+x = the
+# right side, FIST_SIDE), local y along it from the camera end (0 .. CANYON_LEN); the export's origin is its midpoint
+# on the centre line, so Blender (x, y) = (CANYON_HALF - local y, local x).
+CANYON_LEN = 114.0        # cfg28.Cfg.canyon_len(): (46 - 27) lots x 6 BU
+CANYON_HALF = CANYON_LEN / 2.0
+CANYON_LOT_CENTRE = (46.0 - CANYON_HALF / 6.0, 36.5)  # cfg28 canyon_origin() moved half the street along it (lots)
+CANYON_FLOOR_PAD = 9.0    # the alley floor runs this far past both ends (BU): the camera end and the head crossing
+CANYON_ROWS_Y = (10.0, 28.0, 46.0, 64.0, 82.0, 100.0)  # layer rows along the street (local y)
+CANYON_ALLEY_X = 0.9      # alley slots: either side of the centre line, inside the shop awnings (street34: to 1.2)
+CANYON_ALLEY_STAGGER = 8.0  # the right alley slot stands this far up the street from the left one (apart on screen)
+CANYON_ROOF_X = 5.4       # rooftop slots: the front of the shophouse roofs (SW + 2.2)
+CANYON_ROOF_Z = 40.0      # rooftop slots snap down from above the tallest shophouse (street34: <= ~30 BU)
+CANYON_ROOF_SEEK = (0.0, 2.0, -2.0, 4.0, -4.0, 6.0, -6.0)  # a rooftop slot over a gap moves along the street to a roof
+CANYON_YAW_DEG = 180.0    # the HQ-run camera looks down the canyon (toward lot -x, as round 34's camera)
+CANYON_PITCH_DEG = 40.0   # the city's own pitch (the canyon's sides stay readable as rooftops)
+
+
+def _canyon_b(lx, ly, z):
+    return (round(CANYON_HALF - ly, 3), round(lx, 3), z)
+
+
 def _rebel_cell():
-    # heroes25 rebel_base (STATE dispatch): six blocks round a courtyard, the relay mast (DISPATCH CORE) in the middle.
-    rows = [
-        [(-10.0, -18.0, 14.6), (10.0, -20.0, 9.6), (20.0, -15.0, 9.6), (20.0, -2.0, 10.6)],     # front roofs
-        [(-20.0, -19.0, 14.6), (-19.0, -8.0, 18.6), (4.0, -10.0, 4.2), (18.0, 9.0, 10.6)],      # roofs, courtyard shack
-        [(-19.0, 1.0, 18.6), (-6.0, -6.0, 4.2), (8.0, -2.0, 0.6), (20.0, 19.0, 16.6)],         # the deck, shack, courtyard
-        [(-19.0, 9.0, 18.6), (-6.0, 4.0, 4.2), (-3.0, 19.0, 12.6), (11.0, 19.0, 16.6)],        # back roofs
-        [(-20.0, 18.0, 12.6), (-11.0, 19.0, 12.6), (14.0, 4.0, 10.6), (5.0, 21.0, 16.6)],      # back roofs
-        [(-4.0, -2.0, 0.6), (4.0, -5.0, 0.6), (-2.0, 5.0, 0.6), (5.0, 4.0, 0.6)],              # round the mast
-    ]
-    return dict(rows=rows, server=(0.0, 0.0, 35.6), entry=(24.0, -24.0, 0.5),
-                camera=((0.0, 0.0, 8.0), 125.0), server_name="DISPATCH CORE")
+    # The canyon: per layer, the left rooftop, both pavement edges and the right rooftop (round 43 Sync Strike's three
+    # lanes: left rooftops, the alley, right rooftops); DISPATCH CORE on the REBEL_CELL billboard over the head crossing.
+    rows = [[_canyon_b(-CANYON_ROOF_X, y, CANYON_ROOF_Z), _canyon_b(-CANYON_ALLEY_X, y, 0.5),
+             _canyon_b(CANYON_ALLEY_X, y + CANYON_ALLEY_STAGGER, 0.5), _canyon_b(CANYON_ROOF_X, y, CANYON_ROOF_Z)] for y in CANYON_ROWS_Y]
+    # DISPATCH CORE stands in the head crossing under the REBEL_CELL billboard (its screen has no top to stand on).
+    return dict(rows=rows, server=_canyon_b(0.0, CANYON_LEN + 1.0, 0.5), entry=_canyon_b(0.0, -8.0, 0.5),
+                camera=((0.0, 0.0, 6.0), 170.0), server_name="DISPATCH CORE", yaw=CANYON_YAW_DEG, pitch=CANYON_PITCH_DEG,
+                snap_below=CANYON_ROOF_Z, seek=CANYON_ROOF_SEEK, lot_centre=CANYON_LOT_CENTRE, builder="build_dispatch_canyon.py",
+                origin="the canyon's midpoint on its centre line at (0, 0, 0); place it on lot point place_lot (round 34's "
+                       "own canyon lots: the grid street j 36, i 27..46, beside the Cell's palm)")
 
 
 _BUILD = {"meridian": _meridian, "solace": _solace, "halcyon": _halcyon, "orbital": _orbital, "rebel_cell": _rebel_cell}
@@ -130,17 +154,30 @@ _BUILD = {"meridian": _meridian, "solace": _solace, "halcyon": _halcyon, "orbita
 def layout(corp):
     """The compound layout of `corp`: rows (LAYERS x SLOTS, sorted left to right), server, entry, camera, name."""
     d = _BUILD[corp]()
-    d["rows"] = _rows_sorted(d["rows"])
+    d.setdefault("yaw", YAW_DEG)
+    d.setdefault("pitch", PITCH_DEG)
+    d.setdefault("snap_below", SNAP_BELOW)
+    d.setdefault("builder", "build_hq_compound.py")
+    d["rows"] = _rows_sorted(d["rows"], d["yaw"])
     assert len(d["rows"]) == LAYERS and all(len(r) == SLOTS for r in d["rows"]), corp
     return d
 
 
-def screen_px(p_godot, ortho):
-    """A Godot-frame point on screen (px, y up) at the reference camera (REF_WIDTH_PX wide, PITCH_DEG, the city azimuth)."""
+def screen_px(p_godot, ortho, yaw_deg=YAW_DEG, pitch_deg=PITCH_DEG):
+    """A Godot-frame point on screen (px, y up) at the reference camera (REF_WIDTH_PX wide; the city azimuth at
+    PITCH_DEG unless the layout has its own camera)."""
     x, y, z = p_godot[0], -p_godot[2], p_godot[1]
     ppu = REF_WIDTH_PX / ortho
-    el = math.radians(PITCH_DEG)
-    return ((x + y) / math.sqrt(2.0) * ppu, ((y - x) / math.sqrt(2.0) * math.sin(el) + z * math.cos(el)) * ppu)
+    el = math.radians(pitch_deg)
+    a = math.radians(yaw_deg)
+    right = x * math.sin(a) - y * math.cos(a)
+    away = x * math.cos(a) + y * math.sin(a)  # along the view on the ground (Blender frame of CityIsoCamera.forward())
+    return (right * ppu, (away * math.sin(el) + z * math.cos(el)) * ppu)
+
+
+def to_blender(p):
+    """Godot / glTF (x, y, z) -> Blender (x, -z, y)."""
+    return (p[0], -p[2], p[1])
 
 
 def to_godot(p):
