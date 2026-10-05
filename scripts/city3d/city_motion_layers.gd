@@ -14,15 +14,17 @@ extends Node3D
 ## day / night look and the light spill its toon materials take. Every motion has its
 ## `ui_motion.tres` entry (MOTION_IDS, T0): its period, share or angle; the layer asks
 ## Motion.live for it every frame. Pauses when the map is covered or the window loses
-## focus; reduce effects shows every layer's end state; reduce motion keeps them steady
-## (CityMotionClock). The layer sits at the world origin of its host's 3D world.
+## focus or the host pauses its ambience; reduce effects shows every layer's end state;
+## reduce motion pauses them in their steady look (CityMotionClock). The layer and its
+## groups sit at the world origin of their host's 3D world.
 
 ## The host's fog and rain clock scale (0 while the layers are paused or held).
 signal ambient_scale_changed(scale: float)
 ## The share of the night look (1 night .. 0 day) the host's city should show.
 signal night_share_changed(share: float)
-## Light spill sources for the host's toon materials (LightSpill.uniforms_3d's result).
-signal spill_changed(uniforms: Dictionary)
+## Light spill sources for the host's toon materials (LightSpill.uniforms_3d's input:
+## {position, radius, color, intensity}, nearest the camera first).
+signal spill_changed(sources: Array)
 
 enum View { GRID, RAID, NETRUN }
 enum Daylight { NIGHT, DAY }
@@ -44,6 +46,8 @@ const MOTION_IDS: Array[StringName] = [SKY_CARS, STREET_CARS, BILLBOARD, AVIATIO
 
 const CAR_SHADER := preload("res://shaders/city/sky_car.gdshader")
 const GLOW_SHADER := preload("res://shaders/city/city_glow.gdshader")
+const GLOW_XRAY_SHADER := preload("res://shaders/city/city_glow_xray.gdshader")
+const POOL_XRAY_SHADER := preload("res://shaders/city/city_pool_xray.gdshader")
 const BEAM_SHADER := preload("res://shaders/city/city_beam.gdshader")
 const POOL_SHADER := preload("res://shaders/city/city_pool.gdshader")
 const BILLBOARD_SHADER := preload("res://shaders/city/holo_billboard.gdshader")
@@ -55,6 +59,12 @@ enum PoolMode { DISC, RING }
 const POOL_LIFT := 0.08
 ## A sprite never draws under this many screen pixels.
 const MIN_PX := 2.5
+## The layer groups, as the host's scene layers name them (CityView3D.LAYERS): street
+## traffic, the sky lanes, billboards and aviation lights, the Heat / suspicion rig. The
+## traffic, sky and heat groups also draw under see-through buildings (bible 4.1: ground,
+## lanes and cars render under them).
+const GROUPS: Array[StringName] = [&"traffic", &"sky", &"props", &"heat"]
+const GROUND_PASS_GROUPS: Array[StringName] = [&"traffic", &"sky", &"heat"]
 
 var cfg: CityMotionConfigData
 var site: CityMotionSite
@@ -68,6 +78,13 @@ var covered: bool = false
 var unfocused: bool = false
 ## Quiet windowed runs (tools/run_windowed.py) never have focus: they keep the layers going.
 var honour_focus: bool = true
+## The host's ambient scale (CityView3D.ambient_scale: 0 when it pauses or holds its own
+## ambient layers): 0 pauses every layer here too.
+var host_ambient: float = 1.0
+## The host's render layer (bit number) for its ground-only pass, 0 for none.
+var ground_pass_layer: int = 0
+## The groups' nodes (GROUPS), children of this node until a host moves them to its layers.
+var groups: Dictionary = {}
 var view: int = View.GRID
 var daylight: int = Daylight.NIGHT
 var suspicion: bool = false
@@ -109,6 +126,7 @@ var _drones: Array[Node3D] = []
 var _air_mats: Array[ShaderMaterial] = []
 var _aabb: AABB = AABB()
 var _spill: Dictionary = {}
+var _spill_sources: Array = []
 
 
 ## Builds every layer on `p_site` from `p_cfg`, seeded by the city's seed `seed`.
@@ -117,8 +135,16 @@ func setup(p_cfg: CityMotionConfigData, p_site: CityMotionSite, seed: int) -> vo
 	site = p_site
 	_seed = seed
 	honour_focus = not Settings.quiet_window()
+	for g: Node3D in groups.values():
+		g.queue_free()
 	for c in get_children():
 		c.queue_free()
+	groups.clear()
+	for name_ in GROUPS:
+		var g := Node3D.new()
+		g.name = String(name_).capitalize()
+		add_child(g)
+		groups[name_] = g
 	_car_mmis.clear()
 	_car_mats.clear()
 	lanes = CitySkyLanes.build(cfg, site)
@@ -130,9 +156,7 @@ func setup(p_cfg: CityMotionConfigData, p_site: CityMotionSite, seed: int) -> vo
 	_build_sky()
 	_build_billboards()
 	_build_aviation()
-	_rig_root = Node3D.new()
-	_rig_root.name = "HeatRig"
-	add_child(_rig_root)
+	_rig_root = groups[&"heat"]
 	_rebuild_rig()
 	set_ortho(ortho)
 	_apply_light(true)
@@ -160,7 +184,7 @@ func set_view(p_view: int) -> void:
 		return
 	var g := 1.0 if view == View.GRID else cfg.management_gain
 	for m in _car_mats:
-		m.set_shader_parameter(&"gain", g * _car_gain())
+		m.set_shader_parameter(&"line_gain", g)
 	if _guide_mat != null:
 		_guide_mat.set_shader_parameter(&"gain", g)
 	_apply_visibility()
@@ -200,9 +224,23 @@ func set_focus_point(p: Vector3) -> void:
 		_update_spill()
 
 
-## True while every layer is stopped (covered, or the window unfocused).
+## The host's ambient scale (0 pauses every layer: the host's map is covered or unfocused,
+## or it holds its ambience under reduce effects / reduce motion).
+func set_host_ambient(scale: float) -> void:
+	host_ambient = scale
+	_update_ambient_scale()
+
+
+## Marks the groups that draw under see-through buildings for the host's ground-only pass
+## (render layer bit `bit`; 0: none).
+func set_ground_pass_layer(bit: int) -> void:
+	ground_pass_layer = bit
+	_mark_ground_pass()
+
+
+## True while every layer is stopped (covered, the window unfocused, or the host paused).
 func paused() -> bool:
-	return covered or (honour_focus and unfocused)
+	return covered or (honour_focus and unfocused) or host_ambient <= 0.0
 
 
 ## True when the sky-lane cars draw.
@@ -218,6 +256,26 @@ func layer_time(layer: int) -> float:
 ## The spill uniforms last sent (LightSpill.uniforms_3d).
 func spill_uniforms() -> Dictionary:
 	return _spill
+
+
+## The spill sources last sent (LightSpill.uniforms_3d's input).
+func spill_sources() -> Array:
+	return _spill_sources
+
+
+func _mark_ground_pass() -> void:
+	if ground_pass_layer <= 0:
+		return
+	for name_ in GROUND_PASS_GROUPS:
+		if groups.has(name_):
+			_set_mask(groups[name_], ground_pass_layer)
+
+
+static func _set_mask(node: Node, bit: int) -> void:
+	if node is VisualInstance3D:
+		(node as VisualInstance3D).set_layer_mask_value(bit, true)
+	for c in node.get_children():
+		_set_mask(c, bit)
 
 
 func _notification(what: int) -> void:
@@ -309,7 +367,7 @@ func _apply_light(snap: bool) -> void:
 	var n := night_share
 	for m in _car_mats:
 		m.set_shader_parameter(&"night", n)
-		m.set_shader_parameter(&"gain", (1.0 if view == View.GRID else cfg.management_gain) * _car_gain())
+		m.set_shader_parameter(&"gain", _car_gain())
 	if _street_mat != null:
 		_street_mat.set_shader_parameter(&"night", n)
 	if _billboard_mat != null:
@@ -350,9 +408,10 @@ func _mmi(mesh: Mesh, count: int, mat: Material, name_: String, parent: Node = s
 	return mi
 
 
-func _glow_mat(mode: int, id: StringName) -> ShaderMaterial:
+func _glow_mat(mode: int, id: StringName, xray: bool = false) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
-	m.shader = GLOW_SHADER
+	m.shader = GLOW_XRAY_SHADER if xray else GLOW_SHADER
+	m.set_shader_parameter(&"off_level", cfg.blink_off_level)
 	m.set_shader_parameter(&"mode", mode)
 	m.set_shader_parameter(&"min_px", MIN_PX)
 	m.set_shader_parameter(&"bu_per_px", _bu_per_px)
@@ -403,7 +462,9 @@ func _build_sky() -> void:
 		m.set_shader_parameter(&"body_alpha", cfg.medium_alpha if tier == CitySkyTraffic.CarTier.MEDIUM else 1.0)
 		m.set_shader_parameter(&"body_lane_fill", tier == CitySkyTraffic.CarTier.MEDIUM)
 		m.set_shader_parameter(&"toon", tier == CitySkyTraffic.CarTier.CLOSE)
-		var mi := _mmi(CityMotionMeshes.car(cfg, tier), traffic.cars.size(), m, "SkyCars%d" % tier)
+		if tier == CitySkyTraffic.CarTier.CLOSE:
+			m.set_shader_parameter(&"body_color", _v3(cfg.close_body_color))
+		var mi := _mmi(CityMotionMeshes.car(cfg, tier), traffic.cars.size(), m, "SkyCars%d" % tier, groups[&"sky"])
 		for k in traffic.cars.size():
 			var car: Dictionary = traffic.cars[k]
 			mi.multimesh.set_instance_transform(k, Transform3D.IDENTITY)
@@ -415,7 +476,7 @@ func _build_sky() -> void:
 	_guide_mat = _glow_mat(GlowMode.STEADY, &"")
 	_guide_mat.set_shader_parameter(&"alpha", cfg.guide_alpha)
 	_guide_mat.set_shader_parameter(&"min_px", 1.0)
-	_guide_mmi = _mmi(_quad(), dots.size(), _guide_mat, "LaneGuides")
+	_guide_mmi = _mmi(_quad(), dots.size(), _guide_mat, "LaneGuides", groups[&"sky"])
 	for k in dots.size():
 		_guide_mmi.multimesh.set_instance_transform(k, Transform3D(Basis.IDENTITY, dots[k]["pos"]))
 		_guide_mmi.multimesh.set_instance_color(k, cfg.lane_colors[int(dots[k]["color"])])
@@ -427,7 +488,8 @@ func _build_street() -> void:
 		return
 	_street_mat = _car_mat(_path_texture(lanes.street_rows))
 	_street_mat.set_shader_parameter(&"street", true)
-	_street_mmi = _mmi(CityMotionMeshes.street_car(cfg), traffic.street_cars.size(), _street_mat, "StreetCars")
+	_street_mmi = _mmi(CityMotionMeshes.street_car(cfg), traffic.street_cars.size(), _street_mat, "StreetCars",
+		groups[&"traffic"])
 	for k in traffic.street_cars.size():
 		var car: Dictionary = traffic.street_cars[k]
 		_street_mmi.multimesh.set_instance_transform(k, Transform3D.IDENTITY)
@@ -447,7 +509,7 @@ func _build_billboards() -> void:
 	_billboard_mat.set_shader_parameter(&"size", cfg.billboard_size)
 	_billboard_mat.set_shader_parameter(&"scanlines", cfg.billboard_scanlines)
 	_billboard_mat.set_shader_parameter(&"panels", cfg.billboard_panels)
-	_billboard_mmi = _mmi(_quad(), props.billboards.size(), _billboard_mat, "HoloBillboards")
+	_billboard_mmi = _mmi(_quad(), props.billboards.size(), _billboard_mat, "HoloBillboards", groups[&"props"])
 	for k in props.billboards.size():
 		var b: Dictionary = props.billboards[k]
 		_billboard_mmi.multimesh.set_instance_transform(k, Transform3D(Basis.IDENTITY, b["pos"]))
@@ -457,7 +519,7 @@ func _build_billboards() -> void:
 
 func _build_aviation() -> void:
 	_aviation_mat = _glow_mat(GlowMode.BLINK, AVIATION)
-	_aviation_mmi = _mmi(_quad(), props.aviation.size(), _aviation_mat, "AviationLights")
+	_aviation_mmi = _mmi(_quad(), props.aviation.size(), _aviation_mat, "AviationLights", groups[&"props"])
 	for k in props.aviation.size():
 		var a: Dictionary = props.aviation[k]
 		_aviation_mmi.multimesh.set_instance_transform(k, Transform3D(Basis.IDENTITY, (a["pos"] as Vector3) + Vector3.UP * cfg.aviation_size))
@@ -486,11 +548,13 @@ func _rebuild_rig() -> void:
 	var flat := PlaneMesh.new()
 	flat.size = Vector2(2.0, 2.0)
 	_pool_mmi = _mmi(flat, spots + rig.police.size(), pool, "Pools", _rig_root)
+	# The hardened nodes' rings and lights are node markers: drawn through buildings, as the
+	# network decal is.
 	var ring := ShaderMaterial.new()
-	ring.shader = POOL_SHADER
+	ring.shader = POOL_XRAY_SHADER
 	ring.set_shader_parameter(&"mode", PoolMode.RING)
 	_ring_mmi = _mmi(flat, rig.node_lights.size(), ring, "NodeRings", _rig_root)
-	_node_mat = _glow_mat(GlowMode.CIRCLE, NODE_LIGHT)
+	_node_mat = _glow_mat(GlowMode.CIRCLE, NODE_LIGHT, true)
 	_node_mmi = _mmi(_quad(), rig.node_lights.size(), _node_mat, "NodeLights", _rig_root)
 	for k in rig.node_lights.size():
 		var nl: Dictionary = rig.node_lights[k]
@@ -567,6 +631,7 @@ func _rebuild_rig() -> void:
 		_air_light_mmi.multimesh.set_instance_custom_data(k, Color(0.5 * float(k % 2), cfg.strobe_size * 0.7, 0.0, 0.0))
 	_update_rig(Settings.reduce_motion, _lives())
 	_update_spill()
+	_mark_ground_pass()
 
 
 ## Moves the CPU-placed parts of the rig (searchlight sweeps, aircraft orbits, their spots
@@ -675,6 +740,7 @@ func _update_spill() -> void:
 		var pb: Vector3 = b["position"]
 		return pa.x < pb.x if pa.x != pb.x else pa.z < pb.z)
 	_spill = LightSpill.uniforms_3d(src)
+	_spill_sources = src.slice(0, LightSpill.MAX_3D)
 	for m in _air_mats:
-		ToonInkMaterial.set_spill(m, src)
-	spill_changed.emit(_spill)
+		ToonInkMaterial.set_spill(m, _spill_sources)
+	spill_changed.emit(_spill_sources)

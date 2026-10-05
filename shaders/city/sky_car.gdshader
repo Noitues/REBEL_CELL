@@ -15,6 +15,9 @@ render_mode unshaded, cull_disabled, specular_disabled, blend_mix, depth_draw_op
 
 uniform float clock = 0.0;
 uniform float gain = 1.0;
+// The lane-colour line's share at management zooms (bible 4.1: sky lanes at 35 %); the car
+// itself stays at full strength.
+uniform float line_gain = 1.0;
 uniform float body_alpha = 1.0;
 uniform bool body_lane_fill = false;
 uniform bool streak_on = true;
@@ -71,7 +74,7 @@ void fragment() {
 		}
 		a = body_alpha;
 	} else if (v_part < 1.5) {
-		c = (street ? mix(lane, v_tail > 0.5 ? taillight : street_head, night) : lane) * gain;
+		c = (street ? mix(lane, v_tail > 0.5 ? taillight : street_head, night) : lane) * gain * line_gain;
 	} else if (v_part < 2.5) {
 		vec3 lamp = street ? (v_tail > 0.5 ? taillight : street_head) : headlight * headlight_gain;
 		c = mix(lane, lamp, night) * gain;

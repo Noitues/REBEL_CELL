@@ -7,9 +7,9 @@ extends RefCounted
 ## - not live (reduce effects, a headless display or its motion entry switched off): the
 ##   layer shows its end state at once and holds it (time 0, steady: lights on and still,
 ##   one billboard panel, searchlights at rest, aircraft parked);
-## - reduce motion: steady too, except street traffic, which runs at
-##   `reduce_motion_street_share` with no streaks; the sky lanes show their markers without
-##   cars (bible 5.4).
+## - reduce motion: every layer pauses in its steady look (no blink, sweep or orbit; street
+##   cars without streaks); the sky lanes show their markers without cars (bible 5.4; the
+##   brief and 5a's ambient scale pause street traffic too rather than run it at 40 %).
 ## Pure and deterministic: a test steps it with fixed deltas.
 
 enum Layer { SKY_CARS, STREET_CARS, BILLBOARDS, AVIATION, SEARCHLIGHTS, CHOPPERS, DRONES, STROBES, ALARMS, NODE_LIGHTS }
@@ -24,19 +24,15 @@ func _init() -> void:
 
 
 ## The rate (seconds of layer time per second) of `layer`.
-static func rate(cfg: CityMotionConfigData, layer: int, paused: bool, reduce_motion: bool, live: bool) -> float:
-	if paused or not live:
+static func rate(_cfg: CityMotionConfigData, _layer: int, paused: bool, reduce_motion: bool, live: bool) -> float:
+	if paused or not live or reduce_motion:
 		return 0.0
-	if reduce_motion:
-		return cfg.reduce_motion_street_share if layer == Layer.STREET_CARS else 0.0
 	return 1.0
 
 
 ## True when `layer` shows its still, steady look (lights on, nothing turning).
-static func steady(layer: int, reduce_motion: bool, live: bool) -> bool:
-	if not live:
-		return true
-	return reduce_motion and layer != Layer.STREET_CARS
+static func steady(_layer: int, reduce_motion: bool, live: bool) -> bool:
+	return not live or reduce_motion
 
 
 ## True when the sky-lane cars draw at all: not under reduce motion (markers only) and

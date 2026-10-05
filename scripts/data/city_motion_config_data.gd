@@ -71,8 +71,10 @@ const BAND_LOOKS := 4
 @export var medium_box: Vector3 = Vector3(2.6, 0.7, 1.3)
 @export var medium_alpha: float = 0.65
 @export var medium_line: float = 0.35
-@export var close_length: float = 3.2
-@export var close_line: float = 0.6
+@export var close_length: float = 4.4
+@export var close_line: float = 0.32
+## The CLOSE model's body (round 40 cars_lod: a light silver-violet wedge, toon-lit).
+@export var close_body_color: Color = Color(0.66, 0.64, 0.78)
 ## Night: the white headlight at the nose (round 26 v4) and its gain; day: the dot takes
 ## the lane colour.
 @export var headlight: Color = Color(1.0, 0.97, 0.9)
@@ -83,7 +85,7 @@ const BAND_LOOKS := 4
 @export var car_far_above: float = 400.0
 @export var car_close_below: float = 150.0
 ## Share past a tier's edge the zoom must go before the tier swaps.
-@export var lod_hysteresis: float = 0.06
+@export var lod_hysteresis: float = 0.04
 ## Sky lanes at management zooms (raid, netrun) draw at this share (bible 4.1: 35 %).
 @export var management_gain: float = 0.35
 
@@ -99,9 +101,6 @@ const BAND_LOOKS := 4
 @export var street_streak: float = 2.4
 @export var street_head: Color = Color(1.0, 0.93, 0.78)
 @export var street_tail: Color = Color(1.0, 0.18, 0.14)
-## Under reduce motion street traffic runs at this share of its speed, with no streaks
-## (ART_BIBLE 5.4: "traffic at 40 % with no streaks").
-@export var reduce_motion_street_share: float = 0.4
 
 @export_group("Holo billboards (round 24 layer 3)")
 @export var billboard_count: int = 16
@@ -125,6 +124,8 @@ const BAND_LOOKS := 4
 @export var aviation_color: Color = Color(1.0, 0.14, 0.12)
 @export var aviation_gain_night: float = 2.2
 @export var aviation_gain_day: float = 1.2
+## A blinking light's brightness between blinks (a red dot still reads in a still frame).
+@export var blink_off_level: float = 0.3
 
 @export_group("Searchlights (round 24 FLAGGED, round 37 calm Heat B)")
 ## Beam length and end radius (BU), the beam's lean from vertical (deg), colour.
@@ -180,8 +181,8 @@ const BAND_LOOKS := 4
 @export var police_red: Color = Color(1.0, 0.13, 0.22)
 @export var police_blue: Color = Color(0.16, 0.42, 1.0)
 @export var alarm_color: Color = Color(1.0, 0.77, 0.16)
-@export var strobe_size: float = 1.6
-@export var strobe_pool: float = 6.0
+@export var strobe_size: float = 2.4
+@export var strobe_pool: float = 9.0
 
 @export_group("Suspicion (round 6: local police, choppers and drones)")
 @export var suspicion_police: int = 13
@@ -191,7 +192,7 @@ const BAND_LOOKS := 4
 @export_group("Day and night (round 6 day / night, round 26 day v4)")
 ## The city's day look for the host (the toon ramp shadow / mid / lit, sky, window gain,
 ## neon gain, haze); the host lerps its night look toward it by the night share.
-@export var day_ramp: Array[Color] = [Color(0.30, 0.31, 0.44), Color(0.58, 0.55, 0.60), Color(0.88, 0.80, 0.68)]
+@export var day_ramp: Array[Color] = [Color(0.34, 0.31, 0.42), Color(0.66, 0.57, 0.56), Color(0.95, 0.84, 0.70)]
 @export var day_sky: Color = Color(0.56, 0.58, 0.66)
 @export var day_window_gain: float = 0.12
 @export var day_neon_gain: float = 0.62

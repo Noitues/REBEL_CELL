@@ -1,15 +1,16 @@
 class_name CitySpikeMotion
 extends RefCounted
-## ART-5 5c: the one seam between the city's motion layers (CityMotionLayers) and 1D's spike
-## city (`city_spike_3d.tscn`), until 5a's production CityModel lands and takes its place.
+## ART-5 5c: a test host for the city's motion layers (CityMotionLayers) on 1D's spike city
+## (`city_spike_3d.tscn`), for windowed render checks next to 5a's CityView3D (the game's
+## host is CityViewMotion).
 ## `attach` builds the site from the spike's district (CityMotionSite.from_district), adds
 ## the layers at the spike's world origin, retires the spike's own prototype car tiers, and
 ## wires the layers' signals up to the spike's look: the fog / rain clock, the day / night
 ## look (the night look lerped toward CityMotionConfigData's day look), and the light spill
-## (the spike's building shader predates 1B's spill uniforms: logged, sent nowhere).
+## onto the spike's building and ground materials (CityMaterials.set_spill).
 ## Calls down only: the spike never changes game state either.
 
-const GROUND_SHADER := preload("res://tools/spike/city/shaders/city_ground.gdshader")
+const GROUND_SHADER := preload("res://shaders/city/city_ground.gdshader")
 
 var spike: Node3D
 var layers: CityMotionLayers
@@ -24,7 +25,7 @@ static func attach(p_spike: Node3D, cfg: CityMotionConfigData, home_lot: Vector2
 	var m := CitySpikeMotion.new()
 	m.spike = p_spike
 	m.motion_cfg = cfg
-	var spike_cfg: CitySpikeConfig = p_spike.get("cfg")
+	var spike_cfg: CityConfig = p_spike.get("cfg")
 	var site := CityMotionSite.from_district(p_spike.get("district"), spike_cfg, home_lot)
 	for mi: MultiMeshInstance3D in p_spike.get("_car_tiers"):
 		mi.queue_free()
@@ -44,6 +45,7 @@ static func attach(p_spike: Node3D, cfg: CityMotionConfigData, home_lot: Vector2
 		"neon_gain": spike_cfg.neon_gain, "haze": spike_cfg.haze, "grade": spike_cfg.grade}
 	m.layers.ambient_scale_changed.connect(m._on_ambient_scale)
 	m.layers.night_share_changed.connect(m._on_night_share)
+	m.layers.spill_changed.connect(m._on_spill)
 	m.layers.setup(cfg, site, spike_cfg.city_seed)
 	return m
 
@@ -54,6 +56,12 @@ func set_ortho(ortho: float) -> void:
 	layers.set_ortho(ortho, spike.get_viewport().get_visible_rect().size.x)
 	var iso: CityIsoCamera = spike.get("iso")
 	layers.set_focus_point(iso.target)
+
+
+func _on_spill(sources: Array) -> void:
+	var mats: Array[ShaderMaterial] = [spike.get("_building_mat")]
+	mats.append_array(_ground_mats)
+	CityMaterials.set_spill(mats, sources)
 
 
 func _on_ambient_scale(scale: float) -> void:

@@ -8,7 +8,9 @@ extends GutTest
 ## when covered or unfocused, end state under reduce effects, markers only under reduce
 ## motion, LOD swaps, the day / night crossfade, every motion in the table as T0.
 
-const SPIKE_CONFIG := preload("res://tools/spike/city/city_spike_config.tres")
+const CITY_CONFIG := preload("res://content/config/city_config.tres")
+## A part of the game's city (lots) for the model test: the Halcyon border round the raid frame.
+const MODEL_RECT := Rect2i(10, 0, 48, 48)
 
 var cfg: CityMotionConfigData
 var site: CityMotionSite
@@ -108,17 +110,18 @@ func test_rows_are_uniform_by_arc_length_and_the_bake_matches_the_cpu() -> void:
 	assert_almost_eq(lanes.sample(rows[0], 0.0).distance_to(lanes.sample(rows[1], 1.0)), cfg.lane_side * 2.0, 0.05, "reversed")
 
 
-func test_the_lanes_on_the_real_district_are_deterministic() -> void:
-	var d := CityDistrict.from_layout(SPIKE_CONFIG)
-	var s1 := CityMotionSite.from_district(d, SPIKE_CONFIG)
+func test_the_lanes_on_the_city_model_are_deterministic() -> void:
+	var m := CityModel.build(CITY_CONFIG, 7, MODEL_RECT)
+	var s1 := CityMotionSite.from_model(m, CITY_CONFIG)
 	var l1 := CitySkyLanes.build(cfg, s1)
-	var l2 := CitySkyLanes.build(cfg, CityMotionSite.from_district(d, SPIKE_CONFIG))
+	var l2 := CitySkyLanes.build(cfg, CityMotionSite.from_model(m, CITY_CONFIG))
 	assert_gte(l1.roads.size(), 6, "the busiest avenues carry at least the six straight roads")
 	assert_eq(l1.rows.size(), l2.rows.size())
 	for r in l1.rows.size():
 		assert_eq(l1.rows[r]["points"], l2.rows[r]["points"], "row %d the same each build" % r)
 	assert_gt(l1.street_rows.size(), 0, "busy avenues carry street traffic")
-	assert_gt(s1.roofs.size(), 1000, "every building's roof reaches the layers")
+	assert_gt(s1.roofs.size(), 500, "every building's roof reaches the layers")
+	assert_true(s1.bounds.has_point(s1.home), "home inside the city's bounds")
 
 
 func test_car_colours_are_seeded_and_every_loop_moves_whole_gaps() -> void:
@@ -226,7 +229,7 @@ func test_the_pause_and_reduce_rules() -> void:
 		assert_true(CityMotionClock.steady(layer, false, false), "not live: end state")
 		assert_eq(CityMotionClock.rate(cfg, layer, false, false, true), 1.0, "live: full speed")
 		assert_false(CityMotionClock.steady(layer, false, true))
-	assert_eq(CityMotionClock.rate(cfg, L.STREET_CARS, false, true, true), cfg.reduce_motion_street_share, "reduce motion: street traffic at 40 %")
+	assert_eq(CityMotionClock.rate(cfg, L.STREET_CARS, false, true, true), 0.0, "reduce motion: street traffic pauses")
 	assert_eq(CityMotionClock.rate(cfg, L.SEARCHLIGHTS, false, true, true), 0.0, "reduce motion: searchlights fixed")
 	assert_true(CityMotionClock.steady(L.STROBES, true, true), "reduce motion: strobes steady")
 	assert_false(CityMotionClock.street_streaks(true), "no streaks under reduce motion")
@@ -276,6 +279,28 @@ func test_the_layers_pause_when_covered_or_unfocused() -> void:
 	layers._process(0.25)
 	assert_almost_eq(layers.layer_time(L.AVIATION), t + 0.25, 0.0001, "focused again: running")
 	assert_eq(scales.back(), 1.0)
+	# The host's ambient scale (CityView3D.ambient_changed) pauses them as well.
+	layers.set_host_ambient(0.0)
+	layers._process(0.25)
+	assert_almost_eq(layers.layer_time(L.AVIATION), t + 0.25, 0.0001, "the host paused: paused")
+	layers.set_host_ambient(1.0)
+	layers._process(0.25)
+	assert_almost_eq(layers.layer_time(L.AVIATION), t + 0.5, 0.0001, "the host live again: running")
+
+
+func test_the_groups_go_to_the_hosts_layers_and_its_ground_pass() -> void:
+	var layers := _layers()
+	assert_eq(layers.groups.keys(), CityMotionLayers.GROUPS as Array, "traffic, sky, props and heat groups")
+	assert_true(layers._street_mmi.get_parent() == layers.groups[&"traffic"], "street cars in traffic")
+	assert_true(layers._car_mmis[0].get_parent() == layers.groups[&"sky"], "sky cars in sky")
+	assert_true(layers._billboard_mmi.get_parent() == layers.groups[&"props"], "billboards in props")
+	assert_true(layers._search_mmi.get_parent() == layers.groups[&"heat"], "the rig in heat")
+	layers.set_ground_pass_layer(CityView3D.GROUND_LAYER)
+	assert_true(layers._car_mmis[0].get_layer_mask_value(CityView3D.GROUND_LAYER), "sky cars draw under see-through buildings")
+	assert_false(layers._billboard_mmi.get_layer_mask_value(CityView3D.GROUND_LAYER), "billboards do not")
+	var nodes: Array[Vector3] = [site.lot_to_world(Vector2(30, 30))]
+	layers.set_heat(CityHeatRig.Band.HUNTED, nodes)
+	assert_true(layers._ring_mmi.get_layer_mask_value(CityView3D.GROUND_LAYER), "a rebuilt rig keeps the ground pass")
 
 
 func test_reduce_effects_shows_the_end_state_and_reduce_motion_keeps_it_steady() -> void:
@@ -292,7 +317,7 @@ func test_reduce_effects_shows_the_end_state_and_reduce_motion_keeps_it_steady()
 	Settings.reduce_effects = false
 	Settings.reduce_motion = true
 	layers._process(0.5)
-	assert_almost_eq(layers.layer_time(L.STREET_CARS), 0.5 * cfg.reduce_motion_street_share, 0.0001, "street traffic at 40 %")
+	assert_eq(layers.layer_time(L.STREET_CARS), 0.0, "street traffic paused")
 	assert_eq(layers.layer_time(L.CHOPPERS), 0.0, "choppers parked")
 	assert_false(layers.sky_cars_visible(), "sky lanes: markers without cars")
 	for mi in layers._car_mmis:
