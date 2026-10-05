@@ -131,10 +131,10 @@ func test_heat_color_bands_follow_the_config_majors() -> void:
 	assert_eq(Palette.heat_color(majors[1]), Palette.HEAT_FLAGGED, "FLAGGED")
 	assert_eq(Palette.heat_color(majors[2] - 1), Palette.HEAT_FLAGGED, "FLAGGED up to the last major")
 	assert_eq(Palette.heat_color(majors[2]), Palette.HARM, "HUNTED")
-	assert_eq(Palette.heat_color(100), Palette.HARM)
-	var custom: Array[int] = [10, 20, 30, 40]
+	assert_eq(Palette.heat_color(100), Palette.HARM, "PURGE reuses HUNTED's colour until ART-1")
+	var custom: Array[int] = [10, 20, 30, 40, 50]
 	assert_eq(Palette.heat_band(15, custom), 1, "explicit levels are honoured")
-	assert_eq(Palette.heat_band(99, custom), 3, "capped at HUNTED")
+	assert_eq(Palette.heat_band(99, custom), 4, "capped at PURGE")
 
 
 func test_heat_is_never_green() -> void:

@@ -2,7 +2,8 @@ class_name HeatPoster
 extends Control
 ## Ransom-note Heat (STYLE_GUIDE 4): cut-out letters in mixed fonts on paper strips and
 ## the value in Anton. As a wanted poster in HQ (`poster = true`) it gains a border and a
-## "WANTED" header. Heat bands follow the thresholds 25/50/75 (GDD 9.4).
+## "WANTED" header. Heat bands follow the MAJOR and PURGE thresholds (GDD 4.3, 9.4): COOL,
+## NOTICED, FLAGGED, HUNTED, PURGE.
 
 ## The most ransom-note strips the Heat word takes (a longer translation is cut).
 const RANSOM_LETTERS_MAX := 6
@@ -12,8 +13,9 @@ var heat: int = 0
 var heat_max: int = 100
 var poster: bool = false
 var band: int = 0
-## Threshold marks on the bar (the config's MAJOR Heat levels, passed by the scenes).
-var marks: Array[int] = [25, 50, 75]
+## Threshold marks on the bar and the band starts (HeatRules.band_levels: the MAJOR levels and
+## the PURGE level, passed by the scenes).
+var marks: Array[int] = [25, 50, 75, 100]
 ## Who the wanted poster shows (a PortraitArt subject; the HQ names the crew's lead).
 var wanted: Dictionary = PortraitArt.operative_subject(&"operative")
 ## The mugshot's side on the wanted poster (px).
@@ -40,7 +42,7 @@ func letter_layout(count: int) -> Dictionary:
 
 
 ## The Heat band words, by band.
-const BAND_WORDS: Array[String] = ["cool", "noticed", "flagged", "hunted"] # TR
+const BAND_WORDS: Array[String] = ["cool", "noticed", "flagged", "hunted", "purge"] # TR
 
 ## ANIM-5 (4.12): the Heat each campaign's posters last showed (view memory, not game
 ## state), so a threshold crossed anywhere (a run, a lost raid) plays once where the Heat
@@ -96,6 +98,7 @@ const EYE_W := 1.3
 const EYE_GAP := 0.35
 ## ANIM-R3 B7: a crossing is a warning, never good news: amber (noticed), orange (flagged),
 ## red (hunted), by band (1-3), not the corporation's colour (Solace green read as good).
+## PURGE (band 4) clamps to hunted's red until ART-1 gives it its own look.
 const BAND_COLORS: Array[Color] = [Color("#FFB000"), Color("#FFB000"), Color("#FF8C1A"), Color("#FF2A3D")]
 ## The ink box round the band word while it stamps (px).
 const STAMP_BOX_PAD := 3.0
@@ -122,7 +125,7 @@ func _init(p_poster: bool = false) -> void:
 func band_label_rect() -> Rect2:
 	var top := POSTER_BLOCK_TOP if poster else 0.0
 	var f := Palette.marker()
-	var word := tr(BAND_WORDS[mini(shown_band(), 3)])
+	var word := tr(BAND_WORDS[mini(shown_band(), BAND_WORDS.size() - 1)])
 	var base := top + BAND_BASELINE
 	return Rect2(8, base - f.get_ascent(BAND_FONT), f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT).x, f.get_height(BAND_FONT))
 
@@ -589,7 +592,7 @@ func note_showing() -> bool:
 ## plays. "HEAT 5 · COOL" below the first threshold.
 func banner_text() -> String:
 	var at := _banner_at if _banner_at > 0 else _band_floor(heat)
-	var word := tr(BAND_WORDS[mini(band_of(at, marks), 3)]).to_upper()
+	var word := tr(BAND_WORDS[mini(band_of(at, marks), BAND_WORDS.size() - 1)]).to_upper()
 	if at <= 0:
 		return tr("HEAT %d · %s") % [heat, word]
 	return tr("HEAT %d · %s (%d+)") % [heat, word, at]
@@ -874,7 +877,7 @@ func tooltip_words(for_text: String) -> String:
 	var band_line := consequence(heat)
 	if band_line == "" or for_text.contains(band_line):
 		return for_text
-	return for_text + "\n" + tr(BAND_WORDS[mini(band, 3)]).to_upper() + ": " + band_line
+	return for_text + "\n" + tr(BAND_WORDS[mini(band, BAND_WORDS.size() - 1)]).to_upper() + ": " + band_line
 
 
 func _process(_delta: float) -> void:
@@ -937,10 +940,10 @@ func _draw() -> void:
 		draw_set_transform(c, 0.0, Vector2.ONE * stamp_scale)
 		var box := Rect2(r.position - c, r.size).grow(STAMP_BOX_PAD)
 		draw_rect(box, Color(hot_color, clampf((stamp_scale - 1.0) * 4.0, 0.0, 1.0)), false, 2.0)
-		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE) - c, tr(BAND_WORDS[mini(shown_band(), 3)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
+		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE) - c, tr(BAND_WORDS[mini(shown_band(), BAND_WORDS.size() - 1)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
 		draw_set_transform(Vector2.ZERO)
 	else:
-		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE), tr(BAND_WORDS[mini(shown_band(), 3)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
+		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE), tr(BAND_WORDS[mini(shown_band(), BAND_WORDS.size() - 1)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
 	if banner_alpha > 0.0:
 		_draw_banner(y)
 

@@ -493,4 +493,7 @@ func _art0() -> int:
 	if not names.has("mirror_trojan_base") or names.has("mirror_" + "deploy_base") or cfg.mirror_trojan_base != 6: fails += 1
 	if shipped == null or shipped.null_slice_overwrite_price != 150: fails += 1
 	if RC.SliceType.keys() != ["SHIM", "OVERFLOW", "DEFRAG", "DETOUR", "SANDBOX", "TROJAN", "HOTFIX", "INFECT", "NULL"]: fails += 1
+	# ART-0 B3: five Heat bands on the existing thresholds (MAJOR 25 / 50 / 75 and PURGE 100).
+	print("ART-0 B3: heat_band_levels ", shipped.heat_band_levels() if shipped != null else [])
+	if shipped == null or shipped.heat_band_levels() != ([25, 50, 75, 100] as Array[int]): fails += 1
 	return fails

@@ -311,3 +311,47 @@ func test_b3_the_new_tags_fit_like_the_others_at_text_size_2() -> void:
 	for t in [RC.SliceType.SANDBOX, RC.SliceType.TROJAN, RC.SliceType.NULL]:
 		var w := font.get_string_size(String(Palette.SLICE_NAMES[t]), HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 		assert_true(w <= widest + 0.5, "%s is %.1f px at 2.0, the widest part-2 tag %.1f" % [Palette.SLICE_NAMES[t], w, widest])
+
+
+# --- Part 3, ruling 2: five Heat bands on the existing thresholds -----------------------------------
+
+## Every band boundary reads its word: COOL 0-24, NOTICED 25-49, FLAGGED 50-74, HUNTED 75-99,
+## PURGE 100, the levels read from the config (never literals in the code under test).
+func test_b3_every_heat_band_boundary_maps_to_its_word() -> void:
+	var cfg := load(ContentRegistry.CONFIG_PATH) as CampaignConfigData
+	var levels := cfg.heat_band_levels()
+	assert_eq(levels, [25, 50, 75, 100] as Array[int], "the bands start at the MAJOR levels and the PURGE level")
+	var want := {0: "cool", 24: "cool", 25: "noticed", 49: "noticed", 50: "flagged", 74: "flagged",
+		75: "hunted", 99: "hunted", 100: "purge"}
+	for heat in want:
+		assert_eq(HeatPoster.BAND_WORDS[Palette.heat_band(heat)], want[heat], "Heat %d" % heat)
+		assert_eq(HeatPoster.BAND_WORDS[HeatPoster.band_of(heat, levels)], want[heat], "Heat %d on the poster" % heat)
+	assert_eq(Palette.heat_color(100), Palette.heat_color(99), "PURGE reuses HUNTED's colour until ART-1")
+	assert_eq(HeatPoster.BAND_WORDS.size(), Palette.HEAT_BAND_COLORS.size(), "a colour for every band")
+
+
+## At Heat 100 the poster's band word and banner say PURGE.
+func test_b3_the_poster_shows_purge_at_100() -> void:
+	RunManager.new_campaign(1)
+	var cfg := RunManager.config()
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = Vector2(1280, 720)
+	var p := HeatPoster.new(true)
+	holder.add_child(p)
+	p.set_heat(cfg.heat_max, cfg.heat_max, HeatRules.band_levels(RunManager.campaign, cfg))
+	assert_eq(p.band, HeatPoster.BAND_WORDS.size() - 1, "the last band")
+	assert_eq(HeatPoster.BAND_WORDS[p.shown_band()], "purge", "the band word")
+	assert_string_contains(p.banner_text(), tr("purge").to_upper(), "the banner names PURGE")
+	p.set_heat(cfg.heat_max - 1, cfg.heat_max, HeatRules.band_levels(RunManager.campaign, cfg))
+	assert_eq(HeatPoster.BAND_WORDS[p.shown_band()], "hunted", "one below is HUNTED")
+
+
+## ICE 17 pulls the Purge down (PURGE_THRESHOLD), and the PURGE band with it.
+func test_b3_the_purge_band_starts_where_the_purge_fires() -> void:
+	var cfg := load(ContentRegistry.CONFIG_PATH) as CampaignConfigData
+	var c := CampaignState.new()
+	assert_eq(HeatRules.band_levels(c, cfg), cfg.heat_band_levels(), "ICE 0: the config's levels")
+	c.ice_level = cfg.max_ice_level()
+	var purge := int(c.rule_modifier(cfg, RC.RuleModifierType.PURGE_THRESHOLD))
+	assert_gt(purge, 0, "the ladder lowers the Purge")
+	assert_eq(HeatRules.band_levels(c, cfg).back(), purge, "the PURGE band starts at the lowered Purge")

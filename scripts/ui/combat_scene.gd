@@ -2056,7 +2056,7 @@ signal shown_hp_changed
 func _sync_heat() -> void:
 	var heat := RunManager.campaign.heat if RunManager.campaign != null else 0
 	var heat_max := engine.resolver.config.heat_max
-	heat_poster.set_heat(heat, heat_max, engine.resolver.config.major_heat_levels())
+	heat_poster.set_heat(heat, heat_max, HeatRules.band_levels(RunManager.campaign, engine.resolver.config))
 	background.corp_creep = clampf(float(heat) / maxf(1.0, heat_max), 0.0, 1.0)
 
 

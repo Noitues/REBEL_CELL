@@ -196,6 +196,17 @@ func major_heat_levels() -> Array[int]:
 	return out
 
 
+## Where the Heat bands start, ascending (GDD 4.3): the MAJOR levels and the PURGE level.
+## Below the first is COOL; then NOTICED, FLAGGED, HUNTED, PURGE.
+func heat_band_levels() -> Array[int]:
+	var out: Array[int] = []
+	for t in heat_thresholds:
+		if t != null and (t.kind == RC.ThresholdKind.MAJOR or t.kind == RC.ThresholdKind.PURGE):
+			out.append(t.heat)
+	out.sort()
+	return out
+
+
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
 	for arr in [rack_heat_by_tier, rack_schematics_by_tier, raid_schematics_by_tier]:

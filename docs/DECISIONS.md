@@ -65,6 +65,22 @@ Internal names follow the display names; no aliases, no migrations (old saves na
   assets ("Deploy armory asset"), EffectType.DEPLOY_DRONE, the `"deploy"` combat event and
   `bark:deploy` (a drone deployed, by a TROJAN slice or a card). *Miss* in prose: "Miss a payment",
   "the cameras miss", "make a miss count", the precision rule "no miss tier".
+- **Five Heat bands (ruling 2).** COOL / NOTICED / FLAGGED / HUNTED / PURGE, starting at the MAJOR
+  levels and the PURGE level of `heat_thresholds` (25 / 50 / 75 / 100); no threshold or number
+  changed and none is written in code. New `CampaignConfigData.heat_band_levels()` (a method, no
+  field; smoke-checked in `_art0`) and `HeatRules.band_levels(campaign, config)`; the HQ's
+  wanted poster and the combat top bar pass the latter. `HeatPoster.BAND_WORDS` gains "purge"
+  (the index caps follow the array, no more `3`); `Palette.HEAT_BAND_COLORS` gains a fifth entry,
+  HARM again: PURGE reuses HUNTED's colour (and the poster's red banner, by its existing clamp)
+  until ART-1 with its own word. Call: the PURGE band starts where the Purge actually fires,
+  so at ICE 17+ (PURGE_THRESHOLD 90) it reads PURGE from 90; `Palette.heat_band` without a
+  campaign reads the config's 100. Unchanged: `CampaignState.heat_majors_crossed` (rules
+  scaling, CORRUPTED) and the HQ backdrop's search lights (MAJOR count), and `consequence()`
+  (the MAJOR modifiers in force; the PURGE event text is a one-time event). GDD 4.3: the
+  duplicated "Bands" line is one line, with the ICE 17 note. Tests:
+  `test_b3_every_heat_band_boundary_maps_to_its_word` (24/25, 49/50, 74/75, 99/100),
+  `test_b3_the_poster_shows_purge_at_100`, `test_b3_the_purge_band_starts_where_the_purge_fires`;
+  `test_heat_color_bands_follow_the_config_majors` caps at PURGE now.
 
 ### 2026-10-05 — Art direction — ART-0 names pass, part 2 (D2–D8, D11–D12)
 Applies "2026-10-05 — Designer rulings: names for M14" (ART-0 area B part 2). Internal names follow
