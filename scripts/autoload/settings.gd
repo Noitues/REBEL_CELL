@@ -63,12 +63,12 @@ var tutorial_done: bool = false
 var assist_mode: bool = false
 ## ART-0 C (ported from art-pass f0a80ba, 44f14bb, ec07661, 35f3b34; M13 W9 / WF):
 ## Colour-blind correction (ART_BIBLE §12): one of COLORBLIND_MODES. Not off puts a
-## full-screen daltonize pass on top (`colorblind_layer`, this node's child); the patterns
+## full-screen daltonize pass on top (`colorblind_layer()`, this node's child); the patterns
 ## and glyphs stay the main cue.
 var colorblind_mode: StringName = &"off"
 const COLORBLIND_MODES: Array[StringName] = [&"off", &"deutan", &"protan", &"tritan"]
 ## The correction layer while colorblind_mode is not off (null when off: no cost).
-var colorblind_layer: ColorblindLayer = null
+var _colorblind_layer: ColorblindLayer = null
 ## High contrast (ART_BIBLE §12): opaque panels, light text on #000 at 7:1, solid thick
 ## button and focus edges (HighContrast.apply, hooked at the end of UiTheme.build).
 var high_contrast: bool = false
@@ -156,7 +156,7 @@ func set_flash_limiter(value: bool) -> void:
 ## Whether the last input came from a pad: hints then name pad buttons (H20).
 var pad_active: bool = false
 ## The device id of the last pad that sent input (-1 before any): auto glyphs follow it.
-var pad_device: int = -1
+var _pad_device: int = -1
 ## Stick motion below this doesn't count as switching to the pad.
 const PAD_SWITCH_DEADZONE := 0.5
 ## Xbox-layout button names for hints (Godot maps other pads onto this layout).
@@ -180,7 +180,7 @@ func _input(event: InputEvent) -> void:
 ## a pad press that ends a motion (and never reaches this node) still switches the prompts.
 func observe_device(event: InputEvent) -> void:
 	var pad := pad_active
-	var device := pad_device
+	var device := _pad_device
 	if event is InputEventJoypadButton:
 		pad = true
 		device = event.device
@@ -190,8 +190,8 @@ func observe_device(event: InputEvent) -> void:
 			device = event.device
 	elif event is InputEventKey or event is InputEventMouseButton:
 		pad = false
-	if device != pad_device:
-		pad_device = device
+	if device != _pad_device:
+		_pad_device = device
 		if pad == pad_active and pad and pad_glyph_set == &"auto":
 			hints_changed.emit()  # another pad: its glyphs
 	if pad != pad_active:
@@ -262,21 +262,26 @@ func set_colorblind_mode(value: StringName) -> void:
 ## ColorblindFilter autoload, folded into Settings in ART-0 C). Off: no layer at all.
 func sync_colorblind_layer() -> void:
 	if not ColorblindLayer.MODES.has(colorblind_mode):
-		if colorblind_layer != null and is_instance_valid(colorblind_layer):
-			remove_child(colorblind_layer)
-			colorblind_layer.queue_free()
-		colorblind_layer = null
+		if _colorblind_layer != null and is_instance_valid(_colorblind_layer):
+			remove_child(_colorblind_layer)
+			_colorblind_layer.queue_free()
+		_colorblind_layer = null
 		return
-	if colorblind_layer == null or not is_instance_valid(colorblind_layer):
-		colorblind_layer = ColorblindLayer.new(colorblind_mode)
-		add_child(colorblind_layer)
+	if _colorblind_layer == null or not is_instance_valid(_colorblind_layer):
+		_colorblind_layer = ColorblindLayer.new(colorblind_mode)
+		add_child(_colorblind_layer)
 	else:
-		colorblind_layer.set_mode(colorblind_mode)
+		_colorblind_layer.set_mode(colorblind_mode)
+
+
+## The correction layer up now (null while colorblind_mode is off).
+func colorblind_layer() -> ColorblindLayer:
+	return _colorblind_layer if _colorblind_layer != null and is_instance_valid(_colorblind_layer) else null
 
 
 ## The mode the screen is corrected for (&"off" when no layer is up).
 func active_colorblind_mode() -> StringName:
-	return colorblind_layer.mode if colorblind_layer != null and is_instance_valid(colorblind_layer) else &"off"
+	return _colorblind_layer.mode if _colorblind_layer != null and is_instance_valid(_colorblind_layer) else &"off"
 
 
 ## Turns high contrast on or off (the UI theme rebuilds through `changed`).
@@ -325,8 +330,8 @@ func effective_glyph_set() -> StringName:
 ## one ("" with none).
 func active_joy_name() -> String:
 	var pads := Input.get_connected_joypads()
-	if pad_device >= 0 and pads.has(pad_device):
-		return Input.get_joy_name(pad_device)
+	if _pad_device >= 0 and pads.has(_pad_device):
+		return Input.get_joy_name(_pad_device)
 	return Input.get_joy_name(pads[0]) if not pads.is_empty() else ""
 
 
@@ -687,6 +692,7 @@ static func _pick(value: Variant, allowed: Array[StringName]) -> StringName:
 func snapshot() -> Dictionary:
 	var d := to_dict()
 	d["pad_active"] = pad_active
+	d["device_probe_override"] = device_probe_override.duplicate()
 	return d
 
 
@@ -699,6 +705,7 @@ func restore(snap: Dictionary) -> void:
 		keybinds[String(action)] = int(snap["keybinds"][action])
 	apply_keybinds()
 	pad_active = bool(snap.get("pad_active", false))
+	device_probe_override = (snap.get("device_probe_override", {}) as Dictionary).duplicate()
 	_apply()
 
 

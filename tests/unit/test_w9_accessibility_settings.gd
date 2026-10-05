@@ -56,7 +56,7 @@ func test_defaults_keep_mains_behaviour() -> void:
 	var glass := plain.get_stylebox(&"panel", &"GlassPanel") as StyleBoxFlat
 	assert_lt(glass.bg_color.a, 1.0, "glass stays glass (no high contrast)")
 	Settings.sync_colorblind_layer()
-	assert_null(Settings.colorblind_layer, "no correction layer")
+	assert_null(Settings.colorblind_layer(), "no correction layer")
 
 
 func test_an_old_settings_file_without_the_new_keys_loads_unchanged() -> void:
@@ -120,7 +120,7 @@ func test_the_suite_snapshot_covers_the_new_settings() -> void:
 	Settings.restore(snap)
 	assert_false(Settings.high_contrast)
 	assert_eq(Settings.colorblind_mode, &"off")
-	assert_null(Settings.colorblind_layer, "restore takes the layer away too")
+	assert_null(Settings.colorblind_layer(), "restore takes the layer away too")
 
 
 # --- 1. Text scale 2.0 ------------------------------------------------------------------
@@ -150,11 +150,11 @@ func _layers() -> int:
 
 func test_each_colorblind_mode_adds_the_layer_and_off_removes_it() -> void:
 	Settings.set_colorblind_mode(&"off")
-	assert_null(Settings.colorblind_layer, "off: no layer")
+	assert_null(Settings.colorblind_layer(), "off: no layer")
 	assert_eq(_layers(), 0, "off: nothing in the tree, no cost")
 	for mode in [&"deutan", &"protan", &"tritan"]:
 		Settings.set_colorblind_mode(mode)
-		var layer: ColorblindLayer = Settings.colorblind_layer
+		var layer: ColorblindLayer = Settings.colorblind_layer()
 		assert_not_null(layer, "%s adds the layer" % mode)
 		assert_true(layer.is_inside_tree())
 		assert_eq(layer.layer, ColorblindLayer.LAYER)
@@ -162,7 +162,7 @@ func test_each_colorblind_mode_adds_the_layer_and_off_removes_it() -> void:
 		assert_eq(Settings.active_colorblind_mode(), mode)
 		assert_eq(_layers(), 1, "one layer, reused")
 	Settings.set_colorblind_mode(&"off")
-	assert_null(Settings.colorblind_layer)
+	assert_null(Settings.colorblind_layer())
 	assert_eq(_layers(), 0, "off frees the layer")
 	assert_eq(Settings.active_colorblind_mode(), &"off")
 
