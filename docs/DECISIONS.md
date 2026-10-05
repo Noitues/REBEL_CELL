@@ -475,6 +475,18 @@ names follow the display words; no aliases, no migrations.
   their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
   folder for a clean title screen.
 
+### 2026-10-05 — Designer ruling: rolling audits as groups merge; Gantt in the hourly report
+1. **Rolling audits** (partly reverses "no audit until the end"): when an M14 group is merged (ART-0, Group 1,
+   Group 2, Group 3, Group 4), its vertical / horizontal / naive auditors review that group on main while the
+   other groups keep building (report only; rules in `docs/handoff/m14_audit/auditor_common_rules.txt`).
+   Findings go to fix agents by owning area at once (nothing deferred, P3s included). The audit after ART-12
+   remains one loop over all of M14 and should then be small. ART-0 is plumbing with no new look, so it gets
+   the horizontal audit only.
+2. **Hourly report** includes the Gantt of agents and dependencies with the critical path and the current
+   finish estimate.
+Context: the critical-path re-plan (Group 3 wave 2 started early: 5b landmarks, 8p HQ compounds; 5a/5c/5d on
+the city spike's interim pick) moved the estimate from Thursday 18:00 to about Wednesday 12:00.
+
 ### 2026-10-05 — Designer rulings: D10, D13, D14 confirmed; the art pass design is correct
 1. **D10, D13, D14 confirmed** at their plan defaults: title verbs BREACH / DISABLE / OVERTHROW with
    **SIMULATE** for the tutorial; an "Always show all nodes" setting with hidden-node visibility on the
