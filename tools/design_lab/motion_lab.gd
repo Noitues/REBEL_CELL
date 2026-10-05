@@ -916,8 +916,8 @@ func _play_screen(what: String) -> void:
 			f.heat_max = 100
 			f.heat_marks.assign([25, 50, 75])
 			f.heat_levels.assign([25, 50, 75])
-			f.crew.assign([{"name": "Vex", "class_id": &"breaker", "class_name": "Breaker", "rank": 3, "alive": true, "runs": 7, "post": "Firewall Relay"},
-				{"name": "Ash", "class_id": &"ghost", "class_name": "Ghost", "rank": 2, "alive": false, "runs": 4, "post": ""}])
+			f.crew.assign([{"id": &"op_1", "name": "Vex", "class_id": &"breaker", "class_name": "Breaker", "rank": 3, "alive": true, "runs": 7, "post": "Firewall Relay"},
+				{"id": &"op_2", "name": "Ash", "class_id": &"ghost", "class_name": "Ghost", "rank": 2, "alive": false, "runs": 4, "post": ""}])
 			f.most_troublesome = f.crew[0]
 			f.next_ice = 2
 			var prints: Array[Dictionary] = [{"caption": "HOME SERVER - 0/50"}, {"caption": "NODES AT THE END"}]

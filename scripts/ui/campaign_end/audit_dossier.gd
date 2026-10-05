@@ -274,7 +274,7 @@ func _build_personnel() -> void:
 		bust.name = "Print"
 		bust.custom_minimum_size = BUST_PRINT * s
 		bust.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		var subj := PortraitArt.operative_subject(r["class_id"], r["id"], String(r["name"]))
+		var subj := PortraitArt.operative_subject(r["class_id"], StringName(String(r.get("id", ""))), String(r["name"]))
 		bust.draw.connect(_draw_print.bind(bust, subj, not bool(r["alive"])))
 		row.add_child(bust)
 		var names := VBoxContainer.new()
