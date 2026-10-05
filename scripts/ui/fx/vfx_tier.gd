@@ -101,5 +101,11 @@ static func of(id: StringName) -> int:
 
 ## An entry's duration fits its tier (T0 loops: a period of at least T0_MIN_PERIOD is not
 ## required of every T0 entry, only of the backdrop's; ART_BIBLE 8 lists it as a floor).
+## ART-0 audit E2: only a one-shot effect is held to the tier's duration; a HOLD (a wait, a
+## budget, a note left up) and a LOOP (a period) are not effect lengths.
 static func fits(e: UiMotionEntryData) -> bool:
-	return e != null and valid(int(e.tier)) and e.duration <= MAX_SECONDS[_i(int(e.tier))]
+	if e == null or not valid(int(e.tier)):
+		return false
+	if int(e.kind) != UiMotionEntryData.Kind.ONE_SHOT:
+		return true
+	return e.duration <= MAX_SECONDS[_i(int(e.tier))]

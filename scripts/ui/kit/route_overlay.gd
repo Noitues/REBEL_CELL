@@ -69,7 +69,7 @@ const TARGET_STROKE := 3.6
 const TARGET_SEGMENTS := 40
 const TARGET_OVERRUN := 0.18
 const TARGET_FONT := 20
-const TARGET_WORD_AT := Vector2(0.7, -0.95)
+const ROUTE_TARGET_WORD_AT := Vector2(0.7, -0.95)
 const TARGET_WORD_TILT := -0.12
 ## Cable paths (screen px): widths of the walked line, the live dash and the later dash.
 const CABLE_WALKED := 3.6
@@ -103,19 +103,15 @@ const SEARCH_PHASE := 0.37
 const SEARCH_BASES: Array[float] = [0.35, -0.45]
 const SEARCH_ORIGINS: Array[float] = [0.18, 0.82]
 
-## D13: every node shown (the legend strip's hover or the Options setting).
-var show_all: bool = false:
-	set(v):
-		if v == show_all:
-			return
-		show_all = v
-		all_t = 0.0 if v else 1.0
-		if v:
-			if is_inside_tree():
-				Motion.run(REVEAL_MOTION, self, ^"all_t", 1.0)
-			else:
-				all_t = 1.0
-		_queue_top()
+## D13: every node shown (the legend strip's hover or the Options setting): `show_all` is
+## CityMapOverlay's (ART-5 5d); the route animates the reveal through its hook.
+func _on_show_all_changed(v: bool) -> void:
+	all_t = 0.0 if v else 1.0
+	if v:
+		if is_inside_tree():
+			Motion.run(REVEAL_MOTION, self, ^"all_t", 1.0)
+		else:
+			all_t = 1.0
 		queue_redraw()
 ## The show-all fade (0..1).
 var all_t: float = 1.0:
@@ -519,7 +515,7 @@ func _target(n: Dictionary, at: Vector2, r: float, a: float) -> void:
 	# else beside the circle.
 	if label_rects().has(String(n["id"])):
 		return
-	_pencil_word(at + Vector2(rr * TARGET_WORD_AT.x, rr * TARGET_WORD_AT.y), tr_word(TARGET_WORD), a)
+	_pencil_word(at + Vector2(rr * ROUTE_TARGET_WORD_AT.x, rr * ROUTE_TARGET_WORD_AT.y), tr_word(TARGET_WORD), a)
 
 
 ## The TARGET's word in red grease pencil at `wp` (its baseline's start), tilted.

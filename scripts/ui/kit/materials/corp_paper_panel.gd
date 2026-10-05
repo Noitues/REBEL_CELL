@@ -44,7 +44,7 @@ func _init() -> void:
 	_paper = Control.new()
 	_paper.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_paper.material = _mat
-	_paper.draw.connect(func() -> void: _paper.draw_rect(Rect2(Vector2.ZERO, size), Color.WHITE))
+	_paper.draw.connect(func() -> void: _paper.draw_rect(Rect2(Vector2.ZERO, size), Palette.NO_TINT))
 	add_child(_paper, false, Node.INTERNAL_MODE_FRONT)
 	var head := Control.new()
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE

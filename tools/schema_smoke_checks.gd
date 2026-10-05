@@ -454,6 +454,20 @@ func _art0_tier(shipped: UiMotionData) -> int:
 	if tier_default != UiMotionEntryData.Tier.T1_FEEDBACK or tb == null or tb.tier != UiMotionEntryData.Tier.T3_MOMENT: fails += 1
 	te.set("tier", 7)
 	if te.validate().size() != 1: fails += 1  # tier out of range
+	# ART-0 audit E2: an entry's kind (ONE_SHOT default, HOLD, LOOP) round-trips; out of range is an error.
+	var ke := UiMotionEntryData.new()
+	ke.id = &"smoke_kind"
+	var kind_default := ke.kind
+	ke.kind = UiMotionEntryData.Kind.HOLD
+	var kind_table := UiMotionData.new()
+	kind_table.entries = [ke]
+	var kind_err := ResourceSaver.save(kind_table, "user://smoke_motion_kind.tres")
+	var kind_back: UiMotionData = load("user://smoke_motion_kind.tres")
+	var kb := kind_back.find(&"smoke_kind") if kind_back != null else null
+	print("ART-0 audit E2: kind default ", kind_default, " save=", kind_err, " reload ", kb.kind if kb != null else -1, " kinds ", UiMotionEntryData.Kind.keys())
+	if kind_default != UiMotionEntryData.Kind.ONE_SHOT or kb == null or kb.kind != UiMotionEntryData.Kind.HOLD: fails += 1
+	ke.set("kind", 5)
+	if ke.validate().size() != 1: fails += 1  # kind out of range
 	var bad_tier := 0
 	if shipped != null:
 		for se in shipped.entries:
@@ -486,6 +500,12 @@ func _art0() -> int:
 	print("ART-0 S0: saves ", cfg.save_dir_source, " / ", cfg.save_dir_export, " replays ", cfg.replay_subdir, " on ", cfg.write_replays)
 	if cfg.save_dir_source != "res://saves" or cfg.save_dir_export != "user://saves" or cfg.replay_subdir != "replays" or not cfg.write_replays: fails += 1
 	if shipped == null or shipped.save_dir_source != cfg.save_dir_source or shipped.save_dir_export != cfg.save_dir_export or shipped.replay_subdir != cfg.replay_subdir or shipped.write_replays != cfg.write_replays: fails += 1
+	# ART-0 audit B4: the replay folder's cap (0 = none; negative is an error).
+	print("ART-0 audit B4: max_replays ", cfg.max_replays, " shipped ", shipped.max_replays if shipped != null else -1)
+	if not names.has("max_replays") or cfg.max_replays != 50 or shipped == null or shipped.max_replays != 50: fails += 1
+	var neg := CampaignConfigData.new()
+	neg.max_replays = -1
+	if neg.validate().is_empty(): fails += 1
 	# ART-0 B3: the slice programs SANDBOX / TROJAN / NULL; the config fields follow the words.
 	print("ART-0 B3: null_slice_overwrite_price ", cfg.null_slice_overwrite_price, " shipped ", shipped.null_slice_overwrite_price if shipped != null else -1,
 		" mirror_trojan_base ", cfg.mirror_trojan_base, " slices ", RC.SliceType.keys())
@@ -512,6 +532,13 @@ func _art2c() -> int:
 	var bad := CampaignConfigData.new()
 	bad.heat_city_side_beacons = PackedInt32Array([1, 2])
 	if bad.validate().is_empty(): fails += 1
+	# ART-0 audit B1: the Heat glitch's per-band table (period, burst, tears, blocks).
+	print("ART-0 audit B1: heat_glitch period ", cfg.heat_glitch_period, " burst ", cfg.heat_glitch_burst, " tears ", cfg.heat_glitch_tears, " blocks ", cfg.heat_glitch_blocks)
+	if cfg.heat_glitch_period.size() != 5 or cfg.heat_glitch_burst.size() != 5 or cfg.heat_glitch_tears[3] != 18 or cfg.heat_glitch_blocks[2] != 48: fails += 1
+	if shipped == null or shipped.heat_glitch_period.size() != 5: fails += 1
+	var bad_glitch := CampaignConfigData.new()
+	bad_glitch.heat_glitch_burst = PackedFloat32Array([0.08, 0.16, 0.26, 2.0, 0.32])
+	if bad_glitch.validate().is_empty(): fails += 1
 	return fails
 
 

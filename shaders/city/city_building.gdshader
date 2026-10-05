@@ -7,6 +7,7 @@
 // COLOR = base colour, INSTANCE_CUSTOM = (taper, trim ink index + 1 or 0, seed 0-1, crest).
 shader_type spatial;
 render_mode cull_disabled, specular_disabled;
+#include "res://shaders/lib/rc_common.gdshaderinc"
 #include "res://shaders/kit/toon_bands.gdshaderinc"
 
 uniform vec3 ramp_shadow;

@@ -95,7 +95,7 @@ func breathe_at(time: float) -> float:
 
 
 func _draw() -> void:
-	draw_rect(rect(), Color.WHITE)
+	draw_rect(rect(), Palette.NO_TINT)
 
 
 ## Packs spill sources for the 3D toon material: each {position: Vector3, radius: float,

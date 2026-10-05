@@ -109,21 +109,64 @@ func test_no_code_file_or_path_keeps_an_old_name() -> void:
 			if SHOP_OLD.search(path) != null or HUB_OLD.search(path) != null:
 				hits.append(path)
 				continue
-			var lines := FileAccess.get_file_as_string(path).split("\n")
+			var src := FileAccess.get_file_as_string(path)
+			var raid_context := _is_raid_context(path, src)
+			var lines := src.split("\n")
 			for i in lines.size():
 				var line := lines[i]
 				if SHOP_OLD.search(line) != null or HUB_OLD.search(line) != null:
 					hits.append("%s:%d" % [path, i + 1])
-				elif _raid_hit(line) and _raid_identifier(line):
+				elif _raid_hit(line) and _raid_identifier(line, raid_context):
 					hits.append("%s:%d" % [path, i + 1])
 	assert_eq(hits, [] as Array[String], "the old names are gone from the code (ruling 5)")
 
 
 ## A line naming the old raid states as code (enum value, field, outcome string), not the
-## UI-control or Hub-Breach "disabled".
-func _raid_identifier(line: String) -> bool:
-	var ident := RegEx.create_from_string("(?i)sei" + "z(e|ed|es)\\b|Condition\\.DIS" + "ABLED|outcome\\W+dis" + "abled|\"dis" + "abled\"\\s*:")
-	return ident.search(line) != null
+## UI-control or Hub-Breach "disabled". ART-0 audit B2: the dictionary-key form (the word
+## quoted, then a colon) counts only in a raid context (see _is_raid_context), so a
+## control's state keys are written plainly everywhere else.
+func _raid_identifier(line: String, raid_context: bool = true) -> bool:
+	var ident := RegEx.create_from_string("(?i)sei" + "z(e|ed|es)\\b|Condition\\.DIS" + "ABLED|outcome\\W+dis" + "abled")
+	if ident.search(line) != null:
+		return true
+	return raid_context and RegEx.create_from_string("(?i)\"dis" + "abled\"\\s*:").search(line) != null
+
+
+## A raid file (its name says raid) or one that builds raid outcome dictionaries (it keys
+## "taken" / "holds"): where an old raid word as a dictionary key would be an outcome.
+func _is_raid_context(path: String, src: String) -> bool:
+	return path.get_file().contains("raid") or RegEx.create_from_string("\"(taken|holds)\"\\s*:").search(src) != null
+
+
+func test_a_control_state_key_is_not_a_raid_word_but_a_raid_outcome_key_is() -> void:
+	var key := "\"dis" + "abled\": box"
+	assert_false(_raid_identifier(key, false), "a UI state key outside raid code passes (ART-0 audit B2)")
+	assert_true(_raid_identifier(key, true), "the same key in raid code is an old outcome")
+	assert_true(_raid_identifier("Condition.DIS" + "ABLED", false), "the old enum value is caught anywhere")
+	assert_true(_is_raid_context("res://scripts/core/raid_resolver.gd", ""), "a raid file")
+	assert_true(_is_raid_context("res://scripts/ui/hq_scene.gd", "{\"taken\": 1}"), "a file building raid outcomes")
+	assert_false(_is_raid_context("res://scripts/ui/kit/ui_theme.gd", "{\"normal\": a}"), "the theme is not raid code")
+	for path in ["res://scripts/ui/kit/ui_theme.gd", "res://tools/design_lab/type_chrome_sheet.gd", "res://tests/unit/test_w9_accessibility_settings.gd"]:
+		var src := FileAccess.get_file_as_string(path)
+		for dodge in ["(&\"dis" + "abled\")", "(\"dis" + "abled\")", "StringName(\"dis" + "abled\")"]:
+			assert_false(src.contains(dodge), "%s writes the state key plainly, no %s" % [path, dodge])
+
+
+## ART-0 audit B3: BREACHED is the home server falling (ruling 6.2); a Hub Breach reads
+## LOCKDOWN (ART_BIBLE v2 3.3, Appendix C #11) in the combat log and on the hub line.
+func test_a_hub_breach_says_lockdown_not_breached() -> void:
+	var fx := EffectInterpreter.new(null, null)
+	var c := CombatantState.new()
+	c.display_name = "Gate"
+	var events: Array[Dictionary] = []
+	fx.hub_breach(c, 2, events)
+	assert_eq(events.size(), 1)
+	var text := String(events[0]["text"])
+	assert_true(text.contains("LOCKDOWN"), "the log says LOCKDOWN: %s" % text)
+	assert_false(text.to_upper().contains("BREACH" + "ED"), "never the home server's word: %s" % text)
+	var view := FileAccess.get_file_as_string("res://scripts/ui/wheel_view.gd")
+	assert_true(view.contains("tr(\" (LOCKDOWN)\")"), "the hub line says LOCKDOWN")
+	assert_false(view.contains("(BREACH" + "ED)"), "and never the home server's word")
 
 
 # --- Part 2 (DECISIONS "2026-10-05 — Designer rulings: names for M14", D2–D8, D11–D12) -----------

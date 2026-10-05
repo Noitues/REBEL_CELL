@@ -140,8 +140,8 @@ const BORDER_WARP := 11.0
 const BORDER_BLEND := 7.0
 ## Ink palettes: 0 = full neon; 1-3 paler options (lerped toward a tint).
 const INK_SETS: Array[Dictionary] = [
-	{"name": "NEON", "tint": Color.WHITE, "amount": 0.0},
-	{"name": "PASTEL NEON", "tint": Color.WHITE, "amount": 0.3},
+	{"name": "NEON", "tint": Palette.NO_TINT, "amount": 0.0},
+	{"name": "PASTEL NEON", "tint": Palette.NO_TINT, "amount": 0.3},
 	{"name": "FADED PRINT", "tint": Color("#C9BFD9"), "amount": 0.38},
 	{"name": "COOL HAZE", "tint": Color("#D6F2FF"), "amount": 0.32},
 ]
@@ -271,7 +271,7 @@ var _hq_rect: Rect2i = Rect2i()
 var _profile: Dictionary = {}
 ## Territory of the lot being drawn and its corporation colour.
 var _terr: StringName = &""
-var _terr_col: Color = Color.WHITE
+var _terr_col: Color = Palette.NO_TINT
 var _terr_next: StringName = &""
 var _border: float = 0.0
 var _hq_rects: Dictionary = {}  # corp id -> Rect2i
@@ -936,7 +936,7 @@ func _draw_old() -> void:
 
 ## The front's glow: one rect the shader turns into the spreading band.
 func _draw_front() -> void:
-	_front_layer.draw_rect(Rect2(Vector2.ZERO, size), Color.WHITE)
+	_front_layer.draw_rect(Rect2(Vector2.ZERO, size), Palette.NO_TINT)
 
 
 ## The influence of the followed campaign (the current one if nothing is followed).
@@ -1079,7 +1079,7 @@ func _apply_context(pair: Array) -> void:
 	_terr_next = pair[1]
 	_border = pair[2]
 	_profile = DISTRICTS.get(_terr, DISTRICTS[&""])
-	_terr_col = _pale(Palette.corp_color(_terr)) if _terr != &"" else Color.WHITE
+	_terr_col = _pale(Palette.corp_color(_terr)) if _terr != &"" else Palette.NO_TINT
 
 
 ## Screen position (local to this control) of grid point (x, y) with the current camera.

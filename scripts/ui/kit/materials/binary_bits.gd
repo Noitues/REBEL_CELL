@@ -217,7 +217,7 @@ func _draw() -> void:
 				continue
 			var p := BitsPath.at(b["start"], b["ctrl"], target, BitsPath.eased(t))
 			var hot := clampf(age / maxf(float(rec["hot"]), 0.001), 0.0, 1.0)
-			var c := Color.WHITE.lerp(col, hot)
+			var c := Palette.WHITE_HOT.lerp(col, hot)
 			var frame := int(floor(age / FLIP_SECONDS + float(b["phase"]) * 7.0)) % 2
 			var sz := cell * BIT_SCALE * lerpf(1.0, 0.55, t)
 			draw_set_transform(p, clock * float(b["spin"]))

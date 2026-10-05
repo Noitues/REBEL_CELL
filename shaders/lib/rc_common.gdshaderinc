@@ -17,6 +17,10 @@
 //   float f = flicker * rc_live();    // an animated strength, 0 under reduce effects
 // Helpers are prefixed rc_ so they never clash with a shader's own functions.
 
+// Guarded (ART-0 audit E3): a shader may include it beside an include that does too.
+#ifndef RC_COMMON_INCLUDED
+#define RC_COMMON_INCLUDED
+
 global uniform float reduce_effects;
 
 // 1.0 while effects play, 0.0 under reduce effects.
@@ -28,3 +32,5 @@ float rc_live() {
 float rc_time(float t) {
 	return t * rc_live();
 }
+
+#endif

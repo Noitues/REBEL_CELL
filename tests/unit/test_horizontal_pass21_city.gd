@@ -84,8 +84,8 @@ func _assert_tooltips(overlay: CityMapOverlay, what: String) -> void:
 	var placed := 0
 	for n in overlay.nodes:
 		var at := overlay.icon_pos(n)
-		if at.x == INF:
-			continue
+		if at.x == INF or not overlay.marker_shown(n):
+			continue  # ART-5 5d: a hidden v4 Site is not on the map (no tooltip)
 		placed += 1
 		var tip := overlay._get_tooltip(at)
 		assert_ne(tip, "", "%s node %s has a tooltip" % [what, n["id"]])
