@@ -7,7 +7,7 @@
 script = ExtResource("1")
 id = &"stolen_intent"
 display_name = "Stolen Intent"
-description = "Once per combat, when you would resolve Miss, swap resolved slices with the target."
+description = "Once per combat, when you would resolve NULL, swap resolved slices with the target."
 rarity = 2
 cycle_cost = 220
 custom_handler = ExtResource("h")

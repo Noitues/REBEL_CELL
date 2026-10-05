@@ -1,30 +1,30 @@
 extends GutTest
-## Player-side drones (GDD 2.6, 5.2, 6.2): DEPLOY slices dock drones on the operative's
+## Player-side drones (GDD 2.6, 5.2, 6.2): TROJAN slices dock drones on the operative's
 ## wheel, a drone resolves when its slice does, it takes enemy hits aimed at that slice,
 ## Botnet Seed grows drones on Perfects, Twin Pointer reads the wheel twice, Linked Bus
-## drags your wheel along, Stolen Intent swaps a Miss for the enemy's slice. Drones
+## drags your wheel along, Stolen Intent swaps a NULL for the enemy's slice. Drones
 ## survive save/load and replay.
 
 var _atk6: SliceData
-var _deploy: SliceData
-var _miss: SliceData
+var _trojan: SliceData
+var _null: SliceData
 var _hub: HubCoreData
 
 
 func before_each() -> void:
 	_atk6 = CombatFixture.slice(&"dr_atk6", RC.SliceType.SHIM, 6)
-	_deploy = CombatFixture.slice(&"dr_deploy", RC.SliceType.DEPLOY, 1, RC.TargetRule.SELF)
-	_miss = CombatFixture.slice(&"dr_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
+	_trojan = CombatFixture.slice(&"dr_trojan", RC.SliceType.TROJAN, 1, RC.TargetRule.SELF)
+	_null = CombatFixture.slice(&"dr_null", RC.SliceType.NULL, 0, RC.TargetRule.SELF)
 	_hub = CombatFixture.hub(&"dr_hub")
 	_hub.max_drones = 2
 	_hub.drone = ContentRegistry.get_content(&"botnet_drone") as EnemyData
 
 
-## Wheel: Deploy, Shim, Shim, Shim, Shim, Miss. Enemy: 300 HP punching bag, or an attacker.
+## Wheel: Trojan, Shim, Shim, Shim, Shim, Null. Enemy: 300 HP punching bag, or an attacker.
 func _session(daemons: Array = [], enemy_wheel: WheelData = null, seed: int = 9) -> CombatSession:
 	var deck: Array[CardData] = [CombatFixture.card(&"dr_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
-	var cls := CombatFixture.operative_class(&"dr_class", 60, CombatFixture.wheel([_deploy, _atk6, _atk6, _atk6, _atk6, _miss], _hub), deck)
-	var enemy := CombatFixture.enemy(&"dr_dummy", 300, enemy_wheel if enemy_wheel != null else CombatFixture.miss_wheel())
+	var cls := CombatFixture.operative_class(&"dr_class", 60, CombatFixture.wheel([_trojan, _atk6, _atk6, _atk6, _atk6, _null], _hub), deck)
+	var enemy := CombatFixture.enemy(&"dr_dummy", 300, enemy_wheel if enemy_wheel != null else CombatFixture.null_wheel())
 	var ids := []
 	for d in daemons:
 		ids.append(String(d))
@@ -35,13 +35,13 @@ func _end(s: CombatSession) -> CombatResult:
 	return s.apply(CombatAction.end_turn())
 
 
-func test_deploy_slice_docks_a_drone_up_to_the_hub_cap() -> void:
+func test_trojan_slice_docks_a_drone_up_to_the_hub_cap() -> void:
 	var s := _session()
 	CombatFixture.land(s.state.player, 0)
 	var r := _end(s)
 	assert_eq(CombatFixture.events_of(r, "deploy").size(), 1)
 	assert_eq(s.state.living_drones().size(), 1)
-	assert_eq(s.state.drones[0].dock_slot, 0, "docked on the Deploy slice itself")
+	assert_eq(s.state.drones[0].dock_slot, 0, "docked on the Trojan slice itself")
 	assert_eq(s.state.drones[0].hp, 5)
 	assert_true(s.state.drones[0].is_player and s.state.drones[0].is_satellite)
 	CombatFixture.land(s.state.player, 0)
@@ -67,7 +67,7 @@ func test_drone_resolves_only_when_its_slice_resolves() -> void:
 		if e["owner"] == drone.id:
 			drone_pointers += 1
 	assert_eq(drone_pointers, 0, "slot 3 resolved, drone on slot 0 idle")
-	# Land on slot 0 again: Deploy fires and so does the drone (Shim 3 or Defrag 3).
+	# Land on slot 0 again: Trojan fires and so does the drone (Shim 3 or Defrag 3).
 	CombatFixture.land(s.state.player, 0)
 	r = _end(s)
 	drone_pointers = 0
@@ -84,7 +84,7 @@ func test_drone_resolves_only_when_its_slice_resolves() -> void:
 func test_drone_on_the_resolved_slice_takes_the_enemy_hit() -> void:
 	# Shim 10 so the drone dies even when its own mini-wheel lands on Defrag 3.
 	var atk10 := CombatFixture.slice(&"dr_atk10", RC.SliceType.SHIM, 10)
-	var enemy_wheel := CombatFixture.wheel([atk10, atk10, atk10, atk10, atk10, _miss])
+	var enemy_wheel := CombatFixture.wheel([atk10, atk10, atk10, atk10, atk10, _null])
 	var s := _session([], enemy_wheel)
 	CombatFixture.land(s.state.player, 0)
 	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 5)
@@ -100,7 +100,7 @@ func test_drone_on_the_resolved_slice_takes_the_enemy_hit() -> void:
 	# The drone dies (10 damage vs 5 HP + at most 3 block) and is reported.
 	assert_eq(CombatFixture.events_of(r, "died").size(), 1)
 	assert_false(s.state.drones[0].is_alive())
-	assert_eq(s.state.living_drones().size(), 1, "the Deploy slice docked a replacement this turn")
+	assert_eq(s.state.living_drones().size(), 1, "the Trojan slice docked a replacement this turn")
 
 
 func test_botnet_seed_sprouts_one_hp_drones_on_perfects_max_two() -> void:
@@ -136,7 +136,7 @@ func test_twin_pointer_reads_the_wheel_at_the_bottom_and_halves_ram() -> void:
 func test_enemy_attacks_hit_both_twin_pointers() -> void:
 	var enemy_wheel := CombatFixture.wheel([_atk6, _atk6, _atk6, _atk6, _atk6, _atk6])
 	var s := _session([&"twin_pointer"], enemy_wheel)
-	CombatFixture.land(s.state.player, 5)  # Miss under pointer 0, slot 2 under pointer 1
+	CombatFixture.land(s.state.player, 5)  # NULL under pointer 0, slot 2 under pointer 1
 	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 0)
 	var r := _end(s)
 	var on_me := 0
@@ -161,8 +161,8 @@ func test_linked_bus_moves_your_wheel_with_enemy_nudges() -> void:
 	assert_eq(s.state.player.wheel.rotation, mine, "nudging your own wheel does not echo")
 
 
-func test_stolen_intent_swaps_a_miss_for_the_enemys_slice_once() -> void:
-	var enemy_wheel := CombatFixture.wheel([_atk6, _atk6, _atk6, _atk6, _atk6, _miss])
+func test_stolen_intent_swaps_a_null_for_the_enemys_slice_once() -> void:
+	var enemy_wheel := CombatFixture.wheel([_atk6, _atk6, _atk6, _atk6, _atk6, _null])
 	var s := _session([&"stolen_intent"], enemy_wheel)
 	CombatFixture.land(s.state.player, 5)
 	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 0)
@@ -172,7 +172,7 @@ func test_stolen_intent_swaps_a_miss_for_the_enemys_slice_once() -> void:
 	assert_eq(hits.size(), 1)
 	assert_eq(hits[0]["attacker"], &"player", "you attack with their Shim 6")
 	assert_eq(s.state.get_combatant(&"enemy_0").hp, 294)
-	assert_eq(s.state.player.hp, 60, "they resolve your Miss")
+	assert_eq(s.state.player.hp, 60, "they resolve your NULL")
 	# Second time: no swap, you simply miss and get hit.
 	CombatFixture.land(s.state.player, 5)
 	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 0)
@@ -190,7 +190,7 @@ func test_drones_survive_save_load_and_replay() -> void:
 	_end(s)
 	CombatFixture.land(s.state.player, 1)
 	_end(s)
-	assert_eq(s.state.living_drones().size(), 3, "one Deploy drone and two seed drones")
+	assert_eq(s.state.living_drones().size(), 3, "one Trojan drone and two seed drones")
 	var reloaded := CombatSession.from_dict(s.resolver, s.to_dict())
 	assert_eq(reloaded.state_hash(), s.state_hash())
 	assert_eq(reloaded.state.drones.size(), s.state.drones.size())

@@ -135,7 +135,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 2x (twice as fast),2x (twice as fast)
 2x NUDGE,2x NUDGE
 2× NUDGE CARDS NEXT,2× NUDGE CARDS NEXT
-": %d for most slots, %d for a pricier one such as the Miss slot; you pick the slot next",": %d for most slots, %d for a pricier one such as the Miss slot; you pick the slot next"
+": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next",": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next"
 < PREV SITE,< PREV SITE
 > CREW     %s,> CREW     %s
 > HOME     %s,> HOME     %s
@@ -325,7 +325,7 @@ CardData.leech_worm.description,The enemy slice under your pointer gets a PARASI
 CardData.leech_worm.display_name,Leech Worm
 CardData.lock_on.description,Move your outer ring to the nearest slice centre (Perfect). Exhaust.
 CardData.lock_on.display_name,Lock On
-CardData.malware_drop.description,CORRUPT a random non-Miss slice of the target.
+CardData.malware_drop.description,CORRUPT a random non-NULL slice of the target.
 CardData.malware_drop.display_name,Malware Drop
 CardData.micro_adjust.description,Two +-1 nudges. Exhaust.
 CardData.micro_adjust.display_name,Micro-Adjust
@@ -472,8 +472,6 @@ DEFEAT,DEFEAT
 DEFEATED,DEFEATED
 DEFENSE LOADOUT // %s,DEFENSE LOADOUT // %s
 DEFRAG,DEFRAG
-DEP,DEP
-DEPLOY,DEPLOY
 DETOUR,DETOUR
 DFRG,DFRG
 DISPATCH,DISPATCH
@@ -492,11 +490,11 @@ DaemonData.cascade.description,Two Perfects in a row: +1 RAM.
 DaemonData.cascade.display_name,Cascade
 DaemonData.clean_signal.description,3 consecutive Perfects: -2 Heat.
 DaemonData.clean_signal.display_name,Clean Signal
-DaemonData.cold_exit.description,Finish a netrun without the Miss slice resolving: -3 Heat.
+DaemonData.cold_exit.description,Finish a netrun without the NULL slice resolving: -3 Heat.
 DaemonData.cold_exit.display_name,Cold Exit
-DaemonData.fail_forward.description,The Miss slice restores 2 RAM.
+DaemonData.fail_forward.description,The NULL slice restores 2 RAM.
 DaemonData.fail_forward.display_name,Fail Forward
-DaemonData.fault_tolerance.description,The Miss slice deals 3 damage to the pointer target.
+DaemonData.fault_tolerance.description,The NULL slice deals 3 damage to the pointer target.
 DaemonData.fault_tolerance.display_name,Fault Tolerance
 DaemonData.feedback_loop.description,Every card you play deals 1 damage to every enemy.
 DaemonData.feedback_loop.display_name,Feedback Loop
@@ -520,7 +518,7 @@ DaemonData.shield_cache.description,Start every combat with 5 shield.
 DaemonData.shield_cache.display_name,Shield Cache
 DaemonData.static_field.description,"At the start of every turn, deal 1 damage to every enemy."
 DaemonData.static_field.display_name,Static Field
-DaemonData.stolen_intent.description,"Once per combat, when you would resolve Miss, swap resolved slices with the target."
+DaemonData.stolen_intent.description,"Once per combat, when you would resolve NULL, swap resolved slices with the target."
 DaemonData.stolen_intent.display_name,Stolen Intent
 DaemonData.tuning_fork.description,Every nudge action grants 1 block.
 DaemonData.tuning_fork.display_name,Tuning Fork
@@ -528,7 +526,7 @@ DaemonData.twin_pointer.description,Your wheel is also read at the bottom; both 
 DaemonData.twin_pointer.display_name,Twin Pointer
 DaemonData.warm_boot.description,Start every combat with +2 RAM.
 DaemonData.warm_boot.display_name,Warm Boot
-DaemonData.zero_day.description,A Perfect on the Miss slice resolves as a 3x OVERFLOW.
+DaemonData.zero_day.description,A Perfect on the NULL slice resolves as a 3x OVERFLOW.
 DaemonData.zero_day.display_name,Zero Day
 Daemons,Daemons
 Daemons: permanent programs of this operative (none installed).,Daemons: permanent programs of this operative (none installed).
@@ -744,7 +742,7 @@ Firmware,Firmware
 Firmware chip,Firmware chip
 FirmwareData.barbed_wire.description,DEFRAG slice also deals 2 damage to the pointer target.
 FirmwareData.barbed_wire.display_name,Barbed Wire
-FirmwareData.bulkhead.description,DEFRAG and SHIELD slices: output +50%.
+FirmwareData.bulkhead.description,DEFRAG and SANDBOX slices: output +50%.
 FirmwareData.bulkhead.display_name,Bulkhead
 FirmwareData.burner.description,Permanently OVERCLOCKED (1.5x); each trigger adds 1 Heat.
 FirmwareData.burner.display_name,Burner
@@ -764,9 +762,9 @@ FirmwareData.overvolt.description,SHIM and OVERFLOW slices: output +25%.
 FirmwareData.overvolt.display_name,Overvolt
 FirmwareData.patch_plus.description,Slice output +50%.
 FirmwareData.patch_plus.display_name,Patch+
-FirmwareData.power_cell.description,SHIELD slice also restores 1 RAM.
+FirmwareData.power_cell.description,SANDBOX slice also restores 1 RAM.
 FirmwareData.power_cell.display_name,Power Cell
-FirmwareData.recycler.description,The Miss slice restores 2 RAM when it resolves.
+FirmwareData.recycler.description,The NULL slice restores 2 RAM when it resolves.
 FirmwareData.recycler.display_name,Recycler
 FirmwareData.shunt.description,Resolves the neighbour on the side you landed toward at 1.5x; nothing special on Perfect.
 FirmwareData.shunt.display_name,Shunt
@@ -916,9 +914,9 @@ HubCoreData.root_access.description,Repairs 4 and gains 4 shield each turn unles
 HubCoreData.root_access.display_name,Root Access
 HubCoreData.station_keeping.description,Repairs 3 and gains 3 shield each turn unless the Hub is breached.
 HubCoreData.station_keeping.display_name,Station Keeping
-HubCoreData.swarm_core.description,"Up to 3 drones; drones persist between the fights of a netrun. Perfect: the slice resolves again at half; on a Deploy, a parasite halves the target slice."
+HubCoreData.swarm_core.description,"Up to 3 drones; drones persist between the fights of a netrun. Perfect: the slice resolves again at half; on a Trojan, a parasite halves the target slice."
 HubCoreData.swarm_core.display_name,Swarm Core
-HubCoreData.swarm_core_mk2.description,"Up to 4 drones that persist between fights. Perfect: the slice resolves again at half; on a Deploy, a parasite halves the target slice."
+HubCoreData.swarm_core_mk2.description,"Up to 4 drones that persist between fights. Perfect: the slice resolves again at half; on a Trojan, a parasite halves the target slice."
 HubCoreData.swarm_core_mk2.display_name,Swarm Core Mk2
 HubCoreData.wrecker_core.description,No spin bonus. Perfect: the slice resolves again at 1.5x.
 HubCoreData.wrecker_core.display_name,Wrecker Core
@@ -977,9 +975,9 @@ Leave REBEL_CELL (asks first).,Leave REBEL_CELL (asks first).
 Leave the Mainframe and go back to the route.,Leave the Mainframe and go back to the route.
 Left click,Left click
 Lexicon,Lexicon
-LineSetData.barks_botnet.lines.0,Perfect Deploy. Something of mine is inside theirs now.
+LineSetData.barks_botnet.lines.0,Perfect Trojan. Something of mine is inside theirs now.
 LineSetData.barks_botnet.lines.1,The swarm says hello.
-LineSetData.barks_botnet.lines.2,Miss. The drones will cover.
+LineSetData.barks_botnet.lines.2,Null. The drones will cover.
 LineSetData.barks_botnet.lines.3,They hit a drone. Probably.
 LineSetData.barks_botnet.lines.4,Swarm intact. Carry on.
 LineSetData.barks_botnet.lines.5,Swarm down. Scatter the seeds.
@@ -993,7 +991,7 @@ LineSetData.barks_breaker.lines.11,Deck warm. Wheel spinning. Let us break somet
 LineSetData.barks_breaker.lines.12,Ghosting in. Nobody bills what nobody sees.
 LineSetData.barks_breaker.lines.13,"Big wheel, bad manners. Breach the Hub and it stops helping itself."
 LineSetData.barks_breaker.lines.2,Perfect. Tell the board the invoice is in the mail.
-LineSetData.barks_breaker.lines.3,Miss. The wheel owes me one.
+LineSetData.barks_breaker.lines.3,Null. The wheel owes me one.
 LineSetData.barks_breaker.lines.4,Nothing. Static. Spin it again.
 LineSetData.barks_breaker.lines.5,That one got through. Patch me at the next Terminal.
 LineSetData.barks_breaker.lines.6,Leash burn. I am fine. I am not fine. Keep going.
@@ -1002,7 +1000,7 @@ LineSetData.barks_breaker.lines.8,Another subbie of theirs off the books. Move.
 LineSetData.barks_breaker.lines.9,Bricked. Tell the Cell it was worth the Cycles.
 LineSetData.barks_ghost.lines.0,Clean. They never saw the wheel move.
 LineSetData.barks_ghost.lines.1,Perfect. Resistance is a rumour.
-LineSetData.barks_ghost.lines.2,"Miss. Stay quiet, reset, try again."
+LineSetData.barks_ghost.lines.2,"Null. Stay quiet, reset, try again."
 LineSetData.barks_ghost.lines.3,Grazed. Nothing they can trace.
 LineSetData.barks_ghost.lines.4,Gone before the log catches up.
 LineSetData.barks_ghost.lines.5,They saw me. First time for everything.
@@ -1011,7 +1009,7 @@ LineSetData.barks_ghost.lines.7,Ghosting in. Leave no footprints.
 LineSetData.barks_ghost.lines.8,"Big wheel, bigger blind spots."
 LineSetData.barks_rigger.lines.0,Perfect. The deck pays me back.
 LineSetData.barks_rigger.lines.1,Latched and refunded.
-LineSetData.barks_rigger.lines.2,Miss. Rerouting power.
+LineSetData.barks_rigger.lines.2,Null. Rerouting power.
 LineSetData.barks_rigger.lines.3,Running hot. Still running.
 LineSetData.barks_rigger.lines.4,Rig holds. Next node.
 LineSetData.barks_rigger.lines.5,Power's out. Tell the Cell the rig was good.
@@ -1352,7 +1350,6 @@ Loadout,Loadout
 MAINFRAME,MAINFRAME
 MAINFRAME SHOP,MAINFRAME SHOP
 MAP KEY,MAP KEY
-MISS,MISS
 MORE BELOW,MORE BELOW
 Mainframe,Mainframe
 Mainframe: the cyber shop,Mainframe: the cyber shop
@@ -1386,6 +1383,7 @@ NO CHANGE,NO CHANGE
 NO DAMAGE,NO DAMAGE
 NO GAIN,NO GAIN
 NUDGE,NUDGE
+NULL,NULL
 NetrunBoostData.boost_field_kit.description,+2 max RAM in every combat of the next netrun.
 NetrunBoostData.boost_field_kit.display_name,Field Kit
 NetrunBoostData.boost_overclocked_deck.description,Two extra Jolt cards for the next netrun only.
@@ -1727,14 +1725,15 @@ Router,Router
 Router: a fight,Router: a fight
 Router: a fight. Win it for Cycles and loot.,Router: a fight. Win it for Cycles and loot.
 Runs,Runs
+SANDBOX,SANDBOX
 SAVED,SAVED
+SBOX,SBOX
 SCHEMATICS,SCHEMATICS
 SCHEMATICS %s,SCHEMATICS %s
 SEND IT,SEND IT
 "SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The tags already show the outcome.","SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The tags already show the outcome."
 SFX volume,SFX volume
 SHARE CODES,SHARE CODES
-SHD,SHD
 SHIELD,SHIELD
 SHIELD %d,SHIELD %d
 SHIM,SHIM
@@ -1955,13 +1954,12 @@ SliceData.defrag_4.display_name,Defrag 4
 SliceData.defrag_5.display_name,Defrag 5
 SliceData.defrag_6.display_name,Defrag 6
 SliceData.defrag_8.display_name,Defrag 8
-SliceData.deploy_1.display_name,Deploy 1
 SliceData.detour_1.display_name,Detour
 SliceData.detour_2.display_name,Detour 2
 SliceData.dose.display_name,Dose
 SliceData.hotfix_4.display_name,Hotfix 4
 SliceData.hotfix_6.display_name,Hotfix 6
-SliceData.miss.display_name,Miss
+SliceData.null.display_name,Null
 SliceData.overflow_12.display_name,Overflow 12
 SliceData.overflow_12_drain.display_name,Overflow 12 (drains 2 RAM)
 SliceData.overflow_14.display_name,Overflow 14
@@ -1969,8 +1967,8 @@ SliceData.overflow_15.display_name,Overflow 15
 SliceData.overflow_16.display_name,Overflow 16
 SliceData.overflow_24.display_name,Overflow 24
 SliceData.priority.display_name,Priority
-SliceData.shield_5.display_name,Shield 5
-SliceData.shield_8.display_name,Shield 8
+SliceData.sandbox_5.display_name,Sandbox 5
+SliceData.sandbox_8.display_name,Sandbox 8
 SliceData.shim_10.display_name,Shim 10
 SliceData.shim_12.display_name,Shim 12
 SliceData.shim_14.display_name,Shim 14
@@ -1985,6 +1983,7 @@ SliceData.shim_8.display_name,Shim 8
 SliceData.shim_8_weight.display_name,Shim 8 (+1 resistance)
 SliceData.shim_9.display_name,Shim 9
 SliceData.solar_flare.display_name,Solar Flare
+SliceData.trojan_1.display_name,Trojan 1
 Slices,Slices
 Slot %d: %s%s,Slot %d: %s%s
 Slot %s: %s,Slot %s: %s
@@ -2437,6 +2436,8 @@ THE WHEEL,THE WHEEL
 THIS RUN,THIS RUN
 THIS TURN,THIS TURN
 TODAY'S RUN,TODAY'S RUN
+TRJN,TRJN
+TROJAN,TROJAN
 "TRUST
 NO ONE","TRUST
 NO ONE"
@@ -2862,6 +2863,7 @@ off,off
 patrol,patrol
 perfect aim,perfect aim
 press a key...,press a key...
+purge,purge
 queued: %s,queued: %s
 reclaim,reclaim
 rescue an operative,rescue an operative

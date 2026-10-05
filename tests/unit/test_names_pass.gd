@@ -219,4 +219,145 @@ func test_d2_slice_display_names_use_the_program_words() -> void:
 		var s := ContentRegistry.get_content(id) as SliceData
 		if s != null:
 			assert_null(old.search(s.display_name), "%s: %s" % [id, s.display_name])
-	assert_eq(RC.SliceType.keys().slice(0, 9), ["SHIM", "OVERFLOW", "DEFRAG", "DETOUR", "SHIELD", "DEPLOY", "HOTFIX", "INFECT", "MISS"])
+	assert_eq(RC.SliceType.keys().slice(0, 9), ["SHIM", "OVERFLOW", "DEFRAG", "DETOUR", "SANDBOX", "TROJAN", "HOTFIX", "INFECT", "NULL"])
+
+
+# --- Part 3 (DECISIONS "2026-10-05 — Designer rulings: SANDBOX / TROJAN / NULL and five Heat
+# bands", ruling 1; "Art direction — ART-0 names pass, part 3") ------------------------------------
+# Same shape as PART2. Kept meanings, never matched: shield the resource (block / shield, the
+# shield cap, "+4 shield" hubs, Shield Wall, Shield Cache, "+%d SHIELD"), deploy the verb (drones
+# and Armory assets, DEPLOY_DRONE, the "deploy" drone event and bark), miss in prose ("Miss a
+# payment", "the cameras miss", "make a miss count", missing / mission ...).
+
+const PART3: Array = [
+	["SANDBOX slice program",
+		"(?-i)\\bSHD\\b|\\b(Shield|SHIELD) \\d|\\bSHIELD slices?\\b|\\bShield slices?\\b|SliceData\\.shield_",
+		"SliceType\\.SHIELD\\b|(?<![A-Za-z0-9])shield_[58]\\b|slices/shield_",
+		[]],
+	["TROJAN slice program",
+		"(?-i)\\bDEP\\b|\\bDeploy \\d|\\b(DEPLOY|Deploy) slices?\\b|\\bPerfect Deploy\\b|\\bon a Deploy\\b|^DEPLOY$|SliceData\\.deploy_",
+		"SliceType\\.DEPLOY\\b|(?<![A-Za-z0-9])deploy_1\\b|slices/deploy_|SLICE_DEPLOY|mirror_" + "deploy_base",
+		[]],
+	["NULL slice program",
+		"(?-i)\\bMISS\\b|\\bMiss\\b|\\bnon-Miss\\b|SliceData\\.miss\\b",
+		"SliceType\\.MISS\\b|RANDOM_NON_MISS|ON_MISS_SLICE|SLICE_MISS|MISS_X_|slices/miss\\.tres|&\"miss\"|bark:miss|_bark\\(\"miss\"|\"type\": \"miss\"|(?i:miss)_(resolved|static|slot|wheel|slice)|\\bis_miss\\b|\\bnon_miss\\b|\\b(s|fx|cd|dm|dr|fw|g|h1\\d)_miss\\b|(?<![A-Za-z0-9])_miss\\b|slot_miss\\b",
+		["Miss a payment"]],
+]
+
+
+func _entry_player_hits(entry: Array) -> Array[String]:
+	return _part2_player_hits(entry)
+
+
+func test_part3_no_player_string_keeps_an_old_word() -> void:
+	for entry in PART3:
+		assert_eq(_entry_player_hits(entry), [] as Array[String], "%s: the old words are gone from player text" % entry[0])
+
+
+func test_part3_no_code_keeps_an_old_name() -> void:
+	var own := (get_script() as Script).resource_path
+	for entry in PART3:
+		var re := RegEx.create_from_string(String(entry[2]))
+		var hits: Array[String] = []
+		for root in CODE_ROOTS:
+			for path in _files(root, CODE_EXTS):
+				if path == own:
+					continue
+				if re.search(path) != null:
+					hits.append(path)
+					continue
+				var lines := FileAccess.get_file_as_string(path).split("\n")
+				for i in lines.size():
+					if re.search(lines[i]) != null:
+						hits.append("%s:%d" % [path, i + 1])
+		assert_eq(hits, [] as Array[String], "%s: the old names are gone from the code" % entry[0])
+
+
+## The kept meanings stay: the shield resource, the deploy verb, miss in prose.
+func test_part3_the_kept_meanings_stay() -> void:
+	var all := "\n".join(_csv_strings())
+	for kept in ["+%d SHIELD", "Gain 4 shield.", "Shield Wall", "Deploy armory asset", "Miss a payment"]:
+		assert_string_contains(all, kept, "%s keeps its meaning" % kept)
+	assert_true(RC.EffectType.keys().has("DEPLOY_DRONE"), "deploying a drone is a verb, not the program")
+
+
+## Ruling 1: the programs' ids, files, display names, words and tags follow the new words.
+func test_b3_the_slice_programs_are_sandbox_trojan_null() -> void:
+	var want := {&"sandbox_5": ["Sandbox 5", RC.SliceType.SANDBOX], &"sandbox_8": ["Sandbox 8", RC.SliceType.SANDBOX],
+		&"trojan_1": ["Trojan 1", RC.SliceType.TROJAN], &"null": ["Null", RC.SliceType.NULL]}
+	for id in want:
+		var s := ContentRegistry.get_content(id) as SliceData
+		assert_not_null(s, "%s exists" % id)
+		if s != null:
+			assert_eq(s.display_name, want[id][0])
+			assert_eq(s.slice_type, want[id][1])
+			assert_true(ResourceLoader.exists("res://content/slices/%s.tres" % id), "%s's file follows its id" % id)
+	assert_eq(Palette.SLICE_WORDS[RC.SliceType.SANDBOX], "SANDBOX")
+	assert_eq(Palette.SLICE_WORDS[RC.SliceType.TROJAN], "TROJAN")
+	assert_eq(Palette.SLICE_WORDS[RC.SliceType.NULL], "NULL")
+	assert_eq(Palette.SLICE_NAMES[RC.SliceType.SANDBOX], "SBOX")
+	assert_eq(Palette.SLICE_NAMES[RC.SliceType.TROJAN], "TRJN")
+	assert_eq(Palette.SLICE_NAMES[RC.SliceType.NULL], "NULL")
+
+
+## The compact tags SBOX / TRJN / NULL take no more room at text size 2.0 than the part-2 tags
+## (SHIM, OVFL, DFRG, DTOR, HFIX, INFC) the slot lists and shop tiles already fit.
+func test_b3_the_new_tags_fit_like_the_others_at_text_size_2() -> void:
+	var font := Palette.mono()
+	var px := roundi(UiTheme.BASE_SIZE * 2.0)
+	var widest := 0.0
+	for t in [RC.SliceType.SHIM, RC.SliceType.OVERFLOW, RC.SliceType.DEFRAG, RC.SliceType.DETOUR, RC.SliceType.HOTFIX, RC.SliceType.INFECT]:
+		widest = maxf(widest, font.get_string_size(String(Palette.SLICE_NAMES[t]), HORIZONTAL_ALIGNMENT_LEFT, -1, px).x)
+	for t in [RC.SliceType.SANDBOX, RC.SliceType.TROJAN, RC.SliceType.NULL]:
+		var w := font.get_string_size(String(Palette.SLICE_NAMES[t]), HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
+		assert_true(w <= widest + 0.5, "%s is %.1f px at 2.0, the widest part-2 tag %.1f" % [Palette.SLICE_NAMES[t], w, widest])
+
+
+# --- Part 3, ruling 2: five Heat bands on the existing thresholds -----------------------------------
+
+## Every band boundary reads its word: COOL 0-24, NOTICED 25-49, FLAGGED 50-74, HUNTED 75-99,
+## PURGE 100, the levels read from the config (never literals in the code under test).
+func test_b3_every_heat_band_boundary_maps_to_its_word() -> void:
+	var cfg := load(ContentRegistry.CONFIG_PATH) as CampaignConfigData
+	var levels := cfg.heat_band_levels()
+	assert_eq(levels, [25, 50, 75, 100] as Array[int], "the bands start at the MAJOR levels and the PURGE level")
+	var want := {0: "cool", 24: "cool", 25: "noticed", 49: "noticed", 50: "flagged", 74: "flagged",
+		75: "hunted", 99: "hunted", 100: "purge"}
+	for heat in want:
+		assert_eq(HeatPoster.BAND_WORDS[Palette.heat_band(heat)], want[heat], "Heat %d" % heat)
+		assert_eq(HeatPoster.BAND_WORDS[HeatPoster.band_of(heat, levels)], want[heat], "Heat %d on the poster" % heat)
+	assert_eq(Palette.heat_color(100), Palette.heat_color(99), "PURGE reuses HUNTED's colour until ART-1")
+	assert_eq(HeatPoster.BAND_WORDS.size(), Palette.HEAT_BAND_COLORS.size(), "a colour for every band")
+
+
+## At Heat 100 the poster's band word and banner say PURGE.
+func test_b3_the_poster_shows_purge_at_100() -> void:
+	RunManager.new_campaign(1)
+	var cfg := RunManager.config()
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = Vector2(1280, 720)
+	var p := HeatPoster.new(true)
+	holder.add_child(p)
+	# A poster another script showed for this campaign key would roll and banner from there.
+	HeatPoster._seen_heat.erase(HeatPoster.memory_key())
+	p.set_heat(cfg.heat_max, cfg.heat_max, HeatRules.band_levels(RunManager.campaign, cfg))
+	assert_eq(p.band, HeatPoster.BAND_WORDS.size() - 1, "the last band")
+	# At rest (no crossing banner still playing).
+	p._banner_at = 0
+	p.shown_heat = cfg.heat_max
+	assert_eq(HeatPoster.BAND_WORDS[p.shown_band()], "purge", "the band word at rest")
+	assert_string_contains(p.banner_text(), tr("purge").to_upper(), "the banner names PURGE")
+	p.set_heat(cfg.heat_max - 1, cfg.heat_max, HeatRules.band_levels(RunManager.campaign, cfg))
+	p.shown_heat = cfg.heat_max - 1
+	assert_eq(HeatPoster.BAND_WORDS[p.shown_band()], "hunted", "one below is HUNTED")
+
+
+## ICE 17 pulls the Purge down (PURGE_THRESHOLD), and the PURGE band with it.
+func test_b3_the_purge_band_starts_where_the_purge_fires() -> void:
+	var cfg := load(ContentRegistry.CONFIG_PATH) as CampaignConfigData
+	var c := CampaignState.new()
+	assert_eq(HeatRules.band_levels(c, cfg), cfg.heat_band_levels(), "ICE 0: the config's levels")
+	c.ice_level = cfg.max_ice_level()
+	var purge := int(c.rule_modifier(cfg, RC.RuleModifierType.PURGE_THRESHOLD))
+	assert_gt(purge, 0, "the ladder lowers the Purge")
+	assert_eq(HeatRules.band_levels(c, cfg).back(), purge, "the PURGE band starts at the lowered Purge")

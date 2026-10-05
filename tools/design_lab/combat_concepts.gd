@@ -6,8 +6,8 @@ extends Control
 ##   6 "what will resolve" as icons over each spinner   (7: no log in any concept)
 ## Run: godot --path . res://tools/design_lab/combat_concepts.tscn -- --concept=A|B|C
 
-const PLAYER := [[RC.SliceType.SHIM, 6], [RC.SliceType.DEFRAG, 5], [RC.SliceType.OVERFLOW, 12], [RC.SliceType.SHIM, 6], [RC.SliceType.MISS, 0], [RC.SliceType.SHIM, 6]]
-const ENEMY := [[RC.SliceType.DEFRAG, 5], [RC.SliceType.SHIM, 7], [RC.SliceType.OVERFLOW, 12], [RC.SliceType.SHIM, 7], [RC.SliceType.MISS, 0], [RC.SliceType.SHIELD, 4]]
+const PLAYER := [[RC.SliceType.SHIM, 6], [RC.SliceType.DEFRAG, 5], [RC.SliceType.OVERFLOW, 12], [RC.SliceType.SHIM, 6], [RC.SliceType.NULL, 0], [RC.SliceType.SHIM, 6]]
+const ENEMY := [[RC.SliceType.DEFRAG, 5], [RC.SliceType.SHIM, 7], [RC.SliceType.OVERFLOW, 12], [RC.SliceType.SHIM, 7], [RC.SliceType.NULL, 0], [RC.SliceType.SANDBOX, 4]]
 
 var concept: String = "A"
 ## Pointer design for the E concepts (0 = the zine arrow of D).
@@ -149,7 +149,7 @@ func _wheel_deck(c: Vector2, slices: Array, rot: float, col: Color, hp: int, max
 		var a1 := a0 + TAU / n
 		var t: int = slices[i][0]
 		var sc := _slice_col(t)
-		art.draw_colored_polygon(_wedge(c, r * 0.42, r, a0 + 0.02, a1 - 0.02), Color(sc, 0.35 if t != RC.SliceType.MISS else 0.08))
+		art.draw_colored_polygon(_wedge(c, r * 0.42, r, a0 + 0.02, a1 - 0.02), Color(sc, 0.35 if t != RC.SliceType.NULL else 0.08))
 		art.draw_polyline(_wedge(c, r * 0.42, r, a0 + 0.02, a1 - 0.02), Color(sc, 0.9), 1.5)
 		var mid := c + Vector2(cos((a0 + a1) * 0.5), sin((a0 + a1) * 0.5)) * r * 0.72
 		SliceIcon.draw_icon(art, mid + Vector2(0, -9), 12, t, Palette.PAPER)
@@ -220,7 +220,7 @@ func _wheel_gauge(c: Vector2, slices: Array, rot: float, col: Color, hp: int, ma
 		var a1 := a0 + TAU / n
 		var t: int = slices[i][0]
 		var sc := _slice_col(t)
-		art.draw_colored_polygon(_wedge(c, r - 26, r, a0 + 0.04, a1 - 0.04), Color(sc, 0.8 if t != RC.SliceType.MISS else 0.15))
+		art.draw_colored_polygon(_wedge(c, r - 26, r, a0 + 0.04, a1 - 0.04), Color(sc, 0.8 if t != RC.SliceType.NULL else 0.15))
 		var mid := c + Vector2(cos((a0 + a1) * 0.5), sin((a0 + a1) * 0.5)) * (r + 30)
 		art.draw_circle(mid, 20, Color(Palette.NIGHT_SKY, 0.95))
 		art.draw_arc(mid, 20, 0, TAU, 24, sc, 2.0)
@@ -281,7 +281,7 @@ func _wheel_zine(c: Vector2, slices: Array, rot: float, col: Color, hp: int, max
 		var a1 := a0 + TAU / n
 		var t: int = slices[i][0]
 		var wedge := _wedge(c, 18, r, a0 + 0.03, a1 - 0.03)
-		art.draw_colored_polygon(wedge, papers[i % 3] if t != RC.SliceType.MISS else Color(0.3, 0.3, 0.3))
+		art.draw_colored_polygon(wedge, papers[i % 3] if t != RC.SliceType.NULL else Color(0.3, 0.3, 0.3))
 		art.draw_polyline(wedge, Palette.INK, 2.0)
 		var mid := c + Vector2(cos((a0 + a1) * 0.5), sin((a0 + a1) * 0.5)) * r * 0.62
 		if int(slices[i][1]) > 0:
@@ -358,7 +358,7 @@ func _wheel_blend(c: Vector2, slices: Array, rot: float, col: Color, hp: int, ma
 		var t: int = slices[i][0]
 		var sc := _slice_col(t)
 		var wedge := _wedge(c, r - band, r, a0 + 0.035, a1 - 0.035)
-		art.draw_colored_polygon(wedge, Color(sc, 0.85 if t != RC.SliceType.MISS else 0.18))
+		art.draw_colored_polygon(wedge, Color(sc, 0.85 if t != RC.SliceType.NULL else 0.18))
 		var closed := wedge.duplicate()
 		closed.append(wedge[0])
 		art.draw_polyline(closed, Color(sc.lightened(0.3), 0.9), 1.2)

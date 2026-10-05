@@ -1387,7 +1387,7 @@ func show_hq() -> void:
 	right.add_theme_constant_override("separation", 10)
 	var poster := HeatPoster.new(true)
 	poster.hot_color = Palette.corp_color(c.corporation_id)
-	poster.set_heat(c.heat, cfg.heat_max, cfg.major_heat_levels())
+	poster.set_heat(c.heat, cfg.heat_max, HeatRules.band_levels(c, cfg))
 	poster.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	poster.tooltip_text = heat_tip()
 	var lead := selected_op()

@@ -85,12 +85,12 @@ func test_slice_colours_keep_their_values_through_named_constants() -> void:
 	assert_eq(Palette.slice_color(RC.SliceType.SHIM), Palette.CELL_PINK)
 	assert_eq(Palette.slice_color(RC.SliceType.OVERFLOW), Palette.CELL_PINK)
 	assert_eq(Palette.slice_color(RC.SliceType.DEFRAG), Palette.NET_CYAN)
-	assert_eq(Palette.slice_color(RC.SliceType.SHIELD), Palette.NET_CYAN)
+	assert_eq(Palette.slice_color(RC.SliceType.SANDBOX), Palette.NET_CYAN)
 	assert_eq(Palette.slice_color(RC.SliceType.DETOUR), Color("#7BE07B"))
 	assert_eq(Palette.slice_color(RC.SliceType.HOTFIX), Palette.SLICE_HOTFIX)
 	assert_eq(Palette.slice_color(RC.SliceType.INFECT), Color("#C85AFF"))
-	assert_eq(Palette.slice_color(RC.SliceType.DEPLOY), Color("#B08CFF"))
-	assert_eq(Palette.slice_color(RC.SliceType.MISS), Color("#6A6A6A"))
+	assert_eq(Palette.slice_color(RC.SliceType.TROJAN), Color("#B08CFF"))
+	assert_eq(Palette.slice_color(RC.SliceType.NULL), Color("#6A6A6A"))
 
 
 func test_every_class_in_content_has_its_accent() -> void:
@@ -131,10 +131,10 @@ func test_heat_color_bands_follow_the_config_majors() -> void:
 	assert_eq(Palette.heat_color(majors[1]), Palette.HEAT_FLAGGED, "FLAGGED")
 	assert_eq(Palette.heat_color(majors[2] - 1), Palette.HEAT_FLAGGED, "FLAGGED up to the last major")
 	assert_eq(Palette.heat_color(majors[2]), Palette.HARM, "HUNTED")
-	assert_eq(Palette.heat_color(100), Palette.HARM)
-	var custom: Array[int] = [10, 20, 30, 40]
+	assert_eq(Palette.heat_color(100), Palette.HARM, "PURGE reuses HUNTED's colour until ART-1")
+	var custom: Array[int] = [10, 20, 30, 40, 50]
 	assert_eq(Palette.heat_band(15, custom), 1, "explicit levels are honoured")
-	assert_eq(Palette.heat_band(99, custom), 3, "capped at HUNTED")
+	assert_eq(Palette.heat_band(99, custom), 4, "capped at PURGE")
 
 
 func test_heat_is_never_green() -> void:

@@ -3,7 +3,7 @@
 [ext_resource type="Resource" path="res://content/slices/shim_10.tres" id="sl_shim_10"]
 [ext_resource type="Resource" path="res://content/slices/overflow_16.tres" id="sl_overflow_16"]
 [ext_resource type="Resource" path="res://content/slices/hotfix_6.tres" id="sl_hotfix_6"]
-[ext_resource type="Resource" path="res://content/slices/shield_8.tres" id="sl_shield_8"]
+[ext_resource type="Resource" path="res://content/slices/sandbox_8.tres" id="sl_sandbox_8"]
 [ext_resource type="Resource" path="res://content/slices/detour_2.tres" id="sl_detour_2"]
 [ext_resource type="Script" path="res://scripts/data/campaign_config_data.gd" id="1_cfg"]
 [ext_resource type="Script" path="res://scripts/data/heat_threshold_data.gd" id="2_ht"]
@@ -15,7 +15,7 @@
 [ext_resource type="Resource" path="res://content/slices/overflow_12.tres" id="sl_overflow_12"]
 [ext_resource type="Resource" path="res://content/slices/defrag_5.tres" id="sl_defrag_5"]
 [ext_resource type="Resource" path="res://content/slices/defrag_8.tres" id="sl_defrag_8"]
-[ext_resource type="Resource" path="res://content/slices/shield_5.tres" id="sl_shield_5"]
+[ext_resource type="Resource" path="res://content/slices/sandbox_5.tres" id="sl_sandbox_5"]
 [ext_resource type="Resource" path="res://content/slices/detour_1.tres" id="sl_detour_1"]
 [ext_resource type="Resource" path="res://content/raids/raid_heat_25.tres" id="raid_25"]
 [ext_resource type="Resource" path="res://content/raids/raid_heat_50.tres" id="raid_50"]
@@ -410,8 +410,8 @@ daemon_price_range = Vector2i(150, 250)
 card_removal_price = 50
 card_removal_increment = 25
 slice_overwrite_price = 100
-miss_slice_overwrite_price = 150
-shop_slices = Array[ExtResource("5_slice")]([ExtResource("sl_shim_6"), ExtResource("sl_shim_8"), ExtResource("sl_overflow_12"), ExtResource("sl_defrag_5"), ExtResource("sl_defrag_8"), ExtResource("sl_shield_5"), ExtResource("sl_detour_1"), ExtResource("sl_shim_10"), ExtResource("sl_overflow_16"), ExtResource("sl_hotfix_6"), ExtResource("sl_shield_8"), ExtResource("sl_detour_2")])
+null_slice_overwrite_price = 150
+shop_slices = Array[ExtResource("5_slice")]([ExtResource("sl_shim_6"), ExtResource("sl_shim_8"), ExtResource("sl_overflow_12"), ExtResource("sl_defrag_5"), ExtResource("sl_defrag_8"), ExtResource("sl_sandbox_5"), ExtResource("sl_detour_1"), ExtResource("sl_shim_10"), ExtResource("sl_overflow_16"), ExtResource("sl_hotfix_6"), ExtResource("sl_sandbox_8"), ExtResource("sl_detour_2")])
 shop_slice_choices = 3
 rookie_cost = 15
 node_base_cost = 20

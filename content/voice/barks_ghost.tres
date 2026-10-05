@@ -15,8 +15,8 @@ text = "Perfect. Resistance is a rumour."
 
 [sub_resource type="Resource" id="l2"]
 script = ExtResource("e1")
-key = "bark:miss"
-text = "Miss. Stay quiet, reset, try again."
+key = "bark:null"
+text = "Null. Stay quiet, reset, try again."
 
 [sub_resource type="Resource" id="l3"]
 script = ExtResource("e1")

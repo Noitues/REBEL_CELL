@@ -103,7 +103,7 @@ func test_ice_4_raises_every_mainframe_price_by_10_percent() -> void:
 	var c := _campaign(4)
 	var s := NetrunSession.start(_resolver, c, c.roster[0].id, 1, &"t1_a", 3)
 	assert_eq(s.card_removal_price(), 55)
-	assert_eq(s.slice_overwrite_price(5), 165, "Miss slot 150 x 1.1")
+	assert_eq(s.slice_overwrite_price(5), 165, "NULL slot 150 x 1.1")
 	assert_eq(s.slice_overwrite_price(0), 110)
 	s._open_shop()
 	for p in s.run.shop["card_prices"]:

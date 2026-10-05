@@ -1,8 +1,8 @@
 class_name SliceIcon
 extends RefCounted
 ## Drawn icons for wheel slices (STYLE_GUIDE 4: a glyph on every slice, readable without
-## colour): attack blade, crit starburst, defend shield, shield hex, evade dodge arrows,
-## heal cross, afflict drip, deploy drone, miss dashed X. Shared by the combat wheels, the
+## colour): attack blade, crit starburst, defrag shield, sandbox hex, evade dodge arrows,
+## heal cross, afflict drip, trojan drone, null dashed X. Shared by the combat wheels, the
 ## spinner view and the Mainframe's slice tiles. Draw on any CanvasItem.
 
 
@@ -65,7 +65,7 @@ static func draw_icon(ci: CanvasItem, c: Vector2, r: float, type: int, col: Colo
 			var shield := PackedVector2Array([c + Vector2(-r * 0.7, -r * 0.7), c + Vector2(r * 0.7, -r * 0.7), c + Vector2(r * 0.7, 0), c + Vector2(0, r * 0.85), c + Vector2(-r * 0.7, 0)])
 			_filled(ci, shield, col, outline)
 			ci.draw_line(c + Vector2(0, -r * 0.55), c + Vector2(0, r * 0.55), Color(outline, 0.5), w * 0.7)
-		RC.SliceType.SHIELD:
+		RC.SliceType.SANDBOX:
 			var hexa := PackedVector2Array()
 			for k in 6:
 				var a := TAU * k / 6.0 - PI * 0.5
@@ -96,7 +96,7 @@ static func draw_icon(ci: CanvasItem, c: Vector2, r: float, type: int, col: Colo
 			_filled(ci, drop, col, outline)
 			ci.draw_circle(c + Vector2(-r * 0.2, r * 0.25), r * 0.1, outline)
 			ci.draw_circle(c + Vector2(r * 0.2, r * 0.25), r * 0.1, outline)
-		RC.SliceType.DEPLOY:
+		RC.SliceType.TROJAN:
 			# Two passes: the outline colour wider underneath, then the ink.
 			for pass_n in 2:
 				var ink := outline if pass_n == 0 else col
@@ -107,7 +107,7 @@ static func draw_icon(ci: CanvasItem, c: Vector2, r: float, type: int, col: Colo
 					ci.draw_line(c + Vector2(r * 0.4 * sx, -r * 0.5), c + Vector2(r * 0.9 * sx, -r * 0.5), ink, w + grow)
 				ci.draw_line(c + Vector2(-r * 0.2, r * 0.2), c + Vector2(-r * 0.35, r * 0.6), ink, w * 0.8 + grow)
 				ci.draw_line(c + Vector2(r * 0.2, r * 0.2), c + Vector2(r * 0.35, r * 0.6), ink, w * 0.8 + grow)
-		RC.SliceType.MISS:
+		RC.SliceType.NULL:
 			for pass_n in 2:
 				var ink := outline if pass_n == 0 else col
 				var grow := 3.0 if pass_n == 0 else 0.0

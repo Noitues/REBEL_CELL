@@ -65,8 +65,8 @@ const STICKER_FOOT := 26.0
 const TILE_GAP := 2.0
 ## Slice icon for each effect that does what a slice does.
 const EFFECT_SLICE := {RC.EffectType.DEAL_DAMAGE: RC.SliceType.SHIM, RC.EffectType.GAIN_BLOCK: RC.SliceType.DEFRAG,
-	RC.EffectType.GAIN_SHIELD: RC.SliceType.SHIELD, RC.EffectType.EVADE: RC.SliceType.DETOUR, RC.EffectType.HEAL: RC.SliceType.HOTFIX,
-	RC.EffectType.DEPLOY_DRONE: RC.SliceType.DEPLOY, RC.EffectType.APPLY_STATUS: RC.SliceType.INFECT}
+	RC.EffectType.GAIN_SHIELD: RC.SliceType.SANDBOX, RC.EffectType.EVADE: RC.SliceType.DETOUR, RC.EffectType.HEAL: RC.SliceType.HOTFIX,
+	RC.EffectType.DEPLOY_DRONE: RC.SliceType.TROJAN, RC.EffectType.APPLY_STATUS: RC.SliceType.INFECT}
 ## Lettering scale (the combat hand follows Settings.text_scale; see scaled()).
 var text_scale: float = 1.0
 ## Sticker size and lettering at scale 1.0.

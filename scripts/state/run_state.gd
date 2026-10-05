@@ -44,8 +44,8 @@ var racks_captured: int = 0
 ## even if a raid Takes the Site mid-run.
 var patrol: bool = false
 var elites_defeated: int = 0
-## Cold Exit: did the operative's Miss slice resolve at any point this run?
-var miss_resolved: bool = false
+## Cold Exit: did the operative's NULL slice resolve at any point this run?
+var null_resolved: bool = false
 var card_removals: int = 0
 var heat_gained: int = 0
 ## Run-only cards from boosts (removed from the deck on completion).
@@ -83,7 +83,7 @@ func _raw_dict() -> Dictionary:
 		"unbanked_assets": _strings(unbanked_assets), "combat": combat.duplicate(true),
 		"pending_rewards": rewards, "event_id": String(event_id), "shop": shop.duplicate(true),
 		"combats_won": combats_won, "elites_defeated": elites_defeated, "racks_captured": racks_captured, "patrol": patrol,
-		"miss_resolved": miss_resolved, "card_removals": card_removals,
+		"null_resolved": null_resolved, "card_removals": card_removals,
 		"heat_gained": heat_gained, "streams": streams.duplicate(true),
 		"temp_cards": _strings(temp_cards),
 		"drones": drones.duplicate(true),
@@ -119,7 +119,7 @@ static func from_dict(d: Dictionary) -> RunState:
 	r.racks_captured = int(d.get("racks_captured", 0))
 	r.patrol = bool(d.get("patrol", false))
 	r.elites_defeated = int(d.get("elites_defeated", 0))
-	r.miss_resolved = bool(d.get("miss_resolved", false))
+	r.null_resolved = bool(d.get("null_resolved", false))
 	r.card_removals = int(d.get("card_removals", 0))
 	r.heat_gained = int(d.get("heat_gained", 0))
 	r.streams = d.get("streams", {}).duplicate(true)

@@ -142,7 +142,7 @@ func _relabel() -> void:
 	hint_label.text = (tr("%s: select the slot to %s. %s: details.") % [pick, tr(action).to_lower(), more]) if action != "" else tr("%s a slice for details.") % (tr("Press") if Settings.pad_active else tr("Click"))
 
 
-## Pick mode prices (H20: the Miss slot costs more): `p_price_of(slot) -> int` and the
+## Pick mode prices (H20: the NULL slot costs more): `p_price_of(slot) -> int` and the
 ## Cycles on hand. Each pad's tooltip names its price; the selected slot's price shows
 ## beside the action, which is off when the slot costs more than `p_budget`.
 func set_prices(p_price_of: Callable, p_budget: int) -> void:
@@ -378,7 +378,7 @@ func _draw_wheel() -> void:
 	_wheel.draw_circle(c, r1 + 44, Color(0, 0, 0, 0.6))
 	for i in n:
 		var s := _slice(i)
-		var type := s.slice_type if s != null else RC.SliceType.MISS
+		var type := s.slice_type if s != null else RC.SliceType.NULL
 		var a0 := _angle(i) - PI / n + 0.03
 		var a1 := _angle(i) + PI / n - 0.03
 		var pts := PackedVector2Array()
@@ -389,7 +389,7 @@ func _draw_wheel() -> void:
 			var a := lerpf(a1, a0, k / 12.0)
 			pts.append(c + Vector2(cos(a), sin(a)) * r0)
 		var col := Palette.slice_color(type)
-		_wheel.draw_colored_polygon(pts, Color(col, 0.7 if i == _hot else 0.5) if type != RC.SliceType.MISS else Color(col, 0.2))
+		_wheel.draw_colored_polygon(pts, Color(col, 0.7 if i == _hot else 0.5) if type != RC.SliceType.NULL else Color(col, 0.2))
 		pts.append(pts[0])
 		_wheel.draw_polyline(pts, Palette.CELL_ACID if i == _hot else col.lightened(0.3), 2.0 if i == _hot else 1.2)
 		var am := _angle(i)
@@ -419,7 +419,7 @@ func open_slot(index: int) -> void:
 	pop.custom_minimum_size = Vector2(480, 0)
 	var icon := Control.new()
 	icon.custom_minimum_size = Vector2(0, 64)
-	var type := s.slice_type if s != null else RC.SliceType.MISS
+	var type := s.slice_type if s != null else RC.SliceType.NULL
 	icon.draw.connect(func() -> void:
 		SliceIcon.draw_icon(icon, Vector2(34, 32), 24, type, Palette.slice_color(type))
 		icon.draw_string(Palette.display(), Vector2(76, 44), _slice_text(index), HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Palette.PAPER))

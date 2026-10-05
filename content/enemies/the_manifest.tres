@@ -9,7 +9,7 @@
 [ext_resource type="Resource" path="res://content/slices/priority.tres" id="e6"]
 [ext_resource type="Resource" path="res://content/slices/defrag_12.tres" id="e7"]
 [ext_resource type="Resource" path="res://content/slices/overflow_24.tres" id="e8"]
-[ext_resource type="Resource" path="res://content/slices/miss.tres" id="e9"]
+[ext_resource type="Resource" path="res://content/slices/null.tres" id="e9"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e10"]
 [ext_resource type="Script" path="res://scripts/data/boss_phase_data.gd" id="e11"]
 [ext_resource type="Script" path="res://scripts/data/satellite_spawn_data.gd" id="e12"]
@@ -52,14 +52,14 @@ slice = ExtResource("e7")
 script = ExtResource("e5")
 slice = ExtResource("e8")
 
-[sub_resource type="Resource" id="wheel_slot_miss"]
+[sub_resource type="Resource" id="wheel_slot_null"]
 script = ExtResource("e5")
 slice = ExtResource("e9")
 
 [sub_resource type="Resource" id="wheel"]
 script = ExtResource("e10")
 slice_count = 6
-slots = Array[ExtResource("e5")]([SubResource("wheel_slot_shim_14"), SubResource("wheel_slot_priority"), SubResource("wheel_slot_defrag_12"), SubResource("wheel_slot_overflow_24"), SubResource("wheel_slot_shim_14"), SubResource("wheel_slot_miss")])
+slots = Array[ExtResource("e5")]([SubResource("wheel_slot_shim_14"), SubResource("wheel_slot_priority"), SubResource("wheel_slot_defrag_12"), SubResource("wheel_slot_overflow_24"), SubResource("wheel_slot_shim_14"), SubResource("wheel_slot_null")])
 hub = SubResource("hub_customs_seal")
 pointer_ticks = PackedInt32Array(0)
 
@@ -86,14 +86,14 @@ slice = ExtResource("e7")
 script = ExtResource("e5")
 slice = ExtResource("e4")
 
-[sub_resource type="Resource" id="wheel_phase1_slot_miss"]
+[sub_resource type="Resource" id="wheel_phase1_slot_null"]
 script = ExtResource("e5")
 slice = ExtResource("e9")
 
 [sub_resource type="Resource" id="wheel_phase1"]
 script = ExtResource("e10")
 slice_count = 6
-slots = Array[ExtResource("e5")]([SubResource("wheel_phase1_slot_overflow_24"), SubResource("wheel_phase1_slot_priority"), SubResource("wheel_phase1_slot_defrag_12"), SubResource("wheel_phase1_slot_overflow_24"), SubResource("wheel_phase1_slot_shim_14"), SubResource("wheel_phase1_slot_miss")])
+slots = Array[ExtResource("e5")]([SubResource("wheel_phase1_slot_overflow_24"), SubResource("wheel_phase1_slot_priority"), SubResource("wheel_phase1_slot_defrag_12"), SubResource("wheel_phase1_slot_overflow_24"), SubResource("wheel_phase1_slot_shim_14"), SubResource("wheel_phase1_slot_null")])
 hub = SubResource("hub_customs_seal")
 pointer_ticks = PackedInt32Array(0, 15)
 

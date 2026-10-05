@@ -10,7 +10,7 @@ var _legend_before: bool = true
 var _log_before: bool = false
 var _pad_before: bool = false
 
-const LONG_LINE := "Runner, the compliance office has flagged your cell for audit. Keep the needle off the Miss slice, bank the Rack before the auditors land, and do not let the Heat climb past the next threshold or the whole district locks down for a week."
+const LONG_LINE := "Runner, the compliance office has flagged your cell for audit. Keep the needle off the NULL slice, bank the Rack before the auditors land, and do not let the Heat climb past the next threshold or the whole district locks down for a week."
 
 
 func before_all() -> void:

@@ -15,8 +15,8 @@ text = "Latched and refunded."
 
 [sub_resource type="Resource" id="l2"]
 script = ExtResource("e1")
-key = "bark:miss"
-text = "Miss. Rerouting power."
+key = "bark:null"
+text = "Null. Rerouting power."
 
 [sub_resource type="Resource" id="l3"]
 script = ExtResource("e1")

@@ -15,11 +15,11 @@ func _slice_ids(w: WheelData) -> Array[StringName]:
 
 func test_stats_match_a3() -> void:
 	assert_eq(_enemy(&"triage_unit").hp, 45)
-	assert_eq(_slice_ids(_enemy(&"triage_unit").wheel), [&"defrag_8", &"hotfix_6", &"shim_6", &"hotfix_6", &"defrag_8", &"miss"])
+	assert_eq(_slice_ids(_enemy(&"triage_unit").wheel), [&"defrag_8", &"hotfix_6", &"shim_6", &"hotfix_6", &"defrag_8", &"null"])
 	assert_eq(_enemy(&"billing_daemon").hp, 42)
-	assert_eq(_slice_ids(_enemy(&"billing_daemon").wheel), [&"shim_7_drain", &"shim_7_drain", &"defrag_6", &"overflow_12_drain", &"shim_7_drain", &"miss"])
+	assert_eq(_slice_ids(_enemy(&"billing_daemon").wheel), [&"shim_7_drain", &"shim_7_drain", &"defrag_6", &"overflow_12_drain", &"shim_7_drain", &"null"])
 	assert_eq(_enemy(&"care_swarm").hp, 25)
-	assert_eq(_slice_ids(_enemy(&"care_swarm").wheel), [&"defrag_4", &"hotfix_4", &"defrag_4", &"hotfix_4", &"shim_4", &"miss"])
+	assert_eq(_slice_ids(_enemy(&"care_swarm").wheel), [&"defrag_4", &"hotfix_4", &"defrag_4", &"hotfix_4", &"shim_4", &"null"])
 	assert_eq(_enemy(&"care_swarm").spawns[0].max_active, 3)
 	assert_eq(_enemy(&"care_drone").hp, 4)
 	assert_eq(_slice_ids(_enemy(&"care_drone").wheel), [&"shim_3", &"shim_3", &"defrag_2"])
@@ -27,13 +27,13 @@ func test_stats_match_a3() -> void:
 	assert_eq(adjuster.hp, 112, "A.3 lists 90; +25% in the M7 balance pass")
 	assert_true(adjuster.is_elite)
 	assert_eq(adjuster.wheel.pointer_ticks, PackedInt32Array([0, 15]))
-	assert_eq(_slice_ids(adjuster.wheel), [&"shim_10", &"defrag_8", &"overflow_16", &"shim_10", &"dose", &"miss"])
+	assert_eq(_slice_ids(adjuster.wheel), [&"shim_10", &"defrag_8", &"overflow_16", &"shim_10", &"dose", &"null"])
 	var recall := _enemy(&"recall_unit")
 	assert_eq(recall.hp, 106, "A.3 lists 85; +25% in the M7 balance pass")
 	assert_true(recall.is_elite)
 	assert_eq(recall.wheel.passive_resistance, 1)
 	assert_eq(recall.wheel.pointer_orbit_per_turn, 2)
-	assert_eq(_slice_ids(recall.wheel), [&"shim_9", &"shim_9", &"defrag_8", &"overflow_15", &"shield_5", &"miss"])
+	assert_eq(_slice_ids(recall.wheel), [&"shim_9", &"shim_9", &"defrag_8", &"overflow_15", &"sandbox_5", &"null"])
 
 
 func test_billing_daemon_attacks_drain_ram() -> void:

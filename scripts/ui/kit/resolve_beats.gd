@@ -35,13 +35,13 @@ const HP_KINDS: Array[String] = ["damage", "heal", "corrupted"]
 ## Which slice types resolve each kind (a beat pulses the source's needle on such a slice).
 const KIND_SLICES := {
 	"damage": [RC.SliceType.SHIM, RC.SliceType.OVERFLOW], "evaded": [RC.SliceType.SHIM, RC.SliceType.OVERFLOW],
-	"block": [RC.SliceType.DEFRAG], "shield": [RC.SliceType.SHIELD], "evade": [RC.SliceType.DETOUR],
+	"block": [RC.SliceType.DEFRAG], "shield": [RC.SliceType.SANDBOX], "evade": [RC.SliceType.DETOUR],
 	"heal": [RC.SliceType.HOTFIX], "status": [RC.SliceType.INFECT], "absorbed": [RC.SliceType.INFECT],
 }
 ## Kinds whose actor is the event's target (it acts on itself: its own needle resolves).
 const SELF_KINDS: Array[String] = ["block", "shield", "evade", "heal"]
 ## Event types that name who acts next (the source of the status events after them).
-const ACTOR_TYPES := {"attack": "attacker", "afflict": "attacker", "retrigger": "owner", "miss": "owner"}
+const ACTOR_TYPES := {"attack": "attacker", "afflict": "attacker", "retrigger": "owner", "null": "owner"}
 
 
 ## The beats of `events` applied to `before` (the state the action or SEND IT started

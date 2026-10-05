@@ -105,20 +105,20 @@ const FONTS_MSDF_RANGE := 16
 ## A glyph for every slice type (STYLE_GUIDE 4): readable without colour.
 const SLICE_GLYPHS := {
 	RC.SliceType.SHIM: "▲", RC.SliceType.OVERFLOW: "✦", RC.SliceType.DEFRAG: "■", RC.SliceType.DETOUR: "◇",
-	RC.SliceType.SHIELD: "⬢", RC.SliceType.DEPLOY: "⬡", RC.SliceType.HOTFIX: "✚", RC.SliceType.INFECT: "◈",
-	RC.SliceType.MISS: "✕",
+	RC.SliceType.SANDBOX: "⬢", RC.SliceType.TROJAN: "⬡", RC.SliceType.HOTFIX: "✚", RC.SliceType.INFECT: "◈",
+	RC.SliceType.NULL: "✕",
 }
 const SLICE_NAMES := {
 	RC.SliceType.SHIM: "SHIM", RC.SliceType.OVERFLOW: "OVFL", RC.SliceType.DEFRAG: "DFRG", RC.SliceType.DETOUR: "DTOR", # TR
-	RC.SliceType.SHIELD: "SHD", RC.SliceType.DEPLOY: "DEP", RC.SliceType.HOTFIX: "HFIX", RC.SliceType.INFECT: "INFC", # TR
-	RC.SliceType.MISS: "MISS", # TR
+	RC.SliceType.SANDBOX: "SBOX", RC.SliceType.TROJAN: "TRJN", RC.SliceType.HOTFIX: "HFIX", RC.SliceType.INFECT: "INFC", # TR
+	RC.SliceType.NULL: "NULL", # TR
 }
 ## Whole words for the tags over the spinners (H21: new players read DEF / AFL / BLK as
 ## noise).
 const SLICE_WORDS := {
 	RC.SliceType.SHIM: "SHIM", RC.SliceType.OVERFLOW: "OVERFLOW", RC.SliceType.DEFRAG: "DEFRAG", RC.SliceType.DETOUR: "DETOUR", # TR
-	RC.SliceType.SHIELD: "SHIELD", RC.SliceType.DEPLOY: "DEPLOY", RC.SliceType.HOTFIX: "HOTFIX", RC.SliceType.INFECT: "INFECT", # TR
-	RC.SliceType.MISS: "MISS", # TR
+	RC.SliceType.SANDBOX: "SANDBOX", RC.SliceType.TROJAN: "TROJAN", RC.SliceType.HOTFIX: "HOTFIX", RC.SliceType.INFECT: "INFECT", # TR
+	RC.SliceType.NULL: "NULL", # TR
 }
 ## A corporation's own word for a program on its wheels (DECISIONS "Designer rulings: names
 ## for M14", D3 / D4): Meridian's OVERFLOW shows as AIRMAIL, Solace's HOTFIX as GROWTH.
@@ -163,26 +163,26 @@ static func corp_color(corporation_id: StringName) -> Color:
 ## ART_BIBLE §2.3 slice colours: the colour means slice type on any wheel, not its owner.
 const SLICE_HOTFIX := Color("#7BE07B")
 const SLICE_INFECT := Color("#C85AFF")
-const SLICE_DEPLOY := Color("#B08CFF")
-const SLICE_MISS := Color("#6A6A6A")
+const SLICE_TROJAN := Color("#B08CFF")
+const SLICE_NULL := Color("#6A6A6A")
 
 
-## The colour of a slice type (§2.3): attack/crit pink, defend/shield cyan, evade/heal
-## green, afflict violet, deploy lilac, miss grey.
+## The colour of a slice type (§2.3): attack/crit pink, defrag/sandbox cyan, evade/heal
+## green, afflict violet, trojan lilac, null grey.
 static func slice_color(type: int) -> Color:
 	match type:
 		RC.SliceType.SHIM, RC.SliceType.OVERFLOW:
 			return CELL_PINK
-		RC.SliceType.DEFRAG, RC.SliceType.SHIELD:
+		RC.SliceType.DEFRAG, RC.SliceType.SANDBOX:
 			return NET_CYAN
 		RC.SliceType.DETOUR, RC.SliceType.HOTFIX:
 			return SLICE_HOTFIX
 		RC.SliceType.INFECT:
 			return SLICE_INFECT
-		RC.SliceType.DEPLOY:
-			return SLICE_DEPLOY
+		RC.SliceType.TROJAN:
+			return SLICE_TROJAN
 		_:
-			return SLICE_MISS
+			return SLICE_NULL
 
 
 ## ART_BIBLE §2.5 class accents, keyed by the class content id (content/classes/*.tres).
@@ -212,8 +212,10 @@ static func class_accent(class_id: StringName) -> Color:
 const HP_WARN_BELOW := 0.5
 ## HP below this fraction of max reads HARM.
 const HP_HARM_BELOW := 0.25
-## Heat colour per band: COOL, NOTICED, FLAGGED, HUNTED (§2.8). Heat is never green.
-const HEAT_BAND_COLORS: Array[Color] = [TEXT_MID, WARN, HEAT_FLAGGED, HARM]
+## Heat colour per band: COOL, NOTICED, FLAGGED, HUNTED, PURGE (§2.8; GDD 4.3). Heat is never
+## green. PURGE reuses HUNTED's colour until ART-1 gives it its own look (designer ruling
+## 2026-10-05, five Heat bands).
+const HEAT_BAND_COLORS: Array[Color] = [TEXT_MID, WARN, HEAT_FLAGGED, HARM, HARM]
 ## The content registry's script, for its config path only (Palette also compiles in `-s`
 ## tool scripts, before any autoload exists).
 const _REGISTRY_SCRIPT := preload("res://scripts/autoload/content_registry.gd")
@@ -236,10 +238,11 @@ static func hp_color(frac: float) -> Color:
 	return GAIN
 
 
-## The Heat band for `heat`: how many MAJOR thresholds it has reached (0 COOL, 1 NOTICED,
-## 2 FLAGGED, 3+ HUNTED, capped at the last band). `major_levels` are the ascending MAJOR
-## threshold levels (`CampaignConfigData.major_heat_levels()`); empty reads them from the
-## campaign config, so the bands never duplicate the game's numbers.
+## The Heat band for `heat`: how many band levels it has reached (0 COOL, 1 NOTICED,
+## 2 FLAGGED, 3 HUNTED, 4 PURGE, capped at the last band). `major_levels` are the ascending
+## band levels (`CampaignConfigData.heat_band_levels()`: the MAJOR levels and the PURGE
+## level); empty reads them from the campaign config, so the bands never duplicate the
+## game's numbers.
 static func heat_band(heat: int, major_levels: Array[int] = []) -> int:
 	var levels := major_levels if not major_levels.is_empty() else _config_heat_levels()
 	var band := 0
@@ -250,17 +253,17 @@ static func heat_band(heat: int, major_levels: Array[int] = []) -> int:
 
 
 ## The Heat colour for `heat`: COOL TEXT_MID, NOTICED WARN, FLAGGED HEAT_FLAGGED, HUNTED
-## HARM. Never GAIN. `major_levels` as in heat_band().
+## and PURGE HARM. Never GAIN. `major_levels` as in heat_band().
 static func heat_color(heat: int, major_levels: Array[int] = []) -> Color:
 	return HEAT_BAND_COLORS[heat_band(heat, major_levels)]
 
 
-## The MAJOR Heat levels from the campaign config (read once; the Resource is never changed).
+## The Heat band levels from the campaign config (read once; the Resource is never changed).
 static func _config_heat_levels() -> Array[int]:
 	if _heat_levels.is_empty():
 		var cfg := load(_REGISTRY_SCRIPT.CONFIG_PATH) as CampaignConfigData
 		if cfg != null:
-			_heat_levels = cfg.major_heat_levels()
+			_heat_levels = cfg.heat_band_levels()
 	return _heat_levels
 
 

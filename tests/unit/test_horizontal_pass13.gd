@@ -6,13 +6,13 @@ extends GutTest
 ## wheels, Momentum's spins come from the card.
 
 var _atk6: SliceData
-var _miss: SliceData
+var _null: SliceData
 var _ring: InnerRingData
 
 
 func before_each() -> void:
 	_atk6 = CombatFixture.slice(&"h13_atk6", RC.SliceType.SHIM, 6)
-	_miss = CombatFixture.slice(&"h13_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
+	_null = CombatFixture.slice(&"h13_null", RC.SliceType.NULL, 0, RC.TargetRule.SELF)
 	_ring = CombatFixture.ring([CombatFixture.segment(&"h13_s0"), CombatFixture.segment(&"h13_s1"), CombatFixture.segment(&"h13_s2")])
 
 
@@ -20,9 +20,9 @@ func _session(cards: Array, enemy: EnemyData = null, hub: HubCoreData = null) ->
 	var deck: Array[CardData] = []
 	for c in cards:
 		deck.append(c if c is CardData else ContentRegistry.get_content(c) as CardData)
-	var cls := CombatFixture.operative_class(&"h13_class", 60, CombatFixture.wheel([_atk6, _atk6, _atk6, _atk6, _atk6, _miss], hub, [0], 0, _ring), deck)
+	var cls := CombatFixture.operative_class(&"h13_class", 60, CombatFixture.wheel([_atk6, _atk6, _atk6, _atk6, _atk6, _null], hub, [0], 0, _ring), deck)
 	if enemy == null:
-		enemy = CombatFixture.enemy(&"h13_dummy", 200, CombatFixture.miss_wheel())
+		enemy = CombatFixture.enemy(&"h13_dummy", 200, CombatFixture.null_wheel())
 	var s := CombatSession.start(CombatFixture.resolver([cls, enemy]), cls.id, [enemy.id], 3)
 	CombatFixture.land(s.state.player, 1)
 	CombatFixture.land_inner(s.state.player, 0)
@@ -65,7 +65,7 @@ func test_fine_tune_still_follows_the_ring_toggle() -> void:
 func test_a_strip_during_resolution_lasts_into_the_next_turn() -> void:
 	var strip := CombatFixture.effect(RC.EffectType.MODIFY_RESISTANCE, RC.EffectTarget.POINTER_TARGET, -2)
 	var hub := CombatFixture.hub(&"h13_ghostlike", 0, [], CombatFixture.triggered(RC.Trigger.ON_PERFECT, [strip], RC.PrecisionTier.PERFECT))
-	var enemy := CombatFixture.enemy(&"h13_resist", 200, CombatFixture.miss_wheel(3))
+	var enemy := CombatFixture.enemy(&"h13_resist", 200, CombatFixture.null_wheel(3))
 	var s := _session([&"jam"], enemy, hub)
 	assert_eq(s.state.get_combatant(&"enemy_0").resistance, 3)
 	CombatFixture.land(s.state.player, 1)  # dead centre: Perfect
