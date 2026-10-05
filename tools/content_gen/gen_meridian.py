@@ -19,11 +19,11 @@ S_PHASE = "res://scripts/data/boss_phase_data.gd"
 S_SPAWN = "res://scripts/data/satellite_spawn_data.gd"
 
 # ---- Slices ---------------------------------------------------------------------------------------------
-# Tariff: AFFLICT, drains 3 RAM from the pointer target. Inertia strike: Atk 8 that adds 1
+# Tariff: INFECT, drains 3 RAM from the pointer target. Inertia strike: Shim 8 that adds 1
 # resistance to its owner (Meridian freight gets heavier the more it hits).
 for sid, name, stype, rule, out, fx in [
     ("tariff", "Tariff", 7, 1, 0, (13, 3, 3)),
-    ("atk_8_inertia", "Attack 8 (+1 resistance)", 0, 1, 8, (10, 0, 1)),
+    ("shim_8_inertia", "Shim 8 (+1 resistance)", 0, 1, 8, (10, 0, 1)),
 ]:
     r = Res("SliceData", "res://scripts/data/slice_data.gd")
     e = r.effect("fx", fx[0], fx[1], fx[2])
@@ -92,32 +92,32 @@ def enemy(eid, name, desc, hp, slices, pointers=(0,), passive=0, orbit=0, elite=
     r.write("content/enemies/%s.tres" % eid, comment or ("Meridian Freight Systems enemy (M8, decision 2026-09-24)."))
 
 
-# Satellite: a courier drone (GDD drone stats: 5 HP, Atk 3 / Def 3).
+# Satellite: a courier drone (GDD drone stats: 5 HP, Shim 3 / Defrag 3).
 r = Res("EnemyData", "res://scripts/data/enemy_data.gd")
-w = wheel_sub(r, "wheel", ["atk_3", "def_3"])
+w = wheel_sub(r, "wheel", ["shim_3", "defrag_3"])
 r.main = ['id = &"courier_drone"', 'display_name = "Courier Drone"', 'description = "A Meridian delivery drone that shields its dispatcher."',
           'corporation_id = &"meridian"', "hp = 5", "wheel = " + w, "cycle_reward = 0"]
 r.write("content/enemies/courier_drone.tres", "Meridian satellite (M8).")
 
 enemy("customs_scanner", "Customs Scanner", "Scans every packet and charges a tariff on the suspicious ones.", 50,
-      ["atk_9", "tariff", "def_6", "crit_14", "atk_9", "miss"])
+      ["shim_9", "tariff", "defrag_6", "overflow_14", "shim_9", "miss"])
 enemy("cargo_hauler", "Cargo Hauler", "Slow, heavy and hard to turn: inertia resists every nudge.", 72,
-      ["def_8", "atk_10", "def_8", "atk_8_inertia", "shield_5", "miss"], passive=2)
+      ["defrag_8", "shim_10", "defrag_8", "shim_8_inertia", "shield_5", "miss"], passive=2)
 enemy("conveyor_warden", "Conveyor Warden", "Its read head rides the conveyor: the pointer orbits 3 ticks a turn.", 54,
-      ["atk_10", "atk_10", "def_6", "crit_16", "tariff", "miss"], orbit=3)
+      ["shim_10", "shim_10", "defrag_6", "overflow_16", "tariff", "miss"], orbit=3)
 enemy("route_optimizer", "Route Optimizer", "Reads two routes at once: pointers at ticks 0 and 15.", 48,
-      ["atk_8", "atk_8", "crit_14", "def_5", "atk_8", "miss"], pointers=(0, 15))
+      ["shim_8", "shim_8", "overflow_14", "defrag_5", "shim_8", "miss"], pointers=(0, 15))
 enemy("drone_dispatcher", "Drone Dispatcher", "Launches a courier drone every other turn (up to 2).", 44,
-      ["def_5", "atk_8", "def_5", "atk_8", "tariff", "miss"], spawns=[("courier_drone", 2, 2, -1, 2)])
+      ["defrag_5", "shim_8", "defrag_5", "shim_8", "tariff", "miss"], spawns=[("courier_drone", 2, 2, -1, 2)])
 enemy("tariff_collector", "Tariff Collector", "Every hit is a fee: attacks drain RAM.", 53,
-      ["atk_7_drain", "atk_7_drain", "def_6", "tariff", "crit_12_drain", "miss"])
+      ["shim_7_drain", "shim_7_drain", "defrag_6", "tariff", "overflow_12_drain", "miss"])
 enemy("port_authority", "Port Authority", "Two readers and a customs wall: resistance 2.", 144,
-      ["atk_12", "def_8", "crit_16", "atk_12", "tariff", "miss"], pointers=(0, 15), passive=2, elite=True, cycle=35)
+      ["shim_12", "defrag_8", "overflow_16", "shim_12", "tariff", "miss"], pointers=(0, 15), passive=2, elite=True, cycle=35)
 enemy("last_mile_enforcer", "Last-Mile Enforcer", "Orbits 2 ticks a turn and brings its own escort drone.", 132,
-      ["atk_14", "atk_14", "def_8", "crit_16", "shield_8", "miss"], orbit=2, elite=True, cycle=35,
+      ["shim_14", "shim_14", "defrag_8", "overflow_16", "shield_8", "miss"], orbit=2, elite=True, cycle=35,
       spawns=[("courier_drone", 1, 1, 1, 1)])
 enemy("logistics_director", "Logistics Director", "Meridian middle management, guarding the final Rack.", 150,
-      ["atk_10", "def_8", "crit_15", "tariff", "shield_5", "miss"], passive=2, elite=True, mini=True, cycle=60,
+      ["shim_10", "defrag_8", "overflow_15", "tariff", "shield_5", "miss"], passive=2, elite=True, mini=True, cycle=60,
       phases=[{"at": 0.5, "behavior": 1, "ticks": (0, 15), "line": "Throughput review: a second reader joins the shift."},
               {"at": 0.25, "behavior": 3, "orbit": 2, "line": "Overtime: the readers start to drift."}])
 
@@ -131,10 +131,10 @@ def boss_hub(r):
 
 
 enemy("the_manifest", "The Manifest", "Meridian's routing core. Every package on the planet passes through it.", 400,
-      ["atk_14", "tariff", "def_12", "crit_24", "atk_14", "miss"], boss=True, cycle=0, hub=boss_hub,
+      ["shim_14", "tariff", "defrag_12", "overflow_24", "shim_14", "miss"], boss=True, cycle=0, hub=boss_hub,
       phases=[{"at": 0.66, "behavior": 1, "ticks": (0, 15), "line": "Load balancing: a second routing head comes online."},
               {"at": 0.33, "behavior": 3, "orbit": 2, "ticks": (0, 15),
-               "wheel": ["crit_24", "tariff", "def_12", "crit_24", "atk_14", "miss"],
+               "wheel": ["overflow_24", "tariff", "defrag_12", "overflow_24", "shim_14", "miss"],
                "spawns": [("courier_drone", 1, 1, -1, 2)],
                "line": "Peak season: the heads drift, the couriers launch, the second lane goes critical."}],
       comment="The Manifest, Meridian final boss (M8, decision 2026-09-24). 400 HP; hub Customs\nSeal gains 4 shield per turn unless breached; 66%: Multiply (0, 15); 33%: Orbit 2, Crit wheel, 2 courier drones.")

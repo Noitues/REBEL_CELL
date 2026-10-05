@@ -8,18 +8,18 @@
 [ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="6"]
 [ext_resource type="Script" path="res://scripts/data/boss_phase_data.gd" id="7"]
 [ext_resource type="Script" path="res://scripts/data/satellite_spawn_data.gd" id="8"]
-[ext_resource type="Resource" path="res://content/slices/atk_14.tres" id="s_atk"]
-[ext_resource type="Resource" path="res://content/slices/def_12.tres" id="s_def"]
+[ext_resource type="Resource" path="res://content/slices/shim_14.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/defrag_12.tres" id="s_def"]
 [ext_resource type="Resource" path="res://content/slices/dose.tres" id="s_dose"]
-[ext_resource type="Resource" path="res://content/slices/crit_24.tres" id="s_crit"]
+[ext_resource type="Resource" path="res://content/slices/overflow_24.tres" id="s_crit"]
 [ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
 [ext_resource type="Resource" path="res://content/enemies/collections_drone.tres" id="drone"]
 
-; Renewal Engine, Solace final boss (GDD A.3, 2.11): 300 HP; Atk 14, Atk 14, Def 12,
-; Dose, Crit 24, Miss. Hub Auto-Renew heals 10 per turn unless Hub-Breached
+; Renewal Engine, Solace final boss (GDD A.3, 2.11): 300 HP; Shim 14, Shim 14, Defrag 12,
+; Dose, Overflow 24, Miss. Hub Auto-Renew heals 10 per turn unless Hub-Breached
 ; (trigger 2 = ON_TURN_START, effect 14 = HEAL on SELF). 66%: Multiply to pointers
 ; 0 and 15 (behavior 1). 33%: pointers Orbit 3 per turn (behavior 3), 2 drones spawn and
-; the wheel reconfigures (wheel_override): the second Atk 14 becomes a Crit 24
+; the wheel reconfigures (wheel_override): the second Shim 14 becomes an Overflow 24
 ; (implementation decision 2026-09-24: "when in doubt, up the boss").
 
 [sub_resource type="Resource" id="fx_heal"]

@@ -668,7 +668,7 @@ func test_hits_fly_to_the_hp_ring_and_hits_that_deal_nothing_stamp() -> void:
 	marks = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "impact")
 	assert_eq(marks.size(), 1)
 	if not marks.is_empty():
-		assert_eq(int(marks[0]["icon"]), RC.SliceType.EVADE, "an evaded hit shows 0 with the evade mark")
+		assert_eq(int(marks[0]["icon"]), RC.SliceType.DETOUR, "an evaded hit shows 0 with the evade mark")
 	scene.skip_motion()
 	await _close(scene)
 
@@ -834,7 +834,7 @@ func test_chips_come_in_order_of_importance_and_the_fold_keeps_damage() -> void:
 	var many: Array = ranked.duplicate()
 	for k in 8:
 		many.append({"text": "STATUS %d" % k, "color": Color.GREEN})
-	v.intent = {"text": "ATTACK", "chips": many}
+	v.intent = {"text": "SHIM", "chips": many}
 	var rows: Array = v._chip_rows()
 	var shown: Array = []
 	for row in rows:

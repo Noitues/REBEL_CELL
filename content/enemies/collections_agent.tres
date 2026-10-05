@@ -4,14 +4,14 @@
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/data/satellite_spawn_data.gd" id="4"]
-[ext_resource type="Resource" path="res://content/slices/atk_8.tres" id="s_atk"]
-[ext_resource type="Resource" path="res://content/slices/def_6.tres" id="s_def"]
+[ext_resource type="Resource" path="res://content/slices/shim_8.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/defrag_6.tres" id="s_def"]
 [ext_resource type="Resource" path="res://content/slices/dose.tres" id="s_dose"]
-[ext_resource type="Resource" path="res://content/slices/crit_14.tres" id="s_crit"]
+[ext_resource type="Resource" path="res://content/slices/overflow_14.tres" id="s_crit"]
 [ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
 [ext_resource type="Resource" path="res://content/enemies/collections_drone.tres" id="drone"]
 
-; Collections Agent (GDD A.3): 40 HP; Atk 8, Atk 8, Def 6, Dose, Crit 14, Miss;
+; Collections Agent (GDD A.3): 40 HP; Shim 8, Shim 8, Defrag 6, Dose, Overflow 14, Miss;
 ; satellite drone docked on slice 1 at combat start (trigger 1 = ON_COMBAT_START).
 
 [sub_resource type="Resource" id="slot_atk"]

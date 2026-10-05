@@ -4,14 +4,14 @@
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/data/satellite_spawn_data.gd" id="4"]
-[ext_resource type="Resource" path="res://content/slices/def_4.tres" id="s_def"]
-[ext_resource type="Resource" path="res://content/slices/heal_4.tres" id="s_heal"]
-[ext_resource type="Resource" path="res://content/slices/atk_4.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/defrag_4.tres" id="s_def"]
+[ext_resource type="Resource" path="res://content/slices/hotfix_4.tres" id="s_heal"]
+[ext_resource type="Resource" path="res://content/slices/shim_4.tres" id="s_atk"]
 [ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
 [ext_resource type="Resource" path="res://content/enemies/care_drone.tres" id="drone"]
 
-; Care Swarm (GDD A.3): 25 HP; Def 4, Heal 4, Def 4, Heal 4, Atk 4, Miss; 3 satellites
-; (4 HP; Atk 3, Atk 3, Def 2) docked on random free slots at combat start.
+; Care Swarm (GDD A.3): 25 HP; Defrag 4, Hotfix 4, Defrag 4, Hotfix 4, Shim 4, Miss; 3 satellites
+; (4 HP; Shim 3, Shim 3, Defrag 2) docked on random free slots at combat start.
 
 [sub_resource type="Resource" id="slot_def"]
 script = ExtResource("3")

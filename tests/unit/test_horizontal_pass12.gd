@@ -106,14 +106,14 @@ func test_raid_pacing_comes_from_the_config() -> void:
 
 
 func test_twin_pointers_miss_spoils_cold_exit() -> void:
-	var atk := CombatFixture.slice(&"h12_atk", RC.SliceType.ATTACK, 6)
+	var atk := CombatFixture.slice(&"h12_atk", RC.SliceType.SHIM, 6)
 	var miss := CombatFixture.slice(&"h12_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
 	var hub := CombatFixture.hub(&"h12_hub")
 	var deck: Array[CardData] = [CombatFixture.card(&"h12_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
 	var cls := CombatFixture.operative_class(&"h12_class", 60, CombatFixture.wheel([atk, atk, atk, atk, atk, miss], hub), deck)
 	var enemy := CombatFixture.enemy(&"h12_dummy", 300, CombatFixture.miss_wheel())
 	var s := CombatSession.start(CombatFixture.resolver([cls, enemy]), cls.id, [enemy.id], 9, &"", 0, {"daemon_ids": ["twin_pointer"]})
-	CombatFixture.land(s.state.player, 2)  # pointer 0 on Atk (slot 2), pointer 1 on the Miss (slot 5)
+	CombatFixture.land(s.state.player, 2)  # pointer 0 on Shim (slot 2), pointer 1 on the Miss (slot 5)
 	s.apply(CombatAction.end_turn())
 	assert_true(s.state.miss_resolved, "the second read head resolved the Miss")
 

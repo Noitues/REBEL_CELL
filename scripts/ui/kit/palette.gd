@@ -50,20 +50,20 @@ const FONT_MONO := "res://assets/fonts/ShareTechMono-Regular.ttf"
 
 ## A glyph for every slice type (STYLE_GUIDE 4): readable without colour.
 const SLICE_GLYPHS := {
-	RC.SliceType.ATTACK: "▲", RC.SliceType.CRIT: "✦", RC.SliceType.DEFEND: "■", RC.SliceType.EVADE: "◇",
-	RC.SliceType.SHIELD: "⬢", RC.SliceType.DEPLOY: "⬡", RC.SliceType.HEAL: "✚", RC.SliceType.AFFLICT: "◈",
+	RC.SliceType.SHIM: "▲", RC.SliceType.OVERFLOW: "✦", RC.SliceType.DEFRAG: "■", RC.SliceType.DETOUR: "◇",
+	RC.SliceType.SHIELD: "⬢", RC.SliceType.DEPLOY: "⬡", RC.SliceType.HOTFIX: "✚", RC.SliceType.INFECT: "◈",
 	RC.SliceType.MISS: "✕",
 }
 const SLICE_NAMES := {
-	RC.SliceType.ATTACK: "ATK", RC.SliceType.CRIT: "CRIT", RC.SliceType.DEFEND: "DEF", RC.SliceType.EVADE: "EVD", # TR
-	RC.SliceType.SHIELD: "SHD", RC.SliceType.DEPLOY: "DEP", RC.SliceType.HEAL: "HEAL", RC.SliceType.AFFLICT: "AFL", # TR
+	RC.SliceType.SHIM: "SHIM", RC.SliceType.OVERFLOW: "OVFL", RC.SliceType.DEFRAG: "DFRG", RC.SliceType.DETOUR: "DTOR", # TR
+	RC.SliceType.SHIELD: "SHD", RC.SliceType.DEPLOY: "DEP", RC.SliceType.HOTFIX: "HFIX", RC.SliceType.INFECT: "INFC", # TR
 	RC.SliceType.MISS: "MISS", # TR
 }
 ## Whole words for the tags over the spinners (H21: new players read DEF / AFL / BLK as
 ## noise).
 const SLICE_WORDS := {
-	RC.SliceType.ATTACK: "ATTACK", RC.SliceType.CRIT: "CRITICAL", RC.SliceType.DEFEND: "DEFEND", RC.SliceType.EVADE: "EVADE", # TR
-	RC.SliceType.SHIELD: "SHIELD", RC.SliceType.DEPLOY: "DEPLOY", RC.SliceType.HEAL: "HEAL", RC.SliceType.AFFLICT: "AFFLICT", # TR
+	RC.SliceType.SHIM: "SHIM", RC.SliceType.OVERFLOW: "OVERFLOW", RC.SliceType.DEFRAG: "DEFRAG", RC.SliceType.DETOUR: "DETOUR", # TR
+	RC.SliceType.SHIELD: "SHIELD", RC.SliceType.DEPLOY: "DEPLOY", RC.SliceType.HOTFIX: "HOTFIX", RC.SliceType.INFECT: "INFECT", # TR
 	RC.SliceType.MISS: "MISS", # TR
 }
 const STATUS_WORDS := {RC.Status.NONE: "", RC.Status.CORRUPTED: "CORRUPTED", RC.Status.OVERCLOCKED: "OVERCLOCKED", RC.Status.ENCRYPTED: "ENCRYPTED", RC.Status.PARASITE: "PARASITE"} # TR
@@ -93,13 +93,13 @@ static func corp_color(corporation_id: StringName) -> Color:
 
 static func slice_color(type: int) -> Color:
 	match type:
-		RC.SliceType.ATTACK, RC.SliceType.CRIT:
+		RC.SliceType.SHIM, RC.SliceType.OVERFLOW:
 			return CELL_PINK
-		RC.SliceType.DEFEND, RC.SliceType.SHIELD:
+		RC.SliceType.DEFRAG, RC.SliceType.SHIELD:
 			return NET_CYAN
-		RC.SliceType.EVADE, RC.SliceType.HEAL:
+		RC.SliceType.DETOUR, RC.SliceType.HOTFIX:
 			return Color("#7BE07B")
-		RC.SliceType.AFFLICT:
+		RC.SliceType.INFECT:
 			return Color("#C85AFF")
 		RC.SliceType.DEPLOY:
 			return Color("#B08CFF")

@@ -34,9 +34,9 @@ const KINDS := {
 const HP_KINDS: Array[String] = ["damage", "heal", "corrupted"]
 ## Which slice types resolve each kind (a beat pulses the source's needle on such a slice).
 const KIND_SLICES := {
-	"damage": [RC.SliceType.ATTACK, RC.SliceType.CRIT], "evaded": [RC.SliceType.ATTACK, RC.SliceType.CRIT],
-	"block": [RC.SliceType.DEFEND], "shield": [RC.SliceType.SHIELD], "evade": [RC.SliceType.EVADE],
-	"heal": [RC.SliceType.HEAL], "status": [RC.SliceType.AFFLICT], "absorbed": [RC.SliceType.AFFLICT],
+	"damage": [RC.SliceType.SHIM, RC.SliceType.OVERFLOW], "evaded": [RC.SliceType.SHIM, RC.SliceType.OVERFLOW],
+	"block": [RC.SliceType.DEFRAG], "shield": [RC.SliceType.SHIELD], "evade": [RC.SliceType.DETOUR],
+	"heal": [RC.SliceType.HOTFIX], "status": [RC.SliceType.INFECT], "absorbed": [RC.SliceType.INFECT],
 }
 ## Kinds whose actor is the event's target (it acts on itself: its own needle resolves).
 const SELF_KINDS: Array[String] = ["block", "shield", "evade", "heal"]
@@ -45,7 +45,7 @@ const ACTOR_TYPES := {"attack": "attacker", "afflict": "attacker", "retrigger": 
 
 
 ## The beats of `events` applied to `before` (the state the action or SEND IT started
-## from). `lookup` (optional) tells a CRIT slice's hit from a plain one.
+## from). `lookup` (optional) tells an OVERFLOW slice's hit from a plain one.
 static func build(before: CombatState, events: Array[Dictionary], lookup: ContentLookup = null) -> Array[Dictionary]:
 	var beats: Array[Dictionary] = []
 	var hp := {}
@@ -161,7 +161,7 @@ static func build(before: CombatState, events: Array[Dictionary], lookup: Conten
 
 ## ANIM-R5 combat 5: the resolve is simultaneous (GDD 2.2): a wheel that goes down this
 ## SEND IT still acts in it. In the engine's order its HP could reach 0 on screen and then
-## its AFFLICT fly, a dead enemy acting. The replay plays a doomed wheel's own actions (and
+## its INFECT fly, a dead enemy acting. The replay plays a doomed wheel's own actions (and
 ## its satellites') of the resolve before the hit that takes its HP to 0, keeping their
 ## order (each moved beat is marked `same_moment`), and recounts every beat's `hp_after`
 ## from `before` in the new order. Presentation only: the events and the result are the
@@ -446,17 +446,17 @@ static func _everyone(s: CombatState) -> Array[CombatantState]:
 	return out
 
 
-## A hit is a crit when its slice is a CRIT slice or its needle landed Perfect.
+## A hit is a crit when its slice is an OVERFLOW slice or its needle landed Perfect.
 static func _is_crit(e: Dictionary, before: CombatState, landings: Dictionary, lookup: ContentLookup) -> bool:
 	var src := StringName(String(e.get("source_id", "")))
 	if lookup != null and src != &"" and lookup.has(src):
 		var slice := lookup.get_content(src) as SliceData
-		if slice != null and slice.slice_type == RC.SliceType.CRIT:
+		if slice != null and slice.slice_type == RC.SliceType.OVERFLOW:
 			return true
 	for l in landings.get(StringName(String(e.get("attacker", ""))), []):
 		if int(l.get("tier", -1)) == RC.PrecisionTier.PERFECT:
 			var owner := before.get_combatant(StringName(String(e.get("attacker", ""))))
-			if owner != null and _slice_type(owner, int(l.get("slice_index", 0)), lookup) in [RC.SliceType.ATTACK, RC.SliceType.CRIT]:
+			if owner != null and _slice_type(owner, int(l.get("slice_index", 0)), lookup) in [RC.SliceType.SHIM, RC.SliceType.OVERFLOW]:
 				return true
 	return false
 

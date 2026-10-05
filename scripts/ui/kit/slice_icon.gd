@@ -48,20 +48,20 @@ static func draw_icon(ci: CanvasItem, c: Vector2, r: float, type: int, col: Colo
 	var w := maxf(1.5, r * 0.18)
 	_outline_w = r * (0.3 if _bold else 0.16)
 	match type:
-		RC.SliceType.ATTACK:
+		RC.SliceType.SHIM:
 			var blade := PackedVector2Array([c + Vector2(-r * 0.24, r * 0.5), c + Vector2(-r * 0.24, -r * 0.35), c + Vector2(0, -r * 0.9), c + Vector2(r * 0.24, -r * 0.35), c + Vector2(r * 0.24, r * 0.5)])
 			_filled(ci, blade, col, outline)
 			ci.draw_line(c + Vector2(-r * 0.5, r * 0.55), c + Vector2(r * 0.5, r * 0.55), outline, w + 2.0)
 			ci.draw_line(c + Vector2(-r * 0.5, r * 0.55), c + Vector2(r * 0.5, r * 0.55), col, w)
 			ci.draw_line(c + Vector2(0, r * 0.55), c + Vector2(0, r * 0.9), col, w)
-		RC.SliceType.CRIT:
+		RC.SliceType.OVERFLOW:
 			var star := PackedVector2Array()
 			for k in 16:
 				var rr := r * (0.95 if k % 2 == 0 else 0.4)
 				var a := TAU * k / 16.0 - PI * 0.5
 				star.append(c + Vector2(cos(a), sin(a)) * rr)
 			_filled(ci, star, col, outline)
-		RC.SliceType.DEFEND:
+		RC.SliceType.DEFRAG:
 			var shield := PackedVector2Array([c + Vector2(-r * 0.7, -r * 0.7), c + Vector2(r * 0.7, -r * 0.7), c + Vector2(r * 0.7, 0), c + Vector2(0, r * 0.85), c + Vector2(-r * 0.7, 0)])
 			_filled(ci, shield, col, outline)
 			ci.draw_line(c + Vector2(0, -r * 0.55), c + Vector2(0, r * 0.55), Color(outline, 0.5), w * 0.7)
@@ -76,18 +76,18 @@ static func draw_icon(ci: CanvasItem, c: Vector2, r: float, type: int, col: Colo
 				var a := TAU * k / 6.0 - PI * 0.5
 				inner.append(c + Vector2(cos(a), sin(a)) * r * 0.45)
 			ci.draw_polyline(inner, Color(outline, 0.6), w * 0.7)
-		RC.SliceType.EVADE:
+		RC.SliceType.DETOUR:
 			for dx in [-0.35, 0.25]:
 				var o := c + Vector2(r * dx, 0)
 				var chev := PackedVector2Array([o + Vector2(-r * 0.3, -r * 0.6), o + Vector2(r * 0.25, 0), o + Vector2(-r * 0.3, r * 0.6)])
 				ci.draw_polyline(chev, outline, w + 3.0)
 				ci.draw_polyline(chev, col, w + 0.5)
-		RC.SliceType.HEAL:
+		RC.SliceType.HOTFIX:
 			var t := r * 0.28
 			var cross := PackedVector2Array([c + Vector2(-t, -r * 0.8), c + Vector2(t, -r * 0.8), c + Vector2(t, -t), c + Vector2(r * 0.8, -t), c + Vector2(r * 0.8, t), c + Vector2(t, t),
 				c + Vector2(t, r * 0.8), c + Vector2(-t, r * 0.8), c + Vector2(-t, t), c + Vector2(-r * 0.8, t), c + Vector2(-r * 0.8, -t), c + Vector2(-t, -t)])
 			_filled(ci, cross, col, outline)
-		RC.SliceType.AFFLICT:
+		RC.SliceType.INFECT:
 			# A toxic drip: a round drop with a pointed top and two dark eyes.
 			var drop := PackedVector2Array([c + Vector2(0, -r * 0.95)])
 			for k in 13:

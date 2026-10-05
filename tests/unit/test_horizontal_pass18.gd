@@ -68,7 +68,7 @@ func test_subtitles_follow_the_text_scale() -> void:
 
 
 func test_a_copy_carries_none_of_the_neighbours_statuses() -> void:
-	var atk := CombatFixture.slice(&"h18_atk", RC.SliceType.ATTACK, 6)
+	var atk := CombatFixture.slice(&"h18_atk", RC.SliceType.SHIM, 6)
 	var miss := CombatFixture.slice(&"h18_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
 	var deck: Array[CardData] = [CombatFixture.card(&"h18_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
 	var cls := CombatFixture.operative_class(&"h18_class", 60, CombatFixture.wheel([atk, atk, atk, atk, atk, miss]), deck)
@@ -86,9 +86,9 @@ func test_a_copy_carries_none_of_the_neighbours_statuses() -> void:
 
 
 func test_stolen_intent_swaps_no_permanent_status() -> void:
-	var atk := CombatFixture.slice(&"h18_atk", RC.SliceType.ATTACK, 6)
+	var atk := CombatFixture.slice(&"h18_atk", RC.SliceType.SHIM, 6)
 	var miss := CombatFixture.slice(&"h18_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
-	var hit := CombatFixture.slice(&"h18_hit", RC.SliceType.ATTACK, 10)
+	var hit := CombatFixture.slice(&"h18_hit", RC.SliceType.SHIM, 10)
 	var deck: Array[CardData] = [CombatFixture.card(&"h18_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
 	var cls := CombatFixture.operative_class(&"h18_class", 60, CombatFixture.wheel([atk, atk, atk, atk, atk, miss]), deck)
 	var enemy := CombatFixture.enemy(&"h18_hitter", 300, CombatFixture.wheel([hit, hit, hit, hit, hit, hit]))
@@ -98,4 +98,4 @@ func test_stolen_intent_swaps_no_permanent_status() -> void:
 	var r := s.apply(CombatAction.end_turn())
 	assert_eq(CombatFixture.events_of(r, "stolen_intent").size(), 1)
 	var mine := CombatFixture.events_of(r, "attack").filter(func(e: Dictionary) -> bool: return e["attacker"] == &"player")
-	assert_eq(int(mine[0]["amount"]), 10, "the stolen Attack 10 resolves without Burner's 1.5x")
+	assert_eq(int(mine[0]["amount"]), 10, "the stolen Shim 10 resolves without Burner's 1.5x")

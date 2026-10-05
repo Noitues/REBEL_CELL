@@ -12,7 +12,7 @@ var _encrypt: CardData
 
 func before_each() -> void:
 	_cfg = CombatFixture.config()
-	_atk6 = CombatFixture.slice(&"s_atk6", RC.SliceType.ATTACK, 6)
+	_atk6 = CombatFixture.slice(&"s_atk6", RC.SliceType.SHIM, 6)
 	_miss = CombatFixture.slice(&"s_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
 	_overdrive = CombatFixture.card(&"s_overdrive", [CombatFixture.effect(RC.EffectType.APPLY_STATUS, RC.EffectTarget.OWN_WHEEL, 0, RC.RingScope.OUTER, 1.0, RC.Status.OVERCLOCKED)], 1, RC.WheelTarget.OWN)
 	_encrypt = CombatFixture.card(&"s_encrypt", [CombatFixture.effect(RC.EffectType.APPLY_STATUS, RC.EffectTarget.OWN_WHEEL, 0, RC.RingScope.OUTER, 1.0, RC.Status.ENCRYPTED)], 1, RC.WheelTarget.OWN)

@@ -8,8 +8,8 @@ var _miss: SliceData
 
 
 func before_each() -> void:
-	_atk6 = CombatFixture.slice(&"g_atk6", RC.SliceType.ATTACK, 6)
-	_def10 = CombatFixture.slice(&"g_def10", RC.SliceType.DEFEND, 10, RC.TargetRule.SELF)
+	_atk6 = CombatFixture.slice(&"g_atk6", RC.SliceType.SHIM, 6)
+	_def10 = CombatFixture.slice(&"g_def10", RC.SliceType.DEFRAG, 10, RC.TargetRule.SELF)
 	_miss = CombatFixture.slice(&"g_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
 
 

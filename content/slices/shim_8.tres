@@ -4,8 +4,8 @@
 
 [resource]
 script = ExtResource("1")
-id = &"heal_6"
-display_name = "Heal 6"
-slice_type = 6
-target_rule = 0
-base_output = 6
+id = &"shim_8"
+display_name = "Shim 8"
+slice_type = 0
+target_rule = 1
+base_output = 8

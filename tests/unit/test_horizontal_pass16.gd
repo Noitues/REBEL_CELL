@@ -21,9 +21,9 @@ func _frames(n: int = 3) -> void:
 		await get_tree().process_frame
 
 
-## Operative wheel Atk, Atk, Atk, Atk, Atk, Miss; Firmware `fw_id` on slot 0.
+## Operative wheel Shim, Shim, Shim, Shim, Shim, Miss; Firmware `fw_id` on slot 0.
 func _session(fw_id: StringName, daemons: Array) -> CombatSession:
-	var atk := CombatFixture.slice(&"h16_atk", RC.SliceType.ATTACK, 6)
+	var atk := CombatFixture.slice(&"h16_atk", RC.SliceType.SHIM, 6)
 	var miss := CombatFixture.slice(&"h16_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
 	var deck: Array[CardData] = [CombatFixture.card(&"h16_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
 	var cls := CombatFixture.operative_class(&"h16_class", 60, CombatFixture.wheel([atk, atk, atk, atk, atk, miss]), deck)

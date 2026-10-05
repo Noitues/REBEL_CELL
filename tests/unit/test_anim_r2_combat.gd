@@ -487,7 +487,7 @@ func test_a_hit_flies_in_its_sides_colour_with_its_raw_number_and_its_guard_chip
 	assert_eq(marks.size(), 1)
 	if not marks.is_empty():
 		assert_eq(String(marks[0]["text"]), "0", "and shows 0 with a shield on impact")
-		assert_eq(int(marks[0]["icon"]), RC.SliceType.DEFEND)
+		assert_eq(int(marks[0]["icon"]), RC.SliceType.DEFRAG)
 	scene.skip_motion()
 	await _close(scene)
 
@@ -608,7 +608,7 @@ func test_the_entering_plate_never_hides_the_forecast() -> void:
 func test_chips_shrink_before_they_fold_at_big_text() -> void:
 	var scene := await _combat(&"collections_agent", Settings.TEXT_SCALE_MAX)
 	var v: WheelView = scene._player_view
-	v.intent = {"text": "DEFEND", "type": RC.SliceType.DEFEND, "chips": [
+	v.intent = {"text": "DEFRAG", "type": RC.SliceType.DEFRAG, "chips": [
 		{"text": "+3 BLOCK", "color": Palette.NET_CYAN}, {"text": "? RANDOM STATUS", "color": Palette.CELL_ACID},
 		{"text": "RAM +4", "color": Palette.NOTE_YELLOW}, {"text": "+2 SHIELD", "color": Palette.NET_CYAN}]}
 	var full := v._chip_rows_at(roundi(WheelView.CHIP_FONT_SIZE * Settings.text_scale))

@@ -121,7 +121,7 @@ static func _mirror_elite(cls: ClassData, base: EnemyData, hub: HubCoreData, loo
 static func _stronger(slice: SliceData, lookup: ContentLookup) -> SliceData:
 	if slice == null or slice.slice_type == RC.SliceType.MISS:
 		return slice
-	var want_type := RC.SliceType.ATTACK if slice.slice_type == RC.SliceType.DEPLOY else slice.slice_type
+	var want_type := RC.SliceType.SHIM if slice.slice_type == RC.SliceType.DEPLOY else slice.slice_type
 	var base := maxi(1, slice.base_output) if slice.slice_type != RC.SliceType.DEPLOY else _deploy_base
 	var want := base * _factor
 	var best: SliceData = null

@@ -4,8 +4,8 @@
 
 [resource]
 script = ExtResource("1")
-id = &"crit_14"
-display_name = "Crit 14"
+id = &"overflow_24"
+display_name = "Overflow 24"
 slice_type = 1
 target_rule = 1
-base_output = 14
+base_output = 24

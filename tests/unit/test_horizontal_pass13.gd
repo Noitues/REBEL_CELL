@@ -11,7 +11,7 @@ var _ring: InnerRingData
 
 
 func before_each() -> void:
-	_atk6 = CombatFixture.slice(&"h13_atk6", RC.SliceType.ATTACK, 6)
+	_atk6 = CombatFixture.slice(&"h13_atk6", RC.SliceType.SHIM, 6)
 	_miss = CombatFixture.slice(&"h13_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
 	_ring = CombatFixture.ring([CombatFixture.segment(&"h13_s0"), CombatFixture.segment(&"h13_s1"), CombatFixture.segment(&"h13_s2")])
 

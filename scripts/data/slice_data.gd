@@ -4,9 +4,9 @@ extends Resource
 
 @export var id: StringName
 @export var display_name: String
-@export var slice_type: RC.SliceType = RC.SliceType.ATTACK
+@export var slice_type: RC.SliceType = RC.SliceType.SHIM
 @export var target_rule: RC.TargetRule = RC.TargetRule.POINTER
-## Damage for ATTACK/CRIT, block for DEFEND/SHIELD, drone count for DEPLOY.
+## Damage for SHIM/OVERFLOW, block for DEFRAG/SHIELD, drone count for DEPLOY.
 @export var base_output: int = 0
 @export var extra_effects: Array[TriggeredEffectData] = []
 @export var icon: Texture2D

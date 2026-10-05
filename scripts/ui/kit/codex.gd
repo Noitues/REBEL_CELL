@@ -4,14 +4,14 @@ extends RefCounted
 ## screen (GDD 8.1, 9.5). Reads content only; never changes state.
 
 const SLICE_TYPE_TEXT := {
-	RC.SliceType.ATTACK: "ATTACK: deals damage to whatever sits at each pointer of the target wheel.",
-	RC.SliceType.CRIT: "CRIT: deals high damage to whatever sits at each pointer of the target wheel.",
-	RC.SliceType.DEFEND: "DEFEND: gains block. Block expires at the start of your next turn.",
+	RC.SliceType.SHIM: "SHIM: deals damage to whatever sits at each pointer of the target wheel.",
+	RC.SliceType.OVERFLOW: "OVERFLOW: deals high damage to whatever sits at each pointer of the target wheel.",
+	RC.SliceType.DEFRAG: "DEFRAG: gains block. Block expires at the start of your next turn.",
 	RC.SliceType.SHIELD: "SHIELD: gains shield. Shield persists across turns (cap 15).",
-	RC.SliceType.EVADE: "EVADE: cancels the next incoming ATTACK or CRIT this turn.",
+	RC.SliceType.DETOUR: "DETOUR: cancels the next incoming SHIM or OVERFLOW this turn.",
 	RC.SliceType.DEPLOY: "DEPLOY: docks a drone on your wheel. It resolves when its slice does and takes hits aimed there.",
-	RC.SliceType.HEAL: "HEAL: restores HP.",
-	RC.SliceType.AFFLICT: "AFFLICT: applies a status or a drain to your wheel (Dose corrupts, Tariff drains RAM, Citation plants a Parasite, Solar Flare overclocks).",
+	RC.SliceType.HOTFIX: "HOTFIX: restores HP.",
+	RC.SliceType.INFECT: "INFECT: applies a status or a drain to your wheel (Dose corrupts, Tariff drains RAM, Citation plants a Parasite, Solar Flare overclocks).",
 	RC.SliceType.MISS: "MISS: nothing happens, unless a Daemon says otherwise.",
 }
 const STATUS_TEXT := {

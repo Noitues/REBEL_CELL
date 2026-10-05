@@ -250,7 +250,7 @@ func test_death_loses_unbanked_loot_keeps_banked_and_adds_heat() -> void:
 		var attack_slot := 0
 		for i in enemy.wheel.slot_slice_ids.size():
 			var slice := _resolver.lookup.get_content(enemy.wheel.slot_slice_ids[i]) as SliceData
-			if slice.slice_type in [RC.SliceType.ATTACK, RC.SliceType.CRIT]:
+			if slice.slice_type in [RC.SliceType.SHIM, RC.SliceType.OVERFLOW]:
 				attack_slot = i
 				break
 		CombatFixture.land(enemy, attack_slot)

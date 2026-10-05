@@ -147,15 +147,11 @@ A guided first fight.,A guided first fight.
 "A patrol: loot, Heat and Rank from the run, no objective.","A patrol: loot, Heat and Rank from the run, no objective."
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
-AFFLICT,AFFLICT
-AFL,AFL
 AGAIN,AGAIN
 ALL BLOCKED,ALL BLOCKED
 ARE YOU SURE?,ARE YOU SURE?
 ARMORY %d/%d,ARMORY %d/%d
 ARMORY:,ARMORY:
-ATK,ATK
-ATTACK,ATTACK
 Accessibility,Accessibility
 Achievements,Achievements
 Achievements earned (Stats & achievements lists them).,Achievements earned (Stats & achievements lists them).
@@ -234,8 +230,6 @@ CORPORATE,CORPORATE
 CORRUPTED,CORRUPTED
 CREW,CREW
 CREW // ROSTER,CREW // ROSTER
-CRIT,CRIT
-CRITICAL,CRITICAL
 CYBER,CYBER
 CYBERDECK,CYBERDECK
 CYBERDECK HQ,CYBERDECK HQ
@@ -468,17 +462,19 @@ DAEMON,DAEMON
 DAEMONS,DAEMONS
 DAMAGE %s,DAMAGE %s
 DECK,DECK
-DEF,DEF
 DEFEAT,DEFEAT
 DEFEATED,DEFEATED
-DEFEND,DEFEND
 DEFENSE LOADOUT // %s,DEFENSE LOADOUT // %s
+DEFRAG,DEFRAG
 DEP,DEP
 DEPLOY,DEPLOY
+DETOUR,DETOUR
+DFRG,DFRG
 DISPATCH,DISPATCH
 DOWN,DOWN
 DOWN: repair the node on the Grid.,DOWN: repair the node on the Grid.
 DRAW %d,DRAW %d
+DTOR,DTOR
 Daemon,Daemon
 DaemonData.adrenal_loop.description,Each Perfect heals 2.
 DaemonData.adrenal_loop.display_name,Adrenal Loop
@@ -526,7 +522,7 @@ DaemonData.twin_pointer.description,Your wheel is also read at the bottom; both 
 DaemonData.twin_pointer.display_name,Twin Pointer
 DaemonData.warm_boot.description,Start every combat with +2 RAM.
 DaemonData.warm_boot.display_name,Warm Boot
-DaemonData.zero_day.description,A Perfect on the Miss slice resolves as a 3x Crit.
+DaemonData.zero_day.description,A Perfect on the Miss slice resolves as a 3x OVERFLOW.
 DaemonData.zero_day.display_name,Zero Day
 Daemons,Daemons
 Daemons: permanent programs of this operative (none installed).,Daemons: permanent programs of this operative (none installed).
@@ -575,9 +571,7 @@ ELITE DOWN,ELITE DOWN
 ELITES,ELITES
 ENCRYPTED,ENCRYPTED
 ENCRYPTED STOPPED %d,ENCRYPTED STOPPED %d
-EVADE,EVADE
 EVADED %d,EVADED %d
-EVD,EVD
 EVENT PAYOUT,EVENT PAYOUT
 EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
@@ -691,7 +685,7 @@ EnemyData.seed_drone.description,A one-hit drone sprouted by a Perfect landing.
 EnemyData.seed_drone.display_name,Seed Drone
 EnemyData.station_commander.description,"Two readers, heavy block and a flare."
 EnemyData.station_commander.display_name,Station Commander
-EnemyData.surveillance_mast.description,Hard to pin down: Evade slices and an orbiting read head.
+EnemyData.surveillance_mast.description,Hard to pin down: DETOUR slices and an orbiting read head.
 EnemyData.surveillance_mast.display_name,Surveillance Mast
 EnemyData.tariff_collector.description,Every hit is a fee: attacks drain RAM.
 EnemyData.tariff_collector.display_name,Tariff Collector
@@ -739,25 +733,25 @@ Fights won this run.,Fights won this run.
 Finish,Finish
 Firmware,Firmware
 Firmware chip,Firmware chip
-FirmwareData.barbed_wire.description,DEF slice also deals 2 damage to the pointer target.
+FirmwareData.barbed_wire.description,DEFRAG slice also deals 2 damage to the pointer target.
 FirmwareData.barbed_wire.display_name,Barbed Wire
-FirmwareData.bulkhead.description,DEF and SHIELD slices: output +50%.
+FirmwareData.bulkhead.description,DEFRAG and SHIELD slices: output +50%.
 FirmwareData.bulkhead.display_name,Bulkhead
 FirmwareData.burner.description,Permanently OVERCLOCKED (1.5x); each trigger adds 1 Heat.
 FirmwareData.burner.display_name,Burner
 FirmwareData.coolant_loop.description,"Once per combat, a Perfect on this slice lowers Heat by 1."
 FirmwareData.coolant_loop.display_name,Coolant Loop
-FirmwareData.counterstrike.description,EVADE slice also deals 4 damage to the pointer target.
+FirmwareData.counterstrike.description,DETOUR slice also deals 4 damage to the pointer target.
 FirmwareData.counterstrike.display_name,Counterstrike
 FirmwareData.hardened.description,Slice permanently ENCRYPTED.
 FirmwareData.hardened.display_name,Hardened
-FirmwareData.leech.description,ATK slice restores 1 RAM on Good or better.
+FirmwareData.leech.description,SHIM slice restores 1 RAM on Good or better.
 FirmwareData.leech.display_name,Leech
 FirmwareData.mirror.description,Copies the neighbour on the side you landed; both on Perfect.
 FirmwareData.mirror.display_name,Mirror
-FirmwareData.nanite_mesh.description,"HEAL slice: output +50%, and it cleanses itself after resolving."
+FirmwareData.nanite_mesh.description,"HOTFIX slice: output +50%, and it cleanses itself after resolving."
 FirmwareData.nanite_mesh.display_name,Nanite Mesh
-FirmwareData.overvolt.description,ATK and CRIT slices: output +25%.
+FirmwareData.overvolt.description,SHIM and OVERFLOW slices: output +25%.
 FirmwareData.overvolt.display_name,Overvolt
 FirmwareData.patch_plus.description,Slice output +50%.
 FirmwareData.patch_plus.display_name,Patch+
@@ -767,13 +761,13 @@ FirmwareData.recycler.description,The Miss slice restores 2 RAM when it resolves
 FirmwareData.recycler.display_name,Recycler
 FirmwareData.shunt.description,Resolves the neighbour on the side you landed toward at 1.5x; nothing special on Perfect.
 FirmwareData.shunt.display_name,Shunt
-FirmwareData.siphon.description,ATK slice heals you 2 on Good or better.
+FirmwareData.siphon.description,SHIM slice heals you 2 on Good or better.
 FirmwareData.siphon.display_name,Siphon
-FirmwareData.skimmer.description,ATK slice: +3 Cycles on a Perfect (twice per combat).
+FirmwareData.skimmer.description,SHIM slice: +3 Cycles on a Perfect (twice per combat).
 FirmwareData.skimmer.display_name,Skimmer
-FirmwareData.static_coat.description,DEF slice also grants 2 shield.
+FirmwareData.static_coat.description,DEFRAG slice also grants 2 shield.
 FirmwareData.static_coat.display_name,Static Coat
-FirmwareData.tracer.description,ATK or CRIT slice strips 1 resistance from the target on a Perfect.
+FirmwareData.tracer.description,SHIM or OVERFLOW slice strips 1 resistance from the target on a Perfect.
 FirmwareData.tracer.display_name,Tracer
 Flash limiter (max 3 flashes per second),Flash limiter (max 3 flashes per second)
 "Forecast, not a result: if you start the defence now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it.","Forecast, not a result: if you start the defence now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it."
@@ -789,12 +783,12 @@ Go,Go
 "Go to HQ (City Grid, raids, roster)","Go to HQ (City Grid, raids, roster)"
 Good for you: %s,Good for you: %s
 Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP): it takes hits aimed at this slice.
-HEAL,HEAL
 HEAT,HEAT
 HEAT %d · %s,HEAT %d · %s
 HEAT %d · %s (%d+),HEAT %d · %s (%d+)
 HEAT %s,HEAT %s
 HEAT & BANKING,HEAT & BANKING
+HFIX,HFIX
 HITS %d,HITS %d
 HITS %s %d,HITS %s %d
 HITS %s %d → %d LEFT,HITS %s %d → %d LEFT
@@ -809,6 +803,7 @@ HOME %s,HOME %s
 HOME %s · HOLDS,HOME %s · HOLDS
 HOME FELL,HOME FELL
 HOME HOLDS,HOME HOLDS
+HOTFIX,HOTFIX
 HP,HP
 HP %d/%d · DECK %d · DAEMONS %d%s,HP %d/%d · DECK %d · DAEMONS %d%s
 HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.,HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.
@@ -927,6 +922,8 @@ IF CLEARED:,IF CLEARED:
 RUNS NOW:","IF THE RAID
 RUNS NOW:"
 IF YOU SEND IT,IF YOU SEND IT
+INFC,INFC
+INFECT,INFECT
 INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
 In force since a Heat threshold. Scrub Heat to fall back under it.,In force since a Heat threshold. Scrub Heat to fall back under it.
@@ -1444,6 +1441,8 @@ OPERATIVE,OPERATIVE
 OPTIONS,OPTIONS
 OUTER,OUTER
 OVERCLOCKED,OVERCLOCKED
+OVERFLOW,OVERFLOW
+OVFL,OVFL
 "Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for.","Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for."
 Operative,Operative
 Options,Options
@@ -1721,6 +1720,7 @@ SHARE CODES,SHARE CODES
 SHD,SHD
 SHIELD,SHIELD
 SHIELD %d,SHIELD %d
+SHIM,SHIM
 SHOP,SHOP
 SHRED,SHRED
 SHRED A CARD,SHRED A CARD
@@ -1930,42 +1930,42 @@ SiteData.wipe_the_citations.display_name,Wipe the Citations
 Sites your network holds besides CORE: claim cleared Sites on the City Grid.,Sites your network holds besides CORE: claim cleared Sites on the City Grid.
 Skip,Skip
 Skip tutorial,Skip tutorial
-SliceData.atk_10.display_name,Attack 10
-SliceData.atk_12.display_name,Attack 12
-SliceData.atk_14.display_name,Attack 14
-SliceData.atk_16.display_name,Attack 16
-SliceData.atk_20.display_name,Attack 20
-SliceData.atk_3.display_name,Attack 3
-SliceData.atk_4.display_name,Attack 4
-SliceData.atk_6.display_name,Attack 6
-SliceData.atk_7.display_name,Attack 7
-SliceData.atk_7_drain.display_name,Attack 7 (drains 1 RAM)
-SliceData.atk_8.display_name,Attack 8
-SliceData.atk_8_inertia.display_name,Attack 8 (+1 resistance)
-SliceData.atk_9.display_name,Attack 9
 SliceData.citation.display_name,Citation
-SliceData.crit_12.display_name,Crit 12
-SliceData.crit_12_drain.display_name,Crit 12 (drains 2 RAM)
-SliceData.crit_14.display_name,Crit 14
-SliceData.crit_15.display_name,Crit 15
-SliceData.crit_16.display_name,Crit 16
-SliceData.crit_24.display_name,Crit 24
-SliceData.def_12.display_name,Defend 12
-SliceData.def_2.display_name,Defend 2
-SliceData.def_3.display_name,Defend 3
-SliceData.def_4.display_name,Defend 4
-SliceData.def_5.display_name,Defend 5
-SliceData.def_6.display_name,Defend 6
-SliceData.def_8.display_name,Defend 8
+SliceData.defrag_12.display_name,Defrag 12
+SliceData.defrag_2.display_name,Defrag 2
+SliceData.defrag_3.display_name,Defrag 3
+SliceData.defrag_4.display_name,Defrag 4
+SliceData.defrag_5.display_name,Defrag 5
+SliceData.defrag_6.display_name,Defrag 6
+SliceData.defrag_8.display_name,Defrag 8
 SliceData.deploy_1.display_name,Deploy 1
+SliceData.detour_1.display_name,Detour
+SliceData.detour_2.display_name,Detour 2
 SliceData.dose.display_name,Dose
-SliceData.evade_1.display_name,Evade
-SliceData.evade_2.display_name,Evade 2
-SliceData.heal_4.display_name,Heal 4
-SliceData.heal_6.display_name,Heal 6
+SliceData.hotfix_4.display_name,Hotfix 4
+SliceData.hotfix_6.display_name,Hotfix 6
 SliceData.miss.display_name,Miss
+SliceData.overflow_12.display_name,Overflow 12
+SliceData.overflow_12_drain.display_name,Overflow 12 (drains 2 RAM)
+SliceData.overflow_14.display_name,Overflow 14
+SliceData.overflow_15.display_name,Overflow 15
+SliceData.overflow_16.display_name,Overflow 16
+SliceData.overflow_24.display_name,Overflow 24
 SliceData.shield_5.display_name,Shield 5
 SliceData.shield_8.display_name,Shield 8
+SliceData.shim_10.display_name,Shim 10
+SliceData.shim_12.display_name,Shim 12
+SliceData.shim_14.display_name,Shim 14
+SliceData.shim_16.display_name,Shim 16
+SliceData.shim_20.display_name,Shim 20
+SliceData.shim_3.display_name,Shim 3
+SliceData.shim_4.display_name,Shim 4
+SliceData.shim_6.display_name,Shim 6
+SliceData.shim_7.display_name,Shim 7
+SliceData.shim_7_drain.display_name,Shim 7 (drains 1 RAM)
+SliceData.shim_8.display_name,Shim 8
+SliceData.shim_8_inertia.display_name,Shim 8 (+1 resistance)
+SliceData.shim_9.display_name,Shim 9
 SliceData.solar_flare.display_name,Solar Flare
 SliceData.tariff.display_name,Tariff
 Slices,Slices

@@ -565,7 +565,7 @@ func test_a_hit_soaked_whole_shows_zero_with_a_shield_where_it_struck_and_all_bl
 	assert_eq(marks.size(), 1, "its outcome shows where it struck")
 	if not marks.is_empty():
 		assert_eq(String(marks[0]["text"]), "0", "0 got through")
-		assert_eq(int(marks[0]["icon"]), RC.SliceType.DEFEND, "with the shield glyph")
+		assert_eq(int(marks[0]["icon"]), RC.SliceType.DEFRAG, "with the shield glyph")
 		assert_eq(marks[0]["at"], pv.hp_ring_spot(), "at the impact")
 		assert_almost_eq(float(marks[0]["delay"]), CombatFxLayer.impact_seconds(), 0.001, "on impact")
 	var tags: Array = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "tag")
@@ -671,11 +671,11 @@ func test_the_hit_shows_its_aim() -> void:
 	var base := 0
 	for i in state.player.wheel.slot_slice_ids.size():
 		var sd := scene.engine.content(state.player.wheel.slot_slice_ids[i]) as SliceData
-		if sd != null and sd.slice_type == RC.SliceType.ATTACK and sd.base_output >= 2:
+		if sd != null and sd.slice_type == RC.SliceType.SHIM and sd.base_output >= 2:
 			slot = i
 			base = sd.base_output
 			break
-	assert_gt(slot, -1, "the operative has an ATTACK slice")
+	assert_gt(slot, -1, "the operative has a SHIM slice")
 	var hit := _base(state, enemy)
 	hit.merge({"kind": "damage", "source": state.player.id, "target": enemy.id, "amount": base / 2, "soaked": 0, "raw": base / 2,
 		"source_slot": slot, "source_tier": RC.PrecisionTier.PARTIAL, "hp_after": enemy.hp - base / 2}, true)

@@ -1035,7 +1035,7 @@ func _play_view(what: String) -> float:
 		"flip":
 			_wheel.play_flip()
 		"tag":
-			_wheel.intent = {"type": RC.SliceType.ATTACK, "text": "ATTACK · GOOD %d" % _generation, "chips": [{"text": "HITS 8", "color": Palette.CELL_PINK, "ink": Palette.INK}]}
+			_wheel.intent = {"type": RC.SliceType.SHIM, "text": "SHIM · GOOD %d" % _generation, "chips": [{"text": "HITS 8", "color": Palette.CELL_PINK, "ink": Palette.INK}]}
 			_wheel.queue_redraw()
 		"hover":
 			var card: ZineCard = _pieces["card"]

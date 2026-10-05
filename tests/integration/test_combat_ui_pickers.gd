@@ -64,7 +64,7 @@ func test_odds_text_gives_percentages_not_rolls() -> void:
 	var odds: String = _scene.odds_text(_state().player)
 	assert_true(odds.begins_with("odds:"))
 	assert_true(odds.contains("%"))
-	assert_true(odds.contains("ATTACK"), "whole words (H22)")
+	assert_true(odds.contains("SHIM"), "whole words (H22)")
 	var non_miss: String = _scene.odds_text(_state().player, true)
 	assert_false(non_miss.contains("MISS"))
 

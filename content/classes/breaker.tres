@@ -7,9 +7,9 @@
 [ext_resource type="Script" path="res://scripts/data/card_data.gd" id="5"]
 [ext_resource type="Script" path="res://scripts/data/hub_core_data.gd" id="6"]
 [ext_resource type="Script" path="res://scripts/data/inner_ring_data.gd" id="7"]
-[ext_resource type="Resource" path="res://content/slices/crit_12.tres" id="s_crit"]
-[ext_resource type="Resource" path="res://content/slices/atk_6.tres" id="s_atk"]
-[ext_resource type="Resource" path="res://content/slices/def_5.tres" id="s_def"]
+[ext_resource type="Resource" path="res://content/slices/overflow_12.tres" id="s_crit"]
+[ext_resource type="Resource" path="res://content/slices/shim_6.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/defrag_5.tres" id="s_def"]
 [ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
 [ext_resource type="Resource" path="res://content/hub_cores/breaker_core.tres" id="hub"]
 [ext_resource type="Resource" path="res://content/hub_cores/breaker_core_mk2.tres" id="hub_mk2"]
@@ -28,7 +28,7 @@
 [ext_resource type="Resource" path="res://content/rings/segments/seg_accelerator.tres" id="seg_accelerator"]
 [ext_resource type="Resource" path="res://content/rings/segments/seg_echo.tres" id="seg_echo"]
 
-; Breaker (GDD 5.2 / A.1): 60 HP; wheel Crit, Atk, Atk, Atk, Def, Miss; deck of 10;
+; Breaker (GDD 5.2 / A.1): 60 HP; wheel Overflow, Shim, Shim, Shim, Defrag, Miss; deck of 10;
 ; Rank 1 installs the x2 / Pierce / - Inner Ring. Slice values are placeholders
 ; (docs/DECISIONS.md open questions).
 

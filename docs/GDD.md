@@ -79,9 +79,9 @@ PROFILE (permanent): unlocks, ICE records
 2. **Player phase:** play cards, use the free nudge (extra nudges cost 1 RAM each),
    inspect previews, rewind freely back to the last checkpoint.
 3. **End turn:** all pointers resolve at once, in this order:
-   1. Defensive slices on both sides (DEF, SHIELD, EVADE, HEAL).
-   2. Offensive slices on both sides (ATK, CRIT, DEPLOY).
-   3. Statuses and other effects (AFFLICT, CORRUPTED triggers, Daemon hooks).
+   1. Defensive slices on both sides (DEFRAG, SHIELD, DETOUR, HOTFIX).
+   2. Offensive slices on both sides (SHIM, OVERFLOW, DEPLOY).
+   3. Statuses and other effects (INFECT, CORRUPTED triggers, Daemon hooks).
 4. Unplayed cards are discarded. When the draw pile is empty, shuffle the discard pile in.
 
 ### 2.3 Resolution Math (locked)
@@ -120,19 +120,19 @@ turn) or the **Hub** (active while the Hub is; disabled by Hub Breach).
 ### 2.6 Slice Types
 | Type | Default target | Effect |
 |---|---|---|
-| ATTACK | Pointer target | Deal damage |
-| CRIT | Pointer target | Deal high damage |
-| DEFEND | Self | Gain block (expires start of your next turn) |
+| SHIM | Pointer target | Deal damage (DECISIONS 2026-10-05, names for M14, D2) |
+| OVERFLOW | Pointer target | Deal high damage |
+| DEFRAG | Self | Gain block (expires start of your next turn) |
 | SHIELD | Self | Gain shield (persists across turns, cap 15) |
-| EVADE | Self | Cancel the next incoming ATK or CRIT this turn |
+| DETOUR | Self | Cancel the next incoming SHIM or OVERFLOW this turn |
 | DEPLOY | Self | Create a drone (Botnet) |
-| HEAL | Self | Restore HP (enemy-facing) |
-| AFFLICT | Pointer target | Apply a status (e.g. Solace DOSE applies CORRUPTED) |
+| HOTFIX | Self | Restore HP (enemy-facing) |
+| INFECT | Pointer target | Apply a status (e.g. Solace DOSE applies CORRUPTED) |
 | MISS | — | Nothing (unless modified) |
 
 ### 2.7 Targeting & Satellites
 - **Pointer rule:** a Pointer attack hits whatever sits at **each** pointer of the target
-  wheel. Against a 3-pointer boss, one Attack lands three times. The rule applies both
+  wheel. Against a 3-pointer boss, one SHIM lands three times. The rule applies both
   ways: enemy attacks hit whatever sits at your pointer.
 - **Satellites** dock onto a slice of their host wheel and rotate with it. A Pointer
   attack aimed at a pointer whose slice has a docked satellite hits the satellite
@@ -289,10 +289,10 @@ Permadeath. HP carries between fights within a netrun; survivors heal fully at H
 ### 5.2 Classes
 | Class | HP | Wheel | Hub Core passive | Perfect hook | Station bonus |
 |---|---|---|---|---|---|
-| **Breaker** (slice) | 60 | Crit, Atk, Atk, Atk, Def, Miss | +1 spin on all cards | Slice resolves twice | Node's assets +50% damage |
-| Ghost | 50 | Atk, Atk, Def, Def, Evade, Miss | First nudge each turn ignores resistance | Strip 2 resistance from target | Threats entering node delayed 1 step |
-| Rigger | 55 | Atk, Atk, Def, Def, Shield, Miss | +1 max RAM | Refund 1 RAM + 1 free nudge | Node regains integrity after each wave |
-| Botnet | 45 | Atk, Atk, Def, Deploy, Deploy, Miss | Up to 3 drones; drones persist between combats in a run | Perfect Deploy docks a Parasite drone on an enemy slice (halves its output) | Node gains one free asset per raid |
+| **Breaker** (slice) | 60 | Overflow, Shim, Shim, Shim, Defrag, Miss | +1 spin on all cards | Slice resolves twice | Node's assets +50% damage |
+| Ghost | 50 | Shim, Shim, Defrag, Defrag, Detour, Miss | First nudge each turn ignores resistance | Strip 2 resistance from target | Threats entering node delayed 1 step |
+| Rigger | 55 | Shim, Shim, Defrag, Defrag, Shield, Miss | +1 max RAM | Refund 1 RAM + 1 free nudge | Node regains integrity after each wave |
+| Botnet | 45 | Shim, Shim, Defrag, Deploy, Deploy, Miss | Up to 3 drones; drones persist between combats in a run | Perfect Deploy docks a Parasite drone on an enemy slice (halves its output) | Node gains one free asset per raid |
 
 *M6 balance ruling (2026-09-24, DECISIONS.md):* every class needs burst to outpace the
 Renewal Engine's heal, so the Ghost hook also resolves the slice twice, and the Rigger and
@@ -303,7 +303,7 @@ the Parasite). Wheels are interleaved so adjacent slices differ; exact slice val
 RAM: start each combat with 6, +4 per turn, carry-over, max 12. All classes share a card
 pool; each class adds 1–2 exclusive cards.
 
-**Botnet drones:** Deploy creates a drone (5 HP, mini-wheel Atk 3 / Def 3) docked on
+**Botnet drones:** Deploy creates a drone (5 HP, mini-wheel Shim 3 / Defrag 3) docked on
 your wheel: on the Deploy slice itself, else the next free slice clockwise (ruling
 2026-09-24; DEPLOY_DRONE card effects may pick the slice). When that slice triggers, the
 drone triggers too. Enemy Pointer attacks hit a drone on your resolved slice before you.
@@ -340,7 +340,7 @@ modify the outer slice. Daemons are run-wide rules. Rule-breaking Daemons are ex
 | Patch+ | Slice output +50% |
 | Hardened | Slice permanently ENCRYPTED |
 | Burner | Permanently OVERCLOCKED (1.5×); each trigger +1 Heat |
-| Leech | ATK slice restores 1 RAM on Good or better |
+| Leech | SHIM slice restores 1 RAM on Good or better |
 | Mirror | Copies the clockwise neighbour when landing clockwise of centre, the counter-clockwise neighbour when landing counter-clockwise, **both** on Perfect |
 | Shunt | Resolves the neighbour on the side you landed toward at 1.5×; nothing on Perfect |
 
@@ -352,7 +352,7 @@ modify the outer slice. Daemons are run-wide rules. Rule-breaking Daemons are ex
 | Scrubber | Capturing a Server Rack removes 1 Heat instead of adding it |
 | Fault Tolerance | Miss slice deals 3 damage to the pointer target |
 | Kernel Sync | Each Perfect: +1 damage for the rest of the combat |
-| Zero Day | A Perfect on the Miss slice resolves as a 3× Crit |
+| Zero Day | A Perfect on the Miss slice resolves as a 3× OVERFLOW |
 | Linked Bus | Nudging an enemy wheel (nudge actions, not cards) also moves your wheel the same way, free |
 | Stolen Intent | Once per combat, when you would resolve Miss and the target would not, swap resolved slices (automatic; ruling 2026-09-24) |
 | Twin Pointer | Your wheel is also read at the bottom; both trigger. Max RAM halved. |
@@ -668,17 +668,17 @@ Breaker Rank 1 ring: ×2 / Pierce / —.
 ### A.3 Solace Enemies (Tier 1 base values; scale per 11.6)
 | Enemy | HP | Wheel (6 slices) | Special |
 |---|---|---|---|
-| Collections Agent | 40 | Atk 8, Atk 8, Def 6, Dose, Crit 14, Miss | Satellite drone (5 HP; Atk 3 / Def 3) docked on slice 1 at combat start |
-| Triage Unit | 45 | Def 8, Heal 6, Atk 6, Heal 6, Def 8, Miss | — |
-| Compliance Officer | 50 | Atk 7, Atk 7, Def 6, Crit 12, Atk 7, Miss | Hub: Compliance Lock, resistance 3 |
-| Dosage Dispenser | 38 | Dose, Atk 6, Dose, Def 5, Atk 6, Miss | — |
-| Billing Daemon | 42 | Atk 7, Atk 7, Def 6, Crit 12, Atk 7, Miss | Attacks drain 1 RAM (Crit drains 2) |
-| Care Swarm | 25 | Def 4, Heal 4, Def 4, Heal 4, Atk 4, Miss | 3 satellites (4 HP; Atk 3, Atk 3, Def 2) |
-| **Elite:** Claims Adjuster | 90 | Atk 10, Def 8, Crit 16, Atk 10, Dose, Miss | 2 pointers (ticks 0, 15) |
-| **Elite:** Recall Unit | 85 | Atk 9, Atk 9, Def 8, Crit 15, Shield 5, Miss | Pointer orbits +2 ticks/turn; passive resistance 1 |
-| **Boss:** Renewal Engine | 300 | Atk 14, Atk 14, Def 12, Dose, Crit 24, Miss | Hub *Auto-Renew*: heal 10/turn unless Hub-Breached. 66%: Multiply to 2 pointers (0, 15). 33%: pointers Orbit 3/turn and spawn 2 drones. |
+| Collections Agent | 40 | Shim 8, Shim 8, Defrag 6, Dose, Overflow 14, Miss | Satellite drone (5 HP; Shim 3 / Defrag 3) docked on slice 1 at combat start |
+| Triage Unit | 45 | Defrag 8, Hotfix 6, Shim 6, Hotfix 6, Defrag 8, Miss | — |
+| Compliance Officer | 50 | Shim 7, Shim 7, Defrag 6, Overflow 12, Shim 7, Miss | Hub: Compliance Lock, resistance 3 |
+| Dosage Dispenser | 38 | Dose, Shim 6, Dose, Defrag 5, Shim 6, Miss | — |
+| Billing Daemon | 42 | Shim 7, Shim 7, Defrag 6, Overflow 12, Shim 7, Miss | Attacks drain 1 RAM (Overflow drains 2) |
+| Care Swarm | 25 | Defrag 4, Hotfix 4, Defrag 4, Hotfix 4, Shim 4, Miss | 3 satellites (4 HP; Shim 3, Shim 3, Defrag 2) |
+| **Elite:** Claims Adjuster | 90 | Shim 10, Defrag 8, Overflow 16, Shim 10, Dose, Miss | 2 pointers (ticks 0, 15) |
+| **Elite:** Recall Unit | 85 | Shim 9, Shim 9, Defrag 8, Overflow 15, Shield 5, Miss | Pointer orbits +2 ticks/turn; passive resistance 1 |
+| **Boss:** Renewal Engine | 300 | Shim 14, Shim 14, Defrag 12, Dose, Overflow 24, Miss | Hub *Auto-Renew*: heal 10/turn unless Hub-Breached. 66%: Multiply to 2 pointers (0, 15). 33%: pointers Orbit 3/turn and spawn 2 drones. |
 
-Dose = AFFLICT slice applying CORRUPTED to a random non-Miss player slice.
+Dose = INFECT slice applying CORRUPTED to a random non-Miss player slice.
 
 *M7 balance ruling (2026-09-24, DECISIONS.md):* elites +25% HP (Claims Adjuster 112, Recall
 Unit 106, Account Manager 150) and the Renewal Engine 360 HP; enemy damage scales 1.3 per

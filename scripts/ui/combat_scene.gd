@@ -1412,7 +1412,7 @@ func _victory_flash() -> void:
 func _slice_type_of(state: CombatState, e: Dictionary) -> int:
 	var slot := int(e.get("slice_index", 0))
 	var slice := engine.content(state.player.wheel.slot_slice_ids[slot]) as SliceData
-	return slice.slice_type if slice != null else RC.SliceType.ATTACK
+	return slice.slice_type if slice != null else RC.SliceType.SHIM
 
 
 func _perfect_feedback(view: WheelView) -> void:
@@ -2453,7 +2453,7 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 	for e in events:
 		if String(e.get("type", "")) == "status" and bool(e.get("random", false)):
 			random_picks[StringName(String(e.get("target", "")))] = int(e.get("status", RC.Status.NONE))
-	# ANIM-R5 combat 8: an AFFLICT names what it puts on whom on its own tag ("PUTS ☠
+	# ANIM-R5 combat 8: an INFECT names what it puts on whom on its own tag ("PUTS ☠
 	# CORRUPTED ON YOU"), from the replay's own beats (who acted).
 	var afflicts := afflict_chips(state, events)
 	var views := {state.player.id: _player_view}
@@ -2524,7 +2524,7 @@ static func odds_lead_chip() -> Dictionary:
 
 ## ANIM-R5 combat 8: per acting wheel (id), a chip for each status it puts on another wheel
 ## in `events` (from `state`): "PUTS ☠ CORRUPTED ON YOU" / "... ON <NAME>", in the colour of
-## whose win it is. Who acts comes from the replay's beats (ResolveBeats: the AFFLICT's
+## whose win it is. Who acts comes from the replay's beats (ResolveBeats: the INFECT's
 ## attacker), so the tag says what the replay shows.
 func afflict_chips(state: CombatState, events: Array[Dictionary]) -> Dictionary:
 	var out := {}
@@ -3777,12 +3777,12 @@ func _guard_of(b: Dictionary) -> Dictionary:
 	var amount := int(b["amount"])
 	match String(b["kind"]):
 		"block":
-			return {"text": signed(amount), "icon": RC.SliceType.DEFEND}
+			return {"text": signed(amount), "icon": RC.SliceType.DEFRAG}
 		"shield":
 			if amount > 0:
 				return {"text": signed(amount), "icon": RC.SliceType.SHIELD}
 		"evade":
-			return {"text": signed(amount), "icon": RC.SliceType.EVADE}
+			return {"text": signed(amount), "icon": RC.SliceType.DETOUR}
 	return {}
 
 
@@ -3827,10 +3827,10 @@ func hit_stamp_for(b: Dictionary) -> String:
 static func zero_mark(b: Dictionary) -> Dictionary:
 	match String(b["kind"]):
 		"evaded":
-			return {"text": "0", "icon": RC.SliceType.EVADE}
+			return {"text": "0", "icon": RC.SliceType.DETOUR}
 		"damage":
 			if int(b["amount"]) <= 0 and int(b["soaked"]) > 0:
-				return {"text": "0", "icon": RC.SliceType.DEFEND}
+				return {"text": "0", "icon": RC.SliceType.DEFRAG}
 	return {}
 
 
@@ -3843,16 +3843,16 @@ static func hit_equation(b: Dictionary) -> Array:
 	if not ResolveBeats.is_hit(b):
 		return []
 	var raw := int(b.get("raw", b["amount"])) if kind == "damage" else int(b["amount"])
-	var items: Array = [{"icon": RC.SliceType.ATTACK, "text": str(raw), "color": WheelView.LOSS_COLOR, "sep": ""}]
+	var items: Array = [{"icon": RC.SliceType.SHIM, "text": str(raw), "color": WheelView.LOSS_COLOR, "sep": ""}]
 	if kind == "evaded":
-		items.append({"icon": RC.SliceType.EVADE, "text": str(raw), "color": CHIP_GUARD, "sep": CombatFxLayer.EQ_MINUS})
+		items.append({"icon": RC.SliceType.DETOUR, "text": str(raw), "color": CHIP_GUARD, "sep": CombatFxLayer.EQ_MINUS})
 		items.append({"icon": -1, "text": "0", "color": CHIP_GUARD, "sep": "="})
 		return items
 	var soaked := int(b["soaked"])
 	if soaked <= 0:
 		return []
 	var through := maxi(0, raw - soaked)
-	items.append({"icon": RC.SliceType.DEFEND, "text": str(soaked), "color": CHIP_GUARD, "sep": CombatFxLayer.EQ_MINUS})
+	items.append({"icon": RC.SliceType.DEFRAG, "text": str(soaked), "color": CHIP_GUARD, "sep": CombatFxLayer.EQ_MINUS})
 	items.append({"icon": -1, "text": str(through), "color": WheelView.LOSS_COLOR if through > 0 else CHIP_GUARD, "sep": "="})
 	# ANIM-R6 A4: a victim with fewer HP left than gets through says so (the HP number that
 	# follows is what it really takes).
@@ -3886,7 +3886,7 @@ func ride_for(b: Dictionary, s: CombatState) -> Dictionary:
 	var base := -1
 	if src != null and slot >= 0 and slot < src.wheel.slot_slice_ids.size():
 		var slice := engine.content(src.wheel.slot_slice_ids[slot]) as SliceData
-		if slice != null and slice.slice_type in [RC.SliceType.ATTACK, RC.SliceType.CRIT]:
+		if slice != null and slice.slice_type in [RC.SliceType.SHIM, RC.SliceType.OVERFLOW]:
 			base = slice.base_output
 	if tier == RC.PrecisionTier.PERFECT:
 		# ANIM-R4 C5: a PERFECT hit's riding size is `ride_perfect`'s amplitude.

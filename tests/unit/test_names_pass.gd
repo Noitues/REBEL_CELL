@@ -124,3 +124,62 @@ func test_no_code_file_or_path_keeps_an_old_name() -> void:
 func _raid_identifier(line: String) -> bool:
 	var ident := RegEx.create_from_string("(?i)sei" + "z(e|ed|es)\\b|Condition\\.DIS" + "ABLED|outcome\\W+dis" + "abled|\"dis" + "abled\"\\s*:")
 	return ident.search(line) != null
+
+
+# --- Part 2 (DECISIONS "2026-10-05 — Designer rulings: names for M14", D2–D8, D11–D12) -----------
+# Each entry: the item, a regex over player strings (strings.csv English, content .tres strings),
+# a regex over code lines (scripts / scenes / tests / tools / content; this file is skipped), and
+# substrings allowed in player strings for an unrelated meaning.
+
+const PART2: Array = [
+	["D2 slice programs",
+		"(?-i)\\b(ATK|ATTACK|DEFEND|AFFLICT|AFL|EVD|DEF|CRIT|HEAL)\\b|\\bCRITICAL\\b|\\b(EVADE|Evade) slices?\\b",
+		"SliceType\\.(ATTACK|CRIT|DEFEND|EVADE|HEAL|AFFLICT)\\b|(?<![A-Za-z0-9])(atk|crit|def|evade|heal)_\\d",
+		["reads CRITICAL"]],
+]
+
+
+func _part2_player_hits(entry: Array) -> Array[String]:
+	var re := RegEx.create_from_string(String(entry[1]))
+	var hits: Array[String] = []
+	for s in _csv_strings() + _content_strings():
+		var rest := s
+		for a in entry[3]:
+			rest = rest.replace(String(a), "")
+		if re.search(rest) != null:
+			hits.append(s)
+	return hits
+
+
+func test_part2_no_player_string_keeps_an_old_word() -> void:
+	for entry in PART2:
+		assert_eq(_part2_player_hits(entry), [] as Array[String], "%s: the old words are gone from player text" % entry[0])
+
+
+func test_part2_no_code_keeps_an_old_name() -> void:
+	var own := (get_script() as Script).resource_path
+	for entry in PART2:
+		var re := RegEx.create_from_string(String(entry[2]))
+		var hits: Array[String] = []
+		for root in CODE_ROOTS:
+			for path in _files(root, CODE_EXTS):
+				if path == own:
+					continue
+				if re.search(path) != null:
+					hits.append(path)
+					continue
+				var lines := FileAccess.get_file_as_string(path).split("\n")
+				for i in lines.size():
+					if re.search(lines[i]) != null:
+						hits.append("%s:%d" % [path, i + 1])
+		assert_eq(hits, [] as Array[String], "%s: the old names are gone from the code" % entry[0])
+
+
+## D2: every slice's display name uses the program's new word.
+func test_d2_slice_display_names_use_the_program_words() -> void:
+	var old := RegEx.create_from_string("(?-i)^(Attack|Crit|Defend|Evade|Heal)\\b")
+	for id in ContentRegistry.all_ids():
+		var s := ContentRegistry.get_content(id) as SliceData
+		if s != null:
+			assert_null(old.search(s.display_name), "%s: %s" % [id, s.display_name])
+	assert_eq(RC.SliceType.keys().slice(0, 9), ["SHIM", "OVERFLOW", "DEFRAG", "DETOUR", "SHIELD", "DEPLOY", "HOTFIX", "INFECT", "MISS"])

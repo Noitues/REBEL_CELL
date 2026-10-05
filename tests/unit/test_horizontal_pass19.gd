@@ -66,7 +66,7 @@ func test_combat_key_hints_follow_a_rebind() -> void:
 
 
 func test_a_mirror_copy_of_a_parasited_slot_is_halved() -> void:
-	var atk := CombatFixture.slice(&"h19_atk", RC.SliceType.ATTACK, 6)
+	var atk := CombatFixture.slice(&"h19_atk", RC.SliceType.SHIM, 6)
 	var miss := CombatFixture.slice(&"h19_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
 	var deck: Array[CardData] = [CombatFixture.card(&"h19_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
 	var cls := CombatFixture.operative_class(&"h19_class", 60, CombatFixture.wheel([atk, atk, atk, atk, atk, miss]), deck)

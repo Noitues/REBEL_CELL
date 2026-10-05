@@ -33,6 +33,24 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-0 names pass, part 2 (D2–D8, D11–D12)
+Applies "2026-10-05 — Designer rulings: names for M14" (ART-0 area B part 2). Internal names follow
+the display names; no aliases, no migrations. `tests/unit/test_names_pass.gd` (PART2 table) sweeps
+player strings and code for each item's old words.
+- **D2 slice programs.** `RC.SliceType` is { SHIM, OVERFLOW, DEFRAG, DETOUR, SHIELD, DEPLOY, HOTFIX,
+  INFECT, MISS } (same positions, so content keeps its ints). Slice content ids and files follow:
+  `shim_*` (was atk_*), `overflow_*` (crit_*), `defrag_*` (def_*), `detour_*` (evade_*), `hotfix_*`
+  (heal_*); display names "Shim 14", "Overflow 24", "Defrag 12", "Detour", "Hotfix 6". Whole words
+  (`Palette.SLICE_WORDS`) are the program names; the compact tags (`Palette.SLICE_NAMES`, slot lists
+  and shop tiles) are SHIM / OVFL / DFRG / DTOR / HFIX / INFC (SHD / DEP / MISS kept): the whole
+  words in those tiles pushed the shop's spinner onto LEAVE MAINFRAME at text size 1.6. Firmware,
+  codex and GDD 2.6 texts name the programs. Kept on purpose: the *evade* mechanic
+  (EffectType.EVADE, a card's "Evade the next incoming attack", the "%s EVADE" charge chip), *heal*
+  as an effect ("Heal 6"), *attack* as a verb, and the damage beats' `crit` flag (a big-hit number
+  style, set by OVERFLOW slices and Perfects alike). SANDBOX / TROJAN / NULL (the art pass's SHIELD /
+  DEPLOY / MISS) are not renamed: the ruling keeps them out of D2; the enum keeps SHIELD / DEPLOY /
+  MISS (question below).
+
 ### 2026-10-05 — Art direction — ART-0 names pass, part 1 + saves folder
 Applies rulings 5, 6.1, 6.2 and 6.5 of the entry below (ART-0 area B, items B1–B4). Internal
 names follow the display words; no aliases, no migrations.

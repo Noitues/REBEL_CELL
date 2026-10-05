@@ -4,11 +4,11 @@
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="3"]
 [ext_resource type="Resource" path="res://content/slices/dose.tres" id="s_dose"]
-[ext_resource type="Resource" path="res://content/slices/atk_6.tres" id="s_atk"]
-[ext_resource type="Resource" path="res://content/slices/def_5.tres" id="s_def"]
+[ext_resource type="Resource" path="res://content/slices/shim_6.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/defrag_5.tres" id="s_def"]
 [ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
 
-; Dosage Dispenser (GDD A.3): 38 HP; Dose, Atk 6, Dose, Def 5, Atk 6, Miss.
+; Dosage Dispenser (GDD A.3): 38 HP; Dose, Shim 6, Dose, Defrag 5, Shim 6, Miss.
 
 [sub_resource type="Resource" id="slot_dose"]
 script = ExtResource("3")

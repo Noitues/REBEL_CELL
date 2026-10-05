@@ -85,7 +85,7 @@ func test_heat_gated_enemy_behaviour_only_above_its_heat() -> void:
 	for heat in [0, 50]:
 		var s := _session(&"compliance_officer", {"heat": heat})
 		var e := s.state.get_combatant(&"enemy_0")
-		CombatFixture.land(e, 0)  # Atk 7
+		CombatFixture.land(e, 0)  # Shim 7
 		CombatFixture.land(s.state.player, 5)
 		var ram := s.state.ram
 		s.apply(CombatAction.end_turn())

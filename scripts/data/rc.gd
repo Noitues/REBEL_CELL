@@ -9,8 +9,8 @@ const RING_SEGMENTS: int = 3
 const TICKS_PER_RING_SEGMENT: int = 10
 
 # --- Combat ---
-## AFFLICT applies statuses via extra_effects (e.g. Solace DOSE). HEAL is enemy-facing.
-enum SliceType { ATTACK, CRIT, DEFEND, EVADE, SHIELD, DEPLOY, HEAL, AFFLICT, MISS }
+## INFECT applies statuses via extra_effects (e.g. Solace DOSE). HOTFIX is enemy-facing.
+enum SliceType { SHIM, OVERFLOW, DEFRAG, DETOUR, SHIELD, DEPLOY, HOTFIX, INFECT, MISS }
 enum TargetRule { SELF, POINTER, SWEEP, CHOSEN }
 ## Ordered low to high so tiers can be compared with >=. There is no Miss
 ## tier: every landing is within 2 ticks of some slice centre (GDD 2.4).

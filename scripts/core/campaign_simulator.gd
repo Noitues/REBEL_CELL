@@ -381,7 +381,7 @@ static func _card_score(card: CardData) -> float:
 static func _firmware_score(fw: FirmwareData) -> float:
 	if fw == null:
 		return -1.0
-	var offensive := fw.allowed_slice_types.is_empty() or RC.SliceType.ATTACK in fw.allowed_slice_types or RC.SliceType.CRIT in fw.allowed_slice_types
+	var offensive := fw.allowed_slice_types.is_empty() or RC.SliceType.SHIM in fw.allowed_slice_types or RC.SliceType.OVERFLOW in fw.allowed_slice_types
 	var score := (fw.output_multiplier - 1.0) * (10.0 if offensive else 3.0)
 	if not fw.triggered_effects.is_empty():
 		score += 0.5

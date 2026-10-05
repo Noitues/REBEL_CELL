@@ -17,14 +17,14 @@ func _mk_effect(t, target, amount := 0, scope := RC.RingScope.OUTER, mult := 1.0
 func _batch1() -> int:
 	var fails := 0
 	# Slices
-	var atk := SliceData.new(); atk.id = &"attack"; atk.slice_type = RC.SliceType.ATTACK; atk.base_output = 6
-	var crit := SliceData.new(); crit.id = &"crit"; crit.slice_type = RC.SliceType.CRIT; crit.base_output = 12
-	var def := SliceData.new(); def.id = &"defend"; def.slice_type = RC.SliceType.DEFEND; def.target_rule = RC.TargetRule.SELF; def.base_output = 5
+	var atk := SliceData.new(); atk.id = &"attack"; atk.slice_type = RC.SliceType.SHIM; atk.base_output = 6
+	var crit := SliceData.new(); crit.id = &"crit"; crit.slice_type = RC.SliceType.OVERFLOW; crit.base_output = 12
+	var def := SliceData.new(); def.id = &"defend"; def.slice_type = RC.SliceType.DEFRAG; def.target_rule = RC.TargetRule.SELF; def.base_output = 5
 	var miss := SliceData.new(); miss.id = &"miss"; miss.slice_type = RC.SliceType.MISS
 	# Mirror firmware
 	var mirror := FirmwareData.new(); mirror.id = &"mirror"; mirror.neighbor_rule = RC.NeighborRule.MIRROR
 	var leech := FirmwareData.new(); leech.id = &"leech"
-	leech.allowed_slice_types = [RC.SliceType.ATTACK]
+	leech.allowed_slice_types = [RC.SliceType.SHIM]
 	var t := TriggeredEffectData.new(); t.min_tier = RC.PrecisionTier.GOOD
 	t.effects = [_mk_effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 1)]
 	leech.triggered_effects = [t]
@@ -40,7 +40,7 @@ func _batch1() -> int:
 	for s in layout:
 		var sl := WheelSlotData.new(); sl.slice = s; slots.append(sl)
 	slots[1].firmware = leech
-	slots[4].firmware = leech   # should fail: leech only fits ATTACK
+	slots[4].firmware = leech   # should fail: leech only fits SHIM
 	w.slots = slots
 	var errs := w.validate()
 	print("Breaker wheel errors (expect 1): ", errs)
@@ -101,10 +101,10 @@ func _site(id, tier, links: Array[StringName], obj := RC.SiteObjective.NONE, ex 
 
 func _batch2() -> int:
 	var fails := 0
-	var atk := _slice(&"atk", RC.SliceType.ATTACK, 6)
-	var def := _slice(&"def", RC.SliceType.DEFEND, 5, RC.TargetRule.SELF)
+	var atk := _slice(&"atk", RC.SliceType.SHIM, 6)
+	var def := _slice(&"def", RC.SliceType.DEFRAG, 5, RC.TargetRule.SELF)
 	var miss := _slice(&"miss", RC.SliceType.MISS, 0)
-	var crit := _slice(&"crit", RC.SliceType.CRIT, 12)
+	var crit := _slice(&"crit", RC.SliceType.OVERFLOW, 12)
 
 	# Class
 	var hub := HubCoreData.new(); hub.id = &"breaker_core"
@@ -213,8 +213,8 @@ func _batch4() -> int:
 	bug.effects = [_mk_effect(RC.EffectType.DRAIN_RAM, RC.EffectTarget.SELF, 1)]
 	print("Bug card (expect 0 errors, offered=false): ", bug.validate(), " ", bug.offered)
 	if bug.validate().size() != 0 or bug.offered: fails += 1
-	var atk := _slice(&"atk", RC.SliceType.ATTACK, 3)
-	var def := _slice(&"def", RC.SliceType.DEFEND, 3, RC.TargetRule.SELF)
+	var atk := _slice(&"atk", RC.SliceType.SHIM, 3)
+	var def := _slice(&"def", RC.SliceType.DEFRAG, 3, RC.TargetRule.SELF)
 	var drone := EnemyData.new(); drone.id = &"drone"; drone.hp = 5; drone.wheel = _wheel([atk, def])
 	var hub := HubCoreData.new(); hub.id = &"botnet_core"; hub.max_drones = 3; hub.drone = drone
 	var seg := RingSegmentData.new(); seg.id = &"seg_echo"

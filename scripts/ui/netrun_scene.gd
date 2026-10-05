@@ -2541,8 +2541,8 @@ func choices_held() -> bool:
 const SOCKET_TIP := "A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into (dragging a chip onto a slot of the small spinner picks it too)." # TR
 
 
-## A spinner slot by what is in it, never by ids (H21 #12: "crit_12" in the socket list):
-## "Slot 2: ATK 10 + Barbed Wire".
+## A spinner slot by what is in it, never by ids (H21 #12: "overflow_12" in the socket list):
+## "Slot 2: SHIM 10 + Barbed Wire".
 static func slot_name(op: OperativeState, k: int) -> String:
 	var lookup := RunManager.lookup()
 	var sd := lookup.get_content(op.slot_slice_ids[k]) as SliceData
@@ -2692,8 +2692,8 @@ func _show_shop() -> void:
 					daemon_row.add_child(sticker)
 			n += 1
 	if not shop.get("firmware", []).is_empty():
-		# ANIM-R5 B11: the list says what it is for ("Chips go into: Slot 1: CRIT 12"); a bare
-		# "Socket into Slot 1: CRIT 12" lost a beginner. Presentation only.
+		# ANIM-R5 B11: the list says what it is for ("Chips go into: Slot 1: OVERFLOW 12"); a bare
+		# "Socket into Slot 1: OVERFLOW 12" lost a beginner. Presentation only.
 		var socket_row := HFlowContainer.new()
 		socket_row.name = "SocketRow"
 		socket_row.add_theme_constant_override("h_separation", 6)
@@ -3637,7 +3637,7 @@ func dry_session() -> NetrunSession:
 
 
 ## `text` (a rules refusal) with the ids in `ids` written as the screens name them (the rules
-## speak in ids: "barbed_wire does not fit a ATTACK slice.").
+## speak in ids: "barbed_wire does not fit a SHIM slice.").
 func _named(text: String, ids: Array) -> String:
 	for id in ids:
 		var key := String(id)

@@ -10,9 +10,9 @@ var _ring: InnerRingData
 
 
 func before_each() -> void:
-	_atk6 = CombatFixture.slice(&"cd_atk6", RC.SliceType.ATTACK, 6)
-	_def5 = CombatFixture.slice(&"cd_def5", RC.SliceType.DEFEND, 5, RC.TargetRule.SELF)
-	_crit12 = CombatFixture.slice(&"cd_crit12", RC.SliceType.CRIT, 12)
+	_atk6 = CombatFixture.slice(&"cd_atk6", RC.SliceType.SHIM, 6)
+	_def5 = CombatFixture.slice(&"cd_def5", RC.SliceType.DEFRAG, 5, RC.TargetRule.SELF)
+	_crit12 = CombatFixture.slice(&"cd_crit12", RC.SliceType.OVERFLOW, 12)
 	_miss = CombatFixture.slice(&"cd_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
 	_ring = CombatFixture.ring([CombatFixture.segment(&"cd_s0"), CombatFixture.segment(&"cd_s1"), CombatFixture.segment(&"cd_s2")])
 
@@ -22,7 +22,7 @@ func _card(id: StringName) -> CardData:
 
 
 ## A session whose hand holds exactly `card_ids` (deck = those cards), on a wheel
-## Crit, Atk, Atk, Atk, Def, Miss with an inner ring, against `enemy`.
+## Overflow, Shim, Shim, Shim, Defrag, Miss with an inner ring, against `enemy`.
 func _session(card_ids: Array, enemy: EnemyData = null, hp: int = 60) -> CombatSession:
 	var deck: Array[CardData] = []
 	for id in card_ids:

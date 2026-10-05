@@ -4,8 +4,8 @@
 
 [resource]
 script = ExtResource("1")
-id = &"evade_2"
-display_name = "Evade 2"
-slice_type = 3
+id = &"defrag_3"
+display_name = "Defrag 3"
+slice_type = 2
 target_rule = 0
-base_output = 2
+base_output = 3

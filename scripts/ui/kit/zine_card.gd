@@ -28,7 +28,7 @@ var look: int = Look.STICKER
 ## Icon colour for shop tiles.
 var accent: Color = Palette.NET_CYAN
 ## SLICE_TILE: the slice type and output drawn as the wheel draws them.
-var slice_type: int = RC.SliceType.ATTACK
+var slice_type: int = RC.SliceType.SHIM
 var slice_output: int = 0
 ## CARD_TILE icon: "" (mini card), "shred" (card through a shredder), "deck" (a fanned stack).
 var icon_kind: String = ""
@@ -64,9 +64,9 @@ const CUSTOM_PICTOS := {"calibrate_handler": "FREE NUDGE x%d", "momentum_handler
 const STICKER_FOOT := 26.0
 const TILE_GAP := 2.0
 ## Slice icon for each effect that does what a slice does.
-const EFFECT_SLICE := {RC.EffectType.DEAL_DAMAGE: RC.SliceType.ATTACK, RC.EffectType.GAIN_BLOCK: RC.SliceType.DEFEND,
-	RC.EffectType.GAIN_SHIELD: RC.SliceType.SHIELD, RC.EffectType.EVADE: RC.SliceType.EVADE, RC.EffectType.HEAL: RC.SliceType.HEAL,
-	RC.EffectType.DEPLOY_DRONE: RC.SliceType.DEPLOY, RC.EffectType.APPLY_STATUS: RC.SliceType.AFFLICT}
+const EFFECT_SLICE := {RC.EffectType.DEAL_DAMAGE: RC.SliceType.SHIM, RC.EffectType.GAIN_BLOCK: RC.SliceType.DEFRAG,
+	RC.EffectType.GAIN_SHIELD: RC.SliceType.SHIELD, RC.EffectType.EVADE: RC.SliceType.DETOUR, RC.EffectType.HEAL: RC.SliceType.HOTFIX,
+	RC.EffectType.DEPLOY_DRONE: RC.SliceType.DEPLOY, RC.EffectType.APPLY_STATUS: RC.SliceType.INFECT}
 ## Lettering scale (the combat hand follows Settings.text_scale; see scaled()).
 var text_scale: float = 1.0
 ## Sticker size and lettering at scale 1.0.

@@ -8,7 +8,7 @@
 script = ExtResource("3")
 type = 13
 target = 3
-amount = 1
+amount = 2
 
 [sub_resource type="Resource" id="te_drain"]
 script = ExtResource("2")
@@ -17,9 +17,9 @@ effects = Array[ExtResource("3")]([SubResource("fx_drain")])
 
 [resource]
 script = ExtResource("1")
-id = &"atk_7_drain"
-display_name = "Attack 7 (drains 1 RAM)"
-slice_type = 0
+id = &"overflow_12_drain"
+display_name = "Overflow 12 (drains 2 RAM)"
+slice_type = 1
 target_rule = 1
-base_output = 7
+base_output = 12
 extra_effects = Array[ExtResource("2")]([SubResource("te_drain")])

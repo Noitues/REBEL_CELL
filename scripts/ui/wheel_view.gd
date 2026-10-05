@@ -2563,16 +2563,16 @@ func icon_row_items() -> Array[Dictionary]:
 	if soaked <= 0 and evaded <= 0:
 		if hp == 0:
 			return out
-		out.append({"icon": RC.SliceType.HEAL if hp > 0 else -1, "text": ("+%d " % hp if hp > 0 else "-%d " % absi(hp)) + tr("HP"),
+		out.append({"icon": RC.SliceType.HOTFIX if hp > 0 else -1, "text": ("+%d " % hp if hp > 0 else "-%d " % absi(hp)) + tr("HP"),
 			"color": HP_COLOR if hp > 0 else LOSS_COLOR, "sep": ""})
 		return out
 	var through := maxi(0, hit - soaked - evaded)
 	var dealt := int(d.get("dealt", 0))
-	out.append({"icon": RC.SliceType.ATTACK, "text": str(hit), "color": LOSS_COLOR, "sep": ""})
+	out.append({"icon": RC.SliceType.SHIM, "text": str(hit), "color": LOSS_COLOR, "sep": ""})
 	if soaked > 0:
-		out.append({"icon": RC.SliceType.DEFEND, "text": str(soaked), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
+		out.append({"icon": RC.SliceType.DEFRAG, "text": str(soaked), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
 	if evaded > 0:
-		out.append({"icon": RC.SliceType.EVADE, "text": str(evaded), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
+		out.append({"icon": RC.SliceType.DETOUR, "text": str(evaded), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
 	out.append({"icon": -1, "text": str(through), "color": LOSS_COLOR if through > 0 else Palette.NET_CYAN, "sep": "="})
 	if dealt < through:
 		out.append({"icon": -1, "text": tr("%d LEFT") % dealt, "color": LOSS_COLOR, "sep": CLAMP_ARROW})
@@ -2580,7 +2580,7 @@ func icon_row_items() -> Array[Dictionary]:
 	var rest := hp + dealt
 	if rest != 0:
 		var hp_text := ("+%d" % rest) if rest > 0 else ("-%d" % absi(rest))
-		out.append({"icon": RC.SliceType.HEAL if rest > 0 else -1, "text": hp_text + " " + tr("HP"),
+		out.append({"icon": RC.SliceType.HOTFIX if rest > 0 else -1, "text": hp_text + " " + tr("HP"),
 			"color": HP_COLOR if rest > 0 else LOSS_COLOR, "sep": "·"})
 	return out
 
@@ -2964,7 +2964,7 @@ static func was_height() -> float:
 
 ## ANIM-R5 combat 7: the tag before the play or nudge being previewed (the scene sets it
 ## when a hover changes this tag; {} = unchanged). The tag shows it struck through under a
-## WAS row, so a flip reads as a change ("CRITICAL · HITS YOU 14" was "ATTACK · HITS YOU 6").
+## WAS row, so a flip reads as a change ("OVERFLOW · HITS YOU 14" was "SHIM · HITS YOU 6").
 var was_tag: Dictionary = {}
 ## What the tag said before the preview, as one line ("" = nothing to show).
 func was_text() -> String:

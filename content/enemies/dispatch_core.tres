@@ -4,11 +4,11 @@
 [ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
 [ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e2"]
 [ext_resource type="Script" path="res://scripts/data/hub_core_data.gd" id="e3"]
-[ext_resource type="Resource" path="res://content/slices/atk_14.tres" id="e4"]
+[ext_resource type="Resource" path="res://content/slices/shim_14.tres" id="e4"]
 [ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="e5"]
 [ext_resource type="Resource" path="res://content/slices/dose.tres" id="e6"]
-[ext_resource type="Resource" path="res://content/slices/def_12.tres" id="e7"]
-[ext_resource type="Resource" path="res://content/slices/crit_24.tres" id="e8"]
+[ext_resource type="Resource" path="res://content/slices/defrag_12.tres" id="e7"]
+[ext_resource type="Resource" path="res://content/slices/overflow_24.tres" id="e8"]
 [ext_resource type="Resource" path="res://content/slices/tariff.tres" id="e9"]
 [ext_resource type="Resource" path="res://content/slices/miss.tres" id="e10"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e11"]
@@ -45,7 +45,7 @@ display_name = "Root Access"
 description = "Repairs 4 and gains 4 shield each turn unless the Hub is breached."
 passive_effects = Array[ExtResource("e2")]([SubResource("hte")])
 
-[sub_resource type="Resource" id="wheel_slot_atk_14"]
+[sub_resource type="Resource" id="wheel_slot_shim_14"]
 script = ExtResource("e5")
 slice = ExtResource("e4")
 
@@ -53,11 +53,11 @@ slice = ExtResource("e4")
 script = ExtResource("e5")
 slice = ExtResource("e6")
 
-[sub_resource type="Resource" id="wheel_slot_def_12"]
+[sub_resource type="Resource" id="wheel_slot_defrag_12"]
 script = ExtResource("e5")
 slice = ExtResource("e7")
 
-[sub_resource type="Resource" id="wheel_slot_crit_24"]
+[sub_resource type="Resource" id="wheel_slot_overflow_24"]
 script = ExtResource("e5")
 slice = ExtResource("e8")
 
@@ -72,11 +72,11 @@ slice = ExtResource("e10")
 [sub_resource type="Resource" id="wheel"]
 script = ExtResource("e11")
 slice_count = 6
-slots = Array[ExtResource("e5")]([SubResource("wheel_slot_atk_14"), SubResource("wheel_slot_dose"), SubResource("wheel_slot_def_12"), SubResource("wheel_slot_crit_24"), SubResource("wheel_slot_tariff"), SubResource("wheel_slot_miss")])
+slots = Array[ExtResource("e5")]([SubResource("wheel_slot_shim_14"), SubResource("wheel_slot_dose"), SubResource("wheel_slot_defrag_12"), SubResource("wheel_slot_overflow_24"), SubResource("wheel_slot_tariff"), SubResource("wheel_slot_miss")])
 hub = SubResource("hub_root_access")
 pointer_ticks = PackedInt32Array(0)
 
-[sub_resource type="Resource" id="wheel_phase0_slot_atk_14"]
+[sub_resource type="Resource" id="wheel_phase0_slot_shim_14"]
 script = ExtResource("e5")
 slice = ExtResource("e4")
 
@@ -84,11 +84,11 @@ slice = ExtResource("e4")
 script = ExtResource("e5")
 slice = ExtResource("e12")
 
-[sub_resource type="Resource" id="wheel_phase0_slot_def_12"]
+[sub_resource type="Resource" id="wheel_phase0_slot_defrag_12"]
 script = ExtResource("e5")
 slice = ExtResource("e7")
 
-[sub_resource type="Resource" id="wheel_phase0_slot_crit_24"]
+[sub_resource type="Resource" id="wheel_phase0_slot_overflow_24"]
 script = ExtResource("e5")
 slice = ExtResource("e8")
 
@@ -103,7 +103,7 @@ slice = ExtResource("e10")
 [sub_resource type="Resource" id="wheel_phase0"]
 script = ExtResource("e11")
 slice_count = 6
-slots = Array[ExtResource("e5")]([SubResource("wheel_phase0_slot_atk_14"), SubResource("wheel_phase0_slot_citation"), SubResource("wheel_phase0_slot_def_12"), SubResource("wheel_phase0_slot_crit_24"), SubResource("wheel_phase0_slot_solar_flare"), SubResource("wheel_phase0_slot_miss")])
+slots = Array[ExtResource("e5")]([SubResource("wheel_phase0_slot_shim_14"), SubResource("wheel_phase0_slot_citation"), SubResource("wheel_phase0_slot_defrag_12"), SubResource("wheel_phase0_slot_overflow_24"), SubResource("wheel_phase0_slot_solar_flare"), SubResource("wheel_phase0_slot_miss")])
 hub = SubResource("hub_root_access")
 pointer_ticks = PackedInt32Array(0, 15)
 
@@ -115,7 +115,7 @@ pointer_ticks = PackedInt32Array(0, 15)
 wheel_override = SubResource("wheel_phase0")
 phase_line = "DISPATCH: You were always going to come here. I scheduled it."
 
-[sub_resource type="Resource" id="wheel_phase1_slot_crit_24"]
+[sub_resource type="Resource" id="wheel_phase1_slot_overflow_24"]
 script = ExtResource("e5")
 slice = ExtResource("e8")
 
@@ -134,7 +134,7 @@ slice = ExtResource("e10")
 [sub_resource type="Resource" id="wheel_phase1"]
 script = ExtResource("e11")
 slice_count = 6
-slots = Array[ExtResource("e5")]([SubResource("wheel_phase1_slot_crit_24"), SubResource("wheel_phase1_slot_dose"), SubResource("wheel_phase1_slot_crit_24"), SubResource("wheel_phase1_slot_crit_24"), SubResource("wheel_phase1_slot_tariff"), SubResource("wheel_phase1_slot_miss")])
+slots = Array[ExtResource("e5")]([SubResource("wheel_phase1_slot_overflow_24"), SubResource("wheel_phase1_slot_dose"), SubResource("wheel_phase1_slot_overflow_24"), SubResource("wheel_phase1_slot_overflow_24"), SubResource("wheel_phase1_slot_tariff"), SubResource("wheel_phase1_slot_miss")])
 hub = SubResource("hub_root_access")
 pointer_ticks = PackedInt32Array(0, 10, 20)
 

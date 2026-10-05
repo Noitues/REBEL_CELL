@@ -81,7 +81,7 @@ func test_ice_8_adds_5_heat_to_deaths_and_ice_16_adds_5_to_exploits() -> void:
 	CombatFixture.land(s.combat.state.player, 5)
 	var e := s.combat.state.get_combatant(&"enemy_0")
 	for i in e.wheel.slot_slice_ids.size():
-		if (_lookup.get_content(e.wheel.slot_slice_ids[i]) as SliceData).slice_type == RC.SliceType.ATTACK:
+		if (_lookup.get_content(e.wheel.slot_slice_ids[i]) as SliceData).slice_type == RC.SliceType.SHIM:
 			CombatFixture.land(e, i)
 			break
 	var guard := 0

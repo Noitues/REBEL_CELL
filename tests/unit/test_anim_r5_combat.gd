@@ -396,10 +396,10 @@ func test_a_card_preview_shows_what_the_tag_was() -> void:
 
 func test_the_play_chip_is_not_a_change() -> void:
 	var script: Script = load("res://scripts/ui/combat_scene.gd")
-	var old := {"text": "ATTACK · GOOD", "chips": [{"text": "HITS YOU 6"}]}
-	var same := {"text": "ATTACK · GOOD", "chips": [{"text": "YOU PLAY JOLT", "play": true}, {"text": "HITS YOU 6"}]}
+	var old := {"text": "SHIM · GOOD", "chips": [{"text": "HITS YOU 6"}]}
+	var same := {"text": "SHIM · GOOD", "chips": [{"text": "YOU PLAY JOLT", "play": true}, {"text": "HITS YOU 6"}]}
 	assert_false(script.tag_changed(old, same))
-	assert_true(script.tag_changed(old, {"text": "CRITICAL · GOOD", "chips": [{"text": "HITS YOU 14"}]}))
+	assert_true(script.tag_changed(old, {"text": "OVERFLOW · GOOD", "chips": [{"text": "HITS YOU 14"}]}))
 
 
 # --- 8: tags that say who gets what -----------------------------------------------------------------
@@ -418,7 +418,7 @@ func test_status_chips_say_who_gets_what() -> void:
 	var chips: Dictionary = scene.afflict_chips(st, events)
 	assert_true(chips.has(e0), "the enemy's tag gets a chip")
 	var text := String(chips[e0][0]["text"])
-	assert_eq(text, tr("PUTS %s ON YOU") % ("%s %s" % [Palette.STATUS_GLYPHS[RC.Status.CORRUPTED], tr("CORRUPTED")]), "AFFLICT names the status and the victim")
+	assert_eq(text, tr("PUTS %s ON YOU") % ("%s %s" % [Palette.STATUS_GLYPHS[RC.Status.CORRUPTED], tr("CORRUPTED")]), "INFECT names the status and the victim")
 	assert_eq(chips[e0][0]["color"], script.CHIP_LOSS, "bad for you: red")
 	await _close(scene)
 

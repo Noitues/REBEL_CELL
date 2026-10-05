@@ -12,7 +12,7 @@ var _hub: HubCoreData
 
 
 func before_each() -> void:
-	_atk6 = CombatFixture.slice(&"dr_atk6", RC.SliceType.ATTACK, 6)
+	_atk6 = CombatFixture.slice(&"dr_atk6", RC.SliceType.SHIM, 6)
 	_deploy = CombatFixture.slice(&"dr_deploy", RC.SliceType.DEPLOY, 1, RC.TargetRule.SELF)
 	_miss = CombatFixture.slice(&"dr_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
 	_hub = CombatFixture.hub(&"dr_hub")
@@ -20,7 +20,7 @@ func before_each() -> void:
 	_hub.drone = ContentRegistry.get_content(&"botnet_drone") as EnemyData
 
 
-## Wheel: Deploy, Atk, Atk, Atk, Atk, Miss. Enemy: 300 HP punching bag, or an attacker.
+## Wheel: Deploy, Shim, Shim, Shim, Shim, Miss. Enemy: 300 HP punching bag, or an attacker.
 func _session(daemons: Array = [], enemy_wheel: WheelData = null, seed: int = 9) -> CombatSession:
 	var deck: Array[CardData] = [CombatFixture.card(&"dr_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
 	var cls := CombatFixture.operative_class(&"dr_class", 60, CombatFixture.wheel([_deploy, _atk6, _atk6, _atk6, _atk6, _miss], _hub), deck)
@@ -67,7 +67,7 @@ func test_drone_resolves_only_when_its_slice_resolves() -> void:
 		if e["owner"] == drone.id:
 			drone_pointers += 1
 	assert_eq(drone_pointers, 0, "slot 3 resolved, drone on slot 0 idle")
-	# Land on slot 0 again: Deploy fires and so does the drone (Atk 3 or Def 3).
+	# Land on slot 0 again: Deploy fires and so does the drone (Shim 3 or Defrag 3).
 	CombatFixture.land(s.state.player, 0)
 	r = _end(s)
 	drone_pointers = 0
@@ -82,8 +82,8 @@ func test_drone_resolves_only_when_its_slice_resolves() -> void:
 
 
 func test_drone_on_the_resolved_slice_takes_the_enemy_hit() -> void:
-	# Atk 10 so the drone dies even when its own mini-wheel lands on Def 3.
-	var atk10 := CombatFixture.slice(&"dr_atk10", RC.SliceType.ATTACK, 10)
+	# Shim 10 so the drone dies even when its own mini-wheel lands on Defrag 3.
+	var atk10 := CombatFixture.slice(&"dr_atk10", RC.SliceType.SHIM, 10)
 	var enemy_wheel := CombatFixture.wheel([atk10, atk10, atk10, atk10, atk10, _miss])
 	var s := _session([], enemy_wheel)
 	CombatFixture.land(s.state.player, 0)
@@ -125,7 +125,7 @@ func test_twin_pointer_reads_the_wheel_at_the_bottom_and_halves_ram() -> void:
 	assert_eq(s.state.player.wheel.pointer_ticks, PackedInt32Array([0, 15]))
 	assert_eq(s.state.max_ram, 6)
 	assert_eq(s.state.ram, 6)
-	CombatFixture.land(s.state.player, 1)  # pointer 0 on Atk 6 -> pointer 1 on slot 4 (Atk 6)
+	CombatFixture.land(s.state.player, 1)  # pointer 0 on Shim 6 -> pointer 1 on slot 4 (Shim 6)
 	var r := _end(s)
 	var hits := CombatFixture.events_of(r, "damage")
 	assert_eq(hits.size(), 2, "both pointers trigger")
@@ -170,7 +170,7 @@ func test_stolen_intent_swaps_a_miss_for_the_enemys_slice_once() -> void:
 	assert_eq(CombatFixture.events_of(r, "stolen_intent").size(), 1)
 	var hits := CombatFixture.events_of(r, "damage")
 	assert_eq(hits.size(), 1)
-	assert_eq(hits[0]["attacker"], &"player", "you attack with their Atk 6")
+	assert_eq(hits[0]["attacker"], &"player", "you attack with their Shim 6")
 	assert_eq(s.state.get_combatant(&"enemy_0").hp, 294)
 	assert_eq(s.state.player.hp, 60, "they resolve your Miss")
 	# Second time: no swap, you simply miss and get hit.

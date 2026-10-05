@@ -6,8 +6,8 @@ extends Control
 ##   6 "what will resolve" as icons over each spinner   (7: no log in any concept)
 ## Run: godot --path . res://tools/design_lab/combat_concepts.tscn -- --concept=A|B|C
 
-const PLAYER := [[RC.SliceType.ATTACK, 6], [RC.SliceType.DEFEND, 5], [RC.SliceType.CRIT, 12], [RC.SliceType.ATTACK, 6], [RC.SliceType.MISS, 0], [RC.SliceType.ATTACK, 6]]
-const ENEMY := [[RC.SliceType.DEFEND, 5], [RC.SliceType.ATTACK, 7], [RC.SliceType.CRIT, 12], [RC.SliceType.ATTACK, 7], [RC.SliceType.MISS, 0], [RC.SliceType.SHIELD, 4]]
+const PLAYER := [[RC.SliceType.SHIM, 6], [RC.SliceType.DEFRAG, 5], [RC.SliceType.OVERFLOW, 12], [RC.SliceType.SHIM, 6], [RC.SliceType.MISS, 0], [RC.SliceType.SHIM, 6]]
+const ENEMY := [[RC.SliceType.DEFRAG, 5], [RC.SliceType.SHIM, 7], [RC.SliceType.OVERFLOW, 12], [RC.SliceType.SHIM, 7], [RC.SliceType.MISS, 0], [RC.SliceType.SHIELD, 4]]
 
 var concept: String = "A"
 ## Pointer design for the E concepts (0 = the zine arrow of D).
@@ -80,11 +80,11 @@ func _draw_art() -> void:
 			_wheel_blend(e, ENEMY, 0.0, Palette.CORP_SOLACE, 30, 42, false)
 			_actions_stickers(p)
 			if concept != "D2":
-				_tag_bubble(p + Vector2(-80, -262), RC.SliceType.DEFEND, "+5 ×2 block!")
-				_tag_bubble(e + Vector2(-60, -262), RC.SliceType.DEFEND, "+6 block")
+				_tag_bubble(p + Vector2(-80, -262), RC.SliceType.DEFRAG, "+5 ×2 block!")
+				_tag_bubble(e + Vector2(-60, -262), RC.SliceType.DEFRAG, "+6 block")
 			else:
-				_round_bubble(p + Vector2(-80, -272), RC.SliceType.DEFEND, "+5 ×2 block!")
-				_round_bubble(e + Vector2(-60, -272), RC.SliceType.DEFEND, "+6 block")
+				_round_bubble(p + Vector2(-80, -272), RC.SliceType.DEFRAG, "+5 ×2 block!")
+				_round_bubble(e + Vector2(-60, -272), RC.SliceType.DEFRAG, "+6 block")
 		_:
 			_wheel_zine(p, PLAYER, 0.9, Palette.CELL_PINK, 42, 60, true)
 			_wheel_zine(e, ENEMY, 2.1, Palette.CORP_SOLACE, 30, 42, false)
@@ -203,8 +203,8 @@ func _chip(at: Vector2, type: int, text: String, col: Color) -> void:
 
 
 func _resolve_chips(p: Vector2, e: Vector2) -> void:
-	_chip(p + Vector2(-80, -215), RC.SliceType.DEFEND, "+5 BLOCK ×2", Palette.NET_CYAN)
-	_chip(e + Vector2(-70, -215), RC.SliceType.DEFEND, "+6 BLOCK", Palette.CORP_SOLACE)
+	_chip(p + Vector2(-80, -215), RC.SliceType.DEFRAG, "+5 BLOCK ×2", Palette.NET_CYAN)
+	_chip(e + Vector2(-70, -215), RC.SliceType.DEFRAG, "+6 BLOCK", Palette.CORP_SOLACE)
 	# Nothing hits this turn: a crossed arrow says so.
 	art.draw_string(Palette.mono(), (p + e) * 0.5 + Vector2(-70, 0), "no damage this turn", HORIZONTAL_ALIGNMENT_CENTER, 140, 12, Color(Palette.PAPER, 0.7))
 
@@ -266,8 +266,8 @@ func _resolve_ghost(p: Vector2, e: Vector2) -> void:
 		var a := -PI * 0.5 + 0.1 * k
 		if k % 2 == 0:
 			art.draw_arc(p, 150, a, a + 0.08, 4, Palette.CELL_ACID, 3.0)
-	_chip(p + Vector2(20, -220), RC.SliceType.DEFEND, "5 ×2 = 10 BLOCK", Palette.CELL_ACID)
-	_chip(e + Vector2(-60, -220), RC.SliceType.DEFEND, "6 BLOCK", Palette.CORP_SOLACE)
+	_chip(p + Vector2(20, -220), RC.SliceType.DEFRAG, "5 ×2 = 10 BLOCK", Palette.CELL_ACID)
+	_chip(e + Vector2(-60, -220), RC.SliceType.DEFRAG, "6 BLOCK", Palette.CORP_SOLACE)
 
 
 # --- Concept C: zine dial -----------------------------------------------------------------
@@ -337,8 +337,8 @@ func _bubble(at: Vector2, type: int, text: String) -> void:
 
 
 func _resolve_bubbles(p: Vector2, e: Vector2) -> void:
-	_bubble(p + Vector2(-40, -262), RC.SliceType.DEFEND, "+5 ×2 block!")
-	_bubble(e + Vector2(-40, -262), RC.SliceType.DEFEND, "+6 block")
+	_bubble(p + Vector2(-40, -262), RC.SliceType.DEFRAG, "+5 ×2 block!")
+	_bubble(e + Vector2(-40, -262), RC.SliceType.DEFRAG, "+6 block")
 
 
 # --- Concept D: the blend --------------------------------------------------------------------
