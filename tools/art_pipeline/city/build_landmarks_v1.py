@@ -66,21 +66,38 @@ def sha256(p):
     return h.hexdigest()
 
 
-def footprint(job, info):
+MANIFEST_SCHEMA = "rebel_cell.art_export/1"  # the shared export convention (8p HQ compounds, DECISIONS 8p)
+
+
+def scripts_sha256():
+    """One hash over the pipeline (path + LF-normalised content of every source script), as 8p's make_hq_compounds;
+    tools/landmark_asset_checks.gd recomputes it, so an export older than its pipeline fails validation."""
+    h = hashlib.sha256()
+    for f in SCRIPTS:
+        h.update(f.encode())
+        h.update(open(os.path.join(HERE, f), "rb").read().replace(b"\r\n", b"\n"))
+    return h.hexdigest()
+
+
+def footprint(info):
+    """Min / max / size in the Godot frame (static geometry; moving parts are in `animation`)."""
+    lo, hi = info["bounds_gltf"]["min"], info["bounds_gltf"]["max"]
+    return dict(min=lo, max=hi, size=[round(hi[k] - lo[k], 3) for k in range(3)])
+
+
+def lot_rect(job, info):
     sp = SPEC.JOBS[job]
     lots = {"hq": SPEC.HQ_LOTS, "site": SPEC.SITE_LOTS, "district": SPEC.DISTRICT_LOTS}[sp["kind"]]
     half = lots * SPEC.LOT_BU / 2
-    lo, hi = info["bounds_concept"]["min"], info["bounds_concept"]["max"]
-    over = max(abs(lo[0]), abs(lo[1]), abs(hi[0]), abs(hi[1])) - half
-    return dict(lots=[lots, lots], bu=[lots * SPEC.LOT_BU, lots * SPEC.LOT_BU], overhang_bu=round(max(0.0, over), 2),
-                note="origin = centre of the lot rectangle on the ground; the model may overhang its rectangle by overhang_bu "
-                     "(lamps, rails, steps); the city should keep that margin clear of tall buildings")
+    lo, hi = info["bounds_gltf"]["min"], info["bounds_gltf"]["max"]
+    over = max(abs(lo[0]), abs(lo[2]), abs(hi[0]), abs(hi[2])) - half
+    return dict(lots=[lots, lots], bu=[lots * SPEC.LOT_BU, lots * SPEC.LOT_BU], overhang_bu=round(max(0.0, over), 2))
 
 
 def ref_cam(sp):
-    """The job's reference camera in glTF / Godot coordinates (Blender (x, y, z) -> (x, z, -y))."""
+    """The job's reference camera in the Godot frame (Blender (x, y, z) -> (x, z, -y))."""
     if sp["cam"] == "iso":
-        return dict(kind="iso", yaw=SPEC.YAW, pitch=SPEC.PITCH, ortho=sp["iso_ortho"], target_up_bu=SPEC.CREST_LIFT_BU)
+        return dict(kind="iso", yaw_deg=SPEC.YAW, pitch_deg=SPEC.PITCH, ortho=sp["iso_ortho"], target_up_bu=SPEC.CREST_LIFT_BU)
     loc, tgt, lens = sp["cam"]
     g = lambda p: [round(p[0], 3), round(p[2], 3), round(-p[1], 3)]  # noqa: E731
     import math
@@ -88,63 +105,77 @@ def ref_cam(sp):
                 hfov_deg=round(math.degrees(2 * math.atan(18.0 / lens)), 3))
 
 
+ORIGIN = {"hq": "the landmark's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot rectangle's centre",
+          "site": "the Site's ground centre at (0, 0, 0); place it on the centre of its 6 x 6 lot block",
+          "district": "the palm (the crest's anchor) on the ground at (0, 0, 0); place it on the centre of the Cell's district"}
+MATERIALS = {
+    "lm_toon": "toon: 3-band ramp x vertex colour (tone baked); alpha = part value 0.55-1.0 -> ROUGHNESS (ink material edges)",
+    "lm_toon_lines": "lm_toon, darkened toward (8, 6, 12)/255 by 0.55 x reveal q (REBEL_CELL detail-line buildings)",
+    "lm_lit": "lm_toon + emission 0.25 x colour (floodlit towers; LandmarkLook.lit_emission)",
+    "lm_neon": "emissive: vertex colour x neon gain (night 1.0, day 0.75)",
+    "lm_win": "emissive windows: vertex colour x window gain (day: 0.55, mixed 0.55 toward dark glass); alpha = the window's seeded value",
+    "lm_win_ring": "lm_win, visible while alpha > reveal q (+/- 0.12 flicker band at the front): the blackout ring",
+    "lm_win_lines": "lm_win, visible while alpha < (1 - q) x 0.85: lit detail lines before the reveal",
+    "lm_win_fist_home": "red fist windows, home look (70 % density baked) x LandmarkLook.fist_gain",
+    "lm_win_fist_dispatch": "red fist windows, DISPATCH look (90 %, glitch rows, a few white); show instead of _home",
+    "lm_beam": "translucent light cone: vertex colour at 0.22 over what is behind, no depth write (no ink)",
+    "lm_sign": "emissive diegetic signage (corp sign colour)",
+}
+
+
 def assemble():
     head = git_head()
+    ssha = scripts_sha256()
     total = 0
     for corp in SPEC.CORPS:
         d = os.path.join(ASSETS, corp)
         os.makedirs(d, exist_ok=True)
-        files, entries = [], []
+        files, entries, blender = [], [], ""
         for job, sp in SPEC.JOBS.items():
             if sp["corp"] != corp:
                 continue
-            src = os.path.join(SCRATCH, job, job + ".glb")
             info = json.load(open(os.path.join(SCRATCH, job, job + ".info.json"), encoding="utf-8"))
             dst = os.path.join(d, job + ".glb")
-            shutil.copyfile(src, dst)
-            files.append(dst)
-            entries.append(dict(job=job, file=job + ".glb", kind=sp["kind"], what=sp["what"], references=sp["refs"],
-                                states=info["states"], seed=info["seed"], triangles=info["triangles"], roles=info["roles"],
-                                animation=info["animation"], bounds_gltf=info["bounds_gltf"], footprint=footprint(job, info),
+            shutil.copyfile(os.path.join(SCRATCH, job, job + ".glb"), dst)
+            files.append((dst, "gltf"))
+            blender = info["blender"]
+            entries.append(dict(job=job, kind=sp["kind"], file=job + ".glb", what=sp["what"], origin=ORIGIN[sp["kind"]],
+                                footprint=footprint(info), lot_rect=lot_rect(job, info), states=info["states"],
                                 state_nodes=[n for n in info["nodes"] if "__state_" in n and n.count("__") == 1],
-                                reference_camera=ref_cam(sp),
-                                exporter=info["exporter_settings"], blender=info["blender"]))
+                                triangles=info["triangles_by_role"], animation=info["animation"], seed=info["seed"],
+                                reference_camera=ref_cam(sp), references=["docs/art_reference/" + r for r in sp["refs"]]))
         if corp == "rebel_cell":
             import landmark_post_v1 as POST
             mp = os.path.join(d, "rebel_cell_crest_mask.png")
             entries.append(POST.crest_mask(mp))
-            files.append(mp)
+            files.append((mp, "mask"))
+        main_entry = entries[0]
         man = dict(
+            schema=MANIFEST_SCHEMA, asset="landmark", corp=corp,
             about="ART-5 5b landmark (bible 4.4). Built by tools/art_pipeline/city/build_landmarks_v1.py; do not edit by hand.",
-            corp=corp, version=SPEC.VERSION, source_commit=head,
-            source_scripts=["tools/art_pipeline/city/" + s for s in SCRIPTS],
-            concept_source="art-concepts-r43 (art-pass 097a6c0 round 31 builders; d14b8f6 round 34 crest)",
-            coordinates=dict(units="1 glTF unit = 1 BU; 1 lot = %.0f BU" % SPEC.LOT_BU, up="+Y",
-                             frame="glTF x = lot x, glTF z = lot y (CityIsoCamera.lot_to_world), origin = centre of the job's lot rectangle at ground level",
-                             front="as the concept built them: HQs are symmetric or face the iso camera's side (+x, +z); Meridian's gate faces +x and its rail yard runs along x at z = -34 / -40 (the round 31 combat camera looks from -z); a Site's front faces +z (lot +y: screen lower-left, as in the locked Site renders)"),
-            materials=dict(
-                note="COLOR_0 is linear: rgb = base colour x the per-triangle tone jitter (0.86-1.12) for toon roles; alpha = a part id (toon roles: write it to ROUGHNESS 0.5-1.0 for material-edge ink) or a window's own seeded value (window roles)",
-                lm_toon="3-band toon (spike city_building light(): ramp shadow / mid / lit on N.L, edges 0.118 / 0.363)",
-                lm_toon_lines="lm_toon, darkened toward (8, 6, 12)/255 by 0.55 x reveal q (REBEL_CELL detail-line buildings)",
-                lm_lit="lm_toon + emission 0.42 x colour (floodlit towers)",
-                lm_neon="emissive colour x neon gain (night 1.0, day 0.75)",
-                lm_window="emissive colour x window gain (night 1.0; day 0.55 mixed 0.55 toward dark glass (0.10, 0.14, 0.20))",
-                lm_window_ring="lm_window, visible while alpha > reveal q (+/- 0.12 flicker band at the front): the blackout ring",
-                lm_window_lines="lm_window, visible while alpha < (1 - q) x 0.85: lit detail lines before the reveal",
-                lm_window_fist_home="red fist windows, home look (70 % density baked)",
-                lm_window_fist_dispatch="red fist windows, DISPATCH look (90 %, glitch rows, a few white); show instead of _home",
-                lm_beam="additive translucent light cone, emission colour x 0.22",
-                lm_sign="flat emissive sign colour (corp sign colour)"),
-            settings=dict(lot_bu=SPEC.LOT_BU, hq_lots=SPEC.HQ_LOTS, site_lots=SPEC.SITE_LOTS, site_scale=SPEC.SITE_SCALE,
-                          site_rot_deg=SPEC.SITE_ROT, camera=dict(yaw=SPEC.YAW, pitch=SPEC.PITCH)),
-            landmarks=entries,
-            files=[dict(path=os.path.relpath(p, ROOT).replace("\\", "/"), bytes=os.path.getsize(p), sha256=sha256(p)) for p in files])
-        with open(os.path.join(d, "manifest.json"), "w", encoding="utf-8") as f:
+            source=dict(script="tools/art_pipeline/city/landmark_build_v1.py", spec="tools/art_pipeline/city/landmark_spec_v1.py",
+                        driver="tools/art_pipeline/city/build_landmarks_v1.py",
+                        vendor="art-concepts-r43:docs/concepts/round31_meridian_combat/scripts @ 097a6c0 (concept_r31/); "
+                               "round34_rebel_cell/scripts/map34.py @ d14b8f6 (landmark_crest_v1)",
+                        scripts=["tools/art_pipeline/city/" + s for s in SCRIPTS], commit=head, scripts_sha256=ssha),
+            settings=dict(blender=blender, version=SPEC.VERSION, units="1 BU = 1 m; 1 lot = %.0f BU" % SPEC.LOT_BU,
+                          up="+Y (glTF; Blender (x, y, z) -> (x, z, -y)); glTF x = lot x, z = lot y (CityIsoCamera.lot_to_world)",
+                          tone=list(SPEC.TONE), part_alpha=list(SPEC.PART_ALPHA), ramp_tint="LandmarkLook.corp_tint (target_corps.TINT)",
+                          pitch_deg=SPEC.PITCH, yaw_deg=SPEC.YAW, normals="none (facet normal from screen derivatives)",
+                          layered_sprites="dropped: 1D chose real-time Godot 3D",
+                          site_scale=SPEC.SITE_SCALE, site_rot_deg=SPEC.SITE_ROT,
+                          front="as the concept built them: Meridian's gate faces +x, its rail yard runs along x at z = -34 / -40; "
+                                "a Site's front faces +z (lot +y, screen lower-left, as the locked Site renders)"),
+            origin=main_entry["origin"], footprint=main_entry["footprint"],
+            materials=MATERIALS, landmarks=entries,
+            files=[dict(path=os.path.basename(p), kind=k, bytes=os.path.getsize(p), sha256=sha256(p)) for p, k in files],
+            validator="tools/landmark_asset_checks.gd (from tools/validate_content.gd): manifest keys, files, sizes, sha256, stale pipeline")
+        with open(os.path.join(d, "manifest.json"), "w", encoding="utf-8", newline="\n") as f:
             json.dump(man, f, indent=1)
             f.write("\n")
         sz = sum(x["bytes"] for x in man["files"])
         total += sz
-        print("%-11s %8.1f KB  %s" % (corp, sz / 1024, ", ".join("%s %.0f KB" % (os.path.basename(x["path"]), x["bytes"] / 1024) for x in man["files"])))
+        print("%-11s %8.1f KB  %s" % (corp, sz / 1024, ", ".join("%s %.0f KB" % (x["path"], x["bytes"] / 1024) for x in man["files"])))
     print("TOTAL %.2f MB" % (total / 1024 / 1024))
 
 

@@ -139,10 +139,10 @@ def set_mode(m):
 
 # role -> (concept preview material, export material name, emissive?)
 ROLES = {
-    "solid": (TOON, "lm_toon"), "lit": (LITM, "lm_lit"), "neon": (NEONM, "lm_neon"), "win": (WINM, "lm_window"),
+    "solid": (TOON, "lm_toon"), "lit": (LITM, "lm_lit"), "neon": (NEONM, "lm_neon"), "win": (WINM, "lm_win"),
     "beam": (BEAMM, "lm_beam"), "sign": (SIGNM, "lm_sign"),
-    "lines": (TOON, "lm_toon_lines"), "win_ring": (WINM, "lm_window_ring"), "win_lines": (WINM, "lm_window_lines"),
-    "win_fist_home": (WINM, "lm_window_fist_home"), "win_fist_dispatch": (WINM, "lm_window_fist_dispatch"),
+    "lines": (TOON, "lm_toon_lines"), "win_ring": (WINM, "lm_win_ring"), "win_lines": (WINM, "lm_win_lines"),
+    "win_fist_home": (WINM, "lm_win_fist_home"), "win_fist_dispatch": (WINM, "lm_win_fist_dispatch"),
 }
 WINDOW_SEEDED = {"win_ring", "win_lines", "win_fist_home", "win_fist_dispatch", "win"}  # alpha = the window's own value
 LANDMARK = []      # every exported object
@@ -581,9 +581,10 @@ def preview():
 
 # ------------------------------------------------------------------ glTF export
 def part_alpha(bid):
-    """A stable 0-1 value per concept part id, for material-edge ink (the game writes it to ROUGHNESS)."""
+    """The part value of a concept part id, for material-edge ink: the shader writes it to ROUGHNESS, so it stays in
+    0.55-1.0 (art_export/1, as 8p: >= 0.5 marks a building for the spike post pass; neighbouring parts differ)."""
     h = math.sin(bid[0] * 12.9898 + bid[1] * 78.233 + bid[2] * 37.719) * 43758.5453
-    return h - math.floor(h)
+    return SPEC.PART_ALPHA[0] + (SPEC.PART_ALPHA[1] - SPEC.PART_ALPHA[0]) * (h - math.floor(h))
 
 
 def export_material(name, role):
@@ -629,7 +630,7 @@ def prep_export(o):
         for p in me.polygons:
             c = col[p.index].color
             t = fj[p.index].value
-            k = (0.86 + (1.12 - 0.86) * t) if toon else 1.0
+            k = (SPEC.TONE[0] + (SPEC.TONE[1] - SPEC.TONE[0]) * t) if toon else 1.0
             a = t if role in WINDOW_SEEDED else part_alpha(bid[p.index].color)
             rgba = (c[0] * k, c[1] * k, c[2] * k, a)
             for li in p.loop_indices:
@@ -680,6 +681,10 @@ def export_glb():
     INFO["bounds_concept"] = dict(min=lo, max=hi)
     INFO["bounds_gltf"] = dict(min=[lo[0], lo[2], -hi[1]], max=[hi[0], hi[2], -lo[1]])
     INFO["triangles"] = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in meshes)
+    INFO["triangles_by_role"] = {}
+    for o in meshes:
+        r = ROLES[o["lm_role"]][1]
+        INFO["triangles_by_role"][r] = INFO["triangles_by_role"].get(r, 0) + sum(len(p.vertices) - 2 for p in o.data.polygons)
     for o in LANDMARK:
         INFO["nodes"].append(o.name)
         if o.type == "MESH":

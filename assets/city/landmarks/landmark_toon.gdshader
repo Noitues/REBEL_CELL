@@ -1,8 +1,9 @@
 // ART-5 5b: the landmark material (every lm_* role but the light cones), the glTF side of the concept's
 // target_corps.mat_toon / mat_glow / hq_scene LITM: 3-band toon on N.L (the spike's city_building light(), so a
 // landmark shades like the city around it), emissive neon / windows / signs, and the REBEL_CELL reveal. COLOR is the
-// glTF COLOR_0 (linear): rgb = base colour (x tone jitter for toon roles), a = part id (toon: written to ROUGHNESS
-// 0.5-1.0 so the ink pass draws part edges and treats the landmark as a building) or a window's own seeded value.
+// glTF COLOR_0 (linear): rgb = base colour (x tone jitter for toon roles), a = the part value 0.55-1.0 (toon roles:
+// written to ROUGHNESS so the ink pass draws part edges and treats the landmark as a building) or a window's own
+// seeded value. Same convention as 8p's compounds (art_export/1).
 // Prototype until 1B's shared toon + ink material lands (the spike shaders are prototypes too).
 shader_type spatial;
 render_mode cull_disabled, specular_disabled;
@@ -49,7 +50,7 @@ void fragment() {
 	}
 	NORMAL = n;
 	vec3 c = COLOR.rgb;
-	ROUGHNESS = 0.5 + 0.5 * COLOR.a;
+	ROUGHNESS = COLOR.a;
 	if (role <= 2) {
 		ALBEDO = c;
 		if (role == 1) {

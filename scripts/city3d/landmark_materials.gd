@@ -1,7 +1,7 @@
 class_name LandmarkMaterials
 extends RefCounted
 ## ART-5 5b: puts the landmark materials on an instanced landmark glTF (assets/city/landmarks/<corp>/<job>.glb).
-## The glTF carries one material per ROLE (lm_toon, lm_lit, lm_neon, lm_window, ... see the corp's manifest.json);
+## The glTF carries one material per ROLE (lm_toon, lm_lit, lm_neon, lm_win, ... see the corp's manifest.json);
 ## this maps each role to the landmark toon or light-cone shader with the LandmarkLook values for the corp and the
 ## time of day. View-side only: it never touches game state.
 
@@ -9,8 +9,8 @@ const TOON_SHADER := preload("res://assets/city/landmarks/landmark_toon.gdshader
 const BEAM_SHADER := preload("res://assets/city/landmarks/landmark_beam.gdshader")
 const LOOK_PATH := "res://assets/city/landmarks/landmark_look.tres"
 ## glTF material name -> landmark_toon.gdshader `role` (lm_beam uses the light-cone shader).
-const ROLES := {"lm_toon": 0, "lm_toon_lines": 1, "lm_lit": 2, "lm_neon": 3, "lm_window": 4, "lm_window_ring": 5,
-	"lm_window_lines": 6, "lm_window_fist_home": 7, "lm_window_fist_dispatch": 7, "lm_sign": 8}
+const ROLES := {"lm_toon": 0, "lm_toon_lines": 1, "lm_lit": 2, "lm_neon": 3, "lm_win": 4, "lm_win_ring": 5,
+	"lm_win_lines": 6, "lm_win_fist_home": 7, "lm_win_fist_dispatch": 7, "lm_sign": 8}
 const BEAM := "lm_beam"
 
 

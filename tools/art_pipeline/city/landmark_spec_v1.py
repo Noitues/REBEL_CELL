@@ -74,9 +74,10 @@ REVEAL_Q = [0.0, 0.0, 0.0, 0.1, 0.22, 0.36, 0.5, 0.64, 0.78, 0.9, 1.0, 1.0, 1.0,
 RED = {"home": (200, 58, 56), "dispatch": (240, 24, 36)}   # map34.RED (sRGB 0-255)
 DISTRICT_LOTS = 32          # the standalone district patch: 32 x 32 lots around the palm
 
-# glTF NORMAL: the landmark shader shades with the flat facet normal from screen derivatives, but Godot's shadow
-# normal bias needs vertex normals (without them thin parts such as the Solace strands self-shadow into the dark band)
-EXPORT_NORMALS = True
+# glTF NORMAL: the landmark shader shades with the flat facet normal from screen derivatives
+EXPORT_NORMALS = False   # art_export/1 (8p): no normals; tested: the Solace strands shade the same with or without
+TONE = (0.86, 1.12)      # target_corps.mat_toon tone jitter range, baked into COLOR_0
+PART_ALPHA = (0.55, 1.0) # COLOR_0.a range of the toon roles (the part value written to ROUGHNESS)
 
 # sign text curve resolution (Blender default 12): 2 keeps the letters' corners and a tenth of the triangles
 TEXT_RESOLUTION = 2

@@ -12,8 +12,9 @@ extends Resource
 ## Per-corp tint on the ramp (target_corps.TINT), keyed by corporation id.
 @export var corp_tint: Dictionary = {&"meridian": Color(1, 1, 1), &"solace": Color(0.92, 1.07, 0.96),
 	&"halcyon": Color(1.0, 0.94, 1.08), &"orbital": Color(0.76, 1.02, 1.12), &"rebel_cell": Color(1.16, 0.88, 0.92)}
-## Floodlit surfaces (lm_lit): emission share of the colour.
-@export var lit_emission: float = 0.42
+## Floodlit surfaces (lm_lit): emission share of the colour (the concept's 0.42 bloomed only in its emission pass;
+## the spike post blooms every bright pixel, so 0.25, as 8p's compounds).
+@export var lit_emission: float = 0.25
 ## Emission gains: neon (trims, rings, chaser) and windows, night and day; by day windows mix toward dark glass.
 @export var neon_gain_night: float = 1.0
 @export var neon_gain_day: float = 0.75

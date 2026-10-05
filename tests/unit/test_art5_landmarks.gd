@@ -119,7 +119,7 @@ func test_landmark_materials_cover_every_surface() -> void:
 	var rc: Node = (load("%s/rebel_cell/rebel_cell_district.glb" % ROOT) as PackedScene).instantiate()
 	var rm := LandmarkMaterials.apply(rc, look, &"rebel_cell", false)
 	LandmarkMaterials.set_reveal(rm, 0.25)
-	assert_almost_eq(float((rm["lm_window_ring"] as ShaderMaterial).get_shader_parameter("reveal_q")), 0.25, 0.0001)
+	assert_almost_eq(float((rm["lm_win_ring"] as ShaderMaterial).get_shader_parameter("reveal_q")), 0.25, 0.0001)
 	LandmarkMaterials.show_dispatch(rc, true)
 	assert_false((rc.find_children("*__win_fist_home", "MeshInstance3D", true, false)[0] as Node3D).visible)
 	assert_true((rc.find_children("*__win_fist_dispatch", "MeshInstance3D", true, false)[0] as Node3D).visible)
