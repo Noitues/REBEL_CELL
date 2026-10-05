@@ -201,7 +201,7 @@ func test_reduce_effects_lands_with_the_rail_only() -> void:
 	assert_eq(v.landing_tint(), Palette.RESIST_GOLD, "the landing's tier still reads (gold)")
 	v.disc.run_screens()
 	assert_false(v.disc.is_processing(), "the CRT loop holds its first frame")
-	assert_eq(float(v.disc.mat.get_shader_parameter(&"frame_pos")), 0.0)
+	assert_eq(float(v.disc.mat.get_shader_parameter(&"frame_pos_in")), 0.0)
 	assert_false(WheelTelemetry.scrolls(), "the telemetry ring stands still")
 	scene.skip_motion()
 
@@ -264,3 +264,37 @@ func test_the_stack_fits_its_view_at_every_text_scale() -> void:
 		scene.skip_motion()
 		scene.get_parent().queue_free()
 		await _frames(2)
+
+
+# --- seams for 2C (cards and FX) ------------------------------------------------------------------
+
+func test_the_fx_seams_reach_the_disc() -> void:
+	var scene := await _combat()
+	var v: WheelView = scene._player_view
+	var full := v.hp_arc_spot(1.0)
+	var empty := v.hp_arc_spot(0.0)
+	assert_ne(full, empty, "the HP arc runs between two ends")
+	assert_almost_eq(v.hp_ring_spot().distance_to(full), 0.0, 0.5, "full HP ends at the arc's full end")
+	assert_gt(full.y, v.global_center().y, "the arc sits under the wheel (3.2)")
+	v.rgb_split = 6.0
+	v.pixelate = 8.0
+	assert_eq(float(v.disc.mat.get_shader_parameter(&"rgb_split")), 6.0)
+	assert_eq(float(v.disc.mat.get_shader_parameter(&"pixelate")), 8.0)
+	v.stop_motion()
+	assert_eq(v.rgb_split, 0.0, "a press ends the split")
+	assert_null(v.wheel_texture(), "headless: no readback, the caller falls back")
+	scene.skip_motion()
+
+
+func test_the_guards_stand_after_their_effect() -> void:
+	var scene := await _combat()
+	var v: WheelView = scene._player_view
+	var st: CombatState = scene.engine.state()
+	assert_eq(v.foe_side(), 90.0, "the player's wall faces right, at its foe")
+	st.player.block = 5
+	st.player.shield = 4
+	st.player.evade_charges = 1
+	scene._refresh(st)
+	await _frames(2)
+	assert_eq(scene._view_of(st.enemies[0].id).foe_side(), 270.0, "an enemy's faces left")
+	scene.skip_motion()

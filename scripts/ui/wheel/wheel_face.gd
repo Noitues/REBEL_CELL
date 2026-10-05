@@ -47,6 +47,9 @@ const HP_A0 := 130.0
 const HP_A1 := 230.0
 const HP_R0 := 6.0
 const HP_R1 := 26.0
+## A phase pip's label (`P2`, combat_wheel.draw_hp) beyond the arc, master units.
+const PIP_LABEL_R := 32.0
+const PIP_LABEL := 15.0
 ## The corner badge (3.8): outer clockwise corner of the slice, its size and the tag under it.
 const BADGE_R := 326.0
 const BADGE_SIZE := 44.0
@@ -302,6 +305,15 @@ static func hp_arc(ci: CanvasItem, center: Vector2, k: float, rt: float, frac: f
 		var dia := PackedVector2Array([c + Vector2(0, -r), c + Vector2(r, 0), c + Vector2(0, r), c + Vector2(-r, 0)])
 		ci.draw_colored_polygon(dia, Color(Palette.RESIST_GOLD if lit else Palette.RESIST_GOLD.darkened(0.5), alpha))
 		_outline(ci, dia, Color(Palette.INK, alpha), maxf(1.0, k * 2.0))
+		# its label: which phase the mark starts (audit P2: the gold ticks read as nothing alone)
+		var fs := maxi(MIN_TEXT_PX, roundi(PIP_LABEL * k))
+		var font := Palette.display()
+		var word := "P%d" % (p + 2)
+		var lp := at(center, k, r1 + PIP_LABEL_R, a)
+		var tw := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var base := Vector2(lp.x - tw * 0.5, lp.y + cap_height(font, fs) * 0.5)
+		ci.draw_string_outline(font, base, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(fs * 0.25)), Color(Palette.INK, alpha))
+		ci.draw_string(font, base, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.RESIST_GOLD if lit else Palette.TEXT_MID, alpha))
 
 
 ## The corner badge of a slice's state (3.8): the status glyph on its shape (circle helps,

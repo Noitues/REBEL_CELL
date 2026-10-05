@@ -73,8 +73,8 @@ func run_screens() -> void:
 	var on := visible and Motion.live(&"wheel_screen_loop")
 	if not on:
 		_clock = 0.0
-		put(&"frame_pos", 0.0)
-		put(&"t_s", 0.0)
+		put(&"frame_pos_in", 0.0)
+		put(&"t_s_in", 0.0)
 	set_process(on)
 
 
@@ -97,5 +97,5 @@ func _process(delta: float) -> void:
 	_clock += delta
 	var period := maxf(0.001, Motion.seconds(&"wheel_screen_loop"))
 	var frames := float(WheelKit.meta().get("frames", 12))
-	put(&"frame_pos", fposmod(_clock / period, 1.0) * frames)
-	put(&"t_s", fposmod(_clock, period * Motion.amplitude(&"wheel_screen_loop")))
+	put(&"frame_pos_in", fposmod(_clock / period, 1.0) * frames)
+	put(&"t_s_in", fposmod(_clock, period * Motion.amplitude(&"wheel_screen_loop")))

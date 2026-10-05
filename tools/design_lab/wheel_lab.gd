@@ -104,6 +104,9 @@ func _combat() -> void:
 	match case_name:
 		"typical":
 			st.player.wheel.slice_statuses[2] = RC.Status.OVERCLOCKED
+			st.player.block = 6
+			st.player.evade_charges = 1
+			foe.shield = 4
 			foe.wheel.slice_statuses[4] = RC.Status.ENCRYPTED
 		"worst":
 			var kinds := [RC.Status.CORRUPTED, RC.Status.OVERCLOCKED, RC.Status.ENCRYPTED, RC.Status.PARASITE]

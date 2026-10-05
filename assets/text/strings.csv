@@ -796,6 +796,7 @@ GUARD +%d BLOCK,GUARD +%d BLOCK
 GUARD TOOK %d,GUARD TOOK %d
 Go,Go
 "Go to HQ (City Grid, raids, roster)","Go to HQ (City Grid, raids, roster)"
+Gold mark P%d: phase %d starts at %d%% HP.,Gold mark P%d: phase %d starts at %d%% HP.
 Good for you: %s,Good for you: %s
 Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP): it takes hits aimed at this slice.
 HEAT,HEAT
@@ -2483,6 +2484,7 @@ Take,Take
 Take nothing from this payout.,Take nothing from this payout.
 Taken Raid Strength,Taken Raid Strength
 Target:,Target:
+Target: the lime brackets mark the wheel your attacks and aimed cards hit.,Target: the lime brackets mark the wheel your attacks and aimed cards hit.
 Terminal,Terminal
 Terminal: an event with choices,Terminal: an event with choices
 Terminal: an event with choices.,Terminal: an event with choices.

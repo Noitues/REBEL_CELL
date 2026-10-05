@@ -705,7 +705,7 @@ func _odds_chips(c: CombatantState, non_null_only: bool = false) -> Array[Dictio
 		var slice := engine.content(id) as SliceData
 		if slice == null or (non_null_only and slice.slice_type == RC.SliceType.NULL):
 			continue
-		var key: String = "%s %s" % [Palette.SLICE_GLYPHS.get(slice.slice_type, "?"), tr(Palette.slice_word(slice.slice_type, corp_of(c)))]
+		var key: String = tr(Palette.slice_word(slice.slice_type, corp_of(c)))  # ART-2 2A: the word only; the glyph is the atlas one (SliceIcon)
 		if not counts.has(key):
 			order.append(key)
 		counts[key] = int(counts.get(key, 0)) + 1

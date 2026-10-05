@@ -9,6 +9,8 @@ shader_type canvas_item;
 // cream outline, the glass crescent. Text, glyphs, blades and plates are drawn by WheelView on top.
 render_mode blend_premul_alpha;
 
+#include "res://shaders/lib/rc_common.gdshaderinc"
+
 const float R_OUT = 360.0;
 const float R_IN = 130.0;
 const float GAP = 1.6;
@@ -53,7 +55,7 @@ uniform sampler2D scenes : filter_linear, repeat_disable;
 uniform bool has_scene = false;
 uniform float scene_yc = 0.5;
 uniform float scene_cut = -1.0;
-uniform float frame_pos = 0.0;
+uniform float frame_pos_in = 0.0;
 uniform int frames = 12;
 uniform int rows = 10;
 uniform vec2 tex_size = vec2(374.0, 215.0);
@@ -79,11 +81,15 @@ uniform float rail_half = 50.0;
 uniform vec4 rail_col : source_color = vec4(1.0, 0.24, 0.66, 1.0);
 uniform float needles[4];
 uniform int needle_n = 1;
-uniform float t_s = 0.0;
+uniform float t_s_in = 0.0;
 uniform float invert = 0.0;
 uniform float hit = 0.0;
 uniform float grey = 0.0;
 uniform float alpha = 1.0;
+// The crit's RGB split on the wheel only (ART_BIBLE 3.20, T3; 2C sets WheelView.rgb_split): master units.
+uniform float rgb_split = 0.0;
+// Pixelation of the whole disc (the defeated wheel's pieces, 3.20): cell size in master units, 0 = off.
+uniform float pixelate = 0.0;
 uniform float needle_gap = 8.0;
 // Tier I screen gain (bible 3.7 says 60 %; the combat v4 mocks show tier I at full gain: DECISIONS
 // "Art direction - ART-2 2A wheel stack").
@@ -124,6 +130,15 @@ float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
+// The overlays' clock and the flipbook frame, both frozen under reduce effects (rc_common).
+float tclock() {
+	return rc_time(t_s_in);
+}
+
+float fpos() {
+	return frame_pos_in * rc_live();
+}
+
 vec2 dir_of(float deg) {
 	float a = radians(deg);
 	return vec2(sin(a), -cos(a));
@@ -135,8 +150,8 @@ vec4 atlas(sampler2D tex, int row, float sx, float sy) {
 	vec2 cell = ts / vec2(float(frames), float(rows));
 	float u = clamp(sx / tex_size.x, 0.5 / cell.x, 1.0 - 0.5 / cell.x);
 	float v = clamp(sy / tex_size.y, 0.5 / cell.y, 1.0 - 0.5 / cell.y);
-	float f0 = floor(frame_pos);
-	float k = frame_pos - f0;
+	float f0 = floor(fpos());
+	float k = fpos() - f0;
 	float c0 = mod(f0, float(frames));
 	float c1 = mod(f0 + 1.0, float(frames));
 	vec2 a = vec2((c0 + u) * cell.x, (float(row) + v) * cell.y) / ts;
@@ -152,16 +167,16 @@ float seg_tex(int sk, float u, float rho, float mid_r) {
 		return (step(0.18, fr) - step(0.30, fr) + step(0.42, fr) - step(0.54, fr)) * 0.75;
 	} else if (sk == 2) {
 		float x = abs(fract(u / 14.0) - 0.5) * 14.0;
-		return step(fract((rho - x * 0.9) / 14.0 - t_s * 0.5), 0.28) * 0.8;
+		return step(fract((rho - x * 0.9) / 14.0 - tclock() * 0.5), 0.28) * 0.8;
 	} else if (sk == 3) {
-		return step(0.7, hash(vec2(floor(u / 6.0), floor(rho / 6.0) + floor(t_s * 4.0)))) * 0.8;
+		return step(0.7, hash(vec2(floor(u / 6.0), floor(rho / 6.0) + floor(tclock() * 4.0)))) * 0.8;
 	} else if (sk == 4) {
 		float lk = fract(u / 16.0);
 		return (1.0 - sm(0.0, 1.5, abs(length(vec2((lk - 0.5) * 16.0, (rho - mid_r) * 1.2)) - 5.0))) * 0.7;
 	} else if (sk == 5) {
-		return step(0.82, fract(u / 9.0 + t_s * 0.8 + hash(vec2(floor(rho / 4.0), 2.0)))) * 0.6;
+		return step(0.82, fract(u / 9.0 + tclock() * 0.8 + hash(vec2(floor(rho / 4.0), 2.0)))) * 0.6;
 	} else if (sk == 6) {
-		return (0.5 + 0.5 * sin(rho * 0.9 - t_s * 4.0 + abs(u) * 0.2)) * 0.45;
+		return (0.5 + 0.5 * sin(rho * 0.9 - tclock() * 4.0 + abs(u) * 0.2)) * 0.45;
 	}
 	return (hash(vec2(floor(u * 2.0), 3.0)) - 0.5) * 0.12 + 0.06;
 }
@@ -197,7 +212,7 @@ vec4 slice_tile(vec2 p, int i, float sc) {
 	// CORRUPTED (3.8): tear bands re-rolled every 83 ms shift the screen sideways.
 	float tear = 0.0;
 	if (st == 1) {
-		float roll = floor(t_s / 0.083);
+		float roll = floor(tclock() / 0.083);
 		float band = floor(ty / 14.0);
 		float hb = hash(vec2(band + float(i) * 7.0, roll));
 		if (hb > 0.45) {
@@ -252,19 +267,19 @@ vec4 slice_tile(vec2 p, int i, float sc) {
 	// state overlays (3.8): their own wash, thinned to 35 % inside the read window
 	float wash_k = mix(1.0, 0.35, clamp(in_plate * 1.6, 0.0, 1.0));
 	if (st == 1) {
-		float roll = floor(t_s / 0.083);
+		float roll = floor(tclock() / 0.083);
 		float cb = hash(vec2(floor(ty / 9.0), roll + 11.0));
 		vec3 band_c = cb > 0.5 ? PINK : GREENG;
 		float bmask = step(0.55, hash(vec2(floor(ty / 9.0) + 40.0, roll)));
 		float flick = 1.0 - 0.18 * step(0.5, hash(vec2(floor(ty / sl_p), roll)));
-		float tl = step(0.94, fract(t_s)) * exp(-pow((ty - H * fract(t_s * 3.7)) / 2.0, 2.0));
+		float tl = step(0.94, fract(tclock())) * exp(-pow((ty - H * fract(tclock() * 3.7)) / 2.0, 2.0));
 		scr = scr * flick;
 		scr = mix(scr, band_c, 0.6 * bmask * wash_k);
 		scr += mix(PINK, GREENG, step(0.5, fract(tx / 7.0))) * 0.1 * wash_k;
 		scr += vec3(1.0, 0.9, 1.0) * tl * wash_k;
 	} else if (st == 3) {
 		// ENCRYPTED: asterisks scrolling outward
-		vec2 g = vec2(tx, ty + t_s * 26.0) / 18.0;
+		vec2 g = vec2(tx, ty + tclock() * 26.0) / 18.0;
 		vec2 cell = fract(g) - 0.5;
 		float ang = atan(cell.y, cell.x);
 		float star = (0.5 + 0.5 * cos(ang * 6.0)) * 0.2 + 0.09 - length(cell);
@@ -275,16 +290,16 @@ vec4 slice_tile(vec2 p, int i, float sc) {
 	} else if (st == 2) {
 		// OVERCLOCKED: a translucent heat look, rising shimmer from the hub side
 		float heat = sm(H, 0.0, ty) * 0.5 + 0.5;
-		float wob = 0.5 + 0.5 * sin(ty * 0.12 - t_s * 6.0 + tx * 0.05);
+		float wob = 0.5 + 0.5 * sin(ty * 0.12 - tclock() * 6.0 + tx * 0.05);
 		scr = mix(scr, HEAT * (0.8 + 0.4 * wob), 0.42 * heat * wash_k);
 	} else if (st == 4) {
 		// PARASITE: the large translucent bug only, legs crawling, body pumping (alpha about 0.5)
 		scr = mix(scr, vec3(0.45, 0.9, 0.25) * 0.6, 0.12 * wash_k);
 		if (has_bug) {
-			float pump = 1.0 + 0.06 * sin(t_s * 7.0);
+			float pump = 1.0 + 0.06 * sin(tclock() * 7.0);
 			vec2 bc2 = dir_of(mid) * (R_IN + 0.5 * (R_OUT - R_IN));
 			vec2 bq = (q - bc2) / (bug_size * pump);
-			bq.x += 0.03 * sin(t_s * 11.0 + bq.y * 9.0) * step(0.25, abs(bq.x));
+			bq.x += 0.03 * sin(tclock() * 11.0 + bq.y * 9.0) * step(0.25, abs(bq.x));
 			vec2 buv = bq + 0.5;
 			if (buv.x > 0.0 && buv.x < 1.0 && buv.y > 0.0 && buv.y < 1.0) {
 				vec4 b = texture(bug_tex, buv);
@@ -401,8 +416,7 @@ float near_needle(float th) {
 	return best;
 }
 
-void fragment() {
-	vec2 p = (UV - 0.5) * 2.0 * ext;
+vec4 disc_at(vec2 p) {
 	float rho = length(p);
 	float th = mod(degrees(atan(p.x, -p.y)), 360.0);
 	vec4 o = vec4(0.0);
@@ -480,7 +494,7 @@ void fragment() {
 		float radial = rho - rm;
 		float chev = abs(radial) * 0.9 - (lat + 5.0) * 0.8;
 		float chev_m = step(abs(radial), hw) * step(-hw * 0.5, chev) * step(chev, hw * 0.55);
-		vec3 thr = phase >= 2 ? mix(THREAT, vec3(1.0, 0.75, 0.3), 0.35 + 0.25 * sin(t_s * 6.0)) : THREAT;
+		vec3 thr = phase >= 2 ? mix(THREAT, vec3(1.0, 0.75, 0.3), 0.35 + 0.25 * sin(tclock() * 6.0)) : THREAT;
 		c = mix(c, thr, chev_m);
 		c += phase >= 2 ? THREAT * 0.18 : vec3(0.0);
 		c = mix(c, vec3(0.04), 1.0 - sm(0.0, 1.5 * px, r1 - rho));
@@ -521,7 +535,7 @@ void fragment() {
 		vec3 c = vec3(0.035, 0.03, 0.05) + tint * 0.10 * (1.0 - rho / hr);
 		// the enemy hub's slow chevron sweep / the player's concentric CRT rings
 		if (theme != 0) {
-			float sweep = fract((p.x + p.y * 0.4) / 46.0 - t_s * 0.08);
+			float sweep = fract((p.x + p.y * 0.4) / 46.0 - tclock() * 0.08);
 			c += tint * 0.08 * step(0.5, sweep) * (1.0 - rho / hr);
 		} else {
 			c += vec3(1.0) * 0.035 * step(0.85, fract(rho / 9.0));
@@ -571,5 +585,20 @@ void fragment() {
 	o.rgb += vec3(1.0, 0.27, 0.2) * hit * o.a;
 	float lum = dot(o.rgb, vec3(0.299, 0.587, 0.114));
 	o.rgb = mix(o.rgb, vec3(lum) * 0.7, grey);
+	return o;
+}
+
+void fragment() {
+	vec2 p = (UV - 0.5) * 2.0 * ext;
+	if (pixelate > 0.0) {
+		p = (floor(p / pixelate) + 0.5) * pixelate;
+	}
+	vec4 o = disc_at(p);
+	float split = rgb_split * rc_live();
+	if (split > 0.0) {
+		vec4 r = disc_at(p + vec2(split, 0.0));
+		vec4 bl = disc_at(p - vec2(split, 0.0));
+		o = vec4(r.r, o.g, bl.b, max(o.a, max(r.a, bl.a)));
+	}
 	COLOR = o * alpha;
 }

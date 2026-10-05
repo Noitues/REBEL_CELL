@@ -264,6 +264,12 @@ func _get_tooltip(at_position: Vector2) -> String:
 		return last_turn_tip if last_turn_tip != "" else last_turn
 	if (lay["hp"] as Rect2).has_point(at_position):
 		return tr("HP now: %d of %d.") % [combatant.hp, combatant.max_hp]
+	# ART-2 2A (audit P2): the HP arc and its boss phase pips say what they are.
+	var arc_tip := hp_arc_tip(at_position)
+	if arc_tip != "":
+		return arc_tip
+	if highlighted and absf((at_position - _center()).length() - (_radius() + RETICLE_GAP)) < RETICLE_HIT:
+		return tr("Target: the lime brackets mark the wheel your attacks and aimed cards hit.")
 	var z := zone_at(global_position + at_position)
 	match String(z.get("kind", "")):
 		"arrow":
@@ -499,6 +505,9 @@ func stop_motion(sync_tag: bool = true) -> void:
 	latch = 0.0
 	stutter_deg = 0.0
 	drain_p = 1.0 if flatlined else 0.0
+	rgb_split = 0.0
+	pixelate = 0.0
+	_drop_land_sticker()
 	lockdown_level = 1.0 if combatant != null and combatant.is_hub_breached() else 0.0
 	if sync_tag:
 		_intent_sig = intent_signature() if _intent_rect_local().has_area() else ""
@@ -1233,8 +1242,13 @@ func hp_counter_spot() -> Vector2:
 ## A point on the HP ring (global) where the HP shown now ends: hit lines end there.
 func hp_ring_spot() -> Vector2:
 	var c := _shown()
-	var frac := clampf(shown_hp() / maxf(1.0, c.max_hp), 0.0, 1.0)
-	var deg := WheelFace.HP_A1 - (WheelFace.HP_A1 - WheelFace.HP_A0) * frac
+	return hp_arc_spot(clampf(shown_hp() / maxf(1.0, c.max_hp), 0.0, 1.0))
+
+
+## ART-2 2A (for 2C's shards and heal relight): the point (global) on the HP arc's middle at HP
+## fraction `frac` (0 = the arc's empty end, 1 = full).
+func hp_arc_spot(frac: float) -> Vector2:
+	var deg := WheelFace.HP_A1 - (WheelFace.HP_A1 - WheelFace.HP_A0) * clampf(frac, 0.0, 1.0)
 	return global_position + WheelFace.at(_center(), art_scale(), frame_master() + (WheelFace.HP_R0 + WheelFace.HP_R1) * 0.5, deg)
 
 
@@ -1327,6 +1341,25 @@ func number_anchor(k: int) -> Vector2:
 ## The radius (px) floating numbers keep within, round the centre.
 func number_room() -> float:
 	return (_radius() - _band()) * NUMBER_ROOM
+
+
+## The HP arc's tooltip at local `at` ("" off the arc): the HP, and on a boss each phase pip's
+## threshold (the gold marks, 3.16).
+func hp_arc_tip(at: Vector2) -> String:
+	if combatant == null or combatant.wheel == null:
+		return ""
+	var k := art_scale()
+	var d := (at - _center()) / maxf(k, 0.001)
+	var rt := frame_master()
+	var deg := fposmod(rad_to_deg(atan2(d.x, -d.y)), 360.0)
+	var r := d.length()
+	if r < rt + WheelFace.HP_R0 - 4.0 or r > rt + WheelFace.HP_R1 + WheelFace.PIP_LABEL_R or deg < WheelFace.HP_A0 - 4.0 or deg > WheelFace.HP_A1 + 4.0:
+		return ""
+	var tip := tr("HP now: %d of %d.") % [combatant.hp, combatant.max_hp]
+	var marks := phase_marks()
+	for i in marks.size():
+		tip += "\n" + tr("Gold mark P%d: phase %d starts at %d%% HP.") % [i + 2, i + 2, roundi(marks[i] * 100.0)]
+	return tip
 
 
 ## The boss's phase thresholds as HP fractions (its phase pips, 3.16); empty for other wheels.
@@ -1915,6 +1948,7 @@ func _draw_view() -> void:
 				var oa := _ang(fposmod(ps[pk] + wheel.pointer_orbit * o, RC.TICKS))
 				draw_circle(center + Vector2(cos(oa), sin(oa)) * (radius + band * 0.55), 3, Color(Palette.PAPER, 0.5 - o * 0.12))
 	_draw_landing(center, k)
+	_draw_guards(center, k)
 	if kit.is_boss and radius > WheelFace.LOD_RADIUS:
 		var top := frame_master() + WheelFace.BLADE_TOP
 		WheelFace.banner(self, center.x, center.y - (top + 8.0) * k, k, shown_name().to_upper(), _banner_sub(), kit.accent)
@@ -1941,7 +1975,7 @@ func _draw_view() -> void:
 	if flatlined and combatant.is_player:
 		_draw_flatlined(center, radius, inner)
 	if highlighted and combatant.is_alive():
-		_draw_crosshair(center, radius + 56)
+		_draw_crosshair(center, radius + RETICLE_GAP)
 		# A crosshair mark by the top-right bracket names the reticle without words.
 		var cm := center + Vector2(cos(-PI * 0.25), sin(-PI * 0.25)) * (radius + 56 + 16)
 		draw_arc(cm, 7, 0, TAU, 16, _col(TARGET_COLOR), 2.0)
@@ -2002,7 +2036,6 @@ const STUTTER_STEPS: Array[float] = [1.0, -0.714, 0.429, -0.171, 0.0]
 ## The landing words (3.19), their tints and the word's offset from the blade window (master units).
 const LAND_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK x0.5"} # TR
 const WORD_SIDE := 120.0
-const WORD_MASTER := 46.0
 ## The PERFECT jaws: their length and open gap (master units) at the tip.
 const JAW_LEN := 26.0
 const JAW_GAP := 22.0
@@ -2024,6 +2057,7 @@ func play_precision(tier: int, slot: int, needle: int = 0) -> void:
 		return
 	var e := Motion.entry(&"precision_word")
 	var life := Motion.seconds(&"precision_word") / WORD_HOLD
+	_show_land_sticker(tier)
 	var tw := _tw(&"landing")
 	tw.set_parallel(true)
 	tw.tween_method(func(x: float) -> void: land_word = x; land_fx = 1.0 - minf(1.0, x / WORD_HOLD); queue_redraw(), 0.0, 1.0, life).set_ease(e.ease).set_trans(e.trans)
@@ -2039,12 +2073,61 @@ func play_precision(tier: int, slot: int, needle: int = 0) -> void:
 			st.tween_property(self, ^"stutter_deg", v * amp, step)
 		st.tween_callback(func() -> void: stutter_deg = 0.0; _end(&"stutter"); queue_redraw())
 		st.step_finished.connect(func(_i: int) -> void: queue_redraw())
+	tw.tween_callback(_dissolve_land_sticker).set_delay(Motion.seconds(&"precision_word"))
 	tw.chain().tween_callback(func() -> void:
 		land_fx = 0.0
 		land_word = 0.0
 		latch = 0.0
+		_drop_land_sticker()
 		_end(&"landing")
 		queue_redraw())
+
+
+## The landing word's vinyl sticker (1B) and the bits it dissolves into (1B's BinaryBits).
+var _land_sticker: VinylSticker = null
+var bits: BinaryBits = null
+## The landing word's type step (UiTheme; the PERFECT vinyl is the big one, 3.19).
+const WORD_STEP_BIG := UiTheme.TITLE
+const WORD_STEP := UiTheme.BODY
+
+
+func _show_land_sticker(tier: int) -> void:
+	_drop_land_sticker()
+	var s := VinylSticker.new()
+	s.text = tr(String(LAND_WORDS.get(tier, "")))
+	s.fill = VinylSticker.Fill.WHITE if tier == RC.PrecisionTier.GOOD else VinylSticker.Fill.YELLOW
+	s.font_step = WORD_STEP_BIG if tier == RC.PrecisionTier.PERFECT else WORD_STEP
+	s.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(s)
+	_land_sticker = s
+	var ps := shown_pointers()
+	var deg := fposmod(-ps[clampi(landing_needle, 0, ps.size() - 1)] * DEG_PER_TICK, 360.0) if not ps.is_empty() else 0.0
+	var at := WheelFace.axis(_center(), art_scale(), frame_master() + WheelFace.BLADE_TOP * 0.55, WORD_SIDE, deg)
+	_place_land_sticker.call_deferred(at)
+	s.slap()
+	queue_redraw()
+
+
+## Sets the word beside the blade's window, off the needle (3.19), once the sticker has its size.
+func _place_land_sticker(at: Vector2) -> void:
+	if _land_sticker != null and is_instance_valid(_land_sticker):
+		_land_sticker.place_center(at + Vector2(_land_sticker.body_rect.size.x * 0.5, 0.0))
+
+
+func _dissolve_land_sticker() -> void:
+	if _land_sticker == null:
+		return
+	if bits == null:
+		bits = BinaryBits.new()
+		bits.name = "Bits"
+		add_child(bits)
+	_land_sticker.dissolve(bits, global_center())
+
+
+func _drop_land_sticker() -> void:
+	if _land_sticker != null and is_instance_valid(_land_sticker):
+		_land_sticker.queue_free()
+	_land_sticker = null
 
 
 ## The landing's tint (3.19): gold PERFECT, white GOOD, amber WEAK.
@@ -2092,42 +2175,6 @@ func _draw_landing(center: Vector2, k: float) -> void:
 					var d := Vector2(sin(a), -cos(a))
 					var r0 := (4.0 + (1.0 - land_fx) * 20.0) * k
 					draw_line(tip + d * r0, tip + d * (r0 + 10.0 * k), Color(Palette.TEXT_MID, land_fx), maxf(1.0, 2.0 * k))
-	if land_word > 0.0 and land_word < 1.0:
-		_draw_land_word(center, k, deg, tint)
-
-
-## The landing word (3.19): a vinyl word (white die-cut, ink keyline) that holds, then dissolves left
-## to right into 0/1 bits drifting up (3.20 temporary labels).
-func _draw_land_word(center: Vector2, k: float, deg: float, tint: Color) -> void:
-	var word := tr(String(LAND_WORDS.get(landing_tier, "")))
-	var big := landing_tier == RC.PrecisionTier.PERFECT
-	var fs := maxi(WheelFace.MIN_TEXT_PX, roundi(WORD_MASTER * k * (1.0 if big else 0.62) * Motion.amplitude(&"precision_word")))
-	var font := Palette.display()
-	var tw := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var at := WheelFace.axis(center, k, frame_master() + WheelFace.BLADE_TOP * 0.55, WORD_SIDE, deg)
-	var base := Vector2(at.x - tw * 0.5, at.y + WheelFace.cap_height(font, fs) * 0.5)
-	var gone := clampf((land_word - WORD_HOLD) / (1.0 - WORD_HOLD), 0.0, 1.0)
-	var cut := base.x + tw * gone
-	# the word, its left part already gone to bits
-	var x := base.x
-	for i in word.length():
-		var ch := word[i]
-		var adv := font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		if x + adv * 0.5 >= cut:
-			if big:
-				draw_char_outline(font, Vector2(x, base.y), ch, fs, maxi(2, roundi(fs * 0.34)), Palette.TEXT_HI)
-			draw_char_outline(font, Vector2(x, base.y), ch, fs, maxi(1, roundi(fs * 0.14)), Palette.INK)
-			draw_char(font, Vector2(x, base.y), ch, fs, tint)
-		x += adv
-	if gone > 0.0:
-		var bf := maxi(WheelFace.MIN_TEXT_PX, roundi(fs * 0.45))
-		var n := int(word.length() * 3 * gone)
-		for b in n:
-			var h := absi(hash(Vector2i(b, landing_tier)))
-			var bx := base.x + float(h % 997) / 997.0 * tw * gone
-			var rise := (gone - float(b) / maxf(1.0, word.length() * 3.0)) * fs * 1.6
-			var alpha := clampf(1.0 - gone, 0.0, 1.0)
-			draw_char(Palette.mono(), Vector2(bx, base.y - rise - float(h % 13)), "1" if h % 2 == 0 else "0", bf, Color(tint, alpha))
 
 
 ## The player's defeat (3.3, round 40): the core breaks into bits, bottom rows first; they fall,
@@ -2139,9 +2186,28 @@ func play_defeat_drain() -> void:
 		return
 	var e := Motion.entry(&"hub_defeat_drain")
 	drain_p = 0.0
+	_burst_core_bits()
 	var tw := _tw(&"drain")
 	tw.tween_method(func(x: float) -> void: drain_p = x; queue_redraw(), 0.0, 1.0, Motion.seconds(&"hub_defeat_drain")).set_ease(e.ease).set_trans(e.trans)
 	tw.tween_callback(func() -> void: drain_p = 1.0; _end(&"drain"))
+
+
+## The core's bits (3.3): from the hub's cells, bottom rows first, falling out past the circle's
+## bottom edge in the class accent (1B's BinaryBits; nothing flies under reduce effects).
+func _burst_core_bits() -> void:
+	if bits == null:
+		bits = BinaryBits.new()
+		bits.name = "Bits"
+		add_child(bits)
+	var hr := (HUB_PLAYER if combatant.wheel.has_inner_ring() else HUB_ENEMY) * art_scale()
+	var c := global_center()
+	var starts := PackedVector2Array()
+	for i in BinaryBits.MAX_BITS:
+		var h := absi(hash(Vector2i(i, 7)))
+		var a := float(h % 360) / 360.0 * TAU
+		var r := sqrt(float(h % 997) / 997.0) * hr
+		starts.append(c + Vector2(cos(a), sin(a)) * r)
+	bits.burst(starts, c + Vector2(0.0, hr), kit.accent)
 
 
 func _draw_drain(center: Vector2, hr: float) -> void:
@@ -2169,6 +2235,39 @@ func _draw_drain(center: Vector2, hr: float) -> void:
 			draw_rect(Rect2(center + Vector2(x, fy) - Vector2(b, b) * 0.5, Vector2(b, b)), col)
 
 
+## ART-2 2A seams for 2C (3.20): the crit's RGB split on this wheel only (master units, 0 = none)
+## and the disc's pixelation for a defeated wheel's pieces (cell size in master units, 0 = none).
+## Set by the FX layer's motion; the disc reads them (reduce effects: the split never shows).
+var rgb_split: float = 0.0:
+	set(v):
+		rgb_split = v
+		if disc != null:
+			disc.put(&"rgb_split", v)
+var pixelate: float = 0.0:
+	set(v):
+		pixelate = v
+		if disc != null:
+			disc.put(&"pixelate", v)
+
+
+## ART-2 2A seam for 2C: the wheel as a texture: what was drawn last frame inside `wheel_rect()`
+## (global), read back from the viewport once (for the defeated pieces' pixelation and the crit
+## split's copy). Null headless or before the first frame. Costly (a GPU readback): one call per
+## moment, never per frame.
+func wheel_texture() -> Texture2D:
+	var vp := get_viewport()
+	if vp == null or DisplayServer.get_name() == "headless":
+		return null
+	var img := vp.get_texture().get_image()
+	if img == null or img.is_empty():
+		return null
+	var xf := vp.get_final_transform()
+	var r := Rect2i(xf * wheel_rect()).intersection(Rect2i(Vector2i.ZERO, img.get_size()))
+	if not r.has_area():
+		return null
+	return ImageTexture.create_from_image(img.get_region(r))
+
+
 ## LOCKDOWN's waterline (3.3): 1 full while Hub Breach holds, draining to 0 when it ends.
 var lockdown_level: float = 0.0
 
@@ -2183,6 +2282,82 @@ func play_lockdown_drain() -> void:
 	var tw := _tw(&"lockdown")
 	tw.tween_method(func(x: float) -> void: lockdown_level = x; queue_redraw(), lockdown_level, 0.0, Motion.seconds(&"hub_lockdown_drain")).set_ease(e.ease).set_trans(e.trans)
 	tw.tween_callback(func() -> void: lockdown_level = 0.0; _end(&"lockdown"))
+
+
+## The standing guards (3.20: what stays after block / shield / evade gain plays): DEFRAG bricks on
+## the side facing the foe, SANDBOX hex plates beyond them, the `>>` EVADE token on the rim.
+## Master units: the wall's half arc, its courses and depth; the hex plates' size; the token's angle.
+const WALL_HALF := 34.0
+const WALL_COURSES := 3
+const WALL_DEPTH := 30.0
+const WALL_GAP := 6.0
+const BRICK_DEG := 7.0
+const HEX_R := 13.0
+const HEX_HALF := 40.0
+const EVADE_DEG := 315.0
+const EVADE_R := 24.0
+
+
+## The side of the wheel facing its foe (degrees clockwise from the top): the player's wheel faces
+## right, an enemy's left.
+func foe_side() -> float:
+	return 90.0 if combatant != null and combatant.is_player else 270.0
+
+
+func _draw_guards(center: Vector2, k: float) -> void:
+	var c := combatant
+	if c == null or not c.is_alive():
+		return
+	var face := foe_side()
+	var r0 := frame_master() + WALL_GAP
+	if c.block > 0:
+		# DEFRAG: bricks course by course on the outer side (the defend rule: the wall stands between
+		# the hit and the wheel), running bond, the amount on the top course.
+		for course in WALL_COURSES:
+			var ra := r0 + course * WALL_DEPTH / WALL_COURSES
+			var rb := ra + WALL_DEPTH / WALL_COURSES - 1.5
+			var off := BRICK_DEG * 0.5 if course % 2 == 1 else 0.0
+			var a := face - WALL_HALF + off
+			while a + BRICK_DEG <= face + WALL_HALF + 0.01:
+				var brick := WheelFace.arc_band(center, k, ra, rb, a + 0.4, a + BRICK_DEG - 0.4)
+				draw_colored_polygon(brick, Color(Palette.NET_CYAN, 0.85))
+				draw_polyline(brick, Palette.INK, maxf(1.0, k), true)
+				a += BRICK_DEG
+		_guard_number(center, k, r0 + WALL_DEPTH + 14.0, face, str(c.block), Palette.NET_CYAN)
+	if c.shield > 0:
+		# SANDBOX: hex plates tiled beyond the wall
+		var rh := r0 + (WALL_DEPTH + HEX_R + 4.0 if c.block > 0 else HEX_R)
+		var step := rad_to_deg(HEX_R * 1.8 / rh)
+		var a2 := face - HEX_HALF
+		while a2 <= face + HEX_HALF + 0.01:
+			var hc := WheelFace.at(center, k, rh, a2)
+			var hexp := PackedVector2Array()
+			for j in 6:
+				hexp.append(hc + Vector2(cos(TAU * j / 6.0), sin(TAU * j / 6.0)) * HEX_R * k)
+			draw_colored_polygon(hexp, Color(Palette.NET_CYAN, 0.35))
+			var closed := hexp.duplicate()
+			closed.append(hexp[0])
+			draw_polyline(closed, Palette.NET_CYAN, maxf(1.0, 1.5 * k), true)
+			a2 += step
+		_guard_number(center, k, rh + HEX_R + 14.0, face + HEX_HALF * 0.6, str(c.shield), Palette.NET_CYAN)
+	if c.evade_charges > 0:
+		# EVADE: the >> token on the rim, one per charge
+		for e in c.evade_charges:
+			var tp := WheelFace.at(center, k, frame_master() + EVADE_R, EVADE_DEG - e * 14.0)
+			var r := EVADE_R * 0.8 * k
+			draw_circle(tp, r, Color(Palette.NIGHT_SKY, 0.92))
+			draw_arc(tp, r, 0.0, TAU, 20, Palette.GAIN, maxf(1.0, 2.0 * k), true)
+			WheelGlyphs.draw(self, GlyphTableData.key_for_slice_type(RC.SliceType.DETOUR), tp, r * 1.3, Palette.GAIN)
+
+
+func _guard_number(center: Vector2, k: float, r: float, deg: float, text: String, col: Color) -> void:
+	var fs := maxi(WheelFace.MIN_TEXT_PX, roundi(26.0 * k))
+	var font := Palette.display()
+	var p := WheelFace.at(center, k, r, deg)
+	var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var base := Vector2(p.x - tw * 0.5, p.y + WheelFace.cap_height(font, fs) * 0.5)
+	draw_string_outline(font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(fs * 0.2)), Palette.INK)
+	draw_string(font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 
 # --- ART-2 2A: the wheel stack -----------------------------------------------------------------
@@ -2373,6 +2548,8 @@ func _sync_disc(center: Vector2, radius: float, rot: float) -> int:
 			seg_now = int(readouts[0].get("segment_index", -1))
 		disc.put(&"seg_active", posmod(-seg_now, 3) if seg_now >= 0 else -1)
 	disc.put(&"lockdown", lockdown_level)
+	disc.put(&"rgb_split", rgb_split)
+	disc.put(&"pixelate", pixelate)
 	disc.put(&"phase", c.phase_index + 1 if kit.is_boss else 1)
 	disc.put(&"land_tint", landing_tint())
 	disc.put(&"land_slot", landing_slot_shown if landing_tier >= 0 else -1)
@@ -3266,6 +3443,9 @@ func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
 ## Target reticle: four bracket arcs on the diagonals with a tick at each (clear of the HP
 ## numbers and the arrows).
 const RETICLE_ARC := 0.28
+## The reticle's distance beyond the rim (px) and its hover band for the tooltip.
+const RETICLE_GAP := 56.0
+const RETICLE_HIT := 10.0
 
 
 func _draw_crosshair(c: Vector2, r: float) -> void:

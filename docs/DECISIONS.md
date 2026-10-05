@@ -83,6 +83,35 @@ ringlock, skins / scenes18). Decided by the implementer:
 - Seams for 2B (attachments): `art_scale()`, `frame_master()`, `window_radius()`, `slice_deg()`,
   `active_slot()`, `badge_spot()`, `WheelFace.at/axis`, `WheelFace.R_*` zones; the firmware square
   and satellite tokens are left as they were for 2B to replace.
+- **On 1B's kit:** the disc shader includes `rc_common` (its clocks stop under the `reduce_effects`
+  global as well as on the view's own gate); the landing word is a `VinylSticker` (yellow PERFECT,
+  white GOOD, yellow WEAK x0.5) that slaps and `dissolve`s into `BinaryBits`; the defeat's core bits
+  are a `BinaryBits` burst from the hub falling past its bottom edge. The slice screens stay their
+  own polar CRT in the disc pass rather than `CrtTerminalPanel` (a rectangle panel can't bend into
+  the wedge; the recipe's scanlines and vignette are the locked slice look); the LOCKDOWN plate stays
+  drawn at hub size for the same reason.
+- **Seams taken over from 2C:** `WheelView.hp_arc_spot(frac)` (the HP arc geometry, replaces 2C's
+  copy); `rgb_split` (the crit's RGB split on the disc only, master units; off under reduce effects)
+  and `pixelate` (the disc in cells, for the defeated pieces) on the view, pushed to the disc;
+  `wheel_texture()` (a one-off readback of `wheel_rect()`, null headless) for pieces that need the
+  wheel's pixels. The standing guards after their effect: DEFRAG bricks in three courses on the side
+  facing the foe (the defend rule), SANDBOX hex plates beyond them, the `>>` EVADE token on the rim,
+  each with its amount; they show whenever the state holds block / shield / evade (reduce effects:
+  they simply stand).
+- **Group 1 audit P2s.** (1) One glyph source for a slice: `SliceIcon.draw_icon` / `draw_on_slice`
+  (every caller: wheels, tags, cards, the FX layer, spinners, Mainframe tiles) now draws 1C's atlas
+  glyph through `WheelGlyphs` (`glyph_table.tres`); the drawn vector icons are gone, and the slice
+  text symbols (✦ ▲ ■ ...) are dropped from the odds chips (combat_scene) and the Codex titles.
+  2D and 2A share that one call (`SliceIcon.draw_icon`, or `WheelGlyphs.draw` with a table key;
+  `GlyphIcon.make` for a node). The status chips' text symbols (☠ ⚡ ⌗ ✺) are the tags' layout (2D).
+  (2) The boss HP arc's gold ticks are the D4 phase pips (§3.2, §3.16): each now carries its `P2` /
+  `P3` label (the recipe's), and hovering the arc says "Gold mark P2: phase 2 starts at 66 % HP";
+  the lime target reticle round the target wheel got its own tooltip.
+- **Files outside 2A:** `scripts/ui/combat_scene.gd` (2D: the `play_precision` call in the landing
+  beat; the odds chips without the text symbol), `scripts/ui/kit/slice_icon.gd`, `scripts/ui/kit/codex.gd`
+  (the glyph source), `scripts/ui/kit/materials/vinyl_sticker.gd` and `scripts/ui/fx/fx_draw.gd`
+  (1B / 2C: their inline tween shapes named, so `test_anim_r6_rules` passes), `tools/design_lab/motion_lab.gd`
+  (demos), `tools/design_lab/wheel_lab.*` and `tools/art/*` (new).
 - No test dropped. Captures: `docs/art_review/ART-2/2A/`.
 
 ### 2026-10-05 — Art direction — ART-9 4B dialogue and portraits
