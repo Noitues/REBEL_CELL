@@ -17,3 +17,4 @@
 | `tutorial_overlay.gd` (combat tutorial note) | Group 2, 2D HUD (combat chrome) |
 | Deck viewer (`deck_view.gd`) | Group 4, 4A (netrun screens beside the shop) |
 | The map legend / key on the Grid and route | Group 3 wave 2 (unified city), 3B for the route key now |
+| CI agent | `test_horizontal_pass20_city.gd :: test_headless_never_bakes_and_still_draws_the_city` is ORDER-DEPENDENT (fails in a shard, passes alone): fix before CI is re-enabled | after ART-12, with the full-suite run |
