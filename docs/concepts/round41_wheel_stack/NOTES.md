@@ -138,3 +138,49 @@ What clips or becomes unreadable:
 7. **Hard limits** (an open question for the designer): no more than 2 drones per slice, and no more than 6 drones and 2 parasites per wheel.
 
 These open questions should go into `DECISIONS.md` under "Open questions for the designer".
+
+---
+
+# v2: drones collapsed, inner ring, re-test (`_v2` files)
+
+## Files
+| File | What it shows |
+|---|---|
+| `drones_v2.png` | Drones collapsed and hovered, each with and without a parasite, plus the locked inner ring with its texture extension. |
+| `combat_typical_v2.png` | The typical case. |
+| `combat_worst_case_v2.png` | The worst case, with the drones on slice 3 hovered. |
+| `combat_worst_case_spin.gif` | 16 frames, 3.8 MB: both wheels spin, settle, and the parasite under each needle pops up. |
+
+Scripts: `stack42.py` (v2 drones and the locked inner ring), `ringlock.py` (a verbatim copy of the round 39/40 `ring2.py` ring functions, rebanded to the D4 hub, 100–127) and `combat42.py worst | typical | sheet | frame k | gif`.
+
+## Changes
+1. **Drones are smaller and sit closer to the wheel.** They are 0.22 of the host, down from 0.30.
+   - With no parasite, the drone has a short stem and sits at RA + 30.
+   - With a parasite, there is no stem and the drone sits directly on the parasite's outer edge.
+2. **Drones are collapsed by default.** Each slice's drones become one thin band, 34 units deep, with one tile per drone. Each tile shows the drone's current effect (glyph and value) and its HP pips.
+   - Hovering the slice, or aiming a card at a drone, blooms the band into the full mini-wheels, each with its needle.
+3. **The inner ring now uses the locked round 39/40 look:**
+   - per-segment textures, machined lips, grooves and bolts, and glyph plates;
+   - each segment's texture extends into its aligned outer slice. Strength is raised to 1.7 so it shows at combat scale.
+4. **Re-test.** Same worst case as before: 2 drones, a parasite and a status ×N on every slice of both wheels, with the inner ring populated.
+
+## Verdict: the worst case now fits
+| Measure | v1 | v2 |
+|---|---|---|
+| Off-screen | 6 % | **0 %** |
+| Player forecast hidden | 50 % | 23 % |
+| Boss forecast hidden | 50 % | 18 % |
+| Name sticker hidden | 69 % | 11 % |
+| Boss HP hidden | 57 % | 5 % |
+| Nudge Q | 71 % | 0 % |
+| Player HP, hand, SEND IT, status bar | 17–66 % | 0 % |
+
+**The typical case** is 0 % off-screen and hides nothing, apart from 2 % of the name sticker.
+
+## Still clipping or crowded
+- **Nudge E is 81 % covered**, but only while the slice next to it is hovered: the bloomed drones sit on the button. Suggested fixes:
+  - bloom away from HUD controls, by mirroring the drones to the slice's other side;
+  - or temporarily nudge the button outward.
+- **The popped parasites reach the top forecast tags** (18–23 %). Suggested fix: the tags gain 30 px of top margin, or slide sideways when a parasite pops on the top slice.
+- **Six status badges with ×N tabs per wheel are still busy.** The rule "one badge per slice, full list on hover" still applies.
+- **The drone band tiles are small at r = 220**, about 14 px values. That is acceptable because hovering shows full size, and the forecast chip carries the numbers.
