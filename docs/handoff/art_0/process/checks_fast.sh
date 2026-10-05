@@ -1,6 +1,6 @@
 #!/bin/bash
 # Per-merge / per-hand-back checks (designer 2026-10-05): import + fast tier + schema smoke + content validation.
-# The full suite x3 (checks.sh) runs once per ART batch, at its end, in isolation (no agents running).
+# The full suite (checks.sh, one run) runs once per ART group, at its end, in isolation (no agents running).
 # usage: bash docs/handoff/art_0/process/checks_fast.sh   (logs in $SP, default %TEMP%\rebel_cell_checks)
 cd "$(git rev-parse --show-toplevel)" || exit 1
 SP="${SP:-$TEMP/rebel_cell_checks}"; mkdir -p "$SP"

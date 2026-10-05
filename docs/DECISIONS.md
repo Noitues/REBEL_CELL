@@ -148,6 +148,15 @@ names follow the display words; no aliases, no migrations.
   their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
   folder for a clean title screen.
 
+### 2026-10-05 — Designer ruling: one full run, one audit at the end
+1. **One full-suite run** instead of three: each ART group (and ART-0) ends with one full run in isolation
+   (`process/checks.sh`, `RUNS=3` only after a failure, to tell a flaky test from a real one; the runner
+   already reruns failing scripts alone). Supersedes the "×3" in "Designer ruling: check cadence for M14".
+2. **No per-batch or per-group audits.** The vertical / horizontal / naive audit loop runs **once**, after
+   ART-12, over every M14 change, with its fix rounds until CLEAN (nothing deferred, P3s included). The
+   designer review after each group stays. Supersedes the per-group audit in "Designer ruling: M14
+   regrouped" and plan §4.1 step 5; MILESTONES M14 and the ART-0 brief updated.
+
 ### 2026-10-05 — Designer rulings: SANDBOX / TROJAN / NULL and five Heat bands
 1. **Default accepted:** the remaining slice programs follow ART_BIBLE v2 §3 (rounds 32–34): SHIELD →
    **SANDBOX**, DEPLOY → **TROJAN**, MISS → **NULL**, display and internal names alike (ruling 5 of pause
