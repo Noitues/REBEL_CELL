@@ -1587,7 +1587,7 @@ trans = 4
 amplitude = 0.35
 tier = 2
 
-; and shakes the wheel; amplitude = px (none under reduce effects)
+; and shakes the wheel; amplitude = px (none under reduce effects); ART-2 2C: 2 px, T2's limit (was 3)
 [sub_resource type="Resource" id="m_hit_shake"]
 script = ExtResource("1_entry")
 id = &"hit_shake"
@@ -1595,7 +1595,7 @@ duration = 0.16
 delay = 0.0
 ease = 1
 trans = 1
-amplitude = 3.0
+amplitude = 2.0
 tier = 2
 
 ; a new fight's enemy slides in from the right edge with its name; amplitude = px
