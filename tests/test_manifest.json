@@ -553,6 +553,10 @@
 			"seconds": 4.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art5_landmarks.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art9_portraits_dialogue.gd": {
 			"seconds": 6.0,
 			"tier": "fast"
