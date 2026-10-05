@@ -33,6 +33,63 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-5 5c city motion
+Agent 5c (ART_BIBLE v2 §4.1 car LOD, §4.2 city motion, §4.3 Heat on maps, §5.3–5.5, §6.1;
+refs round 24 `motion_layers`, round 26 ambient v4, round 37 calm Heat B, round 40 `cars_lod`).
+- **One seam.** The layers (`CityMotionLayers`, `scripts/city3d/`) read the city only through
+  `CityMotionSite` (lot frame, avenues busiest first, roofs, street lots, home, bounds), built by
+  `from_model` (5a's CityModel) or `from_district` (1D's spike). `CityViewMotion` puts them on 5a's
+  `CityView3D`: groups `traffic`, `sky`, `props`, `heat` go to the view's scene layers (traffic,
+  sky and heat also in the ground-only pass, so cars and Heat pools show under see-through
+  buildings); `camera_changed` drives car LOD and sprite sizes, `band_changed` the view
+  (GRID / RAID / NETRUN), `ambient_changed` pauses every layer, the spill goes to `set_spill`.
+  `tools/spike/city/city_spike_motion.gd` keeps a spike host for windowed render checks.
+- **Config.** New schema `CityMotionConfigData` (`scripts/data/`, shipped
+  `content/config/city_motion_config.tres`; smoke check `_art5_city_motion`): counts, sizes,
+  colours, road heights, band rigs, the day look. Every timing is a `ui_motion.tres` entry (all
+  T0, in REQUIRED_IDS, each with a motion-lab demo on a small grid city): `sky_lane_cars`,
+  `street_cars`, `holo_billboard`, `aviation_blink`, `searchlight_sweep`, `chopper_orbit`,
+  `drone_orbit`, `police_strobe`, `alarm_beacon`, `heat_node_light`, `city_light_fade`. NeonCity's
+  `city_traffic` / `beacon_blink` stay with the 2D city (its AWAITING_FIX entries are not hidden).
+- **Sky lanes** (round 26 v4): the 16 road shapes (A double deck, B, C with its flyovers and
+  1.75-turn spiral, F's cloverleaf of four 270° loops, the D×E four-level stack) on the city's own
+  busiest avenues (three per axis, at least 6 lots apart), each a row per direction baked into a
+  float texture (xyz, a = length), uniform by arc length; the car shader moves every vertex along
+  its row, so lines bend through loops and ramps. A loop moves 14–20 whole gaps (seamless). Guide
+  dots per road in its rail colour.
+- **Colours from a derived stream.** Cars and street cars take their lane colour from
+  `RngStreams.make_stream(city_seed, &"city_traffic")`, billboards and aviation phases from
+  `&"city_ambient"`: seeded like RngService streams but never the campaign's own, so a view moves
+  no game state.
+- **Car LOD:** FAR / MEDIUM / CLOSE by ortho (400 / 150) with hysteresis **0.04** (1D's 0.06 kept
+  the raid's 380 on FAR coming from the Grid; the bible and `cars_lod` put the raid on MEDIUM). At
+  management zooms only the lane line drops to 35 %; the car stays full strength. The CLOSE model
+  is a light toon-lit wedge (ToonInkMaterial's bands in the path shader; no ink hull: the cars are
+  drawn after the city's ink pass). Choppers and drones use `ToonInkMaterial` with its ink.
+- **Heat lights** (calm, centred on the hardened nodes' centre, home when none): every hardened
+  node one circling red / blue light on a thin `HEAT_B` ring, drawn through buildings like the
+  network decal; per band COOL nothing, NOTICED 3 alarm beacons, FLAGGED two slow searchlights
+  (calm, lower alpha) + 2 alarms, HUNTED + 13 police strobes, 2 choppers, 6 drones with
+  spotlights and ground pools; **PURGE uses HUNTED's look** (`CityHeatRig.look_of`). Suspicion
+  (round 6) adds 13 strobes, 3 choppers, 5 drones round the Cell's home, day or night.
+- **Day / night.** The layers crossfade (`city_light_fade`) and send the night share up; the host
+  lerps its toon ramp, sky, windows, neon, haze and grade toward the config's day look; by day no
+  rain and no fog at raid zoom (bible 4.2). 5a's CityView3D has no day-look call yet:
+  `CityViewMotion` sets the view's materials directly (asked of 5a below).
+- **Pause / reduce.** Every layer keeps its own clock: covered, unfocused or the host's ambient
+  scale 0 → stopped where it is; reduce effects / headless / entry off → the end state at once
+  (time 0, lights steady on, one billboard panel, searchlights at rest, aircraft parked);
+  **reduce motion pauses every layer in its steady look** and shows the sky lanes' markers
+  without cars (the brief and 5a's ambient scale; bible 5.4's "street traffic at 40 %" is not
+  kept). Quiet windowed runs ignore focus (they never have it). The netrun transit turns the
+  sky-lane cars off (bible 4.1); the CLOSE tier (< 150) therefore only shows outside the netrun
+  band (open question below).
+- **Frame cost** (spike host, this PC, 6 s averages, worst rig HUNTED): 1920×1080 tier 2 grid
+  2.97 ms with the layers vs 2.93 without (GPU +0.03 ms, +46 draws); raid 3.04 vs 2.95. Deck tier 1
+  at 1280×800: grid 2.10 vs 2.04, raid 2.17 vs 2.15. City total within the 8 ms budget.
+- Tests: `tests/unit/test_city_motion.gd` (fast). Captures: `tools/city/city_motion_capture.tscn`
+  (one launch walks 15 states; `--host=spike`; `--mperf`). Crops: `docs/art_review/ART-5/5c/`.
+
 ### 2026-10-05 — Art direction — ART-5 5a city model
 Bible §1.2 World, §4.1–4.3, §6.1; 1D's report (`docs/handoff/art_1/city_spike_report.md`, "What
 ART-5 needs"); 1B's material kit. Agent 5a (Group 3 wave 2, M14).
@@ -6558,6 +6615,11 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **ART-5 5c city motion (defaults implemented):** (1) the netrun transit turns the sky-lane
+  cars off (bible 4.1) while `cars_lod` shows the CLOSE tier at a netrun close-up: CLOSE is built
+  and tested but only shows below ortho 150 outside the netrun band; should the transit show it?
+  (2) reduce motion pauses street traffic (brief) where bible 5.4 says 40 % without streaks.
+  (3) 5a: a public day-look call on CityView3D (CityViewMotion sets the view's materials for now).
 
 - **Unified city: real-time 3D or baked layers? (2026-10-05, ART-1 1D):** the spike recommends
   real-time Godot 3D. It is closer to the round 39/40 references and is the only option with the
