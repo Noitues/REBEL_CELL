@@ -6,7 +6,7 @@ extends RefCounted
 
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
-	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion()
+	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound()
 
 
 func _mk_effect(t, target, amount := 0, scope := RC.RingScope.OUTER, mult := 1.0) -> EffectData:
@@ -564,4 +564,36 @@ func _art5_city_motion() -> int:
 	var back: CityMotionConfigData = load("user://smoke_city_motion.tres")
 	print("ART-5 5c: city motion config save=", err, " gap ", back.car_gap if back != null else -1.0)
 	if err != OK or back == null or back.car_gap != 21.0 or back.band_police != [0, 1, 2, 3] or back.validate().size() != 0: fails += 1
+	return fails
+
+
+## ART-8 8p: HqCompoundLayoutData (the HQ-run node -> compound position table): an empty one
+## reports its three gaps; every shipped one validates with one row per layer before the
+## final one; a save keeps the slots, the Central Server and the entry.
+func _art8_hq_compound() -> int:
+	var fails := 0
+	var empty := HqCompoundLayoutData.new()
+	var ee := empty.validate()
+	print("ART-8 8p: empty HQ compound layout errors (expect 3: corporation, asset_dir, slots): ", ee)
+	if ee.size() != 3: fails += 1
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	for corp in [&"meridian", &"solace", &"halcyon", &"orbital", &"rebel_cell"]:
+		var l := load("res://content/city/hq_compounds/%s.tres" % corp) as HqCompoundLayoutData
+		var le := l.validate() if l != null else PackedStringArray(["missing"])
+		print("ART-8 8p: %s layout errors %s rows %d slots %d" % [corp, le, l.layer_rows() if l != null else -1, l.slots_per_layer if l != null else -1])
+		if le.size() != 0 or l.id != HqCompoundLayoutData.id_for(corp): fails += 1
+		if l == null or l.layer_rows() != cfg.map_layers - 1 or l.slots_per_layer != cfg.map_nodes_max: fails += 1
+	var t := HqCompoundLayoutData.new()
+	t.corporation_id = &"smoke"
+	t.id = HqCompoundLayoutData.id_for(&"smoke")
+	t.asset_dir = "res://assets/city/hq_compounds/smoke"
+	t.slots_per_layer = 2
+	t.layer_slots = PackedVector3Array([Vector3(1, 2, 3), Vector3(4, 5, 6), Vector3(7, 8, 9), Vector3(10, 11, 12)])
+	t.central_server = Vector3(0, 30, 0)
+	t.entry = Vector3(40, 0, 0)
+	var err := ResourceSaver.save(t, "user://smoke_hq_compound.tres")
+	var back: HqCompoundLayoutData = load("user://smoke_hq_compound.tres")
+	print("ART-8 8p: layout save=", err, " rows ", back.layer_rows() if back != null else -1, " L2S1 ", back.slot_position(2, 1) if back != null else Vector3.ZERO)
+	if err != OK or back == null or back.validate().size() != 0 or back.layer_rows() != 2 or back.slot_position(2, 1) != Vector3(10, 11, 12): fails += 1
+	if back == null or back.central_server != Vector3(0, 30, 0) or back.entry != Vector3(40, 0, 0): fails += 1
 	return fails

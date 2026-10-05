@@ -1,6 +1,7 @@
 class_name TutorialOverlay
 extends Control
-## Guided first fight (gap analysis 2.5 onboarding): zine notes that explain the wheel,
+## Guided first fight (gap analysis 2.5 onboarding): terminal notes (ART-2 2D: TerminalNote,
+## TerminalButton Next / Skip, the words name the HUD v4 parts) that explain the wheel,
 ## precision, nudges and resistance, cards and the preview, rewind (UNDO) and where it stops, End
 ## Turn and the resolution order, then Heat and banking. Steps advance on the matching
 ## combat events (or Next); Skip ends it. Marks Settings.tutorial_done when finished.
@@ -19,14 +20,14 @@ const STEPS: Array[Dictionary] = [
 		"title":
 			"THE WHEEL",  # TR
 		"text":
-			"Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The tag above each wheel shows it (the dots: how well the needle sits) and its chips show every result: HITS, BLOCK, statuses, RAM, HEAT. The dashed NEXT plate by the HP is the forecast; the grey LAST TURN line under it is what the last SEND IT did. {inspect_how} anything to read it.",  # TR
+			"Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The grey LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it.",  # TR
 		"until": "",
 	},
 	{
 		"title":
 			"NUDGE",  # TR
 		"text":
-			"Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The curved arrows over a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}",  # TR
+			"Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}",  # TR
 		"until": "nudge",
 	},
 	{
@@ -40,7 +41,7 @@ const STEPS: Array[Dictionary] = [
 		"title":
 			"CARDS",  # TR
 		"text":
-			"Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on an arrow (that sets the way they turn), slice cards on a slice. While you aim, the tags and the dashed acid arc show the result before you commit.",  # TR
+			"Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on a nudge button (that sets the way they turn), slice cards on a slice. While you aim, the result chips and the dashed acid arc show the result before you commit.",  # TR
 		"until": "card",
 	},
 	{
@@ -54,7 +55,7 @@ const STEPS: Array[Dictionary] = [
 		"title":
 			"SEND IT",  # TR
 		"text":
-			"SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The tags already show the outcome.",  # TR
+			"SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The chips beside each HP already show the outcome.",  # TR
 		"until": "turn_start",
 	},
 	{
@@ -76,7 +77,7 @@ var row: HBoxContainer
 func _init(p_size: Vector2 = Vector2(380, 190)) -> void:
 	custom_minimum_size = p_size
 	size = p_size
-	note = ZineNote.new(tr("TUTORIAL"), Vector2(p_size.x, p_size.y - BUTTON_ROW_HEIGHT)).make_reference()
+	note = TerminalNote.new(tr("TUTORIAL"), Vector2(p_size.x, p_size.y - BUTTON_ROW_HEIGHT)).make_reference()
 	add_child(note)
 	row = HBoxContainer.new()
 	row.position = Vector2(10, p_size.y - BUTTON_ROW_HEIGHT + 2)
@@ -84,11 +85,13 @@ func _init(p_size: Vector2 = Vector2(380, 190)) -> void:
 	next_button = Button.new()
 	next_button.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # its words translate in _show (once)
 	next_button.text = tr("Next")
+	next_button.theme_type_variation = UiTheme.TERMINAL_BUTTON
 	next_button.pressed.connect(advance)
 	row.add_child(next_button)
 	skip_button = Button.new()
 	skip_button.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	skip_button.text = tr("Skip tutorial")
+	skip_button.theme_type_variation = UiTheme.TERMINAL_BUTTON
 	skip_button.pressed.connect(skip)
 	row.add_child(skip_button)
 	_show()
@@ -115,7 +118,9 @@ func _room(p_size: Vector2) -> Dictionary:
 	var line_h := font.get_height(fs) + note.label.get_theme_constant(&"line_separation")
 	var w := p_size.x - note.label.offset_left + note.label.offset_right - TEXT_SLACK
 	var h := p_size.y - BUTTON_ROW_HEIGHT - note.label.offset_top + note.label.offset_bottom
-	return {"font": font, "fs": fs, "line_h": line_h, "w": w, "lines": maxi(1, floori(h / line_h) - 1)}
+	# ART-2 2D (audit P2: a page was cut mid-sentence): room for the title and the line that
+	# says how to go on, and a line of margin (the label's own wrap can take one more line).
+	return {"font": font, "fs": fs, "line_h": line_h, "w": w, "lines": maxi(1, floori(h / line_h) - 1 - REASON_LINES)}
 
 
 ## ANIM-R6 A16: `text` wrapped at word breaks to `width` px in `font` at `fs`.
@@ -138,7 +143,7 @@ static func wrap_words(text: String, font: Font, fs: int, width: float) -> Packe
 ## (its title, its text, the Next / Skip row): the scene sizes the box to it.
 func needed_height(width: float) -> float:
 	var r := _room(Vector2(width, BUTTON_ROW_HEIGHT))
-	var n := wrap_words(step_text(step), r["font"], int(r["fs"]), float(r["w"])).size() + 1
+	var n := wrap_words(step_text(step), r["font"], int(r["fs"]), float(r["w"])).size() + 1 + REASON_LINES
 	return n * float(r["line_h"]) + note.label.offset_top - note.label.offset_bottom + BUTTON_ROW_HEIGHT + TEXT_SLACK
 
 
@@ -158,7 +163,9 @@ func pages() -> PackedStringArray:
 
 
 ## Room kept beside the text for the label's scroll bar and rounding (px).
-const TEXT_SLACK := 6.0
+const TEXT_SLACK := 18.0
+## ART-2 2D: lines kept under the page for what moves the tutorial on (and a margin).
+const REASON_LINES := 2
 ## The page of the current step on show.
 var page: int = 0
 var _pulse: Tween = null
@@ -174,6 +181,10 @@ func _show() -> void:
 		head += " (%d/%d)" % [page + 1, all.size()]
 	note.append(head)
 	note.append(all[page])
+	# ART-2 2D (audit P2: "Next" read as greyed with no reason): what moves it on, in words.
+	var more := page < all.size() - 1
+	var reason := tr("More on the next page: press NEXT.") if more else (tr("Press NEXT to go on.") if String(s["until"]) == "" else tr("Do it in the fight to go on (or press NEXT)."))
+	note.append("[color=#%s]%s[/color]" % [HudSkin.TERMINAL_HI.to_html(false), reason])
 	note.label.scroll_to_line.call_deferred(0)  # the step title first, at any text scale
 	var last := step == STEPS.size() - 1 and page == all.size() - 1
 	next_button.text = tr("Finish") if last else tr("Next")

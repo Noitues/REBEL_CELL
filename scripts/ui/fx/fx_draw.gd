@@ -12,6 +12,9 @@ const BRICK_DEPTH := 0.13
 const BRICK_COURSES := 2
 const BRICK_GAP := 2.0
 const POP_FROM := 1.3
+## A brick's pop shape (named, ANIM-R6 rule: no inline tween shapes).
+const POP_TRANS := Tween.TRANS_BACK
+const POP_EASE := Tween.EASE_OUT
 ## A wall spans this angle (rad) round the side facing the foe, standing this far past the
 ## rim (share of the radius).
 const WALL_SPAN := 1.2
@@ -83,7 +86,7 @@ static func bricks(ci: CanvasItem, c: Vector2, r: float, face: float, n: int, co
 		var q := clampf((p - appear) / 0.12, 0.0, 1.0)
 		if q <= 0.0:
 			continue
-		var pop := lerpf(POP_FROM, 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, Tween.TRANS_BACK, Tween.EASE_OUT))
+		var pop := lerpf(POP_FROM, 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, POP_TRANS, POP_EASE))
 		var r0 := r * (1.0 + WALL_OUT) + course * (depth + BRICK_GAP)
 		# Each course is offset by half a brick (a running bond).
 		var step := WALL_SPAN / per
@@ -117,7 +120,7 @@ static func hexes(ci: CanvasItem, c: Vector2, r: float, face: float, n: int, col
 		var q := clampf((p - appear) / 0.12, 0.0, 1.0)
 		if q <= 0.0:
 			continue
-		var pop := lerpf(POP_FROM * 0.6, 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, Tween.TRANS_BACK, Tween.EASE_OUT))
+		var pop := lerpf(POP_FROM * 0.6, 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, POP_TRANS, POP_EASE))
 		var at := c + Vector2(cos(ang), sin(ang)) * (ring + course * hr * 1.55)
 		var ripple := 1.0 - clampf(absf((p - 0.55) * 4.0 - float(k) / maxf(1.0, float(n))) / RIPPLE_W, 0.0, 1.0)
 		var fill := Color(col.lerp(Palette.PAPER, ripple * 0.7), (0.4 + 0.4 * ripple) * alpha * fade)

@@ -384,7 +384,7 @@ func test_the_combat_scene_shows_heat_on_its_backdrop() -> void:
 	assert_not_null(scene.heat_city, "the Heat city stands in the fight")
 	assert_true(scene.heat_city.get_index() < scene.fx_layer.get_index() if scene.heat_city.get_parent() == scene.fx_layer.get_parent() else true,
 		"behind the FX")
-	assert_eq(scene.heat_city.get_index(), scene.background.get_index() + 1, "right over the backdrop, behind every wheel and the HUD")
+	assert_eq(scene.heat_city.get_index(), scene.arena_backdrop.get_index() + 1, "right over the backdrop (ART-2 2B: the close-up), behind every wheel and the HUD")
 	assert_eq(scene.heat_city.mouse_filter, Control.MOUSE_FILTER_IGNORE, "it takes no input")
 	await _close(scene)
 

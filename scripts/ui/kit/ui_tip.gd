@@ -34,20 +34,28 @@ static func fold_to(text: String, cols: int) -> String:
 	return "\n".join(out)
 
 
-## A tooltip body: an optional title line in pink, then the wrapped text, in the theme's
-## tooltip font (the popup around it is the theme's TooltipPanel).
+## A tooltip body: an optional terminal header (the title in mono caps over a cyan rule,
+## ART-2 2D, ART_BIBLE v2 §4.13), then the wrapped text in the body face (Plex), in the
+## theme's tooltip size (the popup around it is the theme's TooltipPanel).
 static func make(text: String, title: String = "") -> Control:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 2)
 	if title != "":
 		var head := Label.new()
+		head.name = "TipHeader"
 		head.theme_type_variation = &"TooltipLabel"
-		head.text = title.to_upper()
-		head.add_theme_color_override("font_color", Palette.CELL_PINK)
+		head.text = "> " + title.to_upper()
+		head.add_theme_font_override("font", HudSkin.mono())
+		head.add_theme_color_override("font_color", HudSkin.TERMINAL_HI)
 		box.add_child(head)
+		var rule := ColorRect.new()
+		rule.color = HudSkin.TERMINAL_EDGE
+		rule.custom_minimum_size = Vector2(0, 1)
+		box.add_child(rule)
 	var body := Label.new()
 	body.theme_type_variation = &"TooltipLabel"
 	body.text = fold(text)
+	body.add_theme_font_override("font", HudSkin.body())
 	box.add_child(body)
 	return box
 
