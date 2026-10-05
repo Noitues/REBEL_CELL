@@ -619,7 +619,9 @@ func test_the_forecast_stays_through_the_replay_and_every_line_ticks() -> void:
 			assert_true(wv.replaying, "the replay plays")
 			assert_false(wv.replay_tag.is_empty(), "%s: the forecast stays up (A6b)" % wv.combatant.display_name)
 			assert_eq(String(wv.replay_tag.get("text", "")), String(tags[wv.combatant.id].get("text", "")), "the same forecast")
-			assert_true(wv.intent_rect().has_area(), "and is drawn where it was")
+			# ART-2 2D (D15): the forecast is drawn on the result chips, held for the replay.
+			var row: HudResultChips = scene.chip_row(wv.combatant.id)
+			assert_true(row.holding and row.visible, "and its chips hold where they were")
 		# Every line ticks by the time the result holds.
 		await BoundedWait.until(get_tree(), func() -> bool:
 			for v in scene._views():
@@ -636,6 +638,9 @@ func test_the_forecast_stays_through_the_replay_and_every_line_ticks() -> void:
 				assert_true(wv.tag_ticks.has(i), "%s: '%s' ticked once the result holds" % [enemy, chips[i]["text"]])
 				ticked += 1
 			assert_true(wv.caption == tr("THIS TURN"), "the tape reads THIS TURN once the result holds")
+			var held: HudResultChips = scene.chip_row(wv.combatant.id)
+			for i in held.held.size():
+				assert_true(held.ticks.has(i), "%s: chip %d ticked once the result holds" % [enemy, i])
 		scene.skip_motion()
 		for v in scene._views():
 			assert_true((v as WheelView).replay_tag.is_empty(), "a skip drops the held forecast")

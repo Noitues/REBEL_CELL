@@ -69,7 +69,7 @@ func _init() -> void:
 			RunManager.autosave()
 		quit_to_title.emit())
 	_add(tr("Quit to desktop"), func() -> void:
-		var confirm := ConfirmDialog.new(tr("Quit REBEL_CELL?"), "QUIT", "Cancel", "QUIT", tr("Progress is autosaved.")) # TR
+		var confirm := ConfirmDialog.new(tr("Quit REBEL_CELL? Progress is autosaved."), TextDb.mark("QUIT"), TextDb.mark("CANCEL"), TextDb.mark("QUIT"))  # ART-2 2D: sticker verbs
 		confirm.position = Vector2(60, 120)
 		add_child(confirm)
 		confirm.confirmed.connect(func() -> void: RunManager.quit_game()))

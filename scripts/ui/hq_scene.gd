@@ -956,6 +956,10 @@ func _focus_named(node_name: String) -> void:
 # --- Panels ---------------------------------------------------------------------------------
 
 func _set_panel(p: Control, name: String) -> void:
+	# ART-11 4D: the campaign lost lock goes with its page.
+	if name != "end_lock" and end_lock != null and is_instance_valid(end_lock):
+		end_lock.queue_free()
+		end_lock = null
 	# ANIM-4: the old page's drop targets go with it (a flight in the air keeps going).
 	if drops != null:
 		drops.reset()
@@ -969,7 +973,7 @@ func _set_panel(p: Control, name: String) -> void:
 	raid_side_hint = null
 	_clear_city_map()
 	# City map screens: clicks fall through the empty panel area to the map.
-	var on_city := name in ["grid", "raid", "raid_playout", "raid_summary"] or name.begins_with("city")
+	var on_city := name in ["grid", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE if on_city else Control.MOUSE_FILTER_STOP
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel = p
@@ -992,7 +996,7 @@ func _set_panel(p: Control, name: String) -> void:
 		more_hint.reset_snap()
 	# Screens built from terminal windows let the city show between them.
 	# ANIM-R5 P4: the campaign's end too (it was a near-opaque glass page of terminal lines).
-	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "grid", "raid", "raid_playout", "raid_summary", "end"] or name.begins_with("city") else &"GlassPanel"
+	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "grid", "raid", "raid_playout", "raid_summary", "end", "end_lock"] or name.begins_with("city") else &"GlassPanel"
 	hud.set_screen(String(SCREEN_NUMBERS.get(name, "")), screen_title(name))
 	# H24 S15: lines tied to the screen being left end here.
 	Dialogue.enter_screen(name)
@@ -1001,7 +1005,8 @@ func _set_panel(p: Control, name: String) -> void:
 	UiFocus.link_layout(p)
 	# ANIM-R3 B5: the raid playout goes on from the raid setup's map: it shows whole at once
 	# (a page entrance showed a dim, half-drawn map for its first frames).
-	if entering and name != "raid_playout":
+	# ART-11 4D: the campaign's end plays its own motion (the lock, the dossier's cover).
+	if entering and not name in ["raid_playout", "end_lock", "end"]:
 		if _panel_host.theme_type_variation == &"" and name != "start":
 			PageTransition.glass_is_windows(p)  # ANIM-R1 M11: the roll band crosses the windows only
 		PageTransition.enter(p, PageTransition.look_of(p), UiFocus.focus_first.bind(p), -1 if back else 1)
@@ -1009,7 +1014,7 @@ func _set_panel(p: Control, name: String) -> void:
 		UiFocus.focus_first(p)
 	_scroll_to_top.call_deferred()
 	# Worlds (STYLE_GUIDE 1): the room is a cyberdeck, the Grid and raids are wireframe.
-	var net := name in ["grid", "raid", "raid_playout", "raid_summary"] or name.begins_with("city")
+	var net := name in ["grid", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
 	background.visible = not net
 	wireframe.visible = net
 	AudioDirector.play_music("raid" if name.begins_with("raid") else ("grid" if name == "grid" else "hq"),
@@ -3623,109 +3628,181 @@ func show_raid_summary() -> void:
 	city_overlay.packets = false  # ANIM-R5 P7: a report, not a live network (no packets loop)
 
 
-## ANIM-R5 P4: the campaign's end reads like the other city pages, not a debug page of
-## terminal lines on a near-opaque panel: the city shows round terminal windows (the page is
-## one of the see-through ones), a WON / LOST verdict stamp lands on the table beside them
-## (ForecastStamp, resolved with `forecast_stamp_resolve`'s pop; the end state at once under
-## reduce effects), and the words have a hierarchy: the headline in display lettering with
-## the next steps under it, the story beats uncovered (each title over its text), then the
-## profile as badges and the ICE records.
-const END_CAPTION := "CAMPAIGN" # TR
-const END_WON := "WON" # TR
-const END_LOST := "LOST" # TR
-const END_HEADLINE_WON := "%s is down." # TR
-const END_HEADLINE_LOST := "The home server is destroyed." # TR
-## The verdict stamp's side, its tilt and its spot on the table (px at text scale 1.0), the
-## windows' width (px x the text size, capped by the screen) and the headline's lettering.
-const END_STAMP := 190.0
-const END_STAMP_TILT := -8.0
-const END_STAMP_AT := Vector2(28, 24)
-const END_WINDOW_W := 520.0
-const END_HEADLINE_FONT := 30
-const END_BEAT_TITLE_FONT := 20
+## ART-11 4D (ART_BIBLE v2 §4.8; refs `docs/art_reference/campaign_end/`): the campaign's end.
+## Lost (the home server BREACHED, ruling 6.2): the winning corporation's ransomware lock over
+## the city (RansomLock: its house style and verb, every node padlocked, the Cell's stickers
+## curling and dropping off, a countdown to the wipe), then its audit dossier on the Cell.
+## Won: the same dossier, the corporation's failure (AT LARGE). Headless (tests) goes straight
+## to the dossier; reduce effects shows the lock's end state for its reading hold. The views
+## only read and emit: NEW CAMPAIGN / MAIN MENU are this scene's calls (Signal Up, Call Down).
+## The wireframe city's bake the lock waits for at most (frames) before it plays anyway, and
+## the most stickers of the Armory the lock puts on the glass.
+const END_LOCK_WAIT_FRAMES := 240
+const END_LOCK_CARDS := 5
+## The lock's camera on the network: close enough that its padlocks stand round the notice.
+const END_LOCK_ZOOM := 1.9
+## The prints' crop round the home server and round the network (share of the screen's height
+## and the network's bounds' margin, px).
+const END_PRINT_HOME_SHARE := 0.36
+const END_PRINT_MARGIN := 60.0
+
+var end_lock: RansomLock = null
+var _end_lock_frames: int = 0
 
 
 func show_end() -> void:
 	var c := RunManager.campaign
 	var won := c.outcome == CampaignState.Outcome.WON
 	Dialogue.speak("win" if won else "loss", RC.Voice.DISPATCH, c.corporation_id, &"", c.campaign_seed)
-	var colour := RaidVerdict.color_of(won)
-	var outer := HBoxContainer.new()
-	outer.name = "CampaignEnd"
-	outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var table := Control.new()
-	table.name = "EndTable"
-	table.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	table.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var side := END_STAMP * Settings.text_scale
-	table.custom_minimum_size = Vector2(side + END_STAMP_AT.x * 2.0, side + END_STAMP_AT.y * 2.0)
-	var stamp := ForecastStamp.new(END_CAPTION, "", colour, StatIcon.WON if won else StatIcon.HOME)  # ANIM-R6 C15: the win's own icon (a shield with "!" said nothing)
-	stamp.name = "CampaignVerdict"
-	stamp.custom_minimum_size = Vector2(side, side)
-	stamp.size = stamp.custom_minimum_size
-	stamp.position = END_STAMP_AT
-	stamp.rotation_degrees = END_STAMP_TILT
-	table.add_child(stamp)
-	outer.add_child(table)
-	var column := VBoxContainer.new()
-	column.name = "EndColumn"
-	# ART-0 C (text scale 2.0): the room left takes the row's own gap off too (at 2.0 the
-	# column filled the rest and the gap pushed the page 4 px past the screen).
-	var room_left := size.x - table.custom_minimum_size.x - outer.get_theme_constant(&"separation")
-	column.custom_minimum_size.x = minf(END_WINDOW_W * Settings.text_scale, room_left if size.x > 0.0 else END_WINDOW_W * Settings.text_scale)
-	column.add_theme_constant_override("separation", 10)
-	outer.add_child(column)
-	# The headline and what to do next.
-	var head := TerminalWindow.new(tr("CAMPAIGN END"), colour)
-	head.name = "EndHeadline"
-	var line := _para(tr(END_HEADLINE_WON) % TextDb.t(RunManager.corporation.final_boss, "display_name") if won else tr(END_HEADLINE_LOST))
-	line.name = "Headline"
-	line.add_theme_font_override("font", Palette.display())
-	line.add_theme_font_size_override("font_size", roundi(END_HEADLINE_FONT * Settings.text_scale))
-	line.add_theme_color_override("font_color", colour)
-	head.body.add_child(line)
-	var buttons := HFlowContainer.new()
-	buttons.add_theme_constant_override("h_separation", 10)
-	buttons.add_child(_icon(_button(tr("New campaign"), func() -> void: RunManager.campaign = null; show_start()), StatIcon.PLAY))
-	buttons.add_child(_icon(_button(tr("Back to title"), RunManager.go_to_title), StatIcon.EXIT))
-	head.body.add_child(buttons)
-	column.add_child(head)
-	# The story uncovered: each beat's title over its text.
-	var beats := CampaignRules.revealed_beats(c, RunManager.corporation)
-	if not beats.is_empty():
-		var story := TerminalWindow.new(tr("STORY UNCOVERED"), Palette.NET_CYAN)
-		story.name = "EndStory"
-		for b in beats:
-			var t := _para(TextDb.t(b, "title"))
-			t.add_theme_font_override("font", Palette.display())
-			t.add_theme_font_size_override("font_size", roundi(END_BEAT_TITLE_FONT * Settings.text_scale))
-			t.add_theme_color_override("font_color", Palette.PAPER)
-			story.body.add_child(t)
-			story.body.add_child(_para(TextDb.t(b, "text")))
-		column.add_child(story)
-	# The profile: badges, then the next campaign's ICE and the records.
-	var p := RunManager.profile
-	var prof := TerminalWindow.new(tr("PROFILE"), Palette.RESIST_GOLD)
-	prof.name = "EndProfile"
-	var facts := HFlowContainer.new()
-	facts.name = "ProfileFacts"
-	facts.add_theme_constant_override("h_separation", 10)
-	facts.add_theme_constant_override("v_separation", 4)
-	facts.add_child(Badge.new(tr("%d won") % p.campaigns_won, Palette.CELL_ACID, "", tr("Campaigns won on this profile.")))
-	facts.add_child(Badge.new(tr("%d lost") % p.campaigns_lost, Palette.CELL_PINK, "", tr("Campaigns lost on this profile.")))
-	facts.add_child(Badge.new(tr("best ICE %s") % HudStats.ice_value(p.best_ice), Palette.NET_CYAN, "", tr("The highest ICE level cleared.")))
-	prof.body.add_child(facts)
-	prof.body.add_child(_para(tr("The next %s campaign may start up to ICE %d.") % [TextDb.t(RunManager.corporation, "display_name"), RunManager.ice_cap(c.corporation_id)]))
-	prof.body.add_child(_para(ice_records_text()))
-	column.add_child(prof)
-	_set_panel(outer, "end")
-	_land_end_stamp.call_deferred(stamp, won)
+	if c.outcome == CampaignState.Outcome.LOST and RansomLock.plays_now():
+		_show_end_lock()
+	else:
+		show_dossier([] as Array[Dictionary])
 
 
-## ANIM-R5 P4: the end page's verdict lands (WON / LOST) once the page is laid out.
-func _land_end_stamp(stamp: ForecastStamp, won: bool) -> void:
-	if is_instance_valid(stamp) and stamp.is_inside_tree():
-		stamp.resolve(END_CAPTION, END_WON if won else END_LOST)
+## The lock's page: the city with the Cell's network, the lock over the whole screen.
+func _show_end_lock() -> void:
+	var c := RunManager.campaign
+	var page := Control.new()
+	page.name = "EndLockPage"
+	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_set_panel(page, "end_lock")
+	var g := raid_graph(c.last_raid.get("nodes", {}), {})
+	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.5, 0.5), END_LOCK_ZOOM)
+	city_overlay.packets = false
+	if end_lock != null and is_instance_valid(end_lock):
+		end_lock.queue_free()
+	end_lock = RansomLock.new()
+	add_child(end_lock)
+	end_lock.nodes_provider = _end_lock_nodes
+	end_lock.ready_check = _end_lock_ready
+	end_lock.setup(c.corporation_id, TextDb.t(RunManager.corporation, "display_name"), c.grid.home_integrity, c.grid.home_max_integrity, end_stickers())
+	end_lock.finished.connect(_on_end_lock_finished)
+
+
+## Where every node of the Cell's network stands on screen now (global px), home flagged.
+func _end_lock_nodes() -> Array:
+	var out: Array = []
+	if city_overlay == null or not is_instance_valid(city_overlay):
+		return out
+	var home := RunManager.campaign.grid.home_site_id if RunManager.campaign != null else &""
+	var xf := city_overlay.get_global_transform()
+	for n in city_overlay.nodes:
+		var p := city_overlay.icon_pos(n)
+		if p.x != INF:
+			out.append({"at": xf * p, "home": n["id"] == home})
+	return out
+
+
+## The lock may play: the city has baked and settled (or it waited long enough).
+func _end_lock_ready() -> bool:
+	_end_lock_frames += 1
+	var city := wireframe.city
+	return _end_lock_frames >= END_LOCK_WAIT_FRAMES or (city.showing_current_look() and city.camera_settled() and city.bake_fade >= 1.0)
+
+
+## The Cell's stickers on the glass when the lock takes it: the screen's title, the Armory's
+## defence cards (up to END_LOCK_CARDS, in id order) and the Cell's name.
+func end_stickers() -> Array[Dictionary]:
+	var out: Array[Dictionary] = [{"text": tr("CELL DEFENSE"), "fill": VinylSticker.Fill.YELLOW, "size": UiTheme.HEADING}]
+	var c := RunManager.campaign
+	var ids: Array[StringName] = []
+	for a in c.armory:
+		if not ids.has(a):
+			ids.append(a)
+	for site in c.grid.claimed_ids():
+		for a in c.grid.assets_on(site):
+			if not ids.has(a):
+				ids.append(a)
+	ids.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	for id in ids.slice(0, END_LOCK_CARDS):
+		out.append({"asset": id, "text": TextDb.t(RunManager.lookup().get_content(id), "display_name").to_upper()})
+	out.append({"text": "REBEL_CELL", "fill": VinylSticker.Fill.PINK, "size": UiTheme.TITLE})
+	return out
+
+
+func _on_end_lock_finished() -> void:
+	var photos := end_photos(end_lock.snapshot, end_lock.snapshot_points)
+	if end_lock != null and is_instance_valid(end_lock):
+		end_lock.queue_free()
+	end_lock = null
+	show_dossier(photos)
+
+
+## The dossier's prints (translated captions): crops of the screen as the lock took it (the
+## home server, the whole network) when there is a picture, else drawn stand-ins; then the
+## crew's most troublesome operative. A won campaign's first print is the corporation's boss.
+func end_photos(shot: Image, points: Array) -> Array[Dictionary]:
+	var c := RunManager.campaign
+	var won := c.outcome == CampaignState.Outcome.WON
+	var out: Array[Dictionary] = []
+	var home_at := Vector2.INF
+	var bounds := Rect2()
+	for p: Dictionary in points:
+		var at: Vector2 = p["at"]
+		bounds = Rect2(at, Vector2.ZERO) if bounds.size == Vector2.ZERO and bounds.position == Vector2.ZERO else bounds.expand(at)
+		if p.get("home", false):
+			home_at = at
+	var home_caption := tr("HOME SERVER - %d/%d") % [c.grid.home_integrity, c.grid.home_max_integrity]
+	if won:
+		var boss := RunManager.corporation.final_boss
+		var boss_name := TextDb.t(boss, "display_name")
+		out.append({"caption": tr("%s - OFFLINE") % boss_name, "subject": PortraitArt.enemy_subject(boss.id, boss_name, c.corporation_id, true)})
+	elif shot != null and home_at != Vector2.INF:
+		var side := shot.get_height() * END_PRINT_HOME_SHARE
+		out.append({"caption": home_caption, "texture": _crop(shot, Rect2(home_at - Vector2(side, side) * 0.5, Vector2(side, side)))})
+	else:
+		out.append({"caption": home_caption})
+	if shot != null and bounds.size != Vector2.ZERO:
+		var r := bounds.grow(END_PRINT_MARGIN)
+		var side := maxf(r.size.x, r.size.y)
+		out.append({"caption": tr("NODES AT THE END"), "texture": _crop(shot, Rect2(r.get_center() - Vector2(side, side) * 0.5, Vector2(side, side)))})
+	else:
+		out.append({"caption": tr("NODES AT THE END")})
+	var best: OperativeState = null
+	for o in c.roster:
+		if best == null or o.runs_completed > best.runs_completed:
+			best = o
+	if best != null:
+		out.append({"caption": "%s - %s" % [best.name, tr("AT LARGE") if best.alive else tr("DECEASED")], "subject": PortraitArt.operative_subject(best.class_id, best.id, best.name)})
+	return out
+
+
+## A square crop of `shot` (clamped to it) as a texture.
+static func _crop(shot: Image, r: Rect2) -> Texture2D:
+	var full := Rect2i(Vector2i.ZERO, shot.get_size())
+	var want := Rect2i(r.position.floor(), r.size.floor()).intersection(full)
+	if want.size.x <= 0 or want.size.y <= 0:
+		return null
+	return ImageTexture.create_from_image(shot.get_region(want))
+
+
+## The audit dossier (AuditDossier) with `photos` as its prints (drawn stand-ins when empty).
+func show_dossier(photos: Array[Dictionary]) -> void:
+	var c := RunManager.campaign
+	if photos.is_empty():
+		photos = end_photos(null, [])
+	var beats: Array[Dictionary] = []
+	for b in CampaignRules.revealed_beats(c, RunManager.corporation):
+		beats.append({"title": TextDb.t(b, "title"), "text": TextDb.t(b, "text")})
+	var facts := DossierFacts.build(c, RunManager.corporation, RunManager.profile, RunManager.config(), site_name, _class_name,
+		beats, RunManager.ice_cap(c.corporation_id))
+	var d := AuditDossier.new(facts, photos)
+	d.new_campaign_pressed.connect(_on_end_new_campaign)
+	d.main_menu_pressed.connect(RunManager.go_to_title)
+	_set_panel(d, "end")
+
+
+func _on_end_new_campaign() -> void:
+	RunManager.campaign = null
+	show_start()
+
+
+## A class's display name (translated).
+func _class_name(class_id: StringName) -> String:
+	return TextDb.t(RunManager.lookup().get_content(class_id), "display_name")
 
 
 # --- Helpers ----------------------------------------------------------------------------------

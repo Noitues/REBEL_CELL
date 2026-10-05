@@ -183,7 +183,9 @@ func test_tags_and_hp_stay_in_view_and_the_toast_sits_in_the_right_column() -> v
 		scene._show_respin_odds()
 		await _frames(1)
 		for v in scene._views():
-			assert_true(v.get_global_rect().grow(0.5).encloses(v.intent_rect()), "tag inside its view at %.1f" % scale)
+			# ART-2 2D (D15): the forecast is the chips beside the HP; they stay on screen.
+			var row: HudResultChips = scene.chip_row(v.combatant.id)
+			assert_true(Rect2(Vector2.ZERO, Vector2(1280, 720)).grow(0.5).encloses(row.get_global_rect()), "chips on screen at %.1f" % scale)
 		scene.engine.state().ram = 0
 		scene.respin()
 		await _frames(1)

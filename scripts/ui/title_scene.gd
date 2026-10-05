@@ -45,6 +45,8 @@ const STATS_H := 200.0
 const HISTORY_H := 150.0
 ## The ON AIR ticker's words (keys; round 33's ticker).
 const TICKER_WORDS := ["PIRATE RADIO 88.1", "HALCYON RAISES FARES AGAIN"] # TR
+## The confirm's caption under CANCEL (a key).
+const CONFIRM_WORDS := ["keep going [B]"] # TR
 
 var background: CyberdeckBackground
 ## The subtitles' band (H21 #11), top right, clear of every menu.
@@ -572,7 +574,8 @@ func start_tutorial() -> void:
 func _ask(question: String, on_yes: Callable, verb: String = "Yes", detail: String = "", what: String = "", destructive: bool = false) -> void:
 	if _confirm != null and is_instance_valid(_confirm):
 		_confirm.queue_free()
-	_confirm = ConfirmDialog.new(question, verb, "Cancel", what, detail, destructive) # TR
+	# 2D's ConfirmDialog (the round 33 abandon dialog): `what` is its title, `detail` its body.
+	_confirm = ConfirmDialog.new(question, verb, "CANCEL", what if what != "" else "ARE YOU SURE?", detail, destructive, "", "keep going [B]")
 	_confirm.position = (size - _confirm.custom_minimum_size) * 0.5
 	_confirm.confirmed.connect(on_yes)
 	add_child(_confirm)

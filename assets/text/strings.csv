@@ -26,10 +26,15 @@ Stationed on %s."
 %d DOWN,%d DOWN
 %d ENTRY SITES,%d ENTRY SITES
 %d HP,%d HP
+%d HP lost,%d HP lost
+%d HP lost: LETHAL,%d HP lost: LETHAL
+%d LANDS HERE,%d LANDS HERE
 %d LEFT,%d LEFT
 %d NEEDLES,%d NEEDLES
+%d RAM lost,%d RAM lost
 %d SLICES,%d SLICES
 %d TAKEN,%d TAKEN
+%d absorbed by block and shield,%d absorbed by block and shield
 %d destroyed,%d destroyed
 %d fps,%d fps
 %d lost,%d lost
@@ -71,6 +76,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s BITES YOU %d,%s BITES YOU %d
 %s DOWN,%s DOWN
 %s EVADE,%s EVADE
+%s LANDS ON: %s,%s LANDS ON: %s
 %s MOVES,%s MOVES
 %s R%d,%s R%d
 %s R%d%s,%s R%d%s
@@ -93,7 +99,9 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s is held at %s (%d more).,%s is held at %s (%d more).
 %s is lost. The campaign is over.,%s is lost. The campaign is over.
 %s moves from %s to %s.,%s moves from %s to %s.
+%s on %d slice(s),%s on %d slice(s)
 %s on %s hits %s for %d.,%s on %s hits %s for %d.
+%s on a random slice,%s on a random slice
 "%s reaches %s: %d damage, HP %d → %d.","%s reaches %s: %d damage, HP %d → %d."
 %s returns to the reserves.,%s returns to the reserves.
 %s rolls,%s rolls
@@ -106,6 +114,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 "%s, your home server","%s, your home server"
 %s.,%s.
 %s/turn,%s/turn
+%s: %s -> %d HP,%s: %s -> %d HP
 %s: %s.,%s: %s.
 "%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.","%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN."
 %s: integrity (HP) %s → %s in the raid. %s,%s: integrity (HP) %s → %s in the raid. %s
@@ -119,15 +128,24 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 "(seed %d, ICE %d, %s) against %s. Story path: %s.","(seed %d, ICE %d, %s) against %s. Story path: %s."
 +%d BLOCK,+%d BLOCK
 +%d DRONE,+%d DRONE
++%d EVADE,+%d EVADE
 +%d HP,+%d HP
++%d HP healed,+%d HP healed
 +%d MORE,+%d MORE
 +%d NEEDLE,+%d NEEDLE
 +%d RAM,+%d RAM
 +%d SHIELD,+%d SHIELD
++%d block and shield gained,+%d block and shield gained
 ", a run in progress",", a run in progress"
+- its block and shield %d (absorbed),- its block and shield %d (absorbed)
 -%d RAM,-%d RAM
 // %s // RANK %d,// %s // RANK %d
 1  Pick a node,1  Pick a node
+"1. BREACH
+2. DISABLE
+3. EXFIL","1. BREACH
+2. DISABLE
+3. EXFIL"
 1x (full replay),1x (full replay)
 2  Press a card,2  Press a card
 2x (twice as fast),2x (twice as fast)
@@ -135,6 +153,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 2× NUDGE CARDS NEXT,2× NUDGE CARDS NEXT
 ": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next",": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next"
 < PREV SITE,< PREV SITE
+= %s HP  (%d -> %d),= %s HP  (%d -> %d)
 > CREW     %s,> CREW     %s
 > HOME     %s,> HOME     %s
 > ICE      0,> ICE      0
@@ -143,13 +162,16 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 > TARGET   %s,> TARGET   %s
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.
-A guided first fight in a simulated net.,A guided first fight in a simulated net.
+A guided first fight.,A guided first fight.
 "A patrol: loot, Heat and Rank from the run, no objective.","A patrol: loot, Heat and Rank from the run, no objective."
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
+A random roll: the odds are in the breakdown,A random roll: the odds are in the breakdown
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
 AGAIN,AGAIN
 AIRMAIL,AIRMAIL
 ALL BLOCKED,ALL BLOCKED
+ALL RESULTS: %s,ALL RESULTS: %s
+ARE YOU SURE?,ARE YOU SURE?
 ARMORY %d/%d,ARMORY %d/%d
 ARMORY:,ARMORY:
 Accessibility,Accessibility
@@ -169,6 +191,7 @@ BEST ICE,BEST ICE
 BLACK MARKET // SCHEMATICS %d,BLACK MARKET // SCHEMATICS %d
 BLOCK,BLOCK
 BLOCK %d,BLOCK %d
+BOSS,BOSS
 BREACH,BREACH
 BREACH PAYOUT,BREACH PAYOUT
 BREACHED,BREACHED
@@ -205,9 +228,11 @@ CAMPAIGN,CAMPAIGN
 CAMPAIGN END,CAMPAIGN END
 CAMPAIGNS,CAMPAIGNS
 CAN BE YOUR NODE,CAN BE YOUR NODE
+CANCEL,CANCEL
 CANNOT UNDO,CANNOT UNDO
 CARD DETAIL,CARD DETAIL
 CARDS,CARDS
+CELL,CELL
 CELL DEFENSE RAID SETUP,CELL DEFENSE RAID SETUP
 CELL HOLDS,CELL HOLDS
 CELL STATUS,CELL STATUS
@@ -219,8 +244,6 @@ CLEANSE,CLEANSE
 CLEARED,CLEARED
 CLEARS %s,CLEARS %s
 CODEX,CODEX
-CODEX // WHAT THE CELL KNOWS,CODEX // WHAT THE CELL KNOWS
-COLOUR-BLIND CORRECTION,COLOUR-BLIND CORRECTION
 COMBATS,COMBATS
 CONFIRM,CONFIRM
 CONNECTING,CONNECTING
@@ -393,7 +416,7 @@ CardData.whirl.description,Spin a wheel 7 ticks.
 CardData.whirl.display_name,Whirl
 Cards,Cards
 Cards in %s's deck (VIEW LOADOUT shows them).,Cards in %s's deck (VIEW LOADOUT shows them).
-"Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on an arrow (that sets the way they turn), slice cards on a slice. While you aim, the tags and the dashed acid arc show the result before you commit.","Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on an arrow (that sets the way they turn), slice cards on a slice. While you aim, the tags and the dashed acid arc show the result before you commit."
+"Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on a nudge button (that sets the way they turn), slice cards on a slice. While you aim, the result chips and the dashed acid arc show the result before you commit.","Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on a nudge button (that sets the way they turn), slice cards on a slice. While you aim, the result chips and the dashed acid arc show the result before you commit."
 Cascade: %s takes %d damage: HP %d → %d.,Cascade: %s takes %d damage: HP %d → %d.
 Central Server,Central Server
 Central Server (star): the corporation's core.,Central Server (star): the corporation's core.
@@ -401,7 +424,6 @@ Central Server: the corporation's core,Central Server: the corporation's core
 Chips go into:,Chips go into:
 Choose,Choose
 City Grid,City Grid
-"City seed (same seed, same city):","City seed (same seed, same city):"
 Claim,Claim
 Claimed: part of your network.,Claimed: part of your network.
 Claimed: part of your network; it defends in raids.,Claimed: part of your network; it defends in raids.
@@ -473,8 +495,6 @@ DEFEAT,DEFEAT
 DEFEATED,DEFEATED
 DEFENSE LOADOUT // %s,DEFENSE LOADOUT // %s
 DEFRAG,DEFRAG
-DELETE,DELETE
-DELETE SLOT,DELETE SLOT
 DELETED,DELETED
 DETOUR,DETOUR
 DFRG,DFRG
@@ -482,6 +502,7 @@ DISPATCH,DISPATCH
 DOWN,DOWN
 DOWN: repair the node on the Grid.,DOWN: repair the node on the Grid.
 DRAW %d,DRAW %d
+DRONE ENDS HERE,DRONE ENDS HERE
 DTOR,DTOR
 Daemon,Daemon
 DaemonData.adrenal_loop.description,Each Perfect heals 2.
@@ -562,11 +583,12 @@ DefenseAssetData.turret.description,"4 damage, range 1, targets the first threat
 DefenseAssetData.turret.display_name,Turret
 Delete,Delete
 Delete the campaign in slot %s (asks first).,Delete the campaign in slot %s (asks first).
-Delete the campaign in slot %s?,Delete the campaign in slot %s?
+Delete the campaign in slot %s? This cannot be undone.,Delete the campaign in slot %s? This cannot be undone.
 Deploy armory asset,Deploy armory asset
 Deploy run asset,Deploy run asset
 Deutan (green-weak),Deutan (green-weak)
 Display,Display
+Do it in the fight to go on (or press NEXT).,Do it in the fight to go on (or press NEXT).
 Drag Firmware or a slice onto a slot to put it there.,Drag Firmware or a slice onto a slot to put it there.
 Drag a card here to shred it (or select it and press REMOVE).,Drag a card here to shred it (or select it and press REMOVE).
 "Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards.","Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards."
@@ -579,18 +601,16 @@ Dragging it onto a slot of the small spinner picks it too.,Dragging it onto a sl
 Drop,Drop
 Drop a nudge card here to aim it this way.,Drop a nudge card here to aim it this way.
 Drop or click on a glowing target  ·  right-click cancels,Drop or click on a glowing target  ·  right-click cancels
-EFFECTS & MOTION,EFFECTS & MOTION
 ELITE DOWN,ELITE DOWN
 ELITES,ELITES
 ENCRYPTED,ENCRYPTED
 ENCRYPTED STOPPED %d,ENCRYPTED STOPPED %d
-ESC,ESC
 EVADED %d,EVADED %d
 EVENT PAYOUT,EVENT PAYOUT
 EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
 EXPLOITS %d/%d,EXPLOITS %d/%d
-"Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The tag above each wheel shows it (the dots: how well the needle sits) and its chips show every result: HITS, BLOCK, statuses, RAM, HEAT. The dashed NEXT plate by the HP is the forecast; the grey LAST TURN line under it is what the last SEND IT did. {inspect_how} anything to read it.","Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The tag above each wheel shows it (the dots: how well the needle sits) and its chips show every result: HITS, BLOCK, statuses, RAM, HEAT. The dashed NEXT plate by the HP is the forecast; the grey LAST TURN line under it is what the last SEND IT did. {inspect_how} anything to read it."
+"Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The grey LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it.","Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The grey LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it."
 Elite Frequency,Elite Frequency
 Elite Router,Elite Router
 Elite Router: a harder fight,Elite Router: a harder fight
@@ -725,7 +745,6 @@ Entering it changes Heat by %s.,Entering it changes Heat by %s.
 Event,Event
 "Event: a choice, and its price","Event: a choice, and its price"
 "Every Rack you capture banks Schematics for the Cell and adds Heat. Heat thresholds bring raids on your home server. Bank early, cool off at Heat objectives, and never leave loot unbanked when you jack out.","Every Rack you capture banks Schematics for the Cell and adds Heat. Heat thresholds bring raids on your home server. Bank early, cool off at Heat objectives, and never leave loot unbanked when you jack out."
-"Everything in slot %s is gone for good: its Cell, its city, its Heat.","Everything in slot %s is gone for good: its Cell, its city, its Heat."
 "Everything the Cell knows: slices, cards, Firmware, Daemons, rules.","Everything the Cell knows: slices, cards, Firmware, Daemons, rules."
 Exploit,Exploit
 Exploit %s found (%d/%d for the breach).,Exploit %s found (%d/%d for the breach).
@@ -799,15 +818,14 @@ GUARD +%d BLOCK,GUARD +%d BLOCK
 GUARD TOOK %d,GUARD TOOK %d
 Go,Go
 "Go to HQ (City Grid, raids, roster)","Go to HQ (City Grid, raids, roster)"
+Gold mark P%d: phase %d starts at %d%% HP.,Gold mark P%d: phase %d starts at %d%% HP.
 Good for you: %s,Good for you: %s
 Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP): it takes hits aimed at this slice.
-HALCYON RAISES FARES AGAIN,HALCYON RAISES FARES AGAIN
 HEAT,HEAT
 HEAT %d · %s,HEAT %d · %s
 HEAT %d · %s (%d+),HEAT %d · %s (%d+)
 HEAT %s,HEAT %s
 HEAT & BANKING,HEAT & BANKING
-"HEAT GLITCH PREVIEW (HUNTED, 82)","HEAT GLITCH PREVIEW (HUNTED, 82)"
 HFIX,HFIX
 HIRE,HIRE
 HIRE: %d SCHEMATICS,HIRE: %d SCHEMATICS
@@ -831,6 +849,7 @@ HP %d/%d,HP %d/%d
 HP %d/%d · DECK %d · DAEMONS %d%s,HP %d/%d · DECK %d · DAEMONS %d%s
 HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.,HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.
 HP %s,HP %s
+HP %s (other effects),HP %s (other effects)
 HP %s → %s %s,HP %s → %s %s
 HP is full,HP is full
 HP now: %d of %d.,HP now: %d of %d.
@@ -839,7 +858,6 @@ HUB,HUB
 HUB BREACH,HUB BREACH
 HUB CORE,HUB CORE
 Heat,Heat
-Heat %d,Heat %d
 Heat %d crossed: %s,Heat %d crossed: %s
 Heat %d of %d: how hard the corporation hunts the Cell.,Heat %d of %d: how hard the corporation hunts the Cell.
 Heat %s,Heat %s
@@ -940,15 +958,15 @@ HubCoreData.wrecker_core_mk2.description,+1 spin on all cards. Perfect: the slic
 HubCoreData.wrecker_core_mk2.display_name,Wrecker Core Mk2
 ICE,ICE
 ICE %d: %s,ICE %d: %s
+ICE (0-%d):,ICE (0-%d):
 ICE 0: the baseline rules.,ICE 0: the baseline rules.
 ICE Lock on %s holds %s for %d step(s).,ICE Lock on %s holds %s for %d step(s).
-ICE difficulty (0-%d):,ICE difficulty (0-%d):
-ICE is the difficulty ladder: each level adds a rule against the Cell. Clear a level to unlock the next one for this corporation.,ICE is the difficulty ladder: each level adds a rule against the Cell. Clear a level to unlock the next one for this corporation.
 IF CLEARED:,IF CLEARED:
 "IF THE RAID
 RUNS NOW:","IF THE RAID
 RUNS NOW:"
 IF YOU SEND IT,IF YOU SEND IT
+IF YOU SEND IT NOW: %s,IF YOU SEND IT NOW: %s
 INFC,INFC
 INFECT,INFECT
 INNER,INNER
@@ -976,18 +994,16 @@ LEFT,LEFT
 LETHAL,LETHAL
 LETHAL: this turn takes it to 0 HP.,LETHAL: this turn takes it to 0 HP.
 LETHAL: this turn takes you to 0 HP.,LETHAL: this turn takes you to 0 HP.
-LIMITED // slow layer only,LIMITED // slow layer only
-"LIMITED: flash limiter on, slow layer only","LIMITED: flash limiter on, slow layer only"
-"LIMITED: reduce effects on, slow layer only","LIMITED: reduce effects on, slow layer only"
 LINES HEARD,LINES HEARD
 LOADOUT // %s // DECK,LOADOUT // %s // DECK
 LOADOUT // %s // SPINNER,LOADOUT // %s // SPINNER
+LOCKDOWN,LOCKDOWN
 LOG,LOG
 LOOT,LOOT
 LOOT: pick a %s,LOOT: pick a %s
 LOST,LOST
 "LURES, PULL %d","LURES, PULL %d"
-"Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The curved arrows over a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}","Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The curved arrows over a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}"
+"Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}","Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}"
 Language,Language
 Language (translations from assets/text/strings.csv),Language (translations from assets/text/strings.csv)
 Leave,Leave
@@ -1370,13 +1386,13 @@ Loadout,Loadout
 MAINFRAME,MAINFRAME
 MAINFRAME SHOP,MAINFRAME SHOP
 MAP KEY,MAP KEY
-MORE,MORE
 MORE BELOW,MORE BELOW
 Mainframe,Mainframe
 Mainframe: the cyber shop,Mainframe: the cyber shop
 "Mainframe: the cyber shop (cards, Firmware, Daemons, slices, card removal).","Mainframe: the cyber shop (cards, Firmware, Daemons, slices, card removal)."
 Map legend on the city views,Map legend on the city views
 Master volume,Master volume
+More on the next page: press NEXT.,More on the next page: press NEXT.
 Move it to %s.,Move it to %s.
 Music volume,Music volume
 NEED %d,NEED %d
@@ -1390,8 +1406,9 @@ NETRUN // ROUTE,NETRUN // ROUTE
 NETRUN ABORTED - the home server fell,NETRUN ABORTED - the home server fell
 NETRUN COMPLETE,NETRUN COMPLETE
 NETRUN FAILED - operative lost,NETRUN FAILED - operative lost
-NEVER SLEEP,NEVER SLEEP
-NEW CAMPAIGN,NEW CAMPAIGN
+"NEVER
+SLEEP","NEVER
+SLEEP"
 NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in.,NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in.
 NEW SLICES,NEW SLICES
 NEXT %d (%s),NEXT %d (%s)
@@ -1402,6 +1419,7 @@ NEXT SITE >,NEXT SITE >
 NEXT SITE: select the next Site on the Grid: %s (the map follows).,NEXT SITE: select the next Site on the Grid: %s (the map follows).
 NO CHANGE,NO CHANGE
 NO DAMAGE,NO DAMAGE
+NO EFFECT,NO EFFECT
 NO GAIN,NO GAIN
 NO SIGNAL,NO SIGNAL
 NUDGE,NUDGE
@@ -1445,12 +1463,10 @@ NetworkNodeData.vault_terminal.description,+3 Schematics per completed netrun (+
 NetworkNodeData.vault_terminal.display_name,Vault Terminal
 New campaign,New campaign
 Next,Next
-Next seed,Next seed
 Next threshold at %d.,Next threshold at %d.
 Next-run boosts:,Next-run boosts:
 No Daemons installed.,No Daemons installed.
 No First Turn Free Nudge,No First Turn Free Nudge
-No campaign is saved yet: OVERTHROW starts one.,No campaign is saved yet: OVERTHROW starts one.
 No campaign.,No campaign.
 No change to your numbers.,No change to your numbers.
 No living operative or open Site: go to HQ.,No living operative or open Site: go to HQ.
@@ -1466,17 +1482,13 @@ Nudge clockwise,Nudge clockwise
 Nudge ring (outer / inner),Nudge ring (outer / inner)
 Nudge wheel (mine / target),Nudge wheel (mine / target)
 OBSERVER,OBSERVER
-OFF,OFF
-OFF // static edge tint,OFF // static edge tint
-ON,ON
 ON %s,ON %s
-ON // slip + split,ON // slip + split
 ON A RANDOM SLICE:,ON A RANDOM SLICE:
-ON AIR,ON AIR
 OPENS %d SITE,OPENS %d SITE
 OPENS %d SITES,OPENS %d SITES
 OPERATIVE,OPERATIVE
 OPTIONS,OPTIONS
+OURS NOW,OURS NOW
 OUTER,OUTER
 OVERCLOCKED,OVERCLOCKED
 OVERFLOW,OVERFLOW
@@ -1510,7 +1522,6 @@ PERFECT,PERFECT
 PERFECT: RAM+,PERFECT: RAM+
 PHASE %d,PHASE %d
 PIRATE RADIO,PIRATE RADIO
-PIRATE RADIO 88.1,PIRATE RADIO 88.1
 "PLAY IT
 SAFE??","PLAY IT
 SAFE??"
@@ -1518,12 +1529,10 @@ PLAYOUT,PLAYOUT
 PREV SITE: select the previous Site on the Grid: %s (the map follows).,PREV SITE: select the previous Site on the Grid: %s (the map follows).
 PROFILE,PROFILE
 PROFILE // RECORDS,PROFILE // RECORDS
-PROFILE // THE CELL,PROFILE // THE CELL
 PUTS %s ON %s,PUTS %s ON %s
 PUTS %s ON YOU,PUTS %s ON YOU
 Pad button glyphs,Pad button glyphs
 Patch home %s (%d),Patch home %s (%d)
-Patterns and glyphs stay the main cue.,Patterns and glyphs stay the main cue.
 Pause / options,Pause / options
 "Pause: options, codex, save and quit.","Pause: options, codex, save and quit."
 Pays %d-%d Cycles.,Pays %d-%d Cycles.
@@ -1543,6 +1552,7 @@ Picking it up and moving it onto a slot of the small spinner picks it too.,Picki
 PlayStation,PlayStation
 Press,Press
 Press %s on,Press %s on
+Press NEXT to go on.,Press NEXT to go on.
 Press a Site to open it on the City Grid.,Press a Site to open it on the City Grid.
 "Press a key, then press the new one. Cards stay on 1-9.","Press a key, then press the new one. Cards stay on 1-9."
 Press an asset card: it deploys to the target (%s now).,Press an asset card: it deploys to the target (%s now).
@@ -1586,12 +1596,12 @@ ProfileUnlockData.unlock_vault_terminal.description,Unlocks the Vault Terminal n
 ProfileUnlockData.unlock_vault_terminal.display_name,Node: Vault Terminal
 ProfileUnlockData.unlock_wrecker.description,Recruit Wrecker operatives in every campaign.
 ProfileUnlockData.unlock_wrecker.display_name,Class: Wrecker
-Progress is autosaved.,Progress is autosaved.
 Protan (red-weak),Protan (red-weak)
 Purge Threshold,Purge Threshold
 QUIT,QUIT
 Quit,Quit
 Quit REBEL_CELL?,Quit REBEL_CELL?
+Quit REBEL_CELL? Progress is autosaved.,Quit REBEL_CELL? Progress is autosaved.
 Quit to desktop,Quit to desktop
 RACK BREACHED,RACK BREACHED
 RAID,RAID
@@ -1611,7 +1621,7 @@ RAID REPORT,RAID REPORT
 RAID SETUP,RAID SETUP
 RAID SETUP: a raid is coming along the dashed routes: set up the defence.,RAID SETUP: a raid is coming along the dashed routes: set up the defence.
 RAIDS,RAIDS
-RAIDS HELD,RAIDS HELD
+RAM,RAM
 RAM %d/%d,RAM %d/%d
 "RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn.","RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn."
 RAM %s,RAM %s
@@ -1619,7 +1629,7 @@ RAM%s,RAM%s
 RANDOM: ODDS,RANDOM: ODDS
 RANK,RANK
 RC1-corporation-ice-seed-home-class,RC1-corporation-ice-seed-home-class
-REBEL_CELL v%s // cell uplink,REBEL_CELL v%s // cell uplink
+REBEL_CELL // MAIN MENU,REBEL_CELL // MAIN MENU
 REMOVE,REMOVE
 REMOVE A CARD,REMOVE A CARD
 REMOVE A CARD // %d CYCLES,REMOVE A CARD // %d CYCLES
@@ -1628,7 +1638,7 @@ RESIST,RESIST
 RESIST %d,RESIST %d
 RESIST %d→%d,RESIST %d→%d
 RESISTANCE,RESISTANCE
-RESOLVE SPEED AFTER SEND IT,RESOLVE SPEED AFTER SEND IT
+RESOLVING...,RESOLVING...
 RESPIN,RESPIN
 RESPIN %d RAM,RESPIN %d RAM
 RESPIN -%d RAM: %s%s,RESPIN -%d RAM: %s%s
@@ -1731,7 +1741,7 @@ RaidData.raid_story.display_name,Collections: Quiet Word
 RaidData.raid_story.warning_text,"Somebody read what you read. A Lockdown Unit and an Enforcer are on their way, no notice filed."
 Raids,Raids
 Raids pending against your network. Set up the defence before the next run.,Raids pending against your network. Set up the defence before the next run.
-Raids repelled.,Raids repelled.
+Raids repelled / lost.,Raids repelled / lost.
 Rank,Rank
 "Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 "Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment)."
@@ -1786,7 +1796,7 @@ SBOX,SBOX
 SCHEMATICS,SCHEMATICS
 SCHEMATICS %s,SCHEMATICS %s
 SEND IT,SEND IT
-"SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The tags already show the outcome.","SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The tags already show the outcome."
+"SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The chips beside each HP already show the outcome.","SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The chips beside each HP already show the outcome."
 SFX volume,SFX volume
 SHARE CODES,SHARE CODES
 SHIELD,SHIELD
@@ -1798,7 +1808,7 @@ SHRED A CARD,SHRED A CARD
 SITES %d,SITES %d
 SLICE %d DETAIL,SLICE %d DETAIL
 SLICES,SLICES
-SLOT %s,SLOT %s
+SLOT %s · %s,SLOT %s · %s
 SNAP,SNAP
 SOLD,SOLD
 SPIN %d+,SPIN %d+
@@ -1806,11 +1816,12 @@ SPINNER,SPINNER
 STABLE,STABLE
 START DEFENSE,START DEFENSE
 STATIONED,STATIONED
-STATS // RECORDS,STATS // RECORDS
+STATS,STATS
 STATUS: %s,STATUS: %s
 STOPPED %d/%d,STOPPED %d/%d
 STORY UNCOVERED,STORY UNCOVERED
 STRENGTH %s%%,STRENGTH %s%%
+SYSTEM ONLINE,SYSTEM ONLINE
 "Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick.","Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick."
 Save,Save
 Save & quit to start screen,Save & quit to start screen
@@ -2041,11 +2052,11 @@ SliceData.solar_flare.display_name,Solar Flare
 SliceData.trojan_1.display_name,Trojan 1
 Slices,Slices
 Slot %d: %s%s,Slot %d: %s%s
+Slot %s: %s,Slot %s: %s
 "Slot %s: %s. Heat %d, ICE %d, %d runs completed. Campaign %s%s.","Slot %s: %s. Heat %d, ICE %d, %d runs completed. Campaign %s%s."
 Something opens at ICE %d everywhere (%d/%d).,Something opens at ICE %d everywhere (%d/%d).
 Start a netrun at the first open Site,Start a netrun at the first open Site
 Start a new campaign in slot %s.,Start a new campaign in slot %s.
-Start a new campaign: pick the corporation to bring down.,Start a new campaign: pick the corporation to bring down.
 Start from code,Start from code
 Start the defence: the raid plays out on the map; the result matches the forecast.,Start the defence: the raid plays out on the map; the result matches the forecast.
 Starting Bug Card,Starting Bug Card
@@ -2486,22 +2497,23 @@ TAKEN by the corporation.,TAKEN by the corporation.
 TAKEN: the corporation took the Site back.,TAKEN: the corporation took the Site back.
 TARGET: %s,TARGET: %s
 TERMINAL EVENT,TERMINAL EVENT
-TEXT SCALE,TEXT SCALE
 THE TARGET,THE TARGET
 THE WHEEL,THE WHEEL
 THIS RUN,THIS RUN
 THIS TURN,THIS TURN
-TITLE,TITLE
 TODAY'S RUN,TODAY'S RUN
 TRJN,TRJN
 TROJAN,TROJAN
-TRUST NO ONE,TRUST NO ONE
-TURN %d · FREE NUDGE %d,TURN %d · FREE NUDGE %d
+"TRUST
+NO ONE","TRUST
+NO ONE"
+TURN %d  |  FREE NUDGE %d,TURN %d  |  FREE NUDGE %d
 TUTORIAL,TUTORIAL
 Take,Take
 Take nothing from this payout.,Take nothing from this payout.
 Taken Raid Strength,Taken Raid Strength
 Target:,Target:
+Target: the lime brackets mark the wheel your attacks and aimed cards hit.,Target: the lime brackets mark the wheel your attacks and aimed cards hit.
 Terminal,Terminal
 Terminal: an event with choices,Terminal: an event with choices
 Terminal: an event with choices.,Terminal: an event with choices.
@@ -2753,11 +2765,11 @@ TerminalEventData.ev_supply_closet.text,A maintenance closet behind the clinic. 
 TerminalEventData.ev_supply_closet.title,Supply Closet
 TerminalEventData.ev_wellness_kiosk.text,A Solace kiosk offers a free wellness scan. The fine print is longer than the kiosk.
 TerminalEventData.ev_wellness_kiosk.title,Wellness Kiosk
+Text scale,Text scale
 "Text size, sound, controls, subtitles.","Text size, sound, controls, subtitles."
 That is not a campaign code.,That is not a campaign code.
 The Armory is empty: runs bank defence assets from their drops.,The Armory is empty: runs bank defence assets from their drops.
 "The Armory: defence assets banked from runs, deployed on your nodes in raid setup.","The Armory: defence assets banked from runs, deployed on your nodes in raid setup."
-The Cell never sleeps. Every word grows with this.,The Cell never sleeps. Every word grows with this.
 The boosts bought for the next run. Drag a boost here to buy it.,The boosts bought for the next run. Drag a boost here to buy it.
 The boosts bought for the next run. Pick a boost up and move it here to buy it.,The boosts bought for the next run. Pick a boost up and move it here to buy it.
 "The campaign map: pick a Site and JACK IN, claim and upgrade nodes.","The campaign map: pick a Site and JACK IN, claim and upgrade nodes."
@@ -2775,7 +2787,6 @@ The next %s campaign may start up to ICE %d.,The next %s campaign may start up t
 The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for %d step(s).
 The operative on %s patches it: %s.,The operative on %s patches it: %s.
 The operative's deck and spinner (hub core and inner ring included).,The operative's deck and spinner (hub core and inner ring included).
-The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city.,The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city.
 "The three campaign slots: start, load or delete.","The three campaign slots: start, load or delete."
 "The turn, and the free nudges left this turn (each extra nudge costs RAM).","The turn, and the free nudges left this turn (each extra nudge costs RAM)."
 Then you can go to: %s.,Then you can go to: %s.
@@ -2822,7 +2833,7 @@ Threats that hit the home server.,Threats that hit the home server.
 Threats your network destroyed.,Threats your network destroyed.
 Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.,Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.
 Tritan (blue-weak),Tritan (blue-weak)
-Try the next city: the seed goes up by one.,Try the next city: the seed goes up by one.
+Tutorial,Tutorial
 UNDO,UNDO
 UNDO %s,UNDO %s
 "UNDO is blocked: a random event came since (a respin, a random pick).","UNDO is blocked: a random event came since (a respin, a random pick)."
@@ -2843,6 +2854,7 @@ Virus,Virus
 WANTED,WANTED
 WAS,WAS
 WEAK,WEAK
+WEAK x0.5,WEAK x0.5
 WHAT WILL RESOLVE,WHAT WILL RESOLVE
 WIN,WIN
 WON,WON
@@ -2855,17 +2867,16 @@ Windowed,Windowed
 Withdraw %s,Withdraw %s
 Won,Won
 Xbox,Xbox
+YES,YES
 YOU,YOU
 YOU ARE HERE,YOU ARE HERE
 YOU GET %s,YOU GET %s
 YOUR %s,YOUR %s
 YOUR NODES // pick the target,YOUR NODES // pick the target
 YOUR WHEEL,YOUR WHEEL
-Yes,Yes
 You are here.,You are here.
 You can move here now.,You can move here now.
 "Your %s, if you play it:","Your %s, if you play it:"
-Your campaign is autosaved.,Your campaign is autosaved.
 Your home Site (CORE),Your home Site (CORE)
 Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.,Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.
 "Your records, achievements and run history.","Your records, achievements and run history."
@@ -2873,7 +2884,6 @@ Your spinner.,Your spinner.
 Zoom out to the whole City Grid.,Zoom out to the whole City Grid.
 a Rack,a Rack
 a Shop,a Shop
-a practice run in a simulated net,a practice run in a simulated net
 a threat,a threat
 active,active
 already visited,already visited
@@ -2882,7 +2892,6 @@ an Event,an Event
 an operative,an operative
 armory: %s,armory: %s
 asset,asset
-back,back
 best ICE %s,best ICE %s
 boss,boss
 calibrate_handler,calibrate_handler
@@ -2890,9 +2899,6 @@ card,card
 chip,chip
 claimed,claimed
 cleared,cleared
-close,close
-codex,codex
-confirm,confirm
 cool,cool
 corporate,corporate
 daemon,daemon
@@ -2910,7 +2916,6 @@ hunted,hunted
 in a run,in a run
 install,install
 it costs you %s,it costs you %s
-keep going [B],keep going [B]
 link,link
 lo-fi loop: HQ,lo-fi loop: HQ
 loot_socket,loot_socket
@@ -2921,7 +2926,6 @@ next,next
 next: pick one (numbered),next: pick one (numbered)
 no change,no change
 no runs yet,no runs yet
-no saved campaign yet,no saved campaign yet
 none,none
 none (%d needed for the breach),none (%d needed for the breach)
 none yet (buy them at HQ with campaign Schematics),none yet (buy them at HQ with campaign Schematics)
@@ -2931,35 +2935,31 @@ odds: %s,odds: %s
 off,off
 patrol,patrol
 perfect aim,perfect aim
-pick a corporation to bring down,pick a corporation to bring down
 press a key...,press a key...
 purge,purge
 queued: %s,queued: %s
 reclaim,reclaim
 rescue an operative,rescue an operative
 ring_lock_handler,ring_lock_handler
-run %d,run %d
 run: %s,run: %s
-saved to profile,saved to profile
 seg %d: %s,seg %d: %s
 seg %d: default,seg %d: default
-select,select
 slice,slice
-slot %s,slot %s
 socket,socket
 sold out,sold out
 spinner,spinner
 steady_hand_handler,steady_hand_handler
-switch tab,switch tab
 the home server falls and the campaign is lost,the home server falls and the campaign is lost
 the net,the net
 then:,then:
-toggle,toggle
 ui.raid_intro,"The corp is raiding your CORE. Place defences to cut the damage, then START DEFENSE."
 undock_handler,undock_handler
+v%s // cell uplink,v%s // cell uplink
 vs %s | ICE %d%s,vs %s | ICE %d%s
 withdraw,withdraw
 won,won
+x0.5,x0.5
+x1.5,x1.5
 you are here,you are here
 your network holds every threat,your network holds every threat
 {undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; UNDO stops at a Respin or a random slice pick.,{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; UNDO stops at a Respin or a random slice pick.

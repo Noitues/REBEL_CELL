@@ -1,117 +1,94 @@
 class_name ConfirmDialog
 extends Control
-## A confirm: a question, the safe answer and the committing verb. Emits confirmed or
-## cancelled and frees itself. Used for quitting and deleting saves.
+## A confirm: a terminal panel (`> CONFIRM // <TITLE>`, ART_BIBLE v2 §4.13, round 33
+## `abandon_dialog`) with the question and its body, a yellow vinyl sticker for the safe
+## answer (CANCEL, default focus) and a pink one for the committing verb (§2.10: two-sticker
+## choice), each with its small terminal caption. Emits confirmed or cancelled and frees
+## itself. Used for quitting, deleting saves and abandoning campaigns.
 ## ART-0 F (ported from art-pass W8a, ART_BIBLE v1 §10 / v2 SCRIM): it is a modal: a
 ## GlassScrim backdrop behind it takes the clicks meant for the page, it opens and closes
 ## with PageTransition's modal motion (`open_modal` / `close_modal`), and a page change
 ## waits for it to close (`PageTransition.after_modals`).
-## ART-10 4C (ART_BIBLE v2 §4.13 "Abandon dialog", §2.10 two-sticker choice; round 33
-## `abandon_dialog.jpg`): a v2 terminal in HARM red (`> CONFIRM // WHAT`, a CANNOT UNDO chip
-## when it destroys something), the question in Plex, its cost under it, then two vinyl
-## stickers: yellow CANCEL (the safe choice, default focus) and the pink verb, each with a
-## terminal caption. B / Esc cancels at once.
+## ART-2 2D: restyled on F's behaviour (the scrim, the modal motion, the focus trap and the
+## safe answer's default focus are F's, unchanged).
 
 signal confirmed
 signal cancelled
 
-## The stickers' lettering size (px at 1.0) and their tilts.
-const STICKER_PX := 40.0
-const TILT_NO := -2.0
-const TILT_YES := 2.0
-## The dialog's least width (px at text scale 1.0) and the question's.
-const WIDTH := 520.0
-const QUESTION_W := 470.0
-## Space between the two choices (px).
-const CHOICE_GAP := 70
-## The default answers (keys).
-const ANSWERS := ["Yes", "Cancel", "CONFIRM", "CANNOT UNDO", "keep going [B]", "confirm"] # TR
+var yes_button: Button
+var no_button: Button
+## The terminal panel (the glass that drops in).
+var panel: HudDialogPanel
 
-var yes_button: VerbSticker
-var no_button: VerbSticker
-var window: CrtWindow
+## The dialog's width and the question's width at text scale 1.0 (px).
+const DIALOG_W := 560.0
+const QUESTION_FONT := 22
+const STICKER_FONT := 40
+## The widest the dialog grows with the text, and the question's inset from its width (px).
+const MAX_SCALE := 1.4
+const TEXT_INSET := 60.0
+const BUTTON_GAP := 48
 
 
-## `question` and `detail` come translated (H24 S4: the dialog shows its words as given);
-## the answers and `what` are keys, translated here. `destructive` adds the CANNOT UNDO chip.
-func _init(question: String, yes_text: String = "Yes", no_text: String = "Cancel", what: String = "", detail: String = "", destructive: bool = false) -> void:
+## `question` comes translated (H24 S4: the dialog shows its words as given); the answers,
+## the title and the captions are keys, translated here. `body` (translated) goes under the
+## question; `destructive` marks the panel CANNOT UNDO in HARM.
+func _init(question: String, yes_text: String = "YES", no_text: String = "CANCEL", title: String = "ARE YOU SURE?", # TR
+		body: String = "", destructive: bool = false, yes_note: String = "", no_note: String = "") -> void:
+	var s := Settings.text_scale
+	custom_minimum_size = Vector2(DIALOG_W * minf(s, MAX_SCALE), 0)
+
 	TextDb.shown_as_given(self)
-	var title := tr("CONFIRM")
-	if what != "":
-		title += " // " + tr(what)
-	window = CrtWindow.new(title, Palette.HARM)
-	window.name = "ConfirmWindow"
-	window.hex = false
-	if destructive:
-		window.tag_label.text = tr("CANNOT UNDO")
-	add_child(window)
-	var box := window.body
-	box.add_theme_constant_override("separation", 8)
+	panel = HudDialogPanel.new(tr(title), destructive)
+	add_child(panel)
+	panel.resized.connect(func() -> void: size = panel.size)  # the dialog is as big as its panel
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 10)
+	panel.body.add_child(box)
 	var l := Label.new()
 	l.name = "Question"
 	l.text = question
-	l.add_theme_font_override(&"font", Chrome.body_medium_font())
-	l.add_theme_font_size_override(&"font_size", Chrome.px(UiTheme.TITLE))
-	l.add_theme_color_override(&"font_color", Palette.TEXT_HI)
 	UiWrap.whole_words(l)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
-	l.custom_minimum_size = Vector2(QUESTION_W, 0)
+	l.custom_minimum_size = Vector2(DIALOG_W * minf(s, MAX_SCALE) - TEXT_INSET, 0)
+	l.add_theme_font_override("font", HudSkin.body())
+	l.add_theme_font_size_override("font_size", roundi(QUESTION_FONT * s))
+	l.add_theme_color_override("font_color", HudSkin.TERMINAL_HI)
 	box.add_child(l)
-	if detail != "":
-		var d := Chrome.body_label(detail, UiTheme.LABEL, Palette.TEXT_MID)
-		d.name = "Detail"
-		d.custom_minimum_size = Vector2(QUESTION_W, 0)
-		box.add_child(d)
+	if body != "":
+		var b := Label.new()
+		b.name = "Body"
+		b.text = body
+		UiWrap.whole_words(b)
+		b.custom_minimum_size = l.custom_minimum_size
+		b.add_theme_color_override("font_color", HudSkin.TERMINAL_TEXT)
+		box.add_child(b)
 	var rule := ColorRect.new()
-	rule.color = Color(Palette.HARM, 0.35)
+	rule.color = Color(HudSkin.TERMINAL_EDGE, 0.35)
 	rule.custom_minimum_size = Vector2(0, 1)
 	box.add_child(rule)
 	var row := HBoxContainer.new()
-	row.name = "Choices"
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", CHOICE_GAP)
+	row.add_theme_constant_override("separation", BUTTON_GAP)
 	box.add_child(row)
-	no_button = VerbSticker.new(tr(no_text).to_upper(), VerbSticker.Fill.YELLOW, STICKER_PX, TILT_NO)
-	no_button.pre_translated = true
+	no_button = _sticker(row, no_text, no_note, HudSkin.VINYL_YELLOW)
 	no_button.name = "No"
 	no_button.pressed.connect(func() -> void: cancelled.emit(); _close())
-	row.add_child(_choice(no_button, tr("keep going [B]")))
-	yes_button = VerbSticker.new(tr(yes_text).to_upper(), VerbSticker.Fill.PINK, STICKER_PX, TILT_YES)
-	yes_button.pre_translated = true
+	yes_button = _sticker(row, yes_text, yes_note, HudSkin.VINYL_PINK)
 	yes_button.name = "Yes"
 	yes_button.pressed.connect(func() -> void: confirmed.emit(); _close())
-	row.add_child(_choice(yes_button, tr(what).to_lower() if what != "" else tr("confirm")))
-	custom_minimum_size = Vector2(WIDTH, 0)
-	window.minimum_size_changed.connect(_fit)
-	_fit()
 
 
-## Left / right / up / down move between CANCEL and the verb (never out of the dialog).
-func _link_choices() -> void:
-	var to_yes := no_button.get_path_to(yes_button)
-	var to_no := yes_button.get_path_to(no_button)
-	for side in ["focus_neighbor_right", "focus_neighbor_left", "focus_neighbor_top", "focus_neighbor_bottom"]:
-		no_button.set(side, to_yes)
-		yes_button.set(side, to_no)
-
-
-## A sticker over its terminal caption.
-func _choice(sticker: VerbSticker, caption: String) -> VBoxContainer:
-	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 2)
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	sticker.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	col.add_child(sticker)
-	var c := Chrome.caps_label(caption, UiTheme.CAPTION, Palette.TEXT_MID if sticker == no_button else Palette.HARM)
-	c.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	col.add_child(c)
-	return col
-
-
-func _fit() -> void:
-	var m := window.get_combined_minimum_size()
-	custom_minimum_size = Vector2(maxf(WIDTH, m.x), m.y)
-	size = custom_minimum_size
-	window.size = size
+## A vinyl sticker answer with its caption under it (no system word: the caption is the
+## line under the sticker).
+func _sticker(row: Container, word: String, note: String, paint: Color) -> SendItSticker:
+	var b := SendItSticker.new(word, "", paint, STICKER_FONT)
+	b.system_word = ""
+	b.system_line = note
+	b.tilt = -2.0
+	b.tooltip_text = tr(note) if note != "" else ""
+	b._fit_size()
+	row.add_child(b)
+	return b
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -141,15 +118,13 @@ func _ready() -> void:
 	# ART-0 F: a modal over a SCRIM (the page behind blurred and dimmed; it takes the clicks
 	# meant for the page), opened with the modal motion.
 	var scrim := GlassScrim.backdrop_for(self, get_viewport_rect().size)
-	# ART-10 4C: a top-level scrim drew over the dialog's own terminal (its words blurred);
-	# as a plain child behind its parent it stays under the dialog and still covers the page.
-	scrim.top_level = false
-	scrim.position = -global_position
+	move_child(scrim, 0)  # ART-2 2D: drawn before the panel, so the blur stays behind the dialog
+	panel.z_index = 1  # (a top-level scrim can still draw late: the panel is drawn over it)
 	PageTransition.open_modal(self)
-	PageTransition.enter(window, PageTransition.Look.GLASS)
-	_link_choices()
-	UiFocus.trap.call_deferred(self)  # the two choices, never out to the screen behind
-	# Pad / keyboard: the safe answer takes focus (§2.10: yellow = default focus).
+	# The panel drops in (Animation pass ANIM-6); a press during the drop completes it.
+	PageTransition.enter(panel, PageTransition.Look.GLASS)
+	UiFocus.trap.call_deferred(self)  # Yes <-> No, and never out to the screen behind
+	# Pad / keyboard: the safe answer takes focus.
 	if no_button != null:
 		no_button.grab_focus.call_deferred()
 

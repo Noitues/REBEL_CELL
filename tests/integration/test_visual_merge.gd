@@ -83,7 +83,9 @@ func test_stickers_and_intent_tags_stay_off_the_wheels_at_every_text_scale() -> 
 	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		var scene := await _combat(scale)
 		assert_eq(scene.layout_violations(), [], "text scale %.1f" % scale)
-		assert_true(scene._player_view.intent_rect().has_area(), "the player spinner has its tag")
+		# ART-2 2D (D15): the forecast is the result chips beside the HP, not a tag.
+		assert_true(scene._player_view.hud_results and not scene._player_view.intent_rect().has_area(), "the player's forecast is its chips")
+		assert_not_null(scene.chip_row(&"player"), "the player spinner has its result chips")
 		for key in scene._stickers:
 			assert_true(scene._stickers[key].get_global_rect().position.y >= scene._hand_box.get_global_rect().position.y, "H20: the %s sticker sits by SEND IT, under the arena" % key)
 

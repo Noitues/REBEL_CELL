@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tools/design_lab/campaign_end_lab.gd" id="1"]
+
+[node name="CampaignEndLab" type="Node"]
+script = ExtResource("1")
