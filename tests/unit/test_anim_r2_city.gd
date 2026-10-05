@@ -523,7 +523,7 @@ func test_the_heat_banner_fits_its_poster_at_every_text_size_and_a_long_translat
 	var locale := TranslationServer.get_locale()
 	var holder: Control = add_child_autofree(Control.new())
 	holder.size = SCREEN.size
-	for scale in [1.0, 1.3, 1.6]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		for loc in [locale, "xx"]:
 			TranslationServer.set_locale(loc)
@@ -582,12 +582,12 @@ func test_equal_route_choices_say_they_are_the_same() -> void:
 # --- R13: big text -------------------------------------------------------------------------------------
 
 func test_big_text_raid_key_folds_and_the_crew_orders_show() -> void:
-	Settings.set_text_scale(1.6)
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	var hq := _hq_raid()
 	await _frames()
 	hq.show_raid()
 	await _frames(6)
-	assert_true(hq.raid_legend_is_strip(), "at 1.6 the raid key is the folding strip")
+	assert_true(hq.raid_legend_is_strip(), "at TEXT_SCALE_MAX the raid key is the folding strip")
 	assert_true(hq.raid_legend.foldable() and hq.raid_legend.is_folded(), "folded to its MAP KEY line")
 	hq.show_hq()
 	await _frames(6)
@@ -595,5 +595,5 @@ func test_big_text_raid_key_folds_and_the_crew_orders_show() -> void:
 	var found := 0
 	for b in hq.find_children("Loadout", "Button", true, false):
 		found += 1
-		assert_true(screen.encloses((b as Button).get_global_rect()), "a dossier's Loadout is on the first screen at 1.6")
+		assert_true(screen.encloses((b as Button).get_global_rect()), "a dossier's Loadout is on the first screen at TEXT_SCALE_MAX")
 	assert_gt(found, 0, "the dossiers have their Loadout")

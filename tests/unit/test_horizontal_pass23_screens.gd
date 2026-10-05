@@ -183,7 +183,7 @@ func _loot(scene: Control) -> void:
 
 # --- S1 the SAVED stamp -----------------------------------------------------------------------
 
-## The screens themselves (raid setup, route, Modem at 1.0 and 1.6) are checked where the
+## The screens themselves (raid setup, route, Modem at 1.0 and TEXT_SCALE_MAX) are checked where the
 ## stamp really lands after each autosave, keyboard and pad: test_horizontal_pass24_screens
 ## test_the_saved_stamp_is_placed_on_the_page_it_lands_on (Test suite optimization).
 func test_a_control_in_the_corner_moves_the_saved_stamp() -> void:

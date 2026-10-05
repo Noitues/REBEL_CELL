@@ -1455,10 +1455,14 @@ func show_hq() -> void:
 	var scrub_price := CampaignRules.heat_purchase_price(c, cfg)
 	var scrub_btn := _icon(_button(tr("Scrub Heat %d · pay %d") % [scrub, scrub_price], buy_heat_reduction), StatIcon.HEAT)
 	scrub_btn.name = "ScrubHeat"
+	# ART-0 C (text scale 2.0): the priced lines wrap in the menu column like RAID PENDING
+	# (at 2.0 "Scrub Heat · pay" alone widened the page past the screen).
+	scrub_btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_add_tip(actions, scrub_btn, tr("Costs %d Schematics (you have %d): Heat changes by %d.") % [scrub_price, c.schematics, scrub])
 	if c.grid.home_integrity < c.grid.home_max_integrity:
-		_add_tip(actions, _icon(_button(tr("Patch home %s (%d)") % [TextDb.signed(c.grid.home_max_integrity - c.grid.home_integrity), CampaignRules.home_repair_price(c, cfg)], repair_home), StatIcon.HOME),
-			tr("Repair the home server to full integrity."))
+		var patch_btn := _icon(_button(tr("Patch home %s (%d)") % [TextDb.signed(c.grid.home_max_integrity - c.grid.home_integrity), CampaignRules.home_repair_price(c, cfg)], repair_home), StatIcon.HOME)
+		patch_btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # ART-0 C: as Scrub Heat
+		_add_tip(actions, patch_btn, tr("Repair the home server to full integrity."))
 	_add_tip(actions, _icon(_button(tr("Codex"), show_codex), StatIcon.CODEX), tr("Everything the Cell knows: slices, cards, Firmware, Daemons, rules."))
 	var settings_btn := _hint_button(tr("Settings"), &"open_settings", open_settings)
 	settings_btn.name = "SettingsButton"
@@ -2644,7 +2648,7 @@ func show_raid() -> void:
 		drops.add_source(card, {"kind": "asset", "index": index, "asset": aid, "prefer": selected_site})
 		cards.add_child(card)
 	if c.armory.is_empty():
-		cards.add_child(_label(tr("Armory empty: runs bank assets from their drops.")))
+		cards.add_child(_para(tr("Armory empty: runs bank assets from their drops.")))  # ART-0 C: wraps (at 2.0 one line widened the page)
 	_set_panel(outer, "raid")
 	# ANIM-R5 P8: YOUR NODES never ends in a cut row (its last node's "HP 30 → 25 HOLDS" sat
 	# half under the window's foot): the Grid's snap, and MORE BELOW when more nodes follow.

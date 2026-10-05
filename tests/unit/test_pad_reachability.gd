@@ -219,7 +219,7 @@ func test_a_pad_scrolls_a_long_note_and_leaves_it_at_the_edge() -> void:
 func test_hq_menu_is_pad_reachable_with_no_crew_and_a_raid_pending() -> void:
 	var scale_before := Settings.text_scale
 	for raid in [false, true]:
-		for scale in [1.0, 1.3, 1.6]:
+		for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 			_begin("gut_test_pad_hq_menu")
 			Settings.set_text_scale(scale)
 			RunManager.new_campaign(1)

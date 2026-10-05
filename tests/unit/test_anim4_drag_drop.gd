@@ -3,7 +3,7 @@ extends GutTest
 ## its button path makes (raid assets, placed assets, crew posts, JACK IN, recruits,
 ## boosts, Rank 3 ring segments); a refused or cancelled drop changes nothing and the item
 ## glides home; the keyboard and pad reach every target; reduce effects and headless show
-## the end state at once; the new pieces keep the layout at 1.0 / 1.3 / 1.6; the views
+## the end state at once; the new pieces keep the layout at 1.0 / 1.3 / TEXT_SCALE_MAX; the views
 ## never change game state; raid asset drops call the ANIM-5 landing and update the
 ## forecast.
 

@@ -10,7 +10,7 @@ extends GutTest
 const COMBAT := "res://scenes/combat/combat_scene.tscn"
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const SCREEN := Rect2(0, 0, 1280, 720)
-const SCALES: Array[float] = [1.0, 1.3, 1.6]
+const SCALES: Array[float] = [1.0, 1.3, Settings.TEXT_SCALE_MAX]
 ## Fights tried for one that ends the way a test wants.
 const SEEDS := 40
 

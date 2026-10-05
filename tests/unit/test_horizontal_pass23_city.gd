@@ -3,14 +3,14 @@ extends GutTest
 ## node or not at all (#2); the Grid's key is on screen and follows the text size (#3); no
 ## two Grid labels overlap (#4); every Grid node shows beside the side column (#5); node
 ## tooltips name the kind (#6); the runs open now and the Site steps carry their Site's
-## map icon (#7). At text scale 1.0 and 1.6, for every corporation. The Grid checks share
+## map icon (#7). At text scale 1.0 and TEXT_SCALE_MAX, for every corporation. The Grid checks share
 ## one Grid per corporation and text size (a headless city draw is slow).
 ## The #2-#5 and #7 Grid checks run in test_city_map_sweeps.gd, on one Grid per
 ## corporation, text size and stage (Test suite optimization, docs/TEST_SUITE.md).
 
 const HQ := "res://scenes/hq/hq_scene.tscn"
 const CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
-const SCALES: Array[float] = [1.0, 1.6]
+const SCALES: Array[float] = [1.0, Settings.TEXT_SCALE_MAX]
 const SCREEN := Rect2(0, 0, 1280, 720)
 ## The HQ mini-map's least size (hq_scene's CITY GRID monitor).
 const MINI_SIZE := Vector2(420, 170)
@@ -140,7 +140,7 @@ func test_mini_map_labels_never_overlap_and_keep_their_tooltips() -> void:
 				assert_string_contains(tip, word, "%s: %s's tooltip names its kind" % [what, sd.id])
 			mini.free()
 	# CORE comes first: it always has its label.
-	Settings.set_text_scale(1.6)
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	var m: GridMapView = add_child_autofree(GridMapView.new())
 	m.size = MINI_SIZE
 	m.show_grid(RunManager.campaign, RunManager.corporation)

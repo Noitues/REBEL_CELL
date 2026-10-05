@@ -339,7 +339,7 @@ func test_no_inline_motion_numbers_left_in_the_raid_heat_and_marks() -> void:
 # --- C6: the Polaroid caption follows the text size ----------------------------------------------
 
 func test_a_polaroid_caption_follows_the_text_size_and_is_never_cut() -> void:
-	for scale in [1.0, 1.3, 1.6]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		assert_eq(Polaroid.caption_floor(), roundi(12 * scale), "%.1f: the floor is 12 px x the text size" % scale)
 		RunManager.new_campaign(1)
@@ -392,7 +392,7 @@ func test_the_maps_drawn_words_are_exported_once() -> void:
 # --- C8: YOUR NODES fills its window and never cuts a row --------------------------------------------
 
 func test_your_nodes_fills_its_window_and_counts_the_withdraw_row() -> void:
-	for scale in [1.0, 1.6]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		_raid_campaign()
 		var c := RunManager.campaign
@@ -669,8 +669,8 @@ func test_newcomer_words_and_places() -> void:
 	assert_eq(stamp.icon_kind, StatIcon.WON, "the WON stamp wears the win's icon")
 	hq.show_hq()
 	await _frames(1)
-	assert_true(hq.more_hint.snap_rows, "the HQ page never ends in a half-cut row (the crew's Loadout at 1.6)")
-	Settings.set_text_scale(1.6)
+	assert_true(hq.more_hint.snap_rows, "the HQ page never ends in a half-cut row (the crew's Loadout at TEXT_SCALE_MAX)")
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	hq.show_hq()
 	await _frames(8)
 	var hint: ScrollHint = hq.more_hint
@@ -679,7 +679,7 @@ func test_newcomer_words_and_places() -> void:
 		for b in hq._panel.find_children("*", "Button", true, false):
 			var r := (b as Control).get_global_rect()
 			if (b as Control).is_visible_in_tree():
-				assert_false(r.position.y < foot - 0.5 and r.end.y > foot + 0.5, "1.6: '%s' is not cut by MORE BELOW" % (b as Button).text)
+				assert_false(r.position.y < foot - 0.5 and r.end.y > foot + 0.5, "TEXT_SCALE_MAX: '%s' is not cut by MORE BELOW" % (b as Button).text)
 
 
 # --- C16: the campaign end in context, and demo waits that never resume on a freed scene ---------------

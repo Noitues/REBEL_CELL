@@ -18,7 +18,7 @@ const CANVAS := Vector2(1280, 720)
 ## Frames the raid map takes to frame its nodes (settled passes, and a key swap).
 const RAID_SETTLE := 60
 const CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
-const SCALES: Array[float] = [1.0, 1.3, 1.6]
+const SCALES: Array[float] = [1.0, 1.3, Settings.TEXT_SCALE_MAX]
 ## The pseudolocalisation marks the tests use (a translation of a translation shows two).
 const PSEUDO_PREFIX := "«"
 const PSEUDO_SUFFIX := "»"

@@ -399,7 +399,7 @@ func test_a_node_disabled_then_seized_is_one_seized_node_everywhere() -> void:
 
 func test_the_campaign_end_is_a_see_through_page_with_a_verdict_stamp() -> void:
 	for won in [true, false]:
-		for scale in [1.0, 1.6]:
+		for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 			Settings.set_text_scale(scale)
 			RunManager.new_campaign(1)
 			var c := RunManager.campaign
@@ -470,7 +470,7 @@ func test_the_interlude_frames_core_and_the_entries_beside_its_window() -> void:
 
 
 func test_the_home_banner_keeps_off_cores_label_and_the_tokens_and_the_packets_stop() -> void:
-	for scale in [1.0, 1.6]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		_raid_campaign(&"solace", false)
 		var hq := _scene(HQ)
@@ -489,7 +489,7 @@ func test_the_home_banner_keeps_off_cores_label_and_the_tokens_and_the_packets_s
 		hq.get_parent().queue_free()
 		await _frames(1)
 	# The banner's spot search: home's label and the token standing on CORE are kept clear.
-	for scale in [1.0, 1.6]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		_raid_campaign(&"solace", false)
 		var c := RunManager.campaign
@@ -573,7 +573,7 @@ func test_the_raid_report_keeps_each_nodes_hp_on_its_row_and_the_forecast_float_
 
 
 func test_your_nodes_never_ends_in_a_cut_row() -> void:
-	for scale in [1.0, 1.6]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		_raid_campaign(&"solace", true)
 		var c := RunManager.campaign
@@ -624,7 +624,7 @@ func test_the_heat_consequence_is_a_legible_note_held_to_be_read() -> void:
 	RunManager.new_campaign(1)
 	var holder: Control = add_child_autofree(Control.new())
 	holder.size = SCREEN.size
-	for scale in [1.0, 1.3, 1.6]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		for kind in [true, false]:
 			var p := HeatPoster.new(kind)
@@ -663,7 +663,7 @@ func test_a_polaroid_caption_is_never_cut() -> void:
 		add_child_autofree(p)
 		p.size = Vector2(w, w * 134.0 / 110.0)
 		assert_true(_caption_fits(p), "%.0f px: the whole caption fits (%s)" % [w, p.caption_layout()])
-	for scale in [1.0, 1.6]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var hq := _scene(HQ)
@@ -889,7 +889,7 @@ func test_under_reduce_effects_the_end_states_show_at_once_and_raid_incoming_hol
 # --- P15 / P16 ---------------------------------------------------------------------------------------
 
 func test_raid_incoming_fits_a_long_translation_at_every_text_size() -> void:
-	for scale in [1.0, 1.3, 1.6]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		Fx._note = "RAID INCOMING\n%s" % "KONZERNSICHERHEITSVERWALTUNGSBEHÖRDE UND ÜBERWACHUNGSGESELLSCHAFT MIT BESCHRÄNKTER HAFTUNG"
 		Fx._show_note(SCREEN.size)
@@ -898,9 +898,9 @@ func test_raid_incoming_fits_a_long_translation_at_every_text_size() -> void:
 		assert_gte(Fx.note_label.get_theme_font_size(&"font_size"), mini(roundi(Fx.NOTE_FONT * scale), roundi(Fx.NOTE_FONT_MIN * scale)), "%.1f: large still" % scale)
 		Fx._hide_connect()
 	Fx._note = "RAID INCOMING\nSOLACE BIOSYSTEMS"
-	Settings.set_text_scale(1.6)
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	Fx._show_note(SCREEN.size)
-	assert_eq(Fx.note_label.get_theme_font_size(&"font_size"), roundi(Fx.NOTE_FONT * 1.6), "a short one keeps its full size")
+	assert_eq(Fx.note_label.get_theme_font_size(&"font_size"), roundi(Fx.NOTE_FONT * Settings.TEXT_SCALE_MAX), "a short one keeps its full size")
 	Fx._hide_connect()
 
 
