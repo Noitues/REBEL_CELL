@@ -1,5 +1,11 @@
 # REBEL_CELL — Style Guide (Visual Baseline)
 
+> **From M14, `docs/ART_BIBLE.md` (v2) is the visual source of truth** (DECISIONS 2026-10-05,
+> "Designer rulings: art reintegration, pause point 0", rulings 2 and 4; GDD 9.1; reference
+> images in `docs/art_reference/`). Where this guide's look (§1–§4, §6–§7: three worlds,
+> wireframe, zine) differs, ART_BIBLE v2 wins; its icon tables (§4.1) hold until the glyph atlas replaces
+> them. **§5 (motion and interaction rulings, ANIM-*) stays binding.**
+
 Approved mockups (private canvas; ask the project owner for access):
 https://claude.ai/artifact/EyiLTRaqVVwdhSQox1yufP — see the "Blended direction: three
 worlds" row (HQ, City Grid, Netrun combat).
