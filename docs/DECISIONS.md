@@ -180,6 +180,110 @@ ringlock, skins / scenes18). Decided by the implementer:
   (demos), `tools/design_lab/wheel_lab.*` and `tools/art/*` (new).
 - No test dropped. Captures: `docs/art_review/ART-2/2A/`.
 
+### 2026-10-05 — Art direction — ART-2 2D HUD
+ART-2 Group 2 area 2D (ART-4; ART_BIBLE v2 §3.1, §1.3, §4.13; refs `hud/round41_wheel_stack/combat_typical_v4`,
+`hud/round22_combat_fx/send_it_sticker`, `menus/round33_ui_chrome/abandon_dialog`, `ui_kit`). D15 built on its plan
+default, since confirmed by the designer. Views only: no rule, number or content changed.
+- **D15 result chips** (`ResultChipModel`, `HudResultChips`, placed by `HudWheelLayer`): beside each wheel's HP, in the
+  bible's order `[−N]` red boxed (HP its hits and CORRUPTED bites take; a skull when lethal), `(N shield)` blue (what
+  block and shield absorb), `+N shield` green (block and shield gained), `+N HP` (healed), `+N evade`, `−N RAM` (RAM
+  spent or drained; the turn's refill is the TURN banner's, not a chip), `±N heat` (the operative, scaled as the
+  netrun applies it), `±N HP` (any other HP change: a boss phase), `<status>×N` (statuses put on its slices; `×glyph`
+  for a clear). A random roll (a random card, a respin, a random slice pick) shows `?` and its odds in the breakdown,
+  never the roll (GDD 2.10). The chips preview the **resolve** (the session's `resolved_state` and the events before
+  `turn_start`): the next turn's start respins at random and is never previewed, so a boss's turn-start passive
+  (Customs Seal +4 shield, Auto-Renew) shows on the next turn's chips, not this one's. Hover = the breakdown tooltip:
+  each attacker's landing (slice and aim) and the HP it takes, what the guard absorbed, `= −N HP (from -> to)`, what
+  the wheel itself lands on, every chip in words, then every line the old tag carried ("ALL RESULTS: …" and its
+  notes), a hovered card's "YOUR <CARD>" and "Before this play: …" first.
+- **The forecast tag and the NEXT plate are off** (WheelView.hud_results): the tag model (`intent`) stays as the
+  breakdown's source and the replay's tick list; the chips hold through a SEND IT replay, tick as the replay does each
+  one and fade, on the tag's own entries (`forecast_tick`, `forecast_fade`, `intent_flip` for a change flipping in;
+  MotionSkip passive; reduce effects / headless = end state at once). **What did not fit on the chips** (carried by the
+  breakdown tooltip only): the landing title (slice · aim dots: the wheel shows its landing, 2A §3.19), HUB BREACH,
+  PHASE N, +N NEEDLE, NEW SLICES, RESIST a→b, DOWN / VICTORY / DEFEAT (the lethal skull says it on the chip), the
+  satellites' own results (2B's satellite plates), "PUTS ☠ ON YOU" (the victim's status chip says it), the run results
+  (DRAW, CYCLES, SCHEMATICS, FREE NUDGE NEXT, DAMAGE ±, +N DRONE, 2× NUDGE CARDS NEXT), the WAS row and the play tape.
+  Proposed slice: a second, smaller chip row for run results if the designer wants them on screen.
+- **Nudges above the wheels**: WheelView in HUD mode places its arrows on one line above the disc (CCW left, CW right,
+  inner ring further out with a dot) and keeps hit-testing them (clicks, drops, tooltips unchanged); HudWheelLayer draws
+  round glass buttons rimmed in the wheel's colour with 1C's `picto_spin_ccw` / `picto_spin` glyphs and the key under
+  the driven pair. The line grows with the text up to 1.3 (`NUDGE_SCALE_MAX`, BIG_TEXT_RADIUS_KEEP holds). **Boss keys
+  A / D: not bound** — the nudge keys drive one wheel and W switches own / target (H23); separate A / D binds would be a
+  new rebindable action pair (Settings.REBINDABLE, the rebind UI, pad map): logged under Open questions, the W switch
+  stays.
+- **Bottom left**: the CELL // CLASS name sticker (HudNameSticker, pink vinyl, the operative's name and the class;
+  "CELL" in the dev fight) overlapping the RAM terminal panel (RamBar restyled: "RAM", the count as a live number,
+  cyan pips; every RamBar motion kept). At text 1.6+ the pair moves to the notes column's foot so the hand keeps its
+  room. Deck / discard counters of the reference are not built (2C's piles own those spots).
+- **SEND IT** (SendItSticker, a DripButton subclass carrying 1B's VinylSticker art so every SEND IT motion entry and test API stays): Anton in the
+  sticker colour, light top, keyline, extrude, white die-cut, rest gloss, hover lift ×1.05 with the gloss sweep
+  (`drip_halo`), press squash (`send_it_press`), the shadow snapping in (`send_it_drips`), the first slap
+  (`drip_grow`), disabled grey with RESOLVING..., focus a lime die-cut; over the washed-out mono `EXECUTE` with
+  `> turn_resolve.exe [Space]` under it (the key only above text 1.3). The next step (LOOT / CONTINUE / JACK OUT) is the
+  same sticker over `PROCEED`. 1B's vinyl material plugs in at `HudSkin.vinyl_material()`.
+- **RESPIN / UNDO** are TerminalChips (a StickerButton subclass): the verb in mono caps over its cost and key, `>`
+  caret on hover, F's focus brackets; the undo block is UNDO greyed with KitState's lock tick (D12), never a word.
+  Side by side up to text 1.3, stacked above it.
+- **TURN banner**: a terminal panel centred at the top, "TURN 3 | FREE NUDGE 1" in Anton over the key-hint line (the
+  status line no longer repeats the turn; `banner_text()` reads both).
+- **Item 2 (map HUD / top bar)**: HudStats tags are terminal plates (dark glass, cyan edge, mono caps name, Anton
+  value, no tilt or tape); layout, fitting, bumps and refusals unchanged.
+- **Item 3 (kit)**: Toast is a terminal strip (cyan edge for a note, HARM edge and no-entry mark for a refusal);
+  UiTip.make has a `> TITLE` mono header over a cyan rule and the body in Plex; ConfirmDialog is a HudDialogPanel
+  (`> CONFIRM // TITLE`, CANNOT UNDO in HARM when destructive) with the question in Plex, a yellow CANCEL vinyl
+  sticker (default focus, left) and the pink verb sticker (right), each with its caption; F's scrim, modal motion and
+  focus trap unchanged. The quit confirm reads QUIT / CANCEL. There is no in-run "abandon run" flow on main: the
+  dialog kit carries the look; the pad hold-to-confirm (0.8 s) stays a proposal (not built). The tooltip delay (350 ms)
+  is a project setting (project.godot is not ours to touch): left as is.
+- **Tutorial** (tutorial_overlay.gd, given to 2D): a TerminalNote with TerminalButton Next / Skip; its words name the
+  chips and the nudge buttons instead of the tags, NEXT plate and curved arrows.
+- **Seams**: HudSkin is the one place for colour roles (palette v2: STICKER_COMMIT / SAFE / DIE_CUT,
+  LIVE_NUMBER_RIM), faces, the terminal panel, the 1B material seam (vinyl, CRT) and the 1C glyphs (atlas nodes:
+  picto_block, picto_ram, picto_hp, status_*, picto_spin*; drawn marks for heat and evade, which have no atlas glyph).
+- **Tests**: `tests/unit/test_art2_hud.gd` (D15 sweep: every enemy × seeds 1/5/9/13, SEND IT and a card's hover, each
+  row equal to the model run on the real resolve, HP change, absorbed, gained and RAM equal to the real events, a
+  random status announced is one that landed; the chip format and order; the row beside the HP with its breakdown;
+  hold / tick / fade and one-press skip; end state without motion; SEND IT vinyl / terminal chips / undo block / name
+  sticker; nudges on one line above each wheel; the layout at 1.0 / 1.6 / 2.0). **Updated on purpose** (they pinned
+  the tag look): test_visual_merge (player has chips), test_anim2_combat_motion (the chips flip), test_anim_r1_combat
+  (flip-in on the chips; banner_text), test_anim_r2_combat (the entering enemy keeps its chips), test_anim_r3_combat
+  (the held chips and their ticks), test_anim_r5_combat (Before this play on the breakdown), test_anim_r6_combat
+  (TerminalChip; YOUR <CARD> on the breakdown), test_horizontal_pass14 (CANCEL left, verb right), pass20 (chips grow
+  with text; the breakdown tooltip), pass21 (chips on screen), pass23 (the banner's translated title),
+  test_art0_kit_words (the toast is terminal, not paper). None dropped; `test_the_tape_never_clips_the_tag` now has no
+  tape to measure (risky, kept for 2A's wheel pass to retire with the tag code).
+- **Files outside 2D's area** (smallest edits): wheel_view.gd (2A: the `hud_results` flag, the nudge line in
+  `arrow_center` / `arrow_hint_rect` / `_radius`, no rim arrows, no tag, no NEXT plate); pause_menu.gd (the quit
+  confirm's words); test_art0_kit_words.gd (F's toast check); test_anim_r4_city.gd (the combat Heat poster is
+  hidden: Heat is 2C's HeatCity backdrop); combat_beat_fx.gd and combat_fx_layer.gd (2C, see below); zine_card.gd
+  (2C's card view, the hover growth below).
+- **1B switch**: SEND IT / the next step / the dialog stickers draw 1B's `VinylSticker` (child `art`, fill PINK /
+  YELLOW / WHITE from the button's paint; its REST / HOVER / PRESSED / DISABLED states follow the button's KitState;
+  its `slap` plays on the first show) over the system word; SendItSticker keeps the DripButton entries and API, the
+  terminal line and a lime focus halo. RESPIN / UNDO and the RAM panel sit on 1B's `CrtTerminalPanel` glass (a backing
+  drawn behind them; the RAM panel with the hex dump). The drawn fallbacks stay behind `SendItSticker.use_kit_art`
+  and `HudSkin.draw_terminal_panel`.
+- **Items handed to 2D by the coordinator (2026-10-05)**: (1) `RamBar.pip_spot(k)`, and 2C's `CombatBeatFx.ram_pip`
+  reads it (its copy of the old chip geometry is gone); (2) damage numbers draw with 1A's `UiTheme.live_number()`
+  settings (font, LIVE_NUMBER_RIM rim, the glow in the number's colour) at their animated size; (3) a hovered hand card
+  grows to `ZineCard.HOVER_SCALE` 1.36 about its foot (drawn only: slots and hit areas stay) on `card_hover`'s timing,
+  its neighbours slide aside (`slide_aside`), and the RAM pips a previewed play would spend are hatched; (4) Daemon /
+  firmware `trigger` events get no beat: `ResolveBeats.trigger_marks` times each on the first beat after it (or the
+  result), so the schedule is unchanged (tested), and the replay calls `CombatBeatFx.trigger` (2C's `trigger_fx`, lime
+  for firmware, violet for a Daemon) from 2B's DaemonRack (or the player's hub for firmware) to the player's wheel.
+  Tests in `test_art2_hud.gd`.
+- **Group 1 naive audit P2s (docs/handoff/m14_audit/group1_naive.md)**: pink is the action stickers' only: the
+  combat's hit / loss chip colours are the one harm red (`Palette.HARM`), gains GAIN, plain counters (RAM, Heat) neutral;
+  the D15 chips never draw pink. Hand cards fit their body text (`fit_whole`) and never draw it under the 12 px
+  caption floor (ZineCard `FIT_MIN_TEXT` 12, the line step follows the font); what does not fit ends in an ellipsis
+  and shows whole on the hover growth and the tooltip. The tutorial keeps a margin of lines so a page never cuts
+  mid-sentence, and says how it goes on in words ("Press NEXT to go on." / "More on the next page" / "Do it in the
+  fight to go on (or press NEXT)"). The tutorial fight is the standalone fight (no run): it has no run top bar to
+  show; its turn, nudges and RAM are on the TURN banner and the RAM panel (asked under Open questions if a run bar
+  is wanted there). Cards grow on the pointer only (a pad's focus lifts the card without the growth, so the
+  focused first card never covers the HP chips). The HUD's numbers stay Anton on boxes / panels, distinct from the
+  mono bits.
 ### 2026-10-05 — Art direction — ART-2 2B attachments and arena
 ART-2 area 2B (`docs/handoff/art_2/ART_2_BATCH.md`; ART_BIBLE v2 §3.9, §3.11, §3.13, §3.14, §3.17,
 §3.21). Built on main behind seams while Group 1 (1A palette, 1B materials, 1C glyphs, 1D city) and
@@ -6764,6 +6868,16 @@ and annotated in the GDD where it changes a rule.
   slices at full screen gain (the combat v4 mocks), not ART_BIBLE §3.7's 60 %; say if tier I should
   dim once slice tiers exist. The corp crests are interim recipe renders until the glyph atlas
   carries them.
+
+- **ART-2 2D: boss nudge keys A / D (2026-10-05):** ART_BIBLE v2 §3.1 proposes [A] / [D] for the
+  boss wheel's nudges ("check bindings"). Main has one nudge key pair (Q / E) that drives the wheel W
+  picks (own or target, H23); A / D would be a new rebindable pair (Settings, the rebind page, the pad
+  map). Default kept: Q / E on the driven wheel, the key shown under its nudge buttons. Say if A / D
+  should be added.
+- **ART-2 2D: run results on the combat chips (2026-10-05):** the D15 chips carry the wheel's own
+  results; the run-wide ones the tag used to list (DRAW, CYCLES, SCHEMATICS, FREE NUDGE NEXT, +N DRONE...)
+  are in the operative's breakdown tooltip only. Say if they should get a small row of their own.
+
 - **Combat backdrop day / night and the REBEL_CELL Site (2026-10-05, ART-2 2B):** the game has no
   clock, so the backdrop alternates by run (odd runs by the cool day). Default applied; say if day
   should follow something else (Heat, a city clock in ART-5). The REBEL_CELL regular Site (the

@@ -211,7 +211,7 @@ func test_combat_words_go_through_the_translation() -> void:
 	TranslationServer.set_locale("xx")
 	t.add_message("NO CHANGE", "XX_NO_CHANGE")
 	t.add_message("LAST TURN: ", "XX_LAST: ")
-	t.add_message("TURN %d · FREE NUDGE %d", "XX_TURN %d XX_FREE %d")
+	t.add_message("TURN %d  |  FREE NUDGE %d", "XX_TURN %d XX_FREE %d")  # ART-2 2D: the banner's title
 	t.add_message("YOUR WHEEL", "XX_YOURS")
 	TranslationServer.add_translation(t)
 	var before := CombatState.new()
@@ -223,7 +223,7 @@ func test_combat_words_go_through_the_translation() -> void:
 	var line: String = load(SCENE_SCRIPT).last_turn_lines(before, before.duplicate_state(), none)[&"player"]
 	var scene := await _combat(&"compliance_officer")
 	scene._refresh_status()
-	var status: String = scene._status.text
+	var status: String = scene.banner_text()
 	TranslationServer.remove_translation(t)
 	TranslationServer.set_locale(locale_before)
 	assert_eq(line, "XX_LAST: XX_NO_CHANGE")

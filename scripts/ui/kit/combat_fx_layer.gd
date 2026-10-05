@@ -1008,8 +1008,13 @@ func _draw_number(s: Dictionary) -> void:
 		var gc := at + Vector2(-w * 0.5 + size * GLYPH_SHARE * 0.5, 0.0)
 		draw_circle(gc, size * GLYPH_SHARE * 0.55, Color(Palette.NIGHT_SKY, 0.8 * alpha))
 		SliceIcon.draw_icon(self, gc, size * GLYPH_SHARE * 0.45, icon, Color(s["color"], alpha))
-	draw_string_outline(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, NUMBER_OUTLINE, Color(Palette.PAPER, alpha))
-	draw_string(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(s["color"], alpha))
+	# ART-2 2D (§6.4 live numbers): 1A's live_number look: the LIVE_NUMBER_RIM rim and a glow
+	# in the number's own colour (its LabelSettings, drawn at the number's animated size).
+	var ls := UiTheme.live_number(UiTheme.DISPLAY, Color(s["color"]))
+	var lf: Font = ls.font if ls.font != null else f
+	draw_string_outline(lf, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, ls.outline_size + ls.shadow_size, Color(ls.shadow_color, ls.shadow_color.a * alpha))
+	draw_string_outline(lf, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, ls.outline_size, Color(ls.outline_color, alpha))
+	draw_string(lf, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(s["color"], alpha))
 
 
 ## ANIM-R3 A6a: a hit's outcome where it struck: its glyph and "0", popping in and fading.

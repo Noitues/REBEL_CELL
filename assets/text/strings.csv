@@ -26,11 +26,15 @@ Stationed on %s."
 %d DOWN,%d DOWN
 %d ENTRY SITES,%d ENTRY SITES
 %d HP,%d HP
+%d HP lost,%d HP lost
+%d HP lost: LETHAL,%d HP lost: LETHAL
 %d LANDS HERE,%d LANDS HERE
 %d LEFT,%d LEFT
 %d NEEDLES,%d NEEDLES
+%d RAM lost,%d RAM lost
 %d SLICES,%d SLICES
 %d TAKEN,%d TAKEN
+%d absorbed by block and shield,%d absorbed by block and shield
 %d destroyed,%d destroyed
 %d fps,%d fps
 %d lost,%d lost
@@ -72,6 +76,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s BITES YOU %d,%s BITES YOU %d
 %s DOWN,%s DOWN
 %s EVADE,%s EVADE
+%s LANDS ON: %s,%s LANDS ON: %s
 %s MOVES,%s MOVES
 %s R%d,%s R%d
 %s R%d%s,%s R%d%s
@@ -94,7 +99,9 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s is held at %s (%d more).,%s is held at %s (%d more).
 %s is lost. The campaign is over.,%s is lost. The campaign is over.
 %s moves from %s to %s.,%s moves from %s to %s.
+%s on %d slice(s),%s on %d slice(s)
 %s on %s hits %s for %d.,%s on %s hits %s for %d.
+%s on a random slice,%s on a random slice
 "%s reaches %s: %d damage, HP %d → %d.","%s reaches %s: %d damage, HP %d → %d."
 %s returns to the reserves.,%s returns to the reserves.
 %s rolls,%s rolls
@@ -107,6 +114,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 "%s, your home server","%s, your home server"
 %s.,%s.
 %s/turn,%s/turn
+%s: %s -> %d HP,%s: %s -> %d HP
 %s: %s.,%s: %s.
 "%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.","%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN."
 %s: integrity (HP) %s → %s in the raid. %s,%s: integrity (HP) %s → %s in the raid. %s
@@ -120,12 +128,16 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 "(seed %d, ICE %d, %s) against %s. Story path: %s.","(seed %d, ICE %d, %s) against %s. Story path: %s."
 +%d BLOCK,+%d BLOCK
 +%d DRONE,+%d DRONE
++%d EVADE,+%d EVADE
 +%d HP,+%d HP
++%d HP healed,+%d HP healed
 +%d MORE,+%d MORE
 +%d NEEDLE,+%d NEEDLE
 +%d RAM,+%d RAM
 +%d SHIELD,+%d SHIELD
++%d block and shield gained,+%d block and shield gained
 ", a run in progress",", a run in progress"
+- its block and shield %d (absorbed),- its block and shield %d (absorbed)
 -%d RAM,-%d RAM
 // %s // RANK %d,// %s // RANK %d
 1  Pick a node,1  Pick a node
@@ -141,6 +153,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 2× NUDGE CARDS NEXT,2× NUDGE CARDS NEXT
 ": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next",": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next"
 < PREV SITE,< PREV SITE
+= %s HP  (%d -> %d),= %s HP  (%d -> %d)
 > CREW     %s,> CREW     %s
 > HOME     %s,> HOME     %s
 > ICE      0,> ICE      0
@@ -152,10 +165,12 @@ A Firmware chip upgrades one slot of your spinner: it works on the slice in that
 A guided first fight.,A guided first fight.
 "A patrol: loot, Heat and Rank from the run, no objective.","A patrol: loot, Heat and Rank from the run, no objective."
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
+A random roll: the odds are in the breakdown,A random roll: the odds are in the breakdown
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
 AGAIN,AGAIN
 AIRMAIL,AIRMAIL
 ALL BLOCKED,ALL BLOCKED
+ALL RESULTS: %s,ALL RESULTS: %s
 ARE YOU SURE?,ARE YOU SURE?
 ARMORY %d/%d,ARMORY %d/%d
 ARMORY:,ARMORY:
@@ -213,8 +228,11 @@ CAMPAIGN,CAMPAIGN
 CAMPAIGN END,CAMPAIGN END
 CAMPAIGNS,CAMPAIGNS
 CAN BE YOUR NODE,CAN BE YOUR NODE
+CANCEL,CANCEL
+CANNOT UNDO,CANNOT UNDO
 CARD DETAIL,CARD DETAIL
 CARDS,CARDS
+CELL,CELL
 CELL DEFENSE RAID SETUP,CELL DEFENSE RAID SETUP
 CELL HOLDS,CELL HOLDS
 CELL STATUS,CELL STATUS
@@ -227,6 +245,7 @@ CLEARED,CLEARED
 CLEARS %s,CLEARS %s
 CODEX,CODEX
 COMBATS,COMBATS
+CONFIRM,CONFIRM
 CONNECTING,CONNECTING
 CONNECTING TO,CONNECTING TO
 CONTINUE,CONTINUE
@@ -397,7 +416,7 @@ CardData.whirl.description,Spin a wheel 7 ticks.
 CardData.whirl.display_name,Whirl
 Cards,Cards
 Cards in %s's deck (VIEW LOADOUT shows them).,Cards in %s's deck (VIEW LOADOUT shows them).
-"Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on an arrow (that sets the way they turn), slice cards on a slice. While you aim, the tags and the dashed acid arc show the result before you commit.","Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on an arrow (that sets the way they turn), slice cards on a slice. While you aim, the tags and the dashed acid arc show the result before you commit."
+"Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on a nudge button (that sets the way they turn), slice cards on a slice. While you aim, the result chips and the dashed acid arc show the result before you commit.","Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on a nudge button (that sets the way they turn), slice cards on a slice. While you aim, the result chips and the dashed acid arc show the result before you commit."
 Cascade: %s takes %d damage: HP %d → %d.,Cascade: %s takes %d damage: HP %d → %d.
 Central Server,Central Server
 Central Server (star): the corporation's core.,Central Server (star): the corporation's core.
@@ -569,6 +588,7 @@ Deploy armory asset,Deploy armory asset
 Deploy run asset,Deploy run asset
 Deutan (green-weak),Deutan (green-weak)
 Display,Display
+Do it in the fight to go on (or press NEXT).,Do it in the fight to go on (or press NEXT).
 Drag Firmware or a slice onto a slot to put it there.,Drag Firmware or a slice onto a slot to put it there.
 Drag a card here to shred it (or select it and press REMOVE).,Drag a card here to shred it (or select it and press REMOVE).
 "Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards.","Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards."
@@ -590,7 +610,7 @@ EVENT PAYOUT,EVENT PAYOUT
 EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
 EXPLOITS %d/%d,EXPLOITS %d/%d
-"Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The tag above each wheel shows it (the dots: how well the needle sits) and its chips show every result: HITS, BLOCK, statuses, RAM, HEAT. The dashed NEXT plate by the HP is the forecast; the grey LAST TURN line under it is what the last SEND IT did. {inspect_how} anything to read it.","Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The tag above each wheel shows it (the dots: how well the needle sits) and its chips show every result: HITS, BLOCK, statuses, RAM, HEAT. The dashed NEXT plate by the HP is the forecast; the grey LAST TURN line under it is what the last SEND IT did. {inspect_how} anything to read it."
+"Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The grey LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it.","Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The grey LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it."
 Elite Frequency,Elite Frequency
 Elite Router,Elite Router
 Elite Router: a harder fight,Elite Router: a harder fight
@@ -829,6 +849,7 @@ HP %d/%d,HP %d/%d
 HP %d/%d · DECK %d · DAEMONS %d%s,HP %d/%d · DECK %d · DAEMONS %d%s
 HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.,HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.
 HP %s,HP %s
+HP %s (other effects),HP %s (other effects)
 HP %s → %s %s,HP %s → %s %s
 HP is full,HP is full
 HP now: %d of %d.,HP now: %d of %d.
@@ -945,6 +966,7 @@ IF CLEARED:,IF CLEARED:
 RUNS NOW:","IF THE RAID
 RUNS NOW:"
 IF YOU SEND IT,IF YOU SEND IT
+IF YOU SEND IT NOW: %s,IF YOU SEND IT NOW: %s
 INFC,INFC
 INFECT,INFECT
 INNER,INNER
@@ -981,7 +1003,7 @@ LOOT,LOOT
 LOOT: pick a %s,LOOT: pick a %s
 LOST,LOST
 "LURES, PULL %d","LURES, PULL %d"
-"Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The curved arrows over a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}","Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The curved arrows over a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}"
+"Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}","Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}"
 Language,Language
 Language (translations from assets/text/strings.csv),Language (translations from assets/text/strings.csv)
 Leave,Leave
@@ -1370,6 +1392,7 @@ Mainframe: the cyber shop,Mainframe: the cyber shop
 "Mainframe: the cyber shop (cards, Firmware, Daemons, slices, card removal).","Mainframe: the cyber shop (cards, Firmware, Daemons, slices, card removal)."
 Map legend on the city views,Map legend on the city views
 Master volume,Master volume
+More on the next page: press NEXT.,More on the next page: press NEXT.
 Move it to %s.,Move it to %s.
 Music volume,Music volume
 NEED %d,NEED %d
@@ -1442,7 +1465,6 @@ New campaign,New campaign
 Next,Next
 Next threshold at %d.,Next threshold at %d.
 Next-run boosts:,Next-run boosts:
-No,No
 No Daemons installed.,No Daemons installed.
 No First Turn Free Nudge,No First Turn Free Nudge
 No campaign.,No campaign.
@@ -1530,6 +1552,7 @@ Picking it up and moving it onto a slot of the small spinner picks it too.,Picki
 PlayStation,PlayStation
 Press,Press
 Press %s on,Press %s on
+Press NEXT to go on.,Press NEXT to go on.
 Press a Site to open it on the City Grid.,Press a Site to open it on the City Grid.
 "Press a key, then press the new one. Cards stay on 1-9.","Press a key, then press the new one. Cards stay on 1-9."
 Press an asset card: it deploys to the target (%s now).,Press an asset card: it deploys to the target (%s now).
@@ -1575,6 +1598,7 @@ ProfileUnlockData.unlock_wrecker.description,Recruit Wrecker operatives in every
 ProfileUnlockData.unlock_wrecker.display_name,Class: Wrecker
 Protan (red-weak),Protan (red-weak)
 Purge Threshold,Purge Threshold
+QUIT,QUIT
 Quit,Quit
 Quit REBEL_CELL?,Quit REBEL_CELL?
 Quit REBEL_CELL? Progress is autosaved.,Quit REBEL_CELL? Progress is autosaved.
@@ -1597,6 +1621,7 @@ RAID REPORT,RAID REPORT
 RAID SETUP,RAID SETUP
 RAID SETUP: a raid is coming along the dashed routes: set up the defence.,RAID SETUP: a raid is coming along the dashed routes: set up the defence.
 RAIDS,RAIDS
+RAM,RAM
 RAM %d/%d,RAM %d/%d
 "RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn.","RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn."
 RAM %s,RAM %s
@@ -1613,6 +1638,7 @@ RESIST,RESIST
 RESIST %d,RESIST %d
 RESIST %d→%d,RESIST %d→%d
 RESISTANCE,RESISTANCE
+RESOLVING...,RESOLVING...
 RESPIN,RESPIN
 RESPIN %d RAM,RESPIN %d RAM
 RESPIN -%d RAM: %s%s,RESPIN -%d RAM: %s%s
@@ -1770,7 +1796,7 @@ SBOX,SBOX
 SCHEMATICS,SCHEMATICS
 SCHEMATICS %s,SCHEMATICS %s
 SEND IT,SEND IT
-"SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The tags already show the outcome.","SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The tags already show the outcome."
+"SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The chips beside each HP already show the outcome.","SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The chips beside each HP already show the outcome."
 SFX volume,SFX volume
 SHARE CODES,SHARE CODES
 SHIELD,SHIELD
@@ -2481,7 +2507,7 @@ TROJAN,TROJAN
 "TRUST
 NO ONE","TRUST
 NO ONE"
-TURN %d · FREE NUDGE %d,TURN %d · FREE NUDGE %d
+TURN %d  |  FREE NUDGE %d,TURN %d  |  FREE NUDGE %d
 TUTORIAL,TUTORIAL
 Take,Take
 Take nothing from this payout.,Take nothing from this payout.
@@ -2841,13 +2867,13 @@ Windowed,Windowed
 Withdraw %s,Withdraw %s
 Won,Won
 Xbox,Xbox
+YES,YES
 YOU,YOU
 YOU ARE HERE,YOU ARE HERE
 YOU GET %s,YOU GET %s
 YOUR %s,YOUR %s
 YOUR NODES // pick the target,YOUR NODES // pick the target
 YOUR WHEEL,YOUR WHEEL
-Yes,Yes
 You are here.,You are here.
 You can move here now.,You can move here now.
 "Your %s, if you play it:","Your %s, if you play it:"

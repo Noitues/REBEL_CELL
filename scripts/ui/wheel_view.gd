@@ -62,6 +62,20 @@ var center_x: float = 0.5
 var left_reserve: float = 0.0
 ## Nudge arrows are drawn and clickable (the player's wheel and every enemy wheel).
 var show_arrows: bool = true
+## ART-2 2D (D15, ART_BIBLE v2 §3.1): the combat HUD shows this wheel's results as chips beside
+## its HP and its nudges as buttons on one line above it: the view then draws no forecast tag,
+## no NEXT plate and no rim arrows (the HUD draws the buttons where `arrow_center` says; the
+## view still hit-tests them, so clicks, drops and tooltips work as before).
+var hud_results: bool = false
+## ART-2 2D: the nudge buttons' line above the disc (px at text scale 1.0): its rise over the
+## disc's top, the room kept for it, and how far out each button sits (share of the radius;
+## the inner ring's pair further out).
+const NUDGE_RISE := 34.0
+const NUDGE_ROOM := 62.0
+const NUDGE_SPREAD := 0.78
+const NUDGE_INNER_SPREAD := 1.08
+## The nudge line grows with the text up to this scale (the wheel keeps its size, H23).
+const NUDGE_SCALE_MAX := 1.3
 ## Key hints drawn by the arrows (the wheel the nudge keys drive): {direction: "[Q]"}.
 var arrow_hints: Dictionary = {}
 ## The ring the nudge keys drive on this wheel (its arrows are marked).
@@ -1515,6 +1529,10 @@ func contains_global(point: Vector2) -> bool:
 
 ## Centre of a nudge arrow on screen.
 func arrow_center(ring: int, direction: int) -> Vector2:
+	if hud_results:
+		var spread := NUDGE_INNER_SPREAD if ring == RC.RingScope.INNER else NUDGE_SPREAD
+		var top := _center().y - _radius() - _band() - NUDGE_RISE * minf(_ts(), NUDGE_SCALE_MAX)
+		return global_position + Vector2(_center().x + _radius() * spread * signf(direction), maxf(ARROW_HIT * _ts(), top))
 	var r := _radius() + (ARROW_INNER_RADIUS if ring == RC.RingScope.INNER else ARROW_RADIUS)
 	var a := deg_to_rad(-90.0 + arrow_angle(ring) * signf(direction))
 	return global_position + _center() + Vector2(cos(a), sin(a)) * r
@@ -1765,6 +1783,8 @@ func _radius() -> float:
 	# RADIUS_FLOOR of the unconstrained size, as long as its title row still fits (H23).
 	var span := 2.0 + ABOVE_SHARE
 	var r_full := (size.y - _bottom_need() - INTENT_HEIGHT - _tag_reserve()) / span
+	if hud_results:
+		r_full = (size.y - _bottom_need() - NUDGE_ROOM * minf(_ts(), NUDGE_SCALE_MAX)) / span
 	var r_title := (size.y - _bottom_need() - INTENT_HEIGHT * _ts()) / span
 	r = minf(r, maxf(r_full, minf(r_title, r * RADIUS_FLOOR)))
 	return maxf(MIN_RADIUS, r)
@@ -3034,6 +3054,8 @@ const INNER_GHOST_INSET := 12.0
 
 
 func _draw_arrows() -> void:
+	if hud_results:
+		return  # ART-2 2D: the HUD draws the nudge buttons
 	for ar in arrows():
 		var ring: int = ar["ring"]
 		var d: int = ar["direction"]
@@ -3080,6 +3102,8 @@ func arrow_hint_rect(ring: int, d: int) -> Rect2:
 	var f := Palette.mono()
 	var sz := Vector2(f.get_string_size(String(arrow_hints[d]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, f.get_height(fs))
 	var c := arrow_center(ring, d) - global_position
+	if hud_results:
+		return Rect2(c + Vector2(-sz.x * 0.5, ARROW_HIT * _ts() + HINT_GAP), sz)
 	var above := Rect2(c + Vector2(-sz.x * 0.5 + d * HINT_SIDE, -HINT_RISE - f.get_ascent(fs)), sz)
 	var beside := Rect2(Vector2(c.x + ARROW_HIT + HINT_GAP if d > 0 else c.x - ARROW_HIT - HINT_GAP - sz.x, c.y - sz.y * 0.5), sz)
 	var under := Rect2(c + Vector2(-sz.x * 0.5 + d * HINT_SIDE, ARROW_HIT + HINT_GAP), sz)
@@ -3127,7 +3151,7 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 	var hs := _fs(HP_FONT_SIZE)
 	var hp_rect: Rect2 = lay["hp"]
 	draw_string(Palette.display(), Vector2(hp_rect.position.x, hp_rect.end.y), String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hp_col)
-	if not replaying and is_nan(anim_hp) and (after != combatant.hp or bool(lay.get("lethal", false))):
+	if not hud_results and not replaying and is_nan(anim_hp) and (after != combatant.hp or bool(lay.get("lethal", false))):
 		var fs := int(lay.get("next_fs", _fs(HUB_FONT_SIZE + 3)))
 		var ftext := String(lay["next_text"])
 		var fr: Rect2 = lay["next"]
@@ -3628,7 +3652,7 @@ func _intent_rect_local() -> Rect2:
 ## The tag's rect (local) and its WAS row (ANIM-R5 combat 7; empty when none or no room).
 func _tag_geometry() -> Dictionary:
 	var it := tag_intent()
-	if combatant == null or it.is_empty() or String(it.get("text", "")) == "":
+	if combatant == null or hud_results or it.is_empty() or String(it.get("text", "")) == "":
 		return {"rect": Rect2(), "was": Rect2()}
 	var ts := _ts()
 	var title_h := INTENT_HEIGHT * ts
