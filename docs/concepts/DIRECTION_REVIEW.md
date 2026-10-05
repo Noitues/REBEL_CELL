@@ -1217,3 +1217,10 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
   - a combined layer stack covering every per-slice feature, plus priority rules.
 - **Netrun transit v3:** network, cable and power-line runs (straight segments and turns, not a hiking path), with the walked path solid, and a lighter city.
 - **Unified city:** lightened.
+
+### Locked (2026-10-04)
+- **Exploit map v3:** the chip sits clear of the pencil.
+- **Netrun transit v3:** straight cable-run paths, a solid walked path, and the lighter city ("perfect").
+
+### In progress
+- **Worst-case combat clutter test:** double drones, a parasite and a status on every slice of both wheels, with the inner ring populated. Compared against a typical case, with mitigations.
