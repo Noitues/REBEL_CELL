@@ -33,6 +33,15 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Designer ruling: reduce effects as a project-wide shader global
+Asked after area E merged (E made `reduce_effects` a per-material uniform set by `ShaderReduce`, because
+M13's global lives in `project.godot`, a designer file). Ruling: add the global to `project.godot`
+(`[shader_globals]` `reduce_effects`, float, 0.0, as on `art-m13-final`). Agents may stage
+`project.godot` **for that entry only** (area E2, ART-0); every other `project.godot` change still needs
+the designer. `rc_common.gdshaderinc` reads the global; `Fx.apply_settings` sets it with
+`RenderingServer.global_shader_parameter_set`; `ShaderReduce` is removed or reduced to what the global
+cannot cover.
+
 ### 2026-10-05 — Designer ruling: M14 regrouped
 The designer asked why integrating a one-week art pass would take 3–4 weeks. The reason: the locked v2
 direction exists only as concept stills and GIFs (43 rounds, 5,915 files under `docs/concepts/`; after
