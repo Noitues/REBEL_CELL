@@ -10,14 +10,14 @@ extends Node3D
 ##   --freeze=1  (stills: the clock stands)
 
 const CONFIG := preload("res://tools/spike/city/city_spike_config.tres")
-const BUILDING_SHADER := preload("res://tools/spike/city/shaders/city_building.gdshader")
-const GROUND_SHADER := preload("res://tools/spike/city/shaders/city_ground.gdshader")
-const CAR_SHADER := preload("res://tools/spike/city/shaders/city_car.gdshader")
-const POST_SHADER := preload("res://tools/spike/city/shaders/city_post.gdshader")
+const BUILDING_SHADER := preload("res://shaders/city/city_building.gdshader")
+const GROUND_SHADER := preload("res://shaders/city/city_ground.gdshader")
+const CAR_SHADER := preload("res://shaders/city/city_car.gdshader")
+const POST_SHADER := preload("res://shaders/city/city_post.gdshader")
 const GROUND_LAYER := 2
 const SETTLE_DEFAULT := 30
 
-var cfg: CitySpikeConfig = CONFIG
+var cfg: CityConfig = CONFIG
 var district: CityDistrict
 var traffic: CityTraffic
 var iso: CityIsoCamera

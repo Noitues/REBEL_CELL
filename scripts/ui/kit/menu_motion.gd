@@ -41,7 +41,7 @@ var _typed: int = -1
 var _type_tween: Tween = null
 ## The line's font colour overrides while its words are drawn here ({name: colour or null}).
 var _saved_colors: Dictionary = {}
-var _type_color: Color = Color.WHITE
+var _type_color: Color = Palette.NO_TINT
 var _type_outline: Color = Color(0, 0, 0, 0)
 var _blink_t: float = 0.0
 var _quiet: bool = true

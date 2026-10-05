@@ -466,3 +466,4 @@ save_dir_source = "res://saves"
 save_dir_export = "user://saves"
 replay_subdir = "replays"
 write_replays = true
+max_replays = 50

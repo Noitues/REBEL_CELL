@@ -206,11 +206,15 @@ func _check_key_and_steps(hq: Control, what: String, scale: float) -> void:
 ## H24 K6: no two node icons (with their tier pips) overlap.
 func _check_icons_apart(overlay: CityMapOverlay, what: String) -> void:
 	var rects := {}
+	var shown := 0
 	for n in overlay.nodes:
+		if not overlay.marker_shown(n):
+			continue  # ART-5 5d: a hidden v4 Site draws nothing
+		shown += 1
 		var r := overlay.icon_rect(n)
 		if r.has_area():
 			rects[String(n["id"])] = r
-	assert_eq(rects.size(), overlay.nodes.size(), "%s: every node has its icon" % what)
+	assert_eq(rects.size(), shown, "%s: every node shown has its icon" % what)
 	_assert_apart(rects, "%s icons" % what)
 
 
@@ -269,6 +273,8 @@ func _check_nodes_beside_the_column(hq: Control, what: String) -> void:
 	var column := (hq.find_child("GridColumn", true, false) as Control).get_global_rect()
 	var xf := overlay.get_global_transform()
 	for n in overlay.nodes:
+		if not overlay.marker_shown(n):
+			continue  # ART-5 5d: a hidden v4 Site is not on the map
 		var at := _screen_at(overlay, n)
 		var where := "%s %s at %s" % [what, n["id"], at]
 		assert_true(area.has_point(at), "%s: on the map %s" % [where, area])
@@ -287,7 +293,7 @@ func _assert_no_overlap(overlay: CityMapOverlay, what: String) -> void:
 		for b in range(a + 1, overlay.nodes.size()):
 			var na: Dictionary = overlay.nodes[a]
 			var nb: Dictionary = overlay.nodes[b]
-			if overlay.icon_pos(na).x == INF or overlay.icon_pos(nb).x == INF:
+			if overlay.icon_pos(na).x == INF or overlay.icon_pos(nb).x == INF or not overlay.marker_shown(na) or not overlay.marker_shown(nb):
 				continue
 			assert_true(overlay.icon_pos(na).distance_to(overlay.icon_pos(nb)) >= overlay.icon_radius(na) + overlay.icon_radius(nb),
 				"%s: icons %s and %s overlap" % [what, na["id"], nb["id"]])
@@ -297,7 +303,7 @@ func _assert_no_overlap(overlay: CityMapOverlay, what: String) -> void:
 			assert_false((rects[keys[i]] as Rect2).intersects(rects[keys[j]]), "%s: labels %s and %s overlap" % [what, keys[i], keys[j]])
 		for n in overlay.nodes:
 			var at := overlay.icon_pos(n)
-			if at.x == INF:
+			if at.x == INF or not overlay.marker_shown(n):
 				continue
 			var r: Rect2 = rects[keys[i]]
 			var q := Vector2(clampf(at.x, r.position.x, r.end.x), clampf(at.y, r.position.y, r.end.y))

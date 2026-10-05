@@ -12,6 +12,9 @@ extends Node
 var blocking: bool = false
 ## Events stopped so far (tests read it).
 var stopped: int = 0
+## ART-7 3B: called for a press while blocking (the link jack's one-press skip, STYLE 5.1);
+## the press itself still reaches no screen.
+var on_press: Callable = Callable()
 
 
 func _init() -> void:
@@ -50,4 +53,6 @@ func stay_last() -> void:
 func _input(event: InputEvent) -> void:
 	if blocking and not (event is InputEventMouseMotion):
 		stopped += 1
+		if on_press.is_valid() and event.is_pressed() and not event.is_echo():
+			on_press.call()
 		get_viewport().set_input_as_handled()

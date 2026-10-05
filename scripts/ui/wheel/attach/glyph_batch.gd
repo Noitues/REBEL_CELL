@@ -49,4 +49,4 @@ func _draw() -> void:
 		if region.size == Vector2.ZERO:
 			continue
 		var cell := GlyphIcon.cell_size_for(float(it[2]))
-		draw_texture_rect_region(t.atlas, Rect2(Vector2(it[1]) - cell * 0.5, cell), region, Color(Color.WHITE, float(it[3])))
+		draw_texture_rect_region(t.atlas, Rect2(Vector2(it[1]) - cell * 0.5, cell), region, Color(Palette.NO_TINT, float(it[3])))

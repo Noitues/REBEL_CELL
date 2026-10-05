@@ -8,7 +8,9 @@ extends RefCounted
 ##
 ## Rules (keys of the per-file dictionaries):
 ## - `color`: `Color(` whose first argument is a number or a string literal, `Color8(`,
-##   `Color.html(`, `Color.hex(`. `palette.gd` (the token file) is exempt.
+##   `Color.html(`, `Color.hex(`, and (ART-0 audit D2) a named constant such as
+##   `Color.WHITE`, `Color.BLACK` or `Color.TRANSPARENT` (Palette has NO_TINT, CLEAR,
+##   WHITE_HOT, HC_BG). `palette.gd` (the token file) is exempt.
 ## - `font_override`: `add_theme_font_size_override(<name>, <int literal>)`.
 ## - `draw_size`: `draw_string` / `draw_multiline_string` (and their `_outline` forms) whose
 ##   font-size argument is an integer literal.
@@ -38,7 +40,7 @@ static var _re_int: RegEx
 static func _init_res() -> void:
 	if _re_color != null:
 		return
-	_re_color = RegEx.create_from_string("\\bColor\\s*\\(\\s*[-+]?[0-9.\"']|\\bColor8\\s*\\(|\\bColor\\.html\\s*\\(|\\bColor\\.hex(64)?\\s*\\(")
+	_re_color = RegEx.create_from_string("\\bColor\\s*\\(\\s*[-+]?[0-9.\"']|\\bColor8\\s*\\(|\\bColor\\.html\\s*\\(|\\bColor\\.hex(64)?\\s*\\(|\\bColor\\.[A-Z][A-Z0-9_]*\\b")
 	_re_override = RegEx.create_from_string("add_theme_font_size_override\\s*\\([^,()]+,\\s*[0-9]+\\s*\\)")
 	_re_const = RegEx.create_from_string("^\\s*(?:static\\s+)?(?:const|var)\\s+([A-Za-z0-9_]*FONT[A-Za-z0-9_]*)\\s*(?::\\s*int\\s*)?:?=\\s*([0-9]+)\\s*$")
 	_re_assign = RegEx.create_from_string("(?<![A-Za-z0-9_])font_size\\s*(?::\\s*int\\s*)?:?=\\s*[0-9]+\\s*$")

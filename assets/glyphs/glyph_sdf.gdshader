@@ -4,6 +4,7 @@
 // Colours come from Palette tokens (GLYPH_FILL / GLYPH_INK) through GlyphIcon; the node's
 // modulate multiplies the result. Geometry comes from content/config/glyph_table.tres.
 shader_type canvas_item;
+#include "res://shaders/lib/rc_common.gdshaderinc"
 
 uniform vec4 fill_color : source_color = vec4(1.0);
 uniform vec4 outline_color : source_color = vec4(0.047, 0.039, 0.086, 1.0);

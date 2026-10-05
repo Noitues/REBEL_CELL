@@ -104,6 +104,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"heal_inflow", &"evade_token", &"corrupt_apply", &"corrupt_tick", &"drone_deploy", &"drone_attack", &"drone_destroyed",
 	&"enemy_defeated_bits", &"phase_change_bits", &"respin_bits", &"nudge_resist_bits", &"ram_gain_bits", &"temp_label",
 	&"daemon_trigger", &"firmware_trigger", &"heat_city_beacon", &"heat_city_sweep",
+	# ART-0 audit B1: the Heat glitch Options extra (ART_BIBLE v2 5.5).
+	&"heat_glitch",
 
 	# ART-1 1B material kit (ART_BIBLE v2 1.2, 6.3; round 3 combined_v2 lifecycle): the CRT
 	# terminal, the vinyl sticker, the grease pencil, the holo, the light spill and the bits.
@@ -118,6 +120,10 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-10 4C (ART_BIBLE v2 4.13, round 33 ui_chrome): the title's SIMULATE glitch and neon
 	# sign loops, the ON AIR ticker.
 	&"title_glitch_burst", &"title_sign_flicker", &"on_air_ticker",
+	# ART-7 3B (ART_BIBLE v2 4.6): the netrun map's hidden-node reveal and calm Heat, and the
+	# jack-in transition's beats (terminal, link rain, CRT collapse, wheel slap and spin, lens).
+	&"route_node_reveal", &"route_heat_orbit", &"route_searchlight",
+	&"jack_terminal_type", &"jack_link_rain", &"jack_crt_collapse", &"jack_wheel_slap", &"jack_wheel_spin", &"jack_lens",
 	# ART-2 2A (the wheel stack): the screens' loop, the telemetry scroll, the precision landings, the hub states.
 	&"wheel_screen_loop", &"wheel_telemetry_scroll", &"precision_latch", &"precision_word", &"precision_stutter", &"hub_defeat_drain", &"hub_lockdown_drain",
 
@@ -129,6 +135,10 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-9 4B (ART_BIBLE v2 §4.11 / §4.12): the portrait feed's live clock, its blink and
 	# talking mouth, DISPATCH's voice trace (PortraitFeed).
 	&"portrait_feed", &"portrait_blink", &"portrait_talk", &"dispatch_trace",
+	# ART-5 5c city motion (CityMotionLayers): the sky lanes, street traffic, billboards, aviation
+	# lights, the Heat / suspicion rig and the day / night crossfade.
+	&"sky_lane_cars", &"street_cars", &"holo_billboard", &"aviation_blink", &"searchlight_sweep", &"chopper_orbit",
+	&"drone_orbit", &"police_strobe", &"alarm_beacon", &"heat_node_light", &"city_light_fade",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.

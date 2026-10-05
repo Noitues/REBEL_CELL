@@ -7,7 +7,7 @@ extends GutTest
 
 const CONFIG := preload("res://tools/spike/city/city_spike_config.tres")
 
-var cfg: CitySpikeConfig = CONFIG
+var cfg: CityConfig = CONFIG
 var district: CityDistrict
 
 

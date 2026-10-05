@@ -113,6 +113,413 @@ kit) after both merged; generator scripts read on `art-concepts-r43` (round 33 `
   / 24_screens` and `test_anim6_screen_motion` read PIRATE RADIO as CrtText, the plan's stickers are
   translated once, CONTINUE is a TerminalChip with the slot line (its tooltip at big text). No test
   dropped.
+### 2026-10-05 — Art direction — ART-0 audit fixes
+Fixes every finding of `docs/handoff/m14_audit/ART-0_horizontal.md` (3 P2, 12 P3); nothing deferred.
+- **E1 (P2) shakes held to their tier.** `Motion.shake` plays `Motion.shake_px(id)`, the amplitude
+  clamped by `VfxTier.clamp_shake(VfxTier.of(id), …)`; `Fx.shake_px` delegates to it. Data made honest
+  too: `heat_letters_shake` is T3 (a Heat crossing is a moment, like `heat_number_pop` and
+  `heat_banner`; keeps 3 px), `precision_weak` 4 → 2 px (T2); `hit_shake` stays 2 px (2C). Not a shake
+  in the bible's sense, left as is: `drop_reject`'s 6 px wiggle of the small no-entry mark (the
+  refused-target glyph moving, not the scene). Tests `test_every_shake_fits_its_tier` (every id the
+  scripts pass to Motion.shake), `test_motion_shake_clamps_an_amplitude_over_its_tier`.
+- **E2 (P2) one-shots fit their tier; holds and loops are marked.** Schema: `UiMotionEntryData.kind`
+  { ONE_SHOT (default), HOLD, LOOP } (smoke-checked in `_art0_tier`); `VfxTier.fits` holds only
+  one-shots to `MAX_SECONDS`. HOLD (what the duration measures is a stay or a wait): `saved_stamp`,
+  `toast`, `toast_note_hold`, `resolve_sequence` (a budget), `combat_end_hold`, `jack_arrival_wait`,
+  `asset_drop_wait`, and the readable floats `ram_spend_float`, `ram_refill_float`, `forecast_change`.
+  LOOP: `drop_zone_pulse`, `pointer_orbit`, `ram_pending_blink`, `send_it_ready`, `route_target_pulse`,
+  `tutorial_next_pulse`. Retiered T1 → T2 (short outcomes, not 0.25 s feedback): `wheel_spin`,
+  `wheel_respin`, `inner_ring_turn`, `enemy_turn_spin`, `pointer_migrate`, `site_outline_draw`,
+  `map_camera_ease`, `route_pulse`, `visited_dim`, `loot_fan`, `count_up`, `number_roll`, `drip_grow`,
+  `drip_halo`, `minimap_pulse`, `flight_land_pulse`; `city_bake_fade` T0 (the backdrop). `buy_fly`
+  and `loot_pick` 0.7 → 0.6 s (the bible names buy_fly a T2 outcome; ANIM-R5's floor 0.6 holds).
+  Merged with main's newer entries (2B, ART-11): `backdrop_won_lights` T3 (a fight won is a moment),
+  `preview_chevron_chase` LOOP, `ransom_sticker_curl` / `ransom_sticker_drop` T4 (campaign end is the
+  bible's T4), `ransom_countdown` / `ransom_wipe_hold` HOLD, `dossier_open` T3.
+  Tests `test_every_one_shot_entry_fits_its_tier`,
+  `test_holds_and_loops_are_marked_and_only_one_shots_are_held_to_the_duration`.
+- **E3 shader rule everywhere.** `test_vfx_tiers` scans every `*.gdshader` outside `addons/`
+  (subfolders of `shaders/`, `assets/`, `tools/`): game shaders include rc_common; any shader with
+  TIME freezes it through `rc_time` / `rc_live`. Fixed on the way: the two animated city-spike
+  shaders (`tools/spike/city/shaders/city_car`, `city_post`) and `glyph_sdf` now include rc_common.
+  After merging main: the ten static city / landmark shaders main added (`shaders/city/city_building`,
+  `city_glow(_xray)`, `city_ground`, `city_network(_xray)`, `city_pool(_xray)`,
+  `assets/city/landmarks/landmark_beam`, `landmark_toon`) include it too, and rc_common is
+  include-guarded (`RC_COMMON_INCLUDED`) since `city_glow` / `city_pool`'s own includes pull it in;
+  all compiled cleanly in a windowed renderer check. `glyph_batch.gd`'s `Color.WHITE` reads
+  `Palette.NO_TINT`; the lint baseline lowered again to main's counts.
+  Test `test_the_shader_scan_reaches_every_folder`.
+- **B1 (P2) the Heat glitch is built.** `HeatGlitchLayer` (`scripts/ui/fx/`) + `shaders/heat_glitch.gdshader`,
+  in the combat scene between the backdrop (city + Heat lights) and the UI root, so wheels, FX and HUD
+  draw above it: the bible's protect mask (wheel discs <= 35 %) is met at 0 %. Grows with the band per
+  round 18-22 (COOL dip + line jitter; NOTICED tears; FLAGGED roll + macroblocks; HUNTED hold slip,
+  RGB split, scanlines; PURGE = HUNTED). Off by default; exempt from VfxTier (Settings.VFX_TIER_EXEMPT,
+  nothing clamps it); flash limiter on: no luminance dip and no roll brightening; option off: the
+  static corp edge tint at HUNTED+ only (§5.5), in the fight's corporation colour (Heat's HEAT_B when
+  none). CALL: **off under reduce effects** (the brief); §5.5 had "tears only at NOTICED strength, one
+  burst per 3 s" — reduce effects means no tears anywhere else (§5.4), so off is the simpler reading.
+  Timing: `ui_motion.tres` `heat_glitch` (LOOP; duration = a glitch state's hold, amplitude = the
+  edge tint's alpha; REQUIRED_IDS, motion-lab demo `fx_glitch`); per band
+  `CampaignConfigData.heat_glitch_period / _burst / _tears / _blocks` (schema, smoke-checked,
+  validated); px sizes are the view's named constants (round 18 table). Verified windowed (lab fight,
+  every band, the off tint). Test script `tests/unit/test_heat_glitch.gd` (fast tier).
+- **B2 names sweep narrowed.** The quoted-key form of the old raid word counts only in a raid context
+  (a raid file, or one that builds raid outcome dictionaries); `ui_theme.gd`,
+  `type_chrome_sheet.gd` and `test_w9_accessibility_settings.gd` write `"disabled":` plainly again.
+  Test `test_a_control_state_key_is_not_a_raid_word_but_a_raid_outcome_key_is`.
+- **B3 Hub Breach reads LOCKDOWN.** BREACHED stays the home server falling (ruling 6.2); the Hub
+  Breach log line ("<name> hub in LOCKDOWN for N turn(s)") and the hub line's " (LOCKDOWN)" take the
+  bible's word (§3.3, Appendix C #11). Seen, not changed: the netrun loot title "RACK BREACHED" (a
+  Server Rack, not home; the audit confirmed it). Test `test_a_hub_breach_says_lockdown_not_breached`.
+- **B4 saves folder.** `CampaignConfigData.max_replays` (50; 0 = no cap; schema, smoke-checked):
+  `SaveService.write_replay` prunes the oldest; replay names lead with the zero-padded wall-clock ms
+  so they sort oldest first. `export_presets.cfg` excludes `saves/*` in all three presets. Tests
+  `test_the_replay_folder_is_capped_and_drops_the_oldest`,
+  `test_netrun_rewind_and_resumed_fights_replay_to_the_same_hash` (netrun plain / with a rewind /
+  saved and resumed through JSON, two seeds each).
+- **B5 + O1 stale lines.** Part 2's "enum keeps SHIELD / DEPLOY / MISS" and D11 "no band changes" are
+  struck and marked superseded; "the glitch comes in ART-3 / ART-5" annotated; the SANDBOX question
+  struck as resolved; the cut-off duplicate D11 question line removed.
+- **C1 + D2 named colours.** `Palette.HC_BG` (#000) is high contrast's background; the colour lint
+  also counts `Color.WHITE` / `BLACK` / `TRANSPARENT` and the like; all 22 uses in `scripts/ui` now
+  read `Palette.NO_TINT` (multiplier white: shader carriers, masks, modulates), `CLEAR`, `WHITE_HOT`
+  (victory disc flash, white-hot bits) or `HC_BG`; values unchanged. Test
+  `test_named_colour_constants_are_palette_tokens`.
+- **D1 no slack.** Baseline lowered to today's counts (`ui_theme.gd` colour 24 → 12);
+  `test_the_baseline_has_no_slack` fails when a count drops without the baseline following.
+- **O2** `.github/workflows/ci.yml` fast-checks runs `python3 tools/test_run_tests.py` (triggers stay manual).
+- **O3** `docs/timeline/.gdignore`.
+
+### 2026-10-05 — Art direction — ART-5 5c city motion
+Agent 5c (ART_BIBLE v2 §4.1 car LOD, §4.2 city motion, §4.3 Heat on maps, §5.3–5.5, §6.1;
+refs round 24 `motion_layers`, round 26 ambient v4, round 37 calm Heat B, round 40 `cars_lod`).
+- **One seam.** The layers (`CityMotionLayers`, `scripts/city3d/`) read the city only through
+  `CityMotionSite` (lot frame, avenues busiest first, roofs, street lots, home, bounds), built by
+  `from_model` (5a's CityModel) or `from_district` (1D's spike). `CityViewMotion` puts them on 5a's
+  `CityView3D`: groups `traffic`, `sky`, `props`, `heat` go to the view's scene layers (traffic,
+  sky and heat also in the ground-only pass, so cars and Heat pools show under see-through
+  buildings); `camera_changed` drives car LOD and sprite sizes, `band_changed` the view
+  (GRID / RAID / NETRUN), `ambient_changed` pauses every layer, the spill goes to `set_spill`.
+  `tools/spike/city/city_spike_motion.gd` keeps a spike host for windowed render checks.
+- **Config.** New schema `CityMotionConfigData` (`scripts/data/`, shipped
+  `content/config/city_motion_config.tres`; smoke check `_art5_city_motion`): counts, sizes,
+  colours, road heights, band rigs, the day look. Every timing is a `ui_motion.tres` entry (all
+  T0, in REQUIRED_IDS, each with a motion-lab demo on a small grid city): `sky_lane_cars`,
+  `street_cars`, `holo_billboard`, `aviation_blink`, `searchlight_sweep`, `chopper_orbit`,
+  `drone_orbit`, `police_strobe`, `alarm_beacon`, `heat_node_light`, `city_light_fade`. NeonCity's
+  `city_traffic` / `beacon_blink` stay with the 2D city (its AWAITING_FIX entries are not hidden).
+- **Sky lanes** (round 26 v4): the 16 road shapes (A double deck, B, C with its flyovers and
+  1.75-turn spiral, F's cloverleaf of four 270° loops, the D×E four-level stack) on the city's own
+  busiest avenues (three per axis, at least 6 lots apart), each a row per direction baked into a
+  float texture (xyz, a = length), uniform by arc length; the car shader moves every vertex along
+  its row, so lines bend through loops and ramps. A loop moves 14–20 whole gaps (seamless). Guide
+  dots per road in its rail colour.
+- **Colours from a derived stream.** Cars and street cars take their lane colour from
+  `RngStreams.make_stream(city_seed, &"city_traffic")`, billboards and aviation phases from
+  `&"city_ambient"`: seeded like RngService streams but never the campaign's own, so a view moves
+  no game state.
+- **Car LOD:** FAR / MEDIUM / CLOSE by ortho (400 / 150) with hysteresis **0.04** (1D's 0.06 kept
+  the raid's 380 on FAR coming from the Grid; the bible and `cars_lod` put the raid on MEDIUM). At
+  management zooms only the lane line drops to 35 %; the car stays full strength. The CLOSE model
+  is a light toon-lit wedge (ToonInkMaterial's bands in the path shader; no ink hull: the cars are
+  drawn after the city's ink pass). Choppers and drones use `ToonInkMaterial` with its ink.
+- **Heat lights** (calm, centred on the hardened nodes' centre, home when none): every hardened
+  node one circling red / blue light on a thin `HEAT_B` ring, drawn through buildings like the
+  network decal; per band COOL nothing, NOTICED 3 alarm beacons, FLAGGED two slow searchlights
+  (calm, lower alpha) + 2 alarms, HUNTED + 13 police strobes, 2 choppers, 6 drones with
+  spotlights and ground pools; **PURGE uses HUNTED's look** (`CityHeatRig.look_of`). Suspicion
+  (round 6) adds 13 strobes, 3 choppers, 5 drones round the Cell's home, day or night.
+- **Day / night.** The layers crossfade (`city_light_fade`) and send the night share up; the host
+  lerps its toon ramp, sky, windows, neon, haze and grade toward the config's day look; by day no
+  rain and no fog at raid zoom (bible 4.2). 5a's CityView3D has no day-look call yet:
+  `CityViewMotion` sets the view's materials directly (asked of 5a below).
+- **Pause / reduce.** Every layer keeps its own clock: covered, unfocused or the host's ambient
+  scale 0 → stopped where it is; reduce effects / headless / entry off → the end state at once
+  (time 0, lights steady on, one billboard panel, searchlights at rest, aircraft parked);
+  **reduce motion pauses every layer in its steady look** and shows the sky lanes' markers
+  without cars (the brief and 5a's ambient scale; bible 5.4's "street traffic at 40 %" is not
+  kept). Quiet windowed runs ignore focus (they never have it). The netrun transit turns the
+  sky-lane cars off (bible 4.1); the CLOSE tier (< 150) therefore only shows outside the netrun
+  band (open question below).
+- **Frame cost** (spike host, this PC, 6 s averages, worst rig HUNTED): 1920×1080 tier 2 grid
+  2.97 ms with the layers vs 2.93 without (GPU +0.03 ms, +46 draws); raid 3.04 vs 2.95. Deck tier 1
+  at 1280×800: grid 2.10 vs 2.04, raid 2.17 vs 2.15. City total within the 8 ms budget.
+- Tests: `tests/unit/test_city_motion.gd` (fast). Captures: `tools/city/city_motion_capture.tscn`
+  (one launch walks 15 states; `--host=spike`; `--mperf`). Crops: `docs/art_review/ART-5/5c/`.
+
+### 2026-10-05 — Art direction — ART-5 5d Grid markers and key
+Agent 5d (Group 3 wave 2; bible §4.3, §4.5, §4.9, ruling 11, D17; refs `city/round42_site_markers/*`,
+`round39_landing_exploits/exploit_on_map_v3.jpg`, `exploits_v2.jpg`, `round39_city_unified/city_grid.jpg`;
+generator `art-concepts-r43:docs/concepts/round42_site_markers/scripts/markers42.py`).
+- **Site markers v4 (`SiteMarker`, pure; `SiteMarkerView`).** One marker, five layers ported from
+  `markers42.marker()` at its sizes (disc 30 px, Exploit 34, not-yet x0.85, ring gap 5 / width 4 (3),
+  pad 17 (14), pips 5 px squares, badge 9, sub-badge 0.31 of the disc). The state is a pure function
+  `SiteMarker.spec_for(campaign, corp, site, selectable)`. Per the coordinator, the disc is a 1B
+  `VinylSticker` (node stickers are vinyl): CIRCLE, gloss, a 1.5 px die-cut rim, art at 2x on a holder
+  (the sticker's own scale belongs to its motion). Cleared = grey vinyl (`grey` 1); DOWN = the
+  sticker's DISABLED state under the white bolt.
+- **Icons.** The Exploit type sub-badge is the glyph atlas (`GlyphIcon`, `exploit_<type>` keys). The
+  atlas has no map icons yet, so the corp crests (Meridian crane-A, Solace helix, Halcyon eye, Orbital
+  ringed planet, REBEL_CELL fist), the keyring, flame, tucked-thumb fist (`fist_mask` geometry), heart,
+  bolt and check are vector ports of the round 42 masks. The locked link's padlock is the atlas's
+  `state_locked`. Disc fills are night ink tinted by a token (no new Palette tokens).
+- **DOWN** = `SiteMarker.draw_bolt` (the v3 `bolt_mask`, white with a dark shadow, spanning the marker,
+  everything greyed). It is a static so 3A's raid view can draw the same bolt (ruling 11). **TAKEN** =
+  the SEIZURE NOTICE slip (pale paper, violet hatch and letterhead with the corp crest, red bar, tilted
+  -8 deg) with violet pips; orange ring while a Reclaim run is launchable. Links to a TAKEN or DOWN node
+  are de-powered (grey double trace, broken, no packets); locked cross-links show (grey dashes,
+  padlock disc). Both only on the Grid (`grid_graph(..., v4 = true)`); raid and netrun graphs keep
+  their own look (3A / 3B).
+- **Hidden-nodes rule (round 42 rules strip, bible §4.5 "Pinned").** Regular Sites that are not
+  selectable are hidden; Exploit, Heat objective, the boss, yours, cleared and TAKEN Sites, the
+  selected Site and a Site lit from its run row always show. The key's `HOVER: SHOW ALL` cell (pad:
+  `OPEN KEY: SHOW ALL`, the key button opens it) shows them all. A hidden Site is not picked on the map,
+  keeps no room in the fit or the icon stacking, and stays reachable by PREV / NEXT SITE (pad
+  reachability unchanged).
+- **Boss.** The red pencil TARGET is 1B's `GreasePencilMark` (hand circle, THREAT ink) plus
+  `GreasePencilWord` "TARGET", on a pencil layer above every UI layer of the overlay; the chip
+  `CENTRAL SERVER // EXPLOITS n/3` sits over the circle, clear of it.
+- **Exploit tag on hover (bible §4.9).** On the map an Exploit Site shows only its badge and gold pips.
+  Pointing at it (or lighting its run row) opens its decrypted file: a 1B `DecryptedHoloPanel` (corp
+  tint, no scrim) with `CATEGORY // ITEM` from the corp's ExploitData (`Breach: Customs Override Keys`
+  -> `BREACH // CUSTOMS OVERRIDE KEYS`), its effect at the breach and the Site. Its tooltip leads with
+  the same tag.
+- **Fight won (D17).** A cleared or claimed Site's building lights its windows in Cell pink with some
+  lime (`SiteMarker.won_light`, deterministic by Site id): on today's Grid host as window rows on the
+  roof's front walls; on 5a's 3D city as `SiteWonLights` (one MultiMesh of window quads for the `fx`
+  layer, placement pure and tested). Call: a DOWN node's lights are out (no power), so DOWN reads
+  apart from a won Site.
+- **The Grid map key, restyled (carry-over item).** The Grid's key is the v4 key
+  (`MapLegend.use_site_markers`). Each row draws the map's own marker (`SiteMarkerView`) or line, with
+  a word or two. Pointing at a row gives its meaning in plain words (`SiteMarker.MEANINGS`, written from
+  the rules as the v4 legend is). The strip keeps the reference's rows: next, cleared, yours, DOWN,
+  TAKEN, exploit, heat obj., locked link, a threat route when a raid is coming, and SHOW ALL. The
+  compact key holds every row (+ not yet, CORE, TARGET, no power). Fold, fit and live text size behave
+  as before (H23/H24, `legend_fold`).
+- **Group 1 naive audit P2s.** (1) The other maps' key: "cleared" had the corporate square; it is
+  now `◇`, and a test checks that every key entry differs in greyscale (glyphs for the old key,
+  `SiteMarker.grey_key` for v4). (2) A selected Site with no JACK IN says why in plain words and what
+  to do first (`why_not_runnable`: CORE, the breach's Exploits, the linked Sites to clear first, or no
+  operative).
+- **Projection seam.** `GridMarkerProjection` attaches to 5a's seam (54ee7d2): `from_view(CityView3D)`
+  (project, top_at; re-place on `camera_changed` / `band_changed`), `from_model(CityModel,
+  CityIsoCamera)` headless, `from_camera` with no model. `SiteMarkerLayout` (pure) places discs apart
+  and labels clear of markers, and picks. `SiteMarkerLayer` puts the markers on the 3D city. Today's
+  Grid page still runs on its NeonCity host (the overlay places markers on its roofs, the same layers
+  and rules). Moving the page onto CityView3D waits on 5a's Grid camera and fit. Proposed slice: when
+  5a's Grid host lands, mount `SiteMarkerLayer` with `from_view`, and keep the overlay for the routes.
+- **Tests changed (none dropped):** `test_horizontal_pass21_city` tooltips, `test_horizontal_pass22_city`
+  pips and focus strip, and `test_city_map_sweeps` icon, node and overlap checks now skip hidden v4
+  Sites. The boss and claimed nodes carry no pips (v4). New: `tests/unit/test_art5_grid_markers.gd`
+  (fast).
+
+- **Open questions (defaults built; also under "Open questions for the designer"):**
+  - **SHOW ALL setting.** The Grid reveals hidden Sites by the key's hover / open. D13's "Always show all
+    nodes" setting (3B, netrun) should drive the Grid too once it lands. Default: the key only.
+  - **VIRUS badge.** The bible says the INFECT glyph. 1C's table maps `exploit_virus` to
+    `status_corrupted` (the effect it causes). Default: the table.
+  - **DOWN lights.** A won Site whose node is DOWN goes dark (no power). Default: dark.
+
+### 2026-10-05 — Art direction — ART-5 5a city model
+Bible §1.2 World, §4.1–4.3, §6.1; 1D's report (`docs/handoff/art_1/city_spike_report.md`, "What
+ART-5 needs"); 1B's material kit. Agent 5a (Group 3 wave 2, M14).
+- **Production classes (from 1D's spike).** `CitySpikeConfig` is renamed `CityConfig` (internal
+  names follow the word; the spike keeps its district in `tools/spike/city/city_spike_config.tres`).
+  The game's values are `content/config/city_config.tres`: the whole city `city_rect` (lots
+  -80..85 on both axes: every territory, HQ and the Sprawl round them), `chunk_lots` 24, building
+  LOD (`lod0_below` 400, `lod2_above` 760, `lod_rows_share`, `lod_cols`), zoom / pan (`grid_ortho`
+  440, `zoom_ortho_min/max`, `zoom_step`, `pan_screens_s`, `band_netrun_below`, `minimap_size`) and
+  the network decal (`net_*`).
+- **`CityModel`** (`scripts/city3d/city_model.gd`): the whole city of the game's own layout
+  (CityLayoutRecorder per chunk, the NeonCity placement code, seed 7): 13,306 buildings, 17,968
+  extrusions, 9,267 street lots, 64 chunks; recorded in 1.4 s headless on one thread, in the game on
+  the worker pool (`CityView3D`, chunks in order, so the model is deterministic). Shared once per
+  process (`CityModel.shared`). Picking tests only the chunks the ray crosses (equal to testing every
+  prism; ~3 ms a pick). The Cell's district keeps the street grid (round 34 lock); the HQs are
+  stepped stand-ins until 5b's landmarks (`hide_stand_in`).
+- **Building families** stay 1D's 12 unit-prism families (4 / 6 / 8 sides × 4 facet-row classes,
+  the bible's "~6" is per side count) — one MultiMesh per family **per chunk**, so frustum culling
+  works; LOD0 / LOD1 / LOD2 meshes (all rows / half the rows and 2 columns / one row: a plain
+  extrusion) swap by camera ortho with the 6 % hysteresis (`CityLod.building_lod`), never by
+  distance. Buffers are written whole (`CityMeshKit.instance_buffer`, 31 ms for the city).
+- **View bands** (`CityLod.band`): GRID at and above the see-through band's top (ortho ≈ 440, 1D's
+  lod 1.595), RAID down to ortho 200, NETRUN below, with hysteresis: the views move onto the city by
+  zoom band, no scene change.
+- **Materials: one seam** (`CityMaterials`). The building and ground shaders moved to
+  `shaders/city/`; their toon bands and banded light spill now come from 1B's kit through a shared
+  include, `shaders/kit/toon_bands.gdshaderinc` (`toon_band_index`, `toon_spill` and the
+  `spill_*` uniforms), so `ToonInkMaterial.set_spill` / `LightSpill.uniforms_3d` drive the city as
+  they drive props. **Small change to 1B's material:** `toon_ink.gdshader` includes that file
+  instead of declaring its spill uniforms and loop itself (same uniforms, same maths). The city's
+  ink stays 1D's depth / normal post pass (1B's note: the inverted hull splits at hard corners on
+  big city meshes); the band edges and ramp colours stay the city's config values.
+- **SEAMS for 5c / 5d / 5b / the views** (`CityView3D`, a SubViewport with its own World3D):
+  - *Scene layers:* `layer(name)` for `ground, network, buildings, landmarks, props, traffic, sky,
+    heat, fx`; `add_to_layer(name, node, ground_pass)` (ground_pass = also drawn in the ground-only
+    pass, render layer 2, seen under see-through buildings); signals `camera_changed(iso)`,
+    `band_changed(band)`, `building_lod_changed(lod)`, `ambient_changed(scale)` and
+    `ambient_scale` (0 when the map is covered, the window unfocused, or reduce effects / reduce
+    motion is on: every ambient layer pauses on it); `set_spill(sources)`; `landmark_slot(corp)`,
+    `hide_stand_in(corp)`.
+  - *Picking (pure, this viewport's pixels):* `pick(p)` → {prism, building, cell, lot, terr, world},
+    `lot_at(p)`, `project(world)`, `unproject(p, height)`, `lot_world(lot, height)`, `top_at(lot)`;
+    the same on `CityModel` with a `CityIsoCamera` for headless tests.
+  - Overlays read the camera only through `CityIsoCamera` (1D's constraint).
+- **Tests:** `tests/unit/test_city3d_model.gd` (fast): the whole-city config and its chunk tiling,
+  the deterministic chunked model, the Cell's grid, picking through chunks = every prism,
+  `top_at`, building LOD and view bands with hysteresis, log-linear zoom about the cursor and pan,
+  the network decal's buffers, CityView3D's layer and picking API, ambient pause.
+
+### 2026-10-05 — Art direction — ART-5 5b landmarks
+ART_BIBLE v2 §1.2 (World), §2.4, §4.1, §4.4, §6.1; ART_3_BATCH "Wave 2" 5b; references `city/round26_hq_targets/*`,
+`round27_hq_targets/*`, `round31_meridian_combat/*`, `round34_rebel_cell/*`, `foundations/round2/*`; 1D's pick
+(real-time Godot 3D); 8p's export convention (`rebel_cell.art_export/1`).
+- **Blender 5.2 headless from the concept generators.** `tools/art_pipeline/city/` (v1): `concept_r31/` holds the round
+  31 builders unchanged (target_corps + heroes24–31, ported from art-pass 097a6c0); `landmark_build_v1.py` is the port
+  of `hq_scene.py` (same seeds `2525 + job`, same reference cameras) that exports instead of compositing a city;
+  `landmark_crest_v1.py` / `landmark_district_v1.py` port the round 34 crest (`map34.Crest.zone`, the blackout ring,
+  the DISPATCH glitch bands; art-pass d14b8f6); `build_landmarks_v1.py blender|post|sheets|assemble` runs it all. Builds
+  are deterministic (same bytes on a rebuild).
+- **What is built, per bible 4.4:** Meridian container castle on texture A (round 29 t1), moat, gantry keep, rail yard
+  and the round 31 crane + train loop; Solace lit helix (down-lights, cones, spotlight, 12-frame chaser) + the SOLACE
+  GENERAL hospital Site; Halcyon seven-tier Civic Core with the scanning eye (own pivot, ±55°, searchlight) + Halcyon
+  Court with the Justice statue (the round 27 default Site); Orbital silo crescent with the doors 1.6 below the rim,
+  closed and open (rocket) as two state nodes + the OC-TV Site; REBEL_CELL district: a normal street grid whose window
+  lights draw the tucked-thumb fist (home 70 %, DISPATCH 90 % with the glitch rows), detail lines on windowless
+  buildings, the blackout ring and the reveal. Meridian's regular Site (the depot) is not one of the five landmarks
+  and is not exported; it is one more job in `landmark_spec_v1.JOBS` when the Sites need it.
+- **glTF is the primary and only export (coordinator, after 1D's pick); the 2× day/night layered sprites are dropped.**
+  They would need their own render, holdout passes and finish per corp, mode and animation frame and would only
+  serve the baked technique 1D did not pick. 5.9 MB in all (Meridian 1.27 MB, Solace 1.34, Halcyon 0.44, Orbital
+  0.63, REBEL_CELL 2.38), uncompressed (Godot imports no Draco or meshopt).
+- **On 8p's convention (`rebel_cell.art_export/1`):** no normals (the toon shader takes the facet normal from screen
+  derivatives; rendered with and without normals: no difference); COLOR_0 linear = face colour × tone (0.86–1.12);
+  alpha = a part value 0.55–1.0 written to ROUGHNESS (part edges ink as material edges; ≥ 0.5 marks a building for the
+  spike post) or, on windows, the window's own seeded value; materials named by role `lm_toon`, `lm_lit`, `lm_neon`,
+  `lm_win`, `lm_sign` (as 8p's `hq_*`) plus `lm_beam`, `lm_toon_lines`, `lm_win_ring`, `lm_win_lines`,
+  `lm_win_fist_home`, `lm_win_fist_dispatch`. Manifest per corp (`assets/city/landmarks/<corp>/manifest.json`):
+  source (scripts, commit, `scripts_sha256`), settings, origin and footprint (Godot frame) per landmark, the lot
+  rectangle and overhang, triangles per role, animation, reference camera, files with sizes and sha256.
+- **Origin convention for 5a:** glTF x = lot x, z = lot y (`CityIsoCamera.lot_to_world`), 1 unit = 1 BU, +Y up; an HQ's
+  origin is its plaza's ground centre, to sit on the centre of its 10 × 10 HQ lot rectangle; a Site's on the centre of
+  its 6 × 6 lot block; the district's at the palm. Some landmarks overhang their rectangle (`lot_rect.overhang_bu`:
+  Meridian's rail yard runs ±90 BU along x).
+- **Moving parts as glTF animation, written by `gltf_anim_v1.py`** (the exporter's action handling is not used):
+  Meridian `loop` (3.0 s: 17 crane poses as step flipbooks over one shared portal, the train once, slid along the
+  track, its new container from frame 9 to 14, motion streaks 11–14); Solace `chaser` (12 × 90 ms); Halcyon `eye_scan`
+  (12 × 110 ms, rotation about +Y). The rest pose is the concept's still (Meridian frame 6, chaser frame 0; the eye at
+  frame 0, its still angle 28° is in the manifest).
+- **Locked Site renders face lot +y:** the round 26–27 `build_at` meant to turn new Sites 45° but turned only their
+  sign objects, so the references show them unturned; the export matches the references (front +z), with a readable
+  sign (the references' was turned into the wall).
+- **Smaller than the concept, same picture:** signs at curve resolution 2 (the default 12 made a sign heavier than its
+  building); Orbital's sign once on the root (not per state); the district's walls 4 jittered triangles each (the
+  city's 1.7 BU facet grid is the CityModel shader's job) and mid-rise heights (7–27 BU, a few to 51) so the fist
+  reads; the fist's panes 1.3 × 1.2 BU and `LandmarkLook.fist_gain` 1.8 (map34 lights the crest denser and spills red).
+- **Godot side (no view changes):** `assets/city/landmarks/landmark_toon.gdshader` / `landmark_beam.gdshader` (the
+  spike's 3-band light() and ramp × the corp `TINT`; the reveal: ring windows off as q passes their value with a
+  ±0.12 flicker band, detail-line windows off, line buildings darken), `LandmarkLook` (`landmark_look.tres`: night and
+  cool-day ramps, gains, the concept's numbers; `lit_emission` 0.25 as 8p, since the spike post blooms every bright
+  pixel) and `LandmarkMaterials` (role → material, `set_reveal`, `show_dispatch`). The crest mask
+  (`rebel_cell_crest_mask.png`, R home / G DISPATCH zone, B ring weight, on the iso screen plane; mapping in the
+  manifest) is for the CityModel's window shader, so the fist can be drawn on the city's own buildings.
+- **Validator hook and test:** `tools/landmark_asset_checks.gd` from `validate_content.gd` (every corporation, schema,
+  files, sizes, sha256, stale pipeline); `tests/unit/test_art5_landmarks.gd` (fast): every glTF loads headless with
+  landmark roles only, loops with their lengths, Orbital's states, the district's reveal meshes, the mask imports.
+- **Renders read:** `tools/art_pipeline/city/landmark_review.tscn` (windowed, one launch, 26 shots) next to the Blender
+  concept finish and the references in `docs/art_review/ART-5/5b/` (`.gdignore` in `ART-5/`). Halcyon, Orbital and
+  Meridian match closely; Solace's strands read violet-grey in Godot where the concept's emission-pass bloom and the
+  stand-in city's lime lanes tint them lime (the spike post blooms only what passes its threshold, so dim seams do not
+  bloom); the fist reads in Blender and more faintly in Godot on the bare district, where it needs the lit city around
+  the blackout ring for contrast.
+
+### 2026-10-05 — Art direction — ART-7 3B netrun presentation
+ART-7 wave 1, 2D parts (ART_BIBLE v2 §4.6, §1.2; D13 and D14 confirmed), on the **current**
+route view (the route still sits on the neon city; wave 2 moves it onto the 3D city).
+- **Route look (3B.1, 3B.5): `RouteOverlay`** (a CityMapOverlay subclass, so the route sweeps,
+  label layout, moves and hover keep their rules). Option A: every node is a vinyl sticker in
+  its kind's colour (white die-cut, ink keyline, StatIcon symbol), one ring carries the state:
+  lime walked, orange selectable (soft glow, orange number chip), white not yet, `RING_CUT`
+  grey cut off; each state also has its own ring style (§5.1 never colour alone, the Group 1
+  naive-reader audit P2): walked a double ring, selectable a thick solid ring with its glow
+  and number, not yet dashed, cut off dotted and struck through (`RouteOverlay.RING_STYLES`,
+  the key's swatches draw the same `draw_state_ring`). The final Rack carries the red grease-pencil TARGET circle and word (the word
+  is the node's map label, so the layout keeps it off other labels). "You are here" is the
+  operative's pink sticker pinned over the node. Transit v3 cables: each link runs along the
+  city's two ground axes with one turn (straight segments, no street-following); walked = solid
+  lime, live = crawling orange dash, later = white dash, cut = grey dash. **Call:** one turn
+  per link (no 45° jog, no bridge hops; crossings are not avoided): the hops need the real
+  city's cable router (wave 2). **Projection seam:** everything the route draws goes through
+  `RouteOverlay.cable()`, `_axes()` and CityMapOverlay's `icon_pos` / `_to_local`; the 3D city
+  replaces those, nothing else.
+- **D13 hidden nodes:** only walked nodes, the choices and the TARGET are drawn; hovering the
+  legend strip shows all (`show_all`, `route_node_reveal` fade); the pointer reveals one hidden
+  node within 40 px; `Settings.always_show_all_nodes` (additive key, default off, Options >
+  Display row "Always show all nodes on the netrun map"; 4C restyles that panel). The pad
+  reads "OPTIONS > DISPLAY: SHOW ALL NODES" on the strip instead of the hover words.
+- **Route key:** the RouteLegend is now the foot strip (stickers COMBAT / ELITE / EVENT / SHOP
+  / RACK as the map draws them, the four rings, the D13 cue), in a row of its own under the
+  map, scaled down to its row at big text. `COLOR_KEYS` are now walked / next / later / cut
+  (were here / next / later / visited / corp). Test edit: `test_horizontal_pass24_city` reads
+  the key's rows under `strip` (the rows moved into the strip's HBox).
+- **Calm Heat (D14, GDD 4.3 only):** a choice Heat has made harder carries a thin `HEAT_B`
+  ring with a red and a blue light circling it (`route_heat_orbit`) and its effect as a
+  second label line: fights (Routers, Racks) "HEAT: +N RESISTANCE" from
+  `HeatRules.active_modifiers` ENEMY_RESISTANCE; the Mainframe "HEAT: SHOP STOCK -N" from a
+  SHOP_STOCK complication. From NOTICED up two slow searchlights sweep the map
+  (`route_searchlight`). **Not drawn (needs a rule):** "HEAT: +1 ELITE" per node: the elite
+  frequency modifier changes map generation, not a node, so no node can honestly carry it.
+- **Panels (3B.2):** `OperativeDossier` on 1B's CorpPaperPanel (letterhead = the target corp;
+  Courier Prime fields: subject, class, rank, HP, RAM, wheel, hub core (the rank's upgrade
+  else the wheel's own hub), deck, the class's raid station bonus via Codex; AT LARGE and
+  "HEAT n: BAND" stamps). It folds to a compact file when the full one would take more than
+  24 % of the screen's width (text 2.0 at 1280). `RouteNodePanel` on 1B's DecryptedHoloPanel
+  (no full-screen scrim over the map): title (node word // layer), tier (the run's Site tier),
+  type, rewards from the config (Cycles range x reward scale, Firmware, Rack Schematics by tier,
+  Daemon / the Site's objective), Heat on entry and Heat marks. **D14 "only when decrypted":**
+  under GDD 4.2 every node's kind is known, so every node the map shows is decrypted; the
+  panel follows the hovered node or the focused ROUTE choice. DECK / MENU stickers from the
+  reference are not added (VIEW LOADOUT and the pause menu already do that; ART-10 screens).
+- **Jack-in (3B.3): `Fx.jack_in_link`** (`JackSequence`), used by `RunManager.go_to_netrun`
+  with `RunManager.jack_link(site)` (the owned end: home or a claimed Site linked to the
+  target, lowest id; the link's screen points from the HQ's City Grid overlay; the operative's
+  slice colours). Beats: 1B's CrtTerminalPanel types `> jack --from A --to B`, routing,
+  handshake, CONNECTED (`jack_terminal_type`); binary rain along the link only
+  (`jack_link_rain`, drawn glyphs: BinaryBits flies to one target, the rain lands along a line);
+  CRT collapse (`jack_crt_collapse`); the wheel slaps on and spins (`jack_wheel_slap`,
+  `jack_wheel_spin`); the lens (`jack_lens`): the wheel swells until its hub covers the screen,
+  the switch and the CONNECTING line happen under it, then the hub opens onto the run and the
+  ring flies past. One press skips (the JackInputGate passes the press to the sequence; the
+  press still reaches no screen): the switch at once, then the run. Reduce effects / reduce
+  motion / headless / an entry off / no link: the old `jack_in` (its fade and end state). Plain
+  `Fx.jack_in` (jack out, the tests) is unchanged.
+- **Node backdrops (3B.4):** round 36's tower rooms (r32_scene.py, Blender 5.2 headless, the
+  room camera per kind: fight, elite, event, shop = modem room, rack; recipe in
+  `tools/art_pipeline/netrun_rooms/`: `make_rooms.py` builds rooms3b.py from the tag's
+  r32_scene.py, `finish_all3b.py` runs the tag's finish.py) rendered per corp (the
+  container families mixed 55 % toward the corp hue; Meridian as drawn) and finished with the
+  round 32 Cv2 + E finish at 1280x720, JPEG q82, 25 stills, 2.7 MB in
+  `assets/backdrops/netrun/<corp>_<kind>.jpg`. `NodeBackdrop` shows the current node's room
+  behind its event, shop and loot pages (`_update_node_backdrop`); the fight keeps its arena.
+- **Motion (union):** `route_node_reveal`, `route_heat_orbit`, `route_searchlight`,
+  `jack_terminal_type`, `jack_link_rain`, `jack_crt_collapse`, `jack_wheel_slap`,
+  `jack_wheel_spin`, `jack_lens` in ui_motion.tres, REQUIRED_IDS and the lab (`netrun
+  route_heat`, `jack_link`). Capture walk: `tools/design_lab/netrun_states.tscn` (one windowed
+  launch, every state). Tests: `tests/unit/test_art7_netrun.gd` (fast).
+- **1B kit:** the dossier's sheet is `CorpPaperPanel` (letterhead = the corp's mark word, the
+  sheet's letterhead is one fixed-size line), the node panel's plate `DecryptedHoloPanel`
+  (scrim off: it would darken the map), the jack terminal `CrtTerminalPanel` (typed on the
+  sequence's own clock). Not used: `BinaryBits` (it flies bits to one target; the rain lands
+  along a line, drawn in the same mono glyphs) and `GreasePencilMark` (a Node2D of Line2Ds; the
+  route redraws per camera frame in the overlay's own canvas, so the TARGET circle and word are
+  drawn there in the pencil colours and face; the walked path is the Cell's lime line, not
+  pencil, per §4.6).
+- **Big text:** the dossier folds (above); the node panel widens to 1.3x at most and shows only
+  when the ROUTE column has room under the window (the choices come first).
+- **Files outside 3B's area (smallest change):** `scripts/autoload/fx.gd` (jack_in_link,
+  _link_switch, the sequence node), `scripts/ui/kit/jack_input_gate.gd` (on_press),
+  `scripts/autoload/run_manager.gd` (jack_link, the launch call), `settings.gd` /
+  `settings_panel.gd` (the D13 key and row), `motion_lab.gd` (demos).
 
 ### 2026-10-05 — Art direction — ART-8 8p HQ compound prep
 ART_BIBLE v2 §1.2 (World), §4.7 (HQ runs: the compound), §6.1; ART_3_BATCH "Wave 2" 8p; references
@@ -537,6 +944,7 @@ arena_lab.tscn` (windowed only; fixtures typical / worst, bloom, hover, won, per
 - **Motion entries** (ui_motion.tres, REQUIRED_IDS, motion lab scene demos): `backdrop_won_lights`,
   `drone_bloom` (a hover state: never skipped), `preview_chevron_chase`, `preview_ghost`,
   `daemon_rack_scan`. Strings: "OURS NOW", "%d LANDS HERE", "DRONE ENDS HERE".
+
 ### 2026-10-05 — Art direction — ART-9 4B dialogue and portraits
 ART_BIBLE v2 §4.11 (dialogue A), §4.12 (portraits v2), DECISIONS "Designer ruling: DISPATCH
 text"; references `round31_reward_event/dialogue.jpg`, `round38_portraits/*`,
@@ -1180,9 +1588,10 @@ player strings and code for each item's old words.
   codex and GDD 2.6 texts name the programs. Kept on purpose: the *evade* mechanic
   (EffectType.EVADE, a card's "Evade the next incoming attack", the "%s EVADE" charge chip), *heal*
   as an effect ("Heal 6"), *attack* as a verb, and the damage beats' `crit` flag (a big-hit number
-  style, set by OVERFLOW slices and Perfects alike). SANDBOX / TROJAN / NULL (the art pass's SHIELD /
+  style, set by OVERFLOW slices and Perfects alike). ~~SANDBOX / TROJAN / NULL (the art pass's SHIELD /
   DEPLOY / MISS) are not renamed: the ruling keeps them out of D2; the enum keeps SHIELD / DEPLOY /
-  MISS (question below).
+  MISS (question below).~~ *Superseded (ART-0 audit B5):* the designer ruled SANDBOX / TROJAN / NULL
+  ("Designer rulings: SANDBOX / TROJAN / NULL and five Heat bands"); ART-0 B3 renamed the enum and words.
 - **D3 Meridian.** The RAM-drain slice is `priority` (`content/slices/priority.tres`, "Priority", its
   wheel sub-resources `*_slot_priority`; codex and descriptions). A corporation's own program word
   lives in `Palette.CORP_SLICE_WORDS` (view words, `# TR`), read by `Palette.slice_word(type,
@@ -1211,12 +1620,14 @@ player strings and code for each item's old words.
   2.4 / 10. Schema: `CampaignConfigData.partial_multiplier` → `weak_multiplier` (0.5; checked in
   `schema_smoke_checks.gd` `_art0`). Motion id `precision_partial` → `precision_weak` (table,
   REQUIRED_IDS, motion lab). "Partial" in other meanings (a partial cover, a partial patch) stays.
-- **D11 Heat bands.** Main already shows the bands ART_BIBLE v2 §2.8 / §3.15 sets (COOL, NOTICED 25+,
+- **D11 Heat bands.** ~~Main already shows the bands ART_BIBLE v2 §2.8 / §3.15 sets (COOL, NOTICED 25+,
   FLAGGED 50+, HUNTED 75+; the bible's NOTICED is the "couple of alarms" band and the thresholds stay),
   so no band or threshold changes; the five-band reading is asked under "Open questions for the
-  designer". Added: `Settings.heat_glitch` (off by default, saved in settings.json, listed in
+  designer".~~ *Superseded (ART-0 audit B5):* the designer ruled five bands; ART-0 B3 built them
+  ("ART-0 names pass, part 3"). Added: `Settings.heat_glitch` (off by default, saved in settings.json, listed in
   `Settings.VFX_TIER_EXEMPT`) and its row on the current panel (Accessibility, "Heat glitch (the
-  screen distorts as Heat rises; off by default)"); the glitch itself comes in ART-3 / ART-5 (test
+  screen distorts as Heat rises; off by default)"); ~~the glitch itself comes in ART-3 / ART-5~~
+  *(annotated, ART-0 audit B1: the glitch was built by the ART-0 audit fixes, `HeatGlitchLayer`)* (test
   `test_the_heat_glitch_extra_is_off_by_default_and_round_trips`). settings.gd and settings_panel.gd
   are area C's files: additions only.
 - **D12 RESPIN / UNDO.** The respin sticker already read RESPIN; its tips and the tutorial no longer say
@@ -7020,6 +7431,11 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **ART-5 5c city motion (defaults implemented):** (1) the netrun transit turns the sky-lane
+  cars off (bible 4.1) while `cars_lod` shows the CLOSE tier at a netrun close-up: CLOSE is built
+  and tested but only shows below ortho 150 outside the netrun band; should the transit show it?
+  (2) reduce motion pauses street traffic (brief) where bible 5.4 says 40 % without streaks.
+  (3) 5a: a public day-look call on CityView3D (CityViewMotion sets the view's materials for now).
 
 ### 2026-10-05 — ART-10 4C: hold-to-confirm on the abandon dialog's verb
 ART_BIBLE §4.13 calls the pad's 0.8 s hold on the committing verb (BURN IT) a proposal: not built
@@ -7030,6 +7446,23 @@ The crew dossier keeps its paper card with Courier Prime (1B's CorpPaperPanel wo
 and HP strip re-laid round the letterhead and stamp slot); JACK IN keeps its ZineStamp (its
 `jack_ring_breathe` motion and tests). Default: as is; proposed as a slice with ART-5 / G13.
 
+- **ART-5 5b: the REBEL_CELL fist on the real city (2026-10-05):** the landmark export carries a standalone district
+  patch and the crest as a mask texture; on the unified city the fist must be the city's own buildings' windows
+  (bible 4.4). Default: 5a's CityModel window shader samples `rebel_cell_crest_mask.png` at the palm of the Cell's
+  district and the district glTF stays a reference. Also: crest size 110 BU tall on the iso screen (map34's 880 px at
+  8 px/BU); say if the fist should scale with the zoom instead.
+
+- **ART-7 3B (netrun):** (1) a per-node "HEAT: +1 ELITE" mark needs the elite-frequency
+  Heat modifier to pick nodes (today it changes map generation), so it is not drawn; (2) the
+  "available" ring stays the run orange for every corporation (Appendix C #22); (3) transit v3's
+  bridge hops and crossing avoidance wait for the 3D city's cable router (wave 2).
+
+- **Grid Site markers v4 (2026-10-05, ART-5 5d; defaults built, see "Art direction — ART-5 5d Grid
+  markers and key"):**
+  1. Hidden Sites show only through the key's SHOW ALL, until D13's "Always show all nodes" setting
+     covers the Grid too.
+  2. The VIRUS badge follows 1C's table (`status_corrupted`), not the bible's INFECT glyph.
+  3. A DOWN node's fight-won lights go dark.
 - ~~**ART-8 8p: where is DISPATCH's HQ run, and does an HQ run become a map? (2026-10-05):**~~ resolved by the
   standing ruling "the art pass design is correct" (orchestrator, 2026-10-05): the latest lock wins, so DISPATCH's
   HQ run is set in the round 43 Tokyo canyon (built in ART-8 wave 2, static until G12); the HQ run stays a single
@@ -7103,7 +7536,6 @@ and HP strip re-laid round the letterhead and stamp slot); JACK IN keeps its Zin
   Marker is grease pencil only); the screens that still letter in it read as Anton until their
   ART-n restyle.
 
-- **D11 Heat bands: is a fifth band wanted? (2026-10-05, ART-0 B part 2):** the plan's "old FLAGGED →
 - **Glyph concept slice after M14 (designer, 2026-10-05, from the two ART-1 1C questions below):** draw
   glyphs for Heat, Cycles, Schematics and custom effects, and redraw the 16 px twins in the Firmware /
   Daemon set; both defaults hold for M14 (pending stand-in; twins allow-listed). Scheduled with the other
@@ -7137,7 +7569,9 @@ and HP strip re-laid round the letterhead and stamp slot); JACK IN keeps its Zin
   bible. Default applied: the band names and thresholds stay as the bible has them (no new band, no
   config value); the re-cut is the backdrop's look per band (ART-3 / ART-5). Say if you want the
   five-band version (and its lowest threshold).
-- **SANDBOX / TROJAN / NULL (2026-10-05, ART-0 B part 2, D2):** the art pass calls SHIELD, DEPLOY and
+- ~~**SANDBOX / TROJAN / NULL (2026-10-05, ART-0 B part 2, D2):**~~ resolved: the designer ruled SANDBOX /
+  TROJAN / NULL ("Designer rulings: SANDBOX / TROJAN / NULL and five Heat bands"; built by ART-0 B3;
+  struck by the ART-0 audit, B5). Original note: the art pass calls SHIELD, DEPLOY and
   MISS by these program names; the D2 ruling left them unchanged, so the game still shows SHIELD,
   DEPLOY and MISS (SHIELD is also the shield points' word). Default: unchanged until you say.
 - **Merge commit `7e569ca` (ART-0 B):** its message keeps git's "# Conflicts:" lines (a merge commit

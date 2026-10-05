@@ -31,7 +31,7 @@ func _init(p_mode: StringName = &"deutan") -> void:
 	layer = LAYER
 	rect = ColorRect.new()
 	rect.name = "Correction"
-	rect.color = Color.WHITE
+	rect.color = Palette.NO_TINT
 	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var mat := ShaderMaterial.new()

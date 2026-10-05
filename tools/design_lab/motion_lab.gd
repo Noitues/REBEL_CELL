@@ -163,6 +163,9 @@ const DEMOS := {
 	&"nudge_resist_bits": ["scene", "fx_resist"], &"ram_gain_bits": ["scene", "fx_ram"], &"temp_label": ["scene", "fx_label"],
 	&"daemon_trigger": ["scene", "fx_daemon"], &"firmware_trigger": ["scene", "fx_firmware"],
 	&"heat_city_beacon": ["scene", "fx_heat"], &"heat_city_sweep": ["scene", "fx_heat"],
+	# ART-0 audit B1: the Heat glitch extra on the live fight at HUNTED (forced on in the lab's
+	# layer only; the player's Settings never change).
+	&"heat_glitch": ["scene", "fx_glitch"],
 
 	# ART-1 1B material kit: each entry on a fresh real piece (KitDemo: a VinylSticker, a
 	# CrtTerminalPanel, a GreasePencilMark, a DecryptedHoloPanel, a LightSpill, BinaryBits).
@@ -180,6 +183,11 @@ const DEMOS := {
 	# glitch and REBEL_CELL neon sign loops, the ON AIR ticker.
 	&"title_glitch_burst": ["screen", "title_glitch"], &"title_sign_flicker": ["screen", "title_sign"],
 	&"on_air_ticker": ["screen", "ticker"],
+	# ART-7 3B: the netrun map's reveal and calm Heat (the route at Heat 60, every node shown),
+	# and the jack-in transition along a link (Fx.jack_in_link).
+	&"route_node_reveal": ["netrun", "route_heat"], &"route_heat_orbit": ["netrun", "route_heat"], &"route_searchlight": ["netrun", "route_heat"],
+	&"jack_terminal_type": ["jack_link", "stage"], &"jack_link_rain": ["jack_link", "stage"], &"jack_crt_collapse": ["jack_link", "stage"],
+	&"jack_wheel_slap": ["jack_link", "stage"], &"jack_wheel_spin": ["jack_link", "stage"], &"jack_lens": ["jack_link", "stage"],
 	# ART-2 2A: the wheel stack.
 	&"wheel_screen_loop": ["view", "screens"], &"wheel_telemetry_scroll": ["view", "telemetry"], &"precision_latch": ["view", "perfect_latch"], &"precision_word": ["view", "landing_word"], &"precision_stutter": ["view", "weak_stutter"], &"hub_defeat_drain": ["view", "defeat_drain"], &"hub_lockdown_drain": ["view", "lockdown"],
 
@@ -194,9 +202,25 @@ const DEMOS := {
 	# ART-9 4B: the portrait feeds (idle, talking, stationed) and DISPATCH's voice trace.
 	&"portrait_feed": ["screen", "feed"], &"portrait_blink": ["screen", "feed"], &"portrait_talk": ["screen", "feed"],
 	&"dispatch_trace": ["screen", "feed"],
+	# ART-5 5c: the city's motion layers on a small grid city (CityMotionLayers, in 3D).
+	&"sky_lane_cars": ["screen", "city_motion"], &"street_cars": ["screen", "city_motion"],
+	&"holo_billboard": ["screen", "city_motion"], &"aviation_blink": ["screen", "city_motion"],
+	&"searchlight_sweep": ["screen", "city_motion"], &"chopper_orbit": ["screen", "city_motion"],
+	&"drone_orbit": ["screen", "city_motion"], &"police_strobe": ["screen", "city_motion"],
+	&"alarm_beacon": ["screen", "city_motion"], &"heat_node_light": ["screen", "city_motion"],
+	&"city_light_fade": ["screen", "city_motion"],
 }
 ## ART-11 4D: the lock demo's nodes on the stage (px from its top-left; the first is home).
 const RANSOM_NODES: Array[Vector2] = [Vector2(450, 300), Vector2(250, 180), Vector2(640, 170), Vector2(180, 430), Vector2(700, 420)]
+
+## ART-5 5c city motion demo: the grid city's seed, its hardened nodes (lots), the camera
+## (ortho BU: the MEDIUM car tier; the locked iso yaw and pitch; distance BU).
+const CITY_MOTION_SEED := 7
+const CITY_MOTION_NODES: Array[Vector2] = [Vector2(27, 27), Vector2(33, 29), Vector2(30, 34)]
+const CITY_MOTION_ORTHO := 240.0
+const CITY_MOTION_YAW := 135.0
+const CITY_MOTION_PITCH := 40.0
+const CITY_MOTION_DISTANCE := 900.0
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
 ## subtitle demo says, and how long the frames between a menu's focus moves are (s).
@@ -218,6 +242,9 @@ const CONTEXT_LOOP := 6.0
 const DEMO_CAMPAIGN_SEED := 1
 ## The jack demos' destination line and the raid interlude's stamp (translated).
 const JACK_DESTINATION := "SOLACE // THE RACK"
+## ART-7 3B: the link jack demo's loop length (s) and the route Heat demo's Heat.
+const JACK_LINK_LOOP := 6.0
+const DEMO_ROUTE_HEAT := 60
 ## ANIM-R6 C14: the words the game stamps (RunManager.jack_note: "RAID INCOMING" over the
 ## raiding corporation), for the demo campaign's corporation.
 const RAID_NOTE := "RAID INCOMING\n%s"
@@ -590,6 +617,11 @@ func _play() -> void:
 			Fx.jack_out(func() -> void: pass, -1.0, JACK_DESTINATION)
 		"jack_reduced":
 			_play_jack_reduced()
+		"jack_link":
+			# ART-7 3B: the netrun jack along a stand-in link across the stage.
+			Fx.jack_in_link(func() -> void: pass, {"from": "RELAY_4", "to": "DEPOT_15",
+				"points": PackedVector2Array([Vector2(PANEL_W + 160, 520), Vector2(PANEL_W + 560, 300)])}, JACK_DESTINATION)
+			length = JACK_LINK_LOOP
 		"view":
 			length = _play_view(String(demo[1]))
 		"screen":
@@ -912,6 +944,9 @@ func _play_screen(what: String) -> void:
 			t.size = Vector2(1280 - PANEL_W, 32)
 			_screen_host.add_child(t)
 			length = 4.0 * Motion.seconds(&"on_air_ticker")
+		"city_motion":
+			_city_motion_demo()
+			length = Motion.entry(&"sky_lane_cars").duration
 		"ransom":
 			# ART-11 4D: Halcyon's lock over the stage: tearing, the wipe, padlocks on five nodes,
 			# the notice and its verb, the countdown, the stickers curling and dropping, the cut.
@@ -963,6 +998,49 @@ func _play_screen(what: String) -> void:
 			_screen_host.move_child(_hud, -1)
 			length = Motion.entry(&"hq_sign_flicker").duration
 	print("motion_lab: screen demo %s, %.2f s" % [what, length])
+
+
+## ART-5 5c: the city's motion layers (CityMotionLayers) on a small grid city in a 3D
+## viewport, through the same seam as the real city (CityMotionSite): HUNTED with three
+## hardened nodes and suspicion, every layer on, crossfading from day to night.
+func _city_motion_demo() -> void:
+	var box := SubViewportContainer.new()
+	box.stretch = true
+	box.position = Vector2(0, 80)
+	box.size = Vector2(1280 - PANEL_W, 640)
+	var vp := SubViewport.new()
+	vp.own_world_3d = true
+	box.add_child(vp)
+	_screen_host.add_child(box)
+	var env := Environment.new()
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Palette.NIGHT_SKY
+	var we := WorldEnvironment.new()
+	we.environment = env
+	vp.add_child(we)
+	var site := CityMotionSite.grid()
+	var layers := CityMotionLayers.new()
+	vp.add_child(layers)
+	layers.set_light(CityMotionLayers.Daylight.DAY, true)
+	layers.setup(CityMotionConfigData.shipped(), site, CITY_MOTION_SEED)
+	var nodes: Array[Vector3] = []
+	for lot in CITY_MOTION_NODES:
+		nodes.append(site.lot_to_world(lot))
+	layers.set_heat(CityHeatRig.Band.HUNTED, nodes)
+	layers.set_light(CityMotionLayers.Daylight.NIGHT, true)
+	layers.set_ortho(CITY_MOTION_ORTHO, box.size.x)
+	var cam := Camera3D.new()
+	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
+	cam.size = CITY_MOTION_ORTHO
+	cam.keep_aspect = Camera3D.KEEP_WIDTH
+	cam.far = CITY_MOTION_DISTANCE * 2.0
+	var yaw := deg_to_rad(CITY_MOTION_YAW)
+	var pitch := deg_to_rad(CITY_MOTION_PITCH)
+	# CityIsoCamera's frame: the view runs along (cos yaw cos pitch, -sin pitch, -sin yaw cos pitch).
+	var back := Vector3(-cos(yaw) * cos(pitch), sin(pitch), sin(yaw) * cos(pitch))
+	vp.add_child(cam)
+	cam.look_at_from_position(site.home + back * CITY_MOTION_DISTANCE, site.home, Vector3.UP)
+	cam.make_current()
 
 
 ## ANIM-R5: the jack under reduce effects (its fade, `jack_fade_reduced`): reduce effects
@@ -1053,6 +1131,9 @@ func _play_context(scene: String, what: String) -> void:
 			var first: StringName = s.available_nodes()[0]
 			s.run.current_node_id = first
 			s.run.visited.append(first)
+			if what == "route_heat":
+				# ART-7 3B: Heat past the resistance band (calm Heat marks and searchlights).
+				RunManager.campaign.heat = DEMO_ROUTE_HEAT
 			_context._show_map()
 	else:
 		_demo_campaign(what)
@@ -1081,6 +1162,9 @@ func _play_context(scene: String, what: String) -> void:
 			hq._demo_combat_end("win")
 		"route":
 			hq.enter_node(RunManager.netrun.available_nodes()[0])
+		"route_heat":
+			# ART-7 3B: every node fades in (D13), the Heat lights circle, the searchlights sweep.
+			(hq.city_overlay as RouteOverlay).show_all = true
 		"select":
 			hq.show_grid()
 			await get_tree().process_frame
@@ -1569,6 +1653,10 @@ func _fx_call(what: String, ev: WheelView) -> void:
 			fx.trigger_fx(pv.global_center() + Vector2(0, pv.hub_radius() * 0.5), pv.slot_spot(0), Palette.RESIST_GOLD, &"firmware_trigger")
 		"fx_heat":
 			_scene.heat_city.set_band(DEMO_HEAT_BAND, ev.global_center())
+		"fx_glitch":
+			_scene.heat_city.set_band(DEMO_HEAT_BAND, ev.global_center())
+			_scene.heat_glitch.force_on = true
+			_scene.heat_glitch.set_band(DEMO_HEAT_BAND, _scene._hunting_corp_color())
 
 
 

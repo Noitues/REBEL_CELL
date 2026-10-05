@@ -18,9 +18,11 @@ extends Node
 const SAVE_VERSION: int = 2
 const PROFILE_FILE := "profile.json"
 const CAMPAIGN_FILE_FORMAT := "campaign_%s.json"
-## A replay's file name: its seed and the time it was written (ms), so two fights never
-## share one.
-const REPLAY_FILE_FORMAT := "replay_%s_%d.json"
+## A replay's file name: the wall-clock time it was written (ms, zero-padded so the names
+## sort oldest first; ART-0 audit B4) and its seed, so two fights never share one.
+const REPLAY_FILE_FORMAT := "replay_%013d_%s.json"
+const REPLAY_PREFIX := "replay_"
+const REPLAY_EXT := ".json"
 ## Godot's marker that keeps a folder out of the import (a fixed engine file name).
 const GDIGNORE_FILE := ".gdignore"
 ## The config the save locations come from.
@@ -181,12 +183,38 @@ func migrate(data: Dictionary) -> Dictionary:
 func write_replay(session: CombatSession, dir: String = "") -> String:
 	var folder := dir if dir != "" else replay_dir()
 	var data := CombatReplay.record(session)
-	var path := folder.path_join(REPLAY_FILE_FORMAT % [data["seed"], Time.get_ticks_msec()])
+	var now_ms := int(Time.get_unix_time_from_system() * 1000.0)
+	var path := folder.path_join(REPLAY_FILE_FORMAT % [now_ms, data["seed"]])
 	var n := 1
 	while FileAccess.file_exists(path):
-		path = folder.path_join(REPLAY_FILE_FORMAT % [data["seed"], Time.get_ticks_msec() + n])
+		path = folder.path_join(REPLAY_FILE_FORMAT % [now_ms + n, data["seed"]])
 		n += 1
-	return path if save_dict(path, data) == OK else ""
+	if save_dict(path, data) != OK:
+		return ""
+	prune_replays(folder)
+	return path
+
+
+## The replay files in `dir`, oldest first (their names sort by the time written).
+func list_replays(dir: String) -> PackedStringArray:
+	var out := PackedStringArray()
+	for f in DirAccess.get_files_at(dir):
+		if f.begins_with(REPLAY_PREFIX) and f.ends_with(REPLAY_EXT):
+			out.append(dir.path_join(f))
+	out.sort()
+	return out
+
+
+## ART-0 audit B4: deletes the oldest replays in `dir` until at most `config.max_replays`
+## remain (0 = no cap). Returns how many were deleted.
+func prune_replays(dir: String) -> int:
+	if config.max_replays <= 0:
+		return 0
+	var files := list_replays(dir)
+	var extra := files.size() - config.max_replays
+	for i in maxi(0, extra):
+		DirAccess.remove_absolute(files[i])
+	return maxi(0, extra)
 
 
 ## Writes the replay of a combat that just ended, when replays are on (replays_enabled).
