@@ -92,6 +92,57 @@ text"; references `round31_reward_event/dialogue.jpg`, `round38_portraits/*`,
   states, matrix, contexts, dialogue, strip / column at 1.0 / 1.6 / 2.0).
 - Tests: `tests/unit/test_art9_portraits_dialogue.gd` (fast). No M13 test dropped.
 
+### 2026-10-05 — Art direction — ART-1 1D city render spike
+Bible §1.2, §4.1–4.2, §6.1; plan §5.1–5.2; ruling 7 (fidelity first, then optimise). Full report:
+`docs/handoff/art_1/city_spike_report.md`; crops in `docs/art_review/ART-1/1D/` (`.gdignore`d).
+- **Built both ways on one district of the game's own layout:** NeonCity's streets, lots,
+  territories and buildings, seed 7, read by `CityLayoutRecorder` (NeonCity placement mode, nothing
+  drawn, game code untouched): the Halcyon border, 50 lots around lot (34, 22), with 3,710
+  buildings and 2,608 street lots.
+  - (a) Real-time Godot 3D: MultiMesh unit-prism families with jittered facets; the 3-band toon
+    light function; procedural windows, ledges, shopfronts and roof trim; one full-screen post
+    pass porting `post40.finish` (ink from normal, depth and material edges, grime, spill, bloom,
+    fog, haze, rain, grade); a half-resolution ground pass for the see-through band; three sky-lane
+    car tiers; one orthographic `Camera3D`.
+  - (b) Blender 5.2 bake with the concept recipe, plus the post40 port, with 2D car motion on top.
+- **Choice: (a).** It is closer to the references at grid, raid and netrun (read side by side). It
+  is also the only one that gives §4.1's continuous zoom, the see-through band, the LOD swaps and
+  the camera fits without a bake per view and zoom; a whole-city bake at raid density is about
+  220 MB per layer.
+- **Numbers, after optimisation (RX 6700 XT, 1080p, tier 2):** grid / raid / netrun take
+  2.69 / 2.78 / 2.53 ms a frame (GPU 2.31 / 2.22 / 1.95 ms), 31–33 draw calls, 2.2 M primitives,
+  and 106–127 MB of texture memory.
+  - Deck tier 1 at 1280×800 on this PC: 1.81 ms a frame (GPU 1.3–1.4 ms).
+  - The budget (city ≤ 8 ms) is met. The Deck itself is not measured yet; scaling suggests about
+    10–12 ms there, and tier 0's levers are ready in config.
+  - Measured with 3–6 other agents' Godot processes running.
+- **Optimisation round** (config only, frames compared, look unchanged): the tier 2 shadow atlas went
+  from 4096 to 2048, MSAA went off (the ink draws the edges) and the ground pass went to half
+  resolution. Texture memory fell from 210–283 MB to 106–127 MB and frame time by about 0.6 ms.
+- **Calls:**
+  1. The see-through band is lod 1.50–1.595, so the City Grid (ortho 440) is solid and the raid
+     (ortho 380) sits at the locked v3 opacity of 0.68. The bible's 1.45–1.75 with post40's anchors
+     gave the Grid an opacity of 0.83.
+  2. The toon band edges include the concept's world ambient: N·L 0.118 and 0.363.
+  3. The post works on display values, as post40 does. Bloom and spill come from screen mips over a
+     threshold, because Godot has no emission-only pass; Godot's glow is off.
+  4. Sky lanes run over the district's six busiest avenues. Car colours come from the
+     `RngStreams` stream `city_traffic`.
+  5. Round 34 lock: the Cell's district keeps the street grid, with no fist roads. The HQs are
+     stepped stand-ins; the heroes are ART-5's.
+  6. The toon, ink and post shaders are prototypes in `tools/spike/city/shaders/`, because 1B owns
+     `shaders/kit/`. They are to be unified with 1B's material.
+- **Tests:** `tests/unit/test_city3d_spike.gd` (fast tier) covers:
+  - projection round trips and the locked iso;
+  - picking;
+  - LOD, see-through and detail tiers from config;
+  - car tiers with hysteresis;
+  - quality tiers, with the Deck at tier 1;
+  - the deterministic district;
+  - the unit-prism instance mapping (never mirrored);
+  - seeded traffic.
+
+  The render is verified windowed only. No shipped screen changed.
 ### 2026-10-05 — Art direction — ART-1 1A palette, faces, theme
 ART_BIBLE v2 §2.1–2.10, §5.6, §6.4 applied through `Palette` and `UiTheme` only (no screen
 restyled; screens pick it up through the tokens and the theme).
@@ -6266,6 +6317,14 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 
+- **Unified city: real-time 3D or baked layers? (2026-10-05, ART-1 1D):** the spike recommends
+  real-time Godot 3D. It is closer to the round 39/40 references and is the only option with the
+  continuous zoom and the see-through band, at 2.5–2.8 ms at 1080p on this PC. See
+  `docs/handoff/art_1/city_spike_report.md` and the crops in `docs/art_review/ART-1/1D/`.
+  - Default: ART-5 builds on (a).
+  - Also: the see-through band was moved to lod 1.50–1.595 so that the Grid is solid and the raid
+    sits at 0.68. Say if the bible's 1.45–1.75 was meant literally.
+  - Tier 1 still needs a measurement on a Steam Deck.
 - **ART-1 1A: the Daemon family MISS, the PURGE look, the gunmetal (2026-10-05):** ART_BIBLE v2
   §2.6 calls the family that fires on the Miss slice MISS; the slice is NULL since the
   2026-10-05 ruling, so the token and id follow it (`DAEMON_NULL`, `&"null"`). Say if the family
