@@ -66,6 +66,36 @@ hover, transition mix), `round38_netrun_transit/*` (transit v3).
    version comes in wave 2.
 - Accept: route sweeps for every corp; the transition skips with one press; captures vs references.
 
+## Wave 2 (critical path; re-planned 2026-10-05 to pull the M14 finish in)
+
+Order: 1D posts an interim render pick (`docs/handoff/art_1/city_spike_interim.md`) → 5a/5c/5d start on it;
+5b and 8p start **now** because the models are needed whichever technique wins (Blender is the source for
+both real-time glTF and baked layers). 1D's optimisation round and final report run alongside; its final
+numbers can still change the pick, so keep the asset pipeline technique-neutral where cheap.
+
+### 5b — Landmarks for the five corps (ART-5; bible §4.4; refs `city/round26_hq_targets/*`,
+`round27_hq_targets/*`, `round31_meridian_combat/*`, `round34_rebel_cell/*`, `foundations/round2/*`)
+Meridian container castle (texture A, moat, gantry keep, train), Solace lit helix + hospital, Halcyon
+Court + eye scan + the Justice statue, Orbital in-ground silo + TV station, REBEL_CELL red-window fist with
+the blackout reveal. Blender 5.2 headless from the concept generator scripts; versioned export scripts in
+`tools/art_pipeline/city/` (not under docs); exports in `assets/city/landmarks/<corp>/` as glTF 2.0 **and**
+a day/night layered-sprite set at 2×, each with a manifest (source script, commit, settings) and a
+validator hook. Game-sized, compressed. Renders compared with the references.
+
+### 8p — HQ compound prep (ART-8; bible §4.7; refs `hq/round43_hq_mechanics/hq_*_compound.jpg`,
+`hq/round35_netrun/hq_compound.jpg`)
+The overhead compound per corp as static layouts on the **current** HQ-run rules (moving parts — crane /
+train, strands, switchback eye, silo loop, Sync Strike — wait for G12): the same pipeline and export
+pair as 5b under `assets/city/hq_compounds/<corp>/`, plus a layout table in content that maps each current
+HQ-run node to a compound position (schema minimal, smoke-checked). No view changes yet.
+
+### 5a / 5c / 5d — after the interim pick
+5a city kit + layout from the game's layout table + the orthographic camera and zoom; 5c city motion
+(sky lanes, cars with 3 LOD tiers, helicopters and drones, searchlights, billboards, day / night /
+suspicion, Heat lights) with reduce-motion pauses; 5d Grid site markers v4 + plain-language legend +
+Exploit badges on T2 Sites + fight-won lights + the Grid map key. Then the optimisation round, then the
+raid / netrun / HQ-run views move onto the city.
+
 ## File-ownership matrix (wave 1)
 | Path | Owner |
 |---|---|

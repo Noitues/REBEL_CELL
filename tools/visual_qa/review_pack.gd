@@ -1226,7 +1226,9 @@ func _lint_export(screen: String, size: Vector2i) -> Dictionary:
 	return {"screen": screen, "text_scale": text_scale, "viewport": [size.x, size.y],
 		"floor_px": roundi(12 * text_scale), "controls": out, "custom_draw": _custom_draw,
 		"type_steps": theme_consts.get("STEPS", []),
-		"hero": [theme_consts.get("HERO", 0), theme_consts.get("HERO_MAX", 0)]}
+		"hero": [theme_consts.get("HERO", 0), theme_consts.get("HERO_MAX", 0)],
+		# ART-1 1B: the grease pencil rule (no UI over a stroke, pencil above all UI).
+		"pencil": PencilLint.violations(get_tree().root)}
 
 
 func _walk(n: Node, out: Array, screen_rect: Rect2) -> void:
