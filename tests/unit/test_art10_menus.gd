@@ -70,9 +70,9 @@ func test_the_title_shows_breach_simulate_overthrow_with_their_chips() -> void:
 	for v in t.verbs:
 		words.append(v.shown_text())
 	assert_eq(words, ["BREACH", "SIMULATE", "OVERTHROW"], "D10: the three verbs in order")
-	assert_eq(t.verbs[0].fill, VinylSticker.Fill.PINK, "BREACH is the pink verb")
-	assert_eq(t.verbs[1].fill, VinylSticker.Fill.GLITCH, "SIMULATE carries the CORRUPTED glitch")
-	assert_eq(t.verbs[2].fill, VinylSticker.Fill.BLUE, "OVERTHROW is blue")
+	assert_eq(t.verbs[0].fill, VerbSticker.Fill.PINK, "BREACH is the pink verb")
+	assert_eq(t.verbs[1].fill, VerbSticker.Fill.GLITCH, "SIMULATE carries the CORRUPTED glitch")
+	assert_eq(t.verbs[2].fill, VerbSticker.Fill.BLUE, "OVERTHROW is blue")
 	assert_eq(t.verbs[2].fist_at, "OVERTHROW".length() - 2, "its last O is the rebel fist")
 	var cont := t._panel.find_child("Continue", true, false) as TerminalChip
 	assert_not_null(cont, "BREACH's chip reads CONTINUE")
@@ -166,8 +166,8 @@ func test_the_confirm_is_yellow_cancel_by_default_and_a_pink_verb() -> void:
 	t.confirm_delete("1")
 	await _frames(2)
 	var d: ConfirmDialog = t._confirm
-	assert_eq(d.no_button.fill, VinylSticker.Fill.YELLOW, "CANCEL is the yellow safe sticker")
-	assert_eq(d.yes_button.fill, VinylSticker.Fill.PINK, "the committing verb is pink")
+	assert_eq(d.no_button.fill, VerbSticker.Fill.YELLOW, "CANCEL is the yellow safe sticker")
+	assert_eq(d.yes_button.fill, VerbSticker.Fill.PINK, "the committing verb is pink")
 	assert_eq(d.yes_button.shown_text(), "DELETE")
 	assert_eq(d.window.tag_label.text, "CANNOT UNDO", "a delete says it cannot be undone")
 	assert_eq(get_viewport().gui_get_focus_owner(), d.no_button, "CANCEL holds the default focus")
@@ -183,13 +183,13 @@ func test_the_confirm_is_yellow_cancel_by_default_and_a_pink_verb() -> void:
 
 func test_sticker_motions_show_their_end_state_headless() -> void:
 	var h: Control = add_child_autofree(Control.new())
-	var s := VinylSticker.new("BURN IT", VinylSticker.Fill.PINK, 40.0)
+	var s := VerbSticker.new("BURN IT", VerbSticker.Fill.PINK, 40.0)
 	h.add_child(s)
 	await _frames(1)
 	s._hot(true)
-	assert_almost_eq(s.scale.x, Motion.amplitude(VinylSticker.HOVER_MOTION), 0.001, "hover: the grown size at once")
+	assert_almost_eq(s.scale.x, Motion.amplitude(VerbSticker.HOVER_MOTION), 0.001, "hover: the grown size at once")
 	s._press(true)
-	assert_almost_eq(s.scale.y, 1.0 - Motion.amplitude(VinylSticker.PRESS_MOTION), 0.001, "press: squashed at once")
+	assert_almost_eq(s.scale.y, 1.0 - Motion.amplitude(VerbSticker.PRESS_MOTION), 0.001, "press: squashed at once")
 	s._press(false)
 	s._hot(false)
 	assert_almost_eq(s.scale.x, 1.0, 0.001)
@@ -200,7 +200,7 @@ func test_sticker_motions_show_their_end_state_headless() -> void:
 
 func test_the_glitch_sign_and_ticker_hold_still_headless() -> void:
 	var h: Control = add_child_autofree(Control.new())
-	var sim := VinylSticker.new("SIMULATE", VinylSticker.Fill.GLITCH, 40.0)
+	var sim := VerbSticker.new("SIMULATE", VerbSticker.Fill.GLITCH, 40.0)
 	var sign := NeonSign.new()
 	var ticker := OnAirTicker.new(PackedStringArray(["PIRATE RADIO 88.1"]))
 	for c in [sim, sign, ticker]:
@@ -221,7 +221,7 @@ func test_the_sign_loop_drops_to_cell_and_stutters_an_e() -> void:
 		assert_eq(NeonSign.lit_at(i, drop), 1.0, "CELL stays lit (%d)" % i)
 	assert_lt(NeonSign.lit_at(NeonSign.STUTTER_LETTER, NeonSign.STUTTER_FRAMES[0]), 1.0, "the E stutters")
 	assert_true(UiMotionData.REQUIRED_IDS.has(NeonSign.MOTION))
-	for id in [VinylSticker.HOVER_MOTION, VinylSticker.PRESS_MOTION, VinylSticker.GLITCH_MOTION, OnAirTicker.MOTION]:
+	for id in [VerbSticker.HOVER_MOTION, VerbSticker.PRESS_MOTION, VerbSticker.GLITCH_MOTION, OnAirTicker.MOTION]:
 		assert_true(UiMotionData.REQUIRED_IDS.has(id), "%s is required" % id)
 		assert_true(Motion.has(id), "%s is in ui_motion.tres" % id)
 

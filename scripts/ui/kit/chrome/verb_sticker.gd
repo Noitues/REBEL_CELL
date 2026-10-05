@@ -1,4 +1,4 @@
-class_name VinylSticker
+class_name VerbSticker
 extends Button
 ## ART-10 4C: a vinyl sticker word that presses like a button (ART_BIBLE v2 §1.2 "Vinyl
 ## sticker", §2.10, §4.13; round 33 `ui_kit.jpg`, `title_screen.jpg`, `abandon_dialog.jpg`):

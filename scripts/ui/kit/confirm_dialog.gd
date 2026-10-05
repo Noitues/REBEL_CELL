@@ -27,8 +27,8 @@ const CHOICE_GAP := 70
 ## The default answers (keys).
 const ANSWERS := ["Yes", "Cancel", "CONFIRM", "CANNOT UNDO", "keep going [B]", "confirm"] # TR
 
-var yes_button: VinylSticker
-var no_button: VinylSticker
+var yes_button: VerbSticker
+var no_button: VerbSticker
 var window: CrtWindow
 
 
@@ -70,12 +70,12 @@ func _init(question: String, yes_text: String = "Yes", no_text: String = "Cancel
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", CHOICE_GAP)
 	box.add_child(row)
-	no_button = VinylSticker.new(tr(no_text).to_upper(), VinylSticker.Fill.YELLOW, STICKER_PX, TILT_NO)
+	no_button = VerbSticker.new(tr(no_text).to_upper(), VerbSticker.Fill.YELLOW, STICKER_PX, TILT_NO)
 	no_button.pre_translated = true
 	no_button.name = "No"
 	no_button.pressed.connect(func() -> void: cancelled.emit(); _close())
 	row.add_child(_choice(no_button, tr("keep going [B]")))
-	yes_button = VinylSticker.new(tr(yes_text).to_upper(), VinylSticker.Fill.PINK, STICKER_PX, TILT_YES)
+	yes_button = VerbSticker.new(tr(yes_text).to_upper(), VerbSticker.Fill.PINK, STICKER_PX, TILT_YES)
 	yes_button.pre_translated = true
 	yes_button.name = "Yes"
 	yes_button.pressed.connect(func() -> void: confirmed.emit(); _close())
@@ -86,7 +86,7 @@ func _init(question: String, yes_text: String = "Yes", no_text: String = "Cancel
 
 
 ## A sticker over its terminal caption.
-func _choice(sticker: VinylSticker, caption: String) -> VBoxContainer:
+func _choice(sticker: VerbSticker, caption: String) -> VBoxContainer:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 2)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER

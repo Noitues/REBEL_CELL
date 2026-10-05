@@ -106,7 +106,7 @@ var rebinding: StringName = &""
 ## ART-10 4C: the v2 pieces: the terminal, the title sticker, the tabs, the tile rows, the
 ## text-scale readout and sample, the glitch preview.
 var window: CrtWindow
-var title_sticker: VinylSticker
+var title_sticker: VerbSticker
 var colorblind_tiles: CrtTiles
 var resolve_tiles: CrtTiles
 var glitch_preview: HeatGlitchPreview
@@ -230,7 +230,7 @@ func _init() -> void:
 	saved.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	foot.add_child(saved)
 	# The yellow OPTIONS title sticker over the header's right end (round 31).
-	title_sticker = VinylSticker.new(tr("OPTIONS"), VinylSticker.Fill.YELLOW, TITLE_PX, TITLE_TILT)
+	title_sticker = VerbSticker.new(tr("OPTIONS"), VerbSticker.Fill.YELLOW, TITLE_PX, TITLE_TILT)
 	title_sticker.pre_translated = true
 	title_sticker.name = "TitleSticker"
 	title_sticker.focus_mode = Control.FOCUS_NONE

@@ -59,7 +59,7 @@ var _confirm: ConfirmDialog = null
 ## H24 S13: the storyboard shows its own private slot, so its title matches its HQ.
 var continue_slot: String = ""
 ## The three verb stickers on the main page (BREACH, SIMULATE, OVERTHROW), for tests.
-var verbs: Array[VinylSticker] = []
+var verbs: Array[VerbSticker] = []
 
 
 func _ready() -> void:
@@ -228,13 +228,13 @@ func show_main() -> void:
 	var latest := continue_slot if continue_slot != "" else RunManager.latest_slot()
 	var summary := RunManager.slot_summary(latest) if latest != "" else {}
 	var cont_line := slot_text(latest, summary) if not summary.is_empty() else tr("no saved campaign yet")
-	var breach := _verb(rows, "BREACH", VinylSticker.Fill.PINK, -1, "Continue", cont_line,
+	var breach := _verb(rows, "BREACH", VerbSticker.Fill.PINK, -1, "Continue", cont_line,
 		(func() -> void: load_slot(latest)) if not summary.is_empty() else Callable(),
 		"%s\n%s" % [tr("Pick up the campaign saved most recently."), slot_words(latest, summary)] if not summary.is_empty() else tr("No campaign is saved yet: OVERTHROW starts one."))
 	breach.name = "Breach"
-	_verb(rows, "SIMULATE", VinylSticker.Fill.GLITCH, -1, "Tutorial", tr("a practice run in a simulated net"), start_tutorial,
+	_verb(rows, "SIMULATE", VerbSticker.Fill.GLITCH, -1, "Tutorial", tr("a practice run in a simulated net"), start_tutorial,
 		tr("A guided first fight in a simulated net.")).name = "Simulate"
-	_verb(rows, "OVERTHROW", VinylSticker.Fill.BLUE, "OVERTHROW".length() - 2, "New campaign", tr("pick a corporation to bring down"), new_campaign,
+	_verb(rows, "OVERTHROW", VerbSticker.Fill.BLUE, "OVERTHROW".length() - 2, "New campaign", tr("pick a corporation to bring down"), new_campaign,
 		tr("Start a new campaign: pick the corporation to bring down.")).name = "Overthrow"
 	_align_verbs(rows)
 	# MORE: the rest of the menu, with key hints.
@@ -286,11 +286,11 @@ func _place_bottom(c: Control, right: bool, full_width: bool = false) -> void:
 
 ## One numbered verb row: the sticker (it takes focus) and its terminal chip (the plain
 ## label and line; a click on it does the same). Returns the sticker.
-func _verb(rows: Control, word: String, fill: int, fist: int, label: String, line: String, on_pressed: Callable, tip: String) -> VinylSticker:
+func _verb(rows: Control, word: String, fill: int, fist: int, label: String, line: String, on_pressed: Callable, tip: String) -> VerbSticker:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", GAP_CHIP)
 	row.alignment = BoxContainer.ALIGNMENT_BEGIN
-	var s := VinylSticker.new(tr(word), fill, VERB_PX, VERB_TILTS[verbs.size()])
+	var s := VerbSticker.new(tr(word), fill, VERB_PX, VERB_TILTS[verbs.size()])
 	s.pre_translated = true
 	s.fist_at = fist
 	s.tooltip_text = UiTip.fold(tip)
@@ -404,7 +404,7 @@ func _page(title_word: String, content: Control, page_name: String) -> VBoxConta
 	box.name = page_name
 	box.add_theme_constant_override("separation", 6)
 	var head := HBoxContainer.new()
-	var sticker := VinylSticker.new(tr(title_word), VinylSticker.Fill.YELLOW, TITLE_STICKER_PX, TITLE_STICKER_TILT)
+	var sticker := VerbSticker.new(tr(title_word), VerbSticker.Fill.YELLOW, TITLE_STICKER_PX, TITLE_STICKER_TILT)
 	sticker.pre_translated = true
 	sticker.name = "TitleSticker"
 	sticker.focus_mode = Control.FOCUS_NONE

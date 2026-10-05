@@ -4292,8 +4292,8 @@ func _as_menu(box: Control) -> void:
 
 ## A long line of prose that wraps to the panel width (profile, unlocks, records).
 ## ART-10 4C (v2 §2.10): a screen's title as a yellow vinyl sticker (never focused, no clicks).
-func _title_sticker(word: String) -> VinylSticker:
-	var s := VinylSticker.new(word, VinylSticker.Fill.YELLOW, TITLE_STICKER_PX, TITLE_STICKER_TILT)
+func _title_sticker(word: String) -> VerbSticker:
+	var s := VerbSticker.new(word, VerbSticker.Fill.YELLOW, TITLE_STICKER_PX, TITLE_STICKER_TILT)
 	s.pre_translated = true
 	s.name = "TitleSticker"
 	s.focus_mode = Control.FOCUS_NONE

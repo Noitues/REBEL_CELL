@@ -154,7 +154,6 @@ const DEMOS := {
 	&"modal_in": ["screen", "modal_open"], &"modal_out": ["screen", "modal_close"],
 	# ART-10 4C (round 33 ui_chrome): the vinyl stickers (hover, press), the title's SIMULATE
 	# glitch and REBEL_CELL neon sign loops, the ON AIR ticker.
-	&"sticker_hover": ["screen", "sticker_hover"], &"sticker_press": ["screen", "sticker_press"],
 	&"title_glitch_burst": ["screen", "title_glitch"], &"title_sign_flicker": ["screen", "title_sign"],
 	&"on_air_ticker": ["screen", "ticker"],
 }
@@ -824,7 +823,7 @@ func _play_screen(what: String) -> void:
 					PageTransition.close_modal(m)
 		"sticker_hover", "sticker_press":
 			# ART-10 4C: a pink verb sticker hovered (grow + gloss sweep), then pressed (squash).
-			var st := VinylSticker.new("BURN IT", VinylSticker.Fill.PINK, 40.0, 2.0)
+			var st := VerbSticker.new("BURN IT", VerbSticker.Fill.PINK, 40.0, 2.0)
 			st.position = Vector2(240, 280)
 			_screen_host.add_child(st)
 			await get_tree().process_frame
@@ -838,7 +837,7 @@ func _play_screen(what: String) -> void:
 			length = Motion.seconds(&"sticker_hover") * 3.0 + LOOP_GAP
 		"title_glitch":
 			# ART-10 4C: SIMULATE's glitch loop (bursts on frames 9-10 and 27-28 of 48).
-			var sim := VinylSticker.new("SIMULATE", VinylSticker.Fill.GLITCH, 48.0, 1.5)
+			var sim := VerbSticker.new("SIMULATE", VerbSticker.Fill.GLITCH, 48.0, 1.5)
 			sim.position = Vector2(220, 280)
 			_screen_host.add_child(sim)
 			length = Motion.seconds(&"title_glitch_burst")

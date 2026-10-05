@@ -126,7 +126,7 @@ func _draw_tubes() -> void:
 	var cap_w := f.get_string_size("E", HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 	var gap := cap_w * (BAR.x + 0.3)
 	var total := w_a + gap + w_b
-	var cap_h := px * VinylSticker.CAP_SHARE
+	var cap_h := px * VerbSticker.CAP_SHARE
 	var base := Vector2((BOARD.x - total) * 0.5, (BOARD.y + cap_h) * 0.5 - 2.0)
 	var letters: Array = []  # [char, x, index]
 	var x := base.x

@@ -89,7 +89,7 @@ func _init() -> void:
 	# Focus moves slide the highlight and type the line in (Animation pass ANIM-6).
 	MenuMotion.attach(_menu)
 	# The yellow PAUSED title sticker over the terminal's top left (round 33).
-	title_sticker = VinylSticker.new(tr("PAUSED"), VinylSticker.Fill.YELLOW, TITLE_PX, TITLE_TILT)
+	title_sticker = VerbSticker.new(tr("PAUSED"), VerbSticker.Fill.YELLOW, TITLE_PX, TITLE_TILT)
 	title_sticker.pre_translated = true
 	title_sticker.name = "TitleSticker"
 	title_sticker.focus_mode = Control.FOCUS_NONE
@@ -138,7 +138,7 @@ static func code_line() -> String:
 var _panel: CrtWindow = null
 ## ART-10 4C: the PAUSED title sticker, its size and tilt, and how far it rises over the
 ## terminal's top edge (share of its height).
-var title_sticker: VinylSticker = null
+var title_sticker: VerbSticker = null
 const TITLE_PX := 30.0
 const TITLE_TILT := -3.0
 const STICKER_RISE := 0.6
