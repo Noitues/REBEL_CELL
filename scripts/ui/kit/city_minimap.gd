@@ -136,7 +136,7 @@ func _draw_map() -> void:
 	var corners := PackedVector2Array([to_map(r.position), to_map(Vector2(r.end.x, r.position.y)), to_map(r.end),
 		to_map(Vector2(r.position.x, r.end.y))])
 	if _terrain_tex != null:
-		_map.draw_colored_polygon(corners, Color.WHITE, PackedVector2Array([Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]), _terrain_tex)
+		_map.draw_colored_polygon(corners, Palette.NO_TINT, PackedVector2Array([Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]), _terrain_tex)
 	else:
 		_map.draw_colored_polygon(corners, Color(Palette.NIGHT_BLOCK, TERRAIN_ALPHA))
 	var edge := corners.duplicate()
