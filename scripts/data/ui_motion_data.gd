@@ -95,6 +95,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-0 E (ported from art-pass W6, ART_BIBLE v2 5.3): the wheel-local T3 bursts that
 	# retire the full-screen Perfect and boss-phase flashes.
 	&"wheel_burst_perfect", &"wheel_burst_phase",
+	# ART-2 2B (wheel attachments and the arena): the won backdrop, the drone bloom, the card-play
+	# preview's chevrons and ghosts, the Daemon rack's idle scan.
+	&"backdrop_won_lights", &"drone_bloom", &"preview_chevron_chase", &"preview_ghost", &"daemon_rack_scan",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.

@@ -504,6 +504,10 @@
 		"res://tests/unit/test_w9_accessibility_settings.gd": {
 			"seconds": 3.0,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_art2_attachments.gd": {
+			"seconds": 12.0,
+			"tier": "full"
 		}
 	}
 }

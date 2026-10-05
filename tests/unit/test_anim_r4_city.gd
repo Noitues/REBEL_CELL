@@ -327,10 +327,12 @@ func test_the_combat_heat_banner_never_spills_over_the_daemon_row() -> void:
 		var p: HeatPoster = combat.heat_poster
 		p.heat = 80
 		p._banner_at = 75
-		var row: Rect2 = combat.daemon_row.get_global_rect()
+		# ART-2 2B: the Daemons are the rack on the operative's wheel's left edge (ART_BIBLE v2 §3.13).
+		var rack: Control = combat._player_view.get_node("DaemonRack")
+		var row: Rect2 = rack.get_global_rect()
 		var xf := p.get_global_transform()
 		for c in p.banner_corners():
-			assert_true((xf * c).y <= row.position.y + 0.5, "%.1f: the banner ends above the Daemons (%.0f > %.0f)" % [scale, (xf * c).y, row.position.y])
+			assert_false(row.has_point(xf * c), "%.1f: the banner never spills over the Daemons" % scale)
 		# ANIM-R5 P9: the consequence is the flat note beside the poster now.
 		assert_false(p.note_lines().is_empty(), "%.1f: the consequence still shows, in the note" % scale)
 		combat.get_parent().queue_free()

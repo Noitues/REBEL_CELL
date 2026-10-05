@@ -148,6 +148,10 @@ const DEMOS := {
 	# ART-0 E (ported from art-pass W6): the wheel-local T3 bursts on the fight's wheels (the
 	# Perfect's on the operative's, a boss phase's on an enemy's in the corp hue).
 	&"wheel_burst_perfect": ["scene", "perfect"], &"wheel_burst_phase": ["scene", "phase_burst"],
+	# ART-2 2B (wheel attachments and the arena): on the live fight's wheels and backdrop.
+	&"backdrop_won_lights": ["scene", "arena_won"], &"drone_bloom": ["scene", "attach_bloom"],
+	&"preview_chevron_chase": ["scene", "attach_preview"], &"preview_ghost": ["scene", "attach_preview"],
+	&"daemon_rack_scan": ["scene", "attach_rack"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -1070,6 +1074,42 @@ func _show_scene(on: bool) -> void:
 
 ## A motion in a live combat scene (a fresh fight each time, laid out for SCENE_SETTLE
 ## frames before the motion starts).
+## ART-2 2B demos on the live fight (lab only: the fight's state is dressed directly): a drone's
+## band blooms, a spin card's animated preview, the Daemon rack's idle scan, the won backdrop.
+func _play_attach(what: String) -> void:
+	var st: CombatState = _scene.engine.state()
+	var pv: WheelView = _scene._player_view
+	match what:
+		"attach_bloom":
+			if st.drones.is_empty():
+				var d := EffectInterpreter.make_combatant(_scene.engine.content(LAB_DRONE) as EnemyData, &"lab_drone", true)
+				d.is_player = true
+				d.host_id = st.player.id
+				d.dock_slot = 1
+				st.drones.append(d)
+			_scene._refresh(st)
+			pv.attachments.dock.force_bloom = false
+			await get_tree().process_frame
+			pv.attachments.dock.force_bloom = true
+		"attach_preview":
+			st.hand[0] = LAB_SPIN_CARD
+			_scene._refresh(st)
+			_scene._preview_card(0)
+		"attach_rack":
+			st.daemon_ids.clear()
+			st.daemon_ids.append_array(LAB_DAEMONS)
+			_scene._refresh(st)
+		"arena_won":
+			_scene.arena_backdrop.won = 0.0
+			_scene.arena_backdrop.play_won()
+
+
+## The ART-2 2B demos' drone, spin card and Daemons.
+const LAB_DRONE := &"botnet_drone"
+const LAB_SPIN_CARD := &"heavy_spin"
+const LAB_DAEMONS: Array[StringName] = [&"clean_signal", &"cascade", &"botnet_seed"]
+
+
 func _play_scene(what: String) -> void:
 	_show_scene(true)
 	_clear_screen()
@@ -1083,6 +1123,8 @@ func _play_scene(what: String) -> void:
 	var enemy: StringName = _scene.engine.state().enemies[0].id
 	var ev: WheelView = _scene._view_of(enemy)
 	match what:
+		"attach_bloom", "attach_preview", "attach_rack", "arena_won":
+			_play_attach(what)
 		"send":
 			_scene.end_turn()
 		"send_hit", "send_kill":
