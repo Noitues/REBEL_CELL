@@ -162,7 +162,9 @@ enemy Hub for one turn.
 - Random effects (Respin, random targets) show odds instead of a single result.
 - **Rewind:** unlimited undo within a turn, back to the most recent checkpoint. Every
   random outcome sets a checkpoint; the start-of-turn respin is the first. Checkpoints
-  are saved, so quitting and reloading cannot reroll a random result.
+  are saved, so quitting and reloading cannot reroll a random result. On screen the respin
+  control reads **RESPIN** (never CHECKPOINT) and an undo blocked by a checkpoint shows on
+  **UNDO** itself (DECISIONS 2026-10-05, names for M14, D12).
 
 ### 2.11 Boss Pointer Phases (experimental)
 Bosses change pointers when HP crosses phase thresholds: **Multiply** (new pointers

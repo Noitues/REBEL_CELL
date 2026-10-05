@@ -1685,8 +1685,8 @@ Resistance %d: absorbs nudges and spins tick for tick; Flip and Respin are block
 Resolution (windowed),Resolution (windowed)
 Respin,Respin
 Respin for %d RAM,Respin for %d RAM
-Respin your wheel for %d RAM: a random result (sets a checkpoint).,Respin your wheel for %d RAM: a random result (sets a checkpoint).
-Respin your wheel for %d RAM: a random result (sets a checkpoint). %s,Respin your wheel for %d RAM: a random result (sets a checkpoint). %s
+Respin your wheel for %d RAM: a random result (UNDO stops here).,Respin your wheel for %d RAM: a random result (UNDO stops here).
+Respin your wheel for %d RAM: a random result (UNDO stops here). %s,Respin your wheel for %d RAM: a random result (UNDO stops here). %s
 Resume,Resume
 Resume saved campaign,Resume saved campaign
 Resume saved game,Resume saved game
@@ -2750,6 +2750,7 @@ Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or
 Tutorial,Tutorial
 UNDO,UNDO
 UNDO %s,UNDO %s
+"UNDO is blocked: a random event came since (a respin, a random pick).","UNDO is blocked: a random event came since (a respin, a random pick)."
 UNDOCK,UNDOCK
 UPGRADE,UPGRADE
 UPGRADE A SLICE // INSTALL %s,UPGRADE A SLICE // INSTALL %s
@@ -2863,4 +2864,4 @@ vs %s | ICE %d%s,vs %s | ICE %d%s
 won,won
 you are here,you are here
 your network holds every threat,your network holds every threat
-{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.,{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.
+{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; UNDO stops at a Respin or a random slice pick.,{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; UNDO stops at a Respin or a random slice pick.

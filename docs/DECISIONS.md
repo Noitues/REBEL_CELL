@@ -86,6 +86,13 @@ player strings and code for each item's old words.
   screen distorts as Heat rises; off by default)"); the glitch itself comes in ART-3 / ART-5 (test
   `test_the_heat_glitch_extra_is_off_by_default_and_round_trips`). settings.gd and settings_panel.gd
   are area C's files: additions only.
+- **D12 RESPIN / UNDO.** The respin sticker already read RESPIN; its tips and the tutorial no longer say
+  "checkpoint" ("UNDO stops here"). The undo block shows on UNDO: the sticker's tooltip says why it is
+  off (`combat_scene.UNDO_BLOCKED`), and an undo pressed with nothing to undo (Ctrl+Z, the pad)
+  shows that note over the UNDO sticker instead of the notes column (`show_undo_block`); the core's
+  refusal text reads "Nothing to undo: a random event came since (UNDO stops there)". The rules word
+  checkpoint stays internal (CombatSession, GDD 2.10). Test
+  `test_respin_reads_respin_and_the_undo_block_shows_on_undo`.
 
 ### 2026-10-05 — Art direction — ART-0 names pass, part 1 + saves folder
 Applies rulings 5, 6.1, 6.2 and 6.5 of the entry below (ART-0 area B, items B1–B4). Internal

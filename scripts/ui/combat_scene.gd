@@ -378,12 +378,39 @@ static func last_turn_tips(lines: Dictionary, events: Array[Dictionary]) -> Dict
 func rewind() -> void:
 	cancel_selection()
 	skip_motion()
+	if engine.has_fight() and not engine.can_rewind():
+		show_undo_block()
+		return
 	_rewind_from = engine.state().duplicate_state() if Motion.animating() and engine.has_fight() else null
 	var ok := engine.rewind()
 	_rewind_from = null
 	if ok and tutorial != null and is_instance_valid(tutorial):
 		var ev: Array[Dictionary] = [{"type": "rewind"}]
 		tutorial.on_events(ev)
+
+
+## ART-0 D12 (DECISIONS "Designer rulings: names for M14"): UNDO's words, and the block when there
+## is nothing to undo since the last random event.
+const UNDO_TIP := "Undo back to the last random event (free, unlimited this turn)." # TR
+const UNDO_BLOCKED := "UNDO is blocked: a random event came since (a respin, a random pick)." # TR
+
+
+## UNDO's tooltip: what it does, or why it is blocked now.
+func _sync_undo_tip() -> void:
+	if _rewind_button == null:
+		return
+	var blocked := engine == null or not engine.has_fight() or not engine.can_rewind()
+	shown_tip(_rewind_button, tr(UNDO_BLOCKED) if blocked else tr(UNDO_TIP))
+
+
+## ART-0 D12: an undo with nothing to undo shows its block on the UNDO sticker itself (its
+## refusal note sits over it), not in the notes column.
+func show_undo_block() -> void:
+	if _rewind_button == null:
+		return
+	var r := _rewind_button.get_global_rect()
+	toast.show_text(tr(UNDO_BLOCKED), Vector2(r.get_center().x, r.position.y - TOAST_GAP), _toast_spot().size.x)
+	AudioDirector.play_sfx("click")
 
 
 ## Keyboard / pad nudge: the wheel and ring the W and R toggles chose.
@@ -1926,6 +1953,7 @@ func _refresh(state: CombatState) -> void:
 	# ANIM-R1 C7: nothing left to spend: the ▶▶ mark pulses gently (off under reduce effects).
 	(_end_turn_button as DripButton).set_ready(state.ram <= 0 and not state.is_over())
 	_rewind_button.disabled = not engine.can_rewind()
+	_sync_undo_tip()
 	_link_hand_focus()
 	_nav_focus = false  # the refocus below is automatic, not the player moving focus
 	UiFocus.focus_first(_hand_box, true, _end_turn_button.get_parent())
@@ -2403,11 +2431,11 @@ func _show_respin_odds() -> void:
 	var chips: Array = [{"text": tr("RESPIN: ODDS"), "color": Palette.INK, "ink": Palette.PAPER}]
 	chips.append_array(_odds_chips(engine.state().player))
 	_player_view.intent = {"type": -1, "text": tr("Respin for %d RAM") % cost, "chips": chips,
-		"tooltip": tr("Respin your wheel for %d RAM: a random result (sets a checkpoint). %s") % [cost, odds_text(engine.state().player)]}
+		"tooltip": tr("Respin your wheel for %d RAM: a random result (UNDO stops here). %s") % [cost, odds_text(engine.state().player)]}
 	_player_view.queue_redraw()
 	_mark_was(was)
 	preview_note.clear()
-	preview_note.append("Respin your wheel for %d RAM (a random event: sets a checkpoint)." % cost)
+	preview_note.append("Respin your wheel for %d RAM (a random event: UNDO stops here)." % cost)
 	preview_note.append(odds_text(engine.state().player))
 
 
@@ -2876,7 +2904,7 @@ func _build_stickers() -> void:
 		if _nav_focus:
 			_show_respin_odds())
 	_respin_button.mouse_exited.connect(_show_end_turn_preview)
-	shown_tip(_rewind_button, tr("Undo back to the last random event (free, unlimited this turn)."))
+	_sync_undo_tip()
 
 
 ## Sticker label with its bound key (the action each sticker runs).
@@ -2899,7 +2927,7 @@ func _sync_stickers() -> void:
 	var cost := engine.resolver.config.respin_ram_cost if engine != null and engine.has_fight() else 0
 	(_stickers["respin"] as StickerButton).set_label(_sticker_text("respin", tr("RESPIN %d RAM") % cost if cost > 0 else tr("RESPIN")))
 	(_stickers["undo"] as StickerButton).set_label(_sticker_text("undo", tr("UNDO")))
-	shown_tip(_respin_button, tr("Respin your wheel for %d RAM: a random result (sets a checkpoint).") % cost)
+	shown_tip(_respin_button, tr("Respin your wheel for %d RAM: a random result (UNDO stops here).") % cost)
 	for key in _stickers:
 		(_stickers[key] as StickerButton).refit()
 	_place_stickers()

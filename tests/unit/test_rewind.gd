@@ -39,7 +39,7 @@ func test_rewind_cannot_cross_the_start_of_turn_checkpoint() -> void:
 	var s := CombatSession.start(_resolver, &"breaker", [&"collections_agent"], 5, &"rank:1")
 	var r := s.rewind()
 	assert_false(r.ok())
-	assert_string_contains(r.error, "checkpoint")
+	assert_string_contains(r.error, "UNDO stops there")
 	s.apply(CombatAction.nudge(&"enemy_0", 1))
 	s.apply(CombatAction.end_turn())
 	assert_eq(s.state.turn, 2)

@@ -118,6 +118,25 @@ func test_a_meridian_wheel_says_airmail_for_its_overflow() -> void:
 	assert_false(_scene.odds_text(_state().player).contains("AIRMAIL"), "the operative's do not")
 
 
+## ART-0 D12: the respin control reads RESPIN (never the old label); the undo block shows on UNDO.
+func test_respin_reads_respin_and_the_undo_block_shows_on_undo() -> void:
+	var respin: StickerButton = _scene._respin_button
+	var undo: StickerButton = _scene._rewind_button
+	assert_false(respin.tooltip_text.to_lower().contains("checkpoint"), "the respin control names no checkpoint")
+	_scene.respin()
+	assert_false(_scene.engine.can_rewind(), "nothing to undo after a random event")
+	await get_tree().process_frame
+	assert_true(undo.disabled, "UNDO is off")
+	assert_eq(undo.tooltip_text, tr(_scene.UNDO_BLOCKED), "and says why on itself")
+	var turn: int = _state().turn
+	_scene.rewind()
+	assert_eq(_scene.toast.label.text, tr(_scene.UNDO_BLOCKED), "a press shows the block")
+	var at: Rect2 = undo.get_global_rect()
+	var t: Rect2 = _scene.toast.get_global_rect()
+	assert_lt(absf(t.get_center().x - at.get_center().x), maxf(t.size.x, at.size.x), "over the UNDO sticker")
+	assert_eq(_state().turn, turn, "nothing changed")
+
+
 ## ART-0 D4: a Solace wheel calls its HOTFIX slice GROWTH (Triage Unit heals).
 func test_a_solace_wheel_says_growth_for_its_hotfix() -> void:
 	assert_eq(Palette.slice_word(RC.SliceType.HOTFIX, &"solace"), "GROWTH")
