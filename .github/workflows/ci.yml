@@ -23,11 +23,15 @@ env:
 jobs:
   # Cheap checks, in their own job so a schema or content break shows up in about a minute.
   fast-checks:
-    name: Schema, content, text export
+    name: Runner tests, schema, content, text export
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      # ART-0 audit O2: the runner's own tests (--shard, --tier, balancing) run here too, not
+      # only inside test_anim_r6_rules (full tier). Standard library only; no Godot needed.
+      - name: Test runner unit tests
+        run: python3 tools/test_run_tests.py
       - name: Cache the Godot download
         uses: actions/cache@v4
         with:
