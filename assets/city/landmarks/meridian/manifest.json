@@ -1,0 +1,172 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "landmark",
+ "corp": "meridian",
+ "about": "ART-5 5b landmark (bible 4.4). Built by tools/art_pipeline/city/build_landmarks_v1.py; do not edit by hand.",
+ "source": {
+  "script": "tools/art_pipeline/city/landmark_build_v1.py",
+  "spec": "tools/art_pipeline/city/landmark_spec_v1.py",
+  "driver": "tools/art_pipeline/city/build_landmarks_v1.py",
+  "vendor": "art-concepts-r43:docs/concepts/round31_meridian_combat/scripts @ 097a6c0 (concept_r31/); round34_rebel_cell/scripts/map34.py @ d14b8f6 (landmark_crest_v1)",
+  "scripts": [
+   "tools/art_pipeline/city/landmark_spec_v1.py",
+   "tools/art_pipeline/city/landmark_build_v1.py",
+   "tools/art_pipeline/city/landmark_district_v1.py",
+   "tools/art_pipeline/city/landmark_crest_v1.py",
+   "tools/art_pipeline/city/landmark_post_v1.py",
+   "tools/art_pipeline/city/gltf_anim_v1.py",
+   "tools/art_pipeline/city/build_landmarks_v1.py",
+   "tools/art_pipeline/city/concept_r31/target_corps.py",
+   "tools/art_pipeline/city/concept_r31/heroes24.py",
+   "tools/art_pipeline/city/concept_r31/heroes25.py",
+   "tools/art_pipeline/city/concept_r31/heroes26.py",
+   "tools/art_pipeline/city/concept_r31/heroes27.py",
+   "tools/art_pipeline/city/concept_r31/heroes28.py",
+   "tools/art_pipeline/city/concept_r31/heroes29.py",
+   "tools/art_pipeline/city/concept_r31/heroes30.py",
+   "tools/art_pipeline/city/concept_r31/heroes31.py"
+  ],
+  "commit": "012dc6813e2f2ab261197c905fad0c3bdc7788e3",
+  "scripts_sha256": "c0b99454bfc673b57ca229540c34e63bd6ebaa284009441d21a44a1b1bc24390"
+ },
+ "settings": {
+  "blender": "5.2.2 LTS",
+  "version": "v1",
+  "units": "1 BU = 1 m; 1 lot = 6 BU",
+  "up": "+Y (glTF; Blender (x, y, z) -> (x, z, -y)); glTF x = lot x, z = lot y (CityIsoCamera.lot_to_world)",
+  "tone": [
+   0.86,
+   1.12
+  ],
+  "part_alpha": [
+   0.55,
+   1.0
+  ],
+  "ramp_tint": "LandmarkLook.corp_tint (target_corps.TINT)",
+  "pitch_deg": 40.0,
+  "yaw_deg": 135.0,
+  "normals": "none (facet normal from screen derivatives)",
+  "layered_sprites": "dropped: 1D chose real-time Godot 3D",
+  "site_scale": 0.8,
+  "site_rot_deg": 0.0,
+  "front": "as the concept built them: Meridian's gate faces +x, its rail yard runs along x at z = -34 / -40; a Site's front faces +z (lot +y, screen lower-left, as the locked Site renders)"
+ },
+ "origin": "the landmark's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot rectangle's centre",
+ "footprint": {
+  "min": [
+   -90.3,
+   -0.058,
+   -41.8
+  ],
+  "max": [
+   90.0,
+   49.45,
+   30.1
+  ],
+  "size": [
+   180.3,
+   49.508,
+   71.9
+  ]
+ },
+ "materials": {
+  "lm_toon": "toon: 3-band ramp x vertex colour (tone baked); alpha = part value 0.55-1.0 -> ROUGHNESS (ink material edges)",
+  "lm_toon_lines": "lm_toon, darkened toward (8, 6, 12)/255 by 0.55 x reveal q (REBEL_CELL detail-line buildings)",
+  "lm_lit": "lm_toon + emission 0.25 x colour (floodlit towers; LandmarkLook.lit_emission)",
+  "lm_neon": "emissive: vertex colour x neon gain (night 1.0, day 0.75)",
+  "lm_win": "emissive windows: vertex colour x window gain (day: 0.55, mixed 0.55 toward dark glass); alpha = the window's seeded value",
+  "lm_win_ring": "lm_win, visible while alpha > reveal q (+/- 0.12 flicker band at the front): the blackout ring",
+  "lm_win_lines": "lm_win, visible while alpha < (1 - q) x 0.85: lit detail lines before the reveal",
+  "lm_win_fist_home": "red fist windows, home look (70 % density baked) x LandmarkLook.fist_gain",
+  "lm_win_fist_dispatch": "red fist windows, DISPATCH look (90 %, glitch rows, a few white); show instead of _home",
+  "lm_beam": "translucent light cone: vertex colour at 0.22 over what is behind, no depth write (no ink)",
+  "lm_sign": "emissive diegetic signage (corp sign colour)"
+ },
+ "landmarks": [
+  {
+   "job": "meridian_hq",
+   "kind": "hq",
+   "file": "meridian_hq.glb",
+   "what": "Container castle: texture A (raw corrugated steel), lower walls, faceted moat, gantry crane keep, rail yard and the 20-frame crane + train loop",
+   "origin": "the landmark's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot rectangle's centre",
+   "footprint": {
+    "min": [
+     -90.3,
+     -0.058,
+     -41.8
+    ],
+    "max": [
+     90.0,
+     49.45,
+     30.1
+    ],
+    "size": [
+     180.3,
+     49.508,
+     71.9
+    ]
+   },
+   "lot_rect": {
+    "lots": [
+     10,
+     10
+    ],
+    "bu": [
+     60.0,
+     60.0
+    ],
+    "overhang_bu": 60.3
+   },
+   "states": [
+    ""
+   ],
+   "state_nodes": [],
+   "triangles": {
+    "lm_toon": 18332,
+    "lm_lit": 6182,
+    "lm_neon": 1842,
+    "lm_sign": 596,
+    "lm_win": 12
+   },
+   "animation": {
+    "name": "loop",
+    "frames": 20,
+    "seconds_per_frame": 0.15,
+    "loop_seconds": 3.0,
+    "still_frame": 6,
+    "still_deg": null,
+    "tracks": 22,
+    "note": "rest pose = the concept's still; play the animation looped"
+   },
+   "seed": 3678,
+   "reference_camera": {
+    "kind": "perspective",
+    "position": [
+     0.0,
+     60.0,
+     -150.0
+    ],
+    "target": [
+     0.0,
+     15.0,
+     -22.0
+    ],
+    "lens_mm": 34.0,
+    "sensor_mm": 36.0,
+    "hfov_deg": 55.795
+   },
+   "references": [
+    "docs/art_reference/city/round31_meridian_combat/combat_meridian.jpg"
+   ]
+  }
+ ],
+ "files": [
+  {
+   "path": "meridian_hq.glb",
+   "kind": "gltf",
+   "bytes": 1303996,
+   "sha256": "68026e2e84c1ecbce2f6276edaa957c6fb50f607ecf413e34779db1972be743a"
+  }
+ ],
+ "validator": "tools/landmark_asset_checks.gd (from tools/validate_content.gd): manifest keys, files, sizes, sha256, stale pipeline"
+}

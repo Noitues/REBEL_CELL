@@ -588,9 +588,76 @@ func go_to_netrun(before_switch: Callable = Callable(), site_id: StringName = &"
 	AudioDirector.play_sfx("jack_in")
 	_before_switch = before_switch
 	if scene_switching_enabled:
-		Fx.jack_in(_switch_to_netrun, -1.0, jack_destination(site_id), jack_note(), jack_tier(site_id))
+		# ART-7 3B: along the link on the City Grid when the jack starts from one (4.6).
+		Fx.jack_in_link(_switch_to_netrun, jack_link(site_id), jack_destination(site_id), jack_note(), jack_tier(site_id))
 	else:
 		_switch_to_netrun()
+
+
+## ART-7 3B (4.6): the link a jack in runs along: {from, to: the ends' terminal names; points:
+## the link on screen (from the City Grid's map in the current scene, empty when none shows);
+## slices: the operative's wheel colours}; {} when no Site is named.
+func jack_link(site_id: StringName, operative_id: StringName = &"") -> Dictionary:
+	if site_id == &"" or corporation == null or campaign == null:
+		return {}
+	var to_site := CampaignRules.site_data(corporation, site_id)
+	if to_site == null:
+		return {}
+	# The owned end: home or a claimed Site linked to the target (lowest id first).
+	var owned: Array[StringName] = []
+	if corporation.city_grid != null:
+		owned.append(corporation.city_grid.home_site_id)
+	if campaign.grid != null:
+		owned.append_array(campaign.grid.claimed_ids())
+	var from_id: StringName = &""
+	var links: Array = to_site.links.duplicate()
+	links.sort()
+	for l in links:
+		if owned.has(l):
+			from_id = l
+			break
+	if from_id == &"":
+		# A link stored on the owned end only.
+		var mine := owned.duplicate()
+		mine.sort()
+		for o in mine:
+			var od := CampaignRules.site_data(corporation, o)
+			if od != null and od.links.has(site_id):
+				from_id = o
+				break
+	var from_site := CampaignRules.site_data(corporation, from_id) if from_id != &"" else null
+	var points := PackedVector2Array()
+	var scene := get_tree().current_scene
+	if scene != null:
+		for o in scene.find_children("*", "CityMapOverlay", true, false):
+			var ov := o as CityMapOverlay
+			if ov.is_visible_in_tree() and ov.has_site(site_id):
+				var xf := ov.get_global_transform_with_canvas()
+				var a := ov.icon_at(from_id) if from_id != &"" else Vector2.INF
+				var b := ov.icon_at(site_id)
+				if b.x != INF:
+					if a.x != INF:
+						points.append(xf * a)
+					points.append(xf * b)
+				break
+	var slices: Array[Color] = []
+	var op: OperativeState = campaign.get_operative(operative_id) if operative_id != &"" else null
+	if op == null and not campaign.living_operatives().is_empty():
+		op = campaign.living_operatives()[0]
+	if op != null:
+		for id in op.slot_slice_ids:
+			var sd := lookup().get_content(id) as SliceData
+			if sd != null:
+				slices.append(Palette.slice_color(sd.slice_type))
+	return {"from": _terminal_name(from_site, "RELAY"), "to": _terminal_name(to_site, "SITE"), "points": points, "slices": slices}
+
+
+## A Site's name as the Cell's terminal writes it ("DEPOT_15"): its translated name, upper
+## case, words joined by "_".
+func _terminal_name(site: SiteData, fallback: String) -> String:
+	if site == null:
+		return fallback
+	return "_".join(TextDb.t(site, "display_name").to_upper().split(" ", false))
 
 
 ## ANIM-R2 R5: where a jack in connects to, named on the cover: the run's Site (its
