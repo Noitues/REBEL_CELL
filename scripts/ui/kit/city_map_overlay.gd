@@ -1245,8 +1245,8 @@ func _is_dashed(e: Dictionary) -> bool:
 
 
 func _edge_static(e: Dictionary, pts: PackedVector2Array) -> void:
-	if pts.size() < 2:
-		return
+	if pts.size() < 2 or e.get("pencil", false):
+		return  # ART-6 3A: a raid route the pencil draws (RaidRouteLayer)
 	var col: Color = e.get("color", Palette.NET_CYAN)
 	var width: float = e.get("width", 3.0)
 	# Dark keyline under every path so it separates from the city's own ink.
@@ -1257,8 +1257,8 @@ func _edge_static(e: Dictionary, pts: PackedVector2Array) -> void:
 
 
 func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
-	if pts.size() < 2:
-		return
+	if pts.size() < 2 or e.get("pencil", false):
+		return  # ART-6 3A: a raid route the pencil draws (RaidRouteLayer)
 	var col: Color = e.get("color", Palette.NET_CYAN)
 	var width: float = e.get("width", 3.0)
 	if _is_dashed(e):
@@ -1376,7 +1376,10 @@ func _node(n: Dictionary) -> void:
 		# ANIM-5 (4.16): the new node pops up with the marker on it.
 		r *= lerpf(Motion.amplitude(&"node_pop"), 1.0, arrive_t)
 		_here(at, r)
-	draw_icon(_c, String(n.get("kind", "")), at, r, col, String(n.get("glyph", "")), DIM_ALPHA if dim else 1.0)
+	if n.has("socket"):
+		RaidSocket.draw(_c, at, r, socket_spec(n))  # ART-6 3A: a Cell node on the raid map is its socket
+	else:
+		draw_icon(_c, String(n.get("kind", "")), at, r, col, String(n.get("glyph", "")), DIM_ALPHA if dim else 1.0)
 	if visited or (not _travel.is_empty() and n["id"] == _travel["from"] and dim_t > 0.0):
 		# ANIM-R1 M7: a tick on a node passed through (it fades in as the node dims).
 		var ta := 1.0 if visited else dim_t
@@ -1430,6 +1433,31 @@ func _node(n: Dictionary) -> void:
 			var dia := PackedVector2Array([mp + Vector2(0, -s), mp + Vector2(s * 0.9, 0), mp + Vector2(0, s), mp + Vector2(-s * 0.9, 0)])
 			_c.draw_colored_polygon(dia, Palette.corp_color(StringName(n.get("threat_corp", "solace"))) if n.has("threat_corp") else Palette.CORP_SOLACE)
 			_c.draw_polyline(dia + PackedVector2Array([dia[0]]), Palette.PAPER, 1.2)
+
+
+# --- ART-6 3A raid layer: sockets ---------------------------------------------------------------
+## ART-6 3A: the raid's live socket states (site id -> {health, state} overriding a node's
+## "socket"; the playout's RaidFxLayer sets it so sockets drain and fall as the hits land).
+var socket_live: Callable = Callable()
+## ART-6 3A: the drag preview on a socket (site id -> RaidSocket.DRAG_*; the raid setup sets it
+## while a defence is carried over a node).
+var socket_drag: Dictionary = {}
+
+
+## ART-6 3A: node `n`'s socket drawing spec (RaidSocket.draw): its "socket" entry, with the
+## playout's live health and state and the drag preview over it.
+func socket_spec(n: Dictionary) -> Dictionary:
+	var spec: Dictionary = (n["socket"] as Dictionary).duplicate()
+	if socket_live.is_valid():
+		var live: Variant = socket_live.call(n["id"])
+		if live is Dictionary:
+			spec.merge(live as Dictionary, true)
+	if socket_drag.has(n["id"]):
+		spec["drag"] = socket_drag[n["id"]]
+	if is_dimmed(n["id"]):
+		spec["alpha"] = DIM_ALPHA
+	spec["seed"] = String(n["id"]).hash()
+	return spec
 
 
 ## ANIM-R1 M4: where placed asset `k` of `count` on node `n` sits (local px): a row

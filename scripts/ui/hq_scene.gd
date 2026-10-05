@@ -2617,7 +2617,8 @@ func show_raid() -> void:
 	intro.add_theme_color_override("font_color", Palette.PAPER)
 	side.add_child(intro)
 	side.add_child(_raid_card(raid, pending, projection))
-	var orders_win := TerminalWindow.new(tr("YOUR NODES // pick the target"), Palette.CELL_PINK)
+	# ART-6 3A: YOUR NETWORK is the Cell's own CRT terminal with a status chip per node.
+	var orders_win := RaidTerminal.new(tr("YOUR NETWORK"), Palette.NET_CYAN)
 	orders_win.name = "NodeOrders"
 	side.add_child(orders_win)
 	# A fixed-height list (many claimed nodes scroll inside it; follow_focus for the pad).
@@ -2642,25 +2643,46 @@ func show_raid() -> void:
 	for site_id in claimed:
 		orders.add_child(_node_order_row(site_id, projection, claimed))
 	var go := HBoxContainer.new()
+	go.name = "RaidGo"
 	go.add_theme_constant_override("separation", 10)
+	go.alignment = BoxContainer.ALIGNMENT_END
 	side.add_child(go)
-	# H24 S14: "RUN THE RAID" read like attacking; the Cell defends.
-	var run_btn := _icon(_button(tr(START_DEFENSE), fight_raid), StatIcon.PLAY)
-	run_btn.name = "RunRaid"
-	run_btn.theme_type_variation = &"HotButton"
-	_add_tip(go, run_btn, tr("Start the defence: the raid plays out on the map; the result matches the forecast."))
+	# H24 S14: "RUN THE RAID" read like attacking; the Cell defends. ART-6 3A: the verb is a
+	# vinyl sticker (§1.2), the Speed / Skip terminal strip sits under it (greyed: nothing
+	# plays yet) and stays when START peels away in the playout.
 	_add_tip(go, _icon(_button(tr("Back to HQ"), show_hq), StatIcon.BACK), tr("Back to the HQ; the raid waits until you start the defence."))
+	var run_btn := RaidSticker.new(START_DEFENSE, roundi(START_STICKER_PX * Settings.text_scale), RaidSticker.PINK)
+	run_btn.name = "RunRaid"
+	run_btn.pressed.connect(fight_raid)
+	_add_tip(go, run_btn, tr("Start the defence: the raid plays out on the map; the result matches the forecast."))
+	var strip := RaidSpeedStrip.new(RunManager.config().raid_step_cap)
+	strip.size_flags_horizontal = Control.SIZE_SHRINK_END
+	side.add_child(strip)
 	# H24 S14: the same words and tooltip as the HQ's ARMORY badge (assets banked, not
 	# deployed, of the Armory's room).
 	var loadout := TerminalWindow.new(tr("DEFENSE LOADOUT // %s") % armory_words(), Palette.CELL_PINK)
 	loadout.name = "DefenseLoadout"
 	loadout.tooltip_text = UiTip.fold(armory_tip())
 	loadout.tag_label.text = tr("TARGET: %s") % site_name(selected_site)
+	# ART-6 3A: THREAT INTEL (the decrypted holo) sits beside the loadout under the map (the
+	# reference's bottom left), or in the side column at big text.
+	var intel := _threat_intel(raid, pending, projection)
 	if big_text:
 		side.add_child(loadout)
 		side.move_child(loadout, 0)  # ART-0 C: the cards on the first screen
+		side.add_child(intel)
+		side.move_child(intel, side.get_child_count() - 3)
 	else:
-		map_col.add_child(loadout)
+		var bottom := HBoxContainer.new()
+		bottom.name = "RaidBottom"
+		bottom.add_theme_constant_override("separation", 10)
+		bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		intel.custom_minimum_size.x = INTEL_WIDTH * Settings.text_scale
+		bottom.add_child(intel)
+		loadout.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bottom.add_child(loadout)
+		map_col.add_child(bottom)
+
 	# How to deploy, in pictures (H22 #9): 1 pick a node (map or YOUR NODES), 2 press a
 	# card: it goes to the target. The cards sit beside the steps.
 	var deploy_row: BoxContainer = VBoxContainer.new() if big_text else HBoxContainer.new()
@@ -2713,6 +2735,8 @@ func show_raid() -> void:
 	city_overlay.node_clicked.connect(func(id: StringName) -> void:
 		if RunManager.campaign.grid.is_claimed(id):
 			select_target(id))
+	# ART-6 3A: the threats' routes in red grease pencil, as the projection runs them.
+	_mount_raid_routes(raid_route_paths(projection.events))
 	_raid_avoid = [side, loadout]
 	city_overlay.avoid_controls([side, loadout, raid_legend])  # labels clear of the panels and the key
 	_register_raid_drops(claimed, loadout)
@@ -2748,65 +2772,251 @@ func select_target(site_id: StringName) -> void:
 		b.grab_focus.call_deferred()
 
 
-## The raid at a glance: the projected result as a stamp, then badges for home before and
-## after, threats destroyed, strength, steps, the entry Sites and the link changes; the
-## raid's warning in the tooltip.
-func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult) -> TerminalWindow:
+# --- ART-6 3A raid presentation: setup panels (ART_BIBLE v2 §4.8 "Panels by fiction") -----------
+## The raid's words for its targets' routing rules (THREAT INTEL and the work order's TARGET).
+const RAID_TARGETS := {RC.ThreatRouting.SHORTEST_TO_HOME: "CORE (home)", RC.ThreatRouting.HIGHEST_VALUE: "highest-value node", # TR
+	RC.ThreatRouting.WEAKEST_NODE: "weakest node"} # TR
+## The intercepted work order's lines (corp paper, §1.2).
+const ORDER_KIND := "RAID INCOMING  //  %s" # TR
+const ORDER_UNITS := "%d IN %d WAVE" # TR
+const ORDER_UNITS_MANY := "%d IN %d WAVES" # TR
+## The forecast stamp's size on the work order (a share of the playout's stamp).
+const ORDER_STAMP_SHARE := 0.78
+## START DEFENSE's sticker lettering (px at text scale 1.0) and THREAT INTEL's width beside
+## the loadout (px at 1.0).
+const START_STICKER_PX := 30
+const INTEL_WIDTH := 300.0
+
+
+## The raid at a glance as the corp's own intercepted WORK ORDER (ART_BIBLE v2 §4.8: corp
+## paper with its letterhead, redactions and INTERCEPTED; round 20-21 `memo_glass`): the
+## raid's name, its target, units, entry Sites, strength and what it would cost if it ran
+## now (the forecast is exact), with the Cell's forecast stamp on it; the raid's warning in
+## the tooltip. Named "RaidCard"; its values keep their names (HomeForecast, ThreatsStopped,
+## RaidStrength) for the pad and the tests.
+func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult) -> Control:
 	var c := RunManager.campaign
 	var cfg := RunManager.config()
-	var corp_col := Palette.corp_color(c.corporation_id)
-	var card := TerminalWindow.new(tr("RAID // %s") % TextDb.t(raid, "display_name"), corp_col)
+	var skin := RaidSkin.of(c.corporation_id)
+	var number := skin.order_number(StringName(String(pending.get("raid_id", raid.id))), int(pending.get("heat", c.heat)))
+	var card := RaidPaper.new(c.corporation_id, TextDb.t(raid, "display_name").to_upper(), RaidPaper.STAMP_INTERCEPTED, number)
 	card.name = "RaidCard"
 	card.tooltip_text = UiTip.fold(TextDb.t(raid, "warning_text"))
+	card.set_sub(tr(ORDER_KIND) % number)
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
+	row.name = "RaidFacts"
+	row.add_theme_constant_override("separation", 6)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.body.add_child(row)
-	# A forecast, not a result (H22 #9): "IF THE RAID RUNS NOW: HOME -5" on a dashed
-	# ring like combat's NEXT plate; the tooltip says so. ANIM-R4 H3: the verdict names the
-	# losses (RaidVerdict), CELL HOLDS only when there are none.
-	var verdict := raid_verdict(projection)
-	var clean := RaidVerdict.clean_projection(projection)
-	var stamp := ForecastStamp.new(FORECAST_CAPTION, verdict, RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
-	stamp.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP) * (1.0 + (Settings.text_scale - 1.0) * PROJECTION_FOLLOW)
-	stamp.tooltip_text = UiTip.fold(forecast_tip(projection))
-	row.add_child(stamp)
-	var facts := HFlowContainer.new()
-	facts.name = "RaidFacts"
-	facts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	facts.add_theme_constant_override("h_separation", 10)
-	facts.add_theme_constant_override("v_separation", 4)
-	row.add_child(facts)
-	var home_col := Palette.CELL_ACID if projection.home_after >= projection.home_before else Palette.CELL_PINK
-	# H23 S5: every number says what it counts ("HOME 50 > 40", "STOPPED 0/2", "STRENGTH
-	# +0%"), and its tooltip says what it means.
-	var home_badge := Badge.new(tr("HOME %d → %d") % [projection.home_before, projection.home_after], home_col, GLYPH_HOME,
-		tr("Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.") % [projection.home_before, projection.home_after]).with_meter(projection.home_after, c.grid.home_max_integrity).with_icon(StatIcon.HOME)
-	home_badge.name = "HomeForecast"
-	facts.add_child(home_badge)
+	var fields := VBoxContainer.new()
+	fields.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fields.add_theme_constant_override("separation", 1)
+	fields.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(fields)
+	# The rows go into the fields column (RaidPaper.add_row adds to its body: borrow it).
+	var paper_body := card.body
+	card.body = fields
+	var targets := PackedStringArray()
+	var units := 0
+	for w in raid.waves:
+		for t in w.threats:
+			if t == null:
+				continue
+			units += 1
+			var word := tr(String(RAID_TARGETS.get(t.routing, "")))
+			if word != "" and not targets.has(word):
+				targets.append(word)
 	var total := projection.threats_destroyed + projection.threats_reached_home + _still_active(projection)
-	var stopped := Badge.new(tr("STOPPED %d/%d") % [projection.threats_destroyed, total], Palette.CELL_ACID, GLYPH_THREAT,
-		tr("Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.") % [projection.threats_destroyed, total])
-	stopped.name = "ThreatsStopped"
-	facts.add_child(stopped)
-	var strength := Badge.new(tr("STRENGTH %s%%") % TextDb.signed(roundi(CampaignRules.raid_strength_pct(c, cfg, pending, RunManager.corporation))), corp_col, GLYPH_RULE,
-		tr("How much stronger than normal the threats are (from Heat, ICE and taken Sites). 0% is normal strength."))
-	strength.name = "RaidStrength"
-	facts.add_child(strength)
-	# Entry Sites: a badge each for a few, else one count (names in its tooltip); the
-	# dashed routes on the map show them all.
+	var target_l := card.add_row(tr("TARGET"), ", ".join(targets).to_upper(), Palette.INK, "RaidTarget")
+	_tip_label(target_l, tr("What the threats go for (their routing rule)."))
+	var waves := raid.waves.size()
+	card.add_row(tr("UNITS"), (tr(ORDER_UNITS) if waves == 1 else tr(ORDER_UNITS_MANY)) % [units, waves], Palette.INK, "RaidUnits")
 	var entries := PackedStringArray()
 	for e in CampaignRules.raid_entries(c, RunManager.corporation, pending):
 		entries.append(site_name(e))
-	if entries.size() <= MAX_ENTRY_BADGES:
-		for entry in entries:
-			facts.add_child(Badge.new(entry, corp_col, GLYPH_ENTRY, tr("Threats come in at %s (the dashed routes on the map).") % entry))
-	else:
-		facts.add_child(Badge.new(tr("%d ENTRY SITES") % entries.size(), corp_col, GLYPH_ENTRY, tr("Threats come into the city at %d Sites: %s. They follow the dashed routes on the map to your nodes.") % [entries.size(), ", ".join(entries)]))
+	var entry_l := card.add_row(tr("ENTRY SITES"), str(entries.size()), Palette.INK, "RaidEntries")
+	_tip_label(entry_l, tr("Threats come into the city at %d Sites: %s. The red pencil routes on the map show where they go.") % [entries.size(), ", ".join(entries)])
+	var strength := card.add_row(tr("STRENGTH"), tr("STRENGTH %s%%") % TextDb.signed(roundi(CampaignRules.raid_strength_pct(c, cfg, pending, RunManager.corporation))),
+		Palette.INK, "RaidStrength")
+	_tip_label(strength, tr("How much stronger than normal the threats are (from Heat, ICE and taken Sites). 0% is normal strength."))
+	var lost_home := projection.home_after < projection.home_before
+	var home := card.add_row(tr("IF IT RAN NOW"), tr("HOME %d > %d") % [projection.home_before, projection.home_after],
+		Palette.HARM_INK if lost_home else Palette.INK, "HomeForecast")
+	_tip_label(home, tr("Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.") % [projection.home_before, projection.home_after])
+	var stopped := card.add_row(tr("STOPPED"), tr("STOPPED %d/%d") % [projection.threats_destroyed, total], Palette.GAIN_INK if projection.threats_destroyed == total and total > 0 else Palette.INK, "ThreatsStopped")
+	_tip_label(stopped, tr("Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.") % [projection.threats_destroyed, total])
+	var l := RaidVerdict.losses(_raid_dict(projection))
+	card.add_row(tr("DOWN / TAKEN"), "%d / %d" % [int(l["down"]), int(l["taken"])], Palette.HARM_INK if int(l["down"]) + int(l["taken"]) > 0 else Palette.INK, "RaidLosses")
 	for e in projection.events:
 		if e.get("type", "") in ["link_frozen", "link_altered"]:
-			facts.add_child(Badge.new(tr("link"), Palette.RESIST_GOLD, GLYPH_LINK, String(e["text"])))
+			var link := card.add_row(tr("LINK"), tr("FROZEN") if e["type"] == "link_frozen" else tr("ALTERED"), Palette.HARM_INK)
+			_tip_label(link, String(e["text"]))
+	card.body = paper_body
+	# The Cell's forecast stamp on the order (a dashed ring: a forecast, not a result).
+	var verdict := raid_verdict(projection)
+	var clean := RaidVerdict.clean_projection(projection)
+	var stamp := ForecastStamp.new(FORECAST_CAPTION, verdict, RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
+	stamp.name = "RaidForecast"
+	stamp.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP) * ORDER_STAMP_SHARE * (1.0 + (Settings.text_scale - 1.0) * PROJECTION_FOLLOW)
+	stamp.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	stamp.tooltip_text = UiTip.fold(forecast_tip(projection))
+	row.add_child(stamp)
 	return card
 
+
+## ART-6 3A: the raid map's pencil routes (null off a raid page).
+var raid_routes: RaidRouteLayer = null
+
+
+## ART-6 3A: lays the pencil routes `paths` (Site id sequences) on the city map, written on.
+func _mount_raid_routes(paths: Array[Array]) -> void:
+	if city_overlay == null or not is_instance_valid(city_overlay):
+		return
+	raid_routes = RaidRouteLayer.new(city_overlay)
+	city_overlay.add_child(raid_routes)
+	# Written on when they change (a new raid, a defence that turns a threat), not on every
+	# rebuild of the page (picking a target).
+	var key := str(paths)
+	raid_routes.set_routes(paths, key != _routes_shown)
+	_routes_shown = key
+
+
+var _routes_shown: String = ""
+
+
+## A paper value label with a tooltip (hovered, it shows the old badge's words).
+func _tip_label(l: Label, tip: String) -> void:
+	l.mouse_filter = Control.MOUSE_FILTER_PASS
+	l.tooltip_text = UiTip.fold(tip)
+
+
+## A projection as the dictionary RaidVerdict reads.
+static func _raid_dict(p: RaidResolver.RaidResult) -> Dictionary:
+	return {"campaign_lost": p.campaign_lost, "home_before": p.home_before, "home_after": p.home_after, "nodes": p.nodes}
+
+
+## ART-6 3A: THREAT INTEL as decrypted holo (ART_BIBLE v2 §4.8; round 21 `intel_holo`): the
+## corp seal cracked + DECRYPTED, one row per entry route (its letter, the units entering
+## there, what they go for), the scanned threats under them. From the projection (exact:
+## the playout matches it). Named "ThreatIntel".
+func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult) -> RaidHolo:
+	var c := RunManager.campaign
+	var holo := RaidHolo.new(c.corporation_id, tr("THREAT INTEL // SCAN"), RaidHolo.key_of(StringName(String(pending.get("raid_id", raid.id)))))
+	holo.name = "ThreatIntel"
+	var groups := raid_route_groups(projection)
+	var units: Array[Dictionary] = []
+	var seen := {}
+	for g: Dictionary in groups:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(RaidRouteMark.new(String(g["letter"])))
+		var words := VBoxContainer.new()
+		words.add_theme_constant_override("separation", 0)
+		words.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(words)
+		holo.body.add_child(row)
+		var names := PackedStringArray()
+		var rules := PackedStringArray()
+		for cid: StringName in g["threats"]:
+			var td := RunManager.lookup().get_content(cid) as ThreatData
+			var nm := TextDb.t(td, "display_name").to_upper() if td != null else String(cid).to_upper()
+			names.append(nm)
+			var rule := tr(String(RAID_TARGETS.get(td.routing if td != null else RC.ThreatRouting.SHORTEST_TO_HOME, "")))
+			if not rules.has(rule):
+				rules.append(rule)
+			if not seen.has(cid):
+				seen[cid] = true
+				units.append({"type": RaidVehicle.type_of(td), "name": nm, "letter": "%s%d" % [g["letter"], units.size() + 1]})
+		var head := holo.add_line(" + ".join(names), Palette.AUTO, UiTheme.BODY)
+		head.reparent(words)
+		var sub := holo.add_line("> " + " / ".join(rules) + "  //  " + site_name(StringName(String(g["entry"]))))
+		sub.reparent(words)
+	if groups.is_empty():
+		holo.add_line(tr("No threats can reach your network."))
+	if not units.is_empty():
+		holo.body.add_child(RaidIntelStrip.new(c.corporation_id, units))
+	return holo
+
+
+## ART-6 3A: the projection's threats grouped by their entry Site, in entry order (A first):
+## [{"letter", "entry", "threats": [content ids]}]. Ties by Site id (deterministic).
+static func raid_route_groups(projection: RaidResolver.RaidResult) -> Array[Dictionary]:
+	var by_entry := {}
+	var order: Array[StringName] = []
+	if projection == null:
+		return []
+	for e in projection.events:
+		if String(e.get("type", "")) != "threat_enters":
+			continue
+		var site := StringName(String(e.get("site", "")))
+		if not by_entry.has(site):
+			by_entry[site] = []
+			order.append(site)
+		(by_entry[site] as Array).append(StringName(String(e.get("threat_content", ""))))
+	var out: Array[Dictionary] = []
+	for i in order.size():
+		out.append({"letter": RaidRouteMark.letter_of(i), "entry": order[i], "threats": by_entry[order[i]]})
+	return out
+
+
+## ART-6 3A: each threat's route in a resolved raid's events (its entry Site, then every Site
+## it moves to), deduplicated, in the order the threats enter (the pencil routes: what the
+## threats will do, as the forecast is exact).
+static func raid_route_paths(events: Array) -> Array[Array]:
+	var by_threat := {}
+	var order: Array[String] = []
+	for e in events:
+		var t := String(e.get("threat", ""))
+		match String(e.get("type", "")):
+			"threat_enters":
+				if not by_threat.has(t):
+					order.append(t)
+				by_threat[t] = [StringName(String(e.get("site", "")))]
+			"move":
+				if by_threat.has(t):
+					var p: Array = by_threat[t]
+					var to := StringName(String(e.get("to", "")))
+					if p.is_empty() or p[p.size() - 1] != to:
+						p.append(to)
+	var out: Array[Array] = []
+	var seen := {}
+	for t in order:
+		var p: Array = by_threat[t]
+		if p.size() < 2:
+			continue
+		var key := str(p)
+		if seen.has(key):
+			continue
+		seen[key] = true
+		out.append(p)
+	return out
+
+
+## ART-6 3A: claimed node `site_id`'s socket on the raid map (RaidSocket spec): its type's
+## glyph, its state (DOWN / the raid's outcome when `res` is a result), its health now and the
+## projected outcome as a forecast ring (`forecast`: `res` is the setup's projection).
+func raid_socket(site_id: StringName, res: Dictionary, forecast: bool, c: CampaignState) -> Dictionary:
+	var s := c.grid.site(site_id)
+	var home := site_id == c.grid.home_site_id
+	var glyph := RaidSocket.GLYPH_CORE if home else RaidSocket.glyph_of(c.grid.node_type_of(site_id))
+	var integ := c.grid.home_integrity if home else int(s.get("integrity", 0))
+	var most := c.grid.home_max_integrity if home else maxi(1, int(s.get("max_integrity", 1)))
+	var state := RaidSocket.STATE_DOWN if not c.grid.is_active_node(site_id) else RaidSocket.STATE_HOLDS
+	var spec := {"glyph": glyph, "state": state, "health": float(integ) / float(maxi(1, most)), "max": most}
+	if not res.is_empty():
+		var outcome := String(res.get("outcome", ""))
+		if forecast:
+			spec["forecast"] = outcome
+		else:
+			spec["health"] = float(int(res.get("after", integ))) / float(maxi(1, most))
+			if outcome == "down":
+				spec["state"] = RaidSocket.STATE_DOWN
+			elif outcome == "taken":
+				spec["state"] = RaidSocket.STATE_TAKEN
+	return spec
+# --- end ART-6 3A setup panels -------------------------------------------------------------------
 
 ## The raid forecast in words: what happens if the raid runs now (H22 #9; ANIM-R4 H3: the
 ## one verdict, RaidVerdict, translated).
@@ -3105,25 +3315,33 @@ func _deploy_steps() -> VBoxContainer:
 func _node_order_row(site_id: StringName, projection: RaidResolver.RaidResult, claimed: Array[StringName]) -> Control:
 	var c := RunManager.campaign
 	var n: Dictionary = projection.nodes.get(String(site_id), {})
-	var holds := String(n.get("outcome", "")) == "holds"
 	var box := VBoxContainer.new()
 	box.name = "Order_%s" % site_id
 	var row := HFlowContainer.new()
 	row.add_theme_constant_override("h_separation", 8)
 	box.add_child(row)
 	var picked := site_id == selected_site
+	# ART-6 3A: the node's socket glyph leads its terminal row (no tag: the type is the glyph).
+	var glyph := RaidSocket.GLYPH_CORE if site_id == c.grid.home_site_id else RaidSocket.glyph_of(c.grid.node_type_of(site_id))
+	row.add_child(RaidGlyphMark.new(glyph, RaidSocket.frame_color(glyph) if c.grid.is_active_node(site_id) else Palette.DISABLED))
 	var target := _button(("> %s" if picked else "%s") % site_name(site_id), func() -> void: select_target(site_id))
 	target.name = "Target_%s" % site_id
 	target.custom_minimum_size.x = TARGET_BUTTON_WIDTH
 	target.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	target.flat = true
 	if picked:
 		target.add_theme_color_override("font_color", Palette.CELL_ACID)
 	target.disabled = not c.grid.is_active_node(site_id)
 	_add_tip(row, target, tr("%s (%s): make it the target for the Armory's assets.") % [site_name(site_id), _display(c.grid.node_type_of(site_id))])
 	if not n.is_empty():
 		# H23 S5: the numbers are the node's integrity (HP); HOLDS / BREACHED said in the tip.
-		row.add_child(Badge.new(tr("HP %s → %s %s") % [n.get("before", "?"), n.get("after", "?"), outcome_word(String(n.get("outcome", "")))],
-			Palette.CELL_ACID if holds else Palette.CELL_PINK, GLYPH_NODE, tr("%s's integrity (HP) now and after the raid: %s → %s. %s") % [site_name(site_id), n.get("before", "?"), n.get("after", "?"), outcome_tip(String(n.get("outcome", "")))]))
+		# ART-6 3A: a status chip in the outcome's colour with its word (round 21 terminal rows).
+		var outcome := String(n.get("outcome", ""))
+		var chip := RaidChip.new(tr("HP %s → %s %s") % [n.get("before", "?"), n.get("after", "?"), outcome_word(outcome)], RaidChip.outcome_color(outcome))
+		chip.name = "Chip_%s" % site_id
+		chip.add_theme_font_override("font", Palette.mono_arrows())
+		_add_tip(row, chip, tr("%s's integrity (HP) now and after the raid: %s → %s. %s") % [site_name(site_id), n.get("before", "?"), n.get("after", "?"), outcome_tip(outcome)])
+
 	var assets := c.grid.assets_on(site_id)
 	for i in assets.size():
 		var badge := Badge.new("", Palette.CELL_PINK, "", _display(assets[i]), assets[i])
@@ -3188,10 +3406,14 @@ func raid_graph(results: Variant, markers: Dictionary, c: CampaignState = null, 
 			n["tip"] = tr("%s: integrity (HP) %s → %s in the raid. %s") % [site_name(n["id"]), res["before"], res["after"], outcome_tip(String(res["outcome"]))]
 		n["assets"] = c.grid.assets_on(n["id"])
 		n["threat_corp"] = String(c.corporation_id)
+		if c.grid.is_claimed(n["id"]):
+			n["socket"] = raid_socket(n["id"], res, results is RaidResolver.RaidResult, c)  # ART-6 3A
 		nodes.append(n)
 	var edges: Array[Dictionary] = []
 	for e in g["edges"]:
 		if network.has(e["a"]) and network.has(e["b"]):
+			if e.get("arrows", false):
+				e["pencil"] = true  # ART-6 3A: the threat routes are the pencil's (RaidRouteLayer)
 			edges.append(e)
 	return {"nodes": nodes, "edges": edges}
 
