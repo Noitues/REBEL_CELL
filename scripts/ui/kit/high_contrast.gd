@@ -107,7 +107,7 @@ static func _box(sb: StyleBoxFlat, box_name: StringName, is_button: bool) -> voi
 		return
 	var filled := sb.draw_center and sb.bg_color.a > 0.0
 	if not filled and not has_edge:
-		if is_button and box_name != &"normal" and box_name != &"disabled":
+		if is_button and not [&"normal", &"disabled"].has(box_name):
 			# A flat toggle row's hover: no fill to tint, so an edge shows the state.
 			sb.draw_center = false
 			sb.border_color = FOCUS
