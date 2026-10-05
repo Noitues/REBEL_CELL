@@ -33,6 +33,18 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Designer ruling: M14 regrouped
+The designer asked why integrating a one-week art pass would take 3–4 weeks. The reason: the locked v2
+direction exists only as concept stills and GIFs (43 rounds, 5,915 files under `docs/concepts/`; after
+`art-m13-final` the concept rounds added 5 design-lab files, 261 lines, to the game). The M13 code implements
+the superseded v1 look, so v2 is built in Godot, not merged. The estimate was driven by 13 separate
+batch → audit → fix → review loops. Ruling: **regroup M14** into ART-0, four groups and the final sweep:
+Group 1 Foundations (ART-1); Group 2 Combat (ART-2, 3, 4); Group 3 City (ART-5, 6, 7, 8; ART-5's city
+model first); Group 4 Screens (ART-9, 10, 11); Final (ART-12). A group's batches are built in parallel
+(at most 4–5 agents), with one audit round and its fix rounds to CLEAN, one full suite ×3 in isolation,
+and one designer review per group. Batch contents and acceptance lines are unchanged. MILESTONES M14
+and plan §4 annotated. Estimate given at the time: about 1.5–2.5 weeks, re-estimated after ART-0.
+
 ### 2026-10-05 — Designer ruling: DISPATCH text
 Default accepted for the ART-0a open question: DISPATCH text is always a clean CRT terminal feed (red
 accent, ART_BIBLE v2 §1.2), never a sticker or pencil. GDD 8.2's "never zine-styled" reworded to that.
