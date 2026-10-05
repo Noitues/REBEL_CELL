@@ -96,6 +96,27 @@ static func crt_material() -> Material:
 	return UiTheme.crt_material()
 
 
+## 1B: the CRT glass (CrtTerminalPanel: navy glass, scanlines, edge glow; the hex dump when
+## `hex`) as `owner`'s backing, drawn behind it (the owner draws its words, pips and edge
+## states on top). No prompt, no caret: the owner's words are its own.
+static func crt_backing(owner: Control, hex: bool = false) -> CrtTerminalPanel:
+	var c := CrtTerminalPanel.new()
+	c.name = "CrtGlass"
+	c.prompt = false
+	c.caret = false
+	c.hex_dump = hex
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	c.show_behind_parent = true
+	owner.add_child(c, false, Node.INTERNAL_MODE_FRONT)
+	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	return c
+
+
+## A terminal panel's edge only (over a CRT backing): the chamfered outline.
+static func draw_terminal_edge(ci: CanvasItem, r: Rect2, edge: Color) -> void:
+	draw_terminal_panel(ci, r, edge, Color(TERMINAL_BG, 0.0))
+
+
 ## A terminal panel: dark glass, a thin cyan edge, its top-right corner cut (§4.13).
 ## `edge` overrides the edge colour (a hot or refused state).
 static func draw_terminal_panel(ci: CanvasItem, r: Rect2, edge: Color = TERMINAL_EDGE, bg: Color = TERMINAL_BG) -> void:

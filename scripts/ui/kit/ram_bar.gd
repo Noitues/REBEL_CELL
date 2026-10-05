@@ -34,6 +34,7 @@ var _blink_tween: Tween = null
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	custom_minimum_size = Vector2(PANEL_W, PANEL_H)
+	_glass = HudSkin.crt_backing(self, true)  # ART-1 1B: the CRT glass with its hex dump
 
 
 func set_ram(value: int, maximum: int) -> void:
@@ -234,6 +235,8 @@ const PIP_W := 9.0
 const PIP_H := 18.0
 const PIP_STEP := 13.0
 const PIP_GAP := 12.0
+## The hatch over the pips a previewed play spends: the gap between its strokes (px at 1.0).
+const HATCH_STEP := 5.0
 ## The panel grows with the text by this share of the text scale's step (the pips shrink to
 ## fit; the count keeps the whole text scale).
 const PANEL_GROWTH := 0.1
@@ -271,6 +274,9 @@ func spend_rect() -> Rect2:
 	return Rect2(Vector2(lr.position.x, bottom - sz.y), sz)
 
 
+var _glass: CrtTerminalPanel = null
+
+
 ## The words a reader gets ("RAM 6/12 (-2)"; the tooltip and tests).
 func _label() -> String:
 	var label := tr("RAM %d/%d") % [ram, max_ram]
@@ -300,15 +306,28 @@ func pip_rects() -> Array[Rect2]:
 	return out
 
 
+## The centre of pip `k` on screen (global; FX fly to and from it). Past the last pip, the
+## spot one step on.
+func pip_spot(k: int) -> Vector2:
+	var pips := pip_rects()
+	if pips.is_empty():
+		return get_global_rect().get_center()
+	if k < pips.size():
+		return global_position + pips[maxi(0, k)].get_center()
+	var last := pips[pips.size() - 1]
+	var step := last.position.x - pips[pips.size() - 2].position.x if pips.size() > 1 else last.size.x
+	return global_position + last.get_center() + Vector2(step * (k - pips.size() + 1), 0.0)
+
+
 func _draw() -> void:
 	var s := Settings.text_scale
 	var pad := PANEL_PAD * s
-	HudSkin.draw_terminal_panel(self, Rect2(Vector2.ZERO, size), HudSkin.TERMINAL_EDGE, HudSkin.TERMINAL_BG)
+	HudSkin.draw_terminal_edge(self, Rect2(Vector2.ZERO, size), HudSkin.TERMINAL_EDGE)
 	var hf := roundi(HEADER_FONT * s)
 	var mono := HudSkin.mono()
 	var head := tr("RAM")  # drawn words translate (H24)
 	if owner_words != "":
-		head = "%s  ·  %s" % [owner_words, head]  # ART-2 2D: the name sticker's words at big text
+		head = owner_words  # ART-2 2D: the name sticker's words at big text (the count says RAM)
 	if pending != 0:
 		head += "  (%+d)" % pending
 	draw_string(mono, Vector2(pad, pad + mono.get_ascent(hf)), head, HORIZONTAL_ALIGNMENT_LEFT, -1, hf, HudSkin.TERMINAL_TEXT)
@@ -339,6 +358,15 @@ func _draw() -> void:
 			rc = rc.grow(rc.size.x * (Motion.amplitude(&"ram_tick") - 1.0) * 0.5 * tick_pop)
 			col = col.lerp(Palette.PAPER, tick_pop * 0.6)
 		draw_rect(rc, col)
+		if k >= after and k < lit:
+			# ART-2 2D: the previewed cost is hatched across the pips it will spend.
+			var hy := rc.size.x
+			var y := rc.position.y - hy
+			while y < rc.end.y:
+				var a0 := Vector2(rc.position.x, clampf(y + hy, rc.position.y, rc.end.y))
+				var a1 := Vector2(rc.end.x, clampf(y, rc.position.y, rc.end.y))
+				draw_line(a0, a1, Color(Palette.LIVE_NUMBER_RIM, 0.7 * pending_alpha), 1.5)
+				y += HATCH_STEP * Settings.text_scale
 		if k >= lit and k < after:
 			draw_rect(rc, Color(Palette.CELL_ACID, 0.9), false, 2.0)  # gained by the previewed action
 	if spend_text != "":

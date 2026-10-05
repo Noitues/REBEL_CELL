@@ -7,8 +7,13 @@ extends DripButton
 ## and sweeps the gloss, a press squashes it, disabled greys it, focus gives it a lime
 ## die-cut halo. It keeps DripButton's API and motion entries (`send_it_press`, `drip_halo`,
 ## `drip_grow` = the slap as it first shows, `send_it_drips` = the shadow snapping in,
-## `send_it_ready`): art restyles motion, never drops it. 1B's vinyl material plugs in
-## through HudSkin.vinyl_material(). View only; the scene decides what a press means.
+## `send_it_ready`): art restyles motion, never drops it. View only; the scene decides what
+## a press means.
+## ART-1 1B landed: the sticker's art is 1B's VinylSticker (`art`, Anton jitter, keyline,
+## extrude, die-cut, rim, gloss, its own slap / hover / press / sweep entries) over the
+## system word, with this button's states mapped onto it; the drawn sticker below stays only as
+## the fallback when `use_kit_art` is off. The terminal line and the focus halo stay this
+## button's.
 
 ## The system word under the sticker and the terminal line beside its key.
 var system_word: String = "EXECUTE"
@@ -37,11 +42,121 @@ const SHADOW_OFFSET := Vector2(4.0, 6.0)
 const SHADOW_ALPHA := 0.55
 ## The disabled sticker's RESOLVING chip lettering share of the key hint.
 const RESOLVING_SHARE := 0.9
+## 1B's sticker for SEND IT-sized lettering (HERO) and smaller verbs (DISPLAY): the font size
+## from which the HERO step is used.
+const HERO_FROM := 80
+## Text scales up to which the kit sticker keeps its step, and up to which it takes HEADING
+## (above: TITLE).
+const ART_SCALE_SMALL := 1.3
+const ART_SCALE_MID := 1.7
+## The focus halo round the kit sticker (px) and its stroke.
+const HALO_PAD := 6.0
+const HALO_PX := 3.0
+## The kit sticker sits right of and below the drawn lettering's place (shares of the system
+## word's width and of the font size), so EXECUTE reads above-left of it (round 22).
+const ART_SHIFT := Vector2(0.22, 0.18)
+
+## 1B's vinyl sticker drawing this button's lettering (null = the drawn fallback).
+var art: VinylSticker = null
+## Draw with 1B's sticker (the kit material); off = the drawn fallback.
+static var use_kit_art: bool = true
+var _art_state: int = -1
+var _slapped: bool = false
 
 
 func _init(p_text: String = "SEND IT", p_hint: String = "", p_color: Color = HudSkin.VINYL_PINK, p_size: int = 56) -> void:
 	super(p_text, p_hint, p_color, p_size, [])
-	material = HudSkin.vinyl_material()
+	if use_kit_art:
+		art = VinylSticker.new()
+		art.name = "Art"
+		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		art.font_step = art_step()
+		art.tilt_deg = tilt
+		add_child(art)
+		_sync_art_words()
+		resized.connect(_place_art)
+
+
+## The kit sticker's fill for this button's paint: yellow for the safe choice, white for a
+## lost fight's JACK OUT, else the Cell's pink.
+func kit_fill() -> VinylSticker.Fill:
+	if paint == HudSkin.VINYL_YELLOW:
+		return VinylSticker.Fill.YELLOW
+	if paint == Palette.PAPER:
+		return VinylSticker.Fill.WHITE
+	return VinylSticker.Fill.PINK
+
+
+func _sync_art_words() -> void:
+	if art == null:
+		return
+	var shown := String(shown_lettering()[0])
+	if art.text != shown:
+		art.text = shown
+	if art.fill != kit_fill():
+		art.fill = kit_fill()
+	var step := art_step()
+	if art.font_step != step:
+		art.font_step = step
+	_place_art()
+
+
+## The kit sticker's type step: the sticker is a baked object, so at big text it takes a
+## smaller step and keeps about its 1.0 size (§2.9).
+func art_step() -> int:
+	var base := UiTheme.HERO if font_size >= HERO_FROM else UiTheme.DISPLAY
+	var ts := Settings.text_scale
+	if ts <= ART_SCALE_SMALL:
+		return base
+	return UiTheme.HEADING if ts <= ART_SCALE_MID else UiTheme.TITLE
+
+
+## The kit sticker's centre: where the drawn lettering's middle would be.
+func _place_art() -> void:
+	if art == null:
+		return
+	var tw := face().get_string_size(String(shown_lettering()[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	art.place_center(_base() + Vector2(tw * 0.5 + _system_w() * ART_SHIFT.x, -font_size * 0.35 + font_size * ART_SHIFT.y))
+
+
+## This button's state on the kit sticker (rest, hover, pressed, disabled).
+func _sync_art_state() -> void:
+	if art == null:
+		return
+	var st := state()
+	var want := VinylSticker.State.REST
+	if disabled:
+		want = VinylSticker.State.DISABLED
+	elif st == KitState.PRESSED:
+		want = VinylSticker.State.PRESSED
+	elif st == KitState.HOVER or st == KitState.FOCUS or _hot:
+		want = VinylSticker.State.HOVER
+	if int(want) != _art_state:
+		_art_state = int(want)
+		art.set_state(want)
+
+
+func set_tag_text(text: String) -> void:
+	super(text)
+	_sync_art_words()
+
+
+## The first show slaps the kit sticker on (its `slap` entry) with DripButton's growth.
+func grow_in() -> void:
+	super()
+	if art != null and not _slapped and is_visible_in_tree():
+		_slapped = true
+		art.slap()
+
+
+func motion_running() -> bool:
+	return super() or (art != null and art.motion_running())
+
+
+func complete_motion() -> void:
+	super()
+	if art != null:
+		art.complete_motion()
 
 
 ## The lettering face: Anton (display).
@@ -124,6 +239,9 @@ func _base() -> Vector2:
 
 
 func _draw() -> void:
+	if art != null:
+		_draw_with_art()
+		return
 	var s := Settings.text_scale
 	var lettering := shown_lettering()
 	var shown: String = lettering[0]
@@ -194,3 +312,33 @@ func _stamp(f: Font, at: Vector2, text: String, fs: int, radius: float, col: Col
 		var o := Vector2(cos(TAU * i / STAMPS), sin(TAU * i / STAMPS)) * radius
 		draw_string(f, at + o, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 	draw_string(f, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+
+
+## With 1B's sticker: the system word and the terminal line here, the sticker is `art`; focus
+## is a lime halo round it (v2 §2.10).
+func _draw_with_art() -> void:
+	_sync_art_words()
+	_sync_art_state()
+	var st := state()
+	var sys := String(TranslationServer.translate(system_word))
+	var sp := _system_px()
+	var sys_base := Vector2(0.0, _system_y())
+	if sys != "":
+		draw_string(HudSkin.mono(), sys_base, sys, HORIZONTAL_ALIGNMENT_LEFT, -1, sp, Color(HudSkin.TERMINAL_TEXT, HudSkin.SYSTEM_WORD_ALPHA))
+		var sr := Rect2(Vector2(-2.0, sys_base.y - HudSkin.mono().get_ascent(sp) - 2.0), Vector2(_system_w() + 4.0, sp + 4.0))
+		draw_rect(sr, Color(HudSkin.TERMINAL_EDGE, HudSkin.SYSTEM_WORD_ALPHA * 0.6), false, 1.0)
+	if st == KitState.FOCUS and not disabled:
+		var r := Rect2(art.position + art.body_rect.position, art.body_rect.size).grow(HALO_PAD)
+		if art.body_rect.size == Vector2.ZERO:
+			r = Rect2(_base() + Vector2(0.0, -font_size), Vector2(lettering_room(), font_size * 1.2)).grow(HALO_PAD)
+		draw_rect(r, HudSkin.FOCUS, false, HALO_PX)
+	var hs := _hint_px()
+	var words := _line_words()
+	if words != "":
+		var hw := HudSkin.mono().get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
+		var hp := Vector2(6.0, size.y - 5.0)
+		draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 5)), Color(HudSkin.TERMINAL_BG, 0.85))
+		draw_string(HudSkin.mono(), hp, words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, HudSkin.TERMINAL_TEXT if not disabled else HudSkin.TERMINAL_DIM)
+		if glyph:
+			_draw_glyph(Vector2(hp.x + hw + 6.0 + GLYPH_GAP + hs * 2.0, hp.y - hs * 0.5 + 2.0), hs, paint if not disabled else HudSkin.VINYL_DISABLED)
+	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), st, false)

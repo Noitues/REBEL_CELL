@@ -45,9 +45,10 @@ const TUTORIAL_RECT := Rect2(980, 287, 300, 250)
 const STICKER_GAP := 6.0
 const STICKER_EDGE := 4.0
 ## Chip colours on the tags (the text says what they are; colour is a second cue).
-const CHIP_HIT := Palette.CELL_PINK
-const CHIP_LOSS := Color("#FF4D4D")
-const CHIP_GAIN := Color("#3DFF8B")
+## ART-2 2D (audit P2): pink is the action stickers' only; one red (HARM) for harm.
+const CHIP_HIT := Palette.HARM
+const CHIP_LOSS := Palette.HARM
+const CHIP_GAIN := Palette.GAIN
 const CHIP_GUARD := Palette.NET_CYAN
 const CHIP_STATUS := Palette.CELL_ACID
 const CHIP_RESIST := Palette.RESIST_GOLD
@@ -140,7 +141,7 @@ var _banner_rows: BoxContainer
 ## Bottom left: the operative's name sticker over the RAM panel.
 var _cell_panel: VBoxContainer
 var name_sticker: HudNameSticker
-## Where the cell panel goes: the bottom row's start, or the notes column's foot at big text
+## Where the cell panel goes: the bottom row's start, or the notes column's top at big text
 ## (the hand keeps its room).
 var _bottom_row: HBoxContainer
 ## The result chips shown when SEND IT was pressed (wheel id -> chips), held for its replay.
@@ -779,6 +780,8 @@ func layout_violations() -> Array[String]:
 			covers.append(["%s sticker" % key, (_stickers[key] as Control).get_global_rect()])
 	if toast.visible:
 		covers.append(["toast", toast.get_global_rect()])
+	if _cell_panel != null and _cell_panel.is_visible_in_tree():
+		covers.append(["the RAM panel", _cell_panel.get_global_rect()])  # ART-2 2D
 	if Dialogue.bar.visible:
 		covers.append(["subtitles", Rect2(Dialogue.bar.global_position, Dialogue.bar.size)])
 	for cv in covers:
@@ -1942,7 +1945,7 @@ func _relayout() -> void:
 	_banner_rows.vertical = ts <= STICKERS_SIDE_BY_SIDE_UP_TO
 	_banner_rows.add_theme_constant_override("separation", 0 if _banner_rows.vertical else roundi(BANNER_PAD_H))
 	_banner.custom_minimum_size.x = minf(BANNER_W * ts, size.x * (BANNER_MAX_SHARE if _banner_rows.vertical else BANNER_WIDE_SHARE))
-	# At big text the name sticker and RAM panel leave the bottom row for the notes column's foot;
+	# At big text the name sticker and RAM panel leave the bottom row for the notes column's top;
 	# the sticker stands down there (its words lead the RAM header) so the notes keep their room.
 	name_sticker.visible = ts <= STICKERS_SIDE_BY_SIDE_UP_TO
 	ram_note.owner_words = "" if name_sticker.visible else name_sticker.words
@@ -1951,8 +1954,8 @@ func _relayout() -> void:
 	if _cell_panel.get_parent() != cell_home:
 		_cell_panel.get_parent().remove_child(_cell_panel)
 		cell_home.add_child(_cell_panel)
-		if cell_home == _bottom_row:
-			_bottom_row.move_child(_cell_panel, 0)
+		# The bottom row's start, or the notes column's top (clear of the wheels' HP chips).
+		cell_home.move_child(_cell_panel, 0)
 		_relayout.call_deferred()  # the notes' room changed: dock the subtitles and the tutorial again
 	if engine.has_fight() and absf(_card_scale_for(engine.state().hand.size()) - _hand_scale) > 0.01:
 		var had_focus := UiFocus.owner_of(self) != null and _hand_box.is_ancestor_of(UiFocus.owner_of(self))
@@ -2355,12 +2358,14 @@ func _build_hand(state: CombatState) -> void:
 		var index := i
 		c.pressed.connect(_card_pressed.bind(index))
 		c.mouse_entered.connect(func() -> void:
+			_spread_hand(index)
 			if selecting < 0:
 				_preview_card(index))
 		c.focus_entered.connect(func() -> void:
 			if _nav_focus and selecting < 0:
 				_preview_card(index))
 		c.mouse_exited.connect(func() -> void:
+			_spread_hand(-1)
 			if selecting < 0:
 				_clear_ghost()
 				_show_end_turn_preview())
@@ -2388,7 +2393,17 @@ func _make_card(card: CardData, i: int, s: float) -> ZineCard:
 		c.hotkey = ""
 		c.pad_hint = Settings.key_text(&"ui_accept")
 	c.drag_index = i
+	c.fit_whole = true  # ART-2 2D (audit P2): the body shrinks to fit, never under the 12 px floor
+	c.body_floor = ZineCard.BODY_FLOOR
 	return c
+
+
+## ART-2 2D (§3.18): the hovered card's neighbours slide aside (-1 = all back in place).
+func _spread_hand(hovered: int) -> void:
+	for k in _hand_box.get_child_count():
+		var card := _hand_box.get_child(k) as ZineCard
+		if card != null:
+			card.slide_aside(0 if hovered < 0 or k == hovered else signi(k - hovered))
 
 
 ## Card scale: the text scale, shrunk when the hand would not fit beside SEND IT.
@@ -3839,6 +3854,9 @@ func _play_resolve_sequence(before: CombatState, after: CombatState, events: Arr
 	_held_tags.clear()
 	_held_chips.clear()
 	ram_note.hold(before.ram)
+	# ART-2 2D: Daemon / firmware triggers ride the beat after them (no beat, no time of their own).
+	for m in ResolveBeats.trigger_marks(events, beats, times, result_at):
+		_after_seq(float(m["at"]), _trigger_fx.bind(StringName(m["source_id"])))
 	_hide_new_cards(0)
 	var discard_spot := _discard_spot()
 	var stagger := Motion.delay_of(&"card_draw")
@@ -3861,6 +3879,15 @@ func _play_resolve_sequence(before: CombatState, after: CombatState, events: Arr
 		_seq.tween_callback(c[1]).set_delay(float(c[0]))
 	_seq_calls.clear()
 	_seq.tween_callback(_finish_sequence).set_delay(_seq_total)
+
+
+## ART-2 2D: a Daemon or firmware fires: 2C's trigger FX from its source (the Daemon row, or
+## the player's hub for firmware) to the player's wheel.
+func _trigger_fx(source_id: StringName) -> void:
+	var data: Resource = engine.content(source_id) if engine.resolver.lookup.has(source_id) else null
+	var daemon := data is DaemonData
+	var from := daemon_row.get_global_rect().get_center() if daemon and daemon_row.is_visible_in_tree() else _player_view.global_center()
+	CombatBeatFx.trigger(fx_layer, from, _player_view.global_center(), daemon)
 
 
 ## Calls queued for the SEND IT sequence being built ([seconds, callable]).

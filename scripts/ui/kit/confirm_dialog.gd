@@ -119,6 +119,7 @@ func _ready() -> void:
 	# meant for the page), opened with the modal motion.
 	var scrim := GlassScrim.backdrop_for(self, get_viewport_rect().size)
 	move_child(scrim, 0)  # ART-2 2D: drawn before the panel, so the blur stays behind the dialog
+	panel.z_index = 1  # (a top-level scrim can still draw late: the panel is drawn over it)
 	PageTransition.open_modal(self)
 	# The panel drops in (Animation pass ANIM-6); a press during the drop completes it.
 	PageTransition.enter(panel, PageTransition.Look.GLASS)

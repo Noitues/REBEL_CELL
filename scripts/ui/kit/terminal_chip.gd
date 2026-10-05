@@ -15,10 +15,12 @@ const CHIP_HEIGHT := 40.0
 const CHIP_PAD := 10.0
 const CARET_ROOM := 10.0
 
+var _glass: CrtTerminalPanel = null
+
 
 func _init(p_text: String = "") -> void:
 	super(p_text, HudSkin.TERMINAL_BG, 0.0)
-	material = HudSkin.crt_material()
+	_glass = HudSkin.crt_backing(self)  # ART-1 1B: the CRT glass under the words
 
 
 ## The verb (first word) and the rest of the label (cost and key).
@@ -45,7 +47,12 @@ func _draw() -> void:
 	var st := state()
 	var r := Rect2(Vector2(0.0, KitState.lift(st)), size)
 	var edge := KitState.edge_color(st, HudSkin.PIP_ON) if not disabled else HudSkin.TERMINAL_DIM
-	HudSkin.draw_terminal_panel(self, r, edge, HudSkin.TERMINAL_BG)
+	if _glass != null:
+		_glass.position.y = r.position.y
+		_glass.modulate.a = 0.55 if disabled else 1.0
+		HudSkin.draw_terminal_edge(self, r, edge)
+	else:
+		HudSkin.draw_terminal_panel(self, r, edge, HudSkin.TERMINAL_BG)
 	var p := parts()
 	var f := HudSkin.mono()
 	var wf := roundi(WORD_FONT * s)
