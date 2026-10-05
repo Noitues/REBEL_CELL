@@ -33,6 +33,72 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-8 8p HQ compound prep
+ART_BIBLE v2 §1.2 (World), §4.7 (HQ runs: the compound), §6.1; ART_3_BATCH "Wave 2" 8p; references
+`hq/round43_hq_mechanics/hq_*_compound.jpg`, `hq/round35_netrun/hq_compound.jpg`; 1D's pick (real-time
+Godot 3D, `docs/handoff/art_1/city_spike_report.md`).
+- **Static compounds on the current rules, one per corporation.** `tools/art_pipeline/city/build_hq_compound.py`
+  (Blender 5.2 headless) runs the round 43 exec chain (`vendor_r43/`: target_corps.py and heroes24–31/42/43,
+  ported from art-pass 36d1f34, unchanged) with every G12 moving part at rest or out: Meridian's gantry keep
+  stands parked (boom level, spreader up, no load) and no train runs (the rail yard stays); Solace's helix does not
+  turn; Halcyon's eye stands at the still angle (28°, its own glTF nodes so G12 can turn it) without the
+  searchlight cone; Orbital's silo doors are shut and the rocket is down; REBEL_CELL is DISPATCH's base (round 42
+  `rebel_base`, STATE dispatch). Sync Strike, strands, switchback eye, silo loop and crane/train are not built.
+  The city around a compound is not built either (ART-5's CityModel draws it): each model stops at its plaza.
+- **glTF is the only export (coordinator, after 1D's pick); the layered sprites are dropped.** A day/night sprite
+  set needs its own render and finish pass per corporation (passes, ink, bloom, per mode) and would only serve the
+  baked technique 1D did not pick. `assets/city/hq_compounds/<corp>/<corp>_compound.glb` is 0.3–0.8 MB
+  (8.6k–18k triangles), uncompressed (Godot imports no Draco), with `manifest.json`.
+- **The glTF carries the spike's look as data.** No normals (the toon shader takes the facet normal from screen
+  derivatives, as `city_building.gdshader` does); COLOR_0 = the concept face colour × its per-triangle tone
+  (0.86–1.12, `mat_toon`), linear; COLOR_0.a = a part bit that the shader writes to ROUGHNESS (1.0 / 0.55) so the
+  spike post pass inks part boundaries as material edges (the concept's id-pass ink). Materials carry the role in
+  the name (`hq_toon`, `hq_lit`, `hq_neon`, `hq_win`, `hq_sign`); `tools/art_pipeline/city/hq_compound_toon.gdshader`
+  shades them with the spike ramp × the corp's `target_corps.TINT` (manifest `settings.ramp_tint`).
+  `hq_lit` adds 0.25 × its colour (the concept's 0.42 bloomed only in the emission pass; the spike post blooms
+  every bright pixel, so 0.42 blew the Meridian towers out). The toon shader is a prototype until 1B's shared toon
+  / ink material lands, like the spike's.
+- **Manifest fields (shared export convention, `schema rebel_cell.art_export/1`, for 5b to reuse):** source
+  (script, spec, driver, vendor tag @ sha, git commit, `scripts_sha256` of the pipeline), settings (Blender
+  version, state, units 1 BU = 1 m, +Y up with (x, y, z) → (x, z, −y), tone, ramp tint, pitch 55° / yaw 135°,
+  the reference camera target and ortho), origin (the compound's ground centre, to sit on the HQ lot's centre),
+  footprint (min / max / size in the Godot frame), files (path, kind, bytes, sha256), triangles per role,
+  materials, anchors, slot surfaces, validator. A stale export (pipeline changed since the build) fails validation.
+- **Layout table (schema change, minimal):** `HqCompoundLayoutData` (`scripts/data/`), one per corporation at
+  `content/city/hq_compounds/<corp>.tres`, id `hq_compound_<corp>` (found by id, so CorporationData is untouched):
+  `corporation_id`, `asset_dir`, `slots_per_layer`, `layer_slots` (row-major PackedVector3Array), `central_server`,
+  `entry`. Checked in `tools/schema_smoke_checks.gd` (`_art8_hq_compound`). Written by
+  `make_hq_compounds.py` from `hq_compound_spec.py`, the same spec the model's anchors come from.
+- **Which nodes, on the current rules.** Today's HQ run is the breach: `start_special("boss")` builds one node,
+  the Central Server. A full run map at the HQ (GDD 4.2: 7 layers of 2–4, the last one node) is covered too, so
+  the table holds whichever comes first: a row of `map_nodes_max` slots for each layer before the last, the last
+  layer (and the breach) at the Central Server. `HqCompoundLayout` (pure, `scripts/core/`) maps a node of layer L,
+  index i of n to slot round(i·(slots−1)/(n−1)) (n = 1: the middle slot), so a layer spreads over its row and the
+  generator's non-crossing index order stays left to right on screen. Test: `tests/unit/test_hq_compound_layout.gd`.
+- **Slots sit on the model.** Each slot is snapped onto the first surface under it at build (ray from 3 BU above
+  its nominal height, lifted 0.3); never on a G12 moving part (train, trolley, doors, rocket). Rows are sorted left
+  to right at the city azimuth and kept at least 50 px apart (with the server) at the reference framing (1920 px
+  wide); `validate_hq_compounds.py` checks both. Meridian runs a south lane (wall top) and a north / back lane
+  with the keep portal and house between, closing on THE MASTER MANIFEST tower; Solace's six rows climb both
+  strands (spacing searched for the widest gap) to THE GENOME CORE at the cap; Halcyon's rows are the six
+  switchback terraces of the front face to THE PANOPTICON; Orbital's rows close in round both sides of the podium
+  from the steps to LAUNCH CONTROL at the mast foot (dishes as rows 4–5); DISPATCH's rows go round the rooftops
+  into the courtyard to DISPATCH CORE on the mast.
+- **Validator hooks:** `python tools/art_pipeline/city/validate_hq_compounds.py` (files, hashes, glTF content,
+  stale scripts, anchors, spacing, the .tres = the manifest) and `tools/validate_content.gd`
+  (`_hq_compound_errors`: every corporation has a layout, the layout fits the config's map, the manifest exists for
+  that corporation and its files exist).
+- **Review:** `tools/art_pipeline/city/hq_compound_lab.tscn` (windowed, one launch for all five) renders each
+  glTF with the spike's light, ramp and post pass at the compound reference camera (55°, its ortho) and the
+  anchors over it; crops beside the references in `docs/art_review/ART-8/8p/` (`.gdignore` in `ART-8/`).
+  Read: Meridian (tan / orange towers, dark rust walls, hazard-striped boom over the rail yard, the server tower
+  on the left corner as in the reference; no train, by rule); Solace (grey-green helix with lime trim and lit
+  rungs over the lit podium rings; the reference's crossover walkways are G12); Halcyon (violet terraced ziggurat,
+  lit terrace edges, the eye's ring on the pylon; windows read whiter than the reference's warm ones under the
+  spike's window gain); Orbital (steel-blue podium, caution ring, dishes and lattice mast match closely); DISPATCH
+  (the red-lit base; the round 43 ideas play in the Tokyo canyon instead, see the open question).
+- No view changes; no mechanics; no change to how HQ runs play.
+
 ### 2026-10-05 — Art direction — ART-2 2B attachments and arena
 ART-2 area 2B (`docs/handoff/art_2/ART_2_BATCH.md`; ART_BIBLE v2 §3.9, §3.11, §3.13, §3.14, §3.17,
 §3.21). Built on main behind seams while Group 1 (1A palette, 1B materials, 1C glyphs, 1D city) and
@@ -6602,6 +6668,13 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+
+- **ART-8 8p: where is DISPATCH's HQ run, and does an HQ run become a map? (2026-10-05):** the compounds are built
+  on today's rules, where the HQ run is the single breach node (all slots exist for a full 7-layer run map at the
+  HQ as well). Defaults: REBEL_CELL's compound is DISPATCH's base (round 42 `rebel_base`, dispatch state) with
+  DISPATCH CORE on the relay mast; the round 43 Sync Strike / mirror ideas play in the Tokyo canyon instead and wait
+  for G12 — say if the canyon should replace the base. Meridian's train and the crane's moves, Solace's crossover
+  walkways, Halcyon's eye sweep and Orbital's silo loop are left out until G12 says how they play.
 
 - **Combat backdrop day / night and the REBEL_CELL Site (2026-10-05, ART-2 2B):** the game has no
   clock, so the backdrop alternates by run (odd runs by the cool day). Default applied; say if day

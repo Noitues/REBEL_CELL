@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="HqCompoundLayoutData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/hq_compound_layout_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hq_compound_meridian"
+corporation_id = &"meridian"
+asset_dir = "res://assets/city/hq_compounds/meridian"
+slots_per_layer = 4
+layer_slots = PackedVector3Array(18.0, 23.5, 18.0, 18.0, 18.3, 6.6, 18.0, 18.3, -6.6, 18.0, 23.5, -18.0, 9.0, 12.69, 18.0, 12.0, 0.32, 11.0, 7.0, 0.32, -11.0, 9.0, 12.699, -18.0, 3.0, 10.683, 18.0, 9.0, 32.684, 7.0, 9.0, 32.79, -7.0, 3.0, 10.657, -18.0, -3.0, 10.678, 18.0, -18.0, 10.641, -11.0, 0.0, 37.27, 4.0, -8.0, 12.709, -18.0, -9.0, 12.673, 18.0, -18.0, 10.698, 5.0, -18.0, 10.692, -4.0, -18.0, 23.5, -18.0, -18.0, 10.783, 11.0, -14.0, 0.32, 6.0, -14.0, 0.32, -3.0, -14.0, 0.32, -11.0)
+central_server = Vector3(-18.0, 23.5, 18.0)
+entry = Vector3(40.0, 0.5, -0.0)
