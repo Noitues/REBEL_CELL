@@ -9,7 +9,7 @@ extends Control
 ## them), translated where they are shown; every panel shows its words as given
 ## (TextDb.shown_as_given), translated once where it is built.
 const STATUS_NAMES := {GridState.SiteStatus.CORPORATE: "corporate", GridState.SiteStatus.CLEARED: "cleared", # TR
-	GridState.SiteStatus.CLAIMED: "claimed", GridState.SiteStatus.SEIZED: "SEIZED"} # TR
+	GridState.SiteStatus.CLAIMED: "claimed", GridState.SiteStatus.TAKEN: "TAKEN"} # TR
 
 ## Screen numbers on the HUD strip, by panel name (STYLE_GUIDE 4, "Neon city"); the
 ## titles are `screen_title`.
@@ -53,11 +53,11 @@ const START_DEFENSE := "START DEFENSE" # TR
 ## Words the screens translate that sit in the core's data (H24 S1: exported by the "# TR"
 ## marker): run kinds, raid outcomes, Exploit types and rule modifier names.
 const RUN_KIND_WORDS := ["netrun", "patrol", "reclaim", "boss"] # TR
-const OUTCOME_WORDS := ["HOLDS", "DISABLED", "SEIZED", "PASSED"] # TR
+const OUTCOME_WORDS := ["HOLDS", "DOWN", "TAKEN", "PASSED"] # TR
 const EXPLOIT_WORDS := ["Intel", "Breach", "Virus"] # TR
 const MODIFIER_WORDS := ["Heat Gain", "Heat Sink", "Heat Objective Sites", "Elite Frequency", "Cycle Price", "Shop Stock", # TR
 	"Raid Strength", "Raid Extra Wave", "Enemy Resistance", "Death Heat", "Exploit Heat", "Boss Phase Early", # TR
-	"Boss Extra Pointer", "Starting Bug Card", "No First Turn Free Nudge", "Repair Cost", "Seized Raid Strength", # TR
+	"Boss Extra Pointer", "Starting Bug Card", "No First Turn Free Nudge", "Repair Cost", "Taken Raid Strength", # TR
 	"Purge Threshold", "Boss Strength"] # TR
 ## Passes framing the raid map beside its legend (each on the positions the last one gave).
 const RAID_REFRAMES_MAX := 6
@@ -94,7 +94,7 @@ const PRICE_ICON_GAP := 8.0
 const STATUS_TIPS := {GridState.SiteStatus.CORPORATE: "Corporate: run it to clear it.", # TR
 	GridState.SiteStatus.CLEARED: "Cleared: claim it to build a node of your network.", # TR
 	GridState.SiteStatus.CLAIMED: "Claimed: part of your network; it defends in raids.", # TR
-	GridState.SiteStatus.SEIZED: "Seized by a raid: run it again to take it back."} # TR
+	GridState.SiteStatus.TAKEN: "TAKEN by a raid: run it again to take it back."} # TR
 
 var _status: Label
 ## Top strip: screen title and the status line (`_status`).
@@ -2426,10 +2426,10 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	elif site.objective == RC.SiteObjective.HEAT_REDUCTION:
 		facts.add_child(Badge.new(CityMapOverlay.tr_word("off"), Color(Palette.NET_CYAN, 0.6), GLYPH_HEAT, tr("This Site's Heat objective is switched off at this ICE level.")).with_icon(StatIcon.COOLING))
 	if c.grid.is_claimed(site.id):
-		var node_col := Palette.CELL_TURF if int(s["condition"]) != GridState.Condition.DISABLED else Palette.RESIST_GOLD
+		var node_col := Palette.CELL_TURF if int(s["condition"]) != GridState.Condition.DOWN else Palette.RESIST_GOLD
 		var node_text := "%s %d/%d" % [_display(c.grid.node_type_of(site.id)), int(s["integrity"]), int(s["max_integrity"])]
-		if int(s["condition"]) == GridState.Condition.DISABLED:
-			node_text += tr(" DISABLED")
+		if int(s["condition"]) == GridState.Condition.DOWN:
+			node_text += tr(" DOWN")
 		var node_data := lookup.get_content(c.grid.node_type_of(site.id)) as NetworkNodeData
 		facts.add_child(Badge.new(node_text, node_col, GLYPH_NODE, TextDb.t(node_data, "description") if node_data != null else "").with_meter(int(s["integrity"]), int(s["max_integrity"])))
 		if c.grid.upgrade_level_of(site.id) > 0:
@@ -2498,9 +2498,9 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		row.add_child(node_pick)
 		var sid2 := site.id
 		_add_tip(row, _button(tr("Claim"), func() -> void: claim(sid2, choices[node_pick.selected].id)), tr("Build the picked node here: it joins your network and defends in raids."))
-	if c.grid.is_claimed(site.id) and int(s["condition"]) == GridState.Condition.DISABLED:
+	if c.grid.is_claimed(site.id) and int(s["condition"]) == GridState.Condition.DOWN:
 		var sid3 := site.id
-		_add_tip(row, _button(tr("Repair (%d)") % CampaignRules.repair_cost(c, cfg, lookup, sid3), func() -> void: repair(sid3)), tr("Bring the disabled node back online."))
+		_add_tip(row, _button(tr("Repair (%d)") % CampaignRules.repair_cost(c, cfg, lookup, sid3), func() -> void: repair(sid3)), tr("Bring the DOWN node back online."))
 	if c.grid.is_active_node(site.id) and site.id != c.grid.home_site_id:
 		var cost := CampaignRules.upgrade_cost(c, cfg, site.id)
 		if cost >= 0:
@@ -2708,7 +2708,7 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	card.body.add_child(row)
 	# A forecast, not a result (H22 #9): "IF THE RAID RUNS NOW: HOME -5" on a dashed
 	# ring like combat's NEXT plate; the tooltip says so. ANIM-R4 H3: the verdict names the
-	# losses (RaidVerdict), ALL HOLD only when there are none.
+	# losses (RaidVerdict), CELL HOLDS only when there are none.
 	var verdict := raid_verdict(projection)
 	var clean := RaidVerdict.clean_projection(projection)
 	var stamp := ForecastStamp.new(FORECAST_CAPTION, verdict, RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
@@ -2734,7 +2734,7 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	stopped.name = "ThreatsStopped"
 	facts.add_child(stopped)
 	var strength := Badge.new(tr("STRENGTH %s%%") % TextDb.signed(roundi(CampaignRules.raid_strength_pct(c, cfg, pending, RunManager.corporation))), corp_col, GLYPH_RULE,
-		tr("How much stronger than normal the threats are (from Heat, ICE and seized Sites). 0% is normal strength."))
+		tr("How much stronger than normal the threats are (from Heat, ICE and taken Sites). 0% is normal strength."))
 	strength.name = "RaidStrength"
 	facts.add_child(strength)
 	# Entry Sites: a badge each for a few, else one count (names in its tooltip); the
@@ -2779,7 +2779,7 @@ func forecast_tip(projection: RaidResolver.RaidResult) -> String:
 	if projection.campaign_lost:
 		what = tr("the home server falls and the campaign is lost")
 	elif not RaidVerdict.clean_projection(projection):
-		# ANIM-R4 H3: the losses, in the verdict's words (a Disabled node with every threat
+		# ANIM-R4 H3: the losses, in the verdict's words (a DOWN node with every threat
 		# stopped is not "holds every threat").
 		what = tr("it costs you %s") % raid_verdict(projection).replace("\n", ", ")
 	return tr("Forecast, not a result: if you start the defence now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it.") % what
@@ -3103,7 +3103,7 @@ func _placed_payload(site_id: StringName, index: int, asset_id: StringName) -> D
 ## outcome, with their assets), the Sites on the threat routes, links among them.
 ## `c` draws another campaign state than the current one (ANIM-5: the playout starts from
 ## the Grid as it stood before the raid); `include` keeps more Sites on the map (the
-## pre-raid network after the raid, so a Seized node keeps its stamp).
+## pre-raid network after the raid, so a TAKEN node keeps its stamp).
 func raid_graph(results: Variant, markers: Dictionary, c: CampaignState = null, include: Array = []) -> Dictionary:
 	if c == null:
 		c = RunManager.campaign
@@ -3206,7 +3206,7 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	if before != null and Motion.animating():
 		_creep_band = before.heat_majors_crossed(RunManager.config())
 	_set_panel(box, "raid_playout")
-	# The map as it stood before the raid (Seized nodes still yours until they flip).
+	# The map as it stood before the raid (TAKEN nodes still yours until they flip).
 	var pre := before if before != null else c
 	var kept: Array = pre.grid.claimed_ids()
 	var g := raid_graph({}, {}, pre)
@@ -3551,14 +3551,14 @@ func show_raid_summary() -> void:
 		node_row.add_child(Badge.new("%d → %d %s" % [int(n["before"]), int(n["after"]), outcome_word(String(n["outcome"]))], Palette.CELL_ACID if holds else Palette.CELL_PINK, GLYPH_NODE,
 			tr("Integrity before and after, and whether the node held.")))
 		box.add_child(node_row)
-	# ANIM-R5 P18: each fallen node once, by its outcome (a node Disabled and then Seized in
-	# the same raid is SEIZED, as the verdict, its row and its stamp say; it was listed twice).
-	for key in ["seized", "disabled"]:
+	# ANIM-R5 P18: each fallen node once, by its outcome (a node DOWN and then TAKEN in
+	# the same raid is TAKEN, as the verdict, its row and its stamp say; it was listed twice).
+	for key in ["taken", "down"]:
 		for id in ids:
 			if String(r["nodes"][id].get("outcome", "")) != key:
 				continue
 			box.add_child(Badge.new("%s %s" % [site_name(StringName(String(id))), tr(key.to_upper())], Palette.RESIST_GOLD, GLYPH_RULE,
-				tr("Seized: the corporation took the Site back.") if key == "seized" else tr("Disabled: repair the node on the Grid.")))
+				tr("TAKEN: the corporation took the Site back.") if key == "taken" else tr("DOWN: repair the node on the Grid.")))
 	box.add_child(_icon(_button(tr("Back to HQ"), show_hq), StatIcon.BACK))
 	_set_panel(outer, "raid_summary")
 	var g := raid_graph(r.get("nodes", {}), {})
@@ -3904,7 +3904,7 @@ func _demo_drag_release(id: String, layer: DropLayer, end: Vector2) -> void:
 
 
 func _still_active(projection: RaidResolver.RaidResult) -> int:
-	return projection.seized.size()
+	return projection.taken.size()
 
 
 func _demo_run(site_id: StringName) -> RunState:

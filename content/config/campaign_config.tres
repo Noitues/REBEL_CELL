@@ -32,7 +32,7 @@
 ; 3 ELITE_FREQUENCY_PCT, 4 CYCLE_PRICE_PCT, 5 SHOP_STOCK, 6 RAID_STRENGTH_PCT,
 ; 7 RAID_EXTRA_WAVE, 8 ENEMY_RESISTANCE, 9 DEATH_HEAT, 10 EXPLOIT_HEAT,
 ; 11 BOSS_PHASE_EARLY, 12 BOSS_EXTRA_POINTER, 13 STARTING_BUG_CARD,
-; 14 NO_FIRST_TURN_FREE_NUDGE, 15 REPAIR_COST_PCT, 16 SEIZED_RAID_STRENGTH_PCT,
+; 14 NO_FIRST_TURN_FREE_NUDGE, 15 REPAIR_COST_PCT, 16 TAKEN_RAID_STRENGTH_PCT,
 ; 17 PURGE_THRESHOLD
 
 [sub_resource type="Resource" id="rm_minor_shop_stock"]
@@ -343,7 +343,7 @@ modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_13")])
 [sub_resource type="Resource" id="ice_14"]
 script = ExtResource("4_ice")
 level = 14
-description = "Seized Sites spawn stronger raids."
+description = "TAKEN Sites spawn stronger raids."
 modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_14")])
 
 [sub_resource type="Resource" id="ice_15"]

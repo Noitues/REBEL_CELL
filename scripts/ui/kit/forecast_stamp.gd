@@ -3,7 +3,7 @@ extends Control
 ## A forecast, not a result (H22 #9: the raid setup's solid BREACHED stamp read as if the
 ## raid had already run, beside rows such as "50 > 40 HOLDS"). Drawn like combat's dashed
 ## NEXT plate: a dashed ring, a small caption over the verdict ("IF THE RAID RUNS NOW:")
-## and the verdict ("HOME -5", "ALL HOLD"), the verdict's icon above it. The tooltip says it is a
+## and the verdict ("HOME -5", "CELL HOLDS"), the verdict's icon above it. The tooltip says it is a
 ## projection and how to change it. Display only (no focus, clicks pass).
 ## H23 S18: icon, caption and verdict are stacked from their measured heights and centred
 ## in the ring (fixed shares of the radius let the icon sit on the caption at 1.6), the
@@ -61,8 +61,8 @@ func shown_caption() -> String:
 
 
 ## The verdict as drawn: translated (H23 S16). ANIM-R4 H3: a verdict built from its parts
-## (RaidVerdict: "HOME -5\n1 DISABLED") comes translated and is shown as given; a key a
-## catalogue has ("ALL HOLD") is translated here.
+## (RaidVerdict: "HOME -5\n1 DOWN") comes translated and is shown as given; a key a
+## catalogue has ("CELL HOLDS") is translated here.
 func shown_verdict() -> String:
 	return tr(verdict) if TextDb.has_message(verdict) else verdict
 

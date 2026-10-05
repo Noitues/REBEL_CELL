@@ -373,6 +373,10 @@
 			"seconds": 100.7,
 			"tier": "full"
 		},
+		"res://tests/unit/test_names_pass.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_nodes.gd": {
 			"seconds": 0.9,
 			"tier": "fast"

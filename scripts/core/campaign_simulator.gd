@@ -122,7 +122,7 @@ func _deploy_armory(c: CampaignState) -> void:
 
 func _maintain(c: CampaignState) -> void:
 	for site_id in c.grid.claimed_ids():
-		if c.grid.is_claimed(site_id) and int(c.grid.site(site_id).get("condition", 0)) == GridState.Condition.DISABLED:
+		if c.grid.is_claimed(site_id) and int(c.grid.site(site_id).get("condition", 0)) == GridState.Condition.DOWN:
 			CampaignRules.repair(c, config, lookup, site_id)
 	if c.grid.home_integrity < c.grid.home_max_integrity:
 		CampaignRules.repair_home(c, config)
@@ -156,7 +156,7 @@ func _pick_launch(c: CampaignState) -> Dictionary:
 	var targets := CampaignRules.launchable_sites(c, corp, config)
 	targets.append_array(CampaignRules.patrol_sites(c, corp))
 	for site in targets:
-		if c.grid.is_seized(site.id):
+		if c.grid.is_taken(site.id):
 			continue
 		for op in ops:
 			var cls := lookup.get_content(op.class_id) as ClassData

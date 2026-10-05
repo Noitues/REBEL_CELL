@@ -1,12 +1,12 @@
 class_name GridState
 extends RefCounted
 ## Runtime state of the City Grid (GDD 3.1-3.3, 4.1): which Sites are cleared, claimed
-## or Seized, the node installed on each claimed Site, its integrity and condition, the
+## or TAKEN, the node installed on each claimed Site, its integrity and condition, the
 ## assets deployed there, the stationed operative, and links opened by Intel.
 ## Layout comes from CityGridData (content); this holds only what changes.
 
-enum SiteStatus { CORPORATE, CLEARED, CLAIMED, SEIZED }
-enum Condition { OK, DISABLED }
+enum SiteStatus { CORPORATE, CLEARED, CLAIMED, TAKEN }
+enum Condition { OK, DOWN }
 
 var home_site_id: StringName = &""
 var home_integrity: int = 50
@@ -71,15 +71,15 @@ func is_cleared(site_id: StringName) -> bool:
 	return status_of(site_id) == SiteStatus.CLEARED
 
 
-func is_seized(site_id: StringName) -> bool:
-	return status_of(site_id) == SiteStatus.SEIZED
+func is_taken(site_id: StringName) -> bool:
+	return status_of(site_id) == SiteStatus.TAKEN
 
 
 func is_corporate(site_id: StringName) -> bool:
 	return status_of(site_id) == SiteStatus.CORPORATE
 
 
-## Claimed Sites (home included) whose node is not Disabled.
+## Claimed Sites (home included) whose node is not DOWN.
 func is_active_node(site_id: StringName) -> bool:
 	return is_claimed(site_id) and int(site(site_id).get("condition", Condition.OK)) == Condition.OK
 

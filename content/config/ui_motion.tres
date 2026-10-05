@@ -474,7 +474,7 @@ ease = 1
 trans = 0
 amplitude = 0.0
 
-; raid playout: HOLDS / DISABLED / SEIZED / BREACHED stamps flip onto nodes; amplitude = the flip's start angle (degrees)
+; raid playout: HOLDS / DOWN / TAKEN / BREACHED stamps flip onto nodes; amplitude = the flip's start angle (degrees)
 [sub_resource type="Resource" id="m_raid_flip"]
 script = ExtResource("1_entry")
 id = &"raid_flip"
@@ -1610,7 +1610,7 @@ trans = 7
 amplitude = 1.4
 
 ; ---- ANIM-R1: territory marks ----
-; ANIM-R1 M5: a territory change's CLAIMED / SEIZED stamp stamps onto its Site as the spread's front passes (it and the Site's outline stay); amplitude = its start scale
+; ANIM-R1 M5: a territory change's CLAIMED / TAKEN stamp stamps onto its Site as the spread's front passes (it and the Site's outline stay); amplitude = its start scale
 [sub_resource type="Resource" id="m_influence_mark"]
 script = ExtResource("1_entry")
 id = &"influence_mark"

@@ -5,7 +5,7 @@ extends RefCounted
 ## the rules. Events are grouped by step as the resolver ran them; inside a step each beat
 ## takes the resolver's phase order: threats enter, move (or stay held), ICE LOCKs and
 ## ghosts hold, guns fire (shots one after another), then nodes take damage, are
-## Disabled or Seized. The raid's end is its own group (the outcome stamps, the forecast
+## DOWN or TAKEN. The raid's end is its own group (the outcome stamps, the forecast
 ## resolving). Times are seconds at 1x from the motion table's raw durations; the
 ## playout divides by Motion.speed (1x / 2x / 4x). Pure: reads events and the motion
 ## table, writes nothing.
@@ -18,8 +18,8 @@ const PHASE_OF := {
 	"move": "move", "held": "move",
 	"ice_lock": "hold", "station_hold": "hold",
 	"shot": "fire", "threat_destroyed": "fire",
-	"node_hit": "damage", "home_hit": "damage", "cascade": "damage", "disabled": "damage",
-	"seized": "damage", "station_regen": "damage", "home_lost": "damage",
+	"node_hit": "damage", "home_hit": "damage", "cascade": "damage", "down": "damage",
+	"taken": "damage", "station_regen": "damage", "home_lost": "damage",
 	"raid_end": "end",
 }
 ## The motion entry timing each beat type.
@@ -29,7 +29,7 @@ const MOTION_OF := {
 	"ice_lock": &"ice_lock_ring", "station_hold": &"ice_lock_ring",
 	"shot": &"turret_trace", "threat_destroyed": &"raid_hit_effect",
 	"node_hit": &"node_damage_number", "home_hit": &"node_damage_number", "cascade": &"node_damage_number",
-	"station_regen": &"node_damage_number", "disabled": &"raid_flip", "seized": &"raid_flip", "home_lost": &"raid_flip",
+	"station_regen": &"node_damage_number", "down": &"raid_flip", "taken": &"raid_flip", "home_lost": &"raid_flip",
 	"raid_end": &"forecast_stamp_resolve",
 }
 ## Shots in one step start `raid_shot_stagger`'s amplitude (a share) of a trace apart (a
@@ -40,7 +40,7 @@ const GAP_MOTION := &"raid_step_gap"
 
 ## Splits `events` into playout groups: group 0 is the setup (step 0: link changes), then
 ## one group per step, then the end (the raid_end event and everything after the last
-## step without a step of its own: step-cap seizures, recalls, the reward, Heat).
+## step without a step of its own: step-cap takeovers, recalls, the reward, Heat).
 static func group(events: Array) -> Array[Array]:
 	var by_step := {}
 	var max_step := 0
@@ -139,7 +139,7 @@ static func focus_sites(events: Array, threat_sites: Dictionary) -> Array[String
 				_add(out, StringName(String(e["site"])))
 				if at.has(String(e["threat"])):
 					_add(out, StringName(String(at[String(e["threat"])])))
-			"node_hit", "cascade", "disabled", "seized", "home_hit":
+			"node_hit", "cascade", "down", "taken", "home_hit":
 				if e.has("site"):
 					_add(out, StringName(String(e["site"])))
 	out.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))

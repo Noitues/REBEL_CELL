@@ -249,17 +249,17 @@ func _raid_campaign() -> CampaignState:
 	return c
 
 
-## A late campaign (H24 S5): LATE_CLAIMS claimed Sites of the lowest tiers, LATE_SEIZED
-## seized ones, an Armory and a pending raid.
+## A late campaign (H24 S5): LATE_CLAIMS claimed Sites of the lowest tiers, LATE_TAKEN
+## taken ones, an Armory and a pending raid.
 const LATE_CLAIMS := 9
-const LATE_SEIZED := 2
+const LATE_TAKEN := 2
 func _late_campaign() -> CampaignState:
 	var c := RunManager.campaign
 	var sites: Array = RunManager.corporation.city_grid.sites.filter(func(sd: SiteData) -> bool:
 		return sd != null and sd.id != RunManager.corporation.city_grid.home_site_id and sd.objective != RC.SiteObjective.BOSS)
 	sites.sort_custom(func(a: SiteData, b: SiteData) -> bool: return a.tier < b.tier or (a.tier == b.tier and String(a.id) < String(b.id)))
 	var claimed := 0
-	var seized := 0
+	var taken := 0
 	for sd in sites:
 		var s := c.grid.site(sd.id)
 		if claimed < LATE_CLAIMS:
@@ -269,9 +269,9 @@ func _late_campaign() -> CampaignState:
 			s["max_integrity"] = 30
 			s["assets"] = []
 			claimed += 1
-		elif seized < LATE_SEIZED:
-			s["status"] = GridState.SiteStatus.SEIZED
-			seized += 1
+		elif taken < LATE_TAKEN:
+			s["status"] = GridState.SiteStatus.TAKEN
+			taken += 1
 	c.armory = [&"turret", &"ice_lock", &"decoy"]
 	c.pending_raids.append({"raid_id": "raid_heat_25", "source": RC.RaidTriggerSource.HEAT_THRESHOLD, "heat": 25, "corporation": String(c.corporation_id)})
 	return c

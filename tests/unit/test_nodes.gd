@@ -92,8 +92,8 @@ func test_vault_and_proxy_passives_fire_on_run_completion_with_adjacency() -> vo
 	schematics = c.schematics
 	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t3_core"), _lookup)
 	assert_eq(c.schematics - schematics, 5, "Vault +3, hardened +2")
-	# Disabled nodes give nothing.
-	c.grid.site(&"t1_a")["condition"] = GridState.Condition.DISABLED
+	# DOWN nodes give nothing.
+	c.grid.site(&"t1_a")["condition"] = GridState.Condition.DOWN
 	schematics = c.schematics
 	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t1_c"), _lookup)
 	assert_eq(c.schematics - schematics, 0)

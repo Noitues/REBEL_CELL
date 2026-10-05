@@ -161,7 +161,7 @@ func test_repair_costs_half_the_install_and_restores_the_node() -> void:
 	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t1_a"))
 	CampaignRules.claim(c, _corp, _cfg, _lookup, &"t1_a", &"firewall_relay")
 	var s := c.grid.site(&"t1_a")
-	s["condition"] = GridState.Condition.DISABLED
+	s["condition"] = GridState.Condition.DOWN
 	s["integrity"] = 0
 	var schematics := c.schematics
 	CampaignRules.repair(c, _cfg, _lookup, &"t1_a")
@@ -217,7 +217,7 @@ func test_deployed_assets_persist_can_be_repositioned_and_the_armory_is_capped()
 	assert_eq(CampaignRules.move_asset(c, _cfg, _lookup, &"home", 0, &"")[0]["type"], "refused", "Armory cap 6")
 
 
-func test_claim_raid_seizes_or_holds_and_updates_counters() -> void:
+func test_claim_raid_takes_or_holds_and_updates_counters() -> void:
 	var c := _campaign()
 	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t1_a"))
 	CampaignRules.claim(c, _corp, _cfg, _lookup, &"t1_a", &"relay")

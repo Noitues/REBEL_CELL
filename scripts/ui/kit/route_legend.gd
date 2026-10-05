@@ -1,7 +1,7 @@
 class_name RouteLegend
 extends TerminalWindow
 ## The netrun route's key (H23 S7: the route showed the campaign map's key, claimed /
-## seized / threat route / CORE, which is not on a route): one row for each node kind the
+## taken / threat route / CORE, which is not on a route): one row for each node kind the
 ## route actually has, its icon drawn by the map's own painter (CityMapOverlay.draw_icon)
 ## and what the node does, in a fixed order. Follows Settings.map_legend and the text
 ## size, like MapLegend. View only.

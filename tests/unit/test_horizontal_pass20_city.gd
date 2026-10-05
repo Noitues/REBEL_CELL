@@ -1,9 +1,9 @@
 extends GutTest
 ## H20 city backdrop: the baked city's cache key (same look = same key, a territory change
 ## = a new key), the territory influence (deterministic; claimed Sites lean to the Cell,
-## Seized ones to the corporation), the headless fallback (procedural, no bake, no
+## TAKEN ones to the corporation), the headless fallback (procedural, no bake, no
 ## crash), map legends on the raid maps following the Options switch live, non-colour
-## marks for claimed / Seized Sites, REBEL_CELL's colour apart from the Cell pink, and the
+## marks for claimed / TAKEN Sites, REBEL_CELL's colour apart from the Cell pink, and the
 ## mid-run raid playout on the city overlay.
 
 const HQ := "res://scenes/hq/hq_scene.tscn"
@@ -83,9 +83,9 @@ func test_a_territory_change_gives_a_new_bake_key() -> void:
 	city.bind_campaign(c, RunManager.corporation)
 	assert_ne(city.bake_key(region), k0, "a claimed Site re-keys the bake")
 	var k1 := city.bake_key(region)
-	c.grid.sites[_first_link()]["status"] = GridState.SiteStatus.SEIZED
+	c.grid.sites[_first_link()]["status"] = GridState.SiteStatus.TAKEN
 	city.sync_influence()
-	assert_ne(city.bake_key(region), k1, "a Seized Site re-keys it again")
+	assert_ne(city.bake_key(region), k1, "a TAKEN Site re-keys it again")
 	assert_ne(city.bake_key(Rect2(0, 0, 1280, 720)), city.bake_key(region), "the region is part of the key")
 	var look := city.look_key()
 	city.focus_grid = Vector2(5, 5)
@@ -150,13 +150,13 @@ func test_influence_is_deterministic_and_leans_the_right_way() -> void:
 	assert_eq(CityInfluence.signature(claimed), CityInfluence.signature(CityInfluence.of(c, corp)), "deterministic")
 	assert_gt(CityInfluence.value_at(claimed, at), base, "a claimed Site pulls toward the Cell")
 	assert_eq(CityInfluence.color_for(claimed, 0.5), Palette.CELL_TURF)
-	c.grid.sites[site]["status"] = GridState.SiteStatus.SEIZED
-	var seized := CityInfluence.of(c, corp)
-	assert_lt(CityInfluence.value_at(seized, at), CityInfluence.value_at(claimed, at), "Seized pulls back")
-	assert_lt(CityInfluence.value_at(seized, at), base, "toward the corporation")
-	assert_eq(CityInfluence.color_for(seized, -0.5), Palette.corp_color(corp.id))
+	c.grid.sites[site]["status"] = GridState.SiteStatus.TAKEN
+	var taken := CityInfluence.of(c, corp)
+	assert_lt(CityInfluence.value_at(taken, at), CityInfluence.value_at(claimed, at), "TAKEN pulls back")
+	assert_lt(CityInfluence.value_at(taken, at), base, "toward the corporation")
+	assert_eq(CityInfluence.color_for(taken, -0.5), Palette.corp_color(corp.id))
 	var far := at + Vector2(CityInfluence.RADIUS * 4.0, 0)
-	assert_eq(CityInfluence.value_at(claimed, far) - CityInfluence.value_at(seized, far), 0.0, "the pull is local")
+	assert_eq(CityInfluence.value_at(claimed, far) - CityInfluence.value_at(taken, far), 0.0, "the pull is local")
 
 
 func test_raid_results_sway_the_corporate_territory() -> void:
@@ -258,17 +258,17 @@ func test_the_grid_legend_follows_the_switch_live() -> void:
 	assert_true(legend.visible)
 
 
-func test_claimed_and_seized_sites_carry_a_non_colour_mark() -> void:
+func test_claimed_and_taken_sites_carry_a_non_colour_mark() -> void:
 	RunManager.new_campaign(1)
 	var c := RunManager.campaign
 	var first := _first_link()
-	c.grid.sites[first]["status"] = GridState.SiteStatus.SEIZED
+	c.grid.sites[first]["status"] = GridState.SiteStatus.TAKEN
 	var g := CityLayout.grid_graph(c, RunManager.corporation, [])
 	var marks := {}
 	for n in g["nodes"]:
 		marks[n["id"]] = n["mark"]
 	assert_eq(marks[c.grid.home_site_id], CityMapOverlay.MARK_SPRAY, "claimed: spray ring")
-	assert_eq(marks[first], CityMapOverlay.MARK_CROSS, "Seized: cross")
+	assert_eq(marks[first], CityMapOverlay.MARK_CROSS, "TAKEN: cross")
 	var corporate := 0
 	for id in marks:
 		if c.grid.is_corporate(id):
@@ -280,7 +280,7 @@ func test_claimed_and_seized_sites_carry_a_non_colour_mark() -> void:
 	assert_eq(overlay.mark_of(c.grid.home_site_id), CityMapOverlay.MARK_SPRAY)
 	# The legend's status rows each have their own glyph (never colour alone).
 	assert_ne(MapLegend.ROWS[0][0], MapLegend.ROWS[2][0], "claimed and corporate rows differ by glyph")
-	assert_ne(MapLegend.ROWS[3][0], MapLegend.ROWS[2][0], "seized and corporate rows differ by glyph")
+	assert_ne(MapLegend.ROWS[3][0], MapLegend.ROWS[2][0], "taken and corporate rows differ by glyph")
 
 
 func test_rebel_cell_red_is_apart_from_the_cell_pink() -> void:

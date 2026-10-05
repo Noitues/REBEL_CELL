@@ -13,7 +13,7 @@ Stationed on %s."
  // PINNED, // PINNED
  // exhausts, // exhausts
  AGAIN, AGAIN
- DISABLED, DISABLED
+ DOWN, DOWN
  [locked], [locked]
  | ASSIST, | ASSIST
  · %s/%s NUDGE %s%s, · %s/%s NUDGE %s%s
@@ -23,12 +23,12 @@ Stationed on %s."
  · [DEAD], · [DEAD]
 %d BLOCKED,%d BLOCKED
 %d CYCLES,%d CYCLES
-%d DISABLED,%d DISABLED
+%d DOWN,%d DOWN
 %d ENTRY SITES,%d ENTRY SITES
 %d HP,%d HP
 %d LEFT,%d LEFT
-%d SEIZED,%d SEIZED
 %d SLICES,%d SLICES
+%d TAKEN,%d TAKEN
 %d destroyed,%d destroyed
 %d lost,%d lost
 %d reached home,%d reached home
@@ -81,8 +81,8 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s finds no locked route to open near %s.,%s finds no locked route to open near %s.
 %s freezes the link %s - %s for this raid.,%s freezes the link %s - %s for this raid.
 %s guards %s (%s): the class's station bonus helps it hold in raids.,%s guards %s (%s): the class's station bonus helps it hold in raids.
-%s is DISABLED.,%s is DISABLED.
-%s is SEIZED.,%s is SEIZED.
+%s is DOWN.,%s is DOWN.
+%s is TAKEN.,%s is TAKEN.
 %s is at HQ already.,%s is at HQ already.
 "%s is back at HQ, healed, keeping the deck, Firmware and Daemons. Unspent Cycles became Schematics.","%s is back at HQ, healed, keeping the deck, Firmware and Daemons. Unspent Cycles became Schematics."
 %s is destroyed.,%s is destroyed.
@@ -151,7 +151,6 @@ AFFLICT,AFFLICT
 AFL,AFL
 AGAIN,AGAIN
 ALL BLOCKED,ALL BLOCKED
-ALL HOLD,ALL HOLD
 ARE YOU SURE?,ARE YOU SURE?
 ARMORY %d/%d,ARMORY %d/%d
 ARMORY:,ARMORY:
@@ -206,17 +205,17 @@ Boss Strength,Boss Strength
 Breach,Breach
 Bring %s back from %s.,Bring %s back from %s.
 Bring its HP to 0 to win the fight.,Bring its HP to 0 to win the fight.
-Bring the disabled node back online.,Bring the disabled node back online.
+Bring the DOWN node back online.,Bring the DOWN node back online.
 Build the picked node here: it joins your network and defends in raids.,Build the picked node here: it joins your network and defends in raids.
 Buy,Buy
 CAMPAIGN,CAMPAIGN
 CAMPAIGN END,CAMPAIGN END
-CAMPAIGN LOST,CAMPAIGN LOST
 CAMPAIGNS,CAMPAIGNS
 CAN BE YOUR NODE,CAN BE YOUR NODE
 CARD DETAIL,CARD DETAIL
 CARDS,CARDS
 CELL DEFENSE RAID SETUP,CELL DEFENSE RAID SETUP
+CELL HOLDS,CELL HOLDS
 CELL STATUS,CELL STATUS
 CITY GRID,CITY GRID
 CITY GRID // %s,CITY GRID // %s
@@ -476,9 +475,9 @@ DEFEND,DEFEND
 DEFENSE LOADOUT // %s,DEFENSE LOADOUT // %s
 DEP,DEP
 DEPLOY,DEPLOY
-DISABLED,DISABLED
 DISPATCH,DISPATCH
 DOWN,DOWN
+DOWN: repair the node on the Grid.,DOWN: repair the node on the Grid.
 DRAW %d,DRAW %d
 Daemon,Daemon
 DaemonData.adrenal_loop.description,Each Perfect heals 2.
@@ -562,7 +561,6 @@ Delete the campaign in slot %s (asks first).,Delete the campaign in slot %s (ask
 Delete the campaign in slot %s? This cannot be undone.,Delete the campaign in slot %s? This cannot be undone.
 Deploy armory asset,Deploy armory asset
 Deploy run asset,Deploy run asset
-Disabled: repair the node on the Grid.,Disabled: repair the node on the Grid.
 Display,Display
 Drag a card here to shred it (or select it and press REMOVE).,Drag a card here to shred it (or select it and press REMOVE).
 "Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards.","Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards."
@@ -874,7 +872,7 @@ HomeServerVariantData.home_relay_nest.display_name,Relay Nest home server
 HomeServerVariantData.home_standard.description,The default home server layout.
 HomeServerVariantData.home_standard.display_name,Standard home server
 Hover or right-click,Hover or right-click
-"How much stronger than normal the threats are (from Heat, ICE and seized Sites). 0% is normal strength.","How much stronger than normal the threats are (from Heat, ICE and seized Sites). 0% is normal strength."
+"How much stronger than normal the threats are (from Heat, ICE and taken Sites). 0% is normal strength.","How much stronger than normal the threats are (from Heat, ICE and taken Sites). 0% is normal strength."
 HubCoreData.auto_renew.description,Heals 10 each turn unless the Hub is breached.
 HubCoreData.auto_renew.display_name,Auto-Renew
 HubCoreData.breaker_core.description,+1 spin on all cards. Perfect: the slice resolves twice.
@@ -1716,7 +1714,6 @@ Runs,Runs
 SAVED,SAVED
 SCHEMATICS,SCHEMATICS
 SCHEMATICS %s,SCHEMATICS %s
-SEIZED,SEIZED
 SEND IT,SEND IT
 "SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The tags already show the outcome.","SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The tags already show the outcome."
 SFX volume,SFX volume
@@ -1756,10 +1753,6 @@ Schematics this run has banked for the campaign.,Schematics this run has banked 
 "Schematics: the campaign's currency, spent at HQ.","Schematics: the campaign's currency, spent at HQ."
 "Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks.","Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks."
 Scrub Heat %d · pay %d,Scrub Heat %d · pay %d
-Seized Raid Strength,Seized Raid Strength
-Seized by a raid: run it again to take it back.,Seized by a raid: run it again to take it back.
-Seized by the corporation.,Seized by the corporation.
-Seized: the corporation took the Site back.,Seized: the corporation took the Site back.
 Select,Select
 Server Rack,Server Rack
 Server Rack: the Site's guardian,Server Rack: the Site's guardian
@@ -2414,6 +2407,10 @@ Subtitles type in (off: each line shows at once),Subtitles type in (off: each li
 Subtitles with speaker names,Subtitles with speaker names
 System log strip at the foot of the screen,System log strip at the foot of the screen
 T%d,T%d
+TAKEN,TAKEN
+TAKEN by a raid: run it again to take it back.,TAKEN by a raid: run it again to take it back.
+TAKEN by the corporation.,TAKEN by the corporation.
+TAKEN: the corporation took the Site back.,TAKEN: the corporation took the Site back.
 TARGET: %s,TARGET: %s
 TERMINAL EVENT,TERMINAL EVENT
 THE TARGET,THE TARGET
@@ -2428,6 +2425,7 @@ TURN %d · FREE NUDGE %d,TURN %d · FREE NUDGE %d
 TUTORIAL,TUTORIAL
 Take,Take
 Take nothing from this payout.,Take nothing from this payout.
+Taken Raid Strength,Taken Raid Strength
 Target:,Target:
 Terminal,Terminal
 Terminal: an event with choices,Terminal: an event with choices
@@ -2693,8 +2691,8 @@ The corporation's core. The breach needs %d Exploits.,The corporation's core. Th
 The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.,The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.
 The highest ICE level cleared.,The highest ICE level cleared.
 The home server fell: the campaign is lost.,The home server fell: the campaign is lost.
+The home server is BREACHED. Campaign lost.,The home server is BREACHED. Campaign lost.
 The home server is destroyed.,The home server is destroyed.
-The home server is gone. Campaign lost.,The home server is gone. Campaign lost.
 The installed Daemons. Opens the tray: each sigil shows what its Daemon does.,The installed Daemons. Opens the tray: each sigil shows what its Daemon does.
 "The map key: what the icons, colours and lines mean. Point at it or press it to open it; the pad's key button too.","The map key: what the icons, colours and lines mean. Point at it or press it to open it; the pad's key button too."
 The next %s campaign may start up to ICE %d.,The next %s campaign may start up to ICE %d.
@@ -2741,7 +2739,7 @@ ThreatData.tow_truck.display_name,Tow Truck
 Threats,Threats
 Threats come in at %s (the dashed routes on the map).,Threats come in at %s (the dashed routes on the map).
 Threats come into the city at %d Sites: %s. They follow the dashed routes on the map to your nodes.,Threats come into the city at %d Sites: %s. They follow the dashed routes on the map to your nodes.
-Threats destroyed: %d. Reached home: %d. Disabled: %d. Seized: %d.,Threats destroyed: %d. Reached home: %d. Disabled: %d. Seized: %d.
+Threats destroyed: %d. Reached home: %d. DOWN: %d. TAKEN: %d.,Threats destroyed: %d. Reached home: %d. DOWN: %d. TAKEN: %d.
 Threats here: %s.,Threats here: %s.
 Threats that hit the home server.,Threats that hit the home server.
 Threats your network destroyed.,Threats your network destroyed.

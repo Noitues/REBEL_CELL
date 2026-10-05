@@ -8,7 +8,7 @@ extends Control
 ##
 ## Feed it a graph with `set_graph(nodes, edges)`:
 ##   nodes: [{id, at: Vector2 (grid target), color, label, glyph, big: bool,
-##            mark: "spray" (claimed: a spray-paint ring) | "cross" (Seized) | "",
+##            mark: "spray" (claimed: a spray-paint ring) | "cross" (TAKEN) | "",
 ##            kind: an icon (KIND_*; "" draws `glyph` in a hexagon), tip: hover text,
 ##            here: bool (you are here), next: bool (reachable now),
 ##            tier: int (a Site's tier 1-4: difficulty pips; 0 or missing = none)}]
@@ -51,7 +51,7 @@ signal node_hovered(id: StringName)
 enum Look { TRACE, PILLARS, ISOLATE, XRAY, BLUEPRINT, SPOTLIGHT }
 
 ## Non-colour Site marks (GDD 9.6: never colour alone): claimed Sites get a spray ring,
-## Seized ones a cross.
+## TAKEN ones a cross.
 const MARK_SPRAY := "spray"
 const MARK_CROSS := "cross"
 ## Spray ring: radius around the roof (px), wobble, drips (count, length) and strokes.
@@ -103,7 +103,7 @@ const KIND_NAMES := {KIND_FIGHT: "Router: a fight", KIND_ELITE: "Elite Router: a
 const TIP_NAMED := "%s: %s." # TR
 const TIP_ONE := "%s." # TR
 const TIP_CLAIMED := "Claimed: part of your network." # TR
-const TIP_SEIZED := "Seized by the corporation." # TR
+const TIP_TAKEN := "TAKEN by the corporation." # TR
 const TIP_ELITE := "Elite: a harder fight." # TR
 const TIP_HERE := "You are here." # TR
 const TIP_NEXT := "You can move here now." # TR
@@ -777,7 +777,7 @@ func tip_of(id: StringName) -> String:
 			MARK_SPRAY:
 				tip += " " + tr_word(TIP_CLAIMED)
 			MARK_CROSS:
-				tip += " " + tr_word(TIP_SEIZED)
+				tip += " " + tr_word(TIP_TAKEN)
 	parts.append(tip)
 	var elite := tr_word(TIP_ELITE)
 	if String(n.get("kind", "")) == KIND_ELITE and not tip.contains(elite.get_slice(":", 0)):
@@ -953,7 +953,7 @@ func _draw() -> void:
 			_spotlight()
 	for k in edges.size():
 		_edge_static(edges[k], _route_px(k))
-	# ANIM-R1 M5: a territory change's marks (outline, tint, CLAIMED / SEIZED stamp) show on
+	# ANIM-R1 M5: a territory change's marks (outline, tint, CLAIMED / TAKEN stamp) show on
 	# the map too, over its dimming and under its nodes. ANIM-R3 B6: their stamps draw on the
 	# top layer, over the labels (a label hid CLAIMED).
 	city.draw_marks_on(self, true, false)
@@ -2388,7 +2388,7 @@ func _tag_box(l: Dictionary) -> void:
 		y += f.get_height(fs)
 
 
-## The node's non-colour mark: a spray-paint ring (claimed) or a cross (Seized). The
+## The node's non-colour mark: a spray-paint ring (claimed) or a cross (TAKEN). The
 ## wobble and drips come from a hash of the node id (no game RNG).
 func _mark(n: Dictionary, at: Vector2, col: Color) -> void:
 	match String(n.get("mark", "")):

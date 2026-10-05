@@ -1,7 +1,7 @@
 extends GutTest
 ## Raid triggers and threat abilities beyond the M3 set (GDD 4.4, 7.1, 3.3): retaliation,
 ## story and node-built raids; Icebreakers open locked links, Lockdown Units freeze one;
-## stationed operatives return from Disabled nodes; ICE progression on the profile.
+## stationed operatives return from DOWN nodes; ICE progression on the profile.
 
 var _cfg: CampaignConfigData
 var _lookup: ContentLookup
@@ -125,7 +125,7 @@ func test_lockdown_unit_freezes_the_busiest_link_to_home_for_one_raid() -> void:
 	assert_eq(c.grid.neighbors(&"home", grid), [&"c1"], "the link is usable again")
 
 
-func test_stationed_operative_returns_from_a_disabled_node() -> void:
+func test_stationed_operative_returns_from_a_down_node() -> void:
 	var grid := GridFixture.chain_grid([&"c1"])
 	var c := GridFixture.campaign(grid, {&"c1": &"safehouse"})
 	c.recruit(_breaker, "Vex")
@@ -133,7 +133,7 @@ func test_stationed_operative_returns_from_a_disabled_node() -> void:
 	assert_eq(c.grid.stationed_on(&"c1"), c.roster[0].id)
 	var raid := GridFixture.raid(&"heavy", [&"enforcer", &"enforcer", &"enforcer"])
 	var result := RaidResolver.resolve(c, grid, raid, _lookup, _cfg)
-	assert_true(result.disabled.has("c1") or result.seized.has("c1"), "the Safehouse falls")
+	assert_true(result.down.has("c1") or result.taken.has("c1"), "the Safehouse falls")
 	var recalled := false
 	for e in result.events:
 		if e.get("type", "") == "recalled":

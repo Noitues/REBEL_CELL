@@ -120,13 +120,13 @@ static func touches_territory(campaign: CampaignState, corp: CorporationData, si
 
 
 ## Sites a netrun can target now, sorted by id: corporate Sites next to the territory
-## (the boss only with enough Exploits) and Seized Sites (Reclaim).
+## (the boss only with enough Exploits) and TAKEN Sites (Reclaim).
 static func launchable_sites(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData) -> Array[SiteData]:
 	var out: Array[SiteData] = []
 	for s in corp.city_grid.sites:
 		if s == null or s.id == corp.city_grid.home_site_id:
 			continue
-		if campaign.grid.is_seized(s.id):
+		if campaign.grid.is_taken(s.id):
 			out.append(s)
 		elif campaign.grid.is_corporate(s.id) and touches_territory(campaign, corp, s.id):
 			if s.objective == RC.SiteObjective.BOSS and campaign.exploits.size() < config.min_exploits_for_breach:
@@ -185,7 +185,7 @@ static func launch_error(campaign: CampaignState, corp: CorporationData, config:
 				return "The breach needs %d Exploits (%d held)." % [config.min_exploits_for_breach, campaign.exploits.size()]
 			return "The breach needs a cleared or claimed Site next to it."
 		return "%s is not reachable from your territory." % site.id
-	if campaign.grid.is_seized(site.id):
+	if campaign.grid.is_taken(site.id):
 		return ""
 	if class_data == null or class_data.id != op.class_id:
 		return "Class data for %s does not match its class %s." % [op.name, op.class_id]
@@ -197,7 +197,7 @@ static func launch_error(campaign: CampaignState, corp: CorporationData, config:
 ## "netrun", "patrol", "boss" or "reclaim" for a launch at `site`. A patrol plays as a
 ## full netrun (NetrunSession kind "netrun"); only its completion differs.
 static func run_kind_for(campaign: CampaignState, site: SiteData) -> String:
-	if campaign.grid.is_seized(site.id):
+	if campaign.grid.is_taken(site.id):
 		return "reclaim"
 	if site.objective == RC.SiteObjective.BOSS:
 		return "boss"
@@ -452,7 +452,7 @@ static func claim(campaign: CampaignState, corp: CorporationData, config: Campai
 	events.append({"type": "claimed", "site": site_id, "node": node_type_id, "text": "Claimed %s with a %s (-%d Schematics)." % [site_id, node.display_name, node.install_cost]})
 	var entry: StringName = &""
 	for n in campaign.grid.neighbors(site_id, corp.city_grid):
-		if campaign.grid.is_corporate(n) or campaign.grid.is_seized(n):
+		if campaign.grid.is_corporate(n) or campaign.grid.is_taken(n):
 			entry = n
 			break
 	if node.triggers_raid:
@@ -557,19 +557,19 @@ static func _raid_for(corp: CorporationData, source: int) -> RaidData:
 	return null
 
 
-## Schematics to repair the Disabled node on `site_id` (ICE 13 REPAIR_COST_PCT included).
+## Schematics to repair the DOWN node on `site_id` (ICE 13 REPAIR_COST_PCT included).
 static func repair_cost(campaign: CampaignState, config: CampaignConfigData, lookup: ContentLookup, site_id: StringName) -> int:
 	var node := lookup.get_content(campaign.grid.node_type_of(site_id)) as NetworkNodeData
 	var pct := campaign.rule_modifier(config, RC.RuleModifierType.REPAIR_COST_PCT)
 	return roundi(node.install_cost * node.repair_cost_ratio * (1.0 + pct / 100.0)) if node != null else 0
 
 
-## Repairs a Disabled node for repair_cost_ratio x install cost (GDD 3.3).
+## Repairs a DOWN node for repair_cost_ratio x install cost (GDD 3.3).
 static func repair(campaign: CampaignState, config: CampaignConfigData, lookup: ContentLookup, site_id: StringName) -> Array[Dictionary]:
 	var events: Array[Dictionary] = []
 	var s := campaign.grid.site(site_id)
-	if s.is_empty() or not campaign.grid.is_claimed(site_id) or int(s["condition"]) != GridState.Condition.DISABLED:
-		events.append({"type": "refused", "text": "%s is not a Disabled node." % site_id})
+	if s.is_empty() or not campaign.grid.is_claimed(site_id) or int(s["condition"]) != GridState.Condition.DOWN:
+		events.append({"type": "refused", "text": "%s is not a DOWN node." % site_id})
 		return events
 	var cost := repair_cost(campaign, config, lookup, site_id)
 	if campaign.schematics < cost:
@@ -876,11 +876,11 @@ static func move_asset(campaign: CampaignState, config: CampaignConfigData, look
 
 static func raid_strength_pct(campaign: CampaignState, config: CampaignConfigData, pending: Dictionary = {}, corp: CorporationData = null) -> float:
 	var pct := campaign.rule_modifier(config, RC.RuleModifierType.RAID_STRENGTH_PCT)
-	# SEIZED_RAID_STRENGTH_PCT (ICE 14): raids entering from a Seized Site hit harder.
+	# TAKEN_RAID_STRENGTH_PCT (ICE 14): raids entering from a TAKEN Site hit harder.
 	if corp != null and not pending.is_empty():
 		for entry in raid_entries(campaign, corp, pending):
-			if campaign.grid.is_seized(entry):
-				pct += campaign.rule_modifier(config, RC.RuleModifierType.SEIZED_RAID_STRENGTH_PCT)
+			if campaign.grid.is_taken(entry):
+				pct += campaign.rule_modifier(config, RC.RuleModifierType.TAKEN_RAID_STRENGTH_PCT)
 				break
 	return pct
 

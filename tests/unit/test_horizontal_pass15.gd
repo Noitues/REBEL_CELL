@@ -120,7 +120,7 @@ func test_repair_shows_what_it_charges() -> void:
 	var s := c.grid.site(site)
 	s["status"] = GridState.SiteStatus.CLAIMED
 	s["node_type"] = "firewall_relay"
-	s["condition"] = GridState.Condition.DISABLED
+	s["condition"] = GridState.Condition.DOWN
 	c.schematics = 500
 	var price := CampaignRules.repair_cost(c, _cfg, lookup, site)
 	assert_true(price > 0)

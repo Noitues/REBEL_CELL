@@ -1,6 +1,6 @@
 extends GutTest
 ## Horizontal pass 12 fixes (GAP_ANALYSIS H12): one profile for every campaign slot, a
-## patrol stays a patrol when its Site is Seized mid-run, an Exploit is never held twice,
+## patrol stays a patrol when its Site is TAKEN mid-run, an Exploit is never held twice,
 ## Daemon tuning and raid pacing come from content and config, Twin Pointer's Miss spoils
 ## Cold Exit, and long HQ / title panels wrap. (The final Rack's rewards: test_netrun.gd.)
 
@@ -52,7 +52,7 @@ func _campaign() -> CampaignState:
 	return CampaignRules.new_campaign(_corp, _cfg, _lookup, 3, ContentRegistry.get_content(&"breaker") as ClassData, GridFixture.home_node())
 
 
-func test_a_patrol_seized_mid_run_stays_a_patrol() -> void:
+func test_a_patrol_taken_mid_run_stays_a_patrol() -> void:
 	var c := _campaign()
 	var site := _exploit_site()
 	assert_not_null(site)
@@ -62,12 +62,12 @@ func test_a_patrol_seized_mid_run_stays_a_patrol() -> void:
 	assert_true(s.run.patrol, "launched as a patrol")
 	var back := RunState.from_dict(s.run.to_dict())
 	assert_true(back.patrol, "saved with the run")
-	c.grid.sites[site.id]["status"] = GridState.SiteStatus.SEIZED  # a mid-run raid takes it
+	c.grid.sites[site.id]["status"] = GridState.SiteStatus.TAKEN  # a mid-run raid takes it
 	var heat := c.heat
 	CampaignRules.on_run_completed(c, _corp, _cfg, s.run, _lookup)
 	assert_eq(c.exploits, [site.exploit_type], "no second Exploit")
 	assert_eq(c.heat, heat, "no Exploit Heat")
-	assert_eq(int(c.grid.sites[site.id]["status"]), GridState.SiteStatus.SEIZED, "the Site stays Seized")
+	assert_eq(int(c.grid.sites[site.id]["status"]), GridState.SiteStatus.TAKEN, "the Site stays TAKEN")
 
 
 func test_an_exploit_is_never_held_twice() -> void:

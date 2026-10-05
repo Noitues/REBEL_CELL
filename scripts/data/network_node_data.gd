@@ -7,7 +7,7 @@ extends Resource
 @export var display_name: String
 @export_multiline var description: String
 @export var install_cost: int = 20
-## Repair cost for a Disabled node = install_cost * this.
+## Repair cost for a DOWN node = install_cost * this.
 @export var repair_cost_ratio: float = 0.5
 @export var integrity: int = 20
 @export var asset_slots: int = 0
