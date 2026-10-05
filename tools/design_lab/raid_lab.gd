@@ -240,7 +240,7 @@ func _draw_sheet(ci: Control) -> void:
 		{"glyph": "relay", "dock": "valid"}, {"glyph": "relay", "dock": "invalid"},
 	]
 	for i in states_row.size():
-		var c := Vector2(40 + (i % 7) * 62, 40 + (i / 7) * 62)
+		var c := Vector2(40 + (i % 7) * 70, 40 + (i / 7) * 70)
 		RaidSocket.draw(ci, c, r, states_row[i])
 	var corps := RaidSkin.CORPS
 	var types := [RaidVehicle.FAST, RaidVehicle.HEAVY, RaidVehicle.SPECIAL]

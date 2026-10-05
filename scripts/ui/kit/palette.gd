@@ -579,3 +579,6 @@ const END_HOUSE_TEXT := Color("#F4F1E9")
 const GLYPH_FILL := Color("#FFFFFF")
 ## The dark rounded outline added at render time (bible 2.1: glyph outline #0C0A16).
 const GLYPH_INK := Color("#0C0A16")
+## ART-6 3A: the raid slow field's blue (round 22 screens22 SLOW_BLUE: the Ghost station's
+## dashed rings drifting inward).
+const RAID_SLOW_BLUE := Color("#5AAAFF")

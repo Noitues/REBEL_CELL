@@ -108,18 +108,46 @@ const MARK_LIFT := 2.4
 const HOLDS_TICK := 16.0
 ## Screen px: a mark's lift above its node, the BREACHED underline's and the ticks' width.
 const MARK_LIFT_PX := 46.0
+## Screen px between two marks shown at once on one node (the later one stacks above).
+const MARK_STACK_GAP_PX := 6.0
 const UNDERLINE_W := 9.0
 const TICK_W := 6.0
-## The vehicle icon's radius (screen px x screen_k), the ice block round a frozen one (x
-## radius) and its crystals, the slow field's radius (x the node icon) and rings.
+## The vehicle icon's radius (screen px x screen_k), the ice round a frozen one (its half
+## width x radius; the baked concept ice: folder, growth steps, the ellipse's half width in
+## the image px, manifest.json), the slow field's radius (x the node icon) and rings.
 const VEHICLE_R := 11.0
 const ICE_BLOCK := 2.1
-const ICE_CRYSTALS := 10
+const ICE_DIR := "res://assets/raid/ice/"
+const ICE_STEPS := 8
+const ICE_ART_RX := 50.0
 const FIELD_R := 3.2
 const FIELD_RINGS := 3
-## Repair: rising "+" sparks (count, rise in screen px).
-const SPARKS := 6
-const SPARK_RISE := 34.0
+## The slow field as the concept's fx_slow_v2 draws it: the edge's dashes, their gap (share
+## of a dash step), its turn (dashes a cycle) and width (px x screen_k); the drifting rings'
+## dashes, the share of them they lose and of the radius they cross going in, their width;
+## the ground's foreshortening (y x).
+const FIELD_DASHES := 40
+const FIELD_GAP := 0.45
+const FIELD_EDGE_TURN := 0.6
+const FIELD_EDGE_W := 5.0
+const FIELD_RING_DASHES := 34
+const FIELD_DASH_LOSS := 0.6
+const FIELD_INNER := 0.75
+const FIELD_RING_W := 3.0
+const FIELD_SQUASH := 0.55
+## Repair (concept fx_repair_v2): the rising "+" marks (count, their stagger across the
+## socket, its half width x the node icon, rise, arm and width in screen px x screen_k) and the
+## pale streaks (count, speed x the marks', length, paleness).
+const SPARKS := 7
+const SPARK_STEP := 0.4625
+const SPARK_SPREAD := 1.5
+const SPARK_RISE := 60.0
+const SPARK_ARM := 3.5
+const SPARK_W := 2.0
+const STREAKS := 5
+const STREAK_SPEED := 1.375
+const STREAK_LEN := 12.0
+const STREAK_PALE := 0.5
 ## BREACHED's bits: count and burst radius (screen px x screen_k).
 const BITS := 70
 const BITS_R := 120.0
@@ -1059,30 +1087,19 @@ func _update_hover() -> void:
 	_hovered = found
 
 
-## ART-6 3A (§4.8 ICE): a threat encased in ice: light-blue translucent fill, a crisp blue
-## rim, blue / white crystals growing inward from the border (`u`: the growth).
-func _ice_block(c: Vector2, r: float, u: float, alpha: float, seed: int) -> void:
-	var block := PackedVector2Array()
-	for i in 6:
-		var a := TAU * i / 6.0 + PI / 6.0
-		block.append(c + Vector2(cos(a), sin(a) * 0.8) * r * (1.0 + 0.05 * RaidPencil.noise(seed, i)))
-	var ice := Palette.NET_CYAN.lerp(Palette.TEXT_HI, 0.45)
-	_ci.draw_colored_polygon(block, Color(ice, 0.32 * alpha))
-	var rim := block.duplicate()
-	rim.append(block[0])
-	_ci.draw_polyline(rim, Color(Palette.NET_CYAN, 0.95 * alpha), maxf(1.5, r * 0.07), true)
-	for i in ICE_CRYSTALS:
-		var e := i % 6
-		var a := block[e]
-		var b := block[(e + 1) % 6]
-		var base := a.lerp(b, 0.2 + 0.6 * absf(RaidPencil.noise(seed + 3, i)))
-		var inward := (c - base).normalized()
-		var length := r * (0.25 + 0.3 * absf(RaidPencil.noise(seed + 7, i))) * clampf(u, 0.0, 1.0)
-		var tip := base + inward * length
-		var col := Color(Palette.TEXT_HI if i % 2 == 0 else Palette.NET_CYAN, 0.9 * alpha)
-		_ci.draw_line(base, tip, col, maxf(1.0, r * 0.05))
-		var side := inward.orthogonal() * length * 0.35
-		_ci.draw_line(base.lerp(tip, 0.5), base.lerp(tip, 0.5) + side + inward * length * 0.2, col, maxf(1.0, r * 0.035))
+## ART-6 3A (§4.8 ICE, round 22 "ICE as crystals"): a threat encased in ice: the concept's own
+## ice (ui22.ice, baked by tools/art_pipeline/raid/bake_ice.py into assets/raid/ice/), its
+## crystals grown to `u` (the baked step), the ellipse `r` wide (half width) over the unit.
+func _ice_block(c: Vector2, r: float, u: float, alpha: float, _seed: int) -> void:
+	var step := clampi(ceili(clampf(u, 0.0, 1.0) * ICE_STEPS), 1, ICE_STEPS)
+	var path := ICE_DIR + "ice_%02d.png" % step
+	if not _ice_tex.has(path):
+		_ice_tex[path] = load(path) if ResourceLoader.exists(path) else null
+	var tex: Texture2D = _ice_tex[path]
+	if tex == null:
+		return
+	var half := Vector2(tex.get_size()) * 0.5 * r / ICE_ART_RX
+	_ci.draw_texture_rect(tex, Rect2(c - half, half * 2.0), false, Color(Color.WHITE, alpha))
 
 ## ANIM-R1 M4: the shot: the gun's node rings as it fires, the trace flies from the gun to
 ## the threat over its duration (a bright head), then fades while the hit lands.
@@ -1212,6 +1229,7 @@ func _lay_pencil() -> void:
 	var plan := GreasePencilMark.Ink.PLAN
 	var gxf := get_global_transform()
 	var zoom := RaidMapAnchor.scale(overlay)
+	var tops := {}
 	for i in _marks.size():
 		var m: Dictionary = _marks[i]
 		var pr := mark_progress(m)
@@ -1230,6 +1248,13 @@ func _lay_pencil() -> void:
 		if c.x == INF:
 			continue
 		var step := UiTheme.DISPLAY if heavy else UiTheme.TITLE
+		if not heavy:
+			# Two marks at once on one node (INCOMING then DOWN at an entry) never overlap: the
+			# later one stacks above the earlier one's top.
+			var h := RaidPencilPool.word_size(String(m["word"]), step).y
+			if tops.has(site):
+				c.y = minf(c.y, float(tops[site]) - h * 0.5 - MARK_STACK_GAP_PX)
+			tops[site] = c.y - h * 0.5
 		var write := minf(1.0, pr.x * (1.25 if heavy else 1.0))
 		_pool.word("mark_%d" % i, String(m["word"]), c, step, threat, 1.0, write, pr.y, -0.05)
 		if heavy:
@@ -1293,9 +1318,15 @@ func pencil_shown() -> Array[Node2D]:
 
 
 var _pool: RaidPencilPool = null
+## The baked ice steps, loaded once (path -> Texture2D or null).
+static var _ice_tex: Dictionary = {}
 
-## ART-6 3A (§4.8 Ghost station bonus): a slow field drawn under the units on the node whose
-## operative holds them: dashed rings drifting inward (still under reduce effects).
+## ART-6 3A (§4.8 Ghost station bonus, round 22 `bonus_slow_v2`): the slow field under the
+## units on the node whose operative holds them, drawn as the concept's `fx_slow_v2` draws it
+## (screens22.py): the dashed edge carries it (FIELD_DASHES dashes, FIELD_GAP gap) and
+## FIELD_RINGS slow-blue dashed rings drift inward, shrinking to FIELD_INNER of the radius
+## and losing dashes and alpha as they go. Procedural because the rings move (an image can't
+## drift inward); still, without the drift, under reduce effects.
 func _draw_fields(k: float) -> void:
 	for f in _fields:
 		if clock < float(f["t0"]):
@@ -1305,21 +1336,28 @@ func _draw_fields(k: float) -> void:
 			continue
 		var R := CityMapOverlay.ICON_RADIUS * k * FIELD_R
 		var period := maxf(0.001, Motion.seconds(SLOW_FIELD))
-		var drift := fmod((clock - float(f["t0"])) / period, 1.0) if Motion.live(SLOW_FIELD) else 0.0
-		var col := Palette.NET_CYAN.lerp(Palette.NEON_VIOLET, 0.25)
-		_ci.draw_set_transform(c, 0.0, Vector2(1.0, 0.55))
-		_ci.draw_circle(Vector2.ZERO, R, Color(col, 0.12))
+		var t := (clock - float(f["t0"])) / period if Motion.live(SLOW_FIELD) else 0.0
+		_ci.draw_set_transform(c, 0.0, Vector2(1.0, FIELD_SQUASH))
+		_dashed_ring(R, FIELD_DASHES, t * FIELD_EDGE_TURN, FIELD_EDGE_W * k, 1.0)
 		for i in FIELD_RINGS:
-			var u := fposmod(float(i) / FIELD_RINGS - drift, 1.0)
-			var rr := R * (0.35 + 0.65 * u)
-			var dashes := 18
-			for d in dashes:
-				var a0 := TAU * d / dashes + drift
-				_ci.draw_arc(Vector2.ZERO, rr, a0, a0 + TAU / dashes * 0.55, 4, Color(col, 0.55 * u), 2.0 * k)
+			var q := fmod(t + float(i) / FIELD_RINGS, 1.0)
+			_dashed_ring(R * (1.0 - FIELD_INNER * q), maxi(6, int(FIELD_RING_DASHES * (1.0 - FIELD_DASH_LOSS * q))), -t,
+				FIELD_RING_W * k, 0.9 * (1.0 - q))
 		_ci.draw_set_transform(Vector2.ZERO)
 
 
-## ART-6 3A (§4.8 Rigger repair): "+" sparks rising off the node as its fill rises.
+## One dashed ring of the slow field (concept `dashed_ground_ring`): `n` dashes from `phase`
+## (in dashes), each FIELD_GAP short of the next.
+func _dashed_ring(R: float, n: int, phase: float, width: float, alpha: float) -> void:
+	for i in n:
+		var a0 := TAU * (i + phase) / n
+		var a1 := TAU * (i + phase + 1.0 - FIELD_GAP) / n
+		_ci.draw_arc(Vector2.ZERO, R, a0, a1, 5, Color(Palette.RAID_SLOW_BLUE, alpha), width)
+
+## ART-6 3A (§4.8 Rigger repair, round 22 `bonus_repair_v2`): health goes UP. The socket's
+## baked fill steps back up (RaidSocket health v2) while the concept's `fx_repair_v2` marks
+## rise off it (screens22.py): SPARKS "+" marks spread over the socket rising straight up and
+## STREAKS pale vertical streaks. Procedural because they move.
 func _draw_sparks(k: float) -> void:
 	for f in _sparks:
 		var u := beat_u(REPAIR_RISE, float(f["t0"]), RaidBeats.raw_seconds(REPAIR_RISE))
@@ -1328,17 +1366,21 @@ func _draw_sparks(k: float) -> void:
 		var c := overlay.icon_at(f["site"])
 		if c.x == INF:
 			continue
-		var seed := String(f["site"]).hash()
+		var spread := CityMapOverlay.ICON_RADIUS * k * SPARK_SPREAD
 		for i in SPARKS:
-			var x := RaidPencil.noise(seed, i) * CityMapOverlay.ICON_RADIUS * k * 1.4
-			var lag := absf(RaidPencil.noise(seed + 1, i)) * 0.4
-			var su := clampf((u - lag) / (1.0 - lag), 0.0, 1.0)
-			var p := c + Vector2(x, -SPARK_RISE * k * su)
-			var s := 4.0 * k
-			var col := Color(Palette.GAIN, 1.0 - su)
-			draw_line(p - Vector2(s, 0), p + Vector2(s, 0), col, 2.0 * k)
-			draw_line(p - Vector2(0, s), p + Vector2(0, s), col, 2.0 * k)
-
+			var q := fmod(u + float(i) / SPARKS, 1.0)
+			var x := -spread + fmod(i * SPARK_STEP, 1.0) * spread * 2.0
+			var p := c + Vector2(x, -SPARK_RISE * k * q)
+			var s := SPARK_ARM * k
+			var col := Color(Palette.GAIN, 1.0 - q)
+			draw_line(p - Vector2(s, 0), p + Vector2(s, 0), col, SPARK_W * k)
+			draw_line(p - Vector2(0, s), p + Vector2(0, s), col, SPARK_W * k)
+		var pale := Palette.GAIN.lerp(Palette.TEXT_HI, STREAK_PALE)
+		for i in STREAKS:
+			var q := fmod(u * STREAK_SPEED + float(i) / STREAKS, 1.0)
+			var x := -spread * 0.75 + spread * 1.5 * i / maxf(1.0, STREAKS - 1.0)
+			var top := c + Vector2(x, -SPARK_RISE * k * q)
+			draw_line(top, top + Vector2(0, -STREAK_LEN * k), Color(pale, 0.9 * (1.0 - q)), maxf(1.0, k))
 
 ## ART-6 3A (§4.8 BREACHED): a red bit explosion at CORE (0 / 1 glyphs blasting out and
 ## falling) and CORE's links de-powering segment by segment from the node outward.
