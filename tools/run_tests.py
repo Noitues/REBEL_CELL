@@ -10,6 +10,7 @@ exits non-zero on any failure, crash or timeout.
     python tools/run_tests.py --select pass24 # scripts whose path contains "pass24"
     python tools/run_tests.py --update-times  # also write measured times to the manifest
     python tools/run_tests.py --no-isolate    # don't rerun failing scripts alone
+    python tools/run_tests.py --shard 2/6 -j 2  # CI: the 2nd of 6 global shards, run in 2 processes
 
 A script that fails in its shard is run again alone (ANIM-R5): when it passes alone its
 result depends on what ran before it in the shard (state leaking between scripts), and it
@@ -76,8 +77,9 @@ def load_manifest() -> dict:
         return json.load(f)
 
 
-def balance(scripts: list[str], seconds: dict[str, float], n: int) -> list[list[str]]:
-    """Longest-processing-time-first: the slowest script goes to the emptiest shard."""
+def balance(scripts: list[str], seconds: dict[str, float], n: int, keep_empty: bool = False) -> list[list[str]]:
+    """Longest-processing-time-first: the slowest script goes to the emptiest shard.
+    Empty shards are dropped unless `keep_empty` (so shard K of N always exists)."""
     shards: list[list[str]] = [[] for _ in range(n)]
     load = [0.0] * n
     # Ties broken by path so the split is deterministic.
@@ -85,7 +87,24 @@ def balance(scripts: list[str], seconds: dict[str, float], n: int) -> list[list[
         i = min(range(n), key=lambda k: (load[k], k))
         shards[i].append(s)
         load[i] += seconds.get(s, DEFAULT_SECONDS)
-    return [sh for sh in shards if sh]
+    return shards if keep_empty else [sh for sh in shards if sh]
+
+
+def parse_shard(text: str) -> tuple[int, int]:
+    """CI: "K/N" -> (K, N) with 1 <= K <= N. Raises ValueError on anything else."""
+    parts = text.split("/")
+    if len(parts) != 2 or not all(p.strip().isdigit() for p in parts):
+        raise ValueError(f"--shard wants K/N (e.g. 2/6), got {text!r}")
+    k, n = int(parts[0]), int(parts[1])
+    if n < 1 or not 1 <= k <= n:
+        raise ValueError(f"--shard K/N needs 1 <= K <= N, got {text!r}")
+    return k, n
+
+
+def pick_shard(scripts: list[str], seconds: dict[str, float], k: int, n: int) -> list[str]:
+    """CI: the scripts of global shard K (1-based) of N, from the same balancing as a local
+    N-shard run. The N shards are disjoint and together hold every script exactly once."""
+    return balance(scripts, seconds, n, keep_empty=True)[k - 1]
 
 
 def shard_env(user_root: Path) -> dict[str, str]:
@@ -239,6 +258,7 @@ def main() -> int:
     ap.add_argument("--timeout", type=float, default=3600.0, help="seconds per shard")
     ap.add_argument("--out", default="", help="folder for shard logs and results (default: a new temp folder)")
     ap.add_argument("--update-times", action="store_true", help="write measured script times to the manifest")
+    ap.add_argument("--shard", default="", metavar="K/N", help="CI: run only global shard K of N (balanced like -j N); -j then splits it into local processes")
     ap.add_argument("--list", action="store_true", help="print the shards and exit")
     ap.add_argument("--gut-arg", action="append", default=[], help="extra GUT argument for every shard (repeatable), e.g. --gut-arg=-gunit_test_name=foo")
     ap.add_argument("--no-isolate", action="store_true", help="don't rerun failing scripts alone to spot order-dependent ones")
@@ -258,6 +278,17 @@ def main() -> int:
         print("run_tests: no scripts selected")
         return 2
     seconds = {s: float(entries.get(s, {}).get("seconds", DEFAULT_SECONDS)) for s in scripts}
+    if args.shard:
+        try:
+            k, n = parse_shard(args.shard)
+        except ValueError as e:
+            print(f"run_tests: {e}")
+            return 2
+        scripts = pick_shard(scripts, seconds, k, n)
+        print(f"run_tests: global shard {k}/{n}: {len(scripts)} scripts, ~{sum(seconds[s] for s in scripts):.0f}s measured")
+        if not scripts:
+            print("run_tests: this shard has no scripts (nothing to do)")
+            return 0
     shards = balance(scripts, seconds, max(1, args.jobs))
 
     if args.list:

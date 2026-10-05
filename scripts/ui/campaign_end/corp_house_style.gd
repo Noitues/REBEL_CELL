@@ -86,9 +86,10 @@ func back() -> Color:
 	return Palette.END_HOUSE_BACK.get(corp_id, Palette.END_HOUSE_BACK[FALLBACK])
 
 
-## The house's accent: the countdown, the progress, the padlocks and the verb stamp.
+## The house's accent: the countdown, the progress, the padlocks and the verb stamp (the
+## corporation's round 18 secondary, ART_BIBLE v2 §2.4).
 func accent() -> Color:
-	return Palette.END_HOUSE_ACCENT.get(corp_id, Palette.END_HOUSE_ACCENT[FALLBACK])
+	return Palette.corp_secondary(corp_id)
 
 
 ## The house's name as the notice prints it (translated): its own (DISPATCH) or `display_name`.

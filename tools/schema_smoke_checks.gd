@@ -6,7 +6,7 @@ extends RefCounted
 
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
-	return _batch1() + _batch2() + _batch3()
+	return _batch1() + _batch2() + _batch3() + _art1_glyphs()
 
 
 func _mk_effect(t, target, amount := 0, scope := RC.RingScope.OUTER, mult := 1.0) -> EffectData:
@@ -496,4 +496,30 @@ func _art0() -> int:
 	# ART-0 B3: five Heat bands on the existing thresholds (MAJOR 25 / 50 / 75 and PURGE 100).
 	print("ART-0 B3: heat_band_levels ", shipped.heat_band_levels() if shipped != null else [])
 	if shipped == null or shipped.heat_band_levels() != ([25, 50, 75, 100] as Array[int]): fails += 1
+	return fails
+
+
+## ART-1 1C: GlyphTableData (the glyph atlas and its id -> glyph table): an empty table reports
+## its missing atlas and stand-in; the shipped one validates; a save keeps the ids and geometry.
+func _art1_glyphs() -> int:
+	var fails := 0
+	var empty := GlyphTableData.new()
+	var ee := empty.validate()
+	print("ART-1 1C: empty glyph table errors (expect 2: no atlas, no stand-in): ", ee)
+	if ee.size() != 2: fails += 1
+	var shipped := GlyphTableData.shipped()
+	var se := shipped.validate() if shipped != null else PackedStringArray(["missing"])
+	print("ART-1 1C: shipped glyph table errors (expect 0): ", se, " glyphs ", shipped.glyph_names.size() if shipped != null else -1,
+		" ids ", shipped.ids.size() if shipped != null else -1)
+	if se.size() != 0: fails += 1
+	if shipped == null or shipped.glyph_for(GlyphTableData.key_for_slice_type(RC.SliceType.SHIM)) != &"slice_shim": fails += 1
+	var t := GlyphTableData.new()
+	t.glyph_names = PackedStringArray(["slice_shim", "pending"])
+	t.ids = {&"type_shim": &"slice_shim", &"effect_custom": &"pending"}
+	t.box_px = 90
+	var err := ResourceSaver.save(t, "user://smoke_glyph_table.tres")
+	var back: GlyphTableData = load("user://smoke_glyph_table.tres")
+	print("ART-1 1C: glyph table save=", err, " ids ", back.ids if back != null else {}, " box ", back.box_px if back != null else -1)
+	if err != OK or back == null or back.glyph_for(&"type_shim") != &"slice_shim" or not back.is_pending(&"effect_custom") or back.box_px != 90: fails += 1
+	if back == null or back.cell_region(&"pending") != Rect2(128, 0, 128, 128): fails += 1
 	return fails

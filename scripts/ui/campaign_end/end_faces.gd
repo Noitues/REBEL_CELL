@@ -1,44 +1,22 @@
 class_name EndFaces
 extends RefCounted
-## ART-11 4D: the faces the corp paper of the campaign end needs (ART_BIBLE v2 §2.9): Courier
-## Prime Regular / Bold for typed fields and titles. A seam until 1A lands Courier Prime in
-## `assets/fonts/`: it reads the shipped face there first and, until then, the same OFL face
-## the GUT addon carries, then falls back to the mono face. Look only.
-
-## Where Courier Prime ships once 1A copies it (bible §2.9), then the copy the repo already has.
-const TYPE_PATHS: Array[String] = ["res://assets/fonts/CourierPrime-Regular.ttf", "res://addons/gut/fonts/CourierPrime-Regular.ttf"]
-const TYPE_BOLD_PATHS: Array[String] = ["res://assets/fonts/CourierPrime-Bold.ttf", "res://addons/gut/fonts/CourierPrime-Bold.ttf"]
-
-static var _cache: Dictionary = {}
+## ART-11 4D: the faces the corp paper of the campaign end uses (ART_BIBLE v2 §2.9): Courier
+## Prime Regular / Bold (1A's `Palette.paper` / `paper_bold`) for typed fields and titles, and
+## the auditor's ballpoint hand. Look only.
 
 
-## Courier Prime Regular (typed fields), or the mono face.
+## Courier Prime Regular (typed fields).
 static func typed() -> Font:
-	return _first(TYPE_PATHS)
+	return Palette.paper()
 
 
-## Courier Prime Bold (typed titles), or the mono face.
+## Courier Prime Bold (typed titles).
 static func typed_bold() -> Font:
-	return _first(TYPE_BOLD_PATHS)
+	return Palette.paper_bold()
 
 
 ## The auditor's ballpoint hand. No ballpoint face ships (DECISIONS "Art direction — ART-11 4D
-## campaign end", open question): the marker face, small and in ballpoint blue.
+## campaign end", open question): the one handwriting face (Permanent Marker), small and in
+## ballpoint blue, never in the grease pencil's wax colours.
 static func ballpoint() -> Font:
-	return Palette.marker()
-
-
-static func _first(paths: Array[String]) -> Font:
-	var key := paths[0]
-	if _cache.has(key):
-		return _cache[key]
-	var f: Font = null
-	for p in paths:
-		if ResourceLoader.exists(p):
-			f = load(p) as Font
-			if f != null:
-				break
-	if f == null:
-		f = Palette.mono()
-	_cache[key] = f
-	return f
+	return Palette.pencil()
