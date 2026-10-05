@@ -104,6 +104,14 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"heal_inflow", &"evade_token", &"corrupt_apply", &"corrupt_tick", &"drone_deploy", &"drone_attack", &"drone_destroyed",
 	&"enemy_defeated_bits", &"phase_change_bits", &"respin_bits", &"nudge_resist_bits", &"ram_gain_bits", &"temp_label",
 	&"daemon_trigger", &"firmware_trigger", &"heat_city_beacon", &"heat_city_sweep",
+
+	# ART-1 1B material kit (ART_BIBLE v2 1.2, 6.3; round 3 combined_v2 lifecycle): the CRT
+	# terminal, the vinyl sticker, the grease pencil, the holo, the light spill and the bits.
+	&"crt_type_on", &"crt_caret_blink", &"crt_hex_scroll",
+	&"sticker_slap", &"sticker_peel", &"sticker_dissolve", &"sticker_gloss_sweep", &"sticker_corner_flutter",
+	&"sticker_hover", &"sticker_press",
+	&"pencil_write_on", &"pencil_wipe", &"pencil_glint",
+	&"holo_bands", &"light_spill_breathe", &"bits_flight",
 	# ART-0 F (ported from art-pass W2 / W8a): the pad focus scale, the refused state, and a
 	# modal's open and close (PageTransition.open_modal / close_modal).
 	&"focus_scale", &"button_refused", &"modal_in", &"modal_out",

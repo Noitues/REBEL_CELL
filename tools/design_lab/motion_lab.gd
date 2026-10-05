@@ -163,6 +163,15 @@ const DEMOS := {
 	&"nudge_resist_bits": ["scene", "fx_resist"], &"ram_gain_bits": ["scene", "fx_ram"], &"temp_label": ["scene", "fx_label"],
 	&"daemon_trigger": ["scene", "fx_daemon"], &"firmware_trigger": ["scene", "fx_firmware"],
 	&"heat_city_beacon": ["scene", "fx_heat"], &"heat_city_sweep": ["scene", "fx_heat"],
+
+	# ART-1 1B material kit: each entry on a fresh real piece (KitDemo: a VinylSticker, a
+	# CrtTerminalPanel, a GreasePencilMark, a DecryptedHoloPanel, a LightSpill, BinaryBits).
+	&"crt_type_on": ["kit", "crt_type_on"], &"crt_caret_blink": ["kit", "crt_caret_blink"], &"crt_hex_scroll": ["kit", "crt_hex_scroll"],
+	&"sticker_slap": ["kit", "sticker_slap"], &"sticker_peel": ["kit", "sticker_peel"], &"sticker_dissolve": ["kit", "sticker_dissolve"],
+	&"sticker_gloss_sweep": ["kit", "sticker_gloss_sweep"], &"sticker_corner_flutter": ["kit", "sticker_corner_flutter"],
+	&"sticker_hover": ["kit", "sticker_hover"], &"sticker_press": ["kit", "sticker_press"],
+	&"pencil_write_on": ["kit", "pencil_write_on"], &"pencil_wipe": ["kit", "pencil_wipe"], &"pencil_glint": ["kit", "pencil_glint"],
+	&"holo_bands": ["kit", "holo_bands"], &"light_spill_breathe": ["kit", "light_spill_breathe"], &"bits_flight": ["kit", "bits_flight"],
 	# ART-0 F (ported from art-pass W2 / W8a): kit behaviour on the real pieces (a native
 	# button's pad focus, a refused sticker, a confirm opened and closed as a modal).
 	&"focus_scale": ["screen", "kit_focus"], &"button_refused": ["screen", "kit_refused"],
@@ -575,6 +584,8 @@ func _play() -> void:
 		"hq", "netrun":
 			_play_context(String(demo[0]), String(demo[1]))
 			length = CONTEXT_LOOP
+		"kit":
+			length = maxf(_play_kit(StringName(demo[1])), LOOP_HOLD)
 	_show_values()
 	if _loop:
 		_replay_later(maxf(length, 0.0) + LOOP_GAP)
@@ -590,6 +601,24 @@ func _replay_later(seconds: float) -> void:
 # --- Combat demos (ANIM-2 / ANIM-3) --------------------------------------------------------
 
 # --- Screen demos (ANIM-6) -------------------------------------------------------------------
+
+## ART-1 1B: a material-kit motion on a fresh real piece (KitDemo) over the stage. Returns
+## its length (s).
+func _play_kit(id: StringName) -> float:
+	_show_scene(false)
+	if _screen_host != null:
+		_screen_host.queue_free()
+	_screen_host = Control.new()
+	_screen_host.name = "KitDemo"
+	_screen_host.position = Vector2(PANEL_W, 0)
+	_screen_host.size = Vector2(1280 - PANEL_W, 720)
+	add_child(_screen_host)
+	var bg := ColorRect.new()
+	bg.color = Palette.DESK_DARK
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_screen_host.add_child(bg)
+	return KitDemo.play(id, _screen_host)
+
 
 ## A screen motion on a fresh piece over the stage (the stage's own pieces hide). Returns
 ## its length (s).
