@@ -280,10 +280,12 @@ func _get_tooltip(at_position: Vector2) -> String:
 	if (lay["hp"] as Rect2).has_point(at_position):
 		return tr("HP now: %d of %d.") % [combatant.hp, combatant.max_hp]
 	# ART-2 2A (audit P2): the HP arc and its boss phase pips say what they are.
-	var arc_tip := hp_arc_tip(at_position)
+	# (only where nothing aimable is: a satellite, an arrow or a slice keeps its own tooltip)
+	var free := not String(zone_at(global_position + at_position).get("kind", "")) in ["satellite", "arrow"]
+	var arc_tip := hp_arc_tip(at_position) if free else ""
 	if arc_tip != "":
 		return arc_tip
-	if highlighted and absf((at_position - _center()).length() - (_radius() + RETICLE_GAP)) < RETICLE_HIT:
+	if free and highlighted and absf((at_position - _center()).length() - (_radius() + RETICLE_GAP)) < RETICLE_HIT:
 		return tr("Target: the lime brackets mark the wheel your attacks and aimed cards hit.")
 	var z := zone_at(global_position + at_position)
 	match String(z.get("kind", "")):
