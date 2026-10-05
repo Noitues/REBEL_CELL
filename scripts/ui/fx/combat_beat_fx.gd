@@ -112,14 +112,15 @@ static func spawn(fx: CombatFxLayer, b: Dictionary, tv: WheelView) -> void:
 
 ## Where RAM chip `k` of `bar` stands (global), as RamBar draws it (2D owns the bar; a public
 ## `pip_spot(k)` there would replace this).
+## ART-2 2D: a Daemon (`daemon`) or firmware trigger, from its source to where it acts.
+static func trigger(fx: CombatFxLayer, from: Vector2, to: Vector2, daemon: bool) -> void:
+	if fx == null:
+		return
+	fx.trigger_fx(from, to, Palette.CELL_ACID if not daemon else Palette.NEON_VIOLET, &"daemon_trigger" if daemon else &"firmware_trigger")
+
+
 static func ram_pip(bar: RamBar, k: int) -> Vector2:
-	var s := Settings.text_scale
-	var x0 := bar._label_x() - bar.max_ram * RamBar.STEP * s - RAM_LABEL_GAP
-	return bar.global_position + Vector2(x0 + k * RamBar.STEP * s + RamBar.CHIP * s * 0.5, 1.0 + RamBar.CHIP * s * 0.5)
-
-
-## RamBar's gap between its chips and its count (px), as its `_label_x` draws it.
-const RAM_LABEL_GAP := 6.0
+	return bar.pip_spot(k)  # ART-2 2D: the RAM panel's own pips
 
 
 ## The chips from `from_k` up to (not with) `to_k` (global).

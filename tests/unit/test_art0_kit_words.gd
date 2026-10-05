@@ -362,14 +362,17 @@ func test_paper_pieces_in_high_contrast_keep_their_paper_with_ink_words_and_edge
 	Settings.high_contrast = true
 	var p := _paper_pieces()
 	await _frames(2)
+	# ART-2 2D: the toast is a terminal strip now (§4.13): bright words on dark glass, its edge opaque.
 	var toast: Toast = p["toast"]
-	assert_gte(Palette.contrast(toast.label.get_theme_color(&"font_color"), Palette.NOTE_YELLOW), PaperInk.MIN_CONTRAST, "the toast's words")
+	assert_gte(Palette.contrast(toast.label.get_theme_color(&"font_color"), Color(HudSkin.TERMINAL_BG, 1.0)), PaperInk.MIN_CONTRAST, "the toast's words")
+	assert_eq(toast.edge_color().a, 1.0, "the toast's edge is opaque")
+	assert_gte(toast.edge_width(), PaperInk.EDGE_PX, "and %s px" % PaperInk.EDGE_PX)
 	assert_gte(Palette.contrast((p["photo"] as Polaroid).caption_ink(), Palette.PAPER), PaperInk.MIN_CONTRAST, "the caption")
 	var card: CrewCard = p["card"]
 	for l in card.find_children("*", "Label", true, false):
 		var col := (l as Label).get_theme_color(&"font_color")
 		assert_gte(Palette.contrast(col, Palette.NOTE_PAPER), PaperInk.MIN_CONTRAST, "dossier '%s' at 7:1" % (l as Label).text)
-	for key in ["photo", "toast", "card"]:
+	for key in ["photo", "card"]:
 		var piece: Object = p[key]
 		var ec: Color = piece.call(&"edge_color")
 		assert_eq(ec, Palette.INK, "%s edge is opaque INK" % key)

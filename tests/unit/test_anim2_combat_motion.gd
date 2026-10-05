@@ -353,23 +353,18 @@ func test_intent_tags_flip_only_when_their_content_changes() -> void:
 	var ev: WheelView = scene._enemy_views.values()[0]
 	scene.skip_motion()
 	await _frames(3)
-	ev._tweens.erase(&"tag")
-	var flips := ev.tag_flips
-	var same := ev.intent.duplicate(true)
-	ev.intent = same
-	ev.queue_redraw()
+	# ART-2 2D (D15): the result chips carry the forecast and its flip (`intent_flip`).
+	var row: HudResultChips = scene.chip_row(ev.combatant.id)
+	var flips := row.flips
+	row.set_result(row.chips.duplicate(true), row.tip_title, row.tip_body)
 	await _frames(2)
-	assert_false(ev.tag_flipping(), "the same chips re-set on hover: no flip, no jitter")
-	assert_eq(ev.tag_flips, flips, "no flip started")
-	var changed := ev.intent.duplicate(true)
-	changed["text"] = String(changed.get("text", "")) + " X"
-	ev.intent = changed
-	ev.queue_redraw()
-	# Count the flips instead of catching one mid-way: a slow frame can finish the whole
-	# flip before a fixed frame count is up (Test suite: bounded waits).
+	assert_eq(row.flips, flips, "the same chips re-set on hover: no flip, no jitter")
+	var changed: Array = row.chips.duplicate(true)
+	changed.append({"kind": ResultChipModel.GAINED, "value": 9, "icon": "shield", "good": true})
+	row.set_result(changed, row.tip_title, row.tip_body)
+	assert_true(row.flips > flips, "new content flips the chips")
 	if Motion.live(&"intent_flip"):
-		await BoundedWait.until(get_tree(), func() -> bool: return ev.tag_flips > flips, BoundedWait.motion_limit([&"intent_flip"]))
-	assert_true(ev.tag_flips > flips or not Motion.live(&"intent_flip"), "new content flips the tag")
+		assert_true(row.motion_running(), "with the intent_flip entry")
 
 
 func test_precision_landings_are_distinct_marks() -> void:

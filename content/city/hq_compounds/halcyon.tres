@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="HqCompoundLayoutData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/hq_compound_layout_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hq_compound_halcyon"
+corporation_id = &"halcyon"
+asset_dir = "res://assets/city/hq_compounds/halcyon"
+slots_per_layer = 4
+layer_slots = PackedVector3Array(-15.795, 9.3, 25.0, -5.265, 9.3, 25.0, 5.265, 9.3, 25.0, 15.795, 9.3, 25.0, -13.747, 18.353, 21.5, -4.583, 18.353, 21.5, 4.583, 18.353, 21.5, 13.747, 18.353, 21.5, -11.7, 27.337, 18.0, -3.9, 27.337, 18.0, 3.9, 27.337, 18.0, 11.7, 27.337, 18.0, -9.652, 36.3, 14.5, -3.218, 36.299, 14.5, 3.218, 36.299, 14.5, 9.652, 36.3, 14.5, -7.897, 45.314, 11.5, -2.633, 45.314, 11.5, 2.633, 45.314, 11.5, 7.897, 45.314, 11.5, -6.143, 54.29, 8.5, -2.048, 54.29, 8.5, 2.048, 54.29, 8.5, 6.143, 54.29, 8.5)
+central_server = Vector3(0.0, 62.33, 5.0)
+entry = Vector3(0.0, 0.5, 40.0)

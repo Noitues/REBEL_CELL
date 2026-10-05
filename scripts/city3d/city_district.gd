@@ -14,11 +14,11 @@ var streets: Array[Dictionary] = []
 var plazas: Array[Dictionary] = []
 var hqs: Dictionary = {}
 var buildings: int = 0
-var cfg: CitySpikeConfig
+var cfg: CityConfig
 
 
 ## Records the district of `cfg` from the game's layout (NeonCity, seed cfg.city_seed).
-static func from_layout(p_cfg: CitySpikeConfig) -> CityDistrict:
+static func from_layout(p_cfg: CityConfig) -> CityDistrict:
 	var rec := CityLayoutRecorder.new()
 	rec.city_seed = p_cfg.city_seed
 	var r := int(ceil(p_cfg.district_radius))
@@ -31,7 +31,7 @@ static func from_layout(p_cfg: CitySpikeConfig) -> CityDistrict:
 
 ## Builds the district from recorded layout data (lots, height px), keeping what lies
 ## within the district radius.
-static func from_recording(p_cfg: CitySpikeConfig, extrusions: Array[Dictionary], p_streets: Array[Dictionary],
+static func from_recording(p_cfg: CityConfig, extrusions: Array[Dictionary], p_streets: Array[Dictionary],
 		p_plazas: Array[Dictionary], p_hqs: Dictionary) -> CityDistrict:
 	var d := CityDistrict.new()
 	d.cfg = p_cfg

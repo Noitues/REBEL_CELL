@@ -145,6 +145,10 @@
 			"seconds": 30.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_art2_hud.gd": {
+			"seconds": 40.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_anim_r5_rules.gd": {
 			"seconds": 1.3,
 			"tier": "full"
@@ -183,6 +187,14 @@
 		},
 		"res://tests/unit/test_cards.gd": {
 			"seconds": 0.5,
+			"tier": "fast"
+		},
+"res://tests/unit/test_city3d_model.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_city_motion.gd": {
+			"seconds": 4.0,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_city3d_spike.gd": {
@@ -521,6 +533,10 @@
 			"seconds": 6.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art2_wheel_stack.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_vfx_tiers.gd": {
 			"seconds": 3.0,
 			"tier": "fast"
@@ -528,6 +544,10 @@
 		"res://tests/unit/test_w9_accessibility_settings.gd": {
 			"seconds": 3.0,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_art2_attachments.gd": {
+			"seconds": 12.0,
+			"tier": "full"
 		},
 		"res://tests/unit/test_art2_cards_fx.gd": {
 			"seconds": 8.0,
@@ -537,8 +557,20 @@
 			"seconds": 4.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art5_landmarks.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art9_portraits_dialogue.gd": {
 			"seconds": 6.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_hq_compound_layout.gd": {
+			"seconds": 1.5,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_art11_campaign_end.gd": {
+			"seconds": 12.0,
 			"tier": "fast"
 		}
 	}

@@ -181,10 +181,10 @@ func test_the_run_end_is_a_window_over_the_city_with_a_verdict_and_reasons() -> 
 		await _frames(4)
 		assert_true(scene.background.visible, "%.1f: the city shows behind the run's end (it was black)" % scale)
 		assert_ne(scene._panel_host.theme_type_variation, &"GlassPanel", "%.1f: no dark sheet over the city" % scale)
-		var stamp := scene._panel.find_child("ResultStamp", true, false) as ForecastStamp
+		# ART-11 4D: the verdict is 1B's vinyl sticker on the glass.
+		var stamp := scene._panel.find_child("ResultStamp", true, false) as VinylSticker
 		assert_not_null(stamp, "%.1f: a verdict stamp" % scale)
-		assert_eq(stamp.verdict, "FLATLINED")
-		assert_true(stamp.resolved, "a solid ring: a result")
+		assert_eq(stamp.text, tr("FLATLINED"))
 		assert_eq(stamp.focus_mode, Control.FOCUS_NONE)
 		var fate := scene._panel.find_child("RunFate", true, false) as Label
 		assert_string_contains(fate.text, "permadeath", "the loss is said to be for good")
