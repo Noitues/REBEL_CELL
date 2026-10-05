@@ -101,6 +101,26 @@ def bolt_mask():
     return m
 
 
+def gate_mask():
+    """BREACH / Customs Override: a customs BOOM GATE raised (the override lifts the barrier)."""
+    S = 512
+    m = Image.new("L", (S, S), 0)
+    d = ImageDraw.Draw(m)
+    d.rounded_rectangle([60, 300, 170, 470], radius=12, fill=255)              # the gate post / booth
+    d.rectangle([84, 330, 146, 380], fill=0)                                     # booth window
+    import math as _m
+    a = _m.radians(-38)
+    x0, y0 = 150, 320
+    x1, y1 = x0 + 360 * _m.cos(a), y0 + 360 * _m.sin(a)
+    d.line([(x0, y0), (x1, y1)], fill=255, width=46)                            # the raised boom
+    for t in (0.25, 0.5, 0.75):                                                  # hazard bands
+        cx, cy = x0 + (x1 - x0) * t, y0 + (y1 - y0) * t
+        d.line([(cx - 18 * _m.cos(a), cy - 18 * _m.sin(a)), (cx + 18 * _m.cos(a), cy + 18 * _m.sin(a))], fill=0, width=30)
+    d.ellipse([125, 295, 175, 345], fill=255)
+    d.rectangle([40, 462, 470, 486], fill=255)                                   # the road line
+    return m
+
+
 def tint(mask, col):
     im = Image.new("RGBA", mask.size, col + (255,))
     im.putalpha(mask)
@@ -121,8 +141,8 @@ def disc(kind, px, exploit=None, status="corporate"):
         d.line([(c[0] - s * 0.45, c[1] + s * 0.1), (c[0] + s * 0.45, c[1] + s * 0.1)], fill=MER + (255,), width=2 * S)
         d.line([(c[0] - s * 1.1, c[1] - s * 0.55), (c[0] + s * 1.2, c[1] - s * 0.75)], fill=MER + (255,), width=2 * S)
     elif kind == "exploit":
-        g = tint(g_mask(keyring_mask, int(P * 0.7)), GOLD)
-        im.alpha_composite(g, ((P - g.width) // 2 - int(P * 0.13), (P - g.height) // 2 - int(P * 0.08)))
+        g = RL.glyph("placeholder_key", int(P * 0.58), fill=GOLD, ow=0)
+        im.alpha_composite(g, ((P - g.width) // 2 - int(P * 0.06), (P - g.height) // 2))
         if exploit:
             gname = {"INTEL": "placeholder_recon", "BREACH": "placeholder_key", "VIRUS": "slice_virus"}[exploit]
             r = P * 0.25
@@ -130,7 +150,7 @@ def disc(kind, px, exploit=None, status="corporate"):
             d = ImageDraw.Draw(im)
             d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(18, 14, 4, 255), outline=GOLD + (255,), width=S)
             if exploit == "BREACH":
-                g2 = tint(g_mask(scale_mask, int(r * 1.5)), (255, 236, 170))
+                g2 = tint(g_mask(gate_mask, int(r * 1.6)), (255, 236, 170))
             else:
                 g2 = RL.glyph(gname, int(r * 1.4), fill=(255, 236, 170), ow=0)
             im.alpha_composite(g2, (int(cx - g2.width / 2), int(cy - g2.height / 2)))
@@ -152,10 +172,10 @@ def cell_disc(kind, px, status="claimed"):
     im = Image.new("RGBA", (P, P), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
     d.ellipse([S, S, P - S, P - S], fill=(16, 26, 4, 255), outline=(10, 9, 12, 255), width=2 * S)
-    ic = tint(g_mask(crests15.fist, int(P * 0.82)), LIME) if kind != "home" else RC_.cell_icon(kind, int(P * 0.62), LIME)
+    ic = RC_.cell_icon(kind, int(P * 0.62), LIME)
     im.alpha_composite(ic, ((P - ic.width) // 2, (P - ic.height) // 2))
     im = im.resize((px, px), Image.LANCZOS)
-    if status == "disabled":                      # health v2: the fill drains north -> south; the outline stays lit
+    if False:                                     # v3: disabled is the greyed marker + a white bolt (see marker())
         m = Image.new("L", (px, px), 0)
         ImageDraw.Draw(m).rectangle([0, 0, px, int(px * 0.62)], fill=150)
         dark = Image.new("RGBA", (px, px), (4, 4, 8, 255))
@@ -195,13 +215,10 @@ def badge(img, x, y, status, r=10):
     if status == "cleared":
         d.ellipse([x - r, y - r, x + r, y + r], fill=(40, 40, 48, 255), outline=(200, 200, 210, 255), width=2)
         d.line([(x - r * 0.5, y), (x - r * 0.1, y + r * 0.45), (x + r * 0.55, y - r * 0.45)], fill=(230, 230, 240, 255), width=3)
-    elif status == "seized":                         # v2: a red caution triangle
-        d.polygon([(x, y - r * 1.1), (x + r * 1.1, y + r * 0.85), (x - r * 1.1, y + r * 0.85)], fill=RED + (255,), outline=(30, 4, 6, 255))
-        d.text((x, y + r * 0.2), "!", font=RL.f_num(int(r * 1.4)), fill=(255, 255, 255, 255), anchor="mm")
-    elif status == "disabled":                       # v2: a circled lightning bolt (no power), in the player colour
-        d.ellipse([x - r, y - r, x + r, y + r], fill=(16, 22, 4, 255), outline=LIME + (255,), width=2)
-        b = tint(g_mask(bolt_mask, int(r * 1.5)), (255, 240, 120))
-        img.alpha_composite(b, (int(x - b.width / 2), int(y - b.height / 2)))
+    elif status == "seized":
+        d.ellipse([x - r, y - r, x + r, y + r], fill=(60, 6, 10, 255), outline=RED + (255,), width=2)
+        d.line([(x - r * 0.5, y - r * 0.5), (x + r * 0.5, y + r * 0.5)], fill=RED + (255,), width=3)
+        d.line([(x - r * 0.5, y + r * 0.5), (x + r * 0.5, y - r * 0.5)], fill=RED + (255,), width=3)
     return img
 
 
@@ -238,10 +255,45 @@ def marker(img, x, y, kind, tier, status="corporate", avail="next", exploit=None
     if tier and status not in ("claimed", "disabled"):
         img = pips(img, x, cy + ic.width / 2 + 9, tier, GOLD if kind == "exploit" else (rc if avail != "notyet" else (210, 206, 220)),
                    s=int(5 * k), gap=int(3 * k))
-    if status in ("cleared", "seized", "disabled"):
+    if status in ("cleared", "seized"):
         img = badge(img, x + ic.width / 2 + 2, cy - ic.width / 2 + 2, status, r=int(9 * k))
+    if status == "disabled":                          # v3: the WHOLE marker greys out, a plain white bolt across it
+        R0 = ic.width / 2 + 9
+        box = (int(x - R0), int(cy - R0), int(x + R0), int(cy + R0 + 6))
+        reg = img.crop(box)
+        a = reg.split()[3]
+        g = ImageEnhance.Brightness(reg.convert("L").convert("RGB")).enhance(0.75).convert("RGBA")
+        g.putalpha(a)
+        m = Image.new("L", reg.size, 0)
+        ImageDraw.Draw(m).ellipse([0, 0, reg.width - 1, reg.height - 7], fill=255)
+        img.paste(Image.composite(g, reg, m), box[:2])
+        b = tint(g_mask(bolt_mask, int(R0 * 2.1)), (250, 250, 250))
+        sh = tint(g_mask(bolt_mask, int(R0 * 2.1)), (8, 8, 12))
+        img.alpha_composite(sh, (int(x - b.width / 2 + 2), int(cy - b.height / 2 + 3)))
+        img.alpha_composite(b, (int(x - b.width / 2), int(cy - b.height / 2)))
     if label:
         img = U.chip(img, (x, y + 26 * k), label, rc if rc != WHITE else (220, 218, 228), int(12 * k), fill_a=230)
+    return img
+
+
+def depowered(img, segs):
+    """A de-powered link: a dim grey double trace, broken in the middle (a cut with two loose ends)."""
+    d = ImageDraw.Draw(img)
+    for a, b in segs:
+        L_ = math.hypot(b[0] - a[0], b[1] - a[1]) or 1
+        ux, uy = (b[0] - a[0]) / L_, (b[1] - a[1]) / L_
+        nx, ny = -uy, ux
+        m0 = 0.5 - 12 / L_
+        m1 = 0.5 + 12 / L_
+        for o in (-2.5, 2.5):
+            for t0, t1 in ((0.0, m0), (m1, 1.0)):
+                p = (a[0] + (b[0] - a[0]) * t0 + nx * o, a[1] + (b[1] - a[1]) * t0 + ny * o)
+                q = (a[0] + (b[0] - a[0]) * t1 + nx * o, a[1] + (b[1] - a[1]) * t1 + ny * o)
+                d.line([p, q], fill=(140, 140, 156, 255), width=3)
+        mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2       # the cut: two bent loose ends
+        for sgn in (-1, 1):
+            ex, ey = mx - sgn * ux * 12, my - sgn * uy * 12
+            d.line([(ex, ey), (ex + nx * 9 * sgn, ey + ny * 9 * sgn)], fill=(190, 190, 205, 255), width=3)
     return img
 
 
@@ -263,14 +315,62 @@ def locked_link(img, a, b, k=1.0):
     return img
 
 
+# ------------------------------------------------------------------ plain-language legend (v3)
+LEGEND = [  # (draw fn, title, what it means in the game)
+    (lambda im, x, y: marker(im, x, y, "site", 1, "corporate", "next", scale=0.9), "CORP CREST",
+     "A corporate Site you can run (Meridian's crane). Clear it, then claim it to grow your network."),
+    (lambda im, x, y: marker(im, x, y, "exploit", 2, "corporate", "next", scale=0.9), "GOLD KEY",
+     "An Exploit Site (always T2). It holds one Exploit: you need 3 to breach the Central Server."),
+    (lambda im, x, y: marker(im, x, y, "exploit", 2, "corporate", "next", "INTEL", scale=0.9), "MAGNIFIER (INTEL)",
+     "Intel Exploit: reveals the boss's moves and opens locked links on the Grid."),
+    (lambda im, x, y: marker(im, x, y, "exploit", 2, "corporate", "next", "BREACH", scale=0.9), "BOOM GATE (BREACH)",
+     "Breach Exploit (customs override): the boss starts with one fewer pointer."),
+    (lambda im, x, y: marker(im, x, y, "exploit", 2, "corporate", "next", "VIRUS", scale=0.9), "VIRUS",
+     "Virus Exploit: the boss starts the fight with CORRUPTED slices."),
+    (lambda im, x, y: marker(im, x, y, "heat", 1, "corporate", "next", scale=0.9), "FLAME",
+     "A Heat objective Site: clearing it lowers campaign Heat (about -5 to -8) and never provokes a raid."),
+    (lambda im, x, y: marker(im, x, y, "core", 0, scale=0.9), "HEART",
+     "CORE, your home server. If its integrity reaches 0 you lose the campaign."),
+    (lambda im, x, y: marker(im, x, y, "site", 0, "claimed", scale=0.9), "RELAY (LIME)",
+     "Your node: a claimed Site with a node installed. Raids attack these; runs start from them."),
+    (lambda im, x, y: marker(im, x, y, "site", 1, "cleared", "yours", scale=0.9), "GREY + CHECK",
+     "Cleared: already run and used up, not claimed. It can still be patrolled for loot, Heat and Rank."),
+    (lambda im, x, y: marker(im, x, y, "site", 0, "disabled", scale=0.9), "WHITE BOLT",
+     "Disabled: your node hit 0 integrity. No bonus and no power to its links until you repair it."),
+    (lambda im, x, y: marker(im, x, y, "site", 1, "seized", "next", scale=0.9), "RED X",
+     "Seized: the corp took the Site back. Run a Reclaim (one fight) to retake it; it is a raid entry point."),
+    (None, "RINGS", "White = not yet reachable.  Orange = you can run it now.  Lime = yours or already visited."),
+    (None, "PIPS", "Tier 1-3 of the Site (harder runs, better rewards). Gold pips = an Exploit Site."),
+    (None, "TARGET", "The corp HQ: the Central Server boss fight. Needs 3 Exploits (the chip counts them)."),
+    (None, "PADLOCK", "A locked link: opens with an Intel Exploit or an objective. De-powered links: grey, broken."),
+]
+
+
+def legend(img, y0):
+    d = ImageDraw.Draw(img)
+    d.line([(24, y0 - 14), (1896, y0 - 14)], fill=(70, 70, 90, 255), width=1)
+    d.text((30, y0 + 8), "WHAT EACH ICON MEANS IN THE GAME", font=RL.f_ui(24, b"Bold"), fill=GOLD + (255,), anchor="lm")
+    cols = 2
+    rh = 62
+    for i, (fn, title, text) in enumerate(LEGEND):
+        cx = 30 + (i % cols) * 940
+        cy = y0 + 64 + (i // cols) * rh
+        if fn:
+            img = fn(img, cx + 34, cy + 18)
+        d = ImageDraw.Draw(img)
+        d.text((cx + 84, cy - 10), title, font=RL.f_ui(18, b"Bold"), fill=(235, 235, 240, 255))
+        d.text((cx + 84, cy + 14), text, font=RL.f_ui(16, b"Regular"), fill=(190, 200, 210, 255))
+    return img
+
+
 # ------------------------------------------------------------------ the key sheet
 def key_sheet():
-    W, H = 1920, 1080
+    W, H = 1920, 1640
     img = Image.new("RGBA", (W, H), (12, 11, 18, 255))
     # a dim street texture behind the cells (the markers sit on streets)
     bg = CV.base_map()
-    bg = ImageEnhance.Brightness(bg).enhance(0.38).filter(ImageFilter.GaussianBlur(3))
-    img = Image.alpha_composite(img, bg)
+    bg = ImageEnhance.Brightness(bg).enhance(0.38).filter(ImageFilter.GaussianBlur(3)).resize((int(1920 * H / 1080), H))
+    img.alpha_composite(bg.crop(((bg.width - W) // 2, 0, (bg.width - W) // 2 + W, H)))
     img = RL.place_sticker(img, RL.sticker_word(["SITE MARKERS"], 52, fills=["yellow"], seed=42), 210, 52, angle=-2)
     d = ImageDraw.Draw(img)
     d.text((420, 52), "KIND = icon   AVAILABILITY = ring (option A)   TIER = pips   STATUS = pad + corner badge", font=RL.f_ui(24, b"SemiBold"),
@@ -322,17 +422,19 @@ def key_sheet():
     pr.circle(1450, yb + 100, 70, 46, width=8)
     pr.text("TARGET", 1440, yb + 186, 26, angle=-6)
     img = U.pad(img, CV.diamond(1450, yb + 110, 52), (255, 120, 90), lit=0.6, glow=0.3, fill_a=0, k=1.0)
-    img = RL.ink(img, pr)
+    top = RL.ink(img.crop((0, 0, 1920, 1080)), pr)          # the pen canvas is 1920 x 1080
+    img.paste(top, (0, 0))
     img = U.chip(img, (1450, yb + 36), "CENTRAL SERVER // EXPLOITS 1/3", GOLD, 12)
     d = ImageDraw.Draw(img)
     d.text((1640, yb), "LOCKED LINK", font=RL.f_ui(21, b"Bold"), fill=(235, 235, 240, 255))
     img = locked_link(img, (1620, yb + 150), (1860, yb + 70))
+    img = legend(img, 940)
     # rules strip
     c = RL.CRT(1876, 104, U.CYAN, "RULES", seed=43)
     c.text((16, 50), "Hidden by default: regular Sites that are not selectable. PINNED (always shown): Exploit, Heat objective, the boss, your", 15, (220, 232, 238))
     c.text((16, 74), "nodes. Seized Sites next to you are raid entry points (red pins). Pips: tier 1-3; the boss has the TARGET circle.", 15, (220, 232, 238))
-    img = RL.paste(img, c.finish(scan=0.15), 22, 960)
-    RL.save(img, "site_markers_v2.png")
+    img = RL.paste(img, c.finish(scan=0.15), 22, H - 124)
+    RL.save(img, "site_markers_v3.png")
 
 
 # ------------------------------------------------------------------ on the map
@@ -356,8 +458,12 @@ def on_map():
     shown = set(owned) | set(avail) | set(past) | set(exploits) | set(heat_pins)
     # links: owned lime, border orange, others only between shown ones; one locked cross-link
     inl = U.Inlay()
+    dead = []
     for a, b in links:
         if a not in shown or b not in shown:
+            continue
+        if {a, b} & {seized, disabled}:                 # v3: no power to / from a seized or disabled node
+            dead.append((a, b))
             continue
         st = CV.link_state(nodes, a, b)
         pa, pb = nodes[a]["xy"], nodes[b]["xy"]
@@ -365,6 +471,7 @@ def on_map():
         inl.trace([pa, pb], col, width=2.6 if st in ("owned", "border") else 1.6, lanes=3 if st in ("owned", "border") else 2, gap=4.5,
                   glow=0.9 if st in ("owned", "border") else 0.1, alpha=1.0 if st in ("owned", "border", "past") else 0.6, pads=False)
     img = inl.lay(img)
+    img = depowered(img, [(nodes[a]["xy"], nodes[b]["xy"]) for a, b in dead])
     lk = sorted(exploits)[0]
     nb2 = min((k for k in avail if k != seized), key=lambda k: math.hypot(nodes[k]["xy"][0] - nodes[lk]["xy"][0], nodes[k]["xy"][1] - nodes[lk]["xy"][1]))
     img = locked_link(img, nodes[nb2]["xy"], nodes[lk]["xy"])
@@ -413,7 +520,7 @@ def on_map():
         xk += 34 + int(c.text((xk + 34, 15), lab, 15, (215, 225, 230))) + 18
     c.text((xk + 4, 15), "| locked link: grey dashes + padlock   | HOVER: SHOW ALL", 15, U.CYAN)
     img = RL.paste(img, c.finish(scan=0.15), 210, 1018)
-    RL.save(RL.bloom(img, 0.12, 0.82, 8), "site_markers_on_map_v2.png")
+    RL.save(RL.bloom(img, 0.12, 0.82, 8), "site_markers_on_map_v3.png")
     return dict(core=core, disabled=disabled, seized=seized, exploits=exploits)
 
 

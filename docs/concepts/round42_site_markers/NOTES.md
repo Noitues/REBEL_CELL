@@ -113,3 +113,12 @@ Other icon choices (unchanged from v1):
 - **Cleared: a grey check.** The Site is done, but its ring stays lime as visited.
 - **Regular Site: the corp crest** (Meridian crane-A). Each corp uses its own crest.
 - **Locked link: a padlock.**
+
+## v3 (`site_markers_v3.png`, `site_markers_on_map_v3.png`; v1 and v2 are kept)
+
+The designer's review showed the real problem was meaning, not shape, so the v2 icon swaps are reverted. v3 uses the v1 icons for customs, yours, T2 keys and seized, plus these changes:
+1. **Disabled: a plain white lightning bolt** (no circle) laid across the whole marker.
+2. **The whole marker greys out when disabled:** disc, ring, pad glow and pips.
+3. **The key now means only "Exploit Site".** In v1, BREACH's type badge was also a key. BREACH now has a new icon: a **raised customs boom gate** (the override lifts the barrier, matching Meridian's "Customs Override Keys").
+4. **De-powered links.** On the city map, every link to a seized or disabled node is drawn as a dim grey double trace with a **break in the middle** (two bent loose ends): no power flows. A disabled node gets its links back when repaired; a seized one when reclaimed.
+5. **Plain-language legend.** The key sheet (now 1920×1640) has a "WHAT EACH ICON MEANS IN THE GAME" section: one short line per icon, ring, pip, TARGET and padlock, written from the rules (GDD 3.2–3.3, 4.1, 9 Exploit effects).
