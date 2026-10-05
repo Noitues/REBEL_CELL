@@ -22,6 +22,11 @@ const TAG_GAP := 8.0
 ## Full tags (with their names) may shrink to this share of the text scale to fit before
 ## the row goes compact.
 const FULL_MIN_FIT := 0.85
+## ART-0 C (text scale 2.0): the tags' floor never asks for more than this scale (about
+## what the old 1.6 ceiling asked, 1.36, less the raid setup's wider top-bar buttons at
+## 2.0): at 2.0 a row that fits at it stays one row (two rows of 1.7x tags took 212 px of
+## the screen and pushed the page down).
+const FIT_FLOOR_MAX := 1.3
 ## A compact tag's height at scale 1.0 (px).
 const COMPACT_H := 34.0
 ## Room past a fitted tag's name (the tilt and the marker's overhang, px at 1.0).
@@ -384,6 +389,12 @@ func full_width(s: float = 1.0) -> float:
 	return items.size() * (TAG_SIZE.x + TAG_GAP) * s
 
 
+## The least scale full tags may shrink to at text scale `s` before the row changes look:
+## FULL_MIN_FIT of it, never more than FIT_FLOOR_MAX (ART-0 C).
+static func fit_floor(s: float) -> float:
+	return minf(s * FULL_MIN_FIT, FIT_FLOOR_MAX)
+
+
 ## Width the compact tags take at scale `s` (the least room the row needs, at 1.0).
 func compact_width(s: float = 1.0) -> float:
 	var total := 0.0
@@ -456,7 +467,7 @@ func _relayout() -> void:
 		most = minf(text_s, maxf(1.0, max_height / (TOP_ROOM + COMPACT_H + BOTTOM_ROOM)))
 	var fit_full := room / maxf(1.0, full_width(1.0))
 	rows = 1
-	if n == 0 or fit_full >= s * FULL_MIN_FIT:
+	if n == 0 or fit_full >= fit_floor(s):
 		compact = false
 		tag_scale = minf(s, fit_full) if n > 0 else s
 		var t := tag_scale
@@ -466,8 +477,12 @@ func _relayout() -> void:
 		# Words kept (H22 #14): fitted tags on one row, else on two.
 		compact = false
 		var fit_one := room / maxf(1.0, _fitted_width(0, n))
+		if with_captions:
+			# ART-0 C: one row draws its captions at the tags' scale, so they take that much
+			# room, not their size at the text scale (at 2.0 the difference made two rows).
+			fit_one = (room + _caption_width(text_s)) / maxf(1.0, _fitted_width(0, n) + _caption_width(1.0))
 		var split := n
-		if fit_one < s * FULL_MIN_FIT and n > 1:
+		if fit_one < fit_floor(s) and n > 1:
 			rows = 2
 			split = ceili(n / 2.0)
 			tag_scale = minf(s, room / maxf(1.0, maxf(_fitted_width(0, split), _fitted_width(split, n))))

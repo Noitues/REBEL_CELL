@@ -13,9 +13,24 @@ const SECTIONS := ["Accessibility", "Display", "Audio", "Controls", "Language"] 
 const ACTION_LABELS := {&"nudge_left": "Nudge anticlockwise", &"nudge_right": "Nudge clockwise", &"cycle_target": "Cycle target", # TR
 	&"end_turn": "End turn", &"rewind": "Rewind", &"toggle_ring": "Nudge ring (outer / inner)", # TR
 	&"toggle_nudge_wheel": "Nudge wheel (mine / target)", # TR
-	&"respin": "Respin", &"open_settings": "Pause / options"} # TR
+	&"respin": "Respin", &"open_settings": "Pause / options", # TR
+	&"resolve_fast_forward": "Fast-forward the resolve (hold)"} # TR
 ## The window modes in words (keys).
 const MODE_WORDS := ["Windowed", "Fullscreen", "Borderless"] # TR
+## ART-0 C (art pass W9, ART_BIBLE §12, §10): the choices' words, in Settings' list orders
+## (COLORBLIND_MODES, RESOLVE_SPEEDS, PAD_GLYPH_SETS). Keys.
+const COLORBLIND_WORDS := ["Off (no correction)", "Deutan (green-weak)", "Protan (red-weak)", "Tritan (blue-weak)"] # TR
+const RESOLVE_SPEED_WORDS := ["1x (full replay)", "2x (twice as fast)", "Instant (results at once)"] # TR
+const GLYPH_WORDS := ["Automatic (match the pad)", "Xbox", "PlayStation", "Switch", "Steam Deck"] # TR
+## The rows' words (keys).
+const REDUCE_MOTION_WORDS := "Reduce motion (no camera moves or parallax; pages cross-fade)" # TR
+const HIGH_CONTRAST_WORDS := "High contrast (opaque panels, 7:1 text, thick edges)" # TR
+const COLORBLIND_HEADING := "Colour-blind correction (patterns and glyphs stay the main cue)" # TR
+const RESOLVE_SPEED_HEADING := "Resolve speed after SEND IT (hold Fast-forward to speed it up)" # TR
+const GLYPH_HEADING := "Pad button glyphs" # TR
+## Every word the W9 rows add (tests check each has a strings.csv key and no mouse wording).
+const W9_WORDS := COLORBLIND_WORDS + RESOLVE_SPEED_WORDS + GLYPH_WORDS + [REDUCE_MOTION_WORDS, HIGH_CONTRAST_WORDS,
+	COLORBLIND_HEADING, RESOLVE_SPEED_HEADING, GLYPH_HEADING, "Fast-forward the resolve (hold)"]
 
 ## Set by a modal host (the pause menu): D-pad focus never leaves the panel.
 ## Why the last key pressed while rebinding was refused (Controls section).
@@ -25,6 +40,13 @@ const BIND_NOTE_WIDTH := 480.0
 var _paper_panel: ZinePanel = null
 var trap_focus: bool = false
 var reduce_check: CheckButton
+## ART-0 C (art pass W9): reduce motion and high contrast (Accessibility), the colour-blind
+## correction and the resolve speed (Accessibility), the pad glyph set (Controls).
+var reduce_motion_check: CheckButton
+var high_contrast_check: CheckButton
+var colorblind_option: OptionButton
+var resolve_speed_option: OptionButton
+var glyph_option: OptionButton
 var flash_check: CheckButton
 ## ART-0 D11: the Heat glitch extra (off by default).
 var heat_glitch_check: CheckButton
@@ -80,6 +102,13 @@ func _init() -> void:
 	flash_check = _check(tr("Flash limiter (max 3 flashes per second)"), Settings.flash_limiter, Settings.set_flash_limiter)
 	heat_glitch_check = _check(tr("Heat glitch (the screen distorts as Heat rises; off by default)"), Settings.heat_glitch, Settings.set_heat_glitch)
 	heat_glitch_check.name = "HeatGlitchCheck"
+	reduce_motion_check = _check(tr(REDUCE_MOTION_WORDS), Settings.reduce_motion, Settings.set_reduce_motion)
+	reduce_motion_check.name = "ReduceMotionCheck"
+	high_contrast_check = _check(tr(HIGH_CONTRAST_WORDS), Settings.high_contrast, Settings.set_high_contrast)
+	high_contrast_check.name = "HighContrastCheck"
+	colorblind_option = _choice("ColorblindOption", COLORBLIND_WORDS, Settings.COLORBLIND_MODES, Settings.colorblind_mode, Settings.set_colorblind_mode)
+	resolve_speed_option = _choice("ResolveSpeedOption", RESOLVE_SPEED_WORDS, Settings.RESOLVE_SPEEDS, Settings.resolve_speed, Settings.set_resolve_speed)
+	glyph_option = _choice("GlyphOption", GLYPH_WORDS, Settings.PAD_GLYPH_SETS, Settings.pad_glyph_set, Settings.set_pad_glyph_set)
 	subtitles_check = _check(tr("Subtitles with speaker names"), Settings.subtitles, Settings.set_subtitles)
 	typing_check = _check(tr("Subtitles type in (off: each line shows at once)"), Settings.subtitle_typing, Settings.set_subtitle_typing)
 	typing_check.name = "TypingCheck"
@@ -141,7 +170,9 @@ func show_section(name: String) -> void:
 	_key_buttons.clear()
 	match name:
 		"Accessibility":
-			for w in [reduce_check, flash_check, heat_glitch_check, subtitles_check, typing_check, assist_check, _labelled(tr("Text scale")), scale_slider]:
+			for w in [reduce_check, reduce_motion_check, flash_check, heat_glitch_check, high_contrast_check, subtitles_check, typing_check, assist_check,
+					_labelled(tr(COLORBLIND_HEADING)), colorblind_option, _labelled(tr(RESOLVE_SPEED_HEADING)), resolve_speed_option,
+					_labelled(tr("Text scale")), scale_slider]:
 				_body.add_child(w)
 		"Display":
 			for w in [_labelled(tr("Window mode")), mode_option, _labelled(tr("Resolution (windowed)")), resolution_option, vsync_check, fps_check, legend_check, log_check]:
@@ -150,6 +181,8 @@ func show_section(name: String) -> void:
 			for w in [_labelled(tr("Master volume")), master_slider, _labelled(tr("Music volume")), music_slider, _labelled(tr("SFX volume")), sfx_slider]:
 				_body.add_child(w)
 		"Controls":
+			_body.add_child(_labelled(tr(GLYPH_HEADING)))
+			_body.add_child(glyph_option)
 			_body.add_child(_labelled(tr("Click a key, then press the new one. Cards stay on 1-9.")))
 			var grid := GridContainer.new()
 			grid.columns = 4
@@ -186,7 +219,8 @@ func show_section(name: String) -> void:
 ## The widgets built once in _init (they move between the body and off the tree).
 func _persistent() -> Array[Control]:
 	return [reduce_check, flash_check, heat_glitch_check, subtitles_check, typing_check, assist_check, scale_slider, master_slider, music_slider,
-		sfx_slider, mode_option, resolution_option, vsync_check, fps_check, legend_check, log_check, language_option]
+		sfx_slider, mode_option, resolution_option, vsync_check, fps_check, legend_check, log_check, language_option,
+		reduce_motion_check, high_contrast_check, colorblind_option, resolve_speed_option, glyph_option]
 
 
 ## ANIM-R4 C3: the built widgets of the sections not showing are off the tree, so the
@@ -255,6 +289,17 @@ func _check(text: String, value: bool, setter: Callable) -> CheckButton:
 	c.add_theme_color_override("font_color", Palette.TERMINAL_TEXT)
 	c.toggled.connect(func(on: bool) -> void: setter.call(on))
 	return c
+
+
+## ART-0 C: a choice row: `words[i]` (keys) for `values[i]`; picking one calls `setter`.
+func _choice(node_name: String, words: Array, values: Array[StringName], current: StringName, setter: Callable) -> OptionButton:
+	var o := OptionButton.new()
+	o.name = node_name
+	for w in words:
+		o.add_item(tr(String(w)))
+	o.select(maxi(0, values.find(current)))
+	o.item_selected.connect(func(i: int) -> void: setter.call(values[i]))
+	return o
 
 
 func _slider(text: String, lo: float, hi: float, step: float, value: float, setter: Callable) -> HSlider:

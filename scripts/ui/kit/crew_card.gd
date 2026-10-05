@@ -27,6 +27,12 @@ const DETAIL_SIZE := 12
 ## COMPACT_POLAROID of its size.
 const COMPACT_FROM := 1.3
 const CARD_MAX_SCALE := 1.15
+## ART-0 C (text scale 2.0): above BIG_FROM the compact card widens again by BIG_GROW of
+## each step of text scale (196 px x 1.43 at 2.0: two dossiers still side by side in the
+## crew window, the name on one line, the dossier inside the page's view). 1.6 and below
+## are unchanged.
+const BIG_FROM := 1.6
+const BIG_GROW := 0.7
 ## ANIM-R2 R13: compact, the Polaroid is this share of its size and the class tags sit
 ## beside it (at 1.6 the tags were cut by the page's foot and the Loadout button hidden
 ## under MORE BELOW).
@@ -41,7 +47,7 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	# The dossier's lettering and width follow the text size (H21 #15).
 	var s := Settings.text_scale
 	var compact := is_compact()
-	custom_minimum_size = Vector2(CARD_WIDTH * (minf(s, CARD_MAX_SCALE) if compact else s), 0)
+	custom_minimum_size = Vector2(CARD_WIDTH * (minf(s, CARD_MAX_SCALE) + maxf(0.0, s - BIG_FROM) * BIG_GROW if compact else s), 0)
 	var style := UiTheme.box(Palette.NOTE_PAPER, Color(Palette.INK, 0.45), 1, 10, 12)
 	style.shadow_color = Palette.SHADOW
 	style.shadow_size = 7

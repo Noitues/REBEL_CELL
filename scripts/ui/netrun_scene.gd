@@ -34,6 +34,9 @@ const QUAD_GAP := 12.0
 ## on screen at text scale 1.6) and its exit icon beside it (px).
 const LEAVE_AT := Vector2(900, 440)
 const LEAVE_ICON := 34.0
+## ART-0 C (text scale 2.0): the least gap kept between LEAVE THE MAINFRAME and the REMOVE A
+## CARD row's pieces it would otherwise cover (px).
+const LEAVE_GAP := 6.0
 ## Loot stickers at text scale 1.0 and the most a row of them may grow (px).
 const LOOT_CARD := Vector2(150, 170)
 const LOOT_ROW_MAX := 900.0
@@ -2805,6 +2808,9 @@ func _show_shop() -> void:
 	leave_icon.tooltip_text = leave.tooltip_text
 	leave_icon.mouse_filter = Control.MOUSE_FILTER_PASS
 	root.add_child(leave_icon)
+	# ART-0 C (text scale 2.0): the spinner beside the wallet grew down into LEAVE_AT; the
+	# button moves down under whatever of the row it would cover (unchanged up to 1.6).
+	remove_row.sort_children.connect(func() -> void: _place_leave.call_deferred(leave, leave_icon, remove_row, root))
 	# ANIM-R3 A7: the first focus is the first item (one the Cycles reach, else the first),
 	# never the socket list: the pad prompt says "A Buy".
 	var first_item: ZineCard = null
@@ -3510,6 +3516,20 @@ func _item_payload(kind: String, src: String, index: int, item: StringName) -> D
 	if src in ["shop", "modal"]:
 		p["stamp"] = tr("SOLD")
 	return p
+
+
+## ART-0 C: LEAVE_AT, or just under the REMOVE A CARD row's pieces it would cover.
+func _place_leave(leave: Control, icon: Control, row: Control, root: Control) -> void:
+	if not is_instance_valid(leave) or not is_instance_valid(row) or not row.is_inside_tree():
+		return
+	var at := LEAVE_AT
+	var span := Vector2(root.global_position.x + at.x, root.global_position.x + at.x + leave.size.x)
+	for c in row.get_children():
+		var r := (c as Control).get_global_rect()
+		if r.end.x > span.x and r.position.x < span.y:
+			at.y = maxf(at.y, r.end.y - root.global_position.y + LEAVE_GAP)
+	leave.position = at
+	icon.position = at + Vector2(-LEAVE_ICON - 4.0, 4.0)
 
 
 ## Mainframe: cards drag onto the deck, Firmware onto a slot of the small spinner, Daemons

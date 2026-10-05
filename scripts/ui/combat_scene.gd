@@ -29,7 +29,9 @@ const SUBTITLE_LINE_PX := 22.0
 const SUBTITLE_CHROME_PX := 52.0
 ## Gap between the dock and the tutorial (px); the tutorial needs this height.
 const NOTE_GAP := 6.0
-const TUTORIAL_MIN_HEIGHT := 140.0
+## ART-0 C (text scale 2.0): 130, not 140: at 2.0 a one-line subtitle dock left 138 px
+## under it and the tutorial jumped over the subtitles (it pages its text in what it gets).
+const TUTORIAL_MIN_HEIGHT := 130.0
 ## Where the tutorial sits before the layout is known.
 const TUTORIAL_RECT := Rect2(980, 287, 300, 250)
 ## Sticker gap and the edge they keep (px).
@@ -135,6 +137,7 @@ func _exit_tree() -> void:
 		_outcome_held = false
 		outcome_landed.emit()
 	Dialogue.dock_bottom()
+	_restore_time_scale()
 
 
 func _ready() -> void:
@@ -1225,7 +1228,9 @@ func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 	# ANIM-2 / ANIM-3: the state is final now; motion replays it on top. A replay still
 	# running ends first, except queued nudge steps, which a new nudge joins.
 	var live := Motion.animating() and not events.is_empty()
-	var sequence := live and before_turn != null and _has_event(events, "resolve_start")
+	# ART-0 C (art pass W9s, ART_BIBLE §10): an instant resolve speed shows the end state at
+	# once, as a skip would.
+	var sequence := live and before_turn != null and _has_event(events, "resolve_start") and not Motion.resolve_instant()
 	if not (live and _only_nudges(events)):
 		skip_motion()
 	# ANIM-R1 C5e: while a SEND IT replays, the next turn's forecast (tags, NEXT plates) and
@@ -2991,12 +2996,51 @@ const NUMBER_RISE_SHARE := 0.7
 
 
 func _process(_delta: float) -> void:
+	if _seq != null:
+		# ART-0 C (art pass W3 / W9s, §10): the replay runs at the resolve speed; holding
+		# fast-forward speeds it further, frame by frame.
+		_apply_resolve_speed()
 	# A gap closes once the cursor is off the hand (the hand never moves under it).
 	if _gap_waiting and is_instance_valid(_gap):
 		if not _hand_box.get_global_rect().has_point(get_global_mouse_position()):
 			_close_gap()
-	elif not _gap_waiting:
+	elif not _gap_waiting and _seq == null:
 		set_process(false)
+
+
+## ART-0 C (ported from art-pass W3 / W9s): whether this scene has changed the engine's
+## clock for a replay, and what the clock was.
+var _speeding: bool = false
+var _base_time_scale: float = 1.0
+
+
+## The SEND IT replay's clock factor now: Motion.resolve_time_scale_now() (1 at 1x, 0.5 at
+## 2x, at most FAST_FORWARD_TIME_SCALE while fast-forward is held). The replay's schedule
+## stays in 1x seconds (one hit at a time holds at every speed); the engine's clock runs it
+## faster, so every tween, sprite and timer of the replay keeps its place. Instant never
+## plays one.
+static func resolve_clock() -> float:
+	return Motion.resolve_time_scale_now()
+
+
+func _apply_resolve_speed() -> void:
+	var k := resolve_clock()
+	if k <= 0.0:
+		return
+	if not _speeding:
+		if is_equal_approx(k, 1.0):
+			return
+		_base_time_scale = Engine.time_scale
+		_speeding = true
+	Engine.time_scale = _base_time_scale / k
+
+
+## The engine's clock back to what it was (the replay ended, was skipped, or the scene left).
+func _restore_time_scale() -> void:
+	if not _speeding:
+		return
+	Engine.time_scale = _base_time_scale
+	_speeding = false
 
 
 ## True while any combat motion still plays (the SEND IT sequence, flights, wheels).
@@ -3020,6 +3064,7 @@ func motion_seconds_left() -> float:
 ## the hand's deal and the RAM chips. The state was final all along.
 func skip_motion() -> void:
 	var had := _seq != null
+	_restore_time_scale()
 	if _seq != null and _seq.is_valid():
 		_seq.kill()
 	_seq = null
@@ -3526,6 +3571,8 @@ func _play_resolve_sequence(before: CombatState, after: CombatState, events: Arr
 	_seq = create_tween().set_parallel(true)
 	_hold_city(true)  # ANIM-R6 A14: the city never switches in mid-replay
 	_seq_started = Time.get_ticks_msec() / 1000.0
+	_apply_resolve_speed()  # ART-0 C: the resolve speed from the first frame
+	set_process(true)
 	var end_at := outcome_time(beats, times)
 	_seq_total = maxf(float(sch["total"]), end_at)
 	for k in beats.size():
@@ -3690,6 +3737,7 @@ func result_stamps(beats: Array[Dictionary], before: CombatState) -> Dictionary:
 
 func _finish_sequence() -> void:
 	_seq = null
+	_restore_time_scale()
 	_hold_city(false)
 	# The forecast goes on first, so the tags flip in with it (C5e).
 	_release_forecast()

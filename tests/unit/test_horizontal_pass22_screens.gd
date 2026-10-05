@@ -350,7 +350,7 @@ func test_every_dossier_loadout_is_pad_reachable_and_has_its_icon() -> void:
 				assert_true(reach.has(n), "dossier Loadout %d reachable by D-pad at %.1f" % [loadouts, scale])
 				assert_eq(IconMark.kind_of(n), StatIcon.CARDS, "the Loadout button has its icon")
 		assert_eq(loadouts, c.living_operatives().size(), "one Loadout a dossier")
-		# The crew shows side by side or says there is more (H22 #10: one dossier at 1.6).
+		# The crew shows side by side or says there is more (H22 #10: one dossier at TEXT_SCALE_MAX).
 		var roster: Control = hq._panel.find_child("Roster", true, false)
 		var view := (hq.get_node("PageScroll") if hq.has_node("PageScroll") else hq.find_child("PageScroll", true, false)) as ScrollContainer
 		for card in roster.get_children():
@@ -445,8 +445,9 @@ func test_stat_tags_keep_their_words_at_big_text() -> void:
 				hq.show_raid()
 		await _frames()
 		var st: HudStats = hq.hud.stats
-		assert_false(st.compact, "%s: the tags keep their names at 1.6" % screen)
-		assert_true(st.tag_scale >= Settings.TEXT_SCALE_MAX * HudStats.FULL_MIN_FIT - 0.01, "%s: the names stay big (%.2f)" % [screen, st.tag_scale])
+		assert_false(st.compact, "%s: the tags keep their names at TEXT_SCALE_MAX" % screen)
+		# ART-0 C: at 2.0 the floor is HudStats.fit_floor (the 1.6 floor), so the row stays one row.
+		assert_true(st.tag_scale >= HudStats.fit_floor(Settings.TEXT_SCALE_MAX) - 0.01, "%s: the names stay big (%.2f)" % [screen, st.tag_scale])
 		for r in st.tag_rects():
 			assert_true(r.end.x <= st.size.x + 0.5, "%s: a tag stays in the row" % screen)
 	hq.get_parent().queue_free()
@@ -461,7 +462,7 @@ func test_stat_tags_keep_their_words_at_big_text() -> void:
 				_event(scene)
 		await _frames()
 		var st: HudStats = scene.hud.stats
-		assert_false(st.compact, "%s: the tags keep their names at 1.6" % screen)
+		assert_false(st.compact, "%s: the tags keep their names at TEXT_SCALE_MAX" % screen)
 		for r in st.tag_rects():
 			assert_true(r.end.x <= st.size.x + 0.5, "%s: a tag stays in the row" % screen)
 	# A fight keeps its height (compact tags are still allowed there).

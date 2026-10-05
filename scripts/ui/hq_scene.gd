@@ -75,6 +75,11 @@ const GRID_MIN_ZOOM := 0.3
 const STEP_ICONS_SCALE := MapLegend.FOLD_SCALE
 ## The deploy steps' icons, a little larger than a button's.
 const DEPLOY_ICON_GROW := 1.2
+## ART-0 C (text scale 2.0): above this text scale the raid setup's DEFENSE LOADOUT moves
+## to the top of the side column (its steps over its cards) and that column scrolls on its
+## own, so the raid map takes the page's whole height (under the map, the Armory left the
+## map too short for a late campaign's nodes, and the column ran past the screen).
+const RAID_SIDE_LOADOUT_ABOVE := 1.6
 ## The raid orders list's least height at text scale 1.0 (px).
 const ORDERS_MIN_HEIGHT := 70.0
 const TARGET_BUTTON_WIDTH := 150.0
@@ -105,6 +110,8 @@ var subtitle_strip: SubtitleStrip
 ## and at the foot of the Grid's side column (freed with the Grid).
 var more_hint: ScrollHint
 var side_hint: ScrollHint = null
+## ART-0 C (text scale 2.0): MORE BELOW at the foot of the raid setup's scrolling side column.
+var raid_side_hint: ScrollHint = null
 var _panel_host: PanelContainer
 var _log: RichTextLabel
 var _panel: Control = null
@@ -956,6 +963,9 @@ func _set_panel(p: Control, name: String) -> void:
 	if side_hint != null and is_instance_valid(side_hint):
 		side_hint.queue_free()
 	side_hint = null
+	if raid_side_hint != null and is_instance_valid(raid_side_hint):
+		raid_side_hint.queue_free()
+	raid_side_hint = null
 	_clear_city_map()
 	# City map screens: clicks fall through the empty panel area to the map.
 	var on_city := name in ["grid", "raid", "raid_playout", "raid_summary"] or name.begins_with("city")
@@ -1455,10 +1465,14 @@ func show_hq() -> void:
 	var scrub_price := CampaignRules.heat_purchase_price(c, cfg)
 	var scrub_btn := _icon(_button(tr("Scrub Heat %d · pay %d") % [scrub, scrub_price], buy_heat_reduction), StatIcon.HEAT)
 	scrub_btn.name = "ScrubHeat"
+	# ART-0 C (text scale 2.0): the priced lines wrap in the menu column like RAID PENDING
+	# (at 2.0 "Scrub Heat · pay" alone widened the page past the screen).
+	scrub_btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_add_tip(actions, scrub_btn, tr("Costs %d Schematics (you have %d): Heat changes by %d.") % [scrub_price, c.schematics, scrub])
 	if c.grid.home_integrity < c.grid.home_max_integrity:
-		_add_tip(actions, _icon(_button(tr("Patch home %s (%d)") % [TextDb.signed(c.grid.home_max_integrity - c.grid.home_integrity), CampaignRules.home_repair_price(c, cfg)], repair_home), StatIcon.HOME),
-			tr("Repair the home server to full integrity."))
+		var patch_btn := _icon(_button(tr("Patch home %s (%d)") % [TextDb.signed(c.grid.home_max_integrity - c.grid.home_integrity), CampaignRules.home_repair_price(c, cfg)], repair_home), StatIcon.HOME)
+		patch_btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # ART-0 C: as Scrub Heat
+		_add_tip(actions, patch_btn, tr("Repair the home server to full integrity."))
 	_add_tip(actions, _icon(_button(tr("Codex"), show_codex), StatIcon.CODEX), tr("Everything the Cell knows: slices, cards, Firmware, Daemons, rules."))
 	var settings_btn := _hint_button(tr("Settings"), &"open_settings", open_settings)
 	settings_btn.name = "SettingsButton"
@@ -1563,6 +1577,11 @@ func show_hq() -> void:
 		roster_box.add_child(row)
 	roster_box.name = "Roster"
 	center.add_child(crew)
+	if Settings.text_scale > CrewCard.BIG_FROM:
+		# ART-0 C (text scale 2.0): the crew comes above the City Grid monitor, so the
+		# dossiers' HP and Loadout are on the first screen (under the monitor they ended at
+		# the screen's foot).
+		center.move_child(crew, 0)
 	# The market: recruits, next-run boosts (GDD 11.4) and Profile unlocks (GDD 3.4).
 	var market := TerminalWindow.new(tr("BLACK MARKET // SCHEMATICS %d") % c.schematics, Palette.CELL_ACID)
 	market.name = "BlackMarket"
@@ -2065,7 +2084,9 @@ func fit_grid_map() -> void:
 ## ANIM-5 (4.14): the Grid map has settled into `free`: the camera leans toward the
 ## selected Site once (`grid_lean`), then the picture eases from the frame it held.
 func _grid_settled(free: Rect2) -> void:
-	if not _grid_leaned and panel_name == "grid" and city_overlay != null and is_instance_valid(city_overlay):
+	# ART-0 C (art pass W8b, §12 reduce motion): no lean when camera moves are off (the
+	# fitted frame is the end).
+	if not _grid_leaned and panel_name == "grid" and city_overlay != null and is_instance_valid(city_overlay) and Motion.camera_moves_allowed():
 		_grid_leaned = true
 		var lean: Vector2 = wireframe.unrigged(func() -> Vector2: return grid_lean(free))
 		if lean.length() >= GRID_LEAN_MIN:
@@ -2564,7 +2585,27 @@ func show_raid() -> void:
 	side.name = "RaidSide"
 	side.custom_minimum_size.x = RAID_SIDE_WIDTH
 	side.add_theme_constant_override("separation", 8)
-	outer.add_child(side)
+	var big_text := Settings.text_scale > RAID_SIDE_LOADOUT_ABOVE
+	var side_scroll: ScrollContainer = null
+	if big_text:
+		# ART-0 C (text scale 2.0): the side column (the Armory, intro, raid card, YOUR NODES,
+		# START DEFENSE) is taller than the page's view; it scrolls on its own (focus follows).
+		# The bar is never drawn (it would take width from the column and cut its words);
+		# MORE BELOW says there is more, as on the HQ page.
+		var side_box := VBoxContainer.new()
+		side_box.name = "RaidSideBox"
+		side_scroll = ScrollContainer.new()
+		side_scroll.name = "RaidSideScroll"
+		side_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		side_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+		side_scroll.follow_focus = true
+		side_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		side_scroll.add_child(side)
+		side_box.add_child(side_scroll)
+		outer.add_child(side_box)
+	else:
+		outer.add_child(side)
 	# H23 S5: what the raid is and what to do, in one plain sentence.
 	var intro := _para(TextDb.ui_text("ui.raid_intro"))
 	intro.name = "RaidIntro"
@@ -2611,10 +2652,14 @@ func show_raid() -> void:
 	loadout.name = "DefenseLoadout"
 	loadout.tooltip_text = UiTip.fold(armory_tip())
 	loadout.tag_label.text = tr("TARGET: %s") % site_name(selected_site)
-	map_col.add_child(loadout)
+	if big_text:
+		side.add_child(loadout)
+		side.move_child(loadout, 0)  # ART-0 C: the cards on the first screen
+	else:
+		map_col.add_child(loadout)
 	# How to deploy, in pictures (H22 #9): 1 pick a node (map or YOUR NODES), 2 press a
 	# card: it goes to the target. The cards sit beside the steps.
-	var deploy_row := HBoxContainer.new()
+	var deploy_row: BoxContainer = VBoxContainer.new() if big_text else HBoxContainer.new()
 	deploy_row.add_theme_constant_override("separation", 14)
 	loadout.body.add_child(deploy_row)
 	deploy_row.add_child(_deploy_steps())
@@ -2624,6 +2669,8 @@ func show_raid() -> void:
 	cards.add_theme_constant_override("h_separation", 14)
 	cards.add_theme_constant_override("v_separation", 8)
 	deploy_row.add_child(cards)
+	if big_text:
+		deploy_row.move_child(cards, 0)  # ART-0 C: in the side column the cards come first, the steps under them
 	var seen := {}
 	for i in c.armory.size():
 		var aid: StringName = c.armory[i]
@@ -2642,7 +2689,7 @@ func show_raid() -> void:
 		drops.add_source(card, {"kind": "asset", "index": index, "asset": aid, "prefer": selected_site})
 		cards.add_child(card)
 	if c.armory.is_empty():
-		cards.add_child(_label(tr("Armory empty: runs bank assets from their drops.")))
+		cards.add_child(_para(tr("Armory empty: runs bank assets from their drops.")))  # ART-0 C: wraps (at 2.0 one line widened the page)
 	_set_panel(outer, "raid")
 	# ANIM-R5 P8: YOUR NODES never ends in a cut row (its last node's "HP 30 → 25 HOLDS" sat
 	# half under the window's foot): the Grid's snap, and MORE BELOW when more nodes follow.
@@ -2650,6 +2697,10 @@ func show_raid() -> void:
 	side_hint.snap_rows = true
 	side_hint.name = "OrdersHint"
 	add_child(side_hint)
+	if side_scroll != null:
+		raid_side_hint = ScrollHint.new(side_scroll)
+		raid_side_hint.name = "RaidSideHint"
+		add_child(raid_side_hint)
 	if raid_legend.foldable():
 		# ANIM-R2 R13: as the Grid.
 		set_page_prompts(prompts_for("raid") + [[&"cycle_target", KEY_PROMPT]])
@@ -3613,7 +3664,10 @@ func show_end() -> void:
 	outer.add_child(table)
 	var column := VBoxContainer.new()
 	column.name = "EndColumn"
-	column.custom_minimum_size.x = minf(END_WINDOW_W * Settings.text_scale, size.x - table.custom_minimum_size.x if size.x > 0.0 else END_WINDOW_W * Settings.text_scale)
+	# ART-0 C (text scale 2.0): the room left takes the row's own gap off too (at 2.0 the
+	# column filled the rest and the gap pushed the page 4 px past the screen).
+	var room_left := size.x - table.custom_minimum_size.x - outer.get_theme_constant(&"separation")
+	column.custom_minimum_size.x = minf(END_WINDOW_W * Settings.text_scale, room_left if size.x > 0.0 else END_WINDOW_W * Settings.text_scale)
 	column.add_theme_constant_override("separation", 10)
 	outer.add_child(column)
 	# The headline and what to do next.

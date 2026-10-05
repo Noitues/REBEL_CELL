@@ -1,7 +1,7 @@
 extends GutTest
 ## H20 screens (GAP_ANALYSIS H20; DECISIONS "H20 screens"): no text logs on the HQ, Grid,
 ## raid setup and netrun end (badges, cards and the map instead; refusals as toasts); real
-## tooltips; subtitles clear of every control at text scale 1.0 and 1.6; pad focus held by
+## tooltips; subtitles clear of every control at text scale 1.0 and TEXT_SCALE_MAX; pad focus held by
 ## the Mainframe / HQ modals; raid targets by pad; the Mainframe's per-slot price; key hints that
 ## follow the device; names instead of ids; per-operative loadout and faces; the kit
 ## leftovers; demo slots keep a private profile.

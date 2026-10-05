@@ -163,7 +163,7 @@ func test_a_choice_that_differs_further_on_shows_what_only_it_reaches() -> void:
 # --- B8: route framing ------------------------------------------------------------------------------
 
 func test_the_route_frames_the_marker_and_the_next_choices_at_every_text_size() -> void:
-	for scale in [1.0, 1.3, 1.6]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.reset()
 		RunManager.new_campaign(1)
@@ -417,7 +417,7 @@ func test_the_heat_banner_wraps_sits_beside_its_number_and_warns() -> void:
 	var locale := TranslationServer.get_locale()
 	var holder: Control = add_child_autofree(Control.new())
 	holder.size = SCREEN.size
-	for scale in [1.0, 1.3, 1.6]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		for loc in [locale, "xx"]:
 			TranslationServer.set_locale(loc)
@@ -572,7 +572,7 @@ func test_reduce_effects_holds_the_connecting_line_its_reading_time() -> void:
 # --- B13: SAVED keeps off titles; the side column ends on a whole row -----------------------------------
 
 func test_saved_keeps_off_titles_and_buttons_on_the_map_screens() -> void:
-	for scale in [1.0, 1.3, 1.6]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.reset()
 		var hq := _scene(HQ)
@@ -588,7 +588,11 @@ func test_saved_keeps_off_titles_and_buttons_on_the_map_screens() -> void:
 			var titles: Array[Rect2] = [hq.hud.title_box.get_global_rect()]
 			for t in hq.find_children("TerminalTitle", "Label", true, false):
 				if (t as Control).is_visible_in_tree():
-					titles.append(((t as Control).get_parent() as Control).get_global_rect())
+					# ART-0 C: the part its scroll views show (at 2.0 the raid's side column
+					# scrolls; a title below its view is not on the screen).
+					var shown := Fx._shown_rect((t as Control).get_parent() as Control)
+					if shown.has_area():
+						titles.append(shown)
 			for t in titles:
 				assert_false(r.intersects(t), "%s at %.1f: SAVED %s off the title %s" % [page, scale, r, t])
 			for b in hq.find_children("*", "BaseButton", true, false):
@@ -605,7 +609,7 @@ func test_saved_keeps_off_titles_and_buttons_on_the_map_screens() -> void:
 
 
 func test_the_grid_column_never_ends_in_a_cut_row_at_big_text() -> void:
-	Settings.set_text_scale(1.6)
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	var hq := _scene(HQ)
 	await _frames(1)
 	hq.new_campaign(1)

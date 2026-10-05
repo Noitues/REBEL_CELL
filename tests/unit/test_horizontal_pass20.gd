@@ -270,7 +270,7 @@ func test_the_text_scale_reaches_tags_chips_and_cards() -> void:
 	assert_true(big._player_view.intent_rect().size.y > tag_small, "the tag grows with the text scale")
 	var card: ZineCard = big._hand_box.get_child(0)
 	assert_true(card.text_scale > 1.0, "hand cards scale their lettering")
-	assert_eq(big.layout_violations(), [], "still nothing over a wheel at 1.6")
+	assert_eq(big.layout_violations(), [], "still nothing over a wheel at TEXT_SCALE_MAX")
 
 
 func test_combat_controls_have_tooltips() -> void:
@@ -323,4 +323,4 @@ func test_a_netrun_fight_shows_the_whole_hand_and_send_it_at_1_6() -> void:
 	assert_true(combat._end_turn_button.get_global_rect().end.y <= bottom + 0.5, "SEND IT ends at %.0f" % combat._end_turn_button.get_global_rect().end.y)
 	for c in combat._hand_box.get_children():
 		assert_true((c as Control).get_global_rect().end.y <= bottom + 0.5, "a card ends at %.0f" % (c as Control).get_global_rect().end.y)
-	assert_eq(combat.layout_violations(), [], "nothing over a wheel in the netrun at 1.6")
+	assert_eq(combat.layout_violations(), [], "nothing over a wheel in the netrun at TEXT_SCALE_MAX")

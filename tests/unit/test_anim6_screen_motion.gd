@@ -6,7 +6,7 @@ extends GutTest
 ## whole at once headless, with the instant setting, and page as before; a top bar tag
 ## bumps only when its value changed; a Mainframe purchase and a loot pick fly to their icon and
 ## the state is the purchase's; motion never changes game state; the end-state layout is
-## the instant layout at text scale 1.0, 1.3 and 1.6; a settings change animates nothing.
+## the instant layout at text scale 1.0, 1.3 and TEXT_SCALE_MAX; a settings change animates nothing.
 
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const HQ := "res://scenes/hq/hq_scene.tscn"
@@ -473,7 +473,7 @@ func _button_rects(page: Control) -> Array:
 
 
 func test_end_state_layout_is_the_instant_layout_at_every_text_size() -> void:
-	for scale in [1.0, 1.3, 1.6]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		for screen in ["shop", "loot", "event"]:
 			var scene := await _netrun(scale)
 			match screen:

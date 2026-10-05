@@ -1,6 +1,6 @@
 extends GutTest
 ## H22 city maps: labels stay inside the visible map and out of a screen's side column
-## (every node of every corporation selected in turn, at text scale 1.0 and 1.6; the
+## (every node of every corporation selected in turn, at text scale 1.0 and TEXT_SCALE_MAX; the
 ## route's YOU ARE HERE too); map labels and tips use translated Site names (TextDb); the
 ## map legend and the HQ mini-map follow the text size; the tier difficulty pips are on
 ## the map, the mini-map and in the legend.
@@ -10,7 +10,7 @@ extends GutTest
 const HQ := "res://scenes/hq/hq_scene.tscn"
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
-const SCALES: Array[float] = [1.0, 1.6]
+const SCALES: Array[float] = [1.0, Settings.TEXT_SCALE_MAX]
 const TEST_LOCALE := "xx"
 
 var _text_scale_before: float = 1.0
@@ -186,13 +186,13 @@ func test_the_legend_follows_the_text_size_live() -> void:
 	var small := _legend_font(legend)
 	var small_h := legend.get_combined_minimum_size().y
 	assert_eq(small, MapLegend.COMPACT_FONT)
-	Settings.set_text_scale(1.6)
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	await _frames(1)
-	assert_eq(_legend_font(legend), roundi(MapLegend.COMPACT_FONT * 1.6), "rows grow with the text size")
+	assert_eq(_legend_font(legend), roundi(MapLegend.COMPACT_FONT * Settings.TEXT_SCALE_MAX), "rows grow with the text size")
 	assert_gt(legend.get_combined_minimum_size().y, small_h * 1.3, "and the legend reports its taller size")
 	var full: MapLegend = add_child_autofree(MapLegend.new(&"solace"))
 	await _frames(1)
-	assert_eq(_legend_font(full), roundi(MapLegend.FULL_FONT * 1.6), "the full legend too")
+	assert_eq(_legend_font(full), roundi(MapLegend.FULL_FONT * Settings.TEXT_SCALE_MAX), "the full legend too")
 
 
 func test_a_pinned_legend_stays_inside_its_area_at_big_text() -> void:
@@ -208,7 +208,7 @@ func test_a_pinned_legend_stays_inside_its_area_at_big_text() -> void:
 		assert_true(legend.size.y >= legend.get_combined_minimum_size().y - 0.5, "at its full height")
 		assert_almost_eq(r.end.y, area.size.y - MapLegend.PIN_MARGIN, 1.0, "pinned to the bottom corner")
 		# Growing the text later keeps the corner and grows it upward.
-		Settings.set_text_scale(1.6 if scale < 1.6 else 1.3)
+		Settings.set_text_scale(Settings.TEXT_SCALE_MAX if scale < Settings.TEXT_SCALE_MAX else 1.3)
 		await _frames(2)
 		r = Rect2(legend.position, legend.size)
 		assert_almost_eq(r.end.y, area.size.y - MapLegend.PIN_MARGIN, 1.0, "still pinned after a text size change")
@@ -227,9 +227,9 @@ func test_the_mini_map_labels_follow_the_text_size() -> void:
 	assert_false(mini.drawn_labels.is_empty(), "the mini-map draws its labels")
 	var base: int = mini.drawn_labels[0]["size"]
 	assert_true(Settings.changed.is_connected(mini.queue_redraw), "redraws when the settings change")
-	Settings.set_text_scale(1.6)
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	await _frames(2)
-	assert_eq(int(mini.drawn_labels[0]["size"]), roundi(base * 1.6), "T1/T2 labels grow with the text size")
+	assert_eq(int(mini.drawn_labels[0]["size"]), roundi(base * Settings.TEXT_SCALE_MAX), "T1/T2 labels grow with the text size")
 
 
 # --- Tier pips ------------------------------------------------------------------------------

@@ -286,7 +286,7 @@ func test_the_heat_banner_box_fits_both_posters_at_every_text_size_and_long_word
 	var locale := TranslationServer.get_locale()
 	var holder: Control = add_child_autofree(Control.new())
 	holder.size = SCREEN.size
-	for scale in [1.0, 1.3, 1.6]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		for loc in [locale, "xx"]:
 			TranslationServer.set_locale(loc)
@@ -318,7 +318,7 @@ func test_the_heat_banner_box_fits_both_posters_at_every_text_size_and_long_word
 
 
 func test_the_combat_heat_banner_never_spills_over_the_daemon_row() -> void:
-	for scale in [1.0, 1.3, 1.6]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var combat := _scene(COMBAT)
@@ -361,6 +361,8 @@ func _clipped(root: Node, out: Array) -> void:
 					var wraps: bool = c is Badge or c.get("autowrap_mode") != TextServer.AUTOWRAP_OFF
 					var g := c.get_global_rect()
 					var vis := _clip_rect(c)
+					if not g.intersects(vis):
+						continue  # ART-0 C: scrolled out of its view (the raid side column at 2.0), not cut
 					if (not wraps and w > c.size.x + 1.0) or g.position.x < vis.position.x - 1.0 or g.end.x > vis.end.x + 1.0 or g.end.x > SCREEN.end.x + 1.0:
 						out.append("%s '%s'" % [c.name, text.left(40)])
 		_clipped(n, out)
@@ -467,7 +469,7 @@ func test_raid_incoming_is_a_large_amber_stamp_naming_the_corporation_held_a_sec
 	assert_string_contains(note, corp_name, "the stamp names the corporation")
 	assert_string_contains(note, tr("RAID INCOMING\n%s").get_slice("\n", 0), "and says RAID INCOMING")
 	assert_true(Fx.note_hold() >= 1.0, "held at least a second (%.2f s)" % Fx.note_hold())
-	for scale in [1.0, 1.6]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		Fx._note = note
 		Fx._show_note(SCREEN.size)
@@ -578,7 +580,7 @@ func test_a_move_shows_the_new_choices_at_once_the_marker_off_them_and_the_trail
 # --- H11 d: territory -----------------------------------------------------------------------------------
 
 func test_the_claimed_stamp_keeps_off_the_sites_name_and_the_side_panel_never_clips() -> void:
-	for scale in [1.0, 1.3, 1.6]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		_raid_campaign(&"solace", true)
 		var c := RunManager.campaign

@@ -208,6 +208,8 @@ const SIDE_X := 566.0
 const SIDE_Y := 16.0
 const SIDE_W := 100.0
 const SIDE_GAP := 6
+## ART-0 C: above this text scale the column scrolls inside the wheel area.
+const SIDE_SCROLL_ABOVE := 1.6
 var _side: VBoxContainer = null
 
 
@@ -219,7 +221,23 @@ func add_side(control: Control) -> void:
 		_side.position = Vector2(SIDE_X, SIDE_Y)
 		_side.custom_minimum_size.x = SIDE_W
 		_side.add_theme_constant_override("separation", SIDE_GAP)
-		_wheel.add_child(_side)
+		if Settings.text_scale > SIDE_SCROLL_ABOVE:
+			# ART-0 C (text scale 2.0): the column scrolls inside the wheel area (focus follows)
+			# instead of running past the window's foot (five swaps took 564 px at 2.0).
+			var scroll := ScrollContainer.new()
+			scroll.name = "Side"
+			_side.name = "SideList"
+			_side.position = Vector2.ZERO
+			scroll.position = Vector2(SIDE_X, SIDE_Y)
+			scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+			scroll.follow_focus = true
+			scroll.add_child(_side)
+			_wheel.add_child(scroll)
+			var fit := func() -> void: scroll.size = Vector2(SIDE_W, maxf(0.0, _wheel.size.y - SIDE_Y * 2.0))
+			_wheel.resized.connect(fit)
+			fit.call()
+		else:
+			_wheel.add_child(_side)
 	_side.add_child(control)
 
 

@@ -2,7 +2,7 @@ extends GutTest
 ## The Grid and route map sweeps of the H21-H24 city passes, merged (Test suite
 ## optimization, docs/TEST_SUITE.md): each pass opened its own Grid for every corporation
 ## (50 settled Grids in all) to check the same maps. Here each corporation's Grid is opened
-## once per text size (1.0, 1.3, 1.6) and campaign stage (early, late) and every check of
+## once per text size (1.0, 1.3, TEXT_SCALE_MAX) and campaign stage (early, late) and every check of
 ## those passes runs on it:
 ## - H24 K1/K6: the key folds only at big text, the steps go icon-only inside the column,
 ##   node icons apart, labels apart, below the top bar, on the map area, within reach, and
@@ -12,22 +12,22 @@ extends GutTest
 ## - H21: icons never on one another, labels never on one another or on an icon (every
 ##   campaign stage and text size; H21 checked 1.0 and a live 1.5; ANIM-R1 M13 added the
 ##   late campaign);
-## - with every node selected in turn (early, 1.0 and 1.6, as H22 and H23 did): the selected
+## - with every node selected in turn (early, 1.0 and TEXT_SCALE_MAX, as H22 and H23 did): the selected
 ##   Site labelled, labels apart, inside the label area and clear of its blocks (the side
 ##   column), within reach; the landmarks labelled (H22); the selection ring clear of the
 ##   labels (H21, at 1.0); the run rows and Site steps carry their map icons (H23 #7,
 ##   Solace);
 ## - a live text size change on an open Grid keeps labels apart and on screen (H21 at 1.5,
-##   H22 at 1.6 set live: here 1.0 -> 1.6 live).
+##   H22 at TEXT_SCALE_MAX set live: here 1.0 -> TEXT_SCALE_MAX live).
 ## The route sweep merges H21 (labels never overlap, at the start and under way) and H22
-## (YOU ARE HERE labelled and on screen at 1.0 and 1.6, clear of the route window).
+## (YOU ARE HERE labelled and on screen at 1.0 and TEXT_SCALE_MAX, clear of the route window).
 
 const HQ := "res://scenes/hq/hq_scene.tscn"
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
-const SCALES: Array[float] = [1.0, 1.3, 1.6]
+const SCALES: Array[float] = [1.0, 1.3, Settings.TEXT_SCALE_MAX]
 ## The text sizes the every-node selection sweeps ran at (H22, H23).
-const SELECT_SCALES: Array[float] = [1.0, 1.6]
+const SELECT_SCALES: Array[float] = [1.0, Settings.TEXT_SCALE_MAX]
 const SCREEN := Rect2(0, 0, 1280, 720)
 ## Frames for the Grid map to settle (the fit waits for the city to redraw each pass).
 const SETTLE := 12
@@ -165,7 +165,7 @@ func test_the_grid_for_every_corporation_text_size_and_stage() -> void:
 				_check_legend(hq, what, scale)
 				_check_nodes_beside_the_column(hq, what)
 				# ANIM-R1 M13: late too (the selected Site's long name lay over other nodes'
-				# icons in a late campaign at 1.3 / 1.6: now asserted everywhere).
+				# icons in a late campaign at 1.3 / TEXT_SCALE_MAX: now asserted everywhere).
 				_assert_no_overlap(overlay, what)
 				if not late and SELECT_SCALES.has(scale):
 					_check_every_selection(hq, what, is_equal_approx(scale, 1.0))

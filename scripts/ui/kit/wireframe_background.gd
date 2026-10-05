@@ -109,7 +109,9 @@ func camera_points() -> Array:
 ## Keeps the picture on the current frame while the camera changes (a page rebuilds and
 ## refits its map), until `ease_camera`. Nothing happens when motion doesn't play.
 func hold_camera() -> void:
-	if not Motion.live(CAMERA_MOTION) or not city.camera_settled():
+	# ART-0 C (art pass W7, reduce motion, ART_BIBLE §12): no camera moves: nothing is held,
+	# every change cuts to its end framing.
+	if not Motion.live(CAMERA_MOTION) or not Motion.camera_moves_allowed() or not city.camera_settled():
 		return
 	if _ease_tween != null and _ease_tween.is_valid():
 		_ease_tween.kill()
@@ -128,7 +130,7 @@ func ease_camera() -> void:
 		return
 	_apply_hold()
 	_held = []
-	if not Motion.live(CAMERA_MOTION):
+	if not Motion.live(CAMERA_MOTION) or not Motion.camera_moves_allowed():
 		_rig_rest()
 		return
 	var e := Motion.entry(CAMERA_MOTION)

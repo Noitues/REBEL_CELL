@@ -519,7 +519,7 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 	_raid_campaign()
 	var hq := _open(HQ)
 	await _frames()
-	assert_true(hq._panel.get_combined_minimum_size().x <= CANVAS.x, "the HQ never runs off the side at 1.6 (a raid pending)")
+	assert_true(hq._panel.get_combined_minimum_size().x <= CANVAS.x, "the HQ never runs off the side at TEXT_SCALE_MAX (a raid pending)")
 	assert_true(hq.hud.stats.tag_scale > 1.2, "the stat tags grow (%.2f)" % hq.hud.stats.tag_scale)
 	var crew := hq._panel.find_child("Crew_%s" % RunManager.campaign.roster[0].id, true, false) as CrewCard
 	var name_label: Label = null
@@ -536,7 +536,10 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 	var deck := (hq.get_node("LoadoutView") as LoadoutView)._view as DeckView
 	for n in _all(deck):
 		if n is ZineCard and (n as ZineCard).focus_mode != Control.FOCUS_NONE:
-			assert_almost_eq((n as ZineCard).text_scale, Settings.TEXT_SCALE_MAX, 0.01, "deck view cards grow")
+			# ART-0 C: the cards grow while a row still holds CARDS_PER_ROW (DeckView's rule): at
+			# 2.0 that cap (1.83) is reached first.
+			var row_cap := (DeckView.GRID_WIDTH - DeckView.GRID_GAP * (DeckView.CARDS_PER_ROW - 1)) / (DeckView.CARDS_PER_ROW * ZineCard.STICKER_SIZE.x)
+			assert_almost_eq((n as ZineCard).text_scale, minf(Settings.TEXT_SCALE_MAX, row_cap), 0.01, "deck view cards grow")
 			assert_false((n as ZineCard).pictos.is_empty(), "deck view cards show pictograms")
 			break
 	var scene := _netrun()
@@ -552,18 +555,18 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 			assert_almost_eq((n as ZineCard).text_scale, Settings.TEXT_SCALE_MAX, 0.01, "tile lettering grows")
 	for id in ["LeaveMainframe", "Wallet"]:
 		var r := (scene._panel.find_child(id, true, false) as Control).get_global_rect()
-		assert_true(r.end.y <= CANVAS.y, "%s on screen at 1.6: %s" % [id, r])
+		assert_true(r.end.y <= CANVAS.y, "%s on screen at TEXT_SCALE_MAX: %s" % [id, r])
 	_loot(scene)
 	await _frames()
 	var loot: Node = scene._panel.find_child("Stickers", true, false)
 	assert_true((loot.get_child(0) as ZineCard).text_scale > 1.2, "loot cards grow")
 	assert_false((loot.get_child(0) as ZineCard).pictos.is_empty(), "loot cards show pictograms")
 	var skip := (scene._panel.find_child("Skip", true, false) as Control).get_global_rect()
-	assert_true(skip.end.y <= CANVAS.y, "Skip on screen at 1.6: %s" % skip)
+	assert_true(skip.end.y <= CANVAS.y, "Skip on screen at TEXT_SCALE_MAX: %s" % skip)
 	var title := _open(TITLE)
 	await _frames()
 	var plan := title._panel.find_child("PlanNote", true, false) as ZineNote
-	assert_true(plan.label.get_content_height() <= plan.label.size.y + 1.0, "the plan note shows 1. BREACH at 1.6 (%d > %d)" % [plan.label.get_content_height(), plan.label.size.y])
+	assert_true(plan.label.get_content_height() <= plan.label.size.y + 1.0, "the plan note shows 1. BREACH at TEXT_SCALE_MAX (%d > %d)" % [plan.label.get_content_height(), plan.label.size.y])
 
 
 func test_grid_side_column_scrolls_and_the_hq_says_there_is_more_below() -> void:

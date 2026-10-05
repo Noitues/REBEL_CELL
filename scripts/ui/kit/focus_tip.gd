@@ -120,7 +120,7 @@ func _place(control: Control) -> void:
 func _body(cols: int, fshare: float) -> Control:
 	var body := UiTip.make(UiTip.fold_to(text, cols))
 	if fshare < 1.0:
-		var fs := roundi(get_theme_font_size(&"font_size", &"TooltipLabel") * fshare)
+		var fs := maxi(UiTheme.CAPTION, roundi(get_theme_font_size(&"font_size", &"TooltipLabel") * fshare))
 		for l in body.get_children():
 			if l is Label:
 				(l as Label).add_theme_font_size_override(&"font_size", maxi(1, fs))
@@ -128,7 +128,9 @@ func _body(cols: int, fshare: float) -> Control:
 
 
 ## ANIM-R4 C7: the lettering steps a crowded tip tries (shares of the theme's size).
-const FONT_SHARES: Array[float] = [1.0, 0.85, 0.72]
+## ART-0 C (text scale 2.0): a last step at half size; no step goes under UiTheme.CAPTION
+## (the type floor): at 2.0 a big-text loot row left the tip no clear spot at 0.72.
+const FONT_SHARES: Array[float] = [1.0, 0.85, 0.72, 0.5]
 
 
 ## How much of `avoid` (and the control's own rect `own`) a tip at `box` covers (0: none).

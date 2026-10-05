@@ -5,7 +5,7 @@ extends GutTest
 ## raid interlude assets); a refused or cancelled drop changes nothing and the item glides
 ## home; keys and the pad reach every target; a click picks up and a click drops; reduce
 ## effects and headless show the end state at once; the views never change game state; the
-## new pieces keep the layout at 1.0 / 1.3 / 1.6.
+## new pieces keep the layout at 1.0 / 1.3 / TEXT_SCALE_MAX.
 
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const SCREEN := Rect2(0, 0, 1280, 720)

@@ -6,7 +6,7 @@ extends GutTest
 ## time in their side's colour and every HP change has a number of exactly its size, the
 ## result holding before the respin (E4); a break flashes its own wheel, VICTORY lands on
 ## the enemies' side, the result reads before the break (E5); the Mainframe's chip and Daemon
-## tiles show their whole text (seeds 1-6, English and pseudolocalised, 1.0 / 1.3 / 1.6) and
+## tiles show their whole text (seeds 1-6, English and pseudolocalised, 1.0 / 1.3 / TEXT_SCALE_MAX) and
 ## a slice shows one price (E6); the entering plate never hides the forecast, chips shrink
 ## before they fold, satellites keep off the values (E7); loot keeps its tip off Skip and its
 ## cards apart (E8); refusals wrap, drops that pick land beside, the ghost reads, the wallet
@@ -248,10 +248,10 @@ func test_the_event_top_bar_keeps_one_row_and_the_choices_show_at_big_text() -> 
 	var scene := await _netrun()
 	_event(scene)
 	await _frames(4)
-	assert_eq(scene.hud.stats.rows, 1, "the top bar keeps one row at 1.6 (two pushed the page down)")
+	assert_eq(scene.hud.stats.rows, 1, "the top bar keeps one row at TEXT_SCALE_MAX (two pushed the page down)")
 	for b in scene._panel.find_children("Choice*", "Button", true, false):
 		var r := (b as Control).get_global_rect()
-		assert_true(SCREEN.encloses(r), "%s on screen at 1.6" % b.name)
+		assert_true(SCREEN.encloses(r), "%s on screen at TEXT_SCALE_MAX" % b.name)
 	await _close(scene)
 
 

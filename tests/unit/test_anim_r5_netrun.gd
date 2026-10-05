@@ -12,7 +12,7 @@ extends GutTest
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const SCREEN := Rect2(0, 0, 1280, 720)
 const EVENT := &"ev_leash_on_the_floor"
-const SCALES: Array[float] = [1.0, 1.3, 1.6]
+const SCALES: Array[float] = [1.0, 1.3, Settings.TEXT_SCALE_MAX]
 const LONG_LINE := "Keep the Heat down and bank at the first Rack. The collectors are already on their way, and they bill by the hour, so do not let them find you standing still."
 
 var _scale: float = 1.0
@@ -171,7 +171,7 @@ func test_a_line_paged_for_another_dock_is_paged_again_not_squeezed() -> void:
 # --- B3: the run's end -----------------------------------------------------------------------------
 
 func test_the_run_end_is_a_window_over_the_city_with_a_verdict_and_reasons() -> void:
-	for scale in [1.0, 1.6]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		var scene := await _netrun(scale)
 		scene.background.visible = false  # as a fight leaves it
 		var s := RunManager.netrun
@@ -382,7 +382,7 @@ func test_the_raid_framing_stops_when_the_scene_left_the_tree() -> void:
 
 
 func test_the_socket_list_says_what_it_is_for() -> void:
-	for scale in [1.0, 1.6]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		var scene := await _netrun(scale)
 		RunManager.netrun._open_shop()
 		scene._show_current()

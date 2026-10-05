@@ -10,7 +10,7 @@ extends GutTest
 
 const HQ := "res://scenes/hq/hq_scene.tscn"
 const CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
-const SCALES: Array[float] = [1.0, 1.3, 1.6]
+const SCALES: Array[float] = [1.0, 1.3, Settings.TEXT_SCALE_MAX]
 const SCREEN := Rect2(0, 0, 1280, 720)
 const MINI_SIZE := Vector2(420, 170)
 const SETTLE := 12
@@ -136,14 +136,14 @@ func _close(hq: Control) -> void:
 	await _frames(1)
 
 
-# --- K1 / K6: the Grid at 1.0, 1.3 and 1.6, early and late, every corporation ----------------
+# --- K1 / K6: the Grid at 1.0, 1.3 and TEXT_SCALE_MAX, early and late, every corporation ----------------
 
 # (The K1 / K6 sweep itself: test_city_map_sweeps.gd.)
 
 
 func test_the_folded_key_opens_on_hover_press_and_pad_and_does_not_refit() -> void:
 	Settings.set_map_legend(true)
-	var hq: Control = await _hq_grid(&"solace", 1.6)
+	var hq: Control = await _hq_grid(&"solace", Settings.TEXT_SCALE_MAX)
 	var legend: MapLegend = hq.grid_legend
 	assert_true(legend.is_folded())
 	var zoom: float = hq.city_overlay.city.scale.x
@@ -180,7 +180,7 @@ func test_the_folded_key_opens_on_hover_press_and_pad_and_does_not_refit() -> vo
 # --- K2 a long language ------------------------------------------------------------------------
 
 func test_the_step_row_stays_in_the_column_pseudolocalised() -> void:
-	for scale in [1.0, 1.6]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		RunManager.reset()
 		Settings.set_text_scale(scale)
 		var hq := _scene(HQ)
