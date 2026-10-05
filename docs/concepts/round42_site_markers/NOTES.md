@@ -95,3 +95,21 @@ Each layer answers one question, and each comes from an already-locked language.
 
 ## Build (from `scripts/`)
 Run `python markers42.py all`. All randomness is seeded.
+
+## v2 (`site_markers_v2.png`, `site_markers_on_map_v2.png`; the v1 images are kept)
+
+Changes from the designer's review:
+1. **Customs: a tipping weigh scale.** This is the Exploit type badge for BREACH (Meridian's Customs Override Keys). The beam tips to show the override is in progress.
+2. **Yours: the rebel FIST.** Every claimed node uses the fist (the REBEL_CELL crest from round 15) in lime. CORE keeps the heart: it is the home server, the one node whose loss ends the campaign, so it needs its own icon.
+3. **T2 Exploit plate: a keyring with three keys dangling.** It no longer shares the single key with Customs. Three keys also hint at "3 Exploits open the Central Server".
+4. **Disabled: a circled lightning bolt** in the corner badge. Yellow bolt, lime circle: no power.
+5. **Seized: a red caution triangle** with "!". This is the old hazard shape, now in red (the threat colour).
+6. **Disabled stays in the player colour.** Ring and pad are lime; the pad is dimmer. The drained node fill (raid health v2) and the bolt carry the state. Amber is gone from Site markers, so nothing reads as corp orange.
+
+Other icon choices (unchanged from v1):
+- **INTEL: a magnifier.** Shipping Manifests are read, not opened.
+- **VIRUS: the virus slice glyph.** Players already know it from combat.
+- **Heat objective: the flame.** Its dark orange is the locked Heat B colour, and its darker disc sets it apart from corp Sites.
+- **Cleared: a grey check.** The Site is done, but its ring stays lime as visited.
+- **Regular Site: the corp crest** (Meridian crane-A). Each corp uses its own crest.
+- **Locked link: a padlock.**

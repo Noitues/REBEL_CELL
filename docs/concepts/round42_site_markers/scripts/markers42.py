@@ -47,6 +47,65 @@ HEATC = (206, 84, 18)
 OUT = RL.OUT
 
 
+# ------------------------------------------------------------------ v2 glyphs (designer round 42 review)
+import crests15  # noqa: E402
+
+
+def g_mask(fn, px):
+    return fn().resize((px, px), Image.LANCZOS)
+
+
+def scale_mask():
+    """CUSTOMS (BREACH: Customs Override Keys): a weigh scale TIPPING to one side."""
+    S = 512
+    m = Image.new("L", (S, S), 0)
+    d = ImageDraw.Draw(m)
+    d.polygon([(256, 120), (236, 420), (276, 420)], fill=255)                 # post
+    d.rounded_rectangle([156, 410, 356, 450], radius=14, fill=255)           # foot
+    a = math.radians(-16)                                                    # the beam tips
+    L = 200
+    p0 = (256 - L * math.cos(a), 140 - L * math.sin(a))
+    p1 = (256 + L * math.cos(a), 140 + L * math.sin(a))
+    d.line([p0, p1], fill=255, width=26)
+    d.ellipse([236, 120, 276, 160], fill=255)
+    for (px, py), drop in ((p0, 150), (p1, 110)):
+        d.line([(px, py), (px - 46, py + drop)], fill=255, width=10)
+        d.line([(px, py), (px + 46, py + drop)], fill=255, width=10)
+        d.pieslice([px - 70, py + drop - 46, px + 70, py + drop + 46], 0, 180, fill=255)
+    return m
+
+
+def keyring_mask():
+    """T2 EXPLOIT plate: a keyring with three keys dangling (not the single key of the old customs badge)."""
+    S = 512
+    m = Image.new("L", (S, S), 0)
+    d = ImageDraw.Draw(m)
+    d.ellipse([186, 40, 326, 180], outline=255, width=26)                     # the ring
+    for ang in (-28, 0, 28):
+        a = math.radians(90 + ang)
+        bx, by = 256 + 70 * math.cos(a), 110 + 70 * math.sin(a)
+        tx, ty = 256 + 330 * math.cos(a), 110 + 330 * math.sin(a)
+        d.ellipse([bx - 44 + (tx - bx) * 0.12, by - 44 + (ty - by) * 0.12, bx + 44 + (tx - bx) * 0.12, by + 44 + (ty - by) * 0.12], fill=255)
+        d.line([(bx + (tx - bx) * 0.12, by + (ty - by) * 0.12), (tx, ty)], fill=255, width=26)
+        nx, ny = -math.sin(a), math.cos(a)
+        for t in (0.78, 0.92):                                               # the bits
+            qx, qy = bx + (tx - bx) * t, by + (ty - by) * t
+            d.line([(qx, qy), (qx + nx * 40, qy + ny * 40)], fill=255, width=20)
+    return m
+
+
+def bolt_mask():
+    S = 512
+    m = Image.new("L", (S, S), 0)
+    ImageDraw.Draw(m).polygon([(300, 40), (130, 290), (240, 290), (200, 470), (380, 200), (270, 200)], fill=255)
+    return m
+
+
+def tint(mask, col):
+    im = Image.new("RGBA", mask.size, col + (255,))
+    im.putalpha(mask)
+    return im
+
 # ------------------------------------------------------------------ parts
 def disc(kind, px, exploit=None, status="corporate"):
     S = 4
@@ -62,15 +121,18 @@ def disc(kind, px, exploit=None, status="corporate"):
         d.line([(c[0] - s * 0.45, c[1] + s * 0.1), (c[0] + s * 0.45, c[1] + s * 0.1)], fill=MER + (255,), width=2 * S)
         d.line([(c[0] - s * 1.1, c[1] - s * 0.55), (c[0] + s * 1.2, c[1] - s * 0.75)], fill=MER + (255,), width=2 * S)
     elif kind == "exploit":
-        g = RL.glyph("placeholder_key", int(P * 0.58), fill=GOLD, ow=0)
-        im.alpha_composite(g, ((P - g.width) // 2 - int(P * 0.06), (P - g.height) // 2))
+        g = tint(g_mask(keyring_mask, int(P * 0.7)), GOLD)
+        im.alpha_composite(g, ((P - g.width) // 2 - int(P * 0.13), (P - g.height) // 2 - int(P * 0.08)))
         if exploit:
             gname = {"INTEL": "placeholder_recon", "BREACH": "placeholder_key", "VIRUS": "slice_virus"}[exploit]
             r = P * 0.25
             cx, cy = P * 0.72, P * 0.7
             d = ImageDraw.Draw(im)
             d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(18, 14, 4, 255), outline=GOLD + (255,), width=S)
-            g2 = RL.glyph(gname, int(r * 1.4), fill=(255, 236, 170), ow=0)
+            if exploit == "BREACH":
+                g2 = tint(g_mask(scale_mask, int(r * 1.5)), (255, 236, 170))
+            else:
+                g2 = RL.glyph(gname, int(r * 1.4), fill=(255, 236, 170), ow=0)
             im.alpha_composite(g2, (int(cx - g2.width / 2), int(cy - g2.height / 2)))
     elif kind == "heat":
         g = RL.glyph("placeholder_burn", int(P * 0.62), fill=(255, 140, 50), ow=0)
@@ -90,7 +152,7 @@ def cell_disc(kind, px, status="claimed"):
     im = Image.new("RGBA", (P, P), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
     d.ellipse([S, S, P - S, P - S], fill=(16, 26, 4, 255), outline=(10, 9, 12, 255), width=2 * S)
-    ic = RC_.cell_icon(kind, int(P * 0.62), LIME if status != "disabled" else AMBER)
+    ic = tint(g_mask(crests15.fist, int(P * 0.82)), LIME) if kind != "home" else RC_.cell_icon(kind, int(P * 0.62), LIME)
     im.alpha_composite(ic, ((P - ic.width) // 2, (P - ic.height) // 2))
     im = im.resize((px, px), Image.LANCZOS)
     if status == "disabled":                      # health v2: the fill drains north -> south; the outline stays lit
@@ -104,8 +166,8 @@ def cell_disc(kind, px, status="claimed"):
 
 def pad(img, x, y, r, own, k=1.0):
     q = CV.diamond(x, y, r)
-    col = {"corporate": MER, "claimed": LIME, "seized": RED, "cleared": GREY, "disabled": AMBER}[own]
-    return U.pad(img, q, col, lit={"corporate": 0.7, "claimed": 1.0, "seized": 1.0, "cleared": 0.6, "disabled": 1.0}[own],
+    col = {"corporate": MER, "claimed": LIME, "seized": RED, "cleared": GREY, "disabled": LIME}[own]
+    return U.pad(img, q, col, lit={"corporate": 0.7, "claimed": 1.0, "seized": 1.0, "cleared": 0.6, "disabled": 0.45}[own],
                  glow={"claimed": 0.7, "seized": 0.6, "disabled": 0.7}.get(own, 0.2), fill_a=215, k=0.85 * k)
 
 
@@ -133,13 +195,13 @@ def badge(img, x, y, status, r=10):
     if status == "cleared":
         d.ellipse([x - r, y - r, x + r, y + r], fill=(40, 40, 48, 255), outline=(200, 200, 210, 255), width=2)
         d.line([(x - r * 0.5, y), (x - r * 0.1, y + r * 0.45), (x + r * 0.55, y - r * 0.45)], fill=(230, 230, 240, 255), width=3)
-    elif status == "seized":
-        d.ellipse([x - r, y - r, x + r, y + r], fill=(60, 6, 10, 255), outline=RED + (255,), width=2)
-        d.line([(x - r * 0.5, y - r * 0.5), (x + r * 0.5, y + r * 0.5)], fill=RED + (255,), width=3)
-        d.line([(x - r * 0.5, y + r * 0.5), (x + r * 0.5, y - r * 0.5)], fill=RED + (255,), width=3)
-    elif status == "disabled":
-        d.polygon([(x, y - r), (x + r, y + r * 0.8), (x - r, y + r * 0.8)], fill=AMBER + (255,), outline=(20, 14, 0, 255))
-        d.text((x, y + r * 0.15), "!", font=RL.f_num(int(r * 1.4)), fill=(20, 14, 0, 255), anchor="mm")
+    elif status == "seized":                         # v2: a red caution triangle
+        d.polygon([(x, y - r * 1.1), (x + r * 1.1, y + r * 0.85), (x - r * 1.1, y + r * 0.85)], fill=RED + (255,), outline=(30, 4, 6, 255))
+        d.text((x, y + r * 0.2), "!", font=RL.f_num(int(r * 1.4)), fill=(255, 255, 255, 255), anchor="mm")
+    elif status == "disabled":                       # v2: a circled lightning bolt (no power), in the player colour
+        d.ellipse([x - r, y - r, x + r, y + r], fill=(16, 22, 4, 255), outline=LIME + (255,), width=2)
+        b = tint(g_mask(bolt_mask, int(r * 1.5)), (255, 240, 120))
+        img.alpha_composite(b, (int(x - b.width / 2), int(y - b.height / 2)))
     return img
 
 
@@ -171,7 +233,7 @@ def marker(img, x, y, kind, tier, status="corporate", avail="next", exploit=None
     if status == "seized":
         rc = MER if avail == "next" else WHITE
     if status == "disabled":
-        rc = AMBER
+        rc = LIME                                     # v2: disabled stays in the player colour
     img = ring(img, x, cy, ic.width / 2 + 5, rc, w=4 if avail != "notyet" else 3, glow={"next": 0.9, "yours": 0.6}.get(avail, 0.0))
     if tier and status not in ("claimed", "disabled"):
         img = pips(img, x, cy + ic.width / 2 + 9, tier, GOLD if kind == "exploit" else (rc if avail != "notyet" else (210, 206, 220)),
@@ -270,7 +332,7 @@ def key_sheet():
     c.text((16, 50), "Hidden by default: regular Sites that are not selectable. PINNED (always shown): Exploit, Heat objective, the boss, your", 15, (220, 232, 238))
     c.text((16, 74), "nodes. Seized Sites next to you are raid entry points (red pins). Pips: tier 1-3; the boss has the TARGET circle.", 15, (220, 232, 238))
     img = RL.paste(img, c.finish(scan=0.15), 22, 960)
-    RL.save(img, "site_markers.png")
+    RL.save(img, "site_markers_v2.png")
 
 
 # ------------------------------------------------------------------ on the map
@@ -351,7 +413,7 @@ def on_map():
         xk += 34 + int(c.text((xk + 34, 15), lab, 15, (215, 225, 230))) + 18
     c.text((xk + 4, 15), "| locked link: grey dashes + padlock   | HOVER: SHOW ALL", 15, U.CYAN)
     img = RL.paste(img, c.finish(scan=0.15), 210, 1018)
-    RL.save(RL.bloom(img, 0.12, 0.82, 8), "site_markers_on_map.png")
+    RL.save(RL.bloom(img, 0.12, 0.82, 8), "site_markers_on_map_v2.png")
     return dict(core=core, disabled=disabled, seized=seized, exploits=exploits)
 
 
