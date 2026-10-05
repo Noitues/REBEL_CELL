@@ -3236,16 +3236,18 @@ func _site_name(site_id: StringName) -> String:
 	return TextDb.t(sd, "display_name") if sd != null else String(site_id)
 
 
-## ANIM-R5 B3: the run's end over the city (it was a black page, its words in the top
-## 250 px): a window in the middle of the screen with the verdict stamp (FLATLINED, JACKED
-## OUT, HOME FELL: the ForecastStamp's ring, solid, landing like a resolved forecast), what
-## happened to the operative (a flatline is for good: GDD 4.2 permadeath), the run in numbers
-## and why Heat rose, then Back to HQ.
+## ANIM-R5 B3 / ART-11 4D (ART_BIBLE v2 §1.2): the run's end over the city: the Cell's own CRT
+## window in the middle of the screen (cyan for a run that jacked out, red for a loss) with the
+## verdict slapped on the glass as a vinyl sticker (JACKED OUT yellow; FLATLINED, HOME FELL
+## red; `run_end_slap`), what happened to the operative (a flatline is for good: GDD 4.2
+## permadeath), the run in numbers and why Heat rose, then BACK TO HQ, the screen's one pink
+## verb. HOME FELL hands over to the HQ's campaign lost lock.
 const END_WIDTH := 760.0
 const END_GROW := 1.3
-const END_STAMP := 132.0
-## The stamp's small words over its verdict (a key).
-const END_CAPTION := "NETRUN" # TR
+## The verdict sticker's lettering (type step) and tilt (degrees).
+const END_VERDICT_STEP := UiTheme.DISPLAY
+const END_VERDICT_TILT := -6.0
+const END_SLAP := &"run_end_slap"
 
 
 func _show_end() -> void:
@@ -3257,20 +3259,24 @@ func _show_end() -> void:
 	_warm_hq.call_deferred()
 	var won := s.run.outcome == RunState.Outcome.COMPLETED
 	var aborted := s.run.outcome == RunState.Outcome.ABORTED
-	var col := Palette.CELL_ACID if won else Palette.CELL_PINK
+	var col := Palette.NET_CYAN if won else Palette.HARM
 	var title := tr("NETRUN COMPLETE") if won else (tr("NETRUN ABORTED - the home server fell") if aborted else tr("NETRUN FAILED - operative lost"))
 	var report := TerminalWindow.new(title, col)
 	report.name = "RunReport"
 	report.custom_minimum_size.x = END_WIDTH * minf(Settings.text_scale, END_GROW)
 	var head := HBoxContainer.new()
-	head.add_theme_constant_override("separation", 18)
+	head.add_theme_constant_override("separation", roundi(UiTheme.SP_L * Settings.text_scale))
 	report.body.add_child(head)
-	# The verdict: display only (no focus; its tooltip says what it means).
-	var stamp := ForecastStamp.new(END_CAPTION, end_verdict(s.run.outcome), col, end_icon(s.run.outcome))
+	# The verdict: a sticker on the glass, display only (no focus; its tooltip says what it means).
+	var stamp := VinylWord.new(tr(end_verdict(s.run.outcome)), Palette.END_VINYL_YELLOW if won else Palette.END_VINYL_RED, END_VERDICT_STEP)
 	stamp.name = "ResultStamp"
+	stamp.pre_translated = true
+	stamp.verdict = end_verdict(s.run.outcome)
 	stamp.resolved = true
-	stamp.custom_minimum_size = Vector2(END_STAMP, END_STAMP) * (1.0 + (Settings.text_scale - 1.0) * RAID_STAMP_FOLLOW)
-	stamp.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	stamp.refit()
+	stamp.rotation_degrees = END_VERDICT_TILT
+	stamp.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	stamp.mouse_filter = Control.MOUSE_FILTER_PASS
 	stamp.tooltip_text = UiTip.fold(end_fate(s))
 	head.add_child(stamp)
 	var col_box := VBoxContainer.new()
@@ -3281,7 +3287,7 @@ func _show_end() -> void:
 	var fate := _label(end_fate(s))
 	fate.name = "RunFate"
 	UiWrap.whole_words(fate)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
-	fate.add_theme_color_override("font_color", Palette.PAPER)
+	fate.add_theme_color_override("font_color", Palette.TERMINAL_TEXT)
 	col_box.add_child(fate)
 	# The run in numbers as the top bar's paper tags (H20: no text summary).
 	var tags := HudStats.new()
@@ -3306,10 +3312,16 @@ func _show_end() -> void:
 	why_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	why.add_child(why_text)
 	col_box.add_child(why)
-	var back := _button(tr("Back to HQ"), finish_run)
+	# BACK TO HQ: the screen's one verb, a pink sticker at the window's foot.
+	var foot := HBoxContainer.new()
+	foot.name = "RunEndFoot"
+	foot.alignment = BoxContainer.ALIGNMENT_END
+	report.body.add_child(foot)
+	var back := VinylButton.new(TextDb.mark("Back to HQ"), Palette.END_VINYL_PINK, UiTheme.HEADING)
+	back.name = "BackToHq"
+	back.pressed.connect(finish_run)
 	back.tooltip_text = UiTip.fold(tr("Back to HQ: the campaign, the City Grid and the crew."))
-	IconMark.attach(back, StatIcon.BACK)
-	report.body.add_child(back)
+	foot.add_child(back)
 	# In the middle of the screen, the city round it (a page of windows, not a glass sheet).
 	var wrap := CenterContainer.new()
 	wrap.name = "RunEnd"
@@ -3317,8 +3329,14 @@ func _show_end() -> void:
 	wrap.add_child(report)
 	_set_panel(wrap, false)
 	if entering:
-		# The verdict lands as a resolved forecast does (`forecast_stamp_resolve`).
-		stamp.resolve.call_deferred(END_CAPTION, end_verdict(s.run.outcome))
+		# The verdict slaps onto the glass (a pop from big; at rest at once when it does not play).
+		_slap_verdict.call_deferred(stamp)
+
+
+## The run end's verdict sticker slaps on (`run_end_slap`) once laid out.
+func _slap_verdict(stamp: VinylWord) -> void:
+	if is_instance_valid(stamp) and stamp.is_inside_tree():
+		stamp.slap(END_SLAP)
 
 
 ## ANIM-R5 B3: the run's verdict as its stamp says it (a key).
@@ -3339,16 +3357,6 @@ static func end_title(outcome: int) -> String:
 		RunState.Outcome.ABORTED:
 			return "NETRUN // HOME FELL" # TR
 	return "NETRUN // FLATLINED" # TR
-
-
-## The verdict stamp's icon.
-static func end_icon(outcome: int) -> StringName:
-	match outcome:
-		RunState.Outcome.COMPLETED:
-			return StatIcon.JACK_IN
-		RunState.Outcome.ABORTED:
-			return StatIcon.HOME
-	return StatIcon.OPERATIVE
 
 
 ## ANIM-R5 B3: what the run's end means for the operative, in words (translated): a

@@ -152,7 +152,17 @@ const DEMOS := {
 	# button's pad focus, a refused sticker, a confirm opened and closed as a modal).
 	&"focus_scale": ["screen", "kit_focus"], &"button_refused": ["screen", "kit_refused"],
 	&"modal_in": ["screen", "modal_open"], &"modal_out": ["screen", "modal_close"],
+	# ART-11 4D: the campaign lost lock (RansomLock over the stage), the audit dossier
+	# (AuditDossier) and the run end's verdict sticker (VinylWord.slap), each the real piece.
+	&"ransom_glitch": ["screen", "ransom"], &"ransom_wipe": ["screen", "ransom"], &"ransom_padlock": ["screen", "ransom"],
+	&"ransom_notice_in": ["screen", "ransom"], &"ransom_verb_stamp": ["screen", "ransom"], &"ransom_sticker_curl": ["screen", "ransom"],
+	&"ransom_sticker_drop": ["screen", "ransom"], &"ransom_sticker_stagger": ["screen", "ransom"], &"ransom_countdown": ["screen", "ransom"],
+	&"ransom_wipe_hold": ["screen", "ransom"], &"ransom_cut": ["screen", "ransom"],
+	&"dossier_open": ["screen", "dossier_file"], &"dossier_stamp": ["screen", "dossier_file"], &"dossier_note": ["screen", "dossier_file"],
+	&"dossier_note_stagger": ["screen", "dossier_file"], &"run_end_slap": ["screen", "run_end"],
 }
+## ART-11 4D: the lock demo's nodes on the stage (px from its top-left; the first is home).
+const RANSOM_NODES: Array[Vector2] = [Vector2(450, 300), Vector2(250, 180), Vector2(640, 170), Vector2(180, 430), Vector2(700, 420)]
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
 ## subtitle demo says, and how long the frames between a menu's focus moves are (s).
@@ -817,6 +827,58 @@ func _play_screen(what: String) -> void:
 				await get_tree().create_timer(Motion.seconds(&"modal_in") + LOOP_GAP).timeout
 				if is_instance_valid(m):
 					PageTransition.close_modal(m)
+		"ransom":
+			# ART-11 4D: Halcyon's lock over the stage: tearing, the wipe, padlocks on five nodes,
+			# the notice and its verb, the countdown, the stickers curling and dropping, the cut.
+			var lock := RansomLock.new()
+			_screen_host.add_child(lock)
+			var host := _screen_host
+			lock.nodes_provider = func() -> Array:
+				var pts: Array = []
+				if is_instance_valid(host):
+					for i in RANSOM_NODES.size():
+						pts.append({"at": host.global_position + RANSOM_NODES[i], "home": i == 0})
+				return pts
+			var specs: Array[Dictionary] = [{"text": "CELL DEFENSE"}, {"asset": &"turret", "text": "TURRET"}, {"asset": &"ice_lock", "text": "ICE LOCK"},
+				{"asset": &"decoy", "text": "DECOY"}, {"text": "REBEL_CELL", "fill": Palette.END_VINYL_PINK, "size": UiTheme.TITLE}]
+			lock.setup(&"halcyon", "Halcyon Civic", 0, 50, specs)
+			length = lock.motion_end() + Motion.seconds(RansomLock.HOLD) + Motion.seconds(RansomLock.CUT)
+		"dossier_file":
+			# ART-11 4D: a lost campaign's audit dossier opening, stamped, its notes slapping on.
+			var f := DossierFacts.new()
+			f.corporation_id = &"halcyon"
+			f.corporation_name = "Halcyon Civic"
+			f.cell_number = 3
+			f.runs_started = 8
+			f.deaths = 2
+			f.raids_won = 3
+			f.raids_lost = 1
+			f.held = 3
+			f.down = 1
+			f.taken = 1
+			f.home_max = 50
+			f.heat = 82
+			f.heat_max = 100
+			f.heat_marks.assign([25, 50, 75])
+			f.heat_levels.assign([25, 50, 75])
+			f.crew.assign([{"name": "Vex", "class_id": &"breaker", "class_name": "Breaker", "rank": 3, "alive": true, "runs": 7, "post": "Firewall Relay"},
+				{"name": "Ash", "class_id": &"ghost", "class_name": "Ghost", "rank": 2, "alive": false, "runs": 4, "post": ""}])
+			f.most_troublesome = f.crew[0]
+			f.next_ice = 2
+			var prints: Array[Dictionary] = [{"caption": "HOME SERVER - 0/50"}, {"caption": "NODES AT THE END"}]
+			var dossier := AuditDossier.new(f, prints)
+			dossier.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			_screen_host.add_child(dossier)
+			length = dossier.motion_end()
+		"run_end":
+			# ART-11 4D: the run end's verdict sticker slaps on (as netrun_scene._slap_verdict).
+			var verdict := VinylWord.new("FLATLINED", Palette.END_VINYL_RED, UiTheme.DISPLAY)
+			verdict.position = Vector2(260, 280)
+			_screen_host.add_child(verdict)
+			await get_tree().process_frame
+			if is_instance_valid(verdict):
+				verdict.slap(&"run_end_slap")
+			length = Motion.seconds(&"run_end_slap")
 		"city":
 			var city := NeonCity.new()
 			city.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
