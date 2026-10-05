@@ -24,7 +24,8 @@ const SHORT := {CityMapOverlay.KIND_FIGHT: "COMBAT", CityMapOverlay.KIND_ELITE: 
 ## ART-7 3B: the state rings the key names (option A), and their words.
 const COLOR_KEYS: Array[String] = ["walked", "next", "later", "cut"]
 const COLOR_WORDS: Array[String] = ["walked", "next: pick one (numbered)", "not yet", "cut off"] # TR
-## The D13 cue (mouse), its pad words, and the words while every node shows.
+## The D13 cue (mouse, shown through UiTip.for_input with PAD_WORDS when pad_active), its pad
+## words (UiTip.for_input(HOVER_WORDS, PAD_WORDS)), and the words while every node shows.
 const HOVER_WORDS := "HOVER HERE: SHOW ALL NODES" # TR
 const PAD_WORDS := "OPTIONS > DISPLAY: SHOW ALL NODES" # TR
 const SHOWING_WORDS := "SHOWING ALL NODES" # TR

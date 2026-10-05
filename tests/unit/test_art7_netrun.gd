@@ -295,7 +295,7 @@ func test_one_press_skips_the_link_jack() -> void:
 		Settings.set_reduce_effects(false)
 	var switched := [0]
 	Fx.jack_in_link(func() -> void: switched[0] += 1, {"from": "A", "to": "B", "points": PackedVector2Array([Vector2(100, 400), Vector2(500, 200)])})
-	await _frames(3)
+	await BoundedWait.until(get_tree(), func() -> bool: return Fx.jack_link.visible, 2.0)
 	assert_true(Fx.transitioning(), "the jack runs")
 	assert_true(Fx.jack_link.visible, "the sequence plays")
 	var press := InputEventKey.new()
