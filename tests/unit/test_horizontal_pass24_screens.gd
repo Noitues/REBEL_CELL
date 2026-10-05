@@ -925,7 +925,7 @@ func test_defence_cards_say_what_they_do_and_the_button_says_defend() -> void:
 	await _frames()
 	var badge := hq2._panel.find_child("ArmoryBadge", true, false) as Badge
 	assert_eq(badge.text, hq2.armory_words(), "HQ's ARMORY badge: the same count")
-	assert_string_contains(badge.tooltip_text, "not counting those deployed")
+	assert_string_contains(badge.tooltip_text.replace("\n", " "), "not counting those deployed")  # ART-0 C: folded narrower at 2.0
 	await _close(hq2)
 	assert_eq(AssetCard.effect_of(RunManager.lookup().get_content(&"ice_lock"))[0], "hold")
 	assert_eq(AssetCard.effect_of(RunManager.lookup().get_content(&"decoy"))[0], "lure")

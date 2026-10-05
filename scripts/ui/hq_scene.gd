@@ -75,6 +75,11 @@ const GRID_MIN_ZOOM := 0.3
 const STEP_ICONS_SCALE := MapLegend.FOLD_SCALE
 ## The deploy steps' icons, a little larger than a button's.
 const DEPLOY_ICON_GROW := 1.2
+## ART-0 C (text scale 2.0): above this text scale (with cards in the Armory) each deploy
+## step wraps onto two lines, so the Armory's cards keep one row beside the steps and the raid map keeps its height.
+const DEPLOY_WRAP_ABOVE := 1.6
+## The share of a step's one-line width its wrapped label keeps (two lines).
+const DEPLOY_WRAP_SHARE := 0.6
 ## The raid orders list's least height at text scale 1.0 (px).
 const ORDERS_MIN_HEIGHT := 70.0
 const TARGET_BUTTON_WIDTH := 150.0
@@ -3040,6 +3045,14 @@ func _deploy_steps() -> VBoxContainer:
 		row.add_child(IconMark.standalone(step[0], side, Palette.CELL_ACID))
 		var l := _label(String(step[1]))
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if Settings.text_scale > DEPLOY_WRAP_ABOVE and not RunManager.campaign.armory.is_empty():
+			var fs := roundi(UiTheme.BASE_SIZE * Settings.text_scale)
+			var whole := Palette.mono().get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			var widest := 0.0
+			for word in l.text.split(" ", false):
+				widest = maxf(widest, Palette.mono().get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+			l.autowrap_mode = TextServer.AUTOWRAP_WORD
+			l.custom_minimum_size.x = ceilf(maxf(widest, whole * DEPLOY_WRAP_SHARE))
 		row.add_child(l)
 		steps.add_child(row)
 	var to := _label("> %s" % target)
@@ -3619,7 +3632,10 @@ func show_end() -> void:
 	outer.add_child(table)
 	var column := VBoxContainer.new()
 	column.name = "EndColumn"
-	column.custom_minimum_size.x = minf(END_WINDOW_W * Settings.text_scale, size.x - table.custom_minimum_size.x if size.x > 0.0 else END_WINDOW_W * Settings.text_scale)
+	# ART-0 C (text scale 2.0): the room left takes the row's own gap off too (at 2.0 the
+	# column filled the rest and the gap pushed the page 4 px past the screen).
+	var room_left := size.x - table.custom_minimum_size.x - outer.get_theme_constant(&"separation")
+	column.custom_minimum_size.x = minf(END_WINDOW_W * Settings.text_scale, room_left if size.x > 0.0 else END_WINDOW_W * Settings.text_scale)
 	column.add_theme_constant_override("separation", 10)
 	outer.add_child(column)
 	# The headline and what to do next.

@@ -29,7 +29,9 @@ const SUBTITLE_LINE_PX := 22.0
 const SUBTITLE_CHROME_PX := 52.0
 ## Gap between the dock and the tutorial (px); the tutorial needs this height.
 const NOTE_GAP := 6.0
-const TUTORIAL_MIN_HEIGHT := 140.0
+## ART-0 C (text scale 2.0): 130, not 140: at 2.0 a one-line subtitle dock left 138 px
+## under it and the tutorial jumped over the subtitles (it pages its text in what it gets).
+const TUTORIAL_MIN_HEIGHT := 130.0
 ## Where the tutorial sits before the layout is known.
 const TUTORIAL_RECT := Rect2(980, 287, 300, 250)
 ## Sticker gap and the edge they keep (px).

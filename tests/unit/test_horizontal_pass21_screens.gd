@@ -536,7 +536,10 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 	var deck := (hq.get_node("LoadoutView") as LoadoutView)._view as DeckView
 	for n in _all(deck):
 		if n is ZineCard and (n as ZineCard).focus_mode != Control.FOCUS_NONE:
-			assert_almost_eq((n as ZineCard).text_scale, Settings.TEXT_SCALE_MAX, 0.01, "deck view cards grow")
+			# ART-0 C: the cards grow while a row still holds CARDS_PER_ROW (DeckView's rule): at
+			# 2.0 that cap (1.83) is reached first.
+			var row_cap := (DeckView.GRID_WIDTH - DeckView.GRID_GAP * (DeckView.CARDS_PER_ROW - 1)) / (DeckView.CARDS_PER_ROW * ZineCard.STICKER_SIZE.x)
+			assert_almost_eq((n as ZineCard).text_scale, minf(Settings.TEXT_SCALE_MAX, row_cap), 0.01, "deck view cards grow")
 			assert_false((n as ZineCard).pictos.is_empty(), "deck view cards show pictograms")
 			break
 	var scene := _netrun()

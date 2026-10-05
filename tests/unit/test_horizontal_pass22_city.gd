@@ -229,7 +229,7 @@ func test_the_mini_map_labels_follow_the_text_size() -> void:
 	assert_true(Settings.changed.is_connected(mini.queue_redraw), "redraws when the settings change")
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	await _frames(2)
-	assert_eq(int(mini.drawn_labels[0]["size"]), roundi(base * 1.6), "T1/T2 labels grow with the text size")
+	assert_eq(int(mini.drawn_labels[0]["size"]), roundi(base * Settings.TEXT_SCALE_MAX), "T1/T2 labels grow with the text size")
 
 
 # --- Tier pips ------------------------------------------------------------------------------
