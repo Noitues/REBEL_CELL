@@ -1,9 +1,14 @@
 name: CI
 
+# Paused during M14 (designer, 2026-10-05): every push to main started a single-process full suite that
+# outran the 30-minute limit and was cancelled. Run it by hand from the Actions tab (Run workflow).
+# Restore `push: branches: [main]` and `pull_request:` after ART-12 (DECISIONS "CI paused for M14").
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   checks:

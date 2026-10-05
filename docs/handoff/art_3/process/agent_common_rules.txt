@@ -1,9 +1,9 @@
-COMMON RULES FOR ALL ART-2 AGENTS (M14 — Art direction v2)
+COMMON RULES FOR ALL ART-3 AGENTS (M14 — Art direction v2)
 
 START
 - Your worktree must branch from main @ MAIN_SHA (see your brief): first `git log -1`; if older, `git merge main`, then
   `godot --headless --path . --import` (output to a file, see below).
-- Read: CLAUDE.md; docs/handoff/art_2/ART_2_BATCH.md (your area, its file-ownership matrix, its acceptance lines);
+- Read: CLAUDE.md; docs/handoff/art_3/ART_3_BATCH.md (your area, its file-ownership matrix, its acceptance lines);
   docs/DECISIONS.md entry "2026-10-05 — Designer rulings: art reintegration, pause point 0"; docs/TEST_SUITE.md
   (incl. "Windowed checks"); docs/STYLE_GUIDE.md §5; docs/ANIMATION_HANDOFF.md ground rules.
 - The art sources are on tag `art-concepts-r43` (concept direction, ART_BIBLE v2, docs/ART_REINTEGRATION_PLAN.md) and
@@ -25,7 +25,7 @@ DESIGNER RULINGS THAT BIND EVERY AGENT (2026-10-05)
   a view, word, layout, look or presentation rule, follow the art pass without asking; log it. Mechanics the rules
   lack (G1–G16) are still not built.
 - Nothing deferred: never write "out of scope". If an item does not fit, say so in your report and propose a slice.
-- Decide small things yourself and log them in DECISIONS ("Art direction — ART-2 <area>"); real design questions go
+- Decide small things yourself and log them in DECISIONS ("Art direction — ART-3 <area>"); real design questions go
   under DECISIONS "Open questions for the designer" and in your report, with your default implemented.
 
 CLAUDE.MD RULES (non-negotiable)
@@ -41,7 +41,7 @@ TESTS
 New test scripts go in tests/test_manifest.json with a tier (test_suite_integrity checks it). Use
 tests/helpers/bounded_wait.gd; no fixed waits gating asserts; no frame-signal lambdas; gut_-prefixed save slots;
 restore every Settings value you change. Port M13 tests that test behaviour; drop tests that pin a superseded look and
-list each dropped test in your DECISIONS entry. Run selected scripts with docs/handoff/art_2/process/gt.sh
+list each dropped test in your DECISIONS entry. Run selected scripts with docs/handoff/art_3/process/gt.sh
 (`-gtest=` alone still runs the whole suite).
 
 LONG JOBS AND SHARING THE MACHINE (added 2026-10-05 after interrupted waits)
@@ -71,7 +71,7 @@ BATCH GODOT LAUNCHES (designer 2026-10-05)
 MACHINE RULES
 - NEVER run `python -` (it hangs on stdin, even with an empty heredoc). Write scripts to files with the Write tool and
   run `python file.py`. Set PYTHONIOENCODING=utf-8 when printing non-ASCII.
-- Never pipe Godot output: redirect to a file under your own %TEMP%\a2<letter>\ and wrap the command in `timeout`
+- Never pipe Godot output: redirect to a file under your own %TEMP%\a3<letter>\ and wrap the command in `timeout`
   (a -s script that fails to parse never quits).
 - Windowed Godot ONLY via `python tools/run_windowed.py --log <file> -- <godot args>` from YOUR worktree (never the
   main checkout, never a bare windowed godot: it steals the designer's focus and plays sound). Redirect APPDATA to your
@@ -80,7 +80,7 @@ MACHINE RULES
 - Kill only PIDs you started. Never `taskkill /IM godot.exe`.
 - DISK: captures at 800x450 or crops; delete them once read. `df -h /c` before big captures; under 5 GB free, stop and
   say so. Delete the rebel_cell_tests_* folders in %TEMP% that your runs create. Before hand-back delete your
-  %TEMP%\a2<letter>\ folder except your report.
+  %TEMP%\a3<letter>\ folder except your report.
 - Bash heredocs break on apostrophes and halve backslashes: write patch scripts with the Write tool.
 - .tres union merges: load_steps = sub_resources + ext_resources + 1.
 - `git commit -F .git/MERGE_MSG` keeps the "# Conflicts:" lines: strip them.
@@ -88,12 +88,12 @@ MACHINE RULES
 GIT
 Stage explicitly (never `git add -A` / `git add .`). Never touch project.godot, .claude/, docs/reference/,
 docs/HANDOFF_H20_MERGE.md, docs/art_asset.md, runmap38.py. Small commits, one per acceptance line, message
-"ART-2 <area>: <criterion>", ending with "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>". DO NOT PUSH.
+"ART-3 <area>: <criterion>", ending with "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>". DO NOT PUSH.
 Never `git stash`, `reset --hard`, `checkout -- .` or `clean` outside your own worktree.
 
 HAND-BACK (designer ruling 2026-10-05: no full-suite re-runs per commit; the full suite runs once per ART batch)
 `git merge main` (union-resolve DECISIONS / strings.csv (re-export) / ui_motion.tres / REQUIRED_IDS / lab DEMOS /
-tests/test_manifest.json; see process/resolve_union_example.py), then `bash docs/handoff/art_2/process/checks_fast.sh`
+tests/test_manifest.json; see process/resolve_union_example.py), then `bash docs/handoff/art_3/process/checks_fast.sh`
 (import + `python tools/run_tests.py --tier fast` + schema smoke + content validation), plus every test script you
 added or changed via process/gt.sh. Do NOT run the full suite or repeat it: the orchestrator runs the full suite
 once at the end of the batch, in isolation. A fast-tier or own-test failure must be fixed before hand-back.
