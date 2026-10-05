@@ -183,7 +183,7 @@ func band_height(lines: int = 1) -> float:
 	var scale := 1.0
 	if has_node("/root/Settings"):
 		scale = float(get_node("/root/Settings").text_scale)
-	return BAR_PADDING + Palette.mono().get_height(roundi(TEXT_FONT_SIZE * scale)) * maxi(1, lines) + BAND_SLACK
+	return BAR_PADDING + UiTheme.line_px(Palette.mono(), roundi(TEXT_FONT_SIZE * scale)) * maxi(1, lines) + BAND_SLACK
 
 
 ## Kept for callers from before H20 (the combat scene restores the dock on exit): the
@@ -195,7 +195,7 @@ func dock_bottom() -> void:
 ## How many subtitle lines fit in `rect`'s height at the current text size (at least 1).
 func lines_fitting(rect: Rect2) -> int:
 	var fs := text_label.get_theme_font_size("normal_font_size")
-	return maxi(1, floori((rect.size.y - BAR_PADDING) / Palette.mono().get_height(fs)))
+	return maxi(1, floori((rect.size.y - BAR_PADDING) / UiTheme.line_px(Palette.mono(), fs)))
 
 
 ## The subtitle bar in a screen rect (combat puts it at the top, clear of the hand). With
@@ -341,8 +341,8 @@ func _page_height(page: String) -> float:
 	var lines: PackedStringArray = _wrap(page, width * PAGE_FILL, font, fs)[0]
 	var h := 0.0
 	for l in lines:
-		h += maxf(font.get_height(fs), font.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).y)
-	return maxf(h, font.get_height(fs))
+		h += maxf(UiTheme.line_px(font, fs), font.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).y)
+	return maxf(h, UiTheme.line_px(font, fs))
 
 
 ## The text's height the dock's rect leaves (px): the rect less the bar's padding and a
@@ -352,7 +352,7 @@ func _dock_text_room() -> float:
 	if speaker_label.visible:
 		var box := speaker_label.get_parent() as BoxContainer
 		room -= speaker_label.get_combined_minimum_size().y + (box.get_theme_constant("separation") if box != null else 0)
-	return maxf(Palette.mono().get_height(text_label.get_theme_font_size("normal_font_size")), room)
+	return maxf(UiTheme.line_px(Palette.mono(), text_label.get_theme_font_size("normal_font_size")), room)
 
 
 ## Escapes BBCode in shown words (pseudolocalisation wraps a line in brackets).
