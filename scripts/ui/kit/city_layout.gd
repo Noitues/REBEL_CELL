@@ -81,10 +81,25 @@ static func site_points(corp: CorporationData) -> Dictionary:
 ## The campaign's Grid as a graph for the city overlay: every Site on a real building
 ## in the corporation's territory (laid out like the Grid data, the boss end near the
 ## corporation's HQ), links along the streets, pending threat routes in its colour.
-static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Array], selected: StringName = &"") -> Dictionary:
+##
+## ART-5 5d: `v4` (the Grid page) gives each node its Site marker v4 (`marker`:
+## SiteMarker.spec_for; `pinned`; an Exploit Site's `exploit_tag` for its hover file), the
+## links to a TAKEN or DOWN node de-powered, and the locked cross-links (grey dashes and a
+## padlock). Selectable = a run launches there now (`cfg`: the campaign config, else the
+## running one).
+static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Array], selected: StringName = &"", v4: bool = false,
+		cfg: CampaignConfigData = null) -> Dictionary:
 	var points := site_points(corp)
 	var corp_col := Palette.corp_color(corp.id)
 	var nodes: Array[Dictionary] = []
+	var selectable := {}
+	var dead := {}
+	if v4:
+		if cfg == null and RunManager != null:
+			cfg = RunManager.config()
+		if cfg != null:
+			for s in CampaignRules.launchable_sites(c, corp, cfg):
+				selectable[s.id] = true
 	for sd in corp.city_grid.sites:
 		if sd == null:
 			continue
@@ -112,10 +127,30 @@ static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Arr
 			mark = CityMapOverlay.MARK_CROSS
 		# H22: the translated name (TextDb), as on every other screen.
 		var site_label := home_label() if home else TextDb.t(sd, "display_name")
-		nodes.append({"id": sd.id, "at": points[sd.id], "color": col, "mark": mark, "kind": kind,
+		var node := {"id": sd.id, "at": points[sd.id], "color": col, "mark": mark, "kind": kind,
 			"label": site_label if named else "", "name": site_label, "glyph": glyph, "big": home or objective == RC.SiteObjective.CENTRAL_SERVER,
 			"tier": 0 if home else sd.tier,
-			"tip": site_tip(site_label, sd.tier, status, kind)})
+			"tip": site_tip(site_label, sd.tier, status, kind)}
+		if v4:
+			var spec := SiteMarker.spec_for(c, corp.id, sd, selectable.has(sd.id))
+			node["marker"] = spec
+			node["pinned"] = spec["pinned"]
+			var lines := PackedStringArray([node["tip"]])
+			var key := SiteMarker.meaning_key(spec)
+			if key == "down" or key == "taken":
+				lines.append(SiteMarker.meaning(key))
+			if spec["status"] == SiteMarker.ST_CLEARED:
+				lines.append(CityMapOverlay.tr_word(SiteMarker.PATROL_TIP))
+			if spec["kind"] == SiteMarker.KIND_EXPLOIT:
+				var tag := SiteMarker.exploit_tag(corp, int(spec["exploit"]))
+				if not tag.is_empty():
+					tag["site"] = "%s  %s" % [CityMapOverlay.tier_text(sd.tier), site_label]
+					node["exploit_tag"] = tag
+					lines.insert(0, "%s // %s: %s" % [tag["category"], tag["name"], tag["effect"]])
+			node["tip"] = "\n".join(lines)
+			if spec["status"] == SiteMarker.ST_TAKEN or spec["status"] == SiteMarker.ST_DOWN:
+				dead[sd.id] = true
+		nodes.append(node)
 	var edges: Array[Dictionary] = []
 	var seen := {}
 	for sd in corp.city_grid.sites:
@@ -128,7 +163,23 @@ static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Arr
 				continue
 			seen[str(key)] = true
 			var ours := c.grid.is_claimed(sd.id) and c.grid.is_claimed(l)
-			edges.append({"a": sd.id, "b": l, "color": Palette.CELL_TURF if ours else Color(Palette.NET_CYAN, 0.6), "width": 3.5 if ours else 2.0, "flow": ours})
+			var e := {"a": sd.id, "b": l, "color": Palette.CELL_TURF if ours else Color(Palette.NET_CYAN, 0.6), "width": 3.5 if ours else 2.0, "flow": ours}
+			if dead.has(sd.id) or dead.has(l):
+				e["depowered"] = true  # ART-5 5d: no power flows to a TAKEN or DOWN node
+				e["flow"] = false
+			edges.append(e)
+		if v4:
+			# ART-5 5d: the locked cross-links still shut (an opened one is a link like any).
+			for l in sd.locked_links:
+				var key := [String(sd.id), String(l)]
+				key.sort()
+				if seen.has(str(key)):
+					continue
+				seen[str(key)] = true
+				if c.grid.is_link_open(sd.id, l):
+					edges.append({"a": sd.id, "b": l, "color": Color(Palette.NET_CYAN, 0.6), "width": 2.0, "flow": false})
+				else:
+					edges.append({"a": sd.id, "b": l, "color": Palette.TEXT_LO, "width": 2.0, "flow": false, "locked": true})
 	for path in paths:
 		for i in path.size() - 1:
 			edges.append({"a": path[i], "b": path[i + 1], "color": corp_col, "width": 4.0, "dashed": true, "flow": true, "arrows": true})
