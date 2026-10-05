@@ -54,12 +54,12 @@ float motif_mask(vec2 px) {
 	} else if (motif == 2) {
 		// Cells: hexagons and floating bubbles.
 		vec2 p = px / 38.0;
-		vec2 a = mod(p, vec2(1.732, 1.0)) - vec2(0.866, 0.5);
-		vec2 b = mod(p - vec2(0.866, 0.5), vec2(1.732, 1.0)) - vec2(0.866, 0.5);
-		vec2 q = dot(a, a) < dot(b, b) ? a : b;
-		q = abs(q);
+		vec2 rr = vec2(1.0, 1.732);
+		vec2 a = mod(p, rr) - rr * 0.5;
+		vec2 b = mod(p - rr * 0.5, rr) - rr * 0.5;
+		vec2 q = abs(dot(a, a) < dot(b, b) ? a : b);
 		float hex = max(dot(q, normalize(vec2(1.0, 1.732))), q.x);
-		float edge = 1.0 - smoothstep(0.0, 0.05, abs(hex - 0.5));
+		float edge = 1.0 - smoothstep(0.0, 0.04, abs(hex - 0.5));
 		vec2 c = floor(px / 90.0);
 		float bub = 1.0 - smoothstep(0.0, 1.2, abs(length(px - (c + vec2(h(c), h(c + 2.0))) * 90.0) - (8.0 + h(c + 5.0) * 24.0)));
 		return max(edge * 0.43, bub * 0.35);

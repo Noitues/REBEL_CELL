@@ -16,7 +16,7 @@ var tint: Color = Palette.NET_CYAN
 
 ## The print's width at text scale 1.0 (px; its height follows), the frame, the caption band
 ## (shares of the width), the tape's size (px at 1.0) and the vignette's strength.
-const WIDTH := 172.0
+const WIDTH := 132.0
 const HEIGHT_SHARE := 1.2
 const FRAME_SHARE := 0.05
 const CAPTION_SHARE := 0.16
@@ -38,14 +38,32 @@ func refit() -> void:
 	custom_minimum_size = Vector2(w, w * HEIGHT_SHARE)
 	size = custom_minimum_size
 	pivot_offset = size * 0.5
-	rotation_degrees = tilt
 	queue_redraw()
 
 
-## The picture's rect inside the frame (local px).
+## The caption as drawn: one line stepped down to the caption floor, or (a long name) its
+## words wrapped at the floor. {"lines", "fs"}.
+func caption_layout() -> Dictionary:
+	var f := EndFaces.ballpoint()
+	var room := size.x * (1.0 - FRAME_SHARE * 2.0)
+	var fs := UiTheme.font_px(UiTheme.BODY)
+	var floor_px := UiTheme.font_px(UiTheme.CAPTION)
+	while fs > floor_px and f.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
+		fs -= 1
+	if f.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= room:
+		return {"lines": PackedStringArray([caption]), "fs": fs}
+	return {"lines": HeatPoster.wrap_words(f, caption, floor_px, room), "fs": floor_px}
+
+
+## The picture's rect inside the frame (local px): square, smaller when the caption takes
+## more than one line.
 func image_rect() -> Rect2:
 	var m := size.x * FRAME_SHARE
-	return Rect2(Vector2(m, m), Vector2(size.x - m * 2.0, size.x - m * 2.0))
+	var lay := caption_layout()
+	var line_h := EndFaces.ballpoint().get_height(int(lay["fs"]))
+	var band := maxf(size.y - size.x, line_h * (lay["lines"] as PackedStringArray).size() + m)
+	var side := minf(size.x - m * 2.0, size.y - m - band)
+	return Rect2(Vector2((size.x - side) * 0.5, m), Vector2(side, side))
 
 
 func _draw() -> void:
@@ -74,10 +92,15 @@ func _draw() -> void:
 	for i in 4:
 		draw_rect(img.grow(-i * 2.0), Color(Palette.INK, VIGNETTE * 0.12 * (4 - i) / 4.0), false, 2.0)
 	var f := EndFaces.ballpoint()
-	var fs := UiTheme.font_px(UiTheme.BODY)
-	var band_top := img.end.y
-	var base := band_top + (size.y - band_top + f.get_ascent(fs) - f.get_descent(fs)) * 0.5
-	draw_string(f, Vector2(img.position.x, base), caption, HORIZONTAL_ALIGNMENT_CENTER, img.size.x, fs, PaperInk.text(Palette.END_BALLPOINT))
+	var lay := caption_layout()
+	var fs: int = lay["fs"]
+	var lines: PackedStringArray = lay["lines"]
+	var m := size.x * FRAME_SHARE
+	var line_h := f.get_height(fs)
+	var y := img.end.y + (size.y - img.end.y - line_h * lines.size()) * 0.5 + f.get_ascent(fs)
+	for line in lines:
+		draw_string(f, Vector2(m, y), line, HORIZONTAL_ALIGNMENT_CENTER, size.x - m * 2.0, fs, PaperInk.text(Palette.END_BALLPOINT))
+		y += line_h
 	# The tape over the top edge.
 	var t := TAPE * s
 	draw_set_transform(Vector2(size.x * 0.5, 0.0), deg_to_rad(4.0), Vector2.ONE)

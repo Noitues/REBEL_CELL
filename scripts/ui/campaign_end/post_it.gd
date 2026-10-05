@@ -35,6 +35,9 @@ func refit() -> void:
 	var f := EndFaces.ballpoint()
 	var fs := UiTheme.font_px(HAND_STEP)
 	var w := SIDE.x * s
+	# Never narrower than its longest word (a word is never broken between letters).
+	for word in words.split(" ", false):
+		w = maxf(w, f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + PAD * 2.0 * s + 2.0)
 	var lines := HeatPoster.wrap_words(f, words, fs, w - PAD * 2.0 * s)
 	var h := maxf(SIDE.y * s, SIDE.y * s * BAND_SHARE + PAD * 2.0 * s + lines.size() * f.get_height(fs) * LINE_SHARE)
 	custom_minimum_size = Vector2(w, h)
@@ -57,7 +60,7 @@ func _draw() -> void:
 	draw_rect(Rect2(0, 0, size.x, band), PaperInk.opaque(paper.darkened(BAND_DARK)))
 	var f := EndFaces.ballpoint()
 	var fs := UiTheme.font_px(HAND_STEP)
-	var lines := HeatPoster.wrap_words(f, words, fs, size.x - PAD * 2.0 * s)
+	var lines := HeatPoster.wrap_words(f, words, fs, size.x - PAD * 2.0 * s + 1.0)
 	var y := band + PAD * s + f.get_ascent(fs)
 	for line in lines:
 		draw_string(f, Vector2(PAD * s, y), line, HORIZONTAL_ALIGNMENT_LEFT, size.x - PAD * 2.0 * s, fs, PaperInk.text(Palette.END_BALLPOINT))

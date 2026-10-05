@@ -203,15 +203,15 @@ func _build_notice() -> void:
 	row.add_child(words)
 	var head := _label(tr(style.head), style.head_font(), UiTheme.HEADING, Palette.END_HOUSE_TEXT)
 	head.name = "Head"
-	head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(head)  # whole words, never mid-word (ART-0 F)
 	words.add_child(head)
 	var sub := _label(tr(style.sub), Palette.body(), UiTheme.BODY, style.color())
 	sub.name = "Sub"
-	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(sub)  # whole words, never mid-word (ART-0 F)
 	words.add_child(sub)
 	fields_label = _label("", Palette.mono(), UiTheme.BODY, Palette.END_HOUSE_TEXT)
 	fields_label.name = "Fields"
-	fields_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(fields_label)  # whole words, never mid-word (ART-0 F)
 	words.add_child(fields_label)
 	progress = Control.new()
 	progress.name = "Progress"
@@ -235,7 +235,7 @@ func _build_notice() -> void:
 		foot.add_theme_constant_override("margin_" + side, roundi(UiTheme.SP_L * s))
 	col.add_child(foot)
 	var footer := _label(tr("decryption is not offered.  your station is no longer yours."), Palette.mono(), UiTheme.BODY, Palette.TEXT_MID)
-	footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(footer)  # whole words, never mid-word (ART-0 F)
 	foot.add_child(footer)
 
 

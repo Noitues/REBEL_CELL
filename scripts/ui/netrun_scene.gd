@@ -3248,6 +3248,9 @@ const END_GROW := 1.3
 const END_VERDICT_STEP := UiTheme.DISPLAY
 const END_VERDICT_TILT := -6.0
 const END_SLAP := &"run_end_slap"
+## The most the verdict and BACK TO HQ stickers grow with the text size (whole objects, bible
+## §2.9: at 2.0 the window kept off the screen's foot).
+const END_STICKER_CAP := 1.3
 
 
 func _show_end() -> void:
@@ -3273,12 +3276,19 @@ func _show_end() -> void:
 	stamp.pre_translated = true
 	stamp.verdict = end_verdict(s.run.outcome)
 	stamp.resolved = true
+	stamp.scale_cap = END_STICKER_CAP
 	stamp.refit()
-	stamp.rotation_degrees = END_VERDICT_TILT
-	stamp.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	stamp.mouse_filter = Control.MOUSE_FILTER_PASS
 	stamp.tooltip_text = UiTip.fold(end_fate(s))
-	head.add_child(stamp)
+	# A container resets a child's tilt when it lays it out: the sticker's holder tilts it.
+	var tilted := TiltBox.new(END_VERDICT_TILT, stamp)
+	# The verdict over the screen's one verb (BACK TO HQ, below): the window stays one row tall.
+	var side_col := VBoxContainer.new()
+	side_col.name = "RunEndSide"
+	side_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	side_col.add_theme_constant_override("separation", roundi(UiTheme.SP_L * Settings.text_scale))
+	side_col.add_child(tilted)
+	head.add_child(side_col)
 	var col_box := VBoxContainer.new()
 	col_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col_box.add_theme_constant_override("separation", 10)
@@ -3312,12 +3322,14 @@ func _show_end() -> void:
 	why_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	why.add_child(why_text)
 	col_box.add_child(why)
-	# BACK TO HQ: the screen's one verb, a pink sticker at the window's foot.
+	# BACK TO HQ: the screen's one verb, a pink sticker under the verdict.
 	var foot := HBoxContainer.new()
 	foot.name = "RunEndFoot"
-	foot.alignment = BoxContainer.ALIGNMENT_END
-	report.body.add_child(foot)
+	foot.alignment = BoxContainer.ALIGNMENT_CENTER
+	side_col.add_child(foot)
 	var back := VinylButton.new(TextDb.mark("Back to HQ"), Palette.END_VINYL_PINK, UiTheme.HEADING)
+	back.sticker.scale_cap = END_STICKER_CAP
+	back.refit()
 	back.name = "BackToHq"
 	back.pressed.connect(finish_run)
 	back.tooltip_text = UiTip.fold(tr("Back to HQ: the campaign, the City Grid and the crew."))

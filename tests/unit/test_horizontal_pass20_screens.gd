@@ -263,8 +263,8 @@ func test_the_netrun_end_is_tags_and_a_stamp_that_takes_no_focus() -> void:
 	RunManager.netrun.run.phase = RunState.Phase.ENDED
 	scene._show_end()
 	await _frames()
-	# ANIM-R5 B3: the verdict is a resolved ForecastStamp (its tooltip says what it means).
-	var stamp := scene._panel.find_child("ResultStamp", true, false) as ForecastStamp
+	# ANIM-R5 B3 / ART-11 4D: the verdict is a vinyl sticker (its tooltip says what it means).
+	var stamp := scene._panel.find_child("ResultStamp", true, false) as VinylWord
 	assert_not_null(stamp, "the verdict stamp")
 	assert_eq(stamp.focus_mode, Control.FOCUS_NONE)
 	assert_eq(stamp.verdict, "JACKED OUT")

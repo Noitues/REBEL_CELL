@@ -955,6 +955,10 @@ func _focus_named(node_name: String) -> void:
 # --- Panels ---------------------------------------------------------------------------------
 
 func _set_panel(p: Control, name: String) -> void:
+	# ART-11 4D: the campaign lost lock goes with its page.
+	if name != "end_lock" and end_lock != null and is_instance_valid(end_lock):
+		end_lock.queue_free()
+		end_lock = null
 	# ANIM-4: the old page's drop targets go with it (a flight in the air keeps going).
 	if drops != null:
 		drops.reset()
@@ -3635,6 +3639,8 @@ func show_raid_summary() -> void:
 ## the most stickers of the Armory the lock puts on the glass.
 const END_LOCK_WAIT_FRAMES := 240
 const END_LOCK_CARDS := 5
+## The lock's camera on the network: close enough that its padlocks stand round the notice.
+const END_LOCK_ZOOM := 1.9
 ## The prints' crop round the home server and round the network (share of the screen's height
 ## and the network's bounds' margin, px).
 const END_PRINT_HOME_SHARE := 0.36
@@ -3648,7 +3654,7 @@ func show_end() -> void:
 	var c := RunManager.campaign
 	var won := c.outcome == CampaignState.Outcome.WON
 	Dialogue.speak("win" if won else "loss", RC.Voice.DISPATCH, c.corporation_id, &"", c.campaign_seed)
-	if not won and RansomLock.plays_now():
+	if c.outcome == CampaignState.Outcome.LOST and RansomLock.plays_now():
 		_show_end_lock()
 	else:
 		show_dossier([] as Array[Dictionary])
@@ -3664,7 +3670,7 @@ func _show_end_lock() -> void:
 	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_set_panel(page, "end_lock")
 	var g := raid_graph(c.last_raid.get("nodes", {}), {})
-	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.5, 0.55))
+	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.5, 0.5), END_LOCK_ZOOM)
 	city_overlay.packets = false
 	if end_lock != null and is_instance_valid(end_lock):
 		end_lock.queue_free()

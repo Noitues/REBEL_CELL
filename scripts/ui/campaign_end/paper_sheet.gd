@@ -7,7 +7,7 @@ extends MarginContainer
 
 ## The stock.
 var stock: Color = Palette.END_REPORT
-## The tilt (degrees) and the shadow's offset (px at 1.0).
+## The tilt its holder gives it (TiltBox, degrees) and the shadow's offset (px at 1.0).
 var tilt: float = 0.0
 const SHADOW_OFFSET := Vector2(5, 8)
 ## The fibre grain: marks per 10 000 px², their length (px) and alpha. Drawn from a hash of
@@ -29,7 +29,6 @@ func _init(p_stock: Color = Palette.END_REPORT, p_tilt: float = 0.0, pad: float 
 
 func _on_resized() -> void:
 	pivot_offset = size * 0.5
-	rotation_degrees = tilt
 	queue_redraw()
 
 

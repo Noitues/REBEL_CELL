@@ -113,13 +113,18 @@ func shown_text() -> String:
 	return text if pre_translated else tr(text)
 
 
+## The most the sticker grows with the text size (0 = with it all the way): a sticker is a
+## whole object (bible §2.9), and a big verdict at 2.0 would push its window off the screen.
+var scale_cap: float = 0.0
+
+
 ## The lettering size now (px).
 func font_px() -> int:
-	return roundi(font_size * Settings.text_scale)
+	return roundi(font_size * _s())
 
 
 func _s() -> float:
-	return Settings.text_scale
+	return minf(Settings.text_scale, scale_cap) if scale_cap > 0.0 else Settings.text_scale
 
 
 ## Measures the sticker at the text size now.
@@ -254,6 +259,9 @@ func _draw_card(inner: Rect2) -> void:
 	var f := Palette.display()
 	var fs := roundi(font_size * s)
 	var name_w := inner.size.x - BORDER * s
+	# The name steps down to the caption floor to fit the card.
+	while fs > UiTheme.font_px(UiTheme.CAPTION) and f.get_string_size(shown_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > name_w:
+		fs -= 1
 	_ink.draw_string(f, Vector2(inner.position.x + BORDER * 0.5 * s, inner.end.y - BORDER * s), shown_text(), HORIZONTAL_ALIGNMENT_LEFT, name_w, fs, Palette.TEXT_HI)
 
 

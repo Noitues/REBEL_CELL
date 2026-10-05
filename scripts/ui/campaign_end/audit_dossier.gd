@@ -25,23 +25,25 @@ const MOTIONS: Array[StringName] = [OPEN, STAMP, NOTE, NOTE_STAGGER]
 ## The desk's margin round the folder, the folder's inner pad, the gap between the pages, the
 ## file tab's size and its inset from the right (px at 1.0).
 const DESK_MARGIN := 18.0
-const FOLDER_PAD := 18.0
+const FOLDER_PAD := 12.0
 const PAGE_GAP := 30.0
-const TAB := Vector2(190, 26)
+const TAB := Vector2(190, 22)
 const TAB_INSET := 40.0
 ## The spine's crease (px) and how far the stickers overlap the folder's foot (px at 1.0).
 const SPINE := 3.0
-const BUTTON_OVERLAP := 22.0
+const BUTTON_OVERLAP := 34.0
 ## A page's share of the post-it width it leaves free on its right for the notes.
 const NOTE_ROOM := 0.62
 ## The CASE CLOSED stamp's spot on the report (share from its top-left) and tilt.
-const STAMP_AT := Vector2(0.68, 0.2)
+const STAMP_AT := Vector2(0.58, 0.22)
 const STAMP_TILT := -12.0
 ## The letterhead seal's side (px at 1.0) and the rule under the letterhead (px).
 const LETTERHEAD_SEAL := 58.0
 const LETTERHEAD_RULE := 3.0
 ## The personnel rows' bust side (px at 1.0).
-const BUST := 34.0
+const BUST := 26.0
+## The typed fields' size at text scale 1.0 (bible §2.9: 20 px fields at 1080p, ÷1.5).
+const FIELD_PX := 13
 ## Leader dots after a field name up to this many characters (the typed column).
 const FIELD_WIDTH := 14
 
@@ -149,6 +151,8 @@ func _build() -> void:
 	var column := VBoxContainer.new()
 	column.name = "Desk"
 	column.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	column.offset_left = DESK_MARGIN * 2.0 * s
+	column.offset_right = -DESK_MARGIN * 2.0 * s
 	column.add_theme_constant_override(&"separation", roundi(-BUTTON_OVERLAP * s))
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(column)
@@ -167,7 +171,7 @@ func _build() -> void:
 	left_page = VBoxContainer.new()
 	left_page.name = "LeftPage"
 	left_page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	left_page.add_theme_constant_override(&"separation", roundi(UiTheme.SP_M * s))
+	left_page.add_theme_constant_override(&"separation", roundi(UiTheme.SP_S * s))
 	spread.add_child(left_page)
 	right_page = VBoxContainer.new()
 	right_page.name = "RightPage"
@@ -240,20 +244,20 @@ func _build_photos() -> void:
 	var tilts := [-5.0, 3.5, -2.5]
 	for i in photos.size():
 		var p: Dictionary = photos[i]
-		var ph := DossierPhoto.new(String(p.get("caption", "")), tilts[i % tilts.size()])
+		var ph := DossierPhoto.new(String(p.get("caption", "")))
 		ph.name = "Print%d" % i
 		ph.picture = p.get("texture", null)
 		ph.subject = p.get("subject", {})
 		ph.tint = style.color()
-		row.add_child(ph)
+		row.add_child(TiltBox.new(tilts[i % tilts.size()], ph))
 
 
 func _build_personnel() -> void:
 	var s := Settings.text_scale
-	personnel = PaperSheet.new(Palette.END_REPORT, 1.0)
+	personnel = PaperSheet.new(Palette.END_REPORT, 1.0, UiTheme.SP_M)
 	personnel.name = "Personnel"
 	personnel.add_theme_constant_override(&"margin_right", roundi(PostIt.SIDE.x * NOTE_ROOM * s))
-	left_page.add_child(personnel)
+	left_page.add_child(TiltBox.new(personnel.tilt, personnel))
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override(&"separation", roundi(UiTheme.SP_XS * s))
 	personnel.add_child(col)
@@ -275,7 +279,7 @@ func _build_personnel() -> void:
 		names.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(names)
 		var alive: bool = r["alive"]
-		var head := _typed("%s  R%d" % [who.to_upper(), int(r["rank"])], UiTheme.BODY, true)
+		var head := _typed("%s  R%d" % [who.to_upper(), int(r["rank"])], FIELD_PX, true)
 		head.name = "Name"
 		if not alive:
 			head.draw.connect(_strike.bind(head))
@@ -288,10 +292,10 @@ func _build_personnel() -> void:
 			fate = tr("AT LARGE (stationed: %s)") % String(r["post"])
 		else:
 			fate = tr("AT LARGE (reserve)")
-		var fate_label := _typed(fate, UiTheme.BODY, false, Palette.END_STAMP_RED if not alive else Palette.END_TYPE_INK)
+		var fate_label := _typed(fate, FIELD_PX, false, Palette.END_STAMP_RED if not alive else Palette.END_TYPE_INK)
 		fate_label.name = "Fate"
 		fate_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		fate_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		UiWrap.whole_words(fate_label)  # whole words, never mid-word (ART-0 F)
 		row.add_child(fate_label)
 
 
@@ -314,9 +318,9 @@ func _rule(col: Color, h: float = 2.0) -> ColorRect:
 
 func _build_annex() -> void:
 	var s := Settings.text_scale
-	annex = PaperSheet.new(Palette.END_ANNEX, -0.8)
+	annex = PaperSheet.new(Palette.END_ANNEX, -0.8, UiTheme.SP_M)
 	annex.name = "Annex"
-	left_page.add_child(annex)
+	left_page.add_child(TiltBox.new(annex.tilt, annex))
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override(&"separation", roundi(UiTheme.SP_XS * s))
 	annex.add_child(col)
@@ -326,13 +330,19 @@ func _build_annex() -> void:
 		story.add_theme_constant_override(&"separation", roundi(UiTheme.SP_XS * s))
 		col.add_child(story)
 		story.add_child(_typed(tr("ANNEX A  //  RECOVERED INTERCEPTS"), UiTheme.BODY, true))
+		# The intercepts by title on one typed run (their words in the tooltip: the HQ's story
+		# window read them in full during the campaign).
+		var titles := PackedStringArray()
+		var texts := PackedStringArray()
 		for b in facts.beats:
-			var t := _typed(String(b["title"]).to_upper(), UiTheme.BODY, true)
-			t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			story.add_child(t)
-			var body := _typed(String(b["text"]), UiTheme.BODY)
-			body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			story.add_child(body)
+			titles.append(String(b["title"]).to_upper())
+			texts.append("%s: %s" % [String(b["title"]), String(b["text"])])
+		var t := _typed(" / ".join(titles), FIELD_PX)
+		t.name = "Intercepts"
+		UiWrap.whole_words(t)  # whole words, never mid-word (ART-0 F)
+		t.mouse_filter = Control.MOUSE_FILTER_PASS
+		t.tooltip_text = UiTip.fold("\n".join(texts))
+		story.add_child(t)
 	var risk := VBoxContainer.new()
 	risk.name = "ProfileFacts"
 	risk.add_theme_constant_override(&"separation", roundi(UiTheme.SP_XS * s))
@@ -342,17 +352,17 @@ func _build_annex() -> void:
 	var lines := [tr("subject's record: %d campaigns won, %d lost, best ICE %s.") % [facts.campaigns_won, facts.campaigns_lost, best],
 		tr("the next %s campaign may start up to ICE %d.") % [facts.corporation_name, facts.next_ice]]
 	for line: String in lines:
-		var l := _typed(line, UiTheme.BODY)
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var l := _typed(line, FIELD_PX)
+		UiWrap.whole_words(l)  # whole words, never mid-word (ART-0 F)
 		risk.add_child(l)
 
 
 func _build_report() -> void:
 	var s := Settings.text_scale
-	report = PaperSheet.new(Palette.END_REPORT, 1.2)
+	report = PaperSheet.new(Palette.END_REPORT, 1.2, UiTheme.SP_M)
 	report.name = "AuditReport"
 	report.add_theme_constant_override(&"margin_right", roundi(PostIt.SIDE.x * NOTE_ROOM * s))
-	right_page.add_child(report)
+	right_page.add_child(TiltBox.new(report.tilt, report))
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override(&"separation", roundi(UiTheme.SP_XS * s))
 	report.add_child(col)
@@ -368,6 +378,7 @@ func _build_report() -> void:
 	head.add_child(seal)
 	var names := VBoxContainer.new()
 	names.alignment = BoxContainer.ALIGNMENT_CENTER
+	names.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	names.add_theme_constant_override(&"separation", 0)
 	head.add_child(names)
 	var corp_line := Label.new()
@@ -388,7 +399,7 @@ func _build_report() -> void:
 	var title := _typed(tr("AUDIT REPORT"), UiTheme.TITLE, true)
 	title.name = "Title"
 	col.add_child(title)
-	var lines := _typed("\n".join(report_lines()), UiTheme.BODY)
+	var lines := _typed("\n".join(report_lines()), FIELD_PX)
 	lines.name = "Fields"
 	col.add_child(lines)
 	var trace := HeatTrace.new()
@@ -431,7 +442,7 @@ func _relayout() -> void:
 	# Side by side when both pages fit the folder; one over the other when not (large text).
 	var s := Settings.text_scale
 	spread.vertical = false
-	var room := size.x - (FOLDER_PAD * 2.0 + PAGE_GAP) * s
+	var room := size.x - (FOLDER_PAD * 2.0 + PAGE_GAP + DESK_MARGIN * 4.0) * s
 	var want := left_page.get_combined_minimum_size().x + right_page.get_combined_minimum_size().x
 	spread.vertical = want > room
 	custom_minimum_size.y = get_child(0).get_combined_minimum_size().y
@@ -499,14 +510,16 @@ func _place_overlays() -> void:
 	var amp := Motion.amplitude(STAMP)
 	case_stamp.scale = Vector2.ONE * (lerpf(amp, 1.0, ease(sp, 0.4)) if amp > 0.0 else 1.0)
 	var spots := [Vector2(per.end.x - notes[0].size.x * 0.75, per.position.y + UiTheme.SP_L * s),
-		Vector2(per.end.x - notes[1].size.x * 0.7, per.end.y - notes[1].size.y * 0.75),
+		Vector2(per.end.x - notes[1].size.x * 0.68, per.position.y + notes[0].size.y + UiTheme.SP_S * s),
 		Vector2(rep.end.x - notes[2].size.x * 0.7, rep.position.y - UiTheme.SP_S * s),
-		Vector2(rep.end.x - notes[3].size.x * 0.72, rep.end.y - notes[3].size.y * 0.85)]
+		Vector2(rep.end.x - notes[3].size.x * 0.5, rep.end.y - notes[3].size.y * 0.55)]
 	var stagger := Motion.seconds(NOTE_STAGGER) if Motion.live(NOTE_STAGGER) else 0.0
 	var namp := Motion.amplitude(NOTE)
 	for i in notes.size():
 		var n := notes[i]
-		n.position = spots[i % spots.size()]
+		var at: Vector2 = spots[i % spots.size()]
+		# On the desk, never past the screen's edge.
+		n.position = Vector2(clampf(at.x, 0.0, maxf(0.0, size.x - n.size.x)), at.y)
 		var p := phase(NOTE, stagger * i)
 		n.visible = p > 0.0
 		n.scale = Vector2.ONE * (lerpf(namp, 1.0, ease(p, 0.4)) if namp > 0.0 else 1.0)
@@ -529,8 +542,11 @@ func _place_overlays() -> void:
 
 
 func _draw() -> void:
-	# The desk under the folder, warmer under the lamp.
-	var r := Rect2(Vector2.ZERO, size)
+	# The desk under the folder, warmer under the lamp: it runs to the screen's edges round the
+	# page (the city never shows round the file).
+	var vp := get_viewport_rect().size
+	var origin := get_global_transform().affine_inverse() * Vector2.ZERO
+	var r := Rect2(origin, vp).merge(Rect2(Vector2.ZERO, size))
 	draw_rect(r, Palette.END_DESK)
 	var lamp := Vector2(size.x * 0.32, size.y * 0.2)
 	for i in 6:
