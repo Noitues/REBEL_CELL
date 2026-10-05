@@ -11,7 +11,7 @@ extends GutTest
 var RAID_OLD := RegEx.create_from_string("(?i)\\b(" + "sei" + "z(e|ed|es)|" + "dis" + "abled)\\b|\\b(?-i:ALL " + "HOLD|CAMPAIGN " + "LOST)\\b")
 ## The shop node's old name (ruling 6.5); it is the Mainframe now.
 var SHOP_OLD := RegEx.create_from_string("(?i)" + "mo" + "dem")
-## The Manifest's hub's old name (ruling 6.1): Priority Routing -> Customs Seal.
+## The Manifest's hub's old name (ruling 6.1); it is the Customs Seal now.
 var HUB_OLD := RegEx.create_from_string("(?i)priority[ _]" + "routing")
 
 ## Strings that use an old raid word in an unrelated meaning (freight flavour, a Hub
@@ -93,19 +93,26 @@ func test_no_player_string_or_content_names_the_old_shop_node() -> void:
 	assert_eq(hits, [] as Array[String], "the shop node is the Mainframe (ruling 6.5)")
 
 
+func test_no_player_string_or_content_names_the_old_manifest_hub() -> void:
+	var hits: Array[String] = []
+	for s in _csv_strings() + _content_strings():
+		if HUB_OLD.search(s) != null:
+			hits.append(s)
+	assert_eq(hits, [] as Array[String], "the Manifest's hub is the Customs Seal (ruling 6.1)")
+
 
 ## Ruling 5: ids, enums, file and class names follow the words; no alias is kept.
 func test_no_code_file_or_path_keeps_an_old_name() -> void:
 	var hits: Array[String] = []
 	for root in CODE_ROOTS:
 		for path in _files(root, CODE_EXTS):
-			if SHOP_OLD.search(path) != null:
+			if SHOP_OLD.search(path) != null or HUB_OLD.search(path) != null:
 				hits.append(path)
 				continue
 			var lines := FileAccess.get_file_as_string(path).split("\n")
 			for i in lines.size():
 				var line := lines[i]
-				if SHOP_OLD.search(line) != null:
+				if SHOP_OLD.search(line) != null or HUB_OLD.search(line) != null:
 					hits.append("%s:%d" % [path, i + 1])
 				elif _raid_hit(line) and _raid_identifier(line):
 					hits.append("%s:%d" % [path, i + 1])

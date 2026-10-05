@@ -881,6 +881,8 @@ HubCoreData.breaker_core_mk2.description,+2 spin on all cards. Perfect: the slic
 HubCoreData.breaker_core_mk2.display_name,Breaker Core Mk2
 HubCoreData.compliance_lock.description,Spin resistance 3 while the Hub is online.
 HubCoreData.compliance_lock.display_name,Compliance Lock
+HubCoreData.customs_seal.description,Gains 4 shield each turn unless the Hub is breached.
+HubCoreData.customs_seal.display_name,Customs Seal
 HubCoreData.emergency_powers.description,Heals 4 and gains 4 block each turn unless the Hub is breached.
 HubCoreData.emergency_powers.display_name,Emergency Powers
 HubCoreData.ghost_core.description,"First nudge on an enemy wheel each turn ignores resistance. Perfect: the slice resolves twice; on each resolution, strip 2 resistance."
@@ -899,8 +901,6 @@ HubCoreData.phantom_core.description,"A free nudge at the start of each turn. Pe
 HubCoreData.phantom_core.display_name,Phantom Core
 HubCoreData.phantom_core_mk2.description,"Two free nudges at the start of each turn. Perfect: the slice resolves twice; on each resolution, evade the next attack."
 HubCoreData.phantom_core_mk2.display_name,Phantom Core Mk2
-HubCoreData.priority_routing.description,Gains 4 shield each turn unless the Hub is breached.
-HubCoreData.priority_routing.display_name,Priority Routing
 HubCoreData.rig_core.description,"+1 max RAM. Perfect: the slice resolves again at half; on each resolution, refund 1 RAM and gain a free nudge."
 HubCoreData.rig_core.display_name,Rig Core
 HubCoreData.rig_core_mk2.description,"+2 max RAM. Perfect: the slice resolves again at half; on each resolution, refund 2 RAM and gain a free nudge."

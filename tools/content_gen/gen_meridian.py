@@ -124,8 +124,8 @@ enemy("logistics_director", "Logistics Director", "Meridian middle management, g
 
 def boss_hub(r):
     fx = r.effect("fx_shield", 2, 0, 4)
-    te = r.te("te_priority", 2, [fx])
-    return r.sub("hub_priority", S_HUB, [("id", '&"priority_routing"'), ("display_name", '"Priority Routing"'),
+    te = r.te("te_customs_seal", 2, [fx])
+    return r.sub("hub_customs_seal", S_HUB, [("id", '&"customs_seal"'), ("display_name", '"Customs Seal"'),
         ("description", '"Gains 4 shield each turn unless the Hub is breached."'),
         ("passive_effects", arr(r.script(S_TE), [te]))])
 
@@ -137,7 +137,7 @@ enemy("the_manifest", "The Manifest", "Meridian's routing core. Every package on
                "wheel": ["crit_24", "tariff", "def_12", "crit_24", "atk_14", "miss"],
                "spawns": [("courier_drone", 1, 1, -1, 2)],
                "line": "Peak season: the heads drift, the couriers launch, the second lane goes critical."}],
-      comment="The Manifest, Meridian final boss (M8, decision 2026-09-24). 400 HP; hub Priority\nRouting gains 4 shield per turn unless breached; 66%: Multiply (0, 15); 33%: Orbit 2, Crit wheel, 2 courier drones.")
+      comment="The Manifest, Meridian final boss (M8, decision 2026-09-24). 400 HP; hub Customs\nSeal gains 4 shield per turn unless breached; 66%: Multiply (0, 15); 33%: Orbit 2, Crit wheel, 2 courier drones.")
 
 # ---- Threats and raids ---------------------------------------------------------------------------------------
 for tid, name, desc, integ, dmg, speed, routing, extra in [

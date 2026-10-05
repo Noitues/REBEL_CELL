@@ -15,8 +15,8 @@
 [ext_resource type="Script" path="res://scripts/data/satellite_spawn_data.gd" id="e12"]
 [ext_resource type="Resource" path="res://content/enemies/courier_drone.tres" id="e13"]
 
-; The Manifest, Meridian final boss (M8, decision 2026-09-24). 400 HP; hub Priority
-; Routing gains 4 shield per turn unless breached; 66%: Multiply (0, 15); 33%: Orbit 2, Crit wheel, 2 courier drones.
+; The Manifest, Meridian final boss (M8, decision 2026-09-24). 400 HP; hub Customs
+; Seal gains 4 shield per turn unless breached; 66%: Multiply (0, 15); 33%: Orbit 2, Crit wheel, 2 courier drones.
 
 [sub_resource type="Resource" id="fx_shield"]
 script = ExtResource("e1")
@@ -24,17 +24,17 @@ type = 2
 target = 0
 amount = 4
 
-[sub_resource type="Resource" id="te_priority"]
+[sub_resource type="Resource" id="te_customs_seal"]
 script = ExtResource("e2")
 trigger = 2
 effects = Array[ExtResource("e1")]([SubResource("fx_shield")])
 
-[sub_resource type="Resource" id="hub_priority"]
+[sub_resource type="Resource" id="hub_customs_seal"]
 script = ExtResource("e3")
-id = &"priority_routing"
-display_name = "Priority Routing"
+id = &"customs_seal"
+display_name = "Customs Seal"
 description = "Gains 4 shield each turn unless the Hub is breached."
-passive_effects = Array[ExtResource("e2")]([SubResource("te_priority")])
+passive_effects = Array[ExtResource("e2")]([SubResource("te_customs_seal")])
 
 [sub_resource type="Resource" id="wheel_slot_atk_14"]
 script = ExtResource("e5")
@@ -60,7 +60,7 @@ slice = ExtResource("e9")
 script = ExtResource("e10")
 slice_count = 6
 slots = Array[ExtResource("e5")]([SubResource("wheel_slot_atk_14"), SubResource("wheel_slot_tariff"), SubResource("wheel_slot_def_12"), SubResource("wheel_slot_crit_24"), SubResource("wheel_slot_atk_14"), SubResource("wheel_slot_miss")])
-hub = SubResource("hub_priority")
+hub = SubResource("hub_customs_seal")
 pointer_ticks = PackedInt32Array(0)
 
 [sub_resource type="Resource" id="phase0"]
@@ -94,7 +94,7 @@ slice = ExtResource("e9")
 script = ExtResource("e10")
 slice_count = 6
 slots = Array[ExtResource("e5")]([SubResource("wheel_phase1_slot_crit_24"), SubResource("wheel_phase1_slot_tariff"), SubResource("wheel_phase1_slot_def_12"), SubResource("wheel_phase1_slot_crit_24"), SubResource("wheel_phase1_slot_atk_14"), SubResource("wheel_phase1_slot_miss")])
-hub = SubResource("hub_priority")
+hub = SubResource("hub_customs_seal")
 pointer_ticks = PackedInt32Array(0, 15)
 
 [sub_resource type="Resource" id="pspawn1_0"]
