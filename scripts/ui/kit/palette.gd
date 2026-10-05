@@ -121,9 +121,10 @@ const SLICE_WORDS := {
 	RC.SliceType.MISS: "MISS", # TR
 }
 ## A corporation's own word for a program on its wheels (DECISIONS "Designer rulings: names
-## for M14", D3 / D4): Meridian's OVERFLOW shows as AIRMAIL.
+## for M14", D3 / D4): Meridian's OVERFLOW shows as AIRMAIL, Solace's HOTFIX as GROWTH.
 const CORP_SLICE_WORDS := {
 	&"meridian": {RC.SliceType.OVERFLOW: "AIRMAIL"}, # TR
+	&"solace": {RC.SliceType.HOTFIX: "GROWTH"}, # TR
 }
 
 

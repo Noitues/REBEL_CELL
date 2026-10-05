@@ -140,6 +140,10 @@ const PART2: Array = [
 		"(?-i)\\bTariff\\b|(?i)\\bjudge?ment\\b",
 		"slices/tariff|&\"tariff\"|\"tariff\"|slot_tariff|(?i)judge?ment",
 		["Tariff Collector", "Tariff Calculation Office", "Tariff season"]],
+	["D4 WEIGHT",
+		"(?i)\\binertia\\b",
+		"(?i)inertia",
+		[]],
 ]
 
 

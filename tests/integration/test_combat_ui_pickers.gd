@@ -116,3 +116,14 @@ func test_a_meridian_wheel_says_airmail_for_its_overflow() -> void:
 	assert_eq(_scene.corp_of(boss), &"meridian")
 	assert_true(_scene.odds_text(boss).contains("AIRMAIL"), "the Manifest's odds name AIRMAIL")
 	assert_false(_scene.odds_text(_state().player).contains("AIRMAIL"), "the operative's do not")
+
+
+## ART-0 D4: a Solace wheel calls its HOTFIX slice GROWTH (Triage Unit heals).
+func test_a_solace_wheel_says_growth_for_its_hotfix() -> void:
+	assert_eq(Palette.slice_word(RC.SliceType.HOTFIX, &"solace"), "GROWTH")
+	assert_eq(Palette.slice_word(RC.SliceType.HOTFIX, &"halcyon"), "HOTFIX")
+	var ids: Array[StringName] = [&"triage_unit"]
+	_scene.engine.start_fight(&"breaker", ids, 3)
+	var e: CombatantState = _state().get_combatant(&"enemy_0")
+	assert_true(_scene.odds_text(e).contains("GROWTH"), "the Triage Unit's odds name GROWTH")
+	assert_false(_scene.odds_text(e).contains("HOTFIX"))

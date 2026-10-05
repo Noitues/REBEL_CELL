@@ -602,7 +602,7 @@ EnemyData.care_drone.description,A swarm drone.
 EnemyData.care_drone.display_name,Care Drone
 EnemyData.care_swarm.description,A cloud of care drones around a fragile core.
 EnemyData.care_swarm.display_name,Care Swarm
-EnemyData.cargo_hauler.description,"Slow, heavy and hard to turn: inertia resists every nudge."
+EnemyData.cargo_hauler.description,"Slow, heavy and hard to turn: its weight resists every nudge."
 EnemyData.cargo_hauler.display_name,Cargo Hauler
 EnemyData.cell_informant.description,It knows your wheel. Its reader orbits 3 a turn.
 EnemyData.cell_informant.display_name,Cell Informant
@@ -778,6 +778,7 @@ GETS %s,GETS %s
 GOOD,GOOD
 GOT %s,GOT %s
 GRID VIEW,GRID VIEW
+GROWTH,GROWTH
 GUARD +%d BLOCK,GUARD +%d BLOCK
 GUARD TOOK %d,GUARD TOOK %d
 Go,Go
@@ -1966,7 +1967,7 @@ SliceData.shim_6.display_name,Shim 6
 SliceData.shim_7.display_name,Shim 7
 SliceData.shim_7_drain.display_name,Shim 7 (drains 1 RAM)
 SliceData.shim_8.display_name,Shim 8
-SliceData.shim_8_inertia.display_name,Shim 8 (+1 resistance)
+SliceData.shim_8_weight.display_name,Shim 8 (+1 resistance)
 SliceData.shim_9.display_name,Shim 9
 SliceData.solar_flare.display_name,Solar Flare
 Slices,Slices

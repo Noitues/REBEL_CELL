@@ -441,7 +441,7 @@ Meridian Freight Systems, Halcyon Civic, Orbital Commons). A beat may trigger a 
 
 ### 8.4b Meridian Freight Systems (M8, DECISIONS.md 2026-09-24)
 Logistics: automated freight, tariffs, tracking, last-mile drones. Enemies lean on
-Inertia (spin resistance), **PRIORITY** (RAM drain; its OVERFLOW shows as **AIRMAIL**; DECISIONS
+**WEIGHT** (spin resistance; was Inertia, D4), **PRIORITY** (RAM drain; its OVERFLOW shows as **AIRMAIL**; DECISIONS
 2026-10-05, names for M14, D3), Conveyors (orbiting pointers) and courier
 drones. Exploits: Intel (shipping manifests), Breach (customs override keys), Virus (rogue
 routing table). Final server: **The Manifest**, which shields itself every turn unless its
@@ -679,7 +679,8 @@ Breaker Rank 1 ring: ×2 / Pierce / —.
 | **Elite:** Recall Unit | 85 | Shim 9, Shim 9, Defrag 8, Overflow 15, Shield 5, Miss | Pointer orbits +2 ticks/turn; passive resistance 1 |
 | **Boss:** Renewal Engine | 300 | Shim 14, Shim 14, Defrag 12, Dose, Overflow 24, Miss | Hub *Auto-Renew*: heal 10/turn unless Hub-Breached. 66%: Multiply to 2 pointers (0, 15). 33%: pointers Orbit 3/turn and spawn 2 drones. |
 
-Dose = INFECT slice applying CORRUPTED to a random non-Miss player slice.
+Dose = INFECT slice applying CORRUPTED to a random non-Miss player slice. Solace wheels show
+HOTFIX as **GROWTH** (DECISIONS 2026-10-05, names for M14, D4).
 
 *M7 balance ruling (2026-09-24, DECISIONS.md):* elites +25% HP (Claims Adjuster 112, Recall
 Unit 106, Account Manager 150) and the Renewal Engine 360 HP; enemy damage scales 1.3 per

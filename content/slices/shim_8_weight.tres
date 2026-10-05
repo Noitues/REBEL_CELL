@@ -19,7 +19,7 @@ effects = Array[ExtResource("e1")]([SubResource("fx")])
 
 [resource]
 script = ExtResource("main_script")
-id = &"shim_8_inertia"
+id = &"shim_8_weight"
 display_name = "Shim 8 (+1 resistance)"
 slice_type = 0
 target_rule = 1

@@ -58,6 +58,9 @@ player strings and code for each item's old words.
   `test_a_meridian_wheel_says_airmail_for_its_overflow`). JUDGEMENT: no id, string or code carried
   it on main; the sweep keeps it out. Kept as flavour: the Tariff Collector enemy, the Tariff
   Calculation Office Site, "Tariff season" and tariffs in prose (allow-listed).
+- **D4.** INERTIA is **WEIGHT**: `shim_8_weight` (was the inertia strike), the codex entry "Weight",
+  the Cargo Hauler's text, GDD 8.4b. Solace's HOTFIX reads **GROWTH** through
+  `Palette.CORP_SLICE_WORDS` (test `test_a_solace_wheel_says_growth_for_its_hotfix`).
 
 ### 2026-10-05 — Art direction — ART-0 names pass, part 1 + saves folder
 Applies rulings 5, 6.1, 6.2 and 6.5 of the entry below (ART-0 area B, items B1–B4). Internal

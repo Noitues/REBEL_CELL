@@ -39,7 +39,7 @@ const LEXICON := {
 	"Priority": "Meridian's fast lane: an enemy slice that bills your RAM for it.",
 	"Citation": "Halcyon's fine: a Parasite on one of your slices until you cleanse it.",
 	"Solar Flare": "Orbital's gift: your slice runs hot once (1.5x), then corrupts.",
-	"Inertia": "Heavy freight resists nudges; some Meridian slices add resistance as they hit.",
+	"Weight": "Heavy freight resists nudges; some Meridian slices add resistance as they hit.",
 	"Mirror": "A copy of one of your own operatives. You will know it when you meet it.",
 }
 

@@ -1,6 +1,6 @@
 """M8: Meridian Freight Systems, the second corporation (GDD 8.4, DECISIONS 2026-09-24).
 Logistics megacorp: automated freight, tariffs, tracking, last-mile drones. Its enemies
-lean on spin resistance (Inertia), RAM drain (Priority), orbiting pointers (Conveyors) and
+lean on spin resistance (Weight), RAM drain (Priority), orbiting pointers (Conveyors) and
 cargo drones; its boss shields itself each turn unless the Hub is breached.
 Only existing effect types and schema (plus RaidData.corporation_id / replaces)."""
 import os
@@ -19,11 +19,11 @@ S_PHASE = "res://scripts/data/boss_phase_data.gd"
 S_SPAWN = "res://scripts/data/satellite_spawn_data.gd"
 
 # ---- Slices ---------------------------------------------------------------------------------------------
-# Priority: INFECT, drains 3 RAM from the pointer target. Inertia strike: Shim 8 that adds 1
+# Priority: INFECT, drains 3 RAM from the pointer target. Weight strike: Shim 8 that adds 1
 # resistance to its owner (Meridian freight gets heavier the more it hits).
 for sid, name, stype, rule, out, fx in [
     ("priority", "Priority", 7, 1, 0, (13, 3, 3)),
-    ("shim_8_inertia", "Shim 8 (+1 resistance)", 0, 1, 8, (10, 0, 1)),
+    ("shim_8_weight", "Shim 8 (+1 resistance)", 0, 1, 8, (10, 0, 1)),
 ]:
     r = Res("SliceData", "res://scripts/data/slice_data.gd")
     e = r.effect("fx", fx[0], fx[1], fx[2])
@@ -101,8 +101,8 @@ r.write("content/enemies/courier_drone.tres", "Meridian satellite (M8).")
 
 enemy("customs_scanner", "Customs Scanner", "Scans every packet and charges a tariff on the suspicious ones.", 50,
       ["shim_9", "priority", "defrag_6", "overflow_14", "shim_9", "miss"])
-enemy("cargo_hauler", "Cargo Hauler", "Slow, heavy and hard to turn: inertia resists every nudge.", 72,
-      ["defrag_8", "shim_10", "defrag_8", "shim_8_inertia", "shield_5", "miss"], passive=2)
+enemy("cargo_hauler", "Cargo Hauler", "Slow, heavy and hard to turn: its weight resists every nudge.", 72,
+      ["defrag_8", "shim_10", "defrag_8", "shim_8_weight", "shield_5", "miss"], passive=2)
 enemy("conveyor_warden", "Conveyor Warden", "Its read head rides the conveyor: the pointer orbits 3 ticks a turn.", 54,
       ["shim_10", "shim_10", "defrag_6", "overflow_16", "priority", "miss"], orbit=3)
 enemy("route_optimizer", "Route Optimizer", "Reads two routes at once: pointers at ticks 0 and 15.", 48,
