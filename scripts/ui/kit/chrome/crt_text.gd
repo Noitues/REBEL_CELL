@@ -59,9 +59,9 @@ func append(text: String) -> void:
 	label.append_text(text + "\n")
 
 
-## A section heading line: terminal CAPS in the accent ("> SLICES").
+## A section heading line: the terminal mono in the accent ("> Slices").
 func heading(text: String) -> void:
-	label.append_text("[color=#%s][code]> %s[/code][/color]\n" % [accent.to_html(false), text.to_upper()])
+	label.append_text("[color=#%s][code]> %s[/code][/color]\n" % [accent.to_html(false), text])
 
 
 ## Fills the text with the codex (Codex.entries): a terminal heading per section, then each

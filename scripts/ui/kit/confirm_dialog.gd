@@ -85,6 +85,15 @@ func _init(question: String, yes_text: String = "Yes", no_text: String = "Cancel
 	_fit()
 
 
+## Left / right / up / down move between CANCEL and the verb (never out of the dialog).
+func _link_choices() -> void:
+	var to_yes := no_button.get_path_to(yes_button)
+	var to_no := yes_button.get_path_to(no_button)
+	for side in ["focus_neighbor_right", "focus_neighbor_left", "focus_neighbor_top", "focus_neighbor_bottom"]:
+		no_button.set(side, to_yes)
+		yes_button.set(side, to_no)
+
+
 ## A sticker over its terminal caption.
 func _choice(sticker: VerbSticker, caption: String) -> VBoxContainer:
 	var col := VBoxContainer.new()
@@ -138,6 +147,7 @@ func _ready() -> void:
 	scrim.position = -global_position
 	PageTransition.open_modal(self)
 	PageTransition.enter(window, PageTransition.Look.GLASS)
+	_link_choices()
 	UiFocus.trap.call_deferred(self)  # the two choices, never out to the screen behind
 	# Pad / keyboard: the safe answer takes focus (§2.10: yellow = default focus).
 	if no_button != null:

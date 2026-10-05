@@ -425,7 +425,7 @@ func tag_rects() -> Array[Rect2]:
 ## Width of a tag fitted to its words at scale 1.0: the longer of the name and the icon
 ## with its value (H22 #14).
 func _fitted_tag_width(it: Array) -> float:
-	var name_w := Chrome.caps_font(NAME_SIZE).get_string_size(tr(String(it[0])).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, NAME_SIZE).x + NAME_SLACK
+	var name_w := Palette.mono().get_string_size(tr(String(it[0])).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, NAME_SIZE).x + NAME_SLACK
 	return maxf(PAD + name_w + PAD, _compact_tag_width(it))
 
 
@@ -615,7 +615,7 @@ func _draw() -> void:
 			icon_c = r.position + Vector2(PAD + ICON_R, COMPACT_H * 0.5) * s
 			value_at = r.position + Vector2(PAD + ICON_R * 2.0 + 5.0, COMPACT_H * 0.5 + VALUE_SIZE * 0.36) * s
 		else:
-			draw_string(Chrome.caps_font(NAME_SIZE), r.position + Vector2(PAD, 14) * s, tag_name(i).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 10.0 * s, roundi(NAME_SIZE * s), Palette.TEXT_MID)
+			draw_string(Palette.mono(), r.position + Vector2(PAD, 14) * s, tag_name(i).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 10.0 * s, roundi(NAME_SIZE * s), Palette.TEXT_MID)
 			icon_c = r.position + Vector2(PAD + ICON_R, 30) * s
 			value_at = r.position + Vector2(PAD + ICON_R * 2.0 + 5.0, 38) * s
 		StatIcon.draw(self, icon_c, ICON_R * s, icon_of(i), tone if tone != Palette.TEXT_HI else Palette.NET_CYAN)

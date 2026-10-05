@@ -173,6 +173,9 @@ func _set_panel(p: Control, name: String) -> void:
 	# drops); focus lands when it ends.
 	var back := name == "main" and panel_name != ""
 	panel_name = name
+	# The sub-pages start under the subtitles' band (H21 #11); the main page keeps its top
+	# left for the sign (the band sits top right, clear of it).
+	margin.add_theme_constant_override("margin_top", int(PAGE_MARGIN.y if name == "main" else SubtitleStrip.top_below(PAGE_MARGIN.y)))
 	# H24 S4: the page shows its words as given (translated once where built).
 	TextDb.shown_as_given(p)
 	_panel_host.add_child(p)
@@ -267,6 +270,8 @@ func show_main() -> void:
 		more.anchor_left = 1.0
 		more.anchor_right = 1.0
 		more.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		# Under the subtitles' band (H21 #11: no menu under it).
+		more.offset_top = SubtitleStrip.top_below(PAGE_MARGIN.y) - PAGE_MARGIN.y
 	else:
 		_place_bottom(more, false)
 		more.offset_bottom = -foot.get_combined_minimum_size().y - 6.0
@@ -502,6 +507,8 @@ func show_options() -> void:
 	var box := VBoxContainer.new()
 	var panel := SettingsPanel.new()
 	panel.context = tr("TITLE")
+	# The page's room (under the subtitles' band, over the ticker): past it the section scrolls.
+	panel.max_height = get_viewport_rect().size.y - SubtitleStrip.top_below(PAGE_MARGIN.y) - PAGE_MARGIN.z - ticker.get_combined_minimum_size().y
 	panel.closed.connect(show_main)
 	box.add_child(panel)
 	_set_panel(box, "options")

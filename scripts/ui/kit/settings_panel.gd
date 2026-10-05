@@ -114,6 +114,14 @@ var _scale_value: Label
 var _scale_sample: Label
 var _scale_block: VBoxContainer
 var _body: VBoxContainer
+## ART-10 4C (ART-0 carry-over: panels adopt FitScroll): the section scrolls inside the
+## terminal when the panel would be taller than `max_height` (0: it sizes to its section,
+## inside a host that scrolls, the pause menu).
+var fit: FitScroll
+var max_height: float = 0.0:
+	set(v):
+		max_height = v
+		_fit_body.call_deferred()
 var _tabs: HFlowContainer
 var _tab_buttons: Dictionary = {}
 var _key_buttons: Dictionary = {}
@@ -157,7 +165,9 @@ func _init() -> void:
 	_body.name = "Body"
 	_body.add_theme_constant_override("separation", 4)
 	_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	box.add_child(_body)
+	fit = FitScroll.new(_body)
+	fit.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	box.add_child(fit)
 	# Widgets are built once so tests (and Settings.changed) can drive them by name.
 	reduce_check = _check(tr("Reduce effects (no scanlines, flicker, chromatic, distortion)"), Settings.reduce_effects, Settings.set_reduce_effects)
 	flash_check = _check(tr("Flash limiter (max 3 flashes per second)"), Settings.flash_limiter, Settings.set_flash_limiter)
@@ -345,6 +355,7 @@ func show_section(name: String) -> void:
 	else:
 		UiFocus.link_layout(self)  # the section swapped its controls
 	UiFocus.focus_first(_body)
+	_fit_body.call_deferred()
 
 
 ## Takes the built widgets out of `node` (they wait off the tree); frees the rest.
@@ -562,7 +573,23 @@ func _labelled(text: String) -> Label:
 	return l
 
 
+## The section's view: the room `max_height` leaves after the terminal's header, tabs and foot.
+func _on_settings_changed() -> void:
+	_fit_body.call_deferred()
+
+
+func _fit_body() -> void:
+	if fit == null or not is_instance_valid(fit):
+		return
+	if max_height <= 0.0:
+		fit.max_height = 0.0
+		return
+	var chrome := window.get_combined_minimum_size().y - fit.get_combined_minimum_size().y
+	fit.max_height = maxf(FitScroll.MIN_VIEW * Settings.text_scale, max_height - chrome)
+
+
 func _ready() -> void:
+	Settings.changed.connect(_on_settings_changed)
 	Settings.hints_changed.connect(_relabel_close)
 	_relabel_close()
 	var where := context if context != "" else tr("PAUSED")

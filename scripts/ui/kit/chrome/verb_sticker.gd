@@ -67,6 +67,10 @@ var _hover_k: float = 0.0
 var _sweep_tween: Tween = null
 var _scale_tween: Tween = null
 var _clock: float = 0.0
+## The scale the running hover / press motion ends on.
+var _scale_to: Vector2 = Vector2.ONE
+## The sweep's off position (the shader's default).
+const SWEEP_OFF := -10000.0
 ## Group 1B's sticker drawing a PINK / YELLOW word (null for BLUE / GLITCH).
 var vinyl: VinylSticker = null
 ## Room round the kit sticker's body for the focus halo (px), the halo's stroke and corner.
@@ -108,7 +112,24 @@ func _init(p_text: String = "", p_fill: int = Fill.PINK, p_size: float = 40.0, p
 	_fit()
 
 
+## MotionSkip: the hover growth, press squash and gloss sweep drawn here (BLUE / GLITCH; the
+## kit sticker registers its own) end with any press another helper takes. The glitch loop
+## is an idle T0 loop, not a motion to skip.
+func motion_running() -> bool:
+	return (_scale_tween != null and _scale_tween.is_running()) or (_sweep_tween != null and _sweep_tween.is_running())
+
+
+func complete_motion() -> void:
+	if _scale_tween != null and _scale_tween.is_valid():
+		_scale_tween.kill()
+		scale = _scale_to
+	if _sweep_tween != null and _sweep_tween.is_valid():
+		_sweep_tween.kill()
+		_mat.set_shader_parameter(&"sweep", SWEEP_OFF)
+
+
 func _ready() -> void:
+	MotionSkip.register_passive(self)
 	if uses_kit() and vinyl == null:
 		vinyl = VinylSticker.new()
 		vinyl.name = "Vinyl"
@@ -217,6 +238,7 @@ func _grow(on: bool) -> void:
 	var to := Vector2.ONE * (Motion.amplitude(HOVER_MOTION) if on and not disabled else 1.0)
 	if _scale_tween != null:
 		_scale_tween.kill()
+	_scale_to = to
 	_scale_tween = Motion.run(HOVER_MOTION, self, ^"scale", to)
 
 
@@ -234,6 +256,7 @@ func _press(down: bool) -> void:
 	var to := Vector2(VinylSticker.PRESS_X, a) if down else Vector2.ONE * hover
 	if _scale_tween != null:
 		_scale_tween.kill()
+	_scale_to = to
 	_scale_tween = Motion.run(PRESS_MOTION, self, ^"scale", to)
 
 
@@ -249,7 +272,7 @@ func _sweep() -> void:
 	_sweep_tween = create_tween()
 	_sweep_tween.tween_method(func(x: float) -> void: _mat.set_shader_parameter(&"sweep", x), -w * 0.3, w * 1.3,
 		Motion.seconds(HOVER_MOTION) * 3.0)
-	_sweep_tween.tween_callback(func() -> void: _mat.set_shader_parameter(&"sweep", -10000.0))
+	_sweep_tween.tween_callback(func() -> void: _mat.set_shader_parameter(&"sweep", SWEEP_OFF))
 
 
 func _process(delta: float) -> void:

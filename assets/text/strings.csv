@@ -401,6 +401,7 @@ Central Server: the corporation's core,Central Server: the corporation's core
 Chips go into:,Chips go into:
 Choose,Choose
 City Grid,City Grid
+"City seed (same seed, same city):","City seed (same seed, same city):"
 Claim,Claim
 Claimed: part of your network.,Claimed: part of your network.
 Claimed: part of your network; it defends in raids.,Claimed: part of your network; it defends in raids.
@@ -939,9 +940,10 @@ HubCoreData.wrecker_core_mk2.description,+1 spin on all cards. Perfect: the slic
 HubCoreData.wrecker_core_mk2.display_name,Wrecker Core Mk2
 ICE,ICE
 ICE %d: %s,ICE %d: %s
-ICE (0-%d):,ICE (0-%d):
 ICE 0: the baseline rules.,ICE 0: the baseline rules.
 ICE Lock on %s holds %s for %d step(s).,ICE Lock on %s holds %s for %d step(s).
+ICE difficulty (0-%d):,ICE difficulty (0-%d):
+ICE is the difficulty ladder: each level adds a rule against the Cell. Clear a level to unlock the next one for this corporation.,ICE is the difficulty ladder: each level adds a rule against the Cell. Clear a level to unlock the next one for this corporation.
 IF CLEARED:,IF CLEARED:
 "IF THE RAID
 RUNS NOW:","IF THE RAID
@@ -1443,6 +1445,7 @@ NetworkNodeData.vault_terminal.description,+3 Schematics per completed netrun (+
 NetworkNodeData.vault_terminal.display_name,Vault Terminal
 New campaign,New campaign
 Next,Next
+Next seed,Next seed
 Next threshold at %d.,Next threshold at %d.
 Next-run boosts:,Next-run boosts:
 No Daemons installed.,No Daemons installed.
@@ -2772,6 +2775,7 @@ The next %s campaign may start up to ICE %d.,The next %s campaign may start up t
 The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for %d step(s).
 The operative on %s patches it: %s.,The operative on %s patches it: %s.
 The operative's deck and spinner (hub core and inner ring included).,The operative's deck and spinner (hub core and inner ring included).
+The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city.,The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city.
 "The three campaign slots: start, load or delete.","The three campaign slots: start, load or delete."
 "The turn, and the free nudges left this turn (each extra nudge costs RAM).","The turn, and the free nudges left this turn (each extra nudge costs RAM)."
 Then you can go to: %s.,Then you can go to: %s.
@@ -2818,6 +2822,7 @@ Threats that hit the home server.,Threats that hit the home server.
 Threats your network destroyed.,Threats your network destroyed.
 Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.,Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.
 Tritan (blue-weak),Tritan (blue-weak)
+Try the next city: the seed goes up by one.,Try the next city: the seed goes up by one.
 UNDO,UNDO
 UNDO %s,UNDO %s
 "UNDO is blocked: a random event came since (a respin, a random pick).","UNDO is blocked: a random event came since (a respin, a random pick)."

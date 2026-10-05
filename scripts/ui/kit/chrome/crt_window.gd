@@ -72,6 +72,9 @@ func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN, max_body: f
 		head.add_theme_font_size_override(&"font_size", Chrome.px(HEADER_STEP))
 		head.add_theme_color_override(&"font_color", accent)
 		head.add_theme_color_override(&"font_shadow_color", Palette.AUTO)
+		# A long title wraps at its words (it never widens the window: the M13 title was 15 px
+		# whatever the text scale).
+		UiWrap.whole_words(head)
 		tag_label.add_theme_font_override(&"font", Chrome.caps_font(UiTheme.CAPTION))
 		tag_label.add_theme_font_size_override(&"font_size", Chrome.px(UiTheme.CAPTION))
 		tag_label.add_theme_color_override(&"font_color", accent)
