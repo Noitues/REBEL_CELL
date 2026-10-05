@@ -117,6 +117,10 @@ func _place_art() -> void:
 		return
 	var tw := face().get_string_size(String(shown_lettering()[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 	art.place_center(_base() + Vector2(tw * 0.5 + _system_w() * ART_SHIFT.x, -font_size * 0.35 + font_size * ART_SHIFT.y))
+	# Kept inside the button on the right (the screen's edge is there).
+	var over := art.position.x + art.body_rect.end.x - size.x
+	if over > 0.0:
+		art.position.x -= over
 
 
 ## This button's state on the kit sticker (rest, hover, pressed, disabled).
