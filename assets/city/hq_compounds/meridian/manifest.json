@@ -7,7 +7,7 @@
   "spec": "tools/art_pipeline/city/hq_compound_spec.py",
   "driver": "tools/art_pipeline/city/make_hq_compounds.py",
   "vendor": "art-concepts-r43:docs/concepts/round43_hq_mechanics/scripts @ 36d1f34de595297787d06f4f0cc8075018a8b744",
-  "commit": "uncommitted",
+  "commit": "729e7a10357506d095c3b20d73efcce5d3bf5d16",
   "scripts_sha256": "db6adbacc2c78192736407de34c705cac327bb7e33ffde658f8a7ccb876ede05"
  },
  "settings": {

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="HqCompoundLayoutData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/hq_compound_layout_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"hq_compound_orbital"
+corporation_id = &"orbital"
+asset_dir = "res://assets/city/hq_compounds/orbital"
+slots_per_layer = 4
+layer_slots = PackedVector3Array(11.123, 6.3, 21.83, 7.264, 6.3, 14.256, 14.256, 6.3, 7.264, 21.83, 6.3, 11.123, 0.0, 6.3, 24.5, 0.0, 6.3, 16.0, 16.0, 6.3, -0.0, 24.5, 6.3, -0.0, -12.25, 6.3, 21.218, -8.0, 6.3, 13.856, 13.856, 6.3, -8.0, 21.218, 6.3, -12.25, -20.352, 11.8, 11.75, -14.565, 6.3, 5.301, 5.301, 6.3, -14.565, 11.75, 11.8, -20.352, -20.5, 21.3, -0.0, -14.972, 6.3, -4.012, -4.012, 6.3, -14.972, 0.0, 21.3, -20.5, -21.218, 9.3, -12.25, -11.98, 9.3, -9.027, -9.027, 9.3, -11.98, -12.25, 9.3, -21.218)
+central_server = Vector3(-14.142, 9.3, -14.142)
+entry = Vector3(19.0, 6.5, 19.0)
