@@ -41,6 +41,7 @@ ease = 1
 trans = 0
 amplitude = 0.0
 tier = 1
+kind = 1
 
 ; Toast: on screen `delay` seconds, then fades over `duration`
 [sub_resource type="Resource" id="m_toast"]
@@ -52,6 +53,7 @@ ease = 1
 trans = 0
 amplitude = 0.0
 tier = 1
+kind = 1
 
 ; ---- 4.1 Jack in / jack out ----
 ; Fx.jack_in (4.1): the push's seconds (the reveal after the switch is `jack_arrive`'s); the old screen pushes in about the deck CRT to amplitude x zoom while the dissolve covers it (ANIM-R1: was the whole 0.8 s, halved inline) (ANIM-R6 D2: the push eases in by the entry, it was an inline EASE_IN over the table's IN_OUT)
@@ -97,7 +99,7 @@ delay = 0.0
 ease = 1
 trans = 7
 amplitude = 2.0
-tier = 1
+tier = 2
 
 ; slice blur fade; amplitude = ticks per second above which slices blur
 [sub_resource type="Resource" id="m_wheel_spin_blur"]
@@ -461,7 +463,7 @@ delay = 0.0
 ease = 1
 trans = 7
 amplitude = 0.0
-tier = 1
+tier = 2
 
 ; the Grid camera eases between frames (4.14); amplitude = how far (screen px) it leans toward the selected Site, inside the fitted map's slack
 [sub_resource type="Resource" id="m_map_camera_ease"]
@@ -472,7 +474,7 @@ delay = 0.0
 ease = 2
 trans = 7
 amplitude = 90.0
-tier = 1
+tier = 2
 
 ; threat route dashes crawl toward home (4.14); amplitude = px they travel per `duration` seconds
 [sub_resource type="Resource" id="m_route_crawl"]
@@ -540,7 +542,7 @@ delay = 0.0
 ease = 2
 trans = 1
 amplitude = 0.0
-tier = 1
+tier = 2
 
 ; new node pops up; scale
 [sub_resource type="Resource" id="m_node_pop"]
@@ -562,7 +564,7 @@ delay = 0.0
 ease = 1
 trans = 4
 amplitude = 0.5
-tier = 1
+tier = 2
 
 ; ---- 4.17 Screen transitions ----
 ; panel slides in from the edge; px
@@ -655,11 +657,11 @@ trans = 1
 amplitude = 0.0
 tier = 2
 
-; bought item flies to the top bar icon; amplitude = its scale on arrival (ANIM-R5 B5: 0.7 s to x0.55, was 0.4 s to x0.35: too quick and small to follow)
+; bought item flies to the top bar icon; amplitude = its scale on arrival (ANIM-R5 B5: 0.7 s to x0.55, was 0.4 s to x0.35: too quick and small to follow) (ART-0 audit E2: 0.6 s, the T2 limit; the bible names buy_fly a T2 outcome)
 [sub_resource type="Resource" id="m_buy_fly"]
 script = ExtResource("1_entry")
 id = &"buy_fly"
-duration = 0.7
+duration = 0.6
 delay = 0.0
 ease = 2
 trans = 7
@@ -687,13 +689,13 @@ delay = 0.06
 ease = 1
 trans = 7
 amplitude = 8.0
-tier = 1
+tier = 2
 
-; picked card lifts, then flies to the deck icon; amplitude = lift px (ANIM-R5 B5: 0.7 s, was 0.35 s)
+; picked card lifts, then flies to the deck icon; amplitude = lift px (ANIM-R5 B5: 0.7 s, was 0.35 s) (ART-0 audit E2: 0.6 s, the T2 limit)
 [sub_resource type="Resource" id="m_loot_pick"]
 script = ExtResource("1_entry")
 id = &"loot_pick"
-duration = 0.7
+duration = 0.6
 delay = 0.0
 ease = 2
 trans = 7
@@ -709,7 +711,7 @@ delay = 0.0
 ease = 1
 trans = 4
 amplitude = 0.0
-tier = 1
+tier = 2
 
 ; ---- 4.21 DISPATCH and subtitles ----
 ; subtitles and DISPATCH text type in: seconds per character (instant with the setting); ANIM-R5 B4: amplitude = the most a page takes (s), so a line is whole as its page settles
@@ -744,7 +746,7 @@ delay = 0.0
 ease = 1
 trans = 4
 amplitude = 0.0
-tier = 1
+tier = 2
 
 ; DripButton hover halo: jitter px; duration = the one pulse when hover starts
 [sub_resource type="Resource" id="m_drip_halo"]
@@ -755,7 +757,7 @@ delay = 0.0
 ease = 2
 trans = 1
 amplitude = 3.0
-tier = 1
+tier = 2
 
 ; ---- 4.23 City ambience ----
 ; NeonCity beacon period; amplitude = lit share of the period
@@ -812,7 +814,7 @@ delay = 0.0
 ease = 1
 trans = 4
 amplitude = 0.0
-tier = 1
+tier = 2
 
 ; ---- Animation pass scope: raid execution ----
 ; raid playout: an ICE LOCK ring closes on a threat from amplitude x its rest radius, then the threat shows frozen
@@ -903,6 +905,7 @@ ease = 2
 trans = 1
 amplitude = 0.5
 tier = 1
+kind = 2
 
 ; aim line draws from the card to the target
 [sub_resource type="Resource" id="m_aim_line_draw"]
@@ -1048,7 +1051,7 @@ delay = 0.0
 ease = 1
 trans = 7
 amplitude = 2.0
-tier = 1
+tier = 2
 
 ; inner ring rotation; overshoot (ticks x 0.1)
 [sub_resource type="Resource" id="m_inner_ring_turn"]
@@ -1059,7 +1062,7 @@ delay = 0.0
 ease = 1
 trans = 7
 amplitude = 1.0
-tier = 1
+tier = 2
 
 ; a migrating pointer moves to its new tick
 [sub_resource type="Resource" id="m_pointer_migrate"]
@@ -1070,7 +1073,7 @@ delay = 0.0
 ease = 2
 trans = 7
 amplitude = 0.0
-tier = 1
+tier = 2
 
 ; orbiting pointer: seconds per step around the wheel
 [sub_resource type="Resource" id="m_pointer_orbit"]
@@ -1082,6 +1085,7 @@ ease = 2
 trans = 0
 amplitude = 0.0
 tier = 1
+kind = 2
 
 ; enemy wheel spins on its turn after `delay`; overshoot
 [sub_resource type="Resource" id="m_enemy_turn_spin"]
@@ -1092,7 +1096,7 @@ delay = 0.05
 ease = 1
 trans = 7
 amplitude = 2.0
-tier = 1
+tier = 2
 
 ; ---- Animation pass scope: drag and drop ----
 ; any draggable lifts; scale
@@ -1227,7 +1231,7 @@ delay = 0.0
 ease = 1
 trans = 7
 amplitude = 18.0
-tier = 1
+tier = 2
 
 ; selected / you-are-here ring eases in from amplitude x its rest radius
 [sub_resource type="Resource" id="m_select_ring_ease"]
@@ -1262,6 +1266,7 @@ ease = 1
 trans = 0
 amplitude = 0.0
 tier = 2
+kind = 1
 
 ; attacker -> victim hit line draws in and fades (ANIM-R4 C6d: 0.45 s, was 0.3: the projectile flies hit_line_flight of it and is seen); amplitude = line width px
 [sub_resource type="Resource" id="m_hit_line"]
@@ -1295,6 +1300,7 @@ ease = 1
 trans = 0
 amplitude = 0.0
 tier = 3
+kind = 1
 
 ; FLIP: the disc squashes to a line and opens mirrored
 [sub_resource type="Resource" id="m_wheel_flip"]
@@ -1373,6 +1379,7 @@ ease = 2
 trans = 1
 amplitude = 0.3
 tier = 1
+kind = 2
 
 ; ---- ANIM-4: HQ drag and drop ----
 ; the stamp ring where a dropped item lands grows amplitude px as the copy fades
@@ -1663,6 +1670,7 @@ ease = 2
 trans = 1
 amplitude = 1.18
 tier = 1
+kind = 2
 
 ; share of send_it_drips' time the drips spend running out (the rest drawing back)
 [sub_resource type="Resource" id="m_send_it_drips_share"]
@@ -1696,6 +1704,7 @@ ease = 1
 trans = 0
 amplitude = 0.0
 tier = 1
+kind = 1
 
 ; a flight's stamp fades in over this share of its stamp-down
 [sub_resource type="Resource" id="m_stamp_fade_in"]
@@ -1729,6 +1738,7 @@ ease = 1
 trans = 0
 amplitude = 0.0
 tier = 4
+kind = 1
 
 ; the map's selected-node ring breathes: duration = one period (s), amplitude = px (ANIM-R1: were inline 3 px at 4 rad/s)
 [sub_resource type="Resource" id="m_select_ring_pulse"]
@@ -1809,7 +1819,7 @@ delay = 0.0
 ease = 1
 trans = 1
 amplitude = 0.0
-tier = 1
+tier = 0
 
 ; ANIM-R2 R5: CONNECTING TO <place> on the opaque jack cover while the arriving screen builds: duration = the least it shows (s, to be read), then it lifts with the cover; amplitude = its progress bar's width (px); the bar fills over jack_arrival_wait
 [sub_resource type="Resource" id="m_jack_connect"]
@@ -1876,6 +1886,7 @@ ease = 2
 trans = 1
 amplitude = 6.0
 tier = 1
+kind = 2
 
 ; ANIM-R2 / ANIM-R4 C6c: a guarded hit's equation (sword raw - shield soaked = through) reads this long (s) where it struck before the HP number pops fresh in the hub and travels into the HP; amplitude unused
 [sub_resource type="Resource" id="m_hit_absorb"]
@@ -1898,6 +1909,7 @@ ease = 1
 trans = 7
 amplitude = 22.0
 tier = 1
+kind = 1
 
 ; ANIM-R2: a purchase refused for want of Cycles flashes the CYCLES tag (and the Mainframe's wallet) red with PRICE > CYCLES; amplitude = pulses
 [sub_resource type="Resource" id="m_price_refusal"]
@@ -1920,6 +1932,7 @@ ease = 0
 trans = 0
 amplitude = 0.0
 tier = 1
+kind = 1
 
 ; ANIM-R3 B5: a landing defence falls from amplitude x its marker size to 1 over `asset_drop`'s fall (timing unused)
 [sub_resource type="Resource" id="m_asset_drop_grow"]
@@ -1942,6 +1955,7 @@ ease = 1
 trans = 1
 amplitude = 22.0
 tier = 2
+kind = 1
 
 ; ANIM-R3 B5: the jack cover's dissolve: amplitude = the share of a cell's turn set by its distance from the CRT (the rest is its hash; 0.6 read as corruption), duration = each cell's fade (share of the progress)
 [sub_resource type="Resource" id="m_jack_dissolve"]
@@ -2107,6 +2121,7 @@ ease = 1
 trans = 7
 amplitude = 22.0
 tier = 1
+kind = 1
 
 ; ANIM-R4 C7: an event's story types in at this many s per character, the whole text within amplitude s (it took 8 s under an empty panel)
 [sub_resource type="Resource" id="m_event_type"]
@@ -2172,7 +2187,7 @@ delay = 0.0
 ease = 1
 trans = 10
 amplitude = 1.3
-tier = 1
+tier = 2
 
 ; ANIM-R6 D2 (was inline FlightFx.LIFT_SHARE): a flight with a lift spends this share of its seconds lifting first; ease/trans = the lift's shape; amplitude = share (a tuning of the flight: never switched off)
 [sub_resource type="Resource" id="m_flight_lift_share"]
@@ -2228,6 +2243,7 @@ ease = 2
 trans = 1
 amplitude = 0.45
 tier = 1
+kind = 2
 
 ; ANIM-R6 C4: a raid step's volley: each shot starts this share of a trace (turret_trace) after the one before (amplitude = the share; SHOT_STAGGER was inline); off, the shots of a step start together
 [sub_resource type="Resource" id="m_raid_shot_stagger"]

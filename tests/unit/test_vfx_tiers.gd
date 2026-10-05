@@ -68,6 +68,37 @@ func test_the_fx_layers_effects_fit_their_tier() -> void:
 		assert_lt(VfxTier.of(id), VfxTier.T4, "%s is below T4 (local)" % id)
 
 
+func test_every_one_shot_entry_fits_its_tier() -> void:
+	# ART-0 audit E2: every entry, not a hand-picked few. A one-shot effect runs within its
+	# tier's longest duration; holds, waits and loops say so with their `kind`.
+	var table := load(MOTION_TRES) as UiMotionData
+	var over: Array[String] = []
+	for e in table.entries:
+		assert_true(e.kind >= UiMotionEntryData.Kind.ONE_SHOT and e.kind <= UiMotionEntryData.Kind.LOOP, "%s has a valid kind" % e.id)
+		if e.kind == UiMotionEntryData.Kind.ONE_SHOT and e.duration > VfxTier.MAX_SECONDS[int(e.tier)] + 0.0001:
+			over.append("%s %.2f s > %s's %.2f s" % [e.id, e.duration, VfxTier.NAMES[int(e.tier)], VfxTier.MAX_SECONDS[int(e.tier)]])
+		assert_true(VfxTier.fits(e), "%s fits (or is marked a hold or a loop)" % e.id)
+	assert_eq(over, [] as Array[String], "one-shot effects over their tier")
+
+
+func test_holds_and_loops_are_marked_and_only_one_shots_are_held_to_the_duration() -> void:
+	for id in [&"toast_note_hold", &"combat_end_hold", &"jack_arrival_wait", &"asset_drop_wait", &"resolve_sequence", &"saved_stamp"]:
+		assert_eq(int(Motion.entry(id).kind), UiMotionEntryData.Kind.HOLD, "%s is a hold" % id)
+	for id in [&"drop_zone_pulse", &"ram_pending_blink", &"send_it_ready", &"tutorial_next_pulse", &"pointer_orbit"]:
+		assert_eq(int(Motion.entry(id).kind), UiMotionEntryData.Kind.LOOP, "%s is a loop" % id)
+	assert_eq(int(Motion.entry(&"buy_fly").kind), UiMotionEntryData.Kind.ONE_SHOT, "a flight is an effect")
+	assert_true(Motion.seconds(&"buy_fly") <= VfxTier.MAX_SECONDS[VfxTier.T2] + 0.0001, "buy_fly fits T2 (the bible's example)")
+	var e := UiMotionEntryData.new()
+	e.id = &"gut_kind"
+	e.tier = UiMotionEntryData.Tier.T1_FEEDBACK
+	e.duration = 3.0
+	assert_false(VfxTier.fits(e), "a 3 s one-shot is over T1")
+	e.kind = UiMotionEntryData.Kind.HOLD
+	assert_true(VfxTier.fits(e), "a 3 s hold is not an effect length")
+	e.kind = UiMotionEntryData.Kind.LOOP
+	assert_true(VfxTier.fits(e), "nor is a loop's period")
+
+
 # --- The limits clamp ------------------------------------------------------------------------
 
 func test_the_tier_limits_clamp() -> void:
