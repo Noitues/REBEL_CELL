@@ -262,6 +262,7 @@ func test_firmware_sockets_sit_in_the_hub_side_band_pins_to_the_core() -> void:
 		var d := (Vector2(s["at"]) - a.center()).length() / u
 		assert_between(d, 142.0, 194.0, "inside the firmware zone (master 142..194)")
 		var off := Vector2(s["at"]) - a.center()
+		assert_true(a.sockets.trigger_origin(slot).is_equal_approx(a.global_position + Vector2(s["at"])), "the trigger starts at the die")
 		assert_lt(absf(wrapf(off.angle() - a.slot_angle(slot, scene._player_view.shown_rotation()), -PI, PI)), 0.01, "on the slice midline")
 
 
@@ -279,6 +280,10 @@ func test_the_daemon_rack_stands_beside_the_operative_and_folds_past_six() -> vo
 	assert_lt(rack.get_global_rect().end.x, pv.global_center().x, "on the left, beside the wheel")
 	assert_eq(rack.plate_rect(7).size, rack.plate_rect(6).size, "past six the last tile says +N")
 	assert_true(rack._get_tooltip(rack.tile_rect(0).get_center()) != "", "a tile says what its Daemon does")
+	assert_true(rack.trigger_origin(&"cascade").is_equal_approx(rack.global_position + rack.tile_rect(1).get_center()), "a Daemon's trigger starts at its tile")
+	assert_true(rack.trigger_origin(&"scrubber").is_equal_approx(rack.global_position + rack.tile_rect(5).get_center()), "a folded one at the +N tile")
+	assert_eq(rack.trigger_origin(&"field_medic"), Vector2.INF, "not installed: no origin")
+	assert_not_null(rack.plate, "the plate is 1B's CRT terminal")
 
 
 # --- The card-play preview (§3.17): it is the result ------------------------------------------------

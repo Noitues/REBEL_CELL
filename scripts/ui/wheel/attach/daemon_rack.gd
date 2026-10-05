@@ -38,6 +38,9 @@ var fire: Dictionary = {}
 var _clock: float = 0.0
 ## The sigil glyphs (1C's atlas), one batch per phosphor colour.
 var _batches: Dictionary = {}
+## The CRT plate (1B) and the layer the tiles draw on, over it.
+var plate: CrtTerminalPanel
+var _tiles: Control
 
 
 ## Puts a rack beside `v` (on its left edge) reading `row`, and returns it.
@@ -54,12 +57,26 @@ func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	tooltip_text = " "
 	tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	# The plate is 1B's CRT terminal (glass, scanlines, hex dump, edge glow); the tiles sit on it.
+	plate = CrtTerminalPanel.new()
+	plate.name = "Plate"
+	plate.prompt = false
+	plate.caret = false
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plate.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(plate)
+	_tiles = Control.new()
+	_tiles.name = "Tiles"
+	_tiles.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tiles.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_tiles.draw.connect(_draw_tiles)
+	add_child(_tiles)
 
 
 ## ART-3's seam: lights tile `slot` (0..1) for the fire cue.
 func fire_slot(slot: int, amount: float) -> void:
 	fire[slot] = clampf(amount, 0.0, 1.0)
-	queue_redraw()
+	_tiles.queue_redraw()
 
 
 func ids() -> Array[StringName]:
@@ -98,9 +115,20 @@ func _process(delta: float) -> void:
 	if position != r.position or size != r.size:
 		position = r.position
 		size = r.size
+		_tiles.queue_redraw()
 	if Motion.live(SCAN_MOTION):
 		_clock = fposmod(_clock + delta / maxf(0.001, Motion.seconds(SCAN_MOTION)), 1.0)
-		queue_redraw()
+		_tiles.queue_redraw()
+
+
+## Where Daemon `id`'s trigger starts on screen (its tile's centre; the "+N" tile for one folded
+## past six), or Vector2.INF when it is not installed: the seam for the trigger beat (2D) and its
+## FX (ART-3).
+func trigger_origin(id: StringName) -> Vector2:
+	var k := ids().find(id)
+	if k < 0 or not is_visible_in_tree():
+		return Vector2.INF
+	return global_position + tile_rect(mini(k, MAX_TILES - 1)).get_center()
 
 
 func _get_tooltip(at_position: Vector2) -> String:
@@ -114,15 +142,14 @@ func _get_tooltip(at_position: Vector2) -> String:
 	return source.describe_all() if source != null else ""
 
 
-func _draw() -> void:
+func _draw_tiles() -> void:
 	for b in _batches.values():
 		(b as GlyphBatch).clear()
 	var list := ids()
 	if list.is_empty():
 		return
 	var ts := Settings.text_scale
-	draw_style_box(UiTheme.terminal_box(), Rect2(Vector2.ZERO, size))
-	AttachStyle.draw_centred(self, AttachStyle.label_font(), Vector2(size.x * 0.5, PAD + HEADER * ts * 0.45), tr("DAEMONS"), roundi(HEADER_PX * ts), Palette.TERMINAL_TEXT)
+	AttachStyle.draw_centred(_tiles, AttachStyle.label_font(), Vector2(size.x * 0.5, PAD + HEADER * ts * 0.45), tr("DAEMONS"), roundi(HEADER_PX * ts), Palette.TERMINAL_TEXT)
 	var shown := mini(list.size(), MAX_TILES)
 	for k in shown:
 		var r := tile_rect(k)
@@ -131,24 +158,24 @@ func _draw() -> void:
 		var rarity: int = d.rarity if d != null else RC.Rarity.COMMON
 		var phos := AttachStyle.daemon_color(d)
 		var f := float(fire.get(k, 0.0))
-		draw_rect(r, AttachStyle.glass(0.95))
-		draw_rect(r.grow(-2.0), Color(phos, GLOW_ALPHA + 0.5 * f))
+		_tiles.draw_rect(r, AttachStyle.glass(0.95))
+		_tiles.draw_rect(r.grow(-2.0), Color(phos, GLOW_ALPHA + 0.5 * f))
 		if k == shown - 1 and list.size() > MAX_TILES:
-			AttachStyle.draw_centred(self, AttachStyle.value_font(), r.get_center(), "+%d" % (list.size() - MAX_TILES + 1), roundi(TILE * ts * 0.4), Palette.TERMINAL_TEXT, 2)
+			AttachStyle.draw_centred(_tiles, AttachStyle.value_font(), r.get_center(), "+%d" % (list.size() - MAX_TILES + 1), roundi(TILE * ts * 0.4), Palette.TERMINAL_TEXT, 2)
 		else:
 			var g := AttachStyle.daemon_glyph(id)
 			if GlyphBatch.has_glyph(g):
 				_batch(phos).add(g, r.get_center(), r.size.x * SIGIL * 2.0)
 			else:
-				DaemonSigil.draw_sigil(self, r.get_center(), r.size.x * SIGIL, id, rarity)
+				DaemonSigil.draw_sigil(_tiles, r.get_center(), r.size.x * SIGIL, id, rarity)
 		# Idle: the scan bar rolls down the tile, each slot on its own phase; the LED beats with it.
 		var phase := fposmod(_clock + float(k) / MAX_TILES, 1.0)
 		if Motion.live(SCAN_MOTION):
 			var bar := Rect2(Vector2(r.position.x, r.position.y + phase * r.size.y * (1.0 - SCAN_H)), Vector2(r.size.x, r.size.y * SCAN_H))
-			draw_rect(bar, Color(phos, SCAN_ALPHA))
+			_tiles.draw_rect(bar, Color(phos, SCAN_ALPHA))
 		var beat := 1.0 if phase < 0.12 or not Motion.live(SCAN_MOTION) else LED_DIM
-		draw_circle(r.position + Vector2(r.size.x - r.size.x * LED * 2.0, r.size.y * LED * 2.0), r.size.x * LED, Color(phos, beat))
-		draw_rect(r, AttachStyle.rarity_color(rarity), false, 1.5)
+		_tiles.draw_circle(r.position + Vector2(r.size.x - r.size.x * LED * 2.0, r.size.y * LED * 2.0), r.size.x * LED, Color(phos, beat))
+		_tiles.draw_rect(r, AttachStyle.rarity_color(rarity), false, 1.5)
 
 
 ## The glyph batch that draws sigils in phosphor `col` (made on first use).
@@ -156,6 +183,6 @@ func _batch(col: Color) -> GlyphBatch:
 	var key := col.to_html()
 	if not _batches.has(key):
 		var b := GlyphBatch.make(col)
-		add_child(b)
+		_tiles.add_child(b)
 		_batches[key] = b
 	return _batches[key]

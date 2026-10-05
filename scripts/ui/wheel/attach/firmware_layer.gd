@@ -34,6 +34,14 @@ func flash_slot(slot: int, amount: float) -> void:
 	queue_redraw()
 
 
+## Where slot `slot`'s firmware trigger starts on screen (its die's centre: the LAND -> FLARE -> TRACE
+## cue runs from here, §3.9), or Vector2.INF when the slot has none: the seam for the trigger beat
+## (2D) and its FX (ART-3).
+func trigger_origin(slot: int) -> Vector2:
+	var s := socket(slot)
+	return global_position + Vector2(s["at"]) if not s.is_empty() else Vector2.INF
+
+
 ## Where slot `slot`'s socket stands (local) and its chip width, as drawn now; {} without firmware.
 func socket(slot: int) -> Dictionary:
 	if host == null or not host.live():

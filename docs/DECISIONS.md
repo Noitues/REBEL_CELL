@@ -45,8 +45,10 @@ arena_lab.tscn` (windowed only; fixtures typical / worst, bloom, hover, won, per
   `Palette.RARITY_COLORS` / `RARITY_PIPS`, Daemon phosphors from `Palette.DAEMON_FAMILY_COLORS`, every
   glyph (slice, `fw_<id>`, `daemon_<id>`) from 1C's atlas through `GlyphBatch` (a child of each
   immediate-mode layer carrying `GlyphIcon`'s shader material; drawn firmware / sigil shapes remain only
-  as the fallback for a name the atlas lacks), the rack plate is `UiTheme.terminal_box()` (TerminalPanel).
-  1B's materials are not in yet: plates are flat token fills. Geometry is in master units of the round 41 stack (the slices end at 360), read
+  as the fallback for a name the atlas lacks), the rack plate is 1B's `CrtTerminalPanel` (after 1B merged).
+  Trigger seams for 2D's beat and ART-3's FX: `FirmwareLayer.trigger_origin(slot)` and
+  `DaemonRack.trigger_origin(id)` (global points). ToonInk / LightSpill / BinaryBits are not needed by
+  these pieces (stills are baked; bits belong to the replace / destroy FX). Geometry is in master units of the round 41 stack (the slices end at 360), read
   from the view, so it follows 2A's new wheel. The backdrop is `scripts/ui/arena/` (`CombatBackdrop`,
   `BackdropCatalog`, `shaders/arena/combat_backdrop.gdshader`); `BackdropCatalog` is the seam ART-5's
   real city swaps.
