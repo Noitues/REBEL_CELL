@@ -942,7 +942,7 @@ tier = 1
 [sub_resource type="Resource" id="m_card_stamp"]
 script = ExtResource("1_entry")
 id = &"card_stamp"
-duration = 0.1
+duration = 0.18
 delay = 0.0
 ease = 1
 trans = 10
@@ -953,7 +953,7 @@ tier = 2
 [sub_resource type="Resource" id="m_effect_burst"]
 script = ExtResource("1_entry")
 id = &"effect_burst"
-duration = 0.3
+duration = 0.5
 delay = 0.0
 ease = 1
 trans = 5
@@ -1595,7 +1595,7 @@ duration = 0.16
 delay = 0.0
 ease = 1
 trans = 1
-amplitude = 3.0
+amplitude = 2.0
 tier = 2
 
 ; a new fight's enemy slides in from the right edge with its name; amplitude = px

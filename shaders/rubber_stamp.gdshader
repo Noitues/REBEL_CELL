@@ -1,4 +1,6 @@
 shader_type canvas_item;
+// Static (no TIME): reduce effects changes nothing here; the include keeps the one control.
+#include "res://shaders/lib/rc_common.gdshaderinc"
 // ART-11 4D: a rubber stamp's uneven ink on corp paper (ART_BIBLE v2 §1.2 "Anton stamps
 // (CLASSIFIED, CASE CLOSED, PROCESSED)"; round 21 dossier21.py `stamp`): the ink's coverage
 // breaks up in blotches and fine grain. Static (no TIME), so nothing changes under reduce
