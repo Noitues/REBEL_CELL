@@ -168,9 +168,13 @@ ART-5 needs"); 1B's material kit. Agent 5a (Group 3 wave 2, M14).
   the map's foot left of the key (the key's strip is that much narrower) and labels avoid it.
 - **Ambient pause:** `ambient_scale` is 0 when the map is covered, the window unfocused, or reduce
   effects / reduce motion is on; the post's rain / fog and the decal's packets freeze (end state).
-- **Test changed:** `test_anim_r5_city` "a claim stamps at once and the tint follows its bake" no
-  longer waits for a bake on the Grid (the 3D city has none): the claim stamps once at once and the
-  view stays covered.
+- **Tests changed** (they pinned the 2D bake on the Grid, superseded): `test_anim_r5_city` "a claim
+  stamps at once and the tint follows its bake" (the claim stamps once at once, the view stays
+  covered) and `test_anim_r2_city` "the Grid draws its nodes before any bake lands" (the 3D city
+  covers the Grid at once; the nodes, labels and settled camera on the first frame are kept).
+- **Call: the minimap folds with the key.** At the text sizes where the map key folds to one line
+  (`MapLegend.FOLD_SCALE`, 1.3 and up) the minimap's room is the map's, so it hides; the wheel,
+  drag, WASD and the right stick still move the camera.
 - **Not done in this slice (proposed next):** the edge chevrons and the red pencil marker for an
   off-screen TARGET (§4.1; with 5d's markers), the Cell's red-window crest and the HQ heroes (5b's
   glTFs: `landmark_slot` / `hide_stand_in` are ready), city motion layers (5c, on the layer seam), a

@@ -2068,6 +2068,7 @@ func fit_grid_map() -> void:
 	# H24 K1: map labels stay on the map's own area (under the top bar, beside the column).
 	city_overlay.screen_rect = area
 	var free := area.grow(-LegendSpot.MARGIN)
+	_sync_grid_minimap()
 	if grid_legend.visible:
 		# The key runs along the map's foot, in as many columns as the width holds; the
 		# nodes fit above it (above its folded MAP KEY line at big text, H24 K1).
@@ -2252,6 +2253,15 @@ func _minimap_room() -> Vector2:
 	return grid_minimap.get_combined_minimum_size() + Vector2(LegendSpot.MARGIN, 0.0)
 
 
+## ART-5 5a: the minimap shows while the key keeps its rows; at the text sizes where the key
+## folds to one line (MapLegend.FOLD_SCALE) the map needs that room, so the minimap folds away
+## with it (the wheel, drag, WASD and the right stick still move the camera).
+func _sync_grid_minimap() -> void:
+	if grid_minimap == null or not is_instance_valid(grid_minimap):
+		return
+	grid_minimap.visible = grid_legend == null or not is_instance_valid(grid_legend) or not grid_legend.foldable()
+
+
 func _place_grid_minimap() -> void:
 	if grid_minimap == null or not is_instance_valid(grid_minimap):
 		return
@@ -2278,6 +2288,7 @@ func _mount_grid_camera(area: Control, page: Control, column: Control) -> void:
 	grid_controls.sites_of = _minimap_sites
 	page.add_child(grid_controls)
 	grid_controls.attach(city_overlay, grid_minimap)
+	_sync_grid_minimap()
 	wireframe.city.rebuilt.connect(grid_controls.sync_minimap)
 	city_overlay.avoid_controls([column, grid_legend, grid_minimap])
 
