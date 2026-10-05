@@ -1,0 +1,370 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "hq_compound",
+ "corp": "solace",
+ "source": {
+  "script": "tools/art_pipeline/city/build_hq_compound.py",
+  "spec": "tools/art_pipeline/city/hq_compound_spec.py",
+  "driver": "tools/art_pipeline/city/make_hq_compounds.py",
+  "vendor": "art-concepts-r43:docs/concepts/round43_hq_mechanics/scripts @ 36d1f34de595297787d06f4f0cc8075018a8b744",
+  "commit": "uncommitted",
+  "scripts_sha256": "db6adbacc2c78192736407de34c705cac327bb7e33ffde658f8a7ccb876ede05"
+ },
+ "settings": {
+  "blender": "5.2.2 LTS",
+  "state": "static",
+  "units": "1 BU = 1 m",
+  "up": "+Y (glTF; Blender (x, y, z) -> (x, z, -y))",
+  "tone": [
+   0.86,
+   1.12
+  ],
+  "ramp_tint": [
+   0.92,
+   1.07,
+   0.96
+  ],
+  "pitch_deg": 55.0,
+  "yaw_deg": 135.0,
+  "reference_camera": {
+   "target": [
+    0.0,
+    58.0,
+    -0.0
+   ],
+   "ortho": 190.0
+  },
+  "normals": "none (facet normal from screen derivatives)",
+  "layered_sprites": "dropped: 1D chose real-time Godot 3D"
+ },
+ "origin": "the compound's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot's centre",
+ "footprint": {
+  "min": [
+   -27.5,
+   0.0,
+   -27.5
+  ],
+  "max": [
+   27.5,
+   111.0,
+   27.5
+  ],
+  "size": [
+   55.0,
+   111.0,
+   55.0
+  ]
+ },
+ "files": [
+  {
+   "path": "solace_compound.glb",
+   "kind": "gltf",
+   "bytes": 834392,
+   "sha256": "46021113feeff00a0777c1a9a05fd13fac3f3457406ff92a786604c5f6c83420"
+  }
+ ],
+ "triangles": {
+  "neon": 8486,
+  "toon": 9564
+ },
+ "materials": {
+  "hq_toon": "toon: 3-band ramp x vertex colour (tone baked); alpha = part bit -> ROUGHNESS (ink material edges)",
+  "hq_neon": "emissive: vertex colour x neon gain (strips, trims, beacons)"
+ },
+ "anchors": {
+  "frame": "godot",
+  "lift": 0.3,
+  "server_name": "THE GENOME CORE",
+  "layers": [
+   [
+    [
+     -11.103,
+     18.854,
+     10.263
+    ],
+    [
+     1.423,
+     24.563,
+     15.053
+    ],
+    [
+     -1.423,
+     24.563,
+     -15.053
+    ],
+    [
+     11.103,
+     18.854,
+     -10.263
+    ]
+   ],
+   [
+    [
+     -12.766,
+     37.251,
+     8.102
+    ],
+    [
+     -14.185,
+     31.542,
+     -5.233
+    ],
+    [
+     14.185,
+     31.542,
+     5.233
+    ],
+    [
+     12.766,
+     37.251,
+     -8.102
+    ]
+   ],
+   [
+    [
+     1.777,
+     44.229,
+     15.015
+    ],
+    [
+     -13.014,
+     49.938,
+     -7.697
+    ],
+    [
+     13.014,
+     49.938,
+     7.697
+    ],
+    [
+     -1.777,
+     44.229,
+     -15.015
+    ]
+   ],
+   [
+    [
+     -12.572,
+     56.916,
+     8.4
+    ],
+    [
+     -0.949,
+     62.626,
+     15.09
+    ],
+    [
+     0.949,
+     62.626,
+     -15.09
+    ],
+    [
+     12.572,
+     56.916,
+     -8.4
+    ]
+   ],
+   [
+    [
+     -13.876,
+     75.314,
+     6.005
+    ],
+    [
+     -13.192,
+     69.604,
+     -7.388
+    ],
+    [
+     13.192,
+     69.604,
+     7.388
+    ],
+    [
+     13.876,
+     75.314,
+     -6.005
+    ]
+   ],
+   [
+    [
+     -0.594,
+     82.292,
+     15.108
+    ],
+    [
+     -11.65,
+     88.001,
+     -9.638
+    ],
+    [
+     11.65,
+     88.001,
+     9.638
+    ],
+    [
+     0.594,
+     82.292,
+     -15.108
+    ]
+   ]
+  ],
+  "central_server": [
+   -13.334,
+   111.3,
+   -2.112
+  ],
+  "entry": [
+   16.0,
+   3.7,
+   16.0
+  ]
+ },
+ "slot_surfaces": [
+  {
+   "layer": 1,
+   "slot": 0,
+   "z": 19.216,
+   "surface": 18.554
+  },
+  {
+   "layer": 1,
+   "slot": 1,
+   "z": 24.925,
+   "surface": 24.263
+  },
+  {
+   "layer": 1,
+   "slot": 2,
+   "z": 24.925,
+   "surface": 24.263
+  },
+  {
+   "layer": 1,
+   "slot": 3,
+   "z": 19.216,
+   "surface": 18.554
+  },
+  {
+   "layer": 2,
+   "slot": 0,
+   "z": 37.613,
+   "surface": 36.951
+  },
+  {
+   "layer": 2,
+   "slot": 1,
+   "z": 31.903,
+   "surface": 31.242
+  },
+  {
+   "layer": 2,
+   "slot": 2,
+   "z": 31.903,
+   "surface": 31.242
+  },
+  {
+   "layer": 2,
+   "slot": 3,
+   "z": 37.613,
+   "surface": 36.951
+  },
+  {
+   "layer": 3,
+   "slot": 0,
+   "z": 44.591,
+   "surface": 43.929
+  },
+  {
+   "layer": 3,
+   "slot": 1,
+   "z": 50.3,
+   "surface": 49.638
+  },
+  {
+   "layer": 3,
+   "slot": 2,
+   "z": 50.3,
+   "surface": 49.638
+  },
+  {
+   "layer": 3,
+   "slot": 3,
+   "z": 44.591,
+   "surface": 43.929
+  },
+  {
+   "layer": 4,
+   "slot": 0,
+   "z": 57.278,
+   "surface": 56.616
+  },
+  {
+   "layer": 4,
+   "slot": 1,
+   "z": 62.988,
+   "surface": 62.326
+  },
+  {
+   "layer": 4,
+   "slot": 2,
+   "z": 62.988,
+   "surface": 62.326
+  },
+  {
+   "layer": 4,
+   "slot": 3,
+   "z": 57.278,
+   "surface": 56.616
+  },
+  {
+   "layer": 5,
+   "slot": 0,
+   "z": 75.675,
+   "surface": 75.014
+  },
+  {
+   "layer": 5,
+   "slot": 1,
+   "z": 69.966,
+   "surface": 69.304
+  },
+  {
+   "layer": 5,
+   "slot": 2,
+   "z": 69.966,
+   "surface": 69.304
+  },
+  {
+   "layer": 5,
+   "slot": 3,
+   "z": 75.675,
+   "surface": 75.014
+  },
+  {
+   "layer": 6,
+   "slot": 0,
+   "z": 82.653,
+   "surface": 81.992
+  },
+  {
+   "layer": 6,
+   "slot": 1,
+   "z": 88.363,
+   "surface": 87.701
+  },
+  {
+   "layer": 6,
+   "slot": 2,
+   "z": 88.363,
+   "surface": 87.701
+  },
+  {
+   "layer": 6,
+   "slot": 3,
+   "z": 82.653,
+   "surface": 81.992
+  }
+ ],
+ "validator": "python tools/art_pipeline/city/validate_hq_compounds.py; tools/validate_content.gd (manifest + files)"
+}

@@ -1,0 +1,374 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "hq_compound",
+ "corp": "halcyon",
+ "source": {
+  "script": "tools/art_pipeline/city/build_hq_compound.py",
+  "spec": "tools/art_pipeline/city/hq_compound_spec.py",
+  "driver": "tools/art_pipeline/city/make_hq_compounds.py",
+  "vendor": "art-concepts-r43:docs/concepts/round43_hq_mechanics/scripts @ 36d1f34de595297787d06f4f0cc8075018a8b744",
+  "commit": "uncommitted",
+  "scripts_sha256": "db6adbacc2c78192736407de34c705cac327bb7e33ffde658f8a7ccb876ede05"
+ },
+ "settings": {
+  "blender": "5.2.2 LTS",
+  "state": "static",
+  "units": "1 BU = 1 m",
+  "up": "+Y (glTF; Blender (x, y, z) -> (x, z, -y))",
+  "tone": [
+   0.86,
+   1.12
+  ],
+  "ramp_tint": [
+   1.0,
+   0.94,
+   1.08
+  ],
+  "pitch_deg": 55.0,
+  "yaw_deg": 135.0,
+  "reference_camera": {
+   "target": [
+    2.0,
+    36.0,
+    12.0
+   ],
+   "ortho": 112.0
+  },
+  "normals": "none (facet normal from screen derivatives)",
+  "layered_sprites": "dropped: 1D chose real-time Godot 3D"
+ },
+ "origin": "the compound's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot's centre",
+ "footprint": {
+  "min": [
+   -28.8,
+   0.0,
+   -27.823
+  ],
+  "max": [
+   74.203,
+   94.0,
+   129.194
+  ],
+  "size": [
+   103.003,
+   94.0,
+   157.017
+  ]
+ },
+ "files": [
+  {
+   "path": "halcyon_compound.glb",
+   "kind": "gltf",
+   "bytes": 379420,
+   "sha256": "ae2baefd78bb433bc559b0dbe3b8e37e670f7be2dbb21ec66929fc17c89c2f5d"
+  }
+ ],
+ "triangles": {
+  "neon": 1290,
+  "toon": 3416,
+  "sign": 4948,
+  "win": 468
+ },
+ "materials": {
+  "hq_toon": "toon: 3-band ramp x vertex colour (tone baked); alpha = part bit -> ROUGHNESS (ink material edges)",
+  "hq_neon": "emissive: vertex colour x neon gain (strips, trims, beacons)",
+  "hq_win": "emissive windows: vertex colour x window gain",
+  "hq_sign": "emissive diegetic signage (corp sign colour)"
+ },
+ "anchors": {
+  "frame": "godot",
+  "lift": 0.3,
+  "server_name": "THE PANOPTICON",
+  "layers": [
+   [
+    [
+     -15.795,
+     9.3,
+     25.0
+    ],
+    [
+     -5.265,
+     9.3,
+     25.0
+    ],
+    [
+     5.265,
+     9.3,
+     25.0
+    ],
+    [
+     15.795,
+     9.3,
+     25.0
+    ]
+   ],
+   [
+    [
+     -13.747,
+     18.353,
+     21.5
+    ],
+    [
+     -4.583,
+     18.353,
+     21.5
+    ],
+    [
+     4.583,
+     18.353,
+     21.5
+    ],
+    [
+     13.747,
+     18.353,
+     21.5
+    ]
+   ],
+   [
+    [
+     -11.7,
+     27.337,
+     18.0
+    ],
+    [
+     -3.9,
+     27.337,
+     18.0
+    ],
+    [
+     3.9,
+     27.337,
+     18.0
+    ],
+    [
+     11.7,
+     27.337,
+     18.0
+    ]
+   ],
+   [
+    [
+     -9.652,
+     36.3,
+     14.5
+    ],
+    [
+     -3.218,
+     36.299,
+     14.5
+    ],
+    [
+     3.218,
+     36.299,
+     14.5
+    ],
+    [
+     9.652,
+     36.3,
+     14.5
+    ]
+   ],
+   [
+    [
+     -7.897,
+     45.314,
+     11.5
+    ],
+    [
+     -2.633,
+     45.314,
+     11.5
+    ],
+    [
+     2.633,
+     45.314,
+     11.5
+    ],
+    [
+     7.897,
+     45.314,
+     11.5
+    ]
+   ],
+   [
+    [
+     -6.143,
+     54.29,
+     8.5
+    ],
+    [
+     -2.048,
+     54.29,
+     8.5
+    ],
+    [
+     2.048,
+     54.29,
+     8.5
+    ],
+    [
+     6.143,
+     54.29,
+     8.5
+    ]
+   ]
+  ],
+  "central_server": [
+   0.0,
+   62.33,
+   5.0
+  ],
+  "entry": [
+   0.0,
+   0.5,
+   40.0
+  ]
+ },
+ "slot_surfaces": [
+  {
+   "layer": 1,
+   "slot": 0,
+   "z": 9.6,
+   "surface": 9.0
+  },
+  {
+   "layer": 1,
+   "slot": 1,
+   "z": 9.6,
+   "surface": 9.0
+  },
+  {
+   "layer": 1,
+   "slot": 2,
+   "z": 9.6,
+   "surface": 9.0
+  },
+  {
+   "layer": 1,
+   "slot": 3,
+   "z": 9.6,
+   "surface": 9.0
+  },
+  {
+   "layer": 2,
+   "slot": 0,
+   "z": 18.6,
+   "surface": 18.053
+  },
+  {
+   "layer": 2,
+   "slot": 1,
+   "z": 18.6,
+   "surface": 18.053
+  },
+  {
+   "layer": 2,
+   "slot": 2,
+   "z": 18.6,
+   "surface": 18.053
+  },
+  {
+   "layer": 2,
+   "slot": 3,
+   "z": 18.6,
+   "surface": 18.053
+  },
+  {
+   "layer": 3,
+   "slot": 0,
+   "z": 27.6,
+   "surface": 27.037
+  },
+  {
+   "layer": 3,
+   "slot": 1,
+   "z": 27.6,
+   "surface": 27.037
+  },
+  {
+   "layer": 3,
+   "slot": 2,
+   "z": 27.6,
+   "surface": 27.037
+  },
+  {
+   "layer": 3,
+   "slot": 3,
+   "z": 27.6,
+   "surface": 27.037
+  },
+  {
+   "layer": 4,
+   "slot": 0,
+   "z": 36.6,
+   "surface": 36.0
+  },
+  {
+   "layer": 4,
+   "slot": 1,
+   "z": 36.6,
+   "surface": 35.999
+  },
+  {
+   "layer": 4,
+   "slot": 2,
+   "z": 36.6,
+   "surface": 35.999
+  },
+  {
+   "layer": 4,
+   "slot": 3,
+   "z": 36.6,
+   "surface": 36.0
+  },
+  {
+   "layer": 5,
+   "slot": 0,
+   "z": 45.6,
+   "surface": 45.014
+  },
+  {
+   "layer": 5,
+   "slot": 1,
+   "z": 45.6,
+   "surface": 45.014
+  },
+  {
+   "layer": 5,
+   "slot": 2,
+   "z": 45.6,
+   "surface": 45.014
+  },
+  {
+   "layer": 5,
+   "slot": 3,
+   "z": 45.6,
+   "surface": 45.014
+  },
+  {
+   "layer": 6,
+   "slot": 0,
+   "z": 54.6,
+   "surface": 53.99
+  },
+  {
+   "layer": 6,
+   "slot": 1,
+   "z": 54.6,
+   "surface": 53.99
+  },
+  {
+   "layer": 6,
+   "slot": 2,
+   "z": 54.6,
+   "surface": 53.99
+  },
+  {
+   "layer": 6,
+   "slot": 3,
+   "z": 54.6,
+   "surface": 53.99
+  }
+ ],
+ "validator": "python tools/art_pipeline/city/validate_hq_compounds.py; tools/validate_content.gd (manifest + files)"
+}
