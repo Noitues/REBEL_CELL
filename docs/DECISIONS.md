@@ -93,6 +93,7 @@ what changed is how the disc composites them and the frame code ported from the 
   the rail half: the smallest change). `palette.gd` / `palette_skins.gd` / `hud_wheel_layer.gd` /
   `spinner_view.gd` unchanged (no slice token needed a new value: the concept's look comes from the
   composite, the program colours already match ART_BIBLE 2.3).
+
 ### 2026-10-05 — Designer ruling — abandon run, abandon campaign, quit
 The designer approved a new rule (2026-10-05): three exit paths, each a screen. Added to the GDD as **4.5 Leaving a
 Run or the Campaign** (a marked addition; no other GDD text changed). It answers the open questions "ART-10 4C: an
