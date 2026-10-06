@@ -941,6 +941,7 @@ func test_defence_cards_say_what_they_do_and_the_button_says_defend() -> void:
 	# HQ-B (c): the Armory's count is the DEFENCE tab's line (under the word below big text);
 	# its cards explain it.
 	Settings.set_text_scale(1.0)
+	RunManager.campaign.pending_raids.clear()  # with a raid pending the tab says RAID n
 	var hq2 := _open(HQ)
 	await _frames()
 	var tab := hq2._panel.find_child("Tab_DEFENCE", true, false) as MenuChip
