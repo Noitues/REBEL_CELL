@@ -64,6 +64,15 @@ func _init() -> void:
 	stamp_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stamp_slot.draw.connect(_draw_stamp)
 	add_child(stamp_slot, false, Node.INTERNAL_MODE_BACK)
+	var clip_layer := Control.new()
+	clip_layer.name = "ClipLayer"
+	clip_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	clip_layer.draw.connect(func() -> void:
+		if clip:
+			PaperLie.draw_clip(clip_layer, Rect2(Vector2.ZERO, size), get_viewport_rect().size.y if is_inside_tree() else PaperLie.BOARD_H))
+	add_child(clip_layer, false, Node.INTERNAL_MODE_BACK)
+	clip_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	resized.connect(clip_layer.queue_redraw)
 
 
 func _ready() -> void:
@@ -106,10 +115,18 @@ func _layout() -> void:
 	_paper.queue_redraw()
 
 
-## The drop shadow under the sheet.
+## The drop shadow under the sheet. B5 (review D24): the soft 6 px contact shadow of paper lying on the world
+## (PaperLie), in place of the hard offset copy.
 func _draw() -> void:
-	var sh := Palette.SHADOW
-	draw_rect(Rect2(SHADOW_OFFSET, size), sh)
+	PaperLie.draw_contact_shadow(self, Rect2(Vector2.ZERO, size), get_viewport_rect().size.y if is_inside_tree() else PaperLie.BOARD_H)
+
+
+## B5 (D24): the sheet wears the concepts' paper clip (top right), over its letterhead and fields.
+@export var clip: bool = true:
+	set(v):
+		clip = v
+		if stamp_slot != null:
+			stamp_slot.queue_redraw()
 
 
 ## The letterhead (corp name over a rule in the corp colour), on its own layer over the paper.

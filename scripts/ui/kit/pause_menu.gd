@@ -4,7 +4,8 @@ extends Control
 ## of the same day). Scenes open it on Esc; it never changes game state itself beyond asking
 ## RunManager to save, abandon and switch scenes.
 ## - The page behind is blurred and darkened (GlassScrim, as every other modal); no PAUSED sticker.
-## - Two columns of vinyl stickers (the kit's VinylSticker through HoloSticker, each always in its
+## - Two columns of vinyl stickers (the kit's VinylSticker through HoloSticker, each always in its (B5, round 44: RESUME
+##   yellow (the safe verb, the one sweep), ABANDON pink (destructive), the rest neutral white vinyl)
 ##   role's colour; the focused one lifts and runs the gloss sweep, no brackets). LEFT: RESUME
 ##   (pink, the one primary, its key hint beside it), OPTIONS (the SettingsPanel inline), CODEX.
 ##   RIGHT: ABANDON CAMPAIGN (at HQ; ABANDON RUN in a run: the same slot, ABANDON-QUIT, GDD 4.5,
@@ -84,7 +85,7 @@ func _init() -> void:
 	add_child(_backdrop)
 	# H24 S4: the menu shows its words as given, translated where set.
 	TextDb.shown_as_given(self)
-	var panel := CrtWindow.new(tr("PAUSED"))
+	var panel := CrtWindow.new(header_text())
 	panel.name = "PauseWindow"
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(panel)
@@ -109,15 +110,18 @@ func _init() -> void:
 	_menu.add_child(_columns)
 	_left = _column("Left")
 	_right = _column("Right")
-	var resume_cell := _cell(_left, "Resume", tr("Resume"), VinylSticker.Fill.PINK, RESUME_PX, resumed.emit,
+	var resume_cell := _cell(_left, "Resume", tr("Resume"), VinylSticker.Fill.YELLOW, RESUME_PX, resumed.emit,
 		tr("Down with the Oligarchy!"), Palette.PENCIL_PLAN, RESUME_NOTE_TILT, true)
 	resume_button = resume_cell
+	# B5 (round 44 B_menus `pause.png`): RESUME is the yellow safe verb, the default focus and the page's one sweep
+	# (named: the pink ABANDON would otherwise take it); ABANDON pink (destructive); the rest neutral white vinyl.
+	resume_cell.sticker.sweep_primary = true
 	resume_hint = Label.new()
 	resume_hint.name = "ResumeHint"
 	resume_hint.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	resume_hint.add_theme_font_override(&"font", Palette.mono())
 	resume_hint.add_theme_font_size_override(&"font_size", UiTheme.font_px(UiTheme.LABEL))
-	resume_hint.add_theme_color_override(&"font_color", Palette.CELL_PINK)
+	resume_hint.add_theme_color_override(&"font_color", Palette.STICKER_FILL_YELLOW[0])
 	resume_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var resume_box := resume_cell.get_parent().get_parent()  # the cell: [sticker + note beside], hint, note below
 	resume_box.add_child(resume_hint)
@@ -131,21 +135,21 @@ func _init() -> void:
 	_notes.append(_resume_below)
 	_relabel()
 	Settings.hints_changed.connect(_relabel)
-	_cell(_left, "Options", tr("Options"), VinylSticker.Fill.YELLOW, ROW_PX, show_options)
+	_cell(_left, "Options", tr("Options"), VinylSticker.Fill.WHITE, ROW_PX, show_options)
 	_cell(_left, "Codex", tr("Codex"), VinylSticker.Fill.WHITE, ROW_PX, show_codex)
 	# ABANDON-QUIT: in a run, abandon it; at HQ (a live campaign, no run), abandon the campaign.
 	# Same slot (top right), same rules and dialogs (ExitDialogs, hold to confirm).
 	if RunManager.has_active_run():
-		abandon_run_button = _cell(_right, "AbandonRun", tr("Abandon run"), VinylSticker.Fill.RED, ROW_PX, confirm_abandon_run,
+		abandon_run_button = _cell(_right, "AbandonRun", tr("Abandon run"), VinylSticker.Fill.PINK, ROW_PX, confirm_abandon_run,
 			tr("No Going Back"), Palette.PENCIL_THREAT, ABANDON_NOTE_TILT)
 	elif RunManager.has_campaign():
-		abandon_campaign_button = _cell(_right, "AbandonCampaign", tr("Abandon campaign"), VinylSticker.Fill.RED, ROW_PX, confirm_abandon_campaign,
+		abandon_campaign_button = _cell(_right, "AbandonCampaign", tr("Abandon campaign"), VinylSticker.Fill.PINK, ROW_PX, confirm_abandon_campaign,
 			tr("No Going Back"), Palette.PENCIL_THREAT, ABANDON_NOTE_TILT)
 	_cell(_right, "QuitMain", tr("Quit to Main Menu"), VinylSticker.Fill.WHITE, ROW_PX, func() -> void:
 		if RunManager.campaign != null:
 			RunManager.autosave()
 		quit_to_title.emit())
-	_cell(_right, "Quit", tr("Quit to desktop"), VinylSticker.Fill.HOLO, ROW_PX, confirm_quit,
+	_cell(_right, "Quit", tr("Quit to desktop"), VinylSticker.Fill.WHITE, ROW_PX, confirm_quit,
 		tr("Come Back Soon"), Palette.PENCIL_PLAN, QUIT_NOTE_TILT)
 	_link_columns()
 	# H24 S11 / PAUSE-02: the campaign's share code in a mono field with a copy button (it
@@ -255,6 +259,19 @@ func _notes_extra_h(mode: NoteMode, others: bool) -> float:
 ## The least the menu is tall and the screen edge it keeps clear of (px).
 const FIT_MIN_H := 120.0
 const FIT_MARGIN := 12.0
+
+
+## B5 (round 44 `pause.png`: `> PAUSED // NETRUN // MERIDIAN FREIGHT`): the window's header: PAUSED, where (NETRUN
+## in a run, HQ in a campaign) and the corporation, translated.
+static func header_text() -> String:
+	var parts := PackedStringArray([TranslationServer.translate("PAUSED")])
+	if RunManager.has_active_run():
+		parts.append(TranslationServer.translate("NETRUN"))
+	elif RunManager.has_campaign():
+		parts.append(TranslationServer.translate("HQ"))
+	if RunManager.corporation != null and (RunManager.has_active_run() or RunManager.has_campaign()):
+		parts.append(TextDb.t(RunManager.corporation, "display_name"))
+	return "  //  ".join(parts)
 
 
 ## The campaign's share code alone ("" without a campaign).

@@ -30,6 +30,15 @@ const ICONS := {&"first_blood": StatIcon.RUNS, &"banked": StatIcon.RACK, &"breac
 var id: StringName = &""
 var title: String = ""
 var earned: bool = false
+## B5 (round 44 B_menus `stats.png`): the badge sits on the white liner (LinerPanel): an earned badge is the glossy
+## die-cut sticker, an unearned one only its empty kiss-cut outline in the liner, and the name is printed in the
+## liner's ink.
+var on_liner: bool = false
+## B5: the kiss-cut's ink on the liner and its width (px).
+const KISS_CUT_INK := Color8(176, 176, 172)
+const KISS_CUT_W := 1.5
+const LINER_NAME_INK := Color8(40, 40, 46)
+const LINER_NAME_DIM := Color8(130, 130, 136)
 
 
 func _init(p_id: StringName, p_title: String, p_text: String, p_earned: bool) -> void:
@@ -110,6 +119,8 @@ func _draw() -> void:
 		draw_circle(Vector2.ZERO, r * (1.0 - RING_SHARE), Palette.CELL_PINK)
 		StatIcon.draw(self, Vector2.ZERO, r * 0.5, kind, Palette.INK)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	elif on_liner:
+		draw_arc(c, r - 1.0, 0.0, TAU, 48, KISS_CUT_INK, KISS_CUT_W, true)  # B5: the empty kiss-cut in the liner
 	else:
 		for i in DASHES:
 			if i % 2 == 0:
@@ -122,6 +133,9 @@ func _draw() -> void:
 		StatIcon.draw(self, lock_c, lr * 0.7, StatIcon.LOCK, Palette.TEXT_HI)
 	var cf := Chrome.caps_font(NAME_STEP)
 	var cp := Chrome.px(NAME_STEP)
+	var name_col := Palette.TEXT_HI if earned else Palette.TEXT_MID
+	if on_liner:
+		name_col = LINER_NAME_INK if earned else LINER_NAME_DIM
 	draw_multiline_string(cf, Vector2(0, side() + NAME_GAP + cf.get_ascent(cp)), shown_name(), HORIZONTAL_ALIGNMENT_CENTER, size.x, cp, -1,
-		Palette.TEXT_HI if earned else Palette.TEXT_MID, CrtSwitch.WRAP)
+		name_col, CrtSwitch.WRAP)
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), st)

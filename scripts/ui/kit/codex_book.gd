@@ -14,6 +14,13 @@ extends VBoxContainer
 ## Pad / keyboard: the tabs are a row (LB / RB switch them from anywhere in the book); the page
 ## takes focus as one stop: up / down scroll it by a quarter view and move on at either end.
 ## Reads Codex entries only. View only.
+## B5 (integration review D11 / Q13, round 44 B_menus `codex.png`): the Codex is the Cell's own knowledge, so it is
+## TERMINAL GLASS, never paper: one CrtWindow `> CODEX // WHAT THE CELL KNOWS` (its tag the number of entries) holds
+## the tab plates and the page; each entry is a glyph-tile row (the 26 px glyph in a navy tile with an accent edge,
+## then its title and words in Plex, as the tooltips' rows). The CORPORATIONS section lists the corporations and
+## opens the selected one's intercepted HOLO card beside the list (CodexHoloCard: hacked intel on a corporation);
+## up / down on the focused page (or a click) picks the corporation, the selected row lit with the cyan wash, the
+## lime focus brackets and the caret.
 
 ## The characters a body line holds (≤ 70 a line), and the sample its width is measured on.
 const COLUMN_CHARS := 60
@@ -34,9 +41,18 @@ const SCROLL_STEP := 0.25
 ## caption and heading lines (the open tab, filled, names the section): the entries keep the
 ## room (at 2.0 the view was at its least height).
 const ONE_ROW_FROM := 1.6
-## The page's caption (a key).
+## The page's caption (a key): the terminal window's header.
 const CAPTION := "CODEX // WHAT THE CELL KNOWS" # TR
-const PAPER_SHADER := preload("res://shaders/kit/corp_paper.gdshader")
+## B5: the window's tag (a key) and the section whose entries open the holo card.
+const ENTRIES_TAG := "%d ENTRIES" # TR
+const CORP_SECTION := "Corporations"
+## B5: the glyph tile's fill and its edge's alpha (round 44 b44.glyph_tile: navy (8, 18, 34), the accent at 200/255),
+## and the selected row's cyan wash (alpha).
+const TILE_FILL := Color8(8, 18, 34)
+const TILE_EDGE_ALPHA := 0.78
+const ROW_WASH := 0.12
+## B5: the holo card's share of the page's width beside the corporations' list.
+const HOLO_SHARE := 0.48
 ## Each section's StatIcon (the art pass's set): the glyph of an entry with no atlas glyph.
 const SECTION_ICONS := {"Story": StatIcon.TERMINAL, "Slices": StatIcon.FIGHT, "Statuses & precision": StatIcon.CHECK,
 	"Classes": StatIcon.OPERATIVE, "Corporations": StatIcon.MAP, "Cards": StatIcon.CARDS, "Firmware": StatIcon.FIRMWARE,
@@ -75,10 +91,15 @@ var max_height: float = 0.0:
 		max_height = v
 		_queue_fit()
 var _tab_buttons: Dictionary = {}
-var _paper: Control
+## B5: the terminal window round the tabs and the page (the Codex's glass).
+var frame: CrtWindow
 var _content: VBoxContainer
 var _marks: Control
-var _mat: ShaderMaterial
+## B5: the corporations' rows (their entries), the one picked, and its holo card (null in other sections).
+var _corp_rows: Array[Control] = []
+var _corp_items: Array = []
+var selected_corp: int = 0
+var holo_card: CodexHoloCard = null
 
 
 ## `p_entries` from Codex.entries; the book stays under `p_max_height` px (its page scrolls)
@@ -88,6 +109,16 @@ func _init(p_entries: Dictionary, p_max_height: float = 0.0, p_max_width: float 
 	entries = p_entries
 	max_width = p_max_width
 	add_theme_constant_override("separation", UiTheme.SP_S)
+	# B5 (D11): one terminal window holds the tabs and the page.
+	frame = CrtWindow.new(tr(CAPTION))
+	frame.name = "Frame"
+	var count := 0
+	for k in entries:
+		count += (entries[k] as Array).size()
+	frame.tag_label.text = tr(ENTRIES_TAG) % count
+	frame.tag_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	frame.body.add_theme_constant_override("separation", UiTheme.SP_XS if one_row() else UiTheme.SP_S)  # big text: the entries keep the room
+	add_child(frame)
 	if one_row():
 		# Big text: the tabs in one row that scrolls sideways (focus follows), so the page keeps
 		# its room (rows of big tabs took most of the screen at 2.0).
@@ -97,8 +128,8 @@ func _init(p_entries: Dictionary, p_max_height: float = 0.0, p_max_width: float 
 		# No bar (its room is the page's): the wheel, the focus and LB / RB move the row.
 		tab_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 		tab_scroll.follow_focus = true
-		tab_scroll.custom_minimum_size.x = p_max_width
-		add_child(tab_scroll)
+		tab_scroll.custom_minimum_size.x = p_max_width - CrtWindow.PAD_H * 2.0
+		frame.body.add_child(tab_scroll)
 		tabs = HBoxContainer.new()
 		tabs.add_theme_constant_override("separation", UiTheme.SP_XS)
 		tab_scroll.add_child(tabs)
@@ -106,7 +137,7 @@ func _init(p_entries: Dictionary, p_max_height: float = 0.0, p_max_width: float 
 		tabs = HFlowContainer.new()
 		tabs.add_theme_constant_override("h_separation", UiTheme.SP_XS)
 		tabs.add_theme_constant_override("v_separation", UiTheme.SP_XS)
-		add_child(tabs)
+		frame.body.add_child(tabs)
 	tabs.name = "Tabs"
 	for key in entries:
 		var b := MenuChip.new(tr(String(key)))
@@ -131,24 +162,14 @@ func _init(p_entries: Dictionary, p_max_height: float = 0.0, p_max_width: float 
 	page.gui_input.connect(_on_page_input)
 	page.focus_entered.connect(_redraw_marks)
 	page.focus_exited.connect(_redraw_marks)
-	page.draw.connect(_draw_shadow)
-	add_child(page)
-	_mat = ShaderMaterial.new()
-	_mat.shader = PAPER_SHADER
-	_paper = Control.new()
-	_paper.name = "Paper"
-	_paper.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_paper.material = _mat
-	_paper.draw.connect(func() -> void: _paper.draw_rect(Rect2(Vector2.ZERO, _paper.size), Palette.NO_TINT))
-	page.add_child(_paper)
-	_paper.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	frame.body.add_child(page)
 	var margin := MarginContainer.new()
 	margin.name = "Margin"
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for side in ["left", "right"]:
 		margin.add_theme_constant_override("margin_" + side, roundi(PAGE_PAD.x))
 	for side in ["top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, roundi(PAGE_PAD.y))
+		margin.add_theme_constant_override("margin_" + side, roundi(page_pad_y()))
 	page.add_child(margin)
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_content = VBoxContainer.new()
@@ -156,20 +177,10 @@ func _init(p_entries: Dictionary, p_max_height: float = 0.0, p_max_width: float 
 	_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_content.add_theme_constant_override("separation", 2)
 	margin.add_child(_content)
-	var cap := Label.new()
-	cap.name = "Caption"
-	cap.text = tr(CAPTION)
-	cap.add_theme_font_override(&"font", Chrome.paper_font())
-	cap.add_theme_font_size_override(&"font_size", Chrome.px(UiTheme.CAPTION))
-	cap.add_theme_color_override(&"font_color", Palette.PAPER_TYPE_INK)
-	cap.visible = not one_row()
-	_content.add_child(cap)
-	heading = Label.new()
+	# B5: the section's name as the terminal's mono caps heading (the window's header is the caption).
+	heading = Chrome.caps_label("", UiTheme.CAPTION, Palette.NET_CYAN)
 	heading.name = "Heading"
-	heading.add_theme_font_override(&"font", Palette.display())
-	heading.add_theme_font_size_override(&"font_size", Chrome.px(UiTheme.HEADING))
 	heading.visible = not one_row()
-	heading.add_theme_color_override(&"font_color", Palette.INK)
 	_content.add_child(heading)
 	columns = HBoxContainer.new()
 	columns.name = "Columns"
@@ -232,6 +243,12 @@ static func one_row() -> bool:
 	return Settings.text_scale >= ONE_ROW_FROM
 
 
+## B5: the page's top and bottom margin (px): PAGE_PAD.y, half of it at big text (one row of tabs), so the entries
+## keep the room the terminal window's header takes.
+static func page_pad_y() -> float:
+	return PAGE_PAD.y * (0.5 if one_row() else 1.0)
+
+
 ## A section's tab node name ("Tab_Statuses_and_precision").
 static func tab_name(key: String) -> String:
 	return "Tab_%s" % key.replace(" ", "_").replace("&", "and")
@@ -270,7 +287,17 @@ func show_section(name_key: String) -> void:
 	for c in columns.get_children():
 		columns.remove_child(c)
 		c.queue_free()
+	_corp_rows.clear()
+	_corp_items.clear()
+	holo_card = null
 	var items: Array = entries.get(name_key, [])
+	if name_key == CORP_SECTION and not items.is_empty():
+		_show_corporations(items)
+		if fit.scroll != null:
+			fit.scroll.scroll_vertical = 0
+		_queue_fit()
+		section_shown.emit(name_key)
+		return
 	var n := columns_for(max_width)
 	var cols: Array[VBoxContainer] = []
 	for i in n:
@@ -315,37 +342,160 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
-func _entry(name_key: String, item: Dictionary) -> Control:
+func _entry(name_key: String, item: Dictionary, text_w: float = -1.0) -> Control:
+	var w := column_width() if text_w < 0.0 else text_w
 	var row := HBoxContainer.new()
 	row.name = "Entry"
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_theme_constant_override("separation", UiTheme.SP_S)
+	# B5 (D11): the glyph in its navy tile with the accent edge (round 44 b44.glyph_tile; the tooltips' rows).
 	var g := _glyph(name_key, item)
-	g.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	row.add_child(g)
+	var tile := Control.new()
+	tile.name = "Tile"
+	tile.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tile.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	tile.custom_minimum_size = g.get_combined_minimum_size()
+	var tile_col := glyph_tile_edge(name_key, item)
+	tile.set_meta(&"tile_edge", tile_col)
+	tile.draw.connect(func() -> void: draw_tile(tile, tile_col))
+	tile.add_child(g)
+	row.add_child(tile)
 	var words := VBoxContainer.new()
 	words.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	words.add_theme_constant_override("separation", 0)
 	var t := Label.new()
 	t.name = "Title"
-	t.text = title_text(String(item.get("title", "")), String(item.get("text", "")))
-	t.add_theme_font_override(&"font", Chrome.paper_bold_font())
+	t.text = title_text(String(item.get("title", "")), String(item.get("text", ""))).to_upper()
+	t.add_theme_font_override(&"font", Palette.body_medium())
 	t.add_theme_font_size_override(&"font_size", Chrome.px(UiTheme.LABEL))
-	t.add_theme_color_override(&"font_color", Palette.PAPER_TYPE_INK)
+	t.add_theme_color_override(&"font_color", Palette.TEXT_HI)
 	UiWrap.whole_words(t)
-	t.custom_minimum_size.x = column_width()
+	t.custom_minimum_size.x = w
 	words.add_child(t)
 	var body := Label.new()
 	body.name = "Body"
 	body.text = body_text(String(item.get("title", "")), String(item.get("text", "")))
 	body.add_theme_font_override(&"font", Palette.body())
 	body.add_theme_font_size_override(&"font_size", Chrome.px(UiTheme.BODY))
-	body.add_theme_color_override(&"font_color", Palette.INK)
+	body.add_theme_color_override(&"font_color", Palette.TEXT_MID)
 	UiWrap.whole_words(body)
-	body.custom_minimum_size.x = column_width()
+	body.custom_minimum_size.x = w
 	words.add_child(body)
 	row.add_child(words)
 	return row
+
+
+## B5: the glyph tile's edge colour for an entry: the glyph's own hue (a slice's colour, a corporation's), else the
+## Cell's cyan.
+static func glyph_tile_edge(name_key: String, item: Dictionary) -> Color:
+	var corp := StringName(String(item.get("corporation", "")))
+	if corp != &"":
+		return Palette.corp_color(corp)
+	if item.has("slice") or item.has("status") or name_key in ICON_FILLED:
+		return glyph_fill(name_key, item)
+	return Palette.NET_CYAN
+
+
+## B5 (D11, round 44 b44.glyph_tile): a glyph's tile: the navy chip with the accent edge, under the glyph.
+static func draw_tile(ci: Control, edge: Color) -> void:
+	var r := Rect2(Vector2.ZERO, ci.size)
+	ci.draw_rect(r, TILE_FILL)
+	ci.draw_rect(r.grow(-0.5), Color(PaletteSkins.chrome(edge), TILE_EDGE_ALPHA), false, 1.0)
+
+
+## B5 (D11, Q13): the corporations' list at the left (glyph-tile rows; the picked one lit) and the picked
+## corporation's intercepted holo card at the right.
+func _show_corporations(items: Array) -> void:
+	var inner := max_width - CrtWindow.PAD_H * 2.0 - PAGE_PAD.x * 2.0
+	var card_w := floorf(inner * HOLO_SHARE)
+	var list_w := inner - card_w - COLUMN_GAP
+	var col := VBoxContainer.new()
+	col.name = "Column1"
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_theme_constant_override("separation", ENTRY_GAP)
+	col.custom_minimum_size.x = list_w
+	columns.add_child(col)
+	var text_w := maxf(list_w - GlyphIcon.cell_size_for(glyph_px()).x - UiTheme.SP_S * 2.0, column_width() * 0.5)
+	for i in items.size():
+		var row := _entry(CORP_SECTION, items[i], text_w)
+		row.mouse_filter = Control.MOUSE_FILTER_STOP
+		row.gui_input.connect(_on_corp_row_input.bind(i))
+		row.draw.connect(_draw_corp_row.bind(row, i))
+		col.add_child(row)
+		_corp_rows.append(row)
+		_corp_items.append(items[i])
+	selected_corp = clampi(selected_corp, 0, items.size() - 1)
+	_show_holo(card_w)
+
+
+## The picked corporation's holo card (none for a corporation still a secret).
+func _show_holo(card_w: float = -1.0) -> void:
+	if holo_card != null and is_instance_valid(holo_card):
+		if card_w < 0.0:
+			card_w = holo_card.custom_minimum_size.x
+		columns.remove_child(holo_card)
+		holo_card.queue_free()
+	holo_card = null
+	if _corp_items.is_empty():
+		return
+	var item: Dictionary = _corp_items[selected_corp]
+	var corp := StringName(String(item.get("corporation", "")))
+	if corp != &"":
+		holo_card = CodexHoloCard.new(corp, String(item.get("text", "")), bosses_of(corp))
+		holo_card.custom_minimum_size.x = maxf(card_w, 0.0)
+		holo_card.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		columns.add_child(holo_card)
+	for r in _corp_rows:
+		r.queue_redraw()
+
+
+## The bosses of `corp` the Codex knows (its Enemies entries for that corporation), as card rows ranked HQ BOSS,
+## MINI BOSS, ELITE (then the rest), each {title, text, rank}.
+func bosses_of(corp: StringName) -> Array:
+	var out: Array = []
+	for e in entries.get("Enemies", []):
+		var item := e as Dictionary
+		if StringName(String(item.get("corporation", ""))) != corp:
+			continue
+		var res := RunManager.lookup().get_content(StringName(String(item.get("id", "")))) as EnemyData
+		var rank := ""
+		if res != null:
+			rank = "boss" if res.is_boss else ("mini" if res.is_mini_boss else ("elite" if res.is_elite else ""))
+		if rank == "":
+			continue
+		out.append({"title": String(item.get("title", "")), "text": body_text(String(item.get("title", "")), String(item.get("text", ""))), "rank": rank})
+	var order := {"boss": 0, "mini": 1, "elite": 2}
+	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var ra: int = order.get(a["rank"], 3)
+		var rb: int = order.get(b["rank"], 3)
+		return ra < rb if ra != rb else String(a["title"]) < String(b["title"]))
+	return out
+
+
+## Picks corporation `i` (its row lit, its holo card shown).
+func pick_corporation(i: int) -> void:
+	if _corp_items.is_empty():
+		return
+	selected_corp = clampi(i, 0, _corp_items.size() - 1)
+	_show_holo()
+	_queue_fit()
+
+
+func _on_corp_row_input(event: InputEvent, i: int) -> void:
+	if event is InputEventMouseButton and (event as InputEventMouseButton).pressed and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		pick_corporation(i)
+		page.grab_focus()
+
+
+## The picked row: the cyan wash, the caret, and the lime focus brackets while the page holds the focus.
+func _draw_corp_row(row: Control, i: int) -> void:
+	if i != selected_corp:
+		return
+	var r := Rect2(Vector2.ZERO, row.size).grow(UiTheme.SP_XS)
+	row.draw_rect(r, Color(PaletteSkins.chrome(Palette.NET_CYAN), ROW_WASH))
+	row.draw_rect(r, Color(PaletteSkins.chrome(Palette.NET_CYAN), TILE_EDGE_ALPHA), false, 1.0)
+	if page.has_focus():
+		StyleBoxBrackets.draw_on(row, r)
 
 
 ## An entry's text under its title, without saying the title again (the audit's "SHIM SHIM:"):
@@ -443,11 +593,10 @@ func _draw_drawn_glyph(g: Control, name_key: String, item: Dictionary, side: flo
 	var r := side * 0.5
 	var corp := StringName(String(item.get("corporation", "")))
 	if corp != &"":
-		g.draw_circle(c, r, Palette.INK)
-		CorpSeal.draw_crest(g, c, r * CaseFileCard.EMBLEM_SHARE, corp, Palette.corp_color(corp))
+		CorpSeal.draw_crest(g, c, r * DecryptedHoloPanel.CREST_SHARE, corp, Palette.corp_color(corp))  # B5: on its navy tile
 		return
 	var kind: StringName = StatIcon.LOCK if name_key == "Corporations" else SECTION_ICONS.get(name_key, StatIcon.CODEX)
-	StatIcon.draw(g, c, r * 0.9, kind, Palette.INK)
+	StatIcon.draw(g, c, r * 0.9, kind, Palette.TEXT_HI)
 
 
 ## The page's least size: its content's (a Button's own ignores its children); deferred, so a
@@ -470,11 +619,6 @@ func _apply_page_size(margin: Control) -> void:
 ## The page's paper takes its new size (the margin, paper and marks follow it by their anchors:
 ## no size is set here, so a rewrap can never re-enter this).
 func _place_page(_margin: Control) -> void:
-	_mat.set_shader_parameter(&"panel", Vector4(0, 0, page.size.x, page.size.y))
-	_mat.set_shader_parameter(&"stock", Palette.PAPER)
-	_mat.set_shader_parameter(&"fibre", Palette.KRAFT_FIBRE)
-	_mat.set_shader_parameter(&"seed", float(entries.size()))
-	_paper.queue_redraw()
 	page.queue_redraw()
 
 
@@ -491,7 +635,10 @@ func _fit_page() -> void:
 	var tabs_part: Control = tab_scroll if tab_scroll != null else tabs
 	var gap := float(get_theme_constant(&"separation"))
 	var inner := float(_content.get_theme_constant(&"separation"))
-	var chrome := tabs_part.get_combined_minimum_size().y + gap + PAGE_PAD.y * 2.0
+	var chrome := tabs_part.get_combined_minimum_size().y + gap + page_pad_y() * 2.0
+	# B5: the terminal window's header strip and pads round its body.
+	chrome += frame.get_combined_minimum_size().y - frame.body.get_combined_minimum_size().y
+	chrome += float(frame.body.get_theme_constant(&"separation"))
 	for c in _content.get_children():
 		if c != fit and (c as Control).visible:
 			chrome += (c as Control).get_combined_minimum_size().y + inner
@@ -506,6 +653,18 @@ func _on_page_input(event: InputEvent) -> void:
 	var up := event.is_action_pressed("ui_up", true)
 	if not (down or up):
 		return
+	if not _corp_items.is_empty():
+		# B5: on the corporations' page up / down pick the corporation; past either end they move on.
+		var to := selected_corp + (1 if down else -1)
+		if to >= 0 and to < _corp_items.size():
+			pick_corporation(to)
+			fit.scroll.ensure_control_visible(_corp_rows[to])
+		else:
+			var away := page.find_valid_focus_neighbor(SIDE_BOTTOM if down else SIDE_TOP)
+			if away != null:
+				away.grab_focus()
+		page.accept_event()
+		return
 	var bar := fit.scroll.get_v_scroll_bar()
 	var at_edge := bar == null or bar.max_value - bar.page <= 0.5 or (down and bar.value >= bar.max_value - bar.page - 0.5) or (up and bar.value <= bar.min_value + 0.5)
 	if at_edge:
@@ -519,15 +678,14 @@ func _on_page_input(event: InputEvent) -> void:
 
 func _redraw_marks() -> void:
 	_marks.queue_redraw()
+	for r in _corp_rows:
+		r.queue_redraw()
 
 
 func _draw_marks() -> void:
-	if page.has_focus():
+	if page.has_focus() and _corp_items.is_empty():  # B5: on the corporations the picked row carries them
 		StyleBoxBrackets.draw_on(_marks, Rect2(Vector2.ZERO, _marks.size))
 
-
-func _draw_shadow() -> void:
-	page.draw_rect(Rect2(SHADOW_OFFSET, page.size), Palette.SHADOW)
 
 
 ## Every word on the book now (tests: a tab per section, the entries shown).
