@@ -899,7 +899,17 @@ corp summary slip, New campaign. Main: the audit dossier (the won variant: polar
 `MOST TROUBLESOME` sticky note), MAIN MENU and NEW CAMPAIGN stickers. View: main follows the
 dossier concept (which was drawn for the loss); the won screen lacks a celebratory beat (the
 build's CORP DOWN) and the story text is reduced to the intercept titles in ANNEX A. Likely file:
-`scripts/ui/campaign_end/`. Decision:
+`scripts/ui/campaign_end/`. Decision: **Designer group ruling 2026-10-05 (match the concepts; the
+won screen keeps the build's CORP DOWN beat reworked in v2), fixed by S-END**: a won file leads with
+the CORP DOWN poster (`CorpDownPoster`, ported from art-m13-final `campaign_end_stage.gd` /
+`corp_fall_art.gd` 5c077bc1): the corporation's own notice in its house style (house bar, motif,
+seal with the round 20 emblem, the boss and division), the Cell's red grease pencil X over it
+(spray is a rejected v2 medium) and CORP DOWN as the Cell's yellow vinyl slapped across its foot;
+it takes the boss print's place and plays after the AT LARGE stamp (`dossier_poster`, then
+`pencil_write_on`, then `sticker_slap`). Annex A types every intercept's title and words (the
+build's STORY UNCOVERED) and annex B under them, scrolling inside the sheet (MORE BELOW) so the
+file fits 1280x720 at 1.0. Tests `test_parity_endings.gd` (END-03 cases); sheets `fixes/END.jpg`,
+`fixes/END-03_won_beat.jpg`.
 
 **END-04 (P3) Campaign lost capture timing.** The review pack's frame (`hq.show_end()` + 12 frames)
 lands inside the tear; the harness should wait for the lock's end state (MotionSkip) or the
@@ -912,7 +922,14 @@ PROCESSED`, the corp seal, HOME SERVER / NODES ENCRYPTED bar, `WIPE IN 00:02.80`
 curling off along the bottom. Main (Solace): a very close match in the Solace style (`TREATED`,
 green notice, pink countdown and bar, padlocks on the top bar). Differences: the city behind is
 a hex pattern rather than the map with padlocked nodes; no defence-sticker row. Likely file:
-`scripts/ui/campaign_end/` (lock). Decision:
+`scripts/ui/campaign_end/` (lock). Decision: **Designer group ruling 2026-10-05 (match the concept),
+fixed by S-END**: the "hex pattern" was the city zoomed past its network (END_LOCK_ZOOM 1.9: most
+nodes, the home server among them, stood off screen or under the notice, so their padlocks never
+showed). Once the city has baked the lock fits its camera once (`RansomLock.fit_zoom`: of 24 zooms
+the one that shows the most nodes on the city round the notice, under the top bar), so the
+padlocks stand round the notice as in concept A, for all five houses. The defence-sticker row was
+there (the review pack's frame came after they had dropped: END-04's harness note). Tests
+`test_parity_endings.gd` (END-05 fit); sheet `fixes/END.jpg`.
 
 **END-06 (P2) Audit dossier.** Concept: a kraft folder on a dark desk, a CELL-03 / CLOSED tab, three
 3D city polaroids (home server, a beacon, nodes at the end), personnel with class icons, deceased
@@ -922,7 +939,18 @@ grey-white folder (concept: kraft), the polaroids are a flat grid, a 2D map shot
 (concept: city renders), sticky notes are plain white with blue ink (concept: coloured), the CASE
 CLOSED stamp covers `(cell 01)` and part of the STATUS line, `HEAT ... at closure 82:` cut at the
 left by the note. Build: the CELL BURNED poster. Likely file: `scripts/ui/campaign_end/` (dossier),
-`polaroid.gd`. Decision: **Defect fixed (white paper only), designer approved 2026-10-05, d4cfc16**: the white folder was the bug (the manila was loaded inside the draw call and freed before the frame rendered); held once now, the folder draws kraft (at the merge, main's ART-12 12p holder of the same textures is kept). The other differences are look calls, left for the designer; sheet `fixes/END-06.jpg`.
+`polaroid.gd`. Decision: **Defect fixed (white paper only), designer approved 2026-10-05, d4cfc16**: the white folder was the bug (the manila was loaded inside the draw call and freed before the frame rendered); held once now, the folder draws kraft (at the merge, main's ART-12 12p holder of the same textures is kept). The other differences are look calls, left for the designer; sheet `fixes/END-06.jpg`. **The rest,
+designer group ruling 2026-10-05 (match the concept), fixed by S-END**: the "grey-white folder"
+round the sheets was the corp paper's stock laid inset by its pads (a MarginContainer fits its
+internal stock child too), the drop shadow showing round it: the stock now covers its whole sheet;
+the sticky notes are the concept's coloured papers (white only while their PNG was unheld, ART-12
+12p); the personnel notes keep to the left page (one cut `HEAT ... at closure` on the report); the
+stamp lands beside the head lines' values, inking only their bracketed tails as the concept does;
+the stickers sit on the folder's manila foot, off the signature; the prints are crops of the city
+under the top bar (the lock's picture, its camera now fitted, END-05), the home server's
+included. Still drawn stand-ins with no lock (won, abandoned, headless): the concept's prints
+are Blender renders, no exported asset exists (proposed slice in the S-END report). Tests
+`test_parity_endings.gd` (END-06 cases); sheet `fixes/END.jpg`.
 
 ### Motion (`MOTION-01.jpg` … `MOTION-10.jpg`)
 Each strip: the motion lab's `--demo-anim=<id>` on both builds (Movie Maker 30 fps, one launch per
