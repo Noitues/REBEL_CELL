@@ -10633,3 +10633,50 @@ The art director approved the first B1c build except for three points; the conce
 - **Review tool:** `tools/visual_qa/review_pack.gd` gains `raid_setup_meridian` (an orange corp's THREAT INTEL).
 - **Tests** (`test_b1c_crt_holo.gd`): fill vs edge/word tint and the dark body, the stamp's shadow and its contrast per corp, the dump glyph size equal at text 1.0 / 1.6 / 2.0 and under the caption size, effective alpha 6 % and x0.5 under words (the rects reach the shader), the slow scroll.
 - **Sheet:** `docs/art_review/PARITY/fixes/B1c_b.jpg` (round 44 | before | after: Solace and Meridian holo at 1.0 and 1.6, the HQ card at 1.6 and 1.0). Main has no Meridian raid screen and my sandbox refused restoring main's files in the worktree for a fresh capture, so the Meridian "before" cells are empty; the Solace and HQ "before" tiles are main's captures from the first sheet.
+
+### 2026-10-06 — B1d — sticker sweep scheduler and peel focus (designer ruling)
+Designer 2026-10-06 (supersedes "Parity fix — sticker edge and sticker focus": focus = rainbow sweep + curl) and art-pass review
+D22: the rainbow gloss sweep is a scheduler's, focus and hover are the peel-back only. Claims: D22 (and section d "Sticker gloss / peel").
+- **Scheduler** (`StickerSweepQueue`, the existing static kit singleton, reworked): every `ambient_sweep` sticker (VinylSticker, HoloSticker words,
+  VerbSticker kit / baked / drawn) joins; ONE is the screen's primary and only it sweeps: a sticker named `sweep_primary` (rank 0), else the first
+  PINK verb (rank 1), else the first to join (rank 2); hidden (other screen) or disabled ones are skipped; ties by join order. One sweep at a
+  time, never two. **Primary only, no rotation** (the review says "one sweep every 4 to 6 s on the screen's primary verb"). The pause menu's
+  focus-driven `ambient_sweep` hack is gone (RESUME is the pink primary).
+- **Period**: new motion entry `sticker_sweep_period` (HOLD-kind tuning, ALWAYS_ON, demo = the sweep): delay 4.0 s = shortest, duration 6.0 s =
+  longest, amplitude 14 = the seed; a seeded `RngStreams` stream (`sticker_sweep`, no global randomness) draws the period from the range; the next
+  sweep starts one period after the last started (rest = period - sweep). `sticker_gloss_sweep.delay` (was the rest) is now 0.
+- **Focus / hover = peel-back only**: `VinylSticker.set_state(HOVER)` no longer sets `rainbow` or starts a sweep, and the static rainbow sheen
+  (`RAINBOW_STATIC_*`) is removed; lift, grow and the corner curl (HOVER_CURL) stay. `VerbSticker` (baked / drawn): `_grow` sets only `_focused`
+  (the drawn curl); hover no longer sweeps. The scheduled sweep is the rainbow one (`rainbow` = 1 during it, 0 after).
+- **Reduce effects / headless**: no sweep (`Motion.live` false; the turn is handed back at once); the rest gloss 0.22 is the static sheen (bible);
+  MotionSkip `complete_motion` ends a running sweep at rest values and frees the queue.
+- **Rest curl on verb stickers (review d: "4 px corner curl at rest")**: NOT built. I did not find a rest curl on the locked concept stickers in the
+  material available to this worktree (the art-pass renders are not in it); the idle flutter (`rest_curl`, `flutter`) stays off by default. For the
+  art director: setting `rest_curl` on the primary verb is a one-line change.
+- **Tests**: new `test_sticker_sweep_scheduler` (primary pick order, one at a time, period 4-6 s from config and seeded, next-sweep timing, focus =
+  peel and no rainbow, reduce effects, MotionSkip, drawn VerbSticker). Updated: `test_sticker_edge_focus` (focus tests peel-only), `test_art1_material_kit`
+  (queue test: primary only). Dropped: none. `test_motion_lab_demos` shows the `asset_drop_grow` red (city_map_overlay), not touched by this change.
+- Windowed: `tools/visual_qa/sticker_sweep_strip.tscn` (new lab: frame strip of one sweep plus a focus shot); sheet
+  `docs/art_review/PARITY/fixes/B1d.jpg` (title, pause, slots, new_campaign, combat_start at 1.0; the first four at 1.6; before | after; strip below).
+
+### 2026-10-06 — B1d fixes — sweep band, peel-back size, calm confirms (art director review)
+Approved calls: primary only, no rotation; no rest curl (round 44 shows none, stickers at rest stay flat); reduce effects = static 0.22 sheen, no sweep.
+- **1. The sweep is ONE narrow band**, not a flood: a 45 degree diagonal band (`VinylSticker.SWEEP_BAND_DEG`), 22 % of the sticker's width, soft rainbow
+  across the band only, strength 0.55 (blended and added over the vinyl and the letters), crossing in 0.9 s; the rest of the sticker keeps its colour and
+  the gloss stays at rest. Config: `sticker_gloss_sweep` (duration 0.9 = the crossing, delay 0.22 = the width share, amplitude 0.55 = the strength; the old
+  gloss-up amplitude and rest delay are gone). Both shaders (`shaders/kit/vinyl_sticker.gdshader`: band_t / band_width / band_alpha / band_deg;
+  `shaders/chrome/vinyl_sticker.gdshader`: the drawn and baked stickers' band at x + y = sweep). The slap's own shine keeps the old gloss sweep.
+- **2. Focus / hover peel-back matches round 44 B_menus**: a fixed 45 degree fold at the top-right corner, legs 34 px at 1080p (24 px on short words, body
+  under 240 px at 1080p), scaled by the screen height and the text size (about 54 px at text 1.6), the paler adhesive back on the fold, a 2 to 3 px soft shadow
+  under it. New entry `sticker_peel_back` (amplitude 34 = long words, duration 24 = short words, delay 240 = the short-word body width; ALWAYS_ON tuning, lab
+  demo = the hover). `VinylSticker.peel_back` (0..1, tweened with the hover; `fold` stays the share-based fold of the peel, flutter and ransom curls) +
+  `peel_leg()`; the drawn / baked `VerbSticker` curl uses the same leg. `HOVER_CURL` is no longer the focus look. Not done: on drawn and baked
+  stickers the original corner pixels stay under the flap (the baked art cannot be cut in a draw call), the kit stickers fold the corner away properly.
+- **3. Calm confirms**: `StickerSweepQueue.calm_enter / calm_leave / is_calm`; `ConfirmDialog` (and so `AbandonDialog`, the slot DELETE confirm, the quit
+  confirms) registers while it is in the tree: while any is open no sticker takes the sweep's turn. Focus there is the curl only.
+- **Confirms verified**: slot DELETE (title_scene AbandonDialog), abandon run, abandon campaign (ExitDialogs, AbandonDialog) and quit (ConfirmDialog) all go through ConfirmDialog, so all are calm; one test opens each. **Flap**: on baked and drawn stickers the flap is now an opaque quad covering the original corner (`VerbSticker.curl_flap`, placed on the opaque body of the baked art, not its shadow margin); test covers the corner triangle.
+- **Tests**: `test_sticker_sweep_scheduler` gains band (width / angle / alpha / crossing from config), fold size by text scale (34 / 24 / ~54), and no sweep
+  while a ConfirmDialog is open; `test_sticker_edge_focus` and `test_art1_material_kit` assert `peel_back`. Dropped: none.
+- Sheet `docs/art_review/PARITY/fixes/B1d_b.jpg`: pause, abandon and title at 1.6 (round 44 column where the concept has one; none for the title), the sweep
+  strip (stepped by hand, t = 0..1) and the focus fold.
+- **Corner cover is a triangle (art director)**: the square patch is gone. On baked and drawn stickers the corner the fold takes away is covered by a TRIANGLE polygon clipped to the sticker die-cut outline (baked: the art last opaque pixel per row; drawn: a rounded rectangle of the die-cut radius), filled with the die-cut edge colour (sampled from the art), then the paler flap triangle and its 3 px shadow on top. Polygon draws only, no texture cutting. Test: the cover lies inside the rounded shape and covers the corner triangle inside it; the flap has 3 points. Crop sheet docs/art_review/PARITY/fixes/B1d_c.jpg.

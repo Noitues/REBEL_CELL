@@ -35,8 +35,18 @@ uniform float lift : hint_range(0.0, 1.0) = 0.0;
 uniform float dissolve : hint_range(0.0, 1.0) = 0.0;
 uniform float dissolve_cell = 4.0;
 uniform float grey : hint_range(0.0, 1.0) = 0.0;
-// Focus: the gloss band runs in holo-foil colours (the fill keeps its own colour).
+// The scheduled holographic sweep (designer 2026-10-06, round 44): ONE narrow band at band_deg crossing the sticker
+// (band_t 0..1 across it, off < 0; band_width = a share of the body's width), soft rainbow across the band only,
+// added (band_alpha) over the vinyl and the letters. The rest of the sticker keeps its colour.
 uniform float rainbow : hint_range(0.0, 1.0) = 0.0;
+uniform float band_t = -1.0;
+uniform float band_width = 0.22;
+uniform float band_alpha = 0.55;
+uniform float band_deg = 45.0;
+// The focus / hover peel-back (round 44): a fixed fold at the corner, a 45 degree line whose legs are peel_px long
+// at peel_back 1 (the adhesive back, paler, shows on the fold).
+uniform float peel_back : hint_range(0.0, 1.0) = 0.0;
+uniform float peel_px = 34.0;
 uniform float opacity : hint_range(0.0, 1.0) = 1.0;
 
 float h21(vec2 p) {
@@ -48,6 +58,10 @@ vec4 art(vec2 px, vec2 tps) {
 }
 
 // The fold geometry: corner C, unit direction u (corner -> centre), fold point P, depth.
+bool folding() {
+	return fold > 0.0 || peel_back > 0.0;
+}
+
 void fold_frame(out vec2 P, out vec2 u, out float depth) {
 	vec2 c0 = body_rect.xy;
 	vec2 c1 = body_rect.xy + body_rect.zw;
@@ -57,12 +71,17 @@ void fold_frame(out vec2 P, out vec2 u, out float depth) {
 	float L = max(length(d), 1.0);
 	u = d / L;
 	depth = fold * L;
+	if (peel_back > 0.0) {
+		// the fixed 45 degree fold: legs of peel_back * peel_px along both edges
+		u = vec2(sign(d.x), sign(d.y)) * 0.70710678;
+		depth = peel_back * peel_px * 0.70710678;
+	}
 	P = C + u * depth;
 }
 
 // The sticker's alpha after the fold (what stays plus the flap folded over it).
 float folded_alpha(vec2 px, vec2 tps, vec2 P, vec2 u, float depth) {
-	if (fold <= 0.0) {
+	if (!folding()) {
 		return art(px, tps).a;
 	}
 	float s = dot(px - P, u);
@@ -94,7 +113,7 @@ void fragment() {
 	fold_frame(P, u, depth);
 	vec4 base = art(px, tps);
 	float s = dot(px - P, u);
-	bool removed = fold > 0.0 && s < 0.0;
+	bool removed = folding() && s < 0.0;
 	if (removed) {
 		base = vec4(0.0);
 	}
@@ -129,21 +148,35 @@ void fragment() {
 		float sharp2 = exp(-pow((t - gloss_pos - 0.085) / 0.007, 2.0)) * 0.45 * glossy;
 		float spec = max(max(soft, sharp), sharp2) * gloss_k;
 		rgb = mix(rgb, mix(vec3(1.0, 0.96, 0.88), vec3(1.0), glossy), spec);
-		if (rainbow > 0.0) {
-			float band = exp(-pow((t - gloss_pos) / 0.2, 2.0));
-			vec3 foil = 0.5 + 0.5 * cos(6.28318 * (vec3(0.0, 0.33, 0.67) + (t - gloss_pos) * 2.4));
-			rgb = mix(rgb, foil, clamp(band * min(1.0, gloss_k * 1.4) * 0.8 * rainbow, 0.0, 1.0));
+		if (rainbow > 0.0 && band_t >= 0.0) {
+			// the band's axis n runs across it (perpendicular to the band at band_deg); it crosses the whole body
+			float bd = radians(band_deg);
+			vec2 bdir = vec2(cos(bd), sin(bd));
+			vec2 n = vec2(-bdir.y, bdir.x);
+			float half_w = 0.5 * band_width * body_rect.z;
+			float n0 = dot(body_rect.xy, n);
+			float n1 = dot(body_rect.xy + vec2(body_rect.z, 0.0), n);
+			float n2 = dot(body_rect.xy + vec2(0.0, body_rect.w), n);
+			float n3 = dot(body_rect.xy + body_rect.zw, n);
+			float lo = min(min(n0, n1), min(n2, n3)) - half_w;
+			float hi = max(max(n0, n1), max(n2, n3)) + half_w;
+			float centre = mix(lo, hi, band_t);
+			float dd = (dot(px, n) - centre) / max(half_w, 1.0);
+			float w = 1.0 - smoothstep(0.0, 1.0, abs(dd));
+			vec3 foil = clamp(pow(0.5 + 0.5 * cos(6.28318 * (vec3(0.0, 0.33, 0.67) + dd * 0.7)), vec3(0.55)) * 1.3, 0.0, 1.0);
+			rgb = clamp(mix(rgb, foil, clamp(w * band_alpha * 1.6, 0.0, 1.0)) + vec3(w * band_alpha * 0.25), 0.0, 1.0);
 		}
 	}
 
 	// ---- the flap: the adhesive back folded over the sticker
-	if (fold > 0.0 && s >= 0.0 && s <= depth) {
+	if (folding() && s >= 0.0 && s <= depth) {
 		float fa = art(px - 2.0 * s * u, tps).a;
 		if (fa > 0.0) {
 			float sf = s / max(depth, 1.0);
 			vec3 back = backing_color.rgb;
 			back = mix(back, vec3(0.0), 0.27 * pow(sf, 1.3));
 			back = mix(back, vec3(1.0), 0.67 * exp(-pow(sf / 0.10, 2.0)));
+			back = mix(back, vec3(1.0), 0.35 * peel_back);
 			// the flap's own cut edge
 			float fe = art(px - 2.0 * s * u + u * 1.2, tps).a;
 			back = mix(back, vec3(0.275, 0.259, 0.282), clamp(fa - fe, 0.0, 1.0) * 0.5);
@@ -151,13 +184,13 @@ void fragment() {
 			a = max(a, fa);
 		} else if (a > 0.0) {
 			// the flap's cast shadow on what stays
-			vec2 sp = px - vec2(4.0, 7.0);
+			vec2 sp = px - vec2(2.0, 3.0);
 			float ss = dot(sp - P, u);
 			float fsh = 0.0;
 			if (ss >= 0.0 && ss <= depth + 8.0) {
 				fsh = art(sp - 2.0 * ss * u, tps).a;
 			}
-			rgb = mix(rgb, vec3(0.0), fsh * 0.45);
+			rgb = mix(rgb, vec3(0.0), fsh * 0.4);
 		}
 	}
 
