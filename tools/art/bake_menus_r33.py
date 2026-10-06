@@ -7,8 +7,7 @@ settings.py, abandon.py). This runs their drawing functions as they are and spli
 per-item PNGs under `assets/ui/menus/`:
 
 - `stickers/`: abandon.py's answer stickers (`dialog_cancel`, `dialog_burn_it` and `dialog_delete`, each
-  at rest and with its focus halo; `--only dialog` bakes just these); BREACH (rest, focus halo, the 12 focused gloss-sweep frames), SIMULATE (calm, the two
-  burst frames, each with its focus halo), OVERTHROW with the fist (rest, focus), and the yellow screen
+  at rest; `--only dialog` bakes just these); BREACH (rest), SIMULATE (calm, the two burst frames), OVERTHROW with the fist (rest), and the yellow screen
   titles (OPTIONS, PAUSED, CODEX, STATS, CAMPAIGN SLOTS, NEW CAMPAIGN) with `ui31.sticker`'s round 33
   parameters. Placed with `sticker_lib31.place` (its own drop shadow) at 2x the 1920x1080 board space.
 - `sign/`: the REBEL_CELL neon sign: `board()` + `neon()` for every distinct lit state of
@@ -153,35 +152,27 @@ def bake_stickers(SL, U, M, T) -> None:
     d = OUT / "stickers"
     with Thin(SL, 60):
         breach = T.stk("BREACH", U.FILL_PINK, 60, 50, focus=False)
-        breach_f = T.stk("BREACH", U.FILL_PINK, 60, 50, focus=True)
     sticker_png(SL, breach["base"], d / "breach.png")
-    sticker_png(SL, breach_f["base"], d / "breach_focus.png")
-    for k, sw in enumerate(breach_f["sweeps"]):
-        sticker_png(SL, sw, d / ("breach_sweep_%02d.png" % k))
     with Thin(SL, 60, M):
         sim = T.stk("SIMULATE", "glitch", 60, 51)
     sticker_png(SL, sim["base"], d / "simulate.png")
-    sticker_png(SL, U.focus_sticker(sim["base"]), d / "simulate_focus.png")
     for ph, sd in sim["glitch"].items():
         sticker_png(SL, sd, d / ("simulate_burst_%d.png" % ph))
-        sticker_png(SL, U.focus_sticker(sd), d / ("simulate_burst_%d_focus.png" % ph))
     with Thin(SL, 60):
         ovr = T.stk("OVERTHROW", "fist", 60, 52)
     sticker_png(SL, ovr["base"], d / "overthrow.png")
-    sticker_png(SL, U.focus_sticker(ovr["base"]), d / "overthrow_focus.png")
     for word, (size, seed) in TITLE_WORDS.items():
         sticker_png(SL, U.sticker(word, size, U.FILL_YELLOW, seed=seed, border=edge_px(size)), d / ("title_%s.png" % word.lower().replace(" ", "_")))
 
 
 def bake_dialog_stickers(SL, U) -> None:
-    """abandon.py: the yellow CANCEL (safe, default focus) and the pink verb, at rest and with
-    U.focus_sticker's lime die-cut halo."""
+    """abandon.py: the yellow CANCEL (safe, default focus) and the pink verb, at rest (focus is drawn by the game:
+    the rainbow sweep and the curl, designer 2026-10-05)."""
     d = OUT / "stickers"
     for word, (size, fill, seed) in DIALOG_WORDS.items():
         sd = U.sticker(word, size, getattr(U, fill), seed=seed, border=edge_px(size))
         key = "dialog_" + word.lower().replace(" ", "_")
         sticker_png(SL, sd, d / (key + ".png"))
-        sticker_png(SL, U.focus_sticker(sd), d / (key + "_focus.png"))
 
 
 def bake_sign(T, U) -> dict:
