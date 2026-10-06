@@ -326,6 +326,30 @@ These override any call below that disagrees.
 
 ---
 
+## f. Art director's pass on the screens the concepts never designed
+
+Read from `PARITY/fixes/{HEAT_ALL,MENUS,SLOTS_c,NEWC,PAUSE_b,CARDFACE_deck,END,ROUTE_c}.jpg` and
+`HQ_REDESIGN/build/g_final.jpg`. This is an opinion for the designer; where they have already ruled otherwise in the
+M14 session, their ruling stands.
+
+| Screen | Opinion | Grade | Change |
+|---|---|---|---|
+| **Resource top bar (every page)** | The biggest single source of clutter. 7 to 10 counters (Heat, Schematics, Home, Exploits, Raids, ICE, Crew, Cycles, Cards, Rank, Banked) sit on the route, combat, event, loot, shop and raid pages. No concept has this outside the HQ | D | Full bar on the HQ / Grid page only. Netrun pages: Heat, HP, Cycles. Shop: Cycles. Combat: Q1 (c). Loot / event: only what the choice changes. Everything else behind VIEW LOADOUT |
+| **HQ direction B (their design)** | The *design* (`direction_B.png`) is good and in our language: work-order paper, crew polaroids, CREW / MARKET / DEFENCE tabs, one plan, JACK IN. The *build* lost it: 20+ orange markers, stacked CLAIMED stamps, an INTERCEPTED paper plus map key plus news band, UPGRADE as the idle verb | design A-, build C | Build to `direction_B.png` literally (D7). Idle verb is JACK IN; UPGRADE / CLAIM only once a node is selected |
+| **Netrun route page** | The route is about 5 % of the frame, labelled with "[1] Fight" text tags and pink YOU ARE HERE, while a terminal panel repeats the same choices as text. Dossier paper and the FIGHT // L1 holo are right ideas | C- | Zoom so the route fills 40 %+ (D14); drop the text tags (the sticker is the type); YOU ARE HERE = the lime token, no words; the ROUTE panel keeps only GRID VIEW and Save & quit |
+| **New campaign** | A clear, honest form in terminal tiles; START sticker is right. Selected tiles are solid light-cyan blocks, which shout; the "TRUST NO ONE" pencil is a joke in pencil | B- | Selected = cyan edge + lime focus brackets, not a fill. Corp tiles carry the crest on a small holo chip. TRUST NO ONE becomes a small sticker slogan or goes. Dim the city behind |
+| **Campaign slots** | Manila case-file cards are a good invention. Two stickers per slot (LOAD, DELETE) plus a pencil note on each slot repeats nine marks | B- | LOAD is a sticker on the focused slot only; Delete is a terminal row; one CAN'T UNDO pencil, on the focused slot (designer may already have ruled the pencil per slot) |
+| **Stats** | Terminal tiles + sticker achievement badges are right and read well | B | Run history as terminal log rows, not paper |
+| **Codex** | Paper looks warm but is the wrong medium (D11) | C | Terminal glass; corp entries open a holo card |
+| **Options** | Faithful to round 31 | B+ | Reset = every tab (designer ruling), terminal button |
+| **Pause** | Seven stickers plus pencil captions reads as a sticker-bomb; the abandon confirm (CANCEL / BURN IT) is excellent | C+ (confirm A-) | One RESUME sticker, terminal rows for the rest (D13), unless the designer keeps their earlier ruling |
+| **Deck viewer / card detail** | Cards match the hand; the detail panel is clean | B | Put the cards on the white liner sheet; card notes as glyph rows |
+| **Campaign end dossiers / lock** | The best undesigned work in the build: polaroids, post-its, CORP DOWN poster with a true pencil X, padlocks round the notice | A- | Keep. Lock notice over a darkened city with the large countdown (round 20) |
+| **Raid setup / playout** | The MAP LEGEND terminal box is large and covers the map (and pencil) at 1.6 / 2.0 | C | Legend collapses to the key strip (expand on hover / [K]); never over the map (round 40 rule) |
+
+**Cohesion rule to adopt:** every page shows one sticker verb, at most one paper document, one terminal panel for
+the Cell's state, and the world dimmed behind; anything else hides until hovered or selected.
+
 ## Calls on the orchestrator's 15 open questions
 
 1. **Fight top bar: (c), no bar, plus a small Heat gauge in the corner.**
