@@ -38,6 +38,9 @@ Site building, so on some corps the subject does not stand out. Accepted as **in
 unique per-fight backdrops slice. Affected frames: Solace (`docs/art_review/PARITY/fixes/B2_b_site_start.png`,
 Continuum Billing Farm) and Orbital (the arena-lab Site shots in `B2_b.jpg`). The art-pass session is raising this
 with the designer.
+- **Designer ruling (relayed by the art-pass session, 2026-10-06):** per-fight backdrops (unique buildings for non-HQ
+  Site fights) stay **deferred until after the gameplay polish passes**; the designer wants gameplay polish before
+  another content and visual pass. The Site fight subject stays interim (Solace, Orbital) through M14.
 
 ### 2026-10-06 — B2 c — the Site block lit by its own neon; focus brackets on the lifted card
 Re-check of B2 b (aa815dde; relayed by the orchestrator): boss start, the Meridian / Halcyon Site blocks, the fanned
