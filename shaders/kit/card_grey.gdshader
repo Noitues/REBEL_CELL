@@ -3,6 +3,7 @@
 // layer has no material). COLOR already holds the texture (and the MSDF text's coverage), so only
 // its colour changes. Static: nothing animates, nothing for reduce effects to stop.
 shader_type canvas_item;
+#include "res://shaders/lib/rc_common.gdshaderinc"
 
 // Share of the mix toward luminance and how much darker the grey face is.
 uniform float grey : hint_range(0.0, 1.0) = 1.0;

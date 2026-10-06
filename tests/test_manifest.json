@@ -744,6 +744,10 @@
 		"res://tests/unit/test_b1b_wax_pencil.gd": {
 			"seconds": 3.0,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_b2_combat_composition.gd": {
+			"seconds": 12.0,
+			"tier": "fast"
 		}
 	}
 }
