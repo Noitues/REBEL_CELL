@@ -446,6 +446,7 @@ func _frame_city() -> void:
 		city.set_view_cut(BackdropCatalog.occludes.bind(cut), str(cut))
 	else:
 		city.set_view_cut(Callable())
+	city.set_far_lod(far_keep(CityView3D.CONFIG, shot), 0.0)
 	var t := city.project(shot.get("centre", cam.target))
 	var at := Vector2(t.x / maxf(1.0, float(city.size.x)), t.y / maxf(1.0, float(city.size.y)))
 	_mat.set_shader_parameter(&"keep_at", at)
@@ -467,6 +468,17 @@ func _frame_city() -> void:
 	_mat.set_shader_parameter(&"focus_radius", _focus_radius)
 	_mat.set_shader_parameter(&"focus_axes", axes)
 	_mat.set_shader_parameter(&"focus_dim", _focus_dim())
+
+
+## M14 perf slice (art director's approach): the close-up's keep rect for the far LOD (world
+## X/Z): the shot's subject (the fought building's block, or the HQ) grown by
+## `backdrop_far_lod_reach_bu` (its neighbours); the distant blocks draw at the far LOD. No area
+## (full quality everywhere) for a shot with no subject or an orthographic one.
+static func far_keep(cfg: CityConfig, s: Dictionary) -> Rect2:
+	if not s.has("subject") or not (s["camera"] as CityIsoCamera).perspective():
+		return Rect2()
+	var b: AABB = s["subject"]
+	return Rect2(Vector2(b.position.x, b.position.z), Vector2(b.size.x, b.size.z)).grow(cfg.backdrop_far_lod_reach_bu)
 
 
 func _on_city_ready() -> void:
