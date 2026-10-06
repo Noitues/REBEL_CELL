@@ -10,6 +10,11 @@ const COLUMN := 82.0
 const CAPTION_GAP := 4.0
 const SCAN_PITCH := 3.0
 
+## Parity RAID-03: the width at the right the strip leaves free (px; the holo's DECRYPTED stamp).
+var reserve_right: float = 0.0:
+	set(v):
+		reserve_right = v
+		queue_redraw()
 ## [{type, name, letter}] in route order.
 var units: Array[Dictionary] = []
 var corporation_id: StringName = &""
@@ -31,7 +36,7 @@ func _draw() -> void:
 	var f := Palette.mono()
 	var px := UiTheme.font_px(UiTheme.CAPTION)
 	var col_w := COLUMN * k
-	var per_row := maxi(1, floori(size.x / col_w))
+	var per_row := maxi(1, floori(maxf(0.0, size.x - reserve_right) / col_w))
 	var r := ICON_R * k
 	var skin := RaidSkin.of(corporation_id)
 	for i in mini(units.size(), per_row):
