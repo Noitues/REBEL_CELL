@@ -66,9 +66,39 @@ func _ready() -> void:
 		city.set_iso(camera(CityView3D.CONFIG, look, corp, _view_px()))
 		city.model_ready.connect(_on_city_ready)
 		add_child(city)
-		city_motion = CityViewMotion.make(city)
+		city_motion = CityViewMotion.make(city, motion_config(look))
 		city.add_child(city_motion)
 	_on_resized()
+
+
+## TITLE-01c: the city motion this backdrop runs: the shipped CityMotionConfigData as it is
+## when the look asks for nothing more, else a copy (the loaded one is never changed; the Grid's
+## city keeps the shipped motion) with the sky-lane and street cars `traffic_density` times as
+## dense at the same speed (gaps per loop scale with the gap) and their lights and streaks
+## `traffic_light_scale` times as big.
+static func motion_config(p_look: CityBackdropLook) -> CityMotionConfigData:
+	var base := CityMotionConfigData.shipped()
+	var d := maxf(p_look.traffic_density, 0.01)
+	var s := p_look.traffic_light_scale
+	if is_equal_approx(d, 1.0) and is_equal_approx(s, 1.0):
+		return base
+	var c := base.duplicate() as CityMotionConfigData
+	c.car_gap = base.car_gap / d
+	c.street_gap = base.street_gap / d
+	c.gaps_per_loop = Vector2i(roundi(base.gaps_per_loop.x * d), roundi(base.gaps_per_loop.y * d))
+	c.far_dot = base.far_dot * s
+	c.far_line = base.far_line * s
+	c.medium_line = base.medium_line * s
+	c.streak_length = base.streak_length * s
+	c.street_dot = base.street_dot * s
+	c.street_streak = base.street_streak * s
+	return c
+
+
+## True when `p_look` takes the 3D city at Settings.city_quality value `city_quality` where
+## `can_render` (a renderer is there; else the host keeps its 2D city). Pure.
+static func takes(p_look: CityBackdropLook, city_quality: int, can_render: bool) -> bool:
+	return p_look.city_mode(CityView3D.CONFIG.tier_for(city_quality), can_render)
 
 
 ## The corp whose HQ frames the view: `wanted` when it has an HQ on the city (a campaign's
@@ -126,6 +156,22 @@ func _apply_look() -> void:
 	for p: StringName in [&"focus_centre", &"focus_half", &"focus_power", &"side_dark", &"side_reach", &"side_power", &"foot_dark",
 			&"foot_from", &"vignette", &"vignette_centre", &"vignette_scale", &"gain"]:
 		_mat.set_shader_parameter(p, look.get(p))
+	for p: StringName in [&"grade_gain", &"grade_lift"]:
+		var c: Color = look.get(p)
+		_mat.set_shader_parameter(p, Vector3(c.r, c.g, c.b))
+	_mat.set_shader_parameter(&"haze_out_of_focus", look.haze_out_of_focus)
+	_mat.set_shader_parameter(&"grade_saturation", look.grade_saturation)
+	_mat.set_shader_parameter(&"light_keep", look.light_keep)
+	_mat.set_shader_parameter(&"light_threshold", look.light_threshold)
+
+
+## Shows or hides the backdrop (a host that keeps it across pages): hidden, its city is
+## covered (it pauses its life and stops rendering, CityView3D.covered).
+func set_shown(on: bool) -> void:
+	visible = on
+	if city != null:
+		city.covered = not on
+		_sync_still()
 
 
 ## The view's size in screen pixels (the window's stretch included).
@@ -142,7 +188,7 @@ func _on_resized() -> void:
 	if city != null:
 		city.set_view_size(Vector2i(px))
 		city.set_iso(camera(city.cfg, look, corp, px))
-		if _city_in and still():
+		if _city_in and still() and not city.covered:
 			city.render_target_update_mode = SubViewport.UPDATE_ONCE
 	_picture.queue_redraw()
 
@@ -160,7 +206,7 @@ func _on_city_ready() -> void:
 
 
 func _sync_still() -> void:
-	if city == null or not _city_in:
+	if city == null or not _city_in or city.covered:
 		return
 	city.render_target_update_mode = SubViewport.UPDATE_ONCE if still() else SubViewport.UPDATE_ALWAYS
 

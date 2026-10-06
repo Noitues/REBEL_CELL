@@ -837,9 +837,9 @@ func test_every_crew_dossier_is_reachable_at_big_text() -> void:
 		assert_string_contains(radio.tooltip_text, "RC1-", "it is in the note's tooltip")
 		hq.open_settings()
 		await _frames()
-		var seed_line := hq._settings_panel.find_child("SeedLine", true, false) as Label
+		var seed_line := hq._settings_panel.find_child("SeedLine", true, false) as CodeField  # PAUSE-02: a field with a copy button
 		assert_not_null(seed_line, "Settings has the seed line")
-		assert_string_contains(seed_line.text, CampaignCode.of(RunManager.campaign, RunManager.campaign.start_class_id))
+		assert_string_contains(seed_line.value, CampaignCode.of(RunManager.campaign, RunManager.campaign.start_class_id))
 		hq.open_settings()
 		await _close(hq)
 

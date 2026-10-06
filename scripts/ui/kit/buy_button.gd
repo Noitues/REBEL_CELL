@@ -198,7 +198,8 @@ func _draw() -> void:
 	# ART-9 4A (ART_BIBLE v2 §4.10): the concept's kraft price tag (r31lib.price_tag: kraft stock,
 	# the notch, the string hole and the Cycles mark; MainframeArt "tag"), its middle stretched to
 	# the price; out of reach the concept's red print ("tag_short") and, so it is never colour alone,
-	# a padlock and a red pencil strike (naive-reader audit P2).
+	# a padlock (naive-reader audit P2). S-CARDFACE (SHOP-04): no pencil strike: struck through, the
+	# price read as "sold" rather than "not yet".
 	var s := _scale()
 	var rr := Rect2(Vector2.ZERO, size)
 	var off := disabled or (host != null and host.disabled)
@@ -219,5 +220,3 @@ func _draw() -> void:
 	var first := (rr.size.y - lh * (_lines.size() - 1) + f.get_ascent(fs) - f.get_descent(fs)) * 0.5
 	for i in _lines.size():
 		draw_string(f, Vector2(left, first + i * lh), _lines[i], HORIZONTAL_ALIGNMENT_LEFT, rr.size.x - left, fs, ink)
-	if off:
-		draw_line(Vector2(left * 0.6, rr.size.y * 0.7), Vector2(rr.size.x - 2.0, rr.size.y * 0.3), Color(Palette.PENCIL_THREAT, 0.96), 2.5 * s, true)

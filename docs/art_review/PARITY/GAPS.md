@@ -110,11 +110,19 @@ main's list is legible but plain. Likely cause: the build's `scripts/ui/kit/slot
 Art-pass source: `art-m13-final:scripts/ui/kit/slot_picker.gd`, `title_scene.gd show_slots`.
 Fix: port SlotPicker onto main's v2 kit (paper card = `PaperInk`/`ZinePanel`, terminal chips).
 Decision: **build layout, reworked in the v2 kit**: the build's slot cards brought to main, restyled with the concept philosophy. (designer, 2026-10-05)
+Fixed (S-TITLE, `CaseFileCard`; sheet `fixes/SLOTS.jpg`). Follow-up ruling (designer, 2026-10-05): used slots stay manila
+folders, each with a sliver of paper poking out (the art pass's print stock); built, sheet `fixes/SLOTS_b.jpg`.
 
 **SLOTS-02 (P2) Load / Delete.** Build: pink filled `Load` (primary) and a red-edged `Delete`.
 Main: two equal terminal buttons, `Load` with the lime focus brackets. View: main follows the v2
 rule (one sticker verb per screen, the rest terminal chips); the build's colour split marks the
 destructive action more clearly. Same file as SLOTS-01. Decision: **build's Load / Delete, reworked with the concept** (v2 kit). (designer, 2026-10-05)
+Fixed (S-TITLE): LOAD the pink sticker on the newest campaign, DELETE a HARM chip. Follow-up ruling (designer,
+2026-10-05, overriding v2's one sticker verb per screen on this page): LOAD and DELETE are both stickers (DELETE = 4C's
+baked `dialog_delete` art at LOAD's size), with a red grease-pencil "Can't Undo" and arrow pointing at DELETE (up to
+text scale 1.6; at 2.0 the words move into DELETE's tooltip). Built, sheet `fixes/SLOTS_b.jpg`.
+Second follow-up (designer, 2026-10-05): every used slot's LOAD is the pink sticker (not only the newest
+campaign's); the newest campaign's LOAD keeps the first focus. Built, sheet `fixes/SLOTS_c.jpg`.
 
 **SLOTS-03 (P3) Page title.** Build: the REBEL_CELL logo top left. Main: a `CAMPAIGN SLOTS` title
 sticker (the v2 sticker-title rule, as THE GRID / RAID SETUP). View: main is consistent with v2.
@@ -246,7 +254,7 @@ cream paper cards with halftone art in a terminal panel. Main: the white sheet i
 are flat gold / purple rectangles with only the name, cost and a two-line rule in small type, no
 glyph art, no type band; the sheet is small (cards ~110 px wide). View: the concept is much richer;
 main's cards read like placeholders. Likely file: `scripts/ui/kit/loot_sheet.gd`, `zine_card.gd`
-(the same card face as CMB-04 / SHOP-02 / DECK-01). Decision:
+(the same card face as CMB-04 / SHOP-02 / DECK-01). Decision: Match concept (designer group ruling 2026-10-05); fixed f90191c
 
 **LOOT-02 (P2) Page title.** Concept: `FIGHT WON` title sticker + a `LOOT // NETRUN ...` chip.
 Main: `PAYOUT` sticker + `> PAYOUT // LOOT: PICK A CARD` chip. Build: pink pencil `LOOT: PICK A
@@ -262,7 +270,10 @@ Decision:
 **LOOT-04 (P1) Backdrop.** Concept: the dark, blurred lit city. Main: the bright 2D wireframe
 city (lime / cyan / magenta outlines) at full strength behind the sheet, also behind the event,
 shop overlays and pauses; it competes with every page. Build: the same wireframe city (M13).
-Likely file: `cyberdeck_background.gd` (as TITLE-01). Decision:
+Likely file: `cyberdeck_background.gd` (as TITLE-01). Decision: use the title's blurred city (designer 2026-10-05)
+Fixed (S-BACKDROP): the netrun's loot and event pages show BlurredCityBackdrop (own look
+`content/config/overlay_city_backdrop.tres`, the title's grade); the Mainframe keeps its facade
+(it covers the city); review `fixes/TITLE-01b_LOOT-04.jpg`.
 
 ### HQ sub-pages (`hq_black_market.jpg`, `hq_crew.jpg`, `hq_loadout_deck.jpg`, `hq_loadout_spinner.jpg`, `hq_heat_band.jpg`)
 Ref: art pass build (no concept beyond portraits `round39_portraits/portraits_classes_v2.png`).
@@ -284,7 +295,7 @@ the locked v2 set. Likely file: `crew_card.gd`, `polaroid.gd`, `hq_scene.gd` (ro
 Decision: Superseded: HQ design pass (designer 2026-10-05, by extension of HQ-01..05)
 
 **HQ-08 (P1) Loadout DECK tab.** Same card-face difference as DECK-01 (build: paper cards with
-art; main: flat gold faces with text only). Decision: Superseded: HQ design pass (designer 2026-10-05, by extension of HQ-01..05; the card face itself stays with S-CARDFACE / DECK-01)
+art; main: flat gold faces with text only). Decision: Superseded: HQ design pass (designer 2026-10-05, by extension of HQ-01..05; the card face itself stays with S-CARDFACE / DECK-01); card face: Match concept (designer group ruling 2026-10-05), the DECK tab is `DeckView` on the one face, fixed f90191c
 
 **HQ-09 (P3) Loadout SPINNER tab.** Same wheel and side list; main's centre reads `BREAKER CORE
 MK2` in red (build: pink), the side tiles are cut (`Accelera`). Likely file:
@@ -346,6 +357,11 @@ icon rows, the campaign code in a field with a copy button. Main: five `>` rows 
 code as a plain line (no copy button). View: the build's primary Resume and copy button are better.
 Same file. Decision: **the build's rows, reworked in v2** (designer 2026-10-05: the build looks a
 little better): primary Resume, icon rows, the code in a field with a copy button.
+**Built (2026-10-05, supersedes the icon rows; `fixes/PAUSE_b.jpg`, mockups in `fixes/pause_layouts/`):** the designer's own
+layout: two columns of vinyl stickers, each always in its role's colour. LEFT RESUME (pink, `[Esc]` beside it),
+OPTIONS, CODEX; RIGHT ABANDON CAMPAIGN (ABANDON RUN in a run: the same slot), QUIT TO MAIN MENU, QUIT TO DESKTOP; the
+code field with copy on the bottom row; grease-pencil notes "Down with the Oligarchy!", "No Going Back" (red), "Come
+Back Soon". The focused sticker lifts and runs the kit's gloss sweep (no brackets).
 
 **PAUSE-03 (P3) Pause over a fight.** As PAUSE-01; the turn banner shows through above the panel.
 Decision: **fixed by PAUSE-01** (designer 2026-10-05); verify the banner no longer shows through.
@@ -375,22 +391,22 @@ line, offset right, as in the concept. Decision: **Defect fixed, designer approv
 **SHOP-02 (P1) Card stock faces.** Concept: pinned sticker cards with type colour (SYSTEM teal,
 WHEEL grey), a big glyph on a patterned field, type band, value and rule. Main: pinned cards with
 price tags on strings (matches), but the faces are flat gold / magenta with a small rule in tiny
-type and no glyph art (same card face as LOOT-01). Decision:
+type and no glyph art (same card face as LOOT-01). Decision: Match concept (designer group ruling 2026-10-05); fixed f90191c
 
 **SHOP-03 (P2) Slice wheel.** Concept and main: the half wheel at the foot with prices on tabs,
 `TOP 3 ONLY` pencil; main's slices are darker and the tab prices smaller. Matches in layout.
-Likely file: `scripts/ui/kit/slice_stock_wheel.gd`. Decision:
+Likely file: `scripts/ui/kit/slice_stock_wheel.gd`. Decision: Match concept (designer group ruling 2026-10-05); wedges already the concept's export (no change); the bigger tag price needs the wallet moved at 2.0 in the shop block: slice proposed (DECISIONS "Parity fix — one card face")
 
 **SHOP-04 (P2) Firmware pegs.** Concept: three chips with glowing coloured gems, white bold glyphs,
 names, rarity in colour (COMMON / UNCOMMON blue / RARE gold), allowed slice, kraft price tags, and a
 cyan terminal hint row (`> SKIMMER ATK: ...`). Main: two chips, dark with grey glyphs, rarity and
 slice in grey, price tags struck out in red (not affordable: the concept's rule is a greyed dot +
 NEED tag). View: main's red strike reads as "sold" rather than "can't afford yet". Likely file:
-`scripts/ui/kit/shop_item.gd`, `shop_pegboard.gd`. Decision:
+`scripts/ui/kit/shop_item.gd`, `shop_pegboard.gd`. Decision: Match concept (designer group ruling 2026-10-05); fixed f90191c (no pencil strike; red print tag + padlock)
 
 **SHOP-05 (P3) LEAVE and the bin.** Concept: `LEAVE THE MAINFRAME` sticker + chevrons bottom
 right, recycle bin top right of the wheel. Main: matches; LEAVE is green-white (concept's is the
-same), the bin sits higher. Decision:
+same), the bin sits higher. Decision: Match concept (designer group ruling 2026-10-05); not fixed in S-CARDFACE: `netrun_scene.gd` shop block (S-OVERLAPS); slice proposed (DECISIONS "Parity fix — one card face")
 
 **SHOP-06 (P1) Socket choice.** Concept: drag the chip onto a slice of the wheel; valid slices get
 lime brackets, invalid ones grey out, occupied ones show an amber REPLACE?. Build: a row of numbered
@@ -402,10 +418,10 @@ info it needs. Likely file: `netrun_scene.gd` shop socket UI, `shop_item.gd`. De
 or DEGAUSS coil. Build: card grid + a SHRED sticker. Main: a `RECYCLE BIN // REMOVE A CARD` lime
 terminal with the card grid and the recycle bin icon under it (the bin is the concept's 4th, sketch
 option). Designer call between the concept's PURGE (marked "recommended") and main's bin.
-Decision:
+Decision: Match concept (designer group ruling 2026-10-05): the locked round 34 shop_v5 RECYCLE BIN kept over round 32's PURGE (open question); the viewer's cards wear the one face, fixed f90191c
 
 **SHOP-08 (P3) Upgrade a slice.** Build: `UPGRADE · 100 CYCLES` as one pink graffiti line. Main:
-`UPGRADE` graffiti + `100 CYCLES` in small cyan beside it. Same wheel. Decision:
+`UPGRADE` graffiti + `100 CYCLES` in small cyan beside it. Same wheel. Decision: Match concept (designer group ruling 2026-10-05); not fixed in S-CARDFACE: `spinner_view.gd` (S-WHEEL); slice proposed (DECISIONS "Parity fix — one card face")
 
 ### Events (`event.jpg`, `event_dispatch.jpg`)
 Refs: build `event`, `event_dispatch` (M13: paper note top left, choice cards right, pink pencil
@@ -438,13 +454,13 @@ Ref: build `deck_view`, `card_detail` (no concept image; the cards should match 
 **DECK-01 (P1) Card faces in the viewer.** Build: the cream paper cards with halftone art. Main:
 flat gold / magenta cards with name, cost, a two-line rule and a tiny value line; no art, the grid
 leaves the right third empty. Same card face issue as LOOT-01 / SHOP-02. Likely file:
-`scripts/ui/kit/deck_view.gd`, `zine_card.gd`. Decision:
+`scripts/ui/kit/deck_view.gd`, `zine_card.gd`. Decision: Match concept (designer group ruling 2026-10-05); fixed f90191c
 
 **DECK-02 (P2) Card detail.** Build: the card at ~2x with its art, and a CARD NOTES panel
 (type, what it does, rarity and stock, the SPIN rule). Main: a `CARD DETAIL` terminal over the grid
 with a ~1.3x card and three plain lines (`JOLT // 1 RAM`, `Common`, `Jolt (RAM 1) Spin a wheel 3
 ticks.`) repeating the card. View: the build's notes explain more. Likely file: `scripts/ui/kit/inspect_popup.gd`.
-Decision:
+Decision: Match concept (designer group ruling 2026-10-05); fixed f90191c
 
 ### Daemon tray (`daemon_tray.jpg`)
 Refs: build `daemon_tray`; concept `round34_firmware_daemons/daemon_row.png` (the rack in combat,
@@ -479,11 +495,20 @@ white glyph badges, a sticker ring. Main: the D4 shape and glyph/number set matc
 dark and desaturated (maroon / slate), the frame thin and dim; the slice types are hard to tell
 apart at a glance. View: the concept is clearly more legible (slice type by colour + glyph); main
 reads muddy. Likely file: `scripts/ui/wheel/wheel_face.gd`, `wheel_disc.gd`, `wheel_kit.gd`, the
-slice materials / palette tokens (`palette.gd`, `palette_skins.gd`). Decision:
+slice materials / palette tokens (`palette.gd`, `palette_skins.gd`). Decision: **fixed, concept** (designer group ruling, 2026-10-05: combat matches the concept):
+the baked art-pass screens through a tone step (saturation 1.4, the part over 0.3 lifted x1.1: the
+recipe's bloom / add_glow folded into the disc), the player's frame lit in its class accent (bevel
+wash + hairline glow). Slice tier pips and FROZEN / LOCKED / BURNING stay listed (G4, G5). Sheet
+`fixes/WHEEL.jpg`; test `test_parity_wheel.gd`.
 
 **CMB-03 (P1) Enemy wheel corp kit.** Concept: the enemy wheel wears the corp kit (Meridian orange
 hazard frame). Main: the enemy wheel (Solace) is olive-green and very dark; the corp frame is thin.
-Build: green sticker ring. Same files as CMB-02 plus the corp kits. Decision:
+Build: green sticker ring. Same files as CMB-02 plus the corp kits. Decision: **fixed, concept**
+(designer group ruling, 2026-10-05: combat matches the concept): the corp frame ported from round 14 `d4corp` (frame R1 424 on a corp wheel, the corp
+frame bases and gloss, `corp_rim`: Meridian hazard stripes + teeth, Solace capsule studs + glass
+ring, Halcyon colonnade + gold halo, Orbital azimuth ticks + ring, Rebel_Cell broken segments; the
+elite collar beyond the frame) and the saturated corp screens. Orbital's azimuth numbers are not
+drawn (below 4 px at combat size). Sheet `fixes/WHEEL.jpg`.
 
 **CMB-04 (P1) Hand: sticker cards.** Concept: gold-yellow die-cut sticker cards with a white border,
 type band (WHEEL yellow / HACK pink / SYSTEM teal), big glyph and value, fanned and overlapping, a
@@ -492,7 +517,7 @@ flat row. Main: the gold cards with type band, but in a dim olive tone with a ca
 behind the glyph, a straight row with gaps, no deck/discard piles, card text cut (`Spin a whee...`,
 `OVERCLOC...`). View: main is close in structure; the dull gold and cut text read worse than the
 concept; the missing piles drop info (deck counts are in the top bar). Likely file:
-`scripts/ui/kit/zine_card.gd`, `sticker_button.gd`, `combat_scene.gd` (hand layout). Decision:
+`scripts/ui/kit/zine_card.gd`, `sticker_button.gd`, `combat_scene.gd` (hand layout). Decision: Match concept (designer group ruling 2026-10-05); card part (face, text, DECK / DISCARD piles) fixed f90191c; at-rest hand text at 1.0 is an open question
 
 **CMB-05 (P2) Turn banner.** Concept: a slim terminal strip top centre `TURN 3 | FREE NUDGE 1` with
 the fight's address line under it. Build: one text line top left. Main: a large boxed banner with
@@ -518,7 +543,11 @@ Decision:
 **CMB-09 (P2) Card-play preview.** Build: `LANDS HERE` tag, dashed slice outline and white chevrons
 on the target wheel. Main: same pieces (dashed pink slice, LANDS HERE tag, chevrons) dimmer; the
 preview tag is cut at the left by the wheel's frame. Concept: `round17_corp_wheels/preview.gif`.
-Likely file: `scripts/ui/kit/hud_wheel_layer.gd`, `forecast_*`. Decision:
+Likely file: `scripts/ui/kit/hud_wheel_layer.gd`, `forecast_*`. Decision: **fixed, concept** (designer group ruling, 2026-10-05: combat matches the concept):
+the landing slice lit in its program colour (fill + glow + heavier dashes, round 14
+`preview_indicator` A), a stronger ghost blade; the `LANDS HERE` / `DRONE ENDS HERE` tags take the
+first spot clear of the target reticle, the nudge buttons and the HP row (they were crossed by the
+reticle). File `scripts/ui/wheel/attach/card_preview_overlay.gd`.
 
 **CMB-10 (P3) Aim line.** Both: yellow dashed pencil line from the card to the target; main's ends
 on the slice, the build's on the wheel. Equivalent. Decision:
@@ -574,7 +603,12 @@ none. Likely file: `combat_backdrop.gd` (boss place). Decision:
 
 **BOSS-04 (P2) Phase 3 arcs.** Main phase 3: lime guard arcs, double chevrons and a `13` marker
 crowd the boss wheel's right side; build: an orange dashed arc. View: main's lime again collides
-with the focus colour. Likely file: `hud_wheel_layer.gd`. Decision:
+with the focus colour. Likely file: `hud_wheel_layer.gd`. Decision: **fixed, concept** (designer group ruling, 2026-10-05: combat matches the concept):
+needle 2, 3 ... read on round 14 `d4corp.pin` pins inside the frame (round window in the channel,
+number tab), only needle 1 wears the crowned blade; a multi-needle wheel's rails are +-24 degrees;
+the corp rim is drawn over the phase 3 armour plates. The lime is Solace's corp hue (ART_BIBLE 2.4,
+recipe accent) and the target brackets are FOCUS: both kept; what crowded the rim (the second
+crowned blade and its window) is gone. Sheet `fixes/WHEEL.jpg`.
 
 ### City Grid (`grid*.jpg`: grid, grid_site_selected, grid_raid_pending, grid_influence, grid_drag_crew, grid_meridian, grid_halcyon, grid_orbital, grid_rebel_cell)
 Refs: art pass build `grid*` (M13: a flat dark-navy isometric board, hex tier badges, a 2D wireframe
@@ -888,7 +922,7 @@ grey-white folder (concept: kraft), the polaroids are a flat grid, a 2D map shot
 (concept: city renders), sticky notes are plain white with blue ink (concept: coloured), the CASE
 CLOSED stamp covers `(cell 01)` and part of the STATUS line, `HEAT ... at closure 82:` cut at the
 left by the note. Build: the CELL BURNED poster. Likely file: `scripts/ui/campaign_end/` (dossier),
-`polaroid.gd`. Decision: **Defect fixed (white paper only), designer approved 2026-10-05, d4cfc16**: the white folder was the bug (the manila was loaded inside the draw call and freed before the frame rendered); held once now, the folder draws kraft. The other differences are look calls, left for the designer; sheet `fixes/END-06.jpg`.
+`polaroid.gd`. Decision: **Defect fixed (white paper only), designer approved 2026-10-05, d4cfc16**: the white folder was the bug (the manila was loaded inside the draw call and freed before the frame rendered); held once now, the folder draws kraft (at the merge, main's ART-12 12p holder of the same textures is kept). The other differences are look calls, left for the designer; sheet `fixes/END-06.jpg`.
 
 ### Motion (`MOTION-01.jpg` … `MOTION-10.jpg`)
 Each strip: the motion lab's `--demo-anim=<id>` on both builds (Movie Maker 30 fps, one launch per

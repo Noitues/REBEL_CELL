@@ -1312,7 +1312,7 @@ func pointer_spot(index: int) -> Vector2:
 	if ps.is_empty():
 		return global_center()
 	var a := _ang(ps[clampi(index, 0, ps.size() - 1)])
-	return global_center() + Vector2(cos(a), sin(a)) * window_radius()
+	return global_center() + Vector2(cos(a), sin(a)) * window_radius_of(clampi(index, 0, ps.size() - 1))
 
 
 ## Where docked satellite `id` stands on screen (its token), the centre when it's gone.
@@ -1856,13 +1856,20 @@ func art_scale() -> float:
 
 ## The frame's outer radius in master units: the bezel, or the threat ring on a boss (3.2).
 func frame_master() -> float:
-	return WheelFace.R1 + (WheelFace.THREAT_DEPTH if kit.is_boss else 0.0)
+	# Parity S-WHEEL (CMB-03): a corp frame is wider (its rim) and an elite wears its collar.
+	return kit.frame_radius() + (WheelKit.ELITE_COLLAR if kit.is_elite else 0.0) + (WheelFace.THREAT_DEPTH if kit.is_boss else 0.0)
 
 
 ## The radius (px) of the blades' value windows: where a needle's value reads (3.2).
 func window_radius() -> float:
 	var rt := frame_master()
 	return (rt + (WheelFace.WINDOW_IN + WheelFace.BLADE_TOP - WheelFace.WINDOW_OUT) * 0.5) * art_scale()
+
+
+## The radius (px) of needle `index`'s value window: needle 1's blade window, the pins' after it
+## (BOSS-04).
+func window_radius_of(index: int) -> float:
+	return window_radius() if index <= 0 else WheelFace.window_master(index, frame_master()) * art_scale()
 
 
 ## Screen angle of a position `x` ticks round from the top, clockwise on screen when the
@@ -2014,7 +2021,11 @@ func _draw_view() -> void:
 		var bscale := (WheelFace.LOD_BLADE if radius <= WheelFace.LOD_RADIUS else 1.0) * (pulse_scale if pk == pulse_pointer else 1.0)
 		if pk == pulse_pointer:
 			# The needle resolving now: its window glows.
-			draw_circle(center + Vector2(sin(deg_to_rad(degs[pk])), -cos(deg_to_rad(degs[pk]))) * window_radius(), WheelFace.WINDOW_HALF * k * 1.6, Color(_col(Palette.CELL_ACID), 0.35))
+			draw_circle(center + Vector2(sin(deg_to_rad(degs[pk])), -cos(deg_to_rad(degs[pk]))) * window_radius_of(pk), WheelFace.WINDOW_HALF * k * 1.6, Color(_col(Palette.CELL_ACID), 0.35))
+		if pk > 0:
+			# BOSS-04 (d4corp.pin): needle 2, 3 ... read on short pins inside the frame.
+			WheelFace.pin(self, center, k, degs[pk], kit.accent, body, _read_value(sl), WheelGlyphs.slice_id(sl), sc, pk + 1, bscale, pointer_alpha)
+			continue
 		WheelFace.blade(self, center, k, degs[pk], frame_master(), kit.accent, body, _read_value(sl), WheelGlyphs.slice_id(sl), sc,
 			pk + 1 if ps.size() > 1 else 0, kit.is_boss, bscale, pointer_alpha)
 		if wheel.pointer_orbit != 0:
@@ -2598,7 +2609,7 @@ func _sync_disc(center: Vector2, radius: float, rot: float) -> int:
 		needles.append(fposmod(-ps[i] * DEG_PER_TICK, 360.0) if i < ps.size() else 0.0)
 	disc.put(&"needles", needles)
 	disc.put(&"needle_n", mini(ps.size(), 4))
-	disc.put(&"rail_half", WheelFace.RAIL_HALF)
+	disc.put(&"rail_half", WheelFace.rail_half(ps.size()))
 	disc.put(&"needle_gap", WheelFace.NEEDLE_GAP)
 	var rail_col := wheel_color
 	if active >= 0:

@@ -1,8 +1,9 @@
 class_name WheelTelemetry
-extends Control
+extends Node2D
 ## The telemetry ring (ART-2 2A; ART_BIBLE v2 3.2 "Telemetry ring (V2)"): class / corp telemetry
 ## written round the bezel's glass channel, scrolling slowly (`wheel_telemetry_scroll`, T0 ambient;
-## still under reduce motion and reduce effects). It turns as a whole node, so the view never redraws
+## still under reduce motion and reduce effects). It turns as a whole node (a Node2D: a Control
+## redraws on every rotation change, ART-12 12p), so neither it nor the view redraws
 ## for it; the view's rail is drawn over it (static). Sits under the WheelView's own drawing.
 
 ## The ring's text radius (master units: the channel 368..404, the recipe's mid less 5).
@@ -19,7 +20,6 @@ var _turn: float = 0.0
 
 
 func _init() -> void:
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	show_behind_parent = true
 	set_process(false)
 

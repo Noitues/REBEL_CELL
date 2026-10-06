@@ -11,7 +11,6 @@ Stationed on %s."
  (local: REBEL_CELL is built from your profile), (local: REBEL_CELL is built from your profile)
  (run in progress), (run in progress)
  // PINNED, // PINNED
- // exhausts, // exhausts
  AGAIN, AGAIN
  DOWN, DOWN
  [locked], [locked]
@@ -69,7 +68,6 @@ Press to deploy it to %s (the target: pick another node on the map or in YOUR NO
 ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds.","%s
 ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds."
 %s  (home server BREACHED),%s  (home server BREACHED)
-%s  //  %d RAM,%s  //  %d RAM
 %s  //  AUDIT %d,%s  //  AUDIT %d
 %s  //  INTERNAL  //  DO NOT FORWARD,%s  //  INTERNAL  //  DO NOT FORWARD
 %s  //  NOTICE,%s  //  NOTICE
@@ -118,6 +116,8 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s is destroyed.,%s is destroyed.
 %s is gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are kept; Cycles and unbanked loot are lost.,%s is gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are kept; Cycles and unbanked loot are lost.
 %s is held at %s (%d more).,%s is held at %s (%d more).
+%s is locked. %s,%s is locked. %s
+"%s is lost for good, with everything unbanked:","%s is lost for good, with everything unbanked:"
 %s is lost. The campaign is over.,%s is lost. The campaign is over.
 %s is offline. who signed off on this?,%s is offline. who signed off on this?
 %s moves from %s to %s.,%s moves from %s to %s.
@@ -197,6 +197,10 @@ A raid's route toward your CORE.,A raid's route toward your CORE.
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
 A random roll: the odds are in the breakdown,A random roll: the odds are in the breakdown
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
+"A share code holds a whole plan: target, ICE, city seed, home server and crew.","A share code holds a whole plan: target, ICE, city seed, home server and crew."
+ABANDON CAMPAIGN,ABANDON CAMPAIGN
+ABANDON RUN,ABANDON RUN
+ABANDONED,ABANDONED
 ACTIVITY,ACTIVITY
 AFTER-ACTION REPORT,AFTER-ACTION REPORT
 AGAIN,AGAIN
@@ -215,6 +219,10 @@ AT LARGE  (%s offline),AT LARGE  (%s offline)
 AT LARGE (reserve),AT LARGE (reserve)
 AT LARGE (stationed: %s),AT LARGE (stationed: %s)
 AUDIT REPORT,AUDIT REPORT
+Abandon campaign,Abandon campaign
+Abandon run,Abandon run
+Abandon the campaign?,Abandon the campaign?
+Abandon the run?,Abandon the run?
 Accessibility,Accessibility
 Achievements,Achievements
 Achievements earned (Stats & achievements lists them).,Achievements earned (Stats & achievements lists them).
@@ -223,6 +231,7 @@ An operative is stationed here: their class's station bonus helps the node in ra
 Armory,Armory
 Armory empty: runs bank assets from their drops.,Armory empty: runs bank assets from their drops.
 Asset,Asset
+Assets,Assets
 "Assist mode for new campaigns (%s free nudge a turn, %s%% HP; no ICE records or achievements)","Assist mode for new campaigns (%s free nudge a turn, %s%% HP; no ICE records or achievements)"
 At 0 HP you lose the fight.,At 0 HP you lose the fight.
 Audio,Audio
@@ -240,8 +249,10 @@ BOSS,BOSS
 BREACH,BREACH
 BREACH PAYOUT,BREACH PAYOUT
 BREACH: start the fight at the Central Server.,BREACH: start the fight at the Central Server.
+BREACH: the hub core's bonus and resistance are off while it lasts.,BREACH: the hub core's bonus and resistance are off while it lasts.
 BREACHED,BREACHED
 BREACHED: your home server fell. The campaign is lost.,BREACHED: your home server fell. The campaign is lost.
+BURN IT,BURN IT
 BUY,BUY
 Back,Back
 Back to HQ,Back to HQ
@@ -260,11 +271,11 @@ Badges,Badges
 Banked,Banked
 Before this play: %s,Before this play: %s
 Best ICE by corporation: %s.,Best ICE by corporation: %s.
+Best ICE: %s,Best ICE: %s
 Best ICE: %s. %s,Best ICE: %s. %s
 Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d.,Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d.
 Block %d: soaks damage this turn.,Block %d: soaks damage this turn.
 Borderless,Borderless
-Boss,Boss
 Boss Extra Pointer,Boss Extra Pointer
 Boss Phase Early,Boss Phase Early
 Boss Strength,Boss Strength
@@ -274,6 +285,7 @@ Bring its HP to 0 to win the fight.,Bring its HP to 0 to win the fight.
 Bring the DOWN node back online.,Bring the DOWN node back online.
 Build the picked node here: it joins your network and defends in raids.,Build the picked node here: it joins your network and defends in raids.
 Buy,Buy
+Buy it at the HQ Black Market with campaign Schematics (%d).,Buy it at the HQ Black Market with campaign Schematics (%d).
 CAM %02d  %s,CAM %02d  %s
 CAMPAIGN,CAMPAIGN
 CAMPAIGN END,CAMPAIGN END
@@ -283,6 +295,7 @@ CAN BE YOUR NODE,CAN BE YOUR NODE
 CANCEL,CANCEL
 CANNOT UNDO,CANNOT UNDO
 CARD DETAIL,CARD DETAIL
+CARD NOTES,CARD NOTES
 CARDS,CARDS
 CARGO RECLAIMED,CARGO RECLAIMED
 CASE CLOSED,CASE CLOSED
@@ -314,6 +327,7 @@ COLOUR-BLIND CORRECTION,COLOUR-BLIND CORRECTION
 COMBAT,COMBAT
 COMBATS,COMBATS
 COMMON,COMMON
+COMMON · one pip,COMMON · one pip
 COMPLIANCE DIVISION,COMPLIANCE DIVISION
 CONFIRM,CONFIRM
 CONNECTING,CONNECTING
@@ -331,6 +345,7 @@ CYBERDECK,CYBERDECK
 CYBERDECK HQ,CYBERDECK HQ
 CYCLES,CYCLES
 CYCLES %s,CYCLES %s
+Campaign code (share it: it starts this campaign),Campaign code (share it: it starts this campaign)
 Campaign code (share it: it starts this campaign): %s%s,Campaign code (share it: it starts this campaign): %s%s
 Campaign seed:,Campaign seed:
 Campaign slots,Campaign slots
@@ -339,6 +354,7 @@ Campaigns,Campaigns
 Campaigns started on this profile.,Campaigns started on this profile.
 Campaigns won.,Campaigns won.
 "Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost.","Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost."
+Can't Undo,Can't Undo
 Cancel,Cancel
 Card,Card
 CardData.arc_flash.description,Deal 3 damage to every enemy.
@@ -484,6 +500,7 @@ CardData.undock.display_name,Undock
 CardData.whirl.description,Spin a wheel 7 ticks.
 CardData.whirl.display_name,Whirl
 Cards,Cards
+Cards added,Cards added
 Cards in %s's deck (VIEW LOADOUT shows them).,Cards in %s's deck (VIEW LOADOUT shows them).
 "Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on a nudge button (that sets the way they turn), slice cards on a slice. While you aim, the result chips and the dashed acid arc show the result before you commit.","Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on a nudge button (that sets the way they turn), slice cards on a slice. While you aim, the result chips and the dashed acid arc show the result before you commit."
 Cascade: %s takes %d damage: HP %d → %d.,Cascade: %s takes %d damage: HP %d → %d.
@@ -517,6 +534,7 @@ ClassData.rigger.display_name,Rigger
 ClassData.wrecker.description,A Breaker that trades spin control for a heavier Perfect.
 ClassData.wrecker.display_name,Wrecker
 Classes,Classes
+Clear every corporation at ICE %d to open it.,Clear every corporation at ICE %d to open it.
 Clear this Site for the %s Exploit (%d/%d for the breach).,Clear this Site for the %s Exploit (%d/%d for the breach).
 Cleared: claim it to build a node of your network.,Cleared: claim it to build a node of your network.
 Clearing it changes Heat by %s.,Clearing it changes Heat by %s.
@@ -534,10 +552,12 @@ Close,Close
 Cobalt (deep blue terminal),Cobalt (deep blue terminal)
 Codex,Codex
 Colour-blind correction (patterns and glyphs stay the main cue),Colour-blind correction (patterns and glyphs stay the main cue)
-Common,Common
+Come Back Soon,Come Back Soon
 Continue,Continue
 Continue the current run,Continue the current run
 Controls,Controls
+Copy,Copy
+Copy the campaign code,Copy the campaign code
 Corporate: run it to clear it.,Corporate: run it to clear it.
 CorporationData.halcyon.description,"The contractor that runs the city: water, power, transit and the police, billed per resident."
 CorporationData.halcyon.display_name,Halcyon Civic
@@ -576,6 +596,7 @@ DELETE SLOT,DELETE SLOT
 DELETED,DELETED
 DETOUR,DETOUR
 DFRG,DFRG
+DISCARD,DISCARD
 DISPATCH,DISPATCH
 DISPATCH  //  INTERNAL AFFAIRS  //  CLEAN-UP,DISPATCH  //  INTERNAL AFFAIRS  //  CLEAN-UP
 DISPATCH // ECHO 00,DISPATCH // ECHO 00
@@ -585,6 +606,7 @@ DOWN / TAKEN,DOWN / TAKEN
 DOWN: repair the node on the Grid.,DOWN: repair the node on the Grid.
 DRAG / WASD,DRAG / WASD
 DRAW %d,DRAW %d
+DRAW: cards come from your pile to your hand at once.,DRAW: cards come from your pile to your hand at once.
 DRONE ENDS HERE,DRONE ENDS HERE
 DTOR,DTOR
 Daemon,Daemon
@@ -640,6 +662,7 @@ Daemons,Daemons
 Daemons: permanent programs of this operative (none installed).,Daemons: permanent programs of this operative (none installed).
 Daily run,Daily run
 Death Heat,Death Heat
+Deck: %d cards to draw. Discard: %d cards (shuffled back in when the deck runs out).,Deck: %d cards to draw. Discard: %d cards (shuffled back in when the deck runs out).
 Defences: %s.,Defences: %s.
 Defense assets,Defense assets
 DefenseAssetData.bunker_turret.description,Built in: 3 damage to threats on the home server.
@@ -664,7 +687,6 @@ DefenseAssetData.tar_pit.description,Holds a threat for 3 steps. Fragile.
 DefenseAssetData.tar_pit.display_name,Tar Pit
 DefenseAssetData.turret.description,"4 damage, range 1, targets the first threat in path."
 DefenseAssetData.turret.display_name,Turret
-Delete,Delete
 Delete the campaign in slot %s (asks first).,Delete the campaign in slot %s (asks first).
 Delete the campaign in slot %s?,Delete the campaign in slot %s?
 Deploy armory asset,Deploy armory asset
@@ -672,6 +694,7 @@ Deploy run asset,Deploy run asset
 Deutan (green-weak),Deutan (green-weak)
 Display,Display
 Do it in the fight to go on (or press NEXT).,Do it in the fight to go on (or press NEXT).
+Down with the Oligarchy!,Down with the Oligarchy!
 Drag Firmware or a slice onto a slot to put it there.,Drag Firmware or a slice onto a slot to put it there.
 Drag a card here to shred it (or select it and press REMOVE).,Drag a card here to shred it (or select it and press REMOVE).
 "Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards.","Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards."
@@ -697,6 +720,7 @@ ESC,ESC
 EVADED %d,EVADED %d
 EVENT,EVENT
 EVENT PAYOUT,EVENT PAYOUT
+"EXHAUST: once played, the card leaves your deck for this fight.","EXHAUST: once played, the card leaves your deck for this fight."
 EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
 EXPLOITS %d/%d,EXPLOITS %d/%d
@@ -832,6 +856,7 @@ EnemyData.weather_satellite.description,"Fast orbit (4 ticks a turn), self-repai
 EnemyData.weather_satellite.display_name,Weather Satellite
 EnemyData.zoning_board.description,"Shields, heals and rezones its read head 2 ticks a turn."
 EnemyData.zoning_board.display_name,Zoning Board
+Enter a share code,Enter a share code
 Entering it changes Heat by %s.,Entering it changes Heat by %s.
 Event,Event
 "Event: a choice, and its price","Event: a choice, and its price"
@@ -848,11 +873,14 @@ Exploits found: %s. The breach on the corporation's core needs %d.,Exploits foun
 FAILED,FAILED
 FIGHT WON,FIGHT WON
 FILED,FILED
+FIRMWARE,FIRMWARE
 FIRMWARE DROP,FIRMWARE DROP
 FLATLINED,FLATLINED
+"FLIP: mirrors the wheel, so each slice swaps with the one opposite.","FLIP: mirrors the wheel, so each slice swaps with the one opposite."
 FREE NUDGE %s NEXT,FREE NUDGE %s NEXT
 FREE NUDGE x%d,FREE NUDGE x%d
 FREEZE,FREEZE
+FREEZE: the wheel skips its next respin.,FREEZE: the wheel skips its next respin.
 FREIGHT SECURITY  //  YARD OPERATIONS  //  CUSTOMS,FREIGHT SECURITY  //  YARD OPERATIONS  //  CUSTOMS
 FROZEN,FROZEN
 Fast-forward the resolve (hold),Fast-forward the resolve (hold)
@@ -922,8 +950,10 @@ Graphite (neutral grey terminal),Graphite (neutral grey terminal)
 Grey broken link: no power flows to a TAKEN or DOWN node.,Grey broken link: no power flows to a TAKEN or DOWN node.
 Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP): it takes hits aimed at this slice.
 HACK,HACK
+HACK: it harms the target or plants a status on it.,HACK: it harms the target or plants a status on it.
 HALCYON RAISES FARES AGAIN,HALCYON RAISES FARES AGAIN
 HEAT,HEAT
+"HEAT  %s   (operative death, tier %d)","HEAT  %s   (operative death, tier %d)"
 HEAT %d · %s,HEAT %d · %s
 HEAT %d · %s (%d+),HEAT %d · %s (%d+)
 HEAT %d: %s,HEAT %d: %s
@@ -1107,6 +1137,7 @@ Instant (results at once),Instant (results at once)
 "Integrity before and after, and whether the node held.","Integrity before and after, and whether the node held."
 Intel,Intel
 Interface skin (terminal colours only; meanings and layout stay),Interface skin (terminal colours only; meanings and layout stay)
+It counts as a lost campaign.,It counts as a lost campaign.
 "It gets %d through, but only %d HP are left to take.","It gets %d through, but only %d HP are left to take."
 It lands on one slice at random; the odds by slice type follow.,It lands on one slice at random; the odds by slice type follow.
 Its needle lands on %s.,Its needle lands on %s.
@@ -1135,6 +1166,7 @@ LOAD,LOAD
 LOADOUT // %s // DECK,LOADOUT // %s // DECK
 LOADOUT // %s // SPINNER,LOADOUT // %s // SPINNER
 LOCKDOWN,LOCKDOWN
+LOCKED,LOCKED
 LOG,LOG
 LOOT,LOOT
 LOOT SHEET // %s // PICK 1 OF %d,LOOT SHEET // %s // PICK 1 OF %d
@@ -1519,7 +1551,6 @@ LineSetData.dj_solace.lines.2,Reminder to all subbies: a bricked implant is a re
 LineSetData.dj_solace.lines.3,"Collections is on the move. If your links light up gold, that is a lockdown. Walk around it."
 LineSetData.dj_solace.lines.4,Somebody sold Solace patient data before Solace lost it. Think about that order of operations.
 Living operatives in the Cell.,Living operatives in the Cell.
-Load,Load
 Load the campaign in slot %s.,Load the campaign in slot %s.
 Loadout,Loadout
 MAINFRAME // CLERK,MAINFRAME // CLERK
@@ -1575,6 +1606,8 @@ NO SIGNAL,NO SIGNAL
 NO SLOT,NO SLOT
 NODES AT THE END,NODES AT THE END
 NUDGE,NUDGE
+NUDGE CARDS: every card whose effect is a nudge.,NUDGE CARDS: every card whose effect is a nudge.
+NUDGE: moves a ring one tick either way; resistance can refuse it.,NUDGE: moves a ring one tick either way; resistance can refuse it.
 NULL,NULL
 NetrunBoostData.boost_field_kit.description,+2 max RAM in every combat of the next netrun.
 NetrunBoostData.boost_field_kit.display_name,Field Kit
@@ -1620,6 +1653,7 @@ Next threshold at %d.,Next threshold at %d.
 Next-run boosts:,Next-run boosts:
 No Daemons installed.,No Daemons installed.
 No First Turn Free Nudge,No First Turn Free Nudge
+No Going Back,No Going Back
 No campaign filed here yet.,No campaign filed here yet.
 No campaign is saved yet: OVERTHROW starts one.,No campaign is saved yet: OVERTHROW starts one.
 No campaign.,No campaign.
@@ -1651,6 +1685,7 @@ ON AIR,ON AIR
 OPEN KEY: SHOW ALL,OPEN KEY: SHOW ALL
 OPENS %d SITE,OPENS %d SITE
 OPENS %d SITES,OPENS %d SITES
+OPENS AT ICE %d EVERYWHERE,OPENS AT ICE %d EVERYWHERE
 OPERATION: %s  //  TARGET: CELL NETWORK  //  OUTCOME: %s,OPERATION: %s  //  TARGET: CELL NETWORK  //  OUTCOME: %s
 OPERATIONS,OPERATIONS
 OPERATIVE,OPERATIVE
@@ -1668,6 +1703,7 @@ Off (no correction),Off (no correction)
 "Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for.","Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for."
 Open the key to show every Site; unselectable regular Sites are hidden to keep the map clear.,Open the key to show every Site; unselectable regular Sites are hidden to keep the map clear.
 Operative,Operative
+Operatives,Operatives
 Options,Options
 "Options: text size, sound, controls, subtitles.","Options: text size, sound, controls, subtitles."
 Or drag it onto a slot of your spinner: the chip goes into that slot.,Or drag it onto a slot of your spinner: the chip goes into that slot.
@@ -1784,7 +1820,7 @@ Purge Threshold,Purge Threshold
 QUIT,QUIT
 Quit,Quit
 Quit REBEL_CELL?,Quit REBEL_CELL?
-Quit REBEL_CELL? Progress is autosaved.,Quit REBEL_CELL? Progress is autosaved.
+Quit to Main Menu,Quit to Main Menu
 Quit to desktop,Quit to desktop
 RACK,RACK
 RACK BREACHED,RACK BREACHED
@@ -1812,9 +1848,11 @@ RAM %d/%d,RAM %d/%d
 "RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn.","RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn."
 RAM %s,RAM %s
 RAM%s,RAM%s
+RAM: what cards cost to play; it refills each turn.,RAM: what cards cost to play; it refills each turn.
 RANDOM: ODDS,RANDOM: ODDS
 RANK,RANK
 RARE,RARE
+"RARE · three pips, holo die-cut","RARE · three pips, holo die-cut"
 RC1-corporation-ice-seed-home-class,RC1-corporation-ice-seed-home-class
 REBEL_CELL  (cell %02d),REBEL_CELL  (cell %02d)
 REBEL_CELL v%s // cell uplink,REBEL_CELL v%s // cell uplink
@@ -1829,12 +1867,14 @@ RESIST,RESIST
 RESIST %d,RESIST %d
 RESIST %d→%d,RESIST %d→%d
 RESISTANCE,RESISTANCE
+RESISTANCE: how many nudges a wheel shrugs off each turn.,RESISTANCE: how many nudges a wheel shrugs off each turn.
 RESOLVE SPEED AFTER SEND IT,RESOLVE SPEED AFTER SEND IT
 RESOLVING...,RESOLVING...
 RESPIN,RESPIN
 RESPIN %d RAM,RESPIN %d RAM
 RESPIN -%d RAM: %s%s,RESPIN -%d RAM: %s%s
 RESPIN: ODDS,RESPIN: ODDS
+RESPIN: the wheel lands on a random tick.,RESPIN: the wheel lands on a random tick.
 REWARDS,REWARDS
 RIGHT STICK,RIGHT STICK
 RING LOCK,RING LOCK
@@ -1940,7 +1980,6 @@ Rank,Rank
 "Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 "Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 Rank: runs survived. It brings wheel upgrades and higher netrun tiers.,Rank: runs survived. It brings wheel upgrades and higher netrun tiers.
-Rare,Rare
 Recall,Recall
 Recruit %s (%d),Recruit %s (%d)
 Recruit:,Recruit:
@@ -2006,10 +2045,13 @@ SKIP,SKIP
 SLICE %d DETAIL,SLICE %d DETAIL
 SLOT %s,SLOT %s
 SNAP,SNAP
+"SNAP: the ring moves to the nearest slice centre, a PERFECT aim.","SNAP: the ring moves to the nearest slice centre, a PERFECT aim."
 SOLD,SOLD
 SPIN %d+,SPIN %d+
+SPIN: turns the wheel clockwise by the ticks shown (counter-clockwise when negative).,SPIN: turns the wheel clockwise by the ticks shown (counter-clockwise when negative).
 SPINNER,SPINNER
 STABLE,STABLE
+START,START
 START DEFENSE,START DEFENSE
 STATIONED,STATIONED
 STATS,STATS
@@ -2026,14 +2068,15 @@ SUBJECT: REBEL_CELL,SUBJECT: REBEL_CELL
 SUCCESS,SUCCESS
 SUSPECT FILE (HEAT),SUSPECT FILE (HEAT)
 SYSTEM,SYSTEM
+"SYSTEM: guards, RAM, draws and the rest.","SYSTEM: guards, RAM, draws and the rest."
 "Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick.","Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick."
 Save,Save
 Save & quit to start screen,Save & quit to start screen
-Save & quit to title,Save & quit to title
 Save the campaign now (it also saves after every action).,Save the campaign now (it also saves after every action).
 Save the run and leave it; Continue picks it up here.,Save the run and leave it; Continue picks it up here.
 Saved.,Saved.
 Schematics,Schematics
+Schematics already banked at a Server Rack stay banked.,Schematics already banked at a Server Rack stay banked.
 Schematics the run banked for the campaign.,Schematics the run banked for the campaign.
 Schematics this run has banked for the campaign.,Schematics this run has banked for the campaign.
 "Schematics: the campaign's currency, spent at HQ.","Schematics: the campaign's currency, spent at HQ."
@@ -2214,6 +2257,7 @@ SiteData.the_master_manifest.display_name,The Master Manifest
 SiteData.the_panopticon.display_name,The Panopticon
 SiteData.wipe_biometrics.display_name,Wipe Biometrics
 SiteData.wipe_the_citations.display_name,Wipe the Citations
+Sites,Sites
 Sites your network holds besides CORE: claim cleared Sites on the City Grid.,Sites your network holds besides CORE: claim cleared Sites on the City Grid.
 Skip,Skip
 Skip tutorial,Skip tutorial
@@ -2261,6 +2305,7 @@ Slot %d: %s%s,Slot %d: %s%s
 Something opens at ICE %d everywhere (%d/%d).,Something opens at ICE %d everywhere (%d/%d).
 Start a netrun at the first open Site,Start a netrun at the first open Site
 Start a new campaign in slot %s.,Start a new campaign in slot %s.
+"Start a new campaign with this plan: the target, ICE, home server, crew and city seed.","Start a new campaign with this plan: the target, ICE, home server, crew and city seed."
 Start a new campaign.,Start a new campaign.
 Start a new campaign: pick the corporation to bring down.,Start a new campaign: pick the corporation to bring down.
 Start from code,Start from code
@@ -2994,6 +3039,7 @@ The Cell never sleeps. Every word grows with this.,The Cell never sleeps. Every 
 The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.,The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.
 The boosts bought for the next run. Drag a boost here to buy it.,The boosts bought for the next run. Drag a boost here to buy it.
 The boosts bought for the next run. Pick a boost up and move it here to buy it.,The boosts bought for the next run. Pick a boost up and move it here to buy it.
+"The campaign against %s ends here, with everything in it:","The campaign against %s ends here, with everything in it:"
 "The campaign in slot %s is lost for good, with everything in it:","The campaign in slot %s is lost for good, with everything in it:"
 "The campaign map: pick a Site and JACK IN, claim and upgrade nodes.","The campaign map: pick a Site and JACK IN, claim and upgrade nodes."
 The campaign's numbers: they stay between runs.,The campaign's numbers: they stay between runs.
@@ -3056,16 +3102,17 @@ Tritan (blue-weak),Tritan (blue-weak)
 Try the next city: the seed goes up by one.,Try the next city: the seed goes up by one.
 Tutorial,Tutorial
 UNCOMMON,UNCOMMON
+UNCOMMON · two pips,UNCOMMON · two pips
 UNDO,UNDO
 UNDO %s,UNDO %s
 "UNDO is blocked: a random event came since (a respin, a random pick).","UNDO is blocked: a random event came since (a respin, a random pick)."
 UNDOCK,UNDOCK
 UNITS,UNITS
 UNITS DEPLOYED / DESTROYED,UNITS DEPLOYED / DESTROYED
+UNLOCKS · %d,UNLOCKS · %d
 UPGRADE,UPGRADE
 UPGRADE A SLICE // INSTALL %s,UPGRADE A SLICE // INSTALL %s
 UPGRADES: %s,UPGRADES: %s
-Uncommon,Uncommon
 "Undo back to the last random event (free, unlimited this turn).","Undo back to the last random event (free, unlimited this turn)."
 Unlocks: %s,Unlocks: %s
 Upgrade (%d),Upgrade (%d)
@@ -3082,6 +3129,7 @@ WEAK,WEAK
 WEAK x0.5,WEAK x0.5
 WHAT WILL RESOLVE,WHAT WILL RESOLVE
 WHEEL,WHEEL
+"WHEEL: it turns, nudges or flips a wheel.","WHEEL: it turns, nudges or flips a wheel."
 WIN,WIN
 WIPE IN,WIPE IN
 WON,WON
@@ -3110,9 +3158,11 @@ You are here.,You are here.
 You can move here now.,You can move here now.
 "Your %s, if you play it:","Your %s, if you play it:"
 Your campaign is autosaved.,Your campaign is autosaved.
+Your campaign is saved: BREACH on the title picks it up.,Your campaign is saved: BREACH on the title picks it up.
 Your home Site (CORE),Your home Site (CORE)
 Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.,Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.
 "Your records, achievements and run history.","Your records, achievements and run history."
+Your run is saved where it is: BREACH on the title picks it up.,Your run is saved where it is: BREACH on the title picks it up.
 Your spinner.,Your spinner.
 Your stats and achievements stay.,Your stats and achievements stay.
 Your uplink has been reassigned to the commons. Burn-up in progress.,Your uplink has been reassigned to the commons. Burn-up in progress.
@@ -3124,6 +3174,9 @@ a Shop,a Shop
 "a choice, and its price","a choice, and its price"
 a practice run in a simulated net,a practice run in a simulated net
 a threat,a threat
+abandon the campaign [hold A],abandon the campaign [hold A]
+"abandon, lose %s [hold A]","abandon, lose %s [hold A]"
+abandoned,abandoned
 active,active
 an Elite fight,an Elite fight
 an Event,an Event
@@ -3136,7 +3189,6 @@ asset,asset
 back,back
 boss,boss
 calibrate_handler,calibrate_handler
-cannot undo,cannot undo
 card,card
 card %d-%d · slice %d (NULL %d) · bin %d,card %d-%d · slice %d (NULL %d) · bin %d
 chip,chip
@@ -3177,7 +3229,10 @@ hunted,hunted
 in a run,in a run
 install,install
 it costs you %s,it costs you %s
+keep fighting [B],keep fighting [B]
+keep going,keep going
 keep going [B],keep going [B]
+keep running [B],keep running [B]
 lime=you red=target box=view,lime=you red=target box=view
 lo-fi loop: HQ,lo-fi loop: HQ
 locked,locked
@@ -3220,6 +3275,7 @@ ring_lock_handler,ring_lock_handler
 routing via border link ... ok,routing via border link ... ok
 run %d,run %d
 run: %s,run: %s
+save and quit,save and quit
 saved to profile,saved to profile
 schematics,schematics
 seg %d: %s,seg %d: %s

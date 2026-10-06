@@ -13,6 +13,8 @@ var picture: Texture2D = null
 ## An operative's portrait (PortraitArt subject) when there is no picture.
 var subject: Dictionary = {}
 var tint: Color = Palette.NET_CYAN
+## The stock, loaded once and held (ART-12 12p: an unheld `load()` decodes it at every draw).
+var _stock_tex: Texture2D = null
 
 ## The print's width at text scale 1.0 (px; its height follows), the frame, the caption band
 ## (shares of the width), the tape's size (px at 1.0) and the vignette's strength.
@@ -27,16 +29,6 @@ const GRID_CELL := 14.0
 ## M14 asset parity: the print's white stock is round 21's own `sheet` (the polaroid's grain),
 ## exported by `tools/art_pipeline/parity/export_campaign_end.py`.
 const STOCK_ART := "res://assets/campaign_end/print_stock.png"
-
-static var _stock_tex: Texture2D = null
-
-
-## Parity fix (overlap defects, END-06): the print stock, loaded once and held (a texture
-## loaded inside a draw call is let go before the frame renders and draws white).
-static func print_stock() -> Texture2D:
-	if _stock_tex == null:
-		_stock_tex = load(STOCK_ART) as Texture2D
-	return _stock_tex
 
 
 func _init(p_caption: String = "", p_tilt: float = 0.0) -> void:
@@ -83,7 +75,9 @@ func _draw() -> void:
 	var s := Settings.text_scale
 	var r := Rect2(Vector2.ZERO, size)
 	draw_rect(Rect2(r.position + Vector2(4, 7) * s, r.size), Palette.SHADOW)
-	draw_texture_rect(print_stock(), r, false)
+	if _stock_tex == null:
+		_stock_tex = load(STOCK_ART) as Texture2D
+	draw_texture_rect(_stock_tex, r, false)
 	var img := image_rect()
 	if picture != null:
 		draw_texture_rect(picture, img, false, Palette.PAPER.lerp(Palette.TEXT_HI, 0.5))

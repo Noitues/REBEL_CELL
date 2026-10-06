@@ -306,11 +306,19 @@ func test_raid_08_start_defense_peels_off_where_it_was_never_over_the_legend() -
 # --- END-06 -------------------------------------------------------------------------------------
 
 func test_end_06_the_dossiers_manila_is_held_and_drawn_not_white() -> void:
-	var t := AuditDossier.manila_stock()
-	assert_not_null(t, "the manila stock loads")
-	assert_same(AuditDossier.manila_stock(), t, "held once, the same texture at every draw")
-	assert_not_null(DossierPhoto.print_stock(), "the print stock loads")
-	assert_same(DossierPhoto.print_stock(), DossierPhoto.print_stock(), "held once")
+	RunManager.new_campaign(1)
+	var c := RunManager.campaign
+	c.outcome = CampaignState.Outcome.LOST
+	var facts := DossierFacts.build(c, RunManager.corporation, RunManager.profile, RunManager.config(), func(id: StringName) -> String: return String(id),
+		func(id: StringName) -> String: return String(id), [] as Array[Dictionary], 3)
+	var d: AuditDossier = add_child_autofree(AuditDossier.new(facts))
+	d.size = SCREEN.size
+	await _frames(3)
+	# The folder has drawn: its manila is held (a texture loaded inside a draw call and let go is
+	# freed before the frame renders: the folder drew white).
+	assert_not_null(d._manila_tex, "the manila is loaded and held at draw time")
+	if d._manila_tex != null:
+		assert_eq(d._manila_tex.resource_path, AuditDossier.MANILA_ART, "round 21's manila stock")
 	var src := FileAccess.get_file_as_string("res://scripts/ui/campaign_end/audit_dossier.gd") + FileAccess.get_file_as_string("res://scripts/ui/campaign_end/dossier_photo.gd")
 	assert_false(src.contains("draw_texture_rect(load("), "no texture is loaded inside a draw call")
 	assert_false(src.contains("var t := load(MANILA_ART)"), "the folder draws the held stock")

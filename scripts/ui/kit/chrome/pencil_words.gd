@@ -14,6 +14,9 @@ const CROWN := Vector2(34, 22)
 
 var words: String = ""
 var tilt: float = 0.0
+## The grease ink (PENCIL_PLAN yellow, or PENCIL_THREAT red) and the type step (parity PAUSE: a note under a sticker).
+var color: Color = Palette.PENCIL_PLAN
+var step: int = STEP
 var crown := false
 var _tex: Texture2D = null
 
@@ -39,7 +42,7 @@ func _init(p_words: String = "", p_tilt: float = 0.0, p_crown: bool = false, p_a
 func _get_minimum_size() -> Vector2:
 	if _tex != null:
 		return _tex.get_size() * PencilPlan.BOARD_TO_GAME
-	var px := Chrome.px(STEP)
+	var px := Chrome.px(step)
 	var w := Chrome.pencil_font().get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 	return Vector2(ceilf(w + (CROWN.x + 10.0 if crown else 0.0)), ceilf(px * 1.5))
 
@@ -48,14 +51,14 @@ func _draw() -> void:
 	if _tex != null:
 		draw_texture_rect(_tex, Rect2(Vector2.ZERO, _tex.get_size() * PencilPlan.BOARD_TO_GAME), false)
 		return
-	var px := Chrome.px(STEP)
+	var px := Chrome.px(step)
 	var m := get_minimum_size()
 	draw_set_transform(m * 0.5, deg_to_rad(tilt), Vector2.ONE)
 	var at := Vector2(-m.x * 0.5, px * 0.4)
-	PencilPlan.wax_text(self, at, words, px)
+	PencilPlan.wax_text(self, at, words, px, color)
 	if crown:
 		var o := Vector2(m.x * 0.5 - CROWN.x, -CROWN.y * 0.5)
 		PencilPlan.wax_line(self, PackedVector2Array([o + Vector2(0, CROWN.y), o, o + Vector2(CROWN.x * 0.3, CROWN.y * 0.55),
 			o + Vector2(CROWN.x * 0.5, 0), o + Vector2(CROWN.x * 0.7, CROWN.y * 0.55), o + Vector2(CROWN.x, 0), o + Vector2(CROWN.x, CROWN.y),
-			o + Vector2(0, CROWN.y)]), 3.0)
+			o + Vector2(0, CROWN.y)]), 3.0, color)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
