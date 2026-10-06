@@ -352,7 +352,8 @@ its items)
 - [ ] The full QA matrix (all screens × 1.0 / 1.6 / 2.0 × mouse / pad × reduce effects × high
       contrast × greyscale × colour-blind).
 - [ ] A perf profile on the target PC and the Deck tier.
-- [ ] Skins (the M12 box: procedural palette skins on the v2 tokens).
+- [x] Skins (the M12 box: procedural palette skins on the v2 tokens). ART-12 12s: v2 / cobalt / graphite,
+      Options > Display picker, `test_art12_skins`; DECISIONS "Art direction — ART-12 12s skins".
 - [ ] **One full-suite run** in isolation (the only one in M14), then **the M14 audit** (the only one): vertical / horizontal / naive over every ART-0…12 change, fix
       rounds until CLEAN (nothing deferred, P3s included); "M14 complete" logged in DECISIONS.
 
@@ -386,5 +387,6 @@ R7, G1–G16 and horizontal re-evaluations, then H25+ and these passes (see M14 
 - [ ] **Daily run modifiers**: a config table of modifiers (corporation, ICE rules,
       starting deck/wheel twists, boosts...), the day's pick from the date seed, shown on
       the start screen, and a test that each modifier works.
-- [ ] **Skins** (M12's open box): a skin system with procedural palette skins now; art later.
+- [x] **Skins** (M12's open box): a skin system with procedural palette skins now; art later.
+      (Done in ART-12 12s.)
 

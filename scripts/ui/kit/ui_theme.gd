@@ -256,6 +256,7 @@ static func build(text_scale: float = 1.0) -> Theme:
 	t.set_font_size(&"font_size", header, font_px_at(HEADER_STEP, text_scale))
 	t.set_color(&"font_color", header, Palette.TEXT_HI)
 	_body_text(t, text_scale)
+	PaletteSkins.apply(t, PaletteSkins.active())  # ART-12 12s: the skin's chrome values (v2: none)
 	if Settings.high_contrast:
 		HighContrast.apply(t)  # ART-0 C (art pass W9, ART_BIBLE §12): the high-contrast hook
 	return t
@@ -402,6 +403,8 @@ static func terminal_button_boxes(border: int, pad_h: float, pad_v: float) -> Di
 	pressed.shadow_color = Color(Palette.NET_CYAN, GLOW_ALPHA * GLOW_PRESSED)
 	pressed.shadow_size = GLOW_PX
 	var disabled := box(Color(Palette.TERMINAL_BG, 0.7), Palette.DISABLED, border, pad_h, pad_v)
+	for sb in [normal, hover, pressed, disabled]:
+		PaletteSkins.apply_box(sb)  # ART-12 12s: the active skin's chrome
 	return {&"normal": normal, &"hover": hover, &"pressed": pressed, &"disabled": disabled}
 
 
@@ -448,6 +451,7 @@ static func terminal_box(edge: Color = Palette.TERMINAL_EDGE, pad_h: float = 14,
 	p.anti_aliasing = true
 	p.shadow_color = Color(edge, EDGE_GLOW_ALPHA)
 	p.shadow_size = EDGE_GLOW_PX
+	PaletteSkins.apply_box(p)  # ART-12 12s: the active skin's chrome (a corp edge stays)
 	return p
 
 

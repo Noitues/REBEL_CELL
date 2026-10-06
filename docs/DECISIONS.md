@@ -33,6 +33,53 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-12 12s skins
+Agent 12s (the M12 box "Skins": procedural palette skins on the v2 tokens, ART_12_BATCH).
+- **Which skins.** The M12 box names none, so: `v2` (the default and first; the identity, ART_BIBLE §2
+  exactly), `cobalt` (deep blue terminal) and `graphite` (neutral grey terminal). A fourth, `verdigris`
+  (sea-green), was built and dropped: teal sits between PROTECT cyan and GAIN green and failed the
+  OKLab ΔE > 0.1 separation test against both.
+- **What a skin is** (`PaletteSkins`, `scripts/ui/kit/palette_skins.gd`): new values for the chrome
+  tokens only (TERMINAL_BG / _HOT / _EDGE / _TEXT, TEXT_HI / MID / LO, SELECTED, ON_SELECTED,
+  CRT_GLASS_TOP / BOTTOM), made procedurally in OKLCH from the v2 values by one recipe per skin
+  (an ink hue, a glass hue, chroma scales, an accent lightness shift; v2 lightness kept elsewhere so
+  contrast holds). No concept asset exists for skins (the art pass drew v2 only), so procedural is
+  the reuse rule's allowed case; nothing is redrawn.
+- **Where it is realised.** Palette's tokens are compile-time constants used in other files' `const`s,
+  so they are not changed: a skin is applied where chrome is drawn, as HighContrast / ColorblindLayer
+  are. `UiTheme.build` calls `PaletteSkins.apply(theme, active())` before high contrast (by exact v2
+  rgb match, alpha kept); `UiTheme.terminal_box` / `terminal_button_boxes` call `apply_box`;
+  `HudSkin.draw_terminal_panel` and `CrtTerminalPanel` (Cell cyan accent only, glass, text) wrap their
+  colours in `PaletteSkins.chrome()`; `ZinePanel`'s terminal mode (the Options / pause / confirm glass,
+  its edge and corner ticks) does too and redraws on `Settings.changed`, so the open Options dialog
+  turns as a skin is picked (found in the captures: the dialog had kept v2 navy). A colour that is not a chrome token passes through unchanged, so
+  a corp edge or a Heat word is never re-valued. `active()` finds Settings by node path (the autoload
+  name breaks `-s` tools at compile time).
+- **Semantics kept.** Where cyan means PROTECT / the TURN Daemon / Uncommon / NET_CYAN it stays #5CE1FF
+  on every skin; HARM / GAIN, the Heat bands, the corp kits, FOCUS lime and the stickers keep v2;
+  every Palette.PAIRED_WITH greyscale cue stays. Views that set their own `Palette.TEXT_*` overrides
+  keep the v2 near-white text (still readable on every skin's glass) until their batch reads
+  `PaletteSkins.chrome`; kit painters pick up a skin on their next redraw, the theme at once via
+  `Settings.changed`.
+- **Settings and Options.** `Settings.palette_skin` (default `v2`), `PALETTE_SKINS`, `set_palette_skin`
+  (unknown ids ignored), to_dict / from_dict (an old file without the key, or an unknown id, loads v2),
+  covered by snapshot / restore. Options > Display has an "Interface skin" row (`SettingsPanel.skin_option`,
+  "SkinOption"); 4C's restyle of the panel should keep the row. Skins are free (no Profile unlock):
+  see the open question.
+- **Contrast.** Every skin passes 1A's checks (TEXT_HI / TERMINAL_TEXT / the edge colour >= 9:1 on
+  glass, TEXT_MID / TEXT_LO >= 4.5, hover glass >= 7, focus lime >= 7, words on the selected fill
+  >= 7, Heat bands / HARM / GAIN / WARN >= 4.5), the theme's own text on its own boxes, and ΔE > 0.1
+  between each skin's edge / selected fill and HARM, GAIN, the Heat bands, FOCUS, the stickers and
+  every corp colour, and between skins. Cobalt's accent lightness shift is -0.07 (at -0.09 its edge
+  was 8.7:1 on glass).
+- **Captures.** `tools/visual_qa/review_pack.gd --skins=v2,cobalt,graphite` walks the screens once per
+  skin into `<out>/<skin>/`; contact sheets in `docs/art_review/ART-12/skins/` (title, HQ, Grid,
+  combat start, Mainframe, event, Options at 800x450; read: every screen reads on every skin, paper
+  panels, stickers, HP / Heat words and corp edges unchanged). Still v2 on every skin, by design until
+  their batch reads `PaletteSkins.chrome`: view-drawn panel frames and headings that use `Palette`
+  constants directly (e.g. HQ's panel corner frames and "CYBERDECK" heading cyan).
+- Test: `tests/unit/test_art12_skins.gd` (fast tier, 10 tests). No M13 test dropped.
+
 ### 2026-10-05 — Art direction — ART-0 audit fixes
 Fixes every finding of `docs/handoff/m14_audit/ART-0_horizontal.md` (3 P2, 12 P3); nothing deferred.
 - **E1 (P2) shakes held to their tier.** `Motion.shake` plays `Motion.shake_px(id)`, the amplitude
@@ -7445,6 +7492,11 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **ART-12 12s skins (2026-10-05; default built, see "Art direction — ART-12 12s skins"):** (1) skins are
+  free in Options > Display; should they become Profile unlocks (UnlockKind.SKIN) instead? (2) the set is
+  v2 + cobalt + graphite (a sea-green skin was dropped for sitting between PROTECT and GAIN); say if you
+  want others, or skins for the corp kits too.
+
 - **ART-5 5c city motion (defaults implemented):** (1) the netrun transit turns the sky-lane
   cars off (bible 4.1) while `cars_lod` shows the CLOSE tier at a netrun close-up: CLOSE is built
   and tested but only shows below ortho 150 outside the netrun band; should the transit show it?
