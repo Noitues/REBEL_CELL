@@ -989,6 +989,9 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	# ANIM-6: a new screen enters (glass slides in, paper drops); a page rebuilt on the same
 	# screen (the Mainframe after a purchase) just shows. Focus lands when it ends.
 	var screen := screen_name(s) if screen_as == "" else screen_as
+	# ART-7 7w: the route page is the unified 3D city at the NETRUN band (GRID VIEW: the
+	# Grid's band); the other pages keep the 2D city until their own views move onto it.
+	use_route_city(screen == "route")
 	entering = screen != _shown_screen
 	_shown_screen = screen
 	# ANIM-R5 B2: an event's story and the run's end say long lines: their band holds two.
@@ -1305,6 +1308,7 @@ func _show_map() -> void:
 			dossier.visible = true
 		_fit_route_next_frame()
 		spacer.resized.connect(_refit_route)
+	_mount_route_camera(panel)
 	# ANIM-R4 H10: a fight's, a boss's and a raid's music are made ahead (a fight's first frame
 	# built its loop).
 	AudioDirector.prewarm_music(["combat", "boss", "raid"], RunManager.campaign.corporation_id)
@@ -2167,6 +2171,55 @@ func _mount_route(nodes: Array[Dictionary], edges: Array[Dictionary], look: int,
 	city.focus_grid = city_overlay.centre() if focus == Vector2.INF else focus
 	city.focus_anchor = anchor
 	city.refresh()
+
+
+## ART-7 7w: the player's camera on the route page (wheel / + - zoom about the cursor, drag,
+## WASD and the right stick pan: 5a's CityGridControls), so the route can be looked at
+## close up (the CLOSE car tier below ortho 150); null off the 3D city.
+var route_controls: CityGridControls = null
+
+
+## ART-7 7w: puts the backdrop on the unified 3D city for the route page (`on`: the NETRUN
+## band; GRID VIEW holds the Grid's band) or back on the 2D city, with 5c's city motion on
+## the 3D city (CityViewMotion: cars by zoom, sky lanes, billboards, the light spill).
+func use_route_city(on: bool) -> void:
+	if background == null:
+		return
+	background.use_city3d(on, CityLod.Band.GRID if _grid_zoomed else CityLod.Band.NETRUN)
+	var view := background.city.view3d
+	if on and view != null and not view.has_node(ROUTE_MOTION_NAME):
+		var home := NeonCity.hq_of(&"rebel_cell") + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
+		var motion := CityViewMotion.make(view, null, home)
+		motion.name = ROUTE_MOTION_NAME
+		view.add_child(motion)
+
+
+const ROUTE_MOTION_NAME := "CityMotion"
+
+
+## ART-7 7w: a frame of the route page's player camera: zoom `zoom`, grid point `focus` at
+## screen fraction `anchor` (the route fits move the same city).
+func _frame_route_city(zoom: float, focus: Vector2, anchor: Vector2) -> void:
+	var city := background.city
+	city.scale = Vector2(zoom, zoom)
+	city.offset_left = 0
+	city.offset_top = 0
+	city.offset_right = size.x / zoom - size.x
+	city.offset_bottom = size.y / zoom - size.y
+	city.focus_grid = focus
+	city.focus_anchor = anchor
+	city.refresh()
+	city.update_camera()
+
+
+## ART-7 7w: hooks the player's camera to the route map on the 3D city.
+func _mount_route_camera(page: Control) -> void:
+	route_controls = null
+	if not background.city3d or city_overlay == null:
+		return
+	route_controls = CityGridControls.new(background.city, self, _frame_route_city)
+	page.add_child(route_controls)
+	route_controls.attach(city_overlay, null)
 
 
 func _clear_route() -> void:

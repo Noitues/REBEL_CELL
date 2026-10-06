@@ -11,9 +11,13 @@ extends CityMapOverlay
 ##   rest show when `show_all` is on (the legend strip's hover, Options "Always show all
 ##   nodes") or one at a time under the pointer (~REVEAL_RADIUS px, `route_node_reveal`).
 ## - **TARGET:** the final Rack carries the red grease-pencil circle and the word.
-## - **Transit v3 paths:** straight cable runs along the city's two axes with one jog
-##   (45 / 90 degree turns only); the walked path is a solid lime line, the live choices a
-##   crawling orange dash, the rest a white dash, cut-off links dim grey.
+## - **Transit v3 paths (ART-7 7w):** every link is a cable routed on the real city's streets
+##   and blocks by RouteCableRouter (45° / 90° turns only, streets crossed rather than ridden,
+##   crossings avoided, the rest bridged with a hop), from a sticker down to its lot, along
+##   the run and up to the next sticker; the walked path is a solid lime line, the live
+##   choices a crawling orange dash, the rest a white dash, cut-off links dim grey. Before
+##   the lots are known a link falls back to `cable()` (one turn along the two axes). On the
+##   3D city the links are these cables, not the Grid's network decal.
 ## - **Calm Heat (Heat B):** a choice Heat has made harder (`heat_chip`, from the rules) gets
 ##   a thin HEAT_B ring with a red and a blue light circling it and its effect as a label
 ##   line; with `heat_sweeps` two slow searchlights sweep the map.
@@ -247,6 +251,131 @@ func _reveal(id: StringName) -> void:
 
 # --- Paths ------------------------------------------------------------------------------------
 
+## ART-7 7w: a cable's bridge over another (screen px radius) and its arc's segments.
+const HOP_RADIUS := 5.0
+const HOP_SEGMENTS := 8
+## Routed cable sets kept per process (a route's cables never change while its lots stand).
+const CABLE_MEMO_MAX := 64
+static var _cable_memo: Dictionary = {}
+## ART-7 7w: the transit v3 cables on the real city (RouteCableRouter, lot points): one per
+## edge in graph order, then one per entry run (the street to each first choice); and what
+## they were routed for (the map's layout signature and the street marker's spot).
+var _cables: Array[Dictionary] = []
+var _entry_cables: Dictionary = {}
+var _cables_sig: Array = []
+var _cables_here: Vector2 = Vector2.INF
+
+
+## ART-7 7w: on the 3D city the route's links are its own cables, not the Grid's network
+## decal: the decal is cleared.
+func _feed_decal() -> void:
+	if city != null and city.view3d != null:
+		city.view3d.set_network(null)
+
+
+## ART-7 7w: the walked cables draw on the 3D city too (the Grid's decal path draws no
+## static links).
+func _draw() -> void:
+	super()
+	if on_ground_decal() and city != null and not nodes.is_empty():
+		_c = self
+		for k in edges.size():
+			_edge_static(edges[k], _route_px(k))
+
+
+## ART-7 7w: the ground point (lots) a node's cable starts from: its building lot's centre.
+func cable_end(id: StringName) -> Vector2:
+	if not _lots.has(id):
+		return Vector2.INF
+	return Vector2(_lots[id]) + Vector2(0.5, 0.5)
+
+
+## ART-7 7w: the cables routed for the current layout (lot points), routing them when the
+## graph, its lots or the street marker changed. Returns the edge cables in edge order.
+func cables() -> Array[Dictionary]:
+	if city == null:
+		var none: Array[Dictionary] = []
+		return none
+	if _cables_sig == _layout_sig and _cables_here == here_at and _cables.size() == edges.size():
+		return _cables
+	_cables_sig = _layout_sig.duplicate()
+	_cables_here = here_at
+	var pairs: Array = []
+	for e in edges:
+		pairs.append({"a": cable_end(e["a"]), "b": cable_end(e["b"])})
+	var entry_ids: Array[StringName] = []
+	if here_at.x != INF and here_id() == &"":
+		var from := Vector2(here_lot()) + Vector2(0.5, 0.5)
+		for n in nodes:
+			if bool(n.get("next", false)) and _lots.has(n["id"]):
+				entry_ids.append(n["id"])
+				pairs.append({"a": from, "b": cable_end(n["id"])})
+	var routable: Array = []
+	for p: Dictionary in pairs:
+		if Vector2(p["a"]).x != INF and Vector2(p["b"]).x != INF:
+			routable.append(p)
+	var key := [city.city3d, city.city_seed, routable]
+	var routed: Array = _cable_memo.get(key, [])
+	if routed.is_empty() and not routable.is_empty():
+		if _cable_memo.size() >= CABLE_MEMO_MAX:
+			_cable_memo.clear()
+		routed = RouteCableRouter.route_all(routable, func(i: int, j: int) -> bool: return city.is_street(i, j))
+		_cable_memo[key] = routed
+	_cables.clear()
+	_entry_cables.clear()
+	var r := 0
+	for k in pairs.size():
+		var c: Dictionary = {}
+		if Vector2(pairs[k]["a"]).x != INF and Vector2(pairs[k]["b"]).x != INF and r < routed.size():
+			c = routed[r]
+			r += 1
+		if k < edges.size():
+			_cables.append(c)
+		else:
+			_entry_cables[entry_ids[k - edges.size()]] = c
+	return _cables
+
+
+## ART-7 7w: cable `c` on screen (local px): from `top_a` (a node's sticker, or the street
+## marker) down to its ground point, along its run with a bridge at each hop, up to
+## `top_b`. Every ground point goes through the city's own projection (`_to_local`: the 3D
+## camera on the 3D city).
+func cable_px(c: Dictionary, top_a: Vector2, top_b: Vector2) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	var lots: PackedVector2Array = c.get("points", PackedVector2Array())
+	if lots.size() < 2:
+		return out
+	if top_a.x != INF:
+		out.append(top_a)
+	var hops: Array = c.get("hops", [])
+	var r := HOP_RADIUS * _k()
+	for q in lots.size():
+		var p := _to_local(lots[q])
+		if q > 0:
+			var p0 := _to_local(lots[q - 1])
+			var seg := p - p0
+			var length := seg.length()
+			if length > 0.0:
+				var dir := seg / length
+				var up := Vector2(-dir.y, dir.x)
+				if up.y > 0.0 or (is_zero_approx(up.y) and up.x < 0.0):
+					up = -up
+				for h: Dictionary in hops:
+					if int(h["seg"]) != q - 1:
+						continue
+					var at := _to_local(h["at"])
+					var t := (at - p0).dot(dir)
+					if t - r <= 0.0 or t + r >= length:
+						continue
+					for s in HOP_SEGMENTS + 1:
+						var u := -1.0 + 2.0 * s / HOP_SEGMENTS
+						out.append(at + dir * (u * r) + up * (sqrt(maxf(0.0, 1.0 - u * u)) * r))
+		out.append(p)
+	if top_b.x != INF:
+		out.append(top_b)
+	return out
+
+
 ## The city's two ground axes on screen (local px per grid step).
 func _axes() -> Array[Vector2]:
 	var o := _to_local(Vector2.ZERO)
@@ -274,14 +403,33 @@ func cable(a: Vector2, b: Vector2) -> PackedVector2Array:
 	return pts
 
 
+## Edge `k`'s cable on screen: its routed run (7w), else the one-turn run between its
+## stickers (no lots yet).
 func _route_px(k: int) -> PackedVector2Array:
 	if k >= edges.size():
 		return PackedVector2Array()
-	return cable(icon_at(edges[k]["a"]), icon_at(edges[k]["b"]))
+	var a := icon_at(edges[k]["a"])
+	var b := icon_at(edges[k]["b"])
+	var cs := cables()
+	if k < cs.size() and not cs[k].is_empty():
+		if a.x == INF or b.x == INF:
+			return PackedVector2Array()
+		return cable_px(cs[k], a, b)
+	return cable(a, b)
 
 
+## The move rides its link's own cable (either way round).
 func _travel_route() -> PackedVector2Array:
-	return cable(icon_at(_travel["from"]), icon_at(_travel["to"]))
+	var from: StringName = _travel["from"]
+	var to: StringName = _travel["to"]
+	for k in edges.size():
+		if edges[k]["a"] == from and edges[k]["b"] == to:
+			return _route_px(k)
+		if edges[k]["a"] == to and edges[k]["b"] == from:
+			var back := _route_px(k)
+			back.reverse()
+			return back
+	return cable(icon_at(from), icon_at(to))
 
 
 ## How much of edge `e` shows (its ends' share).
@@ -362,10 +510,13 @@ func _entry_roads() -> void:
 	if p.x == INF:
 		return
 	var k := _k()
+	cables()
 	for n in nodes:
 		if not bool(n.get("next", false)):
 			continue
-		_dashes(cable(p, icon_pos(n)), RouteInk.RING_AVAILABLE, CABLE_LIVE * k, 1.0, 0.0, true)
+		var c: Dictionary = _entry_cables.get(n["id"], {})
+		var pts := cable_px(c, p, icon_pos(n)) if not c.is_empty() else cable(p, icon_pos(n))
+		_dashes(pts, RouteInk.RING_AVAILABLE, CABLE_LIVE * k, 1.0, 0.0, true)
 
 
 # --- Nodes ------------------------------------------------------------------------------------
