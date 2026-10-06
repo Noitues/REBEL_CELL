@@ -151,7 +151,7 @@ func test_the_stroke_is_nine_px_at_1080p_with_its_under_shadow_copy() -> void:
 	assert_almost_eq(float(wmat.get_shader_parameter(&"width_px")), line.width, 0.001, "the dropouts know the width")
 	assert_almost_eq(float(wmat.get_shader_parameter(&"dropout_alpha")), 0.35, 0.001, "the dropouts reach the shader")
 	assert_almost_eq(float(wmat.get_shader_parameter(&"dropout_scale")), 1.0 / GreasePencilMark.BOARD_TO_CANVAS, 0.001, "in 1080p px")
-	assert_almost_eq(float((shadow.material as ShaderMaterial).get_shader_parameter(&"dropout_period")), GreasePencilMark.DROPOUT_PERIOD, 0.001,
+	assert_eq((shadow.material as ShaderMaterial).get_shader_parameter(&"dropout_gap"), GreasePencilMark.DROPOUT_GAP,
 		"the shadow thins with the wax")
 
 
@@ -174,12 +174,12 @@ func test_the_width_is_one_screen_width_whatever_the_marks_zoom_and_grows_with_t
 
 
 ## The dropout stretches along `length` 1080p px of a stroke: [{centre, length}].
-func _dropouts(seed: int, length: float, period: float = GreasePencilMark.DROPOUT_PERIOD) -> Array[Dictionary]:
+func _dropouts(seed: int, length: float, gap: Vector2 = GreasePencilMark.DROPOUT_GAP) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var run_from := -1.0
 	var d := 0.0
 	while d <= length:
-		var inside := GreasePencilMark.dropout_factor(seed, d, period) >= 0.5
+		var inside := GreasePencilMark.dropout_factor(seed, d, gap) >= 0.5
 		if inside and run_from < 0.0:
 			run_from = d
 		elif not inside and run_from >= 0.0:
@@ -198,16 +198,34 @@ func test_wax_dropouts_every_40_to_70_px_two_to_four_px_long_to_alpha_0_35() -> 
 			if i > 0:
 				var gap := float(drops[i]["centre"]) - float(drops[i - 1]["centre"])
 				assert_between(gap, 39.9, 70.1, "seed %d: one every 40-70 px" % seed)
+	# each gap drawn uniformly from the whole 40-70 range (not 55 +- 7.5): about a third in each
+	# third of the range, and gaps near both ends
+	var bins := [0, 0, 0]
+	var gaps := 0
+	var lo := 1000.0
+	var hi := 0.0
+	for seed in range(1, 41):
+		var drops := _dropouts(seed, 2400.0)
+		for i in range(1, drops.size()):
+			var gap := float(drops[i]["centre"]) - float(drops[i - 1]["centre"])
+			lo = minf(lo, gap)
+			hi = maxf(hi, gap)
+			bins[clampi(int((gap - 40.0) / 10.0), 0, 2)] += 1
+			gaps += 1
+	assert_lt(lo, 43.0, "short gaps near 40 px")
+	assert_gt(hi, 67.0, "long gaps near 70 px")
+	for b in bins:
+		assert_between(float(b) / gaps, 0.25, 0.42, "uniform over the range: %s of %d gaps a third" % [b, gaps])
 	assert_ne(str(_dropouts(1, 400.0)), str(_dropouts(2, 400.0)), "seeded: another seed, other places")
 	assert_eq(str(_dropouts(5, 400.0)), str(_dropouts(5, 400.0)), "the same seed, the same places")
 	# the depth: the shader takes the wax's alpha down to DROPOUT_ALPHA inside a stretch
 	assert_almost_eq(GreasePencilMark.DROPOUT_ALPHA, 0.35, 0.001)
-	var words := _dropouts(7, 1200.0, GreasePencilMark.WORD_DROPOUT_PERIOD)
+	var words := _dropouts(7, 1200.0, GreasePencilMark.WORD_DROPOUT_GAP)
 	assert_lt(words.size(), _dropouts(7, 1200.0).size(), "words take fewer")
 	var w := GreasePencilWord.new()
 	add_child_autofree(w)
 	var wm := w.wax_node().material as ShaderMaterial
-	assert_almost_eq(float(wm.get_shader_parameter(&"dropout_period")), GreasePencilMark.WORD_DROPOUT_PERIOD, 0.001, "words drop out too")
+	assert_eq(wm.get_shader_parameter(&"dropout_gap"), GreasePencilMark.WORD_DROPOUT_GAP, "words drop out too")
 	assert_almost_eq(float(wm.get_shader_parameter(&"dropout_alpha")), 0.35, 0.001)
 
 
@@ -236,7 +254,9 @@ func test_the_shadow_fades_over_the_whole_gap_so_no_dark_tick_shows() -> void:
 	assert_gte(float(sm.get_shader_parameter(&"dropout_pad")), GreasePencilMark.SHADOW_1080.length() - 0.001,
 		"past the gap by its own offset, so the shifted shadow never shows under the nibble")
 	var src := FileAccess.get_file_as_string("res://shaders/kit/marker_stroke.gdshader")
-	assert_true(src.contains("dropout_hit(along_px * dropout_scale, dropout_pad).x"), "the shadow fades over the full width of the gap")
+	assert_true(src.contains("vec4 hs = dropout_hit(along_px * dropout_scale, dropout_pad);"), "the shadow fades past the gap's ends")
+	assert_true(src.contains("a = mix(a, a * dropout_alpha, bite_at(hs, across, grain));"), "under the bite only")
+	assert_true(src.contains("uniform float dropout_shadow_max = 0.75;"), "never across the far edge: the rim there runs on (never dashed)")
 
 
 func test_dropouts_are_spaced_in_screen_px_on_a_curved_zoomed_stroke() -> void:
@@ -263,10 +283,12 @@ func test_dropouts_are_spaced_in_screen_px_on_a_curved_zoomed_stroke() -> void:
 
 func test_the_shader_hash_is_the_scripts_hash() -> void:
 	var src := FileAccess.get_file_as_string("res://shaders/kit/marker_stroke.gdshader")
-	for token in ["374761393u", "668265263u", "1274126177u", ">> 13u", ">> 16u", "65535u"]:
+	for token in ["374761393u", "668265263u", "1274126177u", ">> 13u", ">> 16u", "65535u", "dhash(p, s + 4)", "dhash(0, s + 5)",
+			"dhash(kk, s + 1)", "dhash(kk, s + 2)", "dhash(kk, s + 3)"]:
 		assert_true(src.contains(token), "the shader's dhash has %s (GreasePencilMark.dhash's constants)" % token)
 	var gd := FileAccess.get_file_as_string("res://scripts/ui/kit/materials/grease_pencil_mark.gd")
-	for token in ["374761393", "668265263", "1274126177", ">> 13", ">> 16", "0xFFFF"]:
+	for token in ["374761393", "668265263", "1274126177", ">> 13", ">> 16", "0xFFFF", "dhash(p, sd + 4)", "dhash(0, sd + 5)",
+			"dhash(kk, sd + 1)", "dhash(kk, sd + 2)", "dhash(kk, sd + 3)"]:
 		assert_true(gd.contains(token), "the script's dhash has %s" % token)
 
 
