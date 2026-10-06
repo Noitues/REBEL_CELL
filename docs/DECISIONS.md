@@ -77,6 +77,67 @@ in-run abandon run" and "ART-10 4C: hold-to-confirm on the abandon dialog's verb
   `state_word` gains ABANDONED; STYLE_GUIDE 5.5 lists the new hold.
 - Tests: `tests/unit/test_abandon_quit.gd`.
 
+### 2026-10-05 — Parity fix — new campaign page (designer decisions)
+Designer rulings NEWC-01..04 (2026-10-05, parity audit `docs/art_review/PARITY/GAPS.md`, branch
+worktree-agent-a99b7a512f1562917): the art pass build was never brought to the v2 concepts, so the build's layout in
+the locked v2 language. Ported by hand from `art-m13-final` (1a746f5c) `scripts/ui/kit/tile_picker.gd`,
+`planning_picker.gd`, `stepper.gd` and `scripts/ui/hq_scene.gd` `show_start` (W8b planning table). Sheet:
+`docs/art_review/PARITY/fixes/NEWC.jpg` (build | main before | main after at 1.0, then 1.0 / 1.6 / 2.0 with locked
+and open choices).
+- **NEWC-01 / NEWC-04: tiles, no dropdown, no popup.** New kit `TilePicker` (a Range; one focus stop whose cursor the
+  D-pad / arrows walk; at an edge the move is left to the focus; accept or a click chooses; a locked tile is refused:
+  KitState's HARM flash + no-entry, `refused(i)`, and a warning toast says how it opens) and `PlanningPicker` (its
+  swatches). The v2 look: the concept's tile plates (`assets/ui/menus/kit/tile_idle` / `tile_selected`, as MenuChip /
+  CrtTiles), names in terminal CAPS (one shared size per picker, whole words on two lines, stepping down to the
+  caption floor before a tile widens), the meta line in the caption step. **Selected** = the cyan-filled plate with ink
+  words and a cyan frame round it (§2.10: selected is a cyan fill, never lime; the build's pink frame is replaced).
+  **Focus** = the lime brackets round the cursor's tile, locked tiles included. **Locked** = grey hatch, the lock badge
+  on the swatch's corner and the unlock words. Tiles a row follow the width (auto columns), so every scale wraps.
+  Target: five corporation tiles (hue stripe + the corp's v2 crest, `Best ICE: n`). Home server: tiles with the house
+  icon, lock and `UNLOCKS · cost`. Crew: portrait tiles with the class's v2 bust (PortraitBust, rookie 0) in a
+  class-accent rim. ICE: `ValueStepper`, a big `- n +` (MenuChip tile plates round a bare Anton number with its dark
+  rim) fronting the hidden `IceSpin` SpinBox as CrtTiles fronts an OptionButton; a step past either end is refused.
+- **Calls (NEWC-01):** (1) the corp emblem is the v2 crest (ART_BIBLE §2.4: crane-A, helix, EYE, ringed planet, FIST;
+  the concept's own `assets/wheel/glyphs_interim/crest_<corp>.png`, as the Site markers wear them), not the M13
+  build's W8a landmark SVGs (which predate v2); tinted in the corp hue, grey when locked. (2) A locked REBEL_CELL is a
+  `CLASSIFIED` tile with a grey `?` and `OPENS AT ICE 10 EVERYWHERE` (the ICE records' no-spoiler rule; the build hid it;
+  open question below). (3) Locked choices follow the open ones: a priced unlock before a free earned one, cheapest
+  first, then by id. (4) Each picker starts on the game's default (Solace, the standard home server, the Breaker, as
+  the daily run and a share code) when it is open, else on the first open choice (main started on the first by id:
+  the bunker home server or the Botnet once bought). (5) Locks and costs come from the existing profile unlocks
+  (`RunManager.available_*`, `CampaignRules.unlock_for`); no new mechanic; the choices, the caps and `new_campaign`
+  are unchanged.
+- **NEWC-02 (reading of the ruling):** main's yellow NEW CAMPAIGN title sticker and the TRUST NO ONE pencil stay where
+  they were; the one verb is a pink vinyl `START` sticker (VerbSticker, the kit's VinylSticker fill: no concept bake
+  has the word) at the head's right end, where the build has it and where the eye ends. It replaces main's pink
+  "New campaign" button under the form, so the page has one verb. The build's SHARE CODES chip beside START is not
+  carried over (the codes have their own terminal, NEWC-03). START takes the page's first focus, as on the build.
+- **NEWC-03:** the city seed, TODAY'S RUN and SHARE CODES stay with their behaviour (seed SpinBox + Next seed, the
+  daily seed and its button, the code field + Start from code). The two terminals lose their lime edge (plain cyan
+  CrtWindows: lime is focus in the v2 kit). The seed is the planning table's last row (a CAPS terminal label: it is
+  part of the plan, so it stays visible rather than in the build's drawer). The share code row folds under an
+  "Enter a share code" toggle in its terminal (the build's drawer idea, kept for the field only); opening it focuses
+  the field and relinks the pad. From text scale 1.6 today's run and the share codes stack (side by side the run's
+  lines wrapped in a narrow column).
+- **Outside `show_start` (smallest change):** `hq_scene.gd` loses the 4C form's `FORM_GAP`, `FORM_ONE_PAIR_FROM`
+  and `_form_cell` (only the old form used them). `tools/visual_qa/review_pack.gd` gains `--scales=a,b,c` (one launch
+  walks the screens per text scale, into `<out>/s<scale>/`) and three screens: `new_campaign_locked` (a fresh
+  profile with one class and one home bought), `new_campaign_crew` and `new_campaign_codes` (scrolled, the code row
+  open). New words exported (`tools/export_text.gd`).
+- **Motion:** nothing removed: the page's enter (PageTransition), the CYBERDECK menu motion and the stickers' own
+  hover / press / gloss motions stay; the refusal flash is KitState's `button_refused` entry (reduce effects: it holds).
+- **Tests:** new `tests/unit/test_parity_newc.gd` (fast): every choice shown, locked ones with their costs, REBEL_CELL
+  not named while locked, no OptionButton or popup; defaults and an unlock; a locked tile refused and the pick
+  unchanged, an open pick + seed + ICE flow through START; the stepper's ends and the per-corp cap; pad focus reaches
+  every picker, both ICE chips, Next seed, Daily run, the codes toggle and START, the cursor reaches every tile, an
+  edge leaves the move to the focus, a pad press on a locked tile is refused; the head ends on START, one verb
+  sticker, no lime code terminals, the code row folds and opens on the field; the page fits at 1.0 / 1.6 / 2.0 (width,
+  START on the first screen, every tile inside its picker, names on two lines inside their room at caption or
+  larger). Adapted (behaviour kept): `test_corporations` reads the target as a TilePicker; `test_horizontal_pass5`
+  opens the code row before focusing the field. No test dropped.
+- Checked windowed: review_pack `new_campaign, new_campaign_picker, new_campaign_locked, new_campaign_crew,
+  new_campaign_codes` at `--scales=1.0,1.6,2.0` in one launch.
+
 ### 2026-10-05 — FIX-REDS (M14): known full-tier reds and the boss HP plate overlap
 - `test_anim_r6_rules::test_no_tween_shape_is_written_inline`: the Central Server gate's BREACH tween
   (`central_server_gate.gd`) wrote `Tween.EASE_OUT` / `TRANS_SINE` as a fallback for a missing entry; it now
@@ -170,6 +231,35 @@ M13 art-pass build's layout and content, reworked in the locked v2 concept langu
   `test_the_slots_page_is_three_case_files_in_one_panel`, `test_load_is_the_one_sticker_verb_and_delete_a_harm_chip_that_asks`,
   `test_slots_fit_and_focus_reaches_every_action_at_every_text_scale` (1, 2, 3 used slots at 1.0 / 1.6 / 2.0),
   `test_the_slots_panel_wraps_its_cards_then_scrolls_past_its_room`. No test dropped.
+
+### 2026-10-05 — Parity fix — pause menu (designer decisions)
+Designer decisions 2026-10-05, audit items PAUSE-01..03 (P1/P2/P3, `docs/art_review/PARITY/GAPS.md` "Pause menus"); PAUSE-04
+unchanged (abandon and quit are different dialogs; `confirm_dialog.gd` untouched). Files: `scripts/ui/kit/pause_menu.gd`.
+- **PAUSE-01 / 03: blur and darken.** The menu's click-eating `Backdrop` is a `GlassScrim` now (it was a flat 0.35 black
+  `ColorRect`): the page behind (HQ, route, fight, and the fight's turn banner above the panel) is blurred by
+  `Palette.SCRIM_BLUR_PX` and dimmed by `Palette.SCRIM`, as every other modal; high contrast makes it opaque, as theirs.
+  `glass_scrim.gd` unchanged. **No PAUSED sticker** (removed with its consts); the terminal header keeps its `PAUSED` title
+  word as a window title. The raid playout plays on under an open pause menu (`MotionSkip`/`raid_playout_panel`), so no
+  raid is ever the paused page and nothing says PAUSED over one. No PAUSED note on confirm dialogs (none existed).
+- **PAUSE-02: the build's rows, in v2.** Ported by hand from `art-m13-final:scripts/ui/kit/pause_menu.gd`. `Resume [Esc]`
+  (the hint follows the device; `VerbSticker.set_label`) is the first row, the one pink `VerbSticker`, focused on open.
+  Options / Codex / Save & quit / Quit to desktop keep the terminal `MenuItem` lines (menu motion attached to that
+  `Rows` box, not to the sticker) with an icon in the chevron's place (`IconMark` + `StatIcon.SETTINGS / CODEX / SAVE /
+  QUIT`, the art pass's own icon set that main already carries, reused as is). The campaign code is a `CodeField`
+  (`scripts/ui/kit/code_field.gd`, ported from the same tag: a read-only mono `LineEdit` with a copy button, the button on
+  the v2 `TerminalButton` variation instead of the art pass's tertiary) under a caption; the field keeps the name
+  `SeedLine`. The copy icon is `StatIcon.COPY`, ported from the same tag (drawn with main's `_line` helper).
+  **Icon source:** the 1C atlas (`glyph_table.tres`) has game pictos only (spin, nudge, hp ...), no settings / codex /
+  save / quit / copy glyph, so the art pass's StatIcon kinds (the set its own build used on these rows) are the "reuse" and
+  nothing was redrawn except COPY's two strokes carried over from the same tag.
+- **Test seam:** `CodeField.clipboard_writer` (a Callable, unset in the game) takes the copied text in place of
+  `DisplayServer.clipboard_set`, because a headless display server has no clipboard.
+- **Strings:** `Copy the campaign code`, `Campaign code (share it: it starts this campaign)`, `Copy` (re-exported once).
+  The one-line `PauseMenu.code_line()` stays for the HQ radio's tooltip.
+- **Tests:** new `tests/unit/test_parity_pause.gd` (scrim over HQ, route, route fight and a lone fight; no sticker; Resume
+  first, pink, focused, icons on the rows; the copy button copies the code; fits at text scale 1.0 / 1.6 / 2.0). Changed:
+  `test_art10_menus` (the pause test pinned the PAUSED sticker: now asserts there is none), `test_horizontal_pass24_screens`
+  (the seed line is a `CodeField`, read by `value`). Dropped: none.
 
 ### 2026-10-05 — Parity fix — TITLE-01 title backdrop (designer decision)
 Designer decision 2026-10-05: the title follows concept round 33 (`round33_ui_chrome/title_screen.png` / `.gif`,
@@ -8437,6 +8527,10 @@ and annotated in the GDD where it changes a rule.
   slot is a manila case folder on corp paper (v2: the corporation's file) where the build had white paper: keep, or
   white? (2) LOAD on the newest campaign is the page's one pink sticker and DELETE a HARM terminal chip: or should
   DELETE carry the pink DELETE sticker as the confirm does (that makes a second sticker verb on the page)?
+- **Parity NEWC (2026-10-05, default implemented, see "Parity fix — new campaign page"):** (1) a locked REBEL_CELL
+  shows as a fifth, CLASSIFIED tile (no name, no crest, "OPENS AT ICE 10 EVERYWHERE") so the Target row has its five
+  tiles without a spoiler; the build hid it until unlocked. Keep the classified tile? (2) The pickers start on the
+  game's defaults (Solace, standard home server, Breaker) rather than the first choice by id: keep?
 - **Parity fix TITLE-01 (2026-10-05, built, see "Parity fix — TITLE-01 title backdrop"):** (1) the title's HQ is the
   last-played campaign's target, else Halcyon (the concept's): keep, or always Halcyon? (2) the 3D city's night grade
   is less pink-saturated than round 33's 2D render: leave it (it is the Grid's grade too) or give the backdrop look its
