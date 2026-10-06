@@ -45,7 +45,11 @@ const DRONE_HEX := 21.0
 const DRONE_TEX := preload("res://assets/fx/stickers/drone.png")
 const DRONE_TEX_HEX_R := 40.0
 const DRONE_TEX_HEX_CENTRE := Vector2(64.5, 65.0)
-const DRONE_PIECE_DIR := "res://assets/fx/stickers/drone_piece_%d.png"
+const DRONE_PIECE_TEX: Array[Texture2D] = [
+	preload("res://assets/fx/stickers/drone_piece_0.png"), preload("res://assets/fx/stickers/drone_piece_1.png"),
+	preload("res://assets/fx/stickers/drone_piece_2.png"), preload("res://assets/fx/stickers/drone_piece_3.png"),
+	preload("res://assets/fx/stickers/drone_piece_4.png"), preload("res://assets/fx/stickers/drone_piece_5.png"),
+]
 ## Each piece's centre offset (px at 1x, from the image centre) and flight direction (rad), as the manifest
 ## records them for `fx_r22._pieces_from`.
 const DRONE_PIECES := [
@@ -194,9 +198,7 @@ static func drone_burst(ci: CanvasItem, at: Vector2, _col: Color, p: float, fly:
 	var sc := r / DRONE_TEX_HEX_R
 	# The six pieces of the art pass's sticker fly out along their own directions.
 	for k in DRONE_PIECES.size():
-		var piece := load(DRONE_PIECE_DIR % k) as Texture2D
-		if piece == null:
-			continue
+		var piece := DRONE_PIECE_TEX[k]
 		var row: Array = DRONE_PIECES[k]
 		var centre := at + (row[0] as Vector2) * sc + Vector2.from_angle(float(row[1])) * fly * p
 		var size := piece.get_size() * sc
