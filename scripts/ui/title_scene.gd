@@ -862,7 +862,7 @@ func _describe(summary: Dictionary) -> String:
 
 
 ## Campaign states as a slot summary words them (keys).
-const STATE_WORDS := ["active", "won", "lost"] # TR
+const STATE_WORDS := ["active", "won", "lost", "abandoned"] # TR
 
 
 ## The Continue chip's line (round 33: "slot 1 // Halcyon Civic // run 9 // Heat 58"): the

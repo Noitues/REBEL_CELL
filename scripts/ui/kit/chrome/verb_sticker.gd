@@ -91,6 +91,17 @@ const ART_TO_GAME := 1.0 / 3.0
 const BURST_FRAMES := {9: 0, 10: 1, 27: 1, 28: 0}
 ## The baked art's key ("" = none: drawn).
 var art_key: String = ""
+## Parity SLOTS (designer 2026-10-05): a baked sticker shown smaller than the board it was
+## baked for (the slots page's DELETE, at the size of the LOAD beside it). Set it with
+## `set_art_scale` (it refits).
+var art_scale: float = 1.0
+
+
+## Shows the baked art at `k` x its game size (1.0 = as baked) and refits.
+func set_art_scale(k: float) -> VerbSticker:
+	art_scale = k
+	_fit()
+	return self
 var _art_rest: Texture2D = null
 var _art_focus: Texture2D = null
 var _art_sweeps: Array[Texture2D] = []
@@ -229,7 +240,7 @@ func _fit() -> void:
 	if uses_art():
 		# The focus image (with its halo) is the largest: the sticker keeps that size, so the
 		# halo never moves the layout.
-		var k := ART_TO_GAME * clampf(Settings.text_scale, 1.0, SCALE_MAX)
+		var k := ART_TO_GAME * art_scale * clampf(Settings.text_scale, 1.0, SCALE_MAX)
 		custom_minimum_size = (_art_focus.get_size() * k).ceil()
 		size = custom_minimum_size
 		_pivot()
@@ -476,7 +487,7 @@ func _draw_art() -> void:
 		tex = _art_bursts_focus[ph] if focused else _art_bursts[ph]
 	elif _sweep_k >= 0 and _sweep_k < _art_sweeps.size():
 		tex = _art_sweeps[_sweep_k]
-	var k := ART_TO_GAME * clampf(Settings.text_scale, 1.0, SCALE_MAX)
+	var k := ART_TO_GAME * art_scale * clampf(Settings.text_scale, 1.0, SCALE_MAX)
 	var sz := tex.get_size() * k
 	draw_texture_rect(tex, Rect2((size - sz) * 0.5, sz), false)
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)

@@ -23,6 +23,15 @@ uniform float vignette = 0.35;
 uniform vec2 vignette_centre = vec2(0.6, 0.5);
 uniform vec2 vignette_scale = vec2(1.3, 1.1);
 uniform float gain = 0.86;
+// TITLE-01b: the backdrop's own grade (CityBackdropLook.grade_*; the city's shared grade is
+// untouched): col * grade_gain + grade_lift * (1 + haze_out_of_focus * (1 - band)), before the
+// darkening, after a saturation step (mix from the Rec. 709 luma). Plain vec3 (no source_color),
+// so CityBackdropLook.shown is the same maths.
+const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
+uniform float grade_saturation = 1.0;
+uniform vec3 grade_gain = vec3(1.0);
+uniform vec3 grade_lift = vec3(0.0);
+uniform float haze_out_of_focus = 0.0;
 
 // glass_blur's kernel: a centre tap and two rings of six (half and full radius); the ring's
 // radius is two sigmas, so the soft copy spreads like a Gaussian of `sigma_px`.
@@ -51,6 +60,8 @@ void fragment() {
 	vec3 soft = soft_at(SCREEN_UV, SCREEN_PIXEL_SIZE);
 	float band = pow(clamp(1.0 - abs(uv.y - focus_centre) / max(focus_half, 0.0001), 0.0, 1.0), focus_power);
 	vec3 col = mix(soft, sharp, band);
+	col = mix(vec3(dot(col, LUMA)), col, grade_saturation);
+	col = col * grade_gain + grade_lift * (1.0 + haze_out_of_focus * (1.0 - band));
 	float side = pow(clamp(1.0 - uv.x / max(side_reach, 0.0001), 0.0, 1.0), side_power);
 	float foot = clamp((uv.y - foot_from) / max(1.0 - foot_from, 0.0001), 0.0, 1.0);
 	float dark = 1.0 - side_dark * side - foot_dark * foot;

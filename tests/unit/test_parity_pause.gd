@@ -104,7 +104,14 @@ func test_resume_is_first_pink_and_focused_and_the_rows_have_icons() -> void:
 	var kinds: Array[StringName] = []
 	for b in menu._rows.get_children():
 		kinds.append(StringName(b.get_meta(&"icon_kind", &"")))
-	assert_eq(kinds, [StatIcon.SETTINGS, StatIcon.CODEX, StatIcon.SAVE, StatIcon.QUIT], "an icon on every other row")
+	# ABANDON-QUIT: an abandon row (in HARM) above Quit when there is a run or a campaign to abandon.
+	var want: Array[StringName] = [StatIcon.SETTINGS, StatIcon.CODEX, StatIcon.SAVE]
+	if RunManager.has_active_run():
+		want.append(StatIcon.OPERATIVE)
+	elif RunManager.has_campaign():
+		want.append(StatIcon.CAMPAIGNS)
+	want.append(StatIcon.QUIT)
+	assert_eq(kinds, want, "an icon on every other row")
 	var resumed := []
 	menu.resumed.connect(func() -> void: resumed.append(true))
 	resume.pressed.emit()
