@@ -106,7 +106,8 @@ func _relayout() -> void:
 	var vw := get_viewport_rect().size.x if is_inside_tree() else 1280.0
 	compact = force_compact or file_width() > vw * MAX_WIDTH_SHARE
 	_rows = _build_rows()
-	custom_minimum_size = Vector2(file_width() if not compact else minf(file_width(), vw * MAX_WIDTH_SHARE), _height())
+	var w := file_width() if not compact else minf(file_width(), vw * MAX_WIDTH_SHARE)
+	custom_minimum_size = Vector2(w, _height(w))
 	update_minimum_size()
 	queue_redraw()
 
@@ -130,12 +131,38 @@ func _line_h(fs: int) -> float:
 	return RouteInk.paper_font().get_height(fs) + ROW_GAP * _s()
 
 
-## The file's height for its rows (px).
-func _height() -> float:
+## The letterhead's sub line ("SECURITY // PERSON OF INTEREST // FILE") wrapped at word
+## breaks to a file `w` px wide (parity: at text 1.6 one clipped line read "PERSON OF IN").
+func sub_lines(w: float) -> PackedStringArray:
+	var s := _s()
+	var sfs := maxi(roundi(SUB_FONT * s), 1)
+	var room := w - MARGIN * s * 2.0
+	var pf := RouteInk.paper_font()
+	var out := PackedStringArray()
+	var line := ""
+	for word in sub_text().split(" ", false):
+		var next := word if line == "" else line + " " + word
+		if line != "" and pf.get_string_size(next, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs).x > room:
+			out.append(line)
+			line = word
+		else:
+			line = next
+	if line != "":
+		out.append(line)
+	return out
+
+
+## The sub line's words (translated).
+func sub_text() -> String:
+	return "%s // %s" % [(tr(SECURITY) % "").strip_edges(), tr(SUBTITLE)]
+
+
+## The file's height for its rows (px) at width `w`.
+func _height(w: float) -> float:
 	var s := _s()
 	var fs := roundi(FIELD_FONT * s)
 	var lh := _line_h(fs)
-	var h := HEAD_H + RouteInk.paper_font().get_height(maxi(roundi(SUB_FONT * s), 1)) + MARGIN * s
+	var h := HEAD_H + RouteInk.paper_font().get_height(maxi(roundi(SUB_FONT * s), 1)) * maxi(1, sub_lines(w).size()) + MARGIN * s
 	h += maxf(MUG * s if not compact else 0.0, lh * _rows.size())
 	if not compact:
 		h += MARGIN * s + lh * 6.0  # wheel, hub core, deck (label + value each)
@@ -158,9 +185,10 @@ func _draw() -> void:
 	var sfs := maxi(roundi(SUB_FONT * s), 1)
 	var x := MARGIN * s
 	# Under the sheet's letterhead: "<CORP> SECURITY // PERSON OF INTEREST // FILE".
-	var sub := "%s // %s" % [(tr(SECURITY) % "").strip_edges(), tr(SUBTITLE)]
-	draw_string(pf, Vector2(x, head_h + pf.get_ascent(sfs)), sub, HORIZONTAL_ALIGNMENT_LEFT, w - x * 2.0, sfs, RouteInk.PAPER_FIELD)
-	head_h += pf.get_height(sfs)
+	# Parity: wrapped at word breaks, every word whole.
+	for line in sub_lines(w):
+		draw_string(pf, Vector2(x, head_h + pf.get_ascent(sfs)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, RouteInk.PAPER_FIELD)
+		head_h += pf.get_height(sfs)
 	# The mugshot and the fields.
 	var y := head_h + MARGIN * s
 	var fs := roundi(FIELD_FONT * s)

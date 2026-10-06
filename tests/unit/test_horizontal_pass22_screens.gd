@@ -503,11 +503,14 @@ func test_route_buttons_draw_the_map_icon_of_their_node() -> void:
 	for n in g["nodes"]:
 		kinds[n["id"]] = String(CityMapOverlay.route_kind(int(s.run.map.get_node(n["id"])["type"]), bool(s.run.map.get_node(n["id"])["elite"])))
 	var available := s.available_nodes()
+	# Parity ROUTE-04 (round 37: the route is picked on the map): each choice is a focus stop
+	# on its own map sticker, so the icon it shows IS its node's (no copy on a list row).
+	var ov: CityMapOverlay = scene.city_overlay
 	for i in available.size():
 		var b := scene._panel.find_child("Node%d" % (i + 1), true, false) as Button
-		assert_ne(IconMark.map_kind_of(b), "", "a map icon")
-		assert_eq(IconMark.map_kind_of(b), kinds[available[i]], "the same icon kind as its node on the map")
-		var mark := b.get_node("IconMark") as IconMark
-		assert_eq(mark.color, scene.ROUTE_NEXT_COLOR, "the map's colour for a next node")
+		assert_eq(StringName(b.get_meta(&"route_stop", &"")), available[i], "a stop on its node's sticker")
+		var n := ov._node_dict(available[i])
+		assert_eq(String(n.get("kind", "")), kinds[available[i]], "the same icon kind as its node on the map")
+		assert_true(b.get_global_rect().has_point(ov.get_global_transform_with_canvas() * ov.icon_pos(n)), "over the sticker")
 
 

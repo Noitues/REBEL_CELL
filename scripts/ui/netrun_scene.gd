@@ -1295,6 +1295,9 @@ func _show_map() -> void:
 		city_overlay.here_at = r["entry"]
 		city_overlay.ease_rings()  # ANIM-5: the "you are here" ring eases in
 		city_overlay.avoid_controls([win, route_legend, dossier, node_panel])
+		# Parity ROUTE-01 b: the district plates keep off the top bar (the map runs under it).
+		var plate_bar: Array[Control] = [hud]
+		(city_overlay as RouteOverlay).plate_avoid = plate_bar
 		route_legend.minimum_size_changed.connect(func() -> void: place_route_legend.call_deferred())
 		city_overlay.node_clicked.connect(func(id: StringName) -> void: map_view.node_clicked.emit(id))
 		_wire_route_frame()
@@ -1326,13 +1329,20 @@ func _fill_route_choices(row: VBoxContainer) -> void:
 	var s := RunManager.netrun
 	# Hidden and freed in place: the button pressed (the move) may be one of them, mid-signal.
 	for old in row.get_children():
-		(old as CanvasItem).visible = false
+		if old is CanvasItem:
+			(old as CanvasItem).visible = false
 		old.queue_free()
 	var available := view_choices(s)
 	_route_buttons.clear()
 	var twins := choice_twins(s)
 	var differs := choice_differences(s)
 	var ahead_rows := {}
+	# Parity ROUTE-04: on the run's own route (not GRID VIEW, not a boss run's compound) the
+	# choices are focus stops on their map stickers, not list rows (RouteStopPlacer).
+	var placer: RouteStopPlacer = null
+	if route_on_map(s):
+		placer = RouteStopPlacer.new(self)
+		row.add_child(placer)
 	for i in available.size():
 		var node := s.run.map.get_node(available[i])
 		# H21 #14: what the node is (word + icon), its index on every device (the map's
@@ -1361,18 +1371,43 @@ func _fill_route_choices(row: VBoxContainer) -> void:
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.set_meta(&"route_base", text)
 		b.set_meta(&"route_index", i)
-		IconMark.attach(b, node_icon(node), StatIcon.color_of(node_icon(node)))
-		# H22 #14: the node's own map icon (the map's painter, its colour for a next node),
-		# so the same node looks the same on the button and on the map.
-		IconMark.attach_map(b, CityMapOverlay.route_kind(int(node["type"]), bool(node["elite"])), ROUTE_NEXT_COLOR)
+		if placer == null:
+			IconMark.attach(b, node_icon(node), StatIcon.color_of(node_icon(node)))
+			# H22 #14: the node's own map icon (the map's painter, its colour for a next node),
+			# so the same node looks the same on the button and on the map.
+			IconMark.attach_map(b, CityMapOverlay.route_kind(int(node["type"]), bool(node["elite"])), ROUTE_NEXT_COLOR)
 		b.tooltip_text = UiTip.fold(route_tip(s, node, heat) + ((" " + tr(TWIN_TIP) % (int(twins[id]) + 1)) if twins.has(id) else ""))
 		# ART-7 3B: the focused choice's decrypted file shows in the node panel.
 		b.focus_entered.connect(show_node_panel.bind(id))
 		_route_buttons.append(b)
 		row.add_child(b)
+		if placer != null:
+			placer.add_stop(b, id, _focus_route_choice)
 		if ahead_rows.has(i):
-			row.add_child(ahead_rows[i])
+			var ahead_row: Control = ahead_rows[i]
+			ahead_row.set_meta(&"route_choice", id)
+			# Parity ROUTE-04: on the map the window shows only the lit choice's "then:" line.
+			ahead_row.visible = placer == null
+			row.add_child(ahead_row)
 	_label_route_buttons()
+
+
+## Parity ROUTE-04: a stop on the map took the focus or the pointer: its node's file in the
+## panel and, in the ROUTE window, its own "then:" line (what only it reaches) alone.
+func _focus_route_choice(id: StringName) -> void:
+	show_node_panel(id)
+	var row := _panel.find_child("RouteNodes", true, false) if _panel != null and is_instance_valid(_panel) else null
+	if row == null:
+		return
+	for c in row.get_children():
+		if c is Control and (c as Control).has_meta(&"route_choice"):
+			(c as Control).visible = StringName(c.get_meta(&"route_choice")) == id
+
+
+## Parity ROUTE-04: true when the route's choices are picked on the map (their stickers are
+## the focus stops): the run's own route, not GRID VIEW nor a boss run's compound.
+func route_on_map(s: NetrunSession) -> bool:
+	return s != null and not _grid_zoomed and s.run.kind != "boss"
 
 
 ## ANIM-R2 R1 / R2: the default frame's bake at this scene's size and at the page's (a fight's

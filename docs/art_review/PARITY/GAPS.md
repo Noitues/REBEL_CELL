@@ -218,7 +218,7 @@ Decision: **Partly resolved by S-MAPVIEW (designer ruling 2026-10-05):** the rou
 the `HEAT 0: COOL` stamp touches the IF STATIONED box. Concept: stamps in the paper's margins. Likely
 file: `scripts/ui/kit/operative_dossier.gd` (stamp anchors). Decision: **drop the Heat stamp** (designer Q10, 2026-10-05): the Heat gauge in the
 top bar is the one place for Heat. Fixed by HEAT-ALL: the stamp is removed from the dossier (the file, its height and
-`AT LARGE` keep their places); sheet `docs/art_review/PARITY/fixes/HEAT_ALL.jpg`.
+`AT LARGE` keep their places); sheet `docs/art_review/PARITY/fixes/HEAT_ALL.jpg`. Follow-up (S-ROUTE b, 2026-10-06): the letterhead's sub line wraps at word breaks, every word whole (it read "PERSON OF IN" at 1.6); sheet `fixes/ROUTE_b.jpg`.
 
 **ROUTE-03 (P1) Node panel.** Main: `DECRYPTED` stamp over the panel header, `Fight: win it for
 Cycles and loo` cut at the right edge, the crossed-out dial `5` on the rewards text. Concept: the
@@ -229,7 +229,7 @@ plus a JACK IN sticker and the map option under it. Likely file: `scripts/ui/kit
 **ROUTE-04 (P2) Route choice panel.** Build and main: `ROUTE // PICK THE NEXT NODE` terminal, rows
 `[1] Fight > Fight · Event`, GRID VIEW, Save & quit. Main's rows have lime focus brackets and
 `then: Shop` lines. Concept: no list (you pick on the map; the holo shows the hovered node). View:
-the list is the pad / keyboard path; keep it, but it duplicates the map. Decision: Kept (default, open question in DECISIONS): the list is the pad's only path (the map's stickers take no focus) and the keyboard's labelled one; its rows are the map's own numbered choices (tested). Proposed slice: the stickers as focus stops, then the rows go. DECISIONS "Parity fix — route map (designer group ruling)"; sheet `fixes/ROUTE.jpg`
+the list is the pad / keyboard path; keep it, but it duplicates the map. Decision: Kept (default, open question in DECISIONS): the list is the pad's only path (the map's stickers take no focus) and the keyboard's labelled one; its rows are the map's own numbered choices (tested). Proposed slice: the stickers as focus stops, then the rows go. DECISIONS "Parity fix — route map (designer group ruling)"; sheet `fixes/ROUTE.jpg` **Superseded (orchestrator relay 2026-10-06): built:** each choice is a focus stop on its map sticker (pad and keys walk them in the numbered order, Enter / A picks), the list rows are gone; DECISIONS "Parity fix — route map b"; sheet `fixes/ROUTE_b.jpg`.
 
 **ROUTE-05 (P3) Node key strip.** Main: `COMBAT ELITE EVENT SHOP RACK | walked next not yet cut off
 | HOVER HERE: SHOW ALL NODES` along the foot. Concept: the same idea, states only. Matches.

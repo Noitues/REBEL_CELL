@@ -114,6 +114,8 @@ func test_district_plates_sit_clear_of_every_node_label_and_panel() -> void:
 			await _frames(2)
 			var area := ov.label_area()
 			var avoid: Array[Rect2] = ov.label_blocks()
+			# The top bar (the map runs under it).
+			avoid.append(ov.get_global_transform_with_canvas().affine_inverse() * (scene.hud.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, scene.hud.size)))
 			for r: Rect2 in ov.label_rects().values():
 				avoid.append(r)
 			for n in ov.nodes:
@@ -142,23 +144,98 @@ func test_district_plates_sit_clear_of_every_node_label_and_panel() -> void:
 	assert_gt(plates, 0, "the route names its districts")
 
 
-# --- ROUTE-04: the ROUTE list is the map's choices ------------------------------------------------
+# --- ROUTE-04: the choices are picked on the map ---------------------------------------------------
 
-func test_the_route_list_is_the_pad_path_of_the_maps_numbered_choices() -> void:
+func test_the_choices_are_focus_stops_on_their_map_stickers_in_numbered_order() -> void:
+	for scale in SCALES:
+		Settings.set_text_scale(scale)
+		RunManager.reset()
+		var scene := _netrun()
+		await _frames(4)
+		var ov := _overlay(scene)
+		var s := RunManager.netrun
+		var choices: Array = scene.view_choices(s)
+		var buttons: Array = scene._route_buttons
+		assert_gt(choices.size(), 1, "x%.1f: a route start with a choice to make" % scale)
+		assert_eq(buttons.size(), choices.size(), "x%.1f: one stop per choice" % scale)
+		for n in ov.nodes:
+			if int(n.get("number", 0)) > 0:
+				assert_true(choices.has(n["id"]), "x%.1f: every numbered sticker has its stop" % scale)
+		var xf := ov.get_global_transform_with_canvas()
+		var row := scene._panel.find_child("RouteNodes", true, false) as Control
+		# The ROUTE window lists no rows (the concept picks on the map): at most the lit choice's
+		# "then:" line shows.
+		var shown_lines := 0
+		for c in row.get_children():
+			if c is Control and (c as Control).visible and not (c as Control).top_level:
+				shown_lines += 1
+		assert_lte(shown_lines, 1, "x%.1f: no list rows in the ROUTE window" % scale)
+		var grid := scene._panel.find_child("GridZoom", true, false) as Control
+		for i in choices.size():
+			var b := buttons[i] as Button
+			var n := ov._node_dict(choices[i])
+			assert_eq(int(n.get("number", 0)), i + 1, "x%.1f: stop %d is the map's choice %d" % [scale, i + 1, i + 1])
+			assert_eq(b.focus_mode, Control.FOCUS_ALL, "x%.1f: stop %d takes the pad's and the keys' focus" % [scale, i + 1])
+			assert_true(b.top_level, "x%.1f: stop %d is on the map, not in the window's column" % [scale, i + 1])
+			assert_true(b.get_global_rect().has_point(xf * ov.icon_pos(n)), "x%.1f: stop %d sits on its sticker" % [scale, i + 1])
+			assert_eq(b.get_theme_color(&"font_color").a, 0.0, "x%.1f: the map's label speaks for stop %d" % [scale, i + 1])
+			# Down walks the stops in the map's numbered order, then GRID VIEW.
+			var down := b.get_node_or_null(b.focus_neighbor_bottom)
+			var want: Control = buttons[i + 1] if i + 1 < buttons.size() else grid
+			assert_eq(down, want, "x%.1f: down from stop %d" % [scale, i + 1])
+		# Focus lights the sticker.
+		var last := buttons[buttons.size() - 1] as Button
+		last.grab_focus()
+		await _frames(2)
+		assert_eq(ov.hover_id, choices[choices.size() - 1], "x%.1f: the focused stop lights its sticker" % scale)
+		assert_lt(ov._hi.get_index(), ov._tags.get_index(), "the focus ring draws under the labels")
+		Settings.set_text_scale(1.0)
+		scene.get_parent().queue_free()
+		await _frames(1)
+
+
+func test_enter_on_a_focused_stop_picks_that_choice() -> void:
 	var scene := _netrun()
-	await _frames()
-	var ov := _overlay(scene)
+	await _frames(4)
 	var s := RunManager.netrun
 	var choices: Array = scene.view_choices(s)
 	var buttons: Array = scene._route_buttons
-	assert_eq(buttons.size(), choices.size(), "one row per choice")
-	for i in choices.size():
-		var n := ov._node_dict(choices[i])
-		assert_eq(int(n.get("number", 0)), i + 1, "row %d is the map's choice %d" % [i + 1, i + 1])
-		assert_eq((buttons[i] as Button).focus_mode, Control.FOCUS_ALL, "row %d takes the pad's focus" % (i + 1))
-	for n in ov.nodes:
-		if int(n.get("number", 0)) > 0:
-			assert_true(choices.has(n["id"]), "every numbered node has its row")
+	var last := buttons[buttons.size() - 1] as Button
+	last.grab_focus()
+	await _frames(1)
+	# Enter / A (ui_accept) on the focused stop is its press: the choice is asked for.
+	var asked := [false]
+	last.pressed.connect(func() -> void: asked[0] = true)
+	var press := InputEventAction.new()
+	press.action = &"ui_accept"
+	press.pressed = true
+	Input.parse_input_event(press)
+	var release := InputEventAction.new()
+	release.action = &"ui_accept"
+	Input.parse_input_event(release)
+	await _frames(1)
+	assert_true(asked[0], "Enter / A picks the focused choice")
+	assert_true(s.run.current_node_id == choices[choices.size() - 1] or s.run.visited.has(choices[choices.size() - 1]),
+		"the run goes to that choice (%s)" % s.run.current_node_id)
+
+
+# --- The dossier's letterhead (ROUTE-02 follow-up) ----------------------------------------------
+
+func test_the_dossier_letterhead_keeps_every_word_whole_at_each_text_size() -> void:
+	var scene := _netrun(&"meridian")
+	await _frames()
+	for scale in SCALES:
+		Settings.set_text_scale(scale)
+		await _frames(2)
+		var d: OperativeDossier = scene.dossier
+		var w := d.size.x
+		var lines := d.sub_lines(w)
+		assert_eq(" ".join(lines), d.sub_text(), "x%.1f: every word of the sub line is there, in order" % scale)
+		var fs := maxi(roundi(OperativeDossier.SUB_FONT * scale), 1)
+		for line in lines:
+			var lw := RouteInk.paper_font().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			assert_lte(lw, w - OperativeDossier.MARGIN * scale * 2.0 + 0.5, "x%.1f: '%s' fits the file" % [scale, line])
+		assert_gte(d.size.y, d.get_combined_minimum_size().y, "x%.1f: the file is as tall as its lines" % scale)
 
 
 # --- ROUTE-05: the key strip -------------------------------------------------------------------
