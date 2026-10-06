@@ -730,10 +730,21 @@ func fed_network() -> CityNetworkData:
 var _fed_network: CityNetworkData = null
 
 
+## B4 (HQ idle, review D7; additive, off by default): the ground decal draws a node disc only
+## for the Sites the map pins (and the selection): a hidden Site leaves no disc behind it.
+var decal_shown_only: bool = false
+
+
 ## ART-5 5a: this map's network as the decal's buffers (the nodes on their lots, the links
 ## along their street routes).
 func network_data() -> CityNetworkData:
-	return CityNetworkData.from_graph(CityView3D.CONFIG, nodes, edges, func(id: StringName) -> Vector2i: return lot_of(id),
+	var shown: Array[Dictionary] = nodes
+	if decal_shown_only:
+		shown = []
+		for n in nodes:
+			if n["id"] == selected_id or not n.has("marker") or bool(n["marker"].get("pinned", true)):
+				shown.append(n)
+	return CityNetworkData.from_graph(CityView3D.CONFIG, shown, edges, func(id: StringName) -> Vector2i: return lot_of(id),
 		func(k: int) -> PackedVector2Array: return _routes[k] if k < _routes.size() else PackedVector2Array())
 
 
