@@ -123,10 +123,10 @@ static func draw_terminal_panel(ci: CanvasItem, r: Rect2, edge: Color = TERMINAL
 	var c := minf(CHAMFER * Settings.text_scale, minf(r.size.x, r.size.y) * 0.4)
 	var pts := PackedVector2Array([r.position, Vector2(r.end.x - c, r.position.y), Vector2(r.end.x, r.position.y + c),
 		r.end, Vector2(r.position.x, r.end.y)])
-	ci.draw_colored_polygon(pts, bg)
+	ci.draw_colored_polygon(pts, PaletteSkins.chrome(bg))  # ART-12 12s: the skin's glass and edge
 	var closed := pts.duplicate()
 	closed.append(pts[0])
-	ci.draw_polyline(closed, edge, EDGE_PX, true)
+	ci.draw_polyline(closed, PaletteSkins.chrome(edge), EDGE_PX, true)
 
 
 ## Small HUD glyphs (1C seam: the glyph atlas replaces these drawn marks). `kind`: "shield",

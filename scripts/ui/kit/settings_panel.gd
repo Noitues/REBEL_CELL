@@ -28,6 +28,8 @@ const HIGH_CONTRAST_WORDS := "High contrast (opaque panels, 7:1 text, thick edge
 const COLORBLIND_HEADING := "Colour-blind correction (patterns and glyphs stay the main cue)" # TR
 const RESOLVE_SPEED_HEADING := "Resolve speed after SEND IT (hold Fast-forward to speed it up)" # TR
 const GLYPH_HEADING := "Pad button glyphs" # TR
+## ART-12 12s: the palette skin row (Display); its choices are PaletteSkins.WORDS.
+const SKIN_HEADING := "Interface skin (terminal colours only; meanings and layout stay)" # TR
 ## Every word the W9 rows add (tests check each has a strings.csv key and no mouse wording).
 const W9_WORDS := COLORBLIND_WORDS + RESOLVE_SPEED_WORDS + GLYPH_WORDS + [REDUCE_MOTION_WORDS, HIGH_CONTRAST_WORDS,
 	COLORBLIND_HEADING, RESOLVE_SPEED_HEADING, GLYPH_HEADING, "Fast-forward the resolve (hold)"]
@@ -47,6 +49,8 @@ var high_contrast_check: CheckButton
 var colorblind_option: OptionButton
 var resolve_speed_option: OptionButton
 var glyph_option: OptionButton
+## ART-12 12s: the palette skin picker (Display).
+var skin_option: OptionButton
 var flash_check: CheckButton
 ## ART-0 D11: the Heat glitch extra (off by default).
 var heat_glitch_check: CheckButton
@@ -110,6 +114,7 @@ func _init() -> void:
 	high_contrast_check.name = "HighContrastCheck"
 	colorblind_option = _choice("ColorblindOption", COLORBLIND_WORDS, Settings.COLORBLIND_MODES, Settings.colorblind_mode, Settings.set_colorblind_mode)
 	resolve_speed_option = _choice("ResolveSpeedOption", RESOLVE_SPEED_WORDS, Settings.RESOLVE_SPEEDS, Settings.resolve_speed, Settings.set_resolve_speed)
+	skin_option = _choice("SkinOption", PaletteSkins.WORDS, Settings.PALETTE_SKINS, Settings.palette_skin, Settings.set_palette_skin)
 	glyph_option = _choice("GlyphOption", GLYPH_WORDS, Settings.PAD_GLYPH_SETS, Settings.pad_glyph_set, Settings.set_pad_glyph_set)
 	subtitles_check = _check(tr("Subtitles with speaker names"), Settings.subtitles, Settings.set_subtitles)
 	typing_check = _check(tr("Subtitles type in (off: each line shows at once)"), Settings.subtitle_typing, Settings.set_subtitle_typing)
@@ -179,7 +184,8 @@ func show_section(name: String) -> void:
 					_labelled(tr("Text scale")), scale_slider]:
 				_body.add_child(w)
 		"Display":
-			for w in [_labelled(tr("Window mode")), mode_option, _labelled(tr("Resolution (windowed)")), resolution_option, vsync_check, fps_check, legend_check, all_nodes_check, log_check]:
+			for w in [_labelled(tr("Window mode")), mode_option, _labelled(tr("Resolution (windowed)")), resolution_option, vsync_check, fps_check, legend_check, all_nodes_check, log_check,
+					_labelled(tr(SKIN_HEADING)), skin_option]:
 				_body.add_child(w)
 		"Audio":
 			for w in [_labelled(tr("Master volume")), master_slider, _labelled(tr("Music volume")), music_slider, _labelled(tr("SFX volume")), sfx_slider]:
@@ -224,7 +230,7 @@ func show_section(name: String) -> void:
 func _persistent() -> Array[Control]:
 	return [reduce_check, flash_check, heat_glitch_check, subtitles_check, typing_check, assist_check, scale_slider, master_slider, music_slider,
 		sfx_slider, mode_option, resolution_option, vsync_check, fps_check, legend_check, log_check, all_nodes_check, language_option,
-		reduce_motion_check, high_contrast_check, colorblind_option, resolve_speed_option, glyph_option]
+		reduce_motion_check, high_contrast_check, colorblind_option, resolve_speed_option, glyph_option, skin_option]
 
 
 ## ANIM-R4 C3: the built widgets of the sections not showing are off the tree, so the
