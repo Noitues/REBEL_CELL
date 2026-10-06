@@ -129,8 +129,9 @@ extends Resource
 ## Per corporation, in place of backdrop_tint (Halcyon's deep violet night sits under the
 ## concept band without a little more light).
 @export var backdrop_tint_by_corp: Dictionary = {&"halcyon": Color(1.1, 1.12, 1.14)}
-## ... and its saturation toward the grey (1 = kept): the concept's rain-calmed neon.
-@export var backdrop_saturation: float = 0.72
+## ... and its saturation toward the grey (1 = kept). B2 (art director): 1: the 0.6 cap is the wheel
+## pools' only (UiScrimPools); between the wheels the subject and its neon keep full saturation.
+@export var backdrop_saturation: float = 1.0
 ## Concept-derived band for the settled close-up's mean relative luminance (linear, the frame
 ## between the top bar's and the hand's bands): the night stills (bakes of the concept
 ## generators) measure 0.053 (Solace HQ) .. 0.187 (Solace Site); main before the fix 0.017 .. 0.049.
@@ -169,14 +170,29 @@ extends Resource
 @export var backdrop_close_pitch_deg: float = 8.0
 @export var backdrop_close_fov_deg: float = 44.0
 @export var backdrop_haze_k: float = 0.18
+## B2 (art director): the close-up's rain: thin streaks at this strength that never lift the blacks.
+@export var backdrop_rain_alpha: float = 0.15
 ## B2 (D1): the low camera's view cut (BackdropCatalog.view_cut): buildings nearer the eye than the subject's near face
 ## less this margin (BU), in the wedge to its sides widened by it, give way where they rise over the sight line.
 @export var backdrop_close_cut_margin: float = 6.0
 ## B2 (D1): the cut keeps the sight line from the eye to this share of the subject's height clear
-## (lower roofs stay in front of it).
-@export var backdrop_close_sight_share: float = 0.2
+## (0, B2 art director: its foot: an open street in front of the subject; lower roofs stay).
+@export var backdrop_close_sight_share: float = 0.0
 ## B2 (D1): how far past the subject (BU) the close-up still draws the city (its camera's far plane).
 @export var backdrop_close_far_bu: float = 1400.0
+## B2 (art director): a Site fight's subject building between the wheels: its middle at this
+## share of the view, its height this share of the view's (35-45 %), its width at most this share.
+@export var backdrop_site_close_centre: Vector2 = Vector2(0.5, 0.45)
+@export var backdrop_site_close_height: float = 0.4
+@export var backdrop_site_close_max_width: float = 0.6
+## ... and a low building's telephoto: the eye at least this far (BU) from it, the lens no narrower.
+@export var backdrop_site_close_min_eye_bu: float = 180.0
+@export var backdrop_site_close_min_fov_deg: float = 10.0
+## ... and its focus: the city outside the block dims by this share, the ellipse (the block's
+## shape) reaching this times its half width, the block lit by this factor.
+@export var backdrop_site_focus_dim: float = 0.55
+@export var backdrop_site_focus_reach: float = 1.2
+@export var backdrop_site_focus_lift: float = 1.5
 ## A Site fight's subject when the model has not measured the Site's building yet: a block of
 ## this many lots round the Site's point (half width) and this tall (BU); an HQ with no
 ## landmark is a block of backdrop_site_hq_height over its HQ lots.

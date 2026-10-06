@@ -54,6 +54,9 @@ uniform float focus_radius = 0.24;
 uniform float focus_blur = 2.0;
 uniform float focus_dim = 0.0;
 uniform float focus_lift = 1.0;
+// B2 (art director): the focus ellipse's axes (x = 1: focus_radius across; y: its height over
+// its width), so a tall Site block is lit as itself.
+uniform vec2 focus_axes = vec2(1.0, 1.0);
 
 vec3 graded(vec3 c) {
 	if (!city_grade) {
@@ -83,7 +86,7 @@ void fragment() {
 	// S-ARENA round 2: outside the subject's ellipse the close-up softens and dims (focus_dim 0: off).
 	float away = 0.0;
 	if (focus_dim > 0.0) {
-		vec2 df = (UV - focus_at) * vec2(1.0, 1.0 / aspect);
+		vec2 df = (UV - focus_at) * vec2(1.0, 1.0 / aspect) / max(focus_axes, vec2(0.001));
 		away = 1.0 - exp(-pow(length(df) / max(focus_radius, 0.001), pool_falloff));
 	}
 	vec3 col = base.rgb;
