@@ -137,6 +137,7 @@ func test_the_dump_scrolls_slowly() -> void:
 func test_the_holo_uniforms_are_the_reviews() -> void:
 	Settings.reduce_effects = false
 	var h := DecryptedHoloPanel.new()
+	h.corp_color = Palette.CORP_MERIDIAN  # B4: the measured shares are round 44's Meridian file's
 	h.size = Vector2(300, 200)
 	add_child_autofree(h)
 	var mat := h.get_child(1, true).material as ShaderMaterial

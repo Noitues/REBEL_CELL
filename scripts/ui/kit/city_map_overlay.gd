@@ -735,10 +735,32 @@ func fed_network() -> CityNetworkData:
 var _fed_network: CityNetworkData = null
 
 
+## B4 (art director's ruling: the HQ's selection marker is its vignette and its one tag; the
+## lime ring and roof outline only under pad / keyboard focus; additive, on by default): false
+## hides the selected node's ring and roof outline.
+var select_ring_shown: bool = true:
+	set(v):
+		if v != select_ring_shown:
+			select_ring_shown = v
+			if _hi != null:
+				_hi.queue_redraw()
+
+
+## B4 (HQ idle, review D7; additive, off by default): the ground decal draws a node disc only
+## for the Sites the map pins (and the selection): a hidden Site leaves no disc behind it.
+var decal_shown_only: bool = false
+
+
 ## ART-5 5a: this map's network as the decal's buffers (the nodes on their lots, the links
 ## along their street routes).
 func network_data() -> CityNetworkData:
-	return CityNetworkData.from_graph(CityView3D.CONFIG, nodes, edges, func(id: StringName) -> Vector2i: return lot_of(id),
+	var shown: Array[Dictionary] = nodes
+	if decal_shown_only:
+		shown = []
+		for n in nodes:
+			if n["id"] == selected_id or not n.has("marker") or bool(n["marker"].get("pinned", true)):
+				shown.append(n)
+	return CityNetworkData.from_graph(CityView3D.CONFIG, shown, edges, func(id: StringName) -> Vector2i: return lot_of(id),
 		func(k: int) -> PackedVector2Array: return _routes[k] if k < _routes.size() else PackedVector2Array())
 
 
@@ -1283,7 +1305,7 @@ func _draw_hi() -> void:
 			city.stamp_avoid = stamp_avoid_rects()
 		city.draw_marks_on(_hi, false, true)
 	# The selected node's roof outline, drawing on (ANIM-5; ANIM-R2 R9: on this layer).
-	if city != null and selected_id != &"" and _lots.has(selected_id):
+	if city != null and selected_id != &"" and _lots.has(selected_id) and select_ring_shown:
 		var rec := _roof(selected_id)
 		if not rec.is_empty():
 			var closed: PackedVector2Array = (rec["roof"] as PackedVector2Array).duplicate()
@@ -1303,7 +1325,7 @@ func _draw_hi() -> void:
 			var d := Vector2.from_angle(PI * 0.25 + q * PI * 0.5)
 			_hi.draw_line(hc + d * hr, hc + d * (hr + HOVER_TICK * k), Palette.PAPER, 2.0 * k)
 	var at := ring_centre()
-	if at.x == INF:
+	if at.x == INF or not select_ring_shown:
 		return
 	var grow := lerpf(Motion.amplitude(&"select_ring_ease"), 1.0, ring_ease)
 	_hi.draw_arc(at, ring_radius() * grow + (sin(anim_t * TAU / maxf(Motion.entry(PULSE_MOTION).duration, 0.001)) - 1.0) * pulse_amplitude() * _k(), 0, TAU, 32, Color(Palette.CELL_ACID, ring_ease), 2.0 * _k())
