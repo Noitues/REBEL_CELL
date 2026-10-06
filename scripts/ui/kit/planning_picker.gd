@@ -41,6 +41,58 @@ static var _crests: Dictionary = {}
 func _init(p_tiles: Array[Dictionary] = [], p_columns: int = 0, p_tile_size: Vector2 = Vector2(176, 64), p_swatch: float = SWATCH_W) -> void:
 	swatch_base = p_swatch
 	super(p_tiles, p_columns, p_tile_size)
+	# B5 (review section f, round 44 `new_campaign.png`): the chosen tile is the cyan edge and its SELECTED tab
+	# (with the lime brackets on the pad's focus), never a solid fill.
+	fill_selected = false
+
+
+## B5 (review section c / f: "The corp tiles may show each corp's crest on a small holo chip (intel on the
+## target)"): each corp tile's crest sits on the kit's decrypted HOLO material (DecryptedHoloPanel: its corp tint,
+## scanlines, slow bands and RGB-split edge; no seal, no stamp, no scrim on a chip this small), by tile index.
+var _chips: Dictionary = {}
+## The crest's share of the chip and its glow (alpha, and how much bigger the glow copy is).
+const CHIP_CREST := 0.68
+const CHIP_GLOW_ALPHA := 0.45
+const CHIP_GLOW_GROW := 1.25
+
+
+## Tile `i`'s holo chip (made the first time it is drawn), placed over `box`.
+func _chip(i: int, corp: StringName, box: Rect2) -> DecryptedHoloPanel:
+	var chip: DecryptedHoloPanel = _chips.get(i)
+	if chip == null or not is_instance_valid(chip):
+		chip = DecryptedHoloPanel.new()
+		chip.name = "HoloChip%d" % i
+		chip.scrim = false
+		chip.backing = false
+		chip.seal = false
+		chip.corp_color = Palette.corp_color(corp)
+		chip.corporation = corp
+		chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		chip.stamp_slot.visible = false
+		var crest_c := Control.new()
+		crest_c.name = "Crest"
+		crest_c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		chip.content.add_child(crest_c)
+		crest_c.set_anchors_preset(Control.PRESET_FULL_RECT)
+		crest_c.draw.connect(_draw_chip_crest.bind(crest_c, corp))
+		add_child(chip)
+		_chips[i] = chip
+	if chip.position != box.position or chip.size != box.size:
+		chip.position = box.position
+		chip.size = box.size
+	return chip
+
+
+func _draw_chip_crest(c: Control, corp: StringName) -> void:
+	var tex := crest(corp)
+	var tint := Palette.corp_color(corp)
+	var side := minf(c.size.x, c.size.y) * CHIP_CREST
+	var box := Rect2((c.size - Vector2(side, side)) * 0.5, Vector2(side, side))
+	if tex == null:
+		StatIcon.draw(c, c.size * 0.5, side * 0.5, StatIcon.MAP, DecryptedHoloPanel.ink(tint))
+		return
+	c.draw_texture_rect(tex, box.grow(side * (CHIP_GLOW_GROW - 1.0) * 0.5), false, Color(tint, CHIP_GLOW_ALPHA))
+	c.draw_texture_rect(tex, box, false, DecryptedHoloPanel.ink(tint))
 
 
 ## Corporation `corp_id`'s crest mask (white), loaded once; null when it has none.
@@ -70,11 +122,17 @@ func _draw_swatch(i: int, sw: Rect2, st: StringName, chosen: bool, locked: bool)
 		var corp := StringName(t["corp"])
 		var redacted := bool(t.get("redacted", false))
 		var hue := Palette.DISABLED if locked or redacted else Palette.corp_color(corp)
-		draw_rect(Rect2(sw.position, Vector2(STRIPE_W * s, sw.size.y)), hue)
-		var block := Rect2(sw.position + Vector2(STRIPE_W * s + PAD * 0.5, 0.0), Vector2(sw.size.x - STRIPE_W * s - PAD * 0.5, sw.size.y))
-		draw_rect(block, Palette.NIGHT_SKY)
+		var block := Rect2(sw.position, sw.size)
 		var side := minf(block.size.x, block.size.y) * CREST_SHARE
 		var box := Rect2(block.get_center() - Vector2(side, side) * 0.5, Vector2(side, side))
+		if not (locked or redacted):
+			# B5: an open corporation's crest on its holo chip (the intel the Cell holds on the target).
+			var sq := minf(block.size.x, block.size.y)
+			_chip(i, corp, Rect2(block.position + Vector2(0.0, (block.size.y - sq) * 0.5), Vector2(sq, sq))).visible = true
+			return
+		if _chips.has(i) and is_instance_valid(_chips[i]):
+			(_chips[i] as Control).visible = false
+		draw_rect(block, Palette.NIGHT_SKY)
 		if redacted:
 			var f := Palette.display()
 			var px := roundi(side)

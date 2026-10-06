@@ -17,8 +17,11 @@ const SHADOW_LAYERS := 3
 const SHADOW_ALPHA := 0.22
 ## The clip (px at 1.0): its width and height, and how far it rises over the paper's top edge.
 const CLIP_W := 13.0
-const CLIP_H := 34.0
+const CLIP_H := 24.0
 const CLIP_RISE := 10.0
+## How far the clip bites into the sheet (px at 1.0): the sheet keeps its top padding this deep so
+## the letterhead starts below the jaw (D24).
+const CLIP_BITE := CLIP_H - CLIP_RISE
 ## The clip's wire widths (px at 1.0) and the shade under it.
 const CLIP_WIRE := 2.0
 const CLIP_UNDER := 3.0

@@ -73,6 +73,7 @@ static func make_pair(button: int, verb: String) -> HBoxContainer:
 	l.text = verb
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l.add_theme_color_override("font_color", Palette.CELL_ACID)
+	Chrome.keyline(l)  # B5 (B1a b Q2): prompts sit over the world: the ink keyline
 	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	pair.add_child(l)
 	return pair

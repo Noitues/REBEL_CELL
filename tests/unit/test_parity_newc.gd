@@ -287,3 +287,17 @@ func test_the_page_fits_at_every_text_scale() -> void:
 				assert_true(p.meta_lines(i).size() <= TilePicker.META_LINES, "%s tile %d: meta in two lines at %.1f" % [pick_name, i, scale])
 		hq.queue_free()
 		await _frames(1)
+
+
+## Art director B5 fix 3 (round 44 `new_campaign.png`): at 1.0 the target and home-server tiles are one row of five
+## each and the crew shows on the screen without scrolling, beside the right column.
+func test_at_1_0_targets_and_homes_are_one_row_of_five_and_the_crew_shows() -> void:
+	Settings.set_text_scale(1.0)
+	var hq := await _open()
+	await _frames(3)
+	for pick_name in ["CorporationPicker", "HomePicker"]:
+		var p := _pick(hq, pick_name)
+		assert_eq(p.column_count(), mini(5, p.tiles.size()), "%s: one row of five" % pick_name)
+	var crew := _pick(hq, "ClassPicker")
+	assert_lte(crew.get_global_rect().end.y, 720.0, "the crew on screen without scrolling")
+	assert_true(crew.is_visible_in_tree())

@@ -232,6 +232,20 @@ static func sync_hex(mat: ShaderMaterial, tint: Color, on: bool, hex_seed: int) 
 	mat.set_shader_parameter(&"hex_tint", tint)
 
 
+## B5 (B1c review follow-up 2): puts this glass behind `owner` (an internal child drawn before the owner's own
+## drawing, full rect) in place of the shared `crt_panel` material: the owner gets the navy glass, scanlines, the
+## accent edge glow and the hex dump that fades under its words (`text_scope` = the owner). `accent` is the
+## edge's colour (the Cell's cyan follows the skin; a corp colour stays). The owner's own material is cleared;
+## the owner draws only its edge, header and words over it. Returns the glass.
+static func behind(owner: Control, accent_color: Color = Palette.NET_CYAN) -> CrtTerminalPanel:
+	var g := HudSkin.crt_backing(owner)
+	g.accent_kind = Accent.CORP
+	g.corp_color = accent_color
+	g.text_scope = owner
+	owner.material = null
+	return g
+
+
 ## The hex dump's character cell (px): the mono advance and line height at HEX_GLYPH_PX.
 static func hex_cell() -> Vector2:
 	var font := Palette.mono()

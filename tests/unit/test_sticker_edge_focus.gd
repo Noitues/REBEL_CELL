@@ -180,4 +180,5 @@ func test_focus_on_every_sticker_wrapper_reaches_the_vinyl_or_the_shader() -> vo
 			assert_true(bool(b.get("_focused")), "and the curl is drawn")
 	art.release_focus()
 	await _frames(2)
-	assert_false(bool(art.get("_focused")), "off focus: no curl")
+	assert_not_null(art.vinyl, "B5 follow-up 1: the baked art is shown by a kit sticker")
+	assert_eq(art.vinyl.state, VinylSticker.State.REST, "off focus: no curl")

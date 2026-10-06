@@ -55,7 +55,10 @@ func show_deck() -> void:
 
 func show_spinner() -> void:
 	tab = "SPINNER"
-	var view := SpinnerView.new(op.slot_slice_ids, op.slot_firmware_ids, lookup, tr("LOADOUT // %s // SPINNER") % op.name.to_upper(), "", upgrades)
+	var view := SpinnerView.new(op.slot_slice_ids, op.slot_firmware_ids, lookup, tr("LOADOUT // %s // SPINNER // %d SLICES") % [op.name.to_upper(), op.slot_slice_ids.size()], "", upgrades)
+	# B5 (review section c: "the spinner tab should show the D4 wheel at r = 220 on a dimmed backdrop, not a mini
+	# wheel"; round 44 `deck_viewer_spinner.png`): the combat's own wheel (WheelView), the slices as glyph rows.
+	view.use_d4(display_combatant(op, lookup))
 	_swap(view)
 	var core := core_of(op, lookup)
 	view.set_core(core["hub"], core["ring"])
@@ -158,6 +161,32 @@ static func core_of(p_op: OperativeState, p_lookup: ContentLookup) -> Dictionary
 					seg = s
 			ring.append(seg)
 	return {"hub": hub, "ring": ring}
+
+
+## B5: the operative's wheel as it fights (its slices, Firmware, hub core and inner ring with the Rank 3 swaps), as a
+## display-only CombatantState for the combat's WheelView (no fight starts; nothing of the operative changes).
+static func display_combatant(p_op: OperativeState, p_lookup: ContentLookup) -> CombatantState:
+	var p := CombatantState.new()
+	p.id = &"player"
+	p.is_player = true
+	var cls := p_lookup.get_content(p_op.class_id) as ClassData
+	if cls == null or cls.starting_wheel == null:
+		return p
+	p.source_id = cls.id
+	p.display_name = cls.display_name
+	p.max_hp = maxi(1, p_op.max_hp)
+	p.hp = clampi(p_op.hp, 0, p.max_hp)
+	var inner := cls.starting_wheel.inner_ring
+	var best := 0
+	for reward in cls.rank_rewards:
+		if reward != null and reward.inner_ring != null and reward.rank <= p_op.rank and reward.rank > best:
+			best = reward.rank
+			inner = reward.inner_ring
+	p.wheel = WheelState.from_wheel_data(cls.starting_wheel, inner, p_op.slot_slice_ids, p_op.slot_firmware_ids, p_op.ring_segment_ids)
+	var hub_id := p_op.hub_id(cls)
+	if hub_id != &"":
+		p.wheel.hub_id = hub_id
+	return p
 
 
 func _swap(view: Control) -> void:

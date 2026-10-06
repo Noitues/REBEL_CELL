@@ -231,7 +231,9 @@ func test_system_dialog_glass_follows_the_skin_live() -> void:
 		var redrawn := await BoundedWait.until(get_tree(), func() -> bool: return Color(glass.color, 1.0) == want, 2.0)
 		assert_true(redrawn, "%s: the open dialog redraws in the skin" % skin)
 		assert_eq(Color(glass.color, 1.0), want, "%s dialog glass" % skin)
-		assert_almost_eq(glass.color.a, 0.97, 0.001, "%s keeps the glass alpha" % skin)
+		# B5 (B1c follow-up 2, expectation changed on purpose): the kit's CRT glass behind it is the fill; this rect
+		# stays clear (its colour still follows the skin).
+		assert_almost_eq(glass.color.a, 0.0, 0.001, "%s keeps the rect clear over the kit glass" % skin)
 		assert_eq(paper_rect.color, paper_before, "%s leaves paper alone" % skin)
 
 

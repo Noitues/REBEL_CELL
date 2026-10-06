@@ -481,7 +481,7 @@ func test_route_shop_event_loot_words_are_translated_once() -> void:
 	for n in _all(scene._panel):
 		if n is GraffitiTag:
 			assert_true((n as GraffitiTag).text.begins_with(PSEUDO_PREFIX), "LOOT: pick a card translated")
-	assert_true(String(scene.hud._title).begins_with(PSEUDO_PREFIX), "BREACH PAYOUT translated")
+	assert_eq(String(scene.hud._title), "", "B5 (D8): no bar title on the loot (the page's FIGHT WON sticker; PAYOUT is the terminal's word)")
 	await _close(scene)
 
 
@@ -1014,17 +1014,22 @@ func test_the_top_bar_says_whose_numbers_it_shows() -> void:
 	var words := []
 	for cp in rs.captions:
 		words.append(cp[1])
-	# B3 (round 44 `topbar_by_page.png`): the route page's strip is Heat, HP and Cycles, no groups;
-	# the run's other pages keep the campaign's numbers, then the run's.
+	# B3 (round 44 `topbar_by_page.png`): the route page's strip is Heat, HP and Cycles, no groups.
 	assert_true(words.is_empty(), "the route page: HP and Cycles only, no group captions")
-	scene._refresh_status()
+	# B5 (review section f, art director ruling: the Mainframe bar is Cycles + the Heat gauge): the Mainframe's strip
+	# is its Cycles only, so no group captions split it either.
 	RunManager.netrun.run.phase = RunState.Phase.SHOP
 	scene._refresh_status()
 	words.clear()
 	for cp in rs.captions:
 		words.append(cp[1])
-	assert_eq(words, ["CAMPAIGN", "THIS RUN"], "a run's other page: the campaign's numbers, then the run's")
+	assert_eq(words, [], "the Mainframe: Cycles only, no group captions")
+	var shop_tags := []
+	for it in rs.items:
+		shop_tags.append(String(it[0]))
+	assert_eq(shop_tags, ["CYCLES"], "the Mainframe's strip")
 	RunManager.netrun.run.phase = RunState.Phase.MAP
+	scene._refresh_status()
 	for i in rs.items.size():
 		assert_ne(String(rs.items[i][3]), "", "run tag %s has a tooltip" % rs.items[i][0])
 	await _close(scene)

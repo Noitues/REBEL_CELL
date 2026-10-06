@@ -237,11 +237,13 @@ func test_the_slots_page_is_three_case_files_in_one_panel() -> void:
 	var summary := RunManager.slot_summary("1")
 	var name_l := used.find_child("CorpName", true, false) as Label
 	assert_eq(name_l.text, t.corporation_name(String(summary["corporation"])).to_upper(), "the corporation's name")
-	assert_eq(name_l.get_theme_font(&"font"), Palette.paper_bold(), "typed in Courier Prime Bold (corp paper, no stencil)")
+	assert_eq(name_l.get_theme_font(&"font"), Palette.mono(), "B5 (round 44, D21): printed in the Cell's mono (its own file, no corp letterhead)")
 	assert_eq(int(used.find_child("HeatBar", true, false).get_meta(&"heat")), int(summary["heat"]), "the Heat bar")
 	assert_eq((used.find_child("HeatValue", true, false) as Label).text, str(int(summary["heat"])), "and its number")
-	assert_not_null(used.find_child("Emblem", true, false), "the corporation's emblem disc")
+	assert_not_null(used.find_child("Crest", true, false), "B5: the corporation's crest in ink beside its name")
 	assert_not_null(CorpSeal.emblem(StringName(String(summary["corporation"]))), "the art pass's emblem asset")
+	assert_not_null(used.tab_clip, "B5 (D21): the Cell's terminal tab clip on the tab")
+	assert_true(used.stamp != null and used.stamp.baked(), "B5 (D21): the Cell's own rubber stamp, the concept's image")
 	for n in ["Ice", "Runs", "LastPlayed"]:
 		assert_not_null(used.find_child(n, true, false), "the %s field" % n)
 	var chips := used.find_children("Crew_*", "CrewChip", true, false)
@@ -280,8 +282,8 @@ func test_load_and_delete_are_stickers_and_delete_says_cant_undo_in_pencil() -> 
 	for c: CaseFileCard in cards:
 		var del := c.delete_button as VerbSticker
 		assert_not_null(del, "DELETE is a sticker")
-		assert_true(del.uses_art() and del.art_key == CaseFileCard.DELETE_ART, "4C's baked DELETE sticker")
-		assert_lte(del.size.y, CaseFileCard.DELETE_ART_SCALE * 100.0, "at about LOAD's size, not the dialog's (93 px)")
+		assert_eq(del.fill, VerbSticker.Fill.WHITE, "B5 (round 44): DELETE is the neutral white vinyl (not the page's verb)")
+		assert_lte(del.size.y, c.load_button.size.y, "smaller than LOAD")
 		var note := c.cant_undo
 		assert_not_null(note, "Can't Undo in grease pencil at 1.0")
 		assert_eq(note.text.replace("
@@ -292,6 +294,8 @@ func test_load_and_delete_are_stickers_and_delete_says_cant_undo_in_pencil() -> 
 		var head: Vector2 = note.get_global_transform() * note.arrow_to
 		assert_lt(head.x, del.get_global_rect().position.x, "the arrow stops short of DELETE (no UI over pencil)")
 		assert_gt(head.x, del.get_global_rect().position.x - 45.0, "pointing at it")
+		assert_true(head.y > del.get_global_rect().position.y and head.y < del.get_global_rect().end.y, "B5 (round 44): up to DELETE's side from under it")
+		assert_gt(note.global_position.y + note.text_size().y, del.get_global_rect().get_center().y, "the words sit low, under-left of DELETE")
 		assert_eq(PencilLint.violations(c).size(), 0, "nothing in the card covers the pencil: %s; load %s del %s row %s" % [PencilLint.violations(c), c.load_button.size, c.delete_button.size, c.delete_button.get_parent().size])
 	# The paper sliver is the art pass's print stock.
 	assert_not_null(CaseFileCard.print_stock(), "the art pass's paper stock")
@@ -338,8 +342,10 @@ func test_slots_fit_and_focus_reaches_every_action_at_every_text_scale() -> void
 				for l in c.folder.find_children("*", "Label", true, false):
 					var r := (l as Control).get_global_rect()
 					assert_true(f.grow(1.0).encloses(r), "%d used, %.1f slot %s: '%s' %s inside its folder %s" % [used, scale, c.slot, (l as Label).text, r, f])
+				# B5 (D24): the folder lies tilted round its centre; the actions sit under its laid-out (straight) rect.
+				var straight := Rect2(c.global_position + c.folder.position, c.folder.size)
 				for a in c.actions():
-					assert_lte(a.get_global_rect().end.x, f.end.x + 1.0, "%.1f slot %s: %s under its folder" % [scale, c.slot, a.name])
+					assert_lte(a.get_global_rect().end.x, straight.end.x + 1.0, "%.1f slot %s: %s under its folder" % [scale, c.slot, a.name])
 				if c.delete_button == null:
 					continue
 				# The pencil up to 1.6; at 2.0 its words move into DELETE's tooltip.
@@ -449,7 +455,7 @@ func test_the_codex_and_stats_pages_fit_over_the_ticker_at_every_text_scale() ->
 					assert_lte(c.get_global_rect().end.y, floor_y + 1.0, "%s above the ticker at %.1f" % [n, scale])
 			var back: Control = null
 			for b in p.find_children("*", "Button", true, false):
-				if (b as Button).text == tr("Back"):
+				if (b as Button).name == "Back":
 					back = b
 			assert_not_null(back, "%s has its Back" % page)
 			if back != null:
@@ -564,7 +570,7 @@ func test_the_sign_is_the_concept_art_and_loops_its_lit_states() -> void:
 	var b := VerbSticker.new("BREACH", VerbSticker.Fill.PINK, 36.0, 0.0, "breach")
 	h.add_child(b)
 	await _frames(1)
-	assert_true(b.uses_art() and b.vinyl == null, "BREACH is the concept's sticker art")
+	assert_true(b.uses_art() and b.vinyl != null and b.vinyl.is_baked(), "BREACH is the concept's sticker art, shown by a kit sticker (B5 follow-up 1)")
 	assert_true(UiMotionData.REQUIRED_IDS.has(NeonSign.MOTION))
 	for id in [VerbSticker.HOVER_MOTION, VerbSticker.PRESS_MOTION, VerbSticker.GLITCH_MOTION, OnAirTicker.MOTION]:
 		assert_true(UiMotionData.REQUIRED_IDS.has(id), "%s is required" % id)

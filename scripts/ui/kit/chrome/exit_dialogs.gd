@@ -48,11 +48,12 @@ static func abandon_campaign(p: Dictionary, corporation: String) -> AbandonDialo
 static func quit(in_run: bool) -> ConfirmDialog:
 	var body := tr_word("Your run is saved where it is: BREACH on the title picks it up.") if in_run \
 		else tr_word("Your campaign is saved: BREACH on the title picks it up.")
-	var d := ConfirmDialog.new(tr_word("Quit REBEL_CELL?"), TextDb.mark("QUIT"), TextDb.mark("CANCEL"), TextDb.mark("QUIT"), body, false,
-		TextDb.mark("save and quit"), TextDb.mark("keep going"))
+	# B5 (review section c): the safe answer is the yellow KEEP GOING sticker; quitting is a cyan terminal button.
+	var d := ConfirmDialog.new(tr_word("Quit REBEL_CELL?"), TextDb.mark("QUIT"), TextDb.mark("KEEP GOING"), TextDb.mark("QUIT"), body, false,
+		"", "")
 	d.name = "QuitConfirm"
-	# The key hints ride as the stickers' keys, so they stay at big text (where the line drops).
-	_hint(d.yes_button, "[A]")
+	d.use_terminal_yes(TextDb.mark("SAVE & QUIT"), "[A]")
+	# The key hint rides as the sticker's key, so it stays at big text (where the line drops).
 	_hint(d.no_button, "[B]")
 	return d
 

@@ -13,6 +13,10 @@ uniform float tint_mix : hint_range(0.0, 1.0) = 0.35;
 uniform float speed = 0.08;
 uniform float scan_strength : hint_range(0.0, 1.0) = 0.25;
 uniform float grain : hint_range(0.0, 0.5) = 0.08;
+// B5 (review D9: the CAM feed is never an empty box): the run's Site close-up itself (its still or its city
+// close-up's texture) when given, `src` then a rect of that picture's UV; else the screen copy as before.
+uniform sampler2D picture_tex : filter_linear;
+uniform bool use_picture = false;
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
@@ -21,7 +25,7 @@ float hash(vec2 p) {
 void fragment() {
 	float t = rc_time(TIME);
 	vec2 uv = src.xy + UV * src.zw;
-	vec3 c = texture(screen_tex, uv).rgb;
+	vec3 c = use_picture ? texture(picture_tex, uv).rgb : texture(screen_tex, uv).rgb;
 	float lum = dot(c, vec3(0.299, 0.587, 0.114));
 	c = mix(c, tint.rgb * (lum * 1.6 + 0.08), tint_mix);
 	c *= 1.0 - scan_strength * step(0.5, fract(FRAGCOORD.y / 3.0));

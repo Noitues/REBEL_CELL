@@ -20,8 +20,10 @@ var _action_button: DripButton = null
 var _popup: Control = null
 var close_button: Button
 var hint_label: Label
+## B5: the white liner sheet the deck's stickers sit on.
+var liner: LinerPanel = null
 ## The card grid's width, gap, and the fewest cards a row keeps at big text (px).
-const GRID_WIDTH := 860.0
+const GRID_WIDTH := 860.0 - LinerPanel.PAD.x * 2.0
 const GRID_GAP := 14.0
 ## ART-9 4A: the grid's edge inside the scroll (px): a focused sticker's outline stays in the glass.
 const GRID_EDGE := 6
@@ -55,13 +57,18 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	window.body.add_child(hint)
 	var scroll := ScrollContainer.new()
 	_scroll = scroll
-	scroll.custom_minimum_size = Vector2(880, 380)
+	scroll.custom_minimum_size = Vector2(880 - LinerPanel.PAD.x * 2.0, 380 - LinerPanel.PAD.y * 2.0 - LinerPanel.CAPTION_ROOM)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
-	window.body.add_child(scroll)
+	# B5 (review section c / f: "Put the cards on the white liner sheet"; round 44 `deck_viewer.png`): the deck's
+	# stickers sit in kiss-cut slots on the white liner, its print naming the sheet.
+	liner = LinerPanel.new(tr("LOADOUT SHEET  //  %d STICKERS") % deck.size(), tr("PEEL TO INSPECT"))
+	liner.name = "DeckLiner"
+	window.body.add_child(liner)
+	liner.body.add_child(scroll)
 	var grid := HFlowContainer.new()
 	grid.name = "DeckGrid"
-	grid.custom_minimum_size.x = 860
+	grid.custom_minimum_size.x = GRID_WIDTH
 	grid.add_theme_constant_override("h_separation", 14)
 	grid.add_theme_constant_override("v_separation", 14)
 	# room in the glass for a focused sticker's lift (`card_hover`) and its outline: the scroll
@@ -75,6 +82,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	room.add_theme_constant_override(&"margin_bottom", GRID_EDGE)
 	scroll.add_child(room)
 	room.add_child(grid)
+	liner.slots_host = grid
 	# Cards follow the text size (H21 #15) while a row still holds CARDS_PER_ROW of them, and
 	# show what they do as pictograms. S-CARDFACE (DECK-01): the row is filled (as many cards as fit
 	# at the text size, then grown to the grid's width) and centred: it left the right third empty.
@@ -158,7 +166,8 @@ const SHRED_GROW_MAX := 1.3
 ## The bottom row's height without the tile (the REMOVE lettering and its drips) and the
 ## least height the card grid keeps (px).
 const BOTTOM_ROOM := 64.0
-const SCROLL_MIN := 240.0
+## B5: the liner sheet round the grid takes its pad and caption from this floor (at text 2.0 the window fits the canvas).
+const SCROLL_MIN := 160.0
 var _bottom: HBoxContainer = null
 var _scroll: ScrollContainer = null
 
@@ -206,25 +215,25 @@ func _relabel() -> void:
 
 ## A header tab (the loadout view's DECK / SPINNER switch).
 func add_tab(text: String, on_pressed: Callable, active: bool = false) -> void:
-	var b := Button.new()
-	b.text = tr(text)
+	tab_row.add_child(tab_button(text, on_pressed, active, Palette.CELL_PINK))
+
+
+## B5 (round 44 `deck_viewer.png`): a loadout tab as the round 31 tab plate (MenuChip `tab`: the open one filled in
+## the window's accent), the same as the Codex's and Options' tabs. `text` is a key.
+static func tab_button(text: String, on_pressed: Callable, active: bool, accent: Color) -> MenuChip:
+	var b := MenuChip.new(TranslationServer.translate(text))
+	b.pre_translated = true
+	b.plate = &"tab"
 	b.name = "Tab" + text
-	# Same colours for both tabs: the active one is dark with a border, the other in
-	# reverse video (light block, dark text) without one.
-	var fg := Palette.TERMINAL_TEXT
-	var bg := PaletteSkins.chrome(Palette.TERMINAL_BG)
-	var style := UiTheme.box(bg if active else fg, fg if active else Color(0, 0, 0, 0), 2 if active else 0, 12, 4)
-	for st in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
-		b.add_theme_stylebox_override(st, style)
-	var ink := fg if active else bg
-	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color", "font_disabled_color"]:
-		b.add_theme_color_override(key, ink)
+	b.accent = accent
+	b.selected = active
+	b.set_meta(UiFocus.META_NO_SCALE, true)
 	if active:
 		b.focus_mode = Control.FOCUS_NONE
 		b.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
 		b.pressed.connect(on_pressed)
-	tab_row.add_child(b)
+	return b
 
 
 func _on_left(index: int) -> void:

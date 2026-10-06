@@ -15,7 +15,9 @@ extends Button
 ## Button gives it focus, presses and the lime focus halo. BLUE (the pictogram letter) and
 ## GLITCH have no kit fill yet, so they are drawn here with the kit's raster Anton.
 
-enum Fill { PINK, YELLOW, BLUE, GLITCH, GREY }
+## WHITE (B5, round 44 `b44.FILL_WHITE`): white vinyl lettering with the ink keyline, for a sticker that is not
+## the page's verb (pause secondaries, DELETE, a slogan); grey stays disabled.
+enum Fill { PINK, YELLOW, BLUE, GLITCH, GREY, WHITE, RED }
 
 const SHADER := preload("res://shaders/chrome/vinyl_sticker.gdshader")
 ## Motion entries: hover growth + gloss sweep, the press squash, the glitch bursts.
@@ -127,10 +129,11 @@ static func title_art(word: String) -> String:
 
 ## True when the kit's VinylSticker draws this fill (no baked art for it).
 func uses_kit() -> bool:
-	return art_key == "" and (fill == Fill.PINK or fill == Fill.YELLOW)
+	return art_key == "" and (fill == Fill.PINK or fill == Fill.YELLOW or fill == Fill.WHITE or fill == Fill.RED)
 
 
-## True when the concept's baked art draws it.
+## True when the concept's baked art draws it (B5, review follow-up 1: shown by a kit VinylSticker, so the focus
+## fold cuts its corner away and the adhesive back lies over the face, as on the kit stickers).
 func uses_art() -> bool:
 	return _art_rest != null
 
@@ -212,12 +215,12 @@ func complete_motion() -> void:
 
 func _ready() -> void:
 	MotionSkip.register_passive(self)
-	if uses_kit() and vinyl == null:
+	if (uses_kit() or uses_art()) and vinyl == null:
 		vinyl = VinylSticker.new()
 		vinyl.name = "Vinyl"
-		vinyl.fill = VinylSticker.Fill.YELLOW if fill == Fill.YELLOW else VinylSticker.Fill.PINK
+		vinyl.fill = kit_fill(fill)
 		vinyl.tilt_deg = tilt
-		vinyl.ambient_sweep = true
+		vinyl.ambient_sweep = ambient_sweep
 		vinyl.sweep_primary = sweep_primary
 		vinyl.seed = hash(text) % 997
 		add_child(vinyl)
@@ -268,6 +271,11 @@ func _fit() -> void:
 		var k := ART_TO_GAME * art_scale * clampf(Settings.text_scale, 1.0, SCALE_MAX)
 		custom_minimum_size = (_art_rest.get_size() * k).ceil()
 		size = custom_minimum_size
+		if vinyl != null:
+			vinyl.text = shown_text()  # its word (read by the lint and the screen reader); the image is drawn
+			vinyl.show_art(_art_rest, k, _art_body)
+			vinyl.position = -vinyl.art_rect().position  # the image's own frame is this button's
+			_show_burst()
 		_pivot()
 		queue_redraw()
 		return
@@ -423,12 +431,34 @@ func _process(delta: float) -> void:
 	if fill != Fill.GLITCH or not Motion.live(GLITCH_MOTION):
 		if _clock != 0.0:
 			_clock = 0.0
+			_show_burst()
 			queue_redraw()
 		return
 	var was := burst_phase()
 	_clock = fmod(_clock + delta, maxf(0.05, Motion.seconds(GLITCH_MOTION)))
 	if burst_phase() != was:
+		_show_burst()
 		queue_redraw()
+
+
+## The concept art's frame for the glitch's phase now (its burst frame, else the rest art) on the kit sticker.
+func _show_burst() -> void:
+	if vinyl == null or not uses_art():
+		return
+	var ph := burst_phase()
+	vinyl.set_art_texture(_art_bursts[ph] if ph >= 0 and ph < _art_bursts.size() else _art_rest)
+
+
+## The kit sticker's fill for a VerbSticker fill (concept art carries its own colours).
+static func kit_fill(f: int) -> VinylSticker.Fill:
+	match f:
+		Fill.YELLOW:
+			return VinylSticker.Fill.YELLOW
+		Fill.WHITE:
+			return VinylSticker.Fill.WHITE
+		Fill.RED:
+			return VinylSticker.Fill.RED
+	return VinylSticker.Fill.PINK
 
 
 ## True while the glitch bursts (frames 9-10 and 27-28 of its 48-frame loop).
@@ -457,8 +487,8 @@ func _fill_colors() -> Array[Color]:
 
 func _draw() -> void:
 	_mat.set_shader_parameter(&"grey", DISABLED_GREY if disabled else 0.0)
-	if uses_art():
-		_draw_art()
+	if uses_art() and vinyl == null:
+		_draw_art()  # before it is in the tree (in the tree the kit sticker shows the art)
 		return
 	if vinyl != null:
 		_draw_kit_frame()

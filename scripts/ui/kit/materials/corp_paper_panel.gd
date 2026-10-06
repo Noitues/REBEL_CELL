@@ -33,6 +33,11 @@ const SHADOW_OFFSET := Vector2(3, 5)
 		if stamp_slot != null:
 			stamp_slot.queue_redraw()
 @export var seed: int = 3
+## D24: room above the letterhead (px) for a paper clip's bite; 0 for papers without a clip.
+var top_pad: float = 0.0:
+	set(v):
+		top_pad = v
+		queue_redraw()
 
 var content: VBoxContainer = null
 var stamp_slot: Control = null
@@ -64,6 +69,15 @@ func _init() -> void:
 	stamp_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stamp_slot.draw.connect(_draw_stamp)
 	add_child(stamp_slot, false, Node.INTERNAL_MODE_BACK)
+	var clip_layer := Control.new()
+	clip_layer.name = "ClipLayer"
+	clip_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	clip_layer.draw.connect(func() -> void:
+		if clip:
+			PaperLie.draw_clip(clip_layer, Rect2(Vector2.ZERO, size), get_viewport_rect().size.y if is_inside_tree() else PaperLie.BOARD_H))
+	add_child(clip_layer, false, Node.INTERNAL_MODE_BACK)
+	clip_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	resized.connect(clip_layer.queue_redraw)
 
 
 func _ready() -> void:
@@ -93,8 +107,8 @@ func _layout() -> void:
 	_mat.set_shader_parameter(&"stock", Palette.PAPER)
 	_mat.set_shader_parameter(&"fibre", Palette.KRAFT_FIBRE)
 	_mat.set_shader_parameter(&"seed", float(seed))
-	content.position = Vector2(UiTheme.SP_L, LETTERHEAD_H + UiTheme.SP_M)
-	content.size = Vector2(size.x - UiTheme.SP_L * 2.0, maxf(size.y - LETTERHEAD_H - UiTheme.SP_L * 2.0, 0.0))
+	content.position = Vector2(UiTheme.SP_L, top_pad + LETTERHEAD_H + UiTheme.SP_M)
+	content.size = Vector2(size.x - UiTheme.SP_L * 2.0, maxf(size.y - top_pad - LETTERHEAD_H - UiTheme.SP_L * 2.0, 0.0))
 	stamp_slot.size = STAMP_SLOT
 	stamp_slot.position = Vector2(size.x - STAMP_SLOT.x - UiTheme.SP_M, size.y - STAMP_SLOT.y - UiTheme.SP_M)
 	# Parity fix (overlap defects, RAID-11): a stamp wider than its slot (big text) stays on
@@ -106,18 +120,26 @@ func _layout() -> void:
 	_paper.queue_redraw()
 
 
-## The drop shadow under the sheet.
+## The drop shadow under the sheet. B5 (review D24): the soft 6 px contact shadow of paper lying on the world
+## (PaperLie), in place of the hard offset copy.
 func _draw() -> void:
-	var sh := Palette.SHADOW
-	draw_rect(Rect2(SHADOW_OFFSET, size), sh)
+	PaperLie.draw_contact_shadow(self, Rect2(Vector2.ZERO, size), get_viewport_rect().size.y if is_inside_tree() else PaperLie.BOARD_H)
+
+
+## B5 (D24): the sheet wears the concepts' paper clip (top right), over its letterhead and fields.
+@export var clip: bool = true:
+	set(v):
+		clip = v
+		if stamp_slot != null:
+			stamp_slot.queue_redraw()
 
 
 ## The letterhead (corp name over a rule in the corp colour), on its own layer over the paper.
 func _draw_letterhead(on: Control) -> void:
 	var font := Palette.body_medium()
 	var px := UiTheme.font_px(UiTheme.LABEL)
-	on.draw_string(font, Vector2(UiTheme.SP_L, LETTERHEAD_H - UiTheme.SP_M), corp_name, HORIZONTAL_ALIGNMENT_LEFT, -1, px, corp_color.darkened(0.35))
-	on.draw_rect(Rect2(UiTheme.SP_L, LETTERHEAD_H - RULE_PX - UiTheme.SP_XS, size.x - UiTheme.SP_L * 2.0, RULE_PX), corp_color.darkened(0.35))
+	on.draw_string(font, Vector2(UiTheme.SP_L, top_pad + LETTERHEAD_H - UiTheme.SP_M), corp_name, HORIZONTAL_ALIGNMENT_LEFT, -1, px, corp_color.darkened(0.35))
+	on.draw_rect(Rect2(UiTheme.SP_L, top_pad + LETTERHEAD_H - RULE_PX - UiTheme.SP_XS, size.x - UiTheme.SP_L * 2.0, RULE_PX), corp_color.darkened(0.35))
 
 
 ## Parity fix (overlap defects, RAID-02 / RAID-11): the bounding size (px) of the stamp for

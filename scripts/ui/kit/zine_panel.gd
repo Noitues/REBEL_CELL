@@ -23,9 +23,9 @@ func _init(p_title: String = "", p_tilt: float = 0.0, p_terminal: bool = false) 
 	tape = not p_terminal
 	_paper = ColorRect.new()
 	if terminal:
-		_paper.color = Palette.TERMINAL_BG
-		_paper.color.a = 0.97
-		_paper.material = UiTheme.crt_material()
+		# B5 (B1c follow-up 2): the kit's CRT glass is the terminal's fill (the hex dump fades under its words).
+		_paper.color = Color(Palette.TERMINAL_BG, 0.0)
+		CrtTerminalPanel.behind(self)
 	else:
 		_paper.material = ShaderMaterial.new()
 		_paper.material.shader = PAPER_SHADER

@@ -74,6 +74,8 @@ var scrim: UiScrimPools
 var subtitle_strip: SubtitleStrip
 var margin: MarginContainer
 var ticker: OnAirTicker
+## B5 (D20): a sub-page's foot line and pad prompts, in the ticker's strip (the ticker shows on the main page only).
+var sub_foot: HBoxContainer
 var _panel_host: VBoxContainer
 var _panel: Control = null
 var panel_name: String = ""
@@ -115,6 +117,20 @@ func _ready() -> void:
 	margin.add_theme_constant_override("margin_bottom", int(PAGE_MARGIN.z + ticker.get_combined_minimum_size().y))
 	add_child(margin)
 	add_child(ticker)
+	# B5 (review D20: the ON AIR line lives on the title and the HQ only): the sub-pages show their foot line and
+	# pad prompts in the ticker's strip instead (round 44 B_menus).
+	sub_foot = HBoxContainer.new()
+	sub_foot.name = "SubFoot"
+	sub_foot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sub_foot.anchor_left = 0.0
+	sub_foot.anchor_right = 1.0
+	sub_foot.anchor_top = 1.0
+	sub_foot.anchor_bottom = 1.0
+	sub_foot.offset_left = PAGE_MARGIN.x
+	sub_foot.offset_right = -PAGE_MARGIN.x
+	sub_foot.offset_top = -ticker.get_combined_minimum_size().y
+	sub_foot.visible = false
+	add_child(sub_foot)
 	_panel_host = VBoxContainer.new()
 	_panel_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	margin.add_child(_panel_host)
@@ -205,7 +221,14 @@ func _set_panel(p: Control, name: String) -> void:
 	# H24 S4: the page shows its words as given (translated once where built).
 	TextDb.shown_as_given(p)
 	_panel_host.add_child(p)
+	# B5 (D20): ON AIR on the main page only; a sub-page shows its own foot (line and pad prompts).
+	ticker.visible = name == "main"
+	_set_sub_foot(name)
 	UiScrimPools.mark_panels_in(p, SCRIM_PANELS, false)
+	if name != "main":
+		# B5 (round 44 B_menus: every sub-page sits on the title's city dimmed to about 56 %, a soft pool under its
+		# panel): the page pools the city under it (UiScrimPools, 0.55); the main page keeps the lit city (round 33).
+		UiScrimPools.mark_panel(p, true, false)
 	UiSpillShadows.mark_verb_stickers_in(p)
 	Dialogue.enter_screen("title")
 	UiWrap.fit(p)
@@ -214,6 +237,42 @@ func _set_panel(p: Control, name: String) -> void:
 		_link_slots(p)  # the case files' grid (SLOTS-01)
 	var first := _default_focus(p)
 	PageTransition.enter(p, PageTransition.look_of(p), _page_focus.bind(p, first), -1 if back else 1)
+
+
+## B5 (round 44 B_menus): the sub-page's foot in the ticker's strip: a mono line at the left (the slots page names
+## where its files sit) and the page's pad prompts at the right, each with the ink keyline (words over the world).
+## Hidden on the main page (its own foot and the ON AIR ticker).
+func _set_sub_foot(page_name: String) -> void:
+	for c in sub_foot.get_children():
+		sub_foot.remove_child(c)
+		c.free()
+	var prompts: Array = SUB_FOOT_PROMPTS.get(page_name, [])
+	sub_foot.visible = page_name != "main" and not prompts.is_empty()
+	if not sub_foot.visible:
+		return
+	var line := ""
+	if page_name == "slots":
+		line = tr("Files sit in %s  //  autosaved as you play") % SaveService.save_dir
+	var l := Chrome.keyline(Chrome.caps_label(line, UiTheme.CAPTION, Palette.TEXT_MID))
+	l.name = "FootLine"
+	l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	sub_foot.add_child(l)
+	var row := HBoxContainer.new()
+	row.name = "Prompts"
+	row.add_theme_constant_override("separation", roundi(PadPrompts.GAP * Settings.text_scale))
+	for p in prompts:
+		row.add_child(PadPrompts.make_pair(int(p[0]), tr(String(p[1]))))
+	sub_foot.add_child(row)
+
+
+## The sub-pages' pad prompts (round 44): [pad button, verb key].
+const SUB_FOOT_PROMPTS := {
+	"slots": [[JOY_BUTTON_A, "load"], [JOY_BUTTON_X, "delete"], [JOY_BUTTON_B, "back"]], # TR
+	"codex": [[JOY_BUTTON_A, "select"], [JOY_BUTTON_B, "back"]], # TR
+	"stats": [[JOY_BUTTON_B, "back"]], # TR
+}
 
 
 ## The page's first focus once it has entered, unless a confirm opened meanwhile (it holds
@@ -458,6 +517,7 @@ func _foot() -> HBoxContainer:
 	foot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var build := Chrome.caps_label(tr("REBEL_CELL v%s // cell uplink") % ProjectSettings.get_setting("application/config/version", "dev"), UiTheme.CAPTION, Palette.TEXT_LO)
 	build.name = "Build"
+	Chrome.keyline(build)  # B5 (B1a b Q2): the foot line sits over the world: the ink keyline
 	build.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	foot.add_child(build)
 	var prompts := HBoxContainer.new()
@@ -476,6 +536,14 @@ func _page(title_word: String, content: Control, page_name: String) -> VBoxConta
 	box.name = page_name
 	box.add_theme_constant_override("separation", 6)
 	var head := HBoxContainer.new()
+	# B5c: the title sticker keeps the sticker safe margin from the screen's left edge (Fx.sticker_margin: past
+	# the page's own margin at big text).
+	var inset := Control.new()
+	inset.name = "SafeInset"
+	inset.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	inset.custom_minimum_size.x = maxf(0.0, Fx.sticker_margin() - PAGE_MARGIN.x)
+	inset.visible = inset.custom_minimum_size.x > 0.0
+	head.add_child(inset)
 	var sticker := VerbSticker.new(tr(title_word), VerbSticker.Fill.YELLOW, TITLE_STICKER_PX, TITLE_STICKER_TILT, VerbSticker.title_art(title_word))
 	sticker.pre_translated = true
 	sticker.name = "TitleSticker"
@@ -505,7 +573,10 @@ func show_slots() -> void:
 		if at > best:
 			best = at
 			latest = slot
-	var win := CrtWindow.new(tr("Campaign slots"))
+	var filed := 0
+	for slot in SLOTS:
+		filed += 0 if RunManager.slot_summary(slot).is_empty() else 1
+	var win := CrtWindow.new(tr("Campaign slots  //  %d of %d filed") % [filed, SLOTS.size()])  # round 44's header
 	win.name = "Slots"
 	# SLOTS-04: the cards in a FitScroll (CrtWindow's `max_body`, set up here so the window
 	# keeps its default, skinned Cell accent).
@@ -537,7 +608,7 @@ func show_slots() -> void:
 	box.name = "SlotsBox"
 	box.add_theme_constant_override("separation", SLOT_ROW_GAP)  # room for the focus brackets over Back
 	box.add_child(win)
-	var back := _item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
+	var back := _item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."), "Esc", true)  # B5: a terminal line (round 44)
 	back.name = "Back"
 	var page := _page("CAMPAIGN SLOTS", box, "SlotsPage")
 	# SLOTS-04: the panel wraps its cards (the city shows below), never the page's full height.
@@ -553,6 +624,14 @@ func show_slots() -> void:
 	_slots_trims = SLOTS_TRIM_PASSES
 	if is_inside_tree() and not get_tree().process_frame.is_connected(_trim_slots):
 		get_tree().process_frame.connect(_trim_slots, CONNECT_ONE_SHOT)
+
+
+## The case file holding the focus on the slots page (null when none).
+func focused_card() -> CaseFileCard:
+	var f := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
+	while f != null and not (f is CaseFileCard):
+		f = f.get_parent() as Control
+	return f as CaseFileCard
 
 
 ## The page's room under the subtitles' band and over the ticker (px).
@@ -669,7 +748,7 @@ func show_codex() -> void:
 	var book := CodexBook.new(Codex.entries(RunManager.lookup(), RunManager.profile), 0.0, width)
 	book.name = "Codex"
 	box.add_child(book)
-	var back := _item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
+	var back := _item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."), "Esc", true)  # B5: a terminal line (round 44)
 	back.name = "Back"
 	var page := _page("CODEX", box, "CodexPage")
 	box.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -698,6 +777,9 @@ func _codex_room(book: CodexBook, head: Control, back: Control, page: VBoxContai
 ## (earned pink, the rest locked) with the count on the window's tag, RUN HISTORY as paper run
 ## cards (RunReceipt). The tiles, badges and cards are focus stops in grids (the pad walks them;
 ## the sheet follows).
+## B5 (review section c / f, round 44 `stats.png`): one terminal; the badges on a white liner strip (LinerPanel; earned
+## = the die-cut sticker, unearned = its empty kiss-cut), the run history as terminal log rows (RunLogRow: an Anton
+## sticker only for COMPLETED and FLATLINED), never paper.
 func show_stats() -> void:
 	var p := RunManager.profile
 	var room_w := get_viewport_rect().size.x - PAGE_MARGIN.x * 2 - CrtWindow.PAD_H * 2
@@ -714,35 +796,49 @@ func show_stats() -> void:
 	per_corp.name = "BestIceByCorp"
 	stats.body.add_child(per_corp)
 	sheet.add_child(stats)
-	var ach := CrtWindow.new(tr("Achievements"), Palette.CELL_PINK)
-	ach.name = "Achievements"
+	# B5 (round 44 B_menus `stats.png`): one terminal; the achievements are die-cut stickers on a white liner strip
+	# (the earned ones glossy, the rest an empty kiss-cut), the run history the Cell's terminal log rows.
 	var got := 0
 	for d in Achievements.DEFS:
 		got += 1 if p.achievements.has(d["id"]) else 0
-	ach.tag_label.text = "%d/%d" % [got, Achievements.DEFS.size()]
-	var badges := _grid("Badges", AchievementBadge.side() * AchievementBadge.WIDTH_SHARE, room_w)
+	var ach_head := Chrome.caps_label(tr("ACHIEVEMENTS  %d / %d  //  stickers you keep") % [got, Achievements.DEFS.size()], UiTheme.CAPTION, PaletteSkins.chrome(Palette.NET_CYAN))
+	ach_head.name = "AchievementsHead"
+	stats.body.add_child(ach_head)
+	var liner := LinerPanel.new("", tr("REBEL_CELL // MERIT SHEET"))
+	liner.name = "Achievements"
+	var badges := _grid("Badges", AchievementBadge.side() * AchievementBadge.WIDTH_SHARE, room_w - LinerPanel.PAD.x * 2.0 * Settings.text_scale)
 	for d in Achievements.DEFS:
-		badges.add_child(AchievementBadge.new(StringName(String(d["id"])), tr(String(d["title"])), tr(String(d["text"])), p.achievements.has(d["id"])))
-	ach.body.add_child(badges)
-	sheet.add_child(ach)
-	var hist := CrtWindow.new(tr("RUN HISTORY"))
-	hist.name = "History"
-	var cards := _grid("Receipts", RunReceipt.WIDTH * Settings.text_scale, room_w)
+		var b := AchievementBadge.new(StringName(String(d["id"])), tr(String(d["title"])), tr(String(d["text"])), p.achievements.has(d["id"]))
+		b.on_liner = true
+		badges.add_child(b)
+	liner.body.add_child(badges)
+	stats.body.add_child(liner)
+	var hist_head := Chrome.caps_label(tr("RUN HISTORY  //  last %d") % p.run_history.size(), UiTheme.CAPTION, PaletteSkins.chrome(Palette.NET_CYAN))
+	hist_head.name = "HistoryHead"
+	stats.body.add_child(hist_head)
+	var log_head := RunLogRow.header()
+	log_head.custom_minimum_size.x = room_w
+	stats.body.add_child(log_head)
+	var cards := GridContainer.new()
+	cards.name = "RunLog"
+	cards.columns = 1
+	cards.add_theme_constant_override("v_separation", 0)
 	if p.run_history.is_empty():
-		cards.add_child(RunReceipt.empty())
+		cards.add_child(RunLogRow.empty())
 	var i := 0
 	for r in p.run_history:
 		var corp := RunManager.lookup().get_content(StringName(String(r.get("corporation", "")))) as CorporationData
-		cards.add_child(RunReceipt.of_run(r, TextDb.t(corp, "display_name") if corp != null else String(r.get("corporation", "?")), i))
+		cards.add_child(RunLogRow.of_run(r, TextDb.t(corp, "display_name") if corp != null else String(r.get("corporation", "?")), i))
 		i += 1
-	hist.body.add_child(cards)
-	sheet.add_child(hist)
+	for row in cards.get_children():
+		(row as Control).custom_minimum_size.x = room_w  # a log line across the terminal
+	stats.body.add_child(cards)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", SLOT_ROW_GAP)  # room for the focus brackets over Back
 	var fit := FitScroll.new(sheet)
 	fit.name = "StatsScroll"
 	box.add_child(fit)
-	var back := _item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
+	var back := _item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."), "Esc", true)  # B5: a terminal line (round 44)
 	back.name = "Back"
 	var page := _page("STATS", box, "StatsPage")
 	box.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -951,7 +1047,10 @@ func confirm_delete(slot: String) -> void:
 
 
 func confirm_quit() -> void:
-	_ask(tr("Quit REBEL_CELL?"), RunManager.quit_game, "QUIT", tr("Your campaign is autosaved."), "QUIT") # TR
+	# B5 (review section c): the yellow KEEP GOING sticker and a cyan terminal QUIT (never two stickers).
+	var d := ConfirmDialog.new(tr("Quit REBEL_CELL?"), "QUIT", "KEEP GOING", "QUIT", tr("Your campaign is autosaved."), false, "", "") # TR
+	d.use_terminal_yes("QUIT", "[A]")
+	_open_confirm(d, RunManager.quit_game)
 
 
 func start_tutorial() -> void:
@@ -993,6 +1092,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if panel_name in ["slots", "codex", "stats"] and event.is_action_pressed("ui_cancel"):
 		show_main()
 		get_viewport().set_input_as_handled()
+		return
+	if panel_name == "slots" and event is InputEventJoypadButton and event.pressed and (event as InputEventJoypadButton).button_index == JOY_BUTTON_X:
+		# B5 (round 44 slots: X delete): the focused case file's DELETE (it asks first).
+		var card := focused_card()
+		if card != null and card.delete_button != null:
+			confirm_delete(card.slot)
+			get_viewport().set_input_as_handled()
 		return
 	if panel_name != "main":
 		return
@@ -1063,11 +1169,11 @@ static func corporation_name(corporation_id: String) -> String:
 ## A terminal menu line (`> ITEM`, CAPS) with a tooltip and an optional key hint at its
 ## right, added to `box`. The v2 MORE list shows the words and the key hint only (round
 ## 33); the other pages' buttons keep their icon.
-func _item(box: Control, text: String, on_pressed: Callable, kind: StringName, tip: String, hint: String = "") -> Button:
+func _item(box: Control, text: String, on_pressed: Callable, kind: StringName, tip: String, hint: String = "", as_line: bool = false) -> Button:
 	var b := _button(text, on_pressed)
 	b.tooltip_text = UiTip.fold(tip)
 	box.add_child(b)
-	if box.name == "MoreList":
+	if box.name == "MoreList" or as_line:
 		b.text = text.to_upper()
 		b.theme_type_variation = &"MenuItem"
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -1092,6 +1198,8 @@ func _item(box: Control, text: String, on_pressed: Callable, kind: StringName, t
 			var sb := b.get_theme_stylebox(&"normal")
 			var words := f.get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, Chrome.px(MORE_STEP)).x
 			b.custom_minimum_size.x = maxf(b.custom_minimum_size.x, ceilf(words + sb.get_margin(SIDE_LEFT) + h.get_combined_minimum_size().x + HINT_GAP - h.offset_right))
+		if as_line:
+			b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN  # a line of its own, not the page's width
 	else:
 		IconMark.attach(b, kind)
 		b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN  # a terminal chip, not a full-width bar

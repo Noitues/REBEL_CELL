@@ -401,7 +401,7 @@ func test_the_in_run_pause_abandons_the_run() -> void:
 	assert_true(rows.find("AbandonRun") < rows.find("Quit"), "Abandon run sits above Quit")
 	assert_eq(menu.abandon_run_button.get_parent().get_parent(), menu._right, "in the right column")
 	assert_eq(menu._right.get_child(0).find_children("*", "HoloSticker", true, false)[0], menu.abandon_run_button, "in the top right slot")
-	assert_eq(menu.abandon_run_button.sticker.fill, VinylSticker.Fill.RED, "the destructive sticker is harm red")
+	assert_eq(menu.abandon_run_button.sticker.fill, VinylSticker.Fill.PINK, "B5 (round 44): the destructive sticker is the pink verb")
 	menu.abandon_run_button.pressed.emit()
 	await _frames(2)
 	assert_true(menu.exit_dialog is AbandonDialog, "it asks with the abandon dialog")
@@ -420,7 +420,7 @@ func test_the_hq_pause_abandons_the_campaign() -> void:
 	assert_true(rows.has("AbandonCampaign"), "the campaign's pause has Abandon campaign (%s)" % [rows])
 	assert_false(rows.has("AbandonRun"))
 	assert_eq(menu._right.get_child(0).find_children("*", "HoloSticker", true, false)[0], menu.abandon_campaign_button, "the same top right slot")
-	assert_eq(menu.abandon_campaign_button.sticker.fill, VinylSticker.Fill.RED)
+	assert_eq(menu.abandon_campaign_button.sticker.fill, VinylSticker.Fill.PINK)
 	menu.abandon_campaign_button.pressed.emit()
 	await _frames(2)
 	assert_true(menu.exit_dialog is AbandonDialog)
@@ -449,8 +449,12 @@ func test_the_quit_confirm_keeps_its_key_hints_at_big_text() -> void:
 		Settings.text_scale = scale
 		var d: ConfirmDialog = add_child_autofree(ExitDialogs.quit(false))
 		await _frames(1)
-		assert_eq((d.no_button as SendItSticker)._line_words().right(3), "[B]", "CANCEL says [B] at %.1f" % scale)
-		assert_eq((d.yes_button as SendItSticker)._line_words().right(3), "[A]", "QUIT says [A] at %.1f" % scale)
+		assert_eq((d.no_button as SendItSticker)._line_words().right(3), "[B]", "KEEP GOING says [B] at %.1f" % scale)
+		# B5 (review section c): quitting is a cyan terminal button with its key, not a second sticker.
+		assert_false(d.yes_button is SendItSticker, "SAVE & QUIT is a terminal button at %.1f" % scale)
+		assert_eq(d.yes_button.theme_type_variation, UiTheme.TERMINAL_BUTTON)
+		assert_eq(d.yes_button.text.right(3), "[A]", "SAVE & QUIT says [A] at %.1f" % scale)
+		assert_eq(String((d.no_button as SendItSticker).shown_lettering()[0]), tr("KEEP GOING"), "the safe sticker reads KEEP GOING")
 		d.queue_free()
 		await _frames(1)
 	Settings.text_scale = was

@@ -91,6 +91,29 @@ func _sticker(row: Container, word: String, note: String, paint: Color) -> Butto
 	return b
 
 
+## B5 (integration review section c: "Quit uses yellow KEEP GOING plus a cyan terminal 'save & quit', not two
+## stickers of competing hue"): the committing answer becomes a terminal button in the Cell's cyan (`word`, a key,
+## with its key hint) beside the safe sticker; the dialog's one sticker is the safe answer. Returns the button.
+func use_terminal_yes(word: String, key_hint: String = "") -> Button:
+	var old := yes_button
+	var row := old.get_parent()
+	var at := old.get_index()
+	row.remove_child(old)
+	old.queue_free()
+	var b := Button.new()
+	b.name = "Yes"
+	b.text = ("%s  %s" % [tr(word), key_hint]).strip_edges()
+	b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	b.theme_type_variation = UiTheme.TERMINAL_BUTTON
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.tooltip_text = b.text
+	b.pressed.connect(func() -> void: confirmed.emit(); _close())
+	row.add_child(b)
+	row.move_child(b, at)
+	yes_button = b
+	return b
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		cancelled.emit()

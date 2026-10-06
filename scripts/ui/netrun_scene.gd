@@ -94,6 +94,13 @@ var subtitle_strip: SubtitleStrip
 var city_overlay: CityMapOverlay = null
 var _grid_zoomed: bool = false
 var _panel_host: PanelContainer
+## B5: the kit's CRT glass behind the page host (shown on glass pages).
+var _panel_glass: CrtTerminalPanel = null
+## B5 (D8 / D9): the run's Site close-up behind the loot and event pages, the copy the event's CAM feed reads, and
+## the event's dim with the corp tint over it.
+var site_backdrop: CombatBackdrop = null
+var site_copy: BackBufferCopy = null
+var site_dim: ColorRect = null
 var _log: RichTextLabel
 var _panel: Control = null
 var combat_scene: Control = null
@@ -554,6 +561,8 @@ func _choose_reward(index: int, slot: int, fly: bool) -> void:
 	var s := RunManager.netrun
 	var offer := s.current_reward() if s.run.phase == RunState.Phase.REWARD else {}
 	var left := s.run.pending_rewards.size()
+	# B5 (section f): the loot page's bar (CARDS) stays while the page does, so the pick flies to the tag it shows.
+	_held_bar = bar_keys(s)
 	_report(s.choose_reward(index, slot))
 	# The picked card lifts and flies to the deck (ANIM-6); the page is rebuilt under it.
 	if s.run.pending_rewards.size() < left and not offer.is_empty():
@@ -896,6 +905,7 @@ func save_and_quit() -> void:
 # --- Panels --------------------------------------------------------------------------
 
 func _show_current() -> void:
+	_held_bar = []
 	if _loot_hold != null:
 		# ANIM-R4 C7: whatever shows next ends the loot page's wait.
 		if _loot_hold.is_valid():
@@ -951,7 +961,20 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	# and the corner chips stand alone and the wheels get the height (the bar's numbers keep
 	# updating for the page after the fight).
 	hud.visible = not p.has_method("attach_netrun")
-	_panel_host.theme_type_variation = &"GlassPanel" if glass else &""
+	_panel_host.theme_type_variation = UiTheme.CRT_GLASS_PANEL if glass else &""
+	_panel_glass.visible = glass
+	# B5c (art director): the pages of stickers on the world keep them inside the screen's safe margin
+	# (Fx.sticker_margin(): at the sides and the foot; the top bar is above them).
+	var page_as := screen_name(RunManager.netrun) if screen_as == "" else screen_as
+	if not glass and page_as in SAFE_MARGIN_SCREENS:
+		var safe := StyleBoxEmpty.new()
+		var m := Fx.sticker_margin()
+		safe.content_margin_left = m
+		safe.content_margin_right = m
+		safe.content_margin_bottom = m
+		_panel_host.add_theme_stylebox_override(&"panel", safe)
+	else:
+		_panel_host.remove_theme_stylebox_override(&"panel")
 	_clear_route()
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_STOP
 	_panel_host.add_child(p)
@@ -969,8 +992,10 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	else:
 		use_route_city(screen == "route" and (s == null or s.run.kind != "boss" or _grid_zoomed))  # ART-8 8w: an HQ run draws its own compound city
 	# LOOT-04 (designer 2026-10-05): the loot and event pages sit on the title's blurred city.
+	# B5 (D8 / D9): now on the run's Site close-up (the blurred city stays their fallback under it).
 	background.show_blurred_city(BLURRED_CITY_SCREENS.has(screen), BLURRED_CITY_LOOK,
 		RunManager.campaign.corporation_id if RunManager.campaign != null else &"")
+	_show_site_backdrop(screen, s)
 	entering = screen != _shown_screen
 	_shown_screen = screen
 	# ART-9 4A: the Mainframe's facade stays only behind the Mainframe.
@@ -1082,6 +1107,118 @@ func _focus_now(page, first) -> void:
 		(first as Control).grab_focus()
 
 
+## B5 (integration review D8 / D9; designer ruling 6 "FIGHT WON + OURS NOW + CONTINUE on the dimmed fought Site"):
+## the loot page sits on the fought Site's close-up in its won state (the district at 62 %, the target's lights in the
+## Cell's colours, OURS NOW written on in yellow pencil: CombatBackdrop's own won look); the event page on the run's
+## Site close-up dimmed to EVENT_DIM with the corp's tint (EVENT_TINT_SHARE), its CAM feed reading the close-up
+## (SiteCopy) before the dim, so the feed is never an empty box. Every other page hides them.
+func _show_site_backdrop(screen: String, s: NetrunSession) -> void:
+	var on := (screen == "loot" or screen == "event") and s != null and RunManager.campaign != null
+	site_backdrop.visible = on
+	site_copy.visible = on and screen == "event"
+	site_dim.visible = on and screen == "event"
+	if not on:
+		return
+	var corp := RunManager.campaign.corporation_id
+	# Loot (reward_screen_v2): the won Site stands low right, under the sheet's foot by CONTINUE, where OURS NOW
+	# reads; the close-up is framed on its target, so the backdrop's rect is grown to put its middle at LOOT_SITE_AT.
+	var at := LOOT_SITE_AT if screen == "loot" else Vector2(0.5, 0.5)
+	site_backdrop.anchor_left = 0.0
+	site_backdrop.anchor_top = 0.0
+	site_backdrop.anchor_right = at.x * 2.0
+	site_backdrop.anchor_bottom = at.y * 2.0
+	site_backdrop.offset_left = 0.0
+	site_backdrop.offset_top = 0.0
+	site_backdrop.offset_right = 0.0
+	site_backdrop.offset_bottom = 0.0
+	site_backdrop.show_place(BackdropCatalog.place(corp, false, BackdropCatalog.is_day(RunManager.campaign), s.run.site_id))
+	# OURS NOW only where it has its room (no UI may cover pencil): from LOOT_SIDE_FROM the loot's side column and
+	# its sheet take the screen's foot, so the won Site shows without its word.
+	var ink := site_backdrop.get_node_or_null(^"OursNow") as CanvasItem
+	if ink != null:
+		ink.visible = screen != "loot" or Settings.text_scale < LOOT_SIDE_FROM
+	_ours_watch = screen == "loot" and ink != null and ink.visible
+	set_process(_ours_watch)
+	# Art director (D8): the loot's district sits at about 62 % under the page (the sheet and FIRMWARE DROP on their
+	# own B1a pools); the picture layers dim (on top of the won look's own district dim round the target), the
+	# OURS NOW pencil over them does not.
+	var shade := Palette.NO_TINT.darkened(1.0 - LOOT_DISTRICT) if screen == "loot" else Palette.NO_TINT
+	for layer in [^"Still", ^"WonStill"]:
+		var pic := site_backdrop.get_node_or_null(layer) as CanvasItem
+		if pic != null:
+			pic.modulate = shade
+	if screen == "loot":
+		# The won look as the fight left it; OURS NOW writes on as the page shows (D25: never faded in).
+		if site_backdrop.won < 1.0:
+			site_backdrop.won = 1.0
+	else:
+		site_backdrop.won = 0.0
+		var tint := Palette.corp_color(corp)
+		site_dim.color = Color(EVENT_DIM, EVENT_DIM, EVENT_DIM).lerp(Color(tint.r, tint.g, tint.b) * EVENT_DIM * 2.0, EVENT_TINT_SHARE)
+		site_dim.color.a = 1.0
+
+
+## Art director (B5 fix 2): no UI may cover pencil. OURS NOW stands where the won Site's close-up puts it (its target's
+## top); while the loot page shows, a frame that finds it under one of the page's panels or stickers (FIRMWARE DROP,
+## the sheet, CONTINUE) leaves the word out rather than tuck it under them.
+func _process(_delta: float) -> void:
+	if not _ours_watch or site_backdrop == null or not site_backdrop.visible:
+		_ours_watch = false
+		set_process(false)
+		return
+	var ink := site_backdrop.get_node_or_null(^"OursNow") as CanvasItem if site_backdrop != null else null
+	if ink == null or not ink.visible or _panel == null or not is_instance_valid(_panel):
+		return
+	var word := site_backdrop.ours_now()
+	if word == null or not word.is_visible_in_tree():
+		return
+	if PageTransition.running(_panel) or FlightFx.active_count(self) > 0:
+		return  # the page's parts are still coming in (the loot fans up through the word's place)
+	for c in _panel.find_children("*", "Control", true, false):
+		var ctl := c as Control
+		if not ctl.is_visible_in_tree():
+			continue
+		if (ctl.has_meta(UiScrimPools.META_POOL) or ctl is BaseButton) and word_covered_by(word, ctl.get_global_rect()):
+			ink.visible = false
+			_ours_watch = false
+			return
+
+
+## True when screen rect `r` covers any of pencil word `word` (its tilted letters' box with their shadow: the two
+## boxes are tested in both frames, so a tilted word's empty corners never count).
+static func word_covered_by(word: GreasePencilWord, r: Rect2) -> bool:
+	var font := Palette.pencil()
+	var px := word.font_px()
+	var local := Rect2(Vector2(0, -font.get_ascent(px)), font.get_string_size(word.text, HORIZONTAL_ALIGNMENT_LEFT, -1, px))
+	local.end += GreasePencilMark.SHADOW_OFFSET
+	var xf := word.get_global_transform()
+	return (xf * local).intersects(r) and local.intersects(xf.affine_inverse() * r)
+
+
+## True while the loot page watches OURS NOW against its panels.
+var _ours_watch: bool = false
+
+
+## B5 (D9): the run's Site close-up as a picture (its city close-up's render, else its still): what the event's CAM
+## feed shows. Null when there is none (the feed falls back to the screen copy).
+func site_picture() -> Texture2D:
+	if site_backdrop == null:
+		return null
+	if site_backdrop.city != null:
+		return site_backdrop.city.get_texture()
+	return site_backdrop.get(&"_tex") as Texture2D  # CombatBackdrop's still (read only)
+
+
+## B5 (D8, reward_screen_v2): where the won Site's target stands on the loot page (screen share): low right, clear
+## of the sheet, so OURS NOW reads over it above CONTINUE.
+const LOOT_SITE_AT := Vector2(0.86, 0.84)
+## Art director (D8): the loot page's district brightness (review: "district at 62 %").
+const LOOT_DISTRICT := 0.62
+## B5 (D9): the event page's close-up dims to this share, and takes this share of the corp's tint.
+const EVENT_DIM := 0.4
+const EVENT_TINT_SHARE := 0.35
+
+
 ## The meta naming a page's first focus.
 const FIRST_FOCUS_META := &"first_focus"
 ## ANIM-R5 B2: subtitle lines the band holds on a screen (1 elsewhere).
@@ -1091,6 +1228,8 @@ const SUBTITLE_LINES := {"event": 2, "run_end": 2}
 const BLURRED_CITY_SCREENS: Array[String] = ["loot", "event"]
 ## B1a: the page parts that are panels on the world (UiScrimPools.mark_panels_in).
 const SCRIM_PANELS: Array[String] = ["TerminalWindow", "LootSheet", "OperativeDossier", "RouteNodePanel"]
+## B5c: the netrun pages whose stickers stand on the world, kept inside the screen's sticker safe margin.
+const SAFE_MARGIN_SCREENS: Array[String] = ["loot", "event", "shop", "run_end"]
 const BLURRED_CITY_LOOK := preload("res://content/config/overlay_city_backdrop.tres")
 ## ANIM-R5 B8: the mid-run raid's playout, a screen of its own (its title, its lines).
 const RAID_PLAYOUT_SCREEN := "netrun_raid_playout"
@@ -1178,7 +1317,7 @@ func _title_screen(s: NetrunSession, screen: String = "") -> void:
 		RunState.Phase.COMBAT:
 			hud.set_screen("", "")
 		RunState.Phase.REWARD:
-			hud.set_screen("", tr("BREACH PAYOUT"))
+			hud.set_screen("", "")  # B5 (D8): the page's own FIGHT WON sticker names it; PAYOUT is the terminal's word
 		RunState.Phase.EVENT:
 			# ANIM-R2 E2: a title as short as the Mainframe's, so the top bar keeps one row at 1.6
 			# (the long one wrapped the tags onto two rows and pushed the page down).
@@ -1441,7 +1580,7 @@ func _prebake_backdrops() -> void:
 	var sizes: Array[Vector2] = [size]
 	if _panel_host != null and is_instance_valid(_panel_host):
 		var inner := _panel_host.size
-		var box := _panel_host.get_theme_stylebox(&"panel", &"GlassPanel")
+		var box := _panel_host.get_theme_stylebox(&"panel", UiTheme.CRT_GLASS_PANEL)
 		if box != null:
 			inner -= box.get_minimum_size()
 		sizes.append(inner.floor())
@@ -2998,6 +3137,8 @@ func _show_reward() -> void:
 		FocusTip.attach(sticker)
 		var index: int = i
 		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected() if slot_option != null else -1))
+		sticker.focus_entered.connect(func() -> void: _loot_lit = sticker)
+		sticker.mouse_entered.connect(func() -> void: _loot_lit = sticker)
 		if slot_option != null and res is FirmwareData:
 			_mark_socket_fits(sticker, slot_option, id)
 		stickers.add_child(sticker)
@@ -3034,11 +3175,31 @@ func _show_reward() -> void:
 	# Parity LOOT-03: under the sheet, in the middle of the foot (the DECK counter on its left)
 	skip.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN if compact else Control.SIZE_SHRINK_CENTER
 	(side if compact else foot).add_child(skip)
+	# B5 (designer ruling 6, review D8: "the page ends on a sticker verb"): CONTINUE, the pink verb bottom right: the
+	# same press as taking the lit sticker (the one holding the focus, the first by default), so the flow is the
+	# rules' own pick.
+	var go := HoloSticker.word(tr("CONTINUE"), VinylSticker.Fill.PINK, os, LOOT_CONTINUE_PX)
+	go.name = "Continue"
+	go.sticker.sweep_primary = true
+	go.tooltip_text = UiTip.fold(tr("Take the lit sticker and go on."))
+	go.pressed.connect(func() -> void: _continue_loot(stickers, slot_option))
 	if compact:
+		# B5c: SKIP and CONTINUE share a row in the side column (stacked, a Firmware drop's column ran past the
+		# screen's foot and its safe margin at 2.0).
+		var verbs := HBoxContainer.new()
+		verbs.name = "LootVerbs"
+		verbs.add_theme_constant_override(&"separation", roundi(UiTheme.SP_M * os))
+		side.add_child(verbs)
+		side.move_child(verbs, skip.get_index())
+		skip.reparent(verbs, false)
+		go.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		verbs.add_child(go)
 		foot.queue_free()
 		foot_right.queue_free()
 	else:
 		foot.add_child(foot_right)
+		go.size_flags_horizontal = Control.SIZE_SHRINK_END
+		foot.add_child(go)
 	if side.get_child_count() == 0:
 		side.visible = false
 	_set_panel(page, false)
@@ -3046,6 +3207,28 @@ func _show_reward() -> void:
 	_register_loot_drops(stickers, mini, slot_option)
 	if entering:
 		_fan_loot.call_deferred(stickers)
+
+
+## B5 (D8): CONTINUE takes the loot sticker that holds the focus (the last one hovered or focused; the first when
+## none has been), as its own press would.
+func _continue_loot(stickers: Control, slot_option: SpinnerMini) -> void:
+	if not is_instance_valid(stickers):
+		return
+	var items := _row_items(stickers)
+	if items.is_empty():
+		return
+	var at := 0
+	var owner := get_viewport().gui_get_focus_owner()
+	for i in items.size():
+		if items[i] == owner or items[i] == _loot_lit:
+			at = i
+	choose_reward(at, slot_option.selected() if slot_option != null else -1)
+
+
+## B5: the loot sticker last hovered or focused (CONTINUE's pick).
+var _loot_lit: Control = null
+## B5 (D8): CONTINUE's lettering (px at scale 1).
+const LOOT_CONTINUE_PX := 32
 
 
 ## ART-9 4A: the loot's title sticker and Skip lettering (px at scale 1) and the sheet's foot.
@@ -3158,9 +3341,12 @@ func _payout_row(word: String, value: String, col: Color) -> HBoxContainer:
 const LOOT_SOCKET_TIP := "A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into." # TR
 ## ANIM-R6 B10: what paid the loot out, by the node the run stands on (keys): a fight, an
 ## Elite, the Server Rack, an event.
+## B5 (review D8: "PAYOUT is a terminal word"): the title sticker never says PAYOUT (an event's loot is EVENT LOOT,
+## the rest LOOT); PAYOUT stays the terminal's.
 const LOOT_SOURCES := {RC.InfilNodeType.ROUTER: "FIGHT WON", RC.InfilNodeType.SERVER_RACK: "RACK BREACHED", # TR
-	RC.InfilNodeType.TERMINAL: "EVENT PAYOUT", RC.InfilNodeType.MAINFRAME: "PAYOUT"} # TR
+	RC.InfilNodeType.TERMINAL: "EVENT LOOT", RC.InfilNodeType.MAINFRAME: "LOOT"} # TR
 const LOOT_ELITE := "ELITE DOWN" # TR
+const LOOT_PLAIN := "LOOT" # TR
 
 
 ## ANIM-R6 B10: what paid out the loot on show, as its window names it (a key): the node the
@@ -3168,10 +3354,10 @@ const LOOT_ELITE := "ELITE DOWN" # TR
 static func loot_source(s: NetrunSession) -> String:
 	var node := s.run.current_node() if s != null and s.run.current_node_id != &"" else {}
 	if node.is_empty():
-		return "PAYOUT" # TR
+		return LOOT_PLAIN
 	if _is_elite(node):
 		return LOOT_ELITE
-	return String(LOOT_SOURCES.get(int(node["type"]), "PAYOUT"))
+	return String(LOOT_SOURCES.get(int(node["type"]), LOOT_PLAIN))
 
 
 ## The loot fans in from the foot of its row, one after another (ANIM-6, `loot_fan`).
@@ -3238,9 +3424,11 @@ func _show_event() -> void:
 	var os := minf(ts, ShopItem.OBJECT_MAX_SCALE)
 	var dispatch := ev.speaker == RC.Voice.DISPATCH
 	var corp_id := ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id
-	# Parity EVT-03 (round 31 `event_screen_memo`): a corp speaker's story is an intercepted memo
-	# and DISPATCH's a transcript on the same paper (the concept's memo, not a waveform).
-	var memo := ev.speaker == RC.Voice.CORPO or dispatch
+	# Parity EVT-03 (round 31 `event_screen_memo`): a corp speaker's story is an intercepted memo.
+	# B5 (review D10, designer ruling 5: DISPATCH is voice only, before and after the betrayal): DISPATCH is the Cell's
+	# handler, never paper: the red voice trace (VOICE ONLY // NO FEED) and the transcript typed on in the red-accent
+	# CRT.
+	var memo := ev.speaker == RC.Voice.CORPO
 	var tint := Palette.HARM if dispatch else Palette.corp_color(corp_id)
 	var corp_res := s.lookup.get_content(corp_id)
 	var corp_name := TextDb.t(corp_res, "display_name") if corp_res != null else String(corp_id)
@@ -3275,11 +3463,11 @@ func _show_event() -> void:
 	var right := VBoxContainer.new()
 	right.add_theme_constant_override("separation", roundi(8 * os))
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var feed: CamFeed = null
+	var cam_row: HBoxContainer = null
 	# Left: the memo (corp speaker), the CAM feed, or DISPATCH's voice.
 	if memo:
-		var paper := CorpMemo.new(tr("DISPATCH") if dispatch else corp_name, tint, os)
-		if dispatch:
-			paper.as_transcript()
+		var paper := CorpMemo.new(corp_name, tint, os)
 		paper.custom_minimum_size = Vector2(EVENT_MEMO_W, 0)
 		paper.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		text.custom_minimum_size = Vector2(EVENT_MEMO_W - CorpMemo.PAD.x * 2.0 * os, 0)
@@ -3288,12 +3476,21 @@ func _show_event() -> void:
 		paper.body.add_child(text)
 		inner.add_child(paper)
 	else:
-		var feed := CamFeed.new(tr("CAM %02d  %s") % [absi(ev.id.hash()) % 90 + 4, TextDb.t(ev, "title").to_upper()], tint, dispatch, os)
+		feed = CamFeed.new(tr("CAM %02d  %s") % [absi(ev.id.hash()) % 90 + 4, TextDb.t(ev, "title").to_upper()], tint, dispatch, os)
 		feed.custom_minimum_size = EVENT_CAM * os
 		feed.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		# At big text the story and the choices need the room: the feed (a picture) steps aside.
-		feed.visible = ts < EVENT_FEED_BELOW
-		inner.add_child(feed)
+		if ts < EVENT_FEED_BELOW:
+			inner.add_child(feed)
+		else:
+			# B5 (review Q14 / D9: shrink and reflow, never hide): at big text the feed is a 160 px wide strip above the
+			# story, in one row with the title (CamRow) so the choices keep the screen.
+			feed.custom_minimum_size = Vector2(EVENT_CAM_STRIP_W, EVENT_CAM_STRIP_H) * minf(ts, EVENT_CAM_STRIP_GROW)
+			feed.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+			cam_row = HBoxContainer.new()
+			cam_row.name = "CamRow"
+			cam_row.add_theme_constant_override("separation", roundi(UiTheme.SP_M * os))
+			cam_row.add_child(feed)
+			right.add_child(cam_row)
 		text.custom_minimum_size = Vector2(EVENT_TEXT_W, 0)
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		text.add_theme_font_override(&"normal_font", Palette.mono())
@@ -3314,7 +3511,12 @@ func _show_event() -> void:
 	title.add_theme_font_override(&"font", Palette.display())
 	title.add_theme_font_size_override(&"font_size", roundi(EVENT_TITLE_PX * os))
 	title.add_theme_color_override(&"font_color", Palette.TEXT_HI)
-	right.add_child(title)
+	if cam_row != null:
+		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		cam_row.add_child(title)
+	else:
+		right.add_child(title)
 	# Naive-reader audit P3: DISPATCH's name once (its title already starts with it).
 	var speaker := _label(tr("voice only // transcript") if dispatch else ((who + " - " + TextDb.t(ev, "title")) if memo else tr("%s // terminal log, unsigned") % who))
 	speaker.add_theme_color_override(&"font_color", tint)
@@ -3390,8 +3592,8 @@ func _show_event() -> void:
 	split.add_child(side)
 	# Parity EVT-01 (round 31 `event_screen`): the RUN side terminal (HP, CYCLES, CREW); at big
 	# text the top bar's tags say the same and the story takes the room.
-	if ts < EVENT_FEED_BELOW:
-		side.add_child(_event_run_window(s))
+	# B5 (review section f: "Loot / event: only what the choice changes"): the top bar carries what the choices change
+	# (HP, Cycles, crew ...: event_bar_keys), in place of the RUN terminal.
 	var node_sticker := HoloSticker.word(tr("TERMINAL"), VinylSticker.Fill.RED if dispatch else VinylSticker.Fill.WHITE, os, EVENT_STICKER_PX)
 	node_sticker.name = "NodeSticker"
 	node_sticker.focus_mode = Control.FOCUS_NONE
@@ -3420,6 +3622,10 @@ func _show_event() -> void:
 		split.sort_children.connect(func() -> void: aim.call_deferred())
 	_set_panel(box, false)
 	_event_backbuffer()
+	# B5 (D9): the CAM feed shows the run's Site close-up itself (never an empty box, never the dimmed page behind).
+	var cam := box.find_child("CamFeed", true, false) as CamFeed
+	if cam != null and not cam.voice_only:
+		cam.show_picture(site_picture())
 	_register_event_drops(ev, options)
 	# ANIM-R4 C7: the story types within `event_type`'s cap (0.8 s).
 	if entering and Typing.type_in(text, &"event_type") > 0.0:
@@ -3430,6 +3636,12 @@ func _show_event() -> void:
 ## it, the memo's width, the title lettering, the TERMINAL sticker and the side column (parity
 ## EVT-01: wide enough for the RUN terminal).
 const EVENT_CAM := Vector2(320, 230)
+## B5 (Q14): the CAM strip above the story at big text: its width (px at 1; 160 px as the review asks) and the most it
+## grows with the text.
+const EVENT_CAM_STRIP_W := 160.0
+const EVENT_CAM_STRIP_GROW := 1.2
+## B5 (Q14): the strip's height (px at 1): a letterbox, short enough that the choices stay on screen at 2.0.
+const EVENT_CAM_STRIP_H := 64.0
 const EVENT_TEXT_W := 320.0
 const EVENT_MEMO_W := 470.0
 const EVENT_TITLE_PX := 34
@@ -3494,14 +3706,10 @@ var _event_bbc: BackBufferCopy = null
 
 
 ## Copies the city behind the event page for the CAM feed (once; freed with the screen).
+## B5 (D9): the copy is SiteCopy, right over the Site's close-up and under the event's dim (the feed shows the Site,
+## never an empty box).
 func _event_backbuffer() -> void:
-	if _event_bbc != null and is_instance_valid(_event_bbc):
-		return
-	_event_bbc = BackBufferCopy.new()
-	_event_bbc.name = "EventCityCopy"
-	_event_bbc.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
-	add_child(_event_bbc)
-	move_child(_event_bbc, background.get_index() + 1)
+	site_copy.visible = true
 
 
 ## ANIM-R1 M9 / ANIM-R2 E1-E2: while the event's story types in, its choices wait. They stay
@@ -4752,6 +4960,8 @@ const END_VERDICT_STEP := UiTheme.HEADING
 const END_VERDICT_TILT := -6.0
 ## BACK TO HQ's lettering (type step).
 const END_BACK_STEP := UiTheme.TITLE
+## B5 fix 4: the room kept past BACK TO HQ's last letter for its focus fold (two no-break spaces).
+const END_BACK_FOLD_ROOM := "\u00a0\u00a0"
 ## Parity END-01 (the build's RunEndStage, art pass W8c): the operative's Polaroid at text scale
 ## 1 (px; it grows to END_GROW) and its tilt (degrees), how far down the print the verdict
 ## sticker is slapped (share of its height), and the lost run's grey city (screen shader: the
@@ -4867,6 +5077,9 @@ func _show_end() -> void:
 	side_col.add_child(foot)
 	var back := VinylButton.new(TextDb.mark("Back to HQ"), VinylSticker.Fill.PINK, END_BACK_STEP)
 	back.name = "BackToHq"
+	# Art director (B5 fix 4): BACK TO HQ is the page's first focus, so it shows its peel-back; the sticker keeps the
+	# fold's room past its last letter (a no-break space of the sticker's own lettering) so the whole word shows.
+	back.sticker.text += END_BACK_FOLD_ROOM
 	back.pressed.connect(finish_run)
 	back.tooltip_text = UiTip.fold(tr("Back to HQ: the campaign, the City Grid and the crew."))
 	foot.add_child(back)
@@ -5095,6 +5308,9 @@ func deck_rect() -> Rect2:
 		if st.icon_of(i) == StatIcon.CARDS:
 			var xf := st.get_global_transform()
 			return Rect2(xf * rects[i].position, rects[i].size * xf.get_scale())
+	# B5 (review section f): a bar without CARDS (the Mainframe): the deck is behind VIEW LOADOUT.
+	if hud.loadout_button.is_visible_in_tree():
+		return hud.loadout_button.get_global_rect()
 	return Rect2()
 
 
@@ -5489,7 +5705,7 @@ func _refresh_status() -> void:
 	var stats := [[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency, spent at HQ.")]]
 	# H24 S16: whose numbers these are: the campaign's, then this run's.
 	var captions := [[0, tr("CAMPAIGN"), tr("The campaign's numbers: they stay between runs.")]]
-	if route_strip_only(s):
+	if route_strip_only(s) and _held_bar.is_empty():  # B5: a leaving loot page keeps its own strip (its pick flies to CARDS)
 		# B3 (round 44 `topbar_by_page.png`): the route page's strip is Heat (the gauge), HP and
 		# Cycles; the rest is behind VIEW LOADOUT and the Heat terminal.
 		var hop := s.run.operative
@@ -5503,12 +5719,66 @@ func _refresh_status() -> void:
 			[TextDb.mark("CYCLES"), str(s.run.cycles), "", tr("Cycles: this run's money, spent in the Mainframe.")],
 			[TextDb.mark("CARDS"), str(op.deck.size()), "", tr("Cards in %s's deck (VIEW LOADOUT shows them).") % op.name],
 			[TextDb.mark("RANK"), str(op.rank), "", tr("Rank: runs survived. It brings wheel upgrades and higher netrun tiers.")],
-			[TextDb.mark("BANKED"), str(s.run.banked_schematics), "", tr("Schematics this run has banked for the campaign.")]])
+			[TextDb.mark("BANKED"), str(s.run.banked_schematics), "", tr("Schematics this run has banked for the campaign.")],
+			[TextDb.mark("CREW"), str(c.living_operatives().size()), "", tr("The crew still standing.")]])
+	# B5 (review section f, round 44 `topbar_by_page.png`): each netrun page's bar shows only what it is about (the
+	# Heat gauge stays on every page, designer ruling Q1); everything else is behind VIEW LOADOUT.
+	var keys := _held_bar if not _held_bar.is_empty() else bar_keys(s)
+	if _held_bar.is_empty() and s != null and not s.run.is_over() and s.run.phase == RunState.Phase.MAP and not route_strip_only(s):
+		keys = [BAR_ALL]  # B3: GRID VIEW and a boss run's compound keep the whole strip
+	if not keys.has(BAR_ALL):
+		stats = stats.filter(func(st: Array) -> bool: return keys.has(String(st[0])))
+		captions = []
+	elif s != null and not s.run.is_over():
+		stats.pop_back()  # CREW: only the event's bar names it
 	hud.set_stats(stats, captions)
 	hud.loadout_button.visible = s != null and not s.run.is_over()
 	if s != null and not s.run.is_over():
 		hud.set_daemons(s.run.operative.daemon_ids)
 
+
+## B5 (review section f): the bar's tags a netrun page shows (keys; BAR_ALL: the full bar): the route and transit
+## Heat, HP and Cycles; the Mainframe its Cycles; the loot the deck when a card is on offer; an event what its
+## choices change.
+static func bar_keys(s: NetrunSession) -> Array:
+	if s == null or s.run.is_over():
+		return [BAR_ALL]
+	match s.run.phase:
+		RunState.Phase.MAP:
+			return ["HP", "CYCLES"]
+		RunState.Phase.SHOP:
+			return ["CYCLES"]
+		RunState.Phase.REWARD:
+			return ["CARDS"] if String(s.current_reward().get("kind", "")) == "card" else []
+		RunState.Phase.EVENT:
+			return event_bar_keys(s)
+	return [BAR_ALL]
+
+
+## The bar's full set (every tag).
+const BAR_ALL := "*"
+## B5: the keys of the page still on show while it leaves (a loot pick's flight); empty: the page's own.
+var _held_bar: Array = []
+## An event's outcome kinds -> the bar tag that shows them.
+const EVENT_BAR_TAGS := {StatIcon.HP: "HP", StatIcon.CYCLES: "CYCLES", StatIcon.OPERATIVE: "CREW", StatIcon.SCHEMATICS: "SCHEMATICS",
+	StatIcon.CARDS: "CARDS"}
+
+
+## The tags an event's choices change (in the bar's order), from the rules' own preview (OutcomeRow.of_choice).
+static func event_bar_keys(s: NetrunSession) -> Array:
+	var ev := s.current_event()
+	var seen := {}
+	if ev != null:
+		for c in ev.choices:
+			for it in OutcomeRow.of_choice(s, c):
+				var tag: String = EVENT_BAR_TAGS.get(it.get("kind", &""), "")
+				if tag != "":
+					seen[tag] = true
+	var out: Array = []
+	for k in ["SCHEMATICS", "HP", "CYCLES", "CARDS", "CREW"]:
+		if seen.has(k):
+			out.append(k)
+	return out
 
 ## B3: true when the top strip shows only the route page's numbers (HP, Cycles; Heat is the
 ## gauge): the run's own route on the map (not GRID VIEW, not a boss run's compound).
@@ -5647,7 +5917,28 @@ func _unhandled_input(event: InputEvent) -> void:
 func _build_ui() -> void:
 	background = WireframeBackground.new()
 	add_child(background)
-	scrim = UiScrimPools.attach_after(background)
+	# B5 (integration review D8 / D9, designer ruling 6): the loot and event pages sit on the run's Site close-up (the
+	# combat's own backdrop: its still or its city close-up), won with OURS NOW behind the loot, dimmed with the corp
+	# tint behind an event (its CAM feed copies the close-up before the dim). Hidden on every other page.
+	site_backdrop = CombatBackdrop.new()
+	site_backdrop.name = "SiteBackdrop"
+	site_backdrop.visible = false
+	add_child(site_backdrop)
+	site_copy = BackBufferCopy.new()
+	site_copy.name = "SiteCopy"
+	site_copy.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
+	site_copy.visible = false
+	add_child(site_copy)
+	site_dim = ColorRect.new()
+	site_dim.name = "SiteDim"
+	site_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	site_dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var mul := CanvasItemMaterial.new()
+	mul.blend_mode = CanvasItemMaterial.BLEND_MODE_MUL
+	site_dim.material = mul
+	site_dim.visible = false
+	add_child(site_dim)
+	scrim = UiScrimPools.attach_after(site_dim)
 	scrim.spill.add_spill_source(_target_spill, Palette.PENCIL_THREAT)
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -5670,8 +5961,9 @@ func _build_ui() -> void:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(scroll)
 	_panel_host = PanelContainer.new()
-	_panel_host.theme_type_variation = &"GlassPanel"
-	_panel_host.material = UiTheme.crt_material()
+	# B5 (B1c follow-up 2): the kit's CRT glass behind the host (shown on glass pages), not the shared material.
+	_panel_host.theme_type_variation = UiTheme.CRT_GLASS_PANEL
+	_panel_glass = CrtTerminalPanel.behind(_panel_host)
 	_panel_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panel_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_panel_host)
@@ -5679,8 +5971,8 @@ func _build_ui() -> void:
 	pad_prompts = PadPrompts.new()
 	root.add_child(pad_prompts)
 	_log = RichTextLabel.new()
-	_log.theme_type_variation = &"LogText"
-	_log.material = UiTheme.crt_material()
+	_log.theme_type_variation = UiTheme.CRT_LOG_TEXT
+	CrtTerminalPanel.behind(_log)
 	_log.bbcode_enabled = true
 	_log.scroll_following = true
 	_log.custom_minimum_size = Vector2(0, 110)

@@ -1,0 +1,15 @@
+{
+ "words": {
+  "ACTIVE": "cell_stamp_active.png",
+  "IN A RUN": "cell_stamp_in_a_run.png",
+  "WON": "cell_stamp_won.png",
+  "LOST": "cell_stamp_lost.png",
+  "ABANDONED": "cell_stamp_abandoned.png"
+ },
+ "hex_centre": [
+  58,
+  60
+ ],
+ "hex_r": 48,
+ "board_h": 1080
+}
