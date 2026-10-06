@@ -68,8 +68,8 @@ kit) after both merged; generator scripts read on `art-concepts-r43` (round 33 `
   MORE / PROFILE / Options / pause terminals (same), the chip and tile words, the ticker's crawl
   (live words), the codex / stats text, the HQ (no concept: G13 dropped the HQ room), the
   new-campaign page and its TRUST NO ONE pencil (no concept: §4.14 "new-campaign page" not
-  designed), stickers for words the concept never drew (the kit's VinylSticker), the confirm (2D's
-  ConfirmDialog). The title's backdrop stays the live city (round 33 used pre-rendered city frames;
+  designed), stickers for words the concept never drew (the kit's VinylSticker), the quit confirm (2D's
+  ConfirmDialog). The abandon dialog's answer stickers are abandon.py's own (baked, below). The title's backdrop stays the live city (round 33 used pre-rendered city frames;
   the city is 1D / ART-5's), dimmed.
 - **Title option A (D10, confirmed):** the REBEL_CELL neon tube sign on its circuit board (idle loop
   `title_sign_flicker`: underscore cursor, an E stutter, a two-frame drop to CELL); 1. BREACH (pink,
@@ -85,11 +85,37 @@ kit) after both merged; generator scripts read on `art-concepts-r43` (round 33 `
   stickers and their chips do the same action (the chip has no focus of its own; it lights with its
   sticker). Big text (≥ 1.6): MORE heads the right column, the chips drop their second line (it stays
   in the tooltip), the motto and the PROFILE panel give way (Stats shows the same tags).
-- **Abandon dialog:** ART-2 2D restyled ConfirmDialog to the round 33 abandon dialog
-  (`HudDialogPanel`, yellow CANCEL, pink verb) while 4C ran; 4C's own version was dropped at the
-  merge and the title uses 2D's: delete slot = `> CONFIRM // DELETE SLOT`, destructive, DELETE, with the
-  slot's cost in the body; quit = QUIT, "Your campaign is autosaved." **Call:** the pad hold-A 0.8 s on
-  the verb is a proposal in the bible (§4.13): not built.
+- **Abandon dialog (resume, 2026-10-05):** `AbandonDialog` (kit/chrome) extends 2D's ConfirmDialog
+  on its `HudDialogPanel`: `> CONFIRM // TITLE`, CANNOT UNDO + pip in HARM, the question, the body in
+  Plex, the costs (terminal CAPS names, values beside them, two pairs a row), an optional Heat line in
+  HARM and what stays in GAIN, the rule, then abandon.py's own stickers: yellow CANCEL (default focus,
+  its lime die-cut halo) and the pink verb, tilted as abandon.py places them, each with its terminal
+  caption (grey for the safe answer, pink for the verb). `tools/art/bake_menus_r33.py --only dialog`
+  bakes `dialog_cancel`, `dialog_burn_it` and `dialog_delete` (rest + focus) with abandon.py's
+  `ui31.sticker` parameters (DELETE with BURN IT's); a translated word falls back to the kit sticker.
+  **Calls:** (1) there is no in-run abandon on main (the GDD has no voluntary abandon: building one is a
+  mechanic), so the dialog serves the title's delete slot: `DELETE SLOT`, verb DELETE, costs TARGET /
+  RUNS / HEAT / ICE from the slot, "Your stats and achievements stay." (the profile is its own file),
+  captions "keep going [B]" / "erase slot N [A]"; `dialog_burn_it` is baked for when an abandon-run
+  rule exists. The quit confirms (title, pause) stay 2D's ConfirmDialog. (2) The pad hold-A 0.8 s on
+  the verb is a proposal in the bible (§4.13): not built (open question below). (3) The confirm
+  re-centres as its panel takes its size (at 2.0 it ran off the bottom). (4) The title's page focus
+  that lands when the page's enter motion ends no longer takes the focus from an open confirm
+  (windowed, BREACH behind the scrim took it: CANCEL showed no halo). (5) Outside 4C, smallest edits:
+  `confirm_dialog.gd` `_sticker` returns `Button` (AbandonDialog overrides it); `hud_dialog_panel.gd`
+  draws its header words and tag on an unshaded Node2D child (the panel's CRT canvas shader sampled
+  the MSDF font atlas raw: every dialog's header read dim and soft) and adds the tag's pip.
+- **Title / pages fit (resume):** at 2.0 the verbs' chips are as wide as their labels and MORE's
+  stats line reads STATS (its page's title; the tooltip names the achievements), so MORE clears the
+  verbs; each MORE line keeps room for its key hint (`HINT_GAP`; the hint ran over STATS &
+  ACHIEVEMENTS at 2.0); PROFILE sits above the pad prompts like MORE (`FOOT_GAP`; they overlapped at
+  1.0); the title's terminal chips inset their words by the plate's baked glow (`MenuChip.CHIP_GLOW`:
+  the words sat on the frame). Codex and stats texts share the page's room and scroll (`_flex`,
+  `TEXT_FLOOR_H`), and from 1.6 the run history is a section of the records text (its own window did
+  not fit over the ticker); slot rows keep `SLOT_ROW_GAP` for the focus brackets. The pause menu's
+  PAUSED sticker sits over its header's right end (as OPTIONS does) so `> PAUSED` reads. The
+  new-campaign setup is a form (`SetupForm`: names and their controls, two fields a row, one from 1.6)
+  instead of one wrapping line.
 - **Options (round 31):** `> TITLE // OPTIONS` or `> PAUSED // OPTIONS`, the yellow OPTIONS sticker,
   terminal tabs (LB / RB switch), Accessibility in two columns (EFFECTS & MOTION switches; TEXT SCALE
   slider with its value, ticks and live sample; colour-blind and resolve-speed tiles; the Heat glitch
@@ -7556,6 +7582,13 @@ and annotated in the GDD where it changes a rule.
 ### 2026-10-05 — ART-10 4C: hold-to-confirm on the abandon dialog's verb
 ART_BIBLE §4.13 calls the pad's 0.8 s hold on the committing verb (BURN IT) a proposal: not built
 (A presses it like any button). Default: no hold. Build it if the designer wants it.
+
+### 2026-10-05 — ART-10 4C: an in-run "abandon run" (the dialog's own subject)
+The round 33 abandon dialog asks "Abandon the run?" (operative lost with everything unbanked, Heat
++10 + tier, banked Schematics stay). The GDD has no voluntary abandon (a run ends by death, jack-out
+or completion), so it is a mechanic and is not built. Default: the dialog (`AbandonDialog`, with
+`dialog_burn_it` baked) serves the title's delete slot. If the designer wants an abandon-run line in
+the netrun pause menu, its rule would be the death rule (GDD 4.2) and the dialog takes its costs.
 
 ### 2026-10-05 — ART-10 4C: the HQ dossier on corp paper and JACK IN as a vinyl sticker
 The crew dossier keeps its paper card with Courier Prime (1B's CorpPaperPanel would need its orders
