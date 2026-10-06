@@ -1123,6 +1123,11 @@ func _show_site_backdrop(screen: String, s: NetrunSession) -> void:
 	site_backdrop.offset_right = 0.0
 	site_backdrop.offset_bottom = 0.0
 	site_backdrop.show_place(BackdropCatalog.place(corp, false, BackdropCatalog.is_day(RunManager.campaign), s.run.site_id))
+	# OURS NOW only where it has its room (no UI may cover pencil): from LOOT_SIDE_FROM the loot's side column and
+	# its sheet take the screen's foot, so the won Site shows without its word.
+	var ink := site_backdrop.get_node_or_null(^"OursNow") as CanvasItem
+	if ink != null:
+		ink.visible = screen != "loot" or Settings.text_scale < LOOT_SIDE_FROM
 	if screen == "loot":
 		# The won look as the fight left it; OURS NOW writes on as the page shows (D25: never faded in).
 		if site_backdrop.won < 1.0:

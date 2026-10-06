@@ -530,6 +530,7 @@ static func _panels(t: Theme) -> void:
 	var crt_glass := terminal_box(Color(Palette.TERMINAL_EDGE, 0.0), 12, 8)
 	crt_glass.bg_color = Color(Palette.TERMINAL_BG, 0.0)
 	crt_glass.set_border_width_all(0)
+	crt_glass.shadow_size = 0  # the edge glow would show through the clear centre as a wash over the glass
 	t.set_stylebox("panel", CRT_GLASS_PANEL, crt_glass)
 	# "HoloPanel" (§1.2): decrypted corp intel; this box is the corp-tinted plate and edge (the
 	# `holo_panel` shader of the material kit, 1B, draws the scanlines, bands and RGB split

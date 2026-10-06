@@ -27,6 +27,8 @@ func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN) -> void:
 		var sb := UiTheme.terminal_box(Color(p_accent, 0.0))
 		sb.bg_color = Color(sb.bg_color, 0.0)
 		sb.set_border_width_all(0)
+		sb.shadow_size = 0  # the box's accent glow drew through its clear centre as a wash over the glass
+		sb.shadow_color = Color(sb.shadow_color, 0.0)
 		add_theme_stylebox_override(&"panel", sb)
 	var outer := VBoxContainer.new()
 	outer.add_theme_constant_override("separation", 6)
