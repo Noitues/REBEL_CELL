@@ -322,6 +322,11 @@ func set_iso(cam: CityIsoCamera) -> void:
 	camera.size = iso.ortho
 	_ground_cam.global_transform = camera.global_transform
 	_ground_cam.size = iso.ortho
+	# Parity S-HQRUN: the DISPATCH canyon's HQ-run page looks down the street in perspective.
+	for c: Camera3D in [camera, _ground_cam]:
+		c.projection = Camera3D.PROJECTION_PERSPECTIVE if iso.perspective() else Camera3D.PROJECTION_ORTHOGONAL
+		c.fov = iso.fov_deg if iso.perspective() else c.fov
+	_post.set_shader_parameter("cam_distance", iso.eye_distance())
 	var lod := view_lod(cfg, iso.ortho, band_lock)
 	var op := CityLod.opacity(cfg, lod)
 	var city := CityLod.city_share(cfg, lod)

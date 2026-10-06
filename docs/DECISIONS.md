@@ -31,6 +31,81 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-05 — Parity fix — HQ runs and gate (designer group ruling)
+Designer group ruling 2026-10-05: the HQ run and the Central Server gate match the concepts (round 43
+`hq_{solace,meridian,halcyon,orbital}_compound.png`, `dispatch_idea_1_sync_strike.png`, round 38
+`central_server_gate.png`; tag art-concepts-r43) with nothing that needs a mechanic the rules lack. Audit items
+HQRUN-01, 03..08, GATE-01..03 (`docs/art_review/PARITY/GAPS.md`); HQRUN-02 held (question below). Builds on 8w
+("Art direction — ART-8 8w HQ runs on the city"), S-ARENA round 2, S-MAPVIEW (the city's map mode stays off on the
+HQ-run page: it holds no band). Sheet `docs/art_review/PARITY/fixes/HQRUN.jpg` (concept | before | after).
+- **HQRUN-01 title sticker and state key.** `HqRunView` builds its chrome in one full-page frame: a yellow title
+  sticker top left under the run's HUD band (`top_inset` = HudBar.BAND_HEIGHT; the kit's VerbSticker YELLOW, live
+  translated words, as HEAT-ALL's run titles), words **"<CORPORATION>: HQ RUN"** (the corporation display name's
+  first word; the concept's CLIMB THE HELIX / CRANE + TRAIN / THE LONG WAY / THE LAUNCH LOOP / SYNC STRIKE name
+  G12 mechanics, so not used); the state key strip at the foot right (a CrtWindow: walked / selectable / not yet /
+  cut off rings as the map draws them, RouteOverlay.draw_state_ring; no "danger": the eye is G12); the
+  `> HQ MECHANIC` terminal at the foot left presenting only the rules that exist: the breach ("one node, the
+  Central Server; its gate takes N Exploits; each extra one weakens the boss further", N =
+  `min_exploits_for_breach`) or, for a full run map, its layers, with a `STEP walked/layers` chip (the concept's
+  HEIGHT 31 % / LAP chips are G12). Chrome takes no focus or clicks; it steps aside while the gate is open.
+- **HQRUN-03 / 04 markers.** Selectable nodes carry the concept's name tab (dark glass, cyan edge, mono caps: the
+  route key's kind word, led by the choice number when there is more than one choice, numbered as the ROUTE
+  window's buttons); the Central Server keeps its chip instead. Cut-off nodes sit on a pale backing disc (they
+  read on the dark helix / canyon). The entry is the concept's lime diamond on the ground. Ring styles are the
+  route's (option A) unchanged.
+- **HQRUN-05 / 06 / 07 framing.** New `HqCompoundStage.page_camera` = the manifest camera with the page's
+  per-corporation framing from CityConfig "HQ run page" (`hq_run_ortho_scale_by_corp` Meridian 1.15, Halcyon
+  1.4, Orbital 1.15; `hq_run_target_by_corp`, `hq_run_pitch_by_corp`, `hq_run_yaw_by_corp`, `hq_run_fov_by_corp`);
+  the combat backdrop keeps `camera` (the manifest's). `run_camera` now frames the run inside the page's free
+  part (`HqRunView.free_rect`: TOP_ROOM under the HUD band for the TARGET circle and chip, above the laid-out
+  foot): an orthographic page fits the points into it (`_fit_into`), any page then aims at the points' middle
+  (`hq_run_fit_pans`) and steps back (`hq_run_fit_step`) up to FIT_MAX_SHARE 2.0 (a perspective page up to
+  `hq_run_fit_share_perspective` 1.25: further back the canyon's far rows crowd into the core); still too tall,
+  the run's top stays in (`hq_run_fit_slack_px`) and the entry may sit under the foot (only at text 1.6+ on
+  1280 x 720). Solace frames wider than before (ortho 190 -> 254) because the server and its chip now stay
+  under the HUD band (in game the chip sat under the band). Meridian's call-outs, Orbital's loop route and
+  MISSILE BAY, Halcyon's switchback and eye are G12: listed, not built.
+- **HQRUN-08 the REBEL_CELL HQ.** The canyon page is a **perspective** view: round 34's own concept camera
+  (`hq34.py` CAM27: elevated telephoto, 54 mm lens = 36.9 degrees horizontal, about 19 degrees down the street),
+  `hq_run_fov_by_corp` 36.9, pitch 19, target 10 BU nearer the camera, width 0.6 x the manifest's. An orthographic
+  camera along the street cannot show the canyon's walls at any pitch (tried 26 and 20: it still read as a top-down
+  grid). `CityIsoCamera.fov_deg` (0 = the iso camera, every other view unchanged): `eye_distance` frames `ortho`
+  at the target, `project` / `unproject` / `transform` / `copy` follow it; `CityView3D.set_iso` sets both cameras'
+  projection and fov and the post's `cam_distance` (= `eye_distance`, unchanged 2600 for iso views).
+- **GATE-01 panel.** The concept's card (exploits.py `panel()` values at two thirds, its colours as the nearest palette tokens, type at the 12 px floor): dark glass (NET_BG_OUTER at 0.894),
+  a 2 px edge in the corp colour once the breach is ready (DISABLED grey before), radius 9, the corp bar down the
+  left side, header in Plex Medium, subtitle in the mono, EXPLOITS and the count in Anton, sockets 128 x 175 (lit:
+  the corp colour darkened 0.88 under a corp edge; empty: dashed with a plus), the kind word under each socket,
+  BREACH centred under the panel with Back beside it, the wheel right of centre (the concept's 65 % of the width).
+  Panel width 427 x text scale (at most 1.5x). The keycards and BREACH vinyl stay the generator's art.
+- **GATE-02 one label.** The gate joins `CentralServerGate.GROUP` and tells every HQ-run page (`HqRunView.GROUP`,
+  `set_gate_open`) it is open; the page hides its chip and chrome until the last gate leaves (no hookup in
+  netrun_scene). The exploit-effect card (INTEL // ... BREACHED) and cut slices on the preview are G6: listed,
+  not built. Preview == result unchanged (`breach_preview`).
+- **GATE-03 backdrop.** The shared GlassScrim (blur + SCRIM dim; opaque under high contrast) plus the concept's
+  darker side behind the panel (0.45 at the left edge to nothing at 40 % of the width) and a soft dark disc under
+  the wheel.
+- **Kept.** Motion entries gate_keycard_stagger / gate_socket_ring / gate_breach_ready / sticker_slap, MotionSkip,
+  reduce effects = end state, pad focus on BREACH, the run's press path.
+- **Measured** (windowed, hq_run_lab city GPU, 1920 x 1080, shared machine): tier 2 canyon page 3.7 ms, canyon full
+  map 4.5, canyon gate 3.6, Solace 3.5, Halcyon 3.5, Meridian gate 3.0; tier 1 3.1 / 5.9 / 4.8 / 5.0 / 5.2 / 4.1; in
+  game (perf_pack, Solace) page frame 4.0 ms mean, gate 3.7 ms (root GPU 0.75 ms with the blur); all in the 8 ms
+  budget.
+- **Tests.** New `tests/unit/test_parity_hq_run.gd` (fast): title per corporation, key order, terminal words
+  (no G12 words), chrome fit at 1.0 / 1.6 / 2.0 at 1280 x 720 and 1920 x 1080, tabs and numbers, full maps of every
+  corporation clear of the chrome with cut-off nodes, the framing per corporation (page further out, backdrop's
+  camera unchanged), the canyon's perspective (lanes converge, rows climb), perspective maths (pick == project,
+  eye distance, iso unchanged), the gate's card, the gate's fit at every text size, one label (two gates too),
+  the blur scrim, the run under the HUD band at every text size. No test dropped or changed.
+- **Lab.** `hq_run_lab` `--scale=`; each corporation's own campaign (the lab profile holds the unlock; REBEL_CELL
+  still falls back to Solace's boss there: its unlock has requirements); the corporation's display name on the gate.
+- **Files outside the area (smallest change):** `scripts/city3d/city_view_3d.gd` (`set_iso`: 4 lines),
+  `scripts/city3d/city_config.gd` ("HQ run page" group), `assets/text/strings.csv` (re-exported),
+  `tests/test_manifest.json`.
+- **Relay (optional, netrun_scene.gd, S-NETRUN's):** the HUD band still reads NETRUN // ROUTE over the page's own
+  title sticker; `hud.set_screen("", "")` on a boss run's map would leave one title (the band then shows the Heat
+  gauge, as the HQ). Not done here.
+
 ### 2026-10-05 — HQ redesign — direction B (designer rulings)
 Design: `docs/art_review/HQ_REDESIGN/PROPOSAL.md` (inventory of the HQ's 26 functions, direction B "THE HAND"), built
 by HQ-BUILD in the brief's order, one commit per step ("HQ-B <step>: <criterion>"). Designer rulings 2026-10-05,
@@ -9728,6 +9803,14 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **HQRUN-02, today's HQ run as nodes (2026-10-05, held, not built; see "Parity fix — HQ runs and gate"):** GDD 4.2
+  / 11.7 make the HQ run the breach: one node, the Central Server, behind the gate's Exploits; the page draws one
+  dashed line from the entry to the server. The round 43 concepts draw a whole compound route (nodes on the helix,
+  the crane arms, the ziggurat's switchbacks, the launch loop, three canyon lanes). Should the HQ run become a
+  netrun of its own on the compound (layers of nodes before the breach, as the full-map layout `full_<corp>`
+  already places them) and if so how long, with what node mix, and do Heat, death and banking follow GDD 4.2? The
+  per-corporation mechanics on top (G11 / G12) are separate. Default kept: the breach run, one node. Also: the page
+  title reads "<CORPORATION>: HQ RUN" until the concept's mechanic names have mechanics (G12).
 - **HQ redesign B, the raid setup at big text (2026-10-06, built, see "HQ redesign — direction B" (g)):** with the
   round 40 layout (RAID-06) at text 1.3 and up a late network does not fit the map all at once; every node is on
   screen and the map follows the target. Keep, or move YOUR NETWORK under THREAT INTEL at big text? RAID-05: no

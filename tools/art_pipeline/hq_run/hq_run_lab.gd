@@ -9,7 +9,8 @@ extends Control
 ##   python tools/run_windowed.py --log <f> -- --resolution 1920x1080
 ##     res://tools/art_pipeline/hq_run/hq_run_lab.tscn -- --out=<dir> --states=run_meridian,gate_solace
 ##     [--tier=1] [--settle=30] [--perf=60] [--raw=160x90 (S-ARENA: also <state>_raw.png, the
-##     backdrop city's own render before its grade, at that size)]
+##     backdrop city's own render before its grade, at that size)] [--scale=2.0 (S-HQRUN: the
+##     text size)]
 ## Prints "HQRUN <state> gpu_ms=<city viewport GPU ms> frame_ms=<frame ms>" per state.
 
 const MAX_WAIT := 900
@@ -24,6 +25,7 @@ var _backdrop: CombatBackdrop = null
 var _perf: Array[float] = []
 var _frame_ms: Array[float] = []
 var _ready_at: int = -1
+var _scale_was: float = -1.0
 
 
 func _ready() -> void:
@@ -34,6 +36,10 @@ func _ready() -> void:
 	_states = PackedStringArray(String(_args.get("states", "run_meridian")).split(","))
 	if _args.has("tier"):
 		Settings.city_quality = int(_args["tier"])
+	if _args.has("scale"):
+		# Parity S-HQRUN: the pages and the gate at a text size (1.0 / 1.6 / 2.0); restored at quit.
+		_scale_was = Settings.text_scale
+		Settings.text_scale = float(_args["scale"])
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var bg := ColorRect.new()
 	bg.color = Palette.NIGHT_SKY
@@ -48,7 +54,15 @@ func _corp_of(state: String) -> StringName:
 
 func _session(corp: StringName) -> NetrunSession:
 	RunManager.save_slot = "lab_hq_run"
+	# Parity S-HQRUN: every corporation's own campaign (its boss on the gate), not the locked
+	# corporations' fallback to Solace: the lab's profile (its own APPDATA) holds the unlock.
+	var u := CampaignRules.unlock_for(RunManager.lookup(), RunManager.lookup().get_content(corp))
+	var added := u != null and not RunManager.profile.unlocks.has(u.id)
+	if added:
+		RunManager.profile.unlocks.append(u.id)
 	RunManager.new_campaign(11, corp)
+	if added:
+		RunManager.profile.unlocks.erase(u.id)
 	var c := RunManager.campaign
 	for e in [RC.ExploitType.INTEL, RC.ExploitType.BREACH, RC.ExploitType.VIRUS]:
 		if not c.exploits.has(e):
@@ -105,7 +119,7 @@ func _load(state: String) -> void:
 				var g := CentralServerGate.new()
 				var held: Array[int] = []
 				held.assign(CentralServerGate.KINDS)
-				g.setup(corp, String(corp).capitalize(), HqCompoundStage.server_name(HqCompoundStage.manifest(corp)), 4, held, 3,
+				g.setup(corp, TextDb.t(RunManager.corporation, "display_name"),HqCompoundStage.server_name(HqCompoundStage.manifest(corp)), 4, held, 3,
 					s.breach_preview(), RunManager.lookup())
 				_host.add_child(g)
 		"hq", "site", "won":
@@ -144,7 +158,7 @@ func _process(delta: float) -> void:
 	if since < settle + perf:
 		return
 	var state := _states[_step]
-	var out := String(_args.get("out", "user://hq_run_lab"))
+	var out :=String(_args.get("out", "user://hq_run_lab"))
 	DirAccess.make_dir_recursive_absolute(out)
 	get_viewport().get_texture().get_image().save_png("%s/%s.png" % [out, state])
 	if _args.has("raw") and _backdrop != null and _backdrop.on_city():
@@ -157,6 +171,8 @@ func _process(delta: float) -> void:
 	_step += 1
 	if _step >= _states.size():
 		RunManager.delete_save()
+		if _scale_was > 0.0:
+			Settings.text_scale = _scale_was
 		get_tree().quit()
 		return
 	_load(_states[_step])
