@@ -364,7 +364,7 @@ func test_the_loot_names_what_paid_out_and_its_socket_list_as_the_mainframe_does
 			RC.InfilNodeType.SERVER_RACK:
 				assert_eq(said, "RACK BREACHED")
 			RC.InfilNodeType.TERMINAL:
-				assert_eq(said, "EVENT PAYOUT")
+				assert_eq(said, "EVENT LOOT", "B5 (D8): PAYOUT is a terminal word, never the sticker")
 	await _close(scene)
 
 

@@ -45,14 +45,16 @@ var _title: String = ""
 func _init() -> void:
 	name = "HudBar"
 	var band := StyleBoxFlat.new()
-	band.bg_color = Color(0.02, 0.04, 0.1, 0.92)
+	band.bg_color = Color(0.02, 0.04, 0.1, 0.0)  # B5: the kit glass behind it is the band's fill
 	band.border_color = Palette.NET_CYAN
 	PaletteSkins.track_box(band)  # ART-12 12s-b: the band's rule follows the skin
 	band.border_width_bottom = 2
 	band.content_margin_left = 10
 	band.content_margin_right = 10
 	add_theme_stylebox_override("panel", band)
-	material = UiTheme.crt_material()
+	# B5 (B1c follow-up 2): the kit's CRT glass (scanlines, the hex dump that fades under the counters' words), not
+	# the shared crt_panel material.
+	CrtTerminalPanel.behind(self)
 	custom_minimum_size.y = BAND_HEIGHT
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
@@ -186,7 +188,10 @@ func set_stats(items: Array, captions: Array = []) -> void:
 func land_pulse(kind: String) -> Control:
 	match kind:
 		"card":
-			return stats if stats.land_pulse(StatIcon.CARDS) else null
+			# B5 (review section f): a page whose bar does not show CARDS (the Mainframe) lands the card on VIEW
+			# LOADOUT, where the deck is (below).
+			if stats.land_pulse(StatIcon.CARDS):
+				return stats
 		"daemon":
 			if daemon_button.is_visible_in_tree():
 				Motion.pop(daemon_button, HudStats.LAND_PULSE)

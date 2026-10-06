@@ -40,11 +40,33 @@ func _init(p_caption: String = "", p_tint: Color = Palette.CORP_SOLACE, p_voice_
 	item_rect_changed.connect(_fit)
 
 
+## B5 (review D9: never an empty CAM box): the feed shows `tex` (the run's Site close-up: its still or its city's
+## texture) through the CAM look, a ZOOM-magnified crop round PICTURE_AIM of it, instead of the screen copy.
+func show_picture(tex: Texture2D) -> void:
+	picture = tex
+	_fit()
+
+
+## The close-up the feed shows (null: the screen copy behind the page).
+var picture: Texture2D = null
+## Where the feed aims on a picture (UV; the close-ups frame their target a little above the middle).
+const PICTURE_AIM := Vector2(0.5, 0.45)
+
+
 func _fit() -> void:
 	if _pic == null:
 		return
 	_pic.position = Vector2.ONE * FRAME
 	_pic.size = size - Vector2.ONE * FRAME * 2.0
+	var mat := _pic.material as ShaderMaterial
+	mat.set_shader_parameter(&"use_picture", picture != null)
+	if picture != null:
+		mat.set_shader_parameter(&"picture_tex", picture)
+		var aspect := (size.x / maxf(size.y, 1.0)) / maxf(float(picture.get_width()) / maxf(float(picture.get_height()), 1.0), 0.01)
+		var w := clampf(1.0 / ZOOM * maxf(aspect, 1.0), 0.05, 1.0)
+		var h := clampf(w / maxf(aspect, 0.01), 0.05, 1.0)
+		mat.set_shader_parameter(&"src", Vector4(clampf(PICTURE_AIM.x - w * 0.5, 0.0, 1.0 - w), clampf(PICTURE_AIM.y - h * 0.5, 0.0, 1.0 - h), w, h))
+		return
 	# the city behind the feed, magnified about its centre (screen UV)
 	var vp := get_viewport_rect().size if is_inside_tree() else Vector2(1280, 720)
 	var r := get_global_rect()
@@ -86,9 +108,14 @@ func _ready() -> void:
 		var s := text_scale
 		var f := Palette.mono()
 		var fs := roundi(CAPTION_PX * s)
-		var tw := f.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var words := caption
+		var tw := f.get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		# B5 (Q14): on the narrow strip the caption keeps its camera (CAM 17), never runs past the feed.
+		if tw + REC_R * 4.0 * s + 12.0 + 10.0 * s > size.x:
+			words = caption.get_slice("  ", 0)
+			tw = f.get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var box := Rect2(Vector2(10, 10) * s, Vector2(tw + REC_R * 4.0 * s + 12.0, f.get_height(fs) + 6.0))
 		cap.draw_rect(box, Color(Palette.NIGHT_SKY, 0.75))
 		cap.draw_circle(box.position + Vector2(REC_R * 2.0 * s, box.size.y * 0.5), REC_R * s, Palette.HARM)
-		cap.draw_string(f, box.position + Vector2(REC_R * 4.0 * s, 3.0 + f.get_ascent(fs)), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.TEXT_HI))
+		cap.draw_string(f, box.position + Vector2(REC_R * 4.0 * s, 3.0 + f.get_ascent(fs)), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.TEXT_HI))
 	add_child(cap)

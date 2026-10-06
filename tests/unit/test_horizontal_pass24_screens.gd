@@ -481,7 +481,7 @@ func test_route_shop_event_loot_words_are_translated_once() -> void:
 	for n in _all(scene._panel):
 		if n is GraffitiTag:
 			assert_true((n as GraffitiTag).text.begins_with(PSEUDO_PREFIX), "LOOT: pick a card translated")
-	assert_true(String(scene.hud._title).begins_with(PSEUDO_PREFIX), "BREACH PAYOUT translated")
+	assert_eq(String(scene.hud._title), "", "B5 (D8): no bar title on the loot (the page's FIGHT WON sticker; PAYOUT is the terminal's word)")
 	await _close(scene)
 
 
@@ -1009,7 +1009,9 @@ func test_the_top_bar_says_whose_numbers_it_shows() -> void:
 	var words := []
 	for cp in rs.captions:
 		words.append(cp[1])
-	assert_eq(words, ["CAMPAIGN", "THIS RUN"], "a run: the campaign's numbers, then the run's")
+	# B5 (review section f, expectation changed on purpose): the route bar is the run's HP and Cycles only (Heat is the
+	# gauge), so no captions split it.
+	assert_eq(words, [], "the route bar needs no captions")
 	for i in rs.items.size():
 		assert_ne(String(rs.items[i][3]), "", "run tag %s has a tooltip" % rs.items[i][0])
 	await _close(scene)

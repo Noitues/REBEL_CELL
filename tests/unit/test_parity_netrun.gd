@@ -244,16 +244,13 @@ func test_the_event_terminal_has_its_place_the_run_panel_and_chips_beside_the_ch
 		await _show(scene)
 		var panel := scene._panel.find_child("EventPanel", true, false) as CrtWindow
 		assert_eq(panel.title, scene.event_header(s, TextDb.t(s.lookup.get_content(s.campaign.corporation_id), "display_name").to_upper()), "x%.1f: EVT-01 header" % scale)
-		var run: Node = scene._panel.find_child("EventRun", true, false)
-		if scale < NetrunScript.EVENT_FEED_BELOW:
-			assert_not_null(run, "x%.1f: the RUN terminal" % scale)
-			var words := PackedStringArray()
-			for l in (run as Node).find_children("*", "Label", true, false):
-				words.append((l as Label).text)
-			var op := s.run.operative
-			assert_true(words.has("%d/%d" % [op.hp, op.max_hp]), "x%.1f: HP" % scale)
-			assert_true(words.has(str(s.run.cycles)), "x%.1f: CYCLES" % scale)
-			assert_true(words.has(str(s.campaign.living_operatives().size())), "x%.1f: CREW" % scale)
+		# B5 (review section f, expectation changed on purpose): no RUN side terminal; the top bar carries what the
+		# choices change (HP, Cycles, crew ...: event_bar_keys).
+		assert_null(scene._panel.find_child("EventRun", true, false), "x%.1f: no RUN terminal" % scale)
+		var shown := []
+		for it in scene.hud.stats.items:
+			shown.append(String(it[0]))
+		assert_eq(shown, NetrunScript.event_bar_keys(s), "x%.1f: the bar shows what the choices change" % scale)
 		var ev := s.current_event()
 		for i in ev.choices.size():
 			var b := scene._panel.find_child("Choice%d" % (i + 1), true, false) as Button
@@ -268,16 +265,18 @@ func test_the_event_terminal_has_its_place_the_run_panel_and_chips_beside_the_ch
 		await _close(scene)
 
 
-func test_dispatch_is_a_transcript_on_paper_not_a_waveform() -> void:
+func test_dispatch_is_a_voice_trace_and_a_crt_transcript_never_paper() -> void:
+	# B5 (review D10, designer ruling 5; EVT-03 expectation reverted on purpose): DISPATCH is the Cell's handler, voice
+	# only: the red voice trace and the transcript in the red-accent CRT, never paper.
 	var scene := _netrun()
 	DemoSetup.open_event(RunManager.netrun, &"ev_dispatch_early_reply")
 	await _show(scene)
-	var memo := scene._panel.find_child("CorpMemo", true, false) as CorpMemo
-	assert_not_null(memo, "EVT-03: DISPATCH's story is on paper")
-	assert_eq(memo.head_word, CorpMemo.TRANSCRIPT_HEAD)
-	assert_eq(memo.sheet.stamp, tr(CorpMemo.TRANSCRIPT_STAMP), "the concept's DO NOT FORWARD stamp")
-	assert_null(scene._panel.find_child("CamFeed", true, false), "no voice-only feed")
-	assert_true(memo.is_ancestor_of(scene._panel.find_child("EventText", true, false)), "the story is on the paper")
+	assert_null(scene._panel.find_child("CorpMemo", true, false), "EVT-03: no paper")
+	var feed := scene._panel.find_child("CamFeed", true, false) as CamFeed
+	assert_not_null(feed, "the voice trace")
+	assert_true(feed.voice_only, "VOICE ONLY // NO FEED")
+	var panel := scene._panel.find_child("EventPanel", true, false) as CrtWindow
+	assert_true(panel.is_ancestor_of(scene._panel.find_child("EventText", true, false)), "the transcript in the CRT")
 	await _close(scene)
 
 
