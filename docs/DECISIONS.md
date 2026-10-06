@@ -78,6 +78,9 @@ saturation cap), B1b (the wax pencil), B1c / B1d (CRT, the sweep scheduler). She
   with the core's name made the player's row too long: the tutorial and toasts covered it at 2.0). The upcoming-phase
   lines an Intel reveal shows moved from the hub to its tooltip. Replay numbers keep off the name only
   (`hub_text_extent`).
+  The name is under ART_BIBLE §4.2's 12 px caption floor by the review's own number (7 canvas px = 10 px at 1080p):
+  `tools/visual_qa/lint_baseline.json` wheel_view `font_const` 2 -> 3 (NAME_FONT_SIZE; NAME_MIN_FONT is derived from it).
+  The name is also the boss banner's and the hub tooltip's first line.
 - **The aiming result (designer 2026-10-06).** `PlayResultPlate` removed. While a card's aim is on a target, every
   wheel the play changes (as before: the aimed one and any whose chips differ from the forecast without the card) gets
   its HP number and result chips underlined in the B1b wax (`CombatScene.result_underlines`, drawn by
@@ -89,7 +92,7 @@ saturation cap), B1b (the wax pencil), B1c / B1d (CRT, the sweep scheduler). She
   card's rest tilt; `ZineCard.set_fan`, hover still turns it to 0), 12 % overlap (the hand box's separation is minus
   12 % of a card's width; `_card_scale_for` counts the overlap), a 6 px (1080p) arc rise at the middle (`fan_rise`,
   drawn). At rest every card is full brightness; while aiming the others go to 75 % brightness, opaque (they were 45 %
-  alpha). A card short of RAM is greyscale (`ZineCard.set_greyed`, new `shaders/kit/card_grey.gdshader`, a little
+  alpha). A card short of RAM is greyscale (`ZineCard.set_greyed`, new `shaders/card_grey.gdshader`, a little
   darker) with its NEED tag in colour on its own child layer (`CardFace.draw_need`).
 - **D16 EXECUTE.** Share Tech Mono at 25 % alpha (`SendItSticker.SYSTEM_WORD_ALPHA`; round 22 said 30), its cap height
   0.8 x the kit sticker's SEND IT cap height (measured on both faces), the sticker's body placed with its top-left at
@@ -126,7 +129,7 @@ saturation cap), B1b (the wax pencil), B1c / B1d (CRT, the sweep scheduler). She
   (the close-up pitch; past the city's edge the close-up shows sky), `test_b1b_wax_pencil` (the plate's exemption),
   `test_layout_rules` (the HeatChip node), `test_anim3_card_motion` (the fan's rest tilt compared within 0.001),
   `test_anim_r4_city` (the fight shows the Heat chip, its banner inside its tag), `test_art12b_skin_chrome` (wheel_view's
-  semantic cyan uses 13 -> 15: FROZEN and LOCKDOWN chips).
+  semantic cyan uses 13 -> 15: FROZEN and LOCKDOWN chips), `test_names_pass` (LOCKDOWN is now the standing chip's word).
   None dropped.
 - **Open questions for the designer** (defaults built). (1) The lime target brackets with several enemy wheels (D4
   says lime = focus): kept then, as the attacks' focus; alternative: no target mark outside aiming. (2) The passive's
@@ -10412,6 +10415,7 @@ and annotated in the GDD where it changes a rule.
 - The lime target brackets with several enemy wheels: kept outside aiming as the attacks' focus (D4: lime = focus); alternative: no target mark outside aiming.
 - The hub passive's name: in the tooltip only (the emblem is the passive); alternative: a short chip beside the HP.
 - Site close-ups at street level frame a low Site building small (Meridian, Orbital) until the per-fight backdrops.
+- The hub's tiny name (review D2: 9-10 px at 1080p) is under the 12 px caption floor (ART_BIBLE §4.2); built as the review asks.
 
 - **B1b pencil audit (2026-10-06, see "B1b — wax pencil material and pencil audit"): answered (art director 2026-10-06: all three stay; the raid verdict slice goes to B3).** Was: three pencil notes are kept only
   because a locked concept draws them, not because they are plans: the title's NEVER SLEEP motto (round 33 title A),

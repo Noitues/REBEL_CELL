@@ -217,7 +217,7 @@ const HUB_FONT_SIZE := 10
 ## B2 (review D2): the hub's tiny name, 10 px at 1080p (x BOARD_TO_CANVAS: 7 canvas px at text 1.0;
 ## round 40 hub_cores_v3), never under NAME_MIN_FONT; it spans HUB_NAME_WIDTH of the hub's diameter.
 const NAME_FONT_SIZE := 7
-const NAME_MIN_FONT := 6
+const NAME_MIN_FONT := NAME_FONT_SIZE - 1
 const HUB_NAME_WIDTH := 0.8
 const VALUE_FONT_SIZE := 20
 const HP_FONT_SIZE := 22

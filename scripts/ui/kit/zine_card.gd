@@ -57,7 +57,7 @@ var _fanned: bool = false
 ## B2 (D15): unaffordable and shown greyscale (set_greyed); the NEED tag's own layer over it.
 var greyed: bool = false
 var _need_layer: Control = null
-const CARD_GREY_SHADER := preload("res://shaders/kit/card_grey.gdshader")
+const CARD_GREY_SHADER := preload("res://shaders/card_grey.gdshader")
 static var _grey_mat: ShaderMaterial = null
 var draw_offset: Vector2 = Vector2.ZERO
 var draw_tilt: float = 0.0

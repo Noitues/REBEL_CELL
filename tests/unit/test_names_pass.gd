@@ -171,7 +171,7 @@ func test_a_hub_breach_says_lockdown_not_breached() -> void:
 	assert_true(text.contains("LOCKDOWN"), "the log says LOCKDOWN: %s" % text)
 	assert_false(text.to_upper().contains("BREACH" + "ED"), "never the home server's word: %s" % text)
 	var view := FileAccess.get_file_as_string("res://scripts/ui/wheel_view.gd")
-	assert_true(view.contains("tr(\" (LOCKDOWN)\")"), "the hub line says LOCKDOWN")
+	assert_true(view.contains("tr(\"LOCKDOWN\")"), "the hub says LOCKDOWN (B2: its standing chip)")
 	assert_false(view.contains("(BREACH" + "ED)"), "and never the home server's word")
 
 
