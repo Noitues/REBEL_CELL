@@ -1,63 +1,304 @@
 class_name MainframeSign
 extends Control
-## The Mainframe's vertical neon sign (left edge of the shop): a rounded pink border, a dense
-## printed-circuit board inside it with traces running in from the border, MAINFRAME stacked
-## in the drawn cybernetic face (pink) and CYBER SHOP under it (cyan), both sprouting
-## traces, and BUY / SHRED sticky notes overlapping the bottom-right corner (the Mainframe
-## sells and removes cards; nothing is sold back, H20). Decoration.
+## ART-9 4A (ART_BIBLE v2 §4.10, LOCKED v4): the MAINFRAME shop's vertical neon sign on the F1b
+## Tenement facade: filled neon tubes (saturated body, thin hot centre line, unlit tubes as dark
+## glass) on a circuit-board plate whose traces belong to the letters and light with them. Normal
+## = blue; the takeover plays in the Cell's red: NO -> MoRE -> MAN, I AM -> AI, I AM -> NO -> MAN
+## (round 33 `mainframe_sequence_v4`, `iamai_sequence_v4`, `iamnoman_sequence_v4`).
+##
+## Drawn from round 33's own renders, baked per letter (tools/art_bake/mainframe_sign_bake.py):
+## the dark plate, then one light layer per tube added at its level (the frame, the rails, each
+## letter in blue and red, the two A's lit only as an "o"), and the snapped glass and soot of the
+## dead letters taken away. The sign is the diegetic name of the shop (a store name, never
+## translated, like any sign in the world). Decoration: it changes no state.
+##
+## Motion: the tubes warm up on entering (`mainframe_sign_warmup`, each striking at its own
+## hash-picked moment within `mainframe_sign_strike`, flickering for `mainframe_sign_flicker`),
+## the traces light after them (`mainframe_trace`), then after `mainframe_takeover`'s delay the
+## takeover plays once per visit (its frames at `amplitude` per second). Reduce effects and
+## headless show the lit blue sign (the end state); a press that ends a motion lands it.
 
-const PINK := Palette.CELL_PINK
-## The sticky notes' lettering (px; a longer translation shrinks to fit).
-const STICKY_FONT := 24
-## The sticky notes: what the Mainframe does (keys, translated when drawn).
-const NOTES: Array[String] = ["BUY", "SHRED"] # TR
-## ANIM-R6 B11: a sticky note's width and its glyph's radius (px), the sign's bag (its radius,
-## its top inside the border, its glow's size and alpha), and the bag's tube id (warm-up).
-const STICKY_W := 104.0
-const STICKY_GLYPH := 12.0
-const BAG_R := 22.0
-const BAG_TOP := 22.0
-const GLOW_GROW := 1.25
-const GLOW_ALPHA := 0.35
-const TUBE_BAG := 99
-## ANIM-R6 B11: the sign's glyph (a shop bag) and each sticky note's (a cart for BUY, a
-## shredder for SHRED), readable whatever the language.
-const SIGN_GLYPH := StatIcon.SHOP
-const NOTE_GLYPHS: Array[StringName] = [StatIcon.CART, StatIcon.SHRED]
-## The sign's words (keys; H24 S3: drawn in the player's language, in the cybernetic face
-## when it has every letter, else in the display font).
-const WORD_MAINFRAME := "MAINFRAME" # TR
-const WORD_CYBER := "CYBER" # TR
-const WORD_SHOP := "SHOP" # TR
+signal light_changed
 
+const BASE := preload("res://assets/backdrops/shop/sign_base.png")
+const LAYERS := preload("res://assets/backdrops/shop/sign_layers.png")
+const TABLE := "res://assets/backdrops/shop/sign_layers.json"
+## The letters (M0 A1 I2 N3 F4 R5 A6 M7 E8) and the two A's that light as an "o".
+const LETTERS := 9
+const A_TOPS: Array[int] = [1, 6]
+## Takeover words as lit letters ([index, "o"] = only the A's top half), per sequence (LOCKED).
+const SEQUENCES := {
+	&"no_more_man": [["NO", [3, [6, "o"]]], ["MoRE", [0, [1, "o"], 5, 8]], ["MAN", [0, 1, 3]]],
+	&"i_am_ai": [["I AM", [2, 6, 7]], ["AI", [1, 2]]],
+	&"i_am_no_man": [["I AM", [2, 6, 7]], ["NO", [3, [6, "o"]]], ["MAN", [0, 1, 3]]],
+}
+const SEQUENCE_ORDER: Array[StringName] = [&"no_more_man", &"i_am_ai", &"i_am_no_man"]
+## Round 33's frame plan (frames at the takeover's rate): the sign stutters into red, holds the
+## Cell's red, its dead letters drop out, it goes dark, each word holds then stutters into the
+## next (twice round), and the old sign flashes back before the blue returns.
+const F_STUTTER := 10
+const F_RED := 8
+const F_DROP := 4
+const F_DARK := 2
+const F_WORD := 9
+const F_BETWEEN := 3
+const LOOPS := 2
+const F_FLASH := 3
+## Stutter: the share of tubes lit, half lit (a frame's draw, by hash).
+const STUTTER_ON := 0.45
+const STUTTER_HALF := 0.7
+## A word's tube that dips on a hum frame, and how often a word hums.
+const HUM_FRAMES: Array[int] = [3, 6]
+const HUM_CHANCE := 0.6
+## Takeover light on the street: the words keep about a tenth of the spill (bible §4.10).
+const WORD_SPILL := 0.09
+## The rails light at this share of the brightest letter when the frame is dark.
+const RAIL_SHARE := 0.8
+## ANIM-R3 A7: an unlit tube's level during the warm-up, the flicker steps and their lit chance.
+const TUBE_OFF_ALPHA := 0.12
+const WARM_STEPS := 14
+const FLICKER_ON := 0.6
+## Tube ids for the warm-up hash: the frame, then each letter (1..9).
+const TUBE_BORDER := 0
 
-## Animation pass ANIM-6 (ANIMATION_HANDOFF 4.19): on entering the Mainframe the neon tubes warm
-## up (`mainframe_sign_warmup`: each tube flickers on at its own, hash-picked moments, then
-## holds) and the circuit traces light up one after another with CYBER SHOP last
-## (`mainframe_trace`). 1 = lit (the rest state; reduce effects and headless stay there).
+## Warm-up progress (1 = lit, the rest state) and the traces' (ANIM-6).
 var warm: float = 1.0
 var trace: float = 1.0
+## Which takeover this sign plays (SEQUENCE_ORDER index; the shop picks it per visit).
+var sequence_index: int = 0
 var _tweens: Array[Tween] = []
-## Flicker steps across the warm-up, and the alpha of an unlit tube.
-const WARM_STEPS := 14
-const TUBE_OFF_ALPHA := 0.12
-## ANIM-R3 A7 / ANIM-R4 C5: every tube strikes within `mainframe_sign_strike` of the warm-up,
-## flickers for `mainframe_sign_flicker` after it (lit at a flicker step with this chance: a
-## drawing threshold, not motion), then holds.
-const FLICKER_ON := 0.6
-## Tube ids for the warm-up hash: the border, then each letter.
-const TUBE_BORDER := 0
-## The strike and flicker shares of the warm-up that plays (read once as it starts, so a
-## warm-up shorter than a frame still reads its entries; `tube` uses these).
 var _strike: float = 0.0
 var _flicker: float = 0.0
+## The takeover playing: its frames and the time into it (-1 = not playing).
+var _frames: Array[Dictionary] = []
+var _t: float = -1.0
+var _wait: float = -1.0
+## Levels shown now (see `_state`).
+var _now: Dictionary = {}
+var _adds: Control
+var _subs: Control
+static var _table: Dictionary = {}
 
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	custom_minimum_size = Vector2(210, 540)
-	MotionSkip.register_passive(self)  # ANIM-R6 D7: the warm-up ends with any press that ends a motion
+	custom_minimum_size = canvas_size() * PLATE_SCALE
+	MotionSkip.register_passive(self)
+	_subs = _layer(CanvasItemMaterial.BLEND_MODE_SUB, &"sub")
+	_adds = _layer(CanvasItemMaterial.BLEND_MODE_ADD, &"add")
+	_now = blue_state(1.0)
+	set_process(false)
 
+
+## The sign canvas is drawn at this scale of its baked size by default (the plate lands on the
+## facade's plate at 1280x720).
+const PLATE_SCALE := 2.0 / 3.0
+
+
+func _layer(blend: int, mode: StringName) -> Control:
+	var c := Control.new()
+	c.name = "Light_%s" % mode
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var m := CanvasItemMaterial.new()
+	m.blend_mode = blend
+	c.material = m
+	c.set_anchors_preset(Control.PRESET_FULL_RECT)
+	c.draw.connect(_draw_layers.bind(c, mode))
+	add_child(c)
+	return c
+
+
+## The baked table: canvas size, plate rect and layers (name -> {rect, at, mode}).
+static func table() -> Dictionary:
+	if _table.is_empty():
+		var j := load(TABLE) as JSON
+		_table = j.data if j != null and j.data is Dictionary else {}
+	return _table
+
+
+## The baked canvas size (px).
+static func canvas_size() -> Vector2:
+	var c: Array = table().get("canvas", [250, 751])
+	return Vector2(float(c[0]), float(c[1]))
+
+
+## The plate's rect on the baked canvas (px).
+static func plate_rect() -> Rect2:
+	var p: Array = table().get("plate", [0, 0, 1, 1])
+	return Rect2(float(p[0]), float(p[1]), float(p[2]), float(p[3]))
+
+
+## Places the sign so its plate covers `plate` (the facade's plate, in the parent's space).
+func fit_plate(plate: Rect2) -> void:
+	var src := plate_rect()
+	var k := plate.size.x / src.size.x
+	size = canvas_size() * k
+	position = plate.position - src.position * k
+
+
+# ------------------------------------------------------------------ states (level tables)
+
+## Every tube at `level` in blue (the normal sign).
+static func blue_state(level: float) -> Dictionary:
+	var s := _empty()
+	s["blue_frame"] = level
+	for i in LETTERS:
+		s["blue_%d" % i] = level
+	return s
+
+
+## Every tube at `level` in the Cell's red.
+static func red_state(level: float) -> Dictionary:
+	var s := _empty()
+	s["red"] = 1.0
+	s["red_frame"] = level
+	for i in LETTERS:
+		s["red_%d" % i] = level
+	return s
+
+
+## Word `wi` of `seq` lit in red, the dead letters snapped and sooted, the frame dark.
+static func word_state(seq: StringName, wi: int, level: float = 1.0) -> Dictionary:
+	var s := _empty()
+	s["red"] = 1.0
+	_break_dead(s, seq)
+	var word: Array = (SEQUENCES[seq] as Array)[wi][1]
+	for it in word:
+		if it is Array:
+			s["red_%do" % int(it[0])] = level
+		else:
+			s["red_%d" % int(it)] = level
+	return s
+
+
+static func _empty() -> Dictionary:
+	return {"red": 0.0, "soot": 0.0}
+
+
+## The letters `seq` never lights (they get snapped tubes and soot).
+static func dead_letters(seq: StringName) -> Array[int]:
+	var used := {}
+	for w: Array in SEQUENCES[seq]:
+		for it in w[1]:
+			used[int(it[0]) if it is Array else int(it)] = true
+	var out: Array[int] = []
+	for i in LETTERS:
+		if not used.has(i):
+			out.append(i)
+	return out
+
+
+static func _break_dead(s: Dictionary, seq: StringName) -> void:
+	s["soot"] = 1.0
+	for i in dead_letters(seq):
+		s["brk_%d" % i] = 1.0
+
+
+## The level of every light layer in state `s` (rails follow the frame or the brightest letter).
+static func layer_levels(s: Dictionary) -> Dictionary:
+	var out := {}
+	var red := float(s.get("red", 0.0))
+	out["glass_red"] = red
+	out["glass_blue"] = red
+	var brightest := {"blue": 0.0, "red": 0.0}
+	for k: String in s:
+		if k == "red":
+			continue
+		out[k] = float(s[k])
+		for pal in ["blue", "red"]:
+			if k.begins_with(pal + "_") and not k.ends_with("frame"):
+				brightest[pal] = maxf(brightest[pal], float(s[k]))
+	for pal in ["blue", "red"]:
+		out["%s_rail" % pal] = maxf(float(s.get("%s_frame" % pal, 0.0)), RAIL_SHARE * float(brightest[pal]))
+	return out
+
+
+## The blue and red light this state throws on the street (0..1 each; MainframeFacade).
+static func spill_of(s: Dictionary) -> Vector2:
+	var b := float(s.get("blue_frame", 0.0))
+	var r := float(s.get("red_frame", 0.0))
+	var word := 0.0
+	for i in LETTERS:
+		b += float(s.get("blue_%d" % i, 0.0))
+		r += float(s.get("red_%d" % i, 0.0))
+	for i in A_TOPS:
+		word += float(s.get("red_%do" % i, 0.0))
+	b /= LETTERS + 1.0
+	r /= LETTERS + 1.0
+	if float(s.get("red_frame", 0.0)) <= 0.0 and r > 0.0:
+		r = minf(1.0, (r * (LETTERS + 1.0) + word) / 4.0) * WORD_SPILL  # a word: its letters' tenth
+	return Vector2(b, r)
+
+
+## The light the sign throws now (x blue, y red).
+func spill() -> Vector2:
+	return spill_of(_now)
+
+
+## The levels shown now (tests).
+func shown_state() -> Dictionary:
+	return _now.duplicate()
+
+
+# ------------------------------------------------------------------ the takeover's frames
+
+## Round 33's takeover for `seq` as frames of tube levels (deterministic: stutters by hash).
+static func takeover_frames(seq: StringName) -> Array[Dictionary]:
+	var fr: Array[Dictionary] = []
+	var words: Array = SEQUENCES[seq]
+	var dead := dead_letters(seq)
+	for i in F_STUTTER:  # the takeover hits the controller: blue and red stutter
+		var s := _empty()
+		var red := _h(seq, i, 99) < 0.5
+		s["red"] = 1.0 if red else 0.0
+		var pal := "red" if red else "blue"
+		for k in LETTERS:
+			var r := _h(seq, i, k)
+			s["%s_%d" % [pal, k]] = 1.0 if r < STUTTER_ON else (0.0 if r < STUTTER_HALF else 0.5)
+		s["%s_frame" % pal] = 1.0 if _h(seq, i, 77) < 0.5 else 0.0
+		fr.append(s)
+	for i in F_RED:  # the Cell's red, fully lit
+		fr.append(red_state(1.0))
+	for i in F_DROP:  # the dead letters drop out first, then the frame
+		var s := red_state(1.0)
+		var n_off := int(ceil(float(dead.size()) * (i + 1) / F_DROP))
+		for j in n_off:
+			s["red_%d" % dead[j]] = 0.0
+			s["brk_%d" % dead[j]] = 1.0
+		s["soot"] = 1.0
+		s["red_frame"] = 0.5 if i < 2 else 0.0
+		fr.append(s)
+	for i in F_DARK:
+		var s := _empty()
+		s["red"] = 1.0
+		_break_dead(s, seq)
+		fr.append(s)
+	for lp in LOOPS:
+		for wi in words.size():
+			for j in F_WORD:
+				var s := word_state(seq, wi)
+				if HUM_FRAMES.has(j) and _h(seq, lp * 100 + wi * 10 + j, 55) < HUM_CHANCE:
+					var word: Array = words[wi][1]
+					var hum: Variant = word[int(_h(seq, lp * 100 + wi * 10 + j, 56) * word.size()) % word.size()]
+					s["red_%do" % int(hum[0]) if hum is Array else "red_%d" % int(hum)] = 0.0
+				fr.append(s)
+			for j in F_BETWEEN:  # stutter between words
+				var s := word_state(seq, wi, _h(seq, lp * 100 + wi * 10 + j, 57) * 0.6 + 0.3)
+				var nxt := word_state(seq, (wi + 1) % words.size())
+				for k: String in nxt:
+					if k.begins_with("red_") and _h(seq, lp * 100 + wi * 10 + j, k.hash()) < 0.35:
+						s[k] = nxt[k]
+				fr.append(s)
+	for lvl in [1.0, 0.0, 0.8]:  # the old sign flickers back for a moment
+		fr.append(red_state(lvl))
+	return fr
+
+
+static func _h(seq: StringName, i: int, k: int) -> float:
+	return float(absi(hash([String(seq), i, k, 33])) % 1000) / 1000.0
+
+
+# ------------------------------------------------------------------ motion
 
 ## MotionSkip (ANIM-R6 D7): the sign is warming up.
 func motion_running() -> bool:
@@ -69,7 +310,7 @@ func complete_motion() -> void:
 	settle()
 
 
-## Warms the sign up from dark (entering the Mainframe).
+## Warms the sign up from dark (entering the Mainframe), then waits for the takeover.
 func warm_up() -> void:
 	settle()
 	_strike = strike_share()
@@ -80,7 +321,7 @@ func warm_up() -> void:
 		var tw := create_tween()
 		tw.tween_method(func(v: float) -> void:
 			warm = v
-			queue_redraw(), 0.0, 1.0, Motion.seconds(&"mainframe_sign_warmup")).set_delay(Motion.delay_of(&"mainframe_sign_warmup")).set_ease(e.ease).set_trans(e.trans)
+			_refresh(), 0.0, 1.0, Motion.seconds(&"mainframe_sign_warmup")).set_delay(Motion.delay_of(&"mainframe_sign_warmup")).set_ease(e.ease).set_trans(e.trans)
 		_tweens.append(tw)
 	if Motion.live(&"mainframe_trace"):
 		var te := Motion.entry(&"mainframe_trace")
@@ -88,12 +329,15 @@ func warm_up() -> void:
 		var tt := create_tween()
 		tt.tween_method(func(v: float) -> void:
 			trace = v
-			queue_redraw(), 0.0, 1.0, Motion.seconds(&"mainframe_trace")).set_delay(Motion.delay_of(&"mainframe_trace")).set_ease(te.ease).set_trans(te.trans)
+			_refresh(), 0.0, 1.0, Motion.seconds(&"mainframe_trace")).set_delay(Motion.delay_of(&"mainframe_trace")).set_ease(te.ease).set_trans(te.trans)
 		_tweens.append(tt)
-	queue_redraw()
+	if Motion.live(&"mainframe_takeover"):
+		_wait = Motion.delay_of(&"mainframe_takeover")
+		set_process(true)
+	_refresh()
 
 
-## Ends the warm-up at once (lit).
+## Ends the warm-up at once (lit) and stops a takeover (the blue sign: the end state).
 func settle() -> void:
 	for tw in _tweens:
 		if tw != null and tw.is_valid():
@@ -101,7 +345,11 @@ func settle() -> void:
 	_tweens.clear()
 	warm = 1.0
 	trace = 1.0
-	queue_redraw()
+	_t = -1.0
+	_wait = -1.0
+	_frames.clear()
+	set_process(false)
+	_refresh()
 
 
 ## True while the sign is still warming up.
@@ -109,11 +357,56 @@ func warming() -> bool:
 	return warm < 1.0 or trace < 1.0
 
 
-## A tube's brightness now: lit once warm, else flickering on at hash-picked steps.
-## ANIM-R3 A7: each tube strikes at its own hash-picked moment in the first
-## strike_share() of the warm-up, flickers for flicker_share(), then holds lit, so the sign is
-## whole well before the warm-up ends (a still mid-way showed one lit letter: it read as
-## broken).
+## True while the takeover plays (ambient: never a motion a press must end).
+func taking_over() -> bool:
+	return _t >= 0.0
+
+
+## Starts the takeover now (the lab, captures); it plays only where motion plays.
+func take_over() -> void:
+	if not Motion.live(&"mainframe_takeover"):
+		return
+	_frames = takeover_frames(SEQUENCE_ORDER[posmod(sequence_index, SEQUENCE_ORDER.size())])
+	_t = 0.0
+	_wait = -1.0
+	set_process(true)
+
+
+## Shows takeover frame `i` and holds it (captures).
+func show_frame(i: int) -> void:
+	_frames = takeover_frames(SEQUENCE_ORDER[posmod(sequence_index, SEQUENCE_ORDER.size())])
+	set_process(false)
+	_t = -1.0
+	_now = _frames[clampi(i, 0, _frames.size() - 1)]
+	_redraw_all()
+
+
+func _process(delta: float) -> void:
+	if _wait >= 0.0:
+		if warming():
+			return
+		_wait -= delta
+		if _wait < 0.0:
+			take_over()
+		return
+	if _t < 0.0:
+		set_process(false)
+		return
+	_t += delta
+	var i := int(_t * maxf(1.0, Motion.amplitude(&"mainframe_takeover")))
+	if i >= _frames.size():
+		_t = -1.0
+		_frames.clear()
+		set_process(false)
+		_refresh()
+		return
+	_now = _frames[i]
+	_redraw_all()
+
+
+## A tube's brightness during the warm-up: lit once warm, else flickering on at hash-picked
+## steps (ANIM-R3 A7: each strikes within strike_share() of the warm-up, flickers for
+## flicker_share(), then holds lit, so the sign is whole before the warm-up ends).
 func tube(id: int) -> float:
 	if warm >= 1.0:
 		return 1.0
@@ -127,143 +420,55 @@ func tube(id: int) -> float:
 	return 1.0 if h < FLICKER_ON else TUBE_OFF_ALPHA
 
 
-## `col` at brightness `k` (1 = lit; an unlit tube is the colour darkened, so every glow
-## layer the painters build from it dims too).
-static func _tube_color(col: Color, k: float) -> Color:
-	return col if k >= 1.0 else col.darkened(1.0 - k)
+func _refresh() -> void:
+	if _t >= 0.0:
+		return
+	var s := _empty()
+	s["blue_frame"] = tube(TUBE_BORDER)
+	for i in LETTERS:
+		s["blue_%d" % i] = tube(i + 1)
+	_now = s
+	_redraw_all()
+
+
+func _redraw_all() -> void:
+	queue_redraw()
+	_adds.queue_redraw()
+	_subs.queue_redraw()
+	light_changed.emit()
 
 
 func _draw() -> void:
-	var r := Rect2(Vector2(6, 6), Vector2(size.x - 44, size.y - 40))
-	_rounded_border(r, 26, _tube_color(PINK, tube(TUBE_BORDER)))
-	_board_traces(r.grow(-12), PINK, 80)
-	_border_traces(r, PINK)
-	# ANIM-R6 B11: a shop bag in neon at the head of the sign (the sign said what it was in
-	# words only: under a language the player can't read it was a column of letters).
-	var bag_at := r.position + Vector2(r.size.x * 0.5, BAG_TOP + BAG_R)
-	var bag_col := _tube_color(Palette.CELL_ACID, tube(TUBE_BAG))
-	StatIcon.draw(self, bag_at, BAG_R * GLOW_GROW, SIGN_GLYPH, Color(bag_col, GLOW_ALPHA))
-	StatIcon.draw(self, bag_at, BAG_R, SIGN_GLYPH, bag_col)
-	# The name stacked letter by letter down the sign (as many rows as it has letters), under
-	# the bag.
-	var name_word := tr(WORD_MAINFRAME).to_upper()
-	var n := maxi(1, name_word.length())
-	var head := BAG_TOP + BAG_R * 2.0
-	var step := (r.size.y - 160.0 - head) / float(maxi(5, n))
-	var u := minf(11.0, step / 8.2)
-	var cyber := CyberType.can_draw(name_word)
-	for i in name_word.length():
-		var at := r.position + Vector2((r.size.x - 4.0 * u) * 0.5, head + 10 + i * step)
-		var lit := _tube_color(PINK, tube(i + 1))
-		if cyber:
-			CyberType.draw_text(self, at, name_word[i], u, lit, 3.2, i == 0 or i == name_word.length() - 1, 0.7)
-		else:
-			_plain(Rect2(r.position.x, at.y, r.size.x, step), name_word[i], lit)
-	var cu := 4.4
-	for k in 2:
-		var word: String = tr([WORD_CYBER, WORD_SHOP][k]).to_upper()
-		var row := Rect2(r.position.x + 6.0, r.position.y + r.size.y - 118 + k * 42, r.size.x - 12.0, 6.0 * cu)
-		# CYBER SHOP lights last, as the traces reach it.
-		var cyan := _tube_color(Palette.NET_CYAN, lerpf(TUBE_OFF_ALPHA, 1.0, clampf((trace - 0.6 - k * 0.2) / 0.2, 0.0, 1.0)) if trace < 1.0 else 1.0)
-		if CyberType.can_draw(word) and CyberType.width(word, cu) <= row.size.x:
-			CyberType.draw_text(self, Vector2(r.position.x + (r.size.x - CyberType.width(word, cu)) * 0.5, row.position.y), word, cu, cyan, 2.0, false, 0.8)
-		else:
-			_plain(row, word, cyan)
-	_sticky(r.end + Vector2(-8, -54), tr(NOTES[0]), Palette.NOTE_YELLOW, 0.1, NOTE_GLYPHS[0])
-	_sticky(r.end + Vector2(14, 4), tr(NOTES[1]), Palette.STICKER_PINK, -0.07, NOTE_GLYPHS[1])
+	draw_texture_rect(BASE, Rect2(Vector2.ZERO, size), false)
 
 
-## `text` in the display font, centred in `box` and as large as fits it (a translated sign
-## word the cybernetic face has no letters for).
-func _plain(box: Rect2, text: String, col: Color) -> void:
-	var f := Palette.display()
-	var fs := maxi(8, roundi(box.size.y * 0.9))
-	while fs > 8 and f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > box.size.x:
-		fs -= 1
-	var y := box.position.y + (box.size.y + f.get_ascent(fs) - f.get_descent(fs)) * 0.5
-	draw_string(f, Vector2(box.position.x, y), text, HORIZONTAL_ALIGNMENT_CENTER, box.size.x, fs, col)
-
-
-func _rounded_border(r: Rect2, radius: float, col: Color) -> void:
-	var pts := PackedVector2Array()
-	var corners := [[Vector2(r.end.x - radius, r.position.y + radius), -PI * 0.5], [Vector2(r.end.x - radius, r.end.y - radius), 0.0],
-		[Vector2(r.position.x + radius, r.end.y - radius), PI * 0.5], [Vector2(r.position.x + radius, r.position.y + radius), PI]]
-	for cr in corners:
-		for k in 9:
-			var a: float = cr[1] + PI * 0.5 * k / 8.0
-			pts.append(cr[0] + Vector2(cos(a), sin(a)) * radius)
-	draw_colored_polygon(pts, Color(0.02, 0.02, 0.05, 0.94))
-	pts.append(pts[0])
-	draw_polyline(pts, Color(col, 0.12), 20.0, true)
-	draw_polyline(pts, Color(col, 0.3), 9.0, true)
-	draw_polyline(pts, col.lightened(0.35), 3.2, true)
-
-
-func _board_traces(r: Rect2, col: Color, count: int) -> void:
-	var dirs := [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1), Vector2(1, 1).normalized(), Vector2(-1, 1).normalized(), Vector2(1, -1).normalized(), Vector2(-1, -1).normalized()]
-	for n in count:
-		# The traces light one after another as `trace` runs (all lit at 1).
-		if trace < 1.0 and float(n) / count >= trace:
+func _draw_layers(c: Control, mode: StringName) -> void:
+	var t := table()
+	var layers: Dictionary = t.get("layers", {})
+	var k := size.x / maxf(1.0, canvas_size().x)
+	var lv := layer_levels(_now)
+	# The rails light with the traces as they run (ANIM-6 `mainframe_trace`).
+	for pal in ["blue", "red"]:
+		lv["%s_rail" % pal] = float(lv["%s_rail" % pal]) * trace
+	var names := lv.keys()
+	names.sort()
+	for name: String in names:
+		var level := float(lv[name])
+		if level <= 0.0 or not layers.has(name):
 			continue
-		var h := absi(hash([n, 17]))
-		var p := r.position + Vector2(float(h % 1000) / 1000.0 * r.size.x, float((h / 1000) % 1000) / 1000.0 * r.size.y)
-		var pts := PackedVector2Array([p])
-		var d: Vector2 = dirs[(h / 7) % 4]
-		for seg in 2 + (h / 13) % 2:
-			var q := (p + d * (8.0 + float((h / (17 + seg)) % 22))).clamp(r.position, r.end)
-			pts.append(q)
-			p = q
-			d = dirs[4 + (h / (29 + seg)) % 4] if seg % 2 == 0 else dirs[(h / (31 + seg)) % 4]
-		draw_polyline(pts, Color(col, 0.28), 1.4, true)
-		if (h / 3) % 3 == 0:
-			draw_circle(pts[0], 2.2, Color(col, 0.35))
-		var end := pts[pts.size() - 1]
-		if (h / 5) % 2 == 0:
-			draw_circle(end, 3.2, Color(col, 0.55))
-			draw_circle(end, 1.3, Palette.NIGHT_SKY)
-		else:
-			draw_rect(Rect2(end - Vector2(2.5, 2.5), Vector2(5, 5)), Color(col, 0.45))
+		var L: Dictionary = layers[name]
+		if StringName(String(L["mode"])) != mode:
+			continue
+		var r: Array = L["rect"]
+		var at: Array = L["at"]
+		var src := Rect2(float(r[0]), float(r[1]), float(r[2]), float(r[3]))
+		var dst := Rect2(Vector2(float(at[0]), float(at[1])) * k, src.size * k)
+		c.draw_texture_rect_region(LAYERS, dst, src, Color(Palette.NO_TINT, clampf(level, 0.0, 1.0)))
 
 
-func _border_traces(r: Rect2, col: Color) -> void:
-	for side in [-1.0, 1.0]:
-		var n := int((r.size.y - 80.0) / 34.0)
-		for q in n:
-			if trace < 1.0 and float(q) / maxf(1.0, n) >= trace:
-				continue
-			var y := r.position.y + 44.0 + q * 34.0
-			var a := Vector2(r.position.x if side < 0 else r.end.x, y)
-			var b := a + Vector2(-side * (10.0 + (q % 3) * 7.0), 0)
-			var c := b + Vector2(-side, (1.0 if q % 2 == 0 else -1.0)).normalized() * (8.0 + (q % 4) * 4.0)
-			var pts := PackedVector2Array([a, b, c])
-			draw_polyline(pts, Color(col, 0.2), 6.0, true)
-			draw_polyline(pts, Color(col, 0.85), 1.8, true)
-			draw_circle(c, 4.0, Color(col, 0.9))
-			draw_circle(c, 1.6, Palette.NIGHT_SKY)
-
-
-## ANIM-R6 B11: a sticky note with its verb's glyph (`glyph`: a StatIcon kind) before its
-## word, so the note reads with the words scrambled.
-func _sticky(at: Vector2, text: String, paper: Color, tilt: float, glyph: StringName = &"") -> void:
-	draw_set_transform(at, tilt, Vector2.ONE)
-	draw_rect(Rect2(Vector2(-STICKY_W * 0.5 + 4, -26 + 5), Vector2(STICKY_W, 52)), Palette.SHADOW)
-	draw_rect(Rect2(Vector2(-STICKY_W * 0.5, -26), Vector2(STICKY_W, 52)), paper)
-	draw_rect(Rect2(Vector2(-18, -31), Vector2(36, 11)), Palette.NOTE_TAPE)
-	var left := -STICKY_W * 0.5
-	if glyph != &"":
-		StatIcon.draw(self, Vector2(left + 4.0 + STICKY_GLYPH, 0.0), STICKY_GLYPH, glyph, Palette.INK)
-		left += STICKY_GLYPH * 2.0 + 6.0
-	var room := STICKY_W * 0.5 - left - 4.0
-	var fs := STICKY_FONT
-	while fs > 8 and Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
-		fs -= 1
-	draw_string(Palette.marker(), Vector2(left, 10), text, HORIZONTAL_ALIGNMENT_CENTER, room, fs, Palette.INK)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
-
-## The sign's words as drawn, in the player's language (tests).
+## The sign's words as drawn (tests): the shop's name, a diegetic sign (never translated).
 func shown_words() -> PackedStringArray:
-	return PackedStringArray([tr(WORD_MAINFRAME), tr(WORD_CYBER), tr(WORD_SHOP), tr(NOTES[0]), tr(NOTES[1])])
+	return PackedStringArray(["MAINFRAME"])
 
 
 ## ANIM-R4 C5: each tube strikes within this share of the warm-up (`mainframe_sign_strike`).

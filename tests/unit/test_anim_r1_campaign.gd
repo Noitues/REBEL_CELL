@@ -617,7 +617,8 @@ func test_loot_rejects_fall_the_tip_keeps_off_skip_and_cards_off_the_bar() -> vo
 	await _frames(3)
 	var skip := scene._panel.find_child("Skip", true, false) as Control
 	for c in scene._panel.find_child("Stickers", true, false).get_children():
-		assert_true((c as Control).get_global_rect().end.y < skip.get_global_rect().position.y, "%s clear of the Skip bar" % (c as ZineCard).card_title)
+		# ART-9 4A: Skip stands beside the loot sheet (bible v2 §4.11): clear of every sticker.
+		assert_false((c as Control).get_global_rect().intersects(skip.get_global_rect()), "%s clear of the Skip bar" % (c as ZineCard).card_title)
 	var card := scene._panel.find_child("Stickers", true, false).get_child(0) as Control
 	var tip_at := FocusTip.spot(card.get_global_rect(), Vector2(300, 90), SCREEN, [skip.get_global_rect()] as Array[Rect2])
 	assert_false(Rect2(tip_at, Vector2(300, 90)).intersects(skip.get_global_rect()), "the tip keeps off Skip")

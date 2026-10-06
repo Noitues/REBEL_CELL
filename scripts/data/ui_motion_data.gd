@@ -124,6 +124,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	# jack-in transition's beats (terminal, link rain, CRT collapse, wheel slap and spin, lens).
 	&"route_node_reveal", &"route_heat_orbit", &"route_searchlight",
 	&"jack_terminal_type", &"jack_link_rain", &"jack_crt_collapse", &"jack_wheel_slap", &"jack_wheel_spin", &"jack_lens",
+	&"mainframe_takeover", &"mainframe_rain", &"shop_wheel_spin", &"loot_peel", &"event_cam_noise",  # ART-9 4A
 	# ART-6 3A (raid presentation): pencil marks, routes, panels, stickers and the drag.
 	&"raid_mark_write", &"raid_mark_hold", &"raid_mark_wipe", &"raid_breached_write", &"raid_bits_burst", &"raid_slow_field", &"raid_ice_grow", &"raid_repair_rise", &"raid_route_write", &"raid_route_wipe", &"raid_dock_circle", &"raid_drag_arrow", &"raid_beacon_idle",
 	# ART-2 2A (the wheel stack): the screens' loop, the telemetry scroll, the precision landings, the hub states.

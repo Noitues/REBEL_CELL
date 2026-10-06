@@ -606,6 +606,25 @@ const END_HOUSE_TEXT := Color("#F4F1E9")
 const GLYPH_FILL := Color("#FFFFFF")
 ## The dark rounded outline added at render time (bible 2.1: glyph outline #0C0A16).
 const GLYPH_INK := Color("#0C0A16")
+
+
+# --- ART-9 4A: MAINFRAME shop, loot sheet and event tokens (ART_BIBLE v2 §4.10, §4.11) -------
+# Grease pencil, rarity and sticker colours are palette v2's (PENCIL_*, RARITY_*, STICKER_*).
+## The sign's blue and the Cell's red (round 33 tubes and spill).
+const SIGN_BLUE := Color("#3A7DFF")
+const SIGN_RED := Color("#FF2A2A")
+## Kraft price tags (paper and print), and the red print of a price out of reach.
+const KRAFT_INK := Color("#2B1E12")
+const KRAFT_RED := Color("#C4231B")
+## Label-maker tape (black tape, embossed white letters).
+const LABEL_TAPE := Color("#121216")
+## A wedge with no baked art (new content), and the rim of a wedge out of reach.
+const CHIP_EPOXY := Color("#1C1D22")
+const CARTRIDGE_EDGE := Color("#5B606C")
+## The loot sheet when its baked liner is missing.
+const LINER := Color("#F4F3EE")
+## Outcome chips on events (§4.11): gain green, cost red, no change grey.
+const CHIP_NO_CHANGE := Color("#8C93A3")
 ## ART-6 3A: the raid slow field's blue (round 22 screens22 SLOW_BLUE: the Ghost station's
 ## dashed rings drifting inward).
 const RAID_SLOW_BLUE := Color("#5AAAFF")

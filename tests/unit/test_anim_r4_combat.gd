@@ -778,13 +778,12 @@ func test_the_loot_tag_fits_its_window_under_pseudolocalisation() -> void:
 	scene._show_current()
 	PageTransition.settle(scene)
 	await _frames(3)
-	var tag: Array[Node] = scene._panel.find_children("*", "GraffitiTag", true, false)
-	assert_eq(tag.size(), 1)
-	if not tag.is_empty():
-		var t := tag[0] as GraffitiTag
-		var win: Rect2 = scene.loot_window_rect(t)
-		assert_true(win.grow(0.5).encloses(t.get_global_rect()), "the tag stays in its window")
-		assert_lte(t.words_width() + GraffitiTag.LEFT + GraffitiTag.MASCOT_ROOM, t.size.x + 0.5, "the mascot sits after the words")
+	# ART-9 4A: the loot's title is a sticker over its CRT strip (bible v2 §4.11): both on screen.
+	for n in ["LootTitle", "LootWindow"]:
+		var c := scene._panel.find_child(n, true, false) as Control
+		assert_not_null(c, n)
+		if c != null:
+			assert_true(Rect2(0, 0, 1280, 720).grow(0.5).encloses(c.get_global_rect()), "%s on screen" % n)
 	await _close(scene)
 
 
@@ -826,7 +825,7 @@ func test_an_event_types_its_story_quickly_on_a_panel_its_size() -> void:
 	Typing.finish(label)
 	var src := FileAccess.get_file_as_string("res://scripts/ui/netrun_scene.gd")
 	assert_true(src.contains("Typing.type_in(text, &\"event_type\")"), "the event page uses it")
-	assert_true(src.contains("panel.custom_minimum_size = Vector2(760, 0)"), "the paper is as tall as its words")
+	assert_true(src.contains("text.fit_content = true"), "the terminal is as tall as its words")
 
 
 func test_new_words_are_exported_once() -> void:

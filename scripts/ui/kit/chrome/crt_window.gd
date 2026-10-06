@@ -98,6 +98,26 @@ func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN, max_body: f
 		outer.add_child(fit)
 
 
+## ART-9 4A: the glass's accent by kind (CrtTerminalPanel.Accent) and its corp colour: the
+## Mainframe's clerk and strips, the loot's PAYOUT and FIRMWARE DROP, the event terminal (the
+## corp colour, red for DISPATCH) and the deck viewer.
+func with_kind(kind: int, corp: Color) -> CrtWindow:
+	glass.accent_kind = kind
+	glass.corp_color = corp
+	return self
+
+
+## ART-9 4A: the CRT accent for a colour the screens use (corp colours go in as CORP).
+static func kind_for(col: Color) -> int:
+	if col == Palette.CELL_ACID:
+		return CrtTerminalPanel.Accent.FIRMWARE
+	if col == Palette.HARM:
+		return CrtTerminalPanel.Accent.DISPATCH
+	if col == Palette.NET_CYAN or col == Palette.CELL_PINK:
+		return CrtTerminalPanel.Accent.CELL
+	return CrtTerminalPanel.Accent.CORP
+
+
 func _ready() -> void:
 	Settings.changed.connect(_settings_changed)
 	glass.hex_dump = hex

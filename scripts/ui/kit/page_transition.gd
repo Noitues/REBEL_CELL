@@ -138,6 +138,8 @@ static func settle(root: Node) -> void:
 		(root as DripButton).settle_motion()
 	elif root is MainframeSign:
 		(root as MainframeSign).settle()
+	elif root is SliceStockWheel:
+		(root as SliceStockWheel).land()  # ART-9 4A: the Mainframe's stock wheel stops
 	elif root is HudStats:
 		(root as HudStats).settle()
 	elif root is BuyButton:

@@ -90,6 +90,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s // %d CARDS,%s // %d CARDS
 %s // L%d,%s // L%d
 %s // LOOT: pick a %s,%s // LOOT: pick a %s
+"%s // terminal log, unsigned","%s // terminal log, unsigned"
 %s AT TURN START,%s AT TURN START
 %s BITES IT %d,%s BITES IT %d
 %s BITES YOU %d,%s BITES YOU %d
@@ -160,6 +161,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 "+%d Schematics banked, assets banked","+%d Schematics banked, assets banked"
 +%d block and shield gained,+%d block and shield gained
 +%d more routes (the pencil letters them on the map),+%d more routes (the pencil letters them on the map)
++1 = %d,+1 = %d
 ", a run in progress",", a run in progress"
 - its block and shield %d (absorbed),- its block and shield %d (absorbed)
 -%d RAM,-%d RAM
@@ -176,6 +178,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 ": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next",": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next"
 < PREV SITE,< PREV SITE
 = %s HP  (%d -> %d),= %s HP  (%d -> %d)
+> CHOOSE,> CHOOSE
 > CONNECTED,> CONNECTED
 > CREW     %s,> CREW     %s
 > HOME     %s,> HOME     %s
@@ -183,7 +186,9 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 > MODIFIERS,> MODIFIERS
 > SEED     %d,> SEED     %d
 > TARGET   %s,> TARGET   %s
+> focus an item: what it does shows here.,> focus an item: what it does shows here.
 > jack --from %s --to %s,> jack --from %s --to %s
+> point at an item: what it does shows here. Drag Firmware or a slice onto a slot of your spinner.,> point at an item: what it does shows here. Drag Firmware or a slice onto a slot of your spinner.
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.
 A guided first fight in a simulated net.,A guided first fight in a simulated net.
@@ -201,6 +206,7 @@ ALL RESULTS: %s,ALL RESULTS: %s
 ALTERED,ALTERED
 ANNEX A  //  RECOVERED INTERCEPTS,ANNEX A  //  RECOVERED INTERCEPTS
 ANNEX B  //  RESIDUAL RISK,ANNEX B  //  RESIDUAL RISK
+ANY SLICE,ANY SLICE
 ARE YOU SURE?,ARE YOU SURE?
 ARMORY %d/%d,ARMORY %d/%d
 ARMORY:,ARMORY:
@@ -225,6 +231,8 @@ BACK TO THE GRID,BACK TO THE GRID
 BADGES,BADGES
 BANKED,BANKED
 BEST ICE,BEST ICE
+BIN,BIN
+BIN IT,BIN IT
 BLACK MARKET // SCHEMATICS %d,BLACK MARKET // SCHEMATICS %d
 BLOCK,BLOCK
 BLOCK %d,BLOCK %d
@@ -266,6 +274,7 @@ Bring its HP to 0 to win the fight.,Bring its HP to 0 to win the fight.
 Bring the DOWN node back online.,Bring the DOWN node back online.
 Build the picked node here: it joins your network and defends in raids.,Build the picked node here: it joins your network and defends in raids.
 Buy,Buy
+CAM %02d  %s,CAM %02d  %s
 CAMPAIGN,CAMPAIGN
 CAMPAIGN END,CAMPAIGN END
 CAMPAIGN SLOTS,CAMPAIGN SLOTS
@@ -288,6 +297,7 @@ CELL-%02d / %s,CELL-%02d / %s
 CENTRAL SERVER,CENTRAL SERVER
 CENTRAL SERVER // %s,CENTRAL SERVER // %s
 CENTRAL SERVER // EXPLOITS %d/%d,CENTRAL SERVER // EXPLOITS %d/%d
+CHOSEN,CHOSEN
 CITY GRID,CITY GRID
 CITY GRID // %s,CITY GRID // %s
 CIVIC ORDER  //  PUBLIC SAFETY  //  COMPLIANCE,CIVIC ORDER  //  PUBLIC SAFETY  //  COMPLIANCE
@@ -303,6 +313,7 @@ CODEX // WHAT THE CELL KNOWS,CODEX // WHAT THE CELL KNOWS
 COLOUR-BLIND CORRECTION,COLOUR-BLIND CORRECTION
 COMBAT,COMBAT
 COMBATS,COMBATS
+COMMON,COMMON
 COMPLIANCE DIVISION,COMPLIANCE DIVISION
 CONFIRM,CONFIRM
 CONNECTING,CONNECTING
@@ -316,7 +327,6 @@ CORPORATE,CORPORATE
 CORRUPTED,CORRUPTED
 CREW,CREW
 CREW // ROSTER,CREW // ROSTER
-CYBER,CYBER
 CYBERDECK,CYBERDECK
 CYBERDECK HQ,CYBERDECK HQ
 CYCLES,CYCLES
@@ -836,7 +846,7 @@ Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the c
 Exploits found: %s. The breach on the corporation's core needs %d.,Exploits found: %s. The breach on the corporation's core needs %d.
 FAILED,FAILED
 FIGHT WON,FIGHT WON
-FIRMWARE,FIRMWARE
+FIRMWARE DROP,FIRMWARE DROP
 FLATLINED,FLATLINED
 FREE NUDGE %s NEXT,FREE NUDGE %s NEXT
 FREE NUDGE x%d,FREE NUDGE x%d
@@ -1082,7 +1092,10 @@ INFECT,INFECT
 INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
 INTEL,INTEL
+INTERCEPT,INTERCEPT
 INTERCEPTED,INTERCEPTED
+INTERCEPTED // %s INTERNAL MAIL,INTERCEPTED // %s INTERNAL MAIL
+INTERNAL MEMO,INTERNAL MEMO
 In force since a Heat threshold. Scrub Heat to fall back under it.,In force since a Heat threshold. Scrub Heat to fall back under it.
 In force: %s.,In force: %s.
 Infection contained. Please remain calm while we sterilise your network.,Infection contained. Please remain calm while we sterilise your network.
@@ -1103,7 +1116,7 @@ JACK OUT,JACK OUT
 JACKED OUT,JACKED OUT
 Key,Key
 LAST TURN: ,LAST TURN: 
-LEAVE MAINFRAME,LEAVE MAINFRAME
+LEAVE,LEAVE
 LEFT,LEFT
 LETHAL,LETHAL
 LETHAL: this turn takes it to 0 HP.,LETHAL: this turn takes it to 0 HP.
@@ -1120,7 +1133,7 @@ LOADOUT // %s // SPINNER,LOADOUT // %s // SPINNER
 LOCKDOWN,LOCKDOWN
 LOG,LOG
 LOOT,LOOT
-LOOT: pick a %s,LOOT: pick a %s
+LOOT SHEET // %s // PICK 1 OF %d,LOOT SHEET // %s // PICK 1 OF %d
 "LURES, PULL %d","LURES, PULL %d"
 "Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}","Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}"
 Language,Language
@@ -1503,7 +1516,7 @@ Living operatives in the Cell.,Living operatives in the Cell.
 Load,Load
 Load the campaign in slot %s.,Load the campaign in slot %s.
 Loadout,Loadout
-MAINFRAME,MAINFRAME
+MAINFRAME // CLERK,MAINFRAME // CLERK
 MAINFRAME SHOP,MAINFRAME SHOP
 MANIFEST MF-0041-C,MANIFEST MF-0041-C
 MAP KEY,MAP KEY
@@ -1547,6 +1560,11 @@ NO CHANGE,NO CHANGE
 NO DAMAGE,NO DAMAGE
 NO EFFECT,NO EFFECT
 NO GAIN,NO GAIN
+"NO REFUNDS.
+NO NAMES.
+CYCLES ONLY.","NO REFUNDS.
+NO NAMES.
+CYCLES ONLY."
 NO SIGNAL,NO SIGNAL
 NO SLOT,NO SLOT
 NODES AT THE END,NODES AT THE END
@@ -1789,14 +1807,16 @@ RAM %s,RAM %s
 RAM%s,RAM%s
 RANDOM: ODDS,RANDOM: ODDS
 RANK,RANK
+RARE,RARE
 RC1-corporation-ice-seed-home-class,RC1-corporation-ice-seed-home-class
 REBEL_CELL  (cell %02d),REBEL_CELL  (cell %02d)
 REBEL_CELL v%s // cell uplink,REBEL_CELL v%s // cell uplink
 RECLAIMED,RECLAIMED
+RECYCLE BIN,RECYCLE BIN
+RECYCLE BIN  Remove a card from your deck: %d Cycles.,RECYCLE BIN  Remove a card from your deck: %d Cycles.
+RECYCLE BIN // REMOVE A CARD // %d CYCLES,RECYCLE BIN // REMOVE A CARD // %d CYCLES
 REF HC-7718/CELL,REF HC-7718/CELL
 REMOVE,REMOVE
-REMOVE A CARD,REMOVE A CARD
-REMOVE A CARD // %d CYCLES,REMOVE A CARD // %d CYCLES
 RES%s,RES%s
 RESIST,RESIST
 RESIST %d,RESIST %d
@@ -1971,15 +1991,12 @@ SHIELD %d,SHIELD %d
 SHIM,SHIM
 SHOP,SHOP
 SHOWING ALL NODES,SHOWING ALL NODES
-SHRED,SHRED
-SHRED A CARD,SHRED A CARD
 SIGNAL DE-ORBITED,SIGNAL DE-ORBITED
 SIMULATE,SIMULATE
 SITES %d,SITES %d
 SITES RECLAIMED,SITES RECLAIMED
 SKIP,SKIP
 SLICE %d DETAIL,SLICE %d DETAIL
-SLICES,SLICES
 SLOT %s,SLOT %s
 SNAP,SNAP
 SOLD,SOLD
@@ -2680,8 +2697,11 @@ TAKEN: the corporation took the Site back.,TAKEN: the corporation took the Site 
 TARGET,TARGET
 TARGET: %s,TARGET: %s
 "TARGET: the Central Server, the boss fight. The chip counts your Exploits.","TARGET: the Central Server, the boss fight. The chip counts your Exploits."
+TERMINAL,TERMINAL
+TERMINAL // %s,TERMINAL // %s
 TERMINAL EVENT,TERMINAL EVENT
 TEXT SCALE,TEXT SCALE
+THE MAINFRAME,THE MAINFRAME
 THE TARGET,THE TARGET
 THE WHEEL,THE WHEEL
 THEY LOST %d,THEY LOST %d
@@ -2691,7 +2711,9 @@ THREAT INTEL // SCAN,THREAT INTEL // SCAN
 TIER,TIER
 TITLE,TITLE
 TLE OC-55 / DECAY,TLE OC-55 / DECAY
+TO: ALL TIER LEADS    FROM: %s    REF: INTERNAL,TO: ALL TIER LEADS    FROM: %s    REF: INTERNAL
 TODAY'S RUN,TODAY'S RUN
+TOP %d ONLY,TOP %d ONLY
 TRAFFIC CONTROL,TRAFFIC CONTROL
 TREATED,TREATED
 TRJN,TRJN
@@ -3026,6 +3048,7 @@ Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or
 Tritan (blue-weak),Tritan (blue-weak)
 Try the next city: the seed goes up by one.,Try the next city: the seed goes up by one.
 Tutorial,Tutorial
+UNCOMMON,UNCOMMON
 UNDO,UNDO
 UNDO %s,UNDO %s
 "UNDO is blocked: a random event came since (a respin, a random pick).","UNDO is blocked: a random event came since (a respin, a random pick)."
@@ -3099,11 +3122,15 @@ an Elite fight,an Elite fight
 an Event,an Event
 an operative,an operative
 armory: %s,armory: %s
+"ask about the
+back room","ask about the
+back room"
 asset,asset
 back,back
 boss,boss
 calibrate_handler,calibrate_handler
 card,card
+card %d-%d · slice %d (NULL %d) · bin %d,card %d-%d · slice %d (NULL %d) · bin %d
 chip,chip
 claimed,claimed
 cleared,cleared
@@ -3212,6 +3239,7 @@ threat route,threat route
 toggle,toggle
 ui.raid_intro,"The corp is raiding your CORE. Place defences to cut the damage, then START DEFENSE."
 undock_handler,undock_handler
+voice only // no feed,voice only // no feed
 vs %s | ICE %d%s,vs %s | ICE %d%s
 walked,walked
 weakest node,weakest node
@@ -3219,6 +3247,7 @@ wheel,wheel
 withdraw,withdraw
 won,won
 x0.5,x0.5
+x1 %s TAKEN // UNPICKED STICKERS FALL OFF,x1 %s TAKEN // UNPICKED STICKERS FALL OFF
 x1.5,x1.5
 you were always a copy. the original sends its regards.,you were always a copy. the original sends its regards.
 your network holds every threat,your network holds every threat
