@@ -169,6 +169,42 @@ line-art city, unblurred and saturated, under a flat 0.58 dim.
   saturated pink street light and a little more haze than the 3D city's night grade; the framing, blur and darkening
   match. Changing the city's grade would change the Grid too, so it is left for the designer.
 
+### 2026-10-05 — Parity fix — TITLE-01b grade and LOOT-04 (designer decision)
+Designer answers 2026-10-05 to the TITLE-01 questions: (1) keep the last-played corp's HQ (as built); (2) the backdrop
+must look like concept 33: its own colour grade in its CityBackdropLook, not the shared city grade (the Grid is
+unchanged); (3) LOOT-04 "use the title's blurred city" on the loot, event and shop overlays.
+- **The backdrop's own grade** (`CityBackdropLook.grade_saturation`, `grade_gain`, `grade_lift`, `haze_out_of_focus`;
+  `city_tilt_shift.gdshader`): saturate from the Rec. 709 luma, times a gain, plus a haze lift that grows where the
+  view is blurred (lift * (1 + h * (1 - focus))), before the darkening. The city's own post (`CityConfig` grade, haze,
+  ramp) is never touched (tested). Tuned against round 33 `title_screen.png`: a backdrop-only capture with the grade
+  neutral, both images un-darkened by the shared field, then a search matching the right half's channel means,
+  luminance spread and chroma in focus and out of focus: **saturation 1.2, gain 0.765, lift (0.04, 0.03, 0),
+  haze out of focus 3.0** (pink haze, no blue lift). After it the right half's means are within 0.02–0.03 of the
+  concept's per channel (was 0.06 bluer). What still differs is content, not grade: the concept's 2D render has more
+  tiny saturated point lights (bokeh) in its blurred top.
+- **LOOT-04:** `WireframeBackground.show_blurred_city(on, look, corp)` (the net backdrop's twin of
+  `CyberdeckBackground.use_blurred_city`; the same BlurredCityBackdrop, made once, covered while hidden so it stops
+  rendering; the 2D city hidden with its process off). `netrun_scene.gd` asks for it per page (two lines + two
+  constants): `BLURRED_CITY_SCREENS` = loot and event, with their own look `content/config/overlay_city_backdrop.tres`
+  (the title's grade and tiers; a centred page: no menu-side darkening, a centred vignette 0.45, gain 0.62, the focus
+  band at 0.62, the campaign corp's HQ at (0.82, 0.7)). Tier 0 / headless keep the 2D net city. The event's CAM feed
+  copies whatever city is behind it (now the blurred one).
+- **The shop:** the Mainframe page's baked facade (MainframeFacade, SHOP concept round 34 `shop_v5`) hides the city
+  whole, so a blurred city behind it would never show and still cost its render: the shop keeps its facade (my call;
+  open question). BlurredCityBackdrop's `set_shown` is ready if the designer wants the city behind a cut-out facade.
+- **Other users unchanged:** only the title calls `use_blurred_city` and only the netrun scene `show_blurred_city`
+  (tested by scanning scripts/tools/scenes); the HQ, combat, labs and every other netrun page keep their backdrop.
+- **Measured** (windowed, 1920x1080, v-sync off; the machine was shared with other agents' runs, so frame times were
+  noisier than the first pass): title tier 2 frame 6.80 ms avg, backdrop city GPU 2.49 ms; tier 1 5.64 ms, city 1.92 ms;
+  loot tier 2 6.33 ms, city 2.51 ms. City GPU under the 8 ms budget everywhere.
+- **Tests** (`test_parity_title01_backdrop.gd`): `test_loot_and_event_ask_for_the_blurred_city_and_nothing_else_does`,
+  `test_the_backdrop_grade_is_its_own` (the GDScript `shown` equals the shader's maths; the backdrop never writes the
+  city's grade); the legibility test now reads `worst_behind` (white through the grade and darkening).
+- **Review:** `docs/art_review/PARITY/fixes/TITLE-01b_LOOT-04.jpg` (concept | before | after for title, loot, event,
+  shop). GAPS LOOT-04: "Decision: use the title's blurred city (designer 2026-10-05)".
+- Files outside my area (smallest change): `scripts/ui/netrun_scene.gd` (the per-page call and its constants),
+  `scripts/ui/kit/wireframe_background.gd` (the hook), `docs/art_review/PARITY/GAPS.md` (LOOT-04's decision).
+
 ### 2026-10-05 — Art direction — ART-3 6w raid on the city
 ART-3 wave 2b, ART-6 on the unified city (ART_BIBLE v2 §4.1, §4.8, Appendix C #13, plan G10; refs round 40
 `raid_view_v3`, `raid_gifs/`, `unified40.py` "the Cell's nodes: uplink pads + risers"). Builds on 3A's raid 2D
@@ -8391,11 +8427,11 @@ and annotated in the GDD where it changes a rule.
   slot is a manila case folder on corp paper (v2: the corporation's file) where the build had white paper: keep, or
   white? (2) LOAD on the newest campaign is the page's one pink sticker and DELETE a HARM terminal chip: or should
   DELETE carry the pink DELETE sticker as the confirm does (that makes a second sticker verb on the page)?
-- **Parity fix TITLE-01 (2026-10-05, built, see "Parity fix — TITLE-01 title backdrop"):** (1) the title's HQ is the
-  last-played campaign's target, else Halcyon (the concept's): keep, or always Halcyon? (2) the 3D city's night grade
-  is less pink-saturated than round 33's 2D render: leave it (it is the Grid's grade too) or give the backdrop look its
-  own grade? (3) LOOT-04: should the loot / event / shop overlays take the same blurred city (one call with their own
-  `CityBackdropLook`)?
+- **Parity fix TITLE-01 (2026-10-05):** answered by the designer the same day (keep the last-played corp; the backdrop
+  gets its own grade; LOOT-04 takes the blurred city): see "Parity fix — TITLE-01b grade and LOOT-04". New question:
+  the Mainframe (shop) page's baked facade covers the whole city, so the blurred city cannot show there without
+  dropping the facade (SHOP concept round 34 `shop_v5`): keep the facade (built), or put the blurred city behind a
+  cut-out facade?
 - **ART-3 6w raid on the city (2026-10-05, defaults built, see "Art direction — ART-3 6w raid on the city"):**
   (1) the raid's widest zoom is ortho 640 (the bible's round 39 clamp 220-380 no longer holds the x2 spread
   network on the setup's map part): keep, or shrink the network's spread for the raid? (2) the sockets float over

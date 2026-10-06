@@ -958,6 +958,9 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	# ART-7 7w: the route page is the unified 3D city at the NETRUN band (GRID VIEW: the
 	# Grid's band); the other pages keep the 2D city until their own views move onto it.
 	use_route_city(screen == "route" and (s == null or s.run.kind != "boss" or _grid_zoomed))  # ART-8 8w: an HQ run draws its own compound city
+	# LOOT-04 (designer 2026-10-05): the loot and event pages sit on the title's blurred city.
+	background.show_blurred_city(BLURRED_CITY_SCREENS.has(screen), BLURRED_CITY_LOOK,
+		RunManager.campaign.corporation_id if RunManager.campaign != null else &"")
 	entering = screen != _shown_screen
 	_shown_screen = screen
 	# ART-9 4A: the Mainframe's facade stays only behind the Mainframe.
@@ -1073,6 +1076,10 @@ func _focus_now(page, first) -> void:
 const FIRST_FOCUS_META := &"first_focus"
 ## ANIM-R5 B2: subtitle lines the band holds on a screen (1 elsewhere).
 const SUBTITLE_LINES := {"event": 2, "run_end": 2}
+## LOOT-04 (designer 2026-10-05): the pages over the title's blurred 3D city (their own look:
+## centred darkening for a centred page); the Mainframe keeps its own facade (SHOP).
+const BLURRED_CITY_SCREENS: Array[String] = ["loot", "event"]
+const BLURRED_CITY_LOOK := preload("res://content/config/overlay_city_backdrop.tres")
 ## ANIM-R5 B8: the mid-run raid's playout, a screen of its own (its title, its lines).
 const RAID_PLAYOUT_SCREEN := "netrun_raid_playout"
 
