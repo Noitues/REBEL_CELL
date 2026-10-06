@@ -686,8 +686,9 @@ and steam (night rain only) → Heat props → tilt-shift → UI (never blurred)
   `RngService` stream.
 
 ### 4.3 Heat on maps
-- **City Grid / netrun (LOCKED Heat B, calm, rounds 35–37):** the number lives on the operative
-  dossier stamp (`HEAT 52: HUNTED`); city-wide two slow searchlight sweeps; each node Heat has made
+- **City Grid / netrun (LOCKED Heat B, calm, rounds 35–37; number moved in round 44):** the number
+  lives in the page's terminal **top strip** (Heat number, band word, gauge; round 44
+  `topbar_by_page.png`), never as a stamp on the dossier or the gauge; city-wide two slow searchlight sweeps; each node Heat has made
   harder gets one soft circling red/blue light on a thin dark-orange (`HEAT_B`) ring plus its
   effect chip (`HEAT: +1 ELITE`, `HEAT: +1 RESISTANCE`). Only selectable nodes carry markers.
 - **Raid:** the band's rigs (choppers on circular orbits with wobbling spotlights, drones with mini
@@ -753,9 +754,14 @@ Reference: `round37_netrun/*`, `round38_netrun_transit/transit_v3.png`, `transit
   straight segments with 45° or 90° turns only, crossing streets rather than riding them; the walked
   path is a **solid** lime line; available (orange) and not-yet (white) paths are dashed; crossings
   avoided, the rest bridged with a hop; ~7 layers, 15–20 nodes; the lighter city grade.
-- **Panels:** the operative **dossier** is corp paper (AT LARGE stamp by the name, Heat stamp); the
-  node info window shows only tier, type and rewards, and only when decrypted; the TARGET keeps its
-  red pencil circle; DECK and MENU.
+- **Panels:** the operative **dossier** is corp paper (AT LARGE stamp by the name; no Heat stamp,
+  Heat is in the top strip, 4.3); the node info window shows only tier, type and rewards, and only
+  when decrypted; the TARGET keeps its red pencil circle; the ROUTE terminal holds only GRID VIEW
+  and Save & quit.
+- **Route page (LOCKED round 44, `round44_undesigned/A_map/route_page*.png`):** zoomed so the run
+  fills most of the frame; no text tags on nodes and no YOU ARE HERE words (the lime token is the
+  position; option numbers stay); only the links the route uses are drawn, and hovering shows every
+  run link as a 25 % white hairline; top strip = Heat, HP, Cycles.
 - **Transition (LOCKED, ~4.4 s, skippable):** JACK IN → the Cell's terminal types
   `jack --from RELAY_4 --to DEPOT_15`, routing, handshake → CONNECTED, binary rain along the chosen
   link only → the terminal window despawns as a CRT collapse (line, then dot) → the operative's wheel

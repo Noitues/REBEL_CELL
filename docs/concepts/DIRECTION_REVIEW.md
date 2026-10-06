@@ -1332,3 +1332,23 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - **Seized:** matches the raid map's memo-pad icon, replacing the node circle like disabled does.
 - **Second key icon:** a bolder icon that reads from afar.
 - **Yours:** a rebel fist with the thumb tucked.
+
+## Decisions from the M14 integration review and round 44 (2026-10-06)
+
+Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B_menus).
+
+### Locked
+- **DISPATCH:** voice only, before and after the betrayal, with captioned words; never paper.
+- **Combat camera:** a perspective close-up for every fight (not the map iso).
+- **Skins:** accent tokens only; never re-render city, paper or pencil.
+- **HQ behind Sites:** wait for the unique per-fight backdrops.
+- **Map links:** draw only the links the route uses; hover shows all. The main-line map must lose clutter.
+- **RESET TO DEFAULTS:** every tab ("RESET ALL TABS", terminal button).
+- **Pause:** all-sticker menu (kept from the M14 ruling).
+- **Campaign slots:** LOAD and DELETE stickers on every folder, each with a pencil CAN'T UNDO.
+- **Sticker focus:** focus and hover show only the peel-back corner curl; the rainbow gloss sweep runs on a scheduler, one sticker at a time.
+- **Aiming result:** no hub plate; HP result chips underlined in yellow pencil, plus ghost landings.
+- **Loot:** CONTINUE added.
+- **HQ page:** round 44 `hq_idle.png` / `hq_node_selected.png` are the target (direction B, cleaned). The page frames the Cell's network; an off-screen corp HQ gets a red pencil edge arrow. About 16 pinned markers is acceptable.
+- **Route page:** round 44 `route_page*.png` zoom and declutter are the target.
+- **Heat number:** lives in the terminal top strip, not on the dossier stamp (bible 4.3 updated).
