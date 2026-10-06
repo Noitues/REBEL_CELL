@@ -544,8 +544,8 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   (5.1) takes presses. The short motions that answer the player join the same group
   passively (`MotionSkip.register_passive`): the top bar's bumps, rolls and landing pulses
   (`hud_stats`; DAEMONS' and VIEW LOADOUT's landing pops, `hud_bar`), the MAINFRAME sign's warm-up (`mainframe_sign`), SEND IT's drips, halo and squash
-  (`drip_button`), a card dealing or fanning in (`zine_card`) and a wheel's spin after a card
-  (`wheel_view`). They complete with any press another helper takes (one press, every
+  (`drip_button`), a card dealing or fanning in (`zine_card`), a wheel's spin after a card
+  (`wheel_view`) and a rubber stamp's slam on the campaign end's papers (`rubber_stamp`, M14). They complete with any press another helper takes (one press, every
   motion) but take none on their own: a key pressed while a tag bumps still does what it
   does (a helper of their own would eat it for a fraction of a second). Left out, each for
   its reason (`test_anim_r6_rules` keeps this list and the code in step): hover and focus
@@ -558,7 +558,8 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   ANIM-R6 city), pieces
   a registered helper ends (`combat_fx_layer` under the SEND IT replay, `forecast_stamp`
   in the raid playout's step, `city_map_overlay`'s drop and raid through DropLayer and the
-  playout; its selection and route pulses answer the pointer, as `grid_map_view`'s do),
+  playout; its selection and route pulses answer the pointer, as `grid_map_view`'s do, and
+  `route_overlay`'s hidden-node reveal fades answer the pointer and the legend's hover (D13)),
   and `fx` (the jack swallows every press itself; a flash is a tenth of a second).
 - **ANIM-R6 netrun screens**: the loot's deal is a screen motion (one press lands every
   sticker, and a sticker still fanning in takes no click: its press lands the deal and picks

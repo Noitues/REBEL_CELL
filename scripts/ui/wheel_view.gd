@@ -2074,7 +2074,9 @@ const WORD_HOLD := 0.62
 ## The WEAK stutter steps as shares of the first step (3.19: +3.5 / -2.5 / +1.5 / -0.6 degrees).
 const STUTTER_STEPS: Array[float] = [1.0, -0.714, 0.429, -0.171, 0.0]
 ## The landing words (3.19), their tints and the word's offset from the blade window (master units).
-const LAND_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK x0.5"} # TR
+## M14 asset parity: each word is the art pass's own vinyl (`StickerArt`, round 39 `landing.word`);
+## WEAK's x0.5 stays on the rail, as round 39 has it.
+const LAND_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK"} # TR
 const WORD_SIDE := 120.0
 ## The PERFECT jaws: their length and open gap (master units) at the tip.
 const JAW_LEN := 26.0
@@ -2384,10 +2386,8 @@ func _draw_guards(center: Vector2, k: float) -> void:
 		# EVADE: the >> token on the rim, one per charge
 		for e in c.evade_charges:
 			var tp := WheelFace.at(center, k, frame_master() + EVADE_R, EVADE_DEG - e * 14.0)
-			var r := EVADE_R * 0.8 * k
-			draw_circle(tp, r, Color(Palette.NIGHT_SKY, 0.92))
-			draw_arc(tp, r, 0.0, TAU, 20, Palette.GAIN, maxf(1.0, 2.0 * k), true)
-			WheelGlyphs.draw(self, GlyphTableData.key_for_slice_type(RC.SliceType.DETOUR), tp, r * 1.3, Palette.GAIN)
+			var d := EVADE_R * 1.6 * k
+			draw_texture_rect(FxDraw.TOKEN_TEX, Rect2(tp - Vector2(d, d) * 0.5, Vector2(d, d)), false)
 
 
 func _guard_number(center: Vector2, k: float, r: float, deg: float, text: String, col: Color) -> void:

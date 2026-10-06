@@ -1,0 +1,28 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "billboards",
+ "about": "M14 asset parity: holo billboard panel atlas (ART_BIBLE v2 4.2; round 26 city motion). Built by tools/art_pipeline/parity/export_billboards.py; do not edit by hand.",
+ "source": {
+  "tag": "art-concepts-r43",
+  "commit": "9a62cec89be362d89ad58ce8e2c2e2a126c8a3a1",
+  "round": "docs/concepts/round26_city_motion",
+  "scripts": [
+   "cm.py"
+  ],
+  "driver": "tools/art_pipeline/parity/export_billboards.py",
+  "drawing_code": "unchanged (designer ruling 2026-10-05: reuse the art pass's assets)",
+  "scripts_sha256": "344b0541ceb16cdfecf683d037e135aba7e5495e55342fdef4ea20b1ac8f63cb"
+ },
+ "scale": "2x the concept's size unless an item says otherwise",
+ "items": [
+  {
+   "file": "panels.png",
+   "made_by": "cm._billboard_tex(seed, col) x2 (black / white), seeds [2, 1, 5, 0]",
+   "size": [
+    576,
+    88
+   ],
+   "note": "4 panels of 144 x 88 side by side; R = c2 mask, A = alpha; 2x nearest"
+  }
+ ]
+}

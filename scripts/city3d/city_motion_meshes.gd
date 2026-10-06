@@ -2,8 +2,19 @@ class_name CityMotionMeshes
 extends RefCounted
 ## ART-5 5c: the meshes of the city's motion layers, sized from CityMotionConfigData. Car
 ## tiers (ART_BIBLE §4.1 car LOD; X = heading with the nose at 0, Y up, Z side; CUSTOM0 =
-## (part, stretch) for `shaders/city/sky_car.gdshader`), the beam cone, the low-poly police
-## chopper and drone (round 6 / round 24 silhouettes) for ToonInkMaterial. Builders only.
+## (part, stretch) for `shaders/city/sky_car.gdshader`), the beam cone, the police chopper and
+## drone for ToonInkMaterial. The CLOSE car, chopper and drone are the art pass's own models
+## (exported from the concept round's builders, see the consts below); FAR and MEDIUM car
+## tiers, the street car and the lane line are procedural, as in the concept (a dot, a box).
+## Builders only.
+
+## The art pass's vehicles (tools/art_pipeline/parity/blender_export_vehicles.py runs the concept
+## round's own builders in Blender): the CLOSE car as triangles with part ids (a MultiMesh car
+## needs per-vertex CUSTOM0, and an imported mesh cannot be read back headless; the same car is
+## `flying_car.glb`), the chopper and the drone as glb models.
+const CAR_TRIS := preload("res://assets/city/vehicles/flying_car_tris.json")
+const CHOPPER_MODEL := preload("res://assets/city/vehicles/chopper.glb")
+const DRONE_MODEL := preload("res://assets/city/vehicles/drone.glb")
 
 ## Car parts (CUSTOM0.x), as sky_car.gdshader reads them.
 enum Part { BODY, LANE, HEAD, TAIL, CABIN, GLOW }
@@ -28,14 +39,7 @@ static func car(cfg: CityMotionConfigData, tier: int) -> ArrayMesh:
 			b.box(Vector3(-0.2, -0.15, -s.z * 0.4), Vector3(0.05, 0.1, s.z * 0.4), Part.HEAD)
 		_:
 			var l := cfg.close_length
-			var w := l * 0.22
-			b.wedge(l, w, l * 0.08, Part.BODY)
-			b.box(Vector3(-l * 0.62, l * 0.08, -w * 0.7), Vector3(-l * 0.2, l * 0.2, w * 0.7), Part.CABIN)
-			b.box(Vector3(-l * 0.95, -l * 0.01, -w * 1.02), Vector3(-l * 0.1, l * 0.02, w * 1.02), Part.LANE)
-			b.box(Vector3(-l * 0.85, -l * 0.07, -w * 0.8), Vector3(-l * 0.15, -l * 0.05, w * 0.8), Part.GLOW)
-			b.box(Vector3(-0.04, -l * 0.02, -w * 0.85), Vector3(0.04, l * 0.04, -w * 0.4), Part.HEAD)
-			b.box(Vector3(-0.04, -l * 0.02, w * 0.4), Vector3(0.04, l * 0.04, w * 0.85), Part.HEAD)
-			b.box(Vector3(-l - 0.04, -l * 0.02, -w * 0.9), Vector3(-l + 0.04, l * 0.03, w * 0.9), Part.TAIL)
+			b.concept_car(CAR_TRIS.data as Dictionary, l)
 			b.line(-l, cfg.close_line * 0.5, Part.LANE)
 	return b.mesh()
 
@@ -67,18 +71,40 @@ static func cone(sides: int = 16) -> ArrayMesh:
 	return st.commit()
 
 
-## A police chopper `length` BU long (round 6 `heli`: cabin, tail boom, fin, skids); X =
-## heading. Its rotor is `rotor()`.
-static func chopper(length: float) -> ArrayMesh:
-	var b := _Builder.new()
-	var s := length / 3.6
-	b.box(Vector3(-1.0, -0.85, -0.45) * s, Vector3(1.0, 0.0, 0.45) * s, Part.BODY)
-	b.box(Vector3(-0.2, 0.0, -0.32) * s, Vector3(0.75, 0.32, 0.32) * s, Part.BODY)
-	b.box(Vector3(-2.6, -0.62, -0.12) * s, Vector3(-0.9, -0.38, 0.12) * s, Part.BODY)
-	b.box(Vector3(-2.65, -0.62, -0.05) * s, Vector3(-2.35, 0.25, 0.05) * s, Part.BODY)
-	b.box(Vector3(-0.8, -1.05, -0.55) * s, Vector3(0.9, -0.97, -0.45) * s, Part.BODY)
-	b.box(Vector3(-0.8, -1.05, 0.45) * s, Vector3(0.9, -0.97, 0.55) * s, Part.BODY)
-	return b.mesh(true)
+## The art pass's police chopper (district20 `heli_geo`) `length` BU long, X = heading; see
+## `aircraft()`. Its rotor is `rotor()`, sized and lifted by the model's blades.
+static func chopper(length: float) -> Dictionary:
+	return aircraft(CHOPPER_MODEL, length)
+
+
+## An aircraft of the art pass (district20 `heli_geo` / `drone_geo` through Blender, the glb in
+## assets/city/vehicles) fitted to `size` BU along X (its body, blades excluded). Returns
+## {body: Mesh, neon: Mesh, scale: float, offset: Vector3, rotor_y: float, rotor_r: float}: the
+## meshes are in the glb's own units, so a view scales them by `scale` and moves them by `offset`
+## (the body's centre onto the node origin); the rotor values (where the concept's blades sat and
+## their radius) are already scaled, 0 when the model has no blades. The body's vertex colours are
+## tones relative to the concept's body colour (the material albedo stays the tuned body tone);
+## `neon` carries the concept's lit parts in their own colours.
+static func aircraft(model: PackedScene, size: float) -> Dictionary:
+	var out := {"body": null, "neon": null, "scale": 1.0, "offset": Vector3.ZERO, "rotor_y": 0.0, "rotor_r": 0.0}
+	var root := model.instantiate()
+	var meshes := {}
+	for n in root.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		meshes[String(mi.name)] = mi.mesh
+	root.free()
+	var body: Mesh = meshes.get("body")
+	var box := body.get_aabb()
+	var k := size / maxf(box.size.x, 0.001)
+	out["body"] = body
+	out["neon"] = meshes.get("neon")
+	out["scale"] = k
+	out["offset"] = -box.get_center() * k
+	if meshes.has("blades"):
+		var blades := (meshes["blades"] as Mesh).get_aabb()
+		out["rotor_y"] = (blades.get_center().y - box.get_center().y) * k
+		out["rotor_r"] = blades.size.x * 0.5 * k
+	return out
 
 
 ## A rotor disc of radius `r` (flat, for the blur material).
@@ -96,14 +122,9 @@ static func rotor(r: float) -> ArrayMesh:
 	return st.commit()
 
 
-## A quad drone `size` BU across: a flat body and four arms.
-static func drone(size: float) -> ArrayMesh:
-	var b := _Builder.new()
-	var h := size * 0.5
-	b.box(Vector3(-h * 0.45, -h * 0.18, -h * 0.45), Vector3(h * 0.45, h * 0.12, h * 0.45), Part.BODY)
-	b.box(Vector3(-h, -h * 0.06, -h * 0.08), Vector3(h, h * 0.02, h * 0.08), Part.BODY)
-	b.box(Vector3(-h * 0.08, -h * 0.06, -h), Vector3(h * 0.08, h * 0.02, h), Part.BODY)
-	return b.mesh(true)
+## The art pass's quad drone (district20 `drone_geo`) `size` BU across; see `aircraft()`.
+static func drone(size: float) -> Dictionary:
+	return aircraft(DRONE_MODEL, size)
 
 
 ## Collects boxes into one triangle mesh with flat normals and CUSTOM0 = (part, stretch).
@@ -148,10 +169,32 @@ class _Builder:
 			_tri(a, b, b + back, nrm, part, 0.0, 0.0, 1.0)
 			_tri(a, b + back, a + back, nrm, part, 0.0, 1.0, 1.0)
 
-	## A wedge body `l` long (nose at 0), `w` half-wide, `h` high: low nose, raised tail.
-	func wedge(l: float, w: float, h: float, part: int) -> void:
-		box(Vector3(-l, -h, -w), Vector3(-l * 0.35, h * 1.4, w), part)
-		box(Vector3(-l * 0.35, -h, -w * 0.85), Vector3(0.0, h * 0.6, w * 0.85), part)
+	## The art pass's flying car (`flying_car_tris.json`, unified38.flying_car through Blender) `l` long:
+	## concept axes (nose +X, up +Z, side Y) become the game's (nose at X = 0, tail at -l, Y up, Z side;
+	## a proper rotation, so the winding holds), centred vertically on the body; each triangle keeps
+	## the part id the export classified.
+	func concept_car(data: Dictionary, l: float) -> void:
+		var tris: Array = data["tris"]
+		var xmin := INF
+		var xmax := -INF
+		var zmin := INF
+		var zmax := -INF
+		for t in tris:
+			for p in t:
+				xmin = minf(xmin, float(p[0]))
+				xmax = maxf(xmax, float(p[0]))
+				zmin = minf(zmin, float(p[2]))
+				zmax = maxf(zmax, float(p[2]))
+		var k := l / maxf(xmax - xmin, 0.001)
+		var zmid := (zmin + zmax) * 0.5
+		for t in tris:
+			var pts: Array[Vector3] = []
+			for p in t:
+				pts.append(Vector3((float(p[0]) - xmax) * k, (float(p[2]) - zmid) * k, -float(p[1]) * k))
+			var nrm := (pts[1] - pts[0]).cross(pts[2] - pts[0])
+			if nrm.length() < 1e-9:
+				continue
+			_tri(pts[0], pts[1], pts[2], nrm.normalized(), int(t[0][3]), 0.0, 0.0, 0.0)
 
 	func mesh(normals_only: bool = false) -> ArrayMesh:
 		var arr := []

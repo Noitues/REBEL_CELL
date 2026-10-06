@@ -12,6 +12,9 @@ extends RefCounted
 const INTERIM := "res://assets/wheel/glyphs_interim/%s.png"
 ## ART_BIBLE 3.5: the dark rounded outline is 0.075 of the glyph box.
 const OUTLINE_SHARE := 0.075
+## An id `@<atlas name>` names an atlas glyph directly (a HUD mark the id table has no key for:
+## `@picto_hp`, `@state_locked`).
+const NAMED := "@"
 
 static var _cache: Dictionary = {}
 static var _table: GlyphTableData = null
@@ -36,6 +39,8 @@ static func texture(id: StringName) -> Texture2D:
 	if String(id).begins_with("crest_"):
 		var path := INTERIM % id
 		tex = load(path) as Texture2D if ResourceLoader.exists(path) else null
+	elif String(id).begins_with(NAMED):
+		tex = _decode(StringName(String(id).trim_prefix(NAMED)))
 	else:
 		tex = _decode(table().glyph_for(id))
 	_cache[id] = tex
@@ -49,6 +54,11 @@ static func box_share(id: StringName) -> float:
 		return 1.0
 	var t := table()
 	return float(t.box_px) / float(maxi(1, t.cell_px))
+
+
+## The id of atlas glyph `glyph` by its own name (see NAMED).
+static func named(glyph: StringName) -> StringName:
+	return StringName(NAMED + String(glyph))
 
 
 ## Whether `id` has a glyph (the pending stand-in counts as none).

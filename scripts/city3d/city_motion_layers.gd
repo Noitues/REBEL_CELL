@@ -51,6 +51,9 @@ const POOL_XRAY_SHADER := preload("res://shaders/city/city_pool_xray.gdshader")
 const BEAM_SHADER := preload("res://shaders/city/city_beam.gdshader")
 const POOL_SHADER := preload("res://shaders/city/city_pool.gdshader")
 const BILLBOARD_SHADER := preload("res://shaders/city/holo_billboard.gdshader")
+## Round 26's billboard panel atlas (cm._billboard_tex; four panels side by side), exported by
+## tools/art_pipeline/parity/export_billboards.py.
+const BILLBOARD_PANELS := preload("res://assets/city/billboards/panels.png")
 ## Glow modes (city_glow.gdshader).
 enum GlowMode { STEADY, BLINK, STROBE, BEACON, CIRCLE }
 ## A pool's mode (city_pool.gdshader).
@@ -124,6 +127,7 @@ var _air_light_mat: ShaderMaterial
 var _choppers: Array[Node3D] = []
 var _drones: Array[Node3D] = []
 var _air_mats: Array[ShaderMaterial] = []
+var _aircraft_neon_mat: StandardMaterial3D
 var _aabb: AABB = AABB()
 var _spill: Dictionary = {}
 var _spill_sources: Array = []
@@ -501,6 +505,31 @@ func _build_street() -> void:
 		_street_mmi.multimesh.set_instance_custom_data(k, Color(car["phase"], car["speed"], float(car["row"]), streak))
 
 
+## An aircraft node (`CityMotionMeshes.aircraft`'s model): the toon body in `toon`, and the concept's
+## lit parts (nav lights, searchlight frame, belly plate) as one unshaded vertex-colour mesh.
+func _aircraft_body(model: Dictionary, toon: ShaderMaterial) -> Node3D:
+	var holder := Node3D.new()
+	var scl := Vector3.ONE * float(model["scale"])
+	var body := MeshInstance3D.new()
+	body.mesh = model["body"] as Mesh
+	body.material_override = toon
+	body.scale = scl
+	body.position = model["offset"] as Vector3
+	holder.add_child(body)
+	if model["neon"] != null:
+		if _aircraft_neon_mat == null:
+			_aircraft_neon_mat = StandardMaterial3D.new()
+			_aircraft_neon_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			_aircraft_neon_mat.vertex_color_use_as_albedo = true
+		var lit := MeshInstance3D.new()
+		lit.mesh = model["neon"] as Mesh
+		lit.material_override = _aircraft_neon_mat
+		lit.scale = scl
+		lit.position = model["offset"] as Vector3
+		holder.add_child(lit)
+	return holder
+
+
 func _build_billboards() -> void:
 	_billboard_mat = ShaderMaterial.new()
 	_billboard_mat.shader = BILLBOARD_SHADER
@@ -510,6 +539,7 @@ func _build_billboards() -> void:
 	_billboard_mat.set_shader_parameter(&"size", cfg.billboard_size)
 	_billboard_mat.set_shader_parameter(&"scanlines", cfg.billboard_scanlines)
 	_billboard_mat.set_shader_parameter(&"panels", cfg.billboard_panels)
+	_billboard_mat.set_shader_parameter(&"panel_tex", BILLBOARD_PANELS)
 	_billboard_mmi = _mmi(_quad(), props.billboards.size(), _billboard_mat, "HoloBillboards", groups[&"props"])
 	for k in props.billboards.size():
 		var b: Dictionary = props.billboards[k]
@@ -590,35 +620,31 @@ func _rebuild_rig() -> void:
 		_alarm_mmi.multimesh.set_instance_color(k, cfg.alarm_color)
 		_alarm_mmi.multimesh.set_instance_custom_data(k, Color(al["phase"], cfg.strobe_size * 1.4, 0.0, 0.0))
 	# Aircraft: toon bodies with ink (ToonInkMaterial), rotor blur discs, blinking nav lights.
-	var chopper_mesh := CityMotionMeshes.chopper(cfg.chopper_length)
-	var rotor := CityMotionMeshes.rotor(cfg.chopper_length * 0.55)
+	var chopper_model := CityMotionMeshes.chopper(cfg.chopper_length)
+	var rotor := CityMotionMeshes.rotor(float(chopper_model["rotor_r"]))
 	var rotor_mat := StandardMaterial3D.new()
 	rotor_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	rotor_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	rotor_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	rotor_mat.albedo_color = Color(cfg.chopper_color, 0.22)
 	for k in rig.choppers.size():
-		var body := MeshInstance3D.new()
-		body.mesh = chopper_mesh
 		var m := ToonInkMaterial.make(cfg.chopper_color)
-		body.material_override = m
+		var body := _aircraft_body(chopper_model, m)
 		_air_mats.append(m)
 		var disc := MeshInstance3D.new()
 		disc.mesh = rotor
 		disc.material_override = rotor_mat
-		disc.position = Vector3(0.0, cfg.chopper_length * 0.12, 0.0)
+		disc.position = Vector3(0.0, float(chopper_model["rotor_y"]), 0.0)
 		body.add_child(disc)
 		var n := Node3D.new()
 		n.name = "Chopper%d" % k
 		n.add_child(body)
 		_rig_root.add_child(n)
 		_choppers.append(n)
-	var drone_mesh := CityMotionMeshes.drone(cfg.drone_size)
+	var drone_model := CityMotionMeshes.drone(cfg.drone_size)
 	for k in rig.drones.size():
-		var body := MeshInstance3D.new()
-		body.mesh = drone_mesh
 		var m := ToonInkMaterial.make(cfg.drone_color, ToonInkMaterial.INK_PX * 0.6)
-		body.material_override = m
+		var body := _aircraft_body(drone_model, m)
 		_air_mats.append(m)
 		var n := Node3D.new()
 		n.name = "Drone%d" % k
