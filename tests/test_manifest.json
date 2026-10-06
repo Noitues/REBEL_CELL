@@ -641,6 +641,10 @@
 			"seconds": 4.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_parity_cardface.gd": {
+			"seconds": 12.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_parity_pause.gd": {
 			"seconds": 6.0,
 			"tier": "fast"

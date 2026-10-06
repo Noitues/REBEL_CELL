@@ -127,6 +127,76 @@ Results and causes in `docs/art_review/ART-12/perf.md`.
   `card_preview_overlay.gd`, `scripts/ui/wheel/wheel_telemetry.gd`,
   `scripts/ui/campaign_end/audit_dossier.gd`, `dossier_photo.gd`, `post_it.gd`.
 
+### 2026-10-05 — Parity fix — one card face (designer group ruling)
+Designer group ruling (2026-10-05): netrun pages and combat match the concepts; mechanics the rules lack (G1–G16) stay
+listed, not built. Ids LOOT-01, SHOP-02, SHOP-03, SHOP-04, SHOP-05, SHOP-07, SHOP-08, DECK-01, DECK-02, CMB-04 (card
+part), HQ-08 (`docs/art_review/PARITY/GAPS.md`). Sheets: `docs/art_review/PARITY/fixes/CARDFACE*.jpg` (concept | before
+| after). Tests: `tests/unit/test_parity_cardface.gd` (fast tier).
+- **One face.** `ZineCard`'s drawn sticker (`_draw_sticker`: a flat fill by what the card does, a gloss band, a corner
+  chip mark and drawn pictogram arrows) is gone: every sticker card is drawn by `CardFace`, the art pass's own C-C card
+  exported by `tools/art/export_card_faces.py` from round 31 `r31lib.card_sticker` (asset parity; unchanged): the
+  hand, the loot sheet, the Mainframe's CARDS, the deck viewer, the card detail, the loadout's DECK tab (HQ-08: the same
+  `DeckView`), and every ghost and flying copy. `with_face_art()` / `face_art` are removed (no alias). The holo border,
+  pips and kind band are the face art's; the art glyph and pictograms are 1C's atlas glyphs. Concept references: round
+  41 `combat_typical_v4` (hand), round 32 `reward_screen_v2` (loot), round 34 `shop_v5` (shop).
+- **Type band (G16).** The band is drawn for the three kinds the face has (WHEEL / HACK / SYSTEM, by what the card does
+  first). A loot offer that is not a card (Firmware, Daemon) wears the SYSTEM face with its own word on the band
+  (FIRMWARE / DAEMON) and its own concept art (`MainframeArt` chip / cartridge, the round 34 export) in the art panel
+  (`ZineCard.as_offer`). A band word of its own per card (the concept's per-card types) is G16: listed, not built.
+- **Whole text (CardFace.text_fit).** The rules text is lettered in the face's body type (Plex Sans Condensed: it was
+  measured in mono and drawn in Plex). Layouts tried in turn, each stepping down to the card's floor before the next:
+  the generator's block (text_top 228, 13 px, line 1.3), the block closed up under the pictograms on the face's full
+  inner width (line 1.15, down to 272), then the pictogram row's room too (the art glyph still says what the card does).
+  A line that reaches the rarity pips keeps to their left. Loot (162 x 216, the face's 3:4: `LOOT_CARD` was 170 x 210,
+  which stretched the face), Mainframe (112 x 148 with the hanging tag), the deck viewer and the detail show every word of
+  every card in content at 1.0, 1.6 and 2.0 (floor 8 px, ANIM-R1 M10's). Mainframe cards: the tag's foot room is only
+  the tag's top and flap now (the face has no key hint at its foot; it kept the hand's 26 px).
+- **The hand (CMB-04 text).** At rest the hand keeps the 12 px floor (ART-2 2D audit P2) and its glyph and value
+  (`pictos_give_way = false`); a face of the hand's size holds one or two lines there (the hand shrinks under 1.0 to
+  fit beside SEND IT: one line in the 5-card hand of the review pack), so longer texts end in an ellipsis at rest. The
+  card the pointer grows (x1.36) shows every word: it letters at floor / 1.36 local px (12 on screen) and may take the
+  pictogram row. At 1.0 the two 92-character texts (Hot Patch, Overdrive) still need the tooltip / inspect even grown
+  (open question below); at 1.6 and 2.0 every card's grown face holds it all. The key hint moved from the face's foot
+  (over the text's last line) to a dark chip on the art panel's top right corner.
+- **Piles (CMB-04).** New `CardPiles`: DECK over DISCARD (one column, so the hand keeps its width), stacks with their
+  counts and words, left of the hand, at the cards' scale (the fight's draw and discard piles, set each time the hand
+  is built; the hand's scale keeps room for them; the pile card is the deal's pile mark size). Drawn procedurally:
+  the concept's piles are plain dark card backs and no card back was exported. The deal and discard flights keep their
+  spots (the hand row's ends, ANIM-R3 A7 / ANIM-R6 A17): moving them onto the piles is motion (open question below).
+- **DECK-01.** The viewer's row is filled: as many cards as fit at the text size (never under 4), grown to the grid's
+  width, centred (it left the right third empty); the cards fit their whole text.
+- **DECK-02.** The card detail is the build's (ported from art-pass 5355432, `InspectPopup.card_notes` /
+  `card_detail`): the face at twice the hand's size (every word on it) beside CARD NOTES (the band's kind in words, the
+  rarity and what the face shows for it, the keyword notes from the Codex: statuses, slice kinds, SPIN, NUDGE, FLIP,
+  RESPIN, SNAP, RAM, DRAW, EXHAUST); the notes never repeat the rules text (main's three lines did) and scroll past the
+  card's height; the window is centred on the screen; the card keeps room round it for its die-cut and curl (Close sat
+  on them). The M13 build's paper-stock rarity words became the v2 face's
+  (pips, holo die-cut).
+- **SHOP-02.** The Mainframe's cards are the face (pinned, their kraft tags hanging under them as 4A's).
+- **SHOP-03.** The stock wheel's wedges are the concept's own export and match in layout; their brightness is the
+  bake's (no change). The concept letters a tag's price bigger (about 16 px on main's 28 px tag, main: 13): tried, it
+  widens the bin's tag onto the wallet at 2.0 (4A's `test_card_tags_hang_under_the_cards_and_the_notes_cover_no_tag`),
+  whose place is the shop block's (`netrun_scene.gd`, S-OVERLAPS): kept at 13 px; proposed with SHOP-05's slice below
+  (`BuyButton.BUY_FONT` 16 and the wallet's place at 2.0 together).
+- **SHOP-04.** An item out of reach keeps the concept's red print tag and the padlock; the red pencil strike is gone
+  (struck through, the price read as "sold"). Chip and cartridge art, rarity colours and the info strip are 4A's
+  (exported); the concept's three chips vs main's two is the shop's stock (rules), not the look.
+- **SHOP-07 call.** The removal stays the RECYCLE BIN: round 34 `shop_v5` (LOCKED, later than round 32's
+  `removal_options`, where PURGE was "recommended") puts the bin on the board; its viewer's cards are the face now.
+- **Not done here, with the slice proposed (file owned elsewhere):** SHOP-05 (the concept's pink chevron sticker
+  beside LEAVE instead of the EXIT mark, and the bin's height) lives in `netrun_scene.gd`'s shop block, which S-OVERLAPS
+  is editing: proposed slice after it lands: export `shop2.leave_sticker()`'s arrow (round 34 scripts, unchanged) and
+  swap `IconMark.standalone(StatIcon.EXIT…)` for it. SHOP-08 (`UPGRADE · 100 CYCLES` on one line) lives in
+  `spinner_view.gd` (S-WHEEL): proposed: the action's DripButton reads the verb and the slot's price together
+  (`price_label` folded in).
+- Dropped tests: none. `test_art2_hud`'s floor check and `test_horizontal_pass24_screens`' parts check now read the
+  face's layout (`sticker_body_fit` / `sticker_parts` return CardFace's).
+- **Open questions (defaults built; also under "Open questions for the designer"):** (1) the hand at rest shows two
+  lines of rules text at most at 1.0 (12 px floor on a face of the hand's size; one line once the hand shrinks to fit);
+  a bigger hand card or a lower floor would show more; default: glyph + value + what fits at rest, every word on the
+  grown card. (2) Deal and discard flights to the new
+  piles (motion: the animation pass is paused until after M14).
+
 ### 2026-10-05 — Designer ruling — abandon run, abandon campaign, quit
 The designer approved a new rule (2026-10-05): three exit paths, each a screen. Added to the GDD as **4.5 Leaving a
 Run or the Campaign** (a marked addition; no other GDD text changed). It answers the open questions "ART-10 4C: an
@@ -8779,6 +8849,17 @@ and annotated in the GDD where it changes a rule.
   (`city_quality` 1) was measured on the dev PC only (interim, under load; `docs/art_review/ART-12/perf.md`).
   A real Deck run of `tools/visual_qa/perf_pack.tscn --tiers=1 --size=1280x800` is owed when the
   designer has a Deck; scaling from this PC suggested ~10-12 ms a frame there (5e).
+- **Parity fix S-CARDFACE (2026-10-05, default implemented, see "Parity fix — one card face"):** (1) the combat hand
+  at 1.0 holds one or two lines of rules text at rest (the 12 px floor on a 112 x 148 face); the grown card shows every word
+  (all but Hot Patch and Overdrive at 1.0, which need the tooltip / inspect). Keep, or a bigger hand card / a lower
+  floor at rest? (2) The deal and discard flights still start and land at the hand row's ends; fly them to the new DECK
+  and DISCARD piles (motion, after the paused animation pass)? (3) SHOP-07: the RECYCLE BIN (round 34 shop_v5, locked)
+  kept over round 32's recommended PURGE key: confirm.
+- **Parity fix SLOTS-01/02 (2026-10-05, built, see "Parity fix — title spacing and campaign slots"):** (1) the used
+  slot is a manila case folder on corp paper (v2: the corporation's file) where the build had white paper: keep, or
+  white? (2) LOAD on the newest campaign is the page's one pink sticker and DELETE a HARM terminal chip: or should
+  DELETE carry the pink DELETE sticker as the confirm does (that makes a second sticker verb on the page)?
+
 - **Parity fix SLOTS-01/02:** answered by the designer 2026-10-05 (see "Parity fix — campaign slots follow-up"):
   manila folders stay; DELETE is a sticker too (two sticker verbs on this page).
 - **Parity NEWC (2026-10-05, default implemented, see "Parity fix — new campaign page"):** (1) a locked REBEL_CELL
