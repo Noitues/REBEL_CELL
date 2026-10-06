@@ -1633,7 +1633,7 @@ func _build_hq_page(page_name: String) -> void:
 			# and said what the paper and START DEFENSE say); its sentence is the paper's tooltip.
 			var order_paper := paper.find_child("RaidCard", true, false) as Control
 			if order_paper != null:
-				order_paper.tooltip_text = UiTip.fold(TextDb.ui_text("ui.raid_intro") + "\n" + order_paper.tooltip_text)
+				order_paper.tooltip_text = UiTip.fold(TextDb.ui_text(RAID_INTRO_KEY) + "\n" + order_paper.tooltip_text)
 		page.add_child(order)
 	# The hand: its tabs and the cards of the deck picked.
 	page.add_child(_hand_tabs())
@@ -3990,6 +3990,8 @@ const RAID_TARGETS := {RC.ThreatRouting.SHORTEST_TO_HOME: "CORE (home)", RC.Thre
 	RC.ThreatRouting.WEAKEST_NODE: "weakest node"} # TR
 ## The intercepted work order's lines (corp paper, §1.2).
 const ORDER_KIND := "RAID INCOMING  //  %s" # TR
+## The raid setup's sentence (a TextDb ui key, translated by TextDb.ui_text: B3 b's paper tooltip).
+const RAID_INTRO_KEY := "ui.raid_intro"
 const ORDER_UNITS := "%d IN %d WAVE" # TR
 const ORDER_UNITS_MANY := "%d IN %d WAVES" # TR
 ## The forecast stamp's size on the work order (a share of the playout's stamp).
