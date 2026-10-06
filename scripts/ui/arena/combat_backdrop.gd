@@ -70,6 +70,17 @@ var _city_ready: bool = false
 var _won_lights: SiteWonLights = null
 var _site_lots: Dictionary = {}
 var _ext_job: Dictionary = {}
+## B2: the subject's focus ellipse radius (share of the width) now.
+var _focus_radius: float = CityView3D.CONFIG.backdrop_focus_radius
+
+
+## B2 (art director): how much the city outside the subject's focus dims: a Site's block reads
+## against a darker street (backdrop_site_focus_dim), an HQ by S-ARENA's own; none on the canyon.
+func _focus_dim() -> float:
+	if not _city_ready or String(shot.get("focus", "")) == "compound":
+		return 0.0
+	var cfg := CityView3D.CONFIG
+	return cfg.backdrop_site_focus_dim if String(shot.get("focus", "")) == "site" else cfg.backdrop_focus_dim
 
 
 func _init() -> void:
@@ -423,22 +434,50 @@ func _frame_city() -> void:
 	var cam: CityIsoCamera = (shot["camera"] as CityIsoCamera).copy()
 	cam.viewport = Vector2(city.size)
 	city.set_iso(cam)
+	# B2 (review D1): the street-level camera looks over the rooftops at its subject; past the
+	# city's edge at its horizon the night sky shows, not the asphalt plane.
+	city.show_outer_ground(not cam.perspective())
+	# ...and its view ends backdrop_close_far_bu past the subject (the skyline past it is haze;
+	# the far chunks are the perspective's cost).
+	if city.camera != null:
+		city.camera.far = cam.eye_distance() + CityView3D.CONFIG.backdrop_close_far_bu if cam.perspective() else CityView3D.CONFIG.camera_far
+	if shot.has("subject") and cam.perspective():
+		var cut := BackdropCatalog.view_cut(CityView3D.CONFIG, cam, shot["subject"])
+		city.set_view_cut(BackdropCatalog.occludes.bind(cut), str(cut))
+	else:
+		city.set_view_cut(Callable())
 	var t := city.project(shot.get("centre", cam.target))
 	var at := Vector2(t.x / maxf(1.0, float(city.size.x)), t.y / maxf(1.0, float(city.size.y)))
 	_mat.set_shader_parameter(&"keep_at", at)
 	_mat.set_shader_parameter(&"keep_radius", CityView3D.CONFIG.backdrop_keep_radius)
 	# S-ARENA round 2: the subject reads first (the rest softened and dimmed round it).
 	_mat.set_shader_parameter(&"focus_at", at)
+	# B2 (art director): a Site's subject block is the focus: the ellipse reaches its own corners.
+	_focus_radius = CityView3D.CONFIG.backdrop_focus_radius
+	var axes := Vector2.ONE
+	if String(shot.get("focus", "")) == "site" and shot.has("subject"):
+		var px := BackdropCatalog.projected_box(city.iso, shot["subject"])
+		if px.has_area():
+			_focus_radius = px.size.x * 0.5 / maxf(1.0, float(city.size.x)) * CityView3D.CONFIG.backdrop_site_focus_reach
+			axes = Vector2(1.0, px.size.y / px.size.x)
+			# B2 b: the block lit by its own neon (window glow, a rim and the street in its colour).
+			var sz := Vector2(city.size).max(Vector2.ONE)
+			_mat.set_shader_parameter(&"subject_rect", Vector4(px.position.x / sz.x, px.position.y / sz.y, px.size.x / sz.x, px.size.y / sz.y))
+	_mat.set_shader_parameter(&"subject_on", _city_ready and String(shot.get("focus", "")) == "site" and shot.has("subject"))
+	_mat.set_shader_parameter(&"focus_radius", _focus_radius)
+	_mat.set_shader_parameter(&"focus_axes", axes)
+	_mat.set_shader_parameter(&"focus_dim", _focus_dim())
 
 
 func _on_city_ready() -> void:
 	if city == null:
 		return
 	if String(shot.get("focus", "")) == "site" and city.model != null and not shot.has("landmark"):
-		# S-ARENA round 2: the subject is the Site's own building (the nearest lot with a roof:
-		# the layout's point may be a street), measured on the model, framed large.
+		# S-ARENA round 2: the subject is the Site's own building, measured on the model, framed
+		# large. B2 (art director): the Site's block: its tallest building and the buildings within
+		# backdrop_site_reach lots of it (one procedural prism read as nothing between the wheels).
 		var lot := _building_lot(city.model, shot["lot"])
-		var box := _building_box(city.model, Vector2i(lot.floor()))
+		var box := block_box(city.model, Vector2i(lot.floor()), CityView3D.CONFIG.backdrop_site_reach)
 		if box.size != Vector3.ZERO:
 			var corp: StringName = place.get("corp", BackdropCatalog.DEFAULT_CORP)
 			shot = BackdropCatalog.site_shot(CityView3D.CONFIG, corp, StringName(shot["won_site"]), _site_lots, Vector2(city.size), box)
@@ -479,10 +518,16 @@ func _light_city() -> void:
 	_mat.set_shader_parameter(&"city_tint", cfg.backdrop_tint_by_corp.get(place.get("corp", &""), cfg.backdrop_tint))
 	_mat.set_shader_parameter(&"city_saturation", cfg.backdrop_saturation)
 	_mat.set_shader_parameter(&"city_grade", _city_ready)
-	_mat.set_shader_parameter(&"focus_radius", cfg.backdrop_focus_radius)
+	_mat.set_shader_parameter(&"focus_radius", _focus_radius)
 	_mat.set_shader_parameter(&"focus_blur", cfg.backdrop_focus_blur)
-	_mat.set_shader_parameter(&"focus_lift", cfg.backdrop_focus_lift)
-	_mat.set_shader_parameter(&"focus_dim", cfg.backdrop_focus_dim if _city_ready and String(shot.get("focus", "")) != "compound" else 0.0)
+	var cfg_n := CityView3D.CONFIG
+	_mat.set_shader_parameter(&"neon", Palette.corp_color(place.get("corp", BackdropCatalog.DEFAULT_CORP)))
+	_mat.set_shader_parameter(&"window_gain", cfg_n.backdrop_site_window_gain)
+	_mat.set_shader_parameter(&"rim_gain", cfg_n.backdrop_site_rim_gain)
+	_mat.set_shader_parameter(&"street_gain", cfg_n.backdrop_site_street_gain)
+	_mat.set_shader_parameter(&"subject_on", _city_ready and String(shot.get("focus", "")) == "site" and shot.has("subject"))
+	_mat.set_shader_parameter(&"focus_lift", cfg.backdrop_site_focus_lift if String(shot.get("focus", "")) == "site" else cfg.backdrop_focus_lift)
+	_mat.set_shader_parameter(&"focus_dim", _focus_dim())
 
 
 ## The shader's city grade (`graded`) on `c`, the value the shader samples, for the tests and the contrast
@@ -521,6 +566,7 @@ func _drop_city() -> void:
 	_city_ready = false
 	_mat.set_shader_parameter(&"city_grade", false)
 	_mat.set_shader_parameter(&"focus_dim", 0.0)
+	_mat.set_shader_parameter(&"subject_on", false)
 
 
 ## The target's top (world): a fitted landmark's own top, the Site building's roof, or the
@@ -557,20 +603,37 @@ static func _building_box(model: CityModel, lot: Vector2i) -> AABB:
 	return out
 
 
-## The lot centre of the building nearest lot point `p` (within SITE_SEARCH lots; nearest first,
-## ties by y then x), else `p` itself.
+## B2: the world box of every building standing within `reach` lots of lot `lot` (AABB() when none).
+static func block_box(model: CityModel, lot: Vector2i, reach: int) -> AABB:
+	var out := AABB()
+	for dy in range(-reach, reach + 1):
+		for dx in range(-reach, reach + 1):
+			var b := _building_box(model, lot + Vector2i(dx, dy))
+			if b.size == Vector3.ZERO:
+				continue
+			out = b if out.size == Vector3.ZERO else out.merge(b)
+	return out
+
+
+## The lot centre of the Site's building: B2 (art director: a subject building between the wheels)
+## the tallest roof within SITE_SEARCH lots of lot point `p` (the Site's block; a 1-lot shed on the
+## point itself read as nothing), ties the nearest, then by y then x; else `p` itself.
 static func _building_lot(model: CityModel, p: Vector2) -> Vector2:
 	var at := Vector2i(p.floor())
 	var best := Vector2i(-99999, -99999)
+	var best_top := 0.0
 	var best_d := INF
 	for dy in range(-SITE_SEARCH, SITE_SEARCH + 1):
 		for dx in range(-SITE_SEARCH, SITE_SEARCH + 1):
 			var l := at + Vector2i(dx, dy)
-			if model.top_at(l) <= 0.0:
+			var top := model.top_at(l)
+			if top <= 0.0:
 				continue
 			var d := float(dx * dx + dy * dy)
-			if d < best_d:
+			if top > best_top or (is_equal_approx(top, best_top) and d < best_d):
+				best_top = top
 				best_d = d
 				best = l
+	return Vector2(best) + Vector2(0.5, 0.5) if best_d < INF else p
 	return Vector2(best) + Vector2(0.5, 0.5) if best_d < INF else p
 

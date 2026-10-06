@@ -3,7 +3,6 @@ keys,en
 "  %s (%s) Rank %d, HP %d/%d, deck %d, daemons %d","  %s (%s) Rank %d, HP %d/%d, deck %d, daemons %d"
  %s Heat, %s Heat
  (INNER RING), (INNER RING)
- (LOCKDOWN), (LOCKDOWN)
  (local: REBEL_CELL is built from your profile), (local: REBEL_CELL is built from your profile)
  (run in progress), (run in progress)
  // PINNED, // PINNED
@@ -1103,7 +1102,6 @@ IF STATIONED (RAIDS):,IF STATIONED (RAIDS):
 "IF THE RAID
 RUNS NOW:","IF THE RAID
 RUNS NOW:"
-IF YOU PLAY %s,IF YOU PLAY %s
 IF YOU SEND IT,IF YOU SEND IT
 IF YOU SEND IT NOW: %s,IF YOU SEND IT NOW: %s
 IN A RUN,IN A RUN

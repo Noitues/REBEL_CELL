@@ -21,6 +21,15 @@ const SKULL_SHARE := 0.28
 const TICKED_ALPHA := 0.45
 const CHECK_PX := 2.5
 
+## B2 (review D2: the hub is an emblem and a name): the wheel's standing facts the hub used to
+## write (BLOCK, SHIELD, RESIST, FROZEN, its passive), {text, color} each (WheelView.
+## standing_chips), as terminal chips before the result chips: the mono word in its colour on an
+## outlined dark chip, not a result. Not part of `chips` (the preview == result row).
+var standing: Array[Dictionary] = []
+## The standing chips' lettering (px at text scale 1.0) and outline (px).
+const STANDING_FONT := 13
+const STANDING_RIM := 1.0
+
 var chips: Array[Dictionary] = []
 ## The breakdown tooltip: its title and its lines.
 var tip_title: String = ""
@@ -244,10 +253,34 @@ static func chip_width(c: Dictionary) -> float:
 	return w
 
 
-## Each chip's rect in the row (local), in order.
-func chip_rects() -> Array[Rect2]:
+## Sets the standing chips (B2); a change re-fits the row.
+func set_standing(p_standing: Array[Dictionary]) -> void:
+	if str(p_standing) == str(standing):
+		return
+	standing = p_standing.duplicate(true)
+	_fit()
+	queue_redraw()
+
+
+## Each standing chip's rect (local), in order, from the row's left.
+func standing_rects() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var x := 0.0
+	var s := _ts()
+	var h := CHIP_H * s
+	var fs := roundi(STANDING_FONT * s)
+	for c in standing:
+		var w := HudSkin.mono().get_string_size(String(c["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + PAD * 2.0 * s
+		out.append(Rect2(Vector2(x, 0.0), Vector2(w, h)))
+		x += w + GAP * s
+	return out
+
+
+## Each chip's rect in the row (local), in order (after the standing chips).
+func chip_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	var st := standing_rects()
+	var x := 0.0 if st.is_empty() else st[st.size() - 1].end.x + GAP * _ts()
 	var h := CHIP_H * _ts()
 	for c in shown():
 		var w := chip_width(c)
@@ -258,7 +291,10 @@ func chip_rects() -> Array[Rect2]:
 
 func _fit() -> void:
 	var rs := chip_rects()
+	var st := standing_rects()
 	var w := 0.0 if rs.is_empty() else rs[rs.size() - 1].end.x
+	if not st.is_empty():
+		w = maxf(w, st[st.size() - 1].end.x)
 	custom_minimum_size = Vector2(w, CHIP_H * _ts())
 	size = custom_minimum_size
 	_layout_glyphs()
@@ -341,6 +377,7 @@ func _layout_glyphs() -> void:
 
 
 func _draw() -> void:
+	_draw_standing()
 	var row := shown()
 	if row.is_empty():
 		return
@@ -391,6 +428,21 @@ func _draw() -> void:
 			draw_polyline(PackedVector2Array([cc + Vector2(-k, 0), cc + Vector2(-k * 0.3, k * 0.7), cc + Vector2(k, -k * 0.8)]), Color(HudSkin.TERMINAL_HI, a), CHECK_PX * s, true)
 	draw_set_transform(Vector2.ZERO)
 	_layout_glyphs.call_deferred()
+
+
+## The standing chips (B2): a dark chip rimmed in its colour, the mono word in it.
+func _draw_standing() -> void:
+	var s := _ts()
+	var fs := roundi(STANDING_FONT * s)
+	var font := HudSkin.mono()
+	var rs := standing_rects()
+	for i in standing.size():
+		var r := rs[i]
+		var col: Color = standing[i]["color"]
+		draw_rect(r, Color(HudSkin.CHIP_INK, 0.7))
+		draw_rect(r, col, false, STANDING_RIM)
+		var base := r.position.y + (r.size.y + font.get_ascent(fs) - font.get_descent(fs)) * 0.5
+		draw_string(font, Vector2(r.position.x + PAD * s, base), String(standing[i]["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 
 func _make_custom_tooltip(for_text: String) -> Object:

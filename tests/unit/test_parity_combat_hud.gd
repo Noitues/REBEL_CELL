@@ -128,17 +128,18 @@ func test_the_result_on_the_aimed_wheel_is_the_real_play_for_every_card() -> voi
 				if action == null or eng.validate(action) != "":
 					scene.cancel_selection()
 					continue
-				var plates: Dictionary = scene.play_plates()
+				var results: Dictionary = scene.play_results()
 				var aimed_c := st.get_combatant(action.wheel_id)
 				var aimed_v: WheelView = scene._view_of(aimed_c.host_id if aimed_c != null and aimed_c.is_satellite else action.wheel_id)
 				if CardTargeting.is_random(card):
-					assert_eq(plates.size(), 0, "%s: a random play shows its odds on the chips, no plate" % card_id)
+					assert_eq(results.size(), 0, "%s: a random play shows its odds on the chips, no underline" % card_id)
 					scene.cancel_selection()
 					continue
-				assert_true(plates.has(aimed_v), "%s on %s: the aimed wheel shows the play's result" % [card_id, enemy])
+				assert_true(results.has(aimed_v), "%s on %s: the aimed wheel's result chips show the play's result" % [card_id, enemy])
+				assert_eq((scene.result_underlines() as Array).size(), results.size(), "%s: one pencil underline per wheel it changes" % card_id)
 				var shown := {}
-				for v in plates:
-					shown[(v as WheelView).combatant.id] = ((plates[v] as PlayResultPlate).result as Dictionary).duplicate(true)
+				for v in results:
+					shown[(v as WheelView).combatant.id] = (results[v] as Dictionary).duplicate(true)
 				var before: CombatState = st.duplicate_state()
 				scene.cancel_selection()
 				_events = []
@@ -153,17 +154,17 @@ func test_the_result_on_the_aimed_wheel_is_the_real_play_for_every_card() -> voi
 					events.append(e)
 				var after: CombatState = r.resolved_state
 				for id in shown:
-					var plate: Dictionary = shown[id]
-					var chips: Array = plate["chips"]
+					var res: Dictionary = shown[id]
+					var chips: Array = res["chips"]
 					var random_status := -1
 					for c in chips:
 						if StringName(c["kind"]) == ResultChipModel.STATUS and bool(c.get("random", false)):
 							random_status = int(c["status"])
 					var real := ResultChipModel.build(before, after, events, id, random_status, ResultChipModel.value_of(chips, ResultChipModel.HEAT))
-					assert_eq(HudResultChips.signature(chips), HudResultChips.signature(real), "%s on %s (%s): the plate's chips == the real play" % [card_id, enemy, id])
+					assert_eq(HudResultChips.signature(chips), HudResultChips.signature(real), "%s on %s (%s): the result chips == the real play" % [card_id, enemy, id])
 					var a := after.get_combatant(id)
-					assert_eq(int(plate["hp_to"]), a.hp if a != null else 0, "%s on %s (%s): HP after == the real play" % [card_id, enemy, id])
-					assert_eq(int(plate["hp_from"]), before.get_combatant(id).hp, "%s: HP before" % card_id)
+					assert_eq(int(res["hp_to"]), a.hp if a != null else 0, "%s on %s (%s): HP after == the real play" % [card_id, enemy, id])
+					assert_eq(int(res["hp_from"]), before.get_combatant(id).hp, "%s: HP before" % card_id)
 					checked += 1
 				plays += 1
 				for e in card.effects:
@@ -174,7 +175,7 @@ func test_the_result_on_the_aimed_wheel_is_the_real_play_for_every_card() -> voi
 			RC.EffectType.DEPLOY_DRONE, RC.EffectType.APPLY_STATUS]:
 		assert_true(kinds.has(kind), "the sweep aimed a %s card" % RC.EffectType.keys()[kind])
 	assert_gt(plays, cards.size(), "plays swept (%d)" % plays)
-	assert_gt(checked, plays, "plates checked (%d)" % checked)
+	assert_gt(checked, plays, "results checked (%d)" % checked)
 	await _close(scene)
 
 
@@ -190,20 +191,20 @@ func test_slices_a_play_changes_are_circled_in_pencil_true_to_the_preview() -> v
 	var marks: Array[Dictionary] = scene.slice_marks()
 	var want := 0
 	for v in scene._views():
-		if scene.play_plates().has(v):
+		if scene.play_results().has(v):
 			want += (v.outcome.get("statuses", []) as Array).size()
 	assert_eq(marks.size(), want, "one pencil circle per slice whose status the play changes")
 	await _frames(2)
 	scene.cancel_selection()
 	assert_eq(scene.slice_marks().size(), 0, "the circles go with the aim")
-	assert_eq(scene.play_plates().size(), 0, "and the plates")
+	assert_eq(scene.play_results().size(), 0, "and the underlined results")
 	await _close(scene)
 
 
-func test_hover_without_aim_shows_no_plate_and_pad_aiming_does() -> void:
+func test_hover_without_aim_underlines_nothing_and_pad_aiming_does() -> void:
 	var scene := await _combat()
 	scene._preview_card(0)
-	assert_eq(scene.play_plates().size(), 0, "a hovered card (not aimed) keeps the chips only")
+	assert_eq(scene.play_results().size(), 0, "a hovered card (not aimed) keeps the chips only")
 	var picked := -1
 	for i in scene.engine.state().hand.size():
 		if CardTargeting.options(scene.engine.resolver, scene.engine.state(), i).size() > 1:
@@ -212,9 +213,9 @@ func test_hover_without_aim_shows_no_plate_and_pad_aiming_does() -> void:
 	assert_true(picked >= 0, "a card with several targets")
 	Settings.pad_active = true
 	scene.select_card(picked)
-	assert_gt(scene.play_plates().size(), 0, "pad aiming shows the result on the wheel")
+	assert_gt(scene.play_results().size(), 0, "pad aiming shows the result on the wheel")
 	scene.step_selection(1)
-	assert_gt(scene.play_plates().size(), 0, "and keeps it as the aim steps")
+	assert_gt(scene.play_results().size(), 0, "and keeps it as the aim steps")
 	scene.cancel_selection()
 	await _close(scene)
 
@@ -344,7 +345,7 @@ func test_the_beaten_enemy_wears_deleted_and_flatlined_sits_on_the_hub() -> void
 
 # --- Fit at 1.0 / 1.6 / 2.0 -------------------------------------------------------------------------
 
-func test_the_result_plate_fits_on_screen_at_every_text_scale() -> void:
+func test_the_result_underline_sits_under_the_chips_on_screen_at_every_text_scale() -> void:
 	for scale in SCALES:
 		var scene := await _combat(scale)
 		var picked := -1
@@ -353,13 +354,25 @@ func test_the_result_plate_fits_on_screen_at_every_text_scale() -> void:
 				picked = i
 				break
 		scene.select_card(picked)
-		var plates: Dictionary = scene.play_plates()
-		assert_gt(plates.size(), 0, "x%.1f: a plate" % scale)
-		for v in plates:
-			var r: Rect2 = (plates[v] as Control).get_global_rect()
-			assert_true(SCREEN.encloses(r), "x%.1f: the plate on screen (%s)" % [scale, r])
-			assert_true(r.has_point((v as WheelView).global_center()), "x%.1f: on its wheel's hub" % scale)
-			assert_false(r.intersects(scene._hand_box.get_global_rect()), "x%.1f: never on the hand" % scale)
+		await _frames(2)
+		var lines: Array = scene.result_underlines()
+		assert_gt(lines.size(), 0, "x%.1f: an underline" % scale)
+		assert_false(scene.find_child("PlayResultPlate", true, false) != null, "x%.1f: no plate on the hub (designer 2026-10-06)" % scale)
+		for v in scene.play_results():
+			var wv := v as WheelView
+			var row: HudResultChips = scene.hud_layer.row_for(wv)
+			var ln: Dictionary = {}
+			for l in lines:
+				if String(l["key"]) == "%s|chips" % wv.combatant.id:
+					ln = l
+			assert_false(ln.is_empty(), "x%.1f: %s's chips underlined" % [scale, wv.combatant.id])
+			var from: Vector2 = ln["from"]
+			var to: Vector2 = ln["to"]
+			assert_true(SCREEN.has_point(from) and SCREEN.has_point(to), "x%.1f: on screen (%s %s)" % [scale, from, to])
+			if not row.chips.is_empty():
+				var rr := row.get_global_rect()
+				assert_true(from.y >= rr.end.y and from.x <= rr.position.x + 1.0 and to.x >= rr.end.x - 1.0, "x%.1f: under the whole chip row" % scale)
+			assert_false(Rect2(from, to - from).grow(2.0).intersects(wv.wheel_rect().grow(-wv.wheel_rect().size.x * 0.2)), "x%.1f: off the hub" % scale)
 		scene.cancel_selection()
 		await _close(scene)
 
