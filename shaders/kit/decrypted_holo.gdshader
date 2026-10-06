@@ -1,6 +1,6 @@
 // REBEL_CELL material kit (ART-1 1B): the decrypted holo (ART_BIBLE v2 §1.2 "Decrypted holo":
 // hacked corp intel: the selected Site file, THREAT INTEL, intercepted corp news). Corp tint
-// at about 78 %, 4 px scanlines, 3-4 slow bands, a +-2 px RGB split on the edge only (never
+// at about 78 %, 4 px scanlines at 12 %, three slow bands (6 s), a +-2 px RGB split on the edge only (never
 // on the text). Two passes over the panel's rect:
 //   mode 0 (under the text): the tinted glass, the edge in three offset channels;
 //   mode 1 (over the text): the scanlines and the slow bands.
@@ -16,10 +16,10 @@ uniform vec4 deep : source_color = vec4(0.008, 0.012, 0.039, 1.0);
 uniform float tint_share : hint_range(0.0, 1.0) = 0.78;
 uniform float glass_alpha : hint_range(0.0, 1.0) = 0.86;
 uniform float scan_px = 4.0;
-uniform float scan_strength : hint_range(0.0, 1.0) = 0.16;
-uniform float band_count = 3.5;
-uniform float band_strength : hint_range(0.0, 0.3) = 0.06;
-uniform float band_seconds = 4.0;
+uniform float scan_strength : hint_range(0.0, 1.0) = 0.12;
+uniform float band_count = 3.0;
+uniform float band_strength : hint_range(0.0, 0.3) = 0.1;
+uniform float band_seconds = 6.0;
 uniform float split_px = 2.0;
 uniform float edge_px = 1.5;
 

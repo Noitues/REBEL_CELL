@@ -2082,9 +2082,10 @@ func _make_exploit_file(id: StringName, tag: Dictionary) -> DecryptedHoloPanel:
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.set_meta(&"site", id)
 	p.corp_color = Palette.corp_color(StringName(_node_dict(id)["marker"].get("corp", &"")))
+	p.corporation = StringName(_node_dict(id)["marker"].get("corp", &""))  # B1c: the cracked emblem
 	var box := MarginContainer.new()
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Clear of the DECRYPTED stamp (top right) and the cracked seal (bottom right).
+	# Clear of the DECRYPTED stamp over the cracked seal (top right; B1c: the seal sits under it).
 	box.add_theme_constant_override("margin_left", UiTheme.SP_M)
 	box.add_theme_constant_override("margin_bottom", UiTheme.SP_M)
 	box.add_theme_constant_override("margin_top", int(DecryptedHoloPanel.STAMP_SLOT.y) + UiTheme.SP_S)

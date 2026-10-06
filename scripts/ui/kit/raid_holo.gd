@@ -5,7 +5,8 @@ extends PanelContainer
 ## 4 px scanlines, its slow bands, the RGB split on the edge only, the corp seal cracked by a
 ## red fracture and the DECRYPTED stamp. A container (the raid's column lays it out): the
 ## holo is its backdrop, its words are Labels in `body` under the header (the title, the
-## corp's net and the Cell's key). Its scrim is local (a panel beside the map, not a modal).
+## corp's net and the Cell's key). Its scrim is local (a panel beside the map, not a modal):
+## the holo's own 0.88 backing (B1c, D17).
 
 const KEY_LINE := "DECRYPTED BY THE CELL  //  KEY %s" # TR
 ## The header's height (px at 1.0) and the room round the words.
@@ -16,9 +17,6 @@ const PAD := 12.0
 ## threats strip leaves it its width, and without the strip the holo's foot keeps its height.
 ## The gap round it (px at 1.0).
 const STAMP_GAP := 2.0
-## The local scrim round the plate (px) and its alpha (§1.2: near opaque, 0.88).
-const SCRIM_OUT := 4.0
-const SCRIM_ALPHA := 0.88
 
 var skin: RaidSkin
 var title: String = ""
@@ -46,6 +44,7 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_key: 
 	holo.scrim = false
 	holo.corp_color = skin.hue
 	holo.seal_letter = skin.corp_name().left(1)
+	holo.corporation = p_corporation  # B1c (D17): the seal carries the corp's emblem, cracked
 	holo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(holo, false, Node.INTERNAL_MODE_FRONT)
 	body = VBoxContainer.new()
@@ -81,10 +80,6 @@ func _notification(what: int) -> void:
 
 
 var _head: Control = null
-
-func _draw() -> void:
-	var r := Rect2(Vector2.ZERO, size)
-	draw_rect(r.grow(SCRIM_OUT * _k), Color(Palette.NIGHT_SKY, SCRIM_ALPHA))
 
 
 ## Parity RAID-03: where the header's words end (local y): the title, the corp's net, the key.

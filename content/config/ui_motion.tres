@@ -2798,15 +2798,15 @@ trans = 1
 amplitude = 0.55
 tier = 0
 
-; the decrypted holo's 3-4 slow bands roll down: seconds per pass; amplitude = band strength
+; the decrypted holo's three slow bands roll down: seconds per pass (B1c, review D17: 6 s); amplitude = band strength
 [sub_resource type="Resource" id="m_holo_bands"]
 script = ExtResource("1_entry")
 id = &"holo_bands"
-duration = 4.0
+duration = 6.0
 delay = 0.0
 ease = 2
 trans = 0
-amplitude = 0.06
+amplitude = 0.1
 tier = 0
 
 ; a light spill breathes with its source: period (s); amplitude = the intensity swing (share)
