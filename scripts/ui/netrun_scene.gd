@@ -101,6 +101,10 @@ var _log: RichTextLabel
 var _panel: Control = null
 var combat_scene: Control = null
 var background: WireframeBackground
+## B1a (review D19, section d): the world's darkening under the UI, the panels' shadows and the
+## light spill (UiScrimPools), over the city (and the HQ run's compound) and under every page. A
+## fight has its own (the combat scene's, over its backdrop).
+var scrim: UiScrimPools
 var map_view: NetrunMapView = null
 var playout: RaidPlayoutPanel = null
 var _spoken_events: Dictionary = {}
@@ -954,6 +958,7 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	_clear_route()
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_STOP
 	_panel_host.add_child(p)
+	_mark_scrim(p)
 	var s := RunManager.netrun
 	# ANIM-6: a new screen enters (glass slides in, paper drops); a page rebuilt on the same
 	# screen (the Mainframe after a purchase) just shows. Focus lands when it ends.
@@ -1087,6 +1092,8 @@ const SUBTITLE_LINES := {"event": 2, "run_end": 2}
 ## LOOT-04 (designer 2026-10-05): the pages over the title's blurred 3D city (their own look:
 ## centred darkening for a centred page); the Mainframe keeps its own facade (SHOP).
 const BLURRED_CITY_SCREENS: Array[String] = ["loot", "event"]
+## B1a: the page parts that are panels on the world (UiScrimPools.mark_panels_in).
+const SCRIM_PANELS: Array[String] = ["TerminalWindow", "LootSheet", "OperativeDossier", "RouteNodePanel"]
 const BLURRED_CITY_LOOK := preload("res://content/config/overlay_city_backdrop.tres")
 ## ANIM-R5 B8: the mid-run raid's playout, a screen of its own (its title, its lines).
 const RAID_PLAYOUT_SCREEN := "netrun_raid_playout"
@@ -5537,6 +5544,8 @@ func _unhandled_input(event: InputEvent) -> void:
 func _build_ui() -> void:
 	background = WireframeBackground.new()
 	add_child(background)
+	scrim = UiScrimPools.attach_after(background)
+	scrim.spill.add_spill_source(_target_spill, Palette.PENCIL_THREAT)
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -5546,6 +5555,8 @@ func _build_ui() -> void:
 	hud.daemons_pressed.connect(open_daemons)
 	hud.heat_pressed.connect(toggle_heat_terminal)
 	root.add_child(hud)
+	UiScrimPools.mark_band(hud, SIDE_TOP)
+	UiScrimPools.mark_panel(hud, false)
 	_status = hud.label
 	subtitle_strip = SubtitleStrip.new()
 	root.add_child(subtitle_strip)
@@ -5578,6 +5589,28 @@ func _build_ui() -> void:
 	drops = DropLayer.new()
 	_wire_drops(drops)
 	add_child(drops)
+
+
+## B1a (review D19, section d): a page's windows sit on the world (a pool and a drop shadow), its
+## route key lies on a dark band at the foot, and its pink verb sticker spills its pink. A fight
+## marks its own.
+func _mark_scrim(p: Control) -> void:
+	if p.has_method("attach_netrun"):
+		return
+	UiScrimPools.mark_panels_in(p, SCRIM_PANELS)
+	for legend in p.find_children("*", "RouteLegend", true, false):
+		UiScrimPools.mark_band(legend as Control, SIDE_BOTTOM)
+	UiSpillShadows.mark_verb_stickers_in(p)
+
+
+## B1a (review D19): the map's red TARGET pencil lights the city round it (global px).
+func _target_spill() -> Array:
+	if city_overlay == null or not is_instance_valid(city_overlay) or not city_overlay.is_visible_in_tree():
+		return []
+	var word := city_overlay.target_word()
+	if word == null or not word.is_visible_in_tree():
+		return []
+	return [word.global_rect()]
 
 
 func _label(text: String) -> Label:

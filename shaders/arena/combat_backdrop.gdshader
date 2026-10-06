@@ -1,5 +1,6 @@
-// Combat backdrop (ART_BIBLE v2 3.1, 3.14): the target building's close-up still, softened and
-// darkened in a pool behind each wheel, with darker bands under the top bar and the hand. Fight won
+// Combat backdrop (ART_BIBLE v2 3.1, 3.14): the target building's close-up still, softened in a pool
+// behind each wheel (B1a: the pools' darkening and the bands under the top bar and the hand are the
+// shared UiScrimPools layer's, drawn over this backdrop and its Heat lights). Fight won
 // (D17): the district dims and the target's own lights turn Cell colours (lime, pink hazard stripes).
 // Static: nothing here animates on its own (`won` is tweened by the view, its end state under reduce
 // effects); rc_common is included so the convention holds if a part ever moves.
@@ -30,20 +31,15 @@ uniform vec3 pool_a = vec3(0.0, 0.0, 0.0);
 uniform vec3 pool_b = vec3(0.0, 0.0, 0.0);
 uniform vec3 pool_c = vec3(0.0, 0.0, 0.0);
 uniform vec3 pool_d = vec3(0.0, 0.0, 0.0);
-// Pool darkening (0.45 leaves 55 %) and the blur radius inside a pool (still texels).
-uniform float pool_dark : hint_range(0.0, 1.0) = 0.45;
+// The blur radius inside a pool (still texels).
 uniform float pool_blur = 2.5;
 // Pool edge: exp(-(d / r) ^ pool_falloff).
 uniform float pool_falloff = 4.0;
 // The still's aspect (width / height), to keep pools round.
 uniform float aspect = 1.7777778;
-// Darker bands: the top bar (top share of the height) and the hand (bottom share), and how dark.
-uniform float top_band = 0.1;
-uniform float bottom_band = 0.24;
-uniform float band_dark : hint_range(0.0, 1.0) = 0.4;
 
 // Parity fix S-ARENA: the city close-up's canvas grade (CityConfig backdrop_exposure /
-// backdrop_tint), city only (the stills are the concept already), before pools and bands: the
+// backdrop_tint), city only (the stills are the concept already), before the pools: the
 // value V (brightest channel) goes to 1 - (1 - V)^exposure, hue kept (no neon clips), then the
 // tint and the saturation (toward its grey; the concept's calmer rainy city). CombatBackdrop.graded
 // mirrors it for the tests.
@@ -101,14 +97,11 @@ void fragment() {
 		}
 		soft /= 9.0;
 		col = mix(col, soft, soften);
-		col *= (1.0 - pool_dark * pool) * (1.0 - focus_dim * away);
+		col *= 1.0 - focus_dim * away;
 	}
 	if (focus_dim > 0.0) {
 		col = min(col * mix(focus_lift, 1.0, away), vec3(1.0));
 	}
-	float top = 1.0 - smoothstep(0.0, top_band, UV.y);
-	float bottom = smoothstep(1.0 - bottom_band, 1.0, UV.y);
-	col *= 1.0 - band_dark * max(top, bottom);
 	vec4 m = texture(won_mask, UV);
 	if (won > 0.0 && !use_mask) {
 		vec2 dk = (UV - keep_at) * vec2(1.0, 1.0 / aspect);

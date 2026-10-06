@@ -131,8 +131,11 @@ func _init() -> void:
 	_marks.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_marks.draw.connect(_draw_marks)
 	add_child(_marks)
-	# B1b: the TARGET's grease pencil is the kit's wax, over the marks.
+	# B1a b (bible 4.1; designer ruling 2026-10-06): the run's network marks draw over the UI scrim.
+	_marks.add_to_group(UiScrimPools.LIFT_GROUP)
+	# B1b: the TARGET's grease pencil is the kit's wax, over the marks (and over the scrim with them).
 	_pencil = PencilSet.under(self)
+	_pencil.add_to_group(UiScrimPools.LIFT_GROUP)
 	resized.connect(_on_resized)
 	add_to_group(GROUP)
 
@@ -217,6 +220,7 @@ func _build_chrome() -> void:
 	_chrome.add_theme_constant_override("margin_bottom", edge)
 	_chrome.add_theme_constant_override("margin_top", roundi(top_inset) + edge)
 	add_child(_chrome)
+	_chrome.add_to_group(UiScrimPools.LIFT_GROUP)  # B1a b: the page's chrome over the UI scrim
 	var col := VBoxContainer.new()
 	col.name = "Column"
 	_chrome.add_child(col)
@@ -257,6 +261,9 @@ func _build_chrome() -> void:
 	for i in KEY_STATES.size():
 		row.add_child(_key_row(KEY_STATES[i], KEY_WORDS[i], k))
 	foot.add_child(key_strip)
+	# B1a: the foot terminals sit on the compound (a pool and a drop shadow each).
+	UiScrimPools.mark_panel(mechanic)
+	UiScrimPools.mark_panel(key_strip)
 	_ignore_mouse(_chrome)
 	move_child(_chrome, _marks.get_index() + 1)
 	set_gate_open(gate_open)

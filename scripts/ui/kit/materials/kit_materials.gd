@@ -24,6 +24,14 @@ const ALL: Dictionary = {
 	&"light_spill": {"component": "LightSpill", "tier": T0,
 		"shaders": ["res://shaders/kit/light_spill.gdshader"],
 		"motions": [&"light_spill_breathe"]},
+	# B1a (review D1, D19): the world's darkening under the UI, the panels' shadows and the UI's
+	# light spill on the city (static: no motion).
+	&"ui_scrim_pools": {"component": "UiScrimPools", "tier": T0,
+		"shaders": ["res://shaders/kit/ui_scrim_pools.gdshader"],
+		"motions": []},
+	&"ui_spill_shadows": {"component": "UiSpillShadows", "tier": T0,
+		"shaders": ["res://shaders/kit/ui_panel_shadows.gdshader", "res://shaders/kit/ui_light_spill.gdshader"],
+		"motions": []},
 	&"decrypted_holo": {"component": "DecryptedHoloPanel", "tier": T0,
 		"shaders": ["res://shaders/kit/decrypted_holo.gdshader"],
 		"motions": [&"holo_bands"]},

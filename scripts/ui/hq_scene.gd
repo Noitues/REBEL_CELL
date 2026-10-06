@@ -78,6 +78,9 @@ var _panel: Control = null
 var panel_name: String = ""
 var background: CyberdeckBackground
 var wireframe: WireframeBackground
+## B1a (review D19, section d): the world's darkening under the UI, the panels' shadows and the
+## light spill (UiScrimPools), over the city and under every page.
+var scrim: UiScrimPools
 var playout: RaidPlayoutPanel = null
 ## The raid setup's map key (placed clear of the nodes).
 var raid_legend: MapLegend = null
@@ -1685,6 +1688,7 @@ func _build_hq_page(page_name: String) -> void:
 	ticker.tooltip_text = UiTip.fold("%s\n%s" % [dj_text, campaign_code_line()])
 	ticker.mouse_filter = Control.MOUSE_FILTER_PASS
 	page.add_child(ticker)
+	_mark_scrim(page)
 	_set_panel(page, page_name)
 	page.resized.connect(_place_hq)
 	for piece in page.get_children():
@@ -5204,6 +5208,8 @@ func _build_ui() -> void:
 	wireframe.city.territory_marked.connect(_on_territory_marked)
 	wireframe.visible = false
 	add_child(wireframe)
+	scrim = UiScrimPools.attach_after(wireframe)
+	scrim.spill.add_spill_source(_target_spill, Palette.PENCIL_THREAT)
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE  # city map screens take clicks behind
@@ -5213,6 +5219,8 @@ func _build_ui() -> void:
 	hud.daemons_pressed.connect(open_daemons)
 	hud.heat_pressed.connect(toggle_heat_terminal)
 	root.add_child(hud)
+	UiScrimPools.mark_band(hud, SIDE_TOP)
+	UiScrimPools.mark_panel(hud, false)
 	_status = hud.label
 	# The subtitles' own band under the top bar: no control and no stat tag under it (H21 #11).
 	subtitle_strip = SubtitleStrip.new()
@@ -5257,6 +5265,35 @@ func _build_ui() -> void:
 	pencil.active = _raid_page_open
 	pencil.forecast = if_placed_lines
 	drops.add_child(pencil)
+
+
+## B1a (review D19, section d): the HQ page's parts on the world: the work order's papers, the
+## hand's tabs and cards and the card column's cards are panels (a pool and a drop shadow), the
+## ON AIR line lies on a dark band at the foot, and the verb slot's pink sticker spills its pink.
+func _mark_scrim(page: Control) -> void:
+	for path in ["WorkOrder/WorkOrderPaper/WorkOrderBox", "Hand/HandCards", "CardColumn/CardMargin/CardStack"]:
+		var box := page.get_node_or_null(path)
+		if box != null:
+			for k in box.get_children():
+				if k is Control:
+					UiScrimPools.mark_panel(k as Control)
+	var tabs := page.get_node_or_null("HandTabs") as Control
+	if tabs != null:
+		UiScrimPools.mark_panel(tabs)
+	var ticker := page.get_node_or_null("OnAir") as Control
+	if ticker != null:
+		UiScrimPools.mark_band(ticker, SIDE_BOTTOM)
+	UiSpillShadows.mark_verb_stickers_in(page)
+
+
+## B1a (review D19): the map's red TARGET pencil lights the city round it (global px).
+func _target_spill() -> Array:
+	if city_overlay == null or not is_instance_valid(city_overlay):
+		return []
+	var word := city_overlay.target_word()
+	if word == null or not word.is_visible_in_tree():
+		return []
+	return [word.global_rect()]
 
 
 ## ANIM-4: a drop layer's questions and intents come to this screen: whether a target
