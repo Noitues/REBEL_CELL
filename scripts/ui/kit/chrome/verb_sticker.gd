@@ -106,12 +106,16 @@ func set_art_scale(k: float) -> VerbSticker:
 var _art_rest: Texture2D = null
 ## The baked art's opaque body (texture px).
 var _art_body: Rect2 = Rect2()
+## The baked art's image (its die-cut silhouette and edge colour for the curl's corner cover).
+var _art_img: Image = null
 var _art_bursts: Array[Texture2D] = []
 ## Hovered or focused (the rainbow sheen and the curl show).
 var _focused: bool = false
 ## The corner curl's size as a share of the sticker's shorter side, the sheen's band width as a share of its
 ## height, and where the static sheen (no motion) stands across its width.
 const CURL_BACK_LIGHTEN := 0.35
+## The flap's soft shadow below the fold (px).
+const CURL_SHADOW_PX := 3.0
 
 
 ## The baked art key for a screen-title word ("OPTIONS" -> "title_options"), or "" when the
@@ -135,7 +139,8 @@ func _load_art() -> void:
 	if art_key == "" or not ResourceLoader.exists(ART_DIR + art_key + ".png"):
 		return
 	_art_rest = load(ART_DIR + art_key + ".png") as Texture2D
-	_art_body = _opaque_rect(_art_rest.get_image())  # the opaque body in texture px (the art has a shadow margin)
+	_art_img = _art_rest.get_image()
+	_art_body = _opaque_rect(_art_img)  # the opaque body in texture px (the art has a shadow margin)
 	var k := 0
 	while ResourceLoader.exists(ART_DIR + "%s_burst_%d.png" % [art_key, k]):
 		_art_bursts.append(load(ART_DIR + "%s_burst_%d.png" % [art_key, k]) as Texture2D)
@@ -507,7 +512,8 @@ func _draw() -> void:
 	else:
 		draw_string(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.STICKER_FILL_MARKER)
 	var edge := die + key
-	_draw_curl(Rect2(Vector2(origin.x - edge, top - edge), Vector2(w + ext + edge * 2.0, cap + ext + edge * 2.0)))
+	var drawn_body := Rect2(Vector2(origin.x - edge, top - edge), Vector2(w + ext + edge * 2.0, cap + ext + edge * 2.0))
+	_draw_curl(drawn_body, func(y_rel: float) -> float: return rounded_right_edge(drawn_body, edge, y_rel), Palette.STICKER_DIE_CUT)
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
 
 
@@ -529,30 +535,87 @@ func _draw_art() -> void:
 	var k := ART_TO_GAME * art_scale * clampf(Settings.text_scale, 1.0, SCALE_MAX)
 	var sz := tex.get_size() * k
 	draw_texture_rect(tex, Rect2((size - sz) * 0.5, sz), false)
-	_draw_curl(Rect2((size - sz) * 0.5 + _art_body.position * k, _art_body.size * k))
+	var origin_px := (size - sz) * 0.5
+	var body := Rect2(origin_px + _art_body.position * k, _art_body.size * k)
+	_draw_curl(body, func(y_rel: float) -> float: return origin_px.x + _art_right_edge(int(_art_body.position.y + y_rel / k)) * k, _art_edge_colour())
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
 
 
 ## The focus curl for the drawn and baked stickers: the top right corner peels back (a paper-backed
 ## flap over the corner and its cast shadow; the kit sticker's own curl is the shader's fold).
-func _draw_curl(body: Rect2) -> void:
+func _draw_curl(body: Rect2, right_edge: Callable, cover_colour: Color) -> void:
 	if not _focused:
 		return
 	var c := VinylSticker.peel_leg(body.size.x, get_viewport_rect().size.y)  # round 44: a fixed 45 degree fold
-	var flap := curl_flap(body, c)
 	var tr := body.position + Vector2(body.size.x, 0.0)
-	var shade := PackedVector2Array([tr + Vector2(-c, c), tr + Vector2(0.0, c), tr + Vector2(-c, c * 1.35)])
+	# 1. the corner the fold takes away is covered with the die-cut's colour, clipped to the die-cut shape
+	var cover := corner_cover(body, c, right_edge)
+	if cover.size() >= 3:
+		draw_colored_polygon(cover, cover_colour)
+	# 2. the flap (paler adhesive back) and its soft 2-3 px shadow on top
+	var flap := curl_flap(body, c)
+	var shade := PackedVector2Array([tr + Vector2(-c, c), tr + Vector2(0.0, c), tr + Vector2(-c, c + CURL_SHADOW_PX)])
 	draw_colored_polygon(shade, Color(Palette.VINYL_INK, SHADOW_ALPHA * 0.5))
 	draw_colored_polygon(flap, Palette.VINYL_BACKING.lightened(CURL_BACK_LIGHTEN))
-	draw_polyline(PackedVector2Array([flap[0], flap[2]]), Color(Palette.STICKER_DIE_CUT, 0.9), 1.0)
+	draw_polyline(PackedVector2Array([flap[0], flap[1]]), Color(Palette.STICKER_DIE_CUT, 0.9), 1.0)
 
 
-## The curl's flap on a baked / drawn sticker whose body is `body`, for a fold leg `c`: OPAQUE and covering the
-## original corner pixels (the triangle the fold takes away) as well as the folded-over triangle, so no doubled
-## corner shows (the proper corner cut for baked art is B5's). Points: top edge, corner, side edge, fold inner.
+## The curl's flap (the folded-over triangle, below the 45 degree fold line) on a sticker whose body is `body`, for a
+## fold leg `c`: the corner's mirror image. Points: top edge, side edge, fold inner.
 static func curl_flap(body: Rect2, c: float) -> PackedVector2Array:
 	var tr := body.position + Vector2(body.size.x, 0.0)
-	return PackedVector2Array([tr + Vector2(-c, 0.0), tr, tr + Vector2(0.0, c), tr + Vector2(-c, c)])
+	return PackedVector2Array([tr + Vector2(-c, 0.0), tr + Vector2(0.0, c), tr + Vector2(-c, c)])
+
+
+## The corner the fold takes away: the part of the top-right corner triangle (top edge, fold line, side) that is
+## inside the die-cut shape. `right_edge` gives the shape's right edge x at `y_rel` px below the body's top. A
+## polygon draw (no texture cutting): it needs no more than the shape's own outline.
+static func corner_cover(body: Rect2, c: float, right_edge: Callable) -> PackedVector2Array:
+	var xr := body.position.x + body.size.x
+	var steps := maxi(4, ceili(c))
+	var left := PackedVector2Array()
+	var right := PackedVector2Array()
+	for i in steps + 1:
+		var y := c * float(i) / float(steps)
+		var xl := xr - c + y  # the fold line
+		var xe := minf(float(right_edge.call(y)), xr)
+		if xe > xl:
+			left.append(Vector2(xl, body.position.y + y))
+			right.append(Vector2(xe, body.position.y + y))
+	if left.is_empty():
+		return PackedVector2Array()
+	right.reverse()
+	left.append_array(right)
+	return left
+
+
+## A rounded rectangle's right edge (radius `r`) at `y_rel` px below its top.
+static func rounded_right_edge(body: Rect2, r: float, y_rel: float) -> float:
+	var xr := body.position.x + body.size.x
+	if y_rel >= r or r <= 0.0:
+		return xr
+	var dy := r - y_rel
+	return xr - r + sqrt(maxf(0.0, r * r - dy * dy))
+
+
+## The baked art's right edge (texture px) on row `y`: the last mostly-opaque pixel, +1.
+func _art_right_edge(y: int) -> float:
+	if _art_img == null:
+		return 0.0
+	y = clampi(y, 0, _art_img.get_height() - 1)
+	for x in range(_art_img.get_width() - 1, -1, -1):
+		if _art_img.get_pixel(x, y).a > 0.5:
+			return float(x + 1)
+	return 0.0
+
+
+## The die-cut edge's colour of the baked art (a pixel just inside its right edge, a third of the way down).
+func _art_edge_colour() -> Color:
+	var y := int(_art_body.position.y + _art_body.size.y * 0.33)
+	var x := int(_art_right_edge(y)) - 2
+	var col := _art_img.get_pixel(clampi(x, 0, _art_img.get_width() - 1), clampi(y, 0, _art_img.get_height() - 1))
+	col.a = 1.0
+	return col
 
 
 ## SIMULATE: white letters with a pink split on the left and a green split on the right and

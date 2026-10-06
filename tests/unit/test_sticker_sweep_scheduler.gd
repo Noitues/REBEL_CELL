@@ -196,20 +196,34 @@ func test_every_destructive_and_quit_confirm_is_calm() -> void:
 		assert_false(StickerSweepQueue.is_calm(), "%s closed: not calm" % key)
 
 
-func test_the_baked_and_drawn_curl_flap_is_opaque_and_covers_the_original_corner() -> void:
+func test_the_curl_cover_is_a_triangle_inside_the_die_cut_and_the_flap_a_triangle() -> void:
 	var body := Rect2(Vector2(10.0, 20.0), Vector2(300.0, 80.0))
 	var c := 30.0
+	var r := 14.0
+	var edge := func(y_rel: float) -> float: return VerbSticker.rounded_right_edge(body, r, y_rel)
+	var cover := VerbSticker.corner_cover(body, c, edge)
 	var flap := VerbSticker.curl_flap(body, c)
 	var tr := body.position + Vector2(body.size.x, 0.0)
-	# every point of the corner triangle the fold takes away (and of the folded-over triangle) is under the flap
-	var steps := 8
+	assert_eq(flap.size(), 3, "the flap is a triangle")
+	assert_false(cover.is_empty())
+	# the cover lies inside the rounded die-cut shape: no square patch past the rounded corner
+	for p in cover:
+		var y_rel: float = p.y - body.position.y
+		assert_lte(p.x, VerbSticker.rounded_right_edge(body, r, y_rel) + 0.001, "cover point %s inside the die-cut" % p)
+	assert_false(cover.has(tr), "the square corner itself is not painted: it is outside the rounded shape")
+	# and it covers every point of the corner triangle that is inside the die-cut shape (below the fold line)
+	var steps := 12
+	var covered := 0
 	for i in steps + 1:
-		for j in steps + 1 - i:
+		for j in steps + 1:
 			var p := tr + Vector2(-c * float(i) / steps, c * float(j) / steps)
-			p += Vector2(-0.01, 0.01) if i == 0 and j == 0 else Vector2.ZERO
-			assert_true(Geometry2D.is_point_in_polygon(p, flap) or flap.has(p), "corner point %s is covered" % p)
-	assert_true(flap.has(tr), "the flap reaches the original corner itself")
-	assert_eq(Palette.VINYL_BACKING.lightened(VerbSticker.CURL_BACK_LIGHTEN).a, 1.0, "opaque")
+			var y_rel := p.y - body.position.y
+			var inside_triangle := (p.x - (tr.x - c)) >= y_rel and p.x > tr.x - c + y_rel - 0.001
+			var inside_shape := p.x <= VerbSticker.rounded_right_edge(body, r, y_rel) - 0.01 and y_rel <= c
+			if inside_triangle and inside_shape:
+				covered += 1
+				assert_true(Geometry2D.is_point_in_polygon(p, cover), "corner point %s is covered" % p)
+	assert_gt(covered, 10)
 
 
 func test_no_scheduled_sweep_while_a_confirm_dialog_is_open() -> void:
