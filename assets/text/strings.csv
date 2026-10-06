@@ -118,6 +118,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s is destroyed.,%s is destroyed.
 %s is gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are kept; Cycles and unbanked loot are lost.,%s is gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are kept; Cycles and unbanked loot are lost.
 %s is held at %s (%d more).,%s is held at %s (%d more).
+%s is locked. %s,%s is locked. %s
 %s is lost. The campaign is over.,%s is lost. The campaign is over.
 %s is offline. who signed off on this?,%s is offline. who signed off on this?
 %s moves from %s to %s.,%s moves from %s to %s.
@@ -197,6 +198,7 @@ A raid's route toward your CORE.,A raid's route toward your CORE.
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
 A random roll: the odds are in the breakdown,A random roll: the odds are in the breakdown
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
+"A share code holds a whole plan: target, ICE, city seed, home server and crew.","A share code holds a whole plan: target, ICE, city seed, home server and crew."
 ACTIVITY,ACTIVITY
 AFTER-ACTION REPORT,AFTER-ACTION REPORT
 AGAIN,AGAIN
@@ -260,6 +262,7 @@ Badges,Badges
 Banked,Banked
 Before this play: %s,Before this play: %s
 Best ICE by corporation: %s.,Best ICE by corporation: %s.
+Best ICE: %s,Best ICE: %s
 Best ICE: %s. %s,Best ICE: %s. %s
 Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d.,Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d.
 Block %d: soaks damage this turn.,Block %d: soaks damage this turn.
@@ -274,6 +277,7 @@ Bring its HP to 0 to win the fight.,Bring its HP to 0 to win the fight.
 Bring the DOWN node back online.,Bring the DOWN node back online.
 Build the picked node here: it joins your network and defends in raids.,Build the picked node here: it joins your network and defends in raids.
 Buy,Buy
+Buy it at the HQ Black Market with campaign Schematics (%d).,Buy it at the HQ Black Market with campaign Schematics (%d).
 CAM %02d  %s,CAM %02d  %s
 CAMPAIGN,CAMPAIGN
 CAMPAIGN END,CAMPAIGN END
@@ -517,6 +521,7 @@ ClassData.rigger.display_name,Rigger
 ClassData.wrecker.description,A Breaker that trades spin control for a heavier Perfect.
 ClassData.wrecker.display_name,Wrecker
 Classes,Classes
+Clear every corporation at ICE %d to open it.,Clear every corporation at ICE %d to open it.
 Clear this Site for the %s Exploit (%d/%d for the breach).,Clear this Site for the %s Exploit (%d/%d for the breach).
 Cleared: claim it to build a node of your network.,Cleared: claim it to build a node of your network.
 Clearing it changes Heat by %s.,Clearing it changes Heat by %s.
@@ -831,6 +836,7 @@ EnemyData.weather_satellite.description,"Fast orbit (4 ticks a turn), self-repai
 EnemyData.weather_satellite.display_name,Weather Satellite
 EnemyData.zoning_board.description,"Shields, heals and rezones its read head 2 ticks a turn."
 EnemyData.zoning_board.display_name,Zoning Board
+Enter a share code,Enter a share code
 Entering it changes Heat by %s.,Entering it changes Heat by %s.
 Event,Event
 "Event: a choice, and its price","Event: a choice, and its price"
@@ -1131,6 +1137,7 @@ LIVE RAID FEED,LIVE RAID FEED
 LOADOUT // %s // DECK,LOADOUT // %s // DECK
 LOADOUT // %s // SPINNER,LOADOUT // %s // SPINNER
 LOCKDOWN,LOCKDOWN
+LOCKED,LOCKED
 LOG,LOG
 LOOT,LOOT
 LOOT SHEET // %s // PICK 1 OF %d,LOOT SHEET // %s // PICK 1 OF %d
@@ -1644,6 +1651,7 @@ ON AIR,ON AIR
 OPEN KEY: SHOW ALL,OPEN KEY: SHOW ALL
 OPENS %d SITE,OPENS %d SITE
 OPENS %d SITES,OPENS %d SITES
+OPENS AT ICE %d EVERYWHERE,OPENS AT ICE %d EVERYWHERE
 OPERATION: %s  //  TARGET: CELL NETWORK  //  OUTCOME: %s,OPERATION: %s  //  TARGET: CELL NETWORK  //  OUTCOME: %s
 OPERATIONS,OPERATIONS
 OPERATIVE,OPERATIVE
@@ -2003,6 +2011,7 @@ SOLD,SOLD
 SPIN %d+,SPIN %d+
 SPINNER,SPINNER
 STABLE,STABLE
+START,START
 START DEFENSE,START DEFENSE
 STATIONED,STATIONED
 STATS,STATS
@@ -2254,6 +2263,7 @@ Slot %d: %s%s,Slot %d: %s%s
 Something opens at ICE %d everywhere (%d/%d).,Something opens at ICE %d everywhere (%d/%d).
 Start a netrun at the first open Site,Start a netrun at the first open Site
 Start a new campaign in slot %s.,Start a new campaign in slot %s.
+"Start a new campaign with this plan: the target, ICE, home server, crew and city seed.","Start a new campaign with this plan: the target, ICE, home server, crew and city seed."
 Start a new campaign.,Start a new campaign.
 Start a new campaign: pick the corporation to bring down.,Start a new campaign: pick the corporation to bring down.
 Start from code,Start from code
@@ -3055,6 +3065,7 @@ UNDO %s,UNDO %s
 UNDOCK,UNDOCK
 UNITS,UNITS
 UNITS DEPLOYED / DESTROYED,UNITS DEPLOYED / DESTROYED
+UNLOCKS · %d,UNLOCKS · %d
 UPGRADE,UPGRADE
 UPGRADE A SLICE // INSTALL %s,UPGRADE A SLICE // INSTALL %s
 UPGRADES: %s,UPGRADES: %s
