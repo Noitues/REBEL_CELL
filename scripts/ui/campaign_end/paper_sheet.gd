@@ -35,6 +35,16 @@ func _init(p_stock: Color = Palette.END_REPORT, p_tilt: float = 0.0, pad: float 
 	resized.connect(_on_resized)
 
 
+## M14 parity END-06: the stock covers the whole sheet. A MarginContainer fits every child,
+## its internal ones too, inside its margins: the stock was laid inset by the pads (the report's
+## right pad is the post-its' room), so the shadow showed round it as a dark band and the typed
+## lines ran to the stock's very edge. It is laid again after each sort.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_SORT_CHILDREN and _paper != null:
+		_paper.position = Vector2.ZERO
+		_paper.size = size
+
+
 func _on_resized() -> void:
 	pivot_offset = size * 0.5
 	_paper.position = Vector2.ZERO
