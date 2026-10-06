@@ -184,6 +184,16 @@ Designer (Noitues), 2026-10-05 evening: "I want my main to look just like art pa
   before any fix. This replaces "the art pass design is correct, follow it without asking" for parity work. Bug fixes
   that are not a look choice (test reds, overlaps) still go ahead.
 
+### 2026-10-05 — Parity fix — campaign slots: every LOAD a sticker (designer ruling)
+Designer ruling 2026-10-05 (SLOTS c): every used slot's LOAD is the pink sticker, not only the newest campaign's (the
+other LOADs were cyan terminal chips). The newest campaign's LOAD (`CaseFileCard.primary`) keeps the page's first focus.
+Each used card now has two sticker verbs, LOAD and DELETE, with the "Can't Undo" pencil between them; nothing else
+changed (sizes, focus links, the 2.0 tooltip). Checked with three used slots at 1.0 / 1.6 / 2.0 (one review_pack
+launch): the row of three cards fits at 1.0, one card a row with the view on the focused card at 1.6 and 2.0. Test:
+`test_load_and_delete_are_stickers_and_delete_says_cant_undo_in_pencil` now saves three slots and checks every card's
+LOAD and DELETE are stickers and the newest campaign's LOAD has the first focus. Sheet
+`docs/art_review/PARITY/fixes/SLOTS_c.jpg` (audit build | main before, then 3 used slots at 1.0 / 1.6 / 2.0).
+
 ### 2026-10-05 — Parity fix — campaign slots follow-up (designer ruling)
 Designer follow-up 2026-10-05 on the slots page (answers the two SLOTS-01/02 open questions). Sheet
 `docs/art_review/PARITY/fixes/SLOTS_b.jpg` (audit build | main before, then 1, 2, 3 used slots at 1.0; 3 at 1.6; 1 and 3 at 2.0).
