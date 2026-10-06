@@ -31,6 +31,31 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-05 — Parity fix — one card face: designer answers
+The designer's answers to the S-CARDFACE open questions (2026-10-05). Sheet:
+`docs/art_review/PARITY/fixes/CARDFACE_hand_b.jpg` (combat_start, combat_aiming, combat_hover at 1.0 / 1.6 / 2.0).
+Tests: `tests/unit/test_parity_cardface.gd` (the Hot Patch / Overdrive exception is gone), `test_art2_hud.gd`.
+- **Hand text (CMB-04).** The rules text at rest may go down to **10 px** (`ZineCard.HAND_REST_FLOOR`; was 12, the
+  ART-2 2D audit floor, which stays for the grown card on screen: `grown_floor`). Type: Plex Sans Condensed, TEXT_HI
+  #F2F6FF with a 2 px ink outline at 0.7 alpha (`CardFace.TEXT_OUTLINE`). Contrast against the face art under the
+  text block (face px y 186..272, every kind and rarity): 8.4:1 (WHEEL, SYSTEM) to 11.7:1 (HACK) at the 95th
+  percentile of the background, above WCAG AA (4.5:1) for small text; the only brighter pixels are the gloss streak
+  and the pips, which the outline and the pip rule cover. More of the text shows at rest (tested in characters: a
+  smaller font fits more words a line, so line counts are not the measure).
+- **The grown card.** `ZineCard.HOVER_SCALE` 1.36 -> **1.75**; a hand shrunk under 1.0 to fit beside SEND IT grows its
+  card further (`hover_to` = 1.75 x max(1, 1 / hand scale): never smaller on screen than a 1.0 card grown). The grown
+  face shows every word of every card in content (Hot Patch and Overdrive included) at 1.0 / 1.6 / 2.0 and down to
+  the hand's least scale (MIN_CARD_SCALE 0.6), at 12 px or more on screen. The grown card moves in across so its die-cut
+  stays on the screen (`grown_shift`: the end cards grew past the edge); its neighbours slide aside by its own growth.
+  The hand at rest is unchanged (it fits at every scale as before). The review pack's `combat_hover` now hovers the
+  first card for real (`mouse_entered`), so the capture shows the growth. Seen in the frames: at 1.0 the preview's
+  result chips over the player's wheel draw above the grown card (they live on the combat FX layer); left as is (the
+  card is grown only while the pointer is on it).
+- **Flights to the piles.** Approved for the animation pass (paused until after M14), not built: item F1 in
+  `docs/R7_REEVALUATION_PREP.md` with the entries it needs (`card_draw`, `card_discard`, `card_exhaust`, `card_pile`
+  re-aimed; new `pile_count_tick`, `pile_reshuffle`) and the two tests that pin today's spots.
+- **SHOP-07.** The RECYCLE BIN is confirmed (open question closed).
+
 ### 2026-10-05 — Parity fix — combat wheels (designer group ruling)
 
 Designer group ruling (2026-10-05): combat matches the concept; mechanics the rules lack stay
@@ -8849,7 +8874,10 @@ and annotated in the GDD where it changes a rule.
   (`city_quality` 1) was measured on the dev PC only (interim, under load; `docs/art_review/ART-12/perf.md`).
   A real Deck run of `tools/visual_qa/perf_pack.tscn --tiers=1 --size=1280x800` is owed when the
   designer has a Deck; scaling from this PC suggested ~10-12 ms a frame there (5e).
-- **Parity fix S-CARDFACE (2026-10-05, default implemented, see "Parity fix — one card face"):** (1) the combat hand
+- ~~**Parity fix S-CARDFACE (2026-10-05, default implemented, see "Parity fix — one card face"):**~~ **Answered by the
+  designer 2026-10-05, see "Parity fix — one card face: designer answers":** (1) lower floor at rest + bigger grown
+  card (built); (2) flights to the piles: yes, queued for the animation pass (R7_REEVALUATION_PREP F1); (3) RECYCLE
+  BIN confirmed. Original question: (1) the combat hand
   at 1.0 holds one or two lines of rules text at rest (the 12 px floor on a 112 x 148 face); the grown card shows every word
   (all but Hot Patch and Overdrive at 1.0, which need the tooltip / inspect). Keep, or a bigger hand card / a lower
   floor at rest? (2) The deal and discard flights still start and land at the hand row's ends; fly them to the new DECK
