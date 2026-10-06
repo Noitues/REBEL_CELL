@@ -45,6 +45,14 @@ uniform float rain_alpha = 0.11;
 uniform float rain_density = 0.1;
 uniform vec3 grade = vec3(0.94, 0.92, 1.04);
 uniform float time_scale = 1.0;
+// S-MAPVIEW: map mode (raid and netrun views): the city greyed toward its own grey and its
+// contrast lowered round `map_mid`, after the night grade (display values), its bloom cut to
+// `map_bloom`. CityView3D.map_graded mirrors it on the CPU for the tests.
+uniform bool map_on = false;
+uniform float map_saturation = 1.0;
+uniform float map_contrast = 1.0;
+uniform float map_mid = 0.22;
+uniform float map_bloom = 1.0;
 
 void vertex() {
 	POSITION = vec4(VERTEX.xy, 1.0, 1.0);
@@ -144,7 +152,8 @@ void fragment() {
 	vec3 b1 = glow_at(uv, glow_lod + 1.0);
 	vec3 b2 = glow_at(uv, glow_lod + 3.0);
 	vec3 b3 = glow_at(uv, glow_lod + 4.6);
-	img = img * (1.0 + spill * (b2 * 0.8 + b3)) + bloom * (b1 * 0.5 + b2 * 0.4 + b3 * 0.12);
+	float bl = bloom * (map_on ? map_bloom : 1.0);
+	img = img * (1.0 + spill * (b2 * 0.8 + b3)) + bl * (b1 * 0.5 + b2 * 0.4 + b3 * 0.12);
 	// World position (fog height) and the distance past the target (haze).
 	vec3 wp = (INV_VIEW_MATRIX * vec4(vp, 1.0)).xyz;
 	float dep = -vp.z - cam_distance;
@@ -166,5 +175,11 @@ void fragment() {
 		float ra = step(1.0 - rain_density, h) * clamp(inx, 0.0, 1.0) * (0.3 + 0.7 * hash12(cell + 7.0));
 		img = mix(img, rain_color, ra * rain_alpha);
 	}
-	ALBEDO = to_lin(clamp(img * grade, 0.0, 1.0));
+	img = clamp(img * grade, 0.0, 1.0);
+	if (map_on) {
+		float grey = dot(img, vec3(0.2126, 0.7152, 0.0722));
+		img = mix(vec3(grey), img, map_saturation);
+		img = clamp(vec3(map_mid) + (img - vec3(map_mid)) * map_contrast, 0.0, 1.0);
+	}
+	ALBEDO = to_lin(img);
 }

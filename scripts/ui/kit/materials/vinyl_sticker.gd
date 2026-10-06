@@ -32,6 +32,18 @@ const SHADER := preload("res://shaders/kit/vinyl_sticker.gdshader")
 const FILL_SHADER := preload("res://shaders/kit/sticker_fill.gdshader")
 ## Look (round 3 combined_v2 `word_sticker` / `build_sticker` defaults, 1x px).
 const BORDER_PX := 18.0
+## Parity STICKER_EDGE (designer 2026-10-05): the die-cut edge of a LETTERED sticker is proportional to its
+## lettering (a fixed 18 px edge read far too thick on a menu-sized sticker), up to the concept's own edge
+## (round 33 ui31.sticker border 12 px on the 1920 board = 8 px on the 1280 frame at 1.0, and the edge
+## grows with the text scale like the lettering does). The concept's edge / body height runs 0.08 (the title
+## verbs) to 0.27 (CANCEL at 28 px); `EDGE_SHARE` of the lettering keeps menu stickers at about 0.2.
+const EDGE_SHARE := 0.14
+const EDGE_MAX_PX := 8.0
+## Focus (designer 2026-10-05): the sticker keeps its fill; its gloss sweep runs in holo-foil colours
+## (`rainbow`) and the corner curls (HOVER_CURL). Under reduce effects the end state is a static sheen at
+## this gloss strength and position, with the curl.
+const RAINBOW_STATIC_K := 0.8
+const RAINBOW_STATIC_POS := 0.5
 const KEYLINE_PX := 5.0
 ## draw_string_outline's size is the outline's whole width (both sides of the contour):
 ## a reach of r px out from the glyph takes an outline of r x this.
@@ -108,7 +120,9 @@ const PRESS := &"sticker_press"
 		body_size = v
 		_rebuild()
 @export var corner_radius: float = 16.0
-@export var border_px: float = BORDER_PX:
+## The die-cut border (px); negative = automatic: proportional to the lettering for a word (`edge_for`),
+## BORDER_PX for an object sticker.
+@export var border_px: float = -1.0:
 	set(v):
 		border_px = v
 		_rebuild()
@@ -165,6 +179,11 @@ var dissolve_t: float = 0.0:
 var grey: float = 0.0:
 	set(v):
 		grey = v
+		_sync()
+## 1 while the sticker is focused / hovered: its gloss runs in holo-foil colours (the shader's `rainbow`).
+var rainbow: float = 0.0:
+	set(v):
+		rainbow = v
 		_sync()
 
 var state: State = State.REST
@@ -284,6 +303,18 @@ static func art_font() -> FontFile:
 	return _art_font
 
 
+## The die-cut edge (px) of a lettered sticker whose lettering is `px` (see EDGE_SHARE).
+static func edge_for(px: float) -> float:
+	return minf(px * EDGE_SHARE, EDGE_MAX_PX * maxf(1.0, Settings.text_scale))
+
+
+## This sticker's die-cut border (px) as drawn.
+func edge() -> float:
+	if border_px >= 0.0:
+		return border_px
+	return edge_for(float(_px)) if shape == Shape.WORD else BORDER_PX
+
+
 func _holo() -> bool:
 	return (shape == Shape.WORD and fill == Fill.HOLO) or (shape != Shape.WORD and stock == Stock.HOLO)
 
@@ -294,7 +325,7 @@ func _rebuild() -> void:
 	_font = art_font()
 	_px = UiTheme.font_px(font_step)
 	var key := KEYLINE_PX
-	var reach := border_px + key
+	var reach := edge() + key
 	var art := Vector2.ZERO
 	var body_pos := Vector2.ZERO
 	var body_sz := Vector2.ZERO
@@ -348,8 +379,8 @@ func _rebuild() -> void:
 	_vp.size = Vector2i(ceili(full.x), ceili(full.y))
 	_base.size = full
 	_fill.size = full
-	content_root.position = body_pos + (Vector2(border_px, border_px) if stock != Stock.KRAFT and shape != Shape.WORD else Vector2.ZERO)
-	content_root.size = body_sz - (Vector2(border_px, border_px) * 2.0 if stock != Stock.KRAFT and shape != Shape.WORD else Vector2.ZERO)
+	content_root.position = body_pos + (Vector2(edge(), edge()) if stock != Stock.KRAFT and shape != Shape.WORD else Vector2.ZERO)
+	content_root.size = body_sz - (Vector2(edge(), edge()) * 2.0 if stock != Stock.KRAFT and shape != Shape.WORD else Vector2.ZERO)
 	body_rect = Rect2(body_pos, body_sz)
 	custom_minimum_size = full
 	size = full
@@ -452,7 +483,7 @@ const KRAFT_BLOTCH_SHARE := 6
 
 
 func _draw_word_base() -> void:
-	var reach := border_px + KEYLINE_PX
+	var reach := edge() + KEYLINE_PX
 	# 1. the die-cut body: every glyph grown by the border and the keyline, plus a band
 	# through each line's middle that closes the notches between letters.
 	for g in _glyphs:
@@ -485,13 +516,13 @@ func _draw_word_base() -> void:
 func _draw_face() -> void:
 	if shape == Shape.WORD or stock != Stock.HOLO:
 		return
-	var r := body_rect.grow(-border_px * 0.5)
+	var r := body_rect.grow(-edge() * 0.5)
 	if shape == Shape.CIRCLE:
 		_face.draw_circle(r.get_center(), minf(r.size.x, r.size.y) * 0.5, Palette.STICKER_DIE_CUT)
 	else:
 		var sb := StyleBoxFlat.new()
 		sb.bg_color = Palette.STICKER_DIE_CUT
-		sb.set_corner_radius_all(int(maxf(corner_radius - border_px * 0.5, 2.0)))
+		sb.set_corner_radius_all(int(maxf(corner_radius - edge() * 0.5, 2.0)))
 		_face.draw_style_box(sb, r)
 
 
@@ -524,6 +555,7 @@ func _sync() -> void:
 	_mat.set_shader_parameter(&"lift", lift)
 	_mat.set_shader_parameter(&"dissolve", dissolve_t)
 	_mat.set_shader_parameter(&"grey", grey)
+	_mat.set_shader_parameter(&"rainbow", rainbow)
 	_mat.set_shader_parameter(&"backing_color", Palette.KRAFT.lightened(0.2) if stock == Stock.KRAFT else Palette.VINYL_BACKING)
 	_mat.set_shader_parameter(&"shadow_color", Palette.VINYL_EXTRUDE)
 
@@ -706,6 +738,7 @@ func set_state(s: State) -> void:
 	tw.tween_callback(func() -> void:
 		_tween = null
 		_end_state(id))
+	rainbow = 1.0 if s == State.HOVER or s == State.PRESSED else 0.0
 	if s == State.HOVER:
 		sweep()
 
@@ -725,6 +758,14 @@ func _apply_state_end(s: State) -> void:
 	lift = v["lift"]
 	fold = v["fold"]
 	grey = 1.0 if s == State.DISABLED else 0.0
+	# Focus / hover: the sheen is holo-foil; with no sweep playing (reduce effects) it stands as a static sheen.
+	rainbow = 1.0 if s == State.HOVER or s == State.PRESSED else 0.0
+	if s == State.HOVER and not Motion.live(SWEEP):
+		gloss_k = RAINBOW_STATIC_K
+		gloss_pos = RAINBOW_STATIC_POS
+	elif s == State.REST:
+		gloss_k = GLOSS_REST
+		gloss_pos = GLOSS_POS_REST
 	modulate.a = DISABLED_ALPHA if s == State.DISABLED else 1.0
 
 

@@ -8,7 +8,8 @@ extends Control
 ##                    fight's HQ, a regular fight's Site, the Site fight won
 ##   python tools/run_windowed.py --log <f> -- --resolution 1920x1080
 ##     res://tools/art_pipeline/hq_run/hq_run_lab.tscn -- --out=<dir> --states=run_meridian,gate_solace
-##     [--tier=1] [--settle=30] [--perf=60]
+##     [--tier=1] [--settle=30] [--perf=60] [--raw=160x90 (S-ARENA: also <state>_raw.png, the
+##     backdrop city's own render before its grade, at that size)]
 ## Prints "HQRUN <state> gpu_ms=<city viewport GPU ms> frame_ms=<frame ms>" per state.
 
 const MAX_WAIT := 900
@@ -146,6 +147,12 @@ func _process(delta: float) -> void:
 	var out := String(_args.get("out", "user://hq_run_lab"))
 	DirAccess.make_dir_recursive_absolute(out)
 	get_viewport().get_texture().get_image().save_png("%s/%s.png" % [out, state])
+	if _args.has("raw") and _backdrop != null and _backdrop.on_city():
+		# S-ARENA: the close-up's own render before the backdrop's grade (test fixtures).
+		var raw := _backdrop.city.get_texture().get_image()
+		var wh := String(_args["raw"]).split("x")
+		raw.resize(int(wh[0]), int(wh[1]), Image.INTERPOLATE_NEAREST)  # point samples: no averaging bias
+		raw.save_png("%s/%s_raw.png" % [out, state])
 	print("HQRUN %s ready=%s gpu_ms=%.2f frame_ms=%.2f ortho=%.1f" % [state, _ready_at >= 0, _avg(_perf), _avg(_frame_ms), _city.iso.ortho if _city != null and _city.iso != null else -1.0])
 	_step += 1
 	if _step >= _states.size():

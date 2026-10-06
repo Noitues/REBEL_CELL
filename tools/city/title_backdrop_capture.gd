@@ -4,13 +4,17 @@ extends Node
 ## 2.0 at city quality tier 2, tier 1, tier 0 = the 2D fallback, reduce effects = the still
 ## frame, `bare` = the backdrop alone for grading), the netrun's loot, event and Mainframe
 ## pages, then the perf probes (1920x1080, v-sync off as city_lab: tier 2 and tier 1, the whole
-## frame and the backdrop city's own GPU time). Prints TITLECAP lines; with --out writes a PNG
+## frame and the backdrop city's own GPU time). --raw also prints a colour-space probe (the frame vs the
+## city viewport's image). Prints TITLECAP lines; with --out writes a PNG
 ## per shot.
 ##   res://tools/city/title_backdrop_capture.tscn -- --out=<abs dir> [--states=a,b] [--perf=<s>]
 ## Its own settings and save files (the player's are untouched).
 
 const TITLE := preload("res://scenes/menu/title_scene.tscn")
 const NETRUN := preload("res://scenes/netrun_map/netrun_scene.tscn")
+const HQ := preload("res://scenes/hq/hq_scene.tscn")
+## Real time the HQ's 2D city bake gets before its picture (ms).
+const HQ_BAKE_MS := 5000
 const SLOT := "gut_title_backdrop_capture"
 ## name -> [window size, text scale, city quality, reduce effects, kind]
 ## kind: "title", "bare" (the title's backdrop alone), "loot", "event", "shop", "perf" (title),
@@ -28,6 +32,7 @@ const STATES: Dictionary = {
 	"event_t2": [Vector2i(1280, 720), 1.0, 2, false, "event"],
 	"event_t0": [Vector2i(1280, 720), 1.0, 0, false, "event"],
 	"shop_t2": [Vector2i(1280, 720), 1.0, 2, false, "shop"],
+	"hq_t2": [Vector2i(1280, 720), 1.0, 2, false, "hq"],
 	"perf_1080_t2": [Vector2i(1920, 1080), 1.0, 2, false, "perf"],
 	"perf_1080_t1": [Vector2i(1920, 1080), 1.0, 1, false, "perf"],
 	"perf_loot_1080_t2": [Vector2i(1920, 1080), 1.0, 2, false, "perf_loot"],
@@ -88,6 +93,19 @@ func _state(n: String, s: Array) -> void:
 		if kind == "bare":
 			for k in ["margin", "ticker", "subtitle_strip"]:
 				(title.get(k) as CanvasItem).visible = false
+	elif kind == "hq":
+		# The HQ page (its own backdrop, whatever main draws there today), its 2D city's bake
+		# given HQ_BAKE_MS to land.
+		RunManager.reset()
+		var hq: Node = HQ.instantiate()
+		get_tree().root.add_child(hq)
+		root = hq
+		await get_tree().process_frame
+		await get_tree().process_frame
+		hq.new_campaign(7)
+		var until := Time.get_ticks_msec() + HQ_BAKE_MS
+		while Time.get_ticks_msec() < until:
+			await get_tree().process_frame
 	else:
 		RunManager.reset()
 		RunManager.new_campaign(7)
@@ -124,6 +142,14 @@ func _state(n: String, s: Array) -> void:
 	if _raw and blurred != null:
 		(blurred.get_node("TiltShift") as CanvasItem).visible = false
 		await get_tree().process_frame
+		await get_tree().process_frame
+		# Colour-space probe: the window's frame against the city viewport's own image (both
+		# the whole view; a decode mismatch shows as a ratio far from 1 in the mid-tones).
+		if blurred.city != null:
+			var shown := get_viewport().get_texture().get_image()
+			var own := blurred.city.get_texture().get_image()
+			own.resize(shown.get_width(), shown.get_height())
+			print("TITLECAP probe state=%s frame_mean=%s viewport_mean=%s" % [n, _mean(shown), _mean(own)])
 	if kind.begins_with("perf"):
 		await _probe(n, blurred)
 	elif _out != "":
@@ -140,6 +166,18 @@ func _state(n: String, s: Array) -> void:
 	root.queue_free()
 	await get_tree().process_frame
 	await get_tree().process_frame
+
+
+## Mean RGB of `img` over a sparse grid (the colour-space probe).
+static func _mean(img: Image) -> Vector3:
+	var acc := Vector3.ZERO
+	var k := 0
+	for y in range(0, img.get_height(), 8):
+		for x in range(0, img.get_width(), 8):
+			var c := img.get_pixel(x, y)
+			acc += Vector3(c.r, c.g, c.b)
+			k += 1
+	return acc / maxf(float(k), 1.0)
 
 
 func _probe(n: String, blurred: BlurredCityBackdrop) -> void:

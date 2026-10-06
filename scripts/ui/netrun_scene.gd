@@ -959,6 +959,10 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	# A fight docks its subtitles in its own column and needs the height (H21 #11).
 	subtitle_strip.visible = not p.has_method("attach_netrun")
 	hud.stats.max_height = HudBar.BAND_HEIGHT if p.has_method("attach_netrun") else 0.0
+	# S-COMBAT-HUD (parity CMB-07, combat_typical_v4): no global top bar in a fight; the TURN strip
+	# and the corner chips stand alone and the wheels get the height (the bar's numbers keep
+	# updating for the page after the fight).
+	hud.visible = not p.has_method("attach_netrun")
 	_panel_host.theme_type_variation = &"GlassPanel" if glass else &""
 	_clear_route()
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_STOP
@@ -1763,22 +1767,23 @@ const ROUTE_TRAIL_WIDTH := 2.2
 func route_graph() -> Dictionary:
 	var s := RunManager.netrun
 	var map := s.run.map
-	var target: Vector2 = CityLayout.site_points(RunManager.corporation).get(s.run.site_id, NeonCity.hq_of(RunManager.corporation.id))
-	var layers := map.layer_count()
+	var points := CityLayout.site_points(RunManager.corporation)
+	if not points.has(s.run.site_id):
+		points[s.run.site_id] = NeonCity.hq_of(RunManager.corporation.id)
+	# S-MAPVIEW (designer 2026-10-05): the route's nodes sit along the link the run jacks along
+	# (from the Cell's end to the run's Site), not scattered round the Site.
+	var placed := RouteLinkLayout.place(CityView3D.CONFIG, map,
+		RouteLinkLayout.link_of(CityView3D.CONFIG, RunManager.corporation, s.campaign, s.run.site_id, points))
+	var spots: Dictionary = placed["nodes"]
 	var available := view_choices(s)
 	var type_glyph := {RC.InfilNodeType.ROUTER: "○", RC.InfilNodeType.TERMINAL: "▭", RC.InfilNodeType.MAINFRAME: "◇", RC.InfilNodeType.SERVER_RACK: "⬢"}
 	var twins := choice_twins(s)
 	# ART-7 3B: the TARGET (the final Rack) and what Heat has made harder (calm Heat, 4.3).
 	var final_id: StringName = map.final_node_id()
 	var heat_marks := route_heat_marks(s)
-	var rows := {}
-	for n in map.all_nodes():
-		rows[int(n["layer"])] = maxi(int(rows.get(int(n["layer"]), 0)), int(n["index"]) + 1)
 	var nodes: Array[Dictionary] = []
 	for n in map.all_nodes():
-		var li := int(n["layer"])
-		var count := int(rows[li])
-		var at := target - CityLayout.RIGHT * (layers - li) * 1.7 + CityLayout.DOWN * (int(n["index"]) - (count - 1) * 0.5) * 2.2
+		var at: Vector2 = spots[n["id"]]
 		var col := Palette.NET_CYAN
 		if n["id"] == s.run.current_node_id:
 			col = Palette.CELL_PINK
@@ -1829,7 +1834,7 @@ func route_graph() -> Dictionary:
 	# route's first layer: the "you are here" marker is drawn there (it was drawn nowhere).
 	var entry := Vector2.INF
 	if s.run.current_node_id == &"":
-		entry = target - CityLayout.RIGHT * (layers + 1) * 1.7
+		entry = placed["entry"]
 	return {"nodes": nodes, "edges": edges, "entry": entry}
 
 

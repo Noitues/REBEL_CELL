@@ -42,6 +42,33 @@ uniform float top_band = 0.1;
 uniform float bottom_band = 0.24;
 uniform float band_dark : hint_range(0.0, 1.0) = 0.4;
 
+// Parity fix S-ARENA: the city close-up's canvas grade (CityConfig backdrop_exposure /
+// backdrop_tint), city only (the stills are the concept already), before pools and bands: the
+// value V (brightest channel) goes to 1 - (1 - V)^exposure, hue kept (no neon clips), then the
+// tint and the saturation (toward its grey; the concept's calmer rainy city). CombatBackdrop.graded
+// mirrors it for the tests.
+uniform bool city_grade = false;
+uniform float city_exposure = 1.0;
+uniform vec3 city_tint = vec3(1.0);
+uniform float city_saturation = 1.0;
+// S-ARENA round 2: the subject's focus (UV), its ellipse radius (share of the width), the blur
+// (texels) and the dim (share taken off) outside it (CityConfig backdrop_focus_*).
+uniform vec2 focus_at = vec2(0.5, 0.5);
+uniform float focus_radius = 0.24;
+uniform float focus_blur = 2.0;
+uniform float focus_dim = 0.0;
+uniform float focus_lift = 1.0;
+
+vec3 graded(vec3 c) {
+	if (!city_grade) {
+		return c;
+	}
+	float v = max(max(c.r, c.g), c.b);
+	float k = (1.0 - pow(1.0 - clamp(v, 0.0, 1.0), city_exposure)) / max(v, 0.0001);
+	vec3 g = clamp(c * k * city_tint, 0.0, 1.0);
+	return mix(vec3(dot(g, vec3(0.2126, 0.7152, 0.0722))), g, city_saturation);
+}
+
 float pool_at(vec2 uv, vec3 p) {
 	if (p.z <= 0.0) {
 		return 0.0;
@@ -53,17 +80,31 @@ float pool_at(vec2 uv, vec3 p) {
 void fragment() {
 	vec2 texel = TEXTURE_PIXEL_SIZE;
 	vec4 base = texture(TEXTURE, UV);
+	if (city_grade) {
+		base.rgb = graded(base.rgb);
+	}
 	float pool = max(max(pool_at(UV, pool_a), pool_at(UV, pool_b)), max(pool_at(UV, pool_c), pool_at(UV, pool_d)));
+	// S-ARENA round 2: outside the subject's ellipse the close-up softens and dims (focus_dim 0: off).
+	float away = 0.0;
+	if (focus_dim > 0.0) {
+		vec2 df = (UV - focus_at) * vec2(1.0, 1.0 / aspect);
+		away = 1.0 - exp(-pow(length(df) / max(focus_radius, 0.001), pool_falloff));
+	}
 	vec3 col = base.rgb;
-	if (pool > 0.01) {
+	float soften = max(pool, away);
+	if (soften > 0.01) {
+		float br = max(pool > 0.01 ? pool_blur : 0.0, focus_blur * away);
 		vec3 soft = base.rgb;
 		for (int k = 0; k < 8; k++) {
 			float a = float(k) * 0.785398;
-			soft += texture(TEXTURE, UV + vec2(cos(a), sin(a)) * texel * pool_blur).rgb;
+			soft += graded(texture(TEXTURE, UV + vec2(cos(a), sin(a)) * texel * br).rgb);
 		}
 		soft /= 9.0;
-		col = mix(col, soft, pool);
-		col *= 1.0 - pool_dark * pool;
+		col = mix(col, soft, soften);
+		col *= (1.0 - pool_dark * pool) * (1.0 - focus_dim * away);
+	}
+	if (focus_dim > 0.0) {
+		col = min(col * mix(focus_lift, 1.0, away), vec3(1.0));
 	}
 	float top = 1.0 - smoothstep(0.0, top_band, UV.y);
 	float bottom = smoothstep(1.0 - bottom_band, 1.0, UV.y);

@@ -4,7 +4,8 @@ extends GutTest
 ## the slice screens' tone step keeps every slice kind apart (OKLab distance between kinds, the read
 ## block's contrast on every palette skin, NULL darker than any lit kind, a glyph per kind for
 ## greyscale), the semantic slice colours never follow a skin, every corp frame wears its rim and
-## the wider corp frame, a multi-needle wheel reads needle 2+ on pins inside the frame, and the
+## the wider corp frame, a multi-needle wheel keeps two full blades with short rails (round 2:
+## designer, keep main's needles), Meridian's screens read its palette orange (round 2), and the
 ## card-play preview's label stands clear of the target reticle.
 
 const COMBAT := "res://scenes/combat/combat_scene.tscn"
@@ -88,7 +89,7 @@ func _screen_mean(img: Image, row: int, step: int = 3) -> Color:
 func _shown(img: Image, row: int) -> Color:
 	var c := _screen_mean(img, row)
 	c = Color(c.r * SCREEN_GAIN, c.g * SCREEN_GAIN, c.b * SCREEN_GAIN)
-	var t := WheelKit.tone(c)
+	var t := WheelKit.new().tone(c)
 	return Color(clampf(t.r, 0.0, 1.0), clampf(t.g, 0.0, 1.0), clampf(t.b, 0.0, 1.0))
 
 
@@ -133,13 +134,13 @@ func test_the_tone_step_saturates_and_lifts_the_screens() -> void:
 	for t in [RC.SliceType.SHIM, RC.SliceType.DEFRAG, RC.SliceType.INFECT]:
 		var raw := _screen_mean(img, t)
 		raw = Color(raw.r * SCREEN_GAIN, raw.g * SCREEN_GAIN, raw.b * SCREEN_GAIN)
-		var toned := WheelKit.tone(raw)
+		var toned := WheelKit.new().tone(raw)
 		assert_gt(toned.s, raw.s, "kind %d: the tone step saturates its screen (CMB-02)" % t)
 		assert_gte(Palette.luminance(toned) + 0.0001, Palette.luminance(raw) * 0.9, "kind %d: and never darkens it much" % t)
 	# a bright pixel is lifted, a dark one only saturated
-	var hi := WheelKit.tone(Color(0.8, 0.8, 0.8))
+	var hi := WheelKit.new().tone(Color(0.8, 0.8, 0.8))
 	assert_gt(hi.r, 0.8, "the part over the threshold is lifted (the recipe's bloom)")
-	var lo := WheelKit.tone(Color(0.1, 0.1, 0.1))
+	var lo := WheelKit.new().tone(Color(0.1, 0.1, 0.1))
 	assert_almost_eq(lo.r, 0.1, 0.0001, "a dark grey is left as it is")
 
 
@@ -157,8 +158,10 @@ func test_null_reads_empty_against_every_lit_kind() -> void:
 		if best >= MIN_NULL_CONTRAST:
 			clear += 1
 	# TROJAN's screen is a dark one (the art pass's smiley on violet): it is told from NULL by its
-	# glyph and its colour (the tests above), so most families, not all, must clear the line.
-	assert_gte(clear, FAMILIES.size() - 1, "the lit families stand off the NULL screen without colour")
+	# glyph and its colour (the tests above), so most families, not all, must clear the line; round 2
+	# (designer: less colour pop on the player kit) leaves a second dark family under it, still
+	# brighter than NULL (asserted above) and told by glyph and colour.
+	assert_gte(clear, FAMILIES.size() - 2, "the lit families stand off the NULL screen without colour")
 
 
 func test_the_read_block_keeps_its_contrast_on_every_skin() -> void:
@@ -207,9 +210,10 @@ func test_the_disc_gets_the_tone_and_the_lit_frame() -> void:
 	var scene := await _combat()
 	var v: WheelView = scene._player_view
 	var m := v.disc.mat
-	assert_almost_eq(float(m.get_shader_parameter(&"screen_sat")), WheelKit.SCREEN_SAT, 0.0001)
-	assert_almost_eq(float(m.get_shader_parameter(&"bloom_thresh")), WheelKit.BLOOM_THRESH, 0.0001)
-	assert_almost_eq(float(m.get_shader_parameter(&"bloom_gain")), WheelKit.BLOOM_GAIN, 0.0001)
+	var t := v.kit.tone_params()
+	assert_eq(t, WheelKit.TONE[&"player"], "the player wheel takes the player's tone (round 2: per kit)")
+	for key in [["screen_sat", "sat"], ["bloom_thresh", "thresh"], ["bloom_gain", "gain"], ["corp_pull", "pull"], ["screen_expo", "expo"]]:
+		assert_almost_eq(float(m.get_shader_parameter(StringName(key[0]))), float(t[key[1]]), 0.0001, "the disc gets %s" % key[0])
 	assert_almost_eq(float(m.get_shader_parameter(&"frame_tint")), WheelKit.PLAYER_FRAME_TINT, 0.0001, "the player's frame is lit in its class accent")
 	assert_eq(int(m.get_shader_parameter(&"rim_kind")), 0, "the player's frame wears no corp rim")
 	assert_almost_eq(float(m.get_shader_parameter(&"r_frame")), WheelKit.R_FRAME_PLAYER, 0.0001)
@@ -246,9 +250,9 @@ func test_every_corp_frame_wears_its_rim() -> void:
 	scene2.skip_motion()
 
 
-# --- BOSS-04: needle 2+ on pins ------------------------------------------------------------------
+# --- BOSS-04 (round 2: designer, keep main's needles) ------------------------------------------
 
-func test_a_second_needle_reads_on_a_pin_inside_the_frame() -> void:
+func test_a_second_needle_keeps_its_full_blade_with_short_rails() -> void:
 	var scene := await _combat(&"renewal_engine")
 	var foe: WheelView = null
 	for w: WheelView in scene._views():
@@ -258,18 +262,41 @@ func test_a_second_needle_reads_on_a_pin_inside_the_frame() -> void:
 	var keep := wheel.pointer_ticks
 	wheel.pointer_ticks = PackedInt32Array([0, 10])
 	foe._sync_disc(foe._center(), foe._radius(), foe.shown_rotation())
-	var k := foe.art_scale()
-	assert_almost_eq(foe.window_radius_of(0), foe.window_radius(), 0.001, "needle 1 reads in its blade's window")
-	assert_almost_eq(foe.window_radius_of(1), WheelFace.PIN_WINDOW_R * k, 0.001, "needle 2 reads in its pin's window")
-	assert_lt(WheelFace.PIN_WINDOW_R, WheelFace.RCH1, "the pin's window sits in the frame's channel, not past the rim")
 	var spot := foe.pointer_spot(1) - foe.global_center()
-	assert_almost_eq(spot.length(), WheelFace.PIN_WINDOW_R * k, 0.5, "the FX find needle 2 at its pin")
+	assert_almost_eq(spot.length(), foe.window_radius(), 0.5, "needle 2 reads in a full blade's window, as needle 1")
 	assert_almost_eq(float(foe.disc.mat.get_shader_parameter(&"rail_half")), WheelFace.RAIL_HALF_MULTI, 0.0001, "a multi-needle wheel's rails are short (d4corp)")
 	wheel.pointer_ticks = PackedInt32Array([0])
 	foe._sync_disc(foe._center(), foe._radius(), foe.shown_rotation())
 	assert_almost_eq(float(foe.disc.mat.get_shader_parameter(&"rail_half")), WheelFace.RAIL_HALF, 0.0001)
 	wheel.pointer_ticks = keep
 	scene.skip_motion()
+
+
+# --- round 2: Meridian reads its palette colour ---------------------------------------------------
+
+## How far (degrees) the toned Meridian screens' hue may sit from Palette.CORP_MERIDIAN's.
+const MERIDIAN_HUE_TOL := 15.0
+## The least luminance (WCAG) of a toned Meridian screen (round 1 read too dark: ~0.04).
+const MERIDIAN_MIN_LUM := 0.06
+
+
+func test_meridian_screens_read_its_palette_orange() -> void:
+	var tex := load(WheelKit.SCREENS % "meridian") as Texture2D
+	assert_not_null(tex)
+	if tex == null:
+		return
+	var img := tex.get_image()
+	var kit := WheelKit.new()
+	kit.theme = WheelKit.THEMES.find(&"meridian")
+	kit.accent = Palette.corp_color(&"meridian")
+	var want := Palette.CORP_MERIDIAN.h * 360.0
+	for t in [RC.SliceType.SHIM, RC.SliceType.DEFRAG, RC.SliceType.HOTFIX]:
+		var c := _screen_mean(img, t)
+		c = kit.tone(Color(c.r * SCREEN_GAIN, c.g * SCREEN_GAIN, c.b * SCREEN_GAIN))
+		c = Color(clampf(c.r, 0.0, 1.0), clampf(c.g, 0.0, 1.0), clampf(c.b, 0.0, 1.0))
+		var dh := absf(wrapf(c.h * 360.0 - want, -180.0, 180.0))
+		assert_lte(dh, MERIDIAN_HUE_TOL, "kind %d: the screen's hue %.0f sits by Meridian's %.0f" % [t, c.h * 360.0, want])
+		assert_gte(Palette.luminance(c), MERIDIAN_MIN_LUM, "kind %d: and is not dark" % t)
 
 
 # --- CMB-09: the card-play preview --------------------------------------------------------------

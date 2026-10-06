@@ -96,14 +96,120 @@ extends Resource
 ## lot (BU); the HQ fills the gap between the wheels.
 @export var backdrop_hq_ortho: float = 140.0
 @export var backdrop_hq_lift: float = 30.0
-## A regular fight's Site close-up: ortho width (BU) and target height (BU).
-@export var backdrop_site_ortho: float = 90.0
+## A regular fight's Site close-up: its least ortho width (BU) and target height (BU).
+@export var backdrop_site_ortho: float = 60.0
 @export var backdrop_site_lift: float = 8.0
 ## The DISPATCH canyon's close-up: share of the HQ-run framing's ortho.
 @export var backdrop_canyon_share: float = 0.7
 ## Fight won without a won mask: the target's kept (undimmed) ellipse, share of the view's
 ## width, round the target's point.
 @export var backdrop_keep_radius: float = 0.16
+## Parity fix S-ARENA (CMB-01, BACKDROP-01/02, MOTION-07): the close-up's own lit night look
+## (the concept stills' blue-grey rainy city, not the Grid's dark night grade), applied once
+## through CityView3D.set_night_share (night share 0 = this look in full; rain and fog kept,
+## the landmarks' look per focus below). Keys as CityViewMotion.day_look.
+@export var backdrop_ramp: Array[Color] = [Color(0.30, 0.33, 0.46), Color(0.50, 0.54, 0.66), Color(0.72, 0.75, 0.84)]
+@export var backdrop_sky: Color = Color(0.17, 0.16, 0.27)
+@export var backdrop_window_gain: float = 1.4
+@export var backdrop_neon_gain: float = 1.2
+@export var backdrop_haze: Color = Color(0.30, 0.30, 0.42)
+@export var backdrop_grade: Color = Color(0.96, 0.98, 1.04)
+@export var backdrop_bloom: float = 0.6
+@export var backdrop_glow_threshold: float = 0.8
+## The landmarks' own look in the close-up (LandmarkLook), per focus: an HQ in its day
+## materials (false: combat_solace.jpg's pale lit helix; rain and the night sky stay), a Site
+## landmark in its night ones (site_solace_night.jpg's lit cross and neon trims).
+@export var backdrop_hq_landmarks_night: bool = false
+@export var backdrop_site_landmarks_night: bool = true
+## The canvas grade over the close-up (combat_backdrop.gdshader `city_exposure` / `city_tint`,
+## city only; the stills are the concept already): each pixel's value V (its brightest
+## channel) goes to 1 - (1 - V) ^ exposure, hue kept (no neon clips to white),
+## then times the tint (the concept's cool blue-grey).
+@export var backdrop_exposure: float = 5.0
+@export var backdrop_tint: Color = Color(0.96, 1.0, 1.04)
+## Per corporation, in place of backdrop_tint (Halcyon's deep violet night sits under the
+## concept band without a little more light).
+@export var backdrop_tint_by_corp: Dictionary = {&"halcyon": Color(1.1, 1.12, 1.14)}
+## ... and its saturation toward the grey (1 = kept): the concept's rain-calmed neon.
+@export var backdrop_saturation: float = 0.72
+## Concept-derived band for the settled close-up's mean relative luminance (linear, the frame
+## between the top bar's and the hand's bands): the night stills (bakes of the concept
+## generators) measure 0.053 (Solace HQ) .. 0.187 (Solace Site); main before the fix 0.017 .. 0.049.
+@export var backdrop_luma_band: Vector2 = Vector2(0.05, 0.19)
+## The pool behind each wheel (combat_backdrop.gdshader pool_dark / pool_falloff, stills and
+## city alike): darkening at its centre (0.55 leaves 45 %: the concept's ~55 % softening, with
+## margin for the HP numbers over the lit city) and its edge's
+## exponent, exp(-(d / reach) ^ falloff). Checked: the HP numbers (WheelView.HP_COLOR) keep
+## 4.5:1 and the wheel rims 3:1 over the settled close-up (test_parity_arena_backdrop).
+@export var backdrop_pool_dark: float = 0.55
+@export var backdrop_pool_falloff: float = 4.0
+## Per corporation: the HQ close-up's least ortho width (BU; else backdrop_hq_ortho) and the
+## share of the view its landmark is fitted into (else backdrop_hq_frame).
+@export var backdrop_hq_ortho_by_corp: Dictionary = {}
+@export var backdrop_hq_frame_by_corp: Dictionary = {}
+## Per corporation: the HQ landmark meshes the framing fits (else backdrop_fit_keep): Meridian's
+## crane (combat_worst_case_v4.png's yellow crane between the wheels), not the whole yard and
+## train, which spread 180 BU wide and would push the close-up out past the LOD and the budget.
+@export var backdrop_hq_fit_keep_by_corp: Dictionary = {&"meridian": PackedStringArray(["crane_solid", "crane_lit"])}
+## Where the HQ landmark's box is fitted for a boss fight (share of the view: between the
+## wheels, under the top bar, its foot behind the hand as combat_solace.jpg), and where a Site
+## fight's subject (the fought Site's building) is fitted (site_solace_night.jpg's clinic:
+## large, between the wheels, above the hand). Only the meshes whose name holds a word of
+## backdrop_fit_keep count toward a landmark's box (the body, not the light beams and neon
+## rays spread over the ground). The close-ups' camera pitch (degrees; the city's own is
+## pitch_deg): the concept's low angle (designer round 2, 2026-10-05: adopt 22-30 now; it costs
+## 9-10.5 ms of city GPU at 1080p tier 2, over budget_ms: owed in ART-12/perf.md, the
+## optimisation slice proposed in DECISIONS).
+@export var backdrop_hq_frame: Rect2 = Rect2(0.32, 0.05, 0.36, 0.85)
+@export var backdrop_site_frame: Rect2 = Rect2(0.33, 0.24, 0.34, 0.56)
+@export var backdrop_fit_keep: PackedStringArray = PackedStringArray(["solid"])
+@export var backdrop_hq_pitch_deg: float = 24.0
+@export var backdrop_site_pitch_deg: float = 22.0
+## A Site fight's subject when the model has not measured the Site's building yet: a block of
+## this many lots round the Site's point (half width) and this tall (BU); an HQ with no
+## landmark is a block of backdrop_site_hq_height over its HQ lots.
+@export var backdrop_site_reach: int = 2
+## The measured subject is grown to at least this footprint (BU) round its centre: one
+## procedural tower alone is too slight to carry the shot.
+@export var backdrop_site_subject_span: float = 30.0
+@export var backdrop_site_height: float = 24.0
+@export var backdrop_site_hq_height: float = 60.0
+## The HQ in a Site shot's back: the close-up zooms out round the subject by this step, while
+## the subject keeps backdrop_site_subject_min of the view (its larger share: width or height), until the HQ's point at
+## backdrop_site_hq_show of its height stands below backdrop_site_hq_top of the view.
+@export var backdrop_site_zoom_step: float = 1.1
+@export var backdrop_site_subject_min: float = 0.3
+@export var backdrop_site_hq_show: float = 0.6
+@export var backdrop_site_hq_top: float = 0.06
+## The built city stops this many lots inside city_rect (a bare ground strip at the edge); the
+## close-up re-records those cut chunks whole (backdrop_extend_lots).
+@export var backdrop_site_edge_margin: float = 4.0
+## A Site or HQ shot records the city past city_rect within this many lots of its target (its own
+## copy of the model, CombatBackdrop._extend_city), so the frame is city all round.
+@export var backdrop_extend_lots: int = 56
+## The subject reads first: outside an ellipse of backdrop_focus_radius (share of the view's
+## width) round the subject the close-up softens (blur, in texels) and dims (share taken off).
+@export var backdrop_focus_radius: float = 0.18
+@export var backdrop_focus_blur: float = 3.0
+@export var backdrop_focus_dim: float = 0.22
+## ... and inside it the subject is lit up by this gain (1 = as the city).
+@export var backdrop_focus_lift: float = 1.3
+## The close-up renders at most this many px tall (0: the view's own size) and is drawn scaled
+## to the view (CombatBackdrop.render_px): the backdrop sits softened behind the wheels, and
+## its wider lit framing keeps the 8 ms city budget at 1080p (budget_ms).
+@export var backdrop_render_height: int = 640
+
+@export_group("Landmark footprints (parity S-ARENA round 2)")
+## Inside a landmark's cleared box the procedural buildings give way only on the lots it
+## stands on: lots under its triangles that reach below landmark_footprint_ground BU and rise
+## above landmark_footprint_rise BU (walls, not ground plates or floating beams), grown by
+## landmark_footprint_grow lots; meshes named with a word of landmark_footprint_skip (light
+## beams over the ground) never count. Before, the whole box cleared: blank lots round
+## Meridian's yard and under Halcyon's eye beam, on the Grid too.
+@export var landmark_footprint_ground: float = 2.0
+@export var landmark_footprint_rise: float = 3.0
+@export var landmark_footprint_grow: int = 1
+@export var landmark_footprint_skip: PackedStringArray = PackedStringArray(["beam"])
 
 @export_group("Buildings")
 ## Facet cell (BU) the walls are split into, and the jitter (share of a cell / BU).
@@ -287,6 +393,34 @@ extends Resource
 @export var roof_antenna_share: float = 0.45
 @export var roof_billboard_above: float = 14.0
 @export var roof_billboard_share: float = 0.16
+
+@export_group("Map mode (S-MAPVIEW: the city as a map in raid and netrun views)")
+## Designer ruling 2026-10-05: on a raid view and a netrun route the city and its buildings are
+## slightly greyed out and lowered in opacity so the nodes and links pop (round 40
+## raid_view_v3, round 37 city_default). On while the host holds the RAID or NETRUN band
+## (CityView3D.map_band); off everywhere else. The night look stays underneath.
+@export var map_mode_on: bool = true
+## The share of its colour the city keeps (display values; 1 = unchanged, 0 = grey).
+@export var map_saturation: float = 0.7
+## The city's contrast round `map_mid` (display values; 1 = unchanged).
+@export var map_contrast: float = 0.8
+## The display value the contrast pivots round (the night city's mid-tone).
+@export var map_mid: float = 0.22
+## The share of the post's bloom (the neon glow) the map keeps.
+@export var map_bloom: float = 0.45
+## The veil over the whole city, its ambient motion included (sky lanes, searchlights, holo
+## signs, pools: they draw after the post), before the network and the map's marks: the
+## city shows through at 1 - `map_veil_alpha` (its opacity lowered toward the night sky).
+@export var map_veil: Color = Color(0.09, 0.07, 0.15)
+@export var map_veil_alpha: float = 0.22
+## The network decal's glow halo kept on the map (its traces, discs and rings stay full: the
+## concept's thin cable links; GRID-01's veil under the network read as part of the mess).
+@export var map_net_halo: float = 0.35
+## A netrun's route along its link (RouteLinkLayout): a layer's nodes side by side across the
+## link this far apart (lots), and the shortest link the route is laid on (lots; a shorter one
+## reaches back along its heading from the target).
+@export var route_link_lateral: float = 2.0
+@export var route_link_min_lots: float = 6.0
 
 
 ## The quality tier for a Settings.city_quality value (-1 = default).

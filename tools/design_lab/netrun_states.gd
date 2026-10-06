@@ -5,6 +5,7 @@ extends Node
 ##   res://tools/design_lab/netrun_states.tscn -- --out=<abs dir> [--states=a,b] [--size=1280x720]
 ## States: start, underway, show_all, heat, meridian_16, halcyon_20, orbital, rebel_cell,
 ## close (ART-7 7w: the route zoomed in to a close-up, the CLOSE car tier), event, jack.
+## S-MAPVIEW: `--raw` also writes `<state>_raw.png`, the 3D city's own render behind the page.
 ## `--perf=<s>`: after each route state, a frame-time probe (PERF lines: the frame and the 3D
 ## city's own GPU / CPU time). Every state prints its camera (CAM lines: ortho, band, car tier).
 ## Sets the run up the way the motion lab and DemoSetup do (a dev tool may write a demo
@@ -24,6 +25,7 @@ const JACK_TIMES: Array[float] = [0.6, 1.4, 2.2, 3.0, 3.6, 4.2, 4.8, 5.6, 6.6, 8
 
 var _out := ""
 var _perf_s := 0.0
+var _raw := false
 var _scene: Node = null
 
 
@@ -34,6 +36,8 @@ func _ready() -> void:
 			_out = a.trim_prefix("--out=")
 		elif a.begins_with("--perf="):
 			_perf_s = float(a.trim_prefix("--perf="))
+		elif a == "--raw":
+			_raw = true
 		elif a.begins_with("--states="):
 			states = a.trim_prefix("--states=").split(",", false)
 		elif a.begins_with("--size="):
@@ -160,6 +164,8 @@ func _shot(name_: String) -> void:
 	await RenderingServer.frame_post_draw
 	var img := get_viewport().get_texture().get_image()
 	img.save_png(_out.path_join(name_ + ".png"))
+	if _raw and _scene != null and is_instance_valid(_scene) and _scene.background.city.view3d != null:
+		_scene.background.city.view3d.get_texture().get_image().save_png(_out.path_join(name_ + "_raw.png"))
 
 
 func _state(st: String) -> void:

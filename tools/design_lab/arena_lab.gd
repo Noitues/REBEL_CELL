@@ -10,6 +10,7 @@ extends Control
 ##       --hover=spin --bloom --won --scale=1.6 --shot=<abs png> --frames=40
 ##       --phase=2 (FIX-REDS: the boss in that phase: its HP under the threshold, its needles)
 ##       --scales=1.0,1.6,2.0 (one shot per text scale in one launch: <shot>_<scale>.png)
+##       --site=auto|<site id> (S-ARENA: a regular fight's backdrop at that Site; auto: the first tier 1)
 
 const COMBAT := preload("res://scenes/combat/combat_scene.tscn")
 const BOSSES := {&"meridian": &"the_manifest", &"solace": &"renewal_engine", &"halcyon": &"civic_core",
@@ -21,6 +22,8 @@ const SAT_TEMPLATES: Array[StringName] = [&"care_drone", &"civic_drone", &"couri
 const FIRMWARE: Array[StringName] = [&"leech", &"overvolt", &"hardened", &"mirror", &"burner", &"power_cell"]
 const DAEMONS: Array[StringName] = [&"clean_signal", &"cascade", &"botnet_seed", &"twin_pointer", &"zero_day", &"kernel_sync", &"scrubber"]
 const SPIN_CARD := &"heavy_spin"
+## S-ARENA: the frame --site= re-aims the backdrop at (after its own first pick).
+const SITE_AT_FRAME := 3
 
 var _args := {}
 var _scene: Control = null
@@ -104,6 +107,19 @@ func _dress() -> void:
 		_scene.arena_backdrop.play_won(true)
 
 
+## S-ARENA: a regular fight at a Site (the lab has no netrun): `site` is a Site id, or "auto"
+## for the corp's first tier-1 Site, as hq_run_lab's site_<corp>.
+func _show_site(corp: StringName, site: String) -> void:
+	var id := StringName(site)
+	if site == "auto":
+		var cd := RunManager.lookup().get_content(corp) as CorporationData
+		id = &""
+		for sd in cd.city_grid.sites:
+			if sd != null and sd.tier == 1 and id == &"":
+				id = sd.id
+	_scene.arena_backdrop.show_place(BackdropCatalog.place(corp, false, RunManager.campaign.runs_started % 2 == 1, id))
+
+
 func _dock(st: CombatState, owner: CombatantState, data: EnemyData, slot: int) -> void:
 	if data == null:
 		return
@@ -122,6 +138,11 @@ func _dock(st: CombatState, owner: CombatantState, data: EnemyData, slot: int) -
 
 func _process(_delta: float) -> void:
 	_frames += 1
+	if _frames == SITE_AT_FRAME and _args.has("site"):
+		# After the backdrop's own first pick (the lab has no netrun, so it picked the HQ).
+		_show_site(StringName(_args.get("corp", "meridian")), String(_args["site"]))
+		if _args.has("won"):
+			_scene.arena_backdrop.play_won(true)
 	if _frames == int(_args.get("frames", "40")) and _args.has("shot"):
 		var img := get_viewport().get_texture().get_image()
 		var path := String(_args["shot"])
@@ -130,7 +151,7 @@ func _process(_delta: float) -> void:
 		DirAccess.make_dir_recursive_absolute(path.get_base_dir())
 		img.save_png(path)
 		print("arena_lab: saved ", path)
-		var at := _scales.find(String(_args["scale"]))
+		var at := _scales.find(String(_args.get("scale", "")))
 		if at >= 0 and at + 1 < _scales.size():
 			_args["scale"] = _scales[at + 1]
 			_scene.queue_free()

@@ -37,6 +37,7 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 FONTS = ROOT / "assets" / "fonts"
 OUT = ROOT / "assets" / "fx" / "stickers"
 TAG = "art-concepts-r43"
+EDGE_SHARE = 0.14  # = bake_menus_r33.EDGE_SHARE = VinylSticker.EDGE_SHARE
 SRC = "docs/concepts/round39_landing_exploits/scripts/"
 
 
@@ -48,6 +49,7 @@ def crop(im):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", required=True, help="the round 39 concept scripts folder (from the tag)")
+    ap.add_argument("--only", default="", help="bake one part only: send_it (the SEND IT sticker)")
     args = ap.parse_args()
     sys.path.insert(0, args.src)
     os.chdir(args.src)
@@ -71,9 +73,15 @@ def main() -> int:
     files = {}
     # SEND IT: send_sticker's own lettering and die-cut, gloss left to the runtime material.
     art = SL.lettering(["SEND IT"], 74, [R22.FILL_PINK], key_w=6, extrude=9, seed=21, jitter=4.0, track=1, holo_seed=61)
-    sd = SL.build_sticker(art, border=15, material="gloss", seed=21, close=15 * 1.25, gloss_k=0.0)
+    # Parity STICKER_EDGE (designer 2026-10-05): the concept's border 15 (0.2 of the lettering) as the menus' share of it
+    # (bake_menus_r33.EDGE_SHARE = VinylSticker.EDGE_SHARE); the drawing code is the concept's, only `border` changes.
+    border = round(EDGE_SHARE * 74)
+    sd = SL.build_sticker(art, border=border, material="gloss", seed=21, close=border * 1.25, gloss_k=0.0)
     im = crop(sd["img"])
     im.save(OUT / "send_it.png", optimize=True)
+    if args.only == "send_it":
+        print("wrote send_it.png")
+        return 0
     files["send_it.png"] = {"call": "SL.lettering(['SEND IT'], 74, [FILL_PINK], key_w=6, extrude=9, seed=21, jitter=4.0, track=1, "
                             "holo_seed=61) + SL.build_sticker(border=15, close=18.75, seed=21, gloss_k=0.0)",
                             "from": "fx_r22.send_sticker", "scale": SL.SS, "lettering_px": 74, "size": list(im.size)}

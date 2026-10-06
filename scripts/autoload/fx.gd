@@ -433,7 +433,9 @@ func _collect_avoid(node: Node, out: Array[Rect2]) -> void:
 						out.append(Rect2(xf * r.position, r.size * xf.get_scale()))
 			# ART-3 6w: and the raid's Speed / Skip strip (its keys are drawn, greyed in setup, not
 			# buttons: SAVED landed on SKIP).
-			if usable or c is MapLegend or c is RouteLegend or c is PadPrompts or c is RaidSpeedStrip:
+			# S-COMBAT-HUD (parity CMB-08): and the fight's RAM panel and name sticker (SAVED sat inside
+			# the RAM plate).
+			if usable or c is MapLegend or c is RouteLegend or c is PadPrompts or c is RaidSpeedStrip or c is RamBar or c is HudNameSticker:
 				var r := _shown_rect(c)
 				if r.has_area():
 					out.append(r)

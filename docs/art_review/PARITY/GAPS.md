@@ -212,7 +212,7 @@ dashed orange start bracket are drawn; the rest of the run is blank city; `[1] F
 chips sit on top of their own markers. Build: the whole board with every node icon. View: main shows
 too little to plan a route (the concept shows hidden nodes as grey "not yet" discs). Likely file:
 `scripts/ui/kit/netrun_map_view.gd`, `route_overlay.gd`, `route_ink.gd`, `route_legend.gd`.
-Decision:
+Decision: **Partly resolved by S-MAPVIEW (designer ruling 2026-10-05):** the route's nodes sit along the link the run jacks along (`RouteLinkLayout`, from the Cell's node to the run's Site) over the city in map mode; the whole-route drawing (hidden nodes as grey discs, landmark stickers) stays with S-ROUTE.
 
 **ROUTE-02 (P1) Dossier overlaps.** Main: the `AT LARGE` stamp covers the HP value (`60 /` cut) and
 the `HEAT 0: COOL` stamp touches the IF STATIONED box. Concept: stamps in the paper's margins. Likely
@@ -418,7 +418,7 @@ info it needs. Likely file: `netrun_scene.gd` shop socket UI, `shop_item.gd`. De
 or DEGAUSS coil. Build: card grid + a SHRED sticker. Main: a `RECYCLE BIN // REMOVE A CARD` lime
 terminal with the card grid and the recycle bin icon under it (the bin is the concept's 4th, sketch
 option). Designer call between the concept's PURGE (marked "recommended") and main's bin.
-Decision: Match concept (designer group ruling 2026-10-05): the locked round 34 shop_v5 RECYCLE BIN kept over round 32's PURGE (open question); the viewer's cards wear the one face, fixed f90191c
+Decision: Match concept (designer group ruling 2026-10-05): the locked round 34 shop_v5 RECYCLE BIN kept over round 32's PURGE; the viewer's cards wear the one face, fixed f90191c; RECYCLE BIN confirmed by the designer 2026-10-05
 
 **SHOP-08 (P3) Upgrade a slice.** Build: `UPGRADE · 100 CYCLES` as one pink graffiti line. Main:
 `UPGRADE` graffiti + `100 CYCLES` in small cyan beside it. Same wheel. Decision: Match concept (designer group ruling 2026-10-05); not fixed in S-CARDFACE: `spinner_view.gd` (S-WHEEL); slice proposed (DECISIONS "Parity fix — one card face")
@@ -486,7 +486,7 @@ windows, most of the frame near black; the scene reads much darker than both ref
 concept's lit city gives each corp its place; main's dark field makes the wheels the only colour,
 but it loses the sense of where the fight is. Likely file: `scripts/ui/arena/combat_backdrop.gd`,
 `backdrop_catalog.gd`, `content/config/city_config.tres` (exposure / light at the combat band).
-Decision:
+Decision: Follow the concept: the close-up keeps a lit blue-grey night (own look + canvas grade), every corp's HQ framed whole (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg) Round 2 (designer 2026-10-05, DECISIONS "Parity fix — combat backdrop, round 2", fixes/ARENA_b.jpg): the concept's low angle (24 / 22 degrees), the target focused, blank lots filled; unique per-fight backdrops are the target (proposed slice).
 
 **CMB-02 (P1) Player wheel colour and material.** Concept D4: slices with distinct illustrated
 screen fills (attack red grid, defend teal waves, special skull, debuff purple), a bright pink outer
@@ -498,7 +498,9 @@ reads muddy. Likely file: `scripts/ui/wheel/wheel_face.gd`, `wheel_disc.gd`, `wh
 slice materials / palette tokens (`palette.gd`, `palette_skins.gd`). Decision: **fixed, concept** (designer group ruling, 2026-10-05: combat matches the concept):
 the baked art-pass screens through a tone step (saturation 1.4, the part over 0.3 lifted x1.1: the
 recipe's bloom / add_glow folded into the disc), the player's frame lit in its class accent (bevel
-wash + hairline glow). Slice tier pips and FROZEN / LOCKED / BURNING stay listed (G4, G5). Sheet
+wash + hairline glow). Round 2 (designer): the tone is per kit (less pop on the player, Meridian and
+Rebel_Cell), every slice keeps its outline at combat size (tier 1 included), the scanlines fade where
+they would beat the screen's own pattern; sheet `fixes/WHEEL_b.jpg`. Slice tier pips and FROZEN / LOCKED / BURNING stay listed (G4, G5). Sheet
 `fixes/WHEEL.jpg`; test `test_parity_wheel.gd`.
 
 **CMB-03 (P1) Enemy wheel corp kit.** Concept: the enemy wheel wears the corp kit (Meridian orange
@@ -508,7 +510,9 @@ Build: green sticker ring. Same files as CMB-02 plus the corp kits. Decision: **
 frame bases and gloss, `corp_rim`: Meridian hazard stripes + teeth, Solace capsule studs + glass
 ring, Halcyon colonnade + gold halo, Orbital azimuth ticks + ring, Rebel_Cell broken segments; the
 elite collar beyond the frame) and the saturated corp screens. Orbital's azimuth numbers are not
-drawn (below 4 px at combat size). Sheet `fixes/WHEEL.jpg`.
+drawn (below 4 px at combat size). Sheet `fixes/WHEEL.jpg`. Round 2 (designer): Meridian's screens
+pulled to its palette orange (Palette.CORP_MERIDIAN #FF8C1A) and brighter, the corp tier I outline
+brighter; sheet `fixes/WHEEL_b.jpg`.
 
 **CMB-04 (P1) Hand: sticker cards.** Concept: gold-yellow die-cut sticker cards with a white border,
 type band (WHEEL yellow / HACK pink / SYSTEM teal), big glyph and value, fanned and overlapping, a
@@ -517,28 +521,28 @@ flat row. Main: the gold cards with type band, but in a dim olive tone with a ca
 behind the glyph, a straight row with gaps, no deck/discard piles, card text cut (`Spin a whee...`,
 `OVERCLOC...`). View: main is close in structure; the dull gold and cut text read worse than the
 concept; the missing piles drop info (deck counts are in the top bar). Likely file:
-`scripts/ui/kit/zine_card.gd`, `sticker_button.gd`, `combat_scene.gd` (hand layout). Decision: Match concept (designer group ruling 2026-10-05); card part (face, text, DECK / DISCARD piles) fixed f90191c; at-rest hand text at 1.0 is an open question
+`scripts/ui/kit/zine_card.gd`, `sticker_button.gd`, `combat_scene.gd` (hand layout). Decision: Match concept (designer group ruling 2026-10-05); card part (face, text, DECK / DISCARD piles) fixed f90191c; designer answers 2026-10-05: hand text 10 px at rest, the hovered card x1.75 shows every word of every card, fixed 05a9cb5; flights to the piles queued for the animation pass (R7_REEVALUATION_PREP F1)
 
 **CMB-05 (P2) Turn banner.** Concept: a slim terminal strip top centre `TURN 3 | FREE NUDGE 1` with
 the fight's address line under it. Build: one text line top left. Main: a large boxed banner with
 stencil `TURN 1 | FREE NUDGE 1` and the key hint under it. View: main's banner is bigger than needed
 and pushes into the wheel area. Likely file: `scripts/ui/kit/hud_dialog_panel.gd` / `combat_scene.gd`.
-Decision:
+Decision: **fixed, concept**: a slim terminal strip, TURN | FREE NUDGE over the fight's address line (NETRUN // CORP // SITE // ENEMY); key hints moved to its tooltip (open question logged) (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-06 (P2) SEND IT block.** Concept: SEND IT white die-cut sticker overlapping a dark EXECUTE
 plate; RESPIN / UNDO terminal chips beside it. Main: matches, but EXECUTE is drawn as a pale ghost
 outline that reads like a rendering fault, and `> turn_resolve.exe [Space]` runs under it in tiny
 type. Build: graffiti SEND IT with drips. Likely file: `scripts/ui/kit/send_it_sticker.gd`.
-Decision:
+Decision: **fixed, concept**: EXECUTE and its terminal line sit on a dark terminal plate the sticker overlaps (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-07 (P2) Top bar in combat.** Concept: no global top bar in combat (the turn strip and corner
 chips only). Build and main: the full campaign resource bar. View: the concept gives the wheels the
-height. Likely file: `combat_scene.gd`, `hud_bar.gd`. Decision:
+height. Likely file: `combat_scene.gd`, `hud_bar.gd`. Decision: **fixed, concept**: no global top bar in a fight; the TURN strip and corner chips only (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-08 (P3) Name sticker and RAM.** Concept: `CELL-9 // BREAKER` pink sticker, RAM pips in a
 terminal plate. Main: matches; the name reads `BREAKER 1 // BREAKER` (doubled class word), SAVED
 stamp sits inside the RAM plate. Likely file: `scripts/ui/kit/hud_name_sticker.gd`, `ram_bar.gd`.
-Decision:
+Decision: **fixed, concept**: CELL-n // CLASS (no class word twice); SAVED avoids the RAM panel and the name sticker (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-09 (P2) Card-play preview.** Build: `LANDS HERE` tag, dashed slice outline and white chevrons
 on the target wheel. Main: same pieces (dashed pink slice, LANDS HERE tag, chevrons) dimmer; the
@@ -550,41 +554,41 @@ first spot clear of the target reticle, the nudge buttons and the HP row (they w
 reticle). File `scripts/ui/wheel/attach/card_preview_overlay.gd`.
 
 **CMB-10 (P3) Aim line.** Both: yellow dashed pencil line from the card to the target; main's ends
-on the slice, the build's on the wheel. Equivalent. Decision:
+on the slice, the build's on the wheel. Equivalent. Decision: **fixed, designer ruling (grease pencil)**: the aim is a yellow grease-pencil arrow from the card's top edge to the hub's edge with a loop round the target, written on (aim_line_draw / target_snap) and wiped (pencil_wipe); with the aim on a target the play's result shows on every wheel it changes (hub plate: HP from -> to + the D15 chips; changed slices circled in pencil), held to the real play for every card (test_parity_combat_hud.gd) (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-11 (P2) Mid-replay.** Build: forecast tags flip to `THIS TURN` with tick boxes. Main: a WEAK
 landing tag, the bit stream into the hub, a blue shield bar beside the wheel, chips `?`. Main follows
-the concept (precision landings, bit stream); fine. Decision:
+the concept (precision landings, bit stream); fine. Decision: **keep main**: it follows the concept (precision landing, bit stream) (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-12 (P2) Result chips and LAST TURN.** Concept: `-14` red boxed, `(4 shield)`, `+4` green, at
 HP height. Main: the chips are there; `+3` uses a tiny boxed icon, an empty octagon outline chip
 follows HP (an empty status slot?) and the HP plate has a cyan chevron bracket the concept lacks.
-Likely file: `scripts/ui/kit/hud_result_chips.gd`, `result_chip_model.gd`. Decision:
+Likely file: `scripts/ui/kit/hud_result_chips.gd`, `result_chip_model.gd`. Decision: **fixed, concept**: the chip glyph as tall as its number; octagon chip and chevron bracket no longer drawn; block keeps picto_block (no shield glyph in the atlas) (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-13 (P2) Refusal toast.** Build: yellow paper note with a no-entry mark, pencil type. Main: a
 red-edged terminal toast centre-right, small. The bible says "refusal: HARM edge + no-entry mark":
-main follows the bible. Decision:
+main follows the bible. Decision: **keep main**: follows the bible (HARM edge + no-entry mark) (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-14 (P2) Victory.** Build: the enemy wheel greyed with a green `DEFEATED` stamp and skull, a
 small LOOT graffiti. Main: `VICTORY` in big lime stencil, `OURS NOW` in yellow over the backdrop,
 the enemy wheel removed (dashed circle + DEFEATED stamp), the operative line in a terminal box.
 View: main is louder; `OURS NOW` floats with no anchor. Likely file: `combat_scene.gd`
-(`combat_end_hold`), `scripts/ui/kit/zine_stamp.gd`. Decision:
+(`combat_end_hold`), `scripts/ui/kit/zine_stamp.gd`. Decision: **fixed, concept**: FIGHT WON in sticker yellow; the beaten wheel's spot shows a DELETED vinyl sticker (round 23 fx_enemy_defeated_v2); OURS NOW is S-ARENA's (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-15 (P3) LOOT sticker.** Main: white die-cut LOOT with lime focus brackets; build: graffiti.
-Main follows the sticker rule. Decision:
+Main follows the sticker rule. Decision: **keep main**: white die-cut sticker (the sticker rule), now on the dark PROCEED plate (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-16 (P2) Defeat.** Build: player wheel drained grey with a red DEFEAT stamp and skull. Main:
 FLATLINED stamp, wheel dimmed, the top bar shrinks to HEAT + SCHEMATICS only, both on main and the
-build. Concept `round40_hub_inner_ring/player_defeat_v2.gif` (drain). Decision:
+build. Concept `round40_hub_inner_ring/player_defeat_v2.gif` (drain). Decision: **fixed, concept**: FLATLINED on the hub, square, a hollow box in the class accent (round 40 player_defeat_v2); no top bar in a fight (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
-**CMB-17 (P3) JACK OUT sticker.** As CMB-15. Decision:
+**CMB-17 (P3) JACK OUT sticker.** As CMB-15. Decision: **keep main**: as CMB-15 (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-18 (P1) Tutorial card covers the play area.** Build: the tutorial note sits bottom right,
 paper, clear of both wheels. Main: a terminal card sits in the middle between the wheels, over the
 enemy wheel's left edge and the backdrop; its body is Plex sans at a small size. View: the build's
 placement keeps the wheels readable while you read. Likely file: `scripts/ui/kit/tutorial_overlay.gd`.
-Decision:
+Decision: **designer: between the wheels**: kept in the notes column, tested clear of both wheels at 1.0 / 1.6 / 2.0 (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **BOSS-01 (P1) Guard-arc marker over the HP plate.** Main: the green guard-arc end marker (the
 triangle) sits on the first digits of the boss HP `1395/1475`. Build and concept: nothing over the
@@ -599,16 +603,14 @@ Decision:
 
 **BOSS-03 (P2) White bead chain on the backdrop.** Main: a chain of white blobs arcs across the
 boss backdrop between the wheels (the Solace helix's lights?) and reads as a UI element. Build:
-none. Likely file: `combat_backdrop.gd` (boss place). Decision:
+none. Likely file: `combat_backdrop.gd` (boss place). Decision: Follow the concept: the helix in its day materials, its lights sit in the pale helix, no white bead chain (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg)
 
 **BOSS-04 (P2) Phase 3 arcs.** Main phase 3: lime guard arcs, double chevrons and a `13` marker
 crowd the boss wheel's right side; build: an orange dashed arc. View: main's lime again collides
-with the focus colour. Likely file: `hud_wheel_layer.gd`. Decision: **fixed, concept** (designer group ruling, 2026-10-05: combat matches the concept):
-needle 2, 3 ... read on round 14 `d4corp.pin` pins inside the frame (round window in the channel,
-number tab), only needle 1 wears the crowned blade; a multi-needle wheel's rails are +-24 degrees;
-the corp rim is drawn over the phase 3 armour plates. The lime is Solace's corp hue (ART_BIBLE 2.4,
-recipe accent) and the target brackets are FOCUS: both kept; what crowded the rim (the second
-crowned blade and its window) is gone. Sheet `fixes/WHEEL.jpg`.
+with the focus colour. Likely file: `hud_wheel_layer.gd`. Decision: **designer: keep main's needles** (round 2, 2026-10-05): both needles stay full crowned
+blades (round 1's `d4corp.pin` readers reverted). The crowding is thinned by the short rails a
+multi-needle wheel keeps (+-24 degrees, d4corp) and the corp rim drawn over the phase 3 armour. The
+lime is Solace's corp hue and the FOCUS reticle: both kept. Sheet `fixes/WHEEL_b.jpg`.
 
 ### City Grid (`grid*.jpg`: grid, grid_site_selected, grid_raid_pending, grid_influence, grid_drag_crew, grid_meridian, grid_halcyon, grid_orbital, grid_rebel_cell)
 Refs: art pass build `grid*` (M13: a flat dark-navy isometric board, hex tier badges, a 2D wireframe
@@ -627,7 +629,7 @@ glow also makes the lime "yours" focus colour hard to pick out. Likely cause:
 `scripts/ui/kit/city_map_overlay.gd` (the veil / keyline / glow under-layer, `_draw` ~l.1071) and
 the 3D city's bloom (`content/config/city_config.tres` `bloom`, `lane_glow_management`). Fix: drop
 the veil, draw links as the concept's single cable strokes in the state colours, lower the bloom
-at the Grid band. Decision:
+at the Grid band. Decision: **Partly resolved by S-MAPVIEW (designer ruling 2026-10-05, city as a map):** on the raid views and the netrun route the city is greyed, its bloom cut to 45% and veiled, and the network decal's glow halo cut to 35%; the Grid band itself is unchanged (the Grid folds into the HQ raid view, HQ-BUILD); the decal's disc fill and link look stay with S-GRID. Sheet `fixes/MAPVIEW.jpg`.
 
 **GRID-02 (P2) Marker size and ring.** Concept v4: small discs (~24 px at 1080p, ~16 at 720)
 with a thin state ring and the corp glyph, labels only on hover / landmarks. Main: discs ~36 px at
@@ -732,7 +734,7 @@ cover the header. Likely file: `scripts/ui/kit/raid_intel_strip.gd`, `raid_holo.
 **RAID-04 (P2) Links and threat pencil.** Main: the same glow veil as GRID-01 under the network,
 hex `T1` badges on each node, red pencil arrows A/B. Concept: dashed yellow cable lines, small
 diamond pads, red pencil routes with lettered entry marks. Build: green wireframe. Same cause as
-GRID-01 (`city_map_overlay.gd`), plus the raid's node badges (`raid_socket.gd`). Decision:
+GRID-01 (`city_map_overlay.gd`), plus the raid's node badges (`raid_socket.gd`). Decision: **Partly resolved by S-MAPVIEW:** the city under the raid map is greyed and veiled, the decal's halo cut; the raid map keeps the major nodes only (the Cell's network and the Sites the raid really enters at and crosses, `RaidMapNodes`; hookup in `hq_scene.raid_graph` relayed to HQ-BUILD), so the frontier's T1 / T2 hexes are gone. Badges and link strokes stay with S-RAID / S-GRID.
 
 **RAID-05 (P2) Page title.** Concept: `RAID SETUP` title sticker top left. Main and build: the top
 bar's words `03 CELL DEFENSE RAID SETUP`. Likely file: `hq_scene.gd`, `hud_bar.gd`. Decision: **Follow the concept: handed to HQ-BUILD** (the title sticker is `hq_scene.gd` / the top bar, the HQ redesign's Q1 / Q6; nothing in the raid kit).
@@ -863,13 +865,13 @@ blurred. Decision:
 pale against a rainy blue-grey city, green beams, readable; the wheels sit in front. Main: the helix
 in near-black navy, a chain of white bead lights (BOSS-03), a few lit windows; the frame is
 mostly black. Same cause as CMB-01 (`combat_backdrop.gd`, the city's light at the combat band).
-Decision:
+Decision: Follow the concept: the whole helix lit pale and framed between the wheels in a lit rainy city (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg) Round 2 (designer 2026-10-05, DECISIONS "Parity fix — combat backdrop, round 2", fixes/ARENA_b.jpg): the boss view stays the special HQ view, now at 24 degrees.
 
 **BACKDROP-02 (P1) Site fight backdrop (Solace).** Concept `site_solace_night.jpg`: the Site
 building (a clinic with the cross sign and helipad) lit and framed at the centre, a lit blue-grey
 city around it. Main: generic dark blocks with neon roof outlines, no Site building in view.
 Likely file: `backdrop_catalog.gd` (`place(...)` for a Site: which building and camera),
-`combat_backdrop.gd`. Decision:
+`combat_backdrop.gd`. Decision: Follow the concept: the corp's Site building stands on the Site's lot, lit and framed at the centre (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg) Round 2 (designer 2026-10-05, DECISIONS "Parity fix — combat backdrop, round 2", fixes/ARENA_b.jpg): each Site fight frames its own Site's lot (no repeated landmark, no inset), the Site's building the focused subject, the city recorded past the edge.
 
 ### Endings: run end, campaign won / lost (`run_end*.jpg`, `campaign_*.jpg`)
 Refs: build `run_end`, `campaign_won`, `campaign_lost` (M13: a CELL BURNED / CORP DOWN stamp
@@ -951,7 +953,7 @@ file: `scripts/ui/kit/terminal_window.gd` / `menu_motion.gd` (`panel_in` entry i
 ~667 ms). Main's in-context demo shows the combat backdrop **lit** (a coloured, readable 3D city)
 for its first ~400 ms and then dropping to the near-black look of CMB-01 when the fight settles:
 the lit city exists in main and is being darkened afterwards. Useful for CMB-01 / BACKDROP-01.
-Likely file: `scripts/ui/arena/combat_backdrop.gd` (the settle / dim step). Decision:
+Likely file: `scripts/ui/arena/combat_backdrop.gd` (the settle / dim step). Decision: Fix the cause: the close-up's texture reached the shader as linear values; graded so the settled city stays lit (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg)
 
 **MOTION-08 (P3) victory_flash.** Build: VICTORY appears at ~267 ms over the unchanged scene.
 Main: a white flash disc on the enemy wheel at ~133 ms, VICTORY at ~267 ms, OURS NOW from ~533 ms.
