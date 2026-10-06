@@ -1,21 +1,21 @@
 class_name PauseMenu
 extends Control
-## Pause menu (gap analysis 2.5): Resume, Options (the SettingsPanel inline), Codex,
-## Save & quit to title, Quit to desktop (confirmed). Scenes open it on Esc; it never
-## changes game state itself beyond asking RunManager to save and switch scenes.
-## ART-10 4C (ART_BIBLE v2 §4.13, §2.10; round 33 `abandon_dialog.jpg`, `ui_kit.jpg` MENU):
-## a v2 terminal (`> PAUSED // WHERE`), its lines in terminal CAPS with the `>` caret and
-## lime brackets on focus; the Codex as terminal text, the Options single-column inside it,
-## the quit confirm in the abandon dialog's look.
-## M14 parity PAUSE-01..03 (designer 2026-10-05): the page behind is blurred and darkened
-## (GlassScrim, as every other modal); no PAUSED sticker (the raid plays on under the menu,
-## so no running raid is paused). PAUSE-02, ported from art-m13-final
-## scripts/ui/kit/pause_menu.gd: `Resume [Esc]` is the one pink verb sticker, the other rows
-## carry icons (StatIcon), the campaign code sits in a CodeField with a copy button.
-## ABANDON-QUIT (designer ruling 2026-10-05, GDD 4.5): the in-run pause has "Abandon run", the
-## campaign's pause (no run in progress) "Abandon campaign", both rows in HARM (as the slots'
-## DELETE: the destructive verb's edge) asking with the abandon dialog (ExitDialogs); "Quit to
-## desktop" asks with the quit confirm and its key hints. The answers go to RunManager.
+## Pause menu (gap analysis 2.5; M14 parity PAUSE-01..03, designer 2026-10-05 and the layout
+## of the same day). Scenes open it on Esc; it never changes game state itself beyond asking
+## RunManager to save, abandon and switch scenes.
+## - The page behind is blurred and darkened (GlassScrim, as every other modal); no PAUSED sticker.
+## - Two columns of vinyl stickers (the kit's VinylSticker through HoloSticker, each always in its
+##   role's colour; the focused one lifts and runs the gloss sweep, no brackets). LEFT: RESUME
+##   (pink, the one primary, its key hint beside it), OPTIONS (the SettingsPanel inline), CODEX.
+##   RIGHT: ABANDON CAMPAIGN (at HQ; ABANDON RUN in a run: the same slot, ABANDON-QUIT, GDD 4.5,
+##   harm red, asking with ExitDialogs, hold to confirm), QUIT TO MAIN MENU (saves, returns to the
+##   title, whose Continue resumes it), QUIT TO DESKTOP (the quit confirm, not destructive).
+## - Grease-pencil notes (the kit's PencilWords): "Down with the Oligarchy!" under Resume,
+##   "No Going Back" (red) under the abandon sticker, "Come Back Soon" under Quit to desktop; they
+##   drop out when big text leaves no room.
+## - The campaign code sits in a CodeField with a copy button on the bottom row.
+## ART-10 4C kept: the v2 terminal glass (`> PAUSED // WHERE`), the Codex as terminal text, the
+## Options single-column inside it.
 
 signal resumed
 signal quit_to_title
@@ -23,12 +23,20 @@ signal quit_to_title
 var settings_panel: SettingsPanel = null
 var codex_note: CrtText = null
 var _menu: VBoxContainer
-## The icon rows under Resume (they carry the menu motion; Resume is a sticker).
-var _rows: VBoxContainer
+## The two columns of stickers (left: Resume, Options, Codex; right: abandon, quit to the main
+## menu, quit to the desktop) and their box.
+var _columns: HBoxContainer
+var _left: VBoxContainer
+var _right: VBoxContainer
+## The key hint beside Resume (`[Esc]`, or the pad's button).
+var resume_hint: Label = null
+## Every sticker with its grease-pencil note (null when it has none), in focus order.
+var _stickers: Array[HoloSticker] = []
+var _notes: Array[PencilWords] = []
 ## The campaign code field (null without a campaign).
 var code_field: CodeField = null
 var _host: VBoxContainer
-var resume_button: Button
+var resume_button: HoloSticker
 ## ABANDON-QUIT: the destructive rows (null when the menu has none) and the open exit dialog.
 var abandon_run_button: Button = null
 var abandon_campaign_button: Button = null
@@ -40,9 +48,16 @@ var _return_focus: Control = null
 ## Menu size: wide enough for the Controls grid and Accessibility switches at text scale
 ## 1.6 (the content scrolls vertically inside it).
 const MENU_SIZE := Vector2(760, 520)
-## Resume's sticker lettering (px at text scale 1.0) and its tilt.
-const RESUME_PX := 28.0
-const RESUME_TILT := -1.5
+## Sticker lettering (px at text scale 1.0): Resume, and every other row. Stickers follow the
+## player's text size up to STICKER_SCALE_MAX (as VerbSticker.SCALE_MAX: the pair of columns must fit).
+const RESUME_PX := 34
+const ROW_PX := 22
+const STICKER_SCALE_MAX := 1.5
+## The grease-pencil notes: type step and tilt (deg) under Resume, the abandon sticker and quit.
+const NOTE_STEP := UiTheme.LABEL
+const RESUME_NOTE_TILT := -2.0
+const ABANDON_NOTE_TILT := 1.5
+const QUIT_NOTE_TILT := -1.5
 
 
 ## Full-screen, click-eating backdrop behind the menu: no click reaches the game (H17).
@@ -76,36 +91,46 @@ func _init() -> void:
 	_menu = VBoxContainer.new()
 	_menu.name = "Menu"
 	_host.add_child(_menu)
-	# PAUSE-02: the one primary, a pink verb sticker (its words are given whole by _relabel).
-	var resume := VerbSticker.new(tr("Resume"), VerbSticker.Fill.PINK, RESUME_PX, RESUME_TILT)
-	resume.pre_translated = true
-	resume.name = "Resume"
-	resume.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	resume.pressed.connect(func() -> void: resumed.emit())
-	_menu.add_child(resume)
-	resume_button = resume
-	_rows = VBoxContainer.new()
-	_rows.name = "Rows"
-	_menu.add_child(_rows)
+	# PAUSE-02 (designer layout 2026-10-05): two columns of vinyl stickers, each always in its
+	# role's colour. LEFT: Resume (the one pink verb), Options, Codex. RIGHT: Abandon campaign /
+	# Abandon run (harm red; only with a campaign), Quit to Main Menu, Quit to desktop.
+	_columns = HBoxContainer.new()
+	_columns.name = "Columns"
+	_columns.add_theme_constant_override(&"separation", UiTheme.SP_XL)
+	_menu.add_child(_columns)
+	_left = _column("Left")
+	_right = _column("Right")
+	var resume_cell := _cell(_left, "Resume", tr("Resume"), VinylSticker.Fill.PINK, RESUME_PX, resumed.emit,
+		tr("Down with the Oligarchy!"), Palette.PENCIL_PLAN, RESUME_NOTE_TILT)
+	resume_button = resume_cell
+	resume_hint = Label.new()
+	resume_hint.name = "ResumeHint"
+	resume_hint.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	resume_hint.add_theme_font_override(&"font", Palette.mono())
+	resume_hint.add_theme_font_size_override(&"font_size", UiTheme.font_px(UiTheme.LABEL))
+	resume_hint.add_theme_color_override(&"font_color", Palette.CELL_PINK)
+	resume_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	resume_cell.get_parent().add_child(resume_hint)
+	resume_cell.get_parent().move_child(resume_hint, 1)
 	_relabel()
 	Settings.hints_changed.connect(_relabel)
-	_add(tr("Options"), show_options, StatIcon.SETTINGS)
-	_add(tr("Codex"), show_codex, StatIcon.CODEX)
-	_add(tr("Save & quit to title"), func() -> void:
+	_cell(_left, "Options", tr("Options"), VinylSticker.Fill.YELLOW, ROW_PX, show_options)
+	_cell(_left, "Codex", tr("Codex"), VinylSticker.Fill.WHITE, ROW_PX, show_codex)
+	# ABANDON-QUIT: in a run, abandon it; at HQ (a live campaign, no run), abandon the campaign.
+	# Same slot (top right), same rules and dialogs (ExitDialogs, hold to confirm).
+	if RunManager.has_active_run():
+		abandon_run_button = _cell(_right, "AbandonRun", tr("Abandon run"), VinylSticker.Fill.RED, ROW_PX, confirm_abandon_run,
+			tr("No Going Back"), Palette.PENCIL_THREAT, ABANDON_NOTE_TILT)
+	elif RunManager.has_campaign():
+		abandon_campaign_button = _cell(_right, "AbandonCampaign", tr("Abandon campaign"), VinylSticker.Fill.RED, ROW_PX, confirm_abandon_campaign,
+			tr("No Going Back"), Palette.PENCIL_THREAT, ABANDON_NOTE_TILT)
+	_cell(_right, "QuitMain", tr("Quit to Main Menu"), VinylSticker.Fill.WHITE, ROW_PX, func() -> void:
 		if RunManager.campaign != null:
 			RunManager.autosave()
-		quit_to_title.emit(), StatIcon.SAVE)
-	# ABANDON-QUIT: in a run, abandon it; at HQ (a live campaign, no run), abandon the campaign.
-	if RunManager.has_active_run():
-		abandon_run_button = _add(tr("Abandon run"), confirm_abandon_run, StatIcon.OPERATIVE)
-		abandon_run_button.name = "AbandonRun"
-		_harm(abandon_run_button)
-	elif RunManager.has_campaign():
-		abandon_campaign_button = _add(tr("Abandon campaign"), confirm_abandon_campaign, StatIcon.CAMPAIGNS)
-		abandon_campaign_button.name = "AbandonCampaign"
-		_harm(abandon_campaign_button)
-	var quit := _add(tr("Quit to desktop"), confirm_quit, StatIcon.QUIT)
-	quit.name = "Quit"
+		quit_to_title.emit())
+	_cell(_right, "Quit", tr("Quit to desktop"), VinylSticker.Fill.HOLO, ROW_PX, confirm_quit,
+		tr("Come Back Soon"), Palette.PENCIL_PLAN, QUIT_NOTE_TILT)
+	_link_columns()
 	# H24 S11 / PAUSE-02: the campaign's share code in a mono field with a copy button (it
 	# read like debug output on the HQ's Pirate Radio note, then as a plain line here).
 	var code := share_code()
@@ -127,8 +152,6 @@ func _init() -> void:
 		code_field.copy_button.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		row.add_child(code_field)
 		_menu.add_child(row)
-	# Focus moves slide the highlight and type the line in (Animation pass ANIM-6).
-	MenuMotion.attach(_rows)
 	# ANIM-R5 P4: as tall as what it shows (the box stood 520 px tall round ~200 px of lines,
 	# hiding the city behind it); Options and the Codex grow it up to MENU_SIZE.
 	_host.minimum_size_changed.connect(_fit_height)
@@ -144,9 +167,49 @@ func _fit_height() -> void:
 	var most := MENU_SIZE.y
 	if is_inside_tree():
 		most = minf(most, get_viewport_rect().size.y - global_position.y - FIT_MARGIN)
+	# The grease-pencil notes drop out when the menu would not fit with them (big text).
+	var notes_room := _notes_room()
+	var bare := want - (notes_room if _notes_shown() else 0.0)
+	var show := bare + notes_room <= most and _columns_width(true) <= MENU_SIZE.x - UiTheme.SP_XL
+	if show != _notes_shown():
+		for n in _notes:
+			n.visible = show
+		want = bare + (notes_room if show else 0.0)
 	var h := clampf(ceilf(want), minf(FIT_MIN_H, most), most)
 	custom_minimum_size = Vector2(MENU_SIZE.x, h)
 	size = custom_minimum_size
+
+
+## The two columns' width (px) with their notes (`with_notes`) or without: the wider of a sticker
+## and its note, per column, and the gap between.
+func _columns_width(with_notes: bool) -> float:
+	var total := float(_columns.get_theme_constant(&"separation"))
+	for col in [_left, _right]:
+		var w := 0.0
+		for cell in (col as Control).get_children():
+			for c in cell.get_children():
+				if c is PencilWords and not with_notes:
+					continue
+				w = maxf(w, (c as Control).get_combined_minimum_size().x if not (c is PencilWords) else (c as PencilWords).get_minimum_size().x)
+		total += w
+	return total
+
+
+## The height the notes add to the taller column (px).
+func _notes_room() -> float:
+	var left := 0.0
+	var right := 0.0
+	for n in _notes:
+		var h := n.get_minimum_size().y
+		if _left != null and _left.is_ancestor_of(n):
+			left += h
+		else:
+			right += h
+	return maxf(left, right)
+
+
+func _notes_shown() -> bool:
+	return _notes.is_empty() or _notes[0].visible
 
 
 ## The least the menu is tall and the screen edge it keeps clear of (px).
@@ -217,26 +280,56 @@ func _cover_screen() -> void:
 	_backdrop.global_position = Vector2.ZERO
 
 
-func _add(text: String, on_pressed: Callable, kind: StringName) -> Button:
-	var b := Button.new()
-	b.text = text
-	# ART-10 4C: a terminal menu line (`> ITEM` on focus, lime brackets), CAPS.
-	b.theme_type_variation = &"MenuItem"
-	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	b.add_theme_font_override(&"font", Chrome.caps_font(UiTheme.BODY))
-	b.add_theme_font_size_override(&"font_size", Chrome.px(UiTheme.BODY))
-	b.set_meta(UiFocus.META_NO_SCALE, true)
+## One column of the sticker grid.
+func _column(p_name: String) -> VBoxContainer:
+	var c := VBoxContainer.new()
+	c.name = p_name
+	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	c.add_theme_constant_override(&"separation", UiTheme.SP_M)
+	_columns.add_child(c)
+	return c
+
+
+## A sticker `p_name` in `col`: the word (caps), its colour `fill`, its press, and under it a
+## grease-pencil note when given. Stickers always show their colour; the focused one lifts and
+## runs the kit's gloss sweep (ambient while it has focus). Returns the sticker button.
+func _cell(col: VBoxContainer, p_name: String, word: String, fill: int, px: int, on_pressed: Callable,
+		note: String = "", ink: Color = Palette.PENCIL_PLAN, tilt: float = 0.0) -> HoloSticker:
+	var cell := VBoxContainer.new()
+	cell.name = p_name + "Cell"
+	cell.add_theme_constant_override(&"separation", 0)
+	col.add_child(cell)
+	var b := HoloSticker.word(word.to_upper(), fill, minf(Settings.text_scale, STICKER_SCALE_MAX), px)  # (it divides by the text scale itself)
+	b.name = p_name
+	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	b.pressed.connect(on_pressed)
-	IconMark.attach(b, kind)  # PAUSE-02: the row's icon (StatIcon), in the chevron's place
-	_rows.add_child(b)
+	b.focus_entered.connect(func() -> void: b.sticker.ambient_sweep = true)
+	b.focus_exited.connect(func() -> void: b.sticker.ambient_sweep = false)
+	cell.add_child(b)
+	_stickers.append(b)
+	if note != "":
+		var n := PencilWords.new(note, tilt)
+		n.color = ink
+		n.step = NOTE_STEP
+		n.name = p_name + "Note"
+		cell.add_child(n)
+		_notes.append(n)
 	return b
 
 
-## ABANDON-QUIT: a destructive row reads in HARM (its words and its icon), as the slots' DELETE.
-func _harm(b: Button) -> void:
-	for key in [&"font_color", &"font_hover_color", &"font_focus_color", &"font_pressed_color", &"font_hover_pressed_color"]:
-		b.add_theme_color_override(key, Palette.HARM)
-	IconMark.attach(b, IconMark.kind_of(b), Palette.HARM)
+## Left / Right cross the columns on the same row; Up / Down walk a column (focus order: the left
+## column top-down, the right column top-down, then the code field).
+func _link_columns() -> void:
+	var l := _left.get_children().map(func(c: Node) -> Control: return c.get_child(0) as Control)
+	var r := _right.get_children().map(func(c: Node) -> Control: return c.get_child(0) as Control)
+	for i in l.size():
+		if r.is_empty():
+			break
+		var other: Control = r[mini(i, r.size() - 1)]
+		(l[i] as Control).focus_neighbor_right = (l[i] as Control).get_path_to(other)
+	for i in r.size():
+		var other: Control = l[mini(i, l.size() - 1)]
+		(r[i] as Control).focus_neighbor_left = (r[i] as Control).get_path_to(other)
 
 
 ## Abandon run: the abandon dialog with the run's costs (RunManager.abandon_run_preview); BURN IT
@@ -285,7 +378,8 @@ func _open_exit(d: ConfirmDialog, on_yes: Callable) -> void:
 
 ## "Resume [Esc]" / "Resume [Start]": the hint follows the device and the binds (H20).
 func _relabel() -> void:
-	(resume_button as VerbSticker).set_label(("%s %s" % [tr("Resume"), Settings.hint(&"open_settings")]).strip_edges())
+	if resume_hint != null:
+		resume_hint.text = Settings.hint(&"open_settings")
 
 
 func show_options() -> void:

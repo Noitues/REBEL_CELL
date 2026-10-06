@@ -357,6 +357,11 @@ icon rows, the campaign code in a field with a copy button. Main: five `>` rows 
 code as a plain line (no copy button). View: the build's primary Resume and copy button are better.
 Same file. Decision: **the build's rows, reworked in v2** (designer 2026-10-05: the build looks a
 little better): primary Resume, icon rows, the code in a field with a copy button.
+**Built (2026-10-05, supersedes the icon rows; `fixes/PAUSE_b.jpg`, mockups in `fixes/pause_layouts/`):** the designer's own
+layout: two columns of vinyl stickers, each always in its role's colour. LEFT RESUME (pink, `[Esc]` beside it),
+OPTIONS, CODEX; RIGHT ABANDON CAMPAIGN (ABANDON RUN in a run: the same slot), QUIT TO MAIN MENU, QUIT TO DESKTOP; the
+code field with copy on the bottom row; grease-pencil notes "Down with the Oligarchy!", "No Going Back" (red), "Come
+Back Soon". The focused sticker lifts and runs the kit's gloss sweep (no brackets).
 
 **PAUSE-03 (P3) Pause over a fight.** As PAUSE-01; the turn banner shows through above the panel.
 Decision: **fixed by PAUSE-01** (designer 2026-10-05); verify the banner no longer shows through.

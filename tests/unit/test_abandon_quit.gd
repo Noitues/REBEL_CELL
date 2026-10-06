@@ -384,7 +384,7 @@ func test_the_quit_confirm_is_not_destructive_and_says_its_keys() -> void:
 
 func _row_names(menu: PauseMenu) -> PackedStringArray:
 	var out := PackedStringArray()
-	for c in menu._rows.get_children():
+	for c in menu._stickers:
 		out.append(String(c.name))
 	return out
 
@@ -394,12 +394,14 @@ func test_the_in_run_pause_abandons_the_run() -> void:
 	RunManager.start_run()
 	var menu: PauseMenu = add_child_autofree(PauseMenu.new())
 	await _frames(2)
-	assert_eq(menu._menu.get_child(0), menu.resume_button, "Resume stays first")
+	assert_eq(menu._stickers[0], menu.resume_button, "Resume stays first")
 	var rows := _row_names(menu)
 	assert_true(rows.has("AbandonRun"), "the in-run pause has Abandon run (%s)" % [rows])
 	assert_false(rows.has("AbandonCampaign"), "and not Abandon campaign")
 	assert_true(rows.find("AbandonRun") < rows.find("Quit"), "Abandon run sits above Quit")
-	assert_eq(menu.abandon_run_button.get_theme_color(&"font_color"), Palette.HARM, "the destructive row reads in HARM")
+	assert_eq(menu.abandon_run_button.get_parent().get_parent(), menu._right, "in the right column")
+	assert_eq(menu._right.get_child(0).get_child(0), menu.abandon_run_button, "in the top right slot")
+	assert_eq(menu.abandon_run_button.sticker.fill, VinylSticker.Fill.RED, "the destructive sticker is harm red")
 	menu.abandon_run_button.pressed.emit()
 	await _frames(2)
 	assert_true(menu.exit_dialog is AbandonDialog, "it asks with the abandon dialog")
@@ -417,7 +419,8 @@ func test_the_hq_pause_abandons_the_campaign() -> void:
 	var rows := _row_names(menu)
 	assert_true(rows.has("AbandonCampaign"), "the campaign's pause has Abandon campaign (%s)" % [rows])
 	assert_false(rows.has("AbandonRun"))
-	assert_eq(menu.abandon_campaign_button.get_theme_color(&"font_color"), Palette.HARM)
+	assert_eq(menu._right.get_child(0).get_child(0), menu.abandon_campaign_button, "the same top right slot")
+	assert_eq(menu.abandon_campaign_button.sticker.fill, VinylSticker.Fill.RED)
 	menu.abandon_campaign_button.pressed.emit()
 	await _frames(2)
 	assert_true(menu.exit_dialog is AbandonDialog)
@@ -431,7 +434,7 @@ func test_the_pause_quit_asks_with_the_plain_quit_confirm() -> void:
 	RunManager.new_campaign(47)
 	var menu: PauseMenu = add_child_autofree(PauseMenu.new())
 	await _frames(2)
-	(menu._rows.get_node("Quit") as Button).pressed.emit()
+	(menu.find_child("Quit", true, false) as Button).pressed.emit()
 	await _frames(2)
 	assert_not_null(menu.exit_dialog)
 	assert_false(menu.exit_dialog is AbandonDialog, "quitting loses nothing: the plain confirm")
