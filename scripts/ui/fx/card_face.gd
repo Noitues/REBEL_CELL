@@ -140,7 +140,7 @@ static func text_fit(card: ZineCard) -> Dictionary:
 		tries.append([PIC_AT.y + PIC_PX + PIC_GAP, TEXT_W_WIDE, TEXT_LINE_TIGHT, TEXT_FOOT, true])
 		if card.pictos_give_way or grown:
 			tries.append([PIC_AT.y, TEXT_W_WIDE, TEXT_LINE_TIGHT, TEXT_FOOT, false])
-	# what is drawn when nothing shows the whole text: the layout with the most rows, at the floor
+	# what is drawn when nothing shows the whole text: the layout with the most rows (the later, roomier one on a tie), at the floor
 	var fallback := {}
 	for t: Array in tries:
 		var fs := maxi(floor_px, gen)
@@ -148,7 +148,7 @@ static func text_fit(card: ZineCard) -> Dictionary:
 			var fit := _fit_at(card, fs, float(t[0]) * ky, float(t[1]) * kx, fs * float(t[2]), minf(float(t[3]) * ky, foot), bool(t[4]))
 			if (fit["lines"] as PackedStringArray).size() <= int(fit["rows"]):
 				return fit
-			if fallback.is_empty() or int(fit["rows"]) > int(fallback["rows"]):
+			if fallback.is_empty() or int(fit["rows"]) >= int(fallback["rows"]):
 				fallback = fit
 			if not card.fit_whole or fs <= floor_px:
 				break

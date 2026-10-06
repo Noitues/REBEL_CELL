@@ -2372,13 +2372,13 @@ func _build_hand(state: CombatState) -> void:
 		else:
 			child.free()
 	_gap = null
-	_piles.set_scale_to(Settings.text_scale)
 	_piles.set_counts(state.draw_pile.size(), state.discard_pile.size())
 	# ANIM-3: a played card leaves a gap in its slot while it flies, so no card moves under
 	# the cursor; the hand keeps the scale it had with that card in it.
 	var hold := _hold_slot if Motion.animating() and _hold_slot >= 0 and _hold_slot <= state.hand.size() else -1
 	var s := _card_scale_for(state.hand.size() + (1 if hold >= 0 else 0))
 	_hand_scale = s
+	_piles.set_scale_to(s)  # S-CARDFACE: the piles at the cards' size
 	for i in state.hand.size():
 		if i == hold:
 			_add_gap(s)

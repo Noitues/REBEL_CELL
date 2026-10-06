@@ -1,21 +1,21 @@
 class_name CardPiles
 extends Control
 ## S-CARDFACE (CMB-04; round 41 `combat_typical_v4`): the DECK and DISCARD piles beside the hand,
-## each a small stack of face-down cards with its count on top and its word under it. Drawn
-## procedurally: the concept draws the piles as plain dark card backs and there is no exported
-## card back (the art pass baked only the faces). The counts are the fight's (the scene sets them).
-## View only.
+## each a small stack of face-down cards with its count on top and its word beside it; DECK over
+## DISCARD, one column, so the hand keeps its width. Drawn procedurally: the concept draws the piles
+## as plain dark card backs and there is no exported card back (the art pass baked only the faces).
+## The counts are the fight's (the scene sets them). View only.
 
-## One pile's card at text scale 1 (px), the layers of its stack and their step (px), the gap
-## between the piles and under a pile to its word (px at scale 1).
-const CARD := Vector2(38, 52)
+## One pile's card at text scale 1 (px; the deal's pile mark, CombatFxLayer.PILE_SIZE), the layers of
+## its stack and their step (px), the gap between the piles and between a pile and its word (px at 1).
+const CARD := CombatFxLayer.PILE_SIZE
 const LAYERS := 3
 const LAYER_STEP := 2.0
-const GAP := 10.0
-const WORD_GAP := 4.0
+const GAP := 6.0
+const WORD_GAP := 2.0
 ## The count's and the word's lettering at scale 1 (px), the outline's width.
-const COUNT_PX := 22
-const WORD_PX := 11
+const COUNT_PX := 20
+const WORD_PX := 10
 const EDGE_W := 1.5
 const WORDS := ["DECK", "DISCARD"] # TR
 
@@ -37,9 +37,13 @@ func set_scale_to(ts: float) -> void:
 	var word_w := 0.0
 	for w in WORDS:
 		word_w = maxf(word_w, Palette.mono().get_string_size(tr(w), HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(WORD_PX * ts)).x)
-	var col := maxf(CARD.x * ts + LAYER_STEP * (LAYERS - 1), word_w)
-	custom_minimum_size = Vector2(col * 2.0 + GAP * ts, CARD.y * ts + LAYER_STEP * (LAYERS - 1) + WORD_GAP * ts + Palette.mono().get_height(roundi(WORD_PX * ts)))
+	var w := maxf(CARD.x * ts + LAYER_STEP * (LAYERS - 1), word_w)
+	custom_minimum_size = Vector2(w, (_pile_h(ts)) * 2.0 + GAP * ts)
 	queue_redraw()
+
+
+func _pile_h(ts: float) -> float:
+	return CARD.y * ts + LAYER_STEP * (LAYERS - 1) + WORD_GAP * ts + Palette.mono().get_height(roundi(WORD_PX * ts))
 
 
 ## Shows `deck` cards in the draw pile and `discard` in the discard pile.
@@ -52,10 +56,9 @@ func set_counts(deck: int, discard: int) -> void:
 
 ## Pile `i`'s top card (local; 0 = DECK, 1 = DISCARD).
 func pile_rect(i: int) -> Rect2:
-	var col := (size.x - GAP * text_scale) * 0.5
 	var card := CARD * text_scale
-	var x := i * (col + GAP * text_scale) + (col - card.x - LAYER_STEP * (LAYERS - 1)) * 0.5
-	return Rect2(Vector2(x, 0.0), card)
+	var x := (size.x - card.x - LAYER_STEP * (LAYERS - 1)) * 0.5
+	return Rect2(Vector2(x, i * (_pile_h(text_scale) + GAP * text_scale)), card)
 
 
 func _draw() -> void:
@@ -79,5 +82,4 @@ func _draw() -> void:
 			count, HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Palette.TEXT_HI)
 		var word := tr(WORDS[i])
 		var ww := mono.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, wfs).x
-		var col := (size.x - GAP * s) * 0.5
-		draw_string(mono, Vector2(i * (col + GAP * s) + (col - ww) * 0.5, face.end.y + WORD_GAP * s + mono.get_ascent(wfs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, wfs, Palette.TEXT_LO)
+		draw_string(mono, Vector2((size.x - ww) * 0.5, face.end.y + WORD_GAP * s + mono.get_ascent(wfs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, wfs, Palette.TEXT_LO)
