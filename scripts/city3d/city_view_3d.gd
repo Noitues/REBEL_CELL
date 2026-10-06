@@ -31,6 +31,10 @@ signal camera_changed(cam: CityIsoCamera)
 signal band_changed(band: int)
 signal building_lod_changed(lod: int)
 signal ambient_changed(scale: float)
+## ART-5 5e: the host's pause (host_paused: the map covered or the window unfocused)
+## changed. Reduce effects / reduce motion are not a pause (the ambient layers keep their
+## own rules), so a layer that follows the host's pause listens to this, not ambient_changed.
+signal host_pause_changed(paused: bool)
 ## The model is built and its chunks are placed (layers can read `model`).
 signal model_ready
 
@@ -99,6 +103,7 @@ var _net_xray_mi: MeshInstance3D
 var _net_mat: ShaderMaterial
 var _net_xray_mat: ShaderMaterial
 var _focused: bool = true
+var _host_paused: bool = false
 
 ## Async model builds in flight, by config path and seed: {"task", "recs", "keys", "rects"}.
 static var _jobs: Dictionary = {}
@@ -312,6 +317,12 @@ func set_iso(cam: CityIsoCamera) -> void:
 		(m as ShaderMaterial).set_shader_parameter("bu_per_px", iso.bu_per_px())
 		(m as ShaderMaterial).set_shader_parameter("city_share", city)
 	_net_xray_mat.set_shader_parameter("strength", lerpf(1.0, cfg.net_xray, city))
+	var props_on := iso.ortho <= cfg.roof_props_below
+	if props_on != _props_on:
+		_props_on = props_on
+		for key: Vector2i in _chunks:
+			for mi: MultiMeshInstance3D in _chunks[key].get("props", []):
+				mi.visible = _props_on
 	var lod_now := CityLod.building_lod(cfg, iso.ortho, building_lod)
 	if lod_now != building_lod:
 		building_lod = lod_now
@@ -378,6 +389,10 @@ func _sync_ambient() -> void:
 	if not is_equal_approx(s, ambient_scale):
 		ambient_scale = s
 		ambient_changed.emit(s)
+	var hp := host_paused()
+	if hp != _host_paused:
+		_host_paused = hp
+		host_pause_changed.emit(hp)
 
 
 func _sync_update() -> void:
@@ -613,6 +628,7 @@ func _build_chunk(key: Vector2i) -> void:
 		node.add_child(mi)
 		entry["families"][fk] = mi
 	layer(&"buildings").add_child(node)
+	entry["props"] = _add_roof_props(node, idx)
 	var r: Rect2i = ch["rect"]
 	var a := lot_world(Vector2(r.position))
 	var b := lot_world(Vector2(r.end))
@@ -685,6 +701,7 @@ func place_landmarks() -> void:
 			hide_stand_in(corp)
 	var centre := NeonCity.hq_of(CELL) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
 	_place_landmark(CELL, "%s/%s/%s" % [LANDMARKS_DIR, CELL, CELL_DISTRICT_FILE], Transform3D(Basis(), lot_world(centre)), look)
+	_place_site_landmark()
 
 
 func _place_landmark(corp: StringName, path: String, at: Transform3D, look: LandmarkLook) -> bool:
@@ -713,7 +730,12 @@ func _place_landmark(corp: StringName, path: String, at: Transform3D, look: Land
 var landmark_mats: Dictionary = {}
 ## ART-5 5e: the Cell's blackout reveal (0 the sector fully lit .. 1 the fist revealed) and
 ## which fist its windows draw (DISPATCH's when true, else home's).
-var cell_reveal: float = 1.0
+## Motion.run tweens it (`cell_fist_reveal`); setting it restyles the Cell's windows.
+var cell_reveal: float = 1.0:
+	set(q):
+		cell_reveal = clampf(q, 0.0, 1.0)
+		if landmark_mats.has(CELL):
+			LandmarkMaterials.set_reveal(landmark_mats[CELL], cell_reveal)
 var cell_dispatch: bool = false
 ## ART-5 5e: the Site landmark placed (5b's `<corp>_site.glb`): {"corp", "lot"} or {}.
 var site_landmark: Dictionary = {}
@@ -729,9 +751,24 @@ func _landmark_corp(key: StringName) -> StringName:
 ## ART-5 5e: the Cell's blackout reveal (bible 4.4, round 34 `map_fist_reveal`): 0 the
 ## sector fully lit and washed out, 1 the ring and the hand's lines dark and the fist shown.
 func set_cell_reveal(q: float) -> void:
-	cell_reveal = clampf(q, 0.0, 1.0)
-	if landmark_mats.has(CELL):
-		LandmarkMaterials.set_reveal(landmark_mats[CELL], cell_reveal)
+	cell_reveal = q
+
+
+## ART-5 5e: the motion entry of the Cell's blackout reveal.
+const CELL_REVEAL_MOTION := &"cell_fist_reveal"
+
+
+## ART-5 5e: plays the Cell's blackout reveal (`cell_fist_reveal`: the sector lit, then its
+## lights go dark until the fist shows). Under reduce effects, reduce motion, headless or
+## with the entry off it shows the fist at once (returns null). MotionSkip: Motion.settle on
+## `cell_reveal` ends it.
+func play_cell_reveal() -> Tween:
+	if Settings.reduce_motion or not Motion.live(CELL_REVEAL_MOTION):
+		Motion.settle(self, ^"cell_reveal")
+		cell_reveal = 1.0
+		return null
+	cell_reveal = 0.0
+	return Motion.run(CELL_REVEAL_MOTION, self, ^"cell_reveal", 1.0)
 
 
 ## ART-5 5e: the Cell's district shows DISPATCH's fist (the REBEL_CELL campaign) or home's.
@@ -751,14 +788,20 @@ func set_site_landmark(corp: StringName, lot: Vector2) -> bool:
 		return landmarks.has(SITE_KEY)
 	_remove_site_landmark()
 	site_landmark = want
-	if want.is_empty() or model == null:
-		return false
-	var path := CityLandmarks.site_path(corp)
+	return _place_site_landmark()
+
+
+## Places the Site landmark `site_landmark` asks for once the model is built (where the 3D
+## city draws); its chunks are rebuilt when they already stand.
+func _place_site_landmark() -> bool:
+	if site_landmark.is_empty() or model == null or landmarks.has(SITE_KEY) or not can_render():
+		return landmarks.has(SITE_KEY)
+	var path := CityLandmarks.site_path(StringName(site_landmark["corp"]))
 	if path == "":
 		return false
 	var look := load(LandmarkMaterials.LOOK_PATH) as LandmarkLook
 	var before := _cleared.size()
-	if not _place_landmark(SITE_KEY, path, Transform3D(Basis(), lot_world(lot)), look):
+	if not _place_landmark(SITE_KEY, path, Transform3D(Basis(), lot_world(site_landmark["lot"])), look):
 		return false
 	_rebuild_under(_cleared[before] if _cleared.size() > before else Rect2())
 	return true
@@ -795,7 +838,10 @@ func _restyle_landmarks() -> void:
 	var look := load(LandmarkMaterials.LOOK_PATH) as LandmarkLook
 	for key: StringName in landmarks:
 		landmark_mats[key] = LandmarkMaterials.apply(landmarks[key], look, _landmark_corp(key), not _landmarks_night)
-	set_cell_reveal(cell_reveal)
+	_prop_mats.clear()
+	for nm: StringName in _prop_meshes:
+		_style_prop_mesh(nm)
+	cell_reveal = cell_reveal
 
 
 ## The X/Z box of every mesh under `node` (world).
@@ -818,3 +864,76 @@ func _in_cleared(c: Vector2) -> bool:
 		if r.has_point(c):
 			return true
 	return false
+
+
+# --- Roof props: the concept's own models (ART-5 5e, CityRoofProps) ---------------------------
+
+## The roof props show at and below CityConfig.roof_props_below (bible 4.1: from raid zoom).
+var _props_on: bool = false
+## Prop name -> this view's copy of its mesh (its surfaces in the landmark materials).
+var _prop_meshes: Dictionary = {}
+var _prop_mats: Dictionary = {}
+
+
+## One MultiMesh per prop on the chunk's prisms `idx` under `node` (shadows off); returns them.
+func _add_roof_props(node: Node3D, idx: PackedInt32Array) -> Array:
+	var out: Array = []
+	var placed := CityRoofProps.place(cfg, model.prisms, idx)
+	for nm in CityRoofProps.names():
+		var xfs: Array = placed[nm]
+		if xfs.is_empty():
+			continue
+		var mesh := _prop_mesh(nm)
+		if mesh == null:
+			continue
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.mesh = mesh
+		mm.instance_count = xfs.size()
+		for k in xfs.size():
+			mm.set_instance_transform(k, xfs[k])
+		var mi := MultiMeshInstance3D.new()
+		mi.name = "Props_%s" % nm
+		mi.multimesh = mm
+		mi.layers = 1 << (WORLD_LAYER - 1)
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.visible = _props_on
+		node.add_child(mi)
+		out.append(mi)
+	return out
+
+
+## This view's copy of prop `nm`'s mesh (null when the export is missing).
+func _prop_mesh(nm: StringName) -> Mesh:
+	if not _prop_meshes.has(nm):
+		var src := CityRoofProps.mesh_of(nm)
+		if src == null:
+			return null
+		_prop_meshes[nm] = src.duplicate()
+		_style_prop_mesh(nm)
+	return _prop_meshes[nm]
+
+
+## Puts the landmark materials (day or night, no corporation tint) on prop `nm`'s mesh copy.
+func _style_prop_mesh(nm: StringName) -> void:
+	var src := CityRoofProps.mesh_of(nm)
+	var m: Mesh = _prop_meshes[nm]
+	if src == null or m == null:
+		return
+	var look := load(LandmarkMaterials.LOOK_PATH) as LandmarkLook
+	for k in m.get_surface_count():
+		var sm := src.surface_get_material(k)
+		var mat_name := sm.resource_name if sm != null else ""
+		if not _prop_mats.has(mat_name):
+			_prop_mats[mat_name] = LandmarkMaterials.make(mat_name, look, &"", not _landmarks_night)
+		m.surface_set_material(k, _prop_mats[mat_name])
+
+
+## The roof props placed so far (tests, the perf probe): prop name -> instances.
+func roof_prop_counts() -> Dictionary:
+	var out := {}
+	for key: Vector2i in _chunks:
+		for mi: MultiMeshInstance3D in _chunks[key].get("props", []):
+			var nm := String(mi.name).trim_prefix("Props_")
+			out[nm] = int(out.get(nm, 0)) + mi.multimesh.instance_count
+	return out
