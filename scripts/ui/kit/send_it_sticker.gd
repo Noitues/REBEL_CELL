@@ -259,10 +259,9 @@ func _draw() -> void:
 	var sys := String(TranslationServer.translate(system_word))
 	var sp := _system_px()
 	var sys_base := Vector2(0.0, _system_y())
+	_draw_plate(sys)
 	if sys != "":
 		draw_string(HudSkin.mono(), sys_base, sys, HORIZONTAL_ALIGNMENT_LEFT, -1, sp, Color(HudSkin.TERMINAL_TEXT, HudSkin.SYSTEM_WORD_ALPHA))
-		var sr := Rect2(Vector2(-2.0, sys_base.y - HudSkin.mono().get_ascent(sp) - 2.0), Vector2(_system_w() + 4.0, sp + 4.0))
-		draw_rect(sr, Color(PaletteSkins.chrome(HudSkin.TERMINAL_EDGE), HudSkin.SYSTEM_WORD_ALPHA * 0.6), false, 1.0)
 	# The sticker: hover lifts and grows it, a press squashes it, the first show slaps it on.
 	var hot := (st == KitState.HOVER or st == KitState.FOCUS or _hot) and not off
 	var k := (HOVER_SCALE if hot else 1.0) * lerpf(SLAP_FROM, 1.0, clampf(grow, 0.0, 1.0))
@@ -303,7 +302,8 @@ func _draw() -> void:
 	if words != "":
 		var hw := HudSkin.mono().get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
 		var hp := Vector2(6.0, size.y - 5.0)
-		draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 5)), Color(PaletteSkins.chrome(HudSkin.TERMINAL_BG), 0.85))
+		if sys == "":
+			draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 5)), Color(PaletteSkins.chrome(HudSkin.TERMINAL_BG), 0.85))
 		draw_string(HudSkin.mono(), hp, words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, HudSkin.TERMINAL_TEXT if not off else HudSkin.TERMINAL_DIM)
 		if glyph:
 			_draw_glyph(Vector2(hp.x + hw + 6.0 + GLYPH_GAP + hs * 2.0, hp.y - hs * 0.5 + 2.0), hs, paint_col)
@@ -318,6 +318,25 @@ func _stamp(f: Font, at: Vector2, text: String, fs: int, radius: float, col: Col
 	draw_string(f, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 
+## S-COMBAT-HUD (parity CMB-06, combat_typical_v4): the machine under the sticker is a dark
+## terminal plate (glass, its edge dim) holding the washed-out system word and the terminal
+## line, so EXECUTE reads as a plate the sticker is slapped on, not a pale outline floating
+## alone (it read like a rendering fault).
+func _draw_plate(sys: String) -> void:
+	if sys == "":
+		return
+	var sp := _system_px()
+	var top := _system_y() - HudSkin.mono().get_ascent(sp) - PLATE_PAD
+	var w := maxf(_system_w(), _line_w()) + PLATE_PAD * 2.0
+	HudSkin.draw_terminal_panel(self, Rect2(Vector2(-PLATE_PAD, top), Vector2(w, size.y - top)),
+		Color(PaletteSkins.chrome(HudSkin.TERMINAL_EDGE), HudSkin.SYSTEM_WORD_ALPHA), Color(PaletteSkins.chrome(HudSkin.TERMINAL_BG), PLATE_ALPHA))
+
+
+## The plate's padding round the system word (px) and its glass's alpha.
+const PLATE_PAD := 4.0
+const PLATE_ALPHA := 0.72
+
+
 ## With 1B's sticker: the system word and the terminal line here, the sticker is `art`; focus
 ## is the kit sticker's own rainbow sheen and curl (designer 2026-10-05: no halo, no brackets).
 func _draw_with_art() -> void:
@@ -326,16 +345,16 @@ func _draw_with_art() -> void:
 	var sys := String(TranslationServer.translate(system_word))
 	var sp := _system_px()
 	var sys_base := Vector2(0.0, _system_y())
+	_draw_plate(sys)
 	if sys != "":
 		draw_string(HudSkin.mono(), sys_base, sys, HORIZONTAL_ALIGNMENT_LEFT, -1, sp, Color(HudSkin.TERMINAL_TEXT, HudSkin.SYSTEM_WORD_ALPHA))
-		var sr := Rect2(Vector2(-2.0, sys_base.y - HudSkin.mono().get_ascent(sp) - 2.0), Vector2(_system_w() + 4.0, sp + 4.0))
-		draw_rect(sr, Color(PaletteSkins.chrome(HudSkin.TERMINAL_EDGE), HudSkin.SYSTEM_WORD_ALPHA * 0.6), false, 1.0)
 	var hs := _hint_px()
 	var words := _line_words()
 	if words != "":
 		var hw := HudSkin.mono().get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
 		var hp := Vector2(6.0, size.y - 5.0)
-		draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 5)), Color(PaletteSkins.chrome(HudSkin.TERMINAL_BG), 0.85))
+		if sys == "":
+			draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 5)), Color(PaletteSkins.chrome(HudSkin.TERMINAL_BG), 0.85))
 		draw_string(HudSkin.mono(), hp, words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, HudSkin.TERMINAL_TEXT if not disabled else HudSkin.TERMINAL_DIM)
 		if glyph:
 			_draw_glyph(Vector2(hp.x + hw + 6.0 + GLYPH_GAP + hs * 2.0, hp.y - hs * 0.5 + 2.0), hs, paint if not disabled else HudSkin.VINYL_DISABLED)
