@@ -112,7 +112,6 @@ extends Resource
 @export var backdrop_sky: Color = Color(0.17, 0.16, 0.27)
 @export var backdrop_window_gain: float = 1.4
 @export var backdrop_neon_gain: float = 1.2
-@export var backdrop_haze: Color = Color(0.30, 0.30, 0.42)
 @export var backdrop_grade: Color = Color(0.96, 0.98, 1.04)
 @export var backdrop_bloom: float = 0.6
 @export var backdrop_glow_threshold: float = 0.8
@@ -156,15 +155,28 @@ extends Resource
 ## fight's subject (the fought Site's building) is fitted (site_solace_night.jpg's clinic:
 ## large, between the wheels, above the hand). Only the meshes whose name holds a word of
 ## backdrop_fit_keep count toward a landmark's box (the body, not the light beams and neon
-## rays spread over the ground). The close-ups' camera pitch (degrees; the city's own is
-## pitch_deg): the concept's low angle (designer round 2, 2026-10-05: adopt 22-30 now; it costs
-## 9-10.5 ms of city GPU at 1080p tier 2, over budget_ms: owed in ART-12/perf.md, the
-## optimisation slice proposed in DECISIONS).
+## rays spread over the ground). (The close-ups' camera: backdrop_close_* below.)
 @export var backdrop_hq_frame: Rect2 = Rect2(0.32, 0.05, 0.36, 0.85)
 @export var backdrop_site_frame: Rect2 = Rect2(0.33, 0.24, 0.34, 0.56)
 @export var backdrop_fit_keep: PackedStringArray = PackedStringArray(["solid"])
-@export var backdrop_hq_pitch_deg: float = 24.0
-@export var backdrop_site_pitch_deg: float = 22.0
+## B2 (integration review D1, designer 2026-10-06: "a perspective close-up for every fight"): the
+## close-ups' camera is a perspective view backdrop_close_pitch_deg above the street (D1: 6 to 10),
+## looking at the facade, its horizontal field of view backdrop_close_fov_deg (D1: a 35 to 50 mm
+## lens on a 36 mm frame = 54 to 40 degrees; 44 is a 44 mm lens), the canyon's `fov_deg` path
+## (HQRUN-08). It replaces backdrop_hq_pitch_deg 24 / backdrop_site_pitch_deg 22 (the iso
+## look). Depth haze past the subject toward the night sky (backdrop_sky) at backdrop_haze_k
+## (D1: 15 to 20 %).
+@export var backdrop_close_pitch_deg: float = 8.0
+@export var backdrop_close_fov_deg: float = 44.0
+@export var backdrop_haze_k: float = 0.18
+## B2 (D1): the low camera's view cut (BackdropCatalog.view_cut): buildings nearer the eye than the subject's near face
+## less this margin (BU), in the wedge to its sides widened by it, give way where they rise over the sight line.
+@export var backdrop_close_cut_margin: float = 6.0
+## B2 (D1): the cut keeps the sight line from the eye to this share of the subject's height clear
+## (lower roofs stay in front of it).
+@export var backdrop_close_sight_share: float = 0.2
+## B2 (D1): how far past the subject (BU) the close-up still draws the city (its camera's far plane).
+@export var backdrop_close_far_bu: float = 1400.0
 ## A Site fight's subject when the model has not measured the Site's building yet: a block of
 ## this many lots round the Site's point (half width) and this tall (BU); an HQ with no
 ## landmark is a block of backdrop_site_hq_height over its HQ lots.

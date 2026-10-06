@@ -423,6 +423,18 @@ func _frame_city() -> void:
 	var cam: CityIsoCamera = (shot["camera"] as CityIsoCamera).copy()
 	cam.viewport = Vector2(city.size)
 	city.set_iso(cam)
+	# B2 (review D1): the street-level camera looks over the rooftops at its subject; past the
+	# city's edge at its horizon the night sky shows, not the asphalt plane.
+	city.show_outer_ground(not cam.perspective())
+	# ...and its view ends backdrop_close_far_bu past the subject (the skyline past it is haze;
+	# the far chunks are the perspective's cost).
+	if city.camera != null:
+		city.camera.far = cam.eye_distance() + CityView3D.CONFIG.backdrop_close_far_bu if cam.perspective() else CityView3D.CONFIG.camera_far
+	if shot.has("subject") and cam.perspective():
+		var cut := BackdropCatalog.view_cut(CityView3D.CONFIG, cam, shot["subject"])
+		city.set_view_cut(BackdropCatalog.occludes.bind(cut), str(cut))
+	else:
+		city.set_view_cut(Callable())
 	var t := city.project(shot.get("centre", cam.target))
 	var at := Vector2(t.x / maxf(1.0, float(city.size.x)), t.y / maxf(1.0, float(city.size.y)))
 	_mat.set_shader_parameter(&"keep_at", at)

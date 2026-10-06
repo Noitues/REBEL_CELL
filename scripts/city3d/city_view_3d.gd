@@ -94,6 +94,11 @@ var _hidden_hq: Dictionary = {}
 ## World X/Z rects whose procedural buildings give way to a landmark's own (the art pass's
 ## glTF stands there instead: never two cities on one lot).
 var _cleared: Array[Rect2] = []
+## B2 (integration review D1): a street-level close-up's view cut: (centre: Vector2 world X/Z,
+## top: float BU) -> true for a procedural building that would stand between a low perspective
+## camera and its subject (BackdropCatalog.occludes); it is not built. Empty = no cut.
+var _view_cut: Callable = Callable()
+var _view_cut_key: String = ""
 ## ART-8 8w: the rect each landmark (corp) or staged compound ("compound_<corp>") cleared,
 ## so staging a compound can give a landmark's lot back.
 var _cleared_by: Dictionary = {}
@@ -254,6 +259,8 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	_building_mat.set_shader_parameter(&"neon_gain", lerpf(float(day["neon_gain"]), cfg.neon_gain, night_share))
 	var hz := (day["haze"] as Color).lerp(cfg.haze, night_share)
 	_post.set_shader_parameter(&"haze_color", Vector3(hz.r, hz.g, hz.b))
+	# B2 (review D1): a look may set its own haze strength (the combat close-up's 15-20 %).
+	_post.set_shader_parameter(&"haze_k", lerpf(float(day.get("haze_k", cfg.haze_k)), cfg.haze_k, night_share))
 	var gr := (day["grade"] as Color).lerp(cfg.grade, night_share)
 	_post.set_shader_parameter(&"grade", Vector3(gr.r, gr.g, gr.b))
 	_post.set_shader_parameter(&"bloom", lerpf(float(day.get("bloom", cfg.bloom)), cfg.bloom, night_share))
@@ -499,6 +506,7 @@ func _build_scene() -> void:
 	var om := CityMaterials.ground(cfg, false)
 	outer.material_override = om
 	outer.layers = (1 << (WORLD_LAYER - 1)) | (1 << (GROUND_LAYER - 1))
+	outer.visible = _outer_ground_on  # B2: a street-level close-up hides it (show_outer_ground)
 	layer(&"ground").add_child(outer)
 	_post = CityMaterials.post(cfg, quality, _ground_vp.get_texture())
 	var qm := QuadMesh.new()
@@ -689,7 +697,7 @@ func _build_chunk(key: Vector2i) -> void:
 		var pr := model.prisms[n]
 		if pr.get("hq", false) and _hidden_hq.has(pr["terr"]):
 			continue
-		if _in_cleared(pr["centre"]):
+		if _in_cleared(pr["centre"]) or in_view_cut(pr["centre"], float(pr["y0"]) + float(pr["h"])):
 			continue
 		idx.append(n)
 	var fams := CityMeshKit.families_of(cfg, model.prisms, idx)
@@ -1137,6 +1145,47 @@ func _hide_for_compound(key: StringName) -> void:
 ## footprint has no procedural buildings).
 func is_cleared(c: Vector2) -> bool:
 	return _in_cleared(c)
+
+
+## B2 (review D1): shows or hides the asphalt plane round the city (`OuterGround`). A street-level
+## close-up hides it: its grazing view reaches past the city's edge at the horizon, where the
+## plane read as a bare band under the skyline; the night sky shows there instead.
+func show_outer_ground(on: bool) -> void:
+	_outer_ground_on = on
+	var g := layer(&"ground")
+	var outer := g.get_node_or_null(^"OuterGround") as Node3D if g != null else null
+	if outer != null:
+		outer.visible = on
+
+
+## Whether the asphalt plane round the city shows (tests).
+func outer_ground_shown() -> bool:
+	return _outer_ground_on
+
+
+var _outer_ground_on: bool = true
+
+
+## B2 (review D1): sets the close-up's view cut (see `_view_cut`; an empty Callable: none);
+## `key` names it, so the same cut set again rebuilds nothing; the built chunks rebuild.
+func set_view_cut(cut: Callable, key: String = "") -> void:
+	if key == _view_cut_key and cut.is_valid() == _view_cut.is_valid():
+		return
+	_view_cut = cut
+	_view_cut_key = key
+	if model == null:
+		return
+	var keys: Array = _chunks.keys()
+	keys.sort()
+	for k: Vector2i in keys:
+		_free_chunk(k)
+		_build_chunk(k)
+
+
+## True when a building at world ground point `c` (X/Z) with its roof at `top` (BU) is in the view
+## cut (tests: it is not built).
+func in_view_cut(c: Vector2, top: float) -> bool:
+	return _view_cut.is_valid() and bool(_view_cut.call(c, top))
 
 
 ## Rebuilds the built chunks whose ground touches any of `rects` (world X/Z).
