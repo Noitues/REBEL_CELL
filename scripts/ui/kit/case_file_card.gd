@@ -111,7 +111,7 @@ func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], 
 	add_child(actions)
 	if summary.is_empty():
 		_fill_empty()
-		new_button = _chip(actions, tr("New campaign"), "", Palette.NET_CYAN, tr("Start a new campaign in slot %s.") % slot)
+		new_button = _chip(actions, tr("New campaign"), "", tr("Start a new campaign in slot %s.") % slot)
 		new_button.name = "New"
 		new_button.pressed.connect(func() -> void: new_pressed.emit(slot))
 		return
@@ -125,7 +125,7 @@ func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], 
 		actions.add_child(verb)
 		load_button = verb
 	else:
-		load_button = _chip(actions, tr("Load"), "", Palette.NET_CYAN, load_tip)
+		load_button = _chip(actions, tr("Load"), "", load_tip)
 	load_button.name = "Load"
 	load_button.pressed.connect(func() -> void: load_pressed.emit(slot))
 	var gap := Control.new()
@@ -134,8 +134,9 @@ func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], 
 	actions.add_child(gap)
 	var undo := tr("cannot undo")
 	var big := Settings.text_scale >= BIG_TEXT_FROM
-	delete_button = _chip(actions, tr("Delete"), "" if big else undo, Palette.HARM,
+	delete_button = _chip(actions, tr("Delete"), "" if big else undo,
 		"%s (%s)" % [tr("Delete the campaign in slot %s (asks first).") % slot, undo] if big else tr("Delete the campaign in slot %s (asks first).") % slot)
+	(delete_button as MenuChip).accent = Palette.HARM  # the destructive verb: HARM edge and caret
 	delete_button.name = "Delete"
 	delete_button.pressed.connect(func() -> void: delete_pressed.emit(slot))
 
@@ -177,9 +178,10 @@ func actions() -> Array[Control]:
 	return out
 
 
-## A terminal chip (MenuChip, drawn, `accent` edge and caret) under the folder.
-func _chip(row: HBoxContainer, words: String, line: String, accent: Color, tip: String) -> MenuChip:
-	var b := MenuChip.new(words, line, accent)
+## A terminal chip (MenuChip, drawn: the Cell's cyan edge and caret, following the skin) under
+## the folder.
+func _chip(row: HBoxContainer, words: String, line: String, tip: String) -> MenuChip:
+	var b := MenuChip.new(words, line)
 	b.pre_translated = true
 	b.plate = &""  # drawn: the accent marks its edge (HARM for the destructive verb)
 	b.line_step = UiTheme.CAPTION

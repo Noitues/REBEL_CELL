@@ -514,8 +514,14 @@ func show_slots() -> void:
 		if at > best:
 			best = at
 			latest = slot
-	var win := CrtWindow.new(tr("Campaign slots"), Palette.NET_CYAN, page_room())
+	var win := CrtWindow.new(tr("Campaign slots"))
 	win.name = "Slots"
+	# SLOTS-04: the cards in a FitScroll (CrtWindow's `max_body`, set up here so the window
+	# keeps its default, skinned Cell accent).
+	var outer := win.body.get_parent()
+	outer.remove_child(win.body)
+	win.fit = FitScroll.new(win.body, page_room())
+	outer.add_child(win.fit)
 	# The view scrolls whole case files: no snap to the lines inside a card (it shrank the view
 	# under a card's height at 1.6).
 	win.fit.hint.snap_rows = false
