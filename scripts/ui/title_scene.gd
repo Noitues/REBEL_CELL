@@ -536,6 +536,14 @@ func _page(title_word: String, content: Control, page_name: String) -> VBoxConta
 	box.name = page_name
 	box.add_theme_constant_override("separation", 6)
 	var head := HBoxContainer.new()
+	# B5c: the title sticker keeps the sticker safe margin from the screen's left edge (Fx.sticker_margin: past
+	# the page's own margin at big text).
+	var inset := Control.new()
+	inset.name = "SafeInset"
+	inset.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	inset.custom_minimum_size.x = maxf(0.0, Fx.sticker_margin() - PAGE_MARGIN.x)
+	inset.visible = inset.custom_minimum_size.x > 0.0
+	head.add_child(inset)
 	var sticker := VerbSticker.new(tr(title_word), VerbSticker.Fill.YELLOW, TITLE_STICKER_PX, TITLE_STICKER_TILT, VerbSticker.title_art(title_word))
 	sticker.pre_translated = true
 	sticker.name = "TitleSticker"

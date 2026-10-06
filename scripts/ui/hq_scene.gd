@@ -3550,11 +3550,22 @@ func _defence_verb(slot: VBoxContainer) -> void:
 	run_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
 	run_btn.pressed.connect(fight_raid)
 	run_btn.tooltip_text = UiTip.fold(tr("Start the defence: the raid plays out on the map; the result matches the forecast."))
-	slot.add_child(run_btn)
+	# B5c (art director): the sticker keeps the screen's sticker safe margin from the right edge (Fx.sticker_margin);
+	# the Speed / Skip strip under it lines up with it.
+	var safe := MarginContainer.new()
+	safe.name = "RunRaidSafe"
+	safe.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	safe.size_flags_horizontal = Control.SIZE_SHRINK_END
+	safe.add_theme_constant_override(&"margin_right", roundi(Fx.sticker_margin()))
+	var verbs := VBoxContainer.new()
+	verbs.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	safe.add_child(verbs)
+	slot.add_child(safe)
+	verbs.add_child(run_btn)
 	var strip := RaidSpeedStrip.new(RunManager.config().raid_step_cap)
 	strip.name = "SpeedStrip"
 	strip.size_flags_horizontal = Control.SIZE_SHRINK_END
-	slot.add_child(strip)
+	verbs.add_child(strip)
 
 
 ## ART-3 6w: the raid's pages on the unified 3D city at the RAID band.

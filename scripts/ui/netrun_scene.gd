@@ -963,6 +963,18 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	hud.visible = not p.has_method("attach_netrun")
 	_panel_host.theme_type_variation = UiTheme.CRT_GLASS_PANEL if glass else &""
 	_panel_glass.visible = glass
+	# B5c (art director): the pages of stickers on the world keep them inside the screen's safe margin
+	# (Fx.sticker_margin(): at the sides and the foot; the top bar is above them).
+	var page_as := screen_name(RunManager.netrun) if screen_as == "" else screen_as
+	if not glass and page_as in SAFE_MARGIN_SCREENS:
+		var safe := StyleBoxEmpty.new()
+		var m := Fx.sticker_margin()
+		safe.content_margin_left = m
+		safe.content_margin_right = m
+		safe.content_margin_bottom = m
+		_panel_host.add_theme_stylebox_override(&"panel", safe)
+	else:
+		_panel_host.remove_theme_stylebox_override(&"panel")
 	_clear_route()
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_STOP
 	_panel_host.add_child(p)
@@ -1216,6 +1228,8 @@ const SUBTITLE_LINES := {"event": 2, "run_end": 2}
 const BLURRED_CITY_SCREENS: Array[String] = ["loot", "event"]
 ## B1a: the page parts that are panels on the world (UiScrimPools.mark_panels_in).
 const SCRIM_PANELS: Array[String] = ["TerminalWindow", "LootSheet", "OperativeDossier", "RouteNodePanel"]
+## B5c: the netrun pages whose stickers stand on the world, kept inside the screen's sticker safe margin.
+const SAFE_MARGIN_SCREENS: Array[String] = ["loot", "event", "shop", "run_end"]
 const BLURRED_CITY_LOOK := preload("res://content/config/overlay_city_backdrop.tres")
 ## ANIM-R5 B8: the mid-run raid's playout, a screen of its own (its title, its lines).
 const RAID_PLAYOUT_SCREEN := "netrun_raid_playout"
@@ -3170,8 +3184,16 @@ func _show_reward() -> void:
 	go.tooltip_text = UiTip.fold(tr("Take the lit sticker and go on."))
 	go.pressed.connect(func() -> void: _continue_loot(stickers, slot_option))
 	if compact:
+		# B5c: SKIP and CONTINUE share a row in the side column (stacked, a Firmware drop's column ran past the
+		# screen's foot and its safe margin at 2.0).
+		var verbs := HBoxContainer.new()
+		verbs.name = "LootVerbs"
+		verbs.add_theme_constant_override(&"separation", roundi(UiTheme.SP_M * os))
+		side.add_child(verbs)
+		side.move_child(verbs, skip.get_index())
+		skip.reparent(verbs, false)
 		go.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		side.add_child(go)
+		verbs.add_child(go)
 		foot.queue_free()
 		foot_right.queue_free()
 	else:

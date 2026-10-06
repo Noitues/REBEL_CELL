@@ -393,6 +393,65 @@ static func saved_spot(stamp: Vector2, screen: Rect2, avoid: Array[Rect2]) -> Ve
 
 ## B5: the room the stamp keeps from a sticker's control rect (px at text scale 1.0).
 const SAVED_STICKER_CLEAR := 16.0
+## B5c (art director): every sticker on a page stays this far inside the screen's edges (px at text scale 1.0): a
+## sticker that touches an edge reads as cut off. Pages keep their content inside `sticker_safe_rect`.
+const STICKER_SAFE_MARGIN := 24.0
+
+
+## B5c: the sticker safe margin now (px; it grows with the text).
+static func sticker_margin() -> float:
+	return STICKER_SAFE_MARGIN * Settings.text_scale
+
+
+## B5c: the part of `screen` a sticker may stand in (the screen less the safe margin on every side).
+static func sticker_safe_rect(screen: Rect2) -> Rect2:
+	return screen.grow(-sticker_margin())
+
+
+## B5c: whether `c` is a sticker (a verb or title on vinyl), not a sticker's own inner art.
+static func is_sticker(c: Node) -> bool:
+	if c is VerbSticker or c is HoloSticker or c is VinylButton or c is SendItSticker or c is RaidSticker or c is HudNameSticker:
+		return true
+	if c is VinylSticker:
+		var p := c.get_parent()
+		return not (p is VerbSticker or p is HoloSticker or p is VinylButton or p is SendItSticker or p is RaidSticker or p is HudNameSticker)
+	return false
+
+
+## B5c: the top bar's own title sticker is the bar's chrome (it sits in the bar's band, which is the screen's top
+## edge by design), not a sticker on the page: the safe margin is the pages'.
+static func _in_top_bar(c: Node) -> bool:
+	var p := c.get_parent()
+	while p != null:
+		if p is HudBar:
+			return true
+		p = p.get_parent()
+	return false
+
+
+## B5c: a sticker's rect on screen (its vinyl body for a bare VinylSticker; else its control rect), clipped to the
+## scroll views above it (the part shown; empty when scrolled away).
+static func sticker_rect(c: Control) -> Rect2:
+	if c is VinylSticker:
+		var v := c as VinylSticker
+		var xf := v.get_global_transform()
+		var r := Rect2(xf * v.body_rect.position, v.body_rect.size * xf.get_scale()) if v.body_rect.has_area() else v.get_global_rect()
+		return _clip_to_scrolls(c, r)
+	return _shown_rect(c)
+
+
+## B5c: the stickers under `root` shown on screen that leave the safe rect of `screen` ([name, rect] pairs).
+static func stickers_outside_safe(root: Node, screen: Rect2) -> Array:
+	var out: Array = []
+	var safe := sticker_safe_rect(screen).grow(0.5)
+	for n in root.find_children("*", "Control", true, false):
+		var c := n as Control
+		if not is_sticker(c) or not c.is_visible_in_tree() or _in_top_bar(c):
+			continue
+		var r := sticker_rect(c)
+		if r.has_area() and not safe.encloses(r):
+			out.append([String(c.name), r])
+	return out
 ## ANIM-R3 B13: the step of the whole-screen grid tried after the edges (px).
 const SAVED_INNER_STEP := 40.0
 
@@ -452,7 +511,11 @@ func _collect_avoid(node: Node, out: Array[Rect2]) -> void:
 
 ## `c`'s rect clipped to the scroll views above it (the part on screen).
 static func _shown_rect(c: Control) -> Rect2:
-	var r := c.get_global_rect()
+	return _clip_to_scrolls(c, c.get_global_rect())
+
+
+## `r` (global) clipped to the scroll views above `c`.
+static func _clip_to_scrolls(c: Control, r: Rect2) -> Rect2:
 	var p := c.get_parent()
 	while p != null:
 		if p is ScrollContainer:
