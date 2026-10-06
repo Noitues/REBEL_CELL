@@ -119,6 +119,49 @@ BREACHED); crops in `docs/art_review/ART-6/3A/`.
 - Files outside 3A's area (smallest edits): `scripts/core/raid_resolver.gd` (`integrity` on
   `threat_enters`), `tools/design_lab/motion_lab.gd` (demos + raid kinds),
   `scripts/data/ui_motion_data.gd` / `content/config/ui_motion.tres` (union).
+- **Designer correction (never redraw concept art) and M14 resume.** Everything above that was first
+  drawn procedurally from the concept's recipes is now the concept's own art, baked by running its
+  generator script on tag art-concepts-r43 unchanged (bake scripts in `tools/art_pipeline/raid/`, each
+  with stand-in modules for the heavy kits and a black / white difference matte for alpha). This
+  supersedes, above: "the node glyphs are vector stand-ins" (2) and "R3 class beacons are not done" (5).
+  Raid visual sources:
+
+  | Piece | Source | Asset |
+  |---|---|---|
+  | Threat vehicle icons v4 (shape, corp fill draining, ring) | concept `round22_raid_world/icons22.py` | `assets/raid/icons/` (320 PNG) |
+  | Node sockets, health v2 fill, status key, YOUR NETWORK glyph marks | concept `netdecal19.Net.pad` + `netdecal21.Net.health_pad` | `assets/raid/sockets/` (7 glyphs x 10 looks) |
+  | ICE freeze crystals | concept `ui22.ice` | `assets/raid/ice/` (8 growth steps) |
+  | R3 class beacons (stationed operatives) | concept `screens21.beacon` | `assets/raid/beacons/` (8 strips x 16 frames) |
+  | BREACHED bit burst (flash, shock ring, 0 / 1 bits) | concept `ui21.bit_burst`, called as `screens22` 26_home_breached | `assets/raid/bits/bits.png` (24 frames) |
+  | Pencil routes, marks, entry circles and letters, TAKEN / BREACHED words | 1B kit (GreasePencilMark / Word, PencilShapes) | — |
+  | START, CELL HOLDS, parked card | 1B kit (VinylSticker) | — |
+  | YOUR NETWORK / RAID INCOMING / THREAT INTEL / report panels | 1B kit (CrtTerminalPanel, CorpPaperPanel, DecryptedHoloPanel) | — |
+  | Procedural (they move, or no concept image) | DOWN bolt (ruling 11 addition); hover heading arrow (turns with the threat); slow field rings (drift inward, `fx_slow_v2` geometry); repair "+" sparks and streaks (rise, `fx_repair_v2`); CORE's links de-powering at BREACHED (follow the live links); drag pencil arrow and dock circle (follow the pointer) | — |
+
+  Calls made: **Compiler Rack** has no concept glyph: it uses round 17's `picto_ram` (orchestrator:
+  scheduled in the post-M14 glyph concept slice, see "Open questions"). **DOWN** is the concept's
+  disabled socket greyed (`RaidSocket` tint) under the procedural white bolt. New palette token
+  `Palette.RAID_SLOW_BLUE` (the slow field's blue; palette.gd is 1A's file, reported). The BREACHED
+  burst plays frame = u x 24 of the strip, sized so the bake's radius (190 px) is `BITS_R` x screen_k,
+  centred 10 bake px above CORE as screens22 draws it; the procedural 0 / 1 glyph loop is gone.
+- **M14 resume fixes (2026-10-05):**
+  - The fallen home server's label read "2 → 0 HOLDS" (the core keeps the home's outcome "holds"; the
+    campaign is lost, the node is not taken): the map label, YOUR NETWORK's chip and the report row now
+    say **BREACHED** (`hq_scene.shown_outcome`, view only; its tip says the campaign is lost).
+  - START DEFENSE sat under MORE BELOW at text scale 1.0 (the scrolling column held the work order,
+    YOUR NETWORK, then START): **START and the Speed / Skip strip are pinned at the column's foot**
+    (`RaidFoot`, outside the scroll), so the page's action is on the first screen at 1.0 / 1.6 / 2.0.
+    YOUR NETWORK's own MORE BELOW then drew over START (its list ran past the column's view):
+    `ScrollHint.in_outer_views` hides a tag whose spot an outer scroll view clips (kit file, smallest
+    change; the outer view's tag says there is more).
+  - INCOMING overlapped an entry's pencil letter ("A"): a mark written above an entry now clears the
+    letter (`RaidFxLayer.mark_centres`, `entry_letters` from the route layer); DOWN stays over its node.
+  - 4C's audit P3 "the SAVED note on the raid setup is nearly invisible grey" (`Fx`, the autosave
+    stamp): 14 → 20 px with a dark keyline (`SAVED_OUTLINE`, `SAVED_KEYLINE` = NIGHT_SKY 0.9), so the
+    pink reads over any page and in greyscale. `scripts/autoload/fx.gd` is outside 3A (smallest change).
+  - Tests: `test_breached_bits_are_the_concepts_baked_burst`, `test_a_fallen_home_reads_breached_not_holds`,
+    `test_a_mark_above_an_entry_clears_its_letter` (test_art6_raid_presentation). Raid lab states added:
+    `breached_bits` (mid burst), `saved_stamp`.
 
 _(Claude Code: add entries here as you make them.)_
 
@@ -7637,7 +7680,9 @@ and annotated in the GDD where it changes a rule.
 - **Glyph concept slice after M14 (designer, 2026-10-05, from the two ART-1 1C questions below):** draw
   glyphs for Heat, Cycles, Schematics and custom effects, and redraw the 16 px twins in the Firmware /
   Daemon set; both defaults hold for M14 (pending stand-in; twins allow-listed). Scheduled with the other
-  post-M14 concept slice (the Cell's own crest).
+  post-M14 concept slice (the Cell's own crest). Also in this slice (orchestrator, 2026-10-05, from ART-6 3A):
+  a **Compiler Rack** node glyph: the concept has none, so the raid socket and the YOUR NETWORK mark use
+  round 17's `picto_ram` (baked with the other sockets) until the slice draws one.
 - ~~**Card pictograms with no glyph yet (2026-10-05, ART-1 1C):**~~ resolved: default (see the glyph concept slice above). Original note: four card effect types have no glyph in
   the bible's set: `effect_modify_heat` (Heat up/down), `effect_gain_cycles` (Cycles),
   `effect_gain_schematics` (Schematics) and `effect_custom` (a custom handler's own effect; the card
