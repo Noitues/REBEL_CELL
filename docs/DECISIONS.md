@@ -31,6 +31,21 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-06 — Parity fix — route map c: the street marker's YOU ARE HERE is a placed label (orchestrator follow-up)
+Found by S-ROUTE b: before the route's first node, the street marker's "YOU ARE HERE" was drawn at a fixed spot under
+the marker (`CityMapOverlay._draw_top`, ANIM-R3 B8), outside the label layout, so at Meridian 1.0 it sat over choice
+2's sticker and its number chip. Now (`city_map_overlay.gd`) while `here_label_shown()` the layout places it as a
+focus label under `HERE_KEY` ("#here", sorted before every node id, so it is placed first): the marker's reach (pin and
+ring) is an icon obstacle, the words go to the first free spot round it (else inward, else the focus label's last
+resort, which for these words may cover an icon as a node's YOU ARE HERE may), and the labels drawn after it keep off
+it. Drawn with the labels in the Cell's pink (the route's terminal tag: pink edge). The layout's key gains the marker's
+point. New hook `label_marks_of(n)` (none in the base): `RouteOverlay` returns a numbered choice's chip
+(`number_rect`, also what `_number` draws), so no label covers a number. Motion kept: the marker itself (its pin, ring
+ease, the entry roads) draws as before in `_draw_top`; the words had no motion of their own and show only while no move
+plays, as before. Test: `test_parity_route::test_the_street_marker_words_keep_off_every_choice_sticker_chip_and_label`
+(all five corporations, 1.0 / 1.6 / 2.0: placed, off every choice sticker, number chip and other label). Sheet
+`docs/art_review/PARITY/fixes/ROUTE_c.jpg` (before | after). File outside the area: `city_map_overlay.gd` (the hook,
+the label's placement, the old draw removed; the smallest change).
 ### 2026-10-06 — Parity fix — route map b: choices on the map, the dossier's letterhead (orchestrator follow-up)
 Follow-up to "Parity fix — route map" (orchestrator relay, 2026-10-06; answers that entry's open question (1)). Sheet:
 `docs/art_review/PARITY/fixes/ROUTE_b.jpg` (concept | before | after at 1.0 / 1.6 / 2.0). Tests: `test_parity_route`
