@@ -754,7 +754,7 @@ func line_ink(speaker: int) -> Color:
 static func crt_style(accent: Color, black: bool = false) -> StyleBoxFlat:
 	var style := UiTheme.terminal_box(accent)
 	if black:
-		style.bg_color = Color(Palette.TERMINAL_BG.darkened(BLACK_GLASS), Palette.TERMINAL_BG.a)
+		style.bg_color = Color(PaletteSkins.chrome(Palette.TERMINAL_BG).darkened(BLACK_GLASS), PaletteSkins.chrome(Palette.TERMINAL_BG).a)
 	style.border_width_left = LEFT_EDGE_PX
 	return style
 

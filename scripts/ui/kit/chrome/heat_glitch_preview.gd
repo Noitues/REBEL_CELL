@@ -22,6 +22,7 @@ var _held: Dictionary = {}
 
 
 func _init() -> void:
+	PaletteSkins.watch(self)  # ART-12 12s-b: the skin's chrome follows a pick
 	name = "HeatGlitchPreview"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
@@ -62,7 +63,7 @@ func _draw() -> void:
 		if tex != null:
 			draw_texture_rect(tex, r, false)
 		var chosen := Settings.heat_glitch == on
-		draw_rect(r, Palette.NET_CYAN if chosen else Color(Palette.NET_CYAN, 0.3), false, 2.0 if chosen else 1.0)
+		draw_rect(r, PaletteSkins.chrome(Palette.NET_CYAN) if chosen else Color(PaletteSkins.chrome(Palette.NET_CYAN), 0.3), false, 2.0 if chosen else 1.0)
 		var words := (tr("LIMITED // slow layer only") if limited() else tr("ON // slip + split")) if on else tr("OFF // static edge tint")
 		draw_string(f, Vector2(r.position.x, r.end.y + 4.0 + f.get_ascent(cp)), words, HORIZONTAL_ALIGNMENT_LEFT, FRAME.x, cp,
-			Palette.NET_CYAN if chosen else Palette.TEXT_LO)
+			PaletteSkins.chrome(Palette.NET_CYAN) if chosen else Palette.TEXT_LO)

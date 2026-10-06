@@ -45,6 +45,6 @@ func _draw() -> void:
 	var y := lerpf(-band, size.y, k)
 	var r := Rect2(0.0, y, size.x, band).intersection(Rect2(Vector2.ZERO, size))
 	if r.has_area():
-		draw_rect(r, Color(Palette.NET_CYAN, amp))
+		draw_rect(r, Color(PaletteSkins.chrome(Palette.NET_CYAN), amp))
 	# The whole glass swells a touch as the band crosses its middle.
 	draw_rect(Rect2(Vector2.ZERO, size), Color(Palette.PAPER, amp * 0.25 * sin(PI * k)))

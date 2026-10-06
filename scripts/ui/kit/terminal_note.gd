@@ -10,6 +10,7 @@ const HEADER_H := 24.0
 
 
 func _init(p_title: String = "", min_size: Vector2 = Vector2(240, 120)) -> void:
+	PaletteSkins.watch(self)  # ART-12 12s-b: the skin's chrome follows a pick
 	super(p_title, min_size)
 	paper_color = HudSkin.TERMINAL_BG
 	material = HudSkin.crt_material()
@@ -26,4 +27,4 @@ func _draw() -> void:
 	var f := HudSkin.mono()
 	var fs := roundi(HEADER_FONT * minf(Settings.text_scale, 1.0))
 	draw_string(f, Vector2(10.0, (HEADER_H + f.get_ascent(fs) - f.get_descent(fs)) * 0.5), "> " + title.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HudSkin.TERMINAL_HI)
-	draw_line(Vector2(0.0, HEADER_H), Vector2(size.x - HudSkin.CHAMFER, HEADER_H), Color(HudSkin.TERMINAL_EDGE, 0.6), 1.0)
+	draw_line(Vector2(0.0, HEADER_H), Vector2(size.x - HudSkin.CHAMFER, HEADER_H), Color(PaletteSkins.chrome(HudSkin.TERMINAL_EDGE), 0.6), 1.0)

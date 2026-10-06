@@ -576,7 +576,7 @@ func _draw_sticker() -> void:
 func _draw_tile() -> void:
 	var rect := Rect2(Vector2.ZERO, size)
 	var hot := _lifted and not disabled
-	draw_rect(rect, Palette.TERMINAL_BG_HOT if hot else Color(0.02, 0.05, 0.11, 0.95))
+	draw_rect(rect, PaletteSkins.chrome(Palette.TERMINAL_BG_HOT) if hot else Color(0.02, 0.05, 0.11, 0.95))
 	if hot:
 		draw_rect(rect.grow(3), Color(Palette.CELL_PINK, 0.3), false, 6.0)
 	draw_rect(rect, Palette.CELL_PINK if hot else Color(accent, 0.7), false, 1.5)
@@ -1013,7 +1013,7 @@ func _draw_tile_scaled() -> void:
 	var s := text_scale
 	var rect := Rect2(Vector2.ZERO, size)
 	var hot := _lifted and not disabled
-	draw_rect(rect, Palette.TERMINAL_BG_HOT if hot else Color(0.02, 0.05, 0.11, 0.95))
+	draw_rect(rect, PaletteSkins.chrome(Palette.TERMINAL_BG_HOT) if hot else Color(0.02, 0.05, 0.11, 0.95))
 	if hot:
 		draw_rect(rect.grow(3), Color(Palette.CELL_PINK, 0.3), false, 6.0)
 	draw_rect(rect, Palette.CELL_PINK if hot else Color(accent, 0.7), false, 1.5)
@@ -1128,7 +1128,7 @@ func tile_description() -> String:
 func _draw_chip_tile() -> void:
 	var rect := Rect2(Vector2.ZERO, size)
 	var hot := _lifted and not disabled
-	draw_rect(rect, Palette.TERMINAL_BG_HOT if hot else Color(0.02, 0.05, 0.11, 0.95))
+	draw_rect(rect, PaletteSkins.chrome(Palette.TERMINAL_BG_HOT) if hot else Color(0.02, 0.05, 0.11, 0.95))
 	if hot:
 		draw_rect(rect.grow(3), Color(Palette.CELL_PINK, 0.3), false, 6.0)
 	draw_rect(rect, Palette.CELL_PINK if hot else Color(accent, 0.7), false, 1.5)

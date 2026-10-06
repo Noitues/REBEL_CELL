@@ -475,7 +475,7 @@ func _build_marker_rows(into: Container, fs: int) -> void:
 	show_all_cell.tooltip_text = UiTip.fold(UiTip.for_input(CityMapOverlay.tr_word(SHOW_ALL_TIP), CityMapOverlay.tr_word(SHOW_ALL_TIP_PAD)))
 	show_all_cell.mouse_filter = Control.MOUSE_FILTER_STOP
 	show_all_cell.add_theme_font_size_override("font_size", fs)
-	show_all_cell.add_theme_color_override("font_color", Palette.NET_CYAN)
+	show_all_cell.add_theme_color_override("font_color", PaletteSkins.chrome(Palette.NET_CYAN))
 	show_all_cell.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	show_all_cell.mouse_entered.connect(func() -> void: show_all_changed.emit(true))
 	show_all_cell.mouse_exited.connect(func() -> void: show_all_changed.emit(opened))

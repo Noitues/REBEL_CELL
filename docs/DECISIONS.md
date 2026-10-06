@@ -556,6 +556,27 @@ Agent 12s (the M12 box "Skins": procedural palette skins on the v2 tokens, ART_1
   their batch reads `PaletteSkins.chrome`: view-drawn panel frames and headings that use `Palette`
   constants directly (e.g. HQ's panel corner frames and "CYBERDECK" heading cyan).
 - Test: `tests/unit/test_art12_skins.gd` (fast tier, 10 tests). No M13 test dropped.
+- **12s-b: skin chrome sweep (2026-10-05).** Every direct use of `Palette.TERMINAL_EDGE / TERMINAL_BG /
+  TERMINAL_BG_HOT / NET_CYAN` and `HudSkin.TERMINAL_EDGE / TERMINAL_BG` in `scripts/` was classed
+  CHROME (frames, panel glass, chrome headings) or SEMANTIC. **Chrome: 55 lines in 30 files now go
+  through `PaletteSkins.chrome` / `track_box`** (HQ's CYBERDECK heading and corner frames via
+  `CrtWindow` / `TerminalWindow` accent and `CrtTerminalPanel` corp accents, the CRT switch, menu chip,
+  ON AIR ticker, Heat glitch preview, HUD bar rule, wheel arrow plates, terminal note, toast, tooltip rule,
+  confirm rule, SEND IT system strip, deck / spinner tabs, route label plate, hover glass of cards, CRT
+  hum, page roll, legend button, Raid speed strip, Options sample / sliders / headings, title SLOT
+  heading, combat TURN banner, dialogue black glass, the kit state's rest edge). **Kept: 146 direct uses
+  in 46 files**, each listed with a reason in `ALLOWED` of `tests/unit/test_art12b_skin_chrome.gd`:
+  about 100 SEMANTIC (net / hack cyan on maps, the jack and the 3D city; PROTECT FX, wall and chips;
+  badges and stat icons; world / portrait art; stickers; RAM and face-button colours), 29 in
+  `ui_theme.gd` (all in the theme, re-valued by `PaletteSkins.apply`), and the rest declarations that
+  carry a v2 value into a routed painter.
+  Calls: (1) `KitState.edge_color` routes its edge (all its callers are glass chrome); (2) a corp accent
+  is unchanged because `chrome` maps exact v2 values only, so `CrtWindow` routes any accent; (3) text
+  tokens (TEXT_HI / MID / TERMINAL_TEXT) are still v2 in views that set them (outside this slice).
+  New helpers: `PaletteSkins.watch` (redraw on Settings.changed), `bind`, `track_box` (a StyleBoxFlat
+  re-valued live from its v2 colours, weak links). Lint: `test_no_new_direct_use_of_a_v2_chrome_colour_...`
+  (fast tier, static; `tools/` lab scenes are not scanned: concept sheets, not game chrome). New test
+  script `tests/unit/test_art12b_skin_chrome.gd` (7 tests).
 
 ### 2026-10-05 — Art direction — ART-0 audit fixes
 Fixes every finding of `docs/handoff/m14_audit/ART-0_horizontal.md` (3 P2, 12 P3); nothing deferred.

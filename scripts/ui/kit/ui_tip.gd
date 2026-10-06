@@ -49,7 +49,7 @@ static func make(text: String, title: String = "") -> Control:
 		head.add_theme_color_override("font_color", HudSkin.TERMINAL_HI)
 		box.add_child(head)
 		var rule := ColorRect.new()
-		rule.color = HudSkin.TERMINAL_EDGE
+		rule.color = PaletteSkins.chrome(HudSkin.TERMINAL_EDGE)
 		rule.custom_minimum_size = Vector2(0, 1)
 		box.add_child(rule)
 	var body := Label.new()
