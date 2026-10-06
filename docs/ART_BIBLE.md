@@ -39,7 +39,7 @@ Where the shipped game follows this bible with a stated difference (details in D
   not built (proposals / mechanic).
 - **2.x:** skins are procedural palettes on the chrome tokens (v2, cobalt, graphite); semantic tokens never change (§5.1).
 - **3.x:** the Compiler Rack uses `picto_ram` (no concept glyph); the wheel bezel is a shader port of the D4 recipe.
-- **4.10 / 4.11:** the Mainframe shop, rewards and events restyle (ART-9 4A) were still landing when this note was written.
+- **4.10 / 4.11:** built by 4A from the concept scripts; no time of day exists in the rules, so the facade state is a hash of the visit; the recycle bin takes cards only and its crumple animation is not built; the CAM feed magnifies the game's own city.
 
 ---
 
