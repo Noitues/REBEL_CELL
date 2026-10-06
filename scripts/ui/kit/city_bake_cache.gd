@@ -433,6 +433,26 @@ static func _join(key: String, rec: Dictionary, field: String, group: bool) -> b
 	return painter != null and is_instance_valid(painter) and not painter.cancelled
 
 
+## FIX-BAKE: true when the bake `rec` must not go on after an await: it was stopped (`_live`
+## holds another record or none), or its painter or viewport was freed under it (the holder
+## and its viewport go with the tree at quit, or a scene change). A freed one is cleaned up
+## here (record dropped, slot given back) so nothing touches the dead instance afterwards.
+static func _abandoned(key: String, rec: Dictionary) -> bool:
+	if not is_same(_live.get(key), rec):
+		return true
+	var vp: Variant = rec.get("vp")
+	if is_instance_valid(rec.get("painter")) and (vp == null or is_instance_valid(vp)):
+		return false
+	_stop(rec)
+	_live.erase(key)
+	_pending.erase(key)
+	if bool(rec.get("holding", false)):
+		rec["holding"] = false
+		_building = maxi(0, _building - 1)
+	_pump()
+	return true
+
+
 static func _bake(key: String, look: String, painter: NeonCity) -> void:
 	# `holding`: this build has the slot (drop_stale gives it back if it stops the build).
 	var rec := {"painter": painter, "holding": true}
@@ -465,7 +485,7 @@ static func _bake(key: String, look: String, painter: NeonCity) -> void:
 	# submitted a chunk a frame); let the viewport render it (READBACK_FRAMES frames, so the
 	# render has surely landed), then take the picture and drop the viewport and geometry.
 	await painter.rebuilt
-	if not is_same(_live.get(key), rec):
+	if _abandoned(key, rec):
 		return
 	if threaded:
 		# ANIM-R2 R1: chunks go in while the frame's budget lasts (SUBMIT_BUDGET_USEC), then
@@ -476,7 +496,7 @@ static func _bake(key: String, look: String, painter: NeonCity) -> void:
 			at = painter.submit_chunk(at)
 			if at >= 0 and Time.get_ticks_usec() - t0 >= SUBMIT_BUDGET_USEC:
 				await (Engine.get_main_loop() as SceneTree).process_frame
-				if not is_same(_live.get(key), rec):
+				if _abandoned(key, rec):
 					return
 				t0 = Time.get_ticks_usec()
 		vp.render_target_update_mode = SubViewport.UPDATE_ONCE
@@ -486,7 +506,7 @@ static func _bake(key: String, look: String, painter: NeonCity) -> void:
 	_pump()
 	for f in READBACK_FRAMES:
 		await RenderingServer.frame_post_draw
-		if not is_same(_live.get(key), rec):
+		if _abandoned(key, rec):
 			return
 	var e := {"look": look, "region": painter.painter_region, "scale": painter.scale.x}
 	var tex: Texture2D = _keep_viewport(vp) if is_instance_valid(vp) else null

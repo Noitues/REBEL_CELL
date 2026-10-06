@@ -9249,3 +9249,15 @@ _(Claude Code: add questions here instead of guessing on design.)_
 - Still open: **ICE levels 10, 15 and 20** have no listed change; `REPAIR_COST_PCT = 25`
   (ICE 13) and `SEIZED_RAID_STRENGTH_PCT = 25` (ICE 14) are placeholders ("when in doubt,
   up elite and boss numbers" applied); MAJOR-threshold RaidData arrives in M3.
+
+## FIX-BAKE (M14) — the city bake teardown error
+- Symptom: `city_bake_cache.gd:476 submit_chunk on a previously freed instance` (and 17 leaked
+  CanvasItem RIDs) at quit of windowed review_pack / capture_pack runs; reproduced with
+  `capture_pack.py --screens title,hq,grid,route,loot,event,raid_setup,combat_start,mainframe`.
+- Cause: the bake coroutine only checked `_live` after its awaits. When the tree went at quit,
+  the holder's viewport and the painter inside it were freed with it while the record was still
+  in `_live` (Fx's `shutdown()` had not stopped it), so the coroutine resumed on a freed painter.
+- Fix: `CityBakeCache._abandoned(key, rec)` after every await in `_bake`: besides the stopped
+  check it ends the bake when the painter or viewport is freed (record dropped, slot given back,
+  queue pumped). `NeonCity` frees its submitted chunk canvas items on PREDELETE (the leaked
+  RIDs). No change to how the city looks. Test: `tests/unit/test_fix_bake.gd` (fast tier).

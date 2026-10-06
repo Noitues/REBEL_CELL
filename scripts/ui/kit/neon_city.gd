@@ -486,6 +486,8 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
 		_free_placement()
 		free_slices()
+		# FIX-BAKE: a painter freed mid-bake (the tree going at quit) drops its chunk canvas items.
+		free_chunks()
 	elif what == NOTIFICATION_VISIBILITY_CHANGED and not is_visible_in_tree():
 		# ANIM-R6 B4 (netrun): hidden, the sky it showed is gone from the screen: a bake that
 		# lands meanwhile shows at once when it comes back (the run's end after a fight that
