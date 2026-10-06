@@ -35,6 +35,7 @@ fixed until the designer has ruled** on each id (`Decision:` left empty).
 ## Differences
 
 ### Title (`title.jpg`)
+**Designer ruling (2026-10-05):** the title follows concept round 33 `title_screen.png`, except main's SIMULATE sticker stays (not the concept's DISABLE).
 Refs: art pass build `title`; concept `round33_ui_chrome/title_screen.png` (LOCKED option A).
 The build's title is the M13 menu (logo, pink CONTINUE bar, menu list, yellow note, UPLINK box);
 main already follows the locked concept's layout (neon sign, BREACH / SIMULATE / OVERTHROW
@@ -52,22 +53,22 @@ Grid / raid / netrun. Likely cause: `scripts/ui/title_scene.gd` builds `Cyberdec
 the unified `CityView3D` look. Fix options: (a) CityView3D at a fixed title camera + the
 `glass_blur` shader as a depth-of-field band; (b) keep NeonCity but drop its saturation and add the
 blur. Art-pass source: concept `round33_ui_chrome/title_screen.png` / `.gif`.
-Decision:
+Decision: **concept 33** (the blurred, lit 3D city). (designer, 2026-10-05)
 
 **TITLE-02 (P2) MORE panel crowds the verb stickers.** Concept: a clear gap (~40 px at 1080p,
 ~25 px at 720) between OVERTHROW and the MORE panel, MORE sits lower. Main: MORE's top edge almost
 touches the OVERTHROW sticker. View: concept reads better (the three verbs are the hero group).
 Likely cause: `title_scene.gd` `_place_bottom` / `FOOT_GAP` / `_align_verbs`. Fix: place MORE from
 the foot up with the concept's gap, or nudge the verb column up.
-Decision:
+Decision: **concept 33** (a clear gap from OVERTHROW to MORE). (designer, 2026-10-05)
 
 **TITLE-03 (P3) CONTINUE summary line.** Concept: `slot 1 // Halcyon Civic // run 9 // Heat 58`
 (slot named first). Main: `Solace Biosystems // run 1 // Heat 0` and a `>` caret on the focused
 chip (the caret is the UI kit's focus rule). Fix if wanted: prefix the slot in
-`title_scene.gd` `slot_words`. Decision:
+`title_scene.gd` `slot_words`. Decision: **keep main** (content only). (designer, 2026-10-05)
 
 **TITLE-04 (P3) Version line.** Concept: `REBEL_CELL v0.33.0 // build <date> // godot 4.7`. Main:
-`REBEL_CELL v0.9.0 // cell uplink`. Content only. Decision:
+`REBEL_CELL v0.9.0 // cell uplink`. Content only. Decision: **keep main** (content only). (designer, 2026-10-05)
 
 ### Title: delete-slot confirm (`title_confirm.jpg`)
 Ref: concept `round33_ui_chrome/abandon_dialog.png` (the build has no such dialog; it is the same
@@ -177,8 +178,85 @@ lines (`25` alone on the second); the build fits it on one. Main's headers carry
 and square (kit rule). Likely cause: main's panel is narrower than its row at 1.0
 (`hq_scene.gd`, menu column width). Decision:
 
-### MAINFRAME shop (`mainframe.jpg`; only the orchestrator's finding so far)
-Refs: build `modem`; concept `round34_firmware_daemons/shop_v5.png`.
+### Netrun route (`route.jpg`)
+Refs: art pass build `route` (M13: wireframe city, hex/diamond node icons on a dashed board, route
+panel top right, DISPATCH strip, ROUTE KEY); concept `round37_netrun/city_default.png` (LOCKED hybrid
+D: the unified lit city, cable-run paths, dossier paper, node holo panel, JACK IN sticker, minimap,
+state key, `Always show all nodes` option). Main follows the concept's pieces.
+
+**ROUTE-01 (P1) Route on the city.** Concept: the whole route is drawn: yellow walked cable-runs,
+orange selectable, grey hidden nodes as small discs, patrols and corp landmarks labelled with
+stickers (THE SPRAWL, MERIDIAN, HALCYON), the target circled. Main: only the two next nodes and a
+dashed orange start bracket are drawn; the rest of the run is blank city; `[1] Fight` / `[2] Fight`
+chips sit on top of their own markers. Build: the whole board with every node icon. View: main shows
+too little to plan a route (the concept shows hidden nodes as grey "not yet" discs). Likely file:
+`scripts/ui/kit/netrun_map_view.gd`, `route_overlay.gd`, `route_ink.gd`, `route_legend.gd`.
+Decision:
+
+**ROUTE-02 (P1) Dossier overlaps.** Main: the `AT LARGE` stamp covers the HP value (`60 /` cut) and
+the `HEAT 0: COOL` stamp touches the IF STATIONED box. Concept: stamps in the paper's margins. Likely
+file: `scripts/ui/kit/operative_dossier.gd` (stamp anchors). Decision:
+
+**ROUTE-03 (P1) Node panel.** Main: `DECRYPTED` stamp over the panel header, `Fight: win it for
+Cycles and loo` cut at the right edge, the crossed-out dial `5` on the rewards text. Concept: the
+node holo (`DEPOT 15`) with tier / type / rewards, the stamp small in the corner, nothing over text;
+plus a JACK IN sticker and the map option under it. Likely file: `scripts/ui/kit/route_node_panel.gd`,
+`raid_holo.gd` (shared holo), `zine_stamp.gd`. Decision:
+
+**ROUTE-04 (P2) Route choice panel.** Build and main: `ROUTE // PICK THE NEXT NODE` terminal, rows
+`[1] Fight > Fight · Event`, GRID VIEW, Save & quit. Main's rows have lime focus brackets and
+`then: Shop` lines. Concept: no list (you pick on the map; the holo shows the hovered node). View:
+the list is the pad / keyboard path; keep it, but it duplicates the map. Decision:
+
+**ROUTE-05 (P3) Node key strip.** Main: `COMBAT ELITE EVENT SHOP RACK | walked next not yet cut off
+| HOVER HERE: SHOW ALL NODES` along the foot. Concept: the same idea, states only. Matches.
+Decision:
+
+**ROUTE-06 (P2) Page title.** Concept: `THE GRID` title sticker top left (the run's map). Build:
+DISPATCH line under the top bar. Main: top-bar words `NETRUN // ROUTE` only; no DISPATCH line on
+this frame. Decision:
+
+### Jack-in (`jack_in.jpg`)
+Ref: build `jack_in`; concept `round37_netrun/transition_storyboard.png`.
+
+**JACK-01 (P3) CONNECTING TO.** Build: one small cyan line `CONNECTING TO SOLACE BIOSYSTEMS`. Main:
+small `CONNECTING TO` over a large cream stencil corp name. Same grid and scan band. View: main's is
+stronger. Likely file: `scripts/ui/kit/jack_sequence.gd`. Decision:
+
+### Loot (`loot.jpg`)
+Refs: build `loot`; concept `round32_shop_reward/reward_screen_v2.png` (LOCKED reward).
+
+**LOOT-01 (P1) Loot sheet cards.** Concept: three big sticker cards on a white loot sheet, the
+middle one lifted with a peel corner, each card with art (glyph on a coloured field), type band,
+rule, and a holo border for rare; a FIRMWARE DROP terminal beside it with a socket wheel. Build:
+cream paper cards with halftone art in a terminal panel. Main: the white sheet is there; the cards
+are flat gold / purple rectangles with only the name, cost and a two-line rule in small type, no
+glyph art, no type band; the sheet is small (cards ~110 px wide). View: the concept is much richer;
+main's cards read like placeholders. Likely file: `scripts/ui/kit/loot_sheet.gd`, `zine_card.gd`
+(the same card face as CMB-04 / SHOP-02 / DECK-01). Decision:
+
+**LOOT-02 (P2) Page title.** Concept: `FIGHT WON` title sticker + a `LOOT // NETRUN ...` chip.
+Main: `PAYOUT` sticker + `> PAYOUT // LOOT: PICK A CARD` chip. Build: pink pencil `LOOT: PICK A
+CARD`. Content choice. Decision:
+
+**LOOT-03 (P2) Payout, deck counter, SKIP.** Concept: PAYOUT terminal top right (CYCLES +18, HP,
+HEAT), a DECK 17 counter bottom left with a yellow pencil arrow `+1 = 18` from the picked card,
+SKIP and CONTINUE stickers. Main: PAYOUT terminal (CYCLES 0, HP 60/60) beside the sheet, a small
+`DECK 10` chip with a yellow `+1 = 11` scribble, SKIP sticker, no CONTINUE. View: main's pieces are
+crammed into the right of the sheet. Likely file: `loot_sheet.gd`, `netrun_scene.gd` (loot page).
+Decision:
+
+**LOOT-04 (P1) Backdrop.** Concept: the dark, blurred lit city. Main: the bright 2D wireframe
+city (lime / cyan / magenta outlines) at full strength behind the sheet, also behind the event,
+shop overlays and pauses; it competes with every page. Build: the same wireframe city (M13).
+Likely file: `cyberdeck_background.gd` (as TITLE-01). Decision:
+
+### MAINFRAME shop (`mainframe*.jpg`)
+Refs: build `modem`, `modem_socket`, `modem_remove`, `modem_overwrite` (M13 MODEM CYBER SHOP: a
+pink neon sign column, terminal panels MICROCHIPS / CARDS / SLICES / DAEMONS / REMOVE A CARD);
+concepts `round34_firmware_daemons/shop_v5.png` (LOCKED shop), `firmware_socket.png`,
+`round32_shop_reward/removal_options.png`. Main follows shop_v5 (MAINFRAME sign, pegboard, clerk,
+slice wheel, recycle bin, LEAVE).
 
 **SHOP-01 (P1) Pencil note over the clerk's line.** Concept: the yellow pencil
 `ASK ABOUT THE BACK ROOM` sits below and right of `CYCLES ONLY.`, clear of it. Main: at 1.0 the
@@ -186,6 +264,89 @@ note's first line runs over the end of `CYCLES ONLY.` (the full stop and the Y a
 Build: no clerk. Likely cause: `scripts/ui/netrun_scene.gd` `CLERK_NOTE` placement (~l.3558), the
 note anchored to the line's right instead of under it. Fix: anchor the note under the last clerk
 line, offset right, as in the concept. Decision:
+
+**SHOP-02 (P1) Card stock faces.** Concept: pinned sticker cards with type colour (SYSTEM teal,
+WHEEL grey), a big glyph on a patterned field, type band, value and rule. Main: pinned cards with
+price tags on strings (matches), but the faces are flat gold / magenta with a small rule in tiny
+type and no glyph art (same card face as LOOT-01). Decision:
+
+**SHOP-03 (P2) Slice wheel.** Concept and main: the half wheel at the foot with prices on tabs,
+`TOP 3 ONLY` pencil; main's slices are darker and the tab prices smaller. Matches in layout.
+Likely file: `scripts/ui/kit/slice_stock_wheel.gd`. Decision:
+
+**SHOP-04 (P2) Firmware pegs.** Concept: three chips with glowing coloured gems, white bold glyphs,
+names, rarity in colour (COMMON / UNCOMMON blue / RARE gold), allowed slice, kraft price tags, and a
+cyan terminal hint row (`> SKIMMER ATK: ...`). Main: two chips, dark with grey glyphs, rarity and
+slice in grey, price tags struck out in red (not affordable: the concept's rule is a greyed dot +
+NEED tag). View: main's red strike reads as "sold" rather than "can't afford yet". Likely file:
+`scripts/ui/kit/shop_item.gd`, `shop_pegboard.gd`. Decision:
+
+**SHOP-05 (P3) LEAVE and the bin.** Concept: `LEAVE THE MAINFRAME` sticker + chevrons bottom
+right, recycle bin top right of the wheel. Main: matches; LEAVE is green-white (concept's is the
+same), the bin sits higher. Decision:
+
+**SHOP-06 (P1) Socket choice.** Concept: drag the chip onto a slice of the wheel; valid slices get
+lime brackets, invalid ones grey out, occupied ones show an amber REPLACE?. Build: a row of numbered
+slot tiles `1 CRIT 12 ... 6 MISS`. Main: a `Chips go into: Slot 1: OVFL 12` OptionButton whose list
+covers the card's description panel. View: the dropdown is the weakest of the three and hides the
+info it needs. Likely file: `netrun_scene.gd` shop socket UI, `shop_item.gd`. Decision:
+
+**SHOP-07 (P2) Remove a card.** Concept (two options): PURGE `rm -rf` keycap you drop the card on,
+or DEGAUSS coil. Build: card grid + a SHRED sticker. Main: a `RECYCLE BIN // REMOVE A CARD` lime
+terminal with the card grid and the recycle bin icon under it (the bin is the concept's 4th, sketch
+option). Designer call between the concept's PURGE (marked "recommended") and main's bin.
+Decision:
+
+**SHOP-08 (P3) Upgrade a slice.** Build: `UPGRADE · 100 CYCLES` as one pink graffiti line. Main:
+`UPGRADE` graffiti + `100 CYCLES` in small cyan beside it. Same wheel. Decision:
+
+### Events (`event.jpg`, `event_dispatch.jpg`)
+Refs: build `event`, `event_dispatch` (M13: paper note top left, choice cards right, pink pencil
+`PLAY IT SAFE??`); concepts `round31_reward_event/event_screen.png`, `event_screen_memo.png`.
+
+**EVT-01 (P2) Event terminal.** Concept: one wide terminal centred with a CAM feed still, title,
+body, CHOOSE list, RUN side terminal (HP / CYCLES / CREW), TERMINAL sticker and the pencil to the
+safe choice. Main: the same pieces, placed top right over the city; no RUN side panel; the CAM
+feed is the wireframe city (concept: a photo-like cam still with a red pencil circle). View: main
+follows the concept; centring it as the concept does would stop it fighting the top bar.
+Likely file: `scripts/ui/kit/cam_feed.gd`, `netrun_scene.gd` (event page). Decision:
+
+**EVT-02 (P2) Choice rows.** Concept: yellow numbered tabs, stencil choice names, outcome chips
+(`-12 HP`, `+1 BREAKER`, `NO CHANGE`) in a column to the right of the row. Main: yellow tabs and
+stencil names, outcome chips tucked under the name in tiny type, the row has a lime focus edge.
+View: the concept's chips are readable at a glance. Likely file: `choice_sticker.gd`,
+`outcome_row.gd`. Decision:
+
+**EVT-03 (P1) DISPATCH event.** Concept memo: a paper memo (corp letterhead, highlighted lines,
+red pencil circle, DO NOT FORWARD stamp) on the left of the terminal; INTERCEPTED header; result
+lines and CONTINUE. Main: a red-edged terminal `> TERMINAL // DISPATCH` with a red heartbeat
+`VOICE ONLY // NO FEED` instead of the memo. View: DISPATCH is voice (no document), so main's
+waveform is a reasonable stand-in; the memo concept is for corp intercepts. Designer call.
+Likely file: `corp_memo.gd`, `netrun_scene.gd`. Decision:
+
+### Deck viewer and card detail (`deck_view.jpg`, `card_detail.jpg`)
+Ref: build `deck_view`, `card_detail` (no concept image; the cards should match the hand,
+`round41_wheel_stack/combat_typical_v4.png`).
+
+**DECK-01 (P1) Card faces in the viewer.** Build: the cream paper cards with halftone art. Main:
+flat gold / magenta cards with name, cost, a two-line rule and a tiny value line; no art, the grid
+leaves the right third empty. Same card face issue as LOOT-01 / SHOP-02. Likely file:
+`scripts/ui/kit/deck_view.gd`, `zine_card.gd`. Decision:
+
+**DECK-02 (P2) Card detail.** Build: the card at ~2x with its art, and a CARD NOTES panel
+(type, what it does, rarity and stock, the SPIN rule). Main: a `CARD DETAIL` terminal over the grid
+with a ~1.3x card and three plain lines (`JOLT // 1 RAM`, `Common`, `Jolt (RAM 1) Spin a wheel 3
+ticks.`) repeating the card. View: the build's notes explain more. Likely file: `scripts/ui/kit/inspect_popup.gd`.
+Decision:
+
+### Daemon tray (`daemon_tray.jpg`)
+Refs: build `daemon_tray`; concept `round34_firmware_daemons/daemon_row.png` (the rack in combat,
+CLEAN SIGNAL card).
+
+**DAEMON-01 (P3) Daemon tray popup.** Build and main: the same small `DAEMON / CASCADE` terminal
+under the top-right Daemon badge; main's reads `Daemon Cascade` (doubled word). Concept: in combat,
+a CRT rack on the left with a hover card (name, rarity, trigger, family colour, TILE STATES). The
+tray outside combat has no concept. Likely file: `scripts/ui/kit/daemon_tray.gd`. Decision:
 
 ### Combat (`combat_*.jpg`, `tutorial.jpg`)
 Refs: art pass build `combat_*` (M13: bright teal wireframe city, pink/teal sticker-ring wheels,
