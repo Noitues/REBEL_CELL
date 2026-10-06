@@ -219,6 +219,40 @@ func test_enter_on_a_focused_stop_picks_that_choice() -> void:
 		"the run goes to that choice (%s)" % s.run.current_node_id)
 
 
+# --- S-ROUTE c: the street marker's YOU ARE HERE is a placed label ---------------------------------
+
+func test_the_street_marker_words_keep_off_every_choice_sticker_chip_and_label() -> void:
+	for corp in CORPORATIONS:
+		RunManager.reset()
+		var scene := _netrun(corp)
+		await _frames(4)
+		var ov := _overlay(scene)
+		assert_eq(ov.here_id(), &"", "%s: before the first node the marker stands on the street" % corp)
+		for scale in SCALES:
+			Settings.set_text_scale(scale)
+			await _frames(2)
+			var rects: Dictionary = ov.label_rects()
+			assert_true(rects.has(CityMapOverlay.HERE_KEY), "%s x%.1f: YOU ARE HERE is placed" % [corp, scale])
+			if not rects.has(CityMapOverlay.HERE_KEY):
+				continue
+			var here: Rect2 = rects[CityMapOverlay.HERE_KEY]
+			for n in ov.nodes:
+				if not bool(n.get("next", false)):
+					continue
+				var at := ov.icon_pos(n)
+				if at.x == INF:
+					continue
+				var r := ov.icon_radius(n)
+				assert_false(CityMapOverlay._rect_hits_disc(here, at, r), "%s x%.1f: not on choice %d's sticker" % [corp, scale, int(n["number"])])
+				assert_false(here.intersects(ov.number_rect(at, r)), "%s x%.1f: not on choice %d's number" % [corp, scale, int(n["number"])])
+			for key in rects:
+				if key != CityMapOverlay.HERE_KEY:
+					assert_false(here.intersects(rects[key]), "%s x%.1f: not on %s's label" % [corp, scale, key])
+		Settings.set_text_scale(1.0)
+		scene.get_parent().queue_free()
+		await _frames(1)
+
+
 # --- The dossier's letterhead (ROUTE-02 follow-up) ----------------------------------------------
 
 func test_the_dossier_letterhead_keeps_every_word_whole_at_each_text_size() -> void:
