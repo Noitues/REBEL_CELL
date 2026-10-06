@@ -19,6 +19,9 @@ extends Control
 ## reads the words and points it is given and emits `finished`.
 
 signal finished
+## The countdown is at zero and the reading hold begins (once): nothing moves until the cut
+## (ART-12 12p: the HQ builds the dossier then).
+signal holding
 
 const SHADER := preload("res://shaders/ransom_lock.gdshader")
 const GLITCH := &"ransom_glitch"
@@ -328,6 +331,42 @@ func _finish() -> void:
 	finished.emit()
 
 
+## M14 parity END-05: the camera zoom that shows the most padlocks round the notice (concept A:
+## padlocks on the city all round it). `points` (global px) stand as they do at `zoom_now`; a
+## zoom scales them about `centre` (the network's, on the screen). Of FIT_STEPS zooms from
+## `zoom_max` down to `zoom_min`, the one that puts the most nodes inside `room` (the screen
+## under the top bar, less a margin) and outside `avoid` (the notice, grown by a padlock) wins;
+## a tie keeps the larger zoom. `zoom_now` with no points.
+static func fit_zoom(points: Array, centre: Vector2, room: Rect2, avoid: Rect2, zoom_now: float, zoom_min: float, zoom_max: float) -> float:
+	if points.is_empty() or zoom_now <= 0.0:
+		return zoom_now
+	var best := zoom_now
+	var best_seen := -1
+	for i in FIT_STEPS + 1:
+		var z := lerpf(zoom_max, zoom_min, float(i) / FIT_STEPS)
+		var seen := 0
+		for p: Dictionary in points:
+			var at := centre + ((p["at"] as Vector2) - centre) * (z / zoom_now)
+			if room.has_point(at) and not avoid.has_point(at):
+				seen += 1
+		if seen > best_seen:
+			best_seen = seen
+			best = z
+	return best
+
+
+## The zooms `fit_zoom` tries.
+const FIT_STEPS := 24
+
+
+## Where the notice stands on `screen` (global px) once it is up: centred, NOTICE_W wide (the
+## screen less its margins at most), its laid-out height.
+func notice_rect_on(screen: Rect2) -> Rect2:
+	var w := minf(NOTICE_W * Settings.text_scale, screen.size.x - SCREEN_MARGIN * 2.0)
+	var h := notice.get_combined_minimum_size().y if notice != null else 0.0
+	return Rect2(screen.get_center() - Vector2(w, h) * 0.5, Vector2(w, h))
+
+
 ## True when the lock shows at all: a real display (or Motion.force_live). Headless never
 ## waits on it (the screen goes straight to the dossier); reduce effects shows its end state.
 static func plays_now() -> bool:
@@ -358,6 +397,9 @@ func _process(delta: float) -> void:
 		# The countdown is at zero: the reading hold, then the cut.
 		if hold_left < 0.0:
 			hold_left = hold_seconds()
+			# 12p: the screen is still now; the HQ builds the audit dossier behind it here, so
+			# the cut's switch shows a file that is already built.
+			holding.emit()
 		else:
 			hold_left -= delta
 		if hold_left <= 0.0:
