@@ -498,7 +498,9 @@ reads muddy. Likely file: `scripts/ui/wheel/wheel_face.gd`, `wheel_disc.gd`, `wh
 slice materials / palette tokens (`palette.gd`, `palette_skins.gd`). Decision: **fixed, concept** (designer group ruling, 2026-10-05: combat matches the concept):
 the baked art-pass screens through a tone step (saturation 1.4, the part over 0.3 lifted x1.1: the
 recipe's bloom / add_glow folded into the disc), the player's frame lit in its class accent (bevel
-wash + hairline glow). Slice tier pips and FROZEN / LOCKED / BURNING stay listed (G4, G5). Sheet
+wash + hairline glow). Round 2 (designer): the tone is per kit (less pop on the player, Meridian and
+Rebel_Cell), every slice keeps its outline at combat size (tier 1 included), the scanlines fade where
+they would beat the screen's own pattern; sheet `fixes/WHEEL_b.jpg`. Slice tier pips and FROZEN / LOCKED / BURNING stay listed (G4, G5). Sheet
 `fixes/WHEEL.jpg`; test `test_parity_wheel.gd`.
 
 **CMB-03 (P1) Enemy wheel corp kit.** Concept: the enemy wheel wears the corp kit (Meridian orange
@@ -508,7 +510,9 @@ Build: green sticker ring. Same files as CMB-02 plus the corp kits. Decision: **
 frame bases and gloss, `corp_rim`: Meridian hazard stripes + teeth, Solace capsule studs + glass
 ring, Halcyon colonnade + gold halo, Orbital azimuth ticks + ring, Rebel_Cell broken segments; the
 elite collar beyond the frame) and the saturated corp screens. Orbital's azimuth numbers are not
-drawn (below 4 px at combat size). Sheet `fixes/WHEEL.jpg`.
+drawn (below 4 px at combat size). Sheet `fixes/WHEEL.jpg`. Round 2 (designer): Meridian's screens
+pulled to its palette orange (Palette.CORP_MERIDIAN #FF8C1A) and brighter, the corp tier I outline
+brighter; sheet `fixes/WHEEL_b.jpg`.
 
 **CMB-04 (P1) Hand: sticker cards.** Concept: gold-yellow die-cut sticker cards with a white border,
 type band (WHEEL yellow / HACK pink / SYSTEM teal), big glyph and value, fanned and overlapping, a
@@ -603,12 +607,10 @@ none. Likely file: `combat_backdrop.gd` (boss place). Decision:
 
 **BOSS-04 (P2) Phase 3 arcs.** Main phase 3: lime guard arcs, double chevrons and a `13` marker
 crowd the boss wheel's right side; build: an orange dashed arc. View: main's lime again collides
-with the focus colour. Likely file: `hud_wheel_layer.gd`. Decision: **fixed, concept** (designer group ruling, 2026-10-05: combat matches the concept):
-needle 2, 3 ... read on round 14 `d4corp.pin` pins inside the frame (round window in the channel,
-number tab), only needle 1 wears the crowned blade; a multi-needle wheel's rails are +-24 degrees;
-the corp rim is drawn over the phase 3 armour plates. The lime is Solace's corp hue (ART_BIBLE 2.4,
-recipe accent) and the target brackets are FOCUS: both kept; what crowded the rim (the second
-crowned blade and its window) is gone. Sheet `fixes/WHEEL.jpg`.
+with the focus colour. Likely file: `hud_wheel_layer.gd`. Decision: **designer: keep main's needles** (round 2, 2026-10-05): both needles stay full crowned
+blades (round 1's `d4corp.pin` readers reverted). The crowding is thinned by the short rails a
+multi-needle wheel keeps (+-24 degrees, d4corp) and the corp rim drawn over the phase 3 armour. The
+lime is Solace's corp hue and the FOCUS reticle: both kept. Sheet `fixes/WHEEL_b.jpg`.
 
 ### City Grid (`grid*.jpg`: grid, grid_site_selected, grid_raid_pending, grid_influence, grid_drag_crew, grid_meridian, grid_halcyon, grid_orbital, grid_rebel_cell)
 Refs: art pass build `grid*` (M13: a flat dark-navy isometric board, hex tier badges, a 2D wireframe
