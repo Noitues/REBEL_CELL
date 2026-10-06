@@ -194,6 +194,96 @@ Refs: build `combat_boss_p2`; concept `round41_wheel_stack/combat_worst_case_v4.
 triangle) sits on the first digits of the boss HP `1395/1475`. Build and concept: nothing over the
 HP value. **In progress: FIX-REDS** (a separate agent is fixing it). Decision:
 
+### City Grid (`grid*.jpg`: grid, grid_site_selected, grid_raid_pending, grid_influence, grid_drag_crew, grid_meridian, grid_halcyon, grid_orbital, grid_rebel_cell)
+Refs: art pass build `grid*` (M13: a flat dark-navy isometric board, hex tier badges, a 2D wireframe
+city); concepts `round40_city_unified/city_grid_v3.png` (LOCKED unified city),
+`round42_site_markers/site_markers_on_map_v4.png` (LOCKED markers), `round32_ui_chrome/city_map_hud.png`
+(Grid HUD, "in progress" in the bible), `round34_rebel_cell/map_A_home.jpg`.
+The build's board look is superseded by the unified-city concept, which main follows (3D city,
+round marker discs, minimap); the entries compare main with the concept unless they say otherwise.
+
+**GRID-01 (P1) Network area bloom.** Concept: links are thin yellow (yours) / orange (selectable)
+cable lines over an unchanged city; the city stays readable between them. Main: the whole linked
+area sits under a white/cyan glow veil with bright cyan double-line links and lit pad rings on
+every link; at 1.0 it washes out the buildings under it and is the brightest thing on screen.
+View: the concept reads better (the markers are the information, the links support them); main's
+glow also makes the lime "yours" focus colour hard to pick out. Likely cause:
+`scripts/ui/kit/city_map_overlay.gd` (the veil / keyline / glow under-layer, `_draw` ~l.1071) and
+the 3D city's bloom (`content/config/city_config.tres` `bloom`, `lane_glow_management`). Fix: drop
+the veil, draw links as the concept's single cable strokes in the state colours, lower the bloom
+at the Grid band. Decision:
+
+**GRID-02 (P2) Marker size and ring.** Concept v4: small discs (~24 px at 1080p, ~16 at 720)
+with a thin state ring and the corp glyph, labels only on hover / landmarks. Main: discs ~36 px at
+720 with a thick orange ring and a dark face, a name label on most Sites. View: main is more
+legible at 1.0 but crowds the map (labels and discs cover the city); the concept relies on hover.
+Likely file: `scripts/ui/kit/site_marker.gd`, `site_marker_view.gd`, `site_marker_layout.gd`.
+Decision:
+
+**GRID-03 (P1) Central Server chip collides.** Main: the `CENTRAL SERVER // EXPLOITS 0/3` chip is
+cut by the Site label `The Genome Core` placed over it, and the red TARGET pencil runs over the
+next marker. Concept: the chip sits clear under the circled HQ (bible rule: no UI over grease
+pencil). Same family on REBEL_CELL (GRID-13). View: a defect either way. Likely file:
+`scripts/ui/kit/city_map_overlay.gd` label placement (the free-space test ~l.1065) does not
+register the chip / pencil; `target_edge_marker.gd`. Decision:
+
+**GRID-04 (P2) Right column.** Build: plain terminal panels, a magenta header rule, CLAIM chips.
+Main: both panels have lime 2 px edges with the v2 `>` header and square; the site card holds
+portrait chips + an operative dropdown + the JACK IN button; RUNS OPEN NOW rows with IF CLEARED
+lines. Concept (HUD in progress): crew panel on the left, holo Site card and IF CLEARED terminal
+on the right. View: lime is the kit's focus colour (ui_kit: "lime brackets = focus, everywhere");
+using it as a panel edge competes with real focus. Likely file: `scripts/ui/hq_scene.gd` (Grid side
+column), `scripts/ui/kit/city_grid_controls.gd`. Decision:
+
+**GRID-05 (P2) Page title and HUD.** Concept: `THE GRID` title sticker, campaign line
+`CAMPAIGN 03 // HALCYON CIVIC // ICE 5`, a resource strip and a big HEAT suspect-file bar
+(COOL / NOTICED / FLAGGED / HUNTED with the next threshold). Main and build: the shared top bar
+(`02 CITY GRID` + resource chips). View: the concept's Heat bar explains Heat on the page where it
+matters; whether the Grid gets its own HUD is a designer call (the bible marks it "in progress").
+Likely file: `scripts/ui/kit/hud_bar.gd`, `hq_scene.gd`. Decision:
+
+**GRID-06 (P2) Minimap and legend.** Main: minimap (corp territories in colour, lime view box) and a
+MAP LEGEND panel with icons (next, cleared, yours, DOWN, TAKEN, exploit, heat obj., locked link).
+Concept: minimap only, plus a one-line state key along the bottom (`owned / visited`, `selectable`,
+`not yet (hidden)`, `HOVER HERE: SHOW ALL`). Build: a text legend. View: the concept's strip costs
+less screen; main's legend is clearer for a first look. Likely file: `scripts/ui/kit/city_minimap.gd`,
+`map_legend.gd`. Decision:
+
+**GRID-07 (P2) JACK IN placement.** Concept: one big JACK IN vinyl sticker bottom right (the one
+sticker verb on the page). Main: a pink button-sized JACK IN inside the Site card; the bottom right
+is the runs list. View: concept matches the v2 "one sticker verb per screen, where the eye ends"
+rule; main's keeps the verb next to the operative it launches. Likely file: `hq_scene.gd`.
+Decision:
+
+**GRID-08 (P3) Selected Site panel text.** Main adds a plain-language line (`Not reachable yet.
+Clear a Site linked to it first: ... Then it opens (orange ring) and JACK IN shows here.`) in Plex
+sans; the build shows only the tags. View: main's line helps; it is the only sans paragraph in the
+column. Decision:
+
+**GRID-09 (P3) RAID SETUP sticker.** Build and main: a pink RAID SETUP sticker above the Site card;
+main's is larger with the v2 white die-cut. Concept: a RAID PENDING terminal at the bottom centre
+with a RAID SETUP terminal button. View: equivalent; designer call on the concept's bottom bar.
+Decision:
+
+**GRID-10 (P3) Claimed tint.** Main: a lime spray scribble on the claimed Site's ground plus the
+claimed marker; build legend says "claimed: spray ring". Matches the intent. Decision:
+
+**GRID-11 (P2) Carried operative (main only).** Main: dragging a crew chip shows a black/lime
+`DOWN` sticker on the Site, a green ground glow and the chip ghost (the build has no drag). View:
+`DOWN` reads as "this Site is down", not "drop here"; the word may confuse. Likely file:
+`scripts/ui/kit/drop_layer.gd`, `drag_ghost.gd`, `hq_scene.gd` (grid drop). Decision:
+
+**GRID-12 (P1) Camera framing on Meridian.** Main: the network sits on the city's edge; the right
+half of the map area is empty purple fog past the last block, the TARGET pencil is half under the
+minimap, and Meridian's HQ is not in view. Halcyon and Orbital frame well; Solace and REBEL_CELL
+are fine. Build: the board fills the area. View: a defect. Likely file: `scripts/ui/kit/grid_map_view.gd`
+/ the Grid camera fit (`RaidZoomFit`-style fit for the Grid band), `scripts/core/` city layout for
+Meridian's seed. Decision:
+
+**GRID-13 (P1) Label collisions on REBEL_CELL.** Main: `Erase the Ledger` and `Lose the Handler`
+labels touch; `The Cell's Own Patch` sits on a marker; the TARGET pencil runs under `CENTRAL
+SERVER // EXPLOITS 0/3`. Same cause as GRID-03. Decision:
+
 ## Mechanics the rules lack (listed, not built)
 (Filled as the remaining screens are compared; first candidates seen while capturing: the HQ run
 pages' per-corp mechanics (round 43 "climb the helix", "crane + train"; GDD has the HQ run but
