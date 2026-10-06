@@ -31,6 +31,63 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-05 — Designer ruling — abandon run, abandon campaign, quit
+The designer approved a new rule (2026-10-05): three exit paths, each a screen. Added to the GDD as **4.5 Leaving a
+Run or the Campaign** (a marked addition; no other GDD text changed). It answers the open questions "ART-10 4C: an
+in-run abandon run" and "ART-10 4C: hold-to-confirm on the abandon dialog's verb".
+- **Abandon run = the operative's death on the run.** `NetrunSession.abandon()` ends a fight in progress and calls
+  the death path itself (`_die`: `RunState.Outcome.DIED`, the operative not alive, its post freed, `deaths + 1`,
+  banked Schematics and assets kept, unbanked lost, Heat `death_heat_base + tier` + the ICE death modifier through
+  `HeatRules`, so ICE scaling, the cap and threshold raids apply as for any death). No new number. A
+  `run_abandoned` event comes first so the run's report says why. The profile counts an operative lost (the
+  existing run-outcome record); the campaign goes on at HQ. `abandon_preview()` abandons a copy of the run and
+  campaign and reports the costs (operative, Cycles, unbanked assets, cards / Firmware / Daemons gained this run,
+  Rank, the Heat change and the Heat after, Schematics and assets kept, raids queued): the dialog's numbers are the
+  rule's own (preview == result, tested). "Gained this run" = a multiset difference against the roster copy
+  (boost cards not counted).
+- **Abandon campaign** (`ExitRules`, pure core): `CampaignState.Outcome.ABANDONED` (a new outcome; `is_over`, so
+  every existing end path holds: HQ shows the end page, CONTINUE on it shows that page). **Calls:** (1) the profile
+  counts it as a lost campaign (`record_loss`; no win records, no ICE record); (2) the slot is kept and marked, as a
+  lost campaign's is (`slot_summary` state "abandoned"; the case file's stamp reads ABANDONED; the slot is freed by
+  DELETE as before) — simplest consistent with the GDD's loss path; (3) refused while a netrun runs (abandon the run
+  first; the HQ pause is the only entry); (4) the end page is the lost campaign's (the audit dossier, CASE CLOSED);
+  the ransom lock plays only for a breached home server (LOST), not for an abandon.
+- **Quit** saves the exact state: `RunManager.quit_game` already autosaved the campaign, the run (mid-fight
+  included: the combat dict carries its checkpoint and rewind history) and the RNG streams, and the title's BREACH
+  (Continue) resumes the run in the netrun scene or the campaign at HQ. No gap found in the rules' state: the round
+  trip is tested at every page a run reaches (map, a fight a turn in, loot, and event / shop / raid when the seed
+  reaches them) and at HQ. UI-only state (an open picker, the scroll) is not saved, as before.
+- **Dialogs** (`ExitDialogs`, kit/chrome): abandon run is 4C's AbandonDialog as round 33 draws it: `> CONFIRM //
+  ABANDON RUN`, CANNOT UNDO, "Abandon the run?", "<name> is lost for good, with everything unbanked:", the costs
+  CYCLES / CARDS ADDED / FIRMWARE / DAEMONS (round 33's four) plus ASSETS (unbanked) and RANK (what dies with the
+  operative), the HARM line "HEAT +N (operative death, tier T)", the GAIN line "Schematics already banked at a
+  Server Rack stay banked.", yellow CANCEL (default focus, "keep running [B]") and the baked pink BURN IT
+  ("abandon, lose <name> [hold A]"). Abandon campaign: the same family (`ABANDON CAMPAIGN`; RUNS / OPERATIVES /
+  SCHEMATICS / SITES / HEAT / ICE; HARM "It counts as a lost campaign."; GAIN "Your stats and achievements stay.";
+  BURN IT, the baked sticker). Quit stays main's ConfirmDialog (`> CONFIRM // QUIT`, not destructive) with its key
+  hints ("save and quit [A]" / "keep going [B]"; the keys ride as the stickers' key hints, so at big text, where
+  main's sticker line drops its words, "[A]" / "[B]" stay) and a body naming what BREACH resumes.
+- **Hold to confirm (the concept's rule, now built):** on the abandon dialogs the pad / keyboard confirm on BURN IT is
+  a 0.8 s hold (`dialog_hold_confirm` in ui_motion.tres, a HOLD read raw: never sped up, and reduce effects still
+  fills the ring); a lime ring (`HoldRing`, drawn: the concept draws a plain arc over the baked sticker) fills from
+  the top, clockwise; letting go or losing focus empties it; a mouse click confirms at once (the concept: "Mouse:
+  click"). The entry joins REQUIRED_IDS, the motion lab (`hold_confirm` demo on the real dialog) and the lab test's
+  HOLDS. **Call:** the title's DELETE SLOT confirm keeps its plain press (the ruling names BURN IT; a hold there is
+  a one-line `require_hold()` if wanted).
+- **Entry points (after S-PAUSE):** the pause menu's icon rows under Resume (Resume stays first): "Abandon run"
+  (StatIcon OPERATIVE) when a run is in progress, else "Abandon campaign" (StatIcon CAMPAIGNS) when a live campaign is
+  loaded, both above "Quit to desktop" and in HARM (words and icon, as the slots' DELETE marks the destructive verb).
+  **Calls:** the menu decides by the run's state (no HQ edit: the HQ is being redesigned): a run's end page in the
+  netrun scene therefore offers Abandon campaign too (no run is in progress then). BURN IT closes the menu and calls
+  RunManager; an abandoned run is shown by the netrun scene (`RunManager.run_abandoned`, which both its own pause and
+  the fight's pause reach), an abandoned campaign reloads the HQ scene, which opens on the campaign's end page.
+  "Save & quit to title" is unchanged. Review pack screens `pause_fight_abandon`, `pause_fight_abandon_hold`,
+  `hq_pause_abandon`, `hq_pause_quit`.
+- **Outside this area, smallest edits:** `title_scene.gd` STATE_WORDS gains "abandoned"; `case_file_card.gd`
+  `state_word` gains ABANDONED; `netrun_scene.gd` shows the run's end on `run_abandoned`; STYLE_GUIDE 5.5 lists the
+  new hold.
+- Tests: `tests/unit/test_abandon_quit.gd`.
+
 ### 2026-10-05 — Parity fix — new campaign page (designer decisions)
 Designer rulings NEWC-01..04 (2026-10-05, parity audit `docs/art_review/PARITY/GAPS.md`, branch
 worktree-agent-a99b7a512f1562917): the art pass build was never brought to the v2 concepts, so the build's layout in
@@ -8596,6 +8653,8 @@ and annotated in the GDD where it changes a rule.
 ### 2026-10-05 — ART-10 4C: hold-to-confirm on the abandon dialog's verb
 ART_BIBLE §4.13 calls the pad's 0.8 s hold on the committing verb (BURN IT) a proposal: not built
 (A presses it like any button). Default: no hold. Build it if the designer wants it.
+**Answered (designer ruling 2026-10-05):** built on the abandon dialogs' BURN IT (0.8 s, `dialog_hold_confirm`); see
+"Designer ruling — abandon run, abandon campaign, quit".
 
 ### 2026-10-05 — ART-10 4C: an in-run "abandon run" (the dialog's own subject)
 The round 33 abandon dialog asks "Abandon the run?" (operative lost with everything unbanked, Heat
@@ -8603,6 +8662,8 @@ The round 33 abandon dialog asks "Abandon the run?" (operative lost with everyth
 or completion), so it is a mechanic and is not built. Default: the dialog (`AbandonDialog`, with
 `dialog_burn_it` baked) serves the title's delete slot. If the designer wants an abandon-run line in
 the netrun pause menu, its rule would be the death rule (GDD 4.2) and the dialog takes its costs.
+**Answered (designer ruling 2026-10-05):** built (GDD 4.5): abandon run is the death rule, plus abandon campaign and
+quit; see "Designer ruling — abandon run, abandon campaign, quit".
 
 ### 2026-10-05 — ART-10 4C: the HQ dossier on corp paper and JACK IN as a vinyl sticker
 The crew dossier keeps its paper card with Courier Prime (1B's CorpPaperPanel would need its orders

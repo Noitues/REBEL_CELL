@@ -134,6 +134,7 @@ func _ready() -> void:
 	# Subtitles sit in the top band, clear of every control (H20); combat docks its own.
 	Dialogue.dock_default()
 	Settings.hints_changed.connect(_relabel_route)
+	RunManager.run_abandoned.connect(_on_run_abandoned)  # ABANDON-QUIT: from either pause menu
 	# Capture variants (ANIM-6): --demo-set / --demo-speed tune a copy of the motion table.
 	MotionDemo.apply_args()
 	_build_ui()
@@ -882,6 +883,16 @@ func finish_run() -> void:
 	RunManager.clear_run()
 	RunManager.go_to_hq()
 	_show_start()
+
+
+## Abandon run (designer ruling 2026-10-05, GDD 4.5): the run ended as the operative's death
+## (RunManager.abandon_run, from this scene's pause menu or the fight's): the pause closes, the
+## run's report reads the events and the run's end page shows (FAILED - operative lost).
+func _on_run_abandoned(events: Array[Dictionary]) -> void:
+	if _settings_panel != null:
+		open_settings()
+	_report(events)
+	_show_current()
 
 
 func save_and_quit() -> void:

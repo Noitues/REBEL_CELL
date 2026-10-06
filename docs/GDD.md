@@ -287,6 +287,18 @@ Heat 50 or more; Heat objectives never provoke one, 2026-09-24). They can happen
 mid-netrun (an interlude between map nodes) or between netruns. **Raid rewards are set by
 the trigger; raid strength scales with current Heat**, so low-Heat raids are profitable.
 
+### 4.5 Leaving a Run or the Campaign (addition: designer ruling 2026-10-05)
+Three ways out, each from the pause menu and each asked first:
+- **Abandon run** (in-run pause): the operative on the run is killed. It is an operative
+  death with the **Death** consequences of 4.2 (lost for good with everything unbanked;
+  banked loot kept; campaign gains 10 + tier Heat). The campaign continues at HQ. The
+  confirm shows those costs and cannot be undone.
+- **Abandon campaign** (HQ / campaign pause, never during a run): the campaign ends as
+  **abandoned** through the campaign's normal end; it counts as a lost campaign for the
+  profile, and its slot keeps the ended campaign marked abandoned (as a lost one is kept).
+- **Quit** (both pauses): nothing is abandoned. The game saves the exact current state,
+  mid-run and mid-fight included, and the title's Continue resumes that run or campaign.
+
 ---
 
 ## 5. Operatives

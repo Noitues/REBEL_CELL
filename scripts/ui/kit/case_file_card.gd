@@ -407,6 +407,8 @@ func state_word() -> String:
 			return tr("WON")
 		"lost":
 			return tr("LOST")
+		"abandoned":
+			return tr("ABANDONED")
 	return ""
 
 

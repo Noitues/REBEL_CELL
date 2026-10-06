@@ -12,6 +12,10 @@ extends Control
 ## so no running raid is paused). PAUSE-02, ported from art-m13-final
 ## scripts/ui/kit/pause_menu.gd: `Resume [Esc]` is the one pink verb sticker, the other rows
 ## carry icons (StatIcon), the campaign code sits in a CodeField with a copy button.
+## ABANDON-QUIT (designer ruling 2026-10-05, GDD 4.5): the in-run pause has "Abandon run", the
+## campaign's pause (no run in progress) "Abandon campaign", both rows in HARM (as the slots'
+## DELETE: the destructive verb's edge) asking with the abandon dialog (ExitDialogs); "Quit to
+## desktop" asks with the quit confirm and its key hints. The answers go to RunManager.
 
 signal resumed
 signal quit_to_title
@@ -25,6 +29,10 @@ var _rows: VBoxContainer
 var code_field: CodeField = null
 var _host: VBoxContainer
 var resume_button: Button
+## ABANDON-QUIT: the destructive rows (null when the menu has none) and the open exit dialog.
+var abandon_run_button: Button = null
+var abandon_campaign_button: Button = null
+var exit_dialog: ConfirmDialog = null
 ## Who had focus before the menu opened (the combat hand); it gets it back on close.
 var _return_focus: Control = null
 
@@ -87,11 +95,17 @@ func _init() -> void:
 		if RunManager.campaign != null:
 			RunManager.autosave()
 		quit_to_title.emit(), StatIcon.SAVE)
-	_add(tr("Quit to desktop"), func() -> void:
-		var confirm := ConfirmDialog.new(tr("Quit REBEL_CELL? Progress is autosaved."), TextDb.mark("QUIT"), TextDb.mark("CANCEL"), TextDb.mark("QUIT"))  # ART-2 2D: sticker verbs
-		confirm.position = Vector2(60, 120)
-		add_child(confirm)
-		confirm.confirmed.connect(func() -> void: RunManager.quit_game()), StatIcon.QUIT)
+	# ABANDON-QUIT: in a run, abandon it; at HQ (a live campaign, no run), abandon the campaign.
+	if RunManager.has_active_run():
+		abandon_run_button = _add(tr("Abandon run"), confirm_abandon_run, StatIcon.OPERATIVE)
+		abandon_run_button.name = "AbandonRun"
+		_harm(abandon_run_button)
+	elif RunManager.has_campaign():
+		abandon_campaign_button = _add(tr("Abandon campaign"), confirm_abandon_campaign, StatIcon.CAMPAIGNS)
+		abandon_campaign_button.name = "AbandonCampaign"
+		_harm(abandon_campaign_button)
+	var quit := _add(tr("Quit to desktop"), confirm_quit, StatIcon.QUIT)
+	quit.name = "Quit"
 	# H24 S11 / PAUSE-02: the campaign's share code in a mono field with a copy button (it
 	# read like debug output on the HQ's Pirate Radio note, then as a plain line here).
 	var code := share_code()
@@ -216,6 +230,57 @@ func _add(text: String, on_pressed: Callable, kind: StringName) -> Button:
 	IconMark.attach(b, kind)  # PAUSE-02: the row's icon (StatIcon), in the chevron's place
 	_rows.add_child(b)
 	return b
+
+
+## ABANDON-QUIT: a destructive row reads in HARM (its words and its icon), as the slots' DELETE.
+func _harm(b: Button) -> void:
+	for key in [&"font_color", &"font_hover_color", &"font_focus_color", &"font_pressed_color", &"font_hover_pressed_color"]:
+		b.add_theme_color_override(key, Palette.HARM)
+	IconMark.attach(b, IconMark.kind_of(b), Palette.HARM)
+
+
+## Abandon run: the abandon dialog with the run's costs (RunManager.abandon_run_preview); BURN IT
+## kills the operative (RunManager.abandon_run; the netrun scene shows the run's end).
+func confirm_abandon_run() -> void:
+	var p := RunManager.abandon_run_preview()
+	if p.is_empty():
+		return
+	_open_exit(ExitDialogs.abandon_run(p), func() -> void:
+		resumed.emit()
+		RunManager.abandon_run())
+
+
+## Abandon campaign: the abandon dialog with the campaign's costs; BURN IT ends it
+## (RunManager.abandon_campaign) and HQ opens again on the campaign's end page.
+func confirm_abandon_campaign() -> void:
+	var p := RunManager.abandon_campaign_preview()
+	if p.is_empty():
+		return
+	var corp := TextDb.t(RunManager.corporation, "display_name") if RunManager.corporation != null else String(p.get("corporation", ""))
+	_open_exit(ExitDialogs.abandon_campaign(p, corp), func() -> void:
+		resumed.emit()
+		RunManager.abandon_campaign()
+		RunManager.change_scene(RunManager.HQ_SCENE))
+
+
+## Quit to desktop: the quit confirm (not destructive); QUIT saves and quits.
+func confirm_quit() -> void:
+	_open_exit(ExitDialogs.quit(RunManager.has_active_run()), func() -> void: RunManager.quit_game())
+
+
+## Opens `d` over the menu, centred on the screen as its panel takes its size, `on_yes` on its
+## confirm.
+func _open_exit(d: ConfirmDialog, on_yes: Callable) -> void:
+	if exit_dialog != null and is_instance_valid(exit_dialog):
+		exit_dialog.queue_free()
+	exit_dialog = d
+	add_child(d)
+	var centre := func() -> void:
+		if is_instance_valid(d) and d.is_inside_tree():
+			d.global_position = ((get_viewport_rect().size - d.size) * 0.5).floor()
+	d.resized.connect(centre)
+	centre.call()
+	d.confirmed.connect(on_yes)
 
 
 ## "Resume [Esc]" / "Resume [Start]": the hint follows the device and the binds (H20).
