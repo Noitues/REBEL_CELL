@@ -9,7 +9,7 @@ extends Control
 ## 2D NeonCity. Every other user (the HQ, the warm-ups, the labs) is unchanged.
 
 ## The night tint over the 2D city (multiplies its picture: green down, a violet cast).
-const NIGHT_TINT := Color(0.94, 0.78, 1.0)
+const NIGHT_TINT := Palette.CITY_2D_NIGHT_TINT
 
 ## The title's 2D-city design-review args (title_scene `--demo-*`): they keep the 2D city.
 const CITY_2D_DEMOS: Array[String] = ["--demo-district=", "--demo-ink=", "--demo-jitter=", "--demo-texture=", "--demo-cultures",
