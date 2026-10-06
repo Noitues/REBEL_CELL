@@ -238,7 +238,7 @@ func shadow_at(p: Vector2) -> float:
 
 ## The light the spill adds at `p` (the layer's own px), as the shader computes it.
 func spill_at(p: Vector2) -> Color:
-	var add := Color(0, 0, 0, 1)
+	var add := Vector3.ZERO
 	for sp in spills:
 		var d: float
 		var m := 0.0
@@ -251,5 +251,5 @@ func spill_at(p: Vector2) -> Color:
 		var k := clampf(1.0 - (d + m) / maxf(float(sp["reach"]) + m, 0.001), 0.0, 1.0)
 		var c: Color = sp["color"]
 		var w := float(sp["strength"]) * k * k
-		add = Color(minf(add.r + c.r * w, 1.0), minf(add.g + c.g * w, 1.0), minf(add.b + c.b * w, 1.0), 1.0)
-	return add
+		add = (add + Vector3(c.r, c.g, c.b) * w).min(Vector3.ONE)
+	return Color(add.x, add.y, add.z)
