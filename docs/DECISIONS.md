@@ -31,7 +31,359 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-05 — Art direction — ART-6 3A raid presentation
+Group 3 wave 1, ART-6's 2D parts (ART_BIBLE v2 §1.2, §4.8; rulings 6.2 words and 11 DOWN), on
+the **current** raid map (wave 2 moves it onto 1D's real-time unified city). Generator recipes
+ported from art-concepts-r43 rounds 19-23 (`ui19-ui22`, `netdecal21`, `icons22`). Captured
+windowed with `tools/design_lab/raid_lab.tscn` (one launch walks the kit sheet, the setup for
+every corp, the drag valid / refused, a pencil mark in its hold, the playout's end, the report and
+BREACHED); crops in `docs/art_review/ART-6/3A/`.
+1. **Panels by fiction** on 1B's materials: RAID INCOMING = the raiding corp's intercepted WORK
+   ORDER (`RaidPaper` over `CorpPaperPanel`: letterhead, the corp seal, division line, Courier
+   fields, redactions, clip, INTERCEPTED) with the Cell's forecast stamp on it; YOUR NETWORK =
+   the Cell's CRT (`RaidTerminal` over `CrtTerminalPanel`) with a socket glyph and a status
+   chip per node (`RaidChip`: HOLDS green, DOWN amber, TAKEN red, always the word); THREAT
+   INTEL = decrypted holo (`RaidHolo` over `DecryptedHoloPanel`, a local scrim, not the modal
+   one) with a row per entry route (A, B, C), the units entering there, their routing rule, and
+   the scanned v4 icons; panels re-skin per raiding corp (`RaidSkin`: hue, ink, seal crest,
+   letterhead line, order number); START DEFENSE is a vinyl sticker (`RaidSticker` over
+   `VinylSticker`) with the Speed / Skip terminal strip under it (greyed in setup); in the
+   playout START peels away (1B's `sticker_peel`) and the live strip is the feed's foot.
+   THREAT INTEL sits beside the loadout under the map at text scale 1.0 (the reference's
+   bottom left), listing at most three entry routes (A, B, C; the rest as a count); above 1.0
+   it joins the side column. The side column now scrolls at every text scale (the paper and
+   the terminals are taller than the old badges; MORE BELOW says so), YOUR NETWORK keeping a
+   150 px view of its own there; the go row wraps and the Speed / Skip strip's STEP readout
+   shows only when the column has room, so nothing widens the page.
+2. **Node status and health v2** (`RaidSocket`): an isometric chip socket with pins and the
+   pin-1 notch, the type glyph (no tags), holds green / CORE pink; only the inner fill drains
+   north to south with a hatch and a drain line, the outline and glyph stay lit; DOWN = the
+   Site markers' white bolt over a greyed socket (ruling 11); TAKEN = a burnt socket with
+   embers once its pencil mark has wiped; the setup's projected outcome is a dashed outer
+   ring (DOWN amber, TAKEN red). Sockets drain and fall live in the playout
+   (`CityMapOverlay.socket_live` from `RaidFxLayer.socket_state`). The node glyphs are vector
+   stand-ins: 1C's atlas has no node-type glyphs yet.
+3. **Grease pencil on 1B** (`GreasePencilMark` / `GreasePencilWord` through `RaidPencilPool`,
+   on a scene CanvasLayer at 95, above every UI layer the raid shows and under Fx's jack cover,
+   so PencilLint's rules hold): the threat routes in red along the real streets, snapped onto
+   them (`PencilShapes.snap_to`), are the **projection's own routes** (each threat's entry and
+   moves: preview equals result) with A/B/C circles at their entries; they write on
+   (`raid_route_write`) and cloth-wipe at the verdict (`raid_route_wipe`). State marks: INCOMING
+   once per entry Site, DOWN over its node, TAKEN v2 above its node, each written ~0.4 s, held
+   1.5 s, wiped ~0.4 s **in real time** from its beat (`raid_mark_write` / `raid_mark_hold` /
+   `raid_mark_wipe`: never shortened at 2x / 4x, longer below 1x; the hold keeps its time
+   under reduce effects, write and wipe are instant); BREACHED is one slow heavy pass
+   (`raid_breached_write`) with its underline, a red bit burst at CORE and CORE's links going
+   dark from CORE outward (`raid_bits_burst`); home's verdict is pencil (the loss red, HOLDS
+   yellow) and every node that holds gets a yellow tick. Every mark is anchored through one
+   seam, `RaidMapAnchor` (Site, street, zoom), for wave 2's projection.
+4. **Card drag** (`RaidDragPencil` over the DropLayer): the card peels and parks above its
+   slot as a vinyl sticker, a yellow pencil arrow runs to the pointer, the dock circle draws
+   round the node in reach (yellow; red + X where the rules refuse) with the IF PLACED terminal
+   (the defence, the node's outcome and HOME before > after, from the rules on a copy of the
+   campaign) or NO SLOT and the rules' reason. The DropLayer still does every drop (ANIM-4's
+   behaviour and tests unchanged); its pointer ghost hides while the sticker is parked.
+   **Not done:** "remove = click the node" (a click on a node still picks the target; returning
+   a defence is its Withdraw button or a drag to the loadout) — a behaviour change, see the
+   open question below.
+5. **Threats** (`RaidVehicle`, icons v4): shape = type from the rules (FAST moves 2 links a
+   step, SPECIAL freezes or alters links, else HEAVY; FLYING has no rule and stays in
+   docs/art_reference), fill = corp colour = health draining from the top (the threat's
+   integrity is now on its `threat_enters` event, a view field; the core change is that one
+   key), a dashed corp ring with status pips (frozen by ICE, slowed by a stationed Ghost),
+   the yellow heading arrow on hover only. ICE encases a held threat (crystals growing inward,
+   `raid_ice_grow`), a stationed Ghost lays its slow field under the units (`raid_slow_field`),
+   a Rigger's repair raises the fill with rising "+" sparks (`raid_repair_rise`). R3 class
+   beacons for stationed operatives are **not done** in wave 1 (they stand on the Safehouse's
+   roof pad, a 3D city part: wave 2).
+6. **The raid report** is the raiding corp's AFTER-ACTION REPORT (corp paper, CLASSIFIED):
+   operation, units deployed / destroyed, equipment lost (the reward), Sites reclaimed, nodes
+   disabled, the home server, the Heat (settled here), each node's before > after; the Cell's
+   pencil on it (`RaidReportPencil`: "THEY LOST n" and "OURS! +n" circled in yellow, RIP by
+   reclaimed Sites, a tick by an intact home); **CELL HOLDS** is slapped on (1B's
+   `sticker_slap`) whenever the Cell survived the raid (GDD 7.2 "a survived raid ends CELL
+   HOLDS"); the raid's one verdict (RaidVerdict) keeps its stamp on the table, so a raid that
+   cost HOME -5 shows both CELL HOLDS and HOME -5. BACK TO THE GRID is a sticker.
+- Motion: new entries (REQUIRED_IDS + lab demos): raid_mark_write / _hold / _wipe,
+  raid_breached_write, raid_bits_burst, raid_slow_field, raid_ice_grow, raid_repair_rise,
+  raid_route_write / _wipe, raid_dock_circle, raid_drag_arrow. Every one shows its end state
+  under reduce effects and headless and ends with any press (MotionSkip passive); the hold is
+  a reading time. No existing entry dropped (raid_flip, raid_result_banner and the others are
+  still read for their timing).
+- Tests: `tests/unit/test_art6_raid_presentation.gd` (routes = projection = the raid's own,
+  marks name what the raid did and end at a skip, sockets fall, holds never shortened at
+  2x / 4x, reduce effects = end state, IF PLACED = placing, the report's CELL HOLDS).
+  Tests changed because they pinned the superseded look (behaviour kept): pass 21 reads the
+  work order's title (RaidPaper), pass 24 reads the work order's fields as Labels, ANIM-R5 P8
+  reads the report's value as a Label. No test dropped.
+- Files outside 3A's area (smallest edits): `scripts/core/raid_resolver.gd` (`integrity` on
+  `threat_enters`), `tools/design_lab/motion_lab.gd` (demos + raid kinds),
+  `scripts/data/ui_motion_data.gd` / `content/config/ui_motion.tres` (union).
+- **Designer correction (never redraw concept art) and M14 resume.** Everything above that was first
+  drawn procedurally from the concept's recipes is now the concept's own art, baked by running its
+  generator script on tag art-concepts-r43 unchanged (bake scripts in `tools/art_pipeline/raid/`, each
+  with stand-in modules for the heavy kits and a black / white difference matte for alpha). This
+  supersedes, above: "the node glyphs are vector stand-ins" (2) and "R3 class beacons are not done" (5).
+  Raid visual sources:
+
+  | Piece | Source | Asset |
+  |---|---|---|
+  | Threat vehicle icons v4 (shape, corp fill draining, ring) | concept `round22_raid_world/icons22.py` | `assets/raid/icons/` (320 PNG) |
+  | Node sockets, health v2 fill, status key, YOUR NETWORK glyph marks | concept `netdecal19.Net.pad` + `netdecal21.Net.health_pad` | `assets/raid/sockets/` (7 glyphs x 10 looks) |
+  | ICE freeze crystals | concept `ui22.ice` | `assets/raid/ice/` (8 growth steps) |
+  | R3 class beacons (stationed operatives) | concept `screens21.beacon` | `assets/raid/beacons/` (8 strips x 16 frames) |
+  | BREACHED bit burst (flash, shock ring, 0 / 1 bits) | concept `ui21.bit_burst`, called as `screens22` 26_home_breached | `assets/raid/bits/bits.png` (24 frames) |
+  | Pencil routes, marks, entry circles and letters, TAKEN / BREACHED words | 1B kit (GreasePencilMark / Word, PencilShapes) | — |
+  | START, CELL HOLDS, parked card | 1B kit (VinylSticker) | — |
+  | YOUR NETWORK / RAID INCOMING / THREAT INTEL / report panels | 1B kit (CrtTerminalPanel, CorpPaperPanel, DecryptedHoloPanel) | — |
+  | Procedural (they move, or no concept image) | DOWN bolt (ruling 11 addition); hover heading arrow (turns with the threat); slow field rings (drift inward, `fx_slow_v2` geometry); repair "+" sparks and streaks (rise, `fx_repair_v2`); CORE's links de-powering at BREACHED (follow the live links); drag pencil arrow and dock circle (follow the pointer) | — |
+
+  Calls made: **Compiler Rack** has no concept glyph: it uses round 17's `picto_ram` (orchestrator:
+  scheduled in the post-M14 glyph concept slice, see "Open questions"). **DOWN** is the concept's
+  disabled socket greyed (`RaidSocket` tint) under the procedural white bolt. New palette token
+  `Palette.RAID_SLOW_BLUE` (the slow field's blue; palette.gd is 1A's file, reported). The BREACHED
+  burst plays frame = u x 24 of the strip, sized so the bake's radius (190 px) is `BITS_R` x screen_k,
+  centred 10 bake px above CORE as screens22 draws it; the procedural 0 / 1 glyph loop is gone.
+- **M14 resume fixes (2026-10-05):**
+  - The fallen home server's label read "2 → 0 HOLDS" (the core keeps the home's outcome "holds"; the
+    campaign is lost, the node is not taken): the map label, YOUR NETWORK's chip and the report row now
+    say **BREACHED** (`hq_scene.shown_outcome`, view only; its tip says the campaign is lost).
+  - START DEFENSE sat under MORE BELOW at text scale 1.0 (the scrolling column held the work order,
+    YOUR NETWORK, then START): **START and the Speed / Skip strip are pinned at the column's foot**
+    (`RaidFoot`, outside the scroll), so the page's action is on the first screen at 1.0 / 1.6 / 2.0.
+    YOUR NETWORK's own MORE BELOW then drew over START (its list ran past the column's view):
+    `ScrollHint.in_outer_views` hides a tag whose spot an outer scroll view clips (kit file, smallest
+    change; the outer view's tag says there is more).
+  - INCOMING overlapped an entry's pencil letter ("A"): a mark written above an entry now clears the
+    letter (`RaidFxLayer.mark_centres`, `entry_letters` from the route layer); DOWN stays over its node.
+  - 4C's audit P3 "the SAVED note on the raid setup is nearly invisible grey" (`Fx`, the autosave
+    stamp): 14 → 20 px with a dark keyline (`SAVED_OUTLINE`, `SAVED_KEYLINE` = NIGHT_SKY 0.9), so the
+    pink reads over any page and in greyscale. `scripts/autoload/fx.gd` is outside 3A (smallest change).
+  - Tests: `test_breached_bits_are_the_concepts_baked_burst`, `test_a_fallen_home_reads_breached_not_holds`,
+    `test_a_mark_above_an_entry_clears_its_letter` (test_art6_raid_presentation). Raid lab states added:
+    `breached_bits` (mid burst), `saved_stamp`.
+
 _(Claude Code: add entries here as you make them.)_
+
+### 2026-10-05 — Art direction — ART-10 4C menus, title, settings, HQ
+ART_BIBLE v2 §1.2, §1.3, §2.9–2.10, §4.13, §5.6; refs `menus/round33_ui_chrome/title_screen.jpg`,
+`title_screen_alt_simulate.jpg`, `abandon_dialog.jpg`, `ui_kit.jpg`, `typography.jpg`,
+`menus/round31_ui_chrome/settings_menu.jpg`. Built on 1A (palette v2, faces, theme) and 1B (material
+kit) after both merged; generator scripts read on `art-concepts-r43` (round 33 `menu33.py`, `title.py`).
+- **Chrome seam** `scripts/ui/kit/chrome/` (one class per file): `Chrome` (faces per medium, the
+  terminal drawing helpers), `CrtWindow` (TerminalWindow's API, 1B's `CrtTerminalPanel` as its glass,
+  a `> TITLE` header strip with tag chip and square marker, the foot bracket; `max_body` puts the body
+  in a FitScroll), `CrtText` (terminal reference text: ZineNote's `label` / `append` / `make_reference`
+  API, headings in terminal CAPS, prose in Plex), `VerbSticker` (a Button: PINK / YELLOW drawn by 1B's
+  `VinylSticker` inside it; BLUE with the rebel-fist letter and GLITCH drawn by it with the kit's raster
+  Anton; the lime die-cut halo on focus, never brackets), `MenuChip` (terminal button with a label
+  and a line; `selected` = cyan fill), `CrtSwitch` (an Options row: name in CAPS, line in Plex, the
+  ON / OFF pill with a visible OFF track; a CheckButton, so C's behaviour and tests are unchanged),
+  `CrtTiles` (tiles fronting a hidden OptionButton), `HeatGlitchPreview`, `NeonSign`, `PencilPlan`,
+  `PencilWords`, `OnAirTicker`, and `shaders/chrome/vinyl_sticker.gdshader` (the BLUE / GLITCH fill).
+- **Concept art, not redrawn (designer correction 2026-10-05):** `tools/art/bake_menus_r33.py` runs
+  the round 33 ui_chrome scripts from `art-concepts-r43` unchanged (only the font paths and the
+  defaults that captured them are re-pointed at `assets/fonts`) and splits their output into
+  `assets/ui/menus/`: the BREACH / SIMULATE / OVERTHROW stickers (rest, focus halo, BREACH's 12
+  gloss-sweep frames, SIMULATE's two burst frames; `title.stk`, `menu33`), the yellow title stickers
+  OPTIONS, PAUSED, CODEX, STATS, CAMPAIGN SLOTS, NEW CAMPAIGN (`ui31.sticker`, round 33 parameters),
+  the REBEL_CELL sign per lit state of its 48-frame loop and its glow (`title.board` + `neon`), the
+  pencil plan and NEVER SLEEP + crown (`ui31.Pencil`), the pill switches, slider handle, tab and tile
+  plates and the title's chip plates (`ui31.toggle / slider / tabs / term_panel`, `settings.tiles`),
+  the ON AIR block (`title.ticker`) and the Heat glitch preview frames (the round 18 storyboard,
+  cropped as settings.py crops it). Stickers are at 2x the 1920 board (a third in the game), the
+  rest at 1x (two thirds). The title's verb rows keep the concept's 112 px board pitch so the
+  pencil numbers sit on them. **Every visual and its source:** sign, verb stickers, title stickers,
+  plan, motto, switches, slider handle, tabs, tiles, chip plates, ON AIR, glitch preview = baked
+  concept art (above). Drawn, with the reason: terminal windows (CrtWindow = 1B's CrtTerminalPanel
+  glass, the coordinator's seam; its header, tag chip and square carry live, translated words), the
+  MORE / PROFILE / Options / pause terminals (same), the chip and tile words, the ticker's crawl
+  (live words), the codex / stats text, the HQ (no concept: G13 dropped the HQ room), the
+  new-campaign page and its TRUST NO ONE pencil (no concept: §4.14 "new-campaign page" not
+  designed), stickers for words the concept never drew (the kit's VinylSticker), the quit confirm (2D's
+  ConfirmDialog). The abandon dialog's answer stickers are abandon.py's own (baked, below). The title's backdrop stays the live city (round 33 used pre-rendered city frames;
+  the city is 1D / ART-5's), dimmed.
+- **Title option A (D10, confirmed):** the REBEL_CELL neon tube sign on its circuit board (idle loop
+  `title_sign_flicker`: underscore cursor, an E stutter, a two-frame drop to CELL); 1. BREACH (pink,
+  default focus) = Continue with the slot line `slot // corp // run N // Heat H`; 2. SIMULATE (the
+  CORRUPTED glitch inside the letters, bursts on frames 9–10 and 27–28 of 48, `title_glitch_burst`) =
+  Tutorial; 3. OVERTHROW (blue, last O the red fist) = New campaign. DISABLE stays the Cell's motto
+  (round 33 note 3). The grease-pencil plan numbers the stickers; NEVER SLEEP + crown in pencil; the
+  MORE terminal (CAMPAIGN SLOTS [C], CODEX [X], STATS & ACHIEVEMENTS [S], OPTIONS [O], QUIT [ESC] — the
+  keys work, pad Y opens the Codex, B / Esc backs out of a sub-page); PROFILE // THE CELL tags; the
+  build line, pad prompts and the ON AIR ticker (`on_air_ticker`). The city is dimmed behind it.
+  **Calls:** with no saved campaign BREACH is the grey disabled sticker and SIMULATE takes the focus;
+  OVERTHROW starts a campaign in the first empty slot (the slots page when all three hold one); the
+  stickers and their chips do the same action (the chip has no focus of its own; it lights with its
+  sticker). Big text (≥ 1.6): MORE heads the right column, the chips drop their second line (it stays
+  in the tooltip), the motto and the PROFILE panel give way (Stats shows the same tags).
+- **Abandon dialog (resume, 2026-10-05):** `AbandonDialog` (kit/chrome) extends 2D's ConfirmDialog
+  on its `HudDialogPanel`: `> CONFIRM // TITLE`, CANNOT UNDO + pip in HARM, the question, the body in
+  Plex, the costs (terminal CAPS names, values beside them, two pairs a row), an optional Heat line in
+  HARM and what stays in GAIN, the rule, then abandon.py's own stickers: yellow CANCEL (default focus,
+  its lime die-cut halo) and the pink verb, tilted as abandon.py places them, each with its terminal
+  caption (grey for the safe answer, pink for the verb). `tools/art/bake_menus_r33.py --only dialog`
+  bakes `dialog_cancel`, `dialog_burn_it` and `dialog_delete` (rest + focus) with abandon.py's
+  `ui31.sticker` parameters (DELETE with BURN IT's); a translated word falls back to the kit sticker.
+  **Calls:** (1) there is no in-run abandon on main (the GDD has no voluntary abandon: building one is a
+  mechanic), so the dialog serves the title's delete slot: `DELETE SLOT`, verb DELETE, costs TARGET /
+  RUNS / HEAT / ICE from the slot, "Your stats and achievements stay." (the profile is its own file),
+  captions "keep going [B]" / "erase slot N [A]"; `dialog_burn_it` is baked for when an abandon-run
+  rule exists. The quit confirms (title, pause) stay 2D's ConfirmDialog. (2) The pad hold-A 0.8 s on
+  the verb is a proposal in the bible (§4.13): not built (open question below). (3) The confirm
+  re-centres as its panel takes its size (at 2.0 it ran off the bottom). (4) The title's page focus
+  that lands when the page's enter motion ends no longer takes the focus from an open confirm
+  (windowed, BREACH behind the scrim took it: CANCEL showed no halo). (5) Outside 4C, smallest edits:
+  `confirm_dialog.gd` `_sticker` returns `Button` (AbandonDialog overrides it); `hud_dialog_panel.gd`
+  draws its header words and tag on an unshaded Node2D child (the panel's CRT canvas shader sampled
+  the MSDF font atlas raw: every dialog's header read dim and soft) and adds the tag's pip.
+- **Title / pages fit (resume):** at 2.0 the verbs' chips are as wide as their labels and MORE's
+  stats line reads STATS (its page's title; the tooltip names the achievements), so MORE clears the
+  verbs; each MORE line keeps room for its key hint (`HINT_GAP`; the hint ran over STATS &
+  ACHIEVEMENTS at 2.0); PROFILE sits above the pad prompts like MORE (`FOOT_GAP`; they overlapped at
+  1.0); the title's terminal chips inset their words by the plate's baked glow (`MenuChip.CHIP_GLOW`:
+  the words sat on the frame). Codex and stats texts share the page's room and scroll (`_flex`,
+  `TEXT_FLOOR_H`), and from 1.6 the run history is a section of the records text (its own window did
+  not fit over the ticker); slot rows keep `SLOT_ROW_GAP` for the focus brackets. The pause menu's
+  PAUSED sticker sits over its header's right end (as OPTIONS does) so `> PAUSED` reads. The
+  new-campaign setup is a form (`SetupForm`: names and their controls, two fields a row, one from 1.6)
+  instead of one wrapping line.
+- **Options (round 31):** `> TITLE // OPTIONS` or `> PAUSED // OPTIONS`, the yellow OPTIONS sticker,
+  terminal tabs (LB / RB switch), Accessibility in two columns (EFFECTS & MOTION switches; TEXT SCALE
+  slider with its value, ticks and live sample; colour-blind and resolve-speed tiles; the Heat glitch
+  preview with ON / OFF frames and LIMITED under the flash limiter or reduce effects; HEAT GLITCH's row
+  shows the LIMITED chip). Every row carries `UiFocus.META_NO_SCALE` (ART-0 carry-over: the pad focus
+  scale moved full-width rows' words and put the brackets past the panel). Below text scale 1.5, and
+  never inside the pause menu (`compact`), one column. **Call:** the reference's RESET TO DEFAULTS for
+  every setting is not built (no such rule; the Controls section keeps its keybind reset); D13's
+  "Always show all nodes" row is not on main yet (3B) — it takes a CrtSwitch row when it lands.
+- **Pause, codex, stats, slots, new campaign:** yellow title stickers over v2 terminals; the codex and
+  stats are terminal text (the zine note is a rejected medium); stats gain the profile tag grid; the
+  pause lines are terminal CAPS menu items. The new-campaign page swaps the spray tag / scrawl
+  (rejected) for its NEW CAMPAIGN sticker and TRUST NO ONE in pencil; its words say what they do
+  (City seed, Next seed, ICE difficulty, with icons and tooltips; audit P3).
+- **HQ (G13 not ruled: every action kept):** CYBERDECK, CELL STATUS, CITY GRID, CREW, BLACK MARKET, story,
+  the Site card and RUNS OPEN NOW are CrtWindows; PIRATE RADIO is terminal text (the DJ is a voice on
+  the Cell's feed); the dossier's name and fields are Courier Prime (corp paper). Raid parts (3A) and
+  campaign end (4D) untouched. **Not done:** the crew dossier on 1B's `CorpPaperPanel` (it keeps its
+  paper card with Courier Prime: the panel's letterhead / stamp slot would need the card's orders and
+  HP strip re-laid; proposed slice) and JACK IN as a vinyl sticker (ZineStamp keeps `jack_ring_breathe`
+  and its tests; a slice once 1B's sticker can breathe).
+- **Audit (group1_naive) P2:** the top bar (HudStats, every screen) is terminal tags with names at the
+  caption step, no colour-coded paper; Heat's value and icon in its band colour (§2.8); the Heat poster's
+  number and bar in the band colour (ink on its paper for COOL). **Not done:** the Heat count-up vs the
+  banner (P3, ART-5's poster timing; the banner names the threshold crossed, the number rolls on after
+  it) and the raid setup's SAVED (Fx's stamp, 3A's screen: reported).
+- **Motion:** new `title_glitch_burst`, `title_sign_flicker`, `on_air_ticker` (T0; REQUIRED_IDS; lab
+  demos `screen title_glitch / title_sign / ticker`); the stickers use 1B's `sticker_hover` /
+  `sticker_press`. Reduce effects, headless or an entry off: the sign holds lit, the glitch shows its
+  light split, the ticker holds still, the stickers take their end states at once.
+- **Tokens:** Palette gains STICKER_BLUE / STICKER_BLUE_LOW, NEON_TUBE / NEON_CORE, BOARD_* (smallest
+  edit, reported). Fonts: the stickers and the sign draw from `VinylSticker.art_font()` (raster Anton:
+  their outlines are wider than the MSDF field).
+- **Merges:** the 1B merge resolved `ui_motion.tres` with the two-way tool, which kept 4C's copy of
+  entries main had retuned; the Group 2 merge rebuilt the file as main's plus 4C's three entries, so
+  main's tunings are back.
+- **Tests:** `tests/unit/test_art10_menus.gd` (fast). Adapted (they pinned the M13 look the art
+  replaces; behaviour kept): `test_visual_merge` pause menu = CrtWindow; `test_art0_kit_states` the
+  confirm's scrim is a plain child behind it (still full screen, still takes the clicks);
+  `test_horizontal_pass15` reads `window.body`; `test_horizontal_pass21_screens` the title profile is a
+  caption + value grid (tooltips, never "none"), the MORE lines carry key hints instead of icons, the
+  plan is the three stickers on screen at 2.0, the radio shows all its words; `test_horizontal_pass23
+  / 24_screens` and `test_anim6_screen_motion` read PIRATE RADIO as CrtText, the plan's stickers are
+  translated once, CONTINUE is a TerminalChip with the slot line (its tooltip at big text). No test
+  dropped.
+
+### 2026-10-05 — Art direction — asset parity: combat and foundations (M14)
+Designer ruling "REUSE ART-PASS ASSETS": every combat or foundation image the art pass made is exported by its own
+generator on tag art-concepts-r43 (wrappers in `tools/art/export_*.py` change only font paths and split live text off),
+and the game draws that image. Inventory: `docs/handoff/m14_asset_parity/combat.md`.
+- Replaced: firmware dies (4 rarities + lit), Daemon tiles (12 idle frames + fire), hand card faces (wheel/hack/system
+  x 4 rarities; new `CardFace`, combat hand only), HUD marks from the 1C atlas, SEND IT, PERFECT/GOOD/WEAK stickers
+  (`StickerArt`), the EVADE `>>` token (flight and standing on the wheel), the drone sticker and its six flying pieces.
+- Landing word WEAK is now the word "WEAK" (was x0.5) and amber, as the concept; the x0.5 stays on the rail. Accepted.
+- Procedural kept, each with its reason, in the inventory (no concept sprite: bricks, hexes, bits, tears, shards, rings,
+  cracks, jaws, Heat mark, lethal skull, dock geometry, peel curl, live-text stickers, kit materials, the wheel disc's
+  bezel/hub, which are live geometry).
+- New strings: WEAK, WHEEL, HACK, SYSTEM (translated once; `CardFace.KIND_WORDS`).
+- Motion is unchanged (slap, peel, dissolve, token flight, drone slap and burst keep their ui_motion entries).
+- The two ANIM reds the brief named (`vinyl_sticker.gd` inline tween, `fx_draw.gd` literal) no longer show in
+  `test_anim_r6_rules` / `test_anim_r2_combat` on this branch; the one remaining r6 failure is
+  `test_every_script_that_animates_registers_or_says_why_not` for `campaign_end/rubber_stamp.gd` and
+  `kit/route_overlay.gd` (ART-11 and ART-5 5d files, not mine).
+
+### 2026-10-05 — Art direction — asset parity: city and screens
+Designer ruling: art-pass assets are exported by the art pass's own generators (tag `art-concepts-r43`), never redrawn.
+Inventory, sources and the procedural list: `docs/handoff/m14_asset_parity/city_screens.md`; wrappers in
+`tools/art_pipeline/parity/`; before/after captures in `docs/art_review/ART-parity/city_screens/`.
+- **Replaced:** Site discs, pads, slip, badge and DOWN bolt (`assets/city/grid_markers/`); route stickers and operative token
+  (`assets/netrun/route/`); seal emblems, padlock, house motifs, post-its, print stock and manila (`assets/campaign_end/`);
+  billboard panels (`assets/city/billboards/`, packed R = lightened mask, A = alpha, tinted by the instance colour in
+  `holo_billboard.gdshader`); the CLOSE flying car, chopper and drone (`assets/city/vehicles/`, Blender 5.2 running the
+  concept builders `unified38.flying_car`, `district20.heli_geo` / `drone_geo`, extracted with `ast` and run verbatim).
+- **Exploit marker = the v4 generator's single gold key** (orchestrator call): approved art wins over the bible's "keyring".
+  The Exploit key MEANINGS word is "Gold key"; strings re-exported.
+- **Corp seals use the round 6 `EM_` emblems** the seal script builds (halo and triangle, hex), not the bible crests
+  (orchestrator call: the art pass is correct).
+- **Car model as data:** the car needs per-vertex CUSTOM0 (part id), and an imported mesh cannot be read back headless, so
+  `CityMotionMeshes.car` reads `flying_car_tris.json` (the same triangles as `flying_car.glb`). Chopper and drone are used
+  as the imported glb meshes; vertex colours of the toon bodies are tones relative to the concept body colour, so the tuned
+  `chopper_color` / `drone_color` stay the body tone. The rotor blur disc takes the model's blade radius and height (the
+  ANIM entry stays; the static blades are not drawn).
+- **Dropped test assertion:** `GlyphIcon` sub-badge on the Site `type_glyph()` (the badge is baked into the disc art; `disc_art()`
+  replaces it). **Tests:** `test_city_motion` gains the asset check; MotionSkip registration of `rubber_stamp` and
+  `route_overlay` (`NOT_SKIPPABLE` with reason) kept.
+- **Procedural, with reasons:** see the inventory (state rings, text rings and stamps, tape, portrait chrome, FAR/MEDIUM car
+  tiers, the lane line and others the concept draws procedurally or that follow state, zoom or text).
+- **Proposed slice (not built):** host the 2A WheelView as a ViewportTexture in `JackSequence._draw_wheel` (the concept's
+  `zoom36.wheel` has fixed English labels), together with the combat parity sweep.
+
+### 2026-10-05 — Art direction — ART-12 12s skins
+Agent 12s (the M12 box "Skins": procedural palette skins on the v2 tokens, ART_12_BATCH).
+- **Which skins.** The M12 box names none, so: `v2` (the default and first; the identity, ART_BIBLE §2
+  exactly), `cobalt` (deep blue terminal) and `graphite` (neutral grey terminal). A fourth, `verdigris`
+  (sea-green), was built and dropped: teal sits between PROTECT cyan and GAIN green and failed the
+  OKLab ΔE > 0.1 separation test against both.
+- **What a skin is** (`PaletteSkins`, `scripts/ui/kit/palette_skins.gd`): new values for the chrome
+  tokens only (TERMINAL_BG / _HOT / _EDGE / _TEXT, TEXT_HI / MID / LO, SELECTED, ON_SELECTED,
+  CRT_GLASS_TOP / BOTTOM), made procedurally in OKLCH from the v2 values by one recipe per skin
+  (an ink hue, a glass hue, chroma scales, an accent lightness shift; v2 lightness kept elsewhere so
+  contrast holds). No concept asset exists for skins (the art pass drew v2 only), so procedural is
+  the reuse rule's allowed case; nothing is redrawn.
+- **Where it is realised.** Palette's tokens are compile-time constants used in other files' `const`s,
+  so they are not changed: a skin is applied where chrome is drawn, as HighContrast / ColorblindLayer
+  are. `UiTheme.build` calls `PaletteSkins.apply(theme, active())` before high contrast (by exact v2
+  rgb match, alpha kept); `UiTheme.terminal_box` / `terminal_button_boxes` call `apply_box`;
+  `HudSkin.draw_terminal_panel` and `CrtTerminalPanel` (Cell cyan accent only, glass, text) wrap their
+  colours in `PaletteSkins.chrome()`; `ZinePanel`'s terminal mode (the Options / pause / confirm glass,
+  its edge and corner ticks) does too and redraws on `Settings.changed`, so the open Options dialog
+  turns as a skin is picked (found in the captures: the dialog had kept v2 navy). A colour that is not a chrome token passes through unchanged, so
+  a corp edge or a Heat word is never re-valued. `active()` finds Settings by node path (the autoload
+  name breaks `-s` tools at compile time).
+- **Semantics kept.** Where cyan means PROTECT / the TURN Daemon / Uncommon / NET_CYAN it stays #5CE1FF
+  on every skin; HARM / GAIN, the Heat bands, the corp kits, FOCUS lime and the stickers keep v2;
+  every Palette.PAIRED_WITH greyscale cue stays. Views that set their own `Palette.TEXT_*` overrides
+  keep the v2 near-white text (still readable on every skin's glass) until their batch reads
+  `PaletteSkins.chrome`; kit painters pick up a skin on their next redraw, the theme at once via
+  `Settings.changed`.
+- **Settings and Options.** `Settings.palette_skin` (default `v2`), `PALETTE_SKINS`, `set_palette_skin`
+  (unknown ids ignored), to_dict / from_dict (an old file without the key, or an unknown id, loads v2),
+  covered by snapshot / restore. Options > Display has an "Interface skin" row (`SettingsPanel.skin_option`,
+  "SkinOption"); 4C's restyle of the panel should keep the row. Skins are free (no Profile unlock):
+  see the open question.
+- **Contrast.** Every skin passes 1A's checks (TEXT_HI / TERMINAL_TEXT / the edge colour >= 9:1 on
+  glass, TEXT_MID / TEXT_LO >= 4.5, hover glass >= 7, focus lime >= 7, words on the selected fill
+  >= 7, Heat bands / HARM / GAIN / WARN >= 4.5), the theme's own text on its own boxes, and ΔE > 0.1
+  between each skin's edge / selected fill and HARM, GAIN, the Heat bands, FOCUS, the stickers and
+  every corp colour, and between skins. Cobalt's accent lightness shift is -0.07 (at -0.09 its edge
+  was 8.7:1 on glass).
+- **Captures.** `tools/visual_qa/review_pack.gd --skins=v2,cobalt,graphite` walks the screens once per
+  skin into `<out>/<skin>/`; contact sheets in `docs/art_review/ART-12/skins/` (title, HQ, Grid,
+  combat start, Mainframe, event, Options at 800x450; read: every screen reads on every skin, paper
+  panels, stickers, HP / Heat words and corp edges unchanged). Still v2 on every skin, by design until
+  their batch reads `PaletteSkins.chrome`: view-drawn panel frames and headings that use `Palette`
+  constants directly (e.g. HQ's panel corner frames and "CYBERDECK" heading cyan).
+- Test: `tests/unit/test_art12_skins.gd` (fast tier, 10 tests). No M13 test dropped.
 
 ### 2026-10-05 — Art direction — ART-0 audit fixes
 Fixes every finding of `docs/handoff/m14_audit/ART-0_horizontal.md` (3 P2, 12 P3); nothing deferred.
@@ -7533,6 +7885,13 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **Asset parity, card kinds (2026-10-05, default implemented):** the concept's card face has three kinds, WHEEL / HACK /
+  SYSTEM. The game's violet "other" family (rest and similar cards) is drawn as SYSTEM (cyan). Is a fourth face wanted?
+- **ART-12 12s skins (2026-10-05; default built, see "Art direction — ART-12 12s skins"):** (1) skins are
+  free in Options > Display; should they become Profile unlocks (UnlockKind.SKIN) instead? (2) the set is
+  v2 + cobalt + graphite (a sea-green skin was dropped for sitting between PROTECT and GAIN); say if you
+  want others, or skins for the corp kits too.
+
 - **ART-5 5c city motion (defaults implemented):** (1) the netrun transit turns the sky-lane
   cars off (bible 4.1) while `cars_lod` shows the CLOSE tier at a netrun close-up: CLOSE is built
   and tested but only shows below ortho 150 outside the netrun band; should the transit show it?
@@ -7549,6 +7908,27 @@ and annotated in the GDD where it changes a rule.
   no rule drives day or suspicion. (4) DISPATCH's fist shows on the Cell's district in the
   REBEL_CELL campaign only. (5) The Cell's blackout reveal plays once per game session, on the
   first Grid visit.
+
+- **ART-6 3A (raid):** "Remove to hand = click the node" (ART_BIBLE v2 §4.8 card drag) changes what a click on a
+  claimed node does in the raid setup (today it picks the target for the cards, a behaviour the pad path and
+  several tests rely on). Default kept: click = pick the target; a defence returns by its Withdraw button or a
+  drag to the loadout. Confirm the change, and whether the pad keeps a separate target pick.
+
+### 2026-10-05 — ART-10 4C: hold-to-confirm on the abandon dialog's verb
+ART_BIBLE §4.13 calls the pad's 0.8 s hold on the committing verb (BURN IT) a proposal: not built
+(A presses it like any button). Default: no hold. Build it if the designer wants it.
+
+### 2026-10-05 — ART-10 4C: an in-run "abandon run" (the dialog's own subject)
+The round 33 abandon dialog asks "Abandon the run?" (operative lost with everything unbanked, Heat
++10 + tier, banked Schematics stay). The GDD has no voluntary abandon (a run ends by death, jack-out
+or completion), so it is a mechanic and is not built. Default: the dialog (`AbandonDialog`, with
+`dialog_burn_it` baked) serves the title's delete slot. If the designer wants an abandon-run line in
+the netrun pause menu, its rule would be the death rule (GDD 4.2) and the dialog takes its costs.
+
+### 2026-10-05 — ART-10 4C: the HQ dossier on corp paper and JACK IN as a vinyl sticker
+The crew dossier keeps its paper card with Courier Prime (1B's CorpPaperPanel would need its orders
+and HP strip re-laid round the letterhead and stamp slot); JACK IN keeps its ZineStamp (its
+`jack_ring_breathe` motion and tests). Default: as is; proposed as a slice with ART-5 / G13.
 
 - **ART-5 5b: the REBEL_CELL fist on the real city (2026-10-05):** the landmark export carries a standalone district
   patch and the crest as a mask texture; on the unified city the fist must be the city's own buildings' windows
@@ -7643,7 +8023,9 @@ and annotated in the GDD where it changes a rule.
 - **Glyph concept slice after M14 (designer, 2026-10-05, from the two ART-1 1C questions below):** draw
   glyphs for Heat, Cycles, Schematics and custom effects, and redraw the 16 px twins in the Firmware /
   Daemon set; both defaults hold for M14 (pending stand-in; twins allow-listed). Scheduled with the other
-  post-M14 concept slice (the Cell's own crest).
+  post-M14 concept slice (the Cell's own crest). Also in this slice (orchestrator, 2026-10-05, from ART-6 3A):
+  a **Compiler Rack** node glyph: the concept has none, so the raid socket and the YOUR NETWORK mark use
+  round 17's `picto_ram` (baked with the other sockets) until the slice draws one.
 - ~~**Card pictograms with no glyph yet (2026-10-05, ART-1 1C):**~~ resolved: default (see the glyph concept slice above). Original note: four card effect types have no glyph in
   the bible's set: `effect_modify_heat` (Heat up/down), `effect_gain_cycles` (Cycles),
   `effect_gain_schematics` (Schematics) and `effect_custom` (a custom handler's own effect; the card

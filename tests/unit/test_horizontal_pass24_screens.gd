@@ -414,7 +414,7 @@ func test_hq_raid_and_grid_words_are_translated_once() -> void:
 	assert_true(String(hq.hud._title).begins_with(PSEUDO_PREFIX), "the screen title: %s" % hq.hud._title)
 	for i in hq.hud.stats.items.size():
 		assert_true(hq.hud.stats.tag_name(i).begins_with(PSEUDO_PREFIX), "top-bar word %s" % hq.hud.stats.tag_name(i))
-	var radio := hq._panel.find_child("PirateRadio", true, false) as ZineNote
+	var radio := hq._panel.find_child("PirateRadio", true, false) as CrtText  # ART-10 4C: terminal text
 	assert_true(radio.title.begins_with(PSEUDO_PREFIX), "PIRATE RADIO's title")
 	assert_true(radio.label.get_parsed_text().contains(PSEUDO_PREFIX), "its words")
 	for n in _all(hq._panel):
@@ -433,7 +433,7 @@ func test_hq_raid_and_grid_words_are_translated_once() -> void:
 	await _frames(8)
 	_assert_once(hq, "raid setup")
 	for key in ["HomeForecast", "ThreatsStopped", "RaidStrength"]:
-		var b := hq._panel.find_child(key, true, false) as Badge
+		var b := hq._panel.find_child(key, true, false) as Label  # ART-6 3A: the work order's fields
 		assert_true(b.text.begins_with(PSEUDO_PREFIX), "%s: '%s'" % [key, b.text])
 	assert_true(String(hq.hud._title).begins_with(PSEUDO_PREFIX), "the raid title")
 	var run := hq._panel.find_child("RunRaid", true, false) as Button
@@ -490,8 +490,9 @@ func test_title_words_are_translated_once() -> void:
 	await _frames(4)
 	_assert_once(title, "title")
 	_assert_translated(title._panel, "title")
-	var plan := title._panel.find_child("PlanNote", true, false) as ZineNote
-	assert_true(plan.label.get_parsed_text().contains(PSEUDO_PREFIX), "the plan note: 1. BREACH ...")
+	# ART-10 4C: the plan is the three verb stickers (1. BREACH ...), each translated once.
+	for v in title.verbs:
+		assert_true(v.shown_text().begins_with(PSEUDO_PREFIX), "the plan: %s" % v.shown_text())
 	await _close(title)
 
 
@@ -826,7 +827,7 @@ func test_every_crew_dossier_is_reachable_at_big_text() -> void:
 			assert_true(CrewCard.is_compact(), "compact dossiers at big text")
 			assert_almost_eq(cards[0].get_global_rect().position.y, cards[1].get_global_rect().position.y, 1.0,
 				"the first two dossiers side by side at big text: %s, %s" % [cards[0].get_global_rect(), cards[1].get_global_rect()])
-		var radio := hq._panel.find_child("PirateRadio", true, false) as ZineNote
+		var radio := hq._panel.find_child("PirateRadio", true, false) as CrtText  # ART-10 4C: terminal text
 		assert_false(radio.label.get_parsed_text().contains("RC1-"), "no share code on the lore note")
 		assert_string_contains(radio.tooltip_text, "RC1-", "it is in the note's tooltip")
 		hq.open_settings()
@@ -880,22 +881,14 @@ func test_the_continue_line_reads_as_a_line_of_icons() -> void:
 		title.continue_slot = SLOT
 		title.show_main()
 		await _frames(4)
-		var cont := title._panel.find_child("Continue", true, false) as Button
+		# ART-10 4C (round 33): BREACH's terminal chip reads CONTINUE with the slot line under it
+		# ("slot // corp // run N // Heat H"); at big text the line moves into the tooltip.
+		var cont := title._panel.find_child("Continue", true, false) as MenuChip
 		assert_not_null(cont, "Continue offers the slot")
 		assert_eq(cont.text, "Continue", "one word on its own line")
-		var line := cont.find_child("SlotLine", true, false) as IconLine
-		assert_not_null(line, "the saved campaign as a line under it")
-		var kinds := []
-		for it in line.items:
-			kinds.append(it["kind"])
-		assert_true(kinds.has(StatIcon.HEAT) and kinds.has(StatIcon.ICE) and kinds.has(StatIcon.RUNS), "Heat, ICE and runs by their icons")
-		assert_string_contains(line.lead, TextDb.t(RunManager.corporation, "display_name"))
-		var parts := line.part_rects()
-		for i in parts.size():
-			for j in range(i + 1, parts.size()):
-				assert_false(parts[i].intersects(parts[j]), "the line's parts apart")
-		var lr := line.get_global_rect()
-		assert_true(cont.get_global_rect().grow(1.0).encloses(lr), "the line %s sits on its button %s (text %.1f)" % [lr, cont.get_global_rect(), scale])
+		if scale <= 1.0:
+			assert_string_contains(cont.line, TextDb.t(RunManager.corporation, "display_name"), "the saved campaign as a line under it")
+			assert_string_contains(cont.line, "Heat 14")
 		assert_string_contains(cont.tooltip_text, "Heat 14", "the tooltip says it in words")
 		await _close(title)
 	var src := FileAccess.get_file_as_string("res://tools/playtest/storyboard.gd")

@@ -186,9 +186,11 @@ func test_every_stat_tag_has_its_icon_on_every_screen() -> void:
 		assert_true(StatIcon.ALL.has(end_tags.icon_of(i)), "run end tag %s has an icon" % end_tags.items[i][0])
 	var title := _open(TITLE)
 	await _frames()
-	var profile := title._panel.find_child("Tags", true, false) as HudStats
-	for i in profile.items.size():
-		assert_true(StatIcon.ALL.has(profile.icon_of(i)), "profile tag %s has an icon" % profile.items[i][0])
+	# ART-10 4C: the title's profile is a terminal grid of caption + value (round 33 PROFILE
+	# CELL-03): no icons there; each cell says what it counts in its tooltip.
+	var profile := title._panel.find_child("Tags", true, false) as GridContainer
+	for cell in profile.get_children():
+		assert_ne((cell as Control).tooltip_text, "", "profile cell %s says what it counts" % cell.name)
 
 
 func test_every_icon_draws() -> void:
@@ -444,7 +446,8 @@ func test_menus_and_skip_leave_carry_icons() -> void:
 	await _frames()
 	for b in _all(title._panel):
 		if b is Button and (b as Button).theme_type_variation == &"MenuItem":
-			assert_ne(IconMark.kind_of(b), &"", "title item '%s' has an icon" % (b as Button).text)
+			# ART-10 4C (round 33 MORE): the title's lines carry their key hint, not an icon.
+			assert_not_null(b.find_child("KeyHint", false, false), "title item '%s' shows its key" % (b as Button).text)
 			assert_ne((b as Button).tooltip_text, "", "title item '%s' has a tooltip" % (b as Button).text)
 	var hq := _open(HQ)
 	await _frames()
@@ -527,10 +530,9 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 		if n is Label and (n as Label).text == RunManager.campaign.roster[0].name.to_upper():
 			name_label = n
 	assert_eq(name_label.get_theme_font_size(&"font_size"), roundi(CrewCard.NAME_SIZE * Settings.TEXT_SCALE_MAX), "the dossier's name grows")
-	var radio := hq._panel.find_child("PirateRadio", true, false) as ZineNote
-	var line_h := UiTheme.line_px(Palette.mono(), roundi(UiTheme.BASE_SIZE * Settings.text_scale))
-	var lines := radio.label.size.y / line_h
-	assert_almost_eq(lines, roundf(lines), 0.05, "the radio shows whole lines (%.2f)" % lines)
+	# ART-10 4C: the radio is terminal text that grows to its words (fit_content): all shown.
+	var radio := hq._panel.find_child("PirateRadio", true, false) as CrtText
+	assert_true(radio.label.get_content_height() <= radio.label.size.y + 1.0, "the radio shows all its words")
 	hq.open_loadout()
 	await _frames()
 	var deck := (hq.get_node("LoadoutView") as LoadoutView)._view as DeckView
@@ -565,8 +567,9 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 	assert_true(skip.end.y <= CANVAS.y, "Skip on screen at TEXT_SCALE_MAX: %s" % skip)
 	var title := _open(TITLE)
 	await _frames()
-	var plan := title._panel.find_child("PlanNote", true, false) as ZineNote
-	assert_true(plan.label.get_content_height() <= plan.label.size.y + 1.0, "the plan note shows 1. BREACH at TEXT_SCALE_MAX (%d > %d)" % [plan.label.get_content_height(), plan.label.size.y])
+	# ART-10 4C: the plan is the three verb stickers (1. BREACH ...), all on the screen.
+	for v in title.verbs:
+		assert_true(Rect2(Vector2.ZERO, CANVAS).encloses(v.get_global_rect()), "%s on screen at TEXT_SCALE_MAX" % v.shown_text())
 
 
 func test_grid_side_column_scrolls_and_the_hq_says_there_is_more_below() -> void:
@@ -644,8 +647,8 @@ func test_new_hq_code_reads_content_text_through_textdb() -> void:
 	assert_true(asset_named, "asset badge")
 	hq.show_raid()
 	await _frames()
-	var card := hq._panel.find_child("RaidCard", true, false) as TerminalWindow
-	assert_string_contains(card.title, "XL_RAID", "raid card title")
+	var card := hq._panel.find_child("RaidCard", true, false) as RaidPaper  # ART-6 3A: the work order is corp paper
+	assert_string_contains(card.title_label.text, "XL_RAID", "raid card title")
 
 
 func test_one_name_for_jack_in_and_names_on_the_title() -> void:
@@ -664,8 +667,8 @@ func test_one_name_for_jack_in_and_names_on_the_title() -> void:
 	var corp := RunManager.lookup().get_content(RunManager.DEFAULT_CORPORATION) as CorporationData
 	var line: String = title._describe({"corporation": String(corp.id), "heat": 14, "ice": 0, "runs": 0, "state": "active", "in_run": false})
 	assert_true(line.begins_with(TextDb.t(corp, "display_name")), "the Continue line names the corporation: %s" % line)
-	var tags := title._panel.find_child("Tags", true, false) as HudStats
-	for it in tags.items:
-		assert_ne(String(it[1]), "none", "a number or a dash, never 'none'")
+	var tags := title._panel.find_child("Tags", true, false) as GridContainer
+	for v in tags.find_children("Value", "Label", true, false):
+		assert_ne((v as Label).text, "none", "a number or a dash, never 'none'")
 	assert_eq(HudStats.ice_value(-1), HudStats.NO_VALUE)
 	assert_eq(HudStats.ice_value(3), "3")

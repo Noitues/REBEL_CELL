@@ -338,7 +338,7 @@ func test_the_poster_word_shows_and_the_radio_note_is_whole() -> void:
 		word.position += poster.global_position
 		var pr := poster.get_global_rect()
 		assert_true(pr.encloses(word), "the band word %s inside the poster %s (text %.1f)" % [word, pr, scale])
-		var radio := hq._panel.find_child("PirateRadio", true, false) as ZineNote
+		var radio := hq._panel.find_child("PirateRadio", true, false) as CrtText  # ART-10 4C: terminal text
 		assert_false(radio.get_global_rect().intersects(word), "the radio note leaves the word alone")
 		assert_true(radio.label.get_content_height() <= radio.label.size.y + 1.0, "the radio's words are whole (%.1f in %.1f, text %.1f)" % [radio.label.get_content_height(), radio.label.size.y, scale])
 		assert_true(radio.get_global_rect().encloses(radio.label.get_global_rect()), "the words stay on the note")

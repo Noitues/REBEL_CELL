@@ -80,7 +80,7 @@ func _init(question: String, yes_text: String = "YES", no_text: String = "CANCEL
 
 ## A vinyl sticker answer with its caption under it (no system word: the caption is the
 ## line under the sticker).
-func _sticker(row: Container, word: String, note: String, paint: Color) -> SendItSticker:
+func _sticker(row: Container, word: String, note: String, paint: Color) -> Button:  # ART-10 4C: AbandonDialog overrides it
 	var b := SendItSticker.new(word, "", paint, STICKER_FONT)
 	b.system_word = ""
 	b.system_line = note

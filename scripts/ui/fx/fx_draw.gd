@@ -25,9 +25,10 @@ const RIPPLE_W := 0.25
 ## A shape's outline width (px) and the wall's settled alpha (it settles to 60 %).
 const LINE_W := 2.0
 const SETTLED_ALPHA := 0.6
-## The evade token: its size (px at text scale 1.0) and lettering.
+## The evade token (the art pass's own sticker, `assets/fx/stickers/evade_token.png`): its size (px at
+## text scale 1.0).
 const TOKEN_PX := 44.0
-const TOKEN_WORD := ">>"
+const TOKEN_TEX := preload("res://assets/fx/stickers/evade_token.png")
 ## Glitch tears: bands across the slice, their height (px) and how far they shift (px).
 const TEAR_BANDS := 8
 const TEAR_H := 6.0
@@ -39,6 +40,22 @@ const STREAK_TEXT := "0110 1001"
 const STREAK_FONT := 14
 ## Drone hex outline radius (px at text scale 1.0).
 const DRONE_HEX := 21.0
+## The art pass's drone sticker and its six pieces (`assets/fx/stickers/drone*.png`, exported at 1x): the
+## hex's radius and centre in `drone.png`, and where the pieces' offsets are measured from (the image centre).
+const DRONE_TEX := preload("res://assets/fx/stickers/drone.png")
+const DRONE_TEX_HEX_R := 40.0
+const DRONE_TEX_HEX_CENTRE := Vector2(64.5, 65.0)
+const DRONE_PIECE_TEX: Array[Texture2D] = [
+	preload("res://assets/fx/stickers/drone_piece_0.png"), preload("res://assets/fx/stickers/drone_piece_1.png"),
+	preload("res://assets/fx/stickers/drone_piece_2.png"), preload("res://assets/fx/stickers/drone_piece_3.png"),
+	preload("res://assets/fx/stickers/drone_piece_4.png"), preload("res://assets/fx/stickers/drone_piece_5.png"),
+]
+## Each piece's centre offset (px at 1x, from the image centre) and flight direction (rad), as the manifest
+## records them for `fx_r22._pieces_from`.
+const DRONE_PIECES := [
+	[Vector2(24.5, -26.5), -1.0472], [Vector2(25.5, 0.5), 0.0], [Vector2(25.0, 30.5), 1.0472],
+	[Vector2(-25.0, 30.5), 2.0944], [Vector2(-26.0, 0.5), 3.1416], [Vector2(-24.5, -26.5), 4.1888],
+]
 ## The clamp that springs open when a drone goes (rad it swings).
 const CLAMP_SWING := 1.1
 const SEGMENTS := 40
@@ -138,15 +155,11 @@ static func _hex(at: Vector2, r: float) -> PackedVector2Array:
 	return out
 
 
-## The `>>` token sticker (§3.20 evade): at `at`, `s` its scale, alpha `alpha`.
-static func token(ci: CanvasItem, at: Vector2, s: float, col: Color, alpha: float) -> void:
+## The `>>` token sticker (§3.20 evade): the art pass's own sticker at `at`, `s` its scale, alpha `alpha`.
+## `_col` is kept for the callers: the sticker carries its own green.
+static func token(ci: CanvasItem, at: Vector2, s: float, _col: Color, alpha: float) -> void:
 	var size := TOKEN_PX * Settings.text_scale * s
-	var box := Rect2(at - Vector2(size, size * 0.6) * 0.5, Vector2(size, size * 0.6))
-	ci.draw_rect(box.grow(2.0), Color(Palette.PAPER, alpha))
-	ci.draw_rect(box, Color(col, alpha))
-	var fs := maxi(1, roundi(size * 0.5))
-	var w := Palette.display().get_string_size(TOKEN_WORD, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	ci.draw_string(Palette.display(), at + Vector2(-w * 0.5, fs * 0.35), TOKEN_WORD, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.INK, alpha))
+	ci.draw_texture_rect(TOKEN_TEX, Rect2(at - Vector2(size, size) * 0.5, Vector2(size, size)), false, Color(Palette.NO_TINT, alpha))
 
 
 ## Glitch tears (§3.20 corrupt): TEAR_BANDS shifted bands over `rect`, revealed left to
@@ -172,23 +185,24 @@ static func drone_hex(ci: CanvasItem, at: Vector2, col: Color, fill: float, slap
 	outline.append(hex[0])
 	ci.draw_polyline(outline.slice(0, n), Color(col, alpha), LINE_W + 1.0, true)
 	if slap > 0.0:
-		var sc := CardFx.slap_scale(clampf(slap, 0.0, 1.0))
-		var body := PackedVector2Array()
-		for v in hex:
-			body.append(at + (v - at) * sc)
-		ci.draw_colored_polygon(body, Color(col, 0.75 * alpha))
+		var sc := CardFx.slap_scale(clampf(slap, 0.0, 1.0)) * (r / DRONE_TEX_HEX_R)
+		ci.draw_set_transform(at, 0.0, sc)
+		ci.draw_texture(DRONE_TEX, -DRONE_TEX_HEX_CENTRE, Color(Palette.NO_TINT, alpha))
+		ci.draw_set_transform(Vector2.ZERO)
 
 
 ## A cracked hex popping apart and its clamp springing open (§3.20 drone destroyed v3).
-static func drone_burst(ci: CanvasItem, at: Vector2, col: Color, p: float, fly: float) -> void:
+static func drone_burst(ci: CanvasItem, at: Vector2, _col: Color, p: float, fly: float) -> void:
 	var r := DRONE_HEX * Settings.text_scale
-	var hex := _hex(at, r)
 	var a := 1.0 - p
-	for k in 6:
-		var mid := (hex[k] + hex[(k + 1) % 6]) * 0.5
-		var d := (mid - at).normalized()
-		var o := d * fly * p
-		ci.draw_line(hex[k] + o, hex[(k + 1) % 6] + o, Color(col, a), LINE_W + 1.0, true)
+	var sc := r / DRONE_TEX_HEX_R
+	# The six pieces of the art pass's sticker fly out along their own directions.
+	for k in DRONE_PIECES.size():
+		var piece := DRONE_PIECE_TEX[k]
+		var row: Array = DRONE_PIECES[k]
+		var centre := at + (row[0] as Vector2) * sc + Vector2.from_angle(float(row[1])) * fly * p
+		var size := piece.get_size() * sc
+		ci.draw_texture_rect(piece, Rect2(centre - size * 0.5, size), false, Color(Palette.NO_TINT, a))
 	# The clamp: two arms off the bezel side swing open.
 	for s in [-1.0, 1.0]:
 		var arm := Vector2(0, -r * 1.4).rotated(s * CLAMP_SWING * p)

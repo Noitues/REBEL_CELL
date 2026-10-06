@@ -121,7 +121,7 @@ func test_the_pause_menu_keeps_its_backdrop_on_the_terminal_panel() -> void:
 	assert_eq(backdrop.mouse_filter, Control.MOUSE_FILTER_STOP)
 	var terminal := false
 	for c in menu.get_children():
-		terminal = terminal or (c is ZinePanel and (c as ZinePanel).terminal)
+		terminal = terminal or c is CrtWindow  # ART-10 4C: the v2 terminal (1B's glass)
 	assert_true(terminal, "the menu is terminal glass (visual pass)")
 
 

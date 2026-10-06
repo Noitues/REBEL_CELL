@@ -19,6 +19,7 @@ uniform float gain = 1.6;
 uniform float scanlines = 22.0;
 uniform int panels = 4;
 uniform float jitter = 0.04;
+uniform sampler2D panel_tex : filter_linear, repeat_disable;
 
 varying float v_panel;
 varying float v_next;
@@ -51,32 +52,23 @@ void vertex() {
 	POSITION = PROJECTION_MATRIX * VIEW_MATRIX * vec4(wp, 1.0);
 }
 
-float panel(vec2 uv, float id) {
-	// Rows of illegible glyph blocks: a header bar, then blocks of varying width.
-	vec2 g = vec2(9.0, 5.0);
-	vec2 c = floor(uv * g);
-	vec2 f = fract(uv * g);
-	float on = step(0.42, h21(c + id * 13.1));
-	if (c.y > g.y - 1.5) {
-		on = step(0.2, h21(vec2(c.x * 0.3, id)));
-	}
-	float block = step(0.12, f.x) * step(f.x, 0.88) * step(0.2, f.y) * step(f.y, 0.8);
-	return on * block;
+// Round 26's own billboard panels (assets/city/billboards/panels.png, from cm._billboard_tex): one
+// atlas cell per panel id. R = the lightened-colour mask (c2 = col * 0.5 + 0.5), A = the panel alpha
+// (pictogram, glyph rows, frame and the concept's half-alpha scanline rows are all in the texture).
+vec4 panel(vec2 uv, float id) {
+	vec2 auv = vec2((clamp(uv.x, 0.0, 1.0) + id) / float(panels), clamp(uv.y, 0.0, 1.0));
+	return texture(panel_tex, auv);
 }
 
 void fragment() {
 	vec2 uv = UV;
 	uv.y = 1.0 - uv.y;
-	float edge = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
-	float frame = smoothstep(0.05, 0.02, edge);
-	vec2 inner = (uv - 0.08) / 0.84;
-	float in_box = step(0.0, inner.x) * step(inner.x, 1.0) * step(0.0, inner.y) * step(inner.y, 1.0);
-	float id = inner.x < v_wipe ? v_next : v_panel;
-	float glyph = panel(inner, id) * in_box;
-	float wipe_line = (v_wipe > 0.0 && v_wipe < 1.0) ? smoothstep(0.03, 0.0, abs(inner.x - v_wipe)) * in_box : 0.0;
-	float scan = 0.7 + 0.3 * sin(uv.y * scanlines * PI * 2.0);
-	float fill = 0.16 * in_box;
-	float a = (fill + glyph * 0.85 * scan + frame * 0.9 + wipe_line) * v_drop;
-	ALBEDO = COLOR.rgb * gain;
+	float id = uv.x < v_wipe ? v_next : v_panel;
+	vec4 t = panel(uv, id);
+	float wipe_line = (v_wipe > 0.0 && v_wipe < 1.0) ? smoothstep(0.03, 0.0, abs(uv.x - v_wipe)) : 0.0;
+	float scan = 0.85 + 0.15 * sin(uv.y * scanlines * PI * 2.0);
+	vec3 col = mix(COLOR.rgb, COLOR.rgb * 0.5 + 0.5, t.r);
+	float a = (t.a * scan + wipe_line) * v_drop;
+	ALBEDO = col * gain;
 	ALPHA = clamp(a, 0.0, 1.0);
 }

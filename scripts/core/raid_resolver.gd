@@ -65,7 +65,7 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 		if waves.has(step):
 			for t in waves[step]:
 				threats.append(t)
-				result.events.append({"type": "threat_enters", "step": step, "threat": t["id"], "threat_content": t["content_id"], "site": t["site"],
+				result.events.append({"type": "threat_enters", "step": step, "threat": t["id"], "threat_content": t["content_id"], "site": t["site"], "integrity": int(t["integrity"]),
 					"text": "Step %d: %s enters at %s." % [step, t["name"], t["site"]]})
 		if _active(threats).is_empty():
 			if waves.is_empty() or step > _last_wave_step(waves):

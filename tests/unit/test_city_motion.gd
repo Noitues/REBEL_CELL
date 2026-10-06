@@ -384,6 +384,28 @@ func test_day_and_night_crossfade_and_heat_rebuilds_the_rig() -> void:
 		"the nearest billboards and searchlights spill on the toon materials")
 
 
+func test_the_close_car_chopper_drone_and_billboards_are_the_art_pass_assets() -> void:
+	# M14 asset parity: models exported from the concept round's own builders (Blender), the panels from cm.py.
+	var car := CityMotionMeshes.car(cfg, CitySkyTraffic.CarTier.CLOSE)
+	assert_eq(car.get_surface_count(), 1)
+	assert_true(car.get_aabb().size.x >= cfg.close_length - 0.01, "the car runs close_length from tail to nose (plus its line)")
+	assert_gt((CityMotionMeshes.CAR_TRIS.data as Dictionary)["tris"].size(), 20, "the exported flying car's triangles")
+	var parts := {}
+	for t: Array in (CityMotionMeshes.CAR_TRIS.data as Dictionary)["tris"]:
+		parts[int(t[0][3])] = true
+	for p in CityMotionMeshes.Part.values():
+		assert_true(parts.has(p), "part %d is in the exported car" % p)
+	var heli := CityMotionMeshes.chopper(cfg.chopper_length)
+	assert_almost_eq((heli["body"] as Mesh).get_aabb().size.x * float(heli["scale"]), cfg.chopper_length, 0.01, "fitted to chopper_length")
+	assert_not_null(heli["neon"], "the concept's lit parts")
+	assert_gt(float(heli["rotor_r"]), 0.0, "the blur disc takes the model's blade radius")
+	var drone := CityMotionMeshes.drone(cfg.drone_size)
+	assert_almost_eq((drone["body"] as Mesh).get_aabb().size.x * float(drone["scale"]), cfg.drone_size, 0.01)
+	var tex := load("res://assets/city/billboards/panels.png") as Texture2D
+	assert_eq(tex.get_width() % cfg.billboard_panels, 0, "an atlas of billboard_panels cells")
+	assert_eq(CityMotionLayers.BILLBOARD_PANELS, tex)
+
+
 func _road(name: String) -> Dictionary:
 	for rd in lanes.roads:
 		if rd["name"] == name:

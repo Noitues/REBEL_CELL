@@ -613,6 +613,20 @@ func shown_band() -> int:
 	return band_of(roundi(shown_heat), marks)
 
 
+## ART-10 4C: the colour of the band the number shows (Palette.HEAT_BAND_COLORS), as ink on
+## the paper poster (COOL = INK; the warm bands a step darker).
+func band_color() -> Color:
+	var b := mini(shown_band(), Palette.HEAT_BAND_COLORS.size() - 1)
+	var col: Color = Palette.HEAT_BAND_COLORS[b]
+	if poster:
+		return Palette.INK if b == 0 else col.darkened(PAPER_DARKEN)
+	return col
+
+
+## How much darker a band colour is on the paper poster.
+const PAPER_DARKEN := 0.25
+
+
 ## ANIM-R3 B7: the banner's colour: the band's warning colour (BAND_COLORS).
 func banner_color() -> Color:
 	var at := _banner_at if _banner_at > 0 else heat
@@ -918,7 +932,10 @@ func _draw() -> void:
 		x += step
 	x = minf(x, size.x - 6.0 - num_w)
 	# ANIM-R1 M6: the number rolls, grows and flashes white on a crossing.
-	var num_col := Palette.CELL_PINK if band < 2 else hot_color
+	# ART-10 4C (audit P2, ART_BIBLE v2 §2.8): the number and the bar take the band's colour
+	# (five bands; the band word says it too); on the paper poster COOL is ink and the warm
+	# bands darken a step so they read on the stock.
+	var num_col := band_color()
 	if number_scale > 1.0:
 		num_col = num_col.lerp(Palette.PAPER, clampf((number_scale - 1.0) / maxf(0.001, Motion.amplitude(&"heat_number_pop") - 1.0), 0.0, 1.0))
 	var num_at := Vector2(x + 6, y + 30)
@@ -928,7 +945,7 @@ func _draw() -> void:
 	draw_string(Palette.mono(), Vector2(x + 6, y + 44), "/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.INK if poster else Palette.PAPER)
 	var bar := Rect2(8, y + 44, size.x - 16, 8)
 	draw_rect(bar, Color(Palette.INK, 0.3) if poster else Color(Palette.PAPER, 0.15))
-	draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(float(heat) / maxf(1.0, heat_max), 0.0, 1.0), bar.size.y)), Palette.CELL_PINK)
+	draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(float(heat) / maxf(1.0, heat_max), 0.0, 1.0), bar.size.y)), band_color())
 	for t in marks:
 		var tx: float = bar.position.x + bar.size.x * int(t) / float(heat_max)
 		draw_line(Vector2(tx, bar.position.y - 3), Vector2(tx, bar.end.y + 3), Palette.INK if poster else Palette.PAPER, 1.0)

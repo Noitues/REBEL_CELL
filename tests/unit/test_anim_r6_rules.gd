@@ -302,6 +302,7 @@ const NOT_SKIPPABLE := {
 	"res://scripts/ui/kit/neon_city.gd": "ambient loops (traffic, signs, beacons): nothing to complete",
 	"res://scripts/ui/kit/pad_prompts.gd": "the prompts fade in when a device is used: the answer to that press",
 	"res://scripts/ui/kit/ram_bar.gd": "RAM ticks and refusals answer the card played or refused",
+	"res://scripts/ui/kit/route_overlay.gd": "M14: the hidden-node reveal fades answer the pointer (node hover) and the legend's hover / always-show (D13)",
 	"res://scripts/ui/kit/toast.gd": "a toast is a reading time",
 	"res://scripts/ui/kit/tutorial_overlay.gd": "the tutorial's Next pulses in a loop while it waits: nothing to complete",
 	"res://scripts/ui/kit/wireframe_background.gd": "an ambient loop: nothing to complete",
@@ -340,7 +341,7 @@ func test_every_script_that_animates_registers_or_says_why_not() -> void:
 		if not p.contains("/motion"):
 			assert_true(style.contains("`%s`" % p.get_file().get_basename()), "STYLE_GUIDE 5.5 names %s" % p.get_file())
 	for p in ["res://scripts/ui/kit/mainframe_sign.gd", "res://scripts/ui/kit/hud_stats.gd", "res://scripts/ui/kit/hud_bar.gd", "res://scripts/ui/kit/drip_button.gd",
-			"res://scripts/ui/kit/zine_card.gd", "res://scripts/ui/wheel_view.gd"]:
+			"res://scripts/ui/kit/zine_card.gd", "res://scripts/ui/wheel_view.gd", "res://scripts/ui/campaign_end/rubber_stamp.gd"]:
 		assert_true(FileAccess.get_file_as_string(p).contains("MotionSkip.register_passive("), "%s's short motion joins the group" % p)
 
 

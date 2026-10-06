@@ -179,11 +179,21 @@ const DEMOS := {
 	# button's pad focus, a refused sticker, a confirm opened and closed as a modal).
 	&"focus_scale": ["screen", "kit_focus"], &"button_refused": ["screen", "kit_refused"],
 	&"modal_in": ["screen", "modal_open"], &"modal_out": ["screen", "modal_close"],
+	# ART-10 4C (round 33 ui_chrome): the title's SIMULATE
+	# glitch and REBEL_CELL neon sign loops, the ON AIR ticker.
+	&"title_glitch_burst": ["screen", "title_glitch"], &"title_sign_flicker": ["screen", "title_sign"],
+	&"on_air_ticker": ["screen", "ticker"],
 	# ART-7 3B: the netrun map's reveal and calm Heat (the route at Heat 60, every node shown),
 	# and the jack-in transition along a link (Fx.jack_in_link).
 	&"route_node_reveal": ["netrun", "route_heat"], &"route_heat_orbit": ["netrun", "route_heat"], &"route_searchlight": ["netrun", "route_heat"],
 	&"jack_terminal_type": ["jack_link", "stage"], &"jack_link_rain": ["jack_link", "stage"], &"jack_crt_collapse": ["jack_link", "stage"],
 	&"jack_wheel_slap": ["jack_link", "stage"], &"jack_wheel_spin": ["jack_link", "stage"], &"jack_lens": ["jack_link", "stage"],
+	# ART-6 3A (raid presentation): on the HQ's real raid pages.
+	&"raid_mark_write": ["hq", "raid"], &"raid_mark_hold": ["hq", "raid"], &"raid_mark_wipe": ["hq", "raid"],
+	&"raid_breached_write": ["hq", "raid_breached"], &"raid_bits_burst": ["hq", "raid_breached"],
+	&"raid_slow_field": ["hq", "raid"], &"raid_ice_grow": ["hq", "raid_ice"], &"raid_repair_rise": ["hq", "raid_repair"], &"raid_beacon_idle": ["hq", "raid_repair"],
+	&"raid_route_write": ["hq", "raid_setup"], &"raid_route_wipe": ["hq", "raid"],
+	&"raid_dock_circle": ["hq", "raid_drag"], &"raid_drag_arrow": ["hq", "raid_drag"],
 	# ART-2 2A: the wheel stack.
 	&"wheel_screen_loop": ["view", "screens"], &"wheel_telemetry_scroll": ["view", "telemetry"], &"precision_latch": ["view", "perfect_latch"], &"precision_word": ["view", "landing_word"], &"precision_stutter": ["view", "weak_stutter"], &"hub_defeat_drain": ["view", "defeat_drain"], &"hub_lockdown_drain": ["view", "lockdown"],
 
@@ -927,6 +937,25 @@ func _play_screen(what: String) -> void:
 				await get_tree().create_timer(Motion.seconds(&"modal_in") + LOOP_GAP).timeout
 				if is_instance_valid(m):
 					PageTransition.close_modal(m)
+		"title_glitch":
+			# ART-10 4C: SIMULATE's glitch loop (bursts on frames 9-10 and 27-28 of 48).
+			var sim := VerbSticker.new("SIMULATE", VerbSticker.Fill.GLITCH, 48.0, 1.5)
+			sim.position = Vector2(220, 280)
+			_screen_host.add_child(sim)
+			length = Motion.seconds(&"title_glitch_burst")
+		"title_sign":
+			# ART-10 4C: the REBEL_CELL neon sign's idle loop.
+			var sign_board := NeonSign.new()
+			sign_board.position = Vector2(60, 220)
+			_screen_host.add_child(sign_board)
+			length = Motion.seconds(&"title_sign_flicker")
+		"ticker":
+			# ART-10 4C: the ON AIR ticker's crawl.
+			var t := OnAirTicker.new(PackedStringArray(["PIRATE RADIO 88.1", "HALCYON RAISES FARES AGAIN"]))
+			t.position = Vector2(0, 600)
+			t.size = Vector2(1280 - PANEL_W, 32)
+			_screen_host.add_child(t)
+			length = 4.0 * Motion.seconds(&"on_air_ticker")
 		"city_motion":
 			_city_motion_demo()
 			length = Motion.entry(&"sky_lane_cars").duration
@@ -1216,12 +1245,33 @@ func _play_context(scene: String, what: String) -> void:
 				var core := c.grid.home_site_id
 				hq.city_overlay.drop_asset(site, Callable(), tr("TURRET"),
 					[{"site": core, "from": DEMO_FORECAST_FROM, "to": DEMO_FORECAST_TO}], hq.threat_road(site))
-		"raid", "raid_ice":
+		"raid", "raid_ice", "raid_breached", "raid_repair":
 			hq.show_raid()
 			for f in CONTEXT_SETTLE:
 				await get_tree().process_frame
 			if is_instance_valid(hq):
 				hq.fight_raid()
+		"raid_setup":
+			# ART-6 3A: the setup's pencil routes, holo and terminals.
+			hq.show_raid()
+		"raid_report":
+			# ART-6 3A: the after-action report and its CELL HOLDS sticker.
+			hq.show_raid()
+			for f in CONTEXT_SETTLE:
+				await get_tree().process_frame
+			if is_instance_valid(hq):
+				hq.fight_raid()
+				if hq.playout != null and is_instance_valid(hq.playout):
+					hq.playout.skip_pressed()
+				else:
+					hq.show_raid_summary()
+		"raid_drag":
+			# ART-6 3A: a defence carried over the map (the HQ's scripted drag).
+			hq.show_raid()
+			for f in CONTEXT_SETTLE:
+				await get_tree().process_frame
+			if is_instance_valid(hq):
+				hq._demo_drag("drag_asset")
 		"influence":
 			# A second Site cleared and claimed: the tint spreads from it once its look bakes.
 			_claim_next(c)
@@ -1252,6 +1302,10 @@ func _defended_site(c: CampaignState) -> StringName:
 
 ## ANIM-R5: the demo campaign the HQ demos play on (the lab's own slot): a Site next to home
 ## cleared and claimed, defended by a turret, a decoy and an ICE lock, and a raid queued.
+## ART-6 3A: the repair demo's Safehouse integrity (of 30: hurt, standing).
+const REPAIR_DEMO_INTEGRITY := 15
+
+
 func _demo_campaign(what: String) -> void:
 	RunManager.new_campaign(DEMO_CAMPAIGN_SEED)
 	var c := RunManager.campaign
@@ -1262,11 +1316,24 @@ func _demo_campaign(what: String) -> void:
 	run.site_id = first
 	CampaignRules.on_run_completed(c, corp, RunManager.config(), run)
 	CampaignRules.claim(c, corp, RunManager.config(), RunManager.lookup(), first, &"firewall_relay")
-	if what in ["raid", "raid_ice"]:
+	if what in ["raid", "raid_ice", "raid_setup", "raid_report"]:
 		var defences := DEMO_ICE_DEFENCES if what == "raid_ice" else DEMO_DEFENCES
 		c.armory = defences.duplicate()
 		for i in defences.size():
 			CampaignRules.deploy_asset(c, RunManager.config(), RunManager.lookup(), 0, first)
+	elif what == "raid_drag":
+		c.armory = DEMO_DEFENCES.duplicate()  # ART-6 3A: the cards to carry
+	elif what == "raid_breached":
+		c.grid.home_integrity = 1  # ART-6 3A: an undefended home that falls
+	elif what == "raid_repair":
+		# ART-6 3A: a Rigger stationed on a damaged Safehouse patches it as the raid runs.
+		c.grid.sites[first]["node_type"] = "safehouse"
+		c.grid.sites[first]["integrity"] = REPAIR_DEMO_INTEGRITY
+		c.armory = DEMO_DEFENCES.duplicate()
+		for i in DEMO_DEFENCES.size():
+			CampaignRules.deploy_asset(c, RunManager.config(), RunManager.lookup(), 0, first)
+		DemoSetup.only_class(c, RunManager.lookup().get_content(&"rigger") as ClassData)
+		CampaignRules.station(c, RunManager.lookup(), c.living_operatives()[0].id, first)
 	if c.pending_raids.is_empty():
 		CampaignRules.queue_raid(c, corp, RC.RaidTriggerSource.STORY, &"", "motion lab")
 

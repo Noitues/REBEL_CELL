@@ -16,6 +16,23 @@ const BAND_SHARE := 0.16
 const PAD := 10.0
 const BAND_DARK := 0.07
 const FOOT_DARK := 0.12
+## M14 asset parity: the concept's post-it papers (round 21 `postit`, exported at 2x by
+## `tools/art_pipeline/parity/export_campaign_end.py`) by stock, their glued band's height and
+## the clear strip under the paper in the texture (px: the concept draws a 34 px band and
+## leaves 10 px under the note).
+const ART := {Palette.END_NOTE_PINK: "pink", Palette.END_NOTE_YELLOW: "yellow", Palette.END_NOTE_BLUE: "blue", Palette.END_NOTE_GREEN: "green"}
+const ART_PATH := "res://assets/campaign_end/postit_%s.png"
+const ART_BAND := 34
+const ART_FOOT := 10
+
+
+## The concept's paper for stock `col`, or null (another stock).
+static func paper_art(col: Color) -> Texture2D:
+	if not ART.has(col):
+		return null
+	return load(ART_PATH % String(ART[col])) as Texture2D
+
+
 ## The ballpoint's size (type step) and its line height.
 const HAND_STEP := UiTheme.LABEL
 const LINE_SHARE := 1.12
@@ -52,12 +69,20 @@ func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
 	draw_rect(Rect2(r.position + Vector2(4, 7) * s, r.size), Palette.SHADOW)
 	var band := size.y * BAND_SHARE
-	# The paper darkens toward its lifted foot.
-	var steps := 8
-	for i in steps:
-		var y0 := band + (size.y - band) * i / steps
-		draw_rect(Rect2(0, y0, size.x, (size.y - band) / steps + 1.0), PaperInk.opaque(paper.darkened(FOOT_DARK * i / steps)))
-	draw_rect(Rect2(0, 0, size.x, band), PaperInk.opaque(paper.darkened(BAND_DARK)))
+	var art := paper_art(paper)
+	if art != null:
+		# M14 asset parity: round 21's own post-it paper (its grain, glued band and lifted
+		# foot), blank; the words are lettered below.
+		var paper_px := Vector2(art.get_width(), art.get_height() - ART_FOOT)
+		draw_texture_rect_region(art, r, Rect2(Vector2.ZERO, paper_px))
+		band = size.y * float(ART_BAND) / paper_px.y
+	else:
+		# A stock the concept has no note for: its recipe in flat colour.
+		var steps := 8
+		for i in steps:
+			var y0 := band + (size.y - band) * i / steps
+			draw_rect(Rect2(0, y0, size.x, (size.y - band) / steps + 1.0), PaperInk.opaque(paper.darkened(FOOT_DARK * i / steps)))
+		draw_rect(Rect2(0, 0, size.x, band), PaperInk.opaque(paper.darkened(BAND_DARK)))
 	var f := EndFaces.ballpoint()
 	var fs := UiTheme.font_px(HAND_STEP)
 	var lines := HeatPoster.wrap_words(f, words, fs, size.x - PAD * 2.0 * s + 1.0)

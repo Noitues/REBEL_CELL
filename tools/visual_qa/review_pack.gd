@@ -11,7 +11,8 @@ extends Node
 ##   res://tools/visual_qa/review_pack.tscn -- --out=<abs dir> [--screens=a,b] [--scale=1.6]
 ##       [--pad] [--reduce-effects] [--filter=none|grey|deutan] [--scramble]
 ##       [--high-contrast] [--reduce-motion] [--colorblind=<mode>] [--save-size=800x450]
-##       [--screen-timeout=90] [--list=<file.json>]
+##       [--screen-timeout=90] [--list=<file.json>] [--skins=v2,cobalt]
+## --skins (ART-12 12s) walks the screens once per palette skin, into <out>/<skin>/.
 ##
 ## Per screen it writes <screen>.png, <screen>.lint.json and <screen>.status.json
 ## ({status: ok|failed|timeout|unavailable, error, errors[], warnings[], seconds});
@@ -78,6 +79,7 @@ const AXIS_SETTINGS: Array[StringName] = [&"high_contrast", &"reduce_motion", &"
 ## main's screens (ART-0 D): main's ANIM states the art pass never saw are marked "main".
 const SCREENS := [
 	["title", "_s_title", "Title / main menu with a campaign to continue."],
+	["title_confirm", "_s_title_confirm", "ART-10 4C: the title's delete-slot confirm (the abandon dialog look)."],
 	["slots", "_s_slots", "Campaign slots with one saved campaign."],
 	["new_campaign", "_s_new_campaign", "New campaign page (all corporations unlocked)."],
 	["new_campaign_picker", "_s_new_campaign_picker", "New campaign with the target picker open."],
@@ -148,6 +150,8 @@ var scramble := false
 var high_contrast := false
 var reduce_motion := false
 var colorblind := ""
+## ART-12 12s: palette skins to walk (empty: the one Settings has).
+var skins: PackedStringArray = []
 ## The PNG's size (the layout stays CAPTURE_SIZE; the picture is scaled down to keep packs small).
 var save_size := CAPTURE_SIZE
 var screen_timeout := DEFAULT_TIMEOUT_S
@@ -207,6 +211,8 @@ func _ready() -> void:
 				save_size = Vector2i(int(wh[0]), int(wh[1]))
 		elif a.begins_with("--screen-timeout="):
 			screen_timeout = float(a.trim_prefix("--screen-timeout="))
+		elif a.begins_with("--skins="):
+			skins = a.trim_prefix("--skins=").split(",", false)
 		elif a.begins_with("--list="):
 			list_file = a.trim_prefix("--list=")
 	if list_file != "":
@@ -232,11 +238,19 @@ func _ready() -> void:
 	for s in SCREENS:
 		if only.is_empty() or only.has(s[0]):
 			todo.append(s)
-	for s in todo:
-		if _missing_axes.is_empty():
-			await _capture(s[0], s[1], s[2])
-		else:
-			_unavailable(s[0], s[2])
+	var base := out_dir
+	for skin in (skins if not skins.is_empty() else PackedStringArray([""])):
+		if skin != "":
+			Settings.palette_skin = StringName(skin)
+			Settings.changed.emit()
+			out_dir = base.path_join(skin)
+			DirAccess.make_dir_recursive_absolute(out_dir)
+		for s in todo:
+			if _missing_axes.is_empty():
+				await _capture(s[0], s[1], s[2])
+			else:
+				_unavailable(s[0], s[2])
+	out_dir = base
 	_teardown()
 	print("REVIEW PACK DONE %d screens in %s" % [todo.size(), out_dir])
 	get_tree().quit()
@@ -618,6 +632,19 @@ func _s_title() -> void:
 	var title: Node = TITLE.instantiate()
 	title.continue_slot = SLOT
 	get_tree().root.add_child(title)
+	await _settle(title)
+
+
+func _s_title_confirm() -> void:
+	RunManager.save_slot = "1"  # the confirm shows slot 1's costs
+	RunManager.new_campaign(7)
+	DemoSetup.set_heat(RunManager.campaign, 33)
+	RunManager.autosave()
+	var title: Node = TITLE.instantiate()
+	title.continue_slot = SLOT
+	get_tree().root.add_child(title)
+	await _frames(2)
+	title.confirm_delete("1")
 	await _settle(title)
 
 
