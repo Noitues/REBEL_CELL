@@ -31,6 +31,18 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-05 — Designer ruling: the M14 audit is a side-by-side art-pass parity audit
+Designer (Noitues), 2026-10-05 evening: "I want my main to look just like art pass."
+- The M14 audit is no longer the vertical / horizontal / naive code audit over the stored reports. It is a visual
+  parity audit: every screen and state captured on the art pass (run from a scratch copy of the `art-pass` branch,
+  never written to) and on main under identical conditions (size, text scale, seed, state), shown side by side, with a
+  ranked list of every visible difference (layout, colour, type, materials, assets, motion) and the fix that makes main
+  match. Fix agents close the gaps; re-capture and repeat until the pairs match.
+- Where the art pass has no runnable screen for a state, the approved concept image (tag `art-concepts-r43`) is the
+  reference. Mechanics the rules lack (G1–G16) are still not built: a difference that needs one is listed, not built.
+- The old audit agents and `docs/handoff/m14_audit/` stored reports are not inputs to this effort.
+- The full-suite run in isolation, fixes to green and the CI re-enable stay after it.
+
 ### 2026-10-05 — Art direction — ART-3 6w raid on the city
 ART-3 wave 2b, ART-6 on the unified city (ART_BIBLE v2 §4.1, §4.8, Appendix C #13, plan G10; refs round 40
 `raid_view_v3`, `raid_gifs/`, `unified40.py` "the Cell's nodes: uplink pads + risers"). Builds on 3A's raid 2D
