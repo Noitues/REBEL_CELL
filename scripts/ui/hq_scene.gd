@@ -2605,6 +2605,7 @@ func _place_hq() -> void:
 		# stands on the map) and ends at the verb's sticker.
 		top = RAID_COLUMN_TOP
 		bottom = verb.position.y
+		_fit_intel(column.get_child(0) as Control, col_w, bottom - top)
 		_fit_network(column.get_child(0) as Control, bottom - top)
 	column.size = Vector2(col_w, maxf(1.0, minf((column.get_child(0) as Control).get_combined_minimum_size().y, bottom - top)))
 	column.position = Vector2(col_x, bottom - column.size.y)
@@ -3788,7 +3789,18 @@ func _fill_defence_hand(cards: HBoxContainer) -> void:
 func _defence_cards(stack: VBoxContainer, raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult) -> void:
 	stack.alignment = BoxContainer.ALIGNMENT_BEGIN  # B3: THREAT INTEL whole at the column's top
 	stack.add_theme_constant_override("separation", RAID_STACK_GAP)
-	stack.add_child(_threat_intel(raid, pending, projection))
+	# BIG-TEXT: THREAT INTEL is built to fit the column (`_fit_intel`: smaller, down to the floor,
+	# then fewer routes), never cut mid-line.
+	var intel_fit := FitBuildBox.new()
+	intel_fit.name = "ThreatIntelFit"
+	intel_fit.builder = func(_m: float, d: int) -> Control: return _threat_intel(raid, pending, projection, d)
+	var levels: Array[int] = []
+	for d in clampi(raid_route_groups(projection).size(), 1, INTEL_ROWS_MAX):
+		levels.append(d)
+	intel_fit.details = levels
+	intel_fit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	intel_fit.fit(HqLayout.CARD_COLUMN * HqLayout.words_scale(Settings.text_scale), INF)
+	stack.add_child(intel_fit)
 	# B3 (review Q9, round 44): YOUR NETWORK under THREAT INTEL, never over the map or the pencil;
 	# the column scrolls its rows ("more below").
 	stack.add_child(_your_network(projection))
@@ -3922,22 +3934,40 @@ func _fit_network(stack_holder: Control, room: float) -> bool:
 	if placed != null and is_instance_valid(placed) and placed.visible:
 		need -= placed.get_combined_minimum_size().y + float((placed.get_parent() as VBoxContainer).get_theme_constant("separation"))
 	var compact := need > room + 0.5 and not _network_rows.is_empty()
-	if compact != _network_compact:
-		_network_compact = compact
-		for r in _network_rows:
-			r.visible = not compact
+	_set_network_compact(compact)
 	# Where even THREAT INTEL alone is taller than the column (text 2.0), the collapsed YOUR
 	# NETWORK leads the column, so it is never below the fold (THREAT INTEL scrolls under it).
 	var win := _network_win
 	var stack := win.get_parent()
 	if stack != null:
-		var intel := stack.get_node_or_null("ThreatIntel") as Control
+		var intel := stack.get_node_or_null("ThreatIntelFit") as Control
 		var lead := need > room + 0.5 and intel != null and intel.get_combined_minimum_size().y + float((stack as VBoxContainer).get_theme_constant("separation")) \
 			+ (win as Control).get_combined_minimum_size().y > room + 0.5
 		var want := 0 if lead else (intel.get_index() + 1 if intel != null else win.get_index())
 		if win.get_index() != want and (lead or win.get_index() < (intel.get_index() if intel != null else 0)):
 			stack.move_child(win, want if lead else intel.get_index())
 	return compact
+
+
+## Collapses YOUR NETWORK to its header and CORE row (or shows every row again).
+func _set_network_compact(compact: bool) -> void:
+	if compact != _network_compact:
+		_network_compact = compact
+		for r in _network_rows:
+			r.visible = not compact
+
+
+## BIG-TEXT: THREAT INTEL gets the setup column's height less what YOUR NETWORK needs collapsed
+## (its header and the CORE row), and is built smaller (down to `HqLayout.FIT_FLOOR`, then with
+## fewer routes) until every line of it fits: never cut mid-line, never under the fold.
+func _fit_intel(holder: Control, col_w: float, room: float) -> void:
+	var fit := holder.find_child("ThreatIntelFit", true, false) as FitBuildBox
+	if fit == null:
+		return
+	_set_network_compact(true)  # measure with YOUR NETWORK at its smallest; `_fit_network` decides after
+	var others := holder.get_combined_minimum_size().y - fit.get_combined_minimum_size().y
+	var side := float(holder.get_theme_constant("margin_left")) + float(holder.get_theme_constant("margin_right")) if holder is MarginContainer else 0.0
+	fit.fit(col_w - side, room - others)
 
 
 ## B3 b: whether YOUR NETWORK is collapsed now (tests).
@@ -4201,7 +4231,9 @@ static func _raid_dict(p: RaidResolver.RaidResult) -> Dictionary:
 ## corp seal cracked + DECRYPTED, one row per entry route (its letter, the units entering
 ## there, what they go for), the scanned threats under them. From the projection (exact:
 ## the playout matches it). Named "ThreatIntel".
-func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult) -> RaidHolo:
+func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult, detail: int = 0) -> RaidHolo:
+	# BIG-TEXT: `detail` folds routes away (and the strip) when the column is too short for them all.
+	var rows_max := maxi(INTEL_ROWS_MAX - detail, 1)
 	var c := RunManager.campaign
 	var holo := RaidHolo.new(c.corporation_id, tr("THREAT INTEL // SCAN"), RaidHolo.key_of(StringName(String(pending.get("raid_id", raid.id)))))
 	holo.name = "ThreatIntel"
@@ -4225,7 +4257,7 @@ func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver
 			if not seen.has(cid):
 				seen[cid] = true
 				units.append({"type": RaidVehicle.type_of(td), "name": nm, "letter": "%s%d" % [g["letter"], units.size() + 1]})
-		if gi >= INTEL_ROWS_MAX:
+		if gi >= rows_max:
 			continue
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 6)
@@ -4244,14 +4276,14 @@ func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver
 		head.reparent(words)
 		var sub := holo.add_line("> " + " / ".join(rules) + "  //  " + site_name(StringName(String(g["entry"]))))
 		sub.reparent(words)
-	if groups.size() > INTEL_ROWS_MAX:
-		holo.add_line(tr("+%d more routes (the pencil letters them on the map)") % (groups.size() - INTEL_ROWS_MAX))
+	if groups.size() > rows_max:
+		holo.add_line(tr("+%d more routes (the pencil letters them on the map)") % (groups.size() - rows_max))
 
 	if groups.is_empty():
 		holo.add_line(tr("No threats can reach your network."))
 	# The scanned threats strip at the base text size (bigger text keeps the map its room: the
 	# names say the same).
-	if not units.is_empty() and Settings.text_scale <= INTEL_STRIP_SCALE_MAX:
+	if not units.is_empty() and detail == 0 and Settings.text_scale <= INTEL_STRIP_SCALE_MAX:
 		holo.body.add_child(RaidIntelStrip.new(c.corporation_id, units))
 	return holo
 

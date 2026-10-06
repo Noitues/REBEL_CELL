@@ -31,6 +31,12 @@ const OBJECT_SCALE_MAX := 1.3
 const WORDS_SCALE_MAX := 1.6
 
 
+## M14 BIG-TEXT: a panel that must fit its room (THREAT INTEL, the raid's work order) is built at
+## no less than this share of the player's text scale, in at most this many shrink passes.
+const FIT_FLOOR := 0.85
+const FIT_PASSES := 4
+
+
 ## A drawn object's growth at text scale `s`.
 static func object_scale(s: float) -> float:
 	return clampf(s, 1.0, OBJECT_SCALE_MAX)

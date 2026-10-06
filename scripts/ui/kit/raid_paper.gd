@@ -207,7 +207,7 @@ func _deco(on: Control) -> void:
 	var seal_c := Vector2(r.size.x - (PAD + SEAL_R) * k, (PAD * 0.4 + SEAL_R) * k)
 	draw_seal(on, seal_c, SEAL_R * k, skin.paper_hue, false, skin.corporation_id)
 	var meta_font := Palette.paper()
-	var meta_px := UiTheme.font_px(UiTheme.CAPTION)
+	var meta_px := UiTheme.font_px_at(UiTheme.CAPTION, _k)
 	on.draw_string(meta_font, Vector2(CorpPaperPanel.LETTERHEAD_H * 0.0 + UiTheme.SP_L, CorpPaperPanel.LETTERHEAD_H + meta_px * 0.6), skin.division(),
 		HORIZONTAL_ALIGNMENT_LEFT, r.size.x - UiTheme.SP_L * 2.0, meta_px, Palette.INK.lerp(Palette.PAPER, 0.45))
 	# The footer: redacted lines and the meta line.

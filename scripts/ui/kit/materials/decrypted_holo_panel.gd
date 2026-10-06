@@ -90,6 +90,8 @@ const STAMP_SHADOW_ALPHA := 0.7
 		if stamp_slot != null:
 			stamp_slot.queue_redraw()
 
+## BIG-TEXT: the text scale the stamp is lettered at (a panel built smaller to fit sets it); 0 = the player's.
+var text_k: float = 0.0
 var content: Control = null
 ## The stamp slot (top right): DECRYPTED is drawn here; a caller may add its own stamp.
 var stamp_slot: Control = null
@@ -205,7 +207,7 @@ func _draw_seal() -> void:
 		stamp_slot.draw_texture_rect_region(t, Rect2(box.position + Vector2(box.size.x * 0.5, 0.0) + CRACK_RIGHT * k, Vector2(box.size.x * 0.5, box.size.y)), Rect2(Vector2(ts.x * 0.5, 0.0), Vector2(ts.x * 0.5, ts.y)), ring)
 	else:
 		var font := Palette.display()
-		var px := UiTheme.font_px(UiTheme.TITLE)
+		var px := UiTheme.font_px_at(UiTheme.TITLE, text_k if text_k > 0.0 else Settings.text_scale)
 		var w := font.get_string_size(seal_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
 		stamp_slot.draw_string(font, c + Vector2(-w.x * 0.5, w.y * 0.32), seal_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ring)
 	# the red fracture down the middle, across the ring
@@ -221,7 +223,7 @@ func _draw_stamp() -> void:
 	if seal:
 		_draw_seal()
 	var font := Palette.display()
-	var px := UiTheme.font_px(UiTheme.HEADING)
+	var px := UiTheme.font_px_at(UiTheme.HEADING, text_k if text_k > 0.0 else Settings.text_scale)
 	var sz := font.get_string_size(STAMP_WORD, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
 	var col := STAMP_COLOR
 	col.a = STAMP_ALPHA
