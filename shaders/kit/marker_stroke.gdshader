@@ -42,6 +42,18 @@ uniform float dropout_jitter = 30.0;
 uniform vec2 dropout_len = vec2(2.0, 4.0);
 uniform float dropout_alpha = 0.35;
 uniform float dropout_scale = 1.5;
+// B1b fix c: a dropout is a nibble, a ragged bite `dropout_bite` (0.4-0.7) of the stroke's width
+// from one edge (the side from the seed), never a full-width break; the under-shadow fades over
+// the whole gap, `dropout_pad` 1080p px past its ends (its offset), so no dark tick shows.
+// Strokes are drawn with the texture STRETCHED (UV.x 0..1 over the drawn part) and
+// `seg_from_px` / `seg_to_px` give that part's span along the stroke (local px), so the
+// dropouts are spaced in screen px whatever the curve. Words: `word_cap_px` is the lettering's
+// cap height (local px) the bite runs across.
+uniform vec2 dropout_bite = vec2(0.4, 0.7);
+uniform float dropout_pad = 0.0;
+uniform float seg_from_px = 0.0;
+uniform float seg_to_px = 1.0;
+uniform float word_cap_px = 20.0;
 
 varying vec2 local_px;
 
@@ -68,18 +80,33 @@ float dhash(int k, int s) {
 	return float(n & 65535u) / 65535.0;
 }
 
-// 1 inside a dropout stretch at `d` (1080p px along the stroke), 0 outside (half-px soft ends).
-float dropout_at(float d) {
+// The dropout at `d` (1080p px along the stroke), its stretch grown `pad` px each way:
+// (inside 0..1 with half-px soft ends, t 0..1 along the stretch, the bitten side +-1, the bite
+// as a share of the width). GreasePencilMark.dropout_factor / dropout_bite compute the same.
+vec4 dropout_hit(float d, float pad) {
 	int s = int(seed);
 	float k = floor(d / dropout_period);
-	float best = 0.0;
+	vec4 best = vec4(0.0, 0.5, 1.0, dropout_bite.x);
 	for (int i = -1; i <= 1; i++) {
 		int kk = int(k) + i;
 		float c = (float(kk) + 0.5) * dropout_period + (dhash(kk, s) - 0.5) * dropout_jitter;
-		float half_len = mix(dropout_len.x, dropout_len.y, dhash(kk, s + 1)) * 0.5;
-		best = max(best, 1.0 - smoothstep(half_len - 0.5, half_len + 0.5, abs(d - c)));
+		float half_len = mix(dropout_len.x, dropout_len.y, dhash(kk, s + 1)) * 0.5 + pad;
+		float inside = 1.0 - smoothstep(half_len - 0.5, half_len + 0.5, abs(d - c));
+		if (inside > best.x) {
+			float side = dhash(kk, s + 2) < 0.5 ? -1.0 : 1.0;
+			float bite = mix(dropout_bite.x, dropout_bite.y, dhash(kk, s + 3));
+			best = vec4(inside, clamp((d - c) / max(half_len * 2.0, 0.001) + 0.5, 0.0, 1.0), side, bite);
+		}
 	}
 	return best;
+}
+
+// How much of the bite covers the point `across` (-1..1 over the width) for hit `h`: a ragged
+// bite from the hit's side, deepest mid-stretch (`grain` roughens its front).
+float bite_at(vec4 h, float across, float grain) {
+	float depth = h.w * (0.7 + 0.3 * sin(3.14159 * h.y)) + (grain - 0.5) * 0.12;
+	float into = h.z * across;  // 1 at the bitten edge, -1 at the far one
+	return h.x * smoothstep(1.0 - 2.0 * depth - 0.06, 1.0 - 2.0 * depth + 0.06, into);
 }
 
 float glint_band(vec2 p) {
@@ -107,12 +134,15 @@ void fragment() {
 		a = smoothstep(0.22, 0.62, a * (0.8 + 0.2 * tooth) + (grain - 0.5) * 0.18);
 		vec3 c = ink.rgb * (0.88 + 0.12 * mid);
 		c += vec3(1.0, 0.98, 0.95) * glint_band(local_px) * a;
-		a = mix(a, min(a, dropout_alpha / alpha_max), dropout_at(local_px.x * dropout_scale));
+		vec4 wh = dropout_hit(local_px.x * dropout_scale, 0.0);
+		float wacross = clamp(local_px.y / max(word_cap_px, 1.0) * 2.0 + 1.0, -1.0, 1.0);
+		a = mix(a, min(a, dropout_alpha / alpha_max), bite_at(wh, wacross, grain));
 		COLOR = vec4(c, a * alpha_max);
 	} else {
 		float across = UV.y * 2.0 - 1.0;
 		float edge_d = abs(across);
-		float along = UV.x;
+		float along_px = mix(seg_from_px, seg_to_px, UV.x);
+		float along = along_px / max(width_px, 0.001);
 		if (dashed) {
 			float cycle = dash_len + gap_len;
 			float k = floor(along / cycle);
@@ -121,12 +151,12 @@ void fragment() {
 				discard;
 			}
 		}
-		float drop = dropout_at(along * width_px * dropout_scale);
 		if (mode == 1) {
 			// the under-shadow: a copy of the stroke in PENCIL_SHADOW (its alpha: 85 %), a firm edge
-			// so it reads under the wax on a light street too; thin where the wax drops out
+			// so it reads under the wax on a light street too; it fades over the whole gap (and its
+			// offset past it) so a nibble shows the street, never a dark tick
 			float a = (1.0 - smoothstep(0.8, 1.0, edge_d)) * ink.a;
-			a = mix(a, a * dropout_alpha, drop);
+			a = mix(a, a * dropout_alpha, dropout_hit(along_px * dropout_scale, dropout_pad).x);
 			COLOR = vec4(ink.rgb, a);
 		} else {
 			// bristles: bands across the stroke, each with its own dropouts along it
@@ -143,8 +173,8 @@ void fragment() {
 			float a = m * (0.80 + 0.20 * tooth);
 			a = smoothstep(0.22, 0.62, a + (grain - 0.5) * 0.18) * (0.74 + 0.26 * smoothstep(0.75, 1.0, m));
 			a = clamp(a * 1.08, 0.0, 1.0);
-			// the dropouts: the wax thins to ~0.35 there
-			a = mix(a, min(a, dropout_alpha / alpha_max), drop);
+			// the dropouts: a ragged nibble from one edge where the wax thins to ~0.35
+			a = mix(a, min(a, dropout_alpha / alpha_max), bite_at(dropout_hit(along_px * dropout_scale, 0.0), across, grain));
 			vec3 c = ink.rgb * (0.88 + 0.12 * mid + 0.08 * bristle);
 			// the wax's round body: lit along one side, shaded along the other, a sheen line
 			c *= 1.0 + 0.18 * (-across) - 0.06;

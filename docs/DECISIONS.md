@@ -125,6 +125,17 @@ at text 1.0 and 2.0). Test: `tests/unit/test_b1b_wax_pencil.gd`.
   shadow thins there too; words take fewer (period 90). Replaces the edge-only dropout that never showed. Tests:
   `test_b1b_wax_pencil::test_wax_dropouts_every_40_to_70_px_two_to_four_px_long_to_alpha_0_35`,
   `::test_the_shader_hash_is_the_scripts_hash`. Crops: `B1b_crop_aim.png`, `B1b_crop_target_only.png` (1:1, 1080p).
+- **Art-director fix c (2026-10-06): the dropouts read as a dashed line** (dark cross-ticks ~25-30 px apart; dashes
+  mean forecasts and locked links, so pencil must never look dashed). (a) The under-shadow fades to 0.35 over the whole
+  gap and `dropout_pad` (its own offset's length, ~3.6 px) past each end, so the street shows through, never the
+  shifted shadow as a dark tick. (b) A dropout is a nibble: a ragged bite of 40-70 % of the stroke's width
+  (`DROPOUT_BITE`) from one edge, the side and the depth from the seed (`dropout_bite` mirrors the shader), deepest
+  mid-stretch, never a full-width break; words bite across their cap height. (c) Spacing in screen px: the wax lines
+  draw with the texture STRETCHED and each line has its own material copy carrying its drawn span along the stroke
+  (`seg_from_px` / `seg_to_px`), so the shader's distance is the arc length, not the tiled UV (which ran at about twice
+  the arc length in widths, halving the spacing). Tests: `test_b1b_wax_pencil::test_a_dropout_is_a_partial_width_nibble_from_one_seeded_edge`,
+  `::test_the_shadow_fades_over_the_whole_gap_so_no_dark_tick_shows`, `::test_dropouts_are_spaced_in_screen_px_on_a_curved_zoomed_stroke`.
+  Crop resent: `B1b_crop_aim.png`.
 
 ### 2026-10-06 — Designer rulings on the art-direction integration review
 The art-pass session reviewed main @ 175377de (`docs/concepts/INTEGRATION_REVIEW/REVIEW.md` on art-pass, D1–D25 and

@@ -211,6 +211,56 @@ func test_wax_dropouts_every_40_to_70_px_two_to_four_px_long_to_alpha_0_35() -> 
 	assert_almost_eq(float(wm.get_shader_parameter(&"dropout_alpha")), 0.35, 0.001)
 
 
+func test_a_dropout_is_a_partial_width_nibble_from_one_seeded_edge() -> void:
+	var sides := {}
+	var n := 0
+	for seed in [1, 3, 11, 351]:
+		for drop in _dropouts(seed, 1200.0):
+			var b := GreasePencilMark.dropout_bite(seed, float(drop["centre"]))
+			assert_between(float(b["bite"]), 0.4, 0.7, "a bite of 40-70 % of the width, never a full-width break")
+			sides[int(b["side"])] = true
+			n += 1
+	assert_gt(n, 50)
+	assert_eq(sides.size(), 2, "the seed picks either edge")
+	var m := _mark()
+	var wm := m.wax_lines()[0].material as ShaderMaterial
+	assert_eq(wm.get_shader_parameter(&"dropout_bite"), GreasePencilMark.DROPOUT_BITE, "the shader bites that share")
+	var src := FileAccess.get_file_as_string("res://shaders/kit/marker_stroke.gdshader")
+	assert_true(src.contains("bite_at(dropout_hit("), "the wax thins only under the bite")
+
+
+func test_the_shadow_fades_over_the_whole_gap_so_no_dark_tick_shows() -> void:
+	var m := _mark()
+	var sm := m.shadow_lines()[0].material as ShaderMaterial
+	assert_almost_eq(float(sm.get_shader_parameter(&"dropout_alpha")), 0.35, 0.001, "the shadow fades to ~0.35 with the wax")
+	assert_gte(float(sm.get_shader_parameter(&"dropout_pad")), GreasePencilMark.SHADOW_1080.length() - 0.001,
+		"past the gap by its own offset, so the shifted shadow never shows under the nibble")
+	var src := FileAccess.get_file_as_string("res://shaders/kit/marker_stroke.gdshader")
+	assert_true(src.contains("dropout_hit(along_px * dropout_scale, dropout_pad).x"), "the shadow fades over the full width of the gap")
+
+
+func test_dropouts_are_spaced_in_screen_px_on_a_curved_zoomed_stroke() -> void:
+	Settings.text_scale = 1.0
+	var holder := Node2D.new()
+	add_child_autofree(holder)
+	holder.scale = Vector2(2.5, 2.5)
+	var m := GreasePencilMark.new()
+	m.auto_write = false
+	holder.add_child(m)
+	m.add_stroke(PencilShapes.bezier(Vector2(0, 0), Vector2(120, -90), Vector2(260, 40), 40))
+	await get_tree().process_frame
+	m.progress = 0.6
+	var line := m.wax_lines()[0]
+	var mat := line.material as ShaderMaterial
+	assert_eq(line.texture_mode, Line2D.LINE_TEXTURE_STRETCH, "UV.x runs over the drawn part, not in widths")
+	var span := float(mat.get_shader_parameter(&"seg_to_px")) - float(mat.get_shader_parameter(&"seg_from_px"))
+	assert_almost_eq(span, PencilShapes.length_of(line.points), 0.5, "the part's span is its arc length (local px)")
+	var screen_1080 := span * float(mat.get_shader_parameter(&"dropout_scale"))
+	assert_almost_eq(screen_1080, PencilShapes.length_of(line.points) * 2.5 / GreasePencilMark.BOARD_TO_CANVAS, 0.5,
+		"the dropouts are placed along its screen length in 1080p px (40-70 apart)")
+	assert_ne(m.wax_lines()[0].material, m.shadow_lines()[0].material, "each line has its own span")
+
+
 func test_the_shader_hash_is_the_scripts_hash() -> void:
 	var src := FileAccess.get_file_as_string("res://shaders/kit/marker_stroke.gdshader")
 	for token in ["374761393u", "668265263u", "1274126177u", ">> 13u", ">> 16u", "65535u"]:

@@ -62,6 +62,12 @@ const DROPOUT_JITTER := 15.0
 const DROPOUT_LEN := Vector2(2.0, 4.0)
 const DROPOUT_ALPHA := 0.35
 const WORD_DROPOUT_PERIOD := 90.0
+## B1b fix c: a dropout is a nibble, a ragged bite this share of the stroke's width (40-70 %)
+## from one edge (its side from the seed), never a full-width break; the under-shadow fades
+## over the whole gap and its offset past it (`dropout_pad`: SHADOW_1080's length). Words bite
+## across this share of their ascent (the cap height).
+const DROPOUT_BITE := Vector2(0.4, 0.7)
+const WORD_CAP_SHARE := 0.72
 ## Seeds fold into 0..SEED_FOLD-1 before they reach the shader.
 const SEED_FOLD := 997
 ## The resample step (px).
@@ -175,6 +181,24 @@ static func dropout_factor(s: int, d: float, period: float = DROPOUT_PERIOD) -> 
 	return best
 
 
+## The nibble of the dropout stretch at `d` (1080p px along a stroke) for `seed`:
+## {side: -1 or 1 (the edge it bites from), bite: share of the width (DROPOUT_BITE)}; the
+## shader's `dropout_hit` picks the same.
+static func dropout_bite(s: int, d: float, period: float = DROPOUT_PERIOD) -> Dictionary:
+	var sd := int(shader_seed(s))
+	var k := floori(d / period)
+	var best := {"inside": 0.0, "side": 1, "bite": DROPOUT_BITE.x}
+	for i in [-1, 0, 1]:
+		var kk: int = k + i
+		var c := (float(kk) + 0.5) * period + (dhash(kk, sd) - 0.5) * DROPOUT_JITTER
+		var half_len := lerpf(DROPOUT_LEN.x, DROPOUT_LEN.y, dhash(kk, sd + 1)) * 0.5
+		var inside := 1.0 - smoothstep(half_len - 0.5, half_len + 0.5, absf(d - c))
+		if inside > float(best["inside"]):
+			best = {"inside": inside, "side": -1 if dhash(kk, sd + 2) < 0.5 else 1,
+				"bite": lerpf(DROPOUT_BITE.x, DROPOUT_BITE.y, dhash(kk, sd + 3))}
+	return best
+
+
 ## Local px (under global scale `k`) to the dropouts' 1080p px, at the current text size.
 static func dropout_scale(k: float) -> float:
 	return k / (BOARD_TO_CANVAS * ui_scale())
@@ -186,6 +210,7 @@ static func set_dropouts(mat: ShaderMaterial, period: float) -> void:
 	mat.set_shader_parameter(&"dropout_jitter", DROPOUT_JITTER)
 	mat.set_shader_parameter(&"dropout_len", DROPOUT_LEN)
 	mat.set_shader_parameter(&"dropout_alpha", DROPOUT_ALPHA)
+	mat.set_shader_parameter(&"dropout_bite", DROPOUT_BITE)
 
 
 ## The colour of `ink`.
@@ -280,10 +305,12 @@ func _make_line(mat: ShaderMaterial) -> Line2D:
 	l.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	l.end_cap_mode = Line2D.LINE_CAP_ROUND
 	l.joint_mode = Line2D.LINE_JOINT_ROUND
-	l.texture_mode = Line2D.LINE_TEXTURE_TILE
+	# B1b fix c: STRETCH (UV.x 0..1 over the drawn part) with the part's span along the stroke
+	# per line (`seg_from_px` / `seg_to_px`), so the dropouts are spaced in screen px.
+	l.texture_mode = Line2D.LINE_TEXTURE_STRETCH
 	l.texture = _tile
 	l.antialiased = true
-	l.material = mat
+	l.material = mat.duplicate() as ShaderMaterial
 	l.default_color = Palette.NO_TINT
 	add_child(l)
 	return l
@@ -307,25 +334,41 @@ func _rescale() -> void:
 	_apply()
 
 
+## The wax materials (the template and each line's own) or the shadow's.
+func _mats(shadow: bool) -> Array[ShaderMaterial]:
+	var out: Array[ShaderMaterial] = [_shadow_mat if shadow else _mat]
+	for l in (_shadows if shadow else _lines):
+		if l.material is ShaderMaterial:
+			out.append(l.material as ShaderMaterial)
+	return out
+
+
+func _set_param(shadow: bool, param: StringName, value: Variant) -> void:
+	for m in _mats(shadow):
+		m.set_shader_parameter(param, value)
+
+
 func _sync() -> void:
 	if _mat == null:
 		return
-	_mat.set_shader_parameter(&"ink", ink_color(ink))
-	_mat.set_shader_parameter(&"seed", shader_seed(seed))
-	_mat.set_shader_parameter(&"dashed", dashed)
-	_mat.set_shader_parameter(&"smear", smear)
-	_mat.set_shader_parameter(&"alpha_max", WAX_ALPHA)
-	_mat.set_shader_parameter(&"sheen", SHEEN)
-	set_dropouts(_mat, DROPOUT_PERIOD)
-	set_dropouts(_shadow_mat, DROPOUT_PERIOD)
-	_shadow_mat.set_shader_parameter(&"ink", Palette.PENCIL_SHADOW)
-	_shadow_mat.set_shader_parameter(&"dashed", dashed)
-	_shadow_mat.set_shader_parameter(&"seed", shader_seed(seed))
+	_set_param(false, &"ink", ink_color(ink))
+	_set_param(false, &"seed", shader_seed(seed))
+	_set_param(false, &"dashed", dashed)
+	_set_param(false, &"smear", smear)
+	_set_param(false, &"alpha_max", WAX_ALPHA)
+	_set_param(false, &"sheen", SHEEN)
+	for sh in [false, true]:
+		for m in _mats(sh):
+			set_dropouts(m, DROPOUT_PERIOD)
+	_set_param(true, &"dropout_pad", SHADOW_1080.length())
+	_set_param(true, &"ink", Palette.PENCIL_SHADOW)
+	_set_param(true, &"dashed", dashed)
+	_set_param(true, &"seed", shader_seed(seed))
 	if Motion.has(GLINT):
 		var e := Motion.entry(GLINT)
-		_mat.set_shader_parameter(&"glint_run", e.duration)
-		_mat.set_shader_parameter(&"glint_rest", e.delay)
-		_mat.set_shader_parameter(&"glint_strength", e.amplitude if Motion.live(GLINT) else 0.0)
+		_set_param(false, &"glint_run", e.duration)
+		_set_param(false, &"glint_rest", e.delay)
+		_set_param(false, &"glint_strength", e.amplitude if Motion.live(GLINT) else 0.0)
 
 
 ## Shows the strokes between the wiped share and the written share (by length, in order).
@@ -336,14 +379,18 @@ func _apply() -> void:
 	var acc := 0.0
 	var w := width()
 	if _mat != null:
-		_mat.set_shader_parameter(&"width_px", w)
-		_shadow_mat.set_shader_parameter(&"width_px", w)
 		var ds := dropout_scale(_screen_k)
-		_mat.set_shader_parameter(&"dropout_scale", ds)
-		_shadow_mat.set_shader_parameter(&"dropout_scale", ds)
+		for sh in [false, true]:
+			_set_param(sh, &"width_px", w)
+			_set_param(sh, &"dropout_scale", ds)
 	for i in _paths.size():
 		var l := _lens[i]
-		var pts := PencilShapes.trim(_paths[i], clampf(from - acc, 0.0, l), clampf(to - acc, 0.0, l))
+		var seg_from := clampf(from - acc, 0.0, l)
+		var seg_to := clampf(to - acc, 0.0, l)
+		var pts := PencilShapes.trim(_paths[i], seg_from, seg_to)
+		for ln: Line2D in [_lines[i], _shadows[i]]:
+			(ln.material as ShaderMaterial).set_shader_parameter(&"seg_from_px", seg_from)
+			(ln.material as ShaderMaterial).set_shader_parameter(&"seg_to_px", maxf(seg_to, seg_from + 0.001))
 		if smear > 0.0 and pts.size() > 1:
 			# the palm drags the trailing wax along with it
 			var drag := WIPE_DRAG * smear * Motion.amplitude(WIPE)

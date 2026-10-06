@@ -85,6 +85,7 @@ func _sync() -> void:
 	if _mat != null:
 		_mat.set_shader_parameter(&"ink", GreasePencilMark.ink_color(ink))
 		_mat.set_shader_parameter(&"seed", GreasePencilMark.shader_seed(absi(text.hash())))
+		_mat.set_shader_parameter(&"word_cap_px", Palette.pencil().get_ascent(font_px()) * GreasePencilMark.WORD_CAP_SHARE)
 		var k := absf(get_global_transform().get_scale().x) if is_inside_tree() else 1.0
 		_mat.set_shader_parameter(&"dropout_scale", GreasePencilMark.dropout_scale(maxf(k, 0.0001)))
 
