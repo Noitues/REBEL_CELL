@@ -45,7 +45,7 @@ func test_combat_zine_elements_never_cover_the_wheels() -> void:
 	for c in scene.enemy_wheel_colors():
 		assert_eq(c, Palette.CORP_SOLACE, "enemy wheels use the corporation colour")
 	assert_true(scene.background is WireframeBackground, "combat arena is wireframe")
-	for name in ["Polaroid", "RamTally", "HeatPoster", "SendIt"]:
+	for name in ["Polaroid", "RamTally", "HeatChip", "SendIt"]:  # B2: the Heat corner chip (Q1 c)
 		assert_not_null(scene.find_child(name, true, false), "%s present" % name)
 	# Combat pass (owner's direction): no log strip or preview wall on screen; what will
 	# resolve is a tag over each spinner; actions are stickers around the player spinner;

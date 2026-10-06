@@ -55,6 +55,13 @@ const HALO_PX := 3.0
 ## The kit sticker sits right of and below the drawn lettering's place (shares of the system
 ## word's width and of the font size), so EXECUTE reads above-left of it (round 22).
 const ART_SHIFT := Vector2(0.22, 0.18)
+## B2 (review D16): EXECUTE washes out to this alpha (round 22: "30 %", the review: 25 %), and
+## the font size the mono face's cap height is measured at.
+const SYSTEM_WORD_ALPHA := 0.25
+const CAP_PROBE_PX := 100
+## B2 (D16): where the sticker's body's top-left corner sits on EXECUTE's box (shares of it):
+## covering about (1 - x) x (1 - y) = half of the word.
+const COVER_AT := Vector2(0.25, 0.35)
 
 ## 1B's vinyl sticker drawing this button's lettering (null = the drawn fallback).
 var art: VinylSticker = null
@@ -117,6 +124,11 @@ func _place_art() -> void:
 		return
 	var tw := face().get_string_size(String(shown_lettering()[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 	art.place_center(_base() + Vector2(tw * 0.5 + _system_w() * ART_SHIFT.x, -font_size * 0.35 + font_size * ART_SHIFT.y))
+	# B2 (D16): the sticker slapped over EXECUTE so it covers about half of it: its body's top-left
+	# corner at COVER_AT of the word's box (round 22: SEND IT over the word's lower right).
+	if system_word != "" and art.body_rect.size.y > 0.0:
+		var word := system_word_rect()
+		art.position = word.position + word.size * COVER_AT - art.body_rect.position
 	# Kept inside the button on the right (the screen's edge is there).
 	var over := art.position.x + art.body_rect.end.x - size.x
 	if over > 0.0:
@@ -191,7 +203,29 @@ func drawn_width() -> float:
 
 
 func _system_px() -> int:
-	return roundi(font_size * SYSTEM_SHARE)
+	if art == null:
+		return roundi(font_size * SYSTEM_SHARE)
+	# B2 (review D16): EXECUTE's cap height is SYSTEM_SHARE of the sticker's SEND IT cap height
+	# (the kit sticker's own lettering size), in Share Tech Mono.
+	var want := WheelFace.cap_height(face(), UiTheme.font_px(art.font_step)) * SYSTEM_SHARE
+	var per_px := WheelFace.cap_height(HudSkin.mono(), CAP_PROBE_PX) / float(CAP_PROBE_PX)
+	return maxi(1, roundi(want / maxf(per_px, 0.01)))
+
+
+## B2 (D16): EXECUTE's box (local): from its cap line to its baseline, its width.
+func system_word_rect() -> Rect2:
+	var sp := _system_px()
+	var cap := WheelFace.cap_height(HudSkin.mono(), sp)
+	return Rect2(Vector2(0.0, _system_y() - cap), Vector2(_system_w(), cap))
+
+
+## B2 (D16): the share of EXECUTE's box the kit sticker's body covers (about half).
+func system_word_cover() -> float:
+	var word := system_word_rect()
+	if art == null or word.get_area() <= 0.0:
+		return 0.0
+	var body := Rect2(art.position + art.body_rect.position, art.body_rect.size)
+	return word.intersection(body).get_area() / word.get_area()
 
 
 func _system_w() -> float:
@@ -232,6 +266,11 @@ func _fit_size() -> void:
 	var cut := HudSkin.VINYL_DIE_CUT_PX
 	var w := maxf(maxf(_system_w(), _sticker_x() + lettering_room() + cut), _line_w())
 	var h := _system_y() + font_size * STICKER_DOWN + face().get_descent(font_size) + cut + HudSkin.VINYL_EXTRUDE_PX
+	if art != null and system_word != "" and art.body_rect.size.y > 0.0:
+		# B2 (D16): the kit sticker's foot, where it sits on EXECUTE's middle.
+		var word := system_word_rect()
+		h = maxf(h, word.position.y + word.size.y * COVER_AT.y + art.body_rect.size.y)
+		w = maxf(w, word.size.x * COVER_AT.x + art.body_rect.size.x)
 	if key_hint != "" or system_line != "":
 		h += _hint_px() + 8.0
 	custom_minimum_size = Vector2(w + cut, h)
@@ -261,7 +300,7 @@ func _draw() -> void:
 	var sys_base := Vector2(0.0, _system_y())
 	_draw_plate(sys)
 	if sys != "":
-		draw_string(HudSkin.mono(), sys_base, sys, HORIZONTAL_ALIGNMENT_LEFT, -1, sp, Color(HudSkin.TERMINAL_TEXT, HudSkin.SYSTEM_WORD_ALPHA))
+		draw_string(HudSkin.mono(), sys_base, sys, HORIZONTAL_ALIGNMENT_LEFT, -1, sp, Color(HudSkin.TERMINAL_TEXT, SYSTEM_WORD_ALPHA))
 	# The sticker: hover lifts and grows it, a press squashes it, the first show slaps it on.
 	var hot := (st == KitState.HOVER or st == KitState.FOCUS or _hot) and not off
 	var k := (HOVER_SCALE if hot else 1.0) * lerpf(SLAP_FROM, 1.0, clampf(grow, 0.0, 1.0))
@@ -347,7 +386,7 @@ func _draw_with_art() -> void:
 	var sys_base := Vector2(0.0, _system_y())
 	_draw_plate(sys)
 	if sys != "":
-		draw_string(HudSkin.mono(), sys_base, sys, HORIZONTAL_ALIGNMENT_LEFT, -1, sp, Color(HudSkin.TERMINAL_TEXT, HudSkin.SYSTEM_WORD_ALPHA))
+		draw_string(HudSkin.mono(), sys_base, sys, HORIZONTAL_ALIGNMENT_LEFT, -1, sp, Color(HudSkin.TERMINAL_TEXT, SYSTEM_WORD_ALPHA))
 	var hs := _hint_px()
 	var words := _line_words()
 	if words != "":

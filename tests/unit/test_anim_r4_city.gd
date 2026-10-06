@@ -328,8 +328,9 @@ func test_the_combat_heat_banner_never_spills_over_the_daemon_row() -> void:
 		p.heat = 80
 		p._banner_at = 75
 		# ART-2 2D (HUD v4, §3.1 / §3.15): the fight shows Heat on its backdrop (2C's HeatCity);
-		# the poster stays hidden there, so its banner can never spill over the Daemons.
-		assert_false(p.is_visible_in_tree(), "%.1f: no Heat poster on the combat screen" % scale)
+		# B2 (designer Q1 c): plus the small Heat chip in the top-left corner (the shared gauge,
+		# whose banner stays inside its own tag).
+		assert_true(p is HeatGauge and p.is_visible_in_tree(), "%.1f: the Heat corner chip" % scale)
 		assert_not_null(combat.heat_city, "%.1f: Heat is on the backdrop" % scale)
 		# ART-2 2B: the Daemons are the rack on the operative's wheel's left edge (ART_BIBLE v2 §3.13).
 		var rack: Control = combat._player_view.get_node("DaemonRack")

@@ -23,6 +23,10 @@ uniform vec4 shape_rect[MAX_SHAPES];
 // (1 - what it leaves of the world).
 uniform vec4 shape_params[MAX_SHAPES];
 uniform float pool_saturation = 0.6;
+// B2 (art director): emissives (signs, lit windows: the brightest channel from emissive_from up,
+// fully at emissive_to) are never capped.
+uniform float emissive_from = 0.72;
+uniform float emissive_to = 0.9;
 
 // B4 (review D7, round 44 hq_idle): the map dim. Outside the network's rect (xy centre, zw half
 // size, px) the world keeps 1 - dim_out (desaturated to dim_sat), inside it 1 - dim_in, over a
@@ -140,6 +144,7 @@ void fragment() {
 	}
 	vec3 c = texture(screen_tex, SCREEN_UV).rgb;
 	float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+	sat *= 1.0 - smoothstep(emissive_from, emissive_to, max(max(c.r, c.g), c.b));
 	c = mix(vec3(l), c, mix(1.0, pool_saturation, sat) * mix(1.0, dim_sat, dsat));
 	COLOR = vec4(c * (1.0 - pool) * (1.0 - band) * (1.0 - dim), 1.0);
 }

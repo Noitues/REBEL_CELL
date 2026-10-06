@@ -752,6 +752,10 @@
 		"res://tests/unit/test_b3_raid_map_route.gd": {
 			"seconds": 30.0,
 			"tier": "full"
+		},
+		"res://tests/unit/test_b2_combat_composition.gd": {
+			"seconds": 12.0,
+			"tier": "fast"
 		}
 	}
 }
