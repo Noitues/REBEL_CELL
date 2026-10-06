@@ -126,7 +126,7 @@ func setup(corporation_id: StringName, display_name: String, p_home_now: int, p_
 	m.shader = SHADER
 	m.set_shader_parameter(&"house", style.color())
 	m.set_shader_parameter(&"back", style.back())
-	m.set_shader_parameter(&"motif", style.motif)
+	m.set_shader_parameter(&"motif_tex", load(MOTIF_ART % MOTIF_NAMES[clampi(style.motif, 0, MOTIF_NAMES.size() - 1)]))
 	glass.material = m
 	add_child(glass)
 	padlocks = Control.new()
@@ -498,17 +498,33 @@ func _draw_padlocks() -> void:
 		draw_padlock(padlocks, m["at"], m["r"], style.accent())
 
 
-## Draws a padlock centred on `c` with half size `r` (round 20 `padlock`).
+## Draws a padlock centred on `c` with half size `r`: round 20's own `padlock` (M14 asset
+## parity, `assets/campaign_end/padlock.png`), tinted `col` (its keyhole keeps its ink) over
+## the shadow pool that lifts it off the city.
 static func draw_padlock(ci: CanvasItem, c: Vector2, r: float, col: Color) -> void:
-	var w := maxf(2.0, r * 0.22)
 	ci.draw_circle(c + Vector2(0, r * 0.2), r * 1.15, Palette.SHADOW)
-	ci.draw_arc(c + Vector2(0, -r * 0.15), r * 0.5, PI, TAU, 12, col, w, true)
-	ci.draw_line(c + Vector2(-r * 0.5, -r * 0.15), c + Vector2(-r * 0.5, r * 0.1), col, w)
-	ci.draw_line(c + Vector2(r * 0.5, -r * 0.15), c + Vector2(r * 0.5, r * 0.1), col, w)
-	var body := Rect2(c + Vector2(-r * 0.75, 0.0), Vector2(r * 1.5, r * 1.05))
-	ci.draw_rect(body, col)
-	ci.draw_circle(c + Vector2(0, r * 0.4), r * 0.16, Palette.NIGHT_SKY)
-	ci.draw_rect(Rect2(c + Vector2(-r * 0.05, r * 0.45), Vector2(r * 0.1, r * 0.35)), Palette.NIGHT_SKY)
+	var side := r * PADLOCK_SIDE
+	var at := c + Vector2(0, r * PADLOCK_DROP)
+	ci.draw_texture_rect(_padlock(), Rect2(at - Vector2(side, side) * 0.5, Vector2(side, side)), false, col)
+
+
+## The house motifs (round 20 `motif(style, 1)`, M14 asset parity), by CorpHouseStyle.Motif.
+const MOTIF_ART := "res://assets/campaign_end/motif_%s.png"
+const MOTIF_NAMES: Array[String] = ["blueprint", "hazard", "cells", "stars", "glitch"]
+## The lock's texture side and its centre's drop, as shares of the half size (the concept's
+## lock fills 0.88 of its box, shackle to foot).
+const PADLOCK_SIDE := 1.95
+const PADLOCK_DROP := 0.2
+const PADLOCK_ART := "res://assets/campaign_end/padlock.png"
+
+
+static func _padlock() -> Texture2D:
+	if _padlock_tex == null:
+		_padlock_tex = load(PADLOCK_ART) as Texture2D
+	return _padlock_tex
+
+
+static var _padlock_tex: Texture2D = null
 
 
 func _draw_progress() -> void:

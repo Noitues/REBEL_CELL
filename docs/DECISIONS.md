@@ -161,6 +161,98 @@ kit) after both merged; generator scripts read on `art-concepts-r43` (round 33 `
   / 24_screens` and `test_anim6_screen_motion` read PIRATE RADIO as CrtText, the plan's stickers are
   translated once, CONTINUE is a TerminalChip with the slot line (its tooltip at big text). No test
   dropped.
+
+### 2026-10-05 — Art direction — asset parity: combat and foundations (M14)
+Designer ruling "REUSE ART-PASS ASSETS": every combat or foundation image the art pass made is exported by its own
+generator on tag art-concepts-r43 (wrappers in `tools/art/export_*.py` change only font paths and split live text off),
+and the game draws that image. Inventory: `docs/handoff/m14_asset_parity/combat.md`.
+- Replaced: firmware dies (4 rarities + lit), Daemon tiles (12 idle frames + fire), hand card faces (wheel/hack/system
+  x 4 rarities; new `CardFace`, combat hand only), HUD marks from the 1C atlas, SEND IT, PERFECT/GOOD/WEAK stickers
+  (`StickerArt`), the EVADE `>>` token (flight and standing on the wheel), the drone sticker and its six flying pieces.
+- Landing word WEAK is now the word "WEAK" (was x0.5) and amber, as the concept; the x0.5 stays on the rail. Accepted.
+- Procedural kept, each with its reason, in the inventory (no concept sprite: bricks, hexes, bits, tears, shards, rings,
+  cracks, jaws, Heat mark, lethal skull, dock geometry, peel curl, live-text stickers, kit materials, the wheel disc's
+  bezel/hub, which are live geometry).
+- New strings: WEAK, WHEEL, HACK, SYSTEM (translated once; `CardFace.KIND_WORDS`).
+- Motion is unchanged (slap, peel, dissolve, token flight, drone slap and burst keep their ui_motion entries).
+- The two ANIM reds the brief named (`vinyl_sticker.gd` inline tween, `fx_draw.gd` literal) no longer show in
+  `test_anim_r6_rules` / `test_anim_r2_combat` on this branch; the one remaining r6 failure is
+  `test_every_script_that_animates_registers_or_says_why_not` for `campaign_end/rubber_stamp.gd` and
+  `kit/route_overlay.gd` (ART-11 and ART-5 5d files, not mine).
+
+### 2026-10-05 — Art direction — asset parity: city and screens
+Designer ruling: art-pass assets are exported by the art pass's own generators (tag `art-concepts-r43`), never redrawn.
+Inventory, sources and the procedural list: `docs/handoff/m14_asset_parity/city_screens.md`; wrappers in
+`tools/art_pipeline/parity/`; before/after captures in `docs/art_review/ART-parity/city_screens/`.
+- **Replaced:** Site discs, pads, slip, badge and DOWN bolt (`assets/city/grid_markers/`); route stickers and operative token
+  (`assets/netrun/route/`); seal emblems, padlock, house motifs, post-its, print stock and manila (`assets/campaign_end/`);
+  billboard panels (`assets/city/billboards/`, packed R = lightened mask, A = alpha, tinted by the instance colour in
+  `holo_billboard.gdshader`); the CLOSE flying car, chopper and drone (`assets/city/vehicles/`, Blender 5.2 running the
+  concept builders `unified38.flying_car`, `district20.heli_geo` / `drone_geo`, extracted with `ast` and run verbatim).
+- **Exploit marker = the v4 generator's single gold key** (orchestrator call): approved art wins over the bible's "keyring".
+  The Exploit key MEANINGS word is "Gold key"; strings re-exported.
+- **Corp seals use the round 6 `EM_` emblems** the seal script builds (halo and triangle, hex), not the bible crests
+  (orchestrator call: the art pass is correct).
+- **Car model as data:** the car needs per-vertex CUSTOM0 (part id), and an imported mesh cannot be read back headless, so
+  `CityMotionMeshes.car` reads `flying_car_tris.json` (the same triangles as `flying_car.glb`). Chopper and drone are used
+  as the imported glb meshes; vertex colours of the toon bodies are tones relative to the concept body colour, so the tuned
+  `chopper_color` / `drone_color` stay the body tone. The rotor blur disc takes the model's blade radius and height (the
+  ANIM entry stays; the static blades are not drawn).
+- **Dropped test assertion:** `GlyphIcon` sub-badge on the Site `type_glyph()` (the badge is baked into the disc art; `disc_art()`
+  replaces it). **Tests:** `test_city_motion` gains the asset check; MotionSkip registration of `rubber_stamp` and
+  `route_overlay` (`NOT_SKIPPABLE` with reason) kept.
+- **Procedural, with reasons:** see the inventory (state rings, text rings and stamps, tape, portrait chrome, FAR/MEDIUM car
+  tiers, the lane line and others the concept draws procedurally or that follow state, zoom or text).
+- **Proposed slice (not built):** host the 2A WheelView as a ViewportTexture in `JackSequence._draw_wheel` (the concept's
+  `zoom36.wheel` has fixed English labels), together with the combat parity sweep.
+
+### 2026-10-05 — Art direction — ART-12 12s skins
+Agent 12s (the M12 box "Skins": procedural palette skins on the v2 tokens, ART_12_BATCH).
+- **Which skins.** The M12 box names none, so: `v2` (the default and first; the identity, ART_BIBLE §2
+  exactly), `cobalt` (deep blue terminal) and `graphite` (neutral grey terminal). A fourth, `verdigris`
+  (sea-green), was built and dropped: teal sits between PROTECT cyan and GAIN green and failed the
+  OKLab ΔE > 0.1 separation test against both.
+- **What a skin is** (`PaletteSkins`, `scripts/ui/kit/palette_skins.gd`): new values for the chrome
+  tokens only (TERMINAL_BG / _HOT / _EDGE / _TEXT, TEXT_HI / MID / LO, SELECTED, ON_SELECTED,
+  CRT_GLASS_TOP / BOTTOM), made procedurally in OKLCH from the v2 values by one recipe per skin
+  (an ink hue, a glass hue, chroma scales, an accent lightness shift; v2 lightness kept elsewhere so
+  contrast holds). No concept asset exists for skins (the art pass drew v2 only), so procedural is
+  the reuse rule's allowed case; nothing is redrawn.
+- **Where it is realised.** Palette's tokens are compile-time constants used in other files' `const`s,
+  so they are not changed: a skin is applied where chrome is drawn, as HighContrast / ColorblindLayer
+  are. `UiTheme.build` calls `PaletteSkins.apply(theme, active())` before high contrast (by exact v2
+  rgb match, alpha kept); `UiTheme.terminal_box` / `terminal_button_boxes` call `apply_box`;
+  `HudSkin.draw_terminal_panel` and `CrtTerminalPanel` (Cell cyan accent only, glass, text) wrap their
+  colours in `PaletteSkins.chrome()`; `ZinePanel`'s terminal mode (the Options / pause / confirm glass,
+  its edge and corner ticks) does too and redraws on `Settings.changed`, so the open Options dialog
+  turns as a skin is picked (found in the captures: the dialog had kept v2 navy). A colour that is not a chrome token passes through unchanged, so
+  a corp edge or a Heat word is never re-valued. `active()` finds Settings by node path (the autoload
+  name breaks `-s` tools at compile time).
+- **Semantics kept.** Where cyan means PROTECT / the TURN Daemon / Uncommon / NET_CYAN it stays #5CE1FF
+  on every skin; HARM / GAIN, the Heat bands, the corp kits, FOCUS lime and the stickers keep v2;
+  every Palette.PAIRED_WITH greyscale cue stays. Views that set their own `Palette.TEXT_*` overrides
+  keep the v2 near-white text (still readable on every skin's glass) until their batch reads
+  `PaletteSkins.chrome`; kit painters pick up a skin on their next redraw, the theme at once via
+  `Settings.changed`.
+- **Settings and Options.** `Settings.palette_skin` (default `v2`), `PALETTE_SKINS`, `set_palette_skin`
+  (unknown ids ignored), to_dict / from_dict (an old file without the key, or an unknown id, loads v2),
+  covered by snapshot / restore. Options > Display has an "Interface skin" row (`SettingsPanel.skin_option`,
+  "SkinOption"); 4C's restyle of the panel should keep the row. Skins are free (no Profile unlock):
+  see the open question.
+- **Contrast.** Every skin passes 1A's checks (TEXT_HI / TERMINAL_TEXT / the edge colour >= 9:1 on
+  glass, TEXT_MID / TEXT_LO >= 4.5, hover glass >= 7, focus lime >= 7, words on the selected fill
+  >= 7, Heat bands / HARM / GAIN / WARN >= 4.5), the theme's own text on its own boxes, and ΔE > 0.1
+  between each skin's edge / selected fill and HARM, GAIN, the Heat bands, FOCUS, the stickers and
+  every corp colour, and between skins. Cobalt's accent lightness shift is -0.07 (at -0.09 its edge
+  was 8.7:1 on glass).
+- **Captures.** `tools/visual_qa/review_pack.gd --skins=v2,cobalt,graphite` walks the screens once per
+  skin into `<out>/<skin>/`; contact sheets in `docs/art_review/ART-12/skins/` (title, HQ, Grid,
+  combat start, Mainframe, event, Options at 800x450; read: every screen reads on every skin, paper
+  panels, stickers, HP / Heat words and corp edges unchanged). Still v2 on every skin, by design until
+  their batch reads `PaletteSkins.chrome`: view-drawn panel frames and headings that use `Palette`
+  constants directly (e.g. HQ's panel corner frames and "CYBERDECK" heading cyan).
+- Test: `tests/unit/test_art12_skins.gd` (fast tier, 10 tests). No M13 test dropped.
+
 ### 2026-10-05 — Art direction — ART-0 audit fixes
 Fixes every finding of `docs/handoff/m14_audit/ART-0_horizontal.md` (3 P2, 12 P3); nothing deferred.
 - **E1 (P2) shakes held to their tier.** `Motion.shake` plays `Motion.shake_px(id)`, the amplitude
@@ -7573,6 +7665,13 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **Asset parity, card kinds (2026-10-05, default implemented):** the concept's card face has three kinds, WHEEL / HACK /
+  SYSTEM. The game's violet "other" family (rest and similar cards) is drawn as SYSTEM (cyan). Is a fourth face wanted?
+- **ART-12 12s skins (2026-10-05; default built, see "Art direction — ART-12 12s skins"):** (1) skins are
+  free in Options > Display; should they become Profile unlocks (UnlockKind.SKIN) instead? (2) the set is
+  v2 + cobalt + graphite (a sea-green skin was dropped for sitting between PROTECT and GAIN); say if you
+  want others, or skins for the corp kits too.
+
 - **ART-5 5c city motion (defaults implemented):** (1) the netrun transit turns the sky-lane
   cars off (bible 4.1) while `cars_lod` shows the CLOSE tier at a netrun close-up: CLOSE is built
   and tested but only shows below ortho 150 outside the netrun band; should the transit show it?

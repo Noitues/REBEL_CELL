@@ -1,8 +1,8 @@
 class_name SiteMarkerView
 extends Control
 ## ART-5 5d: one Site marker v4 on screen (SiteMarker): its disc is a vinyl node sticker
-## (VinylSticker, ART-1 1B: node stickers are vinyl, bible §1.2) holding the kind's art and,
-## on an Exploit Site, the type sub-badge from the glyph atlas (GlyphIcon); the ring, pips,
+## (VinylSticker, ART-1 1B: node stickers are vinyl, bible §1.2) holding the round 42
+## generator's disc art (M14 asset parity; an Exploit Site's with its type sub-badge); the ring, pips,
 ## corner badge and the SEIZURE NOTICE slip draw under it, the DOWN bolt over it. A cleared
 ## disc is grey vinyl; a DOWN node is the disabled sticker (grey, 80 %) under the white bolt.
 ## The control's origin is the disc's centre; `scale` sizes it (the map undoes its zoom).
@@ -20,7 +20,6 @@ var with_pad: bool = false
 var sticker: VinylSticker = null
 var _holder: Control = null
 var _art: Control = null
-var _badge: GlyphIcon = null
 var _over: Control = null
 
 
@@ -51,6 +50,8 @@ func set_spec(p_spec: Dictionary) -> void:
 	_apply_state()
 	queue_redraw()
 	_over.queue_redraw()
+	if sticker != null and is_instance_valid(_art):
+		_art.queue_redraw()  # a cleared disc is the concept's grey art
 
 
 func _disc_key(s: Dictionary) -> String:
@@ -84,24 +85,14 @@ func _build_sticker() -> void:
 	_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_art.draw.connect(_draw_art)
 	sticker.content_root.add_child(_art)
-	_badge = null
-	if spec.get("kind") == SiteMarker.KIND_EXPLOIT and int(spec.get("exploit", 0)) != RC.ExploitType.NONE \
-			and spec.get("status") != SiteMarker.ST_CLAIMED and spec.get("status") != SiteMarker.ST_DOWN:
-		var key := GlyphTableData.key_for_exploit(int(spec["exploit"]))
-		var t := GlyphIcon.table()
-		var glyph: StringName = t.ids.get(key, GlyphTableData.PENDING)
-		var r := d * SiteMarker.SUB_BADGE_SHARE
-		_badge = GlyphIcon.make(glyph, r * 1.3)
-		_badge.name = "TypeBadge"
-		_badge.fill = Palette.PAPER
-		sticker.content_root.add_child(_badge)
 	sticker.resized.connect(_place_sticker)
 	_place_sticker.call_deferred()
 
 
-## The exploit type glyph's atlas name (checks; &"" without one).
-func type_glyph() -> StringName:
-	return _badge.glyph if _badge != null else &""
+## The disc art the sticker shows (SiteMarker.disc_art: its texture name, "" for another
+## corp's crest on the plain disc). An Exploit Site's carries its type sub-badge.
+func disc_art() -> String:
+	return SiteMarker.disc_art(spec) if sticker != null else ""
 
 
 func _place_sticker() -> void:
@@ -113,15 +104,7 @@ func _place_sticker() -> void:
 	var cr := sticker.content_root
 	_art.position = Vector2.ZERO
 	_art.size = cr.size
-	if _badge != null:
-		var d := cr.size.x
-		var r := sticker.body_size.x * SiteMarker.SUB_BADGE_SHARE
-		var at := cr.size * 0.5 + SiteMarker.SUB_BADGE_AT * sticker.body_size.x
-		_badge.position = at - _badge.custom_minimum_size * 0.5
-		_badge.size = _badge.custom_minimum_size
-		_art.set_meta(&"badge", [at, r, d])
 	sticker.refresh()
-
 
 func _apply_state() -> void:
 	if sticker == null:
@@ -138,14 +121,7 @@ func _apply_state() -> void:
 
 func _draw_art() -> void:
 	var sz := _art.size
-	var c := sz * 0.5
-	var r := minf(sz.x, sz.y) * 0.5
-	_art.draw_circle(c, r, SiteMarker.disc_fill(spec))
-	SiteMarker.draw_art(_art, spec, c, r)
-	if _art.has_meta(&"badge"):
-		var b: Array = _art.get_meta(&"badge")
-		_art.draw_circle(b[0], b[1], Palette.NIGHT_SKY.lerp(Palette.RESIST_GOLD, SiteMarker.DISC_TINT))
-		_art.draw_arc(b[0], b[1], 0.0, TAU, 24, Palette.RESIST_GOLD, maxf(1.5, b[1] * 0.14), true)
+	SiteMarker.draw_art(_art, spec, sz * 0.5, minf(sz.x, sz.y) * 0.5)
 
 
 func _draw() -> void:
