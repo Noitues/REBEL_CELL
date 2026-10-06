@@ -81,6 +81,8 @@ const SCREENS := [
 	["title", "_s_title", "Title / main menu with a campaign to continue."],
 	["title_confirm", "_s_title_confirm", "ART-10 4C: the title's delete-slot confirm (the abandon dialog look)."],
 	["slots", "_s_slots", "Campaign slots with one saved campaign."],
+	["slots_2", "_s_slots_2", "Parity SLOTS: campaign slots with two saved campaigns."],
+	["slots_3", "_s_slots_3", "Parity SLOTS: campaign slots with all three slots used."],
 	["new_campaign", "_s_new_campaign", "New campaign page (all corporations unlocked)."],
 	["new_campaign_picker", "_s_new_campaign_picker", "New campaign with the target picker open."],
 	["hq", "_s_hq", "HQ after starting a new campaign."],
@@ -318,7 +320,7 @@ func _unavailable(screen: String, what: String) -> void:
 func _teardown() -> void:
 	_clear_scenes()
 	RunManager.delete_save()
-	for slot in ["1", "demo", SLOT]:
+	for slot in ["1", "2", "3", "demo", SLOT]:
 		RunManager.save_slot = slot
 		RunManager.delete_save()
 	RunManager.save_slot = RunManager.DEFAULT_SLOT
@@ -649,10 +651,27 @@ func _s_title_confirm() -> void:
 
 
 func _s_slots() -> void:
-	RunManager.save_slot = "1"
-	RunManager.new_campaign(4)
-	DemoSetup.set_heat(RunManager.campaign, 33)
-	RunManager.autosave()
+	await _slots_page(1)
+
+
+func _s_slots_2() -> void:
+	await _slots_page(2)
+
+
+func _s_slots_3() -> void:
+	await _slots_page(3)
+
+
+## The campaign slots page with `used` slots saved (Parity SLOTS-01..04: 1, 2 and 3 cards).
+func _slots_page(used: int) -> void:
+	for i in 3:
+		RunManager.save_slot = str(i + 1)
+		RunManager.delete_save()
+	for i in used:
+		RunManager.save_slot = str(i + 1)
+		RunManager.new_campaign(4 + i)
+		DemoSetup.set_heat(RunManager.campaign, 33 + 30 * i)
+		RunManager.autosave()
 	RunManager.save_slot = SLOT
 	var title: Node = TITLE.instantiate()
 	title.continue_slot = "1"

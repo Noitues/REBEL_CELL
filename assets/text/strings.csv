@@ -689,6 +689,7 @@ EFFECTS & MOTION,EFFECTS & MOTION
 ELITE,ELITE
 ELITE DOWN,ELITE DOWN
 ELITES,ELITES
+EMPTY SLOT,EMPTY SLOT
 ENCRYPTED,ENCRYPTED
 ENCRYPTED STOPPED %d,ENCRYPTED STOPPED %d
 EQUIPMENT LOST TO HOSTILES,EQUIPMENT LOST TO HOSTILES
@@ -846,6 +847,7 @@ Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the c
 Exploits found: %s. The breach on the corporation's core needs %d.,Exploits found: %s. The breach on the corporation's core needs %d.
 FAILED,FAILED
 FIGHT WON,FIGHT WON
+FILED,FILED
 FIRMWARE DROP,FIRMWARE DROP
 FLATLINED,FLATLINED
 FREE NUDGE %s NEXT,FREE NUDGE %s NEXT
@@ -1086,6 +1088,7 @@ RUNS NOW:","IF THE RAID
 RUNS NOW:"
 IF YOU SEND IT,IF YOU SEND IT
 IF YOU SEND IT NOW: %s,IF YOU SEND IT NOW: %s
+IN A RUN,IN A RUN
 INCOMING,INCOMING
 INFC,INFC
 INFECT,INFECT
@@ -1128,16 +1131,19 @@ LIMITED // slow layer only,LIMITED // slow layer only
 LINES HEARD,LINES HEARD
 LINK,LINK
 LIVE RAID FEED,LIVE RAID FEED
+LOAD,LOAD
 LOADOUT // %s // DECK,LOADOUT // %s // DECK
 LOADOUT // %s // SPINNER,LOADOUT // %s // SPINNER
 LOCKDOWN,LOCKDOWN
 LOG,LOG
 LOOT,LOOT
 LOOT SHEET // %s // PICK 1 OF %d,LOOT SHEET // %s // PICK 1 OF %d
+LOST,LOST
 "LURES, PULL %d","LURES, PULL %d"
 "Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}","Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}"
 Language,Language
 Language (translations from assets/text/strings.csv),Language (translations from assets/text/strings.csv)
+Last played,Last played
 Leave,Leave
 Leave REBEL_CELL (asks first).,Leave REBEL_CELL (asks first).
 Leave the Mainframe and go back to the route.,Leave the Mainframe and go back to the route.
@@ -1614,6 +1620,7 @@ Next threshold at %d.,Next threshold at %d.
 Next-run boosts:,Next-run boosts:
 No Daemons installed.,No Daemons installed.
 No First Turn Free Nudge,No First Turn Free Nudge
+No campaign filed here yet.,No campaign filed here yet.
 No campaign is saved yet: OVERTHROW starts one.,No campaign is saved yet: OVERTHROW starts one.
 No campaign.,No campaign.
 No change to your numbers.,No change to your numbers.
@@ -3129,6 +3136,7 @@ asset,asset
 back,back
 boss,boss
 calibrate_handler,calibrate_handler
+cannot undo,cannot undo
 card,card
 card %d-%d · slice %d (NULL %d) · bin %d,card %d-%d · slice %d (NULL %d) · bin %d
 chip,chip
@@ -3153,6 +3161,7 @@ exploits,exploits
 "filed by: %s, AUDIT %d","filed by: %s, AUDIT %d"
 firmware,firmware
 flagged,flagged
+flatlined,flatlined
 good aim,good aim
 guarded,guarded
 hack,hack

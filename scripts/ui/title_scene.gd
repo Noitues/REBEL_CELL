@@ -40,6 +40,14 @@ const MORE_STEP := UiTheme.BODY
 const HINT_GAP := 12.0
 ## The gap between the bottom panels (MORE, PROFILE) and the foot row (px).
 const FOOT_GAP := 6.0
+## Parity TITLE-02 (concept 33 `title_screen.png`): the least gap from OVERTHROW's focus halo
+## down to the MORE panel (px at 1280x720; at rest the sticker's die-cut sits ~10 px further
+## up, the concept's ~25 px). MORE's lines keep the concept's pitch (five lines in ~125 px):
+## each line's empty top and bottom padding overlaps its neighbour's by MORE_ROW_SEP (the
+## words, the hover wash's lit rule and the focus brackets keep their size), so MORE sits
+## lower and clear of the verbs.
+const MORE_GAP := 20.0
+const MORE_ROW_SEP := -4
 ## The city's dim behind the title (it reads as the backdrop, round 33's blurred city).
 const CITY_DIM := 0.58
 ## Parity fix TITLE-01: the blurred 3D city's framing, blur and darkening (round 33); the 2D
@@ -48,7 +56,8 @@ const CITY_LOOK := preload("res://content/config/title_city_backdrop.tres")
 ## The page widths for the codex / stats / slots terminals (px at 1.0) and the codex text's
 ## least height.
 const PAGE_W := 900.0
-const SLOTS_W := 620.0
+## Frames the slots page checks its panel's fit after it is laid out (SLOTS-04).
+const SLOTS_TRIM_PASSES := 3
 const CODEX_H := 420.0
 const STATS_H := 200.0
 const HISTORY_H := 150.0
@@ -201,6 +210,8 @@ func _set_panel(p: Control, name: String) -> void:
 	Dialogue.enter_screen("title")
 	UiWrap.fit(p)
 	UiFocus.link_layout(p)
+	if name == "slots":
+		_link_slots(p)  # the case files' grid (SLOTS-01)
 	var first := _default_focus(p)
 	PageTransition.enter(p, PageTransition.look_of(p), _page_focus.bind(p, first), -1 if back else 1)
 
@@ -216,9 +227,18 @@ func _page_focus(p: Control, first: Control) -> void:
 		UiFocus.focus_first(p)
 
 
-## The control a page focuses first: BREACH (or the first live verb) on the main page.
+## The control a page focuses first: BREACH (or the first live verb) on the main page, the
+## pink LOAD on the slots page.
 func _default_focus(p: Control) -> Control:
-	if panel_name != "main" or p != _panel:
+	if p != _panel:
+		return null
+	if panel_name == "slots":
+		# SLOTS-02: the page's one sticker verb (LOAD on the newest campaign) takes the focus.
+		for c in p.find_children("Slot*", "CaseFileCard", true, false):
+			if (c as CaseFileCard).primary:
+				return (c as CaseFileCard).load_button
+		return null
+	if panel_name != "main":
 		return null
 	for v in verbs:
 		if is_instance_valid(v) and not v.disabled:
@@ -278,6 +298,7 @@ func show_main() -> void:
 	more.custom_minimum_size.x = MORE_W * maxf(1.0, Settings.text_scale * 0.65)
 	var box := more.body
 	box.name = "MoreList"
+	box.add_theme_constant_override("separation", MORE_ROW_SEP)  # TITLE-02: the concept's pitch
 	_item(box, tr("Campaign slots"), show_slots, StatIcon.SLOTS, tr("The three campaign slots: start, load or delete."), "C")
 	_item(box, tr("Codex"), show_codex, StatIcon.CODEX, tr("Everything the Cell knows: slices, cards, Firmware, Daemons, rules."), "X")
 	# Big text: the line reads STATS (its page's title; the tooltip names the achievements) so
@@ -478,31 +499,172 @@ func _flex(t: CrtText, nominal: float) -> void:
 	t.body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 
+## Parity SLOTS-01..04 (designer 2026-10-05; ported from art-m13-final
+## `scripts/ui/title_scene.gd` show_slots / slot_crew / slot_columns, reworked in v2): the
+## CAMPAIGN SLOTS title sticker (SLOTS-03) over one terminal panel holding the three slots as
+## case files in a row (CaseFileCard; fewer columns as the text grows), LOAD the page's one
+## sticker verb on the newest campaign, DELETE a HARM terminal chip that asks first. The panel
+## sizes to its cards up to the room above the Back line and the ticker, then scrolls inside
+## (CrtWindow `max_body`: FitScroll + ScrollHint, SLOTS-04).
 func show_slots() -> void:
-	var win := CrtWindow.new(tr("Campaign slots"))
-	win.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	win.custom_minimum_size.x = SLOTS_W
-	var box := win.body
-	box.add_theme_constant_override("separation", 10)
+	var latest := ""
+	var best := -1.0
 	for slot in SLOTS:
-		var row := VBoxContainer.new()
-		row.name = "Slot%s" % slot
-		row.add_theme_constant_override("separation", SLOT_ROW_GAP)  # room for the focus brackets over the buttons
+		var at := float(RunManager.slot_summary(slot).get("saved_at", -1.0))
+		if at > best:
+			best = at
+			latest = slot
+	var win := CrtWindow.new(tr("Campaign slots"))
+	win.name = "Slots"
+	# SLOTS-04: the cards in a FitScroll (CrtWindow's `max_body`, set up here so the window
+	# keeps its default, skinned Cell accent).
+	var outer := win.body.get_parent()
+	outer.remove_child(win.body)
+	win.fit = FitScroll.new(win.body, page_room())
+	outer.add_child(win.fit)
+	# The view scrolls whole case files: no snap to the lines inside a card (it shrank the view
+	# under a card's height at 1.6).
+	win.fit.hint.snap_rows = false
+	win.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	var grid := GridContainer.new()
+	grid.name = "Cards"
+	grid.columns = slot_columns()
+	grid.add_theme_constant_override("h_separation", UiTheme.GUTTER)
+	grid.add_theme_constant_override("v_separation", UiTheme.GUTTER)
+	for slot in SLOTS:
 		var summary := RunManager.slot_summary(slot)
-		row.add_child(Chrome.caps_label(tr("SLOT %s") % slot, UiTheme.LABEL, PaletteSkins.chrome(Palette.NET_CYAN)))
-		row.add_child(_label(_describe(summary)))
-		var buttons := HFlowContainer.new()
-		buttons.add_theme_constant_override("h_separation", 10)
-		var s := slot
-		if summary.is_empty():
-			_item(buttons, tr("New campaign"), func() -> void: new_in_slot(s), StatIcon.PLAY, tr("Start a new campaign in slot %s.") % s)
-		else:
-			_item(buttons, tr("Load"), func() -> void: load_slot(s), StatIcon.CONTINUE, tr("Load the campaign in slot %s.") % s)
-			_item(buttons, tr("Delete"), func() -> void: confirm_delete(s), StatIcon.QUIT, tr("Delete the campaign in slot %s (asks first).") % s)
-		row.add_child(buttons)
-		box.add_child(row)
-	_item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
-	_set_panel(_page("CAMPAIGN SLOTS", win, "SlotsPage"), "slots")
+		var card := CaseFileCard.new(slot, summary, slot_crew(slot) if not summary.is_empty() else [], slot == latest)
+		card.load_pressed.connect(load_slot)
+		card.delete_pressed.connect(confirm_delete)
+		card.new_pressed.connect(new_in_slot)
+		# The slot in words on hover (a screen reader's line too).
+		card.folder.tooltip_text = UiTip.fold("%s: %s" % [tr("SLOT %s") % slot, _describe(summary)])
+		card.folder.mouse_filter = Control.MOUSE_FILTER_PASS
+		grid.add_child(card)
+	win.body.add_child(grid)
+	var box := VBoxContainer.new()
+	box.name = "SlotsBox"
+	box.add_theme_constant_override("separation", SLOT_ROW_GAP)  # room for the focus brackets over Back
+	box.add_child(win)
+	var back := _item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
+	back.name = "Back"
+	var page := _page("CAMPAIGN SLOTS", box, "SlotsPage")
+	# SLOTS-04: the panel wraps its cards (the city shows below), never the page's full height.
+	box.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	win.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	# The cards' first cap: the page's room less the rows outside the scrolling view that are
+	# known before layout (the sticker, Back, the panel's pads); _trim_slots then gives the
+	# view exactly the room left once the page is laid out.
+	var head := page.get_child(0) as Control
+	win.fit.max_height = maxf(FitScroll.MIN_VIEW * Settings.text_scale, page_room() - head.get_combined_minimum_size().y
+		- back.get_combined_minimum_size().y - SLOT_ROW_GAP - CrtWindow.PAD_TOP - CrtWindow.PAD_BOTTOM)
+	_set_panel(page, "slots")
+	_slots_trims = SLOTS_TRIM_PASSES
+	if is_inside_tree() and not get_tree().process_frame.is_connected(_trim_slots):
+		get_tree().process_frame.connect(_trim_slots, CONNECT_ONE_SHOT)
+
+
+## The page's room under the subtitles' band and over the ticker (px).
+func page_room() -> float:
+	return get_viewport_rect().size.y - SubtitleStrip.top_below(PAGE_MARGIN.y) - PAGE_MARGIN.z - ticker.get_combined_minimum_size().y
+
+
+## Frames the slots page still checks its fit (see _trim_slots).
+var _slots_trims: int = 0
+
+
+## SLOTS-04: once the slots page is laid out, the cards' view takes exactly the room left over
+## the ticker: shorter when Back would run under the ticker, taller (up to its cards) when it
+## scrolls with room to spare. Read from the page's own layout (its entrance may be moving it).
+func _trim_slots() -> void:
+	var page := _panel
+	if panel_name != "slots" or page == null or not is_instance_valid(page) or not is_inside_tree():
+		return
+	var win := page.find_child("Slots", true, false) as CrtWindow
+	var back := page.find_child("Back", true, false) as Control
+	if win != null and win.fit != null and back != null:
+		var bottom := _panel_host.global_position.y + (back.global_position.y - page.global_position.y) + back.size.y
+		var spare := page_room() + SubtitleStrip.top_below(PAGE_MARGIN.y) - bottom
+		if spare < -0.5 or (spare > 0.5 and win.fit.overflowing()):
+			win.fit.max_height = maxf(FitScroll.MIN_VIEW * Settings.text_scale, win.fit.max_height + floorf(spare))
+		# The focus may have landed while the view had no size yet: bring it into sight.
+		var focused := get_viewport().gui_get_focus_owner()
+		if focused != null and win.fit.scroll.is_ancestor_of(focused):
+			# Its whole case file when it fits the view (tab to actions), then the action itself.
+			var card := focused.get_parent()
+			while card != null and not (card is CaseFileCard):
+				card = card.get_parent()
+			if card != null:
+				win.fit.scroll.ensure_control_visible(card as Control)
+			win.fit.scroll.ensure_control_visible(focused)
+	_slots_trims -= 1
+	if _slots_trims > 0 and not get_tree().process_frame.is_connected(_trim_slots):
+		get_tree().process_frame.connect(_trim_slots, CONNECT_ONE_SHOT)
+
+
+## Case files per row: 3 while three fit the screen, then 2, then 1 (ported from
+## art-m13-final title_scene.gd slot_columns).
+func slot_columns() -> int:
+	var room := get_viewport_rect().size.x - PAGE_MARGIN.x * 2 - CrtWindow.PAD_H * 2
+	var w := CaseFileCard.width() + UiTheme.GUTTER
+	return clampi(int((room + UiTheme.GUTTER) / w), 1, SLOTS.size())
+
+
+## The crew of the campaign in `slot` ([{id, name, class_id, alive}]; [] when unreadable).
+## Read-only: the save file is read, never written (ported from art-m13-final).
+static func slot_crew(slot: String) -> Array:
+	var data := SaveService.load_dict(SaveService.campaign_path(slot))
+	var out := []
+	for od in (data.get("campaign", {}) as Dictionary).get("roster", []):
+		if od is Dictionary:
+			out.append({"id": String(od.get("id", "")), "name": String(od.get("name", "")), "class_id": String(od.get("class_id", "")),
+				"alive": bool(od.get("alive", true))})
+	return out
+
+
+## The slots page's focus (the cards sit in a grid UiFocus cannot read): left / right walk
+## the actions of a row of cards, up / down go to the card above / below (the same place in
+## its actions, clamped), the last row down to Back and Back up to the last row.
+func _link_slots(page: Control) -> void:
+	var grid := page.find_child("Cards", true, false) as GridContainer
+	var back := page.find_child("Back", true, false) as Control
+	if grid == null:
+		return
+	var cards: Array[CaseFileCard] = []
+	for c in grid.get_children():
+		if c is CaseFileCard:
+			cards.append(c)
+	var cols := maxi(1, grid.columns)
+	var rows := ceili(float(cards.size()) / cols)
+	for k in cards.size():
+		var r := k / cols
+		var line: Array[Control] = []
+		for j in range(r * cols, mini((r + 1) * cols, cards.size())):
+			line.append_array(cards[j].actions())
+		var own := cards[k].actions()
+		for i in own.size():
+			var c := own[i]
+			var at := line.find(c)
+			c.focus_neighbor_left = c.get_path_to(line[at - 1]) if at > 0 else NodePath()
+			c.focus_neighbor_right = c.get_path_to(line[at + 1]) if at + 1 < line.size() else NodePath()
+			c.focus_neighbor_top = NodePath()
+			if r > 0:
+				var up := cards[k - cols].actions()
+				c.focus_neighbor_top = c.get_path_to(up[mini(i, up.size() - 1)])
+			var below := k + cols
+			if below >= cards.size() and r + 1 < rows:
+				below = cards.size() - 1  # the last row is short: its last card
+			if below < cards.size():
+				var down := cards[below].actions()
+				c.focus_neighbor_bottom = c.get_path_to(down[mini(i, down.size() - 1)])
+			elif back != null:
+				c.focus_neighbor_bottom = c.get_path_to(back)
+	if back != null and not cards.is_empty():
+		var last := cards[(rows - 1) * cols].actions()
+		back.focus_neighbor_top = back.get_path_to(last[0])
+		back.focus_neighbor_bottom = NodePath()
+		back.focus_neighbor_left = NodePath()
+		back.focus_neighbor_right = NodePath()
 
 
 func show_codex() -> void:
@@ -768,12 +930,6 @@ func _item(box: Control, text: String, on_pressed: Callable, kind: StringName, t
 		IconMark.attach(b, kind)
 		b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN  # a terminal chip, not a full-width bar
 	return b
-
-
-func _label(text: String) -> Label:
-	var l := Label.new()
-	l.text = text
-	return l
 
 
 func _button(text: String, on_pressed: Callable) -> Button:
