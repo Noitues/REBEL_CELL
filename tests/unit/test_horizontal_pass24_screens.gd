@@ -876,7 +876,12 @@ func test_route_nodes_clear_of_the_route_column_and_choices_told_apart() -> void
 		await _frames(24)
 		var col := scene._panel.find_child("RouteColumn", true, false) as Control
 		var win := scene._panel.find_child("RouteWindow", true, false) as Control
-		for r in LegendSpot.node_rects(scene.city_overlay, false):
+		# B3 b (art director): the TARGET may be off the route's frame (its red pencil edge arrow).
+		var framed: Array = []
+		for n in scene.city_overlay.nodes:
+			if not bool(n.get("target", false)):
+				framed.append(n["id"])
+		for r in LegendSpot.node_rects(scene.city_overlay, false, framed):
 			assert_false(win.get_global_rect().intersects(r), "a node %s under the ROUTE window %s (text %.1f)" % [r, win.get_global_rect(), scale])
 			assert_false(col.get_global_rect().intersects(r), "a node %s under the route column (text %.1f)" % [r, scale])
 			assert_true(Rect2(Vector2.ZERO, CANVAS).encloses(r), "on screen: %s" % r)

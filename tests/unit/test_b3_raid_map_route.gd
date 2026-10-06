@@ -187,35 +187,66 @@ func test_route_links_are_only_the_ones_the_route_uses_until_the_strip_is_hovere
 		assert_eq(ov.link_hint(e), 0.0, "and they go again")
 
 
-func test_route_fills_the_frame_at_the_round_44_zoom_with_big_stickers() -> void:
+## B3 b (art director, round 44 `route_page.png`): the route frames the walked path, the options
+## and one layer ahead at ortho 130-190 (at a run's start and mid-run, 1.0 / 1.6 / 2.0); the
+## TARGET need not be in frame: off frame it has the red pencil edge arrow.
+func test_route_frames_the_options_at_the_round_44_zoom_with_the_target_arrow() -> void:
+	var cfg: CityConfig = CityView3D.CONFIG
+	assert_almost_eq(cfg.route_ortho_near, 130.0, 0.001)
+	assert_almost_eq(cfg.route_ortho_far, 190.0, 0.001)
 	for corp in CORPORATIONS:
-		RunManager.reset()
-		var scene := _netrun(corp)
-		await _frames(8)
-		var ov := scene.city_overlay as RouteOverlay
-		var ortho: float = scene.route_ortho()
-		var cfg: CityConfig = CityView3D.CONFIG
-		assert_gte(ortho, cfg.route_ortho_near - 0.5, "%s: never closer than the near ortho (%.0f)" % [corp, ortho])
-		# The drawn route (what the map shows: hidden nodes take no room) fills 40 % or more of the
-		# map's free area, along its longer side (the route is a chain, the frame a box).
-		var rects := LegendSpot.node_rects(ov, false)
-		var box := rects[0]
-		for r in rects:
-			box = box.merge(r)
-		var free: Rect2 = scene.route_free_area()
-		var fill := maxf(box.size.x / free.size.x, box.size.y / free.size.y)
-		gut.p("%s: route ortho %.0f, fill %.2f, drawn %d" % [corp, ortho, fill, ov.drawn_ids().size()])
-		if ortho <= cfg.route_ortho_far + 0.5:
-			assert_gte(fill, 0.4, "%s: the route fills %.0f %% of the frame at ortho %.0f" % [corp, fill * 100.0, ortho])
-		else:
-			# A long run framed on the part the player decides on: where they are and the choices.
-			assert_true(scene.route_frames(free), "%s: the decision is framed" % corp)
-		# Node stickers at least 44 px at 1080p (their die-cut).
-		var r := ov.icon_radius(ov.nodes[0]) * ov.get_global_transform_with_canvas().get_scale().x
-		var die := (r - (RouteOverlay.RING_WIDTH + RouteOverlay.RING_GAP) * ov.get_global_transform_with_canvas().get_scale().x) * 2.0
-		assert_gte(die * TO_1080, 44.0, "%s: a node sticker is %.0f px at 1080p" % [corp, die * TO_1080])
-		scene.get_parent().queue_free()
-		await _frames(1)
+		for mid in [false, true]:
+			for scale in [1.0, 1.6, 2.0]:
+				Settings.set_text_scale(scale)
+				RunManager.reset()
+				var scene := _netrun(corp)
+				await _frames(8)
+				if mid:
+					var s := RunManager.netrun
+					var first: StringName = s.available_nodes()[0]
+					s.run.current_node_id = first
+					s.run.visited.append(first)
+					scene._show_map()
+					await _frames(8)
+				var tag := "%s %s x%.1f" % [corp, "mid-run" if mid else "start", scale]
+				var ov := scene.city_overlay as RouteOverlay
+				var ortho: float = scene.route_ortho()
+				gut.p("%s: route ortho %.0f" % [tag, ortho])
+				assert_gte(ortho, cfg.route_ortho_near - 1.0, "%s: never closer than 130 (%.0f)" % [tag, ortho])
+				assert_lte(ortho, cfg.route_ortho_far + 1.0, "%s: never further than 190 (%.0f)" % [tag, ortho])
+				var free: Rect2 = scene.route_free_area()
+				assert_true(scene.route_frames(free), "%s: where the player is and the options are in frame" % tag)
+				# The TARGET: in frame, or the edge arrow shows (with the TARGET word).
+				var target: Dictionary = {}
+				for n in ov.nodes:
+					if bool(n.get("target", false)):
+						target = n
+				assert_false(target.is_empty(), "%s: the run has its TARGET" % tag)
+				var arrow: TargetEdgeMarker = scene.route_target
+				assert_not_null(arrow, "%s: the edge arrow is on the page" % tag)
+				arrow.refresh()
+				var at := ov.get_global_transform_with_canvas() * ov.icon_pos(target)
+				var in_frame := (arrow.get_parent() as Control).get_global_rect().has_point(at)
+				assert_eq(arrow.showing(), not in_frame, "%s: the arrow shows exactly when the TARGET is off frame" % tag)
+				# Node stickers at least 44 px at 1080p (their die-cut).
+				var k := ov.get_global_transform_with_canvas().get_scale().x
+				var r := ov.icon_radius(ov.nodes[0]) * k
+				var die := (r - (RouteOverlay.RING_WIDTH + RouteOverlay.RING_GAP) * k) * 2.0
+				assert_gte(die * TO_1080, 44.0, "%s: a node sticker is %.0f px at 1080p" % [tag, die * TO_1080])
+				Settings.set_text_scale(1.0)
+				scene.get_parent().queue_free()
+				await _frames(1)
+
+
+func test_the_edge_arrow_finds_the_route_target() -> void:
+	var ov := CityMapOverlay.new()
+	add_child_autofree(ov)
+	var nodes: Array[Dictionary] = [{"id": &"a", "at": Vector2(1, 1)}, {"id": &"t", "at": Vector2(3, 3), "target": true}]
+	ov.set_graph(nodes, [] as Array[Dictionary])
+	var m := TargetEdgeMarker.make(ov)
+	add_child_autofree(m)
+	assert_true(TargetEdgeMarker.edge_point(Rect2(0, 0, 100, 100), Vector2(300, 50), 10.0)["inside"] == false)
+	assert_false(m.showing(), "nothing before a frame")
 
 
 func test_the_route_window_keeps_grid_view_and_save_and_quit_only() -> void:
@@ -325,6 +356,50 @@ func test_defence_cards_are_the_concept_size_at_1080p_and_the_honeypot_is_the_de
 	assert_eq(String(m["glyph"]), "placeholder_phishing")
 	assert_eq(AssetCard.color_of(&"honeypot_node").to_html(false), "b08cff")
 	assert_eq(AssetIcon.color_of(&"honeypot_node").to_html(false), "b08cff")
+
+
+## B3 b (art director): no instruction panel over the work order; the paper takes the left
+## column; YOUR NETWORK shows (collapsed to its header and CORE when short) and is never below the
+## fold; the RAID SETUP title is a page title sticker (about 220 px wide, 48 px cap at 1080p).
+func test_raid_setup_paper_whole_network_visible_and_a_page_title() -> void:
+	_raid_campaign()
+	for scale in SCALES:
+		Settings.set_text_scale(scale)
+		var hq := await _hq()
+		hq.show_raid()
+		await _frames(8)
+		var page: Control = hq._panel
+		var tag := "x%.1f" % scale
+		assert_null(page.find_child("RaidIntro", true, false), "%s: no instruction panel" % tag)
+		var order := page.get_node("WorkOrder") as Control
+		var paper := page.find_child("RaidCard", true, false) as Control
+		assert_true(order.is_ancestor_of(paper), "%s: the work order holds the left column" % tag)
+		for k in order.get_children():
+			if k is Control and (k as Control).visible and not (k as Control).is_ancestor_of(paper) and k != paper:
+				assert_true((k as Control).get_global_rect().position.y >= paper.get_global_rect().end.y - 1.0 or not (k as Control).get_global_rect().intersects(paper.get_global_rect()),
+					"%s: nothing over the paper (%s)" % [tag, k.name])
+		var column := page.get_node("CardColumn") as Control
+		var network := page.find_child("NodeOrders", true, false) as Control
+		var core := network.find_child("Order_%s" % RunManager.campaign.grid.home_site_id, true, false) as Control
+		assert_not_null(core, "%s: the CORE row" % tag)
+		var shown := column.get_global_rect().grow(1.0)
+		assert_true(shown.encloses(core.get_global_rect()), "%s: YOUR NETWORK's CORE row is in view, not below the fold (%s in %s)" % [tag, core.get_global_rect(), shown])
+		var head := network.get_global_rect().position.y
+		assert_true(shown.has_point(Vector2(network.get_global_rect().get_center().x, head + 2.0)), "%s: its header is in view" % tag)
+		assert_eq((network as RaidTerminal).tag_label.text, tr("%d NODES") % RunManager.campaign.grid.claimed_ids().size(), "%s: the header counts the nodes" % tag)
+		gut.p("%s: YOUR NETWORK collapsed %s" % [tag, hq.network_collapsed()])
+		if scale <= 1.6:
+			var intel := page.find_child("ThreatIntel", true, false) as Control
+			assert_true(shown.encloses(intel.get_global_rect()), "%s: THREAT INTEL whole too" % tag)
+		# The title: the page title's baked sticker at the title pages' size.
+		var st: VerbSticker = hq.hud.title_sticker
+		assert_not_null(st, tag)
+		assert_true(st.uses_art(), "%s: RAID SETUP is the baked title sticker" % tag)
+		var w := st.get_combined_minimum_size().x * TO_1080
+		assert_gte(w, 200.0, "%s: about 220 px wide at 1080p (%.0f)" % [tag, w])
+		hq.get_parent().queue_free()
+		await _frames(1)
+	Settings.set_text_scale(1.0)
 
 
 func test_your_network_and_threat_intel_fit_the_column_at_every_text_size() -> void:

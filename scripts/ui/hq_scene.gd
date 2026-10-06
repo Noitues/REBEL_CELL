@@ -937,7 +937,8 @@ func _set_panel(p: Control, name: String) -> void:
 	# Q10, round 44 `raid_setup.png`): while the DEFENCE hand is open the page is the raid setup:
 	# its yellow RAID SETUP title sticker.
 	hud.set_screen("" if name in HQ_PAGES else String(SCREEN_NUMBERS.get(name, "")),
-		tr(RAID_SETUP_TITLE) if name == "raid" else ("" if name in HQ_PAGES else screen_title(name)))
+		tr(RAID_SETUP_TITLE) if name == "raid" else ("" if name in HQ_PAGES else screen_title(name)),
+		VerbSticker.title_art(RAID_SETUP_TITLE) if name == "raid" else "")  # B3 b: the title pages' size class
 	if not name in HEAT_BUTTON_PAGES:
 		close_heat_terminal(false)
 	if not name in HQ_PAGES:
@@ -1608,7 +1609,7 @@ func _build_hq_page(page_name: String) -> void:
 		# B3 (review Q9, round 44 `raid_setup.png`): YOUR NETWORK is in the right column under
 		# THREAT INTEL (`_defence_cards`); the left column is the title's work order alone.
 		if raid_mode:
-			# Room for the paper's clip under the setup's instruction line (parity RAID-02).
+			# Room for the paper's clip over the paper (parity RAID-02).
 			var clip_room := Control.new()
 			clip_room.name = "ClipRoom"
 			clip_room.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1623,10 +1624,11 @@ func _build_hq_page(page_name: String) -> void:
 		setup.visible = not raid_mode
 		order.add_child(setup)
 		if raid_mode:
-			# The setup's one line over the column (parity RAID-02: the paper's clip never
-			# reaches it).
-			order.add_child(_raid_intro())
-			order.move_child(order.get_child(order.get_child_count() - 1), 0)
+			# B3 b (art director): no instruction panel over the paper (it covered the work order
+			# and said what the paper and START DEFENSE say); its sentence is the paper's tooltip.
+			var order_paper := paper.find_child("RaidCard", true, false) as Control
+			if order_paper != null:
+				order_paper.tooltip_text = UiTip.fold(TextDb.ui_text("ui.raid_intro") + "\n" + order_paper.tooltip_text)
 		page.add_child(order)
 	# The hand: its tabs and the cards of the deck picked.
 	page.add_child(_hand_tabs())
@@ -1675,8 +1677,9 @@ func _build_hq_page(page_name: String) -> void:
 	card_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
-		# B3: the raid setup's column keeps only the backing's own room (THREAT INTEL fits at 1.6).
-		card_margin.add_theme_constant_override(side, roundi(DecryptedHoloPanel.BACKING_OUT * (1.0 if raid_mode else 2.0)))
+		# B3: the raid setup's column keeps only the backing's side room (THREAT INTEL and YOUR NETWORK fit at 1.6).
+		var share := 2.0 if not raid_mode else (1.0 if side in ["margin_left", "margin_right"] else 0.0)
+		card_margin.add_theme_constant_override(side, roundi(DecryptedHoloPanel.BACKING_OUT * share))
 	card_margin.add_child(stack)
 	column.add_child(card_margin)
 	var site := CampaignRules.site_data(corp, selected_site)
@@ -1769,23 +1772,6 @@ func _build_hq_page(page_name: String) -> void:
 	if _last_warned_raid != String(pending.get("raid_id", "")) and not pending.is_empty():
 		_last_warned_raid = String(pending.get("raid_id", ""))
 		Dialogue.raid_warning(c.corporation_id, StringName(String(pending.get("raid_id", ""))), c.raids_won + c.raids_lost, "raid")
-
-
-## H23 S5 / parity RAID-02: what the raid is and what to do, in one plain sentence, on a dark
-## plate; HQ-B (c): under the work order in the setup.
-func _raid_intro() -> Control:
-	var intro := _para(TextDb.ui_text("ui.raid_intro"))
-	intro.name = "RaidIntro"
-	intro.add_theme_color_override("font_color", Palette.PAPER)
-	var intro_box := PanelContainer.new()
-	intro_box.name = "RaidIntroBox"
-	intro_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var plate := StyleBoxFlat.new()
-	plate.bg_color = Color(Palette.SCRIM, RAID_INTRO_PLATE_ALPHA)
-	plate.set_content_margin_all(UiTheme.SP_S)
-	intro_box.add_theme_stylebox_override(&"panel", plate)
-	intro_box.add_child(intro)
-	return intro_box
 
 
 ## HQ-B: the pages that are the HQ (its hands, and the DEFENCE hand's raid setup).
@@ -2438,7 +2424,9 @@ func _place_hq() -> void:
 		# B3 (the THREAT INTEL fit at 1.6): the setup's column starts at the page's top (its key
 		# stands on the map) and ends at the verb's sticker.
 		top = RAID_COLUMN_TOP
-		bottom = verb.position.y
+		# The slot stands its sticker at its foot (ALIGNMENT_END): the column runs down to the sticker.
+		bottom = verb.position.y + maxf(0.0, verb.size.y - vmin.y)
+		_fit_network(column.get_child(0) as Control, bottom - top)
 	column.size = Vector2(col_w, maxf(1.0, minf((column.get_child(0) as Control).get_combined_minimum_size().y, bottom - top)))
 	column.position = Vector2(col_x, bottom - column.size.y)
 	var was_free := _hq_free
@@ -2472,7 +2460,9 @@ func _place_hq() -> void:
 
 
 ## B3: the raid setup's card column's top (page px): THREAT INTEL starts right under the bar.
-const RAID_COLUMN_TOP := 2.0
+const RAID_COLUMN_TOP := 0.0
+## B3 b: the gap between THREAT INTEL, YOUR NETWORK and IF PLACED in the setup's column (px).
+const RAID_STACK_GAP := 2
 
 
 ## HQ-B: the share of the page's width the opened map key may span.
@@ -3354,6 +3344,7 @@ func _fill_defence_hand(cards: HBoxContainer) -> void:
 ## button makes it the defences' target, the target's row withdraws or moves its assets).
 func _defence_cards(stack: VBoxContainer, raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult) -> void:
 	stack.alignment = BoxContainer.ALIGNMENT_BEGIN  # B3: THREAT INTEL whole at the column's top
+	stack.add_theme_constant_override("separation", RAID_STACK_GAP)
 	stack.add_child(_threat_intel(raid, pending, projection))
 	# B3 (review Q9, round 44): YOUR NETWORK under THREAT INTEL, never over the map or the pencil;
 	# the column scrolls its rows ("more below").
@@ -3438,15 +3429,77 @@ func _your_network(projection: RaidResolver.RaidResult) -> RaidTerminal:
 	var claimed := c.grid.claimed_ids()
 	var orders_win := RaidTerminal.new(tr("YOUR NETWORK"), Palette.NET_CYAN)
 	orders_win.name = "NodeOrders"
-	orders_win.tag_label.text = ""  # HQ-B: the target row carries its ">" (a tag ran over the title in the column)
+	# B3 b (round 44 `raid_setup.png`: "9 NODES" in the header): the node count is the header's tag.
+	orders_win.tag_label.text = tr(NETWORK_COUNT) % claimed.size()
 	var orders := VBoxContainer.new()
 	orders.name = "Orders"
 	orders.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	orders.add_theme_constant_override("separation", 4)
 	orders_win.body.add_child(orders)
+	_network_rows.clear()
+	_network_core_name = null
+	_network_win = orders_win
+	_network_compact = false
 	for site_id in claimed:
-		orders.add_child(_node_order_row(site_id, projection, claimed))
+		var row := _node_order_row(site_id, projection, claimed)
+		if site_id != c.grid.home_site_id:
+			_network_rows.append(row)
+		else:
+			_network_core_name = row.find_child("Target_%s" % site_id, true, false) as Control
+		orders.add_child(row)
 	return orders_win
+
+
+## B3 b: the header's node count (round 44 "9 NODES").
+const NETWORK_COUNT := "%d NODES" # TR
+## B3 b (art director): YOUR NETWORK collapsed to its header and the CORE row (its glyph and
+## forecast chip; the other nodes are picked on the map): the rows it hides, CORE's name button
+## (hidden too: the glyph and the chip carry it), the window and whether it is collapsed now.
+var _network_rows: Array[Control] = []
+var _network_core_name: Control = null
+var _network_win: Control = null
+var _network_compact: bool = false
+
+
+## B3 b (art director: at big text YOUR NETWORK stays visible, never below the fold): the
+## setup's card column holds `room` px; when THREAT INTEL and the whole of YOUR NETWORK need more
+## (IF PLACED, shown only while a card is pointed at, never counts), YOUR NETWORK keeps its header
+## and the CORE row. Returns whether it is collapsed.
+func _fit_network(stack_holder: Control, room: float) -> bool:
+	if _network_win == null or not is_instance_valid(_network_win) or _network_rows.is_empty():
+		return false
+	var sep := float((_network_rows[0].get_parent() as VBoxContainer).get_theme_constant("separation"))
+	var need := stack_holder.get_combined_minimum_size().y
+	if _network_compact:
+		for r in _network_rows:
+			need += r.get_combined_minimum_size().y + sep
+	var placed := _if_placed_term
+	if placed != null and is_instance_valid(placed) and placed.visible:
+		need -= placed.get_combined_minimum_size().y + float((placed.get_parent() as VBoxContainer).get_theme_constant("separation"))
+	var compact := need > room + 0.5
+	if compact != _network_compact:
+		_network_compact = compact
+		for r in _network_rows:
+			r.visible = not compact
+		if _network_core_name != null and is_instance_valid(_network_core_name):
+			_network_core_name.visible = not compact
+	# Where even THREAT INTEL alone is taller than the column (text 2.0), the collapsed YOUR
+	# NETWORK leads the column, so it is never below the fold (THREAT INTEL scrolls under it).
+	var win := _network_win
+	var stack := win.get_parent()
+	if stack != null:
+		var intel := stack.get_node_or_null("ThreatIntel") as Control
+		var lead := compact and intel != null and intel.get_combined_minimum_size().y + float((stack as VBoxContainer).get_theme_constant("separation")) \
+			+ (win as Control).get_combined_minimum_size().y > room + 0.5
+		var want := 0 if lead else (intel.get_index() + 1 if intel != null else win.get_index())
+		if win.get_index() != want and (lead or win.get_index() < (intel.get_index() if intel != null else 0)):
+			stack.move_child(win, want if lead else intel.get_index())
+	return compact
+
+
+## B3 b: whether YOUR NETWORK is collapsed now (tests).
+func network_collapsed() -> bool:
+	return _network_compact
 
 
 ## HQ-B (c): the sticker slot in the raid setup: START DEFENSE (3A's pink RaidSticker) with
@@ -3501,8 +3554,6 @@ const ORDER_STAMP_SHARE := 0.78
 ## START DEFENSE's sticker lettering (px at text scale 1.0) and THREAT INTEL's width beside
 ## the loadout (px at 1.0).
 const START_STICKER_STEP := UiTheme.TITLE
-## Parity fix (RAID-02): the raid instruction line's dark plate (SCRIM's ink, this opaque).
-const RAID_INTRO_PLATE_ALPHA := 0.85
 
 
 ## The raid at a glance as the corp's own intercepted WORK ORDER (ART_BIBLE v2 §4.8: corp
