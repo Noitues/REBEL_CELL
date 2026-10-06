@@ -134,6 +134,7 @@ func _ready() -> void:
 	# Subtitles sit in the top band, clear of every control (H20); combat docks its own.
 	Dialogue.dock_default()
 	Settings.hints_changed.connect(_relabel_route)
+	RunManager.run_abandoned.connect(_on_run_abandoned)  # ABANDON-QUIT: from either pause menu
 	# Capture variants (ANIM-6): --demo-set / --demo-speed tune a copy of the motion table.
 	MotionDemo.apply_args()
 	_build_ui()
@@ -884,6 +885,16 @@ func finish_run() -> void:
 	_show_start()
 
 
+## Abandon run (designer ruling 2026-10-05, GDD 4.5): the run ended as the operative's death
+## (RunManager.abandon_run, from this scene's pause menu or the fight's): the pause closes, the
+## run's report reads the events and the run's end page shows (FAILED - operative lost).
+func _on_run_abandoned(events: Array[Dictionary]) -> void:
+	if _settings_panel != null:
+		open_settings()
+	_report(events)
+	_show_current()
+
+
 func save_and_quit() -> void:
 	if RunManager.scene_change_pending():
 		return
@@ -958,6 +969,9 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	# ART-7 7w: the route page is the unified 3D city at the NETRUN band (GRID VIEW: the
 	# Grid's band); the other pages keep the 2D city until their own views move onto it.
 	use_route_city(screen == "route" and (s == null or s.run.kind != "boss" or _grid_zoomed))  # ART-8 8w: an HQ run draws its own compound city
+	# LOOT-04 (designer 2026-10-05): the loot and event pages sit on the title's blurred city.
+	background.show_blurred_city(BLURRED_CITY_SCREENS.has(screen), BLURRED_CITY_LOOK,
+		RunManager.campaign.corporation_id if RunManager.campaign != null else &"")
 	entering = screen != _shown_screen
 	_shown_screen = screen
 	# ART-9 4A: the Mainframe's facade stays only behind the Mainframe.
@@ -1073,6 +1087,10 @@ func _focus_now(page, first) -> void:
 const FIRST_FOCUS_META := &"first_focus"
 ## ANIM-R5 B2: subtitle lines the band holds on a screen (1 elsewhere).
 const SUBTITLE_LINES := {"event": 2, "run_end": 2}
+## LOOT-04 (designer 2026-10-05): the pages over the title's blurred 3D city (their own look:
+## centred darkening for a centred page); the Mainframe keeps its own facade (SHOP).
+const BLURRED_CITY_SCREENS: Array[String] = ["loot", "event"]
+const BLURRED_CITY_LOOK := preload("res://content/config/overlay_city_backdrop.tres")
 ## ANIM-R5 B8: the mid-run raid's playout, a screen of its own (its title, its lines).
 const RAID_PLAYOUT_SCREEN := "netrun_raid_playout"
 

@@ -7,6 +7,9 @@ extends Resource
 ## below) and the darkening the menu reads over. The darkening numbers are round 33 `title.py`
 ## `backdrop()`'s, unchanged (art-concepts-r43 dcfdf74). Read-only content: a view never writes it.
 
+## Rec. 709 luma weights (the grade's saturation step; the shader's LUMA).
+const LUMA := Vector3(0.2126, 0.7152, 0.0722)
+
 @export_group("Tiers")
 ## Per city quality tier (CityConfig.tier_for): the 3D city (true) or the 2D fallback (false).
 @export var city_tiers: Array[bool] = [false, true, true]
@@ -47,6 +50,16 @@ extends Resource
 ## Overall gain after the darkening.
 @export var gain: float = 0.86
 
+@export_group("Grade (this backdrop's own; the city's shared grade is untouched)")
+## The city's colour saturated by `grade_saturation` (mixed from its Rec. 709 luma), then per
+## channel times `grade_gain` plus `grade_lift` (the haze), the lift grown by
+## `haze_out_of_focus` where the view is blurred (lift * (1 + h * (1 - focus))), before the
+## darkening. Neutral: saturation 1, gain 1, lift 0, h 0.
+@export var grade_saturation: float = 1.0
+@export var grade_gain: Color = Color(1, 1, 1)
+@export var grade_lift: Color = Color(0, 0, 0)
+@export var haze_out_of_focus: float = 0.0
+
 
 ## True when city quality tier `tier` takes the 3D city and a renderer can draw it.
 func city_mode(tier: int, can_render: bool) -> bool:
@@ -69,12 +82,25 @@ func field_at(uv: Vector2) -> float:
 	return maxf(dark * vig * gain, 0.0)
 
 
-## The largest field_at over rect `r` (px) of a view of `size` px (a grid of samples, edges
-## included): the brightest the backdrop gets behind `r`.
-func max_field(r: Rect2, size: Vector2, steps: int = 8) -> float:
-	var best := 0.0
+## The colour a city pixel `c` shows at view share `uv` after the grade and the darkening
+## (the shader's output for that pixel, blur aside).
+func shown(p_c: Color, uv: Vector2) -> Color:
+	var luma := p_c.r * LUMA.x + p_c.g * LUMA.y + p_c.b * LUMA.z
+	var c := Color(lerpf(luma, p_c.r, grade_saturation), lerpf(luma, p_c.g, grade_saturation), lerpf(luma, p_c.b, grade_saturation))
+	var lift := 1.0 + haze_out_of_focus * (1.0 - focus_at(uv))
+	var k := field_at(uv)
+	return Color((c.r * grade_gain.r + grade_lift.r * lift) * k, (c.g * grade_gain.g + grade_lift.g * lift) * k,
+		(c.b * grade_gain.b + grade_lift.b * lift) * k, 1.0)
+
+
+## The brightest the backdrop gets behind rect `r` (px) of a view of `size` px: a pure white
+## city through the grade and the darkening, the per-channel maximum over a grid of samples
+## (edges included).
+func worst_behind(r: Rect2, size: Vector2, steps: int = 8) -> Color:
+	var best := Color(0, 0, 0, 1)
 	for i in steps + 1:
 		for j in steps + 1:
 			var p := r.position + r.size * Vector2(float(i) / steps, float(j) / steps)
-			best = maxf(best, field_at(p / size.max(Vector2.ONE)))
-	return best
+			var c := shown(Color(1, 1, 1), p / size.max(Vector2.ONE))
+			best = Color(maxf(best.r, c.r), maxf(best.g, c.g), maxf(best.b, c.b), 1.0)
+	return Color(minf(best.r, 1.0), minf(best.g, 1.0), minf(best.b, 1.0), 1.0)

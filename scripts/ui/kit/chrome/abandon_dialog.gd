@@ -19,6 +19,19 @@ const SAFE_TILT := -2.0
 const VERB_TILT := 3.0
 const ART_PREFIX := "dialog_"
 
+## Designer ruling 2026-10-05 (round 33 `abandon_dialog`: "BURN IT needs a 0.8 s hold (lime ring
+## fills) so it is never a stray press"): with `require_hold`, the pad / keyboard confirm is a
+## hold of `dialog_hold_confirm` (read raw: never sped up, and reduce effects still fills the
+## ring); a mouse click confirms at once; letting go early empties the ring.
+const HOLD_MOTION := &"dialog_hold_confirm"
+
+## The verb needs the hold (`require_hold`), its ring, how full it is (0..1) and whether the
+## accept is held now.
+var hold_to_confirm: bool = false
+var hold_ring: HoldRing = null
+var hold_progress: float = 0.0
+var holding: bool = false
+
 ## The costs grid (names and values), the Heat line and the line that says what stays.
 var costs_grid: GridContainer = null
 var heat_label: Label = null
@@ -96,6 +109,69 @@ func _sticker(row: Container, word: String, note: String, paint: Color) -> Butto
 		col.add_child(c)
 	row.add_child(col)
 	return s
+
+
+## The pad / keyboard confirm becomes a hold on the verb (see HOLD_MOTION); the lime ring
+## fills round the sticker while it is held.
+func require_hold() -> void:
+	if hold_to_confirm:
+		return
+	hold_to_confirm = true
+	hold_ring = HoldRing.new()
+	yes_button.add_child(hold_ring)
+	hold_ring.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# The signal runs before the Button's own input: an accept taken here never presses it.
+	yes_button.gui_input.connect(_on_verb_input)
+	yes_button.focus_exited.connect(release_hold)
+
+
+## How long the hold lasts (s): `dialog_hold_confirm`'s duration, raw.
+static func hold_seconds() -> float:
+	var e := Motion.entry(HOLD_MOTION)
+	return e.duration if e != null else 0.0
+
+
+func _on_verb_input(event: InputEvent) -> void:
+	if event is InputEventMouse or not event.is_action("ui_accept"):
+		return  # a click presses the sticker at once
+	yes_button.accept_event()
+	if event.is_pressed() and not event.is_echo():
+		start_hold()
+	elif not event.is_pressed():
+		release_hold()
+
+
+## The accept went down on the verb: the ring starts to fill.
+func start_hold() -> void:
+	holding = true
+	set_process(true)
+
+
+## The accept let go (or the focus left) before the ring filled: it empties.
+func release_hold() -> void:
+	holding = false
+	_set_hold(0.0)
+
+
+func _process(delta: float) -> void:
+	if holding:
+		advance_hold(delta)
+
+
+## Fills the ring by `seconds` of hold; a full ring confirms (as a press of the verb).
+func advance_hold(seconds: float) -> void:
+	var total := hold_seconds()
+	_set_hold(1.0 if total <= 0.0 else hold_progress + seconds / total)
+	if hold_progress >= 1.0:
+		holding = false
+		set_process(false)
+		yes_button.pressed.emit()
+
+
+func _set_hold(k: float) -> void:
+	hold_progress = clampf(k, 0.0, 1.0)
+	if hold_ring != null:
+		hold_ring.progress = hold_progress
 
 
 ## The words the costs show, name then value, in reading order (tests and the review pack).

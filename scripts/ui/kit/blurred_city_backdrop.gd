@@ -71,6 +71,12 @@ func _ready() -> void:
 	_on_resized()
 
 
+## True when `p_look` takes the 3D city at Settings.city_quality value `city_quality` where
+## `can_render` (a renderer is there; else the host keeps its 2D city). Pure.
+static func takes(p_look: CityBackdropLook, city_quality: int, can_render: bool) -> bool:
+	return p_look.city_mode(CityView3D.CONFIG.tier_for(city_quality), can_render)
+
+
 ## The corp whose HQ frames the view: `wanted` when it has an HQ on the city (a campaign's
 ## target), else the look's default.
 static func frame_corp(p_look: CityBackdropLook, wanted: StringName) -> StringName:
@@ -126,6 +132,20 @@ func _apply_look() -> void:
 	for p: StringName in [&"focus_centre", &"focus_half", &"focus_power", &"side_dark", &"side_reach", &"side_power", &"foot_dark",
 			&"foot_from", &"vignette", &"vignette_centre", &"vignette_scale", &"gain"]:
 		_mat.set_shader_parameter(p, look.get(p))
+	for p: StringName in [&"grade_gain", &"grade_lift"]:
+		var c: Color = look.get(p)
+		_mat.set_shader_parameter(p, Vector3(c.r, c.g, c.b))
+	_mat.set_shader_parameter(&"haze_out_of_focus", look.haze_out_of_focus)
+	_mat.set_shader_parameter(&"grade_saturation", look.grade_saturation)
+
+
+## Shows or hides the backdrop (a host that keeps it across pages): hidden, its city is
+## covered (it pauses its life and stops rendering, CityView3D.covered).
+func set_shown(on: bool) -> void:
+	visible = on
+	if city != null:
+		city.covered = not on
+		_sync_still()
 
 
 ## The view's size in screen pixels (the window's stretch included).
@@ -142,7 +162,7 @@ func _on_resized() -> void:
 	if city != null:
 		city.set_view_size(Vector2i(px))
 		city.set_iso(camera(city.cfg, look, corp, px))
-		if _city_in and still():
+		if _city_in and still() and not city.covered:
 			city.render_target_update_mode = SubViewport.UPDATE_ONCE
 	_picture.queue_redraw()
 
@@ -160,7 +180,7 @@ func _on_city_ready() -> void:
 
 
 func _sync_still() -> void:
-	if city == null or not _city_in:
+	if city == null or not _city_in or city.covered:
 		return
 	city.render_target_update_mode = SubViewport.UPDATE_ONCE if still() else SubViewport.UPDATE_ALWAYS
 

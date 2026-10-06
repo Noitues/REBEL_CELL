@@ -146,6 +146,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"gate_keycard_stagger", &"gate_socket_ring", &"gate_breach_ready",
 	# ART-5 5e: the Cell's blackout reveal on the Grid's city (CityView3D.set_cell_reveal).
 	&"cell_fist_reveal",
+	# ABANDON-QUIT (designer ruling 2026-10-05): the hold on an abandon dialog's verb (AbandonDialog).
+	&"dialog_hold_confirm",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.

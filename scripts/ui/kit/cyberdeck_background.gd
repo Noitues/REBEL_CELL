@@ -47,7 +47,7 @@ func _ready() -> void:
 ## True when look `look` takes the 3D city at Settings.city_quality value `city_quality` where
 ## `can_render` (a renderer is there). Pure.
 static func blurred_city_mode(look: CityBackdropLook, city_quality: int, can_render: bool) -> bool:
-	return look.city_mode(CityView3D.CONFIG.tier_for(city_quality), can_render)
+	return BlurredCityBackdrop.takes(look, city_quality, can_render)
 
 
 ## Swaps the 2D city for the blurred 3D city of `look` framed on `corp`'s HQ (BlurredCityBackdrop)

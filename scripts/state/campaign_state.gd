@@ -3,7 +3,9 @@ extends RefCounted
 ## Campaign-level state a netrun touches (GDD 3, 4.3, 11): Heat, Schematics, the
 ## roster and the Armory. M3 adds the City Grid, territory, thresholds and raids.
 
-enum Outcome { NONE, WON, LOST }
+## ABANDONED = the player ended it from the pause menu (designer ruling 2026-10-05, GDD 4.5);
+## the profile counts it as a lost campaign.
+enum Outcome { NONE, WON, LOST, ABANDONED }
 
 var corporation_id: StringName = &"solace"
 var campaign_seed: int = 0

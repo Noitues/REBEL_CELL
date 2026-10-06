@@ -222,6 +222,8 @@ const DEMOS := {
 	&"city_light_fade": ["screen", "city_motion"],
 	# ART-5 5e: the Cell's blackout reveal on 5b's district model (CityView3D.play_cell_reveal).
 	&"cell_fist_reveal": ["screen", "cell_fist_reveal"],
+	# ABANDON-QUIT: the abandon-run dialog with its verb held (the lime ring fills, then it confirms).
+	&"dialog_hold_confirm": ["screen", "hold_confirm"],
 }
 ## ART-11 4D: the lock demo's nodes on the stage (px from its top-left; the first is home).
 const RANSOM_NODES: Array[Vector2] = [Vector2(450, 300), Vector2(250, 180), Vector2(640, 170), Vector2(180, 430), Vector2(700, 420)]
@@ -1007,6 +1009,14 @@ func _play_screen(what: String) -> void:
 		"city_motion":
 			_city_motion_demo()
 			length = Motion.entry(&"sky_lane_cars").duration
+		"hold_confirm":
+			# ABANDON-QUIT: an abandon-run dialog; the pad holds BURN IT until the ring is full.
+			var d := ExitDialogs.abandon_run({"operative": "GHOST", "cycles": 140, "cards_added": 2, "firmware": 1,
+				"daemons": 1, "assets": 0, "rank": 2, "heat": 12, "tier": 2})
+			d.position = Vector2(160, 80)
+			_screen_host.add_child(d)
+			d.start_hold()
+			length = AbandonDialog.hold_seconds()
 		"cell_fist_reveal":
 			_cell_fist_reveal_demo()
 			length = Motion.entry(CityView3D.CELL_REVEAL_MOTION).duration
