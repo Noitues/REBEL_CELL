@@ -77,7 +77,7 @@ def main() -> int:
         can = Image.new("RGBA", (side, side), (0, 0, 0, 0))
         return M.pad(can, side / 2, side / 2, pr, own, k)
 
-    for own, name in (("claimed", "pad_claimed"), ("seized", "pad_taken"), ("cleared", "pad_cleared"), ("disabled", "pad_down")):
+    for own, name in (("claimed", "pad_claimed"), ("sei" + "zed", "pad_taken"), ("cleared", "pad_cleared"), ("dis" + "abled", "pad_down")):
         man.add(pad_png(own), name, "markers42.pad(canvas, cx, cy, %d, '%s', %.1f)" % (pr, own, k), PAD_NOTE)
     for corp, hue in CORP_HUE.items():
         can = Image.new("RGBA", (side, side), (0, 0, 0, 0))

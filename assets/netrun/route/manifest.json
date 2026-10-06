@@ -72,7 +72,7 @@
    "note": "the concept's past / cut-off sticker (greyscale 0.7)"
   },
   {
-   "file": "node_modem.png",
+   "file": "node_shop.png",
    "made_by": "r32ui.node_sd('modem', 54)['img']",
    "size": [
     130,
@@ -81,7 +81,7 @@
    "note": "SS = 2 image (2x), trimmed to the die-cut"
   },
   {
-   "file": "node_modem_past.png",
+   "file": "node_shop_past.png",
    "made_by": "r32ui.node_sd('modem', 54, grey=True)['img']",
    "size": [
     130,

@@ -583,12 +583,12 @@ func _draw_folder() -> void:
 	folder.draw_rect(Rect2(r.position + Vector2(6, 10) * s, r.size), Palette.SHADOW)
 	# The file tab, its words typed on it.
 	var tab := Rect2(Vector2(r.end.x - (TAB.x + TAB_INSET) * s, 0), Vector2(TAB.x * s, TAB.y * s + 2.0))
-	_manila(folder, tab, Color.WHITE)
+	_manila(folder, tab, Palette.NO_TINT)
 	var f := EndFaces.typed_bold()
 	var fs := UiTheme.font_px(UiTheme.BODY)
 	var tab_text := tr("CELL-%02d / %s") % [audit_number(), tr("AT LARGE") if facts.won else tr("CLOSED")]
 	folder.draw_string(f, Vector2(tab.position.x + UiTheme.SP_M * s, tab.position.y + (tab.size.y + f.get_ascent(fs)) * 0.5 - 2.0), tab_text, HORIZONTAL_ALIGNMENT_LEFT, tab.size.x - UiTheme.SP_M * s, fs, PaperInk.text(Palette.END_TYPE_SOFT))
-	_manila(folder, r, Color.WHITE)
+	_manila(folder, r, Palette.NO_TINT)
 	if not spread.vertical:
 		var x := (_rect_in_self(left_page).end.x + _rect_in_self(right_page).position.x) * 0.5 - folder.position.x
 		folder.draw_line(Vector2(x, r.position.y), Vector2(x, r.end.y), Palette.END_MANILA_EDGE, SPINE * s)
@@ -607,7 +607,7 @@ func _manila(ci: Control, r: Rect2, tint: Color) -> void:
 func _draw_cover() -> void:
 	var s := Settings.text_scale
 	var r := Rect2(Vector2.ZERO, cover.size)
-	_manila(cover, r, Color.WHITE.darkened(COVER_DARK))
+	_manila(cover, r, Palette.NO_TINT.darkened(COVER_DARK))
 	cover.draw_rect(r, Palette.END_MANILA_EDGE, false, 2.0)
 	if cover.size.x < r.size.y * 0.25:
 		return

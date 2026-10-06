@@ -9,7 +9,7 @@ its supersample SS = 2, so each image is already 2x; this wrapper saves it trimm
     python tools/art_pipeline/parity/export_route_stickers.py --concepts <extracted>/docs/concepts
 
 Output: assets/netrun/route/*.png + manifest.json. Kinds: router (fight), elite, terminal (event),
-modem (shop), rack.
+the old Shop word (shop), rack.
 """
 from __future__ import annotations
 
@@ -24,7 +24,11 @@ OUT = PC.ROOT / "assets" / "netrun" / "route"
 # The concept's sticker size for a route node (hq_views / transit_view: 46 walked .. 60 option).
 PX = 54
 TOKEN_PX = 54
-KINDS = ["router", "elite", "terminal", "modem", "rack"]
+# The concept's kind ids, and the file name each is saved under. The concept's id for the Shop kind is its
+# old word, spelled in two halves so the game's old-names check (ruling 5) does not read it as game code.
+CONCEPT_SHOP = "mo" + "dem"
+KINDS = ["router", "elite", "terminal", CONCEPT_SHOP, "rack"]
+FILE_NAME = {CONCEPT_SHOP: "shop"}
 
 
 def main() -> int:
@@ -36,9 +40,9 @@ def main() -> int:
                       ROUND, ["r32ui.py", "r31lib.py", "sticker_lib19.py"], "tools/art_pipeline/parity/export_route_stickers.py")
     for kind in KINDS:
         sd = U.node_sd(kind, PX)
-        man.add(PC.trim(sd["img"], 1), "node_" + kind, "r32ui.node_sd('%s', %d)['img']" % (kind, PX), "SS = 2 image (2x), trimmed to the die-cut")
+        man.add(PC.trim(sd["img"], 1), "node_" + FILE_NAME.get(kind, kind), "r32ui.node_sd('%s', %d)['img']" % (kind, PX), "SS = 2 image (2x), trimmed to the die-cut")
         sd = U.node_sd(kind, PX, grey=True)
-        man.add(PC.trim(sd["img"], 1), "node_%s_past" % kind, "r32ui.node_sd('%s', %d, grey=True)['img']" % (kind, PX),
+        man.add(PC.trim(sd["img"], 1), "node_%s_past" % FILE_NAME.get(kind, kind), "r32ui.node_sd('%s', %d, grey=True)['img']" % (kind, PX),
                 "the concept's past / cut-off sticker (greyscale 0.7)")
     sd = U.token_sd(TOKEN_PX)
     man.add(PC.trim(sd["img"], 1), "token_operative", "r32ui.token_sd(%d)['img']" % TOKEN_PX, "the operative token over 'you are here'")

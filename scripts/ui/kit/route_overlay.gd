@@ -49,7 +49,7 @@ const NEXT_GLOW_ALPHA := 0.28
 ## (`tools/art_pipeline/parity/export_route_stickers.py`, manifest in ROUTE_ART_DIR); the
 ## concept kind each route kind shows.
 const ROUTE_ART_DIR := "res://assets/netrun/route/"
-const STICKER_ART := {KIND_FIGHT: "router", KIND_ELITE: "elite", KIND_EVENT: "terminal", KIND_SHOP: "modem", KIND_RACK: "rack"}
+const STICKER_ART := {KIND_FIGHT: "router", KIND_ELITE: "elite", KIND_EVENT: "terminal", KIND_SHOP: "shop", KIND_RACK: "rack"}
 ## A cut-off sticker's alpha (its art is the concept's grey `past` sticker).
 const CUT_ALPHA := 0.75
 ## The choice number's chip: side and lettering (screen px at text scale 1.0).
@@ -419,7 +419,7 @@ static func draw_sticker(ci: CanvasItem, kind: String, p: Vector2, r: float, sta
 	var t := sticker_art(kind, state == STATE_CUT)
 	var cut := disc_r + DIE_CUT_WIDTH * k
 	var sz := Vector2(t.get_width(), t.get_height()) * (cut * 2.0 / maxf(1.0, t.get_width()))
-	ci.draw_texture_rect(t, Rect2(p - sz * 0.5, sz), false, Color(1, 1, 1, a))
+	ci.draw_texture_rect(t, Rect2(p - sz * 0.5, sz), false, Color(Palette.NO_TINT, a))
 	if KIND_SHAPES.has(kind):
 		ci.set_meta(&"icon_id", icon_id(kind))
 	draw_state_ring(ci, p, ring_r, state, k, a)
