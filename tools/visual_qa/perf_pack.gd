@@ -33,6 +33,8 @@ const PROBE_SCREENS := [
 	["combat_worst_probe", "_s_combat_worst_probe", "The worst fixture, each part of the combat scene hidden in turn."],
 	["combat_worst_redraw", "_s_combat_worst_redraw", "The worst fixture, every wheel view redrawn every frame (its own drawing's cost)."],
 	["combat_worst_fxlayer", "_s_combat_worst_fxlayer", "The worst fixture, the FX layer's volley alone (no precision landing on the wheels)."],
+	["scrim_probe_hq", "_s_scrim_probe_hq", "B1a: the HQ page with and without its UiScrimPools layer (pools, shadows, spill)."],
+	["scrim_probe_route", "_s_scrim_probe_route", "B1a: the route page with and without its UiScrimPools layer."],
 ]
 ## Frames and seconds per probe part.
 const PROBE_WARMUP := 20
@@ -424,6 +426,34 @@ func _s_combat_worst_probe() -> void:
 		var ms := await _probe_ms()
 		p.visible = true
 		print("PROBE hidden=%s class=%s frame_ms=%.2f saves_ms=%.2f" % [combat.get_path_to(p), _cls(p) if _cls(p) != "" else p.get_class(), ms, whole - ms])
+
+
+## B1a: the HQ page's frame with its UiScrimPools layer shown and hidden (one PROBE line each).
+func _s_scrim_probe_hq() -> void:
+	var hq: Node = await _hq_with_campaign()
+	await _settle(hq)
+	await _scrim_probe(hq)
+
+
+## B1a: the route page's frame with its UiScrimPools layer shown and hidden.
+func _s_scrim_probe_route() -> void:
+	await _s_route()
+	await _scrim_probe(get_tree().current_scene if get_tree().current_scene != null else self)
+
+
+func _scrim_probe(root: Node) -> void:
+	var scrims: Array[Node] = root.find_children("*", "UiScrimPools", true, false)
+	if scrims.is_empty():
+		scrims = get_tree().root.find_children("*", "UiScrimPools", true, false)
+	# Shown, hidden, shown again (the mean of the two shown windows: less drift).
+	var whole := await _probe_ms()
+	for s in scrims:
+		(s as CanvasItem).visible = false
+	var bare := await _probe_ms()
+	for s in scrims:
+		(s as CanvasItem).visible = true
+	whole = (whole + await _probe_ms()) * 0.5
+	print("PROBE scrim layers=%d frame_ms=%.2f without=%.2f costs_ms=%.2f" % [scrims.size(), whole, bare, whole - bare])
 
 
 ## The mean frame time (ms) over PROBE_S seconds after PROBE_WARMUP frames, v-sync off.

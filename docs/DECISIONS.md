@@ -31,6 +31,61 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-06 — B1a — UI scrim pools, light spill, panel shadows (integration review)
+Shared systems batch B1, review (art-pass `INTEGRATION_REVIEW/REVIEW.md`) D1 (the pools and bands only; its camera,
+haze and saturation cap are other slices), D19 and section d rows "World darkening under the UI" and "Light spill".
+Sheet: `docs/art_review/PARITY/fixes/B1a.jpg` (concept | before | after, text 1.0 and 1.6). Test:
+`tests/unit/test_b1a_ui_scrim_pools.gd`.
+- **One layer between the world and the UI: `UiScrimPools`** (`scripts/ui/kit/ui_scrim_pools.gd`, shader
+  `shaders/kit/ui_scrim_pools.gdshader`, numbers `content/config/ui_scrim_look.tres` / `UiScrimLook`). One full-screen
+  quad in multiply (no screen read): soft pools round registered wheels (x0.55 in a soft disc of 1.25 R, edge 0.25 of
+  it each side: D1) and panels (x0.55 under the panel, fading over 64 px at 1080: section d), and bands under bars
+  (x0.65 = 35 % black, fading over 70 px past the top bar and 120 px past the hand / foot strip: D1, bible 3.1). Up to
+  32 shapes; uniforms set only when a rect moves; hidden while nothing is registered.
+- **Its child `UiSpillShadows`** (`ui_spill_shadows.gd`, shaders `ui_panel_shadows` (multiply) and `ui_light_spill`
+  (additive)): panels cast a soft drop shadow (black 45 %, 18 px soft, dropped 6 px at 1080: D19); emissive elements
+  spill 25 % of their colour (D19: 20 to 30 %) out to 1.5x their radius (half the diagonal), lit as a stadium from the
+  middle line so a word's light has no box edge; a pencil stroke (polyline source) lights 48 px round the line.
+  Drawn over the pools (the light falls on the darkened city), under every UI.
+- **API (for the screens' later agents).** `var scrim := UiScrimPools.attach_after(world_node)`;
+  `scrim.add_wheels(views_fn)`; `UiScrimPools.mark_panel(c, pool := true, shadow := true)`;
+  `UiScrimPools.mark_band(c, SIDE_TOP | SIDE_BOTTOM)`; `UiScrimPools.mark_panels_in(page, ["TerminalWindow", ...])`
+  (outermost only); `UiSpillShadows.mark_spill(c, colour)`, `UiSpillShadows.mark_verb_stickers_in(page)` (pink
+  VerbStickers); `scrim.spill.add_spill_source(fn, colour)` (fn -> Rect2s or polylines in canvas global px). Marks are
+  groups + metas on the Control, so a page marks its parts where it builds them; each frame the layer reads the
+  shown marked Controls' rects (any CanvasLayer, tilted ones by their bounding box). A mark belongs to the nearest
+  layer whose host (its parent) holds it and that is drawn before it: a fight inside a netrun page darkens with its
+  own layer, never twice; marks inside the world itself are ignored.
+- **Hookups.** Combat: the layer sits right over the backdrop's Heat lights (under the heat-glitch post and the
+  wheels); wheels pooled, TURN strip and hand row banded, TURN strip / RAM / Daemon rack shadowed (no panel pools:
+  the bands hold them), SEND IT / CONTINUE spill pink, the aim pencil's shaft and loop spill yellow. The backdrop's
+  own pool darkening and UV bands are gone (`combat_backdrop.gdshader` keeps the pools' blur; `CityConfig.
+  backdrop_pool_dark` removed: the layer holds it; `test_parity_arena_backdrop` reads `UiScrimPools.wheel_factor`).
+  HQ and raid setup: work-order papers, hand tabs, hand cards and the card column's cards are panels; top bar and ON
+  AIR banded; the pink verb and the map's red TARGET pencil (`CityMapOverlay.target_word()`, new) spill. Netrun
+  (route, loot, event, HQ run and the run's other pages): every TerminalWindow / LootSheet / OperativeDossier /
+  RouteNodePanel is a panel, the route key a foot band, the pink verb and the TARGET pencil spill. Title: shadows
+  under its windows and case files and the pink verb's spill only, no pools or bands: the approved dimmed city stays
+  as it was (the sign keeps its own baked glow).
+- **Kept.** Static: nothing animates, so reduce effects (end state = its only state) and MotionSkip have nothing to
+  stop; no clock in the shaders (tested). VfxTier T0 (backdrop coverage; both registered in `KitMaterials`). City
+  quality tier 0 keeps the pools (they carry the UI's contrast) and drops shadows and spill (`tier_spill`,
+  `tier_shadows`). No magic numbers: every length and share in `ui_scrim_look.tres`.
+- **Contrast.** Paper-white and plan-yellow words over every corporation's backdrop still (day and night) keep 4.5:1
+  under a panel pool, a wheel pool and a band over a pool (the still's mean, as S-ARENA measures; the layer multiplies
+  the encoded colour: the canvas has no HDR 2D). Day stills' brightest 10 % under a 0.55 panel pool fall to 3.0 to
+  4.4:1: words over the world keep their ink outline or plate there.
+- **Perf** (windowed, 1920x1080, `perf_pack.tscn` new probes `scrim_probe_hq` / `scrim_probe_route` and
+  `combat_worst_probe`; frame with the layer shown vs hidden): HQ tier 2 +0.16 ms (5.55 vs 5.39), tier 1 -0.27;
+  route tier 2 +0.24 (4.60 vs 4.36), tier 1 -0.20; combat worst fixture tier 2 -0.07 (15.89 whole), tier 1 -0.20:
+  inside the run-to-run noise (about 0.3 ms) everywhere; the whole 2D root viewport's GPU time stays 0.45 to 0.59 ms.
+  In budget at tiers 1 and 2. (The existing `combat_worst_probe` overran its screen timeout at the end of its part
+  list in this run, as before; its scrim line was already taken.)
+- **Open questions for the designer.** (1) The map's network markers are world (drawn inside the city), so a marker
+  within a panel's 64 px pool margin or a foot band dims with the city (bible 4.1 wants the network at full strength);
+  default: kept (the margins are short); the alternative is to lift the marker layer over the scrim (a city overlay
+  change). (2) HQ D7's 0.68 "map band" darkening outside the network rect is not this layer (a map-view slice).
+
 ### 2026-10-06 — Designer rulings on the art-direction integration review
 The art-pass session reviewed main @ 175377de (`docs/concepts/INTEGRATION_REVIEW/REVIEW.md` on art-pass, D1–D25 and
 section f). Its calls are advisory; the designer ruled the conflicts with their earlier rulings (2026-10-06):
