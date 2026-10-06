@@ -382,11 +382,11 @@ func test_options_stack_and_fit_at_text_scale_two() -> void:
 		assert_lte(panel.get_combined_minimum_size().x, SCREEN.size.x, "%s fits the width at 2.0" % section)
 
 
-func test_the_pause_menu_is_a_terminal_with_its_sticker_and_one_column_options() -> void:
+func test_the_pause_menu_is_a_terminal_with_no_sticker_and_one_column_options() -> void:
 	var menu: PauseMenu = add_child_autofree(PauseMenu.new())
 	await _frames(2)
 	assert_true(menu._panel is CrtWindow, "terminal glass")
-	assert_eq(menu.title_sticker.shown_text(), "PAUSED")
+	assert_null(menu.find_child("TitleSticker", true, false), "PAUSE-01: no PAUSED sticker")
 	menu.show_options()
 	assert_false(menu.settings_panel.two_columns(), "one column inside the menu")
 	assert_lte(menu.settings_panel.get_combined_minimum_size().x, PauseMenu.MENU_SIZE.x)
