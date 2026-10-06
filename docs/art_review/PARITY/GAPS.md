@@ -338,21 +338,25 @@ Concept: the whole page dimmed and blurred, PAUSED sticker. Main: the menu is a 
 the page at full brightness (HQ, route and fight all readable behind it), so it reads as one more
 panel; the PAUSED sticker is pinned to its top right. View: a defect against both references
 (every other modal in main uses `GlassScrim`). Likely file: `scripts/ui/kit/pause_menu.gd` (no
-scrim), `glass_scrim.gd`. Decision:
+scrim), `glass_scrim.gd`. Decision: **blur and darken** the page behind (designer 2026-10-05); no
+PAUSED sticker except, at most, during a running raid.
 
 **PAUSE-02 (P2) Pause rows.** Build: `Resume [Esc]` as a full-width pink primary bar, the rest
 icon rows, the campaign code in a field with a copy button. Main: five `>` rows of equal weight, the
 code as a plain line (no copy button). View: the build's primary Resume and copy button are better.
-Same file. Decision:
+Same file. Decision: **the build's rows, reworked in v2** (designer 2026-10-05: the build looks a
+little better): primary Resume, icon rows, the code in a field with a copy button.
 
 **PAUSE-03 (P3) Pause over a fight.** As PAUSE-01; the turn banner shows through above the panel.
-Decision:
+Decision: **fixed by PAUSE-01** (designer 2026-10-05); verify the banner no longer shows through.
 
 **PAUSE-04 (P2) Quit confirm.** Concept dialog: `CONFIRM // ABANDON RUN` red-edged with a CANNOT
 UNDO chip, a cost table, CANCEL (yellow, focus) and BURN IT (pink) with key hints under them, the
 page dimmed. Main: `CONFIRM // QUIT` with `Quit REBEL_CELL? Progress is autosaved.`, CANCEL and QUIT
 stickers, no key hints, blurred page. Quitting is not destructive, so the red edge is not needed; the
-key hints are. Likely file: `confirm_dialog.gd`. Decision:
+key hints are. Likely file: `confirm_dialog.gd`. Decision: **not the same screen; keep both as
+shown** (designer 2026-10-05): the concept's dialog is "abandon the run/campaign", main's is "quit
+the game". Both actions should be possible (see the open question on abandon in DECISIONS).
 
 ### MAINFRAME shop (`mainframe*.jpg`)
 Refs: build `modem`, `modem_socket`, `modem_remove`, `modem_overwrite` (M13 MODEM CYBER SHOP: a
