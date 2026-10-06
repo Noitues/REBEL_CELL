@@ -63,7 +63,6 @@ const AWAITING_FIX := {
 	&"hit_absorb": "combat_scene (fix agent A combat)",
 	&"hp_lag": "wheel_view (fix agent A combat)",
 	&"number_float": "combat_scene (fix agent A combat)",
-	&"asset_drop_grow": "city_map_overlay (fix agent C city/raid)",
 	&"beacon_blink": "neon_city (fix agent C city/raid)",
 	&"city_sign_pick": "neon_city (fix agent C city/raid)",
 	&"raid_outcome_stagger": "raid_fx_layer (fix agent C city/raid)",

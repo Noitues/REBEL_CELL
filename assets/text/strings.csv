@@ -32,6 +32,7 @@ keys,en
 %d LANDS HERE,%d LANDS HERE
 %d LEFT,%d LEFT
 %d NEEDLES,%d NEEDLES
+%d NODES,%d NODES
 %d RAM lost,%d RAM lost
 %d SCHEM.,%d SCHEM.
 %d SCHEMATICS,%d SCHEMATICS
@@ -155,6 +156,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 - its block and shield %d (absorbed),- its block and shield %d (absorbed)
 -%d RAM,-%d RAM
 // %s // RANK %d,// %s // RANK %d
+1 NODE,1 NODE
 1x,1x
 1x (full replay),1x (full replay)
 2x,2x
@@ -289,7 +291,6 @@ CASE SB-2210/QUARANTINE,CASE SB-2210/QUARANTINE
 CELL,CELL
 CELL %02d  //  %d RUNS,CELL %02d  //  %d RUNS
 CELL DEFENSE,CELL DEFENSE
-CELL DEFENSE RAID SETUP,CELL DEFENSE RAID SETUP
 CELL HOLDS,CELL HOLDS
 CELL-%02d / %s,CELL-%02d / %s
 CENTRAL SERVER,CENTRAL SERVER
@@ -309,7 +310,6 @@ CLOSED,CLOSED
 CODEX,CODEX
 CODEX // WHAT THE CELL KNOWS,CODEX // WHAT THE CELL KNOWS
 COLOUR-BLIND CORRECTION,COLOUR-BLIND CORRECTION
-COMBAT,COMBAT
 COMBATS,COMBATS
 COMMON,COMMON
 COMMON · one pip,COMMON · one pip
@@ -860,6 +860,7 @@ Exploit Site (diamond): clearing it gives an Exploit for the Central Server brea
 Exploits,Exploits
 Exploits found: %s. The breach on the corporation's core needs %d.,Exploits found: %s. The breach on the corporation's core needs %d.
 FAILED,FAILED
+FIGHT,FIGHT
 FIGHT WON,FIGHT WON
 FILED,FILED
 FIRMWARE,FIRMWARE
@@ -977,8 +978,8 @@ HOME SERVER - %d/%d,HOME SERVER - %d/%d
 HOSTILE HOME SERVER,HOSTILE HOME SERVER
 HOSTILE NODES DOWN,HOSTILE NODES DOWN
 HOTFIX,HOTFIX
-HOVER HERE: SHOW ALL NODES,HOVER HERE: SHOW ALL NODES
 HOVER: SHOW ALL,HOVER: SHOW ALL
+HOVER: SHOW ALL LINKS,HOVER: SHOW ALL LINKS
 HP,HP
 HP %d/%d,HP %d/%d
 HP %s,HP %s
@@ -1892,6 +1893,7 @@ REWARDS,REWARDS
 RIGHT STICK,RIGHT STICK
 RING LOCK,RING LOCK
 RIP,RIP
+ROUTE,ROUTE
 ROUTE // pick the next node,ROUTE // pick the next node
 ROUTE VIEW,ROUTE VIEW
 RUN,RUN
@@ -2053,6 +2055,7 @@ SHIELD,SHIELD
 SHIELD %d,SHIELD %d
 SHIM,SHIM
 SHOP,SHOP
+SHOWING ALL LINKS,SHOWING ALL LINKS
 SHOWING ALL NODES,SHOWING ALL NODES
 SIGNAL DE-ORBITED,SIGNAL DE-ORBITED
 SIMULATE,SIMULATE
@@ -2089,7 +2092,7 @@ SUSPECT FILE (HEAT),SUSPECT FILE (HEAT)
 SYSTEM,SYSTEM
 "SYSTEM: guards, RAM, draws and the rest.","SYSTEM: guards, RAM, draws and the rest."
 "Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick.","Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick."
-Save & quit to start screen,Save & quit to start screen
+Save & quit,Save & quit
 Save the run and leave it; Continue picks it up here.,Save the run and leave it; Continue picks it up here.
 Saved.,Saved.
 Schematics,Schematics
@@ -2770,7 +2773,6 @@ TERMINAL // %s,TERMINAL // %s
 TERMINAL // %s // NODE %d OF %d,TERMINAL // %s // NODE %d OF %d
 TERMINAL EVENT,TERMINAL EVENT
 TEXT SCALE,TEXT SCALE
-THE GRID,THE GRID
 THE MAINFRAME,THE MAINFRAME
 THE SPRAWL,THE SPRAWL
 THE TARGET,THE TARGET
@@ -3284,6 +3286,7 @@ momentum_handler,momentum_handler
 netrun,netrun
 netruns,netruns
 next,next
+next: pick one (numbered),next: pick one (numbered)
 no change,no change
 no names. who ran this cell?,no names. who ran this cell?
 no power,no power
@@ -3293,7 +3296,6 @@ none (%d needed for the breach),none (%d needed for the breach)
 none left at large.,none left at large.
 none yet (buy them at HQ with campaign Schematics),none yet (buy them at HQ with campaign Schematics)
 not yet,not yet
-not yet (hidden),not yet (hidden)
 nothing yet,nothing yet
 noticed,noticed
 notyet,notyet
@@ -3321,7 +3323,6 @@ saved to profile,saved to profile
 schematics,schematics
 select,select
 selectable,selectable
-selectable: pick one (numbered),selectable: pick one (numbered)
 slice,slice
 slot %s,slot %s
 slots,slots

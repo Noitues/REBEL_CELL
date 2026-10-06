@@ -240,7 +240,7 @@ func _paper_rows(paper: RaidPaper) -> Array[Control]:
 	return out
 
 
-func test_raid_02_the_work_order_stamp_disc_and_instruction_line_cover_no_value() -> void:
+func test_raid_02_the_work_order_stamp_and_disc_cover_no_value_and_no_line_covers_it() -> void:
 	for scale in SCALES:
 		Settings.set_text_scale(scale)
 		_raid_campaign()
@@ -258,12 +258,9 @@ func test_raid_02_the_work_order_stamp_disc_and_instruction_line_cover_no_value(
 		var disc := card.find_child("Projection", true, false) as Control
 		for l in _values(card):
 			assert_false(disc.get_global_rect().intersects(l.get_global_rect()), "%s: the forecast disc covers no value (%s)" % [what, l.text])
-		var intro := hq._panel.find_child("RaidIntro", true, false) as Label
-		var box := intro.get_parent() as PanelContainer
-		assert_not_null(box, "%s: the instruction line is boxed" % what)
-		if box != null:
-			assert_true(box.get_theme_stylebox(&"panel") is StyleBoxFlat, "%s: on a dark plate" % what)
-		assert_true(intro.get_global_rect().end.y <= card.get_global_rect().position.y - RaidPaper.CLIP_TOP * Settings.text_scale, "%s: the paper clip never reaches the instruction line" % what)
+		# B3 b (art director): no instruction panel over the paper; the clip keeps on the page.
+		assert_null(hq._panel.find_child("RaidIntro", true, false), "%s: no instruction panel" % what)
+		assert_true(card.get_global_rect().position.y - RaidPaper.CLIP_TOP * Settings.text_scale >= hq._panel.get_global_rect().position.y - 1.0, "%s: the paper clip on the page" % what)
 		await _close(hq)
 
 

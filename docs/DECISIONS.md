@@ -38,6 +38,9 @@ Site building, so on some corps the subject does not stand out. Accepted as **in
 unique per-fight backdrops slice. Affected frames: Solace (`docs/art_review/PARITY/fixes/B2_b_site_start.png`,
 Continuum Billing Farm) and Orbital (the arena-lab Site shots in `B2_b.jpg`). The art-pass session is raising this
 with the designer.
+- **Designer ruling (relayed by the art-pass session, 2026-10-06):** per-fight backdrops (unique buildings for non-HQ
+  Site fights) stay **deferred until after the gameplay polish passes**; the designer wants gameplay polish before
+  another content and visual pass. The Site fight subject stays interim (Solace, Orbital) through M14.
 
 ### 2026-10-06 — B2 c — the Site block lit by its own neon; focus brackets on the lifted card
 Re-check of B2 b (aa815dde; relayed by the orchestrator): boss start, the Meridian / Halcyon Site blocks, the fanned
@@ -11121,3 +11124,122 @@ Art director review of B5 (14e222f2): approved as built, with five fixes. Ruling
 - **4. BACK TO HQ** keeps room for its focus fold after its last letter (`END_BACK_FOLD_ROOM`), so the whole word shows at 1.0 and 1.6.
 - **5. Codex holo card.** The DECRYPTED stamp stands in the header's right corner (the header words keep clear of it), always on screen at 720; the card still scrolls.
 - **Tools:** capture_pack.py passes `--native WxH` to the review pack (B1b's true 1:1 saves). Review PNGs (1920x1080, 1:1): `docs/art_review/PARITY/fixes/B5b_*.png`.
+
+### 2026-10-06 — B3 — raid, map, route, clutter (integration review)
+Integration review (art-pass `docs/concepts/INTEGRATION_REVIEW/REVIEW.md`) D5, D6, D14, sections c / d / f, the designer's
+rulings (Q4, Q5, Q6, Q7, Q9, Q10, Q15) and the round 44 lock (`round44_undesigned/A_map/route_page*.png`, `raid_setup.png`;
+bible 4.6 route lock, 4.3 Heat in the top strip, 4.8 raid). Claims: **D5, D6, D14, Q4, Q5, Q6, Q7, Q9, Q10, Q15, section c
+(raid interlude), section d (the clutter rule), section f (route page, raid MAP LEGEND)**. Sheet:
+`docs/art_review/PARITY/fixes/B3.jpg` (round 44 / concept | before (main) | after at 1.0 and 1.6); 1:1 1080p crops
+`B3_crop_*.png`. Test: `tests/unit/test_b3_raid_map_route.gd` (full tier).
+- **The clutter rule (designer priority) as one API.** `CityMapOverlay.tag_rule` (`TagRule.ALL` the old maps, `FOCUS`
+  the selected node + the node lit from a list / the pad (`hover_id`) + a `plan: true` node, `LIT` the lit and plan nodes
+  only). Under FOCUS / LIT a node's raid `result` is never a tag (it is on the node and in its tooltip) and threat tags
+  show only on the lit node; the pointer's node gets its name as the terminal tooltip (`tip_of`), not a tag.
+  `tagged_ids()` lists what carries a tag (tests). The raid maps (setup, playout, report, the netrun interlude) are
+  `LIT`. **For B4 (hq_scene's HQ idle page, D7):** set `city_overlay.tag_rule = CityMapOverlay.TagRule.FOCUS` after
+  `_mount_city_map` when not `raid_mode` (at most one tag: the selected Site; others on hover/focus), mark a
+  plan-relevant node with `plan: true` in `hq_graph`, and hide the non-4.5 Sites with the existing marker spec
+  `pinned: false` (`marker_shown`). Not B3's: the CLAIMED stamps stacking (NeonCity marks).
+- **No spray pools (D5).** A raid socket draws no roof fill, outline or glow under it, only its own 2 px halo at 35 %
+  (`SOCKET_HALO_*`); on the map views (CityView3D map mode) the network decal's glow discs give way to a 2 px ring at
+  35 % (`city_network.gdshaderinc` `node_discs`, CityConfig `map_node_halo_px` / `_alpha`; `map_look()["node_discs"]`).
+- **D6: the playout's influence fill is gone** (RaidFxLayer's TAKEN tint discs, `_draw_tints`, its "tint" FX entry):
+  losses read on the nodes, links and units.
+- **Q7: the result is CELL HOLDS on the after-action paper.** The pencil "HOME -5 · HOLDS" over the map is dropped
+  (BREACHED stays a heavy mark, bible 4.8); CELL HOLDS sits on a pin over the report (`HOLDS_AT` of the paper, lower
+  left beside CLASSIFIED) and lands with `raid_result_banner` (`RaidSticker.slap_result`: from the entry's amplitude after
+  its delay, with the vinyl's slap; end state at once headless / reduce effects). The report's pencil ticks stay.
+- **Q9 / Q10 / round 44 raid setup.** YOUR NETWORK moved from the left column to the right one under THREAT INTEL
+  (the column scrolls its rows); the yellow RAID SETUP title sticker while the DEFENCE hand is open (the HQ idle page
+  keeps none); no resource bar on the setup (Heat, stats, VIEW LOADOUT hidden; YOUR NETWORK is the Cell's state); IF
+  PLACED shows only while a defence card is pointed at or focused (round 44 shows none at rest). THREAT INTEL fits at
+  1.6: the column starts at the page top and ends at the verb's sticker, its margins the holo backing's own, and the
+  folded MAP KEY stands in the empty top bar (left of its corner chips), so the map keeps its room.
+- **MAP LEGEND (section f).** The playout's, the report's and the interlude playout's key are the strip folded to its
+  MAP KEY line at every text size (`MapLegend.pin_key_line`), opening on hover, a press or [K] (`cycle_target` now works
+  on the playout and the report too); never a box over the map or the pencil.
+- **Q5 Honeypot.** Its baked card is the same generator with the atlas's `placeholder_phishing` hook in the decoy violet
+  #B08CFF (`bake_defence_cards.py`, re-run on tag art-concepts-r43; only `honeypot_node.png` changed); AssetIcon's
+  marker colour too. Logged for the glyph concept slice (its own glyph).
+- **Q6 card size** checked, no change needed: 105 x 120 at 720p is 158 x 180 at 1080p; every word at 8 px+ (12 px at
+  1080p).
+- **Section c: the raid interlude's INCOMING transition.** New `RaidIncoming` (raid kit): from the route page into the
+  raid, a dark plate across the middle with INCOMING (Anton, HARM, ink keyline) while 1B's binary bits stream in from
+  both sides; new motion entry `raid_incoming` (0.6 s, T3; REQUIRED_IDS, lab demo `netrun raid_interlude`); MotionSkip
+  ends it; nothing plays under reduce effects / headless.
+- **Route page (D14, Q4, Q15, bible 4.6 round 44).** Hidden nodes are fully hidden (no grey disc); only the links the
+  route uses are drawn (the walked line, the live dashes); the key strip's hover shows every run link as a 25 % white
+  hairline (`show_links`, "HOVER: SHOW ALL LINKS" / "SHOWING ALL LINKS") and keeps the nodes hidden; Options "Always show
+  all nodes" still shows them all. No node tags and no YOU ARE HERE words (the operative's token marks the position;
+  the TARGET keeps its pencil; a choice's Heat effect shows on hover); the number chips 1 / 2 stay; the token is a
+  sticker's size on the street as on a node. District plates off.
+  Stickers 22 / 26 px reach (the die-cut ~51 px at 1080p). The ROUTE window is "ROUTE" with GRID VIEW and Save & quit
+  only (no "then:" line on the map; that list stays on GRID VIEW). The title sticker reads NETRUN (round 44). The top strip
+  on the route page is the Heat gauge, HP and Cycles. The legend strip says FIGHT / ELITE / EVENT / SHOP / RACK, walked,
+  next.
+- **Route zoom (D14).** The fit frames what the map draws (hidden nodes take no room: `RouteOverlay.marker_shown`),
+  never closer than CityConfig `route_ortho_near` (130) and the whole drawn route at `route_ortho_far` (400) or closer,
+  else the decision (here + choices). Measured at a run's start: ortho 186-209 with the TARGET in frame for every
+  corporation (round 44: 130-190). Call: the far limit is 400 rather than 190 so a run's TARGET stays in frame at its start
+  (at 190 the fit dropped it off screen); mid-run the frame tightens as the walked part leaves the frame's needs.
+- **Map mode (D14).** The netrun band keeps the hue: `netrun_map_saturation` 0.85, contrast 1.0, no violet veil; the
+  darkening is the translucency rule's x0.86 (bible 4.1, unchanged). The raid view keeps round 40's grade and veil.
+  `CityView3D.map_grade` / `map_graded(c, display, lock)`.
+- **Pencil (D25) on these screens:** nothing fades: the raid routes and marks write on and cloth-wipe, the TARGET
+  writes on, the report's ticks write on; the dropped verdict was the last pencil over the map.
+- **Files outside the area (smallest change):** `hq_scene.gd` (raid-mode branches only: YOUR NETWORK's column, the
+  title, the bar, IF PLACED, the column / key placement, the playout's and report's key, CELL HOLDS), `review_pack.gd`
+  (screens raid_result_meridian, raid_report_meridian, route_hover_all, raid_incoming), `motion_lab.gd` (the demo),
+  `ui_motion.tres` / `ui_motion_data.gd`, `bake_defence_cards.py` + `assets/raid/cards/`, `asset_icon.gd`,
+  `city_network.gdshaderinc`, `strings.csv` (re-exported).
+- **Tests changed (they pinned the superseded look; none dropped):** `test_parity_route` (hidden discs → fully hidden;
+  district plates → none; YOU ARE HERE label → none; the key strip's words; THE GRID → NETRUN; no then: row);
+  `test_art7_netrun` (the hover shows links; no YOU ARE HERE words); `test_city_map_sweeps` (the route has no tags);
+  `test_hq_b_defence` (round 44 column; CELL HOLDS on the paper); `test_horizontal_pass21_city` (no YOU ARE HERE label),
+  `test_horizontal_pass21_screens` (the route page's HP and Cycles), `test_horizontal_pass22_screens` (the key in the
+  top bar), `test_heat_all` / `test_anim_r5_netrun` (NETRUN); `test_anim_r5_city` / `test_anim_r6_city` (YOUR
+  NETWORK's column; CORE's label when lit); `test_anim_r3_city` (the then: rows on GRID VIEW); `test_anim_r4_city` (the
+  playout page's bar); `test_horizontal_pass24_screens` (the RAID SETUP title; the route's strip); `test_s_mapview` (the
+  per-band grade, the decal discs); `test_vfx_tiers` (no tint).
+- **Seen, not fixed (pre-existing on main, checked on a clean `git archive main`):**
+  `test_motion_lab_demos::test_every_lab_demo_exercises_its_own_entry` fails on main too (`asset_drop_grow`'s hq drop
+  demo is not read by the game headless; it is listed in AWAITING_FIX). Proposed slice: the drop demo's owner.
+- **Limits / proposed slices:** at text 1.6 / 2.0 a long Meridian run's TARGET is still off the route's frame (the
+  Meridian district sits on the city's edge; the fit frames the decision, as before): proposed slice, the City Grid's red
+  pencil edge marker for an off-screen TARGET on the route page too. At text 2.0 THREAT INTEL is taller than the setup's
+  column (it scrolls; 1.6 fits): proposed slice for the holo's big-text layout (B1c's panel).
+
+### 2026-10-06 — B3 b — the art director's fixes (route zoom, raid setup column, RAID SETUP title)
+The art director approved B3 (c69230b8) but for three points, ruled 2026-10-06. Sheet
+`docs/art_review/PARITY/fixes/B3_b.jpg` (round 44 | after 1.0 | after 1.6; the before is `B3.jpg`'s after columns).
+Tests: `test_b3_raid_map_route` (`test_route_frames_the_options_at_the_round_44_zoom_with_the_target_arrow`,
+`test_the_edge_arrow_finds_the_route_target`, `test_raid_setup_paper_whole_network_visible_and_a_page_title`,
+`test_your_network_and_threat_intel_fit_the_column_at_every_text_size`).
+- **Route zoom (ruling: the TARGET need not be in frame).** The fit frames the walked path, the current options and one
+  layer ahead (hidden nodes keep their room as rects) at CityConfig `route_ortho_near` 130 .. `route_ortho_far` 190
+  (back from B3's 400); a walked path too long for 190 gives way (then current + options + layer ahead; then current +
+  options). Measured 130-159 ortho at a run's start and mid-run, every corporation, 1.0 / 1.6 / 2.0. An off-frame
+  TARGET gets the City Grid's red pencil edge arrow with its word (TargetEdgeMarker, which now also finds a route's
+  `target` node; a click pans to it): this covers the long-Meridian 1.6 / 2.0 case. Supersedes B3's "far 400" call.
+- **Raid setup intro panel removed (my call).** The panel said what the work order and START DEFENSE say and covered the
+  paper; its sentence is now the work order's tooltip (no toast: one more moving part for words the page already
+  says). The paper takes the left column (with room for its clip).
+- **YOUR NETWORK never below the fold.** Its header now carries the node count ("N NODES" / "1 NODE", round 44). When
+  THREAT INTEL and the whole network do not fit the column it collapses to its header and the CORE row (the other nodes
+  are picked on the map; `network_collapsed()`); where even THREAT INTEL and the collapsed network do not fit (text 2.0,
+  or a tall THREAT INTEL such as raid_heat_25's at 1.6) the network leads the column and THREAT INTEL scrolls under it.
+  The column runs from the page top to START DEFENSE's slot, which is as tall as its sticker and strip (no gap inside
+  the column).
+- **RAID SETUP title.** The title pages' baked sticker (round 33 `ui31.sticker`, `bake_menus_r33.py` TITLE_WORDS
+  "RAID SETUP" size 54 seed 65, the CAMPAIGN SLOTS / CODEX size class: about 235 px wide at 1080p); `HudBar.set_screen`
+  takes the art key (its own size; it may stand taller than the band).
+- **Also (orchestrator notes):** RaidSticker joins MotionSkip (`register_passive`, `motion_running` / `complete_motion`
+  over its result stamp-down). `fit_hq_map` no longer double-connects its next pass (a raid relayout could ask first).
+  B4's `decal_shown_only` flag in `city_map_overlay.gd` (not yet on main when this was written) is compatible with the
+  clutter API and is kept as B4 wrote it.
+- **Tests changed:** `test_horizontal_pass22_screens` / `test_horizontal_pass23_screens` / `test_parity_overlaps` (no
+  RaidIntro: the sentence is the paper's tooltip), `test_horizontal_pass24_screens` (the TARGET may be off the route's
+  frame). None dropped.
+- **Limit:** at text 1.6 with a tall THREAT INTEL (four-line entries) its foot scrolls under the collapsed network; the
+  holo's big-text layout is the follow-up the art director already queued.

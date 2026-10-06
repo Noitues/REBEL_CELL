@@ -561,6 +561,16 @@ static func pin_to(area: Control, corporation_id: StringName, p_strip: bool = fa
 	return legend
 
 
+## B3 (review section f, round 44 `raid_setup.png`'s MAP KEY strip): a raid page's key: the
+## strip folded to its MAP KEY line at every text size, opening over the map on hover, a press
+## or the pad's key button; never a big box over the map or the pencil.
+static func pin_key_line(area: Control, corporation_id: StringName) -> MapLegend:
+	var legend := pin_to(area, corporation_id, true)
+	legend.always_fold = true
+	legend._repin()
+	return legend
+
+
 ## Shows only the rows keyed in `keys` (ROW_KEYS and icon kinds; [] = every row).
 func show_only(keys: Array[String]) -> MapLegend:
 	only = keys.duplicate()

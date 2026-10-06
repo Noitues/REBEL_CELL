@@ -176,11 +176,9 @@ func test_every_stat_tag_has_its_icon_on_every_screen() -> void:
 		names.append(String(run_tags.items[i][0]))
 		assert_true(StatIcon.ALL.has(run_tags.icon_of(i)), "run tag %s has an icon" % run_tags.items[i][0])
 		assert_ne(run_tags._get_tooltip(run_tags.tag_rects()[i].get_center()), "", "run tag %s has a tooltip" % run_tags.items[i][0])
-	# B5 (review section f, expectation changed on purpose): the route bar shows Heat (the gauge), HP and Cycles; the
-	# deck, rank and bank are behind VIEW LOADOUT.
-	assert_eq(Array(names), NetrunScript.bar_keys(RunManager.netrun), "the route bar: only what the route is about")
-	for want in ["HP", "CYCLES"]:
-		assert_true(names.has(want), "the run's %s tag" % want)
+	# B3 (round 44 `topbar_by_page.png`): the route page's strip is Heat (the gauge), HP and Cycles (B5's bar_keys agree).
+	assert_eq(names, PackedStringArray(["HP", "CYCLES"]), "the route page's tags")
+	assert_eq(Array(names), NetrunScript.bar_keys(RunManager.netrun), "B5 section f: the same keys")
 	assert_eq(run_tags.icon_of(names.find("CYCLES")), StatIcon.CYCLES)
 	assert_eq(run_tags.icon_of(names.find("HP")), StatIcon.HP)
 	RunManager.netrun.run.outcome = RunState.Outcome.COMPLETED

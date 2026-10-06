@@ -438,7 +438,7 @@ func test_hq_raid_and_grid_words_are_translated_once() -> void:
 	for key in ["HomeForecast", "ThreatsStopped", "RaidStrength"]:
 		var b := hq._panel.find_child(key, true, false) as Label  # ART-6 3A: the work order's fields
 		assert_true(b.text.begins_with(PSEUDO_PREFIX), "%s: '%s'" % [key, b.text])
-	assert_eq(String(hq.hud._title), "", "HQ-B (Q6): the setup is the HQ's DEFENCE hand, no title")
+	assert_eq(String(hq.hud._title), tr("RAID SETUP"), "B3 (Q10): the setup's RAID SETUP title, translated once")
 	var run := hq._panel.find_child("RunRaid", true, false) as Button
 	assert_true(_shown_text(run).begins_with(PSEUDO_PREFIX), "START DEFENSE translated")
 	await _close(hq)
@@ -876,7 +876,12 @@ func test_route_nodes_clear_of_the_route_column_and_choices_told_apart() -> void
 		await _frames(24)
 		var col := scene._panel.find_child("RouteColumn", true, false) as Control
 		var win := scene._panel.find_child("RouteWindow", true, false) as Control
-		for r in LegendSpot.node_rects(scene.city_overlay, false):
+		# B3 b (art director): the TARGET may be off the route's frame (its red pencil edge arrow).
+		var framed: Array = []
+		for n in scene.city_overlay.nodes:
+			if not bool(n.get("target", false)):
+				framed.append(n["id"])
+		for r in LegendSpot.node_rects(scene.city_overlay, false, framed):
 			assert_false(win.get_global_rect().intersects(r), "a node %s under the ROUTE window %s (text %.1f)" % [r, win.get_global_rect(), scale])
 			assert_false(col.get_global_rect().intersects(r), "a node %s under the route column (text %.1f)" % [r, scale])
 			assert_true(Rect2(Vector2.ZERO, CANVAS).encloses(r), "on screen: %s" % r)
@@ -1009,9 +1014,22 @@ func test_the_top_bar_says_whose_numbers_it_shows() -> void:
 	var words := []
 	for cp in rs.captions:
 		words.append(cp[1])
-	# B5 (review section f, expectation changed on purpose): the route bar is the run's HP and Cycles only (Heat is the
-	# gauge), so no captions split it.
-	assert_eq(words, [], "the route bar needs no captions")
+	# B3 (round 44 `topbar_by_page.png`): the route page's strip is Heat, HP and Cycles, no groups.
+	assert_true(words.is_empty(), "the route page: HP and Cycles only, no group captions")
+	# B5 (review section f, art director ruling: the Mainframe bar is Cycles + the Heat gauge): the Mainframe's strip
+	# is its Cycles only, so no group captions split it either.
+	RunManager.netrun.run.phase = RunState.Phase.SHOP
+	scene._refresh_status()
+	words.clear()
+	for cp in rs.captions:
+		words.append(cp[1])
+	assert_eq(words, [], "the Mainframe: Cycles only, no group captions")
+	var shop_tags := []
+	for it in rs.items:
+		shop_tags.append(String(it[0]))
+	assert_eq(shop_tags, ["CYCLES"], "the Mainframe's strip")
+	RunManager.netrun.run.phase = RunState.Phase.MAP
+	scene._refresh_status()
 	for i in rs.items.size():
 		assert_ne(String(rs.items[i][3]), "", "run tag %s has a tooltip" % rs.items[i][0])
 	await _close(scene)

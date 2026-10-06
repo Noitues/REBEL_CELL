@@ -315,10 +315,10 @@ func _assert_setup_map(hq: Control, what: String, scale: float) -> void:
 func test_every_raid_number_says_what_it_is() -> void:
 	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		var hq: Control = await _raid(scale)
-		var intro := hq._panel.find_child("RaidIntro", true, false) as Label
-		assert_not_null(intro, "one plain sentence opens the setup")
-		assert_eq(intro.text, TextDb.ui_text("ui.raid_intro"))
-		assert_string_contains(intro.text, "START DEFENSE")  # H24 S14: the button was renamed
+		# B3 b (art director): the plain sentence is the work order's tooltip (no panel over it).
+		var paper := hq._panel.find_child("RaidCard", true, false) as Control
+		assert_string_contains(paper.tooltip_text.replace("\n", " "), TextDb.ui_text("ui.raid_intro"))
+		assert_string_contains(TextDb.ui_text("ui.raid_intro"), "START DEFENSE")  # H24 S14: the button was renamed
 		var letters := RegEx.create_from_string("[A-Za-z]{2,}")
 		var digits := RegEx.create_from_string("[0-9]")
 		for n in _all(hq._panel):

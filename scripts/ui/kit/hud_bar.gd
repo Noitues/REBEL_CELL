@@ -117,9 +117,13 @@ func complete_motion() -> void:
 ## Names the current screen ("01", "CYBERDECK HQ"; the title translated by the caller); an
 ## empty title leaves the band blank. The title takes only the width it needs (H21: the
 ## stat tags get the rest).
-func set_screen(number: String, title: String) -> void:
+## B3 (art director 2026-10-06): `art` names a page title's baked concept sticker
+## (VerbSticker.title_art: CAMPAIGN SLOTS, CODEX, RAID SETUP), shown at its own size class (the
+## title pages'), not a chip-sized title; it may stand taller than the band.
+func set_screen(number: String, title: String, art: String = "") -> void:
 	_number = number
 	_title = title
+	title_art = art
 	if title_sticker != null:
 		title_box.remove_child(title_sticker)
 		title_sticker.free()
@@ -128,7 +132,7 @@ func set_screen(number: String, title: String) -> void:
 	if title != "":
 		var px := TITLE_STICKER_PX
 		title_sticker = _sticker(title, px)
-		for _i in TITLE_FIT_PASSES:
+		for _i in TITLE_FIT_PASSES if art == "" else 0:
 			var wide := title_sticker.get_combined_minimum_size().x
 			if wide <= TITLE_MAX_WIDTH or px <= TITLE_MIN_PX:
 				break
@@ -145,8 +149,12 @@ func set_screen(number: String, title: String) -> void:
 	title_box.visible = title != "" or not heat_gauge.visible
 
 
+## The page title's baked art key ("" = the drawn chip-size title).
+var title_art: String = ""
+
+
 func _sticker(title: String, px: float) -> VerbSticker:
-	var st := VerbSticker.new(title, VerbSticker.Fill.YELLOW, px, TITLE_STICKER_TILT)
+	var st := VerbSticker.new(title, VerbSticker.Fill.YELLOW, px, TITLE_STICKER_TILT, title_art)
 	st.pre_translated = true
 	st.name = "TitleSticker"
 	st.focus_mode = Control.FOCUS_NONE
