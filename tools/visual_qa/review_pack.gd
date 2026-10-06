@@ -623,7 +623,9 @@ func _s_title() -> void:
 
 
 func _s_title_confirm() -> void:
+	RunManager.save_slot = "1"  # the confirm shows slot 1's costs
 	RunManager.new_campaign(7)
+	DemoSetup.set_heat(RunManager.campaign, 33)
 	RunManager.autosave()
 	var title: Node = TITLE.instantiate()
 	title.continue_slot = SLOT

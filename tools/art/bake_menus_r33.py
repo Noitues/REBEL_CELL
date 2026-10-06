@@ -6,7 +6,8 @@ pieces are drawn by the round 33 ui_chrome scripts on tag `art-concepts-r43`
 settings.py, abandon.py). This runs their drawing functions as they are and splits the result into
 per-item PNGs under `assets/ui/menus/`:
 
-- `stickers/`: BREACH (rest, focus halo, the 12 focused gloss-sweep frames), SIMULATE (calm, the two
+- `stickers/`: abandon.py's answer stickers (`dialog_cancel`, `dialog_burn_it` and `dialog_delete`, each
+  at rest and with its focus halo; `--only dialog` bakes just these); BREACH (rest, focus halo, the 12 focused gloss-sweep frames), SIMULATE (calm, the two
   burst frames, each with its focus halo), OVERTHROW with the fist (rest, focus), and the yellow screen
   titles (OPTIONS, PAUSED, CODEX, STATS, CAMPAIGN SLOTS, NEW CAMPAIGN) with `ui31.sticker`'s round 33
   parameters. Placed with `sticker_lib31.place` (its own drop shadow) at 2x the 1920x1080 board space.
@@ -45,6 +46,9 @@ OUT = ROOT / "assets" / "ui" / "menus"
 # Board space (the concept canvas) and the export scale for stickers (sticker_lib31 works at SS = 2).
 BOARD_W, BOARD_H = 1920, 1080
 STICKER_SCALE = 2.0
+# abandon.py's answer stickers: (size, fill, seed). CANCEL and BURN IT as abandon.py draws them;
+# DELETE (the title's delete-slot verb) with BURN IT's parameters (the pink committing verb).
+DIALOG_WORDS = {"CANCEL": (50, "FILL_YELLOW", 41), "BURN IT": (58, "FILL_PINK", 40), "DELETE": (58, "FILL_PINK", 40)}
 TITLE_WORDS = {"OPTIONS": (66, 19), "PAUSED": (54, 60), "CODEX": (54, 61), "STATS": (54, 62),
                "CAMPAIGN SLOTS": (54, 63), "NEW CAMPAIGN": (54, 64)}
 
@@ -114,6 +118,17 @@ def bake_stickers(SL, U, M, T) -> None:
     sticker_png(SL, U.focus_sticker(ovr["base"]), d / "overthrow_focus.png")
     for word, (size, seed) in TITLE_WORDS.items():
         sticker_png(SL, U.sticker(word, size, U.FILL_YELLOW, seed=seed), d / ("title_%s.png" % word.lower().replace(" ", "_")))
+
+
+def bake_dialog_stickers(SL, U) -> None:
+    """abandon.py: the yellow CANCEL (safe, default focus) and the pink verb, at rest and with
+    U.focus_sticker's lime die-cut halo."""
+    d = OUT / "stickers"
+    for word, (size, fill, seed) in DIALOG_WORDS.items():
+        sd = U.sticker(word, size, getattr(U, fill), seed=seed)
+        key = "dialog_" + word.lower().replace(" ", "_")
+        sticker_png(SL, sd, d / (key + ".png"))
+        sticker_png(SL, U.focus_sticker(sd), d / (key + "_focus.png"))
 
 
 def bake_sign(T, U) -> dict:
@@ -205,6 +220,7 @@ def bake_glitch(S, src: Path) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", required=True, help="extracted art-concepts-r43 tree (its root)")
+    ap.add_argument("--only", default="", help="bake one part only: dialog (abandon.py's stickers)")
     args = ap.parse_args()
     src = Path(args.src)
     scripts = src / "docs" / "concepts" / "round33_ui_chrome" / "scripts"
@@ -216,6 +232,10 @@ def main() -> int:
     import title as T  # noqa: E402
     import settings as S  # noqa: E402
     OUT.mkdir(parents=True, exist_ok=True)
+    bake_dialog_stickers(SL, U)
+    print("dialog stickers", flush=True)
+    if args.only == "dialog":
+        return 0
     bake_stickers(SL, U, M, T)
     print("stickers", flush=True)
     meta = bake_sign(T, U)
