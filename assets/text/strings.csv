@@ -128,6 +128,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s/turn,%s/turn
 %s: %s -> %d HP,%s: %s -> %d HP
 %s: %s.,%s: %s.
+%s: HQ RUN,%s: HQ RUN
 %s: integrity (HP) %s → %s in the raid. %s,%s: integrity (HP) %s → %s in the raid. %s
 %s: no change,%s: no change
 %s: select a card to %s. %s: details.,%s: select a card to %s. %s: details.
@@ -973,6 +974,7 @@ HP %s → %s %s,HP %s → %s %s
 HP is full,HP is full
 HP now: %d of %d.,HP now: %d of %d.
 HQ,HQ
+HQ MECHANIC,HQ MECHANIC
 HUB,HUB
 HUB BREACH,HUB BREACH
 HUB CORE,HUB CORE
@@ -2035,6 +2037,7 @@ STATIONED,STATIONED
 STATS,STATS
 STATS // RECORDS,STATS // RECORDS
 STATUS,STATUS
+STEP %d/%d,STEP %d/%d
 STEP -- / %d,STEP -- / %d
 STOOD DOWN  (operations abandoned),STOOD DOWN  (operations abandoned)
 STOPPED,STOPPED
@@ -3077,6 +3080,7 @@ Threats destroyed: %d. Reached home: %d. DOWN: %d. TAKEN: %d.,Threats destroyed:
 Threats here: %s.,Threats here: %s.
 Threats your network destroyed.,Threats your network destroyed.
 Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.,Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.
+"Today's HQ run is the breach: one node, the Central Server. Its gate takes %d Exploits; each extra one weakens the boss further.","Today's HQ run is the breach: one node, the Central Server. Its gate takes %d Exploits; each extra one weakens the boss further."
 Tritan (blue-weak),Tritan (blue-weak)
 Try the next city: the seed goes up by one.,Try the next city: the seed goes up by one.
 Tutorial,Tutorial
@@ -3111,6 +3115,7 @@ WHEEL,WHEEL
 WIN,WIN
 WIPE IN,WIPE IN
 WON,WON
+Walk the compound layer by layer to the Central Server (%d layers). Its gate takes %d Exploits.,Walk the compound layer by layer to the Central Server (%d layers). Its gate takes %d Exploits.
 What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.,What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.
 What the threats go for (their routing rule).,What the threats go for (their routing rule).
 What this wheel's needles land on. Nothing else changes this turn.,What this wheel's needles land on. Nothing else changes this turn.
@@ -3264,6 +3269,7 @@ save and quit,save and quit
 saved to profile,saved to profile
 schematics,schematics
 select,select
+selectable,selectable
 slice,slice
 slot %s,slot %s
 socket,socket

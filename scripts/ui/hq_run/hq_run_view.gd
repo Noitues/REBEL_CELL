@@ -9,26 +9,73 @@ extends Control
 ## and the yellow `CENTRAL SERVER // <name>` chip clear of the pencil.
 ## Headless (no renderer) it draws the marks only, projected by the same camera, so the
 ## page's maths are testable. A view: it emits `node_pressed` and never changes game state.
+## Parity S-HQRUN (round 43 HQ run concepts, designer group ruling 2026-10-05): the page's
+## yellow title sticker per corporation, the `> HQ MECHANIC` terminal at the foot presenting
+## the HQ run's rules that exist (the breach: the gate's Exploits; GDD 4.2 / 11.7) with a
+## STEP chip, the state key strip (walked / selectable / not yet / cut off), name tabs and
+## choice numbers on the selectable nodes, cut-off nodes on a pale backing so they read on a
+## dark compound, the entry as the concept's lime diamond; the chip and the page's chrome
+## step aside while the Central Server's gate is open over the page (`set_gate_open`, called
+## by the gate through GROUP). The per-corporation mechanics' words (CLIMB THE HELIX, the
+## crane and train, the eye, the missile loop, SYNC STRIKE) are G12: listed, not built.
 
 ## A selectable node was clicked (or pressed by its number).
 signal node_pressed(id: StringName)
 
+## The group every HQ-run page joins (the gate tells the page it is open over it).
+const GROUP := &"hq_run_view"
 const CHIP_WORDS := "CENTRAL SERVER // %s" # TR
+## The page's title sticker: "<CORPORATION>: HQ RUN" (the concept's mechanic names wait for G12).
+const TITLE_WORDS := "%s: HQ RUN" # TR
+## The foot terminal's header, its STEP chip and its words (the rules the run has today).
+const MECHANIC_TITLE := "HQ MECHANIC" # TR
+const STEP_WORDS := "STEP %d/%d" # TR
+const BREACH_RULE := "Today's HQ run is the breach: one node, the Central Server. Its gate takes %d Exploits; each extra one weakens the boss further." # TR
+const MAP_RULE := "Walk the compound layer by layer to the Central Server (%d layers). Its gate takes %d Exploits." # TR
+## The key strip's states (RouteOverlay.STATE_*) and their words, in the concept's order.
+const KEY_STATES: Array[String] = [RouteOverlay.STATE_WALKED, RouteOverlay.STATE_NEXT, RouteOverlay.STATE_LATER, RouteOverlay.STATE_CUT]
+const KEY_WORDS: Array[String] = ["walked", "selectable", "not yet", "cut off"] # TR
+## Title sticker: lettering (px at text scale 1.0), tilt (degrees), inset from the page's
+## top-left corner under the run's HUD band (`top_inset`).
+const TITLE_PX := 26.0
+const TITLE_TILT := -2.0
+const EDGE := 16.0
+## The foot: the gap between the terminal (the width the key leaves) and the key; the key's
+## ring swatch (px) and its ring share.
+const FOOT_GAP := 24.0
+const KEY_SWATCH := 18.0
+const KEY_RING_SHARE := 0.36
+## Name tabs under a selectable node: gap under the sticker, padding, lettering, border.
+const TAB_GAP := 3.0
+const TAB_PAD := Vector2(4.0, 1.0)
+const TAB_FONT := 10
+const TAB_BORDER := 1.0
+const TAB_GLASS_ALPHA := 0.88
+## A cut-off node's pale backing (so its grey sticker reads on a dark compound).
+const CUT_BACKING_ALPHA := 0.5
+const CUT_BACKING_GROW := 4.0
+## The entry's lime diamond: half-width and squash (the ground's iso foreshortening).
+const ENTRY_DIAMOND := 9.0
+const ENTRY_SQUASH := 0.5
 ## The chip: gap above the pencil circle, padding, lettering (screen px at text scale 1.0)
 ## and its glass alpha.
 const CHIP_GAP := 8.0
 const CHIP_PAD := 6.0
 const CHIP_FONT := 15
 const CHIP_GLASS_ALPHA := 0.9
-## The entry's mark: a small lime ring on the ground where the run comes in.
+## The entry's size for the operative pin when no node is current.
 const ENTRY_RADIUS := 7.0
-const ENTRY_WIDTH := 2.4
 ## A click reaches a node within its sticker plus this (screen px).
 const PICK_SLACK := 6.0
 ## The page keeps every node and the entry this far inside its edges (screen px), widening
 ## the compound's reference framing up to FIT_MAX_SHARE times when it must.
 const FIT_MARGIN_PX := 64.0
 const FIT_MAX_SHARE := 2.0
+## The foot's terminal and key strip take this much of the page's height (px at text scale 1.0).
+const FOOT_RESERVE := 104.0
+## Room over the topmost node under the HUD band: the TARGET circle and the CENTRAL SERVER chip
+## above it (px at text scale 1.0).
+const TOP_ROOM := 80.0
 
 var corp: StringName = &""
 ## The Central Server's name, translated and upper case (the Site's display name).
@@ -42,6 +89,22 @@ var city: CityView3D = null
 ## The camera the marks are projected with (the city's own when there is one).
 var iso: CityIsoCamera = null
 var anim_t: float = 0.0
+## How far down the page's title sits: the run's HUD band covers the page's top.
+var top_inset: float = HudBar.BAND_HEIGHT
+## The Exploits the breach's gate takes (the campaign config's minimum).
+var min_exploits: int = 3
+## True while the Central Server's gate is open over the page (its chip and chrome step aside).
+var gate_open: bool = false
+## The page's chrome (built on show_run): the title sticker, the foot terminal and its rule
+## label, the key strip.
+var title_sticker: VerbSticker = null
+var mechanic: CrtWindow = null
+var mechanic_text: Label = null
+var key_strip: CrtWindow = null
+var _chrome: MarginContainer = null
+var _foot: Control = null
+var _foot_top: float = -1.0
+var _built_scale: float = 1.0
 
 var _layout: HqCompoundLayoutData = null
 var _manifest: Dictionary = {}
@@ -69,6 +132,7 @@ func _init() -> void:
 	_marks.draw.connect(_draw_marks)
 	add_child(_marks)
 	resized.connect(_on_resized)
+	add_to_group(GROUP)
 
 
 ## Shows run `graph` on `p_corp`'s compound: the walked, current and selectable nodes, and
@@ -86,10 +150,149 @@ func show_run(p_corp: StringName, p_graph: MapGraph, p_current: StringName, p_vi
 	_at = HqCompoundStage.place(CityView3D.CONFIG, corp, _manifest)
 	_points = HqCompoundStage.node_points(_layout, graph, _at)
 	_entry = HqCompoundStage.entry_point(_layout, _at)
+	var cfg := RunManager.config()
+	if cfg != null:
+		min_exploits = cfg.min_exploits_for_breach
 	_frame()
 	if CityView3D.can_render() and city == null:
 		_mount_city()
+	_build_chrome()
 	_marks.queue_redraw()
+
+
+## The gate over the page opened (`on`) or closed: the chip (the gate names the server) and
+## the page's chrome step aside under it (GATE-02).
+func set_gate_open(on: bool) -> void:
+	gate_open = on
+	for c: Control in [title_sticker, mechanic, key_strip]:
+		if c != null:
+			c.visible = not on
+	_marks.queue_redraw()
+
+
+## The title sticker's words: "<CORPORATION>: HQ RUN" (the corporation's first name word).
+func title_text() -> String:
+	return tr(TITLE_WORDS) % corp_word(corp)
+
+
+## The corporation's short name in capitals: the first word of its display name
+## ("Solace Biosystems" -> SOLACE; REBEL_CELL stays REBEL_CELL).
+static func corp_word(p_corp: StringName) -> String:
+	var cd := ContentRegistry.get_content(p_corp) as CorporationData
+	var name_text := TextDb.t(cd, "display_name") if cd != null else String(p_corp)
+	return name_text.get_slice(" ", 0).to_upper()
+
+
+## The foot terminal's rule: the breach (one node) or a full run map's layers, with the
+## gate's Exploits.
+func mechanic_rule() -> String:
+	var layers := graph.layer_count() if graph != null else 0
+	if layers <= 1:
+		return tr(BREACH_RULE) % min_exploits
+	return tr(MAP_RULE) % [layers, min_exploits]
+
+
+## The foot terminal's chip: the step the run is on (walked nodes) of its layers.
+func step_text() -> String:
+	return tr(STEP_WORDS) % [visited.size(), graph.layer_count() if graph != null else 0]
+
+
+## The page's chrome in one full-page frame: the title row at the top left (under the HUD
+## band, `top_inset`), the terminal and the key along the foot (the terminal takes the width
+## the key leaves).
+func _build_chrome() -> void:
+	if _chrome != null:
+		_chrome.free()
+	_foot_top = -1.0
+	var k := Settings.text_scale
+	_built_scale = k
+	var edge := roundi(EDGE * k)
+	_chrome = MarginContainer.new()
+	_chrome.name = "Chrome"
+	_chrome.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_chrome.add_theme_constant_override("margin_left", edge)
+	_chrome.add_theme_constant_override("margin_right", edge)
+	_chrome.add_theme_constant_override("margin_bottom", edge)
+	_chrome.add_theme_constant_override("margin_top", roundi(top_inset) + edge)
+	add_child(_chrome)
+	var col := VBoxContainer.new()
+	col.name = "Column"
+	_chrome.add_child(col)
+	var top := HBoxContainer.new()
+	top.name = "TitleRow"
+	col.add_child(top)
+	title_sticker = VerbSticker.new(title_text(), VerbSticker.Fill.YELLOW, TITLE_PX, TITLE_TILT)
+	title_sticker.name = "TitleSticker"
+	title_sticker.pre_translated = true
+	top.add_child(title_sticker)
+	var fill := Control.new()
+	fill.name = "Middle"
+	fill.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(fill)
+	var foot := HBoxContainer.new()
+	foot.name = "Foot"
+	foot.add_theme_constant_override("separation", roundi(FOOT_GAP * k))
+	col.add_child(foot)
+	_foot = foot
+	foot.resized.connect(_on_foot_laid_out)
+	mechanic = CrtWindow.new(tr(MECHANIC_TITLE), Palette.NET_CYAN)
+	mechanic.name = "HqMechanic"
+	mechanic.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mechanic.size_flags_vertical = Control.SIZE_SHRINK_END
+	mechanic.tag_label.text = step_text()
+	mechanic_text = Chrome.body_label(mechanic_rule(), UiTheme.CAPTION, Palette.TEXT_MID)
+	mechanic_text.add_theme_font_override(&"font", Palette.mono())
+	mechanic_text.name = "Rule"
+	mechanic.body.add_child(mechanic_text)
+	foot.add_child(mechanic)
+	key_strip = CrtWindow.new("", Palette.NET_CYAN)
+	key_strip.name = "StateKey"
+	key_strip.size_flags_vertical = Control.SIZE_SHRINK_END
+	var row := HBoxContainer.new()
+	row.name = "Keys"
+	row.add_theme_constant_override("separation", roundi(UiTheme.SP_M * k))
+	key_strip.body.add_child(row)
+	for i in KEY_STATES.size():
+		row.add_child(_key_row(KEY_STATES[i], KEY_WORDS[i], k))
+	foot.add_child(key_strip)
+	_ignore_mouse(_chrome)
+	move_child(_chrome, _marks.get_index() + 1)
+	set_gate_open(gate_open)
+
+
+func _key_row(state: String, words: String, k: float) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.name = "Key_%s" % state
+	row.add_theme_constant_override("separation", roundi(UiTheme.SP_XS * k))
+	var side := KEY_SWATCH * k
+	var swatch := Control.new()
+	swatch.name = "Swatch"
+	swatch.custom_minimum_size = Vector2(side, side)
+	swatch.draw.connect(func() -> void:
+		RouteOverlay.draw_state_ring(swatch, swatch.size * 0.5, side * KEY_RING_SHARE, state, k * 0.7))
+	row.add_child(swatch)
+	var l := Chrome.caps_label(tr(words), UiTheme.CAPTION, Palette.TEXT_MID)
+	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(l)
+	return row
+
+
+static func _ignore_mouse(n: Node) -> void:
+	if n is Control:
+		(n as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		(n as Control).focus_mode = Control.FOCUS_NONE
+	for c in n.get_children():
+		_ignore_mouse(c)
+
+
+## The page's chrome rects (local, after layout): title, terminal, key (tests: on the page,
+## apart).
+func chrome_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for c: Control in [title_sticker, mechanic, key_strip]:
+		if c != null:
+			out.append(Rect2(c.global_position - global_position, c.size))
+	return out
 
 
 ## The world point of node `id` (Vector3.INF when it has no slot).
@@ -198,12 +401,36 @@ func _server_id() -> StringName:
 	return StringName(last[0]["id"]) if not last.is_empty() else &""
 
 
+## The part of a page `sz` big the run's nodes and entry keep inside: FIT_MARGIN_PX in from
+## the sides, TOP_ROOM under the HUD band, above the foot's terminal and key (as laid out;
+## FOOT_RESERVE before the first layout).
+func free_rect(sz: Vector2) -> Rect2:
+	var top := top_inset + TOP_ROOM * Settings.text_scale
+	var bottom := FOOT_RESERVE * Settings.text_scale + FIT_MARGIN_PX * 0.5
+	if _foot_top > 0.0:
+		bottom = sz.y - _foot_top + FIT_MARGIN_PX * 0.5
+	return Rect2(FIT_MARGIN_PX, top, sz.x - FIT_MARGIN_PX * 2.0, maxf(sz.y - top - bottom, 1.0))
+
+
+## The foot found its height (a text size, the page's size): the run is framed above it.
+func _on_foot_laid_out() -> void:
+	if _foot == null or not is_instance_valid(_foot) or _foot.size.y <= 0.0:
+		return
+	var top := _foot.global_position.y - global_position.y
+	if absf(top - _foot_top) < 0.5:
+		return
+	_foot_top = top
+	if not _manifest.is_empty():
+		_frame()
+	_marks.queue_redraw()
+
+
 func _frame() -> void:
 	var sz := size if size.x > 1.0 and size.y > 1.0 else Vector2(1920, 1080)
 	var pts: Array[Vector3] = [_entry]
 	for id: StringName in _points:
 		pts.append(_points[id])
-	iso = HqCompoundStage.run_camera(CityView3D.CONFIG, _manifest, _at, sz, pts, FIT_MARGIN_PX, FIT_MAX_SHARE)
+	iso = HqCompoundStage.run_camera(CityView3D.CONFIG, _manifest, _at, sz, pts, FIT_MARGIN_PX, FIT_MAX_SHARE, free_rect(sz))
 	if city != null:
 		city.set_view_size(Vector2i(sz))
 		city.set_iso(iso)
@@ -220,10 +447,24 @@ func _mount_city() -> void:
 	move_child(city, 0)
 
 
+func _ready() -> void:
+	Settings.changed.connect(_on_settings_changed)
+
+
+## A new text size rebuilds the chrome at its scale.
+func _on_settings_changed() -> void:
+	if _chrome != null and not is_equal_approx(_built_scale, Settings.text_scale):
+		_build_chrome()
+		_frame()
+		_marks.queue_redraw()
+
+
 func _on_resized() -> void:
 	if not _manifest.is_empty():
 		_frame()
 	_marks.queue_redraw()
+	# The foot moves with the page's height without changing its own size.
+	_on_foot_laid_out.call_deferred()
 
 
 func _process(delta: float) -> void:
@@ -262,22 +503,88 @@ func _draw_marks() -> void:
 		if a == Vector2.INF or b == Vector2.INF:
 			continue
 		_link(a, b, String(l["state"]), k)
-	_marks.draw_arc(e, ENTRY_RADIUS * k, 0.0, TAU, 24, Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA), (ENTRY_WIDTH + RouteOverlay.KEYLINE_EXTRA) * k)
-	_marks.draw_arc(e, ENTRY_RADIUS * k, 0.0, TAU, 24, RouteInk.RING_WALKED, ENTRY_WIDTH * k)
+	if e != Vector2.INF:
+		_entry_diamond(e, k)
 	var server := _server_id()
 	for n in graph.all_nodes():
 		var id: StringName = n["id"]
 		var at := screen_of(id)
 		if at == Vector2.INF:
 			continue
-		var kind := CityMapOverlay.KIND_RACK if id == server else CityMapOverlay.route_kind(int(n["type"]), bool(n["elite"]))
-		RouteOverlay.draw_sticker(_marks, kind, at, node_radius(id), state_of(id), k)
+		var state := state_of(id)
+		if state == RouteOverlay.STATE_CUT:
+			_marks.draw_circle(at, node_radius(id) + CUT_BACKING_GROW * k, Color(Palette.PAPER, CUT_BACKING_ALPHA))
+		RouteOverlay.draw_sticker(_marks, kind_of(id), at, node_radius(id), state, k)
+	for id: StringName in available:
+		if id != server and screen_of(id) != Vector2.INF:
+			_tab(id, k)
 	if server != &"" and screen_of(server) != Vector2.INF:
 		_target(server, screen_of(server), node_radius(server), k)
-		_chip(k)
+		if not gate_open:
+			_chip(k)
 	var here := screen_of(current_id) if current_id != &"" else e
 	if here != Vector2.INF:
 		_here(here, node_radius(current_id) if current_id != &"" else ENTRY_RADIUS * 2.0 * k, k)
+
+
+## The route kind node `id` shows (CityMapOverlay.KIND_*; the Central Server is the rack).
+func kind_of(id: StringName) -> String:
+	if id == _server_id():
+		return CityMapOverlay.KIND_RACK
+	var n := graph.get_node(id) if graph != null else {}
+	if n.is_empty():
+		return CityMapOverlay.KIND_FIGHT
+	return CityMapOverlay.route_kind(int(n["type"]), bool(n["elite"]))
+
+
+## The choice number of selectable node `id` (its place in `available`, as the ROUTE window's
+## buttons number them; 0 = not numbered: not selectable, or the only choice).
+func number_of(id: StringName) -> int:
+	if available.size() < 2:
+		return 0
+	return available.find(id) + 1
+
+
+## The name tab's words under selectable node `id`: its number (when there is a choice) and
+## its kind (the route key's word).
+func tab_text(id: StringName) -> String:
+	var word := tr(String(RouteLegend.SHORT.get(kind_of(id), "")))
+	var n := number_of(id)
+	return "%d %s" % [n, word] if n > 0 else word
+
+
+## The name tab's rect (local) under node `id`.
+func tab_rect(id: StringName) -> Rect2:
+	var at := screen_of(id)
+	if at == Vector2.INF:
+		return Rect2()
+	var k := Settings.text_scale
+	var f := Palette.mono()
+	var fs := maxi(1, roundi(TAB_FONT * k))
+	var box := Vector2(f.get_string_size(tab_text(id), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, f.get_height(fs)) + TAB_PAD * 2.0 * k
+	return Rect2(Vector2(at.x - box.x * 0.5, at.y + node_radius(id) + TAB_GAP * k), box)
+
+
+## The concept's name tab (round 43: a small dark glass tab with a cyan edge, mono capitals).
+func _tab(id: StringName, k: float) -> void:
+	var r := tab_rect(id)
+	var f := Palette.mono()
+	var fs := maxi(1, roundi(TAB_FONT * k))
+	_marks.draw_rect(r, Color(Palette.NIGHT_SKY, TAB_GLASS_ALPHA))
+	_marks.draw_rect(r, Palette.NET_CYAN, false, TAB_BORDER * k)
+	_marks.draw_string(f, r.position + Vector2(TAB_PAD.x * k, TAB_PAD.y * k + f.get_ascent(fs)), tab_text(id),
+		HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER)
+
+
+## The entry: the concept's lime diamond on the ground where the walked path starts.
+func _entry_diamond(e: Vector2, k: float) -> void:
+	var w := ENTRY_DIAMOND * k
+	var h := w * ENTRY_SQUASH
+	var pts := PackedVector2Array([e + Vector2(-w, 0), e + Vector2(0, -h), e + Vector2(w, 0), e + Vector2(0, h)])
+	var ink := pts.duplicate()
+	ink.append(pts[0])
+	_marks.draw_polyline(ink, Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA), RouteOverlay.KEYLINE_EXTRA * k * 2.0, true)
+	_marks.draw_colored_polygon(pts, RouteInk.RING_WALKED)
 
 
 func _link(a: Vector2, b: Vector2, state: String, k: float) -> void:
