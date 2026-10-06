@@ -13,6 +13,8 @@ extends Node
 ##       [--high-contrast] [--reduce-motion] [--colorblind=<mode>] [--save-size=800x450]
 ##       [--screen-timeout=90] [--list=<file.json>] [--skins=v2,cobalt]
 ## --skins (ART-12 12s) walks the screens once per palette skin, into <out>/<skin>/.
+## --scales=1.0,1.6,2.0 (parity NEWC) walks them once per text scale, into <out>/s<scale>/
+## (one launch for a fit check at every scale; it overrides --scale).
 ##
 ## Per screen it writes <screen>.png, <screen>.lint.json and <screen>.status.json
 ## ({status: ok|failed|timeout|unavailable, error, errors[], warnings[], seconds});
@@ -81,8 +83,13 @@ const SCREENS := [
 	["title", "_s_title", "Title / main menu with a campaign to continue."],
 	["title_confirm", "_s_title_confirm", "ART-10 4C: the title's delete-slot confirm (the abandon dialog look)."],
 	["slots", "_s_slots", "Campaign slots with one saved campaign."],
+	["slots_2", "_s_slots_2", "Parity SLOTS: campaign slots with two saved campaigns."],
+	["slots_3", "_s_slots_3", "Parity SLOTS: campaign slots with all three slots used."],
 	["new_campaign", "_s_new_campaign", "New campaign page (all corporations unlocked)."],
 	["new_campaign_picker", "_s_new_campaign_picker", "New campaign with the target picker open."],
+	["new_campaign_locked", "_s_new_campaign_locked", "Parity NEWC: a fresh profile's new campaign (corporations, homes and classes locked, one class and one home bought)."],
+	["new_campaign_crew", "_s_new_campaign_crew", "Parity NEWC: the same page scrolled to the crew tiles and the city seed."],
+	["new_campaign_codes", "_s_new_campaign_codes", "Parity NEWC: the same page scrolled to today's run and the share codes, the code row open."],
 	["hq", "_s_hq", "HQ after starting a new campaign."],
 	["hq_black_market", "_s_hq_black_market", "HQ scrolled to the Black Market."],
 	["hq_crew", "_s_hq_crew", "HQ crew / dossiers with four classes."],
@@ -138,6 +145,10 @@ const SCREENS := [
 	["pause_netrun", "_s_pause_netrun", "The pause menu over a netrun's route."],
 	["pause_fight", "_s_pause_fight", "The pause menu over a fight."],
 	["pause_fight_quit", "_s_pause_fight_quit", "ART-2 2D: the quit confirm (the dialog kit) over a fight's pause menu."],
+	["pause_fight_abandon", "_s_pause_fight_abandon", "ABANDON-QUIT: the in-run pause's Abandon run dialog over a fight (round 33 abandon_dialog)."],
+	["pause_fight_abandon_hold", "_s_pause_fight_abandon_hold", "ABANDON-QUIT: the same with BURN IT focused and held halfway (the lime ring half full)."],
+	["hq_pause_abandon", "_s_hq_pause_abandon", "ABANDON-QUIT: the HQ pause's Abandon campaign dialog."],
+	["hq_pause_quit", "_s_hq_pause_quit", "ABANDON-QUIT: the HQ pause's quit confirm with its key hints."],
 ]
 
 var out_dir := ""
@@ -152,6 +163,8 @@ var reduce_motion := false
 var colorblind := ""
 ## ART-12 12s: palette skins to walk (empty: the one Settings has).
 var skins: PackedStringArray = []
+## Parity NEWC: text scales to walk (empty: the one --scale gives).
+var scales: PackedStringArray = []
 ## The PNG's size (the layout stays CAPTURE_SIZE; the picture is scaled down to keep packs small).
 var save_size := CAPTURE_SIZE
 var screen_timeout := DEFAULT_TIMEOUT_S
@@ -213,6 +226,8 @@ func _ready() -> void:
 			screen_timeout = float(a.trim_prefix("--screen-timeout="))
 		elif a.begins_with("--skins="):
 			skins = a.trim_prefix("--skins=").split(",", false)
+		elif a.begins_with("--scales="):
+			scales = a.trim_prefix("--scales=").split(",", false)
 		elif a.begins_with("--list="):
 			list_file = a.trim_prefix("--list=")
 	if list_file != "":
@@ -240,16 +255,24 @@ func _ready() -> void:
 			todo.append(s)
 	var base := out_dir
 	for skin in (skins if not skins.is_empty() else PackedStringArray([""])):
+		var skin_dir := base
 		if skin != "":
 			Settings.palette_skin = StringName(skin)
 			Settings.changed.emit()
-			out_dir = base.path_join(skin)
+			skin_dir = base.path_join(skin)
+		for sc in (scales if not scales.is_empty() else PackedStringArray([""])):
+			out_dir = skin_dir
+			if sc != "":
+				text_scale = float(sc)
+				Settings.text_scale = text_scale  # past the clamp on purpose, as --scale
+				Settings.changed.emit()
+				out_dir = skin_dir.path_join("s" + sc)
 			DirAccess.make_dir_recursive_absolute(out_dir)
-		for s in todo:
-			if _missing_axes.is_empty():
-				await _capture(s[0], s[1], s[2])
-			else:
-				_unavailable(s[0], s[2])
+			for s in todo:
+				if _missing_axes.is_empty():
+					await _capture(s[0], s[1], s[2])
+				else:
+					_unavailable(s[0], s[2])
 	out_dir = base
 	_teardown()
 	print("REVIEW PACK DONE %d screens in %s" % [todo.size(), out_dir])
@@ -318,7 +341,7 @@ func _unavailable(screen: String, what: String) -> void:
 func _teardown() -> void:
 	_clear_scenes()
 	RunManager.delete_save()
-	for slot in ["1", "demo", SLOT]:
+	for slot in ["1", "2", "3", "demo", SLOT]:
 		RunManager.save_slot = slot
 		RunManager.delete_save()
 	RunManager.save_slot = RunManager.DEFAULT_SLOT
@@ -649,10 +672,27 @@ func _s_title_confirm() -> void:
 
 
 func _s_slots() -> void:
-	RunManager.save_slot = "1"
-	RunManager.new_campaign(4)
-	DemoSetup.set_heat(RunManager.campaign, 33)
-	RunManager.autosave()
+	await _slots_page(1)
+
+
+func _s_slots_2() -> void:
+	await _slots_page(2)
+
+
+func _s_slots_3() -> void:
+	await _slots_page(3)
+
+
+## The campaign slots page with `used` slots saved (Parity SLOTS-01..04: 1, 2 and 3 cards).
+func _slots_page(used: int) -> void:
+	for i in 3:
+		RunManager.save_slot = str(i + 1)
+		RunManager.delete_save()
+	for i in used:
+		RunManager.save_slot = str(i + 1)
+		RunManager.new_campaign(4 + i)
+		DemoSetup.set_heat(RunManager.campaign, 33 + 30 * i)
+		RunManager.autosave()
 	RunManager.save_slot = SLOT
 	var title: Node = TITLE.instantiate()
 	title.continue_slot = "1"
@@ -675,6 +715,52 @@ func _new_campaign_page() -> Node:
 
 func _s_new_campaign() -> void:
 	await _new_campaign_page()
+
+
+## Parity NEWC: a fresh profile (only Solace open) with one class and one home server bought,
+## so the page shows open and locked tiles in every picker, with their unlock costs.
+func _s_new_campaign_locked() -> void:
+	await _new_campaign_locked_page()
+
+
+func _new_campaign_locked_page() -> Node:
+	var p := RunManager.profile
+	p.unlocks.clear()
+	p.best_ice_by_corp.clear()
+	for u in [&"unlock_ghost", &"unlock_home_bunker"]:
+		p.unlocks.append(u)
+	RunManager.campaign = null
+	var hq: Node = _open(HQ)
+	await _frames(2)
+	if hq.panel_name != "start":
+		hq.show_start()
+	await _settle(hq)
+	return hq
+
+
+## Scrolls the page so `node_name` shows (its bottom on the screen).
+func _scroll_to(hq: Node, node_name: String) -> void:
+	var target: Control = hq._panel.find_child(node_name, true, false) if hq._panel != null else null
+	var sc := hq._panel_host.get_parent() as ScrollContainer
+	if target == null or sc == null:
+		push_error("review_pack: no %s / scroll" % node_name)
+		return
+	sc.ensure_control_visible(target)
+	await _frames(SETTLE_FRAMES)
+
+
+func _s_new_campaign_crew() -> void:
+	var hq: Node = await _new_campaign_locked_page()
+	await _scroll_to(hq, "SeedRow")
+
+
+func _s_new_campaign_codes() -> void:
+	var hq: Node = await _new_campaign_locked_page()
+	var toggle := hq._panel.find_child("CodesToggle", true, false) as Button
+	if toggle != null:
+		toggle.pressed.emit()
+	await _frames(2)
+	await _scroll_to(hq, "ShareCodes")
 
 
 func _s_new_campaign_picker() -> void:
@@ -1249,6 +1335,63 @@ func _s_pause_fight_quit() -> void:
 			(b as Button).pressed.emit()
 			break
 	await _settle(combat.get_parent())
+
+
+## ABANDON-QUIT: the in-run pause's Abandon run opens its dialog (nothing is confirmed).
+func _s_pause_fight_abandon() -> void:
+	await _pause_fight_dialog(false)
+
+
+## ABANDON-QUIT: the same, BURN IT focused and held for half the hold.
+func _s_pause_fight_abandon_hold() -> void:
+	await _pause_fight_dialog(true)
+
+
+func _pause_fight_dialog(hold: bool) -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	combat.open_settings()
+	await _settle(combat.get_parent())
+	var menu := get_tree().root.find_children("*", "PauseMenu", true, false)
+	if menu.is_empty() or (menu[0] as PauseMenu).abandon_run_button == null:
+		push_error("review_pack: no Abandon run row")
+		return
+	(menu[0] as PauseMenu).abandon_run_button.pressed.emit()
+	await _settle(combat.get_parent())
+	var d := (menu[0] as PauseMenu).exit_dialog as AbandonDialog
+	if hold and d != null:
+		d.yes_button.grab_focus()
+		d.set_process(false)  # the picture holds the ring where it is
+		d.advance_hold(AbandonDialog.hold_seconds() * 0.5)
+		await _frames(2)
+
+
+## ABANDON-QUIT: the HQ pause's Abandon campaign opens its dialog (nothing is confirmed).
+func _s_hq_pause_abandon() -> void:
+	await _hq_pause_dialog("abandon_campaign_button")
+
+
+## ABANDON-QUIT: the HQ pause's Quit to desktop opens its confirm (nothing is confirmed).
+func _s_hq_pause_quit() -> void:
+	await _hq_pause_dialog("")
+
+
+func _hq_pause_dialog(row: String) -> void:
+	var hq: Node = await _hq_with_campaign()
+	await _settle(hq)
+	hq.open_settings()
+	await _settle(hq)
+	var menu := get_tree().root.find_children("*", "PauseMenu", true, false)
+	if menu.is_empty():
+		push_error("review_pack: no pause menu")
+		return
+	var m := menu[0] as PauseMenu
+	if row != "":
+		(m.get(row) as Button).pressed.emit()
+	else:
+		m.confirm_quit()
+	await _settle(hq)
 
 
 # --- Runtime lint export -----------------------------------------------------------------

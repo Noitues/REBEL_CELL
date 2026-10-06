@@ -16,6 +16,7 @@ func _init() -> void:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Palette.TERMINAL_BG
 	sb.border_color = Palette.TERMINAL_EDGE
+	PaletteSkins.track_box(sb)  # ART-12 12s-b: the glass and edge follow the skin
 	sb.set_border_width_all(1)
 	sb.set_content_margin_all(MARGIN)
 	add_theme_stylebox_override("panel", sb)

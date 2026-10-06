@@ -12,9 +12,17 @@ extends Control
 const ICON_R := 8.0
 const ICON_GAP := 3.0
 const ITEM_GAP := 12.0
-## Amount colours on the paper choice notes.
-const GOOD := Color("#17702c")
-const BAD := Color("#b3122f")
+## ART-9 4A (ART_BIBLE v2 §4.11 "outcome chips (green gain, red cost, grey no change)"): each
+## item is a framed chip on the dark choice sticker, its icon and amount in the chip's colour.
+const GOOD := Palette.GAIN
+const BAD := Palette.HARM
+## A chip's inner padding and frame (px at text scale 1.0).
+const CHIP_PAD := 5.0
+const CHIP_FRAME := 1.5
+## Naive-reader audit P2 (never colour alone): a gain ends in an up mark, a cost in a down mark
+## (its width and the mark's half size, px at scale 1.0).
+const MARK_W := 12.0
+const MARK_R := 4.0
 ## Why an amount is less than the choice's number (tooltip words, H22 #12).
 const CAPPED_WORDS := {StatIcon.HP: "HP is full", StatIcon.HEAT: "Heat stops at its limit"} # TR
 ## A reward's kind in the button's words (one of it).
@@ -182,7 +190,7 @@ func _get_minimum_size() -> Vector2:
 func _item_width(it: Dictionary) -> float:
 	var s := _scale()
 	var fs := get_theme_font_size(&"font_size", &"Label")
-	return (ICON_R * 2.0 + ICON_GAP) * s + _font().get_string_size(String(it["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	return (ICON_R * 2.0 + ICON_GAP + CHIP_PAD * 2.0 + MARK_W) * s + _font().get_string_size(String(it["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 
 
 ## Every item on one line (px).
@@ -195,7 +203,7 @@ func _one_line_width() -> float:
 
 func _line_height() -> float:
 	var fs := get_theme_font_size(&"font_size", &"Label")
-	return maxf(ICON_R * 2.0 * _scale(), _font().get_height(fs))
+	return maxf(ICON_R * 2.0 * _scale(), _font().get_height(fs)) + CHIP_PAD * _scale()
 
 
 ## ANIM-R1 M9: the items laid out in lines no wider than `width` (each line an Array of
@@ -299,20 +307,30 @@ func _draw() -> void:
 		for k: int in line:
 			var it: Dictionary = items[k]
 			var col := GOOD if bool(it["good"]) else BAD
-			if bool(it.get("neutral", false)):
-				col = Palette.INK
+			if bool(it.get("neutral", false)) or StringName(it["kind"]) == NO_CHANGE:
+				col = Palette.CHIP_NO_CHANGE
+			var chip := Rect2(Vector2(x, y0 + 1.0), Vector2(_item_width(it), line_h - 2.0))
+			draw_rect(chip, Color(Palette.NIGHT_SKY, 0.85))
+			draw_rect(chip, col, false, CHIP_FRAME * s)
+			x += CHIP_PAD * s
 			if StringName(it["kind"]) == NO_CHANGE:
 				# The empty-set mark: a ring with a slash (no StatIcon means "nothing"). ANIM-R3 A7:
 				# the slash ends on the ring (it ran past the icon's box, over the note's border).
 				var c := Vector2(x + ICON_R * s, mid)
 				var ring := ICON_R * s * NULL_RING
-				draw_arc(c, ring, 0.0, TAU, 18, Palette.INK, 1.6 * s, true)
+				draw_arc(c, ring, 0.0, TAU, 18, col, 1.6 * s, true)
 				var arm := Vector2(ring, -ring) * NULL_SLASH
-				draw_line(c - arm, c + arm, Palette.INK, 1.6 * s, true)
+				draw_line(c - arm, c + arm, col, 1.6 * s, true)
 			else:
-				StatIcon.draw(self, Vector2(x + ICON_R * s, mid), ICON_R * s, StringName(it["kind"]), Palette.INK)
+				StatIcon.draw(self, Vector2(x + ICON_R * s, mid), ICON_R * s, StringName(it["kind"]), col)
 			x += (ICON_R * 2.0 + ICON_GAP) * s
 			var t := String(it["text"])
 			draw_string(font, Vector2(x, mid + font.get_ascent(fs) * 0.5 - font.get_descent(fs) * 0.25), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
-			x += font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + ITEM_GAP * s
+			x += font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			if StringName(it["kind"]) != NO_CHANGE and not bool(it.get("neutral", false)):
+				var mc := Vector2(x + MARK_W * 0.5 * s, mid)
+				var up := bool(it["good"])
+				var r := MARK_R * s
+				draw_colored_polygon(PackedVector2Array([mc + Vector2(-r, r * 0.6 if up else -r * 0.6), mc + Vector2(r, r * 0.6 if up else -r * 0.6), mc + Vector2(0, -r if up else r)]), col)
+			x += MARK_W * s + CHIP_PAD * s + ITEM_GAP * s
 		y0 += line_h + LINE_GAP * s

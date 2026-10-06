@@ -207,10 +207,11 @@ func test_held_choices_read_and_carry_a_typing_mark() -> void:
 	assert_true(c1.has_meta(scene.HELD_META), "it waits")
 	assert_not_null(c1.get_node_or_null(^"EventHeldMark"), "with the typing mark")
 	assert_not_null(c1.find_child("OutcomeRow", false, false), "its outcome icons show")
-	var paper := c1.get_theme_stylebox(&"normal") as StyleBoxFlat
-	assert_not_null(paper)
-	if paper != null:
-		assert_eq(paper.bg_color, Palette.NOTE_PAPER, "on its paper note (OutcomeRow read Godot's grey box before the theme)")
+	# ART-9 4A: a choice is the concept's plate sticker (ChoiceSticker draws it behind the words;
+	# the theme's box is clear room), never Godot's grey box.
+	var paper := c1.get_theme_stylebox(&"normal")
+	assert_true(paper is StyleBoxEmpty, "on its sticker (OutcomeRow read Godot's grey box before the theme)")
+	assert_not_null(c1.get_node_or_null(^"ChoiceNumber"), "the plate sticker and its number")
 	var ink := c1.get_theme_color(&"font_color")
 	assert_gt(ink.a, 0.6, "its words stay readable (a disabled note was ink at 0.45 on paper at 0.45)")
 	# A click on it while held shows the words and takes nothing.
@@ -707,7 +708,7 @@ func test_a_focus_tip_folds_narrower_to_keep_off_skip_at_big_text() -> void:
 		var skip := scene._panel.find_child("Skip", true, false) as Control
 		var r := tip.get_global_rect()
 		assert_true(SCREEN.encloses(r), "on screen")
-		assert_false(r.intersects(skip.get_global_rect()), "off Skip")
+		assert_false(r.intersects(skip.get_global_rect()), "off Skip (%s, %s)" % [r, skip.get_global_rect()])
 		for c in stickers.get_children():
 			assert_false(r.intersects((c as Control).get_global_rect().grow(-2.0)), "off the loot cards (%s)" % (c as ZineCard).card_title)
 	await _close(scene)

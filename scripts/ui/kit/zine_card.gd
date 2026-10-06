@@ -576,7 +576,7 @@ func _draw_sticker() -> void:
 func _draw_tile() -> void:
 	var rect := Rect2(Vector2.ZERO, size)
 	var hot := _lifted and not disabled
-	draw_rect(rect, Palette.TERMINAL_BG_HOT if hot else Color(0.02, 0.05, 0.11, 0.95))
+	draw_rect(rect, PaletteSkins.chrome(Palette.TERMINAL_BG_HOT) if hot else Color(0.02, 0.05, 0.11, 0.95))
 	if hot:
 		draw_rect(rect.grow(3), Color(Palette.CELL_PINK, 0.3), false, 6.0)
 	draw_rect(rect, Palette.CELL_PINK if hot else Color(accent, 0.7), false, 1.5)
@@ -926,6 +926,10 @@ func buy_room() -> float:
 		# ANIM-R4 C7: and the reach of its flap (`note_flap` degrees about its top edge lift a
 		# top corner by half its width x sin: at 1.0 the flapping BUY lay on the text's last line).
 		var flap := buy_button.size.x * 0.5 * absf(sin(deg_to_rad(Motion.amplitude(&"note_flap"))))
+		if get_meta(BuyButton.TAG_BELOW, false):
+			# ART-9 4A (round 34 shop_v5): the kraft tag hangs under the card, tied to its foot; the
+			# card keeps the hand's foot, or what the tag's top and its flap reach into it
+			return maxf(STICKER_FOOT * s, BuyButton.EDGE * s + TILE_GAP * s + flap)
 		return h + BuyButton.EDGE * s + TILE_GAP * s + flap
 	return PRICE_TAG_H * s + 8.0 if (price >= 0 or cost >= 0) else 6.0
 
@@ -1009,7 +1013,7 @@ func _draw_tile_scaled() -> void:
 	var s := text_scale
 	var rect := Rect2(Vector2.ZERO, size)
 	var hot := _lifted and not disabled
-	draw_rect(rect, Palette.TERMINAL_BG_HOT if hot else Color(0.02, 0.05, 0.11, 0.95))
+	draw_rect(rect, PaletteSkins.chrome(Palette.TERMINAL_BG_HOT) if hot else Color(0.02, 0.05, 0.11, 0.95))
 	if hot:
 		draw_rect(rect.grow(3), Color(Palette.CELL_PINK, 0.3), false, 6.0)
 	draw_rect(rect, Palette.CELL_PINK if hot else Color(accent, 0.7), false, 1.5)
@@ -1124,7 +1128,7 @@ func tile_description() -> String:
 func _draw_chip_tile() -> void:
 	var rect := Rect2(Vector2.ZERO, size)
 	var hot := _lifted and not disabled
-	draw_rect(rect, Palette.TERMINAL_BG_HOT if hot else Color(0.02, 0.05, 0.11, 0.95))
+	draw_rect(rect, PaletteSkins.chrome(Palette.TERMINAL_BG_HOT) if hot else Color(0.02, 0.05, 0.11, 0.95))
 	if hot:
 		draw_rect(rect.grow(3), Color(Palette.CELL_PINK, 0.3), false, 6.0)
 	draw_rect(rect, Palette.CELL_PINK if hot else Color(accent, 0.7), false, 1.5)

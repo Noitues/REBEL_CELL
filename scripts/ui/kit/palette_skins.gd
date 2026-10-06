@@ -52,6 +52,8 @@ const GAMUT_EPSILON := 0.0005
 static var _cache: Dictionary = {}
 ## skin id -> {opaque v2 rgba32: opaque skin Color}, built on first use.
 static var _maps: Dictionary = {}
+## The boxes `track_box` keeps in step with the skin (weak references).
+static var _tracked: Array = []
 
 
 ## Whether `skin` is a known skin id.
@@ -136,6 +138,62 @@ static func apply_box(sb: StyleBox, skin: StringName = &"") -> void:
 	flat.bg_color = chrome(flat.bg_color, skin)
 	flat.border_color = chrome(flat.border_color, skin)
 	flat.shadow_color = chrome(flat.shadow_color, skin)
+
+
+## Redraws `item` whenever Settings changes (a skin pick), so a view that draws chrome
+## through `chrome()` turns with the open Options dialog. Safe to call twice; the link goes
+## with the item. ART-12 12s-b.
+static func watch(item: CanvasItem) -> void:
+	bind(item, item.queue_redraw)
+
+
+## Calls `on_change` (a method of `node`, so it goes with it) whenever Settings changes.
+## For views that cache a skin value (a theme colour, a ColorRect) rather than draw it.
+static func bind(_node: Node, on_change: Callable) -> void:
+	var sig := _changed_signal()
+	if sig.is_null() or sig.is_connected(on_change):
+		return
+	sig.connect(on_change)
+
+
+## A StyleBoxFlat built from v2 chrome colours, re-valued for the active skin now and on
+## every Settings change (it holds only a weak link: a freed box stops listening). The v2
+## colours are read from `sb` as it is passed in. Returns `sb`.
+static func track_box(sb: StyleBoxFlat) -> StyleBoxFlat:
+	sb.set_meta(&"palette_v2", [sb.bg_color, sb.border_color, sb.shadow_color])
+	_tracked.append(weakref(sb))
+	_retrack_all()
+	var sig := _changed_signal()
+	if not sig.is_null() and not sig.is_connected(_retrack_all):
+		sig.connect(_retrack_all)
+	return sb
+
+
+## Re-values every tracked box for the active skin and forgets the freed ones.
+static func _retrack_all() -> void:
+	var live: Array = []
+	for w: WeakRef in _tracked:
+		var sb := w.get_ref() as StyleBoxFlat
+		if sb == null:
+			continue
+		live.append(w)
+		var v2: Array = sb.get_meta(&"palette_v2")
+		sb.bg_color = chrome(v2[0] as Color)
+		sb.border_color = chrome(v2[1] as Color)
+		sb.shadow_color = chrome(v2[2] as Color)
+	_tracked = live
+
+
+## Settings.changed, found by node (tools run with -s have no autoload names); a null
+## Signal when there is no Settings.
+static func _changed_signal() -> Signal:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null or tree.root == null:
+		return Signal()
+	var settings := tree.root.get_node_or_null(^"Settings")
+	if settings == null:
+		return Signal()
+	return Signal(settings, &"changed")
 
 
 ## Drops the built values (tests that change RECIPES' inputs; nothing at runtime needs it).

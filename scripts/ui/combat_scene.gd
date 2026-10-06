@@ -1678,7 +1678,7 @@ func _build_ui() -> void:
 	# free nudges, the key hints under them (the status line).
 	_banner = PanelContainer.new()
 	_banner.name = "TurnBanner"
-	_banner.add_theme_stylebox_override("panel", UiTheme.box(HudSkin.TERMINAL_BG, HudSkin.TERMINAL_EDGE, 1, BANNER_PAD_H, BANNER_PAD_V))
+	_banner.add_theme_stylebox_override("panel", PaletteSkins.track_box(UiTheme.box(HudSkin.TERMINAL_BG, HudSkin.TERMINAL_EDGE, 1, BANNER_PAD_H, BANNER_PAD_V)))
 	_banner.size_flags_horizontal = Control.SIZE_EXPAND | Control.SIZE_SHRINK_CENTER
 	_banner.mouse_filter = Control.MOUSE_FILTER_PASS
 	_banner_rows = BoxContainer.new()

@@ -529,6 +529,10 @@
 			"seconds": 3.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art12b_skin_chrome.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art12_skins.gd": {
 			"seconds": 4.0,
 			"tier": "fast"
@@ -593,6 +597,26 @@
 			"seconds": 12.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art9_4a_shop.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_art6_raid_presentation.gd": {
+			"seconds": 30.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_art10_menus.gd": {
+			"seconds": 12.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_abandon_quit.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_art7_netrun_city.gd": {
+			"seconds": 15.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art3_6w_raid_city.gd": {
 			"seconds": 8.0,
 			"tier": "fast"
@@ -605,16 +629,16 @@
 			"seconds": 6.0,
 			"tier": "fast"
 		},
-		"res://tests/unit/test_art6_raid_presentation.gd": {
-			"seconds": 30.0,
-			"tier": "full"
-		},
-		"res://tests/unit/test_art10_menus.gd": {
-			"seconds": 12.0,
+		"res://tests/unit/test_parity_newc.gd": {
+			"seconds": 6.0,
 			"tier": "fast"
 		},
-		"res://tests/unit/test_art7_netrun_city.gd": {
-			"seconds": 15.0,
+		"res://tests/unit/test_parity_title01_backdrop.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_parity_pause.gd": {
+			"seconds": 6.0,
 			"tier": "fast"
 		}
 	}

@@ -262,7 +262,7 @@ func _draw() -> void:
 	if sys != "":
 		draw_string(HudSkin.mono(), sys_base, sys, HORIZONTAL_ALIGNMENT_LEFT, -1, sp, Color(HudSkin.TERMINAL_TEXT, HudSkin.SYSTEM_WORD_ALPHA))
 		var sr := Rect2(Vector2(-2.0, sys_base.y - HudSkin.mono().get_ascent(sp) - 2.0), Vector2(_system_w() + 4.0, sp + 4.0))
-		draw_rect(sr, Color(HudSkin.TERMINAL_EDGE, HudSkin.SYSTEM_WORD_ALPHA * 0.6), false, 1.0)
+		draw_rect(sr, Color(PaletteSkins.chrome(HudSkin.TERMINAL_EDGE), HudSkin.SYSTEM_WORD_ALPHA * 0.6), false, 1.0)
 	# The sticker: hover lifts and grows it, a press squashes it, the first show slaps it on.
 	var hot := (st == KitState.HOVER or st == KitState.FOCUS or _hot) and not off
 	var k := (HOVER_SCALE if hot else 1.0) * lerpf(SLAP_FROM, 1.0, clampf(grow, 0.0, 1.0))
@@ -303,7 +303,7 @@ func _draw() -> void:
 	if words != "":
 		var hw := HudSkin.mono().get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
 		var hp := Vector2(6.0, size.y - 5.0)
-		draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 5)), Color(HudSkin.TERMINAL_BG, 0.85))
+		draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 5)), Color(PaletteSkins.chrome(HudSkin.TERMINAL_BG), 0.85))
 		draw_string(HudSkin.mono(), hp, words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, HudSkin.TERMINAL_TEXT if not off else HudSkin.TERMINAL_DIM)
 		if glyph:
 			_draw_glyph(Vector2(hp.x + hw + 6.0 + GLYPH_GAP + hs * 2.0, hp.y - hs * 0.5 + 2.0), hs, paint_col)
@@ -330,7 +330,7 @@ func _draw_with_art() -> void:
 	if sys != "":
 		draw_string(HudSkin.mono(), sys_base, sys, HORIZONTAL_ALIGNMENT_LEFT, -1, sp, Color(HudSkin.TERMINAL_TEXT, HudSkin.SYSTEM_WORD_ALPHA))
 		var sr := Rect2(Vector2(-2.0, sys_base.y - HudSkin.mono().get_ascent(sp) - 2.0), Vector2(_system_w() + 4.0, sp + 4.0))
-		draw_rect(sr, Color(HudSkin.TERMINAL_EDGE, HudSkin.SYSTEM_WORD_ALPHA * 0.6), false, 1.0)
+		draw_rect(sr, Color(PaletteSkins.chrome(HudSkin.TERMINAL_EDGE), HudSkin.SYSTEM_WORD_ALPHA * 0.6), false, 1.0)
 	if st == KitState.FOCUS and not disabled:
 		var r := Rect2(art.position + art.body_rect.position, art.body_rect.size).grow(HALO_PAD)
 		if art.body_rect.size == Vector2.ZERO:
@@ -341,7 +341,7 @@ func _draw_with_art() -> void:
 	if words != "":
 		var hw := HudSkin.mono().get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
 		var hp := Vector2(6.0, size.y - 5.0)
-		draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 5)), Color(HudSkin.TERMINAL_BG, 0.85))
+		draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 5)), Color(PaletteSkins.chrome(HudSkin.TERMINAL_BG), 0.85))
 		draw_string(HudSkin.mono(), hp, words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, HudSkin.TERMINAL_TEXT if not disabled else HudSkin.TERMINAL_DIM)
 		if glyph:
 			_draw_glyph(Vector2(hp.x + hw + 6.0 + GLYPH_GAP + hs * 2.0, hp.y - hs * 0.5 + 2.0), hs, paint if not disabled else HudSkin.VINYL_DISABLED)

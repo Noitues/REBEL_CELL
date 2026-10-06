@@ -31,6 +31,7 @@ var note: Callable = Callable()
 
 
 func _init(p_text: String = "") -> void:
+	PaletteSkins.watch(self)  # ART-12 12s-b: the skin's chrome follows a pick
 	text = p_text
 	clip_text = true
 	set_meta(UiFocus.META_NO_SCALE, true)
@@ -145,8 +146,8 @@ func _draw() -> void:
 	var hot := st == KitState.HOVER or st == KitState.FOCUS or st == KitState.PRESSED
 	var r := Rect2(Vector2.ZERO, size)
 	if hot:
-		draw_rect(r, Color(Palette.NET_CYAN, 0.08))
-	draw_line(Vector2(PAD.x, r.end.y - 0.5), Vector2(r.end.x - PAD.x, r.end.y - 0.5), Color(Palette.NET_CYAN, 0.15), 1.0)
+		draw_rect(r, Color(PaletteSkins.chrome(Palette.NET_CYAN), 0.08))
+	draw_line(Vector2(PAD.x, r.end.y - 0.5), Vector2(r.end.x - PAD.x, r.end.y - 0.5), Color(PaletteSkins.chrome(Palette.NET_CYAN), 0.15), 1.0)
 	var p := parts()
 	var nf := Chrome.caps_font(NAME_STEP)
 	var np := Chrome.px(NAME_STEP)
@@ -154,7 +155,7 @@ func _draw() -> void:
 	var y := PAD.y + nf.get_ascent(np)
 	var dim := disabled
 	if hot and not dim:
-		draw_string(nf, Vector2(PAD.x, y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, np, Palette.FOCUS if st == KitState.FOCUS else Palette.NET_CYAN)
+		draw_string(nf, Vector2(PAD.x, y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, np, Palette.FOCUS if st == KitState.FOCUS else PaletteSkins.chrome(Palette.NET_CYAN))
 	var name_h := nf.get_multiline_string_size(p[0], HORIZONTAL_ALIGNMENT_LEFT, _line_room(size.x), np, -1, WRAP).y
 	draw_multiline_string(nf, Vector2(x, y), p[0], HORIZONTAL_ALIGNMENT_LEFT, _line_room(size.x), np, -1, Palette.TEXT_LO if dim else Palette.TEXT_HI, WRAP)
 	var s := Settings.text_scale
@@ -196,12 +197,12 @@ func _draw_pill(pill: Rect2, on: bool, dim: bool) -> void:
 		var sz := tex.get_size() * TOGGLE_SCALE * Settings.text_scale
 		draw_texture_rect(tex, Rect2(Vector2(pill.end.x - sz.x, pill.get_center().y - sz.y * 0.5), sz), false)
 		return
-	var cyan := Palette.DISABLED if dim else Palette.NET_CYAN
+	var cyan := Palette.DISABLED if dim else PaletteSkins.chrome(Palette.NET_CYAN)
 	var rad := pill.size.y * 0.5
 	var shape := _capsule(pill, rad)
 	# OFF keeps a visible track (audit P2: a lone knob read as a bullet): a dim cyan fill and
 	# the full outline, the knob on the left and the word OFF.
-	draw_colored_polygon(shape, cyan if on else Palette.TERMINAL_BG.lerp(cyan, OFF_TRACK))
+	draw_colored_polygon(shape, cyan if on else PaletteSkins.chrome(Palette.TERMINAL_BG).lerp(cyan, OFF_TRACK))
 	var edge := shape.duplicate()
 	edge.append(shape[0])
 	draw_polyline(edge, cyan, 1.5, true)

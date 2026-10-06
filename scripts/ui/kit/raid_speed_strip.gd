@@ -65,11 +65,11 @@ func _draw_keys() -> void:
 	for key in KEYS:
 		var w := (SKIP_W if key == "SKIP" else KEY_W) * k
 		var box := Rect2(x, PAD * k * 0.6, w, size.y - PAD * k * 1.2)
-		_keys.draw_rect(box, Color(Palette.NET_CYAN, 0.12 * a))
-		_keys.draw_rect(box, Color(Palette.NET_CYAN, a), false, 1.0)
+		_keys.draw_rect(box, Color(PaletteSkins.chrome(Palette.NET_CYAN), 0.12 * a))
+		_keys.draw_rect(box, Color(PaletteSkins.chrome(Palette.NET_CYAN), a), false, 1.0)
 		var word := tr(key)
 		var tw := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
-		_keys.draw_string(f, Vector2(box.get_center().x - tw * 0.5, box.get_center().y + f.get_ascent(px) * 0.4), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(Palette.NET_CYAN, a))
+		_keys.draw_string(f, Vector2(box.get_center().x - tw * 0.5, box.get_center().y + f.get_ascent(px) * 0.4), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(PaletteSkins.chrome(Palette.NET_CYAN), a))
 		x += w + GAP * k
 	if size.x - x < _step_w():
 		return
@@ -96,10 +96,12 @@ static func style_button(b: Button) -> void:
 	b.add_theme_stylebox_override(&"hover", hot)
 	for st in [&"pressed", &"hover_pressed"]:
 		b.add_theme_stylebox_override(st, on)
+	for box in [off, on, hot]:
+		PaletteSkins.track_box(box as StyleBoxFlat)  # ART-12 12s-b: the key's v2 colours, re-valued per skin
 	b.add_theme_font_override(&"font", Palette.mono())
 	b.add_theme_font_size_override(&"font_size", UiTheme.font_px(UiTheme.BODY))
-	b.add_theme_color_override(&"font_color", Palette.NET_CYAN)
+	b.add_theme_color_override(&"font_color", PaletteSkins.chrome(Palette.NET_CYAN))
 	b.add_theme_color_override(&"font_hover_color", Palette.TEXT_HI)
 	b.add_theme_color_override(&"font_pressed_color", Palette.NIGHT_SKY)
 	b.add_theme_color_override(&"font_hover_pressed_color", Palette.NIGHT_SKY)
-	b.add_theme_color_override(&"font_disabled_color", Color(Palette.NET_CYAN, IDLE_ALPHA))
+	b.add_theme_color_override(&"font_disabled_color", Color(PaletteSkins.chrome(Palette.NET_CYAN), IDLE_ALPHA))

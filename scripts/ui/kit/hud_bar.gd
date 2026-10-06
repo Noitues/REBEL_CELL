@@ -33,6 +33,7 @@ func _init() -> void:
 	var band := StyleBoxFlat.new()
 	band.bg_color = Color(0.02, 0.04, 0.1, 0.92)
 	band.border_color = Palette.NET_CYAN
+	PaletteSkins.track_box(band)  # ART-12 12s-b: the band's rule follows the skin
 	band.border_width_bottom = 2
 	band.content_margin_left = 10
 	band.content_margin_right = 10

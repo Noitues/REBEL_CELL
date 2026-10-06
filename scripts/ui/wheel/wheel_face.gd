@@ -122,6 +122,23 @@ static func cap_height(font: Font, fs: int) -> float:
 ## slice, a dark value window with the live value, accent chevrons near the tip, an index tab on a
 ## multi-needle wheel. `rt` is the frame's outer radius (R1, or the threat ring's on a boss).
 ## `crown`: the boss's crowned blade in the corp colour.
+## FIX-REDS (M14): the box a blade at `deg` covers (its outline, a boss's crown and the glow),
+## for keeping the HP row under every needle's reach (art pass W3 / ART_BIBLE 3.2).
+static func blade_bounds(center: Vector2, k: float, deg: float, rt: float, crown: bool = false, scale: float = 1.0) -> Rect2:
+	var s := scale
+	var top := rt + BLADE_TOP * s
+	var wtop := BLADE_W_TOP * s
+	var wsh := BLADE_W_SHOULDER * s
+	var rv: Array[Vector2] = [Vector2(BLADE_TIP, 0.0), Vector2(rt + BLADE_SHOULDER * s, wsh), Vector2(top - 12.0 * s, wtop), Vector2(top, wtop - 12.0)]
+	if crown:
+		rv.append(Vector2(top + 26.0 * s, wtop + 18.0))
+	var box := Rect2(axis(center, k, BLADE_TIP, 0.0, deg), Vector2.ZERO)
+	for p in rv:
+		for side: float in [1.0, -1.0]:
+			box = box.expand(axis(center, k, p.x, p.y * side, deg))
+	return box.grow(6.0 * k)
+
+
 static func blade(ci: CanvasItem, center: Vector2, k: float, deg: float, rt: float, accent: Color, body: Color,
 		value: String, glyph: StringName, program: Color, index: int = 0, crown: bool = false, scale: float = 1.0, alpha: float = 1.0) -> void:
 	var s := scale

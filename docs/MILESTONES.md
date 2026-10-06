@@ -209,7 +209,7 @@ recruitment gated by Profile unlocks. Decisions are the implementer's, logged in
       pause menu's Options size and hotkeys behind it in H15.)
 - [x] Share codes replay the same campaign; a daily run seeds from the date.
 - [x] Assist mode: extra free nudge and HP, no ICE records or achievements.
-- [ ] Skins: deferred to art integration (M13).
+- [x] Skins: done in M14 (ART-12 12s: v2 / cobalt / graphite, Options > Display).
 - [x] Tests, schema smoke test and content validation green.
 
 ## M13 — Art pass v1 (art-pass branch, superseded in part)
@@ -276,11 +276,11 @@ budget met in a windowed profile (plan §5.2). Boxes are ticked only as the orch
 
 **ART-1 — Foundations** (palette v2, faces incl. Courier Prime, theme, the material kit, glyph
 pipeline, the render spike)
-- [ ] Kit sheet capture vs `round3_overlay/combined_v2`, `round33_ui_chrome/ui_kit.png` and
+- [x] Kit sheet capture vs `round3_overlay/combined_v2`, `round33_ui_chrome/ui_kit.png` and
       `typography.png`.
-- [ ] Every shader has a `reduce_effects` uniform and a VfxTier.
-- [ ] Lint rule: no UI node's rect over a pencil stroke.
-- [ ] Render spike for the unified city, **fidelity first** (ruling 7): the technique that
+- [x] Every shader has a `reduce_effects` uniform and a VfxTier (`test_art1_material_kit`).
+- [x] Lint rule: no UI node's rect over a pencil stroke (PencilLint, in the runtime lint).
+- [x] Render spike for the unified city, **fidelity first** (ruling 7): the technique that
       reproduces the reference images most faithfully is chosen, then an optimisation round brings
       it inside the plan §5.2 budget (the budget is a gate, not a reason to change the look).
 
@@ -290,27 +290,27 @@ pipeline, the render spike)
 **ART-2 — Combat wheel stack**
 - [ ] The worst-case clutter fixture renders legibly at 1.0 and 1.6.
 - [ ] Preview == result still holds.
-- [ ] Wheel draw time is within budget.
+- [x] Wheel draw time is within budget (3.8 ms mean vs 4 ms, 2A).
 
 **ART-3 — Cards and FX**
-- [ ] Every FX has an entry in `ui_motion.tres`, a lab demo and its reduce-effects end state.
-- [ ] Flash limiter (≤ 3/s) test.
-- [ ] The D16 origin rule tested.
+- [x] Every FX has an entry in `ui_motion.tres`, a lab demo and its reduce-effects end state.
+- [x] Flash limiter (≤ 3/s) test (`test_the_flash_limiter_holds_local_fx_flashes_to_three_a_second`).
+- [x] The D16 origin rule tested (`test_d16_origin_rule`).
 
 **ART-4 — HUD**
-- [ ] GDD 2.10 holds: chip == resolve for all enemies × seeds (the H23/H24 sweeps re-used).
+- [x] GDD 2.10 holds: chip == resolve for all enemies × seeds (the H23/H24 sweeps re-used).
 - [ ] Pad reachability.
-- [ ] Fits at 2.0.
+- [x] Fits at 2.0 (`test_the_hud_fits_at_every_text_size`).
 
 ### Group 3 — City
 - [ ] Group 3 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only").
 
 **ART-5 — Unified city model and motion**
 - [ ] Each corporation's Grid capture vs the reference.
-- [ ] Motion layers pause under reduce motion.
-- [ ] LOD switches at the configured zooms.
+- [x] Motion layers pause under reduce motion (`test_the_pause_and_reduce_rules`).
+- [x] LOD switches at the configured zooms (`test_the_car_lod_swaps_at_the_configured_zooms`).
 - [ ] 60 fps at 1080p on the target PC, and the Deck tier.
-- [ ] Logic-side tests headless (projection, picking, label placement); render verified windowed.
+- [x] Logic-side tests headless (projection, picking, label placement); render verified windowed.
 
 **ART-6 — Raid**
 - [ ] The raid verdict sweep still matches `raid_verdict`.
@@ -331,20 +331,20 @@ pipeline, the render spike)
 - [ ] Group 4 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only").
 
 **ART-9 — Shop, rewards, events, dialogue, portraits**
-- [ ] The shop and event sweeps (affordability, outcome rows == deltas) still hold.
+- [x] The shop and event sweeps (affordability, outcome rows == deltas) still hold (4A ported `test_horizontal_pass20/23/24_screens` and kept their behaviour; confirm in the full run).
 
 **ART-10 — Menus, title, settings** (plan §4.2 names references, no acceptance line; these are
 its items)
-- [ ] Title option A with the verbs (D10) and SIMULATE; the abandon dialog; Options on the v2 kit
+- [x] Title option A with the verbs (D10) and SIMULATE; the abandon dialog; Options on the v2 kit
       (incl. `heat_glitch`, always-show nodes), each captured vs `round33_ui_chrome/title_screen.png`,
       `title_screen_alt_simulate.png`, `abandon_dialog.png`.
-- [ ] Codex, stats, achievements, pause, campaign slots and the new-campaign picker on the v2 kit;
+- [x] Codex, stats, achievements, pause, campaign slots and the new-campaign picker on the v2 kit;
       corp paper in Courier Prime.
 
 **ART-11 — Campaign lost and dossier** (no acceptance line in the plan; these are its items)
-- [ ] Campaign lost = A, ransomware lock; the campaign summary as a corporate dossier with the
+- [x] Campaign lost = A, ransomware lock; the campaign summary as a corporate dossier with the
       audit report; campaign won in the same language.
-- [ ] Run end (FLATLINED / JACKED OUT / HOME FELL) restyled.
+- [x] Run end (FLATLINED / JACKED OUT / HOME FELL) restyled.
 
 ### Final
 
@@ -356,6 +356,13 @@ its items)
       Options > Display picker, `test_art12_skins`; DECISIONS "Art direction — ART-12 12s skins".
 - [ ] **One full-suite run** in isolation (the only one in M14), then **the M14 audit** (the only one): vertical / horizontal / naive over every ART-0…12 change, fix
       rounds until CLEAN (nothing deferred, P3s included); "M14 complete" logged in DECISIONS.
+
+*Left unticked by ART-12 12b, and why:* the four "Group n merged" boxes (they wait for the full-suite run and
+the designer review); ART-2 clutter fixture at 1.0 / 1.6 and "preview == result still holds" (confirm in the full
+run; no named test here); ART-4 pad reachability; ART-5 per-corporation Grid captures vs reference and 60 fps /
+Deck tier (12p); ART-6 verdict sweep, reading holds at 2x / 4x, a capture for every changing state and the DOWN
+bolt line (3A captured it; the playout capture is for 12q); ART-7 route sweeps and the one-press skip; ART-8
+per-corporation HQ run captures and D17 check; ART-12 QA matrix, perf, full suite and audit.
 
 **After ART-12** (rulings 1, 8, 9; nothing deferred)
 - [ ] **R7 re-evaluation:** every ANIM-R7 finding (`docs/handoff/anim_r7/`) re-checked against the

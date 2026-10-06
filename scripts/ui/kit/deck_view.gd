@@ -23,6 +23,8 @@ var hint_label: Label
 ## The card grid's width, gap, and the fewest cards a row keeps at big text (px).
 const GRID_WIDTH := 860.0
 const GRID_GAP := 14.0
+## ART-9 4A: the grid's edge inside the scroll (px): a focused sticker's outline stays in the glass.
+const GRID_EDGE := 6
 const CARDS_PER_ROW := 4
 ## Card rarities in words (keys).
 const RARITY_WORDS: Array[String] = ["Common", "Uncommon", "Rare", "Boss"] # TR
@@ -35,14 +37,14 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	name = "DeckView"
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.72)
-	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# ART-9 4A: the deck lies over the glass scrim (the screen behind dimmed and blurred).
+	var dim := GlassScrim.full_screen()
 	add_child(dim)
 	# H24 S4: the viewer shows its words as given: the title comes translated, the action
 	# is a key ("REMOVE") translated where shown.
 	TextDb.shown_as_given(self)
-	window = TerminalWindow.new(tr("%s // %d CARDS") % [p_title, deck.size()], Palette.CELL_PINK)
+	var accent := Palette.CELL_ACID if p_action == "REMOVE" else Palette.CELL_PINK
+	window = CrtWindow.new(tr("%s // %d CARDS") % [p_title, deck.size()], accent).with_kind(CrtWindow.kind_for(accent), accent)
 	window.custom_minimum_size = Vector2(900, 540)
 	window.position = Vector2(190, SubtitleStrip.top_below(70.0))  # under the subtitles (H21)
 	add_child(window)
@@ -64,7 +66,17 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	grid.custom_minimum_size.x = 860
 	grid.add_theme_constant_override("h_separation", 14)
 	grid.add_theme_constant_override("v_separation", 14)
-	scroll.add_child(grid)
+	# room in the glass for a focused sticker's lift (`card_hover`) and its outline: the scroll
+	# clips, and the first row's lifted card lost its top and left edge
+	var room := MarginContainer.new()
+	room.name = "DeckGridRoom"
+	var lift := ceili(absf(Motion.amplitude(&"card_hover")))
+	room.add_theme_constant_override(&"margin_top", lift + GRID_EDGE)
+	room.add_theme_constant_override(&"margin_left", GRID_EDGE)
+	room.add_theme_constant_override(&"margin_right", GRID_EDGE)
+	room.add_theme_constant_override(&"margin_bottom", GRID_EDGE)
+	scroll.add_child(room)
+	room.add_child(grid)
 	# Cards follow the text size (H21 #15) while a row still holds CARDS_PER_ROW of them, and
 	# show what they do as pictograms.
 	var ds := clampf(minf(Settings.text_scale, (GRID_WIDTH - GRID_GAP * (CARDS_PER_ROW - 1)) / (CARDS_PER_ROW * ZineCard.STICKER_SIZE.x)), 1.0, Settings.TEXT_SCALE_MAX)
@@ -107,7 +119,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 ## cards drag onto the SHRED tile beside Close.
 var drops: DropLayer = null
 ## The SHRED tile in REMOVE mode with drops on (null otherwise).
-var shred_tile: ZineCard = null
+var shred_tile: ZineCard = null  # ART-9 4A: a ShopItem (the recycle bin)
 
 
 ## ANIM-4b (REMOVE mode): the deck's cards become drag sources of `layer` and a SHRED tile
@@ -119,9 +131,10 @@ func enable_drops(layer: DropLayer) -> void:
 	drops = layer
 	if action != "REMOVE":
 		return
-	shred_tile = ZineCard.new(tr("SHRED"), -1, "", 0)
+	# ART-9 4A: the Mainframe's recycle bin takes the card (the removal's look, cards only).
+	var bin := ShopItem.new(tr("RECYCLE BIN"), -1, "", 0).on_shelf(ShopItem.Shelf.BIN, clampf(Settings.text_scale, 1.0, SHRED_GROW_MAX))
+	shred_tile = bin
 	shred_tile.name = "ShredTarget"
-	shred_tile.as_tile(ZineCard.Look.CARD_TILE, Palette.CELL_ACID).tile_text(Settings.text_scale)
 	shred_tile.icon_kind = "shred"
 	shred_tile.hotkey = ""
 	shred_tile.focus_mode = Control.FOCUS_NONE
@@ -131,13 +144,14 @@ func enable_drops(layer: DropLayer) -> void:
 	_bottom.add_child(shred_tile)
 	# The window keeps its height: the card grid gives the tile its room.
 	_scroll.custom_minimum_size.y = maxf(SCROLL_MIN, _scroll.custom_minimum_size.y - maxf(0.0, shred_tile.custom_minimum_size.y - BOTTOM_ROOM))
+	_fit_canvas.call_deferred()
 	for i in _cards.size():
 		drops.add_source(_cards[i], {"kind": "deck_card", "index": i, "card": deck[i], "land": "shred", "motion": &"loadout_swap"})
 	drops.add_target("shred", ["deck_card"], "shred", null, DropLayer.rect_of(shred_tile))
 
 
 ## The SHRED tile's size at text scale 1.0, and the most it grows (px).
-const SHRED_TILE := Vector2(96, 110)
+const SHRED_TILE := Vector2(84, 108)
 const SHRED_GROW_MAX := 1.3
 ## The bottom row's height without the tile (the REMOVE lettering and its drips) and the
 ## least height the card grid keeps (px).
@@ -152,7 +166,19 @@ func card(i: int) -> ZineCard:
 	return _cards[i] if i >= 0 and i < _cards.size() else null
 
 
+## The window stays on the canvas: the card grid gives up what the v2 terminal's header and the
+## words take at big text (never under SCROLL_MIN).
+func _fit_canvas() -> void:
+	if not is_inside_tree() or window == null or _scroll == null:
+		return
+	var over := window.position.y + window.get_combined_minimum_size().y - get_viewport_rect().size.y
+	if over > 0.0:
+		_scroll.custom_minimum_size.y = maxf(SCROLL_MIN, _scroll.custom_minimum_size.y - over)
+		window.size = window.get_combined_minimum_size()
+
+
 func _ready() -> void:
+	_fit_canvas.call_deferred()
 	# Modal for keys and the pad (H20): nothing behind it takes focus; inside the loadout
 	# view, the loadout view holds focus for both tabs.
 	if not (get_parent() is LoadoutView):
@@ -182,7 +208,7 @@ func add_tab(text: String, on_pressed: Callable, active: bool = false) -> void:
 	# Same colours for both tabs: the active one is dark with a border, the other in
 	# reverse video (light block, dark text) without one.
 	var fg := Palette.TERMINAL_TEXT
-	var bg := Palette.TERMINAL_BG
+	var bg := PaletteSkins.chrome(Palette.TERMINAL_BG)
 	var style := UiTheme.box(bg if active else fg, fg if active else Color(0, 0, 0, 0), 2 if active else 0, 12, 4)
 	for st in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
 		b.add_theme_stylebox_override(st, style)

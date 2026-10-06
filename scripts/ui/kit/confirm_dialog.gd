@@ -63,7 +63,7 @@ func _init(question: String, yes_text: String = "YES", no_text: String = "CANCEL
 		b.add_theme_color_override("font_color", HudSkin.TERMINAL_TEXT)
 		box.add_child(b)
 	var rule := ColorRect.new()
-	rule.color = Color(HudSkin.TERMINAL_EDGE, 0.35)
+	rule.color = Color(PaletteSkins.chrome(HudSkin.TERMINAL_EDGE), 0.35)
 	rule.custom_minimum_size = Vector2(0, 1)
 	box.add_child(rule)
 	var row := HBoxContainer.new()

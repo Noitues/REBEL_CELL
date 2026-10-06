@@ -44,6 +44,12 @@ func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN) -> void:
 		(outer.get_child(1) as ColorRect).color = Palette.AUTO
 
 
+## The title and rule stay clear (the CRT's prompt shows the title); the CRT panel binds its own
+## skin, so a pick only redraws the frame. ART-12 12s-b.
+func _apply_skin() -> void:
+	queue_redraw()
+
+
 func _notification(what: int) -> void:
 	if (what == NOTIFICATION_RESIZED or what == NOTIFICATION_SORT_CHILDREN) and crt != null:  # after the container fitted it
 		crt.position = Vector2.ZERO

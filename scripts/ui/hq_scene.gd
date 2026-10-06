@@ -1222,134 +1222,264 @@ static func prompts_for(p_name: String) -> Array:
 	return out
 
 
-## ART-10 4C: the new-campaign form's gaps (px: between columns, between rows) and the text
-## scale from which it keeps one field a row.
-const FORM_GAP := Vector2i(14, 8)
-const FORM_ONE_PAIR_FROM := 1.6
-
-
-## One control cell of the new-campaign form (its controls in a row), added to `form`.
-func _form_cell(form: Container) -> HBoxContainer:
-	var cell := HBoxContainer.new()
-	cell.add_theme_constant_override(&"separation", 6)
-	form.add_child(cell)
-	return cell
-
-
+## Parity NEWC-01..04 (designer 2026-10-05): the new campaign page is the art pass build's
+## planning table (ported from art-m13-final scripts/ui/hq_scene.gd `show_start`, W8b) in the
+## v2 kit. The pickers are tiles, every choice visible at once with locked ones showing their
+## unlock (NEWC-01, NEWC-04: no dropdown, no popup list): Target as corporation tiles (hue
+## stripe, crest, `Best ICE`), ICE as a big `- n +` stepper, Home server as tiles (house icon,
+## lock, `UNLOCKS · cost`), Crew as portrait tiles (the class's v2 bust). Main's NEW CAMPAIGN
+## title sticker and TRUST NO ONE pencil stay, and the one verb, START, is a pink vinyl sticker
+## at the head's right end, where the eye ends (NEWC-02). The seed, today's run and the share
+## codes are main's own and stay, on plain cyan terminals (lime is focus only, v2 §2.10); the
+## share code row folds away under its terminal (NEWC-03). Choices come from the profile's
+## unlocks as before (RunManager.available_*); a locked tile can't be picked.
 func show_start() -> void:
-	var cfg := RunManager.config()
+	# The pickers' tile sizes at text scale 1.0 (px, they grow to hold their words) and the
+	# crew's portrait swatch.
+	const CORP_TILE := Vector2(224, 76)
+	const HOME_TILE := Vector2(168, 64)
+	const CREW_TILE := Vector2(176, 76)
+	const CREW_SWATCH := 56.0
+	# The START sticker's lettering size (px at 1.0) and tilt (degrees), the seed's top value.
+	const START_PX := 36.0
+	const START_TILT := 2.0
+	const SEED_MAX := 999999
+	# From this text scale today's run and the share codes stack (side by side the run's lines
+	# wrapped in a narrow column).
+	const CODES_STACK_FROM := 1.6
+	# Today's run beside the share codes: its share of the row (the codes' is 1).
+	const DAILY_SHARE := 0.6
+	var lookup := RunManager.lookup()
+	var profile := RunManager.profile
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
 	var head := HBoxContainer.new()
+	head.name = "PageHead"
 	head.add_theme_constant_override("separation", 24)
 	# ART-10 4C (v2 §1.2, §2.10): the yellow title sticker and the Cell's motto in grease
 	# pencil (the spray tag and scrawl are rejected media).
 	head.add_child(_title_sticker(tr("NEW CAMPAIGN"), "NEW CAMPAIGN"))
 	head.add_child(PencilWords.new(tr("TRUST NO ONE"), -4.0))
+	var head_gap := Control.new()
+	head_gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	head.add_child(head_gap)
 	box.add_child(head)
 	var setup := CrtWindow.new(tr("NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in."))
+	setup.name = "PlanningTable"
 	box.add_child(setup)
-	# ART-10 4C: the setup is a form (a name column, its controls beside it; two fields a row,
-	# one at big text) instead of one wrapping line of words and controls.
-	var row := GridContainer.new()
-	row.name = "SetupForm"
-	row.columns = 2 if Settings.text_scale >= FORM_ONE_PAIR_FROM else 4
-	row.add_theme_constant_override(&"h_separation", FORM_GAP.x)
-	row.add_theme_constant_override(&"v_separation", FORM_GAP.y)
-	setup.body.add_child(row)
-	# ART-10 4C (audit P3): the setup words say what they do, with an icon and a tooltip.
-	var seed_label := _label(tr("City seed (same seed, same city):"))
-	seed_label.mouse_filter = Control.MOUSE_FILTER_PASS
-	seed_label.tooltip_text = UiTip.fold(tr("The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city."))
-	row.add_child(seed_label)
-	var seed_box := _form_cell(row)
-	var seed_spin := SpinBox.new()
-	seed_spin.min_value = 0
-	seed_spin.max_value = 999999
-	seed_spin.value = 1
-	seed_spin.name = "SeedSpin"
-	seed_box.add_child(seed_spin)
-	var next_seed := _icon(_button(tr("Next seed"), func() -> void: seed_spin.value = int(seed_spin.value) + 1), StatIcon.RUNS)
-	next_seed.tooltip_text = UiTip.fold(tr("Try the next city: the seed goes up by one."))
-	next_seed.name = "SeedNext"
-	seed_box.add_child(next_seed)
-	row.add_child(_label(tr("Target:")))
-	var corp_pick := OptionButton.new()
-	corp_pick.name = "CorporationPicker"
+	# A group's head: its icon and words in terminal CAPS (cyan: the Cell's own system).
+	var plan_head := func(words: String, icon: StringName) -> HBoxContainer:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", UiTheme.SP_S)
+		var mark := IconMark.standalone(icon, UiTheme.font_px(UiTheme.LABEL), PaletteSkins.chrome(Palette.NET_CYAN))
+		mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(mark)
+		row.add_child(Chrome.caps_label(words.to_upper(), UiTheme.LABEL, PaletteSkins.chrome(Palette.NET_CYAN)))
+		return row
+	# What unlocks a locked choice: the Black Market's price ("UNLOCKS · 80"), or the ICE every
+	# corporation must be cleared at (REBEL_CELL's free unlock); the tooltip says where to buy.
+	var unlock_words := func(u: ProfileUnlockData) -> String:
+		if u != null and u.schematic_cost > 0:
+			return tr("UNLOCKS · %d") % u.schematic_cost
+		if u != null and u.requires_all_corporations_at_ice >= 0:
+			return tr("OPENS AT ICE %d EVERYWHERE") % u.requires_all_corporations_at_ice
+		return tr("LOCKED")
+	var unlock_tip := func(u: ProfileUnlockData) -> String:
+		if u == null:
+			return ""
+		if u.schematic_cost > 0:
+			return "%s %s" % [TextDb.t(u, "description"), tr("Buy it at the HQ Black Market with campaign Schematics (%d).") % u.schematic_cost]
+		return tr("Clear every corporation at ICE %d to open it.") % u.requires_all_corporations_at_ice
+	# Locked choices after the open ones, cheapest first, then by id (deterministic).
+	var locked_order := func(a: Resource, b: Resource) -> bool:
+		var ua := CampaignRules.unlock_for(lookup, a)
+		var ub := CampaignRules.unlock_for(lookup, b)
+		# A price before a free, earned unlock; then the price; then the id.
+		var fa := ua == null or ua.schematic_cost <= 0
+		var fb := ub == null or ub.schematic_cost <= 0
+		if fa != fb:
+			return fb
+		var ka: int = 0 if fa else ua.schematic_cost
+		var kb: int = 0 if fb else ub.schematic_cost
+		return ka < kb or (ka == kb and String(a.get("id")) < String(b.get("id")))
+	# Each picker starts on the game's default choice (the daily run's, a share code's) when it
+	# is open, else on the first open one.
+	var pick_default := func(open: Array, id: StringName) -> int:
+		for i in open.size():
+			if open[i].get("id") == id:
+				return i
+		return 0
+	# A locked tile refused: the toast says what it is and how it opens.
+	var refused_note := func(i: int, pick: TilePicker) -> void:
+		var t: Dictionary = pick.tiles[i]
+		notify(tr("%s is locked. %s") % [String(t.get("name", "")), String(t.get("tip", t.get("unlock", "")))], true)
+	# TARGET: every corporation, the open ones first (main's order); a locked REBEL_CELL stays
+	# a secret (no spoiler, as the ICE records): CLASSIFIED, no crest.
 	var corps := RunManager.available_corporations()
+	var open_ids := {}
+	var corp_tiles: Array[Dictionary] = []
 	for corp in corps:
-		corp_pick.add_item(TextDb.t(corp, "display_name"))
-	_form_cell(row).add_child(corp_pick)
-	var cap := RunManager.ice_cap(corps[0].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION)
-	var ice_label := _label(tr("ICE difficulty (0-%d):") % cap)
+		open_ids[corp.id] = true
+		corp_tiles.append({"name": TextDb.t(corp, "display_name"), "meta": tr("Best ICE: %s") % HudStats.ice_value(profile.best_ice_for(corp.id)),
+			"corp": corp.id})
+	var locked_corps: Array[Resource] = []
+	for id in lookup.ids_of_class(&"CorporationData"):
+		var corp := lookup.get_content(id) as CorporationData
+		if corp != null and not open_ids.has(corp.id):
+			locked_corps.append(corp)
+	locked_corps.sort_custom(locked_order)
+	for res in locked_corps:
+		var corp := res as CorporationData
+		var u := CampaignRules.unlock_for(lookup, corp)
+		var secret := corp.generated_from_profile
+		corp_tiles.append({"name": tr("CLASSIFIED") if secret else TextDb.t(corp, "display_name"), "corp": corp.id, "redacted": secret,
+			"locked": true, "unlock": unlock_words.call(u), "tip": unlock_tip.call(u)})
+	setup.body.add_child(plan_head.call(tr("Target:"), StatIcon.MAP))
+	var corp_pick := PlanningPicker.new(corp_tiles, 0, CORP_TILE)
+	corp_pick.name = "CorporationPicker"
+	corp_pick.value = pick_default.call(corps, RunManager.DEFAULT_CORPORATION)
+	corp_pick.refused.connect(refused_note.bind(corp_pick))
+	setup.body.add_child(corp_pick)
+	# ICE: a big stepper fronting the spin box (each corporation has its own ICE ladder, GDD 3.4).
+	var first_corp: StringName = corps[corp_pick.selected()].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION
+	var cap := RunManager.ice_cap(first_corp)
+	var ice_head: HBoxContainer = plan_head.call(tr("ICE difficulty (0-%d):") % cap, StatIcon.ICE)
+	var ice_label := ice_head.get_child(1) as Label
 	ice_label.mouse_filter = Control.MOUSE_FILTER_PASS
 	ice_label.tooltip_text = UiTip.fold(tr("ICE is the difficulty ladder: each level adds a rule against the Cell. Clear a level to unlock the next one for this corporation."))
-	row.add_child(ice_label)
-	var ice_box := _form_cell(row)
+	setup.body.add_child(ice_head)
 	var ice_spin := SpinBox.new()
 	ice_spin.name = "IceSpin"
 	ice_spin.min_value = 0
 	ice_spin.max_value = cap
 	ice_spin.value = 0
-	ice_box.add_child(ice_spin)
-	# SpinBoxes ignore the D-pad: explicit buttons make ICE and seed pad-reachable.
-	var ice_down := _button("-", func() -> void: ice_spin.value = maxf(ice_spin.min_value, ice_spin.value - 1))
-	ice_down.name = "IceDown"
-	ice_box.add_child(ice_down)
-	var ice_up := _button("+", func() -> void: ice_spin.value = minf(ice_spin.max_value, ice_spin.value + 1))
-	ice_up.name = "IceUp"
-	ice_box.add_child(ice_up)
-	# Each corporation has its own ICE ladder (GDD 3.4).
-	corp_pick.item_selected.connect(func(i: int) -> void:
+	var ice_row := HBoxContainer.new()
+	ice_row.name = "IceRow"
+	ice_row.add_theme_constant_override("separation", UiTheme.SP_M)
+	ice_row.add_child(ValueStepper.new(ice_spin, "Ice"))
+	var ice_text := _para(_ice_description(0))
+	ice_text.name = "IceText"
+	ice_text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ice_row.add_child(ice_text)
+	setup.body.add_child(ice_row)
+	ice_spin.value_changed.connect(func(v: float) -> void: ice_text.text = _ice_description(int(v)))
+	corp_pick.tile_chosen.connect(func(i: int) -> void:
 		var corp_cap := RunManager.ice_cap(corps[i].id)
 		ice_spin.max_value = corp_cap
-		ice_label.text = tr("ICE difficulty (0-%d):") % corp_cap
+		ice_label.text = (tr("ICE difficulty (0-%d):") % corp_cap).to_upper()
 		warm_start_hq(corps[i]))
 	# ANIM-R6 C9: the HQ the picked corporation's campaign opens on bakes while this page is open.
 	if not corps.is_empty():
-		warm_start_hq.call_deferred(corps[0])
-	var ice_text := _label(_ice_description(0))
-	ice_spin.value_changed.connect(func(v: float) -> void: ice_text.text = _ice_description(int(v)))
-	row.add_child(_label(tr("Home server:")))
-	var home_pick := OptionButton.new()
+		warm_start_hq.call_deferred(corps[corp_pick.selected()])
+	# HOME SERVER: the variants, the open ones first.
 	var variants := RunManager.available_home_variants()
+	var home_tiles: Array[Dictionary] = []
+	var locked_homes: Array[Resource] = []
 	for v in variants:
-		home_pick.add_item(TextDb.t(v, "display_name"))
-	_form_cell(row).add_child(home_pick)
-	row.add_child(_label(tr("Crew:")))
-	var class_pick := OptionButton.new()
+		home_tiles.append({"name": TextDb.t(v, "display_name"), "icon": StatIcon.HOME, "tip": TextDb.t(v, "description")})
+	for id in lookup.ids_of_class(&"HomeServerVariantData"):
+		var v := lookup.get_content(id) as HomeServerVariantData
+		if v != null and not variants.has(v):
+			locked_homes.append(v)
+	locked_homes.sort_custom(locked_order)
+	for res in locked_homes:
+		var u := CampaignRules.unlock_for(lookup, res)
+		home_tiles.append({"name": TextDb.t(res, "display_name"), "icon": StatIcon.HOME, "locked": true, "unlock": unlock_words.call(u),
+			"tip": "%s %s" % [TextDb.t(res, "description"), unlock_tip.call(u)]})
+	setup.body.add_child(plan_head.call(tr("Home server:"), StatIcon.HOME))
+	var home_pick := PlanningPicker.new(home_tiles, 0, HOME_TILE)
+	home_pick.name = "HomePicker"
+	home_pick.value = pick_default.call(variants, RunManager.DEFAULT_HOME)
+	home_pick.refused.connect(refused_note.bind(home_pick))
+	setup.body.add_child(home_pick)
+	# CREW: the first operative's class, as portraits.
 	var classes := RunManager.available_classes()
+	var class_tiles: Array[Dictionary] = []
+	var locked_classes: Array[Resource] = []
 	for cls in classes:
-		class_pick.add_item(TextDb.t(cls, "display_name"))
-	_form_cell(row).add_child(class_pick)
-	var start_btn := _button(tr("New campaign"), func() -> void:
-		new_campaign(int(seed_spin.value), int(ice_spin.value), variants[home_pick.selected].id if not variants.is_empty() else RunManager.DEFAULT_HOME,
-			classes[class_pick.selected].id if not classes.is_empty() else RunManager.DEFAULT_CLASS,
-			corps[corp_pick.selected].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION))
-	start_btn.theme_type_variation = &"HotButton"
-	start_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	_icon(start_btn, StatIcon.PLAY)
-	setup.body.add_child(ice_text)
-	setup.body.add_child(start_btn)
-	# Daily run and share codes side by side; the daily panel lists today's setup and
-	# has room for the day's modifiers.
-	var code_split := HBoxContainer.new()
+		class_tiles.append({"name": TextDb.t(cls, "display_name"), "class": cls.id, "tip": TextDb.t(cls, "description")})
+	for id in lookup.ids_of_class(&"ClassData"):
+		var cls := lookup.get_content(id) as ClassData
+		if cls != null and not classes.has(cls):
+			locked_classes.append(cls)
+	locked_classes.sort_custom(locked_order)
+	for res in locked_classes:
+		var u := CampaignRules.unlock_for(lookup, res)
+		class_tiles.append({"name": TextDb.t(res, "display_name"), "class": res.get("id"), "locked": true, "unlock": unlock_words.call(u),
+			"tip": "%s %s" % [TextDb.t(res, "description"), unlock_tip.call(u)]})
+	setup.body.add_child(plan_head.call(tr("Crew:"), StatIcon.OPERATIVE))
+	var class_pick := PlanningPicker.new(class_tiles, 0, CREW_TILE, CREW_SWATCH)
+	class_pick.name = "ClassPicker"
+	class_pick.value = pick_default.call(classes, RunManager.DEFAULT_CLASS)
+	class_pick.refused.connect(refused_note.bind(class_pick))
+	setup.body.add_child(class_pick)
+	# The city seed (ART-10 4C, audit P3: the words say what it does, with a tooltip).
+	var seed_row := HBoxContainer.new()
+	seed_row.name = "SeedRow"
+	seed_row.add_theme_constant_override("separation", UiTheme.SP_S)
+	var seed_label := Chrome.caps_label(tr("City seed (same seed, same city):").to_upper(), UiTheme.LABEL, PaletteSkins.chrome(Palette.NET_CYAN))
+	seed_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	seed_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	seed_label.tooltip_text = UiTip.fold(tr("The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city."))
+	seed_row.add_child(seed_label)
+	var seed_spin := SpinBox.new()
+	seed_spin.min_value = 0
+	seed_spin.max_value = SEED_MAX
+	seed_spin.value = 1
+	seed_spin.name = "SeedSpin"
+	seed_spin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	seed_row.add_child(seed_spin)
+	var next_seed := _icon(_button(tr("Next seed"), func() -> void: seed_spin.value = int(seed_spin.value) + 1), StatIcon.RUNS)
+	next_seed.tooltip_text = UiTip.fold(tr("Try the next city: the seed goes up by one."))
+	next_seed.name = "SeedNext"
+	seed_row.add_child(next_seed)
+	setup.body.add_child(seed_row)
+	# START: the one verb, a pink vinyl sticker at the head's right end (NEWC-02).
+	var start_btn := VerbSticker.new(tr("START"), VerbSticker.Fill.PINK, START_PX, START_TILT)
+	start_btn.pre_translated = true
+	start_btn.name = "StartCampaign"
+	start_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	start_btn.tooltip_text = UiTip.fold(tr("Start a new campaign with this plan: the target, ICE, home server, crew and city seed."))
+	start_btn.pressed.connect(func() -> void:
+		var ci := corp_pick.selected()
+		var hi := home_pick.selected()
+		var ki := class_pick.selected()
+		new_campaign(int(seed_spin.value), int(ice_spin.value), variants[hi].id if hi < variants.size() else RunManager.DEFAULT_HOME,
+			classes[ki].id if ki < classes.size() else RunManager.DEFAULT_CLASS,
+			corps[ci].id if ci < corps.size() else RunManager.DEFAULT_CORPORATION))
+	head.add_child(start_btn)
+	# Today's run and the share codes, side by side on plain cyan terminals (NEWC-03).
+	var code_split := BoxContainer.new()
+	code_split.name = "CodesSplit"
+	code_split.vertical = Settings.text_scale >= CODES_STACK_FROM
 	code_split.add_theme_constant_override("separation", 14)
 	box.add_child(code_split)
-	var daily := CrtWindow.new(tr("TODAY'S RUN"), Palette.CELL_ACID)
+	var daily := CrtWindow.new(tr("TODAY'S RUN"))
 	daily.name = "DailyRun"
-	daily.custom_minimum_size.x = 420
+	daily.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	daily.size_flags_stretch_ratio = DAILY_SHARE
+	daily.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	code_split.add_child(daily)
 	var today := Time.get_date_dict_from_system()
 	var daily_seed := CampaignCode.daily_seed(today["year"], today["month"], today["day"])
 	daily.tag_label.text = "%04d-%02d-%02d" % [today["year"], today["month"], today["day"]]
 	for line in daily_lines(daily_seed):
 		daily.body.add_child(_label(line))
-	daily.body.add_child(_icon(_button(tr("Daily run"), func() -> void: new_campaign(daily_seed)), StatIcon.PLAY))
-	var codes := CrtWindow.new(tr("SHARE CODES"), Palette.CELL_ACID)
+	var daily_btn := _icon(_button(tr("Daily run"), func() -> void: new_campaign(daily_seed)), StatIcon.PLAY)
+	daily_btn.name = "DailyRunButton"
+	daily_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	daily.body.add_child(daily_btn)
+	var codes := CrtWindow.new(tr("SHARE CODES"))
+	codes.name = "ShareCodes"
 	codes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	codes.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	code_split.add_child(codes)
+	codes.body.add_child(_para(tr("A share code holds a whole plan: target, ICE, city seed, home server and crew.")))
+	# The code row folds away under its toggle (the build's SHARE CODES drawer).
 	var code_row := HFlowContainer.new()
+	code_row.name = "CodesRow"
+	code_row.visible = false
 	var code_edit := LineEdit.new()
 	code_edit.name = "CodeEdit"
 	code_edit.placeholder_text = tr("RC1-corporation-ice-seed-home-class")
@@ -1362,6 +1492,14 @@ func show_start() -> void:
 			UiFocus.focus_first(_panel))
 	code_row.add_child(code_edit)
 	code_row.add_child(_icon(_button(tr("Start from code"), func() -> void: start_from_code(code_edit.text)), StatIcon.PLAY))
+	var codes_toggle := _icon(_button(tr("Enter a share code"), func() -> void:
+		code_row.visible = not code_row.visible
+		UiFocus.link_layout(_panel)
+		if code_row.visible:
+			code_edit.grab_focus.call_deferred()), StatIcon.MORE)
+	codes_toggle.name = "CodesToggle"
+	codes_toggle.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	codes.body.add_child(codes_toggle)
 	codes.body.add_child(code_row)
 	var lower := HBoxContainer.new()
 	lower.add_theme_constant_override("separation", 14)
@@ -1370,20 +1508,20 @@ func show_start() -> void:
 	menu.custom_minimum_size.x = 300
 	menu.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	lower.add_child(menu)
-	var profile := CrtWindow.new(tr("PROFILE // RECORDS"), Palette.CELL_PINK)
-	profile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lower.add_child(profile)
+	var records := CrtWindow.new(tr("PROFILE // RECORDS"), Palette.CELL_PINK)
+	records.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lower.add_child(records)
 	if RunManager.has_save():
 		menu.body.add_child(_icon(_button(tr("Resume saved campaign"), resume), StatIcon.CONTINUE))
-	var p := RunManager.profile
-	profile.body.add_child(_para(tr("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s.") % [
+	var p := profile
+	records.body.add_child(_para(tr("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s.") % [
 		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost, HudStats.ice_value(p.best_ice)]))
-	profile.body.add_child(_para(ice_records_text()))
+	records.body.add_child(_para(ice_records_text()))
 	var unlock_names := PackedStringArray()
 	for uid in p.unlocks:
-		var ud := RunManager.lookup().get_content(uid) as ProfileUnlockData
+		var ud := lookup.get_content(uid) as ProfileUnlockData
 		unlock_names.append(TextDb.t(ud, "display_name") if ud != null else String(uid))
-	profile.body.add_child(_para(tr("Unlocks: %s") % (", ".join(unlock_names) if not unlock_names.is_empty() else tr("none yet (buy them at HQ with campaign Schematics)"))))
+	records.body.add_child(_para(tr("Unlocks: %s") % (", ".join(unlock_names) if not unlock_names.is_empty() else tr("none yet (buy them at HQ with campaign Schematics)"))))
 	var options_btn := _hint_button(tr("Options"), &"open_settings", open_settings)
 	options_btn.name = "OptionsButton"
 	menu.body.add_child(_icon(options_btn, StatIcon.SETTINGS))

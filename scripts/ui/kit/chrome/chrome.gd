@@ -111,6 +111,8 @@ static func panel_shape(r: Rect2, chamfer: float = CHAMFER) -> PackedVector2Arra
 static func draw_terminal(ci: CanvasItem, r: Rect2, accent: Color, glass: Color = Palette.TERMINAL_BG, chamfer: float = CHAMFER) -> void:
 	var shape := panel_shape(r, chamfer)
 	var hc := Settings.high_contrast
+	accent = PaletteSkins.chrome(accent)  # ART-12 12s-b: the skin's edge and glass
+	glass = PaletteSkins.chrome(glass)
 	ci.draw_colored_polygon(shape, HighContrast.BG if hc else glass)
 	if not hc and not Settings.reduce_effects:
 		var y := r.position.y + SCAN_PERIOD
@@ -126,6 +128,7 @@ static func draw_terminal(ci: CanvasItem, r: Rect2, accent: Color, glass: Color 
 
 ## Draws the faint hex-dump on a terminal's glass (§1.2: 6 %), right-aligned columns.
 static func draw_hex(ci: CanvasItem, r: Rect2, color: Color = Palette.NET_CYAN) -> void:
+	color = PaletteSkins.chrome(color)  # ART-12 12s-b
 	if Settings.high_contrast or Settings.reduce_effects:
 		return
 	var f := Palette.mono()

@@ -416,11 +416,17 @@ func test_every_shop_item_has_a_price_words_and_a_buy_button() -> void:
 			assert_not_null(buy, "%s: a buy button" % card.card_title)
 			assert_true(buy is Button, "the buy control is a Button")
 			assert_string_contains(buy.label_text(), card.price_words())
-			assert_true(Rect2(Vector2.ZERO, card.size).grow(1.0).encloses(Rect2(buy.position, buy.size)), "%s: the button sits on its item" % card.card_title)
+			if card.get_meta(BuyButton.TAG_BELOW, false):
+				# ART-9 4A (round 34 shop_v5): a card's kraft tag hangs under it, tied to its foot
+				assert_true(buy.position.y < card.size.y and buy.position.x >= -1.0 and buy.position.x + buy.size.x <= card.size.x + 1.0, "%s: the tag hangs from its card" % card.card_title)
+			else:
+				assert_true(Rect2(Vector2.ZERO, card.size).grow(1.0).encloses(Rect2(buy.position, buy.size)), "%s: the button sits on its item" % card.card_title)
 			assert_eq(buy.disabled, card.disabled, "the button is off when the item is")
 			if card.look == ZineCard.Look.CHIP:
 				assert_ne(card.tile_description(), "", "%s: the chip says what it does" % card.card_title)
-				assert_true(card.chip_lines_shown() >= 1, "%s: its effect is on the tile (text %.1f)" % [card.card_title, scale])
+				# ART-9 4A (bible v2 §4.10, shop_v5): a Firmware chip / Daemon cartridge shows its name
+				# and kind; what it does is in its tip and the pegboard's info strip.
+				assert_string_contains(card.tooltip_text.replace("\n", " "), card.tile_description().left(16), "%s: its effect is in its tip (text %.1f)" % [card.card_title, scale])
 		assert_true(items >= 5, "cards, chips, slices, daemons and the shredder")
 		await _close(scene)
 

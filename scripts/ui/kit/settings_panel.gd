@@ -414,7 +414,7 @@ func _text_scale_block() -> VBoxContainer:
 	block.add_child(ticks)
 	var sample_box := PanelContainer.new()
 	sample_box.name = "Sample"
-	var sb := UiTheme.box(Palette.TERMINAL_BG, Palette.NET_CYAN, 1, 12, 8)
+	var sb := PaletteSkins.track_box(UiTheme.box(Palette.TERMINAL_BG, Palette.NET_CYAN, 1, 12, 8))
 	sample_box.add_theme_stylebox_override(&"panel", sb)
 	_scale_sample = Chrome.body_label(tr("The Cell never sleeps. Every word grows with this."), UiTheme.LABEL, Palette.TEXT_HI)
 	_scale_sample.custom_minimum_size.x = 0
@@ -531,8 +531,8 @@ func _slider(text: String, lo: float, hi: float, step: float, value: float, sett
 	s.step = step
 	s.value = value
 	s.custom_minimum_size = Vector2(300, 20)
-	s.add_theme_stylebox_override(&"slider", UiTheme.box(Color(Palette.NET_CYAN, 0.18), Palette.AUTO, 0, 0, 2))
-	var fill := UiTheme.box(Palette.NET_CYAN, Palette.AUTO, 0, 0, 2)
+	s.add_theme_stylebox_override(&"slider", PaletteSkins.track_box(UiTheme.box(Color(Palette.NET_CYAN, 0.18), Palette.AUTO, 0, 0, 2)))
+	var fill := PaletteSkins.track_box(UiTheme.box(Palette.NET_CYAN, Palette.AUTO, 0, 0, 2))
 	s.add_theme_stylebox_override(&"grabber_area", fill)
 	s.add_theme_stylebox_override(&"grabber_area_highlight", fill)
 	s.add_theme_icon_override(&"grabber", _grabber())
@@ -562,7 +562,7 @@ static func _grabber() -> Texture2D:
 
 ## A section heading: terminal CAPS, cyan, caption step (round 31 "EFFECTS & MOTION").
 func _heading(text: String) -> Label:
-	var l := Chrome.caps_label(text.to_upper(), UiTheme.CAPTION, Palette.NET_CYAN)
+	var l := Chrome.caps_label(text.to_upper(), UiTheme.CAPTION, PaletteSkins.chrome(Palette.NET_CYAN))
 	l.custom_minimum_size.x = 0.0  # a long heading wraps at its words (big text, the pause menu)
 	l.custom_minimum_size.y = Chrome.px(UiTheme.CAPTION) * HEADING_LINES
 	l.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM

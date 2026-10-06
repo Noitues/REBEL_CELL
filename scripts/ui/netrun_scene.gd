@@ -39,8 +39,8 @@ const LEAVE_ICON := 34.0
 ## CARD row's pieces it would otherwise cover (px).
 const LEAVE_GAP := 6.0
 ## Loot stickers at text scale 1.0 and the most a row of them may grow (px).
-const LOOT_CARD := Vector2(150, 170)
-const LOOT_ROW_MAX := 900.0
+const LOOT_CARD := Vector2(170, 210)
+const LOOT_ROW_MAX := 1150.0
 ## The least gap between loot stickers (px; their tilt's reach is added, ANIM-R2 E8).
 const LOOT_GAP := 14.0
 ## ANIM-R1 M11: the gap between the loot stickers and Skip at text scale 1.0 (px): a
@@ -134,6 +134,7 @@ func _ready() -> void:
 	# Subtitles sit in the top band, clear of every control (H20); combat docks its own.
 	Dialogue.dock_default()
 	Settings.hints_changed.connect(_relabel_route)
+	RunManager.run_abandoned.connect(_on_run_abandoned)  # ABANDON-QUIT: from either pause menu
 	# Capture variants (ANIM-6): --demo-set / --demo-speed tune a copy of the motion table.
 	MotionDemo.apply_args()
 	_build_ui()
@@ -549,7 +550,13 @@ func _choose_reward(index: int, slot: int, fly: bool) -> void:
 	# The picked card lifts and flies to the deck (ANIM-6); the page is rebuilt under it.
 	if s.run.pending_rewards.size() < left and not offer.is_empty():
 		if fly:
-			_fly_item(_page_item("Stickers", index), String(offer["kind"]), &"loot_pick", "", Motion.amplitude(&"loot_pick"))
+			var picked_item := _page_item("Stickers", index)
+			# ART-9 4A: the sticker peels off the loot sheet as it lifts (`loot_peel`).
+			var sheet := _panel.find_child("LootSheet", true, false) as LootSheet if _panel != null else null
+			if sheet != null and picked_item != null:
+				var at := picked_item.get_global_rect()
+				sheet.peel(Rect2(at.position - sheet.global_position, at.size), (picked_item as ZineCard).accent if picked_item is ZineCard else Palette.TEXT_HI)
+			_fly_item(picked_item, String(offer["kind"]), &"loot_pick", "", Motion.amplitude(&"loot_pick"))
 		# ANIM-R1 M11: the offers not taken fall away (`loot_reject`), picked by click or drag.
 		# ANIM-R3 A7: within the loot's window (they fell across the route coming in under it).
 		var fell := false
@@ -631,7 +638,7 @@ func loot_leaving() -> bool:
 ## an empty rect when it has none.
 static func loot_window_rect(sticker: Control) -> Rect2:
 	var n: Node = sticker
-	while n != null and not (n is TerminalWindow):
+	while n != null and not (n is TerminalWindow or n is LootSheet):
 		n = n.get_parent()
 	return (n as Control).get_global_rect() if n != null else Rect2()
 
@@ -652,7 +659,8 @@ func choose_event(index: int) -> void:
 	# over its option [2]); a press ends the stamp and the page goes at once.
 	if phase == RunState.Phase.EVENT and s.run.phase != RunState.Phase.EVENT and chosen != null:
 		var row := chosen.get_node_or_null(^"OutcomeRow") as Control
-		if FlightFx.stamp_on(self, row if row != null else chosen, "") != null:
+		# ART-9 4A: the stamp says CHOSEN (round 31 `event_screen_memo`).
+		if FlightFx.stamp_on(self, row if row != null else chosen, tr("CHOSEN")) != null:
 			RunManager.after_step()
 			_hold_page(Motion.seconds(&"event_choice_stamp") + Motion.delay_of(&"event_choice_stamp"))
 			return
@@ -877,6 +885,16 @@ func finish_run() -> void:
 	_show_start()
 
 
+## Abandon run (designer ruling 2026-10-05, GDD 4.5): the run ended as the operative's death
+## (RunManager.abandon_run, from this scene's pause menu or the fight's): the pause closes, the
+## run's report reads the events and the run's end page shows (FAILED - operative lost).
+func _on_run_abandoned(events: Array[Dictionary]) -> void:
+	if _settings_panel != null:
+		open_settings()
+	_report(events)
+	_show_current()
+
+
 func save_and_quit() -> void:
 	if RunManager.scene_change_pending():
 		return
@@ -951,8 +969,17 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	# ART-7 7w: the route page is the unified 3D city at the NETRUN band (GRID VIEW: the
 	# Grid's band); the other pages keep the 2D city until their own views move onto it.
 	use_route_city(screen == "route" and (s == null or s.run.kind != "boss" or _grid_zoomed))  # ART-8 8w: an HQ run draws its own compound city
+	# LOOT-04 (designer 2026-10-05): the loot and event pages sit on the title's blurred city.
+	background.show_blurred_city(BLURRED_CITY_SCREENS.has(screen), BLURRED_CITY_LOOK,
+		RunManager.campaign.corporation_id if RunManager.campaign != null else &"")
 	entering = screen != _shown_screen
 	_shown_screen = screen
+	# ART-9 4A: the Mainframe's facade stays only behind the Mainframe.
+	if screen != "shop":
+		_drop_shop_backdrop()
+	if screen != "event" and _event_bbc != null and is_instance_valid(_event_bbc):
+		_event_bbc.queue_free()
+		_event_bbc = null
 	# ANIM-R5 B2: an event's story and the run's end say long lines: their band holds two.
 	subtitle_strip.set_lines(int(SUBTITLE_LINES.get(screen, 1)))
 	if p.has_method("focus_hand"):
@@ -1060,6 +1087,10 @@ func _focus_now(page, first) -> void:
 const FIRST_FOCUS_META := &"first_focus"
 ## ANIM-R5 B2: subtitle lines the band holds on a screen (1 elsewhere).
 const SUBTITLE_LINES := {"event": 2, "run_end": 2}
+## LOOT-04 (designer 2026-10-05): the pages over the title's blurred 3D city (their own look:
+## centred darkening for a centred page); the Mainframe keeps its own facade (SHOP).
+const BLURRED_CITY_SCREENS: Array[String] = ["loot", "event"]
+const BLURRED_CITY_LOOK := preload("res://content/config/overlay_city_backdrop.tres")
 ## ANIM-R5 B8: the mid-run raid's playout, a screen of its own (its title, its lines).
 const RAID_PLAYOUT_SCREEN := "netrun_raid_playout"
 
@@ -2610,22 +2641,82 @@ func _leave_fight() -> void:
 var _leave_generation: int = 0
 
 
+# ==== ART-9 4A: loot (owner 4A) ====
+## ART-9 4A (ART_BIBLE v2 §4.11 Reward LOCKED A; round 31 `reward_screen`, round 32
+## `reward_screen_v2`): the payout. A title sticker names what paid out (FIGHT WON, ELITE DOWN,
+## RACK BREACHED), a CRT strip under it the loot ("LOOT // FIGHT WON // pick a card"), the
+## PAYOUT terminal top right (the run's Cycles and HP). The offers sit on a loot sheet (sticker
+## liner with kiss-cut slots); a Firmware drop shows its socket list and your spinner in a
+## FIRMWARE DROP terminal; a card offer shows the DECK counter with a pencil "+1 = N" to it. A
+## pick peels off the sheet and flies to the deck (ANIM-6 `loot_pick`), Skip is a sticker.
 func _show_reward() -> void:
 	var s := RunManager.netrun
 	var offer := s.current_reward()
+	var ts := Settings.text_scale
+	var os := minf(ts, ShopItem.OBJECT_MAX_SCALE)
 	var kind_word := tr(String(LOOT_WORDS.get(String(offer["kind"]), String(offer["kind"]))))
+	var source := tr(loot_source(s))
+	var n: int = offer["options"].size()
+	var page := VBoxContainer.new()
+	page.name = "LootPage"
+	page.add_theme_constant_override("separation", roundi(10 * ts))
+	# Top: the title sticker and the loot strip; the payout terminal on the right.
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 18)
+	page.add_child(top)
+	var head := VBoxContainer.new()
+	head.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(head)
+	var title := HoloSticker.word(source, VinylSticker.Fill.YELLOW, os, LOOT_TITLE_PX)
+	title.name = "LootTitle"
+	title.focus_mode = Control.FOCUS_NONE
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	title.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	head.add_child(title)
 	# ANIM-R6 B10: the window names what paid out (it said RACK BREACHED after every fight).
-	var win := TerminalWindow.new(tr("%s // LOOT: pick a %s") % [tr(loot_source(s)), kind_word], Palette.CELL_ACID)
+	var win := _crt_one_line(CrtWindow.new(tr("%s // LOOT: pick a %s") % [source, kind_word], Palette.NET_CYAN).with_kind(CrtWindow.kind_for(Palette.NET_CYAN), Palette.NET_CYAN))
 	win.name = "LootWindow"
-	win.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	var box := win.body
-	# ANIM-R4 C7: the tag fits the loot's row (its words shrink rather than run out of the
-	# window under a long translation).
-	box.add_child(GraffitiTag.new(tr("LOOT: pick a %s") % kind_word).fit_width(LOOT_ROW_MAX))
+	win.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	win.body.visible = false  # a strip: its header line only
+	head.add_child(win)
+	var payout := _crt_one_line(CrtWindow.new(tr("PAYOUT"), Palette.NET_CYAN).with_kind(CrtWindow.kind_for(Palette.NET_CYAN), Palette.NET_CYAN))
+	payout.name = "Payout"
+	payout.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var op := s.run.operative
+	for line in [[TextDb.mark("CYCLES"), str(s.run.cycles)], [TextDb.mark("HP"), "%d/%d" % [_shown_operative_hp(op.hp), op.max_hp]]]:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 24)
+		var k := _label(String(line[0]))
+		k.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		k.add_theme_color_override(&"font_color", Palette.TERMINAL_TEXT)
+		row.add_child(k)
+		var v := _label(String(line[1]))
+		v.add_theme_font_override(&"font", Palette.display())
+		v.add_theme_color_override(&"font_color", Palette.CELL_ACID)
+		row.add_child(v)
+		payout.body.add_child(row)
+	# The loot sheet; beside it PAYOUT, a Firmware drop's terminal, the deck and Skip.
+	var sheet := LootSheet.new(tr("LOOT SHEET // %s // PICK 1 OF %d") % [source, n], "", tr(LOOT_FOOT) % [kind_word.to_upper()], os)
+	var stickers := sheet.row
+	var room := LOOT_ROW_MAX - LOOT_SIDE_W * os
 	var slot_option: OptionButton = null
+	var mini: SpinnerMini = null
+	var loot_row := HBoxContainer.new()
+	loot_row.name = "LootRow"
+	loot_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	loot_row.add_theme_constant_override("separation", 14)
+	page.add_child(loot_row)
+	loot_row.add_child(sheet)
+	var side := VBoxContainer.new()
+	side.name = "LootSide"
+	side.add_theme_constant_override("separation", roundi(12 * os))
+	loot_row.add_child(side)
+	top.add_child(payout)
 	if offer["kind"] == "firmware":
-		# ANIM-R6 B8: the Mainframe's words for the same list ("Chips go into:"; it said "Socket
-		# into slot:" here).
+		var drop := _crt_one_line(CrtWindow.new(tr("FIRMWARE DROP"), Palette.CELL_ACID).with_kind(CrtWindow.kind_for(Palette.CELL_ACID), Palette.CELL_ACID))
+		drop.name = "FirmwareDrop"
+		side.add_child(drop)
+		# ANIM-R6 B8: the Mainframe's words for the same list ("Chips go into:").
 		var row := HFlowContainer.new()
 		row.name = "SocketRow"
 		row.add_theme_constant_override("h_separation", 6)
@@ -2640,32 +2731,14 @@ func _show_reward() -> void:
 			slot_option.add_item(slot_name(s.run.operative, i))
 		slot_option.tooltip_text = UiTip.fold(tr(LOOT_SOCKET_TIP) + " " + drag_tip("loot_socket"))
 		row.add_child(slot_option)
-		box.add_child(row)
-	# Offers as zine stickers (STYLE_GUIDE 4): cards show their RAM cost and what they do as
-	# pictograms, others none. They grow with the text size as far as the row allows (H21).
-	var stickers := HBoxContainer.new()
-	stickers.name = "Stickers"
-	stickers.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	# ANIM-4b: a Firmware chip drags onto a slot of the spinner shown beside the offer.
-	var mini: SpinnerMini = null
-	var room := LOOT_ROW_MAX
-	if offer["kind"] == "firmware":
-		var loot_row := HBoxContainer.new()
-		loot_row.name = "LootRow"
-		loot_row.add_theme_constant_override("separation", 14)
-		box.add_child(loot_row)
-		loot_row.add_child(stickers)
+		drop.body.add_child(row)
+		# ANIM-4b: a Firmware chip drags onto a slot of the spinner shown beside the offer.
 		mini = _spinner_mini()
-		mini.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		loot_row.add_child(mini)
-		room -= mini.custom_minimum_size.x + 14.0
-	else:
-		box.add_child(stickers)
-	var n: int = offer["options"].size()
-	# ANIM-R2 E8: the gap between stickers keeps room for their rest tilt (a tilted CACHE lay
-	# on JAM's cost badge at 1.0 and 1.6): the tilt's reach grows with the card.
+		mini.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		drop.body.add_child(mini)
+	# ANIM-R2 E8: the gap between stickers keeps room for their rest tilt (it grows with the card).
 	var tilt := sin(deg_to_rad(ZineCard.REST_TILT_MAX))
-	var ls := clampf(minf(Settings.text_scale, (room - LOOT_GAP * (n - 1)) / maxf(1.0, n * (LOOT_CARD.x + LOOT_CARD.y * tilt))), 1.0, Settings.TEXT_SCALE_MAX)
+	var ls := clampf(minf(ts, (room - LOOT_GAP * (n - 1)) / maxf(1.0, n * (LOOT_CARD.x + LOOT_CARD.y * tilt))), 1.0, Settings.TEXT_SCALE_MAX)
 	stickers.add_theme_constant_override("separation", roundi(LOOT_GAP + LOOT_CARD.y * ls * tilt))
 	for i in n:
 		var id := StringName(String(offer["options"][i]))
@@ -2684,24 +2757,56 @@ func _show_reward() -> void:
 		var index: int = i
 		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected if slot_option != null else -1))
 		stickers.add_child(sticker)
-	# ANIM-R1 M11: room under the stickers for their tilt and lift (at 1.6 the CACHE card's
-	# corner lay on the Skip bar).
-	var gap := Control.new()
-	gap.name = "SkipGap"
-	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	gap.custom_minimum_size.y = LOOT_SKIP_GAP * ls
-	box.add_child(gap)
-	var skip := _button(tr("Skip"), skip_reward)
+	# The deck counter (a card goes there: "+1 = N" in pencil), then Skip as a sticker.
+	var foot := HBoxContainer.new()
+	foot.add_theme_constant_override("separation", 12)
+	if offer["kind"] == "card":
+		side.add_child(foot)
+		# a small counter (round 31: DECK and the count on one line), no header strip
+		var deck := CrtWindow.new("").with_kind(CrtWindow.kind_for(Palette.CELL_PINK), Palette.CELL_PINK)
+		deck.name = "LootDeck"
+		deck.size_flags_vertical = Control.SIZE_SHRINK_END
+		var deck_row := HBoxContainer.new()
+		deck_row.add_theme_constant_override("separation", 8)
+		deck.body.add_child(deck_row)
+		var deck_word := _label(tr("DECK"))
+		deck_word.add_theme_font_override(&"font", Palette.mono())
+		deck_word.add_theme_color_override(&"font_color", Palette.CELL_PINK)
+		deck_word.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		deck_row.add_child(deck_word)
+		var count := _label(str(op.deck.size()))
+		count.name = "DeckCount"
+		count.add_theme_font_override(&"font", Palette.display())
+		count.add_theme_color_override(&"font_color", Palette.CELL_PINK)
+		deck_row.add_child(count)
+		foot.add_child(deck)
+		var plus := PencilNote.new(tr("+1 = %d") % (op.deck.size() + 1), Palette.PENCIL_PLAN, -0.12, roundi(PencilNote.FONT_PX * os))
+		plus.name = "DeckNote"
+		plus.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		plus.with_arrow(Vector2(0, plus.custom_minimum_size.y * 0.6), Vector2(-28.0, plus.custom_minimum_size.y * 0.9), 4.0)
+		foot.add_child(plus)
+	var skip := HoloSticker.word(tr("Skip").to_upper(), VinylSticker.Fill.WHITE, os, LOOT_SKIP_PX)
 	skip.name = "Skip"
+	skip.pressed.connect(skip_reward)
 	skip.tooltip_text = tr("Take nothing from this payout.")
 	IconMark.attach(skip, StatIcon.SKIP)
-	box.add_child(skip)
+	# under the deck counter, at the column's left (a focused card's tip keeps the screen's right edge)
+	skip.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	side.add_child(skip)
 	var wrap := CenterContainer.new()
-	wrap.add_child(win)
+	wrap.add_child(page)
 	_set_panel(wrap, false)
 	_register_loot_drops(stickers, mini, slot_option)
 	if entering:
 		_fan_loot.call_deferred(stickers)
+
+
+## ART-9 4A: the loot's title sticker and Skip lettering (px at scale 1) and the sheet's foot.
+const LOOT_TITLE_PX := 56
+## ART-9 4A: the column beside the loot sheet (PAYOUT, a Firmware drop, the deck, Skip; px at 1).
+const LOOT_SIDE_W := 240.0
+const LOOT_SKIP_PX := 30
+const LOOT_FOOT := "x1 %s TAKEN // UNPICKED STICKERS FALL OFF" # TR
 
 
 ## ANIM-R6 B8: what the loot's socket list is for (a key; the Mainframe's SOCKET_TIP without
@@ -2772,75 +2877,123 @@ func finish_fan() -> void:
 			(c as ZineCard).finish_deal()
 
 
-## Terminal event (GDD 4.2): zine paper for street and corporate voices; DISPATCH stays
-## clean system text on a dark strip (STYLE_GUIDE 3), never zined.
+# ==== ART-9 4A: events (owner 4A) ====
+## ART-9 4A (ART_BIBLE v2 §4.11 Events LOCKED as drawn; round 31 `event_screen`,
+## `event_screen_memo`): a Terminal event. The story is in a CRT terminal tinted the corp colour
+## ("> TERMINAL // SOLACE"), with a CAM feed of the city beside it, its title in Anton and the
+## speaker under it; a corp speaker's story is an intercepted memo on corp paper taped over the
+## terminal instead (INTERCEPTED // INTERNAL MAIL); DISPATCH has no feed (VOICE ONLY // NO FEED,
+## red). The choices are sticker buttons with their number tab and their outcome chips (green
+## gain, red cost, grey no change), the node's TERMINAL sticker beside the window and at most one
+## pencil note ("PLAY IT SAFE??" at the choice that changes nothing). After the pick its outcome
+## stamps CHOSEN on the page (ANIM-R6 B12).
 func _show_event() -> void:
 	var s := RunManager.netrun
 	var ev := s.current_event()
-	var box := VBoxContainer.new()
-	var body := VBoxContainer.new()
+	var ts := Settings.text_scale
+	var os := minf(ts, ShopItem.OBJECT_MAX_SCALE)
 	var dispatch := ev.speaker == RC.Voice.DISPATCH
-	var holder: Control
-	if dispatch:
-		var strip := PanelContainer.new()
-		var style := UiTheme.box(Color(0.02, 0.03, 0.07, 0.96), Palette.CRT_AMBER, 1, 16, 14)
-		style.border_width_left = 4
-		style.shadow_color = Color(0, 0, 0, 0.5)
-		style.shadow_size = 8
-		strip.add_theme_stylebox_override("panel", style)
-		strip.material = UiTheme.crt_material()
-		strip.custom_minimum_size = Vector2(700, 0)  # ANIM-R4 C7: as tall as its words
-		strip.add_child(body)
-		holder = strip
-	else:
-		var panel := ZinePanel.new(TextDb.t(ev, "title").to_upper(), -1.0).scale_title(Settings.text_scale)
-		panel.custom_minimum_size = Vector2(760, 0)  # ANIM-R4 C7: as tall as its words
-		# ANIM-R5 B1: and never shorter: the paper takes its content's height (a ZinePanel had
-		# no minimum of its own, so "as tall as its words" was a sliver under dark ink).
-		panel.fit_to_content()
-		panel.content.add_child(body)
-		holder = panel
-	holder.name = "EventPanel"
-	# H23 S10: room above the paper for its tape and title, clear of the subtitle band.
+	var corp_id := ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id
+	var memo := ev.speaker == RC.Voice.CORPO
+	var tint := Palette.HARM if dispatch else Palette.corp_color(corp_id)
+	var corp_res := s.lookup.get_content(corp_id)
+	var corp_name := TextDb.t(corp_res, "display_name") if corp_res != null else String(corp_id)
+	var box := VBoxContainer.new()
+	box.name = "EventPage"
+	# H23 S10: room above the window for its title, clear of the subtitle band.
 	var gap := Control.new()
 	gap.name = "EventTopGap"
-	gap.custom_minimum_size.y = EVENT_TOP_GAP * Settings.text_scale
+	gap.custom_minimum_size.y = EVENT_TOP_GAP * ts
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(gap)
 	var split := HBoxContainer.new()
-	split.add_theme_constant_override("separation", 22)
+	split.add_theme_constant_override("separation", 18)
 	box.add_child(split)
-	split.add_child(holder)
+	var holder := _crt_one_line(CrtWindow.new(tr("TERMINAL // %s") % (tr("DISPATCH") if dispatch else corp_name.to_upper()), tint).with_kind(CrtWindow.kind_for(tint), tint))
+	holder.name = "EventPanel"
+	holder.tag_label.text = tr("INTERCEPT") if memo else tr("EVENT")
+	holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	holder.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	var options := VBoxContainer.new()
-	options.add_theme_constant_override("separation", 14)
-	options.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	split.add_child(options)
-	# H24 S4: the speaker's name comes translated (once).
-	var who: String = Dialogue.speaker_name(ev.speaker, ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id)
-	var speaker := _label(who + ((" - " + TextDb.t(ev, "title")) if dispatch else ""))
-	speaker.add_theme_color_override("font_color", Palette.CRT_AMBER if dispatch else Palette.CELL_PINK)
-	body.add_child(speaker)
+	split.add_child(holder)
+	var inner := HBoxContainer.new()
+	inner.add_theme_constant_override("separation", roundi(22 * os))
+	holder.body.add_child(inner)
 	var text := RichTextLabel.new()
 	text.name = "EventText"
 	text.fit_content = true
-	# ANIM-R5 B1: the words are laid out whole while they type in (the height fit_content
-	# measures is all of them, not the characters shown so far).
+	# ANIM-R5 B1: the words are laid out whole while they type in.
 	text.visible_characters_behavior = TextServer.VC_CHARS_AFTER_SHAPING
-	text.custom_minimum_size = Vector2(720, 0)
 	text.text = TextDb.t(ev, "text")
-	text.add_theme_color_override("default_color", Palette.CRT_AMBER if dispatch else Palette.INK)
-	body.add_child(text)
+	var right := VBoxContainer.new()
+	right.add_theme_constant_override("separation", roundi(8 * os))
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Left: the memo (corp speaker), the CAM feed, or DISPATCH's voice.
+	if memo:
+		var paper := CorpMemo.new(corp_name, tint, os)
+		paper.custom_minimum_size = Vector2(EVENT_MEMO_W, 0)
+		paper.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		text.custom_minimum_size = Vector2(EVENT_MEMO_W - CorpMemo.PAD.x * 2.0 * os, 0)
+		text.add_theme_font_override(&"normal_font", Palette.paper())
+		text.add_theme_color_override(&"default_color", Palette.PAPER_TYPE_INK)
+		paper.body.add_child(text)
+		inner.add_child(paper)
+	else:
+		var feed := CamFeed.new(tr("CAM %02d  %s") % [absi(ev.id.hash()) % 90 + 4, TextDb.t(ev, "title").to_upper()], tint, dispatch, os)
+		feed.custom_minimum_size = EVENT_CAM * os
+		feed.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		# At big text the story and the choices need the room: the feed (a picture) steps aside.
+		feed.visible = ts < EVENT_FEED_BELOW
+		inner.add_child(feed)
+		text.custom_minimum_size = Vector2(EVENT_TEXT_W, 0)
+		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		text.add_theme_font_override(&"normal_font", Palette.mono())
+		text.add_theme_color_override(&"default_color", Palette.TERMINAL_TEXT)
+	inner.add_child(right)
+	# Right: who speaks, the title, the story (unless on the memo), then the choices.
+	# H24 S4: the speaker's name comes translated (once).
+	var who: String = Dialogue.speaker_name(ev.speaker, corp_id)
+	if memo:
+		var intercepted := _label(tr("INTERCEPTED // %s INTERNAL MAIL") % corp_name.to_upper())
+		intercepted.add_theme_color_override(&"font_color", tint)
+		intercepted.add_theme_font_override(&"font", Palette.mono())
+		right.add_child(intercepted)
+	var title := _label(TextDb.t(ev, "title").to_upper() if not memo else who)
+	title.name = "EventTitle"
+	title.add_theme_font_override(&"font", Palette.display())
+	title.add_theme_font_size_override(&"font_size", roundi(EVENT_TITLE_PX * os))
+	title.add_theme_color_override(&"font_color", Palette.TEXT_HI)
+	right.add_child(title)
+	# Naive-reader audit P3: DISPATCH's name once (its title already starts with it).
+	var speaker := _label((who + " - " + TextDb.t(ev, "title")) if memo else (tr("voice only // no feed") if dispatch else tr("%s // terminal log, unsigned") % who))
+	speaker.add_theme_color_override(&"font_color", tint)
+	speaker.add_theme_font_override(&"font", Palette.mono())
+	right.add_child(speaker)
+	# big words: the story and the choices take the room (the subtitle names the speaker)
+	speaker.visible = ts < EVENT_FEED_BELOW
+	if not memo:
+		right.add_child(text)
+	var choose := _label(tr("> CHOOSE"))
+	choose.add_theme_color_override(&"font_color", tint)
+	choose.add_theme_font_override(&"font", Palette.mono())
+	right.add_child(choose)
+	choose.visible = ts < EVENT_FEED_BELOW
 	if not _spoken_events.has(ev.id):
 		_spoken_events[ev.id] = true
-		# ANIM-R6 B12: the story is on the paper; the subtitle bar no longer repeats it word for
+		# ANIM-R6 B12: the story is on the page; the subtitle bar no longer repeats it word for
 		# word (kept for the history and voice-over). TextDb text is already translated.
-		Dialogue.log_line(ev.speaker, TextDb.t(ev, "text"), ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id)
+		Dialogue.log_line(ev.speaker, TextDb.t(ev, "text"), corp_id)
+	var options := VBoxContainer.new()
+	options.name = "Choices"
+	options.add_theme_constant_override("separation", roundi(8 * os))
+	options.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	options.theme = ChoiceSticker.theme_for(ts)
+	right.add_child(options)
+	var calm: Control = null
 	for i in ev.choices.size():
 		var c := ev.choices[i]
 		var b := Button.new()
-		# H21 #13: the outcome as icons with numbers under the words (Heat as it applies);
-		# H22 #12: the amounts it will really apply (a heal at full HP, Heat at 0).
+		# H21 #13: the outcome as chips under the words (Heat as it applies); H22 #12: the
+		# amounts it will really apply (a heal at full HP, Heat at 0).
 		var outcome := OutcomeRow.of_choice(s, c)
 		var costs := OutcomeRow.words(outcome)
 		b.text = _choice_text(TextDb.t(c, "label"), costs)
@@ -2852,32 +3005,79 @@ func _show_event() -> void:
 		var index := i
 		b.name = "Choice%d" % (i + 1)
 		b.pressed.connect(func() -> void: _press_choice(index))
-		b.theme_type_variation = &"NoteButton"
+		b.theme_type_variation = ChoiceSticker.TYPE
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD
 		options.add_child(b)
-		# H23 S9: no numbers for a change that is none; H24 S9: a choice that changes nothing
-		# says so with the neutral "no change" mark (it showed nothing at all).
+		b.add_child(ChoiceSticker.new(i + 1, ts))
+		# H23 S9 / H24 S9: a choice that changes nothing says so with the grey NO CHANGE chip.
 		var numbers := OutcomeRow.shown(outcome)
 		var row := OutcomeRow.new(numbers if not numbers.is_empty() else OutcomeRow.no_change())
 		OutcomeRow.attach(b, row)
-		# ANIM-6: the outcome's icons pop when the choice is hovered or focused.
+		if numbers.is_empty() and calm == null:
+			calm = b
+		# ANIM-6: the outcome's chips pop when the choice is hovered or focused.
 		b.mouse_entered.connect(func() -> void: Motion.pop(row, &"event_outcome_pop"))
 		b.focus_entered.connect(func() -> void: Motion.pop(row, &"event_outcome_pop"))
-	options.add_child(GraffitiScrawl.new(tr("PLAY IT\nSAFE??"), -6.0, 24))
-	# H24 S9: the choices keep clear of the screen's right edge (their border was cut).
-	options.custom_minimum_size.x = 0.0
-	var right_gap := Control.new()
-	right_gap.name = "EventRightGap"
-	right_gap.custom_minimum_size.x = EVENT_RIGHT_GAP * Settings.text_scale
-	right_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	split.add_child(right_gap)
+	# Beside the window: the node's TERMINAL sticker and, at most, one pencil note.
+	var side := VBoxContainer.new()
+	side.name = "EventSide"
+	side.add_theme_constant_override("separation", 24)
+	side.custom_minimum_size.x = EVENT_SIDE_W
+	split.add_child(side)
+	var node_sticker := HoloSticker.word(tr("TERMINAL"), VinylSticker.Fill.RED if dispatch else VinylSticker.Fill.WHITE, os, EVENT_STICKER_PX)
+	node_sticker.name = "NodeSticker"
+	node_sticker.focus_mode = Control.FOCUS_NONE
+	node_sticker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	node_sticker.rotation = -0.06
+	node_sticker.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	side.add_child(node_sticker)
+	if calm != null:
+		var note := PencilNote.new(tr("PLAY IT\nSAFE??"), Palette.PENCIL_PLAN, -0.06, roundi(PencilNote.FONT_PX * 1.2 * os))
+		note.name = "EventNote"
+		note.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		side.add_child(note)
+		# Naive-reader audit P3: the arrow ends on the choice it means (whenever either moves).
+		var aim := func() -> void:
+			if is_instance_valid(note) and is_instance_valid(calm) and calm.is_inside_tree():
+				var target := calm.get_global_rect()
+				var to := Vector2(target.end.x + 6.0, target.get_center().y) - note.global_position
+				note.with_arrow(Vector2(0.0, note.custom_minimum_size.y * 0.8), to, 24.0)
+		note.item_rect_changed.connect(aim)
+		calm.item_rect_changed.connect(aim)
+		box.sort_children.connect(func() -> void: aim.call_deferred())
+		split.sort_children.connect(func() -> void: aim.call_deferred())
 	_set_panel(box, false)
+	_event_backbuffer()
 	_register_event_drops(ev, options)
-	# ANIM-R4 C7: the story types within `event_type`'s cap (0.8 s), not a char at a time
-	# for 8 s under an empty panel.
+	# ANIM-R4 C7: the story types within `event_type`'s cap (0.8 s).
 	if entering and Typing.type_in(text, &"event_type") > 0.0:
 		_hold_choices(options, text)
+
+
+## ART-9 4A: the event window's pieces at text scale 1 (px): the CAM feed, the story's width beside
+## it, the memo's width, the title lettering, the TERMINAL sticker and the side column.
+const EVENT_CAM := Vector2(320, 230)
+const EVENT_TEXT_W := 320.0
+const EVENT_MEMO_W := 470.0
+const EVENT_TITLE_PX := 34
+const EVENT_STICKER_PX := 40
+const EVENT_SIDE_W := 190.0
+## The text size from which the event's CAM feed steps aside (the story takes its room).
+const EVENT_FEED_BELOW := 1.6
+## The CAM feed's copy of the city (a BackBufferCopy after it, while the event shows).
+var _event_bbc: BackBufferCopy = null
+
+
+## Copies the city behind the event page for the CAM feed (once; freed with the screen).
+func _event_backbuffer() -> void:
+	if _event_bbc != null and is_instance_valid(_event_bbc):
+		return
+	_event_bbc = BackBufferCopy.new()
+	_event_bbc.name = "EventCityCopy"
+	_event_bbc.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
+	add_child(_event_bbc)
+	move_child(_event_bbc, background.get_index() + 1)
 
 
 ## ANIM-R1 M9 / ANIM-R2 E1-E2: while the event's story types in, its choices wait. They stay
@@ -2894,7 +3094,7 @@ func _hold_choices(options: Control, text: Control) -> void:
 		if b is Button and not (b as Button).disabled:
 			var btn := b as Button
 			btn.set_meta(HELD_META, true)
-			btn.add_theme_color_override(&"font_color", Color(Palette.INK, HELD_INK_ALPHA))
+			btn.add_theme_color_override(&"font_color", Color(Palette.TEXT_HI, HELD_INK_ALPHA))
 			var mark := EventHeldMark.new()
 			mark.name = "EventHeldMark"
 			btn.add_child(mark)
@@ -2988,74 +3188,119 @@ static func _choice_text(label: String, costs: String) -> String:
 	return base if costs == "" else "%s (%s)" % [base, costs]
 
 
-## Mainframe (GDD 11.2) in four quadrants over the storefront: FIRMWARE (top
-## left), CARDS (as their own stickers, top right), SLICES + DAEMONS (bottom left, split)
-## and REMOVE A CARD (bottom right, opens the deck viewer). Overwriting a slice opens the
-## spinner viewer to pick the slot. "Leave the Mainframe" is a dripping tag in the corner.
+# ==== ART-9 4A: MAINFRAME shop (owner 4A; 3B owns the route/map parts of this file) ====
+
+## ART-9 4A (ART_BIBLE v2 §4.10; round 34 `shop_v5`, round 12 F1b facade, round 33 sign v4 and
+## `slice_wheel_offscreen`): the MAINFRAME on its street. The F1b facade fills the screen behind
+## the page with the MAINFRAME sign v4 on its plate (MainframeFacade, its takeover sequences);
+## the pegboard under the sign holds CARDS (stickers), FIRMWARE (chips in pink foam, the socket
+## list under them), the info strip (the focused item's whole text) and DAEMONS (cartridges on
+## hooks); the clerk's CRT terminal sits bottom left with the WALLET and the small spinner; the
+## slice stock is a wheel mostly below the screen whose top wedges are for sale (kraft tags on
+## their rims; a slice opens the UPGRADE viewer as before); card removal is the RECYCLE BIN on the
+## sidewalk (it opens the deck viewer as before: the bin is the removal's look, cards only); the
+## holographic LEAVE sticker is bottom right. Prices and actions are the current rules (GDD 11.2).
 func _show_shop() -> void:
 	var s := RunManager.netrun
 	var shop := s.run.shop
 	var op := s.run.operative
+	var ts := Settings.text_scale
 	var root := Control.new()
 	root.name = "MainframeRoot"
-	root.custom_minimum_size = Vector2(1240, 540)
-	var sign := MainframeSign.new()
-	sign.name = "MainframeSign"
-	sign.position = Vector2(0, -6)
-	sign.size = Vector2(230, 560)
-	root.add_child(sign)
-	var grid := GridContainer.new()
-	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 12)
-	grid.add_theme_constant_override("v_separation", 12)
-	grid.position = Vector2(236, 0)
-	root.add_child(grid)
-	var q_size := MAINFRAME_QUAD
-	var ts := Settings.text_scale
-	# Top left: Firmware. The socket list names each slot by its slice.
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.custom_minimum_size = SHOP_ROOM
+	# The pegboard: CARDS on the left; FIRMWARE, the info strip and DAEMONS on the right.
+	var board := ShopPegboard.new(minf(ts, ShopItem.OBJECT_MAX_SCALE))
+	# Big words: DAEMONS stands beside FIRMWARE (the board keeps its height) and the clerk keeps
+	# only the wallet and the prices (the screen keeps room for the wheel).
+	var wide := ts >= SHOP_WIDE_FROM
+	root.add_child(board)
+	# 1B LightSpill: the sign's light falls on the pegboard beside it (the street's own spill
+	# is baked into the facade with the sign, round 33's composite).
+	var spill := LightSpill.new()
+	spill.name = "SignSpill"
+	spill.gain = LightSpill.GAIN_SHOP * SHOP_SPILL_GAIN
+	root.add_child(spill)
+	var cols := HBoxContainer.new()
+	cols.name = "Shelves"
+	cols.add_theme_constant_override("separation", roundi(SHOP_COL_GAP * ts))
+	cols.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	board.add_child(cols)
+	# The FIRMWARE column comes first in the tree (the page's first focus and the pad's walk start
+	# on the chips, as before) but stands on the right: the row lays out right to left, its
+	# columns left to right.
+	cols.layout_direction = Control.LAYOUT_DIRECTION_RTL
+	var cards_col := VBoxContainer.new()
+	cards_col.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	cards_col.add_theme_constant_override("separation", roundi(SHOP_ROW_GAP * ts))
+	cards_col.add_child(ShopPegboard.tape("CARDS", ts))
+	var stickers := HBoxContainer.new()
+	stickers.name = "Stickers"
+	stickers.add_theme_constant_override("separation", roundi(QUAD_GAP))
+	stickers.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	cards_col.add_child(stickers)
+	# the cards' kraft tags hang under them (round 34 shop_v5): their room under the row
+	var tag_room := Control.new()
+	tag_room.name = "CardTagRoom"
+	tag_room.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tag_room.custom_minimum_size = Vector2(0, BuyButton.BUY_HEIGHT * ts)
+	cards_col.add_child(tag_room)
+	var right := VBoxContainer.new()
+	right.name = "RightShelves"
+	right.layout_direction = Control.LAYOUT_DIRECTION_LTR
+	right.add_theme_constant_override("separation", roundi(SHOP_ROW_GAP * ts))
+	cols.add_child(right)
+	cols.add_child(cards_col)
+	var fw_col := VBoxContainer.new()
+	fw_col.add_theme_constant_override("separation", roundi(SHOP_ROW_GAP * ts))
+	var dm_col := VBoxContainer.new()
+	dm_col.add_theme_constant_override("separation", roundi(SHOP_ROW_GAP * ts))
+	if wide:
+		var pair := HBoxContainer.new()
+		pair.add_theme_constant_override("separation", roundi(SHOP_COL_GAP))
+		right.add_child(pair)
+		pair.add_child(fw_col)
+		pair.add_child(dm_col)
+	else:
+		right.add_child(fw_col)
+		right.add_child(dm_col)
+	fw_col.add_child(ShopPegboard.tape("FIRMWARE", ts))
+	var chips := HBoxContainer.new()
+	chips.name = "Chips"
+	chips.add_theme_constant_override("separation", roundi(SHOP_ROW_GAP * ts))
+	fw_col.add_child(chips)
+	board.foam_row = chips
 	var fw_slot := OptionButton.new()
 	fw_slot.name = "SocketPick"
 	for k in op.slot_slice_ids.size():
 		fw_slot.add_item(slot_name(op, k))
-	var chips_win := TerminalWindow.new(tr("FIRMWARE"))
-	chips_win.custom_minimum_size = q_size
-	grid.add_child(chips_win)
-	var chips := HBoxContainer.new()
-	chips.name = "Chips"
-	chips.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	chips.add_theme_constant_override("separation", 10)
-	chips_win.body.add_child(chips)
-	# Top right: cards as their stickers ("Stickers" holds them in stock order).
-	var cards_win := TerminalWindow.new(tr("CARDS"), Palette.CELL_PINK)
-	cards_win.custom_minimum_size = q_size
-	grid.add_child(cards_win)
-	var stickers := HBoxContainer.new()
-	stickers.name = "Stickers"
-	stickers.add_theme_constant_override("separation", 12)
-	cards_win.body.add_child(stickers)
-	# Bottom left: slices (overwrite) and daemons side by side.
-	# A 2-column grid (not an HBox) so pad focus walks every tile in both windows.
-	var lower_left := GridContainer.new()
-	lower_left.columns = 2
-	lower_left.add_theme_constant_override("h_separation", 12)
-	lower_left.custom_minimum_size = q_size
-	grid.add_child(lower_left)
-	var slices_win := TerminalWindow.new(tr("SLICES"), Palette.CRT_AMBER)
-	slices_win.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lower_left.add_child(slices_win)
-	var daemons_win := TerminalWindow.new(tr("DAEMONS"), Palette.NEON_VIOLET)
-	lower_left.add_child(daemons_win)
+	var info := _crt_one_line(CrtWindow.new("").with_kind(CrtWindow.kind_for(Palette.NET_CYAN), Palette.NET_CYAN))
+	info.name = "ShopInfo"
+	var os := minf(ts, ShopItem.OBJECT_MAX_SCALE)
+	# big words: a narrower strip keeps the spinner beside it clear of the stock wheel's left tag
+	var iw := SHOP_INFO_W * (minf(os, SHOP_INFO_WIDE_SCALE) if wide else os)
+	info.custom_minimum_size = Vector2(iw, 0)
+	var info_text := Label.new()
+	info_text.name = "ShopInfoText"
+	info_text.autowrap_mode = TextServer.AUTOWRAP_WORD
+	info_text.custom_minimum_size = Vector2(iw - 24.0, 0)
+	info_text.add_theme_color_override(&"font_color", Palette.TEXT_MID)
+	info_text.add_theme_font_override(&"font", Palette.mono())
+	info_text.text = UiTip.for_input(tr(SHOP_INFO_IDLE), tr(SHOP_INFO_IDLE_PAD))
+	# the strip keeps to a few lines (the item's whole text is its tip)
+	info_text.max_lines_visible = SHOP_INFO_LINES
+	info_text.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	info.body.add_child(info_text)
 	var daemon_row := HBoxContainer.new()
 	daemon_row.name = "Daemons"
-	daemons_win.body.add_child(daemon_row)
+	daemon_row.add_theme_constant_override("separation", roundi(SHOP_ROW_GAP * ts))
 	var n := 0
 	# ANIM-R1 M11: what the Mainframe offered when the player came in; a bought item stays as a
-	# SOLD stub in its place (the rest keep their spots and colours).
+	# SOLD stub in its place (the rest keep their spots).
 	var seen := _shop_seen(s)
-	# Cards grow with the text size as far as their quadrant holds them (H21 #15).
 	var card_count: int = (seen["cards"] as Array).size()
-	var card_fit := minf((q_size.x - QUAD_FRAME.x - QUAD_GAP * maxi(0, card_count - 1)) / maxf(1.0, card_count * ZineCard.STICKER_SIZE.x),
-		(q_size.y - QUAD_FRAME.y) / ZineCard.STICKER_SIZE.y)
+	var card_fit := minf((SHOP_CARDS_ROOM.x - QUAD_GAP * maxi(0, card_count - 1)) / maxf(1.0, card_count * ZineCard.STICKER_SIZE.x),
+		SHOP_CARDS_ROOM.y / ZineCard.STICKER_SIZE.y)
 	var cs := clampf(minf(ts, card_fit), 1.0, Settings.TEXT_SCALE_MAX)
 	for kind in ["cards", "firmware", "daemons"]:
 		var prices: Array = shop.get(kind.trim_suffix("s") + "_prices", [])
@@ -3065,134 +3310,110 @@ func _show_shop() -> void:
 			var res := s.lookup.get_content(id)
 			if i < 0:
 				var stub := _sold_stub(TextDb.t(res, "display_name"), (res as CardData).ram_cost if res is CardData else -1, n, kind, cs, ts)
-				match kind:
-					"cards":
-						stickers.add_child(stub)
-					"firmware":
-						chips.add_child(stub)
-					_:
-						daemon_row.add_child(stub)
+				_shop_shelf_look(stub, kind, res, id)
+				({"cards": stickers, "firmware": chips}.get(kind, daemon_row) as Control).add_child(stub)
 				n += 1
 				continue
-			# H21 #12: the circle shows a card's real RAM cost; the price hangs on a tag with
-			# the coin.
+			# H21 #12: the circle shows a card's real RAM cost; the price hangs on its kraft tag.
 			var ram := (res as CardData).ram_cost if res is CardData else -1
-			# H24 S3: the effect text alone (a "firmware: " prefix was an untranslated word).
-			var sticker := ZineCard.new(TextDb.t(res, "display_name"), ram, shop_text(res), n)
-			sticker.fit_whole = true  # ANIM-R1 M10: the whole text on the tile or card
-			sticker.hotkey = ""
-			sticker.with_price(int(prices[i]))
+			var item := ShopItem.new(TextDb.t(res, "display_name"), ram, shop_text(res), n)
+			item.fit_whole = true  # ANIM-R1 M10: the whole text on a card
+			item.hotkey = ""
+			item.with_price(int(prices[i]))
 			if kind == "cards":
-				sticker.scaled(cs).with_card(res as CardData)
-			elif kind == "firmware":
-				sticker.as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN).tile_text(ts)
-			elif kind == "daemons":
-				sticker.as_tile(ZineCard.Look.CHIP, Palette.NEON_VIOLET).tile_text(ts)
-			sticker.tooltip_text = UiTip.fold(tr("%s\n%s\nBuy: %d Cycles (you have %d).") % [TextDb.t(res, "display_name"), shop_text(res), int(prices[i]), s.run.cycles]
+				item.scaled(cs).with_card(res as CardData)
+				item.set_meta(BuyButton.TAG_BELOW, true)
+			_shop_shelf_look(item, kind, res, id)
+			item.tooltip_text = UiTip.fold(tr("%s\n%s\nBuy: %d Cycles (you have %d).") % [TextDb.t(res, "display_name"), shop_text(res), int(prices[i]), s.run.cycles]
 				+ "\n" + drag_tip(String({"cards": "card", "firmware": "chip", "daemons": "daemon"}[kind])))
-			sticker.disabled = int(prices[i]) > s.run.cycles
-			# H23 S8: a clear buy button on every item, and the whole text on focus.
-			sticker.with_buy(TextDb.mark("BUY"))
-			if kind != "cards":
-				# ANIM-R2 E6: the tile grows until its whole text reads (at 1.6 a third of the
-				# chips showed 1 of 2-3 lines at the 8 px floor).
-				fit_chip_tile(sticker, chip_tile_room(kind, (seen[kind] as Array).size(), ts))
-			FocusTip.attach(sticker)
+			item.disabled = int(prices[i]) > s.run.cycles
+			# H23 S8: a clear buy button on every item (its kraft tag), the whole text on focus.
+			item.with_buy(TextDb.mark("BUY"))
+			FocusTip.attach(item)
+			_shop_info_on(item, info_text, "%s  %s" % [TextDb.t(res, "display_name").to_upper(), shop_text(res)])
 			var index: int = i
 			var k: String = kind
 			var price_i := int(prices[i])
 			# ANIM-R2 E9: pressing an item out of reach says why on the money itself.
-			sticker.gui_input.connect(func(ev: InputEvent) -> void:
-				if sticker.disabled and (ev.is_action_pressed(&"ui_accept") or (ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT)):
+			item.gui_input.connect(func(ev: InputEvent) -> void:
+				if item.disabled and (ev.is_action_pressed(&"ui_accept") or (ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT)):
 					price_refused(price_i))
-			sticker.set_meta(STOCK_META, i)
-			sticker.pressed.connect(func() -> void: buy(k, index, fw_slot.selected if k == "firmware" else -1))
-			match kind:
-				"cards":
-					stickers.add_child(sticker)
-				"firmware":
-					chips.add_child(sticker)
-				_:
-					daemon_row.add_child(sticker)
+			item.set_meta(STOCK_META, i)
+			item.pressed.connect(func() -> void: buy(k, index, fw_slot.selected if k == "firmware" else -1))
+			({"cards": stickers, "firmware": chips}.get(kind, daemon_row) as Control).add_child(item)
 			n += 1
 	if not shop.get("firmware", []).is_empty():
-		# ANIM-R5 B11: the list says what it is for ("Chips go into: Slot 1: OVERFLOW 12"); a bare
-		# "Socket into Slot 1: OVERFLOW 12" lost a beginner. Presentation only.
+		# ANIM-R5 B11: the list says what it is for ("Chips go into: Slot 1: OVERFLOW 12").
 		var socket_row := HFlowContainer.new()
 		socket_row.name = "SocketRow"
 		socket_row.add_theme_constant_override("h_separation", 6)
 		var socket_word := _label(tr("Chips go into:"))
 		socket_word.name = "SocketWord"
+		socket_word.add_theme_color_override(&"font_color", Palette.TEXT_HI)
 		socket_word.tooltip_text = UiTip.fold(tr(SOCKET_TIP) + " " + drag_tip("socket"))
 		socket_word.mouse_filter = Control.MOUSE_FILTER_PASS
 		socket_row.add_child(socket_word)
 		fw_slot.tooltip_text = UiTip.fold(tr(SOCKET_TIP) + " " + drag_tip("socket"))
 		socket_row.add_child(fw_slot)
-		chips_win.body.add_child(socket_row)
+		cards_col.add_child(socket_row)
+	var info_row := HBoxContainer.new()
+	info_row.name = "InfoRow"
+	info_row.add_theme_constant_override("separation", roundi(SHOP_ROW_GAP * 2.0 * ts))
+	cards_col.add_child(info_row)
+	info_row.add_child(info)
+	dm_col.add_child(ShopPegboard.tape("DAEMONS", ts))
+	dm_col.add_child(daemon_row)
 	if daemon_row.get_child_count() == 0:
-		daemons_win.body.add_child(_label(tr("sold out")))
-	var slice_row := HBoxContainer.new()
-	slice_row.name = "Slices"
-	slice_row.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	slice_row.add_theme_constant_override("separation", 8)
-	slices_win.body.add_child(slice_row)
+		var none := _label(tr("sold out"))
+		none.add_theme_color_override(&"font_color", Palette.TEXT_MID)
+		daemon_row.add_child(none)
+	# The slice stock wheel (named Slices: its wedges for sale are the slice items).
+	var wheel := SliceStockWheel.new()
+	wheel.name = "Slices"
+	root.add_child(wheel)
 	var stock: Array = shop.get("slices", [])
-	# A slice's price depends on the slot it overwrites: the tile shows the lowest ("N+"
-	# when some slot costs more).
+	# A slice's price depends on the slot it overwrites: the tag shows the lowest (the UPGRADE
+	# viewer shows the slot's own price before anything is paid).
 	var low := -1
 	var high := -1
 	for k in op.slot_slice_ids.size():
 		var p := s.slice_overwrite_price(k)
 		low = p if low < 0 else mini(low, p)
 		high = maxi(high, p)
-	for slot: Array in shop_slots(seen["slices"], stock):
+	var slice_slots := shop_slots(seen["slices"], stock)
+	for j in slice_slots.size():
+		var slot: Array = slice_slots[j]
 		var i: int = slot[1]
 		var sd := s.lookup.get_content(StringName(String(slot[0]))) as SliceData
 		if sd == null:
 			continue
 		var slice_word := tr(String(Palette.SLICE_NAMES.get(sd.slice_type, "?")))
+		var title := "%s %d" % [slice_word, sd.base_output] if sd.base_output > 0 else slice_word
+		var tile: ShopItem
 		if i < 0:
-			var stub := _sold_stub("%s %d" % [slice_word, sd.base_output] if sd.base_output > 0 else slice_word, -1, (seen["slices"] as Array).size(), "slices", 1.0, ts)
-			stub.custom_minimum_size = slice_tile_size((seen["slices"] as Array).size(), ts)
-			stub.slice_type = sd.slice_type
-			stub.slice_output = sd.base_output
-			stub.accent = Palette.slice_color(sd.slice_type)
-			slice_row.add_child(stub)
-			continue
-		var tile := ZineCard.new("%s %d" % [slice_word, sd.base_output] if sd.base_output > 0 else slice_word, -1, Codex.describe(sd), i)
-		tile.set_meta(STOCK_META, i)
-		tile.as_tile(ZineCard.Look.SLICE_TILE, Palette.slice_color(sd.slice_type)).tile_text(ts)
+			tile = _sold_stub(title, -1, slice_slots.size(), "slices", 1.0, ts)
+		else:
+			tile = ShopItem.new(title, -1, Codex.describe(sd), i)
+			tile.set_meta(STOCK_META, i)
+			tile.hotkey = ""
+			if low >= 0:
+				tile.with_price(low)
+			# H23 S8: the real prices (the slot you overwrite sets it), said in words.
+			tile.tooltip_text = UiTip.fold(tr("Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).\n") % [tile.price_words(),
+				(tr(": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next") % [low, high]) if high > low else "", s.run.cycles] + Codex.describe(sd)
+				+ "\n" + drag_tip("slice"))
+			tile.with_buy(TextDb.mark("BUY"))
+			FocusTip.attach(tile)
+			_shop_info_on(tile, info_text, "%s  %s" % [title, Codex.describe(sd)])
+			var si := i
+			tile.pressed.connect(func() -> void: open_overwrite(si))
+		tile.on_shelf(ShopItem.Shelf.SLICE, ts, sd.id)
 		tile.slice_type = sd.slice_type
 		tile.slice_output = sd.base_output
-		# H24 S10: the tile widens with the text size as far as the SLICES window holds the
-		# row (its buy sticker "BUY 100-150" shrank to fit a fixed 96 px at 1.6).
-		tile.custom_minimum_size = slice_tile_size((seen["slices"] as Array).size(), ts)
-		tile.hotkey = ""
-		if low >= 0:
-			# ANIM-R2 E6: one price on the tile, what most slots cost ("BUY 100-150" wrapped
-			# onto three lines at 1.6); the UPGRADE viewer shows the exact price of the slot
-			# picked before anything is paid, and the tip names the pricier slot.
-			tile.with_price(low)
-		# H23 S8: the real prices (the slot you overwrite sets it), said in words.
-		tile.tooltip_text = UiTip.fold(tr("Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).\n") % [tile.price_words(),
-			(tr(": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next") % [low, high]) if high > low else "", s.run.cycles] + Codex.describe(sd)
-			+ "\n" + drag_tip("slice"))
-		tile.with_buy(TextDb.mark("BUY"))
-		FocusTip.attach(tile)
-		var si := i
-		tile.pressed.connect(func() -> void: open_overwrite(si))
-		slice_row.add_child(tile)
-	# Bottom right: remove a card, an icon action that opens the deck viewer.
-	var remove_win := TerminalWindow.new(tr("REMOVE A CARD"), Palette.CELL_ACID)
-	remove_win.custom_minimum_size = q_size
-	grid.add_child(remove_win)
-	var remove_row := HBoxContainer.new()
-	remove_row.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	remove_row.add_theme_constant_override("separation", 16)
-	remove_win.body.add_child(remove_row)
-	var shred := ZineCard.new(tr("SHRED A CARD"), -1, tr("Pick a card from your deck to remove."), 0)
-	shred.as_tile(ZineCard.Look.CARD_TILE, Palette.CELL_ACID).tile_text(ts)
-	shred.custom_minimum_size.y *= tile_growth(ts)
+		wheel.add_item(tile, j, slice_slots.size())
+		tile.with_glyph(ShopItem.glyph_of("slices", sd.id, sd.slice_type))
+	# The recycle bin: card removal (the deck viewer picks the card, as before).
+	var shred := ShopItem.new(tr("RECYCLE BIN"), -1, tr("Pick a card from your deck to remove."), 0).on_shelf(ShopItem.Shelf.BIN, ts)
 	shred.with_price(s.card_removal_price())
 	shred.name = "RemoveCard"
 	shred.hotkey = ""
@@ -3200,42 +3421,85 @@ func _show_shop() -> void:
 	shred.icon_kind = "shred"
 	shred.tooltip_text = UiTip.fold(tr("Remove a card from your deck: %d Cycles (you have %d).") % [s.card_removal_price(), s.run.cycles])
 	shred.pressed.connect(open_remove)
-	shred.with_buy(TextDb.mark("SHRED"))
+	shred.with_buy(TextDb.mark("BIN"))
 	FocusTip.attach(shred)
-	remove_row.add_child(shred)
-	# The wallet (H21 #11): the Cycles to spend, beside the shredder, in sight whatever
-	# covers the top bar.
+	_shop_info_on(shred, info_text, tr("RECYCLE BIN  Remove a card from your deck: %d Cycles.") % s.card_removal_price())
+	root.add_child(shred)
+	# The clerk's terminal: the shop's rules in its own words, the WALLET and your spinner.
+	var clerk := _crt_one_line(CrtWindow.new(tr("MAINFRAME // CLERK"), Palette.NET_CYAN).with_kind(CrtWindow.kind_for(Palette.NET_CYAN), Palette.NET_CYAN))
+	clerk.name = "Clerk"
+	clerk.tag_label.text = tr("SHOP")
+	root.add_child(clerk)
+	var face_row := HBoxContainer.new()
+	face_row.add_theme_constant_override("separation", 14)
+	clerk.body.add_child(face_row)
+	var face := Control.new()
+	face.name = "ClerkFace"
+	face.custom_minimum_size = Vector2(CLERK_FACE, CLERK_FACE) * ts
+	face.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	face.draw.connect(_draw_clerk_face.bind(face))
+	face_row.add_child(face)
+	var rules := _label(tr(CLERK_WORDS))
+	rules.name = "ClerkWords"
+	rules.add_theme_color_override(&"font_color", Palette.TERMINAL_TEXT)
+	face_row.add_child(rules)
+	face_row.visible = not wide
+	var wallet_row := HBoxContainer.new()
+	wallet_row.add_theme_constant_override("separation", 12)
+	clerk.body.add_child(wallet_row)
+	# The wallet (H21 #11): the Cycles to spend, in sight whatever covers the top bar.
 	var wallet := HudStats.new()
 	wallet.name = "Wallet"
 	wallet.items = [[TextDb.mark("CYCLES"), str(s.run.cycles), "", tr("Cycles you have to spend in the Mainframe. Runs and events pay them; they don't leave the run.")]]
 	wallet.custom_minimum_size.x = wallet.full_width(ts)
 	wallet.mirror = hud.stats  # ANIM-R2 E9: it rolls with the top bar's CYCLES
-	wallet.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	remove_row.add_child(wallet)
-	# ANIM-4b: the spinner in small beside the wallet: Firmware and slice upgrades drag onto
-	# its slots (the socket list and the UPGRADE viewer stay).
+	wallet.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	wallet_row.add_child(wallet)
+	# ANIM-4b: the spinner in small: Firmware and slice upgrades drag onto its slots.
 	var mini := _spinner_mini()
-	mini.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	remove_row.add_child(mini)
-	var leave := DripButton.new(TextDb.mark("LEAVE MAINFRAME"), "", DripButton.DRIP_PINK, 32, DripButton.LEAVE_MAINFRAME_DRIPS)
+	mini.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	info_row.add_child(mini)
+	if wide:
+		# big words: the wallet joins the info strip and the clerk steps aside (the prices are
+		# on every tag)
+		# under the Daemons (the board's right, clear of where the stock wheel's tags hang)
+		wallet.reparent(dm_col)
+		wallet.custom_minimum_size.x = wallet.full_width(minf(ts, SHOP_WALLET_MAX_SCALE))
+		wallet.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		clerk.visible = false
+	var prices_line := _label(tr("card %d-%d · slice %d (NULL %d) · bin %d") % [RunManager.config().card_price_range.x, RunManager.config().card_price_range.y,
+		RunManager.config().slice_overwrite_price, RunManager.config().null_slice_overwrite_price, s.card_removal_price()])
+	prices_line.name = "ClerkPrices"
+	prices_line.add_theme_color_override(&"font_color", Palette.TEXT_MID)
+	prices_line.add_theme_font_override(&"font", Palette.mono())
+	clerk.body.add_child(prices_line)
+	# LEAVE: a holographic sticker with a pink chevron arrow.
+	var leave := HoloSticker.new(tr("LEAVE"), tr("THE MAINFRAME"), os)
 	leave.name = "LeaveMainframe"
-	leave.position = LEAVE_AT
 	leave.pressed.connect(leave_shop)
 	leave.tooltip_text = tr("Leave the Mainframe and go back to the route.")
 	root.add_child(leave)
-	var leave_icon := IconMark.standalone(StatIcon.EXIT, LEAVE_ICON, DripButton.DRIP_PINK)
+	var leave_icon := IconMark.standalone(StatIcon.EXIT, LEAVE_ICON * os, Palette.CELL_PINK)
 	leave_icon.name = "LeaveIcon"
-	leave_icon.position = LEAVE_AT + Vector2(-LEAVE_ICON - 4.0, 4.0)
 	leave_icon.tooltip_text = leave.tooltip_text
 	leave_icon.mouse_filter = Control.MOUSE_FILTER_PASS
 	root.add_child(leave_icon)
-	# ART-0 C (text scale 2.0): the spinner beside the wallet grew down into LEAVE_AT; the
-	# button moves down under whatever of the row it would cover (unchanged up to 1.6).
-	remove_row.sort_children.connect(func() -> void: _place_leave.call_deferred(leave, leave_icon, remove_row, root))
+	# Grease pencil, true to the rules: only the top wedges are for sale; the bin takes cards;
+	# the clerk's note.
+	var top_note := PencilNote.new(tr("TOP %d ONLY") % stock.size() if stock.size() > 0 else "", Palette.PENCIL_PLAN, -0.08, roundi(PencilNote.FONT_PX * os))
+	top_note.name = "TopNote"
+	root.add_child(top_note)
+	var bin_note := PencilNote.new(tr("BIN IT"), Palette.PENCIL_PLAN, -0.1, roundi(PencilNote.FONT_PX * os))
+	bin_note.name = "BinNote"
+	root.add_child(bin_note)
+	var clerk_note := PencilNote.new(tr(CLERK_NOTE), Palette.PENCIL_PLAN, -0.05, roundi(PencilNote.FONT_PX * 0.8 * os))
+	clerk_note.name = "ClerkNote"
+	root.add_child(clerk_note)
+	clerk_note.visible = not wide
 	# ANIM-R3 A7: the first focus is the first item (one the Cycles reach, else the first),
 	# never the socket list: the pad prompt says "A Buy".
 	var first_item: ZineCard = null
-	for row in [chips, stickers, slice_row, daemon_row]:
+	for row in [chips, daemon_row, stickers, wheel]:
 		for c in (row as Node).get_children():
 			var zc := c as ZineCard
 			if zc == null or zc.sold_stub:
@@ -3249,10 +3513,269 @@ func _show_shop() -> void:
 	if first_item != null:
 		first_item.focus_mode = Control.FOCUS_ALL
 		root.set_meta(FIRST_FOCUS_META, first_item)
+	var lay := func() -> void: _layout_shop(root)
+	root.resized.connect(lay)
+	board.resized.connect(lay)
+	clerk.resized.connect(lay)
 	_set_panel(root, false)
+	var facade := _shop_backdrop(s)
+	var follow := func() -> void:
+		if is_instance_valid(spill) and is_instance_valid(facade):
+			var lv := facade.sign.spill()
+			spill.lit = clampf(maxf(lv.x, lv.y), 0.0, 1.0)
+			spill.color = Palette.SIGN_RED if lv.y > lv.x else Palette.SIGN_BLUE
+	facade.sign.light_changed.connect(follow)
+	# the page goes before the facade (a purchase rebuilds the page): its spill stops following
+	var sign_ref: WeakRef = weakref(facade.sign)
+	root.tree_exiting.connect(func() -> void:
+		var sg := sign_ref.get_ref() as MainframeSign
+		if sg != null and sg.light_changed.is_connected(follow):
+			sg.light_changed.disconnect(follow), CONNECT_ONE_SHOT)
+	follow.call()
+	_layout_shop.call_deferred(root)
 	_register_shop_drops(mini, fw_slot)
 	if entering:
-		sign.warm_up()
+		facade.sign.warm_up()
+		wheel.spin_in()
+
+
+## ART-9 4A: the room the Mainframe page asks of its host (px; its pieces are placed on the
+## street by `_layout_shop`), the pegboard's column and row gaps, the CARDS shelf's room, the
+## info strip's width (px at scale 1), the clerk's face (px), the gap kept under the top bar for
+## the sign, and the wheel's hub below the screen's foot (px).
+const SHOP_ROOM := Vector2(1240, 520)
+const SHOP_COL_GAP := 22.0
+const SHOP_ROW_GAP := 6.0
+const SHOP_CARDS_ROOM := Vector2(470, 300)
+const SHOP_INFO_W := 250.0
+const CLERK_FACE := 48.0
+const SHOP_SIGN_GAP := 6.0
+const SHOP_HUB_BELOW := 100.0
+## The least of the wheel's wedges kept on screen (px).
+const SHOP_WEDGE_SHOWN := 120.0
+## ART-9 4A: from this text size DAEMONS stands beside FIRMWARE and the clerk shows only the wallet
+## and the prices; the info strip's most lines.
+const SHOP_WIDE_FROM := 1.25
+const SHOP_INFO_LINES := 3
+## ART-9 4A: the info strip's largest width scale at big text (its spinner stays clear of the wheel).
+const SHOP_INFO_WIDE_SCALE := 0.92
+## ART-9 4A: the sign's spill on the pegboard: its share of the shop gain and its reach (px).
+const SHOP_SPILL_GAIN := 0.6
+const SHOP_SPILL_REACH := 260.0
+## ART-9 4A: where the pieces stand on the 1280x720 street (round 34 `shop_v5` x 0.8): the
+## pegboard's centre x and top gap under the bar, the wheel's centre x, the bin's top left, the
+## clerk's and LEAVE's margins from the screen's corners (px).
+const SHOP_BOARD_X := 692.0
+const SHOP_BOARD_TOP := 8.0
+const SHOP_WHEEL_X := 672.0
+const SHOP_BIN_AT := Vector2(1090, 392)
+const SHOP_MARGIN := 14.0
+## ART-9 4A: the clerk's words, its pencil note and the info strip's line before an item is
+## focused (keys).
+const CLERK_WORDS := "NO REFUNDS.\nNO NAMES.\nCYCLES ONLY." # TR
+const CLERK_NOTE := "ask about the\nback room" # TR
+## The info line by device (UiTip.for_input( picks the pad's when pad_active).
+const SHOP_INFO_IDLE := "> point at an item: what it does shows here. Drag Firmware or a slice onto a slot of your spinner." # TR
+const SHOP_INFO_IDLE_PAD := "> focus an item: what it does shows here." # TR
+## ART-9 4A: the wallet's largest scale at big text (it stands under the Daemons, clear of the
+## stock wheel's and the bin's tags; the top bar's CYCLES keeps the full size).
+const SHOP_WALLET_MAX_SCALE := 1.6
+## The facade behind the Mainframe (kept while the page is rebuilt on the same visit).
+var _shop_facade: MainframeFacade = null
+var _shop_facade_key: String = ""
+
+
+## The facade for this visit behind the page (made once per visit; the city hides behind it).
+func _shop_backdrop(s: NetrunSession) -> MainframeFacade:
+	var key := String(_shop_memory.get("key", ""))
+	if _shop_facade == null or not is_instance_valid(_shop_facade) or _shop_facade_key != key:
+		_drop_shop_backdrop()
+		_shop_facade = MainframeFacade.new(MainframeFacade.state_for(key))
+		_shop_facade.sign.sequence_index = absi(key.hash()) % MainframeSign.SEQUENCE_ORDER.size()
+		_shop_facade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		add_child(_shop_facade)
+		move_child(_shop_facade, background.get_index() + 1)
+		_shop_facade_key = key
+	background.visible = false
+	return _shop_facade
+
+
+## Takes the facade away (another screen shows; the city comes back).
+func _drop_shop_backdrop() -> void:
+	if _shop_facade != null and is_instance_valid(_shop_facade):
+		_shop_facade.queue_free()
+	_shop_facade = null
+	_shop_facade_key = ""
+	if background != null:
+		background.visible = true
+
+
+## Places the Mainframe's pieces on the street (global targets on the 1280x720 screen, kept
+## on screen at every text size): the pegboard under the bar between the sign and the bin, the
+## clerk bottom left, the wheel's hub below the foot, the bin right, LEAVE bottom right, and the
+## pencil notes beside what they mean.
+func _layout_shop(root: Control) -> void:
+	if not is_instance_valid(root) or not root.is_inside_tree():
+		return
+	var screen := get_viewport_rect().size
+	var o := root.global_position
+	var top := hud.get_global_rect().end.y
+	if _shop_facade != null and is_instance_valid(_shop_facade):
+		_shop_facade.top_clear = top + SHOP_SIGN_GAP
+	var sign_right := _shop_facade.plate_rect().end.x if _shop_facade != null and is_instance_valid(_shop_facade) else 150.0
+	var board := root.get_node_or_null(^"Pegboard") as Control
+	var clerk := root.get_node_or_null(^"Clerk") as Control
+	var wheel := root.get_node_or_null(^"Slices") as SliceStockWheel
+	var bin := root.get_node_or_null(^"RemoveCard") as Control
+	var tape := root.get_node_or_null(^"BinTape") as Control
+	var leave := root.get_node_or_null(^"LeaveMainframe") as Control
+	var icon := root.get_node_or_null(^"LeaveIcon") as Control
+	if board == null or clerk == null or wheel == null or bin == null or leave == null:
+		return
+	board.size = board.get_combined_minimum_size()
+	bin.size = bin.get_combined_minimum_size()
+	# Between the sign and the bin; over the sign when the words are big (the sign is the world).
+	var right_edge := screen.x - SHOP_MARGIN * 2.0 - bin.size.x - SHOP_MARGIN
+	clerk.size = clerk.get_combined_minimum_size()
+	clerk.global_position = Vector2(SHOP_MARGIN * 2.0, screen.y - SHOP_MARGIN - clerk.size.y)
+	var left := sign_right + SHOP_MARGIN
+	if clerk.visible and top + SHOP_BOARD_TOP + board.size.y > clerk.global_position.y:
+		left = maxf(left, clerk.get_global_rect().end.x + SHOP_MARGIN)  # big words: beside the clerk
+	var bx := clampf(SHOP_BOARD_X - board.size.x * 0.5, minf(left, right_edge - board.size.x), right_edge - board.size.x)
+	board.global_position = Vector2(maxf(SHOP_MARGIN, bx), top + SHOP_BOARD_TOP)
+	leave.size = leave.get_combined_minimum_size()
+	var icon_w := icon.size.x + SHOP_MARGIN if icon != null else 0.0
+	leave.global_position = screen - leave.size - Vector2(SHOP_MARGIN * 2.0 + icon_w, SHOP_MARGIN)
+	if icon != null:
+		icon.global_position = Vector2(leave.get_global_rect().end.x + SHOP_MARGIN * 0.5, leave.get_global_rect().get_center().y - icon.size.y * 0.5)
+	var bin_at := Vector2(screen.x - SHOP_MARGIN * 2.0 - bin.size.x, maxf(SHOP_BIN_AT.y, board.get_global_rect().end.y - bin.size.y * 0.4))
+	bin_at.y = minf(bin_at.y, leave.global_position.y - bin.size.y - SHOP_MARGIN)
+	bin.global_position = bin_at
+	if tape != null:
+		tape.size = tape.get_combined_minimum_size()
+		tape.global_position = bin_at + Vector2((bin.size.x - tape.size.x) * 0.5, -tape.size.y - 4.0)
+	# The hub stays below the screen and the rim below the board (its tags hang over the board's
+	# foot), but some wedge always shows.
+	var tag_h := SliceStockWheel.TAG_ROOM * Settings.text_scale
+	var hub_y := clampf(board.get_global_rect().end.y - tag_h * 0.5 + SliceStockWheel.R_OUT, screen.y + SHOP_HUB_BELOW, screen.y + SliceStockWheel.R_OUT - SHOP_WEDGE_SHOWN)
+	wheel.hub = Vector2(SHOP_WHEEL_X, hub_y) - o
+	wheel.inner_visible = hub_y - screen.y + SHOP_MARGIN
+	wheel.position = Vector2.ZERO
+	wheel.size = root.size
+	wheel.place_items()
+	var spill := root.get_node_or_null(^"SignSpill") as LightSpill
+	if spill != null and _shop_facade != null and is_instance_valid(_shop_facade):
+		var plate := _shop_facade.plate_rect()
+		spill.position = plate.get_center() + _shop_facade.global_position - o
+		spill.source_size = plate.size
+		spill.reach = SHOP_SPILL_REACH
+	var top_note := root.get_node_or_null(^"TopNote") as PencilNote
+	if top_note != null:
+		var rim := Vector2(SHOP_WHEEL_X, hub_y - SliceStockWheel.R_OUT)
+		top_note.size = top_note.custom_minimum_size
+		top_note.global_position = rim + Vector2(-SliceStockWheel.R_OUT * 0.95, -top_note.size.y * 0.2)
+		top_note.with_arrow(Vector2(top_note.size.x * 0.5, top_note.size.y), Vector2(top_note.size.x * 0.75, top_note.size.y + 34.0), -6.0)
+	var bin_note := root.get_node_or_null(^"BinNote") as PencilNote
+	if bin_note != null:
+		bin_note.size = bin_note.custom_minimum_size
+		bin_note.global_position = bin_at + Vector2(-bin_note.size.x - 6.0, bin.size.y * 0.35)
+		bin_note.with_arrow(Vector2(bin_note.size.x * 0.6, bin_note.size.y), Vector2(bin_note.size.x + 4.0, bin_note.size.y + 26.0), 6.0)
+	# the pencil notes never cover an item or its tag (big words): moved left, else left out
+	if top_note != null:
+		_shop_note_clear(top_note, root, true)
+	if bin_note != null:
+		_shop_note_clear(bin_note, root, false)  # it points at the bin: never moved away from it
+	var clerk_note := root.get_node_or_null(^"ClerkNote") as PencilNote
+	if clerk_note != null:
+		clerk_note.size = clerk_note.custom_minimum_size
+		var words := clerk.find_child("ClerkWords", true, false) as Control
+		var under := words.get_global_rect() if words != null else clerk.get_global_rect()
+		clerk_note.global_position = Vector2(clerk.get_global_rect().end.x - clerk_note.size.x - 4.0, under.end.y - clerk_note.size.y * 0.55)
+
+
+## ART-9 4A: a v2 terminal (4C's CrtWindow) whose `> TITLE` keeps to one line: the strip widens
+## to its title (the Mainframe's clerk, the loot's strips, the event terminal), as round 31-34 draw them.
+func _crt_one_line(win: CrtWindow) -> CrtWindow:
+	var head := win.find_child("TerminalTitle", true, false) as Label
+	if head != null:
+		var f := head.get_theme_font(&"font")
+		var px := head.get_theme_font_size(&"font_size")
+		head.custom_minimum_size.x = ceilf(f.get_string_size(head.text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x) + 2.0
+	return win
+
+
+## Moves a shop pencil note left off any item, tag or the wallet it covers (when `may_move`);
+## hides it when no place is clear (a hint, never over what it points at).
+func _shop_note_clear(note: PencilNote, root: Control, may_move: bool) -> void:
+	var blocks: Array[Rect2] = []
+	for n in root.find_children("*", "ShopItem", true, false):
+		var it := n as ShopItem
+		if it.visible and it.shelf != ShopItem.Shelf.SLICE:
+			blocks.append(it.get_global_rect())
+		if it.buy_button != null:
+			blocks.append(it.buy_button.get_global_rect())
+	for n in root.find_children("*", "SpinnerMini", true, false):
+		blocks.append((n as Control).get_global_rect())
+	for id in ["Wallet", "ShopInfo"]:
+		var c := root.find_child(id, true, false) as Control
+		if c != null and c.is_visible_in_tree():
+			blocks.append(c.get_global_rect())
+	note.visible = true
+	for i in blocks.size() + 1:
+		var r := note.get_global_rect()
+		var hit := -1
+		for k in blocks.size():
+			if r.intersects(blocks[k]):
+				hit = k
+				break
+		if hit < 0:
+			return
+		var x := blocks[hit].position.x - r.size.x - SHOP_MARGIN
+		if not may_move or x < SHOP_MARGIN:
+			note.visible = false
+			return
+		note.global_position.x = x
+	note.visible = false
+func _shop_shelf_look(item: ShopItem, kind: String, res: Resource, id: StringName) -> void:
+	var ts := Settings.text_scale
+	match kind:
+		"firmware":
+			item.on_shelf(ShopItem.Shelf.FIRMWARE, ts, id)
+			var fw := res as FirmwareData
+			if fw != null:
+				item.rarity = fw.rarity
+				var fits: PackedStringArray = []
+				for t in fw.allowed_slice_types:
+					fits.append(tr(String(Palette.SLICE_NAMES.get(t, "?"))))
+				item.kind_line = "%s  %s" % [tr(ShopItem.rarity_word(fw.rarity)), " + ".join(fits) if not fits.is_empty() else tr("ANY SLICE")]
+			item.with_glyph(ShopItem.glyph_of(kind, id))
+		"daemons":
+			item.on_shelf(ShopItem.Shelf.DAEMON, ts, id)
+			var d := res as DaemonData
+			if d != null:
+				item.rarity = d.rarity
+				item.kind_line = tr(ShopItem.rarity_word(d.rarity))
+			item.with_glyph(ShopItem.glyph_of(kind, id))
+
+
+## The info strip shows `text` (an item's whole text) while `item` is hovered or focused.
+func _shop_info_on(item: Control, label: Label, text: String) -> void:
+	var show := func() -> void:
+		if is_instance_valid(label):
+			label.text = "> " + text.replace("\n", "  ")
+			label.add_theme_color_override(&"font_color", Palette.TERMINAL_TEXT)
+	item.focus_entered.connect(show)
+	item.mouse_entered.connect(show)
+
+
+## The clerk's face on its screen: the concept's pixel grin (shop.clerk_panel, MainframeArt
+## "clerk_face"), fitted to the face's box.
+func _draw_clerk_face(face: Control) -> void:
+	var t := MainframeArt.tex("clerk_face")
+	if t == null:
+		return
+	var k := minf(face.size.x / t.get_size().x, face.size.y / t.get_size().y)
+	face.draw_texture_rect(t, Rect2((face.size - t.get_size() * k) * 0.5, t.get_size() * k), false)
 
 
 ## ANIM-R1 M11: the node meta naming a Mainframe item's stock index (SOLD stubs have none).
@@ -3300,18 +3823,14 @@ static func shop_slots(seen: Array, current: Array) -> Array[Array]:
 	return out
 
 
-## A bought Mainframe item's place: its tile, dimmed, stamped SOLD; not a button any more.
-func _sold_stub(title: String, ram: int, index: int, kind: String, cs: float, ts: float) -> ZineCard:
-	var stub := ZineCard.new(title, ram, "", index)
+## A bought Mainframe item's place: its object, dimmed, stamped SOLD; not a button any more.
+func _sold_stub(title: String, ram: int, index: int, kind: String, cs: float, ts: float) -> ShopItem:
+	var stub := ShopItem.new(title, ram, "", index)
 	match kind:
 		"cards":
 			stub.scaled(cs)
-		"firmware":
-			stub.as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN).tile_text(ts)
-		"daemons":
-			stub.as_tile(ZineCard.Look.CHIP, Palette.NEON_VIOLET).tile_text(ts)
 		"slices":
-			stub.as_tile(ZineCard.Look.SLICE_TILE, Palette.CRT_AMBER).tile_text(ts)
+			stub.on_shelf(ShopItem.Shelf.SLICE, ts)
 	stub.name = "Sold_%s_%d" % [kind, index]
 	stub.hotkey = ""
 	stub.sold_stub = true
@@ -3399,7 +3918,7 @@ func _open_modal(view: Control) -> void:
 ## Deck viewer in pick mode: the chosen card is removed for the shop's price.
 func open_remove() -> void:
 	var s := RunManager.netrun
-	var view := DeckView.new(s.run.operative.deck, s.lookup, tr("REMOVE A CARD // %d CYCLES") % s.card_removal_price(), TextDb.mark("REMOVE"))
+	var view := DeckView.new(s.run.operative.deck, s.lookup, tr("RECYCLE BIN // REMOVE A CARD // %d CYCLES") % s.card_removal_price(), TextDb.mark("REMOVE"))
 	view.card_picked.connect(remove_card)
 	_open_modal(view)
 	# ANIM-4b: the cards drag onto the SHRED tile (select + REMOVE stays).

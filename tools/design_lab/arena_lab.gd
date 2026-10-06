@@ -8,6 +8,8 @@ extends Control
 ## Run (windowed only, through tools/run_windowed.py):
 ##   res://tools/design_lab/arena_lab.tscn -- --corp=meridian --boss --day --fixture=typical|worst|none
 ##       --hover=spin --bloom --won --scale=1.6 --shot=<abs png> --frames=40
+##       --phase=2 (FIX-REDS: the boss in that phase: its HP under the threshold, its needles)
+##       --scales=1.0,1.6,2.0 (one shot per text scale in one launch: <shot>_<scale>.png)
 
 const COMBAT := preload("res://scenes/combat/combat_scene.tscn")
 const BOSSES := {&"meridian": &"the_manifest", &"solace": &"renewal_engine", &"halcyon": &"civic_core",
@@ -23,12 +25,20 @@ const SPIN_CARD := &"heavy_spin"
 var _args := {}
 var _scene: Control = null
 var _frames := 0
+var _scales: PackedStringArray = []
 
 
 func _ready() -> void:
 	for a in OS.get_cmdline_user_args():
 		var kv := a.trim_prefix("--").split("=", true, 1)
 		_args[kv[0]] = kv[1] if kv.size() > 1 else "1"
+	if _args.has("scales"):
+		_scales = String(_args["scales"]).split(",", false)
+		_args["scale"] = _scales[0]
+	_start()
+
+
+func _start() -> void:
 	if _args.has("scale"):
 		Settings.text_scale = float(_args["scale"])
 	var corp := StringName(_args.get("corp", "meridian"))
@@ -69,6 +79,16 @@ func _dress() -> void:
 		st.daemon_ids.clear()
 		for k in (DAEMONS.size() if fixture == "worst" else 4):
 			st.daemon_ids.append(DAEMONS[k])
+	if _args.has("phase"):
+		var foe := st.enemies[0]
+		var data := lookup.get_content(foe.source_id) as EnemyData
+		var n := int(_args["phase"])
+		if data != null and n >= 2 and n - 2 < data.phases.size():
+			var ph := data.phases[n - 2]
+			foe.phase_index = n - 1
+			foe.hp = roundi(foe.max_hp * (ph.hp_threshold_pct - 0.05))
+			if not ph.pointer_ticks.is_empty():
+				foe.wheel.pointer_ticks = ph.pointer_ticks.duplicate()
 	if _args.has("hover"):
 		st.hand[0] = SPIN_CARD
 	_scene._refresh(st)
@@ -105,7 +125,16 @@ func _process(_delta: float) -> void:
 	if _frames == int(_args.get("frames", "40")) and _args.has("shot"):
 		var img := get_viewport().get_texture().get_image()
 		var path := String(_args["shot"])
+		if not _scales.is_empty():
+			path = "%s_%s.png" % [path.get_basename(), String(_args["scale"])]
 		DirAccess.make_dir_recursive_absolute(path.get_base_dir())
 		img.save_png(path)
 		print("arena_lab: saved ", path)
+		var at := _scales.find(String(_args["scale"]))
+		if at >= 0 and at + 1 < _scales.size():
+			_args["scale"] = _scales[at + 1]
+			_scene.queue_free()
+			_frames = 0
+			_start.call_deferred()
+			return
 		get_tree().quit()
