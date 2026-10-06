@@ -187,12 +187,126 @@ Build: no clerk. Likely cause: `scripts/ui/netrun_scene.gd` `CLERK_NOTE` placeme
 note anchored to the line's right instead of under it. Fix: anchor the note under the last clerk
 line, offset right, as in the concept. Decision:
 
-### Combat, boss phase 2 (`combat_boss_p2.jpg`; only the orchestrator's finding so far)
-Refs: build `combat_boss_p2`; concept `round41_wheel_stack/combat_worst_case_v4.png`.
+### Combat (`combat_*.jpg`, `tutorial.jpg`)
+Refs: art pass build `combat_*` (M13: bright teal wireframe city, pink/teal sticker-ring wheels,
+cream paper cards, forecast tags above each wheel, NEXT TURN plates, SEND IT as dripping pink
+graffiti); concepts `round41_wheel_stack/combat_typical_v4.png` and `combat_worst_case_v4.png`
+(LOCKED HUD v4: no forecast tags, no NEXT plates, result chips beside HP, D4 wheels, gold sticker
+cards). Main follows HUD v4 in layout (name sticker + RAM bottom left, chips beside HP, SEND IT over
+EXECUTE, RESPIN / UNDO chips); the differences are mostly in colour and material.
+
+**CMB-01 (P1) Combat backdrop.** Concept: the corp's lit 3D city (Meridian's yellow crane yard in
+the worst case), warm and readable, softened ~55 % under each wheel. Build: the saturated
+teal / magenta wireframe city filling the screen. Main: a very dark navy 3D block city, a few lit
+windows, most of the frame near black; the scene reads much darker than both references. View: the
+concept's lit city gives each corp its place; main's dark field makes the wheels the only colour,
+but it loses the sense of where the fight is. Likely file: `scripts/ui/arena/combat_backdrop.gd`,
+`backdrop_catalog.gd`, `content/config/city_config.tres` (exposure / light at the combat band).
+Decision:
+
+**CMB-02 (P1) Player wheel colour and material.** Concept D4: slices with distinct illustrated
+screen fills (attack red grid, defend teal waves, special skull, debuff purple), a bright pink outer
+frame with telemetry text, a bold gold active slice, high saturation. Build: flat pink/teal fills,
+white glyph badges, a sticker ring. Main: the D4 shape and glyph/number set match, but the fills are
+dark and desaturated (maroon / slate), the frame thin and dim; the slice types are hard to tell
+apart at a glance. View: the concept is clearly more legible (slice type by colour + glyph); main
+reads muddy. Likely file: `scripts/ui/wheel/wheel_face.gd`, `wheel_disc.gd`, `wheel_kit.gd`, the
+slice materials / palette tokens (`palette.gd`, `palette_skins.gd`). Decision:
+
+**CMB-03 (P1) Enemy wheel corp kit.** Concept: the enemy wheel wears the corp kit (Meridian orange
+hazard frame). Main: the enemy wheel (Solace) is olive-green and very dark; the corp frame is thin.
+Build: green sticker ring. Same files as CMB-02 plus the corp kits. Decision:
+
+**CMB-04 (P1) Hand: sticker cards.** Concept: gold-yellow die-cut sticker cards with a white border,
+type band (WHEEL yellow / HACK pink / SYSTEM teal), big glyph and value, fanned and overlapping, a
+DECK / DISCARD pile pair on the left. Build: cream paper cards with a halftone wheel illustration,
+flat row. Main: the gold cards with type band, but in a dim olive tone with a camo/triangle pattern
+behind the glyph, a straight row with gaps, no deck/discard piles, card text cut (`Spin a whee...`,
+`OVERCLOC...`). View: main is close in structure; the dull gold and cut text read worse than the
+concept; the missing piles drop info (deck counts are in the top bar). Likely file:
+`scripts/ui/kit/zine_card.gd`, `sticker_button.gd`, `combat_scene.gd` (hand layout). Decision:
+
+**CMB-05 (P2) Turn banner.** Concept: a slim terminal strip top centre `TURN 3 | FREE NUDGE 1` with
+the fight's address line under it. Build: one text line top left. Main: a large boxed banner with
+stencil `TURN 1 | FREE NUDGE 1` and the key hint under it. View: main's banner is bigger than needed
+and pushes into the wheel area. Likely file: `scripts/ui/kit/hud_dialog_panel.gd` / `combat_scene.gd`.
+Decision:
+
+**CMB-06 (P2) SEND IT block.** Concept: SEND IT white die-cut sticker overlapping a dark EXECUTE
+plate; RESPIN / UNDO terminal chips beside it. Main: matches, but EXECUTE is drawn as a pale ghost
+outline that reads like a rendering fault, and `> turn_resolve.exe [Space]` runs under it in tiny
+type. Build: graffiti SEND IT with drips. Likely file: `scripts/ui/kit/send_it_sticker.gd`.
+Decision:
+
+**CMB-07 (P2) Top bar in combat.** Concept: no global top bar in combat (the turn strip and corner
+chips only). Build and main: the full campaign resource bar. View: the concept gives the wheels the
+height. Likely file: `combat_scene.gd`, `hud_bar.gd`. Decision:
+
+**CMB-08 (P3) Name sticker and RAM.** Concept: `CELL-9 // BREAKER` pink sticker, RAM pips in a
+terminal plate. Main: matches; the name reads `BREAKER 1 // BREAKER` (doubled class word), SAVED
+stamp sits inside the RAM plate. Likely file: `scripts/ui/kit/hud_name_sticker.gd`, `ram_bar.gd`.
+Decision:
+
+**CMB-09 (P2) Card-play preview.** Build: `LANDS HERE` tag, dashed slice outline and white chevrons
+on the target wheel. Main: same pieces (dashed pink slice, LANDS HERE tag, chevrons) dimmer; the
+preview tag is cut at the left by the wheel's frame. Concept: `round17_corp_wheels/preview.gif`.
+Likely file: `scripts/ui/kit/hud_wheel_layer.gd`, `forecast_*`. Decision:
+
+**CMB-10 (P3) Aim line.** Both: yellow dashed pencil line from the card to the target; main's ends
+on the slice, the build's on the wheel. Equivalent. Decision:
+
+**CMB-11 (P2) Mid-replay.** Build: forecast tags flip to `THIS TURN` with tick boxes. Main: a WEAK
+landing tag, the bit stream into the hub, a blue shield bar beside the wheel, chips `?`. Main follows
+the concept (precision landings, bit stream); fine. Decision:
+
+**CMB-12 (P2) Result chips and LAST TURN.** Concept: `-14` red boxed, `(4 shield)`, `+4` green, at
+HP height. Main: the chips are there; `+3` uses a tiny boxed icon, an empty octagon outline chip
+follows HP (an empty status slot?) and the HP plate has a cyan chevron bracket the concept lacks.
+Likely file: `scripts/ui/kit/hud_result_chips.gd`, `result_chip_model.gd`. Decision:
+
+**CMB-13 (P2) Refusal toast.** Build: yellow paper note with a no-entry mark, pencil type. Main: a
+red-edged terminal toast centre-right, small. The bible says "refusal: HARM edge + no-entry mark":
+main follows the bible. Decision:
+
+**CMB-14 (P2) Victory.** Build: the enemy wheel greyed with a green `DEFEATED` stamp and skull, a
+small LOOT graffiti. Main: `VICTORY` in big lime stencil, `OURS NOW` in yellow over the backdrop,
+the enemy wheel removed (dashed circle + DEFEATED stamp), the operative line in a terminal box.
+View: main is louder; `OURS NOW` floats with no anchor. Likely file: `combat_scene.gd`
+(`combat_end_hold`), `scripts/ui/kit/zine_stamp.gd`. Decision:
+
+**CMB-15 (P3) LOOT sticker.** Main: white die-cut LOOT with lime focus brackets; build: graffiti.
+Main follows the sticker rule. Decision:
+
+**CMB-16 (P2) Defeat.** Build: player wheel drained grey with a red DEFEAT stamp and skull. Main:
+FLATLINED stamp, wheel dimmed, the top bar shrinks to HEAT + SCHEMATICS only, both on main and the
+build. Concept `round40_hub_inner_ring/player_defeat_v2.gif` (drain). Decision:
+
+**CMB-17 (P3) JACK OUT sticker.** As CMB-15. Decision:
+
+**CMB-18 (P1) Tutorial card covers the play area.** Build: the tutorial note sits bottom right,
+paper, clear of both wheels. Main: a terminal card sits in the middle between the wheels, over the
+enemy wheel's left edge and the backdrop; its body is Plex sans at a small size. View: the build's
+placement keeps the wheels readable while you read. Likely file: `scripts/ui/kit/tutorial_overlay.gd`.
+Decision:
 
 **BOSS-01 (P1) Guard-arc marker over the HP plate.** Main: the green guard-arc end marker (the
 triangle) sits on the first digits of the boss HP `1395/1475`. Build and concept: nothing over the
 HP value. **In progress: FIX-REDS** (a separate agent is fixing it). Decision:
+
+**BOSS-02 (P1) Boss wheel phase dressing.** Concept worst case: an outer parasite ring, satellites
+docked on the rim, status-stack tabs above, a wide orange hazard frame, two needles. Main: the boss
+wheel is the regular D4 wheel in olive with a name plate `RENEWAL ENGINE`, two side hex pips and
+guard arcs; no satellites, inner ring tabs or drones. Build: sticker wheel with a bead ring. Part of
+this needs mechanics the rules lack (see below); the corp frame and colour (CMB-03) do not.
+Decision:
+
+**BOSS-03 (P2) White bead chain on the backdrop.** Main: a chain of white blobs arcs across the
+boss backdrop between the wheels (the Solace helix's lights?) and reads as a UI element. Build:
+none. Likely file: `combat_backdrop.gd` (boss place). Decision:
+
+**BOSS-04 (P2) Phase 3 arcs.** Main phase 3: lime guard arcs, double chevrons and a `13` marker
+crowd the boss wheel's right side; build: an orange dashed arc. View: main's lime again collides
+with the focus colour. Likely file: `hud_wheel_layer.gd`. Decision:
 
 ### City Grid (`grid*.jpg`: grid, grid_site_selected, grid_raid_pending, grid_influence, grid_drag_crew, grid_meridian, grid_halcyon, grid_orbital, grid_rebel_cell)
 Refs: art pass build `grid*` (M13: a flat dark-navy isometric board, hex tier badges, a 2D wireframe
