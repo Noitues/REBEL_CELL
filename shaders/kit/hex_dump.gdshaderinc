@@ -20,9 +20,14 @@ uniform sampler2D hex_atlas : hint_default_transparent, filter_linear_mipmap, re
 uniform float hexdump : hint_range(0.0, 1.0) = 0.06;
 uniform vec2 hex_cell = vec2(6.5, 13.5);
 uniform vec2 hex_origin = vec2(8.0, 0.0);
-uniform float hex_scroll = 14.0;
+uniform float hex_scroll = 6.0;
 uniform float hex_seed = 7.0;
 uniform vec4 hex_tint : source_color = vec4(0.361, 0.882, 1.0, 1.0);
+// B1c-b: the words over the glass (panel-local x0, y0, x1, y1): the dump fades to
+// `hex_text_fade` under them, so it stays texture and never competes with a line of text.
+uniform vec4 hex_text_rects[16];
+uniform int hex_text_count = 0;
+uniform float hex_text_fade : hint_range(0.0, 1.0) = 0.5;
 
 const float HEX_BYTES = 12.0;
 const float HEX_ROWS = 48.0;
@@ -66,7 +71,18 @@ float rc_hex_dump(vec2 p) {
 	vec2 f = vec2(fract(x / cell.x), fract(y / cell.y));
 	vec2 uv = vec2((digit + f.x) / 16.0, f.y);
 	vec2 scale = vec2(1.0 / (cell.x * 16.0), 1.0 / cell.y);
-	return textureGrad(hex_atlas, uv, dFdx(p) * scale, dFdy(p) * scale).a;
+	float fade = 1.0;
+	for (int i = 0; i < 16; i++) {
+		if (i >= hex_text_count) {
+			break;
+		}
+		vec4 r = hex_text_rects[i];
+		if (p.x >= r.x && p.x <= r.z && p.y >= r.y && p.y <= r.w) {
+			fade = hex_text_fade;
+			break;
+		}
+	}
+	return fade * textureGrad(hex_atlas, uv, dFdx(p) * scale, dFdy(p) * scale).a;
 }
 
 #endif

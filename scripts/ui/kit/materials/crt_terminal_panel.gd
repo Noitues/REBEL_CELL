@@ -38,6 +38,17 @@ const HEX_ROWS := 48
 const HEX_SEED := 7
 ## B1c: the hex dump's glyphs (Share Tech Mono 0-F; tools/design_lab/hex_atlas_bake.py).
 const HEX_ATLAS := preload("res://shaders/kit/hex_atlas.png")
+## B1c-b (art director): the dump's glyph size, fixed: about 11 px on a 1080p screen (the game
+## lays out at 1280x720, 1.5x smaller), never scaled by the text size, so it reads as texture.
+const HEX_GLYPH_PX := 11.0 / 1.5
+## B1c-b: behind a line of words the dump drops to this share (texture, never a second text).
+const HEX_TEXT_FADE := 0.5
+## B1c-b: the most word rects the glass fades the dump under (the shader's array size), and
+## how often (s) a live panel re-reads them.
+const HEX_TEXT_MAX := 16
+const HEX_TEXT_REFRESH_S := 0.25
+## The font size the glyph grid is measured at before it is scaled to HEX_GLYPH_PX.
+const HEX_MEASURE_PX := 64
 
 @export var accent_kind: Accent = Accent.CELL:
 	set(v):
@@ -65,6 +76,9 @@ const HEX_ATLAS := preload("res://shaders/kit/hex_atlas.png")
 @export var text_step: int = UiTheme.BODY
 ## Seed of the hex dump's bytes (the shader's hash; HEX_SEED by default).
 @export var seed: int = HEX_SEED
+## B1c-b: where the words over this glass live (their rects fade the dump). Default: the
+## parent when the glass is a backing (internal or drawn behind its parent), else the panel.
+var text_scope: Control = null
 
 var label: Label = null
 var content: Control = null
@@ -161,6 +175,7 @@ func _sync() -> void:
 		sm.set_shader_parameter(&"scan_px", SCAN_PX)
 		sm.set_shader_parameter(&"scan_strength", SCAN_STRENGTH)
 	sync_hex(_glass_mat, c, hex_dump, seed)
+	refresh_text_mask()
 	_over_mat.set_shader_parameter(&"hexdump", 0.0)  # the dump sits under the text only
 	if label != null:
 		label.add_theme_color_override(&"font_color", PaletteSkins.chrome(Palette.TERMINAL_TEXT))
@@ -203,19 +218,25 @@ func caret_position() -> Vector2:
 
 ## B1c (review D23): sets the shared hex-dump uniforms (`hex_dump.gdshaderinc`) on `mat`: the
 ## atlas, the alpha (HEX_ALPHA, 0 when `on` is false), the character grid (the mono advance and
-## line height at the caption size, so it lays out as the font would), the accent tint, and the
+## line height at HEX_GLYPH_PX, whatever the text size), the accent tint, and the
 ## scroll (`crt_hex_scroll`'s px/s while that motion is live; 0 holds it still: reduce effects,
 ## the motion switch, headless). Shared with UiTheme.crt_material.
 static func sync_hex(mat: ShaderMaterial, tint: Color, on: bool, hex_seed: int) -> void:
-	var font := Palette.mono()
-	var px := UiTheme.font_px(UiTheme.CAPTION)
 	mat.set_shader_parameter(&"hex_atlas", HEX_ATLAS)
 	mat.set_shader_parameter(&"hexdump", HEX_ALPHA if on else 0.0)
-	mat.set_shader_parameter(&"hex_cell", Vector2(font.get_char_size(ord("0"), px).x, font.get_height(px)))
+	mat.set_shader_parameter(&"hex_cell", hex_cell())
+	mat.set_shader_parameter(&"hex_text_fade", HEX_TEXT_FADE)
 	mat.set_shader_parameter(&"hex_origin", Vector2(PAD.x * 0.5, 0.0))
 	mat.set_shader_parameter(&"hex_scroll", Motion.amplitude(HEX) if Motion.live(HEX) else 0.0)
 	mat.set_shader_parameter(&"hex_seed", float(hex_seed))
 	mat.set_shader_parameter(&"hex_tint", tint)
+
+
+## The hex dump's character cell (px): the mono advance and line height at HEX_GLYPH_PX.
+static func hex_cell() -> Vector2:
+	var font := Palette.mono()
+	var k := HEX_GLYPH_PX / float(HEX_MEASURE_PX)
+	return Vector2(font.get_char_size(ord("0"), HEX_MEASURE_PX).x, font.get_height(HEX_MEASURE_PX)) * k
 
 
 ## The hex dump's alpha on the glass now (0 when off).
@@ -223,7 +244,76 @@ func hex_alpha() -> float:
 	return float(_glass_mat.get_shader_parameter(&"hexdump"))
 
 
+## B1c-b: the rects (panel-local) of the visible words over this glass: Labels, RichTextLabels,
+## Buttons and LineEdits under `text_scope`, the ones that overlap the panel, at most HEX_TEXT_MAX
+## (in tree order). The dump fades to HEX_TEXT_FADE under them.
+func text_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	var scope := _scope()
+	if scope == null or not is_inside_tree():
+		return out
+	var inv := get_global_transform().affine_inverse()
+	var own := Rect2(Vector2.ZERO, size)
+	var stack: Array[Node] = [scope]
+	while not stack.is_empty() and out.size() < HEX_TEXT_MAX:
+		var n: Node = stack.pop_front()
+		if n is CanvasItem and not (n as CanvasItem).visible:
+			continue
+		if n is Label or n is RichTextLabel or n is Button or n is LineEdit:
+			var c := n as Control
+			var g := c.get_global_rect()
+			var r := Rect2(inv * g.position, inv.basis_xform(g.size)).abs()
+			if r.has_area() and r.intersects(own) and not _has_no_words(c):
+				out.append(r)
+		for k in n.get_children(true):
+			if k != self:
+				stack.append(k)
+	return out
+
+
+func _has_no_words(c: Control) -> bool:
+	if c == label:
+		return text.strip_edges() == ""  # the bare prompt is not a line of words
+	if c is Label:
+		return (c as Label).text.strip_edges() == ""
+	if c is Button:
+		return (c as Button).text.strip_edges() == ""
+	return false
+
+
+func _scope() -> Control:
+	if text_scope != null and is_instance_valid(text_scope):
+		return text_scope
+	var parent := get_parent() as Control
+	if parent != null and (show_behind_parent or not get_parent().get_children(false).has(self)):
+		return parent
+	return self
+
+
+## B1c-b: re-reads the word rects and hands them to the shader (a live panel does it every
+## HEX_TEXT_REFRESH_S; layout changes do it at once).
+func refresh_text_mask() -> void:
+	if _glass_mat == null:
+		return
+	var rects := text_rects() if hex_dump else ([] as Array[Rect2])
+	var packed := PackedVector4Array()
+	packed.resize(HEX_TEXT_MAX)
+	for i in rects.size():
+		var r := rects[i]
+		packed[i] = Vector4(r.position.x, r.position.y, r.end.x, r.end.y)
+	_glass_mat.set_shader_parameter(&"hex_text_rects", packed)
+	_glass_mat.set_shader_parameter(&"hex_text_count", rects.size())
+
+
+var _mask_clock: float = 0.0
+
+
 func _process(delta: float) -> void:
+	if hex_dump:
+		_mask_clock += delta
+		if _mask_clock >= HEX_TEXT_REFRESH_S:
+			_mask_clock = 0.0
+			refresh_text_mask()
 	if caret:
 		var was := _caret_on
 		if Motion.live(CARET):

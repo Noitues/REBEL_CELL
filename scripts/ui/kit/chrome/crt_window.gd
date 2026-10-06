@@ -47,6 +47,7 @@ func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN, max_body: f
 	glass.corp_color = p_accent  # the glass routes it through the skin
 	glass.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_glass_host.add_child(glass)
+	glass.text_scope = self  # B1c-b: the window's words fade the dump
 	_frame = Control.new()
 	_frame.name = "HeaderStrip"
 	_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
