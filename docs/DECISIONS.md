@@ -31,6 +31,14 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-06 — Site fight subject: interim until per-fight backdrops
+Art director (B2 c review): Site fights now frame the fought Site's block centred between the wheels and lit by its
+own neon, with the grade right (violet sky, saturated neon, dark pools), but the procedural city has no distinct
+Site building, so on some corps the subject does not stand out. Accepted as **interim** until the designer's deferred
+unique per-fight backdrops slice. Affected frames: Solace (`docs/art_review/PARITY/fixes/B2_b_site_start.png`,
+Continuum Billing Farm) and Orbital (the arena-lab Site shots in `B2_b.jpg`). The art-pass session is raising this
+with the designer.
+
 ### 2026-10-06 — B2 c — the Site block lit by its own neon; focus brackets on the lifted card
 Re-check of B2 b (aa815dde; relayed by the orchestrator): boss start, the Meridian / Halcyon Site blocks, the fanned
 hand, the 12 px hub name and the grade approved. Two fixes (resend `B2_b_site_start.png`, Solace, 1:1 1080p, and
