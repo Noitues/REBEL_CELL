@@ -24,6 +24,8 @@ const FRAME_SHARE := 0.05
 const CAPTION_SHARE := 0.16
 const TAPE := Vector2(70, 18)
 const VIGNETTE := 0.35
+## The print's cast shadow on the folder (px at 1.0; the poster's too).
+const SHADOW_OFFSET := Vector2(4, 7)
 ## The drawn stand-in grid's cell (px at 1.0).
 const GRID_CELL := 14.0
 ## M14 asset parity: the print's white stock is round 21's own `sheet` (the polaroid's grain),
@@ -74,7 +76,7 @@ func image_rect() -> Rect2:
 func _draw() -> void:
 	var s := Settings.text_scale
 	var r := Rect2(Vector2.ZERO, size)
-	draw_rect(Rect2(r.position + Vector2(4, 7) * s, r.size), Palette.SHADOW)
+	draw_rect(Rect2(r.position + SHADOW_OFFSET * s, r.size), Palette.SHADOW)
 	if _stock_tex == null:
 		_stock_tex = load(STOCK_ART) as Texture2D
 	draw_texture_rect(_stock_tex, r, false)

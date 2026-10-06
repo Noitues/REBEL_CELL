@@ -135,6 +135,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"ransom_glitch", &"ransom_wipe", &"ransom_padlock", &"ransom_notice_in", &"ransom_verb_stamp", &"ransom_sticker_curl",
 	&"ransom_sticker_drop", &"ransom_sticker_stagger", &"ransom_countdown", &"ransom_wipe_hold", &"ransom_cut",
 	&"dossier_open", &"dossier_stamp", &"dossier_note", &"dossier_note_stagger",
+	&"dossier_poster",  # M14 parity END-03: the won file's CORP DOWN poster
 	# ART-9 4B (ART_BIBLE v2 §4.11 / §4.12): the portrait feed's live clock, its blink and
 	# talking mouth, DISPATCH's voice trace (PortraitFeed).
 	&"portrait_feed", &"portrait_blink", &"portrait_talk", &"dispatch_trace",
