@@ -31,6 +31,8 @@ var speed: float = 1.0
 var fx: RaidFxLayer = null
 var _steps: Array = []  # Array[Array[Dictionary]] grouped by step (RaidBeats.group)
 var _threat_sites: Dictionary = {}  # threat id -> site
+## Parity RAID-08: each threat's route end (RaidBeats.route_ends), kept in the step's frame.
+var _route_ends: Dictionary = {}
 var _threat_names: Dictionary = {}
 var _dead: Dictionary = {}
 var _index: int = 0
@@ -180,6 +182,7 @@ func play(events: Array[Dictionary], instant: bool = false, start_now: bool = tr
 	_clock = 0.0
 	_next_at = 0.0
 	_steps = RaidBeats.group(events)
+	_route_ends = RaidBeats.route_ends(events)
 	log_note.clear()
 	if _instant:
 		skip_to_end()
@@ -340,12 +343,27 @@ func _show_step() -> void:
 	if framer.is_valid() and not (tl.get("beats", []) as Array).is_empty():
 		# ANIM-R2 R6: the beats set off while the camera is still easing in (and a step with
 		# nothing to show is not framed at all).
-		start += float(framer.call(RaidBeats.focus_sites(_steps[_index], _threat_sites))) * FRAME_WAIT_SHARE
+		start += float(framer.call(on_map(RaidBeats.framed_sites(_steps[_index], _threat_sites, _route_ends, _home())))) * FRAME_WAIT_SHARE
 	_apply_step(_steps[_index], start, tl)
 	_index += 1
 	_next_at = start + float(tl["seconds"])
 	if not is_inside_tree():
 		skip_to_end()
+
+
+## Parity RAID-08: the Sites of `sites` the map shows (a CityMapOverlay's own; every one on
+## another map). The raid's events also name the corporation's Sites off the raid map (where a
+## threat moves between entries): framed, they had no spot (the grid origin) and dragged the
+## camera off CORE, whose route then ended under the MAP LEGEND.
+func on_map(sites: Array[StringName]) -> Array[StringName]:
+	if not (grid_view is CityMapOverlay):
+		return sites
+	var ov := grid_view as CityMapOverlay
+	var out: Array[StringName] = []
+	for id in sites:
+		if ov.has_site(id):
+			out.append(id)
+	return out
 
 
 func _apply_step(events: Array, start: float = 0.0, tl: Dictionary = {}) -> void:
