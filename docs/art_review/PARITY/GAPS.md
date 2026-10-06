@@ -418,7 +418,7 @@ info it needs. Likely file: `netrun_scene.gd` shop socket UI, `shop_item.gd`. De
 or DEGAUSS coil. Build: card grid + a SHRED sticker. Main: a `RECYCLE BIN // REMOVE A CARD` lime
 terminal with the card grid and the recycle bin icon under it (the bin is the concept's 4th, sketch
 option). Designer call between the concept's PURGE (marked "recommended") and main's bin.
-Decision: Match concept (designer group ruling 2026-10-05): the locked round 34 shop_v5 RECYCLE BIN kept over round 32's PURGE (open question); the viewer's cards wear the one face, fixed f90191c
+Decision: Match concept (designer group ruling 2026-10-05): the locked round 34 shop_v5 RECYCLE BIN kept over round 32's PURGE; the viewer's cards wear the one face, fixed f90191c; RECYCLE BIN confirmed by the designer 2026-10-05
 
 **SHOP-08 (P3) Upgrade a slice.** Build: `UPGRADE · 100 CYCLES` as one pink graffiti line. Main:
 `UPGRADE` graffiti + `100 CYCLES` in small cyan beside it. Same wheel. Decision: Match concept (designer group ruling 2026-10-05); not fixed in S-CARDFACE: `spinner_view.gd` (S-WHEEL); slice proposed (DECISIONS "Parity fix — one card face")
@@ -521,7 +521,7 @@ flat row. Main: the gold cards with type band, but in a dim olive tone with a ca
 behind the glyph, a straight row with gaps, no deck/discard piles, card text cut (`Spin a whee...`,
 `OVERCLOC...`). View: main is close in structure; the dull gold and cut text read worse than the
 concept; the missing piles drop info (deck counts are in the top bar). Likely file:
-`scripts/ui/kit/zine_card.gd`, `sticker_button.gd`, `combat_scene.gd` (hand layout). Decision: Match concept (designer group ruling 2026-10-05); card part (face, text, DECK / DISCARD piles) fixed f90191c; at-rest hand text at 1.0 is an open question
+`scripts/ui/kit/zine_card.gd`, `sticker_button.gd`, `combat_scene.gd` (hand layout). Decision: Match concept (designer group ruling 2026-10-05); card part (face, text, DECK / DISCARD piles) fixed f90191c; designer answers 2026-10-05: hand text 10 px at rest, the hovered card x1.75 shows every word of every card, fixed 05a9cb5; flights to the piles queued for the animation pass (R7_REEVALUATION_PREP F1)
 
 **CMB-05 (P2) Turn banner.** Concept: a slim terminal strip top centre `TURN 3 | FREE NUDGE 1` with
 the fight's address line under it. Build: one text line top left. Main: a large boxed banner with
