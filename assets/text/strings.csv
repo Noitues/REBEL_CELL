@@ -335,6 +335,7 @@ CYBERDECK,CYBERDECK
 CYBERDECK HQ,CYBERDECK HQ
 CYCLES,CYCLES
 CYCLES %s,CYCLES %s
+Campaign code (share it: it starts this campaign),Campaign code (share it: it starts this campaign)
 Campaign code (share it: it starts this campaign): %s%s,Campaign code (share it: it starts this campaign): %s%s
 Campaign seed:,Campaign seed:
 Campaign slots,Campaign slots
@@ -544,6 +545,8 @@ Common,Common
 Continue,Continue
 Continue the current run,Continue the current run
 Controls,Controls
+Copy,Copy
+Copy the campaign code,Copy the campaign code
 Corporate: run it to clear it.,Corporate: run it to clear it.
 CorporationData.halcyon.description,"The contractor that runs the city: water, power, transit and the police, billed per resident."
 CorporationData.halcyon.display_name,Halcyon Civic

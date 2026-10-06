@@ -211,6 +211,35 @@ M13 art-pass build's layout and content, reworked in the locked v2 concept langu
   `test_slots_fit_and_focus_reaches_every_action_at_every_text_scale` (1, 2, 3 used slots at 1.0 / 1.6 / 2.0),
   `test_the_slots_panel_wraps_its_cards_then_scrolls_past_its_room`. No test dropped.
 
+### 2026-10-05 — Parity fix — pause menu (designer decisions)
+Designer decisions 2026-10-05, audit items PAUSE-01..03 (P1/P2/P3, `docs/art_review/PARITY/GAPS.md` "Pause menus"); PAUSE-04
+unchanged (abandon and quit are different dialogs; `confirm_dialog.gd` untouched). Files: `scripts/ui/kit/pause_menu.gd`.
+- **PAUSE-01 / 03: blur and darken.** The menu's click-eating `Backdrop` is a `GlassScrim` now (it was a flat 0.35 black
+  `ColorRect`): the page behind (HQ, route, fight, and the fight's turn banner above the panel) is blurred by
+  `Palette.SCRIM_BLUR_PX` and dimmed by `Palette.SCRIM`, as every other modal; high contrast makes it opaque, as theirs.
+  `glass_scrim.gd` unchanged. **No PAUSED sticker** (removed with its consts); the terminal header keeps its `PAUSED` title
+  word as a window title. The raid playout plays on under an open pause menu (`MotionSkip`/`raid_playout_panel`), so no
+  raid is ever the paused page and nothing says PAUSED over one. No PAUSED note on confirm dialogs (none existed).
+- **PAUSE-02: the build's rows, in v2.** Ported by hand from `art-m13-final:scripts/ui/kit/pause_menu.gd`. `Resume [Esc]`
+  (the hint follows the device; `VerbSticker.set_label`) is the first row, the one pink `VerbSticker`, focused on open.
+  Options / Codex / Save & quit / Quit to desktop keep the terminal `MenuItem` lines (menu motion attached to that
+  `Rows` box, not to the sticker) with an icon in the chevron's place (`IconMark` + `StatIcon.SETTINGS / CODEX / SAVE /
+  QUIT`, the art pass's own icon set that main already carries, reused as is). The campaign code is a `CodeField`
+  (`scripts/ui/kit/code_field.gd`, ported from the same tag: a read-only mono `LineEdit` with a copy button, the button on
+  the v2 `TerminalButton` variation instead of the art pass's tertiary) under a caption; the field keeps the name
+  `SeedLine`. The copy icon is `StatIcon.COPY`, ported from the same tag (drawn with main's `_line` helper).
+  **Icon source:** the 1C atlas (`glyph_table.tres`) has game pictos only (spin, nudge, hp ...), no settings / codex /
+  save / quit / copy glyph, so the art pass's StatIcon kinds (the set its own build used on these rows) are the "reuse" and
+  nothing was redrawn except COPY's two strokes carried over from the same tag.
+- **Test seam:** `CodeField.clipboard_writer` (a Callable, unset in the game) takes the copied text in place of
+  `DisplayServer.clipboard_set`, because a headless display server has no clipboard.
+- **Strings:** `Copy the campaign code`, `Campaign code (share it: it starts this campaign)`, `Copy` (re-exported once).
+  The one-line `PauseMenu.code_line()` stays for the HQ radio's tooltip.
+- **Tests:** new `tests/unit/test_parity_pause.gd` (scrim over HQ, route, route fight and a lone fight; no sticker; Resume
+  first, pink, focused, icons on the rows; the copy button copies the code; fits at text scale 1.0 / 1.6 / 2.0). Changed:
+  `test_art10_menus` (the pause test pinned the PAUSED sticker: now asserts there is none), `test_horizontal_pass24_screens`
+  (the seed line is a `CodeField`, read by `value`). Dropped: none.
+
 ### 2026-10-05 — Parity fix — TITLE-01 title backdrop (designer decision)
 Designer decision 2026-10-05: the title follows concept round 33 (`round33_ui_chrome/title_screen.png` / `.gif`,
 art-concepts-r43). Audit item TITLE-01 (P1, `docs/art_review/PARITY/GAPS.md`): main's title drew the 2D NeonCity
@@ -254,6 +283,42 @@ line-art city, unblurred and saturated, under a flat 0.58 dim.
   effects; tier 0 fallback). Remaining difference from the concept: its city (round 26's 2D render) shows more
   saturated pink street light and a little more haze than the 3D city's night grade; the framing, blur and darkening
   match. Changing the city's grade would change the Grid too, so it is left for the designer.
+
+### 2026-10-05 — Parity fix — TITLE-01b grade and LOOT-04 (designer decision)
+Designer answers 2026-10-05 to the TITLE-01 questions: (1) keep the last-played corp's HQ (as built); (2) the backdrop
+must look like concept 33: its own colour grade in its CityBackdropLook, not the shared city grade (the Grid is
+unchanged); (3) LOOT-04 "use the title's blurred city" on the loot, event and shop overlays.
+- **The backdrop's own grade** (`CityBackdropLook.grade_saturation`, `grade_gain`, `grade_lift`, `haze_out_of_focus`;
+  `city_tilt_shift.gdshader`): saturate from the Rec. 709 luma, times a gain, plus a haze lift that grows where the
+  view is blurred (lift * (1 + h * (1 - focus))), before the darkening. The city's own post (`CityConfig` grade, haze,
+  ramp) is never touched (tested). Tuned against round 33 `title_screen.png`: a backdrop-only capture with the grade
+  neutral, both images un-darkened by the shared field, then a search matching the right half's channel means,
+  luminance spread and chroma in focus and out of focus: **saturation 1.2, gain 0.765, lift (0.04, 0.03, 0),
+  haze out of focus 3.0** (pink haze, no blue lift). After it the right half's means are within 0.02–0.03 of the
+  concept's per channel (was 0.06 bluer). What still differs is content, not grade: the concept's 2D render has more
+  tiny saturated point lights (bokeh) in its blurred top.
+- **LOOT-04:** `WireframeBackground.show_blurred_city(on, look, corp)` (the net backdrop's twin of
+  `CyberdeckBackground.use_blurred_city`; the same BlurredCityBackdrop, made once, covered while hidden so it stops
+  rendering; the 2D city hidden with its process off). `netrun_scene.gd` asks for it per page (two lines + two
+  constants): `BLURRED_CITY_SCREENS` = loot and event, with their own look `content/config/overlay_city_backdrop.tres`
+  (the title's grade and tiers; a centred page: no menu-side darkening, a centred vignette 0.45, gain 0.62, the focus
+  band at 0.62, the campaign corp's HQ at (0.82, 0.7)). Tier 0 / headless keep the 2D net city. The event's CAM feed
+  copies whatever city is behind it (now the blurred one).
+- **The shop:** the Mainframe page's baked facade (MainframeFacade, SHOP concept round 34 `shop_v5`) hides the city
+  whole, so a blurred city behind it would never show and still cost its render: the shop keeps its facade (my call;
+  open question). BlurredCityBackdrop's `set_shown` is ready if the designer wants the city behind a cut-out facade.
+- **Other users unchanged:** only the title calls `use_blurred_city` and only the netrun scene `show_blurred_city`
+  (tested by scanning scripts/tools/scenes); the HQ, combat, labs and every other netrun page keep their backdrop.
+- **Measured** (windowed, 1920x1080, v-sync off; the machine was shared with other agents' runs, so frame times were
+  noisier than the first pass): title tier 2 frame 6.80 ms avg, backdrop city GPU 2.49 ms; tier 1 5.64 ms, city 1.92 ms;
+  loot tier 2 6.33 ms, city 2.51 ms. City GPU under the 8 ms budget everywhere.
+- **Tests** (`test_parity_title01_backdrop.gd`): `test_loot_and_event_ask_for_the_blurred_city_and_nothing_else_does`,
+  `test_the_backdrop_grade_is_its_own` (the GDScript `shown` equals the shader's maths; the backdrop never writes the
+  city's grade); the legibility test now reads `worst_behind` (white through the grade and darkening).
+- **Review:** `docs/art_review/PARITY/fixes/TITLE-01b_LOOT-04.jpg` (concept | before | after for title, loot, event,
+  shop). GAPS LOOT-04: "Decision: use the title's blurred city (designer 2026-10-05)".
+- Files outside my area (smallest change): `scripts/ui/netrun_scene.gd` (the per-page call and its constants),
+  `scripts/ui/kit/wireframe_background.gd` (the hook), `docs/art_review/PARITY/GAPS.md` (LOOT-04's decision).
 
 ### 2026-10-05 — Art direction — ART-3 6w raid on the city
 ART-3 wave 2b, ART-6 on the unified city (ART_BIBLE v2 §4.1, §4.8, Appendix C #13, plan G10; refs round 40
@@ -8479,11 +8544,11 @@ and annotated in the GDD where it changes a rule.
   shows as a fifth, CLASSIFIED tile (no name, no crest, "OPENS AT ICE 10 EVERYWHERE") so the Target row has its five
   tiles without a spoiler; the build hid it until unlocked. Keep the classified tile? (2) The pickers start on the
   game's defaults (Solace, standard home server, Breaker) rather than the first choice by id: keep?
-- **Parity fix TITLE-01 (2026-10-05, built, see "Parity fix — TITLE-01 title backdrop"):** (1) the title's HQ is the
-  last-played campaign's target, else Halcyon (the concept's): keep, or always Halcyon? (2) the 3D city's night grade
-  is less pink-saturated than round 33's 2D render: leave it (it is the Grid's grade too) or give the backdrop look its
-  own grade? (3) LOOT-04: should the loot / event / shop overlays take the same blurred city (one call with their own
-  `CityBackdropLook`)?
+- **Parity fix TITLE-01 (2026-10-05):** answered by the designer the same day (keep the last-played corp; the backdrop
+  gets its own grade; LOOT-04 takes the blurred city): see "Parity fix — TITLE-01b grade and LOOT-04". New question:
+  the Mainframe (shop) page's baked facade covers the whole city, so the blurred city cannot show there without
+  dropping the facade (SHOP concept round 34 `shop_v5`): keep the facade (built), or put the blurred city behind a
+  cut-out facade?
 - **ART-3 6w raid on the city (2026-10-05, defaults built, see "Art direction — ART-3 6w raid on the city"):**
   (1) the raid's widest zoom is ortho 640 (the bible's round 39 clamp 220-380 no longer holds the x2 spread
   network on the setup's map part): keep, or shrink the network's spread for the raid? (2) the sockets float over

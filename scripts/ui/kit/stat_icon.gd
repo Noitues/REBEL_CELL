@@ -65,12 +65,14 @@ const LINKS := &"links"
 const RAM := &"ram"
 const CART := &"cart"
 const SHRED := &"shred"
+## ported from art-m13-final scripts/ui/kit/stat_icon.gd: the kit's copy mark (the pause menu's code field).
+const COPY := &"copy"
 
 ## Every icon kind (tests draw each one).
 const ALL: Array[StringName] = [HEAT, SCHEMATICS, HOME, EXPLOITS, RAIDS, ICE, CREW, HP, CYCLES, CARDS, RANK, BANKED,
 	ARMORY, COMBATS, ELITES, CAMPAIGNS, WON, RUNS, BADGES, FIRMWARE, DAEMON, OPERATIVE, PLAY, CONTINUE, MAP, CODEX,
 	SETTINGS, SAVE, EXIT, BACK, NEXT, SKIP, SLOTS, STATS, TUTORIAL, QUIT, JACK_IN, MORE, FIGHT, ELITE, SHOP, TERMINAL, RACK,
-	COOLING, CLAIM, LINKS, RAM, CART, SHRED]
+	COOLING, CLAIM, LINKS, RAM, CART, SHRED, COPY]
 
 ## Tag names (as the tags spell them) -> icon.
 const TAG_KINDS := {"HEAT": HEAT, "SCHEMATICS": SCHEMATICS, "HOME": HOME, "EXPLOITS": EXPLOITS, "RAIDS": RAIDS,
@@ -281,6 +283,9 @@ static func draw(ci: CanvasItem, c: Vector2, r: float, kind: StringName, col: Co
 		"quit":
 			ci.draw_arc(c + Vector2(0, 0.08) * r, 0.7 * r, -PI * 0.5 + 0.7, -PI * 0.5 - 0.7 + TAU, 20, col, w * 1.2)
 			ci.draw_line(c + Vector2(0, -0.92) * r, c + Vector2(0, -0.1) * r, col, w * 1.2)
+		"copy":
+			ci.draw_rect(Rect2(c + Vector2(-0.35, -0.35) * r, Vector2(1.15, 1.2) * r), col, false, w)
+			_line(ci, c, r, [[-0.55, 0.55], [-0.8, 0.55], [-0.8, -0.85], [0.35, -0.85], [0.35, -0.6]], col, w)
 		"jack_in":
 			ci.draw_rect(Rect2(c + Vector2(-0.42, -0.25) * r, Vector2(0.84, 0.62) * r), col)
 			ci.draw_line(c + Vector2(-0.2, -0.25) * r, c + Vector2(-0.2, -0.85) * r, col, w * 1.2)

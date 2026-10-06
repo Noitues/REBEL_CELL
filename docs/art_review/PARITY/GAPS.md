@@ -268,7 +268,10 @@ Decision:
 **LOOT-04 (P1) Backdrop.** Concept: the dark, blurred lit city. Main: the bright 2D wireframe
 city (lime / cyan / magenta outlines) at full strength behind the sheet, also behind the event,
 shop overlays and pauses; it competes with every page. Build: the same wireframe city (M13).
-Likely file: `cyberdeck_background.gd` (as TITLE-01). Decision:
+Likely file: `cyberdeck_background.gd` (as TITLE-01). Decision: use the title's blurred city (designer 2026-10-05)
+Fixed (S-BACKDROP): the netrun's loot and event pages show BlurredCityBackdrop (own look
+`content/config/overlay_city_backdrop.tres`, the title's grade); the Mainframe keeps its facade
+(it covers the city); review `fixes/TITLE-01b_LOOT-04.jpg`.
 
 ### HQ sub-pages (`hq_black_market.jpg`, `hq_crew.jpg`, `hq_loadout_deck.jpg`, `hq_loadout_spinner.jpg`, `hq_heat_band.jpg`)
 Ref: art pass build (no concept beyond portraits `round39_portraits/portraits_classes_v2.png`).

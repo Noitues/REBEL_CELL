@@ -78,9 +78,6 @@
 		"res://scripts/ui/kit/netrun_map_view.gd": {
 			"draw_size": 3
 		},
-		"res://scripts/ui/kit/pause_menu.gd": {
-			"color": 1
-		},
 		"res://scripts/ui/kit/portrait_art.gd": {
 			"color": 16
 		},
