@@ -249,8 +249,8 @@ func test_station_recall_and_patch_from_the_node_card() -> void:
 	c.grid.home_integrity = c.grid.home_max_integrity - 5
 	hq.select_site(c.grid.home_site_id)
 	await _frames(2)
-	var patch := _page(hq).find_child("PatchHome", true, false) as Button
-	assert_not_null(patch, "CORE's card patches home")
+	var patch := _page(hq).get_node("VerbSlot").find_child("Patch", true, false) as Button  # HQ-B (d): PATCH is the verb sticker
+	assert_not_null(patch, "CORE's verb is PATCH")
 	patch.pressed.emit()
 	await _frames(2)
 	assert_eq(c.grid.home_integrity, c.grid.home_max_integrity)

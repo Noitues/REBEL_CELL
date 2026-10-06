@@ -1722,7 +1722,15 @@ func _build_hq_page(page_name: String) -> void:
 	stack.alignment = BoxContainer.ALIGNMENT_END
 	stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	column.add_child(stack)
+	# Room round the cards for their glow and scrim (the scroll clips at its edge).
+	var card_margin := MarginContainer.new()
+	card_margin.name = "CardMargin"
+	card_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+		card_margin.add_theme_constant_override(side, roundi(RaidHolo.SCRIM_OUT * 2.0))
+	card_margin.add_child(stack)
+	column.add_child(card_margin)
 	var site := CampaignRules.site_data(corp, selected_site)
 	if raid_mode:
 		_defence_cards(stack, raid, pending, projection)
@@ -1750,7 +1758,7 @@ func _build_hq_page(page_name: String) -> void:
 	for piece in page.get_children():
 		if piece is Control:
 			(piece as Control).minimum_size_changed.connect(_queue_place_hq)
-	for deep in ["WorkOrder/WorkOrderPaper/WorkOrderBox", "Hand/HandCards", "CardColumn/CardStack"]:
+	for deep in ["WorkOrder/WorkOrderPaper/WorkOrderBox", "Hand/HandCards", "CardColumn/CardMargin/CardStack"]:
 		var n := page.get_node_or_null(deep) as Control
 		if n != null:
 			n.minimum_size_changed.connect(_queue_place_hq)
@@ -1877,6 +1885,8 @@ func _hand_tabs() -> VBoxContainer:
 		var tab := MenuChip.new(tr(TAB_WORDS[i]), lines[i] if small else "", Palette.CELL_PINK if hot else PaletteSkins.chrome(Palette.NET_CYAN))
 		tab.pre_translated = true
 		tab.name = "Tab_%s" % TAB_WORDS[i]
+		tab.plate = &"tab"  # ui31.tabs: the open one filled
+		tab.refit()
 		tab.selected = i == hand_tab
 		tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		tab.alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -2127,26 +2137,37 @@ func _verb_slot(site: SiteData, launchable: Array[SiteData], raid_mode: bool = f
 		if site != null and s.id == site.id:
 			runnable = true
 	var resume := RunManager.has_active_run()
-	if not runnable and not resume:
+	var v := {"verb": VERB_JACK_IN, "price": -1} if resume else site_verb(site, runnable)
+	var verb := String(v.get("verb", ""))
+	if verb == "":
 		return slot
-	var jack := VerbSticker.new(tr(JACK_IN), VerbSticker.Fill.PINK, VERB_STICKER_PX, VERB_STICKER_TILT)
-	jack.pre_translated = true
-	jack.name = "Launch"
-	jack.size_flags_horizontal = Control.SIZE_SHRINK_END
-	jack.add_to_group(Fx.JACK_FOCUS_GROUP)
-	if resume:
-		jack.tooltip_text = UiTip.fold(tr("JACK IN: back into the run you left."))
-		jack.pressed.connect(resume_run)
+	var sticker := VerbSticker.new(tr(verb), VerbSticker.Fill.PINK, VERB_STICKER_PX, VERB_STICKER_TILT)
+	sticker.pre_translated = true
+	sticker.name = VERB_NODE_NAMES.get(verb, "Verb")
+	sticker.size_flags_horizontal = Control.SIZE_SHRINK_END
+	var sid: StringName = site.id if site != null else &""
+	if verb == VERB_JACK_IN:
+		sticker.add_to_group(Fx.JACK_FOCUS_GROUP)
+		_jack_button = sticker
+		if resume:
+			sticker.tooltip_text = UiTip.fold(tr("JACK IN: back into the run you left."))
+			sticker.pressed.connect(resume_run)
+		else:
+			sticker.tooltip_text = UiTip.fold(tr("JACK IN to %s: start a %s here with %s.") % [site_name(sid), tr(CampaignRules.run_kind_for(c, site)), selected_op().name if selected_op() != null else "-"])
+			sticker.pressed.connect(press_verb.bind(v, sid))
+			sticker.disabled = selected_op() == null
 	else:
-		var sid := site.id
-		jack.tooltip_text = UiTip.fold(tr("JACK IN to %s: start a %s here with %s.") % [site_name(sid), tr(CampaignRules.run_kind_for(c, site)), selected_op().name if selected_op() != null else "-"])
-		jack.pressed.connect(func() -> void:
-			var op := selected_op()
-			if op != null:
-				launch(sid, op.id))
-		jack.disabled = selected_op() == null
-	slot.add_child(jack)
-	_jack_button = jack
+		sticker.tooltip_text = UiTip.fold(verb_tip(v, site))
+		sticker.pressed.connect(press_verb.bind(v, sid))
+	slot.add_child(sticker)
+	# Q11: the price in a gold tag under the sticker (bible 1.2: never on the sticker).
+	if int(v.get("price", -1)) >= 0:
+		var tag := PriceTag.new(tr(PRICE_WORDS) % int(v["price"]))
+		tag.name = "VerbPrice"
+		tag.size_flags_horizontal = Control.SIZE_SHRINK_END
+		slot.add_child(tag)
+	if verb != VERB_JACK_IN:
+		return slot
 	var word := Label.new()
 	word.name = "SystemWord"
 	word.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
@@ -2176,6 +2197,25 @@ func _verb_slot(site: SiteData, launchable: Array[SiteData], raid_mode: bool = f
 		warn.mouse_filter = Control.MOUSE_FILTER_PASS
 		slot.add_child(warn)
 	return slot
+
+
+## The verb stickers' node names (tests and the pad find them by these).
+const VERB_NODE_NAMES := {VERB_JACK_IN: "Launch", VERB_CLAIM: "Claim", VERB_REPAIR: "Repair", VERB_UPGRADE: "Upgrade", VERB_PATCH: "Patch"}
+
+
+## What verb `v` does on `site`, in its tooltip.
+func verb_tip(v: Dictionary, site: SiteData) -> String:
+	var c := RunManager.campaign
+	match String(v.get("verb", "")):
+		VERB_CLAIM:
+			return tr("CLAIM %s: build a %s here (%d Schematics). It joins your network and defends in raids.") % [site_name(site.id), _display(StringName(String(v.get("node", "")))), int(v["price"])]
+		VERB_REPAIR:
+			return tr("REPAIR %s: bring the DOWN node back online (%d Schematics).") % [site_name(site.id), int(v["price"])]
+		VERB_UPGRADE:
+			return tr("UPGRADE %s: one level up from level %d (%d Schematics).") % [site_name(site.id), c.grid.upgrade_level_of(site.id), int(v["price"])]
+		VERB_PATCH:
+			return tr("PATCH CORE: +%d integrity (%d Schematics).") % [int(v.get("points", 0)), int(v["price"])]
+	return ""
 
 
 ## The verb sticker's lettering (px at 1.0) and tilt (degrees).
@@ -2363,6 +2403,14 @@ func _place_hq() -> void:
 		order.position = o.position
 		order.size = Vector2(maxf(o.size.x, paper.get_combined_minimum_size().x), minf(paper.get_combined_minimum_size().y + chip_h, maxf(chip_h + 1.0, foot_top - HqLayout.GAP - o.position.y)))
 	var top := HqLayout.MARGIN
+	var bottom_now := verb.position.y - HqLayout.GAP
+	if hq_minimap != null and is_instance_valid(hq_minimap):
+		# The minimap is optional at the raid zoom (proposal §1 #20): it gives its room to a card
+		# that needs it (CLAIM's tiles), and shows only below the key's fold scale.
+		var key_h := hq_legend.fit_size().y + HqLayout.GAP if hq_legend != null and is_instance_valid(hq_legend) else 0.0
+		var need := (column.get_child(0) as Control).get_combined_minimum_size().y
+		hq_minimap.visible = Settings.text_scale < MapLegend.FOLD_SCALE - 0.001 \
+			and need <= bottom_now - (top + hq_minimap.get_combined_minimum_size().y + HqLayout.GAP + key_h)
 	if hq_minimap != null and is_instance_valid(hq_minimap) and hq_minimap.visible:
 		var ms := hq_minimap.get_combined_minimum_size()
 		hq_minimap.size = ms
@@ -2490,7 +2538,7 @@ func fit_hq_map() -> void:
 const HQ_FIT_PASSES := 4
 ## The share of the free part the fitted Sites take (designer 2026-10-05: err on showing more
 ## city round the network).
-const HQ_FIT_SHARE := 0.75
+const HQ_FIT_SHARE := 0.65
 var _hq_fit_passes: int = 0
 
 
@@ -3385,11 +3433,15 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		facts.add_child(Badge.new(CityMapOverlay.tr_word("off"), Color(Palette.NET_CYAN, 0.6), GLYPH_HEAT, tr("This Site's Heat objective is switched off at this ICE level.")).with_icon(StatIcon.COOLING))
 	if c.grid.is_claimed(site.id):
 		var node_col := Palette.CELL_TURF if int(s["condition"]) != GridState.Condition.DOWN else Palette.RESIST_GOLD
-		var node_text := "%s %d/%d" % [_display(c.grid.node_type_of(site.id)), int(s["integrity"]), int(s["max_integrity"])]
+		# HQ-B: CORE's integrity is the home server's (the grid keeps it apart from its Site row).
+		var home := site.id == c.grid.home_site_id
+		var integ := c.grid.home_integrity if home else int(s["integrity"])
+		var most := c.grid.home_max_integrity if home else int(s["max_integrity"])
+		var node_text := "%s %d/%d" % [_display(c.grid.node_type_of(site.id)), integ, most]
 		if int(s["condition"]) == GridState.Condition.DOWN:
 			node_text += tr(" DOWN")
 		var node_data := lookup.get_content(c.grid.node_type_of(site.id)) as NetworkNodeData
-		facts.add_child(Badge.new(node_text, node_col, GLYPH_NODE, TextDb.t(node_data, "description") if node_data != null else "").with_meter(int(s["integrity"]), int(s["max_integrity"])))
+		facts.add_child(Badge.new(node_text, node_col, GLYPH_NODE, TextDb.t(node_data, "description") if node_data != null else "").with_meter(integ, most))
 		if c.grid.upgrade_level_of(site.id) > 0:
 			facts.add_child(Badge.new(TextDb.signed(c.grid.upgrade_level_of(site.id)), Palette.CELL_ACID, GLYPH_UPGRADE, tr("Node upgrade level %d.") % c.grid.upgrade_level_of(site.id)))
 		for aid in c.grid.assets_on(site.id):
@@ -3456,32 +3508,84 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 			var sb := _button(tr("Station %s") % who.name, func() -> void: station(oid, sid))
 			sb.name = "StationHere"
 			_add_tip(row, sb, tr("%s guards %s (%s): the class's station bonus helps it hold in raids.") % [who.name, site_name(site.id), TextDb.t(node_data, "description")])
-	# HQ-B (b): CORE's patch (it was the deck menu's line).
-	if site.id == c.grid.home_site_id and c.grid.home_integrity < c.grid.home_max_integrity:
-		var pb := _button(tr("Patch home %s (%d)") % [TextDb.signed(c.grid.home_max_integrity - c.grid.home_integrity), CampaignRules.home_repair_price(c, cfg)], repair_home)
-		pb.name = "PatchHome"
-		_add_tip(row, pb, tr("Repair the home server to full integrity."))
+	# HQ-B (d): what clearing it gives and risks (the rules' own preview: preview equals result),
+	# for a Site a run can start from.
+	if launchable_here and site.id != c.grid.home_site_id:
+		var gains := HFlowContainer.new()
+		gains.name = "IfCleared"
+		gains.add_theme_constant_override("h_separation", 8)
+		gains.add_theme_constant_override("v_separation", 4)
+		var cap := Label.new()
+		cap.name = "GainsCaption"
+		cap.text = tr(GAIN_CAPTION)
+		cap.add_theme_font_override("font", Palette.mono())
+		cap.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+		cap.add_theme_color_override("font_color", PaletteSkins.chrome(Palette.NET_CYAN))
+		cap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		gains.add_child(cap)
+		for g: Badge in run_gains(site, clear_preview_of(site)):
+			gains.add_child(g)
+		card.body.add_child(gains)
+		card.body.move_child(gains, row.get_index())
+	# HQ-B (d) (Q11, q11_a_claim.png): a cleared Site of the Cell's to build on: the node tiles
+	# with their prices (the locked ones show their unlock); the pick sets CLAIM's price.
 	if c.grid.is_cleared(site.id) and site.claimable:
-		var node_pick := OptionButton.new()
-		node_pick.name = "NodePick"
-		for i in choices.size():
-			var node := choices[i]
+		var cap := Label.new()
+		cap.name = "PickCaption"
+		cap.text = tr("PICK THE NODE TO BUILD")
+		cap.add_theme_font_override("font", Palette.mono())
+		cap.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+		cap.add_theme_color_override("font_color", PaletteSkins.chrome(Palette.NET_CYAN))
+		card.body.add_child(cap)
+		var tiles := GridContainer.new()
+		tiles.name = "NodeTiles"
+		tiles.columns = NODE_TILE_COLUMNS
+		tiles.add_theme_constant_override("h_separation", 6)
+		tiles.add_theme_constant_override("v_separation", 6)
+		card.body.add_child(tiles)
+		var picked := claim_choice()
+		for node in choices:
 			var available := CampaignRules.node_available(RunManager.profile, lookup, node)
-			node_pick.add_item("%s (%d)%s" % [TextDb.t(node, "display_name"), node.install_cost, "" if available else tr(" [locked]")])
-			node_pick.set_item_disabled(i, not available)
-			node_pick.set_item_tooltip(i, UiTip.fold(TextDb.t(node, "description")))
-		row.add_child(node_pick)
-		var sid2 := site.id
-		_add_tip(row, _button(tr("Claim"), func() -> void: claim(sid2, choices[node_pick.selected].id)), tr("Build the picked node here: it joins your network and defends in raids."))
-	if c.grid.is_claimed(site.id) and int(s["condition"]) == GridState.Condition.DOWN:
-		var sid3 := site.id
-		_add_tip(row, _button(tr("Repair (%d)") % CampaignRules.repair_cost(c, cfg, lookup, sid3), func() -> void: repair(sid3)), tr("Bring the DOWN node back online."))
-	if c.grid.is_active_node(site.id) and site.id != c.grid.home_site_id:
-		var cost := CampaignRules.upgrade_cost(c, cfg, site.id)
-		if cost >= 0:
-			var sid4 := site.id
-			_add_tip(row, _button(tr("Upgrade (%d)") % cost, func() -> void: upgrade(sid4)), tr("Upgrade the node one level (level %d now).") % c.grid.upgrade_level_of(site.id))
+			var unlock := _unlock_cost_of(node)
+			var tile := MenuChip.new(TextDb.t(node, "display_name"), (tr("%d SCHEM.") % node.install_cost) if available else (tr("unlock %d") % unlock if unlock > 0 else tr("locked")))
+			tile.pre_translated = true
+			tile.name = "NodeTile_%s" % node.id
+			tile.plate = &"tile"  # settings.py tiles: the picked one filled
+			tile.refit()
+			tile.selected = node.id == picked
+			tile.disabled = not available
+			tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			tile.tooltip_text = UiTip.fold(TextDb.t(node, "description"))
+			var nid := node.id
+			tile.pressed.connect(pick_claim.bind(nid))
+			tiles.add_child(tile)
+		card.body.move_child(cap, row.get_index())
+		card.body.move_child(tiles, row.get_index())
+	# HQ-B (d): a Site whose verb is not JACK IN but a run can start from (a cleared or claimed
+	# Site's patrol): PATROL IT INSTEAD, a chip on the card (the slot holds CLAIM / UPGRADE ...).
+	if launchable_here and site_verb(site, true).get("verb", "") != VERB_JACK_IN and not living.is_empty():
+		var sid5 := site.id
+		var patrol := MenuChip.new(tr("PATROL IT INSTEAD"), tr("a full run, no objective"))
+		patrol.pre_translated = true
+		patrol.name = "PatrolHere"
+		patrol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		patrol.tooltip_text = UiTip.fold(tr("JACK IN to %s for a patrol with %s: loot, Heat and Rank from the run, no objective.") % [site_name(sid5), selected_op().name if selected_op() != null else "-"])
+		patrol.pressed.connect(func() -> void:
+			var op := selected_op()
+			if op != null:
+				launch(sid5, op.id))
+		row.add_child(patrol)
 	return card
+
+
+## The node tiles' columns on the CLAIM card.
+const NODE_TILE_COLUMNS := 2
+
+
+## The Schematics a Profile unlock that opens node type `node` costs (0 when none is listed).
+func _unlock_cost_of(node: NetworkNodeData) -> int:
+	var u := CampaignRules.unlock_for(RunManager.lookup(), node)
+	return u.schematic_cost if u != null else 0
 
 
 ## ART-5 5d: the "why not" note's narrowest width (px; it wraps inside the card).
@@ -3574,7 +3678,7 @@ func _defence_cards(stack: VBoxContainer, raid: RaidData, pending: Dictionary, p
 	stack.add_child(_threat_intel(raid, pending, projection))
 	var orders_win := RaidTerminal.new(tr("YOUR NETWORK"), Palette.NET_CYAN)
 	orders_win.name = "NodeOrders"
-	orders_win.tag_label.text = tr("TARGET: %s") % site_name(selected_site)
+	orders_win.tag_label.text = ""  # HQ-B: the target row carries its ">" (a tag ran over the title in the column)
 	var orders := VBoxContainer.new()
 	orders.name = "Orders"
 	orders.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -5921,3 +6025,102 @@ func _price_icon(b: Button, kind: StringName) -> IconMark:
 func _icon(b: Button, kind: StringName) -> Button:
 	IconMark.attach(b, kind)
 	return b
+
+
+# --- HQ-B (d): the verb slot -----------------------------------------------------------------
+
+## HQ-B (d) (designer ruling Q11, final): the selected thing's verb for the one sticker slot,
+## with its price (the rules' own numbers: the preview is the purchase): {"verb", "price",
+## "word" (the sticker's word, a translation key), "tip"}. A node of the Cell's: REPAIR when
+## DOWN, else UPGRADE while it can rise; CORE: PATCH while damaged (what the Schematics buy);
+## a cleared Site of the Cell's to build on: CLAIM (the picked node type's install); a Site a
+## run can start from: JACK IN. "" when the selection has no verb (the card says why).
+func site_verb(site: SiteData, runnable: bool) -> Dictionary:
+	var c := RunManager.campaign
+	var cfg := RunManager.config()
+	var lookup := RunManager.lookup()
+	if site == null or c == null:
+		return {"verb": ""}
+	var sid := site.id
+	if sid == c.grid.home_site_id:
+		var points := patch_points()
+		if points > 0:
+			return {"verb": VERB_PATCH, "price": CampaignRules.home_repair_price(c, cfg, points), "points": points}
+		return {"verb": ""}
+	if c.grid.is_claimed(sid):
+		if int(c.grid.site(sid).get("condition", 0)) == GridState.Condition.DOWN:
+			return {"verb": VERB_REPAIR, "price": CampaignRules.repair_cost(c, cfg, lookup, sid)}
+		var up := CampaignRules.upgrade_cost(c, cfg, sid)
+		if c.grid.is_active_node(sid) and up >= 0:
+			return {"verb": VERB_UPGRADE, "price": up}
+	elif c.grid.is_cleared(sid) and site.claimable:
+		var node := lookup.get_content(claim_choice()) as NetworkNodeData
+		if node != null:
+			return {"verb": VERB_CLAIM, "price": node.install_cost, "node": node.id}
+	if runnable:
+		return {"verb": VERB_JACK_IN, "price": -1}
+	return {"verb": ""}
+
+
+## The verbs (the stickers' words, translation keys).
+const VERB_JACK_IN := "JACK IN" # TR
+const VERB_CLAIM := "CLAIM" # TR
+const VERB_REPAIR := "REPAIR" # TR
+const VERB_UPGRADE := "UPGRADE" # TR
+const VERB_PATCH := "PATCH" # TR
+## The price tag's words (a translation key).
+const PRICE_WORDS := "%d SCHEMATICS" # TR
+## The node type CLAIM builds (picked on the card's tiles; kept across rebuilds).
+var claim_pick: StringName = &""
+
+
+## The node type CLAIM builds now: the one picked on the card if it can be built, else the
+## first that can (id order, as `_node_choices`).
+func claim_choice() -> StringName:
+	var lookup := RunManager.lookup()
+	var first: StringName = &""
+	for node in _node_choices():
+		if not CampaignRules.node_available(RunManager.profile, lookup, node):
+			continue
+		if node.id == claim_pick:
+			return node.id
+		if first == &"":
+			first = node.id
+	return first
+
+
+## CORE's patch now: the integrity points the Schematics buy (all missing ones at most), the
+## same count CampaignRules.repair_home restores.
+func patch_points() -> int:
+	var c := RunManager.campaign
+	var cfg := RunManager.config()
+	var missing := c.grid.home_max_integrity - c.grid.home_integrity
+	var per := CampaignRules.home_repair_point_cost(c, cfg)
+	return mini(missing, int(floor(c.schematics / maxf(0.0001, per))))
+
+
+## HQ-B (d): picks node type `node_id` on the CLAIM card (the sticker's price follows).
+func pick_claim(node_id: StringName) -> void:
+	claim_pick = node_id
+	_hq_focus = "NodeTile_%s" % node_id
+	if panel_name in HQ_PAGES:
+		wireframe.hold_camera()
+	show_hq()
+
+
+## HQ-B (d): presses the verb sticker's verb `v` on Site `sid` (the same calls the old
+## buttons made).
+func press_verb(v: Dictionary, sid: StringName) -> void:
+	match String(v.get("verb", "")):
+		VERB_CLAIM:
+			claim(sid, StringName(String(v.get("node", ""))))
+		VERB_REPAIR:
+			repair(sid)
+		VERB_UPGRADE:
+			upgrade(sid)
+		VERB_PATCH:
+			repair_home()
+		VERB_JACK_IN:
+			var op := selected_op()
+			if op != null:
+				launch(sid, op.id)

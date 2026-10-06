@@ -102,21 +102,34 @@ func _campaign() -> void:
 	var c := RunManager.campaign
 	var corp := RunManager.corporation
 	var cfg := RunManager.config()
-	c.schematics = 142
+	c.schematics = 300
 	for t in NODES:
-		var open := CampaignRules.launchable_sites(c, corp, cfg)
-		if open.is_empty():
+		# The first runnable Site that can be claimed once cleared (next to home or a Relay).
+		for s in CampaignRules.launchable_sites(c, corp, cfg):
+			var dry := c.duplicate_state()
+			var probe := RunState.new()
+			probe.site_id = s.id
+			CampaignRules.on_run_completed(dry, corp, cfg, probe)
+			if CampaignRules.claim_error(dry, corp, cfg, RunManager.lookup(), s.id, t, RunManager.profile) != "":
+				continue
+			var run := RunState.new()
+			run.site_id = s.id
+			CampaignRules.on_run_completed(c, corp, cfg, run)
+			CampaignRules.claim(c, corp, cfg, RunManager.lookup(), s.id, t)
 			break
+	for s in CampaignRules.launchable_sites(c, corp, cfg):
+		var dry := c.duplicate_state()
+		var probe := RunState.new()
+		probe.site_id = s.id
+		CampaignRules.on_run_completed(dry, corp, cfg, probe)
+		dry.schematics = 999
+		if CampaignRules.claim_error(dry, corp, cfg, RunManager.lookup(), s.id, &"firewall_relay", RunManager.profile) != "":
+			continue
 		var run := RunState.new()
-		run.site_id = open[0].id
+		run.site_id = s.id
 		CampaignRules.on_run_completed(c, corp, cfg, run)
-		CampaignRules.claim(c, corp, cfg, RunManager.lookup(), open[0].id, t)
-	var more := CampaignRules.launchable_sites(c, corp, cfg)
-	if not more.is_empty():
-		var run := RunState.new()
-		run.site_id = more[0].id
-		CampaignRules.on_run_completed(c, corp, cfg, run)
-		_cleared = more[0].id
+		_cleared = s.id
+		break
 	c.schematics = 300
 	for cls in [&"ghost", &"rigger", &"botnet"]:
 		var data := RunManager.lookup().get_content(cls) as ClassData
@@ -131,6 +144,7 @@ func _campaign() -> void:
 		elif id != c.grid.home_site_id:
 			_down = id
 			_active = id
+	print("hq_b_lab: claimed %s cleared %s down %s" % [c.grid.claimed_ids(), _cleared, _down])
 	c.grid.home_integrity = c.grid.home_max_integrity - 6
 	c.heat = HEAT
 	c.armory = [&"turret", &"ice_lock", &"decoy"]

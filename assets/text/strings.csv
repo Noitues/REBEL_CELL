@@ -9,7 +9,6 @@ keys,en
  // PINNED, // PINNED
  AGAIN, AGAIN
  DOWN, DOWN
- [locked], [locked]
  | ASSIST, | ASSIST
  · %s/%s NUDGE %s%s, · %s/%s NUDGE %s%s
  · %s: %s RING, · %s: %s RING
@@ -34,6 +33,7 @@ keys,en
 %d LEFT,%d LEFT
 %d NEEDLES,%d NEEDLES
 %d RAM lost,%d RAM lost
+%d SCHEM.,%d SCHEM.
 %d SCHEMATICS,%d SCHEMATICS
 %d SLICES,%d SLICES
 %d TAKEN,%d TAKEN
@@ -269,8 +269,6 @@ Boss Strength,Boss Strength
 Breach,Breach
 Bring %s back from %s.,Bring %s back from %s.
 Bring its HP to 0 to win the fight.,Bring its HP to 0 to win the fight.
-Bring the DOWN node back online.,Bring the DOWN node back online.
-Build the picked node here: it joins your network and defends in raids.,Build the picked node here: it joins your network and defends in raids.
 Buy,Buy
 Buy it at the HQ Black Market with campaign Schematics (%d).,Buy it at the HQ Black Market with campaign Schematics (%d).
 CAM %02d  %s,CAM %02d  %s
@@ -299,6 +297,8 @@ CENTRAL SERVER // EXPLOITS %d/%d,CENTRAL SERVER // EXPLOITS %d/%d
 CHOSEN,CHOSEN
 CITY GRID,CITY GRID
 CIVIC ORDER  //  PUBLIC SAFETY  //  COMPLIANCE,CIVIC ORDER  //  PUBLIC SAFETY  //  COMPLIANCE
+CLAIM,CLAIM
+CLAIM %s: build a %s here (%d Schematics). It joins your network and defends in raids.,CLAIM %s: build a %s here (%d Schematics). It joins your network and defends in raids.
 CLAIMED,CLAIMED
 CLASS,CLASS
 CLASSIFIED,CLASSIFIED
@@ -498,7 +498,6 @@ Chips go into:,Chips go into:
 Choose,Choose
 "City seed (same seed, same city):","City seed (same seed, same city):"
 "Civic Order 7/88: network assets taken, operatives reclassified.","Civic Order 7/88: network assets taken, operatives reclassified."
-Claim,Claim
 Claimed: part of your network.,Claimed: part of your network.
 Claimed: part of your network; it defends in raids.,Claimed: part of your network; it defends in raids.
 Class default,Class default
@@ -1130,6 +1129,7 @@ It lands on one slice at random; the odds by slice type follow.,It lands on one 
 Its needle lands on %s.,Its needle lands on %s.
 JACK A CAMPAIGN IN,JACK A CAMPAIGN IN
 JACK IN,JACK IN
+"JACK IN to %s for a patrol with %s: loot, Heat and Rank from the run, no objective.","JACK IN to %s for a patrol with %s: loot, Heat and Rank from the run, no objective."
 JACK IN to %s: start a %s here with %s.,JACK IN to %s: start a %s here with %s.
 JACK IN: back into the run you left.,JACK IN: back into the run you left.
 JACK OUT,JACK OUT
@@ -1712,7 +1712,10 @@ Out of reach from here.,Out of reach from here.
 "
 PARASITE,PARASITE
 PASSED,PASSED
+PATCH,PATCH
+PATCH CORE: +%d integrity (%d Schematics).,PATCH CORE: +%d integrity (%d Schematics).
 PATIENT RECOVERY  //  COLLECTIONS  //  COMPLIANCE,PATIENT RECOVERY  //  COLLECTIONS  //  COMPLIANCE
+PATROL IT INSTEAD,PATROL IT INSTEAD
 "PATROL: loot, Heat and Rank, no objective.","PATROL: loot, Heat and Rank, no objective."
 PAUSED,PAUSED
 PAYOUT,PAYOUT
@@ -1721,6 +1724,7 @@ PERFECT: RAM+,PERFECT: RAM+
 PERSON OF INTEREST // FILE,PERSON OF INTEREST // FILE
 PERSONNEL  //  IDENTIFIED OPERATIVES,PERSONNEL  //  IDENTIFIED OPERATIVES
 PHASE %d,PHASE %d
+PICK THE NODE TO BUILD,PICK THE NODE TO BUILD
 PIRATE RADIO 88.1,PIRATE RADIO 88.1
 "PLAY IT
 SAFE??","PLAY IT
@@ -1734,7 +1738,6 @@ PUTS %s ON %s,PUTS %s ON %s
 PUTS %s ON YOU,PUTS %s ON YOU
 Pad button glyphs,Pad button glyphs
 Padlock: a locked link. An Intel Exploit or an objective opens it.,Padlock: a locked link. An Intel Exploit or an objective opens it.
-Patch home %s (%d),Patch home %s (%d)
 Patterns and glyphs stay the main cue.,Patterns and glyphs stay the main cue.
 Pause / options,Pause / options
 "Pause: options, codex, save and quit.","Pause: options, codex, save and quit."
@@ -1851,6 +1854,8 @@ RECYCLE BIN  Remove a card from your deck: %d Cycles.,RECYCLE BIN  Remove a card
 RECYCLE BIN // REMOVE A CARD // %d CYCLES,RECYCLE BIN // REMOVE A CARD // %d CYCLES
 REF HC-7718/CELL,REF HC-7718/CELL
 REMOVE,REMOVE
+REPAIR,REPAIR
+REPAIR %s: bring the DOWN node back online (%d Schematics).,REPAIR %s: bring the DOWN node back online (%d Schematics).
 RES%s,RES%s
 RESIST,RESIST
 RESIST %d,RESIST %d
@@ -1974,9 +1979,7 @@ Recall %s,Recall %s
 "Reduce effects (no scanlines, flicker, chromatic, distortion)","Reduce effects (no scanlines, flicker, chromatic, distortion)"
 Reduce motion (no camera moves or parallax; pages cross-fade),Reduce motion (no camera moves or parallax; pages cross-fade)
 Remove a card from your deck: %d Cycles (you have %d).,Remove a card from your deck: %d Cycles (you have %d).
-Repair (%d),Repair (%d)
 Repair Cost,Repair Cost
-Repair the home server to full integrity.,Repair the home server to full integrity.
 Reset to defaults,Reset to defaults
 Resistance %d: absorbs nudges and spins tick for tick; Flip and Respin are blocked.,Resistance %d: absorbs nudges and spins tick for tick; Flip and Respin are blocked.
 Resolution (windowed),Resolution (windowed)
@@ -2734,7 +2737,6 @@ TAKEN by a raid: run it again to take it back.,TAKEN by a raid: run it again to 
 TAKEN by the corporation.,TAKEN by the corporation.
 TAKEN: the corporation took the Site back.,TAKEN: the corporation took the Site back.
 TARGET,TARGET
-TARGET: %s,TARGET: %s
 "TARGET: the Central Server, the boss fight. The chip counts your Exploits.","TARGET: the Central Server, the boss fight. The chip counts your Exploits."
 TERMINAL,TERMINAL
 TERMINAL // %s,TERMINAL // %s
@@ -3101,12 +3103,11 @@ UNITS,UNITS
 UNITS DEPLOYED / DESTROYED,UNITS DEPLOYED / DESTROYED
 UNLOCKS · %d,UNLOCKS · %d
 UPGRADE,UPGRADE
+UPGRADE %s: one level up from level %d (%d Schematics).,UPGRADE %s: one level up from level %d (%d Schematics).
 UPGRADE A SLICE // INSTALL %s,UPGRADE A SLICE // INSTALL %s
 UPGRADES: %s,UPGRADES: %s
 "Undo back to the last random event (free, unlimited this turn).","Undo back to the last random event (free, unlimited this turn)."
 Unlocks: %s,Unlocks: %s
-Upgrade (%d),Upgrade (%d)
-Upgrade the node one level (level %d now).,Upgrade the node one level (level %d now).
 V-sync,V-sync
 VICTORY,VICTORY
 VIEW LOADOUT,VIEW LOADOUT
@@ -3161,6 +3162,7 @@ a Firmware chip to pick,a Firmware chip to pick
 a Rack,a Rack
 a Shop,a Shop
 "a choice, and its price","a choice, and its price"
+"a full run, no objective","a full run, no objective"
 a practice run in a simulated net,a practice run in a simulated net
 a threat,a threat
 abandon the campaign [hold A],abandon the campaign [hold A]
@@ -3296,6 +3298,7 @@ threat route,threat route
 toggle,toggle
 ui.raid_intro,"The corp is raiding your CORE. Place defences to cut the damage, then START DEFENSE."
 undock_handler,undock_handler
+unlock %d,unlock %d
 voice only // no feed,voice only // no feed
 vs %s | ICE %d%s,vs %s | ICE %d%s
 walked,walked

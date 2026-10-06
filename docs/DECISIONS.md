@@ -192,7 +192,21 @@ binding (also in PROPOSAL.md's rulings section):
   rows' badges), so the preview the RUNS OPEN NOW rows gave is on the card.
 - A selection with nothing to do (a full CORE, a Site not reachable yet) leaves the slot empty and the card's WHY NOT
   note says why (5d).
-- Tests: new `tests/unit/test_hq_b_verbs.gd` (fast).
+- Tests: new `tests/unit/test_hq_b_verbs.gd` (fast). Changed: `test_hq_b_city` (CORE's patch is the verb).
+- Also in (d): the tabs wear the concept's tab plates (`MenuChip.plate` `tab`, the open one filled) and the node
+  tiles its tile plates; the minimap gives its room to a card that needs it (CLAIM's tiles; it is optional at the raid
+  zoom); CORE's card shows the home server's own integrity; the card column keeps room round its cards for their
+  scrim; YOUR NETWORK's tag left the column (the target row carries its `>`). **Designer feedback "frame wider than
+  the default":** `HQ_FIT_SHARE` 0.75 -> 0.65.
+
+**HQ-B (e): JACK IN is every netrun's start.**
+- The HQ's JACK IN calls `launch` -> `RunManager.go_to_netrun(start, site)` -> `Fx.jack_in_link` with
+  `RunManager.jack_link(site)`: the link's ends are read from the HQ's own CityMapOverlay (the owned end and the Site,
+  both on screen), so the 4.6 jack plays along the link on this same city. The page JACK IN used to open (the Grid)
+  and the deck-monitor CRT push are gone: there is no HQ jack any more. A saved run's resume (`resume_run`) plays the
+  same jack from that run's Site (`resume_site`), the HQ selecting that Site so its link is on the map; the system word
+  names the jack's ends either way.
+- Tests: new `tests/unit/test_hq_b_jack.gd` (fast).
 
 ### 2026-10-05 — Parity fix — combat wheels (designer group ruling)
 
