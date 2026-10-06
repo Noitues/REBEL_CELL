@@ -8,6 +8,13 @@ extends Control
 ## "OURS NOW" over it (`play_won`).
 ## Layers, bottom to top: the still, `heat_layer` (Heat on combat, §3.15: ART-3 draws its beacons
 ## and searchlights there, behind the wheels' pools in spirit), the pencil.
+## ART-8 8w (D17 on the city): where the city quality tier takes it (CityConfig.backdrop_city_tiers,
+## BackdropCatalog.city_mode) the backdrop is a close-up of the one city (its own CityView3D:
+## the corp's HQ for a boss, the DISPATCH canyon staged for the Cell, the run's Site lot for a
+## regular fight) drawn through the same shader, so the pools and bands work on it as on a still;
+## the still shows until the city's model is in, and stays the fallback below the tier. Won on the
+## city: the Site's windows turn Cell colours (SiteWonLights, 5d) and the district dims outside an
+## ellipse round the target (no mask).
 ## View only: it reads the wheels it is given (`wheel_source`) and the campaign, never changes them.
 
 const SHADER := preload("res://shaders/arena/combat_backdrop.gdshader")
@@ -27,6 +34,8 @@ const OURS_NOW_MIN_Y := 0.16
 const OURS_NOW_OUTLINE := 6
 ## The design height the pencil's size is given at.
 const DESIGN_HEIGHT := 720.0
+## D17 on the city: how far (lots) a Site's point looks for its building.
+const SITE_SEARCH := 4
 
 ## Returns the WheelViews (or anything with `combatant`, `lookup`, `global_center()` and
 ## `disc_radius()`) whose pools this backdrop softens; the combat scene sets it.
@@ -50,6 +59,11 @@ var _won_tex: Texture2D = null
 var _enemy_key: String = ""
 var _pools_sig: String = ""
 var _won_tween: Tween = null
+## D17 on the city: the close-up's city (null on the stills) and its shot (BackdropCatalog.city_shot).
+var city: CityView3D = null
+var shot: Dictionary = {}
+var _city_ready: bool = false
+var _won_lights: SiteWonLights = null
 
 
 func _init() -> void:
@@ -98,8 +112,10 @@ func show_place(p: Dictionary) -> void:
 	_won_tex = load(won_path) as Texture2D if won_path != "" else null
 	var mask_path := BackdropCatalog.won_mask_path(place)
 	_mat.set_shader_parameter(&"won_mask", load(mask_path) as Texture2D if mask_path != "" else null)
+	_mat.set_shader_parameter(&"use_mask", true)
 	# A won look that is another still crossfades to it; the district does not dim twice.
 	_mat.set_shader_parameter(&"district_dim", 1.0 if _won_tex != null else DISTRICT_DIM)
+	_use_city()
 	if _tex != null:
 		_mat.set_shader_parameter(&"aspect", float(_tex.get_width()) / float(_tex.get_height()))
 	if not fresh:
@@ -144,6 +160,8 @@ func _stop_won() -> void:
 func _sync_won() -> void:
 	if _mat == null:
 		return
+	if _won_lights != null:
+		_won_lights.visible = won > 0.0
 	_mat.set_shader_parameter(&"won", won if _won_tex == null else 0.0)
 	_won_still.visible = _won_tex != null and won > 0.0
 	_won_still.modulate.a = won
@@ -177,7 +195,8 @@ func _follow_fight(views: Array) -> void:
 	var key := ",".join(keys)
 	if key != _enemy_key:
 		_enemy_key = key
-		show_place(BackdropCatalog.place_for(RunManager.campaign, enemies))
+		var site: StringName = RunManager.netrun.run.site_id if RunManager.netrun != null else &""
+		show_place(BackdropCatalog.place_for(RunManager.campaign, enemies, site))
 	if alive and won > 0.0 and not motion_running():
 		won = 0.0  # a fight going on (a new one with the same foes) is not won
 
@@ -215,6 +234,9 @@ func _cover_rect() -> Rect2:
 
 func _on_resized() -> void:
 	_pools_sig = ""
+	if city != null and size.x >= 2.0 and size.y >= 2.0:
+		city.set_view_size(Vector2i(size))
+		_frame_city()
 	_still.queue_redraw()
 	_won_still.queue_redraw()
 	_ink.queue_redraw()
@@ -234,6 +256,9 @@ func _draw_won_still() -> void:
 
 ## Where OURS NOW stands (local), on the target's top, clear of the top bar.
 func ours_now_spot() -> Vector2:
+	if _city_ready and city != null and city.iso != null:
+		var top := city.project(_target_top())
+		return Vector2(top.x, maxf(top.y, size.y * OURS_NOW_MIN_Y))
 	var cover := _cover_rect()
 	var a := BackdropCatalog.anchor(place) if not place.is_empty() else BackdropCatalog.ANCHOR_FALLBACK
 	var p := cover.position + cover.size * a
@@ -258,3 +283,123 @@ func _draw_ink() -> void:
 	_ink.draw_string_outline(font, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(OURS_NOW_OUTLINE * k)), ink)
 	_ink.draw_string(font, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.RESIST_GOLD, show))
 	_ink.draw_set_transform(Vector2.ZERO)
+
+
+
+# --- D17 on the city (ART-8 8w) -----------------------------------------------------------------
+
+## True when this backdrop shows the city's close-up (else the stills).
+func on_city() -> bool:
+	return _city_ready
+
+
+## Builds (or re-aims) the city close-up for `place` when the quality tier takes it.
+func _use_city() -> void:
+	var cfg := CityView3D.CONFIG
+	if not BackdropCatalog.city_mode(cfg, cfg.tier_for(Settings.city_quality), CityView3D.can_render()):
+		_drop_city()
+		return
+	var corp: StringName = place.get("corp", BackdropCatalog.DEFAULT_CORP)
+	var corp_data := RunManager.lookup().get_content(corp) as CorporationData
+	var lots := CityLayout.site_points(corp_data) if corp_data != null and corp_data.city_grid != null else {}
+	var sz := size if size.x >= 2.0 and size.y >= 2.0 else Vector2(1280, 720)
+	shot = BackdropCatalog.city_shot(cfg, place, lots, sz)
+	if city != null and (shot["stage"] != &"") != city.compounds.has(CityView3D.CELL):
+		_drop_city()
+	if city == null:
+		city = CityView3D.new()
+		city.name = "BackdropCity"
+		city.set_iso(shot["camera"])
+		if shot["stage"] != &"":
+			city.stage_compound(shot["stage"])
+		city.model_ready.connect(_on_city_ready)
+		add_child(city)
+		city.set_view_size(Vector2i(sz))
+	_frame_city()
+	if city.model != null and city.chunks_built() > 0:
+		_on_city_ready()
+
+
+func _frame_city() -> void:
+	if city == null or shot.is_empty():
+		return
+	var cam: CityIsoCamera = (shot["camera"] as CityIsoCamera).copy()
+	cam.viewport = Vector2(city.size)
+	city.set_iso(cam)
+	var t := city.project(cam.target)
+	_mat.set_shader_parameter(&"keep_at", Vector2(t.x / maxf(1.0, float(city.size.x)), t.y / maxf(1.0, float(city.size.y))))
+	_mat.set_shader_parameter(&"keep_radius", CityView3D.CONFIG.backdrop_keep_radius)
+
+
+func _on_city_ready() -> void:
+	if city == null:
+		return
+	if String(shot.get("focus", "")) == "site" and city.model != null:
+		# The Site's own building: the nearest lot with a roof (the layout's point may be a street).
+		var lot := _building_lot(city.model, shot["lot"])
+		shot["lot"] = lot
+		var cfg := CityView3D.CONFIG
+		(shot["camera"] as CityIsoCamera).target = city.lot_world(lot, cfg.backdrop_site_lift)
+		_frame_city()
+	_city_ready = true
+	_tex = city.get_texture()
+	_won_tex = null
+	_mat.set_shader_parameter(&"use_mask", false)
+	_mat.set_shader_parameter(&"won_mask", null)
+	_mat.set_shader_parameter(&"district_dim", DISTRICT_DIM)
+	_mat.set_shader_parameter(&"aspect", float(city.size.x) / maxf(1.0, float(city.size.y)))
+	_build_won_lights()
+	_sync_won()
+	_pools_sig = ""
+	_still.queue_redraw()
+
+
+## 5d's fight-won lights on the run's Site (hidden until won).
+func _build_won_lights() -> void:
+	if _won_lights != null:
+		_won_lights.queue_free()
+		_won_lights = null
+	var site: StringName = shot.get("won_site", &"")
+	if site == &"" or city.model == null:
+		return
+	_won_lights = SiteWonLights.new()
+	_won_lights.build(city.model, {site: shot["lot"]})
+	city.add_to_layer(&"fx", _won_lights)
+	_won_lights.visible = won > 0.0
+
+
+func _drop_city() -> void:
+	if city != null:
+		city.queue_free()
+	city = null
+	shot = {}
+	_won_lights = null
+	_city_ready = false
+
+
+## The target's top (world): the Site building's roof, or the HQ / canyon target raised.
+func _target_top() -> Vector3:
+	var cam: CityIsoCamera = shot["camera"]
+	if String(shot.get("focus", "")) == "site":
+		var lot: Vector2 = shot["lot"]
+		return city.lot_world(lot, city.top_at(Vector2i(lot.floor())))
+	return cam.target + Vector3(0.0, CityView3D.CONFIG.backdrop_hq_lift, 0.0)
+
+
+## The lot centre of the building nearest lot point `p` (within SITE_SEARCH lots; nearest first,
+## ties by y then x), else `p` itself.
+static func _building_lot(model: CityModel, p: Vector2) -> Vector2:
+	var at := Vector2i(p.floor())
+	var best := Vector2i(-99999, -99999)
+	var best_d := INF
+	for dy in range(-SITE_SEARCH, SITE_SEARCH + 1):
+		for dx in range(-SITE_SEARCH, SITE_SEARCH + 1):
+			var l := at + Vector2i(dx, dy)
+			if model.top_at(l) <= 0.0:
+				continue
+			var d := float(dx * dx + dy * dy)
+			if d < best_d:
+				best_d = d
+				best = l
+	return Vector2(best) + Vector2(0.5, 0.5) if best_d < INF else p
+

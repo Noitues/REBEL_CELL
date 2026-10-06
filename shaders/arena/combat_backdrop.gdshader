@@ -19,6 +19,12 @@ uniform float stripe_share : hint_range(0.0, 1.0) = 0.4;
 uniform float light_from = 0.08;
 uniform float light_to = 0.45;
 uniform float outline_px = 1.5;
+// ART-8 8w (D17 on the city): no won mask (the live city close-up): the target is the ellipse of
+// radius keep_radius (share of the width) round keep_at (UV); the district outside it dims, and the
+// target's own lights come from the city (SiteWonLights), not from this shader.
+uniform bool use_mask = true;
+uniform vec2 keep_at = vec2(0.5, 0.5);
+uniform float keep_radius = 0.16;
 // Up to four wheel pools: xy = centre (still UV), z = radius (share of the still's width).
 uniform vec3 pool_a = vec3(0.0, 0.0, 0.0);
 uniform vec3 pool_b = vec3(0.0, 0.0, 0.0);
@@ -63,7 +69,11 @@ void fragment() {
 	float bottom = smoothstep(1.0 - bottom_band, 1.0, UV.y);
 	col *= 1.0 - band_dark * max(top, bottom);
 	vec4 m = texture(won_mask, UV);
-	if (won > 0.0) {
+	if (won > 0.0 && !use_mask) {
+		vec2 dk = (UV - keep_at) * vec2(1.0, 1.0 / aspect);
+		float keep = exp(-pow(length(dk) / max(keep_radius, 0.001), pool_falloff));
+		col = mix(col, col * district_dim, won * (1.0 - keep));
+	} else if (won > 0.0) {
 		float sil = clamp(m.r, 0.0, 1.0);
 		col = mix(col, col * district_dim, won * (1.0 - sil));
 		float lum = max(max(base.r, base.g), base.b);
