@@ -98,9 +98,47 @@ func test_every_close_up_is_a_low_perspective_view_with_an_open_street() -> void
 			assert_true(px.size.x <= want.size.x * 1.05 and px.size.y <= want.size.y * 1.05, "%s: fitted into its frame (%s in %s)" % [corp, px, want])
 			assert_almost_eq(px.get_center().x, want.get_center().x, want.size.x * 0.1, "%s: centred between the wheels" % corp)
 	var look := BackdropCatalog.city_look(cfg, "hq")
-	assert_eq(look["haze"], cfg.backdrop_sky, "D1: the haze goes toward the night sky colour")
+	assert_eq(look["haze"], cfg.haze, "the haze goes toward the city grade's night-sky violet (art director)")
+	assert_gt(cfg.haze.b, maxf(cfg.haze.r, cfg.haze.g) * 1.5, "violet, not grey")
+	assert_almost_eq(float(look["rain_alpha"]), 0.15, 0.02, "thin rain at about 15 %")
+	assert_eq(float(look["rain_keep_blacks"]), 1.0, "that never lifts the blacks")
+	assert_eq(cfg.backdrop_saturation, 1.0, "no saturation cap between the wheels (the pools hold the 0.6)")
 	assert_eq(float(look["haze_k"]), cfg.backdrop_haze_k)
 	assert_true(bool(look["night"]), "the lit night look keeps the round 11 rain")
+
+
+func test_a_site_fight_frames_its_building_centred_between_the_wheels_35_to_45_percent_tall() -> void:
+	# Art director (round 31 combat_meridian, round 41 typical_v4): the fought Site's own building,
+	# centred between the wheels, 35-45 % of the frame's height; a low one gets a closer dolly.
+	var cfg := CityView3D.CONFIG
+	var size := Vector2(1920, 1080)
+	assert_between(cfg.backdrop_site_close_height, 0.35, 0.45)
+	var checked := 0
+	for corp: StringName in [&"meridian", &"solace", &"halcyon", &"orbital"]:
+		var cd := RunManager.lookup().get_content(corp) as CorporationData
+		var lots := CityLayout.site_points(cd)
+		var ids: Array = lots.keys()
+		ids.sort()
+		# The nominal block (before the model measures the building) and measured shapes: a low
+		# wide shed, a tall narrow tower, a small kiosk, on the Site's own lot.
+		for site: StringName in ids:
+			var c := CityIsoCamera.lot_to_world(cfg, lots[site])
+			var boxes: Array[AABB] = [AABB(), AABB(c - Vector3(12, 0, 9), Vector3(24, 8, 18)),
+				AABB(c - Vector3(5, 0, 5), Vector3(10, 70, 10)), AABB(c - Vector3(3, 0, 3), Vector3(6, 5, 6))]
+			for b in boxes:
+				var shot := BackdropCatalog.site_shot(cfg, corp, site, lots, size, b)
+				var cam: CityIsoCamera = shot["camera"]
+				assert_true(cam.perspective(), "%s %s: the perspective close-up" % [corp, site])
+				assert_eq(shot["lot"], CityLandmarks.site_lot(cfg, corp, lots) if shot.has("landmark") else lots[site], "%s %s: aimed at the Site's own lot" % [corp, site])
+				var px := BackdropCatalog.projected_box(cam, shot["subject"])
+				var h := px.size.y / size.y
+				var w := px.size.x / size.x
+				assert_true((h >= 0.35 and h <= 0.45) or (h < 0.35 and w >= cfg.backdrop_site_close_max_width - 0.02),
+					"%s %s %s: the subject %.2f of the height (or as wide as the gap: %.2f)" % [corp, site, b, h, w])
+				assert_almost_eq(px.get_center().x / size.x, 0.5, 0.02, "%s %s: centred between the wheels" % [corp, site])
+				assert_almost_eq(px.get_center().y / size.y, cfg.backdrop_site_close_centre.y, 0.03, "%s %s: above the hand" % [corp, site])
+				checked += 1
+	assert_gt(checked, 40)
 
 
 func test_the_view_cut_clears_only_what_hides_the_subject() -> void:
@@ -134,20 +172,26 @@ func test_the_view_cut_clears_only_what_hides_the_subject() -> void:
 
 # --- D4: no lime reticle while aiming ----------------------------------------------------------------
 
-func test_the_lime_brackets_never_draw_while_a_card_is_aimed() -> void:
-	var scene := await _combat()
+func test_the_lime_brackets_are_focus_only_never_a_static_marker_or_while_aiming() -> void:
+	var scene := await _combat(1.0, &"collections_agent")
 	var ev: WheelView = scene._enemy_views.values()[0]
 	assert_true(ev.highlighted, "the enemy is the target")
-	assert_false(ev.reticle_shown, "one wheel to hit: no brackets (lime = focus only)")
+	assert_false(ev.reticle_visible(), "no brackets at rest (art director: lime = focus only)")
+	var st: CombatState = scene.engine.state()
+	assert_false(scene.target_focused())
+	scene._set_target_focus(true)  # the target key / the pad put focus on the wheel
+	assert_true(ev.reticle_visible(), "pad / keyboard focus on the wheel wears them")
+	var mouse := InputEventMouseMotion.new()
+	scene._input(mouse)
+	assert_false(scene.target_focused(), "the mouse takes the focus away")
 	assert_false(ev.reticle_visible())
-	ev.reticle_shown = true  # two wheels to choose between
-	assert_true(ev.reticle_visible(), "with a choice of wheels, the attacks' focus wears them")
+	scene._set_target_focus(true)
 	var picked := _several_target_card(scene)
 	assert_true(picked >= 0)
 	scene.select_card(picked)
-	ev.reticle_shown = true
 	assert_false(ev.reticle_visible(), "never while a card is aimed: the pencil loop is the mark")
 	scene.cancel_selection()
+	assert_not_null(st)
 	await _close(scene)
 
 
@@ -163,7 +207,8 @@ func test_the_hub_is_an_emblem_and_a_tiny_name_and_shield_moves_to_chips() -> vo
 	var pv: WheelView = scene._player_view
 	var k := pv.art_scale()
 	assert_almost_eq(pv.hub_emblem_px(k), pv.hub_px(k) * 0.9, 0.01, "D2: the emblem at 0.45 of the hub's radius each side")
-	assert_eq(WheelView.NAME_FONT_SIZE, roundi(10.0 * GreasePencilMark.BOARD_TO_CANVAS), "D2: the name at 10 px at 1080p")
+	assert_eq(WheelView.NAME_FONT_SIZE, 12, "D2 + the art director: the name at the 12 px caption floor (bible 4.2)")
+	assert_eq(WheelView.NAME_MIN_FONT, WheelView.NAME_FONT_SIZE, "never under the floor")
 	assert_true(pv.hub_name_shown(k), "a wheel this size shows its name")
 	var standing: Array = scene.hud_layer.row_for(pv).standing
 	var words := PackedStringArray()
@@ -245,12 +290,32 @@ func test_the_hand_fans_overlaps_and_rises_at_the_middle() -> void:
 		var f: Dictionary = scene.hand_fan(k, n, s)
 		assert_almost_eq(float(f["deg"]), (k - (n - 1) * 0.5) * 2.5, 0.001, "D15: 2.5 degrees per card from the middle")
 		var card := scene._hand_box.get_child(k) as ZineCard
-		assert_almost_eq(card.rest_tilt, float(f["deg"]), 0.001, "the card rests at its fan angle")
+		assert_almost_eq(card.fan_deg, float(f["deg"]), 0.001, "the card's fan angle")
+		if not card._lifted:
+			assert_almost_eq(card.fan_turn, float(f["deg"]), 0.001, "drawn turned at rest (a container resets a child's rotation, so the turn is drawn)")
+			assert_almost_eq(card.face_xform().get_rotation(), deg_to_rad(float(f["deg"])), 0.001)
+		else:
+			assert_eq(card.fan_turn, 0.0, "focus and hover turn it upright")
 		assert_almost_eq(card.fan_rise, float(f["rise"]), 0.001)
 	var mid: Dictionary = scene.hand_fan((n - 1) / 2, n, s) if n % 2 == 1 else scene.hand_fan(n / 2, n, s)
 	assert_almost_eq(float(scene.hand_fan(0, 5, 1.0)["rise"]), 0.0, 0.001, "the ends sit on the line")
 	assert_almost_eq(float(scene.hand_fan(2, 5, 1.0)["rise"]), 6.0 * GreasePencilMark.BOARD_TO_CANVAS, 0.001, "D15: a 6 px arc rise at the middle")
 	assert_gt(float(mid["rise"]), 0.0)
+	await _close(scene)
+
+
+func test_card_focus_is_lime_corner_brackets_and_a_lift_never_a_lime_fill() -> void:
+	var src := FileAccess.get_file_as_string("res://scripts/ui/fx/card_face.gd")
+	assert_false(src.contains("_cc_style"), "no lime-filled plate behind a focused card (bible 2.10)")
+	assert_true(src.contains("StyleBoxBrackets.draw_on(card"), "focus = the kit's lime corner brackets")
+	assert_almost_eq(Motion.amplitude(&"card_hover") / GreasePencilMark.BOARD_TO_CANVAS, 18.0, 0.5, "an 18 px lift at 1080p")
+	var scene := await _combat()
+	var card := scene._card_node(1) as ZineCard
+	card.focus_entered.emit()
+	assert_eq(card.lift, Motion.amplitude(&"card_hover"), "focus lifts it")
+	assert_eq(card.fan_turn, 0.0, "and turns it upright")
+	card.focus_exited.emit()
+	assert_almost_eq(card.fan_turn, card.fan_deg, 0.001, "back to its fan angle")
 	await _close(scene)
 
 

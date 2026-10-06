@@ -31,6 +31,54 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-06 — B2 b — combat composition, the art director's fixes
+The art-pass review of B2 (29260839; relayed by the orchestrator). Approved as built: the hub (emblem + accent glow,
+statuses as chips), the hub plate's removal, the wax underlines on the HP / result chips, the boss helix framing,
+EXECUTE behind SEND IT, the Heat chip, D25; perf as is (a far-LOD slice is queued separately). Ruled: the lime brackets
+are focus only; the passive is the emblem + its tooltip. Fixes (sheet `docs/art_review/PARITY/fixes/B2_b.jpg`: Site
+fight start / aiming, boss start, the arena lab's Solace boss and two more Sites; 1:1 1080p `B2_b_site_start.png`,
+`B2_b_site_aiming.png`, `B2_b_boss_start.png`, `B2_crop_hand.png`, `B2_b_crop_hub_site.png`, `B2_crop_hub_player.png`,
+`B2_crop_hub_boss.png`). Tests: `test_b2_combat_composition` (new and changed below), `test_b1a_ui_scrim_pools`.
+- **(1) A Site fight frames its building.** `BackdropCatalog.close_site_shot` (perspective path of `site_shot`): the
+  subject centred between the wheels at `backdrop_site_close_centre` (0.5, 0.45), `backdrop_site_close_height` 0.4 of
+  the frame's height (lock: 35-45 %), at most `backdrop_site_close_max_width` 0.6 wide (`fit_height`: the camera dollies
+  in); a low subject would put the eye on its roof, so the lens narrows instead (`telephoto`: the eye at least
+  `backdrop_site_close_min_eye_bu` 180 BU away, the lens no narrower than 10 degrees), the city standing behind it.
+  The HQ zoom-out (the S-ARENA "HQ in the back") is skipped: it waits for the per-fight backdrops (designer). The
+  subject is measured on the model at the Site's own lot (`CityLayout.site_points`): the Site's **block**, its tallest
+  building within `SITE_SEARCH` lots and every building within `backdrop_site_reach` lots of it
+  (`CombatBackdrop.block_box`; the old "nearest building" was a 1-lot shed 3 to 5 BU tall that read as nothing).
+  It is lit against its street: the focus ellipse takes the block's own shape (`focus_axes`, its half width x
+  `backdrop_site_focus_reach` 1.2), the block lifted x `backdrop_site_focus_lift` 1.5, the rest dimmed by
+  `backdrop_site_focus_dim` 0.55 (an HQ keeps S-ARENA's). The view cut now opens the street to the subject's foot
+  (`backdrop_close_sight_share` 0.2 -> 0). Test: `test_a_site_fight_frames_its_building_centred_between_the_wheels_35_to_45_percent_tall`
+  (every Site of the four corps, the nominal block and three measured shapes: height share 0.35-0.45, or as wide as the
+  gap; centred).
+- **(2) The grade.** (a) The haze goes to the city grade's night-sky violet (`CityConfig.haze`), 18 %. (b) No
+  saturation cap between the wheels: `backdrop_saturation` 0.72 -> 1.0; the 0.6 cap is the wheel pools' (B1a), and
+  emissives are never capped there either (`UiScrimLook.emissive_from` 0.72 / `emissive_to` 0.9 on the pixel's brightest
+  channel: `ui_scrim_pools.gdshader` and its GDScript mirror). (c) Rain: the close-up's look sets `rain_alpha` 0.15
+  (`backdrop_rain_alpha`) and `rain_keep_blacks` 1 (the post pass's streaks scale with the light under them, so they never
+  lift the blacks; `city_post.gdshader`).
+- **(3) The hand.** A container resets a child's own rotation, so B2's fan never showed: the fan is now drawn
+  (`ZineCard.fan_deg` / `fan_turn`, about the card's foot in `face_xform`; focus and hover turn it upright on
+  `card_hover`). Focus is the kit's lime corner brackets round the die-cut (`StyleBoxBrackets`) and the `card_hover`
+  lift (12 canvas px = 18 px at 1080p); the lime-filled plate (`_cc_style`) is gone (bible 2.10).
+- **(4) Hub name** at 12 px (the bible 4.2 caption floor wins), Plex Condensed caps, never under it (two lines first,
+  centred by its own width, never clipped); emblem only under r 90 at 1080p. The lint baseline's wheel_view
+  `font_const` is back to 2.
+- **Lime brackets = focus only.** The target wheel wears them only while the pad / keyboard put focus there
+  (`cycle_target`; a mouse move or click takes it away: `CombatScene._target_focus`), never as a static marker; never
+  while aiming. Test: `test_the_lime_brackets_are_focus_only_never_a_static_marker_or_while_aiming`.
+- Files outside the area: `shaders/city/city_post.gdshader` (rain keeps the blacks), `scripts/city3d/city_view_3d.gd`
+  (a look's rain), `shaders/kit/ui_scrim_pools.gdshader` / `ui_scrim_pools.gd` / `ui_scrim_look.gd` /
+  `ui_scrim_look.tres` (emissives uncapped), `scripts/ui/fx/card_face.gd` (focus brackets for every sticker card),
+  `scripts/city3d/city_config.gd`. Test changed: `test_b1a_ui_scrim_pools` (the capped colour is under the emissive
+  band; an emissive keeps its chroma).
+- **Open question for the art director:** the procedural city has no distinct "Site building", so the subject is the
+  Site's block (its tallest building and its neighbours), lit against a dimmed street; a dense corp (Orbital) still
+  reads busy behind it. Unique per-fight backdrops (queued) are the full fix.
+
 ### 2026-10-06 — B2 — combat composition (integration review)
 Integration review (art-pass `docs/concepts/INTEGRATION_REVIEW/REVIEW.md`) D1, D2, D4, D15, D16, section c (the
 play-result plate, Settings, tutorial, card piles, key hints) and the orchestrator calls Q1 (c) and Q2, bound by the
