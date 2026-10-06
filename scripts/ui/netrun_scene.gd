@@ -5676,7 +5676,7 @@ func _refresh_status() -> void:
 	var stats := [[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency, spent at HQ.")]]
 	# H24 S16: whose numbers these are: the campaign's, then this run's.
 	var captions := [[0, tr("CAMPAIGN"), tr("The campaign's numbers: they stay between runs.")]]
-	if route_strip_only(s):
+	if route_strip_only(s) and _held_bar.is_empty():  # B5: a leaving loot page keeps its own strip (its pick flies to CARDS)
 		# B3 (round 44 `topbar_by_page.png`): the route page's strip is Heat (the gauge), HP and
 		# Cycles; the rest is behind VIEW LOADOUT and the Heat terminal.
 		var hop := s.run.operative
@@ -5695,7 +5695,7 @@ func _refresh_status() -> void:
 	# B5 (review section f, round 44 `topbar_by_page.png`): each netrun page's bar shows only what it is about (the
 	# Heat gauge stays on every page, designer ruling Q1); everything else is behind VIEW LOADOUT.
 	var keys := _held_bar if not _held_bar.is_empty() else bar_keys(s)
-	if s != null and not s.run.is_over() and s.run.phase == RunState.Phase.MAP and not route_strip_only(s):
+	if _held_bar.is_empty() and s != null and not s.run.is_over() and s.run.phase == RunState.Phase.MAP and not route_strip_only(s):
 		keys = [BAR_ALL]  # B3: GRID VIEW and a boss run's compound keep the whole strip
 	if not keys.has(BAR_ALL):
 		stats = stats.filter(func(st: Array) -> bool: return keys.has(String(st[0])))
