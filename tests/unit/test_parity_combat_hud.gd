@@ -362,3 +362,26 @@ func test_the_result_plate_fits_on_screen_at_every_text_scale() -> void:
 			assert_false(r.intersects(scene._hand_box.get_global_rect()), "x%.1f: never on the hand" % scale)
 		scene.cancel_selection()
 		await _close(scene)
+
+
+func test_preview_labels_keep_off_the_send_it_block_and_the_aim_hint() -> void:
+	for scale in SCALES:
+		var scene := await _combat(scale)
+		var ev: WheelView = scene._enemy_views.values()[0]
+		var overlay := ev.find_child("CardPreview", true, false) as CardPreviewOverlay
+		if overlay == null:
+			overlay = scene.find_child("CardPreview", true, false) as CardPreviewOverlay
+		assert_not_null(overlay, "the card preview overlay")
+		var blockers: Array[Rect2] = overlay.label_blockers()
+		for c in [scene._end_turn_button, scene._sticker_box]:
+			var r: Rect2 = (c as Control).get_global_rect()
+			var local := Rect2(r.position - overlay.global_position, r.size).grow(CardPreviewOverlay.BLOCK_PAD)
+			assert_true(blockers.has(local), "x%.1f: %s blocks the preview's labels" % [scale, (c as Node).name])
+		# a label aimed straight at the SEND IT block turns round the wheel off it
+		var send: Rect2 = scene._end_turn_button.get_global_rect()
+		var hub: Vector2 = ev.global_center() - overlay.global_position
+		var at: Vector2 = send.get_center() - overlay.global_position
+		var dists: Array[float] = [hub.distance_to(at)]
+		var box: Rect2 = overlay.label_box(hub, (at - hub).angle(), dists, tr("DRONE ENDS HERE"))
+		assert_false(Rect2(box.position + overlay.global_position, box.size).intersects(send), "x%.1f: DRONE ENDS HERE never sits on SEND IT / EXECUTE" % scale)
+		await _close(scene)
