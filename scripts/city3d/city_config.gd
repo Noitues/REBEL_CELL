@@ -136,12 +136,12 @@ extends Resource
 ## between the top bar's and the hand's bands): the night stills (bakes of the concept
 ## generators) measure 0.053 (Solace HQ) .. 0.187 (Solace Site); main before the fix 0.017 .. 0.049.
 @export var backdrop_luma_band: Vector2 = Vector2(0.05, 0.19)
-## The pool behind each wheel (combat_backdrop.gdshader pool_dark / pool_falloff, stills and
-## city alike): darkening at its centre (0.55 leaves 45 %: the concept's ~55 % softening, with
-## margin for the HP numbers over the lit city) and its edge's
-## exponent, exp(-(d / reach) ^ falloff). Checked: the HP numbers (WheelView.HP_COLOR) keep
-## 4.5:1 and the wheel rims 3:1 over the settled close-up (test_parity_arena_backdrop).
-@export var backdrop_pool_dark: float = 0.55
+## The soft blur pool behind each wheel (combat_backdrop.gdshader pool_falloff, stills and city
+## alike) and the won look's keep ellipse: the edge's exponent, exp(-(d / reach) ^ falloff).
+## B1a: the pool's darkening moved to the shared UiScrimPools layer (UiScrimLook wheel_pool_*:
+## x0.55 in a soft disc of 1.25 R, review D1; it replaces backdrop_pool_dark 0.55 in this
+## falloff); the HP numbers keep 4.5:1 and the wheel rims 3:1 over the settled close-up
+## (test_parity_arena_backdrop).
 @export var backdrop_pool_falloff: float = 4.0
 ## Per corporation: the HQ close-up's least ortho width (BU; else backdrop_hq_ortho) and the
 ## share of the view its landmark is fitted into (else backdrop_hq_frame).
@@ -356,6 +356,9 @@ extends Resource
 @export var net_ring_px: float = 3.0
 ## Management zooms: the 3-trace bus spacing (px) and the packets' speed (BU / s) and gap.
 @export var net_bus_gap_px: float = 4.0
+## B1a b: how far past a trace's core or a node's disc (px, its dark keyline) the UI scrim keeps
+## the network at full strength (UiScrimPools keep).
+@export var net_keep_edge_px: float = 2.0
 @export var net_packet_speed: float = 24.0
 @export var net_packet_gap: float = 30.0
 ## Dash length / gap (BU) of border and not-yet links.

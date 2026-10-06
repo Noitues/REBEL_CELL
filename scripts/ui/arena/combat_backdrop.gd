@@ -2,8 +2,9 @@ class_name CombatBackdrop
 extends Control
 ## The combat backdrop (ART_BIBLE v2 §3.1, §3.14; DECISIONS D17 on its plan default): a close-up
 ## still of the place being attacked fills the screen (the corporation's HQ for a boss, the target
-## Site otherwise, night or the cool day; BackdropCatalog picks it), softened and darkened in a
-## pool behind each wheel, with darker bands under the top bar and the hand. Once the fight is won
+## Site otherwise, night or the cool day; BackdropCatalog picks it), softened in a pool behind each
+## wheel (B1a: the pools' darkening and the darker bands under the top bar and the hand are the
+## combat scene's UiScrimPools layer, drawn over this backdrop and its Heat lights). Once the fight is won
 ## the district dims and the target's own lights turn Cell colours, with a yellow pencilled
 ## "OURS NOW" over it (`play_won`).
 ## Layers, bottom to top: the still, `heat_layer` (Heat on combat, §3.15: ART-3 draws its beacons
@@ -80,7 +81,6 @@ func _init() -> void:
 	_mat.set_shader_parameter(&"lime", Palette.CELL_ACID)
 	_mat.set_shader_parameter(&"pink", Palette.CELL_PINK)
 	_mat.set_shader_parameter(&"district_dim", DISTRICT_DIM)
-	_mat.set_shader_parameter(&"pool_dark", CityView3D.CONFIG.backdrop_pool_dark)
 	_mat.set_shader_parameter(&"pool_falloff", CityView3D.CONFIG.backdrop_pool_falloff)
 	_still = _layer("Still", _draw_still)
 	_still.material = _mat

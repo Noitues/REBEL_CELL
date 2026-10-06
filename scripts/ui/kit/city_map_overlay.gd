@@ -362,6 +362,10 @@ func _init(p_city: NeonCity = null) -> void:
 	city = p_city
 	_c = self
 	mouse_filter = Control.MOUSE_FILTER_PASS
+	# B1a b (bible 4.1; designer ruling 2026-10-06): the map draws over the UI scrim, and its
+	# ground-decal network is kept out of the scrim's pools and bands.
+	add_to_group(UiScrimPools.LIFT_GROUP)
+	add_to_group(UiScrimPools.NETWORK_GROUP)
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_anim = _layer("Flow", _draw_anim)
 	# ART-5 5d: the atlas glyphs on links (a locked link's padlock), through the glyph shader.
@@ -713,6 +717,11 @@ func _feed_decal() -> void:
 		return
 	_fed_network = network_data()
 	city.view3d.set_network(_fed_network)
+
+
+## B1a b: the network this map last handed the 3D city's decal (null: none).
+func fed_network() -> CityNetworkData:
+	return _fed_network
 
 
 ## ART-5 5e: the network this map last handed the 3D city: leaving the tree clears the decal
@@ -1957,6 +1966,11 @@ func _sync_markers() -> void:
 func marker_view(id: StringName) -> SiteMarkerView:
 	var v: Variant = _marker_views.get(id)
 	return v if v != null and is_instance_valid(v) else null
+
+
+## The boss's red pencil TARGET word (null while none shows; B1a: its light spill reads it).
+func target_word() -> GreasePencilWord:
+	return _target_word if _target_word != null and is_instance_valid(_target_word) else null
 
 
 ## The boss's red pencil TARGET circle and word round its roof (bible §4.5), redrawn only

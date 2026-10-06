@@ -33,7 +33,18 @@ const PROBE_SCREENS := [
 	["combat_worst_probe", "_s_combat_worst_probe", "The worst fixture, each part of the combat scene hidden in turn."],
 	["combat_worst_redraw", "_s_combat_worst_redraw", "The worst fixture, every wheel view redrawn every frame (its own drawing's cost)."],
 	["combat_worst_fxlayer", "_s_combat_worst_fxlayer", "The worst fixture, the FX layer's volley alone (no precision landing on the wheels)."],
+	["scrim_probe_hq", "_s_scrim_probe_hq", "B1a: the HQ page with and without its UiScrimPools layer (pools, shadows, spill)."],
+	["scrim_probe_route", "_s_scrim_probe_route", "B1a: the route page with and without its UiScrimPools layer."],
+	["scrim_probe_combat", "_s_scrim_probe_combat", "B1a b: a fight's frame with and without its UiScrimPools layer."],
+	["scrim_luma_combat_start", "_s_scrim_luma_combat_start", "B1a b: the fight's world luma in the wheel pools vs between the wheels (+ fixture)."],
+	["scrim_luma_combat_aiming", "_s_scrim_luma_combat_aiming", "B1a b: the same while a card is aimed."],
+	["scrim_luma_hq", "_s_scrim_luma_hq", "B1a b: the HQ's city luma in the panels' pool margins and under the foot band vs open (+ fixture)."],
+	["scrim_luma_raid_setup", "_s_scrim_luma_raid_setup", "B1a b: the same on the raid setup (+ fixture)."],
+	["scrim_luma_route", "_s_scrim_luma_route", "B1a b: the same on the route page (+ fixture)."],
 ]
+const ScrimLuma := preload("res://tools/visual_qa/scrim_luma.gd")
+## B1a b: the luma probe's working size and fixture size (px).
+const LUMA_SIZE := Vector2i(480, 270)
 ## Frames and seconds per probe part.
 const PROBE_WARMUP := 20
 const PROBE_S := 1.2
@@ -424,6 +435,135 @@ func _s_combat_worst_probe() -> void:
 		var ms := await _probe_ms()
 		p.visible = true
 		print("PROBE hidden=%s class=%s frame_ms=%.2f saves_ms=%.2f" % [combat.get_path_to(p), _cls(p) if _cls(p) != "" else p.get_class(), ms, whole - ms])
+
+
+## B1a: the HQ page's frame with its UiScrimPools layer shown and hidden (one PROBE line each).
+func _s_scrim_probe_hq() -> void:
+	var hq: Node = await _hq_with_campaign()
+	await _settle(hq)
+	await _scrim_probe(hq)
+
+
+## B1a: the route page's frame with its UiScrimPools layer shown and hidden.
+func _s_scrim_probe_route() -> void:
+	await _s_route()
+	await _scrim_probe(get_tree().current_scene if get_tree().current_scene != null else self)
+
+
+## B1a b: a fight's frame with its UiScrimPools layer shown and hidden.
+func _s_scrim_probe_combat() -> void:
+	await _s_combat_start()
+	await _scrim_probe(get_tree().root)
+
+
+func _scrim_probe(root: Node) -> void:
+	var scrims: Array[Node] = root.find_children("*", "UiScrimPools", true, false)
+	if scrims.is_empty():
+		scrims = get_tree().root.find_children("*", "UiScrimPools", true, false)
+	# Shown, hidden, shown again (the mean of the two shown windows: less drift).
+	var whole := await _probe_ms()
+	for s in scrims:
+		(s as CanvasItem).visible = false
+	var bare := await _probe_ms()
+	for s in scrims:
+		(s as CanvasItem).visible = true
+	whole = (whole + await _probe_ms()) * 0.5
+	for s in scrims:
+		(s as UiScrimPools).keep_enabled = false
+	var no_keep := await _probe_ms()
+	for s in scrims:
+		(s as UiScrimPools).keep_enabled = true
+	print("PROBE scrim layers=%d frame_ms=%.2f without=%.2f costs_ms=%.2f no_keep=%.2f keep_costs_ms=%.2f" % [scrims.size(), whole, bare,
+		whole - bare, no_keep, whole - no_keep])
+
+
+func _s_scrim_luma_combat_start() -> void:
+	await _s_combat_start()
+	await _scrim_luma("combat_start")
+
+
+func _s_scrim_luma_combat_aiming() -> void:
+	await _s_combat_aiming()
+	await _scrim_luma("combat_aiming")
+
+
+func _s_scrim_luma_hq() -> void:
+	await _s_hq()
+	await _scrim_luma("hq")
+
+
+func _s_scrim_luma_raid_setup() -> void:
+	await _s_raid_setup()
+	await _scrim_luma("raid_setup")
+
+
+func _s_scrim_luma_route() -> void:
+	await _s_route()
+	await _scrim_luma("route")
+
+
+## B1a b: the world under the screen's scrim with its pools and bands hidden (raw) and shown (on),
+## the UI and the lifted map hidden; prints the measured ratios (and the scrim maths' on the raw
+## frame), and writes the raw frame and the scrim's sources as a fixture (<out>/fixtures/).
+func _scrim_luma(screen: String) -> void:
+	var scrim: UiScrimPools = null
+	var best := -1
+	for n in get_tree().root.find_children("*", "UiScrimPools", true, false):
+		var s := n as UiScrimPools
+		if s == null or not s.is_visible_in_tree():
+			continue
+		s.refresh()
+		if s.shapes.size() > best:
+			best = s.shapes.size()
+			scrim = s
+	if scrim == null:
+		push_error("perf_pack: no scrim on %s" % screen)
+		return
+	for i in 6:
+		await get_tree().process_frame
+	scrim.refresh()
+	var src := scrim.sources()
+	scrim.hold_shapes = true
+	var hidden: Array[CanvasItem] = []
+	for sib in scrim.get_parent().get_children():
+		var ci := sib as CanvasItem
+		if ci != null and ci.get_index() > scrim.get_index() and ci.visible:
+			hidden.append(ci)
+	for ci in scrim.lifted:
+		if is_instance_valid(ci) and ci.visible:
+			hidden.append(ci)
+	for ci in hidden:
+		ci.visible = false
+	scrim.spill.visible = false
+	scrim.visible = false
+	var raw := await _grab_luma()
+	scrim.visible = true
+	var on := await _grab_luma()
+	scrim.hold_shapes = false
+	scrim.spill.visible = true
+	for ci in hidden:
+		if is_instance_valid(ci):
+			ci.visible = true
+	var real := ScrimLuma.measure(raw, on, src)
+	var model := ScrimLuma.measure(raw, null, src)
+	print("PROBE scrim_luma tier=%d screen=%s real: %s" % [_tier, screen, ScrimLuma.line(real)])
+	print("PROBE scrim_luma tier=%d screen=%s model: %s" % [_tier, screen, ScrimLuma.line(model)])
+	var dir := out_dir.path_join("fixtures")
+	DirAccess.make_dir_recursive_absolute(dir)
+	raw.save_png(dir.path_join(screen + ".png"))
+	on.save_png(dir.path_join(screen + "_on.png"))
+	var f := FileAccess.open(dir.path_join(screen + ".json"), FileAccess.WRITE)
+	f.store_string(JSON.stringify(ScrimLuma.to_json(src), "\t"))
+	f.close()
+
+
+func _grab_luma() -> Image:
+	for i in 3:
+		await RenderingServer.frame_post_draw
+	var img := get_viewport().get_texture().get_image()
+	img.convert(Image.FORMAT_RGB8)
+	img.resize(LUMA_SIZE.x, LUMA_SIZE.y, Image.INTERPOLATE_NEAREST)
+	return img
 
 
 ## The mean frame time (ms) over PROBE_S seconds after PROBE_WARMUP frames, v-sync off.
