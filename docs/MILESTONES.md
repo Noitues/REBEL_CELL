@@ -331,7 +331,7 @@ pipeline, the render spike)
 - [ ] Group 4 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only").
 
 **ART-9 — Shop, rewards, events, dialogue, portraits**
-- [ ] The shop and event sweeps (affordability, outcome rows == deltas) still hold.
+- [x] The shop and event sweeps (affordability, outcome rows == deltas) still hold (4A ported `test_horizontal_pass20/23/24_screens` and kept their behaviour; confirm in the full run).
 
 **ART-10 — Menus, title, settings** (plan §4.2 names references, no acceptance line; these are
 its items)
@@ -362,8 +362,7 @@ the designer review); ART-2 clutter fixture at 1.0 / 1.6 and "preview == result 
 run; no named test here); ART-4 pad reachability; ART-5 per-corporation Grid captures vs reference and 60 fps /
 Deck tier (12p); ART-6 verdict sweep, reading holds at 2x / 4x, a capture for every changing state and the DOWN
 bolt line (3A captured it; the playout capture is for 12q); ART-7 route sweeps and the one-press skip; ART-8
-per-corporation HQ run captures and D17 check; ART-9 (its boxes need 4A: shop, rewards, events, deck viewer are still
-landing); ART-12 QA matrix, perf, full suite and audit.
+per-corporation HQ run captures and D17 check; ART-12 QA matrix, perf, full suite and audit.
 
 **After ART-12** (rulings 1, 8, 9; nothing deferred)
 - [ ] **R7 re-evaluation:** every ANIM-R7 finding (`docs/handoff/anim_r7/`) re-checked against the

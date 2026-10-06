@@ -61,6 +61,10 @@ Designer (Noitues), 2026-10-05 evening: "I want my main to look just like art pa
   reference. Mechanics the rules lack (G1–G16) are still not built: a difference that needs one is listed, not built.
 - The old audit agents and `docs/handoff/m14_audit/` stored reports are not inputs to this effort.
 - The full-suite run in isolation, fixes to green and the CI re-enable stay after it.
+- **Amended the same evening (designer):** some art-pass looks are off or not better than main, so every difference
+  the audit finds goes to the designer for a comment and a decision (match the art pass / keep main / something else)
+  before any fix. This replaces "the art pass design is correct, follow it without asking" for parity work. Bug fixes
+  that are not a look choice (test reds, overlaps) still go ahead.
 
 ### 2026-10-05 — Art direction — ART-3 6w raid on the city
 ART-3 wave 2b, ART-6 on the unified city (ART_BIBLE v2 §4.1, §4.8, Appendix C #13, plan G10; refs round 40
