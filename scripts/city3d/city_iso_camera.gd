@@ -13,6 +13,11 @@ var target: Vector3 = Vector3.ZERO
 var ortho: float = 440.0
 var viewport: Vector2 = Vector2(1920, 1080)
 var distance: float = 2600.0
+## Parity S-HQRUN: the horizontal field of view (degrees) of a perspective view; 0 = the
+## orthographic iso camera (every view but the DISPATCH canyon's HQ-run page). In perspective
+## `ortho` stays the view's width (BU) at the target's depth: the eye stands `eye_distance()`
+## back from the target, so the target plane frames as the orthographic view would.
+var fov_deg: float = 0.0
 
 
 ## A camera from the config for view `view_name` ("grid", "raid", "netrun", "close").
@@ -56,17 +61,42 @@ func up() -> Vector3:
 	return right().cross(forward())
 
 
-## The Camera3D transform (looks along forward(), `distance` back from the target).
+## True for a perspective view (`fov_deg` > 0).
+func perspective() -> bool:
+	return fov_deg > 0.0
+
+
+## How far back from the target the eye stands: `distance` (orthographic), or the distance
+## at which the horizontal field of view spans `ortho` at the target (perspective).
+func eye_distance() -> float:
+	if not perspective():
+		return distance
+	return ortho * 0.5 / tan(deg_to_rad(fov_deg) * 0.5)
+
+
+## The eye's world position.
+func eye() -> Vector3:
+	return target - forward() * eye_distance()
+
+
+## The Camera3D transform (looks along forward(), `eye_distance()` back from the target).
 func transform() -> Transform3D:
 	var b := Basis(right(), up(), -forward())
-	return Transform3D(b, target - forward() * distance)
+	return Transform3D(b, eye())
 
 
-## Screen pixel of world point `w`.
+## Screen pixel of world point `w` (Vector2.INF behind a perspective eye).
 func project(w: Vector3) -> Vector2:
 	var d := w - target
 	var xc := d.dot(right())
 	var yc := d.dot(up())
+	if perspective():
+		var e := eye_distance()
+		var z := (w - eye()).dot(forward())
+		if z <= 0.0:
+			return Vector2.INF
+		xc *= e / z
+		yc *= e / z
 	var oh := ortho * viewport.y / viewport.x
 	return Vector2((xc / ortho + 0.5) * viewport.x, (0.5 - yc / oh) * viewport.y)
 
@@ -75,6 +105,9 @@ func project(w: Vector3) -> Vector2:
 func unproject(p: Vector2, height: float = 0.0) -> Vector3:
 	var o := ray_origin(p)
 	var f := forward()
+	if perspective():
+		o = eye()
+		f = (ray_origin(p) - o).normalized()
 	return o + f * ((height - o.y) / f.y)
 
 
@@ -119,6 +152,7 @@ func copy() -> CityIsoCamera:
 	c.viewport = viewport
 	c.target = target
 	c.ortho = ortho
+	c.fov_deg = fov_deg
 	return c
 
 

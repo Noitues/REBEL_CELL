@@ -422,6 +422,33 @@ extends Resource
 @export var route_link_lateral: float = 2.0
 @export var route_link_min_lots: float = 6.0
 
+@export_group("HQ run page (parity S-HQRUN: the round 43 compound views)")
+## Per-corporation framing of the HQ run's page over the compound manifest's reference camera
+## (HqCompoundStage.run_camera; the combat backdrop's canyon keeps the manifest's own). Keys are
+## corporation ids. The reference ortho times `hq_run_ortho_scale_by_corp` (the concept's
+## distance), the reference target moved by `hq_run_target_by_corp` (compound frame, BU), and
+## the pitch / yaw replaced by `hq_run_pitch_by_corp` / `hq_run_yaw_by_corp` (degrees).
+@export var hq_run_ortho_scale_by_corp: Dictionary = {&"halcyon": 1.4, &"meridian": 1.15, &"orbital": 1.15, &"rebel_cell": 0.6}
+@export var hq_run_target_by_corp: Dictionary = {&"rebel_cell": Vector3(10.0, -2.0, 0.0)}
+@export var hq_run_pitch_by_corp: Dictionary = {&"rebel_cell": 19.0}
+@export var hq_run_yaw_by_corp: Dictionary = {}
+## A perspective view's horizontal field of view (degrees; absent = the orthographic iso
+## camera). The DISPATCH canyon is round 34's elevated telephoto down the street (hq34.py
+## CAM27: a 54 mm lens, 36.9 degrees, about 19 degrees down), the concept of
+## dispatch_idea_1_sync_strike.
+@export var hq_run_fov_by_corp: Dictionary = {&"rebel_cell": 36.9}
+## A page whose run does not fit steps back by this factor of its width at a time.
+@export var hq_run_fit_step: float = 1.05
+## A page whose run does not fit first aims at the run's middle, up to this many passes (a
+## perspective view's projection is not linear, so one pass can fall short).
+@export var hq_run_fit_pans: int = 3
+## A perspective page steps back at most this times its width (further back the canyon's far
+## rows crowd into the core: the run keeps its top in view instead).
+@export var hq_run_fit_share_perspective: float = 1.25
+## A pan that keeps the run's top in aims this far (px) inside the free part (a perspective
+## pan is not exact).
+@export var hq_run_fit_slack_px: float = 4.0
+
 
 ## The quality tier for a Settings.city_quality value (-1 = default).
 func tier_for(city_quality: int) -> int:

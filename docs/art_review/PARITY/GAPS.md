@@ -244,7 +244,7 @@ Ref: build `jack_in`; concept `round37_netrun/transition_storyboard.png`.
 
 **JACK-01 (P3) CONNECTING TO.** Build: one small cyan line `CONNECTING TO SOLACE BIOSYSTEMS`. Main:
 small `CONNECTING TO` over a large cream stencil corp name. Same grid and scan band. View: main's is
-stronger. Likely file: `scripts/ui/kit/jack_sequence.gd`. Decision:
+stronger. Likely file: `scripts/ui/kit/jack_sequence.gd`. Decision: Kept as main (no concept or ART_BIBLE line shows the CONNECTING cover; the round 37 storyboard stops at the terminal, wheel and lens; the large destination is ANIM-R6 B13, a readability fix for the smallest type in the biggest beat). Fixed the real layout defect the check found: the name's width came from a Label minimum size one text size stale, so the first jack after a text-size change sat off-centre; now measured from the face (designer group ruling 2026-10-05; DECISIONS "Parity fix — jack, daemon tray, panel_in scan band", sheet fixes/JACK_MOTION.jpg)
 
 ### Loot (`loot.jpg`)
 Refs: build `loot`; concept `round32_shop_reward/reward_screen_v2.png` (LOCKED reward).
@@ -471,7 +471,7 @@ CLEAN SIGNAL card).
 **DAEMON-01 (P3) Daemon tray popup.** Build and main: the same small `DAEMON / CASCADE` terminal
 under the top-right Daemon badge; main's reads `Daemon Cascade` (doubled word). Concept: in combat,
 a CRT rack on the left with a hover card (name, rarity, trigger, family colour, TILE STATES). The
-tray outside combat has no concept. Likely file: `scripts/ui/kit/daemon_tray.gd`. Decision:
+tray outside combat has no concept. Likely file: `scripts/ui/kit/daemon_tray.gd`. Decision: Follow the build / concept card: name once (the doubled `Daemon Cascade` line is gone, the card shows the Daemon's own text), head, name and width grow with the text size (designer group ruling 2026-10-05; DECISIONS "Parity fix — jack, daemon tray, panel_in scan band", sheet fixes/JACK_MOTION.jpg)
 
 ### Combat (`combat_*.jpg`, `tutorial.jpg`)
 Refs: art pass build `combat_*` (M13: bright teal wireframe city, pink/teal sticker-ring wheels,
@@ -806,7 +806,7 @@ an `> HQ MECHANIC` terminal at the foot explaining the compound's rule with a pr
 (`HEIGHT 31%`, `STEP 3`, `LAP 1`), and a state key strip (walked / selectable / not yet / cut off /
 danger). Main: none of these; only the TARGET pencil and the `CENTRAL SERVER // <name>` chip.
 The mechanic text needs the per-corp mechanics (see "Mechanics the rules lack"); the title sticker
-and the key strip do not. Likely file: `scripts/ui/hq_run/hq_run_view.gd`. Decision:
+and the key strip do not. Likely file: `scripts/ui/hq_run/hq_run_view.gd`. Decision: Follow the concept without the mechanics: the yellow title sticker per corporation ("<CORPORATION>: HQ RUN"; the concept's mechanic names are G12), the state key (walked / selectable / not yet / cut off; danger is G12), the `> HQ MECHANIC` terminal presenting today's rules (the breach and its Exploits, a STEP chip) (designer group ruling 2026-10-05; built, see DECISIONS "Parity fix — HQ runs and gate (designer group ruling)", sheet fixes/HQRUN.jpg).
 
 **HQRUN-02 (P1) Today's run shows one dashed line.** Concept: the whole compound route drawn
 (nodes on the structure, walked path in lime, selectable in orange, labels like `STRAND A`,
@@ -814,36 +814,36 @@ and the key strip do not. Likely file: `scripts/ui/hq_run/hq_run_view.gd`. Decis
 server and the operative marker; no nodes (main's run is GDD 4.2's breach run, a straight line).
 `full_solace` shows main can draw a full map (rings on the helix, walked lime path, gears for
 locked nodes). View: the full-map look is close to the concept; which one the real run shows is
-a rules question. Decision:
+a rules question. Decision: Held (designer group ruling 2026-10-05): a rules question (GDD 4.2), written up under DECISIONS "Open questions for the designer"; not built.
 
 **HQRUN-03 (P2) Node markers on the compound.** Concept: route vinyl stickers with state rings and
-small name tabs. Main `run_solace` (crop HQRUN-03): no nodes at all on today's run. Decision:
+small name tabs. Main `run_solace` (crop HQRUN-03): no nodes at all on today's run. Decision: Follow the concept: name tabs (kind word, choice number) on the selectable nodes, the Central Server's chip, the entry as the lime diamond; today's run still has its one node (HQRUN-02 held) (designer group ruling 2026-10-05; built, see DECISIONS "Parity fix — HQ runs and gate (designer group ruling)", sheet fixes/HQRUN.jpg).
 
 **HQRUN-04 (P2) Full run map markers (`full_solace`).** Main: white-dashed rings for not-yet nodes,
 grey gear discs for cut nodes, orange selectable rings, a lime walked path; no name tabs, and the
 gears are hard to read on the dark helix. Close to the concept's language. Likely file:
-`hq_run_view.gd`, `route_overlay.gd`. Decision:
+`hq_run_view.gd`, `route_overlay.gd`. Decision: Follow the concept: name tabs and choice numbers, cut-off nodes on a pale backing so they read on the dark compound, the route's ring styles kept (designer group ruling 2026-10-05; built, see DECISIONS "Parity fix — HQ runs and gate (designer group ruling)", sheet fixes/HQRUN.jpg).
 
 **HQRUN-05 (P2) Meridian compound.** Concept: the crane yard at night with lit warm windows, nodes on
 the crane arms and the train, a `NEXT: OFF THE TRAIN` pencil call-out, the master manifest circled.
 Main: the same compound model (crane, cars, warm lit faces) — a good match in modelling; camera a
-little closer; no nodes / call-outs (HQRUN-02). Decision:
+little closer; no nodes / call-outs (HQRUN-02). Decision: Follow the concept: framed a little further out (1.15x); the crane / train call-outs are G12, listed (designer group ruling 2026-10-05; built, see DECISIONS "Parity fix — HQ runs and gate (designer group ruling)", sheet fixes/HQRUN.jpg).
 
 **HQRUN-06 (P2) Halcyon framing.** Concept: the ziggurat seen from further out with the switchback
 route on its face, the eye's watched half tinted. Main: a much closer camera on the ziggurat; the
 compound fills the frame, the city around it is hidden. Likely file: `scripts/city3d/hq_compound_stage.gd`
-(per-corp framing). Decision:
+(per-corp framing). Decision: Follow the concept: seen from further out (1.4x) with the city round it; the switchback route and the eye's watched half are G12, listed (designer group ruling 2026-10-05; built, see DECISIONS "Parity fix — HQ runs and gate (designer group ruling)", sheet fixes/HQRUN.jpg).
 
 **HQRUN-07 (P2) Orbital launch loop.** Concept: the platform with the hazard ring, dishes, antenna,
 the loop route, a `> MISSILE BAY` terminal with a NEXT MISSILE PREP bar. Main: the same platform,
 hazard ring and dishes (a close match), no loop route, no missile bay panel (needs the mechanic).
-Decision:
+Decision: Follow the concept: framed a little further out (1.15x); the loop route and the MISSILE BAY panel are G12, listed (designer group ruling 2026-10-05; built, see DECISIONS "Parity fix — HQ runs and gate (designer group ruling)", sheet fixes/HQRUN.jpg).
 
 **HQRUN-08 (P1) REBEL_CELL HQ camera.** Concept (DISPATCH sync strike): an angled view down three
 lanes towards the DISPATCH core tower with red signage. Main: a near top-down view of a street grid
 with a red lane, a white X, and a yellow wedge (a searchlight) cut off at the bottom-right corner;
 it reads like the Grid, not an HQ. Likely file: `hq_compound_stage.gd` (REBEL_CELL camera pitch /
-framing), `city_iso_camera.gd`. Decision:
+framing), `city_iso_camera.gd`. Decision: Follow the concept: the canyon page is round 34's perspective telephoto down the street (36.9 degrees, 19 degrees down); the three lanes / SYNC STRIKE are G12, listed (designer group ruling 2026-10-05; built, see DECISIONS "Parity fix — HQ runs and gate (designer group ruling)", sheet fixes/HQRUN.jpg).
 
 **GATE-01 (P2) Gate panel.** Concept: a corp-orange bordered panel with `CENTRAL SERVER // THE
 MANIFEST`, `EXPLOITS 3/3 minimum to breach`, three keycards (corp name header, icon, type, one-line
@@ -851,17 +851,17 @@ effect, a footer tag), EXTRA slots, `3/3 - BREACH READY`, and a BREACH sticker u
 Main: the same pieces (keycards in Solace lime, EXTRA slots, BREACH READY, BREACH sticker with a
 lime focus box, `Back to the compound`), larger and without the panel border: the keycards and text
 float on the dimmed compound. View: main's content matches; the concept's bordered panel holds it
-together. Likely file: `scripts/ui/hq_run/central_server_gate.gd`. Decision:
+together. Likely file: `scripts/ui/hq_run/central_server_gate.gd`. Decision: Follow the concept: the bordered card at the concept's size (corp edge when ready, corp bar, kind words under the sockets), BREACH under the panel (designer group ruling 2026-10-05; built, see DECISIONS "Parity fix — HQ runs and gate (designer group ruling)", sheet fixes/HQRUN.jpg).
 
 **GATE-02 (P1) Duplicated server label / boss preview.** Main: `CENTRAL SERVER // THE GENOME CORE`
 appears twice (the gate's header and the run page's chip, left visible behind the gate at a
 different place); the boss wheel preview sits right with `1475/1475` HP but no exploit effect card.
 Concept: one label; the wheel shows the exploit effects (cut slices, a crossed phase) with an
 `INTEL // SHIPPING MANIFESTS` card listing what each Exploit did (`PHASE 2 @ 66% ... BREACHED`).
-Likely file: `central_server_gate.gd`, `hq_run_view.gd` (hide its chip under the gate). Decision:
+Likely file: `central_server_gate.gd`, `hq_run_view.gd` (hide its chip under the gate). Decision: One label: the page's chip steps aside while the gate is open; the exploit-effect card and cut slices are G6, listed (designer group ruling 2026-10-05; built, see DECISIONS "Parity fix — HQ runs and gate (designer group ruling)", sheet fixes/HQRUN.jpg).
 
 **GATE-03 (P3) Gate backdrop.** Concept: the compound blurred and darkened. Main: dimmed, not
-blurred. Decision:
+blurred. Decision: Follow the concept: the page behind blurred and dimmed (GlassScrim), darker behind the panel and under the wheel (designer group ruling 2026-10-05; built, see DECISIONS "Parity fix — HQ runs and gate (designer group ruling)", sheet fixes/HQRUN.jpg).
 
 **BACKDROP-01 (P1) Boss fight backdrop (Solace).** Concept `combat_solace.jpg`: the double helix lit
 pale against a rainy blue-grey city, green beams, readable; the wheels sit in front. Main: the helix
@@ -977,7 +977,7 @@ static ones (CMB-02/04/06). In-context strips needed only if the designer wants 
 **MOTION-06 (P3) panel_in.** Build: the panel arrives with a bright scan band across it at ~133 ms.
 Main: the panel appears at ~133 ms with no band (its kit's panel-in is a plain fade/scale). Likely
 file: `scripts/ui/kit/terminal_window.gd` / `menu_motion.gd` (`panel_in` entry in
-`content/config/ui_motion.tres`). Decision:
+`content/config/ui_motion.tres`). Decision: Added the scan band: a bright band sweeps down the glass once it is shown, over the rest of `panel_in`'s own duration; skip and reduce effects end it (designer group ruling 2026-10-05; DECISIONS "Parity fix — jack, daemon tray, panel_in scan band", sheet fixes/JACK_MOTION.jpg)
 
 **MOTION-07 (P2) enemy_break.** Same beat timing (break at ~533 ms, the red hit line flies by
 ~667 ms). Main's in-context demo shows the combat backdrop **lit** (a coloured, readable 3D city)

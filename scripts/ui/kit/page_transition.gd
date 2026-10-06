@@ -19,6 +19,10 @@ enum Look { GLASS, PAPER }
 const FADE_SHARE := 0.4
 ## The CRT roll band's height as a share of the page's.
 const ROLL_BAND_SHARE := 0.12
+## MOTION-06: the scan band's fill alpha, its bright leading edge's height (px) and alpha.
+const SCAN_ALPHA := 0.4
+const SCAN_EDGE_PX := 2.0
+const SCAN_EDGE_ALPHA := 0.85
 const NODE_NAME := "PageTransition"
 ## ANIM-R1 M11: a page whose glass is only some of its controls (windows over the city)
 ## names them in this meta (Array of Controls); the roll band crosses each of them only.
@@ -34,6 +38,10 @@ var _started: bool = false
 var _rest: Vector2 = Vector2.ZERO
 var _last_set: Vector2 = Vector2.INF
 var _roll: Control = null
+## MOTION-06: the scan band that sweeps down the glass as `panel_in` settles (top level, like
+## the roll; it shows from the fade's end to the entrance's end and follows the sliding page).
+var _scan: Control = null
+var _scan_u: float = 0.0
 ## Seconds of the CRT roll still to show (it starts once the glass is fully shown).
 var _roll_left: float = 0.0
 var _alpha: float = 1.0
@@ -175,6 +183,9 @@ func finish() -> void:
 	if _roll != null and is_instance_valid(_roll):
 		_roll.queue_free()
 	_roll = null
+	if _scan != null and is_instance_valid(_scan):
+		_scan.queue_free()
+	_scan = null
 	var cb := _on_done
 	_on_done = Callable()
 	if cb.is_valid():
@@ -219,6 +230,7 @@ func _process(delta: float) -> void:
 		_rest = page.position
 		if look == Look.GLASS and not fade_only:
 			_add_roll()
+			_add_scan()
 			_roll_left = Motion.seconds(&"panel_crt_roll")
 	elif page.position != _last_set:
 		# The container laid the page out again: the offset rides on the new rest.
@@ -248,6 +260,7 @@ func _process(delta: float) -> void:
 		_roll.visible = false
 	page.position = _rest + offset
 	_last_set = page.position
+	_update_scan(k)
 	page.modulate.a = _alpha * clampf(k / FADE_SHARE, 0.0, 1.0)
 
 
@@ -281,6 +294,54 @@ func _add_roll() -> void:
 			_roll.draw_rect(Rect2(gr.position.x, y, gr.size.x, h), Color(PaletteSkins.chrome(Palette.NET_CYAN), 0.32))
 			_roll.draw_rect(Rect2(gr.position.x, y + h * 0.45, gr.size.x, 2.0), Color(Palette.PAPER, 0.7)))
 	page.add_child(_roll)
+
+
+## MOTION-06 (the build's panel-in scan band): a bright band, cyan with a paper-white leading
+## edge, that crosses the glass top to bottom once the glass is shown, over the rest of
+## `panel_in`'s own time (so its duration and its off switch are the entry's). Only for the
+## page's glass (see GLASS_META), clipped to it; gone under reduce effects and reduce motion
+## (no helper or no band) and removed by a skip (`finish`).
+func _add_scan() -> void:
+	_scan = Control.new()
+	_scan.name = "ScanBand"
+	_scan.top_level = true
+	_scan.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_scan.focus_mode = Control.FOCUS_NONE
+	var r := page.get_global_rect()
+	_scan.global_position = r.position
+	_scan.size = r.size
+	_scan.visible = false
+	var glass: Array[Rect2] = []
+	for g in page.get_meta(GLASS_META, []):
+		if g is Control and is_instance_valid(g):
+			var gr := (g as Control).get_global_rect()
+			glass.append(Rect2(gr.position - r.position, gr.size))
+	if glass.is_empty():
+		glass.append(Rect2(Vector2.ZERO, r.size))
+	_scan.draw.connect(func() -> void:
+		for gr: Rect2 in glass:
+			var h := gr.size.y * ROLL_BAND_SHARE
+			var top := gr.position.y + (gr.size.y + h) * _scan_u - h
+			var band := Rect2(gr.position.x, top, gr.size.x, h).intersection(gr)
+			if band.size.y <= 0.0:
+				continue
+			_scan.draw_rect(band, Color(PaletteSkins.chrome(Palette.NET_CYAN), SCAN_ALPHA))
+			var edge := Rect2(gr.position.x, top + h - SCAN_EDGE_PX, gr.size.x, SCAN_EDGE_PX).intersection(gr)
+			if edge.size.y > 0.0:
+				_scan.draw_rect(edge, Color(Palette.PAPER, SCAN_EDGE_ALPHA)))
+	page.add_child(_scan)
+
+
+## The scan band at the entrance's progress `k` (0..1): hidden until the fade ends.
+func _update_scan(k: float) -> void:
+	if _scan == null or not is_instance_valid(_scan):
+		return
+	_scan.visible = k >= FADE_SHARE
+	if not _scan.visible:
+		return
+	_scan_u = clampf((k - FADE_SHARE) / (1.0 - FADE_SHARE), 0.0, 1.0)
+	_scan.global_position = page.get_global_rect().position
+	_scan.queue_redraw()
 
 
 func _exit_tree() -> void:
