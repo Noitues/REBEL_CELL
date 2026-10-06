@@ -31,6 +31,91 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-06 — B4 — HQ to round 44 (integration review)
+Integration review D7, D18, D20, section c "HQ page, direction B", section f (HQ, top bar), Q10, Q11; designer: "build
+the HQ to round 44" (`round44_undesigned/A_map/hq_idle.png`, `hq_node_selected.png`; direction B stays, A and C never
+ship), HQ framing ("the page frames the Cell's network; an off-screen corp HQ gets a red pencil edge arrow"), "about 16
+pinned markers". Sheet: `docs/art_review/PARITY/fixes/B4.jpg` (round 44 / round 43 | before (main) | after at 1.0 and
+1.6, the verb pages, MARKET / CREW, the five HQ runs), 1:1 crops `docs/art_review/PARITY/fixes/B4_crops/`. Test: new
+`tests/unit/test_b4_hq_round44.gd` (fast). Claimed: D7, D18, D20, section c HQ, section f HQ (+ top bar on the HQ), Q10,
+Q11 (HQ verbs and HQ-run titles), D25 (no pencil fades).
+- **JACK IN was invisible on every idle frame (bug).** `Motion.loop_pulse` tweened a float into the sticker's Vector2
+  `scale` (`jack_ring_breathe`), which zeroed it; a Vector2 property now breathes on both axes (`motion.gd`).
+- **The city (D7).** The HQ idle is the City Grid look (`hq_band`: GRID at every zoom; the raid setup keeps RAID). The
+  scrim has a map dim (`UiScrimPools.set_map_dim_source`, `dim_at`; shader uniforms `dim_*`; numbers in
+  `ui_scrim_look.tres` "Map dim": outside the network's fit rect x0.68 and desaturated to 0.85, inside x0.86, a 110 px
+  edge, fully lit within 110-300 px of the selected Site). The network decal stays at full strength (the keep). The HQ
+  gives the rect round the Cell's nodes and the selection's centre (`hq_map_dim`).
+- **Markers, tags, links (D7, bible 4.5).** `hq_idle_graph`: the Cell's nodes are their v4 markers (fists, CORE's heart;
+  no raid sockets, pads or asset pips at the idle), pinned = `pinned_at_hq` (Exploit / Heat / boss Sites, CORE, every
+  Site no longer plainly the corp's; a selectable plain Site hides until hovered or selected), one name tag (the
+  selection; a hovered Site gets its tag, `_hq_hover_tag`), a link only where both its ends show (threat routes stay),
+  and no decal disc for a hidden Site (`CityMapOverlay.decal_shown_only`, additive, off elsewhere).
+- **Framing.** The idle frames the network and its frontier (the Sites a run can start from now); patrols and a pending
+  raid's routes no longer widen it; the GRID-12 lean now counts the city in the map's free part (not behind the panels).
+  The off-screen TARGET (5e's edge arrow) carries its `CENTRAL SERVER // EXPLOITS n/3` chip (`TargetEdgeMarker.chip_text`).
+- **Verbs (section f, Q11).** The HQ's own pick (`idle_pick`) is the first Site whose verb is JACK IN, so the idle verb
+  is JACK IN; UPGRADE / CLAIM / REPAIR / PATCH show only once a node of the Cell's is selected (the stickers and gold
+  price tags of Q11 unchanged). The one plan (`HqPlanPencil`): a yellow wax arrow along JACK IN's link from the owned end
+  to the Site (B1b's wax, written on in 0.4 s, wiped with the cloth; none while a node is selected or a run resumes).
+  The system word under JACK IN has an ink keyline (`outline_size` 2 at 720 = 3 px at 1080).
+- **Cards (section c).** A corporate (or seized) Site's file is a decrypted holo (`SiteHoloCard` on RaidHolo: "T2 //
+  NAME" over "CORP // SITE FILE nnn", TYPE / REWARDS (the clear preview) / LINK rows, IF CLEARED, the runner's refusal,
+  DECRYPTED at its foot). The Cell's nodes keep terminal cards in round 44's form: "CORE // HOME SERVER" with YOURS,
+  INTEGRITY as a bare Anton number and pip bar (`IntegrityReadout`), DEFENCES, LINKS (n powered), STATIONED; CORE's card
+  ends with `> HQ ACTIONS` and HEAT SCRUB as a terminal action (the Heat terminal's purchase at the rules' price: preview
+  == result, tested). CORE's "why" note shows only when it has no verb.
+- **Corp news (D7, bible 4.13).** `CorpNewsToast`: a holo strip in the corp's tint at the page's foot for the `toast`
+  entry's 2.4 s (longer while a long line needs its reading time, Dialogue's rate), two lines at most. A pending raid's
+  warning at the HQ is intercepted news (`intercept_raid_warning`: the corp's line as Dialogue picks it, logged to
+  Dialogue's history and voice, "INTERCEPTED // ..."), not the subtitle band; the story beats' corp news too.
+- **ON AIR (D20).** The HQ keeps its ON AIR line: in the foot's gap between the hand and the verb when that gap is wide
+  enough for its baked block (520 px at 1.0), else along the whole foot as before (most layouts: a crew of four leaves no
+  such gap); the toast sits in the gap over it.
+- **Crew (round 44 polaroids).** `CrewHandCard`: white polaroid paper, the print on its dark ground, the name printed in
+  ink, the rank in the class colour, the status on a clipped terminal chip, a fixed rest tilt by place (`TILTS`, kept
+  after the hand's layout; `polaroid_tilt` tilts on hover from it), a cyan RUNNER tag and keyline on the runner, a
+  flatlined print through greyscale (ART-9's `grey_dim`) under the red FLATLINED stamp.
+- **Heat gauge (D7).** No stamp box: the band word pops (the band stamp's motion kept as the word's pop); the change is
+  the gauge's roll.
+- **Q10.** The DEFENCE hand's page (the raid setup) carries the yellow RAID SETUP title sticker over its column (kit
+  VinylSticker; no baked art exists for it); from text 1.6 its instruction line steps into the title's tooltip so the
+  column keeps YOUR NETWORK and the work order. No title on the HQ idle.
+- **Top bar (section f).** The full resource bar stays on the HQ only; its one-strip restyle (round 44
+  `topbar_by_page.png`) is the shared HudBar's (not changed here).
+- **HQ runs (D18, Q11).** Titles are "<CORP>: <CENTRAL SERVER NAME>" (SOLACE: THE GENOME CORE ...). An orthographic page
+  stands its landmark 60 % of the frame's height (`hq_run_landmark_share`; measured on the model's own vertices above
+  3 BU, `HqCompoundStage.silhouette`, footprint box as a fallback; a wide, low compound is held to 0.9 of the width) -
+  the S-HQRUN per-corp ortho scales went. The page's city is the solid City Grid look (`band_lock` GRID), so the street
+  lanes glow at 100 % (was 28 %). Cut-off nodes are 60 % grey discs on an ink keyline, no backing (the key's swatch
+  too). The canyon keeps CAM27 (19 degrees, 36.9 degree lens): 0.45 of the width was tried and the run no longer fits.
+- **D25.** No pencil in these screens fades: the plan arrow and the TARGET pencils write on (0.4 s) and wipe with the
+  cloth (PencilSet AUTO).
+- **Motion kept.** `jack_ring_breathe`, `radio_type`, `hq_crt_hum` (the holo or terminal card), `polaroid_tilt`,
+  `minimap_pulse`, `toast`, `pencil_wipe`; MotionSkip unchanged (the toast is a reading time, listed in
+  `test_anim_r6_rules` and STYLE_GUIDE 5.5). Reduce effects: no fade on the toast, the wax at its end state.
+- **Perf.** Windowed perf_pack, 1920 x 1080, shared machine (other agents' Godot running): HQ idle tier 2 frame 9.8 / 10.1 ms mean (two runs), root GPU 2.05 / 2.18 ms, city 3.7 / 4.6 ms; the raid setup on the same runs 8.0 / 8.8 ms (root 1.10 / 1.63). The map dim costs the root about 0.5 ms; the B1a network-keep loop no longer runs over the whole screen (it runs only under a pool or a band; the dim lies over the decal too). HQ-run pages (hq_run_lab, GRID band): city GPU 5.4-7.4 ms (was 3-5 at the see-through band); the solid city's full life is the cost. Both near the 8 ms budget
+  on this busy machine: re-measure in isolation (the orchestrator's batch run).
+- **Relay (B2's red):** the crew card's tooltip line was a bare literal; it is `CREW_CARD_TIP`, translated once
+  (`test_horizontal_pass20`, `test_anim_r5_combat` green). Seen, not B4's: `test_anim6_screen_motion::
+  test_end_state_layout_is_the_instant_layout_at_every_text_size` fails on the loot page at 2.0 with or without B4's
+  changes (main's).
+- **Tests changed (behaviour superseded by the art direction):** `test_hq_b_city` (GRID band, markers not sockets, the
+  framed set, ON AIR in the foot), `test_hq_b_story` (ON AIR within the foot margin), `test_city3d_grid` (decal = shown
+  Sites), `test_art3_6w_raid_city` (HQ at GRID), `test_layout_rules`, `test_art10_menus`, `test_horizontal_pass24_city`
+  (the corporate Site's card is the holo), `test_anim6_screen_motion` (the tilt from the rest tilt), `test_parity_hq_run`
+  (titles, cut discs, the landmark share replaces the S-HQRUN ortho scales), `test_parity_overlaps` (RAID-02: the line
+  steps aside from 1.6). None dropped.
+- **Files outside the HQ (smallest change):** `motion.gd` (the Vector2 breathe), `ui_scrim_pools.gd` / its shader /
+  `ui_scrim_look` (the map dim), `city_map_overlay.gd` (`decal_shown_only`, 6 lines: B3's file, flagged to the
+  orchestrator), `target_edge_marker.gd` (the chip), `heat_gauge.gd` (no stamp box), `city_config.gd` ("HQ run page"),
+  `hq_compound_stage.gd`, `hq_run_view.gd` (now B4's), `review_pack.gd` (screens `b4_*`), `hq_run_lab.gd` (landmark share
+  printed), STYLE_GUIDE 5.5, strings.csv (re-exported).
+- **Not built / kept against the still (designer's call):** the minimap terminal and the MAP KEY strip stay at the top
+  right (section c lists them for the HQ; round 44 drew neither: the camera's overview and the plain-language key are
+  functions); UPGRADE on CORE (round 44's verb) needs a home-upgrade rule the GDD lacks, so CORE's verb stays PATCH; the
+  overlay's lime focus brackets and cursor on the selection and the stacked CLAIMED / DOWN map stamps are the overlay's
+  (B3's clutter rule); the top bar's one-strip look is HudBar's.
 ### 2026-10-06 — B1b — wax pencil material and pencil audit (integration review)
 Integration review D3 ("the aim pencil is a thin vector line"), D25 (pencil appears whole), section d "Pencil
 opacity / wax" ("one wax material everywhere; audit every pencil: is it a true plan? If not, remove it"). Bound by the
