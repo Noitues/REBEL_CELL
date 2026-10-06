@@ -5,6 +5,8 @@
 // sky, while the network and the map's marks stay at full strength on top.
 shader_type spatial;
 render_mode unshaded, blend_mix, cull_disabled, depth_draw_never, depth_test_disabled, shadows_disabled, fog_disabled;
+// No clock (a still veil); the include keeps the shared reduce-effects global every shader declares.
+#include "res://shaders/lib/rc_common.gdshaderinc"
 
 uniform vec3 veil_color : source_color = vec3(0.075, 0.06, 0.13);
 uniform float veil_alpha = 0.32;
