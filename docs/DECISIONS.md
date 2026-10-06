@@ -118,7 +118,7 @@ Q11 (HQ verbs and HQ-run titles), D25 (no pencil fades).
   flatlined print through greyscale (ART-9's `grey_dim`) under the red FLATLINED stamp.
 - **Heat gauge (D7).** No stamp box: the band word pops (the band stamp's motion kept as the word's pop); the change is
   the gauge's roll.
-- **Q10.** The DEFENCE hand's page (the raid setup) carries the yellow RAID SETUP title sticker over its column (kit
+- **Q10 (superseded at the merge by B3 b: the RAID SETUP title is the page title's baked sticker through HudBar.set_screen, and the instruction panel went into the paper's tooltip; B4's column sticker and its 1.6 step-aside were removed).** The DEFENCE hand's page (the raid setup) carries the yellow RAID SETUP title sticker over its column (kit
   VinylSticker; no baked art exists for it); from text 1.6 its instruction line steps into the title's tooltip so the
   column keeps YOUR NETWORK and the work order. No title on the HQ idle.
 - **Top bar (section f).** The full resource bar stays on the HQ only; its one-strip restyle (round 44
