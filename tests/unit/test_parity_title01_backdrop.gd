@@ -68,8 +68,16 @@ func test_the_title_asks_for_the_blurred_city_and_keeps_the_2d_fallback_headless
 func test_other_cyberdeck_background_users_are_unchanged() -> void:
 	var callers: Array[String] = []
 	for dir in ["res://scripts", "res://tools", "res://scenes"]:
-		_scan(dir, callers)
+		_scan(dir, callers, ".use_blurred_city(")
 	assert_eq(callers, ["res://scripts/ui/title_scene.gd"], "only the title swaps in the blurred city")
+	var wire_callers: Array[String] = []
+	for dir in ["res://scripts", "res://tools", "res://scenes"]:
+		_scan(dir, wire_callers, ".show_blurred_city(")
+	assert_eq(wire_callers, ["res://scripts/ui/netrun_scene.gd"], "only the netrun's pages show it on the net backdrop")
+	var wire: WireframeBackground = add_child_autofree(WireframeBackground.new())
+	assert_null(wire.blurred, "a plain WireframeBackground keeps the 2D city")
+	assert_true(wire.rig.visible and wire.city.visible)
+	assert_false(wire.on_blurred_city())
 	var bg: CyberdeckBackground = add_child_autofree(CyberdeckBackground.new())
 	assert_null(bg.blurred, "a plain CyberdeckBackground keeps the 2D city")
 	assert_true(bg.city.visible)
@@ -79,12 +87,60 @@ func test_other_cyberdeck_background_users_are_unchanged() -> void:
 	assert_eq(bg.get_child_count(), 2, "the city and the deck frame, nothing more")
 
 
-func _scan(dir: String, out: Array[String]) -> void:
+func _scan(dir: String, out: Array[String], needle: String) -> void:
 	for f in DirAccess.get_files_at(dir):
-		if f.ends_with(".gd") and FileAccess.get_file_as_string(dir.path_join(f)).contains(".use_blurred_city("):
+		if f.ends_with(".gd") and FileAccess.get_file_as_string(dir.path_join(f)).contains(needle):
 			out.append(dir.path_join(f))
 	for d in DirAccess.get_directories_at(dir):
-		_scan(dir.path_join(d), out)
+		_scan(dir.path_join(d), out, needle)
+
+
+## LOOT-04 (designer 2026-10-05): the netrun's loot and event pages ask for the blurred city
+## (their own centred look); every other page (the route, a fight, the Mainframe's facade, the
+## run's end) keeps the net backdrop as it was. Headless it stays the 2D city.
+func test_loot_and_event_ask_for_the_blurred_city_and_nothing_else_does() -> void:
+	var net_script := load("res://scripts/ui/netrun_scene.gd") as GDScript
+	var consts := net_script.get_script_constant_map()
+	assert_eq(consts["BLURRED_CITY_SCREENS"], ["loot", "event"], "the loot and event pages")
+	var overlay := consts["BLURRED_CITY_LOOK"] as CityBackdropLook
+	assert_not_null(overlay, "their own look")
+	assert_eq(overlay.side_dark, 0.0, "a centred page: no menu side")
+	var title_look := _look()
+	for k in ["grade_saturation", "grade_gain", "grade_lift", "haze_out_of_focus", "city_tiers"]:
+		assert_eq(overlay.get(k), title_look.get(k), "the title's %s" % k)
+	var src := FileAccess.get_file_as_string("res://scripts/ui/netrun_scene.gd")
+	assert_true(src.contains("background.show_blurred_city(BLURRED_CITY_SCREENS.has(screen)"), "asked per page")
+	# Headless (no renderer) the net backdrop keeps its 2D city on a loot page.
+	var wire: WireframeBackground = add_child_autofree(WireframeBackground.new())
+	assert_false(wire.show_blurred_city(true, overlay, &"solace"), "no renderer: the 2D city")
+	assert_null(wire.blurred)
+	assert_true(wire.rig.visible)
+	assert_eq(wire.city.process_mode, Node.PROCESS_MODE_INHERIT)
+
+
+## TITLE-01b (designer 2026-10-05): the backdrop's own grade (saturation, gain, haze lift that
+## grows out of focus) lives in its look; the city's shared grade (the Grid's) is untouched.
+func test_the_backdrop_grade_is_its_own() -> void:
+	var look := _look()
+	assert_gt(look.grade_lift.r, look.grade_lift.b, "a pink haze, not a blue one")
+	assert_gt(look.haze_out_of_focus, 0.0, "hazier where blurred")
+	var uv := Vector2(0.8, 0.1)
+	var c := Color(0.2, 0.4, 0.6)
+	var luma := c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722
+	var s := Color(lerpf(luma, c.r, look.grade_saturation), lerpf(luma, c.g, look.grade_saturation), lerpf(luma, c.b, look.grade_saturation))
+	var lift := 1.0 + look.haze_out_of_focus * (1.0 - look.focus_at(uv))
+	var k := look.field_at(uv)
+	var want := Color((s.r * look.grade_gain.r + look.grade_lift.r * lift) * k, (s.g * look.grade_gain.g + look.grade_lift.g * lift) * k,
+		(s.b * look.grade_gain.b + look.grade_lift.b * lift) * k)
+	var got := look.shown(c, uv)
+	for i in 3:
+		assert_almost_eq(got[i], want[i], 0.0001, "shown channel %d" % i)
+	var shader := FileAccess.get_file_as_string("res://shaders/city/city_tilt_shift.gdshader")
+	for u in ["grade_saturation", "grade_gain", "grade_lift", "haze_out_of_focus"]:
+		assert_true(shader.contains("uniform") and shader.contains(u), "the shader takes %s" % u)
+	var backdrop := FileAccess.get_file_as_string("res://scripts/ui/kit/blurred_city_backdrop.gd")
+	for touch in ["set_night_share", ".cfg.grade", "CONFIG.grade", "_post"]:
+		assert_false(backdrop.contains(touch), "the backdrop never touches the city's own grade (%s)" % touch)
 
 
 func test_the_frame_shows_the_last_played_corp_else_halcyon() -> void:
@@ -167,16 +223,16 @@ func test_the_menu_reads_over_both_backdrops() -> void:
 		if sticker == null:
 			continue
 		var r := sticker.get_global_rect()
-		var city_3d := WORST_CITY * look.max_field(r, size)
+		var city_3d := look.worst_behind(r, size)
 		# The sticker's edge is two-tone (the white die-cut and its VINYL_INK rim): one of them
 		# stands off any city behind it.
-		for city: Color in [Color(city_3d, 1.0), city_2d]:
+		for city: Color in [city_3d, city_2d]:
 			var edge := maxf(Palette.contrast(Palette.PAPER, city), Palette.contrast(Palette.VINYL_INK, city))
 			assert_gte(edge, EDGE_MIN, "%s's die-cut over the city" % row_name)
 		var row := sticker.get_parent().get_parent()
 		for chip in row.find_children("*", "MenuChip", true, false):
 			var cr := (chip as Control).get_global_rect()
-			var c3 := Color(WORST_CITY * look.max_field(cr, size), 1.0)
+			var c3 := look.worst_behind(cr, size)
 			for city: Color in [c3, city_2d]:
 				for g: Color in glass_alphas:
 					var bg := Palette.over(city, g)
@@ -193,7 +249,7 @@ func test_the_menu_reads_over_both_backdrops() -> void:
 			if not label.is_visible_in_tree() or label.text.strip_edges() == "":
 				continue
 			var lr := label.get_global_rect()
-			var c3 := Color(WORST_CITY * look.max_field(lr, size), 1.0)
+			var c3 := look.worst_behind(lr, size)
 			for city: Color in [c3, city_2d]:
 				for g: Color in glass_alphas:
 					var ink := label.get_theme_color(&"font_color")

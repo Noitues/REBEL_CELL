@@ -1,23 +1,36 @@
 extends Node
-## Parity fix TITLE-01: the title's backdrop, windowed (run_windowed.py only). One launch walks
-## the states: shots of the title at 1280x720 (text 1.0 / 1.6 / 2.0 at city quality tier 2,
-## tier 1, tier 0 = the 2D fallback, reduce effects = the still frame), then the perf probes
-## (1920x1080, v-sync off as city_lab: tier 2 and tier 1, the whole frame and the backdrop
-## city's own GPU time). Prints TITLECAP lines; with --out writes a PNG per shot.
+## Parity fixes TITLE-01 / TITLE-01b / LOOT-04: the blurred-city backdrops, windowed
+## (run_windowed.py only). One launch walks the states: the title at 1280x720 (text 1.0 / 1.6 /
+## 2.0 at city quality tier 2, tier 1, tier 0 = the 2D fallback, reduce effects = the still
+## frame, `bare` = the backdrop alone for grading), the netrun's loot, event and Mainframe
+## pages, then the perf probes (1920x1080, v-sync off as city_lab: tier 2 and tier 1, the whole
+## frame and the backdrop city's own GPU time). Prints TITLECAP lines; with --out writes a PNG
+## per shot.
 ##   res://tools/city/title_backdrop_capture.tscn -- --out=<abs dir> [--states=a,b] [--perf=<s>]
 ## Its own settings and save files (the player's are untouched).
 
 const TITLE := preload("res://scenes/menu/title_scene.tscn")
-## name -> [window size, text scale, city quality, reduce effects, perf]
+const NETRUN := preload("res://scenes/netrun_map/netrun_scene.tscn")
+const SLOT := "gut_title_backdrop_capture"
+## name -> [window size, text scale, city quality, reduce effects, kind]
+## kind: "title", "bare" (the title's backdrop alone), "loot", "event", "shop", "perf" (title),
+## "perf_loot".
 const STATES: Dictionary = {
-	"t2_text10": [Vector2i(1280, 720), 1.0, 2, false, false],
-	"t2_text16": [Vector2i(1280, 720), 1.6, 2, false, false],
-	"t2_text20": [Vector2i(1280, 720), 2.0, 2, false, false],
-	"t1_text10": [Vector2i(1280, 720), 1.0, 1, false, false],
-	"t0_text10": [Vector2i(1280, 720), 1.0, 0, false, false],
-	"t2_reduced": [Vector2i(1280, 720), 1.0, 2, true, false],
-	"perf_1080_t2": [Vector2i(1920, 1080), 1.0, 2, false, true],
-	"perf_1080_t1": [Vector2i(1920, 1080), 1.0, 1, false, true],
+	"t2_text10": [Vector2i(1280, 720), 1.0, 2, false, "title"],
+	"t2_bare": [Vector2i(1280, 720), 1.0, 2, false, "bare"],
+	"t2_text16": [Vector2i(1280, 720), 1.6, 2, false, "title"],
+	"t2_text20": [Vector2i(1280, 720), 2.0, 2, false, "title"],
+	"t1_text10": [Vector2i(1280, 720), 1.0, 1, false, "title"],
+	"t0_text10": [Vector2i(1280, 720), 1.0, 0, false, "title"],
+	"t2_reduced": [Vector2i(1280, 720), 1.0, 2, true, "title"],
+	"loot_t2": [Vector2i(1280, 720), 1.0, 2, false, "loot"],
+	"loot_t0": [Vector2i(1280, 720), 1.0, 0, false, "loot"],
+	"event_t2": [Vector2i(1280, 720), 1.0, 2, false, "event"],
+	"event_t0": [Vector2i(1280, 720), 1.0, 0, false, "event"],
+	"shop_t2": [Vector2i(1280, 720), 1.0, 2, false, "shop"],
+	"perf_1080_t2": [Vector2i(1920, 1080), 1.0, 2, false, "perf"],
+	"perf_1080_t1": [Vector2i(1920, 1080), 1.0, 1, false, "perf"],
+	"perf_loot_1080_t2": [Vector2i(1920, 1080), 1.0, 2, false, "perf_loot"],
 }
 const MODEL_WAIT_FRAMES := 2400
 const SETTLE_FRAMES := 90
@@ -40,9 +53,11 @@ func _ready() -> void:
 		DirAccess.make_dir_recursive_absolute(_out)
 	Settings.path = "user://title_backdrop_capture_settings.json"
 	SaveService.save_dir = "user://saves/title_backdrop_capture"
+	RunManager.save_slot = SLOT
 	RunManager.scene_switching_enabled = false
 	for n: String in names:
 		await _state(n, STATES[n])
+	RunManager.delete_save()
 	get_tree().quit(0)
 
 
@@ -52,31 +67,65 @@ func _state(n: String, s: Array) -> void:
 	Settings.set_city_quality(int(s[2]))
 	Settings.set_reduce_effects(bool(s[3]))
 	await get_tree().process_frame
-	var title: Control = TITLE.instantiate()
-	get_tree().root.add_child(title)
-	var bg: CyberdeckBackground = title.get("background")
+	var kind: String = s[4]
+	var root: Node
+	var blurred: BlurredCityBackdrop = null
+	if kind in ["title", "bare", "perf"]:
+		var title: Control = TITLE.instantiate()
+		get_tree().root.add_child(title)
+		root = title
+		blurred = (title.get("background") as CyberdeckBackground).blurred
+		if kind == "bare":
+			for k in ["margin", "ticker", "subtitle_strip"]:
+				(title.get(k) as CanvasItem).visible = false
+	else:
+		RunManager.reset()
+		RunManager.new_campaign(7)
+		var net: Node = NETRUN.instantiate()
+		get_tree().root.add_child(net)
+		root = net
+		await get_tree().process_frame
+		await get_tree().process_frame
+		net.start_run(1)
+		match kind:
+			"loot", "perf_loot":
+				DemoSetup.offer_loot(RunManager.netrun, ["twist", "jam", "cache"])
+			"event":
+				DemoSetup.open_event(RunManager.netrun, &"ev_leash_on_the_floor")
+			"shop":
+				DemoSetup.open_shop(RunManager.netrun)
+		net._show_current()
+		blurred = (net.get("background") as WireframeBackground).blurred
 	var waited := 0
-	while bg.on_blurred_city() and not bg.blurred.city_in() and waited < MODEL_WAIT_FRAMES:
+	while blurred != null and blurred.visible and not blurred.city_in() and waited < MODEL_WAIT_FRAMES:
 		await get_tree().process_frame
 		waited += 1
 	for i in SETTLE_FRAMES:
 		await get_tree().process_frame
-	print("TITLECAP state=%s blurred=%s city_in=%s corp=%s waited=%d" % [n, bg.on_blurred_city(), bg.blurred.city_in() if bg.blurred != null else false,
-		bg.blurred.corp if bg.blurred != null else &"", waited])
-	if bool(s[4]):
-		await _probe(n, bg)
+	if blurred != null:
+		blurred.complete_motion()
+	PageTransition.settle(root)
+	Dialogue.finish_typing()
+	Typing.finish_all(get_tree())
+	for i in 4:
+		await get_tree().process_frame
+	print("TITLECAP state=%s blurred=%s city_in=%s corp=%s waited=%d" % [n, blurred != null and blurred.visible,
+		blurred.city_in() if blurred != null else false, blurred.corp if blurred != null else &"", waited])
+	if kind.begins_with("perf"):
+		await _probe(n, blurred)
 	elif _out != "":
 		var img := get_viewport().get_texture().get_image()
 		var path := "%s/%s.png" % [_out, n]
 		img.save_png(path)
 		print("TITLECAP shot %s %dx%d" % [path, img.get_width(), img.get_height()])
-	title.queue_free()
+	root.queue_free()
+	await get_tree().process_frame
 	await get_tree().process_frame
 
 
-func _probe(n: String, bg: CyberdeckBackground) -> void:
+func _probe(n: String, blurred: BlurredCityBackdrop) -> void:
 	var rid := get_viewport().get_viewport_rid()
-	var vrid := bg.blurred.city.get_viewport_rid() if bg.blurred != null and bg.blurred.city != null else RID()
+	var vrid := blurred.city.get_viewport_rid() if blurred != null and blurred.city != null else RID()
 	RenderingServer.viewport_set_measure_render_time(rid, true)
 	if vrid.is_valid():
 		RenderingServer.viewport_set_measure_render_time(vrid, true)
