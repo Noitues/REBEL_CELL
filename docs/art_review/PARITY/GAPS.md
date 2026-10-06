@@ -121,6 +121,8 @@ Fixed (S-TITLE): LOAD the pink sticker on the newest campaign, DELETE a HARM chi
 2026-10-05, overriding v2's one sticker verb per screen on this page): LOAD and DELETE are both stickers (DELETE = 4C's
 baked `dialog_delete` art at LOAD's size), with a red grease-pencil "Can't Undo" and arrow pointing at DELETE (up to
 text scale 1.6; at 2.0 the words move into DELETE's tooltip). Built, sheet `fixes/SLOTS_b.jpg`.
+Second follow-up (designer, 2026-10-05): every used slot's LOAD is the pink sticker (not only the newest
+campaign's); the newest campaign's LOAD keeps the first focus. Built, sheet `fixes/SLOTS_c.jpg`.
 
 **SLOTS-03 (P3) Page title.** Build: the REBEL_CELL logo top left. Main: a `CAMPAIGN SLOTS` title
 sticker (the v2 sticker-title rule, as THE GRID / RAID SETUP). View: main is consistent with v2.
