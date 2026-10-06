@@ -1012,7 +1012,10 @@ func _set_panel(p: Control, name: String) -> void:
 	# Screens built from terminal windows let the city show between them.
 	# ANIM-R5 P4: the campaign's end too (it was a near-opaque glass page of terminal lines).
 	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "grid", "raid", "raid_playout", "raid_summary", "end", "end_lock"] or name.begins_with("city") else &"GlassPanel"
-	hud.set_screen(String(SCREEN_NUMBERS.get(name, "")), screen_title(name))
+	# HQ-B (Q6): the HQ shows no title (the HEAT gauge holds the bar's first slot).
+	hud.set_screen("" if name == "hq" else String(SCREEN_NUMBERS.get(name, "")), "" if name == "hq" else screen_title(name))
+	if not name in HEAT_BUTTON_PAGES:
+		close_heat_terminal(false)
 	# H24 S15: lines tied to the screen being left end here.
 	Dialogue.enter_screen(name)
 	set_page_prompts(prompts_for(name))
@@ -1143,6 +1146,13 @@ func open_settings() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("open_settings"):
 		open_settings()
+		get_viewport().set_input_as_handled()
+		return
+	# HQ-B (Q1): H, or the pad's View (the run's rewind button; the HQ has no rewind), drops
+	# the Heat terminal from the gauge.
+	if panel_name in HEAT_BUTTON_PAGES and _settings_panel == null and (event.is_action_pressed(HeatGauge.OPEN_ACTION)
+			or (event is InputEventJoypadButton and event.is_action_pressed(&"rewind"))):
+		toggle_heat_terminal()
 		get_viewport().set_input_as_handled()
 		return
 	# H24 K1: the pad's key button (Y) opens and folds the Grid's map key at big text.
@@ -1577,14 +1587,7 @@ func show_hq() -> void:
 	# Right column (built now, added last): wanted poster, pirate radio, JACK IN.
 	var right := VBoxContainer.new()
 	right.add_theme_constant_override("separation", 10)
-	var poster := HeatPoster.new(true)
-	poster.hot_color = Palette.corp_color(c.corporation_id)
-	poster.set_heat(c.heat, cfg.heat_max, HeatRules.band_levels(c, cfg))
-	poster.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	poster.tooltip_text = heat_tip()
-	var lead := selected_op()
-	if lead != null:
-		poster.wanted = PortraitArt.operative_subject(lead.class_id, lead.id, lead.name)
+	# HQ-B (Q1): no WANTED poster: Heat is the top bar's gauge (its motion moved onto it).
 	# The note shows whole lines at any text size (H21 #15: at 1.6 its last line was cut in
 	# half); the rest scrolls.
 	var line_h := UiTheme.line_px(Palette.mono(), roundi(UiTheme.BASE_SIZE * Settings.text_scale))
@@ -1622,7 +1625,6 @@ func show_hq() -> void:
 		jack.pressed.connect(show_grid)
 	var top_right := HBoxContainer.new()
 	top_right.add_theme_constant_override("separation", 10)
-	top_right.add_child(poster)
 	top_right.add_child(jack)
 	right.add_child(top_right)
 	right.add_child(radio)
@@ -1651,15 +1653,7 @@ func show_hq() -> void:
 		raid_btn.autowrap_mode = TextServer.AUTOWRAP_WORD
 		raid_btn.add_theme_color_override("font_color", Palette.CELL_PINK)
 		_add_tip(actions, raid_btn, TextDb.t(raid, "warning_text"))
-	var scrub := HeatRules.scaled_delta(c, -cfg.heat_purchase_amount, cfg)
-	# H23 S13: the price says what it is: "pay 25" and the Schematics icon after it.
-	var scrub_price := CampaignRules.heat_purchase_price(c, cfg)
-	var scrub_btn := _icon(_button(tr("Scrub Heat %d · pay %d") % [scrub, scrub_price], buy_heat_reduction), StatIcon.HEAT)
-	scrub_btn.name = "ScrubHeat"
-	# ART-0 C (text scale 2.0): the priced lines wrap in the menu column like RAID PENDING
-	# (at 2.0 "Scrub Heat · pay" alone widened the page past the screen).
-	scrub_btn.autowrap_mode = TextServer.AUTOWRAP_WORD
-	_add_tip(actions, scrub_btn, tr("Costs %d Schematics (you have %d): Heat changes by %d.") % [scrub_price, c.schematics, scrub])
+	# HQ-B (Q1): SCRUB HEAT lives in the Heat terminal the HEAT gauge drops.
 	if c.grid.home_integrity < c.grid.home_max_integrity:
 		var patch_btn := _icon(_button(tr("Patch home %s (%d)") % [TextDb.signed(c.grid.home_max_integrity - c.grid.home_integrity), CampaignRules.home_repair_price(c, cfg)], repair_home), StatIcon.HOME)
 		patch_btn.autowrap_mode = TextServer.AUTOWRAP_WORD  # ART-0 C: as Scrub Heat
@@ -1672,13 +1666,8 @@ func show_hq() -> void:
 	save_btn.name = "SaveButton"
 	_add_tip(actions, save_btn, tr("Save the campaign now (it also saves after every action)."))
 	_as_menu(actions)
-	_price_icon(scrub_btn, StatIcon.SCHEMATICS)
-	# The Cell at a glance (H20: badges, not a text readout): home, Exploits, Armory and the
-	# rules the Heat thresholds added; each badge's tooltip says what it means.
-	var status := CrtWindow.new(tr("CELL STATUS"))
-	status.name = "CellStatus"
-	left.add_child(status)
-	status.body.add_child(cell_badges())
+	# HQ-B (Q1): no CELL STATUS badges: Heat and its rules are the gauge and its terminal;
+	# home, Exploits and the crew are the top bar's tags; the Armory is the DEFENCE hand.
 	# The crew: Polaroids with their stats and orders.
 	# The deck monitor: the City Grid at a glance (click or JACK IN to open it).
 	var monitor := CrtWindow.new(tr("CITY GRID // %s") % TextDb.t(RunManager.corporation, "display_name"))
@@ -4955,14 +4944,17 @@ func _refresh_status() -> void:
 	var c := RunManager.campaign
 	if c == null:
 		_status.text = tr("No campaign.")
+		hud.hide_heat()
 		return
 	var cfg := RunManager.config()
 	_status.text = "Heat %d/%d | Schematics %d | Home %d/%d | Exploits %d | Raids pending %d | ICE %d | %s" % [
 		c.heat, cfg.heat_max, c.schematics, c.grid.home_integrity, c.grid.home_max_integrity,
 		c.exploits.size(), c.pending_raids.size(), c.ice_level, "campaign over" if c.is_over() else "active"]
+	# HQ-B (Q1): Heat is the gauge in the bar's first slot (the HEAT stat tag gave it its place);
+	# at the HQ it opens the Heat terminal (Scrub Heat).
+	hud.set_heat(c.heat if hud_heat_shown < 0 else hud_heat_shown, cfg.heat_max, HeatRules.band_levels(c, cfg), panel_name in HEAT_BUTTON_PAGES, heat_tip())
 	# H24 S3: the tags' names are keys (translated where drawn); the tooltips translated here.
-	hud.set_stats([[TextDb.mark("HEAT"), str(c.heat if hud_heat_shown < 0 else hud_heat_shown), "/%d" % cfg.heat_max, heat_tip()],
-		[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks.")],
+	hud.set_stats([[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks.")],
 		[TextDb.mark("HOME"), str(c.grid.home_integrity if hud_home_shown < 0 else hud_home_shown), "/%d" % c.grid.home_max_integrity, tr("Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.")],
 		[TextDb.mark("EXPLOITS"), str(c.exploits.size()), "/%d" % cfg.min_exploits_for_breach, tr("Exploits found: %s. The breach on the corporation's core needs %d.") % [_exploit_names(c), cfg.min_exploits_for_breach]],
 		[TextDb.mark("RAIDS"), str(c.pending_raids.size() if hud_raids_shown < 0 else hud_raids_shown), "", tr("Raids pending against your network. Set up the defence before the next run.")],
@@ -4974,6 +4966,47 @@ func _refresh_status() -> void:
 	hud.loadout_button.visible = op != null
 	if op != null:
 		hud.set_daemons(op.daemon_ids)
+
+
+## HQ-B (Q1): the pages whose HEAT gauge is a button (it opens the Heat terminal with SCRUB
+## HEAT); elsewhere in the scene it only shows.
+const HEAT_BUTTON_PAGES: Array[String] = ["hq", "grid", "raid"]
+## HQ-B: the Heat terminal dropped from the gauge (null when closed).
+var heat_terminal: HeatTerminal = null
+
+
+## HQ-B (Q1, `heat_indicator.jpg`): the HEAT gauge pressed (click, A, H or the pad's View):
+## the Heat terminal drops from it, or folds back when it is open. SCRUB HEAT buys through
+## the rules (`buy_heat_reduction`) and the terminal opens again on the new numbers.
+func toggle_heat_terminal() -> void:
+	if heat_terminal != null and is_instance_valid(heat_terminal):
+		close_heat_terminal()
+		return
+	if RunManager.campaign == null or not panel_name in HEAT_BUTTON_PAGES:
+		return
+	heat_terminal = HeatTerminal.new(RunManager.campaign, RunManager.config(), false)
+	heat_terminal.scrub_pressed.connect(_scrub_from_terminal)
+	heat_terminal.closed.connect(close_heat_terminal)
+	add_child(heat_terminal)
+	TextDb.shown_as_given(heat_terminal)
+	heat_terminal.drop_under(hud.heat_gauge.get_global_rect(), get_global_rect())
+	if heat_terminal.scrub != null:
+		heat_terminal.scrub.grab_focus.call_deferred()
+
+
+## HQ-B: folds the Heat terminal away; focus goes back to the gauge.
+func close_heat_terminal(refocus: bool = true) -> void:
+	if heat_terminal != null and is_instance_valid(heat_terminal):
+		heat_terminal.queue_free()
+		if refocus and hud.heat_gauge.is_visible_in_tree() and hud.heat_gauge.focus_mode != Control.FOCUS_NONE:
+			hud.heat_gauge.grab_focus.call_deferred()
+	heat_terminal = null
+
+
+func _scrub_from_terminal() -> void:
+	close_heat_terminal()
+	buy_heat_reduction()
+	toggle_heat_terminal()
 
 
 ## What the Heat number means now: the next threshold and the rules the crossed ones added.
@@ -4997,10 +5030,9 @@ func heat_tip() -> String:
 
 ## A rule modifier as words ("Raid strength +10%").
 static func _modifier_text(m: RuleModifierData) -> String:
-	var key: String = RC.RuleModifierType.keys()[m.type]
-	var pct := key.ends_with("_PCT")
-	# H24 S2: the sign from TextDb.signed (no "%+" in a translated line).
-	return "%s %s%s" % [TranslationServer.translate(key.trim_suffix("_PCT").capitalize()), TextDb.signed(roundi(m.value)), "%" if pct else ""]
+	# H24 S2: the sign from TextDb.signed (no "%+" in a translated line). HQ-B: one wording,
+	# the Heat terminal's.
+	return HeatTerminal.modifier_text(m)
 
 
 ## The operative VIEW LOADOUT and the Daemon tray show: the one picked on a dossier, else
@@ -5092,7 +5124,8 @@ func cell_badges() -> HFlowContainer:
 ## ANIM-R1 M5: a territory change landed on the city: the counter it changes bumps (the
 ## CELL STATUS SITES badge on the HQ page).
 func _on_territory_marked(_marks: Array) -> void:
-	var badge := _panel.find_child("NetworkBadge", true, false) as Control if _panel != null else null
+	# HQ-B (Q1): CELL STATUS went; its SITES bump plays on the HEAT tag (the motion entry kept).
+	var badge: Control = hud.heat_gauge if hud != null else null
 	if badge != null and badge.is_visible_in_tree():
 		Motion.pop(badge, &"sticky_bump")
 	refresh_site_card()
@@ -5182,6 +5215,7 @@ func _build_ui() -> void:
 	hud = HudBar.new()
 	hud.loadout_pressed.connect(open_loadout)
 	hud.daemons_pressed.connect(open_daemons)
+	hud.heat_pressed.connect(toggle_heat_terminal)
 	root.add_child(hud)
 	_status = hud.label
 	# The subtitles' own band under the top bar: no control and no stat tag under it (H21 #11).

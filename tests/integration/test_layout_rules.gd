@@ -88,7 +88,9 @@ func test_hq_is_a_cyberdeck_and_the_grid_is_wireframe() -> void:
 		found_poster = found_poster or n is HeatPoster
 		found_polaroid = found_polaroid or n is Polaroid
 		found_stamp = found_stamp or (n is ZineStamp and n.stamp_text == "JACK IN")
-	assert_true(found_poster, "wanted poster (Heat)")
+	# HQ-B (Q1): no WANTED poster: Heat is the top bar's gauge, its first slot.
+	assert_false(found_poster, "no wanted poster on the page")
+	assert_true(hq.hud.heat_gauge.is_visible_in_tree() and hq.hud.heat_gauge.get_index() == 0, "the HEAT gauge in the bar's first slot")
 	assert_true(found_polaroid, "Polaroid roster")
 	assert_true(found_stamp, "JACK IN stamp")
 	hq.show_grid()

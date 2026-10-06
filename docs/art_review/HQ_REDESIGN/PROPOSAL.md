@@ -10,7 +10,22 @@ Agent: HQ-DESIGN, 2026-10-05, on main @ 11edde0.
 - **Q4, yes.** At the HQ the wheel may zoom out past `raid_fit_max` into the GRID band (the whole city).
 - **Q11, examples first.** The designer wants to see examples before deciding. They are in section 6b below.
 
-Q2, Q5 to Q10, Q12 and Q13 are still open, with the defaults written in section 6.
+Later rulings the same day (relayed to HQ-BUILD), binding:
+- **Q2.** In a run the HEAT tag opens the same Heat terminal read-only.
+- **Q3 (wording).** JACK IN's system word says `raid incoming mid-run` while a raid waits.
+- **Q5.** Fit the network plus the launchable Sites up to the clamp; the Central Server by its edge arrow when outside.
+- **Q6.** No title sticker; `hq_scene` keeps its name.
+- **Q7.** Pirate radio becomes one ON AIR ticker line (4C's `on_air_ticker`).
+- **Q8.** Story so far becomes a STORY section in the Codex plus a corp-news toast when a beat is revealed.
+- **Q9.** The Save button goes (autosave; the pause menu keeps Save & quit).
+- **Q10.** The route dossier's Heat stamp goes.
+- **Q11 (final).** CLAIM, REPAIR, UPGRADE and PATCH are all stickers in the verb slot, the price in a gold tag under
+  each sticker, never on it, so the slot is never empty while a node is selected (this supersedes the first default
+  of chips for UPGRADE and PATCH).
+- **Q12.** Crew cards in roster order, the flatlined last, an ineligible card greyed with the rule's reason.
+- **Q13.** Rank 3 inner-ring swaps move into the Loadout's SPINNER tab.
+- JACK IN is the normal netrun start; Codex / Options / Save live in the pause menu only; the Grid page folds into
+  the HQ. The build is recorded in `docs/DECISIONS.md` "HQ redesign — direction B (designer rulings)".
 
 ## The brief (designer, 2026-10-05)
 The art pass missed the HQ and it does not match the concepts, so the HQ is reworked entirely:

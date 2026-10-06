@@ -237,7 +237,7 @@ func test_hq_menu_is_pad_reachable_with_no_crew_and_a_raid_pending() -> void:
 			await _frames()
 			var label := "hq %s raid=%s" % [scale, raid]
 			_assert_all_reachable(hq._panel, label)
-			var names := ["CityGrid", "ScrubHeat", "SettingsButton", "SaveButton"]
+			var names := ["CityGrid", "SettingsButton", "SaveButton"]
 			if raid:
 				names.append("RaidPending")
 			var reach := _reachable(hq._panel)
@@ -245,6 +245,14 @@ func test_hq_menu_is_pad_reachable_with_no_crew_and_a_raid_pending() -> void:
 				var b: Node = hq._panel.find_child(n, true, false)
 				assert_not_null(b, "%s: %s shown" % [label, n])
 				assert_true(reach.has(b), "%s: %s reachable by pad" % [label, n])
+			# HQ-B (Q1): Scrub Heat is in the Heat terminal the gauge drops (the pad's View).
+			var view := InputEventJoypadButton.new()
+			view.button_index = JOY_BUTTON_BACK
+			view.pressed = true
+			hq._unhandled_input(view)
+			await _frames()
+			assert_true(hq.heat_terminal != null and hq.heat_terminal.scrub != null and hq.heat_terminal.scrub.has_focus(), "%s: View drops the Heat terminal, SCRUB HEAT focused" % label)
+			hq.close_heat_terminal()
 			# The menu walks down item by item.
 			var grid: Control = hq._panel.find_child("CityGrid", true, false)
 			var below := grid.find_valid_focus_neighbor(SIDE_BOTTOM)

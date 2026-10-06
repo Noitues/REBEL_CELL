@@ -31,6 +31,61 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-05 — HQ redesign — direction B (designer rulings)
+Design: `docs/art_review/HQ_REDESIGN/PROPOSAL.md` (inventory of the HQ's 26 functions, direction B "THE HAND"), built
+by HQ-BUILD in the brief's order, one commit per step ("HQ-B <step>: <criterion>"). Designer rulings 2026-10-05,
+binding (also in PROPOSAL.md's rulings section):
+- **Direction B.** The HQ is the live 3D city at the RAID band with a hand of cards along its foot behind three
+  terminal tabs (CREW / MARKET / DEFENCE), the selected thing's card at the right and one pink sticker slot at the
+  bottom right holding the selected thing's verb. The Grid page folds into it (the HQ IS the raid-band city view).
+- **Q1.** The HEAT gauge takes the top bar's first slot on every screen. This agent builds the shared component and
+  the HQ's use; another agent does the other screens. The WANTED poster and the CELL STATUS badges go; their motion
+  entries move onto the tag.
+- **Q2.** In a run the tag opens the same Heat terminal read-only. **Q3.** Keep the rule: JACK IN with a raid pending
+  plays the raid as a mid-run interlude; JACK IN's system word says `raid incoming mid-run`. **Q4.** The HQ's wheel
+  may zoom out past `raid_fit_max` into the GRID band (the whole city). **Q5.** The fit frames the network and the
+  launchable Sites up to the clamp; the Central Server by its edge arrow when outside. **Q6.** No title sticker;
+  `hq_scene` keeps its name. **Q7.** Pirate radio is one ON AIR ticker line (4C's `OnAirTicker`). **Q8.** Story so far
+  is a STORY section in the Codex plus a corp-news toast when a beat is revealed. **Q9.** No Save button (autosave;
+  the pause menu keeps Save & quit). **Q10.** The route dossier's Heat stamp goes. **Q11 (updated by the designer,
+  superseding the first default):** CLAIM, REPAIR, UPGRADE and PATCH are ALL stickers in the verb slot, the price in
+  a gold tag under the sticker, never on it, so the slot is never empty while a node is selected. **Q12.** Crew
+  cards in roster order, the flatlined last, an ineligible card greyed with the rule's reason. **Q13.** Rank 3
+  inner-ring swaps move into the Loadout's SPINNER tab.
+- JACK IN is the normal netrun start (select a Site, the runner preselected, the pink sticker, the normal link jack
+  on this same city; a resume uses the same jack). Codex / Options / Save live in the pause menu only.
+
+**HQ-B (a): the HEAT gauge (shared component) and its use at the HQ.**
+- `HeatGauge` (`scripts/ui/kit/heat_gauge.gd`) **extends HeatPoster** (poster false): the poster's whole motion (the
+  number's roll through each threshold, the crossing's pop / shake / band stamp, the banner and its consequence note,
+  the per-campaign Heat memory, MotionSkip, reduce effects = end state) plays on the tag unchanged; the gauge only
+  draws differently (`heat_indicator.jpg`: HEAT caption, bare-Anton number in the band colour, the band word printed,
+  `/max`, the five-band strip with the threshold ticks and a marker) and gives the banner the tag itself as its room.
+  Its look is `HeatGaugeLook` (`scripts/ui/kit/heat_gauge_look.gd`, read-only, not a `scripts/data` schema) in
+  `content/config/heat_gauge_look.tres`: 240 x 44 px at 1.0 (the concept's 370 x 64 at 1080), a drawn object that
+  grows with the text up to x1.3 (STYLE 5.6). `HudBar` carries it as its first child (`heat_gauge`, hidden until a
+  screen calls `set_heat(value, max, marks, interactive, tip)`; `heat_pressed` up). A screen with no title gives the
+  title box's slot to it. **For the other screens' agent:** call `hud.set_heat(...)` with `interactive` true where
+  the tag opens the terminal and build `HeatTerminal.new(campaign, config, true)` for the read-only one (Q2).
+- `HeatTerminal` (`scripts/ui/kit/heat_terminal.gd`, a CrtWindow): `> HEAT // SUSPECT FILE`, the band word on its
+  tag, IN FORCE (each rule with the threshold that put it in force), NEXT (the next two thresholds and what they
+  bring: RAID / complication / harder rules), SINKS, and at the HQ the `ScrubHeat` MenuChip (`SCRUB HEAT -5` over
+  `pay 25 Schematics (next 35)`; the numbers are the rules' own `scaled_delta` and `heat_purchase_price`, so the
+  preview equals the purchase). Read-only it has no SCRUB and says where Heat is scrubbed. It drops under the tag,
+  kept on the screen; a press outside, Esc or B closes it and focus goes back to the tag.
+- **Input (call):** the tag is a button (click, A on focus); new runtime action `open_heat` (H, `Settings.
+  RUNTIME_ACTIONS`, not rebindable yet) opens it from anywhere on the HQ, and the pad's View (the run's `rewind`
+  button; the HQ has no rewind) does too. In a run View stays rewind, so the run's agent needs another pad route.
+- The HQ page loses the WANTED poster, CELL STATUS (its HOME / EXPLOITS / CREW numbers are the bar's tags; the
+  Armory moves to the DEFENCE hand in step c) and the deck menu's Scrub Heat line. The HEAT stat tag left the bar
+  (the gauge is the one Heat). **Call:** CELL STATUS's SITES bump (`sticky_bump` on a territory change) plays on the
+  HEAT tag, per Q1 ("their motion entries move onto the tag").
+- Strings: the terminal's words (`HEAT // SUSPECT FILE`, `IN FORCE`, `NEXT`, `SINKS`, `SCRUB HEAT %s`, `pay %d
+  Schematics (next %d)` ...) exported once.
+- Tests: new `tests/unit/test_hq_b_heat_gauge.gd` (fast). Changed (behaviour kept): `test_layout_rules`
+  (`test_hq_is_a_cyberdeck...`: no poster, the gauge in the first slot), `test_pad_reachability` (the HQ menu: Scrub
+  Heat is reached by View into the Heat terminal, focused).
+
 ### 2026-10-05 — Parity fix — new campaign page (designer decisions)
 Designer rulings NEWC-01..04 (2026-10-05, parity audit `docs/art_review/PARITY/GAPS.md`, branch
 worktree-agent-a99b7a512f1562917): the art pass build was never brought to the v2 concepts, so the build's layout in
