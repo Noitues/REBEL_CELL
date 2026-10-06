@@ -50,6 +50,7 @@ and the game draws that image. Inventory: `docs/handoff/m14_asset_parity/combat.
   `test_anim_r6_rules` / `test_anim_r2_combat` on this branch; the one remaining r6 failure is
   `test_every_script_that_animates_registers_or_says_why_not` for `campaign_end/rubber_stamp.gd` and
   `kit/route_overlay.gd` (ART-11 and ART-5 5d files, not mine).
+
 ### 2026-10-05 — Art direction — ART-12 12s skins
 Agent 12s (the M12 box "Skins": procedural palette skins on the v2 tokens, ART_12_BATCH).
 - **Which skins.** The M12 box names none, so: `v2` (the default and first; the identity, ART_BIBLE §2
