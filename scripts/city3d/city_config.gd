@@ -104,6 +104,73 @@ extends Resource
 ## Fight won without a won mask: the target's kept (undimmed) ellipse, share of the view's
 ## width, round the target's point.
 @export var backdrop_keep_radius: float = 0.16
+## Parity fix S-ARENA (CMB-01, BACKDROP-01/02, MOTION-07): the close-up's own lit night look
+## (the concept stills' blue-grey rainy city, not the Grid's dark night grade), applied once
+## through CityView3D.set_night_share (night share 0 = this look in full; rain and fog kept,
+## the landmarks' look per focus below). Keys as CityViewMotion.day_look.
+@export var backdrop_ramp: Array[Color] = [Color(0.30, 0.33, 0.46), Color(0.50, 0.54, 0.66), Color(0.72, 0.75, 0.84)]
+@export var backdrop_sky: Color = Color(0.17, 0.16, 0.27)
+@export var backdrop_window_gain: float = 1.4
+@export var backdrop_neon_gain: float = 1.2
+@export var backdrop_haze: Color = Color(0.30, 0.30, 0.42)
+@export var backdrop_grade: Color = Color(0.96, 0.98, 1.04)
+@export var backdrop_bloom: float = 0.6
+@export var backdrop_glow_threshold: float = 0.8
+## The landmarks' own look in the close-up (LandmarkLook), per focus: an HQ in its day
+## materials (false: combat_solace.jpg's pale lit helix; rain and the night sky stay), a Site
+## landmark in its night ones (site_solace_night.jpg's lit cross and neon trims).
+@export var backdrop_hq_landmarks_night: bool = false
+@export var backdrop_site_landmarks_night: bool = true
+## The canvas grade over the close-up (combat_backdrop.gdshader `city_exposure` / `city_tint`,
+## city only; the stills are the concept already): each pixel's value V (its brightest
+## channel) goes to 1 - (1 - V) ^ exposure, hue kept (no neon clips to white),
+## then times the tint (the concept's cool blue-grey).
+@export var backdrop_exposure: float = 4.6
+@export var backdrop_tint: Color = Color(0.96, 1.0, 1.04)
+## ... and its saturation toward the grey (1 = kept): the concept's rain-calmed neon.
+@export var backdrop_saturation: float = 0.72
+## Concept-derived band for the settled close-up's mean relative luminance (linear, the frame
+## between the top bar's and the hand's bands): the night stills (bakes of the concept
+## generators) measure 0.053 (Solace HQ) .. 0.187 (Solace Site); main before the fix 0.017 .. 0.049.
+@export var backdrop_luma_band: Vector2 = Vector2(0.05, 0.19)
+## The pool behind each wheel (combat_backdrop.gdshader pool_dark / pool_falloff, stills and
+## city alike): darkening at its centre (0.55 leaves 45 %: the concept's ~55 % softening, with
+## margin for the HP numbers over the lit city) and its edge's
+## exponent, exp(-(d / reach) ^ falloff). Checked: the HP numbers (WheelView.HP_COLOR) keep
+## 4.5:1 and the wheel rims 3:1 over the settled close-up (test_parity_arena_backdrop).
+@export var backdrop_pool_dark: float = 0.55
+@export var backdrop_pool_falloff: float = 4.0
+## Per corporation: the HQ close-up's least ortho width (BU; else backdrop_hq_ortho) and the
+## share of the view its landmark is fitted into (else backdrop_hq_frame).
+@export var backdrop_hq_ortho_by_corp: Dictionary = {}
+@export var backdrop_hq_frame_by_corp: Dictionary = {}
+## Per corporation: the HQ landmark meshes the framing fits (else backdrop_fit_keep): Meridian's
+## crane (combat_worst_case_v4.png's yellow crane between the wheels), not the whole yard and
+## train, which spread 180 BU wide and would push the close-up out past the LOD and the budget.
+@export var backdrop_hq_fit_keep_by_corp: Dictionary = {&"meridian": PackedStringArray(["crane_solid", "crane_lit"])}
+## Where the HQ landmark's box is fitted (share of the view: between the wheels, under the
+## top bar, its foot behind the hand as combat_solace.jpg), and where a Site fight's Site
+## landmark is (the corp's Site landmark, CityLandmarks.site_path, stood on the run's Site
+## lot as the stills' one Site building per corp; site_solace_night.jpg's clinic). Only the
+## meshes whose name holds a word of backdrop_fit_keep count toward the box (the body, not the
+## light beams and neon rays spread over the ground). The close-ups' camera pitch (degrees;
+## the city's own is pitch_deg): a Site lower, looking across the city at its building as
+## site_solace_night.jpg; an HQ at the city's own 40 (22-30 read closer to combat_solace.jpg's low
+## angle but showed so much city to the horizon that the close-up took 9-10.5 ms at 1080p, over
+## budget_ms; 40 measures 6.2-7.6).
+@export var backdrop_hq_frame: Rect2 = Rect2(0.32, 0.05, 0.36, 0.85)
+@export var backdrop_site_frame: Rect2 = Rect2(0.32, 0.22, 0.36, 0.46)
+@export var backdrop_fit_keep: PackedStringArray = PackedStringArray(["solid"])
+@export var backdrop_hq_pitch_deg: float = 40.0
+@export var backdrop_site_pitch_deg: float = 34.0
+## A Site fight's close-up stands its Site this many lots inside the city's edge (city_rect):
+## the territories reach the edge, and a Site there would leave half the frame the bare plane
+## past it (BackdropCatalog.site_close_up_lot).
+@export var backdrop_site_inset: int = 28
+## The close-up renders at most this many px tall (0: the view's own size) and is drawn scaled
+## to the view (CombatBackdrop.render_px): the backdrop sits softened behind the wheels, and
+## its wider lit framing keeps the 8 ms city budget at 1080p (budget_ms).
+@export var backdrop_render_height: int = 640
 
 @export_group("Buildings")
 ## Facet cell (BU) the walls are split into, and the jitter (share of a cell / BU).

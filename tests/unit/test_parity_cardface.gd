@@ -2,16 +2,13 @@ extends GutTest
 ## Parity fix S-CARDFACE (designer group ruling 2026-10-05; DECISIONS "Parity fix — one card face"):
 ## LOOT-01, SHOP-02..05, SHOP-07, SHOP-08, DECK-01, DECK-02, CMB-04 (card part), HQ-08. One card face
 ## (CardFace, the art pass's own exported C-C sticker) for every card view; the whole rules text on
-## the face at text scale 1.0 (loot, Mainframe, deck viewer, detail; the hand's grown card); the DECK
+## the face at text scale 1.0 (loot, Mainframe, deck viewer, detail; the hand's grown card, every card; S-CARDFACE b: 10 px at rest, hover x1.75); the DECK
 ## and DISCARD piles beside the hand with their counts.
 
 const COMBAT := "res://scenes/combat/combat_scene.tscn"
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const SCREEN := Rect2(0, 0, 1280, 720)
 const SCALES: Array[float] = [1.0, 1.6, 2.0]
-## The two longest rules texts (92 characters) need the inspect at 1.0 in the hand even grown (DECISIONS
-## open question: a bigger hand card or a lower floor would hold them).
-const HAND_GROWN_LONG: Array[StringName] = [&"hot_patch", &"overdrive"]
 
 var _settings: Dictionary = {}
 
@@ -147,18 +144,83 @@ func test_mainframe_cards_show_every_word_above_their_hanging_tag() -> void:
 
 
 func test_hand_cards_keep_the_floor_at_rest_and_show_every_word_grown() -> void:
+	# S-CARDFACE b (designer 2026-10-05): 10 px at rest, the grown card every word of every card at 12 px on screen,
+	# at every text size and in a hand shrunk to fit (down to the scene's MIN_CARD_SCALE)
 	var cards := _cards()
-	for scale in SCALES:
-		for id in cards:
-			var z := _card(cards[id], ZineCard.STICKER_SIZE * scale, ZineCard.BODY_FLOOR, false)
-			var rest := CardFace.text_fit(z)
-			assert_gte(int(rest["fs"]), ZineCard.BODY_FLOOR, "hand x%.1f %s: never under the floor at rest" % [scale, id])
-			assert_true(bool(rest["pictos"]), "hand x%.1f %s: glyph and value at rest" % [scale, id])
-			z.hover_scale = ZineCard.HOVER_SCALE
-			var grown := CardFace.text_fit(z)
-			assert_gte(int(grown["fs"]) * ZineCard.HOVER_SCALE, float(ZineCard.BODY_FLOOR), "hand x%.1f %s: the grown card's words never under the floor on screen" % [scale, id])
-			if scale > 1.0 or not HAND_GROWN_LONG.has(StringName(id)):
-				assert_true((grown["lines"] as PackedStringArray).size() <= int(grown["rows"]), "hand x%.1f %s: every word on the grown card" % [scale, id])
+	var least: float = load("res://scripts/ui/combat_scene.gd").MIN_CARD_SCALE
+	for ts in SCALES:
+		for hand in [ts, ts * 0.9, least]:
+			for id in cards:
+				var z := _card(cards[id], ZineCard.STICKER_SIZE * hand, ZineCard.HAND_REST_FLOOR, false)
+				z.grown_floor = ZineCard.BODY_FLOOR
+				var rest := CardFace.text_fit(z)
+				assert_gte(int(rest["fs"]), ZineCard.HAND_REST_FLOOR, "hand x%.2f %s: never under the floor at rest" % [hand, id])
+				assert_true(bool(rest["pictos"]), "hand x%.2f %s: glyph and value at rest" % [hand, id])
+				# as the scene sets it: a hand shrunk under 1.0 grows its card to a 1.0 card's growth
+				z.hover_scale = ZineCard.HOVER_SCALE * maxf(1.0, 1.0 / hand)
+				var grown := CardFace.text_fit(z)
+				assert_gte(int(grown["fs"]) * z.hover_scale, float(ZineCard.BODY_FLOOR), "hand x%.2f %s: the grown card's words never under 12 px on screen" % [hand, id])
+				assert_true((grown["lines"] as PackedStringArray).size() <= int(grown["rows"]), "hand x%.2f (text %.1f) %s: every word on the grown card" % [hand, ts, id])
+
+
+func test_more_of_the_text_shows_at_rest_than_at_the_old_floor() -> void:
+	var cards := _cards()
+	var now_whole := 0
+	var old_whole := 0
+	var now_chars := 0
+	var old_chars := 0
+	for id in cards:
+		var z := _card(cards[id], ZineCard.STICKER_SIZE, ZineCard.HAND_REST_FLOOR, false)
+		var now := CardFace.text_fit(z)
+		now_whole += 1 if z.text_whole() else 0
+		now_chars += _shown_chars(now)
+		z.body_floor = ZineCard.BODY_FLOOR
+		var old := CardFace.text_fit(z)
+		old_whole += 1 if z.text_whole() else 0
+		old_chars += _shown_chars(old)
+	assert_gt(now_chars, old_chars, "the 10 px floor shows more of the rules text in the hand at rest (%d vs %d characters)" % [now_chars, old_chars])
+	assert_gte(now_whole, old_whole, "and as many whole texts or more (%d vs %d cards)" % [now_whole, old_whole])
+
+
+func _shown_chars(fit: Dictionary) -> int:
+	var n := 0
+	var lines: PackedStringArray = fit["lines"]
+	for i in mini(lines.size(), int(fit["rows"])):
+		n += lines[i].length()
+	return n
+
+
+func test_the_scene_grows_a_shrunk_hands_card_further_and_keeps_it_on_screen() -> void:
+	for ts in SCALES:
+		Settings.set_text_scale(ts)
+		RunManager.new_campaign(1)
+		var holder: Control = add_child_autofree(Control.new())
+		holder.size = SCREEN.size
+		var scene: Control = load(COMBAT).instantiate()
+		scene.auto_start = false
+		holder.add_child(scene)
+		scene.start_fight(&"collections_agent", 5)
+		await _frames()
+		var s: float = scene._hand_scale
+		for c in scene._hand_box.get_children():
+			if c is ZineCard:
+				var z := c as ZineCard
+				assert_eq(z.body_floor, ZineCard.HAND_REST_FLOOR, "the hand's floor at rest")
+				assert_eq(z.grown_floor, ZineCard.BODY_FLOOR, "12 px on screen grown")
+				assert_almost_eq(z.hover_to, ZineCard.HOVER_SCALE * maxf(1.0, 1.0 / s), 0.001, "grows at least to a 1.0 card's growth")
+				z.hover_scale = z.hover_to
+				assert_true(z.text_whole(), "x%.1f %s: every word on the grown card in the scene" % [ts, z.card_title])
+				# the grown die-cut stays on the screen across (the end cards moved in)
+				var half := z.size.x * z.hover_scale * (0.5 + CardFace.FACE_AT.x / CardFace.FACE.x)
+				var foot := z.get_global_transform() * Vector2(z.size.x * 0.5, z.size.y)
+				var x := foot.x + z.grown_shift()
+				assert_gte(x - half, SCREEN.position.x - 0.5, "x%.1f %s: the grown card's left edge on screen" % [ts, z.card_title])
+				assert_lte(x + half, SCREEN.end.x + 0.5, "x%.1f %s: its right edge on screen" % [ts, z.card_title])
+				assert_gte(foot.y - z.size.y * z.hover_scale, SCREEN.position.y, "x%.1f %s: its top on screen" % [ts, z.card_title])
+				z.hover_scale = 1.0
+		scene.skip_motion()
+		holder.queue_free()
+		await _frames(2)
 
 
 func test_no_rules_line_runs_under_the_rarity_pips_or_off_the_face() -> void:

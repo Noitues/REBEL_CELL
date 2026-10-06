@@ -116,6 +116,12 @@ File and line references below are R7's and will have moved.
 |---|---|---|---|---|
 | E1 | H P2-2 / N P2-5: rules write English sentences and `%+d` in core (~90 sites); emit `text_key` + args and structured fields; `deploy_failed` / `undock_failed` never reach `_report` | None rewrites it; touches every group's text | Valid | Core text is outside every M14 brief. Do it after M14 so the new strings (names pass, new chips, new panels) are converted once. Log it in DECISIONS and update the schema smoke check if a payload schema changes. |
 
+## F — queued for the animation pass (new items from M14, designer-approved, not built)
+
+| # | Item | Source | Motion entries it needs | Notes |
+|---|---|---|---|---|
+| F1 | Cards fly from the DECK pile into the hand and from the hand onto the DISCARD pile (and exhausts away from it); each pile's count ticks as a card lands; a reshuffle moves the discard onto the deck | Designer 2026-10-05 (parity S-CARDFACE b, CMB-04): yes, in the animation pass after M14. The standing piles are `CardPiles` (`scripts/ui/kit/card_piles.gd`), left of the hand, DECK over DISCARD | Existing, re-aimed: `card_draw` (start at `CardPiles.pile_rect(0)`), `card_discard` (land on `pile_rect(1)`), `card_exhaust`, `card_pile` (the transient pile mark: drop it, or keep it as the landing pulse on the standing pile). New: `pile_count_tick` (the count changes as each card lands, not at once), `pile_reshuffle` (discard to deck when the draw needs it; ends at once with MotionSkip, end state under reduce effects) | Today the flights start and end at the hand row's ends (`combat_scene._deck_spot` / `_discard_spot`), pinned by `test_anim_r3_combat` "discarded cards keep off RESPIN and UNDO" (lands inside the hand row) and `test_anim_r6_combat` "a card dealt in starts whole on screen": both are re-stated against the piles. Counts must show the end state headless and under reduce effects; REQUIRED_IDS, lab demos and the switch check get the new ids. |
+
 ## Reading the totals
 
 - **Likely obsolete** (replaced views): A5, A12b, B3, B4, B8a, B8c, C1, C2, C3, C8a, C9c, C9d, C9e, part of D5b.
