@@ -1,0 +1,26 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "city_vehicles",
+ "source": {
+  "tag": "art-concepts-r43",
+  "drawing_code": "unchanged (ast-extracted builders run verbatim)",
+  "driver": "tools/art_pipeline/parity/blender_export_vehicles.py"
+ },
+ "items": [
+  {
+   "file": "flying_car.glb",
+   "made_by": "unified38.flying_car(c, s=1.0)",
+   "note": "UV2.u = part id (0 body, 1 lane stripe, 2 head, 3 tail, 4 cabin, 5 under-glow); concept axes: nose +X, up +Z"
+  },
+  {
+   "file": "chopper.glb",
+   "made_by": "district20.heli_geo()",
+   "note": "concept axes: nose +X, up +Z; objects: body, neon, blades, blade_ring"
+  },
+  {
+   "file": "drone.glb",
+   "made_by": "district20.drone_geo()",
+   "note": "concept axes: nose +X, up +Z; objects: body, neon"
+  }
+ ]
+}

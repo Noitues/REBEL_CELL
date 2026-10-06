@@ -1,0 +1,175 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "campaign_end",
+ "about": "M14 asset parity: the campaign end's padlock, house motifs, seal emblems and dossier stock (ART_BIBLE v2 4.8). Built by tools/art_pipeline/parity/export_campaign_end.py; do not edit by hand.",
+ "source": {
+  "tag": "art-concepts-r43",
+  "commit": "9a62cec89be362d89ad58ce8e2c2e2a126c8a3a1",
+  "round": "docs/concepts/round20_raid_world + round21_raid_world",
+  "scripts": [
+   "lost20.py",
+   "emblems20.py",
+   "ui19.py",
+   "dossier21.py"
+  ],
+  "driver": "tools/art_pipeline/parity/export_campaign_end.py",
+  "drawing_code": "unchanged (designer ruling 2026-10-05: reuse the art pass's assets)",
+  "scripts_sha256": "e53bdcb462d0a832c48f98455a0b1cc0dfd0a8becefcdf7f166bee6f53982ffd"
+ },
+ "scale": "2x the concept's size unless an item says otherwise",
+ "items": [
+  {
+   "file": "padlock.png",
+   "made_by": "lost20.padlock(144, white)",
+   "size": [
+    144,
+    144
+   ],
+   "note": "2x the CORE's 72 px lock; the keyhole stays its ink"
+  },
+  {
+   "file": "emblem_meridian.png",
+   "made_by": "lost20.emblem_img('MERIDIAN', 256, white)",
+   "size": [
+    256,
+    256
+   ],
+   "note": "the seal's emblem (round 6 slicelib EM_MERIDIAN via emblems20.py), a white mask"
+  },
+  {
+   "file": "emblem_solace.png",
+   "made_by": "lost20.emblem_img('SOLACE', 256, white)",
+   "size": [
+    256,
+    256
+   ],
+   "note": "the seal's emblem (round 6 slicelib EM_SOLACE via emblems20.py), a white mask"
+  },
+  {
+   "file": "emblem_halcyon.png",
+   "made_by": "lost20.emblem_img('HALCYON', 256, white)",
+   "size": [
+    256,
+    256
+   ],
+   "note": "the seal's emblem (round 6 slicelib EM_HALCYON via emblems20.py), a white mask"
+  },
+  {
+   "file": "emblem_orbital.png",
+   "made_by": "lost20.emblem_img('ORBITAL', 256, white)",
+   "size": [
+    256,
+    256
+   ],
+   "note": "the seal's emblem (round 6 slicelib EM_ORBITAL via emblems20.py), a white mask"
+  },
+  {
+   "file": "emblem_rebel_cell.png",
+   "made_by": "lost20.emblem_img('REBEL_CELL', 256, white)",
+   "size": [
+    256,
+    256
+   ],
+   "note": "the seal's emblem (round 6 slicelib EM_REBEL_CELL via emblems20.py), a white mask"
+  },
+  {
+   "file": "motif_blueprint.png",
+   "made_by": "lost20.motif('blueprint', 1)",
+   "size": [
+    1920,
+    1080
+   ],
+   "note": "L mask 1920 x 1080 (the concept's screen; 1x)"
+  },
+  {
+   "file": "motif_hazard.png",
+   "made_by": "lost20.motif('hazard', 1)",
+   "size": [
+    1920,
+    1080
+   ],
+   "note": "L mask 1920 x 1080 (the concept's screen; 1x)"
+  },
+  {
+   "file": "motif_cells.png",
+   "made_by": "lost20.motif('cells', 1)",
+   "size": [
+    1920,
+    1080
+   ],
+   "note": "L mask 1920 x 1080 (the concept's screen; 1x)"
+  },
+  {
+   "file": "motif_stars.png",
+   "made_by": "lost20.motif('stars', 1)",
+   "size": [
+    1920,
+    1080
+   ],
+   "note": "L mask 1920 x 1080 (the concept's screen; 1x)"
+  },
+  {
+   "file": "motif_glitch.png",
+   "made_by": "lost20.motif('glitch', 1)",
+   "size": [
+    1920,
+    1080
+   ],
+   "note": "L mask 1920 x 1080 (the concept's screen; 1x)"
+  },
+  {
+   "file": "postit_pink.png",
+   "made_by": "dossier21.postit([], (255, 120, 170), 460, 400, 41)",
+   "size": [
+    460,
+    410
+   ],
+   "note": "blank, 2x; words are live text"
+  },
+  {
+   "file": "postit_yellow.png",
+   "made_by": "dossier21.postit([], (255, 232, 90), 460, 400, 41)",
+   "size": [
+    460,
+    410
+   ],
+   "note": "blank, 2x; words are live text"
+  },
+  {
+   "file": "postit_blue.png",
+   "made_by": "dossier21.postit([], (150, 220, 255), 460, 400, 41)",
+   "size": [
+    460,
+    410
+   ],
+   "note": "blank, 2x; words are live text"
+  },
+  {
+   "file": "postit_green.png",
+   "made_by": "dossier21.postit([], (180, 240, 140), 460, 400, 41)",
+   "size": [
+    460,
+    410
+   ],
+   "note": "blank, 2x; words are live text"
+  },
+  {
+   "file": "print_stock.png",
+   "made_by": "dossier21.sheet(580, 696, (246, 244, 238), 20, 4)",
+   "size": [
+    580,
+    696
+   ],
+   "note": "the polaroid's white stock (polaroid(): sheet(w, 1.2 w, ...)), 2x of w 290"
+  },
+  {
+   "file": "manila.jpg",
+   "made_by": "dossier21.manila(1920, 1080, 11)",
+   "size": [
+    1920,
+    1080
+   ],
+   "note": "the folder's stock, one screen (1x), JPEG q86"
+  }
+ ]
+}

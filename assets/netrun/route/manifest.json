@@ -1,0 +1,120 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "route_stickers",
+ "about": "M14 asset parity: netrun route node stickers and the operative token (ART_BIBLE v2 4.6; round 36/37 option A). Built by tools/art_pipeline/parity/export_route_stickers.py; do not edit by hand.",
+ "source": {
+  "tag": "art-concepts-r43",
+  "commit": "9a62cec89be362d89ad58ce8e2c2e2a126c8a3a1",
+  "round": "docs/concepts/round37_netrun",
+  "scripts": [
+   "r32ui.py",
+   "r31lib.py",
+   "sticker_lib19.py"
+  ],
+  "driver": "tools/art_pipeline/parity/export_route_stickers.py",
+  "drawing_code": "unchanged (designer ruling 2026-10-05: reuse the art pass's assets)",
+  "scripts_sha256": "e4495b23270434c5780672a5b1107e067d0c130f7f500a621888369980da1022"
+ },
+ "scale": "2x the concept's size unless an item says otherwise",
+ "items": [
+  {
+   "file": "node_router.png",
+   "made_by": "r32ui.node_sd('router', 54)['img']",
+   "size": [
+    130,
+    130
+   ],
+   "note": "SS = 2 image (2x), trimmed to the die-cut"
+  },
+  {
+   "file": "node_router_past.png",
+   "made_by": "r32ui.node_sd('router', 54, grey=True)['img']",
+   "size": [
+    130,
+    130
+   ],
+   "note": "the concept's past / cut-off sticker (greyscale 0.7)"
+  },
+  {
+   "file": "node_elite.png",
+   "made_by": "r32ui.node_sd('elite', 54)['img']",
+   "size": [
+    130,
+    130
+   ],
+   "note": "SS = 2 image (2x), trimmed to the die-cut"
+  },
+  {
+   "file": "node_elite_past.png",
+   "made_by": "r32ui.node_sd('elite', 54, grey=True)['img']",
+   "size": [
+    130,
+    130
+   ],
+   "note": "the concept's past / cut-off sticker (greyscale 0.7)"
+  },
+  {
+   "file": "node_terminal.png",
+   "made_by": "r32ui.node_sd('terminal', 54)['img']",
+   "size": [
+    130,
+    130
+   ],
+   "note": "SS = 2 image (2x), trimmed to the die-cut"
+  },
+  {
+   "file": "node_terminal_past.png",
+   "made_by": "r32ui.node_sd('terminal', 54, grey=True)['img']",
+   "size": [
+    130,
+    130
+   ],
+   "note": "the concept's past / cut-off sticker (greyscale 0.7)"
+  },
+  {
+   "file": "node_shop.png",
+   "made_by": "r32ui.node_sd('modem', 54)['img']",
+   "size": [
+    130,
+    130
+   ],
+   "note": "SS = 2 image (2x), trimmed to the die-cut"
+  },
+  {
+   "file": "node_shop_past.png",
+   "made_by": "r32ui.node_sd('modem', 54, grey=True)['img']",
+   "size": [
+    130,
+    130
+   ],
+   "note": "the concept's past / cut-off sticker (greyscale 0.7)"
+  },
+  {
+   "file": "node_rack.png",
+   "made_by": "r32ui.node_sd('rack', 54)['img']",
+   "size": [
+    128,
+    134
+   ],
+   "note": "SS = 2 image (2x), trimmed to the die-cut"
+  },
+  {
+   "file": "node_rack_past.png",
+   "made_by": "r32ui.node_sd('rack', 54, grey=True)['img']",
+   "size": [
+    128,
+    134
+   ],
+   "note": "the concept's past / cut-off sticker (greyscale 0.7)"
+  },
+  {
+   "file": "token_operative.png",
+   "made_by": "r32ui.token_sd(54)['img']",
+   "size": [
+    110,
+    140
+   ],
+   "note": "the operative token over 'you are here'"
+  }
+ ]
+}

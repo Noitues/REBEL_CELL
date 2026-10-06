@@ -24,6 +24,9 @@ const TAPE := Vector2(70, 18)
 const VIGNETTE := 0.35
 ## The drawn stand-in grid's cell (px at 1.0).
 const GRID_CELL := 14.0
+## M14 asset parity: the print's white stock is round 21's own `sheet` (the polaroid's grain),
+## exported by `tools/art_pipeline/parity/export_campaign_end.py`.
+const STOCK_ART := "res://assets/campaign_end/print_stock.png"
 
 
 func _init(p_caption: String = "", p_tilt: float = 0.0) -> void:
@@ -70,7 +73,7 @@ func _draw() -> void:
 	var s := Settings.text_scale
 	var r := Rect2(Vector2.ZERO, size)
 	draw_rect(Rect2(r.position + Vector2(4, 7) * s, r.size), Palette.SHADOW)
-	draw_rect(r, PaperInk.opaque(Palette.PAPER))
+	draw_texture_rect(load(STOCK_ART) as Texture2D, r, false)
 	var img := image_rect()
 	if picture != null:
 		draw_texture_rect(picture, img, false, Palette.PAPER.lerp(Palette.TEXT_HI, 0.5))

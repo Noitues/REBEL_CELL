@@ -408,8 +408,9 @@ func test_pointing_at_an_exploit_site_opens_its_decrypted_file() -> void:
 	assert_not_null(overlay.exploit_file, "the file opens")
 	var tag := overlay.exploit_file.find_child("Tag", true, false) as Label
 	assert_string_contains(tag.text, " // ", "CATEGORY // ITEM")
-	assert_eq(overlay.marker_view(ex).type_glyph(), GlyphIcon.table().ids[GlyphTableData.key_for_exploit(int(overlay._node_dict(ex)["marker"]["exploit"]))],
-		"the badge is its type's atlas glyph")
+	var type_word := String(RC.ExploitType.keys()[int(overlay._node_dict(ex)["marker"]["exploit"])]).to_lower()
+	assert_eq(overlay.marker_view(ex).disc_art(), "disc_exploit_" + type_word,
+		"M14 asset parity: the disc is round 42's key plate with its type's sub-badge")
 	overlay._point_at(&"")
 	await _frames(3)
 	assert_null(overlay.exploit_file, "and closes")

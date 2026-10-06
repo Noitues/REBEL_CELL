@@ -1,0 +1,108 @@
+{
+ "source_tag": "art-concepts-r43",
+ "source": "docs/concepts/round34_firmware_daemons/scripts/fwlib.py",
+ "function": "daemon_tile(did, s, t=k/frames) + daemon_tile(did, s, t=0, fire=1)",
+ "reference": "docs/art_reference/wheel/round34_firmware_daemons/daemon_set.jpg, daemon_row.jpg, daemon_trigger.gif",
+ "script": "tools/art/export_firmware_daemons.py",
+ "tile_px": 128,
+ "frames": 12,
+ "layout": "columns 0..frames-1 = idle loop t = k / frames; column frames = fire flash",
+ "files": {
+  "clean_signal": {
+   "rarity": "uncommon",
+   "family": "PERFECT"
+  },
+  "kernel_sync": {
+   "rarity": "uncommon",
+   "family": "PERFECT"
+  },
+  "zero_day": {
+   "rarity": "uncommon",
+   "family": "PERFECT"
+  },
+  "botnet_seed": {
+   "rarity": "uncommon",
+   "family": "PERFECT"
+  },
+  "adrenal_loop": {
+   "rarity": "uncommon",
+   "family": "PERFECT"
+  },
+  "cascade": {
+   "rarity": "uncommon",
+   "family": "PERFECT"
+  },
+  "fault_tolerance": {
+   "rarity": "uncommon",
+   "family": "MISS"
+  },
+  "fail_forward": {
+   "rarity": "uncommon",
+   "family": "MISS"
+  },
+  "stolen_intent": {
+   "rarity": "rare",
+   "family": "MISS"
+  },
+  "twin_pointer": {
+   "rarity": "rare",
+   "family": "TURN"
+  },
+  "warm_boot": {
+   "rarity": "uncommon",
+   "family": "TURN"
+  },
+  "shield_cache": {
+   "rarity": "uncommon",
+   "family": "TURN"
+  },
+  "idle_armor": {
+   "rarity": "uncommon",
+   "family": "TURN"
+  },
+  "static_field": {
+   "rarity": "rare",
+   "family": "TURN"
+  },
+  "linked_bus": {
+   "rarity": "uncommon",
+   "family": "ACTION"
+  },
+  "tuning_fork": {
+   "rarity": "uncommon",
+   "family": "ACTION"
+  },
+  "feedback_loop": {
+   "rarity": "rare",
+   "family": "ACTION"
+  },
+  "salvager": {
+   "rarity": "common",
+   "family": "RUN"
+  },
+  "field_medic": {
+   "rarity": "common",
+   "family": "RUN"
+  },
+  "bounty_code": {
+   "rarity": "rare",
+   "family": "RUN"
+  },
+  "rack_skimmer": {
+   "rarity": "uncommon",
+   "family": "RUN"
+  },
+  "cold_exit": {
+   "rarity": "uncommon",
+   "family": "HEAT"
+  },
+  "scrubber": {
+   "rarity": "uncommon",
+   "family": "HEAT"
+  },
+  "log_wiper": {
+   "rarity": "rare",
+   "family": "HEAT"
+  }
+ }
+}

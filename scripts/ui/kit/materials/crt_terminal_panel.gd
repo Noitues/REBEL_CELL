@@ -122,7 +122,7 @@ func accent() -> Color:
 			return corp_color
 		Accent.DISPATCH:
 			return Palette.HARM
-	return Palette.NET_CYAN
+	return PaletteSkins.chrome(Palette.NET_CYAN)  # ART-12 12s: the Cell's edge follows the skin
 
 
 ## Types `t` on behind the prompt (`crt_type_on`; Typing: a press shows it whole, the
@@ -153,13 +153,13 @@ func _sync() -> void:
 		var sm := m as ShaderMaterial
 		sm.set_shader_parameter(&"panel", Vector4(0.0, 0.0, size.x, size.y))
 		sm.set_shader_parameter(&"accent", c)
-		sm.set_shader_parameter(&"glass_top", Palette.CRT_GLASS_TOP)
-		sm.set_shader_parameter(&"glass_bottom", Palette.CRT_GLASS_BOTTOM)
+		sm.set_shader_parameter(&"glass_top", PaletteSkins.chrome(Palette.CRT_GLASS_TOP))
+		sm.set_shader_parameter(&"glass_bottom", PaletteSkins.chrome(Palette.CRT_GLASS_BOTTOM))
 		sm.set_shader_parameter(&"glow_px", GLOW_PX)
 		sm.set_shader_parameter(&"scan_px", SCAN_PX)
 		sm.set_shader_parameter(&"scan_strength", SCAN_STRENGTH)
 	if label != null:
-		label.add_theme_color_override(&"font_color", Palette.TERMINAL_TEXT)
+		label.add_theme_color_override(&"font_color", PaletteSkins.chrome(Palette.TERMINAL_TEXT))
 
 
 ## The glass, grown by the glow (the shader's panel rect sits GLOW_PX in).
