@@ -625,6 +625,10 @@
 			"seconds": 6.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_parity_wheel.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_parity_title01_backdrop.gd": {
 			"seconds": 4.0,
 			"tier": "fast"

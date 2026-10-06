@@ -479,11 +479,20 @@ white glyph badges, a sticker ring. Main: the D4 shape and glyph/number set matc
 dark and desaturated (maroon / slate), the frame thin and dim; the slice types are hard to tell
 apart at a glance. View: the concept is clearly more legible (slice type by colour + glyph); main
 reads muddy. Likely file: `scripts/ui/wheel/wheel_face.gd`, `wheel_disc.gd`, `wheel_kit.gd`, the
-slice materials / palette tokens (`palette.gd`, `palette_skins.gd`). Decision:
+slice materials / palette tokens (`palette.gd`, `palette_skins.gd`). Decision: **fixed, concept** (designer group ruling, 2026-10-05: combat matches the concept):
+the baked art-pass screens through a tone step (saturation 1.4, the part over 0.3 lifted x1.1: the
+recipe's bloom / add_glow folded into the disc), the player's frame lit in its class accent (bevel
+wash + hairline glow). Slice tier pips and FROZEN / LOCKED / BURNING stay listed (G4, G5). Sheet
+`fixes/WHEEL.jpg`; test `test_parity_wheel.gd`.
 
 **CMB-03 (P1) Enemy wheel corp kit.** Concept: the enemy wheel wears the corp kit (Meridian orange
 hazard frame). Main: the enemy wheel (Solace) is olive-green and very dark; the corp frame is thin.
-Build: green sticker ring. Same files as CMB-02 plus the corp kits. Decision:
+Build: green sticker ring. Same files as CMB-02 plus the corp kits. Decision: **fixed, concept**
+(designer group ruling, 2026-10-05: combat matches the concept): the corp frame ported from round 14 `d4corp` (frame R1 424 on a corp wheel, the corp
+frame bases and gloss, `corp_rim`: Meridian hazard stripes + teeth, Solace capsule studs + glass
+ring, Halcyon colonnade + gold halo, Orbital azimuth ticks + ring, Rebel_Cell broken segments; the
+elite collar beyond the frame) and the saturated corp screens. Orbital's azimuth numbers are not
+drawn (below 4 px at combat size). Sheet `fixes/WHEEL.jpg`.
 
 **CMB-04 (P1) Hand: sticker cards.** Concept: gold-yellow die-cut sticker cards with a white border,
 type band (WHEEL yellow / HACK pink / SYSTEM teal), big glyph and value, fanned and overlapping, a
@@ -518,7 +527,11 @@ Decision:
 **CMB-09 (P2) Card-play preview.** Build: `LANDS HERE` tag, dashed slice outline and white chevrons
 on the target wheel. Main: same pieces (dashed pink slice, LANDS HERE tag, chevrons) dimmer; the
 preview tag is cut at the left by the wheel's frame. Concept: `round17_corp_wheels/preview.gif`.
-Likely file: `scripts/ui/kit/hud_wheel_layer.gd`, `forecast_*`. Decision:
+Likely file: `scripts/ui/kit/hud_wheel_layer.gd`, `forecast_*`. Decision: **fixed, concept** (designer group ruling, 2026-10-05: combat matches the concept):
+the landing slice lit in its program colour (fill + glow + heavier dashes, round 14
+`preview_indicator` A), a stronger ghost blade; the `LANDS HERE` / `DRONE ENDS HERE` tags take the
+first spot clear of the target reticle, the nudge buttons and the HP row (they were crossed by the
+reticle). File `scripts/ui/wheel/attach/card_preview_overlay.gd`.
 
 **CMB-10 (P3) Aim line.** Both: yellow dashed pencil line from the card to the target; main's ends
 on the slice, the build's on the wheel. Equivalent. Decision:
@@ -574,7 +587,12 @@ none. Likely file: `combat_backdrop.gd` (boss place). Decision:
 
 **BOSS-04 (P2) Phase 3 arcs.** Main phase 3: lime guard arcs, double chevrons and a `13` marker
 crowd the boss wheel's right side; build: an orange dashed arc. View: main's lime again collides
-with the focus colour. Likely file: `hud_wheel_layer.gd`. Decision:
+with the focus colour. Likely file: `hud_wheel_layer.gd`. Decision: **fixed, concept** (designer group ruling, 2026-10-05: combat matches the concept):
+needle 2, 3 ... read on round 14 `d4corp.pin` pins inside the frame (round window in the channel,
+number tab), only needle 1 wears the crowned blade; a multi-needle wheel's rails are +-24 degrees;
+the corp rim is drawn over the phase 3 armour plates. The lime is Solace's corp hue (ART_BIBLE 2.4,
+recipe accent) and the target brackets are FOCUS: both kept; what crowded the rim (the second
+crowned blade and its window) is gone. Sheet `fixes/WHEEL.jpg`.
 
 ### City Grid (`grid*.jpg`: grid, grid_site_selected, grid_raid_pending, grid_influence, grid_drag_crew, grid_meridian, grid_halcyon, grid_orbital, grid_rebel_cell)
 Refs: art pass build `grid*` (M13: a flat dark-navy isometric board, hex tier badges, a 2D wireframe
