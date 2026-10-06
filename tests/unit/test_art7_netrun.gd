@@ -250,7 +250,7 @@ func test_the_dossier_and_node_panel_say_what_the_rules_say() -> void:
 	assert_eq(int(d["hp"]), op.hp)
 	assert_eq(int(d["deck"]), op.deck.size())
 	assert_ne(String(d["hub"]), "", "the hub core is named")
-	assert_eq(scene.dossier.heat_words(), tr(OperativeDossier.HEAT_STAMP) % [52, String(d["band"]).to_upper()])
+	assert_false(d.has("heat"), "Q10: no Heat on the file (the gauge is the one place)")
 	var s := RunManager.netrun
 	for id in s.available_nodes():
 		var p: Dictionary = scene.node_panel_data(id)

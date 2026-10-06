@@ -26,7 +26,6 @@ const FIELD_FONT := 12
 const STAMP_FONT := 15
 ## The stamps' tilts (rad), ruling (px) and alpha.
 const AT_LARGE_TILT := 0.12
-const HEAT_TILT := -0.08
 const STAMP_RULE := 2.0
 const STAMP_ALPHA := 0.88
 ## The share of the screen's width the full file may take before it folds to the compact one.
@@ -48,11 +47,11 @@ const F_DECK := "DECK" # TR
 const DECK_CARDS := "%d cards" # TR
 const STATION := "IF STATIONED (RAIDS):" # TR
 const AT_LARGE := "AT LARGE" # TR
-const HEAT_STAMP := "HEAT %d: %s" # TR
 
 ## What the file shows (the scene reads it from the run): corp, corp_color, subject,
 ## class_word, class_id, operative_id, rank, hp, max_hp, ram, wheel (Array[String]), hub,
-## deck, station (Array[String]), heat, band (the band's word).
+## deck, station (Array[String]). Designer ruling Q10: no Heat stamp (the top bar's gauge is the one
+## place for Heat).
 var data: Dictionary = {}
 ## True while the compact file shows (big text on a small screen).
 var compact: bool = false
@@ -143,7 +142,7 @@ func _height() -> float:
 		var station: Array = data.get("station", [])
 		if not station.is_empty():
 			h += MARGIN * s + lh * (1.0 + station.size()) + MARGIN * s
-	h += (STAMP_FONT * s) * (2.2 if not compact else 3.6) + MARGIN * s
+	h += (STAMP_FONT * s) * (1.2 if not compact else 2.0) + MARGIN * s
 	return h
 
 
@@ -181,12 +180,12 @@ func _draw() -> void:
 		ry += lh
 	# AT LARGE beside the name (rubber stamp).
 	# AT LARGE by the name, over the short rows' free right side (HP, RAM); the compact file
-	# gives it a row of its own above the Heat stamp.
+	# gives it a row of its own at the foot.
 	if not compact:
 		var stamp_y := y + lh * minf(3.5, _rows.size() - 0.5)
 		_stamp(Vector2(w - MARGIN * s, stamp_y), tr(AT_LARGE), AT_LARGE_TILT, true)
 	else:
-		_stamp(Vector2(w - MARGIN * s, h - MARGIN * s - STAMP_FONT * s * 1.9), tr(AT_LARGE), AT_LARGE_TILT, true)
+		_stamp(Vector2(w - MARGIN * s, h - MARGIN * s - STAMP_FONT * s * 0.6), tr(AT_LARGE), AT_LARGE_TILT, true)
 	y = maxf(y + (MUG * s if not compact else 0.0), y + lh * _rows.size())
 	if not compact:
 		y += MARGIN * s * 0.5
@@ -212,14 +211,7 @@ func _draw() -> void:
 				sy += lh
 				draw_string(pf, Vector2(x + MARGIN * s * 0.5, sy), String(line), HORIZONTAL_ALIGNMENT_LEFT, box.size.x - MARGIN * s, fs, RouteInk.PAPER_INK)
 			y = box.end.y + MARGIN * s * 0.5
-	# The Heat stamp at the foot, right.
-	_stamp(Vector2(w - MARGIN * s, h - MARGIN * s - STAMP_FONT * s * 0.6), heat_words(), HEAT_TILT, true)
 	draw_set_transform(Vector2.ZERO, 0.0)
-
-
-## "HEAT 52: HUNTED" (translated).
-func heat_words() -> String:
-	return tr(HEAT_STAMP) % [int(data.get("heat", 0)), String(data.get("band", "")).to_upper()]
 
 
 ## A red rubber stamp of `text` with its right edge at `right` (its centre line at right.y),

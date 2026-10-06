@@ -934,7 +934,6 @@ HEAT,HEAT
 HEAT %d CROSSED,HEAT %d CROSSED
 HEAT %d · %s,HEAT %d · %s
 HEAT %d · %s (%d+),HEAT %d · %s (%d+)
-HEAT %d: %s,HEAT %d: %s
 HEAT %s,HEAT %s
 HEAT & BANKING,HEAT & BANKING
 "HEAT (subject's exposure), at closure %d:","HEAT (subject's exposure), at closure %d:"
@@ -1003,7 +1002,6 @@ Heat reduction Site,Heat reduction Site
 Heat settles here: what the raid changed.,Heat settles here: what the raid changed.
 Heat stops at its limit,Heat stops at its limit
 Heat the run added (campaign Heat is now %d).,Heat the run added (campaign Heat is now %d).
-Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules.,Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules.
 Heat: the corporation's attention. Thresholds bring raids and harder rules.,Heat: the corporation's attention. Thresholds bring raids and harder rules.
 HeatThresholdData.heat_10.event_text,The next netrun's Mainframe carries one item fewer.
 HeatThresholdData.heat_100.event_text,PURGE: the corporation sends the largest raid of the campaign.
