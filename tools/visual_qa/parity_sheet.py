@@ -33,12 +33,12 @@ from PIL import Image, ImageDraw, ImageFont
 
 FRAME = (1280, 720)
 ## Width of the whole sheet; the top row splits it between the pictures.
-SHEET_W = 1920
+SHEET_W = 1440
 GAP = 8
 LABEL_H = 26
 ## Largest blow-up of a crop.
-CROP_MAX_SCALE = 2.0
-JPEG_QUALITY = 76
+CROP_MAX_SCALE = 1.5
+JPEG_QUALITY = 55
 BG = (18, 18, 24)
 FG = (235, 235, 235)
 REF_TAG = (255, 200, 60)
@@ -145,6 +145,49 @@ def build(pair: dict, art_dir: Path, main_dir: Path, concepts: Path | None, out:
     return path
 
 
+## Motion strips: frames picked from a motion lab Movie Maker run (--demo-anim=<id>, 30 fps).
+MOTION_START = 6
+MOTION_FPS = 30
+MOTION_COUNT = 8
+MOTION_STEP = 4
+## The lab's stage (right of its 380 px control column), in 1280x720.
+MOTION_CROP = (380, 0, 900, 720)
+MOTION_CELL_W = 200
+
+
+def motion(art_root: Path, main_root: Path, demo: str, out: Path, sheet_id: str) -> Path:
+    """One strip pair: the art pass's frames of `demo` on the top row, main's under it,
+    MOTION_COUNT frames every MOTION_STEP from MOTION_START, labelled in ms."""
+    small = _font(15)
+    x, y, w, h = MOTION_CROP
+    cell = (MOTION_CELL_W, round(MOTION_CELL_W * h / w))
+    rows = []
+    for label, tag, root in (("ART PASS BUILD", REF_TAG, art_root), ("MAIN", MAIN_TAG, main_root)):
+        frames = sorted((root / demo).glob("f*.png"))
+        row = []
+        for i in range(MOTION_COUNT):
+            k = MOTION_START + i * MOTION_STEP
+            img = _load(frames[k] if k < len(frames) else None, "%s f%d" % (demo, k))
+            row.append((round((k - MOTION_START) * 1000 / MOTION_FPS), img.crop((x, y, x + w, y + h)).resize(cell, Image.LANCZOS)))
+        rows.append((label, tag, row))
+    width = MOTION_COUNT * (cell[0] + GAP)
+    sheet = Image.new("RGB", (width, LABEL_H + 2 * (LABEL_H + cell[1] + GAP)), BG)
+    d = ImageDraw.Draw(sheet)
+    d.text((6, 4), "%s  motion lab --demo-anim=%s (30 fps, from its start frame)" % (sheet_id, demo), fill=FG, font=small)
+    yy = LABEL_H
+    for label, tag, row in rows:
+        d.text((6, yy + 4), label, fill=tag, font=small)
+        yy += LABEL_H
+        for i, (ms, im) in enumerate(row):
+            sheet.paste(im, (i * (cell[0] + GAP), yy))
+            d.text((i * (cell[0] + GAP) + 4, yy + 2), "%d ms" % ms, fill=MARK, font=small)
+        yy += cell[1] + GAP
+    out.mkdir(parents=True, exist_ok=True)
+    path = out / (sheet_id + ".jpg")
+    sheet.save(path, "JPEG", quality=JPEG_QUALITY, optimize=True)
+    return path
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--art", required=True, help="art pass pack combo folder (its <screen>.png files)")
@@ -153,7 +196,14 @@ def main() -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--concepts", default="", help="docs/concepts of tag art-concepts-r43 (e.g. the art-pass copy's)")
     ap.add_argument("--only", default="", help="comma list of sheet names")
+    ap.add_argument("--motion", default="", help="id=demo,... : motion strip pairs from --art / --main "
+                    "folders holding one Movie Maker folder per demo (the pairs file is then ignored)")
     args = ap.parse_args()
+    if args.motion:
+        for item in args.motion.split(","):
+            sheet_id, demo = item.split("=")
+            print(motion(Path(args.art), Path(args.main), demo, Path(args.out), sheet_id))
+        return 0
     pairs = json.loads(Path(args.pairs).read_text(encoding="utf-8"))["pairs"]
     only = {s.strip() for s in args.only.split(",") if s.strip()}
     concepts = Path(args.concepts) if args.concepts else None

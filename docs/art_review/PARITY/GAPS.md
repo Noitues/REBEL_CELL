@@ -1,14 +1,11 @@
 # M14 parity audit: art pass vs main (GAPS)
 
-Status: **INTERIM** (2026-10-05). Screens compared so far: title, title confirm, campaign slots,
-new campaign (+ picker open), HQ, plus the two findings the orchestrator passed on (shop, boss
-phase 2). Every other screen is captured on both sides; the comparison continues in the same
-format below.
+Status: **COMPLETE** (2026-10-05): every screen and state of both review packs, the HQ run pages, the Central Server gate, the combat backdrops, the campaign end lock and dossier, and 10 motion strips are compared. 134 entries covering 136 difference ids (entries by rank: P1 44, P2 59, P3 31); 13 ruled by the designer so far (their `Decision:` filled), the rest wait for a ruling.
 
 Designer rulings this file follows (DECISIONS 2026-10-05 "the M14 audit is a side-by-side art-pass
 parity audit", and the orchestrator's relay of the later ruling): every difference is described
 neutrally, both sides; where it helps, an honest view of which reads better and why; **nothing is
-fixed until the designer has ruled** on each id (`Decision:` left empty).
+fixed until the designer has ruled** on each id (`Decision:` empty until then).
 
 ## The designer's general principle (2026-10-05)
 Where the M13 art-pass build is **richer than main** (more layout, content or information) but
@@ -126,6 +123,7 @@ Likely cause: `title_scene.gd` `_page` / `SLOTS_W` (the page fills the height). 
 panel to its content. Decision: **size the panel to its content up to a maximum allocated size, then a scroll bar.** (designer, 2026-10-05)
 
 ### New campaign (`new_campaign.jpg`, `new_campaign_picker.jpg`)
+**Designer ruling (2026-10-05):** the same principle as the slots: the build's layout reworked with the latest concept (v2 kit) into main.
 Ref: art pass build `new_campaign`, `new_campaign_picker` (no concept image).
 
 **NEWC-01 (P1) Pickers: tiles vs dropdowns.** Build: Target as five corp tiles (corp colour
@@ -139,23 +137,23 @@ dropdowns hide all of that. Likely cause: the build's `scripts/ui/kit/tile_picke
 `scripts/ui/hq_scene.gd` `show_start` (lines ~1239-1400) builds `OptionButton`s.
 Art-pass source: `art-m13-final:scripts/ui/kit/tile_picker.gd`, `planning_picker.gd`,
 `scripts/ui/hq_scene.gd` (corp tiles ~l.1233). Fix: port both pickers onto the v2 kit (corp
-emblems from the art pass's own assets). Decision:
+emblems from the art pass's own assets). Decision: **agree with the audit**: the build's tiles (corp / home server / crew, with locks and costs), reworked in the v2 kit. (designer, 2026-10-05)
 
 **NEWC-02 (P2) Page header.** Build: the REBEL_CELL logo, a pink `TRUST NO ONE` pencil scrawl and
 a pink START sticker top right with `SHARE CODES` beside it. Main: a `NEW CAMPAIGN` title sticker,
 a yellow `TRUST NO ONE` pencil, the pink `New campaign` sticker under the form. View: main's title
 sticker matches the v2 page-title rule; the build puts the one verb where the eye ends (top right).
-Decision:
+Decision: **agree with the audit**: keep main's v2 title sticker; the start verb sticker goes top right as in the build. (designer, 2026-10-05)
 
 **NEWC-03 (P2) Seed, daily run, share codes.** Build: seed lives in a collapsible SHARE CODES box
 at the bottom (seed stepper, code field, copy); no daily run panel. Main: `City seed` field +
 `Next seed` in the form, plus two lime-edged panels `TODAY'S RUN` and `SHARE CODES` side by side
 under it. Main has more here (daily run is a main feature). View: main's lime panel edges are as
 loud as the focus colour (lime = focus in the v2 kit), which competes with real focus.
-Likely file: `hq_scene.gd show_start`. Decision:
+Likely file: `hq_scene.gd show_start`. Decision: **main-only function, kept; restyle it with the concept approach** so it matches the rest of the final page (not lime panel edges). (designer, 2026-10-05)
 
 **NEWC-04 (P1) Picker opened.** Build: "picker" is the tile row (no popup). Main: the target
-OptionButton's popup list (Godot default popup restyled). Follows NEWC-01. Decision:
+OptionButton's popup list (Godot default popup restyled). Follows NEWC-01. Decision: **agree with the audit**: the tiles are the picker; no popup. (designer, 2026-10-05)
 
 ### HQ (`hq.jpg`)
 Ref: art pass build `hq` (no concept image for the HQ page; chrome per `round33_ui_chrome/ui_kit.png`).
@@ -884,37 +882,111 @@ CLOSED stamp covers `(cell 01)` and part of the STATUS line, `HEAT ... at closur
 left by the note. Build: the CELL BURNED poster. Likely file: `scripts/ui/campaign_end/` (dossier),
 `polaroid.gd`. Decision:
 
+### Motion (`MOTION-01.jpg` … `MOTION-10.jpg`)
+Each strip: the motion lab's `--demo-anim=<id>` on both builds (Movie Maker 30 fps, one launch per
+demo), 8 frames every 133 ms from the demo's start frame, the art pass on top, main below. The
+lab's stage is small for the HUD-piece demos, so those strips show placement and timing, not
+detail; an in-context capture (`hq_scene` / `netrun_scene` / `combat_scene` `--demo-anim`) is the
+follow-up where a ruling needs it.
+
+**MOTION-01 (P3) jack_in.** Same timing on both: the page cuts to the grid at ~267 ms, the cover
+holds to ~800 ms, the page returns by ~933 ms. Main's cover carries the big corp line
+(`SOLACE // THE RACK`, JACK-01); the build only a small `CONNECTING`. Decision:
+
+**MOTION-02 / 03 / 04 (P3) card_hover, send_it_press, wheel_spin.** No visible timing difference
+at the lab's scale; both lift / press / spin over the same frames. The look differences are the
+static ones (CMB-02/04/06). In-context strips needed only if the designer wants them. Decision:
+
+**MOTION-05 (P3) loot_fan.** Same: the three cards fan out from a stack at ~133 ms and settle by
+~400 ms on both. Card faces differ (LOOT-01). Decision:
+
+**MOTION-06 (P3) panel_in.** Build: the panel arrives with a bright scan band across it at ~133 ms.
+Main: the panel appears at ~133 ms with no band (its kit's panel-in is a plain fade/scale). Likely
+file: `scripts/ui/kit/terminal_window.gd` / `menu_motion.gd` (`panel_in` entry in
+`content/config/ui_motion.tres`). Decision:
+
+**MOTION-07 (P2) enemy_break.** Same beat timing (break at ~533 ms, the red hit line flies by
+~667 ms). Main's in-context demo shows the combat backdrop **lit** (a coloured, readable 3D city)
+for its first ~400 ms and then dropping to the near-black look of CMB-01 when the fight settles:
+the lit city exists in main and is being darkened afterwards. Useful for CMB-01 / BACKDROP-01.
+Likely file: `scripts/ui/arena/combat_backdrop.gd` (the settle / dim step). Decision:
+
+**MOTION-08 (P3) victory_flash.** Build: VICTORY appears at ~267 ms over the unchanged scene.
+Main: a white flash disc on the enemy wheel at ~133 ms, VICTORY at ~267 ms, OURS NOW from ~533 ms.
+Same start; main adds beats. Decision:
+
+**MOTION-09 (P3) card_stamp.** Both: the card lands on the wheel at ~267 ms and dissolves by
+~533-667 ms; main's dissolve is the bible's bit stream into the hub (Dissolve A), the build's a
+plain fade. Main follows the bible. Decision:
+
+**MOTION-10 (P3) saved_stamp.** The lab's SAVED stamp sits outside the cropped stage on the build
+and as a tiny corner stamp on main; no comparison possible at this crop. Low value; skip unless
+asked. Decision:
+
 ## Mechanics the rules lack (listed, not built)
-(Filled as the remaining screens are compared; first candidates seen while capturing: the HQ run
-pages' per-corp mechanics (round 43 "climb the helix", "crane + train"; GDD has the HQ run but
-not the per-corp mechanic), the boss phase-2 satellites / inner ring / status-stack tabs of
-`combat_worst_case_v4.png`.)
+Differences whose reference needs a rule the game does not have (ART_REINTEGRATION_PLAN §3.2,
+G1-G16). They stay listed until the designer approves a G-pass; any fix agent must leave them out.
+
+| Id | What the reference shows | Needs |
+|---|---|---|
+| BOSS-02 | boss wheel with a parasite ring, docked satellites, status-stack tabs, two needles | G1 inner ring, G2 satellites, G3 parasite ring |
+| CMB-02 / CMB-04 (part) | slice tier pips, slice states FROZEN / LOCKED / BURNING on the wheel; card type band WHEEL / HACK / SYSTEM | G4, G5 (tiers), G16 (card type band; main already draws a band, its words are not in the rules) |
+| HQRUN-01 (mechanic text), HQRUN-05/06/07/08 (routes) | per-corp HQ mechanics: Meridian crane / train, Solace two strands, Halcyon switchback + eye, Orbital missile loop, DISPATCH sync strike | G12 |
+| HQRUN-02 | a full compound route on today's HQ run (GDD 4.2 has the breach run) | G11 / G12 |
+| GATE-02 (part) | the exploit-effect card (`PHASE 2 @ 66% ... BREACHED`) and cut slices on the boss preview for one Exploit per boss buff | G6 |
+| SHOP-03 / SHOP-07 (part) | slice wheel sells only the top 3, top slice cheaper; removal by the bin replacing SHRED | G14 (main already shows TOP 3 ONLY and the bin: check against the rules) |
+| SHOP-06 (part) | REPLACE? on an occupied socket destroys the old chip | G14 |
+| RAID-01 / RAID-06 (part) | defence cards with INT, counts, EXPOSED nodes, IF PLACED forecast by wave | G8, G9 |
+| GRID-05 (part) | the Grid's own Heat bar with COOL / NOTICED / FLAGGED / HUNTED and the next threshold | none (presentation), listed because the Grid HUD is "in progress" in the bible |
+| END-05 (part) | the defence stickers curling off along the bottom of the lock | none (presentation) |
 
 ## Fix slices (provisional; nothing starts until the designer has ruled)
-Grouped by file ownership so parallel agents never share a file:
-- **S-TITLE** (`scripts/ui/title_scene.gd`, `scripts/ui/kit/slot_picker.gd` new): TITLE-02/03/04,
-  SLOTS-01..04. Opus (visual; SlotPicker port).
-- **S-BACKDROP** (`scripts/ui/kit/cyberdeck_background.gd`, the title's city): TITLE-01. Opus.
-- **S-NEWC** (`scripts/ui/hq_scene.gd` `show_start` only, `tile_picker.gd` / `planning_picker.gd`
-  new): NEWC-01..04. Opus.
-- **S-HQ** (`scripts/ui/hq_scene.gd` HQ layout, `heat_poster.gd`, `crew_card.gd`, `hud_bar.gd`):
-  HQ-01..05. Must not run beside S-NEWC (same file): sequence them, or split hq_scene first.
-  Sonnet for HQ-02/05 (mechanical layout), Opus for HQ-01/03/04 if the designer picks a change.
-- **S-MODAL** (`glass_scrim.gd`, `confirm_dialog.gd`): CONFIRM-01/02. Sonnet.
-- **S-SHOP** (`scripts/ui/netrun_scene.gd` shop block): SHOP-01. Sonnet.
-- BOSS-01: FIX-REDS (in progress).
+Grouped by file ownership so parallel agents never share a file. A slice takes only the ids the
+designer has ruled on, in the ruled direction. "Opus" = visual judgement / porting a build layout
+into the v2 language; "Sonnet" = mechanical placement / anchors / sizes.
+
+| Slice | Files (owned) | Ids | Model |
+|---|---|---|---|
+| S-TITLE | `scripts/ui/title_scene.gd`, new `scripts/ui/kit/slot_picker.gd` | TITLE-02, SLOTS-01..04, STATS-01, END-04 harness note excluded | Opus |
+| S-BACKDROP | `scripts/ui/kit/cyberdeck_background.gd` (title + overlay pages' city) | TITLE-01, LOOT-04, OPT-01 (backdrop part) | Opus |
+| S-CODEX | `scripts/ui/kit/codex.gd` | CODEX-01 | Opus |
+| S-NEWC | `scripts/ui/hq_scene.gd` `show_start` only, new `tile_picker.gd`, `planning_picker.gd` | NEWC-01..04 | Opus |
+| S-HQ | `scripts/ui/hq_scene.gd` HQ page + market, `heat_poster.gd`, `crew_card.gd`, `polaroid.gd`, `hud_bar.gd`, `hud_stats.gd` | HQ-01..07, HQ-10 | Opus (HQ-01/03/06/07), Sonnet (HQ-02/05) — sequence after S-NEWC (same file) |
+| S-GRID | `scripts/ui/kit/city_map_overlay.gd`, `site_marker*.gd`, `grid_map_view.gd`, `city_minimap.gd`, `map_legend.gd`, `target_edge_marker.gd`, `content/config/city_config.tres` (Grid band) | GRID-01..03, GRID-06, GRID-12, GRID-13, RAID-04 | Opus (GRID-01/02), Sonnet (03/12/13) |
+| S-GRID-HUD | `scripts/ui/hq_scene.gd` Grid side column, `city_grid_controls.gd`, `drop_layer.gd` | GRID-04, GRID-05, GRID-07..11 | Opus — after S-HQ (same file) |
+| S-RAID | `raid_paper.gd`, `corp_memo.gd`, `raid_intel_strip.gd`, `raid_holo.gd`, `asset_card.gd`, `raid_feed.gd`, `raid_playout_panel.gd`, `raid_verdict.gd`, `raid_report_pencil.gd`, `raid_drag_pencil.gd`, `raid_beats.gd` | RAID-01..03, RAID-05..12 | Opus (RAID-01/10), Sonnet (stamps / anchors) |
+| S-NETRUN | `scripts/ui/netrun_scene.gd` (raid interlude, shop, event, loot, run end pages), `route_node_panel.gd`, `operative_dossier.gd`, `zine_stamp.gd` | RAID-13, RAID-14, ROUTE-02, ROUTE-03, ROUTE-06, SHOP-01, SHOP-06, EVT-01..03, LOOT-02, LOOT-03, END-01, END-02 | Sonnet (stamps / anchors / SHOP-01), Opus (END-01, EVT) |
+| S-ROUTE | `netrun_map_view.gd`, `route_overlay.gd`, `route_ink.gd`, `route_legend.gd` | ROUTE-01, ROUTE-04, ROUTE-05 | Opus |
+| S-CARDFACE | `scripts/ui/kit/zine_card.gd`, `loot_sheet.gd`, `deck_view.gd`, `shop_item.gd`, `shop_pegboard.gd`, `slice_stock_wheel.gd`, `inspect_popup.gd` | LOOT-01, SHOP-02..05, SHOP-07, SHOP-08, DECK-01, DECK-02, HQ-08, CMB-04 (card part) | Opus (one card face for hand, loot, shop, viewer) |
+| S-WHEEL | `scripts/ui/wheel/*`, `palette.gd`, `palette_skins.gd` (slice tokens), `hud_wheel_layer.gd`, `spinner_view.gd` | CMB-02, CMB-03, CMB-09, BOSS-04, HQ-09 | Opus |
+| S-ARENA | `scripts/ui/arena/combat_backdrop.gd`, `backdrop_catalog.gd` | CMB-01, BOSS-03, BACKDROP-01, BACKDROP-02, MOTION-07 | Opus |
+| S-COMBAT-HUD | `scripts/ui/combat_scene.gd`, `send_it_sticker.gd`, `hud_name_sticker.gd`, `ram_bar.gd`, `hud_result_chips.gd`, `hud_dialog_panel.gd`, `tutorial_overlay.gd` | CMB-05..08, CMB-10..18 | Sonnet (placement), Opus (CMB-14/16) |
+| S-MODAL | `glass_scrim.gd`, `confirm_dialog.gd`, `pause_menu.gd`, `settings_panel.gd` | CONFIRM-01/02, PAUSE-01..04, OPT-01 (framing), OPT-02/03 | Sonnet |
+| S-HQRUN | `scripts/ui/hq_run/hq_run_view.gd`, `central_server_gate.gd`, `scripts/city3d/hq_compound_stage.gd`, `city_iso_camera.gd` | HQRUN-01 (title + key only), HQRUN-03, HQRUN-04, HQRUN-06, HQRUN-08, GATE-01..03 | Opus |
+| S-END | `scripts/ui/campaign_end/*` | END-03, END-05, END-06 | Opus |
+| S-MOTION | `content/config/ui_motion.tres` entries, `terminal_window.gd` / `menu_motion.gd` | MOTION-06 (and any motion ruling) | Sonnet |
+| S-JACK | `scripts/ui/kit/jack_sequence.gd`, `daemon_tray.gd` | JACK-01, DAEMON-01 | Sonnet |
+| Harness | `tools/visual_qa/review_pack.gd` | END-04 (wait for the lock's end state) | Sonnet |
+| done | — | BOSS-01 (FIX-REDS) | — |
+
+Collisions to watch: `hq_scene.gd` is shared by S-NEWC, S-HQ and S-GRID-HUD (run them in that
+order, or split the file first); `netrun_scene.gd` is one slice on purpose.
 
 ## Harness
-- `tools/visual_qa/parity_sheet.py` (new): builds `<screen>.jpg` and `<ID>.jpg` from the two packs
-  and the concepts; `tools/visual_qa/parity_pairs.json`: the screen list, references and the
-  difference rectangles.
+- `tools/visual_qa/parity_sheet.py` (new): builds `<screen>.jpg` (full pictures side by side, ids
+  marked) and `<ID>.jpg` (one crop sheet per difference) from the two packs, lab frames and the
+  concepts; `--motion id=demo,...` builds the motion strip pairs. `tools/visual_qa/parity_pairs.json`:
+  the screen list, references and difference rectangles (re-run after a fix to refresh the sheets).
 - Capture, main: `python tools/visual_qa/capture_pack.py --out <dir> -j 1 --no-lint --save-size 1280x720`
-  (60 screens). The HQ run pages and the Central Server gate (not in the review pack):
-  `python tools/run_windowed.py --log <f> -- --resolution 1280x720 res://tools/art_pipeline/hq_run/hq_run_lab.tscn -- --out=<dir> --states=run_solace,...,gate_solace`.
+  (60 screens, about 10 min). HQ run pages, gate and combat backdrops (not in the review pack):
+  `python tools/run_windowed.py --log <f> -- --resolution 1280x720 res://tools/art_pipeline/hq_run/hq_run_lab.tscn -- --out=<dir> --states=run_solace,run_meridian,run_halcyon,run_orbital,run_rebel_cell,full_solace,gate_solace,hq_solace,site_solace`.
+  Campaign end lock and dossier: `python tools/run_windowed.py --log <f> -- --resolution 1280x720 res://tools/design_lab/campaign_end_lab.tscn -- --out=<dir> --corps=solace --what=lost --scales=1.0`.
 - Capture, art pass: from a scratch copy (`git archive art-pass | tar -x`, here
-  `%TEMP%\parity\artpass`, imported headless): `python tools/visual_qa/capture_pack.py --out <dir> -j 1 --no-lint`
-  run inside the copy (53 screens; screen names as main's except modem* = mainframe*).
+  `%TEMP%\parity\artpass`, imported headless twice): inside the copy,
+  `python tools/visual_qa/capture_pack.py --out <dir> -j 1 --no-lint` (53 screens, about 3 min;
+  screen names as main's except modem* = mainframe*).
+- Motion: per demo, `python tools/run_windowed.py --log <f> -- --resolution 1280x720 res://tools/design_lab/motion_lab.tscn --write-movie <dir>/<demo>/f.png --fixed-fps 30 --quit-after 75 -- --demo-anim=<demo>`
+  on each build (the lab takes one demo per launch), then `parity_sheet.py --art <art root> --main <main root> --motion MOTION-01=jack_in,...`.
 - Sheets: `python tools/visual_qa/parity_sheet.py --art <art pack>/1.0_mouse_re-off_none --main <main pack>/1.0_mouse_re-off_none --concepts <copy>/docs/concepts --pairs tools/visual_qa/parity_pairs.json --out docs/art_review/PARITY`.
-- Motion: the motion lab (`--demo-anim=<id>`, one launch per demo, Movie Maker 30 fps) captured on
-  both for jack_in, card_hover, send_it_press, wheel_spin, loot_fan, panel_in, enemy_break,
-  victory_flash, card_stamp, saved_stamp; strips not yet compared.
+  The `file:` references in the pairs file point at this run's lab frames under `%TEMP%\parity\lab_main`;
+  re-capture there (or edit the paths) before rebuilding those sheets.
