@@ -130,9 +130,13 @@ func test_every_skin_theme_text_reads_on_its_own_boxes() -> void:
 			assert_gt(Palette.contrast(t.get_color(pair[2], pair[0]), bg), float(pair[3]), "%s: %s %s words on their box" % [skin, pair[0], pair[1]])
 		var tab := t.get_stylebox(&"tab_selected", &"TabBar") as StyleBoxFlat
 		assert_gt(Palette.contrast(t.get_color(&"font_selected_color", &"TabBar"), tab.bg_color), 7.0, "%s the selected tab" % skin)
-		var panel := t.get_stylebox(&"panel", &"PanelContainer") as StyleBoxFlat
-		if panel != null:
-			assert_eq(Color(panel.bg_color, 1.0), Color(PaletteSkins.resolve(skin, &"TERMINAL_BG"), 1.0), "%s panels take its glass" % skin)
+		# A bare PanelContainer is a clear box; the glass is on the terminal and glass variations.
+		for variation: StringName in [&"TerminalPanel", &"GlassPanel"]:
+			var panel := t.get_stylebox(&"panel", variation) as StyleBoxFlat
+			assert_not_null(panel, "%s has a %s box" % [skin, variation])
+			if panel != null:
+				assert_eq(Color(panel.bg_color, 1.0), Color(PaletteSkins.resolve(skin, &"TERMINAL_BG"), 1.0), "%s %s takes its glass" % [skin, variation])
+				assert_gt(Palette.contrast(t.get_color(&"font_color", &"Label"), Palette.over(night, panel.bg_color)), 9.0, "%s words on %s" % [skin, variation])
 		# The kit's own terminal boxes follow the skin; a corp edge stays the corp's.
 		var tb := UiTheme.terminal_box()
 		assert_eq(Color(tb.border_color, 1.0), Color(PaletteSkins.resolve(skin, &"TERMINAL_EDGE"), 1.0), "%s terminal edge" % skin)
