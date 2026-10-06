@@ -1,0 +1,144 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "raid_defence_cards",
+ "about": "Parity RAID-01 defence cards (dark sticker card, words left off). Built by tools/art_pipeline/raid/bake_defence_cards.py; do not edit by hand.",
+ "source": {
+  "tag": "art-concepts-r43",
+  "script": "docs/concepts/round19_raid/scripts/ui19.py (asset_card, TRAY)",
+  "seeds": "screens19.py 50 + i; interactions19.py SENTRY 61; HONEYPOT 62 (call)"
+ },
+ "scale": 2,
+ "face_px": [
+  150,
+  172
+ ],
+ "border_px": 7,
+ "face_box": [
+  0.038461538461538464,
+  0.03387533875338753,
+  0.9230769230769231,
+  0.9322493224932249
+ ],
+ "cards": {
+  "turret": {
+   "file": "turret.png",
+   "concept_name": "TURRET",
+   "glyph": "picto_target",
+   "color": [
+    92,
+    225,
+    255
+   ],
+   "seed": 50,
+   "image_px": [
+    325,
+    369
+   ]
+  },
+  "railgun": {
+   "file": "railgun.png",
+   "concept_name": "RAILGUN",
+   "glyph": "slice_zero_day",
+   "color": [
+    92,
+    225,
+    255
+   ],
+   "seed": 51,
+   "image_px": [
+    325,
+    369
+   ]
+  },
+  "ice_lock": {
+   "file": "ice_lock.png",
+   "concept_name": "ICE LOCK",
+   "glyph": "state_frozen",
+   "color": [
+    178,
+    235,
+    255
+   ],
+   "seed": 52,
+   "image_px": [
+    325,
+    369
+   ]
+  },
+  "flak_array": {
+   "file": "flak_array.png",
+   "concept_name": "FLAK ARRAY",
+   "glyph": "placeholder_storm",
+   "color": [
+    255,
+    176,
+    0
+   ],
+   "seed": 53,
+   "image_px": [
+    325,
+    369
+   ]
+  },
+  "decoy": {
+   "file": "decoy.png",
+   "concept_name": "DECOY",
+   "glyph": "placeholder_phishing",
+   "color": [
+    200,
+    90,
+    255
+   ],
+   "seed": 54,
+   "image_px": [
+    325,
+    369
+   ]
+  },
+  "tar_pit": {
+   "file": "tar_pit.png",
+   "concept_name": "TAR PIT",
+   "glyph": "state_locked",
+   "color": [
+    123,
+    224,
+    123
+   ],
+   "seed": 55,
+   "image_px": [
+    325,
+    369
+   ]
+  },
+  "sentry": {
+   "file": "sentry.png",
+   "concept_name": "SENTRY",
+   "glyph": "picto_target",
+   "color": [
+    123,
+    224,
+    123
+   ],
+   "seed": 61,
+   "image_px": [
+    325,
+    369
+   ]
+  },
+  "honeypot_node": {
+   "file": "honeypot_node.png",
+   "concept_name": "HONEYPOT",
+   "glyph": "placeholder_vault",
+   "color": [
+    255,
+    61,
+    168
+   ],
+   "seed": 62,
+   "image_px": [
+    325,
+    369
+   ]
+  }
+ }
+}

@@ -310,10 +310,11 @@ func test_every_raid_number_says_what_it_is() -> void:
 					assert_not_null(letters.search(b.text), "badge '%s' names what its number is" % b.text)
 			if n is AssetCard:
 				var card := n as AssetCard
-				assert_string_contains(card.integrity_text(), "HP")
-				assert_string_contains(card.count_text(), "LEFT")
-				assert_string_contains(card.tooltip_text, "HP %d" % card.integrity)
-				assert_string_contains(card.tooltip_text, "%d LEFT" % card.count)
+				# Parity RAID-01: the concept card's words, INT n and xN, explained in the tooltip.
+				assert_string_contains(card.integrity_text(), "INT")
+				assert_eq(card.count_text(), "x%d" % card.count)
+				assert_string_contains(card.tooltip_text, "INT %d" % card.integrity)
+				assert_string_contains(card.tooltip_text, "x%d" % card.count)
 		for n in hq.city_overlay.nodes:
 			if n.has("result"):
 				var tip: String = hq.city_overlay.tip_of(n["id"])
@@ -616,7 +617,7 @@ func test_voice_lines_have_keys_and_speak_translated() -> void:
 
 
 func test_drawn_words_are_translated() -> void:
-	_translate({"HOME HIT": "XX_HOME_HIT", "IF THE RAID\nRUNS NOW:": "XX_IF", "HEAT": "XX_HEAT", "HP": "XX_HP", "LEFT": "XX_LEFT", "RESPIN": "XX_RESPIN"})
+	_translate({"HOME HIT": "XX_HOME_HIT", "IF THE RAID\nRUNS NOW:": "XX_IF", "HEAT": "XX_HEAT", "INT": "XX_INT", "x%d": "XX_x%d", "RESPIN": "XX_RESPIN"})
 	var stamp: ForecastStamp = add_child_autofree(ForecastStamp.new("IF THE RAID\nRUNS NOW:", "HOME HIT"))
 	stamp.size = Vector2(124, 124)
 	assert_eq(stamp.shown_verdict(), "XX_HOME_HIT")
@@ -625,8 +626,8 @@ func test_drawn_words_are_translated() -> void:
 	tags.items = [["HEAT", "3", "/100", "Heat."]]
 	assert_eq(tags.tag_name(0), "XX_HEAT")
 	var card: AssetCard = add_child_autofree(AssetCard.new(&"turret", "Turret", 10, 1))
-	assert_eq(card.integrity_text(), "XX_HP 10")
-	assert_eq(card.count_text(), "1 XX_LEFT")
+	assert_eq(card.integrity_text(), "XX_INT 10")
+	assert_eq(card.count_text(), "XX_x1")
 	var sticker: StickerButton = add_child_autofree(StickerButton.new("RESPIN"))
 	assert_eq(sticker.shown_text(), "XX_RESPIN")
 	sticker.refit()

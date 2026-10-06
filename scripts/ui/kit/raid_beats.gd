@@ -146,6 +146,37 @@ static func focus_sites(events: Array, threat_sites: Dictionary) -> Array[String
 	return out
 
 
+## Parity RAID-08: each threat's route end in a resolved raid's events (threat id -> the last
+## Site it enters or moves to): where its red pencil route ends (the arrow head). Pure.
+static func route_ends(events: Array) -> Dictionary:
+	var out := {}
+	for e: Dictionary in events:
+		match String(e.get("type", "")):
+			"threat_enters":
+				out[String(e["threat"])] = StringName(String(e["site"]))
+			"move":
+				out[String(e["threat"])] = StringName(String(e["to"]))
+	return out
+
+
+## Parity RAID-08: a step's camera Sites with the plan kept in frame: `focus_sites`, plus home
+## (CORE) and the route end of every threat the step moves or brings in (`ends`: route_ends), so
+## CORE and the route's arrow head stay in the map's free part (they slid under the MAP LEGEND).
+## Sorted by id, no repeats. Pure.
+static func framed_sites(events: Array, threat_sites: Dictionary, ends: Dictionary, home: StringName) -> Array[StringName]:
+	var out := focus_sites(events, threat_sites)
+	if out.is_empty():
+		return out
+	_add(out, home)
+	for e: Dictionary in events:
+		if String(e.get("type", "")) in ["threat_enters", "move"]:
+			var t := String(e.get("threat", ""))
+			if ends.has(t):
+				_add(out, StringName(String(ends[t])))
+	out.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	return out
+
+
 static func _add(list: Array[StringName], id: StringName) -> void:
 	if id != &"" and not list.has(id):
 		list.append(id)

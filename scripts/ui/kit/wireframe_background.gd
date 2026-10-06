@@ -260,6 +260,10 @@ func frame_points(points: PackedVector2Array, area: Rect2, max_zoom: float, min_
 		box = box.expand(Vector2((points[i].x - points[i].y) * NeonCity.TILE_A, (points[i].x + points[i].y) * tb))
 		centre += points[i]
 	centre /= points.size()
+	# Parity RAID-08: the frame centres on the points' box, not their mean (a cluster of
+	# entries pulled the mean off CORE, which then sat outside the fitted frame under the key).
+	var mid := box.get_center()
+	centre = Vector2(mid.x / NeonCity.TILE_A + mid.y / tb, mid.y / tb - mid.x / NeonCity.TILE_A) * 0.5
 	var room := area.size * FIGHT_FIT_SHARE
 	var zoom := max_zoom
 	if box.size.x > 0.0:
