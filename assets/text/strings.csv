@@ -991,7 +991,6 @@ HOVER: SHOW ALL,HOVER: SHOW ALL
 HP,HP
 HP %d/%d,HP %d/%d
 HP %d/%d · DECK %d · DAEMONS %d%s,HP %d/%d · DECK %d · DAEMONS %d%s
-HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.,HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.
 HP %s,HP %s
 HP %s (other effects),HP %s (other effects)
 HP %s → %s %s,HP %s → %s %s
@@ -1124,6 +1123,8 @@ INFC,INFC
 INFECT,INFECT
 INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
+INT,INT
+"INT %d: integrity, the hits it takes before it breaks. x%d: how many are in the Armory to deploy.","INT %d: integrity, the hits it takes before it breaks. x%d: how many are in the Armory to deploy."
 INTEL,INTEL
 INTERCEPT,INTERCEPT
 INTERCEPTED,INTERCEPTED
@@ -1151,7 +1152,6 @@ JACKED OUT,JACKED OUT
 Key,Key
 LAST TURN: ,LAST TURN: 
 LEAVE,LEAVE
-LEFT,LEFT
 LETHAL,LETHAL
 LETHAL: this turn takes it to 0 HP.,LETHAL: this turn takes it to 0 HP.
 LETHAL: this turn takes you to 0 HP.,LETHAL: this turn takes you to 0 HP.
@@ -1724,6 +1724,7 @@ Out of reach from here.,Out of reach from here.
 ","Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 "
 PARASITE,PARASITE
+PARKED,PARKED
 PASSED,PASSED
 PATIENT RECOVERY  //  COLLECTIONS  //  COMPLIANCE,PATIENT RECOVERY  //  COLLECTIONS  //  COMPLIANCE
 "PATROL: loot, Heat and Rank, no objective.","PATROL: loot, Heat and Rank, no objective."
@@ -3212,6 +3213,7 @@ exploit,exploit
 exploits,exploits
 "filed by: %s, AUDIT %d","filed by: %s, AUDIT %d"
 firmware,firmware
+first in path,first in path
 flagged,flagged
 flatlined,flatlined
 good aim,good aim
@@ -3219,6 +3221,7 @@ guarded,guarded
 hack,hack
 half power,half power
 handshake ... ok,handshake ... ok
+hardest hitter,hardest hitter
 heat,heat
 heat obj.,heat obj.
 heat reached %d. why weren't we told?,heat reached %d. why weren't we told?
@@ -3261,6 +3264,7 @@ noticed,noticed
 notyet,notyet
 odds: %s,odds: %s
 off,off
+own node only,own node only
 patrol,patrol
 perfect aim,perfect aim
 pick a corporation to bring down,pick a corporation to bring down
@@ -3301,6 +3305,7 @@ then:,then:
 they'll be back. flag ICE %d.,they'll be back. flag ICE %d.
 threat,threat
 threat route,threat route
+threats route to it,threats route to it
 toggle,toggle
 ui.raid_intro,"The corp is raiding your CORE. Place defences to cut the damage, then START DEFENSE."
 undock_handler,undock_handler
@@ -3308,9 +3313,11 @@ voice only // no feed,voice only // no feed
 vs %s | ICE %d%s,vs %s | ICE %d%s
 walked,walked
 weakest node,weakest node
+weakest threat,weakest threat
 wheel,wheel
 withdraw,withdraw
 won,won
+x%d,x%d
 x0.5,x0.5
 x1 %s TAKEN // UNPICKED STICKERS FALL OFF,x1 %s TAKEN // UNPICKED STICKERS FALL OFF
 x1.5,x1.5
