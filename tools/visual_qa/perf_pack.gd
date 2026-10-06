@@ -38,6 +38,10 @@ const PROBE_SCREENS := [
 const PROBE_WARMUP := 20
 const PROBE_S := 1.2
 const PERF_DEFAULT_S := 4.0
+## A frame longer than this (ms: the 60 fps frame, TECH_SPEC 10) is listed as a hitch, at most
+## MAX_SPIKES of them per screen.
+const SPIKE_MS := 16.7
+const MAX_SPIKES := 40
 const WARMUP_DEFAULT := 60
 ## Frames between two FX volleys in combat_worst_fx.
 const FX_EVERY := 12
@@ -46,6 +50,10 @@ var _perf_s := PERF_DEFAULT_S
 var _warmup := WARMUP_DEFAULT
 var _tiers: PackedInt32Array = []
 var _size := Vector2i(1920, 1080)
+## --census: also count every CanvasItem's redraws through the timing and print the busiest
+## (CENSUS lines; the counting itself costs frame time, so read its frame times apart).
+var _census := false
+const CENSUS_TOP := 15
 var _tier := -1
 ## Called every timed frame (combat_worst_fx fires its FX from it).
 var _tick: Callable = Callable()
@@ -63,6 +71,8 @@ func _ready() -> void:
 			only = a.trim_prefix("--screens=").split(",", false)
 		elif a.begins_with("--perf="):
 			_perf_s = float(a.trim_prefix("--perf="))
+		elif a == "--census":
+			_census = true
 		elif a.begins_with("--warmup="):
 			_warmup = int(a.trim_prefix("--warmup="))
 		elif a.begins_with("--tiers="):
@@ -157,6 +167,15 @@ func _measure(screen: String) -> void:
 	var draws := 0.0
 	var prims := 0.0
 	var subs := 0
+	var counts := {}
+	var items: Array[Node] = []
+	var hooks: Array[Callable] = []
+	if _census:
+		items = get_tree().root.find_children("*", "CanvasItem", true, false)
+		for ci in items:
+			var cb := _count_draw.bind(counts, ci.get_instance_id())
+			hooks.append(cb)
+			(ci as CanvasItem).draw.connect(cb)
 	var started := Time.get_ticks_usec()
 	var last := started
 	var n := 0
@@ -185,6 +204,18 @@ func _measure(screen: String) -> void:
 		cpu += c
 		draws += Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
 		prims += Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)
+	if _census:
+		var rows: Array = []
+		for i in items.size():
+			if is_instance_valid(items[i]):
+				(items[i] as CanvasItem).draw.disconnect(hooks[i])
+				var k: int = counts.get(items[i].get_instance_id(), 0)
+				if k > 0:
+					rows.append([k, items[i]])
+		rows.sort_custom(func(x: Array, y: Array) -> bool: return x[0] > y[0])
+		for r in rows.slice(0, CENSUS_TOP):
+			var nd: Node = r[1]
+			print("CENSUS tier=%d screen=%s draws=%d of %d frames: %s (%s)" % [_tier, screen, r[0], n, String(nd.get_path()).right(90), _cls(nd) if _cls(nd) != "" else nd.get_class()])
 	var fn := float(maxi(1, n))
 	var total := 0.0
 	var worst := 0.0
@@ -203,7 +234,17 @@ func _measure(screen: String) -> void:
 		"vmem_mb": Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0,
 		"tex_mb": Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED) / 1048576.0,
 	}
+	# The hitches: frames over the 60 fps frame (when, in s from the timing's start, and how long).
+	var spikes := PackedStringArray()
+	var at := 0.0
+	for t in times:
+		at += t / 1000.0
+		if t > SPIKE_MS and spikes.size() < MAX_SPIKES:
+			spikes.append("%.2fs:%.0f" % [at, t])
+	rec["spikes"] = spikes
 	_write_json(out_dir.path_join(screen + ".perf.json"), rec)
+	if not spikes.is_empty():
+		print("SPIKES tier=%d screen=%s %s" % [_tier, screen, " ".join(spikes)])
 	print("PERF tier=%d screen=%s frames=%d frame_mean_ms=%.2f frame_p95_ms=%.2f frame_max_ms=%.1f gpu_total_ms=%.2f gpu_root_ms=%.2f gpu_city3d_ms=%.2f gpu_sub_ms=%.2f subs=%d cpu_ms=%.2f draws=%.0f prims=%.0f vmem_mb=%.0f window=%s" % [
 		_tier, screen, n, rec["frame_mean_ms"], p95, worst, rec["gpu_total_ms"], rec["gpu_root_ms"], rec["gpu_city3d_ms"],
 		rec["gpu_sub_ms"], subs, rec["render_cpu_ms"], rec["draws"], rec["prims"], rec["vmem_mb"],
