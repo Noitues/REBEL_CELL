@@ -116,15 +116,15 @@ static func city_mode(cfg: CityConfig, tier: int, can_render: bool) -> bool:
 
 
 ## The city close-up of place `p` (`site_lots`: Site id -> lot point, CityLayout.site_points):
-## {"focus": "compound" | "hq" | "site" | "site_landmark", "stage": the corp whose HQ compound
-## is staged (the DISPATCH canyon) or &"", "camera": CityIsoCamera, "lot": the target's lot
-## point, "won_site": the Site whose won lights show (&"" for an HQ), and for a fitted
-## landmark "centre" / "top" (world) and, for a Site landmark, "landmark" (its corp)}. A boss
-## fight frames the corp's whole HQ landmark (fit_box into backdrop_hq_frame; the Cell's: the
-## staged DISPATCH canyon at the HQ run's camera, closer); a regular fight the corp's Site
-## landmark stood on the run's Site lot (site_close_up_lot: kept clear of the city's edge;
-## fit into backdrop_site_frame), else that lot's nearest building; a Site without a lot
-## falls back to the HQ. Pure apart from reading the landmark glTFs' boxes.
+## {"focus": "compound" | "hq" | "site", "stage": the corp whose HQ compound is staged (the
+## DISPATCH canyon) or &"", "camera": CityIsoCamera, "lot": the target's lot point, "won_site":
+## the Site whose won lights show (&"" for an HQ), "centre" / "top" (world) of what is framed,
+## for a Site "hq_box" (the HQ in its back) and, when the fought Site is the one carrying the
+## corp's Site landmark, "landmark" (its corp)}. A boss fight is the special view: the corp's
+## whole HQ landmark fitted into backdrop_hq_frame (the Cell's: the staged DISPATCH canyon at
+## the HQ run's camera, closer). A regular fight frames the fought Site's own lot, looking from
+## it toward the corp's HQ so the HQ stands in the back of the shot (site_shot); a Site without
+## a lot falls back to the HQ. Pure apart from reading the landmark glTFs' boxes.
 static func city_shot(cfg: CityConfig, p: Dictionary, site_lots: Dictionary, size: Vector2) -> Dictionary:
 	var corp: StringName = p.get("corp", DEFAULT_CORP)
 	var site: StringName = p.get("site", &"")
@@ -136,19 +136,8 @@ static func city_shot(cfg: CityConfig, p: Dictionary, site_lots: Dictionary, siz
 		cam.ortho *= cfg.backdrop_canyon_share
 		return {"focus": "compound", "stage": corp, "camera": cam, "lot": HqCompoundStage.place_lot(corp, m), "won_site": &""}
 	if not boss and site_lots.has(site):
-		var lot := site_close_up_lot(cfg, site_lots[site])
-		var landmark := CityLandmarks.site_path(corp)
-		if landmark != "":
-			# S-ARENA (BACKDROP-02): the corp's Site building stands on the Site's lot, framed.
-			var at := lot.floor() + Vector2(0.5, 0.5)
-			var box := landmark_box(cfg, landmark, at)
-			var sc := fit_box(cfg, box, cfg.backdrop_site_frame, cfg.backdrop_site_ortho, size, cfg.backdrop_site_pitch_deg)
-			return {"focus": "site_landmark", "stage": &"", "camera": sc, "lot": at, "won_site": site, "centre": box.get_center(),
-				"landmark": corp, "top": Vector3(box.get_center().x, box.end.y, box.get_center().z)}
-		var c := CityIsoCamera.make(cfg, CityIsoCamera.lot_to_world(cfg, lot, cfg.backdrop_site_lift), cfg.backdrop_site_ortho, size)
-		c.pitch_deg = cfg.backdrop_site_pitch_deg
-		return {"focus": "site", "stage": &"", "camera": c, "lot": lot, "won_site": site}
-	var hq := NeonCity.hq_of(corp) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
+		return site_shot(cfg, corp, site, site_lots, size)
+	var hq := hq_lot(corp)
 	var path := hq_landmark_path(corp)
 	if path != "":
 		# S-ARENA (BACKDROP-01): the whole HQ landmark (Solace's helix top included) between the
@@ -162,12 +151,101 @@ static func city_shot(cfg: CityConfig, p: Dictionary, site_lots: Dictionary, siz
 	return {"focus": "hq", "stage": &"", "camera": h, "lot": hq, "won_site": &""}
 
 
-## The lot the close-up stands a Site on: its layout point, kept backdrop_site_inset lots
-## inside the city's edge (CityConfig.city_rect) so the close-up shows city all round (the
-## Sites of a territory at the edge would leave half the frame the bare plane past it). Pure.
-static func site_close_up_lot(cfg: CityConfig, lot: Vector2) -> Vector2:
-	var r := Rect2(cfg.city_rect).grow(-float(cfg.backdrop_site_inset))
-	return lot.clamp(r.position, r.end)
+## The centre lot point of `corp`'s HQ (NeonCity's HQ block).
+static func hq_lot(corp: StringName) -> Vector2:
+	return NeonCity.hq_of(corp) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
+
+
+## The world box of `corp`'s HQ as a Site shot's back: its landmark's body, else a block of
+## backdrop_site_hq_height over its HQ lots.
+static func hq_box(cfg: CityConfig, corp: StringName) -> AABB:
+	var hq := hq_lot(corp)
+	var path := hq_landmark_path(corp)
+	if path != "":
+		return landmark_box(cfg, path, hq, corp)
+	var half := float(NeonCity.HQ_LOTS) * 0.5 * cfg.lot_bu
+	var c := CityIsoCamera.lot_to_world(cfg, hq)
+	return AABB(c - Vector3(half, 0.0, half), Vector3(half * 2.0, cfg.backdrop_site_hq_height, half * 2.0))
+
+
+## Parity fix S-ARENA round 2 (designer 2026-10-05: every fight gets its own backdrop; this is
+## the placeholder): a regular fight's shot of the fought Site's own lot (its layout point,
+## never moved). The subject is the Site's building (`subject`: its world box, CombatBackdrop
+## measures it on the model; else the corp's Site landmark when this Site carries it, else a
+## nominal block of backdrop_site_reach lots, backdrop_site_height tall), fitted large into
+## backdrop_site_frame at backdrop_site_pitch_deg; the camera looks from it toward the corp's
+## HQ (yaw on the Site -> HQ line) and zooms out round the subject, by backdrop_site_zoom_step,
+## while the subject keeps backdrop_site_subject_min of the view's width, until the HQ shows in the back (its point at
+## backdrop_site_hq_show of its height below backdrop_site_hq_top of the view). Pure.
+static func site_shot(cfg: CityConfig, corp: StringName, site: StringName, site_lots: Dictionary, size: Vector2, subject: AABB = AABB()) -> Dictionary:
+	var lot: Vector2 = site_lots[site]
+	var own := CityLandmarks.site_of(cfg, corp) == site and CityLandmarks.site_path(corp) != ""
+	var at := CityLandmarks.site_lot(cfg, corp, site_lots) if own else lot
+	var sbox := subject
+	if sbox.size != Vector3.ZERO:
+		var grow := Vector2(maxf(0.0, cfg.backdrop_site_subject_span - sbox.size.x), maxf(0.0, cfg.backdrop_site_subject_span - sbox.size.z)) * 0.5
+		sbox = AABB(sbox.position - Vector3(grow.x, 0.0, grow.y), sbox.size + Vector3(grow.x, 0.0, grow.y) * 2.0)
+	if sbox.size == Vector3.ZERO:
+		if own:
+			sbox = landmark_box(cfg, CityLandmarks.site_path(corp), at)
+		else:
+			var half := float(cfg.backdrop_site_reach) * cfg.lot_bu
+			var c := CityIsoCamera.lot_to_world(cfg, at)
+			sbox = AABB(c - Vector3(half, 0.0, half), Vector3(half * 2.0, cfg.backdrop_site_height, half * 2.0))
+	var hbox := hq_box(cfg, corp)
+	var yaw := site_yaw(cfg, sbox.get_center(), hbox.get_center())
+	var cam := fit_box(cfg, sbox, cfg.backdrop_site_frame, cfg.backdrop_site_ortho, size, cfg.backdrop_site_pitch_deg, yaw)
+	var base := cam.ortho
+	var hq_pt := Vector3(hbox.get_center().x, hbox.position.y + hbox.size.y * cfg.backdrop_site_hq_show, hbox.get_center().z)
+	var ext := _screen_extent(cam, sbox).size
+	var widest := maxf(base, maxf(ext.x, ext.y * size.x / maxf(1.0, size.y)) / maxf(0.01, cfg.backdrop_site_subject_min))
+	while cam.project(hq_pt).y < cfg.backdrop_site_hq_top * size.y and cam.ortho * cfg.backdrop_site_zoom_step <= widest:
+		cam.ortho *= cfg.backdrop_site_zoom_step
+		aim(cam, sbox, cfg.backdrop_site_frame.get_center())
+	var out := {"focus": "site", "stage": &"", "camera": cam, "lot": at, "won_site": site, "centre": sbox.get_center(),
+		"top": Vector3(sbox.get_center().x, sbox.end.y, sbox.get_center().z), "subject": sbox, "hq_box": hbox}
+	if own:
+		out["landmark"] = corp
+	return out
+
+
+## The chunk keys (CityModel's grid, sorted row by row) round lot point `lot` (within
+## backdrop_extend_lots) that model chunks `have` (key -> {"rect"}) lack in full: the city past
+## city_rect's edge (cut chunks included), which a Site shot's close-up records for itself so
+## no bare plane shows round a Site at the edge. Pure.
+static func extension_keys(cfg: CityConfig, lot: Vector2, have: Dictionary) -> Array[Vector2i]:
+	var n := cfg.chunk_lots
+	var r := float(cfg.backdrop_extend_lots)
+	var lo := Vector2i(floori((lot.x - r) / n), floori((lot.y - r) / n))
+	var hi := Vector2i(floori((lot.x + r) / n), floori((lot.y + r) / n))
+	var out: Array[Vector2i] = []
+	for y in range(lo.y, hi.y + 1):
+		for x in range(lo.x, hi.x + 1):
+			var k := Vector2i(x, y)
+			var full := Rect2i(k * n, Vector2i(n, n))
+			if not have.has(k) or (have[k]["rect"] as Rect2i) != full:
+				out.append(k)
+	return out
+
+
+## The yaw (degrees) a Site shot looks along: of the city's own four diagonal views (yaw_deg +
+## k * 90, the iso look and its light kept), the one that looks most from the Site toward its
+## corp's HQ (the HQ in the back; ties: the lower k). Sites lie near the city's edge and their
+## HQ inward, so the bare plane past the edge stays behind the camera. Pure.
+static func site_yaw(cfg: CityConfig, from: Vector3, to: Vector3) -> float:
+	var d := Vector2(to.x - from.x, to.z - from.z)
+	if d.length() < 0.001:
+		return cfg.yaw_deg
+	var best := cfg.yaw_deg
+	var best_dot := -INF
+	for k in 4:
+		var yaw := cfg.yaw_deg + 90.0 * k
+		var f := Vector2(cos(deg_to_rad(yaw)), -sin(deg_to_rad(yaw)))
+		var dot := f.dot(d.normalized())
+		if dot > best_dot + 0.000001:
+			best_dot = dot
+			best = yaw
+	return best
 ## The HQ landmark glTF of `corp` ("" when it has none: the stand-in tower).
 static func hq_landmark_path(corp: StringName) -> String:
 	var p := "%s/%s/%s_hq.glb" % [CityLandmarks.DIR, corp, corp]
@@ -224,12 +302,34 @@ static func _kept(mesh_name: String, keep: PackedStringArray) -> bool:
 	return false
 
 
-## A camera at the city's yaw and pitch `pitch_deg` that fits world box `box` into `frame` (share of the view)
-## with its centre at the frame's centre; ortho at least `least` (the close-up never zooms in
-## past the plain framing). Pure.
-static func fit_box(cfg: CityConfig, box: AABB, frame: Rect2, least: float, size: Vector2, pitch_deg: float) -> CityIsoCamera:
+## A camera at pitch `pitch_deg` (and yaw `yaw_deg`; NAN: the city's) that fits world box
+## `box` into `frame` (share of the view) with its middle at the frame's middle; ortho at least
+## `least` (the close-up never zooms in past the plain framing). Pure.
+static func fit_box(cfg: CityConfig, box: AABB, frame: Rect2, least: float, size: Vector2, pitch_deg: float, yaw_deg: float = NAN) -> CityIsoCamera:
 	var c := CityIsoCamera.make(cfg, box.get_center(), least, size)
 	c.pitch_deg = pitch_deg
+	if not is_nan(yaw_deg):
+		c.yaw_deg = yaw_deg
+	var ext := _screen_extent(c, box)
+	var aspect := size.y / maxf(1.0, size.x)
+	c.ortho = maxf(least, maxf(ext.size.x / maxf(0.01, frame.size.x), ext.size.y / maxf(0.01, frame.size.y * aspect)))
+	aim(c, box, frame.get_center())
+	return c
+
+
+## Moves camera `c`'s target (its ortho, yaw and pitch kept) so world box `box`'s screen middle
+## lands at `want` (share of the view). Pure.
+static func aim(c: CityIsoCamera, box: AABB, want: Vector2) -> void:
+	var ext := _screen_extent(c, box)
+	var mid := ext.get_center()
+	var oh := c.ortho * c.viewport.y / maxf(1.0, c.viewport.x)
+	var dx := mid.x - (want.x - 0.5) * c.ortho
+	var dy := mid.y - (0.5 - want.y) * oh
+	c.target = box.get_center() + c.right() * dx + c.up() * dy
+
+
+## `box`'s extent in camera `c`'s right / up axes round its centre (world units).
+static func _screen_extent(c: CityIsoCamera, box: AABB) -> Rect2:
 	var r := c.right()
 	var u := c.up()
 	var lo := Vector2(INF, INF)
@@ -239,16 +339,7 @@ static func fit_box(cfg: CityConfig, box: AABB, frame: Rect2, least: float, size
 		var q := Vector2(p.dot(r), p.dot(u))
 		lo = lo.min(q)
 		hi = hi.max(q)
-	var aspect := size.y / maxf(1.0, size.x)
-	c.ortho = maxf(least, maxf((hi.x - lo.x) / maxf(0.01, frame.size.x), (hi.y - lo.y) / maxf(0.01, frame.size.y * aspect)))
-	# Move the box's middle onto the frame's middle (screen share -> world along right / up).
-	var mid := (lo + hi) * 0.5
-	var want := frame.get_center()
-	var oh := c.ortho * aspect
-	var dx := mid.x - (want.x - 0.5) * c.ortho
-	var dy := mid.y - (0.5 - want.y) * oh
-	c.target = box.get_center() + r * dx + u * dy
-	return c
+	return Rect2(lo, hi - lo)
 
 
 ## The close-up's lit night look (CityConfig backdrop_*), for CityView3D.set_night_share at

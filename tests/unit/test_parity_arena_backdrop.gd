@@ -3,15 +3,13 @@ extends GutTest
 ## BOSS-03, BACKDROP-01, BACKDROP-02, MOTION-07): the combat backdrop's city close-up keeps the
 ## concept's lit city once it settles (no drop to near black), the HUD and the wheels keep their
 ## contrast over it, every corporation's HQ landmark stands whole in the frame for a boss fight
-## and a Site fight frames its Site's building.
+## and a Site fight frames its own Site's building as the subject with the HQ ahead (round 2:
+## the concept's low angle, no bare plane or blank lots in the frame).
 ##
 ## The settled close-up is measured on fixtures: `tests/fixtures/arena_backdrop/<shot>.png`,
-## point samples (256x144) of each close-up's own render (CityView3D.get_texture, before the
-## backdrop's shader) from the windowed `hq_run_lab --raw`. The backdrop's shader receives
-## that texture as linear values (measured windowed: with the grade off the frame shows the
-## render's linear values, its mid-tones ~4x darker: MOTION-07's settle step), so the model
-## below decodes each sample to linear, applies CombatBackdrop.graded (the shader's mirror)
-## and measures what the screen shows.
+## point samples (256x144) of the windowed hq_run_lab frame of each shot once settled (the
+## backdrop as the screen shows it: grade, subject focus and bands, no HUD), recaptured with
+## the lab when the look changes (DECISIONS "Parity fix — combat backdrop, round 2").
 
 const FIXTURES := "res://tests/fixtures/arena_backdrop/"
 const STILLS := "res://assets/backdrops/combat/"
@@ -35,9 +33,9 @@ func _cfg() -> CityConfig:
 	return CityView3D.CONFIG
 
 
-## Mean relative luminance of image `img` (sRGB pixels, mapped by `fn` first when valid) over
-## the rows between the top bar's band and the hand's (the shader's top_band / bottom_band).
-func _mid_luma(img: Image, step: int, fn: Callable = Callable()) -> float:
+## Mean relative luminance of image `img` (sRGB pixels) over the rows between the top bar's
+## band and the hand's (the shader's top_band / bottom_band).
+func _mid_luma(img: Image, step: int) -> float:
 	var h := img.get_height()
 	var y0 := int(h * 0.1)
 	var y1 := int(h * 0.76)
@@ -45,27 +43,13 @@ func _mid_luma(img: Image, step: int, fn: Callable = Callable()) -> float:
 	var n := 0
 	for y in range(y0, y1, step):
 		for x in range(0, img.get_width(), step):
-			var c := img.get_pixel(x, y)
-			if fn.is_valid():
-				c = fn.call(c)
-			total += Palette.luminance(c)
+			total += Palette.luminance(img.get_pixel(x, y))
 			n += 1
 	return total / maxf(1.0, float(n))
 
 
 func _fixture(shot: String) -> Image:
 	return Image.load_from_file(ProjectSettings.globalize_path(FIXTURES + shot + ".png"))
-
-
-## What the screen shows for a fixture sample: the render's value reaching the shader as linear,
-## through the grade.
-func _shown(c: Color) -> Color:
-	return CombatBackdrop.graded(_cfg(), c.srgb_to_linear())
-
-
-## The same with the grade off (main before the fix: the linear values shown as they are).
-func _shown_ungraded(c: Color) -> Color:
-	return c.srgb_to_linear()
 
 
 func test_the_luma_band_is_the_concept_stills() -> void:
@@ -88,18 +72,19 @@ func test_the_settled_close_up_stays_in_the_concept_band() -> void:
 		assert_not_null(img, "fixture %s" % shot)
 		if img == null:
 			continue
-		var l := _mid_luma(img, 1, _shown)
+		var l := _mid_luma(img, 1)
 		assert_between(l, band.x, band.y, "%s: the settled close-up keeps the concept's light (%.3f)" % [shot, l])
 
 
-func test_without_the_grade_the_close_up_drops_below_the_band() -> void:
-	# MOTION-07's settle step reproduced: the city's render shown as linear values.
-	for shot in SHOTS:
-		var img := _fixture(shot)
-		if img == null:
-			continue
-		var l := _mid_luma(img, 1, _shown_ungraded)
-		assert_lt(l, _cfg().backdrop_luma_band.x, "%s ungraded is the near-black look (%.3f)" % [shot, l])
+func test_the_grade_lifts_the_linear_close_up_into_the_band() -> void:
+	# MOTION-07: the close-up's texture reaches the shader as linear values; shown as they are
+	# its mid-tones sit ~4x down. The grade lifts a dark mid-tone several times over (hue kept).
+	var cfg := _cfg()
+	for v in [0.03, 0.06, 0.1]:
+		var raw := Color(v, v * 1.05, v * 1.2)
+		var g := CombatBackdrop.graded(cfg, raw)
+		assert_gt(Palette.luminance(g), Palette.luminance(raw) * 3.0, "a dark mid-tone %.2f is lifted" % v)
+		assert_lt(Palette.luminance(g), 0.6, "but not blown out")
 
 
 func test_the_grade_keeps_the_neon_hue_and_the_ink_dark() -> void:
@@ -134,7 +119,7 @@ func test_hud_and_wheel_rims_keep_their_contrast_over_the_backdrop() -> void:
 		if img == null:
 			continue
 		# What is behind a word or a rim: the backdrop's local mean (the pool blurs it).
-		var mean_l := _mid_luma(img, 1, _shown)
+		var mean_l := _mid_luma(img, 1)
 		var hp_l := mean_l * _pool_factor(HP_AT)
 		var rim_l := mean_l * _pool_factor(RIM_AT)
 		assert_gte(_contrast_l(Palette.luminance(WheelView.HP_COLOR), hp_l), TEXT_MIN,
@@ -185,41 +170,110 @@ func test_each_corps_hq_landmark_stands_whole_in_the_frame() -> void:
 			assert_almost_eq(top.y, box.end.y, 0.01, "%s: the shot's top is the landmark's" % corp)
 
 
-func test_site_fights_frame_the_site_lot() -> void:
-	var cfg := _cfg()
+## Every Site of every corporation, with its layout lots.
+func _all_sites() -> Array:
+	var out := []
 	for corp in CORPS:
 		var cd := RunManager.lookup().get_content(corp) as CorporationData
 		var lots := CityLayout.site_points(cd)
 		var ids: Array = lots.keys()
 		ids.sort()
 		for site: StringName in ids:
-			var lot: Vector2 = lots[site]
-			var inside := BackdropCatalog.site_close_up_lot(cfg, lot)
-			var r := Rect2(cfg.city_rect).grow(-float(cfg.backdrop_site_inset))
-			assert_true(r.grow(0.001).has_point(inside), "%s %s: the close-up stands it inside the city" % [corp, site])
-			if r.has_point(lot):
-				assert_eq(inside, lot, "%s %s: a Site well inside keeps its own lot" % [corp, site])
-			var shot := BackdropCatalog.city_shot(cfg, BackdropCatalog.place(corp, false, false, site), lots, SIZES[0])
-			assert_eq(shot["won_site"], site, "%s %s: the won lights go on this Site" % [corp, site])
-			var landmark := CityLandmarks.site_path(corp)
-			if landmark != "":
-				assert_eq(shot["focus"], "site_landmark", "%s: its Site building stands on the lot" % corp)
-				assert_eq(shot["landmark"], corp)
-				assert_eq(shot["lot"], inside.floor() + Vector2(0.5, 0.5), "%s %s: on the Site's lot block" % [corp, site])
-				var box := BackdropCatalog.landmark_box(cfg, landmark, shot["lot"])
-				for size in SIZES:
-					var cam := BackdropCatalog.city_shot(cfg, BackdropCatalog.place(corp, false, false, site), lots, size)["camera"] as CityIsoCamera
-					var on := _screen_box(cam, box, size)
-					var want := Rect2(cfg.backdrop_site_frame.position * size, cfg.backdrop_site_frame.size * size).grow(1.0)
-					assert_true(want.encloses(on), "%s %s at %s: the Site building %s fills its frame %s" % [corp, site, size, on, want])
-			else:
-				assert_eq(shot["focus"], "site", "%s: no Site landmark: the lot's own building" % corp)
-				var cam: CityIsoCamera = (shot["camera"] as CityIsoCamera).copy()
-				cam.viewport = SIZES[0]
-				var at := cam.project(CityIsoCamera.lot_to_world(cfg, inside, cfg.backdrop_site_lift))
-				assert_almost_eq(at, SIZES[0] * 0.5, Vector2(1, 1), "%s %s: the Site lot at the view's centre" % [corp, site])
+			out.append([corp, site, lots])
+	return out
 
 
+func test_site_fights_frame_the_fought_sites_own_lot() -> void:
+	# Designer round 2: each Site fight frames its own Site's lot (never moved, no repeated
+	# landmark); the corp's Site landmark stands only on the Site that carries it.
+	var cfg := _cfg()
+	for row in _all_sites():
+		var corp: StringName = row[0]
+		var site: StringName = row[1]
+		var lots: Dictionary = row[2]
+		var shot := BackdropCatalog.city_shot(cfg, BackdropCatalog.place(corp, false, false, site), lots, SIZES[0])
+		assert_eq(shot["focus"], "site", "%s %s: a Site shot" % [corp, site])
+		assert_eq(shot["won_site"], site, "%s %s: the won lights go on this Site" % [corp, site])
+		var own := CityLandmarks.site_of(cfg, corp) == site and CityLandmarks.site_path(corp) != ""
+		assert_eq(shot.has("landmark"), own, "%s %s: the Site landmark only on its own Site" % [corp, site])
+		var want: Vector2 = CityLandmarks.site_lot(cfg, corp, lots) if own else lots[site]
+		assert_eq(shot["lot"], want, "%s %s: the fought Site's own lot, not moved" % [corp, site])
+
+
+func test_the_site_building_is_the_large_subject_with_the_hq_behind() -> void:
+	var cfg := _cfg()
+	# Concept-derived share of the view the subject takes (its larger of width and height share):
+	# site_solace_night.jpg's clinic spans 0.38 x 0.37; the range runs from the configured floor to 0.6.
+	var most := 0.6
+	for row in _all_sites():
+		var corp: StringName = row[0]
+		var site: StringName = row[1]
+		for size in SIZES:
+			var shot := BackdropCatalog.city_shot(cfg, BackdropCatalog.place(corp, false, false, site), row[2], size)
+			var cam: CityIsoCamera = shot["camera"]
+			var on := _screen_box(cam, shot["subject"], size)
+			var share := maxf(on.size.x / size.x, on.size.y / size.y)
+			assert_between(share, cfg.backdrop_site_subject_min - 0.02, most, "%s %s at %s: the subject's share of the width (%.2f)" % [corp, site, size, share])
+			var frame := Rect2(cfg.backdrop_site_frame.position * size, cfg.backdrop_site_frame.size * size)
+			assert_true(frame.grow(size.x * 0.05).has_point(on.get_center()), "%s %s: the subject in its frame" % [corp, site])
+			# The camera looks from the Site toward its HQ (one of the city's diagonal views).
+			var hq: AABB = shot["hq_box"]
+			var f := Vector2(cos(deg_to_rad(cam.yaw_deg)), -sin(deg_to_rad(cam.yaw_deg)))
+			var to_hq := Vector2(hq.get_center().x, hq.get_center().z) - Vector2((shot["subject"] as AABB).get_center().x, (shot["subject"] as AABB).get_center().z)
+			assert_gt(f.dot(to_hq.normalized()), 0.0, "%s %s: the HQ lies ahead, in the back of the shot" % [corp, site])
+			assert_true(is_equal_approx(fposmod(cam.yaw_deg - cfg.yaw_deg, 90.0), 0.0) or is_equal_approx(fposmod(cam.yaw_deg - cfg.yaw_deg, 90.0), 90.0),
+				"%s %s: one of the city's own diagonal views" % [corp, site])
+			assert_almost_eq(cam.pitch_deg, cfg.backdrop_site_pitch_deg, 0.001)
+	assert_between(cfg.backdrop_site_pitch_deg, 22.0, 30.0, "the concept's low angle (designer: 22-30)")
+	assert_between(cfg.backdrop_hq_pitch_deg, 22.0, 30.0, "the concept's low angle for the boss view too")
+
+
+func test_no_empty_lot_shows_in_the_frame() -> void:
+	# Every ground point of the frame above the hand lands on city: inside city_rect, or in a
+	# chunk the close-up records past its edge (BackdropCatalog.extension_keys).
+	var cfg := _cfg()
+	var shots := []
+	for row in _all_sites():
+		shots.append([BackdropCatalog.place(row[0], false, false, row[1]), row[2]])
+	for corp in CORPS:
+		shots.append([BackdropCatalog.place(corp, true, false), {}])
+	var rect := Rect2(cfg.city_rect).grow(-cfg.backdrop_site_edge_margin)
+	for s in shots:
+		var shot := BackdropCatalog.city_shot(cfg, s[0], s[1], SIZES[0])
+		var cam: CityIsoCamera = (shot["camera"] as CityIsoCamera).copy()
+		cam.viewport = SIZES[0]
+		var extra := BackdropCatalog.extension_keys(cfg, shot["lot"], {})
+		var have := {}
+		for k in extra:
+			have[k] = true
+		var bad := 0
+		for j in 6:
+			for i in 9:
+				var uv := Vector2(0.06 + 0.11 * i, 0.12 + 0.12 * j)
+				var lot := CityIsoCamera.world_to_lot(cfg, cam.unproject(uv * SIZES[0]))
+				var key := Vector2i(floori(lot.x / cfg.chunk_lots), floori(lot.y / cfg.chunk_lots))
+				if not rect.has_point(lot) and not have.has(key):
+					bad += 1
+		assert_eq(bad, 0, "%s: no bare plane past the city in the frame" % str(s[0]))
+
+
+func test_landmarks_clear_only_the_lots_they_stand_on() -> void:
+	# The blank lots (designer round 2): a landmark's whole ground box used to clear the city's
+	# buildings; now only its footprint does (not Meridian's open yard corners, not the ground
+	# under Halcyon's eye beam).
+	var cfg := _cfg()
+	for corp in [&"meridian", &"halcyon"]:
+		var path := BackdropCatalog.hq_landmark_path(corp)
+		var node := (load(path) as PackedScene).instantiate() as Node3D
+		var lots := CityView3D.footprint_lots(node, cfg)
+		var box := CityView3D._ground_box(node)
+		node.free()
+		if lots.is_empty():
+			pending("%s: no mesh arrays headless" % corp)
+			continue
+		var area := (box.size.x / cfg.lot_bu) * (box.size.y / cfg.lot_bu)
+		assert_lt(float(lots.size()), area * 0.9, "%s: the footprint is less than its box (%d of %.0f lots)" % [corp, lots.size(), area])
+		assert_gt(lots.size(), 4, "%s: it still clears where it stands" % corp)
 func test_the_close_up_look_keeps_the_rain_and_the_lit_landmarks_per_shot() -> void:
 	var cfg := _cfg()
 	var hq := BackdropCatalog.city_look(cfg, "hq")
