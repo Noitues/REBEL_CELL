@@ -218,6 +218,70 @@ binding (also in PROPOSAL.md's rulings section):
 - Q13: the swaps are the Loadout's SPINNER chips (ANIM-4's, unchanged); the dossiers' OptionButtons went in b.
 - Tests: new `tests/unit/test_hq_b_story.gd` (fast).
 
+### 2026-10-05 — Designer ruling — city as a map in raid and netrun views
+Designer rulings 2026-10-05 (S-MAPVIEW): on a raid view and a netrun view the city and its buildings are slightly
+greyed and lowered in opacity so the nodes and links pop (main's raid view was "a bright colourful mess"); the city
+raid view shows the major (raid) nodes only, never netrun sub-nodes; a netrun's route nodes sit along the link
+between two raid nodes. Refs (art-concepts-r43): round 40 `raid_view_v3` / `raid_gifs/`, round 32
+`city_map_hud.png`, round 37 `city_default.png`; ART_BIBLE v2 §4.1 / §4.3 / §4.8.
+- **Map mode (`CityView3D.map_mode`).** On while the host holds the RAID or NETRUN band (`CityView3D.map_band`:
+  the raid setup / playout / report, and the HQ once it holds RAID as the raid view; the netrun route), off for the
+  Grid (GRID band), the title, the blurred backdrop (GRID), the combat backdrop and the HQ-run views (no band). It
+  follows `band_lock`, so no page calls it. The night look stays underneath: after the post's night grade the city
+  keeps `map_saturation` (0.7) of its colour, its contrast `map_contrast` (0.8) round `map_mid` (0.22), its bloom
+  `map_bloom` (0.45); then a veil (`shaders/city/city_map_veil.gdshader`, `map_veil` night violet at
+  `map_veil_alpha` 0.22) drawn after the city's ambient layers (holo signs, pools 10, beams 11; render priority
+  15) and before the network decal (19 / 20), so sky lanes, searchlights and signs are lowered with the city while
+  the links stay full. The decal's glow halo keeps `map_net_halo` (0.35) of itself (GRID-01's veil under the
+  network); its traces, discs and rings are unchanged. Nodes, links, markers, pencil and stickers are 2D or the
+  decal: full strength on top. All numbers in CityConfig ("Map mode"). `CityView3D.map_graded` mirrors the step on
+  the CPU. **Measured** (map area, mean relative luminance / mean HSV saturation, 1280x720): raid setup Solace
+  0.104 / 0.42 before, 0.071 / 0.29 after; the route 0.063 / 0.38 before, 0.044 / 0.26 after; the concepts 0.08-0.11
+  / 0.41-0.53 (the concept's neon is in its marks; the city's p90 drops from 0.13-0.18 to 0.08-0.11).
+- **Linear-as-sRGB check (S-ARENA's finding).** The raid pages and the route draw the city's ViewportTexture with a
+  plain canvas draw (NeonCity, no shader): the frame equals the render within 1-2 levels in clear patches (raid
+  setup Solace and Meridian, the route; `raid_lab --raw`, `netrun_states --raw`). No darkening on these views;
+  nothing to decode. (Answers part of the "Parity fix combat backdrop" open question 3 for the raid and route.)
+- **Major nodes only (`RaidMapNodes`, pure).** The raid map showed every Site a raid could enter at
+  (`RaidResolver.default_entry_sites`: the whole frontier, `CityLayout.threat_paths` of every pending raid), a T1 /
+  T2 hexagon on each. It now keeps the Cell's network (home and the claimed Sites) and the Sites the shown raid's
+  threats really enter at and cross: the setup's own projection (`RaidResult.events`), the playout's raid projected
+  from the pre-raid state, the report's touched nodes. Preview == result: the map's routes are the routes the raid
+  takes (tested against `fight_raid`'s events). Never a netrun route node (sub-node): every id is a Grid Site.
+  `RaidMapNodes.route_paths` is `hq_scene.raid_route_paths`' code (the relay makes that one delegate to it).
+  **The hookup in `hq_scene.raid_graph` (3 lines) is relayed to HQ-BUILD** (it owns `hq_scene.gd`; the orchestrator asked S-MAPVIEW
+  not to edit it); the after frames of the raid rows in the sheet were taken with it applied locally.
+- **Route nodes along the link (`RouteLinkLayout`, pure).** The link is the one the run jacks along (bible 4.6):
+  `RouteLinkLayout.from_site` (home or a claimed Site linked to the run's Site, lowest content id first; else an
+  owned Site whose links name it) to the run's Site, on CityLayout's Site layout; `RunManager.jack_link` now uses the
+  same function (behaviour unchanged), so the jack rides the link the route lies on. Layer k of L sits k / L of the
+  way along (the final Rack on the target Site), the entry ("you are here" before the first node) on the Cell's node,
+  a layer's nodes side by side across the link `route_link_lateral` (2.0) lots apart in index order (node ids
+  L<layer>N<index>). A link shorter than `route_link_min_lots` (6) reaches back along its heading. No rule change:
+  `netrun_scene.route_graph` only computes the points (the old lattice round the Site goes); the overlay's building
+  snap (radius 4) then puts each sticker on a roof as before.
+- **Kept.** Route generation, raid resolution, the Grid page's look, ANIM motion entries (none touched). The decal's
+  disc fill, the link strokes and the badges stay with S-GRID / S-RAID (GRID-01 / RAID-04, partly resolved here).
+  The playout's orange result spread over the city (NeonCity influence) is unchanged.
+- **Perf** (windowed, 1920x1080, tier 2, other agents running): route 3.08 ms a frame (city GPU 1.77 ms),
+  REBEL_CELL route 3.57 ms (2.19); 7w's were 2.93-3.75 ms: the veil and the map step cost nothing measurable; in
+  the 8 ms budget.
+- **Tests.** New `tests/unit/test_s_mapview.gd` (fast): map mode on for RAID / NETRUN only (and the look it sets),
+  the raid setup and the route hold map bands and the Grid does not; the veil between the ambient layers and the
+  decal; the grade greys and dims but keeps the hue; the marks' contrast over the dimmed city (fixtures
+  `tests/fixtures/mapview/*.png`: the 3D city's own render, network decal off, map mode on and `_off`): lime links /
+  ring states >= 3:1 against the city's 90th percentile, CORE and the threat pencil >= 3:1 against its median, the
+  city's bright part lower than without; the raid view's major nodes (no frontier-only Site, every id a Grid Site);
+  the map's routes == the played raid's; every route node on the link within (widest layer - 1) / 2 x lateral, the
+  final Rack on the Site, the entry on the Cell's node, for seeds 1, 2, 5; seeded replays place identically; the
+  jack starts where the route does. No test dropped or changed.
+- **Tools.** `raid_lab` `--raw` (the city's render, and `_city_raw` with the decal off) and `--size=`;
+  `netrun_states` `--raw`.
+- **Review:** `docs/art_review/PARITY/fixes/MAPVIEW.jpg` (concept | before | after: raid setup Solace, Meridian,
+  Solace at text 2.0, playout end, route underway, REBEL_CELL route start).
+- **Files outside the area (smallest change):** `scripts/autoload/run_manager.gd` (`jack_link` calls
+  `RouteLinkLayout.from_site`), `scripts/ui/netrun_scene.gd` (`route_graph`: the points), the two labs.
+
 ### 2026-10-05 — Parity fix — combat backdrop (designer group ruling)
 Designer group ruling 2026-10-05: combat matches the concept. Audit items CMB-01, BOSS-03, BACKDROP-01, BACKDROP-02,
 MOTION-07 (`docs/art_review/PARITY/GAPS.md`); references `round26_hq_targets/combat_solace.jpg`,
@@ -9299,6 +9363,14 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **S-MAPVIEW (2026-10-05, built, see "Designer ruling — city as a map in raid and netrun views"):** (1) "raid
+  nodes" read as the Cell's network plus the Sites the shown raid really enters at and crosses; the other frontier
+  Sites (possible entries of later raids) are off the raid map: confirm, or should the HQ (the raid view) show every
+  launchable Site too (HQ-BUILD's Q5 framing)? (2) A netrun's route lies on one link, the jack's (Cell's node ->
+  the run's Site); a branching route spreads its layer across the link (2 lots apart). Should the route instead
+  follow several links (a route through intermediate Sites)? That would need the route generation to know the Grid
+  (a rule change): not built. (3) The map-mode numbers (saturation 0.7, veil 0.22, bloom 0.45) are a first pass
+  against the concepts: tune on the sheet.
 - **Parity fix combat backdrop (2026-10-05, built, see "Parity fix — combat backdrop"):** (1) every Site fight of a
   corporation stands its one Site landmark (Solace's clinic ...) on that Site's lot in the close-up, as the stills
   did, and a Site at the city's edge is stood 28 lots inside: keep, or only the landmark's own Site gets the

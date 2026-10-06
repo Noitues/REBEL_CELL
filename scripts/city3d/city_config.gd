@@ -355,6 +355,34 @@ extends Resource
 @export var roof_billboard_above: float = 14.0
 @export var roof_billboard_share: float = 0.16
 
+@export_group("Map mode (S-MAPVIEW: the city as a map in raid and netrun views)")
+## Designer ruling 2026-10-05: on a raid view and a netrun route the city and its buildings are
+## slightly greyed out and lowered in opacity so the nodes and links pop (round 40
+## raid_view_v3, round 37 city_default). On while the host holds the RAID or NETRUN band
+## (CityView3D.map_band); off everywhere else. The night look stays underneath.
+@export var map_mode_on: bool = true
+## The share of its colour the city keeps (display values; 1 = unchanged, 0 = grey).
+@export var map_saturation: float = 0.7
+## The city's contrast round `map_mid` (display values; 1 = unchanged).
+@export var map_contrast: float = 0.8
+## The display value the contrast pivots round (the night city's mid-tone).
+@export var map_mid: float = 0.22
+## The share of the post's bloom (the neon glow) the map keeps.
+@export var map_bloom: float = 0.45
+## The veil over the whole city, its ambient motion included (sky lanes, searchlights, holo
+## signs, pools: they draw after the post), before the network and the map's marks: the
+## city shows through at 1 - `map_veil_alpha` (its opacity lowered toward the night sky).
+@export var map_veil: Color = Color(0.09, 0.07, 0.15)
+@export var map_veil_alpha: float = 0.22
+## The network decal's glow halo kept on the map (its traces, discs and rings stay full: the
+## concept's thin cable links; GRID-01's veil under the network read as part of the mess).
+@export var map_net_halo: float = 0.35
+## A netrun's route along its link (RouteLinkLayout): a layer's nodes side by side across the
+## link this far apart (lots), and the shortest link the route is laid on (lots; a shorter one
+## reaches back along its heading from the target).
+@export var route_link_lateral: float = 2.0
+@export var route_link_min_lots: float = 6.0
+
 
 ## The quality tier for a Settings.city_quality value (-1 = default).
 func tier_for(city_quality: int) -> int:
