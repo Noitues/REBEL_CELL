@@ -18,8 +18,12 @@ extends Control
 
 const SHADER := preload("res://shaders/kit/decrypted_holo.gdshader")
 const BANDS := &"holo_bands"
-## Look (§1.2): tint share, scanline period, edge split.
+## Look (§1.2): tint share, scanline period, edge split. B1c-b (art director): TINT_SHARE is
+## the tint's strength on the words and the edge (`ink`); the body is FILL_SHARE of the tint
+## over the dark 0.88 glass (round 21 `intel_decrypt`, round 44 `raid_setup`).
 const TINT_SHARE := 0.78
+const FILL_SHARE := 0.28
+const GLASS_ALPHA := 0.88
 const SCAN_PX := 4.0
 const SPLIT_PX := 2.0
 ## B1c (D17): the scanlines' strength and the number of slow bands on the plate.
@@ -44,6 +48,10 @@ const STAMP_SLOT := Vector2(180, 48)
 ## B1c: the stamp's ink (the Cell's acid, as the route holo's DECRYPTED chip) and its alpha.
 const STAMP_COLOR := Palette.CELL_ACID
 const STAMP_ALPHA := 0.9
+## B1c-b (art director): a dark ink under-shadow so the acid stamp reads on every corp tint
+## (Solace's green above all): its offset (px) and alpha.
+const STAMP_SHADOW_OFFSET := Vector2(2, 2)
+const STAMP_SHADOW_ALPHA := 0.7
 
 @export var corp_color: Color = Palette.CORP_SOLACE:
 	set(v):
@@ -157,6 +165,8 @@ func _sync() -> void:
 		sm.set_shader_parameter(&"tint", corp_color)
 		sm.set_shader_parameter(&"deep", Palette.NET_BG_OUTER)
 		sm.set_shader_parameter(&"tint_share", TINT_SHARE)
+		sm.set_shader_parameter(&"fill_share", FILL_SHARE)
+		sm.set_shader_parameter(&"glass_alpha", GLASS_ALPHA)
 		sm.set_shader_parameter(&"scan_px", SCAN_PX)
 		sm.set_shader_parameter(&"scan_strength", SCAN_STRENGTH)
 		sm.set_shader_parameter(&"band_count", BAND_COUNT)
@@ -215,8 +225,22 @@ func _draw_stamp() -> void:
 	var col := STAMP_COLOR
 	col.a = STAMP_ALPHA
 	var centre := stamp_slot.size * 0.5
-	stamp_slot.draw_set_transform(centre, deg_to_rad(STAMP_TILT_DEG))
 	var box := Rect2(-sz * 0.5 - Vector2(8, 2), sz + Vector2(16, 4))
-	stamp_slot.draw_rect(box, col, false, 3.0)
-	stamp_slot.draw_string(font, Vector2(-sz.x * 0.5, sz.y * 0.32), STAMP_WORD, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
+	for pass_shadow in [true, false]:
+		var at: Vector2 = centre + (STAMP_SHADOW_OFFSET if pass_shadow else Vector2.ZERO)
+		var ink: Color = stamp_shadow_color() if pass_shadow else col
+		stamp_slot.draw_set_transform(at, deg_to_rad(STAMP_TILT_DEG))
+		stamp_slot.draw_rect(box, ink, false, 3.0)
+		stamp_slot.draw_string(font, Vector2(-sz.x * 0.5, sz.y * 0.32), STAMP_WORD, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ink)
 	stamp_slot.draw_set_transform(Vector2.ZERO, 0.0)
+
+
+## B1c-b: the stamp's under-shadow ink (dark, STAMP_SHADOW_ALPHA).
+static func stamp_shadow_color() -> Color:
+	return Color(Palette.INK, STAMP_SHADOW_ALPHA)
+
+
+## B1c-b: the holo's words and edge colour for corp tint `tint`: the tint at TINT_SHARE over the
+## bright text white (the full corp colour on the words; the body stays dark).
+static func ink(tint: Color) -> Color:
+	return Palette.TEXT_HI.lerp(tint, TINT_SHARE)
