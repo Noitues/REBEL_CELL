@@ -222,9 +222,8 @@ func test_the_site_building_is_the_large_subject_with_the_hq_behind() -> void:
 			assert_gt(f.dot(to_hq.normalized()), 0.0, "%s %s: the HQ lies ahead, in the back of the shot" % [corp, site])
 			assert_true(is_equal_approx(fposmod(cam.yaw_deg - cfg.yaw_deg, 90.0), 0.0) or is_equal_approx(fposmod(cam.yaw_deg - cfg.yaw_deg, 90.0), 90.0),
 				"%s %s: one of the city's own diagonal views" % [corp, site])
-			assert_almost_eq(cam.pitch_deg, cfg.backdrop_site_pitch_deg, 0.001)
-	assert_between(cfg.backdrop_site_pitch_deg, 22.0, 30.0, "the concept's low angle (designer: 22-30)")
-	assert_between(cfg.backdrop_hq_pitch_deg, 22.0, 30.0, "the concept's low angle for the boss view too")
+			assert_almost_eq(cam.pitch_deg, cfg.backdrop_close_pitch_deg, 0.001)
+			assert_true(cam.perspective(), "%s %s: B2 (D1): the perspective close-up" % [corp, site])
 
 
 func test_no_empty_lot_shows_in_the_frame() -> void:
@@ -249,9 +248,16 @@ func test_no_empty_lot_shows_in_the_frame() -> void:
 		for j in 6:
 			for i in 9:
 				var uv := Vector2(0.06 + 0.11 * i, 0.12 + 0.12 * j)
+				# B2 (D1): the street-level perspective sees the sky over its horizon (no ground there).
+				if cam.perspective() and (cam.ray_origin(uv * SIZES[0]) - cam.eye()).y >= 0.0:
+					continue
 				var lot := CityIsoCamera.world_to_lot(cfg, cam.unproject(uv * SIZES[0]))
 				var key := Vector2i(floori(lot.x / cfg.chunk_lots), floori(lot.y / cfg.chunk_lots))
 				if not rect.has_point(lot) and not have.has(key):
+					if cam.perspective():
+						# B2 (D1): the street-level close-up hides the asphalt plane past the city
+						# (CombatBackdrop: CityView3D.show_outer_ground): the night sky shows there.
+						continue
 					bad += 1
 		assert_eq(bad, 0, "%s: no bare plane past the city in the frame" % str(s[0]))
 

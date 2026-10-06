@@ -106,6 +106,8 @@ func _init() -> void:
 	_mat = ShaderMaterial.new()
 	_mat.shader = SHADER
 	_mat.set_shader_parameter(&"pool_saturation", LOOK.pool_saturation)
+	_mat.set_shader_parameter(&"emissive_from", LOOK.emissive_from)
+	_mat.set_shader_parameter(&"emissive_to", LOOK.emissive_to)
 	# The world as drawn up to here (an earlier screen reader, a light spill in the backdrop's Heat
 	# lights, may have taken the screen before the world was whole).
 	_before = BackBufferCopy.new()
@@ -386,7 +388,8 @@ static func masks_at(list: Array[Dictionary], p: Vector2) -> Vector3:
 static func apply_shapes(list: Array[Dictionary], p: Vector2, c: Color, keep_share: float = 0.0) -> Color:
 	var m := masks_at(list, p) * (1.0 - keep_share)
 	var l := Vector3(c.r, c.g, c.b).dot(LUMA)
-	var s := lerpf(1.0, LOOK.pool_saturation, m.z)
+	var v := maxf(c.r, maxf(c.g, c.b))
+	var s := lerpf(1.0, LOOK.pool_saturation, m.z * (1.0 - smoothstep(LOOK.emissive_from, LOOK.emissive_to, v)))
 	var f := (1.0 - m.x) * (1.0 - m.y)
 	return Color((l + (c.r - l) * s) * f, (l + (c.g - l) * s) * f, (l + (c.b - l) * s) * f, c.a)
 
