@@ -31,6 +31,25 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-05 — FIX-REDS (M14): known full-tier reds and the boss HP plate overlap
+- `test_anim_r6_rules::test_no_tween_shape_is_written_inline`: the Central Server gate's BREACH tween
+  (`central_server_gate.gd`) wrote `Tween.EASE_OUT` / `TRANS_SINE` as a fallback for a missing entry; it now
+  sets ease and trans only from its `gate_breach_ready` entry (a required id, so it is always there).
+- `test_anim_r6_rules::test_every_script_that_animates_registers_or_says_why_not`: `CityView3D` (ART-5 5e's
+  Cell blackout reveal, `cell_fist_reveal`) now joins MotionSkip as a short motion (`register_passive`, as
+  `rubber_stamp.gd`): `motion_running()` while the reveal plays, `complete_motion()` shows the fist at once.
+- The boss HP plate (timeline row 19_art2): the "guard-arc marker" over "895/1475" in phase 2 was the boss's
+  second blade (Renewal Engine phase 2 adds a needle at tick 15, straight down): the D4 blade reaches 96 master
+  units past the frame, onto the HP number. Following the art pass (M13 W3, `hp_layout`: "under the arc and under
+  every needle's reach; a multi-needle boss never sweeps a needle over its HP"), the HP row now sits under the
+  lowest blade of the state's needles (`WheelView.needle_floor`, `NEEDLE_HP_GAP` 4 px) and the disc's vertical fit
+  keeps that room (`_fit_radius` / `_below_need`; a wheel with no needle pointing down lays out exactly as
+  before). The state's needles, not the animated ones, so the row and the disc hold still while a needle
+  migrates. Test: `test_art2_wheel_stack::test_no_needle_covers_the_hp_number_at_every_text_scale` (a second
+  needle at every tick, both wheels, 1.0 / 1.6 / 2.0: no blade box meets the HP number, which stays on screen).
+  Checked windowed: `arena_lab --corp=solace --boss --fixture=worst --phase=2 --scales=1.0,1.6,2.0` (the lab
+  gains `--phase=N` and `--scales=` for one launch over the three scales).
+
 ### 2026-10-05 — Designer ruling: the M14 audit is a side-by-side art-pass parity audit
 Designer (Noitues), 2026-10-05 evening: "I want my main to look just like art pass."
 - The M14 audit is no longer the vertical / horizontal / naive code audit over the stored reports. It is a visual
@@ -42,6 +61,10 @@ Designer (Noitues), 2026-10-05 evening: "I want my main to look just like art pa
   reference. Mechanics the rules lack (G1–G16) are still not built: a difference that needs one is listed, not built.
 - The old audit agents and `docs/handoff/m14_audit/` stored reports are not inputs to this effort.
 - The full-suite run in isolation, fixes to green and the CI re-enable stay after it.
+- **Amended the same evening (designer):** some art-pass looks are off or not better than main, so every difference
+  the audit finds goes to the designer for a comment and a decision (match the art pass / keep main / something else)
+  before any fix. This replaces "the art pass design is correct, follow it without asking" for parity work. Bug fixes
+  that are not a look choice (test reds, overlaps) still go ahead.
 
 ### 2026-10-05 — Art direction — ART-3 6w raid on the city
 ART-3 wave 2b, ART-6 on the unified city (ART_BIBLE v2 §4.1, §4.8, Appendix C #13, plan G10; refs round 40

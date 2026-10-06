@@ -139,6 +139,7 @@ func _init() -> void:
 func _ready() -> void:
 	quality = CityLod.quality(cfg, Settings.city_quality)
 	_build_scene()
+	MotionSkip.register_passive(self)  # FIX-REDS M14: the Cell's reveal lands with any press that ends a motion
 	Settings.changed.connect(_sync_ambient)
 	_sync_ambient()
 	if iso == null:
@@ -791,7 +792,24 @@ func play_cell_reveal() -> Tween:
 		cell_reveal = 1.0
 		return null
 	cell_reveal = 0.0
-	return Motion.run(CELL_REVEAL_MOTION, self, ^"cell_reveal", 1.0)
+	_reveal = Motion.run(CELL_REVEAL_MOTION, self, ^"cell_reveal", 1.0)
+	return _reveal
+
+
+var _reveal: Tween = null
+
+
+## MotionSkip (FIX-REDS M14, a short motion: `register_passive`): true while the Cell's
+## blackout reveal plays.
+func motion_running() -> bool:
+	return _reveal != null and _reveal.is_valid() and _reveal.is_running()
+
+
+## MotionSkip: the reveal's end state (the fist shown).
+func complete_motion() -> void:
+	Motion.settle(self, ^"cell_reveal")
+	cell_reveal = 1.0
+	_reveal = null
 
 
 ## ART-5 5e: the Cell's district shows DISPATCH's fist (the REBEL_CELL campaign) or home's.
