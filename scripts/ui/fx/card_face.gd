@@ -238,8 +238,6 @@ static func draw(card: ZineCard) -> void:
 	var k := size / FACE
 	var dest := Rect2(-FACE_AT * k, IMAGE * k)
 	var tex := face(kind_of(card), card.card_rarity)
-	if card._lifted:
-		card.draw_style_box(card._cc_style(Color(Palette.CELL_ACID, 0.5), ZineCard.CC_EDGE * s + 4.0, ZineCard.CC_CORNER * s + 4.0), Rect2(Vector2.ZERO, size))
 	if tex != null:
 		card.draw_texture_rect(tex, Rect2(dest.position + ZineCard.CC_SHADOW * s, dest.size), false, Color(Palette.SHADOW, SHADOW_ALPHA))
 		card.draw_texture_rect(tex, dest, false)
@@ -325,17 +323,34 @@ static func draw(card: ZineCard) -> void:
 		card.draw_rect(kr, Color(Palette.INK, KEY_CHIP_ALPHA))
 		card.draw_string(Palette.marker(), Vector2(kr.position.x + KEY_PAD * s, kr.position.y + (kr.size.y + Palette.marker().get_ascent(kfs) - Palette.marker().get_descent(kfs)) * 0.5),
 			key_text(card), HORIZONTAL_ALIGNMENT_LEFT, -1, kfs, Palette.TEXT_HI)
-	if card.disabled:
+	# B2 (art director, bible 2.10): focus is the kit's lime corner brackets round the die-cut and
+	# the hover lift (`card_hover`, 18 px at 1080p), never a lime fill behind the card.
+	if card._lifted:
+		# B2 b: drawn under the face's own draw transform, so they move with the lift (and the hover
+		# growth) and sit on the die-cut's edge (the brackets' own OFFSET taken back): the card as drawn.
+		StyleBoxBrackets.draw_on(card, Rect2(Vector2.ZERO, size).grow(ZineCard.CC_EDGE * s - StyleBoxBrackets.OFFSET))
+	if card.disabled and not card.greyed:
 		card.draw_rect(Rect2(Vector2.ZERO, size), Color(Palette.SHADOW, 0.5))
-	if card.short_ram and card.cost >= 0:
-		# Can't afford: the dot greys and a NEED tag says what is missing (under the dot).
-		var nfs := roundi(ZineCard.NEED_FONT * s)
-		var word := card.tr(ZineCard.NEED_WORD) % card.cost
-		var nw := display.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, nfs).x
-		var tag := Rect2(Vector2(cc.x - cr, cc.y + cr + 3.0), Vector2(nw + ZineCard.NEED_PAD * 2.0, nfs * 1.3))
-		card.draw_rect(tag.grow(2.0), Palette.PAPER)
-		card.draw_rect(tag, Palette.HARM)
-		card.draw_string(display, tag.position + Vector2(ZineCard.NEED_PAD, nfs * 1.0), word, HORIZONTAL_ALIGNMENT_LEFT, -1, nfs, Palette.PAPER)
+	if not card.greyed:
+		draw_need(card, card)
+
+
+## Can't afford: a NEED tag says what is missing (under the grey cost dot), drawn on `ci` (the
+## card itself, or B2's NeedTag layer over a greyscale card, so the tag keeps its colour).
+static func draw_need(ci: CanvasItem, card: ZineCard) -> void:
+	if not card.short_ram or card.cost < 0:
+		return
+	var s := card.text_scale
+	var display := Palette.display()
+	var cc := at_px(card, COST_AT)
+	var cr := COST_R * card.size.x / UNIT.x
+	var nfs := roundi(ZineCard.NEED_FONT * s)
+	var word := card.tr(ZineCard.NEED_WORD) % card.cost
+	var nw := display.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, nfs).x
+	var tag := Rect2(Vector2(cc.x - cr, cc.y + cr + 3.0), Vector2(nw + ZineCard.NEED_PAD * 2.0, nfs * 1.3))
+	ci.draw_rect(tag.grow(2.0), Palette.PAPER)
+	ci.draw_rect(tag, Palette.HARM)
+	ci.draw_string(display, tag.position + Vector2(ZineCard.NEED_PAD, nfs * 1.0), word, HORIZONTAL_ALIGNMENT_LEFT, -1, nfs, Palette.PAPER)
 
 
 ## A pictogram's value as drawn next to its glyph.

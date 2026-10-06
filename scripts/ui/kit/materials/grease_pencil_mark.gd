@@ -53,15 +53,14 @@ const SHADOW_GROW := SHADOW_GROW_1080 * BOARD_TO_CANVAS
 ## Wax opacity (bible §1.2: 0.96) and the sheen line's strength (D3: 35 % white).
 const WAX_ALPHA := 0.96
 const SHEEN := 0.35
-## The wax dropouts (D3 lock), in 1080p px along a stroke: one stretch a period (its centre
-## jittered by up to half DROPOUT_JITTER either way, so the spacing runs 40-70 px), each
-## DROPOUT_LEN long (2-4 px), where the wax's alpha falls to DROPOUT_ALPHA. Words take fewer
-## (WORD_DROPOUT_PERIOD). The shader draws them with the same hash (`dhash`).
-const DROPOUT_PERIOD := 55.0
-const DROPOUT_JITTER := 15.0
+## The wax dropouts (D3 lock), in 1080p px along a stroke: each gap drawn uniformly from
+## DROPOUT_GAP (40-70 px, seeded; `dropout_hit`), each stretch DROPOUT_LEN long (2-4 px), where
+## the wax's alpha falls to DROPOUT_ALPHA. Words take fewer (WORD_DROPOUT_GAP). The shader draws
+## them with the same hash (`dhash`).
+const DROPOUT_GAP := Vector2(40.0, 70.0)
 const DROPOUT_LEN := Vector2(2.0, 4.0)
 const DROPOUT_ALPHA := 0.35
-const WORD_DROPOUT_PERIOD := 90.0
+const WORD_DROPOUT_GAP := Vector2(70.0, 110.0)
 ## B1b fix c: a dropout is a nibble, a ragged bite this share of the stroke's width (40-70 %)
 ## from one edge (its side from the seed), never a full-width break; the under-shadow fades
 ## over the whole gap and its offset past it (`dropout_pad`: SHADOW_1080's length). Words bite
@@ -167,36 +166,39 @@ static func dhash(k: int, s: int) -> float:
 	return float(n & 0xFFFF) / 65535.0
 
 
-## The wax's dropout at `d` (1080p px along a stroke) for `seed`: 1 inside a dropout stretch,
-## 0 outside (the shader's `dropout_at`; its alpha falls to DROPOUT_ALPHA there).
-static func dropout_factor(s: int, d: float, period: float = DROPOUT_PERIOD) -> float:
+## The dropout at `d` (1080p px along a stroke) for `seed` with gaps from `gap`: {inside: 0..1
+## (1 inside a stretch, half-px soft ends), side: -1 or 1 (the edge it bites from), bite: share
+## of the width (DROPOUT_BITE)}. The shader's `dropout_hit` computes the same: the dropouts come
+## in pairs `gap.x + gap.y` long, one at the pair's start and one a seeded gap g on (uniform in
+## `gap`), so every gap, g or the pair's rest, is uniform in the range; a seeded phase shifts them.
+static func dropout_hit(s: int, d: float, gap: Vector2 = DROPOUT_GAP) -> Dictionary:
 	var sd := int(shader_seed(s))
-	var k := floori(d / period)
-	var best := 0.0
-	for i in [-1, 0, 1]:
-		var kk: int = k + i
-		var c := (float(kk) + 0.5) * period + (dhash(kk, sd) - 0.5) * DROPOUT_JITTER
-		var half_len := lerpf(DROPOUT_LEN.x, DROPOUT_LEN.y, dhash(kk, sd + 1)) * 0.5
-		best = maxf(best, 1.0 - smoothstep(half_len - 0.5, half_len + 0.5, absf(d - c)))
-	return best
-
-
-## The nibble of the dropout stretch at `d` (1080p px along a stroke) for `seed`:
-## {side: -1 or 1 (the edge it bites from), bite: share of the width (DROPOUT_BITE)}; the
-## shader's `dropout_hit` picks the same.
-static func dropout_bite(s: int, d: float, period: float = DROPOUT_PERIOD) -> Dictionary:
-	var sd := int(shader_seed(s))
-	var k := floori(d / period)
+	var pair := gap.x + gap.y
+	var dd := d + dhash(0, sd + 5) * pair
+	var k := floori(dd / pair)
 	var best := {"inside": 0.0, "side": 1, "bite": DROPOUT_BITE.x}
-	for i in [-1, 0, 1]:
-		var kk: int = k + i
-		var c := (float(kk) + 0.5) * period + (dhash(kk, sd) - 0.5) * DROPOUT_JITTER
-		var half_len := lerpf(DROPOUT_LEN.x, DROPOUT_LEN.y, dhash(kk, sd + 1)) * 0.5
-		var inside := 1.0 - smoothstep(half_len - 0.5, half_len + 0.5, absf(d - c))
-		if inside > float(best["inside"]):
-			best = {"inside": inside, "side": -1 if dhash(kk, sd + 2) < 0.5 else 1,
-				"bite": lerpf(DROPOUT_BITE.x, DROPOUT_BITE.y, dhash(kk, sd + 3))}
+	for pi in [-1, 0, 1]:
+		var p: int = k + pi
+		for j in [0, 1]:
+			var kk: int = 2 * p + j
+			var c := float(p) * pair + (lerpf(gap.x, gap.y, dhash(p, sd + 4)) if j == 1 else 0.0)
+			var half_len := lerpf(DROPOUT_LEN.x, DROPOUT_LEN.y, dhash(kk, sd + 1)) * 0.5
+			var inside := 1.0 - smoothstep(half_len - 0.5, half_len + 0.5, absf(dd - c))
+			if inside > float(best["inside"]):
+				best = {"inside": inside, "side": -1 if dhash(kk, sd + 2) < 0.5 else 1,
+					"bite": lerpf(DROPOUT_BITE.x, DROPOUT_BITE.y, dhash(kk, sd + 3))}
 	return best
+
+
+## The wax's dropout at `d` (1080p px along a stroke) for `seed`: 1 inside a dropout stretch,
+## 0 outside (its alpha falls to DROPOUT_ALPHA there, under the nibble).
+static func dropout_factor(s: int, d: float, gap: Vector2 = DROPOUT_GAP) -> float:
+	return float(dropout_hit(s, d, gap)["inside"])
+
+
+## The nibble of the dropout stretch at `d`: {side, bite} (see `dropout_hit`).
+static func dropout_bite(s: int, d: float, gap: Vector2 = DROPOUT_GAP) -> Dictionary:
+	return dropout_hit(s, d, gap)
 
 
 ## Local px (under global scale `k`) to the dropouts' 1080p px, at the current text size.
@@ -204,10 +206,9 @@ static func dropout_scale(k: float) -> float:
 	return k / (BOARD_TO_CANVAS * ui_scale())
 
 
-## Sets the dropout uniforms on `mat` (strokes: DROPOUT_PERIOD; words: WORD_DROPOUT_PERIOD).
-static func set_dropouts(mat: ShaderMaterial, period: float) -> void:
-	mat.set_shader_parameter(&"dropout_period", period)
-	mat.set_shader_parameter(&"dropout_jitter", DROPOUT_JITTER)
+## Sets the dropout uniforms on `mat` (strokes: DROPOUT_GAP; words: WORD_DROPOUT_GAP).
+static func set_dropouts(mat: ShaderMaterial, gap: Vector2) -> void:
+	mat.set_shader_parameter(&"dropout_gap", gap)
 	mat.set_shader_parameter(&"dropout_len", DROPOUT_LEN)
 	mat.set_shader_parameter(&"dropout_alpha", DROPOUT_ALPHA)
 	mat.set_shader_parameter(&"dropout_bite", DROPOUT_BITE)
@@ -359,7 +360,7 @@ func _sync() -> void:
 	_set_param(false, &"sheen", SHEEN)
 	for sh in [false, true]:
 		for m in _mats(sh):
-			set_dropouts(m, DROPOUT_PERIOD)
+			set_dropouts(m, DROPOUT_GAP)
 	_set_param(true, &"dropout_pad", SHADOW_1080.length())
 	_set_param(true, &"ink", Palette.PENCIL_SHADOW)
 	_set_param(true, &"dashed", dashed)

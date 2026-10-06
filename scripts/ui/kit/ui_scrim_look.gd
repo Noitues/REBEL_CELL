@@ -27,6 +27,10 @@ extends Resource
 ## The pools' saturation (review D1: the backdrop capped at 0.6 inside the pools; 1 = none),
 ## toward the pixel's own luma (Rec. 709), reached where a pool holds its full darkness.
 @export var pool_saturation: float = 0.6
+## B2 (art director): emissives are never capped: a pixel whose brightest channel (encoded) is at
+## emissive_from keeps a little more of its colour, from emissive_to all of it.
+@export var emissive_from: float = 0.72
+@export var emissive_to: float = 0.9
 
 @export_group("Bands")
 ## What a bar's band leaves of the world (review D1: about 35 % black; B1a b: 42 %, so the city

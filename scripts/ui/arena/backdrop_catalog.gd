@@ -132,7 +132,7 @@ static func city_shot(cfg: CityConfig, p: Dictionary, site_lots: Dictionary, siz
 	if boss and corp == CityView3D.CELL:
 		var m := HqCompoundStage.manifest(corp)
 		var at := HqCompoundStage.place(cfg, corp, m)
-		var cam := HqCompoundStage.camera(cfg, m, at, size)
+		var cam := HqCompoundStage.page_camera(cfg, m, at, size)  # B2 (D1): the canyon's own perspective street view
 		cam.ortho *= cfg.backdrop_canyon_share
 		return {"focus": "compound", "stage": corp, "camera": cam, "lot": HqCompoundStage.place_lot(corp, m), "won_site": &""}
 	if not boss and site_lots.has(site):
@@ -144,10 +144,12 @@ static func city_shot(cfg: CityConfig, p: Dictionary, site_lots: Dictionary, siz
 		# top bar and the hand (per corp: backdrop_hq_frame_by_corp / backdrop_hq_ortho_by_corp).
 		var hbox := landmark_box(cfg, path, hq, corp)
 		var least: float = cfg.backdrop_hq_ortho_by_corp.get(corp, cfg.backdrop_hq_ortho)
-		var fc := fit_box(cfg, hbox, cfg.backdrop_hq_frame_by_corp.get(corp, cfg.backdrop_hq_frame), least, size, cfg.backdrop_hq_pitch_deg)
+		var fc := fit_box(cfg, hbox, cfg.backdrop_hq_frame_by_corp.get(corp, cfg.backdrop_hq_frame), least, size, cfg.backdrop_close_pitch_deg)
 		return {"focus": "hq", "stage": &"", "camera": fc, "lot": hq, "won_site": &"", "centre": hbox.get_center(),
-			"top": Vector3(hbox.get_center().x, hbox.end.y, hbox.get_center().z)}
+			"top": Vector3(hbox.get_center().x, hbox.end.y, hbox.get_center().z), "subject": hbox}
 	var h := CityIsoCamera.make(cfg, CityIsoCamera.lot_to_world(cfg, hq, cfg.backdrop_hq_lift), cfg.backdrop_hq_ortho_by_corp.get(corp, cfg.backdrop_hq_ortho), size)
+	h.pitch_deg = cfg.backdrop_close_pitch_deg  # B2 (D1): the perspective close-up here too
+	h.fov_deg = cfg.backdrop_close_fov_deg
 	return {"focus": "hq", "stage": &"", "camera": h, "lot": hq, "won_site": &""}
 
 
@@ -173,7 +175,7 @@ static func hq_box(cfg: CityConfig, corp: StringName) -> AABB:
 ## never moved). The subject is the Site's building (`subject`: its world box, CombatBackdrop
 ## measures it on the model; else the corp's Site landmark when this Site carries it, else a
 ## nominal block of backdrop_site_reach lots, backdrop_site_height tall), fitted large into
-## backdrop_site_frame at backdrop_site_pitch_deg; the camera looks from it toward the corp's
+## backdrop_site_frame at backdrop_close_pitch_deg (B2: in perspective); the camera looks from it toward the corp's
 ## HQ (yaw on the Site -> HQ line) and zooms out round the subject, by backdrop_site_zoom_step,
 ## while the subject keeps backdrop_site_subject_min of the view's width, until the HQ shows in the back (its point at
 ## backdrop_site_hq_show of its height below backdrop_site_hq_top of the view). Pure.
@@ -181,6 +183,8 @@ static func site_shot(cfg: CityConfig, corp: StringName, site: StringName, site_
 	var lot: Vector2 = site_lots[site]
 	var own := CityLandmarks.site_of(cfg, corp) == site and CityLandmarks.site_path(corp) != ""
 	var at := CityLandmarks.site_lot(cfg, corp, site_lots) if own else lot
+	if cfg.backdrop_close_fov_deg > 0.0:
+		return close_site_shot(cfg, corp, site, at, own, size, subject)
 	var sbox := subject
 	if sbox.size != Vector3.ZERO:
 		var grow := Vector2(maxf(0.0, cfg.backdrop_site_subject_span - sbox.size.x), maxf(0.0, cfg.backdrop_site_subject_span - sbox.size.z)) * 0.5
@@ -194,7 +198,7 @@ static func site_shot(cfg: CityConfig, corp: StringName, site: StringName, site_
 			sbox = AABB(c - Vector3(half, 0.0, half), Vector3(half * 2.0, cfg.backdrop_site_height, half * 2.0))
 	var hbox := hq_box(cfg, corp)
 	var yaw := site_yaw(cfg, sbox.get_center(), hbox.get_center())
-	var cam := fit_box(cfg, sbox, cfg.backdrop_site_frame, cfg.backdrop_site_ortho, size, cfg.backdrop_site_pitch_deg, yaw)
+	var cam := fit_box(cfg, sbox, cfg.backdrop_site_frame, cfg.backdrop_site_ortho, size, cfg.backdrop_close_pitch_deg, yaw)
 	var base := cam.ortho
 	var hq_pt := Vector3(hbox.get_center().x, hbox.position.y + hbox.size.y * cfg.backdrop_site_hq_show, hbox.get_center().z)
 	var ext := _screen_extent(cam, sbox).size
@@ -207,6 +211,71 @@ static func site_shot(cfg: CityConfig, corp: StringName, site: StringName, site_
 	if own:
 		out["landmark"] = corp
 	return out
+
+
+## B2 (art director, round 31 combat_meridian / round 41 typical_v4): a Site fight's perspective
+## close-up: the fought Site's own building (`subject`, measured on the model on the Site's lot;
+## else its landmark or a nominal block) lit and centred between the wheels at
+## backdrop_site_close_centre, its height backdrop_site_close_height of the frame's (35-45 %): the
+## camera dollies in on a low building until it stands that tall (fit_height), its width kept
+## under backdrop_site_close_max_width. It looks from the Site toward the corp's HQ (site_yaw);
+## the HQ in its back waits for the per-fight backdrops (designer 2026-10-06). Pure.
+static func close_site_shot(cfg: CityConfig, corp: StringName, site: StringName, at: Vector2, own: bool, size: Vector2, subject: AABB) -> Dictionary:
+	var sbox := subject
+	if sbox.size == Vector3.ZERO:
+		if own:
+			sbox = landmark_box(cfg, CityLandmarks.site_path(corp), at)
+		else:
+			var half := float(cfg.backdrop_site_reach) * cfg.lot_bu
+			var c := CityIsoCamera.lot_to_world(cfg, at)
+			sbox = AABB(c - Vector3(half, 0.0, half), Vector3(half * 2.0, cfg.backdrop_site_height, half * 2.0))
+	var hbox := hq_box(cfg, corp)
+	var cam := CityIsoCamera.make(cfg, sbox.get_center(), cfg.backdrop_site_ortho, size)
+	cam.pitch_deg = cfg.backdrop_close_pitch_deg
+	cam.fov_deg = cfg.backdrop_close_fov_deg
+	cam.yaw_deg = site_yaw(cfg, sbox.get_center(), hbox.get_center())
+	fit_height(cam, sbox, cfg.backdrop_site_close_height, cfg.backdrop_site_close_max_width, cfg.backdrop_site_close_centre, size)
+	# A low building would pull the eye down onto its roof: the lens narrows instead (a telephoto
+	# from at least backdrop_site_close_min_eye_bu away, down to backdrop_site_close_min_fov_deg),
+	# so the city stands behind it as in the concepts; the framing at the target is the same.
+	telephoto(cam, cfg.backdrop_site_close_min_eye_bu, cfg.backdrop_site_close_min_fov_deg)
+	fit_height(cam, sbox, cfg.backdrop_site_close_height, cfg.backdrop_site_close_max_width, cfg.backdrop_site_close_centre, size)
+	var out := {"focus": "site", "stage": &"", "camera": cam, "lot": at, "won_site": site, "centre": sbox.get_center(),
+		"top": Vector3(sbox.get_center().x, sbox.end.y, sbox.get_center().z), "subject": sbox, "hq_box": hbox}
+	if own:
+		out["landmark"] = corp
+	return out
+
+
+## B2: dollies perspective camera `c` (its `ortho`, the width at the target's depth) and slides it
+## in its own plane until world box `box` stands `height_share` of the view's height (never wider
+## than `max_width_share` of its width) with its middle at `centre` (share of the view). Pure.
+static func fit_height(c: CityIsoCamera, box: AABB, height_share: float, max_width_share: float, centre: Vector2, size: Vector2) -> void:
+	c.target = box.get_center()
+	for i in FIT_HEIGHT_PASSES:
+		var px := projected_box(c, box)
+		if not px.has_area():
+			c.ortho *= FIT_BACK_STEP
+			continue
+		var k := maxf(px.size.y / maxf(1.0, height_share * size.y), px.size.x / maxf(1.0, max_width_share * size.x))
+		c.ortho *= k
+		px = projected_box(c, box)
+		if px.has_area():
+			var d := (px.get_center() - centre * size) * c.bu_per_px()
+			c.target += c.right() * d.x - c.up() * d.y
+
+
+## B2: narrows perspective camera `c`'s field of view (never under `min_fov_deg`) so its eye
+## stands at least `min_eye` BU from its target; its width at the target (`ortho`) is kept. Pure.
+static func telephoto(c: CityIsoCamera, min_eye: float, min_fov_deg: float) -> void:
+	if not c.perspective() or c.eye_distance() >= min_eye:
+		return
+	c.fov_deg = maxf(min_fov_deg, rad_to_deg(2.0 * atan(c.ortho * 0.5 / min_eye)))
+
+
+## B2: passes of a height fit, and the step back when the box's corner is behind the eye.
+const FIT_HEIGHT_PASSES := 6
+const FIT_BACK_STEP := 1.5
 
 
 ## The chunk keys (CityModel's grid, sorted row by row) round lot point `lot` (within
@@ -304,17 +373,92 @@ static func _kept(mesh_name: String, keep: PackedStringArray) -> bool:
 
 ## A camera at pitch `pitch_deg` (and yaw `yaw_deg`; NAN: the city's) that fits world box
 ## `box` into `frame` (share of the view) with its middle at the frame's middle; ortho at least
-## `least` (the close-up never zooms in past the plain framing). Pure.
+## `least` (the close-up never zooms in past the plain framing). B2 (D1): a perspective view
+## (CityConfig.backdrop_close_fov_deg; `ortho` is its width at the target's depth): the plain
+## fit is refined FIT_PASSES times on the box's projected corners (its near face draws larger).
+## Pure.
 static func fit_box(cfg: CityConfig, box: AABB, frame: Rect2, least: float, size: Vector2, pitch_deg: float, yaw_deg: float = NAN) -> CityIsoCamera:
 	var c := CityIsoCamera.make(cfg, box.get_center(), least, size)
 	c.pitch_deg = pitch_deg
+	c.fov_deg = cfg.backdrop_close_fov_deg
 	if not is_nan(yaw_deg):
 		c.yaw_deg = yaw_deg
 	var ext := _screen_extent(c, box)
 	var aspect := size.y / maxf(1.0, size.x)
 	c.ortho = maxf(least, maxf(ext.size.x / maxf(0.01, frame.size.x), ext.size.y / maxf(0.01, frame.size.y * aspect)))
 	aim(c, box, frame.get_center())
+	for i in FIT_PASSES:
+		var px := projected_box(c, box)
+		if not px.has_area():
+			break
+		var want := Rect2(frame.position * size, frame.size * size)
+		var k := maxf(px.size.x / maxf(1.0, want.size.x), px.size.y / maxf(1.0, want.size.y))
+		c.ortho = maxf(least, c.ortho * k)
+		px = projected_box(c, box)
+		if px.has_area():
+			# Slide the view in its own plane so the box's middle lands on the frame's middle.
+			var d := (px.get_center() - want.get_center()) * c.bu_per_px()
+			c.target += c.right() * d.x - c.up() * d.y
 	return c
+
+
+## The screen box (px) of world box `box`'s eight corners through camera `c` (Rect2() when a
+## corner is behind the eye).
+static func projected_box(c: CityIsoCamera, box: AABB) -> Rect2:
+	var out := Rect2()
+	for k in 8:
+		var p := c.project(box.get_endpoint(k))
+		if not p.is_finite():
+			return Rect2()
+		out = Rect2(p, Vector2.ZERO) if k == 0 else out.expand(p)
+	return out
+
+
+## B2 (D1): refinement passes of a perspective fit.
+const FIT_PASSES := 3
+
+
+## B2 (D1): the street-level close-up's view cut for camera `c` on subject box `box`
+## (CityView3D.set_view_cut takes `occludes` bound to it): only the procedural buildings that
+## would hide the subject give way: nearer the eye than the subject's front (less
+## CityConfig.backdrop_close_cut_margin), inside the wedge from the eye to the subject's sides
+## (that margin wider), and taller than the sight line from the eye to the subject's height at
+## backdrop_close_sight_share. Low roofs in front and the city to the sides stay (the concepts
+## look over rooftops at the landmark). {eye, fwd, right, front, lo, hi, pad, base_y} (world). Pure.
+static func view_cut(cfg: CityConfig, c: CityIsoCamera, box: AABB) -> Dictionary:
+	var eye := c.eye()
+	var f := c.forward()
+	var fwd := Vector2(f.x, f.z).normalized()
+	var right := Vector2(-fwd.y, fwd.x)
+	var e2 := Vector2(eye.x, eye.z)
+	var front := INF
+	var lo := INF
+	var hi := -INF
+	for k in 8:
+		var p := box.get_endpoint(k)
+		var v := Vector2(p.x, p.z) - e2
+		var d := maxf(v.dot(fwd), 0.001)
+		front = minf(front, d)
+		lo = minf(lo, v.dot(right) / d)
+		hi = maxf(hi, v.dot(right) / d)
+	return {"eye": eye, "fwd": fwd, "right": right, "front": front - cfg.backdrop_close_cut_margin, "sub": front,
+		"lo": lo, "hi": hi, "pad": cfg.backdrop_close_cut_margin, "base_y": box.position.y + box.size.y * cfg.backdrop_close_sight_share}
+
+
+## B2 (D1): whether a building at ground point `centre` (world X/Z) with its roof at `top` (BU)
+## hides the subject of view cut `cut` (`view_cut`). Pure.
+static func occludes(centre: Vector2, top: float, cut: Dictionary) -> bool:
+	var eye: Vector3 = cut["eye"]
+	var v := centre - Vector2(eye.x, eye.z)
+	var d := v.dot(cut["fwd"])
+	if d <= 0.0 or d >= float(cut["front"]):
+		return false
+	var s := v.dot(cut["right"])
+	var pad := float(cut["pad"])
+	if s < float(cut["lo"]) * d - pad or s > float(cut["hi"]) * d + pad:
+		return false
+	var line := eye.y + (float(cut["base_y"]) - eye.y) * d / maxf(float(cut["sub"]), 0.001)
+	return top > line
 
 
 ## Moves camera `c`'s target (its ortho, yaw and pitch kept) so world box `box`'s screen middle
@@ -349,7 +493,7 @@ static func _screen_extent(c: CityIsoCamera, box: AABB) -> Rect2:
 static func city_look(cfg: CityConfig, focus: String = "hq") -> Dictionary:
 	var lm_night := cfg.backdrop_hq_landmarks_night if focus == "hq" else cfg.backdrop_site_landmarks_night
 	return {"ramp": cfg.backdrop_ramp.duplicate(), "sky": cfg.backdrop_sky, "window_gain": cfg.backdrop_window_gain,
-		"neon_gain": cfg.backdrop_neon_gain, "haze": cfg.backdrop_haze, "grade": cfg.backdrop_grade,
+		"neon_gain": cfg.backdrop_neon_gain, "haze": cfg.haze, "haze_k": cfg.backdrop_haze_k, "rain_alpha": cfg.backdrop_rain_alpha, "rain_keep_blacks": 1.0, "grade": cfg.backdrop_grade,
 		"bloom": cfg.backdrop_bloom, "glow_threshold": cfg.backdrop_glow_threshold, "night": true,
 		"landmarks_night": lm_night}
 

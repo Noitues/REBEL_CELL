@@ -565,7 +565,7 @@ func test_the_settings_button_stickers_and_notes_translate() -> void:
 	PseudoLoc.on()
 	var scene := await _combat()
 	var settings: Button = scene._settings_button
-	assert_true(settings.text.begins_with(tr("Settings")), "Settings is translated (%s)" % settings.text)
+	assert_true(settings.tooltip_text.begins_with(tr("Settings")), "Settings is translated (%s)" % settings.tooltip_text)  # B2: the icon chip names itself in its tooltip
 	assert_ne(tr("Settings"), "Settings", "(the scramble is on)")
 	assert_eq(settings.auto_translate_mode, Node.AUTO_TRANSLATE_MODE_DISABLED, "and shown as given")
 	assert_eq(scene.preview_note.title, tr("WHAT WILL RESOLVE"))

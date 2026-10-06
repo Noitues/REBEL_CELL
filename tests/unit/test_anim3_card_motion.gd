@@ -192,7 +192,7 @@ func test_hover_lifts_and_tilts_the_card_to_zero() -> void:
 	assert_eq(card.rotation_degrees, 0.0, "tilted to 0")
 	card.focus_exited.emit()
 	assert_eq(card.lift, 0.0, "it settles back")
-	assert_eq(card.rotation_degrees, card.rest_tilt, "to its resting tilt")
+	assert_almost_eq(card.rotation_degrees, card.rest_tilt, 0.001, "to its resting tilt (B2: the fan's angle)")
 
 
 func test_the_drag_ghost_trails_the_cursor_and_catches_up() -> void:

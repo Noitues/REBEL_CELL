@@ -203,12 +203,16 @@ func test_pools_cap_the_world_s_saturation_and_keep_its_luma() -> void:
 	var rect := Rect2(200, 300, 400, 200)
 	UiScrimPools.mark_panel(_panel(h["host"], rect))
 	scrim.refresh()
-	var c := Color(0.2, 0.9, 0.7)
+	var c := Color(0.15, 0.6, 0.45)  # B2: under the emissive band (its brightest channel < emissive_from)
 	var l := ScrimLuma.luma(c)
 	var under := scrim.apply_at(rect.get_center(), c)
 	assert_almost_eq(ScrimLuma.luma(under), l * LOOK.panel_pool_multiply, 0.002, "the pool multiplies the luma")
 	# Chroma: the channels' spread round the luma, scaled by pool_saturation (D1: 0.6) then the pool.
 	assert_almost_eq(under.g - under.r, (c.g - c.r) * LOOK.pool_saturation * LOOK.panel_pool_multiply, 0.002, "saturation capped")
+	# B2 (art director): an emissive (a sign, a lit window) is never capped, only darkened.
+	var neon := Color(1.0, 0.24, 0.66)
+	var lit := scrim.apply_at(rect.get_center(), neon)
+	assert_almost_eq(lit.r - lit.g, (neon.r - neon.g) * LOOK.panel_pool_multiply, 0.002, "emissive: chroma kept")
 	var out := scrim.apply_at(Vector2(1700, 900), c)
 	assert_true(out.is_equal_approx(c), "outside every shape: untouched")
 	assert_lt(LOOK.pool_saturation, 1.0, "a cap")

@@ -31,6 +31,186 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-06 — Site fight subject: interim until per-fight backdrops
+Art director (B2 c review): Site fights now frame the fought Site's block centred between the wheels and lit by its
+own neon, with the grade right (violet sky, saturated neon, dark pools), but the procedural city has no distinct
+Site building, so on some corps the subject does not stand out. Accepted as **interim** until the designer's deferred
+unique per-fight backdrops slice. Affected frames: Solace (`docs/art_review/PARITY/fixes/B2_b_site_start.png`,
+Continuum Billing Farm) and Orbital (the arena-lab Site shots in `B2_b.jpg`). The art-pass session is raising this
+with the designer.
+
+### 2026-10-06 — B2 c — the Site block lit by its own neon; focus brackets on the lifted card
+Re-check of B2 b (aa815dde; relayed by the orchestrator): boss start, the Meridian / Halcyon Site blocks, the fanned
+hand, the 12 px hub name and the grade approved. Two fixes (resend `B2_b_site_start.png`, Solace, 1:1 1080p, and
+`B2_crop_hand.png`). Test: `test_b2_combat_composition` (`test_a_site_block_is_lit_by_its_own_neon_not_a_flat_lift`,
+`test_card_focus_is_lime_corner_brackets_and_a_lift_never_a_lime_fill`).
+- **(1) The Site block's light** (`combat_backdrop.gdshader` `subject_on`, set by `CombatBackdrop` for a Site close-up):
+  no flat lift (it whitened Solace's facades). Inside the block's focus its unlit facades sit at `subject_base` 0.72,
+  its windows (the ungraded city's lit pixels from `window_from` 0.45) x `backdrop_site_window_gain` 2, a rim of the
+  corp colour (`Palette.corp_color`) on the block's luminance edges inside its screen box (x `backdrop_site_rim_gain`
+  0.9), and the street under its foot catching that colour (x `backdrop_site_street_gain` 0.5, fading down over 12 %
+  of the view's height and to the sides); the rest stays x0.55 (`backdrop_site_focus_dim` 0.45; B2 b had 0.55, i.e.
+  x0.45). `backdrop_site_focus_lift` stays for the HQ / stills path only.
+- **(2) Focus brackets** draw under the card face's own draw transform (they always did: the B2 b crop's corners sat
+  OFFSET outside the control): they now sit on the die-cut's edge (`grow(CC_EDGE * s - StyleBoxBrackets.OFFSET)`), so
+  they frame the lifted card as drawn and move with its 18 px lift and hover growth.
+- **Orbital's Site stays busy** (accepted by the art director): logged against the per-fight backdrops slice (the
+  queued unique backdrops are its fix; the procedural city has no distinct Site building for the block to stand out).
+
+### 2026-10-06 — B2 b — combat composition, the art director's fixes
+The art-pass review of B2 (29260839; relayed by the orchestrator). Approved as built: the hub (emblem + accent glow,
+statuses as chips), the hub plate's removal, the wax underlines on the HP / result chips, the boss helix framing,
+EXECUTE behind SEND IT, the Heat chip, D25; perf as is (a far-LOD slice is queued separately). Ruled: the lime brackets
+are focus only; the passive is the emblem + its tooltip. Fixes (sheet `docs/art_review/PARITY/fixes/B2_b.jpg`: Site
+fight start / aiming, boss start, the arena lab's Solace boss and two more Sites; 1:1 1080p `B2_b_site_start.png`,
+`B2_b_site_aiming.png`, `B2_b_boss_start.png`, `B2_crop_hand.png`, `B2_b_crop_hub_site.png`, `B2_crop_hub_player.png`,
+`B2_crop_hub_boss.png`). Tests: `test_b2_combat_composition` (new and changed below), `test_b1a_ui_scrim_pools`.
+- **(1) A Site fight frames its building.** `BackdropCatalog.close_site_shot` (perspective path of `site_shot`): the
+  subject centred between the wheels at `backdrop_site_close_centre` (0.5, 0.45), `backdrop_site_close_height` 0.4 of
+  the frame's height (lock: 35-45 %), at most `backdrop_site_close_max_width` 0.6 wide (`fit_height`: the camera dollies
+  in); a low subject would put the eye on its roof, so the lens narrows instead (`telephoto`: the eye at least
+  `backdrop_site_close_min_eye_bu` 180 BU away, the lens no narrower than 10 degrees), the city standing behind it.
+  The HQ zoom-out (the S-ARENA "HQ in the back") is skipped: it waits for the per-fight backdrops (designer). The
+  subject is measured on the model at the Site's own lot (`CityLayout.site_points`): the Site's **block**, its tallest
+  building within `SITE_SEARCH` lots and every building within `backdrop_site_reach` lots of it
+  (`CombatBackdrop.block_box`; the old "nearest building" was a 1-lot shed 3 to 5 BU tall that read as nothing).
+  It is lit against its street: the focus ellipse takes the block's own shape (`focus_axes`, its half width x
+  `backdrop_site_focus_reach` 1.2), the block lifted x `backdrop_site_focus_lift` 1.5, the rest dimmed by
+  `backdrop_site_focus_dim` 0.55 (an HQ keeps S-ARENA's). The view cut now opens the street to the subject's foot
+  (`backdrop_close_sight_share` 0.2 -> 0). Test: `test_a_site_fight_frames_its_building_centred_between_the_wheels_35_to_45_percent_tall`
+  (every Site of the four corps, the nominal block and three measured shapes: height share 0.35-0.45, or as wide as the
+  gap; centred).
+- **(2) The grade.** (a) The haze goes to the city grade's night-sky violet (`CityConfig.haze`), 18 %. (b) No
+  saturation cap between the wheels: `backdrop_saturation` 0.72 -> 1.0; the 0.6 cap is the wheel pools' (B1a), and
+  emissives are never capped there either (`UiScrimLook.emissive_from` 0.72 / `emissive_to` 0.9 on the pixel's brightest
+  channel: `ui_scrim_pools.gdshader` and its GDScript mirror). (c) Rain: the close-up's look sets `rain_alpha` 0.15
+  (`backdrop_rain_alpha`) and `rain_keep_blacks` 1 (the post pass's streaks scale with the light under them, so they never
+  lift the blacks; `city_post.gdshader`).
+- **(3) The hand.** A container resets a child's own rotation, so B2's fan never showed: the fan is now drawn
+  (`ZineCard.fan_deg` / `fan_turn`, about the card's foot in `face_xform`; focus and hover turn it upright on
+  `card_hover`). Focus is the kit's lime corner brackets round the die-cut (`StyleBoxBrackets`) and the `card_hover`
+  lift (12 canvas px = 18 px at 1080p); the lime-filled plate (`_cc_style`) is gone (bible 2.10).
+- **(4) Hub name** at 12 px (the bible 4.2 caption floor wins), Plex Condensed caps, never under it (two lines first,
+  centred by its own width, never clipped); emblem only under r 90 at 1080p. The lint baseline's wheel_view
+  `font_const` is back to 2.
+- **Lime brackets = focus only.** The target wheel wears them only while the pad / keyboard put focus there
+  (`cycle_target`; a mouse move or click takes it away: `CombatScene._target_focus`), never as a static marker; never
+  while aiming. Test: `test_the_lime_brackets_are_focus_only_never_a_static_marker_or_while_aiming`.
+- Files outside the area: `shaders/city/city_post.gdshader` (rain keeps the blacks), `scripts/city3d/city_view_3d.gd`
+  (a look's rain), `shaders/kit/ui_scrim_pools.gdshader` / `ui_scrim_pools.gd` / `ui_scrim_look.gd` /
+  `ui_scrim_look.tres` (emissives uncapped), `scripts/ui/fx/card_face.gd` (focus brackets for every sticker card),
+  `scripts/city3d/city_config.gd`. Test changed: `test_b1a_ui_scrim_pools` (the capped colour is under the emissive
+  band; an emissive keeps its chroma).
+- **Open question for the art director:** the procedural city has no distinct "Site building", so the subject is the
+  Site's block (its tallest building and its neighbours), lit against a dimmed street; a dense corp (Orbital) still
+  reads busy behind it. Unique per-fight backdrops (queued) are the full fix.
+
+### 2026-10-06 — B2 — combat composition (integration review)
+Integration review (art-pass `docs/concepts/INTEGRATION_REVIEW/REVIEW.md`) D1, D2, D4, D15, D16, section c (the
+play-result plate, Settings, tutorial, card piles, key hints) and the orchestrator calls Q1 (c) and Q2, bound by the
+designer's rulings of 2026-10-06 (combat camera: a perspective close-up for every fight; HQ behind Sites waits; the
+aiming result in the HP chips with a yellow pencil underline). Built on B1a (UiScrimPools: pools, bands, the 0.6
+saturation cap), B1b (the wax pencil), B1c / B1d (CRT, the sweep scheduler). Sheet:
+`docs/art_review/PARITY/fixes/B2.jpg` (concept | before (main ba4bc6f8) | after, text 1.0 and 1.6); 1:1 1080p crops
+`B2_crop_{hub_player,hub_boss,hand,underline,heat_chip,send_it}.png` (the underline crop with reduce effects: the write-on's end state). Test: `tests/unit/test_b2_combat_composition.gd`.
+- **D1 camera.** Every close-up is a perspective street-level view: `CityConfig.backdrop_close_pitch_deg` 8 (D1: 6 to
+  10), `backdrop_close_fov_deg` 44 (horizontal; a 44 mm lens, D1: 35 to 50 mm), the canyon's `fov_deg` path.
+  `BackdropCatalog.fit_box` refines the fit on the subject's projected corners (`projected_box`, FIT_PASSES 3; the near
+  face draws larger in perspective). Replaces `backdrop_hq_pitch_deg` 24 / `backdrop_site_pitch_deg` 22 (removed). The
+  DISPATCH canyon (the Cell's boss) takes the HQ run page's own perspective camera (`HqCompoundStage.page_camera`,
+  round 34's telephoto at its 19 degrees: its staged street is framed for it) times `backdrop_canyon_share`.
+  **The low camera's occluders:** a building between the eye and the subject hid it (first capture: one green wall
+  filled the frame). `BackdropCatalog.view_cut` / `occludes` (bound into the new `CityView3D.set_view_cut(Callable)`)
+  skip, at chunk build, only the procedural buildings nearer than the subject's front (less
+  `backdrop_close_cut_margin` 6 BU), inside the wedge from the eye to the subject's sides, whose roof rises over the
+  sight line to `backdrop_close_sight_share` 0.2 of the subject's height: low roofs stay in front (the concepts look over
+  rooftops) and the city stays to the sides. Past the city's edge the grazing view saw the asphalt plane as a band under
+  the skyline: the close-up hides `OuterGround` (`CityView3D.show_outer_ground`, the night sky shows) and its camera's
+  far plane is `backdrop_close_far_bu` 1400 past the eye's target distance (the far chunks are the perspective's cost).
+  **Haze:** the close-up's look hazes toward the night sky (`backdrop_sky`, was `backdrop_haze` 0.30/0.30/0.42,
+  removed) at `backdrop_haze_k` 0.18 (D1: 15 to 20 %; a look may now set `haze_k`, `CityView3D.set_night_share`).
+  **Rain:** the lit night look keeps the post pass's rain (round 11; unchanged, verified on). The 0.6 saturation cap
+  is B1a's pools. The HQ behind Sites: not built (designer: waits for the per-fight backdrops).
+  **Perf** (windowed `perf_pack`, 1920x1080, this machine shared with other agents: about +-1 ms noise; city 3D GPU /
+  frame mean, iso baseline (this build with the old camera) -> B2): tier 2 Site fight 1.98 -> 4.39 ms / 10.5 -> 9.3;
+  boss (Solace) 3.54 -> 4.81 / 11.8 -> 10.6; worst fixture 3.74 -> 6.64 / 17.0 -> 16.6; tier 1 Site 1.78 -> 5.01,
+  boss 3.24 -> 5.20, worst 6.71 -> 8.57. So the perspective costs +1.3 to +3 ms of city GPU (Q-B's estimate was 1 to 2
+  ms); the city stays inside its 8 ms budget (`CityConfig.budget_ms`) everywhere but the worst fixture at tier 1 (8.57,
+  over by about the noise). Wheels + FX: worst minus bare 0.6 to 1.0 ms of root GPU (budget 4 ms). Proposed slice
+  "perspective close-up LOD": a far-chunk LOD (or a lower render height past the subject) for the close-up camera.
+- **D4 reticle.** The target's lime brackets (`WheelView.reticle_visible`) never draw while a card is aimed (any valid
+  drop zone: the pencil loop is the mark), and otherwise only while the fight has more than one living wheel to choose
+  between (`reticle_shown`; lime = focus: the attacks' focus when there is a choice). A drone that is the target keeps
+  its small crosshair (not while aiming). The drop zones' lime pulses (the aimed zone = focus) are unchanged.
+- **D2 hub.** The hub is the emblem and a tiny name: the core's glyph at 0.45 of the hub's radius each side
+  (`HUB_EMBLEM_SHARE`), lifted 0.14 of it, over a soft accent glow; the combatant's name in Plex Condensed (Medium)
+  caps at 10 px at 1080p (`NAME_FONT_SIZE` 7 canvas px x the text size), its baseline at 0.58 of the radius; under a
+  wheel radius of 90 px at 1080p the emblem alone (`name_shows_at`; the bible's "r", as WheelFace.LOD_RADIUS). BLOCK,
+  SHIELD, RESIST, FROZEN and LOCKDOWN (the hub's lines) are **standing chips** before the result chips beside the HP
+  (`HudResultChips.standing`, from `WheelView.standing_chips`, outlined mono chips in their colour; not part of the
+  preview row, so preview == result is untouched); the passive's name is the hub's emblem and its tooltip line (a chip
+  with the core's name made the player's row too long: the tutorial and toasts covered it at 2.0). The upcoming-phase
+  lines an Intel reveal shows moved from the hub to its tooltip. Replay numbers keep off the name only
+  (`hub_text_extent`).
+  The name is under ART_BIBLE §4.2's 12 px caption floor by the review's own number (7 canvas px = 10 px at 1080p):
+  `tools/visual_qa/lint_baseline.json` wheel_view `font_const` 2 -> 3 (NAME_FONT_SIZE; NAME_MIN_FONT is derived from it).
+  The name is also the boss banner's and the hub tooltip's first line.
+- **The aiming result (designer 2026-10-06).** `PlayResultPlate` removed. While a card's aim is on a target, every
+  wheel the play changes (as before: the aimed one and any whose chips differ from the forecast without the card) gets
+  its HP number and result chips underlined in the B1b wax (`CombatScene.result_underlines`, drawn by
+  `AimLinePencil` as the aim spec's `lines`: `AimLinePencil.underline`, a seeded hand line that overruns each end by
+  4 % and wobbles under a quarter of the wax width), each writing on over `pencil_write_on` (0.4 s) on its own clock
+  and wiping with the cloth (`pencil_wipe`) when it goes; never an alpha fade. The underlines spill yellow (D19). The
+  ghost landings and the slice circles are unchanged. `play_plates()` is now `play_results()` (view -> chips, HP).
+- **D15 hand.** The hand fans (`CombatScene._fan_hand` / `hand_fan`): 2.5 degrees per place from the middle (the
+  card's rest tilt; `ZineCard.set_fan`, hover still turns it to 0), 12 % overlap (the hand box's separation is minus
+  12 % of a card's width; `_card_scale_for` counts the overlap), a 6 px (1080p) arc rise at the middle (`fan_rise`,
+  drawn). At rest every card is full brightness; while aiming the others go to 75 % brightness, opaque (they were 45 %
+  alpha). A card short of RAM is greyscale (`ZineCard.set_greyed`, new `shaders/card_grey.gdshader`, a little
+  darker) with its NEED tag in colour on its own child layer (`CardFace.draw_need`).
+- **D16 EXECUTE.** Share Tech Mono at 25 % alpha (`SendItSticker.SYSTEM_WORD_ALPHA`; round 22 said 30), its cap height
+  0.8 x the kit sticker's SEND IT cap height (measured on both faces), the sticker's body placed with its top-left at
+  (0.25, 0.35) of the word's box (`COVER_AT`), covering about half of it. PROCEED under CONTINUE / LOOT / JACK OUT
+  follows.
+- **Q1 (c) Heat chip.** No top bar in a fight (there was none on main's fight already); the run's Heat is a terminal chip
+  in the top-left corner: the shared `HeatGauge` on a new look, `content/config/heat_chip_look.tres` (80 x 22 canvas px
+  = 120 x 32 at 1080p; the number, the band word, the strip; no caption, no "/max", no caret: read-only). It is the
+  poster (its roll, stamp, banner and MotionSkip kept). Shown in a campaign. `HeatGauge` skips its caption and "/max"
+  when their size is 0 (smallest change).
+- **Q2 key hints.** The aim's caption line over the hand ("Drop or click on a glowing target...") is gone: its words are
+  the aimed card's tooltip. The nudge buttons show their key letter alone (Q / E, A / D), white on an ink keyline of
+  3 px at 1080p (`HudWheelLayer.KEYLINE_1080`; B1a Q2 ruling: a word over the world wears a keyline). RESPIN [R] / UNDO
+  [Z] and SEND IT's [Space] keep their letters on the controls.
+- **Settings** is a 32 px (1080p) terminal icon chip (`SettingsIconChip`): navy glass, the terminal edge, a gear; its
+  name and key are its tooltip. The gear is procedural: no concept made a settings icon (the glyph atlas has none;
+  `seg_accelerator`'s gear is a segment's mark and bible 5.2 keeps silhouettes unique).
+- **Tutorial** is already a terminal card with the terminal's cyan edge (`TerminalNote`, terminal buttons): checked,
+  unchanged. **Card piles** are already plain dark card backs (S-CARDFACE): unchanged.
+- **D25.** No pencil on the combat screen fades: the aim arrow, the target loop, the slice circles and the underlines
+  write on (0.4 s) and wipe with the cloth; OURS NOW writes on (B1b).
+- **Kept.** Preview == result (`test_parity_combat_hud`'s sweep now holds the underlined chips and the HP after to the
+  real SEND IT for every card); MotionSkip completes the underlines; reduce effects / headless show them whole; pad
+  aiming underlines too; fit at 1.0 / 1.6 / 2.0 (tests); strings once (re-exported: "IF YOU PLAY %s" and
+  " (LOCKDOWN)" left with the plate and the hub lines).
+- **Files outside the area** (smallest change each): `scripts/city3d/city_config.gd` (the close-up's camera, haze, cut
+  and far exports; `backdrop_hq_pitch_deg`, `backdrop_site_pitch_deg`, `backdrop_haze` removed),
+  `scripts/city3d/city_view_3d.gd` (`set_view_cut`, `in_view_cut`, `show_outer_ground`, a look's `haze_k`),
+  `scripts/ui/kit/heat_gauge.gd` (caption / max skip), `scripts/ui/kit/zine_card.gd` and `scripts/ui/fx/card_face.gd`
+  (fan, grey, the NEED tag's layer), `scripts/ui/kit/hud_result_chips.gd` / `hud_wheel_layer.gd` (standing chips,
+  key letters). Tests changed (behaviour kept): `test_parity_combat_hud` (plates -> the underlined result chips; the
+  plate's fit test -> the underline's), `test_horizontal_pass24` (the aim hint's placement -> it is the card's tooltip),
+  `test_horizontal_pass19` / `test_anim_r6_combat` (Settings' key and name are its tooltip), `test_parity_arena_backdrop`
+  (the close-up pitch; past the city's edge the close-up shows sky), `test_b1b_wax_pencil` (the plate's exemption),
+  `test_layout_rules` (the HeatChip node), `test_anim3_card_motion` (the fan's rest tilt compared within 0.001),
+  `test_anim_r4_city` (the fight shows the Heat chip, its banner inside its tag), `test_art12b_skin_chrome` (wheel_view's
+  semantic cyan uses 13 -> 15: FROZEN and LOCKDOWN chips), `test_names_pass` (LOCKDOWN is now the standing chip's word).
+  None dropped.
+- **Open questions for the designer** (defaults built). (1) The lime target brackets with several enemy wheels (D4
+  says lime = focus): kept then, as the attacks' focus; alternative: no target mark outside aiming. (2) The passive's
+  name: tooltip only (the emblem is the passive); alternative: a short chip. (3) Site close-ups: with the HQ-behind
+  ruling waiting, a regular fight frames the Site's building at street level over rooftops; its subject can read small
+  where the Site's building is low (Meridian, Orbital).
+
 ### 2026-10-06 — B1b — wax pencil material and pencil audit (integration review)
 Integration review D3 ("the aim pencil is a thin vector line"), D25 (pencil appears whole), section d "Pencil
 opacity / wax" ("one wax material everywhere; audit every pencil: is it a true plan? If not, remove it"). Bound by the
@@ -135,7 +315,14 @@ at text 1.0 and 2.0). Test: `tests/unit/test_b1b_wax_pencil.gd`.
   (`seg_from_px` / `seg_to_px`), so the shader's distance is the arc length, not the tiled UV (which ran at about twice
   the arc length in widths, halving the spacing). Tests: `test_b1b_wax_pencil::test_a_dropout_is_a_partial_width_nibble_from_one_seeded_edge`,
   `::test_the_shadow_fades_over_the_whole_gap_so_no_dark_tick_shows`, `::test_dropouts_are_spaced_in_screen_px_on_a_curved_zoomed_stroke`.
-  Crop resent: `B1b_crop_aim.png`. Merge with B1a: the HQ run's TARGET pencil joins `UiScrimPools.LIFT_GROUP` with its marks (over the scrim).
+  Optional tweak (art director, 2026-10-06, no review loop): each gap is drawn uniformly from the whole 40-70 px
+  range (`DROPOUT_GAP`, seeded), not 55 +- 7.5: the dropouts come in pairs 110 px long, one at the pair's start and one
+  a seeded gap g on, so every gap (g or 110 - g) is uniform in 40-70, with a seeded phase so no stroke starts on one
+  (`GreasePencilMark.dropout_hit` and the shader's `dropout_hit` compute the same; words: 70-110). Reading the new
+  1080p frame, the under-shadow's dark rim was broken at every gap (its full-width fade read as a dashed underline):
+  the shadow now fades only under the bite (`dropout_shadow_extra` 0.15 deeper for its offset, at most 0.75 of the
+  width), so the rim on the far edge runs on unbroken. Test: the spacing test checks the gaps fill the range
+  uniformly (a third in each third). Crop resent: `B1b_crop_aim.png`. Merge with B1a: the HQ run's TARGET pencil joins `UiScrimPools.LIFT_GROUP` with its marks (over the scrim).
 
 ### 2026-10-06 — B1a b — the art director's fixes: pools that read, the network over the scrim
 The art-pass review of B1a (c270cd7f; relayed by the orchestrator): architecture approved; three fixes, Q1 and Q2
@@ -10298,6 +10485,12 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+### 2026-10-06 — B2 combat composition (defaults built; see the B2 entry)
+- The lime target brackets with several enemy wheels: kept outside aiming as the attacks' focus (D4: lime = focus); alternative: no target mark outside aiming.
+- The hub passive's name: in the tooltip only (the emblem is the passive); alternative: a short chip beside the HP.
+- Site close-ups at street level frame a low Site building small (Meridian, Orbital) until the per-fight backdrops.
+- The hub's tiny name (review D2: 9-10 px at 1080p) is under the 12 px caption floor (ART_BIBLE §4.2); built as the review asks.
+
 - **B1b pencil audit (2026-10-06, see "B1b — wax pencil material and pencil audit"): answered (art director 2026-10-06: all three stay; the raid verdict slice goes to B3).** Was: three pencil notes are kept only
   because a locked concept draws them, not because they are plans: the title's NEVER SLEEP motto (round 33 title A),
   the Mainframe's "ask about the back room" (bible Mainframe interior; there is no back room in the rules) and the

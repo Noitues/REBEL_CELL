@@ -43,6 +43,8 @@ uniform bool rain_on = true;
 uniform vec3 rain_color = vec3(0.75, 0.82, 1.0);
 uniform float rain_alpha = 0.11;
 uniform float rain_density = 0.1;
+// B2 (art director): 1 = the streaks never lift the blacks (they show by the light under them).
+uniform float rain_keep_blacks = 0.0;
 uniform vec3 grade = vec3(0.94, 0.92, 1.04);
 uniform float time_scale = 1.0;
 // S-MAPVIEW: map mode (raid and netrun views): the city greyed toward its own grey and its
@@ -173,7 +175,8 @@ void fragment() {
 		float h = hash12(cell);
 		float inx = 1.0 - abs(fract(r.x / 6.0) - 0.5) * 6.0;
 		float ra = step(1.0 - rain_density, h) * clamp(inx, 0.0, 1.0) * (0.3 + 0.7 * hash12(cell + 7.0));
-		img = mix(img, rain_color, ra * rain_alpha);
+		float lit = mix(1.0, smoothstep(0.02, 0.3, dot(img, vec3(0.2126, 0.7152, 0.0722))), rain_keep_blacks);
+		img = mix(img, rain_color, ra * rain_alpha * lit);
 	}
 	img = clamp(img * grade, 0.0, 1.0);
 	if (map_on) {

@@ -141,7 +141,8 @@ func _draw() -> void:
 	var disp := Palette.display()
 	# The caption and the number (it rolls, grows and flashes on a crossing: the poster's).
 	var cap_px := roundi(look.caption_px * g)
-	draw_string(mono, Vector2(look.pad.x * g, look.pad.y * g + mono.get_ascent(cap_px)), tr(CAPTION), HORIZONTAL_ALIGNMENT_LEFT, -1, cap_px, HudSkin.TERMINAL_TEXT)
+	if cap_px > 0:  # B2: the fight's corner chip (Q1 c) has no caption
+		draw_string(mono, Vector2(look.pad.x * g, look.pad.y * g + mono.get_ascent(cap_px)), tr(CAPTION), HORIZONTAL_ALIGNMENT_LEFT, -1, cap_px, HudSkin.TERMINAL_TEXT)
 	var num_col := col
 	if number_scale > 1.0:
 		num_col = num_col.lerp(Palette.PAPER, clampf((number_scale - 1.0) / maxf(0.001, Motion.amplitude(&"heat_number_pop") - 1.0), 0.0, 1.0))
@@ -166,8 +167,9 @@ func _draw() -> void:
 	var strip := _strip_rect()
 	var mpx := roundi(look.max_px * g)
 	var max_text := "/%d" % heat_max
-	var mw := mono.get_string_size(max_text, HORIZONTAL_ALIGNMENT_LEFT, -1, mpx).x
-	draw_string(mono, Vector2(strip.end.x - mw, look.pad.y * g + mono.get_ascent(mpx)), max_text, HORIZONTAL_ALIGNMENT_LEFT, -1, mpx, HudSkin.TERMINAL_TEXT)
+	if mpx > 0:  # B2: the fight's corner chip has no "/max"
+		var mw := mono.get_string_size(max_text, HORIZONTAL_ALIGNMENT_LEFT, -1, mpx).x
+		draw_string(mono, Vector2(strip.end.x - mw, look.pad.y * g + mono.get_ascent(mpx)), max_text, HORIZONTAL_ALIGNMENT_LEFT, -1, mpx, HudSkin.TERMINAL_TEXT)
 	_draw_strip(strip, g)
 	if interactive:
 		var cp := look.caret_px * g
