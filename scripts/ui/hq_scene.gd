@@ -131,6 +131,8 @@ var grid_legend: MapLegend = null
 ## stick) and its minimap terminal (on the map's foot, left of the key); freed with the page.
 var grid_controls: CityGridControls = null
 var grid_minimap: CityMinimap = null
+## ART-5 5e: the Grid map's off-screen TARGET arrow (null off the Grid or headless 2D).
+var grid_target: TargetEdgeMarker = null
 var _grid_fits: int = 0
 ## ANIM-5: the Grid camera has leaned toward the selected Site on this page.
 var _grid_leaned: bool = false
@@ -2040,6 +2042,8 @@ func show_grid() -> void:
 	city_overlay.node_hovered.connect(light_run_row)
 	city_overlay.avoid_controls([column, grid_legend])  # map labels stay clear of the column and the key
 	_mount_grid_camera(spacer, outer, column)
+	# ART-5 5e: the Grid's city shows the campaign (Heat rig, the Cell's fist, the Site landmark).
+	wireframe.city.set_city_life(GridCityLife.of(c, corp, cfg))
 	_grid_fits = 0
 	_grid_leaned = false
 	_fit_next_frame()
@@ -2283,6 +2287,7 @@ func _place_grid_minimap() -> void:
 func _mount_grid_camera(area: Control, page: Control, column: Control) -> void:
 	grid_controls = null
 	grid_minimap = null
+	grid_target = null
 	if not wireframe.city3d:
 		return
 	grid_minimap = CityMinimap.new()
@@ -2296,6 +2301,12 @@ func _mount_grid_camera(area: Control, page: Control, column: Control) -> void:
 	grid_controls.attach(city_overlay, grid_minimap)
 	_sync_grid_minimap()
 	wireframe.city.rebuilt.connect(grid_controls.sync_minimap)
+	# ART-5 5e: the off-screen TARGET: a red pencil arrow on the map's edge; clicking pans to it.
+	grid_target = TargetEdgeMarker.make(city_overlay)
+	grid_target.avoid.append(grid_legend)
+	grid_target.avoid.append(grid_minimap)
+	area.add_child(grid_target)
+	grid_target.pan_requested.connect(grid_controls.centre_on)
 	city_overlay.avoid_controls([column, grid_legend, grid_minimap])
 
 
