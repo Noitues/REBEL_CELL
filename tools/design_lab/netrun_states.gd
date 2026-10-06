@@ -113,6 +113,12 @@ func _probe(net: Node, st: String) -> void:
 	print("CAM state=%s ortho=%.1f band=%d car_tier=%d sky_cars=%s size=%s" % [st, v.iso.ortho, v.band, tier, cars, str(v.size)])
 	if _perf_s <= 0.0:
 		return
+	# As city_lab / city_perf_probe: vsync off while measuring (a vsynced GPU clocks down and
+	# reports its idle-clock time, ~4x the real cost).
+	var vs := DisplayServer.window_get_vsync_mode()
+	var fps0 := Engine.max_fps
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	Engine.max_fps = 0
 	var vrid := v.get_viewport_rid()
 	var root := get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vrid, true)
@@ -136,6 +142,8 @@ func _probe(net: Node, st: String) -> void:
 		all_gpu += RenderingServer.viewport_get_measured_render_time_gpu(root)
 	print("PERF state=%s frames=%d frame_avg_ms=%.2f frame_max_ms=%.2f city_gpu_ms=%.2f city_cpu_ms=%.2f screen_gpu_ms=%.2f" % [
 		st, n, (Time.get_ticks_usec() - t0) / 1000.0 / maxf(1.0, n), worst, gpu / maxf(1.0, n), cpu / maxf(1.0, n), all_gpu / maxf(1.0, n)])
+	DisplayServer.window_set_vsync_mode(vs)
+	Engine.max_fps = fps0
 
 
 func _underway(net: Node) -> void:
