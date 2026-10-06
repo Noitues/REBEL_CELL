@@ -13,6 +13,9 @@ const LETTERHEAD_H := 46.0
 const RULE_PX := 2.0
 const STAMP_TILT_DEG := -9.0
 const STAMP_SLOT := Vector2(200, 56)
+## The stamp box round its word (px, both sides together).
+const STAMP_BOX_PAD := Vector2(16, 4)
+const STAMP_LINE := 3.0
 const SHADOW_OFFSET := Vector2(3, 5)
 
 @export var corp_name: String = "SOLACE BIOSYSTEMS":
@@ -94,6 +97,11 @@ func _layout() -> void:
 	content.size = Vector2(size.x - UiTheme.SP_L * 2.0, maxf(size.y - LETTERHEAD_H - UiTheme.SP_L * 2.0, 0.0))
 	stamp_slot.size = STAMP_SLOT
 	stamp_slot.position = Vector2(size.x - STAMP_SLOT.x - UiTheme.SP_M, size.y - STAMP_SLOT.y - UiTheme.SP_M)
+	# Parity fix (overlap defects, RAID-11): a stamp wider than its slot (big text) stays on
+	# the paper, its right edge SP_M in from the paper's.
+	var half := stamp_extent(stamp) * 0.5
+	var c := (stamp_slot.position + STAMP_SLOT * 0.5).min(size - Vector2(UiTheme.SP_M, UiTheme.SP_M) - half)
+	stamp_slot.position = c - STAMP_SLOT * 0.5
 	queue_redraw()
 	_paper.queue_redraw()
 
@@ -112,6 +120,32 @@ func _draw_letterhead(on: Control) -> void:
 	on.draw_rect(Rect2(UiTheme.SP_L, LETTERHEAD_H - RULE_PX - UiTheme.SP_XS, size.x - UiTheme.SP_L * 2.0, RULE_PX), corp_color.darkened(0.35))
 
 
+## Parity fix (overlap defects, RAID-02 / RAID-11): the bounding size (px) of the stamp for
+## `word` as drawn (its box, tilted): what a sheet keeps clear of its words.
+static func stamp_extent(word: String) -> Vector2:
+	if word == "":
+		return Vector2.ZERO
+	var sz := Palette.display().get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(UiTheme.HEADING))
+	var box := sz + STAMP_BOX_PAD + Vector2(STAMP_LINE, STAMP_LINE)
+	var a := absf(deg_to_rad(STAMP_TILT_DEG))
+	return Vector2(box.x * cos(a) + box.y * sin(a), box.x * sin(a) + box.y * cos(a))
+
+
+## How far above the sheet's foot the stamp for `word` reaches (px): a sheet's words end
+## above it.
+static func stamp_reach(word: String) -> float:
+	var half := stamp_extent(word).y * 0.5
+	return UiTheme.SP_M + maxf(STAMP_SLOT.y * 0.5, half) + half
+
+
+## The stamp's bounding rect as drawn, in the panel's px (empty without a stamp).
+func stamp_rect() -> Rect2:
+	if stamp == "" or stamp_slot == null:
+		return Rect2()
+	var e := stamp_extent(stamp)
+	return Rect2(stamp_slot.position + STAMP_SLOT * 0.5 - e * 0.5, e)
+
+
 func _draw_stamp() -> void:
 
 	if stamp == "":
@@ -122,7 +156,7 @@ func _draw_stamp() -> void:
 	var col := Palette.HARM_INK
 	col.a = 0.85
 	stamp_slot.draw_set_transform(STAMP_SLOT * 0.5, deg_to_rad(STAMP_TILT_DEG))
-	stamp_slot.draw_rect(Rect2(-sz * 0.5 - Vector2(8, 2), sz + Vector2(16, 4)), col, false, 3.0)
+	stamp_slot.draw_rect(Rect2(-(sz + STAMP_BOX_PAD) * 0.5, sz + STAMP_BOX_PAD), col, false, STAMP_LINE)
 	stamp_slot.draw_string(font, Vector2(-sz.x * 0.5, sz.y * 0.32), stamp, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
 	stamp_slot.draw_set_transform(Vector2.ZERO, 0.0)
 
