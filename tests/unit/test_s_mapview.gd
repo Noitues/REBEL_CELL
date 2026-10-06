@@ -303,3 +303,24 @@ func test_layers_spread_across_the_link_in_node_order() -> void:
 	assert_almost_eq((at[&"L2N0"] as Vector2).y, -cfg.route_link_lateral * 0.5, 0.001, "index 0 first across the link")
 	assert_almost_eq((at[&"L2N1"] as Vector2).y, cfg.route_link_lateral * 0.5, 0.001)
 	assert_eq(p["entry"], Vector2.ZERO)
+
+
+## FIX-REDS-3: the HQ's raid map and the netrun's mid-run raid map build a node's socket with one
+## function (`RaidMapNodes.socket_spec`): same spec for home and every claimed node, as a forecast
+## (the setup's projection) and as the playout (no result).
+func test_the_hq_and_the_netrun_build_the_same_raid_socket() -> void:
+	_raid_campaign()
+	var c := RunManager.campaign
+	var proj := RunManager.project_raid()
+	var hq := _scene(HQ)
+	await _frames(2)
+	var ids: Array = [c.grid.home_site_id]
+	ids.append_array(c.grid.claimed_ids())
+	assert_gt(ids.size(), 1, "home and claimed nodes")
+	var netrun_script: GDScript = load("res://scripts/ui/netrun_scene.gd")
+	for id: StringName in ids:
+		var res: Dictionary = proj.nodes.get(String(id), {})
+		for forecast in [true, false]:
+			var want := RaidMapNodes.socket_spec(id, res, forecast, c)
+			assert_eq(hq.raid_socket(id, res, forecast, c), want, "%s: the HQ's socket (forecast %s)" % [id, forecast])
+			assert_eq(netrun_script.raid_socket_spec(id, res, forecast, c), want, "%s: the netrun's socket (forecast %s)" % [id, forecast])

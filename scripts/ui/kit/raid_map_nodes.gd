@@ -72,3 +72,33 @@ static func major_ids(c: CampaignState, routes: Array[Array], touched: Dictionar
 	for id in touched:
 		out[StringName(String(id))] = true
 	return out
+
+## ART-6 3A (FIX-REDS-3: one builder for the HQ's and the netrun's raid maps): claimed node
+## `site_id`'s socket (RaidSocket spec): its type's glyph, its state (DOWN / the raid's outcome
+## when `res` is a result), its health now and the projected outcome as a forecast ring
+## (`forecast`: `res` is the setup's projection).
+static func socket_spec(site_id: StringName, res: Dictionary, forecast: bool, c: CampaignState) -> Dictionary:
+	var s := c.grid.site(site_id)
+	var home := site_id == c.grid.home_site_id
+	var glyph := RaidSocket.GLYPH_CORE if home else RaidSocket.glyph_of(c.grid.node_type_of(site_id))
+	var integ := c.grid.home_integrity if home else int(s.get("integrity", 0))
+	var most := c.grid.home_max_integrity if home else maxi(1, int(s.get("max_integrity", 1)))
+	var state := RaidSocket.STATE_DOWN if not c.grid.is_active_node(site_id) else RaidSocket.STATE_HOLDS
+	var spec := {"glyph": glyph, "state": state, "health": float(integ) / float(maxi(1, most)), "max": most}
+	# The R3 class beacon of the operative stationed there (RaidBeaconLayer).
+	var op_id := c.grid.stationed_on(site_id)
+	if op_id != &"":
+		for op in c.roster:
+			if op.id == op_id:
+				spec["beacon"] = op.class_id
+	if not res.is_empty():
+		var outcome := String(res.get("outcome", ""))
+		if forecast:
+			spec["forecast"] = outcome
+		else:
+			spec["health"] = float(int(res.get("after", integ))) / float(maxi(1, most))
+			if outcome == "down":
+				spec["state"] = RaidSocket.STATE_DOWN
+			elif outcome == "taken":
+				spec["state"] = RaidSocket.STATE_TAKEN
+	return spec

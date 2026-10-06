@@ -502,7 +502,7 @@ func test_end_state_layout_is_the_instant_layout_at_every_text_size() -> void:
 				var got: Rect2 = live[i][1]
 				assert_eq(live[i][0], instant[i][0], "%s at %.1f: control %d" % [screen, scale, i])
 				assert_almost_eq(got.position, want.position, Vector2.ONE, "%s at %.1f: '%s' rests where it would at once" % [screen, scale, instant[i][0]])
-				assert_true(screen_rect.encloses(got), "%s at %.1f: '%s' on screen" % [screen, scale, instant[i][0]])
+				assert_true(screen_rect.encloses(got), "%s at %.1f: '%s' on screen: %s (at once %s)" % [screen, scale, instant[i][0], got, want])
 			Motion.force_live = false
 			scene.get_parent().queue_free()
 			await _frames()
