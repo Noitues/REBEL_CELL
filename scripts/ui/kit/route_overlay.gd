@@ -214,6 +214,11 @@ func marker_shown(n: Dictionary) -> bool:
 	return shown(n) > 0.0
 
 
+## B3 c: true when the TARGET's sticker and pencil draw (false while its edge arrow speaks for it).
+func target_drawn() -> bool:
+	return not target_off
+
+
 ## The ids drawn now (shown at all), in graph order (tests and captures).
 func drawn_ids() -> Array[StringName]:
 	var out: Array[StringName] = []
@@ -597,6 +602,8 @@ func _node(n: Dictionary) -> void:
 	var at := icon_pos(n)
 	if at.x == INF:
 		return
+	if target_off and bool(n.get("target", false)):
+		return  # B3 c: off frame its edge arrow speaks for it (nothing shows through the top bar)
 	var k := _k()
 	if a <= 0.0:
 		return
@@ -739,6 +746,22 @@ func label_marks_of(n: Dictionary) -> Array[Rect2]:
 	return out
 
 
+## B3 c: how far the TARGET's pencil reaches round its node's point (local px): its circle and the
+## wax's half width (the edge arrow counts it off frame unless all of it shows).
+func target_reach(n: Dictionary) -> float:
+	return icon_radius(n) * TARGET_SHARE + GreasePencilMark.stroke_width() * 0.5 * _k()
+
+
+## B3 c (art director): while the TARGET's edge arrow shows, its own circle and word hide (they
+## never show through the top bar); the scene sets it from TargetEdgeMarker.showing_changed.
+var target_off: bool = false:
+	set(v):
+		if v != target_off:
+			target_off = v
+			_queue_top()
+			_queue_target_pencil()
+
+
 ## The TARGET's red grease-pencil loop round `at` (radius `rr`): one hand ellipse with its 20
 ## degree tail (B1b, D3), its wobble from `seed`.
 static func target_loop(at: Vector2, rr: float, seed: int) -> Array[PackedVector2Array]:
@@ -790,6 +813,11 @@ func _lay_target_pencil() -> void:
 		return
 	var k := _k()
 	var word := tr_word(TARGET_WORD)
+	if target_off:
+		# B3 c: the edge arrow speaks for it: no circle or word (the marks wipe off).
+		_target_loops.clear()
+		_target_labels.clear()
+		_target_beside.clear()
 	_target_pencil.begin()
 	for id: String in _target_loops:
 		_target_pencil.stroke("loop|" + id, _target_loops[id], GreasePencilMark.Ink.THREAT, PencilSet.AUTO, 0.0, false, absi(hash(id)))

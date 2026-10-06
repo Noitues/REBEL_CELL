@@ -10,6 +10,8 @@ extends Control
 
 ## The host should centre the map on lot point `lot` (the Central Server's lot).
 signal pan_requested(lot: Vector2)
+## B3 c: the arrow showed (`on`) or hid: the host hides the TARGET's own circle while it shows.
+signal showing_changed(on: bool)
 
 ## The arrow's tip keeps this far inside the area's edge (px); its shaft and head (px).
 const EDGE_MARGIN := 46.0
@@ -26,6 +28,9 @@ const MOVE_EPS := 1.0
 var overlay: CityMapOverlay = null
 ## Controls along the area's foot (the map key, the minimap): the arrow keeps above them.
 var avoid: Array[Control] = []
+## B3 c: controls drawn over the area (the top bar): the TARGET counts as off frame when any part
+## of it sits under one, and the arrow keeps off them.
+var covers: Array[Control] = []
 var _mark: GreasePencilMark
 var _word: GreasePencilWord
 var _hit: Control
@@ -122,10 +127,21 @@ func refresh() -> void:
 		return
 	var g := overlay.get_global_transform() * p
 	var local := get_global_transform().affine_inverse() * g
-	var e := edge_point(free_rect(), local, EDGE_MARGIN)
-	if bool(e["inside"]):
+	var free := free_rect()
+	# B3 c: the whole TARGET (its pencil circle, `target_reach` on the overlay) must be in frame.
+	var reach := 0.0
+	if overlay.has_method(&"target_reach"):
+		reach = float(overlay.call(&"target_reach", _boss)) * overlay.get_global_transform().get_scale().x / maxf(get_global_transform().get_scale().x, 0.001)
+	if free.grow(-reach).has_point(local):
 		_show(false)
 		return
+	var e := edge_point(free, local, EDGE_MARGIN)
+	if bool(e["inside"]):
+		# Partly under a cover or past the edge: the arrow stands just inside, pointing out.
+		var c := free.get_center()
+		var d := (local - c).normalized() if local != c else Vector2.UP
+		var t := edge_point(free, c + d * (free.size.length() + reach), EDGE_MARGIN)
+		e = t
 	var at: Vector2 = e["at"]
 	var dir: Vector2 = e["dir"]
 	if _drawn.is_empty() or (_drawn[0] as Vector2).distance_to(at) > MOVE_EPS or (_drawn[1] as Vector2).distance_to(dir) > 0.01:
@@ -144,6 +160,12 @@ func refresh() -> void:
 func free_rect() -> Rect2:
 	var r := Rect2(Vector2.ZERO, size)
 	var inv := get_global_transform().affine_inverse()
+	for c in covers:
+		if c == null or not is_instance_valid(c) or not c.is_visible_in_tree():
+			continue
+		var b := inv * c.get_global_rect()
+		if b.position.y <= r.position.y + 1.0 and b.end.y > r.position.y and b.end.y < size.y * 0.5:
+			r = Rect2(Vector2(r.position.x, b.end.y), Vector2(r.size.x, r.end.y - b.end.y))
 	for c in avoid:
 		if c == null or not is_instance_valid(c) or not c.is_visible_in_tree():
 			continue
@@ -156,6 +178,7 @@ func free_rect() -> Rect2:
 func _show(on: bool) -> void:
 	if _mark.visible == on:
 		return
+	showing_changed.emit(on)
 	_mark.visible = on
 	_word.visible = on
 	_hit.visible = on

@@ -225,9 +225,20 @@ func test_route_frames_the_options_at_the_round_44_zoom_with_the_target_arrow() 
 				var arrow: TargetEdgeMarker = scene.route_target
 				assert_not_null(arrow, "%s: the edge arrow is on the page" % tag)
 				arrow.refresh()
+				# B3 c: "in frame" is the whole TARGET (its circle) inside the area and clear of the top
+				# bar; while the arrow shows the TARGET's own circle hides.
 				var at := ov.get_global_transform_with_canvas() * ov.icon_pos(target)
-				var in_frame := (arrow.get_parent() as Control).get_global_rect().has_point(at)
-				assert_eq(arrow.showing(), not in_frame, "%s: the arrow shows exactly when the TARGET is off frame" % tag)
+				var reach: float = ov.target_reach(target) * ov.get_global_transform_with_canvas().get_scale().x
+				var area := (arrow.get_parent() as Control).get_global_rect()
+				var whole := Rect2(at - Vector2(reach, reach), Vector2(reach, reach) * 2.0)
+				var in_frame: bool = area.encloses(whole) and not (scene.hud as Control).get_global_rect().intersects(whole)
+				assert_eq(arrow.showing(), not in_frame, "%s: the arrow shows exactly when the TARGET is (partly) off frame" % tag)
+				assert_eq(ov.target_off, arrow.showing(), "%s: the TARGET's circle hides while its arrow shows" % tag)
+				if ov.target_off:
+					assert_false(ov.target_drawn(), "%s: and its sticker" % tag)
+				if arrow.showing():
+					var tip: Vector2 = arrow.get_global_transform() * arrow.tip()
+					assert_false(scene.hud.get_global_rect().has_point(tip), "%s: the arrow keeps off the top bar" % tag)
 				# Node stickers at least 44 px at 1080p (their die-cut).
 				var k := ov.get_global_transform_with_canvas().get_scale().x
 				var r := ov.icon_radius(ov.nodes[0]) * k
