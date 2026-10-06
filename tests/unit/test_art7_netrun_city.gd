@@ -161,6 +161,20 @@ func test_the_route_page_is_the_3d_city_at_the_netrun_band() -> void:
 	assert_eq(bg.city.band_lock, -1)
 
 
+## The 2D bake's stand-in silhouette (flat roof slabs) never draws over the 3D city: the route
+## page turns the 3D city on after the page's first 2D frames.
+func test_the_bake_silhouette_goes_when_the_3d_city_comes_on() -> void:
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = SCREEN.size
+	var city := NeonCity.new()
+	holder.add_child(city)
+	await _frames()
+	var sil := city.get_node(^"CityView/CitySilhouette") as Control
+	sil.visible = true  # what a 2D frame with no bake yet leaves
+	city.city3d = true
+	assert_false(sil.visible, "no 2D silhouette over the 3D city")
+
+
 func test_the_netrun_band_is_see_through_at_any_zoom() -> void:
 	for ortho in [60.0, 160.0, 440.0, 900.0]:
 		assert_lte(CityLod.opacity(CFG, CityView3D.view_lod(CFG, ortho, CityLod.Band.NETRUN)), CFG.see_through_opacity + 0.0001,

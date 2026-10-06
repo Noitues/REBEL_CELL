@@ -1253,6 +1253,10 @@ func _sync_city3d() -> void:
 		view3d = null
 	if _view != null:
 		_view.material = null if city3d else _live_material
+	# ART-7 7w: the 2D bake's stand-in silhouette (ANIM-R3 B4) never draws over the 3D city
+	# (a page that turns the 3D city on after a 2D frame left it showing: flat roof slabs).
+	if _sil != null and city3d:
+		_sil.visible = false
 	refresh()
 
 

@@ -36,6 +36,10 @@ func _ready() -> void:
 			_perf_s = float(a.trim_prefix("--perf="))
 		elif a.begins_with("--states="):
 			states = a.trim_prefix("--states=").split(",", false)
+		elif a.begins_with("--size="):
+			# The quiet window ignores --resolution: size it here (e.g. 1920x1080 for the perf budget).
+			var wh := a.trim_prefix("--size=").split("x")
+			DisplayServer.window_set_size(Vector2i(int(wh[0]), int(wh[1])))
 	RunManager.save_slot = SLOT
 	RunManager.scene_switching_enabled = false
 	_run.call_deferred(states)
