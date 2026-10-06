@@ -1,0 +1,193 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "roof_props",
+ "about": "ART-5 5e roof props (bible 4.1: from raid zoom). Built by tools/art_pipeline/city/build_roof_props_v1.py; do not edit by hand.",
+ "source": {
+  "script": "tools/art_pipeline/city/build_roof_props_v1.py",
+  "vendor": "art-concepts-r43:docs/concepts/round40_city_unified/scripts/unified40.py @ ace98b9 (concept_r40/, lines 204-227 and cyl36 231-237) on target_corps.py (concept_r31/)",
+  "scripts": [
+   "tools/art_pipeline/city/build_roof_props_v1.py",
+   "tools/art_pipeline/city/concept_r40/unified40.py",
+   "tools/art_pipeline/city/concept_r31/target_corps.py"
+  ],
+  "commit": "653eea8ab8fc19fd354a319722482f41ccfa4366",
+  "scripts_sha256": "bd1726110c73a19f6203b8e445b997beef9eb24266bbb534ba32594e081592c4"
+ },
+ "settings": {
+  "blender": "5.2.2 LTS",
+  "version": "v1",
+  "units": "1 BU = 1 m",
+  "seed": 4040,
+  "up": "+Y (glTF; Blender (x, y, z) -> (x, z, -y))",
+  "tone": [
+   0.86,
+   1.12
+  ],
+  "part_alpha": [
+   0.55,
+   1.0
+  ],
+  "normals": "none (facet normal from screen derivatives)",
+  "drawn": {
+   "antenna_h": [
+    5.0,
+    3.0,
+    7.0
+   ],
+   "billboard_w": [
+    5.75,
+    4.0,
+    7.5
+   ]
+  },
+  "exporter": {
+   "export_format": "GLB",
+   "export_yup": true,
+   "export_apply": false,
+   "export_texcoords": false,
+   "export_normals": false,
+   "export_materials": "EXPORT",
+   "export_cameras": false,
+   "export_lights": false,
+   "export_animations": false,
+   "export_extras": false,
+   "export_vertex_color": "ACTIVE",
+   "export_all_vertex_colors": false,
+   "export_tangents": false,
+   "export_attributes": false,
+   "export_active_vertex_color_when_no_material": true,
+   "export_shared_accessors": true
+  }
+ },
+ "origin": "each prop's roof contact centre at (0, 0, 0): stand it on a roof top",
+ "materials": [
+  "lm_toon",
+  "lm_neon"
+ ],
+ "props": {
+  "ac": {
+   "min": [
+    -0.44999998807907104,
+    0.0,
+    -0.3499999940395355
+   ],
+   "max": [
+    0.44999998807907104,
+    0.550000011920929,
+    0.3499999940395355
+   ],
+   "triangles": 10,
+   "materials": [
+    "lm_toon"
+   ]
+  },
+  "tank": {
+   "min": [
+    -0.800000011920929,
+    0.0,
+    -0.800000011920929
+   ],
+   "max": [
+    0.800000011920929,
+    2.0999999046325684,
+    0.800000011920929
+   ],
+   "triangles": 70,
+   "materials": [
+    "lm_toon"
+   ]
+  },
+  "antenna": {
+   "min": [
+    -0.30000001192092896,
+    0.0,
+    -0.09000000357627869
+   ],
+   "max": [
+    0.30000001192092896,
+    5.5,
+    0.09000000357627869
+   ],
+   "triangles": 14,
+   "materials": [
+    "lm_toon",
+    "lm_neon"
+   ]
+  },
+  "billboard_0": {
+   "min": [
+    -2.032912492752075,
+    0.0,
+    -2.032912492752075
+   ],
+   "max": [
+    2.032912492752075,
+    4.449999809265137,
+    2.032912492752075
+   ],
+   "triangles": 14,
+   "materials": [
+    "lm_toon",
+    "lm_neon"
+   ]
+  },
+  "billboard_1": {
+   "min": [
+    -2.032912492752075,
+    0.0,
+    -2.032912492752075
+   ],
+   "max": [
+    2.032912492752075,
+    4.449999809265137,
+    2.032912492752075
+   ],
+   "triangles": 14,
+   "materials": [
+    "lm_toon",
+    "lm_neon"
+   ]
+  },
+  "billboard_2": {
+   "min": [
+    -2.032912492752075,
+    0.0,
+    -2.032912492752075
+   ],
+   "max": [
+    2.032912492752075,
+    4.449999809265137,
+    2.032912492752075
+   ],
+   "triangles": 14,
+   "materials": [
+    "lm_toon",
+    "lm_neon"
+   ]
+  },
+  "billboard_3": {
+   "min": [
+    -2.032912492752075,
+    0.0,
+    -2.032912492752075
+   ],
+   "max": [
+    2.032912492752075,
+    4.449999809265137,
+    2.032912492752075
+   ],
+   "triangles": 14,
+   "materials": [
+    "lm_toon",
+    "lm_neon"
+   ]
+  }
+ },
+ "files": [
+  {
+   "path": "roof_props.glb",
+   "bytes": 11352,
+   "sha256": "9710ae8140d5efd92a2060a2d37af3cc47e615ede6346cf215a9fe4ab309e10e"
+  }
+ ]
+}

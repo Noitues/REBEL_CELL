@@ -171,7 +171,11 @@ func _ready() -> void:
 	add_child(fps_label)
 	saved_label = Label.new()
 	saved_label.add_theme_font_override("font", Palette.marker())
-	saved_label.add_theme_font_size_override("font_size", 14)
+	saved_label.add_theme_font_size_override("font_size", SAVED_FONT)
+	# ART-6 3A (M14 audit P3: "nearly invisible" on the raid setup, in grey): a dark keyline
+	# so the pink lettering reads over any page and in greyscale.
+	saved_label.add_theme_color_override("font_outline_color", SAVED_KEYLINE)
+	saved_label.add_theme_constant_override("outline_size", SAVED_OUTLINE)
 	saved_label.add_theme_color_override("font_color", Palette.CELL_PINK)
 	# H24 S4: translated when shown (show_saved), shown as given.
 	saved_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
@@ -299,7 +303,10 @@ func saved_showing() -> bool:
 
 
 ## The SAVED stamp's lettering at text scale 1.0 and its margin from the screen edge (px).
-const SAVED_FONT := 14
+const SAVED_FONT := 20
+## ART-6 3A: its dark keyline (px) and colour, so it reads over any page and in greyscale.
+const SAVED_OUTLINE := 6
+const SAVED_KEYLINE := Color(Palette.NIGHT_SKY, 0.9)
 const SAVED_MARGIN := 8.0
 ## Step between the spots tried along the screen's edges (px).
 const SAVED_STEP := 24.0

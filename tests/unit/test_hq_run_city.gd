@@ -247,7 +247,11 @@ func test_staging_a_compound_clears_its_footprint_and_skips_the_landmark() -> vo
 	assert_true(v.is_cleared(Vector2(at.origin.x, at.origin.z)), "the city's own buildings give way in the canyon")
 	assert_false(v._place_landmark(&"rebel_cell", "res://assets/city/landmarks/rebel_cell/rebel_cell_district.glb", Transform3D(), null),
 		"the Cell's district stays off while the canyon stands")
+	var near := Rect2(Vector2(at.origin.x, at.origin.z) - Vector2(3, 3), Vector2(6, 6))
+	assert_true(v._under_compound(near), "a Site landmark on the canyon's lot gives way (the compound wins)")
+	assert_false(v._under_compound(Rect2(near.position + Vector2(2000, 2000), near.size)), "one elsewhere stands")
 	v.unstage_compound(&"rebel_cell")
+	assert_false(v._under_compound(near), "unstaged: nothing covers the lot")
 	assert_false(v.compounds.has(&"rebel_cell"))
 	assert_false(v.is_cleared(Vector2(at.origin.x, at.origin.z)), "unstaged: the lot is the city's again")
 	v.free()

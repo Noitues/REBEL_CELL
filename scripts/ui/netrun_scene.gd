@@ -770,11 +770,9 @@ func raid_fight() -> void:
 	_report(events)
 	RunManager.after_step()
 	_show_raid_playout(events, before)
-	# ANIM-R5 P2: behind the playout, the looks the next page and its end show after the raid:
-	# the route first (the next page; a quick Continue found it still queued behind the
-	# playout's), then the fights' stretch of city under the result's tint (it spreads at the
-	# end; until then the old image stands in).
-	_prebake_route.call_deferred()
+	# ANIM-R5 P2: behind the playout, the look its end shows after the raid: the fights'
+	# stretch of city under the result's tint (it spreads at the end; until then the old image
+	# stands in). ART-7 7w: the route after it is the 3D city (nothing to bake).
 	if before != null and not events.is_empty():
 		_prebake_raid_playout.call_deferred(before, CityInfluence.of(RunManager.campaign, RunManager.corporation))
 
@@ -809,27 +807,6 @@ func _prebake_raid_playout(c: CampaignState, inf: Variant) -> void:
 const PLAYOUT_ANCHOR := Vector2(0.4, 0.56)
 
 
-## ANIM-R5 P2: the route's frame baked ahead, from a page before it (the raid interlude and its
-## playout: the route after an interlude raid sat 6.5 s on the silhouette): the route's
-## camera as `_show_map` mounts it, out to ROUTE_MIN_ZOOM (the fit zooms out at most that
-## far), under the city's current influence.
-func _prebake_route() -> void:
-	var s := RunManager.netrun
-	if s == null or not is_inside_tree() or background == null or s.run == null or s.run.map == null:
-		return
-	var r := route_graph()
-	var nodes: Array = r["nodes"]
-	if nodes.is_empty():
-		return
-	var c := Vector2.ZERO
-	for n: Dictionary in nodes:
-		c += Vector2(n["at"])
-	c /= nodes.size()
-	# The look the route shows: the campaign's own tint and Heat (a playout may hold the old).
-	background.city.prebake(background.city.region_for(c, ROUTE_ANCHOR, ROUTE_MIN_ZOOM, size), CityInfluence.of(RunManager.campaign, RunManager.corporation), false,
-		creep_of(RunManager.campaign.heat))
-
-
 ## ANIM-R6 B4: the run end page's look baked ahead (off the main thread) from the fight that
 ## ended the run: the city's default frame at this screen's size under the campaign's Heat as
 ## it stands after the fight (a flatline adds Heat: a new look the fight's own bake never
@@ -852,27 +829,6 @@ func prebake_run_end() -> String:
 	return city.prebake(city.view_rect(), null, false, creep_of(RunManager.campaign.heat))
 
 
-## ANIM-R5 P2: the route's own bake is kept in the cache (CityBakeCache.keep) while the run's
-## other pages come and go, so coming back to the route is never the silhouette again.
-func _keep_route_bake() -> void:
-	if city_overlay == null or not is_instance_valid(city_overlay) or _grid_zoomed or _shown_screen != "route":
-		return
-	var city := background.city
-	if city.view_covered():
-		CityBakeCache.keep(ROUTE_KEEP, CityBakeCache.find(city.look_key(), city.view_rect()))
-
-
-const ROUTE_KEEP := &"route"
-
-
-## ANIM-R6 B6: the route's kept bake goes back to the cache's LRU (the run ended, or the scene
-## left: a jack out, save and quit).
-func release_route_bake() -> void:
-	CityBakeCache.keep(ROUTE_KEEP, "")
-
-
-func _exit_tree() -> void:
-	release_route_bake()
 ## The hidden HQ backdrop twin warming the HQ's bake (`_warm_hq`).
 var _hq_warm: CyberdeckBackground = null
 
@@ -992,6 +948,9 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	# ANIM-6: a new screen enters (glass slides in, paper drops); a page rebuilt on the same
 	# screen (the Mainframe after a purchase) just shows. Focus lands when it ends.
 	var screen := screen_name(s) if screen_as == "" else screen_as
+	# ART-7 7w: the route page is the unified 3D city at the NETRUN band (GRID VIEW: the
+	# Grid's band); the other pages keep the 2D city until their own views move onto it.
+	use_route_city(screen == "route" and (s == null or s.run.kind != "boss" or _grid_zoomed))  # ART-8 8w: an HQ run draws its own compound city
 	entering = screen != _shown_screen
 	_shown_screen = screen
 	# ANIM-R5 B2: an event's story and the run's end say long lines: their band holds two.
@@ -1312,15 +1271,13 @@ func _show_map() -> void:
 			dossier.visible = true
 		_fit_route_next_frame()
 		spacer.resized.connect(_refit_route)
+	_mount_route_camera(panel)
 	# ANIM-R4 H10: a fight's, a boss's and a raid's music are made ahead (a fight's first frame
 	# built its loop).
 	AudioDirector.prewarm_music(["combat", "boss", "raid"], RunManager.campaign.corporation_id)
 	# ANIM-R2 R1 / R2: the next screen is a fight's arena, the Mainframe, an event or loot, all on
 	# the default frame of this city's look: baked now, behind the route (after its own view).
 	_prebake_backdrops.call_deferred()
-	# ANIM-R5 P2: the route's own bake stays in the cache while those pages show.
-	if not background.city.rebuilt.is_connected(_keep_route_bake):
-		background.city.rebuilt.connect(_keep_route_bake)
 
 
 ## The ROUTE window's choice buttons for the choices the view shows (view_choices: ANIM-R4
@@ -1390,7 +1347,8 @@ func _prebake_backdrops() -> void:
 		if box != null:
 			inner -= box.get_minimum_size()
 		sizes.append(inner.floor())
-	background.city.prebake_frames(sizes)
+	# ART-7 7w: the route shows the 3D city; these pages draw the 2D one (baked under it).
+	background.city.prebake_frames(sizes, false, true)
 
 
 ## The route legend where it covers no route node (H22 #14). ART-7 3B: the strip has a row
@@ -2174,6 +2132,55 @@ func _mount_route(nodes: Array[Dictionary], edges: Array[Dictionary], look: int,
 	city.focus_grid = city_overlay.centre() if focus == Vector2.INF else focus
 	city.focus_anchor = anchor
 	city.refresh()
+
+
+## ART-7 7w: the player's camera on the route page (wheel / + - zoom about the cursor, drag,
+## WASD and the right stick pan: 5a's CityGridControls), so the route can be looked at
+## close up (the CLOSE car tier below ortho 150); null off the 3D city.
+var route_controls: CityGridControls = null
+
+
+## ART-7 7w: puts the backdrop on the unified 3D city for the route page (`on`: the NETRUN
+## band; GRID VIEW holds the Grid's band) or back on the 2D city, with 5c's city motion on
+## the 3D city (CityViewMotion: cars by zoom, sky lanes, billboards, the light spill).
+func use_route_city(on: bool) -> void:
+	if background == null:
+		return
+	background.use_city3d(on, CityLod.Band.GRID if _grid_zoomed else CityLod.Band.NETRUN)
+	var view := background.city.view3d
+	if on and view != null and not view.has_node(ROUTE_MOTION_NAME):
+		var home := NeonCity.hq_of(&"rebel_cell") + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
+		var motion := CityViewMotion.make(view, null, home)
+		motion.name = ROUTE_MOTION_NAME
+		view.add_child(motion)
+
+
+const ROUTE_MOTION_NAME := "CityMotion"
+
+
+## ART-7 7w: a frame of the route page's player camera: zoom `zoom`, grid point `focus` at
+## screen fraction `anchor` (the route fits move the same city).
+func _frame_route_city(zoom: float, focus: Vector2, anchor: Vector2) -> void:
+	var city := background.city
+	city.scale = Vector2(zoom, zoom)
+	city.offset_left = 0
+	city.offset_top = 0
+	city.offset_right = size.x / zoom - size.x
+	city.offset_bottom = size.y / zoom - size.y
+	city.focus_grid = focus
+	city.focus_anchor = anchor
+	city.refresh()
+	city.update_camera()
+
+
+## ART-7 7w: hooks the player's camera to the route map on the 3D city.
+func _mount_route_camera(page: Control) -> void:
+	route_controls = null
+	if not background.city3d or city_overlay == null:
+		return
+	route_controls = CityGridControls.new(background.city, self, _frame_route_city)
+	page.add_child(route_controls)
+	route_controls.attach(city_overlay, null)
 
 
 func _clear_route() -> void:
@@ -3524,10 +3531,9 @@ func _show_raid() -> void:
 	city_overlay.avoid_controls([win])
 	_raid_map_area = area
 	_frame_raid_map.call_deferred()
-	# ANIM-R5 P2: behind the setup (after its own view), the playout's fights and the route
-	# the run goes on to.
+	# ANIM-R5 P2: behind the setup (after its own view), the playout's fights (ART-7 7w: the
+	# route the run goes on to is the 3D city: nothing to bake).
 	_prebake_raid_playout.call_deferred(c, null)
-	_prebake_route.call_deferred()
 	_register_raid_drops(run_assets, armory_row)
 
 
@@ -3661,9 +3667,6 @@ const END_BACK_STEP := UiTheme.TITLE
 
 func _show_end() -> void:
 	var s := RunManager.netrun
-	# ANIM-R6 B6: the run's route is over: its bake is no longer kept past the cache's LRU
-	# (the slot pinned up to ~48 MB for the rest of the session).
-	release_route_bake()
 	# ANIM-R5 P2: the HQ's city bakes while the run's report shows.
 	_warm_hq.call_deferred()
 	var won := s.run.outcome == RunState.Outcome.COMPLETED

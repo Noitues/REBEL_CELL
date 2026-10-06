@@ -1,0 +1,29 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "raid_ice",
+ "about": "ART-6 3A ICE crystals round a held threat. Built by tools/art_pipeline/raid/bake_ice.py; do not edit by hand.",
+ "source": {
+  "tag": "art-concepts-r43",
+  "script": "docs/concepts/round22_raid_ui/scripts/ui22.py (ice)",
+  "call": "docs/concepts/round22_raid_ui/scripts/screens22.py g15 (15_threat_held_ice.gif)"
+ },
+ "image_px": [
+  150,
+  112
+ ],
+ "mask_radii_px": [
+  50,
+  35
+ ],
+ "steps": 8,
+ "files": [
+  "ice_01.png",
+  "ice_02.png",
+  "ice_03.png",
+  "ice_04.png",
+  "ice_05.png",
+  "ice_06.png",
+  "ice_07.png",
+  "ice_08.png"
+ ]
+}

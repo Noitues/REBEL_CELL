@@ -229,12 +229,18 @@ func test_the_pause_and_reduce_rules() -> void:
 		assert_true(CityMotionClock.steady(layer, false, false), "not live: end state")
 		assert_eq(CityMotionClock.rate(cfg, layer, false, false, true), 1.0, "live: full speed")
 		assert_false(CityMotionClock.steady(layer, false, true))
-	assert_eq(CityMotionClock.rate(cfg, L.STREET_CARS, false, true, true), 0.0, "reduce motion: street traffic pauses")
+	assert_almost_eq(CityMotionClock.rate(cfg, L.STREET_CARS, false, true, true), cfg.reduce_motion_street_rate, 0.0001,
+		"reduce motion: street traffic at its share (bible 5.4: 40 %)")
+	assert_almost_eq(cfg.reduce_motion_street_rate, 0.4, 0.0001, "the shipped share is the bible's 40 %")
+	assert_eq(CityMotionClock.rate(cfg, L.STREET_CARS, true, true, true), 0.0, "covered under reduce motion: still paused")
+	assert_eq(CityMotionClock.rate(cfg, L.SKY_CARS, false, true, true), 0.0, "reduce motion: no sky-lane cars run")
 	assert_eq(CityMotionClock.rate(cfg, L.SEARCHLIGHTS, false, true, true), 0.0, "reduce motion: searchlights fixed")
 	assert_true(CityMotionClock.steady(L.STROBES, true, true), "reduce motion: strobes steady")
 	assert_false(CityMotionClock.street_streaks(true), "no streaks under reduce motion")
 	assert_false(CityMotionClock.sky_cars_shown(true, false), "reduce motion: sky-lane markers without cars")
 	assert_false(CityMotionClock.sky_cars_shown(false, true), "netrun transit: the sky-lane car layer is off")
+	assert_true(CityMotionClock.sky_cars_shown(false, true, true), "ART-7 7w: a netrun close-up shows the CLOSE tier")
+	assert_false(CityMotionClock.sky_cars_shown(true, true, true), "reduce motion: still no cars")
 	var clock := CityMotionClock.new()
 	var rates := PackedFloat64Array()
 	var live: Array[bool] = []
@@ -317,7 +323,8 @@ func test_reduce_effects_shows_the_end_state_and_reduce_motion_keeps_it_steady()
 	Settings.reduce_effects = false
 	Settings.reduce_motion = true
 	layers._process(0.5)
-	assert_eq(layers.layer_time(L.STREET_CARS), 0.0, "street traffic paused")
+	assert_almost_eq(layers.layer_time(L.STREET_CARS), 0.5 * cfg.reduce_motion_street_rate, 0.0001,
+		"street traffic keeps moving at 40 % (bible 5.4)")
 	assert_eq(layers.layer_time(L.CHOPPERS), 0.0, "choppers parked")
 	assert_false(layers.sky_cars_visible(), "sky lanes: markers without cars")
 	for mi in layers._car_mmis:
@@ -349,7 +356,14 @@ func test_the_car_lod_swaps_at_the_configured_zooms() -> void:
 	assert_eq(layers.car_tier, CitySkyTraffic.CarTier.CLOSE)
 	assert_true(layers._car_mmis[CitySkyTraffic.CarTier.CLOSE].visible)
 	layers.set_view(CityMotionLayers.View.NETRUN)
-	assert_false(layers.sky_cars_visible(), "no sky-lane cars in the netrun transit")
+	# ART-7 7w: a netrun close-up shows the CLOSE tier (round 40 cars_lod); the transit's own
+	# fit (MEDIUM) shows no sky-lane cars (bible 4.1).
+	assert_true(layers.sky_cars_visible(), "a netrun close-up shows the CLOSE car tier")
+	assert_true(layers._car_mmis[CitySkyTraffic.CarTier.CLOSE].visible)
+	layers.set_ortho(cfg.car_close_below * (1.0 + cfg.lod_hysteresis * 1.5))
+	assert_eq(layers.car_tier, CitySkyTraffic.CarTier.MEDIUM)
+	assert_false(layers.sky_cars_visible(), "no sky-lane cars in the netrun transit at its fit")
+	layers.set_ortho(60.0)
 	# The layer carries the seeded traffic (the headless renderer keeps no instance colours).
 	var mm := layers._car_mmis[0].multimesh
 	assert_eq(mm.instance_count, layers.traffic.cars.size())

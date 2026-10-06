@@ -101,6 +101,9 @@ const BAND_LOOKS := 4
 @export var street_streak: float = 2.4
 @export var street_head: Color = Color(1.0, 0.93, 0.78)
 @export var street_tail: Color = Color(1.0, 0.18, 0.14)
+## ART-5 5e (bible 5.4): under reduce motion street traffic keeps moving at this share of its
+## speed, without streaks (0..1).
+@export var reduce_motion_street_rate: float = 0.4
 
 @export_group("Holo billboards (round 24 layer 3)")
 @export var billboard_count: int = 16
@@ -229,6 +232,8 @@ func validate() -> PackedStringArray:
 		errors.append("City motion: day_ramp needs shadow, mid and lit.")
 	if car_skip < 0.0 or car_skip >= 1.0:
 		errors.append("City motion: car_skip must be in [0, 1).")
+	if reduce_motion_street_rate < 0.0 or reduce_motion_street_rate > 1.0:
+		errors.append("City motion: reduce_motion_street_rate must be in [0, 1].")
 	return errors
 
 

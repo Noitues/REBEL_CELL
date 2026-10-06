@@ -117,10 +117,15 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-0 F (ported from art-pass W2 / W8a): the pad focus scale, the refused state, and a
 	# modal's open and close (PageTransition.open_modal / close_modal).
 	&"focus_scale", &"button_refused", &"modal_in", &"modal_out",
+	# ART-10 4C (ART_BIBLE v2 4.13, round 33 ui_chrome): the title's SIMULATE glitch and neon
+	# sign loops, the ON AIR ticker.
+	&"title_glitch_burst", &"title_sign_flicker", &"on_air_ticker",
 	# ART-7 3B (ART_BIBLE v2 4.6): the netrun map's hidden-node reveal and calm Heat, and the
 	# jack-in transition's beats (terminal, link rain, CRT collapse, wheel slap and spin, lens).
 	&"route_node_reveal", &"route_heat_orbit", &"route_searchlight",
 	&"jack_terminal_type", &"jack_link_rain", &"jack_crt_collapse", &"jack_wheel_slap", &"jack_wheel_spin", &"jack_lens",
+	# ART-6 3A (raid presentation): pencil marks, routes, panels, stickers and the drag.
+	&"raid_mark_write", &"raid_mark_hold", &"raid_mark_wipe", &"raid_breached_write", &"raid_bits_burst", &"raid_slow_field", &"raid_ice_grow", &"raid_repair_rise", &"raid_route_write", &"raid_route_wipe", &"raid_dock_circle", &"raid_drag_arrow", &"raid_beacon_idle",
 	# ART-2 2A (the wheel stack): the screens' loop, the telemetry scroll, the precision landings, the hub states.
 	&"wheel_screen_loop", &"wheel_telemetry_scroll", &"precision_latch", &"precision_word", &"precision_stutter", &"hub_defeat_drain", &"hub_lockdown_drain",
 
@@ -138,6 +143,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"drone_orbit", &"police_strobe", &"alarm_beacon", &"heat_node_light", &"city_light_fade",
 	# ART-8 8w Central Server gate (bible 4.9): the keycards' stagger, the socket's ring, BREACH turning pink.
 	&"gate_keycard_stagger", &"gate_socket_ring", &"gate_breach_ready",
+	# ART-5 5e: the Cell's blackout reveal on the Grid's city (CityView3D.set_cell_reveal).
+	&"cell_fist_reveal",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.

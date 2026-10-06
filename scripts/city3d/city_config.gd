@@ -254,6 +254,34 @@ extends Resource
 @export var net_halo: float = 0.25
 @export var net_xray: float = 0.85
 
+@export_group("City integration (ART-5 5e)")
+## The Site layout's spread round each corporation's Grid origin (CityLayout.site_points):
+## 1 = 5a's +/-7.5 x 5 lots; 2 frames the Grid at ortho ~440 as round 39 (presentation only).
+@export var site_spread: float = 2.0
+## The heading (degrees, lot space) each corporation's Site layout is turned round its HQ so
+## the spread layout stays in its own territory (0 = 5a's: the boss end to the Grid's right).
+@export var site_aim_deg: Dictionary = {}
+## Corporations whose Site layout is mirrored across its run axis (true), for the same reason.
+@export var site_mirror: Dictionary = {}
+## The Site that stands in 5b's `<corp>_site.glb` per corporation (content id), until the
+## designer names them (DECISIONS "ART-5 5e", open question).
+@export var site_landmarks: Dictionary = {&"solace": &"t1_c", &"halcyon": &"lose_the_case_file", &"orbital": &"o1_d"}
+## Roof props (the concept's AC units, water tanks, antennas, roof billboards; bible 4.1:
+## from raid zoom): shown at and below this ortho.
+@export var roof_props_below: float = 420.0
+## Where the roof props stand (unified40.py's own rules, round 40): flat roofs only (top
+## scale at least this), both footprint sides over this (BU); AC units 0..roof_ac_max per
+## roof; a water tank on this share; an antenna on roofs over this top (BU) at this share;
+## a holo billboard on roofs over this top at this share.
+@export var roof_prop_min_top_scale: float = 0.99
+@export var roof_prop_min_side: float = 2.0
+@export var roof_ac_max: int = 2
+@export var roof_tank_share: float = 0.18
+@export var roof_antenna_above: float = 22.0
+@export var roof_antenna_share: float = 0.45
+@export var roof_billboard_above: float = 14.0
+@export var roof_billboard_share: float = 0.16
+
 
 ## The quality tier for a Settings.city_quality value (-1 = default).
 func tier_for(city_quality: int) -> int:

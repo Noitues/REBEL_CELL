@@ -253,6 +253,15 @@ var fist_roads: bool = true
 var view3d: CityView3D = null
 ## The view band the 3D city holds (CityView3D.band_lock; -1: by zoom).
 var band_lock: int = -1
+## ART-5 5e: the 3D city's motion layers (5c's CityViewMotion on view3d; null headless).
+var city_motion: CityViewMotion = null
+## ART-5 5e: what the live Grid's city shows of the campaign (GridCityLife.of; {} none).
+var city_life: Dictionary = {}
+## ART-5 5e: the lots (Rect2, lots) whose roofs a landmark lifts and the top (BU) it lifts
+## them to (the Site landmark: the Site markers float over its roof, not the cleared lot's).
+var _lifts: Array = []
+## ART-5 5e: the Cell's blackout reveal plays once per process (the first Grid mount).
+static var _cell_revealed: bool = false
 
 var _fx: Control
 ## The live layer's shader material (off in city-3D mode: the 3D city is not scanned).
@@ -1093,7 +1102,7 @@ func grid_to_local(x: float, y: float) -> Vector2:
 func roof_of(i: int, j: int) -> Dictionary:
 	var rec: Dictionary = _placement().placed_roof(Vector2i(i, j)) if is_baked() else _roofs.get(Vector2i(i, j), {})
 	if city3d and not rec.is_empty():
-		return _roof_3d(rec)
+		return _roof_3d(rec, Vector2i(i, j))
 	if rec.is_empty() or _shift == Vector2.ZERO:
 		return rec
 	# Baked: the roofs are stored in the image's space; move them under the camera.
@@ -1211,7 +1220,7 @@ func iso_camera() -> CityIsoCamera:
 
 ## ART-5 5a: a placement roof record (painter space, the 2:1 iso at the origin) under the
 ## current camera in city-3D mode: each roof point back on its lot, raised to the 3D height.
-func _roof_3d(rec: Dictionary) -> Dictionary:
+func _roof_3d(rec: Dictionary, lot: Vector2i = NO_LOT) -> Dictionary:
 	var roof: PackedVector2Array = rec["roof"]
 	var base: Vector2 = rec["base"]
 	var c := Vector2.ZERO
@@ -1222,10 +1231,15 @@ func _roof_3d(rec: Dictionary) -> Dictionary:
 	var z := maxf(0.0, base.y - c.y)
 	var k := tile_b() / TILE_B
 	var kz := height_k3d()
+	# ART-5 5e: on a landmark's lots the roof is the landmark's top (painter px).
+	var zl := z
+	var top := lift_at(lot)
+	if top > 0.0:
+		zl = top / CityView3D.CONFIG.height_px_bu
 	var out := rec.duplicate()
 	var pts := PackedVector2Array()
 	for q in roof:
-		pts.append(Vector2(_ox + q.x, _oy + (q.y + z) * k - z * kz))
+		pts.append(Vector2(_ox + q.x, _oy + (q.y + z) * k - zl * kz))
 	out["roof"] = pts
 	out["base"] = Vector2(_ox + base.x, _oy + base.y * k)
 	return out
@@ -1248,12 +1262,65 @@ func _sync_city3d() -> void:
 		view3d.name = "City3D"
 		view3d.city_seed = city_seed
 		add_child(view3d)
+		# ART-5 5e: the city's life (5c's motion layers) on every 3D city.
+		city_motion = CityViewMotion.make(view3d, null, Vector2(city_life.get("home_lot", Vector2.INF)))
+		view3d.add_child(city_motion)
+		_apply_city_life()
 	elif not city3d and view3d != null:
 		view3d.queue_free()
 		view3d = null
+		city_motion = null
 	if _view != null:
 		_view.material = null if city3d else _live_material
+	# ART-7 7w: the 2D bake's stand-in silhouette (ANIM-R3 B4) never draws over the 3D city
+	# (a page that turns the 3D city on after a 2D frame left it showing: flat roof slabs).
+	if _sil != null and city3d:
+		_sil.visible = false
 	refresh()
+
+
+## ART-5 5e: the live Grid's city life (GridCityLife.of: the Heat band and hardened Sites,
+## the Cell's home lot, DISPATCH's fist, the Site landmark). Down to the 3D city (its Site
+## landmark, the Cell's fist and its reveal, the motion's Heat rig) and, headless too, the
+## roof lift the Site markers float at. A view: nothing here changes game state.
+func set_city_life(d: Dictionary) -> void:
+	city_life = d
+	_lifts = []
+	var lot: Vector2 = d.get("site_lot", Vector2.INF)
+	var corp: StringName = d.get("site_corp", &"")
+	if city3d and corp != &"" and lot != Vector2.INF:
+		var path := CityLandmarks.site_path(corp)
+		var r := CityLandmarks.lot_rect(CityView3D.CONFIG, path, lot, CityView3D.CLEAR_SHARE) if path != "" else Rect2()
+		if r.has_area():
+			_lifts.append([r, CityLandmarks.top_of(path)])
+	_apply_city_life()
+	if city3d and view3d != null and not _cell_revealed:
+		_cell_revealed = true
+		view3d.play_cell_reveal()
+	queue_redraw()
+
+
+## ART-5 5e: the top (BU) a landmark lifts lot `lot`'s roof to (0: none).
+func lift_at(lot: Vector2i) -> float:
+	for l: Array in _lifts:
+		if (l[0] as Rect2).has_point(Vector2(lot) + Vector2(0.5, 0.5)):
+			return float(l[1])
+	return 0.0
+
+
+func _apply_city_life() -> void:
+	if view3d == null or city_life.is_empty():
+		return
+	view3d.show_cell_dispatch(bool(city_life.get("dispatch", false)))
+	view3d.set_site_landmark(StringName(city_life.get("site_corp", &"")), Vector2(city_life.get("site_lot", Vector2.INF)))
+	if city_motion != null:
+		var hardened: Array[Vector3] = []
+		var points: Dictionary = city_life.get("points", {})
+		for id: StringName in city_life.get("hardened", []):
+			if points.has(id):
+				hardened.append(view3d.lot_world((points[id] as Vector2).floor() + Vector2(0.5, 0.5)))
+		city_motion.home_lot = Vector2(city_life.get("home_lot", Vector2.INF))
+		city_motion.set_heat(int(city_life.get("heat_band", 0)), hardened)
 
 
 ## ART-5 5a: the 3D city under this frame: its viewport sized to the screen pixels this
@@ -2113,8 +2180,11 @@ func free_chunks() -> void:
 ## dropped when this scene goes.
 ## `creep` (>= 0) names another Heat creep than the city's (the look after a raid's Heat while
 ## the playout still holds the old one).
-func prebake(region: Rect2, inf: Variant = null, outlive: bool = false, creep: float = -1.0) -> String:
-	if not is_baked() or not is_inside_tree() or city3d:
+func prebake(region: Rect2, inf: Variant = null, outlive: bool = false, creep: float = -1.0, under_3d: bool = false) -> String:
+	# A city showing the 3D city bakes nothing, unless `under_3d` (ART-7 7w): the 2D look its
+	# next pages draw (the netrun route is 3D, its event / shop / loot pages 2D: baked ahead
+	# behind the route).
+	if not is_baked() or not is_inside_tree() or (city3d and not (under_3d and use_bake and CityBakeCache.can_bake())):
 		return ""
 	var held: Dictionary = (_followed_influence() if inf == null else inf as Dictionary).duplicate(true)
 	if is_visible_in_tree() and not view_covered():
@@ -2205,8 +2275,8 @@ func _note_frame_size() -> void:
 
 ## ANIM-R2 R1: bakes, ahead, the default frame at every size in `sizes` and every size it was
 ## drawn at lately (one region enclosing them all): a fight's arena, the Mainframe, event and
-## loot pages open on their city. Returns prebake's key.
-func prebake_frames(sizes: Array[Vector2], outlive: bool = false) -> String:
+## loot pages open on their city. Returns prebake's key. `under_3d`: as prebake's.
+func prebake_frames(sizes: Array[Vector2], outlive: bool = false, under_3d: bool = false) -> String:
 	var all: Array[Vector2] = sizes.duplicate()
 	for v in frame_sizes:
 		if not all.has(v):
@@ -2219,7 +2289,7 @@ func prebake_frames(sizes: Array[Vector2], outlive: bool = false) -> String:
 		region = r if not region.has_area() else region.merge(r)
 	if not region.has_area():
 		return ""
-	return prebake(region, null, outlive)
+	return prebake(region, null, outlive, -1.0, under_3d)
 
 
 ## The procedural city's geometry for the current camera and look: streets, the fist,
@@ -2509,7 +2579,7 @@ func placement_sig() -> String:
 ## ANIM-R2 R9: what a roof's screen position depends on besides its lot: the frame the city
 ## was last drawn under (its camera and, baked, the image's shift) and its placement.
 func frame_stamp() -> Array:
-	return [_drawn_camera, _shift, _placer_key if is_baked() else "built", _built_serial]
+	return [_drawn_camera, _shift, _placer_key if is_baked() else "built", _built_serial, _lifts]
 
 
 ## The camera's inputs (what `_camera` reads).

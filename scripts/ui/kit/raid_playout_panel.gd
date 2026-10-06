@@ -106,15 +106,22 @@ func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -
 	grid_view = p_grid_view
 	TextDb.shown_as_given(self)  # H24 S4: its words translated here, shown as given
 	MotionSkip.register(self)  # ANIM-R5: one press ends its step with every other motion
+	# ART-6 3A: the feed is terminal text (RaidFeed) and the controls are the Speed / Skip
+	# terminal strip under it (ART_BIBLE v2 §4.8), its STEP readout last.
+	log_note = RaidFeed.new(tr("PLAYOUT"), log_size)
+	# ANIM-R4 H11a: the feed writes changes as "HP 30 → 25": its lettering has the arrows.
+	log_note.label.add_theme_font_override("normal_font", Palette.mono_arrows())
+	log_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	add_child(log_note)
 	var controls := HBoxContainer.new()
+	controls.name = "SpeedStrip"
+	controls.add_theme_constant_override("separation", 6)
 	add_child(controls)
 	step_label = Label.new()
 	step_label.text = tr("Setup")
-	step_label.custom_minimum_size.x = 90
-	step_label.add_theme_font_override("font", Palette.display())
-	step_label.add_theme_font_size_override("font_size", 22)
-	step_label.add_theme_color_override("font_color", Palette.CELL_ACID)
-	controls.add_child(step_label)
+	step_label.add_theme_font_override("font", Palette.mono())
+	step_label.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.BODY))
+	step_label.add_theme_color_override("font_color", Palette.TERMINAL_TEXT)
 	for s in [1.0, 2.0, 4.0]:
 		var b := Button.new()
 		b.name = "Speed%dx" % int(s)
@@ -125,17 +132,15 @@ func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -
 		b.button_pressed = is_equal_approx(s, 1.0)
 		var value: float = s
 		b.pressed.connect(func() -> void: set_speed(value))
+		RaidSpeedStrip.style_button(b)
 		controls.add_child(b)
 	var skip := Button.new()
 	skip.name = "Skip"
 	skip.text = tr("Skip")
 	skip.pressed.connect(skip_pressed)
+	RaidSpeedStrip.style_button(skip)
 	controls.add_child(skip)
-	log_note = ZineNote.new(tr("PLAYOUT"), log_size)
-	# ANIM-R4 H11a: the feed writes changes as "HP 30 → 25": its lettering has the arrows.
-	log_note.label.add_theme_font_override("normal_font", Palette.mono_arrows())
-	log_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	add_child(log_note)
+	controls.add_child(step_label)
 
 
 func _exit_tree() -> void:

@@ -386,8 +386,11 @@ func test_a_confirm_sits_on_a_scrim_that_takes_the_page_clicks_and_traps_the_pad
 	var scrim := d.get_node_or_null("ModalScrim") as GlassScrim
 	assert_not_null(scrim, "a GlassScrim behind the confirm")
 	assert_eq(scrim.mouse_filter, Control.MOUSE_FILTER_STOP, "it takes the clicks meant for the page")
-	assert_true(scrim.show_behind_parent and scrim.top_level)
+	# ART-10 4C: a plain child behind the dialog (top-level, it drew over the dialog's words),
+	# still over the whole screen.
+	assert_true(scrim.show_behind_parent)
 	assert_eq(scrim.size, d.get_viewport_rect().size, "over the whole screen")
+	assert_eq(scrim.get_global_rect().position, Vector2.ZERO, "from the screen's corner")
 	assert_true(d.is_in_group(PageTransition.MODAL_GROUP))
 	# Pad reachability inside the modal: Yes and No, and never out to the page behind.
 	var start := get_viewport().gui_get_focus_owner()
