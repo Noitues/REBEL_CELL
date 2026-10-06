@@ -261,6 +261,9 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	_post.set_shader_parameter(&"haze_color", Vector3(hz.r, hz.g, hz.b))
 	# B2 (review D1): a look may set its own haze strength (the combat close-up's 15-20 %).
 	_post.set_shader_parameter(&"haze_k", lerpf(float(day.get("haze_k", cfg.haze_k)), cfg.haze_k, night_share))
+	# B2 (art director): a look may set its rain's strength and keep its blacks (the combat close-up).
+	_post.set_shader_parameter(&"rain_alpha", float(day.get("rain_alpha", cfg.rain_alpha)))
+	_post.set_shader_parameter(&"rain_keep_blacks", float(day.get("rain_keep_blacks", 0.0)))
 	var gr := (day["grade"] as Color).lerp(cfg.grade, night_share)
 	_post.set_shader_parameter(&"grade", Vector3(gr.r, gr.g, gr.b))
 	_post.set_shader_parameter(&"bloom", lerpf(float(day.get("bloom", cfg.bloom)), cfg.bloom, night_share))
