@@ -39,7 +39,7 @@ func _init(p_verb: String = "", p_plate: String = "", ts: float = 1.0, fill: int
 	# the vinyl's lettering follows the player's text size itself: ask for this sticker's size
 	sticker.font_step = maxi(1, roundi(verb_px_base * ts / maxf(0.01, Settings.text_scale)))
 	sticker.seed = absi(verb.hash()) % 997
-	sticker.ambient_sweep = fill == VinylSticker.Fill.HOLO
+	sticker.ambient_sweep = true  # the queue sweeps only the screen's primary (B1d)
 	sticker.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Its size from the start (the vinyl measures itself when it is built): the page lays out
 	# once, the same at once and after its entrance.

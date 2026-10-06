@@ -26,7 +26,7 @@ static func play(id: StringName, host: Control) -> float:
 			p.size = Vector2(420, 80)
 			host.add_child(p)
 			return p.type_on("RAM 5/12  // next turn +2")
-		&"sticker_slap", &"sticker_peel", &"sticker_dissolve", &"sticker_gloss_sweep", &"sticker_corner_flutter", \
+		&"sticker_slap", &"sticker_peel", &"sticker_dissolve", &"sticker_gloss_sweep", &"sticker_sweep_period", &"sticker_corner_flutter", \
 				&"sticker_hover", &"sticker_press":
 			var s := VinylSticker.new()
 			s.text = "SEND IT"
@@ -43,6 +43,10 @@ static func play(id: StringName, host: Control) -> float:
 					host.add_child(bits)
 					return s.dissolve(bits, host.global_position + AT + Vector2(260, -160))
 				&"sticker_gloss_sweep":
+					return s.sweep()
+				&"sticker_sweep_period":
+					StickerSweepQueue.reset()
+					StickerSweepQueue.next_period()
 					return s.sweep()
 				&"sticker_corner_flutter":
 					s.flutter = true

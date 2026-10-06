@@ -110,7 +110,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-1 1B material kit (ART_BIBLE v2 1.2, 6.3; round 3 combined_v2 lifecycle): the CRT
 	# terminal, the vinyl sticker, the grease pencil, the holo, the light spill and the bits.
 	&"crt_type_on", &"crt_caret_blink", &"crt_hex_scroll",
-	&"sticker_slap", &"sticker_peel", &"sticker_dissolve", &"sticker_gloss_sweep", &"sticker_corner_flutter",
+	&"sticker_slap", &"sticker_peel", &"sticker_dissolve", &"sticker_gloss_sweep", &"sticker_sweep_period", &"sticker_corner_flutter",
 	&"sticker_hover", &"sticker_press",
 	&"pencil_write_on", &"pencil_wipe", &"pencil_glint",
 	&"holo_bands", &"light_spill_breathe", &"bits_flight",
@@ -172,7 +172,7 @@ const OFF_PARTS: Dictionary = {
 }
 ## ANIM-R5: tunings of another entry (see OFF_PARTS): never switched off.
 const ALWAYS_ON: Array[StringName] = [&"drag_ghost_tilt_speed", &"send_it_drips_share", &"heat_pulse_rise",
-	&"flight_lift_share", &"flight_fade_share", &"choice_stamp_down_share", &"choice_stamp_hold_share"]
+	&"flight_lift_share", &"flight_fade_share", &"choice_stamp_down_share", &"choice_stamp_hold_share", &"sticker_sweep_period"]
 
 @export var entries: Array[UiMotionEntryData] = []
 

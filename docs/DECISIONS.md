@@ -10607,3 +10607,28 @@ Rulings 2026-10-05: netrun pages match the concepts; motion: add the scan band t
 - `test_anim6_screen_motion` (event at 1.3): motion end state already equalled the instant layout; the page itself left the screen (third choice at y 641..842) because the CAM feed with the choices beside it is too tall at 1.3. `EVENT_FEED_BELOW` 1.6 -> 1.25 (the feed steps aside from the same size the choices go beside it). The loot at 2.0 passed once the others were fixed.
 - Refactor: `HqScene.raid_socket` and `NetrunScene.raid_socket_spec` were copies; the logic is now `RaidMapNodes.socket_spec` (pure), both call it, no behaviour change. Test: `test_s_mapview::test_the_hq_and_the_netrun_build_the_same_raid_socket`.
 - Dropped assertions: none (the on-screen message of the layout test now prints the rects).
+
+### 2026-10-06 — B1d — sticker sweep scheduler and peel focus (designer ruling)
+Designer 2026-10-06 (supersedes "Parity fix — sticker edge and sticker focus": focus = rainbow sweep + curl) and art-pass review
+D22: the rainbow gloss sweep is a scheduler's, focus and hover are the peel-back only. Claims: D22 (and section d "Sticker gloss / peel").
+- **Scheduler** (`StickerSweepQueue`, the existing static kit singleton, reworked): every `ambient_sweep` sticker (VinylSticker, HoloSticker words,
+  VerbSticker kit / baked / drawn) joins; ONE is the screen's primary and only it sweeps: a sticker named `sweep_primary` (rank 0), else the first
+  PINK verb (rank 1), else the first to join (rank 2); hidden (other screen) or disabled ones are skipped; ties by join order. One sweep at a
+  time, never two. **Primary only, no rotation** (the review says "one sweep every 4 to 6 s on the screen's primary verb"). The pause menu's
+  focus-driven `ambient_sweep` hack is gone (RESUME is the pink primary).
+- **Period**: new motion entry `sticker_sweep_period` (HOLD-kind tuning, ALWAYS_ON, demo = the sweep): delay 4.0 s = shortest, duration 6.0 s =
+  longest, amplitude 14 = the seed; a seeded `RngStreams` stream (`sticker_sweep`, no global randomness) draws the period from the range; the next
+  sweep starts one period after the last started (rest = period - sweep). `sticker_gloss_sweep.delay` (was the rest) is now 0.
+- **Focus / hover = peel-back only**: `VinylSticker.set_state(HOVER)` no longer sets `rainbow` or starts a sweep, and the static rainbow sheen
+  (`RAINBOW_STATIC_*`) is removed; lift, grow and the corner curl (HOVER_CURL) stay. `VerbSticker` (baked / drawn): `_grow` sets only `_focused`
+  (the drawn curl); hover no longer sweeps. The scheduled sweep is the rainbow one (`rainbow` = 1 during it, 0 after).
+- **Reduce effects / headless**: no sweep (`Motion.live` false; the turn is handed back at once); the rest gloss 0.22 is the static sheen (bible);
+  MotionSkip `complete_motion` ends a running sweep at rest values and frees the queue.
+- **Rest curl on verb stickers (review d: "4 px corner curl at rest")**: NOT built. I did not find a rest curl on the locked concept stickers in the
+  material available to this worktree (the art-pass renders are not in it); the idle flutter (`rest_curl`, `flutter`) stays off by default. For the
+  art director: setting `rest_curl` on the primary verb is a one-line change.
+- **Tests**: new `test_sticker_sweep_scheduler` (primary pick order, one at a time, period 4-6 s from config and seeded, next-sweep timing, focus =
+  peel and no rainbow, reduce effects, MotionSkip, drawn VerbSticker). Updated: `test_sticker_edge_focus` (focus tests peel-only), `test_art1_material_kit`
+  (queue test: primary only). Dropped: none. `test_motion_lab_demos` shows the `asset_drop_grow` red (city_map_overlay), not touched by this change.
+- Windowed: `tools/visual_qa/sticker_sweep_strip.tscn` (new lab: frame strip of one sweep plus a focus shot); sheet
+  `docs/art_review/PARITY/fixes/B1d.jpg` (title, pause, slots, new_campaign, combat_start at 1.0; the first four at 1.6; before | after; strip below).

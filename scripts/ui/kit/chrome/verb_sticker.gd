@@ -20,6 +20,7 @@ enum Fill { PINK, YELLOW, BLUE, GLITCH, GREY }
 const SHADER := preload("res://shaders/chrome/vinyl_sticker.gdshader")
 ## Motion entries: hover growth + gloss sweep, the press squash, the glitch bursts.
 const HOVER_MOTION := &"sticker_hover"
+const SWEEP_MOTION := &"sticker_gloss_sweep"
 const PRESS_MOTION := &"sticker_press"
 const GLITCH_MOTION := &"title_glitch_burst"
 ## Geometry as shares of the lettering size (round 33 sticker_lib: keyline 5 px, extrude
@@ -110,7 +111,6 @@ var _focused: bool = false
 ## height, and where the static sheen (no motion) stands across its width.
 const CURL_SHARE := 0.22
 const SWEEP_WIDTH_SHARE := 0.35
-const STATIC_SHEEN_AT := 0.5
 
 
 ## The baked art key for a screen-title word ("OPTIONS" -> "title_options"), or "" when the
@@ -179,9 +179,10 @@ func complete_motion() -> void:
 	if _scale_tween != null and _scale_tween.is_valid():
 		_scale_tween.kill()
 		scale = _scale_to
-	if _sweep_tween != null and _sweep_tween.is_valid():
+	if sweep_running():
 		_sweep_tween.kill()
-		_mat.set_shader_parameter(&"sweep", SWEEP_OFF)
+		_sweep_tween = null
+		_finish_sweep()
 
 
 func _ready() -> void:
@@ -191,16 +192,23 @@ func _ready() -> void:
 		vinyl.name = "Vinyl"
 		vinyl.fill = VinylSticker.Fill.YELLOW if fill == Fill.YELLOW else VinylSticker.Fill.PINK
 		vinyl.tilt_deg = tilt
+		vinyl.ambient_sweep = true
+		vinyl.sweep_primary = sweep_primary
 		vinyl.seed = hash(text) % 997
 		add_child(vinyl)
 		_fit()
 	Settings.changed.connect(_refit_later)
 	resized.connect(_pivot)
 	_pivot()
-	set_process(fill == Fill.GLITCH)
+	set_process(true)
+
+
+func _enter_tree() -> void:
+	StickerSweepQueue.join(self)
 
 
 func _exit_tree() -> void:
+	StickerSweepQueue.leave(self)
 	if Settings.changed.is_connected(_refit_later):
 		Settings.changed.disconnect(_refit_later)
 
@@ -279,8 +287,6 @@ func set_label(t: String) -> void:
 
 func _hot(on: bool) -> void:
 	_grow(on or has_focus())
-	if on and not disabled:
-		_sweep()
 	queue_redraw()
 
 
@@ -296,17 +302,9 @@ func _grow(on: bool) -> void:
 	if vinyl != null:
 		vinyl.set_state(VinylSticker.State.DISABLED if disabled else (VinylSticker.State.HOVER if on else VinylSticker.State.REST))
 		return
-	# Focus / hover (designer 2026-10-05): the gloss band runs in holo-foil colours (the shader's
-	# `rainbow`) and the corner curls (_draw_curl); with no sweep playing (reduce effects) the sheen stands.
+	# Focus / hover (designer 2026-10-06, B1d): the peel-back only (the corner curl, _draw_curl, and the
+	# grow); the rainbow gloss is the one scheduled sweep (run_sweep), never focus.
 	_focused = on and not disabled
-	_mat.set_shader_parameter(&"rainbow", 1.0 if _focused else 0.0)
-	_mat.set_shader_parameter(&"sweep_width", size.y * SWEEP_WIDTH_SHARE)
-	if _sweep_tween != null:
-		_sweep_tween.kill()
-	if _focused and not Motion.live(HOVER_MOTION):
-		_mat.set_shader_parameter(&"sweep", size.x * STATIC_SHEEN_AT)
-	elif not _focused:
-		_mat.set_shader_parameter(&"sweep", SWEEP_OFF)
 	queue_redraw()
 	var to := Vector2.ONE * (Motion.amplitude(HOVER_MOTION) if on and not disabled else 1.0)
 	if _scale_tween != null:
@@ -333,22 +331,66 @@ func _press(down: bool) -> void:
 	_scale_tween = Motion.run(PRESS_MOTION, self, ^"scale", to)
 
 
-## One gloss sweep across the lettering (§4.13: hover = gloss sweep); none when the motion
-## does not play.
-func _sweep() -> void:
-	if vinyl != null or not Motion.live(HOVER_MOTION):
-		return
+## StickerSweepQueue interface (drawn and baked art; the kit sticker joins through its own vinyl).
+@export var ambient_sweep: bool = true
+## The screen names this sticker its primary verb: the queue sweeps it before any other (rank 0).
+@export var sweep_primary: bool = false:
+	set(v):
+		sweep_primary = v
+		if vinyl != null:
+			vinyl.sweep_primary = v
+
+
+## Order of the primary pick: 0 named, 1 pink, 2 the rest.
+func sweep_rank() -> int:
+	if sweep_primary:
+		return 0
+	return 1 if fill == Fill.PINK else 2
+
+
+## It may take the turn: shown, enabled, drawn here (the kit sticker's vinyl sweeps for itself).
+func sweep_ready() -> bool:
+	return vinyl == null and is_visible_in_tree() and not disabled and not sweep_running()
+
+
+func sweep_running() -> bool:
+	return _sweep_tween != null and _sweep_tween.is_valid() and _sweep_tween.is_running()
+
+
+## One rainbow gloss sweep across the lettering (`sticker_gloss_sweep`, run by StickerSweepQueue on the
+## primary verb); none when the motion does not play. Returns its seconds.
+func run_sweep() -> float:
+	if vinyl != null or not Motion.live(SWEEP_MOTION):
+		_finish_sweep()
+		return 0.0
 	if _sweep_tween != null:
 		_sweep_tween.kill()
 	var w := size.x
+	var d := Motion.seconds(SWEEP_MOTION)
+	_mat.set_shader_parameter(&"sweep_width", size.y * SWEEP_WIDTH_SHARE)
+	_mat.set_shader_parameter(&"rainbow", 1.0)
 	_mat.set_shader_parameter(&"sweep", -w * 0.3)
 	_sweep_tween = create_tween()
-	_sweep_tween.tween_method(func(x: float) -> void: _mat.set_shader_parameter(&"sweep", x), -w * 0.3, w * 1.3,
-		Motion.seconds(HOVER_MOTION) * 3.0)
-	_sweep_tween.tween_callback(func() -> void: _mat.set_shader_parameter(&"sweep", SWEEP_OFF))
+	_sweep_tween.tween_method(func(x: float) -> void: _mat.set_shader_parameter(&"sweep", x), -w * 0.3, w * 1.3, d)
+	_sweep_tween.tween_callback(_finish_sweep)
+	return d
+
+
+func _finish_sweep() -> void:
+	_mat.set_shader_parameter(&"sweep", SWEEP_OFF)
+	_mat.set_shader_parameter(&"rainbow", 0.0)
+	StickerSweepQueue.done(self, Time.get_ticks_msec(), Motion.seconds(SWEEP_MOTION))
+
+
+func _process_sweep() -> void:
+	if ambient_sweep and vinyl == null and StickerSweepQueue.take_turn(self, Time.get_ticks_msec()):
+		run_sweep()
 
 
 func _process(delta: float) -> void:
+	_process_sweep()
+	if fill != Fill.GLITCH:
+		return
 	if fill != Fill.GLITCH or not Motion.live(GLITCH_MOTION):
 		if _clock != 0.0:
 			_clock = 0.0

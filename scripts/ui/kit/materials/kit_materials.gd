@@ -16,7 +16,7 @@ const ALL: Dictionary = {
 		"motions": [&"crt_type_on", &"crt_caret_blink", &"crt_hex_scroll"]},
 	&"vinyl_sticker": {"component": "VinylSticker", "tier": T0,
 		"shaders": ["res://shaders/kit/vinyl_sticker.gdshader", "res://shaders/kit/sticker_fill.gdshader"],
-		"motions": [&"sticker_slap", &"sticker_peel", &"sticker_dissolve", &"sticker_gloss_sweep", &"sticker_corner_flutter",
+		"motions": [&"sticker_slap", &"sticker_peel", &"sticker_dissolve", &"sticker_gloss_sweep", &"sticker_sweep_period", &"sticker_corner_flutter",
 			&"sticker_hover", &"sticker_press"]},
 	&"grease_pencil": {"component": "GreasePencilMark", "tier": T0,
 		"shaders": ["res://shaders/kit/marker_stroke.gdshader"],

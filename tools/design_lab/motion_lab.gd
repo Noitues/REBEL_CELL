@@ -172,7 +172,7 @@ const DEMOS := {
 	&"crt_type_on": ["kit", "crt_type_on"], &"crt_caret_blink": ["kit", "crt_caret_blink"], &"crt_hex_scroll": ["kit", "crt_hex_scroll"],
 	&"gate_keycard_stagger": ["kit", "gate_keycard_stagger"], &"gate_socket_ring": ["kit", "gate_socket_ring"], &"gate_breach_ready": ["kit", "gate_breach_ready"],
 	&"sticker_slap": ["kit", "sticker_slap"], &"sticker_peel": ["kit", "sticker_peel"], &"sticker_dissolve": ["kit", "sticker_dissolve"],
-	&"sticker_gloss_sweep": ["kit", "sticker_gloss_sweep"], &"sticker_corner_flutter": ["kit", "sticker_corner_flutter"],
+	&"sticker_gloss_sweep": ["kit", "sticker_gloss_sweep"], &"sticker_sweep_period": ["kit", "sticker_sweep_period"], &"sticker_corner_flutter": ["kit", "sticker_corner_flutter"],
 	&"sticker_hover": ["kit", "sticker_hover"], &"sticker_press": ["kit", "sticker_press"],
 	&"pencil_write_on": ["kit", "pencil_write_on"], &"pencil_wipe": ["kit", "pencil_wipe"], &"pencil_glint": ["kit", "pencil_glint"],
 	&"holo_bands": ["kit", "holo_bands"], &"light_spill_breathe": ["kit", "light_spill_breathe"], &"bits_flight": ["kit", "bits_flight"],
