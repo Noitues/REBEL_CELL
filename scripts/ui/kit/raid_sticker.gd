@@ -26,7 +26,7 @@ func _init(p_text: String = "", p_step: int = UiTheme.HEADING, p_fill: StringNam
 	flat = true
 	clip_text = true
 	focus_mode = Control.FOCUS_ALL
-	add_theme_stylebox_override("focus", UiTheme.focus_box())
+	add_theme_stylebox_override("focus", StyleBoxEmpty.new())  # focus = the vinyl's rainbow sheen and curl, no brackets
 	for key in ["normal", "hover", "pressed", "disabled", "hover_pressed"]:
 		add_theme_stylebox_override(key, StyleBoxEmpty.new())
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color", "font_disabled_color"]:
