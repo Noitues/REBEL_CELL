@@ -48,9 +48,59 @@ BOARD_W, BOARD_H = 1920, 1080
 STICKER_SCALE = 2.0
 # abandon.py's answer stickers: (size, fill, seed). CANCEL and BURN IT as abandon.py draws them;
 # DELETE (the title's delete-slot verb) with BURN IT's parameters (the pink committing verb).
+# Parity STICKER_EDGE (designer 2026-10-05): the die-cut edge of a baked sticker is a share of its lettering size, as the
+# drawn stickers' is (VinylSticker.EDGE_SHARE x the lettering, capped at the concept's own 12 board px): the concept's
+# `border=12` was a fixed number whatever the size. The concept's drawing code is run unchanged; only its `border`
+# argument is replaced, at the size each sticker is baked (`edge_px`). Keep EDGE_SHARE equal to VinylSticker.EDGE_SHARE.
+EDGE_SHARE = 0.14
+EDGE_CAP = 12
 DIALOG_WORDS = {"CANCEL": (50, "FILL_YELLOW", 41), "BURN IT": (58, "FILL_PINK", 40), "DELETE": (58, "FILL_PINK", 40)}
 TITLE_WORDS = {"OPTIONS": (66, 19), "PAUSED": (54, 60), "CODEX": (54, 61), "STATS": (54, 62),
                "CAMPAIGN SLOTS": (54, 63), "NEW CAMPAIGN": (54, 64)}
+
+
+def edge_px(size: float) -> int:
+    """The die-cut border (board px) of a sticker lettered at `size`."""
+    return max(2, min(EDGE_CAP, round(EDGE_SHARE * size)))
+
+
+class Thin:
+    """Context: every `SL.build_sticker` call inside it uses the border of lettering `size` (the concept's drawing code
+    is unchanged; its own `border=12` is replaced)."""
+
+    def __init__(self, SL, size: float, M=None):
+        self.SL, self.size, self.M = SL, size, M
+
+    def __enter__(self):
+        self.orig = self.SL.build_sticker
+        border = edge_px(self.size)
+        orig = self.orig
+
+        def build(art, *a, **kw):
+            kw["border"] = border
+            if kw.get("close") is not None:
+                kw["close"] = border * 1.25
+            return orig(art, *a, **kw)
+
+        self.SL.build_sticker = build
+        if self.M is not None:  # menu33._pad pads glitch art "like build_sticker does (border 12, close 1.6 x border)"
+            from PIL import Image
+            self.orig_pad = self.M._pad
+            SL = self.SL
+
+            def pad(art):
+                extra = int((border + border * 1.6 + 12) * SL.SS)
+                out = Image.new("RGBA", (art.size[0] + 2 * extra, art.size[1] + 2 * extra), (0, 0, 0, 0))
+                out.paste(art, (extra, extra))
+                return out
+
+            self.M._pad = pad
+        return self
+
+    def __exit__(self, *e):
+        self.SL.build_sticker = self.orig
+        if self.M is not None:
+            self.M._pad = self.orig_pad
 
 
 def point_fonts(SL, U, M) -> None:
@@ -101,23 +151,26 @@ def sticker_png(SL, sd, path: Path) -> None:
 
 def bake_stickers(SL, U, M, T) -> None:
     d = OUT / "stickers"
-    breach = T.stk("BREACH", U.FILL_PINK, 60, 50, focus=False)
-    breach_f = T.stk("BREACH", U.FILL_PINK, 60, 50, focus=True)
+    with Thin(SL, 60):
+        breach = T.stk("BREACH", U.FILL_PINK, 60, 50, focus=False)
+        breach_f = T.stk("BREACH", U.FILL_PINK, 60, 50, focus=True)
     sticker_png(SL, breach["base"], d / "breach.png")
     sticker_png(SL, breach_f["base"], d / "breach_focus.png")
     for k, sw in enumerate(breach_f["sweeps"]):
         sticker_png(SL, sw, d / ("breach_sweep_%02d.png" % k))
-    sim = T.stk("SIMULATE", "glitch", 60, 51)
+    with Thin(SL, 60, M):
+        sim = T.stk("SIMULATE", "glitch", 60, 51)
     sticker_png(SL, sim["base"], d / "simulate.png")
     sticker_png(SL, U.focus_sticker(sim["base"]), d / "simulate_focus.png")
     for ph, sd in sim["glitch"].items():
         sticker_png(SL, sd, d / ("simulate_burst_%d.png" % ph))
         sticker_png(SL, U.focus_sticker(sd), d / ("simulate_burst_%d_focus.png" % ph))
-    ovr = T.stk("OVERTHROW", "fist", 60, 52)
+    with Thin(SL, 60):
+        ovr = T.stk("OVERTHROW", "fist", 60, 52)
     sticker_png(SL, ovr["base"], d / "overthrow.png")
     sticker_png(SL, U.focus_sticker(ovr["base"]), d / "overthrow_focus.png")
     for word, (size, seed) in TITLE_WORDS.items():
-        sticker_png(SL, U.sticker(word, size, U.FILL_YELLOW, seed=seed), d / ("title_%s.png" % word.lower().replace(" ", "_")))
+        sticker_png(SL, U.sticker(word, size, U.FILL_YELLOW, seed=seed, border=edge_px(size)), d / ("title_%s.png" % word.lower().replace(" ", "_")))
 
 
 def bake_dialog_stickers(SL, U) -> None:
@@ -125,7 +178,7 @@ def bake_dialog_stickers(SL, U) -> None:
     U.focus_sticker's lime die-cut halo."""
     d = OUT / "stickers"
     for word, (size, fill, seed) in DIALOG_WORDS.items():
-        sd = U.sticker(word, size, getattr(U, fill), seed=seed)
+        sd = U.sticker(word, size, getattr(U, fill), seed=seed, border=edge_px(size))
         key = "dialog_" + word.lower().replace(" ", "_")
         sticker_png(SL, sd, d / (key + ".png"))
         sticker_png(SL, U.focus_sticker(sd), d / (key + "_focus.png"))
@@ -220,7 +273,7 @@ def bake_glitch(S, src: Path) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", required=True, help="extracted art-concepts-r43 tree (its root)")
-    ap.add_argument("--only", default="", help="bake one part only: dialog (abandon.py's stickers)")
+    ap.add_argument("--only", default="", help="bake one part only: dialog (abandon.py's stickers), stickers (those and the title / menu ones)")
     args = ap.parse_args()
     src = Path(args.src)
     scripts = src / "docs" / "concepts" / "round33_ui_chrome" / "scripts"
@@ -238,6 +291,8 @@ def main() -> int:
         return 0
     bake_stickers(SL, U, M, T)
     print("stickers", flush=True)
+    if args.only == "stickers":
+        return 0
     meta = bake_sign(T, U)
     print("sign states", len(meta["states"]), flush=True)
     bake_pencil(U, T)
