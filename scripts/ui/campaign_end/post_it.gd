@@ -11,7 +11,7 @@ var tilt: float = 0.0
 ## The paper art for `_art_paper`, loaded once and held (ART-12 12p: an unheld `load()` decodes
 ## the PNG again at every draw, and the notes redraw as they slap on).
 var _art: Texture2D = null
-var _art_paper: Color = Color(0, 0, 0, 0)
+var _art_paper: Color = Palette.END_NOTE_YELLOW
 var _art_loaded: bool = false
 
 ## The note's side at text scale 1.0 (px), the glued band's share, the inner pad (px at 1.0),
