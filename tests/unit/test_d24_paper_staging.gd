@@ -78,3 +78,41 @@ func test_dossier_is_tilted_at_every_scale_and_keeps_its_fit() -> void:
 		assert_lte(d.size.x, maxf(OperativeDossier.WIDTH * k, 1.0), "x%s: the file's own width" % k)
 		var reach := PaperStaging.reach(d.size, d.rotation_degrees)
 		assert_lte(reach.x + PaperStaging.SHADOW_PX * k, SCREEN.x * 0.1, "x%s: the tilt leaves the map room alone" % k)
+
+
+const SHEET_FLOOR := 320.0
+const CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
+
+
+func test_the_clip_bites_into_padding_and_the_letterhead_starts_below_it() -> void:
+	assert_eq(PaperStaging.CLIP_BITE, 14.0, "the clip's bite is 14 px at 1.0")
+	for k in SCALES:
+		Settings.set_text_scale(k)
+		var p := RaidPaper.new(&"solace", "T", RaidPaper.STAMP_CLASSIFIED, "WO 1")
+		add_child_autofree(p)
+		assert_almost_eq(p.top_pad(), PaperStaging.CLIP_BITE * k, 0.001, "x%s: RaidPaper's top padding" % k)
+		assert_almost_eq(p.paper.top_pad, p.top_pad(), 0.001, "x%s: the sheet's letterhead sits below the jaw" % k)
+		var d := OperativeDossier.new()
+		add_child_autofree(d)
+		d.show_file(_dossier_data("op_vex"))
+		assert_almost_eq(d.paper.top_pad, PaperStaging.CLIP_BITE * k, 0.001, "x%s: the dossier's too" % k)
+
+
+func test_every_letterhead_label_fits_the_sheet_width() -> void:
+	for k in SCALES:
+		Settings.set_text_scale(k)
+		for corp in CORPS:
+			var p := RaidPaper.new(corp, "T", RaidPaper.STAMP_CLASSIFIED, "WO 1")
+			add_child_autofree(p)
+			var w := maxf(p.get_combined_minimum_size().x, SHEET_FLOOR * k)
+			var room := w - UiTheme.SP_L * 2.0
+			var div := Palette.paper().get_string_size(p.skin.division(), HORIZONTAL_ALIGNMENT_LEFT, -1, p.division_px(w)).x
+			assert_lte(div, room, "%s x%s: the division line fits the sheet" % [corp, k])
+			var head := Palette.body_medium().get_string_size(p.paper.corp_name, HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(UiTheme.LABEL)).x
+			assert_lte(head, room, "%s x%s: the corp name fits the sheet" % [corp, k])
+		var d := OperativeDossier.new()
+		add_child_autofree(d)
+		d.show_file(_dossier_data("op_vex"))
+		for line in d.sub_lines(d.custom_minimum_size.x):
+			var lw := RouteInk.paper_font().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(roundi(OperativeDossier.SUB_FONT * k), 1)).x
+			assert_lte(lw, d.custom_minimum_size.x - OperativeDossier.MARGIN * k * 2.0, "x%s: the dossier's sub line fits" % k)

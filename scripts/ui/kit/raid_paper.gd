@@ -22,6 +22,8 @@ const LETTERHEAD_H := 46.0
 ## Room under 1B's letterhead rule for the division line (px at 1.0).
 const DIVISION_ROOM := 18.0
 const SEAL_R := 15.0
+## The least size (px) the division line shrinks to so it fits the sheet.
+const DIVISION_MIN_PX := 6
 ## Margins (px at 1.0): sides, top under the clip, and the footer's room (redactions + meta).
 const PAD := 14.0
 const FOOTER_H := 32.0
@@ -70,7 +72,7 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_stamp
 	var box := StyleBoxEmpty.new()
 	box.content_margin_left = PAD * _k
 	box.content_margin_right = PAD * _k
-	box.content_margin_top = (CorpPaperPanel.LETTERHEAD_H + DIVISION_ROOM) * _k
+	box.content_margin_top = (CorpPaperPanel.LETTERHEAD_H + DIVISION_ROOM) * _k + top_pad()
 	# Parity fix (RAID-02 / RAID-11): the rows end above the rubber stamp, which sits on the
 	# footer's redactions (round 20-21), never on a row's words.
 	box.content_margin_bottom = maxf(FOOTER_H * _k, CorpPaperPanel.stamp_reach(tr(p_stamp)) + STAMP_CLEAR * _k)
@@ -83,6 +85,7 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_stamp
 	paper.corp_color = skin.paper_hue.lightened(0.35) if Palette.luminance(skin.hue) > Palette.luminance(Palette.TEXT_MID) else skin.hue
 	paper.stamp = tr(p_stamp)
 	paper.seed = absi(p_title.hash()) % 97 + 1
+	paper.top_pad = top_pad()
 	add_child(paper, false, Node.INTERNAL_MODE_FRONT)
 	_deco_node = Control.new()
 	_deco_node.name = "Deco"
@@ -189,6 +192,22 @@ func _draw() -> void:
 	PaperStaging.draw_shadow(self, size, _k)
 
 
+## The sheet's top padding (px): the clip's bite, so the letterhead starts below the jaw (D24).
+func top_pad() -> float:
+	return PaperStaging.CLIP_BITE * _k
+
+
+## The size (px) the division line is drawn at for a sheet `width` wide: the caption size, shrunk
+## so the whole line fits between the side margins (never cut at the paper's edge).
+func division_px(width: float) -> int:
+	var px := UiTheme.font_px(UiTheme.CAPTION)
+	var room := width - UiTheme.SP_L * 2.0
+	var f := Palette.paper()
+	while px > DIVISION_MIN_PX and f.get_string_size(skin.division(), HORIZONTAL_ALIGNMENT_LEFT, -1, px).x > room:
+		px -= 1
+	return px
+
+
 ## The document's id (its number, else its title) the tilt is seeded from (D24).
 func tilt_id() -> String:
 	return "%s|%s" % [skin.corporation_id, number if number != "" else title_label.text]
@@ -204,12 +223,13 @@ func tilt() -> float:
 func _deco(on: Control) -> void:
 	var r := Rect2(Vector2.ZERO, size)
 	var k := _k
-	var seal_c := Vector2(r.size.x - (PAD + SEAL_R) * k, (PAD * 0.4 + SEAL_R) * k)
+	var seal_c := Vector2(r.size.x - (PAD + SEAL_R) * k, (PAD * 0.4 + SEAL_R) * k + top_pad())
 	draw_seal(on, seal_c, SEAL_R * k, skin.paper_hue, false, skin.corporation_id)
 	var meta_font := Palette.paper()
 	var meta_px := UiTheme.font_px(UiTheme.CAPTION)
-	on.draw_string(meta_font, Vector2(CorpPaperPanel.LETTERHEAD_H * 0.0 + UiTheme.SP_L, CorpPaperPanel.LETTERHEAD_H + meta_px * 0.6), skin.division(),
-		HORIZONTAL_ALIGNMENT_LEFT, r.size.x - UiTheme.SP_L * 2.0, meta_px, Palette.INK.lerp(Palette.PAPER, 0.45))
+	var div_px := division_px(r.size.x)
+	on.draw_string(meta_font, Vector2(UiTheme.SP_L, top_pad() + CorpPaperPanel.LETTERHEAD_H + meta_px * 0.6), skin.division(),
+		HORIZONTAL_ALIGNMENT_LEFT, -1, div_px, Palette.INK.lerp(Palette.PAPER, 0.45))
 	# The footer: redacted lines and the meta line.
 	var fy := r.size.y - FOOTER_H * k + 8.0 * k
 	for row in REDACT_ROWS:

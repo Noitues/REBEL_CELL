@@ -126,6 +126,7 @@ func _relayout() -> void:
 	compact = force_compact or file_width() > vw * MAX_WIDTH_SHARE
 	_rows = _build_rows()
 	rotation_degrees = tilt()
+	paper.top_pad = PaperStaging.CLIP_BITE * _s()
 	var w := file_width() if not compact else minf(file_width(), vw * MAX_WIDTH_SHARE)
 	custom_minimum_size = Vector2(w, _height(w))
 	update_minimum_size()
@@ -182,7 +183,7 @@ func _height(w: float) -> float:
 	var s := _s()
 	var fs := roundi(FIELD_FONT * s)
 	var lh := _line_h(fs)
-	var h := HEAD_H + RouteInk.paper_font().get_height(maxi(roundi(SUB_FONT * s), 1)) * maxi(1, sub_lines(w).size()) + MARGIN * s
+	var h := HEAD_H + PaperStaging.CLIP_BITE * s + RouteInk.paper_font().get_height(maxi(roundi(SUB_FONT * s), 1)) * maxi(1, sub_lines(w).size()) + MARGIN * s
 	h += maxf(MUG * s if not compact else 0.0, lh * _rows.size())
 	if not compact:
 		h += MARGIN * s + lh * 6.0  # wheel, hub core, deck (label + value each)
@@ -200,7 +201,7 @@ func _draw() -> void:
 	var w := size.x
 	var h := size.y
 	draw_set_transform(Vector2.ZERO, 0.0)
-	var head_h := HEAD_H
+	var head_h := HEAD_H + PaperStaging.CLIP_BITE * s
 	var pf := RouteInk.paper_font()
 	var sfs := maxi(roundi(SUB_FONT * s), 1)
 	var x := MARGIN * s
