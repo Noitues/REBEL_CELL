@@ -290,3 +290,27 @@ func test_the_grid_markers_are_the_overlays_on_the_layouts_lots() -> void:
 	RunManager.reset()
 	RunManager.scene_switching_enabled = true
 	AudioDirector.muted = false
+
+
+func test_a_rebuilt_map_keeps_the_newer_maps_decal() -> void:
+	# ART-5 5e (found in the Heat-band review): the Grid rebuilds its map on every Site
+	# selection; the old map leaves the tree after the new one fed the decal, and must not
+	# clear it.
+	var city: NeonCity = autofree(NeonCity.new())
+	var view := _view()
+	city.view3d = view
+	var holder: Control = add_child_autofree(Control.new())
+	var old_map := CityMapOverlay.new(city)
+	holder.add_child(old_map)
+	old_map._feed_decal()
+	var new_map := CityMapOverlay.new(city)
+	holder.add_child(new_map)
+	new_map._feed_decal()
+	var fed := view.network
+	assert_not_null(fed, "the new map fed the decal")
+	holder.remove_child(old_map)
+	old_map.free()
+	assert_eq(view.network, fed, "the old map leaving keeps the new map's decal")
+	holder.remove_child(new_map)
+	new_map.free()
+	assert_null(view.network, "the last map leaving clears it")

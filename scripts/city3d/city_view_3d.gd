@@ -227,8 +227,9 @@ func host_paused() -> bool:
 ## config's ramp, sky, window and neon gains, haze and grade) toward `day` by night share
 ## `n` (1 night .. 0 day), on the buildings, streets, post and sky, and switches the
 ## landmarks' materials to their day or night look. `day` keys: "ramp" (3 Colors: shadow,
-## mid, lit), "sky", "window_gain", "neon_gain", "haze", "grade" (CityViewMotion.day_look
-## builds it from the motion config). By day there is no rain, and no fog below the Grid.
+## mid, lit), "sky", "window_gain", "neon_gain", "haze", "grade", and optionally "bloom" and
+## "glow_threshold" (ART-5 5e: the post's bloom by day; CityViewMotion.day_look builds it
+## from the motion config). By day there is no rain, and no fog below the Grid.
 func set_night_share(n: float, day: Dictionary) -> void:
 	night_share = clampf(n, 0.0, 1.0)
 	if _building_mat == null or day.is_empty():
@@ -245,6 +246,8 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	_post.set_shader_parameter(&"haze_color", Vector3(hz.r, hz.g, hz.b))
 	var gr := (day["grade"] as Color).lerp(cfg.grade, night_share)
 	_post.set_shader_parameter(&"grade", Vector3(gr.r, gr.g, gr.b))
+	_post.set_shader_parameter(&"bloom", lerpf(float(day.get("bloom", cfg.bloom)), cfg.bloom, night_share))
+	_post.set_shader_parameter(&"glow_threshold", lerpf(float(day.get("glow_threshold", cfg.glow_threshold)), cfg.glow_threshold, night_share))
 	var night := night_share >= 0.5
 	_post.set_shader_parameter(&"rain_on", bool(quality.get("rain", true)) and night)
 	_post.set_shader_parameter(&"fog_on", bool(quality.get("fog", true)) and (night or band == CityLod.Band.GRID))

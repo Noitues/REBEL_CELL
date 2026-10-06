@@ -692,7 +692,14 @@ func on_ground_decal() -> bool:
 func _feed_decal() -> void:
 	if city == null or city.view3d == null:
 		return
-	city.view3d.set_network(network_data())
+	_fed_network = network_data()
+	city.view3d.set_network(_fed_network)
+
+
+## ART-5 5e: the network this map last handed the 3D city: leaving the tree clears the decal
+## only while it is still this map's (a page that rebuilds its map, as the Grid does on every
+## Site selection, frees the old map after the new one fed the decal).
+var _fed_network: CityNetworkData = null
 
 
 ## ART-5 5a: this map's network as the decal's buffers (the nodes on their lots, the links
@@ -813,7 +820,8 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_MOUSE_EXIT:
 		_point_at(&"")
 	elif what == NOTIFICATION_EXIT_TREE and city != null and city.view3d != null and is_instance_valid(city.view3d):
-		city.view3d.set_network(null)
+		if city.view3d.network == null or city.view3d.network == _fed_network:
+			city.view3d.set_network(null)
 
 
 ## H24 K4: the pointer is over node `id` now: tell the screen when that changes.
