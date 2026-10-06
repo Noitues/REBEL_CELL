@@ -70,7 +70,7 @@ const ALLOWED := {
 	"scripts/ui/kit/terminal_window.gd": [1, ROUTED_CARRY],
 	"scripts/ui/kit/ui_theme.gd": [ANY, ROUTED_THEME],
 	"scripts/ui/kit/wireframe_background.gd": [1, SEM_WORLD],
-	"scripts/ui/kit/zine_card.gd": [3, "SEMANTIC: a card's default accent, the holo hue set and the PROTECT card colour"],
+	"scripts/ui/kit/zine_card.gd": [1, "SEMANTIC: a card's default accent (S-CARDFACE: the holo hues and the PROTECT fill went with the drawn sticker)"],
 	"scripts/ui/kit/zine_panel.gd": [1, "CHROME, routed: the glass's first colour; _draw_terminal re-values it through PaletteSkins.chrome"],
 	"scripts/ui/netrun_scene.gd": [9, "SEMANTIC: net-map nodes and edges, the result colour and chip tiles (net cyan); four more are the accent of a CrtWindow (loot, payout, clerk, info), which routes it through the skin (CrtWindow.skin_accent, CrtTerminalPanel.accent)"],
 	"scripts/ui/kit/chrome/crt_window.gd": [1, "CHROME, routed: kind_for only compares the accent to pick the Cell's CRT kind, which follows the skin"],

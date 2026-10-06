@@ -11,7 +11,6 @@ Stationed on %s."
  (local: REBEL_CELL is built from your profile), (local: REBEL_CELL is built from your profile)
  (run in progress), (run in progress)
  // PINNED, // PINNED
- // exhausts, // exhausts
  AGAIN, AGAIN
  DOWN, DOWN
  [locked], [locked]
@@ -69,7 +68,6 @@ Press to deploy it to %s (the target: pick another node on the map or in YOUR NO
 ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds.","%s
 ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds."
 %s  (home server BREACHED),%s  (home server BREACHED)
-%s  //  %d RAM,%s  //  %d RAM
 %s  //  AUDIT %d,%s  //  AUDIT %d
 %s  //  INTERNAL  //  DO NOT FORWARD,%s  //  INTERNAL  //  DO NOT FORWARD
 %s  //  NOTICE,%s  //  NOTICE
@@ -242,6 +240,7 @@ BOSS,BOSS
 BREACH,BREACH
 BREACH PAYOUT,BREACH PAYOUT
 BREACH: start the fight at the Central Server.,BREACH: start the fight at the Central Server.
+BREACH: the hub core's bonus and resistance are off while it lasts.,BREACH: the hub core's bonus and resistance are off while it lasts.
 BREACHED,BREACHED
 BREACHED: your home server fell. The campaign is lost.,BREACHED: your home server fell. The campaign is lost.
 BUY,BUY
@@ -267,7 +266,6 @@ Best ICE: %s. %s,Best ICE: %s. %s
 Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d.,Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d.
 Block %d: soaks damage this turn.,Block %d: soaks damage this turn.
 Borderless,Borderless
-Boss,Boss
 Boss Extra Pointer,Boss Extra Pointer
 Boss Phase Early,Boss Phase Early
 Boss Strength,Boss Strength
@@ -287,6 +285,7 @@ CAN BE YOUR NODE,CAN BE YOUR NODE
 CANCEL,CANCEL
 CANNOT UNDO,CANNOT UNDO
 CARD DETAIL,CARD DETAIL
+CARD NOTES,CARD NOTES
 CARDS,CARDS
 CARGO RECLAIMED,CARGO RECLAIMED
 CASE CLOSED,CASE CLOSED
@@ -318,6 +317,7 @@ COLOUR-BLIND CORRECTION,COLOUR-BLIND CORRECTION
 COMBAT,COMBAT
 COMBATS,COMBATS
 COMMON,COMMON
+COMMON · one pip,COMMON · one pip
 COMPLIANCE DIVISION,COMPLIANCE DIVISION
 CONFIRM,CONFIRM
 CONNECTING,CONNECTING
@@ -539,7 +539,6 @@ Close,Close
 Cobalt (deep blue terminal),Cobalt (deep blue terminal)
 Codex,Codex
 Colour-blind correction (patterns and glyphs stay the main cue),Colour-blind correction (patterns and glyphs stay the main cue)
-Common,Common
 Continue,Continue
 Continue the current run,Continue the current run
 Controls,Controls
@@ -581,6 +580,7 @@ DELETE SLOT,DELETE SLOT
 DELETED,DELETED
 DETOUR,DETOUR
 DFRG,DFRG
+DISCARD,DISCARD
 DISPATCH,DISPATCH
 DISPATCH  //  INTERNAL AFFAIRS  //  CLEAN-UP,DISPATCH  //  INTERNAL AFFAIRS  //  CLEAN-UP
 DISPATCH // ECHO 00,DISPATCH // ECHO 00
@@ -590,6 +590,7 @@ DOWN / TAKEN,DOWN / TAKEN
 DOWN: repair the node on the Grid.,DOWN: repair the node on the Grid.
 DRAG / WASD,DRAG / WASD
 DRAW %d,DRAW %d
+DRAW: cards come from your pile to your hand at once.,DRAW: cards come from your pile to your hand at once.
 DRONE ENDS HERE,DRONE ENDS HERE
 DTOR,DTOR
 Daemon,Daemon
@@ -645,6 +646,7 @@ Daemons,Daemons
 Daemons: permanent programs of this operative (none installed).,Daemons: permanent programs of this operative (none installed).
 Daily run,Daily run
 Death Heat,Death Heat
+Deck: %d cards to draw. Discard: %d cards (shuffled back in when the deck runs out).,Deck: %d cards to draw. Discard: %d cards (shuffled back in when the deck runs out).
 Defences: %s.,Defences: %s.
 Defense assets,Defense assets
 DefenseAssetData.bunker_turret.description,Built in: 3 damage to threats on the home server.
@@ -702,6 +704,7 @@ ESC,ESC
 EVADED %d,EVADED %d
 EVENT,EVENT
 EVENT PAYOUT,EVENT PAYOUT
+"EXHAUST: once played, the card leaves your deck for this fight.","EXHAUST: once played, the card leaves your deck for this fight."
 EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
 EXPLOITS %d/%d,EXPLOITS %d/%d
@@ -854,11 +857,14 @@ Exploits found: %s. The breach on the corporation's core needs %d.,Exploits foun
 FAILED,FAILED
 FIGHT WON,FIGHT WON
 FILED,FILED
+FIRMWARE,FIRMWARE
 FIRMWARE DROP,FIRMWARE DROP
 FLATLINED,FLATLINED
+"FLIP: mirrors the wheel, so each slice swaps with the one opposite.","FLIP: mirrors the wheel, so each slice swaps with the one opposite."
 FREE NUDGE %s NEXT,FREE NUDGE %s NEXT
 FREE NUDGE x%d,FREE NUDGE x%d
 FREEZE,FREEZE
+FREEZE: the wheel skips its next respin.,FREEZE: the wheel skips its next respin.
 FREIGHT SECURITY  //  YARD OPERATIONS  //  CUSTOMS,FREIGHT SECURITY  //  YARD OPERATIONS  //  CUSTOMS
 FROZEN,FROZEN
 Fast-forward the resolve (hold),Fast-forward the resolve (hold)
@@ -928,6 +934,7 @@ Graphite (neutral grey terminal),Graphite (neutral grey terminal)
 Grey broken link: no power flows to a TAKEN or DOWN node.,Grey broken link: no power flows to a TAKEN or DOWN node.
 Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP): it takes hits aimed at this slice.
 HACK,HACK
+HACK: it harms the target or plants a status on it.,HACK: it harms the target or plants a status on it.
 HALCYON RAISES FARES AGAIN,HALCYON RAISES FARES AGAIN
 HEAT,HEAT
 HEAT %d · %s,HEAT %d · %s
@@ -1582,6 +1589,8 @@ NO SIGNAL,NO SIGNAL
 NO SLOT,NO SLOT
 NODES AT THE END,NODES AT THE END
 NUDGE,NUDGE
+NUDGE CARDS: every card whose effect is a nudge.,NUDGE CARDS: every card whose effect is a nudge.
+NUDGE: moves a ring one tick either way; resistance can refuse it.,NUDGE: moves a ring one tick either way; resistance can refuse it.
 NULL,NULL
 NetrunBoostData.boost_field_kit.description,+2 max RAM in every combat of the next netrun.
 NetrunBoostData.boost_field_kit.display_name,Field Kit
@@ -1820,9 +1829,11 @@ RAM %d/%d,RAM %d/%d
 "RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn.","RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn."
 RAM %s,RAM %s
 RAM%s,RAM%s
+RAM: what cards cost to play; it refills each turn.,RAM: what cards cost to play; it refills each turn.
 RANDOM: ODDS,RANDOM: ODDS
 RANK,RANK
 RARE,RARE
+"RARE · three pips, holo die-cut","RARE · three pips, holo die-cut"
 RC1-corporation-ice-seed-home-class,RC1-corporation-ice-seed-home-class
 REBEL_CELL  (cell %02d),REBEL_CELL  (cell %02d)
 REBEL_CELL v%s // cell uplink,REBEL_CELL v%s // cell uplink
@@ -1837,12 +1848,14 @@ RESIST,RESIST
 RESIST %d,RESIST %d
 RESIST %d→%d,RESIST %d→%d
 RESISTANCE,RESISTANCE
+RESISTANCE: how many nudges a wheel shrugs off each turn.,RESISTANCE: how many nudges a wheel shrugs off each turn.
 RESOLVE SPEED AFTER SEND IT,RESOLVE SPEED AFTER SEND IT
 RESOLVING...,RESOLVING...
 RESPIN,RESPIN
 RESPIN %d RAM,RESPIN %d RAM
 RESPIN -%d RAM: %s%s,RESPIN -%d RAM: %s%s
 RESPIN: ODDS,RESPIN: ODDS
+RESPIN: the wheel lands on a random tick.,RESPIN: the wheel lands on a random tick.
 REWARDS,REWARDS
 RIGHT STICK,RIGHT STICK
 RING LOCK,RING LOCK
@@ -1948,7 +1961,6 @@ Rank,Rank
 "Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 "Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 Rank: runs survived. It brings wheel upgrades and higher netrun tiers.,Rank: runs survived. It brings wheel upgrades and higher netrun tiers.
-Rare,Rare
 Recall,Recall
 Recruit %s (%d),Recruit %s (%d)
 Recruit:,Recruit:
@@ -2014,8 +2026,10 @@ SKIP,SKIP
 SLICE %d DETAIL,SLICE %d DETAIL
 SLOT %s,SLOT %s
 SNAP,SNAP
+"SNAP: the ring moves to the nearest slice centre, a PERFECT aim.","SNAP: the ring moves to the nearest slice centre, a PERFECT aim."
 SOLD,SOLD
 SPIN %d+,SPIN %d+
+SPIN: turns the wheel clockwise by the ticks shown (counter-clockwise when negative).,SPIN: turns the wheel clockwise by the ticks shown (counter-clockwise when negative).
 SPINNER,SPINNER
 STABLE,STABLE
 START,START
@@ -2035,6 +2049,7 @@ SUBJECT: REBEL_CELL,SUBJECT: REBEL_CELL
 SUCCESS,SUCCESS
 SUSPECT FILE (HEAT),SUSPECT FILE (HEAT)
 SYSTEM,SYSTEM
+"SYSTEM: guards, RAM, draws and the rest.","SYSTEM: guards, RAM, draws and the rest."
 "Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick.","Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick."
 Save,Save
 Save & quit to start screen,Save & quit to start screen
@@ -3066,6 +3081,7 @@ Tritan (blue-weak),Tritan (blue-weak)
 Try the next city: the seed goes up by one.,Try the next city: the seed goes up by one.
 Tutorial,Tutorial
 UNCOMMON,UNCOMMON
+UNCOMMON · two pips,UNCOMMON · two pips
 UNDO,UNDO
 UNDO %s,UNDO %s
 "UNDO is blocked: a random event came since (a respin, a random pick).","UNDO is blocked: a random event came since (a respin, a random pick)."
@@ -3076,7 +3092,6 @@ UNLOCKS · %d,UNLOCKS · %d
 UPGRADE,UPGRADE
 UPGRADE A SLICE // INSTALL %s,UPGRADE A SLICE // INSTALL %s
 UPGRADES: %s,UPGRADES: %s
-Uncommon,Uncommon
 "Undo back to the last random event (free, unlimited this turn).","Undo back to the last random event (free, unlimited this turn)."
 Unlocks: %s,Unlocks: %s
 Upgrade (%d),Upgrade (%d)
@@ -3093,6 +3108,7 @@ WEAK,WEAK
 WEAK x0.5,WEAK x0.5
 WHAT WILL RESOLVE,WHAT WILL RESOLVE
 WHEEL,WHEEL
+"WHEEL: it turns, nudges or flips a wheel.","WHEEL: it turns, nudges or flips a wheel."
 WIN,WIN
 WIPE IN,WIPE IN
 WON,WON

@@ -38,8 +38,9 @@ const LEAVE_ICON := 34.0
 ## ART-0 C (text scale 2.0): the least gap kept between LEAVE THE MAINFRAME and the REMOVE A
 ## CARD row's pieces it would otherwise cover (px).
 const LEAVE_GAP := 6.0
-## Loot stickers at text scale 1.0 and the most a row of them may grow (px).
-const LOOT_CARD := Vector2(170, 210)
+## Loot stickers at text scale 1.0 (the card face's 3:4, round 32 reward_screen_v2 at 720p; S-CARDFACE) and the
+## most a row of them may grow (px).
+const LOOT_CARD := Vector2(162, 216)
 const LOOT_ROW_MAX := 1150.0
 ## The least gap between loot stickers (px; their tilt's reach is added, ANIM-R2 E8).
 const LOOT_GAP := 14.0
@@ -2729,6 +2730,9 @@ func _show_reward() -> void:
 		var sticker := ZineCard.new(TextDb.t(res, "display_name"), cost, TextDb.t(res, "description"), i).scaled(ls)
 		if res is CardData:
 			sticker.with_card(res as CardData)
+		elif res is FirmwareData or res is DaemonData:
+			# S-CARDFACE: the one card face; its art panel shows the offer's own concept art
+			sticker.as_offer("firmware" if res is FirmwareData else "daemon", ("chip_%s" if res is FirmwareData else "daemon_%s") % id)
 		sticker.fit_whole = true  # ANIM-R1 M10: the whole text on the card
 		sticker.custom_minimum_size = LOOT_CARD * ls
 		sticker.hotkey = ""  # rewards are picked by click or focus, not number keys

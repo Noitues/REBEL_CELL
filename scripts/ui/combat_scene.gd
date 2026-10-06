@@ -148,6 +148,8 @@ var name_sticker: HudNameSticker
 ## Where the cell panel goes: the bottom row's start, or the notes column's top at big text
 ## (the hand keeps its room).
 var _bottom_row: HBoxContainer
+## S-CARDFACE (CMB-04): the DECK and DISCARD piles left of the hand.
+var _piles: CardPiles
 ## The result chips shown when SEND IT was pressed (wheel id -> chips), held for its replay.
 var _held_chips: Dictionary = {}
 ## The free part of the right column: subtitles on top, the tutorial under them.
@@ -1822,6 +1824,9 @@ func _build_ui() -> void:
 	ram_note = RamBar.new()
 	ram_note.name = "RamTally"
 	_cell_panel.add_child(ram_note)
+	# S-CARDFACE (CMB-04, combat_typical_v4): the DECK and DISCARD piles left of the hand.
+	_piles = CardPiles.new(Settings.text_scale)
+	bottom.add_child(_piles)
 	_hand_box = HBoxContainer.new()
 	_hand_box.add_theme_constant_override("separation", 10)
 	_hand_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -2367,6 +2372,8 @@ func _build_hand(state: CombatState) -> void:
 		else:
 			child.free()
 	_gap = null
+	_piles.set_scale_to(Settings.text_scale)
+	_piles.set_counts(state.draw_pile.size(), state.discard_pile.size())
 	# ANIM-3: a played card leaves a gap in its slot while it flies, so no card moves under
 	# the cursor; the hand keeps the scale it had with that card in it.
 	var hold := _hold_slot if Motion.animating() and _hold_slot >= 0 and _hold_slot <= state.hand.size() else -1
@@ -2415,13 +2422,14 @@ func _card_pressed(index: int) -> void:
 ## A hand card sticker for `card` at hand index `i` and scale `s` (no signals: the hand
 ## connects its own; flights use the bare copy).
 func _make_card(card: CardData, i: int, s: float) -> ZineCard:
-	var c := ZineCard.new(TextDb.t(card, "display_name"), card.ram_cost, TextDb.t(card, "description"), i).scaled(s).with_card(card).with_face_art()
+	var c := ZineCard.new(TextDb.t(card, "display_name"), card.ram_cost, TextDb.t(card, "description"), i).scaled(s).with_card(card)
 	if Settings.pad_active:
 		c.hotkey = ""
 		c.pad_hint = Settings.key_text(&"ui_accept")
 	c.drag_index = i
 	c.fit_whole = true  # ART-2 2D (audit P2): the body shrinks to fit, never under the 12 px floor
 	c.body_floor = ZineCard.BODY_FLOOR
+	c.pictos_give_way = false  # S-CARDFACE: glyph and value at rest; the grown card shows every word
 	return c
 
 
@@ -2439,7 +2447,8 @@ func _card_scale_for(count: int) -> float:
 	var sep := float(_hand_box.get_theme_constant("separation"))
 	var width := size.x if size.x > 0.0 else get_viewport_rect().size.x
 	var cell := _cell_panel.get_combined_minimum_size().x + sep if _cell_panel.get_parent() == _bottom_row else 0.0
-	var room := width - _end_turn_button.get_combined_minimum_size().x - _sticker_box.get_combined_minimum_size().x - cell - sep * 3.0
+	var piles := _piles.get_combined_minimum_size().x + sep if _piles != null else 0.0
+	var room := width - _end_turn_button.get_combined_minimum_size().x - _sticker_box.get_combined_minimum_size().x - cell - piles - sep * 3.0
 	var fit := (room - sep * (n - 1)) / n / ZineCard.STICKER_SIZE.x
 	var height := size.y if size.y > 0.0 else get_viewport_rect().size.y
 	fit = minf(fit, height * HAND_HEIGHT_SHARE / ZineCard.STICKER_SIZE.y)
