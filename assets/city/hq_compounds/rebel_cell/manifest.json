@@ -7,8 +7,8 @@
   "spec": "tools/art_pipeline/city/hq_compound_spec.py",
   "driver": "tools/art_pipeline/city/make_hq_compounds.py",
   "vendor": "art-concepts-r43:docs/concepts/round34_rebel_cell/scripts @ d14b8f61158918f302e8e3baf5d39fc734dbde15 (vendor_r34/) + art-concepts-r43:docs/concepts/round43_hq_mechanics/scripts @ 36d1f34de595297787d06f4f0cc8075018a8b744 (vendor_r43/)",
-  "commit": "b80a8f0f32d6e16d3a2cd60b2fc5f78294e52ced",
-  "scripts_sha256": "b94f4a278889539f7f3ff440d9255640f818ae35f7cc3679dec8b4e0e0648458"
+  "commit": "582d1842746f8f9e750b30f20a45e0c49d2ac31a",
+  "scripts_sha256": "4f5e8031fca43afccea4f1efe9b6a57341ca5852d40641848e15a69d87465a9e"
  },
  "settings": {
   "blender": "5.2.2 LTS",
@@ -174,23 +174,23 @@
    ],
    [
     [
-     -29.0,
-     24.861,
+     -15.0,
+     17.183,
      5.4
     ],
     [
-     -25.0,
+     -23.0,
      0.31,
      0.9
     ],
     [
-     -33.0,
+     -31.0,
      0.31,
      -0.9
     ],
     [
-     -29.0,
-     28.225,
+     -17.0,
+     12.814,
      -5.4
     ]
    ],
@@ -329,7 +329,7 @@
    "layer": 5,
    "slot": 0,
    "z": 40.0,
-   "surface": 24.561
+   "surface": 16.883
   },
   {
    "layer": 5,
@@ -347,7 +347,7 @@
    "layer": 5,
    "slot": 3,
    "z": 40.0,
-   "surface": 27.925
+   "surface": 12.514
   },
   {
    "layer": 6,

@@ -121,12 +121,14 @@ CANYON_LEN = 114.0        # cfg28.Cfg.canyon_len(): (46 - 27) lots x 6 BU
 CANYON_HALF = CANYON_LEN / 2.0
 CANYON_LOT_CENTRE = (46.0 - CANYON_HALF / 6.0, 36.5)  # cfg28 canyon_origin() moved half the street along it (lots)
 CANYON_FLOOR_PAD = 9.0    # the alley floor runs this far past both ends (BU): the camera end and the head crossing
-CANYON_ROWS_Y = (10.0, 28.0, 46.0, 64.0, 82.0, 100.0)  # layer rows along the street (local y)
+CANYON_ROWS_Y = (10.0, 28.0, 46.0, 64.0, 80.0, 100.0)  # layer rows along the street (local y); row 5 sits at 80 so its roof
+# slots stay on the low shophouses in front of the tall one at 86 (82 put them 18 px / 1 px from row 6 on screen)
 CANYON_ALLEY_X = 0.9      # alley slots: either side of the centre line, inside the shop awnings (street34: to 1.2)
 CANYON_ALLEY_STAGGER = 8.0  # the right alley slot stands this far up the street from the left one (apart on screen)
 CANYON_ROOF_X = 5.4       # rooftop slots: the front of the shophouse roofs (SW + 2.2)
 CANYON_ROOF_Z = 40.0      # rooftop slots snap down from above the tallest shophouse (street34: <= ~30 BU)
-CANYON_ROOF_SEEK = (0.0, 2.0, -2.0, 4.0, -4.0, 6.0, -6.0)  # a rooftop slot over a gap moves along the street to a roof
+CANYON_ROOF_SEEK = (0.0, -2.0, -4.0, -6.0, -8.0)  # a rooftop slot over a gap moves toward the camera end to a roof
+# (never up the street, where it would climb onto the next row's roof and close the gap on screen)
 CANYON_YAW_DEG = 180.0    # the HQ-run camera looks down the canyon (toward lot -x, as round 34's camera)
 CANYON_PITCH_DEG = 40.0   # the city's own pitch (the canyon's sides stay readable as rooftops)
 
