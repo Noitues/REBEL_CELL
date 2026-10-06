@@ -1580,12 +1580,16 @@ func _build_hq_page(page_name: String) -> void:
 		paper_scroll.name = "WorkOrderPaper"
 		paper_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 		paper_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+		paper_scroll.follow_focus = true  # YOUR NETWORK's rows in the setup (the pad)
 		paper_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		order.add_child(paper_scroll)
 		var paper := VBoxContainer.new()
 		paper.name = "WorkOrderBox"
 		paper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		paper_scroll.add_child(paper)
+		if raid_mode:
+			# Parity RAID-06 (round 40): YOUR NETWORK top left, over the work order.
+			paper.add_child(_your_network(projection))
 		paper.add_child(_raid_card(raid, pending, projection, not raid_mode))
 		var setup := MenuChip.new(tr("RAID SETUP"), "[%s]" % Settings.hint(&"toggle_ring").strip_edges().trim_prefix("[").trim_suffix("]"), Palette.CELL_PINK)
 		setup.name = "RaidSetup"
@@ -3199,6 +3203,8 @@ func _fill_defence_hand(cards: HBoxContainer) -> void:
 		card.disabled = selected_site == &"" or not c.grid.is_active_node(selected_site)
 		var index := i
 		card.pressed.connect(func() -> void: deploy_asset(index, selected_site))
+		card.mouse_entered.connect(show_if_placed.bind(index))
+		card.focus_entered.connect(show_if_placed.bind(index))
 		drops.add_source(card, {"kind": "asset", "index": index, "asset": aid, "prefer": selected_site})
 		cards.add_child(card)
 	if c.armory.is_empty():
@@ -3212,9 +3218,65 @@ func _fill_defence_hand(cards: HBoxContainer) -> void:
 ## its units and what they go for) over YOUR NETWORK (each node's forecast chip; its target
 ## button makes it the defences' target, the target's row withdraws or moves its assets).
 func _defence_cards(stack: VBoxContainer, raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult) -> void:
+	stack.add_child(_threat_intel(raid, pending, projection))
+	stack.add_child(_if_placed_terminal())
+
+
+## Parity RAID-06 (round 40): the IF PLACED terminal on the right: what the defence card hovered
+## or focused in the DEFENCE hand (else the Armory's first) would change on the target, from
+## the rules on a copy (preview equals result); a hint when nothing can be placed.
+func _if_placed_terminal() -> RaidTerminal:
+	var term := RaidTerminal.new(tr(RaidDragPencil.IF_PLACED), Palette.NET_CYAN)
+	term.name = "IfPlaced"
+	term.tag_label.text = ""
+	var lines := VBoxContainer.new()
+	lines.name = "IfPlacedLines"
+	lines.add_theme_constant_override("separation", 2)
+	term.body.add_child(lines)
+	_if_placed_terminal_box = lines
+	show_if_placed(0)
+	return term
+
+
+## The IF PLACED terminal's lines, and the Armory index they show.
+var _if_placed_terminal_box: VBoxContainer = null
+var if_placed_index: int = -1
+
+
+## Shows in the IF PLACED terminal what placing the Armory's defence at `index` on the target
+## would change (nothing to place: how to place one).
+func show_if_placed(index: int) -> void:
+	var box := _if_placed_terminal_box
+	if box == null or not is_instance_valid(box):
+		return
+	var c := RunManager.campaign
+	for k in box.get_children():
+		k.queue_free()
+	if_placed_index = index if index >= 0 and index < c.armory.size() else -1
+	var lines: Array = []
+	if if_placed_index >= 0 and selected_site != &"" and c.grid.is_active_node(selected_site):
+		lines = if_placed_lines({"kind": "asset", "index": if_placed_index, "asset": c.armory[if_placed_index]}, selected_site)
+	if lines.is_empty():
+		lines = [tr(IF_PLACED_HINT)]
+	for i in lines.size():
+		var l := Label.new()
+		l.text = String(lines[i])
+		l.add_theme_font_override("font", Palette.mono())
+		l.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION if i > 0 else UiTheme.BODY))
+		l.add_theme_color_override("font_color", Palette.PAPER if i > 0 else PaletteSkins.chrome(Palette.NET_CYAN))
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		box.add_child(l)
+
+
+## The IF PLACED terminal's line when no defence can be placed on the target.
+const IF_PLACED_HINT := "Pick a defence card, then one of your nodes: the forecast's change shows here." # TR
+
+
+## Parity RAID-06 (round 40): YOUR NETWORK (each node's forecast chip; its target button makes
+## it the defences' target, the target's row withdraws or moves its assets).
+func _your_network(projection: RaidResolver.RaidResult) -> RaidTerminal:
 	var c := RunManager.campaign
 	var claimed := c.grid.claimed_ids()
-	stack.add_child(_threat_intel(raid, pending, projection))
 	var orders_win := RaidTerminal.new(tr("YOUR NETWORK"), Palette.NET_CYAN)
 	orders_win.name = "NodeOrders"
 	orders_win.tag_label.text = ""  # HQ-B: the target row carries its ">" (a tag ran over the title in the column)
@@ -3225,7 +3287,7 @@ func _defence_cards(stack: VBoxContainer, raid: RaidData, pending: Dictionary, p
 	orders_win.body.add_child(orders)
 	for site_id in claimed:
 		orders.add_child(_node_order_row(site_id, projection, claimed))
-	stack.add_child(orders_win)
+	return orders_win
 
 
 ## HQ-B (c): the sticker slot in the raid setup: START DEFENSE (3A's pink RaidSticker) with
@@ -3809,6 +3871,9 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	var cont := _button(tr("Continue"), _after_playout)
 	cont.theme_type_variation = &"HotButton"
 	cont.disabled = true
+	# Parity RAID-09: while the raid plays, Continue keeps its room unseen (a grey waiting
+	# sticker read as broken); it shows with the verdict.
+	cont.modulate.a = 0.0
 	if before != null and Motion.animating():
 		_creep_band = before.heat_majors_crossed(RunManager.config())
 	_set_panel(box, "raid_playout")
@@ -3823,6 +3888,10 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	_playout_open = playout_frame_points(events)
 	if not _playout_open.is_empty():
 		_frame_city(playout_zoom(), _centre_of(_playout_open), PLAYOUT_ANCHOR)
+		# Parity RAID-08 / S-RAID: once the page is laid out, the opening frame is the fight
+		# frame's own fit of CORE and the entries in the map's free part (`frame_points`, which
+		# centres on their box), so CORE starts on screen on a spread network.
+		get_tree().process_frame.connect(_frame_playout_open, CONNECT_ONE_SHOT)
 	# ANIM-R5 P6: the key too (a label and home's banner went under the MAP LEGEND at 1.6).
 	city_overlay.avoid_controls([side, legend])
 	var overlay := city_overlay
@@ -3846,6 +3915,7 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 		fx.home_hit_shown.connect(_fly_home_number)
 	playout.finished.connect(func() -> void:
 		cont.disabled = false
+		cont.modulate.a = 1.0
 		# ANIM-R6 C10: the speed buttons are off now: the focus goes on to Continue.
 		if cont.is_inside_tree():
 			cont.grab_focus()
@@ -4007,6 +4077,13 @@ const PLAYOUT_LOG_SIZE := RaidPlayoutPanel.LOG_SIZE
 const PLAYOUT_ANCHOR := Vector2(0.36, 0.55)
 ## ANIM-R1 M4: the furthest out a framed fight goes (its guns and targets must all show).
 const PLAYOUT_MIN_ZOOM := 1.2
+
+
+## The playout's opening frame (S-RAID): CORE and the entries fitted into the fight area.
+func _frame_playout_open() -> void:
+	if panel_name != "raid_playout" or _playout_open.is_empty() or city_overlay == null or not is_instance_valid(city_overlay):
+		return
+	wireframe.frame_points(_playout_open, fight_area(_fight_area), playout_zoom(), playout_min_zoom())
 
 
 ## ANIM-R1 M4: frames a raid step's fight (`sites`: the guns firing and their targets, else
@@ -4186,15 +4263,8 @@ func show_raid_summary() -> void:
 	table.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# ANIM-R4 H3: the report's stamp is the raid's one verdict, as the playout's stamp
 	# resolved (it said BREACHED for a raid home never felt, beside HOLDS rows).
-	var clean := RaidVerdict.clean(r)
-	var stamp := ForecastStamp.new(RESULT_CAPTION, RaidVerdict.of_result(r), RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
-	stamp.name = "RaidVerdict"
-	stamp.resolved = true
-	stamp.custom_minimum_size = Vector2(150, 150)
-	stamp.size = stamp.custom_minimum_size
-	stamp.position = Vector2(20, 16)
-	stamp.rotation_degrees = -8.0
-	table.add_child(stamp)
+	# Parity RAID-12 (round 40): no result disc: the paper carries the numbers, CELL HOLDS the
+	# verdict.
 	outer.add_child(table)
 	MapLegend.pin_to(table, c.corporation_id)
 	var skin := RaidSkin.of(c.corporation_id)
@@ -4301,15 +4371,20 @@ func show_raid_summary() -> void:
 
 ## ART-6 3A: CELL HOLDS slaps onto the report (1B's vinyl slap, `sticker_slap`; one press ends
 ## it; at rest at once when motion doesn't play), beside the report's top.
-func _slap_holds(holds: RaidSticker, table: Control, report: Control) -> void:
+func _slap_holds(holds: RaidSticker, table: Control, _report: Control) -> void:
 	if not is_instance_valid(holds) or not is_instance_valid(table):
 		return
 	holds.size = holds.custom_minimum_size
 	holds.pivot_offset = holds.size * 0.5
-	# Slapped beside the report's top, over the table (clear of the verdict stamp at its left).
-	var at := report.global_position + Vector2(-holds.size.x - SLAP_MARGIN * Settings.text_scale, SLAP_MARGIN * 2.0 * Settings.text_scale) if is_instance_valid(report) else table.global_position
-	holds.global_position = at.max(table.global_position + Vector2(SLAP_MARGIN * 8.0, SLAP_MARGIN))
+	# Parity RAID-12 (round 40): centre left on the table (the map's side of the report).
+	var room := table.get_global_rect()
+	var at := Vector2(room.position.x + room.size.x * HOLDS_AT.x - holds.size.x * 0.5, room.position.y + room.size.y * HOLDS_AT.y - holds.size.y * 0.5)
+	holds.global_position = at.max(room.position + Vector2(SLAP_MARGIN, SLAP_MARGIN))
 	holds.slap()
+
+
+## Where CELL HOLDS sits on the report's table (share of the table: centre left).
+const HOLDS_AT := Vector2(0.3, 0.5)
 
 
 ## Room round the CELL HOLDS sticker on the table (px at 1.0).

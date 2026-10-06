@@ -550,8 +550,8 @@ func test_the_raid_report_keeps_each_nodes_hp_on_its_row_and_the_forecast_float_
 
 
 func test_your_nodes_never_ends_in_a_cut_row() -> void:
-	# HQ-B (c): YOUR NODES is the raid setup's card column (it scrolls with the focus): every
-	# row's control shows whole in the column once it has the focus.
+	# HQ-B (c), parity RAID-06: YOUR NODES is top left in the raid setup's left column (it
+	# scrolls with the focus): every row's control shows whole once it has the focus.
 	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		_raid_campaign(&"solace", true)
@@ -568,8 +568,8 @@ func test_your_nodes_never_ends_in_a_cut_row() -> void:
 		await _frames(1)
 		hq.show_raid()
 		await _frames(6)
-		var column := hq._panel.find_child("CardColumn", true, false) as ScrollContainer
-		assert_not_null(column, "%.1f: YOUR NODES is in the card column" % scale)
+		var column := hq._panel.find_child("WorkOrderPaper", true, false) as ScrollContainer
+		assert_not_null(column, "%.1f: YOUR NODES is in the left column" % scale)
 		if column == null:
 			return
 		assert_true(column.follow_focus, "%.1f: the column scrolls with the focus" % scale)

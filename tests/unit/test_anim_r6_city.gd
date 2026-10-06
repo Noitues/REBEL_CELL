@@ -404,8 +404,9 @@ func test_the_maps_drawn_words_are_exported_once() -> void:
 # --- C8: YOUR NODES fills its window and never cuts a row --------------------------------------------
 
 func test_your_nodes_fills_its_window_and_counts_the_withdraw_row() -> void:
-	# HQ-B (c): YOUR NODES is a window in the raid setup's card column (the column scrolls,
-	# the window does not): the withdraw row is there and every row shows whole with the focus.
+	# HQ-B (c), parity RAID-06: YOUR NODES is a window top left in the raid setup (its column
+	# scrolls, the window does not): the withdraw row is there and every row shows whole with
+	# the focus.
 	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		_raid_campaign()
@@ -420,8 +421,8 @@ func test_your_nodes_fills_its_window_and_counts_the_withdraw_row() -> void:
 		hq.show_raid()
 		await _frames(8)
 		var tag := "%.1f" % scale
-		var column := hq._panel.find_child("CardColumn", true, false) as ScrollContainer
-		assert_not_null(column, "%s: the card column" % tag)
+		var column := hq._panel.find_child("WorkOrderPaper", true, false) as ScrollContainer
+		assert_not_null(column, "%s: the left column" % tag)
 		if column == null:
 			return
 		var win := column.find_child("NodeOrders", true, false) as Control
