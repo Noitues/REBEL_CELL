@@ -16,6 +16,8 @@ extends Control
 signal new_campaign_pressed
 signal main_menu_pressed
 
+## B5 (D24): the seed of the dossier sheets' tilts (PaperLie: 1-2 degrees either way, view decoration).
+const SHEET_SEED := 2100
 const OPEN := &"dossier_open"
 const STAMP := &"dossier_stamp"
 const NOTE := &"dossier_note"
@@ -311,7 +313,7 @@ func _build_photos() -> void:
 
 func _build_personnel() -> void:
 	var s := Settings.text_scale
-	personnel = PaperSheet.new(Palette.END_REPORT, 1.0, UiTheme.SP_M)
+	personnel = PaperSheet.new(Palette.END_REPORT, PaperLie.tilt_deg(SHEET_SEED), UiTheme.SP_M)  # B5 (D24): a seeded 1-2 degree tilt
 	personnel.name = "Personnel"
 	personnel.add_theme_constant_override(&"margin_right", roundi(PostIt.SIDE.x * NOTE_ROOM * s))
 	left_page.add_child(TiltBox.new(personnel.tilt, personnel))
@@ -396,7 +398,7 @@ func _rule(col: Color, h: float = 2.0) -> ColorRect:
 
 func _build_annex() -> void:
 	var s := Settings.text_scale
-	annex = PaperSheet.new(Palette.END_ANNEX, -0.8, UiTheme.SP_S)  # END-03: a tighter pad (the story's room at 720p)
+	annex = PaperSheet.new(Palette.END_ANNEX, PaperLie.tilt_deg(SHEET_SEED + 1), UiTheme.SP_S)  # END-03: a tighter pad (the story's room at 720p)
 	annex.name = "Annex"
 	# The post-its' room on its right too (the second note reaches down over it).
 	annex.add_theme_constant_override(&"margin_right", roundi(PostIt.SIDE.x * NOTE_ROOM * s))
@@ -470,7 +472,7 @@ func _build_annex() -> void:
 
 func _build_report() -> void:
 	var s := Settings.text_scale
-	report = PaperSheet.new(Palette.END_REPORT, 1.2, UiTheme.SP_M)
+	report = PaperSheet.new(Palette.END_REPORT, PaperLie.tilt_deg(SHEET_SEED + 2), UiTheme.SP_M)
 	report.name = "AuditReport"
 	report.add_theme_constant_override(&"margin_right", roundi(PostIt.SIDE.x * NOTE_ROOM * s))
 	right_page.add_child(TiltBox.new(report.tilt, report))

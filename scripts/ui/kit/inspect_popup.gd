@@ -55,6 +55,8 @@ func text() -> String:
 ## The card's notes beside it (px at text scale 1), the gap between them, the card at the detail's
 ## size (x the hand sticker) and the notes' least room before they scroll (px at scale 1).
 const NOTES_WIDTH := 300.0
+## B5: a card note's glyph box (px at 1.0; the tooltips' rows are 26 px at 1080p).
+const NOTE_GLYPH := 18.0
 const DETAIL_GAP := 24.0
 const DETAIL_CARD := 2.0
 const NOTES_MIN_H := 120.0
@@ -85,6 +87,44 @@ const EXHAUST_TEXT := "EXHAUST: once played, the card leaves your deck for this 
 ## The detail notes for `card`: its kind, its rarity and its keyword notes (never the face's own title
 ## or rules text: the detail-size face shows them whole).
 static func card_notes(card: CardData) -> PackedStringArray:
+	var out := PackedStringArray()
+	for r in card_note_rows(card):
+		out.append(String(r[0]))
+	return out
+
+
+## B5 (review section c: "Card detail notes as tooltip glyph rows"): each note with its glyph: [text, atlas glyph
+## (&"" for none), its colour]: the card's first effect for its kind, the status's or slice's glyph for theirs, the
+## effect's glyph for a keyword; rarity and EXHAUST carry none (their words are the note).
+static func card_note_rows(card: CardData) -> Array:
+	var out: Array = []
+	if card == null:
+		return out
+	var first := card.effects[0].type if not card.effects.is_empty() and card.effects[0] != null else -1
+	var notes := _card_note_texts(card)
+	for i in notes.size():
+		var text: String = notes[i]
+		var glyph := &""
+		var col := Palette.GLYPH_FILL
+		if i == 0 and first >= 0:
+			glyph = CodexBook.atlas_glyph("Cards", {"effect": first})
+		else:
+			for e in card.effects:
+				if e == null:
+					continue
+				if e.type == RC.EffectType.APPLY_STATUS and TranslationServer.translate(String(Codex.STATUS_TEXT.get(e.status, ""))) == text:
+					glyph = CodexBook.atlas_glyph("Statuses & precision", {"status": e.status})
+					col = CodexBook.glyph_fill("Statuses & precision", {"status": e.status})
+				elif ZineCard.EFFECT_SLICE.has(e.type) and TranslationServer.translate(String(Codex.SLICE_TYPE_TEXT.get(ZineCard.EFFECT_SLICE[e.type], ""))) == text:
+					glyph = CodexBook.atlas_glyph("Slices", {"slice": ZineCard.EFFECT_SLICE[e.type]})
+					col = Palette.slice_color(ZineCard.EFFECT_SLICE[e.type])
+				elif KEYWORD_TEXT.has(e.type) and TranslationServer.translate(String(KEYWORD_TEXT[e.type])) == text:
+					glyph = CodexBook.atlas_glyph("Cards", {"effect": e.type})
+		out.append([text, glyph, col])
+	return out
+
+
+static func _card_note_texts(card: CardData) -> PackedStringArray:
 	var out := PackedStringArray()
 	if card == null:
 		return out
@@ -144,13 +184,31 @@ static func card_detail(card: CardData, title: String, rules: String, s: float, 
 	head.add_theme_font_override(&"font", Palette.mono())
 	head.add_theme_color_override(&"font_color", Palette.CELL_ACID)
 	notes.add_child(head)
-	for line in card_notes(card):
+	for r in card_note_rows(card):
+		# B5 (review section c): each note a tooltip glyph row: its glyph in a navy tile, then the words.
+		var note_row := HBoxContainer.new()
+		note_row.name = "NoteRow"
+		note_row.add_theme_constant_override("separation", roundi(UiTheme.SP_S * s))
+		var side := NOTE_GLYPH * minf(s, CodexBook.GLYPH_SCALE_MAX)
+		var tile := Control.new()
+		tile.name = "Tile"
+		tile.custom_minimum_size = GlyphIcon.cell_size_for(side)
+		tile.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		tile.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var edge: Color = r[2]
+		tile.draw.connect(func() -> void: CodexBook.draw_tile(tile, edge))
+		if StringName(r[1]) != &"":
+			var g := GlyphIcon.make(StringName(r[1]), side)
+			g.fill = r[2]
+			tile.add_child(g)
+		note_row.add_child(tile)
 		var l := Label.new()
 		l.theme_type_variation = UiTheme.BODY_TEXT
-		l.text = line
+		l.text = String(r[0])
 		UiWrap.whole_words(l)  # ART-0 F: whole words, never mid-word
-		l.custom_minimum_size.x = NOTES_WIDTH * s
-		notes.add_child(l)
+		l.custom_minimum_size.x = NOTES_WIDTH * s - tile.custom_minimum_size.x - UiTheme.SP_S * s
+		note_row.add_child(l)
+		notes.add_child(note_row)
 	var scroll := ScrollContainer.new()
 	scroll.name = "NotesScroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
