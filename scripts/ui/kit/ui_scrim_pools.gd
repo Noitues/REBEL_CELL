@@ -451,7 +451,7 @@ static func apply_shapes(list: Array[Dictionary], p: Vector2, c: Color, keep_sha
 ## World colour `c` at `p` (this layer's px) once the layer lies over it (with its network kept).
 func apply_at(p: Vector2, c: Color) -> Color:
 	var k := keep_at(p, keep)
-	var d := dim_at(map_dim, p) * (1.0 - k)
+	var d := dim_at(map_dim, p)  # B4: the dim lies over the network too (the shader's perf rule)
 	if d == Vector2.ZERO:
 		return apply_shapes(shapes, p, c, k)
 	# B4: the map dim as the shader does it: one saturation (the pools' times the dim's), then
@@ -468,7 +468,7 @@ func apply_at(p: Vector2, c: Color) -> Color:
 func factor_at(p: Vector2) -> float:
 	var k := keep_at(p, keep)
 	var m := masks_at(shapes, p) * (1.0 - k)
-	return (1.0 - m.x) * (1.0 - m.y) * (1.0 - dim_at(map_dim, p).x * (1.0 - k))
+	return (1.0 - m.x) * (1.0 - m.y) * (1.0 - dim_at(map_dim, p).x)
 
 
 ## What a wheel's pool leaves of the world `d` disc radii from its centre (the look's numbers;

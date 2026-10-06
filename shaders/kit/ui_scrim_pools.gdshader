@@ -126,13 +126,14 @@ void fragment() {
 	if (pool <= 0.0005 && band <= 0.0005 && dim <= 0.0005) {
 		discard;
 	}
-	if (keep_on) {
+	// B4 (perf): the network keep runs only under a pool or a band; the map dim (mild inside the
+	// network's rect, where the decal is) lies over the decal too, so the keep loop never runs
+	// over the whole screen.
+	if (keep_on && (pool > 0.0005 || band > 0.0005)) {
 		float k = 1.0 - network_keep(local_px);
 		pool *= k;
 		band *= k;
 		sat *= k;
-		dim *= k;
-		dsat *= k;
 	}
 	vec3 c = texture(screen_tex, SCREEN_UV).rgb;
 	float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
