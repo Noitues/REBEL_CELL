@@ -73,6 +73,16 @@ static func card_size() -> Vector2:
 func _set_hot(on: bool) -> void:
 	_hot = on
 	queue_redraw()
+	tilt(on and not disabled)
+
+
+## HQ-B (g): `polaroid_tilt` (ANIM-6 4.13), re-pointed from the old dossier's Polaroid: a hovered
+## or focused card tilts by the entry's amplitude about its middle, and back at rest.
+func tilt(on: bool) -> void:
+	pivot_offset = size * 0.5
+	var to := Motion.amplitude(&"polaroid_tilt") if on else 0.0
+	if Motion.run(&"polaroid_tilt", self, ^"rotation_degrees", to) == null:
+		rotation_degrees = to
 
 
 ## The lift out of the hand when picked (px, upward).

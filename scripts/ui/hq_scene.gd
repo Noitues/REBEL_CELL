@@ -13,7 +13,7 @@ const STATUS_NAMES := {GridState.SiteStatus.CORPORATE: "corporate", GridState.Si
 
 ## Screen numbers on the HUD strip, by panel name (STYLE_GUIDE 4, "Neon city"); the
 ## titles are `screen_title`.
-const SCREEN_NUMBERS := {"start": "00", "hq": "01", "grid": "02", "raid": "03", "raid_playout": "03", "raid_summary": "03"}
+const SCREEN_NUMBERS := {"start": "00", "hq": "01", "raid": "03", "raid_playout": "03", "raid_summary": "03"}
 
 ## The home server's name on the Grid, the raid map and the orders (never its id).
 const HOME_LABEL := "CORE" # TR
@@ -21,11 +21,6 @@ const HOME_LABEL := "CORE" # TR
 ## news in acid.
 const TOAST_WARN_EVENTS: Array[String] = ["refused", "deploy_failed", "undock_failed"]
 const TOAST_NEWS_EVENTS: Array[String] = ["unlocked"]
-## The Grid's side column and the raid setup column (px).
-const GRID_SIDE_WIDTH := 440.0
-const RAID_SIDE_WIDTH := 380.0
-## Room for the Grid side column's scroll bar (px).
-const SIDE_SCROLLBAR := 14.0
 ## Glyphs for Site objectives and facts on badges (the map uses the same).
 const GLYPH_EXPLOIT := "◈"
 const GLYPH_HEAT := "❄"
@@ -35,9 +30,6 @@ const GLYPH_NODE := "⬡"
 const GLYPH_RULE := "!"
 const GLYPH_UPGRADE := "▲"
 const GLYPH_GUARD := "☻"
-const GLYPH_THREAT := "◆"
-const GLYPH_ENTRY := ">"
-const GLYPH_LINK := "⛓"
 ## Raid setup: the projection stamp's side and a node's target button width (px).
 const PROJECTION_STAMP := 124.0
 ## The pause menu's least top (px); it opens under the subtitle band.
@@ -61,44 +53,12 @@ const MODIFIER_WORDS := ["Heat Gain", "Heat Sink", "Heat Objective Sites", "Elit
 	"Raid Strength", "Raid Extra Wave", "Enemy Resistance", "Death Heat", "Exploit Heat", "Boss Phase Early", # TR
 	"Boss Extra Pointer", "Starting Bug Card", "No First Turn Free Nudge", "Repair Cost", "Taken Raid Strength", # TR
 	"Purge Threshold", "Boss Strength"] # TR
-## Passes framing the raid map beside its legend (each on the positions the last one gave).
-const RAID_REFRAMES_MAX := 6
-## Passes fitting the Grid map into the screen beside its column and legend (H23 #5).
-const GRID_FITS_MAX := 4
-## The Grid map's own framing (the city's zoom, and where the graph's centre lands as a
-## screen fraction) before it is fitted to the screen.
-const GRID_ZOOM := 0.72
-const GRID_ANCHOR := Vector2(0.31, 0.54)
-## The smallest the fit may make the Grid map (the city's zoom). ART-5 5e: 0.3 -> 0.22 for the x2
-## Site spread (round 39), so a big key at text size 2.0 never covers a node.
-const GRID_MIN_ZOOM := 0.22
-## H24 K1: from this text scale the Grid's step buttons show their icons (and "<" / ">")
-## without words, their words in the tooltip, so the column keeps its width (the same
-## scale the map key folds at).
-const STEP_ICONS_SCALE := MapLegend.FOLD_SCALE
-## The deploy steps' icons, a little larger than a button's.
-const DEPLOY_ICON_GROW := 1.2
-## ART-0 C (text scale 2.0): above this text scale the raid setup's DEFENSE LOADOUT moves
-## to the top of the side column (its steps over its cards) and that column scrolls on its
-## own, so the raid map takes the page's whole height (under the map, the Armory left the
-## map too short for a late campaign's nodes, and the column ran past the screen).
-const RAID_SIDE_LOADOUT_ABOVE := 1.6
-## The raid orders list's least height at text scale 1.0 (px).
-const ORDERS_MIN_HEIGHT := 70.0
 const TARGET_BUTTON_WIDTH := 150.0
-## Entry Sites shown one badge each up to this many; more collapse into a count.
-const MAX_ENTRY_BADGES := 3
-## Height of the raid's node orders list (px); more nodes scroll inside it.
-## PIRATE RADIO: its text's width (px) and the lines it shows at least.
-const RADIO_WIDTH := 230.0
-const RADIO_LINES := 4
 ## The launch button on a Site's card: the same words as the HQ's JACK IN stamp (H21 #21).
 const JACK_IN := "JACK IN" # TR
 ## ART-10 4C: the screen-title stickers (lettering px at 1.0, tilt in degrees).
 const TITLE_STICKER_PX := 30.0
 const TITLE_STICKER_TILT := -3.0
-## Gap round a price's currency icon at a button's right end (px).
-const PRICE_ICON_GAP := 8.0
 ## What each Site status means (the selected Site card's status badge).
 const STATUS_TIPS := {GridState.SiteStatus.CORPORATE: "Corporate: run it to clear it.", # TR
 	GridState.SiteStatus.CLEARED: "Cleared: claim it to build a node of your network.", # TR
@@ -122,13 +82,9 @@ var _panel: Control = null
 var panel_name: String = ""
 var background: CyberdeckBackground
 var wireframe: WireframeBackground
-var grid_view: GridMapView = null
 var playout: RaidPlayoutPanel = null
 ## The raid setup's map key (placed clear of the nodes).
 var raid_legend: MapLegend = null
-## How many times the raid map was framed to clear the legend's column (at most
-## RAID_REFRAMES_MAX: labels keep their size as the map zooms, so a second pass settles it).
-var _raid_reframes: int = 0
 ## The Grid map's key, on the map (H23 #3), and the passes fitting the map so far.
 var grid_legend: MapLegend = null
 ## ART-5 5a: the Grid's player camera on the 3D city (wheel, drag, WASD, the pad's right
@@ -137,13 +93,8 @@ var grid_controls: CityGridControls = null
 var grid_minimap: CityMinimap = null
 ## ART-5 5e: the Grid map's off-screen TARGET arrow (null off the Grid or headless 2D).
 var grid_target: TargetEdgeMarker = null
-var _grid_fits: int = 0
-## ANIM-5: the Grid camera has leaned toward the selected Site on this page.
-var _grid_leaned: bool = false
 ## Leans shorter than this (screen px) are not worth a new frame.
 const GRID_LEAN_MIN := 1.0
-## The key's size the last fit laid the map out for.
-var _grid_legend_size: Vector2 = Vector2.ZERO
 ## The map drawn on the city (Grid, raids); freed when another panel opens.
 var city_overlay: CityMapOverlay = null
 var _settings_panel: PauseMenu = null
@@ -164,10 +115,8 @@ var drops: DropLayer
 ## ANIM-4: the Grid's Site card crew chips and its JACK IN (drop targets and sources).
 var _grid_chips: Array[CrewChip] = []
 var _jack_button: Button = null
-## ANIM-4: map-node target size on the HQ's mini-map (px, as GridMapView.site_at's reach).
-const MINI_TARGET_R := 24.0
 ## ANIM-4: pages whose items the pick-up key takes (the pad prompt names it).
-const DRAG_PANELS: Array[String] = ["hq", "grid", "raid"]
+const DRAG_PANELS: Array[String] = ["hq", "raid"]
 ## Whether the last page entered a new panel (its entrance plays) or rebuilt the same one.
 var entering: bool = false
 
@@ -344,8 +293,7 @@ func arrival_ready() -> bool:
 	if city != null and city.is_visible_in_tree():
 		if not city.camera_settled():
 			return false
-		if city.rebuilt.is_connected(fit_grid_map) or get_tree().process_frame.is_connected(fit_grid_map) \
-				or get_tree().process_frame.is_connected(place_raid_legend) or get_tree().process_frame.is_connected(fit_hq_map):
+		if get_tree().process_frame.is_connected(fit_hq_map):
 			return false
 	return true
 
@@ -660,36 +608,6 @@ func _on_carry_changed(carrying: bool) -> void:
 	pad_prompts.set_prompts([[&"ui_accept", "Drop"], [&"ui_cancel", "Cancel"]] if carrying else _page_prompts) # TR
 
 
-## HQ: the crew's posts on the mini-map (claimed nodes: station; CORE: recall), the crew
-## window (recruits land there) and the next run's kit (boosts).
-func _register_hq_drops(crew: Control, mini: GridMapView, queue: Control) -> void:
-	var c := RunManager.campaign
-	for site_id in c.grid.claimed_ids():
-		var sid: StringName = site_id
-		var kind := "recall" if sid == c.grid.home_site_id else "station"
-		drops.add_target("%s:%s" % [kind, sid], ["crew"], kind, sid, _mini_rect.bind(weakref(mini), sid))
-	drops.add_target("roster", ["recruit"], "roster", null, DropLayer.rect_of(crew))
-	drops.add_target("queue", ["boost"], "queue", null, DropLayer.rect_of(queue))
-
-
-## Site `site_id`'s spot on the HQ mini-map `mini_ref` (global; empty when not shown).
-func _mini_rect(mini_ref: WeakRef, site_id: StringName) -> Rect2:
-	var mini: GridMapView = mini_ref.get_ref()
-	if mini == null or not mini.is_visible_in_tree() or mini.is_queued_for_deletion():
-		return Rect2()
-	var at := mini.get_global_transform() * mini.position_of(site_id)
-	return Rect2(at - Vector2.ONE * MINI_TARGET_R, Vector2.ONE * MINI_TARGET_R * 2.0)
-
-
-## Grid: the Site card's crew chips drag onto its JACK IN.
-func _register_grid_drops(site: SiteData) -> void:
-	if _jack_button == null or site == null:
-		return
-	for chip in _grid_chips:
-		drops.add_source(chip, {"kind": "crew", "op": chip.operative_id, "motion": &"crew_assign", "prefer": site.id}, true)
-	drops.add_target("jack", ["crew"], "jack", site.id, DropLayer.rect_of(_jack_button))
-
-
 ## Raid setup: every claimed node on the map and in YOUR NODES takes assets; the DEFENSE
 ## LOADOUT takes a placed asset back; the target node's assets drag off the map too.
 func _register_raid_drops(claimed: Array[StringName], loadout: Control) -> void:
@@ -964,7 +882,6 @@ func _focus_named(node_name: String) -> void:
 		n.grab_focus()
 
 
-
 # --- Panels ---------------------------------------------------------------------------------
 
 func _set_panel(p: Control, name: String) -> void:
@@ -987,10 +904,10 @@ func _set_panel(p: Control, name: String) -> void:
 	# playout, report), holding the RAID band (see-through buildings, management lanes). The
 	# other net pages keep the 2D city until their views move onto it.
 	if wireframe != null:
-		wireframe.use_city3d(name in ["grid", "hq"] or name in RAID_CITY_PAGES, CityLod.Band.RAID if name in RAID_CITY_PAGES or name == "hq" else CityLod.Band.GRID)
+		wireframe.use_city3d(name == "hq" or name in RAID_CITY_PAGES, CityLod.Band.RAID)
 	_clear_city_map()
 	# City map screens: clicks fall through the empty panel area to the map.
-	var on_city := name in ["hq", "grid", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
+	var on_city := name in ["hq", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE if on_city else Control.MOUSE_FILTER_STOP
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel = p
@@ -1002,7 +919,7 @@ func _set_panel(p: Control, name: String) -> void:
 	panel_name = name
 	# ANIM-5: only the Grid and the playout ease their camera; any other page shows its
 	# frame at once.
-	if wireframe != null and not name in ["hq", "grid", "raid", "raid_playout"]:
+	if wireframe != null and not name in ["hq", "raid", "raid_playout"]:
 		wireframe.settle_camera()
 	# H24 S4: the page shows its words as given (translated once, where they are built).
 	TextDb.shown_as_given(p)
@@ -1014,7 +931,7 @@ func _set_panel(p: Control, name: String) -> void:
 		more_hint.reset_snap()
 	# Screens built from terminal windows let the city show between them.
 	# ANIM-R5 P4: the campaign's end too (it was a near-opaque glass page of terminal lines).
-	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "grid", "raid", "raid_playout", "raid_summary", "end", "end_lock"] or name.begins_with("city") else &"GlassPanel"
+	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "raid", "raid_playout", "raid_summary", "end", "end_lock"] or name.begins_with("city") else &"GlassPanel"
 	# HQ-B (Q6): the HQ shows no title (the HEAT gauge holds the bar's first slot).
 	hud.set_screen("" if name in HQ_PAGES else String(SCREEN_NUMBERS.get(name, "")), "" if name in HQ_PAGES else screen_title(name))
 	if not name in HEAT_BUTTON_PAGES:
@@ -1037,10 +954,10 @@ func _set_panel(p: Control, name: String) -> void:
 		UiFocus.focus_first(p)
 	_scroll_to_top.call_deferred()
 	# Worlds (STYLE_GUIDE 1): the room is a cyberdeck, the Grid and raids are wireframe.
-	var net := name in ["hq", "grid", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
+	var net := name in ["hq", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
 	background.visible = not net
 	wireframe.visible = net
-	AudioDirector.play_music("raid" if name.begins_with("raid") else ("grid" if name == "grid" else "hq"),
+	AudioDirector.play_music("raid" if name.begins_with("raid") else "hq",
 		RunManager.campaign.corporation_id if RunManager.campaign != null else &"")
 	if RunManager.campaign != null:
 		var band := RunManager.campaign.heat_majors_crossed(RunManager.config())
@@ -1062,8 +979,6 @@ static func screen_title(p_name: String) -> String:
 			return TranslationServer.translate("JACK A CAMPAIGN IN")
 		"hq":
 			return TranslationServer.translate("CYBERDECK HQ")
-		"grid":
-			return TranslationServer.translate("CITY GRID")
 		"raid":
 			return TranslationServer.translate("CELL DEFENSE RAID SETUP")
 		"raid_playout":
@@ -1134,6 +1049,14 @@ func select_operative(operative_id: StringName) -> void:
 	_refresh_status()
 
 
+## HQ-B (Q9): the Codex, in the pause menu (the start page's Codex line opens it there).
+func open_codex() -> void:
+	if _settings_panel == null:
+		open_settings()
+	if _settings_panel != null:
+		_settings_panel.show_codex()
+
+
 func open_settings() -> void:
 	if _settings_panel != null:
 		_settings_panel.queue_free()
@@ -1161,7 +1084,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	# H24 K1: the pad's key button (Y) opens and folds the Grid's map key at big text.
-	if event.is_action_pressed("cycle_target") and panel_name in ["hq", "grid"] and grid_legend != null \
+	if event.is_action_pressed("cycle_target") and panel_name in HQ_PAGES and grid_legend != null \
 			and is_instance_valid(grid_legend) and grid_legend.visible and grid_legend.foldable():
 		grid_legend.set_opened(not grid_legend.opened)
 		get_viewport().set_input_as_handled()
@@ -1194,7 +1117,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 ## Panels B leaves for the HQ (their "Back to HQ" button).
-const BACK_PANELS: Array[String] = ["grid", "raid"]
+const BACK_PANELS: Array[String] = ["raid"]
 ## ANIM-R6 C7: the pad prompt of the maps' folding key (exported for the translators).
 const KEY_PROMPT := "Key" # TR
 
@@ -1398,11 +1321,7 @@ func show_start() -> void:
 	corp_pick.tile_chosen.connect(func(i: int) -> void:
 		var corp_cap := RunManager.ice_cap(corps[i].id)
 		ice_spin.max_value = corp_cap
-		ice_label.text = (tr("ICE difficulty (0-%d):") % corp_cap).to_upper()
-		warm_start_hq(corps[i]))
-	# ANIM-R6 C9: the HQ the picked corporation's campaign opens on bakes while this page is open.
-	if not corps.is_empty():
-		warm_start_hq.call_deferred(corps[corp_pick.selected()])
+		ice_label.text = (tr("ICE difficulty (0-%d):") % corp_cap).to_upper())
 	# HOME SERVER: the variants, the open ones first.
 	var variants := RunManager.available_home_variants()
 	var home_tiles: Array[Dictionary] = []
@@ -1556,7 +1475,8 @@ func show_start() -> void:
 	var options_btn := _hint_button(tr("Options"), &"open_settings", open_settings)
 	options_btn.name = "OptionsButton"
 	menu.body.add_child(_icon(options_btn, StatIcon.SETTINGS))
-	menu.body.add_child(_icon(_button(tr("Codex"), show_codex), StatIcon.CODEX))
+	# HQ-B (Q9): the Codex is the pause menu's (one Codex); this button opens it there.
+	menu.body.add_child(_icon(_button(tr("Codex"), open_codex), StatIcon.CODEX))
 	menu.body.add_child(_icon(_button(tr("Back to title"), RunManager.go_to_title), StatIcon.EXIT))
 	_as_menu(menu.body)
 	_set_panel(box, "start")
@@ -1801,6 +1721,7 @@ func _build_hq_page(page_name: String) -> void:
 	else:
 		_register_hq_drops_b(launchable)
 		tell_new_beats()  # HQ-B (f, Q8): a beat revealed since the HQ last showed: corp news
+		_hq_idle()
 	_link_hq_focus(page)
 	if _hq_focus != "":
 		_focus_named.call_deferred(_hq_focus)
@@ -2699,137 +2620,6 @@ func _link_hq_focus(page: Control) -> void:
 			a.focus_neighbor_left = a.get_path_to(cursor)
 
 
-## ANIM-R2 R1 (view memory): the bake region the Grid was last framed at, per campaign.
-static var _grid_views: Dictionary = {}
-
-
-func _grid_memory_key() -> String:
-	var c := RunManager.campaign
-	return "%d|%s" % [c.campaign_seed, c.corporation_id] if c != null else ""
-
-
-## ANIM-R2 R1: bakes, ahead, the net city's current look over the region the Grid was last
-## framed at in this campaign (nothing the first time: the Grid then bakes its own view).
-func _prebake_grid() -> void:
-	if wireframe == null or not is_inside_tree() or RunManager.campaign == null:
-		return
-	# ANIM-R6 C9: behind the HQ page's own city (the Grid's bake took the one build slot first
-	# and the HQ waited on the silhouette): asked for once the HQ's view is covered.
-	# ANIM-R6 C9: only while the HQ page shows (a page left at once must not queue the Grid's
-	# bake ahead of its own: the campaign end sat on the silhouette behind it).
-	if panel_name != "hq":
-		return
-	if background != null and background.visible and background.city.is_baked() and not background.city.view_covered():
-		if not background.city.rebuilt.is_connected(_prebake_grid):
-			background.city.rebuilt.connect(_prebake_grid, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
-		return
-	var region: Variant = _grid_views.get(_grid_memory_key())
-	if not (region is Rect2):
-		# ANIM-R6 C9: the first open in a campaign too (it sat ~1.8 s on the silhouette): the
-		# frame the Grid mounts at (its nodes' middle at GRID_ANCHOR, GRID_ZOOM) and every node
-		# with a margin, the fit's frame lying inside that.
-		region = first_grid_region()
-	if region is Rect2 and (region as Rect2).has_area():
-		wireframe.city.prebake(region)
-	# The Grid's placement (its buildings and street routes) worked out now too: the Grid's
-	# first frame then only draws (~35 ms less in it).
-	if wireframe.city.is_baked():
-		var warm := CityMapOverlay.new(wireframe.city)
-		var g := grid_graph()
-		warm.set_graph(g["nodes"], g["edges"])
-		warm.free()
-
-
-## ANIM-R6 C9: the hidden HQ backdrop twin warming, from the start page, the HQ a new campaign
-## opens on (it sat ~1.9 s on the silhouette after "New campaign").
-var _start_warm: CyberdeckBackground = null
-
-
-## ANIM-R6 C9: bakes, ahead, the HQ page's city for a new campaign against `corp` (its district
-## and a new campaign's territory, the default frame at this screen's size), behind the start
-## page's own city. A twin of the backdrop asks for it; picking another corporation asks again.
-func warm_start_hq(corp: CorporationData) -> void:
-	if corp == null or not is_inside_tree() or panel_name != "start" or corp.generated_from_profile:
-		return
-	if background != null and background.visible and background.city.is_baked() and not background.city.view_covered():
-		var again := warm_start_hq.bind(corp)
-		if not background.city.rebuilt.is_connected(again):
-			background.city.rebuilt.connect(again, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
-		return
-	if _start_warm != null and is_instance_valid(_start_warm):
-		_start_warm.queue_free()
-	var home := RunManager.lookup().get_content(RunManager.DEFAULT_HOME) as HomeServerVariantData
-	var cls := RunManager.lookup().get_content(RunManager.DEFAULT_CLASS) as ClassData
-	if home == null or cls == null:
-		return
-	# A new campaign's state, for its territory only (a view copy, never kept).
-	var fresh := CampaignRules.new_campaign(corp, RunManager.config(), RunManager.lookup(), 1, cls, home.core, 0, home)
-	_start_warm = CyberdeckBackground.new()
-	_start_warm.name = "StartWarm"
-	_start_warm.visible = false
-	add_child(_start_warm)
-	_start_warm.set_district(corp.id)
-	_start_warm.city.pin_influence(CityInfluence.of(fresh, corp))
-	_start_warm.city.prebake_frames([size])
-
-
-## ANIM-R6 C9: the bake region (world px) of the Grid's first open in a campaign, worked out
-## from the HQ page: its mount frame (the nodes' middle at GRID_ANCHOR, GRID_ZOOM, this
-## screen) merged with every node's point grown by NeonCity.REGION_MARGIN. Empty when unknown.
-func first_grid_region() -> Rect2:
-	if RunManager.campaign == null or size.x < 2.0 or size.y < 2.0:
-		return Rect2()
-	var nodes: Array = grid_graph()["nodes"]
-	if nodes.is_empty():
-		return Rect2()
-	var centre := Vector2.ZERO
-	var first: Vector2 = nodes[0]["at"]
-	var box := Rect2(NeonCity.world_of(first.x + 0.5, first.y + 0.5), Vector2.ZERO)
-	for n: Dictionary in nodes:
-		var at: Vector2 = n["at"]
-		centre += at
-		box = box.expand(NeonCity.world_of(at.x + 0.5, at.y + 0.5))
-	centre /= nodes.size()
-	var frame := wireframe.city.region_for(centre, GRID_ANCHOR, GRID_ZOOM, size)
-	return NeonCity.snap_region(frame.merge(box.grow(NeonCity.REGION_MARGIN)))
-
-
-## D-pad through the crew (H22 #10: the second dossier's Loadout could not be reached; the
-## page's row links saw only each column's first control): each dossier's orders top to
-## bottom, left / right to the same line of the dossier beside it (JACK IN after the last),
-## and down from a dossier's last order to the next dossier, then to the Black Market.
-func _link_crew_focus(roster: Control, jack: Control, market: Control) -> void:
-	var cards: Array = []
-	for card in roster.get_children():
-		var list: Array[Control] = []
-		_usable_in(card, list)
-		if not list.is_empty():
-			cards.append(list)
-	var after := UiFocus.first_focusable(market)
-	for k in cards.size():
-		var list: Array = cards[k]
-		for i in list.size():
-			var c: Control = list[i]
-			if i > 0:
-				c.focus_neighbor_top = c.get_path_to(list[i - 1])
-			if i + 1 < list.size():
-				c.focus_neighbor_bottom = c.get_path_to(list[i + 1])
-			elif k + 1 < cards.size():
-				c.focus_neighbor_bottom = c.get_path_to(cards[k + 1][0])
-			elif after != null:
-				c.focus_neighbor_bottom = c.get_path_to(after)
-			if k + 1 < cards.size():
-				var nxt: Array = cards[k + 1]
-				c.focus_neighbor_right = c.get_path_to(nxt[mini(i, nxt.size() - 1)])
-			elif jack != null:
-				c.focus_neighbor_right = c.get_path_to(jack)
-			if k > 0:
-				var prv: Array = cards[k - 1]
-				c.focus_neighbor_left = c.get_path_to(prv[mini(i, prv.size() - 1)])
-		if k == 0 and jack != null:
-			jack.focus_neighbor_left = jack.get_path_to(list[0])
-
-
 ## The focusable controls under `node`, in tree order.
 func _usable_in(node: Node, out: Array[Control]) -> void:
 	for child in node.get_children():
@@ -2855,80 +2645,6 @@ func _node_choices() -> Array[NetworkNodeData]:
 ## Site on it): the Grid opens the HQ with its selected Site.
 func show_grid() -> void:
 	show_hq()
-
-
-## The Grid map fitted to the part of the screen it shows through (H23 #5: at 1.6 a T3
-## Site sat under the side column; H23 #3: the key sits on the map): the legend is a strip
-## along the map's foot, as wide as the map, its rows in columns. Then, when a node (icon
-## or tier pips) lies outside the part above it, the camera pans and zooms out to fit
-## them, and checks again once the city has redrawn (at most GRID_FITS_MAX passes).
-func fit_grid_map() -> void:
-	if panel_name != "grid" or city_overlay == null or not is_instance_valid(city_overlay) \
-			or grid_legend == null or not is_instance_valid(grid_legend) or not grid_legend.is_inside_tree():
-		return
-	var city := wireframe.city
-	if not city.camera_settled():
-		# The icons move once the city has drawn under the new camera: measure then.
-		_fit_after_redraw()
-		return
-	var area_ctl := grid_legend.get_parent() as Control
-	var area := area_ctl.get_global_rect()
-	if area.size.x <= LegendSpot.MARGIN * 2.0 or area.size.y <= LegendSpot.MARGIN * 2.0 or not get_global_rect().grow(1.0).encloses(area):
-		return  # laid out later: the area's `resized` fits it again
-	# H24 K1: map labels stay on the map's own area (under the top bar, beside the column).
-	city_overlay.screen_rect = area
-	var free := area.grow(-LegendSpot.MARGIN)
-	_sync_grid_minimap()
-	if grid_legend.visible:
-		# The key runs along the map's foot, in as many columns as the width holds; the
-		# nodes fit above it (above its folded MAP KEY line at big text, H24 K1).
-		_grid_legend_size = Vector2.INF  # the width set here is not a text size change
-		# ART-5 5a: the minimap terminal sits at the foot's left, the key beside it.
-		grid_legend.set_strip_width(free.size.x - _minimap_room().x)
-		var own := grid_legend.fit_size()
-		_grid_legend_size = own
-		_place_grid_legend()
-		free.size.y = maxf(1.0, area.size.y - maxf(own.y, _minimap_room().y) - LegendSpot.MARGIN * 2.0 - LegendSpot.MARGIN)
-	elif _minimap_room() != Vector2.ZERO:
-		free.size.y = maxf(1.0, area.size.y - _minimap_room().y - LegendSpot.MARGIN * 2.0 - LegendSpot.MARGIN)
-	_place_grid_minimap()
-	if _grid_fits >= GRID_FITS_MAX:
-		_grid_fitted(free, area)
-		return
-	var fit: Dictionary = wireframe.unrigged(func() -> Dictionary:
-		return LegendSpot.fit_into(city_overlay, free, GRID_ZOOM / city.scale.x, GRID_MIN_ZOOM / city.scale.x))
-	if fit.is_empty():
-		_grid_fitted(free, area)
-		return
-	_grid_fits += 1
-	var k := float(fit["zoom"])
-	var screen := get_global_rect()
-	var focus_at := screen.position + city.focus_anchor * screen.size
-	# Zooming by k about the focus point moves the nodes' centre to focus + (from - focus) * k;
-	# the focus then goes where that centre lands in the free part of the map.
-	var to: Vector2 = fit["to"]
-	var from: Vector2 = fit["from"]
-	var anchor := (to - (from - focus_at) * k - screen.position) / screen.size
-	_frame_city(city.scale.x * k, city.focus_grid, anchor)
-	_fit_after_redraw()  # check again under the new camera
-
-
-## Parity fix (GRID-12): the Grid's fitted frame keeps to the city. A network on the city's
-## edge (Meridian) was framed with a third of the map past the last block (fog): once the fit
-## holds every node, the camera pans (never zooms) the way that shows the most city in the map
-## `area`, only as far as keeps every node inside `free`. Once per fit; then it settles.
-func _grid_fitted(free: Rect2, area: Rect2) -> void:
-	if _grid_on_city or city_overlay == null or not is_instance_valid(city_overlay):
-		_grid_settled(free)
-		return
-	_grid_on_city = true
-	var pan: Vector2 = wireframe.unrigged(func() -> Vector2: return grid_city_pan(free, area))
-	if pan.length() < GRID_LEAN_MIN:
-		_grid_settled(free)
-		return
-	var city := wireframe.city
-	_frame_city(city.scale.x, city.focus_grid, city.focus_anchor + pan / get_global_rect().size)
-	_fit_after_redraw()  # measured again under the new camera (the fit holds; then it settles)
 
 
 ## Parity fix (GRID-12): the boss's TARGET pencil (circle and word) as global rects: the
@@ -3000,59 +2716,6 @@ func grid_on_city_share(area: Rect2, pan: Vector2 = Vector2.ZERO) -> float:
 ## Parity fix (GRID-12): the pans tried per axis and the map's sample points per side.
 const GRID_CITY_STEPS := 8
 const GRID_CITY_SAMPLES := 12
-## The Grid's fitted frame has been kept to the city (once per fit).
-var _grid_on_city: bool = false
-
-
-## ANIM-5 (4.14): the Grid map has settled into `free`: the camera leans toward the
-## selected Site once (`grid_lean`), then the picture eases from the frame it held.
-func _grid_settled(free: Rect2) -> void:
-	# ART-0 C (art pass W8b, §12 reduce motion): no lean when camera moves are off (the
-	# fitted frame is the end).
-	if not _grid_leaned and panel_name == "grid" and city_overlay != null and is_instance_valid(city_overlay) and Motion.camera_moves_allowed():
-		_grid_leaned = true
-		var lean: Vector2 = wireframe.unrigged(func() -> Vector2: return grid_lean(free))
-		if lean.length() >= GRID_LEAN_MIN:
-			var city := wireframe.city
-			_frame_city(city.scale.x, city.focus_grid, city.focus_anchor + lean / get_global_rect().size)
-			if city.is_baked():
-				city.update_camera()
-				_grid_settled(free)
-				return
-			if not city.rebuilt.is_connected(_grid_settled):
-				city.rebuilt.connect(_grid_settled.bind(free), CONNECT_ONE_SHOT | CONNECT_DEFERRED)
-			return
-	# ANIM-R2 R1: remembered, so the next visit's city is baked ahead (`_prebake_grid`).
-	if panel_name == "grid" and RunManager.campaign != null:
-		wireframe.city.update_camera()
-		_grid_views[_grid_memory_key()] = wireframe.city.bake_region()
-	wireframe.ease_camera()
-
-
-## ANIM-5 (4.14): how far (screen px) the Grid camera leans so the selected Site moves
-## toward the middle of `free`: at most `map_camera_ease`'s amplitude, and only as far as
-## keeps every node (icon and tier pips) inside the area the fit aims at, so the H23/H24
-## framing holds at the end.
-func grid_lean(free: Rect2) -> Vector2:
-	if city_overlay == null or not is_instance_valid(city_overlay) or selected_site == &"":
-		return Vector2.ZERO
-	var at := city_overlay.icon_at(selected_site)
-	var rects := LegendSpot.node_rects(city_overlay, false)
-	rects.append_array(_grid_pencil_rects())
-	if at.x == INF or rects.is_empty():
-		return Vector2.ZERO
-	var box := rects[0]
-	for r in rects:
-		box = box.merge(r)
-	var aim := free.grow(-LegendSpot.FIT_INSET) if free.size.x > LegendSpot.FIT_INSET * 4.0 and free.size.y > LegendSpot.FIT_INSET * 4.0 else free
-	var want := aim.get_center() - city_overlay.get_global_transform() * at
-	var lo := aim.position - box.position
-	var hi := aim.end - box.end
-	var out := Vector2.ZERO
-	for axis in 2:
-		if lo[axis] <= 0.0 and hi[axis] >= 0.0:
-			out[axis] = clampf(want[axis], lo[axis], hi[axis])
-	return out.limit_length(Motion.amplitude(&"map_camera_ease"))
 
 
 ## ANIM-R5 P8: the run rows' gains read as what clearing gives, never as buttons: a caption
@@ -3063,8 +2726,6 @@ const GAIN_OPENS_ONE := "OPENS %d SITE" # TR
 const GAIN_OPENS := "OPENS %d SITES" # TR
 ## ANIM-R6 C15: what claiming means, in the badge's own words (CLAIMABLE left a beginner asking).
 const GAIN_CLAIMABLE := "CAN BE YOUR NODE" # TR
-## The caption's lettering (px at text scale 1.0).
-const GAIN_CAPTION_FONT := 12
 
 
 ## H24 K4: what clearing Site `s` gives and risks (`preview` = CampaignRules.clear_preview),
@@ -3106,102 +2767,6 @@ func run_gains(_site: SiteData, preview: Dictionary) -> Array[Badge]:
 	return out
 
 
-## H24 K4: the run rows by Site id (the Grid's RUNS OPEN NOW).
-var _run_buttons: Dictionary = {}
-
-
-## H24 K4: a run row is hovered or has the pad's focus: light its node on the map.
-func _light_site(id: StringName) -> void:
-	if city_overlay != null and is_instance_valid(city_overlay):
-		city_overlay.hover_id = id
-
-
-func _unlight_site(id: StringName) -> void:
-	if city_overlay != null and is_instance_valid(city_overlay) and city_overlay.hover_id == id:
-		city_overlay.hover_id = &""
-
-
-## H24 K4: the pointer is on node `id` of the Grid map: its run row looks hovered (the
-## others as they are); &"" lights none.
-func light_run_row(id: StringName) -> void:
-	for sid in _run_buttons:
-		var b := _run_buttons[sid] as Button
-		if b == null or not is_instance_valid(b):
-			continue
-		var lit: bool = sid == id
-		b.set_meta(&"lit", lit)
-		if lit:
-			b.add_theme_stylebox_override(&"normal", b.get_theme_stylebox(&"hover"))
-		else:
-			b.remove_theme_stylebox_override(&"normal")
-
-
-## H24 K1: the Grid's key at the foot of the map area, growing upward (open, its rows sit
-## over the map; the map is framed for the folded line).
-func _place_grid_legend() -> void:
-	if grid_legend == null or not is_instance_valid(grid_legend):
-		return
-	var area_ctl := grid_legend.get_parent() as Control
-	var own := grid_legend.get_combined_minimum_size()
-	grid_legend.size = own
-	grid_legend.position = Vector2(LegendSpot.MARGIN + _minimap_room().x, maxf(LegendSpot.MARGIN, area_ctl.size.y - own.y - LegendSpot.MARGIN))
-
-
-## ART-5 5a: the room the minimap terminal takes at the map's foot (its size and a margin;
-## zero without one).
-func _minimap_room() -> Vector2:
-	if grid_minimap == null or not is_instance_valid(grid_minimap) or not grid_minimap.visible:
-		return Vector2.ZERO
-	return grid_minimap.get_combined_minimum_size() + Vector2(LegendSpot.MARGIN, 0.0)
-
-
-## ART-5 5a: the minimap shows while the key keeps its rows; at the text sizes where the key
-## folds to one line (MapLegend.FOLD_SCALE) the map needs that room, so the minimap folds away
-## with it (the wheel, drag, WASD and the right stick still move the camera).
-func _sync_grid_minimap() -> void:
-	if grid_minimap == null or not is_instance_valid(grid_minimap):
-		return
-	grid_minimap.visible = grid_legend == null or not is_instance_valid(grid_legend) or not grid_legend.foldable()
-
-
-func _place_grid_minimap() -> void:
-	if grid_minimap == null or not is_instance_valid(grid_minimap):
-		return
-	var area_ctl := grid_minimap.get_parent() as Control
-	var own := grid_minimap.get_combined_minimum_size()
-	grid_minimap.size = own
-	grid_minimap.position = Vector2(LegendSpot.MARGIN, maxf(LegendSpot.MARGIN, area_ctl.size.y - own.y - LegendSpot.MARGIN))
-
-
-## ART-5 5a: the Grid's player camera and minimap on the 3D city (bible §4.1): wheel / +-
-## zoom about the cursor (log-linear), drag / WASD / right stick pan, the minimap centres.
-## Each move is a frame through `_frame_city`; nothing moves headless without input.
-func _mount_grid_camera(area: Control, page: Control, column: Control) -> void:
-	grid_controls = null
-	grid_minimap = null
-	grid_target = null
-	if not wireframe.city3d:
-		return
-	grid_minimap = CityMinimap.new()
-	grid_minimap.name = "GridMinimap"
-	area.add_child(grid_minimap)
-	grid_controls = CityGridControls.new(wireframe.city, self, func(z: float, f: Vector2, a: Vector2) -> void:
-		_frame_city(z, f, a)
-		wireframe.city.update_camera())
-	grid_controls.sites_of = _minimap_sites
-	page.add_child(grid_controls)
-	grid_controls.attach(city_overlay, grid_minimap)
-	_sync_grid_minimap()
-	wireframe.city.rebuilt.connect(grid_controls.sync_minimap)
-	# ART-5 5e: the off-screen TARGET: a red pencil arrow on the map's edge; clicking pans to it.
-	grid_target = TargetEdgeMarker.make(city_overlay)
-	grid_target.avoid.append(grid_legend)
-	grid_target.avoid.append(grid_minimap)
-	area.add_child(grid_target)
-	grid_target.pan_requested.connect(grid_controls.centre_on)
-	city_overlay.avoid_controls([column, grid_legend, grid_minimap])
-
-
 ## ART-5 5a: the Grid's Sites for the minimap: yours lime, the target red, the rest white.
 func _minimap_sites() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
@@ -3215,70 +2780,6 @@ func _minimap_sites() -> Array[Dictionary]:
 			kind = "target"
 		out.append({"at": Vector2(city_overlay.lot_of(n["id"])) + Vector2(0.5, 0.5), "kind": kind})
 	return out
-
-
-## H24 K1 / K2: a Grid step button that carries its full words and its short form (icon
-## and arrow only; `short` "" = the icon alone), see `_fit_steps`.
-func _step_button(full: String, short: String, on_pressed: Callable) -> Button:
-	var b := _button(full, on_pressed)
-	b.set_meta(&"full_text", full)
-	b.set_meta(&"short_text", short)
-	return b
-
-
-## H24 K1 / K2: the step row fits the column: at big text (STEP_ICONS_SCALE) or when a
-## button's words (translated) are wider than the column, it shows its short form (the
-## words stay in its tooltip); a button still too wide wraps its words inside the column.
-func _fit_steps(nav: HFlowContainer) -> void:
-	var room := GRID_SIDE_WIDTH
-	for b in nav.get_children():
-		if not (b is Button) or not b.has_meta(&"full_text"):
-			continue
-		var btn := b as Button
-		btn.text = String(btn.get_meta(&"full_text"))
-		btn.autowrap_mode = TextServer.AUTOWRAP_OFF
-		btn.custom_minimum_size.x = 0.0
-		if Settings.text_scale >= STEP_ICONS_SCALE - 0.001 or btn.get_combined_minimum_size().x > room:
-			btn.text = String(btn.get_meta(&"short_text"))
-		if btn.get_combined_minimum_size().x > room:
-			btn.autowrap_mode = TextServer.AUTOWRAP_WORD
-			btn.custom_minimum_size.x = room
-func _fit_after_redraw() -> void:
-	var city := wireframe.city
-	if city.is_baked():
-		# ANIM-R2 R1: a baked city's placement follows the camera at once: the next pass
-		# measures now (each pass waited for a redraw, all of them in one long frame).
-		city.update_camera()
-		fit_grid_map()
-		return
-	if not city.rebuilt.is_connected(fit_grid_map):
-		city.rebuilt.connect(fit_grid_map, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
-
-
-## The key's size changed (its text size): fit the map again. The fit itself sets the
-## key's width, so a size it has already fitted to is ignored.
-func _on_grid_legend_resized() -> void:
-	if _grid_legend_size == Vector2.INF:
-		return
-	if grid_legend != null and is_instance_valid(grid_legend) and not grid_legend.fit_size().is_equal_approx(_grid_legend_size):
-		_refit_grid.call_deferred()
-
-
-## The Grid map's area or key changed size (text scale, legend switch): fit it again. A
-## fit is worked out from where the nodes are now, so fits never compound.
-func _refit_grid() -> void:
-	if panel_name != "grid" or city_overlay == null or not is_instance_valid(city_overlay):
-		return
-	_grid_fits = 0
-	_grid_on_city = false
-	_fit_next_frame()
-
-
-## Runs `fit_grid_map` once at the next frame, when the page's layout has settled (a fit
-## during the containers' first sorts would frame the map for a size it never keeps).
-func _fit_next_frame() -> void:
-	if not get_tree().process_frame.is_connected(fit_grid_map):
-		get_tree().process_frame.connect(fit_grid_map, CONNECT_ONE_SHOT)
 
 
 ## Mounts the map overlay on the net city and frames the camera on it. `zoom` > 1 moves
@@ -3338,7 +2839,7 @@ func _threat_paths() -> Array[Array]:
 ## ANIM-5 (4.14): the picture holds the old frame while the page refits and then eases
 ## to the new one (the camera leans toward the Site, `grid_lean`).
 func select_site(site_id: StringName) -> void:
-	if panel_name in ["hq", "grid"]:
+	if panel_name in HQ_PAGES:
 		wireframe.hold_camera()
 	selected_site = site_id
 	show_grid()
@@ -3363,15 +2864,6 @@ func stepped_site(step: int) -> StringName:
 		if sites[k].id == selected_site:
 			i = k
 	return sites[posmod(i + step, sites.size())].id
-
-
-## Puts map node `mn`'s icon on button `b` (H22 #14, H23 #7): its kind in the map's
-## colour, the tier inside a plain Site's hexagon and, with `pips`, the tier pips after it.
-func _site_mark(b: Button, mn: Dictionary, pips: bool = true) -> void:
-	var kind := String(mn.get("kind", CityMapOverlay.KIND_TIER))
-	IconMark.attach(b, StatIcon.MAP)
-	IconMark.attach_map(b, kind, mn.get("color", Palette.NET_CYAN), String(mn.get("glyph", "")) if kind == CityMapOverlay.KIND_TIER else "",
-		CityMapOverlay.tier_of(mn) if pips else 0)
 
 
 ## Site `id`'s name and kind for a tooltip ("Kill-Switch Authority, a T2 Exploit Site").
@@ -3716,27 +3208,6 @@ func _defence_verb(slot: VBoxContainer) -> void:
 	slot.add_child(strip)
 
 
-## ART-3 6w: at big text the loadout heads the side column's scroll, whose view now ends at
-## 3A's pinned START foot: the defence cards share one row (each as wide as the row allows,
-## down to CARD_ROW_MIN_SHARE of its size) so no card wraps under the view's foot (at 2.0
-## the third card sat half below it). A row that would need narrower cards keeps wrapping.
-func _fit_card_row(cards: HFlowContainer) -> void:
-	var row: Array[AssetCard] = []
-	for k in cards.get_children():
-		if k is AssetCard:
-			row.append(k as AssetCard)
-	if row.is_empty():
-		return
-	var full := AssetCard.card_size().x
-	var w := floorf((cards.size.x - cards.get_theme_constant(&"h_separation") * (row.size() - 1)) / row.size())
-	var want := w if w < full and w >= full * CARD_ROW_MIN_SHARE else full
-	for card in row:
-		if not is_equal_approx(card.custom_minimum_size.x, want):
-			card.custom_minimum_size.x = want
-
-
-## ART-3 6w: the narrowest a defence card gets to share the row (share of its size).
-const CARD_ROW_MIN_SHARE := 0.8
 ## ART-3 6w: the raid's pages on the unified 3D city at the RAID band.
 const RAID_CITY_PAGES: Array[String] = ["raid", "raid_playout", "raid_summary"]
 
@@ -3774,12 +3245,6 @@ const ORDER_STAMP_SHARE := 0.78
 ## START DEFENSE's sticker lettering (px at text scale 1.0) and THREAT INTEL's width beside
 ## the loadout (px at 1.0).
 const START_STICKER_STEP := UiTheme.TITLE
-## Above this text scale the raid setup's side column scrolls (ART-6 3A: at every scale, the
-## work order, YOUR NETWORK and START never push the page past the screen).
-const RAID_SIDE_SCROLL_ABOVE := 0.0
-## YOUR NETWORK's list view in the scrolling column (px at 1.0; ART-6 3A).
-const ORDERS_SCROLL_MIN_HEIGHT := 150.0
-const INTEL_WIDTH := 300.0
 ## Parity fix (RAID-02): the raid instruction line's dark plate (SCRIM's ink, this opaque).
 const RAID_INTRO_PLATE_ALPHA := 0.85
 
@@ -4170,143 +3635,10 @@ func forecast_tip(projection: RaidResolver.RaidResult) -> String:
 	return tr("Forecast, not a result: if you start the defence now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it.") % what
 
 
-## The raid legend at the first spot over the map that covers no node's icon or label
-## (H22 #9: pinned bottom left it covered CORE at 1.6). When every spot covers a node
-## (threat routes cross the whole city), the camera frames the map beside the legend's
-## column (moved, and zoomed out as far as that needs), then the legend is placed again.
-func place_raid_legend() -> void:
-	if raid_legend == null or not is_instance_valid(raid_legend) or city_overlay == null or not is_instance_valid(city_overlay):
-		return
-	# ANIM-5: measured with the camera rig at rest (a held frame may be on screen).
-	if _raid_strip:
-		wireframe.unrigged(func() -> bool:
-			_place_raid_strip()
-			return true)
-	else:
-		wireframe.unrigged(func() -> float: return LegendSpot.place(raid_legend, city_overlay))
-	# H23 S14: the nodes must also sit inside the map's free part (they sat under the top
-	# bar or the DEFENSE LOADOUT). Framing runs on the positions measured after the city
-	# redrew (this runs on `rebuilt`), so each pass corrects the last; at most
-	# RAID_REFRAMES_MAX passes.
-	var free := raid_free_rect()
-	var box: Rect2 = wireframe.unrigged(raid_node_box)
-	if not free.has_area() or not box.has_area():
-		return
-	# ANIM-R1 M15: the whole page's framing is bounded, whatever its layouts do. A free
-	# rect that kept changing reset the per-layout pass count, and a measure that never held
-	# still asked for a check every frame: under some layouts and timings the framing never
-	# ended (each pass a new camera, a new city build), the full suite hanging at 100% CPU.
-	_raid_checks += 1
-	if _raid_checks > RAID_CHECKS_MAX or _raid_passes >= RAID_PASSES_MAX:
-		wireframe.ease_camera()
-		return
-	# ART-3 6w (bible §4.1, Appendix C #13): on the 3D city the raid is fitted to its network
-	# first (nodes, entry Sites and the margin in the free part, ortho clamped to the config's
-	# raid range), once per layout; the passes below then only correct it.
-	if wireframe.city3d and not free.is_equal_approx(_raid_fit_for):
-		_raid_fit_for = free
-		_raid_passes += 1
-		_raid_same = 0
-		_raid_box = Rect2()
-		var lots := raid_fit_lots()
-		if not lots.is_empty():
-			var scr := get_global_rect()
-			_frame_city(RaidZoomFit.fit_zoom(CityView3D.CONFIG, lots, free.size, size.x), _centre_of(lots), (free.get_center() - scr.position) / scr.size)
-		if not get_tree().process_frame.is_connected(place_raid_legend):
-			get_tree().process_frame.connect(place_raid_legend, CONNECT_ONE_SHOT)
-		return
-	# Act only on a settled measure: the same free rect and node box for RAID_STABLE_FRAMES
-	# frames in a row. The icons follow the camera a redraw or two late (and jump again when
-	# the city's new stretch is baked), and the page's layout settles over a few frames;
-	# acting on a passing measure moved the camera twice as far.
-	if not free.is_equal_approx(_raid_free) or not box.is_equal_approx(_raid_box):
-		if not free.is_equal_approx(_raid_free):
-			_raid_reframes = 0  # a new layout: its own passes
-		_raid_free = free
-		_raid_box = box
-		_raid_same = 0
-	elif Engine.get_process_frames() != _raid_frame:
-		_raid_same += 1  # once a frame, however often the city redraws in it
-	_raid_frame = Engine.get_process_frames()
-	if _raid_reframes >= RAID_REFRAMES_MAX or (free.encloses(box) and _raid_same >= RAID_STABLE_FRAMES):
-		wireframe.ease_camera()  # ANIM-5: settled: the held picture eases to it
-		return
-	if _raid_same < RAID_STABLE_FRAMES:
-		if not get_tree().process_frame.is_connected(place_raid_legend):
-			get_tree().process_frame.connect(place_raid_legend, CONNECT_ONE_SHOT)
-		return
-	if free.encloses(box):
-		wireframe.ease_camera()
-		return
-	var city := wireframe.city
-	var screen := get_global_rect()
-	var k := 1.0
-	if box.size.x > free.size.x or box.size.y > free.size.y:
-		k = minf(1.0, minf(free.size.x / box.size.x, free.size.y / box.size.y) * RAID_FIT_SHARE)
-	# H24 S5: nodes that cannot fit beside the key's column even at the zoom floor (a late
-	# campaign at text scale 1.6: the column took 368 px and the icons sat under it) get the
-	# strip key along the map's foot instead, as the Grid has.
-	if not _raid_strip and raid_legend.is_visible_in_tree() and city.scale.x * k < raid_min_zoom() * RAID_STRIP_BELOW:
-		_use_raid_strip()
-		return
-	_raid_reframes += 1
-	_raid_passes += 1
-	# Never further out than raid_min_zoom() (a far camera bakes a huge stretch of city).
-	k = clampf(k, raid_min_zoom() / maxf(raid_min_zoom(), city.scale.x), 1.0)
-	var anchor := city.focus_anchor
-	if k < 1.0:
-		# Zooming by k about the focus point moves the box centre to focus + (from - focus)
-		# * k; the focus goes where that puts the centre on the free rect's centre.
-		var focus_at := screen.position + city.focus_anchor * screen.size
-		anchor = (free.get_center() - (box.get_center() - focus_at) * k - screen.position) / screen.size
-		_raid_step = {}
-	else:
-		# A move only: how far the box went for the last move (per axis) sets this one's
-		# size, so the measured response, not the planned one, steers the camera.
-		var want := free.get_center() - box.get_center()
-		var gain := Vector2.ONE
-		if not _raid_step.is_empty():
-			var moved: Vector2 = box.get_center() - Vector2(_raid_step["centre"])
-			var stepped: Vector2 = _raid_step["step"]
-			for axis in 2:
-				if absf(stepped[axis]) > 1.0 and absf(moved[axis]) > 1.0:
-					gain[axis] = clampf(stepped[axis] / moved[axis], RAID_GAIN_MIN, RAID_GAIN_MAX)
-		var step := want * gain
-		anchor = city.focus_anchor + step / screen.size
-		_raid_step = {"centre": box.get_center(), "step": step}
-	_raid_same = 0
-	_raid_box = Rect2()
-	_frame_city(city.scale.x * k, city.focus_grid, anchor)
-	if not get_tree().process_frame.is_connected(place_raid_legend):
-		get_tree().process_frame.connect(place_raid_legend, CONNECT_ONE_SHOT)
-
-
-## Share of the free rect the raid's nodes are framed into (a margin round them), and the
-## furthest the raid map zooms out (H24 S5: 0.6 left a late campaign's nodes outside the
-## map at text scale 1.6).
-const RAID_FIT_SHARE := 0.9
-const RAID_MIN_ZOOM := 0.45
-## ART-3 6w: the free rect the raid was last fitted to its network for (one fit per layout).
-var _raid_fit_for: Rect2 = Rect2()
-
-
-## The furthest out the raid map goes: on the 3D city the zoom of the config's widest raid
+## ortho (`raid_fit_max`, Appendix C #13).
 ## ortho (`raid_fit_max`, Appendix C #13), else RAID_MIN_ZOOM.
 func raid_min_zoom() -> float:
-	if wireframe != null and wireframe.city3d:
-		return RaidZoomFit.zoom_of(CityView3D.CONFIG.raid_fit_max, size.x)
-	return RAID_MIN_ZOOM
-
-
-## ART-3 6w: the raid's network as lot centres (the map's nodes: the Cell's and the Sites the
-## threats enter at and cross), what the raid zoom fits (bible §4.1).
-func raid_fit_lots() -> PackedVector2Array:
-	var out := PackedVector2Array()
-	if city_overlay == null or not is_instance_valid(city_overlay):
-		return out
-	for n in city_overlay.nodes:
-		out.append(Vector2(city_overlay.lot_of(n["id"])) + Vector2(0.5, 0.5))
-	return out
+	return RaidZoomFit.zoom_of(CityView3D.CONFIG.raid_fit_max, size.x)
 
 
 ## ART-3 6w: the raid playout's camera on the 3D city stays in the raid's ortho range: its
@@ -4323,162 +3655,6 @@ func playout_min_zoom() -> float:
 	if wireframe != null and wireframe.city3d:
 		return RaidZoomFit.zoom_of(CityView3D.CONFIG.raid_fit_max, size.x)
 	return PLAYOUT_MIN_ZOOM
-## The column key gives way to the strip when the nodes would need a zoom under this share
-## of RAID_MIN_ZOOM to fit beside it (1: as soon as the floor would be passed).
-const RAID_STRIP_BELOW := 1.0
-## The raid key is a strip along the map's foot (H24 S5), the layout it was chosen for
-## (`raid_layout_key`), and the panels the map's labels keep clear of.
-var _raid_strip: bool = false
-var _raid_strip_key: String = ""
-var _raid_avoid: Array[Control] = []
-## Bounds of a camera move's measured gain (anchor px per px the nodes moved).
-const RAID_GAIN_MIN := 0.25
-const RAID_GAIN_MAX := 4.0
-## The free rect the passes were counted for, and the last move ({centre, step}).
-var _raid_free: Rect2 = Rect2()
-var _raid_step: Dictionary = {}
-## The last node box measured and for how many frames in a row it (and the free rect) held.
-var _raid_box: Rect2 = Rect2()
-var _raid_same: int = 0
-var _raid_frame: int = -1
-## Frames a measure must hold before the camera acts on it.
-const RAID_STABLE_FRAMES := 2
-## ANIM-R1 M15: bounds on one raid page's framing, whatever its layouts do: the camera
-## moves (over every layout the page goes through) and the checks (frames and redraws the
-## framing looks at the map). Past either, the frame it has is the frame it keeps.
-const RAID_PASSES_MAX := RAID_REFRAMES_MAX * 3
-const RAID_CHECKS_MAX := 240
-var _raid_passes: int = 0
-var _raid_checks: int = 0
-
-
-## The part of the raid map's area the nodes should sit in (screen px): the area less its
-## margin and less the legend's column (the legend's side of the area).
-func raid_free_rect() -> Rect2:
-	var area_ctl := raid_legend.get_parent() as Control if raid_legend != null and is_instance_valid(raid_legend) else null
-	if area_ctl == null:
-		return Rect2()
-	# The area as far as it is on screen (a page taller than the screen scrolls).
-	var area := area_ctl.get_global_rect().intersection(get_global_rect()).grow(-LegendSpot.MARGIN)
-	if not raid_legend.is_visible_in_tree():
-		return area
-	if _raid_strip:
-		# The strip along the area's foot: the nodes sit above it.
-		var top := raid_legend.get_global_rect().position.y - LegendSpot.MARGIN
-		return Rect2(area.position, Vector2(area.size.x, maxf(0.0, top - area.position.y)))
-	# The legend's column at the area's left (LegendSpot tries it first, so the legend lands
-	# there once the nodes leave it).
-	var left := area.position.x + raid_legend.get_combined_minimum_size().x * raid_legend.scale.x + LegendSpot.MARGIN
-	return Rect2(left, area.position.y, maxf(0.0, area.end.x - left), area.size.y)
-
-
-## The screen box round the raid map's node icons and tier pips (empty when none).
-func raid_node_box() -> Rect2:
-	var rects := LegendSpot.node_rects(city_overlay, false)
-	if rects.is_empty():
-		return Rect2()
-	var box := rects[0]
-	for r in rects:
-		box = box.merge(r)
-	return box
-
-
-## Screen rects of the raid map's node icons and labels (the legend must cover none).
-func raid_node_rects() -> Array[Rect2]:
-	return LegendSpot.node_rects(city_overlay)
-
-
-## Whether the raid key is the strip along the map's foot now (H24 S5).
-func raid_legend_is_strip() -> bool:
-	return _raid_strip
-
-
-## The layout a strip key was chosen for: the text size, the screen and the raid map's
-## nodes (a redraw of the same setup keeps the strip; a new layout tries the column again).
-func raid_layout_key() -> String:
-	var n := 0
-	if RunManager.campaign != null:
-		n = RunManager.campaign.grid.claimed_ids().size()
-	return "%.2f|%s|%d|%s" % [Settings.text_scale, size, n, RunManager.campaign.corporation_id if RunManager.campaign != null else &""]
-
-
-## Swaps the raid's column key for the strip key along the map's foot (H24 S5) and frames
-## the map again above it.
-func _use_raid_strip() -> void:
-	if raid_legend == null or not is_instance_valid(raid_legend):
-		return
-	var area := raid_legend.get_parent() as Control
-	var keys := raid_legend.only.duplicate()
-	area.remove_child(raid_legend)
-	raid_legend.queue_free()
-	_raid_strip = true
-	_raid_strip_key = raid_layout_key()
-	raid_legend = MapLegend.pin_to(area, RunManager.campaign.corporation_id, true).show_only(keys)
-	raid_legend.minimum_size_changed.disconnect(raid_legend._repin)
-	raid_legend.minimum_size_changed.connect(_on_raid_legend_resized)
-	raid_legend.fold_changed.connect(_place_raid_strip)
-	TextDb.translates_itself(raid_legend)  # its row words are keys
-	var avoid: Array[Control] = []
-	for ctl in _raid_avoid:
-		if is_instance_valid(ctl):
-			avoid.append(ctl)
-	avoid.append(raid_legend)
-	if city_overlay != null and is_instance_valid(city_overlay):
-		city_overlay.avoid_controls(avoid)
-	_raid_reframes = 0
-	_raid_free = Rect2()
-	_raid_box = Rect2()
-	_raid_same = 0
-	_raid_step = {}
-	place_raid_legend.call_deferred()
-
-
-## The strip key along the foot of the raid map's area (on screen), as wide as the area.
-func _place_raid_strip() -> void:
-	var area_ctl := raid_legend.get_parent() as Control
-	if area_ctl == null:
-		return
-	var shown := area_ctl.get_global_rect().intersection(get_global_rect())
-	if shown.size.x <= LegendSpot.MARGIN * 2.0 or shown.size.y <= LegendSpot.MARGIN * 2.0:
-		return
-	raid_legend.set_strip_width(shown.size.x - LegendSpot.MARGIN * 2.0)
-	var own := raid_legend.get_combined_minimum_size()
-	raid_legend.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	raid_legend.scale = Vector2.ONE
-	raid_legend.size = own
-	var bottom := shown.end.y - area_ctl.global_position.y
-	raid_legend.position = Vector2(LegendSpot.MARGIN, maxf(LegendSpot.MARGIN, bottom - own.y - LegendSpot.MARGIN))
-
-
-func _on_raid_legend_resized() -> void:
-	place_raid_legend.call_deferred()
-
-
-## How to deploy (H22 #9): numbered steps with the map's node icon and the Armory icon.
-func _deploy_steps() -> VBoxContainer:
-	var steps := VBoxContainer.new()
-	steps.name = "DeploySteps"
-	steps.add_theme_constant_override("separation", 6)
-	steps.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var side := UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR * DEPLOY_ICON_GROW
-	var target := site_name(selected_site) if selected_site != &"" else "?"
-	for step in [[StatIcon.MAP, tr("1  Pick a node"), UiTip.for_input(tr("Pick the target: click a node of yours on the map, or its button in YOUR NODES."),
-			tr("Pick the target: press a node of yours on the map, or its button in YOUR NODES."))],
-			[StatIcon.ARMORY, tr("2  Press a card"), tr("Press an asset card: it deploys to the target (%s now).") % target]]:
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 6)
-		row.tooltip_text = UiTip.fold(String(step[2]))
-		row.mouse_filter = Control.MOUSE_FILTER_PASS
-		row.add_child(IconMark.standalone(step[0], side, Palette.CELL_ACID))
-		var l := _label(String(step[1]))
-		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_child(l)
-		steps.add_child(row)
-	var to := _label("> %s" % target)
-	to.name = "DeployTarget"
-	to.add_theme_color_override("font_color", Palette.CELL_ACID)
-	steps.add_child(to)
-	return steps
 
 
 ## One claimed node in the raid orders: its target button (name, node type) and its
@@ -4589,37 +3765,6 @@ func raid_graph(results: Variant, markers: Dictionary, c: CampaignState = null, 
 				e["pencil"] = true  # ART-6 3A: the threat routes are the pencil's (RaidRouteLayer)
 			edges.append(e)
 	return {"nodes": nodes, "edges": edges}
-
-
-## Codex (GDD 8.1): everything the Cell knows, zine-styled, plus the lexicon.
-func show_codex() -> void:
-	var box := VBoxContainer.new()
-	# ART-10 4C (v2 §2.10): the screen title is a yellow sticker; the codex a terminal.
-	box.add_child(_title_sticker(tr("CODEX"), "CODEX"))
-	var entries := Codex.entries(RunManager.lookup(), RunManager.profile)
-	var tabs := HFlowContainer.new()
-	box.add_child(tabs)
-	var body := CrtText.new(tr("CODEX // WHAT THE CELL KNOWS"), Vector2(900, 330)).make_reference()
-	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	for section in entries:
-		var name: String = section
-		tabs.add_child(_button(tr(name), func() -> void: _fill_codex(body, name, entries[name])))
-	box.add_child(body)
-	_fill_codex(body, "Slices", entries["Slices"])
-	if not Dialogue.history.is_empty():
-		var lines := CrtText.new(tr("LINES HEARD"), Vector2(900, 100)).make_reference()
-		for h in Dialogue.history.slice(maxi(0, Dialogue.history.size() - 6)):
-			lines.append("[%s] %s" % [Dialogue.speaker_name(int(h["speaker"]), StringName(String(h.get("corporation", "")))), h["text"]])
-		box.add_child(lines)
-	box.add_child(_icon(_button(tr("Back to HQ"), show_hq if RunManager.campaign != null else show_start), StatIcon.BACK))
-	_set_panel(box, "codex")
-
-
-func _fill_codex(body: CrtText, section: String, items: Array) -> void:
-	body.clear()
-	body.heading(tr(section))
-	for item in items:
-		body.append("[b]%s[/b] - %s" % [item["title"], String(item["text"]).replace("\n", " / ")])
 
 
 ## Raid playout (GDD 7.2, 9.3): threat markers animate over the Grid; 1x/2x/4x and skip.
@@ -5646,7 +4791,7 @@ func _refresh_status() -> void:
 
 ## HQ-B (Q1): the pages whose HEAT gauge is a button (it opens the Heat terminal with SCRUB
 ## HEAT); elsewhere in the scene it only shows.
-const HEAT_BUTTON_PAGES: Array[String] = ["hq", "grid", "raid"]
+const HEAT_BUTTON_PAGES: Array[String] = ["hq", "raid"]
 ## HQ-B: the Heat terminal dropped from the gauge (null when closed).
 var heat_terminal: HeatTerminal = null
 
@@ -5752,54 +4897,6 @@ func _add_tip(parent: Node, control: Control, tip: String) -> Control:
 	return control
 
 
-## The Cell at a glance as badges (the HQ's CELL STATUS; H20 replaces the SYSTEM ONLINE
-## text): home integrity with a meter, each Exploit found (or how many the breach needs),
-## the Armory's assets by icon and count, and every rule the crossed Heat thresholds add.
-func cell_badges() -> HFlowContainer:
-	var c := RunManager.campaign
-	var cfg := RunManager.config()
-	var lookup := RunManager.lookup()
-	var flow := HFlowContainer.new()
-	flow.name = "CellBadges"
-	flow.add_theme_constant_override("h_separation", 12)
-	flow.add_theme_constant_override("v_separation", 6)
-	# H21 #10: each badge names what it counts and carries the icon of that stat's top-bar
-	# tag (house = HOME, diamond = EXPLOITS, crate = ARMORY); Armory assets by short name.
-	var home_col := Palette.CELL_ACID if c.grid.home_integrity * 2 > c.grid.home_max_integrity else Palette.CELL_PINK
-	var home := Badge.new(tr("HOME %d/%d") % [c.grid.home_integrity, c.grid.home_max_integrity], home_col, GLYPH_HOME,
-		tr("Home server integrity. At 0 the campaign is lost.")).with_meter(c.grid.home_integrity, c.grid.home_max_integrity).with_icon(StatIcon.HOME)
-	home.name = "HomeBadge"
-	flow.add_child(home)
-	var exploits := Badge.new(tr("EXPLOITS %d/%d") % [c.exploits.size(), cfg.min_exploits_for_breach], Palette.CELL_ACID if not c.exploits.is_empty() else Palette.NET_CYAN, GLYPH_EXPLOIT,
-		tr("Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the corporation's core needs %d.") % [_exploit_names(c), cfg.min_exploits_for_breach]).with_icon(StatIcon.EXPLOITS)
-	exploits.name = "ExploitsBadge"
-	flow.add_child(exploits)
-	for e in c.exploits:
-		var ename := exploit_name(e)
-		flow.add_child(Badge.new(ename, Palette.CELL_ACID, GLYPH_EXPLOIT,
-			tr("Exploit %s found (%d/%d for the breach).") % [ename, c.exploits.size(), cfg.min_exploits_for_breach]).with_icon(StatIcon.EXPLOITS))
-	# ANIM-R1 M5: the Cell's claimed Sites (its network), the counter a territory change bumps.
-	var sites := maxi(0, c.grid.claimed_ids().size() - 1)
-	var network := Badge.new(tr("SITES %d") % sites, Palette.CELL_PINK, GLYPH_NODE,
-		tr("Sites your network holds besides CORE: claim cleared Sites on the City Grid.")).with_icon(StatIcon.MAP)
-	network.name = "NetworkBadge"
-	flow.add_child(network)
-	var armory := Badge.new(armory_words(), Palette.CELL_PINK, GLYPH_NODE, armory_tip()).with_icon(StatIcon.ARMORY)
-	armory.name = "ArmoryBadge"
-	flow.add_child(armory)
-	var seen := {}
-	for aid in c.armory:
-		if seen.has(aid):
-			continue
-		seen[aid] = true
-		var data := lookup.get_content(aid) as DefenseAssetData
-		flow.add_child(Badge.new("%s x%d" % [_display(aid), c.armory.count(aid)], Palette.CELL_PINK, "", tr("%s (Armory %d/%d)\n%s") % [
-			_display(aid), c.armory.size(), cfg.armory_capacity, TextDb.t(data, "description") if data != null else ""], aid))
-	for m in HeatRules.active_modifiers(c, cfg):
-		flow.add_child(Badge.new(_modifier_text(m), Palette.corp_color(c.corporation_id), GLYPH_RULE, tr("In force since a Heat threshold. Scrub Heat to fall back under it.")).with_icon(StatIcon.HEAT))
-	return flow
-
-
 ## ANIM-R1 M5: a territory change landed on the city: the counter it changes bumps (the
 ## CELL STATUS SITES badge on the HQ page).
 func _on_territory_marked(_marks: Array) -> void:
@@ -5813,7 +4910,7 @@ func _on_territory_marked(_marks: Array) -> void:
 ## ANIM-R3 B6: the Grid's Site card rebuilt in place for the campaign as it is now (a claim
 ## seen on the map while the card still offered CLAIM); nothing off the Grid.
 func refresh_site_card() -> void:
-	if not panel_name in ["hq", "grid"] or _panel == null or RunManager.campaign == null:
+	if not panel_name in HQ_PAGES or _panel == null or RunManager.campaign == null:
 		return
 	var old := _panel.find_child("SelectedSite", true, false) as Control
 	var site := CampaignRules.site_data(RunManager.corporation, selected_site)
@@ -5995,44 +5092,6 @@ func _button(text: String, on_pressed: Callable) -> Button:
 	return b
 
 
-## Puts the currency's StatIcon `kind` after button `b`'s price (H23 S13: "(25)" did not
-## say it was Schematics): a mark at the button's right end, the words kept clear of it.
-## The kind is in the button's "price_kind" meta.
-func _price_icon(b: Button, kind: StringName) -> IconMark:
-	var px := roundf(UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR)
-	var mark := IconMark.standalone(kind, px)
-	mark.name = "PriceIcon"
-	b.add_child(mark)
-	b.set_meta(&"price_kind", kind)
-	var place := func() -> void:
-		# ANIM-R1 M12: right after the price ("pay 25" then the icon), not at the far end of
-		# a wide menu line; never past the button's right edge.
-		var end_x := b.size.x - px - PRICE_ICON_GAP * 0.5
-		var sb := b.get_theme_stylebox(&"normal")
-		var font := b.get_theme_font(&"font")
-		if sb != null and font != null and b.alignment == HORIZONTAL_ALIGNMENT_LEFT:
-			var icon_w := float(b.icon.get_width()) + b.get_theme_constant(&"h_separation") if b.icon != null else 0.0
-			var text_w := font.get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size(&"font_size")).x
-			end_x = minf(end_x, sb.get_margin(SIDE_LEFT) + icon_w + text_w + PRICE_ICON_GAP)
-		mark.position = Vector2(end_x, (b.size.y - px) * 0.5)
-	# The theme's boxes are known once the button is in the tree: room made on the right then.
-	var make_room := func() -> void:
-		for st in [&"normal", &"hover", &"pressed", &"hover_pressed", &"focus", &"disabled"]:
-			var sb := b.get_theme_stylebox(st)
-			if sb == null:
-				continue
-			var room := sb.duplicate() as StyleBox
-			room.content_margin_right = sb.get_margin(SIDE_RIGHT) + px + PRICE_ICON_GAP
-			b.add_theme_stylebox_override(st, room)
-		place.call()
-	if b.is_inside_tree():
-		make_room.call()
-	else:
-		b.ready.connect(make_room, CONNECT_ONE_SHOT)
-	b.resized.connect(place)
-	return mark
-
-
 ## Puts StatIcon `kind` before button `b`'s words (H21 #13: menus in words only); returns b.
 func _icon(b: Button, kind: StringName) -> Button:
 	IconMark.attach(b, kind)
@@ -6164,3 +5223,58 @@ func tell_new_beats() -> PackedStringArray:
 		notify(tr(STORY_TOAST) % title)
 	_beats_seen[key] = beats.size()
 	return told
+
+
+# --- HQ-B (g): the HQ idle's motion entries, re-pointed onto the new page ---------------------
+
+## The Sites' statuses this campaign's HQ last showed (view memory, never game state).
+static var _sites_seen: Dictionary = {}
+
+
+## HQ-B (g) (ANIM-6 4.13 kept, binding: art restyles motion, never drops an entry): the old
+## HQ's idle moves onto the new page's pieces: `hq_crt_hum` hums the selected Site's CRT card
+## (the deck monitor went), `radio_type` types JACK IN's system word in on arrival (the radio
+## is the ON AIR crawl now), `jack_ring_breathe` breathes the JACK IN sticker, `polaroid_tilt`
+## tilts a hovered crew card (CrewHandCard), and `minimap_pulse` rings the Sites whose status
+## changed since the HQ last showed on the minimap (the 2D mini-map went). Headless and under
+## reduce effects each is its end state.
+func _hq_idle() -> void:
+	if _panel == null or not is_instance_valid(_panel):
+		return
+	var card := _panel.find_child("SelectedSite", true, false) as Control
+	if card != null:
+		CrtHum.attach(card)
+	var jack := _panel.find_child("Launch", true, false) as Control
+	if jack != null and jack.is_visible_in_tree():
+		Motion.loop_pulse(jack, ^"scale", &"jack_ring_breathe")
+	var word := _panel.find_child("SystemWord", true, false) as Label
+	if word != null and entering:
+		Typing.type_in(word, &"radio_type")
+	var changed := changed_sites()
+	if hq_minimap != null and is_instance_valid(hq_minimap) and not changed.is_empty():
+		var points: Array[Vector2] = []
+		for id in changed:
+			if city_overlay != null and city_overlay.has_site(id):
+				points.append(Vector2(city_overlay.lot_of(id)) + Vector2(0.5, 0.5))
+		hq_minimap.pulse(points)
+
+
+## HQ-B (g): the Sites whose status changed since this campaign's HQ last showed (none the
+## first time), in the Grid's order; seen now.
+func changed_sites() -> Array[StringName]:
+	var out: Array[StringName] = []
+	var c := RunManager.campaign
+	if c == null or RunManager.corporation == null:
+		return out
+	var key := "%s|%d" % [c.corporation_id, c.campaign_seed]
+	var now := {}
+	for s in RunManager.corporation.city_grid.sites:
+		if s != null:
+			now[s.id] = int(c.grid.status_of(s.id))
+	if _sites_seen.has(key):
+		var was: Dictionary = _sites_seen[key]
+		for s in RunManager.corporation.city_grid.sites:
+			if s != null and was.has(s.id) and int(was[s.id]) != int(now[s.id]):
+				out.append(s.id)
+	_sites_seen[key] = now
+	return out

@@ -34,6 +34,25 @@ var _dragging: bool = false
 
 ## The territory picture per city seed (view memory: a pure function of the layout).
 static var _terrain: Dictionary = {}
+## HQ-B (g): the Sites ringing out once (grid points) and the ring's progress (1 = at rest).
+var pulse_points: Array[Vector2] = []
+var pulse_t: float = 1.0:
+	set(v):
+		pulse_t = v
+		if _map != null:
+			_map.queue_redraw()
+const PULSE_SEGMENTS := 24
+
+
+## HQ-B (g): rings Sites `points` (grid) out once (`minimap_pulse`; the end state at once when
+## motion does not play).
+func pulse(points: Array[Vector2]) -> void:
+	pulse_points = points
+	if points.is_empty() or not Motion.live(&"minimap_pulse"):
+		pulse_t = 1.0
+		return
+	pulse_t = 0.0
+	Motion.run(&"minimap_pulse", self, ^"pulse_t", 1.0)
 
 
 func _init() -> void:
@@ -150,6 +169,11 @@ func _draw_map() -> void:
 			"target":
 				col = TARGET_COLOR
 		_map.draw_circle(to_map(s["at"]), DOT_R, col)
+	# HQ-B (g): `minimap_pulse` re-pointed from the old HQ's 2D mini-map: the Sites whose status
+	# changed since the HQ last showed ring out once.
+	if pulse_t < 1.0:
+		for g in pulse_points:
+			_map.draw_arc(to_map(g), DOT_R * 2.0 + pulse_t * Motion.amplitude(&"minimap_pulse"), 0.0, TAU, PULSE_SEGMENTS, Color(Palette.CELL_ACID, 1.0 - pulse_t), BOX_W * 2.0)
 	if view_quad.size() == 4:
 		var box := PackedVector2Array()
 		for g in view_quad:
