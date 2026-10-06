@@ -226,6 +226,9 @@ func _state(st: String) -> void:
 			_underway(net)
 			DemoSetup.open_event(RunManager.netrun, &"ev_leash_on_the_floor")
 			net._show_current()
+			# ART-7 7w: its first frames, off the 3D route (its 2D city baked ahead behind it).
+			await _frames(3)
+			await _shot("event_first")
 			await _settle(net)
 			await _shot(st)
 		"jack":

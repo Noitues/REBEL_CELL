@@ -64,9 +64,22 @@ ART-3 wave 2b (ART_BIBLE v2 §4.1, §4.6; round 38 `transit_v3` / `transit_step_
   Cell's route at ortho 351 3.75 ms (2.74), the close-up at ortho 60 2.67 ms (1.46). Inside the
   8 ms budget. The capture lab `tools/design_lab/netrun_states.tscn` gains `--size=WxH`,
   `--perf=<s>`, `rebel_cell` and `close` states and CAM lines.
+- **Bakes behind a 3D route (ANIM-R5 P2 / R6 B6 follow the route):** the route never draws a 2D
+  bake now, so its bake-ahead (`_prebake_route`) and its kept bake (`ROUTE_KEEP`,
+  `_keep_route_bake`, `release_route_bake`) are removed from `netrun_scene.gd`. The pages after
+  it (fight arena, Mainframe, event, loot, shop) still draw the 2D city: `_prebake_backdrops`
+  bakes their frame behind the 3D route through `NeonCity.prebake(..., under_3d)` /
+  `prebake_frames(..., under_3d)` (a 3D city otherwise still bakes nothing: the HQ Grid's
+  prebakes stay off). Verified windowed: the event page's first frames are its dressed room.
 - **Tests:** `tests/unit/test_art7_netrun_city.gd` (fast, new). Changed:
   `test_city_motion.gd`, the "no sky cars in the netrun" assert now applies at the transit's own
-  zoom (MEDIUM); at CLOSE they show. No test dropped.
+  zoom (MEDIUM); at CLOSE they show. `test_anim_r5_city.gd`:
+  `test_the_runs_pages_open_on_their_bake_and_the_route_stays_kept` ->
+  `..._behind_the_3d_route` (the route is the 3D city; each page is 2D and covered on its first
+  frames; the route-bake LRU asserts go with the kept bake), `test_a_raid_interlude_bakes_its_playout_and_the_route_after_it_ahead`
+  -> `test_a_raid_interlude_bakes_its_playout_ahead` (the route-frame assert goes). **Dropped:**
+  `test_anim_r6_netrun.gd::test_the_route_bake_is_let_go_at_the_run_end` (no route bake is kept
+  any more).
 - Review: `docs/art_review/ART-7/7w/route_on_city.jpg` (start, underway, the Cell's route,
   the close-up).
 

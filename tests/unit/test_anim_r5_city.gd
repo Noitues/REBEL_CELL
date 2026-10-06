@@ -182,16 +182,17 @@ func test_a_failed_bake_shows_the_silhouette_and_is_not_asked_again() -> void:
 
 # --- P2: pages open on a baked city ----------------------------------------------------------------
 
-func test_the_runs_pages_open_on_their_bake_and_the_route_stays_kept() -> void:
+## ART-7 7w: the route is the 3D city (covered, no bake); the pages after it stay 2D and are
+## baked ahead behind it.
+func test_the_runs_pages_open_on_their_bake_behind_the_3d_route() -> void:
 	CityBakeCache.simulate = true
 	RunManager.new_campaign(1)
 	var scene := _scene(NETRUN)
 	scene.start_run(1)
 	await _settle_bakes()
 	var city: NeonCity = scene.background.city
+	assert_true(city.city3d, "the route is the 3D city")
 	assert_true(city.view_covered(), "the route is covered")
-	var route_key := CityBakeCache.kept_key(NetrunScript.ROUTE_KEEP)
-	assert_ne(route_key, "", "the route's bake is kept while the pages come and go")
 	var run := RunManager.netrun.run
 	for page in ["event", "loot", "shop"]:
 		match page:
@@ -205,11 +206,8 @@ func test_the_runs_pages_open_on_their_bake_and_the_route_stays_kept() -> void:
 				RunManager.netrun._open_shop()
 		scene._show_current()
 		await _frames(2)
+		assert_false(city.city3d, "%s: a 2D page" % page)
 		assert_true(city.view_covered(), "%s: its city is covered on its first frames (baked ahead behind the route)" % page)
-		# Other bakes come and go: the route's stays.
-		for k in CityBakeCache.CAPACITY + 2:
-			CityBakeCache.store("filler_%s_%d" % [page, k], {"look": "x", "region": Rect2(), "texture": _tex()})
-		assert_true(CityBakeCache.has(route_key), "%s: the route's bake outlived the LRU" % page)
 		run.pending_rewards.clear()
 		run.phase = RunState.Phase.MAP
 		scene._show_current()
@@ -219,7 +217,7 @@ func test_the_runs_pages_open_on_their_bake_and_the_route_stays_kept() -> void:
 		await _settle_bakes()
 
 
-func test_a_raid_interlude_bakes_its_playout_and_the_route_after_it_ahead() -> void:
+func test_a_raid_interlude_bakes_its_playout_ahead() -> void:
 	CityBakeCache.simulate = true
 	RunManager.new_campaign(2)
 	var scene := _scene(NETRUN)
@@ -240,15 +238,7 @@ func test_a_raid_interlude_bakes_its_playout_and_the_route_after_it_ahead() -> v
 		assert_ne(CityBakeCache.find(look, view), "", "a fight at %s is baked ahead" % n["id"])
 		checked += 1
 	assert_gt(checked, 1)
-	# The route the run goes on to: its frame as `_show_map` mounts it is baked ahead.
-	var r: Dictionary = scene.route_graph()
-	var centre := Vector2.ZERO
-	for n: Dictionary in r["nodes"]:
-		centre += Vector2(n["at"])
-	centre /= (r["nodes"] as Array).size()
-	var route_view := city.region_for(centre, NetrunScript.ROUTE_ANCHOR, NetrunScript.ROUTE_ZOOM, size).grow(-NeonCity.REGION_MARGIN)
-	assert_ne(CityBakeCache.find(look, route_view), "", "the route's frame is baked behind the interlude")
-	# START DEFENSE (instant headless) then the route.
+	# START DEFENSE (instant headless) then the route (ART-7 7w: the 3D city, no bake).
 	scene.raid_fight()
 	await _settle_bakes()
 	assert_true(city.view_covered(), "the route after the raid is covered")
