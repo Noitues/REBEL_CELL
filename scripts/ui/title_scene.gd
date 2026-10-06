@@ -50,6 +50,9 @@ const MORE_GAP := 20.0
 const MORE_ROW_SEP := -4
 ## The city's dim behind the title (it reads as the backdrop, round 33's blurred city).
 const CITY_DIM := 0.58
+## B1a (review D19): the title's page parts that cast a drop shadow on the city (no pools: the
+## title's city is already dimmed and blurred, the look the designer approved).
+const SCRIM_PANELS: Array[String] = ["TerminalWindow", "CaseFileCard"]
 ## Parity fix TITLE-01: the blurred 3D city's framing, blur and darkening (round 33); the 2D
 ## city and CITY_DIM stay the fallback below its quality tier.
 const CITY_LOOK := preload("res://content/config/title_city_backdrop.tres")
@@ -65,6 +68,8 @@ const CONFIRM_WORDS := ["keep going [B]"] # TR
 const PAGE_WORDS := ["BREACH", "SIMULATE", "OVERTHROW", "Continue", "Tutorial", "New campaign", "CAMPAIGN SLOTS", "CODEX", "STATS"] # TR
 
 var background: CyberdeckBackground
+## B1a: the panels' shadows and the pink verb's light spill on the city (UiScrimPools).
+var scrim: UiScrimPools
 ## The subtitles' band (H21 #11), top right, clear of every menu.
 var subtitle_strip: SubtitleStrip
 var margin: MarginContainer
@@ -95,6 +100,7 @@ func _ready() -> void:
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	dim.visible = not background.on_blurred_city()  # the 3D city darkens itself
 	add_child(dim)
+	scrim = UiScrimPools.attach_after(dim)
 	ticker = OnAirTicker.new(PackedStringArray([tr(TICKER_WORDS[0]), tr(TICKER_WORDS[1])]))
 	ticker.anchor_left = 0.0
 	ticker.anchor_right = 1.0
@@ -199,6 +205,8 @@ func _set_panel(p: Control, name: String) -> void:
 	# H24 S4: the page shows its words as given (translated once where built).
 	TextDb.shown_as_given(p)
 	_panel_host.add_child(p)
+	UiScrimPools.mark_panels_in(p, SCRIM_PANELS, false)
+	UiSpillShadows.mark_verb_stickers_in(p)
 	Dialogue.enter_screen("title")
 	UiWrap.fit(p)
 	UiFocus.link_layout(p)

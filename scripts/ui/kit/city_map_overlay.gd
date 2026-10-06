@@ -1959,6 +1959,11 @@ func marker_view(id: StringName) -> SiteMarkerView:
 	return v if v != null and is_instance_valid(v) else null
 
 
+## The boss's red pencil TARGET word (null while none shows; B1a: its light spill reads it).
+func target_word() -> GreasePencilWord:
+	return _target_word if _target_word != null and is_instance_valid(_target_word) else null
+
+
 ## The boss's red pencil TARGET circle and word round its roof (bible §4.5), redrawn only
 ## when the camera or the boss moved.
 func _sync_target(boss: Dictionary) -> void:
