@@ -641,6 +641,10 @@
 			"seconds": 6.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_parity_combat_hud.gd": {
+			"seconds": 40.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_parity_wheel.gd": {
 			"seconds": 8.0,
 			"tier": "fast"

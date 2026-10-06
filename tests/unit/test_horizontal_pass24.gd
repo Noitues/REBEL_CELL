@@ -181,14 +181,28 @@ func test_toasts_sit_in_the_right_column_off_the_cards() -> void:
 		assert_eq(scene.layout_violations(), [], "and off the wheels")
 
 
-func test_the_aim_line_draws_under_the_wheels() -> void:
+## S-COMBAT-HUD (CMB-10, designer ruling 2026-10-05) supersedes H24's "under the wheels": the aim
+## is grease pencil, on the pencil layer above every UI (ART_BIBLE v2 §1.2: no UI covers it).
+func test_the_aim_is_grease_pencil_above_every_ui() -> void:
 	var scene := await _combat()
-	var root_index := -1
-	for child in scene.get_children():
-		if child is VBoxContainer:
-			root_index = child.get_index()
+	var picked := -1
+	for i in scene.engine.state().hand.size():
+		if CardTargeting.options(scene.engine.resolver, scene.engine.state(), i).size() > 1:
+			picked = i
 			break
-	assert_true(scene._aim_line.get_index() < root_index, "under the UI root (the wheels' HP and NEXT stay on top)")
+	assert_true(picked >= 0, "a card with several targets")
+	scene.select_card(picked)
+	await _frames(2)
+	var marks: Array = scene.aim_pencil.shown()
+	assert_false(marks.is_empty(), "the aim draws in pencil")
+	for m in marks:
+		assert_true((m as Node).is_in_group(GreasePencilMark.GROUP), "the kit's wax (PencilLint's group)")
+		var layer := (m as Node).get_parent().get_parent() as CanvasLayer
+		assert_true(layer != null and layer.layer >= RaidPencilPool.LAYER, "on the pencil layer above the UI")
+	scene.cancel_selection()
+	scene.skip_motion()
+	await _frames(2)
+	assert_eq(scene.aim_pencil.shown(), [], "the aim wipes off when it ends")
 
 
 func test_the_nearest_arrow_or_satellite_takes_the_click() -> void:
