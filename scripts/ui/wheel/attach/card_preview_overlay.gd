@@ -66,6 +66,9 @@ var chase: float = 0.0
 var ghost: Dictionary = {}
 ## True after the card is played: the ghost rides the turning slices until the wheel lands.
 var committed: bool = false
+## The ghost drones' layout and what it was laid out from (`_ghost_entries`).
+var _after: Array[Dictionary] = []
+var _after_key: String = ""
 
 
 func _init() -> void:
@@ -182,7 +185,7 @@ func _draw() -> void:
 			var word := tr("%d LANDS HERE") % (i + 1)
 			_label(label_box(center, a, _needle_label_distances(rim, a, word), word), word, alpha)
 	# Ghost drones where each docked drone ends up (they ride their slice).
-	var after := host.dock.entries(float(int(ghost["rot"])) if not committed else null)
+	var after := _ghost_entries()
 	var labelled := false
 	for e in after:
 		if committed:
@@ -201,6 +204,17 @@ func _draw() -> void:
 			var reach := _reach(out, dw)
 			var dists: Array[float] = [d0 + reach, d0 + reach + _label_size(dw).y]
 			_label(label_box(center, out.angle(), dists, dw), dw, alpha)
+
+
+## Where the docked drones end up (the dock's entries at the ghost's rotation). ART-12 12p: kept
+## while the dock's layout and the ghost hold (the chevron chase redraws this layer every frame;
+## laying out every drone each time cost ~2 ms on the worst fixture's boss wheel).
+func _ghost_entries() -> Array[Dictionary]:
+	var key := "%s|%s|%s" % [host._sig, str(ghost), str(committed)]
+	if key != _after_key:
+		_after_key = key
+		_after = host.dock.entries(float(int(ghost["rot"])) if not committed else null)
+	return _after
 
 
 ## How lit chevron `k` is now: the chase lights them in turn in the direction of travel.

@@ -15,6 +15,7 @@ var sockets: FirmwareLayer
 var dock: DroneDock
 var preview: CardPreviewOverlay
 var _sig: String = ""
+var _preview_sig: String = ""
 
 
 ## Docks the attachment layers on `v` (once) and returns them.
@@ -122,22 +123,30 @@ func _process(_delta: float) -> void:
 	if view == null:
 		return
 	var sig := _signature()
+	var preview_sig := preview.signature()
 	if sig != _sig:
 		_sig = sig
+		_preview_sig = preview_sig
 		sockets.queue_redraw()
 		dock.queue_redraw()
 		preview.queue_redraw()
+	elif preview_sig != _preview_sig:
+		# ART-12 12p: the preview's chevron chase changes every frame while a card is hovered;
+		# only the preview redraws for it (the sockets and the dock read none of its state: they
+		# redrew every frame, 7 ms on the worst fixture's boss wheel).
+		_preview_sig = preview_sig
+		preview.queue_redraw()
 
 
-## What the layers draw from, as text: a change redraws them.
+## What the sockets and the dock draw from, as text: a change redraws every layer (the
+## preview's own state is `preview.signature()`, which redraws the preview alone).
 func _signature() -> String:
 	var c := shown()
 	if c == null or c.wheel == null:
 		return ""
 	var parts := PackedStringArray([str(center()), str(rim()), str(view.shown_rotation()), str(view.shown_pointers()),
 		str(c.wheel.slot_firmware_ids), str(view.ghost_rotation), str(view.defeated()), str(view.flip_squash), str(view.inverted),
-		str(view.targeted_satellite), str(view.valid_zones), str(view.hover_zone), str(Settings.text_scale), dock.signature(),
-		preview.signature()])
+		str(view.targeted_satellite), str(view.valid_zones), str(view.hover_zone), str(Settings.text_scale), dock.signature()])
 	for s in shown_satellites():
 		parts.append("%s:%d:%d:%d" % [s.id, s.hp, s.dock_slot, s.wheel.rotation if s.wheel != null else 0])
 	return "|".join(parts)

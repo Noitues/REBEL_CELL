@@ -360,7 +360,9 @@ func _draw_lobe(e: Dictionary, col: Color, b: float) -> void:
 func _draw_aim(e: Dictionary, b: float) -> void:
 	var v := host.view
 	var sat: CombatantState = e["sat"]
-	var at := satellite_pos(sat)
+	# satellite_pos(sat) from this entry (ART-12 12p: satellite_pos re-lays every entry, once per
+	# drone drawn).
+	var at := (e["tile"] as Vector2).lerp(e["mini"], b)
 	var r := lerpf(float(e["depth"]) * 0.6, float(e["mini_r"]), b) + AIM_RING
 	for z in v.valid_zones:
 		if String(z.get("kind", "")) == "satellite" and z.get("id") == sat.id:
