@@ -31,6 +31,95 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-05 — Art direction — ART-6 3A raid presentation
+Group 3 wave 1, ART-6's 2D parts (ART_BIBLE v2 §1.2, §4.8; rulings 6.2 words and 11 DOWN), on
+the **current** raid map (wave 2 moves it onto 1D's real-time unified city). Generator recipes
+ported from art-concepts-r43 rounds 19-23 (`ui19-ui22`, `netdecal21`, `icons22`). Captured
+windowed with `tools/design_lab/raid_lab.tscn` (one launch walks the kit sheet, the setup for
+every corp, the drag valid / refused, a pencil mark in its hold, the playout's end, the report and
+BREACHED); crops in `docs/art_review/ART-6/3A/`.
+1. **Panels by fiction** on 1B's materials: RAID INCOMING = the raiding corp's intercepted WORK
+   ORDER (`RaidPaper` over `CorpPaperPanel`: letterhead, the corp seal, division line, Courier
+   fields, redactions, clip, INTERCEPTED) with the Cell's forecast stamp on it; YOUR NETWORK =
+   the Cell's CRT (`RaidTerminal` over `CrtTerminalPanel`) with a socket glyph and a status
+   chip per node (`RaidChip`: HOLDS green, DOWN amber, TAKEN red, always the word); THREAT
+   INTEL = decrypted holo (`RaidHolo` over `DecryptedHoloPanel`, a local scrim, not the modal
+   one) with a row per entry route (A, B, C), the units entering there, their routing rule, and
+   the scanned v4 icons; panels re-skin per raiding corp (`RaidSkin`: hue, ink, seal crest,
+   letterhead line, order number); START DEFENSE is a vinyl sticker (`RaidSticker` over
+   `VinylSticker`) with the Speed / Skip terminal strip under it (greyed in setup); in the
+   playout START peels away (1B's `sticker_peel`) and the live strip is the feed's foot.
+   THREAT INTEL sits beside the loadout under the map at text scale 1.0 (the reference's
+   bottom left), listing at most three entry routes (A, B, C; the rest as a count); above 1.0
+   it joins the side column. The side column now scrolls at every text scale (the paper and
+   the terminals are taller than the old badges; MORE BELOW says so), YOUR NETWORK keeping a
+   150 px view of its own there; the go row wraps and the Speed / Skip strip's STEP readout
+   shows only when the column has room, so nothing widens the page.
+2. **Node status and health v2** (`RaidSocket`): an isometric chip socket with pins and the
+   pin-1 notch, the type glyph (no tags), holds green / CORE pink; only the inner fill drains
+   north to south with a hatch and a drain line, the outline and glyph stay lit; DOWN = the
+   Site markers' white bolt over a greyed socket (ruling 11); TAKEN = a burnt socket with
+   embers once its pencil mark has wiped; the setup's projected outcome is a dashed outer
+   ring (DOWN amber, TAKEN red). Sockets drain and fall live in the playout
+   (`CityMapOverlay.socket_live` from `RaidFxLayer.socket_state`). The node glyphs are vector
+   stand-ins: 1C's atlas has no node-type glyphs yet.
+3. **Grease pencil on 1B** (`GreasePencilMark` / `GreasePencilWord` through `RaidPencilPool`,
+   on a scene CanvasLayer at 95, above every UI layer the raid shows and under Fx's jack cover,
+   so PencilLint's rules hold): the threat routes in red along the real streets, snapped onto
+   them (`PencilShapes.snap_to`), are the **projection's own routes** (each threat's entry and
+   moves: preview equals result) with A/B/C circles at their entries; they write on
+   (`raid_route_write`) and cloth-wipe at the verdict (`raid_route_wipe`). State marks: INCOMING
+   once per entry Site, DOWN over its node, TAKEN v2 above its node, each written ~0.4 s, held
+   1.5 s, wiped ~0.4 s **in real time** from its beat (`raid_mark_write` / `raid_mark_hold` /
+   `raid_mark_wipe`: never shortened at 2x / 4x, longer below 1x; the hold keeps its time
+   under reduce effects, write and wipe are instant); BREACHED is one slow heavy pass
+   (`raid_breached_write`) with its underline, a red bit burst at CORE and CORE's links going
+   dark from CORE outward (`raid_bits_burst`); home's verdict is pencil (the loss red, HOLDS
+   yellow) and every node that holds gets a yellow tick. Every mark is anchored through one
+   seam, `RaidMapAnchor` (Site, street, zoom), for wave 2's projection.
+4. **Card drag** (`RaidDragPencil` over the DropLayer): the card peels and parks above its
+   slot as a vinyl sticker, a yellow pencil arrow runs to the pointer, the dock circle draws
+   round the node in reach (yellow; red + X where the rules refuse) with the IF PLACED terminal
+   (the defence, the node's outcome and HOME before > after, from the rules on a copy of the
+   campaign) or NO SLOT and the rules' reason. The DropLayer still does every drop (ANIM-4's
+   behaviour and tests unchanged); its pointer ghost hides while the sticker is parked.
+   **Not done:** "remove = click the node" (a click on a node still picks the target; returning
+   a defence is its Withdraw button or a drag to the loadout) — a behaviour change, see the
+   open question below.
+5. **Threats** (`RaidVehicle`, icons v4): shape = type from the rules (FAST moves 2 links a
+   step, SPECIAL freezes or alters links, else HEAVY; FLYING has no rule and stays in
+   docs/art_reference), fill = corp colour = health draining from the top (the threat's
+   integrity is now on its `threat_enters` event, a view field; the core change is that one
+   key), a dashed corp ring with status pips (frozen by ICE, slowed by a stationed Ghost),
+   the yellow heading arrow on hover only. ICE encases a held threat (crystals growing inward,
+   `raid_ice_grow`), a stationed Ghost lays its slow field under the units (`raid_slow_field`),
+   a Rigger's repair raises the fill with rising "+" sparks (`raid_repair_rise`). R3 class
+   beacons for stationed operatives are **not done** in wave 1 (they stand on the Safehouse's
+   roof pad, a 3D city part: wave 2).
+6. **The raid report** is the raiding corp's AFTER-ACTION REPORT (corp paper, CLASSIFIED):
+   operation, units deployed / destroyed, equipment lost (the reward), Sites reclaimed, nodes
+   disabled, the home server, the Heat (settled here), each node's before > after; the Cell's
+   pencil on it (`RaidReportPencil`: "THEY LOST n" and "OURS! +n" circled in yellow, RIP by
+   reclaimed Sites, a tick by an intact home); **CELL HOLDS** is slapped on (1B's
+   `sticker_slap`) whenever the Cell survived the raid (GDD 7.2 "a survived raid ends CELL
+   HOLDS"); the raid's one verdict (RaidVerdict) keeps its stamp on the table, so a raid that
+   cost HOME -5 shows both CELL HOLDS and HOME -5. BACK TO THE GRID is a sticker.
+- Motion: new entries (REQUIRED_IDS + lab demos): raid_mark_write / _hold / _wipe,
+  raid_breached_write, raid_bits_burst, raid_slow_field, raid_ice_grow, raid_repair_rise,
+  raid_route_write / _wipe, raid_dock_circle, raid_drag_arrow. Every one shows its end state
+  under reduce effects and headless and ends with any press (MotionSkip passive); the hold is
+  a reading time. No existing entry dropped (raid_flip, raid_result_banner and the others are
+  still read for their timing).
+- Tests: `tests/unit/test_art6_raid_presentation.gd` (routes = projection = the raid's own,
+  marks name what the raid did and end at a skip, sockets fall, holds never shortened at
+  2x / 4x, reduce effects = end state, IF PLACED = placing, the report's CELL HOLDS).
+  Tests changed because they pinned the superseded look (behaviour kept): pass 21 reads the
+  work order's title (RaidPaper), pass 24 reads the work order's fields as Labels, ANIM-R5 P8
+  reads the report's value as a Label. No test dropped.
+- Files outside 3A's area (smallest edits): `scripts/core/raid_resolver.gd` (`integrity` on
+  `threat_enters`), `tools/design_lab/motion_lab.gd` (demos + raid kinds),
+  `scripts/data/ui_motion_data.gd` / `content/config/ui_motion.tres` (union).
+
 _(Claude Code: add entries here as you make them.)_
 
 ### 2026-10-05 — Art direction — ART-0 audit fixes
@@ -7451,6 +7540,10 @@ and annotated in the GDD where it changes a rule.
   (2) reduce motion pauses street traffic (brief) where bible 5.4 says 40 % without streaks.
   (3) 5a: a public day-look call on CityView3D (CityViewMotion sets the view's materials for now).
 
+- **ART-6 3A (raid):** "Remove to hand = click the node" (ART_BIBLE v2 §4.8 card drag) changes what a click on a
+  claimed node does in the raid setup (today it picks the target for the cards, a behaviour the pad path and
+  several tests rely on). Default kept: click = pick the target; a defence returns by its Withdraw button or a
+  drag to the loadout. Confirm the change, and whether the pad keeps a separate target pick.
 - **ART-5 5b: the REBEL_CELL fist on the real city (2026-10-05):** the landmark export carries a standalone district
   patch and the crest as a mask texture; on the unified city the fist must be the city's own buildings' windows
   (bible 4.4). Default: 5a's CityModel window shader samples `rebel_cell_crest_mask.png` at the palm of the Cell's

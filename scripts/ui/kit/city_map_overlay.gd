@@ -1375,8 +1375,8 @@ func _is_dashed(e: Dictionary) -> bool:
 
 
 func _edge_static(e: Dictionary, pts: PackedVector2Array) -> void:
-	if pts.size() < 2:
-		return
+	if pts.size() < 2 or bool(e.get("pencil", false)):
+		return  # ART-6 3A: a raid route the pencil draws (RaidRouteLayer)
 	if bool(e.get("depowered", false)):
 		# ART-5 5d: no power to a TAKEN or DOWN node: a grey double trace, broken.
 		SiteMarker.draw_depowered(self, pts, _k())
@@ -1401,7 +1401,7 @@ func _edge_static(e: Dictionary, pts: PackedVector2Array) -> void:
 
 
 func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
-	if pts.size() < 2 or bool(e.get("depowered", false)) or bool(e.get("locked", false)):
+	if pts.size() < 2 or bool(e.get("pencil", false)) or bool(e.get("depowered", false)) or bool(e.get("locked", false)):
 		return
 	var col: Color = e.get("color", Palette.NET_CYAN)
 	var width: float = e.get("width", 3.0)
@@ -1515,7 +1515,8 @@ func _node(n: Dictionary) -> void:
 				_c.draw_line(base, top, Color(col, col.a * 0.6), 1.5)
 			# A short stalk ties the floating icon to its roof.
 			_c.draw_line(top, at + Vector2(0, r), Color(col, col.a * 0.7), 1.5)
-	_mark(n, top, col)
+	if not n.has("socket"):
+		_mark(n, top, col)  # ART-6 3A: a socket carries its own status (no spray ring)
 	if _travel.is_empty():
 		if n.get("here", false):
 			_here(at, r)
@@ -1523,7 +1524,10 @@ func _node(n: Dictionary) -> void:
 		# ANIM-5 (4.16): the new node pops up with the marker on it.
 		r *= lerpf(Motion.amplitude(&"node_pop"), 1.0, arrive_t)
 		_here(at, r)
-	draw_icon(_c, String(n.get("kind", "")), at, r, col, String(n.get("glyph", "")), DIM_ALPHA if dim else 1.0)
+	if n.has("socket"):
+		RaidSocket.draw(_c, at, r, socket_spec(n))  # ART-6 3A: a Cell node on the raid map is its socket
+	else:
+		draw_icon(_c, String(n.get("kind", "")), at, r, col, String(n.get("glyph", "")), DIM_ALPHA if dim else 1.0)
 	if visited or (not _travel.is_empty() and n["id"] == _travel["from"] and dim_t > 0.0):
 		# ANIM-R1 M7: a tick on a node passed through (it fades in as the node dims).
 		var ta := 1.0 if visited else dim_t
@@ -1898,6 +1902,26 @@ func _make_exploit_file(id: StringName, tag: Dictionary) -> DecryptedHoloPanel:
 	col.add_child(site)
 	box.set_anchors_preset(Control.PRESET_FULL_RECT)
 	return p
+
+
+# --- ART-6 3A raid layer: sockets ---------------------------------------------------------------
+## ART-6 3A: the raid's live socket states (site id -> {health, state} overriding a node's
+## "socket"; the playout's RaidFxLayer sets it so sockets drain and fall as the hits land).
+var socket_live: Callable = Callable()
+
+
+## ART-6 3A: node `n`'s socket drawing spec (RaidSocket.draw): its "socket" entry, with the
+## playout's live health and state.
+func socket_spec(n: Dictionary) -> Dictionary:
+	var spec: Dictionary = (n["socket"] as Dictionary).duplicate()
+	if socket_live.is_valid():
+		var live: Variant = socket_live.call(n["id"])
+		if live is Dictionary:
+			spec.merge(live as Dictionary, true)
+	if is_dimmed(n["id"]):
+		spec["alpha"] = DIM_ALPHA
+	spec["seed"] = String(n["id"]).hash()
+	return spec
 
 
 ## ANIM-R1 M4: where placed asset `k` of `count` on node `n` sits (local px): a row
