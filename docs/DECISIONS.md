@@ -756,6 +756,15 @@ matches round 3); the loot page and the HQ have a yellowish hue; loot / event (a
   city. The 3D city needs nothing (its grade is violet). HQ framing: not changed here (the 2D city frames the corp's
   HQ at `hq_anchor` at zoom 1; HQ-BUILD's 3D framing replaces it); to read more city there, frame wider than the
   Grid band's default ortho.
+- **Colour space (the arena agent's lead):** not part of this hue. BlurredCityBackdrop draws the city's ViewportTexture
+  with `draw_texture_rect` (no canvas shader reads it as a sampler), and the tilt-shift reads the screen. Probe
+  (`title_backdrop_capture --raw`: the window's frame against `city.get_texture().get_image()`, the tilt-shift off):
+  title frame (0.293, 0.242, 0.376) vs viewport (0.300, 0.246, 0.385), ratio ~0.98, no ~4x mid-tone loss. The HQ page
+  draws no 3D viewport (2D NeonCity bake). The Grid / HQ-run / raid pages were not changed (designer to rule there).
+- **The run pages' bake test:** `test_anim_r5_city.gd::test_the_runs_pages_open_on_their_bake_behind_the_3d_route`
+  asked the shop page's city to be covered by a bake; under the ruling the Mainframe hides the city behind its facade
+  (no city there), so the shop step now checks the facade shows and the city is hidden; loot and event keep the
+  covered-bake check (headless they are the 2D city; windowed, the blurred 3D city).
 - **Note:** the event's CAM feed copies the city behind the page; with the violet, pulled-back city it reads darker.
 - **Measured:** loot tier 2 at 1920x1080, v-sync off: 3.39 ms a frame, backdrop city GPU 1.81 ms (wider view, smaller
   cars), under the 8 ms budget.

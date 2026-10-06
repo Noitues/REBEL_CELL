@@ -4,7 +4,8 @@ extends Node
 ## 2.0 at city quality tier 2, tier 1, tier 0 = the 2D fallback, reduce effects = the still
 ## frame, `bare` = the backdrop alone for grading), the netrun's loot, event and Mainframe
 ## pages, then the perf probes (1920x1080, v-sync off as city_lab: tier 2 and tier 1, the whole
-## frame and the backdrop city's own GPU time). Prints TITLECAP lines; with --out writes a PNG
+## frame and the backdrop city's own GPU time). --raw also prints a colour-space probe (the frame vs the
+## city viewport's image). Prints TITLECAP lines; with --out writes a PNG
 ## per shot.
 ##   res://tools/city/title_backdrop_capture.tscn -- --out=<abs dir> [--states=a,b] [--perf=<s>]
 ## Its own settings and save files (the player's are untouched).
@@ -141,6 +142,14 @@ func _state(n: String, s: Array) -> void:
 	if _raw and blurred != null:
 		(blurred.get_node("TiltShift") as CanvasItem).visible = false
 		await get_tree().process_frame
+		await get_tree().process_frame
+		# Colour-space probe: the window's frame against the city viewport's own image (both
+		# the whole view; a decode mismatch shows as a ratio far from 1 in the mid-tones).
+		if blurred.city != null:
+			var shown := get_viewport().get_texture().get_image()
+			var own := blurred.city.get_texture().get_image()
+			own.resize(shown.get_width(), shown.get_height())
+			print("TITLECAP probe state=%s frame_mean=%s viewport_mean=%s" % [n, _mean(shown), _mean(own)])
 	if kind.begins_with("perf"):
 		await _probe(n, blurred)
 	elif _out != "":
@@ -157,6 +166,18 @@ func _state(n: String, s: Array) -> void:
 	root.queue_free()
 	await get_tree().process_frame
 	await get_tree().process_frame
+
+
+## Mean RGB of `img` over a sparse grid (the colour-space probe).
+static func _mean(img: Image) -> Vector3:
+	var acc := Vector3.ZERO
+	var k := 0
+	for y in range(0, img.get_height(), 8):
+		for x in range(0, img.get_width(), 8):
+			var c := img.get_pixel(x, y)
+			acc += Vector3(c.r, c.g, c.b)
+			k += 1
+	return acc / maxf(float(k), 1.0)
 
 
 func _probe(n: String, blurred: BlurredCityBackdrop) -> void:
