@@ -251,6 +251,96 @@ city (lime / cyan / magenta outlines) at full strength behind the sheet, also be
 shop overlays and pauses; it competes with every page. Build: the same wireframe city (M13).
 Likely file: `cyberdeck_background.gd` (as TITLE-01). Decision:
 
+### HQ sub-pages (`hq_black_market.jpg`, `hq_crew.jpg`, `hq_loadout_deck.jpg`, `hq_loadout_spinner.jpg`, `hq_heat_band.jpg`)
+Ref: art pass build (no concept beyond portraits `round39_portraits/portraits_classes_v2.png`).
+
+**HQ-06 (P1) Black Market layout.** Build: `BLACK MARKET // SCHEMATICS 500` with three headed groups
+(`RECRUIT`, `BOOSTS`, `UNLOCKS`, each a big stencil header with an icon), chips with an icon, name,
+price and a buy glyph, locked recruits with a lock badge and `Needs Class: ...` under them. Main:
+three run-on rows labelled `Recruit:`, `Next-run boosts:`, `Profile unlocks:` with plain text chips
+`Class: Botnet (80)`; no icons, no locks, no unlock reasons; the lime panel edge again. View: the
+build's grouping is much easier to scan. Likely file: `scripts/ui/hq_scene.gd` (market, ~l.1639);
+art-pass source `art-m13-final:scripts/ui/hq_scene.gd` `_market_section` (~l.1768). Decision:
+
+**HQ-07 (P2) Crew dossier cards.** Build: polaroid with a flat illustrated portrait, `RANK 0` in
+pencil, stencil `GHOST 3`, class line, HP bar, icon stats, Loadout. Main: the v2 portrait in the
+polaroid with a tiny `Ghost 3 R0` caption, stencil name, `// GHOST // RANK 0`, HP bar, stats as
+text `HP 50/50 · DECK 10 · DAEMONS 0`, Loadout; the roster panel shows three cards in a row with
+empty space right, and the CELL STATUS panel peeks out behind the top bar. Main's portraits follow
+the locked v2 set. Likely file: `crew_card.gd`, `polaroid.gd`, `hq_scene.gd` (roster scroll).
+Decision:
+
+**HQ-08 (P1) Loadout DECK tab.** Same card-face difference as DECK-01 (build: paper cards with
+art; main: flat gold faces with text only). Decision:
+
+**HQ-09 (P3) Loadout SPINNER tab.** Same wheel and side list; main's centre reads `BREAKER CORE
+MK2` in red (build: pink), the side tiles are cut (`Accelera`). Likely file:
+`scripts/ui/kit/spinner_view.gd`, `loadout_view.gd`. Decision:
+
+**HQ-10 (P2) WANTED poster crossing a band (main only).** Main: the yellow hazard banner
+`HEAT 30 · NOTICED (25+)` is taped across the poster over the operative's mugshot, the number rolls
+(27 on the frame), `noticed` replaces `cool`; a raid note `A raid is queued. While Heat stays at
+25 or more, elites are more frequent.` sits under PIRATE RADIO; CELL STATUS gains `Elite Frequency
++25%`. The banner hides the portrait. Likely file: `heat_poster.gd`. Decision:
+
+### Title pages: options, codex, stats (`options.jpg`, `codex.jpg`, `stats.jpg`)
+Refs: build `options`, `codex`, `stats`; concept `round31_ui_chrome/settings_menu.png`.
+
+**OPT-01 (P2) Options framing.** Concept: a centred terminal ~700 px wide with an `OPTIONS` sticker
+on its corner, the dimmed page behind. Main: a full-width terminal (y 60-720) with the sticker,
+over the undimmed wireframe city (LOOT-04). Build: a left terminal and the logo. Likely file:
+`scripts/ui/kit/settings_panel.gd`, `title_scene.gd show_options`. Decision:
+
+**OPT-02 (P3) Switch rows.** Concept and main: the same rows in caps with a sans hint line,
+`ON`/`OFF` switches, `>` caret and lime brackets on focus. Main: the Heat glitch row lacks the
+concept's `LIMITED: flash limiter on, slow layer only` chip. Matches otherwise. Decision:
+
+**OPT-03 (P3) Right column.** Concept and main: text scale slider with the live sample, colour-blind
+tiles, resolve speed tiles, heat glitch previews; main matches. Decision:
+
+**CODEX-01 (P1) Codex layout.** Build: two rows of tabs (Slices, Statuses & precision, Classes,
+Corporations, Cards, Firmware, Daemons, Ring segments, Enemies, Nodes, Home servers, Defense assets,
+Threats, Lexicon) and a cream paper page per tab in two columns, every entry with its glyph in
+colour and a stencil name. Main: a `CODEX` sticker and one long terminal scroll of every section,
+`SHIM SHIM: deals damage...` lines (the code then the name again), no glyphs except a few statuses,
+Plex sans. View: the build's is a reference you can find things in; main's is a wall of text.
+Likely file: `scripts/ui/kit/codex.gd`; art-pass source `art-m13-final:scripts/ui/kit/codex.gd`.
+Decision:
+
+**STATS-01 (P1) Stats layout.** Build: stat tiles with icons (Campaigns started / won / lost,
+Runs, Operatives lost, Raids, Best ICE, Perfects, Racks, Cycles, Assisted wins, Achievements), an
+ACHIEVEMENTS row of round badges (earned in pink, locked with a lock), RUN HISTORY as paper run
+cards. Main: a PROFILE strip of six numbers, then `STATS // RECORDS` as one paragraph of text
+(`Campaigns: 3 started, 1 won, 0 lost. ...`), achievements as `[x] First Blood` text lines, run
+history as text lines. View: the build is far more readable. Likely file: `title_scene.gd
+show_stats` (~l.514); art-pass source `art-m13-final:scripts/ui/title_scene.gd`. Decision:
+
+### Pause menus (`hq_pause.jpg`, `pause_netrun.jpg`, `pause_fight.jpg`, `pause_fight_quit.jpg`)
+Refs: build `hq_pause`, `pause_netrun`, `pause_fight` (a compact terminal with a pink `Resume
+[Esc]` bar, icon rows, campaign code field + copy button); concept
+`round33_ui_chrome/abandon_dialog.png` (a `PAUSED` sticker top left, the page dimmed behind).
+
+**PAUSE-01 (P1) No dim behind the pause menu.** Build: the page behind is darkened under the menu.
+Concept: the whole page dimmed and blurred, PAUSED sticker. Main: the menu is a wide terminal over
+the page at full brightness (HQ, route and fight all readable behind it), so it reads as one more
+panel; the PAUSED sticker is pinned to its top right. View: a defect against both references
+(every other modal in main uses `GlassScrim`). Likely file: `scripts/ui/kit/pause_menu.gd` (no
+scrim), `glass_scrim.gd`. Decision:
+
+**PAUSE-02 (P2) Pause rows.** Build: `Resume [Esc]` as a full-width pink primary bar, the rest
+icon rows, the campaign code in a field with a copy button. Main: five `>` rows of equal weight, the
+code as a plain line (no copy button). View: the build's primary Resume and copy button are better.
+Same file. Decision:
+
+**PAUSE-03 (P3) Pause over a fight.** As PAUSE-01; the turn banner shows through above the panel.
+Decision:
+
+**PAUSE-04 (P2) Quit confirm.** Concept dialog: `CONFIRM // ABANDON RUN` red-edged with a CANNOT
+UNDO chip, a cost table, CANCEL (yellow, focus) and BURN IT (pink) with key hints under them, the
+page dimmed. Main: `CONFIRM // QUIT` with `Quit REBEL_CELL? Progress is autosaved.`, CANCEL and QUIT
+stickers, no key hints, blurred page. Quitting is not destructive, so the red edge is not needed; the
+key hints are. Likely file: `confirm_dialog.gd`. Decision:
+
 ### MAINFRAME shop (`mainframe*.jpg`)
 Refs: build `modem`, `modem_socket`, `modem_remove`, `modem_overwrite` (M13 MODEM CYBER SHOP: a
 pink neon sign column, terminal panels MICROCHIPS / CARDS / SLICES / DAEMONS / REMOVE A CARD);
