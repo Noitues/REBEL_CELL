@@ -18,6 +18,8 @@ const GLYPH_SHARE := 0.75
 ## The inner ring's mark: a dot in the glyph (share of the radius).
 const INNER_DOT := 0.16
 const KEY_FONT := 13
+## B2: the key letters' keyline outside the glyph, in 1080p (board) px (B1a Q2: at least 3).
+const KEYLINE_1080 := 3.0
 ## The chips' gap from the HP number and from the screen's edge (px at text scale 1.0).
 const CHIP_GAP := 10.0
 const EDGE := 4.0
@@ -116,6 +118,7 @@ func place_rows() -> void:
 		row.visible = wv.is_visible_in_tree() and wv.combatant != null and not wv.defeated()
 		if not row.visible:
 			continue
+		row.set_standing(wv.standing_chips())  # B2 (D2): what the hub used to write
 		var hp: Rect2 = wv.hp_layout()["hp"]
 		var g := Rect2(wv.global_position + hp.position, hp.size)
 		var at := Vector2(g.end.x + CHIP_GAP * s, g.get_center().y - row.size.y * 0.5)
@@ -164,7 +167,20 @@ func _draw() -> void:
 			draw_circle(c + Vector2(0.0, r * 0.72), r * INNER_DOT, gc)
 		var hr := wv.arrow_hint_rect(int(b["ring"]), int(b["direction"]))
 		if hr.has_area():
-			var key := String(wv.arrow_hints.get(int(b["direction"]), ""))
+			var key := key_letter(String(wv.arrow_hints.get(int(b["direction"]), "")))
 			var kw := mono.get_string_size(key, HORIZONTAL_ALIGNMENT_LEFT, -1, kf).x
 			var at := wv.global_position + Vector2(hr.get_center().x - kw * 0.5, hr.position.y) - origin
-			draw_string(mono, at + Vector2(0.0, mono.get_ascent(kf)), key, HORIZONTAL_ALIGNMENT_LEFT, -1, kf, HudSkin.TERMINAL_TEXT)
+			# B2 (B1a Q2 ruling): a word over the world wears its ink keyline (>= 3 px at 1080p).
+			draw_string_outline(mono, at + Vector2(0.0, mono.get_ascent(kf)), key, HORIZONTAL_ALIGNMENT_LEFT, -1, kf, keyline_px(), Palette.INK)
+			draw_string(mono, at + Vector2(0.0, mono.get_ascent(kf)), key, HORIZONTAL_ALIGNMENT_LEFT, -1, kf, HudSkin.TERMINAL_HI)
+
+
+## B2 (designer Q2; concept HUD v4): the key under a nudge button is its letter alone ("[Q]" -> "Q").
+static func key_letter(hint: String) -> String:
+	return hint.trim_prefix("[").trim_suffix("]")
+
+
+## B2 (B1a Q2 ruling): the key letters' ink keyline, as Godot's outline size (it straddles the
+## glyph's edge: KEYLINE_1080 board px outside it, so twice that), in canvas px.
+static func keyline_px() -> int:
+	return ceili(KEYLINE_1080 * 2.0 * GreasePencilMark.BOARD_TO_CANVAS * Settings.text_scale)

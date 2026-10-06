@@ -30,6 +30,11 @@ var readouts: Array[Dictionary] = []
 var lookup: ContentLookup = null
 ## This wheel is the current target (drawn as a crosshair ring).
 var highlighted: bool = false
+## B2 (review D4: lime = focus only): whether the target's lime brackets may draw at all. The
+## scene sets it while the fight has more than one target to choose between (the brackets are
+## then the attacks' focus); never while a card is aimed (any valid drop zone): the aim's
+## yellow pencil loop is the target mark then (`reticle_visible`).
+var reticle_shown: bool = true
 ## A docked satellite that is the current target ("" = none).
 var targeted_satellite: StringName = &""
 ## What each docked satellite's needle lands on: id -> {type, tier, text} (from the scene).
@@ -209,7 +214,11 @@ const LAST_TURN_LINES := 2
 const INTENT_FONT_SIZE := 15
 const CHIP_FONT_SIZE := 13
 const HUB_FONT_SIZE := 10
-const NAME_FONT_SIZE := 13
+## B2 (review D2): the hub's tiny name, 10 px at 1080p (x BOARD_TO_CANVAS: 7 canvas px at text 1.0;
+## round 40 hub_cores_v3), never under NAME_MIN_FONT; it spans HUB_NAME_WIDTH of the hub's diameter.
+const NAME_FONT_SIZE := 7
+const NAME_MIN_FONT := 6
+const HUB_NAME_WIDTH := 0.8
 const VALUE_FONT_SIZE := 20
 const HP_FONT_SIZE := 22
 const INTENT_HEIGHT := 30.0
@@ -299,7 +308,7 @@ func _get_tooltip(at_position: Vector2) -> String:
 	var arc_tip := hp_arc_tip(at_position) if free else ""
 	if arc_tip != "":
 		return arc_tip
-	if free and highlighted and absf((at_position - _center()).length() - (_radius() + RETICLE_GAP)) < RETICLE_HIT:
+	if free and reticle_visible() and absf((at_position - _center()).length() - (_radius() + RETICLE_GAP)) < RETICLE_HIT:
 		return tr("Target: the lime brackets mark the wheel your attacks and aimed cards hit.")
 	var z := zone_at(global_position + at_position)
 	match String(z.get("kind", "")):
@@ -331,8 +340,12 @@ func _get_tooltip(at_position: Vector2) -> String:
 				lines.append(tr("Shield %d: soaks damage, lasts.") % combatant.shield)
 			if combatant.resistance > 0:
 				lines.append(tr("Resistance %d: absorbs nudges and spins tick for tick; Flip and Respin are blocked.") % combatant.resistance)
+			if combatant.wheel.frozen:
+				lines.append(tr("FROZEN"))
 			if combatant.wheel.hub_id != &"" and lookup != null:
 				lines.append(Codex.describe(lookup.get_content(combatant.wheel.hub_id)))
+			# B2 (D2): the upcoming phases a reveal shows were hub lines; they are the tooltip's.
+			lines.append_array(PackedStringArray(extra_lines))
 			return "\n".join(lines)
 	return ""
 
@@ -1252,18 +1265,17 @@ const STAMP_HP_SHARE := 0.8
 ## The hub's words from the top of the name to the foot of its last line (local y, from
 ## the centre): numbers keep off them.
 func hub_text_extent() -> Vector2:
-	var c := _shown()
-	var hw := (hub_radius() - 10) * 2.0
-	var n := _hub_lines(c).size()
-	var fs := _fs(HUB_FONT_SIZE)
-	var step := fs + 2
-	var top := -6.0 - n * step * 0.5
-	var name_lines := hub_name_lines(hw)
+	# B2 (D2): the hub's only words are its tiny name under the emblem (none under
+	# HUB_NAME_MIN_R_1080: an empty band at the centre).
+	var k := art_scale()
+	if combatant == null or not hub_name_shown(k):
+		return Vector2.ZERO
+	var hr := hub_px(k)
+	var name_lines := hub_name_lines(hr * 2.0 * HUB_NAME_WIDTH)
 	var name_size := int(name_lines[0])
 	var name_count := name_lines.size() - 1
-	var y0 := top - (name_count - 1) * (name_size + 1) - name_size * 0.8
-	var y1 := top + 16.0 + (n - 1) * step + fs * 0.3 if n > 0 else top + name_size * 0.3
-	return Vector2(y0, y1)
+	var base := hr * HUB_NAME_Y
+	return Vector2(base - name_size * 0.8, base + (name_count - 1) * (name_size + 1) + name_size * 0.3)
 
 
 ## Where the HP number sits (global): a damage number travels into it.
@@ -2052,7 +2064,7 @@ func _draw_view() -> void:
 		_draw_drain(center, (HUB_PLAYER if combatant.wheel.has_inner_ring() else HUB_ENEMY) * k)
 	if flatlined and combatant.is_player:
 		_draw_flatlined(center, radius, inner)
-	if highlighted and combatant.is_alive():
+	if reticle_visible():
 		_draw_crosshair(center, radius + RETICLE_GAP)
 		# A crosshair mark by the top-right bracket names the reticle without words.
 		var cm := center + Vector2(cos(-PI * 0.25), sin(-PI * 0.25)) * (radius + 56 + 16)
@@ -2450,9 +2462,20 @@ const TAG_MIN_RADIUS := 100.0
 ## enemy's filling the centre (3.3, no ring).
 const HUB_PLAYER := 96.0
 const HUB_ENEMY := 124.0
-## The hub emblem's box and height over the centre (master units, roster_wheel.draw_hub).
-const HUB_EMBLEM := 40.0
-const HUB_EMBLEM_Y := 0.62
+## B2 (review D2, round 40 hub_cores_v3): the hub is an emblem and a tiny name. The emblem's box is
+## HUB_EMBLEM_SHARE of the hub's radius each side, lifted HUB_EMBLEM_LIFT of it while the name
+## shows, over a glow in the accent (radius and alpha); the name is Plex Condensed caps at
+## NAME_FONT_SIZE (10 px at 1080p, scaled with the text) with its baseline HUB_NAME_Y of
+## the radius under the centre; under a wheel radius of HUB_NAME_MIN_R_1080 (board px) the hub shows
+## the emblem alone. Shield, block, resistance, frozen and the passive are chips beside the HP
+## (WheelView.standing_chips) and lines of the hub's tooltip.
+const HUB_EMBLEM_SHARE := 0.45
+const HUB_EMBLEM_LIFT := 0.14
+const HUB_GLOW_R := 0.62
+const HUB_GLOW_ALPHA := 0.32
+const HUB_GLOW_SEGMENTS := 24
+const HUB_NAME_Y := 0.58
+const HUB_NAME_MIN_R_1080 := 90.0
 ## Segment plates on the inner ring (3.10): glyph box and radius (master units).
 const RING_PLATE := 20.0
 const RING_PLATE_R := 113.5
@@ -2657,17 +2680,60 @@ func _draw_ring_plates(center: Vector2, k: float) -> void:
 		WheelGlyphs.draw(self, WheelGlyphs.segment_id(seg_id), at, RING_PLATE * k * 0.8, Palette.TEXT_HI)
 
 
-## The hub's emblem (3.3): its core glyph in the accent over the CRT disc (the name and lines are
-## `_draw_hub`'s); the LOCKDOWN plate and waterline bits while the hub is breached.
+## The hub's emblem (3.3; B2, review D2: round 40 hub_cores_v3 / combat_typical_v4): its core
+## glyph in the accent over the CRT disc, in the hub's centre, its box HUB_EMBLEM_SHARE x 2 of the
+## hub's radius, lifted HUB_EMBLEM_LIFT of it to leave the tiny name room under it, over a soft
+## glow in the accent (the name is `_draw_hub`'s); the LOCKDOWN plate and waterline bits while the
+## hub is breached.
 func _draw_hub_face(center: Vector2, k: float) -> void:
-	var hub_m := HUB_PLAYER if combatant.wheel.has_inner_ring() else HUB_ENEMY
+	var hr := hub_px(k)
 	var glyph := kit.hub_glyph(combatant)
-	var size := HUB_EMBLEM * k * (hub_m / HUB_PLAYER)
 	var gone := drain_p if combatant.is_player and flatlined else 0.0
 	if gone < 1.0:
-		WheelGlyphs.draw(self, glyph, center + Vector2(0.0, -hub_m * HUB_EMBLEM_Y * k), size, Color(kit.accent, 1.0 - gone))
+		var at := hub_emblem_spot(center, k)
+		_draw_hub_glow(at, hr * HUB_GLOW_R, Color(kit.accent, HUB_GLOW_ALPHA * (1.0 - gone)))
+		WheelGlyphs.draw(self, glyph, at, hub_emblem_px(k), Color(kit.accent, 1.0 - gone))
 	if lockdown_level > 0.0:
-		_draw_lockdown(center, hub_m * k)
+		_draw_lockdown(center, hr)
+
+
+## The hub's radius (px) at art scale `k` (the player's inside its inner ring, an enemy's whole).
+func hub_px(k: float) -> float:
+	return (HUB_PLAYER if combatant != null and combatant.wheel != null and combatant.wheel.has_inner_ring() else HUB_ENEMY) * k
+
+
+## The hub emblem's box (px, B2 D2): HUB_EMBLEM_SHARE of the hub's radius each side.
+func hub_emblem_px(k: float) -> float:
+	return hub_px(k) * HUB_EMBLEM_SHARE * 2.0
+
+
+## Where the hub emblem's centre stands (local px).
+func hub_emblem_spot(center: Vector2, k: float) -> Vector2:
+	var hr := hub_px(k)
+	return center + Vector2(0.0, -hr * (HUB_EMBLEM_LIFT if hub_name_shown(k) else 0.0))
+
+
+## Whether the hub's tiny name shows (B2 D2): from a wheel radius of HUB_NAME_MIN_R_1080 (board px:
+## the bible's "r", WheelFace.LOD_RADIUS at 720) up; under it the hub is the emblem alone.
+func hub_name_shown(_k: float = 0.0) -> bool:
+	return name_shows_at(_radius())
+
+
+## B2 (D2): whether a wheel of radius `r` (canvas px) shows its hub's tiny name.
+static func name_shows_at(r: float) -> bool:
+	return r >= HUB_NAME_MIN_R_1080 * GreasePencilMark.BOARD_TO_CANVAS
+
+
+## A soft radial glow (the emblem's accent) fading to nothing at `r`.
+func _draw_hub_glow(c: Vector2, r: float, col: Color) -> void:
+	if r < 1.0:
+		return
+	var edge := Color(col, 0.0)
+	var cols := PackedColorArray([col, edge, edge])
+	for i in HUB_GLOW_SEGMENTS:
+		var a0 := TAU * i / HUB_GLOW_SEGMENTS
+		var a1 := TAU * (i + 1) / HUB_GLOW_SEGMENTS
+		draw_polygon(PackedVector2Array([c, c + Vector2(cos(a0), sin(a0)) * r, c + Vector2(cos(a1), sin(a1)) * r]), cols)
 
 
 ## LOCKDOWN (3.3, round 40): encrypted bits churning under a bright wavy waterline that fills the
@@ -3001,7 +3067,7 @@ func _draw_satellites() -> void:
 		var plate := satellite_plate_rect(sat, sat_text)
 		draw_rect(plate, Color(Palette.NIGHT_SKY, 0.85))
 		draw_string(Palette.mono(), plate.position + Vector2(3, lfs), sat_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, sat_col)
-		if sat.id == targeted_satellite:
+		if sat.id == targeted_satellite and valid_zones.is_empty():
 			_draw_crosshair(satp, (SATELLITE_TOKEN + 5.0) * _ts())
 		if _zone_is(valid_zones, {"kind": "satellite", "id": sat.id}):
 			var hot := _zone_is([hover_zone], {"kind": "satellite", "id": sat.id})
@@ -3477,7 +3543,7 @@ func _draw_dashed_rect(r: Rect2, col: Color) -> void:
 ## "BILLING DAEMON" drew at 10 px at 1.6 and 13 px at 1.0). [size, line, line?]
 func hub_name_lines(width: float) -> Array:
 	var name := shown_name().to_upper()
-	var font := Palette.display()
+	var font := Palette.body_medium()
 	var fs := _fs(NAME_FONT_SIZE)
 	while fs > NAME_FONT_SIZE and font.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width:
 		fs -= 1
@@ -3496,10 +3562,10 @@ func hub_name_lines(width: float) -> Array:
 				best = cut
 		var l1 := " ".join(words.slice(0, best))
 		var l2 := " ".join(words.slice(best))
-		while fs > 7 and maxf(font.get_string_size(l1, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, font.get_string_size(l2, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x) > width:
+		while fs > NAME_MIN_FONT and maxf(font.get_string_size(l1, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, font.get_string_size(l2, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x) > width:
 			fs -= 1
 		return [fs, l1, l2]
-	while fs > 7 and font.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width:
+	while fs > NAME_MIN_FONT and font.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width:
 		fs -= 1
 	return [fs, name]
 
@@ -3519,56 +3585,48 @@ func name_of(c: CombatantState) -> String:
 	return TextDb.t(data, "display_name")
 
 
-## The hub's lines under the name for `c` (block, shield, resistance, frozen, its hub
-## core, extra lines), and which one is the resistance line (-1 for none).
-func _hub_lines(c: CombatantState) -> Array[String]:
-	# Drawn words go through tr() (H23: drawn text never translated; the scrambled
-	# storyboard still showed them in English).
-	var hub_lines: Array[String] = []
-	if c == null:
-		return hub_lines
+## B2 (review D2): what the hub used to write under its name (block, shield, resistance, frozen,
+## its hub core switched off: LOCKDOWN) as chips beside the HP number (HudResultChips.standing, before the
+## result chips): {text, color} each, in that order. The same facts are lines of the hub's
+## tooltip. (The upcoming-phase lines a reveal shows, `extra_lines`, are the tooltip's.)
+func standing_chips() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var c := combatant
+	if c == null or c.wheel == null:
+		return out
 	if c.block > 0:
-		hub_lines.append(tr("BLOCK %d") % c.block)
+		out.append({"text": tr("BLOCK %d") % c.block, "color": HudSkin.CHIP_ABSORBED})
 	if c.shield > 0:
-		hub_lines.append(tr("SHIELD %d") % c.shield)
+		out.append({"text": tr("SHIELD %d") % c.shield, "color": HudSkin.CHIP_ABSORBED})
 	if c.resistance > 0 or c.hub_resistance > 0 or c.wheel.passive_resistance > 0:
-		hub_lines.append(tr("RESIST %d") % c.resistance)
+		out.append({"text": tr("RESIST %d") % c.resistance, "color": Palette.RESIST_GOLD})
 	if c.wheel.frozen:
-		hub_lines.append(tr("FROZEN"))
-	if c.wheel.hub_id != &"":
-		var hub_data := lookup.get_content(c.wheel.hub_id) if lookup != null else null
-		var hub_name: String = TextDb.t(hub_data, "display_name") if hub_data != null and "display_name" in hub_data else String(c.wheel.hub_id)
-		hub_lines.append(hub_name + (tr(" (LOCKDOWN)") if c.is_hub_breached() else ""))
-	hub_lines.append_array(extra_lines)
-	return hub_lines
+		out.append({"text": tr("FROZEN"), "color": Palette.NET_CYAN})
+	# The passive itself is the hub's emblem (its core's glyph) and its tooltip line; only its
+	# being switched off is a chip.
+	if c.wheel.hub_id != &"" and c.is_hub_breached():
+		out.append({"text": tr("LOCKDOWN"), "color": Palette.NET_CYAN})
+	return out
 
 
-func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
-	var hub_lines := _hub_lines(combatant)
-	var resist_line := -1
-	if combatant.resistance > 0 or combatant.hub_resistance > 0 or combatant.wheel.passive_resistance > 0:
-		resist_line = (1 if combatant.block > 0 else 0) + (1 if combatant.shield > 0 else 0)
-	var hw := (inner - 10) * 2.0
-	var fs := _fs(HUB_FONT_SIZE)
-	var step := fs + 2
-	var top := -6.0 - hub_lines.size() * step * 0.5
+## B2 (review D2): the hub writes only the combatant's tiny name, in Plex Condensed caps under
+## the emblem (`hub_name_lines`), and nothing at all below HUB_NAME_MIN_R_1080 of hub radius.
+func _draw_hub(center: Vector2, _inner: float, _line: Color) -> void:
+	var k := art_scale()
+	if not hub_name_shown(k):
+		return
+	var hr := hub_px(k)
+	var hw := hr * 2.0 * HUB_NAME_WIDTH
 	var name_lines := hub_name_lines(hw)
 	var name_size := int(name_lines[0])
 	var name_count := name_lines.size() - 1
-	for k in name_count:
-		# The last line sits where a one-line name does; a first line goes above it.
-		var ny := top - (name_count - 1 - k) * (name_size + 1)
-		draw_string_outline(Palette.display(), center + Vector2(-hw * 0.5, ny), String(name_lines[k + 1]), HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, maxi(1, roundi(name_size * 0.18)), _col(Palette.INK))
-		draw_string(Palette.display(), center + Vector2(-hw * 0.5, ny), String(name_lines[k + 1]), HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, _col(Palette.TEXT_HI))
-	for i in hub_lines.size():
-		var col := _col(Palette.RESIST_GOLD) if i == resist_line else _col(Palette.PAPER)
-		var lfs := fs
-		while lfs > 6 and Palette.mono().get_string_size(hub_lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > hw:
-			lfs -= 1  # shrink to the hub (H23: "Breaker Core" was cut to "Breake")
-		var line_text: String = hub_lines[i]
-		while line_text.length() > 3 and Palette.mono().get_string_size(line_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > hw:
-			line_text = line_text.substr(0, line_text.length() - 2) + "…"
-		draw_string(Palette.mono(), center + Vector2(-hw * 0.5, top + 16 + i * step), line_text, HORIZONTAL_ALIGNMENT_CENTER, hw, lfs, col)
+	var font := Palette.body_medium()
+	var base := hr * HUB_NAME_Y
+	for i in name_count:
+		# The first line sits at the name's spot; a second goes under it.
+		var ny := base + i * (name_size + 1)
+		draw_string_outline(font, center + Vector2(-hw * 0.5, ny), String(name_lines[i + 1]), HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, maxi(1, roundi(name_size * 0.3)), _col(Palette.INK))
+		draw_string(font, center + Vector2(-hw * 0.5, ny), String(name_lines[i + 1]), HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, _col(Palette.TEXT_HI))
 
 
 ## Target reticle: four bracket arcs on the diagonals with a tick at each (clear of the HP
@@ -3577,6 +3635,12 @@ const RETICLE_ARC := 0.28
 ## The reticle's distance beyond the rim (px) and its hover band for the tooltip.
 const RETICLE_GAP := 56.0
 const RETICLE_HIT := 10.0
+
+
+## True when the target's lime brackets draw on this wheel (B2, D4): it is the target, alive,
+## the scene allows them (`reticle_shown`) and no card is aimed (no valid drop zone).
+func reticle_visible() -> bool:
+	return highlighted and reticle_shown and combatant != null and combatant.is_alive() and valid_zones.is_empty()
 
 
 func _draw_crosshair(c: Vector2, r: float) -> void:
