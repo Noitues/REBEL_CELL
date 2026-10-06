@@ -37,8 +37,10 @@ const BLADE_INK := 3.5
 ## At r = 60 the blade is scaled x1.6 (3.2).
 const LOD_RADIUS := 60.0
 const LOD_BLADE := 1.6
-## Rail: +-50 degrees over the needle, a +-8 degree dark gap round each needle (3.2, round 39).
+## Rail: +-50 degrees over the needle, a +-8 degree dark gap round each needle (3.2, round 39);
+## +-24 over each needle of a multi-needle wheel (d4corp.render, BOSS-04).
 const RAIL_HALF := 50.0
+const RAIL_HALF_MULTI := 24.0
 const NEEDLE_GAP := 8.0
 const RAIL_TEXT := 14.0
 ## The HP arc (combat_wheel.draw_hp): 30 segments from 130 to 230 degrees, 16..40 beyond the frame.
@@ -205,16 +207,71 @@ static func blade(ci: CanvasItem, center: Vector2, k: float, deg: float, rt: flo
 		ci.draw_string(font2, Vector2(tab.x - tw2 * 0.5, tab.y + cap_height(font2, nf) * 0.5), t, HORIZONTAL_ALIGNMENT_LEFT, -1, nf, ink)
 
 
+## Secondary reader pin (BOSS-04; d4corp.pin, ported): needle 2, 3 ... of a multi-needle wheel is
+## a short pin that stays inside the frame, its tip in the slice, a round value window in the
+## channel ringed in the program colour and its number on an accent tab; only needle 1 wears the
+## full blade, so a boss's extra needles no longer crowd its rim.
+const PIN_ROOT := RCH1 + 2.0
+const PIN_SHOULDER := 20.0
+const PIN_ROOT_HALF := 22.0
+const PIN_WINDOW_R := R_OUT + 20.0
+const PIN_WINDOW := 19.0
+const PIN_TAB_R := 11.0
+const PIN_INK := 3.0
+
+
+## The radius (master) of reader `index`'s value window: the blade's for needle 1, the pin's after.
+static func window_master(index: int, rt: float, scale: float = 1.0) -> float:
+	if index > 0:
+		return PIN_WINDOW_R
+	return rt + (WINDOW_IN + BLADE_TOP - WINDOW_OUT) * 0.5 * scale
+
+
+static func pin(ci: CanvasItem, center: Vector2, k: float, deg: float, accent: Color, body: Color, value: String,
+		glyph: StringName, program: Color, number: int, scale: float = 1.0, alpha: float = 1.0) -> void:
+	var s := scale
+	var q := func(r: float, v: float) -> Vector2: return axis(center, k, r, v, deg)
+	var ink := Color(Palette.INK, alpha)
+	var pts := PackedVector2Array([q.call(BLADE_TIP, 0.0), q.call(R_OUT + 2.0, PIN_SHOULDER * s), q.call(PIN_ROOT, PIN_ROOT_HALF * s),
+		q.call(PIN_ROOT, -PIN_ROOT_HALF * s), q.call(R_OUT + 2.0, -PIN_SHOULDER * s)])
+	ci.draw_colored_polygon(_grow(pts, center, 5.0 * k), Color(accent, 0.3 * alpha))
+	ci.draw_colored_polygon(pts, Color(body, alpha))
+	_outline(ci, pts, ink, maxf(1.0, PIN_INK * k))
+	var wc: Vector2 = q.call(PIN_WINDOW_R, 0.0)
+	var r := PIN_WINDOW * k * s
+	ci.draw_circle(wc, r, Color(Palette.NIGHT_SKY, alpha))
+	ci.draw_arc(wc, r, 0.0, TAU, 24, Color(program, alpha), maxf(1.0, 2.4 * k), true)
+	if value != "":
+		var fs := maxi(1, roundi(r * 1.25))
+		var font := Palette.display()
+		var tw := font.get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var base := Vector2(wc.x - tw * 0.5, wc.y + cap_height(font, fs) * 0.5)
+		ci.draw_string_outline(font, base, value, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(2.0 * k)), ink)
+		ci.draw_string(font, base, value, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.TEXT_HI, alpha))
+	else:
+		WheelGlyphs.draw(ci, glyph, wc, r * 1.3, Color(Palette.TEXT_HI, alpha), ink)
+	var tab: Vector2 = q.call(PIN_ROOT + 12.0, 0.0)
+	var rn := PIN_TAB_R * k * s
+	ci.draw_circle(tab, rn + maxf(1.0, 2.0 * k), ink)
+	ci.draw_circle(tab, rn, Color(accent, alpha))
+	var nf := maxi(1, roundi(rn * 1.5))
+	var t := str(number)
+	var font2 := Palette.display()
+	var tw2 := font2.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, nf).x
+	ci.draw_string(font2, Vector2(tab.x - tw2 * 0.5, tab.y + cap_height(font2, nf) * 0.5), t, HORIZONTAL_ALIGNMENT_LEFT, -1, nf, ink)
+
+
 ## The rail over a needle (3.2): the channel tinted the program colour with brackets, its text
 ## (`OVERFLOW 12 // CRIT // PERFECT //`) static, split round every needle in `needles`.
 static func rail(ci: CanvasItem, center: Vector2, k: float, deg: float, needles: Array[float], text: String, tint: Color, word_tint: Color, alpha: float = 1.0) -> void:
 	var r_text := (RCH0 + RCH1) * 0.5
-	var spans := _rail_spans(deg, needles)
+	var half := rail_half(needles.size())
+	var spans := _rail_spans(deg, needles, half)
 	for sp in spans:
 		var a0: float = sp.x
 		var a1: float = sp.y
 		ci.draw_colored_polygon(arc_band(center, k, RCH0 + 2.0, RCH1 - 2.0, a0, a1), Color(tint.darkened(0.58), alpha))
-	for a in [deg - RAIL_HALF, deg + RAIL_HALF]:
+	for a in [deg - half, deg + half]:
 		ci.draw_line(at(center, k, RCH0 - 1.0, a), at(center, k, RCH1 + 1.0, a), Color(tint, alpha), maxf(1.0, 3.0 * k))
 	var fs := roundi(RAIL_TEXT * k)
 	if fs < MIN_TEXT_PX:
@@ -229,9 +286,14 @@ static func rail(ci: CanvasItem, center: Vector2, k: float, deg: float, needles:
 const MIN_TEXT_PX := 4
 
 
-## The rail's arcs round needle `deg`: +-RAIL_HALF less a +-NEEDLE_GAP gap at every needle.
-static func _rail_spans(deg: float, needles: Array[float]) -> Array[Vector2]:
-	var out: Array[Vector2] = [Vector2(deg - RAIL_HALF, deg + RAIL_HALF)]
+## The rail's half arc (degrees) on a wheel with `needles` needles.
+static func rail_half(needles: int) -> float:
+	return RAIL_HALF if needles <= 1 else RAIL_HALF_MULTI
+
+
+## The rail's arcs round needle `deg`: +-`half` less a +-NEEDLE_GAP gap at every needle.
+static func _rail_spans(deg: float, needles: Array[float], half: float = RAIL_HALF) -> Array[Vector2]:
+	var out: Array[Vector2] = [Vector2(deg - half, deg + half)]
 	for n in needles:
 		var nd := deg + wrapf(n - deg, -180.0, 180.0)
 		var next: Array[Vector2] = []
