@@ -322,6 +322,7 @@ CONTINUE,CONTINUE
 CORE,CORE
 CORE (home),CORE (home)
 CORE (house): your home server; if its integrity reaches 0 the campaign is lost.,CORE (house): your home server; if its integrity reaches 0 the campaign is lost.
+CORP NEWS // %s. The story so far is in the Codex (pause menu).,CORP NEWS // %s. The story so far is in the Codex (pause menu).
 CORPORATE,CORPORATE
 CORRUPTED,CORRUPTED
 CREW,CREW

@@ -208,6 +208,16 @@ binding (also in PROPOSAL.md's rulings section):
   names the jack's ends either way.
 - Tests: new `tests/unit/test_hq_b_jack.gd` (fast).
 
+**HQ-B (f): ticker, the story, the pause menu, the Loadout's swaps.**
+- Q7: the ON AIR line (`OnAirTicker`, 4C) runs along the page's foot under the hand (built in b).
+- Q8: `Codex.entries` heads with STORY (built in b); new `tell_new_beats`: a beat revealed since the HQ last showed
+  (per-campaign view memory, `_beats_seen`, never game state) is told as a corp-news toast (`CORP NEWS // <title>. The
+  story so far is in the Codex (pause menu).`) when the HQ shows; nothing is told the first time a campaign's HQ shows.
+- Q9: the page has no Codex / Options / Save; the pause menu (ABANDON-QUIT's cells: Options, Codex, Quit to Main
+  Menu, which saves) carries them.
+- Q13: the swaps are the Loadout's SPINNER chips (ANIM-4's, unchanged); the dossiers' OptionButtons went in b.
+- Tests: new `tests/unit/test_hq_b_story.gd` (fast).
+
 ### 2026-10-05 — Parity fix — combat wheels (designer group ruling)
 
 Designer group ruling (2026-10-05): combat matches the concept; mechanics the rules lack stay

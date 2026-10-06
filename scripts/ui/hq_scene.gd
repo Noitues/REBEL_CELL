@@ -1800,6 +1800,7 @@ func _build_hq_page(page_name: String) -> void:
 		_prebake_playout.call_deferred(c, null)
 	else:
 		_register_hq_drops_b(launchable)
+		tell_new_beats()  # HQ-B (f, Q8): a beat revealed since the HQ last showed: corp news
 	_link_hq_focus(page)
 	if _hq_focus != "":
 		_focus_named.call_deferred(_hq_focus)
@@ -6135,3 +6136,31 @@ func press_verb(v: Dictionary, sid: StringName) -> void:
 			var op := selected_op()
 			if op != null:
 				launch(sid, op.id)
+
+
+# --- HQ-B (f): the story so far --------------------------------------------------------------
+
+## HQ-B (f) (designer ruling Q8): the story beats this campaign's HQ has shown, per campaign
+## (view memory, never game state): a beat revealed since (a run's end, a raid) is told as a
+## corp-news toast when the HQ shows next; the story so far is the Codex's STORY section.
+static var _beats_seen: Dictionary = {}
+## The toast's words (a translation key).
+const STORY_TOAST := "CORP NEWS // %s. The story so far is in the Codex (pause menu)." # TR
+
+
+## HQ-B (f): toasts the beats revealed since the HQ last showed (none the first time a
+## campaign's HQ shows: its beats so far are the Codex's). Returns the titles told.
+func tell_new_beats() -> PackedStringArray:
+	var told := PackedStringArray()
+	var c := RunManager.campaign
+	if c == null or RunManager.corporation == null:
+		return told
+	var key := "%s|%d" % [c.corporation_id, c.campaign_seed]
+	var beats := CampaignRules.revealed_beats(c, RunManager.corporation)
+	var seen: int = _beats_seen.get(key, beats.size())
+	for i in range(mini(seen, beats.size()), beats.size()):
+		var title := TextDb.t(beats[i], "title")
+		told.append(title)
+		notify(tr(STORY_TOAST) % title)
+	_beats_seen[key] = beats.size()
+	return told
