@@ -103,11 +103,10 @@ func test_the_grade_keeps_the_neon_hue_and_the_ink_dark() -> void:
 	assert_true(CombatBackdrop.graded(off, grey).is_equal_approx(grey), "exposure 1, no tint, full saturation: identity")
 
 
-## The shader's darkening of a pool at `d` disc radii from its wheel (pool_at; CityConfig
-## backdrop_pool_dark / backdrop_pool_falloff).
+## The darkening of a wheel's pool at `d` disc radii from its wheel (B1a: the UiScrimPools layer
+## over the backdrop; UiScrimLook wheel_pool_multiply / wheel_pool_reach / pool_falloff).
 func _pool_factor(d: float) -> float:
-	var pool := exp(-pow(d / CombatBackdrop.POOL_REACH, _cfg().backdrop_pool_falloff))
-	return 1.0 - _cfg().backdrop_pool_dark * pool
+	return UiScrimPools.wheel_factor(d)
 
 
 func test_hud_and_wheel_rims_keep_their_contrast_over_the_backdrop() -> void:

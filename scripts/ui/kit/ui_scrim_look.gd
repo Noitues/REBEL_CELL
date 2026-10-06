@@ -1,0 +1,66 @@
+class_name UiScrimLook
+extends Resource
+## B1a (M14 integration review D1, D19, section d "World darkening under the UI"; ART_BIBLE v2
+## §3.1, §4.1): the numbers of the world's darkening under the UI (`UiScrimPools`), its light
+## spill and its panel shadows (`UiSpillShadows`). One file, `content/config/ui_scrim_look.tres`,
+## read by every screen over the city. Lengths are px at a 1080 px tall screen
+## (`reference_height`; the bible's numbers): the layers scale them to their own height.
+## Read-only content: a view never writes it.
+
+## The screen height the px lengths below are given at.
+@export var reference_height: float = 1080.0
+
+@export_group("Pools")
+## What a wheel's pool leaves of the world (review D1: multiply by 0.55 inside the disc).
+@export var wheel_pool_multiply: float = 0.55
+## A wheel's pool is a soft disc of this radius, times its disc radius (review D1: 1.25 R), its
+## edge this share of that radius wide on each side (whole to 0.94 R, half at 1.25 R, none past
+## 1.56 R: the pool shows as a dark ring round the wheel, not hidden under its disc).
+@export var wheel_pool_reach: float = 1.25
+@export var wheel_pool_soft: float = 0.25
+## What a panel's pool leaves of the world under it (review section d: 0.55 pools).
+@export var panel_pool_multiply: float = 0.55
+## How far past a panel's edge its pool fades out (px at 1080).
+@export var panel_pool_margin_px: float = 64.0
+## A panel pool's and a band's edge: exp(-(d / reach) ^ pool_falloff), d past the edge
+## (S-ARENA's backdrop_pool_falloff).
+@export var pool_falloff: float = 4.0
+
+@export_group("Bands")
+## What a bar's band leaves of the world (review D1: about 35 % black).
+@export var band_multiply: float = 0.65
+## How far a band fades out past the bar it lies under (px at 1080; review D1: 70 px under
+## the top strip, 120 px under the hand).
+@export var band_reach_top_px: float = 70.0
+@export var band_reach_bottom_px: float = 120.0
+
+@export_group("Light spill")
+## The spill's additive strength at its element's edge (review D19: 20 to 30 %).
+@export var spill_strength: float = 0.25
+## The spill's radius, times its element's radius (half its diagonal; D19: 1.5x).
+@export var spill_radius_scale: float = 1.5
+## A pencil stroke's spill (the TARGET pencil, the aim): how far its light reaches from the wax
+## line (px at 1080; spill_strength at the line, nothing at this distance) and the most segments
+## one stroke is cut into (the spill's slots are shared by the screen).
+@export var line_glow_px: float = 48.0
+@export var line_segments: int = 6
+
+@export_group("Panel shadows")
+## A panel's drop shadow: its darkness (D19: black at 45 %), its soft edge (D19: 18 px) and
+## its drop (px at 1080; the concepts' panels sit on the world, lit from above).
+@export var shadow_alpha: float = 0.45
+@export var shadow_soft_px: float = 18.0
+@export var shadow_offset_px: Vector2 = Vector2(0.0, 6.0)
+
+@export_group("Quality tiers (Settings.city_quality via CityConfig.tier_for)")
+## Per tier: the spill and the shadows draw (tier 0, the cheapest, keeps the pools only: they
+## carry the UI's contrast and cost one pass).
+@export var tier_spill: Array[bool] = [false, true, true]
+@export var tier_shadows: Array[bool] = [false, true, true]
+
+
+## The tier's flag in `flags` (the last entry past its end).
+static func flag_at(flags: Array[bool], tier: int) -> bool:
+	if flags.is_empty():
+		return true
+	return flags[clampi(tier, 0, flags.size() - 1)]

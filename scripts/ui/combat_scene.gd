@@ -94,6 +94,10 @@ var portrait: Polaroid
 var heat_poster: HeatPoster
 ## ART-2 2C: Heat on the backdrop (ART_BIBLE v2 §3.15 H1).
 var heat_city: HeatCity
+## B1a (review D1, D19): the world's darkening under the UI (the wheels' pools, the bands under
+## the TURN strip and the hand), the panels' shadows and the light spill, over the backdrop and
+## its Heat lights, under the wheels.
+var scrim: UiScrimPools
 ## ART-0 audit B1: the Heat glitch Options extra (§5.5), over the backdrop, under the wheels.
 var heat_glitch: HeatGlitchLayer
 var ram_note: RamBar
@@ -1240,6 +1244,20 @@ func aim_spec() -> Dictionary:
 	return {"from": from, "to": to, "arrow_t": _aim_draw, "stop": stop, "loop": loop, "marks": _slice_marks}
 
 
+## B1a (review D19): the aim's pencil lights the world under it: its shaft and its loop (global
+## px; UiSpillShadows source).
+func _aim_spill_lines() -> Array:
+	var out: Array = []
+	if selecting < 0:
+		return out
+	var shapes := AimLinePencil.shapes(aim_spec())
+	for part in ["arrow", "loop"]:
+		var strokes: Array = shapes[part]
+		if not strokes.is_empty():
+			out.append(strokes[0])
+	return out
+
+
 ## Fades the cards not being aimed (and restores them).
 func _dim_hand() -> void:
 	for c in _hand_box.get_children():
@@ -1724,6 +1742,9 @@ func _build_ui() -> void:
 	heat_city = HeatCity.new()
 	heat_city.name = "HeatCity"
 	add_child(heat_city)
+	scrim = UiScrimPools.attach_after(heat_city)
+	scrim.add_wheels(_views)
+	scrim.spill.add_spill_source(_aim_spill_lines, Palette.PENCIL_PLAN)
 	# ART-0 audit B1 §5.5: the Heat glitch post pass reads the backdrop drawn so far (city +
 	# Heat lights); the wheels, FX and HUD draw above it, so no value is touched.
 	heat_glitch = HeatGlitchLayer.new()
@@ -1993,6 +2014,14 @@ func _build_ui() -> void:
 	aim_pencil = AimLinePencil.new()
 	aim_pencil.spec = aim_spec
 	add_child(aim_pencil)
+	# B1a: the TURN strip and the hand row lie on dark bands; the strip and the RAM panel cast
+	# shadows; SEND IT (and the next step's sticker) spills its pink.
+	UiScrimPools.mark_band(_banner, SIDE_TOP)
+	UiScrimPools.mark_band(_bottom_row, SIDE_BOTTOM)
+	for panel: Control in [_banner, ram_note, daemon_row]:
+		UiScrimPools.mark_panel(panel, false)
+	for verb: Control in [_end_turn_button, _continue_button]:
+		UiSpillShadows.mark_spill(verb, HudSkin.VINYL_PINK)
 	_aim_hint = Label.new()
 	_aim_hint.name = "AimHint"
 	_aim_hint.z_index = OVER_HAND_Z

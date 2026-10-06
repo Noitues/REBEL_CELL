@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="UiScrimLook" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/kit/ui_scrim_look.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+reference_height = 1080.0
+wheel_pool_multiply = 0.55
+wheel_pool_reach = 1.25
+wheel_pool_soft = 0.25
+panel_pool_multiply = 0.55
+panel_pool_margin_px = 64.0
+pool_falloff = 4.0
+band_multiply = 0.65
+band_reach_top_px = 70.0
+band_reach_bottom_px = 120.0
+spill_strength = 0.25
+spill_radius_scale = 1.5
+line_glow_px = 48.0
+line_segments = 6
+shadow_alpha = 0.45
+shadow_soft_px = 18.0
+shadow_offset_px = Vector2(0, 6)
+tier_spill = Array[bool]([false, true, true])
+tier_shadows = Array[bool]([false, true, true])
