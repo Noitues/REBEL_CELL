@@ -60,9 +60,9 @@ void fragment() {
 	float mgmt = 1.0 - clamp(city_share, 0.0, 1.0);
 	// Links.
 	for (int k = 0; k < seg_count; k++) {
+		// M14 perf slice: only the end points are read before the reach test (most links are
+		// out of reach of most pixels); colour, flags and lengths after it.
 		vec4 s0 = texelFetch(segs_tex, ivec2(k, 0), 0);
-		vec4 s1 = texelFetch(segs_tex, ivec2(k, 1), 0);
-		vec4 s2 = texelFetch(segs_tex, ivec2(k, 2), 0);
 		vec2 a = s0.xy;
 		vec2 b = s0.zw;
 		vec2 ab = b - a;
@@ -73,6 +73,8 @@ void fragment() {
 		if (d > reach) {
 			continue;
 		}
+		vec4 s1 = texelFetch(segs_tex, ivec2(k, 1), 0);
+		vec4 s2 = texelFetch(segs_tex, ivec2(k, 2), 0);
 		int flags = int(s1.a + 0.5);
 		float u = s2.x + h * sqrt(l2);
 		float w = trace_px * max(s2.z, 0.6) * 0.5;
@@ -102,12 +104,12 @@ void fragment() {
 	// Nodes: a glow disc, the tier ring, a full socket at management zooms.
 	for (int k = 0; k < node_count; k++) {
 		vec4 n0 = texelFetch(nodes_tex, ivec2(k, 0), 0);
-		vec4 n1 = texelFetch(nodes_tex, ivec2(k, 1), 0);
 		float d = length(p - n0.xy) / px;
 		float r = node_px * n0.z * (1.0 + mgmt * 0.7);
 		if (d > r + halo_px * 2.0) {
 			continue;
 		}
+		vec4 n1 = texelFetch(nodes_tex, ivec2(k, 1), 0);
 		if (!node_discs) {
 			over(col, al, n1.rgb, line_px(abs(d - r), node_halo_px * 0.5) * node_halo_alpha);
 			continue;
