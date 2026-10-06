@@ -1020,6 +1020,70 @@ func _die() -> void:
 	_add_heat(config.death_heat_base + run.tier + extra, "operative death")
 
 
+## Abandon run (designer ruling 2026-10-05, GDD 4.5): the operative is killed on the run, so
+## the consequences are the death's (`_die`, GDD 4.2: lost for good with everything unbanked,
+## banked loot kept, Heat +death_heat_base + tier). A fight in progress ends with it.
+func abandon() -> Array[Dictionary]:
+	last_events = []
+	if run.is_over():
+		return _refuse("The run is already over.")
+	last_events.append({"type": "run_abandoned", "operative": String(run.operative.id),
+		"text": "%s abandons the run." % run.operative.name})
+	combat = null
+	_die()
+	_sync()
+	return last_events
+
+
+## What `abandon` costs, worked out by abandoning a copy of the run and the campaign (so the
+## dialog's numbers are the rule's own: preview == result); {} once the run is over. Keys:
+## operative (name), operative_id, rank, tier; lost unbanked: cycles, assets, cards_added,
+## firmware, daemons (gained this run); heat (the change), heat_before, heat_after; kept:
+## schematics_kept, assets_kept (banked at Server Racks); raids (raids the Heat queues).
+func abandon_preview() -> Dictionary:
+	if run.is_over():
+		return {}
+	var c := campaign.duplicate_state()
+	var copy := NetrunSession.from_dict(resolver, c, to_dict(), corporation)
+	copy.abandon()
+	var home := campaign.get_operative(run.operative.id)
+	return {
+		"operative": run.operative.name, "operative_id": String(run.operative.id), "rank": run.operative.rank,
+		"tier": run.tier, "cycles": run.cycles, "assets": run.unbanked_assets.size(),
+		"cards_added": _gained(home.deck if home != null else ([] as Array[StringName]), run.operative.deck, run.temp_cards),
+		"firmware": _firmware_gained(home), "daemons": _gained(home.daemon_ids if home != null else ([] as Array[StringName]), run.operative.daemon_ids),
+		"heat": c.heat - campaign.heat, "heat_before": campaign.heat, "heat_after": c.heat,
+		"schematics_kept": c.schematics - campaign.schematics, "assets_kept": c.armory.size() - campaign.armory.size(),
+		"raids": c.pending_raids.size() - campaign.pending_raids.size(),
+	}
+
+
+## How many ids `now` holds beyond `before` (a multiset difference), not counting `skip`
+## (the run-only boost cards).
+static func _gained(before: Array[StringName], now: Array[StringName], skip: Array[StringName] = []) -> int:
+	var left := before.duplicate()
+	left.append_array(skip)
+	var n := 0
+	for id in now:
+		var i := left.find(id)
+		if i >= 0:
+			left.remove_at(i)
+		else:
+			n += 1
+	return n
+
+
+## Firmware socketed this run: slots whose Firmware is not the one the roster copy holds there.
+func _firmware_gained(home: OperativeState) -> int:
+	var n := 0
+	for i in run.operative.slot_firmware_ids.size():
+		var fw := run.operative.slot_firmware_ids[i]
+		var was: StringName = home.slot_firmware_ids[i] if home != null and i < home.slot_firmware_ids.size() else &""
+		if fw != &"" and fw != was:
+			n += 1
+	return n
+
+
 func _replace_in_roster(op: OperativeState) -> void:
 	for i in campaign.roster.size():
 		if campaign.roster[i].id == op.id:

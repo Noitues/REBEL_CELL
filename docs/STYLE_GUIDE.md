@@ -537,7 +537,8 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   `toast_note_hold`, `raid_incoming_hold`, `jack_connect`), a bounded wait
   (`jack_arrival_wait`, `asset_drop_wait`) or the replay's pacing
   (`resolve_sequence`, `resolve_beat`, `resolve_pass`; the raid's step gap is a part since
-  ANIM-R6 city: off, the steps follow on at once). Switched off they keep
+  ANIM-R6 city: off, the steps follow on at once), or an input time (`dialog_hold_confirm`,
+  the pad / keyboard hold on an abandon dialog's verb, designer ruling 2026-10-05). Switched off they keep
   their time (there is no motion to leave out); every other entry's view asks whether it
   plays (5.1).
 - **Which motions a press completes (ANIM-R6)**: every helper that ends its motion on a press
