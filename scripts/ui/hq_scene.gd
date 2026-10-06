@@ -2447,6 +2447,8 @@ func _clear_city_map() -> void:
 		city_overlay.queue_free()
 	city_overlay = null
 	var city := wireframe.city
+	if city.view3d != null and not city.view3d.uplink_pads.is_empty():
+		city.view3d.set_uplink_pads([])  # ART-3 6w: the raid's pads go with its map
 	if city.focus_grid != Vector2.INF or city.scale != Vector2.ONE:
 		city.focus_grid = Vector2.INF
 		city.scale = Vector2.ONE
@@ -3102,9 +3104,39 @@ func _mount_raid_routes(paths: Array[Array]) -> void:
 	var key := str(paths)
 	raid_routes.set_routes(paths, key != _routes_shown)
 	_routes_shown = key
+	_mount_uplink_pads()
 
 
 var _routes_shown: String = ""
+
+
+## ART-3 6w (bible §4.8 raid language B): the Cell's nodes on the raid map as the concept's
+## uplink pads on their buildings' roofs, risers up the corner facing their street, on the 3D
+## city (once its model is built). A view: it reads the map as laid out.
+func _mount_uplink_pads() -> void:
+	var view := wireframe.city.view3d if wireframe != null and wireframe.city3d else null
+	if view == null:
+		return
+	if view.model == null:
+		if not view.model_ready.is_connected(_mount_uplink_pads):
+			view.model_ready.connect(_mount_uplink_pads, CONNECT_ONE_SHOT)
+		return
+	view.set_uplink_pads(RaidUplinkPads.of(view.model, view.cfg, raid_uplink_nodes()))
+
+
+## ART-3 6w: the raid map's nodes that carry an uplink pad: the Cell's own (claimed at the time
+## the map shows, home included), each with its building's lot and its street door, in the
+## map's order.
+func raid_uplink_nodes() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if city_overlay == null or not is_instance_valid(city_overlay) or RunManager.campaign == null:
+		return out
+	for n in city_overlay.nodes:
+		if not n.has("socket"):
+			continue
+		var id: StringName = n["id"]
+		out.append({"id": id, "lot": city_overlay.lot_of(id), "door": Vector2(city_overlay.street_door(id)) + Vector2(0.5, 0.5)})
+	return out
 
 
 ## ART-6 3A: the raid setup is the page (the drag pencil draws only there).

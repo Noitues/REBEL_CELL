@@ -209,6 +209,9 @@ func _apply_hold() -> void:
 	var b: Vector2 = origin * (_held[0] as Vector2)
 	rig.scale = Vector2(k, k)
 	rig.position = b - a * k
+	if city3d:
+		# ART-3 6w: the 3D picture covers this backdrop under the held frame (NeonCity.view_cover).
+		city.view_cover = (rig.get_transform() * city.get_transform()).affine_inverse() * Rect2(Vector2.ZERO, size)
 
 
 ## ANIM-R1 M4: frames a raid step's fight: grid points `points` (the Sites' lot centres)
@@ -261,4 +264,5 @@ func _rig_rest() -> void:
 	rig.position = Vector2.ZERO
 	rig.scale = Vector2.ONE
 	if city != null:
+		city.view_cover = Rect2()
 		city.refresh()

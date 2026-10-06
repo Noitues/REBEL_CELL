@@ -2,9 +2,10 @@ class_name RaidMapAnchor
 extends RefCounted
 ## ART-6 3A: the one projection seam every raid mark goes through (pencil routes, state marks,
 ## the drag's dock circle, threat icons' anchors): a raid Site or a street on the map as a
-## point in global (screen) px. Wave 1 reads the current CityMapOverlay; wave 2 (the unified
-## real-time 3D city, 1D's pick) swaps these three functions to its camera's projection and
-## every mark follows. INF / empty when the Site is off the map.
+## point in global (screen) px. It reads the CityMapOverlay; ART-3 6w: on the unified 3D city
+## the overlay's projection is the city camera's (NeonCity city-3D mode: yaw 135°, pitch 40°,
+## roofs at their 3D height), so every mark follows the city camera through this one seam
+## unchanged. INF / empty when the Site is off the map.
 
 
 ## Site `id`'s node on `overlay`'s map (global px; INF off the map).

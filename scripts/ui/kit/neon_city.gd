@@ -1210,12 +1210,38 @@ static func height_k3d() -> float:
 
 ## ART-5 5a: the 3D camera of this city's frame (viewport = this control's size, local
 ## px): `project` of a lot's world point is its `grid_to_local`.
-func iso_camera() -> CityIsoCamera:
+## ART-3 6w: `rect` (local px) frames another part of the same projection (the picture's
+## cover while the camera rig eases, see `view_cover`).
+func iso_camera(rect: Rect2 = Rect2()) -> CityIsoCamera:
 	var cfg: CityConfig = CityView3D.CONFIG
 	_camera()
-	var g := _grid_of(size * 0.5)
-	var ortho := maxf(size.x, 1.0) / px_per_bu()
-	return CityIsoCamera.make(cfg, CityIsoCamera.lot_to_world(cfg, g), ortho, size.max(Vector2.ONE))
+	var r := rect if rect.has_area() else Rect2(Vector2.ZERO, size)
+	var g := _grid_of(r.get_center())
+	var ortho := maxf(r.size.x, 1.0) / px_per_bu()
+	return CityIsoCamera.make(cfg, CityIsoCamera.lot_to_world(cfg, g), ortho, r.size.max(Vector2.ONE))
+
+
+## ART-3 6w: the part of this control's local space the 3D picture must cover besides the
+## control itself (empty: just the control). WireframeBackground sets it while its camera rig
+## shows a held frame (a zoom-in ease shrinks the picture: the 2D city's bake reached past the
+## control, the 3D one stopped at its edge and the sky showed round it), at most COVER_MAX
+## times the control's size each way round its middle.
+var view_cover: Rect2 = Rect2():
+	set(v):
+		if not v.is_equal_approx(view_cover):
+			view_cover = v
+			if city3d and _view != null:
+				_view.queue_redraw()
+const COVER_MAX := 3.0
+
+
+## The rect (local px) the 3D picture is drawn over: the control, grown to `view_cover`.
+func cover_rect() -> Rect2:
+	var own := Rect2(Vector2.ZERO, size)
+	if not view_cover.has_area():
+		return own
+	var cap := Rect2(own.get_center() - size * COVER_MAX * 0.5, size * COVER_MAX)
+	return own.merge(view_cover.intersection(cap))
 
 
 ## ART-5 5a: a placement roof record (painter space, the 2:1 iso at the origin) under the
@@ -1342,9 +1368,10 @@ func _draw_view_3d() -> void:
 	if view3d != null:
 		var stretch := get_viewport().get_final_transform().get_scale().x if is_inside_tree() else 1.0
 		view3d.band_lock = band_lock
-		view3d.set_view_size(Vector2i((size * scale.x * stretch).round()))
-		view3d.set_iso(iso_camera())
-		_view.draw_texture_rect(view3d.get_texture(), Rect2(Vector2.ZERO, size), false)
+		var cover := cover_rect()
+		view3d.set_view_size(Vector2i((cover.size * scale.x * stretch).round()))
+		view3d.set_iso(iso_camera(cover))
+		_view.draw_texture_rect(view3d.get_texture(), cover, false)
 	_built_for = size
 	_drawn_camera = _camera_key()
 	_fx.queue_redraw()
