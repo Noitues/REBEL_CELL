@@ -64,7 +64,7 @@ func _init() -> void:
 	_mat.shader = SHADER
 	_mat.set_shader_parameter(&"mode", 2)
 	_mat.set_shader_parameter(&"alpha_max", GreasePencilMark.WAX_ALPHA)
-	GreasePencilMark.set_dropouts(_mat, GreasePencilMark.WORD_DROPOUT_PERIOD)
+	GreasePencilMark.set_dropouts(_mat, GreasePencilMark.WORD_DROPOUT_GAP)
 	_wax.material = _mat
 	_wax.draw.connect(_draw_text.bind(false))
 	add_child(_wax)
