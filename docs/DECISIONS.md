@@ -31,6 +31,69 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-05 — Parity fix — combat backdrop (designer group ruling)
+Designer group ruling 2026-10-05: combat matches the concept. Audit items CMB-01, BOSS-03, BACKDROP-01, BACKDROP-02,
+MOTION-07 (`docs/art_review/PARITY/GAPS.md`); references `round26_hq_targets/combat_solace.jpg`,
+`site_solace_night.jpg`, `round41_wheel_stack/combat_worst_case_v4.png` (art-concepts-r43); builds on 8w's D17 city
+backdrop (CombatBackdrop's own CityView3D, `BackdropCatalog.city_mode` / `city_shot`). Ideas from TITLE-01 (a backdrop
+look of its own, the concept's numbers in config), not its files.
+- **Cause of the dim (MOTION-07).** The still (an sRGB JPEG bake of the concept) showed lit; when the city's model came
+  in, `combat_backdrop.gdshader` drew the close-up's ViewportTexture, which reaches the shader as linear values, and
+  showed them as they were: the render's mid-tones about four times darker (measured windowed with the grade off:
+  frame 0.027 against its own render's 0.10), over the Grid's already dark night ramp. No timer or dim step; the
+  hand-over itself darkened the scene.
+- **The lit close-up.** (1) The backdrop's city gets its own lit night look through `CityView3D.set_night_share` at
+  share 0 (`BackdropCatalog.city_look`: CityConfig `backdrop_ramp` (the concept's blue-grey), `backdrop_sky`,
+  `_haze`, `_grade`, `_bloom`, `_glow_threshold`); a new optional `night` key keeps rain and fog, and
+  `landmarks_night` picks the landmarks' look per shot: an HQ in its day materials (the pale lit helix of
+  combat_solace; `backdrop_hq_landmarks_night` false), a Site building and the DISPATCH canyon at night (the lit
+  cross; `backdrop_site_landmarks_night` true). (2) A canvas grade on the city only (`city_grade`, never the stills):
+  each pixel's value V -> 1 - (1 - V)^`backdrop_exposure` (4.6) with its hue kept (no neon clips to white), times
+  `backdrop_tint`, toward its grey by `backdrop_saturation` (0.72, the rain-calmed neon); `CombatBackdrop.graded`
+  mirrors it. **Measured** (windowed hq_run_lab, 1920x1080, tier 2, mean relative luminance between the bands):
+  before 0.017-0.049, after 0.050-0.099; the concept stills (`backdrop_luma_band` 0.05-0.19) 0.053-0.187.
+- **HUD and wheels keep their contrast.** The pools behind the wheels darken more: `backdrop_pool_dark` 0.55 (was the
+  shader's 0.45; leaves 45 %), `backdrop_pool_falloff` 4 (both now config). Checked on the settled close-up: the HP
+  numbers (WheelView.HP_COLOR) 4.5:1, the slice numbers 4.5:1, each wheel's edge (accent ring, HP arc or ink frame)
+  3:1, for every corporation's accent and the Cell's pink.
+- **Framing (BACKDROP-01, 8w's cut helix).** A boss fight fits the corp's whole HQ landmark into
+  `backdrop_hq_frame` (0.32, 0.05, 0.36, 0.85 of the view: between the wheels, its tip under the top bar, its foot
+  behind the hand) with `BackdropCatalog.fit_box` (ortho never under `backdrop_hq_ortho`); only the landmark's body
+  counts (`backdrop_fit_keep` "solid": not the beams and the eye's rays over the ground). Per corp in config:
+  `backdrop_hq_fit_keep_by_corp` (Meridian fits its crane, not the 180 BU yard and train: the concept's crane between
+  the wheels), `backdrop_hq_frame_by_corp`, `backdrop_hq_ortho_by_corp` (empty). The DISPATCH canyon is unchanged.
+- **Site fights (BACKDROP-02).** The corp's Site landmark (`<corp>_site.glb`: Solace's clinic, Halcyon's court,
+  Orbital's) stands on the run's Site lot in the close-up (`CityView3D.set_site_landmark`), as the stills give each
+  corp one Site building, fitted into `backdrop_site_frame`; Meridian (no Site landmark) keeps the lot's nearest
+  building. Sites at the city's edge (the territories reach it) are stood `backdrop_site_inset` (28) lots inside
+  `city_rect` (`site_close_up_lot`), so the frame is city all round rather than half the bare plane past the edge.
+  The won lights (5d) and OURS NOW follow the moved lot.
+- **Camera.** `backdrop_site_pitch_deg` 34 (looking across the city at the building, as site_solace_night);
+  `backdrop_hq_pitch_deg` 40, the city's own: 22-30 read closer to combat_solace's low angle but showed so much
+  city to the horizon that the close-up took 9-10.5 ms at 1080p.
+- **Budget.** The close-up renders at most `backdrop_render_height` 640 px tall and is drawn scaled
+  (`CombatBackdrop.render_px`; it sits softened behind the wheels). Measured windowed (hq_run_lab, 1920x1080, three
+  runs on a shared machine): tier 2 HQ close-ups 5.0-7.8 ms, Sites 4.4-7.8 ms, canyon 4.4 ms; tier 1 1.9-5.1 ms; all
+  under `budget_ms` 8; frames held 16.7 ms.
+- **BOSS-03.** The white bead chain was the helix's chaser lights on the dark night helix; with the day landmark
+  look they sit in the pale green helix as the concept's and no longer read as a UI element. The boss phase look
+  needs nothing more from the backdrop (phase 2 checked).
+- **Kept.** Tier 0 and headless keep the baked stills, ungraded; the masked still won path; reduce effects / skip
+  land the won look at once; no motion entry changed.
+- **Tests.** New `tests/unit/test_parity_arena_backdrop.gd` (fast): the band is the concept stills'; the settled
+  close-up (fixtures `tests/fixtures/arena_backdrop/*.png`: point samples of each close-up's own render from
+  `hq_run_lab --raw`, decoded to linear as the shader receives them, graded by `CombatBackdrop.graded`) stays in the
+  band and without the grade drops under it (MOTION-07 reproduced); the grade keeps neon hues and ink; HUD / slice /
+  wheel-edge contrast over the backdrop; every corp's HQ landmark whole inside its frame at 1280x720 and 1920x1080;
+  every Site of every corp frames its lot (landmark in `backdrop_site_frame`, won lights on it); the look per shot;
+  tier 0 / headless stills. Changed: `test_hq_run_city.gd` `test_the_backdrop_takes_the_city_close_up_by_tier_and_frames_the_place`
+  (a Solace Site is now the `site_landmark` shot on the inset lot, ortho at least the Site framing's). No test dropped.
+- **Review:** `docs/art_review/PARITY/fixes/ARENA.jpg` (concept | before | after: Solace boss phase 2, Solace Site,
+  Meridian boss worst case; Halcyon boss, Orbital Site and the D17 won state after).
+- **Files outside the area (smallest change):** `scripts/city3d/city_view_3d.gd` (`set_night_share`: the optional
+  `night` / `landmarks_night` keys, 3 lines), `scripts/city3d/city_config.gd` (the `backdrop_*` fields),
+  `tools/design_lab/arena_lab.gd` (`--site=`; a quit fix when no `--scale` is given),
+  `tools/art_pipeline/hq_run/hq_run_lab.gd` (`--raw=`), `tests/unit/test_hq_run_city.gd` (above).
 ### 2026-10-05 — Parity fix — combat wheels (designer group ruling)
 
 Designer group ruling (2026-10-05): combat matches the concept; mechanics the rules lack stay
@@ -8888,6 +8951,16 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **Parity fix combat backdrop (2026-10-05, built, see "Parity fix — combat backdrop"):** (1) every Site fight of a
+  corporation stands its one Site landmark (Solace's clinic ...) on that Site's lot in the close-up, as the stills
+  did, and a Site at the city's edge is stood 28 lots inside: keep, or only the landmark's own Site gets the
+  building? (2) The HQ close-up keeps the city's 40 degree pitch for the 8 ms budget; combat_solace's lower angle
+  (22-30) costs 9-10.5 ms at 1080p: keep 40, or lower it with a cheaper city for the backdrop (a slice: a backdrop
+  LOD / far-chunk cut in CityView3D)? (3) Finding for the other city views: a 3D city ViewportTexture read in a
+  canvas shader arrives as linear values (shown as they are it is ~4x darker in the mid-tones); the Grid, HQ-run
+  and raid pages draw the same texture and may show the city darker than its render. Proposed slice: measure each
+  view's frame against its `get_texture().get_image()` and, where they differ, decode in that view (designer to rule
+  whether the Grid's current darker look is the intended one).
 - **ART-12 12p Steam Deck run (owed, 2026-10-05):** no Steam Deck was available. The Deck tier
   (`city_quality` 1) was measured on the dev PC only (interim, under load; `docs/art_review/ART-12/perf.md`).
   A real Deck run of `tools/visual_qa/perf_pack.tscn --tiers=1 --size=1280x800` is owed when the
