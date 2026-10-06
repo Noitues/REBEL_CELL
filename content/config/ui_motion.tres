@@ -3729,7 +3729,7 @@ delay = 0.0
 ease = 2
 trans = 1
 amplitude = 0.0
-tier = 1
+tier = 2
 
 [resource]
 script = ExtResource("1_motion")
