@@ -712,7 +712,7 @@ is "parked" in a dashed slot with a yellow pencil arc to its target. Build and m
 cards (`TURRET` / `ICE LOCK` / `DECOY`, `HP 10 1 LEFT`) inside a `DEFENSE LOADOUT // ARMORY 3/6`
 terminal panel with `1 Pick a node / 2 Press a card` steps. View: the concept's row frees the map
 and reads as "hand of cards"; main's panel is clearer about the steps. Likely file:
-`scripts/ui/kit/asset_card.gd`, `hq_scene.gd` (raid setup layout). Decision:
+`scripts/ui/kit/asset_card.gd`, `hq_scene.gd` (raid setup layout). Decision: **Follow the concept (designer group ruling 2026-10-05).** The card is the concept's own dark sticker card, baked by its generator (`bake_defence_cards.py`, ui19.asset_card), with INT n, xN and two rule lines written live; the PARKED zone round a carried card. The row along the map's foot is the DEFENCE hand's layout: handed to HQ-BUILD (`hq_scene.gd`). sheet `fixes/RAID.jpg`.
 
 **RAID-02 (P1) Work order paper overlaps.** Main: the instruction line (`The corp is raiding your
 CORE. Place defences...`) is set straight over the city above the paper, unboxed and hard to read;
@@ -727,7 +727,7 @@ paper, values clear. Build: no paper (terminal panel). View: main's paper is the
 A/B/C, unit sprites along the bottom. Main: corp-tinted (Solace green) holo, `DECRYPTED` stamp over
 the panel's own header (`THREAT INTEL //` and `KEY 4C-E7` partly covered), a single small unit icon
 and a pencil-crossed dial `5`. Build: none. View: main follows the concept; the stamp should not
-cover the header. Likely file: `scripts/ui/kit/raid_intel_strip.gd`, `raid_holo.gd`. Decision:
+cover the header. Likely file: `scripts/ui/kit/raid_intel_strip.gd`, `raid_holo.gd`. Decision: **Fixed (concept).** DECRYPTED at the holo's foot on its seal, never over the header or a row; the strip leaves it its width. The concept's bigger unit sprites need the DEFENCE layout's room (HQ-BUILD). sheet `fixes/RAID.jpg`.
 
 **RAID-04 (P2) Links and threat pencil.** Main: the same glow veil as GRID-01 under the network,
 hex `T1` badges on each node, red pencil arrows A/B. Concept: dashed yellow cable lines, small
@@ -735,37 +735,37 @@ diamond pads, red pencil routes with lettered entry marks. Build: green wirefram
 GRID-01 (`city_map_overlay.gd`), plus the raid's node badges (`raid_socket.gd`). Decision:
 
 **RAID-05 (P2) Page title.** Concept: `RAID SETUP` title sticker top left. Main and build: the top
-bar's words `03 CELL DEFENSE RAID SETUP`. Likely file: `hq_scene.gd`, `hud_bar.gd`. Decision:
+bar's words `03 CELL DEFENSE RAID SETUP`. Likely file: `hq_scene.gd`, `hud_bar.gd`. Decision: **Follow the concept: handed to HQ-BUILD** (the title sticker is `hq_scene.gd` / the top bar, the HQ redesign's Q1 / Q6; nothing in the raid kit).
 
 **RAID-06 (P2) Right column bottom.** Main: `YOUR NETWORK_` terminal (concept: top left, every node
 listed with HOLDS / DISABLED chips), a floating `MORE BELOW` chip inside it, `Back to HQ`, the
 START DEFENSE sticker, the speed strip `1x 2x 4x SKIP STEP --/30`. Concept: START DEFENSE sticker
 and the speed strip bottom right, `IF PLACED` forecast terminal on the right. View: main lacks the
 IF PLACED forecast (it exists as text elsewhere?) and the network list sits where the forecast
-goes. Decision:
+goes. Decision: **Follow the concept: handed to HQ-BUILD** (YOUR NETWORK top left, START DEFENSE and the Speed / Skip strip bottom right, the IF PLACED terminal on the right are the page's layout, `hq_scene.gd`). The IF PLACED terminal itself exists (the drag pencil's, beside the node in reach); a standing forecast by wave is G9, listed.
 
 **RAID-07 (P2) Carried defence card (main only).** Main: the card ghost lifted with a long yellow
 pencil line from it to the bottom-right corner (the pointer, off the map), not to a node. Concept:
 the arc runs from the parked card to the hovered node with a target loop. The harness parks the
 pointer at the corner, so part of this may be the capture; the line should still end on the
-nearest valid node when the pointer is off the map. Likely file: `raid_drag_pencil.gd`. Decision:
+nearest valid node when the pointer is off the map. Likely file: `raid_drag_pencil.gd`. Decision: **Fixed (concept).** Off the map the arrow ends on the nearest node that takes the defence; the parked card sits in the dashed PARKED zone, as its own die-cut sticker. sheet `fixes/RAID.jpg`.
 
 **RAID-08 (P1) START DEFENSE sticker during the playout.** Main, mid-playout: the START DEFENSE
 sticker is drawn over the MAP LEGEND (tilted, mid-exit) while the units move. Build: the button is
 gone once pressed. View: a defect (either its exit motion is not over at the capture frame, 2 frames
 per step, or it is left behind). Likely file: `hq_scene.gd` raid playout start / `raid_beats.gd`.
-Decision: **Defect fixed, designer approved 2026-10-05, 06b5f55** (START DEFENSE peels off where it was pressed: it was placed from the strip before the playout page was laid out; the red pencil arrow there is the threat route to CORE, an open question; sheet `fixes/RAID-08.jpg`).
+Decision: **Defect fixed, designer approved 2026-10-05, 06b5f55** (START DEFENSE peels off where it was pressed: it was placed from the strip before the playout page was laid out; the red pencil arrow there is the threat route to CORE, an open question; sheet `fixes/RAID-08.jpg`). The threat arrow: **fixed in "Parity fix — raid"** (the playout never frames Sites off the raid map, keeps CORE and the route ends in each step's frame; the frame centres on its points' box; sheet `fixes/RAID.jpg`).
 
 **RAID-09 (P2) Live feed and Continue.** Build: a paper `PLAYOUT` note with the steps, pink
 Continue. Main: `> LIVE RAID FEED_` terminal with a red edge, first line clipped at the top, speed
 chips inside; `Continue` as a big grey (disabled) sticker until the end. View: the grey sticker
 reads as broken rather than "wait"; the build's paper note is warmer. Likely file:
-`scripts/ui/kit/raid_feed.gd`, `raid_playout_panel.gd`. Decision:
+`scripts/ui/kit/raid_feed.gd`, `raid_playout_panel.gd`. Decision: **Fixed (feed).** The feed's top line is whole (a clipped view that starts on a feed line); the wheel reads back. Continue's grey waiting sticker is `hq_scene.gd`: handed to HQ-BUILD. sheet `fixes/RAID.jpg`.
 
 **RAID-10 (P2) Result call-out.** Build: a red label sticker `HOME -10 · HOLDS` with a pointer over
 the CORE and a big pink `-10`. Main: small red/yellow pencil words `HOME -10 HOLDS` on the map, a
 pink `-5` floating near the legend, the CORE pad. View: the build's call-out is far easier to read
-at a glance. Likely file: `scripts/ui/kit/raid_verdict.gd`, `raid_report_pencil.gd`. Decision:
+at a glance. Likely file: `scripts/ui/kit/raid_verdict.gd`, `raid_report_pencil.gd`. Decision: **Open (designer).** The call-out is `raid_fx_layer.gd`'s banner (the map layer, outside the raid kit); the round 40 concept keeps it grease pencil. Proposed slice: the pencil banner at the DISPLAY step with a leader to CORE. DECISIONS "Open questions".
 
 **RAID-11 (P1) After-action report.** Main follows the concept (paper report, CELL HOLDS sticker,
 BACK TO THE GRID sticker) but the `CLASSIFIED` stamp covers the CORE row's value
@@ -774,7 +774,7 @@ losses. Concept: the stamp sits on the redaction bars. Build: a terminal list. L
 `raid_paper.gd` (stamp placement). Decision: **Defect fixed, designer approved 2026-10-05, 9707992** (CLASSIFIED on the redactions, never on the CORE row; the red HOSTILE HOME SERVER is a look call, left; sheet `fixes/RAID-11.jpg`).
 
 **RAID-12 (P3) CELL HOLDS and result disc.** Main: result disc top left plus CELL HOLDS sticker;
-concept: the sticker centre-left, no disc (the paper carries the numbers). Decision:
+concept: the sticker centre-left, no disc (the paper carries the numbers). Decision: **Follow the concept: handed to HQ-BUILD** (the disc and the sticker's spot are placed by `hq_scene.gd`'s report page).
 
 **RAID-13 (P1) Map behind the raid interlude.** Build: the network board (nodes, links, threat
 arrows) behind the interlude panel. Main: the old 2D wireframe city (green / cyan, no network, no

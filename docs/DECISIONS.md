@@ -350,6 +350,71 @@ Designer (Noitues), 2026-10-05 evening: "I want my main to look just like art pa
   before any fix. This replaces "the art pass design is correct, follow it without asking" for parity work. Bug fixes
   that are not a look choice (test reds, overlaps) still go ahead.
 
+### 2026-10-05 — Parity fix — raid (designer group ruling)
+Designer group ruling 2026-10-05: the raid **matches the round 40 concept** (`raid_view_v3`, `raid_gifs/`, tag
+art-concepts-r43; ART_BIBLE v2 §4.8); mechanics the rules lack (G8 / G9: defence INT counts beyond the Armory's,
+EXPOSED, the IF PLACED forecast by wave) stay listed, not built. Parity ids RAID-01, 03, 05, 06, 07, 09, 10, 12 and
+the RAID-08 threat arrow (the S-OVERLAPS leftover). Only the raid kit's files changed (how a card, paper or panel
+looks and lays itself out), plus one function outside it (below); the raid setup's page layout is HQ-BUILD's (the
+DEFENCE hand of direction B), so the items that need `hq_scene.gd` are handed to it, listed at the end. The cards and
+panels keep the concept's restrained palette (dark card faces, the asset's one colour; the city's dimming is S-MAPVIEW's).
+Tests: `tests/unit/test_parity_raid.gd` (new; text 1.0 / 1.6 / 2.0 where it applies). Sheet (concept | before | after):
+`docs/art_review/PARITY/fixes/RAID.jpg`.
+- **RAID-01, the defence card is the concept's dark card (reuse rule).** `tools/art_pipeline/raid/bake_defence_cards.py`
+  runs the concept's own `ui19.asset_card` (round 19 `TRAY`, `sticker_lib19.build_sticker`) on tag art-concepts-r43,
+  unchanged, with the concept's seeds (screens19 50 + i, SENTRY 61); the wrapper only makes the concept's `Pen.text` a
+  no-op, so the card's words are written live (translated): the dark face, the glyph window with the round 17 glyph in
+  the asset's colour, the colour band, the white die-cut and gloss are the bake's (`assets/raid/cards/<id>.png` at 2x,
+  + manifest with the face's box and each colour). `AssetCard` draws it with the concept's words at the concept's
+  spots: the name (display face), `INT n` in the asset's colour, `xN` (the count), and two rule lines: what it does
+  (the existing effect line, "HITS 4 · REACH 1", "HOLDS 2 STEPS", "LURES, PULL 3") and how it picks (new: "first in
+  path", "weakest threat", "hardest hitter", "own node only", "threats route to it"; from `targeting`, `range_hops`,
+  `decoy_pull`). Hot: the card lifts 4 px with an acid edge; disabled: the face shaded (0.3). A narrower slot (6w's
+  row fit at 2.0) shrinks the whole card evenly (never squashed). The words shrink together to the face (a row
+  shares one lettering size). **Calls:** (1) the card is 105 x 120 at 1.0 (the concept's aspect at the old card's
+  height: a taller card took the map's room and pushed Orbital's network under the key,
+  `test_late_campaign_raid_map_fits_with_its_key_clear`); (2) the words follow the concept, "INT 10" and "x1" (were
+  "HP 10" and "1 LEFT"; the tooltip explains both); (3) **HONEYPOT** has no concept card: the same generator with the
+  concept's VAULT glyph (a honeypot is a fake vault) in the concept's PINK, seed 62. The parked card (RAID-07) is the
+  same sticker: its vinyl draws no second border (`die_cut_radius`), only the slap.
+- **RAID-07, the carried card.** The parked card sits in the concept's dashed **PARKED** zone (white dashes, the word
+  in the top edge). The yellow arrow follows the pointer over the map; off the map (outside the map nodes' box grown by
+  `MAP_REACH_SHARE` 0.25: over a panel, the screen's corner) it ends just outside the nearest node that takes the
+  defence (ties by target id), never at the screen's corner (`RaidDragPencil.aim_end`). The dock circle and the IF
+  PLACED terminal still draw only on a node in reach (dropping is unchanged: the DropLayer does every drop).
+- **RAID-03, THREAT INTEL.** DECRYPTED sits at the holo's foot on its seal, right, never over the header's title, the
+  corp's net or the key line; the scanned threats strip leaves it its width (`RaidIntelStrip.reserve_right`); with no
+  strip (big text) the holo's foot keeps the stamp's height. The header's words now take the full width. The holo's
+  corp tint is unchanged (Solace green, Meridian orange: the concept's rule). **Call:** the concept's bigger unit
+  sprites were tried (radius 14) and dropped: the taller holo took the map's room (the same key test); a holo of the
+  concept's size needs the DEFENCE layout (HQ-BUILD).
+- **RAID-08 (S-OVERLAPS leftover), the threat arrow under the MAP LEGEND.** Cause found: the raid's events name the
+  corporation's Sites off the raid map (where a threat moves between entries; the raid map shows only the major
+  nodes); framed, they had no spot (the grid's origin) and dragged the camera off CORE. The playout frames only Sites
+  on its map (`RaidPlayoutPanel.on_map`), and every step keeps CORE and the route end of each threat it moves in frame
+  (`RaidBeats.route_ends`, `framed_sites`). Outside the kit (smallest change, `wireframe_background.gd`
+  `frame_points`): the frame centres on its points' box, not their mean (the playout's first frame adds CORE and the
+  entries again, so the mean sat by the entries and CORE fell outside the fitted frame). The route is not clipped.
+- **RAID-09, the live feed.** The feed follows its newest line with a whole feed line at the top (its label's own
+  scroll followed the foot and cut the first line in half): the lines are laid out whole (`fit_content`) in a clipped
+  view that starts on a line of the feed (a paragraph, never a wrapped tail). The wheel reads back a line at a time.
+- **Not in the kit (handed to HQ-BUILD, `hq_scene.gd`):** RAID-01's row placement (the cards along the map's foot as the
+  DEFENCE hand, the steps panel gone), RAID-05 (the RAID SETUP title sticker; the HQ redesign's Q1 / Q6), RAID-06 (YOUR
+  NETWORK top left, START DEFENSE with the Speed / Skip strip bottom right, the IF PLACED terminal on the right),
+  RAID-09's Continue (a grey sticker while it waits), RAID-12 (CELL HOLDS centre left and no result disc on the report).
+  RAID-10's result call-out is `raid_fx_layer.gd`'s banner (the map layer, not this kit): the concept keeps it pencil;
+  proposed slice: the banner at the DISPLAY step with a pencil leader to CORE (open question below).
+- **Tests:** new `tests/unit/test_parity_raid.gd` (full tier: it plays a raid): every content asset has its baked card,
+  manifest entry and colour; the words are the concept's and end on the face at every text size; the rule lines; a
+  narrowed card keeps its aspect; DECRYPTED is off the header and every row, the strip ends left of it; off the map the
+  arrow ends on the nearest node that takes it (not the refusing one), over the map it follows the pointer; route ends,
+  framed Sites, Sites off the map never framed, CORE stays in the fight's frame through a live playout; the frame
+  centres on its box; the feed's top line is whole and its newest line in view. Changed (look pinned, behaviour kept):
+  `test_horizontal_pass23_screens` reads "INT" / "xN" (was "HP" / "LEFT"). No test dropped. New words exported.
+- **Known red not from this slice:** `test_anim4_drag_drop::test_asset_drop_on_its_node_row_hits_the_row_and_matches`
+  (YOUR NODES row off screen) and `test_anim_r5_city::test_the_runs_pages_open_on_their_bake_behind_the_3d_route`
+  (shop) fail on main without these changes too (checked by restoring main's files).
+
 ### 2026-10-05 — Parity fix — overlap defects
 Defects that are wrong whichever look is chosen (designer approved 2026-10-05; `docs/art_review/PARITY/GAPS.md`
 SHOP-01, GRID-03, GRID-12, GRID-13, RAID-02, RAID-08, RAID-11, END-06). Only the overlap itself is fixed; no look
@@ -8907,6 +8972,16 @@ and annotated in the GDD where it changes a rule.
   the playout's step framing keeps CORE and the route's end in the map's free part (or clips the route at the
   legend). Default: unchanged. (2) GRID-12: Meridian's map still shows about 12-19% fog past the city's edge (its
   network is on the edge); a further step is a zoom-in that leaves the farthest Sites to the minimap. Default: no zoom.
+- **Parity fix — raid (2026-10-05, defaults built, see "Parity fix — raid (designer group ruling)"):** (1) the
+  defence card is 105 x 120 at 1.0 (the concept's aspect at the old height; the concept's own card is larger and its
+  words bigger): at 1.6 / 2.0 its words shrink to the face, so they read about as at 1.0. A bigger card waits on the
+  DEFENCE hand's room (HQ-BUILD). Keep? (2) HONEYPOT's card (no concept card): the VAULT glyph in PINK. Keep? (3) RAID-10:
+  keep the result call-out pencil (the concept) but at the DISPLAY step with a pencil leader to CORE
+  (`raid_fx_layer.gd`, its own slice), or the build's red label sticker? Default: unchanged until ruled. (4) The
+  playout opens on CORE and the entries at the closest zoom (`hq_scene._frame_city`, HQ-BUILD's file): on a spread
+  network CORE starts off the frame until step 1's frame eases in; open with the step framing instead?
+- **Parity fix overlap defects (1) RAID-08:** answered by "Parity fix — raid": the playout never frames Sites off the
+  raid map, keeps CORE and the route ends in each step's frame, and the frame centres on its points' box.
 - **Parity fix SLOTS-01/02:** answered by the designer 2026-10-05 (see "Parity fix — campaign slots follow-up"):
   manila folders stay; DELETE is a sticker too (two sticker verbs on this page).
 - **Parity NEWC (2026-10-05, default implemented, see "Parity fix — new campaign page"):** (1) a locked REBEL_CELL
