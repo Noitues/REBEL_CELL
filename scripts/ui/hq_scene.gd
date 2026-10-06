@@ -1634,6 +1634,9 @@ func _build_hq_page(page_name: String) -> void:
 	launchable.append_array(RunManager.patrol_sites())
 	if selected_site == &"" or CampaignRules.site_data(corp, selected_site) == null:
 		selected_site = launchable[0].id if not launchable.is_empty() else c.grid.home_site_id
+	# HQ-B (e): a saved run waiting: its Site is the selection (its resume jacks along that link).
+	if RunManager.has_active_run() and not raid_mode and CampaignRules.site_data(corp, resume_site()) != null:
+		selected_site = resume_site()
 	if selected_op() != null:
 		selected_operative = selected_op().id
 	var pending := RunManager.pending_raid()
@@ -2228,19 +2231,27 @@ const RAID_MID_RUN := "raid incoming mid-run" # TR
 ## HQ-B (bible 1.3: a word over its system word): what JACK IN does, as the deck types it:
 ## `> jack --from <owned end> --to <Site>`; with a raid pending, `raid incoming mid-run` (Q3).
 func jack_system_word(site: SiteData) -> String:
+	var at := site
 	if RunManager.has_active_run():
-		return "> jack --resume"
-	if site == null:
+		# The resume jacks along the saved run's own link.
+		at = CampaignRules.site_data(RunManager.corporation, resume_site())
+	if at == null:
 		return ""
-	var link := RunManager.jack_link(site.id)
-	var word := "> jack --from %s --to %s" % [String(link.get("from", "")), String(link.get("to", site_name(site.id)))]
-	return word
+	var link := RunManager.jack_link(at.id)
+	return "> jack --from %s --to %s" % [String(link.get("from", "")), String(link.get("to", site_name(at.id)))]
 
 
-## HQ-B: JACK IN while a saved run waits: back into it (one run at a time).
+## HQ-B (e): the Site a saved run was started on (&"" with none waiting): its resume jacks along
+## that Site's link on the HQ's city, as every netrun start does.
+func resume_site() -> StringName:
+	return RunManager.netrun.run.site_id if RunManager.has_active_run() else &""
+
+
+## HQ-B (e): JACK IN while a saved run waits: back into it (one run at a time) with the same
+## link jack (4.6) from its Site (the deck monitor's CRT push is gone with the deck).
 func resume_run() -> void:
 	if not RunManager.scene_change_pending():
-		RunManager.go_to_netrun()
+		RunManager.go_to_netrun(Callable(), resume_site())
 
 
 ## HQ-B: the HQ's map graph: every Site as the Grid draws it (v4 markers, links, threat

@@ -15,7 +15,7 @@ extends Control
 ## terminal dropped). Writes `s<scale>_<state>.png` (1280x720).
 
 const HQ := preload("res://scenes/hq/hq_scene.tscn")
-const ALL := ["idle", "site", "claim", "repair", "upgrade", "patch", "defence", "market", "zoomed_out", "heat"]
+const ALL := ["idle", "site", "claim", "repair", "upgrade", "patch", "defence", "market", "zoomed_out", "heat", "jack"]
 const SETTLE := 40
 const WAIT := 900
 ## The lab campaign: the design's moment (Meridian, Heat 58, a raid pending, four crew).
@@ -25,6 +25,8 @@ const HEAT := 58
 const NODES: Array[StringName] = [&"safehouse", &"firewall_relay"]
 ## Wheel notches out for `zoomed_out`.
 const ZOOM_OUT_NOTCHES := 9
+## Frames into the jack for `jack` (the link lit, before the switch).
+const JACK_FRAMES := 14
 
 var out_dir := ""
 var states: Array = ALL
@@ -58,6 +60,11 @@ func _run() -> void:
 			print("hq_b_lab: x%.1f state %s" % [sc, s])
 			await _screen(s)
 			await _shot("s%.1f_%s" % [sc, s])
+			if s == "jack":
+				# The jack switches to the run's scene: the lab ends here (run `jack` last).
+				print("hq_b_lab: done")
+				get_tree().quit(0)
+				return
 			_clear()
 			await _frames(2)
 	print("hq_b_lab: done")
@@ -201,4 +208,10 @@ func _screen(state: String) -> void:
 				print("hq_b_lab: ortho %.0f band %d" % [RaidZoomFit.ortho_of(hq.wireframe.city.scale.x, hq.size.x), hq.wireframe.city.band_lock])
 		"heat":
 			hq.toggle_heat_terminal()
+		"jack":
+			# HQ-B (e): JACK IN plays the 4.6 link jack on this city; caught mid-jack.
+			await _settle()
+			(hq._panel.find_child("Launch", true, false) as Button).pressed.emit()
+			await _frames(JACK_FRAMES)
+			return
 	await _settle()
