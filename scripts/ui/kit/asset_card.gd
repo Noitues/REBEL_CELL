@@ -32,8 +32,8 @@ const TEXT_LEFT := 12.0
 const TEXT_RIGHT := 138.0
 const NAME_TOP := 84.0
 const FOOT_PAD := 6.0
-## The concept's grey for the rule lines (ui19: (190, 186, 205)).
-const RULE_COLOR := Color(190.0 / 255.0, 186.0 / 255.0, 205.0 / 255.0)
+## The rule lines' grey (the concept's ui19 (190, 186, 205); the nearest Palette token).
+const RULE_COLOR := Palette.TEXT_MID
 ## The disabled shade over the face (the numbers stay readable under it).
 const DISABLED_SHADE := Color(0, 0, 0, 0.3)
 ## Hot (hovered / focused): the card lifts this many px (x the face's k) and gets an acid edge.
@@ -108,7 +108,7 @@ static func color_of(id: StringName) -> Color:
 	if cards.has(String(id)):
 		var c: Array = (cards[String(id)] as Dictionary).get("color", [])
 		if c.size() >= 3:
-			return Color8(int(c[0]), int(c[1]), int(c[2]))
+			return Color(float(c[0]) / 255.0, float(c[1]) / 255.0, float(c[2]) / 255.0)
 	return AssetIcon.color_of(id)
 
 
@@ -191,7 +191,7 @@ func _draw() -> void:
 	var face := face_rect()
 	var k := face_k()
 	var col := color_of(asset_id)
-	var round_box := func(fill: Color, rect: Rect2, edge: float = 0.0, edge_col: Color = Color.TRANSPARENT) -> void:
+	var round_box := func(fill: Color, rect: Rect2, edge: float = 0.0, edge_col: Color = Palette.AUTO) -> void:
 		var sb := StyleBoxFlat.new()
 		sb.bg_color = fill
 		sb.set_corner_radius_all(roundi(CORNER * k))
@@ -209,7 +209,7 @@ func _draw() -> void:
 		round_box.call(Palette.NIGHT_SKY, face)
 		AssetIcon.draw_icon(self, face.position + Vector2(FACE_PX.x * 0.5, WINDOW_CENTRE_Y) * k, WINDOW_ICON_R * k, asset_id, false)
 	if _hot and not disabled:
-		round_box.call(Color.TRANSPARENT, card.grow(HOT_EDGE), HOT_EDGE * Settings.text_scale, Palette.CELL_ACID)
+		round_box.call(Palette.AUTO, card.grow(HOT_EDGE), HOT_EDGE * Settings.text_scale, Palette.CELL_ACID)
 	var lay := _layout()
 	var left := face.position.x + TEXT_LEFT * k
 	var right := face.position.x + TEXT_RIGHT * k

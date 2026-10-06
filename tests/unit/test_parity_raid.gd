@@ -46,7 +46,7 @@ func test_every_defence_asset_has_the_concepts_baked_card_and_colour() -> void:
 		var col: Array = ((m.get("cards", {}) as Dictionary).get(String(d.id), {}) as Dictionary).get("color", [])
 		assert_eq(col.size(), 3, "%s has its concept colour" % d.id)
 		if col.size() == 3:
-			assert_eq(AssetCard.color_of(d.id), Color8(int(col[0]), int(col[1]), int(col[2])), "%s is drawn in it" % d.id)
+			assert_eq(AssetCard.color_of(d.id), Color(float(col[0]) / 255.0, float(col[1]) / 255.0, float(col[2]) / 255.0), "%s is drawn in it" % d.id)
 
 
 func test_card_words_are_the_concepts_and_sit_on_the_face_at_every_text_size() -> void:

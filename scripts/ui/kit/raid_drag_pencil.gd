@@ -35,7 +35,7 @@ const PARKED := "PARKED" # TR
 const PARK_ZONE_MARGIN := 14.0
 const PARK_ZONE_DASH := 7.0
 const PARK_ZONE_W := 1.5
-const PARK_ZONE_INK := Color(1, 1, 1, 0.55)
+const PARK_ZONE_INK := Color(Palette.STICKER_DIE_CUT, 0.55)
 ## Parity RAID-07: the map's part, the box round the map's nodes grown by this share of its size
 ## each way; a pointer outside it (over a panel, the screen's corner) is off the map and the arrow
 ## ends on the nearest node that takes the defence instead. The map's node targets' id prefix.
