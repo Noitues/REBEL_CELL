@@ -35,10 +35,12 @@ static func steady(_layer: int, reduce_motion: bool, live: bool) -> bool:
 	return not live or reduce_motion
 
 
-## True when the sky-lane cars draw at all: not under reduce motion (markers only) and
-## not in the netrun transit (bible 4.1).
-static func sky_cars_shown(reduce_motion: bool, netrun_view: bool) -> bool:
-	return not reduce_motion and not netrun_view
+## True when the sky-lane cars draw at all: not under reduce motion (markers only); in the
+## netrun transit only at a close-up, in the CLOSE tier (bible 4.1 turns the transit's car
+## layer off; round 40 `cars_lod` shows CLOSE at a netrun close-up: ART-7 7w, the art pass
+## is correct).
+static func sky_cars_shown(reduce_motion: bool, netrun_view: bool, close_tier: bool = false) -> bool:
+	return not reduce_motion and (not netrun_view or close_tier)
 
 
 ## True when street cars draw their streaks (none under reduce motion).

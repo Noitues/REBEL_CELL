@@ -251,9 +251,7 @@ func set_iso(cam: CityIsoCamera) -> void:
 	camera.size = iso.ortho
 	_ground_cam.global_transform = camera.global_transform
 	_ground_cam.size = iso.ortho
-	var lod := CityIsoCamera.lod_of(cfg, iso.ortho)
-	if band_lock == CityLod.Band.GRID:
-		lod = maxf(lod, cfg.see_through_lod_to)
+	var lod := view_lod(cfg, iso.ortho, band_lock)
 	var op := CityLod.opacity(cfg, lod)
 	var city := CityLod.city_share(cfg, lod)
 	_post.set_shader_parameter("opacity", op)
@@ -278,6 +276,18 @@ func set_iso(cam: CityIsoCamera) -> void:
 		band = band_now
 		band_changed.emit(band)
 	camera_changed.emit(iso)
+
+
+## The zoom level the look follows at `ortho` for a host holding band `lock` (-1: none):
+## the Grid is solid at any zoom; ART-7 7w: a page holding the netrun (or raid) band is
+## see-through at any player zoom (bible 4.1 translucency rule).
+static func view_lod(c: CityConfig, ortho: float, lock: int) -> float:
+	var lod := CityIsoCamera.lod_of(c, ortho)
+	if lock == CityLod.Band.GRID:
+		return maxf(lod, c.see_through_lod_to)
+	if lock == CityLod.Band.NETRUN or lock == CityLod.Band.RAID:
+		return minf(lod, c.see_through_lod_from)
+	return lod
 
 
 ## Resizes the viewport (and the ground pass) to `px` and keeps the camera's frame.

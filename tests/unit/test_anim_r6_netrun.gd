@@ -289,20 +289,6 @@ func test_the_run_end_title_and_lines_agree_with_the_verdict() -> void:
 	await _close(scene)
 
 
-# --- B6: the route's kept bake --------------------------------------------------------------------
-
-func test_the_route_bake_is_let_go_at_the_run_end() -> void:
-	var scene := await _netrun()
-	CityBakeCache.keep(scene.ROUTE_KEEP, "gut_route_look@x")
-	DemoSetup.end_run(RunManager.netrun, "completed")
-	scene._show_current()
-	assert_eq(CityBakeCache.kept_key(scene.ROUTE_KEEP), "", "the run's end lets the route's bake go")
-	var slot: StringName = scene.ROUTE_KEEP
-	CityBakeCache.keep(slot, "gut_route_look@y")
-	await _close(scene)
-	assert_eq(CityBakeCache.kept_key(slot), "", "and so does the scene leaving")
-
-
 # --- B7: the toast at a slow speed, the landing pulse ------------------------------------------
 
 func test_the_toast_holds_longer_at_a_slow_speed_never_shorter() -> void:

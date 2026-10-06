@@ -596,6 +596,10 @@
 		"res://tests/unit/test_city3d_grid.gd": {
 			"seconds": 12.0,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_art7_netrun_city.gd": {
+			"seconds": 15.0,
+			"tier": "fast"
 		}
 	}
 }

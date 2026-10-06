@@ -235,6 +235,8 @@ func test_the_pause_and_reduce_rules() -> void:
 	assert_false(CityMotionClock.street_streaks(true), "no streaks under reduce motion")
 	assert_false(CityMotionClock.sky_cars_shown(true, false), "reduce motion: sky-lane markers without cars")
 	assert_false(CityMotionClock.sky_cars_shown(false, true), "netrun transit: the sky-lane car layer is off")
+	assert_true(CityMotionClock.sky_cars_shown(false, true, true), "ART-7 7w: a netrun close-up shows the CLOSE tier")
+	assert_false(CityMotionClock.sky_cars_shown(true, true, true), "reduce motion: still no cars")
 	var clock := CityMotionClock.new()
 	var rates := PackedFloat64Array()
 	var live: Array[bool] = []
@@ -349,7 +351,14 @@ func test_the_car_lod_swaps_at_the_configured_zooms() -> void:
 	assert_eq(layers.car_tier, CitySkyTraffic.CarTier.CLOSE)
 	assert_true(layers._car_mmis[CitySkyTraffic.CarTier.CLOSE].visible)
 	layers.set_view(CityMotionLayers.View.NETRUN)
-	assert_false(layers.sky_cars_visible(), "no sky-lane cars in the netrun transit")
+	# ART-7 7w: a netrun close-up shows the CLOSE tier (round 40 cars_lod); the transit's own
+	# fit (MEDIUM) shows no sky-lane cars (bible 4.1).
+	assert_true(layers.sky_cars_visible(), "a netrun close-up shows the CLOSE car tier")
+	assert_true(layers._car_mmis[CitySkyTraffic.CarTier.CLOSE].visible)
+	layers.set_ortho(cfg.car_close_below * (1.0 + cfg.lod_hysteresis * 1.5))
+	assert_eq(layers.car_tier, CitySkyTraffic.CarTier.MEDIUM)
+	assert_false(layers.sky_cars_visible(), "no sky-lane cars in the netrun transit at its fit")
+	layers.set_ortho(60.0)
 	# The layer carries the seeded traffic (the headless renderer keeps no instance colours).
 	var mm := layers._car_mmis[0].multimesh
 	assert_eq(mm.instance_count, layers.traffic.cars.size())

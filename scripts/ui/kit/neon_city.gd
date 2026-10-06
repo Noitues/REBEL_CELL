@@ -1253,6 +1253,10 @@ func _sync_city3d() -> void:
 		view3d = null
 	if _view != null:
 		_view.material = null if city3d else _live_material
+	# ART-7 7w: the 2D bake's stand-in silhouette (ANIM-R3 B4) never draws over the 3D city
+	# (a page that turns the 3D city on after a 2D frame left it showing: flat roof slabs).
+	if _sil != null and city3d:
+		_sil.visible = false
 	refresh()
 
 
@@ -2113,8 +2117,11 @@ func free_chunks() -> void:
 ## dropped when this scene goes.
 ## `creep` (>= 0) names another Heat creep than the city's (the look after a raid's Heat while
 ## the playout still holds the old one).
-func prebake(region: Rect2, inf: Variant = null, outlive: bool = false, creep: float = -1.0) -> String:
-	if not is_baked() or not is_inside_tree() or city3d:
+func prebake(region: Rect2, inf: Variant = null, outlive: bool = false, creep: float = -1.0, under_3d: bool = false) -> String:
+	# A city showing the 3D city bakes nothing, unless `under_3d` (ART-7 7w): the 2D look its
+	# next pages draw (the netrun route is 3D, its event / shop / loot pages 2D: baked ahead
+	# behind the route).
+	if not is_baked() or not is_inside_tree() or (city3d and not (under_3d and use_bake and CityBakeCache.can_bake())):
 		return ""
 	var held: Dictionary = (_followed_influence() if inf == null else inf as Dictionary).duplicate(true)
 	if is_visible_in_tree() and not view_covered():
@@ -2205,8 +2212,8 @@ func _note_frame_size() -> void:
 
 ## ANIM-R2 R1: bakes, ahead, the default frame at every size in `sizes` and every size it was
 ## drawn at lately (one region enclosing them all): a fight's arena, the Mainframe, event and
-## loot pages open on their city. Returns prebake's key.
-func prebake_frames(sizes: Array[Vector2], outlive: bool = false) -> String:
+## loot pages open on their city. Returns prebake's key. `under_3d`: as prebake's.
+func prebake_frames(sizes: Array[Vector2], outlive: bool = false, under_3d: bool = false) -> String:
 	var all: Array[Vector2] = sizes.duplicate()
 	for v in frame_sizes:
 		if not all.has(v):
@@ -2219,7 +2226,7 @@ func prebake_frames(sizes: Array[Vector2], outlive: bool = false) -> String:
 		region = r if not region.has_area() else region.merge(r)
 	if not region.has_area():
 		return ""
-	return prebake(region, null, outlive)
+	return prebake(region, null, outlive, -1.0, under_3d)
 
 
 ## The procedural city's geometry for the current camera and look: streets, the fist,
