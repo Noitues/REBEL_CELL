@@ -1326,6 +1326,13 @@ func _show_map() -> void:
 		# its word (the City Grid's device, TargetEdgeMarker); a click pans to it.
 		route_target = TargetEdgeMarker.make(city_overlay)
 		route_target.avoid.append(route_legend)
+		# B3 c: the TARGET is off frame if any of it sits under the top bar or the key strip; while
+		# the arrow shows, the TARGET's own circle hides.
+		route_target.covers.append(hud)
+		var route_ov := city_overlay as RouteOverlay
+		route_target.showing_changed.connect(func(on: bool) -> void:
+			if is_instance_valid(route_ov):
+				route_ov.target_off = on)
 		_route_area.add_child(route_target)
 		if route_controls != null:
 			route_target.pan_requested.connect(route_controls.centre_on)
