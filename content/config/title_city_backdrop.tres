@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="CityBackdropLook" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/city3d/city_backdrop_look.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+city_tiers = Array[bool]([false, true, true])
+default_corp = &"halcyon"
+ortho = 300.0
+lift = 20.0
+anchor = Vector2(0.86, 0.64)
+blur_px = 5.0
+ref_height = 1080.0
+focus_centre = 0.56
+focus_half = 0.36
+focus_power = 0.8
+side_dark = 0.62
+side_reach = 0.46875
+side_power = 1.4
+foot_dark = 0.35
+foot_from = 0.82
+vignette = 0.35
+vignette_centre = Vector2(0.6, 0.5)
+vignette_scale = Vector2(1.3, 1.1)
+gain = 0.86
