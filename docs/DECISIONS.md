@@ -33,6 +33,43 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-7 7w netrun on the city
+ART-3 wave 2b (ART_BIBLE v2 §4.1, §4.6; round 38 `transit_v3` / `transit_step_v3`, round 40
+`cars_lod`). The netrun route page moves onto the unified 3D city; node rooms are unchanged.
+- **Transit v3 cables on the city's streets: `RouteCableRouter`** (pure, deterministic A* on a
+  half-lot lattice): 45° / 90° turns only, streets crossed rather than ridden, crossings with
+  cables already laid avoided, the rest bridged with a hop (the later cable hops). `RouteOverlay`
+  routes every link in graph order plus the entry runs and draws each sticker -> ground lot ->
+  run -> sticker; walked solid lime, live orange crawl, later white dash, cut grey. **Calls:**
+  the router's costs (RIDE, TURN_45/90, CROSS, SHARE, END_FREE, HOP_END_SKIP, lattice and box
+  sizes) are `RouteCableRouter` constants, not config: they shape a drawing, no rule or tuning
+  reads them. The cables are the overlay's own, not the city's network decal (the route page
+  clears the decal). `cable()` / `_axes()` stay as the 2D fallback.
+- **The route page on CityView3D at the NETRUN band:** `WireframeBackground.use_city3d(on, band)`;
+  the route page holds NETRUN and is see-through at any player zoom (bible §4.1 translucency
+  rule; `CityView3D.view_lod`); GRID VIEW shows the whole Grid on the 3D city at the GRID band.
+  **Other netrun pages (event, shop, loot, rooms) stay on the 2D city** until their own slices
+  move them. The route page attaches 5c's `CityViewMotion` and the player's camera
+  (`CityGridControls`, wheel zoom / drag; a view, no state).
+- **CLOSE car tier at netrun close-ups** (answers 5c's open question 1): the transit keeps the
+  sky-lane cars off at its fitted zoom (MEDIUM, bible §4.1) and shows the CLOSE cars once the
+  player zooms the route below ortho 150 (`car_close_below`), as `cars_lod` shows (verified at
+  ortho 60: wedge cars with tail lights and speed lines).
+- **Fix: flat blue blocks over the route's city.** NeonCity's ANIM-R3 B4 bake stand-in
+  silhouette (`CitySilhouette`, roof slabs lifted over every lot) stayed visible over the 3D city
+  when a page turned the 3D city on after its first 2D frames. `NeonCity._sync_city3d` now hides
+  it (a NeonCity file outside 7w's area; one guarded line). It was not 5a's landmark clearing.
+- **Frame time (RX 6700 XT, 1920×1080, tier 2, other agents' Godot running, vsync off as
+  city_lab measures):** route page 2.93–2.97 ms a frame (city GPU 1.94–1.96 ms, CPU 0.37 ms), the
+  Cell's route at ortho 351 3.75 ms (2.74), the close-up at ortho 60 2.67 ms (1.46). Inside the
+  8 ms budget. The capture lab `tools/design_lab/netrun_states.tscn` gains `--size=WxH`,
+  `--perf=<s>`, `rebel_cell` and `close` states and CAM lines.
+- **Tests:** `tests/unit/test_art7_netrun_city.gd` (fast, new). Changed:
+  `test_city_motion.gd`, the "no sky cars in the netrun" assert now applies at the transit's own
+  zoom (MEDIUM); at CLOSE they show. No test dropped.
+- Review: `docs/art_review/ART-7/7w/route_on_city.jpg` (start, underway, the Cell's route,
+  the close-up).
+
 ### 2026-10-05 — Art direction — ART-0 audit fixes
 Fixes every finding of `docs/handoff/m14_audit/ART-0_horizontal.md` (3 P2, 12 P3); nothing deferred.
 - **E1 (P2) shakes held to their tier.** `Motion.shake` plays `Motion.shake_px(id)`, the amplitude
@@ -7448,6 +7485,8 @@ and annotated in the GDD where it changes a rule.
 - **ART-5 5c city motion (defaults implemented):** (1) the netrun transit turns the sky-lane
   cars off (bible 4.1) while `cars_lod` shows the CLOSE tier at a netrun close-up: CLOSE is built
   and tested but only shows below ortho 150 outside the netrun band; should the transit show it?
+  **Answered by ART-7 7w (art pass `cars_lod`):** yes, at a netrun close-up below ortho 150; at
+  the transit's own fitted zoom the cars stay off.
   (2) reduce motion pauses street traffic (brief) where bible 5.4 says 40 % without streaks.
   (3) 5a: a public day-look call on CityView3D (CityViewMotion sets the view's materials for now).
 
@@ -7459,8 +7498,9 @@ and annotated in the GDD where it changes a rule.
 
 - **ART-7 3B (netrun):** (1) a per-node "HEAT: +1 ELITE" mark needs the elite-frequency
   Heat modifier to pick nodes (today it changes map generation), so it is not drawn; (2) the
-  "available" ring stays the run orange for every corporation (Appendix C #22); (3) transit v3's
-  bridge hops and crossing avoidance wait for the 3D city's cable router (wave 2).
+  "available" ring stays the run orange for every corporation (Appendix C #22); (3) ~~transit v3's
+  bridge hops and crossing avoidance wait for the 3D city's cable router (wave 2).~~ Built by
+  ART-7 7w (`RouteCableRouter`, see "Art direction — ART-7 7w netrun on the city").
 
 - **Grid Site markers v4 (2026-10-05, ART-5 5d; defaults built, see "Art direction — ART-5 5d Grid
   markers and key"):**
