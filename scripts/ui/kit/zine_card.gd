@@ -46,7 +46,11 @@ var lift: float = 0.0
 ## (drawn only: its slot and hit area stay), and its neighbours slide aside by `spread` px.
 var hover_scale: float = 1.0
 var spread: float = 0.0
-const HOVER_SCALE := 1.36
+## S-CARDFACE b (designer 2026-10-05): it grows to 1.75 (was 1.36) so the grown face holds every word of every card;
+## a hand shrunk to fit grows its card further (`hover_to`), to what a full-size card grows to.
+const HOVER_SCALE := 1.75
+## How far this card grows under the pointer (HOVER_SCALE, or more in a hand shrunk to fit).
+var hover_to: float = HOVER_SCALE
 var draw_offset: Vector2 = Vector2.ZERO
 var draw_tilt: float = 0.0
 ## The sticker's resting tilt (degrees; hover tilts it to 0).
@@ -86,8 +90,13 @@ const FIT_MIN_TEXT := 8
 ## ART-2 2D (audit P2: hand card text at 6 px): a sticker card's body never under the 12 px
 ## caption floor (what does not fit ends in an ellipsis; the hover growth and tooltip show it).
 const BODY_FLOOR := 12
+## S-CARDFACE b (designer 2026-10-05): the combat hand's rules text at rest may go down to 10 px (Plex Sans Condensed
+## on the face's dark body, outlined: 8.4:1 or better against TEXT_HI); the grown card keeps BODY_FLOOR on screen.
+const HAND_REST_FLOOR := 10
 ## The smallest the body is drawn (FIT_MIN_TEXT; the combat hand sets BODY_FLOOR).
 var body_floor: int = FIT_MIN_TEXT
+## S-CARDFACE b: the smallest a card's words read on screen while it grows under the pointer (px; 0 = body_floor).
+var grown_floor: int = 0
 ## A sticker's largest rest tilt either way (degrees; a row keeps room for it, ANIM-R2 E8).
 const REST_TILT_MAX := 4
 const CHIP_ICON_FIT_SHRINK := 0.3
@@ -246,6 +255,8 @@ func ghost_copy() -> ZineCard:
 	g.offer_art = offer_art
 	g.fit_whole = fit_whole
 	g.body_floor = body_floor
+	g.grown_floor = grown_floor
+	g.hover_to = hover_to
 	g.text_scale = text_scale
 	g.price = price
 	g.price_from = price_from
@@ -268,6 +279,8 @@ func _get_drag_data(_at_position: Vector2) -> Variant:
 	ghost.pictos_give_way = pictos_give_way
 	ghost.fit_whole = fit_whole
 	ghost.body_floor = body_floor
+	ghost.grown_floor = grown_floor
+	ghost.hover_to = hover_to
 	ghost.variant = variant
 	ghost.size = ghost.custom_minimum_size
 	# ANIM-3: the ghost trails the cursor with a lag and a tilt (DragGhost).
@@ -295,13 +308,24 @@ func _set_lift(on: bool) -> void:
 ## ART-2 2D (§3.18): the pointer over the sticker grows it to HOVER_SCALE (`card_hover`).
 func grow_hover(on: bool) -> void:
 	if look == Look.STICKER and is_inside_tree():
-		Motion.run(&"card_hover", self, ^"hover_scale", HOVER_SCALE if on and not disabled else 1.0)
+		Motion.run(&"card_hover", self, ^"hover_scale", hover_to if on and not disabled else 1.0)
+
+
+## S-CARDFACE b: how far (px, local x) the grown sticker moves in so its die-cut stays on the screen (the hand's
+## end cards grew past the screen's edge at x1.75).
+func grown_shift() -> float:
+	if look != Look.STICKER or hover_scale <= 1.0 or not is_inside_tree():
+		return 0.0
+	var view := get_viewport_rect()
+	var half := size.x * hover_scale * (0.5 + CardFace.FACE_AT.x / CardFace.FACE.x)
+	var foot := get_global_transform() * Vector2(size.x * 0.5 + spread, size.y)
+	return maxf(0.0, view.position.x - (foot.x - half)) - maxf(0.0, (foot.x + half) - view.end.x)
 
 
 ## ART-2 2D: how far a neighbour slides aside when the card `away` slots off is hovered
 ## (-1 left, 1 right, 0 back), on `card_hover`'s timing.
 func slide_aside(away: int) -> void:
-	var px := size.x * (HOVER_SCALE - 1.0) * 0.5 * float(away)
+	var px := size.x * (hover_to - 1.0) * 0.5 * float(away)
 	Motion.run(&"card_hover", self, ^"spread", px)
 
 
@@ -413,7 +437,7 @@ func _draw() -> void:
 	if lift != 0.0 or draw_offset != Vector2.ZERO or draw_tilt != 0.0 or hover_scale != 1.0 or spread != 0.0:
 		# ART-2 2D: the hover growth is about the card's foot (it grows up out of the hand).
 		var foot := Vector2(size.x * 0.5, size.y)
-		draw_set_transform_matrix(Transform2D(draw_tilt, foot + draw_offset + Vector2(spread, -lift)) * Transform2D(0.0, Vector2(hover_scale, hover_scale), 0.0, Vector2.ZERO) * Transform2D(0.0, -foot))
+		draw_set_transform_matrix(Transform2D(draw_tilt, foot + draw_offset + Vector2(spread + grown_shift(), -lift)) * Transform2D(0.0, Vector2(hover_scale, hover_scale), 0.0, Vector2.ZERO) * Transform2D(0.0, -foot))
 	if look != Look.STICKER:
 		_draw_tile_any()
 	else:

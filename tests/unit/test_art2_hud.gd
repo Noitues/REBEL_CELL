@@ -370,12 +370,13 @@ func test_pink_is_for_actions_and_one_red_is_harm() -> void:
 				assert_eq(HudResultChips.chip_color(c), Palette.HARM, "%s: harm is HARM" % kind)
 
 
-func test_hand_cards_never_draw_their_body_under_12_px() -> void:
+func test_hand_cards_never_draw_their_body_under_the_hand_floor() -> void:
+	# S-CARDFACE b (designer 2026-10-05): the floor at rest is ZineCard.HAND_REST_FLOOR (10 px; was 12)
 	for scale in SCALES:
 		var scene := await _combat(scale)
 		for c in scene._hand_box.get_children():
 			if c is ZineCard:
-				assert_gte(int((c as ZineCard).sticker_body_fit()["fs"]), 12, "x%.1f: %s's body" % [scale, (c as ZineCard).card_title])
+				assert_gte(int((c as ZineCard).sticker_body_fit()["fs"]), ZineCard.HAND_REST_FLOOR, "x%.1f: %s's body" % [scale, (c as ZineCard).card_title])
 		await _close(scene)
 
 
@@ -444,7 +445,8 @@ func test_a_hovered_card_grows_and_its_neighbours_slide_aside() -> void:
 	assert_gt((cards[2] as ZineCard).spread, 0.0, "the right one slides right")
 	assert_eq((cards[1] as ZineCard).spread, 0.0, "the hovered card keeps its slot")
 	(cards[1] as ZineCard).grow_hover(true)
-	assert_eq((cards[1] as ZineCard).hover_scale, ZineCard.HOVER_SCALE, "it grows to %s (end state headless)" % ZineCard.HOVER_SCALE)
+	assert_eq((cards[1] as ZineCard).hover_scale, (cards[1] as ZineCard).hover_to, "it grows to its hover_to (end state headless)")
+	assert_gte((cards[1] as ZineCard).hover_to, ZineCard.HOVER_SCALE, "at least HOVER_SCALE")
 	scene._spread_hand(-1)
 	for c in cards:
 		assert_eq((c as ZineCard).spread, 0.0, "all back in place")
