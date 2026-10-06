@@ -63,6 +63,7 @@ func _init(p_class: StringName = &"", p_operative: StringName = &"", p_name: Str
 	mouse_exited.connect(_set_hot.bind(false))
 	focus_entered.connect(_set_hot.bind(true))
 	focus_exited.connect(_set_hot.bind(false))
+	MotionSkip.register_passive(self)  # ANIM-R6 D7
 
 
 ## A card's size at the current text scale.
@@ -81,8 +82,23 @@ func _set_hot(on: bool) -> void:
 func tilt(on: bool) -> void:
 	pivot_offset = size * 0.5
 	var to := Motion.amplitude(&"polaroid_tilt") if on else 0.0
-	if Motion.run(&"polaroid_tilt", self, ^"rotation_degrees", to) == null:
+	_tilt_tween = Motion.run(&"polaroid_tilt", self, ^"rotation_degrees", to)
+	if _tilt_tween == null:
 		rotation_degrees = to
+
+
+var _tilt_tween: Tween = null
+
+
+## MotionSkip (ANIM-R6 D7, a short motion: `register_passive`): the tilt still lands.
+func motion_running() -> bool:
+	return _tilt_tween != null and _tilt_tween.is_valid() and _tilt_tween.is_running()
+
+
+## MotionSkip: the card at its tilt's rest.
+func complete_motion() -> void:
+	Motion.settle(self, ^"rotation_degrees")
+	_tilt_tween = null
 
 
 ## The lift out of the hand when picked (px, upward).
