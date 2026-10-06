@@ -1,6 +1,6 @@
 # M14 parity audit: art pass vs main (GAPS)
 
-Status: **COMPLETE** (2026-10-05): every screen and state of both review packs, the HQ run pages, the Central Server gate, the combat backdrops, the campaign end lock and dossier, and 10 motion strips are compared. 134 entries covering 136 difference ids (entries by rank: P1 44, P2 59, P3 31); 13 ruled by the designer so far (their `Decision:` filled), the rest wait for a ruling.
+Status: **COMPLETE** (2026-10-05): every screen and state of both review packs, the HQ run pages, the Central Server gate, the combat backdrops, the campaign end lock and dossier, and 10 motion strips are compared. 134 entries covering 136 difference ids (entries by rank: P1 44, P2 59, P3 31); 23 ruled by the designer so far (their `Decision:` filled), the rest wait for a ruling.
 
 Designer rulings this file follows (DECISIONS 2026-10-05 "the M14 audit is a side-by-side art-pass
 parity audit", and the orchestrator's relay of the later ruling): every difference is described
@@ -13,8 +13,7 @@ Where the M13 art-pass build is **richer than main** (more layout, content or in
 language** (the v2 kit: terminal panels, vinyl stickers, paper for intercepted documents, the locked
 palette and type). Neither "copy the build" nor "keep main's plainer version": the build's structure,
 the concept's look. First applied to the campaign slots (SLOTS-01/02); the same pattern is the
-natural default for the build-richer pages flagged below (new campaign pickers NEWC-01, Black Market
-HQ-06, codex CODEX-01, stats STATS-01, pause rows PAUSE-02, loot / shop / deck card faces), each
+natural default for the build-richer pages flagged below (new campaign pickers NEWC-01 (ruled), codex CODEX-01, stats STATS-01, pause rows PAUSE-02, loot / shop / deck card faces), each
 still awaiting its own ruling.
 
 ## How to read this
@@ -156,36 +155,37 @@ Likely file: `hq_scene.gd show_start`. Decision: **main-only function, kept; res
 OptionButton's popup list (Godot default popup restyled). Follows NEWC-01. Decision: **agree with the audit**: the tiles are the picker; no popup. (designer, 2026-10-05)
 
 ### HQ (`hq.jpg`)
+**Designer ruling (2026-10-05):** HQ-01..10 are superseded by a dedicated HQ design pass. The art pass missed the HQ; it is reworked entirely: fewer panels, obvious at-a-glance verbs and selections, the separate Grid view folds into the actual city raid view, Heat lives in the run-wide Heat indicator position, JACK IN uses the same netrun-start flow as every other netrun. An HQ-DESIGN agent is producing concept options; there is no S-HQ fix slice.
 Ref: art pass build `hq` (no concept image for the HQ page; chrome per `round33_ui_chrome/ui_kit.png`).
 
 **HQ-01 (P1) Top resource strip.** Build: each resource is a coloured paper tag (cream, pink,
 yellow) with a stencil number. Main: dark navy terminal chips with cyan edges (the v2 kit's
 "terminal resource strip", as in `round32_ui_chrome/city_map_hud.png`). View: main follows the
 v2 kit; the build's tags are louder and more "zine". Likely file: `scripts/ui/kit/hud_bar.gd`,
-`hud_stats.gd`, `hud_skin.gd`. Decision:
+`hud_stats.gd`, `hud_skin.gd`. Decision: Superseded: HQ design pass (designer 2026-10-05)
 
 **HQ-02 (P1) WANTED poster overlaps JACK IN.** Build: JACK IN disc top right, WANTED poster below
 it, clear of each other. Main: the poster sits top right against the top bar and its right edge
 runs into the JACK IN disc. View: main's overlap is a defect whichever look is chosen. Likely
-file: `scripts/ui/hq_scene.gd` (HQ layout), `scripts/ui/kit/heat_poster.gd`. Decision:
+file: `scripts/ui/hq_scene.gd` (HQ layout), `scripts/ui/kit/heat_poster.gd`. Decision: Superseded: HQ design pass (designer 2026-10-05)
 
 **HQ-03 (P2) PIRATE RADIO.** Build: a taped paper note, pencil-script header, typewriter body.
 Main: a terminal panel `> PIRATE RADIO`, Plex sans body. View: the v2 kit gives paper to
 intercepted corp documents and terminal to the Cell's systems; pirate radio is neither, so this is
 a designer call. Likely file: `hq_scene.gd` (radio block), `terminal_note.gd` / `zine_note.gd`.
-Decision:
+Decision: Superseded: HQ design pass (designer 2026-10-05)
 
 **HQ-04 (P2) Crew cards.** Build: polaroid with a flat illustrated hooded silhouette, a pencil
 `RANK 0`, stencil name, class line, HP bar, deck/daemon icons. Main: polaroid with the v2 portrait
 bust (`round39_portraits/portraits_classes_v2.png`, LOCKED), caption `Breaker 1 R0` in tiny type,
 name, class/rank line, HP bar, `HP 60/60 · DECK 10 · DAEMONS 0` text. Main's portraits follow the
 locked v2 set. Main's roster panel is wider than its cards (empty right third). Likely file:
-`scripts/ui/kit/crew_card.gd`, `polaroid.gd`, `operative_dossier.gd`. Decision:
+`scripts/ui/kit/crew_card.gd`, `polaroid.gd`, `operative_dossier.gd`. Decision: Superseded: HQ design pass (designer 2026-10-05)
 
 **HQ-05 (P2) Menu panel rows.** Main's CYBERDECK panel wraps `Scrub Heat -5 · pay 25` onto two
 lines (`25` alone on the second); the build fits it on one. Main's headers carry the v2 `> ` caret
 and square (kit rule). Likely cause: main's panel is narrower than its row at 1.0
-(`hq_scene.gd`, menu column width). Decision:
+(`hq_scene.gd`, menu column width). Decision: Superseded: HQ design pass (designer 2026-10-05)
 
 ### Netrun route (`route.jpg`)
 Refs: art pass build `route` (M13: wireframe city, hex/diamond node icons on a dashed board, route
@@ -269,7 +269,7 @@ price and a buy glyph, locked recruits with a lock badge and `Needs Class: ...` 
 three run-on rows labelled `Recruit:`, `Next-run boosts:`, `Profile unlocks:` with plain text chips
 `Class: Botnet (80)`; no icons, no locks, no unlock reasons; the lime panel edge again. View: the
 build's grouping is much easier to scan. Likely file: `scripts/ui/hq_scene.gd` (market, ~l.1639);
-art-pass source `art-m13-final:scripts/ui/hq_scene.gd` `_market_section` (~l.1768). Decision:
+art-pass source `art-m13-final:scripts/ui/hq_scene.gd` `_market_section` (~l.1768). Decision: Superseded: HQ design pass (designer 2026-10-05, by extension of HQ-01..05)
 
 **HQ-07 (P2) Crew dossier cards.** Build: polaroid with a flat illustrated portrait, `RANK 0` in
 pencil, stencil `GHOST 3`, class line, HP bar, icon stats, Loadout. Main: the v2 portrait in the
@@ -277,20 +277,20 @@ polaroid with a tiny `Ghost 3 R0` caption, stencil name, `// GHOST // RANK 0`, H
 text `HP 50/50 · DECK 10 · DAEMONS 0`, Loadout; the roster panel shows three cards in a row with
 empty space right, and the CELL STATUS panel peeks out behind the top bar. Main's portraits follow
 the locked v2 set. Likely file: `crew_card.gd`, `polaroid.gd`, `hq_scene.gd` (roster scroll).
-Decision:
+Decision: Superseded: HQ design pass (designer 2026-10-05, by extension of HQ-01..05)
 
 **HQ-08 (P1) Loadout DECK tab.** Same card-face difference as DECK-01 (build: paper cards with
-art; main: flat gold faces with text only). Decision:
+art; main: flat gold faces with text only). Decision: Superseded: HQ design pass (designer 2026-10-05, by extension of HQ-01..05; the card face itself stays with S-CARDFACE / DECK-01)
 
 **HQ-09 (P3) Loadout SPINNER tab.** Same wheel and side list; main's centre reads `BREAKER CORE
 MK2` in red (build: pink), the side tiles are cut (`Accelera`). Likely file:
-`scripts/ui/kit/spinner_view.gd`, `loadout_view.gd`. Decision:
+`scripts/ui/kit/spinner_view.gd`, `loadout_view.gd`. Decision: Superseded: HQ design pass (designer 2026-10-05, by extension of HQ-01..05)
 
 **HQ-10 (P2) WANTED poster crossing a band (main only).** Main: the yellow hazard banner
 `HEAT 30 · NOTICED (25+)` is taped across the poster over the operative's mugshot, the number rolls
 (27 on the frame), `noticed` replaces `cool`; a raid note `A raid is queued. While Heat stays at
 25 or more, elites are more frequent.` sits under PIRATE RADIO; CELL STATUS gains `Elite Frequency
-+25%`. The banner hides the portrait. Likely file: `heat_poster.gd`. Decision:
++25%`. The banner hides the portrait. Likely file: `heat_poster.gd`. Decision: Superseded: HQ design pass (designer 2026-10-05, by extension of HQ-01..05)
 
 ### Title pages: options, codex, stats (`options.jpg`, `codex.jpg`, `stats.jpg`)
 Refs: build `options`, `codex`, `stats`; concept `round31_ui_chrome/settings_menu.png`.
@@ -951,14 +951,14 @@ into the v2 language; "Sonnet" = mechanical placement / anchors / sizes.
 | S-BACKDROP | `scripts/ui/kit/cyberdeck_background.gd` (title + overlay pages' city) | TITLE-01, LOOT-04, OPT-01 (backdrop part) | Opus |
 | S-CODEX | `scripts/ui/kit/codex.gd` | CODEX-01 | Opus |
 | S-NEWC | `scripts/ui/hq_scene.gd` `show_start` only, new `tile_picker.gd`, `planning_picker.gd` | NEWC-01..04 | Opus |
-| S-HQ | `scripts/ui/hq_scene.gd` HQ page + market, `heat_poster.gd`, `crew_card.gd`, `polaroid.gd`, `hud_bar.gd`, `hud_stats.gd` | HQ-01..07, HQ-10 | Opus (HQ-01/03/06/07), Sonnet (HQ-02/05) — sequence after S-NEWC (same file) |
+| ~~S-HQ~~ | none: HQ-01..10 superseded by the HQ design pass (designer 2026-10-05); the HQ-DESIGN agent owns the HQ | — | — |
 | S-GRID | `scripts/ui/kit/city_map_overlay.gd`, `site_marker*.gd`, `grid_map_view.gd`, `city_minimap.gd`, `map_legend.gd`, `target_edge_marker.gd`, `content/config/city_config.tres` (Grid band) | GRID-01..03, GRID-06, GRID-12, GRID-13, RAID-04 | Opus (GRID-01/02), Sonnet (03/12/13) |
-| S-GRID-HUD | `scripts/ui/hq_scene.gd` Grid side column, `city_grid_controls.gd`, `drop_layer.gd` | GRID-04, GRID-05, GRID-07..11 | Opus — after S-HQ (same file) |
+| S-GRID-HUD | `scripts/ui/hq_scene.gd` Grid side column, `city_grid_controls.gd`, `drop_layer.gd` | GRID-04, GRID-05, GRID-07..11 | Opus — after S-NEWC (same file); hold until the HQ design pass says how the Grid folds into the city raid view |
 | S-RAID | `raid_paper.gd`, `corp_memo.gd`, `raid_intel_strip.gd`, `raid_holo.gd`, `asset_card.gd`, `raid_feed.gd`, `raid_playout_panel.gd`, `raid_verdict.gd`, `raid_report_pencil.gd`, `raid_drag_pencil.gd`, `raid_beats.gd` | RAID-01..03, RAID-05..12 | Opus (RAID-01/10), Sonnet (stamps / anchors) |
 | S-NETRUN | `scripts/ui/netrun_scene.gd` (raid interlude, shop, event, loot, run end pages), `route_node_panel.gd`, `operative_dossier.gd`, `zine_stamp.gd` | RAID-13, RAID-14, ROUTE-02, ROUTE-03, ROUTE-06, SHOP-01, SHOP-06, EVT-01..03, LOOT-02, LOOT-03, END-01, END-02 | Sonnet (stamps / anchors / SHOP-01), Opus (END-01, EVT) |
 | S-ROUTE | `netrun_map_view.gd`, `route_overlay.gd`, `route_ink.gd`, `route_legend.gd` | ROUTE-01, ROUTE-04, ROUTE-05 | Opus |
-| S-CARDFACE | `scripts/ui/kit/zine_card.gd`, `loot_sheet.gd`, `deck_view.gd`, `shop_item.gd`, `shop_pegboard.gd`, `slice_stock_wheel.gd`, `inspect_popup.gd` | LOOT-01, SHOP-02..05, SHOP-07, SHOP-08, DECK-01, DECK-02, HQ-08, CMB-04 (card part) | Opus (one card face for hand, loot, shop, viewer) |
-| S-WHEEL | `scripts/ui/wheel/*`, `palette.gd`, `palette_skins.gd` (slice tokens), `hud_wheel_layer.gd`, `spinner_view.gd` | CMB-02, CMB-03, CMB-09, BOSS-04, HQ-09 | Opus |
+| S-CARDFACE | `scripts/ui/kit/zine_card.gd`, `loot_sheet.gd`, `deck_view.gd`, `shop_item.gd`, `shop_pegboard.gd`, `slice_stock_wheel.gd`, `inspect_popup.gd` | LOOT-01, SHOP-02..05, SHOP-07, SHOP-08, DECK-01, DECK-02, CMB-04 (card part) | Opus (one card face for hand, loot, shop, viewer) |
+| S-WHEEL | `scripts/ui/wheel/*`, `palette.gd`, `palette_skins.gd` (slice tokens), `hud_wheel_layer.gd`, `spinner_view.gd` | CMB-02, CMB-03, CMB-09, BOSS-04 | Opus |
 | S-ARENA | `scripts/ui/arena/combat_backdrop.gd`, `backdrop_catalog.gd` | CMB-01, BOSS-03, BACKDROP-01, BACKDROP-02, MOTION-07 | Opus |
 | S-COMBAT-HUD | `scripts/ui/combat_scene.gd`, `send_it_sticker.gd`, `hud_name_sticker.gd`, `ram_bar.gd`, `hud_result_chips.gd`, `hud_dialog_panel.gd`, `tutorial_overlay.gd` | CMB-05..08, CMB-10..18 | Sonnet (placement), Opus (CMB-14/16) |
 | S-MODAL | `glass_scrim.gd`, `confirm_dialog.gd`, `pause_menu.gd`, `settings_panel.gd` | CONFIRM-01/02, PAUSE-01..04, OPT-01 (framing), OPT-02/03 | Sonnet |
@@ -969,8 +969,8 @@ into the v2 language; "Sonnet" = mechanical placement / anchors / sizes.
 | Harness | `tools/visual_qa/review_pack.gd` | END-04 (wait for the lock's end state) | Sonnet |
 | done | — | BOSS-01 (FIX-REDS) | — |
 
-Collisions to watch: `hq_scene.gd` is shared by S-NEWC, S-HQ and S-GRID-HUD (run them in that
-order, or split the file first); `netrun_scene.gd` is one slice on purpose.
+Collisions to watch: `hq_scene.gd` is shared by S-NEWC, S-GRID-HUD and the HQ design pass (run S-NEWC
+first, or split the file first); `netrun_scene.gd` is one slice on purpose.
 
 ## Harness
 - `tools/visual_qa/parity_sheet.py` (new): builds `<screen>.jpg` (full pictures side by side, ids
@@ -987,6 +987,8 @@ order, or split the file first); `netrun_scene.gd` is one slice on purpose.
   screen names as main's except modem* = mainframe*).
 - Motion: per demo, `python tools/run_windowed.py --log <f> -- --resolution 1280x720 res://tools/design_lab/motion_lab.tscn --write-movie <dir>/<demo>/f.png --fixed-fps 30 --quit-after 75 -- --demo-anim=<demo>`
   on each build (the lab takes one demo per launch), then `parity_sheet.py --art <art root> --main <main root> --motion MOTION-01=jack_in,...`.
-- Sheets: `python tools/visual_qa/parity_sheet.py --art <art pack>/1.0_mouse_re-off_none --main <main pack>/1.0_mouse_re-off_none --concepts <copy>/docs/concepts --pairs tools/visual_qa/parity_pairs.json --out docs/art_review/PARITY`.
+- Sheets: `python tools/visual_qa/parity_sheet.py --art <art pack>/1.0_mouse_re-off_none --main <main pack>/1.0_mouse_re-off_none --concepts <copy>/docs/concepts --pairs tools/visual_qa/parity_pairs.json --out docs/art_review/PARITY --art-rename mainframe=modem,mainframe_socket=modem_socket,mainframe_remove=modem_remove,mainframe_overwrite=modem_overwrite`
+  (the pairs file uses main's screen names; `--art-rename` maps the four shop screens to the art pass pack's old names,
+  which tests/unit/test_names_pass.gd keeps out of tools/).
   The `file:` references in the pairs file point at this run's lab frames under `%TEMP%\parity\lab_main`;
   re-capture there (or edit the paths) before rebuilding those sheets.

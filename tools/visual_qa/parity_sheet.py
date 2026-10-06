@@ -77,14 +77,19 @@ def _load(path: Path | None, label: str) -> Image.Image:
     return img.convert("RGB")
 
 
-def _resolve(name: str, pack: Path, concepts: Path | None) -> Path | None:
+## Main screen name -> the art pass pack's own name, for screens the art pass names with a word
+## main has since renamed (filled from --art-rename; the pairs file uses main's names).
+ART_RENAMES: dict[str, str] = {}
+
+
+def _resolve(name: str, pack: Path, concepts: Path | None, renames: dict | None = None) -> Path | None:
     if not name:
         return None
     if name.startswith("concept:"):
         return (concepts / name[len("concept:"):]) if concepts else None
     if name.startswith("file:"):
         return Path(name[len("file:"):])
-    return pack / (name + ".png")
+    return pack / ((renames or {}).get(name, name) + ".png")
 
 
 def _short(name: str) -> str:
@@ -98,7 +103,7 @@ def _short(name: str) -> str:
 def build(pair: dict, art_dir: Path, main_dir: Path, concepts: Path | None, out: Path) -> Path:
     refs = pair.get("refs", [])
     main_name = pair.get("main", "")
-    pics = [(_short(r), REF_TAG, _load(_resolve(r, art_dir, concepts), r)) for r in refs]
+    pics = [(_short(r), REF_TAG, _load(_resolve(r, art_dir, concepts, ART_RENAMES), r)) for r in refs]
     pics.append(("MAIN " + main_name.replace("file:", ""), MAIN_TAG, _load(_resolve(main_name, main_dir, None), main_name)))
     n = len(pics)
     cell_w = (SHEET_W - GAP * (n - 1)) // n
@@ -198,7 +203,12 @@ def main() -> int:
     ap.add_argument("--only", default="", help="comma list of sheet names")
     ap.add_argument("--motion", default="", help="id=demo,... : motion strip pairs from --art / --main "
                     "folders holding one Movie Maker folder per demo (the pairs file is then ignored)")
+    ap.add_argument("--art-rename", default="", help="main=art,... : screens the art pass pack names "
+                    "differently (e.g. the shop screens, renamed on main)")
     args = ap.parse_args()
+    for item in filter(None, args.art_rename.split(",")):
+        k, v = item.split("=")
+        ART_RENAMES[k.strip()] = v.strip()
     if args.motion:
         for item in args.motion.split(","):
             sheet_id, demo = item.split("=")
