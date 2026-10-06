@@ -106,7 +106,7 @@ const DEMOS := {
 	&"drop_buy": ["screen", "drop_buy"], &"shred_feed": ["screen", "drop_shred"],
 	# ANIM-R1 (the first fix batch; in context: hq_scene / netrun_scene --demo-anim=<id>):
 	&"jack_arrive": ["jack_in", "stage"], &"jack_arrival_wait": ["jack_in", "stage"],
-	&"select_ring_pulse": ["hq", "select"], &"loot_reject": ["screen", "reject"], &"home_number_fly": ["hq", "raid_ice"], &"influence_mark": ["hq", "influence"], &"heat_number_pop": ["screen", "poster"], &"heat_banner": ["screen", "poster"],
+	&"select_ring_pulse": ["hq", "select"], &"loot_reject": ["screen", "reject"], &"home_number_fly": ["hq", "raid_ice"], &"influence_mark": ["hq", "influence"], &"territory_stamp_hold": ["hq", "influence"], &"territory_stamp_wipe": ["hq", "influence"], &"heat_number_pop": ["screen", "poster"], &"heat_banner": ["screen", "poster"],
 	# ANIM-R1 (combat and input): the SEND IT replay's pieces play in a live SEND IT.
 	&"resolve_landing_hold": ["scene", "send"], &"landing_pulse": ["scene", "send"], &"resolve_result_hold": ["scene", "send"],
 	&"result_caption": ["scene", "send"], &"result_stamp": ["scene", "send"], &"number_to_hp": ["scene", "numbers"],

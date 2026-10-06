@@ -1087,6 +1087,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		toggle_heat_terminal()
 		get_viewport().set_input_as_handled()
 		return
+	# B4 (art director): M shows or hides the HQ's minimap (hidden by default).
+	if panel_name == "hq" and _settings_panel == null and event.is_action_pressed(MINIMAP_ACTION):
+		toggle_minimap()
+		get_viewport().set_input_as_handled()
+		return
 	# H24 K1: the pad's key button (Y) opens and folds the Grid's map key at big text.
 	if event.is_action_pressed("cycle_target") and panel_name in HQ_PAGES and grid_legend != null \
 			and is_instance_valid(grid_legend) and grid_legend.visible and grid_legend.foldable():
@@ -1739,6 +1744,17 @@ func _build_hq_page(page_name: String) -> void:
 		city_overlay.decal_shown_only = true
 		# B3's clutter rule (D7): at most one tag, the selection's; the lit (hovered) Site's too.
 		city_overlay.tag_rule = CityMapOverlay.TagRule.FOCUS
+		# The selection is marked by its vignette and its tag; the lime ring only while the pad /
+		# keyboard is on the map (the MapCursor has the focus).
+		var cursor_node := page.get_node("MapCursor") as Control
+		city_overlay.select_ring_shown = cursor_node.has_focus()
+		var ov := city_overlay
+		cursor_node.focus_entered.connect(func() -> void:
+			if is_instance_valid(ov):
+				ov.select_ring_shown = true)
+		cursor_node.focus_exited.connect(func() -> void:
+			if is_instance_valid(ov):
+				ov.select_ring_shown = false)
 		city_overlay._feed_decal()
 	if raid_mode:
 		city_overlay.node_clicked.connect(func(id: StringName) -> void:
@@ -2169,31 +2185,37 @@ func _verb_slot(site: SiteData, launchable: Array[SiteData], raid_mode: bool = f
 	word.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	word.text = jack_system_word(site)
 	word.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	# One line under the sticker (a system word, not a sentence): cut with an ellipsis, whole in
-	# its tooltip.
-	word.clip_text = true
-	word.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	# B4: on its plate the system word wraps at its spaces (never cut mid-name), whole in its
+	# tooltip too.
+	word.autowrap_mode = TextServer.AUTOWRAP_WORD
 	word.mouse_filter = Control.MOUSE_FILTER_PASS
 	word.tooltip_text = word.text
-	word.custom_minimum_size.y = Palette.mono().get_height(UiTheme.font_px(UiTheme.CAPTION))  # a clipped Label reports no height
 	word.add_theme_font_override("font", Palette.mono())
 	word.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
-	word.add_theme_color_override("font_color", Color(Palette.PAPER, HudSkin.SYSTEM_WORD_ALPHA * 2.0))
+	word.add_theme_color_override("font_color", HudSkin.TERMINAL_TEXT)
 	_keyline(word)
-	slot.add_child(word)
-	# Q3: a raid pending fires mid-run (the rule kept); the system word says so, in the raid's pink.
+	# B4 (art director: "bare text on the world; give it a terminal plate"): the system word
+	# lies on a small terminal plate (dark glass, the terminal edge), never on the city.
+	var plate := PanelContainer.new()
+	plate.name = "SystemWordPlate"
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plate.size_flags_horizontal = Control.SIZE_FILL
+	var box := StyleBoxFlat.new()
+	box.bg_color = PaletteSkins.chrome(HudSkin.TERMINAL_BG)
+	box.border_color = PaletteSkins.chrome(HudSkin.TERMINAL_EDGE)
+	box.set_border_width_all(1)
+	box.content_margin_left = UiTheme.SP_S
+	box.content_margin_right = UiTheme.SP_S
+	box.content_margin_top = UiTheme.SP_XS
+	box.content_margin_bottom = UiTheme.SP_XS
+	plate.add_theme_stylebox_override(&"panel", box)
+	plate.add_child(word)
+	slot.add_child(plate)
+	# Q3: a raid pending fires mid-run (the rule kept). B4 (art director: the pink line repeated
+	# the INTERCEPTED toast): it is said in the system word's and JACK IN's tooltips, not on the map.
 	if not resume and not c.pending_raids.is_empty():
-		var warn := Label.new()
-		warn.name = "RaidMidRun"
-		warn.text = "> " + tr(RAID_MID_RUN)
-		warn.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		warn.add_theme_font_override("font", Palette.mono())
-		warn.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
-		warn.add_theme_color_override("font_color", Palette.CELL_PINK)
-		_keyline(warn)
-		warn.tooltip_text = UiTip.fold(tr("A raid is pending: JACK IN now and it hits your network as an interlude in the run (or defend first: RAID SETUP)."))
-		warn.mouse_filter = Control.MOUSE_FILTER_PASS
-		slot.add_child(warn)
+		word.tooltip_text = UiTip.fold("%s\n> %s\n%s" % [word.text, tr(RAID_MID_RUN),
+			tr("A raid is pending: JACK IN now and it hits your network as an interlude in the run (or defend first: RAID SETUP).")])
 	return slot
 
 
@@ -2434,7 +2456,7 @@ func _mount_hq_map_tools(page: Control, graph: Dictionary = {}) -> void:
 	if wireframe.city3d:
 		hq_minimap = CityMinimap.new()
 		hq_minimap.name = "HqMinimap"
-		hq_minimap.visible = Settings.text_scale < MapLegend.FOLD_SCALE - 0.001
+		hq_minimap.visible = minimap_shown() and Settings.text_scale < MapLegend.FOLD_SCALE - 0.001
 		page.add_child(hq_minimap)
 		grid_minimap = hq_minimap
 		grid_controls = CityGridControls.new(wireframe.city, self, _hq_apply_frame)
@@ -2582,7 +2604,7 @@ func _place_hq() -> void:
 		# that needs it (CLAIM's tiles), and shows only below the key's fold scale.
 		var key_h := hq_legend.fit_size().y + HqLayout.GAP if hq_legend != null and is_instance_valid(hq_legend) else 0.0
 		var need := (column.get_child(0) as Control).get_combined_minimum_size().y
-		hq_minimap.visible = Settings.text_scale < MapLegend.FOLD_SCALE - 0.001 \
+		hq_minimap.visible = minimap_shown() and Settings.text_scale < MapLegend.FOLD_SCALE - 0.001 \
 			and need <= bottom_now - (top + hq_minimap.get_combined_minimum_size().y + HqLayout.GAP + key_h)
 	if hq_minimap != null and is_instance_valid(hq_minimap) and hq_minimap.visible:
 		var ms := hq_minimap.get_combined_minimum_size()
@@ -2649,6 +2671,25 @@ func _place_hq() -> void:
 
 ## B3: the raid setup's card column's top (page px): THREAT INTEL starts right under the bar.
 const RAID_COLUMN_TOP := 2.0
+
+
+## B4 (art director: "the minimap is hidden by default, toggled with [M] and the MAP KEY,
+## never a standing panel"): the minimap shows while the player has turned it on (M, kept
+## across the HQ's rebuilds: view memory, never game state) or while the MAP KEY is open.
+static var minimap_open: bool = false
+## The runtime action that toggles it (Settings.RUNTIME_ACTIONS: M).
+const MINIMAP_ACTION := &"toggle_minimap"
+
+
+## B4: true when the HQ's minimap shows (room allowing).
+func minimap_shown() -> bool:
+	return minimap_open or (hq_legend != null and is_instance_valid(hq_legend) and hq_legend.opened)
+
+
+## B4: M: the minimap on or off.
+func toggle_minimap() -> void:
+	minimap_open = not minimap_open
+	_place_hq()
 
 
 ## HQ-B: the share of the page's width the opened map key may span.

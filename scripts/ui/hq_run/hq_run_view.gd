@@ -446,12 +446,26 @@ func _on_foot_laid_out() -> void:
 	_marks.queue_redraw()
 
 
-func _frame() -> void:
-	var sz := size if size.x > 1.0 and size.y > 1.0 else Vector2(1920, 1080)
+## The run's world points: its entry and every node (node-id order as laid out).
+func run_points() -> Array[Vector3]:
 	var pts: Array[Vector3] = [_entry]
 	for id: StringName in _points:
 		pts.append(_points[id])
-	iso = HqCompoundStage.run_camera(CityView3D.CONFIG, _manifest, _at, sz, pts, FIT_MARGIN_PX, FIT_MAX_SHARE, free_rect(sz))
+	return pts
+
+
+## B4 (review D18): the share of the page's height the landmark box (the compound's footprint
+## with the run's network) stands now (0 for a perspective page).
+func landmark_share() -> float:
+	if iso == null:
+		return 0.0
+	var sz := size if size.x > 1.0 and size.y > 1.0 else Vector2(1920, 1080)
+	return HqCompoundStage.landmark_share(iso, _manifest, _at, sz, run_points())
+
+
+func _frame() -> void:
+	var sz := size if size.x > 1.0 and size.y > 1.0 else Vector2(1920, 1080)
+	iso = HqCompoundStage.run_camera(CityView3D.CONFIG, _manifest, _at, sz, run_points(), FIT_MARGIN_PX, FIT_MAX_SHARE, free_rect(sz))
 	if city != null:
 		city.set_view_size(Vector2i(sz))
 		city.set_iso(iso)

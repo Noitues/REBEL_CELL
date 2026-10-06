@@ -196,23 +196,23 @@ func _footprint_screen(corp: StringName, cam: CityIsoCamera) -> Rect2:
 
 
 func test_hqrun_05_06_07_the_corporations_are_framed_as_their_concepts() -> void:
-	# B4 (review D18, round 43 `hq_*_compound.png`): an orthographic page stands its landmark
-	# 55 to 65 % of the frame's height (a wide, low compound is held to its width share).
+	# B4 (review D18, round 43 `hq_*_compound.png`; art director's fix): an orthographic page
+	# stands the union of the compound's footprint and the run's network 55 to 65 % of the
+	# frame's height (a wide, low box is held to its width share), for the breach and full maps.
 	for corp in [&"solace", &"meridian", &"halcyon", &"orbital"]:
-		var m := HqCompoundStage.manifest(corp)
-		var at := HqCompoundStage.place(_city, corp, m)
-		var page := HqCompoundStage.page_camera(_city, m, at, VIEWS[1])
-		assert_false(page.perspective(), "%s: the city's iso camera" % corp)
-		var share := HqCompoundStage.landmark_share(page, m, at, VIEWS[1])
-		var box := HqCompoundStage.landmark_box(page, m, at)
-		var wide := box.size.x / page.ortho >= _city.hq_run_landmark_width_max - 0.001
-		if wide:
-			assert_lte(share, _city.hq_run_landmark_share + 0.001, "%s: a wide compound held to the width (%.2f of the height)" % [corp, share])
-		else:
-			assert_between(share, 0.55, 0.65, "%s: the landmark stands %.2f of the frame's height" % [corp, share])
-		var l := HqCompoundStage.layout(corp)
-		var inner := Rect2(Vector2.ZERO, VIEWS[1]).grow(-HqRunView.FIT_MARGIN_PX)
-		assert_true(inner.has_point(page.project(HqCompoundStage.server_point(l, at))), "%s: the Central Server well inside the page" % corp)
+		for run_seed in [0] + SEEDS:
+			var v := _page(corp, VIEWS[1], run_seed)
+			assert_false(v.iso.perspective(), "%s: the city's iso camera" % corp)
+			var share: float = v.landmark_share()
+			var box := HqCompoundStage.landmark_box(v.iso, v._manifest, v._at, v.run_points())
+			var wide := box.size.x / v.iso.ortho >= _city.hq_run_landmark_width_max - 0.001
+			if wide:
+				assert_lte(share, _city.hq_run_landmark_share + 0.001, "%s seed %d: a wide box held to the width (%.2f)" % [corp, run_seed, share])
+			else:
+				assert_between(share, 0.55, 0.65, "%s seed %d: the compound and its run stand %.2f of the height" % [corp, run_seed, share])
+			var server: Vector2 = v.screen_of(v.graph.final_node_id())
+			assert_true(Rect2(Vector2.ZERO, VIEWS[1]).grow(-HqRunView.FIT_MARGIN_PX).has_point(server), "%s: the Central Server well inside the page" % corp)
+			v.free()
 	# The combat backdrop keeps the manifest's own camera.
 	for corp in CORPS:
 		var m := HqCompoundStage.manifest(corp)
