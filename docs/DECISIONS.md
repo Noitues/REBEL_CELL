@@ -31,6 +31,75 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-05 — Parity fix — card aiming and combat HUD (designer ruling)
+Designer rulings 2026-10-05: (1) card aiming is drawn in grease pencil, not a dashed line; (2) with the aim over the
+target wheel, the play's result shows on the affected wheel (preview == result, no new rule); (3) combat group ruling:
+match the concept. Audit items CMB-05..08, CMB-10..18 (`docs/art_review/PARITY/GAPS.md`) plus S-CARDFACE's defect (the
+result chips drew over the hovered, grown card at text 1.0). References (art-concepts-r43): `round41_wheel_stack/
+combat_typical_v4.png` / `combat_worst_case_v4.png`, `round19_combat_fx/card_play_v2_storyboard.png` (04 PEEL + AIM,
+05 SLAP) and its `card_play.py` `draw_aim`, `round32_shop_reward/reward_screen_v2.png`, `round23_combat_fx/
+fx_enemy_defeated_v2.gif`, `round40_hub_inner_ring/player_defeat_v2.gif`. Sheet `docs/art_review/PARITY/fixes/
+COMBAT_HUD.jpg` (concept | before | after, plus the aim's frame strip).
+- **Aim in grease pencil (CMB-10, `AimLinePencil`).** The kit's wax (GreasePencilMark through RaidPencilPool, the
+  pencil CanvasLayer 95 above every UI: no UI covers grease pencil, ART_BIBLE §1.2 / §6.4) in the plan yellow, solid
+  (what this play will do): a bowed stroke from the aimed card's top edge with two head flicks, ending at the hub's
+  edge (0.28 of the wheel, the concept's stop) for a play on the whole wheel and 10 px short of any other zone (a
+  nudge button, a slice, a drone); on a target a hand loop writes on round that wheel (or drone, 0.22 of the rim);
+  a card dragged over nothing points at the pointer with no loop. Motion kept and restyled: the arrow writes on over
+  `aim_line_draw` each time the aim moves, the loop over `target_snap`, every mark the aim leaves wipes off with the
+  kit's `pencil_wipe` (trimmed, never faded); MotionSkip passive; reduce effects / headless whole at once. The acid
+  reticle is still tracked (`target_snap`, tests) but no longer drawn in a fight (`CombatFxLayer.reticle_drawn`): the
+  loop is the snap. H24's "aim line under the wheels" is superseded by the pencil rule (test updated, below).
+- **The play's result on the wheel (ruling 2, `PlayResultPlate`).** While the aim is on a target (mouse drag, click
+  aim, keys and pad alike), every wheel the play changes shows it: the aimed wheel always, and any wheel whose result
+  chips differ from the forecast without the card (a spin that makes the enemy hit you shows on your wheel too). On its
+  hub (where the arrow ends) a terminal plate with a plan-yellow edge: `IF YOU PLAY <CARD>`, the HP `from → to` (red
+  for a loss, green for a gain) and that wheel's D15 result chips: the same `ResultChipModel` row as beside the HP, so
+  it is the play then SEND IT and nothing new is computed. The slices whose status it changes are circled in grease
+  pencil (yellow good for you, red bad, the outcome's own status list); spins and nudges keep CardPreviewOverlay's
+  ghost landing, now at full strength with its labels while the aim is on that wheel (it held at 50 % while aimed).
+  A random play (GDD 2.10) keeps its odds on the chips and shows no plate. A hover without aiming keeps the chips only.
+- **The hovered card on top (S-CARDFACE's defect).** The hovered hand card draws at `HOVERED_CARD_Z` over the HUD
+  layer (the chips); the motion layer, toast, inspect popup, aim hint and tutorial stay above it (`OVER_HAND_Z`).
+- **CMB-05 TURN strip.** A slim terminal strip: `TURN 3 | FREE NUDGE 1` (Anton 20) over the fight's address line in
+  mono (`NETRUN // <CORP> // <SITE> // <ENEMY>`, `BOSS: <name>` in a boss fight, `TRAINING SIM` for a fight with
+  no run; mono 13, shrinks to the 12 px caption floor, then drops its leading parts so the Site and enemy stay whole). The key hints are no longer a banner line (the concept has none): they are
+  the strip's tooltip; the outcome word (VICTORY / DEFEAT) follows the address once it lands.
+- **CMB-06 EXECUTE plate.** The system word sits on a dark terminal plate (glass 0.72, dim edge) that holds the
+  terminal line too; SEND IT / the next step's sticker overlaps it (it was a pale outline that read as a fault).
+- **CMB-07 top bar.** No global top bar in a fight (netrun_scene hides the HudBar while the fight's panel shows; its
+  numbers keep updating); the TURN strip and the corner chips (Settings) stand alone and the wheels get the height.
+- **CMB-08 name sticker.** An operative still on the class's numbered name ("Breaker 1") reads `CELL-1 // BREAKER`
+  (the concept's CELL-9 // BREAKER; it said the class twice). The SAVED stamp now avoids the RAM panel and the name
+  sticker (Fx's avoid list).
+- **CMB-12 chips.** The chip glyph box is 20 px (as tall as its number; at 16 it read as a tiny box). The atlas has no
+  shield glyph, so block / shield keep `picto_block` (no glyph redrawn). The octagon chip and the cyan chevron bracket
+  of the audit are no longer drawn on main (gone with S-WHEEL's HP row).
+- **CMB-14 fight won.** The held word says `FIGHT WON` in the sticker yellow (round 32 reward screen; VICTORY in lime
+  collided with the focus colour); the beaten wheel's spot shows a `DELETED` vinyl sticker in its own colour with a
+  white die-cut (round 23 `fx_enemy_defeated_v2`); the dashed rings, hub name and skull went with the wheel. OURS NOW
+  is the arena's (S-ARENA, CombatBackdrop.play_won), not changed here.
+- **CMB-16 defeat.** FLATLINED stamps in on the hub, square, a hollow box in the class accent with a rule under it
+  (round 40 `player_defeat_v2`); it was a tilted red stamp with a skull. The drain is S-WHEEL's (kept).
+- **CMB-18 tutorial.** Designer: the tutorial card sits between the wheels: kept in the notes column, checked clear of
+  both wheels at 1.0 / 1.6 / 2.0 (test).
+- **Kept as is (decision only):** CMB-11 (main follows the concept: precision landing, bit stream), CMB-13 (the
+  refusal toast follows the bible: HARM edge + no-entry mark), CMB-15 / CMB-17 (LOOT / JACK OUT are white die-cut
+  stickers, the sticker rule; they now sit on the dark PROCEED plate of CMB-06).
+- **Tests.** New `tests/unit/test_parity_combat_hud.gd` (full tier): every card in content aimed at its first and last
+  option against three enemies, each plate's chips and HP equal to the real play + SEND IT (spin, nudge, block,
+  damage, evade, drone, status covered); pencil circles per changed slice; no plate on a plain hover, plates on pad
+  aiming; the arrow's start, stop, head flicks and loop; write-on / wipe / one-press skip; the hovered card's draw
+  order; the TURN strip's address and fit; CELL-n; the tutorial between and clear of the wheels; DELETED / FLATLINED
+  on the hub; the plate on screen, on its hub and off the hand at 1.0 / 1.6 / 2.0. **Updated on purpose** (they pinned
+  the superseded look): `test_horizontal_pass24` `test_the_aim_line_draws_under_the_wheels` →
+  `test_the_aim_is_grease_pencil_above_every_ui`; `test_anim_r6_combat` and `test_anim_r4_combat` read FIGHT WON for
+  VICTORY. None dropped.
+- **Files outside the area (smallest edits):** `netrun_scene.gd` (the top bar hidden in a fight), `fx.gd` (SAVED's
+  avoid list), `combat_fx_layer.gd` (`reticle_drawn`), `wheel_view.gd` (DELETED sticker, FLATLINED on the hub;
+  `DEFEATED_FONT` renamed `DELETED_FONT` with the word), `card_preview_overlay.gd` (full strength on target).
+- **Open question (default built):** the key-hint line left the TURN strip with the concept (tooltip only); if the W /
+  R switches need to be on screen, the default proposal is a small key caption under the target's nudge pair.
 ### 2026-10-05 — Designer ruling — city as a map in raid and netrun views
 Designer rulings 2026-10-05 (S-MAPVIEW): on a raid view and a netrun view the city and its buildings are slightly
 greyed and lowered in opacity so the nodes and links pop (main's raid view was "a bright colourful mess"); the city
@@ -9229,6 +9298,9 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **Parity fix card aiming and combat HUD (2026-10-05, built, see that entry):** the TURN strip follows the concept
+  (TURN | FREE NUDGE over the address line); the key hints (Q/E nudge, W switch wheel, R ring) are its tooltip only.
+  Keep, or put a small key caption under the target's nudge pair (default proposal)?
 - **S-MAPVIEW (2026-10-05, built, see "Designer ruling — city as a map in raid and netrun views"):** (1) "raid
   nodes" read as the Cell's network plus the Sites the shown raid really enters at and crosses; the other frontier
   Sites (possible entries of later raids) are off the raid map: confirm, or should the HQ (the raid view) show every

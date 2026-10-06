@@ -527,22 +527,22 @@ concept; the missing piles drop info (deck counts are in the top bar). Likely fi
 the fight's address line under it. Build: one text line top left. Main: a large boxed banner with
 stencil `TURN 1 | FREE NUDGE 1` and the key hint under it. View: main's banner is bigger than needed
 and pushes into the wheel area. Likely file: `scripts/ui/kit/hud_dialog_panel.gd` / `combat_scene.gd`.
-Decision:
+Decision: **fixed, concept**: a slim terminal strip, TURN | FREE NUDGE over the fight's address line (NETRUN // CORP // SITE // ENEMY); key hints moved to its tooltip (open question logged) (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-06 (P2) SEND IT block.** Concept: SEND IT white die-cut sticker overlapping a dark EXECUTE
 plate; RESPIN / UNDO terminal chips beside it. Main: matches, but EXECUTE is drawn as a pale ghost
 outline that reads like a rendering fault, and `> turn_resolve.exe [Space]` runs under it in tiny
 type. Build: graffiti SEND IT with drips. Likely file: `scripts/ui/kit/send_it_sticker.gd`.
-Decision:
+Decision: **fixed, concept**: EXECUTE and its terminal line sit on a dark terminal plate the sticker overlaps (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-07 (P2) Top bar in combat.** Concept: no global top bar in combat (the turn strip and corner
 chips only). Build and main: the full campaign resource bar. View: the concept gives the wheels the
-height. Likely file: `combat_scene.gd`, `hud_bar.gd`. Decision:
+height. Likely file: `combat_scene.gd`, `hud_bar.gd`. Decision: **fixed, concept**: no global top bar in a fight; the TURN strip and corner chips only (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-08 (P3) Name sticker and RAM.** Concept: `CELL-9 // BREAKER` pink sticker, RAM pips in a
 terminal plate. Main: matches; the name reads `BREAKER 1 // BREAKER` (doubled class word), SAVED
 stamp sits inside the RAM plate. Likely file: `scripts/ui/kit/hud_name_sticker.gd`, `ram_bar.gd`.
-Decision:
+Decision: **fixed, concept**: CELL-n // CLASS (no class word twice); SAVED avoids the RAM panel and the name sticker (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-09 (P2) Card-play preview.** Build: `LANDS HERE` tag, dashed slice outline and white chevrons
 on the target wheel. Main: same pieces (dashed pink slice, LANDS HERE tag, chevrons) dimmer; the
@@ -554,41 +554,41 @@ first spot clear of the target reticle, the nudge buttons and the HP row (they w
 reticle). File `scripts/ui/wheel/attach/card_preview_overlay.gd`.
 
 **CMB-10 (P3) Aim line.** Both: yellow dashed pencil line from the card to the target; main's ends
-on the slice, the build's on the wheel. Equivalent. Decision:
+on the slice, the build's on the wheel. Equivalent. Decision: **fixed, designer ruling (grease pencil)**: the aim is a yellow grease-pencil arrow from the card's top edge to the hub's edge with a loop round the target, written on (aim_line_draw / target_snap) and wiped (pencil_wipe); with the aim on a target the play's result shows on every wheel it changes (hub plate: HP from -> to + the D15 chips; changed slices circled in pencil), held to the real play for every card (test_parity_combat_hud.gd) (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-11 (P2) Mid-replay.** Build: forecast tags flip to `THIS TURN` with tick boxes. Main: a WEAK
 landing tag, the bit stream into the hub, a blue shield bar beside the wheel, chips `?`. Main follows
-the concept (precision landings, bit stream); fine. Decision:
+the concept (precision landings, bit stream); fine. Decision: **keep main**: it follows the concept (precision landing, bit stream) (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-12 (P2) Result chips and LAST TURN.** Concept: `-14` red boxed, `(4 shield)`, `+4` green, at
 HP height. Main: the chips are there; `+3` uses a tiny boxed icon, an empty octagon outline chip
 follows HP (an empty status slot?) and the HP plate has a cyan chevron bracket the concept lacks.
-Likely file: `scripts/ui/kit/hud_result_chips.gd`, `result_chip_model.gd`. Decision:
+Likely file: `scripts/ui/kit/hud_result_chips.gd`, `result_chip_model.gd`. Decision: **fixed, concept**: the chip glyph as tall as its number; octagon chip and chevron bracket no longer drawn; block keeps picto_block (no shield glyph in the atlas) (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-13 (P2) Refusal toast.** Build: yellow paper note with a no-entry mark, pencil type. Main: a
 red-edged terminal toast centre-right, small. The bible says "refusal: HARM edge + no-entry mark":
-main follows the bible. Decision:
+main follows the bible. Decision: **keep main**: follows the bible (HARM edge + no-entry mark) (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-14 (P2) Victory.** Build: the enemy wheel greyed with a green `DEFEATED` stamp and skull, a
 small LOOT graffiti. Main: `VICTORY` in big lime stencil, `OURS NOW` in yellow over the backdrop,
 the enemy wheel removed (dashed circle + DEFEATED stamp), the operative line in a terminal box.
 View: main is louder; `OURS NOW` floats with no anchor. Likely file: `combat_scene.gd`
-(`combat_end_hold`), `scripts/ui/kit/zine_stamp.gd`. Decision:
+(`combat_end_hold`), `scripts/ui/kit/zine_stamp.gd`. Decision: **fixed, concept**: FIGHT WON in sticker yellow; the beaten wheel's spot shows a DELETED vinyl sticker (round 23 fx_enemy_defeated_v2); OURS NOW is S-ARENA's (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-15 (P3) LOOT sticker.** Main: white die-cut LOOT with lime focus brackets; build: graffiti.
-Main follows the sticker rule. Decision:
+Main follows the sticker rule. Decision: **keep main**: white die-cut sticker (the sticker rule), now on the dark PROCEED plate (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-16 (P2) Defeat.** Build: player wheel drained grey with a red DEFEAT stamp and skull. Main:
 FLATLINED stamp, wheel dimmed, the top bar shrinks to HEAT + SCHEMATICS only, both on main and the
-build. Concept `round40_hub_inner_ring/player_defeat_v2.gif` (drain). Decision:
+build. Concept `round40_hub_inner_ring/player_defeat_v2.gif` (drain). Decision: **fixed, concept**: FLATLINED on the hub, square, a hollow box in the class accent (round 40 player_defeat_v2); no top bar in a fight (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
-**CMB-17 (P3) JACK OUT sticker.** As CMB-15. Decision:
+**CMB-17 (P3) JACK OUT sticker.** As CMB-15. Decision: **keep main**: as CMB-15 (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **CMB-18 (P1) Tutorial card covers the play area.** Build: the tutorial note sits bottom right,
 paper, clear of both wheels. Main: a terminal card sits in the middle between the wheels, over the
 enemy wheel's left edge and the backdrop; its body is Plex sans at a small size. View: the build's
 placement keeps the wheels readable while you read. Likely file: `scripts/ui/kit/tutorial_overlay.gd`.
-Decision:
+Decision: **designer: between the wheels**: kept in the notes column, tested clear of both wheels at 1.0 / 1.6 / 2.0 (designer group ruling 2026-10-05: combat matches the concept; see DECISIONS "Parity fix — card aiming and combat HUD", sheet fixes/COMBAT_HUD.jpg)
 
 **BOSS-01 (P1) Guard-arc marker over the HP plate.** Main: the green guard-arc end marker (the
 triangle) sits on the first digits of the boss HP `1395/1475`. Build and concept: nothing over the

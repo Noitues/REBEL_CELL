@@ -61,10 +61,13 @@ const ENEMY_HIT_COLOR := CHIP_LOSS
 const MIN_CARD_SCALE := 0.6
 ## ART-2 2D: the TURN banner (width, title lettering and padding at text scale 1.0), SEND IT's
 ## and the next step's lettering, and the overlap of the name sticker on the RAM panel (px).
-const BANNER_W := 460.0
-const BANNER_FONT := 24
-const BANNER_PAD_H := 18.0
-const BANNER_PAD_V := 3.0
+## S-COMBAT-HUD (CMB-05, combat_typical_v4): a slim terminal strip, "TURN 3 | FREE NUDGE 1"
+## over the fight's address line in small mono (the key hints are its tooltip).
+const BANNER_W := 420.0
+const BANNER_FONT := 20
+const BANNER_PAD_H := 16.0
+const BANNER_PAD_V := 2.0
+const ADDRESS_FONT := 13
 const SEND_IT_FONT := 58
 const CONTINUE_FONT := 46
 const NAME_OVERLAP := 10
@@ -140,6 +143,8 @@ var hud_layer: HudWheelLayer
 ## The TURN banner's title line (the status line under it keeps the key hints).
 var _banner: PanelContainer
 var _banner_title: Label
+## S-COMBAT-HUD (CMB-05): the banner's address line ("NETRUN // CORP // SITE // ENEMY").
+var _address: Label
 ## The banner's lines: stacked, or side by side at big text (the arena keeps its height).
 var _banner_rows: BoxContainer
 ## Bottom left: the operative's name sticker over the RAM panel.
@@ -167,14 +172,17 @@ var selecting: int = -1
 var _options: Array[CombatAction] = []
 var _option_index: int = -1
 var _dragging: bool = false
-## Draws the aim line (see _draw_aim_line).
-var _aim_line: Control
+## The aim in grease pencil (S-COMBAT-HUD, CMB-10): it asks `aim_spec` each frame.
+var aim_pencil: AimLinePencil
 ## The aiming instruction over the hand.
 var _aim_hint: Label
 const AIM_HINT_FONT := 14
 ## Other cards fade while one is aimed.
 const AIM_DIM := 0.45
-const AIM_LINE_WIDTH := 3.0
+## How short of a zone that is not the hub the pencil arrow stops (px at text scale 1.0), and
+## a drone's loop radius (share of its wheel's rim).
+const AIM_STOP := 10.0
+const AIM_SAT_LOOP := 0.22
 ## Pad triggers held down (axis -> bool): a squeeze toggles once.
 var _trigger_down: Dictionary = {}
 ## Scale the hand's cards were built at (rebuilt when the room or text scale changes it).
@@ -661,6 +669,7 @@ func start_tutorial() -> void:
 		return
 	tutorial = TutorialOverlay.new(TUTORIAL_RECT.size)
 	tutorial.position = TUTORIAL_RECT.position  # the right column: never on a wheel (GDD 9.2)
+	tutorial.z_index = OVER_HAND_Z  # its words and NEXT stay over a hovered card
 	add_child(tutorial)
 	_relayout.call_deferred()
 	tutorial.step_changed.connect(_relayout.call_deferred)  # ANIM-R6 A16: the box follows its step's text
@@ -1181,7 +1190,7 @@ func _on_view_drag_hover(view_id: StringName, zone: Dictionary) -> void:
 			v.queue_redraw()
 		_clear_ghost()
 		_show_end_turn_preview()
-		_aim_line.queue_redraw()
+		_clear_play_results()
 		return
 	_show_selection()
 
@@ -1199,25 +1208,36 @@ func _on_view_drop(view_id: StringName, zone: Dictionary) -> void:
 	confirm_selection()
 
 
-## A dashed acid line from the aimed card to the zone it plays on, with a ring there.
-func _draw_aim_line() -> void:
+## S-COMBAT-HUD (CMB-10, designer ruling 2026-10-05): the aim the grease pencil draws now
+## (AimLinePencil's spec), {} when no card is aimed. The arrow runs from the aimed card's top
+## edge to the zone it plays on (to the hub's edge for a play on the whole wheel, the
+## concept's stop; a little short of any other zone) and writes on over `aim_line_draw` each
+## time the aim moves; on a target the loop goes round that wheel (or drone). A card dragged
+## over nothing points at the pointer, with no loop.
+func aim_spec() -> Dictionary:
 	var card_node := _card_node(selecting)
-	if selecting < 0 or _option_index < 0 or card_node == null:
-		return
+	if selecting < 0 or card_node == null or not card_node.is_inside_tree():
+		return {}
+	var card := card_node.get_global_rect()
+	var from := Vector2(card.get_center().x, card.position.y)
+	if _option_index < 0 or _option_index >= _options.size():
+		if not _dragging:
+			return {}
+		return {"from": from, "to": get_global_mouse_position(), "arrow_t": 1.0, "stop": 0.0, "loop": {}}
 	var z := _zone_of(_options[_option_index])
 	var v := _view_of(z[0])
 	if v == null:
-		return
-	var origin := _aim_line.get_global_rect().position
-	var card := card_node.get_global_rect()
-	var from := Vector2(card.get_center().x, card.position.y) - origin
-	# ANIM-3: the line draws in from the card each time the aim moves.
-	var to := from.lerp(v.zone_center(z[1]) - origin, _aim_draw)
-	var n := maxi(2, int(from.distance_to(to) / 14.0))
-	for k in n:
-		if k % 2 == 0:
-			_aim_line.draw_line(from.lerp(to, float(k) / n), from.lerp(to, float(k + 1) / n), Palette.CELL_ACID, AIM_LINE_WIDTH)
-	_aim_line.draw_arc(to, 12.0, 0, TAU, 20, Palette.CELL_ACID, AIM_LINE_WIDTH)
+		return {}
+	var zone: Dictionary = z[1]
+	var kind := String(zone.get("kind", ""))
+	var to := v.zone_center(zone)
+	var stop := AIM_STOP * Settings.text_scale
+	if kind == "hub":
+		stop = v.rim_radius() * AimLinePencil.HUB_STOP
+	var loop := {"key": "%s|wheel" % v.combatant.id, "center": v.global_center(), "radius": v.rim_radius()}
+	if kind == "satellite":
+		loop = {"key": "%s|%s" % [v.combatant.id, String(zone["id"])], "center": to, "radius": v.rim_radius() * AIM_SAT_LOOP}
+	return {"from": from, "to": to, "arrow_t": _aim_draw, "stop": stop, "loop": loop, "marks": _slice_marks}
 
 
 ## Fades the cards not being aimed (and restores them).
@@ -1225,7 +1245,8 @@ func _dim_hand() -> void:
 	for c in _hand_box.get_children():
 		if c is ZineCard and not _returning.has((c as ZineCard).drag_index):
 			(c as Control).modulate.a = AIM_DIM if selecting >= 0 and (c as ZineCard).drag_index != selecting else 1.0
-	_aim_line.queue_redraw()
+	if selecting < 0:
+		_clear_play_results()
 	if selecting < 0 and _aim_hint != null:
 		_aim_hint.visible = false
 
@@ -1280,6 +1301,71 @@ func _show_selection() -> void:
 	if aimed_view != null:
 		_aim_at(aimed_view.zone_center(z[1]))
 	_preview_action(_options[_option_index])
+
+
+## S-COMBAT-HUD (designer ruling 2026-10-05): the aim is on a target: the play's result shows
+## on every wheel it changes (the aimed one, and any whose result chips differ from the
+## forecast without the card, `base`): a PlayResultPlate on its hub with the HP before and
+## after and its result chips (the same ResultChipModel row as beside the HP), and each slice
+## whose status it changes circled in grease pencil (yellow good for you, red bad). A random
+## play shows its odds on the chips only (GDD 2.10: the roll is never previewed).
+func _show_play_results(action: CombatAction, base: Dictionary) -> void:
+	_clear_play_results()
+	var state := engine.state()
+	var card := engine.content(state.hand[action.hand_index]) as CardData if action.type == CombatAction.Type.PLAY_CARD and action.hand_index < state.hand.size() else null
+	if card == null or CardTargeting.is_random(card):
+		return
+	var target := state.get_combatant(action.wheel_id)
+	var aimed := _view_of(target.host_id if target != null and target.is_satellite else action.wheel_id)
+	var caption := tr("IF YOU PLAY %s") % TextDb.t(card, "display_name").to_upper()
+	for v in _views():
+		var c: CombatantState = v.combatant
+		if c == null or not c.is_alive() or v.outcome.is_empty():
+			continue
+		var row: Array = hud_layer.row_for(v).chips
+		if v != aimed and HudResultChips.signature(row) == HudResultChips.signature(base.get(v, [])):
+			continue
+		var plate: PlayResultPlate = _play_plates.get(v)
+		if plate == null:
+			plate = PlayResultPlate.new()
+			_plate_layer.add_child(plate)
+			_play_plates[v] = plate
+		plate.show_result(caption, c.hp, int(v.outcome.get("hp_after", c.hp)), row, v.global_center())
+		for st in v.outcome.get("statuses", []):
+			var slot := int(st["slot"])
+			var good := WheelView.status_good_for_you(int(st["after"]), c.is_player) if int(st["after"]) != RC.Status.NONE else not WheelView.status_good_for_you(int(st["before"]), c.is_player)
+			_slice_marks.append({"key": "%s|%d" % [c.id, slot], "center": v.badge_spot(slot), "radius": v.band_width() * PLAY_MARK_R,
+				"ink": GreasePencilMark.Ink.PLAN if good else GreasePencilMark.Ink.THREAT})
+
+
+## The play results go (the aim left its target, or aiming ended).
+func _clear_play_results() -> void:
+	for p in _play_plates.values():
+		if is_instance_valid(p):
+			(p as PlayResultPlate).clear()
+	_slice_marks.clear()
+
+
+## Every play result plate showing (tests): view -> plate.
+func play_plates() -> Dictionary:
+	var out := {}
+	for v in _play_plates:
+		var p: PlayResultPlate = _play_plates[v]
+		if is_instance_valid(p) and p.visible:
+			out[v] = p
+	return out
+
+
+## The slices a play changes, circled by the aim's pencil (tests read them).
+func slice_marks() -> Array[Dictionary]:
+	return _slice_marks
+
+
+var _play_plates: Dictionary = {}
+var _slice_marks: Array[Dictionary] = []
+var _plate_layer: Control
+## A changed slice's pencil circle (share of the slice band).
+const PLAY_MARK_R := 0.32
 
 
 # --- Engine callbacks --------------------------------------------------------------
@@ -1699,7 +1785,21 @@ func _build_ui() -> void:
 	banner_rows.add_child(_banner_title)
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_status.add_theme_color_override("font_color", HudSkin.TERMINAL_TEXT)
+	# S-COMBAT-HUD (CMB-05): the key hints are no longer a banner line (the concept's strip has
+	# the address line); the label keeps them as the banner's tooltip and for the readers.
+	_status.visible = false
 	banner_rows.add_child(_status)
+	_address = Label.new()
+	_address.name = "BannerAddress"
+	_address.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # built from translated parts
+	_address.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_address.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS  # past its smallest size: "…" at the end
+	_address.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_address.resized.connect(_fit_address)
+	_address.add_theme_font_override("font", HudSkin.mono())
+	_address.add_theme_color_override("font_color", HudSkin.TERMINAL_TEXT)
+	_address.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	banner_rows.add_child(_address)
 	top.add_child(_banner)
 	_settings_button = _button(tr("Settings"), open_settings)
 	_settings_button.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # ANIM-R6 A12: its words come translated
@@ -1865,6 +1965,12 @@ func _build_ui() -> void:
 	hud_layer.name = "HudLayer"
 	hud_layer.views_of = _views
 	add_child(hud_layer)
+	# S-COMBAT-HUD: an aimed play's result plates, on the wheels it changes.
+	_plate_layer = Control.new()
+	_plate_layer.name = "PlayResults"
+	_plate_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_plate_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(_plate_layer)
 	# The motion overlay: over the arena and the hand, under the toast and popups.
 	fx_layer = CombatFxLayer.new()
 	fx_layer.name = "MotionLayer"
@@ -1875,17 +1981,19 @@ func _build_ui() -> void:
 	inspect_popup = InspectPopup.new()
 	inspect_popup.name = "InspectPopup"
 	add_child(inspect_popup)
-	# The aim line: from the card being aimed to the zone it would play on. Drawn under the
-	# wheel views (H24: on top it crossed the HP number and the NEXT plate).
-	_aim_line = Control.new()
-	_aim_line.name = "AimLine"
-	_aim_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_aim_line.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_aim_line.draw.connect(_draw_aim_line)
-	add_child(_aim_line)
-	move_child(_aim_line, root.get_index())
+	fx_layer.reticle_drawn = false  # CMB-10: the pencil's snap loop marks the target (no acid reticle)
+	for over in [fx_layer, toast, inspect_popup]:
+		(over as CanvasItem).z_index = OVER_HAND_Z  # over the hovered hand card (HOVERED_CARD_Z)
+	# S-COMBAT-HUD (CMB-10, designer ruling 2026-10-05): the aim is grease pencil, on the kit's
+	# pencil layer above every UI (ART_BIBLE v2 §1.2, §6.4: no UI ever covers grease pencil;
+	# H24's "under the wheels" rule for the old dashed line is superseded).
+	aim_pencil = AimLinePencil.new()
+	aim_pencil.spec = aim_spec
+	add_child(aim_pencil)
 	_aim_hint = Label.new()
 	_aim_hint.name = "AimHint"
+	_aim_hint.z_index = OVER_HAND_Z
+	_aim_hint.add_to_group(CardPreviewOverlay.LABEL_BLOCK_GROUP)  # the preview's labels keep off it
 	_aim_hint.visible = false
 	_aim_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_aim_hint.add_theme_color_override("font_color", Palette.CELL_ACID)
@@ -1964,7 +2072,10 @@ func _relayout() -> void:
 	_sticker_box.vertical = ts > STICKERS_SIDE_BY_SIDE_UP_TO
 	_banner_rows.vertical = ts <= STICKERS_SIDE_BY_SIDE_UP_TO
 	_banner_rows.add_theme_constant_override("separation", 0 if _banner_rows.vertical else roundi(BANNER_PAD_H))
-	_banner.custom_minimum_size.x = minf(BANNER_W * ts, size.x * (BANNER_MAX_SHARE if _banner_rows.vertical else BANNER_WIDE_SHARE))
+	# CMB-05: wide enough for the address line at its size, within the share.
+	var address_w := HudSkin.mono().get_string_size(_address_full, HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(ADDRESS_FONT * minf(ts, BANNER_SCALE_MAX))).x + BANNER_PAD_H * 2.0
+	_banner.custom_minimum_size.x = minf(maxf(BANNER_W * ts, address_w), size.x * (BANNER_MAX_SHARE if _banner_rows.vertical else BANNER_WIDE_SHARE))
+	_fit_address()
 	# At big text the name sticker and RAM panel leave the bottom row for the notes column's top;
 	# the sticker stands down there (its words lead the RAM header) so the notes keep their room.
 	name_sticker.visible = ts <= STICKERS_SIDE_BY_SIDE_UP_TO
@@ -2061,7 +2172,7 @@ func _refresh(state: CombatState) -> void:
 		portrait.set_operative(engine.netrun.run.operative.class_id, engine.netrun.run.operative.id)
 	_portrait_name = [operative_name, _name_of(state.player)]
 	# A fight with no operative (the dev fight) says CELL for the name (ART-2 2D).
-	name_sticker.set_names(operative_name if operative_name != state.player.display_name else tr("CELL"), _name_of(state.player))
+	name_sticker.set_names(operative_name if operative_name != state.player.display_name else tr("CELL"), _name_of(state.player), tr("CELL"))
 	# ANIM-R6 A8: while a SEND IT replays, the portrait (its glitch, its HP tooltip) shows the
 	# HP the replay has reached, not the turn's end.
 	_sync_portrait(state.player.hp if _replay_hp < 0 else _replay_hp, state.player.max_hp)
@@ -2338,6 +2449,70 @@ func _refresh_status() -> void:
 			text += tr(" · %s: %s RING") % [Settings.key_text(&"toggle_ring"), tr("OUTER") if inner else tr("INNER")]
 	_status.text = text.trim_prefix(" · ")
 	_fit_status()
+	# S-COMBAT-HUD (CMB-05): the address line, and the outcome's word after it once it lands.
+	var line := address_line()
+	if not _outcome_held and state.outcome != CombatState.Outcome.NONE:
+		line += "  ·  " + _status.text
+	_address_full = line
+	_address.text = line
+	_banner.tooltip_text = _status.text if state.outcome == CombatState.Outcome.NONE else ""
+	_fit_address()
+
+
+## S-COMBAT-HUD (CMB-05, combat_typical_v4 "NETRUN // MERIDIAN FREIGHT // THE CONTAINER
+## FORTRESS // BOSS: THE MANIFEST"): where the fight is, in caps: the run, the corporation, the
+## Site, then the enemy (a boss as "BOSS: <name>", several enemies joined with +). A fight with
+## no run (the tutorial, a dev fight) says TRAINING SIM.
+func address_line() -> String:
+	var parts := PackedStringArray()
+	var run: RunState = engine.netrun.run if engine.netrun != null else null
+	if run == null:
+		parts.append(tr("TRAINING SIM"))
+	else:
+		parts.append(tr("NETRUN"))
+		var corp := RunManager.corporation
+		if corp != null:
+			parts.append(TextDb.t(corp, "display_name"))
+			var site := CampaignRules.site_data(corp, run.site_id) if run.site_id != &"" else null
+			if site != null:
+				parts.append(TextDb.t(site, "display_name"))
+	var names := PackedStringArray()
+	for e in engine.state().enemies:
+		if not e.is_satellite:
+			names.append(_name_of(e))
+	if not names.is_empty():
+		var who := " + ".join(names)
+		parts.append(tr("BOSS: %s") % who if run != null and run.kind == "boss" else who)
+	return " // ".join(parts).to_upper()
+
+
+## The address line's font: ADDRESS_FONT at the text scale (capped like the title), smaller
+## until it fits the banner's width.
+func _fit_address() -> void:
+	if _address == null:
+		return
+	var font := HudSkin.mono()
+	var fs := roundi(ADDRESS_FONT * minf(Settings.text_scale, BANNER_SCALE_MAX))
+	var room := maxf(_banner.custom_minimum_size.x, _banner.size.x) - BANNER_PAD_H * 2.0
+	if not _banner_rows.vertical:
+		room -= _banner_title.get_combined_minimum_size().x + BANNER_PAD_H
+	if _address.size.x > 0.0:
+		room = minf(room, _address.size.x)  # laid out: the room it really has
+	while fs > ADDRESS_MIN_FONT and font.get_string_size(_address_full, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
+		fs -= 1
+	# At its smallest it drops its leading parts (NETRUN, the corporation...) so the Site and
+	# the enemy stay whole; the ellipsis only past that.
+	var parts := _address_full.split(" // ")
+	while parts.size() > 1 and font.get_string_size(" // ".join(parts), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
+		parts.remove_at(0)
+	_address.text = " // ".join(parts)
+	_address.add_theme_font_size_override("font_size", fs)
+
+
+## The smallest the address line shrinks to (px); past it the line drops its leading parts.
+const ADDRESS_MIN_FONT := 12
+## The whole address line (the label may show its end only).
+var _address_full: String = ""
 
 
 ## The status line's font: its themed size, smaller until the line fits its width.
@@ -2443,6 +2618,15 @@ func _spread_hand(hovered: int) -> void:
 		var card := _hand_box.get_child(k) as ZineCard
 		if card != null:
 			card.slide_aside(0 if hovered < 0 or k == hovered else signi(k - hovered))
+			# S-COMBAT-HUD (S-CARDFACE's defect): the hovered, grown card draws over the HUD layer
+			# (the result chips beside the player's HP drew on it at text 1.0); the motion layer,
+			# toasts and popups stay above it (OVER_HAND_Z).
+			card.z_index = HOVERED_CARD_Z if k == hovered else 0
+
+
+## The hovered hand card's draw order over the HUD layer, and the layers kept above it.
+const HOVERED_CARD_Z := 1
+const OVER_HAND_Z := 2
 
 
 ## Card scale: the text scale, shrunk when the hand would not fit beside SEND IT.
@@ -2540,10 +2724,18 @@ func _preview_action(action: CombatAction) -> void:
 		var reason := result.error if result != null else "No fight."
 		preview_note.append("[color=#c05000]%s[/color]" % reason)
 		_show_end_turn_preview()
+		_clear_play_results()
 		return
 	var was := _forecast_tags()
+	var base := {}
+	for v in _views():
+		base[v] = hud_layer.row_for(v).chips.duplicate(true)
 	_preview_result(action, state, result)
 	_mark_was(was)
+	if selecting >= 0 and _option_index >= 0 and action.type == CombatAction.Type.PLAY_CARD:
+		_show_play_results(action, base)
+	else:
+		_clear_play_results()
 
 
 ## ANIM-R5 combat 7: the tags as the End Turn forecast shows them now (view -> its tag), so a
@@ -3656,7 +3848,6 @@ func _aim_at(at: Vector2) -> void:
 		_aim_tween.kill()
 	if not Motion.live(&"aim_line_draw"):
 		_aim_draw = 1.0
-		_aim_line.queue_redraw()
 		return
 	var e := Motion.entry(&"aim_line_draw")
 	_aim_draw = 0.0
@@ -3666,7 +3857,6 @@ func _aim_at(at: Vector2) -> void:
 
 func _set_aim_draw(v: float) -> void:
 	_aim_draw = v
-	_aim_line.queue_redraw()
 
 
 ## A drag let go on nothing (or on no legal target): the card glides home to its slot
@@ -4582,9 +4772,13 @@ func _end_beat(outcome: int) -> void:
 func _hold_victory(instant: bool) -> void:
 	if fx_layer == null:
 		return
-	var word := tr("VICTORY")
+	# S-COMBAT-HUD (parity CMB-14, round 32 `reward_screen_v2`): the won fight says FIGHT WON in
+	# the Cell's sticker yellow (VICTORY in lime collided with the focus colour and was louder
+	# than the concept); the beaten wheel's DELETED sticker and the backdrop's pencilled OURS NOW
+	# carry the rest.
+	var word := tr("FIGHT WON")
 	arena_backdrop.play_won(instant)  # ART-2 2B (D17): the target's lights turn Cell colours
-	fx_layer.hold_word(end_word_spot(true), word, Palette.CELL_ACID, end_word_size(true, word), instant)
+	fx_layer.hold_word(end_word_spot(true), word, Palette.STICKER_SAFE, end_word_size(true, word), instant)
 
 
 ## Where VICTORY (the enemies' side) or DEFEAT (the operative's wheel) lands (global).

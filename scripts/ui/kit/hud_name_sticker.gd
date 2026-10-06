@@ -23,8 +23,12 @@ func _init() -> void:
 
 
 ## Shows "<name> // <class>" (both already translated); one word when they are the same.
-func set_names(operative: String, class_word: String) -> void:
-	var a := operative.strip_edges().to_upper()
+## S-COMBAT-HUD (parity CMB-08): an operative still on the class's own numbered name
+## ("Breaker 1") reads as its cell designation, "CELL-1 // BREAKER" (the concept's
+## "CELL-9 // BREAKER"; it read "BREAKER 1 // BREAKER", the class word twice); `cell_word`
+## is the translated "CELL".
+func set_names(operative: String, class_word: String, cell_word: String = "") -> void:
+	var a := cell_name(operative, class_word, cell_word).to_upper()
 	var b := class_word.strip_edges().to_upper()
 	var w := b if a == "" or a == b else ("%s // %s" % [a, b] if b != "" else a)
 	if w == words:
@@ -33,6 +37,17 @@ func set_names(operative: String, class_word: String) -> void:
 	tooltip_text = w
 	_fit()
 	queue_redraw()
+
+
+## The operative's name as the sticker says it: "<cell>-<n>" when the name is the class word
+## and a number ("Breaker 1" -> "CELL-1"), else the name itself.
+static func cell_name(operative: String, class_word: String, cell_word: String) -> String:
+	var a := operative.strip_edges()
+	var b := class_word.strip_edges()
+	if cell_word == "" or b == "" or not a.to_upper().begins_with(b.to_upper() + " "):
+		return a
+	var rest := a.substr(b.length()).strip_edges()
+	return "%s-%s" % [cell_word, rest] if rest.is_valid_int() else a
 
 
 static func font_px() -> int:
