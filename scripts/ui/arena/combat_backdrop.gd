@@ -67,6 +67,8 @@ var city: CityView3D = null
 var shot: Dictionary = {}
 var _city_ready: bool = false
 var _won_lights: SiteWonLights = null
+var _site_lots: Dictionary = {}
+var _ext_job: Dictionary = {}
 
 
 func _init() -> void:
@@ -175,6 +177,7 @@ func _sync_won() -> void:
 
 
 func _process(_delta: float) -> void:
+	_poll_extension()
 	if not wheel_source.is_valid():
 		return
 	var views: Array = wheel_source.call()
@@ -308,9 +311,14 @@ func _use_city() -> void:
 	var corp_data := RunManager.lookup().get_content(corp) as CorporationData
 	var lots := CityLayout.site_points(corp_data) if corp_data != null and corp_data.city_grid != null else {}
 	var sz := size if size.x >= 2.0 and size.y >= 2.0 else Vector2(1280, 720)
+	_site_lots = lots
 	shot = BackdropCatalog.city_shot(cfg, place, lots, sz)
 	if city != null and (shot["stage"] != &"") != city.compounds.has(CityView3D.CELL):
 		_drop_city()
+	elif city != null and city.model != null and _needs_extension(cfg):
+		_drop_city()  # S-ARENA round 2: a new place past the city's edge needs its own recorded chunks
+	if shot.is_empty():
+		shot = BackdropCatalog.city_shot(cfg, place, lots, sz)  # _drop_city clears it
 	if city == null:
 		city = CityView3D.new()
 		city.name = "BackdropCity"
@@ -318,13 +326,83 @@ func _use_city() -> void:
 		if shot["stage"] != &"":
 			city.stage_compound(shot["stage"])
 		city.model_ready.connect(_on_city_ready)
-		add_child(city)
-		city.set_view_size(render_px(sz))
+		if not _extend_city(cfg):
+			_attach_city(sz)
 	_light_city()
 	city.set_site_landmark(StringName(shot.get("landmark", &"")), shot["lot"])
 	_frame_city()
-	if city.model != null and city.chunks_built() > 0:
+	if city.is_inside_tree() and city.model != null and city.chunks_built() > 0:
 		_on_city_ready()
+
+
+func _attach_city(sz: Vector2) -> void:
+	add_child(city)
+	city.set_view_size(render_px(sz))
+	_frame_city()
+
+
+## S-ARENA round 2: a Site or HQ shot near the city's edge records the city past city_rect round its
+## target (BackdropCatalog.extension_keys) on worker threads, into its own copy of the shared
+## model, before its close-up is attached (the still shows meanwhile). False when nothing is
+## missing or the shared model is not built yet (the close-up then uses the shared one).
+func _extend_city(cfg: CityConfig) -> bool:
+	if not String(shot.get("focus", "")) in ["site", "hq"]:
+		return false
+	var base := CityModel.shared_if_built(cfg, city.city_seed)
+	if base == null:
+		return false
+	var keys := BackdropCatalog.extension_keys(cfg, shot["lot"], base.chunks)
+	if keys.is_empty():
+		return false
+	var recs: Array[CityLayoutRecorder] = []
+	var rects: Array[Rect2i] = []
+	for k in keys:
+		recs.append(CityModel.recorder(city.city_seed))
+		rects.append(Rect2i(k * cfg.chunk_lots, Vector2i(cfg.chunk_lots, cfg.chunk_lots)))
+	var task := WorkerThreadPool.add_group_task(func(i: int) -> void: recs[i].record(rects[i]), keys.size(), -1, true, "BackdropCity")
+	_ext_job = {"task": task, "recs": recs, "rects": rects, "keys": keys, "base": base}
+	return true
+
+
+## True when the shot's place needs chunks the current close-up's model lacks.
+func _needs_extension(cfg: CityConfig) -> bool:
+	return String(shot.get("focus", "")) in ["site", "hq"] and not BackdropCatalog.extension_keys(cfg, shot["lot"], city.model.chunks).is_empty()
+
+
+## Lands a finished extension: the shared model's chunks with the recorded ones in place of
+## (or beside) their cut or missing chunks, then attaches the close-up.
+func _poll_extension() -> void:
+	if _ext_job.is_empty() or not WorkerThreadPool.is_group_task_completed(int(_ext_job["task"])):
+		return
+	WorkerThreadPool.wait_for_group_task_completion(int(_ext_job["task"]))
+	var job := _ext_job
+	_ext_job = {}
+	var recs: Array[CityLayoutRecorder] = job["recs"]
+	if city == null:
+		for r in recs:
+			r.free()
+		return
+	city.use_model(extended_model(job["base"], job["keys"], job["rects"], recs))
+	for r in recs:
+		r.free()
+	_attach_city(size if size.x >= 2.0 and size.y >= 2.0 else Vector2(1280, 720))
+
+
+## A copy of `base` (its prisms, streets, plazas and HQs shared, its chunk table copied) with
+## chunks `keys` set to the recordings `recs` of `rects`.
+static func extended_model(base: CityModel, keys: Array, rects: Array, recs: Array[CityLayoutRecorder]) -> CityModel:
+	var m := CityModel.new()
+	m.cfg = base.cfg
+	m.city_seed = base.city_seed
+	m.prisms = base.prisms.duplicate()
+	m.streets = base.streets.duplicate()
+	m.plazas = base.plazas.duplicate()
+	m.hqs = base.hqs.duplicate()
+	m.chunks = base.chunks.duplicate()
+	m.buildings = base.buildings
+	for i in keys.size():
+		m.add_recording(keys[i], rects[i], recs[i])
+	return m
 
 
 func _frame_city() -> void:
@@ -334,20 +412,26 @@ func _frame_city() -> void:
 	cam.viewport = Vector2(city.size)
 	city.set_iso(cam)
 	var t := city.project(shot.get("centre", cam.target))
-	_mat.set_shader_parameter(&"keep_at", Vector2(t.x / maxf(1.0, float(city.size.x)), t.y / maxf(1.0, float(city.size.y))))
+	var at := Vector2(t.x / maxf(1.0, float(city.size.x)), t.y / maxf(1.0, float(city.size.y)))
+	_mat.set_shader_parameter(&"keep_at", at)
 	_mat.set_shader_parameter(&"keep_radius", CityView3D.CONFIG.backdrop_keep_radius)
+	# S-ARENA round 2: the subject reads first (the rest softened and dimmed round it).
+	_mat.set_shader_parameter(&"focus_at", at)
 
 
 func _on_city_ready() -> void:
 	if city == null:
 		return
-	if String(shot.get("focus", "")) == "site" and city.model != null:
-		# The Site's own building: the nearest lot with a roof (the layout's point may be a street).
+	if String(shot.get("focus", "")) == "site" and city.model != null and not shot.has("landmark"):
+		# S-ARENA round 2: the subject is the Site's own building (the nearest lot with a roof:
+		# the layout's point may be a street), measured on the model, framed large.
 		var lot := _building_lot(city.model, shot["lot"])
-		shot["lot"] = lot
-		var cfg := CityView3D.CONFIG
-		(shot["camera"] as CityIsoCamera).target = city.lot_world(lot, cfg.backdrop_site_lift)
-		_frame_city()
+		var box := _building_box(city.model, Vector2i(lot.floor()))
+		if box.size != Vector3.ZERO:
+			var corp: StringName = place.get("corp", BackdropCatalog.DEFAULT_CORP)
+			shot = BackdropCatalog.site_shot(CityView3D.CONFIG, corp, StringName(shot["won_site"]), _site_lots, Vector2(city.size), box)
+			shot["lot"] = lot
+			_frame_city()
 	_city_ready = true
 	_light_city()
 	_tex = city.get_texture()
@@ -380,17 +464,22 @@ func _light_city() -> void:
 	var cfg := CityView3D.CONFIG
 	city.set_night_share(0.0, BackdropCatalog.city_look(cfg, String(shot.get("focus", "hq"))))
 	_mat.set_shader_parameter(&"city_exposure", cfg.backdrop_exposure)
-	_mat.set_shader_parameter(&"city_tint", cfg.backdrop_tint)
+	_mat.set_shader_parameter(&"city_tint", cfg.backdrop_tint_by_corp.get(place.get("corp", &""), cfg.backdrop_tint))
 	_mat.set_shader_parameter(&"city_saturation", cfg.backdrop_saturation)
 	_mat.set_shader_parameter(&"city_grade", _city_ready)
+	_mat.set_shader_parameter(&"focus_radius", cfg.backdrop_focus_radius)
+	_mat.set_shader_parameter(&"focus_blur", cfg.backdrop_focus_blur)
+	_mat.set_shader_parameter(&"focus_lift", cfg.backdrop_focus_lift)
+	_mat.set_shader_parameter(&"focus_dim", cfg.backdrop_focus_dim if _city_ready and String(shot.get("focus", "")) != "compound" else 0.0)
 
 
 ## The shader's city grade (`graded`) on `c`, the value the shader samples, for the tests and the contrast
-## checks: value V -> 1 - (1 - V)^exposure, hue kept, times the tint, then the saturation.
-static func graded(cfg: CityConfig, c: Color) -> Color:
+## checks: value V -> 1 - (1 - V)^exposure, hue kept, times the tint (`corp`'s from
+## backdrop_tint_by_corp), then the saturation.
+static func graded(cfg: CityConfig, c: Color, corp: StringName = &"") -> Color:
 	var v := maxf(c.r, maxf(c.g, c.b))
 	var k := (1.0 - pow(1.0 - clampf(v, 0.0, 1.0), cfg.backdrop_exposure)) / maxf(v, 0.0001)
-	var t := cfg.backdrop_tint
+	var t: Color = cfg.backdrop_tint_by_corp.get(corp, cfg.backdrop_tint)
 	var g := Vector3(clampf(c.r * k * t.r, 0.0, 1.0), clampf(c.g * k * t.g, 0.0, 1.0), clampf(c.b * k * t.b, 0.0, 1.0))
 	var grey := g.dot(Vector3(0.2126, 0.7152, 0.0722))
 	var o := Vector3(grey, grey, grey).lerp(g, cfg.backdrop_saturation)
@@ -419,6 +508,7 @@ func _drop_city() -> void:
 	_won_lights = null
 	_city_ready = false
 	_mat.set_shader_parameter(&"city_grade", false)
+	_mat.set_shader_parameter(&"focus_dim", 0.0)
 
 
 ## The target's top (world): a fitted landmark's own top, the Site building's roof, or the
@@ -431,6 +521,28 @@ func _target_top() -> Vector3:
 		var lot: Vector2 = shot["lot"]
 		return city.lot_world(lot, city.top_at(Vector2i(lot.floor())))
 	return cam.target + Vector3(0.0, CityView3D.CONFIG.backdrop_hq_lift, 0.0)
+
+
+## The world box of the building standing on lot `lot`: every prism whose cell holds the lot
+## (footprint and the tallest top); AABB() when none.
+static func _building_box(model: CityModel, lot: Vector2i) -> AABB:
+	var cfg := model.cfg
+	var key := Vector2i(floori(float(lot.x) / cfg.chunk_lots), floori(float(lot.y) / cfg.chunk_lots))
+	if not model.chunks.has(key):
+		return AABB()
+	var out := AABB()
+	var first := true
+	for n: int in model.chunks[key]["prisms"]:
+		var pr: Dictionary = model.prisms[n]
+		var cell: Rect2i = pr["cell"]
+		if not cell.has_point(lot):
+			continue
+		var a := CityIsoCamera.lot_to_world(cfg, Vector2(cell.position))
+		var b := CityIsoCamera.lot_to_world(cfg, Vector2(cell.end), float(pr["y0"]) + float(pr["h"]))
+		var box := AABB(a, Vector3.ZERO).expand(b)
+		out = box if first else out.merge(box)
+		first = false
+	return out
 
 
 ## The lot centre of the building nearest lot point `p` (within SITE_SEARCH lots; nearest first,

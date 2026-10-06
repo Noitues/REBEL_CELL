@@ -486,7 +486,7 @@ windows, most of the frame near black; the scene reads much darker than both ref
 concept's lit city gives each corp its place; main's dark field makes the wheels the only colour,
 but it loses the sense of where the fight is. Likely file: `scripts/ui/arena/combat_backdrop.gd`,
 `backdrop_catalog.gd`, `content/config/city_config.tres` (exposure / light at the combat band).
-Decision: Follow the concept: the close-up keeps a lit blue-grey night (own look + canvas grade), every corp's HQ framed whole (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg)
+Decision: Follow the concept: the close-up keeps a lit blue-grey night (own look + canvas grade), every corp's HQ framed whole (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg) Round 2 (designer 2026-10-05, DECISIONS "Parity fix — combat backdrop, round 2", fixes/ARENA_b.jpg): the concept's low angle (24 / 22 degrees), the target focused, blank lots filled; unique per-fight backdrops are the target (proposed slice).
 
 **CMB-02 (P1) Player wheel colour and material.** Concept D4: slices with distinct illustrated
 screen fills (attack red grid, defend teal waves, special skull, debuff purple), a bright pink outer
@@ -865,13 +865,13 @@ blurred. Decision:
 pale against a rainy blue-grey city, green beams, readable; the wheels sit in front. Main: the helix
 in near-black navy, a chain of white bead lights (BOSS-03), a few lit windows; the frame is
 mostly black. Same cause as CMB-01 (`combat_backdrop.gd`, the city's light at the combat band).
-Decision: Follow the concept: the whole helix lit pale and framed between the wheels in a lit rainy city (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg)
+Decision: Follow the concept: the whole helix lit pale and framed between the wheels in a lit rainy city (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg) Round 2 (designer 2026-10-05, DECISIONS "Parity fix — combat backdrop, round 2", fixes/ARENA_b.jpg): the boss view stays the special HQ view, now at 24 degrees.
 
 **BACKDROP-02 (P1) Site fight backdrop (Solace).** Concept `site_solace_night.jpg`: the Site
 building (a clinic with the cross sign and helipad) lit and framed at the centre, a lit blue-grey
 city around it. Main: generic dark blocks with neon roof outlines, no Site building in view.
 Likely file: `backdrop_catalog.gd` (`place(...)` for a Site: which building and camera),
-`combat_backdrop.gd`. Decision: Follow the concept: the corp's Site building stands on the Site's lot, lit and framed at the centre (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg)
+`combat_backdrop.gd`. Decision: Follow the concept: the corp's Site building stands on the Site's lot, lit and framed at the centre (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg) Round 2 (designer 2026-10-05, DECISIONS "Parity fix — combat backdrop, round 2", fixes/ARENA_b.jpg): each Site fight frames its own Site's lot (no repeated landmark, no inset), the Site's building the focused subject, the city recorded past the edge.
 
 ### Endings: run end, campaign won / lost (`run_end*.jpg`, `campaign_*.jpg`)
 Refs: build `run_end`, `campaign_won`, `campaign_lost` (M13: a CELL BURNED / CORP DOWN stamp

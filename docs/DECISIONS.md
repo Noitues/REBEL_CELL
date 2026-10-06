@@ -95,6 +95,59 @@ between two raid nodes. Refs (art-concepts-r43): round 40 `raid_view_v3` / `raid
 - **Files outside the area (smallest change):** `scripts/autoload/run_manager.gd` (`jack_link` calls
   `RouteLinkLayout.from_site`), `scripts/ui/netrun_scene.gd` (`route_graph`: the points), the two labs.
 
+### 2026-10-05 — Parity fix — combat backdrop, round 2 (designer answers and feedback)
+Designer round 2 on "Parity fix — combat backdrop" (below): every fight should get its own unique backdrop and the
+HQ boss fight a special view; build the placeholder now. Feedback: "Combat backdrop is improving": fill the blank
+lots, give the camera angle and the target's focus more work. Sheet `docs/art_review/PARITY/fixes/ARENA_b.jpg`
+(concept | round 1 | round 2).
+- **Target (logged, proposed slice, not built): unique per-fight backdrops.** Each Site fight its own composed view
+  of its Site (its own building, light and camera; a perspective camera or the HQ as a layer behind), the boss
+  fight its HQ's special view. Built now as the placeholder below.
+- **Site fights frame the fought Site's own lot** (`BackdropCatalog.site_shot`): its layout point, never moved (the
+  28-lot inset and `site_close_up_lot` are gone); the corp's Site landmark stands only on the Site that carries it
+  (`CityLandmarks.site_of`), never repeated on other lots. The subject is the Site's building, measured on the model
+  (`CombatBackdrop._building_box`, the nearest lot with a roof, grown to `backdrop_site_subject_span` 30 BU), fitted
+  into `backdrop_site_frame` (0.33, 0.24, 0.34, 0.56: between the wheels, above the hand) at a share of the view
+  between `backdrop_site_subject_min` 0.3 and 0.6 (site_solace_night's clinic: 0.38). The camera looks along the
+  city's own diagonal view that points most from the Site toward its corp's HQ (`site_yaw`: the iso look and its
+  light kept; the HQ ahead) and zooms out round the subject while it keeps that share until the HQ shows
+  (`backdrop_site_hq_*`, `backdrop_site_zoom_step`). With the orthographic close-up a far HQ (100-250 BU behind
+  sits 40-90 BU higher on screen) stays out of frame while the Site is large: the HQ shows only for Sites near it
+  (open question 4).
+- **The subject reads first:** outside an ellipse round it (`backdrop_focus_radius` 0.18 of the width) the close-up
+  softens (`backdrop_focus_blur` 3 texels) and dims (`backdrop_focus_dim` 0.22); inside it is lit up
+  (`backdrop_focus_lift` 1.3). Boss views too (round the landmark); not the DISPATCH canyon.
+- **The concept's low angle** (designer: 22-30 now, over budget accepted): `backdrop_hq_pitch_deg` 24,
+  `backdrop_site_pitch_deg` 22. `backdrop_site_ortho` 90 -> 60 (the least Site framing). Owed: the clean-run line
+  in `docs/art_review/ART-12/perf.md` with the proposed optimisation slice (backdrop LOD / far-chunk cut).
+- **Blank lots, cause and fix (shared city view).** A landmark cleared every procedural building inside 92 % of its
+  whole ground box (`CityView3D._place_landmark`), so the ground under Halcyon's eye beam and Meridian's open yard and
+  train line (a 180 BU box) showed as bare lots, on the Grid and raid too. Now a landmark's cleared box keeps a
+  footprint mask (`CityView3D.footprint_lots`, `_clear_masks`): only lots under its triangles that reach the ground
+  and rise (`landmark_footprint_ground` 2 BU, `landmark_footprint_rise` 3 BU, grown `landmark_footprint_grow` 1
+  lot; beams never count) give way. The Cell's district keeps its whole box (it brings its own street grid). The
+  Grid's look is otherwise unchanged (same models, same ink, the gaps filled with the city's own buildings).
+- **The bare plane past the city's edge:** most Sites lie within a few lots of `city_rect`'s edge, and the low angle
+  showed the empty ground past it (and a ~4-lot bare strip just inside). A Site or HQ close-up now records the city
+  past the edge round its target (`BackdropCatalog.extension_keys`, `backdrop_extend_lots` 56) on worker threads
+  into its own copy of the shared model (`CombatBackdrop._extend_city` / `extended_model`; the still shows
+  meanwhile), so the frame is city all round. The shared model and the Grid are unchanged. When the shared model is
+  not built yet (a fight before any city page) the close-up uses it as it is.
+- **Brightness:** `backdrop_exposure` 4.6 -> 5.0; `backdrop_tint_by_corp` lifts Halcyon's violet night (1.1, 1.12,
+  1.14), which sat under the band. Measured (hq_run_lab, 1920x1080, tier 2, between the bands): HQ 0.050-0.086, Site
+  0.056-0.112, won 0.064; band 0.05-0.19. City GPU tier 2 1080p (shared machine): HQ 4.5-8.75 ms, Site 1.5-8.3 ms.
+- **Round 2 finding (3) ruled:** the raid and netrun views grey the city out on purpose so nodes and links pop
+  (another agent builds that look); not changed here.
+- **Tests** (`test_parity_arena_backdrop.gd`): the fixtures are now the settled frames as the screen shows them
+  (point samples of the windowed hq_run_lab frames, grade and focus in; the round-1 model of the shader's input was
+  replaced: it overstated the frame by 1.6-2.5x); new: each Site fight frames its own lot (landmark only on its own
+  Site), the subject's share of the view in the concept range and in its frame, the HQ ahead along one of the city's
+  diagonal views, both pitches in 22-30, no bare plane in the frame (every Site of every corp and every HQ), the
+  landmarks clear only their footprint (Meridian, Halcyon, headless); the grade lifts a dark linear mid-tone 3x
+  without blowing out (replaces "without the grade the close-up drops below the band"). `test_hq_run_city.gd`: a
+  Solace Site that does not carry the landmark is a plain `site` shot on its own lot. No test dropped.
+- **Files outside the area:** `scripts/city3d/city_view_3d.gd` (footprint masks), `scripts/city3d/city_config.gd`
+  (landmark footprint group, backdrop fields), `docs/art_review/ART-12/perf.md` (owed line).
 ### 2026-10-05 — Parity fix — combat backdrop (designer group ruling)
 Designer group ruling 2026-10-05: combat matches the concept. Audit items CMB-01, BOSS-03, BACKDROP-01, BACKDROP-02,
 MOTION-07 (`docs/art_review/PARITY/GAPS.md`); references `round26_hq_targets/combat_solace.jpg`,
@@ -9194,6 +9247,14 @@ and annotated in the GDD where it changes a rule.
   and raid pages draw the same texture and may show the city darker than its render. Proposed slice: measure each
   view's frame against its `get_texture().get_image()` and, where they differ, decode in that view (designer to rule
   whether the Grid's current darker look is the intended one).
+- **Parity fix combat backdrop (2026-10-05, ruled round 2, see "Parity fix — combat backdrop, round 2"):** (1)
+  ruled: each Site fight frames its own Site's lot, the Site landmark only on its own Site, no inset. (2) ruled: the
+  concept's low angle now; the overage is owed in ART-12/perf.md, the optimisation slice proposed. (3) ruled: the
+  raid and netrun views grey the city out on purpose (another agent builds that look); not changed. Still open:
+  (4) a Site shot cannot keep a far HQ in frame while the Site stays large (the close-up is an orthographic
+  camera: the HQ 100-250 BU behind sits 40-90 BU higher on screen); the HQ shows only for Sites near it. Default:
+  the Site large. The per-fight unique backdrop slice (below) would give each Site its own composed view (a
+  perspective camera, or the HQ as a painted layer behind).
 - **ART-12 12p Steam Deck run (owed, 2026-10-05):** no Steam Deck was available. The Deck tier
   (`city_quality` 1) was measured on the dev PC only (interim, under load; `docs/art_review/ART-12/perf.md`).
   A real Deck run of `tools/visual_qa/perf_pack.tscn --tiers=1 --size=1280x800` is owed when the
