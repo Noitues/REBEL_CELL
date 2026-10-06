@@ -46,6 +46,8 @@ Stationed on %s."
 %d reached home,%d reached home
 %d still at large.,%d still at large.
 "%d-%d Cycles, a card","%d-%d Cycles, a card"
+%d/%d  -  BREACH READY,%d/%d  -  BREACH READY
+%d/%d  -  LOCKED,%d/%d  -  LOCKED
 "%s
 %d CYCLES","%s
 %d CYCLES"
@@ -66,6 +68,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s  //  %d RAM,%s  //  %d RAM
 %s  //  AUDIT %d,%s  //  AUDIT %d
 %s  //  NOTICE,%s  //  NOTICE
+%s  //  TIER %d,%s  //  TIER %d
 %s  HP %s → %s  %s,%s  HP %s → %s  %s
 %s %s HP,%s %s HP
 "%s %s: %s. %s %s Select it, then %s on its card.","%s %s: %s. %s %s Select it, then %s on its card."
@@ -221,6 +224,7 @@ BLOCK %d,BLOCK %d
 BOSS,BOSS
 BREACH,BREACH
 BREACH PAYOUT,BREACH PAYOUT
+BREACH: start the fight at the Central Server.,BREACH: start the fight at the Central Server.
 BREACHED,BREACHED
 BUY,BUY
 Back,Back
@@ -229,6 +233,7 @@ Back to HQ,Back to HQ
 Back to the Armory.,Back to the Armory.
 "Back to the HQ: crew, Black Market, Cell status.","Back to the HQ: crew, Black Market, Cell status."
 Back to the HQ; the raid waits until you start the defence.,Back to the HQ; the raid waits until you start the defence.
+Back to the compound,Back to the compound
 Back to the main menu.,Back to the main menu.
 Back to the title screen.,Back to the title screen.
 Back to this run's route.,Back to this run's route.
@@ -271,6 +276,7 @@ CELL HOLDS,CELL HOLDS
 CELL STATUS,CELL STATUS
 CELL-%02d / %s,CELL-%02d / %s
 CENTRAL SERVER,CENTRAL SERVER
+CENTRAL SERVER // %s,CENTRAL SERVER // %s
 CENTRAL SERVER // EXPLOITS %d/%d,CENTRAL SERVER // EXPLOITS %d/%d
 CITY GRID,CITY GRID
 CITY GRID // %s,CITY GRID // %s
@@ -657,6 +663,7 @@ EVENT PAYOUT,EVENT PAYOUT
 EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
 EXPLOITS %d/%d,EXPLOITS %d/%d
+EXTRA  (each one weakens the boss further),EXTRA  (each one weakens the boss further)
 "Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The grey LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it.","Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The grey LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it."
 Elite Frequency,Elite Frequency
 Elite Router,Elite Router
@@ -1032,6 +1039,7 @@ INFC,INFC
 INFECT,INFECT
 INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
+INTEL,INTEL
 In force since a Heat threshold. Scrub Heat to fall back under it.,In force since a Heat threshold. Scrub Heat to fall back under it.
 In force: %s.,In force: %s.
 Infection contained. Please remain calm while we sterilise your network.,Infection contained. Please remain calm while we sterilise your network.
@@ -1948,7 +1956,7 @@ SiteData.blind_the_cameras.display_name,Blind the Cameras
 SiteData.burn_the_ledger.display_name,Burn the Ledger
 SiteData.burn_the_orbit_logs.display_name,Burn the Orbit Logs
 SiteData.burn_the_orders.display_name,Burn the Orders
-SiteData.dispatch_core_site.display_name,DISPATCH
+SiteData.dispatch_core_site.display_name,DISPATCH CORE
 SiteData.erase_the_ledger.display_name,Erase the Ledger
 SiteData.forge_the_manifest.display_name,Forge the Manifest
 SiteData.h1_a.display_name,Parking Enforcement Office
@@ -2951,6 +2959,7 @@ Upgrade the node one level (level %d now).,Upgrade the node one level (level %d 
 V-sync,V-sync
 VICTORY,VICTORY
 VIEW LOADOUT,VIEW LOADOUT
+VIRUS,VIRUS
 VOICE ONLY // NO FEED,VOICE ONLY // NO FEED
 Virus,Virus
 WANTED,WANTED
@@ -3046,6 +3055,7 @@ locked link,locked link
 loot_socket,loot_socket
 lost,lost
 maybe a Firmware chip,maybe a Firmware chip
+minimum to breach,minimum to breach
 momentum_handler,momentum_handler
 netrun,netrun
 netruns,netruns
