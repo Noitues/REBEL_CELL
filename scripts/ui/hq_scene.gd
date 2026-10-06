@@ -974,6 +974,10 @@ func _set_panel(p: Control, name: String) -> void:
 	if name != "end_lock" and end_lock != null and is_instance_valid(end_lock):
 		end_lock.queue_free()
 		end_lock = null
+	# 12p: a dossier built ahead in the lock's hold goes too when another page comes instead.
+	if _end_dossier != null and is_instance_valid(_end_dossier) and p != _end_dossier:
+		_end_dossier.queue_free()
+	_end_dossier = null
 	# ANIM-4: the old page's drop targets go with it (a flight in the air keeps going).
 	if drops != null:
 		drops.reset()
@@ -1007,7 +1011,8 @@ func _set_panel(p: Control, name: String) -> void:
 		wireframe.settle_camera()
 	# H24 S4: the page shows its words as given (translated once, where they are built).
 	TextDb.shown_as_given(p)
-	_panel_host.add_child(p)
+	if p.get_parent() != _panel_host:  # 12p: a page built ahead is already mounted (the dossier)
+		_panel_host.add_child(p)
 	if more_hint != null and is_instance_valid(more_hint):
 		# ANIM-R6 C15: the HQ page's own snap (the others keep theirs: the raid setup's card row
 		# is taller than any snap would keep whole).
@@ -4634,8 +4639,16 @@ const END_LOCK_ZOOM := 1.9
 const END_PRINT_HOME_SHARE := 0.36
 const END_PRINT_MARGIN := 60.0
 
+## M14 parity END-05: the lock's camera fit: the screen margin the network keeps (px at 1.0)
+## and the least zoom (the most is END_LOCK_ZOOM).
+const END_LOCK_MARGIN := 40.0
+const END_LOCK_ZOOM_MIN := 0.8
+
 var end_lock: RansomLock = null
 var _end_lock_frames: int = 0
+var _end_lock_fitted: bool = false
+## 12p: the dossier built in the lock's reading hold (held, unseen) until the cut shows it.
+var _end_dossier: AuditDossier = null
 
 
 func show_end() -> void:
@@ -4668,6 +4681,9 @@ func _show_end_lock() -> void:
 	end_lock.ready_check = _end_lock_ready
 	end_lock.setup(c.corporation_id, TextDb.t(RunManager.corporation, "display_name"), c.grid.home_integrity, c.grid.home_max_integrity, end_stickers())
 	end_lock.finished.connect(_on_end_lock_finished)
+	end_lock.holding.connect(_on_end_lock_holding)
+	_end_lock_frames = 0
+	_end_lock_fitted = false
 
 
 ## Where every node of the Cell's network stands on screen now (global px), home flagged.
@@ -4684,11 +4700,36 @@ func _end_lock_nodes() -> Array:
 	return out
 
 
-## The lock may play: the city has baked and settled (or it waited long enough).
+## The lock may play: the city has baked and settled (or it waited long enough). M14 parity
+## END-05: once settled, the camera is fitted once so the network spreads over the screen round
+## the notice (RansomLock.fit_zoom), then the city settles again.
 func _end_lock_ready() -> bool:
 	_end_lock_frames += 1
 	var city := wireframe.city
-	return _end_lock_frames >= END_LOCK_WAIT_FRAMES or (city.showing_current_look() and city.camera_settled() and city.bake_fade >= 1.0)
+	var settled := city.showing_current_look() and city.camera_settled() and city.bake_fade >= 1.0
+	if settled and not _end_lock_fitted and _end_lock_frames < END_LOCK_WAIT_FRAMES:
+		_end_lock_fitted = true
+		var screen := get_global_rect()
+		var margin := END_LOCK_MARGIN * Settings.text_scale
+		var top := hud.get_global_rect().end.y if hud != null and is_instance_valid(hud) else screen.position.y
+		var room := Rect2(screen.position.x, top, screen.size.x, screen.end.y - top).grow(-margin)
+		var avoid := end_lock.notice_rect_on(screen).grow(RansomLock.LOCK_R * RansomLock.HOME_LOCK_SCALE * Settings.text_scale)
+		var zoom := RansomLock.fit_zoom(_end_lock_nodes(), screen.get_center(), room, avoid, city.scale.x, END_LOCK_ZOOM_MIN, END_LOCK_ZOOM)
+		if not is_equal_approx(zoom, city.scale.x):
+			_frame_city(zoom, city_overlay.centre(), Vector2(0.5, 0.5))
+			return false
+	return _end_lock_frames >= END_LOCK_WAIT_FRAMES or settled
+
+
+## 12p (ART-12 perf): the lock holds still at 00:00.00: the audit dossier is built now, behind
+## it, unseen and still (`held`), so the cut shows it without a long frame.
+func _on_end_lock_holding() -> void:
+	if end_lock == null or not is_instance_valid(end_lock):
+		return
+	_end_dossier = _build_dossier(end_photos(end_lock.snapshot, end_lock.snapshot_points))
+	_end_dossier.hold()
+	TextDb.shown_as_given(_end_dossier)
+	_panel_host.add_child(_end_dossier)
 
 
 ## The Cell's stickers on the glass when the lock takes it: the screen's title, the Armory's
@@ -4712,6 +4753,16 @@ func end_stickers() -> Array[Dictionary]:
 
 
 func _on_end_lock_finished() -> void:
+	if _end_dossier != null and is_instance_valid(_end_dossier):
+		# 12p: the file built in the lock's hold shows now.
+		var d := _end_dossier
+		_end_dossier = null
+		if end_lock != null and is_instance_valid(end_lock):
+			end_lock.queue_free()
+		end_lock = null
+		_set_panel(d, "end")
+		d.release()
+		return
 	var photos := end_photos(end_lock.snapshot, end_lock.snapshot_points)
 	if end_lock != null and is_instance_valid(end_lock):
 		end_lock.queue_free()
@@ -4734,19 +4785,21 @@ func end_photos(shot: Image, points: Array) -> Array[Dictionary]:
 		if p.get("home", false):
 			home_at = at
 	var home_caption := tr("HOME SERVER - %d/%d") % [c.grid.home_integrity, c.grid.home_max_integrity]
+	# END-06: the prints are of the city, never of the top bar over it.
+	var city_top := hud.get_global_rect().end.y if hud != null and is_instance_valid(hud) else 0.0
 	if won:
 		var boss := RunManager.corporation.final_boss
 		var boss_name := TextDb.t(boss, "display_name")
 		out.append({"caption": tr("%s - OFFLINE") % boss_name, "subject": PortraitArt.enemy_subject(boss.id, boss_name, c.corporation_id, true)})
 	elif shot != null and home_at != Vector2.INF:
 		var side := shot.get_height() * END_PRINT_HOME_SHARE
-		out.append({"caption": home_caption, "texture": _crop(shot, Rect2(home_at - Vector2(side, side) * 0.5, Vector2(side, side)))})
+		out.append({"caption": home_caption, "texture": _crop(shot, _below(Rect2(home_at - Vector2(side, side) * 0.5, Vector2(side, side)), city_top))})
 	else:
 		out.append({"caption": home_caption})
 	if shot != null and bounds.size != Vector2.ZERO:
 		var r := bounds.grow(END_PRINT_MARGIN)
 		var side := maxf(r.size.x, r.size.y)
-		out.append({"caption": tr("NODES AT THE END"), "texture": _crop(shot, Rect2(r.get_center() - Vector2(side, side) * 0.5, Vector2(side, side)))})
+		out.append({"caption": tr("NODES AT THE END"), "texture": _crop(shot, _below(Rect2(r.get_center() - Vector2(side, side) * 0.5, Vector2(side, side)), city_top))})
 	else:
 		out.append({"caption": tr("NODES AT THE END")})
 	var best: OperativeState = null
@@ -4756,6 +4809,11 @@ func end_photos(shot: Image, points: Array) -> Array[Dictionary]:
 	if best != null:
 		out.append({"caption": "%s - %s" % [best.name, tr("AT LARGE") if best.alive else tr("DECEASED")], "subject": PortraitArt.operative_subject(best.class_id, best.id, best.name)})
 	return out
+
+
+## `r` moved down so its top is at `top` or below (END-06: a print's crop starts under the top bar).
+static func _below(r: Rect2, top: float) -> Rect2:
+	return Rect2(Vector2(r.position.x, maxf(r.position.y, top)), r.size)
 
 
 ## A square crop of `shot` (clamped to it) as a texture.
@@ -4769,6 +4827,11 @@ static func _crop(shot: Image, r: Rect2) -> Texture2D:
 
 ## The audit dossier (AuditDossier) with `photos` as its prints (drawn stand-ins when empty).
 func show_dossier(photos: Array[Dictionary]) -> void:
+	_set_panel(_build_dossier(photos), "end")
+
+
+## The audit dossier on the campaign's end, its buttons connected (not mounted).
+func _build_dossier(photos: Array[Dictionary]) -> AuditDossier:
 	var c := RunManager.campaign
 	if photos.is_empty():
 		photos = end_photos(null, [])
@@ -4780,7 +4843,7 @@ func show_dossier(photos: Array[Dictionary]) -> void:
 	var d := AuditDossier.new(facts, photos)
 	d.new_campaign_pressed.connect(_on_end_new_campaign)
 	d.main_menu_pressed.connect(RunManager.go_to_title)
-	_set_panel(d, "end")
+	return d
 
 
 func _on_end_new_campaign() -> void:

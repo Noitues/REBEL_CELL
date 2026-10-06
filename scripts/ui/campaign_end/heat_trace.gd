@@ -13,7 +13,7 @@ var levels: Array[int] = []
 
 ## The chart's height at text scale 1.0 (px), the left room for the level numbers, the dash
 ## and gap of a rule, and the dots' radii (px at 1.0).
-const HEIGHT := 92.0
+const HEIGHT := 72.0  # M14 parity END-06: 92 ran the report past the 720p page with the stickers' room under it
 const LEFT := 26.0
 const DASH := 5.0
 const DASH_GAP := 5.0

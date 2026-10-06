@@ -338,6 +338,7 @@ CONTINUE,CONTINUE
 CORE,CORE
 CORE (home),CORE (home)
 CORE (house): your home server; if its integrity reaches 0 the campaign is lost.,CORE (house): your home server; if its integrity reaches 0 the campaign is lost.
+CORP DOWN,CORP DOWN
 CORPORATE,CORPORATE
 CORRUPTED,CORRUPTED
 CREW,CREW
@@ -2061,6 +2062,7 @@ STATS // RECORDS,STATS // RECORDS
 STATUS,STATUS
 STATUS: %s,STATUS: %s
 STEP -- / %d,STEP -- / %d
+STOOD DOWN  (operations abandoned),STOOD DOWN  (operations abandoned)
 STOPPED,STOPPED
 STOPPED %d/%d,STOPPED %d/%d
 STRENGTH,STRENGTH
@@ -3304,6 +3306,7 @@ the home server falls and the campaign is lost,the home server falls and the cam
 the net,the net
 the next %s campaign may start up to ICE %d.,the next %s campaign may start up to ICE %d.
 then:,then:
+they walked away at heat %d. nobody walks away.,they walked away at heat %d. nobody walks away.
 they'll be back. flag ICE %d.,they'll be back. flag ICE %d.
 threat,threat
 threat route,threat route

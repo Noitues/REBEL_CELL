@@ -7,7 +7,7 @@ extends Node
 ## (FLATLINED, JACKED OUT, HOME FELL). A demo campaign in the lab's own slot; never headless.
 ##
 ##   python tools/run_windowed.py --log <file> -- res://tools/design_lab/campaign_end_lab.tscn
-##       -- --out=<abs dir> [--corps=halcyon,meridian] [--what=lost,won,run] [--scales=1.0,2.0]
+##       -- --out=<abs dir> [--corps=halcyon,meridian] [--what=lost,won,abandoned,run] [--scales=1.0,2.0]
 ##       [--reduce-effects]
 
 const HQ := preload("res://scenes/hq/hq_scene.tscn")
@@ -17,6 +17,9 @@ const CORPS: Array[StringName] = [&"halcyon", &"meridian", &"solace", &"orbital"
 ## Lock moments to picture (s into the lock) and the dossier's (s into its motion).
 const LOCK_AT: Array[float] = [0.25, 1.1, 2.6, 4.2]
 const DOSSIER_AT: Array[float] = [0.45]
+## A won file's CORP DOWN beat (s into the dossier's motion): the poster in, the pencil X, the
+## sticker's slap, at rest.
+const WON_AT: Array[float] = [1.2, 1.5, 1.75, 2.0, 2.3]
 ## The demo campaign's story: Sites claimed, its Heat and thresholds, runs, raids.
 const CLAIMS := 3
 const DEMO_HEAT := 82
@@ -81,6 +84,9 @@ func _run(corps: Array, what: Array) -> void:
 	if "won" in what:
 		for corp in corps.slice(0, 2):
 			await _won(corp)
+	if "abandoned" in what:
+		for corp in corps.slice(0, 1):
+			await _abandoned(corp)
 	if "run" in what:
 		for kind in ["died", "completed", "aborted"]:
 			await _run_end(kind)
@@ -97,6 +103,23 @@ func _unlock_all() -> void:
 func _frames(n: int) -> void:
 	for i in n:
 		await get_tree().process_frame
+
+
+## The longest of the next `n` frames (ms, wall clock between frames drawn).
+func _longest_frame(n: int) -> float:
+	var worst := 0.0
+	var t := Time.get_ticks_usec()
+	for i in n:
+		await RenderingServer.frame_post_draw
+		var now := Time.get_ticks_usec()
+		worst = maxf(worst, (now - t) / 1000.0)
+		t = now
+	return worst
+
+
+## Frames measured after the lock's cut (the switch lands in the first of them).
+const SWITCH_FRAMES := 12
+var _hold_ms := 0.0
 
 
 func _shot(name: String) -> void:
@@ -172,11 +195,19 @@ func _lost(corp: StringName) -> void:
 			await _shot("%s_lock_%.1f" % [corp, t])
 		if is_instance_valid(lock):
 			lock.complete_motion()
-			await _frames(2)
+			_hold_ms = await _longest_frame(2)
 			await _shot("%s_lock_end" % corp)
 			lock.cut()
+		# 12p: the cut's switch to the dossier (built in the hold): the longest frame round it.
+		var worst := 0.0
+		var t := Time.get_ticks_usec()
 		while is_instance_valid(hq.end_lock):
-			await get_tree().process_frame
+			await RenderingServer.frame_post_draw
+			var now := Time.get_ticks_usec()
+			worst = maxf(worst, (now - t) / 1000.0)
+			t = now
+		worst = maxf(worst, await _longest_frame(SWITCH_FRAMES))
+		print("lab4d: switch %s longest_frame_ms=%.1f (hold build frame %.1f ms)" % [corp, worst, _hold_ms])
 	var d := hq._panel as AuditDossier
 	if d != null:
 		for t in DOSSIER_AT:
@@ -192,18 +223,34 @@ func _lost(corp: StringName) -> void:
 
 
 func _won(corp: StringName) -> void:
+	await _ended(corp, CampaignState.Outcome.WON, "won")
+
+
+## M14 parity END: a campaign the Cell abandoned (a loss in its own words; no lock).
+func _abandoned(corp: StringName) -> void:
+	await _ended(corp, CampaignState.Outcome.ABANDONED, "abandoned")
+
+
+## A won or abandoned end: the dossier (a won file: a frame strip of its CORP DOWN beat,
+## WON_AT s into its motion), then at rest.
+func _ended(corp: StringName, outcome: int, tag: String) -> void:
 	RunManager.campaign = null  # a fresh HQ, never the last demo's campaign end
 	RunManager.delete_save()
 	var hq: Node = HQ.instantiate()
 	add_child(hq)
 	await _frames(3)
-	await _campaign(hq, corp, CampaignState.Outcome.WON)
+	await _campaign(hq, corp, outcome)
 	hq.show_end()
 	var d := hq._panel as AuditDossier
+	if outcome == CampaignState.Outcome.WON:
+		for t in WON_AT:
+			while d != null and is_instance_valid(d) and d.elapsed < t and d.motion_running():
+				await get_tree().process_frame
+			await _shot("%s_won_%.2f" % [corp, t])
 	while d != null and is_instance_valid(d) and d.motion_running():
 		await get_tree().process_frame
 	await _frames(SETTLE_FRAMES)
-	await _shot("%s_won" % corp)
+	await _shot("%s_%s" % [corp, tag])
 	hq.queue_free()
 	await _frames(3)
 
