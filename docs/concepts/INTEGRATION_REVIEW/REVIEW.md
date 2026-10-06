@@ -206,7 +206,7 @@ Each item gives the build capture and the locked reference (with its round), the
 **D17. THREAT INTEL holo is flat.**
 - Build: `RAID.jpg` RAID-03 after.
 - Locked: round 21 to 22 holo, bible 1.2.
-- Fix (amended in the B1c review: the glass body is the 0.88 dark scrim with the corp tint at about 25 to 30 %; the
+- Fix (amended in the B1c review: the glass body is the 0.88 dark scrim with the corp tint at about 15 % (measured against round 44 raid_setup in the B1c re-check); the
   78 % is the strength on the edge, title, words, scanlines and bands): corp tint at 78 %, 4 px scanlines at 12 %, three slow horizontal bands (6 s period), ±2 px RGB split on the
   edge only, a 0.88 scrim behind, and the cracked seal with a red fracture under the DECRYPTED stamp. Today it is
   an orange box with a stamp.
