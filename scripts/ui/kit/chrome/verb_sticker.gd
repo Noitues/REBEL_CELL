@@ -104,6 +104,8 @@ func set_art_scale(k: float) -> VerbSticker:
 	_fit()
 	return self
 var _art_rest: Texture2D = null
+## The baked art's opaque body (texture px).
+var _art_body: Rect2 = Rect2()
 var _art_bursts: Array[Texture2D] = []
 ## Hovered or focused (the rainbow sheen and the curl show).
 var _focused: bool = false
@@ -133,10 +135,29 @@ func _load_art() -> void:
 	if art_key == "" or not ResourceLoader.exists(ART_DIR + art_key + ".png"):
 		return
 	_art_rest = load(ART_DIR + art_key + ".png") as Texture2D
+	_art_body = _opaque_rect(_art_rest.get_image())  # the opaque body in texture px (the art has a shadow margin)
 	var k := 0
 	while ResourceLoader.exists(ART_DIR + "%s_burst_%d.png" % [art_key, k]):
 		_art_bursts.append(load(ART_DIR + "%s_burst_%d.png" % [art_key, k]) as Texture2D)
 		k += 1
+
+
+## The rect of the pixels of `img` that are mostly opaque (alpha over 0.5), in px; the whole image when none is.
+static func _opaque_rect(img: Image) -> Rect2:
+	var x0 := img.get_width()
+	var y0 := img.get_height()
+	var x1 := -1
+	var y1 := -1
+	for y in img.get_height():
+		for x in img.get_width():
+			if img.get_pixel(x, y).a > 0.5:
+				x0 = mini(x0, x)
+				x1 = maxi(x1, x)
+				y0 = mini(y0, y)
+				y1 = maxi(y1, y)
+	if x1 < 0:
+		return Rect2(Vector2.ZERO, Vector2(img.get_size()))
+	return Rect2(Vector2(x0, y0), Vector2(x1 - x0 + 1, y1 - y0 + 1))
 
 
 func _init(p_text: String = "", p_fill: int = Fill.PINK, p_size: float = 40.0, p_tilt: float = 0.0, p_art: String = "") -> void:
@@ -485,11 +506,12 @@ func _draw() -> void:
 		_draw_fist(Rect2(Vector2(origin.x + head_w, top), Vector2(slot_w - head_w, cap)).grow(key * 0.8), key)
 	else:
 		draw_string(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.STICKER_FILL_MARKER)
-	_draw_curl()
+	var edge := die + key
+	_draw_curl(Rect2(Vector2(origin.x - edge, top - edge), Vector2(w + ext + edge * 2.0, cap + ext + edge * 2.0)))
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
 
 
-## The kit sticker's frame: its disabled state follows the Button's, the lime halo round
+## The concept art: its disabled state follows the Button's, the lime halo round
 ## its body on focus (designer 2026-10-05: no halo, no brackets: the kit sticker's own rainbow sheen and curl).
 func _draw_kit_frame() -> void:
 	var want := VinylSticker.State.DISABLED if disabled else vinyl.state
@@ -507,22 +529,30 @@ func _draw_art() -> void:
 	var k := ART_TO_GAME * art_scale * clampf(Settings.text_scale, 1.0, SCALE_MAX)
 	var sz := tex.get_size() * k
 	draw_texture_rect(tex, Rect2((size - sz) * 0.5, sz), false)
-	_draw_curl()
+	_draw_curl(Rect2((size - sz) * 0.5 + _art_body.position * k, _art_body.size * k))
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
 
 
 ## The focus curl for the drawn and baked stickers: the top right corner peels back (a paper-backed
 ## flap over the corner and its cast shadow; the kit sticker's own curl is the shader's fold).
-func _draw_curl() -> void:
+func _draw_curl(body: Rect2) -> void:
 	if not _focused:
 		return
-	var c := VinylSticker.peel_leg(size.x, get_viewport_rect().size.y)  # round 44: a fixed 45 degree fold
-	var tr := Vector2(size.x, 0.0)
-	var flap := PackedVector2Array([tr + Vector2(-c, 0.0), tr + Vector2(0.0, c), tr + Vector2(-c, c)])
+	var c := VinylSticker.peel_leg(body.size.x, get_viewport_rect().size.y)  # round 44: a fixed 45 degree fold
+	var flap := curl_flap(body, c)
+	var tr := body.position + Vector2(body.size.x, 0.0)
 	var shade := PackedVector2Array([tr + Vector2(-c, c), tr + Vector2(0.0, c), tr + Vector2(-c, c * 1.35)])
 	draw_colored_polygon(shade, Color(Palette.VINYL_INK, SHADOW_ALPHA * 0.5))
 	draw_colored_polygon(flap, Palette.VINYL_BACKING.lightened(CURL_BACK_LIGHTEN))
-	draw_polyline(PackedVector2Array([flap[0], flap[1]]), Color(Palette.STICKER_DIE_CUT, 0.9), 1.0)
+	draw_polyline(PackedVector2Array([flap[0], flap[2]]), Color(Palette.STICKER_DIE_CUT, 0.9), 1.0)
+
+
+## The curl's flap on a baked / drawn sticker whose body is `body`, for a fold leg `c`: OPAQUE and covering the
+## original corner pixels (the triangle the fold takes away) as well as the folded-over triangle, so no doubled
+## corner shows (the proper corner cut for baked art is B5's). Points: top edge, corner, side edge, fold inner.
+static func curl_flap(body: Rect2, c: float) -> PackedVector2Array:
+	var tr := body.position + Vector2(body.size.x, 0.0)
+	return PackedVector2Array([tr + Vector2(-c, 0.0), tr, tr + Vector2(0.0, c), tr + Vector2(-c, c)])
 
 
 ## SIMULATE: white letters with a pink split on the left and a green split on the right and

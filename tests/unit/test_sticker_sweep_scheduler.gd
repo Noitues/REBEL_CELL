@@ -169,6 +169,49 @@ func test_the_peel_back_fold_is_fixed_in_px_and_scales_with_the_text_size() -> v
 	assert_eq(float(v._mat.get_shader_parameter(&"peel_px")), v.peel_px())
 
 
+func test_every_destructive_and_quit_confirm_is_calm() -> void:
+	# slot DELETE (title_scene builds exactly this AbandonDialog), abandon run, abandon campaign, quit (ExitDialogs)
+	var builders: Dictionary = {
+		"slot delete": func() -> ConfirmDialog:
+			return AbandonDialog.new("Delete the campaign in slot 1?", "DELETE", "DELETE SLOT", "Lost for good:", [["Runs", 1]], "",
+				"Your stats and achievements stay.", "erase slot 1 [A]", "keep going [B]"),
+		"abandon run": func() -> ConfirmDialog: return ExitDialogs.abandon_run({"operative": "BREAKER", "cycles": 3}),
+		"abandon campaign": func() -> ConfirmDialog: return ExitDialogs.abandon_campaign({"runs": 2}, "Solace"),
+		"quit": func() -> ConfirmDialog: return ExitDialogs.quit(true),
+	}
+	for key in builders:
+		var v := _vinyl("GO", VinylSticker.Fill.PINK)
+		var d: ConfirmDialog = (builders[key] as Callable).call()
+		assert_true(d is ConfirmDialog, "%s is a ConfirmDialog" % key)
+		add_child_autofree(d)
+		await get_tree().process_frame
+		assert_true(StickerSweepQueue.is_calm(), "%s open: calm" % key)
+		assert_false(StickerSweepQueue.take_turn(v, 1 << 40), "%s open: no sweep takes a turn" % key)
+		for s: Object in [v, d.yes_button, d.no_button]:
+			assert_eq(StickerSweepQueue.sweeping(), 0, "%s: nothing sweeps" % key)
+		remove_child(d)
+		d.free()
+		v.queue_free()
+		await get_tree().process_frame
+		assert_false(StickerSweepQueue.is_calm(), "%s closed: not calm" % key)
+
+
+func test_the_baked_and_drawn_curl_flap_is_opaque_and_covers_the_original_corner() -> void:
+	var body := Rect2(Vector2(10.0, 20.0), Vector2(300.0, 80.0))
+	var c := 30.0
+	var flap := VerbSticker.curl_flap(body, c)
+	var tr := body.position + Vector2(body.size.x, 0.0)
+	# every point of the corner triangle the fold takes away (and of the folded-over triangle) is under the flap
+	var steps := 8
+	for i in steps + 1:
+		for j in steps + 1 - i:
+			var p := tr + Vector2(-c * float(i) / steps, c * float(j) / steps)
+			p += Vector2(-0.01, 0.01) if i == 0 and j == 0 else Vector2.ZERO
+			assert_true(Geometry2D.is_point_in_polygon(p, flap) or flap.has(p), "corner point %s is covered" % p)
+	assert_true(flap.has(tr), "the flap reaches the original corner itself")
+	assert_eq(Palette.VINYL_BACKING.lightened(VerbSticker.CURL_BACK_LIGHTEN).a, 1.0, "opaque")
+
+
 func test_no_scheduled_sweep_while_a_confirm_dialog_is_open() -> void:
 	var v := _vinyl("GO", VinylSticker.Fill.PINK)
 	var d := ConfirmDialog.new("Sure?", "YES", "CANCEL", "ARE YOU SURE?", "", true)

@@ -10648,6 +10648,7 @@ Approved calls: primary only, no rotation; no rest curl (round 44 shows none, st
   stickers the original corner pixels stay under the flap (the baked art cannot be cut in a draw call), the kit stickers fold the corner away properly.
 - **3. Calm confirms**: `StickerSweepQueue.calm_enter / calm_leave / is_calm`; `ConfirmDialog` (and so `AbandonDialog`, the slot DELETE confirm, the quit
   confirms) registers while it is in the tree: while any is open no sticker takes the sweep's turn. Focus there is the curl only.
+- **Confirms verified**: slot DELETE (title_scene AbandonDialog), abandon run, abandon campaign (ExitDialogs, AbandonDialog) and quit (ConfirmDialog) all go through ConfirmDialog, so all are calm; one test opens each. **Flap**: on baked and drawn stickers the flap is now an opaque quad covering the original corner (`VerbSticker.curl_flap`, placed on the opaque body of the baked art, not its shadow margin); test covers the corner triangle.
 - **Tests**: `test_sticker_sweep_scheduler` gains band (width / angle / alpha / crossing from config), fold size by text scale (34 / 24 / ~54), and no sweep
   while a ConfirmDialog is open; `test_sticker_edge_focus` and `test_art1_material_kit` assert `peel_back`. Dropped: none.
 - Sheet `docs/art_review/PARITY/fixes/B1d_b.jpg`: pause, abandon and title at 1.6 (round 44 column where the concept has one; none for the title), the sweep
