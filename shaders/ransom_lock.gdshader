@@ -18,8 +18,8 @@ uniform float glitch = 0.0;
 uniform float collapse = 0.0;
 uniform vec4 house : source_color = vec4(0.69, 0.43, 1.0, 1.0);
 uniform vec4 back : source_color = vec4(0.07, 0.05, 0.16, 1.0);
-// 0 blueprint, 1 hazard, 2 cells, 3 stars, 4 glitch (CorpHouseStyle.Motif).
-uniform int motif = 0;
+// The house motif mask (CorpHouseStyle.Motif: blueprint, hazard, cells, stars, glitch).
+uniform sampler2D motif_tex : hint_default_black, filter_linear;
 uniform vec2 screen = vec2(1280.0, 720.0);
 uniform float seed = 1.0;
 // The motif's strength and the tint's share of the picture's light (round 20 values).
@@ -30,50 +30,10 @@ float h(vec2 p) {
 	return fract(sin(dot(p, vec2(12.9898, 78.233)) + seed * 3.17) * 43758.5453);
 }
 
-float line_at(float v, float period, float width) {
-	float d = abs(fract(v / period + 0.5) - 0.5) * period;
-	return 1.0 - smoothstep(0.0, width, d);
-}
-
-float motif_mask(vec2 px) {
-	if (motif == 0) {
-		// Blueprint: a fine grid, a heavier one every fifth line, and drafting circles.
-		float g = max(line_at(px.x, 32.0, 0.8), line_at(px.y, 32.0, 0.8)) * 0.28;
-		g = max(g, max(line_at(px.x, 160.0, 1.0), line_at(px.y, 160.0, 1.0)) * 0.55);
-		vec2 c = floor(px / 240.0);
-		vec2 o = (c + vec2(h(c), h(c + 7.0))) * 240.0;
-		float r = 40.0 + h(c + 3.0) * 110.0;
-		g = max(g, (1.0 - smoothstep(0.0, 1.0, abs(length(px - o) - r))) * 0.43);
-		return g;
-	} else if (motif == 1) {
-		// Hazard: diagonal stripes and barcode runs.
-		float s = step(fract((px.x + px.y) / 60.0), 0.5) * 0.24;
-		vec2 c = floor(px / vec2(140.0, 46.0));
-		float bars = step(0.72, h(c)) * step(0.5, h(vec2(floor(px.x / 3.5), c.y)));
-		return max(s, bars * 0.47);
-	} else if (motif == 2) {
-		// Cells: hexagons and floating bubbles.
-		vec2 p = px / 38.0;
-		vec2 rr = vec2(1.0, 1.732);
-		vec2 a = mod(p, rr) - rr * 0.5;
-		vec2 b = mod(p - rr * 0.5, rr) - rr * 0.5;
-		vec2 q = abs(dot(a, a) < dot(b, b) ? a : b);
-		float hex = max(dot(q, normalize(vec2(1.0, 1.732))), q.x);
-		float edge = 1.0 - smoothstep(0.0, 0.04, abs(hex - 0.5));
-		vec2 c = floor(px / 90.0);
-		float bub = 1.0 - smoothstep(0.0, 1.2, abs(length(px - (c + vec2(h(c), h(c + 2.0))) * 90.0) - (8.0 + h(c + 5.0) * 24.0)));
-		return max(edge * 0.43, bub * 0.35);
-	} else if (motif == 3) {
-		// Stars and orbit rings round the screen's centre.
-		vec2 c = floor(px / 9.0);
-		float star = step(0.985, h(c)) * (0.4 + 0.6 * h(c + 1.0));
-		vec2 d = (px - screen * 0.5) / vec2(1.0, 0.35);
-		float ring = line_at(length(d), 107.0, 0.9) * step(200.0, length(d));
-		return max(star, ring * 0.35);
-	}
-	// Glitch: corrupted blocks.
-	vec2 c = floor(px / vec2(120.0, 9.0));
-	return step(0.86, h(c)) * (0.25 + 0.55 * h(c + 4.0));
+// M14 asset parity: the house motif is round 20's own `motif(style, 1)` mask (1920 x 1080,
+// assets/campaign_end/motif_<style>.png), stretched over the screen; the shader only tints it.
+float motif_mask(vec2 uv) {
+	return texture(motif_tex, uv).r;
 }
 
 void fragment() {
@@ -92,7 +52,7 @@ void fragment() {
 	src *= 1.0 - 0.25 * g * step(0.66, fract(px.y / 3.0));
 	// The ransomware's cover: the picture's light in the house hue, its back, its motif.
 	float lum = dot(src, vec3(0.3333));
-	vec3 tinted = lum * lum_share * (0.5 + house.rgb * 0.8) + back.rgb * 0.6 + motif_mask(px) * house.rgb * motif_strength;
+	vec3 tinted = lum * lum_share * (0.5 + house.rgb * 0.8) + back.rgb * 0.6 + motif_mask(UV) * house.rgb * motif_strength;
 	float edge = wipe * 1.12 - 0.06;
 	float cover = clamp((edge - UV.y) / 0.05, 0.0, 1.0);
 	float scan = exp(-pow((UV.y - edge) / 0.008, 2.0)) * step(wipe, 0.999) * step(0.001, wipe);

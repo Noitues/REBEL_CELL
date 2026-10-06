@@ -51,6 +51,32 @@ and the game draws that image. Inventory: `docs/handoff/m14_asset_parity/combat.
   `test_every_script_that_animates_registers_or_says_why_not` for `campaign_end/rubber_stamp.gd` and
   `kit/route_overlay.gd` (ART-11 and ART-5 5d files, not mine).
 
+### 2026-10-05 — Art direction — asset parity: city and screens
+Designer ruling: art-pass assets are exported by the art pass's own generators (tag `art-concepts-r43`), never redrawn.
+Inventory, sources and the procedural list: `docs/handoff/m14_asset_parity/city_screens.md`; wrappers in
+`tools/art_pipeline/parity/`; before/after captures in `docs/art_review/ART-parity/city_screens/`.
+- **Replaced:** Site discs, pads, slip, badge and DOWN bolt (`assets/city/grid_markers/`); route stickers and operative token
+  (`assets/netrun/route/`); seal emblems, padlock, house motifs, post-its, print stock and manila (`assets/campaign_end/`);
+  billboard panels (`assets/city/billboards/`, packed R = lightened mask, A = alpha, tinted by the instance colour in
+  `holo_billboard.gdshader`); the CLOSE flying car, chopper and drone (`assets/city/vehicles/`, Blender 5.2 running the
+  concept builders `unified38.flying_car`, `district20.heli_geo` / `drone_geo`, extracted with `ast` and run verbatim).
+- **Exploit marker = the v4 generator's single gold key** (orchestrator call): approved art wins over the bible's "keyring".
+  The Exploit key MEANINGS word is "Gold key"; strings re-exported.
+- **Corp seals use the round 6 `EM_` emblems** the seal script builds (halo and triangle, hex), not the bible crests
+  (orchestrator call: the art pass is correct).
+- **Car model as data:** the car needs per-vertex CUSTOM0 (part id), and an imported mesh cannot be read back headless, so
+  `CityMotionMeshes.car` reads `flying_car_tris.json` (the same triangles as `flying_car.glb`). Chopper and drone are used
+  as the imported glb meshes; vertex colours of the toon bodies are tones relative to the concept body colour, so the tuned
+  `chopper_color` / `drone_color` stay the body tone. The rotor blur disc takes the model's blade radius and height (the
+  ANIM entry stays; the static blades are not drawn).
+- **Dropped test assertion:** `GlyphIcon` sub-badge on the Site `type_glyph()` (the badge is baked into the disc art; `disc_art()`
+  replaces it). **Tests:** `test_city_motion` gains the asset check; MotionSkip registration of `rubber_stamp` and
+  `route_overlay` (`NOT_SKIPPABLE` with reason) kept.
+- **Procedural, with reasons:** see the inventory (state rings, text rings and stamps, tape, portrait chrome, FAR/MEDIUM car
+  tiers, the lane line and others the concept draws procedurally or that follow state, zoom or text).
+- **Proposed slice (not built):** host the 2A WheelView as a ViewportTexture in `JackSequence._draw_wheel` (the concept's
+  `zoom36.wheel` has fixed English labels), together with the combat parity sweep.
+
 ### 2026-10-05 — Art direction — ART-12 12s skins
 Agent 12s (the M12 box "Skins": procedural palette skins on the v2 tokens, ART_12_BATCH).
 - **Which skins.** The M12 box names none, so: `v2` (the default and first; the identity, ART_BIBLE §2

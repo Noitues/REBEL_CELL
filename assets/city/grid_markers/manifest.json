@@ -1,0 +1,248 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "grid_markers",
+ "about": "M14 asset parity: City Grid Site markers v4 (ART_BIBLE v2 4.5; round 42 site_markers_v4). Built by tools/art_pipeline/parity/export_grid_markers.py; do not edit by hand.",
+ "source": {
+  "tag": "art-concepts-r43",
+  "commit": "9a62cec89be362d89ad58ce8e2c2e2a126c8a3a1",
+  "round": "docs/concepts/round42_site_markers",
+  "scripts": [
+   "markers42.py",
+   "r32ui.py",
+   "r35ui.py",
+   "r31lib.py",
+   "sticker_lib19.py",
+   "route_d_city.py",
+   "city_view.py"
+  ],
+  "driver": "tools/art_pipeline/parity/export_grid_markers.py",
+  "drawing_code": "unchanged (designer ruling 2026-10-05: reuse the art pass's assets)",
+  "scripts_sha256": "8f80eff2b3ce114661cd902c0d6424f4645cb985acd13a1ab81856a2f85edfe7"
+ },
+ "scale": "2x the concept's size unless an item says otherwise",
+ "items": [
+  {
+   "file": "disc_site_meridian.png",
+   "made_by": "markers42.disc('site', 60, None, 'corporate')",
+   "size": [
+    60,
+    60
+   ],
+   "note": "Meridian's crane-A crest disc (the concept's regular Site)"
+  },
+  {
+   "file": "disc_heat.png",
+   "made_by": "markers42.disc('heat', 60, None, 'corporate')",
+   "size": [
+    60,
+    60
+   ]
+  },
+  {
+   "file": "disc_exploit.png",
+   "made_by": "markers42.disc('exploit', 68, None, 'corporate')",
+   "size": [
+    68,
+    68
+   ]
+  },
+  {
+   "file": "disc_exploit_intel.png",
+   "made_by": "markers42.disc('exploit', 68, 'INTEL', 'corporate')",
+   "size": [
+    68,
+    68
+   ]
+  },
+  {
+   "file": "disc_exploit_breach.png",
+   "made_by": "markers42.disc('exploit', 68, 'BREACH', 'corporate')",
+   "size": [
+    68,
+    68
+   ]
+  },
+  {
+   "file": "disc_exploit_virus.png",
+   "made_by": "markers42.disc('exploit', 68, 'VIRUS', 'corporate')",
+   "size": [
+    68,
+    68
+   ]
+  },
+  {
+   "file": "disc_site_meridian_cleared.png",
+   "made_by": "markers42.disc('site', 60, None, 'cleared')",
+   "size": [
+    60,
+    60
+   ],
+   "note": "Meridian's crane-A crest disc (the concept's regular Site)"
+  },
+  {
+   "file": "disc_heat_cleared.png",
+   "made_by": "markers42.disc('heat', 60, None, 'cleared')",
+   "size": [
+    60,
+    60
+   ]
+  },
+  {
+   "file": "disc_exploit_cleared.png",
+   "made_by": "markers42.disc('exploit', 68, None, 'cleared')",
+   "size": [
+    68,
+    68
+   ]
+  },
+  {
+   "file": "disc_exploit_intel_cleared.png",
+   "made_by": "markers42.disc('exploit', 68, 'INTEL', 'cleared')",
+   "size": [
+    68,
+    68
+   ]
+  },
+  {
+   "file": "disc_exploit_breach_cleared.png",
+   "made_by": "markers42.disc('exploit', 68, 'BREACH', 'cleared')",
+   "size": [
+    68,
+    68
+   ]
+  },
+  {
+   "file": "disc_exploit_virus_cleared.png",
+   "made_by": "markers42.disc('exploit', 68, 'VIRUS', 'cleared')",
+   "size": [
+    68,
+    68
+   ]
+  },
+  {
+   "file": "disc_claimed.png",
+   "made_by": "markers42.cell_disc('relay', 60)",
+   "size": [
+    60,
+    60
+   ],
+   "note": "the rebel fist, thumb tucked (fist_mask)"
+  },
+  {
+   "file": "disc_core.png",
+   "made_by": "markers42.cell_disc('home', 68)",
+   "size": [
+    68,
+    68
+   ],
+   "note": "CORE's heart (route_d_city.cell_icon)"
+  },
+  {
+   "file": "slip_taken.png",
+   "made_by": "markers42.seizure_memo(75)",
+   "size": [
+    84,
+    96
+   ],
+   "note": "already tilted -8 deg; Meridian crane-A letterhead"
+  },
+  {
+   "file": "badge_cleared.png",
+   "made_by": "markers42.badge(canvas, cx, cy, 'cleared', r=18)",
+   "size": [
+    44,
+    44
+   ]
+  },
+  {
+   "file": "bolt_down.png",
+   "made_by": "markers42.tint(markers42.g_mask(markers42.bolt_mask, 256), (250, 250, 250))",
+   "size": [
+    256,
+    256
+   ],
+   "note": "the v3/v4 DOWN bolt; drawn 2.1 x (disc / 2 + 9) across, its shadow the same mask in ink offset (2, 3)"
+  },
+  {
+   "file": "pad_claimed.png",
+   "made_by": "markers42.pad(canvas, cx, cy, 34, 'claimed', 2.0)",
+   "size": [
+    148,
+    148
+   ],
+   "note": "square canvas 148 px, the pad's centre at its centre, half-width (r) 34 px"
+  },
+  {
+   "file": "pad_taken.png",
+   "made_by": "markers42.pad(canvas, cx, cy, 34, 'seized', 2.0)",
+   "size": [
+    148,
+    148
+   ],
+   "note": "square canvas 148 px, the pad's centre at its centre, half-width (r) 34 px"
+  },
+  {
+   "file": "pad_cleared.png",
+   "made_by": "markers42.pad(canvas, cx, cy, 34, 'cleared', 2.0)",
+   "size": [
+    148,
+    148
+   ],
+   "note": "square canvas 148 px, the pad's centre at its centre, half-width (r) 34 px"
+  },
+  {
+   "file": "pad_down.png",
+   "made_by": "markers42.pad(canvas, cx, cy, 34, 'disabled', 2.0)",
+   "size": [
+    148,
+    148
+   ],
+   "note": "square canvas 148 px, the pad's centre at its centre, half-width (r) 34 px"
+  },
+  {
+   "file": "pad_corporate_meridian.png",
+   "made_by": "r32ui.pad(canvas, city_view.diamond(cx, cy, 34), (255, 140, 26), lit=0.7, glow=0.2, fill_a=215, k=1.70)",
+   "size": [
+    148,
+    148
+   ],
+   "note": "square canvas 148 px, the pad's centre at its centre, half-width (r) 34 px; markers42.pad's corporate call with this corp's hue (the concept shows Meridian's)"
+  },
+  {
+   "file": "pad_corporate_solace.png",
+   "made_by": "r32ui.pad(canvas, city_view.diamond(cx, cy, 34), (150, 255, 70), lit=0.7, glow=0.2, fill_a=215, k=1.70)",
+   "size": [
+    148,
+    148
+   ],
+   "note": "square canvas 148 px, the pad's centre at its centre, half-width (r) 34 px; markers42.pad's corporate call with this corp's hue (the concept shows Meridian's)"
+  },
+  {
+   "file": "pad_corporate_halcyon.png",
+   "made_by": "r32ui.pad(canvas, city_view.diamond(cx, cy, 34), (176, 110, 255), lit=0.7, glow=0.2, fill_a=215, k=1.70)",
+   "size": [
+    148,
+    148
+   ],
+   "note": "square canvas 148 px, the pad's centre at its centre, half-width (r) 34 px; markers42.pad's corporate call with this corp's hue (the concept shows Meridian's)"
+  },
+  {
+   "file": "pad_corporate_orbital.png",
+   "made_by": "r32ui.pad(canvas, city_view.diamond(cx, cy, 34), (205, 240, 255), lit=0.7, glow=0.2, fill_a=215, k=1.70)",
+   "size": [
+    148,
+    148
+   ],
+   "note": "square canvas 148 px, the pad's centre at its centre, half-width (r) 34 px; markers42.pad's corporate call with this corp's hue (the concept shows Meridian's)"
+  },
+  {
+   "file": "pad_corporate_rebel_cell.png",
+   "made_by": "r32ui.pad(canvas, city_view.diamond(cx, cy, 34), (232, 20, 30), lit=0.7, glow=0.2, fill_a=215, k=1.70)",
+   "size": [
+    148,
+    148
+   ],
+   "note": "square canvas 148 px, the pad's centre at its centre, half-width (r) 34 px; markers42.pad's corporate call with this corp's hue (the concept shows Meridian's)"
+  }
+ ]
+}
