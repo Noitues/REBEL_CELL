@@ -217,6 +217,24 @@ func test_a_live_theme_follows_the_skin_and_restore_puts_v2_back() -> void:
 	assert_eq(Color(sb.border_color, 1.0), Color(Palette.TERMINAL_EDGE, 1.0), "restore puts v2 back")
 
 
+func test_system_dialog_glass_follows_the_skin_live() -> void:
+	# ZinePanel's terminal mode is the Options / pause / confirm glass: chrome, so it follows the skin
+	# while the dialog is open; a paper panel is not chrome and is never touched.
+	var dialog: ZinePanel = add_child_autofree(ZinePanel.new("OPTIONS", 0.0, true))
+	var paper: ZinePanel = add_child_autofree(ZinePanel.new("NOTE"))
+	var glass := dialog.get_child(0) as ColorRect
+	var paper_rect := paper.get_child(0) as ColorRect
+	var paper_before := paper_rect.color
+	for skin in PaletteSkins.IDS:
+		Settings.set_palette_skin(skin)
+		var want := Color(PaletteSkins.resolve(skin, &"TERMINAL_BG"), 1.0)
+		var redrawn := await BoundedWait.until(get_tree(), func() -> bool: return Color(glass.color, 1.0) == want, 2.0)
+		assert_true(redrawn, "%s: the open dialog redraws in the skin" % skin)
+		assert_eq(Color(glass.color, 1.0), want, "%s dialog glass" % skin)
+		assert_almost_eq(glass.color.a, 0.97, 0.001, "%s keeps the glass alpha" % skin)
+		assert_eq(paper_rect.color, paper_before, "%s leaves paper alone" % skin)
+
+
 func test_switching_skins_never_changes_game_state() -> void:
 	AudioDirector.muted = true
 	RunManager.save_slot = SLOT
