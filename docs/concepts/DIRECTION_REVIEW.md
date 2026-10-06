@@ -1352,3 +1352,4 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
 - **HQ page:** round 44 `hq_idle.png` / `hq_node_selected.png` are the target (direction B, cleaned). The page frames the Cell's network; an off-screen corp HQ gets a red pencil edge arrow. About 16 pinned markers is acceptable.
 - **Route page:** round 44 `route_page*.png` zoom and declutter are the target.
 - **Heat number:** lives in the terminal top strip, not on the dossier stamp (bible 4.3 updated).
+- **Per-fight backdrops (2026-10-06):** unique buildings for non-HQ Site fights stay deferred. Gameplay polish passes come first, then another content and visual pass. Site fight subjects (Solace, Orbital) are interim through M14.
