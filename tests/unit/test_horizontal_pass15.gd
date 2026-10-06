@@ -88,7 +88,7 @@ func test_pause_menu_options_grow_with_their_section() -> void:
 	for section in ["Accessibility", "Controls", "Language"]:
 		menu.settings_panel.show_section(section)
 		await _frames()
-		var need := menu.settings_panel._paper_panel.content.get_combined_minimum_size()
+		var need := menu.settings_panel.window.body.get_combined_minimum_size()
 		assert_true(menu.settings_panel.get_combined_minimum_size().y >= need.y, "%s: the panel is as tall as its content" % section)
 		assert_true(need.x <= PauseMenu.MENU_SIZE.x, "%s: %d px fits the %d px menu" % [section, need.x, PauseMenu.MENU_SIZE.x])
 

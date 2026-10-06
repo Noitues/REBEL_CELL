@@ -1,9 +1,17 @@
 class_name SettingsPanel
 extends Control
-## Options (GDD 9.5, 9.6, STYLE_GUIDE 6): five sections on one zine panel. Accessibility
-## (reduce effects, flash limiter, text scale, subtitles), Display (window mode,
-## resolution, vsync, fps counter), Audio (master, music, SFX), Controls (rebind the
-## combat keys; card keys stay 1-9), Language. Writes to the Settings autoload only.
+## Options (GDD 9.5, 9.6, STYLE_GUIDE 6): five sections. Accessibility (reduce effects,
+## flash limiter, text scale, subtitles), Display (window mode, resolution, vsync, fps
+## counter), Audio (master, music, SFX), Controls (rebind the combat keys; card keys stay
+## 1-9), Language. Writes to the Settings autoload only.
+## ART-10 4C (ART_BIBLE v2 §4.13 "Settings"; round 31 `settings_menu.jpg`): a v2 terminal
+## (`> PAUSED // OPTIONS`) with the yellow OPTIONS title sticker; terminal tabs (LB / RB
+## switch them); Accessibility in two columns: EFFECTS & MOTION switches on the left (name in
+## CAPS, what it does in Plex, ON / OFF pills; HEAT GLITCH with its LIMITED chip), and on
+## the right the text-scale slider with its live sample, the colour-blind and resolve-speed
+## tiles and the Heat glitch preview; the close button and pad prompts at the foot. C's
+## behaviour is unchanged: the same widgets (CheckButton, OptionButton, HSlider) drive the
+## same Settings setters, built once, moved between sections.
 
 signal closed
 
@@ -31,14 +39,40 @@ const GLYPH_HEADING := "Pad button glyphs" # TR
 ## Every word the W9 rows add (tests check each has a strings.csv key and no mouse wording).
 const W9_WORDS := COLORBLIND_WORDS + RESOLVE_SPEED_WORDS + GLYPH_WORDS + [REDUCE_MOTION_WORDS, HIGH_CONTRAST_WORDS,
 	COLORBLIND_HEADING, RESOLVE_SPEED_HEADING, GLYPH_HEADING, "Fast-forward the resolve (hold)"]
+## ART-10 4C: the v2 headings, sample and foot words (keys).
+const V2_WORDS := ["EFFECTS & MOTION", "SUBTITLES & ASSIST", "TEXT SCALE", "COLOUR-BLIND CORRECTION", "RESOLVE SPEED AFTER SEND IT",
+	"HEAT GLITCH PREVIEW (HUNTED, 82)", "The Cell never sleeps. Every word grows with this.", "Patterns and glyphs stay the main cue.",
+	"saved to profile", "switch tab", "toggle", "close", "OPTIONS", "PAUSED", "LIMITED: flash limiter on, slow layer only",
+	"LIMITED: reduce effects on, slow layer only"] # TR
 
-## Set by a modal host (the pause menu): D-pad focus never leaves the panel.
-## Why the last key pressed while rebinding was refused (Controls section).
-var _bind_note: Label = null
 ## Width the refusal note wraps at.
 const BIND_NOTE_WIDTH := 480.0
-var _paper_panel: ZinePanel = null
+## ART-10 4C layout (px at 1280x720): the panel's widths with one and two columns, the gap
+## between the columns, the title sticker's lettering size and tilt, the tick marks under
+## the text-scale slider, and from which text scale Accessibility stacks its columns.
+const WIDTH_ONE := 620.0
+const WIDTH_TWO := 1040.0
+const COLUMN_GAP := 28
+const TITLE_PX := 34.0
+const TITLE_TILT := -3.0
+const SCALE_TICKS: Array[float] = [1.0, 1.5, 2.0]
+const STACK_FROM := 1.5
+## A section heading stands this many caption lines tall (its room above it).
+const HEADING_LINES := 2.4
+## The title sticker overlaps the header strip by this share of its height.
+const STICKER_RISE := 0.45
+## The space the panel leaves under it when it fits its own height (px at 1.0; the title
+## page's header and foot).
+const SCREEN_ROOM := 150.0
+
+## Why the last key pressed while rebinding was refused (Controls section).
+var _bind_note: Label = null
+## Set by a modal host (the pause menu): D-pad focus never leaves the panel.
 var trap_focus: bool = false
+## One column always (set by a narrow host: the pause menu's MENU_SIZE).
+var compact: bool = false
+## Where the Options were opened from (the header: "> PAUSED // OPTIONS"); translated.
+var context: String = ""
 var reduce_check: CheckButton
 ## ART-0 C (art pass W9): reduce motion and high contrast (Accessibility), the colour-blind
 ## correction and the resolve speed (Accessibility), the pad glyph set (Controls).
@@ -71,39 +105,78 @@ var close_button: Button
 var section: String = "Accessibility"
 ## Action waiting for a key press (Controls section), or empty.
 var rebinding: StringName = &""
+## ART-10 4C: the v2 pieces: the terminal, the title sticker, the tabs, the tile rows, the
+## text-scale readout and sample, the glitch preview.
+var window: CrtWindow
+var title_sticker: VerbSticker
+var colorblind_tiles: CrtTiles
+var resolve_tiles: CrtTiles
+var glitch_preview: HeatGlitchPreview
+var _scale_value: Label
+var _scale_sample: Label
+var _scale_block: VBoxContainer
 var _body: VBoxContainer
-var _tabs: HBoxContainer
+## ART-10 4C (ART-0 carry-over: panels adopt FitScroll): the section scrolls inside the
+## terminal when the panel would be taller than `max_height` (0: it sizes to its section,
+## inside a host that scrolls, the pause menu).
+var fit: FitScroll
+var max_height: float = 0.0:
+	set(v):
+		max_height = v
+		_fit_body.call_deferred()
+var _tabs: HFlowContainer
+var _tab_buttons: Dictionary = {}
 var _key_buttons: Dictionary = {}
 var _label_counter: int = 0
 
 
 func _init() -> void:
-	custom_minimum_size = Vector2(520, 360)
+	custom_minimum_size = Vector2(WIDTH_ONE, 360)
 	TextDb.shown_as_given(self)
-	var panel := ZinePanel.new(tr("OPTIONS"), 0.0, true)
-	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(panel)
-	_paper_panel = panel
+	window = CrtWindow.new("OPTIONS")
+	window.name = "OptionsWindow"
+	window.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(window)
 	# The panel grows with its section (inside the pause menu's scroll), never clipping it.
-	panel.content.minimum_size_changed.connect(update_minimum_size)
-	var box := VBoxContainer.new()
-	panel.content.add_child(box)
-	_tabs = HBoxContainer.new()
-	box.add_child(_tabs)
+	window.minimum_size_changed.connect(update_minimum_size)
+	var box := window.body
+	box.add_theme_constant_override("separation", 10)
+	var tab_row := HFlowContainer.new()
+	tab_row.name = "TabRow"
+	box.add_child(tab_row)
+	_tabs = HFlowContainer.new()
+	_tabs.name = "Tabs"
+	_tabs.add_theme_constant_override("h_separation", 6)
+	_tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tab_row.add_child(_tabs)
 	for name in SECTIONS:
-		var b := Button.new()
-		b.text = tr(name)
+		var b := MenuChip.new(tr(name))
+		b.plate = &"tab"  # ui31.tabs plates (round 31)
+		b.pre_translated = true
+		b.label_step = UiTheme.BODY
+		b.name = "Tab%s" % name
+		b.set_meta(UiFocus.META_NO_SCALE, true)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		var n: String = name
 		b.pressed.connect(func() -> void: show_section(n))
 		_tabs.add_child(b)
+		_tab_buttons[name] = b
+	var switch_hint := Chrome.caps_label("[LB] [RB] %s" % tr("switch tab"), UiTheme.CAPTION, Palette.TEXT_LO)
+	switch_hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	tab_row.add_child(switch_hint)
 	_body = VBoxContainer.new()
+	_body.name = "Body"
+	_body.add_theme_constant_override("separation", 4)
 	_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	box.add_child(_body)
+	fit = FitScroll.new(_body)
+	fit.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	box.add_child(fit)
 	# Widgets are built once so tests (and Settings.changed) can drive them by name.
 	reduce_check = _check(tr("Reduce effects (no scanlines, flicker, chromatic, distortion)"), Settings.reduce_effects, Settings.set_reduce_effects)
 	flash_check = _check(tr("Flash limiter (max 3 flashes per second)"), Settings.flash_limiter, Settings.set_flash_limiter)
 	heat_glitch_check = _check(tr("Heat glitch (the screen distorts as Heat rises; off by default)"), Settings.heat_glitch, Settings.set_heat_glitch)
 	heat_glitch_check.name = "HeatGlitchCheck"
+	(heat_glitch_check as CrtSwitch).note = _glitch_note
 	reduce_motion_check = _check(tr(REDUCE_MOTION_WORDS), Settings.reduce_motion, Settings.set_reduce_motion)
 	reduce_motion_check.name = "ReduceMotionCheck"
 	high_contrast_check = _check(tr(HIGH_CONTRAST_WORDS), Settings.high_contrast, Settings.set_high_contrast)
@@ -111,6 +184,8 @@ func _init() -> void:
 	colorblind_option = _choice("ColorblindOption", COLORBLIND_WORDS, Settings.COLORBLIND_MODES, Settings.colorblind_mode, Settings.set_colorblind_mode)
 	resolve_speed_option = _choice("ResolveSpeedOption", RESOLVE_SPEED_WORDS, Settings.RESOLVE_SPEEDS, Settings.resolve_speed, Settings.set_resolve_speed)
 	glyph_option = _choice("GlyphOption", GLYPH_WORDS, Settings.PAD_GLYPH_SETS, Settings.pad_glyph_set, Settings.set_pad_glyph_set)
+	colorblind_tiles = CrtTiles.new(colorblind_option)
+	resolve_tiles = CrtTiles.new(resolve_speed_option)
 	subtitles_check = _check(tr("Subtitles with speaker names"), Settings.subtitles, Settings.set_subtitles)
 	typing_check = _check(tr("Subtitles type in (off: each line shows at once)"), Settings.subtitle_typing, Settings.set_subtitle_typing)
 	typing_check.name = "TypingCheck"
@@ -121,6 +196,8 @@ func _init() -> void:
 	master_slider = _slider("Master volume", 0.0, 1.0, 0.05, Settings.master_volume, Settings.set_master_volume)
 	music_slider = _slider("Music volume", 0.0, 1.0, 0.05, Settings.music_volume, Settings.set_music_volume)
 	sfx_slider = _slider("SFX volume", 0.0, 1.0, 0.05, Settings.sfx_volume, Settings.set_sfx_volume)
+	_scale_block = _text_scale_block()
+	glitch_preview = HeatGlitchPreview.new()
 	mode_option = OptionButton.new()
 	for m in MODE_WORDS:
 		mode_option.add_item(tr(m))
@@ -148,48 +225,111 @@ func _init() -> void:
 		if langs[i] == Settings.language:
 			language_option.select(i)
 	language_option.item_selected.connect(func(i: int) -> void: Settings.set_language(langs[i]))
+	# The foot: Close, the pad prompts, "saved to profile".
+	var foot := HFlowContainer.new()
+	foot.name = "Foot"
+	foot.add_theme_constant_override("h_separation", 18)
+	box.add_child(foot)
 	var close := Button.new()
 	close.name = "Close"
 	close_button = close
 	close.pressed.connect(func() -> void: closed.emit())
-	box.add_child(close)
+	foot.add_child(close)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	foot.add_child(spacer)
+	for p in [[JOY_BUTTON_A, tr("toggle")], [JOY_BUTTON_B, tr("close")]]:
+		foot.add_child(PadPrompts.make_pair(int(p[0]), String(p[1])))
+	var saved := Chrome.caps_label(tr("saved to profile"), UiTheme.CAPTION, Palette.TEXT_LO)
+	saved.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	foot.add_child(saved)
+	# The yellow OPTIONS title sticker over the header's right end (round 31).
+	title_sticker = VerbSticker.new(tr("OPTIONS"), VerbSticker.Fill.YELLOW, TITLE_PX, TITLE_TILT, VerbSticker.title_art("OPTIONS"))
+	title_sticker.pre_translated = true
+	title_sticker.name = "TitleSticker"
+	title_sticker.focus_mode = Control.FOCUS_NONE
+	title_sticker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(title_sticker)
+	resized.connect(_place_sticker)
 	show_section("Accessibility")
+
+
+## "LIMITED: ..." under HEAT GLITCH while the flash limiter or reduce effects holds it to its
+## slow layer (§4.13, §5.5); "" otherwise.
+func _glitch_note() -> String:
+	if not Settings.heat_glitch:
+		return ""
+	if Settings.reduce_effects:
+		return tr("LIMITED: reduce effects on, slow layer only")
+	if Settings.flash_limiter:
+		return tr("LIMITED: flash limiter on, slow layer only")
+	return ""
+
+
+func _place_sticker() -> void:
+	if title_sticker == null:
+		return
+	# Inside the pause menu its PAUSED sticker is the title.
+	title_sticker.visible = not compact
+	var m := title_sticker.get_combined_minimum_size()
+	title_sticker.size = m
+	title_sticker.position = Vector2(size.x - m.x - Chrome.CHAMFER * 3.0, -m.y * STICKER_RISE)
+
+
+## The two columns side by side (wide enough, text below STACK_FROM).
+func two_columns() -> bool:
+	return not compact and Settings.text_scale < STACK_FROM
 
 
 func show_section(name: String) -> void:
 	section = name
 	rebinding = &""
+	for s in _tab_buttons:
+		(_tab_buttons[s] as MenuChip).selected = s == name
 	# ANIM-R4 C3: the built widgets wait off the tree for their section; everything else a
 	# section made (its labels, the Controls grid, the note, Reset) goes (they leaked: 49
 	# Controls per Options opened). Queued: Reset calls this from its own press.
 	# ANIM-R6 D10: what goes stays in the tree, hidden, until its free (taken out and only
 	# queued, it was an orphan node until the frame ended: 74 counted after one test).
 	var keep := _persistent()
-	for c in _body.get_children():
-		if keep.has(c):
-			_body.remove_child(c)
-		elif not c.is_queued_for_deletion():
-			(c as CanvasItem).hide()
-			c.queue_free()
+	_release(_body, keep)
 	_key_buttons.clear()
 	match name:
 		"Accessibility":
-			for w in [reduce_check, reduce_motion_check, flash_check, heat_glitch_check, high_contrast_check, subtitles_check, typing_check, assist_check,
-					_labelled(tr(COLORBLIND_HEADING)), colorblind_option, _labelled(tr(RESOLVE_SPEED_HEADING)), resolve_speed_option,
-					_labelled(tr("Text scale")), scale_slider]:
-				_body.add_child(w)
+			var left := _column("Left")
+			left.add_child(_heading(tr("EFFECTS & MOTION")))
+			for w in [reduce_check, reduce_motion_check, flash_check, heat_glitch_check, high_contrast_check, subtitles_check, typing_check, assist_check]:
+				left.add_child(w)
+			var right := _column("Right")
+			right.add_child(_heading(tr("TEXT SCALE")))
+			right.add_child(_scale_block)
+			right.add_child(_heading(tr("COLOUR-BLIND CORRECTION")))
+			right.add_child(colorblind_tiles)
+			right.add_child(_note(tr("Patterns and glyphs stay the main cue.")))
+			right.add_child(_heading(tr("RESOLVE SPEED AFTER SEND IT")))
+			right.add_child(resolve_tiles)
+			right.add_child(_heading(tr("HEAT GLITCH PREVIEW (HUNTED, 82)")))
+			right.add_child(glitch_preview)
+			var cols: BoxContainer = HBoxContainer.new() if two_columns() else VBoxContainer.new()
+			cols.name = "Columns"
+			cols.add_theme_constant_override("separation", COLUMN_GAP if two_columns() else 14)
+			cols.add_child(left)
+			cols.add_child(right)
+			_body.add_child(cols)
 		"Display":
-			for w in [_labelled(tr("Window mode")), mode_option, _labelled(tr("Resolution (windowed)")), resolution_option, vsync_check, fps_check, legend_check, all_nodes_check, log_check]:
+			for w in [_heading(tr("Window mode")), mode_option, _heading(tr("Resolution (windowed)")), resolution_option, vsync_check, fps_check, legend_check, all_nodes_check, log_check]:
 				_body.add_child(w)
 		"Audio":
-			for w in [_labelled(tr("Master volume")), master_slider, _labelled(tr("Music volume")), music_slider, _labelled(tr("SFX volume")), sfx_slider]:
+			for w in [_heading(tr("Master volume")), master_slider, _heading(tr("Music volume")), music_slider, _heading(tr("SFX volume")), sfx_slider]:
 				_body.add_child(w)
 		"Controls":
-			_body.add_child(_labelled(tr(GLYPH_HEADING)))
+			_body.add_child(_heading(tr(GLYPH_HEADING)))
 			_body.add_child(glyph_option)
 			_body.add_child(_labelled(UiTip.for_input(tr("Click a key, then press the new one. Cards stay on 1-9."), tr("Press a key, then press the new one. Cards stay on 1-9."))))
 			var grid := GridContainer.new()
 			grid.columns = 4
+			grid.add_theme_constant_override("h_separation", 12)
 			_body.add_child(grid)
 			for action in Settings.REBINDABLE:
 				var l := _labelled(tr(String(ACTION_LABELS.get(action, String(action)))))
@@ -206,25 +346,89 @@ func show_section(name: String) -> void:
 			_bind_note.custom_minimum_size.x = BIND_NOTE_WIDTH
 			_body.add_child(_bind_note)
 			var reset := Button.new()
-			reset.text = tr("Reset to defaults")
+			reset.name = "ResetKeys"
+			reset.text = tr("Reset to defaults").to_upper()
 			reset.pressed.connect(func() -> void: Settings.reset_keybinds(); show_section("Controls"))
 			_body.add_child(reset)
 		"Language":
-			for w in [_labelled(tr("Language (translations from assets/text/strings.csv)")), language_option]:
+			for w in [_heading(tr("Language (translations from assets/text/strings.csv)")), language_option]:
 				_body.add_child(w)
+	custom_minimum_size.x = WIDTH_TWO if (name == "Accessibility" and two_columns()) else WIDTH_ONE
 	UiWrap.fit(self)
 	if trap_focus:
 		UiFocus.trap(self)  # inside the pause menu: focus stays in the panel
 	else:
 		UiFocus.link_layout(self)  # the section swapped its controls
 	UiFocus.focus_first(_body)
+	_fit_body.call_deferred()
+
+
+## Takes the built widgets out of `node` (they wait off the tree); frees the rest.
+func _release(node: Node, keep: Array[Control]) -> void:
+	for c in node.get_children():
+		if keep.has(c):
+			node.remove_child(c)
+		elif not c.is_queued_for_deletion():
+			_release(c, keep)
+			(c as CanvasItem).hide()
+			c.queue_free()
+
+
+func _column(n: String) -> VBoxContainer:
+	var col := VBoxContainer.new()
+	col.name = n
+	col.add_theme_constant_override("separation", 2)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return col
+
+
+## The text-scale block: the slider with its value and ticks, then the live sample (round
+## 31: "The Cell never sleeps. Every word grows with this.").
+func _text_scale_block() -> VBoxContainer:
+	var block := VBoxContainer.new()
+	block.name = "TextScaleBlock"
+	block.add_theme_constant_override("separation", 4)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	scale_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scale_slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(scale_slider)
+	_scale_value = Chrome.caps_label("", UiTheme.LABEL, Palette.TEXT_HI)
+	_scale_value.name = "ScaleValue"
+	_scale_value.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	row.add_child(_scale_value)
+	block.add_child(row)
+	var ticks := HBoxContainer.new()
+	ticks.name = "Ticks"
+	for i in SCALE_TICKS.size():
+		var t := Chrome.caps_label("%.1f" % SCALE_TICKS[i], UiTheme.CAPTION, Palette.TEXT_LO)
+		t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		t.horizontal_alignment = [HORIZONTAL_ALIGNMENT_LEFT, HORIZONTAL_ALIGNMENT_CENTER, HORIZONTAL_ALIGNMENT_RIGHT][mini(i, 2)]
+		ticks.add_child(t)
+	block.add_child(ticks)
+	var sample_box := PanelContainer.new()
+	sample_box.name = "Sample"
+	var sb := UiTheme.box(Palette.TERMINAL_BG, Palette.NET_CYAN, 1, 12, 8)
+	sample_box.add_theme_stylebox_override(&"panel", sb)
+	_scale_sample = Chrome.body_label(tr("The Cell never sleeps. Every word grows with this."), UiTheme.LABEL, Palette.TEXT_HI)
+	_scale_sample.custom_minimum_size.x = 0
+	sample_box.add_child(_scale_sample)
+	block.add_child(sample_box)
+	scale_slider.value_changed.connect(func(_v: float) -> void: _sync_scale())
+	_sync_scale()
+	return block
+
+
+func _sync_scale() -> void:
+	if _scale_value != null:
+		_scale_value.text = "%.1fx" % scale_slider.value
 
 
 ## The widgets built once in _init (they move between the body and off the tree).
 func _persistent() -> Array[Control]:
-	return [reduce_check, flash_check, heat_glitch_check, subtitles_check, typing_check, assist_check, scale_slider, master_slider, music_slider,
+	return [reduce_check, flash_check, heat_glitch_check, subtitles_check, typing_check, assist_check, master_slider, music_slider,
 		sfx_slider, mode_option, resolution_option, vsync_check, fps_check, legend_check, log_check, all_nodes_check, language_option,
-		reduce_motion_check, high_contrast_check, colorblind_option, resolve_speed_option, glyph_option]
+		reduce_motion_check, high_contrast_check, colorblind_tiles, resolve_tiles, glyph_option, _scale_block, glitch_preview]
 
 
 ## ANIM-R4 C3: the built widgets of the sections not showing are off the tree, so the
@@ -280,6 +484,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		closed.emit()
 		get_viewport().set_input_as_handled()
+		return
+	# LB / RB switch the tab (round 31).
+	if event is InputEventJoypadButton and event.pressed:
+		var b := (event as InputEventJoypadButton).button_index
+		if b == JOY_BUTTON_LEFT_SHOULDER or b == JOY_BUTTON_RIGHT_SHOULDER:
+			var i := SECTIONS.find(section) + (1 if b == JOY_BUTTON_RIGHT_SHOULDER else -1)
+			show_section(SECTIONS[wrapi(i, 0, SECTIONS.size())])
+			get_viewport().set_input_as_handled()
 
 
 static func _key_name(physical: int) -> String:
@@ -287,10 +499,8 @@ static func _key_name(physical: int) -> String:
 
 
 func _check(text: String, value: bool, setter: Callable) -> CheckButton:
-	var c := CheckButton.new()
-	c.text = text
+	var c := CrtSwitch.new(text)
 	c.button_pressed = value
-	c.add_theme_color_override("font_color", Palette.TERMINAL_TEXT)
 	c.toggled.connect(func(on: bool) -> void: setter.call(on))
 	return c
 
@@ -306,6 +516,7 @@ func _choice(node_name: String, words: Array, values: Array[StringName], current
 	return o
 
 
+## A slider in the v2 look: a cyan track and fill, a white grabber (round 31 TEXT SCALE).
 func _slider(text: String, lo: float, hi: float, step: float, value: float, setter: Callable) -> HSlider:
 	var s := HSlider.new()
 	s.name = text.replace(" ", "")
@@ -314,8 +525,51 @@ func _slider(text: String, lo: float, hi: float, step: float, value: float, sett
 	s.step = step
 	s.value = value
 	s.custom_minimum_size = Vector2(300, 20)
+	s.add_theme_stylebox_override(&"slider", UiTheme.box(Color(Palette.NET_CYAN, 0.18), Palette.AUTO, 0, 0, 2))
+	var fill := UiTheme.box(Palette.NET_CYAN, Palette.AUTO, 0, 0, 2)
+	s.add_theme_stylebox_override(&"grabber_area", fill)
+	s.add_theme_stylebox_override(&"grabber_area_highlight", fill)
+	s.add_theme_icon_override(&"grabber", _grabber())
+	s.add_theme_icon_override(&"grabber_highlight", _grabber())
+	s.set_meta(UiFocus.META_NO_SCALE, true)
 	s.value_changed.connect(func(v: float) -> void: setter.call(v))
 	return s
+
+
+static var _grab_tex: ImageTexture = null
+const GRABBER_ART := "res://assets/ui/menus/kit/slider_handle.png"
+const GRABBER_SCALE := 2.0 / 3.0
+
+
+## The slider's grabber: the concept's white notched handle.
+static func _grabber() -> Texture2D:
+	if _grab_tex != null:
+		return _grab_tex
+	# The concept's notched handle (round 31 ui31.slider, baked by tools/art/bake_menus_r33.py),
+	# at two thirds (board -> game); a texture's pixels, resized once (the loaded one is kept).
+	var src := load(GRABBER_ART) as Texture2D
+	var img := src.get_image()
+	img.resize(maxi(1, roundi(img.get_width() * GRABBER_SCALE)), maxi(1, roundi(img.get_height() * GRABBER_SCALE)), Image.INTERPOLATE_LANCZOS)
+	_grab_tex = ImageTexture.create_from_image(img)
+	return _grab_tex
+
+
+## A section heading: terminal CAPS, cyan, caption step (round 31 "EFFECTS & MOTION").
+func _heading(text: String) -> Label:
+	var l := Chrome.caps_label(text.to_upper(), UiTheme.CAPTION, Palette.NET_CYAN)
+	l.custom_minimum_size.x = 0.0  # a long heading wraps at its words (big text, the pause menu)
+	l.custom_minimum_size.y = Chrome.px(UiTheme.CAPTION) * HEADING_LINES
+	l.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	_label_counter += 1
+	l.name = "_tmp_%d" % _label_counter
+	return l
+
+
+func _note(text: String) -> Label:
+	var l := Chrome.body_label(text, UiTheme.BODY, Palette.TEXT_MID)
+	_label_counter += 1
+	l.name = "_tmp_%d" % _label_counter
+	return l
 
 
 func _labelled(text: String) -> Label:
@@ -323,13 +577,35 @@ func _labelled(text: String) -> Label:
 	_label_counter += 1
 	l.name = "_tmp_%d" % _label_counter
 	l.text = text
-	l.add_theme_color_override("font_color", Palette.TERMINAL_TEXT)
+	l.add_theme_color_override("font_color", Palette.TEXT_HI)
 	return l
 
 
+## The section's view: the room `max_height` leaves after the terminal's header, tabs and foot.
+func _on_settings_changed() -> void:
+	_fit_body.call_deferred()
+
+
+func _fit_body() -> void:
+	if fit == null or not is_instance_valid(fit):
+		return
+	if max_height <= 0.0:
+		fit.max_height = 0.0
+		return
+	var chrome := window.get_combined_minimum_size().y - fit.get_combined_minimum_size().y
+	fit.max_height = maxf(FitScroll.MIN_VIEW * Settings.text_scale, max_height - chrome)
+
+
 func _ready() -> void:
+	Settings.changed.connect(_on_settings_changed)
 	Settings.hints_changed.connect(_relabel_close)
 	_relabel_close()
+	var where := context if context != "" else tr("PAUSED")
+	window.title = "%s // %s" % [where, tr("OPTIONS")]
+	var head := window.find_child("TerminalTitle", true, false) as Label
+	if head != null:
+		head.text = "> " + window.title.to_upper()
+	_place_sticker()
 	UiFocus.focus_first(self)
 
 
@@ -340,6 +616,6 @@ func _relabel_close() -> void:
 
 ## At least the content's size, so a host that scrolls can reach every control.
 func _get_minimum_size() -> Vector2:
-	if _paper_panel == null or _paper_panel.content == null:
+	if window == null:
 		return Vector2.ZERO
-	return _paper_panel.content.get_combined_minimum_size()
+	return window.get_combined_minimum_size()

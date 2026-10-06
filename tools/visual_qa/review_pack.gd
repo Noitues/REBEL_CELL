@@ -78,6 +78,7 @@ const AXIS_SETTINGS: Array[StringName] = [&"high_contrast", &"reduce_motion", &"
 ## main's screens (ART-0 D): main's ANIM states the art pass never saw are marked "main".
 const SCREENS := [
 	["title", "_s_title", "Title / main menu with a campaign to continue."],
+	["title_confirm", "_s_title_confirm", "ART-10 4C: the title's delete-slot confirm (the abandon dialog look)."],
 	["slots", "_s_slots", "Campaign slots with one saved campaign."],
 	["new_campaign", "_s_new_campaign", "New campaign page (all corporations unlocked)."],
 	["new_campaign_picker", "_s_new_campaign_picker", "New campaign with the target picker open."],
@@ -618,6 +619,17 @@ func _s_title() -> void:
 	var title: Node = TITLE.instantiate()
 	title.continue_slot = SLOT
 	get_tree().root.add_child(title)
+	await _settle(title)
+
+
+func _s_title_confirm() -> void:
+	RunManager.new_campaign(7)
+	RunManager.autosave()
+	var title: Node = TITLE.instantiate()
+	title.continue_slot = SLOT
+	get_tree().root.add_child(title)
+	await _frames(2)
+	title.confirm_delete("1")
 	await _settle(title)
 
 

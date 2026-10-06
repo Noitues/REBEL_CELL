@@ -33,6 +33,108 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-10 4C menus, title, settings, HQ
+ART_BIBLE v2 §1.2, §1.3, §2.9–2.10, §4.13, §5.6; refs `menus/round33_ui_chrome/title_screen.jpg`,
+`title_screen_alt_simulate.jpg`, `abandon_dialog.jpg`, `ui_kit.jpg`, `typography.jpg`,
+`menus/round31_ui_chrome/settings_menu.jpg`. Built on 1A (palette v2, faces, theme) and 1B (material
+kit) after both merged; generator scripts read on `art-concepts-r43` (round 33 `menu33.py`, `title.py`).
+- **Chrome seam** `scripts/ui/kit/chrome/` (one class per file): `Chrome` (faces per medium, the
+  terminal drawing helpers), `CrtWindow` (TerminalWindow's API, 1B's `CrtTerminalPanel` as its glass,
+  a `> TITLE` header strip with tag chip and square marker, the foot bracket; `max_body` puts the body
+  in a FitScroll), `CrtText` (terminal reference text: ZineNote's `label` / `append` / `make_reference`
+  API, headings in terminal CAPS, prose in Plex), `VerbSticker` (a Button: PINK / YELLOW drawn by 1B's
+  `VinylSticker` inside it; BLUE with the rebel-fist letter and GLITCH drawn by it with the kit's raster
+  Anton; the lime die-cut halo on focus, never brackets), `MenuChip` (terminal button with a label
+  and a line; `selected` = cyan fill), `CrtSwitch` (an Options row: name in CAPS, line in Plex, the
+  ON / OFF pill with a visible OFF track; a CheckButton, so C's behaviour and tests are unchanged),
+  `CrtTiles` (tiles fronting a hidden OptionButton), `HeatGlitchPreview`, `NeonSign`, `PencilPlan`,
+  `PencilWords`, `OnAirTicker`, and `shaders/chrome/vinyl_sticker.gdshader` (the BLUE / GLITCH fill).
+- **Concept art, not redrawn (designer correction 2026-10-05):** `tools/art/bake_menus_r33.py` runs
+  the round 33 ui_chrome scripts from `art-concepts-r43` unchanged (only the font paths and the
+  defaults that captured them are re-pointed at `assets/fonts`) and splits their output into
+  `assets/ui/menus/`: the BREACH / SIMULATE / OVERTHROW stickers (rest, focus halo, BREACH's 12
+  gloss-sweep frames, SIMULATE's two burst frames; `title.stk`, `menu33`), the yellow title stickers
+  OPTIONS, PAUSED, CODEX, STATS, CAMPAIGN SLOTS, NEW CAMPAIGN (`ui31.sticker`, round 33 parameters),
+  the REBEL_CELL sign per lit state of its 48-frame loop and its glow (`title.board` + `neon`), the
+  pencil plan and NEVER SLEEP + crown (`ui31.Pencil`), the pill switches, slider handle, tab and tile
+  plates and the title's chip plates (`ui31.toggle / slider / tabs / term_panel`, `settings.tiles`),
+  the ON AIR block (`title.ticker`) and the Heat glitch preview frames (the round 18 storyboard,
+  cropped as settings.py crops it). Stickers are at 2x the 1920 board (a third in the game), the
+  rest at 1x (two thirds). The title's verb rows keep the concept's 112 px board pitch so the
+  pencil numbers sit on them. **Every visual and its source:** sign, verb stickers, title stickers,
+  plan, motto, switches, slider handle, tabs, tiles, chip plates, ON AIR, glitch preview = baked
+  concept art (above). Drawn, with the reason: terminal windows (CrtWindow = 1B's CrtTerminalPanel
+  glass, the coordinator's seam; its header, tag chip and square carry live, translated words), the
+  MORE / PROFILE / Options / pause terminals (same), the chip and tile words, the ticker's crawl
+  (live words), the codex / stats text, the HQ (no concept: G13 dropped the HQ room), the
+  new-campaign page and its TRUST NO ONE pencil (no concept: §4.14 "new-campaign page" not
+  designed), stickers for words the concept never drew (the kit's VinylSticker), the confirm (2D's
+  ConfirmDialog). The title's backdrop stays the live city (round 33 used pre-rendered city frames;
+  the city is 1D / ART-5's), dimmed.
+- **Title option A (D10, confirmed):** the REBEL_CELL neon tube sign on its circuit board (idle loop
+  `title_sign_flicker`: underscore cursor, an E stutter, a two-frame drop to CELL); 1. BREACH (pink,
+  default focus) = Continue with the slot line `slot // corp // run N // Heat H`; 2. SIMULATE (the
+  CORRUPTED glitch inside the letters, bursts on frames 9–10 and 27–28 of 48, `title_glitch_burst`) =
+  Tutorial; 3. OVERTHROW (blue, last O the red fist) = New campaign. DISABLE stays the Cell's motto
+  (round 33 note 3). The grease-pencil plan numbers the stickers; NEVER SLEEP + crown in pencil; the
+  MORE terminal (CAMPAIGN SLOTS [C], CODEX [X], STATS & ACHIEVEMENTS [S], OPTIONS [O], QUIT [ESC] — the
+  keys work, pad Y opens the Codex, B / Esc backs out of a sub-page); PROFILE // THE CELL tags; the
+  build line, pad prompts and the ON AIR ticker (`on_air_ticker`). The city is dimmed behind it.
+  **Calls:** with no saved campaign BREACH is the grey disabled sticker and SIMULATE takes the focus;
+  OVERTHROW starts a campaign in the first empty slot (the slots page when all three hold one); the
+  stickers and their chips do the same action (the chip has no focus of its own; it lights with its
+  sticker). Big text (≥ 1.6): MORE heads the right column, the chips drop their second line (it stays
+  in the tooltip), the motto and the PROFILE panel give way (Stats shows the same tags).
+- **Abandon dialog:** ART-2 2D restyled ConfirmDialog to the round 33 abandon dialog
+  (`HudDialogPanel`, yellow CANCEL, pink verb) while 4C ran; 4C's own version was dropped at the
+  merge and the title uses 2D's: delete slot = `> CONFIRM // DELETE SLOT`, destructive, DELETE, with the
+  slot's cost in the body; quit = QUIT, "Your campaign is autosaved." **Call:** the pad hold-A 0.8 s on
+  the verb is a proposal in the bible (§4.13): not built.
+- **Options (round 31):** `> TITLE // OPTIONS` or `> PAUSED // OPTIONS`, the yellow OPTIONS sticker,
+  terminal tabs (LB / RB switch), Accessibility in two columns (EFFECTS & MOTION switches; TEXT SCALE
+  slider with its value, ticks and live sample; colour-blind and resolve-speed tiles; the Heat glitch
+  preview with ON / OFF frames and LIMITED under the flash limiter or reduce effects; HEAT GLITCH's row
+  shows the LIMITED chip). Every row carries `UiFocus.META_NO_SCALE` (ART-0 carry-over: the pad focus
+  scale moved full-width rows' words and put the brackets past the panel). Below text scale 1.5, and
+  never inside the pause menu (`compact`), one column. **Call:** the reference's RESET TO DEFAULTS for
+  every setting is not built (no such rule; the Controls section keeps its keybind reset); D13's
+  "Always show all nodes" row is not on main yet (3B) — it takes a CrtSwitch row when it lands.
+- **Pause, codex, stats, slots, new campaign:** yellow title stickers over v2 terminals; the codex and
+  stats are terminal text (the zine note is a rejected medium); stats gain the profile tag grid; the
+  pause lines are terminal CAPS menu items. The new-campaign page swaps the spray tag / scrawl
+  (rejected) for its NEW CAMPAIGN sticker and TRUST NO ONE in pencil; its words say what they do
+  (City seed, Next seed, ICE difficulty, with icons and tooltips; audit P3).
+- **HQ (G13 not ruled: every action kept):** CYBERDECK, CELL STATUS, CITY GRID, CREW, BLACK MARKET, story,
+  the Site card and RUNS OPEN NOW are CrtWindows; PIRATE RADIO is terminal text (the DJ is a voice on
+  the Cell's feed); the dossier's name and fields are Courier Prime (corp paper). Raid parts (3A) and
+  campaign end (4D) untouched. **Not done:** the crew dossier on 1B's `CorpPaperPanel` (it keeps its
+  paper card with Courier Prime: the panel's letterhead / stamp slot would need the card's orders and
+  HP strip re-laid; proposed slice) and JACK IN as a vinyl sticker (ZineStamp keeps `jack_ring_breathe`
+  and its tests; a slice once 1B's sticker can breathe).
+- **Audit (group1_naive) P2:** the top bar (HudStats, every screen) is terminal tags with names at the
+  caption step, no colour-coded paper; Heat's value and icon in its band colour (§2.8); the Heat poster's
+  number and bar in the band colour (ink on its paper for COOL). **Not done:** the Heat count-up vs the
+  banner (P3, ART-5's poster timing; the banner names the threshold crossed, the number rolls on after
+  it) and the raid setup's SAVED (Fx's stamp, 3A's screen: reported).
+- **Motion:** new `title_glitch_burst`, `title_sign_flicker`, `on_air_ticker` (T0; REQUIRED_IDS; lab
+  demos `screen title_glitch / title_sign / ticker`); the stickers use 1B's `sticker_hover` /
+  `sticker_press`. Reduce effects, headless or an entry off: the sign holds lit, the glitch shows its
+  light split, the ticker holds still, the stickers take their end states at once.
+- **Tokens:** Palette gains STICKER_BLUE / STICKER_BLUE_LOW, NEON_TUBE / NEON_CORE, BOARD_* (smallest
+  edit, reported). Fonts: the stickers and the sign draw from `VinylSticker.art_font()` (raster Anton:
+  their outlines are wider than the MSDF field).
+- **Merges:** the 1B merge resolved `ui_motion.tres` with the two-way tool, which kept 4C's copy of
+  entries main had retuned; the Group 2 merge rebuilt the file as main's plus 4C's three entries, so
+  main's tunings are back.
+- **Tests:** `tests/unit/test_art10_menus.gd` (fast). Adapted (they pinned the M13 look the art
+  replaces; behaviour kept): `test_visual_merge` pause menu = CrtWindow; `test_art0_kit_states` the
+  confirm's scrim is a plain child behind it (still full screen, still takes the clicks);
+  `test_horizontal_pass15` reads `window.body`; `test_horizontal_pass21_screens` the title profile is a
+  caption + value grid (tooltips, never "none"), the MORE lines carry key hints instead of icons, the
+  plan is the three stickers on screen at 2.0, the radio shows all its words; `test_horizontal_pass23
+  / 24_screens` and `test_anim6_screen_motion` read PIRATE RADIO as CrtText, the plan's stickers are
+  translated once, CONTINUE is a TerminalChip with the slot line (its tooltip at big text). No test
+  dropped.
 ### 2026-10-05 — Art direction — ART-0 audit fixes
 Fixes every finding of `docs/handoff/m14_audit/ART-0_horizontal.md` (3 P2, 12 P3); nothing deferred.
 - **E1 (P2) shakes held to their tier.** `Motion.shake` plays `Motion.shake_px(id)`, the amplitude
@@ -7450,6 +7552,15 @@ and annotated in the GDD where it changes a rule.
   and tested but only shows below ortho 150 outside the netrun band; should the transit show it?
   (2) reduce motion pauses street traffic (brief) where bible 5.4 says 40 % without streaks.
   (3) 5a: a public day-look call on CityView3D (CityViewMotion sets the view's materials for now).
+
+### 2026-10-05 — ART-10 4C: hold-to-confirm on the abandon dialog's verb
+ART_BIBLE §4.13 calls the pad's 0.8 s hold on the committing verb (BURN IT) a proposal: not built
+(A presses it like any button). Default: no hold. Build it if the designer wants it.
+
+### 2026-10-05 — ART-10 4C: the HQ dossier on corp paper and JACK IN as a vinyl sticker
+The crew dossier keeps its paper card with Courier Prime (1B's CorpPaperPanel would need its orders
+and HP strip re-laid round the letterhead and stamp slot); JACK IN keeps its ZineStamp (its
+`jack_ring_breathe` motion and tests). Default: as is; proposed as a slice with ART-5 / G13.
 
 - **ART-5 5b: the REBEL_CELL fist on the real city (2026-10-05):** the landmark export carries a standalone district
   patch and the crest as a mask texture; on the unified city the fist must be the city's own buildings' windows

@@ -40,9 +40,10 @@ const BOTTOM_ROOM := 3.0
 ## The icon's radius, the inner padding and lettering at scale 1.0.
 const ICON_R := 9.0
 const PAD := 6.0
-const NAME_SIZE := 10
+## ART-10 4C (audit P2: the names read at 6-7 px): the caption floor.
+const NAME_SIZE := UiTheme.CAPTION
 const VALUE_SIZE := 22
-const SUFFIX_SIZE := 11
+const SUFFIX_SIZE := UiTheme.CAPTION
 ## What a tag shows for a number that doesn't exist yet (no best ICE): never "none".
 const NO_VALUE := "—"
 ## ART-2 2D: each tag's edge in turn (the plates read as one strip; the colour is never the
@@ -382,6 +383,16 @@ func tag_name(i: int) -> String:
 	return tr(String(items[i][0])) if i >= 0 and i < items.size() else ""
 
 
+## ART-10 4C: the Heat tag's band colour (Palette.heat_color, five bands); AUTO for any other
+## tag (it keeps the strip's plain colours).
+func heat_tone_of(i: int) -> Color:
+	if icon_of(i) == StatIcon.HEAT:
+		var v := String(items[i][1])
+		if v.is_valid_int():
+			return Palette.heat_color(int(v))
+	return Palette.AUTO
+
+
 func icon_of(i: int) -> StringName:
 	var it: Array = items[i]
 	if it.size() > 4 and String(it[4]) != "":
@@ -607,8 +618,10 @@ func _draw() -> void:
 			draw_string(HudSkin.mono(), r.position + Vector2(PAD, 14) * s, tag_name(i).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 10.0 * s, roundi(NAME_SIZE * s), HudSkin.TERMINAL_TEXT)
 			icon_c = r.position + Vector2(PAD + ICON_R, 30) * s
 			value_at = r.position + Vector2(PAD + ICON_R * 2.0 + 5.0, 38) * s
-		StatIcon.draw(self, icon_c, ICON_R * s, icon_of(i), HudSkin.TERMINAL_TEXT)
-		draw_string(Palette.display(), value_at, value, HORIZONTAL_ALIGNMENT_LEFT, -1, vs, HudSkin.TERMINAL_HI)
+		# ART-10 4C (audit P2, §2.8): Heat's icon and value in its band's colour; the rest plain.
+		var heat_tone := heat_tone_of(i)
+		StatIcon.draw(self, icon_c, ICON_R * s, icon_of(i), heat_tone if heat_tone != Palette.AUTO else HudSkin.TERMINAL_TEXT)
+		draw_string(Palette.display(), value_at, value, HORIZONTAL_ALIGNMENT_LEFT, -1, vs, heat_tone if heat_tone != Palette.AUTO else HudSkin.TERMINAL_HI)
 		if it.size() > 2 and String(it[2]) != "":
 			var vw := Palette.display().get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, vs).x
 			draw_string(HudSkin.mono(), value_at + Vector2(vw + 2.0 * s, -1.0 * s), String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(SUFFIX_SIZE * s), HudSkin.TERMINAL_TEXT)
