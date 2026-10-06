@@ -238,7 +238,14 @@ at text 1.0 and 2.0). Test: `tests/unit/test_b1b_wax_pencil.gd`.
   (`seg_from_px` / `seg_to_px`), so the shader's distance is the arc length, not the tiled UV (which ran at about twice
   the arc length in widths, halving the spacing). Tests: `test_b1b_wax_pencil::test_a_dropout_is_a_partial_width_nibble_from_one_seeded_edge`,
   `::test_the_shadow_fades_over_the_whole_gap_so_no_dark_tick_shows`, `::test_dropouts_are_spaced_in_screen_px_on_a_curved_zoomed_stroke`.
-  Crop resent: `B1b_crop_aim.png`. Merge with B1a: the HQ run's TARGET pencil joins `UiScrimPools.LIFT_GROUP` with its marks (over the scrim).
+  Optional tweak (art director, 2026-10-06, no review loop): each gap is drawn uniformly from the whole 40-70 px
+  range (`DROPOUT_GAP`, seeded), not 55 +- 7.5: the dropouts come in pairs 110 px long, one at the pair's start and one
+  a seeded gap g on, so every gap (g or 110 - g) is uniform in 40-70, with a seeded phase so no stroke starts on one
+  (`GreasePencilMark.dropout_hit` and the shader's `dropout_hit` compute the same; words: 70-110). Reading the new
+  1080p frame, the under-shadow's dark rim was broken at every gap (its full-width fade read as a dashed underline):
+  the shadow now fades only under the bite (`dropout_shadow_extra` 0.15 deeper for its offset, at most 0.75 of the
+  width), so the rim on the far edge runs on unbroken. Test: the spacing test checks the gaps fill the range
+  uniformly (a third in each third). Crop resent: `B1b_crop_aim.png`. Merge with B1a: the HQ run's TARGET pencil joins `UiScrimPools.LIFT_GROUP` with its marks (over the scrim).
 
 ### 2026-10-06 — B1a b — the art director's fixes: pools that read, the network over the scrim
 The art-pass review of B1a (c270cd7f; relayed by the orchestrator): architecture approved; three fixes, Q1 and Q2
