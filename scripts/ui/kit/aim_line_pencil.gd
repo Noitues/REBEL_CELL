@@ -17,7 +17,11 @@ extends Node
 ##
 ## The scene says what to draw each frame through `spec` (a Callable returning the aim:
 ## {} for none, else {from, to, arrow_t, hub (bool: the arrow stops at the hub's edge),
-## stop (px it stops short), loop: {} or {key, center, radius}}). View only.
+## stop (px it stops short), loop: {} or {key, center, radius}, marks: [{key, center, radius,
+## ink}] (slices circled), lines: [{key, from, to}] (B2: the HP result chips underlined)}).
+## Each underline writes on over `pencil_write_on` the first frame it is laid (its own clock, so
+## a wheel whose chips start to change mid-aim writes its line too) and wipes off when it goes.
+## View only.
 
 ## The arrow's bow (share of its length, the concept's quarter bow halved for the shorter
 ## combat reach), the loop's size (shares of the target's radius: the concept's 1.12 x 0.97
@@ -30,6 +34,12 @@ const HUB_STOP := 0.28
 const SHAFT_POINTS := 24
 const ARROW_SEED := 11
 const LOOP_SEED := 5
+
+## B2 underline: points along it, its hand wobble (share of the wax's width) and its pen overrun
+## past each end (share of its length: the concept's underline runs a little past the chips).
+const LINE_POINTS := 16
+const LINE_WOBBLE := 0.22
+const LINE_OVERRUN := 0.04
 
 const LOOP_MOTION := GreasePencilMark.WRITE
 const WIPE_MOTION := GreasePencilMark.WIPE
@@ -47,6 +57,8 @@ var _last_marks: Dictionary = {}
 ## Marks wiping off: [{key, strokes, ink, width, seed, t}].
 var _wipes: Array[Dictionary] = []
 var _wipe_count: int = 0
+## B2: each underline's write-on progress (key -> 0..1).
+var _line_t: Dictionary = {}
 
 
 func _init() -> void:
@@ -65,12 +77,19 @@ func _exit_tree() -> void:
 
 ## MotionSkip: a loop is writing on or a mark is wiping off.
 func motion_running() -> bool:
-	return _loop_t < 1.0 or not _wipes.is_empty()
+	if _loop_t < 1.0 or not _wipes.is_empty():
+		return true
+	for k in _line_t:
+		if float(_line_t[k]) < 1.0:
+			return true
+	return false
 
 
 ## MotionSkip: everything written whole, every wipe done.
 func complete_motion() -> void:
 	_loop_t = 1.0
+	for k in _line_t:
+		_line_t[k] = 1.0
 	_wipes.clear()
 	_lay(_current())
 
@@ -101,6 +120,26 @@ static func shapes(aim: Dictionary) -> Dictionary:
 	return out
 
 
+## B2: a hand underline from `from` to `to` (global px): one wax pass that overruns each end by
+## LINE_OVERRUN of its length, wobbling by up to LINE_WOBBLE of the wax's width (seeded KitNoise
+## through PencilShapes.jitter: deterministic, never game RNG), its far end lifting a little as
+## a hand's does.
+static func underline(from: Vector2, to: Vector2, seed: int) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	var d := to - from
+	var len := maxf(d.length(), 1.0)
+	var dir := d / len
+	var nrm := dir.orthogonal()
+	var amp := GreasePencilMark.stroke_width() * LINE_WOBBLE / PencilShapes.JITTER
+	var a := from - dir * len * LINE_OVERRUN
+	var b := to + dir * len * LINE_OVERRUN
+	for i in LINE_POINTS:
+		var t := float(i) / float(LINE_POINTS - 1)
+		var lift := t * t * GreasePencilMark.stroke_width() * LINE_WOBBLE
+		out.append(a.lerp(b, t) + nrm * (PencilShapes.jitter(seed, t) * amp + lift))
+	return out
+
+
 func _current() -> Dictionary:
 	if not spec.is_valid():
 		return {}
@@ -126,6 +165,8 @@ func _process(delta: float) -> void:
 	for w in _wipes:
 		w["t"] = minf(1.0, float(w["t"]) + delta / maxf(Motion.seconds(WIPE_MOTION), 0.001))
 	_wipes = _wipes.filter(func(w: Dictionary) -> bool: return float(w["t"]) < 1.0)
+	for k in _line_t:
+		_line_t[k] = minf(1.0, float(_line_t[k]) + delta / maxf(Motion.seconds(LOOP_MOTION), 0.001))
 	_lay(aim)
 
 
@@ -165,6 +206,20 @@ func _lay(aim: Dictionary) -> void:
 		var strokes: Array[PackedVector2Array] = [PencilShapes.hand_circle(m["center"], Vector2(r, r), seed)]
 		_pool.stroke(key, strokes, m["ink"], _loop_t, 0.0, false, seed)
 		marks[key] = {"strokes": strokes, "ink": m["ink"], "seed": seed}
+	# B2: the HP result chips of each wheel the play changes, underlined (each its own write-on).
+	var lines_now: Dictionary = {}
+	for ln: Dictionary in aim.get("lines", []):
+		var key := "line|%s" % String(ln["key"])
+		var seed := String(ln["key"]).hash()
+		if not _line_t.has(key):
+			_line_t[key] = 0.0 if Motion.live(LOOP_MOTION) else 1.0
+		var strokes: Array[PackedVector2Array] = [underline(ln["from"], ln["to"], seed)]
+		_pool.stroke(key, strokes, GreasePencilMark.Ink.PLAN, float(_line_t[key]), 0.0, false, seed)
+		marks[key] = {"strokes": strokes, "ink": GreasePencilMark.Ink.PLAN, "seed": seed}
+		lines_now[key] = true
+	for key in _line_t.keys():
+		if not lines_now.has(key):
+			_line_t.erase(key)
 	for key in _last_marks:
 		if not marks.has(key):
 			_start_wipe(_last_marks[key])

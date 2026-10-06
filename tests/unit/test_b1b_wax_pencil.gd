@@ -20,7 +20,6 @@ const MATERIAL_FILES: Array[String] = [
 const NOT_PENCIL := {
 	"res://scripts/ui/kit/raid_vehicle.gd": "the vehicle icon's filled heading chevron (an icon part in the plan hue)",
 	"res://scripts/ui/kit/city_minimap.gd": "the minimap terminal's view box and boss dot (CRT glyphs in the inks' hues)",
-	"res://scripts/ui/kit/play_result_plate.gd": "the aiming plate's terminal accent (the plate goes with the aiming-result change)",
 	"res://tools/design_lab/kit_sheet.gd": "the lab's round 3 board: printed glass brackets and a waypoint disc in the inks' hues (its pencil is the material)",
 }
 const SCAN_DIRS: Array[String] = ["res://scripts", "res://tools/design_lab"]

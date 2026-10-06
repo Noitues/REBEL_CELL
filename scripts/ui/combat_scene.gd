@@ -181,8 +181,19 @@ var aim_pencil: AimLinePencil
 ## The aiming instruction over the hand.
 var _aim_hint: Label
 const AIM_HINT_FONT := 14
-## Other cards fade while one is aimed.
-const AIM_DIM := 0.45
+## B2 (review D15): the other cards' brightness while one is aimed (they stay opaque: 0.45 alpha
+## read as disabled); at rest every card is full brightness.
+const AIM_DIM := 0.75
+## B2 (review D15, round 41 combat_typical_v4): the hand fans: each card turns HAND_FAN_DEG per
+## place from the middle, overlaps its neighbour by HAND_OVERLAP of its width and rises on an arc
+## to HAND_ARC_RISE_1080 board px (1080p) at the middle (scaled with the cards).
+## B2 (designer Q1 c): the fight's Heat chip's look (HeatGauge's, the corner chip's sizes: 120 x
+## 32 at 1080p) and its margin from the screen's top-left corner (px).
+const HEAT_CHIP_LOOK := preload("res://content/config/heat_chip_look.tres")
+const CORNER_MARGIN := 6.0
+const HAND_FAN_DEG := 2.5
+const HAND_OVERLAP := 0.12
+const HAND_ARC_RISE_1080 := 6.0
 ## How short of a zone that is not the hub the pencil arrow stops (px at text scale 1.0), and
 ## a drone's loop radius (share of its wheel's rim).
 const AIM_STOP := 10.0
@@ -1241,7 +1252,8 @@ func aim_spec() -> Dictionary:
 	var loop := {"key": "%s|wheel" % v.combatant.id, "center": v.global_center(), "radius": v.rim_radius()}
 	if kind == "satellite":
 		loop = {"key": "%s|%s" % [v.combatant.id, String(zone["id"])], "center": to, "radius": v.rim_radius() * AIM_SAT_LOOP}
-	return {"from": from, "to": to, "arrow_t": _aim_draw, "stop": stop, "loop": loop, "marks": _slice_marks}
+	return {"from": from, "to": to, "arrow_t": _aim_draw, "stop": stop, "loop": loop, "marks": _slice_marks,
+		"lines": result_underlines()}
 
 
 ## B1a (review D19): the aim's pencil lights the world under it: its shaft and its loop (global
@@ -1255,6 +1267,8 @@ func _aim_spill_lines() -> Array:
 		var strokes: Array = shapes[part]
 		if not strokes.is_empty():
 			out.append(strokes[0])
+	for ln in result_underlines():  # B2: the result chips' underlines light it too
+		out.append(AimLinePencil.underline(ln["from"], ln["to"], String(ln["key"]).hash()))
 	return out
 
 
@@ -1262,7 +1276,8 @@ func _aim_spill_lines() -> Array:
 func _dim_hand() -> void:
 	for c in _hand_box.get_children():
 		if c is ZineCard and not _returning.has((c as ZineCard).drag_index):
-			(c as Control).modulate.a = AIM_DIM if selecting >= 0 and (c as ZineCard).drag_index != selecting else 1.0
+			var d := AIM_DIM if selecting >= 0 and (c as ZineCard).drag_index != selecting else 1.0
+			(c as Control).modulate = Color(d, d, d, (c as Control).modulate.a)
 	if selecting < 0:
 		_clear_play_results()
 	if selecting < 0 and _aim_hint != null:
@@ -1302,7 +1317,12 @@ func _show_aim_hint() -> void:
 	if ram_note != null and ram_note.is_visible_in_tree() and _cell_panel.get_parent() == _bottom_row:
 		top = minf(top, ram_note.get_global_rect().position.y)
 	_aim_hint.global_position = Vector2(clampf(x, 0.0, maxf(0.0, get_global_rect().end.x - hs.x)), top - hs.y - 4.0)
-	_aim_hint.visible = true
+	# B2 (designer Q2): key hints live in the tooltip only, never a caption line: the hint keeps its
+	# words (the readers, the preview labels' blockers) and the aimed card's tooltip says them.
+	_aim_hint.visible = false
+	var card := _card_node(selecting)
+	if card != null and not card.tooltip_text.contains(_aim_hint.text):
+		shown_tip(card, "%s\n%s" % [card.tooltip_text, _aim_hint.text])
 
 
 ## Room kept between the aim hint and the screen's right edge (px).
@@ -1324,12 +1344,14 @@ func _show_selection() -> void:
 	_preview_action(_options[_option_index])
 
 
-## S-COMBAT-HUD (designer ruling 2026-10-05): the aim is on a target: the play's result shows
-## on every wheel it changes (the aimed one, and any whose result chips differ from the
-## forecast without the card, `base`): a PlayResultPlate on its hub with the HP before and
-## after and its result chips (the same ResultChipModel row as beside the HP), and each slice
-## whose status it changes circled in grease pencil (yellow good for you, red bad). A random
-## play shows its odds on the chips only (GDD 2.10: the roll is never previewed).
+## S-COMBAT-HUD (designer ruling 2026-10-05), B2 (designer ruling 2026-10-06, the aiming result):
+## the aim is on a target: the play's result shows on every wheel it changes (the aimed one, and
+## any whose result chips differ from the forecast without the card, `base`) in that wheel's own
+## HP result chips (the ResultChipModel row beside its HP, already the play's preview), which the
+## aim's yellow grease pencil underlines (a true plan: what this play does), plus the existing
+## ghost landings; each slice whose status it changes is circled in pencil (yellow good for you,
+## red bad). No plate on the hub (review section c: an undesigned element that covered the hub).
+## A random play shows its odds on the chips only (GDD 2.10: the roll is never previewed).
 func _show_play_results(action: CombatAction, base: Dictionary) -> void:
 	_clear_play_results()
 	var state := engine.state()
@@ -1338,7 +1360,6 @@ func _show_play_results(action: CombatAction, base: Dictionary) -> void:
 		return
 	var target := state.get_combatant(action.wheel_id)
 	var aimed := _view_of(target.host_id if target != null and target.is_satellite else action.wheel_id)
-	var caption := tr("IF YOU PLAY %s") % TextDb.t(card, "display_name").to_upper()
 	for v in _views():
 		var c: CombatantState = v.combatant
 		if c == null or not c.is_alive() or v.outcome.is_empty():
@@ -1346,12 +1367,7 @@ func _show_play_results(action: CombatAction, base: Dictionary) -> void:
 		var row: Array = hud_layer.row_for(v).chips
 		if v != aimed and HudResultChips.signature(row) == HudResultChips.signature(base.get(v, [])):
 			continue
-		var plate: PlayResultPlate = _play_plates.get(v)
-		if plate == null:
-			plate = PlayResultPlate.new()
-			_plate_layer.add_child(plate)
-			_play_plates[v] = plate
-		plate.show_result(caption, c.hp, int(v.outcome.get("hp_after", c.hp)), row, v.global_center())
+		_result_views.append(v)
 		for st in v.outcome.get("statuses", []):
 			var slot := int(st["slot"])
 			var good := WheelView.status_good_for_you(int(st["after"]), c.is_player) if int(st["after"]) != RC.Status.NONE else not WheelView.status_good_for_you(int(st["before"]), c.is_player)
@@ -1359,21 +1375,43 @@ func _show_play_results(action: CombatAction, base: Dictionary) -> void:
 				"ink": GreasePencilMark.Ink.PLAN if good else GreasePencilMark.Ink.THREAT})
 
 
-## The play results go (the aim left its target, or aiming ended).
+## The play results go (the aim left its target, or aiming ended): their underlines and circles
+## wipe off with the pencil's cloth (AimLinePencil), never fade.
 func _clear_play_results() -> void:
-	for p in _play_plates.values():
-		if is_instance_valid(p):
-			(p as PlayResultPlate).clear()
+	_result_views.clear()
 	_slice_marks.clear()
 
 
-## Every play result plate showing (tests): view -> plate.
-func play_plates() -> Dictionary:
+## Every wheel whose HP result chips show the aimed play's result now (tests): view -> {chips
+## (the row beside its HP), hp_from, hp_to (the preview's HP after SEND IT)}.
+func play_results() -> Dictionary:
 	var out := {}
-	for v in _play_plates:
-		var p: PlayResultPlate = _play_plates[v]
-		if is_instance_valid(p) and p.visible:
-			out[v] = p
+	for v in _result_views:
+		if not is_instance_valid(v) or (v as WheelView).combatant == null:
+			continue
+		var wv := v as WheelView
+		out[wv] = {"chips": hud_layer.row_for(wv).chips.duplicate(true), "hp_from": wv.combatant.hp,
+			"hp_to": int(wv.outcome.get("hp_after", wv.combatant.hp))}
+	return out
+
+
+## The yellow pencil underlines of the result chips of the wheels the aimed play changes (global
+## px; the aim spec's `lines`): {key, from, to} each, under the HP number and its chip row, laid
+## each frame where the rows stand now.
+func result_underlines() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var gap := RESULT_LINE_GAP * Settings.text_scale
+	for v in _result_views:
+		if not is_instance_valid(v) or not (v as WheelView).is_visible_in_tree() or (v as WheelView).combatant == null:
+			continue
+		var wv := v as WheelView
+		var hp: Rect2 = wv.hp_layout()["hp"]
+		var span := Rect2(wv.global_position + hp.position, hp.size)
+		var row := hud_layer.row_for(wv)
+		if row.visible and not row.chips.is_empty():
+			span = span.merge(row.get_global_rect())
+		var y := span.end.y + gap
+		out.append({"key": "%s|chips" % wv.combatant.id, "from": Vector2(span.position.x, y), "to": Vector2(span.end.x, y)})
 	return out
 
 
@@ -1382,11 +1420,12 @@ func slice_marks() -> Array[Dictionary]:
 	return _slice_marks
 
 
-var _play_plates: Dictionary = {}
+var _result_views: Array = []
 var _slice_marks: Array[Dictionary] = []
-var _plate_layer: Control
 ## A changed slice's pencil circle (share of the slice band).
 const PLAY_MARK_R := 0.32
+## The result chips' pencil underline: its gap under the HP number and the chips (px at text 1.0).
+const RESULT_LINE_GAP := 3.0
 
 
 # --- Engine callbacks --------------------------------------------------------------
@@ -1825,9 +1864,11 @@ func _build_ui() -> void:
 	_address.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	banner_rows.add_child(_address)
 	top.add_child(_banner)
-	_settings_button = _button(tr("Settings"), open_settings)
+	# B2 (review section c): Settings is a 32 px terminal icon chip; its name and key are its tooltip.
+	_settings_button = SettingsIconChip.new()
+	_settings_button.pressed.connect(open_settings)
 	_settings_button.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # ANIM-R6 A12: its words come translated
-	shown_tip(_settings_button, tr("Pause: options, codex, save and quit."))
+	_settings_button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	top.add_child(_settings_button)
 
 	var middle := HBoxContainer.new()
@@ -1870,12 +1911,21 @@ func _build_ui() -> void:
 	portrait.name = "Polaroid"
 	portrait.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	side_top.add_child(portrait)
-	heat_poster = HeatPoster.new(false)
-	heat_poster.name = "HeatPoster"
+	# B2 (designer Q1 (c), review section f): no top bar in a fight; the run's Heat is a small
+	# terminal chip in the top-left corner (the number, the band word and the strip): the shared
+	# HeatGauge (it IS the poster: its roll, stamp, banner and MotionSkip are kept) on the corner
+	# chip's look. Read-only here (Q2).
+	var gauge := HeatGauge.new()
+	gauge.look = HEAT_CHIP_LOOK
+	gauge.custom_minimum_size = gauge.gauge_size()
+	heat_poster = gauge
+	heat_poster.name = "HeatChip"
 	shown_tip(heat_poster, tr("Heat: the corporation's attention. Thresholds bring raids and harder rules."))
 	if RunManager.campaign != null:
 		heat_poster.hot_color = Palette.corp_color(RunManager.campaign.corporation_id)
-	side_top.add_child(heat_poster)
+	heat_poster.visible = RunManager.campaign != null
+	heat_poster.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	heat_poster.position = Vector2(CORNER_MARGIN, CORNER_MARGIN)
 	daemon_row = DaemonRow.new()
 	daemon_row.name = "DaemonRow"
 	_right.add_child(daemon_row)
@@ -1989,12 +2039,6 @@ func _build_ui() -> void:
 	hud_layer.name = "HudLayer"
 	hud_layer.views_of = _views
 	add_child(hud_layer)
-	# S-COMBAT-HUD: an aimed play's result plates, on the wheels it changes.
-	_plate_layer = Control.new()
-	_plate_layer.name = "PlayResults"
-	_plate_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_plate_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(_plate_layer)
 	# The motion overlay: over the arena and the hand, under the toast and popups.
 	fx_layer = CombatFxLayer.new()
 	fx_layer.name = "MotionLayer"
@@ -2035,6 +2079,10 @@ func _build_ui() -> void:
 	_aim_hint.add_theme_color_override("font_outline_color", Palette.NIGHT_SKY)
 	_aim_hint.add_theme_constant_override("outline_size", 6)
 	add_child(_aim_hint)
+	# B2 (Q1 c): the Heat chip in the top-left corner, over the arena, under the motion layer's
+	# words (its own z); it casts the panels' shadow onto the city.
+	add_child(heat_poster)
+	UiScrimPools.mark_panel(heat_poster, false)
 	_refresh_key_hints()
 
 
@@ -2165,7 +2213,7 @@ func _refresh_key_hints() -> void:
 	_nudge_minus_button.text = "-1 %s" % Settings.hint(&"nudge_left")
 	_nudge_plus_button.text = "+1 %s" % Settings.hint(&"nudge_right")
 	# ANIM-R6 A12: its word translated once here (the button shows it as given).
-	_settings_button.text = ("%s %s" % [tr("Settings"), Settings.hint(&"open_settings")]).strip_edges()
+	shown_tip(_settings_button, "%s\n%s" % [("%s %s" % [tr("Settings"), Settings.hint(&"open_settings")]).strip_edges(), tr("Pause: options, codex, save and quit.")])
 	(_end_turn_button as DripButton).set_key_hint(Settings.hint(&"end_turn"))
 	(_continue_button as DripButton).set_key_hint(Settings.hint(&"end_turn"))
 	_sync_stickers()
@@ -2233,6 +2281,9 @@ func _refresh(state: CombatState) -> void:
 			_enemy_views_box.add_child(v)
 		var view: WheelView = _enemy_views[e.id]
 		view.highlighted = e.id == state.target_id
+		# B2 (D4): the lime brackets only while there is another wheel to choose (a drone as the
+		# target keeps its own small crosshair).
+		view.reticle_shown = state.living_enemies(false).size() > 1
 		view.targeted_satellite = target.id if target != null and target.is_satellite and target.host_id == e.id else &""
 		var lines: Array[String] = []
 		if reveal:
@@ -2596,6 +2647,7 @@ func _build_hand(state: CombatState) -> void:
 		var c := _make_card(card, i, s)
 		c.disabled = state.is_over() or state.ram < card.ram_cost
 		c.short_ram = not state.is_over() and state.ram < card.ram_cost  # ART-2 2C: the grey dot and NEED tag
+		c.set_greyed(c.short_ram)  # B2 (D15): greyscale, the NEED tag in colour
 		var several := CardTargeting.options(engine.resolver, state, i).size() > 1
 		shown_tip(c, "%s\n%s" % [Codex.describe(card), UiTip.for_input(tr("Drag it onto a glowing target, or click it and then the target."), tr("Press it, then pick a glowing target.")) if several
 			else UiTip.for_input(tr("Click to play."), tr("Press it to play."))])
@@ -2616,6 +2668,31 @@ func _build_hand(state: CombatState) -> void:
 		_hand_box.add_child(c)
 	if hold == state.hand.size():
 		_add_gap(s)
+	_fan_hand(s)
+
+
+## B2 (review D15): fans the hand's slots (the cards and a played card's gap): HAND_OVERLAP of a
+## card's width overlapped, HAND_FAN_DEG per place from the middle, an arc HAND_ARC_RISE_1080
+## high at the middle. Returns each slot's {deg, rise} (tests).
+func _fan_hand(s: float) -> Array[Dictionary]:
+	_hand_box.add_theme_constant_override("separation", -roundi(ZineCard.STICKER_SIZE.x * s * HAND_OVERLAP))
+	var n := _hand_box.get_child_count()
+	var out: Array[Dictionary] = []
+	for k in n:
+		var f := hand_fan(k, n, s)
+		out.append(f)
+		var card := _hand_box.get_child(k) as ZineCard
+		if card != null:
+			card.set_fan(float(f["deg"]), float(f["rise"]))
+	return out
+
+
+## B2 (D15): slot `k` of `n` in a hand of card scale `s`: {deg (its rest turn), rise (px up)}.
+static func hand_fan(k: int, n: int, s: float) -> Dictionary:
+	var mid := (n - 1) * 0.5
+	var j := float(k) - mid
+	var arc := 1.0 - pow(j / mid, 2.0) if mid > 0.0 else 1.0
+	return {"deg": j * HAND_FAN_DEG, "rise": HAND_ARC_RISE_1080 * GreasePencilMark.BOARD_TO_CANVAS * s * arc}
 
 
 ## A hand card was pressed: it is picked (and may play itself, rebuilding the hand while
@@ -2667,12 +2744,14 @@ const OVER_HAND_Z := 2
 ## Card scale: the text scale, shrunk when the hand would not fit beside SEND IT.
 func _card_scale_for(count: int) -> float:
 	var n := maxi(1, count)
-	var sep := float(_hand_box.get_theme_constant("separation"))
+	# The bottom row's own gap between its parts; B2 (D15): the hand's cards overlap by
+	# HAND_OVERLAP of their width (n cards take n - (n - 1) x HAND_OVERLAP widths).
+	var sep := float(_bottom_row.get_theme_constant("separation"))
 	var width := size.x if size.x > 0.0 else get_viewport_rect().size.x
 	var cell := _cell_panel.get_combined_minimum_size().x + sep if _cell_panel.get_parent() == _bottom_row else 0.0
 	var piles := _piles.get_combined_minimum_size().x + sep if _piles != null else 0.0
 	var room := width - _end_turn_button.get_combined_minimum_size().x - _sticker_box.get_combined_minimum_size().x - cell - piles - sep * 3.0
-	var fit := (room - sep * (n - 1)) / n / ZineCard.STICKER_SIZE.x
+	var fit := room / (n - (n - 1) * HAND_OVERLAP) / ZineCard.STICKER_SIZE.x
 	var height := size.y if size.y > 0.0 else get_viewport_rect().size.y
 	fit = minf(fit, height * HAND_HEIGHT_SHARE / ZineCard.STICKER_SIZE.y)
 	return clampf(minf(Settings.text_scale, fit), MIN_CARD_SCALE, Settings.TEXT_SCALE_MAX)

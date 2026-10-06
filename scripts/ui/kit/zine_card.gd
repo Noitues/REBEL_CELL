@@ -51,6 +51,14 @@ var spread: float = 0.0
 const HOVER_SCALE := 1.75
 ## How far this card grows under the pointer (HOVER_SCALE, or more in a hand shrunk to fit).
 var hover_to: float = HOVER_SCALE
+## B2 (D15): the fanned hand's arc rise (px up, drawn only) and whether the fan set the rest tilt.
+var fan_rise: float = 0.0
+var _fanned: bool = false
+## B2 (D15): unaffordable and shown greyscale (set_greyed); the NEED tag's own layer over it.
+var greyed: bool = false
+var _need_layer: Control = null
+const CARD_GREY_SHADER := preload("res://shaders/kit/card_grey.gdshader")
+static var _grey_mat: ShaderMaterial = null
 var draw_offset: Vector2 = Vector2.ZERO
 var draw_tilt: float = 0.0
 ## The sticker's resting tilt (degrees; hover tilts it to 0).
@@ -124,7 +132,8 @@ func _init(p_title: String = "", p_cost: int = 0, p_description: String = "", in
 
 func _ready() -> void:
 	pivot_offset = size / 2.0
-	rest_tilt = float(((hash(card_title) % (REST_TILT_MAX * 2 + 1)) - REST_TILT_MAX)) if look == Look.STICKER else 0.0
+	if not _fanned:
+		rest_tilt = float(((hash(card_title) % (REST_TILT_MAX * 2 + 1)) - REST_TILT_MAX)) if look == Look.STICKER else 0.0
 	rotation_degrees = 0.0 if _lifted and look == Look.STICKER else rest_tilt
 
 
@@ -433,11 +442,57 @@ func complete_motion() -> void:
 	finish_deal()
 
 
+## The card's drawn transform (local): the hover lift and growth about its foot, the deal-in
+## offset and tilt, the spread and B2's fan rise (identity when none).
+func face_xform() -> Transform2D:
+	if lift == 0.0 and fan_rise == 0.0 and draw_offset == Vector2.ZERO and draw_tilt == 0.0 and hover_scale == 1.0 and spread == 0.0:
+		return Transform2D.IDENTITY
+	# ART-2 2D: the hover growth is about the card's foot (it grows up out of the hand).
+	var foot := Vector2(size.x * 0.5, size.y)
+	return Transform2D(draw_tilt, foot + draw_offset + Vector2(spread + grown_shift(), -lift - fan_rise)) * Transform2D(0.0, Vector2(hover_scale, hover_scale), 0.0, Vector2.ZERO) * Transform2D(0.0, -foot)
+
+
+## B2 (review D15, round 41 combat_typical_v4): the card's place in the fanned hand: it rests
+## turned `deg` degrees (in place of its own hash tilt; hover still turns it to 0) and drawn
+## `rise` px up (the fan's arc). Drawn and turned only: its slot stays the container's.
+func set_fan(deg: float, rise: float) -> void:
+	_fanned = true
+	rest_tilt = deg
+	fan_rise = rise
+	if not _lifted:
+		rotation_degrees = deg
+	queue_redraw()
+
+
+## B2 (D15): an unaffordable card shows greyscale (KitMaterials' card grey) with its NEED tag in
+## colour over it (`_need_layer`, drawn after the face without the grey).
+func set_greyed(on: bool) -> void:
+	greyed = on
+	if on and _grey_mat == null:
+		_grey_mat = ShaderMaterial.new()
+		_grey_mat.shader = CARD_GREY_SHADER
+	material = _grey_mat if on else null
+	if on and _need_layer == null:
+		_need_layer = Control.new()
+		_need_layer.name = "NeedTag"
+		_need_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_need_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_need_layer.draw.connect(func() -> void:
+			_need_layer.draw_set_transform_matrix(face_xform())
+			CardFace.draw_need(_need_layer, self))
+		add_child(_need_layer)
+	if _need_layer != null:
+		_need_layer.visible = on
+		_need_layer.queue_redraw()
+	queue_redraw()
+
+
 func _draw() -> void:
-	if lift != 0.0 or draw_offset != Vector2.ZERO or draw_tilt != 0.0 or hover_scale != 1.0 or spread != 0.0:
-		# ART-2 2D: the hover growth is about the card's foot (it grows up out of the hand).
-		var foot := Vector2(size.x * 0.5, size.y)
-		draw_set_transform_matrix(Transform2D(draw_tilt, foot + draw_offset + Vector2(spread + grown_shift(), -lift)) * Transform2D(0.0, Vector2(hover_scale, hover_scale), 0.0, Vector2.ZERO) * Transform2D(0.0, -foot))
+	if _need_layer != null and _need_layer.visible:
+		_need_layer.queue_redraw()
+	var xf := face_xform()
+	if xf != Transform2D.IDENTITY:
+		draw_set_transform_matrix(xf)
 	if look != Look.STICKER:
 		_draw_tile_any()
 	else:
