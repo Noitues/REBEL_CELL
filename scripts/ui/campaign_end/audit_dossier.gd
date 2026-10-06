@@ -309,7 +309,7 @@ func _build_personnel() -> void:
 ## Polaroid.kia look and values).
 func _draw_print(c: Control, subj: Dictionary, kia: bool) -> void:
 	var r := Rect2(Vector2.ZERO, c.size)
-	c.draw_texture_rect(load(DossierPhoto.STOCK_ART) as Texture2D, r, false)
+	c.draw_texture_rect(DossierPhoto.print_stock(), r, false)
 	var m := maxf(1.0, c.size.x * DossierPhoto.FRAME_SHARE)
 	var img := r.grow(-m)
 	PortraitArt.draw(c, img, subj)
@@ -599,9 +599,23 @@ func _draw_folder() -> void:
 ## `assets/campaign_end/manila.jpg`), laid 1:1 from its top-left (stretched only when a rect is
 ## bigger than the screen it was made for); `tint` darkens the cover.
 func _manila(ci: Control, r: Rect2, tint: Color) -> void:
-	var t := load(MANILA_ART) as Texture2D
+	var t := manila_stock()
+	if t == null:
+		return
 	var src := Rect2(Vector2.ZERO, Vector2(minf(r.size.x, t.get_width()), minf(r.size.y, t.get_height())))
 	ci.draw_texture_rect_region(t, r, src, tint)
+
+
+## Parity fix (overlap defects, END-06): the manila stock, loaded once and held. A texture
+## loaded inside a draw call and let go when the call ends is freed before the frame renders,
+## so the folder and its tab drew white (the bug CaseFileCard.manila_stock fixed for the slots).
+static func manila_stock() -> Texture2D:
+	if _manila_tex == null:
+		_manila_tex = load(MANILA_ART) as Texture2D
+	return _manila_tex
+
+
+static var _manila_tex: Texture2D = null
 
 
 func _draw_cover() -> void:
