@@ -31,6 +31,23 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-06 — Designer rulings on the art-direction integration review
+The art-pass session reviewed main @ 175377de (`docs/concepts/INTEGRATION_REVIEW/REVIEW.md` on art-pass, D1–D25 and
+section f). Its calls are advisory; the designer ruled the conflicts with their earlier rulings (2026-10-06):
+1. **Pause menu:** keep the all-sticker pause menu (two columns, grease-pencil notes); overrides review D13.
+2. **Campaign slots:** LOAD and DELETE stickers on every folder, each with the grease-pencil CAN'T UNDO; overrides D21.
+3. **Sticker focus:** the rainbow gloss sweep runs on a scheduler (one sweep at a time, per D22); focus and hover show
+   the peel-back (corner curl) only. Supersedes "focus = rainbow sweep + curl on every sticker".
+4. **Aiming result:** the review's direction: no plate on the hub; the HP result chips of each affected wheel
+   underlined in yellow pencil, plus the existing ghost landings.
+5. **DISPATCH:** voice only, with captioned words (no memo paper); supersedes EVT-03's memo.
+6. **Loot:** add CONTINUE (FIGHT WON + OURS NOW + CONTINUE on the dimmed fought Site).
+Also ruled in the art-pass chat (relayed): combat camera = perspective close-up for every fight; skins = accent tokens
+only; HQ behind Sites waits for unique per-fight backdrops; map links = only the links the route uses, all on hover;
+RESET TO DEFAULTS = every tab (terminal button). The batches wait for the art-pass session's renders of the screens
+the concepts never designed, so the build is compared against them. Not yet ruled: the literal HQ rebuild to
+`direction_B.png` and the route zoom to 40 % (review section f).
+
 ### 2026-10-06 — Parity fix — route map c: the street marker's YOU ARE HERE is a placed label (orchestrator follow-up)
 Found by S-ROUTE b: before the route's first node, the street marker's "YOU ARE HERE" was drawn at a fixed spot under
 the marker (`CityMapOverlay._draw_top`, ANIM-R3 B8), outside the label layout, so at Meridian 1.0 it sat over choice
