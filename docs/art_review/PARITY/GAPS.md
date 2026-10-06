@@ -83,13 +83,17 @@ kit dialog as main's pause-quit confirm).
 **CONFIRM-01 (P2) Scrim.** Concept: the page behind is dimmed, still sharp. Main: blurred
 (`GlassScrim`, `Palette.SCRIM_BLUR_PX`) and dimmed. View: both read; the blur hides the title sign
 entirely, the concept keeps the context visible. Likely cause: `scripts/ui/kit/glass_scrim.gd`
-(shared by every modal: changing it changes all modals). Decision:
+(shared by every modal: changing it changes all modals). Decision: **keep main** (designer
+2026-10-05): no PAUSED notification on the confirm (the concept's PAUSED sticker in this crop is
+dropped); a PAUSED notification is wanted at most during a running raid (applies to PAUSE-01..04).
+Main's blurred scrim stays.
 
 **CONFIRM-02 (P3) Dialog body.** Same kit, same layout. Differences: main adds a divider rule above
 the buttons (concept has one too, fainter and full width); main's question is set slightly larger;
 main's stickers are centred as a pair, the concept's sit under the two cost columns. The verb is
 DELETE (main) where the concept's run-abandon says BURN IT: different action, both fine.
-Likely file: `scripts/ui/kit/confirm_dialog.gd`. Decision:
+Likely file: `scripts/ui/kit/confirm_dialog.gd`. Decision: **keep main** (designer 2026-10-05:
+main is slightly better).
 
 ### Campaign slots (`slots.jpg`)
 **Designer ruling (2026-10-05):** use the art-pass build's layout, reworked to the locked v2 concepts (the art pass never applied the latest concept to this page).
