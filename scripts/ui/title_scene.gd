@@ -42,6 +42,9 @@ const HINT_GAP := 12.0
 const FOOT_GAP := 6.0
 ## The city's dim behind the title (it reads as the backdrop, round 33's blurred city).
 const CITY_DIM := 0.58
+## Parity fix TITLE-01: the blurred 3D city's framing, blur and darkening (round 33); the 2D
+## city and CITY_DIM stay the fallback below its quality tier.
+const CITY_LOOK := preload("res://content/config/title_city_backdrop.tres")
 ## The page widths for the codex / stats / slots terminals (px at 1.0) and the codex text's
 ## least height.
 const PAGE_W := 900.0
@@ -83,11 +86,13 @@ func _ready() -> void:
 	Dialogue.dock_default()
 	background = CyberdeckBackground.new()
 	add_child(background)
+	background.use_blurred_city(CITY_LOOK, BlurredCityBackdrop.corp_of_slot(continue_slot))
 	var dim := ColorRect.new()
 	dim.name = "CityDim"
 	dim.color = Color(Palette.NET_BG_OUTER, CITY_DIM)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.visible = not background.on_blurred_city()  # the 3D city darkens itself
 	add_child(dim)
 	ticker = OnAirTicker.new(PackedStringArray([tr(TICKER_WORDS[0]), tr(TICKER_WORDS[1])]))
 	ticker.anchor_left = 0.0
