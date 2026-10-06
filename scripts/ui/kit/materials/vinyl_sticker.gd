@@ -189,6 +189,10 @@ var _px: int = 0
 var _font: Font = null
 var _flutter_clock: float = 0.0
 var _built: bool = false
+## M14 asset parity: the art pass's finished sticker for this word (StickerArt), {} = lettered live.
+var _baked: Dictionary = {}
+## Look the word up in StickerArt (off: always letter it live).
+static var use_baked_art: bool = true
 
 
 func _init() -> void:
@@ -296,7 +300,14 @@ func _rebuild() -> void:
 	var body_sz := Vector2.ZERO
 	_glyphs.clear()
 	_lines_y.clear()
-	if shape == Shape.WORD:
+	_baked = StickerArt.lookup(text) if use_baked_art and shape == Shape.WORD else {}
+	if not _baked.is_empty():
+		# The art pass's own sticker, at the size this step letters its word.
+		var tex: Texture2D = _baked["tex"]
+		body_sz = tex.get_size() * (float(_px) / float(_baked["lettering_px"]))
+		art = body_sz
+		body_pos = Vector2(SHADOW_PAD, SHADOW_PAD)
+	elif shape == Shape.WORD:
 		var lines := text.split("\n")
 		var asc := _font.get_ascent(_px)
 		var line_h := float(_px) * LINE_GAP
@@ -362,6 +373,8 @@ func _rebuild() -> void:
 
 ## Holo hue cycles per second (lifecycle IDLE "the holo foil hue drifts").
 const HOLO_DRIFT := 0.04
+## The shader's die-cut rim light for lettered stickers (its default).
+const RIM := 0.8
 
 
 func _fill_colors() -> Array[Color]:
@@ -387,7 +400,15 @@ func _glyph(layer: Control, g: Array, offset: Vector2, outline_px: float, col: C
 	layer.draw_string(_font, at, g[0], HORIZONTAL_ALIGNMENT_LEFT, -1, _px, col)
 
 
+## True while the sticker shows the art pass's own image (StickerArt) for its word.
+func is_baked() -> bool:
+	return not _baked.is_empty()
+
+
 func _draw_base() -> void:
+	if not _baked.is_empty():
+		_base.draw_texture_rect(_baked["tex"], body_rect, false)
+		return
 	if shape == Shape.WORD:
 		_draw_word_base()
 		return
@@ -475,7 +496,7 @@ func _draw_face() -> void:
 
 
 func _draw_fill() -> void:
-	if shape != Shape.WORD:
+	if shape != Shape.WORD or not _baked.is_empty():
 		return
 	for g in _glyphs:
 		_glyph(_fill, g, Vector2.ZERO, 0.0, Palette.STICKER_DIE_CUT)
@@ -491,9 +512,13 @@ func _sync() -> void:
 		return
 	_mat.set_shader_parameter(&"art_tex", _vp.get_texture())
 	_mat.set_shader_parameter(&"body_rect",Vector4(body_rect.position.x, body_rect.position.y, body_rect.size.x, body_rect.size.y))
-	_mat.set_shader_parameter(&"gloss_k", gloss_k)
+	_mat.set_shader_parameter(&"gloss_k", 0.0 if bool(_baked.get("own_finish", false)) else gloss_k)
 	_mat.set_shader_parameter(&"gloss_pos", gloss_pos)
-	_mat.set_shader_parameter(&"glossy", 0.0 if stock == Stock.KRAFT else 1.0)
+	var own := bool(_baked.get("own_finish", false))
+	_mat.set_shader_parameter(&"glossy", 0.0 if stock == Stock.KRAFT or own else 1.0)
+	# A baked sticker has its die-cut rim drawn in; one with its own finish has its shadow too.
+	_mat.set_shader_parameter(&"rim", 0.0 if not _baked.is_empty() else RIM)
+	_mat.set_shader_parameter(&"shadow_k", 0.0 if own else 1.0)
 	_mat.set_shader_parameter(&"fold", fold)
 	_mat.set_shader_parameter(&"corner", int(lifted_corner))
 	_mat.set_shader_parameter(&"lift", lift)

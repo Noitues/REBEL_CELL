@@ -33,6 +33,24 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — asset parity: combat and foundations (M14)
+Designer ruling "REUSE ART-PASS ASSETS": every combat or foundation image the art pass made is exported by its own
+generator on tag art-concepts-r43 (wrappers in `tools/art/export_*.py` change only font paths and split live text off),
+and the game draws that image. Inventory: `docs/handoff/m14_asset_parity/combat.md`.
+- Replaced: firmware dies (4 rarities + lit), Daemon tiles (12 idle frames + fire), hand card faces (wheel/hack/system
+  x 4 rarities; new `CardFace`, combat hand only), HUD marks from the 1C atlas, SEND IT, PERFECT/GOOD/WEAK stickers
+  (`StickerArt`), the EVADE `>>` token (flight and standing on the wheel), the drone sticker and its six flying pieces.
+- Landing word WEAK is now the word "WEAK" (was x0.5) and amber, as the concept; the x0.5 stays on the rail. Accepted.
+- Procedural kept, each with its reason, in the inventory (no concept sprite: bricks, hexes, bits, tears, shards, rings,
+  cracks, jaws, Heat mark, lethal skull, dock geometry, peel curl, live-text stickers, kit materials, the wheel disc's
+  bezel/hub, which are live geometry).
+- New strings: WEAK, WHEEL, HACK, SYSTEM (translated once; `CardFace.KIND_WORDS`).
+- Motion is unchanged (slap, peel, dissolve, token flight, drone slap and burst keep their ui_motion entries).
+- The two ANIM reds the brief named (`vinyl_sticker.gd` inline tween, `fx_draw.gd` literal) no longer show in
+  `test_anim_r6_rules` / `test_anim_r2_combat` on this branch; the one remaining r6 failure is
+  `test_every_script_that_animates_registers_or_says_why_not` for `campaign_end/rubber_stamp.gd` and
+  `kit/route_overlay.gd` (ART-11 and ART-5 5d files, not mine).
+
 ### 2026-10-05 — Art direction — ART-12 12s skins
 Agent 12s (the M12 box "Skins": procedural palette skins on the v2 tokens, ART_12_BATCH).
 - **Which skins.** The M12 box names none, so: `v2` (the default and first; the identity, ART_BIBLE §2
@@ -7492,6 +7510,8 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **Asset parity, card kinds (2026-10-05, default implemented):** the concept's card face has three kinds, WHEEL / HACK /
+  SYSTEM. The game's violet "other" family (rest and similar cards) is drawn as SYSTEM (cyan). Is a fourth face wanted?
 - **ART-12 12s skins (2026-10-05; default built, see "Art direction — ART-12 12s skins"):** (1) skins are
   free in Options > Display; should they become Profile unlocks (UnlockKind.SKIN) instead? (2) the set is
   v2 + cobalt + graphite (a sea-green skin was dropped for sitting between PROTECT and GAIN); say if you

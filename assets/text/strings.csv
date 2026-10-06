@@ -875,6 +875,7 @@ Graphite (neutral grey terminal),Graphite (neutral grey terminal)
 "Grey + check: cleared, used up and not claimed. You can still patrol it for loot, Heat and Rank.","Grey + check: cleared, used up and not claimed. You can still patrol it for loot, Heat and Rank."
 Grey broken link: no power flows to a TAKEN or DOWN node.,Grey broken link: no power flows to a TAKEN or DOWN node.
 Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP): it takes hits aimed at this slice.
+HACK,HACK
 HEAT,HEAT
 HEAT %d · %s,HEAT %d · %s
 HEAT %d · %s (%d+),HEAT %d · %s (%d+)
@@ -1919,6 +1920,7 @@ STOPPED %d/%d,STOPPED %d/%d
 STRENGTH %s%%,STRENGTH %s%%
 SUBJECT,SUBJECT
 SUBJECT: REBEL_CELL,SUBJECT: REBEL_CELL
+SYSTEM,SYSTEM
 SYSTEM ONLINE,SYSTEM ONLINE
 "Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick.","Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick."
 Save,Save
@@ -3031,6 +3033,7 @@ firmware,firmware
 flagged,flagged
 good aim,good aim
 guarded,guarded
+hack,hack
 half power,half power
 handshake ... ok,handshake ... ok
 heat,heat
@@ -3091,6 +3094,7 @@ sold out,sold out
 spinner,spinner
 steady_hand_handler,steady_hand_handler
 "subject's record: %d campaigns won, %d lost, best ICE %s.","subject's record: %d campaigns won, %d lost, best ICE %s."
+system,system
 taken,taken
 target,target
 the Site's objective,the Site's objective
@@ -3106,6 +3110,7 @@ undock_handler,undock_handler
 v%s // cell uplink,v%s // cell uplink
 vs %s | ICE %d%s,vs %s | ICE %d%s
 walked,walked
+wheel,wheel
 withdraw,withdraw
 won,won
 x0.5,x0.5
