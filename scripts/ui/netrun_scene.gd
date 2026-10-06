@@ -1320,6 +1320,15 @@ func _show_map() -> void:
 		_fit_route_next_frame()
 		spacer.resized.connect(_refit_route)
 	_mount_route_camera(panel)
+	route_target = null
+	if route_on_map(s) and city_overlay is RouteOverlay and _route_area != null and is_instance_valid(_route_area):
+		# B3 b (art director): the TARGET off the route's frame gets the red pencil edge arrow with
+		# its word (the City Grid's device, TargetEdgeMarker); a click pans to it.
+		route_target = TargetEdgeMarker.make(city_overlay)
+		route_target.avoid.append(route_legend)
+		_route_area.add_child(route_target)
+		if route_controls != null:
+			route_target.pan_requested.connect(route_controls.centre_on)
 	# ANIM-R4 H10: a fight's, a boss's and a raid's music are made ahead (a fight's first frame
 	# built its loop).
 	AudioDirector.prewarm_music(["combat", "boss", "raid"], RunManager.campaign.corporation_id)
@@ -1480,27 +1489,26 @@ func fit_route_map() -> void:
 		if not rescue.is_empty():
 			_apply_route_fit(rescue)
 		return
-	# ANIM-R3 B8: the whole drawn route (B3: what the map draws; hidden nodes take no room) when
-	# it fits at the far ortho or closer; else the part the player decides on (where they are and
-	# the next choices) inside the area with its margins. B3 (review D14): never closer than
-	# the near ortho, never further than the far one (round 44: the route fills the frame).
+	# B3 b (art director, round 44 `route_page.png`): the frame is the walked path, the current
+	# options and one layer ahead, at ortho `route_ortho_near`..`route_ortho_far`; the TARGET need
+	# not be in it (off frame it gets the red pencil edge arrow, TargetEdgeMarker). A long walked
+	# path that does not fit at the far ortho gives way: then the current node, the options and the
+	# layer ahead; then the current node and the options.
 	var near := route_zoom_near()
 	var far := route_zoom_far()
-	var fit := LegendSpot.fit_into(city_overlay, free, near / city.scale.x, 0.0, [], here)
-	if not fit.is_empty() and float(fit["zoom"]) * city.scale.x < far and not _route_under_dossier and dossier != null and is_instance_valid(dossier):
-		# ART-7 3B: the whole route does not fit right of the dossier: it may run under the
-		# paper (pinned over the map) rather than under the ROUTE column (from now on this page).
-		var full := _route_area.get_global_rect().intersection(get_global_rect()).grow(-ROUTE_MARGIN * Settings.text_scale)
-		var whole := LegendSpot.fit_into(city_overlay, full, near / city.scale.x, 0.0, [], here)
-		if whole.is_empty() or float(whole["zoom"]) * city.scale.x >= far:
-			_route_under_dossier = true
-			dossier.force_compact = true
-			free = full
-			fit = whole
-	if not fit.is_empty() and float(fit["zoom"]) * city.scale.x < far:
-		fit = LegendSpot.fit_into(city_overlay, free, near / city.scale.x, far / city.scale.x, route_focus_ids(), here)
-	elif fit.is_empty() and not route_frames(free):
-		fit = LegendSpot.fit_into(city_overlay, free, near / city.scale.x, far / city.scale.x, route_focus_ids(), here)
+	var fit := {}
+	var sets: Array = [route_frame_ids(true), route_frame_ids(false), route_focus_ids()]
+	for i in sets.size():
+		var ids: Array = sets[i]
+		var extra: Array[Rect2] = here.duplicate()
+		extra.append_array(hidden_rects(ids))
+		var f := LegendSpot.fit_into(city_overlay, free, near / city.scale.x, 0.0, ids, extra)
+		var zoom_after := city.scale.x * (float(f["zoom"]) if not f.is_empty() else 1.0)
+		if zoom_after >= far * ROUTE_FAR_TOLERANCE or i == sets.size() - 1:
+			if zoom_after < far * ROUTE_FAR_TOLERANCE:
+				f = LegendSpot.fit_into(city_overlay, free, near / city.scale.x, far / city.scale.x, ids, extra)
+			fit = f
+			break
 	if fit.is_empty():
 		return
 	_apply_route_fit(fit)
@@ -1541,6 +1549,54 @@ func route_zoom_far() -> float:
 ## B3: the route page's ortho now (BU across the page; tests and captures).
 func route_ortho() -> float:
 	return RaidZoomFit.ortho_of(background.city.scale.x, size.x)
+
+
+## B3 b (round 44 `route_page.png`): the route nodes the page frames: the walked path (with
+## `walked`), the current node, the options and the layer one step past them.
+func route_frame_ids(walked: bool) -> Array:
+	var s := RunManager.netrun
+	var out: Array = []
+	if s == null or city_overlay == null or not is_instance_valid(city_overlay):
+		return out
+	if walked:
+		for id in s.run.visited:
+			if not out.has(id):
+				out.append(id)
+	for id in route_focus_ids():
+		if not out.has(id):
+			out.append(id)
+	var options := s.available_nodes()
+	for e in city_overlay.edges:
+		if options.has(e["a"]) and not out.has(e["b"]):
+			out.append(e["b"])
+	return out
+
+
+## B3 b: screen rects (global px) of the nodes of `ids` the map hides (the layer ahead): the
+## frame keeps room for them though they are not drawn.
+func hidden_rects(ids: Array) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if city_overlay == null or not is_instance_valid(city_overlay):
+		return out
+	var xf := city_overlay.get_global_transform()
+	var k := xf.get_scale().x
+	for n in city_overlay.nodes:
+		if not ids.has(n["id"]) or city_overlay.marker_shown(n):
+			continue
+		var at := city_overlay.icon_pos(n)
+		if at.x == INF:
+			continue
+		var r := city_overlay.icon_radius(n) * k
+		out.append(Rect2(xf * at - Vector2(r, r), Vector2(r, r) * 2.0))
+	return out
+
+
+## B3 b: a frame set's zoom counts as within the far ortho down to this share of it (float noise).
+const ROUTE_FAR_TOLERANCE := 0.995
+
+
+## B3 b: the route page's off-frame TARGET arrow (null off the run's own route).
+var route_target: TargetEdgeMarker = null
 
 
 ## ANIM-R3 B8: the route nodes the player decides on: where they are and the next choices.

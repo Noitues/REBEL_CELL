@@ -163,6 +163,9 @@ Site building, so on some corps the subject does not stand out. Accepted as **in
 unique per-fight backdrops slice. Affected frames: Solace (`docs/art_review/PARITY/fixes/B2_b_site_start.png`,
 Continuum Billing Farm) and Orbital (the arena-lab Site shots in `B2_b.jpg`). The art-pass session is raising this
 with the designer.
+- **Designer ruling (relayed by the art-pass session, 2026-10-06):** per-fight backdrops (unique buildings for non-HQ
+  Site fights) stay **deferred until after the gameplay polish passes**; the designer wants gameplay polish before
+  another content and visual pass. The Site fight subject stays interim (Solace, Orbital) through M14.
 
 ### 2026-10-06 — B2 c — the Site block lit by its own neon; focus brackets on the lifted card
 Re-check of B2 b (aa815dde; relayed by the orchestrator): boss start, the Meridian / Halcyon Site blocks, the fanned
@@ -11304,3 +11307,37 @@ bible 4.6 route lock, 4.3 Heat in the top strip, 4.8 raid). Claims: **D5, D6, D1
   Meridian district sits on the city's edge; the fit frames the decision, as before): proposed slice, the City Grid's red
   pencil edge marker for an off-screen TARGET on the route page too. At text 2.0 THREAT INTEL is taller than the setup's
   column (it scrolls; 1.6 fits): proposed slice for the holo's big-text layout (B1c's panel).
+
+### 2026-10-06 — B3 b — the art director's fixes (route zoom, raid setup column, RAID SETUP title)
+The art director approved B3 (c69230b8) but for three points, ruled 2026-10-06. Sheet
+`docs/art_review/PARITY/fixes/B3_b.jpg` (round 44 | after 1.0 | after 1.6; the before is `B3.jpg`'s after columns).
+Tests: `test_b3_raid_map_route` (`test_route_frames_the_options_at_the_round_44_zoom_with_the_target_arrow`,
+`test_the_edge_arrow_finds_the_route_target`, `test_raid_setup_paper_whole_network_visible_and_a_page_title`,
+`test_your_network_and_threat_intel_fit_the_column_at_every_text_size`).
+- **Route zoom (ruling: the TARGET need not be in frame).** The fit frames the walked path, the current options and one
+  layer ahead (hidden nodes keep their room as rects) at CityConfig `route_ortho_near` 130 .. `route_ortho_far` 190
+  (back from B3's 400); a walked path too long for 190 gives way (then current + options + layer ahead; then current +
+  options). Measured 130-159 ortho at a run's start and mid-run, every corporation, 1.0 / 1.6 / 2.0. An off-frame
+  TARGET gets the City Grid's red pencil edge arrow with its word (TargetEdgeMarker, which now also finds a route's
+  `target` node; a click pans to it): this covers the long-Meridian 1.6 / 2.0 case. Supersedes B3's "far 400" call.
+- **Raid setup intro panel removed (my call).** The panel said what the work order and START DEFENSE say and covered the
+  paper; its sentence is now the work order's tooltip (no toast: one more moving part for words the page already
+  says). The paper takes the left column (with room for its clip).
+- **YOUR NETWORK never below the fold.** Its header now carries the node count ("N NODES" / "1 NODE", round 44). When
+  THREAT INTEL and the whole network do not fit the column it collapses to its header and the CORE row (the other nodes
+  are picked on the map; `network_collapsed()`); where even THREAT INTEL and the collapsed network do not fit (text 2.0,
+  or a tall THREAT INTEL such as raid_heat_25's at 1.6) the network leads the column and THREAT INTEL scrolls under it.
+  The column runs from the page top to START DEFENSE's slot, which is as tall as its sticker and strip (no gap inside
+  the column).
+- **RAID SETUP title.** The title pages' baked sticker (round 33 `ui31.sticker`, `bake_menus_r33.py` TITLE_WORDS
+  "RAID SETUP" size 54 seed 65, the CAMPAIGN SLOTS / CODEX size class: about 235 px wide at 1080p); `HudBar.set_screen`
+  takes the art key (its own size; it may stand taller than the band).
+- **Also (orchestrator notes):** RaidSticker joins MotionSkip (`register_passive`, `motion_running` / `complete_motion`
+  over its result stamp-down). `fit_hq_map` no longer double-connects its next pass (a raid relayout could ask first).
+  B4's `decal_shown_only` flag in `city_map_overlay.gd` (not yet on main when this was written) is compatible with the
+  clutter API and is kept as B4 wrote it.
+- **Tests changed:** `test_horizontal_pass22_screens` / `test_horizontal_pass23_screens` / `test_parity_overlaps` (no
+  RaidIntro: the sentence is the paper's tooltip), `test_horizontal_pass24_screens` (the TARGET may be off the route's
+  frame). None dropped.
+- **Limit:** at text 1.6 with a tall THREAT INTEL (four-line entries) its foot scrolls under the collapsed network; the
+  holo's big-text layout is the follow-up the art director already queued.

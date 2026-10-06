@@ -232,17 +232,15 @@ func test_the_corp_news_is_a_holo_toast_at_the_foot_not_a_band() -> void:
 	assert_false(toast.get_global_rect().intersects(hq._panel.get_node("VerbSlot").get_global_rect().grow(-1.0)), "clear of the verb")
 
 
-func test_the_raid_setup_has_its_title_sticker_and_the_idle_has_none() -> void:
+func test_the_raid_setup_has_its_title_and_the_idle_has_none() -> void:
 	_network()
 	var hq := await _hq()
-	assert_null(hq._panel.find_child("RaidSetupTitle", true, false), "no title on the HQ idle (Q10)")
-	assert_null(hq._panel.find_child("TitleSticker", true, false))
+	assert_eq(String(hq.hud._title), "", "no title on the HQ idle (Q10)")
 	RunManager.campaign.pending_raids.append({"raid_id": "raid_heat_25", "source": RC.RaidTriggerSource.HEAT_THRESHOLD, "heat": 25})
 	hq.show_raid()
 	await _frames(3)
-	var title := hq._panel.find_child("RaidSetupTitle", true, false) as VerbSticker
-	assert_not_null(title, "the DEFENCE hand's page is the raid setup: its title")
-	assert_eq(title.fill, VerbSticker.Fill.YELLOW, "the yellow title sticker (round 40)")
+	# B3 b: the DEFENCE hand's page is the raid setup: the page's RAID SETUP title (round 40).
+	assert_eq(String(hq.hud._title), tr("RAID SETUP"), "the raid setup's title")
 
 
 func test_the_crew_are_polaroids_the_runner_tagged_and_the_system_word_keylined() -> void:

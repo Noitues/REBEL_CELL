@@ -46,6 +46,7 @@ func _init(p_text: String = "", p_step: int = UiTheme.HEADING, p_fill: StringNam
 	focus_entered.connect(_state)
 	focus_exited.connect(_state)
 	_fit()
+	MotionSkip.register_passive(self)  # B3: the result stamp-down lands with any press that ends a motion
 
 
 func _ready() -> void:
@@ -128,6 +129,16 @@ func slap_result() -> float:
 	scale = Vector2.ONE * maxf(1.0, Motion.amplitude(RESULT_MOTION))
 	Motion.run(RESULT_MOTION, self, ^"scale", Vector2.ONE)
 	return maxf(Motion.delay_of(RESULT_MOTION) + Motion.seconds(RESULT_MOTION), slap())
+
+
+## MotionSkip (a short motion: `register_passive`): the result's stamp-down is playing.
+func motion_running() -> bool:
+	return Motion.held(self, ^"scale")
+
+
+## MotionSkip: the sticker at rest at once (its size; the vinyl ends its own slap).
+func complete_motion() -> void:
+	Motion.settle(self, ^"scale")
 
 
 ## The vinyl peels away (`sticker_peel`); the button hides once it is gone.

@@ -55,7 +55,9 @@ EDGE_SHARE = 0.14
 EDGE_CAP = 12
 DIALOG_WORDS = {"CANCEL": (50, "FILL_YELLOW", 41), "BURN IT": (58, "FILL_PINK", 40), "DELETE": (58, "FILL_PINK", 40)}
 TITLE_WORDS = {"OPTIONS": (66, 19), "PAUSED": (54, 60), "CODEX": (54, 61), "STATS": (54, 62),
-               "CAMPAIGN SLOTS": (54, 63), "NEW CAMPAIGN": (54, 64)}
+               "CAMPAIGN SLOTS": (54, 63), "NEW CAMPAIGN": (54, 64),
+               # B3 (art director, 2026-10-06): the raid setup's title, the same size class (round 40 raid_view_v3).
+               "RAID SETUP": (54, 65)}
 
 
 def edge_px(size: float) -> int:

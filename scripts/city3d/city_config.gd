@@ -464,13 +464,11 @@ extends Resource
 @export var netrun_map_saturation: float = 0.85
 @export var netrun_map_contrast: float = 1.0
 @export var netrun_map_veil: bool = false
-## B3 (review D14): the route page's camera frames what the map draws (walked, here, the choices
-## and the TARGET; hidden nodes take no room), so the route fills the frame (round 44: about
-## 130 to 190 for a short stretch): never closer than `route_ortho_near`; the whole drawn route
-## at `route_ortho_far` or closer (a long run's TARGET stays in frame), else the part the player
-## decides on.
+## B3 b (art director, round 44 `route_page.png`): the route page's camera frames the walked
+## path, the current options and one layer ahead between these orthos (the TARGET need not be in
+## frame: off frame it gets the red pencil edge arrow).
 @export var route_ortho_near: float = 130.0
-@export var route_ortho_far: float = 400.0
+@export var route_ortho_far: float = 190.0
 ## A netrun's route along its link (RouteLinkLayout): a layer's nodes side by side across the
 ## link this far apart (lots), and the shortest link the route is laid on (lots; a shorter one
 ## reaches back along its heading from the target).

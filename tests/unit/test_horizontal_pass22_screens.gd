@@ -278,9 +278,9 @@ func test_defence_cards_are_on_screen_readable_and_say_how_to_deploy() -> void:
 				assert_false(hq.more_hint.get_global_rect().intersects(r), "MORE BELOW covers no card")
 		# HQ-B (c): the setup's line under the work order says how to deploy; each card names
 		# its target.
-		var intro := hq._panel.find_child("RaidIntro", true, false) as Label
-		assert_not_null(intro, "the deploy line shows")
-		assert_ne(intro.text, "", "it says how to deploy")
+		# B3 b (art director): no instruction panel over the work order; its sentence is the paper's tooltip.
+		assert_null(hq._panel.find_child("RaidIntro", true, false), "no instruction panel")
+		assert_string_contains((hq._panel.find_child("RaidCard", true, false) as Control).tooltip_text.replace("\n", " "), TextDb.ui_text("ui.raid_intro"))
 		for card in cards.get_children():
 			assert_string_contains((card as Control).tooltip_text, hq.site_name(hq.selected_site), "the target is named")
 		hq.get_parent().queue_free()

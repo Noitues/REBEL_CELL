@@ -30,6 +30,7 @@ keys,en
 %d LANDS HERE,%d LANDS HERE
 %d LEFT,%d LEFT
 %d NEEDLES,%d NEEDLES
+%d NODES,%d NODES
 %d RAM lost,%d RAM lost
 %d SCHEM.,%d SCHEM.
 %d SCHEMATICS,%d SCHEMATICS
@@ -159,6 +160,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 - its block and shield %d (absorbed),- its block and shield %d (absorbed)
 -%d RAM,-%d RAM
 // %s // RANK %d,// %s // RANK %d
+1 NODE,1 NODE
 1x,1x
 1x (full replay),1x (full replay)
 2x,2x

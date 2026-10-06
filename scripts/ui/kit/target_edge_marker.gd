@@ -1,7 +1,8 @@
 class_name TargetEdgeMarker
 extends Control
 ## ART-5 5e (round 39 `city_grid`, bible 4.5): the off-screen TARGET. When the corporation's
-## Central Server (the overlay's boss marker, `CityMapOverlay.icon_pos`) is outside the map
+## Central Server (the overlay's boss marker, `CityMapOverlay.icon_pos`; B3 b: on the netrun
+## route, the node marked `target`, the run's final Rack) is outside the map
 ## area this control covers, a red grease-pencil arrow sits on the area's edge pointing at it,
 ## with the scrawled word TARGET behind it. The arrow is the pan affordance: clicking it asks
 ## the host to bring the target into view (`pan_requested`, Signal Up). Nothing shows while
@@ -129,7 +130,7 @@ func refresh() -> void:
 		return
 	_boss = {}
 	for n: Dictionary in overlay.nodes:
-		if n.has("marker") and n["marker"].get("kind") == SiteMarker.KIND_CENTRAL_SERVER:
+		if (n.has("marker") and n["marker"].get("kind") == SiteMarker.KIND_CENTRAL_SERVER) or bool(n.get("target", false)):
 			_boss = n
 			break
 	if _boss.is_empty():

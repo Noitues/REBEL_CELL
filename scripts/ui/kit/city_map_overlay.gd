@@ -1622,7 +1622,7 @@ func _node(n: Dictionary) -> void:
 			# ANIM-R3 B5: a longer fall, from `asset_drop_grow` x its size (it was nearly
 			# invisible).
 			slot.y -= (1.0 - drop_t) * Motion.amplitude(&"asset_drop") * _k()
-			ar *= lerpf(maxf(1.0, Motion.amplitude(GROW_MOTION)), 1.0, drop_t)
+			ar *= lerpf(float(_drop.get("grow", 1.0)), 1.0, drop_t)
 		if landing and drop_stamp_t < 1.0 and drop_t >= 1.0:
 			var grow := lerpf(1.0, Motion.amplitude(&"asset_drop_stamp"), drop_stamp_t)
 			var fade := 1.0 - drop_stamp_t
@@ -2461,6 +2461,9 @@ var drop_stamp_t: float:
 func _start_drop() -> void:
 	_drop.erase("waiting")
 	_drop.erase("ready")
+	# The landing's size from `asset_drop_grow` when it plays (switched off: its own size), read
+	# once as the drop starts (the draw keeps it).
+	_drop["grow"] = maxf(1.0, Motion.amplitude(GROW_MOTION)) if Motion.live(GROW_MOTION) else 1.0
 	var tw := Motion.run(&"asset_drop", _mv, ^"drop_t", 1.0)
 	if tw == null:
 		drop_stamp_t = 1.0
