@@ -72,8 +72,8 @@ HQ-run page: it holds no band). Sheet `docs/art_review/PARITY/fixes/HQRUN.jpg` (
   grid). `CityIsoCamera.fov_deg` (0 = the iso camera, every other view unchanged): `eye_distance` frames `ortho`
   at the target, `project` / `unproject` / `transform` / `copy` follow it; `CityView3D.set_iso` sets both cameras'
   projection and fov and the post's `cam_distance` (= `eye_distance`, unchanged 2600 for iso views).
-- **GATE-01 panel.** The concept's card (exploits.py `panel()` values at two thirds): dark glass (10, 9, 15, 228),
-  a 2 px edge in the corp colour once the breach is ready (grey 90, 88, 104 before), radius 9, the corp bar down the
+- **GATE-01 panel.** The concept's card (exploits.py `panel()` values at two thirds, its colours as the nearest palette tokens, type at the 12 px floor): dark glass (NET_BG_OUTER at 0.894),
+  a 2 px edge in the corp colour once the breach is ready (DISABLED grey before), radius 9, the corp bar down the
   left side, header in Plex Medium, subtitle in the mono, EXPLOITS and the count in Anton, sockets 128 x 175 (lit:
   the corp colour darkened 0.88 under a corp edge; empty: dashed with a plus), the kind word under each socket,
   BREACH centred under the panel with Back beside it, the wheel right of centre (the concept's 65 % of the width).

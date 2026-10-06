@@ -48,7 +48,7 @@ const KEY_RING_SHARE := 0.36
 ## Name tabs under a selectable node: gap under the sticker, padding, lettering, border.
 const TAB_GAP := 3.0
 const TAB_PAD := Vector2(4.0, 1.0)
-const TAB_FONT := 10
+const TAB_FONT := 12
 const TAB_BORDER := 1.0
 const TAB_GLASS_ALPHA := 0.88
 ## A cut-off node's pale backing (so its grey sticker reads on a dark compound).
@@ -235,7 +235,7 @@ func _build_chrome() -> void:
 	col.add_child(foot)
 	_foot = foot
 	foot.resized.connect(_on_foot_laid_out)
-	mechanic = CrtWindow.new(tr(MECHANIC_TITLE), Palette.NET_CYAN)
+	mechanic = CrtWindow.new(tr(MECHANIC_TITLE))
 	mechanic.name = "HqMechanic"
 	mechanic.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	mechanic.size_flags_vertical = Control.SIZE_SHRINK_END
@@ -245,7 +245,7 @@ func _build_chrome() -> void:
 	mechanic_text.name = "Rule"
 	mechanic.body.add_child(mechanic_text)
 	foot.add_child(mechanic)
-	key_strip = CrtWindow.new("", Palette.NET_CYAN)
+	key_strip = CrtWindow.new("")
 	key_strip.name = "StateKey"
 	key_strip.size_flags_vertical = Control.SIZE_SHRINK_END
 	var row := HBoxContainer.new()
@@ -571,7 +571,7 @@ func _tab(id: StringName, k: float) -> void:
 	var f := Palette.mono()
 	var fs := maxi(1, roundi(TAB_FONT * k))
 	_marks.draw_rect(r, Color(Palette.NIGHT_SKY, TAB_GLASS_ALPHA))
-	_marks.draw_rect(r, Palette.NET_CYAN, false, TAB_BORDER * k)
+	_marks.draw_rect(r, PaletteSkins.chrome(Palette.NET_CYAN), false, TAB_BORDER * k)
 	_marks.draw_string(f, r.position + Vector2(TAB_PAD.x * k, TAB_PAD.y * k + f.get_ascent(fs)), tab_text(id),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER)
 

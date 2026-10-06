@@ -80,27 +80,29 @@ const WHEEL_RIGHT_RATIO := 1.5
 ## Lettering (px at text scale 1.0): the header, the subtitle, EXPLOITS and the count, the
 ## "minimum" words, a socket's kind word, the EXTRA line, the footer.
 const HEAD_FONT := 15
-const SUB_FONT := 11
+const SUB_FONT := 12
 const EXPLOITS_FONT := 23
 const COUNT_FONT := 29
 const MIN_FONT := 12
 const KIND_FONT := 12
-const EXTRA_FONT := 11
+const EXTRA_FONT := 12
 const FOOTER_FONT := 19
 const ROW_GAP := 6
 const BUTTON_GAP := 24
-## The concept's panel colours (exploits.py panel()): the glass, the idle edge, the header,
-## subtitle and "minimum" greys, an empty socket's fill and dash, an extra's dash, an idle
-## kind word; a lit socket's fill is the corp colour darkened by SOCKET_LIT_DARK.
-const PANEL_FILL := Color8(10, 9, 15, 228)
-const EDGE_IDLE := Color8(90, 88, 104)
-const HEAD_COLOR := Color8(200, 200, 214)
-const SUB_COLOR := Color8(150, 150, 168)
-const MIN_COLOR := Color8(170, 170, 185)
-const SOCKET_EMPTY_FILL := Color8(18, 17, 24)
-const SOCKET_DASH := Color8(120, 118, 134)
-const EXTRA_DASH := Color8(90, 88, 104)
-const KIND_IDLE := Color8(130, 128, 142)
+## The concept's panel colours (exploits.py panel()) as the nearest palette tokens: the glass
+## (10, 9, 15 at 228 -> the night background at PANEL_GLASS_ALPHA), the idle edge, the header,
+## subtitle and "minimum" greys, an empty socket's fill and dash, an extra's dash, an idle kind
+## word; a lit socket's fill is the corp colour darkened by SOCKET_LIT_DARK.
+const PANEL_GLASS_ALPHA := 0.894
+const PANEL_FILL := Color(Palette.NET_BG_OUTER, PANEL_GLASS_ALPHA)
+const EDGE_IDLE := Palette.DISABLED
+const HEAD_COLOR := Palette.TEXT_MID
+const SUB_COLOR := Palette.TEXT_LO
+const MIN_COLOR := Palette.TEXT_MID
+const SOCKET_EMPTY_FILL := Palette.DESK_DARK
+const SOCKET_DASH := Palette.TEXT_LO
+const EXTRA_DASH := Palette.DISABLED
+const KIND_IDLE := Palette.TEXT_LO
 const SOCKET_LIT_DARK := 0.88
 ## GATE-03: the page behind darkens further toward the panel's side (exploits.py backdrop():
 ## x 0.45 at the left edge, nothing past SHADE_REACH of the width) and under the wheel (a
