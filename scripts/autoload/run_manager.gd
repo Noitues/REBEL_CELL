@@ -656,28 +656,9 @@ func jack_link(site_id: StringName, operative_id: StringName = &"") -> Dictionar
 	var to_site := CampaignRules.site_data(corporation, site_id)
 	if to_site == null:
 		return {}
-	# The owned end: home or a claimed Site linked to the target (lowest id first).
-	var owned: Array[StringName] = []
-	if corporation.city_grid != null:
-		owned.append(corporation.city_grid.home_site_id)
-	if campaign.grid != null:
-		owned.append_array(campaign.grid.claimed_ids())
-	var from_id: StringName = &""
-	var links: Array = to_site.links.duplicate()
-	links.sort()
-	for l in links:
-		if owned.has(l):
-			from_id = l
-			break
-	if from_id == &"":
-		# A link stored on the owned end only.
-		var mine := owned.duplicate()
-		mine.sort()
-		for o in mine:
-			var od := CampaignRules.site_data(corporation, o)
-			if od != null and od.links.has(site_id):
-				from_id = o
-				break
+	# The owned end: home or a claimed Site linked to the target (lowest id first; S-MAPVIEW:
+	# shared with the route page, whose nodes sit along this link).
+	var from_id := RouteLinkLayout.from_site(corporation, campaign, site_id)
 	var from_site := CampaignRules.site_data(corporation, from_id) if from_id != &"" else null
 	var points := PackedVector2Array()
 	var scene := get_tree().current_scene
