@@ -138,6 +138,11 @@ static func tier_text(tier: int) -> String:
 ## Every codex entry, grouped by section, for the codex screen: {section: [{title, text}]}.
 ## Every codex entry, grouped by section. With a `profile`, enemies appear only once met
 ## (no spoilers for bosses and REBEL_CELL); without one (tests, tools) everything shows.
+## Parity CODEX-01 (ported from art-m13-final scripts/ui/kit/codex.gd, art pass W8a): an entry
+## also names what its glyph is drawn from, so the view needs no lookup of its own: `slice`
+## (RC.SliceType), `status` (RC.Status), `tier` (RC.PrecisionTier), `corporation` (a corp id),
+## `hub` (a class's hub core id) and `id` (the content id of a card, Firmware, Daemon, ring
+## segment, enemy, node, defense asset or threat).
 static func entries(lookup: ContentLookup, profile: ProfileState = null) -> Dictionary:
 	var out := {"Slices": [], "Statuses & precision": [], "Classes": [], "Corporations": [], "Cards": [], "Firmware": [], "Daemons": [], # TR
 		"Ring segments": [], "Enemies": [], "Nodes": [], "Home servers": [], "Defense assets": [], "Threats": [], "Lexicon": []} # TR
@@ -146,22 +151,23 @@ static func entries(lookup: ContentLookup, profile: ProfileState = null) -> Dict
 		var hub := cls.starting_wheel.hub if cls.starting_wheel != null else null
 		out["Classes"].append({"title": cls.display_name, "text": "%s\n%d HP. Hub %s: %s%s" % [cls.description, cls.base_hp,
 			hub.display_name if hub != null else "-", hub.description if hub != null else "",
-			("\nAlternative of %s." % cls.alternative_of) if cls.alternative_of != &"" else ""]})
+			("\nAlternative of %s." % cls.alternative_of) if cls.alternative_of != &"" else ""], "hub": hub.id if hub != null else &""})
 	for id in lookup.ids_of_class(&"CorporationData"):
 		var corp := lookup.get_content(id) as CorporationData
 		if corp.generated_from_profile and profile != null and profile.best_ice_for(corp.id) < 0 and not profile.stats.has("use_seen:%s" % corp.final_boss.id):
 			out["Corporations"].append({"title": "???", "text": "Something is waiting behind the other four."})
 			continue
-		out["Corporations"].append({"title": corp.display_name, "text": corp.description})
+		out["Corporations"].append({"title": corp.display_name, "text": corp.description, "corporation": corp.id})
 	for id in lookup.ids_of_class(&"HomeServerVariantData"):
 		var v := lookup.get_content(id) as HomeServerVariantData
 		out["Home servers"].append({"title": v.display_name, "text": v.description})
 	for t in SLICE_TYPE_TEXT:
-		out["Slices"].append({"title": String(Palette.SLICE_NAMES.get(t, "")), "text": SLICE_TYPE_TEXT[t]})
+		out["Slices"].append({"title": String(Palette.SLICE_NAMES.get(t, "")), "text": SLICE_TYPE_TEXT[t], "slice": t})
+	# The status's glyph is the 1C atlas's (the view draws it): the title is its name alone.
 	for st in STATUS_TEXT:
-		out["Statuses & precision"].append({"title": "%s %s" % [Palette.STATUS_GLYPHS.get(st, ""), RC.Status.keys()[st]], "text": STATUS_TEXT[st]})
+		out["Statuses & precision"].append({"title": String(RC.Status.keys()[st]), "text": STATUS_TEXT[st], "status": st})
 	for tier in TIER_TEXT:
-		out["Statuses & precision"].append({"title": RC.PrecisionTier.keys()[tier], "text": TIER_TEXT[tier]})
+		out["Statuses & precision"].append({"title": RC.PrecisionTier.keys()[tier], "text": TIER_TEXT[tier], "tier": tier})
 	var sections := {"Cards": &"CardData", "Firmware": &"FirmwareData", "Daemons": &"DaemonData", "Ring segments": &"RingSegmentData",
 		"Enemies": &"EnemyData", "Nodes": &"NetworkNodeData", "Defense assets": &"DefenseAssetData", "Threats": &"ThreatData"}
 	for section in sections:
@@ -173,7 +179,12 @@ static func entries(lookup: ContentLookup, profile: ProfileState = null) -> Dict
 				continue
 			if res is EnemyData and (res as EnemyData).corporation_id == &"":
 				continue  # templates and class drones
-			out[section].append({"title": String(res.get("display_name")) if res.get("display_name") != "" else String(id), "text": describe(res)})
+			var entry := {"title": String(res.get("display_name")) if res.get("display_name") != "" else String(id), "text": describe(res), "id": id}
+			if res is EnemyData:
+				entry["corporation"] = (res as EnemyData).corporation_id
+			elif res is CardData and not (res as CardData).effects.is_empty() and (res as CardData).effects[0] != null:
+				entry["effect"] = (res as CardData).effects[0].type  # what the card does first
+			out[section].append(entry)
 	for word in LEXICON:
 		out["Lexicon"].append({"title": word, "text": LEXICON[word]})
 	# HQ-B (designer ruling Q8): the campaign's story so far (its revealed beats) heads the Codex

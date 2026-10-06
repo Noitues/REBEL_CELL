@@ -209,6 +209,7 @@ Abandon campaign,Abandon campaign
 Abandon run,Abandon run
 Abandon the campaign?,Abandon the campaign?
 Abandon the run?,Abandon the run?
+Aborted,Aborted
 Accessibility,Accessibility
 Achievements,Achievements
 Achievements earned (Stats & achievements lists them).,Achievements earned (Stats & achievements lists them).
@@ -218,7 +219,8 @@ Armory,Armory
 Armory empty: runs bank assets from their drops.,Armory empty: runs bank assets from their drops.
 Asset,Asset
 Assets,Assets
-"Assist mode for new campaigns (%s free nudge a turn, %s%% HP; no ICE records or achievements)","Assist mode for new campaigns (%s free nudge a turn, %s%% HP; no ICE records or achievements)"
+"Assist mode (new campaigns: %s free nudge a turn, %s%% HP. No ICE records or achievements.)","Assist mode (new campaigns: %s free nudge a turn, %s%% HP. No ICE records or achievements.)"
+Assisted wins,Assisted wins
 At 0 HP you lose the fight.,At 0 HP you lose the fight.
 Audio,Audio
 Automatic (match the pad),Automatic (match the pad)
@@ -254,10 +256,10 @@ Bad for you: %s,Bad for you: %s
 Badges,Badges
 Banked,Banked
 Before this play: %s,Before this play: %s
+Best ICE,Best ICE
 Best ICE by corporation: %s.,Best ICE by corporation: %s.
 Best ICE: %s,Best ICE: %s
 Best ICE: %s. %s,Best ICE: %s. %s
-Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d.,Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d.
 Block %d: soaks damage this turn.,Block %d: soaks damage this turn.
 Borderless,Borderless
 Boss Extra Pointer,Boss Extra Pointer
@@ -335,9 +337,11 @@ Campaign seed:,Campaign seed:
 Campaign slots,Campaign slots
 "Campaign: Heat %d, Schematics %d, roster %d living.","Campaign: Heat %d, Schematics %d, roster %d living."
 Campaigns,Campaigns
+Campaigns lost,Campaigns lost
+Campaigns started,Campaigns started
 Campaigns started on this profile.,Campaigns started on this profile.
+Campaigns won,Campaigns won
 Campaigns won.,Campaigns won.
-"Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost.","Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost."
 Can't Undo,Can't Undo
 Cancel,Cancel
 Card,Card
@@ -534,6 +538,7 @@ Cobalt (deep blue terminal),Cobalt (deep blue terminal)
 Codex,Codex
 Colour-blind correction (patterns and glyphs stay the main cue),Colour-blind correction (patterns and glyphs stay the main cue)
 Come Back Soon,Come Back Soon
+Completed,Completed
 Continue,Continue
 Continue the current run,Continue the current run
 Controls,Controls
@@ -558,6 +563,7 @@ Crew:,Crew:
 Cycle Price,Cycle Price
 Cycle target,Cycle target
 Cycles,Cycles
+Cycles earned,Cycles earned
 Cycles in hand when the run ended.,Cycles in hand when the run ended.
 Cycles you have to spend in the Mainframe. Runs and events pay them; they don't leave the run.,Cycles you have to spend in the Mainframe. Runs and events pay them; they don't leave the run.
 "Cycles: this run's money, spent in the Mainframe.","Cycles: this run's money, spent in the Mainframe."
@@ -673,6 +679,7 @@ Delete the campaign in slot %s?,Delete the campaign in slot %s?
 Deploy armory asset,Deploy armory asset
 Deploy run asset,Deploy run asset
 Deutan (green-weak),Deutan (green-weak)
+Died,Died
 Display,Display
 Do it in the fight to go on (or press NEXT).,Do it in the fight to go on (or press NEXT).
 Down with the Oligarchy!,Down with the Oligarchy!
@@ -906,7 +913,7 @@ FirmwareData.static_coat.display_name,Static Coat
 FirmwareData.tracer.description,SHIM or OVERFLOW slice strips 1 resistance from the target on a Perfect.
 FirmwareData.tracer.display_name,Tracer
 Flame: a Heat objective Site. Clearing it lowers Heat.,Flame: a Heat objective Site. Clearing it lowers Heat.
-Flash limiter (max 3 flashes per second),Flash limiter (max 3 flashes per second)
+Flash limiter (at most 3 flashes a second. On by default.),Flash limiter (at most 3 flashes a second. On by default.)
 "Forecast, not a result: if you start the defence now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it.","Forecast, not a result: if you start the defence now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it."
 Fullscreen,Fullscreen
 Further on: %s (only this way).,Further on: %s (only this way).
@@ -996,7 +1003,7 @@ Heat +0: this run added no Heat.,Heat +0: this run added no Heat.
 Heat Gain,Heat Gain
 Heat Objective Sites,Heat Objective Sites
 Heat Sink,Heat Sink
-Heat glitch (the screen distorts as Heat rises; off by default),Heat glitch (the screen distorts as Heat rises; off by default)
+"Heat glitch (screen-wide Heat distortion, pulsing harder as Heat rises. Off by default.)","Heat glitch (screen-wide Heat distortion, pulsing harder as Heat rises. Off by default.)"
 Heat objective Sites (the cooling mark on the map),Heat objective Sites (the cooling mark on the map)
 Heat reduction,Heat reduction
 Heat reduction Site,Heat reduction Site
@@ -1017,7 +1024,7 @@ HeatThresholdData.heat_70.event_text,An extra elite patrols the next netrun.
 HeatThresholdData.heat_75.event_text,"A raid is queued. While Heat stays at 75 or more, raids are 25% stronger."
 HeatThresholdData.heat_80.event_text,The next netrun's Mainframe carries one item fewer.
 HeatThresholdData.heat_90.event_text,An extra elite patrols the next netrun.
-"High contrast (opaque panels, 7:1 text, thick edges)","High contrast (opaque panels, 7:1 text, thick edges)"
+"High contrast (opaque panels, 7:1 text and thick edges)","High contrast (opaque panels, 7:1 text and thick edges)"
 Home integrity before and after the raid.,Home integrity before and after the raid.
 Home server,Home server
 Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.,Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.
@@ -1126,6 +1133,7 @@ JACK IN to %s: start a %s here with %s.,JACK IN to %s: start a %s here with %s.
 JACK IN: back into the run you left.,JACK IN: back into the run you left.
 JACK OUT,JACK OUT
 JACKED OUT,JACKED OUT
+Jack in from the HQ: each run you finish prints a card here.,Jack in from the HQ: each run you finish prints a card here.
 Key,Key
 LAST TURN: ,LAST TURN: 
 LEAVE,LEAVE
@@ -1579,6 +1587,7 @@ NO NAMES.
 CYCLES ONLY.","NO REFUNDS.
 NO NAMES.
 CYCLES ONLY."
+NO RUNS YET,NO RUNS YET
 NO SIGNAL,NO SIGNAL
 NO SLOT,NO SLOT
 NODE BUILT,NODE BUILT
@@ -1640,6 +1649,7 @@ No living operative or open Site: go to HQ.,No living operative or open Site: go
 No threats can reach your network.,No threats can reach your network.
 Node upgrade level %d.,Node upgrade level %d.
 Nodes,Nodes
+Not earned yet.,Not earned yet.
 Not reachable yet. Clear a Site linked to it first: %s. Then it opens (orange ring) and JACK IN shows here.,Not reachable yet. Clear a Site linked to it first: %s. Then it opens (orange ring) and JACK IN shows here.
 Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours.,Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours.
 Nothing to resume.,Nothing to resume.
@@ -1682,6 +1692,7 @@ Off (no correction),Off (no correction)
 Open the key to show every Site; unselectable regular Sites are hidden to keep the map clear.,Open the key to show every Site; unselectable regular Sites are hidden to keep the map clear.
 Operative,Operative
 Operatives,Operatives
+Operatives lost,Operatives lost
 Options,Options
 Or drag it onto a slot of your spinner: the chip goes into that slot.,Or drag it onto a slot of your spinner: the chip goes into that slot.
 Or drag it onto a slot of your spinner: the slice overwrites that slot.,Or drag it onto a slot of your spinner: the slice overwrites that slot.
@@ -1733,6 +1744,7 @@ Patterns and glyphs stay the main cue.,Patterns and glyphs stay the main cue.
 Pause / options,Pause / options
 "Pause: options, codex, save and quit.","Pause: options, codex, save and quit."
 Pays %d-%d Cycles.,Pays %d-%d Cycles.
+Perfects,Perfects
 Pick a card from your deck to remove.,Pick a card from your deck to remove.
 Pick a card up and move it here to shred it (or select it and press REMOVE).,Pick a card up and move it here to shred it (or select it and press REMOVE).
 "Pick a card with %s, choose a glowing target with the D-pad, press %s again (%s cancels).","Pick a card with %s, choose a glowing target with the D-pad, press %s again (%s cancels)."
@@ -1796,6 +1808,7 @@ ProfileUnlockData.unlock_wrecker.description,Recruit Wrecker operatives in every
 ProfileUnlockData.unlock_wrecker.display_name,Class: Wrecker
 Protan (red-weak),Protan (red-weak)
 Purge Threshold,Purge Threshold
+Puts every setting on this tab back to its default.,Puts every setting on this tab back to its default.
 QUIT,QUIT
 Quit,Quit
 Quit REBEL_CELL?,Quit REBEL_CELL?
@@ -1871,6 +1884,7 @@ RUNNER: %s R%d,RUNNER: %s R%d
 RUNS,RUNS
 Rack,Rack
 "Rack: fight, then bank Schematics and assets","Rack: fight, then bank Schematics and assets"
+Racks captured,Racks captured
 Raid Extra Wave,Raid Extra Wave
 Raid Strength,Raid Strength
 Raid over,Raid over
@@ -1960,12 +1974,13 @@ RaidData.raid_story.warning_text,"Somebody read what you read. A Lockdown Unit a
 Raids,Raids
 Raids pending against your network. Set up the defence before the next run.,Raids pending against your network. Set up the defence before the next run.
 Raids repelled.,Raids repelled.
+Raids won / lost,Raids won / lost
 Rank,Rank
 "Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 "Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 Rank: runs survived. It brings wheel upgrades and higher netrun tiers.,Rank: runs survived. It brings wheel upgrades and higher netrun tiers.
 Recall %s,Recall %s
-"Reduce effects (no scanlines, flicker, chromatic, distortion)","Reduce effects (no scanlines, flicker, chromatic, distortion)"
+"Reduce effects (no scanlines, flicker, chromatic or distortion)","Reduce effects (no scanlines, flicker, chromatic or distortion)"
 Reduce motion (no camera moves or parallax; pages cross-fade),Reduce motion (no camera moves or parallax; pages cross-fade)
 Remove a card from your deck: %d Cycles (you have %d).,Remove a card from your deck: %d Cycles (you have %d).
 Repair Cost,Repair Cost
@@ -2003,6 +2018,7 @@ Router,Router
 Router: a fight,Router: a fight
 Router: a fight. Win it for Cycles and loot.,Router: a fight. Win it for Cycles and loot.
 Runs,Runs
+Runs completed,Runs completed
 SANDBOX,SANDBOX
 SAVED,SAVED
 SBOX,SBOX
@@ -2716,8 +2732,8 @@ StoryPathData.sp_water_rights.premise,"Halcyon owns the city's water now. The pr
 StoryPathData.sp_water_rights.title,Water Rights
 StoryPathData.sp_your_own_hands.premise,REBEL_CELL is built from the Cell's habits. It knows how you fight.
 StoryPathData.sp_your_own_hands.title,Your Own Hands
+"Subtitles (every spoken line, with the speaker's name)","Subtitles (every spoken line, with the speaker's name)"
 Subtitles type in (off: each line shows at once),Subtitles type in (off: each line shows at once)
-Subtitles with speaker names,Subtitles with speaker names
 Switch,Switch
 System log strip at the foot of the screen,System log strip at the foot of the screen
 T%d,T%d
@@ -3098,6 +3114,7 @@ UPGRADE %s: one level up from level %d (%d Schematics).,UPGRADE %s: one level up
 UPGRADE A SLICE // INSTALL %s,UPGRADE A SLICE // INSTALL %s
 UPGRADES: %s,UPGRADES: %s
 "Undo back to the last random event (free, unlimited this turn).","Undo back to the last random event (free, unlimited this turn)."
+Unfinished,Unfinished
 Unlocks: %s,Unlocks: %s
 V-sync,V-sync
 VICTORY,VICTORY
@@ -3236,7 +3253,6 @@ next: pick one (numbered),next: pick one (numbered)
 no change,no change
 no names. who ran this cell?,no names. who ran this cell?
 no power,no power
-no runs yet,no runs yet
 no saved campaign yet,no saved campaign yet
 none,none
 none (%d needed for the breach),none (%d needed for the breach)
@@ -3261,6 +3277,7 @@ raid incoming mid-run,raid incoming mid-run
 raids,raids
 reclaim,reclaim
 rescue an operative,rescue an operative
+reset,reset
 ring_lock_handler,ring_lock_handler
 routing via border link ... ok,routing via border link ... ok
 run %d,run %d

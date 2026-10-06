@@ -441,7 +441,9 @@ func test_the_codex_and_stats_pages_fit_over_the_ticker_at_every_text_scale() ->
 			t.call("show_" + page)
 			await _frames(3)
 			var p := t._panel as Control
-			for n in ["Codex", "Stats", "History"]:
+			# Parity CODEX-01 / STATS-01: the book and the stats sheet's scrolling view (the
+			# windows inside the sheet scroll under it).
+			for n in ["Codex", "StatsScroll"]:
 				var c := p.find_child(n, true, false) as Control
 				if c != null:
 					assert_lte(c.get_global_rect().end.y, floor_y + 1.0, "%s above the ticker at %.1f" % [n, scale])
@@ -612,16 +614,19 @@ func test_options_stack_and_fit_at_text_scale_two() -> void:
 		assert_lte(panel.get_combined_minimum_size().x, SCREEN.size.x, "%s fits the width at 2.0" % section)
 
 
-func test_the_pause_menu_is_a_terminal_with_no_sticker_and_one_column_options() -> void:
+## Parity OPT-01 / CODEX-01 (designer group ruling 2026-10-05) supersede "one column inside the
+## menu" and "the codex is terminal text": Options is round 31's two-column terminal and the
+## Codex the title's book, each centred over the scrim in the menu's place.
+func test_the_pause_menu_is_a_terminal_with_no_sticker_and_its_pages_open_centred() -> void:
 	var menu: PauseMenu = add_child_autofree(PauseMenu.new())
 	await _frames(2)
 	assert_true(menu._panel is CrtWindow, "terminal glass")
 	assert_null(menu.find_child("TitleSticker", true, false), "PAUSE-01: no PAUSED sticker")
 	menu.show_options()
-	assert_false(menu.settings_panel.two_columns(), "one column inside the menu")
-	assert_lte(menu.settings_panel.get_combined_minimum_size().x, PauseMenu.MENU_SIZE.x)
+	assert_true(menu.settings_panel.two_columns(), "round 31: two columns at 1.0")
+	assert_lte(menu.settings_panel.get_combined_minimum_size().x, SCREEN.size.x)
 	menu.show_codex()
-	assert_true(menu.codex_note is CrtText, "the codex is terminal text")
+	assert_true(menu.codex_note is CodexBook, "the codex is the title's book")
 
 
 # --- HQ ------------------------------------------------------------------------------------------

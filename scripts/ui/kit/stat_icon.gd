@@ -67,12 +67,20 @@ const CART := &"cart"
 const SHRED := &"shred"
 ## ported from art-m13-final scripts/ui/kit/stat_icon.gd: the kit's copy mark (the pause menu's code field).
 const COPY := &"copy"
+## Parity STATS-01 / CODEX-01: ported from art-m13-final scripts/ui/kit/stat_icon.gd (art pass W2, the kit's
+## marks): the lock (a badge not earned yet), the cross (campaigns lost), the tick (Perfects, precision), the
+## plus (assisted wins) and the info mark (the Codex's lexicon).
+const LOCK := &"lock"
+const CLOSE := &"close"
+const CHECK := &"check"
+const PLUS := &"plus"
+const INFO := &"info"
 
 ## Every icon kind (tests draw each one).
 const ALL: Array[StringName] = [HEAT, SCHEMATICS, HOME, EXPLOITS, RAIDS, ICE, CREW, HP, CYCLES, CARDS, RANK, BANKED,
 	ARMORY, COMBATS, ELITES, CAMPAIGNS, WON, RUNS, BADGES, FIRMWARE, DAEMON, OPERATIVE, PLAY, CONTINUE, MAP, CODEX,
 	SETTINGS, SAVE, EXIT, BACK, NEXT, SKIP, SLOTS, STATS, TUTORIAL, QUIT, JACK_IN, MORE, FIGHT, ELITE, SHOP, TERMINAL, RACK,
-	COOLING, CLAIM, LINKS, RAM, CART, SHRED, COPY]
+	COOLING, CLAIM, LINKS, RAM, CART, SHRED, COPY, LOCK, CLOSE, CHECK, PLUS, INFO]
 
 ## Tag names (as the tags spell them) -> icon.
 const TAG_KINDS := {"HEAT": HEAT, "SCHEMATICS": SCHEMATICS, "HOME": HOME, "EXPLOITS": EXPLOITS, "RAIDS": RAIDS,
@@ -116,6 +124,11 @@ static func color_of(kind: StringName) -> Color:
 			return Palette.NET_CYAN
 		"terminal":
 			return Palette.CRT_AMBER
+		# Ported from art-m13-final scripts/ui/kit/stat_icon.gd (the kit's marks).
+		"close":
+			return Palette.HARM
+		"lock":
+			return Palette.TEXT_MID
 	return Palette.TERMINAL_TEXT
 
 
@@ -348,6 +361,25 @@ static func draw(ci: CanvasItem, c: Vector2, r: float, kind: StringName, col: Co
 			for k in 5:
 				var x := -0.64 + k * 0.32
 				ci.draw_line(c + Vector2(x, 0.1) * r, c + Vector2(x, 0.9 - (k % 2) * 0.2) * r, col, w * 0.8)
+		# Ported from art-m13-final scripts/ui/kit/stat_icon.gd (art pass W2), the open forms.
+		"lock":
+			ci.draw_arc(c + Vector2(0, -0.2) * r, 0.38 * r, PI, TAU, 12, col, w)
+			ci.draw_line(c + Vector2(-0.38, -0.2) * r, c + Vector2(-0.38, 0.0) * r, col, w)
+			ci.draw_line(c + Vector2(0.38, -0.2) * r, c + Vector2(0.38, 0.0) * r, col, w)
+			ci.draw_rect(Rect2(c + Vector2(-0.68, 0.0) * r, Vector2(1.36, 0.9) * r), col, false, w)
+			ci.draw_circle(c + Vector2(0, 0.42) * r, w * 0.8, col)
+		"close":
+			_round_line(ci, c, r, [[-0.62, -0.62], [0.62, 0.62]], col, w * 1.2)
+			_round_line(ci, c, r, [[0.62, -0.62], [-0.62, 0.62]], col, w * 1.2)
+		"check":
+			_round_line(ci, c, r, [[-0.7, 0.02], [-0.22, 0.52], [0.72, -0.55]], col, w * 1.3)
+		"plus":
+			_round_line(ci, c, r, [[-0.7, 0], [0.7, 0]], col, w * 1.3)
+			_round_line(ci, c, r, [[0, -0.7], [0, 0.7]], col, w * 1.3)
+		"info":
+			ci.draw_arc(c, 0.85 * r, 0, TAU, 24, col, w)
+			ci.draw_circle(c + Vector2(0, -0.42) * r, w * 0.85, col)
+			_round_line(ci, c, r, [[0, -0.1], [0, 0.5]], col, w * 1.1)
 		_:
 			ci.draw_arc(c, r * 0.6, 0, TAU, 16, col, w)
 
@@ -358,6 +390,14 @@ static func _line(ci: CanvasItem, c: Vector2, r: float, pts: Array, col: Color, 
 	for p in pts:
 		out.append(c + Vector2(float(p[0]), float(p[1])) * r)
 	ci.draw_polyline(out, col, w)
+
+
+## An open polyline through `pts` (units of r around c) with round caps and joins (ported from
+## art-m13-final scripts/ui/kit/stat_icon.gd, art pass W2 §7.4).
+static func _round_line(ci: CanvasItem, c: Vector2, r: float, pts: Array, col: Color, w: float) -> void:
+	_line(ci, c, r, pts, col, w)
+	for p in pts:
+		ci.draw_circle(c + Vector2(float(p[0]), float(p[1])) * r, w * 0.5, col)
 
 
 ## A filled convex polygon through `pts` (in units of r around c).

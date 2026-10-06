@@ -53,16 +53,8 @@ const CITY_DIM := 0.58
 ## Parity fix TITLE-01: the blurred 3D city's framing, blur and darkening (round 33); the 2D
 ## city and CITY_DIM stay the fallback below its quality tier.
 const CITY_LOOK := preload("res://content/config/title_city_backdrop.tres")
-## The page widths for the codex / stats / slots terminals (px at 1.0) and the codex text's
-## least height.
-const PAGE_W := 900.0
 ## Frames the slots page checks its panel's fit after it is laid out (SLOTS-04).
 const SLOTS_TRIM_PASSES := 3
-const CODEX_H := 420.0
-const STATS_H := 200.0
-const HISTORY_H := 150.0
-## The least height of a page's reference text (px): it scrolls inside the room it gets.
-const TEXT_FLOOR_H := 72.0
 ## The gap between a slot's lines and its buttons (px): the focus brackets reach above a button.
 const SLOT_ROW_GAP := 8
 ## The ON AIR ticker's words (keys; round 33's ticker).
@@ -490,15 +482,6 @@ func _page(title_word: String, content: Control, page_name: String) -> VBoxConta
 	return box
 
 
-## A reference text that shares the page's room (in proportion to `nominal`, its height at
-## text scale 1.0) and scrolls past it, so the page fits from 1.0 to 2.0.
-func _flex(t: CrtText, nominal: float) -> void:
-	t.label.custom_minimum_size.y = minf(nominal, TEXT_FLOOR_H)
-	t.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	t.size_flags_stretch_ratio = nominal
-	t.body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-
-
 ## Parity SLOTS-01..04 (designer 2026-10-05; ported from art-m13-final
 ## `scripts/ui/title_scene.gd` show_slots / slot_crew / slot_columns, reworked in v2): the
 ## CAMPAIGN SLOTS title sticker (SLOTS-03) over one terminal panel holding the three slots as
@@ -667,70 +650,245 @@ func _link_slots(page: Control) -> void:
 		back.focus_neighbor_right = NodePath()
 
 
+## Parity CODEX-01 (designer group ruling 2026-10-05; ported from art-m13-final
+## `scripts/ui/title_scene.gd` show_codex, reworked in v2): the CODEX title sticker over the
+## Codex as a book (CodexBook): the sections' tabs in rows, one paper page with glyphs, the
+## page scrolling in the room left above Back and the ticker.
 func show_codex() -> void:
 	var box := VBoxContainer.new()
-	var note := CrtText.new(tr("CODEX // WHAT THE CELL KNOWS"), Vector2(PAGE_W, CODEX_H)).make_reference()
-	note.name = "Codex"
-	note.fill_codex()
-	_flex(note, CODEX_H)
-	box.add_child(note)
-	_item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
-	_set_panel(_page("CODEX", box, "CodexPage"), "codex")
+	box.add_theme_constant_override("separation", SLOT_ROW_GAP)  # room for the focus brackets over Back
+	var width := get_viewport_rect().size.x - PAGE_MARGIN.x * 2
+	var book := CodexBook.new(Codex.entries(RunManager.lookup(), RunManager.profile), 0.0, width)
+	book.name = "Codex"
+	box.add_child(book)
+	var back := _item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
+	back.name = "Back"
+	var page := _page("CODEX", box, "CodexPage")
+	box.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	# The book's room: the page's less the sticker and Back (the page scrolls inside it), taken
+	# again once the sticker has its size in the tree (its art sizes it there).
+	var head := page.get_child(0) as Control
+	_codex_room(book, head, back, page)
+	head.minimum_size_changed.connect(_codex_room.bind(book, head, back, page))
+	book.section_shown.connect(func(_n: String) -> void: if _panel == page: UiFocus.link_layout(page))
+	_set_panel(page, "codex")
+	_codex_room.call_deferred(book, head, back, page)
 
 
+## The codex book's height: the page's room less its title sticker, Back and their gaps.
+func _codex_room(book: CodexBook, head: Control, back: Control, page: VBoxContainer) -> void:
+	if not is_instance_valid(book) or not is_instance_valid(head) or not is_instance_valid(back):
+		return
+	var gaps := float(page.get_theme_constant(&"separation")) + float((book.get_parent() as VBoxContainer).get_theme_constant(&"separation"))
+	book.max_height = page_room() - head.get_combined_minimum_size().y - back.get_combined_minimum_size().y - gaps
+
+
+## Parity STATS-01 (designer group ruling 2026-10-05; ported from art-m13-final
+## `scripts/ui/title_scene.gd` show_stats / stat_cells, reworked in v2): the STATS title sticker
+## over one sheet that scrolls in the page's room: STATS // RECORDS as terminal tiles (StatTile:
+## icon, number, name), the best ICE per corporation under them, ACHIEVEMENTS as round badges
+## (earned pink, the rest locked) with the count on the window's tag, RUN HISTORY as paper run
+## cards (RunReceipt). The tiles, badges and cards are focus stops in grids (the pad walks them;
+## the sheet follows).
 func show_stats() -> void:
 	var p := RunManager.profile
+	var room_w := get_viewport_rect().size.x - PAGE_MARGIN.x * 2 - CrtWindow.PAD_H * 2
+	var sheet := VBoxContainer.new()
+	sheet.name = "Sheet"
+	sheet.add_theme_constant_override("separation", UiTheme.GUTTER)
+	var stats := CrtWindow.new(tr("STATS // RECORDS"))
+	stats.name = "Stats"
+	var tiles := _grid("StatGrid", StatTile.WIDTH * Settings.text_scale, room_w)
+	for cell in stat_cells(p):
+		tiles.add_child(StatTile.new(cell[0], String(cell[1]), tr(String(cell[2])), String(cell[3]) if cell.size() > 3 else ""))
+	stats.body.add_child(tiles)
+	var per_corp := Chrome.body_label(tr("Best ICE by corporation: %s.") % ", ".join(best_ice_by_corp(p)), UiTheme.BODY, Palette.TEXT_MID)
+	per_corp.name = "BestIceByCorp"
+	stats.body.add_child(per_corp)
+	sheet.add_child(stats)
+	var ach := CrtWindow.new(tr("Achievements"), Palette.CELL_PINK)
+	ach.name = "Achievements"
+	var got := 0
+	for d in Achievements.DEFS:
+		got += 1 if p.achievements.has(d["id"]) else 0
+	ach.tag_label.text = "%d/%d" % [got, Achievements.DEFS.size()]
+	var badges := _grid("Badges", AchievementBadge.side() * AchievementBadge.WIDTH_SHARE, room_w)
+	for d in Achievements.DEFS:
+		badges.add_child(AchievementBadge.new(StringName(String(d["id"])), tr(String(d["title"])), tr(String(d["text"])), p.achievements.has(d["id"])))
+	ach.body.add_child(badges)
+	sheet.add_child(ach)
+	var hist := CrtWindow.new(tr("RUN HISTORY"))
+	hist.name = "History"
+	var cards := _grid("Receipts", RunReceipt.WIDTH * Settings.text_scale, room_w)
+	if p.run_history.is_empty():
+		cards.add_child(RunReceipt.empty())
+	var i := 0
+	for r in p.run_history:
+		var corp := RunManager.lookup().get_content(StringName(String(r.get("corporation", "")))) as CorporationData
+		cards.add_child(RunReceipt.of_run(r, TextDb.t(corp, "display_name") if corp != null else String(r.get("corporation", "?")), i))
+		i += 1
+	hist.body.add_child(cards)
+	sheet.add_child(hist)
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 8)
-	var records := CrtWindow.new(tr("PROFILE // THE CELL"))
-	records.name = "Records"
-	records.body.add_child(profile_grid(6))
-	box.add_child(records)
-	var note := CrtText.new(tr("STATS // RECORDS"), Vector2(PAGE_W, STATS_H)).make_reference()
-	note.name = "Stats"
-	_flex(note, STATS_H)
-	note.append(tr("Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost.") % [
-		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost])
-	note.append(tr("Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d.") % [HudStats.ice_value(p.best_ice), int(p.stats.get("perfects", 0)), int(p.stats.get("racks", 0)), int(p.stats.get("cycles", 0)), int(p.stats.get("assisted_wins", 0))])
-	var per_corp := PackedStringArray()
+	box.add_theme_constant_override("separation", SLOT_ROW_GAP)  # room for the focus brackets over Back
+	var fit := FitScroll.new(sheet)
+	fit.name = "StatsScroll"
+	box.add_child(fit)
+	var back := _item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
+	back.name = "Back"
+	var page := _page("STATS", box, "StatsPage")
+	box.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var head := page.get_child(0) as Control
+	fit.max_height = maxf(FitScroll.MIN_VIEW * Settings.text_scale, page_room() - head.get_combined_minimum_size().y - back.get_combined_minimum_size().y - SLOT_ROW_GAP * 2)
+	_set_panel(page, "stats")
+	for g in [tiles, badges, cards]:
+		link_grid(g as GridContainer, back)
+	_start_fit_trims()
+
+
+## Frames the codex / stats page still checks its fit (see _trim_fit): the book refits its own
+## page over its frames too, so it gets a few more than the slots page.
+const FIT_TRIM_PASSES := 6
+var _fit_trims: int = 0
+
+
+func _start_fit_trims() -> void:
+	_fit_trims = FIT_TRIM_PASSES
+	if is_inside_tree() and not get_tree().process_frame.is_connected(_trim_fit):
+		get_tree().process_frame.connect(_trim_fit, CONNECT_ONE_SHOT)
+
+
+## CODEX-01 / STATS-01: once the page is laid out, its scrolling view takes exactly the room
+## left over the ticker with Back under it (the view's MORE BELOW room, the tabs' rows and the
+## page's gaps are only known then), as the slots page does (SLOTS-04).
+func _trim_fit() -> void:
+	var page := _panel
+	if not (panel_name in ["codex", "stats"]) or page == null or not is_instance_valid(page) or not is_inside_tree():
+		return
+	var back := page.find_child("Back", true, false) as Control
+	var book := page.find_child("Codex", true, false) as CodexBook
+	var fit := page.find_child("StatsScroll", true, false) as FitScroll
+	if book != null:
+		fit = book.fit
+	if back != null and fit != null:
+		var bottom := _panel_host.global_position.y + (back.global_position.y - page.global_position.y) + back.size.y
+		var spare := page_room() + SubtitleStrip.top_below(PAGE_MARGIN.y) - bottom
+		if spare < -0.5 or (spare > 0.5 and fit.overflowing()):
+			if book != null:
+				book.max_height = maxf(FitScroll.MIN_VIEW * Settings.text_scale, book.max_height + floorf(spare))
+			else:
+				fit.max_height = maxf(FitScroll.MIN_VIEW * Settings.text_scale, fit.max_height + floorf(spare))
+	_fit_trims -= 1
+	if _fit_trims > 0 and not get_tree().process_frame.is_connected(_trim_fit):
+		get_tree().process_frame.connect(_trim_fit, CONNECT_ONE_SHOT)
+
+
+## The profile's numbers as [StatIcon kind, value, name key, tooltip?] for the stats tiles (a
+## number or "—", never "none"; ported from art-m13-final title_scene.gd stat_cells).
+static func stat_cells(p: ProfileState) -> Array:
+	var raids := "%d/%d" % [p.raids_won, p.raids_lost]
+	var badges := "%d/%d" % [p.achievements.size(), Achievements.DEFS.size()]
+	var per_corp := ", ".join(best_ice_by_corp(p))
+	var perfects := str(int(p.stats.get(STAT_PERFECTS, 0)))
+	var racks := str(int(p.stats.get(STAT_RACKS, 0)))
+	var cycles := str(int(p.stats.get(STAT_CYCLES, 0)))
+	var assisted := str(int(p.stats.get(STAT_ASSISTED, 0)))
+	return [[StatIcon.CAMPAIGNS, str(p.campaigns_started), "Campaigns started"], [StatIcon.WON, str(p.campaigns_won), "Campaigns won"], # TR
+		[StatIcon.CLOSE, str(p.campaigns_lost), "Campaigns lost"], [StatIcon.RUNS, str(p.runs_completed), "Runs completed"], # TR
+		[StatIcon.CREW, str(p.operatives_lost), "Operatives lost"], [StatIcon.RAIDS, raids, "Raids won / lost"], # TR
+		[StatIcon.ICE, HudStats.ice_value(p.best_ice), "Best ICE", per_corp], [StatIcon.CHECK, perfects, "Perfects"], # TR
+		[StatIcon.RACK, racks, "Racks captured"], [StatIcon.CYCLES, cycles, "Cycles earned"], # TR
+		[StatIcon.PLUS, assisted, "Assisted wins"], [StatIcon.BADGES, badges, "Achievements"]] # TR
+
+
+## The profile stats' keys the tiles read.
+const STAT_PERFECTS := "perfects"
+const STAT_RACKS := "racks"
+const STAT_CYCLES := "cycles"
+const STAT_ASSISTED := "assisted_wins"
+
+
+## "Corporation ICE" for every corporation the profile can see (REBEL_CELL once unlocked).
+static func best_ice_by_corp(p: ProfileState) -> PackedStringArray:
+	var out := PackedStringArray()
 	for cid in RunManager.lookup().ids_of_class(&"CorporationData"):
 		var corp := RunManager.lookup().get_content(cid) as CorporationData
 		if corp != null and (not corp.generated_from_profile or CampaignRules.corporation_available(p, RunManager.lookup(), corp)):
-			per_corp.append("%s %s" % [TextDb.t(corp, "display_name"), HudStats.ice_value(p.best_ice_for(corp.id))])
-	note.append(tr("Best ICE by corporation: %s.") % ", ".join(per_corp))
-	note.heading(tr("Achievements"))
-	for d in Achievements.DEFS:
-		var have := p.achievements.has(d["id"])
-		note.append("[color=#%s]%s[/color] [b]%s[/b]  %s" % [(Palette.CELL_ACID if have else Palette.TEXT_LO).to_html(false), "[x]" if have else "[ ]", d["title"], d["text"]])
-	box.add_child(note)
-	# Big text: the run history is a section of the records' text (a second window's frame is
-	# room the page lacks at 1.6 and up).
-	var history := note
-	if big_text():
-		note.heading(tr("RUN HISTORY"))
-	else:
-		history = CrtText.new(tr("RUN HISTORY"), Vector2(PAGE_W, HISTORY_H)).make_reference()
-		history.name = "History"
-		_flex(history, HISTORY_H)
-	if p.run_history.is_empty():
-		history.append(tr("no runs yet"))
-	for r in p.run_history:
-		var corp := RunManager.lookup().get_content(StringName(String(r.get("corporation", "")))) as CorporationData
-		history.append("%s T%d %s: %s, %d Cycles, %d banked" % [TextDb.t(corp, "display_name") if corp != null else r.get("corporation", "?"), int(r.get("tier", 1)), r.get("site", "?"), r.get("outcome", "?"), int(r.get("cycles", 0)), int(r.get("banked", 0))])
-	if history != note:
-		box.add_child(history)
-	_item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
-	_set_panel(_page("STATS", box, "StatsPage"), "stats")
+			out.append("%s %s" % [TextDb.t(corp, "display_name"), HudStats.ice_value(p.best_ice_for(corp.id))])
+	return out
 
 
+## A grid of `cell_w` px cells, as many columns as fit `room` px.
+static func _grid(p_name: String, cell_w: float, room: float) -> GridContainer:
+	var g := GridContainer.new()
+	g.name = p_name
+	g.columns = maxi(1, int((room + UiTheme.GUTTER) / (cell_w + UiTheme.GUTTER)))
+	g.add_theme_constant_override("h_separation", UiTheme.GUTTER)
+	g.add_theme_constant_override("v_separation", UiTheme.GUTTER)
+	return g
+
+
+## The stats page's grids (UiFocus reads a GridContainer as a stack): left / right walk a row,
+## up / down the cell above / below (clamped to the last row's last cell); the first row up and
+## the last row down keep the page's links out of the grid (the block above, the block below or
+## `fallback`).
+static func link_grid(grid: GridContainer, fallback: Control) -> void:
+	if grid == null or not grid.is_inside_tree():
+		return
+	var cells: Array[Control] = []
+	for c in grid.get_children():
+		if c is Control and (c as Control).focus_mode != Control.FOCUS_NONE:
+			cells.append(c)
+	if cells.is_empty():
+		return
+	var cols := maxi(1, grid.columns)
+	var above := cells[0].focus_neighbor_top
+	var above_node: Control = null
+	if not above.is_empty():
+		above_node = cells[0].get_node_or_null(above) as Control
+	var below_node := cells[cells.size() - 1].get_node_or_null(cells[cells.size() - 1].focus_neighbor_bottom) as Control
+	if below_node == null or grid.is_ancestor_of(below_node):
+		below_node = fallback
+	for k in cells.size():
+		var c := cells[k]
+		var r := k / cols
+		var col := k % cols
+		c.focus_neighbor_left = c.get_path_to(cells[k - 1]) if col > 0 else NodePath()
+		c.focus_neighbor_right = c.get_path_to(cells[k + 1]) if col + 1 < cols and k + 1 < cells.size() else NodePath()
+		if r > 0:
+			c.focus_neighbor_top = c.get_path_to(cells[k - cols])
+		elif above_node != null and not grid.is_ancestor_of(above_node):
+			c.focus_neighbor_top = c.get_path_to(above_node)
+		var down := k + cols
+		if down >= cells.size() and r + 1 < ceili(float(cells.size()) / cols):
+			down = cells.size() - 1
+		if down < cells.size():
+			c.focus_neighbor_bottom = c.get_path_to(cells[down])
+		elif below_node != null:
+			c.focus_neighbor_bottom = c.get_path_to(below_node)
+
+
+## Parity OPT-01 (designer group ruling 2026-10-05: round 31's concept): the Options terminal
+## centred in the page's room over the blurred, dimmed city, as wide as its columns (not the
+## page), its OPTIONS sticker on its corner; past the room its section scrolls.
 func show_options() -> void:
-	var box := VBoxContainer.new()
+	var box := MarginContainer.new()
+	box.name = "OptionsPage"
+	box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var centre := CenterContainer.new()
+	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(centre)
 	var panel := SettingsPanel.new()
 	panel.context = tr("TITLE")
-	# The page's room (under the subtitles' band, over the ticker): past it the section scrolls.
-	panel.max_height = get_viewport_rect().size.y - SubtitleStrip.top_below(PAGE_MARGIN.y) - PAGE_MARGIN.z - ticker.get_combined_minimum_size().y
+	# The page's room (under the subtitles' band, over the ticker) less the sticker's rise
+	# over the panel's top edge.
+	box.add_theme_constant_override("margin_top", ceili(panel.sticker_rise()))
+	panel.max_height = page_room() - panel.sticker_rise()
+	panel.max_width = get_viewport_rect().size.x - PAGE_MARGIN.x * 2
+	panel.show_section(panel.section)  # sized to that room
 	panel.closed.connect(show_main)
-	box.add_child(panel)
+	centre.add_child(panel)
 	_set_panel(box, "options")
 
 
