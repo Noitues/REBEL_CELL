@@ -6,9 +6,10 @@ extends Control
 ## export). View only: AbandonDialog sets `progress`.
 
 ## The ring's stroke (px at text scale 1.0) and how far it sits outside the sticker's box
-## (share of the box: the concept's arc clears the die-cut halo).
+## (share of the box: the sticker's box already holds the die-cut halo's room, so the ring
+## rides on it and clears the caption under it).
 const STROKE := 5.0
-const OUTSET := 0.06
+const OUTSET := 0.0
 ## The arc's segments for a full turn (a smooth ellipse at 2.0).
 const SEGMENTS := 64
 

@@ -438,3 +438,16 @@ func test_the_pause_quit_asks_with_the_plain_quit_confirm() -> void:
 	assert_false(menu.exit_dialog.panel.destructive)
 	menu.exit_dialog.no_button.pressed.emit()
 	assert_true(RunManager.has_campaign(), "CANCEL leaves everything as it was")
+
+
+func test_the_quit_confirm_keeps_its_key_hints_at_big_text() -> void:
+	var was := Settings.text_scale
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+		Settings.text_scale = scale
+		var d: ConfirmDialog = add_child_autofree(ExitDialogs.quit(false))
+		await _frames(1)
+		assert_eq((d.no_button as SendItSticker)._line_words().right(3), "[B]", "CANCEL says [B] at %.1f" % scale)
+		assert_eq((d.yes_button as SendItSticker)._line_words().right(3), "[A]", "QUIT says [A] at %.1f" % scale)
+		d.queue_free()
+		await _frames(1)
+	Settings.text_scale = was

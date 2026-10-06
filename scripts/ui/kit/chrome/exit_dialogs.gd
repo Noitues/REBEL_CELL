@@ -49,9 +49,20 @@ static func quit(in_run: bool) -> ConfirmDialog:
 	var body := tr_word("Your run is saved where it is: BREACH on the title picks it up.") if in_run \
 		else tr_word("Your campaign is saved: BREACH on the title picks it up.")
 	var d := ConfirmDialog.new(tr_word("Quit REBEL_CELL?"), TextDb.mark("QUIT"), TextDb.mark("CANCEL"), TextDb.mark("QUIT"), body, false,
-		TextDb.mark("save and quit [A]"), TextDb.mark("keep going [B]"))
+		TextDb.mark("save and quit"), TextDb.mark("keep going"))
 	d.name = "QuitConfirm"
+	# The key hints ride as the stickers' keys, so they stay at big text (where the line drops).
+	_hint(d.yes_button, "[A]")
+	_hint(d.no_button, "[B]")
 	return d
+
+
+## Gives a quit sticker its key hint (SendItSticker's line keeps the key at every text size).
+static func _hint(b: Button, key: String) -> void:
+	var st := b as SendItSticker
+	if st != null:
+		st.key_hint = key
+		st._fit_size()
 
 
 ## `key` through the TranslationServer once (static code has no Node.tr; export_text reads

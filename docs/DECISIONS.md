@@ -65,7 +65,8 @@ in-run abandon run" and "ART-10 4C: hold-to-confirm on the abandon dialog's verb
   ("abandon, lose <name> [hold A]"). Abandon campaign: the same family (`ABANDON CAMPAIGN`; RUNS / OPERATIVES /
   SCHEMATICS / SITES / HEAT / ICE; HARM "It counts as a lost campaign."; GAIN "Your stats and achievements stay.";
   BURN IT, the baked sticker). Quit stays main's ConfirmDialog (`> CONFIRM // QUIT`, not destructive) with its key
-  hints ("save and quit [A]" / "keep going [B]") and a body naming what BREACH resumes.
+  hints ("save and quit [A]" / "keep going [B]"; the keys ride as the stickers' key hints, so at big text, where
+  main's sticker line drops its words, "[A]" / "[B]" stay) and a body naming what BREACH resumes.
 - **Hold to confirm (the concept's rule, now built):** on the abandon dialogs the pad / keyboard confirm on BURN IT is
   a 0.8 s hold (`dialog_hold_confirm` in ui_motion.tres, a HOLD read raw: never sped up, and reduce effects still
   fills the ring); a lime ring (`HoldRing`, drawn: the concept draws a plain arc over the baked sticker) fills from
@@ -73,8 +74,18 @@ in-run abandon run" and "ART-10 4C: hold-to-confirm on the abandon dialog's verb
   click"). The entry joins REQUIRED_IDS, the motion lab (`hold_confirm` demo on the real dialog) and the lab test's
   HOLDS. **Call:** the title's DELETE SLOT confirm keeps its plain press (the ruling names BURN IT; a hold there is
   a one-line `require_hold()` if wanted).
+- **Entry points (after S-PAUSE):** the pause menu's icon rows under Resume (Resume stays first): "Abandon run"
+  (StatIcon OPERATIVE) when a run is in progress, else "Abandon campaign" (StatIcon CAMPAIGNS) when a live campaign is
+  loaded, both above "Quit to desktop" and in HARM (words and icon, as the slots' DELETE marks the destructive verb).
+  **Calls:** the menu decides by the run's state (no HQ edit: the HQ is being redesigned): a run's end page in the
+  netrun scene therefore offers Abandon campaign too (no run is in progress then). BURN IT closes the menu and calls
+  RunManager; an abandoned run is shown by the netrun scene (`RunManager.run_abandoned`, which both its own pause and
+  the fight's pause reach), an abandoned campaign reloads the HQ scene, which opens on the campaign's end page.
+  "Save & quit to title" is unchanged. Review pack screens `pause_fight_abandon`, `pause_fight_abandon_hold`,
+  `hq_pause_abandon`, `hq_pause_quit`.
 - **Outside this area, smallest edits:** `title_scene.gd` STATE_WORDS gains "abandoned"; `case_file_card.gd`
-  `state_word` gains ABANDONED; STYLE_GUIDE 5.5 lists the new hold.
+  `state_word` gains ABANDONED; `netrun_scene.gd` shows the run's end on `run_abandoned`; STYLE_GUIDE 5.5 lists the
+  new hold.
 - Tests: `tests/unit/test_abandon_quit.gd`.
 
 ### 2026-10-05 — Parity fix — new campaign page (designer decisions)

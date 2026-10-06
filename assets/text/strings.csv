@@ -3213,6 +3213,7 @@ in a run,in a run
 install,install
 it costs you %s,it costs you %s
 keep fighting [B],keep fighting [B]
+keep going,keep going
 keep going [B],keep going [B]
 keep running [B],keep running [B]
 lime=you red=target box=view,lime=you red=target box=view
@@ -3257,7 +3258,7 @@ ring_lock_handler,ring_lock_handler
 routing via border link ... ok,routing via border link ... ok
 run %d,run %d
 run: %s,run: %s
-save and quit [A],save and quit [A]
+save and quit,save and quit
 saved to profile,saved to profile
 schematics,schematics
 seg %d: %s,seg %d: %s
