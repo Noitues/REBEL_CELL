@@ -227,9 +227,18 @@ func _page_focus(p: Control, first: Control) -> void:
 		UiFocus.focus_first(p)
 
 
-## The control a page focuses first: BREACH (or the first live verb) on the main page.
+## The control a page focuses first: BREACH (or the first live verb) on the main page, the
+## pink LOAD on the slots page.
 func _default_focus(p: Control) -> Control:
-	if panel_name != "main" or p != _panel:
+	if p != _panel:
+		return null
+	if panel_name == "slots":
+		# SLOTS-02: the page's one sticker verb (LOAD on the newest campaign) takes the focus.
+		for c in p.find_children("Slot*", "CaseFileCard", true, false):
+			if (c as CaseFileCard).primary:
+				return (c as CaseFileCard).load_button
+		return null
+	if panel_name != "main":
 		return null
 	for v in verbs:
 		if is_instance_valid(v) and not v.disabled:
@@ -507,6 +516,9 @@ func show_slots() -> void:
 			latest = slot
 	var win := CrtWindow.new(tr("Campaign slots"), Palette.NET_CYAN, page_room())
 	win.name = "Slots"
+	# The view scrolls whole case files: no snap to the lines inside a card (it shrank the view
+	# under a card's height at 1.6).
+	win.fit.hint.snap_rows = false
 	win.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	var grid := GridContainer.new()
 	grid.name = "Cards"
@@ -569,6 +581,16 @@ func _trim_slots() -> void:
 		var spare := page_room() + SubtitleStrip.top_below(PAGE_MARGIN.y) - bottom
 		if spare < -0.5 or (spare > 0.5 and win.fit.overflowing()):
 			win.fit.max_height = maxf(FitScroll.MIN_VIEW * Settings.text_scale, win.fit.max_height + floorf(spare))
+		# The focus may have landed while the view had no size yet: bring it into sight.
+		var focused := get_viewport().gui_get_focus_owner()
+		if focused != null and win.fit.scroll.is_ancestor_of(focused):
+			# Its whole case file when it fits the view (tab to actions), then the action itself.
+			var card := focused.get_parent()
+			while card != null and not (card is CaseFileCard):
+				card = card.get_parent()
+			if card != null:
+				win.fit.scroll.ensure_control_visible(card as Control)
+			win.fit.scroll.ensure_control_visible(focused)
 	_slots_trims -= 1
 	if _slots_trims > 0 and not get_tree().process_frame.is_connected(_trim_slots):
 		get_tree().process_frame.connect(_trim_slots, CONNECT_ONE_SHOT)

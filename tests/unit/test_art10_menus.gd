@@ -274,6 +274,7 @@ func test_load_is_the_one_sticker_verb_and_delete_a_harm_chip_that_asks() -> voi
 	var newest := cards[0] if cards[0].primary else cards[1]
 	assert_true(newest.load_button is VerbSticker and (newest.load_button as VerbSticker).fill == VerbSticker.Fill.PINK, "LOAD on the newest campaign is the pink verb")
 	assert_eq(RunManager.latest_slot(), newest.slot, "the newest campaign")
+	assert_eq(t._default_focus(t._panel), newest.load_button, "the pink LOAD takes the focus first")
 	var other := cards[1] if newest == cards[0] else cards[0]
 	assert_true(other.load_button is MenuChip, "the other LOAD is a terminal chip")
 	for c in [cards[0], cards[1]]:
@@ -307,6 +308,17 @@ func test_slots_fit_and_focus_reaches_every_action_at_every_text_scale() -> void
 			var back := t._panel.find_child("Back", true, false) as Control
 			assert_true(SCREEN.encloses(win.get_global_rect()), "%d used, %.1f: the panel %s on the screen" % [used, scale, win.get_global_rect()])
 			assert_lte(back.get_global_rect().end.y, floor_y + 1.0, "%d used, %.1f: Back above the ticker" % [used, scale])
+			# Up to 1.6 a whole case file (tab to actions) shows in the panel's view; at 2.0 a
+			# card is taller than the room left under the sticker, and the view follows the focus:
+			# the focused card's actions are in sight.
+			var view := win.fit.scroll.get_global_rect()
+			var focused := get_viewport().gui_get_focus_owner()
+			for c in cards:
+				if scale < Settings.TEXT_SCALE_MAX and focused != null and c.is_ancestor_of(focused):
+					assert_true(view.grow(1.0).encloses(c.get_global_rect()), "%d used, %.1f: the focused case file %s whole in the view %s" % [used, scale, c.get_global_rect(), view])
+			assert_not_null(focused, "%d used, %.1f: an action holds the focus" % [used, scale])
+			if focused != null:
+				assert_true(view.grow(1.0).encloses(focused.get_global_rect()), "%d used, %.1f: the focused %s %s in the view %s" % [used, scale, focused.name, focused.get_global_rect(), view])
 			for c in cards:
 				var f := c.folder.get_global_rect()
 				assert_lte(f.size.x, SCREEN.size.x, "a card fits the width at %.1f" % scale)

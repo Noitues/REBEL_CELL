@@ -66,6 +66,65 @@ Designer (Noitues), 2026-10-05 evening: "I want my main to look just like art pa
   before any fix. This replaces "the art pass design is correct, follow it without asking" for parity work. Bug fixes
   that are not a look choice (test reds, overlaps) still go ahead.
 
+### 2026-10-05 — Parity fix — title spacing and campaign slots (designer decisions)
+Designer decisions 2026-10-05 on audit items TITLE-02 and SLOTS-01..04 (`docs/art_review/PARITY/GAPS.md`): the title
+follows concept round 33 (`round33_ui_chrome/title_screen.png`, keeping main's SIMULATE); the campaign slots take the
+M13 art-pass build's layout and content, reworked in the locked v2 concept language (ART_BIBLE v2 §1.2, §2.10, §4.12,
+§4.13; round 33 `ui_kit.png`, `abandon_dialog.png`). Sheets: `docs/art_review/PARITY/fixes/TITLE-02.jpg`, `SLOTS.jpg`.
+- **TITLE-02:** MORE's five lines keep the concept's pitch (about 24 px a line at 720, as the concept's five lines in
+  ~125 px): the lines' empty top / bottom padding overlaps by `MORE_ROW_SEP` (-4 px; the words, the hover wash and
+  the focus brackets keep their size), so MORE is 32 px shorter, still pinned over the foot row, and sits lower with a
+  clear gap under OVERTHROW (`MORE_GAP` 20 px from OVERTHROW's focus halo, about 30 px from its die-cut at rest; the
+  concept shows ~25). Big text (MORE in the right column) is unchanged. TITLE-03 / TITLE-04: main kept.
+- **SLOTS-01, the case files:** `CaseFileCard` (`scripts/ui/kit/case_file_card.gd`), ported from art-m13-final
+  `scripts/ui/kit/case_file_card.gd` (the brief's "slot_picker.gd" is the build's spinner-slot tile picker, a different
+  view; the slot cards are CaseFileCard, so the port keeps that name) and title_scene `show_slots` / `slot_crew` /
+  `slot_columns`. Three cards in a row in one CrtWindow (2 columns at 1.6, 1 at 2.0). The calls made in v2:
+  - The used slot is **corp paper** (v2 §1.2: the corporation's file on the campaign) as a **manila case folder** on
+    round 21's own manila stock (`AuditDossier.MANILA_ART`, the art pass's exported asset; the build's plain white
+    PAPER predates the v2 dossier look), SLOT n on its tab in Courier Prime Bold.
+  - The corporation's name is the document title in **Courier Prime Bold**, ink, not the build's stencil (stencils
+    are a rejected medium, v2 §1.2). Its hue is the **letterhead stripe** down the left edge (the build's CorpPattern
+    fill does not exist on main; v2's paper is "letterhead in corp colour").
+  - The **emblem disc** is an ink disc with the corp's emblem in its hue, from the art pass's exported emblems
+    (`CorpSeal.draw_crest`, `assets/campaign_end/emblem_<corp>.png`), not the build's landmark SVG.
+  - The fields are **typed** (Courier Prime name, bold value) as the v2 work order: HEAT with its bar in the Heat
+    colour (full = `heat_max` from the campaign config) and its number, ICE, RUNS, FILED (the save date). The build's
+    icon + number fields gave way to words (paper fields are typed; words also cover never-colour-alone).
+  - The state is an Anton **rubber stamp** (`RubberStamp`: IN A RUN / WON / LOST), as v2's corp-paper stamps.
+  - The crew are **portrait chips** (`CrewChip`: the v2 bust's print and the name; not a focus stop, the name on
+    hover); a flatlined operative is crossed out in red grease pencil (v2 §4.12 flatlined). Up to 4, then "+n".
+  - The empty slot stays the build's dashed outline, on the **terminal glass** (the Cell's own: nothing filed), its
+    words in terminal CAPS and Plex: EMPTY SLOT / No campaign filed here yet., and a NEW CAMPAIGN terminal chip.
+  - The folder tilts -1 degree (paper carries a slight rotation), its hard shadow as the build's.
+  - The whole slot in words is the folder's tooltip (`_describe`, kept for that).
+- **SLOTS-02, Load / Delete** (v2 §2.10 / ui_kit "primary = sticker verb, secondary = terminal chip; one sticker verb
+  per screen"; the abandon dialog's destructive chrome): LOAD on the **newest** campaign is the page's one pink
+  sticker verb (the kit's VinylSticker: the concept baked no LOAD) and takes the page's first focus; every other LOAD
+  is a cyan terminal chip; **DELETE is a terminal chip in HARM** (HARM edge and caret, as the abandon dialog's HARM
+  frame and CANNOT UNDO tag), with "cannot undo" under the word (big text: in its tooltip, as the title chips drop
+  their line). The confirm it opens is 4C's AbandonDialog with its pink DELETE sticker (unchanged). With no saved
+  campaign there is no sticker on the page (OVERTHROW on the title is the new-campaign verb).
+- **SLOTS-03:** main's yellow CAMPAIGN SLOTS title sticker kept (v2 page-title rule); the build's logo is not ported.
+- **SLOTS-04:** the panel wraps its cards (the city shows below it) up to the room left above Back and the ticker,
+  then scrolls inside (CrtWindow `max_body`: FitScroll + ScrollHint MORE BELOW). The room is exact: `_trim_slots`
+  reads the laid-out page (from its own layout, not the entering slide) for 3 frames and gives the view the room left;
+  the focused action is brought into the view. Back sits under the panel.
+- **Focus:** the cards' grid is linked by `_link_slots` (UiFocus reads a GridContainer as a stack: DELETE was
+  unreachable): left / right walk a row of cards' actions, up / down the card above / below, the last row down to
+  Back. The crew chips and the folder are never focus stops.
+- **Big text:** at 1.6 and 2.0 a card is taller than the room under the sticker; the view scrolls to the focused card
+  (the crew chips stop growing at 1.3x so the names stay legible and the card shorter).
+- **Fixed on the way:** a texture loaded inside a draw and let go draws white (it is freed before the frame renders);
+  the card holds the manila stock once (`manila_stock`). `AuditDossier._manila` loads it the same way (outside this
+  area: reported, not changed).
+- **Outside the area (smallest change):** `tools/visual_qa/review_pack.gd` gains `slots_2` / `slots_3` (two and three
+  used slots) and clears slots 2 and 3 at teardown.
+- **Tests** (`test_art10_menus.gd`): `test_the_more_panel_keeps_a_clear_gap_under_overthrow`,
+  `test_the_slots_page_is_three_case_files_in_one_panel`, `test_load_is_the_one_sticker_verb_and_delete_a_harm_chip_that_asks`,
+  `test_slots_fit_and_focus_reaches_every_action_at_every_text_scale` (1, 2, 3 used slots at 1.0 / 1.6 / 2.0),
+  `test_the_slots_panel_wraps_its_cards_then_scrolls_past_its_room`. No test dropped.
+
 ### 2026-10-05 — Parity fix — TITLE-01 title backdrop (designer decision)
 Designer decision 2026-10-05: the title follows concept round 33 (`round33_ui_chrome/title_screen.png` / `.gif`,
 art-concepts-r43). Audit item TITLE-01 (P1, `docs/art_review/PARITY/GAPS.md`): main's title drew the 2D NeonCity
@@ -8328,6 +8387,10 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **Parity fix SLOTS-01/02 (2026-10-05, built, see "Parity fix — title spacing and campaign slots"):** (1) the used
+  slot is a manila case folder on corp paper (v2: the corporation's file) where the build had white paper: keep, or
+  white? (2) LOAD on the newest campaign is the page's one pink sticker and DELETE a HARM terminal chip: or should
+  DELETE carry the pink DELETE sticker as the confirm does (that makes a second sticker verb on the page)?
 - **Parity fix TITLE-01 (2026-10-05, built, see "Parity fix — TITLE-01 title backdrop"):** (1) the title's HQ is the
   last-played campaign's target, else Halcyon (the concept's): keep, or always Halcyon? (2) the 3D city's night grade
   is less pink-saturated than round 33's 2D render: leave it (it is the Grid's grade too) or give the backdrop look its
