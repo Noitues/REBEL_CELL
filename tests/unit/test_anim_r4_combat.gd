@@ -715,7 +715,7 @@ func test_victory_stands_clear_of_the_beaten_wheel_and_defeated_wears_its_colour
 	for scale in SCALES:
 		var scene := await _combat(&"collections_agent", scale)
 		var ev: WheelView = scene._enemy_views.values()[0]
-		var word := tr("VICTORY")
+		var word := tr("FIGHT WON")  # S-COMBAT-HUD CMB-14: the won fight's word
 		var at: Vector2 = scene.end_word_spot(true)
 		var fs: int = scene.end_word_size(true, word)
 		var r := CombatFxLayer.word_rect(at, word, fs if fs > 0 else roundi(CombatFxLayer.WORD_FONT * Settings.text_scale))
