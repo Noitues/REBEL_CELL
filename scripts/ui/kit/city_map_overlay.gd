@@ -1612,6 +1612,9 @@ const TARGET_WORD_AT := Vector2(-2.0, 0.7)
 ## circle's centre to the word's baseline-left): below left as drawn, then below right, below,
 ## left.
 const TARGET_WORD_SPOTS: Array[Vector2] = [TARGET_WORD_AT, Vector2(0.2, 0.9), Vector2(-0.9, 1.5), Vector2(-2.6, -0.1)]
+## ... then wholly left of the circle, its baseline at these shares of the radius under the
+## centre (big words: a word wider than the circle never reaches past it).
+const TARGET_WORD_LEFT_ROWS: Array[float] = [0.7, 0.0, -0.7, 1.4, -1.4, 2.1, -2.1]
 const TARGET_SEED := 351
 const BOSS_CHIP_GAP := 10.0
 ## Parity fix (GRID-03): the chip's slides along the circle (shares of how far it can slide and
@@ -1720,7 +1723,8 @@ func _draw_boss_chip(n: Dictionary, at: Vector2) -> void:
 	_c.draw_string(f, r.position + Vector2(pad, pad + f.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.RESIST_GOLD)
 
 
-static func _is_boss(n: Dictionary) -> bool:
+## True when node `n` is the Central Server (the boss: its chip and TARGET pencil).
+static func is_boss(n: Dictionary) -> bool:
 	return n.has("marker") and n["marker"].get("kind") == SiteMarker.KIND_CENTRAL_SERVER
 
 
@@ -1781,12 +1785,16 @@ func _boss_chip_box(at: Vector2, others: Array[Rect2] = []) -> Rect2:
 
 
 ## Parity fix (GRID-03): the TARGET word's rect with its baseline-left at `word_at` (local
-## px, its shadow included: GreasePencilWord.global_rect in the overlay's px).
+## px, its shadow included: GreasePencilWord.global_rect in the overlay's px; a word in capitals
+## inks nothing under its baseline, so its rect ends there).
 func _target_word_rect(word_at: Vector2) -> Rect2:
 	var k := _k()
 	var font := Palette.pencil()
 	var px := UiTheme.font_px(UiTheme.HEADING)
-	var sz := font.get_string_size(tr_word("TARGET"), HORIZONTAL_ALIGNMENT_LEFT, -1, px)
+	var text := tr_word("TARGET")
+	var sz := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
+	if text == text.to_upper():
+		sz.y = font.get_ascent(px)
 	var r := Rect2(Vector2(0, -font.get_ascent(px)), sz).grow(2.0)
 	r.end += GreasePencilMark.SHADOW_OFFSET
 	return Rect2(word_at + r.position * k, r.size * k)
@@ -1815,18 +1823,43 @@ func boss_layout(n: Dictionary) -> Dictionary:
 		var r := icon_rect(o)
 		if r.has_area():
 			others.append(r.grow(LABEL_CLEAR * k))
-	var key := [at, k, label_area(), _boss_chip_word(), others]
+	var key := [at, k, label_area(), label_blocks(), _boss_chip_word(), others]
 	if key == _boss_key:
 		return _boss_now
 	var chip := _boss_chip_box(at, others)
 	var avoid: Array[Rect2] = others.duplicate()
 	avoid.append(chip)
+	# On the map's open part (never under the side column, the minimap or the key), then clear
+	# of the markers and the chip; else the spot on the map that covers the least, else the first.
+	var area := label_area()
+	var blocks := label_blocks()
 	var word_at := at + TARGET_WORD_SPOTS[0] * TARGET_RADIUS * k
+	var on_map := Vector2.INF
+	var tries: Array[Vector2] = []
 	for s: Vector2 in TARGET_WORD_SPOTS:
-		var p := at + s * TARGET_RADIUS * k
-		if not _hits_any(_target_word_rect(p), avoid):
-			word_at = p
+		tries.append(at + s * TARGET_RADIUS * k)
+	# Big words: wholly left of the circle (its foot, then its middle), so a word wider than
+	# the circle never reaches past it into the side column.
+	var wide := _target_word_rect(at).size.x
+	var circle := _target_circle_rect(at)
+	for sy in TARGET_WORD_LEFT_ROWS:
+		tries.append(Vector2(circle.position.x - wide, at.y + sy * TARGET_RADIUS * k))
+	var least := INF
+	for p in tries:
+		var w := _target_word_rect(p)
+		if not area.encloses(w) or _hits_any(w, blocks):
+			continue
+		var cover := 0.0
+		for o in avoid:
+			if w.intersects(o):
+				cover += w.intersection(o).get_area()
+		if cover < least:
+			on_map = p
+			least = cover
+		if cover <= 0.0:
 			break
+	if on_map.x != INF:
+		word_at = on_map
 	_boss_now = {"chip": chip, "circle": _target_circle_rect(at), "word": _target_word_rect(word_at), "word_at": word_at}
 	_boss_key = key
 	return _boss_now
@@ -2570,7 +2603,7 @@ func unplaced_with_room() -> Array[StringName]:
 			icons.append({"id": n["id"], "at": icon_pos(n), "r": icon_radius(n)})
 			if tier_of(n) > 0:
 				marks.append(tier_pips_rect(n))
-			if _is_boss(n) and marker_shown(n):
+			if is_boss(n) and marker_shown(n):
 				marks.append_array(boss_rects(n))
 	var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_centre(), "ring_r": ring_radius(),
 		"area": label_area(), "blocks": label_blocks(), "clear": LABEL_CLEAR * _k()}
@@ -2677,7 +2710,7 @@ func _place_labels() -> Array[Dictionary]:
 			icons.append({"id": n["id"], "at": icon_pos(n), "r": icon_radius(n)})
 			if tier_of(n) > 0:
 				marks.append(tier_pips_rect(n))
-			if _is_boss(n) and marker_shown(n):
+			if is_boss(n) and marker_shown(n):
 				marks.append_array(boss_rects(n))  # parity fix GRID-03: the chip and the TARGET pencil
 			# ANIM-R5 P8: a raid's threat tokens (RaidFxLayer: much bigger than the map's
 			# markers) are obstacles too: no label (CORE's included) is placed under one.

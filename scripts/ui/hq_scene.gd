@@ -2162,21 +2162,45 @@ func _grid_fitted(free: Rect2, area: Rect2) -> void:
 	_fit_after_redraw()  # measured again under the new camera (the fit holds; then it settles)
 
 
+## Parity fix (GRID-12): the boss's TARGET pencil (circle and word) as global rects: the
+## Grid's fit, lean and pan hold it on the map with the nodes (it sat half under the minimap
+## or the side column). Empty without a shown Central Server.
+func _grid_pencil_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if city_overlay == null or not is_instance_valid(city_overlay) or not city_overlay.is_inside_tree():
+		return out
+	var xf := city_overlay.get_global_transform()
+	for n in city_overlay.nodes:
+		if CityMapOverlay.is_boss(n) and city_overlay.marker_shown(n):
+			var l := city_overlay.boss_layout(n)
+			for key in ["circle", "word"]:
+				if l.has(key):
+					out.append(xf * (l[key] as Rect2))
+	return out
+
+
 ## Parity fix (GRID-12): the pan (screen px) that shows the most of the city in the map's
 ## `area` (global) while every node (icon and tier pips) stays inside `free` (global): the
 ## best of GRID_CITY_STEPS² pans over the room the nodes leave, the shortest on a tie.
 func grid_city_pan(free: Rect2, area: Rect2) -> Vector2:
 	var rects := LegendSpot.node_rects(city_overlay, false)
+	rects.append_array(_grid_pencil_rects())
 	if rects.is_empty():
 		return Vector2.ZERO
 	var box := rects[0]
 	for r in rects:
 		box = box.merge(r)
 	var aim := free.grow(-LegendSpot.FIT_INSET) if free.size.x > LegendSpot.FIT_INSET * 4.0 and free.size.y > LegendSpot.FIT_INSET * 4.0 else free
-	var lo := (aim.position - box.position).min(Vector2.ZERO)
-	var hi := (aim.end - box.end).max(Vector2.ZERO)
+	# Per axis: the pans that hold the box in `aim` (which may move a node or the pencil back
+	# onto the map); where the box is wider than `aim`, no pan on that axis.
+	var lo := aim.position - box.position
+	var hi := aim.end - box.end
+	for axis in 2:
+		if lo[axis] > hi[axis]:
+			lo[axis] = 0.0
+			hi[axis] = 0.0
 	var best := Vector2.ZERO
-	var best_share := grid_on_city_share(area, Vector2.ZERO)
+	var best_share := -1.0  # a pan in the range always wins (it may have to move the box in)
 	for i in GRID_CITY_STEPS + 1:
 		for j in GRID_CITY_STEPS + 1:
 			var d := Vector2(lerpf(lo.x, hi.x, float(i) / GRID_CITY_STEPS), lerpf(lo.y, hi.y, float(j) / GRID_CITY_STEPS))
@@ -2244,6 +2268,7 @@ func grid_lean(free: Rect2) -> Vector2:
 		return Vector2.ZERO
 	var at := city_overlay.icon_at(selected_site)
 	var rects := LegendSpot.node_rects(city_overlay, false)
+	rects.append_array(_grid_pencil_rects())
 	if at.x == INF or rects.is_empty():
 		return Vector2.ZERO
 	var box := rects[0]
