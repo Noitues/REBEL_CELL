@@ -729,7 +729,7 @@ func sweep_rank() -> int:
 
 ## StickerSweepQueue interface: it may take the turn (shown, not disabled).
 func sweep_ready() -> bool:
-	return is_visible_in_tree() and state != State.DISABLED and not sweep_running()
+	return is_visible_in_tree() and state != State.DISABLED
 
 
 ## StickerSweepQueue interface: runs the sweep; returns its seconds.

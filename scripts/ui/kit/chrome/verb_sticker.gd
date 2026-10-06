@@ -350,7 +350,7 @@ func sweep_rank() -> int:
 
 ## It may take the turn: shown, enabled, drawn here (the kit sticker's vinyl sweeps for itself).
 func sweep_ready() -> bool:
-	return vinyl == null and is_visible_in_tree() and not disabled and not sweep_running()
+	return vinyl == null and is_visible_in_tree() and not disabled
 
 
 func sweep_running() -> bool:
