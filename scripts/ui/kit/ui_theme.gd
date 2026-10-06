@@ -627,6 +627,9 @@ static func _sync_crt() -> void:
 		return
 	_crt.set_shader_parameter("scan_strength", 0.0 if Settings.reduce_effects else 0.12)
 	_crt.set_shader_parameter("flicker", 0.0 if Settings.reduce_effects else 0.01)
+	# M14 B1c (review D23): the faint scrolling hex dump at 6 % on every terminal glass, in
+	# the Cell's cyan as the active skin re-values it (the kit's CRT glass shares the uniforms).
+	CrtTerminalPanel.sync_hex(_crt, PaletteSkins.chrome(Palette.NET_CYAN), true, CrtTerminalPanel.HEX_SEED)
 
 
 static var _chevron: ImageTexture = null

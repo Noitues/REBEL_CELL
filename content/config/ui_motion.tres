@@ -2677,7 +2677,7 @@ trans = 0
 amplitude = 1.0
 tier = 0
 
-; the CRT glass's faint hex dump scrolls up: seconds per loop of its block; amplitude = px per second
+; the CRT glass's faint hex dump scrolls up slowly (B1c-b: 6 px/s, texture not text): seconds per loop of its block; amplitude = px per second
 [sub_resource type="Resource" id="m_crt_hex_scroll"]
 script = ExtResource("1_entry")
 id = &"crt_hex_scroll"
@@ -2685,7 +2685,7 @@ duration = 9.0
 delay = 0.0
 ease = 2
 trans = 0
-amplitude = 14.0
+amplitude = 6.0
 tier = 0
 
 ; lifecycle APPEAR: a sticker drops in from 1.24x over-rotated, slaps (squash 1.13 / 0.84 for 90 ms), one overshoot and a shine sweep; amplitude = the over-rotation (deg)
@@ -2798,15 +2798,15 @@ trans = 1
 amplitude = 0.55
 tier = 0
 
-; the decrypted holo's 3-4 slow bands roll down: seconds per pass; amplitude = band strength
+; the decrypted holo's three slow bands roll down: seconds per pass (B1c, review D17: 6 s); amplitude = band strength
 [sub_resource type="Resource" id="m_holo_bands"]
 script = ExtResource("1_entry")
 id = &"holo_bands"
-duration = 4.0
+duration = 6.0
 delay = 0.0
 ease = 2
 trans = 0
-amplitude = 0.06
+amplitude = 0.1
 tier = 0
 
 ; a light spill breathes with its source: period (s); amplitude = the intensity swing (share)

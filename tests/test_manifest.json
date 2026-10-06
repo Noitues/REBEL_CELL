@@ -521,6 +521,10 @@
 			"seconds": 3.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_b1c_crt_holo.gd": {
+			"seconds": 2.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art_w1_tokens.gd": {
 			"seconds": 2.0,
 			"tier": "fast"

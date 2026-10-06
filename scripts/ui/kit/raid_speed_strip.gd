@@ -32,7 +32,6 @@ func _init(p_steps_max: int = 30) -> void:
 	crt.name = "Crt"
 	crt.prompt = false
 	crt.caret = false
-	crt.hex_dump = false
 	crt.modulate.a = IDLE_ALPHA + 0.25
 	crt.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(crt, false, Node.INTERNAL_MODE_FRONT)
