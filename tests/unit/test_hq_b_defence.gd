@@ -158,8 +158,11 @@ func test_b_from_the_setup_goes_back_to_the_crew() -> void:
 
 func test_jack_in_with_a_raid_pending_plays_it_mid_run_and_says_so() -> void:
 	var hq := await _hq()
-	var word := hq._panel.find_child("RaidMidRun", true, false) as Label
-	assert_not_null(word, "JACK IN's system word says the raid comes mid-run (Q3)")
+	# B4 (art director): Q3's words are in the system word's tooltip (the pink line repeated the
+	# INTERCEPTED corp news toast).
+	var word := hq._panel.find_child("SystemWord", true, false) as Label
+	assert_string_contains(word.tooltip_text, tr(hq.RAID_MID_RUN), "JACK IN's system word says the raid comes mid-run (Q3)")
+	assert_null(hq._panel.find_child("RaidMidRun", true, false), "no pink line on the map")
 	(hq._panel.find_child("Launch", true, false) as VerbSticker).pressed.emit()
 	await _frames(2)
 	assert_not_null(RunManager.netrun, "the rule kept: you may jack in with a raid pending")

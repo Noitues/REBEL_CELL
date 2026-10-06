@@ -99,6 +99,15 @@ const SCREENS := [
 	["hq_pause_codex", "_s_hq_pause_codex", "Parity CODEX-01: the Codex opened from the HQ's pause menu (STORY first)."],
 	["hq_pause_options", "_s_hq_pause_options", "Parity OPT-01: the Options opened from the HQ's pause menu."],
 	["hq_heat_band", "_s_hq_heat_band", "HQ-B: the HEAT gauge crossing a band (banner and note held)."],
+	["b4_idle", "_s_b4_idle", "B4: the HQ idle built to round 44 hq_idle (a network, a raid pending, a flatlined and a stationed operative, the corp news toast)."],
+	["b4_core", "_s_b4_core", "B4: the same HQ with CORE selected (round 44 hq_node_selected: its terminal card, PATCH)."],
+	["b4_claim", "_s_b4_claim", "B4: a cleared Site selected (CLAIM, its tiles, the price tag)."],
+	["b4_repair", "_s_b4_repair", "B4: a DOWN node selected (REPAIR)."],
+	["b4_upgrade", "_s_b4_upgrade", "B4: a node of the Cell's selected (UPGRADE)."],
+	["b4_heat", "_s_b4_heat", "B4: the Heat terminal dropped from the gauge."],
+	["b4_defence", "_s_b4_defence", "B4: the DEFENCE hand open (the raid setup, its RAID SETUP title, Q10)."],
+	["b4_market", "_s_b4_market", "B4: the MARKET hand."],
+	["b4_crew", "_s_b4_crew", "B4: the CREW hand with a tie on the runner (the polaroids)."],
 	["grid", "_s_grid", "City Grid, nothing selected."],
 	["grid_site_selected", "_s_grid_site_selected", "City Grid with an Exploit site selected."],
 	["grid_raid_pending", "_s_grid_raid_pending", "City Grid with a raid pending (RAID SETUP)."],
@@ -919,6 +928,124 @@ func _s_hq_heat_band() -> void:
 	DemoSetup.set_heat(RunManager.campaign, HEAT_TO)
 	hq.show_hq()
 	await _frames(HEAT_BAND_FRAMES)
+
+
+## B4: an HQ in mid-campaign as round 44 draws it: four crew (one flatlined, one stationed),
+## a network of claimed nodes, Heat 58, a raid pending, CORE damaged; `selected` picks the Site
+## ("" = the HQ's own pick, a runnable Site). Returns the HQ.
+func _b4_hq(selected: String = "") -> Node:
+	var hq: Node = await _hq_with_campaign(7)
+	var c := RunManager.campaign
+	var corp := RunManager.corporation
+	var cfg := RunManager.config()
+	var classes: Array[ClassData] = []
+	for id in [&"ghost", &"rigger", &"botnet", &"wrecker"]:
+		classes.append(RunManager.lookup().get_content(id) as ClassData)
+	DemoSetup.roster_of(c, classes)
+	DemoSetup.set_schematics(c, 900)
+	for i in B4_NETWORK:
+		var open := CampaignRules.launchable_sites(c, corp, cfg)
+		if open.is_empty():
+			break
+		CampaignRules.on_run_completed(c, corp, cfg, hq._demo_run(open[0].id))
+		CampaignRules.claim(c, corp, cfg, RunManager.lookup(), open[0].id, &"firewall_relay" if i % 2 == 0 else &"safehouse")
+	var claimed := c.grid.claimed_ids()
+	for id in claimed:
+		if id != c.grid.home_site_id and c.grid.node_type_of(id) == &"safehouse":
+			CampaignRules.station(c, RunManager.lookup(), c.roster[1].id, id)
+			break
+	c.roster[3].alive = false
+	DemoSetup.set_heat(c, B4_HEAT)
+	DemoSetup.set_schematics(c, B4_SCHEMATICS)
+	c.grid.home_integrity = c.grid.home_max_integrity - B4_HOME_DAMAGE
+	DemoSetup.set_armory(c, [&"turret", &"ice_lock", &"decoy"] as Array[StringName])
+	c.pending_raids.clear()
+	c.pending_raids.append({"raid_id": "raid_heat_25", "source": RC.RaidTriggerSource.HEAT_THRESHOLD, "heat": 25})
+	hq.selected_site = StringName(selected)  # "": the HQ's own idle pick
+	hq.show_hq()
+	await _until(func() -> bool: return hq.arrival_ready(), "the HQ camera")
+	await _settle(hq)
+	# The corp news toast (2.4 s) is shown again for the picture (the bake took longer).
+	hq.intercept_raid_warning(&"raid_heat_25")
+	await _frames(B4_TOAST_FRAMES)
+	return hq
+
+
+## B4: the network's size, Heat, Schematics and CORE's damage in the round 44 state.
+const B4_NETWORK := 5
+const B4_HEAT := 58
+const B4_SCHEMATICS := 142
+const B4_HOME_DAMAGE := 6
+## Frames for the toast to lay out before the picture (well inside its 2.4 s hold).
+const B4_TOAST_FRAMES := 6
+
+
+func _s_b4_idle() -> void:
+	await _b4_hq()
+
+
+func _s_b4_core() -> void:
+	var hq: Node = await _b4_hq()
+	hq.select_site(RunManager.campaign.grid.home_site_id)
+	await _settle(hq)
+
+
+func _s_b4_claim() -> void:
+	var hq: Node = await _b4_hq()
+	var c := RunManager.campaign
+	var open := CampaignRules.launchable_sites(c, RunManager.corporation, RunManager.config())
+	for s in open:
+		if not c.grid.is_claimed(s.id) and s.claimable:
+			CampaignRules.on_run_completed(c, RunManager.corporation, RunManager.config(), hq._demo_run(s.id))
+			DemoSetup.set_schematics(c, B4_SCHEMATICS)
+			hq.select_site(s.id)
+			break
+	await _settle(hq)
+
+
+func _s_b4_repair() -> void:
+	var hq: Node = await _b4_hq()
+	var c := RunManager.campaign
+	for id in c.grid.claimed_ids():
+		if id != c.grid.home_site_id:
+			c.grid.site(id)["condition"] = GridState.Condition.DOWN
+			hq.select_site(id)
+			break
+	await _settle(hq)
+
+
+func _s_b4_upgrade() -> void:
+	var hq: Node = await _b4_hq()
+	var c := RunManager.campaign
+	for id in c.grid.claimed_ids():
+		if id != c.grid.home_site_id and c.grid.is_active_node(id):
+			hq.select_site(id)
+			break
+	await _settle(hq)
+
+
+func _s_b4_heat() -> void:
+	var hq: Node = await _b4_hq()
+	hq.toggle_heat_terminal()
+	await _settle(hq)
+
+
+func _s_b4_defence() -> void:
+	var hq: Node = await _b4_hq()
+	hq.open_hand(hq.HandTab.DEFENCE)
+	await _settle(hq)
+
+
+func _s_b4_market() -> void:
+	var hq: Node = await _b4_hq()
+	hq.open_hand(hq.HandTab.MARKET)
+	await _settle(hq)
+
+
+func _s_b4_crew() -> void:
+	var hq: Node = await _b4_hq()
+	hq.open_hand(hq.HandTab.CREW)
+	await _settle(hq)
 
 
 func _s_grid() -> void:

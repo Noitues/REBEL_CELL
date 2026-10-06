@@ -26,6 +26,17 @@ const HIT_PX := 96.0
 const MOVE_EPS := 1.0
 
 var overlay: CityMapOverlay = null
+## B4 (round 44 `hq_idle.png`): the boss chip's words beside the off-screen arrow ("CENTRAL
+## SERVER // EXPLOITS 1/3", translated; "" = no chip), set by the page. It sits under the
+## scrawled word, clear of the pencil, kept inside the area.
+var chip_text: String = "":
+	set(v):
+		chip_text = v
+		if _chip != null:
+			_chip.text = v
+var _chip: Label = null
+## B4: the chip's gap under the word (px).
+const CHIP_GAP := 8.0
 ## Controls along the area's foot (the map key, the minimap): the arrow keeps above them.
 var avoid: Array[Control] = []
 ## B3 c: controls drawn over the area (the top bar): the TARGET counts as off frame when any part
@@ -86,6 +97,15 @@ func _init() -> void:
 	_hit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	_hit.gui_input.connect(_on_hit_input)
 	add_child(_hit)
+	_chip = Label.new()
+	_chip.name = "Chip"
+	_chip.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_chip.add_theme_font_override("font", Palette.mono())
+	_chip.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+	_chip.add_theme_color_override("font_color", Palette.RESIST_GOLD)
+	_chip.add_theme_stylebox_override("normal", UiTheme.box(Color(Palette.NIGHT_SKY, 0.92), Palette.RESIST_GOLD, 1, 8, 3))
+	add_child(_chip)
 	_show(false)
 
 
@@ -153,7 +173,33 @@ func refresh() -> void:
 		var wsize := _word.global_rect().size
 		_word.position = tail - dir * WORD_BACK - wsize * 0.5
 		_hit.position = at - dir * SHAFT_PX * 0.5 - _hit.size * 0.5
+		_place_chip(wsize)
 	_show(true)
+
+
+## B4: the chip under the word (or over it when the word is low), kept inside the free area and
+## off the arrow's box.
+func _place_chip(wsize: Vector2) -> void:
+	_chip.text = chip_text
+	_chip.reset_size()
+	var cs := _chip.get_combined_minimum_size()
+	var area := free_rect()
+	var word_box := Rect2(_word.position, wsize)
+	var p := Vector2(word_box.get_center().x - cs.x * 0.5, word_box.end.y + CHIP_GAP)
+	if p.y + cs.y > area.end.y:
+		p.y = word_box.position.y - CHIP_GAP - cs.y
+	var arrow_box := Rect2(_hit.position, _hit.size)
+	if Rect2(p, cs).intersects(arrow_box):
+		p.y = arrow_box.end.y + CHIP_GAP
+	p.x = clampf(p.x, area.position.x + CHIP_GAP, maxf(area.position.x + CHIP_GAP, area.end.x - cs.x - CHIP_GAP))
+	p.y = clampf(p.y, area.position.y + CHIP_GAP, maxf(area.position.y + CHIP_GAP, area.end.y - cs.y - CHIP_GAP))
+	_chip.position = p
+	_chip.size = cs
+
+
+## B4: the chip's rect (local; empty while it does not show).
+func chip_rect() -> Rect2:
+	return Rect2(_chip.position, _chip.size) if _chip.visible else Rect2()
 
 
 ## The part of this area the arrow may sit in: above the `avoid` controls on its foot.
@@ -182,6 +228,7 @@ func _show(on: bool) -> void:
 	_mark.visible = on
 	_word.visible = on
 	_hit.visible = on
+	_chip.visible = on and chip_text != ""
 	if not on:
 		_drawn = []
 

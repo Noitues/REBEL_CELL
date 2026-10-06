@@ -722,12 +722,29 @@ func _step_spread(delta: float) -> void:
 var marks: Array[Dictionary] = []
 var mark_t: float = 1.0:
 	set(v):
+		var landing := mark_t < 1.0 and v >= 1.0
 		mark_t = v
 		if mark_t >= 1.0:
 			fading_marks = []
+			if landing:
+				_wipe_stamps_later()
 		if _marks_layer != null:
 			_marks_layer.queue_redraw()
 		marks_changed.emit()
+## B4 (art director, review D5 / D7: "a stamp plays once, wipes after 1.5 s, then the node's
+## marker carries the state; never stack"): how much of the landed CLAIMED / TAKEN stamps is
+## left (1 = whole, 0 = wiped). They hold `territory_stamp_hold` after landing, then wipe off
+## over `territory_stamp_wipe`; with motion off (headless, reduce effects) they are wiped at
+## once (the end state: the marker carries the state). The outline and the wash stay.
+var stamp_left: float = 1.0:
+	set(v):
+		stamp_left = v
+		if _marks_layer != null:
+			_marks_layer.queue_redraw()
+		marks_changed.emit()
+var _stamp_tween: Tween = null
+const STAMP_HOLD := &"territory_stamp_hold"
+const STAMP_WIPE := &"territory_stamp_wipe"
 ## ANIM-R6 C12: the stamps of the change before, fading out as the new ones stamp on
 ## (1 - `mark_t`'s stamp alpha); gone once they have landed.
 var fading_marks: Array[Dictionary] = []
@@ -771,11 +788,27 @@ func mark_changes(prev: Dictionary, now: Dictionary) -> void:
 	# with nothing between): a cross-stamp. A stamp still landing lands first (its tween only).
 	Motion._settle(self, ^"mark_t")
 	fading_marks = before
+	if _stamp_tween != null and _stamp_tween.is_valid():
+		_stamp_tween.kill()
+	stamp_left = 1.0
 	mark_t = 0.0
 	if not Motion.run(&"influence_mark", self, ^"mark_t", 1.0):
 		mark_t = 1.0
 	_marks_layer.queue_redraw()
 	territory_marked.emit(marks)
+
+
+## B4: the landed stamps hold, then wipe off (at once with motion off).
+func _wipe_stamps_later() -> void:
+	if _stamp_tween != null and _stamp_tween.is_valid():
+		_stamp_tween.kill()
+	if not Motion.live(STAMP_WIPE) or not Motion.live(STAMP_HOLD) or not is_inside_tree():
+		stamp_left = 0.0
+		return
+	var e := Motion.entry(STAMP_WIPE)
+	_stamp_tween = create_tween()
+	_stamp_tween.tween_interval(maxf(Motion.entry(STAMP_HOLD).duration, Motion.seconds(STAMP_HOLD)))
+	_stamp_tween.tween_property(self, ^"stamp_left", 0.0, Motion.seconds(STAMP_WIPE)).set_ease(e.ease).set_trans(e.trans)
 
 
 func _draw_marks() -> void:
@@ -813,8 +846,8 @@ func draw_marks_on(ci: CanvasItem, rings: bool = true, stamps: bool = true) -> v
 	var font := Palette.display()
 	# ANIM-R6 C12: the old stamps fade out as the new ones stamp on (a site stamped anew shows
 	# the old word under the new one's landing, then the new word alone).
-	var landed := _mark_alpha()
-	if stamps and landed < 1.0:
+	var landed := _mark_alpha() * stamp_left
+	if stamps and landed < 1.0 and stamp_left >= 1.0:
 		for m: Dictionary in fading_marks:
 			_draw_mark_stamp(ci, m, 1.0, 1.0 - landed, k, fs, font)
 	for m: Dictionary in marks:
@@ -830,7 +863,7 @@ func draw_marks_on(ci: CanvasItem, rings: bool = true, stamps: bool = true) -> v
 			_hatch(_marks_layer, c, Vector2(TILE_A, TILE_B) * MARK_RADIUS, Color(col, MARK_HATCH_ALPHA), k)
 			_marks_layer.draw_polyline(ring, Color(0, 0, 0, 0.8), 6.0 * k, true)
 			_marks_layer.draw_polyline(ring, col, 3.0 * k, true)
-		if not stamps:
+		if not stamps or stamp_left <= 0.0:
 			continue
 		# The stamp, tied to its Site by a leader, stamping on from its amplitude's scale.
 		var grow := lerpf(Motion.amplitude(&"influence_mark"), 1.0, mark_t) if mark_t < 1.0 else 1.0

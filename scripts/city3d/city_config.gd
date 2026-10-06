@@ -480,8 +480,12 @@ extends Resource
 ## (HqCompoundStage.run_camera; the combat backdrop's canyon keeps the manifest's own). Keys are
 ## corporation ids. The reference ortho times `hq_run_ortho_scale_by_corp` (the concept's
 ## distance), the reference target moved by `hq_run_target_by_corp` (compound frame, BU), and
-## the pitch / yaw replaced by `hq_run_pitch_by_corp` / `hq_run_yaw_by_corp` (degrees).
-@export var hq_run_ortho_scale_by_corp: Dictionary = {&"halcyon": 1.4, &"meridian": 1.15, &"orbital": 1.15, &"rebel_cell": 0.6}
+## the pitch / yaw replaced by `hq_run_pitch_by_corp` / `hq_run_yaw_by_corp` (degrees). B4 (review
+## D18): the orthographic pages take their width from `hq_run_landmark_share` (the S-HQRUN scales
+## Halcyon 1.4, Meridian 1.15, Orbital 1.15 went); the DISPATCH canyon keeps round 34 / 43's
+## raking telephoto down the street (CAM27) in the solid city look (HqRunView: GRID band), where
+## its facades show their blade signs (0.45 of the width was tried: the run no longer fits).
+@export var hq_run_ortho_scale_by_corp: Dictionary = {&"rebel_cell": 0.6}
 @export var hq_run_target_by_corp: Dictionary = {&"rebel_cell": Vector3(10.0, -2.0, 0.0)}
 @export var hq_run_pitch_by_corp: Dictionary = {&"rebel_cell": 19.0}
 @export var hq_run_yaw_by_corp: Dictionary = {}
@@ -490,6 +494,11 @@ extends Resource
 ## CAM27: a 54 mm lens, 36.9 degrees, about 19 degrees down), the concept of
 ## dispatch_idea_1_sync_strike.
 @export var hq_run_fov_by_corp: Dictionary = {&"rebel_cell": 36.9}
+## B4 (review D18): an orthographic page frames its compound so the landmark stands this share
+## of the frame's height (55 to 65 %; the per-corp ortho scales above then only apply to a
+## perspective page), and a wide, low compound at most this share of the frame's width.
+@export var hq_run_landmark_share: float = 0.6
+@export var hq_run_landmark_width_max: float = 0.9
 ## A page whose run does not fit steps back by this factor of its width at a time.
 @export var hq_run_fit_step: float = 1.05
 ## A page whose run does not fit first aims at the run's middle, up to this many passes (a
