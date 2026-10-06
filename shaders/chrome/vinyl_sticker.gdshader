@@ -24,6 +24,8 @@ uniform float gloss = 0.22;
 uniform float sweep = -10000.0;
 uniform float sweep_width = 14.0;
 uniform float grey = 0.0;
+// Focus: the sweep band is holo-foil colours over the sticker (any pixel with alpha), not white.
+uniform float rainbow : hint_range(0.0, 1.0) = 0.0;
 // Glitch fill: scan line period and the height of one burst band (px).
 uniform float scan_period = 5.0;
 uniform float band_h = 10.0;
@@ -75,6 +77,12 @@ void fragment() {
 			}
 		}
 		c = vec4(rgb * v_bright, c.a);
+	}
+	if (rainbow > 0.0 && sweep > -1000.0) {
+		float d = abs((v_local.x - sweep) + v_local.y * 0.45);
+		float band = 1.0 - smoothstep(0.0, sweep_width * 1.6, d);
+		vec3 foil = 0.5 + 0.5 * cos(6.28318 * (vec3(0.0, 0.33, 0.67) + (v_local.x - sweep) * 0.012));
+		c.rgb = mix(c.rgb, foil, band * 0.75 * rainbow * c.a);
 	}
 	float g = dot(c.rgb, vec3(0.299, 0.587, 0.114));
 	c.rgb = mix(c.rgb, vec3(g), grey);

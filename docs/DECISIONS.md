@@ -147,6 +147,64 @@ look of its own, the concept's numbers in config), not its files.
   `night` / `landmarks_night` keys, 3 lines), `scripts/city3d/city_config.gd` (the `backdrop_*` fields),
   `tools/design_lab/arena_lab.gd` (`--site=`; a quit fix when no `--scale` is given),
   `tools/art_pipeline/hq_run/hq_run_lab.gd` (`--raw=`), `tests/unit/test_hq_run_city.gd` (above).
+
+### 2026-10-05 — Parity fix — combat wheels, designer round 2
+
+Designer feedback on the first wheel fix (relayed by the orchestrator). Sheet
+`docs/art_review/PARITY/fixes/WHEEL_b.jpg` (concept | round 1 | round 2).
+
+1. **Less colour pop, per kit.** The tone step is now a table per kit (`WheelKit.TONE`: sat, thresh,
+   gain, pull, expo; the disc gets them in `set_kit`, `WheelKit.tone` mirrors the shader). Player
+   sat 1.15 / lift 0.6 over 0.35, Meridian 1.1 / 0.6, Rebel_Cell 0.9 / 0.4 over 0.4 with exposure
+   0.85; Solace, Halcyon and Orbital keep round 1 (1.4 / 1.1 over 0.3). The table is wheel material
+   in `WheelKit`, like the shader's kit tables (2A), not a `.tres`: no schema change for a look table.
+2. **Slice outlines.** The slicelib hairline (program colour) and the corp tier border were 0.9
+   master units wide: at combat size (about 2.9 master units a pixel) they fell under a pixel and
+   vanished. Both are now at least 1.6 screen px (`OUTLINE_PX`), on every tier; the corp tier border
+   is stronger (0.95, was 0.75) and its edge brighter.
+3. **Muddy screens.** The 3-master-unit scanlines were clamped to 3 screen px at combat size and
+   beat against the screens' own pattern; the concept renders at 2x and downsamples, so they
+   average out. They now fade (mean kept) where their period is under 2.5 screen px
+   (`SCANLINE_FADE_PX`). The baked atlases are unchanged.
+4. **Meridian per the palette.** The baked Meridian atlas reads dark brown; its screens are now
+   pulled 0.65 towards Palette.CORP_MERIDIAN (#FF8C1A, the screen's luma re-coloured in the corp
+   colour) and exposed x1.6 (`pull`, `expo`). Tested: toned Meridian screens within 15 degrees of the
+   palette hue and not dark.
+5. **BOSS-04: keep main's needles.** Round 1's `d4corp.pin` secondary readers are reverted: every
+   needle is a full blade again (crowned on a boss), `pointer_spot` reads the blade window. The
+   crowding fix kept: a multi-needle wheel's rails are +-24 degrees (d4corp), and the corp rim over
+   the phase 3 armour. FIX-REDS c's HP-under-needle layout already assumed full blades for every
+   needle; its test passes with two full blades at 1.0 / 1.6 / 2.0 (captured).
+- `test_parity_wheel.gd` updated: per-kit tone uniforms, two full blades + short rails (replaces the
+  pin test), Meridian palette hue; the NULL-contrast check now asks 3 of 5 families >= 1.5 (the calmer
+  player tone leaves a second dark family under the line; every family is still brighter than NULL
+  and told by its glyph and colour).
+
+### 2026-10-05 — Parity fix — one card face: designer answers
+The designer's answers to the S-CARDFACE open questions (2026-10-05). Sheet:
+`docs/art_review/PARITY/fixes/CARDFACE_hand_b.jpg` (combat_start, combat_aiming, combat_hover at 1.0 / 1.6 / 2.0).
+Tests: `tests/unit/test_parity_cardface.gd` (the Hot Patch / Overdrive exception is gone), `test_art2_hud.gd`.
+- **Hand text (CMB-04).** The rules text at rest may go down to **10 px** (`ZineCard.HAND_REST_FLOOR`; was 12, the
+  ART-2 2D audit floor, which stays for the grown card on screen: `grown_floor`). Type: Plex Sans Condensed, TEXT_HI
+  #F2F6FF with a 2 px ink outline at 0.7 alpha (`CardFace.TEXT_OUTLINE`). Contrast against the face art under the
+  text block (face px y 186..272, every kind and rarity): 8.4:1 (WHEEL, SYSTEM) to 11.7:1 (HACK) at the 95th
+  percentile of the background, above WCAG AA (4.5:1) for small text; the only brighter pixels are the gloss streak
+  and the pips, which the outline and the pip rule cover. More of the text shows at rest (tested in characters: a
+  smaller font fits more words a line, so line counts are not the measure).
+- **The grown card.** `ZineCard.HOVER_SCALE` 1.36 -> **1.75**; a hand shrunk under 1.0 to fit beside SEND IT grows its
+  card further (`hover_to` = 1.75 x max(1, 1 / hand scale): never smaller on screen than a 1.0 card grown). The grown
+  face shows every word of every card in content (Hot Patch and Overdrive included) at 1.0 / 1.6 / 2.0 and down to
+  the hand's least scale (MIN_CARD_SCALE 0.6), at 12 px or more on screen. The grown card moves in across so its die-cut
+  stays on the screen (`grown_shift`: the end cards grew past the edge); its neighbours slide aside by its own growth.
+  The hand at rest is unchanged (it fits at every scale as before). The review pack's `combat_hover` now hovers the
+  first card for real (`mouse_entered`), so the capture shows the growth. Seen in the frames: at 1.0 the preview's
+  result chips over the player's wheel draw above the grown card (they live on the combat FX layer); left as is (the
+  card is grown only while the pointer is on it).
+- **Flights to the piles.** Approved for the animation pass (paused until after M14), not built: item F1 in
+  `docs/R7_REEVALUATION_PREP.md` with the entries it needs (`card_draw`, `card_discard`, `card_exhaust`, `card_pile`
+  re-aimed; new `pile_count_tick`, `pile_reshuffle`) and the two tests that pin today's spots.
+- **SHOP-07.** The RECYCLE BIN is confirmed (open question closed).
+
 ### 2026-10-05 — Parity fix — combat wheels (designer group ruling)
 
 Designer group ruling (2026-10-05): combat matches the concept; mechanics the rules lack stay
@@ -603,6 +661,69 @@ M13 art-pass build's layout and content, reworked in the locked v2 concept langu
   `test_slots_fit_and_focus_reaches_every_action_at_every_text_scale` (1, 2, 3 used slots at 1.0 / 1.6 / 2.0),
   `test_the_slots_panel_wraps_its_cards_then_scrolls_past_its_room`. No test dropped.
 
+### 2026-10-05 — Parity fix — baked stickers re-baked with a thinner edge (designer)
+Designer 2026-10-05, after "Parity fix — sticker edge and sticker focus": the baked stickers keep a thinner white edge too,
+matching the drawn ones. Files: `tools/art/bake_menus_r33.py` (`EDGE_SHARE`, `edge_px`, `Thin`; new `--only stickers`),
+`tools/art/export_combat_stickers.py` (`--only send_it`), `assets/ui/menus/stickers/*.png`, `assets/fx/stickers/send_it.png`,
+`vinyl_sticker.gd` (`EDGE_SHARE`), `test_sticker_edge_focus.gd`.
+- **One share for drawn and baked: 0.14 of the lettering** (VinylSticker.EDGE_SHARE, was 0.2; the baked edge in board px =
+  round(0.14 x the lettering size), capped at the concept's 12). My earlier reading "0.2 x lettering" would have baked 10-12
+  board px, i.e. nearly the concept's fixed 12, so the designer's "thinner" needed a smaller share; the drawn stickers moved
+  to 0.14 with them so the two kinds stay the same proportion (drawn menu stickers get 0.7 x their previous edge).
+- **How.** The concept's own code, unchanged: `ui31.sticker(border=...)` for the dialog stickers (CANCEL, BURN IT, DELETE) and
+  the title words, and, for BREACH / SIMULATE / OVERTHROW (title.py `stk`, menu33 fist / glitch sets, which hard-code
+  `border=12` inside the concept), a context (`Thin`) that replaces the `border` argument of `sticker_lib31.build_sticker` for the
+  sticker being baked (and menu33's `_pad`, which pads the glitch art "like build_sticker does (border 12 ...)"). The die-cut
+  `close` follows as 1.25 x the border, as the concept's own SEND IT call does. Sizes: BREACH / SIMULATE / OVERTHROW 60 -> 8,
+  CANCEL 50 -> 7, BURN IT / DELETE 58 -> 8, the title words 54 -> 8, OPTIONS 66 -> 9. SEND IT (`send_sticker`, lettering 74,
+  border 15 -> 10) is re-exported by `--only send_it`. Baked: the title verbs (BREACH, SIMULATE with its bursts, OVERTHROW),
+  the screen-title stickers (OPTIONS, PAUSED, CODEX, STATS, CAMPAIGN SLOTS, NEW CAMPAIGN), the dialog stickers (CANCEL, BURN IT,
+  DELETE: the slots' DELETE and the abandon / quit dialogs), SEND IT. Not baked words: the slots' LOAD, NEW CAMPAIGN's START and
+  RAID START DEFENSE (drawn kit stickers: already on `edge_for`); the landing words PERFECT / GOOD / WEAK are plate stickers
+  (`vinyl_word`, border 7 on a rounded plate, no lettering die-cut) and the EVADE token / drone are not word stickers: unchanged.
+- **Focus kept.** The baked rest textures are what `VerbSticker` draws; the rainbow sweep and the curl are drawn over them.
+  **The unused baked `_focus.png`, `_sweep_NN.png` and `_burst_N_focus.png` frames are deleted** (40 files with their `.import`),
+  with the load code (`_art_focus`, `_art_sweeps`, `_art_bursts_focus`, `_sweep_k`) and the bake steps that made them (the bakers
+  make the rest art, the glitch bursts, the titles and the dialog stickers only). The button's size now follows the rest art (it
+  followed the larger halo image).
+- **Test.** `test_sticker_edge_focus`: every baked lettering size is inside the concept's edge / body range and strictly under
+  the old fixed 12; the CANCEL, BREACH and BURN IT PNGs' opaque height is the lettering block plus 4 x the new border (so an
+  old bake fails it).
+
+### 2026-10-05 — Parity fix — sticker edge and sticker focus (designer)
+Designer 2026-10-05: at text 1.0 the stickers have too much white die-cut edge; and focus on EVERY sticker (all kinds, the
+harm red one too) is a rainbow gloss sweep plus the corner curl, the sticker keeping its fill, no lime brackets or halo.
+Files: `vinyl_sticker.gd` + `shaders/kit/vinyl_sticker.gdshader`, `chrome/verb_sticker.gd` + `shaders/chrome/vinyl_sticker.gdshader`,
+`send_it_sticker.gd`, `raid_sticker.gd`, `pause_menu.gd`, `test_sticker_edge_focus.gd` (new), `test_parity_pause.gd`.
+- **Where the edge came from.** (1) `VinylSticker` (HoloSticker words, the pause rows, LEAVE / FIGHT WON, RaidSticker, SendIt's kit
+  art, SystemWordSticker, VerbSticker's kit fills) used a FIXED `BORDER_PX` 18 px edge for words: on the pause rows (22 px
+  lettering) that is 0.8 of the lettering. (2) `VerbSticker` set it to 0.2 of the lettering. (3) The baked stickers (4C: the
+  title verbs, the slots' LOAD / DELETE, the dialogs' CANCEL / BURN IT) are the concept's own bakes: ui31.sticker `border=12` on
+  the 1920 board, scaled with the bake (1/3 of the 2x bake = 2/3 board px on the 1280 frame), so their edge / body height is the
+  concept's: 12 / (0.74 x size + 24) = 0.17 to 0.21 at sizes 50-66 (0.27 for CANCEL at 28 px in ui_kit, 0.08 for the 144 px
+  title hero). They match the concept at the same on-screen size, so they are **not** re-baked (re-baking with the same code
+  and border gives the same pixels at that size).
+- **The fix (one place).** `VinylSticker.border_px` is automatic (-1): for a WORD `edge_for(px) = min(px x EDGE_SHARE 0.2,
+  EDGE_MAX_PX 8 x text scale)`: proportional on a menu sticker, capped at the concept's 12 board px (8 px at 1280) on a hero
+  one. `VerbSticker` no longer sets its own. Object stickers keep 18 (explicit sets in ransom_lock, raid_drag_pencil and
+  site_marker_view are unchanged). The tests hold edge / body height inside the concept's range 0.07-0.28 for every lettering step
+  at 1.0 / 1.6 / 2.0, for HoloSticker.word, VerbSticker (kit), RaidSticker, and the baked concept sizes by the concept's formula.
+- **Focus = rainbow sweep + curl, built once.** `VinylSticker` (HOVER state = focus or hover): the shader's `rainbow` colours the
+  gloss band in holo-foil hues over the sticker's own fill; the HOVER curl (`fold`) stays. Reduce effects (and headless): the end
+  state is a static sheen (`RAINBOW_STATIC_K` / `_POS`) plus the curl. `VerbSticker` drawn and baked art (title verbs, slots,
+  dialog stickers, NEW CAMPAIGN START): the chrome shader's `rainbow` band swept by the existing sweep tween (replacing the baked
+  white `_sweep_NN` frames), a static sheen at `STATIC_SHEEN_AT` with no motion, and `_draw_curl` (a peeled corner flap and its
+  shadow) as the drawn stand-in for the kit's fold. The lime halo of the baked `_focus` art, the kit frame, SendIt's halo and
+  RaidSticker's bracket box are gone; colour-blind safe (curl + lift read without colour). MotionSkip is unchanged (the sweep and
+  curl are the same motions).
+- **Not changed (not vinyl stickers):** StickerButton (taped paper notes), ChoiceSticker (the event plate) and HudNameSticker
+  (static, no focus) keep their own focus looks: logged for the designer.
+- **Pause menu, same pass (designer):** "Down with the Oligarchy!" sits BESIDE RESUME (right of it, in the gap clear of the
+  right column), the key hint BELOW RESUME. When the two columns would not fit the menu width the note wraps below the hint
+  (x1.6), and at 2.0 every note drops (`note_mode` BESIDE / BELOW / NONE).
+- **Tests:** new `test_sticker_edge_focus` (edge ratios; every kind's focus = HOVER with rainbow + curl; static end state;
+  drawn stickers' shader rainbow and `_focused`), `test_parity_pause` (note beside, hint below, wrap and drop). Dropped: none.
+
 ### 2026-10-05 — Parity fix — pause menu as stickers (designer layout)
 Designer layout 2026-10-05, supersedes the icon rows of "Parity fix — pause menu" and options A/B/C of
 `docs/art_review/PARITY/fixes/pause_layouts/` (mockups kept). Files: `scripts/ui/kit/pause_menu.gd`,
@@ -622,7 +743,7 @@ calls `confirm_quit`, the stickers have no text).
   **Selection** = the kit's HOVER state (lift, curl, the `sticker_gloss_sweep`), looping while the sticker has focus
   (`ambient_sweep`), no lime bracket or halo. The kit's rainbow is the HOLO fill's foil only; the gloss sweep of the other
   fills is white. Applying HOLO to the focused sticker would change its colour (and make the harm sticker rainbow), so I did
-  not: **open question for the designer** (rainbow on focus for every sticker, yes / no).
+  not. **Closed 2026-10-05 (designer): rainbow gloss sweep plus the curl on every sticker's focus; see "Parity fix — sticker edge and sticker focus".**
 - **Sizes.** Lettering 34 px (Resume) / 22 px (rows) at text 1.0; stickers follow the text size up to 1.5x
   (`STICKER_SCALE_MAX`, as `VerbSticker.SCALE_MAX`) so the two columns fit the 760 px menu at 2.0.
 - **Notes.** `PencilWords` (the kit's grease pencil, Permanent Marker, drawn so it translates): "Down with the Oligarchy!"
@@ -785,6 +906,46 @@ built that way since TITLE-01b.
 - **Review:** `docs/art_review/PARITY/fixes/TITLE-01c.jpg` (round 33 gif frames | the title's frames 80 ms apart; v4 gif
   | the loot page's frames; event, shop, reduce effects, tier 0; right-half details). The capture tool gained
   `--strip=N` (frames 80 ms apart) and `--raw` (the city without the tilt-shift, for diagnosis).
+
+### 2026-10-05 — Parity fix — TITLE-01d no yellow cast, pulled back (designer decision)
+Designer feedback round 4 (2026-10-05): the title city "is looking really good" (unchanged: the control capture
+matches round 3); the loot page and the HQ have a yellowish hue; loot / event (and the HQ) are a little too zoomed in.
+- **Loot / event, cause:** their look shared the title's grade, whose haze lift (0.04, 0.03, 0) has no blue. Over the
+  title's purple Halcyon district it reads pink; over the Solace district (teal / green roofs, amber and orange lane
+  lights) the same lift turned the city olive-yellow (backdrop bright pixels measured (0.44, 0.37, 0.33), blue lowest;
+  round 32 `reward_screen_v2`'s margins are (0.13, 0.10, 0.13), violet). **Fix:** `overlay_city_backdrop.tres` gets
+  its own violet grade: gain (0.80, 0.70, 0.86), lift (0.03, 0, 0.035) (saturation, haze, kept lights and traffic as
+  the title's). The title's look is untouched.
+- **Loot / event, framing:** ortho 300 -> 440 BU (the Grid's own width): more city reads round the page.
+- **HQ, cause:** main's HQ page still draws the 2D NeonCity through CyberdeckBackground (no 3D city there; the shared
+  3D grade, 5e's day look and the Grid / raid are violet, not yellow, so nothing shared changes). Its campaign
+  district's territory and influence inks are the corp colour (Solace lime #96FF46) plus the base neon inks' green
+  and amber, over the default COOL HAZE ink paling (a cyan tint): the window cast lime-yellow (measured mean
+  (0.20, 0.29, 0.24)). Paling the inks lavender (INK_SETS "FADED PRINT") barely moved it (the street inks are never
+  paled). **Fix (minimal, in my file):** `CyberdeckBackground.NIGHT_TINT` (0.94, 0.78, 1.0) as the 2D city's
+  `modulate` (a multiply over its picture, not its bake: no bake key changes, the warm-ups that build the same class
+  match): mean now (0.19, 0.23, 0.24), the green cast gone, the corp's lime kept as an accent.
+  **For HQ-BUILD (replacing the HQ page with the 3D raid-band city):** this is one line in
+  `CyberdeckBackground._init` plus the constant; drop it with the 2D HQ city, or keep it if any page keeps the 2D
+  city. The 3D city needs nothing (its grade is violet). HQ framing: not changed here (the 2D city frames the corp's
+  HQ at `hq_anchor` at zoom 1; HQ-BUILD's 3D framing replaces it); to read more city there, frame wider than the
+  Grid band's default ortho.
+- **Colour space (the arena agent's lead):** not part of this hue. BlurredCityBackdrop draws the city's ViewportTexture
+  with `draw_texture_rect` (no canvas shader reads it as a sampler), and the tilt-shift reads the screen. Probe
+  (`title_backdrop_capture --raw`: the window's frame against `city.get_texture().get_image()`, the tilt-shift off):
+  title frame (0.293, 0.242, 0.376) vs viewport (0.300, 0.246, 0.385), ratio ~0.98, no ~4x mid-tone loss. The HQ page
+  draws no 3D viewport (2D NeonCity bake). The Grid / HQ-run / raid pages were not changed (designer to rule there).
+- **The run pages' bake test:** `test_anim_r5_city.gd::test_the_runs_pages_open_on_their_bake_behind_the_3d_route`
+  asked the shop page's city to be covered by a bake; under the ruling the Mainframe hides the city behind its facade
+  (no city there), so the shop step now checks the facade shows and the city is hidden; loot and event keep the
+  covered-bake check (headless they are the 2D city; windowed, the blurred 3D city).
+- **Note:** the event's CAM feed copies the city behind the page; with the violet, pulled-back city it reads darker.
+- **Measured:** loot tier 2 at 1920x1080, v-sync off: 3.39 ms a frame, backdrop city GPU 1.81 ms (wider view, smaller
+  cars), under the 8 ms budget.
+- **Tests** (`test_parity_title01_backdrop.gd`): the overlay's grade has no yellow cast (blue lift >= green and red,
+  blue gain > green) and its ortho is wider than the title's; a plain CyberdeckBackground carries NIGHT_TINT (green
+  under red and blue).
+- **Review:** `docs/art_review/PARITY/fixes/TITLE-01d.jpg` (concept | before | after: loot, event, HQ; title control).
 
 ### 2026-10-05 — Art direction — ART-3 6w raid on the city
 ART-3 wave 2b, ART-6 on the unified city (ART_BIBLE v2 §4.1, §4.8, Appendix C #13, plan G10; refs round 40
@@ -9016,7 +9177,10 @@ and annotated in the GDD where it changes a rule.
   (`city_quality` 1) was measured on the dev PC only (interim, under load; `docs/art_review/ART-12/perf.md`).
   A real Deck run of `tools/visual_qa/perf_pack.tscn --tiers=1 --size=1280x800` is owed when the
   designer has a Deck; scaling from this PC suggested ~10-12 ms a frame there (5e).
-- **Parity fix S-CARDFACE (2026-10-05, default implemented, see "Parity fix — one card face"):** (1) the combat hand
+- ~~**Parity fix S-CARDFACE (2026-10-05, default implemented, see "Parity fix — one card face"):**~~ **Answered by the
+  designer 2026-10-05, see "Parity fix — one card face: designer answers":** (1) lower floor at rest + bigger grown
+  card (built); (2) flights to the piles: yes, queued for the animation pass (R7_REEVALUATION_PREP F1); (3) RECYCLE
+  BIN confirmed. Original question: (1) the combat hand
   at 1.0 holds one or two lines of rules text at rest (the 12 px floor on a 112 x 148 face); the grown card shows every word
   (all but Hot Patch and Overdrive at 1.0, which need the tooltip / inspect). Keep, or a bigger hand card / a lower
   floor at rest? (2) The deal and discard flights still start and land at the hand row's ends; fly them to the new DECK

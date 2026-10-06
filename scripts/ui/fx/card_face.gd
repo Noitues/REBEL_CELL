@@ -117,6 +117,9 @@ const PIPS_LEFT := 150.0
 ## A rules line's ink (share of its lettering): its baseline under the row's top, and its whole height
 ## (capitals to descenders; the type's own line metrics carry a gap the face has no room for).
 const TEXT_BASE := 0.9
+## The rules text's ink outline (px) and its alpha.
+const TEXT_OUTLINE := 2
+const TEXT_OUTLINE_ALPHA := 0.7
 const TEXT_INK := 1.15
 
 
@@ -131,7 +134,8 @@ static func text_fit(card: ZineCard) -> Dictionary:
 	var ky := card.size.y / UNIT.y
 	var kx := card.size.x / UNIT.x
 	var grown := card.hover_scale > 1.0
-	var floor_px := maxi(1, ceili(card.body_floor / card.hover_scale)) if grown else card.body_floor
+	var grown_px := card.grown_floor if card.grown_floor > 0 else card.body_floor
+	var floor_px := maxi(1, ceili(grown_px / card.hover_scale)) if grown else card.body_floor
 	var gen := font_px(card, TEXT_PX)
 	var foot := card.size.y - card.buy_room() if card.buy_button != null else INF
 	# [top, width, line share, bottom, pictograms shown] in face px
@@ -311,6 +315,8 @@ static func draw(card: ZineCard) -> void:
 			t = t.substr(0, maxi(0, t.length() - 1)) + "…"
 		var y := float(fit["top"]) + i * float(fit["line"]) + bfs * TEXT_BASE
 		var rw: float = (fit["widths"] as PackedFloat32Array)[i]
+		# S-CARDFACE b: an ink outline keeps small words legible where the face's gloss streak crosses them
+		card.draw_string_outline(body, Vector2((size.x - rw) * 0.5, y), t, HORIZONTAL_ALIGNMENT_CENTER, rw, bfs, TEXT_OUTLINE, Color(Palette.INK, TEXT_OUTLINE_ALPHA))
 		card.draw_string(body, Vector2((size.x - rw) * 0.5, y), t, HORIZONTAL_ALIGNMENT_CENTER, rw, bfs, Palette.TEXT_HI)
 	# The key hint on a dark chip at the art panel's corner.
 	var kr := key_rect(card)

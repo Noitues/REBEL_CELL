@@ -1007,6 +1007,11 @@ func _s_combat_hover() -> void:
 	if combat == null:
 		return
 	combat._preview_card(0)
+	# S-CARDFACE b: the pointer's own effects on the card too (lift, growth with every word, neighbours aside)
+	for c in combat._hand_box.get_children():
+		if c is ZineCard:
+			(c as ZineCard).mouse_entered.emit()
+			break
 	await _frames(SETTLE_FRAMES)
 
 
