@@ -100,8 +100,10 @@ func test_the_hq_idle_pins_only_the_bible_4_5_sites_and_shows_one_tag() -> void:
 			assert_eq(String(spec["status"]), SiteMarker.ST_CORPORATE, "%s: still the corp's" % n["id"])
 		if c.grid.is_claimed(n["id"]):
 			assert_true(pinned, "%s: the Cell's nodes always show" % n["id"])
-		assert_eq(String(n.get("label", "")) != "", n["id"] == hq.selected_site, "%s: one name tag, the selection's" % n["id"])
 	assert_gt(unpinned, 0, "the selectable plain Sites hide until hovered")
+	assert_eq(ov.tag_rule, CityMapOverlay.TagRule.FOCUS, "B3's clutter rule on the HQ idle")
+	for id in ov.tagged_ids():
+		assert_eq(id, hq.selected_site, "one name tag, the selection's (%s)" % id)
 	# A hovered hidden Site shows with its tag; the pointer leaving takes it off.
 	var hidden_id: StringName = &""
 	for n in ov.nodes:
@@ -111,11 +113,11 @@ func test_the_hq_idle_pins_only_the_bible_4_5_sites_and_shows_one_tag() -> void:
 	for n in ov.nodes:
 		if n["id"] == hidden_id:
 			assert_true(ov.marker_shown(n), "hovered: it shows")
-			assert_ne(String(n["label"]), "", "with its tag")
+			assert_true(ov.tag_allowed(n), "with its tag")
 	hq._hq_hover_tag(&"")
 	for n in ov.nodes:
 		if n["id"] == hidden_id:
-			assert_eq(String(n["label"]), "", "and goes")
+			assert_false(ov.tag_allowed(n), "and goes")
 	# No disc on the ground for a hidden Site; a link only where both its ends show.
 	var shown := {}
 	for n in ov.nodes:

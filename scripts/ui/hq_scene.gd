@@ -1737,6 +1737,8 @@ func _build_hq_page(page_name: String) -> void:
 	if not raid_mode:
 		# B4 (D7): a hidden Site leaves no disc on the ground decal either.
 		city_overlay.decal_shown_only = true
+		# B3's clutter rule (D7): at most one tag, the selection's; the lit (hovered) Site's too.
+		city_overlay.tag_rule = CityMapOverlay.TagRule.FOCUS
 		city_overlay._feed_decal()
 	if raid_mode:
 		city_overlay.node_clicked.connect(func(id: StringName) -> void:
@@ -2319,7 +2321,8 @@ func hq_idle_graph(g: Dictionary) -> Dictionary:
 		var id: StringName = m["id"]
 		if id == selected_site or bool(m.get("pinned", true)):
 			shown[id] = true
-		m["label"] = String(m.get("name", m.get("label", ""))) if id == selected_site else ""
+		# Every Site keeps its name; B3's clutter rule (TagRule.FOCUS) shows the one tag.
+		m["label"] = String(m.get("name", m.get("label", "")))
 		nodes.append(m)
 	var edges: Array[Dictionary] = []
 	for e: Dictionary in g["edges"]:
@@ -2377,13 +2380,8 @@ static func pinned_at_hq(spec: Dictionary) -> bool:
 func _hq_hover_tag(id: StringName) -> void:
 	if city_overlay == null or not is_instance_valid(city_overlay) or panel_name != "hq":
 		return
-	for n: Dictionary in city_overlay.nodes:
-		var nid: StringName = n["id"]
-		if nid == selected_site:
-			continue
-		n["label"] = String(n.get("name", "")) if nid == id else ""
-	# The hovered Site lights (a hidden one shows while pointed at, bible 4.5) and the tags
-	# are laid out again with its name.
+	# The hovered Site lights (a hidden one shows while pointed at, bible 4.5) and takes its
+	# tag (B3's TagRule.FOCUS: the selection and the lit node).
 	city_overlay.hover_id = id
 
 
