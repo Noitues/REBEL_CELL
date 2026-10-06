@@ -456,6 +456,7 @@ Cards,Cards
 Cards in %s's deck (VIEW LOADOUT shows them).,Cards in %s's deck (VIEW LOADOUT shows them).
 "Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on a nudge button (that sets the way they turn), slice cards on a slice. While you aim, the result chips and the dashed acid arc show the result before you commit.","Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on a nudge button (that sets the way they turn), slice cards on a slice. While you aim, the result chips and the dashed acid arc show the result before you commit."
 Cascade: %s takes %d damage: HP %d → %d.,Cascade: %s takes %d damage: HP %d → %d.
+"Cell cyan (palette v2, the default)","Cell cyan (palette v2, the default)"
 Central Server,Central Server
 Central Server (star): the corporation's core.,Central Server (star): the corporation's core.
 Central Server: the corporation's core,Central Server: the corporation's core
@@ -498,6 +499,7 @@ Click a Site to open it on the City Grid.,Click a Site to open it on the City Gr
 "Click a key, then press the new one. Cards stay on 1-9.","Click a key, then press the new one. Cards stay on 1-9."
 Click to play.,Click to play.
 Close,Close
+Cobalt (deep blue terminal),Cobalt (deep blue terminal)
 Codex,Codex
 Colour-blind correction (patterns and glyphs stay the main cue),Colour-blind correction (patterns and glyphs stay the main cue)
 Common,Common
@@ -869,6 +871,7 @@ Go,Go
 Gold keyring: an Exploit Site (always T2). It holds one Exploit; you need 3 to breach the Central Server. Point at it for the Exploit.,Gold keyring: an Exploit Site (always T2). It holds one Exploit; you need 3 to breach the Central Server. Point at it for the Exploit.
 Gold mark P%d: phase %d starts at %d%% HP.,Gold mark P%d: phase %d starts at %d%% HP.
 Good for you: %s,Good for you: %s
+Graphite (neutral grey terminal),Graphite (neutral grey terminal)
 "Grey + check: cleared, used up and not claimed. You can still patrol it for loot, Heat and Rank.","Grey + check: cleared, used up and not claimed. You can still patrol it for loot, Heat and Rank."
 Grey broken link: no power flows to a TAKEN or DOWN node.,Grey broken link: no power flows to a TAKEN or DOWN node.
 Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP): it takes hits aimed at this slice.
@@ -1040,6 +1043,7 @@ Inner ring segment %d: Rank 3 lets you swap it for another.,Inner ring segment %
 Instant (results at once),Instant (results at once)
 "Integrity before and after, and whether the node held.","Integrity before and after, and whether the node held."
 Intel,Intel
+Interface skin (terminal colours only; meanings and layout stay),Interface skin (terminal colours only; meanings and layout stay)
 "It gets %d through, but only %d HP are left to take.","It gets %d through, but only %d HP are left to take."
 It lands on one slice at random; the odds by slice type follow.,It lands on one slice at random; the odds by slice type follow.
 Its needle lands on %s.,Its needle lands on %s.
