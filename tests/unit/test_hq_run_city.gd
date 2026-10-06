@@ -263,11 +263,13 @@ func test_the_backdrop_takes_the_city_close_up_by_tier_and_frames_the_place() ->
 		assert_eq(BackdropCatalog.city_mode(_city, t, true), _city.backdrop_city_tiers[t], "tier %d" % t)
 	var lots := CityLayout.site_points(_solace)
 	var site := BackdropCatalog.city_shot(_city, BackdropCatalog.place(&"solace", false, false, &"t1_a"), lots, VIEW)
-	assert_eq(site["focus"], "site", "a regular fight frames its Site")
-	assert_eq(site["lot"], lots[&"t1_a"])
+	# Parity fix S-ARENA (BACKDROP-02): Solace's Site building stands on the Site's lot (kept
+	# inside the city's edge), fitted into backdrop_site_frame (test_parity_arena_backdrop).
+	assert_eq(site["focus"], "site_landmark", "a regular fight frames its Site's building")
+	assert_eq(site["lot"], BackdropCatalog.site_close_up_lot(_city, lots[&"t1_a"]).floor() + Vector2(0.5, 0.5))
 	assert_eq(site["won_site"], &"t1_a", "the Site's lights turn once won")
 	var cam: CityIsoCamera = site["camera"]
-	assert_eq(cam.ortho, _city.backdrop_site_ortho)
+	assert_gte(cam.ortho, _city.backdrop_site_ortho, "never closer than the plain Site framing")
 	var boss := BackdropCatalog.city_shot(_city, BackdropCatalog.place(&"solace", true, false), lots, VIEW)
 	assert_eq(boss["focus"], "hq", "a boss fight frames the HQ")
 	assert_eq(boss["stage"], &"")

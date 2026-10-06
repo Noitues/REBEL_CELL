@@ -150,6 +150,9 @@ const PILLAR_HEIGHT_BIG := 70.0
 const TAG_FONT := 13
 const TAG_PAD := 3.0
 const LABEL_GAP := 4.0
+## Parity fix (GRID-13): the least room between a label and another label or a marker (px x
+## the map's k): labels never touch.
+const LABEL_CLEAR := 3.0
 ## Candidate rings a label may step out to when its first spots are taken.
 const LABEL_RINGS := 3
 ## Label priorities (lower is placed first).
@@ -1605,8 +1608,23 @@ const TARGET_RADIUS := 48.0
 const TARGET_FLAT := 0.62
 const TARGET_WIDTH := 8.0
 const TARGET_WORD_AT := Vector2(-2.0, 0.7)
+## Parity fix (GRID-03): where the TARGET word may go, in turn (shares of the radius from the
+## circle's centre to the word's baseline-left): below left as drawn, then below right, below,
+## left.
+const TARGET_WORD_SPOTS: Array[Vector2] = [TARGET_WORD_AT, Vector2(0.2, 0.9), Vector2(-0.9, 1.5), Vector2(-2.6, -0.1)]
+## ... then wholly left of the circle, its baseline at these shares of the radius under the
+## centre (big words: a word wider than the circle never reaches past it).
+const TARGET_WORD_LEFT_ROWS: Array[float] = [0.7, 0.0, -0.7, 1.4, -1.4, 2.1, -2.1]
 const TARGET_SEED := 351
 const BOSS_CHIP_GAP := 10.0
+## Parity fix (GRID-03): the chip's slides along the circle (shares of how far it can slide and
+## still span the circle's centre), tried in turn when a marker is in its way.
+const BOSS_CHIP_SLIDES: Array[float] = [0.0, -0.5, 0.5, -1.0, 1.0]
+## ... and the rows it may step out (one chip height and gap each) over or under the circle.
+const BOSS_CHIP_ROWS := 3
+## Parity fix (GRID-13): the hand circle's widest reach as a share of its radii
+## (PencilShapes.hand_circle: 1 + its wobble 0.035 + its drift 0.05).
+const TARGET_REACH := 1.085
 ## Fight won (D17): the lit windows on a won Site's front walls: rows per wall, window step
 ## along a wall and dot radius (city px), and the share of the wall the rows span.
 const WON_ROWS := 3
@@ -1696,19 +1714,169 @@ func _draw_boss_chip(n: Dictionary, at: Vector2) -> void:
 	var k := _k()
 	var f := Palette.mono()
 	var fs := label_font_size()
-	var word := tr_word(SiteMarker.BOSS_CHIP) % [boss_exploits.x, boss_exploits.y]
-	var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var word := _boss_chip_word()
 	var pad := TAG_PAD * k
-	var box := Vector2(w, f.get_height(fs)) + Vector2(pad, pad) * 2.0
-	var circle := Rect2(at - Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT) * k, Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT) * 2.0 * k)
-	var r := Rect2(Vector2(at.x - box.x * 0.5, circle.position.y - BOSS_CHIP_GAP * k - box.y), box)
-	# Kept on the map's open part (beside the column), still above the pencil.
-	var area := label_area()
-	r.position.x = clampf(r.position.x, area.position.x, maxf(area.position.x, area.end.x - box.x))
+	var r: Rect2 = boss_layout(n).get("chip", _boss_chip_box(at))
 	boss_chip_rect = r
 	_c.draw_rect(r, Color(Palette.NIGHT_SKY, 0.9))
 	_c.draw_rect(r, Palette.RESIST_GOLD, false, maxf(1.0, k))
 	_c.draw_string(f, r.position + Vector2(pad, pad + f.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.RESIST_GOLD)
+
+
+## True when node `n` is the Central Server (the boss: its chip and TARGET pencil).
+static func is_boss(n: Dictionary) -> bool:
+	return n.has("marker") and n["marker"].get("kind") == SiteMarker.KIND_CENTRAL_SERVER
+
+
+func _boss_chip_word() -> String:
+	return tr_word(SiteMarker.BOSS_CHIP) % [boss_exploits.x, boss_exploits.y]
+
+
+## The TARGET circle's rect round the boss's icon point `at` as drawn (local px): the hand
+## circle's widest wobble and its wax stroke included.
+func _target_circle_rect(at: Vector2) -> Rect2:
+	var k := _k()
+	var radii := Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT) * TARGET_REACH + Vector2(TARGET_WIDTH, TARGET_WIDTH) * 0.5
+	return Rect2(at - radii * k, radii * 2.0 * k)
+
+
+## Parity fix (GRID-03 / GRID-13): the boss chip's rect for the TARGET circle round `at`
+## (local px), its full width (the words' own), clear of the circle as drawn and kept on the
+## map's open part: over the circle, else (another marker there) under it, left or right of it.
+## Returns the first spot clear of `others` (other markers' rects), else the one over it.
+func _boss_chip_box(at: Vector2, others: Array[Rect2] = []) -> Rect2:
+	var k := _k()
+	var f := Palette.mono()
+	var fs := label_font_size()
+	var w := f.get_string_size(_boss_chip_word(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var pad := TAG_PAD * k
+	var box := Vector2(w, f.get_height(fs)) + Vector2(pad, pad) * 2.0
+	var circle := _target_circle_rect(at)
+	var gap := BOSS_CHIP_GAP * k
+	var area := label_area()
+	# Over or under the circle (centred, then slid along so it still spans the circle's
+	# centre), then beside it; the least covered spot when none is clear.
+	var spots: Array[Vector2] = []
+	var slide := maxf(0.0, box.x * 0.5 - circle.size.x * 0.25)
+	for row in BOSS_CHIP_ROWS:
+		var out := row * (box.y + gap)
+		for y in [circle.position.y - gap - box.y - out, circle.end.y + gap + out]:
+			for s in BOSS_CHIP_SLIDES:
+				spots.append(Vector2(at.x - box.x * 0.5 + s * slide, y))
+	spots.append(Vector2(circle.position.x - gap - box.x, at.y - box.y * 0.5))
+	spots.append(Vector2(circle.end.x + gap, at.y - box.y * 0.5))
+	var best := Rect2()
+	var best_cover := INF
+	for p in spots:
+		var r := Rect2(p, box)
+		r.position.x = clampf(r.position.x, area.position.x, maxf(area.position.x, area.end.x - box.x))
+		if r.intersects(circle):
+			continue  # clamped back onto its own pencil
+		var cover := 0.0
+		for o in others:
+			if r.intersects(o):
+				cover += r.intersection(o).get_area()
+		if cover < best_cover:
+			best = r
+			best_cover = cover
+		if cover <= 0.0:
+			break
+	return best if best_cover < INF else Rect2(spots[0], box)
+
+
+## Parity fix (GRID-03): the TARGET word's rect with its baseline-left at `word_at` (local
+## px, its shadow included: GreasePencilWord.global_rect in the overlay's px; a word in capitals
+## inks nothing under its baseline, so its rect ends there).
+func _target_word_rect(word_at: Vector2) -> Rect2:
+	var k := _k()
+	var font := Palette.pencil()
+	var px := UiTheme.font_px(UiTheme.HEADING)
+	var text := tr_word("TARGET")
+	var sz := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
+	if text == text.to_upper():
+		sz.y = font.get_ascent(px)
+	var r := Rect2(Vector2(0, -font.get_ascent(px)), sz).grow(2.0)
+	r.end += GreasePencilMark.SHADOW_OFFSET
+	return Rect2(word_at + r.position * k, r.size * k)
+
+
+static func _hits_any(r: Rect2, rects: Array[Rect2]) -> bool:
+	for o in rects:
+		if r.intersects(o):
+			return true
+	return false
+
+
+## Parity fix (GRID-03 / GRID-13): the boss's chip and TARGET pencil laid round its icon
+## point, clear of the other markers where a spot is: {"chip": Rect2, "circle": Rect2,
+## "word": Rect2, "word_at": Vector2} (local px; empty off the map). The word tries
+## TARGET_WORD_SPOTS in turn (the first clear of the markers and the chip), else the first.
+func boss_layout(n: Dictionary) -> Dictionary:
+	var at := icon_pos(n)
+	if at.x == INF:
+		return {}
+	var k := _k()
+	var others: Array[Rect2] = []
+	for o in nodes:
+		if o["id"] == n["id"] or not marker_shown(o):
+			continue
+		var r := icon_rect(o)
+		if r.has_area():
+			others.append(r.grow(LABEL_CLEAR * k))
+	var key := [at, k, label_area(), label_blocks(), _boss_chip_word(), others]
+	if key == _boss_key:
+		return _boss_now
+	var chip := _boss_chip_box(at, others)
+	var avoid: Array[Rect2] = others.duplicate()
+	avoid.append(chip)
+	# On the map's open part (never under the side column, the minimap or the key), then clear
+	# of the markers and the chip; else the spot on the map that covers the least, else the first.
+	var area := label_area()
+	var blocks := label_blocks()
+	var word_at := at + TARGET_WORD_SPOTS[0] * TARGET_RADIUS * k
+	var on_map := Vector2.INF
+	var tries: Array[Vector2] = []
+	for s: Vector2 in TARGET_WORD_SPOTS:
+		tries.append(at + s * TARGET_RADIUS * k)
+	# Big words: wholly left of the circle (its foot, then its middle), so a word wider than
+	# the circle never reaches past it into the side column.
+	var wide := _target_word_rect(at).size.x
+	var circle := _target_circle_rect(at)
+	for sy in TARGET_WORD_LEFT_ROWS:
+		tries.append(Vector2(circle.position.x - wide, at.y + sy * TARGET_RADIUS * k))
+	var least := INF
+	for p in tries:
+		var w := _target_word_rect(p)
+		if not area.encloses(w) or _hits_any(w, blocks):
+			continue
+		var cover := 0.0
+		for o in avoid:
+			if w.intersects(o):
+				cover += w.intersection(o).get_area()
+		if cover < least:
+			on_map = p
+			least = cover
+		if cover <= 0.0:
+			break
+	if on_map.x != INF:
+		word_at = on_map
+	_boss_now = {"chip": chip, "circle": _target_circle_rect(at), "word": _target_word_rect(word_at), "word_at": word_at}
+	_boss_key = key
+	return _boss_now
+
+
+var _boss_key: Array = []
+var _boss_now: Dictionary = {}
+
+
+## Parity fix (GRID-03 / GRID-13): what the boss covers round its icon point (local px):
+## the CENTRAL SERVER chip, the TARGET circle and the TARGET word. No label goes on them
+## (bible §1.2: no UI on grease pencil).
+func boss_rects(n: Dictionary) -> Array[Rect2]:
+	var l := boss_layout(n)
+	if l.is_empty():
+		return [] as Array[Rect2]
+	return [l["chip"], l["circle"], l["word"]] as Array[Rect2]
 
 
 ## The markers' layer follows the node layer: one SiteMarkerView per shown v4 Site (made,
@@ -1766,7 +1934,7 @@ func _sync_target(boss: Dictionary) -> void:
 		return
 	var at := icon_pos(boss)
 	var k := _k()
-	var key := [at, k]
+	var key := [at, k, boss_layout(boss).get("word_at")]
 	if key == _target_key and _target_mark != null:
 		return
 	_target_key = key
@@ -1786,7 +1954,7 @@ func _sync_target(boss: Dictionary) -> void:
 	_target_mark.add_stroke(PencilShapes.hand_circle(Vector2.ZERO, Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT), TARGET_SEED))
 	_target_mark.position = at
 	_target_mark.scale = Vector2(k, k)
-	_target_word.position = at + TARGET_WORD_AT * TARGET_RADIUS * k
+	_target_word.position = boss_layout(boss).get("word_at", at + TARGET_WORD_AT * TARGET_RADIUS * k)
 	_target_word.scale = Vector2(k, k)
 
 
@@ -2435,8 +2603,10 @@ func unplaced_with_room() -> Array[StringName]:
 			icons.append({"id": n["id"], "at": icon_pos(n), "r": icon_radius(n)})
 			if tier_of(n) > 0:
 				marks.append(tier_pips_rect(n))
+			if is_boss(n) and marker_shown(n):
+				marks.append_array(boss_rects(n))
 	var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_centre(), "ring_r": ring_radius(),
-		"area": label_area(), "blocks": label_blocks()}
+		"area": label_area(), "blocks": label_blocks(), "clear": LABEL_CLEAR * _k()}
 	for n in nodes:
 		var lines := label_lines(n["id"])
 		if lines.is_empty() or got.has(String(n["id"])) or _roof(n["id"]).is_empty():
@@ -2540,6 +2710,8 @@ func _place_labels() -> Array[Dictionary]:
 			icons.append({"id": n["id"], "at": icon_pos(n), "r": icon_radius(n)})
 			if tier_of(n) > 0:
 				marks.append(tier_pips_rect(n))
+			if is_boss(n) and marker_shown(n):
+				marks.append_array(boss_rects(n))  # parity fix GRID-03: the chip and the TARGET pencil
 			# ANIM-R5 P8: a raid's threat tokens (RaidFxLayer: much bigger than the map's
 			# markers) are obstacles too: no label (CORE's included) is placed under one.
 			if tok > 0.0 and markers.has(n["id"]):
@@ -2575,7 +2747,7 @@ func _place_labels() -> Array[Dictionary]:
 		# label moved in for it would float with nothing to point at.
 		if not _visible_at(t["at"], area, blocks):
 			continue
-		var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_c, "ring_r": ring_r, "area": area, "blocks": blocks}
+		var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_c, "ring_r": ring_r, "area": area, "blocks": blocks, "clear": LABEL_CLEAR * k}
 		# H24 K1: a long name with no room on one line tries two (narrower) lines.
 		var variants: Array[PackedStringArray] = [t["lines"]]
 		var wrapped := wrap_lines(t["lines"])
@@ -2770,6 +2942,9 @@ func _search_spot(t: Dictionary, box: Vector2, obstacles: Dictionary) -> Rect2:
 ## `may_cover_icons`, clear of the labels only (H23 #4: never onto another label).
 func _loose_spot(t: Dictionary, box: Vector2, obstacles: Dictionary, may_cover_icons: bool) -> Rect2:
 	var k := _k()
+	# The last resort keeps the old rule (never on a label or an icon) without the clearance.
+	obstacles = obstacles.duplicate()
+	obstacles["clear"] = 0.0
 	var reach := LABEL_REACH * k
 	var at: Vector2 = t["at"]
 	var tries: Array[Rect2] = []
@@ -2792,6 +2967,7 @@ func _loose_spot(t: Dictionary, box: Vector2, obstacles: Dictionary, may_cover_i
 
 ## True when `rect` covers the icon of a node other than `own`.
 static func _hits_icon(rect: Rect2, obstacles: Dictionary, own: StringName) -> bool:
+	rect = rect.grow(float(obstacles.get("clear", 0.0)))
 	for ic: Dictionary in obstacles["icons"]:
 		if ic["id"] != own and _rect_hits_disc(rect, ic["at"], ic["r"]):
 			return true
@@ -2817,6 +2993,7 @@ static func _visible_at(at: Vector2, area: Rect2, blocks: Array[Rect2]) -> bool:
 
 ## True when `rect` overlaps a label placed before it.
 static func _hits_label(rect: Rect2, obstacles: Dictionary) -> bool:
+	rect = rect.grow(float(obstacles.get("clear", 0.0)))
 	for other: Dictionary in obstacles["placed"]:
 		if rect.intersects(other["rect"]):
 			return true
@@ -2862,6 +3039,7 @@ static func _clamp_into(rect: Rect2, area: Rect2) -> Rect2:
 ## True when `rect` overlaps a placed label, a node icon, a tier pip row or the
 ## selection ring.
 static func _blocked(rect: Rect2, obstacles: Dictionary) -> bool:
+	rect = rect.grow(float(obstacles.get("clear", 0.0)))  # parity fix GRID-13: never touching
 	for other: Dictionary in obstacles["placed"]:
 		if rect.intersects(other["rect"]):
 			return true

@@ -25,6 +25,8 @@ const SEAL_R := 15.0
 ## Margins (px at 1.0): sides, top under the clip, and the footer's room (redactions + meta).
 const PAD := 14.0
 const FOOTER_H := 32.0
+## Room between the last row and the stamp's top (px at 1.0; parity fix, RAID-02 / RAID-11).
+const STAMP_CLEAR := 4.0
 ## Redacted bars: rows, height, the share of the width they run to.
 const REDACT_ROWS := 1
 const REDACT_H := 6.0
@@ -41,6 +43,9 @@ const STAMP_PAD := 6.0
 const CLIP_X := 34.0
 const CLIP_W := 13.0
 const CLIP_H := 34.0
+## How far the clip reaches above the paper's top edge (px at 1.0): what sits above the paper
+## keeps clear of it (parity fix, RAID-02).
+const CLIP_TOP := 10.0
 ## The page's own tilt (degrees): stolen paper is never square.
 const PAGE_TILT := 0.0
 
@@ -70,7 +75,9 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_stamp
 	box.content_margin_left = PAD * _k
 	box.content_margin_right = PAD * _k
 	box.content_margin_top = (CorpPaperPanel.LETTERHEAD_H + DIVISION_ROOM) * _k
-	box.content_margin_bottom = FOOTER_H * _k
+	# Parity fix (RAID-02 / RAID-11): the rows end above the rubber stamp, which sits on the
+	# footer's redactions (round 20-21), never on a row's words.
+	box.content_margin_bottom = maxf(FOOTER_H * _k, CorpPaperPanel.stamp_reach(tr(p_stamp)) + STAMP_CLEAR * _k)
 	add_theme_stylebox_override("panel", box)
 	# 1B's corp paper is the sheet (stock, letterhead, rule, the stamp in its slot).
 	paper = CorpPaperPanel.new()
@@ -107,6 +114,14 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_stamp
 	UiWrap.whole_words(sub_label)
 	sub_label.visible = false
 	body.add_child(sub_label)
+
+
+## The rubber stamp's rect as drawn, global (parity fix, RAID-02 / RAID-11: no row under it).
+func stamp_rect() -> Rect2:
+	if paper == null:
+		return Rect2()
+	var r := paper.stamp_rect()
+	return paper.get_global_transform() * r if r.has_area() else Rect2()
 
 
 ## Sets the small line under the title ("MERIDIAN FREIGHT // WORK ORDER 52-MF-114").
@@ -213,7 +228,7 @@ func _clip(on: CanvasItem, k: float) -> void:
 	for j in 2:
 		var w := (CLIP_W - j * 4.0) * k
 		var h := (CLIP_H - j * 9.0) * k
-		var top := (-10.0 + j * 4.0) * k
+		var top := (-CLIP_TOP + j * 4.0) * k
 		var r := Rect2(x - w * 0.5, top, w, h)
 		on.draw_line(r.position + Vector2(0, w * 0.5), Vector2(r.position.x, r.end.y - w * 0.5), Color(Palette.NIGHT_SKY, 0.6), 3.0 * k)
 		on.draw_line(Vector2(r.end.x, r.position.y + w * 0.5), r.end - Vector2(0, w * 0.5), Color(Palette.NIGHT_SKY, 0.6), 3.0 * k)
