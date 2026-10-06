@@ -12,6 +12,14 @@ const AT := Vector2(300, 260)
 ## Builds the piece for `id` on `host` and plays its motion. Returns the demo's length (s).
 static func play(id: StringName, host: Control) -> float:
 	match id:
+		&"gate_keycard_stagger", &"gate_socket_ring", &"gate_breach_ready":
+			# ART-8 8w: the Central Server gate with all three Exploits (no boss wheel).
+			var g := CentralServerGate.new()
+			var all_kinds: Array[int] = []
+			all_kinds.assign(CentralServerGate.KINDS)
+			g.setup(&"meridian", "Meridian", "THE MASTER MANIFEST", 4, all_kinds, all_kinds.size(), null, null)
+			host.add_child(g)
+			return Motion.seconds(CentralServerGate.STAGGER) * all_kinds.size() + Motion.seconds(CentralServerGate.SLAP) 				+ Motion.seconds(CentralServerGate.RING) + Motion.seconds(CentralServerGate.READY)
 		&"crt_type_on", &"crt_caret_blink", &"crt_hex_scroll":
 			var p := CrtTerminalPanel.new()
 			p.position = AT - Vector2(200, 40)
