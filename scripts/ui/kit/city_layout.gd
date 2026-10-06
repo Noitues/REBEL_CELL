@@ -60,7 +60,33 @@ static func home_label() -> String:
 
 
 ## Grid point (lots) for every Site id of `corp`'s City Grid.
+## ART-5 5e: the layout is spread by CityConfig.site_spread (x2: the Grid frames at ortho
+## ~440 as round 39) and aimed into the corporation's own territory (site_aim_deg turns
+## the layout round its HQ, site_mirror flips it across its run axis), the boss end staying
+## next to the HQ. Presentation only: the Grid's rules never read it.
 static func site_points(corp: CorporationData) -> Dictionary:
+	var cfg: CityConfig = CityView3D.CONFIG
+	return site_points_aimed(corp, float(cfg.site_aim_deg.get(corp.id, 0.0)), bool(cfg.site_mirror.get(corp.id, false)),
+		spread_of(corp.id))
+
+
+## Lots per unit of the layout's run (the Grid's left-right) and cross (up-down) axes at
+## spread 1, the gap the boss end keeps from the HQ's centre, and the cross axis' offset.
+const RUN_HALF := 7.5
+const CROSS_HALF := 5.0
+const BOSS_GAP := 3.5
+const CROSS_OFFSET := 2.5
+
+
+## ART-5 5e: the layout spread of corporation `id` (CityConfig.site_spread).
+static func spread_of(_id: StringName) -> float:
+	return maxf(CityView3D.CONFIG.site_spread, 0.1)
+
+
+## ART-5 5e: the Site layout of `corp` turned `aim_deg` round its HQ (0: the boss end to the
+## right of the Grid, as 5a laid it), mirrored across the run axis when `mirror`, spread by
+## `spread`; the boss end (the Grid data's right edge) stays BOSS_GAP from the HQ's centre.
+static func site_points_aimed(corp: CorporationData, aim_deg: float, mirror: bool, spread: float) -> Dictionary:
 	var out := {}
 	var min_p := Vector2(1e9, 1e9)
 	var max_p := Vector2(-1e9, -1e9)
@@ -69,13 +95,46 @@ static func site_points(corp: CorporationData) -> Dictionary:
 			min_p = min_p.min(sd.map_position)
 			max_p = max_p.max(sd.map_position)
 	var span := (max_p - min_p).max(Vector2(1, 1))
-	var origin := NeonCity.hq_of(corp.id) + Vector2(NeonCity.HQ_LOTS * 0.5, NeonCity.HQ_LOTS * 0.5) - RIGHT * 11.0 + DOWN * 2.5
+	var a := RIGHT.rotated(deg_to_rad(aim_deg))
+	var b := DOWN.rotated(deg_to_rad(aim_deg)) * (-1.0 if mirror else 1.0)
+	var centre := NeonCity.hq_of(corp.id) + Vector2(NeonCity.HQ_LOTS * 0.5, NeonCity.HQ_LOTS * 0.5)
+	var origin := centre - a * (BOSS_GAP + RUN_HALF * spread) + b * CROSS_OFFSET
 	for sd in corp.city_grid.sites:
 		if sd == null:
 			continue
 		var uv := (sd.map_position - min_p) / span * 2.0 - Vector2.ONE
-		out[sd.id] = origin + RIGHT * uv.x * 7.5 + DOWN * uv.y * 5.0
+		out[sd.id] = origin + a * uv.x * RUN_HALF * spread + b * uv.y * CROSS_HALF * spread
 	return out
+
+
+## ART-5 5e (the spread sweep): of layout `points` of `corp`, how many Sites stand in its own
+## territory (`city.territory_at` of the Site's lot), which territories the others fall in,
+## how many sit on an HQ plaza or off the city, and how many share a lot with another Site.
+static func spread_report(city: NeonCity, corp: CorporationData, points: Dictionary) -> Dictionary:
+	var cfg: CityConfig = CityView3D.CONFIG
+	var r := {"sites": 0, "in": 0, "off": {}, "hq": 0, "out": 0, "dup": 0}
+	var lots := {}
+	var ids: Array = points.keys()
+	ids.sort()
+	for id in ids:
+		var p: Vector2 = points[id]
+		var l := Vector2i(floori(p.x), floori(p.y))
+		r["sites"] = int(r["sites"]) + 1
+		var t := city.territory_at(l.x, l.y)
+		if t == corp.id:
+			r["in"] = int(r["in"]) + 1
+		else:
+			var off: Dictionary = r["off"]
+			off[t] = int(off.get(t, 0)) + 1
+		for tr in NeonCity.TERRITORIES:
+			if tr["id"] != &"" and Rect2(tr["at"], Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS)).has_point(Vector2(l) + Vector2(0.5, 0.5)):
+				r["hq"] = int(r["hq"]) + 1
+		if not Rect2(cfg.city_rect).has_point(Vector2(l)):
+			r["out"] = int(r["out"]) + 1
+		if lots.has(l):
+			r["dup"] = int(r["dup"]) + 1
+		lots[l] = true
+	return r
 
 
 ## The campaign's Grid as a graph for the city overlay: every Site on a real building

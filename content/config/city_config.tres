@@ -8,3 +8,10 @@ district_centre = Vector2(2.5, 2.5)
 district_radius = 120.0
 city_rect = Rect2i(-80, -80, 165, 165)
 chunk_lots = 24
+site_spread = 2.0
+site_aim_deg = {
+&"halcyon": 255.0,
+&"meridian": 140.0,
+&"rebel_cell": 270.0
+}
+site_mirror = {}
