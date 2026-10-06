@@ -215,17 +215,23 @@ def site(img, key, kind, state, tier=1, k=0.72):
     return img
 
 
-def socket(img, key, kind, k=0.68, beacon=None):
+def socket(img, key, kind, k=0.68, beacon=None, state="hp100"):
     """The Cell's node at the RAID band: its raid socket (assets/raid/sockets) and a class beacon."""
     c = N[key]
+    if key in DOWN:
+        state, beacon = "down", None
     if beacon:
         strip = A("assets/raid/beacons/%s.png" % beacon)
         fr = strip.crop((0, 0, 220, 260))
         fr = scaled(fr, 0.62)
         # the beacon's pad point (110, 210) on the socket
         img = paste_c(img, fr, c[0], c[1] - (210 - 130) * 0.62 - 6)
-    s = scaled(A("assets/raid/sockets/%s_hp100.png" % kind), k)
+    s = scaled(A("assets/raid/sockets/%s_%s.png" % (kind, state)), k)
     return paste_c(img, s, c[0], c[1] - 4)
+
+
+# Q11: the Cell's nodes drawn DOWN (the white bolt over a greyed socket, ruling 11).
+DOWN: set = set()
 
 
 def name_chip(img, xy, words, col=ORANGE_RING, anchor="l", size=15, sub=None):
@@ -979,6 +985,97 @@ def direction_b_text20(shots: Path) -> Image.Image:
     return img
 
 
+# ---------------------------------------------------------------------------------------- Q11
+# Designer ruling 2026-10-05 asked for examples before deciding Q11 (node verbs as stickers or chips).
+# Every sticker word below is baked by the kit's own sticker code (ui31.sticker, as 4C baked its titles);
+# the price never sits on the sticker (bible 1.2: values that change are never stickers): it is a gold
+# terminal tag under it.
+def node_card(img, box, title, rows, accent=None):
+    """The Cell's own node as a CRT terminal (bible 1.2: the Cell's systems), cyan accent."""
+    x0, y0, x1, y1 = box
+    img = U.term_panel(img, box, title, accent=accent or U.CYAN, seed=51)
+    yy = y0 + 54
+    for a, b, col in rows:
+        U.text(img, (x0 + 16, yy), a, mono(15), (130, 160, 190), "lm", 1.2)
+        U.text(img, (x1 - 16, yy), b, mono(18), col or U.WHITE, "rm", 0.6)
+        yy += 28
+    return img, yy
+
+
+def verb_slot(img, word, price, seed, cx=1716, cy=976):
+    img = U.place(img, stk(word, 84, U.FILL_PINK, seed, True), cx, cy, angle=-3)
+    return gold_price(img, cx, cy + 74, price.split(" ")[0])
+
+
+def b_frame(shots, selected, tag_words=None):
+    """Direction B's page with `selected` circled and the crew hand at rest (no runner lifted)."""
+    img = base(shots, ((0.0, 0.2, 0.25, 0.42),))
+    img = map_layer(img, selected=selected, raid=True, chips=False, select_circle=True, jack_link=False)
+    img = top_bar(img)
+    img = work_order(img, (26, 112), angle=-2.0, w=340, h=236)
+    img = hand_tabs(img, 24, 856, active=0)
+    xs = [380, 580, 780, 980]
+    for k, op in enumerate(CREW):
+        img = crew_card(img, xs[k], 966, op, angle=[-1.0, 1.5, -1.0, 2.0][k])
+    if tag_words:
+        c = N[selected]
+        img = name_chip(img, (c[0] + 70, c[1] - 70), tag_words[0], col=tag_words[1], sub=tag_words[2])
+    return img
+
+
+def q11_claim(shots):
+    img = b_frame(shots, "parcel", ("CLEARED  //  " + NAMES["parcel"], U.LIME, "CAN BE YOUR NODE"))
+    box = (20, 430, 470, 840)
+    img, yy = node_card(img, box, "CLAIM  //  PARCEL SORTING HALL", [("STATUS", "CLEARED (neutral)", None),
+                                                                      ("LINK", "next to CUSTOMS PRE-CLEARANCE", None)])
+    U.text(img, (box[0] + 16, yy + 2), "PICK THE NODE TO BUILD", mono(15), U.CYAN, "lm", 1.4)
+    tiles = [("RELAY", "20", "ok"), ("FIREWALL RELAY", "30", "sel"), ("SAFEHOUSE", "20", "ok"),
+             ("VAULT TERMINAL", "25", "ok"), ("PROXY RELAY", "25", "ok"), ("COMPILER RACK", "unlock 30", "lock")]
+    for k, (n, p, st) in enumerate(tiles):
+        x = box[0] + 16 + (k % 2) * 212
+        y = yy + 26 + (k // 2) * 52
+        state = {"ok": "idle", "sel": "pressed", "lock": "disabled"}[st]
+        img = U.term_button(img, (x, y, x + 204, y + 44), n, p + ("" if st == "lock" else " SCHEM."), state)
+    img = U.term_button(img, (box[0] + 16, box[3] - 58, box[2] - 16, box[3] - 14), "PATROL IT INSTEAD", "a full run, no objective", "idle")
+    return verb_slot(img, "CLAIM", "30 SCHEMATICS", 81)
+
+
+def q11_repair(shots):
+    DOWN.add("customs")
+    img = b_frame(shots, "customs", ("DOWN  //  " + NAMES["customs"], (240, 240, 240), "no bonus until repaired"))
+    DOWN.discard("customs")
+    box = (1452, 690, 1900, 900)
+    img, yy = node_card(img, box, "CUSTOMS PRE-CLEARANCE", [("OWNER", "YOUR NODE", U.LIME),
+        ("TYPE", "Firewall Relay (turret 3 dmg)", None), ("STATE", "DOWN", (240, 240, 240)),
+        ("INTEGRITY", "0 / 30", U.HARM), ("RAID", "on route A: repair before it", U.HARM)])
+    return verb_slot(img, "REPAIR", "15 SCHEMATICS", 82)
+
+
+def q11_compare(shots):
+    """UPGRADE (the Safehouse) and PATCH (CORE): as terminal chips on the node card (left) vs as the
+    sticker in the verb slot (right)."""
+    frames = []
+    for key, title, rows, word, price, chip_words, chip_sub, seed in (
+            ("returns", "RETURNS PROCESSING CENTRE",
+             [("TYPE", "Safehouse (1 post)", None), ("POST", "NOVA (Ghost R1)", U.CYAN), ("LEVEL", "0  ->  1", None), ("INTEGRITY", "20 / 20", U.GREEN)],
+             "UPGRADE", "30 SCHEMATICS", "UPGRADE  ->  LEVEL 1", "30 Schematics", 83),
+            ("core", "CORE  //  YOUR HOME SERVER",
+             [("TYPE", "Home server", None), ("INTEGRITY", "44 / 50", U.AMBER), ("AT 0", "the campaign is lost", U.HARM), ("PATCH", "1 Schematic a point", None)],
+             "PATCH", "6 SCHEMATICS", "PATCH  +6  ->  50 / 50", "6 Schematics", 84)):
+        for as_sticker in (False, True):
+            img = b_frame(shots, key)
+            box = (1452, 680, 1900, 910)
+            img, yy = node_card(img, box, title, rows)
+            if as_sticker:
+                img = verb_slot(img, word, price, seed)
+            else:
+                img = U.term_button(img, (box[0] + 16, box[3] - 74, box[2] - 16, box[3] - 18), chip_words, chip_sub, "focus")
+                U.text(img, (1716, 980), "(verb slot empty)", mono(16), (130, 150, 170), "mm", 0.4)
+            cap = "%s as %s" % (word, "the STICKER in the verb slot" if as_sticker else "a TERMINAL CHIP on the node card")
+            frames.append((cap, img))
+    return strip(frames)
+
+
 # ---------------------------------------------------------------------------------------- main
 def save(img: Image.Image, out: Path, name: str, w: int = W) -> None:
     out.mkdir(parents=True, exist_ok=True)
@@ -1033,6 +1130,10 @@ def main() -> None:
         frames = [("RUN (tab 1)", direction_c(a.shots, 0)), ("CREW (tab 2): your nodes lit, the rest dims", direction_c(a.shots, 1)),
                   ("MARKET (tab 3)", direction_c(a.shots, 2)), ("DEFEND (tab 4): the raid setup in place", direction_c(a.shots, 3))]
         save(strip(frames), a.out, "direction_C_tabs.jpg", 1920)
+    if want("q11"):
+        save(q11_claim(a.shots), a.out, "q11_a_claim.png")
+        save(q11_repair(a.shots), a.out, "q11_b_repair.png")
+        save(q11_compare(a.shots), a.out, "q11_c_upgrade_patch_chips_vs_stickers.png", 1920)
     if want("heat"):
         save(heat_board(a.shots), a.out, "heat_indicator.jpg")
     if want("flow"):

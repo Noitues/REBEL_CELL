@@ -3,6 +3,15 @@
 Status: proposal for the designer. Nothing is built; no game file is changed.
 Agent: HQ-DESIGN, 2026-10-05, on main @ 11edde0.
 
+## Designer rulings 2026-10-05 (relayed by the orchestrator)
+- **Direction B, "THE HAND", is chosen.**
+- **Q1, yes.** The Heat gauge takes the top bar's first slot (upper left) on every screen.
+- **Q3, keep the rule.** You may jack in with a raid pending; the raid fires as an interlude, as today.
+- **Q4, yes.** At the HQ the wheel may zoom out past `raid_fit_max` into the GRID band (the whole city).
+- **Q11, examples first.** The designer wants to see examples before deciding. They are in section 6b below.
+
+Q2, Q5 to Q10, Q12 and Q13 are still open, with the defaults written in section 6.
+
 ## The brief (designer, 2026-10-05)
 The art pass missed the HQ and it does not match the concepts, so the HQ is reworked entirely:
 - fewer panels; big at-a-glance verbs and selections;
@@ -359,6 +368,34 @@ Anything that would change a rule, or that touches every screen, is listed here 
 - **Q12. Hand order.** Crew cards in roster order, the flatlined ones last, and an ineligible card greyed
   with the rules' reason (`RANK 1 NEEDED for T2`). OK?
 - **Q13. Segment swaps.** Rank 3 Inner Ring swaps move into the Loadout's SPINNER tab. OK?
+
+## 6b. Q11 examples: node verbs as stickers or as chips
+The designer asked to see these before ruling. Every image is direction B's page over the same real
+RAID-band capture, with a fresh `city_lab` launch for the same frame.
+
+How the stickers were made:
+- Each word (CLAIM, REPAIR, UPGRADE, PATCH) is baked by the kit's own sticker code: round 33
+  `ui31.sticker` plus `focus_sticker`, with JACK IN's size and fill. That is how 4C baked the title words the
+  concept never drew; nothing is hand-drawn.
+- The price is never on the sticker, because bible 1.2 says values that change are not stickers. It sits in a
+  gold terminal tag under the sticker.
+- The node card is the Cell's own CRT terminal (cyan), not holo, because these are the Cell's systems. Cards
+  sit clear of the TARGET pencil.
+
+| File | Shows |
+|---|---|
+| `q11_a_claim.png` | A cleared Site, PARCEL SORTING HALL, is selected; the card sits at the left. The card lists the node tiles with their prices (FIREWALL RELAY picked, COMPILER RACK locked behind its unlock) and a PATROL IT INSTEAD chip. The verb slot reads **CLAIM**, with **30 SCHEMATICS** under it. |
+| `q11_b_repair.png` | CUSTOMS PRE-CLEARANCE is a DOWN Firewall Relay: the white bolt over a greyed socket. It sits on the raid's route A. The verb slot reads **REPAIR**, with **15 SCHEMATICS** under it (50% of the 30 install). |
+| `q11_c_upgrade_patch_chips_vs_stickers.png` | Side by side. Top: the Safehouse's **UPGRADE** (30 Schematics) as a terminal chip on its node card (the verb slot is empty), then the same as the sticker. Bottom: CORE's **PATCH** (+6 to 50/50, 6 Schematics) as a chip, then as the sticker. |
+
+What I see in them:
+- CLAIM and REPAIR read best as stickers. They are the one thing to do with that node, and REPAIR before a
+  raid is urgent.
+- As chips, UPGRADE and PATCH leave the verb slot empty, so the page has no "do this" at all.
+- As stickers they turn a small top-up (PATCH +6) into the screen's loudest object.
+
+My default is unchanged: stickers for CLAIM and REPAIR, chips for UPGRADE and PATCH. "Always a sticker" is
+the other consistent choice, so the slot is never empty.
 
 ## 7. Not in this pass
 No game code, scenes, content or shaders changed. This pass also does not cover the bible 4.14 "HQ actions"
