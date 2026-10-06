@@ -38,7 +38,11 @@ title, the HQ-run titles, lanes at 100 %. Rulings: MAP KEY chip kept; the minima
 foot band; PATCH stays CORE's verb; the top bar's one-strip restyle is B5's; the selection marker is the vignette and the
 one tag. Sheet `docs/art_review/PARITY/fixes/B4_b.jpg`, crop `B4_crops/holo_site_card_1080_b.png`.
 - **Holo body.** The Site file was already B1c's DecryptedHoloPanel; it read as a green box because Solace's green
-  carries twice the luminance of round 44's Meridian orange, at the same 15 % fill and 12 % scanlines. The body's fill and
+  carries twice the luminance of round 44's Meridian orange, at the same 15 % fill and 12 % scanlines. **This amends D17
+  (B1c's holo material; art director approved, 2026-10-06):** the 15 % fill and 12 % scanlines are the shares for the
+  Meridian hue; a brighter corp hue takes them scaled by hue brightness. Polish (art director): the Site card's DECRYPTED
+  stamp and seal at 60 % of the raid holo's size, in the card's lower-right corner, under the rows
+  (`SiteHoloCard.STAMP_SHARE`). The body's fill and
   scanline shares now scale by `body_share` (the Meridian hue's luminance over the corp hue's, at most 1), so every corp's
   body is the same dark glass (measured: the card's body luma 26 against round 44's 39; edge and words keep the full
   tint). `test_b1c_crt_holo` reads the uniforms on a Meridian panel (the measured reference).

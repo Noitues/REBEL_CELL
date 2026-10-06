@@ -64,6 +64,34 @@ func add_row(row_name: String, caption: String, value: String) -> Label:
 	return v
 
 
+## B4 polish (art director): the DECRYPTED stamp and its cracked seal at this share of the raid
+## holo's, in the card's lower-right corner, under the rows (never over IF CLEARED).
+const STAMP_SHARE := 0.6
+
+
+func _place_stamp() -> void:
+	if holo == null or holo.stamp_slot == null:
+		return
+	var slot := holo.stamp_slot
+	slot.scale = Vector2.ONE * STAMP_SHARE
+	slot.position = size - slot.size * STAMP_SHARE - Vector2(UiTheme.SP_S, UiTheme.SP_XS)
+
+
+func _fit_stamp(_n: Node = null) -> void:
+	var foot := DecryptedHoloPanel.STAMP_SLOT.y * STAMP_SHARE + UiTheme.SP_XS
+	var box := get_theme_stylebox(&"panel") as StyleBoxEmpty
+	if box != null and not is_equal_approx(box.content_margin_bottom, PAD * _k + foot):
+		box.content_margin_bottom = PAD * _k + foot
+		queue_sort()
+
+
+## The DECRYPTED stamp's rect (local, as drawn: scaled).
+func stamp_rect() -> Rect2:
+	if holo == null or holo.stamp_slot == null:
+		return Rect2()
+	return Rect2(holo.stamp_slot.position, holo.stamp_slot.size * STAMP_SHARE)
+
+
 ## The words of every row ("TYPE: ..."), for tests and screen readers.
 func rows_text() -> PackedStringArray:
 	var out := PackedStringArray()
