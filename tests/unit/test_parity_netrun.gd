@@ -60,6 +60,7 @@ func _close(scene: Control) -> void:
 
 
 func _show(scene: Control) -> void:
+	await _frames(2)  # the page before it laid out (its bar), as in a run
 	scene._show_current()
 	PageTransition.settle(scene)
 	await _frames(4)
@@ -130,17 +131,18 @@ func test_the_node_panel_keeps_every_word_whole_and_its_stamp_off_the_text() -> 
 		var chip := panel.chip_rect()
 		assert_true(Rect2(Vector2.ZERO, panel.size).encloses(chip), "x%.1f: DECRYPTED on the panel" % scale)
 		assert_true(chip.position.y >= panel.fields_end() - 0.5, "x%.1f: DECRYPTED under the fields" % scale)
-		var seal_left := panel.size.x - DecryptedHoloPanel.SEAL_R * 2.0 - UiTheme.SP_M
-		assert_true(chip.end.x <= seal_left, "x%.1f: DECRYPTED beside the seal, not on it" % scale)
-		var seal_top := panel.size.y - DecryptedHoloPanel.SEAL_R * 2.0 - UiTheme.SP_M
-		assert_true(panel.fields_end() <= seal_top + 0.5, "x%.1f: the fields end above the seal" % scale)
+		assert_false(panel.plate.seal, "x%.1f: no seal on the fields (the concept's holo has none)" % scale)
 
 
-func test_the_route_is_the_grid() -> void:
+func test_a_boss_runs_map_has_no_bar_title() -> void:
+	# S-HQRUN relay: an HQ run's page has its own title sticker; the band shows the Heat gauge.
 	var scene := _netrun()
 	await _frames()
-	assert_eq(scene.hud._title, tr("THE GRID"), "ROUTE-06: the concept's title sticker word")
-	assert_not_null(scene.hud.title_sticker)
+	assert_eq(scene.hud._title, tr(NetrunScript.ROUTE_TITLE), "a transit route keeps its title sticker")
+	RunManager.netrun.run.kind = "boss"
+	scene._title_screen(RunManager.netrun, "route")
+	assert_eq(String(scene.hud._title), "", "a boss run's map: no bar title")
+	assert_null(scene.hud.title_sticker)
 	await _close(scene)
 
 
@@ -293,7 +295,7 @@ func test_the_loot_page_says_where_it_came_from_and_what_it_paid() -> void:
 		DemoSetup.offer_loot(s, ["twist", "jam", "cache"])
 		await _show(scene)
 		var win := scene._panel.find_child("LootWindow", true, false) as CrtWindow
-		assert_eq(win.title, scene.loot_strip(s), "x%.1f: LOOT-02 strip" % scale)
+		assert_eq(win.title, scene.loot_strip(s, scale >= NetrunScript.LOOT_SIDE_FROM, tr(NetrunScript.loot_source(s))), "x%.1f: LOOT-02 strip" % scale)
 		assert_string_contains(win.title, "%d OF %d" % [int(node["layer"]), s.run.map.layer_count()])
 		var pay := NetrunScript.payout_of(s)
 		assert_eq(int(pay["cycles"]), 18, "the payout is the session's own events")

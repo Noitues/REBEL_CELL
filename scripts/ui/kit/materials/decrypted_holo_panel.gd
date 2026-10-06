@@ -37,6 +37,13 @@ const STAMP_SLOT := Vector2(180, 48)
 		if _scrim != null:
 			_scrim.visible = v
 @export var seed: int = 5
+## Parity ROUTE-03: the cracked corp seal at the bottom right (off for the route's node holo: the
+## concept's DEPOT 15 holo has none, and it sat on the fields).
+@export var seal: bool = true:
+	set(v):
+		seal = v
+		if _seal != null:
+			_seal.visible = v
 
 var content: Control = null
 ## The stamp slot (top right): DECRYPTED is drawn here; a caller may add its own stamp.

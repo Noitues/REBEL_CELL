@@ -352,7 +352,7 @@ func test_the_raid_playout_has_its_own_title_and_screen() -> void:
 	assert_eq(scene.hud._title, tr("NETRUN // RAID"), "not NETRUN // ROUTE")
 	scene._show_current()
 	assert_true(scene.entering, "the route after the playout enters as a new screen")
-	assert_eq(scene.hud._title, tr("THE GRID"), "parity ROUTE-06: the route is THE GRID")
+	assert_eq(scene.hud._title, tr("NETRUN // ROUTE"))
 	await _close(scene)
 
 

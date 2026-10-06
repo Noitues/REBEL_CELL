@@ -237,7 +237,7 @@ Decision:
 
 **ROUTE-06 (P2) Page title.** Concept: `THE GRID` title sticker top left (the run's map). Build:
 DISPATCH line under the top bar. Main: top-bar words `NETRUN // ROUTE` only; no DISPATCH line on
-this frame. Decision: Match concept (designer group ruling 2026-10-05): fixed, the title sticker reads THE GRID; sheet `fixes/NETRUN.jpg`; DECISIONS "Parity fix — netrun pages"
+this frame. Decision: Match concept (designer group ruling 2026-10-05): NOT done yet, built then reverted: the word THE GRID shifts the bar's wrap and S-ROUTE's route fit then hides YOU ARE HERE (Meridian 1.6); slice proposed to S-ROUTE in DECISIONS "Parity fix — netrun pages"
 
 ### Jack-in (`jack_in.jpg`)
 Ref: build `jack_in`; concept `round37_netrun/transition_storyboard.png`.

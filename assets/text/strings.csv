@@ -77,6 +77,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s - press another key.,%s - press another key.
 %s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel,%s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel
 %s // %d CARDS,%s // %d CARDS
+%s // %s %d OF %d,%s // %s %d OF %d
 %s // L%d,%s // L%d
 "%s // terminal log, unsigned","%s // terminal log, unsigned"
 %s AT TURN START,%s AT TURN START
@@ -1559,6 +1560,7 @@ NETRUN // FLATLINED,NETRUN // FLATLINED
 NETRUN // HOME FELL,NETRUN // HOME FELL
 NETRUN // JACK OUT,NETRUN // JACK OUT
 NETRUN // RAID,NETRUN // RAID
+NETRUN // ROUTE,NETRUN // ROUTE
 NETRUN ABORTED - the home server fell,NETRUN ABORTED - the home server fell
 NETRUN COMPLETE,NETRUN COMPLETE
 NETRUN FAILED - operative lost,NETRUN FAILED - operative lost
@@ -2737,7 +2739,6 @@ TERMINAL // %s,TERMINAL // %s
 TERMINAL // %s // NODE %d OF %d,TERMINAL // %s // NODE %d OF %d
 TERMINAL EVENT,TERMINAL EVENT
 TEXT SCALE,TEXT SCALE
-THE GRID,THE GRID
 THE MAINFRAME,THE MAINFRAME
 THE TARGET,THE TARGET
 THE WHEEL,THE WHEEL

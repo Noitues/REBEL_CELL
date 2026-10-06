@@ -1143,8 +1143,10 @@ func _modal_open() -> bool:
 
 
 ## Names the screen on the HUD strip from the run phase (STYLE_GUIDE 4, "Neon city").
-## Parity ROUTE-06 (round 37 `city_default`): the run's map is THE GRID (its title sticker).
-const ROUTE_TITLE := "THE GRID" # TR
+## The route's title sticker. Parity ROUTE-06 (round 37 `city_default` names it THE GRID): not
+## renamed yet: the shorter word changes the bar's wrap at 1.6, and the route's fit then leaves
+## YOU ARE HERE on the key strip (Meridian, test_art7_netrun); proposed to S-ROUTE (DECISIONS).
+const ROUTE_TITLE := "NETRUN // ROUTE" # TR
 
 
 func _title_screen(s: NetrunSession, screen: String = "") -> void:
@@ -2711,12 +2713,15 @@ func _show_reward() -> void:
 	var n: int = offer["options"].size()
 	var page := VBoxContainer.new()
 	page.name = "LootPage"
-	page.add_theme_constant_override("separation", roundi(10 * ts))
+	page.add_theme_constant_override("separation", roundi(10 * minf(ts, ShopItem.OBJECT_MAX_SCALE)))
 	# Top: the title sticker and the loot strip; the payout terminal on the right.
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 18)
 	page.add_child(top)
-	var head := VBoxContainer.new()
+	# Big words (LOOT_SIDE_FROM up): the title and the strip share a row (the sheet takes the height).
+	var compact := ts >= LOOT_SIDE_FROM
+	var head: BoxContainer = HBoxContainer.new() if compact else VBoxContainer.new()
+	head.alignment = BoxContainer.ALIGNMENT_BEGIN
 	head.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(head)
 	var title := HoloSticker.word(source, VinylSticker.Fill.YELLOW, os, LOOT_TITLE_PX)
@@ -2725,12 +2730,15 @@ func _show_reward() -> void:
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	title.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	head.add_child(title)
+	# big words: the title's words lead the strip instead (the sheet takes the height)
+	title.visible = not compact
 	# ANIM-R6 B10: the window names what paid out (it said RACK BREACHED after every fight).
 	# Parity LOOT-02 (round 32 `reward_screen_v2`): the strip says where the loot came from on
 	# the run: "LOOT // NETRUN: <SITE> // <NODE> n OF N".
-	var win := _crt_one_line(CrtWindow.new(loot_strip(s), Palette.NET_CYAN).with_kind(CrtWindow.kind_for(Palette.NET_CYAN), Palette.NET_CYAN))
+	var win := _crt_one_line(CrtWindow.new(loot_strip(s, compact, source), Palette.NET_CYAN).with_kind(CrtWindow.kind_for(Palette.NET_CYAN), Palette.NET_CYAN))
 	win.name = "LootWindow"
 	win.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	win.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	win.body.visible = false  # a strip: its header line only
 	head.add_child(win)
 	var payout := _crt_one_line(CrtWindow.new(tr("PAYOUT"), Palette.NET_CYAN).with_kind(CrtWindow.kind_for(Palette.NET_CYAN), Palette.NET_CYAN))
@@ -2740,9 +2748,15 @@ func _show_reward() -> void:
 	# Parity LOOT-03: what this payout paid (the session's own events: preview equals result),
 	# the wallet before and after, HP, and the Heat it added.
 	var pay := payout_of(s)
+	# big words: the lines stand side by side (one row: the sheet takes the height)
+	var pay_rows: BoxContainer = payout.body
+	if compact:
+		pay_rows = HBoxContainer.new()
+		pay_rows.add_theme_constant_override("separation", roundi(UiTheme.SP_L * ts))
+		payout.body.add_child(pay_rows)
 	var cyc_row := _payout_row(TextDb.mark("CYCLES"), TextDb.signed(int(pay["cycles"])) if bool(pay["paid"]) else str(s.run.cycles), Palette.CELL_ACID)
 	cyc_row.name = "PayoutCycles"
-	payout.body.add_child(cyc_row)
+	pay_rows.add_child(cyc_row)
 	# big words: the wallet line goes (the top bar's CYCLES says it) so SKIP keeps the screen
 	if bool(pay["paid"]) and ts < LOOT_SIDE_FROM:
 		var wallet := _label(tr(PAYOUT_WALLET) % [s.run.cycles - int(pay["cycles"]), s.run.cycles])
@@ -2750,10 +2764,10 @@ func _show_reward() -> void:
 		wallet.add_theme_font_override(&"font", Palette.mono())
 		wallet.add_theme_color_override(&"font_color", Palette.TEXT_MID)
 		payout.body.add_child(wallet)
-	payout.body.add_child(_payout_row(TextDb.mark("HP"), "%d/%d" % [_shown_operative_hp(op.hp), op.max_hp], Palette.CELL_PINK))
+	pay_rows.add_child(_payout_row(TextDb.mark("HP"), "%d/%d" % [_shown_operative_hp(op.hp), op.max_hp], Palette.CELL_PINK))
 	var heat_row := _payout_row(TextDb.mark("HEAT"), TextDb.signed(int(pay["heat"])), Palette.HARM if int(pay["heat"]) > 0 else Palette.TEXT_MID)
 	heat_row.name = "PayoutHeat"
-	payout.body.add_child(heat_row)
+	pay_rows.add_child(heat_row)
 	heat_row.visible = ts < LOOT_SIDE_FROM or int(pay["heat"]) != 0
 	# The loot sheet; beside it PAYOUT, a Firmware drop's terminal, the deck and Skip.
 	var sheet := LootSheet.new(tr("LOOT SHEET // %s // PICK 1 OF %d") % [source, n], "", tr(LOOT_FOOT) % [kind_word.to_upper()], os)
@@ -2782,7 +2796,6 @@ func _show_reward() -> void:
 	loot_row.add_child(side)
 	# Big words (LOOT_SIDE_FROM up): the sheet takes the height, so the DECK counter and SKIP stand
 	# in the column beside it (as ART-9 4A placed them) and stay on the screen.
-	var compact := ts >= LOOT_SIDE_FROM
 	var foot := HBoxContainer.new()
 	foot.name = "LootFoot"
 	foot.add_theme_constant_override("separation", roundi(LOOT_GAP * os))
@@ -2796,10 +2809,7 @@ func _show_reward() -> void:
 	var foot_right := Control.new()
 	foot_right.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	foot_right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	# big words: PAYOUT heads the column beside the sheet (beside the title it left the screen)
-	(side if compact else top).add_child(payout)
-	if compact:
-		side.move_child(payout, 0)
+	top.add_child(payout)
 	if offer["kind"] == "firmware":
 		var drop := _crt_one_line(CrtWindow.new(tr("FIRMWARE DROP"), Palette.CELL_ACID).with_kind(CrtWindow.kind_for(Palette.CELL_ACID), Palette.CELL_ACID))
 		drop.name = "FirmwareDrop"
@@ -2816,13 +2826,6 @@ func _show_reward() -> void:
 	# ANIM-R2 E8: the gap between stickers keeps room for their rest tilt (it grows with the card).
 	var tilt := sin(deg_to_rad(ZineCard.REST_TILT_MAX))
 	var ls := clampf(minf(ts, (room - LOOT_GAP * (n - 1)) / maxf(1.0, n * (LOOT_CARD.x + LOOT_CARD.y * tilt))), 1.0, Settings.TEXT_SCALE_MAX)
-	# Parity LOOT-03: the sheet keeps to the screen's height under the bar and the title (at 1.6
-	# the cards grew past the foot and the page scrolled): the cards' scale gives way, never under 1.
-	var bar_h := maxf(hud.size.y, hud.get_combined_minimum_size().y) + (subtitle_strip.size.y if subtitle_strip.visible else 0.0)
-	var head_h := title.get_combined_minimum_size().y + win.get_combined_minimum_size().y + page.get_theme_constant(&"separation") * 2.0
-	var room_h := get_viewport_rect().size.y - bar_h - head_h \
-		- LOOT_SHEET_CHROME * os - (0.0 if compact else LOOT_FOOT_ROOM * os) - LOOT_PAGE_MARGIN * ts
-	ls = clampf(minf(ls, room_h / LOOT_CARD.y), 1.0, Settings.TEXT_SCALE_MAX)
 	stickers.add_theme_constant_override("separation", roundi(LOOT_GAP + LOOT_CARD.y * ls * tilt))
 	for i in n:
 		var id := StringName(String(offer["options"][i]))
@@ -2887,6 +2890,7 @@ func _show_reward() -> void:
 	if side.get_child_count() == 0:
 		side.visible = false
 	_set_panel(page, false)
+	_fit_loot_height(page, stickers, ls, tilt)
 	_register_loot_drops(stickers, mini, slot_option)
 	if entering:
 		_fan_loot.call_deferred(stickers)
@@ -2903,24 +2907,67 @@ const LOOT_FOOT := "x1 %s TAKEN // UNPICKED STICKERS FALL OFF" # TR
 ## PAYOUT's wallet line.
 const LOOT_STRIP := "LOOT // NETRUN: %s // %s %d OF %d" # TR
 const LOOT_STRIP_SITE := "LOOT // NETRUN: %s" # TR
+const LOOT_STRIP_SHORT := "%s // %s %d OF %d" # TR
 const PAYOUT_WALLET := "wallet %d -> %d" # TR
 ## Parity LOOT-03: from this text size the DECK counter and SKIP stand beside the sheet (the
 ## concept's foot row would push SKIP under the screen's edge).
 const LOOT_SIDE_FROM := 1.25
-## Parity LOOT-03: the loot sheet's own height round its cards (header, liner, foot; px at the
-## object scale), the foot row's room (DECK and SKIP under the sheet) and the page's margins (px
-## at the text scale): what the cards' height must leave on the screen.
-const LOOT_SHEET_CHROME := 92.0
-const LOOT_FOOT_ROOM := 64.0
-const LOOT_PAGE_MARGIN := 60.0
+## Parity LOOT-03: the least the cards' scale gives way to at big text (they still grow: H-pass
+## 21, "loot cards grow"), and the page's margin kept under it (px at the text scale).
+const LOOT_PAGE_MARGIN := 8.0
+const LOOT_BIG_FLOOR := 1.25
+
+
+## Parity LOOT-03: the loot page keeps to the room under the bar (at 1.6 its cards grew past the
+## screen's foot and the page scrolled): once laid out with this page's bar, the cards' scale
+## `ls` gives way by what the page is over, never under 1 (nor under LOOT_BIG_FLOOR where they
+## had grown past it); `tilt` keeps their rest tilt's room between them. It looks again on the
+## next frame, when the bar has wrapped its tags for this page.
+func _fit_loot_height(page: Control, stickers: Control, ls: float, tilt: float, low: float = -1.0, again: bool = true) -> void:
+	if low < 0.0:
+		low = maxf(1.0, minf(ls, LOOT_BIG_FLOOR))
+	if again and is_inside_tree():
+		get_tree().process_frame.connect(_refit_loot.bind(weakref(page), weakref(stickers), tilt, low), CONNECT_ONE_SHOT)
+	# the bar as laid out (it wraps its tags at big text past its least height)
+	var room := size.y - maxf(hud.size.y, hud.get_combined_minimum_size().y) - LOOT_PAGE_MARGIN * Settings.text_scale
+	for n: Control in [subtitle_strip, pad_prompts, _log]:
+		if n.visible:
+			room -= n.get_combined_minimum_size().y
+	var over := page.get_combined_minimum_size().y - room
+	if over <= 0.0 or stickers.get_child_count() == 0:
+		return
+	var k := maxf(low, ls - over / LOOT_CARD.y)
+	if k >= ls:
+		return
+	stickers.add_theme_constant_override("separation", roundi(LOOT_GAP + LOOT_CARD.y * k * tilt))
+	for c in stickers.get_children():
+		var card := c as ZineCard
+		if card != null:
+			card.scaled(k)
+			card.custom_minimum_size = LOOT_CARD * k
+
+
+## Parity LOOT-03: the loot page's second look, a frame on (weak refs: the page may be gone).
+func _refit_loot(page_ref: WeakRef, stickers_ref: WeakRef, tilt: float, low: float) -> void:
+	var page := page_ref.get_ref() as Control
+	var stickers := stickers_ref.get_ref() as Control
+	if page == null or stickers == null or not page.is_inside_tree() or stickers.get_child_count() == 0:
+		return
+	var first := stickers.get_child(0) as ZineCard
+	if first != null:
+		_fit_loot_height(page, stickers, first.text_scale, tilt, low, false)
 
 
 ## Parity LOOT-02: the loot strip ("LOOT // NETRUN: SOLACE CLINIC // FIGHT 3 OF 7"), translated.
-func loot_strip(s: NetrunSession) -> String:
+## `short` (big words): what paid out (`source`, translated: the title sticker's words) and the
+## node's place, so the strip and PAYOUT share a row.
+func loot_strip(s: NetrunSession, short: bool = false, source: String = "") -> String:
 	var site := server_label()
 	var node := s.run.current_node() if s.run.current_node_id != &"" else {}
 	if node.is_empty() or s.run.map == null:
 		return tr(LOOT_STRIP_SITE) % site
+	if short:
+		return tr(LOOT_STRIP_SHORT) % [source, node_word(node).to_upper(), int(node["layer"]), s.run.map.layer_count()]
 	return tr(LOOT_STRIP) % [site, node_word(node).to_upper(), int(node["layer"]), s.run.map.layer_count()]
 
 
@@ -3269,7 +3316,7 @@ func _event_run_window(s: NetrunSession) -> CrtWindow:
 	win.tag_label.text = "%s // %s" % [op.name.to_upper(), _content_name(op.class_id).to_upper()]
 	win.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	win.body.add_child(_payout_row(TextDb.mark("HP"), "%d/%d" % [_shown_operative_hp(op.hp), op.max_hp], Palette.CELL_PINK))
-	win.body.add_child(_payout_row(TextDb.mark("CYCLES"), str(s.run.cycles), Palette.NET_CYAN))
+	win.body.add_child(_payout_row(TextDb.mark("CYCLES"), str(s.run.cycles), Palette.CELL_ACID))
 	win.body.add_child(_payout_row(TextDb.mark("CREW"), str(s.campaign.living_operatives().size()), Palette.TEXT_HI))
 	return win
 
@@ -3680,9 +3727,16 @@ func _show_shop() -> void:
 	if wide:
 		# big words: the wallet joins the info strip and the clerk steps aside (the prices are
 		# on every tag)
-		# Parity SHOP-03: beside the info strip and the spinner on the board (under the Daemons the
-		# stock wheel's tags, lettered bigger now, reached it at 2.0).
-		wallet.reparent(info_row)
+		# parity SHOP-03: at the end of the Daemons' row (under it the stock wheel's tags, lettered
+		# bigger now, reached it at 2.0; over it the subtitle band)
+		var shelf := HBoxContainer.new()
+		shelf.name = "DaemonShelf"
+		shelf.add_theme_constant_override("separation", roundi(SHOP_COL_GAP))
+		dm_col.add_child(shelf)
+		dm_col.move_child(shelf, daemon_row.get_index())
+		daemon_row.reparent(shelf)
+		wallet.reparent(shelf)
+		wallet.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		wallet.custom_minimum_size.x = wallet.full_width(minf(ts, SHOP_WALLET_MAX_SCALE))
 		wallet.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		clerk.visible = false
@@ -4563,7 +4617,7 @@ const END_BACK_STEP := UiTheme.TITLE
 const END_PHOTO := Vector2(132, 160)
 const END_PHOTO_TILT := -3.0
 const END_VERDICT_OVER := 0.55
-const END_GREY_SHADER := preload("res://shaders/kit/screen_grey.gdshader")
+const END_GREY_SHADER := preload("res://shaders/screen_grey.gdshader")
 const END_GREY_DIM := 0.35
 
 

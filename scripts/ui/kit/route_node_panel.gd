@@ -29,7 +29,7 @@ const F_HEAT := "HEAT" # TR
 ## padding (px) and keyline (px). Every field's words wrap in their column (none is cut) and end
 ## above the foot.
 const STAMP_WORD := "DECRYPTED" # TR
-const CHIP_FONT := 11
+const CHIP_STEP := UiTheme.CAPTION
 const CHIP_PAD := Vector2(6, 2)
 const CHIP_LINE := 1.5
 
@@ -52,8 +52,10 @@ func _init() -> void:
 	plate.show_behind_parent = true
 	add_child(plate)
 	plate.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# Parity ROUTE-03: the plate's big stamp sat over the title; the panel letters its own chip.
+	# Parity ROUTE-03: the plate's big stamp sat over the title and its seal on the fields (the
+	# concept's DEPOT 15 holo has neither): the panel letters its own DECRYPTED chip.
 	plate.stamp_slot.visible = false
+	plate.seal = false
 	auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	Settings.changed.connect(_relayout)
 	resized.connect(queue_redraw)
@@ -113,24 +115,23 @@ func value_room(w: float) -> float:
 	return w - m * 2.0 - (w - m * 2.0) * LABEL_SHARE
 
 
-## Parity ROUTE-03: the foot's height (the seal and the DECRYPTED chip beside it, px).
+## Parity ROUTE-03: the foot's height (the DECRYPTED chip, px).
 func foot_height() -> float:
-	return maxf(DecryptedHoloPanel.SEAL_R * 2.0 + UiTheme.SP_M, chip_size().y)
+	return chip_size().y
 
 
 ## Parity ROUTE-03: the DECRYPTED chip's size (px).
 func chip_size() -> Vector2:
-	var px := roundi(CHIP_FONT * _s())
+	var px := UiTheme.font_px(CHIP_STEP)
 	var sz := Palette.mono().get_string_size(tr(STAMP_WORD), HORIZONTAL_ALIGNMENT_LEFT, -1, px)
 	return Vector2(sz.x, Palette.mono().get_height(px)) + CHIP_PAD * 2.0 * _s()
 
 
-## Parity ROUTE-03: the DECRYPTED chip's rect (local): in the foot, left of the seal.
+## Parity ROUTE-03: the DECRYPTED chip's rect (local): the foot's right corner.
 func chip_rect() -> Rect2:
 	var cs := chip_size()
-	var seal_left := size.x - DecryptedHoloPanel.SEAL_R * 2.0 - UiTheme.SP_M
-	var seal_mid := size.y - DecryptedHoloPanel.SEAL_R - UiTheme.SP_M
-	return Rect2(Vector2(seal_left - UiTheme.SP_S - cs.x, seal_mid - cs.y * 0.5), cs)
+	var m := MARGIN * _s()
+	return Rect2(size - cs - Vector2(m, m * 0.5), cs)
 
 
 ## Parity ROUTE-03: where the fields end (local y): above the foot.
@@ -182,7 +183,7 @@ func _draw() -> void:
 			first = false
 	# The DECRYPTED chip: a small keyline box in the foot's corner (round 37's holo).
 	var chip := chip_rect()
-	var px := roundi(CHIP_FONT * s)
+	var px := UiTheme.font_px(CHIP_STEP)
 	draw_rect(chip, Color(Palette.NIGHT_SKY, 0.6))
 	draw_rect(chip, Palette.CELL_ACID, false, CHIP_LINE)
 	draw_string(mono, chip.position + Vector2(CHIP_PAD.x * s, CHIP_PAD.y * s + mono.get_ascent(px)), tr(STAMP_WORD), HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.CELL_ACID)

@@ -63,13 +63,18 @@ after 1.0 | after 2.0): `docs/art_review/PARITY/fixes/NETRUN.jpg`.
   The concept's OPTIONS > MAP switch duplicates the key strip's "HOVER HERE: SHOW ALL NODES" and Options > Display's
   row: not added (proposed slice if the designer wants it on the page: a one-row terminal under the node panel, shown
   when the ROUTE column has room).
-- **ROUTE-06.** The route's title sticker reads THE GRID (concept word) in the bar's title slot (HEAT-ALL's rule for
-  page titles); GRID VIEW keeps it. Tests `test_anim_r5_netrun`, `test_heat_all` read THE GRID (was NETRUN // ROUTE).
-  Orchestrator relay (S-HQRUN, 2026-10-06): a boss (HQ) run's map shows no bar title (`set_screen("", "")`): its page
-  has its own title sticker, the band shows the Heat gauge, as the HQ does.
+- **ROUTE-06 (not done, slice proposed).** Renaming the route's title sticker THE GRID (concept word) was built and
+  reverted: the shorter word changes how the bar wraps its tags at 1.6, and the route's fit (`fit_route_map`, S-ROUTE's)
+  then frames Meridian's YOU ARE HERE on the key strip, where its label has no spot (`test_art7_netrun::test_the_route_
+  sweeps_every_corporation...`, red with the word, green without; checked by swapping only the word). Proposed slice for
+  S-ROUTE: the fit's free area leaves out the key strip the labels avoid (`route_free_area` vs `label_blocks`), then the
+  word changes (one constant, `NetrunScene.ROUTE_TITLE`, and three test strings). Orchestrator relay (S-HQRUN,
+  2026-10-06), built: a boss (HQ) run's map shows no bar title (`set_screen("", "")`): its page has its own title
+  sticker and the band shows the Heat gauge, as the HQ does.
 - **SHOP-03.** `BuyButton.BUY_FONT` 16 (was 13), the concept's tag lettering. At big text (SHOP_WIDE_FROM up) the
-  wallet stands in the info row beside the spinner (under the Daemons the stock wheel's right tag, lettered bigger,
-  reached it at 2.0: `test_art9_4a_shop`'s wallet check).
+  wallet stands at the end of the Daemons' row (`DaemonShelf`): under the Daemons the stock wheel's right tag, lettered
+  bigger, reached it at 2.0 (`test_art9_4a_shop`'s wallet check); beside the info strip the left tag did; at the
+  DAEMONS tape the subtitle band covered it.
 - **SHOP-05 (reuse rule).** `tools/art_bake/mainframe_parts_bake.py --part leave` runs round 34 `shop2.leave_sticker()`
   on tag art-concepts-r43 unchanged and saves its arrow sticker placed as `shop2.place_leave` places it (angle -4,
   scale 0.7) -> `assets/ui/mainframe/leave_arrow.png` (+ parts.json). `LeaveIcon` is a flat Button with that art (a
@@ -99,23 +104,26 @@ after 1.0 | after 2.0): `docs/art_review/PARITY/fixes/NETRUN.jpg`.
   the right column headed TRANSCRIPT // DISPATCH // VOICE LOG; the waveform feed is gone from events.
 - **LOOT-02.** The title sticker stays the payout's source (FIGHT WON, ELITE DOWN, RACK BREACHED, as ANIM-R6 B10);
   the strip is the concept's "LOOT // NETRUN: <SITE> // <NODE> n OF N" (`loot_strip`; the Site only off a node).
+  From text 1.25 the title sticker's words lead a short strip instead ("FIGHT WON // FIGHT 3 OF 7") so the strip and
+  PAYOUT share the top row and the sheet keeps the screen.
 - **LOOT-03.** PAYOUT top right: CYCLES as this payout's `+N` (the session's own `cycles` events, `payout_of`), "wallet
   a -> b", HP, HEAT (+n, the payout's Heat events); the DECK counter with its "+1 = N" pencil bottom left and SKIP
-  under the sheet. From text 1.25 (`LOOT_SIDE_FROM`) PAYOUT, the DECK counter and SKIP stand in the column beside the
-  sheet (the wallet line and a +0 Heat line go there), and the cards' scale gives way to the screen's height under the
-  bar and title (`LOOT_SHEET_CHROME`, `LOOT_FOOT_ROOM`, `LOOT_PAGE_MARGIN`; it scrolled at 1.6 and 2.0). **Not built:**
+  under the sheet. From text 1.25 (`LOOT_SIDE_FROM`) PAYOUT's lines stand side by side (the wallet line and a +0 Heat
+  line go), the DECK counter and SKIP stand in the column beside the sheet, and once laid out with its bar the page's
+  cards give way by what it is over the screen (`_fit_loot_height`: never under 1, nor under `LOOT_BIG_FLOOR` 1.25 where
+  they had grown past it, so H-pass 21's "loot cards grow" holds; it scrolled at 1.6 and 2.0). **Not built:**
   the concept's CONTINUE (a pick takes the card and goes on; a separate confirm is a flow change, not a look:
   proposed slice if wanted).
 - **END-01 / END-02.** The run end is the build's RunEndStage in v2: beside the report terminal (main's richer
   content kept: fate, tags, Heat reason) the operative's Polaroid (4B's `Polaroid`; FLATLINED: `kia`, greyed and struck
   out in red pencil) with the verdict sticker slapped over its lower half and BACK TO HQ under it; a lost run (FLATLINED,
-  HOME FELL) greys the city behind the page (`shaders/kit/screen_grey.gdshader`, the build's GRADE_CODE: greyscale,
+  HOME FELL) greys the city behind the page (`shaders/screen_grey.gdshader`, the build's GRADE_CODE: greyscale,
   dim 0.35; static, the page's entrance brings it in, reduce effects shows it at once); a clean exit keeps its colour.
   `END_WIDTH` 600 (the verdict column left the window). Motion: the verdict's `sticker_slap` as before; no new entry.
 - **Tests changed (look pinned, behaviour kept):** `test_anim4b_run_drag_drop`, `test_anim_r5_netrun`,
   `test_horizontal_pass21_screens` (the socket choice is the spinner: `choose`, its slot tips; the run end's row is in
   the middle, the city greys), `test_anim_r6_netrun`, `test_horizontal_pass21_screens` (LEAVE's mark is the concept's
-  chevron), `test_heat_all`, `test_anim_r5_netrun` (THE GRID), `test_anim_r5_city` (the interlude is the 3D raid view:
+  chevron), `test_anim_r5_city` (the interlude is the 3D raid view:
   nothing baked; it frames CORE and the entries its map shows), `test_anim_r1_campaign`, `test_horizontal_pass21_screens`
   (outcome chips beside the choice). No test dropped. `tools/visual_qa/review_pack.gd` `mainframe_socket` points at a
   chip so the spinner's marks show.
