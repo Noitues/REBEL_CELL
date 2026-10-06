@@ -305,7 +305,18 @@ where HQ actions belong.
 
 ---
 
-## e. Questions that need the designer
+## Designer rulings (2026-10-06)
+
+These override any call below that disagrees.
+1. **DISPATCH stays voice only**, before and after the betrayal (D10 as written; Q-A closed).
+2. **Combat camera allowed** (D1 / Q-B): a perspective close-up for every fight.
+3. **Skins are accent tokens only** (D12 / Q-C).
+4. **HQ behind Sites (Q3): wait** for the unique per-fight backdrops.
+5. **Map links (Q4):** draw only the links the route uses; on hover, show all links. More broadly, the main-line map
+   is far too cluttered and hard to read, so cutting clutter (D5, D7, D14, the clutter rule in d.) is a priority.
+6. **RESET TO DEFAULTS (Q12): every tab.** It is still a terminal button, not a sticker.
+
+## e. Questions that need the designer (answered above)
 
 - **Q-A.** DISPATCH after the betrayal: still voice-only red CRT (my call), or corp paper because it is now an
   enemy? Before the betrayal it must be voice-only.
