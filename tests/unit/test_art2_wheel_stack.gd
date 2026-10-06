@@ -21,6 +21,9 @@ func before_all() -> void:
 
 func after_all() -> void:
 	Settings.restore(_settings)
+	# Leaves no gut slot behind (the title's latest-slot scan in a later script found it).
+	RunManager.delete_save()
+	RunManager.save_slot = RunManager.DEFAULT_SLOT
 
 
 func before_each() -> void:
