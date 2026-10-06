@@ -721,6 +721,10 @@
 			"seconds": 25.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_parity_route.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_parity_jack_motion.gd": {
 			"seconds": 10.0,
 			"tier": "fast"

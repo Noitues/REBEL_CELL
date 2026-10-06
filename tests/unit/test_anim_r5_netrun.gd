@@ -349,10 +349,10 @@ func test_the_raid_playout_has_its_own_title_and_screen() -> void:
 	var scene := await _netrun()
 	var page := Control.new()
 	scene._set_panel(page, false, scene.RAID_PLAYOUT_SCREEN)
-	assert_eq(scene.hud._title, tr("NETRUN // RAID"), "not NETRUN // ROUTE")
+	assert_eq(scene.hud._title, tr("NETRUN // RAID"), "not THE GRID")
 	scene._show_current()
 	assert_true(scene.entering, "the route after the playout enters as a new screen")
-	assert_eq(scene.hud._title, tr("NETRUN // ROUTE"))
+	assert_eq(scene.hud._title, tr("THE GRID"))
 	await _close(scene)
 
 

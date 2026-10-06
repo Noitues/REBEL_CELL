@@ -31,6 +31,59 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-06 — Parity fix — route map (designer group ruling)
+Designer group ruling (2026-10-05): netrun pages match the concepts (round 37 `city_default`, `city_legend_hover`;
+tag art-concepts-r43). S-ROUTE ids ROUTE-01, ROUTE-04, ROUTE-05, ROUTE-06 (`docs/art_review/PARITY/GAPS.md`).
+S-MAPVIEW's map mode and its route nodes along the jack's link are kept (the "one link per route" question is still
+open: the link logic is unchanged). Tests: new `tests/unit/test_parity_route.gd` (fast). Sheet (concept | before |
+after): `docs/art_review/PARITY/fixes/ROUTE.jpg`.
+- **ROUTE-01, the whole run drawn.** D13 stays (only walked nodes, the choices and the TARGET are stickers; the strip's
+  hover, Options and the pointer reveal the rest), but a hidden node is no longer blank city: it is a small grey "not
+  yet" disc (`RouteOverlay.draw_ghost`: ink greyed 0.3 toward RING_CUT, its state's ring style, `GHOST_SHARE` 0.42 of a
+  sticker) with no kind, number or label (what it is stays hidden, D13's point), and its links are hairline dashes
+  (0.6 of the later dash, alpha 0.45; cut-off links greyer). Disc and hairline fade out as the sticker fades in (the
+  existing `route_node_reveal`, no new motion entry). **Landmarks:** the concept's district plates (THE SPRAWL,
+  MERIDIAN, HALCYON) as round 34 `city_r6/restyle.labels` draws them, ported (slanted ink plate, keyline, the
+  district's colour bar on its left, its name in that colour; Plex Sans Condensed Medium for the Bahnschrift Bold the
+  generator used, which the game does not ship): one plate per district the route runs through
+  (`NeonCity.territory_at` of each node's lot, sorted by id), over the corporation's HQ when that is on the map, else
+  beside its stretch of the route, at the first of fourteen spots round it inside the map and clear of every node, label, route line, the
+  dossier, ROUTE window, node panel and key strip; none when no spot is clear (`landmark_plates`). Procedural by
+  necessity: the plate's word is translated (corp short name = `HqRunView.corp_word`; "THE SPRAWL" a new key); its
+  geometry is the generator's, not a redraw. The `[1] Fight` chips already sat beside their markers (the label
+  layout's avoidance).
+- **ROUTE-04, the route choice panel. Kept (default; question below).** The concept has no list: the route is picked on
+  the map, the holo shows the hovered node. The ROUTE window stays because it is the pad's only path (map stickers take
+  no focus; HQ-B's JACK IN is not the route's verb, see "Parity fix — netrun pages" ROUTE-03) and the keyboard's
+  labelled path; its rows are the map's own numbered choices (tested). Proposed slice if the designer wants the
+  concept's page: the stickers become focus stops (a pad cursor over the map: left / right through the numbered
+  choices, A to go, the holo following), then the list's choice rows go and GRID VIEW / Save & quit move under the
+  holo.
+- **ROUTE-05, the key strip.** Already the concept's idea; its state words now are round 37's ("selectable", "not yet
+  (hidden)"; "walked" stays, the route's walked cable) and the "not yet (hidden)" swatch is the disc the map draws for a
+  hidden node. The node kinds (COMBAT ... RACK) stay before the states: the concept's city has one kind of node, a route
+  has five (H23 S7). Strings re-exported (`selectable: pick one (numbered)`, `not yet (hidden)`; `next: pick one
+  (numbered)` went).
+- **ROUTE-06, THE GRID.** `NetrunScene.ROUTE_TITLE` is "THE GRID" (the bar's yellow title sticker, HEAT-ALL's place for
+  page titles); test strings in `test_anim_r5_netrun`, `test_heat_all` (two), and a message in
+  `test_horizontal_pass24_screens`. **The real cause of the revert** was not the key strip in the fit's free area (the
+  free area is the map area above the strip's own row already): the fit's last step went unchecked. At Meridian 1.6
+  (the word's taller bar) the three passes went 0.90 -> 0.52 -> 0.42 (the whole route) and the third, the whole
+  route missing ROUTE_FIT_FLOOR by a hair, switched to the part the player decides on with a 3.5x zoom in; with the
+  passes spent nothing measured it, and icons keep their screen size so that big step's estimate is the roughest:
+  YOU ARE HERE ended at y 707, on the strip. Now (in `fit_route_map`; its pass is `_apply_route_fit`, the same code)
+  once the ROUTE_FITS_MAX passes are spent and where the player is and the next choices are not in the free area,
+  up to `ROUTE_RESCUE_PASSES` 2 more passes frame them with no zoom in (a pan and at most a zoom out, the step the
+  estimate gets right). A fit that ends framed is unchanged (the whole-route framings `test_horizontal_pass24_screens`
+  pins stay; a first try that latched the focus framing broke them at 2.0 and was dropped). Tested for all five
+  corporations at 1.0 / 1.6 / 2.0 (and `test_art7_netrun`'s sweep, green).
+- **Tools.** `tools/design_lab/netrun_states.gd`: state `fit` (every corporation one step in, at `--scales=` default
+  1.0,1.6,2.0).
+- **Kept.** Preview == result (views only; the state hashes checked), deterministic placement (graph order, ties by
+  id), motion entries (none added or dropped), pad focus (the ROUTE rows), strings once. No test dropped.
+- **Files outside the area (smallest change):** `scripts/ui/netrun_scene.gd` (`fit_route_map`, its pass moved into
+  `_apply_route_fit`, `ROUTE_RESCUE_PASSES`, `ROUTE_TITLE`), `assets/text/strings.csv` (re-export), the four tests above,
+  `tools/design_lab/netrun_states.gd`.
 ### 2026-10-06 — Parity fix — netrun pages (designer group ruling)
 Designer group ruling (2026-10-05): netrun pages and endings match the concepts; where the M13 build is richer than
 main but predates v2, the build's layout and content reworked in the v2 language; mechanics the rules lack (G1–G16)
@@ -9980,6 +10033,11 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **Parity fix route map (2026-10-06, see "Parity fix — route map"):** (1) ROUTE-04: the concept picks the route on
+  the map only; the ROUTE window's list is kept as the pad's and keyboard's path. Keep it, or make the map's stickers
+  the focus stops (pad cursor over the map) and drop the list's rows (proposed slice)? (2) ROUTE-01: hidden nodes now
+  show as small grey discs with no kind (the run's shape, D13 keeps what each is). Keep, or hide them fully again as
+  round 37's default still (concept NOTES: "hidden nodes take their links with them")?
 - **Parity fix codex, stats, options (2026-10-06, built, see "Parity fix — codex, stats, options"):** (1) RESET TO
   DEFAULTS (round 31's foot, pad Y) resets the OPEN TAB's settings only (Accessibility, Display, Audio, Controls with
   its key binds, Language), to the Settings script's own defaults (a Deck's first-run text size is not restored):

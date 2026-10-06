@@ -212,7 +212,7 @@ dashed orange start bracket are drawn; the rest of the run is blank city; `[1] F
 chips sit on top of their own markers. Build: the whole board with every node icon. View: main shows
 too little to plan a route (the concept shows hidden nodes as grey "not yet" discs). Likely file:
 `scripts/ui/kit/netrun_map_view.gd`, `route_overlay.gd`, `route_ink.gd`, `route_legend.gd`.
-Decision: **Partly resolved by S-MAPVIEW (designer ruling 2026-10-05):** the route's nodes sit along the link the run jacks along (`RouteLinkLayout`, from the Cell's node to the run's Site) over the city in map mode; the whole-route drawing (hidden nodes as grey discs, landmark stickers) stays with S-ROUTE.
+Decision: **Partly resolved by S-MAPVIEW (designer ruling 2026-10-05):** the route's nodes sit along the link the run jacks along (`RouteLinkLayout`, from the Cell's node to the run's Site) over the city in map mode; the whole-route drawing (hidden nodes as grey discs, landmark stickers) stays with S-ROUTE. **S-ROUTE, match concept (designer group ruling 2026-10-05): done:** a hidden node is a small grey "not yet" disc (its ring's state style, no kind or label: D13 keeps what it is) with hairline links, so the whole run shows; the district plates (round 34 `restyle.labels`, ported: THE SPRAWL / the corporations) name each district the route runs through, clear of every node, label and panel. DECISIONS "Parity fix — route map (designer group ruling)"; sheet `fixes/ROUTE.jpg`
 
 **ROUTE-02 (P1) Dossier overlaps.** Main: the `AT LARGE` stamp covers the HP value (`60 /` cut) and
 the `HEAT 0: COOL` stamp touches the IF STATIONED box. Concept: stamps in the paper's margins. Likely
@@ -229,15 +229,15 @@ plus a JACK IN sticker and the map option under it. Likely file: `scripts/ui/kit
 **ROUTE-04 (P2) Route choice panel.** Build and main: `ROUTE // PICK THE NEXT NODE` terminal, rows
 `[1] Fight > Fight · Event`, GRID VIEW, Save & quit. Main's rows have lime focus brackets and
 `then: Shop` lines. Concept: no list (you pick on the map; the holo shows the hovered node). View:
-the list is the pad / keyboard path; keep it, but it duplicates the map. Decision:
+the list is the pad / keyboard path; keep it, but it duplicates the map. Decision: Kept (default, open question in DECISIONS): the list is the pad's only path (the map's stickers take no focus) and the keyboard's labelled one; its rows are the map's own numbered choices (tested). Proposed slice: the stickers as focus stops, then the rows go. DECISIONS "Parity fix — route map (designer group ruling)"; sheet `fixes/ROUTE.jpg`
 
 **ROUTE-05 (P3) Node key strip.** Main: `COMBAT ELITE EVENT SHOP RACK | walked next not yet cut off
 | HOVER HERE: SHOW ALL NODES` along the foot. Concept: the same idea, states only. Matches.
-Decision:
+Decision: Match concept (designer group ruling 2026-10-05): matches; the states now read round 37's words (selectable, not yet (hidden)) and "not yet (hidden)" shows the map's hidden-node disc; the node kinds stay (a route has five, the concept's city one). DECISIONS "Parity fix — route map (designer group ruling)"; sheet `fixes/ROUTE.jpg`
 
 **ROUTE-06 (P2) Page title.** Concept: `THE GRID` title sticker top left (the run's map). Build:
 DISPATCH line under the top bar. Main: top-bar words `NETRUN // ROUTE` only; no DISPATCH line on
-this frame. Decision: Match concept (designer group ruling 2026-10-05): NOT done yet, built then reverted: the word THE GRID shifts the bar's wrap and S-ROUTE's route fit then hides YOU ARE HERE (Meridian 1.6); slice proposed to S-ROUTE in DECISIONS "Parity fix — netrun pages"
+this frame. Decision: Match concept (designer group ruling 2026-10-05): done by S-ROUTE: the title sticker reads THE GRID; the revert's cause was the route fit's last, unchecked 3.5x zoom-in step (not the key strip: the free area already ends above it); the fit now adds up to two rescue passes (pan and zoom out only) while the player's spot and choices are off the free area, YOU ARE HERE framed for all five corporations at 1.0 / 1.6 / 2.0. DECISIONS "Parity fix — route map (designer group ruling)"; sheet `fixes/ROUTE.jpg`
 
 ### Jack-in (`jack_in.jpg`)
 Ref: build `jack_in`; concept `round37_netrun/transition_storyboard.png`.

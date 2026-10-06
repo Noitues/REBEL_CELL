@@ -454,7 +454,7 @@ func test_route_shop_event_loot_words_are_translated_once() -> void:
 	for n in scene.city_overlay.nodes:
 		if String(n.get("label", "")) != "":
 			assert_true(String(n["label"]).contains(PSEUDO_PREFIX), "map label '%s'" % n["label"])
-	assert_true(String(scene.hud._title).begins_with(PSEUDO_PREFIX), "NETRUN // ROUTE translated")
+	assert_true(String(scene.hud._title).begins_with(PSEUDO_PREFIX), "THE GRID translated")
 	_shop(scene)
 	await _frames(4)
 	_assert_once(scene, "Mainframe")

@@ -10,6 +10,10 @@ extends CityMapOverlay
 ## - **Hidden nodes (D13):** only the walked nodes, the choices and the TARGET are drawn; the
 ##   rest show when `show_all` is on (the legend strip's hover, Options "Always show all
 ##   nodes") or one at a time under the pointer (~REVEAL_RADIUS px, `route_node_reveal`).
+##   Parity ROUTE-01: the whole run is still drawn: a hidden node is a small "not yet" disc
+##   (its ring's state style, no kind) and its links hairline dashes (`draw_ghost`).
+## - **Landmarks (ROUTE-01):** the districts in view carry the concept's name plates (THE
+##   SPRAWL, the corporations; round 34 `restyle.labels`), under the node labels.
 ## - **TARGET:** the final Rack carries the red grease-pencil circle and the word.
 ## - **Transit v3 paths (ART-7 7w):** every link is a cable routed on the real city's streets
 ##   and blocks by RouteCableRouter (45° / 90° turns only, streets crossed rather than ridden,
@@ -86,6 +90,17 @@ const CABLE_GLOW_ALPHA := 0.18
 ## The later and cut dashes' alpha.
 const LATER_ALPHA := 0.7
 const CUT_EDGE_ALPHA := 0.5
+## Parity ROUTE-01 (round 37 `city_default`: the whole run drawn): a hidden node still shows
+## where it is as a small "not yet" disc (no kind: D13 keeps what it is until it is revealed),
+## its ring the state's own style; its links a hairline dash. The disc's radius (share of the
+## sticker's), its ink fill's alpha, the ring's alpha and the hairline's width share and alpha.
+const GHOST_SHARE := 0.42
+const GHOST_FILL_ALPHA := 0.85
+## How far the disc's ink fill is greyed toward RING_CUT (a grey "not yet" disc).
+const GHOST_GREY := 0.3
+const GHOST_RING_ALPHA := 0.85
+const GHOST_LINK_SHARE := 0.6
+const GHOST_LINK_ALPHA := 0.45
 ## Hover reveal (D13): radius round the pointer (screen px), and the motion that fades a
 ## hidden node in.
 const REVEAL_RADIUS := 40.0
@@ -464,9 +479,14 @@ func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
 	if pts.size() < 2:
 		return
 	var a := edge_shown(e)
+	var k := _k()
+	if a < 1.0:
+		# ROUTE-01: a link to a hidden node is a hairline dash (it fades as the node shows).
+		var cut := _edge_state(e) == STATE_CUT
+		_dashes(pts, RouteInk.RING_CUT if cut else RouteInk.RING_UNAVAILABLE, CABLE_LATER * GHOST_LINK_SHARE * k,
+			GHOST_LINK_ALPHA * (1.0 - a) * (CUT_EDGE_ALPHA if cut else 1.0), 0.0, false)
 	if a <= 0.0:
 		return
-	var k := _k()
 	match _edge_state(e):
 		STATE_WALKED:
 			return
@@ -524,12 +544,15 @@ func _entry_roads() -> void:
 
 func _node(n: Dictionary) -> void:
 	var a := shown(n)
-	if a <= 0.0:
-		return
 	var at := icon_pos(n)
 	if at.x == INF:
 		return
 	var k := _k()
+	if a < 1.0:
+		# ROUTE-01: a hidden node's "not yet" disc (it fades as the sticker shows).
+		draw_ghost(_c, at, icon_radius(n) * GHOST_SHARE, state_of(n), k, 1.0 - a)
+	if a <= 0.0:
+		return
 	var r := icon_radius(n)
 	var state := state_of(n)
 	if not _travel.is_empty() and n["id"] == _travel["to"] and travel_t >= 1.0:
@@ -574,6 +597,26 @@ static func draw_sticker(ci: CanvasItem, kind: String, p: Vector2, r: float, sta
 	if KIND_SHAPES.has(kind):
 		ci.set_meta(&"icon_id", icon_id(kind))
 	draw_state_ring(ci, p, ring_r, state, k, a)
+
+
+## ROUTE-01: a hidden node's small disc at `p` (outer reach `r`) on `ci`: an ink fill and its
+## state's ring (colour and style, RING_STYLES) at half weight; no kind (D13). Shared with the
+## legend strip's "not yet (hidden)" swatch.
+static func draw_ghost(ci: CanvasItem, p: Vector2, r: float, state: String, k: float, alpha: float = 1.0) -> void:
+	if alpha <= 0.0:
+		return
+	var kk := k * GHOST_SHARE
+	ci.draw_circle(p, r, Color(RouteInk.KEYLINE.lerp(RouteInk.RING_CUT, GHOST_GREY), GHOST_FILL_ALPHA * alpha))
+	draw_state_ring(ci, p, r - RING_WIDTH * 0.5 * kk, state, kk, GHOST_RING_ALPHA * alpha)
+
+
+## The ids drawn only as a hidden node's disc now (ROUTE-01), in graph order.
+func ghost_ids() -> Array[StringName]:
+	var out: Array[StringName] = []
+	for n in nodes:
+		if shown(n) < 1.0 and icon_pos(n).x != INF:
+			out.append(n["id"])
+	return out
 
 
 ## The state ring at radius `ring_r` round `p` in state `state`'s colour AND style
@@ -701,6 +744,193 @@ func _here(at: Vector2, r: float) -> void:
 	# The pin's point down onto the sticker.
 	var tip := at + Vector2(r * 0.35, -r * 0.7)
 	_c.draw_line(c + Vector2(-side * 0.2, side * 0.45), tip, Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA), 2.0 * k)
+
+
+# --- Landmarks (ROUTE-01) ---------------------------------------------------------------------
+
+## The concept's district name plates (round 37 `city_default`: THE SPRAWL, MERIDIAN, HALCYON;
+## the plate is round 34 `city_r6/restyle.labels`, ported: a slanted ink plate, its keyline,
+## the district's colour bar at its left and its name in the district's colour). Lettering
+## (screen px at text scale 1.0), the plate's padding, half height, slant, bar width and
+## keyline (shares of the lettering, as restyle's 40 px face: 24, 30, 8, 20 and 4), and the
+## step off its anchor (screen px).
+const LANDMARK_FONT := 22
+const LANDMARK_PAD := 0.6
+const LANDMARK_HALF_H := 0.75
+const LANDMARK_SLANT := 0.2
+const LANDMARK_BAR := 0.5
+const LANDMARK_KEYLINE := 0.1
+const LANDMARK_LIFT := 70.0
+## Where a plate may stand round its anchor, tried in order: (x in plate half-widths plus half
+## a lift, y in lifts): above, above left, above right, below, below left, below right, then
+## beside and a lift further out.
+const LANDMARK_SPOTS: Array[Vector2] = [Vector2(0, -1), Vector2(-1, -1), Vector2(1, -1), Vector2(0, 1), Vector2(-1, 1), Vector2(1, 1),
+	Vector2(-2, 0), Vector2(2, 0), Vector2(0, -2), Vector2(-1, -2), Vector2(1, -2), Vector2(0, 2), Vector2(-1, 2), Vector2(1, 2)]
+## The plate's fill alpha.
+const LANDMARK_FILL_ALPHA := 0.92
+## The unowned districts' name (a key).
+const SPRAWL_WORD := "THE SPRAWL" # TR
+## Whether the district plates draw (the route page; off for other uses of the overlay).
+var landmarks: bool = true
+
+
+## The districts the route runs through (NeonCity.territory_at of each node's lot; &"" = the
+## Sprawl), sorted by id, each with its nodes' ids in graph order.
+func route_districts() -> Dictionary:
+	var by := {}
+	if city == null:
+		return by
+	for n in nodes:
+		var at: Vector2 = n.get("at", Vector2.INF)
+		if at.x == INF:
+			continue
+		var id := city.territory_at(floori(at.x), floori(at.y))
+		if not by.has(id):
+			by[id] = []
+		(by[id] as Array).append(n["id"])
+	var out := {}
+	var keys := by.keys()
+	keys.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	for key in keys:
+		out[key] = by[key]
+	return out
+
+
+## The landmark plates that fit now: [{"id", "text", "rect" (local px), "fs", "color"}], one
+## per district the route runs through (route_districts order). A corporation's plate stands
+## over its landmark (its HQ) when that is on the map, else, as THE SPRAWL's, beside its stretch
+## of the route (its nodes' middle), at the first of LANDMARK_SPOTS inside the map's label
+## area and clear of every node, label, route line (route_lines), blocked control (dossier,
+## ROUTE window, key strip) and earlier plate; a district with no clear spot gets none.
+func landmark_plates() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if not landmarks or city == null or nodes.is_empty() or not is_inside_tree():
+		return out
+	var k := _k()
+	var area := label_area()
+	var avoid: Array[Rect2] = label_blocks()
+	for r: Rect2 in label_rects().values():
+		avoid.append(r)
+	for n in nodes:
+		var at := icon_pos(n)
+		if at.x != INF:
+			var r := icon_radius(n)
+			avoid.append(Rect2(at - Vector2(r, r), Vector2(r, r) * 2.0))
+	var hp := here_point()
+	if hp.x != INF:
+		var hr := STICKER_RADIUS * 2.0 * k
+		avoid.append(Rect2(hp - Vector2(hr, hr), Vector2(hr, hr) * 2.0))
+	var f := RouteInk.letterhead_font()
+	var fs := maxi(1, roundi(LANDMARK_FONT * Settings.text_scale * k))
+	var lift := LANDMARK_LIFT * k
+	var lines := route_lines()
+	var districts := route_districts()
+	for id: StringName in districts:
+		var word := tr_word(SPRAWL_WORD) if id == &"" else HqRunView.corp_word(id)
+		var anchor := Vector2.INF
+		if id != &"":
+			for t: Dictionary in NeonCity.TERRITORIES:
+				if t["id"] == id:
+					var hq := _to_local(Vector2(t["at"]) + Vector2.ONE * NeonCity.HQ_LOTS * 0.5)
+					if is_finite(hq.x) and area.has_point(hq):
+						anchor = hq
+		if anchor.x == INF:
+			var sum := Vector2.ZERO
+			var count := 0
+			for nid: StringName in districts[id]:
+				var p := icon_pos(_node_dict(nid))
+				if p.x != INF:
+					sum += p
+					count += 1
+			if count == 0:
+				continue
+			anchor = sum / count
+		var tw := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var hh := fs * LANDMARK_HALF_H
+		var w := tw + fs * (LANDMARK_PAD + LANDMARK_BAR) * 2.0
+		for spot in LANDMARK_SPOTS:
+			var c := anchor + Vector2(spot.x * (w * 0.5 + lift * 0.5), spot.y * lift)
+			var rect := Rect2(c - Vector2(w * 0.5, hh), Vector2(w, hh * 2.0))
+			if not area.encloses(rect):
+				continue
+			var clear := true
+			for r in avoid:
+				if r.intersects(rect):
+					clear = false
+					break
+			if not clear or lines_cross(lines, rect):
+				continue
+			avoid.append(rect)
+			out.append({"id": id, "text": word, "rect": rect, "fs": fs,
+				"color": Palette.PAPER if id == &"" else Palette.corp_color(id)})
+			break
+	return out
+
+
+## The route's drawn lines (local px): every link's cable and the street marker's runs to the
+## first choices; a plate never covers one.
+func route_lines() -> Array[PackedVector2Array]:
+	var out: Array[PackedVector2Array] = []
+	for k in edges.size():
+		var pts := _route_px(k)
+		if pts.size() >= 2:
+			out.append(pts)
+	var p := here_point()
+	if here_id() == &"" and p.x != INF:
+		cables()
+		for n in nodes:
+			if bool(n.get("next", false)):
+				var c: Dictionary = _entry_cables.get(n["id"], {})
+				var pts := cable_px(c, p, icon_pos(n)) if not c.is_empty() else cable(p, icon_pos(n))
+				if pts.size() >= 2:
+					out.append(pts)
+	return out
+
+
+## True when any of `lines` runs through `rect`.
+static func lines_cross(lines: Array[PackedVector2Array], rect: Rect2) -> bool:
+	var corners := [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]
+	for pts in lines:
+		for q in pts.size() - 1:
+			var a := pts[q]
+			var b := pts[q + 1]
+			if not (is_finite(a.x) and is_finite(b.x)):
+				continue
+			if rect.has_point(a) or rect.has_point(b):
+				return true
+			for e in 4:
+				if Geometry2D.segment_intersects_segment(a, b, corners[e], corners[(e + 1) % 4]) != null:
+					return true
+	return false
+
+
+## Draws the plates (under the nodes and their labels).
+func _landmarks() -> void:
+	var k := _k()
+	var f := RouteInk.letterhead_font()
+	for p: Dictionary in landmark_plates():
+		var r: Rect2 = p["rect"]
+		var fs: int = p["fs"]
+		var col: Color = p["color"]
+		var sl := fs * LANDMARK_SLANT
+		var plate := PackedVector2Array([r.position + Vector2(sl, 0.0), Vector2(r.end.x, r.position.y), r.end - Vector2(sl, 0.0),
+			Vector2(r.position.x, r.end.y)])
+		_c.draw_colored_polygon(plate, Color(PaletteSkins.chrome(Palette.TERMINAL_BG), LANDMARK_FILL_ALPHA))
+		var ring := plate.duplicate()
+		ring.append(plate[0])
+		_c.draw_polyline(ring, Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA), maxf(k, fs * LANDMARK_KEYLINE), true)
+		var bw := fs * LANDMARK_BAR
+		_c.draw_colored_polygon(PackedVector2Array([r.position + Vector2(sl, 0.0), r.position + Vector2(sl + bw, 0.0),
+			Vector2(r.position.x + bw * 0.6, r.end.y), Vector2(r.position.x, r.end.y)]), col)
+		var y := r.get_center().y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
+		_c.draw_string(f, Vector2(r.position.x + bw, y), String(p["text"]), HORIZONTAL_ALIGNMENT_CENTER, r.size.x - bw, fs, col.lightened(0.15))
+
+
+func _draw_top() -> void:
+	if city != null and not nodes.is_empty() and landmarks:
+		_c = _top
+		_landmarks()
+	super()
 
 
 # --- Labels -----------------------------------------------------------------------------------
