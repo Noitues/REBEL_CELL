@@ -11208,3 +11208,10 @@ Tests: `test_b3_raid_map_route` (`test_route_frames_the_options_at_the_round_44_
   frame). None dropped.
 - **Limit:** at text 1.6 with a tall THREAT INTEL (four-line entries) its foot scrolls under the collapsed network; the
   holo's big-text layout is the follow-up the art director already queued.
+
+### 2026-10-06 — B3 c — the off-frame TARGET hides (art director polish)
+The art director approved B3 b; one polish item: the TARGET counts as off frame when any part of it (its pencil
+circle: `RouteOverlay.target_reach`) is outside the route's map area or under the top bar (`TargetEdgeMarker.covers`;
+the key strip is below the area). While the edge arrow shows (`TargetEdgeMarker.showing_changed`), the TARGET's
+sticker, circle and word hide (`RouteOverlay.target_off`; the pencil cloth-wipes), so nothing shows through the bar;
+the arrow keeps off the bar. Test: `test_b3_raid_map_route::test_route_frames_the_options_at_the_round_44_zoom_with_the_target_arrow`.
