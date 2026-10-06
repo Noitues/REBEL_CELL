@@ -96,10 +96,10 @@ static func crt_material() -> Material:
 	return UiTheme.crt_material()
 
 
-## 1B: the CRT glass (CrtTerminalPanel: navy glass, scanlines, edge glow; the hex dump when
-## `hex`) as `owner`'s backing, drawn behind it (the owner draws its words, pips and edge
+## 1B: the CRT glass (CrtTerminalPanel: navy glass, scanlines, edge glow; the hex dump unless
+## `hex` is false: on by default on every terminal, B1c review D23) as `owner`'s backing, drawn behind it (the owner draws its words, pips and edge
 ## states on top). No prompt, no caret: the owner's words are its own.
-static func crt_backing(owner: Control, hex: bool = false) -> CrtTerminalPanel:
+static func crt_backing(owner: Control, hex: bool = true) -> CrtTerminalPanel:
 	var c := CrtTerminalPanel.new()
 	c.name = "CrtGlass"
 	c.prompt = false

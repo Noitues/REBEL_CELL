@@ -72,7 +72,6 @@ func complete_motion() -> void:
 func _init() -> void:
 	super._init()
 	caret = false
-	hex_dump = false
 	text_step = UiTheme.CAPTION
 	text = CityMapOverlay.tr_word("MINIMAP")
 	mouse_filter = Control.MOUSE_FILTER_STOP

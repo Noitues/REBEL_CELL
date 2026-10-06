@@ -39,11 +39,8 @@ const BORDER_PX := 18.0
 ## verbs) to 0.27 (CANCEL at 28 px); `EDGE_SHARE` of the lettering keeps menu stickers at about 0.2.
 const EDGE_SHARE := 0.14
 const EDGE_MAX_PX := 8.0
-## Focus (designer 2026-10-05): the sticker keeps its fill; its gloss sweep runs in holo-foil colours
-## (`rainbow`) and the corner curls (HOVER_CURL). Under reduce effects the end state is a static sheen at
-## this gloss strength and position, with the curl.
-const RAINBOW_STATIC_K := 0.8
-const RAINBOW_STATIC_POS := 0.5
+## Designer 2026-10-06 (B1d): focus and hover are the PEEL-BACK only (the lift, the grow and the corner curl,
+## HOVER_CURL); the holo-foil (`rainbow`) gloss belongs to the ONE scheduled sweep (StickerSweepQueue), never to focus.
 const KEYLINE_PX := 5.0
 ## draw_string_outline's size is the outline's whole width (both sides of the contour):
 ## a reach of r px out from the glyph takes an outline of r x this.
@@ -82,6 +79,12 @@ const PEEL_FADE_SHARE := 0.35
 const FLUTTER_LOW := 0.08
 const HOVER_LIFT := 0.6
 const HOVER_CURL := 0.12
+## The focus / hover peel-back's entry (round 44 B_menus: a fixed 45 degree fold at the top-right corner) and the
+## game's reference height its px are measured at (the 1080p concept board).
+const PEEL_BACK := &"sticker_peel_back"
+const PEEL_BACK_BOARD_H := 1080.0
+## The holographic sweep's band runs at this angle (a diagonal, 45 degrees).
+const SWEEP_BAND_DEG := 45.0
 const PRESS_X := 1.04
 const DISABLED_ALPHA := 0.8
 
@@ -146,12 +149,14 @@ const PRESS := &"sticker_press"
 	set(v):
 		tilt_deg = v
 		rotation_degrees = v
-## Joins StickerSweepQueue: the one slow sweep visits this sticker in its turn.
+## Joins StickerSweepQueue: the one rainbow sweep runs on the screen's primary sticker in its turn.
 @export var ambient_sweep: bool = false:
 	set(v):
 		ambient_sweep = v
 		if is_inside_tree():
 			_join_sweep()
+## The screen names this sticker its primary verb: the queue sweeps it before any other (rank 0).
+@export var sweep_primary: bool = false
 ## The idle corner flutter (lifecycle IDLE; T0).
 @export var flutter: bool = false
 
@@ -180,10 +185,21 @@ var grey: float = 0.0:
 	set(v):
 		grey = v
 		_sync()
-## 1 while the sticker is focused / hovered: its gloss runs in holo-foil colours (the shader's `rainbow`).
+## 1 while the scheduled sweep crosses: the gloss runs in holo-foil colours (the shader's `rainbow`).
 var rainbow: float = 0.0:
 	set(v):
 		rainbow = v
+		_sync()
+
+## 0..1: the peel-back of the focus / hover (the fold's leg grows to `peel_px()`).
+var peel_back: float = 0.0:
+	set(v):
+		peel_back = v
+		_sync()
+## 0..1: where the sweep's band is (it crosses the sticker once); off = -1.
+var band_t: float = -1.0:
+	set(v):
+		band_t = v
 		_sync()
 
 var state: State = State.REST
@@ -556,6 +572,12 @@ func _sync() -> void:
 	_mat.set_shader_parameter(&"dissolve", dissolve_t)
 	_mat.set_shader_parameter(&"grey", grey)
 	_mat.set_shader_parameter(&"rainbow", rainbow)
+	_mat.set_shader_parameter(&"peel_back", peel_back)
+	_mat.set_shader_parameter(&"peel_px", peel_px())
+	_mat.set_shader_parameter(&"band_t", band_t)
+	_mat.set_shader_parameter(&"band_width", band_share())
+	_mat.set_shader_parameter(&"band_alpha", Motion.amplitude(SWEEP) * rainbow)
+	_mat.set_shader_parameter(&"band_deg", SWEEP_BAND_DEG)
 	_mat.set_shader_parameter(&"backing_color", Palette.KRAFT.lightened(0.2) if stock == Stock.KRAFT else Palette.VINYL_BACKING)
 	_mat.set_shader_parameter(&"shadow_color", Palette.VINYL_EXTRUDE)
 
@@ -564,12 +586,21 @@ func _sync() -> void:
 
 ## True while a slap, peel, dissolve, hover or press plays (MotionSkip).
 func motion_running() -> bool:
-	return _tween != null and _tween.is_valid() and _tween.is_running()
+	return (_tween != null and _tween.is_valid() and _tween.is_running()) or sweep_running()
 
 
-## Ends the running motion at its end state (MotionSkip; a press).
+## True while the rainbow sweep crosses.
+func sweep_running() -> bool:
+	return _sweep_tween != null and _sweep_tween.is_valid() and _sweep_tween.is_running()
+
+
+## Ends the running motion at its end state (MotionSkip; a press): a running sweep ends at once.
 func complete_motion() -> void:
-	if not motion_running():
+	if sweep_running():
+		_sweep_tween.kill()
+		_sweep_tween = null
+		_finish_sweep()
+	if not (_tween != null and _tween.is_valid() and _tween.is_running()):
 		return
 	var kind := _tween_kind
 	_tween.kill()
@@ -688,24 +719,71 @@ func dissolve(emitter: BinaryBits = null, target: Vector2 = Vector2.ZERO) -> flo
 	return d
 
 
-## The one slow gloss sweep (`sticker_gloss_sweep`, T0): the band crosses with the gloss up
-## to the amplitude, then back to rest. Returns its seconds (0 when it doesn't play).
+## The one slow rainbow gloss sweep (`sticker_gloss_sweep`, T0): the band crosses in holo-foil colours with the
+## gloss up to the amplitude, then back to rest. Returns its seconds (0 when it doesn't play).
 func sweep() -> float:
 	if _sweep_tween != null and _sweep_tween.is_valid():
 		_sweep_tween.kill()
 	if not Motion.live(SWEEP):
-		gloss_k = GLOSS_REST
-		gloss_pos = GLOSS_POS_REST
+		_finish_sweep()
 		return 0.0
 	var e := Motion.entry(SWEEP)
 	var d := Motion.seconds(SWEEP)
+	rainbow = 1.0
+	band_t = 0.0
 	_sweep_tween = create_tween()
-	_sweep_tween.tween_method(_sweep_step, 0.0, 1.0, d).set_ease(e.ease).set_trans(e.trans)
-	_sweep_tween.tween_callback(func() -> void:
-		gloss_k = GLOSS_REST
-		gloss_pos = GLOSS_POS_REST
-		StickerSweepQueue.done(self, Time.get_ticks_msec(), int(Motion.delay_of(SWEEP) * 1000.0)))
+	_sweep_tween.tween_method(_band_step, 0.0, 1.0, d).set_ease(e.ease).set_trans(e.trans)
+	_sweep_tween.tween_callback(_finish_sweep)
 	return d
+
+
+func _finish_sweep() -> void:
+	gloss_k = GLOSS_REST
+	gloss_pos = GLOSS_POS_REST
+	band_t = -1.0
+	rainbow = 0.0
+	StickerSweepQueue.done(self, Time.get_ticks_msec(), Motion.seconds(SWEEP))
+
+
+## StickerSweepQueue interface: the order the screen's sticker is considered primary (0 named, 1 pink, 2 the rest).
+func sweep_rank() -> int:
+	if sweep_primary:
+		return 0
+	return 1 if fill == Fill.PINK else 2
+
+
+## StickerSweepQueue interface: it may take the turn (shown, not disabled).
+func sweep_ready() -> bool:
+	return is_visible_in_tree() and state != State.DISABLED
+
+
+## StickerSweepQueue interface: runs the sweep; returns its seconds.
+func run_sweep() -> float:
+	return sweep()
+
+
+func _band_step(t: float) -> void:
+	band_t = t
+
+
+## The band's width as a share of the sticker's width (the sweep entry's `delay`; config).
+func band_share() -> float:
+	return Motion.entry(SWEEP).delay
+
+
+## The peel-back's fold leg in px (round 44: ~34 px at 1080p, 24 on short words; scales with the screen height and
+## the text size, ~54 px at 1080p and text 1.6): from the `sticker_peel_back` entry.
+func peel_px() -> float:
+	return peel_leg(body_rect.size.x, get_viewport_rect().size.y if is_inside_tree() else 720.0)
+
+
+## The fold leg (px) of a sticker whose body is `body_w` px wide on a screen `screen_h` px high (the drawn and baked
+## VerbSticker curl uses it too): config from `sticker_peel_back`, scaled with the screen height and the text size.
+static func peel_leg(body_w: float, screen_h: float) -> float:
+	var e := Motion.entry(PEEL_BACK)
+	var k := screen_h / PEEL_BACK_BOARD_H * Settings.text_scale
+	var short := body_w / maxf(k, 0.01) < e.delay
+	return (e.duration if short else e.amplitude) * k
 
 
 func _sweep_step(t: float) -> void:
@@ -735,21 +813,19 @@ func set_state(s: State) -> void:
 	tw.tween_property(self, "scale", to["scale"], d).set_ease(e.ease).set_trans(e.trans)
 	tw.parallel().tween_property(self, "lift", to["lift"], d if s != State.PRESSED else 0.0)
 	tw.parallel().tween_property(self, "fold", to["fold"], d)
+	tw.parallel().tween_property(self, "peel_back", to["peel_back"], d)
 	tw.tween_callback(func() -> void:
 		_tween = null
 		_end_state(id))
-	rainbow = 1.0 if s == State.HOVER or s == State.PRESSED else 0.0
-	if s == State.HOVER:
-		sweep()
 
 
 func _state_values(s: State) -> Dictionary:
 	match s:
 		State.HOVER:
-			return {"scale": Vector2.ONE * Motion.amplitude(HOVER), "lift": HOVER_LIFT, "fold": maxf(rest_curl, HOVER_CURL)}
+			return {"scale": Vector2.ONE * Motion.amplitude(HOVER), "lift": HOVER_LIFT, "fold": rest_curl, "peel_back": 1.0}
 		State.PRESSED:
-			return {"scale": Vector2(PRESS_X, Motion.amplitude(PRESS)), "lift": 0.0, "fold": rest_curl}
-	return {"scale": Vector2.ONE, "lift": 0.0, "fold": rest_curl}
+			return {"scale": Vector2(PRESS_X, Motion.amplitude(PRESS)), "lift": 0.0, "fold": rest_curl, "peel_back": 0.0}
+	return {"scale": Vector2.ONE, "lift": 0.0, "fold": rest_curl, "peel_back": 0.0}
 
 
 func _apply_state_end(s: State) -> void:
@@ -757,13 +833,10 @@ func _apply_state_end(s: State) -> void:
 	scale = v["scale"]
 	lift = v["lift"]
 	fold = v["fold"]
+	peel_back = v["peel_back"]
 	grey = 1.0 if s == State.DISABLED else 0.0
-	# Focus / hover: the sheen is holo-foil; with no sweep playing (reduce effects) it stands as a static sheen.
-	rainbow = 1.0 if s == State.HOVER or s == State.PRESSED else 0.0
-	if s == State.HOVER and not Motion.live(SWEEP):
-		gloss_k = RAINBOW_STATIC_K
-		gloss_pos = RAINBOW_STATIC_POS
-	elif s == State.REST:
+	# Focus / hover is the peel-back only (no gloss change); the rest gloss is the static sheen.
+	if s == State.REST and not sweep_running():
 		gloss_k = GLOSS_REST
 		gloss_pos = GLOSS_POS_REST
 	modulate.a = DISABLED_ALPHA if s == State.DISABLED else 1.0
@@ -777,9 +850,9 @@ func _join_sweep() -> void:
 
 
 func _process(delta: float) -> void:
-	if ambient_sweep and visible and StickerSweepQueue.take_turn(self, Time.get_ticks_msec()):
+	if ambient_sweep and StickerSweepQueue.take_turn(self, Time.get_ticks_msec()):
 		if sweep() <= 0.0:
-			StickerSweepQueue.done(self, Time.get_ticks_msec(), int(Motion.delay_of(SWEEP) * 1000.0))
+			StickerSweepQueue.done(self, Time.get_ticks_msec(), 0.0)
 	if flutter and not motion_running() and state == State.REST:
 		if Motion.live(FLUTTER):
 			_flutter_clock += delta

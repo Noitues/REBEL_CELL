@@ -1663,7 +1663,7 @@ func _build_hq_page(page_name: String) -> void:
 	card_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
-		card_margin.add_theme_constant_override(side, roundi(RaidHolo.SCRIM_OUT * 2.0))
+		card_margin.add_theme_constant_override(side, roundi(DecryptedHoloPanel.BACKING_OUT * 2.0))
 	card_margin.add_child(stack)
 	column.add_child(card_margin)
 	var site := CampaignRules.site_data(corp, selected_site)
