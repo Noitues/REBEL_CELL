@@ -11348,3 +11348,19 @@ circle: `RouteOverlay.target_reach`) is outside the route's map area or under th
 the key strip is below the area). While the edge arrow shows (`TargetEdgeMarker.showing_changed`), the TARGET's
 sticker, circle and word hide (`RouteOverlay.target_off`; the pencil cloth-wipes), so nothing shows through the bar;
 the arrow keeps off the bar. Test: `test_b3_raid_map_route::test_route_frames_the_options_at_the_round_44_zoom_with_the_target_arrow`.
+
+### D24 — paper tilt, clip, contact shadow
+Integration review D24 (approved follow-up): corp papers sit on the table like B5's case files. `PaperStaging`
+(`scripts/ui/kit/paper_staging.gd`) holds the shared look: a **tilt of 1 to 2 degrees, either way**, drawn from a seeded
+stream (`RngStreams.make_stream(hash(id), &"paper")`, so the same id always leans the same way, no global randomness);
+a **6 px contact shadow** (three soft layers under the sheet, turning with it); and the **steel paper clip**, the art
+pass's own `ui19.dossier` drawing moved out of `RaidPaper._clip` unchanged so `OperativeDossier` shares it (x 30 px at
+1.0; it rises `CLIP_RISE` 10 px, inside the dossier's 10 px map margin). Ids: `RaidPaper` seeds from corporation + document
+number (else title); `OperativeDossier` from `dossier|<operative id>`. Both rotate about their centre in `resized`, so
+they follow the layout at every scale (text 1.0 / 1.6 / 2.0 checked: the tilt's reach stays inside RaidPaper's 14 px
+side margin; the dossier is positioned by the scene and its file leaves the map room alone). No straighten on focus:
+neither paper is interactive (B5's folders are). RaidPaper's tilt is set in its own resize, independent of
+`HudBar.set_screen` (B4's page title). Motion entries unchanged (static dressing). Raid setup column layout and THREAT
+INTEL untouched. Removed unused constants: `RaidPaper.CLIP_W/CLIP_H/PAGE_TILT`, `OperativeDossier.PAPER_TILT/SHADOW_OFFSET`.
+Test: `test_d24_paper_staging`. Sheet `docs/art_review/PARITY/fixes/D24.jpg` (round 21 raid_report concept | before |
+after; `D24_route.jpg` the route dossier before | after; `D24_crop.jpg` a paper crop). Ids: D24.
