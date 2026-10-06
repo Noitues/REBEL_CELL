@@ -56,6 +56,22 @@ extends Resource
 @export var shadow_soft_px: float = 18.0
 @export var shadow_offset_px: Vector2 = Vector2(0.0, 6.0)
 
+@export_group("Map dim (B4: the HQ idle, review D7, round 44 hq_idle)")
+## What the dim leaves of the world outside the network's fit rect (D7: the 0.68 "map band"
+## darkening) and inside it (round 44: x0.86), and the saturation outside (round 44: "slightly
+## desaturated, but keeps its hue"; 1 = none).
+@export var map_dim_outside: float = 0.68
+@export var map_dim_inside: float = 0.86
+@export var map_dim_saturation: float = 0.85
+## How far the network's rect is grown round its icons and over how far its edge fades
+## (px at 1080).
+@export var map_dim_margin_px: float = 70.0
+@export var map_dim_feather_px: float = 110.0
+## The soft vignette round the selected Site where the city is fully lit (D7): full light out
+## to `map_focus_hold_px`, back to the dim at `map_focus_end_px` (px at 1080).
+@export var map_focus_hold_px: float = 110.0
+@export var map_focus_end_px: float = 300.0
+
 @export_group("Quality tiers (Settings.city_quality via CityConfig.tier_for)")
 ## Per tier: the spill and the shadows draw (tier 0, the cheapest, keeps the pools only: they
 ## carry the UI's contrast and cost one pass).

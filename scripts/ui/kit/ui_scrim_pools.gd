@@ -88,6 +88,15 @@ var hold_shapes: bool = false
 ## Dev probes only (perf_pack scrim_probe_*): the network keep's cost is measured by turning it off.
 var keep_enabled: bool = true
 
+## B4 (review D7, round 44 `hq_idle`): the map dim this frame, in this layer's px ({} = off):
+## {rect: Rect2 (the network's fit rect, grown by the look's margin), focus: Vector2 (the
+## selected Site's centre; INF = none), plus the look's numbers in px: feather, hold, end}.
+var map_dim: Dictionary = {}
+## B4: the page's map dim source: () -> {rect: Rect2, focus: Vector2} in global canvas px, or {}
+## (off). Set by a page that shows a map at rest (the HQ idle); cleared by `set_map_dim_source`
+## with an empty Callable.
+var _dim_source: Callable = Callable()
+
 var _quad: ColorRect
 var _mat: ShaderMaterial
 var _copy: BackBufferCopy
@@ -277,11 +286,13 @@ func refresh() -> void:
 	if not hold_shapes:
 		shapes = shapes_for(sources())
 	_sync_keep()
-	var sig := hash(shapes)
-	if sig == _sig and _quad.visible == not shapes.is_empty():
+	_sync_dim()
+	var on := not shapes.is_empty() or not map_dim.is_empty()
+	var sig := hash([shapes, map_dim])
+	if sig == _sig and _quad.visible == on:
 		return
 	_sig = sig
-	_quad.visible = not shapes.is_empty()
+	_quad.visible = on
 	# No pools: no screen copies either (a later reader takes its own, as without the layer).
 	_before.visible = _quad.visible
 	_copy.visible = _quad.visible
@@ -298,6 +309,52 @@ func refresh() -> void:
 	_mat.set_shader_parameter(&"count", shapes.size())
 	_mat.set_shader_parameter(&"shape_rect", rects)
 	_mat.set_shader_parameter(&"shape_params", params)
+	_mat.set_shader_parameter(&"dim_on", not map_dim.is_empty())
+	if not map_dim.is_empty():
+		var r: Rect2 = map_dim["rect"]
+		var f: Vector2 = map_dim["focus"]
+		_mat.set_shader_parameter(&"dim_rect", Vector4(r.get_center().x, r.get_center().y, r.size.x * 0.5, r.size.y * 0.5))
+		_mat.set_shader_parameter(&"dim_in", 1.0 - LOOK.map_dim_inside)
+		_mat.set_shader_parameter(&"dim_out", 1.0 - LOOK.map_dim_outside)
+		_mat.set_shader_parameter(&"dim_sat", LOOK.map_dim_saturation)
+		_mat.set_shader_parameter(&"dim_feather", float(map_dim["feather"]))
+		_mat.set_shader_parameter(&"dim_focus", Vector4(f.x, f.y, float(map_dim["hold"]), float(map_dim["end"])) if f.is_finite() \
+			else Vector4(0.0, 0.0, -1.0, 0.0))
+
+
+## B4 (review D7): the page's map dim (see `map_dim`): `source` () -> {rect, focus} in global
+## canvas px, or {} while the page shows no map at rest. An empty Callable turns it off.
+func set_map_dim_source(source: Callable) -> void:
+	_dim_source = source
+
+
+## B4: reads the map dim source into this layer's px (the look's lengths scaled to its height).
+func _sync_dim() -> void:
+	map_dim = {}
+	if not _dim_source.is_valid() or not is_inside_tree():
+		return
+	var src: Dictionary = _dim_source.call()
+	if src.is_empty() or not (src.get("rect", Rect2()) as Rect2).has_area():
+		return
+	var inv := get_global_transform_with_canvas().affine_inverse()
+	var r: Rect2 = inv * (src["rect"] as Rect2)
+	var f: Vector2 = src.get("focus", Vector2.INF)
+	map_dim = {"rect": r.grow(px(LOOK.map_dim_margin_px)), "focus": inv * f if f.is_finite() else Vector2.INF,
+		"feather": px(LOOK.map_dim_feather_px), "hold": px(LOOK.map_focus_hold_px), "end": px(LOOK.map_focus_end_px)}
+
+
+## B4: the map dim's [removal, desaturation share] at `p` (this layer's px) for `dim` (`map_dim`),
+## as the shader computes it ([0, 0] when off).
+static func dim_at(dim: Dictionary, p: Vector2) -> Vector2:
+	if dim.is_empty():
+		return Vector2.ZERO
+	var r: Rect2 = dim["rect"]
+	var outside := smoothstep(0.0, maxf(float(dim["feather"]), 0.001), maxf(sd_box(p - r.get_center(), r.size * 0.5, 0.0), 0.0))
+	var f: Vector2 = dim["focus"]
+	var lit := 0.0
+	if f.is_finite():
+		lit = 1.0 - smoothstep(float(dim["hold"]), maxf(float(dim["end"]), float(dim["hold"]) + 0.001), p.distance_to(f))
+	return Vector2(lerpf(1.0 - LOOK.map_dim_inside, 1.0 - LOOK.map_dim_outside, outside) * (1.0 - lit), outside * (1.0 - lit))
 
 
 ## What the registered parts are this frame, in this layer's own px: {size, scale (px per px at
@@ -393,14 +450,25 @@ static func apply_shapes(list: Array[Dictionary], p: Vector2, c: Color, keep_sha
 
 ## World colour `c` at `p` (this layer's px) once the layer lies over it (with its network kept).
 func apply_at(p: Vector2, c: Color) -> Color:
-	return apply_shapes(shapes, p, c, keep_at(p, keep))
+	var k := keep_at(p, keep)
+	var d := dim_at(map_dim, p) * (1.0 - k)
+	if d == Vector2.ZERO:
+		return apply_shapes(shapes, p, c, k)
+	# B4: the map dim as the shader does it: one saturation (the pools' times the dim's), then
+	# every multiply.
+	var m := masks_at(shapes, p) * (1.0 - k)
+	var l := Vector3(c.r, c.g, c.b).dot(LUMA)
+	var s := lerpf(1.0, LOOK.pool_saturation, m.z) * lerpf(1.0, LOOK.map_dim_saturation, d.y)
+	var f := (1.0 - m.x) * (1.0 - m.y) * (1.0 - d.x)
+	return Color((l + (c.r - l) * s) * f, (l + (c.g - l) * s) * f, (l + (c.b - l) * s) * f, c.a)
 
 
 ## What the layer leaves of the world's brightness at `p` (pools and bands, no desaturation;
 ## 1.0 where nothing is registered).
 func factor_at(p: Vector2) -> float:
-	var m := masks_at(shapes, p) * (1.0 - keep_at(p, keep))
-	return (1.0 - m.x) * (1.0 - m.y)
+	var k := keep_at(p, keep)
+	var m := masks_at(shapes, p) * (1.0 - k)
+	return (1.0 - m.x) * (1.0 - m.y) * (1.0 - dim_at(map_dim, p).x * (1.0 - k))
 
 
 ## What a wheel's pool leaves of the world `d` disc radii from its centre (the look's numbers;

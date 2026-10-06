@@ -24,6 +24,17 @@ uniform vec4 shape_rect[MAX_SHAPES];
 uniform vec4 shape_params[MAX_SHAPES];
 uniform float pool_saturation = 0.6;
 
+// B4 (review D7, round 44 hq_idle): the map dim. Outside the network's rect (xy centre, zw half
+// size, px) the world keeps 1 - dim_out (desaturated to dim_sat), inside it 1 - dim_in, over a
+// dim_feather px edge; inside the focus vignette (xy centre, z hold, w end, px) it is fully lit.
+uniform bool dim_on = false;
+uniform vec4 dim_rect = vec4(0.0);
+uniform float dim_in = 0.14;
+uniform float dim_out = 0.32;
+uniform float dim_sat = 0.85;
+uniform float dim_feather = 110.0;
+uniform vec4 dim_focus = vec4(0.0, 0.0, -1.0, 0.0);
+
 // The network kept at full strength (UiScrimPools.keep_network): ground XZ (BU) =
 // keep_o + px.x * keep_x + px.y * keep_y; the decal's buffers and sizes (CityNetworkData, the
 // decal's view px: keep_bu_per_px BU each).
@@ -104,7 +115,15 @@ void fragment() {
 			sat = max(sat, m);
 		}
 	}
-	if (pool <= 0.0005 && band <= 0.0005) {
+	float dim = 0.0;
+	float dsat = 0.0;
+	if (dim_on) {
+		float outside = smoothstep(0.0, max(dim_feather, 0.001), max(sd_box(local_px - dim_rect.xy, dim_rect.zw), 0.0));
+		float lit = dim_focus.z < 0.0 ? 0.0 : 1.0 - smoothstep(dim_focus.z, max(dim_focus.w, dim_focus.z + 0.001), length(local_px - dim_focus.xy));
+		dim = mix(dim_in, dim_out, outside) * (1.0 - lit);
+		dsat = outside * (1.0 - lit);
+	}
+	if (pool <= 0.0005 && band <= 0.0005 && dim <= 0.0005) {
 		discard;
 	}
 	if (keep_on) {
@@ -112,9 +131,11 @@ void fragment() {
 		pool *= k;
 		band *= k;
 		sat *= k;
+		dim *= k;
+		dsat *= k;
 	}
 	vec3 c = texture(screen_tex, SCREEN_UV).rgb;
 	float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
-	c = mix(vec3(l), c, mix(1.0, pool_saturation, sat));
-	COLOR = vec4(c * (1.0 - pool) * (1.0 - band), 1.0);
+	c = mix(vec3(l), c, mix(1.0, pool_saturation, sat) * mix(1.0, dim_sat, dsat));
+	COLOR = vec4(c * (1.0 - pool) * (1.0 - band) * (1.0 - dim), 1.0);
 }
