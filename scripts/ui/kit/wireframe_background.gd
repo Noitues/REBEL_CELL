@@ -17,16 +17,26 @@ var corp_creep: float = 0.0:
 			_sync_city()
 ## ART-5 5a: the City Grid draws the unified 3D city (NeonCity.city3d): no wireframe
 ## lattice over it (bible §1.2: the wireframe net is rejected).
-var city3d: bool = false:
+var city3d: bool:
+	get:
+		return _city3d
 	set(v):
-		city3d = v
-		if city != null:
-			city.city3d = v
-			# The City Grid holds the Grid band; the raid's pages set the RAID band after this
-			# (ART-3 6w, hq_scene._set_panel).
-			city.band_lock = CityLod.Band.GRID if v else -1
-		if _grid != null:
-			_grid.visible = not v
+		use_city3d(v, CityLod.Band.GRID)
+var _city3d: bool = false
+
+
+## ART-7 7w: puts this backdrop on the unified 3D city (`on`) holding view band `band`
+## (CityLod.Band: the City Grid GRID, the netrun route NETRUN; "the same flag plus their
+## band"; ART-3 6w: the raid's pages RAID), or back on the 2D city.
+func use_city3d(on: bool, band: int) -> void:
+	_city3d = on
+	if city != null:
+		city.city3d = on
+		city.band_lock = band if on else -1
+		if on:
+			city.refresh()
+	if _grid != null:
+		_grid.visible = not on
 var floor_offset: float = 0.0
 var skyline_seed: int = 7
 var city: NeonCity

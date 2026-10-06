@@ -215,6 +215,8 @@ const DEMOS := {
 	&"drone_orbit": ["screen", "city_motion"], &"police_strobe": ["screen", "city_motion"],
 	&"alarm_beacon": ["screen", "city_motion"], &"heat_node_light": ["screen", "city_motion"],
 	&"city_light_fade": ["screen", "city_motion"],
+	# ART-5 5e: the Cell's blackout reveal on 5b's district model (CityView3D.play_cell_reveal).
+	&"cell_fist_reveal": ["screen", "cell_fist_reveal"],
 }
 ## ART-11 4D: the lock demo's nodes on the stage (px from its top-left; the first is home).
 const RANSOM_NODES: Array[Vector2] = [Vector2(450, 300), Vector2(250, 180), Vector2(640, 170), Vector2(180, 430), Vector2(700, 420)]
@@ -227,6 +229,10 @@ const CITY_MOTION_ORTHO := 240.0
 const CITY_MOTION_YAW := 135.0
 const CITY_MOTION_PITCH := 40.0
 const CITY_MOTION_DISTANCE := 900.0
+## ART-5 5e: the reveal demo's part of the city (lots, round the Cell's district) and its
+## camera (ortho BU).
+const CELL_REVEAL_LOTS := Rect2i(18, 20, 34, 34)
+const CELL_REVEAL_ORTHO := 260.0
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
 ## subtitle demo says, and how long the frames between a menu's focus moves are (s).
@@ -953,6 +959,9 @@ func _play_screen(what: String) -> void:
 		"city_motion":
 			_city_motion_demo()
 			length = Motion.entry(&"sky_lane_cars").duration
+		"cell_fist_reveal":
+			_cell_fist_reveal_demo()
+			length = Motion.entry(CityView3D.CELL_REVEAL_MOTION).duration
 		"ransom":
 			# ART-11 4D: Halcyon's lock over the stage: tearing, the wipe, padlocks on five nodes,
 			# the notice and its verb, the countdown, the stickers curling and dropping, the cut.
@@ -1047,6 +1056,25 @@ func _city_motion_demo() -> void:
 	vp.add_child(cam)
 	cam.look_at_from_position(site.home + back * CITY_MOTION_DISTANCE, site.home, Vector3.UP)
 	cam.make_current()
+
+
+## ART-5 5e: the Cell's blackout reveal on the real piece: a CityView3D of the city round
+## the Cell's district (5b's district model on it, where the 3D city draws), framed on the
+## district, playing `play_cell_reveal` (the lights go dark until the fist shows).
+func _cell_fist_reveal_demo() -> void:
+	var cfg: CityConfig = CityView3D.CONFIG
+	var box := SubViewportContainer.new()
+	box.stretch = true
+	box.position = Vector2(0, 80)
+	box.size = Vector2(1280 - PANEL_W, 640)
+	_screen_host.add_child(box)
+	var view := CityView3D.new()
+	view.size = Vector2i(box.size)
+	view.use_model(CityModel.build(cfg, CITY_MOTION_SEED, CELL_REVEAL_LOTS))
+	box.add_child(view)
+	var centre := NeonCity.hq_of(CityView3D.CELL) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
+	view.set_iso(CityIsoCamera.make(cfg, view.lot_world(centre), CELL_REVEAL_ORTHO, box.size))
+	view.play_cell_reveal()
 
 
 ## ANIM-R5: the jack under reduce effects (its fade, `jack_fade_reduced`): reduce effects

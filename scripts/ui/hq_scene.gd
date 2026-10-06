@@ -69,8 +69,9 @@ const GRID_FITS_MAX := 4
 ## screen fraction) before it is fitted to the screen.
 const GRID_ZOOM := 0.72
 const GRID_ANCHOR := Vector2(0.31, 0.54)
-## The smallest the fit may make the Grid map (the city's zoom).
-const GRID_MIN_ZOOM := 0.3
+## The smallest the fit may make the Grid map (the city's zoom). ART-5 5e: 0.3 -> 0.22 for the x2
+## Site spread (round 39), so a big key at text size 2.0 never covers a node.
+const GRID_MIN_ZOOM := 0.22
 ## H24 K1: from this text scale the Grid's step buttons show their icons (and "<" / ">")
 ## without words, their words in the tooltip, so the column keeps its width (the same
 ## scale the map key folds at).
@@ -134,6 +135,8 @@ var grid_legend: MapLegend = null
 ## stick) and its minimap terminal (on the map's foot, left of the key); freed with the page.
 var grid_controls: CityGridControls = null
 var grid_minimap: CityMinimap = null
+## ART-5 5e: the Grid map's off-screen TARGET arrow (null off the Grid or headless 2D).
+var grid_target: TargetEdgeMarker = null
 var _grid_fits: int = 0
 ## ANIM-5: the Grid camera has leaned toward the selected Site on this page.
 var _grid_leaned: bool = false
@@ -982,9 +985,7 @@ func _set_panel(p: Control, name: String) -> void:
 	# playout, report), holding the RAID band (see-through buildings, management lanes). The
 	# other net pages keep the 2D city until their views move onto it.
 	if wireframe != null:
-		wireframe.city3d = name == "grid" or name in RAID_CITY_PAGES
-		if name in RAID_CITY_PAGES:
-			wireframe.city.band_lock = CityLod.Band.RAID
+		wireframe.use_city3d(name == "grid" or name in RAID_CITY_PAGES, CityLod.Band.RAID if name in RAID_CITY_PAGES else CityLod.Band.GRID)
 	_clear_city_map()
 	# City map screens: clicks fall through the empty panel area to the map.
 	var on_city := name in ["grid", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
@@ -2067,6 +2068,8 @@ func show_grid() -> void:
 	city_overlay.node_hovered.connect(light_run_row)
 	city_overlay.avoid_controls([column, grid_legend])  # map labels stay clear of the column and the key
 	_mount_grid_camera(spacer, outer, column)
+	# ART-5 5e: the Grid's city shows the campaign (Heat rig, the Cell's fist, the Site landmark).
+	wireframe.city.set_city_life(GridCityLife.of(c, corp, cfg))
 	_grid_fits = 0
 	_grid_leaned = false
 	_fit_next_frame()
@@ -2310,6 +2313,7 @@ func _place_grid_minimap() -> void:
 func _mount_grid_camera(area: Control, page: Control, column: Control) -> void:
 	grid_controls = null
 	grid_minimap = null
+	grid_target = null
 	if not wireframe.city3d:
 		return
 	grid_minimap = CityMinimap.new()
@@ -2323,6 +2327,12 @@ func _mount_grid_camera(area: Control, page: Control, column: Control) -> void:
 	grid_controls.attach(city_overlay, grid_minimap)
 	_sync_grid_minimap()
 	wireframe.city.rebuilt.connect(grid_controls.sync_minimap)
+	# ART-5 5e: the off-screen TARGET: a red pencil arrow on the map's edge; clicking pans to it.
+	grid_target = TargetEdgeMarker.make(city_overlay)
+	grid_target.avoid.append(grid_legend)
+	grid_target.avoid.append(grid_minimap)
+	area.add_child(grid_target)
+	grid_target.pan_requested.connect(grid_controls.centre_on)
 	city_overlay.avoid_controls([column, grid_legend, grid_minimap])
 
 

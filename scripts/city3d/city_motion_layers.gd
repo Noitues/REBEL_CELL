@@ -249,7 +249,8 @@ func paused() -> bool:
 
 ## True when the sky-lane cars draw.
 func sky_cars_visible() -> bool:
-	return not _car_mmis.is_empty() and CityMotionClock.sky_cars_shown(Settings.reduce_motion, view == View.NETRUN)
+	return not _car_mmis.is_empty() and CityMotionClock.sky_cars_shown(Settings.reduce_motion, view == View.NETRUN,
+		car_tier == CitySkyTraffic.CarTier.CLOSE)
 
 
 ## Layer time of CityMotionClock layer `layer` (s).

@@ -7,9 +7,10 @@ extends RefCounted
 ## - not live (reduce effects, a headless display or its motion entry switched off): the
 ##   layer shows its end state at once and holds it (time 0, steady: lights on and still,
 ##   one billboard panel, searchlights at rest, aircraft parked);
-## - reduce motion: every layer pauses in its steady look (no blink, sweep or orbit; street
-##   cars without streaks); the sky lanes show their markers without cars (bible 5.4; the
-##   brief and 5a's ambient scale pause street traffic too rather than run it at 40 %).
+## - reduce motion (bible 5.4): street traffic keeps moving at the config's
+##   `reduce_motion_street_rate` (40 %) without streaks; every other layer pauses in its
+##   steady look (no blink, sweep or orbit); the sky lanes show their markers without cars
+##   (ART-5 5e: the art pass's rule replaces 5c's "street traffic pauses").
 ## Pure and deterministic: a test steps it with fixed deltas.
 
 enum Layer { SKY_CARS, STREET_CARS, BILLBOARDS, AVIATION, SEARCHLIGHTS, CHOPPERS, DRONES, STROBES, ALARMS, NODE_LIGHTS }
@@ -24,9 +25,11 @@ func _init() -> void:
 
 
 ## The rate (seconds of layer time per second) of `layer`.
-static func rate(_cfg: CityMotionConfigData, _layer: int, paused: bool, reduce_motion: bool, live: bool) -> float:
-	if paused or not live or reduce_motion:
+static func rate(cfg: CityMotionConfigData, layer: int, paused: bool, reduce_motion: bool, live: bool) -> float:
+	if paused or not live:
 		return 0.0
+	if reduce_motion:
+		return cfg.reduce_motion_street_rate if layer == Layer.STREET_CARS and cfg != null else 0.0
 	return 1.0
 
 
@@ -35,10 +38,12 @@ static func steady(_layer: int, reduce_motion: bool, live: bool) -> bool:
 	return not live or reduce_motion
 
 
-## True when the sky-lane cars draw at all: not under reduce motion (markers only) and
-## not in the netrun transit (bible 4.1).
-static func sky_cars_shown(reduce_motion: bool, netrun_view: bool) -> bool:
-	return not reduce_motion and not netrun_view
+## True when the sky-lane cars draw at all: not under reduce motion (markers only); in the
+## netrun transit only at a close-up, in the CLOSE tier (bible 4.1 turns the transit's car
+## layer off; round 40 `cars_lod` shows CLOSE at a netrun close-up: ART-7 7w, the art pass
+## is correct).
+static func sky_cars_shown(reduce_motion: bool, netrun_view: bool, close_tier: bool = false) -> bool:
+	return not reduce_motion and (not netrun_view or close_tier)
 
 
 ## True when street cars draw their streaks (none under reduce motion).

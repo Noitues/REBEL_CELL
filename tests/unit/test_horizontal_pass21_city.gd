@@ -3,7 +3,7 @@ extends GutTest
 ## mark on the route's current node; unreachable route nodes dimmed; distinct drawn node
 ## icons shared with the legend; map labels that follow the text size and never overlap
 ## (Grid and route, every corporation); the raid sway following each corporation's own
-## Sites (Halcyon's Grid reaches past its district).
+## Sites, across a territory border too (H21 #22).
 ## The every-corporation Grid and route label sweeps are in test_city_map_sweeps.gd (Test
 ## suite optimization, docs/TEST_SUITE.md).
 
@@ -262,7 +262,11 @@ func test_raid_sway_covers_each_corporations_own_sites() -> void:
 		for id in points:
 			var p: Vector2 = points[id]
 			var terr := city.territory_at(floori(p.x), floori(p.y))
-			if corp == &"halcyon" and terr != corp:
+			# H21 #22: the sway does not stop at a territory border. ART-5 5e aims every Grid
+			# into its own territory, so the border case is asked directly: the Site's lot
+			# read as a neighbour's territory is still swayed.
+			if corp == &"halcyon":
+				assert_eq(CityInfluence.sway_share(inf, p, &"rebel_cell"), 1.0, "halcyon: the sway crosses a border at Site %s" % id)
 				outside_halcyon += 1
 			assert_eq(CityInfluence.sway_share(inf, p, terr), 1.0, "%s: the sway reaches Site %s" % [corp, id])
 			# The building the maps put the Site on (within a few lots) is swayed too.
@@ -274,7 +278,7 @@ func test_raid_sway_covers_each_corporations_own_sites() -> void:
 		c.raids_lost = 4
 		var lost := CityInfluence.of(c, corporation)
 		assert_ne(CityInfluence.signature(lost), CityInfluence.signature(inf), "a different sway re-keys the bake")
-	assert_gt(outside_halcyon, 0, "Halcyon's Grid reaches past its district (the case H21 #22 fixes)")
+	assert_gt(outside_halcyon, 0, "the border case (H21 #22) was asked")
 
 
 func test_the_sway_stays_local_to_the_sites() -> void:
