@@ -420,8 +420,15 @@ func test_your_nodes_fills_its_window_and_counts_the_withdraw_row() -> void:
 				var r := (b as Control).get_global_rect()
 				if (b as Control).is_visible_in_tree() and r.position.y > scroll.get_global_rect().position.y:
 					assert_false(r.position.y < foot - 0.5 and r.end.y > foot + 0.5, "%s: '%s' is not cut by the view's foot" % [tag, (b as Button).text])
-			assert_true(hint.visible, "%s: MORE BELOW says there is more" % tag)
-			assert_true(hint.get_global_rect().position.y >= foot - 0.5, "%s: in its own room under the list" % tag)
+			# ART-3 6w: since 3A pinned START under the scrolling side column, the list's own tag
+			# hides while its spot is out of the column's view (ScrollHint.in_outer_views); the
+			# column's own MORE BELOW says there is more then.
+			if hint.in_outer_views():
+				assert_true(hint.visible, "%s: MORE BELOW says there is more" % tag)
+				assert_true(hint.get_global_rect().position.y >= foot - 0.5, "%s: in its own room under the list" % tag)
+			else:
+				assert_not_null(hq.raid_side_hint, "%s: the side column scrolls" % tag)
+				assert_true(hq.raid_side_hint.visible, "%s: the column's MORE BELOW says there is more" % tag)
 		hq.get_parent().queue_free()
 		await _frames(1)
 
