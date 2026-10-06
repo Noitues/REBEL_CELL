@@ -235,6 +235,7 @@ BIN IT,BIN IT
 BLOCK,BLOCK
 BLOCK %d,BLOCK %d
 BOSS,BOSS
+BOSS: %s,BOSS: %s
 BREACH,BREACH
 BREACH PAYOUT,BREACH PAYOUT
 BREACH: start the fight at the Central Server.,BREACH: start the fight at the Central Server.
@@ -575,6 +576,7 @@ DEFEAT,DEFEAT
 DEFEATED,DEFEATED
 DEFENCE,DEFENCE
 "DEFENCE: the Armory's defence cards; with a raid pending, the raid setup.","DEFENCE: the Armory's defence cards; with a raid pending, the raid setup."
+DEFENSE LOADOUT // %s,DEFENSE LOADOUT // %s
 DEFRAG,DEFRAG
 DELETE,DELETE
 DELETE SLOT,DELETE SLOT
@@ -978,6 +980,7 @@ HOVER: SHOW ALL,HOVER: SHOW ALL
 HP,HP
 HP %d/%d,HP %d/%d
 HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.,HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.
+HP %d/%d · DECK %d · DAEMONS %d%s,HP %d/%d · DECK %d · DAEMONS %d%s
 HP %s,HP %s
 HP %s (other effects),HP %s (other effects)
 HP %s → %s %s,HP %s → %s %s
@@ -1103,6 +1106,7 @@ IF STATIONED (RAIDS):,IF STATIONED (RAIDS):
 "IF THE RAID
 RUNS NOW:","IF THE RAID
 RUNS NOW:"
+IF YOU PLAY %s,IF YOU PLAY %s
 IF YOU SEND IT,IF YOU SEND IT
 IF YOU SEND IT NOW: %s,IF YOU SEND IT NOW: %s
 IN A RUN,IN A RUN
@@ -1112,6 +1116,8 @@ INFC,INFC
 INFECT,INFECT
 INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
+INT,INT
+"INT %d: integrity, the hits it takes before it breaks. x%d: how many are in the Armory to deploy.","INT %d: integrity, the hits it takes before it breaks. x%d: how many are in the Armory to deploy."
 INTEL,INTEL
 INTERCEPT,INTERCEPT
 INTERCEPTED,INTERCEPTED
@@ -1138,7 +1144,6 @@ JACKED OUT,JACKED OUT
 Key,Key
 LAST TURN: ,LAST TURN: 
 LEAVE,LEAVE
-LEFT,LEFT
 LETHAL,LETHAL
 LETHAL: this turn takes it to 0 HP.,LETHAL: this turn takes it to 0 HP.
 LETHAL: this turn takes you to 0 HP.,LETHAL: this turn takes you to 0 HP.
@@ -1712,6 +1717,7 @@ Out of reach from here.,Out of reach from here.
 ","Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 "
 PARASITE,PARASITE
+PARKED,PARKED
 PASSED,PASSED
 PATCH,PATCH
 PATCH CORE: +%d integrity (%d Schematics).,PATCH CORE: +%d integrity (%d Schematics).
@@ -2757,6 +2763,7 @@ TO: ALL TIER LEADS    FROM: %s    REF: INTERNAL,TO: ALL TIER LEADS    FROM: %s  
 TODAY'S RUN,TODAY'S RUN
 TOP %d ONLY,TOP %d ONLY
 TRAFFIC CONTROL,TRAFFIC CONTROL
+TRAINING SIM,TRAINING SIM
 TREATED,TREATED
 TRIGGER,TRIGGER
 TRJN,TRJN
@@ -3205,6 +3212,7 @@ exploit,exploit
 exploits,exploits
 "filed by: %s, AUDIT %d","filed by: %s, AUDIT %d"
 firmware,firmware
+first in path,first in path
 flagged,flagged
 flatlined,flatlined
 good aim,good aim
@@ -3213,6 +3221,7 @@ hack,hack
 half power,half power
 handshake ... ok,handshake ... ok
 harder rules,harder rules
+hardest hitter,hardest hitter
 heat,heat
 heat obj.,heat obj.
 heat reached %d. why weren't we told?,heat reached %d. why weren't we told?
@@ -3255,6 +3264,7 @@ noticed,noticed
 notyet,notyet
 odds: %s,odds: %s
 off,off
+own node only,own node only
 patrol,patrol
 pay %d Schematics (next %d),pay %d Schematics (next %d)
 perfect aim,perfect aim
@@ -3296,6 +3306,7 @@ then:,then:
 they'll be back. flag ICE %d.,they'll be back. flag ICE %d.
 threat,threat
 threat route,threat route
+threats route to it,threats route to it
 toggle,toggle
 ui.raid_intro,"The corp is raiding your CORE. Place defences to cut the damage, then START DEFENSE."
 undock_handler,undock_handler
@@ -3304,9 +3315,11 @@ voice only // no feed,voice only // no feed
 vs %s | ICE %d%s,vs %s | ICE %d%s
 walked,walked
 weakest node,weakest node
+weakest threat,weakest threat
 wheel,wheel
 withdraw,withdraw
 won,won
+x%d,x%d
 x0.5,x0.5
 x1 %s TAKEN // UNPICKED STICKERS FALL OFF,x1 %s TAKEN // UNPICKED STICKERS FALL OFF
 x1.5,x1.5

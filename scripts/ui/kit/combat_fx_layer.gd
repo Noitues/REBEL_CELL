@@ -69,6 +69,9 @@ var flights: Array[Dictionary] = []
 ## The aim reticle (global), shown while a card is aimed; `reticle_visible` false = none.
 var reticle_pos: Vector2 = Vector2.ZERO
 var reticle_visible: bool = false
+## S-COMBAT-HUD (CMB-10): false = the reticle is tracked (target_snap) but not drawn: the fight's
+## grease-pencil aim draws its own snap loop round the target.
+var reticle_drawn: bool = true
 var reticle_pop: float = 0.0
 var _reticle_tween: Tween = null
 var _serial: int = 0
@@ -977,7 +980,7 @@ func _draw() -> void:
 				_draw_fx2(s)  # ART-2 2C: bits, the card's slap and the locked effect set
 	if not held_word.is_empty() and float(held_word["age"]) >= float(held_word.get("delay", 0.0)):
 		_draw_word(held_word)  # ANIM-R6 A15: VICTORY holds at full strength
-	if reticle_visible:
+	if reticle_visible and reticle_drawn:
 		var c := _local(reticle_pos)
 		var r := RETICLE_RADIUS + Motion.amplitude(&"target_snap") * reticle_pop
 		for k in 4:

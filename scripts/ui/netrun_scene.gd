@@ -937,6 +937,10 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	# A fight docks its subtitles in its own column and needs the height (H21 #11).
 	subtitle_strip.visible = not p.has_method("attach_netrun")
 	hud.stats.max_height = HudBar.BAND_HEIGHT if p.has_method("attach_netrun") else 0.0
+	# S-COMBAT-HUD (parity CMB-07, combat_typical_v4): no global top bar in a fight; the TURN strip
+	# and the corner chips stand alone and the wheels get the height (the bar's numbers keep
+	# updating for the page after the fight).
+	hud.visible = not p.has_method("attach_netrun")
 	_panel_host.theme_type_variation = &"GlassPanel" if glass else &""
 	_clear_route()
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_STOP

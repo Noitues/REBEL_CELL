@@ -621,7 +621,7 @@ func test_victory_stays_at_full_strength_until_the_fight_is_left() -> void:
 	await BoundedWait.until(get_tree(), _outcome_done.bind(scene), BoundedWait.motion_limit([&"resolve_sequence"], 6.0))
 	var fx: CombatFxLayer = scene.fx_layer
 	assert_false(fx.held_word.is_empty(), "VICTORY stands")
-	assert_eq(String(fx.held_word["text"]), tr("VICTORY"))
+	assert_eq(String(fx.held_word["text"]), tr("FIGHT WON"), "S-COMBAT-HUD CMB-14: FIGHT WON (round 32 reward_screen_v2)")
 	await BoundedWait.until(get_tree(), _settled.bind(scene), BoundedWait.motion_limit([&"resolve_sequence"], 6.0))
 	assert_false(fx.held_word.is_empty(), "and stays once everything has settled (it faded after ~1 s)")
 	assert_false(fx.busy(), "it is not an effect anything waits for")

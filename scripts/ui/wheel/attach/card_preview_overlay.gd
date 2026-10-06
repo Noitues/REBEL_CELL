@@ -47,6 +47,10 @@ const LABEL_CLEAR := 6.0
 ## and extra steps outwards (shares of its height).
 const LABEL_SLIDES: Array[float] = [0.0, 0.6, -0.6, 1.2, -1.2]
 const LABEL_STEPS_OUT: Array[float] = [0.0, 1.6]
+## Screen controls a label keeps off (the combat scene's aim hint joins it).
+const LABEL_BLOCK_GROUP := &"preview_label_block"
+## When every spot along a label's own angle is blocked, the turns (rad) it tries round the wheel.
+const LABEL_TURNS: Array[float] = [0.0, 0.35, -0.35, 0.7, -0.7, 1.05, -1.05]
 ## How much a blocker grows (px) before a label must clear it.
 const BLOCK_PAD := 3.0
 ## Through peel, drag and slap the preview holds at this alpha (§3.17: 50 %).
@@ -80,7 +84,8 @@ func _init() -> void:
 
 
 func signature() -> String:
-	return "%s|%.3f|%.3f|%s" % [str(ghost), shown_amount, chase, str(committed)]
+	var on_target := host != null and host.view != null and not host.view.hover_zone.is_empty()
+	return "%s|%.3f|%.3f|%s|%s" % [str(ghost), shown_amount, chase, str(committed), str(on_target)]
 
 
 ## The wheel's turn this preview shows (ticks, the shortest way round), 0 when none.
@@ -141,7 +146,9 @@ func _draw() -> void:
 	var dt := delta_ticks()
 	if dt == 0:
 		return
-	var aimed := not v.valid_zones.is_empty()
+	# S-COMBAT-HUD (designer ruling 2026-10-05): with the aim ON this wheel the play's result shows on it at
+	# full strength with its labels; aimed elsewhere (a drag over nothing) it holds at HELD_ALPHA.
+	var aimed := not v.valid_zones.is_empty() and v.hover_zone.is_empty()
 	var alpha := shown_amount * (HELD_ALPHA if aimed else 1.0)
 	var center := host.center()
 	var rim := host.rim()
@@ -297,6 +304,14 @@ func label_blockers() -> Array[Rect2]:
 	var hp: Dictionary = v.hp_layout()
 	if hp.has("hp"):
 		out.append((hp["hp"] as Rect2).grow(BLOCK_PAD))
+	# S-COMBAT-HUD: the labels show while the aim is on the wheel now; they keep off the screen's
+	# own aiming words (the aim hint and any control in LABEL_BLOCK_GROUP).
+	if is_inside_tree():
+		for n in get_tree().get_nodes_in_group(LABEL_BLOCK_GROUP):
+			var c := n as Control
+			if c != null and c.is_visible_in_tree():
+				var r := c.get_global_rect()
+				out.append(Rect2(r.position - global_position, r.size).grow(BLOCK_PAD))
 	var center := host.center()
 	var rr := host.rim() + WheelView.RETICLE_GAP
 	for k in 4:
@@ -313,33 +328,36 @@ func label_blockers() -> Array[Rect2]:
 ## the first spot when none is free.
 func label_box(center: Vector2, a: float, dists: Array[float], text: String) -> Rect2:
 	var sz := _label_size(text)
-	var dir := Vector2(cos(a), sin(a))
-	var tan_ := dir.orthogonal()
 	var frame := host.view.frame_master() * host.view.art_scale() if host != null and host.view != null else 0.0
 	var blockers := label_blockers()
 	# the screen, in this layer's space (the label may reach past the wheel's own box)
 	var room := Rect2(-global_position, get_viewport_rect().size)
 	var first := Rect2()
 	var have_first := false
-	for d in dists:
-		for sl in LABEL_SLIDES:
-			var at := center + dir * d + tan_ * sl * sz.x
-			var box := Rect2(at - sz * 0.5, sz)
-			if not have_first:
-				first = box
-				have_first = true
-			if not room.encloses(box):
-				continue
-			var near := Vector2(clampf(center.x, box.position.x, box.end.x), clampf(center.y, box.position.y, box.end.y))
-			if near.distance_to(center) < frame:
-				continue
-			var hit := false
-			for b in blockers:
-				if b.intersects(box):
-					hit = true
-					break
-			if not hit:
-				return box
+	# S-COMBAT-HUD: every spot along its own angle blocked (the SEND IT / EXECUTE block under a
+	# drone's label), the label turns round the wheel a little at a time before it gives up.
+	for turn in LABEL_TURNS:
+		var dir := Vector2(cos(a + turn), sin(a + turn))
+		var tan_ := dir.orthogonal()
+		for d in dists:
+			for sl in LABEL_SLIDES:
+				var at := center + dir * d + tan_ * sl * sz.x
+				var box := Rect2(at - sz * 0.5, sz)
+				if not have_first:
+					first = box
+					have_first = true
+				if not room.encloses(box):
+					continue
+				var near := Vector2(clampf(center.x, box.position.x, box.end.x), clampf(center.y, box.position.y, box.end.y))
+				if near.distance_to(center) < frame:
+					continue
+				var hit := false
+				for b in blockers:
+					if b.intersects(box):
+						hit = true
+						break
+				if not hit:
+					return box
 	first.position.x = clampf(first.position.x, room.position.x, maxf(room.position.x, room.end.x - first.size.x))
 	first.position.y = clampf(first.position.y, room.position.y, maxf(room.position.y, room.end.y - first.size.y))
 	return first
