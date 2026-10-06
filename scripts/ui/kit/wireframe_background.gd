@@ -27,7 +27,7 @@ var _city3d: bool = false
 
 ## ART-7 7w: puts this backdrop on the unified 3D city (`on`) holding view band `band`
 ## (CityLod.Band: the City Grid GRID, the netrun route NETRUN; "the same flag plus their
-## band"), or back on the 2D city.
+## band"; ART-3 6w: the raid's pages RAID), or back on the 2D city.
 func use_city3d(on: bool, band: int) -> void:
 	_city3d = on
 	if city != null:
@@ -209,6 +209,9 @@ func _apply_hold() -> void:
 	var b: Vector2 = origin * (_held[0] as Vector2)
 	rig.scale = Vector2(k, k)
 	rig.position = b - a * k
+	if city3d:
+		# ART-3 6w: the 3D picture covers this backdrop under the held frame (NeonCity.view_cover).
+		city.view_cover = (rig.get_transform() * city.get_transform()).affine_inverse() * Rect2(Vector2.ZERO, size)
 
 
 ## ANIM-R1 M4: frames a raid step's fight: grid points `points` (the Sites' lot centres)
@@ -219,10 +222,12 @@ func _apply_hold() -> void:
 func frame_points(points: PackedVector2Array, area: Rect2, max_zoom: float, min_zoom: float) -> float:
 	if points.is_empty() or not area.has_area():
 		return 0.0
-	var box := Rect2(NeonCity.world_of(points[0].x, points[0].y), Vector2.ZERO)
+	# ART-3 6w: the ground's row step of the city's projection (the 3D city's on the raid).
+	var tb := city.tile_b()
+	var box := Rect2(Vector2((points[0].x - points[0].y) * NeonCity.TILE_A, (points[0].x + points[0].y) * tb), Vector2.ZERO)
 	var centre := points[0]
 	for i in range(1, points.size()):
-		box = box.expand(NeonCity.world_of(points[i].x, points[i].y))
+		box = box.expand(Vector2((points[i].x - points[i].y) * NeonCity.TILE_A, (points[i].x + points[i].y) * tb))
 		centre += points[i]
 	centre /= points.size()
 	var room := area.size * FIGHT_FIT_SHARE
@@ -259,4 +264,5 @@ func _rig_rest() -> void:
 	rig.position = Vector2.ZERO
 	rig.scale = Vector2.ONE
 	if city != null:
+		city.view_cover = Rect2()
 		city.refresh()

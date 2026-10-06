@@ -31,6 +31,62 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-05 — Art direction — ART-3 6w raid on the city
+ART-3 wave 2b, ART-6 on the unified city (ART_BIBLE v2 §4.1, §4.8, Appendix C #13, plan G10; refs round 40
+`raid_view_v3`, `raid_gifs/`, `unified40.py` "the Cell's nodes: uplink pads + risers"). Builds on 3A's raid 2D
+presentation and 5e's live Grid.
+- **The raid's pages on CityView3D at the RAID band.** The setup, the playout and the report
+  (`hq_scene.RAID_CITY_PAGES`) turn the unified 3D city on through 7w's `WireframeBackground.use_city3d(on, band)`
+  holding `CityLod.Band.RAID` (see-through buildings at any zoom, management lane glow, 5c's motion via 5e's
+  CityViewMotion); the Grid keeps GRID. The overlay's projection is the city camera's (5a), so 3A's sockets, pencil
+  routes, state marks, vehicle icons, beacons and drag pencil all follow the city camera through `RaidMapAnchor`
+  unchanged; its network goes to the city's ground decal (lime links through buildings). Picking, the drag model
+  and the raid verdict are unchanged (views only).
+- **Raid zoom fit (G10, Appendix C #13): `RaidZoomFit`** (pure, `scripts/city3d/`). The setup frames its network
+  (the map's nodes: the Cell's, the entry Sites and the Sites the threats cross) plus `raid_fit_margin` (40 BU)
+  inside the map's free part once per layout, then 3A's framing passes only correct it; the furthest out is now
+  `raid_fit_max`'s zoom (was RAID_MIN_ZOOM 0.45 on the 2D city). **Call: `raid_fit_max` 380 -> 640.** Round 39's
+  380 framed the x1 layout; 5e's x2 Site spread doubles the network, which needs ~490-570 on the setup's map part
+  at text 1.0 (measured: Halcyon 491, Solace 565, Meridian 566). The playout's camera stays in the raid range too
+  (`playout_zoom` = `raid_fit_min`'s 220, a framed fight no wider than 640): the 2D city's PLAYOUT_ZOOM 1.9 /
+  PLAYOUT_MIN_ZOOM 1.2 were ortho ~84 / ~133 on the 3D city, the netrun transit's band. The fight framing
+  (`WireframeBackground.frame_points`) measures the network with the city's own ground step (3D: TILE_A x sin 40°).
+- **Building nodes as uplink pads (reuse rule).** `tools/art_pipeline/raid/build_uplink_pads_v1.py` runs the round 40
+  concept's own lines in Blender 5.2 (`unified40.py` 420-428, the pad: dark slab, lime trim, mast with its lime cap;
+  430-433, the riser: three lime traces up the corner facing the socket; vendored unchanged by 5e in
+  `tools/art_pipeline/city/concept_r40/`, ported from art-pass ace98b9, on concept_r31's `target_corps.py`) on a
+  stand-in footprint (pad half-size 1 BU at roof 0; riser 10 BU) and exports `assets/raid/uplink/uplink_pads.glb`
+  (+ art_export/1 manifest; 5e's lm_toon / lm_neon roles, drawn in the landmark materials). `RaidUplinkPads.of`
+  places them by the concept's rule on each of the Cell's nodes (the map's lot): the tallest prism over the lot,
+  half-size `uplink_pad_share` (0.32) x its roof's shorter side, roofs under `uplink_min_top` (3 BU) carry none, the
+  riser on the footprint corner nearest the node's street door (`CityMapOverlay.street_door`), scaled to the roof.
+  `CityView3D.set_uplink_pads` draws them in the props layer (shadows off); they go with the raid's map.
+  **Calls:** (1) a tapered roof keeps its pad, shrunk with the roof (the concept skipped tapered buildings and took
+  the nearest flat one within 1.9 lots; the game's socket stands over its own lot's roof, so the pad stays under
+  it); (2) the socket keeps floating over its roof (3A's overlay placement, label avoidance and fits) rather than
+  moving onto the street as the concept's circuit inlay: the pad on the roof under it is "the socket's twin"; (3) a
+  node's pad stays through the playout (a TAKEN node's socket burns; the building keeps its pad until the map goes).
+- **The 3D picture covers a held frame.** A zoom-in camera ease (setup -> playout, fight to fight) shows the held frame
+  by shrinking the picture through the camera rig; the 2D city's bake reached past the control, the 3D city stopped
+  at its edge and the sky showed round it. `NeonCity.view_cover` (set by the rig while it holds a frame, cleared at
+  rest) grows the 3D viewport and its camera to cover the screen, at most `COVER_MAX` (3) times the control (a file
+  of 5a's, smallest change; the overlays' projection is untouched).
+- **Raid setup fixes (orchestrator):** (1) the SAVED stamp could land on the greyed SKIP of the Speed / Skip strip
+  (3A's note): `Fx.avoid_rects` keeps off `RaidSpeedStrip` (its keys are drawn, not buttons; `scripts/autoload/fx.gd`,
+  one condition). (2) At text 2.0 the third defence card wrapped under the side column's view (3A pinned START at its
+  foot): `hq_scene._fit_card_row` lets the cards share one row, each as wide as the row allows down to
+  `CARD_ROW_MIN_SHARE` (0.8) of its size (fixes `test_horizontal_pass22_screens::test_defence_cards_are_on_screen...`).
+- **Tools.** `tools/design_lab/raid_lab.tscn` waits for the 3D city's chunks, prints the raid ortho and the pads, and
+  gains the `uplink_close` state (ortho 90 on the largest pad).
+- **Tests.** New `tests/unit/test_art3_6w_raid_city.gd` (fast): the zoom fit and its clamp; the raid pages on the 3D
+  city at the RAID band, fitted, nodes in the free part, pads on the Cell's nodes only, the playout in the raid
+  range, the Grid back on GRID; the pads (the concept's export, its rule, the riser's corner, deterministic); the
+  picture's cover and its cap; SAVED keeps off the strip. Changed (behaviour kept): `test_anim_r6_city`
+  `test_your_nodes_fills_its_window_and_counts_the_withdraw_row` accepts the side column's MORE BELOW when YOUR
+  NETWORK's own tag sits outside the column's view (3A's `ScrollHint.in_outer_views` hides it there).
+- **Dependency on 5e:** the x2 spread (the clamp call above), CityViewMotion on every 3D NeonCity, the vendored
+  concept_r40 / concept_r31 sources and the landmark material roles for the pads.
+
 ### 2026-10-05 — Art direction — ART-6 3A raid presentation
 Group 3 wave 1, ART-6's 2D parts (ART_BIBLE v2 §1.2, §4.8; rulings 6.2 words and 11 DOWN), on
 the **current** raid map (wave 2 moves it onto 1D's real-time unified city). Generator recipes
@@ -8017,6 +8073,11 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **ART-3 6w raid on the city (2026-10-05, defaults built, see "Art direction — ART-3 6w raid on the city"):**
+  (1) the raid's widest zoom is ortho 640 (the bible's round 39 clamp 220-380 no longer holds the x2 spread
+  network on the setup's map part): keep, or shrink the network's spread for the raid? (2) the sockets float over
+  their roofs above the uplink pads (3A's placement) instead of sitting on the street as the concept's circuit
+  inlay: keep?
 - **ART-8 8w keycard words (default implemented):** the Exploit keycards are the concept generator's
   own art (round 38 `exploits.py`) with their words baked in English (the corp band, the kind INTEL / BREACH
   / VIRUS, the item name, the effect line), so they cannot be translated. Kept as made (orchestrator's call,

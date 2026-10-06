@@ -101,7 +101,10 @@ func test_the_route_and_the_raid_setup_draw_their_nodes_before_any_bake() -> voi
 	nr.start_run(1)
 	await _frames(1)
 	assert_eq(_placed_nodes(nr.city_overlay), nr.city_overlay.nodes.size(), "route: every node on its first frame")
-	assert_false(nr.background.city.view_covered(), "no bake has landed")
+	# ART-7 7w / ART-3 6w: the route (and the raid setup) are on the 3D city: there is no bake to
+	# land, so the nodes-before-the-bake check applies only to a 2D city.
+	if not nr.background.city.city3d:
+		assert_false(nr.background.city.view_covered(), "no bake has landed")
 	assert_true(nr.arrival_ready(), "the jack in lands on it")
 	var hq: Control = _scene(HQ)
 	await _frames(1)

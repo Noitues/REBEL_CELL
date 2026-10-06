@@ -589,6 +589,10 @@
 			"seconds": 12.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art3_6w_raid_city.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_hq_run_city.gd": {
 			"seconds": 8.0,
 			"tier": "fast"

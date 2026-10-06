@@ -10,16 +10,18 @@ extends Control
 ## States: `sheet` (the kit: sockets, vehicle icons v4, pencil, stickers, paper, holo,
 ## terminal), `setup_<corp>` (the raid setup against each corporation), `drag_valid`,
 ## `drag_invalid` (a defence carried over a node), `playout_mark` (a pencil mark in its hold),
-## `playout_end`, `report`, `breached_bits` (mid bit burst), `breached`, `saved_stamp` (the autosave stamp on the setup). Writes `<state>.png` (1280x720).
+## `playout_end`, `report`, `breached_bits` (mid bit burst), `breached`, `saved_stamp` (the autosave stamp on the setup), `uplink_close` (ART-3 6w: a node's uplink pad up close). Writes `<state>.png` (1280x720).
 
 const HQ := preload("res://scenes/hq/hq_scene.tscn")
 const ALL := ["sheet", "setup_meridian", "setup_solace", "setup_halcyon", "setup_orbital", "setup_rebel_cell",
-	"drag_valid", "drag_invalid", "playout_mark", "playout_end", "report", "breached_bits", "breached", "saved_stamp"]
+	"drag_valid", "drag_invalid", "playout_mark", "playout_end", "report", "breached_bits", "breached", "saved_stamp", "uplink_close"]
 ## `breached_bits` is caught this far into the bit burst (its share of raid_bits_burst).
 const BITS_AT := 0.3
 const NODE_TYPES: Array[StringName] = [&"firewall_relay", &"vault_terminal", &"relay", &"safehouse", &"proxy_relay"]
 const SETTLE := 40
 const WAIT := 900
+## ART-3 6w: the `uplink_close` state's camera (ortho BU).
+const UPLINK_CLOSE_ORTHO := 90.0
 
 var out_dir := ""
 var states: Array = ALL
@@ -131,7 +133,13 @@ func _open_raid(corp_id: StringName, home_integrity: int = -1, defended: bool = 
 	_campaign(corp_id, home_integrity, defended, weak)
 	_hq.show_raid()
 	await _until(func() -> bool: return _hq.arrival_ready())
+	# ART-3 6w: the raid is on the 3D city: its model built and every chunk placed.
+	await _until(func() -> bool:
+		var v: CityView3D = _hq.wireframe.city.view3d
+		return v == null or (v.model != null and not v.is_processing()))
 	await _frames(SETTLE)
+	print("raid_lab: CAM ortho %.0f uplinks %d" % [RaidZoomFit.ortho_of(_hq.wireframe.city.scale.x, _hq.size.x),
+		_hq.wireframe.city.view3d.uplink_count() if _hq.wireframe.city.view3d != null else -1])
 	return _hq
 
 
@@ -169,6 +177,24 @@ func _screen(state: String) -> void:
 			await _frames(4)
 			hq.show_raid_summary()
 			await _frames(90)
+		"uplink_close":
+			# ART-3 6w: a close look at the uplink pads (the concept's pad and risers) on the city.
+			var hq: Node = await _open_raid(&"halcyon")
+			var nodes: Array[Dictionary] = hq.raid_uplink_nodes()
+			var view: CityView3D = hq.wireframe.city.view3d
+			if not nodes.is_empty() and view != null:
+				var pads := RaidUplinkPads.of(view.model, view.cfg, nodes)
+				var big := 0
+				for k in pads.size():
+					if float(pads[k]["half"]) > float(pads[big]["half"]):
+						big = k
+				var at: Vector2 = Vector2(pads[big]["lot"]) + Vector2(0.5, 0.5) if not pads.is_empty() else Vector2(nodes[0]["lot"])
+				hq._raid_passes = hq.RAID_PASSES_MAX  # the page's framing passes are over: the close-up stays
+				hq._frame_city(RaidZoomFit.zoom_of(UPLINK_CLOSE_ORTHO, hq.size.x), at, Vector2(0.45, 0.8))
+				await _frames(SETTLE)
+				for p in pads:
+					var px: Vector2 = view.project(p["centre"]) / Vector2(view.size) * hq.size
+					print("raid_lab: PAD %s top %.1f half %.2f at %s" % [p["id"], p["top"], p["half"], px.round()])
 		"saved_stamp":
 			await _open_raid(&"solace")
 			Fx.show_saved()

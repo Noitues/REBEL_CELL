@@ -981,10 +981,11 @@ func _set_panel(p: Control, name: String) -> void:
 	if raid_side_hint != null and is_instance_valid(raid_side_hint):
 		raid_side_hint.queue_free()
 	raid_side_hint = null
-	# ART-5 5a: the City Grid is the unified 3D city (the raid / netrun / HQ-run views move
-	# onto it next); the other net pages keep the 2D city until then.
+	# ART-5 5a: the City Grid is the unified 3D city; ART-3 6w: the raid's pages too (setup,
+	# playout, report), holding the RAID band (see-through buildings, management lanes). The
+	# other net pages keep the 2D city until their views move onto it.
 	if wireframe != null:
-		wireframe.city3d = name == "grid"
+		wireframe.use_city3d(name == "grid" or name in RAID_CITY_PAGES, CityLod.Band.RAID if name in RAID_CITY_PAGES else CityLod.Band.GRID)
 	_clear_city_map()
 	# City map screens: clicks fall through the empty panel area to the map.
 	var on_city := name in ["grid", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
@@ -2446,6 +2447,8 @@ func _clear_city_map() -> void:
 		city_overlay.queue_free()
 	city_overlay = null
 	var city := wireframe.city
+	if city.view3d != null and not city.view3d.uplink_pads.is_empty():
+		city.view3d.set_uplink_pads([])  # ART-3 6w: the raid's pads go with its map
 	if city.focus_grid != Vector2.INF or city.scale != Vector2.ONE:
 		city.focus_grid = Vector2.INF
 		city.scale = Vector2.ONE
@@ -2748,6 +2751,7 @@ func show_raid() -> void:
 	_raid_passes = 0
 	_raid_checks = 0
 	_raid_free = Rect2()
+	_raid_fit_for = Rect2()
 	_raid_step = {}
 	_raid_box = Rect2()
 	_raid_same = 0
@@ -2904,6 +2908,8 @@ func show_raid() -> void:
 		cards.add_child(card)
 	if c.armory.is_empty():
 		cards.add_child(_para(tr("Armory empty: runs bank assets from their drops.")))  # ART-0 C: wraps (at 2.0 one line widened the page)
+	if big_text:
+		cards.resized.connect(_fit_card_row.bind(cards))
 	_set_panel(outer, "raid")
 	# ANIM-R5 P8: YOUR NODES never ends in a cut row (its last node's "HP 30 → 25 HOLDS" sat
 	# half under the window's foot): the Grid's snap, and MORE BELOW when more nodes follow.
@@ -2939,6 +2945,31 @@ func show_raid() -> void:
 	if _last_warned_raid != String(pending.get("raid_id", "")):
 		_last_warned_raid = String(pending.get("raid_id", ""))
 		Dialogue.raid_warning(c.corporation_id, StringName(String(pending.get("raid_id", raid.id))), c.raids_won + c.raids_lost, "raid")
+
+
+## ART-3 6w: at big text the loadout heads the side column's scroll, whose view now ends at
+## 3A's pinned START foot: the defence cards share one row (each as wide as the row allows,
+## down to CARD_ROW_MIN_SHARE of its size) so no card wraps under the view's foot (at 2.0
+## the third card sat half below it). A row that would need narrower cards keeps wrapping.
+func _fit_card_row(cards: HFlowContainer) -> void:
+	var row: Array[AssetCard] = []
+	for k in cards.get_children():
+		if k is AssetCard:
+			row.append(k as AssetCard)
+	if row.is_empty():
+		return
+	var full := AssetCard.card_size().x
+	var w := floorf((cards.size.x - cards.get_theme_constant(&"h_separation") * (row.size() - 1)) / row.size())
+	var want := w if w < full and w >= full * CARD_ROW_MIN_SHARE else full
+	for card in row:
+		if not is_equal_approx(card.custom_minimum_size.x, want):
+			card.custom_minimum_size.x = want
+
+
+## ART-3 6w: the narrowest a defence card gets to share the row (share of its size).
+const CARD_ROW_MIN_SHARE := 0.8
+## ART-3 6w: the raid's pages on the unified 3D city at the RAID band.
+const RAID_CITY_PAGES: Array[String] = ["raid", "raid_playout", "raid_summary"]
 
 
 ## Makes claimed node `site_id` the raid setup's target (map click, or its target button
@@ -3073,9 +3104,39 @@ func _mount_raid_routes(paths: Array[Array]) -> void:
 	var key := str(paths)
 	raid_routes.set_routes(paths, key != _routes_shown)
 	_routes_shown = key
+	_mount_uplink_pads()
 
 
 var _routes_shown: String = ""
+
+
+## ART-3 6w (bible §4.8 raid language B): the Cell's nodes on the raid map as the concept's
+## uplink pads on their buildings' roofs, risers up the corner facing their street, on the 3D
+## city (once its model is built). A view: it reads the map as laid out.
+func _mount_uplink_pads() -> void:
+	var view := wireframe.city.view3d if wireframe != null and wireframe.city3d else null
+	if view == null:
+		return
+	if view.model == null:
+		if not view.model_ready.is_connected(_mount_uplink_pads):
+			view.model_ready.connect(_mount_uplink_pads, CONNECT_ONE_SHOT)
+		return
+	view.set_uplink_pads(RaidUplinkPads.of(view.model, view.cfg, raid_uplink_nodes()))
+
+
+## ART-3 6w: the raid map's nodes that carry an uplink pad: the Cell's own (claimed at the time
+## the map shows, home included), each with its building's lot and its street door, in the
+## map's order.
+func raid_uplink_nodes() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if city_overlay == null or not is_instance_valid(city_overlay) or RunManager.campaign == null:
+		return out
+	for n in city_overlay.nodes:
+		if not n.has("socket"):
+			continue
+		var id: StringName = n["id"]
+		out.append({"id": id, "lot": city_overlay.lot_of(id), "door": Vector2(city_overlay.street_door(id)) + Vector2(0.5, 0.5)})
+	return out
 
 
 ## ART-6 3A: the raid setup is the page (the drag pencil draws only there).
@@ -3344,6 +3405,21 @@ func place_raid_legend() -> void:
 	if _raid_checks > RAID_CHECKS_MAX or _raid_passes >= RAID_PASSES_MAX:
 		wireframe.ease_camera()
 		return
+	# ART-3 6w (bible §4.1, Appendix C #13): on the 3D city the raid is fitted to its network
+	# first (nodes, entry Sites and the margin in the free part, ortho clamped to the config's
+	# raid range), once per layout; the passes below then only correct it.
+	if wireframe.city3d and not free.is_equal_approx(_raid_fit_for):
+		_raid_fit_for = free
+		_raid_passes += 1
+		_raid_same = 0
+		_raid_box = Rect2()
+		var lots := raid_fit_lots()
+		if not lots.is_empty():
+			var scr := get_global_rect()
+			_frame_city(RaidZoomFit.fit_zoom(CityView3D.CONFIG, lots, free.size, size.x), _centre_of(lots), (free.get_center() - scr.position) / scr.size)
+		if not get_tree().process_frame.is_connected(place_raid_legend):
+			get_tree().process_frame.connect(place_raid_legend, CONNECT_ONE_SHOT)
+		return
 	# Act only on a settled measure: the same free rect and node box for RAID_STABLE_FRAMES
 	# frames in a row. The icons follow the camera a redraw or two late (and jump again when
 	# the city's new stretch is baked), and the page's layout settles over a few frames;
@@ -3375,13 +3451,13 @@ func place_raid_legend() -> void:
 	# H24 S5: nodes that cannot fit beside the key's column even at the zoom floor (a late
 	# campaign at text scale 1.6: the column took 368 px and the icons sat under it) get the
 	# strip key along the map's foot instead, as the Grid has.
-	if not _raid_strip and raid_legend.is_visible_in_tree() and city.scale.x * k < RAID_MIN_ZOOM * RAID_STRIP_BELOW:
+	if not _raid_strip and raid_legend.is_visible_in_tree() and city.scale.x * k < raid_min_zoom() * RAID_STRIP_BELOW:
 		_use_raid_strip()
 		return
 	_raid_reframes += 1
 	_raid_passes += 1
-	# Never further out than RAID_MIN_ZOOM (a far camera bakes a huge stretch of city).
-	k = clampf(k, RAID_MIN_ZOOM / maxf(RAID_MIN_ZOOM, city.scale.x), 1.0)
+	# Never further out than raid_min_zoom() (a far camera bakes a huge stretch of city).
+	k = clampf(k, raid_min_zoom() / maxf(raid_min_zoom(), city.scale.x), 1.0)
 	var anchor := city.focus_anchor
 	if k < 1.0:
 		# Zooming by k about the focus point moves the box centre to focus + (from - focus)
@@ -3415,6 +3491,43 @@ func place_raid_legend() -> void:
 ## map at text scale 1.6).
 const RAID_FIT_SHARE := 0.9
 const RAID_MIN_ZOOM := 0.45
+## ART-3 6w: the free rect the raid was last fitted to its network for (one fit per layout).
+var _raid_fit_for: Rect2 = Rect2()
+
+
+## The furthest out the raid map goes: on the 3D city the zoom of the config's widest raid
+## ortho (`raid_fit_max`, Appendix C #13), else RAID_MIN_ZOOM.
+func raid_min_zoom() -> float:
+	if wireframe != null and wireframe.city3d:
+		return RaidZoomFit.zoom_of(CityView3D.CONFIG.raid_fit_max, size.x)
+	return RAID_MIN_ZOOM
+
+
+## ART-3 6w: the raid's network as lot centres (the map's nodes: the Cell's and the Sites the
+## threats enter at and cross), what the raid zoom fits (bible §4.1).
+func raid_fit_lots() -> PackedVector2Array:
+	var out := PackedVector2Array()
+	if city_overlay == null or not is_instance_valid(city_overlay):
+		return out
+	for n in city_overlay.nodes:
+		out.append(Vector2(city_overlay.lot_of(n["id"])) + Vector2(0.5, 0.5))
+	return out
+
+
+## ART-3 6w: the raid playout's camera on the 3D city stays in the raid's ortho range: its
+## close zoom is `raid_fit_min`'s and a framed fight goes no further out than `raid_fit_max`'s
+## (the 2D city's PLAYOUT_ZOOM / PLAYOUT_MIN_ZOOM were ortho ~84 / ~133 on the city, the
+## netrun transit's band).
+func playout_zoom() -> float:
+	if wireframe != null and wireframe.city3d:
+		return RaidZoomFit.zoom_of(CityView3D.CONFIG.raid_fit_min, size.x)
+	return PLAYOUT_ZOOM
+
+
+func playout_min_zoom() -> float:
+	if wireframe != null and wireframe.city3d:
+		return RaidZoomFit.zoom_of(CityView3D.CONFIG.raid_fit_max, size.x)
+	return PLAYOUT_MIN_ZOOM
 ## The column key gives way to the strip when the nodes would need a zoom under this share
 ## of RAID_MIN_ZOOM to fit beside it (1: as soon as the floor would be passed).
 const RAID_STRIP_BELOW := 1.0
@@ -3756,13 +3869,13 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	var pre := before if before != null else c
 	var kept: Array = pre.grid.claimed_ids()
 	var g := raid_graph({}, {}, pre)
-	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, PLAYOUT_ANCHOR, PLAYOUT_ZOOM)
+	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, PLAYOUT_ANCHOR, playout_zoom())
 	_mount_raid_routes(raid_route_paths(events))  # ART-6 3A: the plan stays drawn while it plays
 	# ANIM-R6 C10: the playout opens framed on CORE and the Sites the raid enters at (it opened
 	# on the middle of the whole network, CORE at the screen's edge, and eased from there).
 	_playout_open = playout_frame_points(events)
 	if not _playout_open.is_empty():
-		_frame_city(PLAYOUT_ZOOM, _centre_of(_playout_open), PLAYOUT_ANCHOR)
+		_frame_city(playout_zoom(), _centre_of(_playout_open), PLAYOUT_ANCHOR)
 	# ANIM-R5 P6: the key too (a label and home's banner went under the MAP LEGEND at 1.6).
 	city_overlay.avoid_controls([side, legend])
 	var overlay := city_overlay
@@ -3956,7 +4069,7 @@ func _frame_fight(sites: Array[StringName], overlay: CityMapOverlay) -> float:
 		_playout_open = PackedVector2Array()
 	for id in sites:
 		pts.append(Vector2(overlay.lot_of(id)) + Vector2(0.5, 0.5))
-	return wireframe.frame_points(pts, fight_area(_fight_area), PLAYOUT_ZOOM, PLAYOUT_MIN_ZOOM)
+	return wireframe.frame_points(pts, fight_area(_fight_area), playout_zoom(), playout_min_zoom())
 
 
 ## The playout map's parts the fight frame keeps to: [the map's area, its key].
