@@ -141,6 +141,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	# lights, the Heat / suspicion rig and the day / night crossfade.
 	&"sky_lane_cars", &"street_cars", &"holo_billboard", &"aviation_blink", &"searchlight_sweep", &"chopper_orbit",
 	&"drone_orbit", &"police_strobe", &"alarm_beacon", &"heat_node_light", &"city_light_fade",
+	# ART-8 8w Central Server gate (bible 4.9): the keycards' stagger, the socket's ring, BREACH turning pink.
+	&"gate_keycard_stagger", &"gate_socket_ring", &"gate_breach_ready",
 	# ART-5 5e: the Cell's blackout reveal on the Grid's city (CityView3D.set_cell_reveal).
 	&"cell_fist_reveal",
 ]

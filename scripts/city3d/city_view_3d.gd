@@ -88,6 +88,14 @@ var _hidden_hq: Dictionary = {}
 ## World X/Z rects whose procedural buildings give way to a landmark's own (the art pass's
 ## glTF stands there instead: never two cities on one lot).
 var _cleared: Array[Rect2] = []
+## ART-8 8w: the rect each landmark (corp) or staged compound ("compound_<corp>") cleared,
+## so staging a compound can give a landmark's lot back.
+var _cleared_by: Dictionary = {}
+## The HQ compounds staged (corp -> Node3D; null where it only cleared its ground headless).
+var compounds: Dictionary = {}
+var _stand_in_was_hidden: Dictionary = {}
+## Landmarks (not the staged corp's own) hidden because a staged compound covers them.
+var _hidden_for_compound: Dictionary = {}
 ## The landmarks placed (corp -> Node3D), 5b's glTFs.
 var landmarks: Dictionary = {}
 var _inks: Array[Color] = []
@@ -219,8 +227,9 @@ func host_paused() -> bool:
 ## config's ramp, sky, window and neon gains, haze and grade) toward `day` by night share
 ## `n` (1 night .. 0 day), on the buildings, streets, post and sky, and switches the
 ## landmarks' materials to their day or night look. `day` keys: "ramp" (3 Colors: shadow,
-## mid, lit), "sky", "window_gain", "neon_gain", "haze", "grade" (CityViewMotion.day_look
-## builds it from the motion config). By day there is no rain, and no fog below the Grid.
+## mid, lit), "sky", "window_gain", "neon_gain", "haze", "grade", and optionally "bloom" and
+## "glow_threshold" (ART-5 5e: the post's bloom by day; CityViewMotion.day_look builds it
+## from the motion config). By day there is no rain, and no fog below the Grid.
 func set_night_share(n: float, day: Dictionary) -> void:
 	night_share = clampf(n, 0.0, 1.0)
 	if _building_mat == null or day.is_empty():
@@ -237,6 +246,8 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	_post.set_shader_parameter(&"haze_color", Vector3(hz.r, hz.g, hz.b))
 	var gr := (day["grade"] as Color).lerp(cfg.grade, night_share)
 	_post.set_shader_parameter(&"grade", Vector3(gr.r, gr.g, gr.b))
+	_post.set_shader_parameter(&"bloom", lerpf(float(day.get("bloom", cfg.bloom)), cfg.bloom, night_share))
+	_post.set_shader_parameter(&"glow_threshold", lerpf(float(day.get("glow_threshold", cfg.glow_threshold)), cfg.glow_threshold, night_share))
 	var night := night_share >= 0.5
 	_post.set_shader_parameter(&"rain_on", bool(quality.get("rain", true)) and night)
 	_post.set_shader_parameter(&"fog_on", bool(quality.get("fog", true)) and (night or band == CityLod.Band.GRID))
@@ -715,8 +726,8 @@ func place_landmarks() -> void:
 
 
 func _place_landmark(corp: StringName, path: String, at: Transform3D, look: LandmarkLook) -> bool:
-	if landmarks.has(corp) or not ResourceLoader.exists(path):
-		return false
+	if landmarks.has(corp) or compounds.has(corp) or not ResourceLoader.exists(path):
+		return false  # ART-8 8w: a staged compound stands there instead
 	var scene := load(path) as PackedScene
 	if scene == null:
 		return false
@@ -728,7 +739,9 @@ func _place_landmark(corp: StringName, path: String, at: Transform3D, look: Land
 	landmarks[corp] = node
 	var box := _ground_box(node)
 	if box.has_area():
-		_cleared.append(Rect2(box.get_center() - box.size * CLEAR_SHARE * 0.5, box.size * CLEAR_SHARE))
+		var r := Rect2(box.get_center() - box.size * CLEAR_SHARE * 0.5, box.size * CLEAR_SHARE)
+		_cleared.append(r)
+		_cleared_by[corp] = r
 	if corp == CELL:
 		LandmarkMaterials.set_reveal(landmark_mats[corp], cell_reveal)
 		LandmarkMaterials.show_dispatch(node, cell_dispatch)
@@ -814,6 +827,8 @@ func _place_site_landmark() -> bool:
 	if not _place_landmark(SITE_KEY, path, Transform3D(Basis(), lot_world(site_landmark["lot"])), look):
 		return false
 	_rebuild_under(_cleared[before] if _cleared.size() > before else Rect2())
+	if _under_compound(_ground_box(landmarks[SITE_KEY])):
+		_hide_for_compound(SITE_KEY)  # ART-8 8w: a staged compound's lot wins
 	return true
 
 
@@ -829,6 +844,8 @@ func _remove_site_landmark() -> void:
 	node.queue_free()
 	landmarks.erase(SITE_KEY)
 	landmark_mats.erase(SITE_KEY)
+	_cleared_by.erase(SITE_KEY)
+	_hidden_for_compound.erase(SITE_KEY)
 	_rebuild_under(r)
 
 
@@ -878,6 +895,128 @@ func _in_cleared(c: Vector2) -> bool:
 		if r.has_point(c):
 			return true
 	return false
+
+
+# --- HQ compounds: 8p's models staged for an HQ run (ART-8 8w) --------------------------------
+
+## The compound key of `corp` in the cleared rects.
+static func compound_key(corp: StringName) -> StringName:
+	return StringName("compound_%s" % corp)
+
+
+## Stages `corp`'s HQ compound (8p's glTF, HqCompoundStage's place) for its HQ run: the
+## corp's landmark (for the Cell its district: the canyon runs through it) and the stand-in
+## tower go, the landmark's cleared lot comes back, the compound's own footprint is cleared
+## and the chunks under either rebuild. Returns the compound's node (null headless or when
+## it has no model). Staging twice is a no-op.
+func stage_compound(corp: StringName) -> Node3D:
+	if compounds.has(corp):
+		return compounds[corp]
+	var m := HqCompoundStage.manifest(corp)
+	if m.is_empty():
+		return null
+	var hq_rect: Rect2i = model.hqs.get(corp, Rect2i()) if model != null else Rect2i()
+	var at := HqCompoundStage.place(cfg, corp, m, hq_rect)
+	var dirty: Array[Rect2] = []
+	if landmarks.has(corp):
+		(landmarks[corp] as Node3D).visible = false
+	if _cleared_by.has(corp):
+		var old: Rect2 = _cleared_by[corp]
+		_cleared.erase(old)
+		dirty.append(old)
+	var fp := HqCompoundStage.footprint_rect(m, at)
+	_cleared.append(fp)
+	_cleared_by[compound_key(corp)] = fp
+	dirty.append(fp)
+	# ART-5 5e's Site landmark (and its cleared block) gives way inside the compound too; the
+	# roof props follow the cleared prisms (they ride the rebuilt chunks).
+	if landmarks.has(SITE_KEY) and fp.intersects(_ground_box(landmarks[SITE_KEY])):
+		_hide_for_compound(SITE_KEY)
+	var node: Node3D = null
+	var path := HqCompoundStage.model_path(corp, m)
+	if can_render() and path != "" and ResourceLoader.exists(path):
+		var scene := load(path) as PackedScene
+		if scene != null:
+			node = scene.instantiate() as Node3D
+			node.name = "Compound_%s" % corp
+			HqCompoundMaterials.apply(node, load(LandmarkMaterials.LOOK_PATH) as LandmarkLook, corp, false)
+			node.transform = at
+			add_to_layer(&"landmarks", node)
+	compounds[corp] = node
+	_stand_in_was_hidden[corp] = _hidden_hq.has(corp)
+	_hidden_hq[corp] = true
+	_rebuild_chunks_under(dirty)
+	return node
+
+
+## Undoes stage_compound: the compound goes, the landmark and its cleared lot come back.
+func unstage_compound(corp: StringName) -> void:
+	if not compounds.has(corp):
+		return
+	var node: Node3D = compounds[corp]
+	if node != null and is_instance_valid(node):
+		node.queue_free()
+	compounds.erase(corp)
+	var dirty: Array[Rect2] = []
+	var key := compound_key(corp)
+	if _cleared_by.has(key):
+		var fp: Rect2 = _cleared_by[key]
+		_cleared.erase(fp)
+		_cleared_by.erase(key)
+		dirty.append(fp)
+	if landmarks.has(corp):
+		(landmarks[corp] as Node3D).visible = true
+		if _cleared_by.has(corp):
+			_cleared.append(_cleared_by[corp])
+			dirty.append(_cleared_by[corp])
+	if not bool(_stand_in_was_hidden.get(corp, false)):
+		_hidden_hq.erase(corp)
+	_stand_in_was_hidden.erase(corp)
+	for k: StringName in _hidden_for_compound.keys():
+		if landmarks.has(k) and not _under_compound(_ground_box(landmarks[k])):
+			(landmarks[k] as Node3D).visible = true
+			_hidden_for_compound.erase(k)
+	if not landmarks.has(corp) and model != null and can_render():
+		place_landmarks()  # a landmark skipped while the compound stood comes in now
+	_rebuild_chunks_under(dirty)
+
+
+## True when world ground rect `r` (X/Z) meets a staged compound's footprint.
+func _under_compound(r: Rect2) -> bool:
+	for corp: StringName in compounds:
+		var fp: Rect2 = _cleared_by.get(compound_key(corp), Rect2())
+		if fp.has_area() and fp.intersects(r):
+			return true
+	return false
+
+
+func _hide_for_compound(key: StringName) -> void:
+	(landmarks[key] as Node3D).visible = false
+	_hidden_for_compound[key] = true
+
+
+## True when world ground point `c` (X/Z) lies in a cleared rect (tests: the compound's
+## footprint has no procedural buildings).
+func is_cleared(c: Vector2) -> bool:
+	return _in_cleared(c)
+
+
+## Rebuilds the built chunks whose ground touches any of `rects` (world X/Z).
+func _rebuild_chunks_under(rects: Array[Rect2]) -> void:
+	if model == null or rects.is_empty():
+		return
+	var keys: Array = _chunks.keys()
+	keys.sort()
+	for key: Vector2i in keys:
+		var r: Rect2i = model.chunks[key]["rect"]
+		var a := lot_world(Vector2(r.position))
+		var b := lot_world(Vector2(r.end))
+		var area := Rect2(Vector2(minf(a.x, b.x), minf(a.z, b.z)), Vector2(absf(b.x - a.x), absf(b.z - a.z)))
+		for rr in rects:
+			if area.intersects(rr):
+				_free_chunk(key)
+				_build_chunk(key)
+				break
 
 
 # --- Roof props: the concept's own models (ART-5 5e, CityRoofProps) ---------------------------

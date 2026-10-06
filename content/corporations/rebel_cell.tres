@@ -327,7 +327,7 @@ map_position = Vector2(560, 430)
 [sub_resource type="Resource" id="site_dispatch_core_site"]
 script = ExtResource("e1")
 id = &"dispatch_core_site"
-display_name = "DISPATCH"
+display_name = "DISPATCH CORE"
 tier = 4
 objective = 4
 claimable = false

@@ -1,0 +1,122 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "central_server_gate",
+ "about": "ART-8 8w (bible 4.9). Built by tools/art_pipeline/hq_run/export_gate_assets.py; do not edit by hand.",
+ "source": {
+  "script": "tools/art_pipeline/hq_run/export_gate_assets.py",
+  "generator": "art-concepts-r43:docs/concepts/round38_landing_exploits/scripts/exploits.py @ 9a62cec89be362d89ad58ce8e2c2e2a126c8a3a1",
+  "functions": [
+   "exploits.card(kind, corp)",
+   "exploits.breach_button(state)"
+  ],
+  "commit": "c66e427cf4f45529697fa9ba91b492be8b738cb4",
+  "generator_sha256": {
+   "exploits.py": "e675b6ef8d964b1dc43e01350966ec280304af957105823e144e8984058356b8",
+   "sticker_lib19.py": "83e43cacf28c1ed7b1707f8a062c21a52ec48d9e56d328db3d9102e306d53ed7"
+  },
+  "scripts_sha256": "cfd9a2ed4c0b3321afafe1aabf118c7a524bd9cccbcaec70ef9fafde129ccb3a"
+ },
+ "settings": {
+  "scale": "2x (sticker_lib19.SS)",
+  "fonts": "assets/fonts (the generator's OFL faces)",
+  "kinds": [
+   "intel",
+   "breach",
+   "virus"
+  ],
+  "corps": [
+   "halcyon",
+   "meridian",
+   "orbital",
+   "rebel_cell",
+   "solace"
+  ]
+ },
+ "files": [
+  {
+   "path": "keycards/halcyon_intel.png",
+   "bytes": 38998,
+   "sha256": "739ee6b4c265ddab4686817429e1ecb21d2d9324462c6aca7e2b2404c73b77e7"
+  },
+  {
+   "path": "keycards/halcyon_breach.png",
+   "bytes": 36269,
+   "sha256": "ef4b5337c61473de6b7cbd2a670cade14a434415ff7492a0f614a8bcb5a5139f"
+  },
+  {
+   "path": "keycards/halcyon_virus.png",
+   "bytes": 38173,
+   "sha256": "f8b4bba62845744eda90c0ea1eee0956782f4d73ff6125ba3900c70f782181fc"
+  },
+  {
+   "path": "keycards/meridian_intel.png",
+   "bytes": 38436,
+   "sha256": "4472e124920916641b82c5bb09fdc06951fa557d7977218aabe7e7f2b32d654d"
+  },
+  {
+   "path": "keycards/meridian_breach.png",
+   "bytes": 36215,
+   "sha256": "26e6784ca2ca2c6ce289588bb95bacfa713ab84898ede13c176a8a6c187e9f4c"
+  },
+  {
+   "path": "keycards/meridian_virus.png",
+   "bytes": 38635,
+   "sha256": "f4411c7edc8442b366c1dac6de789760d56413523312a5844cb3a5c9fe301f1f"
+  },
+  {
+   "path": "keycards/orbital_intel.png",
+   "bytes": 39223,
+   "sha256": "275e02c9bfc421d61f2eb9fdcbe1ad5a2edd0adbfc4487990392b42e09334011"
+  },
+  {
+   "path": "keycards/orbital_breach.png",
+   "bytes": 37920,
+   "sha256": "94dda86d7512b1613240d15d3978449a71797ef14f5ce38a465f5225d8a7c7c6"
+  },
+  {
+   "path": "keycards/orbital_virus.png",
+   "bytes": 39193,
+   "sha256": "49597320ae3440c1217bb4bca979029c0661b7c7bad4f3ff977b64927b9f3017"
+  },
+  {
+   "path": "keycards/rebel_cell_intel.png",
+   "bytes": 36754,
+   "sha256": "c446c415c3b0603cc9f1e84f1a1d86433fa4e02d79062c0a2c4d5365132134eb"
+  },
+  {
+   "path": "keycards/rebel_cell_breach.png",
+   "bytes": 34309,
+   "sha256": "b2f60d7b081b35e1530fef8c3096a9d077d598d36596753cc41a256546e79fc1"
+  },
+  {
+   "path": "keycards/rebel_cell_virus.png",
+   "bytes": 37672,
+   "sha256": "ccfd44867655b41dccdfd5cef780b9ad8258dbed7dbc75da5e24d2f285b13d2d"
+  },
+  {
+   "path": "keycards/solace_intel.png",
+   "bytes": 39473,
+   "sha256": "621615451a378e81ba39db689e7559f0dcd09c3890e14edc68750fc84c95dc9b"
+  },
+  {
+   "path": "keycards/solace_breach.png",
+   "bytes": 35025,
+   "sha256": "a05704b20633b46a8326d4ca3e396535a2c954251113b0c71368e5c9e0105532"
+  },
+  {
+   "path": "keycards/solace_virus.png",
+   "bytes": 39792,
+   "sha256": "9953498ffa2aa1e3942c790c6bd62d35dc885e16094bf20310a89c5ceb38993f"
+  },
+  {
+   "path": "breach_off.png",
+   "bytes": 29358,
+   "sha256": "4e82fea34ddfc1d422ba2b44f93b199ac92ae9a02f59bab6e12f8caded75dcce"
+  },
+  {
+   "path": "breach_on.png",
+   "bytes": 43038,
+   "sha256": "5dd5f82c3872a38ace97d3cd16d53cb95693a13e3054d0f9dcfed894988f1fa6"
+  }
+ ]
+}

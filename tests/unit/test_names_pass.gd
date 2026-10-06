@@ -23,6 +23,10 @@ const RAID_ALLOWED: Array[String] = [
 ## Code roots swept for the renamed identifiers.
 const CODE_ROOTS: Array[String] = ["res://scripts", "res://scenes", "res://tests", "res://tools", "res://content"]
 const CODE_EXTS: Array[String] = ["gd", "tres", "tscn", "py", "cfg", "json"]
+## ART-8 8w: folders of art-pass concept scripts vendored byte for byte (tools/art_pipeline/city/
+## vendor_r34, vendor_r43: the reuse rule runs the concept's own generators unchanged, and the
+## compound manifests hash them) keep the concept's words; the names pass does not scan them.
+const VENDORED_PREFIX := "vendor_"
 
 var _quoted := RegEx.create_from_string("\"((?:[^\"\\\\]|\\\\.)*)\"")
 
@@ -65,6 +69,8 @@ func _files(root: String, exts: Array[String]) -> Array[String]:
 			if exts.has(f.get_extension()):
 				out.append(dir.path_join(f))
 		for d in DirAccess.get_directories_at(dir):
+			if d.begins_with(VENDORED_PREFIX):
+				continue
 			stack.append(dir.path_join(d))
 	out.sort()
 	return out
@@ -245,7 +251,7 @@ func test_part2_no_code_keeps_an_old_name() -> void:
 ## D5: each corporation's Central Server (its boss Site) carries its own name.
 func test_d5_each_central_server_has_its_name() -> void:
 	var want := {&"solace": "The Genome Core", &"meridian": "The Master Manifest", &"halcyon": "The Panopticon",
-		&"orbital": "Launch Control", &"rebel_cell": "DISPATCH"}
+		&"orbital": "Launch Control", &"rebel_cell": "DISPATCH CORE"}  # ART-8 8w: the concept's name
 	for corp_id in want:
 		var corp := ContentRegistry.get_content(corp_id) as CorporationData
 		var names: Array[String] = []

@@ -170,6 +170,7 @@ const DEMOS := {
 	# ART-1 1B material kit: each entry on a fresh real piece (KitDemo: a VinylSticker, a
 	# CrtTerminalPanel, a GreasePencilMark, a DecryptedHoloPanel, a LightSpill, BinaryBits).
 	&"crt_type_on": ["kit", "crt_type_on"], &"crt_caret_blink": ["kit", "crt_caret_blink"], &"crt_hex_scroll": ["kit", "crt_hex_scroll"],
+	&"gate_keycard_stagger": ["kit", "gate_keycard_stagger"], &"gate_socket_ring": ["kit", "gate_socket_ring"], &"gate_breach_ready": ["kit", "gate_breach_ready"],
 	&"sticker_slap": ["kit", "sticker_slap"], &"sticker_peel": ["kit", "sticker_peel"], &"sticker_dissolve": ["kit", "sticker_dissolve"],
 	&"sticker_gloss_sweep": ["kit", "sticker_gloss_sweep"], &"sticker_corner_flutter": ["kit", "sticker_corner_flutter"],
 	&"sticker_hover": ["kit", "sticker_hover"], &"sticker_press": ["kit", "sticker_press"],

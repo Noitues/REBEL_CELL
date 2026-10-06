@@ -221,6 +221,72 @@ BREACHED); crops in `docs/art_review/ART-6/3A/`.
 
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-8 8w HQ runs on the city
+ART_BIBLE v2 §3.14 (D17), §4.6, §4.7, §4.9; ART_3_BATCH "Wave 2b" 8w; references
+`round34_rebel_cell/canyon_dispatch.jpg`, `round38_landing_exploits/central_server_gate.png`,
+`exploit_items.png`; 8p's compounds; 5a's CityView3D; 5d's SiteWonLights.
+- **DISPATCH's HQ run plays in the round 43 Tokyo canyon** (the open question 8p logged, resolved):
+  `tools/art_pipeline/city/build_dispatch_canyon.py` runs round 34's own `hq34.py` chain (street34 /
+  kit26 / cfg28 vendored unchanged in `vendor_r34/` from art-pass d14b8f6) in the DISPATCH state as a
+  still, origin = the canyon's midpoint, placed on round 34's own canyon lots (`place_lot` 36.5, 36.5 in the
+  manifest). It replaces 8p's rebel_base compound for rebel_cell. Text signs at curve resolution 2 (as 5b):
+  2.67 MB, 78k triangles.
+- **Canyon camera yaw 180 / pitch 40** (looking down the street toward its head, round 34's direction, at
+  the city's own pitch so the sides read as rooftops); the corps keep the city azimuth at 55 degrees.
+  `hq_compound_spec.py` carries per-layout yaw / pitch / snap / seek / builder / lot centre.
+- **Canyon slots:** per layer the left rooftop, both pavement edges and the right rooftop (Sync Strike's
+  three lanes); the right alley slot stands 8 BU further up the street (stagger, so the pair reads apart);
+  rows at 10 / 28 / 46 / 64 / 80 / 100 BU along the street and a rooftop over a gap seeks a roof only toward
+  the camera end (rows 82 + both-way seek put 5a / 6a 18 px and 5d / 6d 1 px apart: the validator's 50 px
+  rule failed). DISPATCH CORE stands in the head crossing under the REBEL_CELL billboard.
+- **Godot seams:** `HqCompoundStage` (pure: manifest, layout, place transform = the manifest's
+  `place_lot` else the HQ lot's centre, world node points through HqCompoundLayout, footprint, camera from
+  the manifest, `run_camera` widening the framing up to 2x only when a node or the entry falls outside);
+  `HqCompoundMaterials` maps hq_toon / lit / neon / win / sign / beam onto LandmarkMaterials roles
+  0 / 2 / 3 / 4 / 8 and the light cone (same corp tint); `CityView3D.stage_compound` / `unstage_compound`
+  hide the corp's landmark (for the Cell its district: the canyon runs through it), give its cleared lot
+  back, clear the compound's footprint and rebuild the chunks under both (landmarks are not placed while
+  their compound is staged).
+- **HQ-run page (HqRunView):** its own CityView3D framed on the compound; the run in the route's ink
+  (RouteOverlay's stickers and state rings, walked lime line, live orange crawling dash, later white dash),
+  the entry ring and the operative pin, and the Central Server as the rack sticker with the red pencil
+  **TARGET** circle (bible 4.5's boss mark, not the server's name in pencil) and the yellow chip
+  `CENTRAL SERVER // <Site name>` above the circle (below it when the server is at the top edge). The
+  netrun page mounts it instead of the transit route when `run.kind == "boss"` (a few lines in
+  `_show_map`; `_mount_hq_run`).
+- **Central Server gate (CentralServerGate):** opened by the UI press paths only (`_request_node`: the map
+  click and the ROUTE button); `enter_node` is unchanged so tests and tools reach the fight directly. The
+  panel (EXPLOITS n/min, 3 sockets + 2 dashed extras, the footer), the boss WheelView from the new pure
+  `NetrunSession.breach_preview()` (`_start_combat`'s setup factored into `_combat_setup`; the preview draws
+  from a COPY of the combat stream, tested equal to the real start and leaving run, streams and campaign
+  unchanged), the BREACH vinyl off -> on, Back to the compound. New motion entries `gate_keycard_stagger`,
+  `gate_socket_ring`, `gate_breach_ready` (REQUIRED_IDS, lab "kit" demos); the cards reuse `sticker_slap`;
+  MotionSkip one press; reduce effects / headless = end state; pad focus lands on BREACH (lime frame).
+- **Keycards and the BREACH vinyl are the generator's art:** `tools/art_pipeline/hq_run/export_gate_assets.py`
+  runs round 38 `exploits.py` unchanged on art-concepts-r43 (3082e99) -> `assets/hq_run/` (15 keycards at
+  2x, breach_off / breach_on, manifest). The cards keep their baked English words (orchestrator's call;
+  translation question below).
+- **Names:** the Cell's Central Server is **DISPATCH CORE** (the concept's name; Site display name
+  "DISPATCH" -> "DISPATCH CORE", its id `dispatch_core_site` already follows it; strings re-exported).
+- **D17 on the city:** `BackdropCatalog.city_mode` / `city_shot`: per city quality tier
+  (`CityConfig.backdrop_city_tiers`, default [false, true, true]) the combat backdrop is a CityView3D
+  close-up drawn through the same `combat_backdrop.gdshader` (pools and bands unchanged): the corp's HQ for a
+  boss (ortho 140, target 30 BU up), the staged DISPATCH canyon for the Cell's boss (the HQ-run camera at
+  0.7x), the run's Site building for a regular fight (ortho 90; the nearest lot with a roof within 4 lots of
+  the layout point). The still shows until the city's model is in and stays the tier-0 fallback. Won on the
+  city: 5d's SiteWonLights on the Site building and the district dims outside an ellipse round the target
+  (new shader uniforms `use_mask` / `keep_at` / `keep_radius`; the masked still path is unchanged).
+  `BackdropCatalog.place` gained an optional `site` (the run's Site id). New CityConfig fields
+  (`backdrop_*`, group "Combat backdrop"): CityConfig is not under scripts/data, no smoke check needed.
+- **Measured (windowed, 1920x1080 window, `hq_run_lab`):** city GPU per view: HQ-run pages 3.8–5.9 ms, gate
+  5.0–5.2 ms, backdrop close-ups tier 2 3.4–6.6 ms, tier 1 4.0–5.0 ms; all under the 8 ms city budget, so tier 1
+  (Deck) keeps the city close-up and only tier 0 uses the stills. Frames held 16.7 ms (v-sync).
+- **No tests dropped.** New: `tests/unit/test_hq_run_city.gd` (fast).
+- **Files outside 8w's area (smallest change):** `scripts/ui/netrun_scene.gd` (`_show_map` hook,
+  `_request_node`, gate open / close, `_clear_route`), `scripts/core/netrun_session.gd` (setup factored, preview),
+  `scripts/ui/kit/materials/kit_demo.gd` and `tools/design_lab/motion_lab.gd` (gate demos),
+  `scripts/city3d/city_view_3d.gd` (staging), `scripts/city3d/city_config.gd` (backdrop fields).
+
 ### 2026-10-05 — Art direction — ART-10 4C menus, title, settings, HQ
 ART_BIBLE v2 §1.2, §1.3, §2.9–2.10, §4.13, §5.6; refs `menus/round33_ui_chrome/title_screen.jpg`,
 `title_screen_alt_simulate.jpg`, `abandon_dialog.jpg`, `ui_kit.jpg`, `typography.jpg`,
@@ -655,6 +721,22 @@ Agent 5e (wave 2b, critical path; ART_BIBLE v2 §4.1, §4.3, §4.4, §4.5, §5.4
 - **Grid fit room** (file outside the area: `hq_scene.gd`, one constant): `GRID_MIN_ZOOM` 0.3 ->
   0.22. At 0.3 every corporation's x2 Grid fitted at the clamp (ortho 532 on 1280 px) and
   Meridian's key covered nodes at text size 2.0 (`test_city_map_sweeps`).
+- **Heat-band and day-look review (orchestrator follow-up).** One windowed launch
+  (`city_integration_capture.tscn -- --looks=1`) walks every Heat band through the real path
+  (the campaign's Heat at each band level, then the Grid page again) and the day look (the
+  motion layers' crossfade to DAY, i.e. `set_night_share`), for Solace and the Cell; frames
+  `heat<k>_*` / `day_*` in `docs/art_review/ART-5/5e/`. Two fixes from reading them:
+  (1) **the Grid's network decal vanished whenever the Grid page rebuilt** (every Site
+  selection, claim, repair, upgrade): the old CityMapOverlay left the tree after the new one
+  fed the decal and cleared it. It now clears only its own network (`_fed_network`; file
+  outside the area, smallest change; test `test_a_rebuilt_map_keeps_the_newer_maps_decal`).
+  (2) **the day look was warm and bloomed white**: 5c's day ramp turned Solace's teal olive and
+  the night bloom (threshold 0.62) washed the landmarks out. Retuned to the round 26
+  `hq_*_close_day` / `city_ambient_day_v4` cool day (ramp, sky, haze, grade in
+  CityMotionConfigData) and new `day_bloom` 0.2 / `day_glow_threshold` 0.92 (schema
+  addition, validated, smoke-checked) that `set_night_share` lerps. The Heat rig reads as
+  round 37's calm Heat B (a few searchlight beams, alarm and node lights; police strobes and
+  choppers are small at Grid zoom): kept as designed.
 
 ### 2026-10-05 — Art direction — ART-5 5c city motion
 Agent 5c (ART_BIBLE v2 §4.1 car LOD, §4.2 city motion, §4.3 Heat on maps, §5.3–5.5, §6.1;
@@ -7996,6 +8078,14 @@ and annotated in the GDD where it changes a rule.
   network on the setup's map part): keep, or shrink the network's spread for the raid? (2) the sockets float over
   their roofs above the uplink pads (3A's placement) instead of sitting on the street as the concept's circuit
   inlay: keep?
+- **ART-8 8w keycard words (default implemented):** the Exploit keycards are the concept generator's
+  own art (round 38 `exploits.py`) with their words baked in English (the corp band, the kind INTEL / BREACH
+  / VIRUS, the item name, the effect line), so they cannot be translated. Kept as made (orchestrator's call,
+  the reuse rule). Should a text-free card (art only, the words drawn by the game through tr()) be exported
+  later for other languages?
+- **ART-8 8w combat close-up framing (default implemented):** the city backdrop frames every corp's HQ at one
+  ortho (140) and height (30 BU); Solace's helix (111 BU) is cut at its top. Per-corp framing (or a fit to
+  the landmark's box) is a small follow-up if the designer wants the whole HQ in frame.
 - **Asset parity, card kinds (2026-10-05, default implemented):** the concept's card face has three kinds, WHEEL / HACK /
   SYSTEM. The game's violet "other" family (rest and similar cards) is drawn as SYSTEM (cyan). Is a fourth face wanted?
 - **ART-12 12s skins (2026-10-05; default built, see "Art direction — ART-12 12s skins"):** (1) skins are
