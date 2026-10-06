@@ -284,6 +284,94 @@ Meridian's seed. Decision:
 labels touch; `The Cell's Own Patch` sits on a marker; the TARGET pencil runs under `CENTRAL
 SERVER // EXPLOITS 0/3`. Same cause as GRID-03. Decision:
 
+### Raid (`raid_setup.jpg`, `raid_drag_asset.jpg`, `raid_playout.jpg`, `raid_result.jpg`, `raid_report.jpg`, `raid_interlude.jpg`)
+Refs: art pass build `raid_*` (M13: a 2D wireframe city, a terminal column on the right, paper
+defence cards in a DEFENSE LOADOUT strip); concepts `round40_city_unified/raid_view_v3.png`
+(LOCKED raid view), `round21_raid_ui/raid_report.png`. Main follows the unified-city concept for
+the map and the paper work order, and the build for the loadout strip.
+
+**RAID-01 (P1) Defence cards.** Concept: a row of dark cards along the bottom edge over the map,
+each with a coloured top band, a big glyph, `INT n`, a count `x1`, a two-line rule; a picked card
+is "parked" in a dashed slot with a yellow pencil arc to its target. Build and main: cream paper
+cards (`TURRET` / `ICE LOCK` / `DECOY`, `HP 10 1 LEFT`) inside a `DEFENSE LOADOUT // ARMORY 3/6`
+terminal panel with `1 Pick a node / 2 Press a card` steps. View: the concept's row frees the map
+and reads as "hand of cards"; main's panel is clearer about the steps. Likely file:
+`scripts/ui/kit/asset_card.gd`, `hq_scene.gd` (raid setup layout). Decision:
+
+**RAID-02 (P1) Work order paper overlaps.** Main: the instruction line (`The corp is raiding your
+CORE. Place defences...`) is set straight over the city above the paper, unboxed and hard to read;
+the pink `IF THE RAID RUNS NOW: HOME -10` disc sits on the paper's value column (`2 IN 1 WAVE`,
+`STRENGTH 0%`); the `INTERCEPTED` stamp covers `HOME 50 > 40` and `STOPPED 0/2`; the title line
+`COMPLIA...` is cut at the right edge. Concept: stamp over the redaction bars only, no disc on the
+paper, values clear. Build: no paper (terminal panel). View: main's paper is the right look
+(concept), its placement is a defect. Likely file: `scripts/ui/kit/raid_paper.gd`,
+`corp_memo.gd`, `hq_scene.gd` (where the result disc is placed). Decision:
+
+**RAID-03 (P2) Threat intel panel.** Concept: corp-tinted holo (orange for Meridian), threat lines
+A/B/C, unit sprites along the bottom. Main: corp-tinted (Solace green) holo, `DECRYPTED` stamp over
+the panel's own header (`THREAT INTEL //` and `KEY 4C-E7` partly covered), a single small unit icon
+and a pencil-crossed dial `5`. Build: none. View: main follows the concept; the stamp should not
+cover the header. Likely file: `scripts/ui/kit/raid_intel_strip.gd`, `raid_holo.gd`. Decision:
+
+**RAID-04 (P2) Links and threat pencil.** Main: the same glow veil as GRID-01 under the network,
+hex `T1` badges on each node, red pencil arrows A/B. Concept: dashed yellow cable lines, small
+diamond pads, red pencil routes with lettered entry marks. Build: green wireframe. Same cause as
+GRID-01 (`city_map_overlay.gd`), plus the raid's node badges (`raid_socket.gd`). Decision:
+
+**RAID-05 (P2) Page title.** Concept: `RAID SETUP` title sticker top left. Main and build: the top
+bar's words `03 CELL DEFENSE RAID SETUP`. Likely file: `hq_scene.gd`, `hud_bar.gd`. Decision:
+
+**RAID-06 (P2) Right column bottom.** Main: `YOUR NETWORK_` terminal (concept: top left, every node
+listed with HOLDS / DISABLED chips), a floating `MORE BELOW` chip inside it, `Back to HQ`, the
+START DEFENSE sticker, the speed strip `1x 2x 4x SKIP STEP --/30`. Concept: START DEFENSE sticker
+and the speed strip bottom right, `IF PLACED` forecast terminal on the right. View: main lacks the
+IF PLACED forecast (it exists as text elsewhere?) and the network list sits where the forecast
+goes. Decision:
+
+**RAID-07 (P2) Carried defence card (main only).** Main: the card ghost lifted with a long yellow
+pencil line from it to the bottom-right corner (the pointer, off the map), not to a node. Concept:
+the arc runs from the parked card to the hovered node with a target loop. The harness parks the
+pointer at the corner, so part of this may be the capture; the line should still end on the
+nearest valid node when the pointer is off the map. Likely file: `raid_drag_pencil.gd`. Decision:
+
+**RAID-08 (P1) START DEFENSE sticker during the playout.** Main, mid-playout: the START DEFENSE
+sticker is drawn over the MAP LEGEND (tilted, mid-exit) while the units move. Build: the button is
+gone once pressed. View: a defect (either its exit motion is not over at the capture frame, 2 frames
+per step, or it is left behind). Likely file: `hq_scene.gd` raid playout start / `raid_beats.gd`.
+Decision:
+
+**RAID-09 (P2) Live feed and Continue.** Build: a paper `PLAYOUT` note with the steps, pink
+Continue. Main: `> LIVE RAID FEED_` terminal with a red edge, first line clipped at the top, speed
+chips inside; `Continue` as a big grey (disabled) sticker until the end. View: the grey sticker
+reads as broken rather than "wait"; the build's paper note is warmer. Likely file:
+`scripts/ui/kit/raid_feed.gd`, `raid_playout_panel.gd`. Decision:
+
+**RAID-10 (P2) Result call-out.** Build: a red label sticker `HOME -10 · HOLDS` with a pointer over
+the CORE and a big pink `-10`. Main: small red/yellow pencil words `HOME -10 HOLDS` on the map, a
+pink `-5` floating near the legend, the CORE pad. View: the build's call-out is far easier to read
+at a glance. Likely file: `scripts/ui/kit/raid_verdict.gd`, `raid_report_pencil.gd`. Decision:
+
+**RAID-11 (P1) After-action report.** Main follows the concept (paper report, CELL HOLDS sticker,
+BACK TO THE GRID sticker) but the `CLASSIFIED` stamp covers the CORE row's value
+(`50 > 40 HOLDS`) and `HOSTILE HOME SERVER 40/50` is red where the concept uses red only for
+losses. Concept: the stamp sits on the redaction bars. Build: a terminal list. Likely file:
+`raid_paper.gd` (stamp placement). Decision:
+
+**RAID-12 (P3) CELL HOLDS and result disc.** Main: result disc top left plus CELL HOLDS sticker;
+concept: the sticker centre-left, no disc (the paper carries the numbers). Decision:
+
+**RAID-13 (P1) Map behind the raid interlude.** Build: the network board (nodes, links, threat
+arrows) behind the interlude panel. Main: the old 2D wireframe city (green / cyan, no network, no
+threat route), not the unified 3D city used by every other raid view. View: main's backdrop is
+inconsistent with its own raid screens. Likely file: `scripts/ui/netrun_scene.gd` (raid interlude
+page). Decision:
+
+**RAID-14 (P2) START DEFENSE in the interlude.** Build: the pink START DEFENSE sticker. Main: a
+full-width terminal button with a shield icon. View: every other raid page uses the sticker; this
+one should too (one sticker verb per screen). Also main shows `RUN ASSETS: none / ARMORY: none` as
+two bare lines where the build says why (`No assets to deploy: ...`). Likely file: `netrun_scene.gd`.
+Decision:
+
 ## Mechanics the rules lack (listed, not built)
 (Filled as the remaining screens are compared; first candidates seen while capturing: the HQ run
 pages' per-corp mechanics (round 43 "climb the helix", "crane + train"; GDD has the HQ run but
