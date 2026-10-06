@@ -118,8 +118,8 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s is destroyed.,%s is destroyed.
 %s is gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are kept; Cycles and unbanked loot are lost.,%s is gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are kept; Cycles and unbanked loot are lost.
 %s is held at %s (%d more).,%s is held at %s (%d more).
-"%s is lost for good, with everything unbanked:","%s is lost for good, with everything unbanked:"
 %s is locked. %s,%s is locked. %s
+"%s is lost for good, with everything unbanked:","%s is lost for good, with everything unbanked:"
 %s is lost. The campaign is over.,%s is lost. The campaign is over.
 %s is offline. who signed off on this?,%s is offline. who signed off on this?
 %s moves from %s to %s.,%s moves from %s to %s.
@@ -199,10 +199,10 @@ A raid's route toward your CORE.,A raid's route toward your CORE.
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
 A random roll: the odds are in the breakdown,A random roll: the odds are in the breakdown
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
+"A share code holds a whole plan: target, ICE, city seed, home server and crew.","A share code holds a whole plan: target, ICE, city seed, home server and crew."
 ABANDON CAMPAIGN,ABANDON CAMPAIGN
 ABANDON RUN,ABANDON RUN
 ABANDONED,ABANDONED
-"A share code holds a whole plan: target, ICE, city seed, home server and crew.","A share code holds a whole plan: target, ICE, city seed, home server and crew."
 ACTIVITY,ACTIVITY
 AFTER-ACTION REPORT,AFTER-ACTION REPORT
 AGAIN,AGAIN
@@ -221,6 +221,8 @@ AT LARGE  (%s offline),AT LARGE  (%s offline)
 AT LARGE (reserve),AT LARGE (reserve)
 AT LARGE (stationed: %s),AT LARGE (stationed: %s)
 AUDIT REPORT,AUDIT REPORT
+Abandon campaign,Abandon campaign
+Abandon run,Abandon run
 Abandon the campaign?,Abandon the campaign?
 Abandon the run?,Abandon the run?
 Accessibility,Accessibility
@@ -1807,7 +1809,6 @@ Purge Threshold,Purge Threshold
 QUIT,QUIT
 Quit,Quit
 Quit REBEL_CELL?,Quit REBEL_CELL?
-Quit REBEL_CELL? Progress is autosaved.,Quit REBEL_CELL? Progress is autosaved.
 Quit to desktop,Quit to desktop
 RACK,RACK
 RACK BREACHED,RACK BREACHED
