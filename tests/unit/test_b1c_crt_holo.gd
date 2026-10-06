@@ -12,8 +12,6 @@ const HEX_INC := "res://shaders/kit/hex_dump.gdshaderinc"
 const HOLO := "res://shaders/kit/decrypted_holo.gdshader"
 const CORPS: Array[StringName] = [&"halcyon", &"meridian", &"solace", &"orbital"]
 ## The holo's glass grade toward its foot (decrypted_holo.gdshader: the tint share falls to 70 %).
-## The holo shader's tint lift (decrypted_holo.gdshader: tint.rgb * 0.42).
-const HOLO_LIFT := 0.42
 
 var _saved: Dictionary = {}
 
@@ -49,9 +47,9 @@ func test_the_kit_crt_panel_has_the_dump_on_by_default() -> void:
 	assert_almost_eq(p.hex_alpha(), 0.06, 0.0001, "hex dump at 6 %")
 	assert_eq(mat.get_shader_parameter(&"hex_atlas"), CrtTerminalPanel.HEX_ATLAS, "the baked mono 0-F atlas")
 	var cell := mat.get_shader_parameter(&"hex_cell") as Vector2
-	var px := UiTheme.font_px(UiTheme.CAPTION)
-	assert_almost_eq(cell.y, Palette.mono().get_height(px), 0.01, "rows one caption line high")
-	assert_almost_eq(cell.x, Palette.mono().get_char_size(ord("0"), px).x, 0.01, "one mono advance per character")
+	var k := CrtTerminalPanel.HEX_GLYPH_PX / 64.0
+	assert_almost_eq(cell.y, Palette.mono().get_height(64) * k, 0.01, "rows one HEX_GLYPH_PX line high")
+	assert_almost_eq(cell.x, Palette.mono().get_char_size(ord("0"), 64).x * k, 0.01, "one mono advance per character")
 	assert_eq(mat.get_shader_parameter(&"hex_tint"), p.accent(), "in the accent colour")
 	p.hex_dump = false
 	assert_almost_eq(p.hex_alpha(), 0.0, 0.0001, "a panel may still switch it off")
@@ -93,6 +91,47 @@ func test_the_dump_scrolls_only_while_its_motion_is_live() -> void:
 	assert_almost_eq(float(mat.get_shader_parameter(&"hex_scroll")), 0.0, 0.0001, "reduce effects: it holds still")
 
 
+# --- B1c-b: the dump reads as texture, never as text ------------------------------------------
+
+func test_the_dump_glyphs_are_a_fixed_small_size_at_every_text_scale() -> void:
+	assert_almost_eq(CrtTerminalPanel.HEX_GLYPH_PX * 1.5, 11.0, 0.01, "about 11 px on a 1080p screen")
+	var cells: Array[Vector2] = []
+	for scale in [1.0, 1.6, 2.0]:
+		Settings.text_scale = scale
+		var p := CrtTerminalPanel.new()
+		add_child_autofree(p)
+		cells.append((p.material as ShaderMaterial).get_shader_parameter(&"hex_cell"))
+	assert_eq(cells[1], cells[0], "text 1.6 keeps the glyph size")
+	assert_eq(cells[2], cells[0], "text 2.0 keeps the glyph size")
+	assert_lt(cells[0].y, float(UiTheme.font_px_at(UiTheme.CAPTION, 1.0)), "smaller than the smallest words")
+
+
+func test_the_dump_effective_alpha_is_6_percent_and_halves_under_words() -> void:
+	var p := CrtTerminalPanel.new()
+	p.size = Vector2(320, 120)
+	add_child_autofree(p)
+	var l := Label.new()
+	l.text = "CAN BE YOUR NODE"
+	l.position = Vector2(20, 30)
+	l.size = Vector2(200, 20)
+	p.content.add_child(l)
+	p.refresh_text_mask()
+	var mat := p.material as ShaderMaterial
+	# effective alpha = hexdump x the glyph's coverage (at most 1): 6 % at a glyph's core
+	assert_almost_eq(float(mat.get_shader_parameter(&"hexdump")), 0.06, 0.0001, "6 % effective at most")
+	assert_almost_eq(float(mat.get_shader_parameter(&"hex_text_fade")), 0.5, 0.0001, "x0.5 under a line of words")
+	assert_eq(int(mat.get_shader_parameter(&"hex_text_count")), 1, "the label's rect is handed to the shader")
+	var r: Vector4 = (mat.get_shader_parameter(&"hex_text_rects") as PackedVector4Array)[0]
+	assert_eq(r, Vector4(l.position.x, l.position.y, l.position.x + l.size.x, l.position.y + l.size.y), "panel-local, x0 y0 x1 y1")
+	assert_string_contains(_src(HEX_INC), "fade = hex_text_fade;", "the shader fades the dump inside those rects")
+	var w: CrtWindow = add_child_autofree(CrtWindow.new("SITE"))
+	assert_eq(w.glass.text_scope, w, "a window's own words fade its glass's dump")
+
+
+func test_the_dump_scrolls_slowly() -> void:
+	assert_lte(Motion.entry(CrtTerminalPanel.HEX).amplitude, 6.0, "6 px/s at most")
+
+
 # --- D17: the holo ----------------------------------------------------------------------------
 
 func test_the_holo_uniforms_are_the_reviews() -> void:
@@ -101,7 +140,12 @@ func test_the_holo_uniforms_are_the_reviews() -> void:
 	h.size = Vector2(300, 200)
 	add_child_autofree(h)
 	var mat := h.get_child(1, true).material as ShaderMaterial
-	assert_almost_eq(float(mat.get_shader_parameter(&"tint_share")), 0.78, 0.0001, "corp tint at 78 %")
+	assert_almost_eq(float(mat.get_shader_parameter(&"tint_share")), 0.78, 0.0001, "corp tint at 78 % on the words and edge")
+	assert_almost_eq(float(mat.get_shader_parameter(&"fill_share")), 0.28, 0.0001, "the body: the tint at about 28 % over the dark glass")
+	assert_almost_eq(float(mat.get_shader_parameter(&"glass_alpha")), 0.88, 0.0001, "the body's dark glass at 0.88")
+	assert_string_contains(_src(HOLO), "vec3 e = vec3(er, eg, eb) * tint.rgb;", "the full tint on the edge")
+	assert_string_contains(_src(HOLO), "col = vec4(tint.rgb, scan_strength * line);", "the full tint on the scanlines")
+	assert_eq(DecryptedHoloPanel.ink(Palette.CORP_MERIDIAN), Palette.TEXT_HI.lerp(Palette.CORP_MERIDIAN, 0.78), "the words: the tint at 78 %")
 	assert_almost_eq(float(mat.get_shader_parameter(&"scan_px")), 4.0, 0.0001, "4 px scanlines")
 	assert_almost_eq(float(mat.get_shader_parameter(&"scan_strength")), 0.12, 0.0001, "at 12 %")
 	assert_almost_eq(float(mat.get_shader_parameter(&"band_count")), 3.0, 0.0001, "three bands")
@@ -111,7 +155,7 @@ func test_the_holo_uniforms_are_the_reviews() -> void:
 	assert_string_contains(_src(HOLO), "// the edge in three channels, split +-split_px horizontally (edge only)", "the split is on the edge only")
 	assert_almost_eq(Palette.HOLO_SCRIM.a, 0.88, 0.0001, "the scrim at 0.88")
 	assert_true(h.backing, "the 0.88 scrim right behind the plate by default")
-	for k in ["scan_strength : hint_range(0.0, 1.0) = 0.12", "band_count = 3.0", "band_seconds = 6.0", "tint_share : hint_range(0.0, 1.0) = 0.78"]:
+	for k in ["scan_strength : hint_range(0.0, 1.0) = 0.12", "band_count = 3.0", "band_seconds = 6.0", "tint_share : hint_range(0.0, 1.0) = 0.78", "fill_share : hint_range(0.0, 1.0) = 0.28", "glass_alpha : hint_range(0.0, 1.0) = 0.88"]:
 		assert_string_contains(_src(HOLO), k, "shader default %s" % k)
 
 
@@ -124,6 +168,14 @@ func test_the_cracked_seal_sits_under_the_decrypted_stamp() -> void:
 	assert_not_null(CorpSeal.emblem(&"halcyon"), "the corp's own emblem (art-pass export)")
 	assert_eq(DecryptedHoloPanel.FRACTURE.size(), 5, "ui21 seal_overlay's fracture")
 	assert_eq(DecryptedHoloPanel.STAMP_COLOR, Palette.CELL_ACID, "the concepts' green DECRYPTED: the Cell's acid")
+	assert_eq(DecryptedHoloPanel.STAMP_SHADOW_OFFSET, Vector2(2, 2), "a 2 px under-shadow")
+	assert_eq(DecryptedHoloPanel.stamp_shadow_color(), Color(Palette.INK, 0.7), "dark ink at 70 %")
+	for corp in CORPS:
+		var tint := RaidSkin.of(corp).hue
+		var body := _holo_body(tint, 0.0)
+		var under := body.lerp(Palette.INK, 0.7)
+		assert_gt(Palette.contrast(Palette.CELL_ACID, under), Palette.contrast(Palette.CELL_ACID, body) - 0.001, "%s: the shadow only adds contrast" % corp)
+		assert_gt(Palette.contrast(Palette.CELL_ACID, under), 7.0, "%s: the acid stamp reads on its shadow" % corp)
 	var holo := RaidHolo.new(&"meridian", "THREAT INTEL // SCAN", "7F-A2")
 	add_child_autofree(holo)
 	assert_eq(holo.holo.corporation, &"meridian", "THREAT INTEL's seal is the raiding corp's")
@@ -163,18 +215,30 @@ func test_terminal_words_read_over_the_hex_dump_on_every_skin() -> void:
 		assert_gt(Palette.contrast(PaletteSkins.resolve(skin, &"TEXT_MID"), lit_old), 4.5, "%s crt_panel glass: TEXT_MID over a dump glyph" % skin)
 
 
+## The holo body's colour for `tint` with a band of strength `band` passing: the tint at
+## FILL_SHARE over the deep (its top, the brightest) at 0.88 over the 0.88 scrim over the night.
+func _holo_body(tint: Color, band: float) -> Color:
+	var g := Palette.NET_BG_OUTER.lerp(tint, DecryptedHoloPanel.FILL_SHARE)
+	var behind := Palette.over(Palette.NIGHT_SKY, Palette.HOLO_SCRIM)
+	var glass := Palette.over(behind, Color(g, DecryptedHoloPanel.GLASS_ALPHA))
+	return glass.lerp(tint, band)
+
+
+func test_the_holo_body_is_dark_and_the_tint_is_on_the_words() -> void:
+	for corp in CORPS:
+		var tint := RaidSkin.of(corp).hue
+		var body := _holo_body(tint, 0.0)
+		assert_lt(Palette.luminance(body), 0.06, "%s: the body is dark glass" % corp)
+		assert_gt(Palette.luminance(DecryptedHoloPanel.ink(RaidSkin.of(corp).holo)), Palette.luminance(body) * 5.0, "%s: the words carry the tint, bright" % corp)
+
+
 func test_holo_words_read_on_the_holo_at_its_brightest_on_every_skin() -> void:
 	var band := Motion.entry(DecryptedHoloPanel.BANDS).amplitude
 	for skin in PaletteSkins.IDS:
 		Settings.palette_skin = skin
 		for corp in CORPS:
 			var rs := RaidSkin.of(corp)
-			var tint := rs.hue
-			# the top of the glass (the tint at its fullest) over the 0.88 scrim, the city behind
-			var g := Palette.NET_BG_OUTER.lerp(Color(tint.r * HOLO_LIFT, tint.g * HOLO_LIFT, tint.b * HOLO_LIFT), DecryptedHoloPanel.TINT_SHARE)
-			var behind := Palette.over(Palette.NIGHT_SKY, Palette.HOLO_SCRIM)
-			var glass := Palette.over(behind, Color(g, 0.86))
-			var peak := glass.lerp(tint, band)  # a band passing, off the scanline
+			var peak := _holo_body(rs.hue, band)  # a band passing, off the scanline
 			var holo := RaidHolo.new(corp, "THREAT INTEL // SCAN", "7F-A2")
 			add_child_autofree(holo)
 			var line := holo.add_line("HAULER + COURIER")
