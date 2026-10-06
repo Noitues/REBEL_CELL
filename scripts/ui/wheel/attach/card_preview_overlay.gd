@@ -32,6 +32,23 @@ const WINDOW_SIZE := 0.1
 const DASH := 6.0
 const GAP := 4.0
 const LINE := 2.0
+## CMB-09 (parity S-WHEEL, round 14 preview_indicator A): the landing slice lit in its program colour
+## under a heavier dashed outline with a soft glow, so the preview reads at combat size: the fill's
+## alpha, the outline's width and the glow's width and alpha.
+const LANDING_FILL := 0.24
+const LANDING_LINE := 3.0
+const LANDING_GLOW := 8.0
+const LANDING_GLOW_ALPHA := 0.3
+## The ghost blade's fill alpha (was 0.14: it read as nothing over the lit screens).
+const GHOST_FILL := 0.22
+## The label's room beyond the target reticle (px), so the reticle never runs through it.
+const LABEL_CLEAR := 6.0
+## The label's search when its first spot is blocked: steps along the tangent (shares of its width)
+## and extra steps outwards (shares of its height).
+const LABEL_SLIDES: Array[float] = [0.0, 0.6, -0.6, 1.2, -1.2]
+const LABEL_STEPS_OUT: Array[float] = [0.0, 1.6]
+## How much a blocker grows (px) before a label must clear it.
+const BLOCK_PAD := 3.0
 ## Through peel, drag and slap the preview holds at this alpha (§3.17: 50 %).
 const HELD_ALPHA := 0.5
 ## Label text size (px at text scale 1.0) and its distance outside the ghost (px).
@@ -140,8 +157,10 @@ func _draw() -> void:
 		var a0 := WheelView._ang(slot * tps - tps * 0.5 - ride)
 		var a1 := WheelView._ang(slot * tps + tps * 0.5 - ride)
 		var wedge := AttachStyle.sector(center, rim - host.band(), rim, minf(a0, a1), maxf(a0, a1), 14)
+		draw_colored_polygon(wedge, Color(sc, LANDING_FILL * alpha))
 		wedge.append(wedge[0])
-		AttachStyle.draw_dashed(self, wedge, Color(sc, alpha), LINE, DASH, GAP)
+		draw_polyline(wedge, Color(sc, LANDING_GLOW_ALPHA * alpha), LANDING_GLOW, true)
+		AttachStyle.draw_dashed(self, wedge, Color(sc.lightened(0.25), alpha), LANDING_LINE, DASH, GAP)
 	# Chevrons from the top needle to its landing (not after the commit: the wheel shows the way).
 	if not committed and not w.pointer_ticks.is_empty():
 		var p0 := float(w.pointer_ticks[0])
@@ -160,8 +179,8 @@ func _draw() -> void:
 		var slice := v.lookup.get_content(w.slot_slice_ids[slot]) as SliceData if slot >= 0 else null
 		_draw_ghost_blade(center, rim, a, i, w.pointer_ticks.size(), slice, alpha)
 		if not aimed and not committed:
-			var lp := center + Vector2(cos(a), sin(a)) * (rim * WINDOW_AT + LABEL_OUT * Settings.text_scale + rim * WINDOW_SIZE)
-			_label(lp, tr("%d LANDS HERE") % (i + 1), alpha)
+			var word := tr("%d LANDS HERE") % (i + 1)
+			_label(label_box(center, a, _needle_label_distances(rim, a, word), word), word, alpha)
 	# Ghost drones where each docked drone ends up (they ride their slice).
 	var after := host.dock.entries(float(int(ghost["rot"])) if not committed else null)
 	var labelled := false
@@ -177,7 +196,11 @@ func _draw() -> void:
 		if not aimed and not labelled:
 			labelled = true  # one label: the first drone (slot order) names the ghost for all
 			var out := (at - center).normalized()
-			_label(at + out * (r + LABEL_OUT * Settings.text_scale), tr("DRONE ENDS HERE"), alpha)
+			var dw := tr("DRONE ENDS HERE")
+			var d0 := (at - center).length() + r + LABEL_OUT * Settings.text_scale
+			var reach := _reach(out, dw)
+			var dists: Array[float] = [d0 + reach, d0 + reach + _label_size(dw).y]
+			_label(label_box(center, out.angle(), dists, dw), dw, alpha)
 
 
 ## How lit chevron `k` is now: the chase lights them in turn in the direction of travel.
@@ -202,7 +225,7 @@ func _draw_ghost_blade(center: Vector2, rim: float, a: float, index: int, count:
 	var root := center + dir * rim * BLADE_ROOT
 	var tip := center + dir * rim * BLADE_TIP
 	var col := Color(AttachStyle.cream(), alpha)
-	draw_colored_polygon(PackedVector2Array([tip, root + side, root - side]), Color(AttachStyle.cream(), 0.14 * alpha))
+	draw_colored_polygon(PackedVector2Array([tip, root + side, root - side]), Color(AttachStyle.cream(), GHOST_FILL * alpha))
 	AttachStyle.draw_dashed(self, PackedVector2Array([tip, root + side, root - side, tip]), col, LINE, DASH * 0.6, GAP * 0.6)
 	# Value window: the landing slice's value, and the needle's index tab on multi-needle wheels.
 	var win := center + dir * rim * WINDOW_AT
@@ -219,13 +242,98 @@ func _draw_ghost_blade(center: Vector2, rim: float, a: float, index: int, count:
 		AttachStyle.draw_centred(self, AttachStyle.label_font(), win + dir.orthogonal() * ws * 1.6, str(index + 1), LABEL_PX, col, 2)
 
 
-func _label(at: Vector2, text: String, alpha: float) -> void:
+## A label's box size (px) at the text scale.
+func _label_size(text: String) -> Vector2:
+	var fs := roundi(LABEL_PX * Settings.text_scale)
+	var w := AttachStyle.label_font().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	return Vector2(w + 8.0, fs * 1.4)
+
+
+## How far a label's box reaches along `dir` from its centre.
+func _reach(dir: Vector2, text: String) -> float:
+	var sz := _label_size(text)
+	return absf(dir.x) * sz.x * 0.5 + absf(dir.y) * sz.y * 0.5
+
+
+## The distances (px from the centre) a needle's label tries along its angle `a` (CMB-09): just past
+## the target reticle (WheelView.RETICLE_GAP beyond the rim) by the box's own reach first, so the
+## reticle never runs through the tag, then the ghost window's own spot.
+func _needle_label_distances(rim: float, a: float, text: String) -> Array[float]:
+	var reach := _reach(Vector2(cos(a), sin(a)), text)
+	var past := rim + WheelView.RETICLE_GAP + LABEL_CLEAR + reach
+	var out: Array[float] = []
+	for k in LABEL_STEPS_OUT:
+		out.append(past + k * _label_size(text).y)
+	out.append(maxf(rim * WINDOW_AT + LABEL_OUT * Settings.text_scale + rim * WINDOW_SIZE, rim + reach))
+	return out
+
+
+## What a label must not cover (local rects): the nudge buttons and their keys, the HP row, the
+## target reticle's four arcs and the wheel's frame box is checked apart (`label_box`).
+func label_blockers() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if host == null or host.view == null:
+		return out
+	var v := host.view
+	var s := Settings.text_scale
+	var br := HudWheelLayer.BUTTON_R * minf(s, WheelView.NUDGE_SCALE_MAX)
+	for ar in v.arrows():
+		var c := v.arrow_center(int(ar["ring"]), int(ar["direction"])) - v.global_position
+		out.append(Rect2(c - Vector2(br, br), Vector2(br * 2.0, br * 2.0 + HudWheelLayer.KEY_FONT * s * 1.4)).grow(BLOCK_PAD))
+	var hp: Dictionary = v.hp_layout()
+	if hp.has("hp"):
+		out.append((hp["hp"] as Rect2).grow(BLOCK_PAD))
+	var center := host.center()
+	var rr := host.rim() + WheelView.RETICLE_GAP
+	for k in 4:
+		var a := PI * 0.25 + k * PI * 0.5
+		var box := Rect2(center + Vector2(cos(a), sin(a)) * rr, Vector2.ZERO)
+		for t in [-1.0, -0.5, 0.5, 1.0]:
+			box = box.expand(center + Vector2(cos(a + t * WheelView.RETICLE_ARC), sin(a + t * WheelView.RETICLE_ARC)) * rr)
+		out.append(box.grow(BLOCK_PAD + 8.0))
+	return out
+
+
+## The box (local) a label for angle `a` takes: the first of its spots (each distance in `dists`,
+## slid along the tangent) that stays on the overlay, off the wheel's frame and off every blocker;
+## the first spot when none is free.
+func label_box(center: Vector2, a: float, dists: Array[float], text: String) -> Rect2:
+	var sz := _label_size(text)
+	var dir := Vector2(cos(a), sin(a))
+	var tan_ := dir.orthogonal()
+	var frame := host.view.frame_master() * host.view.art_scale() if host != null and host.view != null else 0.0
+	var blockers := label_blockers()
+	# the screen, in this layer's space (the label may reach past the wheel's own box)
+	var room := Rect2(-global_position, get_viewport_rect().size)
+	var first := Rect2()
+	var have_first := false
+	for d in dists:
+		for sl in LABEL_SLIDES:
+			var at := center + dir * d + tan_ * sl * sz.x
+			var box := Rect2(at - sz * 0.5, sz)
+			if not have_first:
+				first = box
+				have_first = true
+			if not room.encloses(box):
+				continue
+			var near := Vector2(clampf(center.x, box.position.x, box.end.x), clampf(center.y, box.position.y, box.end.y))
+			if near.distance_to(center) < frame:
+				continue
+			var hit := false
+			for b in blockers:
+				if b.intersects(box):
+					hit = true
+					break
+			if not hit:
+				return box
+	first.position.x = clampf(first.position.x, room.position.x, maxf(room.position.x, room.end.x - first.size.x))
+	first.position.y = clampf(first.position.y, room.position.y, maxf(room.position.y, room.end.y - first.size.y))
+	return first
+
+
+func _label(box: Rect2, text: String, alpha: float) -> void:
 	var fs := roundi(LABEL_PX * Settings.text_scale)
 	var font := AttachStyle.label_font()
-	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var box := Rect2(at - Vector2(w * 0.5 + 4.0, fs * 0.7), Vector2(w + 8.0, fs * 1.4))
-	box.position.x = clampf(box.position.x, 0.0, maxf(0.0, size.x - box.size.x))
-	box.position.y = clampf(box.position.y, 0.0, maxf(0.0, size.y - box.size.y))
-	draw_rect(box, AttachStyle.glass(0.85 * alpha))
+	draw_rect(box, AttachStyle.glass(alpha))
 	draw_rect(box, Color(Palette.RESIST_GOLD, alpha), false, 1.0)
 	AttachStyle.draw_centred(self, font, box.get_center(), text, fs, Color(Palette.RESIST_GOLD, alpha))

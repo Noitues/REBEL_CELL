@@ -31,6 +31,69 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-05 — Parity fix — combat wheels (designer group ruling)
+
+Designer group ruling (2026-10-05): combat matches the concept; mechanics the rules lack stay
+listed, not built. Ids CMB-02, CMB-03, CMB-09, BOSS-04 (`docs/art_review/PARITY/GAPS.md`, sheet
+`fixes/WHEEL.jpg`: concept | before | after). Concepts: round 41 `combat_typical_v4` /
+`combat_worst_case_v4`, round 14 `corps_compare` / `preview_indicator` (tag `art-concepts-r43`).
+No asset is redrawn: the slice screens stay the baked art-pass atlases (`assets/wheel/screens`);
+what changed is how the disc composites them and the frame code ported from the round 14 recipe.
+
+- **CMB-02 saturated screens.** main's disc lacked the recipe's composite passes
+  (`make_combat.bloom`, `frames.add_glow`), so its screens read flat (measured p90 value of a lit
+  attack slice 0.35 vs the concept's 0.45-0.66). One tone step in `wheel_disc.gdshader` (`tone`)
+  stands in: saturation x1.4 away from the luma, then the part over 0.3 lifted x1.1
+  (`WheelKit.SCREEN_SAT / BLOOM_THRESH / BLOOM_GAIN`; `WheelKit.tone` mirrors it for the tests).
+  The read plate, scanlines, dim of the other slices (0.68, the recipe's) are kept.
+- **CMB-02 lit frame.** The player's outer bevel takes a wash of the class accent and the frame's
+  hairlines a glow (`PLAYER_FRAME_TINT` 0.62, `PLAYER_FRAME_GLOW` 0.8; corp frames glow 0.35 and
+  wear their rim instead of the wash).
+- **CMB-03 corp frame** (round 14 `d4corp.render` / `corp_rim`, ported into the disc): a corp
+  wheel's frame is R1 424 (the player's stays 414; `WheelKit.frame_radius`, `WheelView.frame_master`
+  adds the elite collar 14 and the threat ring 30); the frame bases and gloss are the recipe's
+  CORP_STYLE (Solace porcelain 0.78/0.80/0.70, gloss 1.1); `corp_rim` per corp (Meridian hazard
+  stripes + corrugation teeth, Solace capsule studs + glass glow ring, Halcyon colonnade + gold
+  halo, Orbital azimuth ticks + ring, Rebel_Cell broken segments with hex rivets, a fixed hash in
+  place of the recipe's seed 5); the elite collar moves beyond the frame as in the recipe (gold
+  rules, corp chevrons). Orbital's azimuth numbers (`000`..`330`) are not drawn: below the 4 px
+  ring-text floor at combat size (MIN_TEXT_PX). Elite crest plates on the collar not added (the
+  recipe's 26 px crests on an elite; the boss lugs stay) — small, listed for the next wheel pass.
+- **Phase 3 armour vs the rim.** The recipe bolts its armour outside the threat ring; main keeps it
+  on the bevel (the wheel never resizes between phases), so the corp rim is drawn over the plates
+  and the corp still reads in phase 3.
+- **BOSS-04 pins.** Needle 2, 3 ... of a multi-needle wheel read on `d4corp.pin` pins
+  (`WheelFace.pin`: tip in the slice, round value window at R_OUT + 20 in the channel, number tab),
+  only needle 1 wears the full (crowned) blade; rails are +-24 degrees on a multi-needle wheel
+  (`WheelFace.rail_half`, the recipe's). `WheelView.window_radius_of(index)` / `pointer_spot` follow
+  the pin's window. `blade_bounds` / `needle_floor` / `hp_layout` are unchanged (every needle is still
+  assumed a full blade there, so the FIX-REDS HP row keeps its place and its test). The lime is
+  Solace's corp hue (ART_BIBLE 2.4, the recipe's accent) and the reticle FOCUS: both kept.
+- **CMB-09 preview.** The landing slice is lit in its program colour (fill 0.24, glow 8 px,
+  dashes 3 px, round 14 `preview_indicator` A); the ghost blade's fill 0.22. The `LANDS HERE` /
+  `DRONE ENDS HERE` tags take the first of a few spots (past the reticle, then the ghost window's
+  spot, slid along the tangent) that stays on screen, off the frame, the target reticle's arcs, the
+  nudge buttons and the HP row (`CardPreviewOverlay.label_box` / `label_blockers`); before, the
+  reticle ran through the tag and at 1.6 the drone tag sat on the HP number.
+- **Kept:** preview == result (draw only; the ghost still comes from `ghost_rotation`), every motion
+  entry (spin, nudge, precision landings, screen loop: nothing in `ui_motion.tres` changed), reduce
+  effects (captured), semantic slice colours never pass a skin (PROTECT stays #5CE1FF on v2 /
+  cobalt / graphite, tested), a glyph per slice kind for greyscale (tested).
+- **Tests:** `tests/unit/test_parity_wheel.gd` (fast): families' toned screens apart (OKLab dE >=
+  0.06), program colours apart (>= 0.08), NULL darker than every lit kind and 4 of 5 families >= 1.5
+  WCAG contrast from it (TROJAN's dark art-pass screen is told by glyph and colour), the read block
+  >= 4.5 on every skin, the disc's tone / frame / rim uniforms, every corp's rim and frame radius,
+  the elite collar, pins and short rails, the preview tags clear of their blockers at 1.0 / 1.6 / 2.0.
+  No test dropped.
+- **Profile** (`profile_frames.gd`, `wheel_lab --case=worst`, 1920x1080 window, 8 other Godot
+  processes on the machine): GPU 0.56 ms, render CPU 0.77 ms a frame (budget: wheels + FX <= 4 ms);
+  mean frame 10.8 ms on the loaded machine (2A's quiet run: 3.8 ms).
+- **Files outside `scripts/ui/wheel/*`:** `shaders/wheel/wheel_disc.gdshader` (the disc the wheel
+  scripts drive) and `scripts/ui/wheel_view.gd` (`frame_master`, the pin call, `window_radius_of`,
+  the rail half: the smallest change). `palette.gd` / `palette_skins.gd` / `hud_wheel_layer.gd` /
+  `spinner_view.gd` unchanged (no slice token needed a new value: the concept's look comes from the
+  composite, the program colours already match ART_BIBLE 2.3).
+
 ### 2026-10-05 — Designer ruling — abandon run, abandon campaign, quit
 The designer approved a new rule (2026-10-05): three exit paths, each a screen. Added to the GDD as **4.5 Leaving a
 Run or the Campaign** (a marked addition; no other GDD text changed). It answers the open questions "ART-10 4C: an
