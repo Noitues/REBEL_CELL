@@ -1918,8 +1918,9 @@ func _fill_crew_hand(cards: HBoxContainer, launchable: Array[SiteData]) -> void:
 				card.refusal = ""
 		card.picked = op.alive and op.id == selected_operative
 		var cls := lookup.get_content(op.class_id) as ClassData
-		card.tooltip_text = UiTip.fold("%s R%d, %s. HP %d/%d, DECK %d, DAEMONS %d.%s%s%s" % [op.name, op.rank, TextDb.t(cls, "display_name") if cls != null else String(op.class_id),
-			op.hp, op.max_hp, op.deck.size(), op.daemon_ids.size(),
+		# B4 (orchestrator relay): the card's words translated once (the line was a bare literal).
+		card.tooltip_text = UiTip.fold("%s%s%s%s" % [tr(CREW_CARD_TIP) % [op.name, op.rank, TextDb.t(cls, "display_name") if cls != null else String(op.class_id),
+			op.hp, op.max_hp, op.deck.size(), op.daemon_ids.size()],
 			(" " + tr("Stationed on %s.") % site_name(where)) if where != &"" else "",
 			("\n" + card.refusal) if card.refusal != "" else "",
 			("\n" + UiTip.for_input(tr("Press to pick them as the runner. Drag the card onto one of your nodes to station them there, or onto CORE to bring them back."),
@@ -1939,6 +1940,10 @@ func _fill_crew_hand(cards: HBoxContainer, launchable: Array[SiteData]) -> void:
 			recall_chip.tooltip_text = UiTip.fold(tr("Bring %s back from %s.") % [op.name, site_name(where)])
 			recall_chip.pressed.connect(recall.bind(oid))
 			cards.add_child(recall_chip)
+
+
+## A crew card's tooltip: name, rank, class, HP, deck and Daemons (a translation key).
+const CREW_CARD_TIP := "%s R%d, %s. HP %d/%d, DECK %d, DAEMONS %d." # TR
 
 
 ## HQ-B: picks operative `operative_id` as the runner (the lifted card); nothing starts.

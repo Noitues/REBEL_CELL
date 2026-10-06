@@ -91,6 +91,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s LANDS ON: %s,%s LANDS ON: %s
 %s MOVES,%s MOVES
 %s R%d,%s R%d
+"%s R%d, %s. HP %d/%d, DECK %d, DAEMONS %d.","%s R%d, %s. HP %d/%d, DECK %d, DAEMONS %d."
 %s SECURITY,%s SECURITY
 %s Schematics,%s Schematics
 %s Site,%s Site
