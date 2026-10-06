@@ -123,15 +123,25 @@ static func draw_terminal_panel(ci: CanvasItem, r: Rect2, edge: Color = TERMINAL
 	var c := minf(CHAMFER * Settings.text_scale, minf(r.size.x, r.size.y) * 0.4)
 	var pts := PackedVector2Array([r.position, Vector2(r.end.x - c, r.position.y), Vector2(r.end.x, r.position.y + c),
 		r.end, Vector2(r.position.x, r.end.y)])
-	ci.draw_colored_polygon(pts, bg)
+	ci.draw_colored_polygon(pts, PaletteSkins.chrome(bg))  # ART-12 12s: the skin's glass and edge
 	var closed := pts.duplicate()
 	closed.append(pts[0])
-	ci.draw_polyline(closed, edge, EDGE_PX, true)
+	ci.draw_polyline(closed, PaletteSkins.chrome(edge), EDGE_PX, true)
 
 
-## Small HUD glyphs (1C seam: the glyph atlas replaces these drawn marks). `kind`: "shield",
-## "ram", "heat", "hp", "evade", "lock", "ccw", "cw", "cards".
+## The art pass's glyph (1C's atlas, regenerated from the concept scripts) for each HUD mark; heat
+## has none (the concepts draw Heat as a gauge, never a glyph), so it stays the drawn flame.
+const HUD_GLYPHS := {"shield": &"picto_block", "ram": &"picto_ram", "hp": &"picto_hp", "evade": &"slice_detour",
+	"lock": &"state_locked", "ccw": &"picto_spin_ccw", "cw": &"picto_spin", "cards": &"picto_draw"}
+## The atlas glyph's box over the mark's radius (the drawn marks span about 2 r).
+const HUD_GLYPH_BOX := 2.1
+
+
+## Small HUD glyphs: the atlas glyph (M14 asset parity) where the art pass has one, else the drawn
+## mark. `kind`: "shield", "ram", "heat", "hp", "evade", "lock", "ccw", "cw", "cards".
 static func draw_glyph(ci: CanvasItem, kind: String, c: Vector2, r: float, col: Color) -> void:
+	if HUD_GLYPHS.has(kind) and WheelGlyphs.draw(ci, WheelGlyphs.named(HUD_GLYPHS[kind]), c, r * HUD_GLYPH_BOX, col):
+		return
 	match kind:
 		"shield":
 			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-r * 0.8, -r * 0.8), c + Vector2(r * 0.8, -r * 0.8),

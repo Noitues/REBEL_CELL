@@ -45,10 +45,12 @@ const RING_GAP := 2.0
 ## A selectable node's soft glow: width (screen px) and alpha.
 const NEXT_GLOW_WIDTH := 9.0
 const NEXT_GLOW_ALPHA := 0.28
-## The symbol's share of the sticker disc.
-const SYMBOL_SHARE := 0.6
-## A cut-off sticker's fade toward grey and its alpha.
-const CUT_GREY := 0.55
+## M14 asset parity: the node stickers and the operative token are round 37's own drawings
+## (`tools/art_pipeline/parity/export_route_stickers.py`, manifest in ROUTE_ART_DIR); the
+## concept kind each route kind shows.
+const ROUTE_ART_DIR := "res://assets/netrun/route/"
+const STICKER_ART := {KIND_FIGHT: "router", KIND_ELITE: "elite", KIND_EVENT: "terminal", KIND_SHOP: "shop", KIND_RACK: "rack"}
+## A cut-off sticker's alpha (its art is the concept's grey `past` sticker).
 const CUT_ALPHA := 0.75
 ## The choice number's chip: side and lettering (screen px at text scale 1.0).
 const NUMBER_SIDE := 15.0
@@ -58,7 +60,6 @@ const NUMBER_FONT := 13
 const PIN_SHARE := 1.05
 const PIN_TILT := -0.3
 const PIN_OFFSET := Vector2(0.75, -1.45)
-const PIN_ICON_SHARE := 0.62
 ## The TARGET circle: its radius (share of the sticker's), squash, wobble (screen px), the
 ## pencil's stroke width (screen px), the second pass's turn offset (rad), and the word's
 ## lettering (screen px at text scale 1.0) and offset (shares of the circle's radius).
@@ -408,26 +409,17 @@ static func draw_sticker(ci: CanvasItem, kind: String, p: Vector2, r: float, sta
 	var ring_col := RouteInk.ring_of(state)
 	var ring_r := r - RING_WIDTH * 0.5 * k
 	var disc_r := r - (RING_WIDTH + RING_GAP + DIE_CUT_WIDTH) * k
-	var fill := RouteInk.sticker_of(kind)
 	var a := alpha
 	if state == STATE_CUT:
-		fill = fill.lerp(RouteInk.RING_CUT, CUT_GREY)
 		a *= CUT_ALPHA
-	var square := kind == KIND_RACK
 	if state == STATE_NEXT:
 		ci.draw_arc(p, ring_r, 0, TAU, 40, Color(ring_col, NEXT_GLOW_ALPHA * a), NEXT_GLOW_WIDTH * k)
-	# The die-cut backing (white), the kind's fill, its symbol.
-	if square:
-		var half := disc_r * 0.92
-		var cut := half + DIE_CUT_WIDTH * k
-		ci.draw_rect(Rect2(p - Vector2(cut, cut), Vector2(cut, cut) * 2.0), Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA * a))
-		ci.draw_rect(Rect2(p - Vector2(cut, cut), Vector2(cut, cut) * 2.0).grow(-k), Color(RouteInk.DIE_CUT, a))
-		ci.draw_rect(Rect2(p - Vector2(half, half), Vector2(half, half) * 2.0), Color(fill, a))
-	else:
-		ci.draw_circle(p, disc_r + DIE_CUT_WIDTH * k + k, Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA * a))
-		ci.draw_circle(p, disc_r + DIE_CUT_WIDTH * k, Color(RouteInk.DIE_CUT, a))
-		ci.draw_circle(p, disc_r, Color(fill, a))
-	StatIcon.draw(ci, p, disc_r * SYMBOL_SHARE, _symbol_of(kind), Color(Palette.PAPER, a))
+	# M14 asset parity: the concept's own node sticker (round 37 r32ui.node_sd: the round 31
+	# icon on a die-cut vinyl sticker; its grey `past` look when cut off), sized to the die-cut.
+	var t := sticker_art(kind, state == STATE_CUT)
+	var cut := disc_r + DIE_CUT_WIDTH * k
+	var sz := Vector2(t.get_width(), t.get_height()) * (cut * 2.0 / maxf(1.0, t.get_width()))
+	ci.draw_texture_rect(t, Rect2(p - sz * 0.5, sz), false, Color(Palette.NO_TINT, a))
 	if KIND_SHAPES.has(kind):
 		ci.set_meta(&"icon_id", icon_id(kind))
 	draw_state_ring(ci, p, ring_r, state, k, a)
@@ -464,18 +456,23 @@ static func draw_state_ring(ci: CanvasItem, p: Vector2, ring_r: float, state: St
 			ci.draw_arc(p, ring_r, 0, TAU, 40, col, w * 1.4)
 
 
-## The StatIcon a route kind's sticker shows.
-static func _symbol_of(kind: String) -> StringName:
-	match kind:
-		KIND_ELITE:
-			return StatIcon.ELITE
-		KIND_EVENT:
-			return StatIcon.TERMINAL
-		KIND_SHOP:
-			return StatIcon.SHOP
-		KIND_RACK:
-			return StatIcon.RACK
-	return StatIcon.FIGHT
+## The concept sticker a route kind shows (STICKER_ART names, round 37's kinds; `past` = the
+## grey cut-off look), loaded once.
+static func sticker_art(kind: String, past: bool = false) -> Texture2D:
+	var name := "node_%s%s" % [STICKER_ART.get(kind, "router"), "_past" if past else ""]
+	if not _art_cache.has(name):
+		_art_cache[name] = load(ROUTE_ART_DIR + name + ".png") as Texture2D
+	return _art_cache[name]
+
+
+## The operative token (round 37 r32ui.token_sd), loaded once.
+static func token_art() -> Texture2D:
+	if not _art_cache.has("token"):
+		_art_cache["token"] = load(ROUTE_ART_DIR + "token_operative.png") as Texture2D
+	return _art_cache["token"]
+
+
+static var _art_cache: Dictionary = {}
 
 
 ## The choice number's orange chip at the sticker's upper left (§4.6: the next options are
@@ -543,11 +540,12 @@ func _here(at: Vector2, r: float) -> void:
 	var side := r * PIN_SHARE
 	var c := at + Vector2(r * PIN_OFFSET.x, r * PIN_OFFSET.y)
 	_c.draw_set_transform(c, PIN_TILT)
-	var box := Rect2(-Vector2(side, side) * 0.5, Vector2(side, side))
-	_c.draw_rect(box.grow(DIE_CUT_WIDTH * k + k), Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA))
-	_c.draw_rect(box.grow(DIE_CUT_WIDTH * k), RouteInk.DIE_CUT)
-	_c.draw_rect(box, Palette.CELL_PINK)
-	StatIcon.draw(_c, Vector2.ZERO, side * PIN_ICON_SHARE * 0.5, StatIcon.OPERATIVE, Palette.PAPER)
+	# M14 asset parity: the concept's operative token (round 37 token_sd, the Breaker emblem in
+	# Cell pink on a die-cut sticker), its die-cut as wide as the old pin's.
+	var t := token_art()
+	var w := side + (DIE_CUT_WIDTH * k + k) * 2.0
+	var sz := Vector2(t.get_width(), t.get_height()) * (w / maxf(1.0, t.get_width()))
+	_c.draw_texture_rect(t, Rect2(-sz * 0.5, sz), false)
 	_c.draw_set_transform(Vector2.ZERO, 0.0)
 	# The pin's point down onto the sticker.
 	var tip := at + Vector2(r * 0.35, -r * 0.7)

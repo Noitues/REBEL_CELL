@@ -1,0 +1,79 @@
+{
+ "source_tag": "art-concepts-r43",
+ "source": "docs/concepts/round34_firmware_daemons/scripts/fwlib.py",
+ "function": "put_chip(canvas, fid, c, c, 180, s, lit) with the glyph split off (icon_rgba empty)",
+ "reference": "docs/art_reference/wheel/round34_firmware_daemons/firmware_set.jpg, firmware_socket.jpg",
+ "script": "tools/art/export_firmware_daemons.py",
+ "die_px": 128,
+ "anchor": [
+  179.0,
+  179.0
+ ],
+ "pins": "top edge (toward the core when drawn)",
+ "files": {
+  "die_common.png": {
+   "rarity": "common",
+   "lit": 0.0,
+   "size": [
+    358,
+    358
+   ]
+  },
+  "die_common_lit.png": {
+   "rarity": "common",
+   "lit": 1.0,
+   "size": [
+    358,
+    358
+   ]
+  },
+  "die_uncommon.png": {
+   "rarity": "uncommon",
+   "lit": 0.0,
+   "size": [
+    358,
+    358
+   ]
+  },
+  "die_uncommon_lit.png": {
+   "rarity": "uncommon",
+   "lit": 1.0,
+   "size": [
+    358,
+    358
+   ]
+  },
+  "die_rare.png": {
+   "rarity": "rare",
+   "lit": 0.0,
+   "size": [
+    358,
+    358
+   ]
+  },
+  "die_rare_lit.png": {
+   "rarity": "rare",
+   "lit": 1.0,
+   "size": [
+    358,
+    358
+   ]
+  },
+  "die_boss.png": {
+   "rarity": "boss",
+   "lit": 0.0,
+   "size": [
+    358,
+    358
+   ]
+  },
+  "die_boss_lit.png": {
+   "rarity": "boss",
+   "lit": 1.0,
+   "size": [
+    358,
+    358
+   ]
+  }
+ }
+}

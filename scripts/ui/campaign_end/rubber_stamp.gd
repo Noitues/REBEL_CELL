@@ -32,6 +32,7 @@ func _init(p_text: String = "", p_color: Color = Palette.END_STAMP_RED, p_font_s
 	m.set_shader_parameter(&"seed", float(p_text.hash() % 97))
 	material = m
 	refit()
+	MotionSkip.register_passive(self)  # ANIM-R6 D7: the slam lands with any press that ends a motion
 
 
 ## The lettering size now (px).
@@ -62,7 +63,22 @@ func hold_back() -> void:
 func slam(id: StringName) -> Tween:
 	landed = true
 	visible = true
-	return Motion.pop(self, id)
+	_slam = Motion.pop(self, id)
+	return _slam
+
+
+var _slam: Tween = null
+
+
+## MotionSkip (ANIM-R6 D7, a short motion: `register_passive`): the slam still lands.
+func motion_running() -> bool:
+	return _slam != null and _slam.is_valid() and _slam.is_running()
+
+
+## MotionSkip: the stamp at rest (its size).
+func complete_motion() -> void:
+	Motion.settle(self, ^"scale")
+	_slam = null
 
 
 func _draw() -> void:

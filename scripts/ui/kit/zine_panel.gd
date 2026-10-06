@@ -46,6 +46,10 @@ func _init(p_title: String = "", p_tilt: float = 0.0, p_terminal: bool = false) 
 func _ready() -> void:
 	rotation_degrees = tilt_degrees
 	pivot_offset = size / 2.0
+	# ART-12 12s: terminal glass follows the palette skin, at once (Options is open while one is picked).
+	var settings := get_node_or_null(^"/root/Settings")
+	if terminal and settings != null and settings.has_signal(&"changed"):
+		settings.connect(&"changed", queue_redraw)
 
 
 ## ANIM-R5 B1: the paper is as tall (and as wide) as its content at least, so a panel given
@@ -110,14 +114,17 @@ func _draw() -> void:
 
 func _draw_terminal() -> void:
 	var r := Rect2(Vector2.ZERO, size)
+	# ART-12 12s: the glass, its edge and the corner ticks are chrome (the skin's values).
+	_paper.color = Color(PaletteSkins.chrome(Palette.TERMINAL_BG), _paper.color.a)
+	var tick := PaletteSkins.chrome(Palette.NET_CYAN)
 	draw_rect(Rect2(Vector2(size.x, 8), Vector2(6, size.y)), Palette.SHADOW)
 	draw_rect(Rect2(Vector2(6, size.y), Vector2(size.x - 6, 8)), Palette.SHADOW)
-	draw_rect(r, Palette.TERMINAL_EDGE, false, 1.0)
+	draw_rect(r, PaletteSkins.chrome(Palette.TERMINAL_EDGE), false, 1.0)
 	if title != "":
 		draw_string(Palette.mono(), Vector2(14, 22), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.PAPER)
 		draw_rect(Rect2(12, 28, size.x - 24, 2), Color(Palette.CELL_PINK, 0.85))
 	for c in [r.position, Vector2(r.end.x, 0), r.end, Vector2(0, r.end.y)]:
 		var sx := 1.0 if c.x <= 0.0 else -1.0
 		var sy := 1.0 if c.y <= 0.0 else -1.0
-		draw_line(c, c + Vector2(14 * sx, 0), Palette.NET_CYAN, 2.0)
-		draw_line(c, c + Vector2(0, 14 * sy), Palette.NET_CYAN, 2.0)
+		draw_line(c, c + Vector2(14 * sx, 0), tick, 2.0)
+		draw_line(c, c + Vector2(0, 14 * sy), tick, 2.0)
