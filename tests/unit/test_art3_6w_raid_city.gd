@@ -134,7 +134,8 @@ func test_the_raid_pages_are_on_the_3d_city_at_the_raid_band_and_fitted() -> voi
 	assert_true(hq.wireframe.city3d and city.band_lock == CityLod.Band.RAID, "and the report")
 	hq.show_grid()
 	await _frames(2)
-	assert_true(hq.wireframe.city3d and city.band_lock == CityLod.Band.RAID, "HQ-B: the Grid is the HQ, at the RAID band (Q4: zoomed out it takes GRID)")
+	# B4 (round 44): the HQ idle is the City Grid look; the raid pages keep the RAID band.
+	assert_true(hq.wireframe.city3d and city.band_lock == CityLod.Band.GRID, "the Grid is the HQ, at the City Grid look")
 	hq.get_parent().queue_free()
 	await _frames(1)
 

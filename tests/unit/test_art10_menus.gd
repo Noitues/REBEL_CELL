@@ -645,7 +645,9 @@ func test_the_hq_is_v2_terminals_with_a_corp_paper_dossier() -> void:
 	var hq: Control = add_child_autofree(load(HQ).instantiate())
 	hq.new_campaign(2)
 	await _frames(2)
-	assert_true(hq._panel.find_child("SelectedSite", true, false) is CrtWindow, "the Site's card is a v2 terminal")
+	# B4 (review section c): the selected corporate Site's file is a decrypted holo (hacked
+	# intel); the Cell's own nodes keep the v2 terminal (test_b4_hq_round44).
+	assert_true(hq._panel.find_child("SelectedSite", true, false) is SiteHoloCard, "the corporate Site's card is a holo")
 	assert_true(hq._panel.find_child("OnAir", true, false) is OnAirTicker, "the DJ on the Cell's feed (ON AIR)")
 	var card := hq._panel.find_child("Crew_%s" % RunManager.campaign.roster[0].id, true, false) as CrewHandCard
 	assert_not_null(card, "the crew as hand cards")

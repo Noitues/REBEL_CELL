@@ -151,14 +151,15 @@ func _draw() -> void:
 	draw_set_transform(num_at + Vector2(0, -npx * 0.35), 0.0, Vector2.ONE * number_scale)
 	draw_string(disp, Vector2(0, npx * 0.35), "%d" % roundi(shown_heat), HORIZONTAL_ALIGNMENT_LEFT, -1, npx, num_col)
 	draw_set_transform(Vector2.ZERO)
-	# The band word, printed (never colour alone); it stamps on when the band changes.
+	# The band word, printed (never colour alone); it pops when the band changes. B4 (review D7:
+	# "no stamp on the Heat gauge; the Heat change is the gauge's roll"): the band stamp's motion
+	# is kept as the word's pop, with no stamp box round it.
 	var word_r := band_label_rect()
 	var bpx := roundi(look.band_px * g)
 	var word_at := Vector2(word_r.position.x, word_r.position.y + disp.get_ascent(bpx))
 	if stamp_scale > 1.0:
 		var c := word_r.get_center()
 		draw_set_transform(c, 0.0, Vector2.ONE * stamp_scale)
-		draw_rect(Rect2(word_r.position - c, word_r.size).grow(STAMP_BOX_PAD), Color(col, clampf((stamp_scale - 1.0) * 4.0, 0.0, 1.0)), false, 2.0)
 		_draw_spaced(disp, word_at - c, band_word(), bpx, col)
 		draw_set_transform(Vector2.ZERO)
 	else:

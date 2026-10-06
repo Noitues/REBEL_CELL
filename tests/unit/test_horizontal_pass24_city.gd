@@ -301,11 +301,15 @@ func test_map_words_are_translated_once() -> void:
 	_pseudo(true)
 	hq.show_grid()
 	await _frames(2)
-	var card := hq.find_child("SelectedSite", true, false) as TerminalWindow
-	assert_eq(card.tag_label.auto_translate_mode, Node.AUTO_TRANSLATE_MODE_DISABLED)
-	assert_string_contains(card.tag_label.text, CityMapOverlay.tr_word("corporate").to_upper(), "the status word translated")
-	var badge := card.find_child("StatusBadge", true, false) as Badge
-	assert_eq(badge.text, CityMapOverlay.tr_word("corporate"), "the status badge translated")
+	# B4 (review section c): a corporate Site's card is its decrypted holo file: its rows'
+	# captions and words are translated once (the scene translates them).
+	var card := hq.find_child("SelectedSite", true, false) as SiteHoloCard
+	assert_not_null(card, "the corporate Site's holo file")
+	for l in card.body.find_children("*", "Label", true, false):
+		if (l as Label).get_parent() is HBoxContainer:
+			assert_eq((l as Label).auto_translate_mode, Node.AUTO_TRANSLATE_MODE_DISABLED, "%s is translated once" % (l as Label).text)
+	var type_row := card.find_child("TypeRow", true, false).get_node("Caption") as Label
+	assert_eq(type_row.text, tr("TYPE"), "the TYPE caption translated")
 	_pseudo(false)
 	await _close(hq)
 

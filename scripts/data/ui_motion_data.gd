@@ -54,7 +54,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"drop_buy", &"shred_feed",
 	# Animation pass ANIM-R1 (the first fix batch): inline fractions moved into the table,
 	# the jack's arrival wait, and the campaign screens' readability motion.
-	&"jack_arrive", &"jack_arrival_wait", &"select_ring_pulse", &"loot_reject", &"home_number_fly", &"influence_mark", &"heat_number_pop", &"heat_banner",
+	&"jack_arrive", &"jack_arrival_wait", &"select_ring_pulse", &"loot_reject", &"home_number_fly", &"influence_mark", &"territory_stamp_hold", &"territory_stamp_wipe", &"heat_number_pop", &"heat_banner",
 	# ANIM-R1 combat and input: the SEND IT replay's legibility, refusals, SEND IT's mark,
 	# and inline numbers moved into the table.
 	&"resolve_landing_hold", &"landing_pulse", &"resolve_result_hold", &"result_caption", &"result_stamp",

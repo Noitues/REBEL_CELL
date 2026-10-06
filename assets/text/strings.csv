@@ -7,7 +7,6 @@ keys,en
  (run in progress), (run in progress)
  // PINNED, // PINNED
  AGAIN, AGAIN
- DOWN, DOWN
  | ASSIST, | ASSIST
  · %s/%s NUDGE %s%s, · %s/%s NUDGE %s%s
  · %s: %s RING, · %s: %s RING
@@ -36,6 +35,7 @@ keys,en
 %d RAM lost,%d RAM lost
 %d SCHEM.,%d SCHEM.
 %d SCHEMATICS,%d SCHEMATICS
+%d SCHEMATICS  %s,%d SCHEMATICS  %s
 %d SLICES,%d SLICES
 %d TAKEN,%d TAKEN
 %d absorbed by block and shield,%d absorbed by block and shield
@@ -43,6 +43,7 @@ keys,en
 %d fps,%d fps
 %d held,%d held
 %d netruns,%d netruns
+%d powered,%d powered
 %d still at large.,%d still at large.
 "%d-%d Cycles, a card","%d-%d Cycles, a card"
 %d/%d  -  BREACH READY,%d/%d  -  BREACH READY
@@ -67,6 +68,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s  //  AUDIT %d,%s  //  AUDIT %d
 %s  //  INTERNAL  //  DO NOT FORWARD,%s  //  INTERNAL  //  DO NOT FORWARD
 %s  //  NOTICE,%s  //  NOTICE
+%s  //  SITE FILE %s,%s  //  SITE FILE %s
 %s  //  TIER %d,%s  //  TIER %d
 %s  HP %s → %s  %s,%s  HP %s → %s  %s
 %s %s HP,%s %s HP
@@ -90,7 +92,9 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s LANDS ON: %s,%s LANDS ON: %s
 %s MOVES,%s MOVES
 %s R%d,%s R%d
+"%s R%d, %s. HP %d/%d, DECK %d, DAEMONS %d.","%s R%d, %s. HP %d/%d, DECK %d, DAEMONS %d."
 %s SECURITY,%s SECURITY
+%s Schematics,%s Schematics
 %s Site,%s Site
 %s a card for details.,%s a card for details.
 %s a slice for details.,%s a slice for details.
@@ -128,6 +132,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 "%s, your home server","%s, your home server"
 %s.,%s.
 %s/turn,%s/turn
+%s: %s,%s: %s
 %s: %s -> %d HP,%s: %s -> %d HP
 %s: %s.,%s: %s.
 %s: HQ RUN,%s: HQ RUN
@@ -170,6 +175,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 > CONNECTED,> CONNECTED
 > CREW     %s,> CREW     %s
 > HOME     %s,> HOME     %s
+> HQ ACTIONS,> HQ ACTIONS
 > ICE      0,> ICE      0
 > MODIFIERS,> MODIFIERS
 > SEED     %d,> SEED     %d
@@ -581,6 +587,7 @@ DECRYPTED BY THE CELL  //  KEY %s,DECRYPTED BY THE CELL  //  KEY %s
 DEFEAT,DEFEAT
 DEFENCE,DEFENCE
 "DEFENCE: the Armory's defence cards; with a raid pending, the raid setup.","DEFENCE: the Armory's defence cards; with a raid pending, the raid setup."
+DEFENCES,DEFENCES
 DEFRAG,DEFRAG
 DELETE,DELETE
 DELETE SLOT,DELETE SLOT
@@ -954,6 +961,7 @@ HEAT & BANKING,HEAT & BANKING
 "HEAT (subject's exposure), at closure %d:","HEAT (subject's exposure), at closure %d:"
 HEAT // SUSPECT FILE,HEAT // SUSPECT FILE
 "HEAT GLITCH PREVIEW (HUNTED, 82)","HEAT GLITCH PREVIEW (HUNTED, 82)"
+HEAT SCRUB  %s HEAT,HEAT SCRUB  %s HEAT
 HEAT: +%d RESISTANCE,HEAT: +%d RESISTANCE
 HEAT: SHOP STOCK %d,HEAT: SHOP STOCK %d
 HFIX,HFIX
@@ -1119,9 +1127,11 @@ INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
 INT,INT
 "INT %d: integrity, the hits it takes before it breaks. x%d: how many are in the Armory to deploy.","INT %d: integrity, the hits it takes before it breaks. x%d: how many are in the Armory to deploy."
+INTEGRITY,INTEGRITY
 INTEL,INTEL
 INTERCEPT,INTERCEPT
 INTERCEPTED,INTERCEPTED
+INTERCEPTED  //  %s,INTERCEPTED  //  %s
 INTERCEPTED  //  %s  //  CORP FILE,INTERCEPTED  //  %s  //  CORP FILE
 INTERCEPTED // %s INTERNAL MAIL,INTERCEPTED // %s INTERNAL MAIL
 INTERNAL MEMO,INTERNAL MEMO
@@ -1154,6 +1164,7 @@ LIMITED // slow layer only,LIMITED // slow layer only
 "LIMITED: flash limiter on, slow layer only","LIMITED: flash limiter on, slow layer only"
 "LIMITED: reduce effects on, slow layer only","LIMITED: reduce effects on, slow layer only"
 LINK,LINK
+LINKS,LINKS
 LIVE RAID FEED,LIVE RAID FEED
 LOAD,LOAD
 LOADOUT // %s // DECK,LOADOUT // %s // DECK
@@ -1899,6 +1910,7 @@ ROUTE VIEW,ROUTE VIEW
 RUN,RUN
 RUN ASSETS:,RUN ASSETS:
 RUN HISTORY  //  last %d,RUN HISTORY  //  last %d
+RUNNER,RUNNER
 RUNNER: %s R%d,RUNNER: %s R%d
 RUNS,RUNS
 Rack,Rack
@@ -2046,6 +2058,7 @@ SBOX,SBOX
 SCHEMATICS,SCHEMATICS
 SCHEMATICS %s,SCHEMATICS %s
 SCRUB HEAT %s,SCRUB HEAT %s
+"SCRUB HEAT: pay %d Schematics, Heat %s (the Heat terminal's purchase).","SCRUB HEAT: pay %d Schematics, Heat %s (the Heat terminal's purchase)."
 SELECTED,SELECTED
 SEND IT,SEND IT
 "SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The chips beside each HP already show the outcome.","SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The chips beside each HP already show the outcome."
@@ -3185,6 +3198,7 @@ YOUR CELL HAS BEEN PROCESSED,YOUR CELL HAS BEEN PROCESSED
 YOUR CELL HAS BEEN TREATED,YOUR CELL HAS BEEN TREATED
 YOUR NETWORK,YOUR NETWORK
 YOUR WHEEL,YOUR WHEEL
+YOURS,YOURS
 You are here.,You are here.
 You can move here now.,You can move here now.
 "Your %s, if you play it:","Your %s, if you play it:"
@@ -3251,8 +3265,8 @@ firmware,firmware
 first in path,first in path
 flagged,flagged
 flatlined,flatlined
+from %s,from %s
 good aim,good aim
-guarded,guarded
 hack,hack
 half power,half power
 handshake ... ok,handshake ... ok
@@ -3337,6 +3351,7 @@ switch tab,switch tab
 system,system
 taken,taken
 target,target
+the %s Exploit,the %s Exploit
 the Site's objective,the Site's objective
 the home server falls and the campaign is lost,the home server falls and the campaign is lost
 the net,the net

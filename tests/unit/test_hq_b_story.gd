@@ -83,7 +83,9 @@ func test_the_radio_is_one_on_air_line() -> void:
 	var hq := await _hq()
 	var ticker := hq._panel.find_child("OnAir", true, false) as OnAirTicker
 	assert_not_null(ticker, "ON AIR (Q7)")
-	assert_eq(ticker.get_global_rect().end.y, hq._panel.get_global_rect().end.y, "one line along the page's foot")
+	# B4 (round 44): one line in the page's foot (in the gap between the hand and the verb slot,
+	# or along the whole foot when that gap is too narrow).
+	assert_almost_eq(ticker.get_global_rect().end.y, hq._panel.get_global_rect().end.y, HqLayout.MARGIN + 0.5, "one line in the page's foot")
 	assert_null(hq._panel.find_child("PirateRadio", true, false), "no radio panel")
 
 

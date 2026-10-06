@@ -88,6 +88,15 @@ var hold_shapes: bool = false
 ## Dev probes only (perf_pack scrim_probe_*): the network keep's cost is measured by turning it off.
 var keep_enabled: bool = true
 
+## B4 (review D7, round 44 `hq_idle`): the map dim this frame, in this layer's px ({} = off):
+## {rect: Rect2 (the network's fit rect, grown by the look's margin), focus: Vector2 (the
+## selected Site's centre; INF = none), plus the look's numbers in px: feather, hold, end}.
+var map_dim: Dictionary = {}
+## B4: the page's map dim source: () -> {rect: Rect2, focus: Vector2} in global canvas px, or {}
+## (off). Set by a page that shows a map at rest (the HQ idle); cleared by `set_map_dim_source`
+## with an empty Callable.
+var _dim_source: Callable = Callable()
+
 var _quad: ColorRect
 var _mat: ShaderMaterial
 var _copy: BackBufferCopy
@@ -279,11 +288,13 @@ func refresh() -> void:
 	if not hold_shapes:
 		shapes = shapes_for(sources())
 	_sync_keep()
-	var sig := hash(shapes)
-	if sig == _sig and _quad.visible == not shapes.is_empty():
+	_sync_dim()
+	var on := not shapes.is_empty() or not map_dim.is_empty()
+	var sig := hash([shapes, map_dim])
+	if sig == _sig and _quad.visible == on:
 		return
 	_sig = sig
-	_quad.visible = not shapes.is_empty()
+	_quad.visible = on
 	# No pools: no screen copies either (a later reader takes its own, as without the layer).
 	_before.visible = _quad.visible
 	_copy.visible = _quad.visible
@@ -300,6 +311,52 @@ func refresh() -> void:
 	_mat.set_shader_parameter(&"count", shapes.size())
 	_mat.set_shader_parameter(&"shape_rect", rects)
 	_mat.set_shader_parameter(&"shape_params", params)
+	_mat.set_shader_parameter(&"dim_on", not map_dim.is_empty())
+	if not map_dim.is_empty():
+		var r: Rect2 = map_dim["rect"]
+		var f: Vector2 = map_dim["focus"]
+		_mat.set_shader_parameter(&"dim_rect", Vector4(r.get_center().x, r.get_center().y, r.size.x * 0.5, r.size.y * 0.5))
+		_mat.set_shader_parameter(&"dim_in", 1.0 - LOOK.map_dim_inside)
+		_mat.set_shader_parameter(&"dim_out", 1.0 - LOOK.map_dim_outside)
+		_mat.set_shader_parameter(&"dim_sat", LOOK.map_dim_saturation)
+		_mat.set_shader_parameter(&"dim_feather", float(map_dim["feather"]))
+		_mat.set_shader_parameter(&"dim_focus", Vector4(f.x, f.y, float(map_dim["hold"]), float(map_dim["end"])) if f.is_finite() \
+			else Vector4(0.0, 0.0, -1.0, 0.0))
+
+
+## B4 (review D7): the page's map dim (see `map_dim`): `source` () -> {rect, focus} in global
+## canvas px, or {} while the page shows no map at rest. An empty Callable turns it off.
+func set_map_dim_source(source: Callable) -> void:
+	_dim_source = source
+
+
+## B4: reads the map dim source into this layer's px (the look's lengths scaled to its height).
+func _sync_dim() -> void:
+	map_dim = {}
+	if not _dim_source.is_valid() or not is_inside_tree():
+		return
+	var src: Dictionary = _dim_source.call()
+	if src.is_empty() or not (src.get("rect", Rect2()) as Rect2).has_area():
+		return
+	var inv := get_global_transform_with_canvas().affine_inverse()
+	var r: Rect2 = inv * (src["rect"] as Rect2)
+	var f: Vector2 = src.get("focus", Vector2.INF)
+	map_dim = {"rect": r.grow(px(LOOK.map_dim_margin_px)), "focus": inv * f if f.is_finite() else Vector2.INF,
+		"feather": px(LOOK.map_dim_feather_px), "hold": px(LOOK.map_focus_hold_px), "end": px(LOOK.map_focus_end_px)}
+
+
+## B4: the map dim's [removal, desaturation share] at `p` (this layer's px) for `dim` (`map_dim`),
+## as the shader computes it ([0, 0] when off).
+static func dim_at(dim: Dictionary, p: Vector2) -> Vector2:
+	if dim.is_empty():
+		return Vector2.ZERO
+	var r: Rect2 = dim["rect"]
+	var outside := smoothstep(0.0, maxf(float(dim["feather"]), 0.001), maxf(sd_box(p - r.get_center(), r.size * 0.5, 0.0), 0.0))
+	var f: Vector2 = dim["focus"]
+	var lit := 0.0
+	if f.is_finite():
+		lit = 1.0 - smoothstep(float(dim["hold"]), maxf(float(dim["end"]), float(dim["hold"]) + 0.001), p.distance_to(f))
+	return Vector2(lerpf(1.0 - LOOK.map_dim_inside, 1.0 - LOOK.map_dim_outside, outside) * (1.0 - lit), outside * (1.0 - lit))
 
 
 ## What the registered parts are this frame, in this layer's own px: {size, scale (px per px at
@@ -396,14 +453,25 @@ static func apply_shapes(list: Array[Dictionary], p: Vector2, c: Color, keep_sha
 
 ## World colour `c` at `p` (this layer's px) once the layer lies over it (with its network kept).
 func apply_at(p: Vector2, c: Color) -> Color:
-	return apply_shapes(shapes, p, c, keep_at(p, keep))
+	var k := keep_at(p, keep)
+	var d := dim_at(map_dim, p)  # B4: the dim lies over the network too (the shader's perf rule)
+	if d == Vector2.ZERO:
+		return apply_shapes(shapes, p, c, k)
+	# B4: the map dim as the shader does it: one saturation (the pools' times the dim's), then
+	# every multiply.
+	var m := masks_at(shapes, p) * (1.0 - k)
+	var l := Vector3(c.r, c.g, c.b).dot(LUMA)
+	var s := lerpf(1.0, LOOK.pool_saturation, m.z) * lerpf(1.0, LOOK.map_dim_saturation, d.y)
+	var f := (1.0 - m.x) * (1.0 - m.y) * (1.0 - d.x)
+	return Color((l + (c.r - l) * s) * f, (l + (c.g - l) * s) * f, (l + (c.b - l) * s) * f, c.a)
 
 
 ## What the layer leaves of the world's brightness at `p` (pools and bands, no desaturation;
 ## 1.0 where nothing is registered).
 func factor_at(p: Vector2) -> float:
-	var m := masks_at(shapes, p) * (1.0 - keep_at(p, keep))
-	return (1.0 - m.x) * (1.0 - m.y)
+	var k := keep_at(p, keep)
+	var m := masks_at(shapes, p) * (1.0 - k)
+	return (1.0 - m.x) * (1.0 - m.y) * (1.0 - dim_at(map_dim, p).x)
 
 
 ## What a wheel's pool leaves of the world `d` disc radii from its centre (the look's numbers;
@@ -496,7 +564,7 @@ func _sync_keep() -> void:
 				_mat.set_shader_parameter(&"keep_node_px", cfg.net_node_px)
 				_mat.set_shader_parameter(&"keep_bus_gap_px", cfg.net_bus_gap_px)
 				_mat.set_shader_parameter(&"keep_edge_px", cfg.net_keep_edge_px)
-	var sig := hash([keep.get("o"), keep.get("x"), keep.get("y"), keep.get("bu"), keep.get("mgmt")])
+	var sig := hash([keep.get("o"), keep.get("x"), keep.get("y"), keep.get("bu"), keep.get("mgmt"), keep.get("box")])
 	if sig == _keep_sig:
 		return
 	_keep_sig = sig
@@ -507,6 +575,8 @@ func _sync_keep() -> void:
 		_mat.set_shader_parameter(&"keep_y", keep["y"])
 		_mat.set_shader_parameter(&"keep_bu_per_px", keep["bu"])
 		_mat.set_shader_parameter(&"keep_mgmt", keep["mgmt"])
+		var kb: Rect2 = keep.get("box", Rect2())
+		_mat.set_shader_parameter(&"keep_box", Vector4(kb.position.x, kb.position.y, kb.end.x, kb.end.y))
 
 
 ## The shown map in this layer's world whose network is the 3D city's ground decal (null: none).
@@ -535,13 +605,44 @@ static func keep_from(net: CityNetworkData, o: Vector2, x: Vector2, y: Vector2, 
 	for n in net.nodes:
 		var w: Vector3 = n["world"]
 		nodes.append([Vector2(w.x, w.z), cfg.net_node_px * (1.4 if n["big"] else 1.0) * (1.0 + mgmt * 0.7) + cfg.net_keep_edge_px])
-	return {"segs": segs, "nodes": nodes, "o": o, "x": x, "y": y, "bu": maxf(bu, 0.0001), "mgmt": mgmt}
+	return {"segs": segs, "nodes": nodes, "o": o, "x": x, "y": y, "bu": maxf(bu, 0.0001), "mgmt": mgmt,
+		"box": keep_box(net, o, x, y, bu, mgmt)}
+
+
+## B4 (perf, the art director: "if the HQ goes over budget, B1a's network-keep loop is the first
+## place to optimise"): the layer's px box round `net` (its nodes and segment ends mapped back
+## from the ground through `o`, `x`, `y`, grown by the widest keep): the shader skips the keep's
+## loops outside it (the panels' pools mostly lie away from the network). Rect2() for none.
+static func keep_box(net: CityNetworkData, o: Vector2, x: Vector2, y: Vector2, bu: float, mgmt: float) -> Rect2:
+	var det := x.x * y.y - x.y * y.x
+	if absf(det) < 1e-9 or (net.nodes.is_empty() and net.segments.is_empty()):
+		return Rect2()
+	var to_px := func(w: Vector3) -> Vector2:
+		var d := Vector2(w.x, w.z) - o
+		return Vector2((d.x * y.y - d.y * y.x) / det, (x.x * d.y - x.y * d.x) / det)
+	var box := Rect2()
+	var first := true
+	for n in net.nodes:
+		var q: Vector2 = to_px.call(n["world"])
+		box = Rect2(q, Vector2.ZERO) if first else box.expand(q)
+		first = false
+	for sg in net.segments:
+		for w: Vector3 in [sg["a"], sg["b"]]:
+			var q: Vector2 = to_px.call(w)
+			box = Rect2(q, Vector2.ZERO) if first else box.expand(q)
+			first = false
+	var cfg := CityView3D.CONFIG
+	var grow := (cfg.net_node_px * 1.4 * (1.0 + mgmt * 0.7) + cfg.net_trace_px * 2.0 + cfg.net_keep_edge_px + mgmt * cfg.net_bus_gap_px + 2.0)
+	return box.grow(grow)
 
 
 ## 1 on `k`'s network (keep_from) at `p` (px), 0 off it, as the shader computes it.
 static func keep_at(p: Vector2, k: Dictionary) -> float:
 	if k.is_empty():
 		return 0.0
+	var kb: Rect2 = k.get("box", Rect2())
+	if kb.has_area() and not kb.has_point(p):
+		return 0.0  # B4: the shader's box (outside it the network is never under the pixel)
 	var w: Vector2 = (k["o"] as Vector2) + p.x * (k["x"] as Vector2) + p.y * (k["y"] as Vector2)
 	var bu := float(k["bu"])
 	var out := 0.0

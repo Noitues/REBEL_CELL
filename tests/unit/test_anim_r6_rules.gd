@@ -304,6 +304,7 @@ const NOT_SKIPPABLE := {
 	"res://scripts/ui/kit/ram_bar.gd": "RAM ticks and refusals answer the card played or refused",
 	"res://scripts/ui/kit/route_overlay.gd": "M14: the hidden-node reveal fades answer the pointer (node hover) and the legend's hover / always-show (D13)",
 	"res://scripts/ui/kit/toast.gd": "a toast is a reading time",
+	"res://scripts/ui/kit/corp_news_toast.gd": "B4: the corp news toast is a reading time (the toast entry's 2.4 s hold)",
 	"res://scripts/ui/kit/tutorial_overlay.gd": "the tutorial's Next pulses in a loop while it waits: nothing to complete",
 	"res://scripts/ui/kit/wireframe_background.gd": "an ambient loop: nothing to complete",
 	"res://scripts/ui/kit/zine_stamp.gd": "JACK IN's breathing is an ambient loop",

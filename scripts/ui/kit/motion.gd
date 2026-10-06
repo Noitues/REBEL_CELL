@@ -315,10 +315,17 @@ static func loop_pulse(node: CanvasItem, property: NodePath, id: StringName) -> 
 		return null
 	var e := entry(id)
 	var d := seconds(id)
+	# B4: a Vector2 property (a sticker's `scale`) breathes on both axes; a float set into it
+	# collapsed it to zero (the HQ's JACK IN sticker vanished while it breathed).
+	var rest: Variant = 1.0
+	var peak: Variant = amplitude(id)
+	if node.get_indexed(property) is Vector2:
+		rest = Vector2.ONE
+		peak = Vector2.ONE * amplitude(id)
 	var tw := node.create_tween().set_loops()
-	tw.tween_method(_setter(node, property), 1.0, amplitude(id), d).set_ease(e.ease).set_trans(e.trans)
-	tw.tween_method(_setter(node, property), amplitude(id), 1.0, d).set_ease(e.ease).set_trans(e.trans)
-	_hold(node, property, tw, 1.0)
+	tw.tween_method(_setter(node, property), rest, peak, d).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_method(_setter(node, property), peak, rest, d).set_ease(e.ease).set_trans(e.trans)
+	_hold(node, property, tw, rest)
 	return tw
 
 

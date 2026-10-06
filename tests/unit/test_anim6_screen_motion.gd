@@ -552,7 +552,7 @@ func test_hq_idle_runs_live_and_rests_headless() -> void:
 	assert_ne(word.text.strip_edges(), "", "its words are all there")
 	var crew := hq._panel.find_child("Crew_%s" % RunManager.campaign.roster[0].id, true, false) as CrewHandCard
 	crew.tilt(true)
-	var want := Motion.amplitude(&"polaroid_tilt")
+	var want := crew.rest_tilt + Motion.amplitude(&"polaroid_tilt")  # B4: the polaroid's rest tilt under it
 	var took := await _until(func() -> bool: return is_equal_approx(crew.rotation_degrees, want))
 	_assert_in_time(took, Motion.seconds(&"polaroid_tilt"), "the tilt")
 	assert_almost_eq(crew.rotation_degrees, want, 0.01, "the crew card tilts on hover")

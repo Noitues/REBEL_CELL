@@ -25,8 +25,11 @@ signal node_pressed(id: StringName)
 ## The group every HQ-run page joins (the gate tells the page it is open over it).
 const GROUP := &"hq_run_view"
 const CHIP_WORDS := "CENTRAL SERVER // %s" # TR
-## The page's title sticker: "<CORPORATION>: HQ RUN" (the concept's mechanic names wait for G12).
-const TITLE_WORDS := "%s: HQ RUN" # TR
+## The page's title sticker (B4, review Q11): "<CORPORATION>: <CENTRAL SERVER NAME>" (e.g.
+## SOLACE: THE GENOME CORE; a real place, bible 4.7) until the concept's mechanic names (CLIMB
+## THE HELIX ...) ship with G12; "<CORPORATION>: HQ RUN" when the server has no name.
+const TITLE_WORDS := "%s: %s" # TR
+const TITLE_FALLBACK := "%s: HQ RUN" # TR
 ## The foot terminal's header, its STEP chip and its words (the rules the run has today).
 const MECHANIC_TITLE := "HQ MECHANIC" # TR
 const STEP_WORDS := "STEP %d/%d" # TR
@@ -51,9 +54,10 @@ const TAB_PAD := Vector2(4.0, 1.0)
 const TAB_FONT := 12
 const TAB_BORDER := 1.0
 const TAB_GLASS_ALPHA := 0.88
-## A cut-off node's pale backing (so its grey sticker reads on a dark compound).
-const CUT_BACKING_ALPHA := 0.5
-const CUT_BACKING_GROW := 4.0
+## B4 (review D18): a cut-off node is a small grey disc this share of a sticker's radius, with
+## no backing (the S-HQRUN pale backing went), over an ink keyline this wide (px at 1.0).
+const CUT_SHARE := 0.6
+const CUT_KEYLINE := 2.0
 ## The entry's lime diamond: half-width and squash (the ground's iso foreshortening).
 const ENTRY_DIAMOND := 9.0
 const ENTRY_SQUASH := 0.5
@@ -175,9 +179,12 @@ func set_gate_open(on: bool) -> void:
 	_marks.queue_redraw()
 
 
-## The title sticker's words: "<CORPORATION>: HQ RUN" (the corporation's first name word).
+## The title sticker's words: "<CORPORATION>: <CENTRAL SERVER NAME>" (the corporation's first
+## name word; B4, review Q11).
 func title_text() -> String:
-	return tr(TITLE_WORDS) % corp_word(corp)
+	if server_label == "":
+		return tr(TITLE_FALLBACK) % corp_word(corp)
+	return tr(TITLE_WORDS) % [corp_word(corp), server_label]
 
 
 ## The corporation's short name in capitals: the first word of its display name
@@ -278,7 +285,12 @@ func _key_row(state: String, words: String, k: float) -> HBoxContainer:
 	swatch.name = "Swatch"
 	swatch.custom_minimum_size = Vector2(side, side)
 	swatch.draw.connect(func() -> void:
-		RouteOverlay.draw_state_ring(swatch, swatch.size * 0.5, side * KEY_RING_SHARE, state, k * 0.7))
+		if state == RouteOverlay.STATE_CUT:
+			# B4 (D18): the key shows the cut-off node as the map draws it, a small grey disc.
+			swatch.draw_circle(swatch.size * 0.5, side * KEY_RING_SHARE + CUT_KEYLINE * k * 0.7, Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA))
+			swatch.draw_circle(swatch.size * 0.5, side * KEY_RING_SHARE, RouteInk.RING_CUT)
+		else:
+			RouteOverlay.draw_state_ring(swatch, swatch.size * 0.5, side * KEY_RING_SHARE, state, k * 0.7))
 	row.add_child(swatch)
 	var l := Chrome.caps_label(tr(words), UiTheme.CAPTION, Palette.TEXT_MID)
 	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -434,12 +446,26 @@ func _on_foot_laid_out() -> void:
 	_marks.queue_redraw()
 
 
-func _frame() -> void:
-	var sz := size if size.x > 1.0 and size.y > 1.0 else Vector2(1920, 1080)
+## The run's world points: its entry and every node (node-id order as laid out).
+func run_points() -> Array[Vector3]:
 	var pts: Array[Vector3] = [_entry]
 	for id: StringName in _points:
 		pts.append(_points[id])
-	iso = HqCompoundStage.run_camera(CityView3D.CONFIG, _manifest, _at, sz, pts, FIT_MARGIN_PX, FIT_MAX_SHARE, free_rect(sz))
+	return pts
+
+
+## B4 (review D18): the share of the page's height the landmark box (the compound's footprint
+## with the run's network) stands now (0 for a perspective page).
+func landmark_share() -> float:
+	if iso == null:
+		return 0.0
+	var sz := size if size.x > 1.0 and size.y > 1.0 else Vector2(1920, 1080)
+	return HqCompoundStage.landmark_share(iso, _manifest, _at, sz, run_points())
+
+
+func _frame() -> void:
+	var sz := size if size.x > 1.0 and size.y > 1.0 else Vector2(1920, 1080)
+	iso = HqCompoundStage.run_camera(CityView3D.CONFIG, _manifest, _at, sz, run_points(), FIT_MARGIN_PX, FIT_MAX_SHARE, free_rect(sz))
 	if city != null:
 		city.set_view_size(Vector2i(sz))
 		city.set_iso(iso)
@@ -448,6 +474,10 @@ func _frame() -> void:
 func _mount_city() -> void:
 	city = CityView3D.new()
 	city.name = "HqCity"
+	# B4 (review D18, round 43 `hq_*_compound.png`): the compound stands in the solid city with
+	# its street lane glow at 100 % (the concepts' pink and cyan lanes), not the see-through
+	# management look the zoom would give (lanes at 28 %).
+	city.band_lock = CityLod.Band.GRID
 	city.set_iso(iso)
 	city.stage_compound(corp)
 	add_child(city)
@@ -524,7 +554,10 @@ func _draw_marks() -> void:
 			continue
 		var state := state_of(id)
 		if state == RouteOverlay.STATE_CUT:
-			_marks.draw_circle(at, node_radius(id) + CUT_BACKING_GROW * k, Color(Palette.PAPER, CUT_BACKING_ALPHA))
+			# B4 (review D18): a cut-off node is a small grey disc, 60 % of a sticker, with no
+			# backing (its kind no longer matters: the run went past it).
+			_cut_disc(at, node_radius(id) * CUT_SHARE, k)
+			continue
 		RouteOverlay.draw_sticker(_marks, kind_of(id), at, node_radius(id), state, k)
 	for id: StringName in available:
 		if id != server and screen_of(id) != Vector2.INF:
@@ -585,6 +618,12 @@ func _tab(id: StringName, k: float) -> void:
 	_marks.draw_rect(r, PaletteSkins.chrome(Palette.NET_CYAN), false, TAB_BORDER * k)
 	_marks.draw_string(f, r.position + Vector2(TAB_PAD.x * k, TAB_PAD.y * k + f.get_ascent(fs)), tab_text(id),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER)
+
+
+## B4 (D18): a cut-off node's small grey disc (radius `r`) over its ink keyline.
+func _cut_disc(at: Vector2, r: float, k: float) -> void:
+	_marks.draw_circle(at, r + CUT_KEYLINE * k, Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA))
+	_marks.draw_circle(at, r, RouteInk.RING_CUT)
 
 
 ## The entry: the concept's lime diamond on the ground where the walked path starts.

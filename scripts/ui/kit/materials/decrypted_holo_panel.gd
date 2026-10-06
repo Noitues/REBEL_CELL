@@ -159,16 +159,17 @@ func _sync() -> void:
 	if _glass_mat == null:
 		return
 	var live := Motion.live(BANDS)
+	var k := body_share(corp_color)
 	for m in [_glass_mat, _over_mat]:
 		var sm := m as ShaderMaterial
 		sm.set_shader_parameter(&"panel", Vector4(0, 0, size.x, size.y))
 		sm.set_shader_parameter(&"tint", corp_color)
 		sm.set_shader_parameter(&"deep", Palette.NET_BG_OUTER)
 		sm.set_shader_parameter(&"tint_share", TINT_SHARE)
-		sm.set_shader_parameter(&"fill_share", FILL_SHARE)
+		sm.set_shader_parameter(&"fill_share", FILL_SHARE * k)
 		sm.set_shader_parameter(&"glass_alpha", GLASS_ALPHA)
 		sm.set_shader_parameter(&"scan_px", SCAN_PX)
-		sm.set_shader_parameter(&"scan_strength", SCAN_STRENGTH)
+		sm.set_shader_parameter(&"scan_strength", SCAN_STRENGTH * k)
 		sm.set_shader_parameter(&"band_count", BAND_COUNT)
 		sm.set_shader_parameter(&"split_px", SPLIT_PX if Fx.effects_enabled() else 0.0)
 		sm.set_shader_parameter(&"band_seconds", maxf(Motion.seconds(BANDS), 0.1))
@@ -233,6 +234,19 @@ func _draw_stamp() -> void:
 		stamp_slot.draw_rect(box, ink, false, 3.0)
 		stamp_slot.draw_string(font, Vector2(-sz.x * 0.5, sz.y * 0.32), STAMP_WORD, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ink)
 	stamp_slot.draw_set_transform(Vector2.ZERO, 0.0)
+
+
+## B4 (art director, round 44 `hq_idle.png`): the body's tint fill and scanlines are FILL_SHARE /
+## SCAN_STRENGTH as measured on round 44's Meridian file; a brighter corp hue (Solace's green
+## carries twice the orange's luminance) takes its share times this factor, so every corp's
+## body is the same dark glass (never a green box): BODY_LUMA_REF over the hue's luminance,
+## at most 1 (a darker hue keeps the measured share).
+static func body_share(tint: Color) -> float:
+	return clampf(Palette.luminance(BODY_LUMA_REF) / maxf(Palette.luminance(tint), 0.0001), 0.0, 1.0)
+
+
+## B4: the hue the measured body shares belong to (round 44's Meridian file).
+const BODY_LUMA_REF := Palette.CORP_MERIDIAN
 
 
 ## B1c-b: the stamp's under-shadow ink (dark, STAMP_SHADOW_ALPHA).

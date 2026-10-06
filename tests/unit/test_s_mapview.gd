@@ -155,15 +155,11 @@ func test_the_raid_and_route_pages_hold_the_map_bands_and_the_grid_does_not() ->
 	hq.show_raid()
 	await _frames(3)
 	assert_true(CityView3D.map_band(cfg, hq.wireframe.city.band_lock), "the raid setup is a map")
-	# HQ-B (Q4): the Grid is the HQ, a map at the RAID band; zoomed out past the raid range it
-	# takes the GRID band, which is not.
+	# B4 (round 44 hq_idle): the HQ idle is the City Grid look (its own map dim, not map mode)
+	# at every zoom; the raid setup above stays a map.
 	hq.show_grid()
 	await _frames(3)
-	assert_true(CityView3D.map_band(cfg, hq.wireframe.city.band_lock), "the HQ (the Grid folded in) is a map")
-	if hq.grid_controls != null:
-		for i in 12:
-			hq.grid_controls.zoom_at(hq.size * 0.5, 1.0)
-		assert_false(CityView3D.map_band(cfg, hq.wireframe.city.band_lock), "zoomed out to the whole city it is not")
+	assert_false(CityView3D.map_band(cfg, hq.wireframe.city.band_lock), "the HQ idle is the City Grid look")
 	var net := _scene(NETRUN)
 	RunManager.new_campaign(1)
 	net.start_run(1)

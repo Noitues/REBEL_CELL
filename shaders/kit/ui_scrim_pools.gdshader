@@ -28,6 +28,17 @@ uniform float pool_saturation = 0.6;
 uniform float emissive_from = 0.72;
 uniform float emissive_to = 0.9;
 
+// B4 (review D7, round 44 hq_idle): the map dim. Outside the network's rect (xy centre, zw half
+// size, px) the world keeps 1 - dim_out (desaturated to dim_sat), inside it 1 - dim_in, over a
+// dim_feather px edge; inside the focus vignette (xy centre, z hold, w end, px) it is fully lit.
+uniform bool dim_on = false;
+uniform vec4 dim_rect = vec4(0.0);
+uniform float dim_in = 0.14;
+uniform float dim_out = 0.32;
+uniform float dim_sat = 0.85;
+uniform float dim_feather = 110.0;
+uniform vec4 dim_focus = vec4(0.0, 0.0, -1.0, 0.0);
+
 // The network kept at full strength (UiScrimPools.keep_network): ground XZ (BU) =
 // keep_o + px.x * keep_x + px.y * keep_y; the decal's buffers and sizes (CityNetworkData, the
 // decal's view px: keep_bu_per_px BU each).
@@ -45,6 +56,8 @@ uniform float keep_trace_px = 3.0;
 uniform float keep_node_px = 13.0;
 uniform float keep_bus_gap_px = 4.0;
 uniform float keep_edge_px = 2.0;
+// B4 (perf): the px box round the network (x0, y0, x1, y1); the keep's loops run only inside it.
+uniform vec4 keep_box = vec4(-1e9, -1e9, 1e9, 1e9);
 
 varying vec2 local_px;
 
@@ -108,10 +121,22 @@ void fragment() {
 			sat = max(sat, m);
 		}
 	}
-	if (pool <= 0.0005 && band <= 0.0005) {
+	float dim = 0.0;
+	float dsat = 0.0;
+	if (dim_on) {
+		float outside = smoothstep(0.0, max(dim_feather, 0.001), max(sd_box(local_px - dim_rect.xy, dim_rect.zw), 0.0));
+		float lit = dim_focus.z < 0.0 ? 0.0 : 1.0 - smoothstep(dim_focus.z, max(dim_focus.w, dim_focus.z + 0.001), length(local_px - dim_focus.xy));
+		dim = mix(dim_in, dim_out, outside) * (1.0 - lit);
+		dsat = outside * (1.0 - lit);
+	}
+	if (pool <= 0.0005 && band <= 0.0005 && dim <= 0.0005) {
 		discard;
 	}
-	if (keep_on) {
+	// B4 (perf): the network keep runs only under a pool or a band; the map dim (mild inside the
+	// network's rect, where the decal is) lies over the decal too, so the keep loop never runs
+	// over the whole screen.
+	bool in_box = all(greaterThanEqual(local_px, keep_box.xy)) && all(lessThanEqual(local_px, keep_box.zw));
+	if (keep_on && in_box && (pool > 0.0005 || band > 0.0005)) {
 		float k = 1.0 - network_keep(local_px);
 		pool *= k;
 		band *= k;
@@ -120,6 +145,6 @@ void fragment() {
 	vec3 c = texture(screen_tex, SCREEN_UV).rgb;
 	float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
 	sat *= 1.0 - smoothstep(emissive_from, emissive_to, max(max(c.r, c.g), c.b));
-	c = mix(vec3(l), c, mix(1.0, pool_saturation, sat));
-	COLOR = vec4(c * (1.0 - pool) * (1.0 - band), 1.0);
+	c = mix(vec3(l), c, mix(1.0, pool_saturation, sat) * mix(1.0, dim_sat, dsat));
+	COLOR = vec4(c * (1.0 - pool) * (1.0 - band) * (1.0 - dim), 1.0);
 }
