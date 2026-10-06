@@ -10,6 +10,16 @@ parity audit", and the orchestrator's relay of the later ruling): every differen
 neutrally, both sides; where it helps, an honest view of which reads better and why; **nothing is
 fixed until the designer has ruled** on each id (`Decision:` left empty).
 
+## The designer's general principle (2026-10-05)
+Where the M13 art-pass build is **richer than main** (more layout, content or information) but
+**predates the v2 concepts**, take the build's layout and content and **rework it in the v2 concept
+language** (the v2 kit: terminal panels, vinyl stickers, paper for intercepted documents, the locked
+palette and type). Neither "copy the build" nor "keep main's plainer version": the build's structure,
+the concept's look. First applied to the campaign slots (SLOTS-01/02); the same pattern is the
+natural default for the build-richer pages flagged below (new campaign pickers NEWC-01, Black Market
+HQ-06, codex CODEX-01, stats STATS-01, pause rows PAUSE-02, loot / shop / deck card faces), each
+still awaiting its own ruling.
+
 ## How to read this
 
 - Per screen: `<screen>.jpg` = the full pictures side by side, references on the left, main on the
@@ -86,6 +96,7 @@ DELETE (main) where the concept's run-abandon says BURN IT: different action, bo
 Likely file: `scripts/ui/kit/confirm_dialog.gd`. Decision:
 
 ### Campaign slots (`slots.jpg`)
+**Designer ruling (2026-10-05):** use the art-pass build's layout, reworked to the locked v2 concepts (the art pass never applied the latest concept to this page).
 Ref: art pass build `slots` (no concept image for this page).
 
 **SLOTS-01 (P1) Slot layout.** Build: three slot cards in a row inside one terminal panel; a used
@@ -98,21 +109,21 @@ main's list is legible but plain. Likely cause: the build's `scripts/ui/kit/slot
 (`SlotPicker`) was never ported; main's `scripts/ui/title_scene.gd` `show_slots` builds rows.
 Art-pass source: `art-m13-final:scripts/ui/kit/slot_picker.gd`, `title_scene.gd show_slots`.
 Fix: port SlotPicker onto main's v2 kit (paper card = `PaperInk`/`ZinePanel`, terminal chips).
-Decision:
+Decision: **build layout, reworked in the v2 kit**: the build's slot cards brought to main, restyled with the concept philosophy. (designer, 2026-10-05)
 
 **SLOTS-02 (P2) Load / Delete.** Build: pink filled `Load` (primary) and a red-edged `Delete`.
 Main: two equal terminal buttons, `Load` with the lime focus brackets. View: main follows the v2
 rule (one sticker verb per screen, the rest terminal chips); the build's colour split marks the
-destructive action more clearly. Same file as SLOTS-01. Decision:
+destructive action more clearly. Same file as SLOTS-01. Decision: **build's Load / Delete, reworked with the concept** (v2 kit). (designer, 2026-10-05)
 
 **SLOTS-03 (P3) Page title.** Build: the REBEL_CELL logo top left. Main: a `CAMPAIGN SLOTS` title
 sticker (the v2 sticker-title rule, as THE GRID / RAID SETUP). View: main is consistent with v2.
-Decision:
+Decision: **keep main** (the v2 page-title rule). (designer, 2026-10-05)
 
 **SLOTS-04 (P2) Panel height.** Main's panel runs from y 160 to the ticker with the lower half
 empty (hex-dump texture only); the build's panel wraps its content and shows the city below.
 Likely cause: `title_scene.gd` `_page` / `SLOTS_W` (the page fills the height). Fix: size the
-panel to its content. Decision:
+panel to its content. Decision: **size the panel to its content up to a maximum allocated size, then a scroll bar.** (designer, 2026-10-05)
 
 ### New campaign (`new_campaign.jpg`, `new_campaign_picker.jpg`)
 Ref: art pass build `new_campaign`, `new_campaign_picker` (no concept image).
@@ -542,7 +553,7 @@ Decision:
 
 **BOSS-01 (P1) Guard-arc marker over the HP plate.** Main: the green guard-arc end marker (the
 triangle) sits on the first digits of the boss HP `1395/1475`. Build and concept: nothing over the
-HP value. **In progress: FIX-REDS** (a separate agent is fixing it). Decision:
+HP value. (Was in progress at FIX-REDS.) Decision: **fixed** (FIX-REDS merged, designer approved). (designer, 2026-10-05)
 
 **BOSS-02 (P1) Boss wheel phase dressing.** Concept worst case: an outer parasite ring, satellites
 docked on the rim, status-stack tabs above, a wide orange hazard frame, two needles. Main: the boss
@@ -736,6 +747,86 @@ full-width terminal button with a shield icon. View: every other raid page uses 
 one should too (one sticker verb per screen). Also main shows `RUN ASSETS: none / ARMORY: none` as
 two bare lines where the build says why (`No assets to deploy: ...`). Likely file: `netrun_scene.gd`.
 Decision:
+
+### HQ run, Central Server gate, combat backdrops (`hq_run_*.jpg`, `central_server_gate.jpg`, `combat_backdrop_*.jpg`)
+No art-pass build screen exists for these (the HQ run and the gate are v2 work on main). References:
+concepts `round43_hq_mechanics/hq_{solace,meridian,halcyon,orbital}_compound.png`,
+`dispatch_idea_1_sync_strike.png`, `round38_landing_exploits/central_server_gate.png`,
+`round26_hq_targets/combat_solace.jpg`, `site_solace_night.jpg`. Main: `hq_run_lab.tscn` at
+1280x720 (`run_<corp>` = today's run page, `full_solace` = a full run map half walked, `gate_<corp>`,
+`hq_solace` / `site_solace` = the combat backdrop's city close-up).
+
+**HQRUN-01 (P1) No page title or mechanic chrome.** Concept: a title sticker per corp (`SOLACE:
+CLIMB THE HELIX`, `MERIDIAN: CRANE + TRAIN`, `HALCYON: THE LONG WAY`, `ORBITAL: THE LAUNCH LOOP`),
+an `> HQ MECHANIC` terminal at the foot explaining the compound's rule with a progress chip
+(`HEIGHT 31%`, `STEP 3`, `LAP 1`), and a state key strip (walked / selectable / not yet / cut off /
+danger). Main: none of these; only the TARGET pencil and the `CENTRAL SERVER // <name>` chip.
+The mechanic text needs the per-corp mechanics (see "Mechanics the rules lack"); the title sticker
+and the key strip do not. Likely file: `scripts/ui/hq_run/hq_run_view.gd`. Decision:
+
+**HQRUN-02 (P1) Today's run shows one dashed line.** Concept: the whole compound route drawn
+(nodes on the structure, walked path in lime, selectable in orange, labels like `STRAND A`,
+`CROSSOVER`, `ON THE TRAIN`). Main `run_<corp>`: only an orange dashed line from the start to the
+server and the operative marker; no nodes (main's run is GDD 4.2's breach run, a straight line).
+`full_solace` shows main can draw a full map (rings on the helix, walked lime path, gears for
+locked nodes). View: the full-map look is close to the concept; which one the real run shows is
+a rules question. Decision:
+
+**HQRUN-03 (P2) Node markers on the compound.** Concept: route vinyl stickers with state rings and
+small name tabs. Main (`full_solace`): white-dashed rings for not-yet nodes, grey gear discs for cut
+nodes, orange selectable rings; no name tabs. Close in language. Likely file: `hq_run_view.gd`,
+`route_overlay.gd`. Decision:
+
+**HQRUN-05 (P2) Meridian compound.** Concept: the crane yard at night with lit warm windows, nodes on
+the crane arms and the train, a `NEXT: OFF THE TRAIN` pencil call-out, the master manifest circled.
+Main: the same compound model (crane, cars, warm lit faces) — a good match in modelling; camera a
+little closer; no nodes / call-outs (HQRUN-02). Decision:
+
+**HQRUN-06 (P2) Halcyon framing.** Concept: the ziggurat seen from further out with the switchback
+route on its face, the eye's watched half tinted. Main: a much closer camera on the ziggurat; the
+compound fills the frame, the city around it is hidden. Likely file: `scripts/city3d/hq_compound_stage.gd`
+(per-corp framing). Decision:
+
+**HQRUN-07 (P2) Orbital launch loop.** Concept: the platform with the hazard ring, dishes, antenna,
+the loop route, a `> MISSILE BAY` terminal with a NEXT MISSILE PREP bar. Main: the same platform,
+hazard ring and dishes (a close match), no loop route, no missile bay panel (needs the mechanic).
+Decision:
+
+**HQRUN-08 (P1) REBEL_CELL HQ camera.** Concept (DISPATCH sync strike): an angled view down three
+lanes towards the DISPATCH core tower with red signage. Main: a near top-down view of a street grid
+with a red lane, a white X, and a yellow wedge (a searchlight) cut off at the bottom-right corner;
+it reads like the Grid, not an HQ. Likely file: `hq_compound_stage.gd` (REBEL_CELL camera pitch /
+framing), `city_iso_camera.gd`. Decision:
+
+**GATE-01 (P2) Gate panel.** Concept: a corp-orange bordered panel with `CENTRAL SERVER // THE
+MANIFEST`, `EXPLOITS 3/3 minimum to breach`, three keycards (corp name header, icon, type, one-line
+effect, a footer tag), EXTRA slots, `3/3 - BREACH READY`, and a BREACH sticker under the panel.
+Main: the same pieces (keycards in Solace lime, EXTRA slots, BREACH READY, BREACH sticker with a
+lime focus box, `Back to the compound`), larger and without the panel border: the keycards and text
+float on the dimmed compound. View: main's content matches; the concept's bordered panel holds it
+together. Likely file: `scripts/ui/hq_run/central_server_gate.gd`. Decision:
+
+**GATE-02 (P1) Duplicated server label / boss preview.** Main: `CENTRAL SERVER // THE GENOME CORE`
+appears twice (the gate's header and the run page's chip, left visible behind the gate at a
+different place); the boss wheel preview sits right with `1475/1475` HP but no exploit effect card.
+Concept: one label; the wheel shows the exploit effects (cut slices, a crossed phase) with an
+`INTEL // SHIPPING MANIFESTS` card listing what each Exploit did (`PHASE 2 @ 66% ... BREACHED`).
+Likely file: `central_server_gate.gd`, `hq_run_view.gd` (hide its chip under the gate). Decision:
+
+**GATE-03 (P3) Gate backdrop.** Concept: the compound blurred and darkened. Main: dimmed, not
+blurred. Decision:
+
+**BACKDROP-01 (P1) Boss fight backdrop (Solace).** Concept `combat_solace.jpg`: the double helix lit
+pale against a rainy blue-grey city, green beams, readable; the wheels sit in front. Main: the helix
+in near-black navy, a chain of white bead lights (BOSS-03), a few lit windows; the frame is
+mostly black. Same cause as CMB-01 (`combat_backdrop.gd`, the city's light at the combat band).
+Decision:
+
+**BACKDROP-02 (P1) Site fight backdrop (Solace).** Concept `site_solace_night.jpg`: the Site
+building (a clinic with the cross sign and helipad) lit and framed at the centre, a lit blue-grey
+city around it. Main: generic dark blocks with neon roof outlines, no Site building in view.
+Likely file: `backdrop_catalog.gd` (`place(...)` for a Site: which building and camera),
+`combat_backdrop.gd`. Decision:
 
 ## Mechanics the rules lack (listed, not built)
 (Filled as the remaining screens are compared; first candidates seen while capturing: the HQ run
