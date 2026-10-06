@@ -159,6 +159,14 @@ footer is shorter (the file's height keeps the AT LARGE stamp's room), which als
   netrun page is built in its own function and a body title would collide with the route map, the fight's arena and
   the wheels, which other agents own; the bar is the one place that names every screen the same way. Proposal if the
   designer wants them on the pages: a `PageTitle` strip per page, a slice of its own.
+- **Big text.** The gauge (312 px at x2.0) and the title leave the stat tags two rows at the largest text (they
+  were one row on the run pages), so the bar is about 30 px taller there. Calls: the title sticker letters smaller
+  rather than wider than `HudBar.TITLE_MAX_WIDTH` (150 px; the raid setup's long title at x2.0 left the tags below
+  `HudStats.fit_floor`); the event window's top gap is 0 above text scale 1.6 (`EVENT_GAP_MAX_SCALE`; its second
+  choice was 8 px off the screen); the Mainframe wallet's width cap is 1.4 (`SHOP_WALLET_MAX_SCALE`, was 1.6; it
+  touched a stock tag by 6 px under the taller bar); `HudStats` never draws tags below `COMPACT_SCALE_FLOOR` (0.5)
+  in its two-row layout (a bar with almost no room left drew them at a zero font size). Test
+  `test_anim_r2_combat` (event top bar) now allows two rows and still asserts every choice on screen.
 - **Motion / accessibility.** The gauge is the HQ-B component, so its motion is unchanged: it joins `MotionSkip`
   (one press completes the roll and the banner), reduce effects shows its end state, headless never waits.
 - Tests: new `tests/unit/test_heat_all.gd` (fast): the gauge first with the campaign's Heat on route / Mainframe /

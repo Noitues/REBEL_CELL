@@ -49,6 +49,9 @@ const LOOT_SKIP_GAP := 14.0
 ## Room above the event's paper at text scale 1.0 (px): its tape and title keep clear of
 ## the subtitle band (H23 S10).
 const EVENT_TOP_GAP := 12.0
+## HEAT-ALL: above this text scale the event window has no gap above it: the Heat gauge makes the top bar two
+## rows at the largest text and the gap was the room the choices needed.
+const EVENT_GAP_MAX_SCALE := 1.6
 ## The event's choice column keeps this far from the screen's right edge at text scale 1.0
 ## (px; H24 S9: its buttons ran to x=1280, the right border cut).
 const EVENT_RIGHT_GAP := 16.0
@@ -2949,7 +2952,7 @@ func _show_event() -> void:
 	# H23 S10: room above the window for its title, clear of the subtitle band.
 	var gap := Control.new()
 	gap.name = "EventTopGap"
-	gap.custom_minimum_size.y = EVENT_TOP_GAP * ts
+	gap.custom_minimum_size.y = EVENT_TOP_GAP * ts if ts <= EVENT_GAP_MAX_SCALE else 0.0
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(gap)
 	var split := HBoxContainer.new()
@@ -3625,7 +3628,7 @@ const SHOP_INFO_IDLE := "> point at an item: what it does shows here. Drag Firmw
 const SHOP_INFO_IDLE_PAD := "> focus an item: what it does shows here." # TR
 ## ART-9 4A: the wallet's largest scale at big text (it stands under the Daemons, clear of the
 ## stock wheel's and the bin's tags; the top bar's CYCLES keeps the full size).
-const SHOP_WALLET_MAX_SCALE := 1.6
+const SHOP_WALLET_MAX_SCALE := 1.4
 ## The facade behind the Mainframe (kept while the page is rebuilt on the same visit).
 var _shop_facade: MainframeFacade = null
 var _shop_facade_key: String = ""

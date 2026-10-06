@@ -249,10 +249,12 @@ func test_the_event_top_bar_keeps_one_row_and_the_choices_show_at_big_text() -> 
 	var scene := await _netrun()
 	_event(scene)
 	await _frames(4)
-	assert_eq(scene.hud.stats.rows, 1, "the top bar keeps one row at TEXT_SCALE_MAX (two pushed the page down)")
+	# HEAT-ALL (designer Q1): the Heat gauge takes the first slot, so the tags wrap to two rows at
+	# TEXT_SCALE_MAX; the page gives back the room (its top gap stops growing) and every choice shows.
+	assert_lte(scene.hud.stats.rows, 2, "the top bar stays within two rows at TEXT_SCALE_MAX")
 	for b in scene._panel.find_children("Choice*", "Button", true, false):
 		var r := (b as Control).get_global_rect()
-		assert_true(SCREEN.encloses(r), "%s on screen at TEXT_SCALE_MAX" % b.name)
+		assert_true(SCREEN.encloses(r), "%s on screen at TEXT_SCALE_MAX (%s, bar %s)" % [b.name, r, scene.hud.get_global_rect()])
 	await _close(scene)
 
 

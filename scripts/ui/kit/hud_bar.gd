@@ -22,6 +22,10 @@ const TITLE_MAX_WIDTH := 150.0
 ## paper lettering. Its lettering size (px at text scale 1.0) and tilt (degrees).
 const TITLE_STICKER_PX := 16.0
 const TITLE_STICKER_TILT := -2.0
+## A long title shrinks its lettering to the cap in at most this many passes, never below TITLE_MIN_PX.
+const TITLE_FIT_PASSES := 6
+const TITLE_MIN_PX := 8.0
+const TITLE_FIT_MARGIN := 0.97
 
 var label: Label
 ## HQ-B (Q1): the one Heat indicator, the bar's first slot on every screen that shows Heat.
@@ -116,15 +120,20 @@ func set_screen(number: String, title: String) -> void:
 	_title = title
 	if title_sticker != null:
 		title_box.remove_child(title_sticker)
-		title_sticker.queue_free()
+		title_sticker.free()
 		title_sticker = null
 	var w := TITLE_MIN_WIDTH
 	if title != "":
-		title_sticker = _sticker(title, TITLE_STICKER_PX)
-		var wide := title_sticker.get_combined_minimum_size().x
-		if wide > TITLE_MAX_WIDTH:
+		var px := TITLE_STICKER_PX
+		title_sticker = _sticker(title, px)
+		for _i in TITLE_FIT_PASSES:
+			var wide := title_sticker.get_combined_minimum_size().x
+			if wide <= TITLE_MAX_WIDTH or px <= TITLE_MIN_PX:
+				break
+			# the sticker's width is its lettering plus a fixed rim: shrink the lettering, measure again
+			px = maxf(px * (TITLE_MAX_WIDTH / wide) * TITLE_FIT_MARGIN, TITLE_MIN_PX)
 			title_sticker.free()
-			title_sticker = _sticker(title, TITLE_STICKER_PX * TITLE_MAX_WIDTH / wide)
+			title_sticker = _sticker(title, px)
 		title_box.add_child(title_sticker)
 		var m := title_sticker.get_combined_minimum_size()
 		title_sticker.position = Vector2(0.0, maxf((BAND_HEIGHT - m.y) * 0.5, 0.0))
