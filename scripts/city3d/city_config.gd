@@ -237,6 +237,17 @@ extends Resource
 @export var net_halo: float = 0.25
 @export var net_xray: float = 0.85
 
+@export_group("City integration (ART-5 5e)")
+## The Site layout's spread round each corporation's Grid origin (CityLayout.site_points):
+## 1 = 5a's +/-7.5 x 5 lots; 2 frames the Grid at ortho ~440 as round 39 (presentation only).
+@export var site_spread: float = 2.0
+## The Site that stands in 5b's `<corp>_site.glb` per corporation (content id), until the
+## designer names them (DECISIONS "ART-5 5e", open question).
+@export var site_landmarks: Dictionary = {&"solace": &"t1_c", &"halcyon": &"lose_the_case_file", &"orbital": &"o1_d"}
+## Roof props (the concept's AC units, water tanks, antennas, roof billboards; bible 4.1:
+## from raid zoom): shown at and below this ortho.
+@export var roof_props_below: float = 420.0
+
 
 ## The quality tier for a Settings.city_quality value (-1 = default).
 func tier_for(city_quality: int) -> int:
