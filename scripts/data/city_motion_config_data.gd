@@ -195,12 +195,19 @@ const BAND_LOOKS := 4
 @export_group("Day and night (round 6 day / night, round 26 day v4)")
 ## The city's day look for the host (the toon ramp shadow / mid / lit, sky, window gain,
 ## neon gain, haze); the host lerps its night look toward it by the night share.
-@export var day_ramp: Array[Color] = [Color(0.34, 0.31, 0.42), Color(0.66, 0.57, 0.56), Color(0.95, 0.84, 0.70)]
-@export var day_sky: Color = Color(0.56, 0.58, 0.66)
+## ART-5 5e (the day look's windowed review against round 26 `hq_*_close_day` and
+## `city_ambient_day_v4`): the cool day of the references (blue-grey sky and haze, the
+## territories' own colours), not a warm one (the warm ramp turned Solace's teal olive).
+@export var day_ramp: Array[Color] = [Color(0.30, 0.33, 0.46), Color(0.56, 0.60, 0.70), Color(0.84, 0.86, 0.88)]
+@export var day_sky: Color = Color(0.68, 0.72, 0.86)
 @export var day_window_gain: float = 0.12
 @export var day_neon_gain: float = 0.62
-@export var day_haze: Color = Color(0.62, 0.60, 0.64)
-@export var day_grade: Color = Color(1.02, 0.99, 0.94)
+@export var day_haze: Color = Color(0.66, 0.70, 0.82)
+@export var day_grade: Color = Color(0.98, 1.0, 1.03)
+## ART-5 5e: the post's bloom by day (the night's CityConfig.bloom / glow_threshold bloom every
+## lit wall by day and wash the landmarks out white).
+@export var day_bloom: float = 0.2
+@export var day_glow_threshold: float = 0.92
 ## Sky-lane car gain by day (streaks in the lane colour against the bright city).
 @export var day_car_gain: float = 1.25
 
@@ -232,6 +239,8 @@ func validate() -> PackedStringArray:
 		errors.append("City motion: day_ramp needs shadow, mid and lit.")
 	if car_skip < 0.0 or car_skip >= 1.0:
 		errors.append("City motion: car_skip must be in [0, 1).")
+	if day_bloom < 0.0 or day_glow_threshold < 0.0 or day_glow_threshold > 1.0:
+		errors.append("City motion: day_bloom must be >= 0 and day_glow_threshold in [0, 1].")
 	if reduce_motion_street_rate < 0.0 or reduce_motion_street_rate > 1.0:
 		errors.append("City motion: reduce_motion_street_rate must be in [0, 1].")
 	return errors

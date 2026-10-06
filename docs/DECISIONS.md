@@ -599,6 +599,22 @@ Agent 5e (wave 2b, critical path; ART_BIBLE v2 §4.1, §4.3, §4.4, §4.5, §5.4
 - **Grid fit room** (file outside the area: `hq_scene.gd`, one constant): `GRID_MIN_ZOOM` 0.3 ->
   0.22. At 0.3 every corporation's x2 Grid fitted at the clamp (ortho 532 on 1280 px) and
   Meridian's key covered nodes at text size 2.0 (`test_city_map_sweeps`).
+- **Heat-band and day-look review (orchestrator follow-up).** One windowed launch
+  (`city_integration_capture.tscn -- --looks=1`) walks every Heat band through the real path
+  (the campaign's Heat at each band level, then the Grid page again) and the day look (the
+  motion layers' crossfade to DAY, i.e. `set_night_share`), for Solace and the Cell; frames
+  `heat<k>_*` / `day_*` in `docs/art_review/ART-5/5e/`. Two fixes from reading them:
+  (1) **the Grid's network decal vanished whenever the Grid page rebuilt** (every Site
+  selection, claim, repair, upgrade): the old CityMapOverlay left the tree after the new one
+  fed the decal and cleared it. It now clears only its own network (`_fed_network`; file
+  outside the area, smallest change; test `test_a_rebuilt_map_keeps_the_newer_maps_decal`).
+  (2) **the day look was warm and bloomed white**: 5c's day ramp turned Solace's teal olive and
+  the night bloom (threshold 0.62) washed the landmarks out. Retuned to the round 26
+  `hq_*_close_day` / `city_ambient_day_v4` cool day (ramp, sky, haze, grade in
+  CityMotionConfigData) and new `day_bloom` 0.2 / `day_glow_threshold` 0.92 (schema
+  addition, validated, smoke-checked) that `set_night_share` lerps. The Heat rig reads as
+  round 37's calm Heat B (a few searchlight beams, alarm and node lights; police strobes and
+  choppers are small at Grid zoom): kept as designed.
 
 ### 2026-10-05 — Art direction — ART-5 5c city motion
 Agent 5c (ART_BIBLE v2 §4.1 car LOD, §4.2 city motion, §4.3 Heat on maps, §5.3–5.5, §6.1;

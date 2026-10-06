@@ -601,6 +601,17 @@ func _art5_city_motion() -> int:
 	var rerr := ResourceSaver.save(rm, "user://smoke_city_motion_rm.tres")
 	var rback: CityMotionConfigData = load("user://smoke_city_motion_rm.tres")
 	if rerr != OK or rback == null or not is_equal_approx(rback.reduce_motion_street_rate, 0.25): fails += 1
+	# ART-5 5e: day_bloom / day_glow_threshold (the day look's post bloom) validated and saved.
+	var db := CityMotionConfigData.new()
+	db.day_glow_threshold = 1.5
+	var dbe := db.validate()
+	print("ART-5 5e: day_glow_threshold 1.5 errors (expect 1): ", dbe)
+	if dbe.size() != 1: fails += 1
+	db.day_glow_threshold = 0.8
+	db.day_bloom = 0.3
+	var derr := ResourceSaver.save(db, "user://smoke_city_motion_day.tres")
+	var dback: CityMotionConfigData = load("user://smoke_city_motion_day.tres")
+	if derr != OK or dback == null or not is_equal_approx(dback.day_bloom, 0.3) or not is_equal_approx(dback.day_glow_threshold, 0.8): fails += 1
 	return fails
 
 

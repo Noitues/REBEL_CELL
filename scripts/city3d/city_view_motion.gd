@@ -102,7 +102,8 @@ func _on_host_pause(paused: bool) -> void:
 ## ART-5 5e: the motion config's day look as CityView3D.set_night_share takes it.
 static func day_look(mcfg: CityMotionConfigData) -> Dictionary:
 	return {"ramp": mcfg.day_ramp.duplicate(), "sky": mcfg.day_sky, "window_gain": mcfg.day_window_gain,
-		"neon_gain": mcfg.day_neon_gain, "haze": mcfg.day_haze, "grade": mcfg.day_grade}
+		"neon_gain": mcfg.day_neon_gain, "haze": mcfg.day_haze, "grade": mcfg.day_grade, "bloom": mcfg.day_bloom,
+		"glow_threshold": mcfg.day_glow_threshold}
 
 
 ## The night look lerped toward the config's day look by night share `n` (1 night, 0 day).

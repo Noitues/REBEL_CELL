@@ -5,9 +5,14 @@ extends Node
 ## props (`site_<corp>.png`), the map panned off the Central Server (`target_<corp>.png`: the
 ## red TARGET arrow on the edge); for the REBEL_CELL campaign the Cell's district through its
 ## blackout reveal (`reveal_<q>.png`, DISPATCH's fist); and, once, the street traffic under
-## reduce motion (its clock runs at 40 %). Prints CAPTURE lines; frames 800x450. Run:
+## reduce motion (its clock runs at 40 %). With --looks=1 it walks the looks instead: every
+## Heat band (the campaign's Heat set to each band's level, the city life sent again) on the
+## fitted Grid and at raid zoom on the hardened Sites (`heat<k>_<corp>_{grid,close}.png`), then
+## the day look through the real path (the motion layers' crossfade to DAY, which calls
+## CityView3D.set_night_share; `day_<corp>_{grid,site,props}.png`). Prints CAPTURE lines;
+## frames 800x450. Run:
 ##   python tools/run_windowed.py --log <f> -- --resolution 1280x720 res://tools/city/city_integration_capture.tscn
-##       -- --out=<abs dir> [--corps=a,b] [--heat=N]
+##       -- --out=<abs dir> [--corps=a,b] [--heat=N] [--looks=1]
 
 const HQ := preload("res://scenes/hq/hq_scene.tscn")
 const CORPS: Array[String] = ["solace", "halcyon", "orbital", "meridian", "rebel_cell"]
@@ -26,6 +31,9 @@ const REVEALS: Array[float] = [0.0, 0.5, 1.0]
 
 var _out := ""
 var _heat := -1
+var _looks := false
+## The Heat look's close shot (ortho BU: the RAID band).
+const HEAT_CLOSE_ORTHO := 300.0
 
 
 func _ready() -> void:
@@ -37,6 +45,8 @@ func _ready() -> void:
 			corps.assign(a.trim_prefix("--corps=").split(",", false))
 		elif a.begins_with("--heat="):
 			_heat = int(a.trim_prefix("--heat="))
+		elif a == "--looks=1":
+			_looks = true
 	DirAccess.make_dir_recursive_absolute(_out)
 	Settings.path = "user://city_integration_capture_settings.json"
 	SaveService.save_dir = "user://saves/city_integration_capture"
@@ -79,6 +89,12 @@ func _corp(corp: String) -> void:
 		hq.queue_free()
 		return
 	await _settle()
+	if _looks:
+		await _looks_of(corp, hq, city, view)
+		hq.queue_free()
+		await get_tree().process_frame
+		await get_tree().process_frame
+		return
 	var life := city.city_life
 	print("CAPTURE grid corp=%s campaign=%s ortho=%.0f band=%d landmarks=%d site=%s dispatch=%s heat_band=%d hardened=%d reveal=%.2f" % [corp,
 		RunManager.corporation.id, view.iso.ortho, view.band, view.layer(&"landmarks").get_child_count(), str(view.site_landmark),
@@ -137,6 +153,62 @@ func _corp(corp: String) -> void:
 	hq.queue_free()
 	await get_tree().process_frame
 	await get_tree().process_frame
+
+
+## Every Heat band, then the day look, on `corp`'s Grid page.
+func _looks_of(corp: String, hq: Control, city: NeonCity, view: CityView3D) -> void:
+	var c := RunManager.campaign
+	var cfg := RunManager.config()
+	var levels := HeatRules.band_levels(c, cfg)
+	for k in levels.size() + 1:
+		# The real path: the campaign's Heat, then the Grid page again (its HUD, its fit and
+		# NeonCity.set_city_life).
+		c.heat = 0 if k == 0 else levels[k - 1]
+		hq.show_grid()
+		await _settle(SETTLE_FRAMES * 2)
+		var life := city.city_life
+		var layers := city.city_motion.layers if city.city_motion != null else null
+		print("CAPTURE heat corp=%s heat=%d band=%d hardened=%d rig=%s" % [corp, c.heat, int(life["heat_band"]),
+			(life["hardened"] as Array).size(), str(layers.rig.look) if layers != null and layers.rig != null else "-"])
+		await _shot("heat%d_%s_grid" % [k, corp])
+		var at := Vector2(life.get("home_lot", Vector2.ZERO))
+		var hard: Array = life["hardened"]
+		var pts: Dictionary = life["points"]
+		if not hard.is_empty():
+			var mid := Vector2.ZERO
+			for id in hard:
+				mid += pts[id] as Vector2
+			at = mid / float(hard.size())
+		hq._frame_city(float(hq.size.x) / (HEAT_CLOSE_ORTHO * NeonCity.px_per_bu()), at, Vector2(0.5, 0.5))
+		await _settle()
+		await _shot("heat%d_%s_close" % [k, corp])
+	# The day look through the real path: the layers crossfade to DAY and call set_night_share.
+	c.heat = 0
+	hq.show_grid()
+	await _settle(SETTLE_FRAMES * 2)
+	var fit_zoom := city.scale.x
+	var fit_focus := city.focus_grid
+	var fit_anchor := city.focus_anchor
+	var lay := city.city_motion.layers if city.city_motion != null else null
+	if lay == null:
+		print("CAPTURE FAIL %s no motion layers" % corp)
+		return
+	lay.set_light(CityMotionLayers.Daylight.DAY, false)
+	await _settle(roundi(Motion.seconds(CityMotionLayers.LIGHT_FADE) * 60.0) + SETTLE_FRAMES)
+	print("CAPTURE day corp=%s layers_share=%.2f view_share=%.2f sky=%s" % [corp, lay.night_share, view.night_share, str(view._env.background_color)])
+	hq._frame_city(fit_zoom, fit_focus, fit_anchor)
+	await _settle()
+	await _shot("day_%s_grid" % corp)
+	var lot: Vector2 = city.city_life.get("site_lot", Vector2.INF)
+	if lot == Vector2.INF:
+		lot = NeonCity.hq_of(StringName(corp)) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
+	hq._frame_city(float(hq.size.x) / (CLOSE_ORTHO * NeonCity.px_per_bu()), lot, Vector2(0.5, 0.5))
+	await _settle()
+	await _shot("day_%s_site" % corp)
+	hq._frame_city(float(hq.size.x) / (PROPS_ORTHO * NeonCity.px_per_bu()), lot + PROPS_OFFSET, Vector2(0.5, 0.5))
+	await _settle()
+	await _shot("day_%s_props" % corp)
+	lay.set_light(CityMotionLayers.Daylight.NIGHT, false)
 
 
 func _settle(n: int = SETTLE_FRAMES) -> void:
