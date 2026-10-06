@@ -31,6 +31,33 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-06 — Parity fix — route map b: choices on the map, the dossier's letterhead (orchestrator follow-up)
+Follow-up to "Parity fix — route map" (orchestrator relay, 2026-10-06; answers that entry's open question (1)). Sheet:
+`docs/art_review/PARITY/fixes/ROUTE_b.jpg` (concept | before | after at 1.0 / 1.6 / 2.0). Tests: `test_parity_route`
+(`test_the_choices_are_focus_stops_on_their_map_stickers_in_numbered_order`, `test_enter_on_a_focused_stop_picks_that_choice`,
+`test_the_dossier_letterhead_keeps_every_word_whole_at_each_text_size`).
+- **ROUTE-04 built: the route is picked on the map.** On the run's own route (not GRID VIEW, not a boss run's compound:
+  `NetrunScene.route_on_map`) each choice's button is a focus stop on its sticker (new `RouteStopPlacer`, a Node beside
+  the stops): top-level, so the ROUTE window's column gives it no room (the list's rows are gone; the window keeps
+  GRID VIEW and Save & quit), drawn as nothing (empty styles, its words transparent: the sticker, its number chip and
+  its "[1] Fight" label are the map's), sized to the sticker's reach + 6 px and kept over it every frame (pans, zooms,
+  moves). It stays where the rows were in the window's tree, so the page's focus links (`UiFocus.link_layout`) walk
+  the stops in the map's numbered order and then GRID VIEW, exactly as the rows did; Enter / A (ui_accept) presses the
+  focused stop (its press is the choice, unchanged); the number keys still pick. Focus or the pointer on a stop lights
+  its sticker (`CityMapOverlay.hover_id`: the paper ring with ticks; on the route that layer now draws under the
+  labels, so the ring's ticks never cross a choice's words) and shows its file in the node panel. The district plates
+  also keep off the top bar now (`RouteOverlay.plate_avoid`: at 2.0 one sat half under it). **Kept,
+  one at a time:** ANIM-R3 B3's "then: [icon] Shop" line (what only that choice reaches) shows in the ROUTE window for
+  the lit choice only (`_focus_route_choice`), not one per choice. **Gone with the rows:** the buttons' IconMarks (the
+  sticker is the icon); what lies ahead is also in each stop's tooltip ("Then you can go to: ...") and a twin's "(same
+  road as choice 1)" on its map label. Tests changed (they
+  pinned the list's look): `test_horizontal_pass21_screens::test_route_buttons_differ_...` (the icon assert: the stop is
+  on its node's sticker), `test_horizontal_pass22_screens::test_route_buttons_draw_the_map_icon_of_their_node` (the stop
+  sits over its node's sticker, of that kind). None dropped.
+- **Dossier letterhead (ROUTE-02 follow-up).** `OperativeDossier`'s sub line ("SECURITY // PERSON OF INTEREST // FILE")
+  was one line clipped to the file's width (at 1.6 "PERSON OF IN", at 1.0 the last "/" cut): it now wraps at word
+  breaks (`sub_lines`), every word whole, and the file's height counts its lines.
+- **Tools.** `review_pack` screens `route_focus` (the pad's focus on the last choice) and `route_meridian`.
 ### 2026-10-06 — Parity fix — route map (designer group ruling)
 Designer group ruling (2026-10-05): netrun pages match the concepts (round 37 `city_default`, `city_legend_hover`;
 tag art-concepts-r43). S-ROUTE ids ROUTE-01, ROUTE-04, ROUTE-05, ROUTE-06 (`docs/art_review/PARITY/GAPS.md`).
@@ -10033,7 +10060,7 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
-- **Parity fix route map (2026-10-06, see "Parity fix — route map"):** (1) ROUTE-04: the concept picks the route on
+- **Parity fix route map (2026-10-06, see "Parity fix — route map"):** (1) ROUTE-04: **answered (orchestrator relay 2026-10-06): the stickers are the focus stops, the rows went; see "Parity fix — route map b".** Was: the concept picks the route on
   the map only; the ROUTE window's list is kept as the pad's and keyboard's path. Keep it, or make the map's stickers
   the focus stops (pad cursor over the map) and drop the list's rows (proposed slice)? (2) ROUTE-01: hidden nodes now
   show as small grey discs with no kind (the run's shape, D13 keeps what each is). Keep, or hide them fully again as
