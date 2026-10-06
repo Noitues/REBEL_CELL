@@ -572,6 +572,36 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   destination large and bright under CONNECTING TO, with the Site's tier icon. A landing
   pulse waits its entry's delay; a toast holds longer at a slower speed, never shorter.
 
+### 5.6 Where behaviour changed in M14 (ART-12 12b; the code is the source, DECISIONS "Art direction — ..." has the detail)
+
+The motion rulings above stay binding; these are the places the M14 art direction changed what a screen does.
+- **The Grid runs on the real-time 3D city** (`CityView3D` through `WireframeBackground.city3d`, the GRID band; the
+  Grid holds that band, `band_lock`). Site markers are v4 (`SiteMarker`, vinyl discs, DOWN = white bolt over a greyed
+  disc, TAKEN = seizure slip, Exploit = the single gold key); nodes the player cannot see are hidden unless
+  Options "Always show all nodes" (D13) is on. TARGET is a red pencil circle and, when the boss is off screen, an edge arrow.
+  The Grid is always night. Motion layers (traffic, billboards, aviation, Heat rig) pause under reduce motion except
+  street traffic at 40 % (`reduce_motion_street_rate`); reduce effects shows the end state.
+- **The raid is drawn on the city at the RAID band** (6w): the camera fits the raid's Sites (`RaidZoomFit`), Cell nodes
+  stand on uplink pads with risers, the setup / playout panels are CRT / corp paper / holo, routes and marks are grease
+  pencil. A view cover hides camera eases. The SAVED stamp stays clear of the Speed / Skip strip.
+- **The netrun route runs on the city at the NETRUN band** (7w) with transit cables and sticker nodes; other netrun pages
+  (event, shop, loot) are still on the 2D city until 4A lands.
+- **HQ runs and fights (D17):** a boss fight's backdrop is the corporation's HQ on the city, a regular fight's is the
+  target Site, and a win turns the building's lights to Cell colours. REBEL_CELL's HQ is the DISPATCH canyon and its
+  Central Server is **DISPATCH CORE**. Baked stills remain the tier-0 fallback.
+- **Day look:** `CityView3D.set_night_share(n, day)` blends towards a cool day look (landmarks and roof props follow);
+  backdrops use day on odd runs; the Grid does not use it. Roof props (AC, tank, antenna, billboards) show at close zoom.
+- **Title and menus:** option A (BREACH = Continue, SIMULATE = Tutorial, OVERTHROW = New campaign), MORE column with key
+  hints, ON AIR ticker. Options is two columns of switches and tiles on the CRT kit with a Heat glitch preview.
+- **Abandon dialog:** the title's delete-slot confirm is `AbandonDialog` (CANCEL / DELETE vinyl stickers on a red CRT
+  window, CANNOT UNDO chip). There is no in-run abandon and no hold-to-confirm (open questions).
+- **Skins:** Options > Display "Interface skin": v2 (default), cobalt, graphite. A skin re-values chrome tokens only
+  (the theme and kit painters); semantic colours (PROTECT cyan, GAIN green, HARM, Heat bands) never change.
+- **Campaign end:** campaign lost is the ransomware lock, won and lost end in the corporate audit dossier; run end shows
+  a stamp sticker (FLATLINED / JACKED OUT / HOME FELL).
+- **Combat HUD:** result chips replace forecast tags and NEXT plates (D15); SEND IT is a vinyl sticker; RESPIN and UNDO are
+  terminal chips; the hand uses baked card faces.
+
 ## 6. Accessibility
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every
 slice and status, text scaling, subtitles with speaker names.

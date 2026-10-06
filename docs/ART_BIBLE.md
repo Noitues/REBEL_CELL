@@ -26,6 +26,23 @@ reintegration (see `GDD_ART_COVERAGE.md` §3). *Resolved: GDD §9.1 was rewritte
 
 ---
 
+## Implementation notes (M14, ART-12 12b)
+
+Where the shipped game follows this bible with a stated difference (details in DECISIONS "Art direction — ..." and
+`docs/GAP_ANALYSIS.md`):
+- **4.1 / 4.5 / 4.8 / 4.6:** the Grid, raid and netrun route are on the real-time 3D city (Godot, not a bake: the render
+  spike measured 2.5-2.8 ms), at the GRID, RAID and NETRUN bands. The Grid is night only. Roof props, uplink pads, the
+  DISPATCH district and Site landmarks are Blender exports of the concept scripts.
+- **4.7 / 4.9:** the Central Server of REBEL_CELL is named DISPATCH CORE (the concept's name); its HQ run is the Tokyo
+  canyon. D17 backdrops follow the city model.
+- **4.13:** title option A is built; the abandon dialog serves the title's delete slot; hold-A 0.8 s and an in-run abandon are
+  not built (proposals / mechanic).
+- **2.x:** skins are procedural palettes on the chrome tokens (v2, cobalt, graphite); semantic tokens never change (§5.1).
+- **3.x:** the Compiler Rack uses `picto_ram` (no concept glyph); the wheel bezel is a shader port of the D4 recipe.
+- **4.10 / 4.11:** the Mainframe shop, rewards and events restyle (ART-9 4A) were still landing when this note was written.
+
+---
+
 ## Rulings applied (2026-10-05)
 
 Updated to follow the designer's rulings of 2026-10-05 (`docs/DECISIONS.md`; where this bible and a ruling
