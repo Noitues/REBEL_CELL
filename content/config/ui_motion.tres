@@ -916,7 +916,7 @@ delay = 0.0
 ease = 1
 trans = 7
 amplitude = 0.0
-tier = 1
+tier = 2
 
 ; card/aim snaps onto the target; overshoot px
 [sub_resource type="Resource" id="m_target_snap"]
@@ -3577,7 +3577,7 @@ delay = 0.0
 ease = 1
 trans = 1
 amplitude = 0.0
-tier = 1
+tier = 2
 
 ; ART-6 3A: the drag's yellow pencil arrow writes on from the parked sticker to the cursor (B1b, D25: ~0.4 s)
 [sub_resource type="Resource" id="m_raid_drag_arrow"]
@@ -3588,7 +3588,7 @@ delay = 0.0
 ease = 1
 trans = 1
 amplitude = 0.0
-tier = 1
+tier = 2
 
 ; ART-6 3A: a stationed operative's R3 class beacon: one idle loop (s; the concept's 16 frames at 100 ms)
 [sub_resource type="Resource" id="m_raid_beacon_idle"]

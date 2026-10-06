@@ -57,7 +57,7 @@ at text 1.0 and 2.0). Test: `tests/unit/test_b1b_wax_pencil.gd`.
   drew two vector passes).
 - **Motion (D25).** `pencil_write_on` 0.6 → 0.4 s and now the write's duration (its px/s amplitude is retired: 0);
   `pencil_wipe` 0.3 → 0.4; `aim_line_draw` 0.15 → 0.4; `raid_route_write` 0.6 → 0.4; `raid_drag_arrow` 0.15 → 0.4;
-  `raid_dock_circle` 0.2 → 0.4 (raid marks were already 0.4; `raid_breached_write` keeps its 1.2 s: the bible's "one
+  `raid_dock_circle` 0.2 → 0.4 (these three move from VFX tier 1 to 2, whose one-shots may run 0.6 s, as `pencil_write_on`; raid marks were already 0.4; `raid_breached_write` keeps its 1.2 s: the bible's "one
   slow heavy wax pass"). The aim's loop writes over `pencil_write_on` (was `target_snap`, 0.1 s, which stays the
   reticle's and the drop layer's snap). A mark, word or art with `auto_write` (the default) writes itself on the first
   time it shows with something to draw, and again when shown after being hidden, so no pencil appears whole; owners

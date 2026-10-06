@@ -239,17 +239,19 @@ func test_reduce_effects_and_headless_show_every_pencil_whole_at_once() -> void:
 	Motion.force_live = true
 	_effects(true)
 	var m2 := _mark()
-	await get_tree().process_frame
-	assert_almost_eq(m2.progress, 1.0, 0.001, "reduce effects: whole")
+	assert_almost_eq(m2.progress, 1.0, 0.001, "reduce effects: whole from the start")
+	assert_false(m2.motion_running(), "nothing to write on")
 	var w := GreasePencilWord.new()
 	w.text = "TARGET"
 	add_child_autofree(w)
-	await get_tree().process_frame
+	# The auto write runs on its first shown frame and ends at once (no motion).
+	await BoundedWait.until(get_tree(), func() -> bool: return w.shown_to == float(w.text.length()), 1.0)
 	assert_eq(w.shown_to, float(w.text.length()), "a word whole")
+	assert_false(w.motion_running(), "with no motion")
 	var art := GreasePencilArt.new(PlaceholderTexture2D.new(), Vector2(40, 20))
 	add_child_autofree(art)
-	await get_tree().process_frame
 	assert_almost_eq(art.progress, 1.0, 0.001, "baked art whole")
+	assert_false(art.motion_running(), "with no motion")
 	assert_eq(m2.wipe(), 0.0, "and wiped at once")
 
 
