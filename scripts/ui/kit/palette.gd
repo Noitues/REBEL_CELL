@@ -249,6 +249,8 @@ const STICKER_FILL_YELLOW: Array[Color] = [STICKER_SAFE, STICKER_SAFE_LOW]
 ## CRT terminal glass: the navy top and bottom of the panel's glass.
 const CRT_GLASS_TOP := Color("#0B1630")
 const CRT_GLASS_BOTTOM := Color("#050A1A")
+## Parity TITLE-01d: the night tint over the HQ's 2D city (a multiply: green down, a violet cast).
+const CITY_2D_NIGHT_TINT := Color(0.94, 0.78, 1.0)
 ## Corp paper: the letterhead rule and the typewriter ink.
 const PAPER_TYPE_INK := Color("#1E1A16")
 ## The near-opaque scrim laid behind a decrypted holo panel (§1.2: 0.88).

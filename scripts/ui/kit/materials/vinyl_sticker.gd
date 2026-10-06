@@ -37,7 +37,7 @@ const BORDER_PX := 18.0
 ## (round 33 ui31.sticker border 12 px on the 1920 board = 8 px on the 1280 frame at 1.0, and the edge
 ## grows with the text scale like the lettering does). The concept's edge / body height runs 0.08 (the title
 ## verbs) to 0.27 (CANCEL at 28 px); `EDGE_SHARE` of the lettering keeps menu stickers at about 0.2.
-const EDGE_SHARE := 0.2
+const EDGE_SHARE := 0.14
 const EDGE_MAX_PX := 8.0
 ## Focus (designer 2026-10-05): the sticker keeps its fill; its gloss sweep runs in holo-foil colours
 ## (`rainbow`) and the corner curls (HOVER_CURL). Under reduce effects the end state is a static sheen at

@@ -212,7 +212,7 @@ dashed orange start bracket are drawn; the rest of the run is blank city; `[1] F
 chips sit on top of their own markers. Build: the whole board with every node icon. View: main shows
 too little to plan a route (the concept shows hidden nodes as grey "not yet" discs). Likely file:
 `scripts/ui/kit/netrun_map_view.gd`, `route_overlay.gd`, `route_ink.gd`, `route_legend.gd`.
-Decision:
+Decision: **Partly resolved by S-MAPVIEW (designer ruling 2026-10-05):** the route's nodes sit along the link the run jacks along (`RouteLinkLayout`, from the Cell's node to the run's Site) over the city in map mode; the whole-route drawing (hidden nodes as grey discs, landmark stickers) stays with S-ROUTE.
 
 **ROUTE-02 (P1) Dossier overlaps.** Main: the `AT LARGE` stamp covers the HP value (`60 /` cut) and
 the `HEAT 0: COOL` stamp touches the IF STATIONED box. Concept: stamps in the paper's margins. Likely
@@ -629,7 +629,7 @@ glow also makes the lime "yours" focus colour hard to pick out. Likely cause:
 `scripts/ui/kit/city_map_overlay.gd` (the veil / keyline / glow under-layer, `_draw` ~l.1071) and
 the 3D city's bloom (`content/config/city_config.tres` `bloom`, `lane_glow_management`). Fix: drop
 the veil, draw links as the concept's single cable strokes in the state colours, lower the bloom
-at the Grid band. Decision:
+at the Grid band. Decision: **Partly resolved by S-MAPVIEW (designer ruling 2026-10-05, city as a map):** on the raid views and the netrun route the city is greyed, its bloom cut to 45% and veiled, and the network decal's glow halo cut to 35%; the Grid band itself is unchanged (the Grid folds into the HQ raid view, HQ-BUILD); the decal's disc fill and link look stay with S-GRID. Sheet `fixes/MAPVIEW.jpg`.
 
 **GRID-02 (P2) Marker size and ring.** Concept v4: small discs (~24 px at 1080p, ~16 at 720)
 with a thin state ring and the corp glyph, labels only on hover / landmarks. Main: discs ~36 px at
@@ -734,7 +734,7 @@ cover the header. Likely file: `scripts/ui/kit/raid_intel_strip.gd`, `raid_holo.
 **RAID-04 (P2) Links and threat pencil.** Main: the same glow veil as GRID-01 under the network,
 hex `T1` badges on each node, red pencil arrows A/B. Concept: dashed yellow cable lines, small
 diamond pads, red pencil routes with lettered entry marks. Build: green wireframe. Same cause as
-GRID-01 (`city_map_overlay.gd`), plus the raid's node badges (`raid_socket.gd`). Decision:
+GRID-01 (`city_map_overlay.gd`), plus the raid's node badges (`raid_socket.gd`). Decision: **Partly resolved by S-MAPVIEW:** the city under the raid map is greyed and veiled, the decal's halo cut; the raid map keeps the major nodes only (the Cell's network and the Sites the raid really enters at and crosses, `RaidMapNodes`; hookup in `hq_scene.raid_graph` relayed to HQ-BUILD), so the frontier's T1 / T2 hexes are gone. Badges and link strokes stay with S-RAID / S-GRID.
 
 **RAID-05 (P2) Page title.** Concept: `RAID SETUP` title sticker top left. Main and build: the top
 bar's words `03 CELL DEFENSE RAID SETUP`. Likely file: `hq_scene.gd`, `hud_bar.gd`. Decision:

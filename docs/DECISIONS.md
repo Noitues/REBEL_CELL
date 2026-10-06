@@ -100,6 +100,69 @@ COMBAT_HUD.jpg` (concept | before | after, plus the aim's frame strip).
   `DEFEATED_FONT` renamed `DELETED_FONT` with the word), `card_preview_overlay.gd` (full strength on target).
 - **Open question (default built):** the key-hint line left the TURN strip with the concept (tooltip only); if the W /
   R switches need to be on screen, the default proposal is a small key caption under the target's nudge pair.
+### 2026-10-05 — Designer ruling — city as a map in raid and netrun views
+Designer rulings 2026-10-05 (S-MAPVIEW): on a raid view and a netrun view the city and its buildings are slightly
+greyed and lowered in opacity so the nodes and links pop (main's raid view was "a bright colourful mess"); the city
+raid view shows the major (raid) nodes only, never netrun sub-nodes; a netrun's route nodes sit along the link
+between two raid nodes. Refs (art-concepts-r43): round 40 `raid_view_v3` / `raid_gifs/`, round 32
+`city_map_hud.png`, round 37 `city_default.png`; ART_BIBLE v2 §4.1 / §4.3 / §4.8.
+- **Map mode (`CityView3D.map_mode`).** On while the host holds the RAID or NETRUN band (`CityView3D.map_band`:
+  the raid setup / playout / report, and the HQ once it holds RAID as the raid view; the netrun route), off for the
+  Grid (GRID band), the title, the blurred backdrop (GRID), the combat backdrop and the HQ-run views (no band). It
+  follows `band_lock`, so no page calls it. The night look stays underneath: after the post's night grade the city
+  keeps `map_saturation` (0.7) of its colour, its contrast `map_contrast` (0.8) round `map_mid` (0.22), its bloom
+  `map_bloom` (0.45); then a veil (`shaders/city/city_map_veil.gdshader`, `map_veil` night violet at
+  `map_veil_alpha` 0.22) drawn after the city's ambient layers (holo signs, pools 10, beams 11; render priority
+  15) and before the network decal (19 / 20), so sky lanes, searchlights and signs are lowered with the city while
+  the links stay full. The decal's glow halo keeps `map_net_halo` (0.35) of itself (GRID-01's veil under the
+  network); its traces, discs and rings are unchanged. Nodes, links, markers, pencil and stickers are 2D or the
+  decal: full strength on top. All numbers in CityConfig ("Map mode"). `CityView3D.map_graded` mirrors the step on
+  the CPU. **Measured** (map area, mean relative luminance / mean HSV saturation, 1280x720): raid setup Solace
+  0.104 / 0.42 before, 0.071 / 0.29 after; the route 0.063 / 0.38 before, 0.044 / 0.26 after; the concepts 0.08-0.11
+  / 0.41-0.53 (the concept's neon is in its marks; the city's p90 drops from 0.13-0.18 to 0.08-0.11).
+- **Linear-as-sRGB check (S-ARENA's finding).** The raid pages and the route draw the city's ViewportTexture with a
+  plain canvas draw (NeonCity, no shader): the frame equals the render within 1-2 levels in clear patches (raid
+  setup Solace and Meridian, the route; `raid_lab --raw`, `netrun_states --raw`). No darkening on these views;
+  nothing to decode. (Answers part of the "Parity fix combat backdrop" open question 3 for the raid and route.)
+- **Major nodes only (`RaidMapNodes`, pure).** The raid map showed every Site a raid could enter at
+  (`RaidResolver.default_entry_sites`: the whole frontier, `CityLayout.threat_paths` of every pending raid), a T1 /
+  T2 hexagon on each. It now keeps the Cell's network (home and the claimed Sites) and the Sites the shown raid's
+  threats really enter at and cross: the setup's own projection (`RaidResult.events`), the playout's raid projected
+  from the pre-raid state, the report's touched nodes. Preview == result: the map's routes are the routes the raid
+  takes (tested against `fight_raid`'s events). Never a netrun route node (sub-node): every id is a Grid Site.
+  `RaidMapNodes.route_paths` is `hq_scene.raid_route_paths`' code (the relay makes that one delegate to it).
+  **The hookup in `hq_scene.raid_graph` (3 lines) is relayed to HQ-BUILD** (it owns `hq_scene.gd`; the orchestrator asked S-MAPVIEW
+  not to edit it); the after frames of the raid rows in the sheet were taken with it applied locally.
+- **Route nodes along the link (`RouteLinkLayout`, pure).** The link is the one the run jacks along (bible 4.6):
+  `RouteLinkLayout.from_site` (home or a claimed Site linked to the run's Site, lowest content id first; else an
+  owned Site whose links name it) to the run's Site, on CityLayout's Site layout; `RunManager.jack_link` now uses the
+  same function (behaviour unchanged), so the jack rides the link the route lies on. Layer k of L sits k / L of the
+  way along (the final Rack on the target Site), the entry ("you are here" before the first node) on the Cell's node,
+  a layer's nodes side by side across the link `route_link_lateral` (2.0) lots apart in index order (node ids
+  L<layer>N<index>). A link shorter than `route_link_min_lots` (6) reaches back along its heading. No rule change:
+  `netrun_scene.route_graph` only computes the points (the old lattice round the Site goes); the overlay's building
+  snap (radius 4) then puts each sticker on a roof as before.
+- **Kept.** Route generation, raid resolution, the Grid page's look, ANIM motion entries (none touched). The decal's
+  disc fill, the link strokes and the badges stay with S-GRID / S-RAID (GRID-01 / RAID-04, partly resolved here).
+  The playout's orange result spread over the city (NeonCity influence) is unchanged.
+- **Perf** (windowed, 1920x1080, tier 2, other agents running): route 3.08 ms a frame (city GPU 1.77 ms),
+  REBEL_CELL route 3.57 ms (2.19); 7w's were 2.93-3.75 ms: the veil and the map step cost nothing measurable; in
+  the 8 ms budget.
+- **Tests.** New `tests/unit/test_s_mapview.gd` (fast): map mode on for RAID / NETRUN only (and the look it sets),
+  the raid setup and the route hold map bands and the Grid does not; the veil between the ambient layers and the
+  decal; the grade greys and dims but keeps the hue; the marks' contrast over the dimmed city (fixtures
+  `tests/fixtures/mapview/*.png`: the 3D city's own render, network decal off, map mode on and `_off`): lime links /
+  ring states >= 3:1 against the city's 90th percentile, CORE and the threat pencil >= 3:1 against its median, the
+  city's bright part lower than without; the raid view's major nodes (no frontier-only Site, every id a Grid Site);
+  the map's routes == the played raid's; every route node on the link within (widest layer - 1) / 2 x lateral, the
+  final Rack on the Site, the entry on the Cell's node, for seeds 1, 2, 5; seeded replays place identically; the
+  jack starts where the route does. No test dropped or changed.
+- **Tools.** `raid_lab` `--raw` (the city's render, and `_city_raw` with the decal off) and `--size=`;
+  `netrun_states` `--raw`.
+- **Review:** `docs/art_review/PARITY/fixes/MAPVIEW.jpg` (concept | before | after: raid setup Solace, Meridian,
+  Solace at text 2.0, playout end, route underway, REBEL_CELL route start).
+- **Files outside the area (smallest change):** `scripts/autoload/run_manager.gd` (`jack_link` calls
+  `RouteLinkLayout.from_site`), `scripts/ui/netrun_scene.gd` (`route_graph`: the points), the two labs.
 
 ### 2026-10-05 — Parity fix — combat backdrop (designer group ruling)
 Designer group ruling 2026-10-05: combat matches the concept. Audit items CMB-01, BOSS-03, BACKDROP-01, BACKDROP-02,
@@ -678,6 +741,35 @@ M13 art-pass build's layout and content, reworked in the locked v2 concept langu
   `test_slots_fit_and_focus_reaches_every_action_at_every_text_scale` (1, 2, 3 used slots at 1.0 / 1.6 / 2.0),
   `test_the_slots_panel_wraps_its_cards_then_scrolls_past_its_room`. No test dropped.
 
+### 2026-10-05 — Parity fix — baked stickers re-baked with a thinner edge (designer)
+Designer 2026-10-05, after "Parity fix — sticker edge and sticker focus": the baked stickers keep a thinner white edge too,
+matching the drawn ones. Files: `tools/art/bake_menus_r33.py` (`EDGE_SHARE`, `edge_px`, `Thin`; new `--only stickers`),
+`tools/art/export_combat_stickers.py` (`--only send_it`), `assets/ui/menus/stickers/*.png`, `assets/fx/stickers/send_it.png`,
+`vinyl_sticker.gd` (`EDGE_SHARE`), `test_sticker_edge_focus.gd`.
+- **One share for drawn and baked: 0.14 of the lettering** (VinylSticker.EDGE_SHARE, was 0.2; the baked edge in board px =
+  round(0.14 x the lettering size), capped at the concept's 12). My earlier reading "0.2 x lettering" would have baked 10-12
+  board px, i.e. nearly the concept's fixed 12, so the designer's "thinner" needed a smaller share; the drawn stickers moved
+  to 0.14 with them so the two kinds stay the same proportion (drawn menu stickers get 0.7 x their previous edge).
+- **How.** The concept's own code, unchanged: `ui31.sticker(border=...)` for the dialog stickers (CANCEL, BURN IT, DELETE) and
+  the title words, and, for BREACH / SIMULATE / OVERTHROW (title.py `stk`, menu33 fist / glitch sets, which hard-code
+  `border=12` inside the concept), a context (`Thin`) that replaces the `border` argument of `sticker_lib31.build_sticker` for the
+  sticker being baked (and menu33's `_pad`, which pads the glitch art "like build_sticker does (border 12 ...)"). The die-cut
+  `close` follows as 1.25 x the border, as the concept's own SEND IT call does. Sizes: BREACH / SIMULATE / OVERTHROW 60 -> 8,
+  CANCEL 50 -> 7, BURN IT / DELETE 58 -> 8, the title words 54 -> 8, OPTIONS 66 -> 9. SEND IT (`send_sticker`, lettering 74,
+  border 15 -> 10) is re-exported by `--only send_it`. Baked: the title verbs (BREACH, SIMULATE with its bursts, OVERTHROW),
+  the screen-title stickers (OPTIONS, PAUSED, CODEX, STATS, CAMPAIGN SLOTS, NEW CAMPAIGN), the dialog stickers (CANCEL, BURN IT,
+  DELETE: the slots' DELETE and the abandon / quit dialogs), SEND IT. Not baked words: the slots' LOAD, NEW CAMPAIGN's START and
+  RAID START DEFENSE (drawn kit stickers: already on `edge_for`); the landing words PERFECT / GOOD / WEAK are plate stickers
+  (`vinyl_word`, border 7 on a rounded plate, no lettering die-cut) and the EVADE token / drone are not word stickers: unchanged.
+- **Focus kept.** The baked rest textures are what `VerbSticker` draws; the rainbow sweep and the curl are drawn over them.
+  **The unused baked `_focus.png`, `_sweep_NN.png` and `_burst_N_focus.png` frames are deleted** (40 files with their `.import`),
+  with the load code (`_art_focus`, `_art_sweeps`, `_art_bursts_focus`, `_sweep_k`) and the bake steps that made them (the bakers
+  make the rest art, the glitch bursts, the titles and the dialog stickers only). The button's size now follows the rest art (it
+  followed the larger halo image).
+- **Test.** `test_sticker_edge_focus`: every baked lettering size is inside the concept's edge / body range and strictly under
+  the old fixed 12; the CANCEL, BREACH and BURN IT PNGs' opaque height is the lettering block plus 4 x the new border (so an
+  old bake fails it).
+
 ### 2026-10-05 — Parity fix — sticker edge and sticker focus (designer)
 Designer 2026-10-05: at text 1.0 the stickers have too much white die-cut edge; and focus on EVERY sticker (all kinds, the
 harm red one too) is a rainbow gloss sweep plus the corner curl, the sticker keeping its fill, no lime brackets or halo.
@@ -894,6 +986,46 @@ built that way since TITLE-01b.
 - **Review:** `docs/art_review/PARITY/fixes/TITLE-01c.jpg` (round 33 gif frames | the title's frames 80 ms apart; v4 gif
   | the loot page's frames; event, shop, reduce effects, tier 0; right-half details). The capture tool gained
   `--strip=N` (frames 80 ms apart) and `--raw` (the city without the tilt-shift, for diagnosis).
+
+### 2026-10-05 — Parity fix — TITLE-01d no yellow cast, pulled back (designer decision)
+Designer feedback round 4 (2026-10-05): the title city "is looking really good" (unchanged: the control capture
+matches round 3); the loot page and the HQ have a yellowish hue; loot / event (and the HQ) are a little too zoomed in.
+- **Loot / event, cause:** their look shared the title's grade, whose haze lift (0.04, 0.03, 0) has no blue. Over the
+  title's purple Halcyon district it reads pink; over the Solace district (teal / green roofs, amber and orange lane
+  lights) the same lift turned the city olive-yellow (backdrop bright pixels measured (0.44, 0.37, 0.33), blue lowest;
+  round 32 `reward_screen_v2`'s margins are (0.13, 0.10, 0.13), violet). **Fix:** `overlay_city_backdrop.tres` gets
+  its own violet grade: gain (0.80, 0.70, 0.86), lift (0.03, 0, 0.035) (saturation, haze, kept lights and traffic as
+  the title's). The title's look is untouched.
+- **Loot / event, framing:** ortho 300 -> 440 BU (the Grid's own width): more city reads round the page.
+- **HQ, cause:** main's HQ page still draws the 2D NeonCity through CyberdeckBackground (no 3D city there; the shared
+  3D grade, 5e's day look and the Grid / raid are violet, not yellow, so nothing shared changes). Its campaign
+  district's territory and influence inks are the corp colour (Solace lime #96FF46) plus the base neon inks' green
+  and amber, over the default COOL HAZE ink paling (a cyan tint): the window cast lime-yellow (measured mean
+  (0.20, 0.29, 0.24)). Paling the inks lavender (INK_SETS "FADED PRINT") barely moved it (the street inks are never
+  paled). **Fix (minimal, in my file):** `CyberdeckBackground.NIGHT_TINT` (0.94, 0.78, 1.0) as the 2D city's
+  `modulate` (a multiply over its picture, not its bake: no bake key changes, the warm-ups that build the same class
+  match): mean now (0.19, 0.23, 0.24), the green cast gone, the corp's lime kept as an accent.
+  **For HQ-BUILD (replacing the HQ page with the 3D raid-band city):** this is one line in
+  `CyberdeckBackground._init` plus the constant; drop it with the 2D HQ city, or keep it if any page keeps the 2D
+  city. The 3D city needs nothing (its grade is violet). HQ framing: not changed here (the 2D city frames the corp's
+  HQ at `hq_anchor` at zoom 1; HQ-BUILD's 3D framing replaces it); to read more city there, frame wider than the
+  Grid band's default ortho.
+- **Colour space (the arena agent's lead):** not part of this hue. BlurredCityBackdrop draws the city's ViewportTexture
+  with `draw_texture_rect` (no canvas shader reads it as a sampler), and the tilt-shift reads the screen. Probe
+  (`title_backdrop_capture --raw`: the window's frame against `city.get_texture().get_image()`, the tilt-shift off):
+  title frame (0.293, 0.242, 0.376) vs viewport (0.300, 0.246, 0.385), ratio ~0.98, no ~4x mid-tone loss. The HQ page
+  draws no 3D viewport (2D NeonCity bake). The Grid / HQ-run / raid pages were not changed (designer to rule there).
+- **The run pages' bake test:** `test_anim_r5_city.gd::test_the_runs_pages_open_on_their_bake_behind_the_3d_route`
+  asked the shop page's city to be covered by a bake; under the ruling the Mainframe hides the city behind its facade
+  (no city there), so the shop step now checks the facade shows and the city is hidden; loot and event keep the
+  covered-bake check (headless they are the 2D city; windowed, the blurred 3D city).
+- **Note:** the event's CAM feed copies the city behind the page; with the violet, pulled-back city it reads darker.
+- **Measured:** loot tier 2 at 1920x1080, v-sync off: 3.39 ms a frame, backdrop city GPU 1.81 ms (wider view, smaller
+  cars), under the 8 ms budget.
+- **Tests** (`test_parity_title01_backdrop.gd`): the overlay's grade has no yellow cast (blue lift >= green and red,
+  blue gain > green) and its ortho is wider than the title's; a plain CyberdeckBackground carries NIGHT_TINT (green
+  under red and blue).
+- **Review:** `docs/art_review/PARITY/fixes/TITLE-01d.jpg` (concept | before | after: loot, event, HQ; title control).
 
 ### 2026-10-05 — Art direction — ART-3 6w raid on the city
 ART-3 wave 2b, ART-6 on the unified city (ART_BIBLE v2 §4.1, §4.8, Appendix C #13, plan G10; refs round 40
@@ -9116,6 +9248,14 @@ and annotated in the GDD where it changes a rule.
 - **Parity fix card aiming and combat HUD (2026-10-05, built, see that entry):** the TURN strip follows the concept
   (TURN | FREE NUDGE over the address line); the key hints (Q/E nudge, W switch wheel, R ring) are its tooltip only.
   Keep, or put a small key caption under the target's nudge pair (default proposal)?
+- **S-MAPVIEW (2026-10-05, built, see "Designer ruling — city as a map in raid and netrun views"):** (1) "raid
+  nodes" read as the Cell's network plus the Sites the shown raid really enters at and crosses; the other frontier
+  Sites (possible entries of later raids) are off the raid map: confirm, or should the HQ (the raid view) show every
+  launchable Site too (HQ-BUILD's Q5 framing)? (2) A netrun's route lies on one link, the jack's (Cell's node ->
+  the run's Site); a branching route spreads its layer across the link (2 lots apart). Should the route instead
+  follow several links (a route through intermediate Sites)? That would need the route generation to know the Grid
+  (a rule change): not built. (3) The map-mode numbers (saturation 0.7, veil 0.22, bloom 0.45) are a first pass
+  against the concepts: tune on the sheet.
 - **Parity fix combat backdrop (2026-10-05, built, see "Parity fix — combat backdrop"):** (1) every Site fight of a
   corporation stands its one Site landmark (Solace's clinic ...) on that Site's lot in the close-up, as the stills
   did, and a Site at the city's edge is stood 28 lots inside: keep, or only the landmark's own Site gets the

@@ -82,8 +82,8 @@ const HALO_RADIUS := 16
 
 
 ## The concept art baked by tools/art/bake_menus_r33.py (round 33 title.py / menu33.py /
-## ui31.sticker, unchanged): `<key>.png` at rest, `<key>_focus.png` with its lime die-cut halo,
-## `<key>_sweep_NN.png` (the focused gloss sweep), `<key>_burst_N[_focus].png` (the glitch).
+## ui31.sticker, unchanged): `<key>.png` at rest and `<key>_burst_N.png` (the glitch). Focus is not baked: it is the
+## rainbow sweep and the curl drawn over the rest art (designer 2026-10-05).
 const ART_DIR := "res://assets/ui/menus/stickers/"
 ## The baked stickers are at 2x the 1920 board: a third of their pixels in the game.
 const ART_TO_GAME := 1.0 / 3.0
@@ -103,11 +103,7 @@ func set_art_scale(k: float) -> VerbSticker:
 	_fit()
 	return self
 var _art_rest: Texture2D = null
-var _art_focus: Texture2D = null
-var _art_sweeps: Array[Texture2D] = []
 var _art_bursts: Array[Texture2D] = []
-var _art_bursts_focus: Array[Texture2D] = []
-var _sweep_k: int = -1
 ## Hovered or focused (the rainbow sheen and the curl show).
 var _focused: bool = false
 ## The corner curl's size as a share of the sticker's shorter side, the sheen's band width as a share of its
@@ -138,17 +134,9 @@ func _load_art() -> void:
 	if art_key == "" or not ResourceLoader.exists(ART_DIR + art_key + ".png"):
 		return
 	_art_rest = load(ART_DIR + art_key + ".png") as Texture2D
-	var fp := ART_DIR + art_key + "_focus.png"
-	_art_focus = load(fp) as Texture2D if ResourceLoader.exists(fp) else _art_rest
 	var k := 0
-	while ResourceLoader.exists(ART_DIR + "%s_sweep_%02d.png" % [art_key, k]):
-		_art_sweeps.append(load(ART_DIR + "%s_sweep_%02d.png" % [art_key, k]) as Texture2D)
-		k += 1
-	k = 0
 	while ResourceLoader.exists(ART_DIR + "%s_burst_%d.png" % [art_key, k]):
 		_art_bursts.append(load(ART_DIR + "%s_burst_%d.png" % [art_key, k]) as Texture2D)
-		var bf := ART_DIR + "%s_burst_%d_focus.png" % [art_key, k]
-		_art_bursts_focus.append(load(bf) as Texture2D if ResourceLoader.exists(bf) else _art_bursts[-1])
 		k += 1
 
 
@@ -194,7 +182,6 @@ func complete_motion() -> void:
 	if _sweep_tween != null and _sweep_tween.is_valid():
 		_sweep_tween.kill()
 		_mat.set_shader_parameter(&"sweep", SWEEP_OFF)
-		_sweep_k = -1
 
 
 func _ready() -> void:
@@ -245,10 +232,8 @@ func _pad() -> float:
 
 func _fit() -> void:
 	if uses_art():
-		# The focus image (with its halo) is the largest: the sticker keeps that size, so the
-		# halo never moves the layout.
 		var k := ART_TO_GAME * art_scale * clampf(Settings.text_scale, 1.0, SCALE_MAX)
-		custom_minimum_size = (_art_focus.get_size() * k).ceil()
+		custom_minimum_size = (_art_rest.get_size() * k).ceil()
 		size = custom_minimum_size
 		_pivot()
 		queue_redraw()
@@ -470,7 +455,7 @@ func _draw_kit_frame() -> void:
 
 ## The concept art: rest, focus (lime halo), the sweep's frame, the glitch's burst frame; centred.
 func _draw_art() -> void:
-	var tex := _art_rest  # the focus art carries the lime halo: not used (focus = rainbow sheen + curl)
+	var tex := _art_rest  # focus is not baked: the rainbow sheen and the curl are drawn over it
 	var ph := burst_phase()
 	if ph >= 0 and ph < _art_bursts.size():
 		tex = _art_bursts[ph]

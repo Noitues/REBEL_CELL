@@ -83,6 +83,11 @@ func test_other_cyberdeck_background_users_are_unchanged() -> void:
 	assert_true(bg.city.visible)
 	assert_eq(bg.city.process_mode, Node.PROCESS_MODE_INHERIT)
 	assert_almost_eq(bg.city.dim, 0.2, 0.0001, "its window dim as before")
+	# TITLE-01d (designer: the HQ's city had a yellowish hue): the night tint over the 2D city
+	# takes its green down (green under red and blue).
+	assert_eq(bg.city.modulate, CyberdeckBackground.NIGHT_TINT)
+	assert_lt(CyberdeckBackground.NIGHT_TINT.g, CyberdeckBackground.NIGHT_TINT.r, "green down")
+	assert_lt(CyberdeckBackground.NIGHT_TINT.g, CyberdeckBackground.NIGHT_TINT.b, "a violet cast")
 	assert_true(bg.city.rain and bg.city.follow_campaign, "rain and the territory follow, as before")
 	assert_eq(bg.get_child_count(), 2, "the city and the deck frame, nothing more")
 
@@ -106,8 +111,15 @@ func test_loot_and_event_ask_for_the_blurred_city_and_nothing_else_does() -> voi
 	assert_not_null(overlay, "their own look")
 	assert_eq(overlay.side_dark, 0.0, "a centred page: no menu side")
 	var title_look := _look()
-	for k in ["grade_saturation", "grade_gain", "grade_lift", "haze_out_of_focus", "city_tiers"]:
+	for k in ["grade_saturation", "haze_out_of_focus", "city_tiers", "traffic_density", "light_keep"]:
 		assert_eq(overlay.get(k), title_look.get(k), "the title's %s" % k)
+	# TITLE-01d (designer: the loot page had a yellowish hue): the overlay's own violet grade,
+	# no yellow cast (blue lifted at least as much as red and green, blue kept over green).
+	assert_gte(overlay.grade_lift.b, overlay.grade_lift.g, "no yellow haze")
+	assert_gte(overlay.grade_lift.b, overlay.grade_lift.r, "a violet haze")
+	assert_gt(overlay.grade_gain.b, overlay.grade_gain.g, "green held under blue")
+	# TITLE-01d (designer: a little too zoomed in): the overlay pulls back past the title.
+	assert_gt(overlay.ortho, title_look.ortho, "more city reads behind a page")
 	var src := FileAccess.get_file_as_string("res://scripts/ui/netrun_scene.gd")
 	assert_true(src.contains("background.show_blurred_city(BLURRED_CITY_SCREENS.has(screen)"), "asked per page")
 	# Headless (no renderer) the net backdrop keeps its 2D city on a loot page.
