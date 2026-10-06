@@ -6,7 +6,7 @@ extends RefCounted
 
 const COLORS := {&"turret": Color("#5CE1FF"), &"sentry": Color("#3DFF8B"), &"railgun": Color("#FF3DA8"),
 	&"flak_array": Color("#FFB000"), &"ice_lock": Color("#8FE8FF"), &"tar_pit": Color("#B04DFF"),
-	&"decoy": Color("#FFD24D"), &"honeypot_node": Color("#FF8C1A")}
+	&"decoy": Color("#FFD24D"), &"honeypot_node": Color("#B08CFF")}  # B3 (Q5): the decoy violet
 
 
 static func color_of(asset_id: StringName) -> Color:

@@ -421,7 +421,7 @@ func test_your_nodes_fills_its_window_and_counts_the_withdraw_row() -> void:
 		hq.show_raid()
 		await _frames(8)
 		var tag := "%.1f" % scale
-		var column := hq._panel.find_child("WorkOrderPaper", true, false) as ScrollContainer
+		var column := hq._panel.find_child("CardColumn", true, false) as ScrollContainer  # B3 (Q9): YOUR NETWORK under THREAT INTEL
 		assert_not_null(column, "%s: the left column" % tag)
 		if column == null:
 			return

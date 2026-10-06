@@ -124,6 +124,10 @@ const SCREENS := [
 	["raid_result", "_s_raid_result", "Raid playout at its end (RESULT)."],
 	["raid_report", "_s_raid_report", "Raid report page after the playout."],
 	["raid_interlude", "_s_raid_interlude", "Raid interlude inside a netrun."],
+	["raid_result_meridian", "_s_raid_result_meridian", "B3 (review D6): a Meridian raid's playout at its end (no orange influence fill)."],
+	["raid_report_meridian", "_s_raid_report_meridian", "B3 (review Q7): a Meridian raid's report (CELL HOLDS on the paper)."],
+	["route_hover_all", "_s_route_hover_all", "B3 (designer Q4): the route while the key strip is hovered (every link a hairline)."],
+	["raid_incoming", "_s_raid_incoming", "B3 (review section c): the raid interlude's INCOMING transition, mid-way."],
 	["route", "_s_route", "Netrun route: choosing where to go."],
 	["route_focus", "_s_route_focus", "Parity ROUTE-04: the pad's focus on the route's last choice sticker."],
 	["route_meridian", "_s_route_meridian", "Netrun route against Meridian (the dossier's letterhead)."],
@@ -1174,6 +1178,51 @@ func _s_raid_report() -> void:
 	await _frames(2)
 	hq.show_raid_summary()
 	await _settle(hq)
+
+
+func _s_raid_result_meridian() -> void:
+	var hq: Node = await _raid_setup(true, &"meridian")
+	hq.fight_raid()
+	await _frames(2)
+	if hq.playout != null and is_instance_valid(hq.playout):
+		hq.playout.skip_to_end()
+	await _settle(hq)
+
+
+func _s_raid_report_meridian() -> void:
+	var hq: Node = await _raid_setup(true, &"meridian")
+	hq.fight_raid()
+	await _frames(2)
+	hq.show_raid_summary()
+	await _settle(hq)
+
+
+## B3: the route's key strip hovered: every run link shows as a 25 % white hairline.
+func _s_route_hover_all() -> void:
+	var net: Node = await _netrun()
+	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
+	await _settle(net)
+	net.route_legend.show_links_hovered.emit(true)
+	await _settle(net)
+
+
+## B3: the raid interlude's INCOMING transition, caught mid-way (its plate and word at full).
+func _s_raid_incoming() -> void:
+	var net: Node = await _netrun()
+	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
+	await _settle(net)
+	DemoSetup.queue_raid_interlude(RunManager.netrun, RunManager.config())
+	net._show_current()
+	var layer: RaidIncoming = net.get_node_or_null("RaidIncoming") as RaidIncoming
+	if layer == null:
+		_warnings.append("no INCOMING layer (motion off?)")
+		return
+	# Held mid-way for the picture (the plate and the word at full, the bits in flight).
+	var tw: Tween = layer.get(&"_tween")
+	if tw != null and tw.is_valid():
+		tw.kill()
+	layer.t = 0.5
+	await _frames(SETTLE_FRAMES)
 
 
 func _s_raid_interlude() -> void:

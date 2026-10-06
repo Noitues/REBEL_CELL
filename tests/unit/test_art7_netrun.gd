@@ -120,13 +120,14 @@ func test_hidden_nodes_show_on_the_legend_hover_the_pointer_and_the_setting() ->
 	for n in ov.nodes:
 		assert_eq(drawn.has(n["id"]), RouteOverlay.pinned(n), "%s: only walked, choices and the TARGET show" % n["id"])
 	assert_lt(drawn.size(), ov.nodes.size(), "some nodes are hidden at the start")
-	# The legend strip's hover shows every node; leaving it hides them again.
-	scene.route_legend.show_all_hovered.emit(true)
-	assert_true(ov.show_all)
-	ov.all_t = 1.0
-	assert_eq(ov.drawn_ids().size(), ov.nodes.size(), "every node shows on the legend hover")
-	scene.route_legend.show_all_hovered.emit(false)
-	assert_false(ov.show_all)
+	# B3 (designer Q4, round 44): the legend strip's hover shows every link, not the nodes.
+	scene.route_legend.show_links_hovered.emit(true)
+	assert_true(ov.show_links)
+	assert_false(ov.show_all, "the hover leaves the nodes hidden")
+	assert_eq(ov.drawn_ids(), drawn, "the same nodes on the hover")
+	assert_eq(scene.route_legend.cue.text, tr(RouteLegend.LINKS_WORDS))
+	scene.route_legend.show_links_hovered.emit(false)
+	assert_false(ov.show_links)
 	# The pointer reveals the hidden node under it.
 	var hidden: Dictionary = {}
 	for n in ov.nodes:
@@ -141,6 +142,8 @@ func test_hidden_nodes_show_on_the_legend_hover_the_pointer_and_the_setting() ->
 	# Options: always show every node (D13).
 	Settings.set_always_show_all_nodes(true)
 	assert_true(ov.show_all, "the setting shows every node")
+	ov.all_t = 1.0
+	assert_eq(ov.drawn_ids().size(), ov.nodes.size(), "every node shows with the setting")
 	assert_eq(scene.route_legend.cue.text, tr(RouteLegend.SHOWING_WORDS))
 	Settings.set_always_show_all_nodes(false)
 	assert_eq(RunManager.campaign.state_hash(), before, "views never change the campaign")
@@ -210,7 +213,8 @@ func test_the_route_sweeps_every_corporation_with_labels_and_you_are_here() -> v
 		for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
 			Settings.set_text_scale(scale)
 			await _frames(2)
-			assert_true(ov.label_rects().has(String(ov.here_id())), "%s x%.1f: YOU ARE HERE shows" % [corp, scale])
+			# B3 (round 44): no YOU ARE HERE words; the token marks the position.
+			assert_false(ov.label_rects().has(String(ov.here_id())), "%s x%.1f: no YOU ARE HERE words" % [corp, scale])
 			var rects: Dictionary = ov.label_rects()
 			var keys: Array = rects.keys()
 			for i in keys.size():

@@ -199,6 +199,8 @@ const DEMOS := {
 	&"raid_slow_field": ["hq", "raid"], &"raid_ice_grow": ["hq", "raid_ice"], &"raid_repair_rise": ["hq", "raid_repair"], &"raid_beacon_idle": ["hq", "raid_repair"],
 	&"raid_route_write": ["hq", "raid_setup"], &"raid_route_wipe": ["hq", "raid"],
 	&"raid_dock_circle": ["hq", "raid_drag"], &"raid_drag_arrow": ["hq", "raid_drag"],
+	# B3 (review section c): the mid-run raid's INCOMING transition, from the route page.
+	&"raid_incoming": ["netrun", "raid_interlude"],
 	# ART-2 2A: the wheel stack.
 	&"wheel_screen_loop": ["view", "screens"], &"wheel_telemetry_scroll": ["view", "telemetry"], &"precision_latch": ["view", "perfect_latch"], &"precision_word": ["view", "landing_word"], &"precision_stutter": ["view", "weak_stutter"], &"hub_defeat_drain": ["view", "defeat_drain"], &"hub_lockdown_drain": ["view", "lockdown"],
 
@@ -1259,6 +1261,10 @@ func _play_context(scene: String, what: String) -> void:
 			hq._demo_combat_end("win")
 		"route":
 			hq.enter_node(RunManager.netrun.available_nodes()[0])
+		"raid_interlude":
+			# B3: a raid queued mid-run: the route page goes into the raid (RaidIncoming).
+			DemoSetup.queue_raid_interlude(RunManager.netrun, RunManager.config())
+			hq._show_current()
 		"route_heat":
 			# ART-7 3B: every node fades in (D13), the Heat lights circle, the searchlights sweep.
 			(hq.city_overlay as RouteOverlay).show_all = true

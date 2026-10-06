@@ -253,8 +253,10 @@ func test_the_raid_legend_covers_no_node_and_stays_on_screen() -> void:
 		assert_true(legend.is_visible_in_tree(), "the legend shows")
 		var lr := legend.get_global_rect()
 		assert_true(Rect2(Vector2.ZERO, CANVAS).encloses(lr), "on screen at %.1f: %s" % [scale, lr])
-		var area := (legend.get_parent() as Control).get_global_rect()
-		assert_true(area.grow(0.5).encloses(lr), "inside the map area at %.1f: %s in %s" % [scale, lr, area])
+		# B3 (Q9, round 44: no resource bar on the setup): the folded MAP KEY stands in the empty top
+		# bar, off the map, THREAT INTEL and YOUR NETWORK.
+		assert_true(legend.is_folded(), "folded to its MAP KEY line at %.1f" % scale)
+		assert_true(hq.hud.get_global_rect().grow(0.5).encloses(lr), "in the top bar at %.1f: %s" % [scale, lr])
 		var rects: Array[Rect2] = LegendSpot.node_rects(hq.city_overlay)
 		assert_false(rects.is_empty(), "the raid map has nodes")
 		for r in rects:

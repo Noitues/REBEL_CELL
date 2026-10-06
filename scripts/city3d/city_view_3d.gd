@@ -557,30 +557,53 @@ func _sync_map_mode() -> void:
 	if _post == null:
 		return
 	_post.set_shader_parameter(&"map_on", map_mode)
-	_veil_mi.visible = map_mode
+	# B3 (review D14): the netrun route keeps the city's hue (its own saturation and contrast, no
+	# veil); the raid view keeps round 40's grade.
+	var g := map_grade(cfg, band_lock)
+	_post.set_shader_parameter(&"map_saturation", g["saturation"])
+	_post.set_shader_parameter(&"map_contrast", g["contrast"])
+	_veil_mi.visible = map_mode and bool(g["veil"])
 	for m in [_net_mat, _net_xray_mat]:
 		(m as ShaderMaterial).set_shader_parameter(&"halo", cfg.net_halo * (cfg.map_net_halo if map_mode else 1.0))
+		# B3 (D5): no glow discs under the map's nodes, a thin halo ring round each instead.
+		(m as ShaderMaterial).set_shader_parameter(&"node_discs", not map_mode)
+		(m as ShaderMaterial).set_shader_parameter(&"node_halo_px", cfg.map_node_halo_px)
+		(m as ShaderMaterial).set_shader_parameter(&"node_halo_alpha", cfg.map_node_halo_alpha)
 
 
-## The map mode's look as the post and the veil hold it (tests: "map_on", "veil", "halo").
+## B3 (review D14): the map mode's grade for a host holding band `lock`: {"saturation",
+## "contrast", "veil": bool}. The netrun route keeps the hue (`netrun_map_*`); the raid view
+## (and any other map band) has round 40's (`map_*`, with the veil).
+static func map_grade(c: CityConfig, lock: int) -> Dictionary:
+	if lock == CityLod.Band.NETRUN:
+		return {"saturation": c.netrun_map_saturation, "contrast": c.netrun_map_contrast, "veil": c.netrun_map_veil}
+	return {"saturation": c.map_saturation, "contrast": c.map_contrast, "veil": true}
+
+
+## The map mode's look as the post and the veil hold it (tests: "map_on", "veil", "halo",
+## "saturation", "contrast").
 func map_look() -> Dictionary:
 	if _post == null:
 		return {}
 	return {"map_on": bool(_post.get_shader_parameter(&"map_on")), "veil": _veil_mi.visible,
-		"halo": float(_net_mat.get_shader_parameter(&"halo"))}
+		"halo": float(_net_mat.get_shader_parameter(&"halo")), "saturation": float(_post.get_shader_parameter(&"map_saturation")),
+		"contrast": float(_post.get_shader_parameter(&"map_contrast")), "node_discs": bool(_net_mat.get_shader_parameter(&"node_discs"))}
 
 
 ## The colour a city pixel shows in map mode (CPU mirror of city_post's map step and the veil,
 ## for the contrast checks): `display` is the post's graded display (sRGB) value; the result is
-## the display value on screen once the veil is blended over it (in linear, as the renderer
-## blends).
-static func map_graded(c: CityConfig, display: Color) -> Color:
+## the display value on screen once the veil (when the band has one) is blended over it (in
+## linear, as the renderer blends). `lock`: the band the host holds (B3: the netrun's grade).
+static func map_graded(c: CityConfig, display: Color, lock: int = CityLod.Band.RAID) -> Color:
+	var g := map_grade(c, lock)
 	var v := Vector3(display.r, display.g, display.b)
 	var grey := v.dot(Vector3(0.2126, 0.7152, 0.0722))
-	v = Vector3(grey, grey, grey).lerp(v, c.map_saturation)
+	v = Vector3(grey, grey, grey).lerp(v, float(g["saturation"]))
 	var mid := Vector3(c.map_mid, c.map_mid, c.map_mid)
-	v = (mid + (v - mid) * c.map_contrast).clamp(Vector3.ZERO, Vector3.ONE)
+	v = (mid + (v - mid) * float(g["contrast"])).clamp(Vector3.ZERO, Vector3.ONE)
 	var lin := Color(v.x, v.y, v.z).srgb_to_linear()
+	if not bool(g["veil"]):
+		return lin.linear_to_srgb()
 	var veil := c.map_veil.srgb_to_linear()
 	return lin.lerp(veil, c.map_veil_alpha).linear_to_srgb()
 

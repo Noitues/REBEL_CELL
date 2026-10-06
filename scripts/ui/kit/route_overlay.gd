@@ -7,13 +7,19 @@ extends CityMapOverlay
 ##   die-cut, ink keyline); one outline ring carries the state: lime walked, orange
 ##   selectable (numbered, with a soft glow), white not yet, dim grey cut off (the run never
 ##   goes back).
-## - **Hidden nodes (D13):** only the walked nodes, the choices and the TARGET are drawn; the
-##   rest show when `show_all` is on (the legend strip's hover, Options "Always show all
-##   nodes") or one at a time under the pointer (~REVEAL_RADIUS px, `route_node_reveal`).
-##   Parity ROUTE-01: the whole run is still drawn: a hidden node is a small "not yet" disc
-##   (its ring's state style, no kind) and its links hairline dashes (`draw_ghost`).
-## - **Landmarks (ROUTE-01):** the districts in view carry the concept's name plates (THE
-##   SPRAWL, the corporations; round 34 `restyle.labels`), under the node labels.
+## - **Hidden nodes (D13; B3, review Q15 and round 44 `route_page.png`):** only the walked
+##   nodes, the choices and the TARGET are drawn; a hidden node is FULLY hidden (no disc: a grey
+##   disc read as "used"); Options "Always show all nodes" (`show_all`) shows them all, and the
+##   pointer one at a time (~REVEAL_RADIUS px, `route_node_reveal`).
+## - **Links (B3, designer Q4):** only the links the route uses are drawn (the walked line, the
+##   live dashes to the choices); the legend strip's hover (`show_links`) shows every run link
+##   as a LINK_HINT_ALPHA white hairline (round 44 `route_page_hover_all.png`); hidden nodes
+##   stay hidden.
+## - **Clutter rule (B3, review D5 / section d):** no text tags on the nodes (the sticker is the
+##   type, the option's number chip stays) and no YOU ARE HERE words (the operative's token is
+##   the position); a choice's Heat effect shows on its hover; the TARGET keeps its pencil.
+## - **Landmarks (ROUTE-01):** the district name plates (round 34 `restyle.labels`) are off on
+##   the route page since round 44 (`landmarks`); kept for other uses of the overlay.
 ## - **TARGET:** the final Rack carries the red grease-pencil circle and the word.
 ## - **Transit v3 paths (ART-7 7w):** every link is a cable routed on the real city's streets
 ##   and blocks by RouteCableRouter (45° / 90° turns only, streets crossed rather than ridden,
@@ -42,8 +48,9 @@ const RING_STYLES := {STATE_WALKED: "double", STATE_NEXT: "solid", STATE_LATER: 
 const RING_DASHES := 12
 const RING_DOTS := 16
 ## A sticker's outer reach, ring included, at text scale 1.0 (screen px); the TARGET's.
-const STICKER_RADIUS := 19.0
-const STICKER_RADIUS_BIG := 23.0
+## B3 (review D14: node stickers at least 44 px at 1080p): the die-cut is about 34 px at 720p.
+const STICKER_RADIUS := 22.0
+const STICKER_RADIUS_BIG := 26.0
 ## The state ring's width, the ink keyline's extra width, the die-cut border's width and
 ## the gap the ring keeps off the die-cut (screen px).
 const RING_WIDTH := 3.2
@@ -86,17 +93,11 @@ const CABLE_GLOW_ALPHA := 0.18
 ## The later and cut dashes' alpha.
 const LATER_ALPHA := 0.7
 const CUT_EDGE_ALPHA := 0.5
-## Parity ROUTE-01 (round 37 `city_default`: the whole run drawn): a hidden node still shows
-## where it is as a small "not yet" disc (no kind: D13 keeps what it is until it is revealed),
-## its ring the state's own style; its links a hairline dash. The disc's radius (share of the
-## sticker's), its ink fill's alpha, the ring's alpha and the hairline's width share and alpha.
-const GHOST_SHARE := 0.42
-const GHOST_FILL_ALPHA := 0.85
-## How far the disc's ink fill is greyed toward RING_CUT (a grey "not yet" disc).
-const GHOST_GREY := 0.3
-const GHOST_RING_ALPHA := 0.85
-const GHOST_LINK_SHARE := 0.6
-const GHOST_LINK_ALPHA := 0.45
+## B3 (designer Q4, round 44 `route_page_hover_all.png`): every run link the route does not
+## use, while the legend strip is hovered: a white hairline (width share of CABLE_LATER) at
+## this alpha.
+const LINK_HINT_SHARE := 0.6
+const LINK_HINT_ALPHA := 0.25
 ## Hover reveal (D13): radius round the pointer (screen px), and the motion that fades a
 ## hidden node in.
 const REVEAL_RADIUS := 40.0
@@ -142,6 +143,22 @@ var reveal_t: float = 1.0:
 		reveal_t = v
 		_queue_top()
 		queue_redraw()
+## B3 (Q4): every run link shows as a hairline (the legend strip's hover), and its fade (0..1).
+var show_links: bool = false:
+	set(v):
+		if v == show_links:
+			return
+		show_links = v
+		if v and is_inside_tree():
+			links_t = 0.0
+			Motion.run(REVEAL_MOTION, self, ^"links_t", 1.0)
+		else:
+			links_t = 1.0
+var links_t: float = 1.0:
+	set(v):
+		links_t = v
+		if _anim != null:
+			_anim.queue_redraw()
 ## Calm Heat: the two searchlights sweep (the scene sets it from the Heat band).
 var heat_sweeps: bool = false:
 	set(v):
@@ -153,6 +170,7 @@ var heat_sweeps: bool = false:
 func _init(p_city: NeonCity = null) -> void:
 	super(p_city)
 	name = "RouteOverlay"
+	landmarks = false  # B3: round 44's route page has no district plates (the clutter rule)
 	# B1b: the TARGET's circle and word are the kit's wax (a PencilSet over every layer).
 	_target_pencil = PencilSet.under(_pencil_root)
 	# Parity ROUTE-04 b: a choice's focus ring (the pad's stop on the map, `hover_id`) draws
@@ -190,6 +208,12 @@ func shown(n: Dictionary) -> float:
 	return a
 
 
+## B3: a hidden route node takes no room in the page's fits (LegendSpot): the route is framed
+## on what is drawn (D14: the route fills the frame).
+func marker_shown(n: Dictionary) -> bool:
+	return shown(n) > 0.0
+
+
 ## The ids drawn now (shown at all), in graph order (tests and captures).
 func drawn_ids() -> Array[StringName]:
 	var out: Array[StringName] = []
@@ -203,17 +227,25 @@ func icon_radius(n: Dictionary) -> float:
 	return (STICKER_RADIUS_BIG if n.get("big", false) else STICKER_RADIUS) * _k()
 
 
-## Labels: a hidden node has none; a choice Heat has made harder carries its effect as a
-## second line (placed with the label, so it never covers another).
+## Labels (B3, the clutter rule): no node carries a text tag (the sticker is the type, the
+## number chip the key); the TARGET keeps its pencil word; a choice Heat has made harder shows
+## its effect only while it is hovered or focused (the node panel holds the rest).
 func label_lines(id: StringName) -> PackedStringArray:
 	var n := _node_dict(id)
+	var out := PackedStringArray()
 	if n.is_empty() or shown(n) <= 0.0:
-		return PackedStringArray()
-	var lines := super(id)
+		return out
+	if n.get("target", false):
+		return super(id)
 	var chip := String(n.get("heat_chip", ""))
-	if chip != "" and not lines.is_empty():
-		lines.append(chip)
-	return lines
+	if chip != "" and (id == hover_id or id == _pointer_id):
+		out.append(chip)
+	return out
+
+
+## B3: no YOU ARE HERE words on the route (round 44: the operative's token is the position).
+func here_label_shown() -> bool:
+	return false
 
 
 # --- Hover reveal (D13) ----------------------------------------------------------------------
@@ -449,9 +481,27 @@ func _travel_route() -> PackedVector2Array:
 	return cable(icon_at(from), icon_at(to))
 
 
-## How much of edge `e` shows (its ends' share).
+## How much of edge `e` shows: a link the route uses (walked, live) as its ends do; any other
+## link only while every node shows (Options' `show_all`; B3, Q4: a node revealed under the
+## pointer brings no links).
 func edge_shown(e: Dictionary) -> float:
-	return minf(shown(_node_dict(e["a"])), shown(_node_dict(e["b"])))
+	var a := minf(shown(_node_dict(e["a"])), shown(_node_dict(e["b"])))
+	if route_uses(e):
+		return a
+	return minf(a, all_t) if show_all else 0.0
+
+
+## B3 (Q4): true when the route uses link `e` (the walked line, a live link to a choice).
+func route_uses(e: Dictionary) -> bool:
+	var st := _edge_state(e)
+	return st == STATE_WALKED or st == "live"
+
+
+## B3 (Q4): how strongly link `e` shows as the hover's hairline now (0 none .. 1).
+func link_hint(e: Dictionary) -> float:
+	if not show_links or route_uses(e):
+		return 0.0
+	return links_t * (1.0 - edge_shown(e))
 
 
 func _edge_state(e: Dictionary) -> String:
@@ -481,11 +531,10 @@ func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
 		return
 	var a := edge_shown(e)
 	var k := _k()
-	if a < 1.0:
-		# ROUTE-01: a link to a hidden node is a hairline dash (it fades as the node shows).
-		var cut := _edge_state(e) == STATE_CUT
-		_dashes(pts, RouteInk.RING_CUT if cut else RouteInk.RING_UNAVAILABLE, CABLE_LATER * GHOST_LINK_SHARE * k,
-			GHOST_LINK_ALPHA * (1.0 - a) * (CUT_EDGE_ALPHA if cut else 1.0), 0.0, false)
+	var hint := link_hint(e)
+	if hint > 0.0:
+		# B3 (Q4): the hover's hairline, every run link in 25 % white.
+		_c.draw_polyline(pts, Color(RouteInk.RING_UNAVAILABLE, LINK_HINT_ALPHA * hint), maxf(1.0, CABLE_LATER * LINK_HINT_SHARE * k), true)
 	if a <= 0.0:
 		return
 	match _edge_state(e):
@@ -549,9 +598,6 @@ func _node(n: Dictionary) -> void:
 	if at.x == INF:
 		return
 	var k := _k()
-	if a < 1.0:
-		# ROUTE-01: a hidden node's "not yet" disc (it fades as the sticker shows).
-		draw_ghost(_c, at, icon_radius(n) * GHOST_SHARE, state_of(n), k, 1.0 - a)
 	if a <= 0.0:
 		return
 	var r := icon_radius(n)
@@ -600,22 +646,11 @@ static func draw_sticker(ci: CanvasItem, kind: String, p: Vector2, r: float, sta
 	draw_state_ring(ci, p, ring_r, state, k, a)
 
 
-## ROUTE-01: a hidden node's small disc at `p` (outer reach `r`) on `ci`: an ink fill and its
-## state's ring (colour and style, RING_STYLES) at half weight; no kind (D13). Shared with the
-## legend strip's "not yet (hidden)" swatch.
-static func draw_ghost(ci: CanvasItem, p: Vector2, r: float, state: String, k: float, alpha: float = 1.0) -> void:
-	if alpha <= 0.0:
-		return
-	var kk := k * GHOST_SHARE
-	ci.draw_circle(p, r, Color(RouteInk.KEYLINE.lerp(RouteInk.RING_CUT, GHOST_GREY), GHOST_FILL_ALPHA * alpha))
-	draw_state_ring(ci, p, r - RING_WIDTH * 0.5 * kk, state, kk, GHOST_RING_ALPHA * alpha)
-
-
-## The ids drawn only as a hidden node's disc now (ROUTE-01), in graph order.
-func ghost_ids() -> Array[StringName]:
+## B3 (Q15): the ids of nodes not drawn now (fully hidden: no disc), in graph order.
+func hidden_ids() -> Array[StringName]:
 	var out: Array[StringName] = []
 	for n in nodes:
-		if shown(n) < 1.0 and icon_pos(n).x != INF:
+		if shown(n) <= 0.0 and icon_pos(n).x != INF:
 			out.append(n["id"])
 	return out
 
@@ -800,6 +835,8 @@ const TARGET_WORD := "TARGET" # TR
 ## square with the operative glyph), the node's own ring already lime.
 func _here(at: Vector2, r: float) -> void:
 	var k := _k()
+	# B3 (round 44: the token is the position, no words): on the street too it is a sticker's size.
+	r = maxf(r, STICKER_RADIUS * k)
 	var side := r * PIN_SHARE
 	var c := at + Vector2(r * PIN_OFFSET.x, r * PIN_OFFSET.y)
 	_c.draw_set_transform(c, PIN_TILT)

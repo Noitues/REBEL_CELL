@@ -300,7 +300,8 @@ func _check_nodes_beside_the_column(hq: Control, what: String) -> void:
 ## another.
 func _assert_no_overlap(overlay: CityMapOverlay, what: String) -> void:
 	var rects := overlay.label_rects()
-	assert_gt(rects.size(), 0, "%s draws labels" % what)
+	if not overlay is RouteOverlay:  # B3 (the clutter rule): the route tags no node (the TARGET is pencil)
+		assert_gt(rects.size(), 0, "%s draws labels" % what)
 	for a in overlay.nodes.size():
 		for b in range(a + 1, overlay.nodes.size()):
 			var na: Dictionary = overlay.nodes[a]
@@ -430,7 +431,8 @@ func test_the_route_for_every_corporation() -> void:
 			var overlay: CityMapOverlay = scene.city_overlay
 			overlay.avoid_controls([win])
 			var here := overlay.here_id()
-			assert_true(overlay.label_rects().has(String(here)), "%s x%.1f: YOU ARE HERE shows" % [corp, scale])
+			# B3 (round 44): no YOU ARE HERE words; the token marks the position.
+			assert_false(overlay.label_rects().has(String(here)), "%s x%.1f: no YOU ARE HERE words" % [corp, scale])
 			_assert_on_screen(overlay, "route %s x%.1f" % [corp, scale])
 		Settings.set_text_scale(1.0)
 		await _close(scene)

@@ -88,13 +88,41 @@ func test_map_mode_is_on_for_the_raid_and_netrun_bands_only() -> void:
 	view.use_model(model)
 	add_child_autofree(view)
 	assert_false(view.map_mode, "off by default")
-	assert_eq(view.map_look(), {"map_on": false, "veil": false, "halo": cfg.net_halo})
+	assert_false(view.map_look()["map_on"])
+	assert_false(view.map_look()["veil"])
+	assert_eq(view.map_look()["halo"], cfg.net_halo)
+	# B3 (review D14): the raid keeps round 40's grade and veil; the netrun route keeps the hue.
+	var expect := {CityLod.Band.RAID: [true, cfg.map_saturation, cfg.map_contrast],
+		CityLod.Band.NETRUN: [cfg.netrun_map_veil, cfg.netrun_map_saturation, cfg.netrun_map_contrast]}
 	for band in [CityLod.Band.RAID, CityLod.Band.NETRUN]:
 		view.band_lock = band
 		assert_true(view.map_mode)
-		assert_eq(view.map_look(), {"map_on": true, "veil": true, "halo": cfg.net_halo * cfg.map_net_halo}, "band %d" % band)
+		var look := view.map_look()
+		assert_true(look["map_on"], "band %d" % band)
+		assert_eq(look["halo"], cfg.net_halo * cfg.map_net_halo, "band %d" % band)
+		assert_eq(look["veil"], expect[band][0], "band %d: the veil" % band)
+		assert_almost_eq(float(look["saturation"]), float(expect[band][1]), 0.0001, "band %d" % band)
+		assert_almost_eq(float(look["contrast"]), float(expect[band][2]), 0.0001, "band %d" % band)
+		# B3 (review D5): no glow disc (the lime "spray" pool) under a map's node: a thin halo.
+		assert_false(look["node_discs"], "band %d: no decal glow discs under the sockets and markers" % band)
 	view.band_lock = CityLod.Band.GRID
-	assert_eq(view.map_look(), {"map_on": false, "veil": false, "halo": cfg.net_halo}, "back off on the Grid")
+	assert_true(view.map_look()["node_discs"], "the Grid's city decal keeps its node discs")
+	assert_false(view.map_look()["map_on"], "back off on the Grid")
+	assert_false(view.map_look()["veil"], "back off on the Grid")
+
+
+## B3 (review D14, bible 4.6 round 44 lock): the netrun route keeps the city's hue: saturation
+## 0.85, no violet veil (the darkening is the translucency rule's x0.86, bible 4.1).
+func test_b3_the_netrun_map_mode_keeps_the_hue() -> void:
+	assert_almost_eq(cfg.netrun_map_saturation, 0.85, 0.001)
+	assert_false(cfg.netrun_map_veil, "no violet veil on the route")
+	assert_almost_eq(cfg.see_through_dark, 0.86, 0.001, "the darkening is the translucency's")
+	var neon := Color(0.55, 0.3, 0.95)
+	var route := CityView3D.map_graded(cfg, neon, CityLod.Band.NETRUN)
+	var raid := CityView3D.map_graded(cfg, neon, CityLod.Band.RAID)
+	assert_gt(route.s, raid.s, "more of its colour than the raid view's grey")
+	assert_almost_eq(route.h, neon.h, 0.03, "the same hue")
+	assert_gt(route.s, neon.s * 0.8, "the hue kept (the slate grey is gone)")
 
 
 func test_the_veil_dims_the_ambient_layers_and_never_the_network() -> void:

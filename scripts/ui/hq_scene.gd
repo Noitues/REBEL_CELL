@@ -42,6 +42,9 @@ const FORECAST_CAPTION := "IF THE RAID\nRUNS NOW:" # TR
 const RESULT_CAPTION := "RAID\nRESULT:" # TR
 ## The raid setup's big button (H24 S14: "RUN THE RAID" read like attacking).
 const START_DEFENSE := "START DEFENSE" # TR
+## B3 (review Q10, round 40 `raid_view_v3` / round 44 `raid_setup.png`): the raid setup's yellow
+## title sticker (the DEFENCE hand is open; the HQ idle page keeps no title).
+const RAID_SETUP_TITLE := "RAID SETUP" # TR
 ## Words the screens translate that sit in the core's data (H24 S1: exported by the "# TR"
 ## marker): run kinds, raid outcomes, Exploit types and rule modifier names.
 const RUN_KIND_WORDS := ["netrun", "patrol", "reclaim", "boss"] # TR
@@ -930,8 +933,11 @@ func _set_panel(p: Control, name: String) -> void:
 	# Screens built from terminal windows let the city show between them.
 	# ANIM-R5 P4: the campaign's end too (it was a near-opaque glass page of terminal lines).
 	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "raid", "raid_playout", "raid_summary", "end", "end_lock"] or name.begins_with("city") else &"GlassPanel"
-	# HQ-B (Q6): the HQ shows no title (the HEAT gauge holds the bar's first slot).
-	hud.set_screen("" if name in HQ_PAGES else String(SCREEN_NUMBERS.get(name, "")), "" if name in HQ_PAGES else screen_title(name))
+	# HQ-B (Q6): the HQ shows no title (the HEAT gauge holds the bar's first slot). B3 (review
+	# Q10, round 44 `raid_setup.png`): while the DEFENCE hand is open the page is the raid setup:
+	# its yellow RAID SETUP title sticker.
+	hud.set_screen("" if name in HQ_PAGES else String(SCREEN_NUMBERS.get(name, "")),
+		tr(RAID_SETUP_TITLE) if name == "raid" else ("" if name in HQ_PAGES else screen_title(name)))
 	if not name in HEAT_BUTTON_PAGES:
 		close_heat_terminal(false)
 	if not name in HQ_PAGES:
@@ -978,7 +984,7 @@ static func screen_title(p_name: String) -> String:
 		"hq":
 			return TranslationServer.translate("CYBERDECK HQ")
 		"raid":
-			return TranslationServer.translate("CELL DEFENSE RAID SETUP")
+			return TranslationServer.translate(RAID_SETUP_TITLE)
 		"raid_playout":
 			return TranslationServer.translate("RAID IN PROGRESS")
 		"raid_summary":
@@ -1098,7 +1104,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			open_hand(HandTab.DEFENCE)
 			get_viewport().set_input_as_handled()
 			return
-	if event.is_action_pressed("cycle_target") and panel_name == "raid" and raid_legend != null \
+	if event.is_action_pressed("cycle_target") and panel_name in ["raid", "raid_playout", "raid_summary"] and raid_legend != null \
 			and is_instance_valid(raid_legend) and raid_legend.visible and raid_legend.foldable():
 		# ANIM-R2 R13: the raid's folding key opens and folds as the Grid's does.
 		raid_legend.set_opened(not raid_legend.opened)
@@ -1599,9 +1605,15 @@ func _build_hq_page(page_name: String) -> void:
 		paper.name = "WorkOrderBox"
 		paper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		paper_scroll.add_child(paper)
+		# B3 (review Q9, round 44 `raid_setup.png`): YOUR NETWORK is in the right column under
+		# THREAT INTEL (`_defence_cards`); the left column is the title's work order alone.
 		if raid_mode:
-			# Parity RAID-06 (round 40): YOUR NETWORK top left, over the work order.
-			paper.add_child(_your_network(projection))
+			# Room for the paper's clip under the setup's instruction line (parity RAID-02).
+			var clip_room := Control.new()
+			clip_room.name = "ClipRoom"
+			clip_room.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			clip_room.custom_minimum_size.y = RaidPaper.CLIP_TOP * Settings.text_scale
+			paper.add_child(clip_room)
 		paper.add_child(_raid_card(raid, pending, projection, not raid_mode))
 		var setup := MenuChip.new(tr("RAID SETUP"), "[%s]" % Settings.hint(&"toggle_ring").strip_edges().trim_prefix("[").trim_suffix("]"), Palette.CELL_PINK)
 		setup.name = "RaidSetup"
@@ -1670,7 +1682,8 @@ func _build_hq_page(page_name: String) -> void:
 	card_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
-		card_margin.add_theme_constant_override(side, roundi(DecryptedHoloPanel.BACKING_OUT * 2.0))
+		# B3: the raid setup's column keeps only the backing's own room (THREAT INTEL fits at 1.6).
+		card_margin.add_theme_constant_override(side, roundi(DecryptedHoloPanel.BACKING_OUT * (1.0 if raid_mode else 2.0)))
 	card_margin.add_child(stack)
 	column.add_child(card_margin)
 	var site := CampaignRules.site_data(corp, selected_site)
@@ -1715,6 +1728,10 @@ func _build_hq_page(page_name: String) -> void:
 		g = hq_idle_graph(g)
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, keep.get("anchor", HQ_ANCHOR), keep.get("scale", 1.0),
 		keep.get("focus", Vector2.INF))
+	if raid_mode:
+		# B3 (review D5, the clutter rule): no node tags on the raid map (status on the node; the
+		# name is the tooltip; a row lit from YOUR NETWORK or the pad shows its node's name).
+		city_overlay.tag_rule = CityMapOverlay.TagRule.LIT
 	city_overlay.selected_id = selected_site
 	city_overlay.boss_exploits = Vector2i(c.exploits.size(), cfg.min_exploits_for_breach)
 	if not raid_mode:
@@ -2533,10 +2550,12 @@ func _place_hq() -> void:
 	var column := page.get_node("CardColumn") as Control
 	var col_w := maxf((r["card"] as Rect2).size.x, (column.get_child(0) as Control).get_combined_minimum_size().x)
 	if panel_name == "raid":
-		# The setup's right column (THREAT INTEL, IF PLACED) at the objects' scale, never under
-		# what its panels need: YOUR NETWORK took the left (RAID-06), the map keeps its middle.
+		# The setup's right column (THREAT INTEL, YOUR NETWORK, IF PLACED; B3, Q9) at the objects' scale,
+		# never under what its panels need; the map keeps its middle.
 		col_w = maxf(HqLayout.CARD_COLUMN * o_scale, (column.get_child(0) as Control).get_combined_minimum_size().x)
-	var col_x := area.x - HqLayout.MARGIN - col_w
+	# B3: in the setup the column's card margin (the holo backing's room) reaches into the page margin, so
+	# YOUR NETWORK under THREAT INTEL leaves the defence hand its three cards whole at 2.0.
+	var col_x := area.x - (HqLayout.MARGIN - (DecryptedHoloPanel.BACKING_OUT if panel_name == "raid" else 0.0)) - col_w
 	hand.size = Vector2(maxf(1.0, minf(verb.position.x, col_x) - HqLayout.GAP - hand.position.x), hand_h)
 	var foot_top := minf(hand.position.y, tabs.position.y)
 	if order != null:
@@ -2578,9 +2597,25 @@ func _place_hq() -> void:
 		hq_legend.set_strip_width(area.x * HQ_KEY_SHARE)
 		var ls := hq_legend.get_combined_minimum_size()
 		hq_legend.size = ls
-		hq_legend.position = Vector2(area.x - HqLayout.MARGIN - ls.x, top)
-		top += hq_legend.fit_size().y + HqLayout.GAP
+		if panel_name == "raid" and hud != null and is_instance_valid(hud):
+			# B3 (review Q9 / the THREAT INTEL fit; round 44: no resource bar on the setup): the
+			# folded MAP KEY stands in the empty top bar, left of its corner chips, so THREAT INTEL
+			# and YOUR NETWORK take the card column's whole height and the map keeps its room.
+			var band := hud.get_global_rect()
+			var fold := hq_legend.fit_size()
+			# Top level: the page's scroll would clip it in the bar (a top-level item draws on the canvas).
+			hq_legend.top_level = true
+			var right := hud.daemon_button.get_global_rect().position.x if hud.daemon_button.is_visible_in_tree() else band.end.x
+			hq_legend.global_position = Vector2(right - HqLayout.GAP - fold.x, band.get_center().y - fold.y * 0.5)
+		else:
+			hq_legend.position = Vector2(area.x - HqLayout.MARGIN - ls.x, top)
+			top += hq_legend.fit_size().y + HqLayout.GAP
 	var bottom := verb.position.y - HqLayout.GAP
+	if panel_name == "raid":
+		# B3 (the THREAT INTEL fit at 1.6): the setup's column starts at the page's top (its key
+		# stands on the map) and ends at the verb's sticker.
+		top = RAID_COLUMN_TOP
+		bottom = verb.position.y
 	column.size = Vector2(col_w, maxf(1.0, minf((column.get_child(0) as Control).get_combined_minimum_size().y, bottom - top)))
 	column.position = Vector2(col_x, bottom - column.size.y)
 	var was_free := _hq_free
@@ -2612,6 +2647,10 @@ func _place_hq() -> void:
 				avoid.append(extra)
 		city_overlay.avoid_controls(avoid)
 	_place_corp_news()
+
+
+## B3: the raid setup's card column's top (page px): THREAT INTEL starts right under the bar.
+const RAID_COLUMN_TOP := 2.0
 
 
 ## HQ-B: the share of the page's width the opened map key may span.
@@ -3721,8 +3760,10 @@ func _fill_defence_hand(cards: HBoxContainer) -> void:
 		card.disabled = selected_site == &"" or not c.grid.is_active_node(selected_site)
 		var index := i
 		card.pressed.connect(func() -> void: deploy_asset(index, selected_site))
-		card.mouse_entered.connect(show_if_placed.bind(index))
-		card.focus_entered.connect(show_if_placed.bind(index))
+		card.mouse_entered.connect(point_card.bind(index))
+		card.focus_entered.connect(point_card.bind(index))
+		card.mouse_exited.connect(func() -> void: if not card.has_focus(): hide_if_placed())
+		card.focus_exited.connect(func() -> void: if not card.is_hovered(): hide_if_placed())
 		drops.add_source(card, {"kind": "asset", "index": index, "asset": aid, "prefer": selected_site})
 		cards.add_child(card)
 	if c.armory.is_empty():
@@ -3736,7 +3777,11 @@ func _fill_defence_hand(cards: HBoxContainer) -> void:
 ## its units and what they go for) over YOUR NETWORK (each node's forecast chip; its target
 ## button makes it the defences' target, the target's row withdraws or moves its assets).
 func _defence_cards(stack: VBoxContainer, raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult) -> void:
+	stack.alignment = BoxContainer.ALIGNMENT_BEGIN  # B3: THREAT INTEL whole at the column's top
 	stack.add_child(_threat_intel(raid, pending, projection))
+	# B3 (review Q9, round 44): YOUR NETWORK under THREAT INTEL, never over the map or the pencil;
+	# the column scrolls its rows ("more below").
+	stack.add_child(_your_network(projection))
 	stack.add_child(_if_placed_terminal())
 
 
@@ -3747,6 +3792,10 @@ func _if_placed_terminal() -> RaidTerminal:
 	var term := RaidTerminal.new(tr(RaidDragPencil.IF_PLACED), Palette.NET_CYAN)
 	term.name = "IfPlaced"
 	term.tag_label.text = ""
+	# B3 (the clutter rule; round 44 shows no IF PLACED until a card is picked): it shows while a
+	# defence card is pointed at, focused or carried (`show_if_placed`).
+	term.visible = false
+	_if_placed_term = term
 	var lines := VBoxContainer.new()
 	lines.name = "IfPlacedLines"
 	lines.add_theme_constant_override("separation", 2)
@@ -3759,6 +3808,22 @@ func _if_placed_terminal() -> RaidTerminal:
 ## The IF PLACED terminal's lines, and the Armory index they show.
 var _if_placed_terminal_box: VBoxContainer = null
 var if_placed_index: int = -1
+## B3: the IF PLACED terminal (shown while a card is pointed at or focused).
+var _if_placed_term: Control = null
+
+
+## B3: a defence card at Armory `index` is pointed at or focused: the IF PLACED terminal shows
+## what it would change on the target.
+func point_card(index: int) -> void:
+	show_if_placed(index)
+	if _if_placed_term != null and is_instance_valid(_if_placed_term):
+		_if_placed_term.visible = true
+
+
+## B3: hides the IF PLACED terminal (the card left the pointer and the focus).
+func hide_if_placed() -> void:
+	if _if_placed_term != null and is_instance_valid(_if_placed_term):
+		_if_placed_term.visible = false
 
 
 ## Shows in the IF PLACED terminal what placing the Armory's defence at `index` on the target
@@ -4343,7 +4408,10 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(spacer)
-	var legend := MapLegend.pin_to(spacer, c.corporation_id)
+	# B3 (review section f, round 44 `raid_setup.png`): the key is a strip that folds to its
+	# MAP KEY line at big text (opens on hover, the key button), never a big box over the map.
+	var legend := MapLegend.pin_key_line(spacer, c.corporation_id)
+	raid_legend = legend  # B3: [K] opens the folded key here too
 	_fight_area = [spacer, legend]
 	var side := VBoxContainer.new()
 	side.add_theme_constant_override("separation", 12)
@@ -4377,6 +4445,7 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	var kept: Array = pre.grid.claimed_ids()
 	var g := raid_graph({}, {}, pre)
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, PLAYOUT_ANCHOR, playout_zoom())
+	city_overlay.tag_rule = CityMapOverlay.TagRule.LIT  # B3 (D5): no node or threat tags on the raid map
 	_mount_raid_routes(raid_route_paths(events))  # ART-6 3A: the plan stays drawn while it plays
 	# ANIM-R6 C10: the playout opens framed on CORE and the Sites the raid enters at (it opened
 	# on the middle of the whole network, CORE at the screen's edge, and eased from there).
@@ -4761,7 +4830,7 @@ func show_raid_summary() -> void:
 	# Parity RAID-12 (round 40): no result disc: the paper carries the numbers, CELL HOLDS the
 	# verdict.
 	outer.add_child(table)
-	MapLegend.pin_to(table, c.corporation_id)
+	raid_legend = MapLegend.pin_key_line(table, c.corporation_id)  # B3: the key strip, folded to MAP KEY ([K] opens it)
 	var skin := RaidSkin.of(c.corporation_id)
 	var raid_key := StringName(String(r.get("raid_id", "")))
 	var raid: RaidData = RunManager.lookup().get_content(raid_key) as RaidData if RunManager.lookup().has(raid_key) else null
@@ -4851,6 +4920,7 @@ func show_raid_summary() -> void:
 	_set_panel(outer, "raid_summary")
 	var g := raid_graph(r.get("nodes", {}), {})
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.55))
+	city_overlay.tag_rule = CityMapOverlay.TagRule.LIT  # B3 (D5): the outcome is on the node and the paper
 	city_overlay.avoid_controls([side])
 	city_overlay.packets = false  # ANIM-R5 P7: a report, not a live network (no packets loop)
 	# The Cell's pencil on the corp's report, and CELL HOLDS slapped on top.
@@ -4858,32 +4928,52 @@ func show_raid_summary() -> void:
 	pencil.name = "ReportPencil"
 	report.add_child(pencil)
 	if held:
+		# B3 (review Q7, bible 4.8): the result is CELL HOLDS slapped on the after-action paper
+		# (a fixed fact: a sticker), not a banner over the map; it plays the result banner's
+		# motion (`raid_result_banner`).
 		var holds := RaidSticker.new(tr(RaidVerdict.CELL_HOLDS), HOLDS_STICKER_STEP, RaidSticker.YELLOW, -6.0).stamp_only()
 		holds.name = "CellHolds"
-		table.add_child(holds)
-		_slap_holds.call_deferred(holds, table, report)
+		# On a pin over the paper (the paper's own child: it follows the paper as the page lays out).
+		var pin := Control.new()
+		pin.name = "HoldsPin"
+		pin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		report.add_child(pin)
+		pin.add_child(holds)
+		pin.resized.connect(_place_holds.bind(holds, pin))
+		_slap_holds.call_deferred(holds, table, pin)
 
 
-## ART-6 3A: CELL HOLDS slaps onto the report (1B's vinyl slap, `sticker_slap`; one press ends
-## it; at rest at once when motion doesn't play), beside the report's top.
-func _slap_holds(holds: RaidSticker, table: Control, _report: Control) -> void:
-	if not is_instance_valid(holds) or not is_instance_valid(table):
+## ART-6 3A / B3 (Q7): CELL HOLDS slaps onto the after-action paper, over its lower right (the
+## result banner's motion, RaidSticker.slap_result; at rest at once when motion doesn't play).
+func _slap_holds(holds: RaidSticker, _table: Control, pin: Control) -> void:
+	if not is_instance_valid(holds) or not is_instance_valid(pin):
+		return
+	_place_holds(holds, pin)
+	holds.slap_result()
+
+
+## B3 (Q7): CELL HOLDS at its spot on the paper's pin (local to the paper).
+func _place_holds(holds: RaidSticker, pin: Control) -> void:
+	if not is_instance_valid(holds) or not is_instance_valid(pin):
 		return
 	holds.size = holds.custom_minimum_size
 	holds.pivot_offset = holds.size * 0.5
-	# Parity RAID-12 (round 40): centre left on the table (the map's side of the report).
-	var room := table.get_global_rect()
-	var at := Vector2(room.position.x + room.size.x * HOLDS_AT.x - holds.size.x * 0.5, room.position.y + room.size.y * HOLDS_AT.y - holds.size.y * 0.5)
-	holds.global_position = at.max(room.position + Vector2(SLAP_MARGIN, SLAP_MARGIN))
-	holds.slap()
+	# The whole paper (the pin is its content box, inside the paper's margins).
+	var paper := pin.get_parent() as Control
+	var whole := Rect2(-pin.position, paper.size) if paper != null else Rect2(Vector2.ZERO, pin.size)
+	holds.position = holds_spot(whole, holds.size)
 
 
-## Where CELL HOLDS sits on the report's table (share of the table: centre left).
-const HOLDS_AT := Vector2(0.3, 0.5)
+## B3 (Q7): where CELL HOLDS stands on the after-action paper `paper` (any px) for a sticker
+## of `size`: its centre at HOLDS_AT of the paper, kept on the paper.
+static func holds_spot(paper: Rect2, size: Vector2) -> Vector2:
+	var at := paper.position + paper.size * HOLDS_AT - size * 0.5
+	return at.clamp(paper.position, (paper.end - size).max(paper.position))
 
 
-## Room round the CELL HOLDS sticker on the table (px at 1.0).
-const SLAP_MARGIN := 24.0
+## Where CELL HOLDS sits on the report (share of the paper: over its lower left, under the rows and
+## beside the CLASSIFIED stamp).
+const HOLDS_AT := Vector2(0.27, 0.8)
 
 ## ART-11 4D (ART_BIBLE v2 §4.8; refs `docs/art_reference/campaign_end/`): the campaign's end.
 ## Lost (the home server BREACHED, ruling 6.2): the winning corporation's ransomware lock over
@@ -5406,6 +5496,14 @@ func _refresh_status() -> void:
 	_status.text = "Heat %d/%d | Schematics %d | Home %d/%d | Exploits %d | Raids pending %d | ICE %d | %s" % [
 		c.heat, cfg.heat_max, c.schematics, c.grid.home_integrity, c.grid.home_max_integrity,
 		c.exploits.size(), c.pending_raids.size(), c.ice_level, "campaign over" if c.is_over() else "active"]
+	if panel_name == "raid":
+		# B3 (round 44 `raid_setup.png` / `topbar_by_page.png`): no resource bar on the raid setup:
+		# YOUR NETWORK is its terminal for the Cell's state (Heat settles on the raid report).
+		hud.hide_heat()
+		hud.set_stats([], [])
+		hud.loadout_button.visible = false
+		hud.set_daemons([] as Array[StringName])
+		return
 	# HQ-B (Q1): Heat is the gauge in the bar's first slot (the HEAT stat tag gave it its place);
 	# at the HQ it opens the Heat terminal (Scrub Heat).
 	hud.set_heat(c.heat if hud_heat_shown < 0 else hud_heat_shown, cfg.heat_max, HeatRules.band_levels(c, cfg), panel_name in HEAT_BUTTON_PAGES, heat_tip())

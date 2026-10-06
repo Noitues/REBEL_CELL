@@ -187,21 +187,26 @@ func test_the_setup_fits_at_every_text_scale() -> void:
 
 # --- S-RAID's page items (designer group ruling: round 40) -----------------------------------------
 
-func test_round_40_your_network_top_left_if_placed_on_the_right_and_its_preview_is_the_result() -> void:
+## B3 (review Q9 / Q10, round 44 `raid_setup.png`; supersedes RAID-06's YOUR NETWORK top left and
+## RAID-05's no title): YOUR NETWORK under THREAT INTEL on the right, the yellow RAID SETUP title,
+## IF PLACED only while a card is pointed at; its preview is the result.
+func test_round_44_your_network_under_threat_intel_if_placed_on_hover_and_its_preview_is_the_result() -> void:
 	var c := RunManager.campaign
 	var hq := await _hq()
 	hq.show_raid()
 	await _frames(4)
 	var page: Control = hq._panel
-	assert_eq(String(hq.hud._title), "", "RAID-05 (Q6): no RAID SETUP title sticker on the HQ")
+	assert_eq(String(hq.hud._title), tr("RAID SETUP"), "Q10: the RAID SETUP title sticker while the DEFENCE hand is open")
 	var network := page.find_child("NodeOrders", true, false) as Control
 	var column := page.get_node("CardColumn") as Control
-	assert_true(page.get_node("WorkOrder").is_ancestor_of(network), "RAID-06: YOUR NETWORK in the left column")
-	assert_lt(network.get_global_rect().get_center().x, SCREEN.size.x * 0.5, "top left")
+	var intel := page.find_child("ThreatIntel", true, false) as Control
+	assert_true(column.is_ancestor_of(network), "Q9: YOUR NETWORK in the right column")
+	assert_gt(network.get_global_rect().position.y, intel.get_global_rect().position.y, "under THREAT INTEL")
+	assert_false(page.get_node("WorkOrder").is_ancestor_of(network), "not over the work order")
 	var if_placed := page.find_child("IfPlaced", true, false) as Control
 	assert_not_null(if_placed, "the IF PLACED terminal")
 	assert_true(column.is_ancestor_of(if_placed), "on the right, in the card column")
-	assert_true(column.is_ancestor_of(page.find_child("ThreatIntel", true, false)), "under THREAT INTEL")
+	assert_false(if_placed.visible, "the clutter rule: no IF PLACED until a card is pointed at")
 	assert_null(page.find_child("DeploySteps", true, false), "RAID-01: no steps panel")
 	# Its lines are the rules' own preview: what the first defence would change on the target.
 	var target: StringName = hq.selected_site
@@ -215,6 +220,7 @@ func test_round_40_your_network_top_left_if_placed_on_the_right_and_its_preview_
 	card.mouse_entered.emit()
 	await _frames(1)
 	assert_eq(hq.if_placed_index, 1, "the hovered card's change")
+	assert_true(if_placed.visible, "IF PLACED shows while the card is pointed at")
 	var copy := c.duplicate_state()
 	CampaignRules.deploy_asset(copy, RunManager.config(), RunManager.lookup(), 1, target)
 	var then := CampaignRules.project_raid(copy, RunManager.corporation, RunManager.config(), RunManager.lookup(), RunManager.pending_raid())
@@ -245,6 +251,7 @@ func test_round_40_continue_waits_unseen_and_the_report_has_no_disc() -> void:
 	assert_null(hq._panel.find_child("RaidVerdict", true, false), "RAID-12: no result disc on the report")
 	var holds := hq._panel.find_child("CellHolds", true, false) as Control
 	if holds != null:
-		var table := hq._panel.find_child("WarTable", true, false) as Control
-		var t := table.get_global_rect()
-		assert_lt(holds.get_global_rect().get_center().x, t.get_center().x, "CELL HOLDS centre left")
+		# B3 (review Q7; supersedes RAID-12's centre left on the table): CELL HOLDS is on the
+		# after-action paper.
+		var paper := hq._panel.find_child("RaidReport", true, false) as Control
+		assert_true(paper.get_global_rect().has_point(holds.get_global_rect().get_center()), "CELL HOLDS on the after-action paper")
