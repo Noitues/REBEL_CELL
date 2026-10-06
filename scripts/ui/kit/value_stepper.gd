@@ -12,7 +12,7 @@ extends HBoxContainer
 ## The value's type step, its rim (px) and the rim's colour (§6.4 live numbers).
 const VALUE_STEP := UiTheme.HEADING
 const RIM_PX := 2
-const RIM_COLOR := Color("#06060A")
+const RIM_COLOR := Palette.LIVE_NUMBER_RIM
 ## The chips' word step.
 const CHIP_STEP := UiTheme.TITLE
 

@@ -475,7 +475,7 @@ func _draw() -> void:
 		draw_style_box(_plate(PLATE_SELECTED if chosen else PLATE_IDLE), Rect2(Vector2.ZERO, r.size / PLATE_SCALE))
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		if not chosen and (st == KitState.HOVER or st == KitState.FOCUS or st == KitState.PRESSED):
-			draw_rect(r, Color(KitState.edge_color(st, Palette.NET_CYAN), 0.6), false, 1.0)
+			draw_rect(r, Color(KitState.edge_color(st), 0.6), false, 1.0)
 		if locked:
 			_hatch(r)
 		var swr := swatch_rect(i, r)
@@ -532,5 +532,5 @@ func _draw_swatch(i: int, sw: Rect2, _st: StringName, chosen: bool, locked: bool
 	if icon == &"":
 		return
 	var r := ICON_R * Settings.text_scale
-	var col := Palette.GLYPH_INK if chosen else (Palette.DISABLED if locked else Palette.NET_CYAN)
+	var col := Palette.GLYPH_INK if chosen else (Palette.DISABLED if locked else PaletteSkins.chrome(Palette.NET_CYAN))
 	StatIcon.draw(self, Vector2(sw.get_center().x, sw.position.y + r), r, icon, col)

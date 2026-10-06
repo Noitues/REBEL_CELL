@@ -25,6 +25,8 @@ const CREST_SHARE := 0.78
 ## The portrait's rim (px) and the dim over a locked one.
 const RIM := 2.0
 const LOCKED_DIM := 0.6
+## A locked bust's grey (DISABLED lightened by this share, so the face still reads).
+const LOCKED_LIGHTEN := 0.3
 ## The concept's crests (round 15 / 18 recipes, `tools/art/bake_wheel_glyphs.py`): white
 ## masks tinted at draw time.
 const CREST_DIR := "res://assets/wheel/glyphs_interim/crest_%s.png"
@@ -92,7 +94,10 @@ func _draw_swatch(i: int, sw: Rect2, st: StringName, chosen: bool, locked: bool)
 		var tex := PortraitBust.texture(cls, 0, 0) as AtlasTexture
 		var inner := photo.grow(-RIM)
 		if tex != null:
-			draw_texture_rect_region(tex.atlas, inner, PortraitBust.square_region(tex.region), Color(1, 1, 1) if not locked else Color(Palette.DISABLED, 1.0).lightened(0.3))
+			if locked:
+				draw_texture_rect_region(tex.atlas, inner, PortraitBust.square_region(tex.region), Palette.DISABLED.lightened(LOCKED_LIGHTEN))
+			else:
+				draw_texture_rect_region(tex.atlas, inner, PortraitBust.square_region(tex.region))
 		else:
 			PortraitArt.draw(self, inner, PortraitArt.operative_subject(cls))
 		if locked:

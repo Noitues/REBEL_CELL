@@ -1272,10 +1272,10 @@ func show_start() -> void:
 	var plan_head := func(words: String, icon: StringName) -> HBoxContainer:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", UiTheme.SP_S)
-		var mark := IconMark.standalone(icon, UiTheme.font_px(UiTheme.LABEL), Palette.NET_CYAN)
+		var mark := IconMark.standalone(icon, UiTheme.font_px(UiTheme.LABEL), PaletteSkins.chrome(Palette.NET_CYAN))
 		mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(mark)
-		row.add_child(Chrome.caps_label(words.to_upper(), UiTheme.LABEL, Palette.NET_CYAN))
+		row.add_child(Chrome.caps_label(words.to_upper(), UiTheme.LABEL, PaletteSkins.chrome(Palette.NET_CYAN)))
 		return row
 	# What unlocks a locked choice: the Black Market's price ("UNLOCKS · 80"), or the ICE every
 	# corporation must be cleared at (REBEL_CELL's free unlock); the tooltip says where to buy.
@@ -1418,7 +1418,7 @@ func show_start() -> void:
 	var seed_row := HBoxContainer.new()
 	seed_row.name = "SeedRow"
 	seed_row.add_theme_constant_override("separation", UiTheme.SP_S)
-	var seed_label := Chrome.caps_label(tr("City seed (same seed, same city):").to_upper(), UiTheme.LABEL, Palette.NET_CYAN)
+	var seed_label := Chrome.caps_label(tr("City seed (same seed, same city):").to_upper(), UiTheme.LABEL, PaletteSkins.chrome(Palette.NET_CYAN))
 	seed_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	seed_label.mouse_filter = Control.MOUSE_FILTER_PASS
 	seed_label.tooltip_text = UiTip.fold(tr("The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city."))
