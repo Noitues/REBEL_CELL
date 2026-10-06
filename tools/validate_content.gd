@@ -14,6 +14,7 @@ func _init() -> void:
 	errors.append_array(_motion_errors(registry.motion))
 	errors.append_array(_hq_compound_errors(registry))
 	errors.append_array(LandmarkAssetChecks.errors(_corporation_ids(registry)))
+	errors.append_array(RoofPropAssetChecks.errors())  # ART-5 5e
 	for e in errors:
 		printerr("  - ", e)
 	print("Content: %d resources, %d ids, config %s, motion %s." % [

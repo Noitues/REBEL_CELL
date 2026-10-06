@@ -6,17 +6,20 @@ extends Node
 ## view's layers (traffic, sky, props, heat; traffic, sky and heat also in the ground-only
 ## pass under see-through buildings), then wires the view's signals down to them: the zoom
 ## (camera_changed: car LOD, sprite sizes, spill focus), the band (band_changed: GRID / RAID
-## / NETRUN), the ambient scale (ambient_changed: 0 pauses every layer). Up from the layers:
-## the light spill to `CityView3D.set_spill`, and the day / night look onto the view's city
-## materials (the view has no day-look call yet: DECISIONS asks 5a for one). A view: no
-## game state changes. Add it as a child of the CityView3D.
+## / NETRUN), the host's pause (host_pause_changed: covered or unfocused pauses every layer;
+## ART-5 5e: not the view's ambient scale, which is 0 under reduce motion while the street
+## traffic keeps moving at 40 %, bible 5.4). Up from the layers: the light spill to
+## `CityView3D.set_spill`, and the day / night look through the view's day-look call
+## (`CityView3D.set_night_share`, landmarks included). A view: no game state changes. Add it
+## as a child of the CityView3D.
 
 var view: CityView3D
 var layers: CityMotionLayers
 var motion_cfg: CityMotionConfigData
 ## The Cell's district centre (lots), where suspicion gathers.
 var home_lot: Vector2 = Vector2.INF
-var _night: Dictionary = {}
+## ART-5 5e: the Heat look asked before the layers were built (band, hardened nodes), or [].
+var _heat: Array = []
 
 
 ## A CityViewMotion for `p_view` with config `cfg` (the shipped one by default).
@@ -35,7 +38,8 @@ func _ready() -> void:
 	if motion_cfg == null:
 		motion_cfg = CityMotionConfigData.shipped()
 	if view.model != null and view.camera != null:
-		_attach()
+		# Deferred: the host sets the home lot and the Heat look in the same frame.
+		_attach.call_deferred()
 	else:
 		view.model_ready.connect(_attach, CONNECT_ONE_SHOT)
 
@@ -44,9 +48,6 @@ func _attach() -> void:
 	var site := CityMotionSite.from_model(view.model, view.cfg, home_lot)
 	layers = CityMotionLayers.new()
 	view.add_to_layer(&"fx", layers)
-	var c := view.cfg
-	_night = {"ramp": c.ramp.duplicate(), "sky": c.sky, "window_gain": c.window_gain, "neon_gain": c.neon_gain,
-		"haze": c.haze, "grade": c.grade}
 	layers.night_share_changed.connect(_on_night_share)
 	layers.spill_changed.connect(_on_spill)
 	layers.setup(motion_cfg, site, view.city_seed)
@@ -56,12 +57,22 @@ func _attach() -> void:
 	layers.set_ground_pass_layer(CityView3D.GROUND_LAYER)
 	view.camera_changed.connect(_on_camera)
 	view.band_changed.connect(_on_band)
-	view.ambient_changed.connect(layers.set_host_ambient)
-	layers.set_host_ambient(view.ambient_scale)
+	view.host_pause_changed.connect(_on_host_pause)
+	_on_host_pause(view.host_paused())
 	if view.band >= 0:
 		_on_band(view.band)
 	if view.iso != null:
 		_on_camera(view.iso)
+	if not _heat.is_empty():
+		layers.set_heat(int(_heat[0]), _heat[1])
+
+
+## ART-5 5e: the Grid's Heat look (CityHeatRig.Band and the hardened nodes, world points);
+## kept until the layers are built.
+func set_heat(band: int, hardened: Array[Vector3]) -> void:
+	_heat = [band, hardened]
+	if layers != null:
+		layers.set_heat(band, hardened)
 
 
 func _on_camera(cam: CityIsoCamera) -> void:
@@ -83,33 +94,17 @@ func _on_spill(sources: Array) -> void:
 	view.set_spill(sources)
 
 
+## ART-5 5e: the host's pause to the layers (0 paused, 1 live; their own reduce rules apply).
+func _on_host_pause(paused: bool) -> void:
+	layers.set_host_ambient(0.0 if paused else 1.0)
+
+
+## ART-5 5e: the motion config's day look as CityView3D.set_night_share takes it.
+static func day_look(mcfg: CityMotionConfigData) -> Dictionary:
+	return {"ramp": mcfg.day_ramp.duplicate(), "sky": mcfg.day_sky, "window_gain": mcfg.day_window_gain,
+		"neon_gain": mcfg.day_neon_gain, "haze": mcfg.day_haze, "grade": mcfg.day_grade}
+
+
 ## The night look lerped toward the config's day look by night share `n` (1 night, 0 day).
 func _on_night_share(n: float) -> void:
-	var ramp: Array = _night["ramp"]
-	var names := [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]
-	var mats: Array[ShaderMaterial] = []
-	for key in ["_building_mat", "_ground_mat", "_lane_mat"]:
-		var m: ShaderMaterial = view.get(key)
-		if m != null:
-			mats.append(m)
-	for k in 3:
-		var col := (motion_cfg.day_ramp[k] as Color).lerp(ramp[k], n)
-		for m in mats:
-			m.set_shader_parameter(names[k], Vector3(col.r, col.g, col.b))
-	var b: ShaderMaterial = view.get("_building_mat")
-	if b != null:
-		b.set_shader_parameter(&"window_gain", lerpf(motion_cfg.day_window_gain, float(_night["window_gain"]), n))
-		b.set_shader_parameter(&"neon_gain", lerpf(motion_cfg.day_neon_gain, float(_night["neon_gain"]), n))
-	var post: ShaderMaterial = view.get("_post")
-	if post != null:
-		var hz := motion_cfg.day_haze.lerp(_night["haze"], n)
-		post.set_shader_parameter(&"haze_color", Vector3(hz.r, hz.g, hz.b))
-		var gr := motion_cfg.day_grade.lerp(_night["grade"], n)
-		post.set_shader_parameter(&"grade", Vector3(gr.r, gr.g, gr.b))
-		# Bible 4.2: no fog at raid zoom by day; rain is night rain only.
-		var night := n >= 0.5
-		post.set_shader_parameter(&"rain_on", bool(view.quality.get("rain", true)) and night)
-		post.set_shader_parameter(&"fog_on", bool(view.quality.get("fog", true)) and (night or layers.view == CityMotionLayers.View.GRID))
-	for ch in view.get_children():
-		if ch is WorldEnvironment:
-			(ch as WorldEnvironment).environment.background_color = motion_cfg.day_sky.lerp(_night["sky"], n)
+	view.set_night_share(n, day_look(motion_cfg))
