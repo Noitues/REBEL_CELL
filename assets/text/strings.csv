@@ -23,7 +23,6 @@ Stationed on %s."
  · [DEAD], · [DEAD]
 %d   (%d operatives lost),%d   (%d operatives lost)
 "%d   (%d repelled, %d lost)","%d   (%d repelled, %d lost)"
-%d / %d extracted,%d / %d extracted
 %d / %d,%d / %d
 %d / %d INTACT,%d / %d INTACT
 %d / %d extracted,%d / %d extracted
@@ -46,17 +45,11 @@ Stationed on %s."
 %d TAKEN,%d TAKEN
 %d absorbed by block and shield,%d absorbed by block and shield
 %d cards,%d cards
-%d destroyed,%d destroyed
 %d fps,%d fps
 %d held,%d held
 %d netruns,%d netruns
-%d reached home,%d reached home
 %d still at large.,%d still at large.
 "%d-%d Cycles, a card","%d-%d Cycles, a card"
-%d fps,%d fps
-%d held,%d held
-%d netruns,%d netruns
-%d still at large.,%d still at large.
 "%s
 %d CYCLES","%s
 %d CYCLES"
@@ -1056,9 +1049,9 @@ ICE (0-%d):,ICE (0-%d):
 ICE 0: the baseline rules.,ICE 0: the baseline rules.
 ICE Lock on %s holds %s for %d step(s).,ICE Lock on %s holds %s for %d step(s).
 IF CLEARED:,IF CLEARED:
-IF STATIONED (RAIDS):,IF STATIONED (RAIDS):
 IF IT RAN NOW,IF IT RAN NOW
 IF PLACED,IF PLACED
+IF STATIONED (RAIDS):,IF STATIONED (RAIDS):
 "IF THE RAID
 RUNS NOW:","IF THE RAID
 RUNS NOW:"
@@ -1639,8 +1632,8 @@ Out of reach from here.,Out of reach from here.
 "
 PARASITE,PARASITE
 PASSED,PASSED
-"PATROL: loot, Heat and Rank, no objective.","PATROL: loot, Heat and Rank, no objective."
 PATIENT RECOVERY  //  COLLECTIONS  //  COMPLIANCE,PATIENT RECOVERY  //  COLLECTIONS  //  COMPLIANCE
+"PATROL: loot, Heat and Rank, no objective.","PATROL: loot, Heat and Rank, no objective."
 PAUSED,PAUSED
 PAYOUT,PAYOUT
 PERFECT,PERFECT
@@ -1963,9 +1956,6 @@ STATUS: %s,STATUS: %s
 STEP -- / %d,STEP -- / %d
 STOPPED,STOPPED
 STOPPED %d/%d,STOPPED %d/%d
-STRENGTH %s%%,STRENGTH %s%%
-SUBJECT,SUBJECT
-SUBJECT: REBEL_CELL,SUBJECT: REBEL_CELL
 STRENGTH,STRENGTH
 STRENGTH %s%%,STRENGTH %s%%
 SUBJECT,SUBJECT
@@ -2657,8 +2647,8 @@ THE WHEEL,THE WHEEL
 THEY LOST %d,THEY LOST %d
 THIS RUN,THIS RUN
 THIS TURN,THIS TURN
-TIER,TIER
 THREAT INTEL // SCAN,THREAT INTEL // SCAN
+TIER,TIER
 TLE OC-55 / DECAY,TLE OC-55 / DECAY
 TODAY'S RUN,TODAY'S RUN
 TRAFFIC CONTROL,TRAFFIC CONTROL
@@ -3040,7 +3030,6 @@ YOU GET %s,YOU GET %s
 YOUR %s,YOUR %s
 YOUR CELL HAS BEEN PROCESSED,YOUR CELL HAS BEEN PROCESSED
 YOUR CELL HAS BEEN TREATED,YOUR CELL HAS BEEN TREATED
-YOUR NODES // pick the target,YOUR NODES // pick the target
 YOUR NETWORK,YOUR NETWORK
 YOUR WHEEL,YOUR WHEEL
 You are here.,You are here.
@@ -3094,8 +3083,6 @@ heat,heat
 heat obj.,heat obj.
 heat reached %d. why weren't we told?,heat reached %d. why weren't we told?
 held %d   down %d   taken %d,held %d   down %d   taken %d
-heat reached %d. why weren't we told?,heat reached %d. why weren't we told?
-held %d   down %d   taken %d,held %d   down %d   taken %d
 highest-value node,highest-value node
 home server  %d / %d,home server  %d / %d
 hunted,hunted
@@ -3103,7 +3090,6 @@ in a run,in a run
 install,install
 it costs you %s,it costs you %s
 lime=you red=target box=view,lime=you red=target box=view
-link,link
 lo-fi loop: HQ,lo-fi loop: HQ
 locked,locked
 locked link,locked link
@@ -3171,7 +3157,6 @@ withdraw,withdraw
 won,won
 x0.5,x0.5
 x1.5,x1.5
-you are here,you are here
 you were always a copy. the original sends its regards.,you were always a copy. the original sends its regards.
 your network holds every threat,your network holds every threat
 yours,yours
