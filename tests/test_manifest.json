@@ -233,6 +233,10 @@
 			"seconds": 0.1,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_d24_paper_staging.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_dialogue.gd": {
 			"seconds": 0.0,
 			"tier": "fast"

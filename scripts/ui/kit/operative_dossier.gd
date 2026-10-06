@@ -30,9 +30,9 @@ const STAMP_RULE := 2.0
 const STAMP_ALPHA := 0.88
 ## The share of the screen's width the full file may take before it folds to the compact one.
 const MAX_WIDTH_SHARE := 0.24
-## The paper's own tilt (rad) and its drop shadow (px).
-const PAPER_TILT := 0.0
-const SHADOW_OFFSET := Vector2(3, 4)
+## The clip's x on the sheet (px at 1.0). The sheet's tilt, clip and contact shadow are
+## `PaperStaging`'s (D24).
+const CLIP_X := 30.0
 ## The words (keys).
 const SUBTITLE := "PERSON OF INTEREST // FILE" # TR
 const SECURITY := "%s SECURITY" # TR
@@ -64,11 +64,20 @@ var force_compact: bool = false:
 var _rows: Array = []
 ## 1B's corp paper sheet under the ink (letterhead, stock, shadow).
 var paper: CorpPaperPanel
+var _shadow: Control
 
 
 func _init() -> void:
 	name = "OperativeDossier"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# D24: the 6 px contact shadow, behind the sheet (it turns with the dossier's tilt).
+	_shadow = Control.new()
+	_shadow.name = "ContactShadow"
+	_shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_shadow.show_behind_parent = true
+	_shadow.draw.connect(func() -> void: PaperStaging.draw_shadow(_shadow, size, _s()))
+	add_child(_shadow)
+	_shadow.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	paper = CorpPaperPanel.new()
 	paper.name = "Paper"
 	paper.stamp = ""
@@ -79,7 +88,17 @@ func _init() -> void:
 	# The words are translated where the file is built; drawn as given.
 	auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	Settings.changed.connect(_relayout)
-	resized.connect(queue_redraw)
+	resized.connect(func() -> void:
+		# D24: the sheet's slight tilt about its centre.
+		pivot_offset = size * 0.5
+		rotation_degrees = tilt()
+		_shadow.queue_redraw()
+		queue_redraw())
+
+
+## The sheet's tilt (degrees): PaperStaging's, seeded from the operative's id (D24).
+func tilt() -> float:
+	return PaperStaging.tilt_degrees("dossier|%s" % String(data.get("operative_id", "")))
 
 
 ## Shows the file for `p_data` (see `data`).
@@ -106,6 +125,8 @@ func _relayout() -> void:
 	var vw := get_viewport_rect().size.x if is_inside_tree() else 1280.0
 	compact = force_compact or file_width() > vw * MAX_WIDTH_SHARE
 	_rows = _build_rows()
+	rotation_degrees = tilt()
+	paper.top_pad = PaperStaging.CLIP_BITE * _s()
 	var w := file_width() if not compact else minf(file_width(), vw * MAX_WIDTH_SHARE)
 	custom_minimum_size = Vector2(w, _height(w))
 	update_minimum_size()
@@ -162,7 +183,7 @@ func _height(w: float) -> float:
 	var s := _s()
 	var fs := roundi(FIELD_FONT * s)
 	var lh := _line_h(fs)
-	var h := HEAD_H + RouteInk.paper_font().get_height(maxi(roundi(SUB_FONT * s), 1)) * maxi(1, sub_lines(w).size()) + MARGIN * s
+	var h := HEAD_H + PaperStaging.CLIP_BITE * s + RouteInk.paper_font().get_height(maxi(roundi(SUB_FONT * s), 1)) * maxi(1, sub_lines(w).size()) + MARGIN * s
 	h += maxf(MUG * s if not compact else 0.0, lh * _rows.size())
 	if not compact:
 		h += MARGIN * s + lh * 6.0  # wheel, hub core, deck (label + value each)
@@ -179,8 +200,8 @@ func _draw() -> void:
 	var s := _s()
 	var w := size.x
 	var h := size.y
-	draw_set_transform(Vector2.ZERO, PAPER_TILT)
-	var head_h := HEAD_H
+	draw_set_transform(Vector2.ZERO, 0.0)
+	var head_h := HEAD_H + PaperStaging.CLIP_BITE * s
 	var pf := RouteInk.paper_font()
 	var sfs := maxi(roundi(SUB_FONT * s), 1)
 	var x := MARGIN * s
@@ -240,6 +261,7 @@ func _draw() -> void:
 				draw_string(pf, Vector2(x + MARGIN * s * 0.5, sy), String(line), HORIZONTAL_ALIGNMENT_LEFT, box.size.x - MARGIN * s, fs, RouteInk.PAPER_INK)
 			y = box.end.y + MARGIN * s * 0.5
 	draw_set_transform(Vector2.ZERO, 0.0)
+	PaperStaging.draw_clip(self, CLIP_X * s, s)
 
 
 ## A red rubber stamp of `text` with its right edge at `right` (its centre line at right.y),
@@ -252,8 +274,8 @@ func _stamp(right: Vector2, text: String, tilt: float, ruled: bool) -> void:
 	var pad := 4.0 * s
 	var box := Rect2(Vector2(-tw - pad * 2.0, -f.get_height(fs) * 0.5 - pad * 0.5), Vector2(tw + pad * 2.0, f.get_height(fs) + pad))
 	var col := Color(RouteInk.PAPER_STAMP, STAMP_ALPHA)
-	draw_set_transform(right.rotated(PAPER_TILT), PAPER_TILT + tilt)
+	draw_set_transform(right, tilt)
 	if ruled:
 		draw_rect(box, col, false, STAMP_RULE * s)
 	draw_string(f, Vector2(box.position.x + pad, box.position.y + pad * 0.5 + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
-	draw_set_transform(Vector2.ZERO, PAPER_TILT)
+	draw_set_transform(Vector2.ZERO, 0.0)

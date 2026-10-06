@@ -11388,3 +11388,19 @@ the arrow keeps off the bar. Test: `test_b3_raid_map_route::test_route_frames_th
 - **Rule:** every sticker on a page stays at least `Fx.STICKER_SAFE_MARGIN` (24 px) x text scale inside the screen's edges (`Fx.sticker_margin`, `Fx.sticker_safe_rect`, `Fx.stickers_outside_safe`, next to the SAVED stamp's sticker clearance). The top bar's own title sticker is the bar's chrome (its band is the screen's top edge by design) and is not a page sticker.
 - **Fixed:** the netrun loot, event, Mainframe and run-end pages sit in the safe margin at the sides and foot (FIGHT WON touched the left edge, CONTINUE / SKIP the right edge and foot, the event's TERMINAL sticker the right edge); at big text the loot's SKIP and CONTINUE share a row in the side column (a Firmware drop's column ran past the foot at 2.0); the title's sub-page title stickers keep the margin past the page margin at 2.0; START DEFENSE (raid setup) keeps it from the right edge, its Speed / Skip strip under it.
 - **Test:** `tests/unit/test_b5_sticker_safe_margin.gd` (full tier): loot (card and Firmware), event, title, campaign slots, pause (over the HQ) and raid setup at text 1.0 / 1.6 / 2.0.
+
+### D24 — paper tilt, clip, contact shadow
+Integration review D24 (approved follow-up): corp papers sit on the table like B5's case files. `PaperStaging`
+(`scripts/ui/kit/paper_staging.gd`) holds the shared look: a **tilt of 1 to 2 degrees, either way**, drawn from a seeded
+stream (`RngStreams.make_stream(hash(id), &"paper")`, so the same id always leans the same way, no global randomness);
+a **6 px contact shadow** (three soft layers under the sheet, turning with it); and the **steel paper clip**, the art
+pass's own `ui19.dossier` drawing moved out of `RaidPaper._clip` unchanged so `OperativeDossier` shares it (x 30 px at
+1.0; it rises `CLIP_RISE` 10 px, inside the dossier's 10 px map margin). Ids: `RaidPaper` seeds from corporation + document
+number (else title); `OperativeDossier` from `dossier|<operative id>`. Both rotate about their centre in `resized`, so
+they follow the layout at every scale (text 1.0 / 1.6 / 2.0 checked: the tilt's reach stays inside RaidPaper's 14 px
+side margin; the dossier is positioned by the scene and its file leaves the map room alone). No straighten on focus:
+neither paper is interactive (B5's folders are). RaidPaper's tilt is set in its own resize, independent of
+`HudBar.set_screen` (B4's page title). Motion entries unchanged (static dressing). Raid setup column layout and THREAT
+INTEL untouched. Removed unused constants: `RaidPaper.CLIP_W/CLIP_H/PAGE_TILT`, `OperativeDossier.PAPER_TILT/SHADOW_OFFSET`.
+Test: `test_d24_paper_staging`. Sheet `docs/art_review/PARITY/fixes/D24.jpg` (round 21 raid_report concept | before |
+after; `D24_route.jpg` the route dossier before | after; `D24_crop.jpg` a paper crop). Ids: D24.

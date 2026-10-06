@@ -33,6 +33,11 @@ const SHADOW_OFFSET := Vector2(3, 5)
 		if stamp_slot != null:
 			stamp_slot.queue_redraw()
 @export var seed: int = 3
+## D24: room above the letterhead (px) for a paper clip's bite; 0 for papers without a clip.
+var top_pad: float = 0.0:
+	set(v):
+		top_pad = v
+		queue_redraw()
 
 var content: VBoxContainer = null
 var stamp_slot: Control = null
@@ -102,8 +107,8 @@ func _layout() -> void:
 	_mat.set_shader_parameter(&"stock", Palette.PAPER)
 	_mat.set_shader_parameter(&"fibre", Palette.KRAFT_FIBRE)
 	_mat.set_shader_parameter(&"seed", float(seed))
-	content.position = Vector2(UiTheme.SP_L, LETTERHEAD_H + UiTheme.SP_M)
-	content.size = Vector2(size.x - UiTheme.SP_L * 2.0, maxf(size.y - LETTERHEAD_H - UiTheme.SP_L * 2.0, 0.0))
+	content.position = Vector2(UiTheme.SP_L, top_pad + LETTERHEAD_H + UiTheme.SP_M)
+	content.size = Vector2(size.x - UiTheme.SP_L * 2.0, maxf(size.y - top_pad - LETTERHEAD_H - UiTheme.SP_L * 2.0, 0.0))
 	stamp_slot.size = STAMP_SLOT
 	stamp_slot.position = Vector2(size.x - STAMP_SLOT.x - UiTheme.SP_M, size.y - STAMP_SLOT.y - UiTheme.SP_M)
 	# Parity fix (overlap defects, RAID-11): a stamp wider than its slot (big text) stays on
@@ -133,8 +138,8 @@ func _draw() -> void:
 func _draw_letterhead(on: Control) -> void:
 	var font := Palette.body_medium()
 	var px := UiTheme.font_px(UiTheme.LABEL)
-	on.draw_string(font, Vector2(UiTheme.SP_L, LETTERHEAD_H - UiTheme.SP_M), corp_name, HORIZONTAL_ALIGNMENT_LEFT, -1, px, corp_color.darkened(0.35))
-	on.draw_rect(Rect2(UiTheme.SP_L, LETTERHEAD_H - RULE_PX - UiTheme.SP_XS, size.x - UiTheme.SP_L * 2.0, RULE_PX), corp_color.darkened(0.35))
+	on.draw_string(font, Vector2(UiTheme.SP_L, top_pad + LETTERHEAD_H - UiTheme.SP_M), corp_name, HORIZONTAL_ALIGNMENT_LEFT, -1, px, corp_color.darkened(0.35))
+	on.draw_rect(Rect2(UiTheme.SP_L, top_pad + LETTERHEAD_H - RULE_PX - UiTheme.SP_XS, size.x - UiTheme.SP_L * 2.0, RULE_PX), corp_color.darkened(0.35))
 
 
 ## Parity fix (overlap defects, RAID-02 / RAID-11): the bounding size (px) of the stamp for
