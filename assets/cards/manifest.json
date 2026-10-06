@@ -1,0 +1,138 @@
+{
+ "source_tag": "art-concepts-r43",
+ "source": "docs/concepts/round34_firmware_daemons/scripts/r31lib.py",
+ "function": "card_sticker(c, 210, 280) with ImageDraw.text and glyph split off",
+ "reference": "docs/art_reference/hud/round41_wheel_stack/combat_typical_v4.jpg (hand), docs/art_reference/cards_fx/round19_combat_fx/card_play_v2_storyboard.jpg",
+ "script": "tools/art/export_card_faces.py",
+ "scale": 2,
+ "image": [
+  504,
+  644
+ ],
+ "face_rect": [
+  42,
+  42,
+  420,
+  560
+ ],
+ "face_px": [
+  210,
+  280
+ ],
+ "layout_px": {
+  "cost_centre": [
+   31,
+   29
+  ],
+  "cost_r": 21,
+  "title_centre": [
+   127,
+   30
+  ],
+  "title_w": 126,
+  "title_px": 23,
+  "art_rect": [
+   14,
+   52,
+   182,
+   102
+  ],
+  "art_glyph": 0.74,
+  "band_rect": [
+   14,
+   154,
+   182,
+   24
+  ],
+  "band_px": 15,
+  "pic_at": [
+   22,
+   186
+  ],
+  "pic_px": 30,
+  "value_px": 34,
+  "text_top": 228,
+  "text_px": 13,
+  "text_line": 17,
+  "text_w": 170
+ },
+ "kind_colours": {
+  "WHEEL": [
+   255,
+   196,
+   40
+  ],
+  "HACK": [
+   255,
+   61,
+   168
+  ],
+  "SYSTEM": [
+   92,
+   225,
+   255
+  ]
+ },
+ "files": {
+  "face_wheel_common.png": {
+   "kind": "WHEEL",
+   "rarity": "common",
+   "holo_border": false
+  },
+  "face_wheel_uncommon.png": {
+   "kind": "WHEEL",
+   "rarity": "uncommon",
+   "holo_border": false
+  },
+  "face_wheel_rare.png": {
+   "kind": "WHEEL",
+   "rarity": "rare",
+   "holo_border": true
+  },
+  "face_wheel_boss.png": {
+   "kind": "WHEEL",
+   "rarity": "boss",
+   "holo_border": false
+  },
+  "face_hack_common.png": {
+   "kind": "HACK",
+   "rarity": "common",
+   "holo_border": false
+  },
+  "face_hack_uncommon.png": {
+   "kind": "HACK",
+   "rarity": "uncommon",
+   "holo_border": false
+  },
+  "face_hack_rare.png": {
+   "kind": "HACK",
+   "rarity": "rare",
+   "holo_border": true
+  },
+  "face_hack_boss.png": {
+   "kind": "HACK",
+   "rarity": "boss",
+   "holo_border": false
+  },
+  "face_system_common.png": {
+   "kind": "SYSTEM",
+   "rarity": "common",
+   "holo_border": false
+  },
+  "face_system_uncommon.png": {
+   "kind": "SYSTEM",
+   "rarity": "uncommon",
+   "holo_border": false
+  },
+  "face_system_rare.png": {
+   "kind": "SYSTEM",
+   "rarity": "rare",
+   "holo_border": true
+  },
+  "face_system_boss.png": {
+   "kind": "SYSTEM",
+   "rarity": "boss",
+   "holo_border": false
+  }
+ }
+}

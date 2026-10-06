@@ -144,6 +144,7 @@ static func pictos_of(card: CardData) -> Array[Dictionary]:
 	for e in card.effects:
 		if e == null:
 			continue
+		var before := out.size()
 		match e.type:
 			RC.EffectType.SPIN:
 				out.append({"kind": "spin", "amount": e.amount})
@@ -186,6 +187,8 @@ static func pictos_of(card: CardData) -> Array[Dictionary]:
 				if EFFECT_SLICE.has(e.type):
 					out.append({"kind": "slice", "type": EFFECT_SLICE[e.type], "amount": e.amount,
 						"status": e.status if e.type == RC.EffectType.APPLY_STATUS else RC.Status.NONE})
+		if out.size() > before:
+			out[-1]["effect"] = e.type
 	return out
 
 
@@ -193,11 +196,23 @@ static func pictos_of(card: CardData) -> Array[Dictionary]:
 func with_card(card: CardData) -> ZineCard:
 	pictos = pictos_of(card)
 	rare = card != null and card.rarity >= RC.Rarity.RARE
+	card_rarity = card.rarity if card != null else RC.Rarity.COMMON
+	return self
+
+
+## M14 asset parity: the card wears the art pass's own sticker face (CardFace: the round 31 C-C card
+## exported from its generator) with its live parts laid out where the generator puts them. The
+## combat hand opts in; the other card views keep the drawn sticker until their areas switch.
+func with_face_art() -> ZineCard:
+	face_art = true
 	return self
 
 
 ## ART-2 2C §3.18: a Rare (or Boss) card wears the holo border.
 var rare: bool = false
+## The card's rarity (RC.Rarity: the art face's pips and die-cut) and whether it draws the art face.
+var card_rarity: int = RC.Rarity.COMMON
+var face_art: bool = false
 ## ART-2 2C §3.18: the RAM there is falls short of the cost: the dot greys, a NEED tag.
 var short_ram: bool = false:
 	set(v):
@@ -230,6 +245,8 @@ func ghost_copy() -> ZineCard:
 	g.icon_kind = icon_kind
 	g.pictos = pictos
 	g.rare = rare
+	g.card_rarity = card_rarity
+	g.face_art = face_art
 	g.text_scale = text_scale
 	g.price = price
 	g.price_from = price_from
@@ -248,6 +265,8 @@ func _get_drag_data(_at_position: Vector2) -> Variant:
 	var ghost := ZineCard.new(card_title, cost, description, drag_index).scaled(text_scale)
 	ghost.pictos = pictos
 	ghost.rare = rare
+	ghost.card_rarity = card_rarity
+	ghost.face_art = face_art
 	ghost.variant = variant
 	ghost.size = ghost.custom_minimum_size
 	# ANIM-3: the ghost trails the cursor with a lag and a tilt (DragGhost).
@@ -396,6 +415,8 @@ func _draw() -> void:
 		draw_set_transform_matrix(Transform2D(draw_tilt, foot + draw_offset + Vector2(spread, -lift)) * Transform2D(0.0, Vector2(hover_scale, hover_scale), 0.0, Vector2.ZERO) * Transform2D(0.0, -foot))
 	if look != Look.STICKER:
 		_draw_tile_any()
+	elif face_art:
+		CardFace.draw(self)
 	else:
 		_draw_sticker()
 	_draw_price_tag()

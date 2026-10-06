@@ -2415,7 +2415,7 @@ func _card_pressed(index: int) -> void:
 ## A hand card sticker for `card` at hand index `i` and scale `s` (no signals: the hand
 ## connects its own; flights use the bare copy).
 func _make_card(card: CardData, i: int, s: float) -> ZineCard:
-	var c := ZineCard.new(TextDb.t(card, "display_name"), card.ram_cost, TextDb.t(card, "description"), i).scaled(s).with_card(card)
+	var c := ZineCard.new(TextDb.t(card, "display_name"), card.ram_cost, TextDb.t(card, "description"), i).scaled(s).with_card(card).with_face_art()
 	if Settings.pad_active:
 		c.hotkey = ""
 		c.pad_hint = Settings.key_text(&"ui_accept")
