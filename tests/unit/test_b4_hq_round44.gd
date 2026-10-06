@@ -116,14 +116,14 @@ func test_the_hq_idle_pins_only_the_bible_4_5_sites_and_shows_one_tag() -> void:
 	for n in ov.nodes:
 		if n["id"] == hidden_id:
 			assert_eq(String(n["label"]), "", "and goes")
-	# No disc on the ground for a hidden Site; a link only where one of its ends shows.
+	# No disc on the ground for a hidden Site; a link only where both its ends show.
 	var shown := {}
 	for n in ov.nodes:
 		if n["id"] == hq.selected_site or not n.has("marker") or bool(n["marker"].get("pinned", true)):
 			shown[n["id"]] = true
 	assert_eq(ov.network_data().nodes.size(), shown.size(), "the decal draws the shown Sites only")
 	for e in ov.edges:
-		assert_true(e.get("arrows", false) or shown.has(e["a"]) or shown.has(e["b"]), "%s-%s: a link of two hidden Sites hides" % [e["a"], e["b"]])
+		assert_true(e.get("arrows", false) or (shown.has(e["a"]) and shown.has(e["b"])), "%s-%s: a hidden Site's link hides" % [e["a"], e["b"]])
 	assert_eq(hq.wireframe.city.band_lock, CityLod.Band.GRID, "the City Grid look (solid buildings)")
 
 
@@ -218,7 +218,8 @@ func test_the_corp_news_is_a_holo_toast_at_the_foot_not_a_band() -> void:
 	assert_false(Dialogue.history.is_empty(), "the line still reaches Dialogue's history")
 	assert_gte(CorpNewsToast.hold_for("short"), 2.4 - 0.001, "it holds 2.4 s (bible 4.13)")
 	var page: Rect2 = hq._panel.get_global_rect()
-	assert_almost_eq(toast.get_global_rect().end.y, page.end.y, HqLayout.MARGIN + 1.0, "at the foot")
+	var band := (hq._panel.get_node("OnAir") as Control).size.y
+	assert_between(toast.get_global_rect().end.y, page.end.y - band - HqLayout.GAP - HqLayout.MARGIN - 1.0, page.end.y + 0.5, "at the foot (on the ON AIR line)")
 	assert_false(toast.get_global_rect().intersects(hq._panel.get_node("VerbSlot").get_global_rect().grow(-1.0)), "clear of the verb")
 
 

@@ -2280,7 +2280,7 @@ func hq_graph(projection: RaidResolver.RaidResult = null) -> Dictionary:
 ## DEFENCE hand's), only the Sites bible 4.5 pins show (Exploit and Heat objective, yours,
 ## cleared, seized, the boss; a selectable plain Site hides until hovered or selected), one
 ## name tag (the selected Site's; a hovered one gets its tag while pointed at,
-## `_hq_hover_tag`), and a link only where one of its ends shows (a hidden Site's other links
+## `_hq_hover_tag`), and a link only where both its ends show (round 44: a hidden Site's links
 ## hide with it); the threat routes stay. Pure on its input.
 func hq_idle_graph(g: Dictionary) -> Dictionary:
 	var shown := {}
@@ -2301,7 +2301,7 @@ func hq_idle_graph(g: Dictionary) -> Dictionary:
 		nodes.append(m)
 	var edges: Array[Dictionary] = []
 	for e: Dictionary in g["edges"]:
-		if e.get("arrows", false) or shown.has(e["a"]) or shown.has(e["b"]):
+		if e.get("arrows", false) or (shown.has(e["a"]) and shown.has(e["b"])):
 			edges.append(e)
 	return {"nodes": nodes, "edges": edges}
 
@@ -2614,8 +2614,10 @@ const HQ_KEY_SHARE := 0.6
 ## B4 (Q10): from this text scale the setup's instruction line steps aside into its title
 ## sticker's tooltip (the column holds the title, YOUR NETWORK and the work order).
 const INTRO_HIDE_SCALE := 1.6
-## B4: the narrowest foot gap (px at 1.0) the ON AIR line and the corp news toast lie in.
-const ON_AIR_MIN_W := 200.0
+## B4: the narrowest foot gap (px at 1.0) the ON AIR line lies in (its baked ON AIR block takes
+## about 170 of them; narrower, it runs along the whole foot) and the corp news toast lies in.
+const ON_AIR_MIN_W := 520.0
+const CORP_NEWS_MIN_W := 240.0
 
 
 ## B4: the foot's gap between the hand's last card and the verb slot (page px; its x span: the
@@ -2643,13 +2645,26 @@ func _place_corp_news() -> void:
 	var ticker := _panel.get_node_or_null("OnAir") as Control
 	if t == null or ticker == null:
 		return
-	var room := ticker.size.x
+	# In the foot's gap between the hand and the verb (round 44), its foot on the page's (the ON
+	# AIR line in that gap waits under it) or on the ON AIR band's top when the line runs along
+	# the whole foot; the whole foot's width when even the gap is too narrow.
+	var gap := _hq_foot_gap(_panel)
+	var in_gap := ticker.size.x < _panel.size.x - 1.0
+	var x := gap.position.x
+	var room := gap.size.x
+	if room < CORP_NEWS_MIN_W * HqLayout.object_scale(Settings.text_scale):
+		# A full hand (big text): over the hand's cards for its 2.4 s, between the tabs and the verb.
+		var tabs := _panel.get_node("HandTabs") as Control
+		var verb := _panel.get_node("VerbSlot") as Control
+		x = tabs.position.x + tabs.size.x + HqLayout.GAP
+		room = maxf(1.0, verb.position.x - HqLayout.GAP - x)
 	t.set_width(room)
-	t.position = Vector2(ticker.position.x, ticker.position.y + ticker.size.y - t.size.y)
+	var foot := ticker.position.y + ticker.size.y if in_gap else ticker.position.y - HqLayout.GAP
+	t.position = Vector2(x, foot - t.size.y)
 	if t.visible:
 		_settle_corp_news.call_deferred()  # a wrapped label reports its height a frame late
-	# While the news shows, the ON AIR line under it waits (one strip in the foot).
-	ticker.modulate.a = 0.0 if t.visible else 1.0
+	# While the news shows over it, the ON AIR line in the gap waits (one strip in the foot).
+	ticker.modulate.a = 0.0 if t.visible and in_gap else 1.0
 	if not t.visibility_changed.is_connected(_place_corp_news):
 		t.visibility_changed.connect(_place_corp_news)
 
