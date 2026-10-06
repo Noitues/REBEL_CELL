@@ -677,8 +677,8 @@ static var _art_cache: Dictionary = {}
 func _number(at: Vector2, r: float, number: int, a: float) -> void:
 	var k := _k()
 	var side := NUMBER_SIDE * Settings.text_scale * k
-	var c := at + Vector2(-r, -r) * 0.78
-	var box := Rect2(c - Vector2(side, side) * 0.5, Vector2(side, side))
+	var box := number_rect(at, r)
+	var c := box.get_center()
 	_c.draw_rect(box.grow(k), Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA * a))
 	_c.draw_rect(box, Color(RouteInk.RING_AVAILABLE, a))
 	var f := Palette.mono()
@@ -686,6 +686,24 @@ func _number(at: Vector2, r: float, number: int, a: float) -> void:
 	var text := str(number)
 	var y := c.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
 	_c.draw_string(f, Vector2(box.position.x, y), text, HORIZONTAL_ALIGNMENT_CENTER, side, fs, Color(RouteInk.KEYLINE, a))
+
+
+## The choice number's chip box (local px) on a sticker at `at` of reach `r`.
+func number_rect(at: Vector2, r: float) -> Rect2:
+	var side := NUMBER_SIDE * Settings.text_scale * _k()
+	var c := at + Vector2(-r, -r) * 0.78
+	return Rect2(c - Vector2(side, side) * 0.5, Vector2(side, side))
+
+
+## S-ROUTE c: a numbered choice's chip is a label obstacle (its keyline included), so no
+## label (the street marker's YOU ARE HERE first) covers the number.
+func label_marks_of(n: Dictionary) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if int(n.get("number", 0)) > 0 and shown(n) > 0.0:
+		var at := icon_pos(n)
+		if at.x != INF:
+			out.append(number_rect(at, icon_radius(n)).grow(_k()))
+	return out
 
 
 ## The TARGET's red grease-pencil circle (two rough passes, a dark under-shadow, wax
@@ -962,8 +980,8 @@ func _tag_box(l: Dictionary) -> void:
 	var k := _k()
 	var f := Palette.mono()
 	var col := RouteInk.ring_of(state_of(n)) if not n.is_empty() else Palette.NET_CYAN
-	if not n.is_empty() and n.get("here", false):
-		col = Palette.CELL_PINK
+	if (not n.is_empty() and n.get("here", false)) or l.get("key", "") == HERE_KEY:
+		col = Palette.CELL_PINK  # S-ROUTE c: the street marker's YOU ARE HERE too
 	var near := Vector2(clampf(l["at"].x, rect.position.x, rect.end.x), clampf(l["at"].y, rect.position.y, rect.end.y))
 	if near.distance_to(l["at"]) > float(l["r"]) + LABEL_GAP * k * 2.0:
 		_c.draw_line(l["at"] + (near - l["at"]).normalized() * float(l["r"]), near, Color(col, 0.7), k)

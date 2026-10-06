@@ -161,6 +161,9 @@ const PRIO_KEY := 1
 const PRIO_REST := 2
 ## The label of the "you are here" node when it has none of its own.
 const HERE_LABEL := "YOU ARE HERE" # TR
+## Parity ROUTE (S-ROUTE c): the street marker's "YOU ARE HERE" (before the route's first node)
+## is a focus label of the layout under this key, so other labels and stickers keep off it.
+const HERE_KEY := "#here"
 ## Unreachable route nodes are drawn at this opacity.
 const DIM_ALPHA := 0.3
 ## The "you are here" pin: size (screen px) and the ring around the icon (px beyond it).
@@ -584,6 +587,19 @@ func here_point() -> Vector2:
 	# ANIM-R6 C15: on the street itself (the nearest street lot to `here_at`: the marker stood
 	# on a block beside the road).
 	return grid_point_local(Vector2(here_lot()) + Vector2(0.5, 0.5))
+
+
+## Parity ROUTE (S-ROUTE c): true when the street marker shows with its words (no node is
+## "here", the marker has a spot on the map, no move is playing).
+func here_label_shown() -> bool:
+	return here_id() == &"" and here_at.x != INF and _travel.is_empty() and city != null and here_point().x != INF
+
+
+## Parity ROUTE (S-ROUTE c): extra rects (local px) node `n` covers that labels keep off
+## besides its icon and tier pips (a subclass's chips); none here.
+func label_marks_of(_n: Dictionary) -> Array[Rect2]:
+	var none: Array[Rect2] = []
+	return none
 
 
 ## ANIM-R3 B8: the street marker's box (screen px, for fitting the route); [] when the
@@ -1184,13 +1200,8 @@ func _draw_top() -> void:
 		if p.x != INF:
 			_entry_roads()
 			_here(p, ICON_RADIUS * _k())
-			var f := Palette.mono()
-			var fs := label_font_size()
-			var word := tr_word(HERE_LABEL)
-			var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-			var at := p + Vector2(-w * 0.5, (ICON_RADIUS + HERE_RING + LABEL_GAP) * _k() + f.get_ascent(fs))
-			_c.draw_rect(Rect2(at - Vector2(TAG_PAD * _k(), f.get_ascent(fs) + TAG_PAD * _k()), Vector2(w, f.get_height(fs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * _k()), Color(Palette.NIGHT_SKY, 0.86))
-			_c.draw_string(f, at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.CELL_PINK)
+			# Its words are the label layout's HERE_KEY focus label (S-ROUTE c), drawn with the
+			# labels, so other labels and stickers keep off them.
 	_c = self
 
 
@@ -2714,7 +2725,8 @@ func _layout_labels() -> Array[Dictionary]:
 	var sig := []
 	for n in nodes:
 		sig.append([n["id"], label_lines(n["id"]), _prio(n)])
-	var key := [Settings.text_scale, selected_id, hover_id, hash(sig), var_to_str(markers), label_area(), label_blocks(), ring_radius(), token_radius]
+	var key := [Settings.text_scale, selected_id, hover_id, hash(sig), var_to_str(markers), label_area(), label_blocks(), ring_radius(), token_radius,
+		here_point() if here_label_shown() else Vector2.INF]
 	if key == _labels_key:
 		return _labels_now
 	_labels_now = _place_labels()
@@ -2737,6 +2749,7 @@ func _place_labels() -> Array[Dictionary]:
 			icons.append({"id": n["id"], "at": icon_pos(n), "r": icon_radius(n)})
 			if tier_of(n) > 0:
 				marks.append(tier_pips_rect(n))
+			marks.append_array(label_marks_of(n))  # S-ROUTE c: a subclass's chips (the route's number chips)
 			if is_boss(n) and marker_shown(n):
 				marks.append_array(boss_rects(n))  # parity fix GRID-03: the chip and the TARGET pencil
 			# ANIM-R5 P8: a raid's threat tokens (RaidFxLayer: much bigger than the map's
@@ -2752,6 +2765,14 @@ func _place_labels() -> Array[Dictionary]:
 	var ring_c := ring_centre()
 	var ring_r := ring_radius()
 	var todo: Array[Dictionary] = []
+	# Parity ROUTE (S-ROUTE c): the street marker (its pin and ring) is an obstacle, and its
+	# "YOU ARE HERE" a focus label placed first (its key sorts before every node id).
+	if here_label_shown():
+		var hp := here_point()
+		var hr := (ICON_RADIUS + HERE_RING + HERE_PIN * 2.0) * k
+		icons.append({"id": &"", "at": hp, "r": hr})
+		todo.append({"key": HERE_KEY, "id": &"", "lines": PackedStringArray([tr_word(HERE_LABEL)]), "col": Palette.CELL_PINK,
+			"prio": PRIO_FOCUS, "at": hp, "r": hr})
 	for n in nodes:
 		if _roof(n["id"]).is_empty():
 			continue
@@ -2815,7 +2836,7 @@ func _place_labels() -> Array[Dictionary]:
 					if not tight.has(v):
 						tight.append(v)
 				for may_cover in [false, true]:
-					if may_cover and not (bool(_node_dict(t["id"]).get("here", false)) or String(t["key"]).ends_with("#threats")):
+					if may_cover and not (bool(_node_dict(t["id"]).get("here", false)) or String(t["key"]).ends_with("#threats") or t["key"] == HERE_KEY):
 						break
 					for lines: PackedStringArray in tight:
 						box = _label_box(lines, f, fs, pad, line_h)
@@ -3102,7 +3123,9 @@ func _tag_box(l: Dictionary) -> void:
 	var y := rect.position.y + pad + f.get_ascent(fs)
 	for line in l["lines"]:
 		# ANIM-R4 H11b: a result line "50 → 40 HOLDS" draws its arrow from the fallback face.
-		_c.draw_string(Palette.mono_for(line), Vector2(rect.position.x + pad, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER)
+		# The street marker's words stay the Cell's pink (S-ROUTE c).
+		_c.draw_string(Palette.mono_for(line), Vector2(rect.position.x + pad, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
+			Palette.CELL_PINK if l.get("key", "") == HERE_KEY else Palette.PAPER)
 		y += f.get_height(fs)
 
 
