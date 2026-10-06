@@ -55,6 +55,9 @@ const BARS_HEIGHT_SHARE := 0.09
 const DIM_SHARE := 0.7
 ## The stamps' tilt (degrees).
 const STAMP_TILT := -8.0
+## B1b: the flatlined X's inset (share of the feed's height) and its wax seed.
+const X_INSET := 0.05
+const X_SEED := 43
 
 var class_id: StringName = &""
 var operative_id: StringName = &""
@@ -166,11 +169,6 @@ func accent() -> Color:
 ## DISPATCH's red (REBEL_CELL red, ART_BIBLE §1.2 "red DISPATCH").
 static func dispatch_red() -> Color:
 	return Palette.CORP_REBEL_CELL
-
-
-## The grease pencil's red for the flatlined X (ART_BIBLE §1.2: threat / loss).
-static func pencil_red() -> Color:
-	return Palette.PENCIL_THREAT
 
 
 ## True when the feed shows a bust (a class with a bust set, not DISPATCH).
@@ -440,11 +438,9 @@ func _draw_dead(c: Control, s: Vector2, a: float) -> void:
 		var band := Rect2(0, s.y * 0.43, s.x, big * 1.5)
 		c.draw_rect(band, Color(Palette.INK, 0.85 * a))
 		c.draw_string(Palette.display(), Vector2(0, band.position.y + big * 1.15), tr("NO SIGNAL"), HORIZONTAL_ALIGNMENT_CENTER, s.x, big, Color(Palette.TEXT_HI, a))
-	var w := maxf(2.0, s.y * 0.022)
-	var m := s.y * 0.05
-	var red := Color(pencil_red(), 0.96 * a)
-	c.draw_line(Vector2(m, m), s - Vector2(m, m), red, w, true)
-	c.draw_line(Vector2(s.x - m, m), Vector2(m, s.y - m), red, w, true)
+	# B1b: the red pencil X is the kit's wax, written on over the feed (never faded with it).
+	PencilSet.show_on(c, PencilSet.cross_strokes(Rect2(Vector2.ZERO, s), s.y * X_INSET) if a > 0.0 else [] as Array[PackedVector2Array],
+		GreasePencilMark.Ink.THREAT, X_SEED)
 	if big >= roundi(WORD_FLOOR * Settings.text_scale):
 		_draw_stamp(c, Vector2(s.x * 0.48, s.y * 0.84), tr("FLATLINED"), Palette.HARM, a * 0.8)
 

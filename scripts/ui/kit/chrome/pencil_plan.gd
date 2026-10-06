@@ -5,24 +5,21 @@ extends Control
 ## is the concept's own (round 33 title.py `static_ui`: the numbers 1. 2. 3. and the plan
 ## bracket in `ui31.Pencil`, baked by tools/art/bake_menus_r33.py into
 ## `assets/ui/menus/pencil/plan.png`); the verb rows keep its 112 px board pitch
-## (`row_pitch`) so each number sits on its row. `wax_text` / `wax_line` remain for pencil
-## words the concept never drew (the HQ's new-campaign motto). View only.
+## (`row_pitch`) so each number sits on its row. B1b (integration review D3 / D25): the art is
+## drawn through the kit's one wax material (a GreasePencilArt child), so it writes on when the
+## title shows instead of appearing whole. View only.
 
 const ART := "res://assets/ui/menus/pencil/plan.png"
 const META := "res://assets/ui/menus/pencil/meta.json"
 ## The concept board (1920 wide) to the game's 1280.
-const BOARD_TO_GAME := 2.0 / 3.0
-## Wax alpha and the under-shadow offset (px) (§1.2: opaque wax 0.96, a dark under-shadow).
-const WAX_ALPHA := 0.96
-const SHADOW := Vector2(2, 2)
-## Stroke width (px).
-const STROKE := 4.0
+const BOARD_TO_GAME := GreasePencilMark.BOARD_TO_CANVAS
 
 static var _meta: Dictionary = {}
 
 ## The column whose rows the numbers stand beside (kept for the layout's reference).
 var rows: Control = null
 var _tex: Texture2D = null
+var _art: GreasePencilArt = null
 
 
 static func meta() -> Dictionary:
@@ -51,31 +48,21 @@ func _init(p_rows: Control = null) -> void:
 	auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_tex = load(ART) as Texture2D
 	custom_minimum_size = Vector2(_tex.get_size().x * art_scale(), 0.0) if _tex != null else Vector2.ZERO
+	if _tex != null:
+		_art = GreasePencilArt.new(_tex, _tex.get_size() * art_scale())
+		_art.name = "Art"
+		add_child(_art)
+		_place()
 
 
-## Draws `text` as wax at `at` (baseline) with its under-shadow (pencil words with no concept
-## art).
-static func wax_text(ci: CanvasItem, at: Vector2, text: String, px: int, color: Color = Palette.PENCIL_PLAN) -> void:
-	var f := Chrome.pencil_font()
-	ci.draw_string(f, at + SHADOW, text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.PENCIL_SHADOW)
-	ci.draw_string(f, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(color, WAX_ALPHA))
+## The plan's pencil (tests: the kit's material).
+func art() -> GreasePencilArt:
+	return _art
 
 
-## Draws a wax stroke along `pts` with its under-shadow.
-static func wax_line(ci: CanvasItem, pts: PackedVector2Array, width: float = STROKE, color: Color = Palette.PENCIL_PLAN) -> void:
-	var shadow := PackedVector2Array()
-	for p in pts:
-		shadow.append(p + SHADOW)
-	ci.draw_polyline(shadow, Palette.PENCIL_SHADOW, width, true)
-	ci.draw_polyline(pts, Color(color, WAX_ALPHA), width, true)
-
-
-func _draw() -> void:
-	if _tex == null:
-		return
+func _place() -> void:
 	# The plan art's first number sits on the first row's centre (the concept's row_y[0]).
 	var box: Array = meta().get("plan_box", [0, 300, 0, 0])
 	var row_y: Array = meta().get("row_y", [392])
 	var k := art_scale()
-	var y := row_pitch() * 0.5 - (float(row_y[0]) - float(box[1])) * k
-	draw_texture_rect(_tex, Rect2(Vector2(0, y), _tex.get_size() * k), false)
+	_art.position = Vector2(0, row_pitch() * 0.5 - (float(row_y[0]) - float(box[1])) * k)

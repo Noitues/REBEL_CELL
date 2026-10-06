@@ -25,7 +25,7 @@ static func letter_of(i: int) -> String:
 func _draw() -> void:
 	var c := size * 0.5
 	var r := minf(size.x, size.y) * 0.42
-	var red := RaidSkin.pencil_threat()
+	var red := Palette.HARM  # B1b audit: the concept's crisp HARM ring (ui19 route row), not pencil
 	draw_arc(c, r, 0.0, TAU, 28, red, maxf(2.0, r * 0.16), true)
 	var f := Palette.display()
 	var px := roundi(r * 1.25)

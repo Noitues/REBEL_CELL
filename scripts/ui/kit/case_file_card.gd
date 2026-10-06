@@ -84,7 +84,7 @@ const SLIVER_INSET := 10.0
 const SLIVER_TILT := 1.2
 ## The flatlined chip's pencil X: inset and width (shares of the chip's width).
 const KIA_INSET := 0.12
-const KIA_WIDTH := 0.06
+const KIA_SEED := 61
 
 var slot: String = ""
 ## The slot's summary (RunManager.slot_summary) or {} when empty.
@@ -209,7 +209,7 @@ func _place_note() -> void:
 	var y := t.y * 0.5
 	# The head stops short of the row's separation and DELETE by the wax's own reach (half its width,
 	# its under-shadow).
-	var reach := GreasePencilMark.WIDTH * 0.5 + GreasePencilMark.SHADOW_OFFSET.x + GreasePencilMark.SHADOW_GROW
+	var reach := GreasePencilMark.stroke_width() * 0.5 + GreasePencilMark.SHADOW_OFFSET.x
 	var to_x := _note_room.size.x + UiTheme.SP_S - reach - ARROW_GAP * Settings.text_scale
 	cant_undo.with_arrow(Vector2(t.x + ARROW_GAP, y), Vector2(maxf(t.x + ARROW_GAP + 1.0, to_x), y), -t.y * 0.25)
 
@@ -421,11 +421,8 @@ static func last_played(unix: float) -> String:
 
 
 func _draw_flatlined(chip: Control) -> void:
-	var m := chip.size.x * KIA_INSET
-	var w := maxf(2.0, chip.size.x * KIA_WIDTH)
-	var red := PortraitFeed.pencil_red()
-	chip.draw_line(Vector2(m, m), chip.size - Vector2(m, m), red, w, true)
-	chip.draw_line(Vector2(chip.size.x - m, m), Vector2(m, chip.size.y - m), red, w, true)
+	# B1b: the kit's wax X (one material, written on).
+	PencilSet.show_on(chip, PencilSet.cross_strokes(Rect2(Vector2.ZERO, chip.size), chip.size.x * KIA_INSET), GreasePencilMark.Ink.THREAT, KIA_SEED)
 
 
 func _draw_heat(bar: Control, heat: int) -> void:

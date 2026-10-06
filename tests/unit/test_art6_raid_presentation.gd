@@ -212,8 +212,8 @@ func test_a_mark_above_an_entry_clears_its_letter() -> void:
 	var fx := RaidFxLayer.new(ov)
 	ov.add_child(fx)
 	fx.entry_letters = routes.letters.duplicate()
-	fx._mark("down", entry, "DOWN", Color.RED, 0.0, false)
-	fx._mark("incoming", entry, "INCOMING", Color.RED, 0.0, true)
+	fx._mark("down", entry, "DOWN", 0.0, false)
+	fx._mark("incoming", entry, "INCOMING", 0.0, true)
 	for m: Dictionary in fx._marks:
 		m["started"] = true
 		m["real0"] = fx._real - 0.1  # written part way, never wiped

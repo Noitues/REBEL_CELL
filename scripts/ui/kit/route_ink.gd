@@ -15,14 +15,12 @@ const RING_AVAILABLE := Palette.RING_AVAILABLE
 const RING_UNAVAILABLE := Palette.RING_UNAVAILABLE
 ## Dim grey: cut off, the run never goes back (§2.2 RING_CUT).
 const RING_CUT := Palette.RING_CUT
-## Grease pencil (§1.2): red = threat / the TARGET circle; yellow = our plan.
+## Grease pencil (§1.2): red = threat / the TARGET circle; yellow = our plan; its dark
+## under-shadow. B1b: the route draws its pencil through the kit's wax (GreasePencilMark /
+## GreasePencilWord), which holds the opacity and the shadow; these name the inks for checks.
 const PENCIL_THREAT := Palette.PENCIL_THREAT
 const PENCIL_PLAN := Palette.PENCIL_PLAN
-## The pencil's dark under-shadow (§1.2: it reads day and night).
 const PENCIL_SHADOW := Palette.PENCIL_SHADOW
-const PENCIL_SHADOW_ALPHA := 1.0
-## The pencil's wax opacity (§1.2: alpha 0.96).
-const PENCIL_ALPHA := 0.96
 ## The police lights circling a node Heat has made harder (§4.3: red / blue).
 const HEAT_LIGHT_RED := Palette.HARM
 const HEAT_LIGHT_BLUE := Palette.NET_CYAN

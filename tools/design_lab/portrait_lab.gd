@@ -250,10 +250,9 @@ func _contexts() -> void:
 	pf.position = Vector2(24, 60)
 	pf.size = Vector2(150, 166)
 	paper.add_child(pf)
-	var ring := Control.new()
-	ring.size = paper.size
-	ring.draw.connect(func() -> void:
-		ring.draw_arc(Vector2(99, 143), 92.0, 0.0, TAU, 48, Color(PortraitFeed.pencil_red(), 0.9), 4.0, true))
+	var ring := GreasePencilMark.new()  # B1b: the kit's one wax material
+	ring.ink = GreasePencilMark.Ink.THREAT
+	ring.add_stroke(PencilShapes.hand_circle(Vector2(99, 143), Vector2(92, 92), 7))
 	paper.add_child(ring)
 	var head := Label.new()
 	head.text = "MERIDIAN FREIGHT // LOSS PREVENTION\nPERSON OF INTEREST // FILE 0419-K"

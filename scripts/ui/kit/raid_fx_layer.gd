@@ -106,12 +106,10 @@ const MARK_INCOMING := "INCOMING" # TR
 ## BREACHED; their stroke widths (x size) and the lift of a word above its node (x icon r).
 const MARK_LIFT := 2.4
 const HOLDS_TICK := 16.0
-## Screen px: a mark's lift above its node, the BREACHED underline's and the ticks' width.
+## Screen px: a mark's lift above its node (the strokes are the kit's one wax width, B1b).
 const MARK_LIFT_PX := 46.0
 ## Screen px between two marks shown at once on one node (the later one stacks above).
 const MARK_STACK_GAP_PX := 6.0
-const UNDERLINE_W := 9.0
-const TICK_W := 6.0
 ## The vehicle icon's radius (screen px x screen_k), the ice round a frozen one (its half
 ## width x radius; the baked concept ice: folder, growth steps, the ellipse's half width in
 ## the image px, manifest.json), the slow field's radius (x the node icon) and rings.
@@ -369,8 +367,8 @@ func _start_marks() -> void:
 			m["started"] = true
 
 
-func _mark(kind: String, site: StringName, word: String, col: Color, t0: float, above: bool, heavy: bool = false, stays: bool = false) -> void:
-	_marks.append({"kind": kind, "site": site, "word": word, "col": col, "t0": t0, "real0": -1.0, "above": above, "heavy": heavy, "stays": stays})
+func _mark(kind: String, site: StringName, word: String, t0: float, above: bool, heavy: bool = false, stays: bool = false) -> void:
+	_marks.append({"kind": kind, "site": site, "word": word, "t0": t0, "real0": -1.0, "above": above, "heavy": heavy, "stays": stays})
 
 
 ## The pencil marks (tests): [{kind, site, word}].
@@ -471,7 +469,7 @@ func play_beat(b: Dictionary, t0: float) -> void:
 			var entry := StringName(e["site"])
 			if not _incoming.has(entry):
 				_incoming[entry] = true
-				_mark("incoming", entry, CityMapOverlay.tr_word(MARK_INCOMING), RaidSkin.pencil_threat(), t0, true)
+				_mark("incoming", entry, CityMapOverlay.tr_word(MARK_INCOMING), t0, true)
 		"move":
 			var tok: Dictionary = _tokens.get_or_add(String(e["threat"]), {"site": StringName(e["from"])})
 			tok["move"] = {"from": StringName(e["from"]), "to": StringName(e["to"]), "t0": t0, "dur": dur,
@@ -534,7 +532,7 @@ func play_beat(b: Dictionary, t0: float) -> void:
 				_number(site, -left, Palette.CELL_PINK, t0, dur)
 			_node_left[String(site)] = 0
 			_stamp(site, "down", Palette.CELL_PINK, t0, dur)
-			_mark("down", site, tr_outcome("down"), RaidSkin.pencil_threat(), t0, false)
+			_mark("down", site, tr_outcome("down"), t0, false)
 		"taken":
 			# ANIM-R3 B5: a Site taken with integrity left (threats standing on it at the step
 			# cap) loses it all: its own number, so the numbers add up to before - after.
@@ -544,13 +542,13 @@ func play_beat(b: Dictionary, t0: float) -> void:
 				_number(taken_site, -taken_left, Palette.RESIST_GOLD, t0, dur)
 			_node_left[String(taken_site)] = 0
 			_stamp(taken_site, "taken", Palette.RESIST_GOLD, t0, dur)
-			_mark("taken", taken_site, tr_outcome("taken"), RaidSkin.pencil_threat(), t0, true)
+			_mark("taken", taken_site, tr_outcome("taken"), t0, true)
 			_tints.append({"site": StringName(e["site"]), "t0": t0, "dur": RaidBeats.raw_seconds(&"influence_spread")})
 		"home_lost":
 			# ANIM-R3 B5: home's verdict is its banner (no stamp over it).
 			_banner = {"text": CityMapOverlay.tr_word(BANNER_BREACHED), "color": Palette.CELL_PINK, "t0": t0, "breached": true}
 			_breach_t0 = t0  # ART-6 3A: the red bit explosion at CORE, its links de-powering
-			_mark("breached", home_id, CityMapOverlay.tr_word(BANNER_BREACHED), RaidSkin.pencil_threat(), t0 + mark_seconds(BREACH_BITS) * 0.5, true, true, true)
+			_mark("breached", home_id, CityMapOverlay.tr_word(BANNER_BREACHED), t0 + mark_seconds(BREACH_BITS) * 0.5, true, true, true)
 		"raid_end":
 			# ANIM-R2 R6: the outcomes stamp node after node (`raid_outcome_stagger`, by id),
 			# then the result banner stamps over home. ANIM-R3 B5: every node's stamp is its
@@ -1298,8 +1296,10 @@ func _lay_pencil() -> void:
 			var size := RaidPencilPool.word_size(String(m["word"]), step)
 			var y := c.y + size.y * 0.55
 			var line := PackedVector2Array([Vector2(c.x - size.x * 0.56, y), Vector2(c.x + size.x * 0.56, y + size.y * 0.06)])
-			_pool.stroke("under_%d" % i, [line], threat, UNDERLINE_W, clampf(pr.x * 1.25 - 0.25, 0.0, 1.0), 0.0, false, 9)
-	# Home's verdict (not BREACHED: that is its own heavy mark).
+			_pool.stroke("under_%d" % i, [line], threat, clampf(pr.x * 1.25 - 0.25, 0.0, 1.0), 0.0, false, 9)
+	# Home's verdict (not BREACHED: that is its own heavy mark). B1b pencil audit: kept for now
+	# (it plays `raid_result_banner`); review RAID-10 moves it to the after-action paper's sticker,
+	# a slice of its own (DECISIONS "B1b — wax pencil material and pencil audit").
 	if not _banner.is_empty() and clock >= float(_banner["t0"]) and not bool(_banner.get("breached", false)):
 		var place := banner_rect()
 		if place.has_area():
@@ -1331,7 +1331,7 @@ func _lay_pencil() -> void:
 		var r := CityMapOverlay.ICON_RADIUS * zoom
 		var tc := p + Vector2(r * RaidSocket.HALF.x * 1.1, -r * 0.9)
 		var t := PackedVector2Array([tc + Vector2(-HOLDS_TICK * 0.5, 0), tc + Vector2(-HOLDS_TICK * 0.1, HOLDS_TICK * 0.4), tc + Vector2(HOLDS_TICK * 0.6, -HOLDS_TICK * 0.55)])
-		_pool.stroke("tick_%s" % id, [t], plan, TICK_W, beat_u(&"raid_flip", float(s["t0"]), float(s["dur"])), 0.0, false, String(id).hash())
+		_pool.stroke("tick_%s" % id, [t], plan, beat_u(&"raid_flip", float(s["t0"]), float(s["dur"])), 0.0, false, String(id).hash())
 	# A red X on a threat withdrawing at the verdict.
 	var at := _token_positions()
 	for id in _tokens:
@@ -1345,7 +1345,7 @@ func _lay_pencil() -> void:
 		var g := gxf * p
 		var arm := VEHICLE_R * zoom * Motion.amplitude(WITHDRAW_MOTION)
 		_pool.stroke("x_%s" % id, [PackedVector2Array([g + Vector2(-arm, -arm * 0.85), g + Vector2(arm, arm * 0.8)]),
-			PackedVector2Array([g + Vector2(arm, -arm * 0.85), g + Vector2(-arm * 0.95, arm * 0.9)])], threat, TICK_W, 1.0, du, false, String(id).hash())
+			PackedVector2Array([g + Vector2(arm, -arm * 0.85), g + Vector2(-arm * 0.95, arm * 0.9)])], threat, 1.0, du, false, String(id).hash())
 	_pool.end()
 
 

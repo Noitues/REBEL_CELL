@@ -133,6 +133,9 @@ func _init() -> void:
 	add_child(_marks)
 	# B1a b (bible 4.1; designer ruling 2026-10-06): the run's network marks draw over the UI scrim.
 	_marks.add_to_group(UiScrimPools.LIFT_GROUP)
+	# B1b: the TARGET's grease pencil is the kit's wax, over the marks (and over the scrim with them).
+	_pencil = PencilSet.under(self)
+	_pencil.add_to_group(UiScrimPools.LIFT_GROUP)
 	resized.connect(_on_resized)
 	add_to_group(GROUP)
 
@@ -499,6 +502,8 @@ func _get_tooltip(at_position: Vector2) -> String:
 # --- Drawing ----------------------------------------------------------------------------------
 
 func _draw_marks() -> void:
+	_target_spec = {}
+	_lay_pencil.call_deferred()
 	if iso == null or graph == null:
 		return
 	var k := Settings.text_scale
@@ -630,29 +635,40 @@ func _dashes(a: Vector2, b: Vector2, col: Color, width: float, alpha: float, pha
 		n += 1
 
 
-## The red grease-pencil TARGET circle (two rough passes over a dark under-shadow) and the
-## word beside it, as the route's TARGET.
-func _target(id: StringName, at: Vector2, r: float, k: float) -> void:
-	var seed_v := absi(hash(String(corp) + String(id)))
+## The red grease-pencil TARGET circle and the word beside it, as the route's TARGET: the kit's
+## wax (B1b, D3), noted while the marks draw and laid as marks after the draw (`_lay_pencil`).
+func _target(id: StringName, at: Vector2, r: float, _k: float) -> void:
 	var rr := r * RouteOverlay.TARGET_SHARE
-	for pass_i in 2:
-		var ring := PackedVector2Array()
-		var turn := TAU * (1.0 + RouteOverlay.TARGET_OVERRUN)
-		var start := float(seed_v % 628) * 0.01 + pass_i * 0.9
-		for q in RouteOverlay.TARGET_SEGMENTS + 1:
-			var t := start + turn * q / RouteOverlay.TARGET_SEGMENTS
-			var wob := (sin(t * 3.0 + float(seed_v % 31) + pass_i) + 0.5 * sin(t * 7.0 + pass_i * 2.0)) * RouteOverlay.TARGET_WOBBLE * k
-			ring.append(at + Vector2(cos(t), sin(t) * RouteOverlay.TARGET_SQUASH) * (rr * (1.0 + pass_i * 0.06) + wob))
-		_marks.draw_polyline(ring, Color(RouteInk.PENCIL_SHADOW, RouteInk.PENCIL_SHADOW_ALPHA), (RouteOverlay.TARGET_STROKE + RouteOverlay.KEYLINE_EXTRA) * k, true)
-		_marks.draw_polyline(ring, Color(RouteInk.PENCIL_THREAT, RouteInk.PENCIL_ALPHA), RouteOverlay.TARGET_STROKE * k * (1.0 - pass_i * 0.35), true)
-	var f := RouteInk.pencil_font()
-	var fs := maxi(1, roundi(RouteOverlay.TARGET_FONT * k))
-	var wp := at + Vector2(rr * RouteOverlay.ROUTE_TARGET_WORD_AT.x, -rr * RouteOverlay.ROUTE_TARGET_WORD_AT.y * 0.2)
-	_marks.draw_set_transform(wp, RouteOverlay.TARGET_WORD_TILT)
-	var word := tr(RouteOverlay.TARGET_WORD)
-	_marks.draw_string_outline(f, Vector2.ZERO, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(RouteOverlay.KEYLINE_EXTRA * k)), Color(RouteInk.PENCIL_SHADOW, RouteInk.PENCIL_SHADOW_ALPHA))
-	_marks.draw_string(f, Vector2.ZERO, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(RouteInk.PENCIL_THREAT, RouteInk.PENCIL_ALPHA))
-	_marks.draw_set_transform(Vector2.ZERO, 0.0)
+	_target_spec = {"id": id, "at": at, "rr": rr, "seed": absi(hash(String(corp) + String(id)))}
+
+
+## B1b: the TARGET noted in the last draw ({} for none) and the set that lays it.
+var _target_spec: Dictionary = {}
+var _pencil: PencilSet = null
+
+
+## Lays the TARGET's loop and word in the kit's wax (they write on when they first show).
+func _lay_pencil() -> void:
+	if _pencil == null or not is_instance_valid(_pencil):
+		return
+	_pencil.begin()
+	if not _target_spec.is_empty():
+		var at: Vector2 = _target_spec["at"]
+		var rr: float = _target_spec["rr"]
+		var key := String(_target_spec["id"])
+		_pencil.stroke("loop|" + key, RouteOverlay.target_loop(at, rr, int(_target_spec["seed"])), GreasePencilMark.Ink.THREAT,
+			PencilSet.AUTO, 0.0, false, int(_target_spec["seed"]))
+		var word := tr(RouteOverlay.TARGET_WORD)
+		var wp := at + Vector2(rr * RouteOverlay.ROUTE_TARGET_WORD_AT.x, -rr * RouteOverlay.ROUTE_TARGET_WORD_AT.y * 0.2)
+		var c := PencilSet.centre_of(wp, word, RouteOverlay.TARGET_FONT, 1.0, RouteOverlay.TARGET_WORD_TILT)
+		_pencil.word("word|" + key, word, c, RouteOverlay.TARGET_FONT, GreasePencilMark.Ink.THREAT, 1.0, PencilSet.AUTO, 0.0,
+			RouteOverlay.TARGET_WORD_TILT)
+	_pencil.end()
+
+
+## The TARGET's pencil (tests).
+func target_pencil() -> PencilSet:
+	return _pencil
 
 
 func _chip(k: float) -> void:

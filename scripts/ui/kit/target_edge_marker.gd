@@ -14,7 +14,6 @@ signal pan_requested(lot: Vector2)
 const EDGE_MARGIN := 46.0
 const SHAFT_PX := 64.0
 const HEAD_PX := 20.0
-const WIDTH := 8.0
 const SEED := 352
 ## Where the word sits behind the arrow's tail (px along the arrow, back from the tail) and
 ## the clickable box round the arrow (px).
@@ -68,7 +67,6 @@ func _init() -> void:
 	_mark = GreasePencilMark.new()
 	_mark.name = "Arrow"
 	_mark.ink = GreasePencilMark.Ink.THREAT
-	_mark.width = WIDTH
 	_mark.seed = SEED
 	add_child(_mark)
 	_word = GreasePencilWord.new()

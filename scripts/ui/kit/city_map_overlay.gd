@@ -1622,11 +1622,11 @@ func _node(n: Dictionary) -> void:
 
 # --- ART-5 5d: Site markers v4 on the Grid -----------------------------------------------
 
-## The boss's red pencil TARGET circle (screen px: radius, its iso flattening, the wax
-## width, the word's offset from the circle's left foot) and the chip's gap over it.
+## The boss's red pencil TARGET circle (screen px: radius, its iso flattening, the word's
+## offset from the circle's left foot; the wax is the kit's one width, B1b) and the chip's gap
+## over it.
 const TARGET_RADIUS := 48.0
 const TARGET_FLAT := 0.62
-const TARGET_WIDTH := 8.0
 const TARGET_WORD_AT := Vector2(-2.0, 0.7)
 ## Parity fix (GRID-03): where the TARGET word may go, in turn (shares of the radius from the
 ## circle's centre to the word's baseline-left): below left as drawn, then below right, below,
@@ -1759,8 +1759,8 @@ func _boss_chip_word() -> String:
 ## circle's widest wobble and its wax stroke included.
 func _target_circle_rect(at: Vector2) -> Rect2:
 	var k := _k()
-	var radii := Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT) * TARGET_REACH + Vector2(TARGET_WIDTH, TARGET_WIDTH) * 0.5
-	return Rect2(at - radii * k, radii * 2.0 * k)
+	var radii := Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT) * TARGET_REACH * k + Vector2.ONE * GreasePencilMark.stroke_width() * 0.5
+	return Rect2(at - radii, radii * 2.0)
 
 
 ## Parity fix (GRID-03 / GRID-13): the boss chip's rect for the TARGET circle round `at`
@@ -1994,7 +1994,6 @@ func _sync_target(boss: Dictionary) -> void:
 		_target_mark = GreasePencilMark.new()
 		_target_mark.name = "Target"
 		_target_mark.ink = GreasePencilMark.Ink.THREAT
-		_target_mark.width = TARGET_WIDTH
 		_target_mark.seed = TARGET_SEED
 		_pencil_root.add_child(_target_mark)
 		_target_word = GreasePencilWord.new()

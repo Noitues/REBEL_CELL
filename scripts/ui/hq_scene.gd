@@ -1183,7 +1183,8 @@ static func prompts_for(p_name: String) -> Array:
 ## unlock (NEWC-01, NEWC-04: no dropdown, no popup list): Target as corporation tiles (hue
 ## stripe, crest, `Best ICE`), ICE as a big `- n +` stepper, Home server as tiles (house icon,
 ## lock, `UNLOCKS · cost`), Crew as portrait tiles (the class's v2 bust). Main's NEW CAMPAIGN
-## title sticker and TRUST NO ONE pencil stay, and the one verb, START, is a pink vinyl sticker
+## title sticker stays (B1b pencil audit: the TRUST NO ONE pencil is gone, a joke in pencil, not a
+## plan; review section f), and the one verb, START, is a pink vinyl sticker
 ## at the head's right end, where the eye ends (NEWC-02). The seed, today's run and the share
 ## codes are main's own and stay, on plain cyan terminals (lime is focus only, v2 §2.10); the
 ## share code row folds away under its terminal (NEWC-03). Choices come from the profile's
@@ -1211,10 +1212,9 @@ func show_start() -> void:
 	var head := HBoxContainer.new()
 	head.name = "PageHead"
 	head.add_theme_constant_override("separation", 24)
-	# ART-10 4C (v2 §1.2, §2.10): the yellow title sticker and the Cell's motto in grease
-	# pencil (the spray tag and scrawl are rejected media).
+	# ART-10 4C (v2 §1.2, §2.10): the yellow title sticker. B1b (pencil audit): no pencil motto
+	# here; pencil is for true plans (round 19), and TRUST NO ONE plans nothing.
 	head.add_child(_title_sticker(tr("NEW CAMPAIGN"), "NEW CAMPAIGN"))
-	head.add_child(PencilWords.new(tr("TRUST NO ONE"), -4.0))
 	var head_gap := Control.new()
 	head_gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE

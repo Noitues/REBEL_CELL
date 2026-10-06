@@ -287,7 +287,6 @@ func _build_pencil_column() -> void:
 	var arrow := GreasePencilMark.new()
 	arrow.ink = GreasePencilMark.Ink.THREAT
 	arrow.seed = 9
-	arrow.width = 7.0
 	pencil.add_child(arrow)
 	for s in PencilShapes.arrow(PencilShapes.bezier(Vector2(1000, 262), Vector2(1024, 274), Vector2(1046, 258)), 14.0, 9):
 		arrow.add_stroke(s)
@@ -462,7 +461,6 @@ func _build_lifecycle() -> void:
 		panel.add_child(word)
 		var arrow := GreasePencilMark.new()
 		arrow.ink = GreasePencilMark.Ink.THREAT
-		arrow.width = 7.0
 		panel.add_child(arrow)
 		for s in PencilShapes.arrow(PencilShapes.bezier(Vector2(250, 84), Vector2(200, 120), Vector2(160, 116)), 14.0, 3):
 			arrow.add_stroke(s)

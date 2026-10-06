@@ -31,6 +31,112 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-06 — B1b — wax pencil material and pencil audit (integration review)
+Integration review D3 ("the aim pencil is a thin vector line"), D25 (pencil appears whole), section d "Pencil
+opacity / wax" ("one wax material everywhere; audit every pencil: is it a true plan? If not, remove it"). Bound by the
+designer's rulings of 2026-10-06 (pause notes kept, CAN'T UNDO on every folder, the aiming result's yellow underline
+is built by another agent on this material). Sheet: `docs/art_review/PARITY/fixes/B1b.jpg` (concept | before | after
+at text 1.0 and 2.0). Test: `tests/unit/test_b1b_wax_pencil.gd`.
+- **One material.** Every grease-pencil stroke and word is the kit's wax (`marker_stroke.gdshader`, the port of the
+  concepts' own generator `tg_lib.wax_stroke`): `GreasePencilMark` (strokes), `GreasePencilWord` (words) and the new
+  `GreasePencilArt` (the concepts' own baked pencil art: the title's plan and motto; shader mode 3 writes it on left to
+  right). Views that drew pencil as `draw_polyline` / `draw_line` / `draw_string` now lay marks: the new `PencilSet`
+  (a keyed set laid per pass; `show_on` for a one-mark view that draws in `_draw`); `RaidPencilPool` is now a
+  `PencilSet` on the raid pencil layer. `RaidPencil` keeps only its geometry (its vector `stroke` / `word` / `circle`
+  helpers are gone). A static check fails on any draw call that uses a pencil ink or the pencil face outside the
+  material files (three non-pencil glyphs and the lab's round 3 board are named with their reason in the test).
+- **The look (D3).** 9 px at 1080p (`WIDTH_1080`; 6 px of the 1280 x 720 canvas: the concept boards are 1080p, so
+  bible §6.3's "8-10" is board px; the old kit width 10 was 15 px at 1080p and the old map pencils 3.6-8), scaled with
+  the text size up to `VerbSticker.SCALE_MAX` as the stickers are, and **one screen width whatever the mark's own
+  zoom** (the mark undoes its global scale on its lines). No caller sets a width any more (removed: `ARROW_W`,
+  `LOOP_W`, `DOCK_W`, `TICK_W`, `UNDERLINE_W`, `STROKE`, raid `WIDTH`, `TARGET_WIDTH`, `PENCIL_W`, edge marker
+  `WIDTH`, route `TARGET_STROKE` / `WOBBLE` / `SEGMENTS` / `OVERRUN`). The under-shadow is a copy of the stroke at
+  (2, 3) 1080p px in `PENCIL_SHADOW` (#060308 at 85 %; it was a wider copy at 42 %); wax alpha 0.96; a 1 px sheen at
+  35 % white (was 45 %); pressure dropouts every 40-70 px along the stroke (`width_px`, `dropout_px` uniforms). A hand
+  loop is one ellipse with a 20 degree tail (`PencilShapes.LOOP_TURNS`; was 1.12 turns; the route and HQ-run TARGET
+  drew two vector passes).
+- **Motion (D25).** `pencil_write_on` 0.6 → 0.4 s and now the write's duration (its px/s amplitude is retired: 0);
+  `pencil_wipe` 0.3 → 0.4; `aim_line_draw` 0.15 → 0.4; `raid_route_write` 0.6 → 0.4; `raid_drag_arrow` 0.15 → 0.4;
+  `raid_dock_circle` 0.2 → 0.4 (these three move from VFX tier 1 to 2, whose one-shots may run 0.6 s, as `pencil_write_on`; raid marks were already 0.4; `raid_breached_write` keeps its 1.2 s: the bible's "one
+  slow heavy wax pass"). The aim's loop writes over `pencil_write_on` (was `target_snap`, 0.1 s, which stays the
+  reticle's and the drop layer's snap). A mark, word or art with `auto_write` (the default) writes itself on the first
+  time it shows with something to draw, and again when shown after being hidden, so no pencil appears whole; owners
+  that drive the progress (raid pool, aim, corp poster) turn it off. A `PencilSet` mark no longer laid wipes off with
+  the cloth and is freed. MotionSkip completes any write or wipe; reduce effects / headless show the end state.
+  OURS NOW no longer fades in with alpha (it shows, so it writes on).
+- **Pencil audit** (every use; K = kept as a true plan or fact the rules make true, R = kept as a designer-ruled or
+  locked-concept note, X = removed):
+  | Where | What it marks | Call |
+  |---|---|---|
+  | `aim_line_pencil.gd`, `combat_scene.gd` | card aim arrow, loop round the target, circles on the slices the play changes | K (what this play will do) |
+  | `combat_backdrop.gd` | OURS NOW over the won Site | K (true once won; bible 4.x round 32; Anton gold text before, now wax) |
+  | `city_map_overlay.gd`, `site_marker_layer.gd` | the Central Server's TARGET loop and word | K (bible 4.5) |
+  | `target_edge_marker.gd` | off-screen TARGET arrow and word | R (round 44 lock: red pencil edge arrow) |
+  | `route_overlay.gd` | the route's TARGET loop and word | K (vector before, now wax) |
+  | `hq_run_view.gd` | the HQ run's Central Server TARGET loop and word | K (vector before, now wax) |
+  | `raid_route_layer.gd` | threat routes (solid / dashed what-if), entry circles, A/B/C letters | K (bible 4.8) |
+  | `raid_drag_pencil.gd` | drag arrow, dock circle (yellow valid / red + X invalid) | K |
+  | `raid_fx_layer.gd` | INCOMING / DOWN / TAKEN marks, BREACHED with its underline, HOLDS ticks, a withdrawing threat's X | K (bible 4.8) |
+  | `raid_fx_layer.gd` | home's verdict ("HOME -5", "HOLDS") over the map | R for now: a fixed fact, not a plan, and review RAID-10 (item 7) moves it to the CELL HOLDS sticker on the after-action paper; it is the view that plays `raid_result_banner`, and motion entries are never dropped, so the move (the entry re-homed on the paper's sticker) is a slice of its own (proposed: "RAID-10 verdict onto the paper"; open question) |
+  | `raid_report_pencil.gd` | circles, RIP, tick and side notes on the after-action report | K (review item 7: pencil may add a tick or RIP there) |
+  | `corp_down_poster.gd` | the red X over the beaten corporation | K |
+  | `audit_dossier.gd`, `polaroid.gd`, `portrait_feed.gd`, `case_file_card.gd` (crew chip) | red X on a dead operative (KIA / FLATLINED) | K (review: "true: the operative is dead"; vector before, now wax) |
+  | `case_file_card.gd` | CAN'T UNDO with its arrow to DELETE, every folder | R (ruling 2) |
+  | `pause_menu.gd` | "Down with the Oligarchy!", "No Going Back", "Come Back Soon" | R (ruling 1; drawn text before, now wax words) |
+  | `title_scene.gd` / `pencil_plan.gd` | the plan's 1. 2. 3. beside the three verbs | K (round 33 title A; now writes on) |
+  | `title_scene.gd` / `pencil_words.gd` | NEVER SLEEP + crown on the sign | R (round 33 title A, locked; see open question) |
+  | `hq_scene.gd` (new campaign) | TRUST NO ONE | **X**: a joke in pencil (round 19 bans it), no concept (review section f) |
+  | `netrun_scene.gd` (loot) | "+1 = N" to the DECK counter | K |
+  | `netrun_scene.gd` (event) | PLAY IT SAFE?? at the choice that changes nothing | R (the review lists it as matching the concept) |
+  | `netrun_scene.gd` (Mainframe) | TOP N ONLY, BIN IT, "ask about the back room" | K, K, R (bible 4.x Mainframe interior) |
+  | `map_legend.gd` | the TARGET key swatch | K (keys the map's TARGET; vector before, now wax) |
+  | `raid_route_mark.gd` | THREAT INTEL row's A/B/C ring | not pencil: the concept's crisp HARM ring (ui19 route row), moved off the pencil ink |
+  | `raid_vehicle.gd`, `city_minimap.gd`, `play_result_plate.gd` | heading chevron; minimap view box and boss dot; the aiming plate's accent | not pencil (icon / terminal glyphs in the inks' hues); the plate goes with the aiming-result change |
+  | `tools/design_lab` (raid_lab, kit_sheet, portrait_lab) | lab samples | now the material |
+- Files outside the pencil kit touched (smallest change each): `combat_backdrop.gd`, `route_overlay.gd`,
+  `hq_run_view.gd`, `city_map_overlay.gd` (width and reach), `site_marker_layer.gd`, `target_edge_marker.gd`,
+  `map_legend.gd`, `polaroid.gd`, `portrait_feed.gd` (`pencil_red` removed), `case_file_card.gd`, `audit_dossier.gd`,
+  `corp_down_poster.gd`, `raid_skin.gd` (`pencil_*` removed), `raid_route_mark.gd`, `raid_vehicle.gd`, `hq_scene.gd`,
+  `route_ink.gd` (unused pencil alphas removed), `kit_demo.gd` (its pencil demo plays the write itself),
+  `strings.csv` (TRUST NO ONE re-exported away). Tests changed (behaviour kept): `test_art1_material_kit` (the width
+  is read in 1080p px; a new mark is completed before it is measured), `test_art6_raid_presentation` (`_mark` has no
+  colour). None dropped.
+- Not verified windowed: the HQ run's TARGET (the review pack has no HQ-run screen); it is covered headless by
+  `test_hq_run_city` and the static check (art director: accepted).
+- **Art-director fixes (2026-10-06).** Rulings: NEVER SLEEP, "ask about the back room" and PLAY IT SAFE?? stay (bible
+  appendix A: one pencil slogan per screen); the raid verdict slice goes to B3. (1) 1:1 crops at a true 1080p window,
+  text 1.0, end state: `docs/art_review/PARITY/fixes/B1b_crop_{aim,target,ours_now,cant_undo}.png` and the write-on
+  strip `B1b_strip_write_on.png` (PNG); the review pack gains `--native=WxH` (sizes the window, also saves
+  `<screen>.native.png` unscaled). (2) The loop lock (D3): `PencilShapes.hand_circle` is one hand ellipse that overruns
+  its start by the 20 degree tail, its radius jittered up to `JITTER` (3 %) by seeded KitNoise knots (deterministic,
+  view-only decoration as the kit's other jitter, never game RNG or global randomness), the pen landing `START_IN`
+  (5 %) inside the line and the tail running `TAIL_OUT` (9 %) past it, so start and end never meet cleanly; the
+  aim loop, the TARGET circles (grid, route, HQ run, legend) and the raid dock circle all draw through it. Tests:
+  `test_b1b_wax_pencil::test_a_loops_radius_jitter_is_seeded_and_about_three_percent`,
+  `::test_the_loops_start_and_end_never_meet_cleanly`.
+- **Art-director fixes b (2026-10-06).** (1) The aim read thinner (~5 px) than the TARGET: its geometry was the same 9 px
+  (probed: line width 6 canvas px, no scale on its layer), but the wax's opaque body only covered the middle ~65 % of
+  the stroke at alpha ~0.77 (the bristles carried the rest), which vanished on the light street. The body is now
+  opaque across all but its ragged edge (`marker_stroke` core to 0.8-0.92 of the half width, side shading eased), so
+  every stroke reads its full 8-9 px at 1080p; the under-shadow copy is 2 px wider (`SHADOW_GROW_1080`) with a firmer
+  edge, so it shows as a dark rim under the arc on a light street. (2) The wax dropouts (D3 lock): one 2-4 px
+  stretch every 40-70 px (1080p px; period 55 with its centre jittered +-7.5) where the wax's alpha falls to 0.35,
+  seeded by a 32-bit integer hash the shader and `GreasePencilMark.dhash` / `dropout_factor` compute alike; the
+  shadow thins there too; words take fewer (period 90). Replaces the edge-only dropout that never showed. Tests:
+  `test_b1b_wax_pencil::test_wax_dropouts_every_40_to_70_px_two_to_four_px_long_to_alpha_0_35`,
+  `::test_the_shader_hash_is_the_scripts_hash`. Crops: `B1b_crop_aim.png`, `B1b_crop_target_only.png` (1:1, 1080p).
+- **Art-director fix c (2026-10-06): the dropouts read as a dashed line** (dark cross-ticks ~25-30 px apart; dashes
+  mean forecasts and locked links, so pencil must never look dashed). (a) The under-shadow fades to 0.35 over the whole
+  gap and `dropout_pad` (its own offset's length, ~3.6 px) past each end, so the street shows through, never the
+  shifted shadow as a dark tick. (b) A dropout is a nibble: a ragged bite of 40-70 % of the stroke's width
+  (`DROPOUT_BITE`) from one edge, the side and the depth from the seed (`dropout_bite` mirrors the shader), deepest
+  mid-stretch, never a full-width break; words bite across their cap height. (c) Spacing in screen px: the wax lines
+  draw with the texture STRETCHED and each line has its own material copy carrying its drawn span along the stroke
+  (`seg_from_px` / `seg_to_px`), so the shader's distance is the arc length, not the tiled UV (which ran at about twice
+  the arc length in widths, halving the spacing). Tests: `test_b1b_wax_pencil::test_a_dropout_is_a_partial_width_nibble_from_one_seeded_edge`,
+  `::test_the_shadow_fades_over_the_whole_gap_so_no_dark_tick_shows`, `::test_dropouts_are_spaced_in_screen_px_on_a_curved_zoomed_stroke`.
+  Crop resent: `B1b_crop_aim.png`. Merge with B1a: the HQ run's TARGET pencil joins `UiScrimPools.LIFT_GROUP` with its marks (over the scrim).
+
 ### 2026-10-06 — B1a b — the art director's fixes: pools that read, the network over the scrim
 The art-pass review of B1a (c270cd7f; relayed by the orchestrator): architecture approved; three fixes, Q1 and Q2
 ruled. Sheet `docs/art_review/PARITY/fixes/B1a_b.jpg` (concept | before (main fb216ae1) | after, with the probe
@@ -10192,6 +10298,13 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **B1b pencil audit (2026-10-06, see "B1b — wax pencil material and pencil audit"): answered (art director 2026-10-06: all three stay; the raid verdict slice goes to B3).** Was: three pencil notes are kept only
+  because a locked concept draws them, not because they are plans: the title's NEVER SLEEP motto (round 33 title A),
+  the Mainframe's "ask about the back room" (bible Mainframe interior; there is no back room in the rules) and the
+  event's PLAY IT SAFE?? (the review counts it as matching). Round 19 bans jokes in pencil. Default built: all three
+  kept. Say which (if any) should go. Also: the raid's home verdict over the map ("HOME -5 · HOLDS") is still pencil
+  because it plays `raid_result_banner`; review RAID-10 wants it as the CELL HOLDS sticker on the after-action paper.
+  Proposed slice: re-home `raid_result_banner` on the paper's sticker and drop the pencil verdict.
 - **Parity fix route map (2026-10-06, see "Parity fix — route map"):** (1) ROUTE-04: **answered (orchestrator relay 2026-10-06): the stickers are the focus stops, the rows went; see "Parity fix — route map b".** Was: the concept picks the route on
   the map only; the ROUTE window's list is kept as the pad's and keyboard's path. Keep it, or make the map's stickers
   the focus stops (pad cursor over the map) and drop the list's rows (proposed slice)? (2) ROUTE-01: hidden nodes now

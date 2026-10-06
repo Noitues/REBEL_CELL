@@ -3,16 +3,26 @@ extends Node2D
 ## A grease pencil mark (ART-1 1B; ART_BIBLE v2 §1.2 "Grease pencil", §6.3, §6.4): plans and
 ## annotations that are true to the rules. One mark is one or more strokes in writing order
 ## (a circle; an arrow's shaft and its two head flicks; a route). Each stroke is a `Line2D`
-## with round caps, width 8-10, `shaders/kit/marker_stroke.gdshader` (opaque wax, alpha 0.96,
-## bristles, dropouts, ragged edge, sheen line, the glint) over a duplicate under-shadow
-## offset SHADOW_OFFSET. Yellow `PENCIL_PLAN` = our plan / valid; red `PENCIL_THREAT` = threat
-## / invalid / loss. Solid = what will happen; dashed = what-if.
+## with round caps and `shaders/kit/marker_stroke.gdshader` (the port of the concepts' own wax
+## generator, round 3 `tg_lib.wax_stroke`: opaque wax, alpha 0.96, bristles, dropouts every
+## 40-70 px, ragged edge, a 1 px sheen line at 35 % white, the glint) over a copy of it as the
+## under-shadow, offset SHADOW_OFFSET in PENCIL_SHADOW (#060308 at 85 %). Yellow `PENCIL_PLAN`
+## = our plan / valid; red `PENCIL_THREAT` = threat / invalid / loss. Solid = what will happen;
+## dashed = what-if.
 ##
-## Writes on in writing order (`pencil_write_on`) and wipes off with a cloth wipe
-## (`pencil_wipe`), both by trimming points, never alpha. `PencilShapes.snap_to` keeps a
-## mark on a real edge. Pencil is above all UI and no UI ever covers it: every mark is in
-## the `GROUP` group, which `PencilLint` checks. Reduce effects / headless / switched off:
-## written whole at once, wiped at once, no glint. A view only.
+## B1b (integration review D3, "one wax material everywhere"): the stroke is one width on
+## screen, `stroke_width()` (9 px at 1080p, 6 px of the 1280x720 canvas, scaled with the text
+## size as the kit's stickers are, up to VerbSticker.SCALE_MAX), whatever the mark's own scale
+## (a map's zoom): the mark undoes its global scale on its lines. No caller sets a width.
+##
+## Writes on in writing order (`pencil_write_on`, its duration: ~0.4 s) and wipes off with a
+## cloth wipe (`pencil_wipe`, ~0.4 s), both by trimming points, never alpha. B1b (D25: pencil
+## never appears whole): a mark with `auto_write` (the default) writes itself on the first
+## time it shows with strokes, and again each time it shows after being hidden; a mark whose
+## owner drives `progress` (RaidPencilPool, the aim) turns `auto_write` off. Reduce effects /
+## headless / switched off: written whole at once, wiped at once, no glint. MotionSkip: one
+## press completes the write or the wipe. Pencil is above all UI and no UI ever covers it:
+## every mark is in the `GROUP` group, which `PencilLint` checks. A view only.
 
 signal written
 signal wiped
@@ -25,10 +35,42 @@ const GROUP := &"grease_pencil"
 const WRITE := &"pencil_write_on"
 const WIPE := &"pencil_wipe"
 const GLINT := &"pencil_glint"
-## Look (§6.3): width, under-shadow offset (round 3 kit: a 4 px cast shadow), resample step.
-const WIDTH := 10.0
-const SHADOW_OFFSET := Vector2(3.0, 4.0)
-const SHADOW_GROW := 3.0
+## The concepts' boards are 1920 x 1080; the game's canvas is 1280 x 720.
+const BOARD_TO_CANVAS := 2.0 / 3.0
+## The look (integration review D3, bible §6.3), in 1080p (board) px: the stroke's width and
+## the range every stroke keeps to (bible: 8-10), the under-shadow's offset.
+const WIDTH_1080 := 9.0
+const WIDTH_MIN_1080 := 8.0
+const WIDTH_MAX_1080 := 10.0
+const SHADOW_1080 := Vector2(2.0, 3.0)
+## The under-shadow copy is this much wider (1080p px) so it shows as a dark rim under the wax
+## on a light street as well as on a dark one.
+const SHADOW_GROW_1080 := 2.0
+## The same in canvas px (at text size 1.0).
+const WIDTH := WIDTH_1080 * BOARD_TO_CANVAS
+const SHADOW_OFFSET := SHADOW_1080 * BOARD_TO_CANVAS
+const SHADOW_GROW := SHADOW_GROW_1080 * BOARD_TO_CANVAS
+## Wax opacity (bible §1.2: 0.96) and the sheen line's strength (D3: 35 % white).
+const WAX_ALPHA := 0.96
+const SHEEN := 0.35
+## The wax dropouts (D3 lock), in 1080p px along a stroke: one stretch a period (its centre
+## jittered by up to half DROPOUT_JITTER either way, so the spacing runs 40-70 px), each
+## DROPOUT_LEN long (2-4 px), where the wax's alpha falls to DROPOUT_ALPHA. Words take fewer
+## (WORD_DROPOUT_PERIOD). The shader draws them with the same hash (`dhash`).
+const DROPOUT_PERIOD := 55.0
+const DROPOUT_JITTER := 15.0
+const DROPOUT_LEN := Vector2(2.0, 4.0)
+const DROPOUT_ALPHA := 0.35
+const WORD_DROPOUT_PERIOD := 90.0
+## B1b fix c: a dropout is a nibble, a ragged bite this share of the stroke's width (40-70 %)
+## from one edge (its side from the seed), never a full-width break; the under-shadow fades
+## over the whole gap and its offset past it (`dropout_pad`: SHADOW_1080's length). Words bite
+## across this share of their ascent (the cap height).
+const DROPOUT_BITE := Vector2(0.4, 0.7)
+const WORD_CAP_SHARE := 0.72
+## Seeds fold into 0..SEED_FOLD-1 before they reach the shader.
+const SEED_FOLD := 997
+## The resample step (px).
 const STEP_PX := 3.0
 ## The wipe drags the wax this way (a palm down-left) while it trims from the start.
 const WIPE_DRAG := Vector2(-0.6, 0.8)
@@ -41,15 +83,16 @@ const WIPE_DRAG := Vector2(-0.6, 0.8)
 	set(v):
 		dashed = v
 		_sync()
-@export var width: float = WIDTH:
-	set(v):
-		width = v
-		_apply()
 ## The wax's seed (grain and dropouts).
 @export var seed: int = 1:
 	set(v):
 		seed = v
 		_sync()
+## Writes itself on when it first shows (and each time it shows again after being hidden).
+@export var auto_write: bool = true:
+	set(v):
+		auto_write = v
+		_arm()
 
 ## Written share 0..1 (by length, in writing order) and the wiped share from the start.
 var progress: float = 1.0:
@@ -74,10 +117,14 @@ var _shadow_mat: ShaderMaterial = null
 var _tween: Tween = null
 var _tween_kind: StringName = &""
 var _tile: Texture2D = null
+## True while an auto write waits for the mark to show with strokes.
+var _pending: bool = true
+var _screen_k: float = 1.0
 
 
 func _init() -> void:
 	add_to_group(GROUP)
+	set_notify_transform(true)
 	_mat = ShaderMaterial.new()
 	_mat.shader = SHADER
 	_shadow_mat = ShaderMaterial.new()
@@ -91,8 +138,79 @@ func _init() -> void:
 
 func _ready() -> void:
 	MotionSkip.register_passive(self)  # ANIM-R6 D7: a mark writing on ends with any press that ends a motion
-	Settings.changed.connect(_sync)
+	Settings.changed.connect(_on_settings)
 	_sync()
+	_arm()
+
+
+## The one stroke width (canvas px on screen) at the current text size.
+static func stroke_width() -> float:
+	return WIDTH * ui_scale()
+
+
+## The pencil's scale with the text size (as the kit's stickers: up to VerbSticker.SCALE_MAX).
+static func ui_scale() -> float:
+	return clampf(Settings.text_scale, 1.0, VerbSticker.SCALE_MAX)
+
+
+## `seed` folded into the shader's float range (a hash seed of 2^31 loses the noise's precision:
+## the grain collapses and the wax turns thin and dark).
+static func shader_seed(s: int) -> float:
+	return float(posmod(s, SEED_FOLD))
+
+
+## A 32-bit integer hash in 0..1 (the shader's `dhash`, bit for bit).
+static func dhash(k: int, s: int) -> float:
+	var n := (k * 374761393 + s * 668265263) & 0xFFFFFFFF
+	n = ((n ^ (n >> 13)) * 1274126177) & 0xFFFFFFFF
+	n = n ^ (n >> 16)
+	return float(n & 0xFFFF) / 65535.0
+
+
+## The wax's dropout at `d` (1080p px along a stroke) for `seed`: 1 inside a dropout stretch,
+## 0 outside (the shader's `dropout_at`; its alpha falls to DROPOUT_ALPHA there).
+static func dropout_factor(s: int, d: float, period: float = DROPOUT_PERIOD) -> float:
+	var sd := int(shader_seed(s))
+	var k := floori(d / period)
+	var best := 0.0
+	for i in [-1, 0, 1]:
+		var kk: int = k + i
+		var c := (float(kk) + 0.5) * period + (dhash(kk, sd) - 0.5) * DROPOUT_JITTER
+		var half_len := lerpf(DROPOUT_LEN.x, DROPOUT_LEN.y, dhash(kk, sd + 1)) * 0.5
+		best = maxf(best, 1.0 - smoothstep(half_len - 0.5, half_len + 0.5, absf(d - c)))
+	return best
+
+
+## The nibble of the dropout stretch at `d` (1080p px along a stroke) for `seed`:
+## {side: -1 or 1 (the edge it bites from), bite: share of the width (DROPOUT_BITE)}; the
+## shader's `dropout_hit` picks the same.
+static func dropout_bite(s: int, d: float, period: float = DROPOUT_PERIOD) -> Dictionary:
+	var sd := int(shader_seed(s))
+	var k := floori(d / period)
+	var best := {"inside": 0.0, "side": 1, "bite": DROPOUT_BITE.x}
+	for i in [-1, 0, 1]:
+		var kk: int = k + i
+		var c := (float(kk) + 0.5) * period + (dhash(kk, sd) - 0.5) * DROPOUT_JITTER
+		var half_len := lerpf(DROPOUT_LEN.x, DROPOUT_LEN.y, dhash(kk, sd + 1)) * 0.5
+		var inside := 1.0 - smoothstep(half_len - 0.5, half_len + 0.5, absf(d - c))
+		if inside > float(best["inside"]):
+			best = {"inside": inside, "side": -1 if dhash(kk, sd + 2) < 0.5 else 1,
+				"bite": lerpf(DROPOUT_BITE.x, DROPOUT_BITE.y, dhash(kk, sd + 3))}
+	return best
+
+
+## Local px (under global scale `k`) to the dropouts' 1080p px, at the current text size.
+static func dropout_scale(k: float) -> float:
+	return k / (BOARD_TO_CANVAS * ui_scale())
+
+
+## Sets the dropout uniforms on `mat` (strokes: DROPOUT_PERIOD; words: WORD_DROPOUT_PERIOD).
+static func set_dropouts(mat: ShaderMaterial, period: float) -> void:
+	mat.set_shader_parameter(&"dropout_period", period)
+	mat.set_shader_parameter(&"dropout_jitter", DROPOUT_JITTER)
+	mat.set_shader_parameter(&"dropout_len", DROPOUT_LEN)
+	mat.set_shader_parameter(&"dropout_alpha", DROPOUT_ALPHA)
+	mat.set_shader_parameter(&"dropout_bite", DROPOUT_BITE)
 
 
 ## The colour of `ink`.
@@ -100,15 +218,19 @@ static func ink_color(i: Ink) -> Color:
 	return Palette.PENCIL_THREAT if i == Ink.THREAT else Palette.PENCIL_PLAN
 
 
+## The stroke's width in this mark's local px (the screen width over its global scale).
+func width() -> float:
+	return stroke_width() / _screen_k
+
+
 ## Adds a stroke (local points) after the others in writing order.
 func add_stroke(points: PackedVector2Array) -> void:
 	var p := PencilShapes.resample(points, STEP_PX)
 	_paths.append(p)
 	_lens.append(PencilShapes.length_of(p))
-	var sh := _make_line(_shadow_mat, width + SHADOW_GROW)
-	sh.position = SHADOW_OFFSET
+	var sh := _make_line(_shadow_mat)
 	_shadows.append(sh)
-	var ln := _make_line(_mat, width)
+	var ln := _make_line(_mat)
 	_lines.append(ln)
 	# shadows under every wax line: keep them first in the tree
 	move_child(sh, _shadows.size() - 1)
@@ -144,8 +266,8 @@ func global_rect() -> Rect2:
 	var r := Rect2()
 	var first := true
 	for p in _paths:
-		var b := PencilShapes.bounds(p, width * 0.5 + SHADOW_GROW)
-		b.end += SHADOW_OFFSET
+		var b := PencilShapes.bounds(p, (width() + SHADOW_GROW * ui_scale() / _screen_k) * 0.5)
+		b.end += SHADOW_OFFSET / _screen_k
 		r = b if first else r.merge(b)
 		first = false
 	return get_global_transform() * r
@@ -163,41 +285,90 @@ func segment_rects(chunk_px: float = 24.0) -> Array[Rect2]:
 			var seg := PackedVector2Array()
 			for k in range(i, j + 1):
 				seg.append(pts[k])
-			out.append(xf * PencilShapes.bounds(seg, width * 0.5))
+			out.append(xf * PencilShapes.bounds(seg, width() * 0.5))
 			i = j
 	return out
 
 
-func _make_line(mat: ShaderMaterial, w: float) -> Line2D:
+## The wax lines (tests: width, caps, material) and their under-shadow copies.
+func wax_lines() -> Array[Line2D]:
+	return _lines
+
+
+func shadow_lines() -> Array[Line2D]:
+	return _shadows
+
+
+func _make_line(mat: ShaderMaterial) -> Line2D:
 	var l := Line2D.new()
-	l.width = w
+	l.width = width()
 	l.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	l.end_cap_mode = Line2D.LINE_CAP_ROUND
 	l.joint_mode = Line2D.LINE_JOINT_ROUND
-	l.texture_mode = Line2D.LINE_TEXTURE_TILE
+	# B1b fix c: STRETCH (UV.x 0..1 over the drawn part) with the part's span along the stroke
+	# per line (`seg_from_px` / `seg_to_px`), so the dropouts are spaced in screen px.
+	l.texture_mode = Line2D.LINE_TEXTURE_STRETCH
 	l.texture = _tile
 	l.antialiased = true
-	l.material = mat
+	l.material = mat.duplicate() as ShaderMaterial
 	l.default_color = Palette.NO_TINT
 	add_child(l)
 	return l
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSFORM_CHANGED or what == NOTIFICATION_ENTER_TREE:
+		_rescale()
+	elif what == NOTIFICATION_VISIBILITY_CHANGED and not is_visible_in_tree():
+		_arm()  # D25: shown again, it writes on again
+
+
+func _on_settings() -> void:
+	_sync()
+	_rescale()
+
+
+func _rescale() -> void:
+	var k := absf(get_global_transform().get_scale().x) if is_inside_tree() else 1.0
+	_screen_k = k if k > 0.0001 else 1.0
+	_apply()
+
+
+## The wax materials (the template and each line's own) or the shadow's.
+func _mats(shadow: bool) -> Array[ShaderMaterial]:
+	var out: Array[ShaderMaterial] = [_shadow_mat if shadow else _mat]
+	for l in (_shadows if shadow else _lines):
+		if l.material is ShaderMaterial:
+			out.append(l.material as ShaderMaterial)
+	return out
+
+
+func _set_param(shadow: bool, param: StringName, value: Variant) -> void:
+	for m in _mats(shadow):
+		m.set_shader_parameter(param, value)
+
+
 func _sync() -> void:
 	if _mat == null:
 		return
-	_mat.set_shader_parameter(&"ink", ink_color(ink))
-	_mat.set_shader_parameter(&"seed", float(seed))
-	_mat.set_shader_parameter(&"dashed", dashed)
-	_mat.set_shader_parameter(&"smear", smear)
-	_shadow_mat.set_shader_parameter(&"ink", Palette.PENCIL_SHADOW)
-	_shadow_mat.set_shader_parameter(&"dashed", dashed)
-	_shadow_mat.set_shader_parameter(&"seed", float(seed))
+	_set_param(false, &"ink", ink_color(ink))
+	_set_param(false, &"seed", shader_seed(seed))
+	_set_param(false, &"dashed", dashed)
+	_set_param(false, &"smear", smear)
+	_set_param(false, &"alpha_max", WAX_ALPHA)
+	_set_param(false, &"sheen", SHEEN)
+	for sh in [false, true]:
+		for m in _mats(sh):
+			set_dropouts(m, DROPOUT_PERIOD)
+	_set_param(true, &"dropout_pad", SHADOW_1080.length())
+	_set_param(true, &"ink", Palette.PENCIL_SHADOW)
+	_set_param(true, &"dashed", dashed)
+	_set_param(true, &"seed", shader_seed(seed))
 	if Motion.has(GLINT):
 		var e := Motion.entry(GLINT)
-		_mat.set_shader_parameter(&"glint_run", e.duration)
-		_mat.set_shader_parameter(&"glint_rest", e.delay)
-		_mat.set_shader_parameter(&"glint_strength", e.amplitude if Motion.live(GLINT) else 0.0)
+		_set_param(false, &"glint_run", e.duration)
+		_set_param(false, &"glint_rest", e.delay)
+		_set_param(false, &"glint_strength", e.amplitude if Motion.live(GLINT) else 0.0)
 
 
 ## Shows the strokes between the wiped share and the written share (by length, in order).
@@ -206,29 +377,67 @@ func _apply() -> void:
 	var from := wiped_share * total
 	var to := progress * total
 	var acc := 0.0
+	var w := width()
+	if _mat != null:
+		var ds := dropout_scale(_screen_k)
+		for sh in [false, true]:
+			_set_param(sh, &"width_px", w)
+			_set_param(sh, &"dropout_scale", ds)
 	for i in _paths.size():
 		var l := _lens[i]
-		var pts := PencilShapes.trim(_paths[i], clampf(from - acc, 0.0, l), clampf(to - acc, 0.0, l))
+		var seg_from := clampf(from - acc, 0.0, l)
+		var seg_to := clampf(to - acc, 0.0, l)
+		var pts := PencilShapes.trim(_paths[i], seg_from, seg_to)
+		for ln: Line2D in [_lines[i], _shadows[i]]:
+			(ln.material as ShaderMaterial).set_shader_parameter(&"seg_from_px", seg_from)
+			(ln.material as ShaderMaterial).set_shader_parameter(&"seg_to_px", maxf(seg_to, seg_from + 0.001))
 		if smear > 0.0 and pts.size() > 1:
 			# the palm drags the trailing wax along with it
 			var drag := WIPE_DRAG * smear * Motion.amplitude(WIPE)
 			for k in pts.size():
-				var w := 1.0 - float(k) / float(pts.size() - 1)
-				pts[k] += drag * w
+				var f := 1.0 - float(k) / float(pts.size() - 1)
+				pts[k] += drag * f
 		_lines[i].points = pts
-		_lines[i].width = width
+		_lines[i].width = w
 		_shadows[i].points = pts
-		_shadows[i].width = width + SHADOW_GROW
+		_shadows[i].width = w + SHADOW_GROW * ui_scale() / _screen_k
+		_shadows[i].position = SHADOW_OFFSET / _screen_k
 		acc += l
 
 
 # --- Motion ------------------------------------------------------------------------------
+
+## D25: an auto mark waits to show, then writes itself on.
+func _arm() -> void:
+	if not auto_write:
+		_pending = false
+		set_process(false)
+		return
+	_pending = true
+	if Motion.live(WRITE) and not motion_running():
+		progress = 0.0
+	set_process(true)
+
+
+func _process(_delta: float) -> void:
+	if not _pending or not auto_write:
+		set_process(false)
+		return
+	if total_length() > 0.0 and is_visible_in_tree():
+		_pending = false
+		set_process(false)
+		write_on()
+
 
 func motion_running() -> bool:
 	return _tween != null and _tween.is_valid() and _tween.is_running()
 
 
 func complete_motion() -> void:
+	if _pending and auto_write and total_length() > 0.0:
+		_pending = false
+		set_process(false)
+		progress = 1.0
 	if not motion_running():
 		return
 	var kind := _tween_kind
@@ -248,11 +457,12 @@ func _end(kind: StringName) -> void:
 		wiped.emit()
 
 
-## Writes the mark on in writing order at `pencil_write_on`'s speed (px/s), capped at its
-## duration. Returns the seconds (0: written whole at once).
+## Writes the mark on in writing order over `pencil_write_on`'s duration. Returns the seconds
+## (0: written whole at once).
 func write_on() -> float:
 	if motion_running():
 		complete_motion()
+	_pending = false
 	wiped_share = 0.0
 	smear = 0.0
 	if not Motion.live(WRITE):
@@ -260,7 +470,7 @@ func write_on() -> float:
 		_end(WRITE)
 		return 0.0
 	var e := Motion.entry(WRITE)
-	var d := minf(total_length() / maxf(e.amplitude, 1.0), e.duration) / maxf(Motion.speed, Motion.SPEED_MIN)
+	var d := Motion.seconds(WRITE)
 	progress = 0.0
 	_tween_kind = WRITE
 	_tween = create_tween()
@@ -276,6 +486,8 @@ func write_on() -> float:
 func wipe() -> float:
 	if motion_running():
 		complete_motion()
+	_pending = false
+	set_process(false)
 	if not Motion.live(WIPE):
 		_end(WIPE)
 		return 0.0

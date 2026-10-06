@@ -64,6 +64,7 @@ static func play(id: StringName, host: Control) -> float:
 		&"pencil_write_on", &"pencil_wipe", &"pencil_glint":
 			var m := GreasePencilMark.new()
 			m.ink = GreasePencilMark.Ink.THREAT
+			m.auto_write = false  # the demo plays the write or the wipe itself
 			host.add_child(m)
 			m.add_stroke(PencilShapes.hand_circle(AT, Vector2(60, 48), 3))
 			if id == &"pencil_wipe":

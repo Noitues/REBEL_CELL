@@ -18,7 +18,7 @@ const LAYOUT_CLASSES: Array[String] = ["Control", "Container", "BoxContainer", "
 	"VFlowContainer", "ScrollContainer", "SubViewportContainer", "SplitContainer", "HSplitContainer", "VSplitContainer"]
 
 
-## Every pencil mark (GreasePencilMark / GreasePencilWord) visible under `root`.
+## Every pencil mark (GreasePencilMark / GreasePencilWord / GreasePencilArt) visible under `root`.
 static func marks(root: Node) -> Array[Node2D]:
 	var out: Array[Node2D] = []
 	if root == null or not root.is_inside_tree():
@@ -36,6 +36,8 @@ static func stroke_rects(m: Node2D) -> Array[Rect2]:
 		return (m as GreasePencilMark).segment_rects()
 	if m is GreasePencilWord:
 		return [(m as GreasePencilWord).global_rect()]
+	if m is GreasePencilArt:
+		return [(m as GreasePencilArt).global_rect()]
 	return []
 
 
@@ -66,7 +68,7 @@ static func violations(root: Node) -> Array[Dictionary]:
 	_walk(root, order, [0])
 	for m in ms:
 		var ml := layer_of(m)
-		var mkey := _key(ml, int(order.get(m.get_instance_id(), 0)))
+		var mkey := _key(ml, int(order.get(m.get_instance_id(), 0)), z_of(m))
 		var rects := stroke_rects(m)
 		for id in order:
 			var n := instance_from_id(id) as Control
@@ -79,7 +81,7 @@ static func violations(root: Node) -> Array[Dictionary]:
 				out.append({"rule": "layer", "mark": str(m.get_path()), "node": str(n.get_path()),
 					"why": "UI on layer %d above the pencil's layer %d" % [nl, ml]})
 				continue
-			if _key(nl, int(order[id])) <= mkey:
+			if _key(nl, int(order[id]), z_of(n)) <= mkey:
 				continue
 			var nr := n.get_global_rect()
 			for r in rects:
@@ -90,8 +92,22 @@ static func violations(root: Node) -> Array[Dictionary]:
 	return out
 
 
-static func _key(layer: int, index: int) -> int:
-	return layer * 1000000 + index
+## B1b: the z a node draws at (its z_index summed up the relative chain): within a layer a
+## higher z draws over a lower one whatever the tree order (a print's pencil X is lifted over
+## the verdict sticker on it that way).
+static func z_of(n: Node) -> int:
+	var z := 0
+	var c := n as CanvasItem
+	while c != null:
+		z += c.z_index
+		if not c.z_as_relative:
+			break
+		c = c.get_parent() as CanvasItem
+	return z
+
+
+static func _key(layer: int, index: int, z: int = 0) -> int:
+	return layer * 1000000000 + (z + 4096) * 100000 + index
 
 
 static func _walk(n: Node, order: Dictionary, counter: Array) -> void:

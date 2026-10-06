@@ -256,6 +256,7 @@ func _sheet() -> void:
 	canvas.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	canvas.draw.connect(_draw_sheet.bind(canvas))
 	add_child(canvas)
+	_pencil_sheet(PencilSet.under(canvas))
 	var paper := RaidPaper.new(&"meridian", "MANIFEST AUDIT", RaidPaper.STAMP_INTERCEPTED, "WO 52-MF-114")
 	paper.set_sub("RAID INCOMING  //  WO 52-MF-114")
 	paper.add_row("TARGET", "CORE (HOME)")
@@ -316,15 +317,23 @@ func _draw_sheet(ci: Control) -> void:
 	RaidVehicle.draw(ci, Vector2(340, 250), 12.0, RaidVehicle.FAST, &"meridian", 0.8, [RaidVehicle.STATUS_SLOWED])
 	RaidVehicle.draw(ci, Vector2(400, 250), 12.0, RaidVehicle.FAST, &"meridian", 0.6, [RaidVehicle.STATUS_FROZEN])
 	RaidVehicle.draw(ci, Vector2(460, 250), 12.0, RaidVehicle.FAST, &"meridian", 1.0, [], -PI * 0.25)
-	var red := RaidSkin.pencil_threat()
-	var yellow := RaidSkin.pencil_plan()
-	RaidPencil.word(ci, "INCOMING", Vector2(110, 370), 26, red)
-	RaidPencil.word(ci, "TAKEN", Vector2(280, 370), 26, red, 0.6)
-	RaidPencil.word(ci, "DOWN", Vector2(420, 370), 26, red, 1.0, 0.5)
-	RaidPencil.word(ci, "BREACHED", Vector2(200, 440), 48, red, 1.0, 0.0, -0.05, true, 1.0)
-	RaidPencil.arrow(ci, PackedVector2Array([Vector2(30, 500), Vector2(200, 480), Vector2(320, 540)]), red, 4.5)
-	RaidPencil.arrow(ci, PackedVector2Array([Vector2(30, 560), Vector2(200, 540), Vector2(320, 600)]), red, 4.5, 1.0, 3, true)
-	RaidPencil.circle(ci, Vector2(400, 520), 32, 22, red, 4.5)
-	RaidPencil.circle(ci, Vector2(480, 520), 32, 22, yellow, 4.5)
-	RaidPencil.cross(ci, Vector2(400, 590), 14, red, 5.0)
-	RaidPencil.tick(ci, Vector2(470, 590), 22, yellow, 4.0)
+
+
+## B1b: the raid's pencil vocabulary in the kit's one wax material (words part written / wiped,
+## a solid and a dashed arrow, the two inks' circles, an X and a tick).
+func _pencil_sheet(pen: PencilSet) -> void:
+	var red := GreasePencilMark.Ink.THREAT
+	var yellow := GreasePencilMark.Ink.PLAN
+	var head := GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN
+	pen.begin()
+	pen.word("incoming", "INCOMING", Vector2(110, 370), UiTheme.TITLE, red, 1.0, 1.0)
+	pen.word("taken", "TAKEN", Vector2(280, 370), UiTheme.TITLE, red, 1.0, 0.6)
+	pen.word("down", "DOWN", Vector2(420, 370), UiTheme.TITLE, red, 1.0, 1.0, 0.5)
+	pen.word("breached", "BREACHED", Vector2(200, 440), UiTheme.DISPLAY, red, 1.0, 1.0, 0.0, -0.05)
+	pen.stroke("arrow", PencilShapes.arrow(PencilShapes.bezier(Vector2(30, 500), Vector2(200, 480), Vector2(320, 540)), head, 1), red, 1.0)
+	pen.stroke("whatif", PencilShapes.arrow(PencilShapes.bezier(Vector2(30, 560), Vector2(200, 540), Vector2(320, 600)), head, 3), red, 1.0, 0.0, true, 3)
+	pen.circle("red", Vector2(400, 520), Vector2(32, 22), red, 1, 1.0)
+	pen.circle("yellow", Vector2(480, 520), Vector2(32, 22), yellow, 2, 1.0)
+	pen.cross("x", Rect2(Vector2(386, 576), Vector2(28, 28)), red, 0.0, 4, 1.0)
+	pen.stroke("tick", [PackedVector2Array([Vector2(459, 589), Vector2(468, 599), Vector2(483, 578)])], yellow, 1.0, 0.0, false, 5)
+	pen.end()

@@ -95,6 +95,6 @@ static func draw(ci: CanvasItem, c: Vector2, r: float, type: String, corporation
 		var l := c + Vector2.from_angle(heading + HEADING_SPREAD) * (R - r * 0.1)
 		var rr := c + Vector2.from_angle(heading - HEADING_SPREAD) * (R - r * 0.1)
 		var tri := PackedVector2Array([tip, l, rr])
-		ci.draw_colored_polygon(tri, Color(RaidSkin.pencil_plan(), alpha))
+		ci.draw_colored_polygon(tri, Color(Palette.PENCIL_PLAN, alpha))  # the icon's heading chevron (an icon part, not a pencil stroke)
 		tri.append(tip)
 		ci.draw_polyline(tri, Color(Palette.NIGHT_SKY, alpha), maxf(1.0, r * 0.08))

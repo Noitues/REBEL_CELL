@@ -18,14 +18,12 @@ const DOCK := &"raid_dock_circle"
 const IF_PLACED := "IF PLACED" # TR
 const NO_SLOT := "NO SLOT" # TR
 ## The parked sticker's lift above its slot (x its height) and tilt (degrees); the arrow's
-## width and its bow; the dock circle's radius (x the node's rect) and width.
+## bow; the dock circle's radius (x the node's rect). The wax's width is the kit's (B1b).
 const PARK_LIFT := 0.62
 const PARK_TILT := -3.0
 const PARK_BORDER := 6.0  # the parked sticker's white border round the card (px)
-const ARROW_W := 6.0
 const ARROW_BOW := 0.18
 const DOCK_R := 1.9
-const DOCK_W := 6.0
 ## The IF PLACED terminal's width and its gap from the node (px at 1.0).
 const TERM_W := 230.0
 const TERM_GAP := 26.0
@@ -265,17 +263,17 @@ func _lay() -> void:
 				end = c + (start - c).normalized() * rad * 1.08
 		var mid := (start + end) * 0.5 + (end - start).orthogonal() * ARROW_BOW
 		var shaft := PencilShapes.bezier(start, mid, end, 24)
-		_pool.stroke("arrow", PencilShapes.arrow(shaft, ARROW_W * RaidPencil.HEAD_LEN, 17), GreasePencilMark.Ink.PLAN, ARROW_W, _arrow_t, 0.0, false, 17)
+		_pool.stroke("arrow", PencilShapes.arrow(shaft, GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN, 17), GreasePencilMark.Ink.PLAN, _arrow_t, 0.0, false, 17)
 		if circle.has_area():
 			var c := circle.get_center()
 			var rad := maxf(circle.size.x, circle.size.y) * 0.5 * DOCK_R
 			var ink := GreasePencilMark.Ink.PLAN if valid else GreasePencilMark.Ink.THREAT
 			var seed := _dock_id.hash()
-			_pool.stroke("dock", [PencilShapes.hand_circle(c, Vector2(rad, rad * 0.68), seed)], ink, DOCK_W, _dock_t, 0.0, false, seed)
+			_pool.stroke("dock", [PencilShapes.hand_circle(c, Vector2(rad, rad * 0.68), seed)], ink, _dock_t, 0.0, false, seed)
 			if not valid:
 				var a := rad * 0.45
 				_pool.stroke("x", [PackedVector2Array([c + Vector2(-a, -a * 0.85), c + Vector2(a, a * 0.8)]),
-					PackedVector2Array([c + Vector2(a, -a * 0.85), c + Vector2(-a * 0.95, a * 0.9)])], GreasePencilMark.Ink.THREAT, DOCK_W, _dock_t, 0.0, false, seed + 3)
+					PackedVector2Array([c + Vector2(a, -a * 0.85), c + Vector2(-a * 0.95, a * 0.9)])], GreasePencilMark.Ink.THREAT, _dock_t, 0.0, false, seed + 3)
 	_pool.end()
 	queue_redraw()
 
