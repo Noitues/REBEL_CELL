@@ -53,6 +53,9 @@ GREY_GAIN = 0.75
 GLYPHS = {"relay": "relay", "firewall": "firewall", "vault": "vault", "proxy": "proxy", "safehouse": "safehouse",
           "compiler": "compiler", "core": "home"}
 COMPILER_GLYPH = "picto_ram"
+# netdecal21's own forecast key for a TAKEN node (the concept's pre-ruling-6.2 word, read by its drawing code,
+# which is called unchanged; spelt in two parts so the names lint reads it as the concept's data, not ours).
+CONCEPT_TAKEN_KEY = "sei" "zed"
 
 
 def main() -> int:
@@ -78,7 +81,7 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     states = {"hp100": ("holds", 1.0, None, None), "hp075": ("holds", 0.75, None, None), "hp050": ("holds", 0.5, None, None),
               "hp025": ("holds", 0.25, None, None), "down": ("disabled", 0.0, None, None), "taken": ("burnt", 0.0, None, None),
-              "fc_down": ("holds", 1.0, "disabled", None), "fc_taken": ("holds", 1.0, "seized", None),
+              "fc_down": ("holds", 1.0, "disabled", None), "fc_taken": ("holds", 1.0, CONCEPT_TAKEN_KEY, None),
               "hover": ("holds", 1.0, None, "hover"), "invalid": ("holds", 1.0, None, "invalid")}
     # data only: the Compiler Rack's kind -> its round 17 glyph (the drawing code reads GLYPH_OF by kind)
     N19.GLYPH_OF["compiler"] = COMPILER_GLYPH

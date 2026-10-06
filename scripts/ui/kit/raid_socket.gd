@@ -117,7 +117,7 @@ static func draw(ci: CanvasItem, c: Vector2, r: float, spec: Dictionary) -> void
 	var alpha := float(spec.get("alpha", 1.0))
 	var tex := texture(spec)
 	if tex != null:
-		ci.draw_texture_rect(tex, rect(c, r), false, Color(Color.WHITE, alpha))
+		ci.draw_texture_rect(tex, rect(c, r), false, Color(Palette.NO_TINT, alpha))
 	if String(spec.get("state", STATE_HOLDS)) == STATE_DOWN:
 		bolt(ci, c, r * BOLT, alpha)
 

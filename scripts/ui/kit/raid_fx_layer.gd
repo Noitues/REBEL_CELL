@@ -1111,7 +1111,7 @@ func _ice_block(c: Vector2, r: float, u: float, alpha: float, _seed: int) -> voi
 	if tex == null:
 		return
 	var half := Vector2(tex.get_size()) * 0.5 * r / ICE_ART_RX
-	_ci.draw_texture_rect(tex, Rect2(c - half, half * 2.0), false, Color(Color.WHITE, alpha))
+	_ci.draw_texture_rect(tex, Rect2(c - half, half * 2.0), false, Color(Palette.NO_TINT, alpha))
 
 ## ANIM-R1 M4: the shot: the gun's node rings as it fires, the trace flies from the gun to
 ## the threat over its duration (a bright head), then fades while the hit lands.

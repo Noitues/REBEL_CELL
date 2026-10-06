@@ -88,7 +88,7 @@ static func draw(ci: CanvasItem, c: Vector2, r: float, type: String, corporation
 	var status := String(statuses[0]) if not statuses.is_empty() else ""
 	var tex := texture(type, corporation_id, hp, status)
 	if tex != null:
-		ci.draw_texture_rect(tex, rect(c, r), false, Color(Color.WHITE, alpha))
+		ci.draw_texture_rect(tex, rect(c, r), false, Color(Palette.NO_TINT, alpha))
 	if not is_nan(heading):
 		var R := r * RING
 		var tip := c + Vector2.from_angle(heading) * (R + r * HEADING_OUT)

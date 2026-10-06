@@ -3386,6 +3386,7 @@ ease = 1
 trans = 0
 amplitude = 0.0
 tier = 2
+kind = 1
 
 ; ART-6 3A: a raid pencil mark cloth-wipes off from its left (never an alpha fade)
 [sub_resource type="Resource" id="m_raid_mark_wipe"]
