@@ -298,8 +298,9 @@ func play() -> void:
 	if held.size() >= needed:
 		var e := Motion.entry(READY)
 		var start := at + slap + ring - step if at > 0.0 else 0.0
-		_tween.parallel().tween_property(self, "breach_t", 1.0, maxf(ready, 0.01)).set_delay(maxf(0.0, start)) \
-			.set_ease(e.ease if e != null else Tween.EASE_OUT).set_trans(e.trans if e != null else Tween.TRANS_SINE)
+		var breach := _tween.parallel().tween_property(self, "breach_t", 1.0, maxf(ready, 0.01)).set_delay(maxf(0.0, start))
+		if e != null:
+			breach.set_ease(e.ease).set_trans(e.trans)
 	_tween.finished.connect(_end_state)
 
 
