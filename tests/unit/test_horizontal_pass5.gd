@@ -106,6 +106,9 @@ func test_esc_leaves_the_share_code_field() -> void:
 	var hq: Control = add_child_autofree(load("res://scenes/hq/hq_scene.tscn").instantiate())
 	hq.show_start()
 	await _frames()
+	# Parity NEWC-03: the share code row folds under its toggle; open it first.
+	(hq.find_child("CodesToggle", true, false) as Button).pressed.emit()
+	await _frames()
 	var field := hq.find_child("CodeEdit", true, false) as LineEdit
 	field.grab_focus()
 	await _frames()
