@@ -61,6 +61,9 @@ const LOOT_WORDS := {"card": "card", "firmware": "Firmware chip", "daemon": "Dae
 ## Passes fitting the route map beside the ROUTE column (H24 S12), the route's own zoom
 ## and anchor, and the smallest the fit may make it (the city's zoom).
 const ROUTE_FITS_MAX := 3
+## Parity ROUTE-06: passes after ROUTE_FITS_MAX that may bring where the player is and the
+## next choices back into the free area (pan and zoom out only; `fit_route_map`).
+const ROUTE_RESCUE_PASSES := 2
 const ROUTE_ZOOM := 1.45
 const ROUTE_ANCHOR := Vector2(0.46, 0.58)
 const ROUTE_MIN_ZOOM := 0.7
@@ -1143,10 +1146,10 @@ func _modal_open() -> bool:
 
 
 ## Names the screen on the HUD strip from the run phase (STYLE_GUIDE 4, "Neon city").
-## The route's title sticker. Parity ROUTE-06 (round 37 `city_default` names it THE GRID): not
-## renamed yet: the shorter word changes the bar's wrap at 1.6, and the route's fit then leaves
-## YOU ARE HERE on the key strip (Meridian, test_art7_netrun); proposed to S-ROUTE (DECISIONS).
-const ROUTE_TITLE := "NETRUN // ROUTE" # TR
+## The route's title sticker: parity ROUTE-06, round 37 `city_default`'s THE GRID (the run's
+## map). The word's taller bar at 1.6 had exposed a fit that ended off where the player is;
+## the fit's rescue pass (`fit_route_map`) frames them again.
+const ROUTE_TITLE := "THE GRID" # TR
 
 
 func _title_screen(s: NetrunSession, screen: String = "") -> void:
@@ -1401,7 +1404,8 @@ var _route_fits: int = 0
 ## The route's nodes (icons and pips) fitted into the map area beside the ROUTE column,
 ## once the page's layout has settled (H24 S12: at 1.6 a node sat under the ROUTE window):
 ## the camera pans and zooms out as far as ROUTE_MIN_ZOOM, and checks again once the city
-## has redrawn (at most ROUTE_FITS_MAX passes).
+## has redrawn (at most ROUTE_FITS_MAX passes, then up to ROUTE_RESCUE_PASSES that only pan and
+## zoom out while where the player is and the next choices are not in the free area).
 func fit_route_map() -> void:
 	if _grid_zoomed or _route_area == null or not is_instance_valid(_route_area) or not _route_area.is_inside_tree() \
 			or city_overlay == null or not is_instance_valid(city_overlay):
@@ -1415,12 +1419,22 @@ func fit_route_map() -> void:
 	var area := route_free_area()
 	if area.size.x <= LegendSpot.MARGIN * 2.0 or area.size.y <= LegendSpot.MARGIN * 2.0:
 		return
-	if _route_fits >= ROUTE_FITS_MAX:
-		return
 	# ANIM-R3 B8: a margin the size of a node's reach (its icon, label tab and pips) off the
 	# screen's edge, and the street marker kept in frame with the nodes.
 	var free := area.grow(-ROUTE_MARGIN * Settings.text_scale)
 	var here := city_overlay.here_marker_rects()
+	if _route_fits >= ROUTE_FITS_MAX:
+		# Parity ROUTE-06: the passes are spent but where the player is and the next choices are
+		# not in the free area (the last pass's big zoom step was never checked: Meridian at 1.6
+		# under THE GRID's taller bar ended with YOU ARE HERE on the key strip). A rescue pass
+		# frames them without zooming in (a pan and at most a zoom out, the step the estimate
+		# gets right), checked once more.
+		if _route_fits >= ROUTE_FITS_MAX + ROUTE_RESCUE_PASSES or route_frames(free):
+			return
+		var rescue := LegendSpot.fit_into(city_overlay, free, 1.0, minf(1.0, ROUTE_MIN_ZOOM / city.scale.x), route_focus_ids(), here)
+		if not rescue.is_empty():
+			_apply_route_fit(rescue)
+		return
 	# ANIM-R3 B8: the whole route when it fits at ROUTE_FIT_FLOOR or closer; else the part the
 	# player decides on (where they are and the next choices) inside the area with its margins
 	# (the whole route squeezed to the minimum zoom jammed its nodes against the screen's edge
@@ -1442,6 +1456,13 @@ func fit_route_map() -> void:
 		fit = LegendSpot.fit_into(city_overlay, free, ROUTE_ZOOM / city.scale.x, ROUTE_MIN_ZOOM / city.scale.x, route_focus_ids(), here)
 	if fit.is_empty():
 		return
+	_apply_route_fit(fit)
+
+
+## One fit pass: the city's camera zoomed by `fit`'s zoom and panned so its "from" point lands on
+## its "to" point (LegendSpot.fit_into), then measured again once the city has redrawn.
+func _apply_route_fit(fit: Dictionary) -> void:
+	var city := background.city
 	_route_fits += 1
 	var k := float(fit["zoom"])
 	var screen := get_global_rect()

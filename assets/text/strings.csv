@@ -1568,7 +1568,6 @@ NETRUN // FLATLINED,NETRUN // FLATLINED
 NETRUN // HOME FELL,NETRUN // HOME FELL
 NETRUN // JACK OUT,NETRUN // JACK OUT
 NETRUN // RAID,NETRUN // RAID
-NETRUN // ROUTE,NETRUN // ROUTE
 NETRUN ABORTED - the home server fell,NETRUN ABORTED - the home server fell
 NETRUN COMPLETE,NETRUN COMPLETE
 NETRUN FAILED - operative lost,NETRUN FAILED - operative lost
@@ -2755,7 +2754,9 @@ TERMINAL // %s,TERMINAL // %s
 TERMINAL // %s // NODE %d OF %d,TERMINAL // %s // NODE %d OF %d
 TERMINAL EVENT,TERMINAL EVENT
 TEXT SCALE,TEXT SCALE
+THE GRID,THE GRID
 THE MAINFRAME,THE MAINFRAME
+THE SPRAWL,THE SPRAWL
 THE TARGET,THE TARGET
 THE WHEEL,THE WHEEL
 THEY LOST %d,THEY LOST %d
@@ -3260,7 +3261,6 @@ momentum_handler,momentum_handler
 netrun,netrun
 netruns,netruns
 next,next
-next: pick one (numbered),next: pick one (numbered)
 no change,no change
 no names. who ran this cell?,no names. who ran this cell?
 no power,no power
@@ -3270,6 +3270,7 @@ none (%d needed for the breach),none (%d needed for the breach)
 none left at large.,none left at large.
 none yet (buy them at HQ with campaign Schematics),none yet (buy them at HQ with campaign Schematics)
 not yet,not yet
+not yet (hidden),not yet (hidden)
 nothing yet,nothing yet
 noticed,noticed
 notyet,notyet
@@ -3298,6 +3299,7 @@ saved to profile,saved to profile
 schematics,schematics
 select,select
 selectable,selectable
+selectable: pick one (numbered),selectable: pick one (numbered)
 slice,slice
 slot %s,slot %s
 socket,socket

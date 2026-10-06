@@ -98,10 +98,10 @@ func test_titles_are_yellow_stickers_not_bar_lettering() -> void:
 	var scene := _netrun()
 	await _frames()
 	var bar: HudBar = scene.hud
-	assert_eq(bar._title, tr("NETRUN // ROUTE"))
+	assert_eq(bar._title, tr("THE GRID"))
 	assert_not_null(bar.title_sticker, "a sticker names the screen")
 	assert_eq(bar.title_sticker.fill, VerbSticker.Fill.YELLOW, "yellow (v2 page-title rule)")
-	assert_eq(bar.title_sticker.text, tr("NETRUN // ROUTE"))
+	assert_eq(bar.title_sticker.text, tr("THE GRID"))
 	assert_false(bar.title_box.draw.is_connected(Callable(bar, "_draw_title")), "no paper lettering in the bar")
 	bar.set_screen("", "CELL DEFENSE RAID SETUP")
 	assert_lte(bar.title_box.custom_minimum_size.x, HudBar.TITLE_MAX_WIDTH + HudBar.TITLE_PAD + 60.0, "a long title letters smaller, not wider")
