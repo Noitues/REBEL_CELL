@@ -2360,7 +2360,8 @@ func _place_hq() -> void:
 	var verb := page.get_node("VerbSlot") as Control
 	var vr: Rect2 = r["verb"]
 	var vmin := verb.get_combined_minimum_size()
-	verb.size = Vector2(maxf(vr.size.x, vmin.x), maxf(vr.size.y, vmin.y))
+	# B3 b: in the raid setup the slot is as tall as its sticker and strip (the card column runs down to it).
+	verb.size = Vector2(maxf(vr.size.x, vmin.x), vmin.y if panel_name == "raid" else maxf(vr.size.y, vmin.y))
 	verb.position = Vector2(area.x - HqLayout.MARGIN - verb.size.x, area.y - HqLayout.MARGIN - verb.size.y)
 	var hand := page.get_node("Hand") as Control
 	var hr: Rect2 = r["hand"]
@@ -2424,8 +2425,7 @@ func _place_hq() -> void:
 		# B3 (the THREAT INTEL fit at 1.6): the setup's column starts at the page's top (its key
 		# stands on the map) and ends at the verb's sticker.
 		top = RAID_COLUMN_TOP
-		# The slot stands its sticker at its foot (ALIGNMENT_END): the column runs down to the sticker.
-		bottom = verb.position.y + maxf(0.0, verb.size.y - vmin.y)
+		bottom = verb.position.y
 		_fit_network(column.get_child(0) as Control, bottom - top)
 	column.size = Vector2(col_w, maxf(1.0, minf((column.get_child(0) as Control).get_combined_minimum_size().y, bottom - top)))
 	column.position = Vector2(col_x, bottom - column.size.y)
@@ -2462,7 +2462,7 @@ func _place_hq() -> void:
 ## B3: the raid setup's card column's top (page px): THREAT INTEL starts right under the bar.
 const RAID_COLUMN_TOP := 0.0
 ## B3 b: the gap between THREAT INTEL, YOUR NETWORK and IF PLACED in the setup's column (px).
-const RAID_STACK_GAP := 2
+const RAID_STACK_GAP := 0
 
 
 ## HQ-B: the share of the page's width the opened map key may span.
@@ -2569,7 +2569,8 @@ func fit_hq_map() -> void:
 	if _hq_fit_passes > HQ_FIT_PASSES:
 		_end_hq_fit()
 		return
-	get_tree().process_frame.connect(fit_hq_map, CONNECT_ONE_SHOT)
+	if not get_tree().process_frame.is_connected(fit_hq_map):  # B3 b: a relayout may have asked already
+		get_tree().process_frame.connect(fit_hq_map, CONNECT_ONE_SHOT)
 
 
 ## How far the map's free part may move or change size (px) before the HQ fits again.
@@ -3430,7 +3431,7 @@ func _your_network(projection: RaidResolver.RaidResult) -> RaidTerminal:
 	var orders_win := RaidTerminal.new(tr("YOUR NETWORK"), Palette.NET_CYAN)
 	orders_win.name = "NodeOrders"
 	# B3 b (round 44 `raid_setup.png`: "9 NODES" in the header): the node count is the header's tag.
-	orders_win.tag_label.text = tr(NETWORK_COUNT) % claimed.size()
+	orders_win.tag_label.text = tr(NETWORK_COUNT_ONE) if claimed.size() == 1 else tr(NETWORK_COUNT) % claimed.size()
 	var orders := VBoxContainer.new()
 	orders.name = "Orders"
 	orders.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -3452,9 +3453,10 @@ func _your_network(projection: RaidResolver.RaidResult) -> RaidTerminal:
 
 ## B3 b: the header's node count (round 44 "9 NODES").
 const NETWORK_COUNT := "%d NODES" # TR
-## B3 b (art director): YOUR NETWORK collapsed to its header and the CORE row (its glyph and
-## forecast chip; the other nodes are picked on the map): the rows it hides, CORE's name button
-## (hidden too: the glyph and the chip carry it), the window and whether it is collapsed now.
+const NETWORK_COUNT_ONE := "1 NODE" # TR
+## B3 b (art director): YOUR NETWORK collapsed to its header and the CORE row (the other nodes
+## are picked on the map): the rows it hides, CORE's name button (the pad's stop), the window and
+## whether it is collapsed now.
 var _network_rows: Array[Control] = []
 var _network_core_name: Control = null
 var _network_win: Control = null
@@ -3466,9 +3468,10 @@ var _network_compact: bool = false
 ## (IF PLACED, shown only while a card is pointed at, never counts), YOUR NETWORK keeps its header
 ## and the CORE row. Returns whether it is collapsed.
 func _fit_network(stack_holder: Control, room: float) -> bool:
-	if _network_win == null or not is_instance_valid(_network_win) or _network_rows.is_empty():
+	if _network_win == null or not is_instance_valid(_network_win):
 		return false
-	var sep := float((_network_rows[0].get_parent() as VBoxContainer).get_theme_constant("separation"))
+	var orders := _network_win.find_child("Orders", true, false) as VBoxContainer
+	var sep := float(orders.get_theme_constant("separation")) if orders != null else 0.0
 	var need := stack_holder.get_combined_minimum_size().y
 	if _network_compact:
 		for r in _network_rows:
@@ -3476,20 +3479,18 @@ func _fit_network(stack_holder: Control, room: float) -> bool:
 	var placed := _if_placed_term
 	if placed != null and is_instance_valid(placed) and placed.visible:
 		need -= placed.get_combined_minimum_size().y + float((placed.get_parent() as VBoxContainer).get_theme_constant("separation"))
-	var compact := need > room + 0.5
+	var compact := need > room + 0.5 and not _network_rows.is_empty()
 	if compact != _network_compact:
 		_network_compact = compact
 		for r in _network_rows:
 			r.visible = not compact
-		if _network_core_name != null and is_instance_valid(_network_core_name):
-			_network_core_name.visible = not compact
 	# Where even THREAT INTEL alone is taller than the column (text 2.0), the collapsed YOUR
 	# NETWORK leads the column, so it is never below the fold (THREAT INTEL scrolls under it).
 	var win := _network_win
 	var stack := win.get_parent()
 	if stack != null:
 		var intel := stack.get_node_or_null("ThreatIntel") as Control
-		var lead := compact and intel != null and intel.get_combined_minimum_size().y + float((stack as VBoxContainer).get_theme_constant("separation")) \
+		var lead := need > room + 0.5 and intel != null and intel.get_combined_minimum_size().y + float((stack as VBoxContainer).get_theme_constant("separation")) \
 			+ (win as Control).get_combined_minimum_size().y > room + 0.5
 		var want := 0 if lead else (intel.get_index() + 1 if intel != null else win.get_index())
 		if win.get_index() != want and (lead or win.get_index() < (intel.get_index() if intel != null else 0)):

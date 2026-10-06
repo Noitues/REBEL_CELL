@@ -384,6 +384,8 @@ func test_raid_setup_paper_whole_network_visible_and_a_page_title() -> void:
 		assert_not_null(core, "%s: the CORE row" % tag)
 		var shown := column.get_global_rect().grow(1.0)
 		assert_true(shown.encloses(core.get_global_rect()), "%s: YOUR NETWORK's CORE row is in view, not below the fold (%s in %s)" % [tag, core.get_global_rect(), shown])
+		var run := page.find_child("RunRaid", true, false) as Control
+		assert_lte(minf(core.get_global_rect().end.y, shown.end.y), run.get_global_rect().position.y + 0.5, "%s: the CORE row is clear of START DEFENSE" % tag)
 		var head := network.get_global_rect().position.y
 		assert_true(shown.has_point(Vector2(network.get_global_rect().get_center().x, head + 2.0)), "%s: its header is in view" % tag)
 		assert_eq((network as RaidTerminal).tag_label.text, tr("%d NODES") % RunManager.campaign.grid.claimed_ids().size(), "%s: the header counts the nodes" % tag)
@@ -417,10 +419,12 @@ func test_your_network_and_threat_intel_fit_the_column_at_every_text_size() -> v
 		if scale <= 1.6:
 			# The review: THREAT INTEL was cut at the column's scroll edge at 1.6 (B1c note).
 			assert_true(column.get_global_rect().grow(1.0).encloses(intel.get_global_rect()), "x%.1f: THREAT INTEL whole in the column" % scale)
+			assert_gt(network.get_global_rect().position.y, intel.get_global_rect().position.y, "x%.1f: under THREAT INTEL" % scale)
 		else:
-			# 2.0: the column scrolls from THREAT INTEL's top (proposed slice: its big-text layout).
-			assert_lte(absf(intel.get_global_rect().position.y - column.get_global_rect().position.y), DecryptedHoloPanel.BACKING_OUT * 2.0 + 1.0, "x%.1f: THREAT INTEL's top shows" % scale)
-		assert_gt(network.get_global_rect().position.y, intel.get_global_rect().position.y, "x%.1f: under THREAT INTEL" % scale)
+			# 2.0 (B3 b): THREAT INTEL alone is taller than the column (its big-text layout is a later
+			# slice): the collapsed YOUR NETWORK leads the column, never below the fold.
+			assert_true(hq.network_collapsed(), "x%.1f: YOUR NETWORK collapsed" % scale)
+			assert_lte(absf(network.get_global_rect().position.y - column.get_global_rect().position.y), 1.0, "x%.1f: YOUR NETWORK at the column's top" % scale)
 		assert_true(SCREEN.grow(1.0).encloses(column.get_global_rect()), "x%.1f: on screen" % scale)
 		hq.get_parent().queue_free()
 		await _frames(1)

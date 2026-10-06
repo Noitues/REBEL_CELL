@@ -118,6 +118,7 @@ const SCREENS := [
 	["raid_result_meridian", "_s_raid_result_meridian", "B3 (review D6): a Meridian raid's playout at its end (no orange influence fill)."],
 	["raid_report_meridian", "_s_raid_report_meridian", "B3 (review Q7): a Meridian raid's report (CELL HOLDS on the paper)."],
 	["route_hover_all", "_s_route_hover_all", "B3 (designer Q4): the route while the key strip is hovered (every link a hairline)."],
+	["route_mid", "_s_route_mid", "B3 b: the route mid-run (two nodes walked; the frame on the walked path, the options and a layer ahead)."],
 	["raid_incoming", "_s_raid_incoming", "B3 (review section c): the raid interlude's INCOMING transition, mid-way."],
 	["route", "_s_route", "Netrun route: choosing where to go."],
 	["route_focus", "_s_route_focus", "Parity ROUTE-04: the pad's focus on the route's last choice sticker."],
@@ -1121,6 +1122,23 @@ func _s_route_focus() -> void:
 		(stops[stops.size() - 1] as Control).grab_focus()
 	await _settle(net)
 	_after_capture = func() -> void: Settings.set_pad_active(false)
+
+
+## B3 b: the route two steps into the run (view state: the first two choices walked).
+func _s_route_mid() -> void:
+	var net: Node = await _netrun()
+	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
+	var s := RunManager.netrun
+	for step in 2:
+		var options: Array = s.available_nodes()
+		if options.is_empty():
+			break
+		var id: StringName = options[0]
+		s.run.current_node_id = id
+		s.run.visited.append(id)
+	net._show_map()
+	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
+	await _settle(net)
 
 
 func _s_route_meridian() -> void:
