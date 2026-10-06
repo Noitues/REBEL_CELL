@@ -66,6 +66,50 @@ Designer (Noitues), 2026-10-05 evening: "I want my main to look just like art pa
   before any fix. This replaces "the art pass design is correct, follow it without asking" for parity work. Bug fixes
   that are not a look choice (test reds, overlaps) still go ahead.
 
+### 2026-10-05 — Parity fix — TITLE-01 title backdrop (designer decision)
+Designer decision 2026-10-05: the title follows concept round 33 (`round33_ui_chrome/title_screen.png` / `.gif`,
+art-concepts-r43). Audit item TITLE-01 (P1, `docs/art_review/PARITY/GAPS.md`): main's title drew the 2D NeonCity
+line-art city, unblurred and saturated, under a flat 0.58 dim.
+- **The real 3D city.** New `BlurredCityBackdrop` (`scripts/ui/kit/blurred_city_backdrop.gd`): its own `CityView3D`
+  (the unified city of the Grid / raid / netrun, 5a; band held at GRID: solid buildings, the full city life) with 5c's
+  `CityViewMotion` (traffic, sky lanes, lights), a fixed camera with the corp's HQ landmark at a screen anchor, night
+  look, drawn under a tilt-shift + darkening ColorRect (`shaders/city/city_tilt_shift.gdshader`: reads the screen like
+  `glass_blur`, with glass_blur's two-ring mip kernel for the soft copy, mixed with the sharp one by the focus band).
+- **The concept's own numbers** (round 33 `title.py` `backdrop()`, art-concepts-r43 dcfdf74, ported, not re-tuned):
+  Gaussian 5 px at 1080 for the soft copy; sharp band centre 0.56, half 0.36, power 0.8; menu-side darkening 0.62
+  fading over 900 / 1920 of the width at power 1.4; foot 0.35 from 0.82 down; vignette 0.35 round (0.6, 0.5) scaled
+  (1.3, 1.1); gain 0.86. They live in a new read-only `CityBackdropLook` resource (`scripts/city3d/city_backdrop_look.gd`,
+  not under scripts/data: no smoke check) — the title's is `content/config/title_city_backdrop.tres` — together with
+  the tiers (`city_tiers` [false, true, true], as D17's `backdrop_city_tiers`), the framing (ortho 300 BU, the HQ's
+  point 20 BU up its lot's centre at (0.86, 0.64) of the view: the ziggurat's eye lands where the concept's does) and
+  `focus_at` / `field_at`, the shader's maths in GDScript for the tests. A reusable piece: LOOT-04's loot / event /
+  shop overlays can take it with their own look and one call if the designer rules that way (not switched here).
+- **Which HQ:** the last-played campaign's target (`corp_of_slot(continue_slot)`: the slot the Continue line offers,
+  else RunManager.latest_slot), else **Halcyon** (`default_corp`, the concept's ziggurat). The Cell and a corp with no
+  HQ on the city fall back to Halcyon too.
+- **Fallback.** `CyberdeckBackground.use_blurred_city(look, corp)` swaps it in only where the look's city quality tier
+  takes the 3D city and a renderer is there (tier 0 and headless keep the 2D NeonCity and CITY_DIM, as D17 keeps its
+  stills) and none of the title's 2D design-review args (`--demo-overview`, `--demo-district=` ...) is given. The 2D
+  city stays in the tree (hidden, process off) for the title's references. Only the title calls it: the HQ, the
+  netrun / HQ warm-ups and the labs are unchanged. `title_scene.gd`: three backdrop lines (the look, the call, the
+  dim hidden over the 3D city, which darkens itself).
+- **Motion.** The city fades in over the night sky when its model is in with the existing `city_bake_fade` (the 2D
+  bake's arrival; T0), MotionSkip passive; the title's own entries (sign, glitch, ticker) are untouched. Reduce
+  effects / reduce motion: a still frame (the city renders once, then holds; again on a resize).
+- **Measured** (windowed, `tools/city/title_backdrop_capture.tscn`, 1920x1080, v-sync off as city_lab): tier 2 frame
+  3.31 ms avg / 5.20 max, backdrop city GPU 2.31 ms, rest of the title 0.46 ms; tier 1 3.22 / 5.16, city 1.80 ms.
+  Under the 8 ms city budget.
+- **Tests:** new `tests/unit/test_parity_title01_backdrop.gd` (fast): tiers 1–2 take the 3D city, tier 0 / no renderer
+  / a 2D design-review arg keep the 2D city; the title asks for it and keeps its 2D fallback and dim headless; only the
+  title calls `use_blurred_city` and a plain CyberdeckBackground is as before; the corp choice; the camera puts the HQ
+  on the anchor; the darkening equals `title.py`'s; the arrival's entry, MotionSkip and the still frame; legibility:
+  the verb chips' words and every MORE / PROFILE label reach 4.5:1 on their glass over pure white darkened by the
+  backdrop (3D field and 2D dim), the verb stickers' two-tone edge (white die-cut, VINYL_INK rim) 3:1. No test dropped.
+- **Review:** `docs/art_review/PARITY/fixes/TITLE-01.jpg` (before / after / concept; text 1.6, 2.0; tier 1; reduce
+  effects; tier 0 fallback). Remaining difference from the concept: its city (round 26's 2D render) shows more
+  saturated pink street light and a little more haze than the 3D city's night grade; the framing, blur and darkening
+  match. Changing the city's grade would change the Grid too, so it is left for the designer.
+
 ### 2026-10-05 — Art direction — ART-3 6w raid on the city
 ART-3 wave 2b, ART-6 on the unified city (ART_BIBLE v2 §4.1, §4.8, Appendix C #13, plan G10; refs round 40
 `raid_view_v3`, `raid_gifs/`, `unified40.py` "the Cell's nodes: uplink pads + risers"). Builds on 3A's raid 2D
@@ -8284,6 +8328,11 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **Parity fix TITLE-01 (2026-10-05, built, see "Parity fix — TITLE-01 title backdrop"):** (1) the title's HQ is the
+  last-played campaign's target, else Halcyon (the concept's): keep, or always Halcyon? (2) the 3D city's night grade
+  is less pink-saturated than round 33's 2D render: leave it (it is the Grid's grade too) or give the backdrop look its
+  own grade? (3) LOOT-04: should the loot / event / shop overlays take the same blurred city (one call with their own
+  `CityBackdropLook`)?
 - **ART-3 6w raid on the city (2026-10-05, defaults built, see "Art direction — ART-3 6w raid on the city"):**
   (1) the raid's widest zoom is ortho 640 (the bible's round 39 clamp 220-380 no longer holds the x2 spread
   network on the setup's map part): keep, or shrink the network's spread for the raid? (2) the sockets float over
