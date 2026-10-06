@@ -8,6 +8,8 @@ extends PanelContainer
 
 signal loadout_pressed
 signal daemons_pressed
+## HQ-B (Q1 / Q2): the HEAT gauge was pressed (the screen opens the Heat terminal).
+signal heat_pressed
 
 const BAND_HEIGHT := 56.0
 ## The screen title's lettering and the width it may take (px).
@@ -18,6 +20,8 @@ const TITLE_MIN_WIDTH := 24.0
 const TITLE_MAX_WIDTH := 250.0
 
 var label: Label
+## HQ-B (Q1): the one Heat indicator, the bar's first slot on every screen that shows Heat.
+var heat_gauge: HeatGauge
 var title_box: Control
 var stats: HudStats
 var loadout_button: Button
@@ -43,6 +47,12 @@ func _init() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	add_child(row)
+	# HQ-B (Q1): the HEAT gauge takes the bar's first slot (hidden until a screen shows Heat).
+	heat_gauge = HeatGauge.new()
+	heat_gauge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	heat_gauge.visible = false
+	heat_gauge.pressed.connect(func() -> void: heat_pressed.emit())
+	row.add_child(heat_gauge)
 	title_box = Control.new()
 	title_box.custom_minimum_size = Vector2(250, BAND_HEIGHT)
 	title_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -102,7 +112,26 @@ func set_screen(number: String, title: String) -> void:
 	var w := maxf(Palette.mono().get_string_size(number, HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_SIZE).x,
 		Palette.mono().get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, TITLE_SIZE).x)
 	title_box.custom_minimum_size.x = clampf(ceilf(w) + TITLE_PAD, TITLE_MIN_WIDTH, TITLE_MAX_WIDTH) if (number != "" or title != "") else TITLE_MIN_WIDTH
+	# HQ-B (Q1, Q6): a screen with no title (the HQ) gives the slot to the HEAT gauge.
+	title_box.visible = number != "" or title != "" or not heat_gauge.visible
 	title_box.queue_redraw()
+
+
+## HQ-B (Q1 / Q2): shows the HEAT gauge in the bar's first slot: `value` of `maximum`, the
+## band levels `marks` (HeatRules.band_levels), and whether it opens the Heat terminal
+## (`interactive`: the caret; read-only in a run is the screen's call).
+func set_heat(value: int, maximum: int, marks: Array[int], interactive: bool, tip: String = "") -> void:
+	heat_gauge.visible = true
+	heat_gauge.interactive = interactive
+	heat_gauge.tooltip_text = tip
+	heat_gauge.set_heat(value, maximum, marks)
+	title_box.visible = _number != "" or _title != ""
+
+
+## HQ-B: hides the HEAT gauge (a screen without a campaign).
+func hide_heat() -> void:
+	heat_gauge.visible = false
+	title_box.visible = true
 
 
 ## The stat tags: each [name, value, suffix] ("HEAT", "12", "/100"), and the small

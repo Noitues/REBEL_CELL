@@ -306,7 +306,6 @@ CELL %02d  //  %d RUNS,CELL %02d  //  %d RUNS
 CELL DEFENSE,CELL DEFENSE
 CELL DEFENSE RAID SETUP,CELL DEFENSE RAID SETUP
 CELL HOLDS,CELL HOLDS
-CELL STATUS,CELL STATUS
 CELL-%02d / %s,CELL-%02d / %s
 CENTRAL SERVER,CENTRAL SERVER
 CENTRAL SERVER // %s,CENTRAL SERVER // %s
@@ -951,6 +950,7 @@ HEAT %d: %s,HEAT %d: %s
 HEAT %s,HEAT %s
 HEAT & BANKING,HEAT & BANKING
 "HEAT (subject's exposure), at closure %d:","HEAT (subject's exposure), at closure %d:"
+HEAT // SUSPECT FILE,HEAT // SUSPECT FILE
 "HEAT GLITCH PREVIEW (HUNTED, 82)","HEAT GLITCH PREVIEW (HUNTED, 82)"
 HEAT: +%d RESISTANCE,HEAT: +%d RESISTANCE
 HEAT: SHOP STOCK %d,HEAT: SHOP STOCK %d
@@ -1011,6 +1011,7 @@ Heat Gain,Heat Gain
 Heat Objective Sites,Heat Objective Sites
 Heat Sink,Heat Sink
 Heat glitch (the screen distorts as Heat rises; off by default),Heat glitch (the screen distorts as Heat rises; off by default)
+Heat objective Sites (the cooling mark on the map),Heat objective Sites (the cooling mark on the map)
 Heat reduction,Heat reduction
 Heat reduction Site,Heat reduction Site
 "Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat.","Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat."
@@ -1110,6 +1111,7 @@ RUNS NOW:"
 IF YOU SEND IT,IF YOU SEND IT
 IF YOU SEND IT NOW: %s,IF YOU SEND IT NOW: %s
 IN A RUN,IN A RUN
+IN FORCE,IN FORCE
 INCOMING,INCOMING
 INFC,INFC
 INFECT,INFECT
@@ -1579,6 +1581,7 @@ NEVER SLEEP,NEVER SLEEP
 NEW CAMPAIGN,NEW CAMPAIGN
 NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in.,NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in.
 NEW SLICES,NEW SLICES
+NEXT,NEXT
 NEXT %d (%s),NEXT %d (%s)
 "NEXT %d: its HP after SEND IT, if you press it now (the tag above says why).","NEXT %d: its HP after SEND IT, if you press it now (the tag above says why)."
 "NEXT %d: your HP after SEND IT, if you press it now (the tag above says why).","NEXT %d: your HP after SEND IT, if you press it now (the tag above says why)."
@@ -2013,6 +2016,7 @@ SAVED,SAVED
 SBOX,SBOX
 SCHEMATICS,SCHEMATICS
 SCHEMATICS %s,SCHEMATICS %s
+SCRUB HEAT %s,SCRUB HEAT %s
 SEND IT,SEND IT
 "SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The chips beside each HP already show the outcome.","SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The chips beside each HP already show the outcome."
 SFX volume,SFX volume
@@ -2024,6 +2028,7 @@ SHOP,SHOP
 SHOWING ALL NODES,SHOWING ALL NODES
 SIGNAL DE-ORBITED,SIGNAL DE-ORBITED
 SIMULATE,SIMULATE
+SINKS,SINKS
 SITES %d,SITES %d
 SITES RECLAIMED,SITES RECLAIMED
 SKIP,SKIP
@@ -2064,7 +2069,7 @@ Schematics the run banked for the campaign.,Schematics the run banked for the ca
 Schematics this run has banked for the campaign.,Schematics this run has banked for the campaign.
 "Schematics: the campaign's currency, spent at HQ.","Schematics: the campaign's currency, spent at HQ."
 "Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks.","Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks."
-Scrub Heat %d · pay %d,Scrub Heat %d · pay %d
+Scrub Heat at the HQ.,Scrub Heat at the HQ.
 "Seizure notice: TAKEN, the corporation took the Site back. Run a Reclaim (one fight) to retake it; it is a raid entry point.","Seizure notice: TAKEN, the corporation took the Site back. Run a Reclaim (one fight) to retake it; it is a raid entry point."
 Select,Select
 Server Rack,Server Rack
@@ -3178,6 +3183,7 @@ claimed,claimed
 cleared,cleared
 close,close
 codex,codex
+complication,complication
 cool,cool
 core,core
 corporate,corporate
@@ -3201,6 +3207,7 @@ guarded,guarded
 hack,hack
 half power,half power
 handshake ... ok,handshake ... ok
+harder rules,harder rules
 heat,heat
 heat obj.,heat obj.
 heat reached %d. why weren't we told?,heat reached %d. why weren't we told?
@@ -3244,6 +3251,7 @@ notyet,notyet
 odds: %s,odds: %s
 off,off
 patrol,patrol
+pay %d Schematics (next %d),pay %d Schematics (next %d)
 perfect aim,perfect aim
 pick a corporation to bring down,pick a corporation to bring down
 pips,pips
@@ -3279,6 +3287,7 @@ the Site's objective,the Site's objective
 the home server falls and the campaign is lost,the home server falls and the campaign is lost
 the net,the net
 the next %s campaign may start up to ICE %d.,the next %s campaign may start up to ICE %d.
+the top of the scale,the top of the scale
 then:,then:
 they'll be back. flag ICE %d.,they'll be back. flag ICE %d.
 threat,threat
