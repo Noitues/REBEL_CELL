@@ -8,6 +8,9 @@ extends RefCounted
 
 ## The campaign was won (the corporation's file on a Cell that beat it).
 var won: bool = false
+## The Cell abandoned the campaign (CampaignState.Outcome.ABANDONED): a loss in the corporation's
+## file (CASE CLOSED, DECISIONS "Abandon campaign"), told in its own words (it stood down).
+var abandoned: bool = false
 var corporation_id: StringName = &""
 ## The profile's campaign count (the Cell's number on the file's tab).
 var cell_number: int = 0
@@ -52,6 +55,7 @@ static func build(c: CampaignState, corp: CorporationData, profile: ProfileState
 		class_name_of: Callable, p_beats: Array[Dictionary], p_next_ice: int) -> DossierFacts:
 	var f := DossierFacts.new()
 	f.won = c.outcome == CampaignState.Outcome.WON
+	f.abandoned = c.outcome == CampaignState.Outcome.ABANDONED
 	f.corporation_id = c.corporation_id
 	f.runs_started = c.runs_started
 	f.runs_completed = c.runs_completed

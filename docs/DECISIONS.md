@@ -940,6 +940,69 @@ Tests: `tests/unit/test_parity_raid.gd` (new; text 1.0 / 1.6 / 2.0 where it appl
   (YOUR NODES row off screen) and `test_anim_r5_city::test_the_runs_pages_open_on_their_bake_behind_the_3d_route`
   (shop) fail on main without these changes too (checked by restoring main's files).
 
+### 2026-10-05 — Parity fix — endings (designer group ruling)
+Designer group ruling for the endings (2026-10-05): match the concepts; the campaign won keeps the M13 build's
+celebration beat (the CORP DOWN poster) reworked in the v2 language; where the build is richer than main but
+predates v2, the build's layout / content in the v2 concept language. Ids END-03, END-05, END-06
+(`docs/art_review/PARITY/GAPS.md`) and ART-12 12p's open perf item (the lock -> dossier switch). Ported by hand
+from art-m13-final `scripts/ui/kit/campaign_end_stage.gd` + `corp_fall_art.gd` (5c077bc1); no art tag merged,
+no asset redrawn (the poster draws the round 20 emblems, motifs and house styles already exported). Tests
+`tests/unit/test_parity_endings.gd` (fast); sheets `docs/art_review/PARITY/fixes/END.jpg` (concept / build |
+before | after) and `fixes/END-03_won_beat.jpg` (the won beat, 1.20 -> 2.30 s).
+- **END-03 won = the audit dossier with the Cell's CORP DOWN poster (`CorpDownPoster`).** The build's billboard
+  (landmark falling, pink spray X, CORP DOWN slammed) in v2: the corporation's own notice in its house style
+  (house bar, motif, CorpSeal with the round 20 emblem, the boss's name and its division: the ransom notice's
+  language turned on its owner), struck out by the Cell's **red grease pencil X** (THREAT ink: the threat struck
+  out, true to the rules; spray paint is on the bible's rejected list, §1.2), and **CORP DOWN as the Cell's
+  yellow vinyl** slapped half over its foot, clear of the pencil (no UI covers grease pencil). It takes the
+  boss print's place at the head of the left page (the boss is named on it; the X says OFFLINE). Beat: after
+  the AT LARGE stamp the poster slaps on (`dossier_poster`, new entry: 0.28 s at 1.35 s, lands from 1.5x), the X
+  writes on (`pencil_write_on`'s speed), CORP DOWN slaps on (`sticker_slap`); one press completes all of it
+  (MotionSkip), reduce effects / headless show it at rest. `dossier_poster` joins REQUIRED_IDS and the motion
+  lab (`dossier_won` demo on the real dossier). **Calls:** the poster grows with the text to 1.3x as the prints
+  do (its words and sticker too); the build's crew polaroid wall is not repeated (the personnel sheet and the
+  most troublesome print already show the crew); the build's corp records slip is annex B.
+- **END-03 story:** annex A types every intercept's title and its words (the build's STORY UNCOVERED paper;
+  main had the titles only, words in a tooltip), then annex B, in one view that scrolls inside the sheet with the
+  kit's MORE BELOW tag. The view is as tall as the story up to `STORY_VIEW` (150 px at 1.0) and gives way (down
+  to `STORY_MIN_LINES`, 2 typed lines) so the file and its stickers fit the HQ's 1280x720 page at 1.0; stacked
+  (1.6 / 2.0) the page scrolls as before. To make that room: the Heat trace is 72 px (was 92), the personnel
+  prints 28x32 (were 32x36), the annex's pad SP_S. The notes keep their room on the annex's right too.
+- **END-05:** the "hex pattern" behind the lock was the city zoomed past the network (END_LOCK_ZOOM 1.9 put most
+  nodes, the home server among them, off screen or under the notice). Once the city has baked the HQ fits the
+  camera once (`RansomLock.fit_zoom`: of 24 zooms between END_LOCK_ZOOM_MIN 0.8 and END_LOCK_ZOOM, the one with
+  the most nodes on the city under the top bar, END_LOCK_MARGIN 40 px in, and out from under the notice; ties keep
+  the larger zoom), then waits for it to settle again (still bounded by END_LOCK_WAIT_FRAMES). The defence
+  stickers were already there (the parity frame came after they dropped: END-04, the harness).
+- **END-06:** (1) `PaperSheet`'s corp paper stock was laid inside the sheet's pads (a MarginContainer fits its
+  internal children too): the shadow showed round it as the grey band, the typed lines ran to the stock's edge;
+  the stock is laid over the whole sheet after each sort. (2) The personnel notes stay on the left page (the
+  second cut `HEAT ... at closure` on the report). (3) The stamp lands beside the values of SUBJECT / OPERATIONS /
+  STATUS (`STAMP_CLEAR_LINES`, `STAMP_GAP`), inking only their bracketed tails as the concept does. (4) The
+  stickers keep off the auditor's signature: room under the report (`StickerRoom`) so they overlap the folder's
+  manila foot. (5) The prints are cropped under the top bar (`HqScene._below`), and with the lock's camera fitted
+  the home server's print is the city again. The coloured post-its were already right (white only while their
+  PNG was unheld, ART-12 12p). **Not done (proposed slice):** with no lock (won, abandoned, headless) the
+  network prints stay drawn stand-ins; the concept's prints are Blender renders with no exported asset. Slice:
+  photograph the mounted network city (the lock's own camera fit, no takeover) for won / abandoned before the
+  dossier, or export the round 21 renders per corp with the concept's own script.
+- **Abandoned (DECISIONS "Abandon campaign"):** the lost file (CASE CLOSED, CLOSED tab, no lock: the lock is the
+  breach's) in its own words: `DossierFacts.abandoned`; STATUS `STOOD DOWN  (operations abandoned)` (never home
+  server BREACHED); the third note `they walked away at heat N. nobody walks away.`.
+- **ART-12 12p switch:** the lock emits `holding` when its countdown reaches zero (the still reading hold); the HQ
+  builds the dossier then (`_build_dossier`, prints from the lock's picture), mounts it behind the lock unseen
+  and still (`AuditDossier.hold`: alpha 0 incl. its top-level MORE BELOW tag, no clock, no input) and at the cut
+  shows that same file (`_set_panel` skips the add for a page already mounted; `release` starts its motion). Lab
+  `campaign_end_lab` measures it (`lab4d: switch`): the switch frame 21-44 ms (was 640-870 ms); the build lands in
+  the hold, ~80-130 ms warm, ~570-1030 ms on the first end of a session (shader warm-up; the screen is still
+  then). `AuditDossier._place_overlays` now runs only while the file moves and for PLACE_FRAMES after a layout
+  change (was every frame at rest).
+- **Outside `scripts/ui/campaign_end/` (smallest edits):** `hq_scene.gd` (the hold build, the camera fit, the
+  crop under the top bar, `_set_panel`'s mounted-page guard); `content/config/ui_motion.tres` + `ui_motion_data.gd`
+  (`dossier_poster`); `tools/design_lab/motion_lab.gd` (`dossier_won` demo); `tools/design_lab/campaign_end_lab.gd`
+  (`--what=abandoned`, the won beat strip, the switch measure); `assets/text/strings.csv` (re-export). No test
+  dropped.
+
 ### 2026-10-05 — Parity fix — overlap defects
 Defects that are wrong whichever look is chosen (designer approved 2026-10-05; `docs/art_review/PARITY/GAPS.md`
 SHOP-01, GRID-03, GRID-12, GRID-13, RAID-02, RAID-08, RAID-11, END-06). Only the overlap itself is fixed; no look
@@ -9610,6 +9673,11 @@ and annotated in the GDD where it changes a rule.
   camera: the HQ 100-250 BU behind sits 40-90 BU higher on screen); the HQ shows only for Sites near it. Default:
   the Site large. The per-fight unique backdrop slice (below) would give each Site its own composed view (a
   perspective camera, or the HQ as a painted layer behind).
+- **Parity endings (2026-10-05, default implemented, see "Parity fix — endings (designer group ruling)"):** (1) the
+  CORP DOWN beat lives inside the won dossier (the poster at the head of the left page), not as a page of its own
+  before the file (the lock's mirror); (2) the build's pink spray X became the Cell's red grease pencil X (spray is
+  rejected in v2); (3) the won / abandoned network prints stay drawn stand-ins until a picture of the city exists
+  for them (proposed slice in the entry).
 - **ART-12 12p Steam Deck run (owed, 2026-10-05):** no Steam Deck was available. The Deck tier
   (`city_quality` 1) was measured on the dev PC only (interim, under load; `docs/art_review/ART-12/perf.md`).
   A real Deck run of `tools/visual_qa/perf_pack.tscn --tiers=1 --size=1280x800` is owed when the

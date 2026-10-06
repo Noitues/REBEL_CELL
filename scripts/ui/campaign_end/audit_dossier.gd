@@ -20,7 +20,10 @@ const OPEN := &"dossier_open"
 const STAMP := &"dossier_stamp"
 const NOTE := &"dossier_note"
 const NOTE_STAGGER := &"dossier_note_stagger"
-const MOTIONS: Array[StringName] = [OPEN, STAMP, NOTE, NOTE_STAGGER]
+## M14 parity END-03: a won file's CORP DOWN poster slaps on (then the Cell's pencil X writes on,
+## `pencil_write_on`, and CORP DOWN slaps on, `sticker_slap`).
+const POSTER := &"dossier_poster"
+const MOTIONS: Array[StringName] = [OPEN, STAMP, NOTE, NOTE_STAGGER, POSTER]
 
 ## The desk's margin round the folder, the folder's inner pad, the gap between the pages, the
 ## file tab's size and its inset from the right (px at 1.0).
@@ -44,11 +47,25 @@ const STAMP_TILT := -12.0
 const LETTERHEAD_SEAL := 58.0
 const LETTERHEAD_RULE := 3.0
 ## The personnel rows' portrait prints (px at 1.0).
-const BUST_PRINT := Vector2(32, 36)
+const BUST_PRINT := Vector2(28, 32)
 ## The typed fields' size at text scale 1.0 (bible §2.9: 20 px fields at 1080p, ÷1.5).
 const FIELD_PX := 13
 ## Leader dots after a field name up to this many characters (the typed column).
 const FIELD_WIDTH := 14
+## M14 parity END-06: the report's head lines the stamp keeps clear of (SUBJECT, OPERATIONS,
+## STATUS: their values; the concept inks over the bracketed tails only), and the gap it keeps
+## from them (px at 1.0).
+const STAMP_CLEAR_LINES := 3
+const STAMP_GAP := 10.0
+## M14 parity END-03: annex A's view on the story the Cell uncovered (every beat's title and
+## words, scrolling inside the sheet past this height; px at 1.0), and the fewest typed lines it
+## keeps when the page needs the room (side by side, the file fits the screen).
+const STORY_VIEW := 150.0
+const STORY_MIN_LINES := 2
+## The CORP DOWN poster's tilt on the folder (degrees).
+const POSTER_TILT := -2.0
+## Frames the overlays are placed for after a layout change (the containers sort a frame late).
+const PLACE_FRAMES := 3
 
 var facts: DossierFacts = null
 var style: CorpHouseStyle = null
@@ -74,6 +91,19 @@ var new_campaign_button: VinylButton = null
 ## every frame while it swings, ~45 ms frames at 1080p).
 var _manila_tex: Texture2D = null
 var _stock_tex: Texture2D = null
+## A won file's CORP DOWN poster (END-03; null when lost or abandoned) and whether its sticker
+## has slapped on.
+var poster: CorpDownPoster = null
+var _poster_slapped: bool = false
+## Annex A's story view (null without a story), its MORE BELOW tag, and the typed fields of
+## the report.
+var story_view: ScrollContainer = null
+var story_hint: ScrollHint = null
+var fields: Label = null
+## 12p (perf): built ahead and held still (the HQ builds it in the ransom lock's reading hold);
+## its motion starts on `release`.
+var held: bool = false
+var _place_left: int = PLACE_FRAMES
 
 
 func _init(p_facts: DossierFacts, p_photos: Array[Dictionary] = []) -> void:
@@ -119,6 +149,8 @@ func report_lines() -> PackedStringArray:
 	out.append(field(tr("OPERATIONS"), tr("%d netruns") % f.runs_started))
 	if f.won:
 		out.append(field(tr("STATUS"), tr("AT LARGE  (%s offline)") % f.boss_name))
+	elif f.abandoned:
+		out.append(field(tr("STATUS"), tr("STOOD DOWN  (operations abandoned)")))
 	else:
 		out.append(field(tr("STATUS"), tr("%s  (home server BREACHED)") % tr(style.verb)))
 	out.append("")
@@ -146,6 +178,8 @@ func note_words() -> PackedStringArray:
 	out.append(tr("%d still at large.") % free if free > 0 else tr("none left at large."))
 	if f.won:
 		out.append(tr("%s is offline. who signed off on this?") % f.boss_name)
+	elif f.abandoned:
+		out.append(tr("they walked away at heat %d. nobody walks away.") % f.heat)
 	else:
 		out.append(tr("heat reached %d. why weren't we told?") % f.heat)
 	out.append(tr("they'll be back. flag ICE %d.") % f.next_ice)
@@ -190,6 +224,14 @@ func _build() -> void:
 	_build_personnel()
 	_build_annex()
 	_build_report()
+	# END-06: room under the report for the stickers: they overlap the folder's manila foot (the
+	# concept), never the report's last lines (the auditor's signature).
+	var foot := Control.new()
+	foot.name = "StickerRoom"
+	foot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# The folder's own pad and the page's gap are manila too.
+	foot.custom_minimum_size.y = maxf(0.0, BUTTON_OVERLAP - FOLDER_PAD - UiTheme.SP_M) * s
+	right_page.add_child(foot)
 	# The Cell's own stickers on the desk: MAIN MENU (yellow, the safe choice, first focus)
 	# and NEW CAMPAIGN (pink, the verb).
 	var buttons := HBoxContainer.new()
@@ -250,7 +292,14 @@ func _build_photos() -> void:
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	left_page.add_child(row)
 	var tilts := [-5.0, 3.5, -2.5]
-	for i in photos.size():
+	var first := 0
+	if facts.won:
+		# END-03: a won file leads with the Cell's CORP DOWN poster over the corporation's own
+		# notice; it takes the boss's print's place (the first print of a won campaign).
+		poster = CorpDownPoster.new(facts.corporation_id, facts.corporation_name, facts.boss_name)
+		row.add_child(TiltBox.new(POSTER_TILT, poster))
+		first = 1
+	for i in range(first, photos.size()):
 		var p: Dictionary = photos[i]
 		var ph := DossierPhoto.new(String(p.get("caption", "")))
 		ph.name = "Print%d" % i
@@ -349,35 +398,18 @@ func _rule(col: Color, h: float = 2.0) -> ColorRect:
 
 func _build_annex() -> void:
 	var s := Settings.text_scale
-	annex = PaperSheet.new(Palette.END_ANNEX, -0.8, UiTheme.SP_M)
+	annex = PaperSheet.new(Palette.END_ANNEX, -0.8, UiTheme.SP_S)  # END-03: a tighter pad (the story's room at 720p)
 	annex.name = "Annex"
+	# The post-its' room on its right too (the second note reaches down over it).
+	annex.add_theme_constant_override(&"margin_right", roundi(PostIt.SIDE.x * NOTE_ROOM * s))
 	left_page.add_child(TiltBox.new(annex.tilt, annex))
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override(&"separation", roundi(UiTheme.SP_XS * s))
 	annex.add_child(col)
-	if not facts.beats.is_empty():
-		var story := VBoxContainer.new()
-		story.name = "EndStory"
-		story.add_theme_constant_override(&"separation", roundi(UiTheme.SP_XS * s))
-		col.add_child(story)
-		story.add_child(_typed(tr("ANNEX A  //  RECOVERED INTERCEPTS"), UiTheme.BODY, true))
-		# The intercepts by title on one typed run (their words in the tooltip: the HQ's story
-		# window read them in full during the campaign).
-		var titles := PackedStringArray()
-		var texts := PackedStringArray()
-		for b in facts.beats:
-			titles.append(String(b["title"]).to_upper())
-			texts.append("%s: %s" % [String(b["title"]), String(b["text"])])
-		var t := _typed(" / ".join(titles), FIELD_PX)
-		t.name = "Intercepts"
-		UiWrap.whole_words(t)  # whole words, never mid-word (ART-0 F)
-		t.mouse_filter = Control.MOUSE_FILTER_PASS
-		t.tooltip_text = UiTip.fold("\n".join(texts))
-		story.add_child(t)
+	# Annex B: the profile's records and the next campaign's ICE cap.
 	var risk := VBoxContainer.new()
 	risk.name = "ProfileFacts"
 	risk.add_theme_constant_override(&"separation", roundi(UiTheme.SP_XS * s))
-	col.add_child(risk)
 	risk.add_child(_typed(tr("ANNEX B  //  RESIDUAL RISK"), UiTheme.BODY, true))
 	var best := tr("none") if facts.best_ice < 0 else "%d" % facts.best_ice
 	var lines := [tr("subject's record: %d campaigns won, %d lost, best ICE %s.") % [facts.campaigns_won, facts.campaigns_lost, best],
@@ -386,6 +418,56 @@ func _build_annex() -> void:
 		var l := _typed(line, FIELD_PX)
 		UiWrap.whole_words(l)  # whole words, never mid-word (ART-0 F)
 		risk.add_child(l)
+	if facts.beats.is_empty():
+		col.add_child(risk)
+		return
+	var story := VBoxContainer.new()
+	story.name = "EndStory"
+	story.add_theme_constant_override(&"separation", roundi(UiTheme.SP_XS * s))
+	col.add_child(story)
+	story.add_child(_typed(tr("ANNEX A  //  RECOVERED INTERCEPTS"), UiTheme.BODY, true))
+	# END-03 (the build's STORY UNCOVERED paper, ported from art-m13-final
+	# `campaign_end_stage.gd` `_story`, 5c077bc1): every intercept's title and its words, typed,
+	# then annex B; past the sheet's room they scroll inside it (MORE BELOW).
+	var text := VBoxContainer.new()
+	text.name = "AnnexText"
+	text.add_theme_constant_override(&"separation", roundi(UiTheme.SP_S * s))
+	var beats := VBoxContainer.new()
+	beats.name = "Intercepts"
+	beats.add_theme_constant_override(&"separation", roundi(UiTheme.SP_XS * s))
+	text.add_child(beats)
+	for i in facts.beats.size():
+		var b: Dictionary = facts.beats[i]
+		var title := _typed(String(b["title"]).to_upper(), FIELD_PX, true)
+		title.name = "BeatTitle%d" % i
+		UiWrap.whole_words(title)  # whole words, never mid-word (ART-0 F)
+		beats.add_child(title)
+		var words := _typed(String(b["text"]), FIELD_PX)
+		words.name = "BeatText%d" % i
+		UiWrap.whole_words(words)  # whole words, never mid-word (ART-0 F)
+		beats.add_child(words)
+	text.add_child(risk)
+	# The kit's scroll view and MORE BELOW tag (as FitScroll lays them, but its view may be
+	# shorter than FitScroll's least: the page fits the screen at 1.0, `_fit_story`).
+	story_view = ScrollContainer.new()
+	story_view.name = "StoryView"
+	story_view.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	story_view.follow_focus = true
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	story_view.add_child(text)
+	story.add_child(story_view)
+	story_hint = ScrollHint.new(story_view)
+	story_hint.snap_rows = true
+	# The tag's room under the view, made here (the tag would add it while the sheet is still
+	# setting up its children), as FitScroll does.
+	var room := Control.new()
+	room.name = "ScrollHintRoom"
+	room.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	story.add_child(room)
+	story_hint.room = room
+	story_hint.top_level = true
+	story.add_child(story_hint)
+	story_view.custom_minimum_size.y = STORY_VIEW * s
 
 
 func _build_report() -> void:
@@ -433,6 +515,7 @@ func _build_report() -> void:
 	var lines := _typed("\n".join(report_lines()), FIELD_PX)
 	lines.name = "Fields"
 	col.add_child(lines)
+	fields = lines
 	var trace := HeatTrace.new()
 	trace.name = "HeatTrace"
 	trace.marks = facts.heat_marks
@@ -477,12 +560,46 @@ func _relayout() -> void:
 	var want := left_page.get_combined_minimum_size().x + right_page.get_combined_minimum_size().x
 	spread.vertical = want > room
 	custom_minimum_size.y = get_child(0).get_combined_minimum_size().y
+	_fit_story.call_deferred()
+	_place_left = PLACE_FRAMES
 	_place_overlays()
 
 
 func _process(delta: float) -> void:
-	if elapsed < motion_end():
-		elapsed += delta
+	if held:
+		return
+	var end := motion_end()
+	var moving := elapsed < end
+	if moving:
+		elapsed = minf(elapsed + delta, end)
+		_place_left = PLACE_FRAMES
+	# 12p: the overlays are placed while the file moves and for a few frames after a layout
+	# change (the containers sort a frame late), never every frame at rest.
+	if _place_left > 0:
+		if not moving:
+			_place_left -= 1
+		_place_overlays()
+
+
+## 12p: holds a file built ahead, unseen and still, until `release`. Its MORE BELOW tag is top
+## level (it keeps no parent's modulate): it is hidden by its own.
+func hold() -> void:
+	held = true
+	modulate.a = 0.0
+	if story_hint != null:
+		story_hint.self_modulate.a = 0.0
+		story_hint.modulate.a = 0.0
+
+
+## 12p: shows a file built ahead (`held`): its motion starts now.
+func release() -> void:
+	held = false
+	modulate.a = 1.0
+	if story_hint != null:
+		story_hint.self_modulate.a = 1.0
+		story_hint.modulate.a = 1.0
+	elapsed = 0.0
+	_place_left = PLACE_FRAMES
 	_place_overlays()
 
 
@@ -497,24 +614,51 @@ func phase(id: StringName, extra_delay: float = 0.0) -> float:
 	return clampf(t / d, 0.0, 1.0)
 
 
+## END-03: when the poster's pencil X starts writing on (s into the file's motion): once the
+## poster has landed.
+func poster_write_at() -> float:
+	return Motion.delay_of(POSTER) + Motion.seconds(POSTER) if Motion.live(POSTER) else 0.0
+
+
+## END-03: how long the pencil X takes to write on (s): `pencil_write_on`'s speed over its
+## length, capped at its duration (GreasePencilMark.write_on's rule); 0 when it does not play.
+func poster_write_seconds() -> float:
+	if poster == null or not Motion.live(GreasePencilMark.WRITE):
+		return 0.0
+	var e := Motion.entry(GreasePencilMark.WRITE)
+	var by_speed := poster.pencil.total_length() / maxf(e.amplitude, 1.0) / maxf(Motion.speed, Motion.SPEED_MIN)
+	return minf(by_speed, Motion.seconds(GreasePencilMark.WRITE))
+
+
+## END-03: when CORP DOWN slaps on (s): as the pencil X is written.
+func poster_slap_at() -> float:
+	return poster_write_at() + poster_write_seconds()
+
+
 func motion_end() -> float:
 	var end := 0.0
 	for id: StringName in [OPEN, STAMP, NOTE]:
 		if Motion.live(id):
 			var extra := Motion.seconds(NOTE_STAGGER) * maxf(0.0, notes.size() - 1.0) if id == NOTE else 0.0
 			end = maxf(end, Motion.delay_of(id) + Motion.seconds(id) + extra)
+	if poster != null:
+		var slap := Motion.seconds(VinylSticker.SLAP) if Motion.live(VinylSticker.SLAP) else 0.0
+		end = maxf(end, poster_slap_at() + slap)
 	return end
 
 
-## MotionSkip: the file still opens, stamps or takes its notes.
+## MotionSkip: the file still opens, stamps or takes its notes (a won file: its poster).
 func motion_running() -> bool:
-	return is_inside_tree() and elapsed < motion_end()
+	return is_inside_tree() and not held and elapsed < motion_end()
 
 
 ## MotionSkip: the open file at once.
 func complete_motion() -> void:
 	elapsed = maxf(elapsed, motion_end())
 	_place_overlays()
+	if poster != null:
+		_poster_slapped = true
+		poster.sticker_at_rest()
 
 
 func _input(event: InputEvent) -> void:
@@ -528,16 +672,42 @@ func _rect_in_self(c: Control) -> Rect2:
 	return Rect2(inv * r.position, r.size)
 
 
+## END-06: where the verdict stamp lands on the report (its top-left, in this view's space):
+## beside the values of the report's head lines (SUBJECT, OPERATIONS, STATUS), over their
+## bracketed tails as the concept inks it, never over a value; centred on those lines.
+func stamp_spot() -> Vector2:
+	var rep := _rect_in_self(report)
+	if fields == null or not fields.is_inside_tree():
+		return rep.position + rep.size * STAMP_AT - case_stamp.size * 0.5
+	var f := fields.get_theme_font(&"font")
+	var fs := fields.get_theme_font_size(&"font_size")
+	var head := report_lines().slice(0, STAMP_CLEAR_LINES)
+	var reach := 0.0
+	for line in head:
+		reach = maxf(reach, f.get_string_size(value_core(line), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+	var at := _rect_in_self(fields)
+	var line_h := f.get_height(fs) + fields.get_theme_constant(&"line_spacing")
+	var mid_y := at.position.y + line_h * head.size() * 0.5
+	var x := at.position.x + reach + STAMP_GAP * Settings.text_scale
+	return Vector2(x, mid_y - case_stamp.size.y * 0.5)
+
+
+## A typed field's line up to its value (the bracketed tail, "  (...)", cut off).
+static func value_core(line: String) -> String:
+	var cut := line.find("  (")
+	return line.substr(0, cut) if cut >= 0 else line
+
+
 func _place_overlays() -> void:
 	if report == null or not report.is_inside_tree():
 		return
 	var s := Settings.text_scale
 	var rep := _rect_in_self(report)
 	var per := _rect_in_self(personnel)
-	# The stamp over the report's head; the notes over the right edges of the two sheets.
+	# The stamp beside the report's head values; the notes over the right edges of the two sheets.
 	var sp := phase(STAMP)
 	case_stamp.visible = sp > 0.0
-	case_stamp.position = rep.position + rep.size * STAMP_AT - case_stamp.size * 0.5
+	case_stamp.position = stamp_spot()
 	var amp := Motion.amplitude(STAMP)
 	case_stamp.scale = Vector2.ONE * (lerpf(amp, 1.0, ease(sp, 0.4)) if amp > 0.0 else 1.0)
 	var spots := [Vector2(per.end.x - notes[0].size.x * 0.75, per.position.y + UiTheme.SP_L * s),
@@ -546,20 +716,26 @@ func _place_overlays() -> void:
 		Vector2(rep.end.x - notes[3].size.x * 0.5, rep.end.y - notes[3].size.y * 1.05)]
 	var stagger := Motion.seconds(NOTE_STAGGER) if Motion.live(NOTE_STAGGER) else 0.0
 	var namp := Motion.amplitude(NOTE)
+	var spine_x := (rep.position.x + per.end.x) * 0.5 if not spread.vertical else size.x * 0.5
 	for i in notes.size():
 		var n := notes[i]
 		var at: Vector2 = spots[i % spots.size()]
+		# END-06: the personnel sheet's notes stay on the left page (the concept): a note over
+		# the report's left edge cut its typed lines (HEAT ... at closure). Tilted: the turned
+		# corner's reach is kept too.
+		if i < 2 and not spread.vertical:
+			at.x = minf(at.x, spine_x - n.size.x - _tilt_reach(n))
 		# On the desk, never past the screen's edge.
 		n.position = Vector2(clampf(at.x, 0.0, maxf(0.0, size.x - n.size.x)), at.y)
 		var p := phase(NOTE, stagger * i)
 		n.visible = p > 0.0
 		n.scale = Vector2.ONE * (lerpf(namp, 1.0, ease(p, 0.4)) if namp > 0.0 else 1.0)
+	_apply_poster()
 	# The cover swings open about the spine: over the right page first, then the left page
 	# lands; at rest it is gone.
 	var o := phase(OPEN)
 	cover.visible = o < 1.0
 	var fold := cos(PI * o)
-	var spine_x := (rep.position.x + per.end.x) * 0.5 if not spread.vertical else size.x * 0.5
 	var folder_r := _rect_in_self(folder)
 	if fold > 0.0:
 		cover.position = Vector2(spine_x, folder_r.position.y + TAB.y * s)
@@ -569,7 +745,69 @@ func _place_overlays() -> void:
 		cover.position = Vector2(spine_x - w, folder_r.position.y + TAB.y * s)
 		cover.size = Vector2(maxf(1.0, w), folder_r.size.y - TAB.y * s)
 	left_page.modulate.a = 1.0 if fold <= 0.0 else 0.0
-	cover.queue_redraw()
+	if cover.visible:
+		cover.queue_redraw()
+
+
+## How far a tilted control's corners reach past its untilted rect sideways (px).
+static func _tilt_reach(c: Control) -> float:
+	var a := absf(deg_to_rad(c.rotation_degrees))
+	return (c.size.x * (cos(a) - 1.0) + c.size.y * sin(a)) * 0.5
+
+
+## END-03: annex A's view: as tall as the story up to STORY_VIEW, shorter (to STORY_MIN_LINES
+## typed lines) when the file side by side would run past the page's foot. Stacked (large
+## text) the page scrolls and the view keeps STORY_VIEW.
+func _fit_story() -> void:
+	if story_view == null or not story_view.is_inside_tree():
+		return
+	var s := Settings.text_scale
+	var f := EndFaces.typed()
+	var line_h := f.get_height(UiTheme.font_px(FIELD_PX)) + UiTheme.SP_XS * s
+	var content_h := 0.0
+	if story_view.get_child_count() > 0:
+		content_h = (story_view.get_child(0) as Control).get_combined_minimum_size().y
+	var cap := STORY_VIEW * s
+	if not spread.vertical:
+		var col_h := (get_child(0) as Control).get_combined_minimum_size().y
+		var over := global_position.y + col_h - _page_bottom()
+		cap = clampf(story_view.custom_minimum_size.y - over, line_h * STORY_MIN_LINES, STORY_VIEW * s)
+	var view := floorf(minf(content_h, cap)) if content_h > 0.0 else cap
+	if story_hint != null and story_hint.is_inside_tree():
+		story_hint.set_view_min(view)
+		story_hint.refresh()
+	else:
+		story_view.custom_minimum_size.y = view
+	custom_minimum_size.y = (get_child(0) as Control).get_combined_minimum_size().y
+
+
+## The foot of the page the file shows on (global px): its scroll view's, else the screen's.
+func _page_bottom() -> float:
+	var n := get_parent()
+	while n != null:
+		if n is ScrollContainer:
+			return (n as ScrollContainer).get_global_rect().end.y
+		n = n.get_parent()
+	return get_viewport_rect().size.y
+
+
+## END-03: the won file's beat: the poster slaps on (`dossier_poster`), the Cell's pencil X
+## writes on, then CORP DOWN slaps on (`sticker_slap`). At rest when none of it plays.
+func _apply_poster() -> void:
+	if poster == null:
+		return
+	var w := 1.0
+	var ws := poster_write_seconds()
+	if ws > 0.0:
+		w = clampf((elapsed - poster_write_at()) / ws, 0.0, 1.0)
+	poster.apply(phase(POSTER), w, Motion.amplitude(POSTER))
+	if held:
+		poster.hold_sticker()
+	elif not _poster_slapped and elapsed >= poster_slap_at():
+		_poster_slapped = true
+		poster.slap_sticker()
+	elif not _poster_slapped:
+		poster.hold_sticker()
 
 
 func _draw() -> void:

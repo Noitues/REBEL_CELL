@@ -209,7 +209,7 @@ const DEMOS := {
 	&"ransom_sticker_drop": ["screen", "ransom"], &"ransom_sticker_stagger": ["screen", "ransom"], &"ransom_countdown": ["screen", "ransom"],
 	&"ransom_wipe_hold": ["screen", "ransom"], &"ransom_cut": ["screen", "ransom"],
 	&"dossier_open": ["screen", "dossier_file"], &"dossier_stamp": ["screen", "dossier_file"], &"dossier_note": ["screen", "dossier_file"],
-	&"dossier_note_stagger": ["screen", "dossier_file"],
+	&"dossier_note_stagger": ["screen", "dossier_file"], &"dossier_poster": ["screen", "dossier_won"],
 	# ART-9 4B: the portrait feeds (idle, talking, stationed) and DISPATCH's voice trace.
 	&"portrait_feed": ["screen", "feed"], &"portrait_blink": ["screen", "feed"], &"portrait_talk": ["screen", "feed"],
 	&"dispatch_trace": ["screen", "feed"],
@@ -1036,9 +1036,12 @@ func _play_screen(what: String) -> void:
 				{"asset": &"decoy", "text": "DECOY"}, {"text": "REBEL_CELL", "fill": VinylSticker.Fill.PINK, "size": UiTheme.TITLE}]
 			lock.setup(&"halcyon", "Halcyon Civic", 0, 50, specs)
 			length = lock.motion_end() + Motion.seconds(RansomLock.HOLD) + Motion.seconds(RansomLock.CUT)
-		"dossier_file":
-			# ART-11 4D: a lost campaign's audit dossier opening, stamped, its notes slapping on.
+		"dossier_file", "dossier_won":
+			# ART-11 4D: a lost campaign's audit dossier opening, stamped, its notes slapping on;
+			# M14 parity END-03: a won one (AT LARGE) with its CORP DOWN poster's beat.
 			var f := DossierFacts.new()
+			f.won = what == "dossier_won"
+			f.boss_name = "Civic Mind"
 			f.corporation_id = &"halcyon"
 			f.corporation_name = "Halcyon Civic"
 			f.cell_number = 3
@@ -1059,6 +1062,8 @@ func _play_screen(what: String) -> void:
 			f.most_troublesome = f.crew[0]
 			f.next_ice = 2
 			var prints: Array[Dictionary] = [{"caption": "HOME SERVER - 0/50"}, {"caption": "NODES AT THE END"}]
+			if f.won:
+				prints[0] = {"caption": "CIVIC MIND - OFFLINE"}  # the boss's print: the poster takes its place
 			var dossier := AuditDossier.new(f, prints)
 			dossier.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			_screen_host.add_child(dossier)
