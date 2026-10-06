@@ -747,6 +747,10 @@ func _place_landmark(corp: StringName, path: String, at: Transform3D, look: Land
 		var r := Rect2(box.get_center() - box.size * CLEAR_SHARE * 0.5, box.size * CLEAR_SHARE)
 		_cleared.append(r)
 		_cleared_by[corp] = r
+		# Parity S-ARENA round 2: inside its box only the lots the landmark stands on give way
+		# (not the ground under its light beams, nor its yard's open corners: blank lots).
+		if corp != CELL:  # the Cell's district brings its own street grid: its whole box gives way
+			_clear_masks[r] = footprint_lots(node, cfg)
 	if corp == CELL:
 		LandmarkMaterials.set_reveal(landmark_mats[corp], cell_reveal)
 		LandmarkMaterials.show_dispatch(node, cell_dispatch)
@@ -915,6 +919,54 @@ static func _ground_box(node: Node3D) -> Rect2:
 func _in_cleared(c: Vector2) -> bool:
 	for r in _cleared:
 		if r.has_point(c):
+			var mask: Variant = _clear_masks.get(r)
+			if mask == null or (mask as Dictionary).has(_lot_of(cfg, c)):
+				return true
+	return false
+
+
+## Parity S-ARENA round 2: footprint masks of the landmarks' cleared rects (Rect2 -> {lot: true}).
+var _clear_masks: Dictionary = {}
+
+
+static func _lot_of(c: CityConfig, w: Vector2) -> Vector2i:
+	var l := CityIsoCamera.world_to_lot(c, Vector3(w.x, 0.0, w.y))
+	return Vector2i(floori(l.x), floori(l.y))
+
+
+## The lots (world lot grid, Vector2i -> true) a landmark `node` stands on: under every
+## triangle of its meshes (beams left out: CityConfig.landmark_footprint_skip) that reaches
+## the ground (below landmark_footprint_ground BU) and rises (above landmark_footprint_rise
+## BU), grown by landmark_footprint_grow lots so its neighbours keep clear of its walls.
+static func footprint_lots(node: Node3D, c: CityConfig) -> Dictionary:
+	var out := {}
+	for mi in node.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.mesh == null or _named_any(String(m.name), c.landmark_footprint_skip):
+			continue
+		var xf := m.global_transform if m.is_inside_tree() else node.transform * m.transform
+		for s in m.mesh.get_surface_count():
+			var arr := m.mesh.surface_get_arrays(s)
+			var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var idx: PackedInt32Array = arr[Mesh.ARRAY_INDEX] if arr[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+			var n := idx.size() if not idx.is_empty() else v.size()
+			for t in range(0, n - 2, 3):
+				var a := xf * v[idx[t] if not idx.is_empty() else t]
+				var b := xf * v[idx[t + 1] if not idx.is_empty() else t + 1]
+				var d := xf * v[idx[t + 2] if not idx.is_empty() else t + 2]
+				if minf(a.y, minf(b.y, d.y)) > c.landmark_footprint_ground or maxf(a.y, maxf(b.y, d.y)) < c.landmark_footprint_rise:
+					continue
+				var lo := _lot_of(c, Vector2(minf(a.x, minf(b.x, d.x)), minf(a.z, minf(b.z, d.z))))
+				var hi := _lot_of(c, Vector2(maxf(a.x, maxf(b.x, d.x)), maxf(a.z, maxf(b.z, d.z))))
+				for y in range(lo.y - c.landmark_footprint_grow, hi.y + c.landmark_footprint_grow + 1):
+					for x in range(lo.x - c.landmark_footprint_grow, hi.x + c.landmark_footprint_grow + 1):
+						out[Vector2i(x, y)] = true
+	return out
+
+
+static func _named_any(s: String, words: PackedStringArray) -> bool:
+	for w in words:
+		if s.contains(w):
 			return true
 	return false
 

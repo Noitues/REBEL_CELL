@@ -96,8 +96,8 @@ extends Resource
 ## lot (BU); the HQ fills the gap between the wheels.
 @export var backdrop_hq_ortho: float = 140.0
 @export var backdrop_hq_lift: float = 30.0
-## A regular fight's Site close-up: ortho width (BU) and target height (BU).
-@export var backdrop_site_ortho: float = 90.0
+## A regular fight's Site close-up: its least ortho width (BU) and target height (BU).
+@export var backdrop_site_ortho: float = 60.0
 @export var backdrop_site_lift: float = 8.0
 ## The DISPATCH canyon's close-up: share of the HQ-run framing's ortho.
 @export var backdrop_canyon_share: float = 0.7
@@ -125,8 +125,11 @@ extends Resource
 ## city only; the stills are the concept already): each pixel's value V (its brightest
 ## channel) goes to 1 - (1 - V) ^ exposure, hue kept (no neon clips to white),
 ## then times the tint (the concept's cool blue-grey).
-@export var backdrop_exposure: float = 4.6
+@export var backdrop_exposure: float = 5.0
 @export var backdrop_tint: Color = Color(0.96, 1.0, 1.04)
+## Per corporation, in place of backdrop_tint (Halcyon's deep violet night sits under the
+## concept band without a little more light).
+@export var backdrop_tint_by_corp: Dictionary = {&"halcyon": Color(1.1, 1.12, 1.14)}
 ## ... and its saturation toward the grey (1 = kept): the concept's rain-calmed neon.
 @export var backdrop_saturation: float = 0.72
 ## Concept-derived band for the settled close-up's mean relative luminance (linear, the frame
@@ -148,29 +151,65 @@ extends Resource
 ## crane (combat_worst_case_v4.png's yellow crane between the wheels), not the whole yard and
 ## train, which spread 180 BU wide and would push the close-up out past the LOD and the budget.
 @export var backdrop_hq_fit_keep_by_corp: Dictionary = {&"meridian": PackedStringArray(["crane_solid", "crane_lit"])}
-## Where the HQ landmark's box is fitted (share of the view: between the wheels, under the
-## top bar, its foot behind the hand as combat_solace.jpg), and where a Site fight's Site
-## landmark is (the corp's Site landmark, CityLandmarks.site_path, stood on the run's Site
-## lot as the stills' one Site building per corp; site_solace_night.jpg's clinic). Only the
-## meshes whose name holds a word of backdrop_fit_keep count toward the box (the body, not the
-## light beams and neon rays spread over the ground). The close-ups' camera pitch (degrees;
-## the city's own is pitch_deg): a Site lower, looking across the city at its building as
-## site_solace_night.jpg; an HQ at the city's own 40 (22-30 read closer to combat_solace.jpg's low
-## angle but showed so much city to the horizon that the close-up took 9-10.5 ms at 1080p, over
-## budget_ms; 40 measures 6.2-7.6).
+## Where the HQ landmark's box is fitted for a boss fight (share of the view: between the
+## wheels, under the top bar, its foot behind the hand as combat_solace.jpg), and where a Site
+## fight's subject (the fought Site's building) is fitted (site_solace_night.jpg's clinic:
+## large, between the wheels, above the hand). Only the meshes whose name holds a word of
+## backdrop_fit_keep count toward a landmark's box (the body, not the light beams and neon
+## rays spread over the ground). The close-ups' camera pitch (degrees; the city's own is
+## pitch_deg): the concept's low angle (designer round 2, 2026-10-05: adopt 22-30 now; it costs
+## 9-10.5 ms of city GPU at 1080p tier 2, over budget_ms: owed in ART-12/perf.md, the
+## optimisation slice proposed in DECISIONS).
 @export var backdrop_hq_frame: Rect2 = Rect2(0.32, 0.05, 0.36, 0.85)
-@export var backdrop_site_frame: Rect2 = Rect2(0.32, 0.22, 0.36, 0.46)
+@export var backdrop_site_frame: Rect2 = Rect2(0.33, 0.24, 0.34, 0.56)
 @export var backdrop_fit_keep: PackedStringArray = PackedStringArray(["solid"])
-@export var backdrop_hq_pitch_deg: float = 40.0
-@export var backdrop_site_pitch_deg: float = 34.0
-## A Site fight's close-up stands its Site this many lots inside the city's edge (city_rect):
-## the territories reach the edge, and a Site there would leave half the frame the bare plane
-## past it (BackdropCatalog.site_close_up_lot).
-@export var backdrop_site_inset: int = 28
+@export var backdrop_hq_pitch_deg: float = 24.0
+@export var backdrop_site_pitch_deg: float = 22.0
+## A Site fight's subject when the model has not measured the Site's building yet: a block of
+## this many lots round the Site's point (half width) and this tall (BU); an HQ with no
+## landmark is a block of backdrop_site_hq_height over its HQ lots.
+@export var backdrop_site_reach: int = 2
+## The measured subject is grown to at least this footprint (BU) round its centre: one
+## procedural tower alone is too slight to carry the shot.
+@export var backdrop_site_subject_span: float = 30.0
+@export var backdrop_site_height: float = 24.0
+@export var backdrop_site_hq_height: float = 60.0
+## The HQ in a Site shot's back: the close-up zooms out round the subject by this step, while
+## the subject keeps backdrop_site_subject_min of the view (its larger share: width or height), until the HQ's point at
+## backdrop_site_hq_show of its height stands below backdrop_site_hq_top of the view.
+@export var backdrop_site_zoom_step: float = 1.1
+@export var backdrop_site_subject_min: float = 0.3
+@export var backdrop_site_hq_show: float = 0.6
+@export var backdrop_site_hq_top: float = 0.06
+## The built city stops this many lots inside city_rect (a bare ground strip at the edge); the
+## close-up re-records those cut chunks whole (backdrop_extend_lots).
+@export var backdrop_site_edge_margin: float = 4.0
+## A Site or HQ shot records the city past city_rect within this many lots of its target (its own
+## copy of the model, CombatBackdrop._extend_city), so the frame is city all round.
+@export var backdrop_extend_lots: int = 56
+## The subject reads first: outside an ellipse of backdrop_focus_radius (share of the view's
+## width) round the subject the close-up softens (blur, in texels) and dims (share taken off).
+@export var backdrop_focus_radius: float = 0.18
+@export var backdrop_focus_blur: float = 3.0
+@export var backdrop_focus_dim: float = 0.22
+## ... and inside it the subject is lit up by this gain (1 = as the city).
+@export var backdrop_focus_lift: float = 1.3
 ## The close-up renders at most this many px tall (0: the view's own size) and is drawn scaled
 ## to the view (CombatBackdrop.render_px): the backdrop sits softened behind the wheels, and
 ## its wider lit framing keeps the 8 ms city budget at 1080p (budget_ms).
 @export var backdrop_render_height: int = 640
+
+@export_group("Landmark footprints (parity S-ARENA round 2)")
+## Inside a landmark's cleared box the procedural buildings give way only on the lots it
+## stands on: lots under its triangles that reach below landmark_footprint_ground BU and rise
+## above landmark_footprint_rise BU (walls, not ground plates or floating beams), grown by
+## landmark_footprint_grow lots; meshes named with a word of landmark_footprint_skip (light
+## beams over the ground) never count. Before, the whole box cleared: blank lots round
+## Meridian's yard and under Halcyon's eye beam, on the Grid too.
+@export var landmark_footprint_ground: float = 2.0
+@export var landmark_footprint_rise: float = 3.0
+@export var landmark_footprint_grow: int = 1
+@export var landmark_footprint_skip: PackedStringArray = PackedStringArray(["beam"])
 
 @export_group("Buildings")
 ## Facet cell (BU) the walls are split into, and the jitter (share of a cell / BU).
