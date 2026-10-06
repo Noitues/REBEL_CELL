@@ -1558,7 +1558,7 @@ func _build_hq_page(page_name: String) -> void:
 	var launchable := RunManager.launchable_sites()
 	launchable.append_array(RunManager.patrol_sites())
 	if selected_site == &"" or CampaignRules.site_data(corp, selected_site) == null:
-		selected_site = launchable[0].id if not launchable.is_empty() else c.grid.home_site_id
+		selected_site = idle_pick(launchable)
 	# HQ-B (e): a saved run waiting: its Site is the selection (its resume jacks along that link).
 	if RunManager.has_active_run() and not raid_mode and CampaignRules.site_data(corp, resume_site()) != null:
 		selected_site = resume_site()
@@ -1615,6 +1615,13 @@ func _build_hq_page(page_name: String) -> void:
 			# reaches it).
 			order.add_child(_raid_intro())
 			order.move_child(order.get_child(order.get_child_count() - 1), 0)
+			# B4 (review Q10, round 40 `raid_view_v3`): while the DEFENCE hand is open the page IS
+			# the raid setup: its yellow RAID SETUP title sticker over the column (no title on the
+			# HQ idle).
+			var title := _title_sticker(tr("RAID SETUP"))
+			title.name = "RaidSetupTitle"
+			order.add_child(title)
+			order.move_child(title, 0)
 		page.add_child(order)
 	# The hand: its tabs and the cards of the deck picked.
 	page.add_child(_hand_tabs())
@@ -1628,7 +1635,7 @@ func _build_hq_page(page_name: String) -> void:
 	cards.name = "HandCards"
 	cards.alignment = BoxContainer.ALIGNMENT_BEGIN
 	cards.add_theme_constant_override("separation", roundi(HqLayout.GAP * 2.0 * HqLayout.object_scale(Settings.text_scale)))
-	cards.custom_minimum_size.y = (HqLayout.CARD.y + HqLayout.LIFT) * HqLayout.object_scale(Settings.text_scale)
+	cards.custom_minimum_size.y = (HqLayout.CARD.y + HqLayout.LIFT + CrewHandCard.TAG_ROOM) * HqLayout.object_scale(Settings.text_scale)
 	hand.add_child(cards)
 	page.add_child(hand)
 	if raid_mode:
@@ -1688,6 +1695,8 @@ func _build_hq_page(page_name: String) -> void:
 	ticker.tooltip_text = UiTip.fold("%s\n%s" % [dj_text, campaign_code_line()])
 	ticker.mouse_filter = Control.MOUSE_FILTER_PASS
 	page.add_child(ticker)
+	# B4 (D7, bible 4.13): the corp news as a holo toast at the foot (hidden until news comes).
+	page.add_child(CorpNewsToast.new(c.corporation_id))
 	_mark_scrim(page)
 	_set_panel(page, page_name)
 	page.resized.connect(_place_hq)
@@ -1702,19 +1711,28 @@ func _build_hq_page(page_name: String) -> void:
 	# on uplink pads; a pending raid's routes as red pencil: dashed (a what-if) at the HQ, solid
 	# with each node's forecast in the setup.
 	var g := hq_graph(projection if raid_mode else null)
+	if not raid_mode:
+		g = hq_idle_graph(g)
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, keep.get("anchor", HQ_ANCHOR), keep.get("scale", 1.0),
 		keep.get("focus", Vector2.INF))
 	city_overlay.selected_id = selected_site
 	city_overlay.boss_exploits = Vector2i(c.exploits.size(), cfg.min_exploits_for_breach)
+	if not raid_mode:
+		# B4 (D7): a hidden Site leaves no disc on the ground decal either.
+		city_overlay.decal_shown_only = true
+		city_overlay._feed_decal()
 	if raid_mode:
 		city_overlay.node_clicked.connect(func(id: StringName) -> void:
 			if RunManager.campaign.grid.is_claimed(id):
 				select_target(id))
 	else:
 		city_overlay.node_clicked.connect(select_site)
+		city_overlay.node_hovered.connect(_hq_hover_tag)
 	_mount_hq_routes(projection, raid_mode)
 	wireframe.city.set_city_life(GridCityLife.of(c, corp, cfg))
 	_mount_hq_map_tools(page, g)
+	if not raid_mode:
+		_mount_plan_pencil(page, site, launchable)
 	hq_map_mode(true)
 	_place_hq()
 	_sync_hq_band()
@@ -1751,7 +1769,10 @@ func _build_hq_page(page_name: String) -> void:
 		_hq_focus = ""
 	if _last_warned_raid != String(pending.get("raid_id", "")) and not pending.is_empty():
 		_last_warned_raid = String(pending.get("raid_id", ""))
-		Dialogue.raid_warning(c.corporation_id, StringName(String(pending.get("raid_id", ""))), c.raids_won + c.raids_lost, "raid")
+		if raid_mode:
+			Dialogue.raid_warning(c.corporation_id, StringName(String(pending.get("raid_id", ""))), c.raids_won + c.raids_lost, "raid")
+		else:
+			intercept_raid_warning(StringName(String(pending.get("raid_id", ""))))
 
 
 ## H23 S5 / parity RAID-02: what the raid is and what to do, in one plain sentence, on a dark
@@ -1908,6 +1929,7 @@ func _fill_crew_hand(cards: HBoxContainer, launchable: Array[SiteData]) -> void:
 		card.pressed.connect(pick_runner.bind(oid))
 		if op.alive:
 			drops.add_source(card, {"kind": "crew", "op": op.id, "motion": &"crew_assign", "prefer": where})  # a press picks the runner; a drag or the pick-up key carries
+		card.rest_tilt = CrewHandCard.rest_tilt_for(cards.get_child_count())
 		cards.add_child(card)
 		if op.alive and where != &"" and op.id == selected_operative:
 			var recall_chip := MenuChip.new(tr("RECALL"), site_name(where).to_upper())
@@ -2133,6 +2155,7 @@ func _verb_slot(site: SiteData, launchable: Array[SiteData], raid_mode: bool = f
 	word.add_theme_font_override("font", Palette.mono())
 	word.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
 	word.add_theme_color_override("font_color", Color(Palette.PAPER, HudSkin.SYSTEM_WORD_ALPHA * 2.0))
+	_keyline(word)
 	slot.add_child(word)
 	# Q3: a raid pending fires mid-run (the rule kept); the system word says so, in the raid's pink.
 	if not resume and not c.pending_raids.is_empty():
@@ -2143,10 +2166,22 @@ func _verb_slot(site: SiteData, launchable: Array[SiteData], raid_mode: bool = f
 		warn.add_theme_font_override("font", Palette.mono())
 		warn.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
 		warn.add_theme_color_override("font_color", Palette.CELL_PINK)
+		_keyline(warn)
 		warn.tooltip_text = UiTip.fold(tr("A raid is pending: JACK IN now and it hits your network as an interlude in the run (or defend first: RAID SETUP)."))
 		warn.mouse_filter = Control.MOUSE_FILTER_PASS
 		slot.add_child(warn)
 	return slot
+
+
+## B4 (art director: "the HQ system word under JACK IN needs an ink keyline (>= 3 px at 1080p)
+## or a plate"): the system word's ink keyline, its width in layout px (720 tall: x1.5 at 1080).
+const SYSTEM_WORD_KEYLINE := 2
+
+
+## B4: gives a system word on the city an ink keyline (it reads over a lit block).
+func _keyline(l: Label) -> void:
+	l.add_theme_constant_override("outline_size", SYSTEM_WORD_KEYLINE)
+	l.add_theme_color_override("font_outline_color", Palette.GLYPH_INK)
 
 
 ## The verb stickers' node names (tests and the pad find them by these).
@@ -2239,6 +2274,97 @@ func hq_graph(projection: RaidResolver.RaidResult = null) -> Dictionary:
 	return {"nodes": nodes, "edges": edges}
 
 
+## B4 (review D7, round 44 `hq_idle.png`, designer: "about 16 pinned markers"): the HQ idle's
+## map, decluttered from `g` (hq_graph without a projection): the Cell's nodes are their v4
+## markers (the lime fists, CORE's heart; no raid sockets, pads or asset pips: those are the
+## DEFENCE hand's), only the Sites bible 4.5 pins show (Exploit and Heat objective, yours,
+## cleared, seized, the boss; a selectable plain Site hides until hovered or selected), one
+## name tag (the selected Site's; a hovered one gets its tag while pointed at,
+## `_hq_hover_tag`), and a link only where one of its ends shows (a hidden Site's other links
+## hide with it); the threat routes stay. Pure on its input.
+func hq_idle_graph(g: Dictionary) -> Dictionary:
+	var shown := {}
+	var nodes: Array[Dictionary] = []
+	for n: Dictionary in g["nodes"]:
+		var m := n.duplicate()
+		m.erase("socket")
+		m.erase("assets")
+		if m.has("marker"):
+			var spec: Dictionary = (m["marker"] as Dictionary).duplicate()
+			spec["pinned"] = pinned_at_hq(spec)
+			m["marker"] = spec
+			m["pinned"] = spec["pinned"]
+		var id: StringName = m["id"]
+		if id == selected_site or bool(m.get("pinned", true)):
+			shown[id] = true
+		m["label"] = String(m.get("name", m.get("label", ""))) if id == selected_site else ""
+		nodes.append(m)
+	var edges: Array[Dictionary] = []
+	for e: Dictionary in g["edges"]:
+		if e.get("arrows", false) or shown.has(e["a"]) or shown.has(e["b"]):
+			edges.append(e)
+	return {"nodes": nodes, "edges": edges}
+
+
+## B4 (review D7, round 44 `hq_idle.png`): the HQ idle's map dim for the scrim (UiScrimPools
+## `set_map_dim_source`): the network's fit rect (the box round the Cell's nodes as drawn;
+## outside it the city is darkened to x0.68 and slightly desaturated, inside to x0.86) and the
+## selected Site (fully lit in a soft vignette round it). {} off the HQ idle (the raid setup is
+## a raid view: its own map mode), with no map, or with no node of the Cell's on screen.
+func hq_map_dim() -> Dictionary:
+	if panel_name != "hq" or city_overlay == null or not is_instance_valid(city_overlay) or RunManager.campaign == null \
+			or not city_overlay.is_visible_in_tree():
+		return {}
+	var box := Rect2()
+	var first := true
+	for id in RunManager.campaign.grid.claimed_ids():
+		var r := _map_node_rect(id)
+		if not r.has_area():
+			continue
+		box = r if first else box.merge(r)
+		first = false
+	if first:
+		return {}
+	var sel := _map_node_rect(selected_site)
+	return {"rect": box, "focus": sel.get_center() if sel.has_area() else Vector2.INF}
+
+
+## B4 (review section f: "idle verb is JACK IN; UPGRADE / CLAIM only once a node is
+## selected"): the Site the HQ picks when the player has picked none: the first of `launchable`
+## (the Grid's order) whose verb is JACK IN (a corporate Site a run can start from), else the
+## first runnable one (a patrol), else CORE.
+func idle_pick(launchable: Array[SiteData]) -> StringName:
+	for s in launchable:
+		if String(site_verb(s, true).get("verb", "")) == VERB_JACK_IN:
+			return s.id
+	if not launchable.is_empty():
+		return launchable[0].id
+	return RunManager.campaign.grid.home_site_id
+
+
+## B4 (bible 4.5 "Pinned (always shown)"): true when a v4 marker `spec` shows on the HQ idle's
+## map whatever the pointer does: an Exploit, Heat-objective or boss Site, CORE, and every Site
+## that is no longer plainly the corporation's (yours, cleared, seized, down). A selectable
+## plain Site is not pinned (D7: the ring of orange markers was the clutter).
+static func pinned_at_hq(spec: Dictionary) -> bool:
+	return String(spec.get("kind", "")) != SiteMarker.KIND_SITE or String(spec.get("status", "")) != SiteMarker.ST_CORPORATE
+
+
+## B4 (D7: "others get a tag on hover"): the hovered Site's name tag on the HQ idle's map,
+## while it is pointed at (the selected one keeps its own).
+func _hq_hover_tag(id: StringName) -> void:
+	if city_overlay == null or not is_instance_valid(city_overlay) or panel_name != "hq":
+		return
+	for n: Dictionary in city_overlay.nodes:
+		var nid: StringName = n["id"]
+		if nid == selected_site:
+			continue
+		n["label"] = String(n.get("name", "")) if nid == id else ""
+	# The hovered Site lights (a hidden one shows while pointed at, bible 4.5) and the tags
+	# are laid out again with its name.
+	city_overlay.hover_id = id
+
+
 ## HQ-B: the pending raid's routes on the HQ map in red pencil, their entries lettered: dashed
 ## (a what-if) at the HQ, solid (the resolver's projection: preview equals result) in the
 ## setup, written on when they change; the stationed beacons and uplink pads.
@@ -2300,8 +2426,31 @@ func _mount_hq_map_tools(page: Control, graph: Dictionary = {}) -> void:
 		grid_target.avoid.append(hq_minimap)
 		page.add_child(grid_target)
 		grid_target.pan_requested.connect(grid_controls.centre_on)
+		# B4 (round 44): the off-screen TARGET carries its boss chip beside the red pencil.
+		grid_target.chip_text = CityMapOverlay.tr_word(SiteMarker.BOSS_CHIP) % [c.exploits.size(), RunManager.config().min_exploits_for_breach]
 		if not wireframe.city.rebuilt.is_connected(grid_controls.sync_minimap):
 			wireframe.city.rebuilt.connect(grid_controls.sync_minimap)
+
+
+## B4 (round 44 "the one plan"): the yellow wax arrow along JACK IN's link, from the network's
+## owned end to the selected Site, while JACK IN is the verb (a run can start there now; not a
+## saved run's resume, which jacks along its own link). Under the page's panels, over the map.
+func _mount_plan_pencil(page: Control, site: SiteData, launchable: Array[SiteData]) -> void:
+	var plan := HqPlanPencil.new()
+	page.add_child(plan)
+	page.move_child(plan, page.get_node("MapCursor").get_index() + 1)
+	plan.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	if site == null or RunManager.has_active_run():
+		return
+	var runnable := false
+	for s in launchable:
+		if s.id == site.id:
+			runnable = true
+	if String(site_verb(site, runnable).get("verb", "")) != VERB_JACK_IN:
+		return
+	var from := RouteLinkLayout.from_site(RunManager.corporation, RunManager.campaign, site.id)
+	if from != &"":
+		plan.set_plan(city_overlay, from, site.id)
 
 
 ## HQ-B: a frame the player's camera asks for (wheel, drag, keys, minimap, edge arrow): the
@@ -2325,8 +2474,10 @@ func _sync_hq_band() -> void:
 func hq_band() -> int:
 	if panel_name == "raid":
 		return CityLod.Band.RAID  # the setup is a raid view (S-MAPVIEW: map mode) at any fit
-	var ortho := RaidZoomFit.ortho_of(wireframe.city.scale.x, size.x)
-	return CityLod.Band.RAID if ortho <= CityView3D.CONFIG.raid_fit_max + HQ_BAND_SLACK else CityLod.Band.GRID
+	# B4 (round 44 `hq_idle.png`, designer: "build the HQ to round 44"): the HQ's own hands
+	# show the city at the City Grid look (solid buildings, the city's full life) at any zoom;
+	# the network's surroundings are dimmed by the scrim's map dim instead (D7).
+	return CityLod.Band.GRID
 
 
 ## Ortho slack (BU) at the band's edge (a fit at the clamp stays in the RAID band).
@@ -2339,12 +2490,22 @@ func _place_hq() -> void:
 		return
 	var page := _panel
 	var o_scale := HqLayout.object_scale(Settings.text_scale)
-	# The ON AIR line along the page's foot (Q7); the rest is laid out above it.
+	# The ON AIR line (Q7, D20: the HQ keeps it). B4 (round 44: the hand and the verb reach the
+	# page's foot, the corp news toast sits between them): it lies in the foot's gap between the
+	# hand's last card and the verb slot when that gap is wide enough; else along the page's
+	# whole foot with the rest laid out above it (big text, a full hand).
 	var ticker := page.get_node_or_null("OnAir") as Control
-	var foot := ticker.get_combined_minimum_size().y if ticker != null else 0.0
+	var gap := _hq_foot_gap(page)
+	var foot := 0.0
 	if ticker != null:
-		ticker.position = Vector2(0.0, page.size.y - foot)
-		ticker.size = Vector2(page.size.x, foot)
+		var th := ticker.get_combined_minimum_size().y
+		if gap.size.x >= ON_AIR_MIN_W * o_scale:
+			ticker.position = Vector2(gap.position.x, page.size.y - HqLayout.MARGIN - th)
+			ticker.size = Vector2(gap.size.x, th)
+		else:
+			foot = th
+			ticker.position = Vector2(0.0, page.size.y - foot)
+			ticker.size = Vector2(page.size.x, foot)
 	var area := Vector2(page.size.x, maxf(1.0, page.size.y - foot))
 	var order := page.get_node_or_null("WorkOrder") as Control
 	var r := HqLayout.rects(area, Settings.text_scale, order != null)
@@ -2377,6 +2538,17 @@ func _place_hq() -> void:
 		var o: Rect2 = r["order"]
 		# The paper scrolls in what RAID SETUP leaves it (the chip always shows).
 		var paper := order.get_node("WorkOrderPaper/WorkOrderBox") as Control
+		# B4 (Q10): the setup's title sticker over its instruction line; where the column's room
+		# can't hold both (big text), the line steps aside into the title's tooltip (the paper
+		# keeps a scrolling share of the room).
+		var intro := order.get_node_or_null("RaidIntroBox") as Control
+		var title := order.get_node_or_null("RaidSetupTitle") as Control
+		if intro != null and title != null:
+			var fits := Settings.text_scale < INTRO_HIDE_SCALE - 0.001
+			if intro.visible != fits:
+				intro.visible = fits
+			title.mouse_filter = Control.MOUSE_FILTER_PASS
+			title.tooltip_text = UiTip.fold((intro.get_child(0) as Label).text)
 		# What the paper's scroll leaves (RAID SETUP, the setup's instruction line) and their gaps.
 		var chip_h := order.get_combined_minimum_size().y + order.get_theme_constant("separation")
 		order.position = o.position
@@ -2434,10 +2606,65 @@ func _place_hq() -> void:
 			if extra != null and is_instance_valid(extra):
 				avoid.append(extra)
 		city_overlay.avoid_controls(avoid)
+	_place_corp_news()
 
 
 ## HQ-B: the share of the page's width the opened map key may span.
 const HQ_KEY_SHARE := 0.6
+## B4 (Q10): from this text scale the setup's instruction line steps aside into its title
+## sticker's tooltip (the column holds the title, YOUR NETWORK and the work order).
+const INTRO_HIDE_SCALE := 1.6
+## B4: the narrowest foot gap (px at 1.0) the ON AIR line and the corp news toast lie in.
+const ON_AIR_MIN_W := 200.0
+
+
+## B4: the foot's gap between the hand's last card and the verb slot (page px; its x span: the
+## ON AIR line's and the corp news toast's room), from the page's widths alone (HqLayout).
+func _hq_foot_gap(page: Control) -> Rect2:
+	var r := HqLayout.rects(page.size, Settings.text_scale, page.get_node_or_null("WorkOrder") != null)
+	var tabs := page.get_node_or_null("HandTabs") as Control
+	var cards := page.get_node_or_null("Hand/HandCards") as Control
+	var verb := page.get_node_or_null("VerbSlot") as Control
+	if tabs == null or cards == null or verb == null:
+		return Rect2()
+	var tabs_w := maxf((r["tabs"] as Rect2).size.x, tabs.get_combined_minimum_size().x)
+	var x0 := (r["tabs"] as Rect2).position.x + tabs_w + HqLayout.GAP * 2.0 + cards.get_combined_minimum_size().x + HqLayout.GAP * 2.0
+	var vw := maxf((r["verb"] as Rect2).size.x, verb.get_combined_minimum_size().x)
+	var x1 := page.size.x - HqLayout.MARGIN - vw - HqLayout.GAP * 2.0
+	return Rect2(x0, 0.0, maxf(0.0, x1 - x0), page.size.y)
+
+
+## B4: puts the corp news toast in the foot's gap over the ON AIR line (or over the foot band),
+## as wide as its words up to that gap.
+func _place_corp_news() -> void:
+	if _panel == null or not is_instance_valid(_panel) or _panel != hq_page:
+		return
+	var t := _panel.get_node_or_null(CorpNewsToast.NODE_NAME) as CorpNewsToast
+	var ticker := _panel.get_node_or_null("OnAir") as Control
+	if t == null or ticker == null:
+		return
+	var room := ticker.size.x
+	t.set_width(room)
+	t.position = Vector2(ticker.position.x, ticker.position.y + ticker.size.y - t.size.y)
+	if t.visible:
+		_settle_corp_news.call_deferred()  # a wrapped label reports its height a frame late
+	# While the news shows, the ON AIR line under it waits (one strip in the foot).
+	ticker.modulate.a = 0.0 if t.visible else 1.0
+	if not t.visibility_changed.is_connected(_place_corp_news):
+		t.visibility_changed.connect(_place_corp_news)
+
+
+## B4: the toast's height once its words have wrapped (its foot stays on the ON AIR line's).
+func _settle_corp_news() -> void:
+	if _panel == null or not is_instance_valid(_panel):
+		return
+	var t := _panel.get_node_or_null(CorpNewsToast.NODE_NAME) as CorpNewsToast
+	var ticker := _panel.get_node_or_null("OnAir") as Control
+	if t == null or ticker == null:
+		return
+	var foot := t.position.y + t.size.y
+	t.size.y = t.get_combined_minimum_size().y
+	t.position.y = foot - t.size.y
 
 
 ## HQ-B: the map's free part as last placed (page px).
@@ -2488,14 +2715,12 @@ func hq_fit_ids() -> Array[StringName]:
 			ids.append(StringName(String(id)))
 		return ids
 	ids.append_array(c.grid.claimed_ids())
-	if panel_name != "raid":
-		for s in RunManager.launchable_sites():
-			ids.append(s.id)
-		for s in RunManager.patrol_sites():
-			ids.append(s.id)
-	for path in CityLayout.threat_paths(c, RunManager.corporation):
-		for id in path:
-			ids.append(StringName(String(id)))
+	# B4 (designer, HQ framing: "the page frames the Cell's network"; round 44 hq_idle): the HQ
+	# idle frames the network and its frontier (the Sites a run can start from now, next to it;
+	# a pending raid's routes and the patrols no longer widen it); the off-screen TARGET has its
+	# red pencil edge arrow.
+	for s in RunManager.launchable_sites():
+		ids.append(s.id)
 	return ids
 
 
@@ -2583,7 +2808,8 @@ func _end_hq_fit() -> void:
 			if r.has_area():
 				held.append(r)
 		var free := hq_free_rect()
-		var area := hq_page.get_global_rect()
+		# B4: the city is counted where the map shows (the free part; the panels cover the rest).
+		var area := free
 		if not held.is_empty() and free.has_area():
 			var pan: Vector2 = wireframe.unrigged(func() -> Vector2: return grid_city_pan(free, area, held))
 			if pan.length() >= GRID_LEAN_MIN:
@@ -3029,14 +3255,22 @@ func _site_glyph(site: SiteData) -> String:
 ## The picked Site as a card (H20, replacing the Site list): its facts as badges (status,
 ## objective, node and integrity, upgrades, assets, station) and the actions it allows now
 ## (launch, claim, repair, upgrade). Named "SelectedSite".
-func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[OperativeState], choices: Array[NetworkNodeData]) -> TerminalWindow:
+func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[OperativeState], choices: Array[NetworkNodeData]) -> Control:
 	var c := RunManager.campaign
 	var cfg := RunManager.config()
 	var lookup := RunManager.lookup()
 	var s := c.grid.site(site.id)
 	var status := int(s["status"])
+	# B4 (review section c, round 44): a corporate (or seized) Site's file is hacked intel, a
+	# holo; the Cell's own nodes (cleared, claimed, CORE) keep their terminal cards.
+	if status == GridState.SiteStatus.CORPORATE or status == GridState.SiteStatus.TAKEN:
+		return _site_holo(site, launchable, living)
 	var accent := Palette.CELL_TURF if status == GridState.SiteStatus.CLAIMED else (Palette.NET_CYAN if status == GridState.SiteStatus.CLEARED else Palette.corp_color(c.corporation_id))
-	var card := CrtWindow.new(site_name(site.id), accent)
+	var card_title := site_name(site.id)
+	if status == GridState.SiteStatus.CLAIMED:
+		# B4 (round 44): "CORE  //  HOME SERVER": the node and its type.
+		card_title = "%s  //  %s" % [site_name(site.id).to_upper(), _display(c.grid.node_type_of(site.id)).to_upper()]
+	var card := CrtWindow.new(card_title, accent)
 	card.name = "SelectedSite"
 	card.set_meta(&"shows", [site.id, int(status)])  # ANIM-R3 B6: what refresh_site_card compares
 	# H24 K7: tier and status words translated here, once.
@@ -3069,25 +3303,7 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	elif site.objective == RC.SiteObjective.HEAT_REDUCTION:
 		facts.add_child(Badge.new(CityMapOverlay.tr_word("off"), Color(Palette.NET_CYAN, 0.6), GLYPH_HEAT, tr("This Site's Heat objective is switched off at this ICE level.")).with_icon(StatIcon.COOLING))
 	if c.grid.is_claimed(site.id):
-		var node_col := Palette.CELL_TURF if int(s["condition"]) != GridState.Condition.DOWN else Palette.RESIST_GOLD
-		# HQ-B: CORE's integrity is the home server's (the grid keeps it apart from its Site row).
-		var home := site.id == c.grid.home_site_id
-		var integ := c.grid.home_integrity if home else int(s["integrity"])
-		var most := c.grid.home_max_integrity if home else int(s["max_integrity"])
-		var node_text := "%s %d/%d" % [_display(c.grid.node_type_of(site.id)), integ, most]
-		if int(s["condition"]) == GridState.Condition.DOWN:
-			node_text += tr(" DOWN")
-		var node_data := lookup.get_content(c.grid.node_type_of(site.id)) as NetworkNodeData
-		facts.add_child(Badge.new(node_text, node_col, GLYPH_NODE, TextDb.t(node_data, "description") if node_data != null else "").with_meter(integ, most))
-		if c.grid.upgrade_level_of(site.id) > 0:
-			facts.add_child(Badge.new(TextDb.signed(c.grid.upgrade_level_of(site.id)), Palette.CELL_ACID, GLYPH_UPGRADE, tr("Node upgrade level %d.") % c.grid.upgrade_level_of(site.id)))
-		for aid in c.grid.assets_on(site.id):
-			var data := lookup.get_content(aid) as DefenseAssetData
-			facts.add_child(Badge.new(_display(aid), Palette.CELL_PINK, "", TextDb.t(data, "description") if data != null else "", aid))
-		var guard := c.grid.stationed_on(site.id)
-		if guard != &"":
-			var guard_op := c.get_operative(guard)
-			facts.add_child(Badge.new(guard_op.name if guard_op != null else tr("guarded"), Palette.PAPER, GLYPH_GUARD, tr("An operative is stationed here: their class's station bonus helps the node in raids.")))
+		_node_rows(card, site, facts)
 	var row := HFlowContainer.new()
 	row.name = "SiteActions"
 	row.add_theme_constant_override("h_separation", 8)
@@ -3098,6 +3314,8 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 			launchable_here = true
 	# ART-5 5d (Group 1 naive audit P2): a Site with no JACK IN says why, and what to do first.
 	var why := why_not_runnable(site, launchable_here, living)
+	if site.id == c.grid.home_site_id and String(site_verb(site, false).get("verb", "")) != "":
+		why = ""  # B4 (round 44): CORE with a verb (PATCH) needs no note; a full CORE says why
 	if why != "":
 		var note := Label.new()
 		note.name = "WhyNot"
@@ -3148,20 +3366,7 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	# HQ-B (d): what clearing it gives and risks (the rules' own preview: preview equals result),
 	# for a Site a run can start from.
 	if launchable_here and site.id != c.grid.home_site_id:
-		var gains := HFlowContainer.new()
-		gains.name = "IfCleared"
-		gains.add_theme_constant_override("h_separation", 8)
-		gains.add_theme_constant_override("v_separation", 4)
-		var cap := Label.new()
-		cap.name = "GainsCaption"
-		cap.text = tr(GAIN_CAPTION)
-		cap.add_theme_font_override("font", Palette.mono())
-		cap.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
-		cap.add_theme_color_override("font_color", PaletteSkins.chrome(Palette.NET_CYAN))
-		cap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		gains.add_child(cap)
-		for g: Badge in run_gains(site, clear_preview_of(site)):
-			gains.add_child(g)
+		var gains := _gains_row(site)
 		card.body.add_child(gains)
 		card.body.move_child(gains, row.get_index())
 	# HQ-B (d) (Q11, q11_a_claim.png): a cleared Site of the Cell's to build on: the node tiles
@@ -3217,6 +3422,205 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 
 ## The node tiles' columns on the CLAIM card.
 const NODE_TILE_COLUMNS := 2
+## B4: the holo Site file's row captions (translation keys).
+const ROW_TYPE := "TYPE" # TR
+const ROW_REWARDS := "REWARDS" # TR
+const ROW_LINK := "LINK" # TR
+const ROW_STATUS := "STATUS" # TR
+
+
+## B4 (review section c, round 44 `hq_idle.png`): the selected corporate Site's file as a
+## decrypted holo (SiteHoloCard, named "SelectedSite"): "T2 // NAME" over "CORP // SITE FILE
+## n"; TYPE (its kind and the run it starts), REWARDS (the rules' clear preview: preview equals
+## result), LINK (the owned end JACK IN runs from) or why it can't be run; IF CLEARED (the same
+## badges); the runner's refusal when the lifted card can't run it (the RUNNER tag on the
+## crew's polaroid names who goes).
+func _site_holo(site: SiteData, launchable: Array[SiteData], living: Array[OperativeState]) -> SiteHoloCard:
+	var c := RunManager.campaign
+	var corp_word := TextDb.t(RunManager.corporation, "display_name").to_upper()
+	var title := "%s  //  %s" % [CityMapOverlay.tier_text(site.tier), site_name(site.id).to_upper()]
+	var card := SiteHoloCard.new(c.corporation_id, title, tr(SiteHoloCard.FILE_LINE) % [corp_word, "%03d" % SiteHoloCard.file_number(site.id)])
+	card.set_meta(&"shows", [site.id, int(c.grid.status_of(site.id))])  # ANIM-R3 B6: what refresh_site_card compares
+	var launchable_here := false
+	for l in launchable:
+		if l.id == site.id:
+			launchable_here = true
+	var kind := CityLayout.site_kind(c, site)
+	var kind_word := CityMapOverlay.kind_word(kind) if kind != CityMapOverlay.KIND_TIER else tr("Site")
+	var type_text := kind_word
+	if launchable_here:
+		type_text = "%s  //  %s" % [kind_word, tr(CampaignRules.run_kind_for(c, site))]
+	card.add_row("TypeRow", tr(ROW_TYPE), type_text)
+	if c.grid.status_of(site.id) == GridState.SiteStatus.TAKEN:
+		card.add_row("StatusRow", tr(ROW_STATUS), CityMapOverlay.tr_word(String(STATUS_NAMES[GridState.SiteStatus.TAKEN])))
+	var preview := clear_preview_of(site) if launchable_here else {}
+	var rewards := reward_words(site, preview)
+	if rewards != "":
+		card.add_row("RewardsRow", tr(ROW_REWARDS), rewards)
+	var why := why_not_runnable(site, launchable_here, living)
+	if why == "" and launchable_here:
+		var from_id := RouteLinkLayout.from_site(RunManager.corporation, c, site.id)
+		if from_id != &"":
+			card.add_row("LinkRow", tr(ROW_LINK), tr("from %s") % site_name(from_id).to_upper())
+	if why != "":
+		var note := card.add_line(why, Palette.TEXT_HI, UiTheme.BODY)
+		note.name = "WhyNot"
+		note.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		note.custom_minimum_size.x = MIN_NOTE_WIDTH
+	if launchable_here and not living.is_empty():
+		var runner := selected_op()
+		var why_runner := _pick_error(runner.id, site.id) if runner != null else ""
+		if why_runner == DropLayer.SKIP:
+			why_runner = ""
+		if why_runner != "" and runner != null:
+			var line := card.add_line(tr("RUNNER: %s R%d") % [runner.name, runner.rank] + "  //  " + why_runner, Palette.HARM, UiTheme.BODY)
+			line.name = "Runner"
+			line.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		if site.id != c.grid.home_site_id:
+			card.body.add_child(_gains_row(site))
+	return card
+
+
+## B4 (round 44 `hq_node_selected.png`): a node of the Cell's on its terminal card: the header
+## "CORE  //  HOME SERVER" (the node's type) with the YOURS tag, then INTEGRITY (the bare Anton
+## number and its pip bar), DEFENCES (the assets on it), LINKS (its powered links to the Cell's
+## other nodes) and STATIONED; CORE's card ends with `> HQ ACTIONS`: HEAT SCRUB as a terminal
+## action (review section c: Heat SCRUB also on the home node; the same purchase as the Heat
+## terminal's, at the rules' price). A plain node keeps its status badge (CLAIMED and its
+## upgrade level) in `facts`; CORE's header says it.
+func _node_rows(card: TerminalWindow, site: SiteData, facts: HFlowContainer) -> void:
+	var c := RunManager.campaign
+	var cfg := RunManager.config()
+	var lookup := RunManager.lookup()
+	var s := c.grid.site(site.id)
+	var home := site.id == c.grid.home_site_id
+	var down := int(s["condition"]) == GridState.Condition.DOWN
+	var node_col := Palette.CELL_ACID if not down else Palette.RESIST_GOLD
+	var node_type := c.grid.node_type_of(site.id)
+	var node_data := lookup.get_content(node_type) as NetworkNodeData
+	card.tag_label.text = tr("YOURS") if not down else tr("DOWN")
+	if home:
+		var badge := facts.get_node_or_null("StatusBadge")
+		if badge != null:
+			facts.remove_child(badge)
+			badge.free()
+	if c.grid.upgrade_level_of(site.id) > 0:
+		facts.add_child(Badge.new(TextDb.signed(c.grid.upgrade_level_of(site.id)), Palette.CELL_ACID, GLYPH_UPGRADE, tr("Node upgrade level %d.") % c.grid.upgrade_level_of(site.id)))
+	# HQ-B: CORE's integrity is the home server's (the grid keeps it apart from its Site row).
+	var integ := c.grid.home_integrity if home else int(s["integrity"])
+	var most := c.grid.home_max_integrity if home else int(s["max_integrity"])
+	var readout := IntegrityReadout.new(integ, most, node_col)
+	readout.name = "Integrity"
+	readout.tooltip_text = UiTip.fold(TextDb.t(node_data, "description") if node_data != null else "")
+	_kv_row(card.body, "IntegrityRow", tr("INTEGRITY"), readout)
+	var defences := PackedStringArray()
+	for aid in c.grid.assets_on(site.id):
+		defences.append(_display(aid).to_upper())
+	_kv_row(card.body, "DefencesRow", tr("DEFENCES"), _kv_value("  +  ".join(defences) if not defences.is_empty() else tr("none")))
+	var powered := 0
+	var sd := CampaignRules.site_data(RunManager.corporation, site.id)
+	for other in RunManager.corporation.city_grid.sites:
+		if other == null or other.id == site.id or not c.grid.is_active_node(other.id):
+			continue
+		if (sd != null and sd.links.has(other.id)) or other.links.has(site.id):
+			powered += 1
+	_kv_row(card.body, "LinksRow", tr("LINKS"), _kv_value(tr("%d powered") % powered))
+	var guard := c.grid.stationed_on(site.id)
+	var guard_op := c.get_operative(guard) if guard != &"" else null
+	var st := _kv_value(guard_op.name if guard_op != null else tr("none"))
+	if guard_op != null:
+		st.tooltip_text = UiTip.fold(tr("An operative is stationed here: their class's station bonus helps the node in raids."))
+	_kv_row(card.body, "StationedRow", tr("STATIONED"), st)
+	if not home:
+		return
+	var head := Label.new()
+	head.name = "HqActionsCaption"
+	head.text = tr("> HQ ACTIONS")
+	head.add_theme_font_override("font", Palette.mono())
+	head.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+	head.add_theme_color_override("font_color", PaletteSkins.chrome(Palette.NET_CYAN))
+	card.body.add_child(head)
+	var amount := HeatRules.scaled_delta(c, -cfg.heat_purchase_amount, cfg)
+	var price := CampaignRules.heat_purchase_price(c, cfg)
+	var scrub := MenuChip.new(tr("HEAT SCRUB  %s HEAT") % TextDb.signed(amount), tr("%d SCHEMATICS  %s") % [price, Settings.hint(HeatGauge.OPEN_ACTION)])
+	scrub.pre_translated = true
+	scrub.name = "CoreHeatScrub"
+	scrub.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scrub.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	scrub.disabled = c.schematics < price or c.heat <= 0
+	scrub.tooltip_text = UiTip.fold(tr("SCRUB HEAT: pay %d Schematics, Heat %s (the Heat terminal's purchase).") % [price, TextDb.signed(amount)])
+	scrub.pressed.connect(buy_heat_reduction)
+	card.body.add_child(scrub)
+
+
+## B4: a terminal card's row: `caption` (mono caps) and `value` beside it.
+func _kv_row(into: Control, row_name: String, caption: String, value: Control) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.name = row_name
+	row.add_theme_constant_override("separation", roundi(SiteHoloCard.ROW_GAP * Settings.text_scale))
+	var cap := Label.new()
+	cap.name = "Caption"
+	cap.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	cap.text = caption
+	cap.custom_minimum_size.x = SiteHoloCard.CAPTION_W * Settings.text_scale
+	cap.add_theme_font_override("font", Palette.mono())
+	cap.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+	cap.add_theme_color_override("font_color", Palette.TEXT_MID)
+	cap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(cap)
+	value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	value.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(value)
+	into.add_child(row)
+	return row
+
+
+## B4: a terminal row's value words (mono, paper white).
+func _kv_value(text: String) -> Label:
+	var l := Label.new()
+	l.name = "Value"
+	l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	l.text = text
+	l.add_theme_font_override("font", Palette.mono())
+	l.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.BODY))
+	l.add_theme_color_override("font_color", Palette.PAPER)
+	l.mouse_filter = Control.MOUSE_FILTER_PASS
+	UiWrap.whole_words(l)
+	return l
+
+
+## B4: the holo's REWARDS words from the rules' clear preview `preview` (Schematics, the
+## Exploit, a win; "" when it gives none of them).
+func reward_words(site: SiteData, preview: Dictionary) -> String:
+	var parts := PackedStringArray()
+	if bool(preview.get("won", false)):
+		parts.append(CityMapOverlay.tr_word("Clearing it wins the campaign."))
+	var sch := int(preview.get("schematics", 0))
+	if sch != 0:
+		parts.append(tr("%s Schematics") % TextDb.signed(sch))
+	var ex := int(preview.get("exploit", -1))
+	if ex >= 0:
+		parts.append(tr("the %s Exploit") % exploit_name(site.exploit_type))
+	return ", ".join(parts)
+
+
+## HQ-B (d): the IF CLEARED row: the caption and one badge per gain of the rules' preview.
+func _gains_row(site: SiteData) -> HFlowContainer:
+	var gains := HFlowContainer.new()
+	gains.name = "IfCleared"
+	gains.add_theme_constant_override("h_separation", 8)
+	gains.add_theme_constant_override("v_separation", 4)
+	var cap := Label.new()
+	cap.name = "GainsCaption"
+	cap.text = tr(GAIN_CAPTION)
+	cap.add_theme_font_override("font", Palette.mono())
+	cap.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+	cap.add_theme_color_override("font_color", PaletteSkins.chrome(Palette.NET_CYAN))
+	cap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	gains.add_child(cap)
+	for g: Badge in run_gains(site, clear_preview_of(site)):
+		gains.add_child(g)
+	return gains
 
 
 ## The Schematics a Profile unlock that opens node type `node` costs (0 when none is listed).
@@ -5210,6 +5614,7 @@ func _build_ui() -> void:
 	add_child(wireframe)
 	scrim = UiScrimPools.attach_after(wireframe)
 	scrim.spill.add_spill_source(_target_spill, Palette.PENCIL_THREAT)
+	scrim.set_map_dim_source(hq_map_dim)  # B4 (D7): the HQ idle's map dim
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE  # city map screens take clicks behind
@@ -5477,9 +5882,43 @@ func tell_new_beats() -> PackedStringArray:
 	for i in range(mini(seen, beats.size()), beats.size()):
 		var title := TextDb.t(beats[i], "title")
 		told.append(title)
-		notify(tr(STORY_TOAST) % title)
+		corp_news(tr(STORY_TOAST) % title)
 	_beats_seen[key] = beats.size()
 	return told
+
+
+## B4 (review D7, bible 4.13): shows `text` (translated) as the HQ page's corp-news holo toast
+## at its foot (CorpNewsToast); off the HQ pages, the note toast as before.
+func corp_news(text: String) -> void:
+	var t := _panel.get_node_or_null(CorpNewsToast.NODE_NAME) as CorpNewsToast if _panel != null and is_instance_valid(_panel) else null
+	if t == null:
+		notify(text)
+		return
+	t.show_news(text)
+	_place_corp_news()
+
+
+## B4: the words the HQ shows for an intercepted raid warning ("INTERCEPTED // MERIDIAN: ...").
+const INTERCEPTED := "INTERCEPTED  //  %s" # TR
+
+
+## B4 (review D7: "move the corp-news ticker off the top"): a pending raid's warning at the HQ
+## (the corporation's line, chosen as Dialogue.raid_warning chooses it) is intercepted corp news:
+## the holo toast at the foot, not the subtitle band under the top bar. The line still goes to
+## Dialogue's history and voice (`log_line`). Returns the words shown ("" with no line).
+func intercept_raid_warning(raid_id: StringName) -> String:
+	var c := RunManager.campaign
+	var salt := c.raids_won + c.raids_lost
+	var l := Dialogue.line("raid:%s" % raid_id, -1, c.corporation_id, &"", salt)
+	if l == null:
+		l = Dialogue.line("raid:any", -1, c.corporation_id, &"", salt)
+	if l == null:
+		return ""
+	var text := Dialogue.voice_text(l)
+	Dialogue.log_line(RC.Voice.CORPO, text, c.corporation_id)
+	var shown := tr(INTERCEPTED) % text
+	corp_news(shown)
+	return shown
 
 
 # --- HQ-B (g): the HQ idle's motion entries, re-pointed onto the new page ---------------------

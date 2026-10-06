@@ -72,19 +72,24 @@ func _page(hq: Control) -> Control:
 	return hq._panel
 
 
-func test_the_hq_is_the_raid_band_city_with_every_site_on_it() -> void:
+func test_the_hq_is_the_city_grid_look_with_every_site_on_it() -> void:
 	_network()
 	var hq := await _hq()
 	assert_eq(hq.panel_name, "hq")
 	assert_true(hq.wireframe.visible and hq.wireframe.city3d, "the HQ is the unified 3D city")
 	assert_false(hq.background.visible, "no cyberdeck room behind it")
-	assert_eq(hq.wireframe.city.band_lock, CityLod.Band.RAID, "at the RAID band")
+	# B4 (round 44 hq_idle, designer "build the HQ to round 44"): the City Grid look (solid
+	# buildings); the network's surroundings are the scrim's map dim (test_b4_hq_round44).
+	assert_eq(hq.wireframe.city.band_lock, CityLod.Band.GRID, "at the City Grid look")
 	var c := RunManager.campaign
 	for s in RunManager.corporation.city_grid.sites:
 		if s != null:
 			assert_true(hq.city_overlay.has_site(s.id), "%s on the map" % s.id)
 	for n in hq.city_overlay.nodes:
-		assert_eq(n.has("socket"), c.grid.is_claimed(n["id"]), "%s: the Cell's nodes are raid sockets, the rest markers" % n["id"])
+		# B4: at the HQ idle the Cell's nodes are their v4 markers (the fists, CORE's heart); the
+		# raid sockets are the DEFENCE hand's (the raid setup).
+		assert_false(n.has("socket"), "%s: no raid socket at the HQ idle" % n["id"])
+		assert_true(n.has("marker") or not c.grid.is_claimed(n["id"]), "%s: a v4 marker" % n["id"])
 	for name in ["MapCursor", "HandTabs", "Hand", "CardColumn", "VerbSlot", "OnAir", "MapLegend"]:
 		assert_not_null(_page(hq).get_node_or_null(name), "%s on the page" % name)
 	for gone in ["CityGrid", "SaveButton", "SettingsButton", "PirateRadio", "BlackMarket", "RunsOpen", "BackToHq"]:
@@ -92,17 +97,22 @@ func test_the_hq_is_the_raid_band_city_with_every_site_on_it() -> void:
 	assert_true(hq.hud.heat_gauge.is_visible_in_tree(), "the HEAT gauge (a)")
 
 
-func test_the_camera_fits_the_network_and_the_runnable_sites_and_zooms_out_to_the_grid_band() -> void:
+func test_the_camera_fits_the_network_and_its_frontier_and_zooms_out_to_the_grid_band() -> void:
 	_network()
 	var hq := await _hq()
 	await _frames(20)
 	var ortho := RaidZoomFit.ortho_of(hq.wireframe.city.scale.x, hq.size.x)
 	assert_between(ortho, cfg.raid_fit_min - 0.5, cfg.raid_fit_max + 0.5, "fitted in the raid range (Q5: up to the clamp)")
 	if ortho < cfg.raid_fit_max - 0.5:
+		# B4 (designer, HQ framing: "the page frames the Cell's network"): the network and the
+		# selected Site in the map's free part.
 		var free: Rect2 = hq.hq_free_rect().grow(2.0)
+		var framed: Array[StringName] = RunManager.campaign.grid.claimed_ids()
 		for s in RunManager.launchable_sites():
-			var p: Vector2 = hq.city_overlay.get_global_transform() * hq.city_overlay.icon_at(s.id)
-			assert_true(free.has_point(p), "%s: a runnable Site in the map's free part (%s in %s)" % [s.id, p, free])
+			framed.append(s.id)
+		for id in framed:
+			var p: Vector2 = hq.city_overlay.get_global_transform() * hq.city_overlay.icon_at(id)
+			assert_true(free.has_point(p), "%s: framed in the map's free part (%s in %s)" % [id, p, free])
 	# Q4: the wheel zooms out past the raid range into the GRID band, and back.
 	for i in 12:
 		hq.grid_controls.zoom_at(hq.size * 0.5, 1.0)
@@ -110,7 +120,8 @@ func test_the_camera_fits_the_network_and_the_runnable_sites_and_zooms_out_to_th
 	assert_eq(hq.wireframe.city.band_lock, CityLod.Band.GRID, "the whole city: the GRID band")
 	for i in 12:
 		hq.grid_controls.zoom_at(hq.size * 0.5, -1.0)
-	assert_eq(hq.wireframe.city.band_lock, CityLod.Band.RAID, "back in: the RAID band")
+	# B4 (round 44): the HQ idle keeps the City Grid look at every zoom.
+	assert_eq(hq.wireframe.city.band_lock, CityLod.Band.GRID, "back in: still the City Grid look")
 
 
 func test_selecting_a_site_keeps_the_camera_and_shows_its_card_and_verb() -> void:

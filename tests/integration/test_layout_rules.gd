@@ -100,7 +100,10 @@ func test_hq_is_a_cyberdeck_and_the_grid_is_wireframe() -> void:
 	assert_true(hq.wireframe.visible, "the Grid is wireframe")
 	assert_false(hq.background.visible)
 	# H20: the plan note and the Site list gave way to the picked Site's card.
-	assert_true(hq._panel.find_child("SelectedSite", true, false) is TerminalWindow, "the selected Site's card in the card column")
+	# B4 (review section c): a corporate Site's card is its decrypted holo file; the Cell's own
+	# nodes keep their terminal.
+	var picked: Node = hq._panel.find_child("SelectedSite", true, false)
+	assert_true(picked is SiteHoloCard or picked is TerminalWindow, "the selected Site's card in the card column")
 
 
 func _descendants(node: Node) -> Array[Node]:

@@ -263,6 +263,12 @@ func test_raid_02_the_work_order_stamp_disc_and_instruction_line_cover_no_value(
 		assert_not_null(box, "%s: the instruction line is boxed" % what)
 		if box != null:
 			assert_true(box.get_theme_stylebox(&"panel") is StyleBoxFlat, "%s: on a dark plate" % what)
+		# B4 (Q10): from text 1.6 the line steps aside into the RAID SETUP title's tooltip.
+		if scale >= (load("res://scripts/ui/hq_scene.gd") as GDScript).INTRO_HIDE_SCALE - 0.001:
+			assert_false(intro.is_visible_in_tree(), "%s: the line steps aside at big text" % what)
+			await _close(hq)
+			continue
+		assert_true(intro.is_visible_in_tree(), "%s: the instruction line shows" % what)
 		assert_true(intro.get_global_rect().end.y <= card.get_global_rect().position.y - RaidPaper.CLIP_TOP * Settings.text_scale, "%s: the paper clip never reaches the instruction line" % what)
 		await _close(hq)
 

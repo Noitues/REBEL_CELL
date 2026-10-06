@@ -177,7 +177,9 @@ func test_the_grid_page_is_the_3d_city_and_feeds_the_decal() -> void:
 	var ov: CityMapOverlay = hq.city_overlay
 	assert_true(ov.on_ground_decal(), "its links are the ground decal")
 	var d := ov.network_data()
-	assert_eq(d.nodes.size(), ov.nodes.size(), "every Site is a decal node")
+	# B4 (review D7): at the HQ idle a hidden Site leaves no disc: the pinned Sites and the selection.
+	var pinned := ov.nodes.filter(func(n: Dictionary) -> bool: return n["id"] == ov.selected_id or not n.has("marker") or bool(n["marker"].get("pinned", true)))
+	assert_eq(d.nodes.size(), pinned.size(), "every shown Site is a decal node")
 	assert_gt(d.segments.size(), 0, "links along the streets")
 	for n in d.nodes:
 		var lot := CityIsoCamera.world_to_lot(cfg, n["world"])
