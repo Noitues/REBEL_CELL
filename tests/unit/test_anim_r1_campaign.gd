@@ -554,7 +554,10 @@ func test_outcome_rows_wrap_inside_their_choice_at_big_text() -> void:
 		var row := b.find_child("OutcomeRow", false, false) as OutcomeRow
 		if row == null:
 			continue
-		assert_true(Rect2(Vector2.ZERO, (b as Control).size).grow(1.0).encloses(Rect2(row.position, row.size)), "%s: the row inside its choice" % b.name)
+		# Parity EVT-02 (updated on purpose): the chips stand in a column beside the sticker (round
+		# 31 event_screen), wrapped to that column, on the screen.
+		assert_true(row.position.x >= (b as Control).size.x - 0.5, "%s: the row beside its choice" % b.name)
+		assert_true(row.get_global_rect().end.x <= SCREEN.size.x + 0.5, "%s: its row on screen" % b.name)
 		assert_true((b as Control).get_global_rect().end.x <= SCREEN.size.x + 0.5, "%s on screen" % b.name)
 	var many: Array[Dictionary] = []
 	for i in 3:

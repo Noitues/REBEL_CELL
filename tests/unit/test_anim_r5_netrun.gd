@@ -194,7 +194,11 @@ func test_the_run_end_is_a_window_over_the_city_with_a_verdict_and_reasons() -> 
 		var why := scene._panel.find_child("HeatReasonText", true, false) as Label
 		assert_string_contains(why.text, "Heat %s" % TextDb.signed(s.run.heat_gained), "the reason names the HEAT tag's number")
 		assert_string_contains(why.text, "flatlined")
-		var win := scene._panel.find_child("RunReport", true, false) as Control
+		# Parity END-01: the report beside the operative's Polaroid (verdict and BACK TO HQ under
+		# it): the row is in the middle of the screen; a flatline greys the city behind it.
+		var win := scene._panel.find_child("RunEndRow", true, false) as Control
+		assert_not_null(scene._panel.find_child("RunReport", true, false), "%.1f: the report" % scale)
+		assert_not_null(scene._panel.find_child("GreyCity", true, false), "%.1f: the city greys" % scale)
 		var r := win.get_global_rect()
 		assert_almost_eq(r.get_center().x, SCREEN.get_center().x, 2.0, "%.1f: in the middle of the screen" % scale)
 		assert_true(SCREEN.encloses(r), "%.1f: on screen: %s" % [scale, r])
@@ -348,7 +352,7 @@ func test_the_raid_playout_has_its_own_title_and_screen() -> void:
 	assert_eq(scene.hud._title, tr("NETRUN // RAID"), "not NETRUN // ROUTE")
 	scene._show_current()
 	assert_true(scene.entering, "the route after the playout enters as a new screen")
-	assert_eq(scene.hud._title, tr("NETRUN // ROUTE"))
+	assert_eq(scene.hud._title, tr("THE GRID"), "parity ROUTE-06: the route is THE GRID")
 	await _close(scene)
 
 
@@ -396,8 +400,11 @@ func test_the_socket_list_says_what_it_is_for() -> void:
 			continue
 		assert_not_null(row, "the socket list has a row")
 		assert_eq((row.find_child("SocketWord", true, false) as Label).text, tr("Chips go into:"))
-		var pick := row.find_child("SocketPick", true, false) as OptionButton
-		assert_true(pick.get_item_text(0).begins_with(tr("Slot %d: %s%s").split(" ")[0]), "items name the slot: %s" % pick.get_item_text(0))
+		# Parity SHOP-06: the choice is the spinner; the row names the chosen slot.
+		var pick := scene._panel.find_child("SpinnerMini", true, false) as SpinnerMini
+		var choice := row.find_child("SocketChoice", true, false) as Label
+		assert_true(choice.text.begins_with(tr("Slot %d: %s%s").split(" ")[0]), "the row names the slot: %s" % choice.text)
+		assert_true(pick.pickable, "the spinner is the socket choice")
 		assert_string_contains(pick.tooltip_text, "slot", "its tooltip explains it")
 		var win := row.get_parent()
 		# ART-9 4A: the socket list is on the Mainframe's pegboard (bible v2 §4.10 layout v5).

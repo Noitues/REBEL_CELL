@@ -387,9 +387,9 @@ func test_the_mainframe_says_what_it_does_with_glyphs() -> void:
 	DemoSetup.open_shop(RunManager.netrun)
 	scene._show_current()
 	await _frames(2)
-	var icon := scene._panel.find_child("LeaveIcon", true, false) as IconMark
-	assert_not_null(icon, "LEAVE MAINFRAME has its exit glyph")
-	assert_eq(icon.kind, StatIcon.EXIT)
+	var icon := scene._panel.find_child("LeaveIcon", true, false) as Button
+	assert_not_null(icon, "LEAVE MAINFRAME has its exit mark")
+	assert_eq(icon.icon, MainframeArt.tex("leave_arrow"), "parity SHOP-05: the concept's chevron sticker")
 	await _close(scene)
 
 

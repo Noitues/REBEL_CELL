@@ -24,6 +24,14 @@ const F_TIER := "TIER" # TR
 const F_TYPE := "TYPE" # TR
 const F_REWARDS := "REWARDS" # TR
 const F_HEAT := "HEAT" # TR
+## Parity ROUTE-03 (round 37 `city_default`: the DEPOT 15 holo): DECRYPTED is a small chip in the
+## foot's corner beside the seal, never over the title or a field; its lettering (px at 1.0),
+## padding (px) and keyline (px). Every field's words wrap in their column (none is cut) and end
+## above the foot.
+const STAMP_WORD := "DECRYPTED" # TR
+const CHIP_FONT := 11
+const CHIP_PAD := Vector2(6, 2)
+const CHIP_LINE := 1.5
 
 ## What the panel shows: title, tier (int), type (words), rewards (Array[String]), heat
 ## (words, "" = none), corp_color.
@@ -44,6 +52,8 @@ func _init() -> void:
 	plate.show_behind_parent = true
 	add_child(plate)
 	plate.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# Parity ROUTE-03: the plate's big stamp sat over the title; the panel letters its own chip.
+	plate.stamp_slot.visible = false
 	auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	Settings.changed.connect(_relayout)
 	resized.connect(queue_redraw)
@@ -78,16 +88,68 @@ func _rows() -> Array:
 	return out
 
 
+## The panel's width at the text size now (px).
+func panel_width() -> float:
+	return WIDTH * minf(_s(), MAX_WIDTH_SCALE)
+
+
+## Parity ROUTE-03: the field rows as drawn, each value wrapped in its column (whole words,
+## never cut): [[label, [lines]], ...] for a panel `w` wide.
+func row_lines(w: float) -> Array:
+	var s := _s()
+	var m := MARGIN * s
+	var fs := roundi(FIELD_FONT * s)
+	var room := value_room(w)
+	var out: Array = []
+	for row in _rows():
+		var lines := TilePicker.wrap_words(String(row[1]), Palette.body(), fs, room)
+		out.append([String(row[0]), lines if not lines.is_empty() else PackedStringArray([""])])
+	return out
+
+
+## Parity ROUTE-03: the value column's width in a panel `w` wide (px).
+func value_room(w: float) -> float:
+	var m := MARGIN * _s()
+	return w - m * 2.0 - (w - m * 2.0) * LABEL_SHARE
+
+
+## Parity ROUTE-03: the foot's height (the seal and the DECRYPTED chip beside it, px).
+func foot_height() -> float:
+	return maxf(DecryptedHoloPanel.SEAL_R * 2.0 + UiTheme.SP_M, chip_size().y)
+
+
+## Parity ROUTE-03: the DECRYPTED chip's size (px).
+func chip_size() -> Vector2:
+	var px := roundi(CHIP_FONT * _s())
+	var sz := Palette.mono().get_string_size(tr(STAMP_WORD), HORIZONTAL_ALIGNMENT_LEFT, -1, px)
+	return Vector2(sz.x, Palette.mono().get_height(px)) + CHIP_PAD * 2.0 * _s()
+
+
+## Parity ROUTE-03: the DECRYPTED chip's rect (local): in the foot, left of the seal.
+func chip_rect() -> Rect2:
+	var cs := chip_size()
+	var seal_left := size.x - DecryptedHoloPanel.SEAL_R * 2.0 - UiTheme.SP_M
+	var seal_mid := size.y - DecryptedHoloPanel.SEAL_R - UiTheme.SP_M
+	return Rect2(Vector2(seal_left - UiTheme.SP_S - cs.x, seal_mid - cs.y * 0.5), cs)
+
+
+## Parity ROUTE-03: where the fields end (local y): above the foot.
+func fields_end() -> float:
+	return size.y - foot_height() - MARGIN * _s() * 0.5
+
+
 func _relayout() -> void:
 	var s := _s()
 	var f := Palette.body()
 	var fs := roundi(FIELD_FONT * s)
 	var tf := Palette.body_medium()
 	var tfs := roundi(TITLE_FONT * s)
-	var h := maxf(MARGIN * s + tf.get_height(tfs), DecryptedHoloPanel.STAMP_SLOT.y) + MARGIN * s * 0.5
-	h += f.get_height(fs) * _rows().size()
-	h += DecryptedHoloPanel.SEAL_R + MARGIN * s
-	custom_minimum_size = Vector2(WIDTH * minf(s, MAX_WIDTH_SCALE), h)
+	var w := panel_width()
+	var h := MARGIN * s + tf.get_height(tfs) + MARGIN * s * 0.5
+	for row in row_lines(w):
+		h += f.get_height(fs) * (row[1] as PackedStringArray).size()
+	h += MARGIN * s * 0.5 + foot_height()
+	custom_minimum_size = Vector2(w, h)
 	update_minimum_size()
 	queue_redraw()
 
@@ -101,18 +163,26 @@ func _draw() -> void:
 	var m := MARGIN * s
 	var tf := Palette.body_medium()
 	var tfs := roundi(TITLE_FONT * s)
-	# The plate's DECRYPTED stamp holds the top right; its seal the bottom right.
-	var stamp_w := DecryptedHoloPanel.STAMP_SLOT.x
-	var seal_w := DecryptedHoloPanel.SEAL_R * 2.0 + m
+	# Parity ROUTE-03: the title has the whole width (the stamp is a chip in the foot).
 	var ty := m + tf.get_ascent(tfs)
-	draw_string(tf, Vector2(m, ty), String(data.get("title", "")).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, maxf(r.size.x - m * 2.0 - stamp_w, r.size.x * 0.4), tfs, corp.lerp(RouteInk.HOLO_TEXT, 0.35))
+	draw_string(tf, Vector2(m, ty), String(data.get("title", "")).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - m * 2.0, tfs, corp.lerp(RouteInk.HOLO_TEXT, 0.35))
 	var f := Palette.body()
 	var mono := Palette.mono()
 	var fs := roundi(FIELD_FONT * s)
-	var y2 := maxf(ty + tf.get_descent(tfs), DecryptedHoloPanel.STAMP_SLOT.y) + m * 0.5
+	var y2 := ty + tf.get_descent(tfs) + m * 0.5
 	var lw := (r.size.x - m * 2.0) * LABEL_SHARE
-	for row in _rows():
-		y2 += f.get_ascent(fs)
-		draw_string(mono, Vector2(m, y2), String(row[0]), HORIZONTAL_ALIGNMENT_LEFT, lw, fs, RouteInk.HOLO_FIELD)
-		draw_string(f, Vector2(m + lw, y2), String(row[1]), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - m * 2.0 - lw - seal_w * 0.5, fs, RouteInk.HOLO_TEXT)
-		y2 += f.get_descent(fs)
+	for row in row_lines(r.size.x):
+		var first := true
+		for line: String in row[1]:
+			y2 += f.get_ascent(fs)
+			if first:
+				draw_string(mono, Vector2(m, y2), String(row[0]), HORIZONTAL_ALIGNMENT_LEFT, lw, fs, RouteInk.HOLO_FIELD)
+			draw_string(f, Vector2(m + lw, y2), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, RouteInk.HOLO_TEXT)
+			y2 += f.get_descent(fs)
+			first = false
+	# The DECRYPTED chip: a small keyline box in the foot's corner (round 37's holo).
+	var chip := chip_rect()
+	var px := roundi(CHIP_FONT * s)
+	draw_rect(chip, Color(Palette.NIGHT_SKY, 0.6))
+	draw_rect(chip, Palette.CELL_ACID, false, CHIP_LINE)
+	draw_string(mono, chip.position + Vector2(CHIP_PAD.x * s, CHIP_PAD.y * s + mono.get_ascent(px)), tr(STAMP_WORD), HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.CELL_ACID)

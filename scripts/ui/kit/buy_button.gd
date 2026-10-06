@@ -9,8 +9,9 @@ extends StickerButton
 ## shrinks to the item's width. View only.
 
 ## Lettering and height at the item's text scale 1.0 (px), the least lettering (px), and
-## the margin kept from the item's sides and foot (px).
-const BUY_FONT := 13
+## the margin kept from the item's sides and foot (px). Parity SHOP-03: the price is lettered
+## 16 px on the 28 px tag, as round 34 `shop_v5` letters it (was 13).
+const BUY_FONT := 16
 const BUY_HEIGHT := 28.0
 const MIN_FONT := 8
 const EDGE := 4.0

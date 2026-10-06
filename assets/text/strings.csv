@@ -78,7 +78,6 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel,%s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel
 %s // %d CARDS,%s // %d CARDS
 %s // L%d,%s // L%d
-%s // LOOT: pick a %s,%s // LOOT: pick a %s
 "%s // terminal log, unsigned","%s // terminal log, unsigned"
 %s AT TURN START,%s AT TURN START
 %s BITES IT %d,%s BITES IT %d
@@ -118,6 +117,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s returns to the reserves.,%s returns to the reserves.
 %s rolls,%s rolls
 %s takes %d damage: HP %d → %d.,%s takes %d damage: HP %d → %d.
+%s · %d CYCLES,%s · %d CYCLES
 %s's HP. At 0 the operative flatlines.,%s's HP. At 0 the operative flatlines.
 %s's integrity (HP) now and after the raid: %s → %s. %s,%s's integrity (HP) now and after the raid: %s → %s. %s
 "%s, %d runs","%s, %d runs"
@@ -566,6 +566,7 @@ DAMAGE %s,DAMAGE %s
 DE-ORBITED,DE-ORBITED
 DECEASED,DECEASED
 DECK,DECK
+DECRYPTED,DECRYPTED
 DECRYPTED BY THE CELL  //  KEY %s,DECRYPTED BY THE CELL  //  KEY %s
 DEFEAT,DEFEAT
 DEFENCE,DEFENCE
@@ -581,6 +582,7 @@ DISPATCH,DISPATCH
 DISPATCH  //  INTERNAL AFFAIRS  //  CLEAN-UP,DISPATCH  //  INTERNAL AFFAIRS  //  CLEAN-UP
 DISPATCH // ECHO 00,DISPATCH // ECHO 00
 DISPATCH HAS YOUR CELL,DISPATCH HAS YOUR CELL
+DO NOT FORWARD,DO NOT FORWARD
 DOWN,DOWN
 DOWN / TAKEN,DOWN / TAKEN
 DOWN: repair the node on the Grid.,DOWN: repair the node on the Grid.
@@ -1143,6 +1145,8 @@ LOCKDOWN,LOCKDOWN
 LOCKED,LOCKED
 LOG,LOG
 LOOT,LOOT
+LOOT // NETRUN: %s,LOOT // NETRUN: %s
+LOOT // NETRUN: %s // %s %d OF %d,LOOT // NETRUN: %s // %s %d OF %d
 LOOT SHEET // %s // PICK 1 OF %d,LOOT SHEET // %s // PICK 1 OF %d
 LOST,LOST
 "LURES, PULL %d","LURES, PULL %d"
@@ -1553,7 +1557,6 @@ NETRUN // FLATLINED,NETRUN // FLATLINED
 NETRUN // HOME FELL,NETRUN // HOME FELL
 NETRUN // JACK OUT,NETRUN // JACK OUT
 NETRUN // RAID,NETRUN // RAID
-NETRUN // ROUTE,NETRUN // ROUTE
 NETRUN ABORTED - the home server fell,NETRUN ABORTED - the home server fell
 NETRUN COMPLETE,NETRUN COMPLETE
 NETRUN FAILED - operative lost,NETRUN FAILED - operative lost
@@ -1629,6 +1632,7 @@ Next threshold at %d.,Next threshold at %d.
 No Daemons installed.,No Daemons installed.
 No First Turn Free Nudge,No First Turn Free Nudge
 No Going Back,No Going Back
+No assets to deploy: this run carries none and the Armory is empty. Your nodes hold with what is on them.,No assets to deploy: this run carries none and the Armory is empty. Your nodes hold with what is on them.
 No campaign filed here yet.,No campaign filed here yet.
 No campaign is saved yet: OVERTHROW starts one.,No campaign is saved yet: OVERTHROW starts one.
 No campaign.,No campaign.
@@ -1863,6 +1867,7 @@ RING LOCK,RING LOCK
 RIP,RIP
 ROUTE // pick the next node,ROUTE // pick the next node
 ROUTE VIEW,ROUTE VIEW
+RUN,RUN
 RUN ASSETS:,RUN ASSETS:
 RUN HISTORY,RUN HISTORY
 RUNNER: %s R%d,RUNNER: %s R%d
@@ -2726,8 +2731,10 @@ TARGET,TARGET
 "TARGET: the Central Server, the boss fight. The chip counts your Exploits.","TARGET: the Central Server, the boss fight. The chip counts your Exploits."
 TERMINAL,TERMINAL
 TERMINAL // %s,TERMINAL // %s
+TERMINAL // %s // NODE %d OF %d,TERMINAL // %s // NODE %d OF %d
 TERMINAL EVENT,TERMINAL EVENT
 TEXT SCALE,TEXT SCALE
+THE GRID,THE GRID
 THE MAINFRAME,THE MAINFRAME
 THE TARGET,THE TARGET
 THE WHEEL,THE WHEEL
@@ -2739,10 +2746,12 @@ TIER,TIER
 TITLE,TITLE
 TLE OC-55 / DECAY,TLE OC-55 / DECAY
 TO: ALL TIER LEADS    FROM: %s    REF: INTERNAL,TO: ALL TIER LEADS    FROM: %s    REF: INTERNAL
+TO: CELL OPERATIVE    FROM: DISPATCH    REF: VOICE LOG,TO: CELL OPERATIVE    FROM: DISPATCH    REF: VOICE LOG
 TODAY'S RUN,TODAY'S RUN
 TOP %d ONLY,TOP %d ONLY
 TRAFFIC CONTROL,TRAFFIC CONTROL
 TRAINING SIM,TRAINING SIM
+TRANSCRIPT // DISPATCH // VOICE LOG,TRANSCRIPT // DISPATCH // VOICE LOG
 TREATED,TREATED
 TRIGGER,TRIGGER
 TRJN,TRJN
@@ -3100,6 +3109,7 @@ VICTORY,VICTORY
 VIEW LOADOUT,VIEW LOADOUT
 VIRUS,VIRUS
 VOICE ONLY // NO FEED,VOICE ONLY // NO FEED
+VOICE TRANSCRIPT,VOICE TRANSCRIPT
 Virus,Virus
 WANTED,WANTED
 WAS,WAS
@@ -3291,9 +3301,10 @@ toggle,toggle
 ui.raid_intro,"The corp is raiding your CORE. Place defences to cut the damage, then START DEFENSE."
 undock_handler,undock_handler
 unlock %d,unlock %d
-voice only // no feed,voice only // no feed
+voice only // transcript,voice only // transcript
 vs %s | ICE %d%s,vs %s | ICE %d%s
 walked,walked
+wallet %d -> %d,wallet %d -> %d
 weakest node,weakest node
 weakest threat,weakest threat
 wheel,wheel

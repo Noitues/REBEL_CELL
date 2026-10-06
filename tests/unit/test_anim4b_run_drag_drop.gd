@@ -173,7 +173,7 @@ func test_a_firmware_chip_dropped_on_a_slot_matches_the_socket_list_and_buy() ->
 		if use_drag:
 			assert_eq(_drag(scene.drops, chip, "slot:%d" % slot), "dropped")
 		else:
-			(scene._panel.find_child("SocketPick", true, false) as OptionButton).select(slot)
+			(scene._panel.find_child("SpinnerMini", true, false) as SpinnerMini).choose(slot)  # parity SHOP-06: the spinner is the socket choice
 			chip.pressed.emit()
 		assert_ne(RunManager.netrun.run.operative.slot_firmware_ids, before, "socketed")
 		hashes.append(_hash())
@@ -253,7 +253,7 @@ func test_loot_dropped_where_it_goes_matches_taking_it() -> void:
 				assert_eq(_drag(scene.drops, sticker, target), "dropped", "%s onto %s" % [case[0], target])
 			else:
 				if slot >= 0:
-					(scene._panel.find_child("SlotPick", true, false) as OptionButton).select(slot)
+					(scene._panel.find_child("SpinnerMini", true, false) as SpinnerMini).choose(slot)  # parity SHOP-06
 				sticker.pressed.emit()
 			hashes.append(_hash())
 			await _close(scene)
@@ -472,9 +472,9 @@ func test_keys_and_pad_reach_every_target_and_drop_like_the_mouse() -> void:
 	await _shop(scene)
 	# X / Space picks up the focused chip; the aim starts on the socket list's slot.
 	var chip := _item(scene, "Chips", 0) as ZineCard
-	var pick := scene._panel.find_child("SocketPick", true, false) as OptionButton
+	var pick := scene._panel.find_child("SpinnerMini", true, false) as SpinnerMini  # parity SHOP-06
 	var slot := _taking_slot(scene.drops, chip)
-	pick.select(slot)
+	pick.choose(slot)
 	scene._show_current()
 	await _frames(3)
 	chip = _item(scene, "Chips", 0) as ZineCard
