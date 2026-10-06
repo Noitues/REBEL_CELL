@@ -113,6 +113,14 @@ func _close() -> void:
 var _return_focus: Control = null
 
 
+func _enter_tree() -> void:
+	StickerSweepQueue.calm_enter(self)  # no scheduled sweep on any sticker while a confirm is open (B1d)
+
+
+func _exit_tree() -> void:
+	StickerSweepQueue.calm_leave(self)
+
+
 func _ready() -> void:
 	_return_focus = UiFocus.owner_of(self)
 	# ART-0 F: a modal over a SCRIM (the page behind blurred and dimmed; it takes the clicks

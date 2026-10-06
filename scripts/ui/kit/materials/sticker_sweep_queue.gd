@@ -16,6 +16,29 @@ static var _members: Array[int] = []
 static var _sweeping: int = 0
 static var _next_at_ms: int = 0
 static var _rng: RandomNumberGenerator = null
+## Confirm dialogs that are open: while any is, no sticker sweeps (destructive confirms stay calm).
+static var _calm: Array[int] = []
+
+
+## A confirm dialog opened (`node` is it): no scheduled sweep until it closes.
+static func calm_enter(node: Object) -> void:
+	if not _calm.has(node.get_instance_id()):
+		_calm.append(node.get_instance_id())
+
+
+## The confirm dialog closed.
+static func calm_leave(node: Object) -> void:
+	_calm.erase(node.get_instance_id())
+
+
+## True while a confirm dialog is open.
+static func is_calm() -> bool:
+	var i := _calm.size() - 1
+	while i >= 0:
+		if not is_instance_id_valid(_calm[i]):
+			_calm.remove_at(i)
+		i -= 1
+	return not _calm.is_empty()
 
 
 ## Adds `sticker` to the queue (once).
@@ -55,7 +78,7 @@ static func primary() -> Object:
 
 ## True when it is `sticker`'s turn to sweep now (it then sweeps; `done` hands the turn back).
 static func take_turn(sticker: Object, now_ms: int) -> bool:
-	if _sweeping != 0 or now_ms < _next_at_ms:
+	if _sweeping != 0 or now_ms < _next_at_ms or is_calm():
 		return false
 	if primary() != sticker:
 		return false
@@ -97,6 +120,7 @@ static func reset() -> void:
 	_sweeping = 0
 	_next_at_ms = 0
 	_rng = null
+	_calm.clear()
 
 
 static func _prune() -> void:

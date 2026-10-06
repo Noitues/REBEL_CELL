@@ -114,7 +114,7 @@ func test_sticker_states_show_their_end_states_at_once_headless() -> void:
 	assert_false(s.motion_running(), "headless never waits")
 	assert_almost_eq(s.scale.x, Motion.amplitude(&"sticker_hover"), 0.001, "hover grows to the entry's scale")
 	assert_almost_eq(s.lift, VinylSticker.HOVER_LIFT, 0.001, "hover lifts 0.6")
-	assert_almost_eq(s.fold, VinylSticker.HOVER_CURL, 0.001, "hover curls the corner 0.12")
+	assert_eq(s.peel_back, 1.0, "hover peels the corner back")
 	s.set_state(VinylSticker.State.PRESSED)
 	assert_almost_eq(s.scale.y, Motion.amplitude(&"sticker_press"), 0.001, "pressed squashes y")
 	assert_almost_eq(s.scale.x, VinylSticker.PRESS_X, 0.001, "and x to 1.04")

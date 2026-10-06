@@ -10632,3 +10632,23 @@ D22: the rainbow gloss sweep is a scheduler's, focus and hover are the peel-back
   (queue test: primary only). Dropped: none. `test_motion_lab_demos` shows the `asset_drop_grow` red (city_map_overlay), not touched by this change.
 - Windowed: `tools/visual_qa/sticker_sweep_strip.tscn` (new lab: frame strip of one sweep plus a focus shot); sheet
   `docs/art_review/PARITY/fixes/B1d.jpg` (title, pause, slots, new_campaign, combat_start at 1.0; the first four at 1.6; before | after; strip below).
+
+### 2026-10-06 — B1d fixes — sweep band, peel-back size, calm confirms (art director review)
+Approved calls: primary only, no rotation; no rest curl (round 44 shows none, stickers at rest stay flat); reduce effects = static 0.22 sheen, no sweep.
+- **1. The sweep is ONE narrow band**, not a flood: a 45 degree diagonal band (`VinylSticker.SWEEP_BAND_DEG`), 22 % of the sticker's width, soft rainbow
+  across the band only, strength 0.55 (blended and added over the vinyl and the letters), crossing in 0.9 s; the rest of the sticker keeps its colour and
+  the gloss stays at rest. Config: `sticker_gloss_sweep` (duration 0.9 = the crossing, delay 0.22 = the width share, amplitude 0.55 = the strength; the old
+  gloss-up amplitude and rest delay are gone). Both shaders (`shaders/kit/vinyl_sticker.gdshader`: band_t / band_width / band_alpha / band_deg;
+  `shaders/chrome/vinyl_sticker.gdshader`: the drawn and baked stickers' band at x + y = sweep). The slap's own shine keeps the old gloss sweep.
+- **2. Focus / hover peel-back matches round 44 B_menus**: a fixed 45 degree fold at the top-right corner, legs 34 px at 1080p (24 px on short words, body
+  under 240 px at 1080p), scaled by the screen height and the text size (about 54 px at text 1.6), the paler adhesive back on the fold, a 2 to 3 px soft shadow
+  under it. New entry `sticker_peel_back` (amplitude 34 = long words, duration 24 = short words, delay 240 = the short-word body width; ALWAYS_ON tuning, lab
+  demo = the hover). `VinylSticker.peel_back` (0..1, tweened with the hover; `fold` stays the share-based fold of the peel, flutter and ransom curls) +
+  `peel_leg()`; the drawn / baked `VerbSticker` curl uses the same leg. `HOVER_CURL` is no longer the focus look. Not done: on drawn and baked
+  stickers the original corner pixels stay under the flap (the baked art cannot be cut in a draw call), the kit stickers fold the corner away properly.
+- **3. Calm confirms**: `StickerSweepQueue.calm_enter / calm_leave / is_calm`; `ConfirmDialog` (and so `AbandonDialog`, the slot DELETE confirm, the quit
+  confirms) registers while it is in the tree: while any is open no sticker takes the sweep's turn. Focus there is the curl only.
+- **Tests**: `test_sticker_sweep_scheduler` gains band (width / angle / alpha / crossing from config), fold size by text scale (34 / 24 / ~54), and no sweep
+  while a ConfirmDialog is open; `test_sticker_edge_focus` and `test_art1_material_kit` assert `peel_back`. Dropped: none.
+- Sheet `docs/art_review/PARITY/fixes/B1d_b.jpg`: pause, abandon and title at 1.6 (round 44 column where the concept has one; none for the title), the sweep
+  strip (stepped by hand, t = 0..1) and the focus fold.

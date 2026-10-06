@@ -121,13 +121,14 @@ func test_focus_on_the_kit_sticker_is_the_peel_back_and_no_rainbow() -> void:
 		assert_eq(v.rainbow, 0.0, "fill %d focused: no rainbow" % fill)
 		assert_eq(v.gloss_k, VinylSticker.GLOSS_REST, "fill %d focused: the rest gloss, no sweep" % fill)
 		assert_false(v.sweep_running(), "focus starts no sweep")
-		assert_gte(v.fold, VinylSticker.HOVER_CURL, "fill %d focused: the corner curls" % fill)
+		assert_eq(v.peel_back, 1.0, "fill %d focused: the corner curls" % fill)
 		assert_eq(v.fill, fill, "the sticker keeps its own fill")
 		assert_eq((v._mat.get_shader_parameter(&"rainbow") as float), 0.0, "the shader gets none")
 		v.set_state(VinylSticker.State.REST)
 		v.complete_motion()
 		assert_eq(v.rainbow, 0.0, "back to the plain gloss at rest")
 		assert_eq(v.fold, 0.0)
+		assert_eq(v.peel_back, 0.0, "the peel-back lets go")
 
 
 func test_the_curl_end_state_under_reduce_effects() -> void:
@@ -140,7 +141,7 @@ func test_the_curl_end_state_under_reduce_effects() -> void:
 	v.set_state(VinylSticker.State.HOVER)
 	assert_eq(v.rainbow, 0.0)
 	assert_eq(v.gloss_k, VinylSticker.GLOSS_REST, "the rest gloss is the static sheen")
-	assert_gte(v.fold, VinylSticker.HOVER_CURL, "the curl: focus reads without colour")
+	assert_eq(v.peel_back, 1.0, "the curl: focus reads without colour")
 	assert_false(v.motion_running(), "nothing moves")
 
 

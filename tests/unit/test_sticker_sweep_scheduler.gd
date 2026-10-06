@@ -88,7 +88,7 @@ func test_focus_and_hover_are_the_peel_back_with_no_rainbow_and_no_sweep() -> vo
 	var v := _vinyl("GO", VinylSticker.Fill.PINK)
 	v.set_state(VinylSticker.State.HOVER)
 	v.complete_motion()
-	assert_gte(v.fold, VinylSticker.HOVER_CURL, "the corner curls")
+	assert_eq(v.peel_back, 1.0, "the corner curls")
 	assert_gt(v.lift, 0.0, "and lifts")
 	assert_eq(v.rainbow, 0.0)
 	assert_false(v.sweep_running())
@@ -135,7 +135,50 @@ func test_the_drawn_verb_sticker_sweeps_by_the_queue_and_focus_is_only_the_curl(
 	assert_eq(StickerSweepQueue.primary(), drawn, "named primary on a drawn sticker")
 	assert_true(StickerSweepQueue.take_turn(drawn, 1 << 40))
 	assert_gt(drawn.run_sweep(), 0.0)
-	assert_eq(drawn._mat.get_shader_parameter(&"rainbow"), 1.0, "the scheduled sweep is the rainbow")
+	assert_almost_eq(float(drawn._mat.get_shader_parameter(&"rainbow")), 0.55, 0.001, "the scheduled sweep is the band, additive 0.55")
 	drawn.complete_motion()
 	assert_eq(drawn._mat.get_shader_parameter(&"rainbow"), 0.0)
 	assert_eq(StickerSweepQueue.sweeping(), 0)
+
+
+func test_the_sweep_is_one_narrow_45_degree_band_from_config() -> void:
+	var e := Motion.entry(&"sticker_gloss_sweep")
+	assert_between(e.delay, 0.20, 0.25, "the band is 20 to 25 % of the sticker's width")
+	assert_almost_eq(e.amplitude, 0.55, 0.001, "additive about 0.55")
+	assert_between(e.duration, 0.8, 1.0, "crossing in about 0.9 s")
+	assert_eq(VinylSticker.SWEEP_BAND_DEG, 45.0, "a diagonal")
+	var v := _vinyl("RESUME", VinylSticker.Fill.PINK)
+	assert_gt(v.sweep(), 0.0)
+	assert_eq(v.band_share(), e.delay)
+	assert_eq(v._mat.get_shader_parameter(&"band_deg"), 45.0)
+	assert_almost_eq(float(v._mat.get_shader_parameter(&"band_alpha")), 0.55, 0.001)
+	assert_eq(v.gloss_k, VinylSticker.GLOSS_REST, "the rest of the sticker keeps its gloss: no flood")
+
+
+func test_the_peel_back_fold_is_fixed_in_px_and_scales_with_the_text_size() -> void:
+	Settings.set_text_scale(1.0)
+	var screen_h := 1080.0
+	assert_almost_eq(VinylSticker.peel_leg(600.0, screen_h), 34.0, 0.01, "34 px at 1080p")
+	assert_almost_eq(VinylSticker.peel_leg(100.0, screen_h), 24.0, 0.01, "24 px on short words")
+	Settings.set_text_scale(1.6)
+	assert_almost_eq(VinylSticker.peel_leg(960.0, screen_h), 54.4, 0.1, "about 54 px at 1.6")
+	var v := _vinyl("OPTIONS")
+	v.set_state(VinylSticker.State.HOVER)
+	v.complete_motion()
+	assert_gt(v.peel_px(), 10.0, "the sticker's own fold is not a few px")
+	assert_eq(float(v._mat.get_shader_parameter(&"peel_px")), v.peel_px())
+
+
+func test_no_scheduled_sweep_while_a_confirm_dialog_is_open() -> void:
+	var v := _vinyl("GO", VinylSticker.Fill.PINK)
+	var d := ConfirmDialog.new("Sure?", "YES", "CANCEL", "ARE YOU SURE?", "", true)
+	add_child_autofree(d)
+	await get_tree().process_frame
+	assert_true(StickerSweepQueue.is_calm(), "a confirm is open")
+	assert_false(StickerSweepQueue.take_turn(v, 1 << 40), "no sweep on any sticker meanwhile")
+	remove_child(d)
+	d.free()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	assert_false(StickerSweepQueue.is_calm())
+	assert_true(StickerSweepQueue.sweeping() == v.get_instance_id() or StickerSweepQueue.take_turn(v, 1 << 40), "and it sweeps again after")

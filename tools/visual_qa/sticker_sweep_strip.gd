@@ -7,6 +7,7 @@ extends Node
 var _out := ""
 var _frames := 8
 var _step := 0.2
+var _scale := 1.0
 
 
 func _ready() -> void:
@@ -15,6 +16,8 @@ func _ready() -> void:
 			_out = a.trim_prefix("--out=")
 		elif a.begins_with("--frames="):
 			_frames = int(a.trim_prefix("--frames="))
+		elif a.begins_with("--scale="):
+			_scale = float(a.trim_prefix("--scale="))
 		elif a.begins_with("--step="):
 			_step = float(a.trim_prefix("--step="))
 	_run.call_deferred()
@@ -26,6 +29,7 @@ func _wait(sec: float) -> void:
 
 func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(_out)
+	Settings.text_scale = _scale
 	var bg := ColorRect.new()
 	bg.color = Color(0.1, 0.1, 0.14)
 	bg.size = Vector2(800, 450)
@@ -48,13 +52,20 @@ func _run() -> void:
 	while StickerSweepQueue.sweeping() == 0 and guard < 800:
 		await get_tree().process_frame
 		guard += 1
+	# The sweep is held and stepped by hand: the crossing at i / (frames - 1), so every frame is where it should be.
+	pink.vinyl._sweep_tween.kill()
 	for i in _frames:
+		pink.vinyl.band_t = float(i) / float(maxi(1, _frames - 1))
+		await get_tree().process_frame
+		await get_tree().process_frame
 		get_viewport().get_texture().get_image().save_png("%s/sweep_%02d.png" % [_out, i])
-		print("frame %d sweeping=%d t=%d" % [i, StickerSweepQueue.sweeping(), Time.get_ticks_msec()])
-		await _wait(_step)
+		print("frame %d sweeping=%d band=%s" % [i, StickerSweepQueue.sweeping(), str(pink.vinyl.band_t)])
 	await _wait(2.0)
-	holo.grab_focus()
-	await _wait(0.6)
-	get_viewport().get_texture().get_image().save_png("%s/focus.png" % _out)
+	var k := 0
+	for c: Control in [pink, holo, art]:
+		c.grab_focus()
+		await _wait(0.6)
+		get_viewport().get_texture().get_image().save_png("%s/focus_%d.png" % [_out, k])
+		k += 1
 	print("focus rainbow=%s sweeping=%d" % [str(holo.sticker.rainbow), StickerSweepQueue.sweeping()])
 	get_tree().quit()

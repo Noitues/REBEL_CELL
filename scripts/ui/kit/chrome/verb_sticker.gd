@@ -109,8 +109,7 @@ var _art_bursts: Array[Texture2D] = []
 var _focused: bool = false
 ## The corner curl's size as a share of the sticker's shorter side, the sheen's band width as a share of its
 ## height, and where the static sheen (no motion) stands across its width.
-const CURL_SHARE := 0.22
-const SWEEP_WIDTH_SHARE := 0.35
+const CURL_BACK_LIGHTEN := 0.35
 
 
 ## The baked art key for a screen-title word ("OPTIONS" -> "title_options"), or "" when the
@@ -365,13 +364,17 @@ func run_sweep() -> float:
 		return 0.0
 	if _sweep_tween != null:
 		_sweep_tween.kill()
-	var w := size.x
 	var d := Motion.seconds(SWEEP_MOTION)
-	_mat.set_shader_parameter(&"sweep_width", size.y * SWEEP_WIDTH_SHARE)
-	_mat.set_shader_parameter(&"rainbow", 1.0)
-	_mat.set_shader_parameter(&"sweep", -w * 0.3)
+	# ONE narrow 45 degree band (x + y = sweep): its width a share of the sticker's width (the entry's `delay`), the
+	# alpha the entry's amplitude; it crosses from off one corner to off the other.
+	var half := Motion.entry(SWEEP_MOTION).delay * size.x * 0.5
+	var from := -half * 2.0
+	var to := size.x + size.y + half * 2.0
+	_mat.set_shader_parameter(&"sweep_width", half)
+	_mat.set_shader_parameter(&"rainbow", Motion.amplitude(SWEEP_MOTION))
+	_mat.set_shader_parameter(&"sweep", from)
 	_sweep_tween = create_tween()
-	_sweep_tween.tween_method(func(x: float) -> void: _mat.set_shader_parameter(&"sweep", x), -w * 0.3, w * 1.3, d)
+	_sweep_tween.tween_method(func(x: float) -> void: _mat.set_shader_parameter(&"sweep", x), from, to, d)
 	_sweep_tween.tween_callback(_finish_sweep)
 	return d
 
@@ -513,12 +516,12 @@ func _draw_art() -> void:
 func _draw_curl() -> void:
 	if not _focused:
 		return
-	var c := minf(size.x, size.y) * CURL_SHARE
+	var c := VinylSticker.peel_leg(size.x, get_viewport_rect().size.y)  # round 44: a fixed 45 degree fold
 	var tr := Vector2(size.x, 0.0)
 	var flap := PackedVector2Array([tr + Vector2(-c, 0.0), tr + Vector2(0.0, c), tr + Vector2(-c, c)])
 	var shade := PackedVector2Array([tr + Vector2(-c, c), tr + Vector2(0.0, c), tr + Vector2(-c, c * 1.35)])
 	draw_colored_polygon(shade, Color(Palette.VINYL_INK, SHADOW_ALPHA * 0.5))
-	draw_colored_polygon(flap, Palette.VINYL_BACKING)
+	draw_colored_polygon(flap, Palette.VINYL_BACKING.lightened(CURL_BACK_LIGHTEN))
 	draw_polyline(PackedVector2Array([flap[0], flap[1]]), Color(Palette.STICKER_DIE_CUT, 0.9), 1.0)
 
 
