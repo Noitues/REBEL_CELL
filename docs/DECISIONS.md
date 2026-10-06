@@ -66,6 +66,48 @@ Designer (Noitues), 2026-10-05 evening: "I want my main to look just like art pa
   before any fix. This replaces "the art pass design is correct, follow it without asking" for parity work. Bug fixes
   that are not a look choice (test reds, overlaps) still go ahead.
 
+### 2026-10-05 — Parity fix — overlap defects
+Defects that are wrong whichever look is chosen (designer approved 2026-10-05; `docs/art_review/PARITY/GAPS.md`
+SHOP-01, GRID-03, GRID-12, GRID-13, RAID-02, RAID-08, RAID-11, END-06). Only the overlap itself is fixed; no look
+changed. Tests: `tests/unit/test_parity_overlaps.gd` (text 1.0 / 1.6 / 2.0 where it applies). Sheets (before | after):
+`docs/art_review/PARITY/fixes/<ID>.jpg`.
+- **SHOP-01:** the clerk's pencil note `ASK ABOUT THE BACK ROOM` sits under the last clerk line, starting
+  `CLERK_NOTE_OFFSET` (0.35) along the words' width and right of the wallet, `CLERK_NOTE_GAP` (2 px) under the words
+  (concept shop_v5); it covered the end of `CYCLES ONLY.` (at big text the clerk and its note step aside, as before).
+- **GRID-03 / GRID-13:** the CENTRAL SERVER chip and the TARGET pencil (circle and word) are obstacles for the map labels
+  (`CityMapOverlay.boss_rects`), at their real size (the chip's own width; the hand circle's widest wobble
+  `TARGET_REACH` 1.085 and its wax stroke). The chip and the word pick the first spot clear of the other markers: the chip
+  over the circle (as drawn), slid along it (`BOSS_CHIP_SLIDES`), stepped out (`BOSS_CHIP_ROWS` 3), then under or beside
+  it, else the least covered spot; the word `TARGET_WORD_SPOTS` (below left as drawn, below right, below, left), then
+  wholly left of the circle (`TARGET_WORD_LEFT_ROWS`; big words), always on the map's open part (never under the side
+  column, the minimap or the key), else the spot that covers the least (a capital word's rect ends at its baseline).
+  The other markers' placement is unchanged (the pencil moves, not the Sites). Labels
+  keep `LABEL_CLEAR` (3 px x the map's k) from other labels, markers, pips and the pencil (they touched); a focus label's
+  last resort keeps the old rule without the clearance, so the selected Site is always labelled.
+- **GRID-12:** after the Grid's fit holds every node, the camera pans (never zooms) the way that shows the most city in
+  the map area (`HqScene.grid_city_pan`: the best of 9 x 9 pans within the room the nodes and the TARGET pencil leave
+  inside the fit's area, the shortest on a tie; the share sampled on a 12 x 12 grid against `city_config.city_rect`),
+  once per fit. The pan and the lean hold the TARGET pencil on the map with the nodes (it sat half under the minimap /
+  the side column); the fit's zoom does not count it (that crowded the 2.0 map until the selected Site lost its
+  label). Meridian's
+  network sits on the city's edge: its map showed about 71% city (29% fog past the last block) and now about 81-88%;
+  every corporation stays at or over 75% (the test's floor; Solace and REBEL_CELL were judged fine at 79%+). More would
+  need a zoom that cuts nodes off the map: not done.
+- **RAID-02 / RAID-11:** the corp paper's rubber stamp keeps on its sheet at big text (`CorpPaperPanel.stamp_rect`, its
+  tilted box) and the raid papers' rows end above it (`RaidPaper` bottom margin = the stamp's reach + `STAMP_CLEAR`):
+  INTERCEPTED and CLASSIFIED sit on the footer's redactions, as in the concept, never on `HOME 50 > 40`, `STOPPED 0/2`
+  or the CORE row. The forecast disc beside the fields already covered no value (checked at every size). The raid's
+  instruction line sits on a dark plate (`RAID_INTRO_PLATE_ALPHA` 0.85 of SCRIM's ink), its foot clear of the paper
+  clip (`RaidPaper.CLIP_TOP`).
+- **RAID-08:** START DEFENSE peels off where it was pressed (its rect is kept when the defence starts); it was placed from
+  the Speed strip under the feed before the playout page was laid out and peeled over the MAP LEGEND. It is gone when
+  its 0.3 s peel ends (unchanged). The red pencil arrow in the parity frame is the threat route to CORE (off the
+  step's framing, under the legend), not the sticker's: listed under "Open questions" as its own slice.
+- **END-06 (white paper vs kraft folder):** yes, this was the cause. `AuditDossier._manila` loaded the manila texture
+  inside the draw call; let go at the call's end, it was freed before the frame rendered and the folder and its tab drew
+  white. The stock is now loaded once and held (`AuditDossier.manila_stock`, as `CaseFileCard.manila_stock`), and the
+  print stock likewise (`DossierPhoto.print_stock`). The folder draws kraft.
+
 ### 2026-10-05 — Parity fix — title spacing and campaign slots (designer decisions)
 Designer decisions 2026-10-05 on audit items TITLE-02 and SLOTS-01..04 (`docs/art_review/PARITY/GAPS.md`): the title
 follows concept round 33 (`round33_ui_chrome/title_screen.png`, keeping main's SIMULATE); the campaign slots take the
@@ -8391,6 +8433,11 @@ and annotated in the GDD where it changes a rule.
   slot is a manila case folder on corp paper (v2: the corporation's file) where the build had white paper: keep, or
   white? (2) LOAD on the newest campaign is the page's one pink sticker and DELETE a HARM terminal chip: or should
   DELETE carry the pink DELETE sticker as the confirm does (that makes a second sticker verb on the page)?
+- **Parity fix overlap defects (2026-10-05, built, see "Parity fix — overlap defects"):** (1) RAID-08: mid-playout the
+  red pencil route to CORE runs off the step's framing and over the MAP LEGEND (CORE sits under it). Proposed slice:
+  the playout's step framing keeps CORE and the route's end in the map's free part (or clips the route at the
+  legend). Default: unchanged. (2) GRID-12: Meridian's map still shows about 12-19% fog past the city's edge (its
+  network is on the edge); a further step is a zoom-in that leaves the farthest Sites to the minimap. Default: no zoom.
 - **Parity fix TITLE-01 (2026-10-05, built, see "Parity fix — TITLE-01 title backdrop"):** (1) the title's HQ is the
   last-played campaign's target, else Halcyon (the concept's): keep, or always Halcyon? (2) the 3D city's night grade
   is less pink-saturated than round 33's 2D render: leave it (it is the Grid's grade too) or give the backdrop look its
