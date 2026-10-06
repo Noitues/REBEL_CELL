@@ -28,6 +28,9 @@ ASSETS = os.path.join(ROOT, "assets", "city", "hq_compounds")
 CONTENT = os.path.join(ROOT, "content", "city", "hq_compounds")
 SCRATCH = os.path.join(os.environ.get("TEMP", os.path.join(ROOT, ".tmp")), "hq_compound_build")
 VENDOR_SOURCE = "art-concepts-r43:docs/concepts/round43_hq_mechanics/scripts @ 36d1f34de595297787d06f4f0cc8075018a8b744"
+# ART-8 8w: DISPATCH's stage is round 34's Tokyo canyon (kit26 / street34 / cfg28 in vendor_r34/; the rest vendor_r43/).
+VENDOR_SOURCE_CANYON = ("art-concepts-r43:docs/concepts/round34_rebel_cell/scripts @ d14b8f61158918f302e8e3baf5d39fc734dbde15 "
+                        "(vendor_r34/) + " + VENDOR_SOURCE + " (vendor_r43/)")
 MANIFEST_SCHEMA = "rebel_cell.art_export/1"
 MATERIALS = {
     "hq_toon": "toon: 3-band ramp x vertex colour (tone baked); alpha = part bit -> ROUGHNESS (ink material edges)",
@@ -40,9 +43,10 @@ MATERIALS = {
 
 
 def source_files():
-    files = ["build_hq_compound.py", "hq_compound_spec.py", "make_hq_compounds.py", "validate_hq_compounds.py",
-             "hq_compound_toon.gdshader"]
-    files += ["vendor_r43/" + f for f in sorted(os.listdir(os.path.join(HERE, "vendor_r43"))) if f.endswith(".py")]
+    files = ["build_hq_compound.py", "build_dispatch_canyon.py", "hq_compound_spec.py", "make_hq_compounds.py",
+             "validate_hq_compounds.py", "hq_compound_toon.gdshader"]
+    for v in ("vendor_r43", "vendor_r34"):
+        files += [v + "/" + f for f in sorted(os.listdir(os.path.join(HERE, v))) if f.endswith(".py")]
     return files
 
 
@@ -80,7 +84,7 @@ def build(corp, blender):
     os.makedirs(out)
     log = os.path.join(SCRATCH, "blender_%s.log" % corp)
     with open(log, "w") as fh:
-        r = subprocess.run([blender, "-b", "--factory-startup", "--python", os.path.join(HERE, "build_hq_compound.py"), "--", corp, out],
+        r = subprocess.run([blender, "-b", "--factory-startup", "--python", os.path.join(HERE, SPEC.layout(corp)["builder"]), "--", corp, out],
                            stdout=fh, stderr=subprocess.STDOUT, timeout=1200)
     if r.returncode != 0 or "DONE" not in open(log, encoding="utf-8", errors="replace").read():
         raise SystemExit("Blender failed for %s (see %s)" % (corp, log))
@@ -103,14 +107,16 @@ def write_manifest(corp, build_dir):
         "schema": MANIFEST_SCHEMA,
         "asset": "hq_compound",
         "corp": corp,
-        "source": {"script": "tools/art_pipeline/city/build_hq_compound.py", "spec": "tools/art_pipeline/city/hq_compound_spec.py",
-                   "driver": "tools/art_pipeline/city/make_hq_compounds.py", "vendor": VENDOR_SOURCE, "commit": git_commit(),
+        "source": {"script": "tools/art_pipeline/city/" + L["builder"], "spec": "tools/art_pipeline/city/hq_compound_spec.py",
+                   "driver": "tools/art_pipeline/city/make_hq_compounds.py",
+                   "vendor": VENDOR_SOURCE_CANYON if L["builder"] == "build_dispatch_canyon.py" else VENDOR_SOURCE, "commit": git_commit(),
                    "scripts_sha256": scripts_sha256()},
         "settings": {"blender": info["blender"], "state": info["state"], "units": "1 BU = 1 m", "up": "+Y (glTF; Blender (x, y, z) -> (x, z, -y))",
-                     "tone": list(SPEC.TONE), "ramp_tint": list(SPEC.RAMP_TINT[corp]), "pitch_deg": SPEC.PITCH_DEG, "yaw_deg": SPEC.YAW_DEG,
+                     "tone": list(SPEC.TONE), "ramp_tint": list(SPEC.RAMP_TINT[corp]), "pitch_deg": L["pitch"], "yaw_deg": L["yaw"],
                      "reference_camera": {"target": gd(cam_t), "ortho": cam_o}, "normals": "none (facet normal from screen derivatives)",
                      "layered_sprites": "dropped: 1D chose real-time Godot 3D"},
-        "origin": "the compound's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot's centre",
+        "origin": L.get("origin", "the compound's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot's centre"),
+        "place_lot": list(L["lot_centre"]) if "lot_centre" in L else None,
         "footprint": {"min": [round(v, 3) for v in gmin], "max": [round(v, 3) for v in gmax],
                       "size": [round(gmax[k] - gmin[k], 3) for k in range(3)]},
         "files": [{"path": info["glb"], "kind": "gltf", "bytes": os.path.getsize(glb), "sha256": sha256(glb)}],

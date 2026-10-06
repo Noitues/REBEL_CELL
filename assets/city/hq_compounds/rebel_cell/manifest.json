@@ -3,16 +3,16 @@
  "asset": "hq_compound",
  "corp": "rebel_cell",
  "source": {
-  "script": "tools/art_pipeline/city/build_hq_compound.py",
+  "script": "tools/art_pipeline/city/build_dispatch_canyon.py",
   "spec": "tools/art_pipeline/city/hq_compound_spec.py",
   "driver": "tools/art_pipeline/city/make_hq_compounds.py",
-  "vendor": "art-concepts-r43:docs/concepts/round43_hq_mechanics/scripts @ 36d1f34de595297787d06f4f0cc8075018a8b744",
-  "commit": "729e7a10357506d095c3b20d73efcce5d3bf5d16",
-  "scripts_sha256": "db6adbacc2c78192736407de34c705cac327bb7e33ffde658f8a7ccb876ede05"
+  "vendor": "art-concepts-r43:docs/concepts/round34_rebel_cell/scripts @ d14b8f61158918f302e8e3baf5d39fc734dbde15 (vendor_r34/) + art-concepts-r43:docs/concepts/round43_hq_mechanics/scripts @ 36d1f34de595297787d06f4f0cc8075018a8b744 (vendor_r43/)",
+  "commit": "b80a8f0f32d6e16d3a2cd60b2fc5f78294e52ced",
+  "scripts_sha256": "b94f4a278889539f7f3ff440d9255640f818ae35f7cc3679dec8b4e0e0648458"
  },
  "settings": {
   "blender": "5.2.2 LTS",
-  "state": "dispatch",
+  "state": "dispatch canyon (static)",
   "units": "1 BU = 1 m",
   "up": "+Y (glTF; Blender (x, y, z) -> (x, z, -y))",
   "tone": [
@@ -24,50 +24,54 @@
    0.88,
    0.92
   ],
-  "pitch_deg": 55.0,
-  "yaw_deg": 135.0,
+  "pitch_deg": 40.0,
+  "yaw_deg": 180.0,
   "reference_camera": {
    "target": [
     0.0,
-    8.0,
+    6.0,
     -0.0
    ],
-   "ortho": 125.0
+   "ortho": 170.0
   },
   "normals": "none (facet normal from screen derivatives)",
   "layered_sprites": "dropped: 1D chose real-time Godot 3D"
  },
- "origin": "the compound's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot's centre",
+ "origin": "the canyon's midpoint on its centre line at (0, 0, 0); place it on lot point place_lot (round 34's own canyon lots: the grid street j 36, i 27..46, beside the Cell's palm)",
+ "place_lot": [
+  36.5,
+  36.5
+ ],
  "footprint": {
   "min": [
-   -24.444,
-   -0.05,
-   -24.611
+   -66.0,
+   0.0,
+   -13.184
   ],
   "max": [
-   24.351,
-   35.4,
-   24.359
+   66.0,
+   29.711,
+   12.579
   ],
   "size": [
-   48.795,
-   35.45,
-   48.97
+   132.0,
+   29.711,
+   25.763
   ]
  },
  "files": [
   {
    "path": "rebel_cell_compound.glb",
    "kind": "gltf",
-   "bytes": 321344,
-   "sha256": "be56b5c3d95324ed274f88293b4894073c802cf1067ff029035ee8edef6caab8"
+   "bytes": 2665024,
+   "sha256": "0933f5b12cce9ec17a3b10a0f14fbaff55d0cbf9831563b5adce38201da38aa4"
   }
  ],
  "triangles": {
-  "neon": 1330,
-  "sign": 4344,
-  "toon": 2498,
-  "win": 418
+  "neon": 13800,
+  "sign": 45884,
+  "toon": 18540,
+  "win": 274
  },
  "materials": {
   "hq_toon": "toon: 3-band ramp x vertex colour (tone baked); alpha = part bit -> ROUGHNESS (ink material edges)",
@@ -82,292 +86,292 @@
   "layers": [
    [
     [
-     -10.0,
-     14.836,
-     18.0
+     47.0,
+     10.6,
+     5.4
     ],
     [
-     10.0,
-     9.298,
-     20.0
+     47.0,
+     0.31,
+     0.9
     ],
     [
-     20.0,
-     9.298,
-     15.0
+     39.0,
+     0.31,
+     -0.9
     ],
     [
-     20.0,
-     13.3,
-     2.0
+     47.0,
+     14.043,
+     -5.4
     ]
    ],
    [
     [
-     -20.0,
-     14.331,
-     19.0
+     35.0,
+     10.304,
+     5.4
     ],
     [
-     -19.0,
-     18.45,
-     8.0
+     29.0,
+     0.31,
+     0.9
     ],
     [
-     4.0,
-     3.859,
-     10.0
+     21.0,
+     0.31,
+     -0.9
     ],
     [
-     18.0,
-     10.371,
-     -9.0
+     33.0,
+     10.3,
+     -5.4
     ]
    ],
    [
     [
-     -19.0,
-     18.943,
-     -1.0
-    ],
-    [
-     -6.0,
-     3.947,
-     6.0
-    ],
-    [
-     8.0,
-     0.37,
-     2.0
-    ],
-    [
-     20.0,
-     16.345,
-     -19.0
-    ]
-   ],
-   [
-    [
-     -19.0,
-     18.282,
-     -9.0
-    ],
-    [
-     -6.0,
-     3.876,
-     -4.0
-    ],
-    [
-     -3.0,
-     13.543,
-     -19.0
+     13.0,
+     12.441,
+     5.4
     ],
     [
      11.0,
-     17.31,
-     -19.0
+     0.31,
+     0.9
+    ],
+    [
+     3.0,
+     1.471,
+     -0.9
+    ],
+    [
+     11.0,
+     11.595,
+     -5.4
     ]
    ],
    [
     [
-     -20.0,
-     12.361,
-     -18.0
+     -7.0,
+     15.802,
+     5.4
     ],
     [
-     -11.0,
-     12.415,
-     -19.0
+     -7.0,
+     0.31,
+     0.9
     ],
     [
-     14.0,
-     10.345,
-     -4.0
+     -15.0,
+     0.31,
+     -0.9
     ],
     [
-     5.0,
-     16.92,
-     -21.0
+     -7.0,
+     14.415,
+     -5.4
     ]
    ],
    [
     [
-     -4.0,
-     0.34,
-     2.0
+     -29.0,
+     24.861,
+     5.4
     ],
     [
-     4.0,
-     0.34,
-     5.0
+     -25.0,
+     0.31,
+     0.9
     ],
     [
-     -2.0,
-     0.34,
-     -5.0
+     -33.0,
+     0.31,
+     -0.9
     ],
     [
-     5.0,
-     0.34,
-     -4.0
+     -29.0,
+     28.225,
+     -5.4
+    ]
+   ],
+   [
+    [
+     -43.0,
+     15.176,
+     5.4
+    ],
+    [
+     -43.0,
+     0.31,
+     0.9
+    ],
+    [
+     -51.0,
+     0.31,
+     -0.9
+    ],
+    [
+     -43.0,
+     16.365,
+     -5.4
     ]
    ]
   ],
   "central_server": [
-   0.0,
-   35.7,
+   -58.0,
+   0.31,
    -0.0
   ],
   "entry": [
-   24.0,
+   65.0,
    0.5,
-   24.0
+   -0.0
   ]
  },
  "slot_surfaces": [
   {
    "layer": 1,
    "slot": 0,
-   "z": 14.6,
-   "surface": 14.536
+   "z": 40.0,
+   "surface": 10.3
   },
   {
    "layer": 1,
    "slot": 1,
-   "z": 9.6,
-   "surface": 8.998
+   "z": 0.5,
+   "surface": 0.01
   },
   {
    "layer": 1,
    "slot": 2,
-   "z": 9.6,
-   "surface": 8.998
+   "z": 0.5,
+   "surface": 0.01
   },
   {
    "layer": 1,
    "slot": 3,
-   "z": 10.6,
-   "surface": 13.0
+   "z": 40.0,
+   "surface": 13.743
   },
   {
    "layer": 2,
    "slot": 0,
-   "z": 14.6,
-   "surface": 14.031
+   "z": 40.0,
+   "surface": 10.004
   },
   {
    "layer": 2,
    "slot": 1,
-   "z": 18.6,
-   "surface": 18.15
+   "z": 0.5,
+   "surface": 0.01
   },
   {
    "layer": 2,
    "slot": 2,
-   "z": 4.2,
-   "surface": 3.559
+   "z": 0.5,
+   "surface": 0.01
   },
   {
    "layer": 2,
    "slot": 3,
-   "z": 10.6,
-   "surface": 10.071
+   "z": 40.0,
+   "surface": 10.0
   },
   {
    "layer": 3,
    "slot": 0,
-   "z": 18.6,
-   "surface": 18.643
+   "z": 40.0,
+   "surface": 12.141
   },
   {
    "layer": 3,
    "slot": 1,
-   "z": 4.2,
-   "surface": 3.647
+   "z": 0.5,
+   "surface": 0.01
   },
   {
    "layer": 3,
    "slot": 2,
-   "z": 0.6,
-   "surface": 0.07
+   "z": 0.5,
+   "surface": 1.171
   },
   {
    "layer": 3,
    "slot": 3,
-   "z": 16.6,
-   "surface": 16.045
+   "z": 40.0,
+   "surface": 11.295
   },
   {
    "layer": 4,
    "slot": 0,
-   "z": 18.6,
-   "surface": 17.982
+   "z": 40.0,
+   "surface": 15.502
   },
   {
    "layer": 4,
    "slot": 1,
-   "z": 4.2,
-   "surface": 3.576
+   "z": 0.5,
+   "surface": 0.01
   },
   {
    "layer": 4,
    "slot": 2,
-   "z": 12.6,
-   "surface": 13.243
+   "z": 0.5,
+   "surface": 0.01
   },
   {
    "layer": 4,
    "slot": 3,
-   "z": 16.6,
-   "surface": 17.01
+   "z": 40.0,
+   "surface": 14.115
   },
   {
    "layer": 5,
    "slot": 0,
-   "z": 12.6,
-   "surface": 12.061
+   "z": 40.0,
+   "surface": 24.561
   },
   {
    "layer": 5,
    "slot": 1,
-   "z": 12.6,
-   "surface": 12.115
+   "z": 0.5,
+   "surface": 0.01
   },
   {
    "layer": 5,
    "slot": 2,
-   "z": 10.6,
-   "surface": 10.045
+   "z": 0.5,
+   "surface": 0.01
   },
   {
    "layer": 5,
    "slot": 3,
-   "z": 16.6,
-   "surface": 16.62
+   "z": 40.0,
+   "surface": 27.925
   },
   {
    "layer": 6,
    "slot": 0,
-   "z": 0.6,
-   "surface": 0.04
+   "z": 40.0,
+   "surface": 14.876
   },
   {
    "layer": 6,
    "slot": 1,
-   "z": 0.6,
-   "surface": 0.04
+   "z": 0.5,
+   "surface": 0.01
   },
   {
    "layer": 6,
    "slot": 2,
-   "z": 0.6,
-   "surface": 0.04
+   "z": 0.5,
+   "surface": 0.01
   },
   {
    "layer": 6,
    "slot": 3,
-   "z": 0.6,
-   "surface": 0.04
+   "z": 40.0,
+   "surface": 16.065
   }
  ],
  "validator": "python tools/art_pipeline/city/validate_hq_compounds.py; tools/validate_content.gd (manifest + files)"
