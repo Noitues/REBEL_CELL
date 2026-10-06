@@ -4,9 +4,18 @@ extends Control
 ## Save & quit to title, Quit to desktop (confirmed). Scenes open it on Esc; it never
 ## changes game state itself beyond asking RunManager to save and switch scenes.
 ## ART-10 4C (ART_BIBLE v2 §4.13, §2.10; round 33 `abandon_dialog.jpg`, `ui_kit.jpg` MENU):
-## the yellow PAUSED title sticker over a v2 terminal (`> PAUSED // WHERE`), its lines in
-## terminal CAPS with the `>` caret and lime brackets on focus; the Codex as terminal text,
-## the Options single-column inside it, the quit confirm in the abandon dialog's look.
+## a v2 terminal (`> PAUSED // WHERE`), its lines in terminal CAPS with the `>` caret and
+## lime brackets on focus; the Codex as terminal text, the Options single-column inside it,
+## the quit confirm in the abandon dialog's look.
+## M14 parity PAUSE-01..03 (designer 2026-10-05): the page behind is blurred and darkened
+## (GlassScrim, as every other modal); no PAUSED sticker (the raid plays on under the menu,
+## so no running raid is paused). PAUSE-02, ported from art-m13-final
+## scripts/ui/kit/pause_menu.gd: `Resume [Esc]` is the one pink verb sticker, the other rows
+## carry icons (StatIcon), the campaign code sits in a CodeField with a copy button.
+## ABANDON-QUIT (designer ruling 2026-10-05, GDD 4.5): the in-run pause has "Abandon run", the
+## campaign's pause (no run in progress) "Abandon campaign", both rows in HARM (as the slots'
+## DELETE: the destructive verb's edge) asking with the abandon dialog (ExitDialogs); "Quit to
+## desktop" asks with the quit confirm and its key hints. The answers go to RunManager.
 
 signal resumed
 signal quit_to_title
@@ -14,8 +23,16 @@ signal quit_to_title
 var settings_panel: SettingsPanel = null
 var codex_note: CrtText = null
 var _menu: VBoxContainer
+## The icon rows under Resume (they carry the menu motion; Resume is a sticker).
+var _rows: VBoxContainer
+## The campaign code field (null without a campaign).
+var code_field: CodeField = null
 var _host: VBoxContainer
 var resume_button: Button
+## ABANDON-QUIT: the destructive rows (null when the menu has none) and the open exit dialog.
+var abandon_run_button: Button = null
+var abandon_campaign_button: Button = null
+var exit_dialog: ConfirmDialog = null
 ## Who had focus before the menu opened (the combat hand); it gets it back on close.
 var _return_focus: Control = null
 
@@ -23,21 +40,21 @@ var _return_focus: Control = null
 ## Menu size: wide enough for the Controls grid and Accessibility switches at text scale
 ## 1.6 (the content scrolls vertically inside it).
 const MENU_SIZE := Vector2(760, 520)
-## Dim over the game while paused.
-const BACKDROP_COLOR := Color(0, 0, 0, 0.35)
+## Resume's sticker lettering (px at text scale 1.0) and its tilt.
+const RESUME_PX := 28.0
+const RESUME_TILT := -1.5
 
 
 ## Full-screen, click-eating backdrop behind the menu: no click reaches the game (H17).
-var _backdrop: ColorRect
+var _backdrop: GlassScrim
 
 
 func _init() -> void:
 	custom_minimum_size = MENU_SIZE
 	# ANIM-R3 A2: motion helpers leave presses to an open pause menu (MotionSkip.pause_open).
 	add_to_group(MotionSkip.PAUSE_GROUP)
-	_backdrop = ColorRect.new()
+	_backdrop = GlassScrim.new()  # PAUSE-01: the page behind blurred and dimmed (SCRIM)
 	_backdrop.name = "Backdrop"
-	_backdrop.color = BACKDROP_COLOR
 	_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 	_backdrop.focus_mode = Control.FOCUS_NONE
 	add_child(_backdrop)
@@ -57,44 +74,61 @@ func _init() -> void:
 	_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_host)
 	_menu = VBoxContainer.new()
+	_menu.name = "Menu"
 	_host.add_child(_menu)
-	resume_button = _add(tr("Resume"), func() -> void: resumed.emit())
-	resume_button.name = "Resume"
+	# PAUSE-02: the one primary, a pink verb sticker (its words are given whole by _relabel).
+	var resume := VerbSticker.new(tr("Resume"), VerbSticker.Fill.PINK, RESUME_PX, RESUME_TILT)
+	resume.pre_translated = true
+	resume.name = "Resume"
+	resume.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	resume.pressed.connect(func() -> void: resumed.emit())
+	_menu.add_child(resume)
+	resume_button = resume
+	_rows = VBoxContainer.new()
+	_rows.name = "Rows"
+	_menu.add_child(_rows)
 	_relabel()
 	Settings.hints_changed.connect(_relabel)
-	_add(tr("Options"), show_options)
-	_add(tr("Codex"), show_codex)
+	_add(tr("Options"), show_options, StatIcon.SETTINGS)
+	_add(tr("Codex"), show_codex, StatIcon.CODEX)
 	_add(tr("Save & quit to title"), func() -> void:
 		if RunManager.campaign != null:
 			RunManager.autosave()
-		quit_to_title.emit())
-	_add(tr("Quit to desktop"), func() -> void:
-		var confirm := ConfirmDialog.new(tr("Quit REBEL_CELL? Progress is autosaved."), TextDb.mark("QUIT"), TextDb.mark("CANCEL"), TextDb.mark("QUIT"))  # ART-2 2D: sticker verbs
-		confirm.position = Vector2(60, 120)
-		add_child(confirm)
-		confirm.confirmed.connect(func() -> void: RunManager.quit_game()))
-	# H24 S11: the campaign's share code has its line here (it read like debug output on
-	# the HQ's Pirate Radio note).
-	var code := code_line()
+		quit_to_title.emit(), StatIcon.SAVE)
+	# ABANDON-QUIT: in a run, abandon it; at HQ (a live campaign, no run), abandon the campaign.
+	if RunManager.has_active_run():
+		abandon_run_button = _add(tr("Abandon run"), confirm_abandon_run, StatIcon.OPERATIVE)
+		abandon_run_button.name = "AbandonRun"
+		_harm(abandon_run_button)
+	elif RunManager.has_campaign():
+		abandon_campaign_button = _add(tr("Abandon campaign"), confirm_abandon_campaign, StatIcon.CAMPAIGNS)
+		abandon_campaign_button.name = "AbandonCampaign"
+		_harm(abandon_campaign_button)
+	var quit := _add(tr("Quit to desktop"), confirm_quit, StatIcon.QUIT)
+	quit.name = "Quit"
+	# H24 S11 / PAUSE-02: the campaign's share code in a mono field with a copy button (it
+	# read like debug output on the HQ's Pirate Radio note, then as a plain line here).
+	var code := share_code()
 	if code != "":
-		var seed_line := Label.new()
-		seed_line.name = "SeedLine"
-		seed_line.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		seed_line.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		seed_line.text = code
-		UiWrap.whole_words(seed_line)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
-		seed_line.mouse_filter = Control.MOUSE_FILTER_PASS
-		seed_line.tooltip_text = UiTip.fold(tr("Share this code: Start from code on the new campaign screen starts this campaign again."))
-		_menu.add_child(seed_line)
+		var row := VBoxContainer.new()
+		row.name = "CodeRow"
+		var head := Label.new()
+		head.name = "CodeHeading"
+		head.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		head.text = code_heading()
+		UiWrap.whole_words(head)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
+		head.add_theme_color_override("font_color", Palette.TEXT_MID)
+		head.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+		row.add_child(head)
+		code_field = CodeField.new(code, true, tr("Copy the campaign code"))
+		code_field.name = "SeedLine"
+		code_field.tooltip_text = UiTip.fold(tr("Share this code: Start from code on the new campaign screen starts this campaign again."))
+		code_field.field.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		code_field.copy_button.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		row.add_child(code_field)
+		_menu.add_child(row)
 	# Focus moves slide the highlight and type the line in (Animation pass ANIM-6).
-	MenuMotion.attach(_menu)
-	# The yellow PAUSED title sticker over the terminal's top left (round 33).
-	title_sticker = VerbSticker.new(tr("PAUSED"), VerbSticker.Fill.YELLOW, TITLE_PX, TITLE_TILT, VerbSticker.title_art("PAUSED"))
-	title_sticker.pre_translated = true
-	title_sticker.name = "TitleSticker"
-	title_sticker.focus_mode = Control.FOCUS_NONE
-	title_sticker.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(title_sticker)
+	MenuMotion.attach(_rows)
 	# ANIM-R5 P4: as tall as what it shows (the box stood 520 px tall round ~200 px of lines,
 	# hiding the city behind it); Options and the Codex grow it up to MENU_SIZE.
 	_host.minimum_size_changed.connect(_fit_height)
@@ -113,16 +147,25 @@ func _fit_height() -> void:
 	var h := clampf(ceilf(want), minf(FIT_MIN_H, most), most)
 	custom_minimum_size = Vector2(MENU_SIZE.x, h)
 	size = custom_minimum_size
-	if title_sticker != null:
-		var m := title_sticker.get_combined_minimum_size()
-		title_sticker.size = m
-		# Over the header's right end (as the OPTIONS sticker sits, round 31): the `> PAUSED` words stay clear.
-		title_sticker.position = Vector2(size.x - m.x - Chrome.CHAMFER * 4.0, -m.y * STICKER_RISE)
 
 
 ## The least the menu is tall and the screen edge it keeps clear of (px).
 const FIT_MIN_H := 120.0
 const FIT_MARGIN := 12.0
+
+
+## The campaign's share code alone ("" without a campaign).
+static func share_code() -> String:
+	var c := RunManager.campaign
+	if c == null or RunManager.corporation == null:
+		return ""
+	return CampaignCode.of(c, c.start_class_id)
+
+
+## The words over the code field, in the player's language.
+static func code_heading() -> String:
+	return TranslationServer.translate("Campaign code (share it: it starts this campaign)") + (
+		TranslationServer.translate(" (local: REBEL_CELL is built from your profile)") if RunManager.corporation != null and RunManager.corporation.generated_from_profile else "")
 
 
 ## The campaign's share code as a line (H24 S11), in the player's language; "" without a
@@ -137,16 +180,14 @@ static func code_line() -> String:
 
 ## The menu's glass (it drops in when the menu opens, Animation pass ANIM-6).
 var _panel: CrtWindow = null
-## ART-10 4C: the PAUSED title sticker, its size and tilt, and how far it rises over the
-## terminal's top edge (share of its height).
-var title_sticker: VerbSticker = null
-const TITLE_PX := 30.0
-const TITLE_TILT := -3.0
-const STICKER_RISE := 0.6
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_READY and _panel != null:
+		if code_field != null:
+			# The whole code shows in its field (the field's own least width is a seed's).
+			var px := UiTheme.font_px(UiTheme.BODY)
+			code_field.field.custom_minimum_size.x = ceilf(Palette.mono().get_string_size(code_field.value + "  ", HORIZONTAL_ALIGNMENT_LEFT, -1, px).x) + UiTheme.SP_M
 		_fit_height()
 		# A wrapped line (the campaign code at 1.6) knows its height only once laid out at its
 		# width: fitted again after the first layout.
@@ -176,7 +217,7 @@ func _cover_screen() -> void:
 	_backdrop.global_position = Vector2.ZERO
 
 
-func _add(text: String, on_pressed: Callable) -> Button:
+func _add(text: String, on_pressed: Callable, kind: StringName) -> Button:
 	var b := Button.new()
 	b.text = text
 	# ART-10 4C: a terminal menu line (`> ITEM` on focus, lime brackets), CAPS.
@@ -186,13 +227,65 @@ func _add(text: String, on_pressed: Callable) -> Button:
 	b.add_theme_font_size_override(&"font_size", Chrome.px(UiTheme.BODY))
 	b.set_meta(UiFocus.META_NO_SCALE, true)
 	b.pressed.connect(on_pressed)
-	_menu.add_child(b)
+	IconMark.attach(b, kind)  # PAUSE-02: the row's icon (StatIcon), in the chevron's place
+	_rows.add_child(b)
 	return b
+
+
+## ABANDON-QUIT: a destructive row reads in HARM (its words and its icon), as the slots' DELETE.
+func _harm(b: Button) -> void:
+	for key in [&"font_color", &"font_hover_color", &"font_focus_color", &"font_pressed_color", &"font_hover_pressed_color"]:
+		b.add_theme_color_override(key, Palette.HARM)
+	IconMark.attach(b, IconMark.kind_of(b), Palette.HARM)
+
+
+## Abandon run: the abandon dialog with the run's costs (RunManager.abandon_run_preview); BURN IT
+## kills the operative (RunManager.abandon_run; the netrun scene shows the run's end).
+func confirm_abandon_run() -> void:
+	var p := RunManager.abandon_run_preview()
+	if p.is_empty():
+		return
+	_open_exit(ExitDialogs.abandon_run(p), func() -> void:
+		resumed.emit()
+		RunManager.abandon_run())
+
+
+## Abandon campaign: the abandon dialog with the campaign's costs; BURN IT ends it
+## (RunManager.abandon_campaign) and HQ opens again on the campaign's end page.
+func confirm_abandon_campaign() -> void:
+	var p := RunManager.abandon_campaign_preview()
+	if p.is_empty():
+		return
+	var corp := TextDb.t(RunManager.corporation, "display_name") if RunManager.corporation != null else String(p.get("corporation", ""))
+	_open_exit(ExitDialogs.abandon_campaign(p, corp), func() -> void:
+		resumed.emit()
+		RunManager.abandon_campaign()
+		RunManager.change_scene(RunManager.HQ_SCENE))
+
+
+## Quit to desktop: the quit confirm (not destructive); QUIT saves and quits.
+func confirm_quit() -> void:
+	_open_exit(ExitDialogs.quit(RunManager.has_active_run()), func() -> void: RunManager.quit_game())
+
+
+## Opens `d` over the menu, centred on the screen as its panel takes its size, `on_yes` on its
+## confirm.
+func _open_exit(d: ConfirmDialog, on_yes: Callable) -> void:
+	if exit_dialog != null and is_instance_valid(exit_dialog):
+		exit_dialog.queue_free()
+	exit_dialog = d
+	add_child(d)
+	var centre := func() -> void:
+		if is_instance_valid(d) and d.is_inside_tree():
+			d.global_position = ((get_viewport_rect().size - d.size) * 0.5).floor()
+	d.resized.connect(centre)
+	centre.call()
+	d.confirmed.connect(on_yes)
 
 
 ## "Resume [Esc]" / "Resume [Start]": the hint follows the device and the binds (H20).
 func _relabel() -> void:
-	resume_button.text = ("%s %s" % [tr("Resume"), Settings.hint(&"open_settings")]).strip_edges()
+	(resume_button as VerbSticker).set_label(("%s %s" % [tr("Resume"), Settings.hint(&"open_settings")]).strip_edges())
 
 
 func show_options() -> void:

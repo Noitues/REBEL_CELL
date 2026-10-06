@@ -110,11 +110,19 @@ main's list is legible but plain. Likely cause: the build's `scripts/ui/kit/slot
 Art-pass source: `art-m13-final:scripts/ui/kit/slot_picker.gd`, `title_scene.gd show_slots`.
 Fix: port SlotPicker onto main's v2 kit (paper card = `PaperInk`/`ZinePanel`, terminal chips).
 Decision: **build layout, reworked in the v2 kit**: the build's slot cards brought to main, restyled with the concept philosophy. (designer, 2026-10-05)
+Fixed (S-TITLE, `CaseFileCard`; sheet `fixes/SLOTS.jpg`). Follow-up ruling (designer, 2026-10-05): used slots stay manila
+folders, each with a sliver of paper poking out (the art pass's print stock); built, sheet `fixes/SLOTS_b.jpg`.
 
 **SLOTS-02 (P2) Load / Delete.** Build: pink filled `Load` (primary) and a red-edged `Delete`.
 Main: two equal terminal buttons, `Load` with the lime focus brackets. View: main follows the v2
 rule (one sticker verb per screen, the rest terminal chips); the build's colour split marks the
 destructive action more clearly. Same file as SLOTS-01. Decision: **build's Load / Delete, reworked with the concept** (v2 kit). (designer, 2026-10-05)
+Fixed (S-TITLE): LOAD the pink sticker on the newest campaign, DELETE a HARM chip. Follow-up ruling (designer,
+2026-10-05, overriding v2's one sticker verb per screen on this page): LOAD and DELETE are both stickers (DELETE = 4C's
+baked `dialog_delete` art at LOAD's size), with a red grease-pencil "Can't Undo" and arrow pointing at DELETE (up to
+text scale 1.6; at 2.0 the words move into DELETE's tooltip). Built, sheet `fixes/SLOTS_b.jpg`.
+Second follow-up (designer, 2026-10-05): every used slot's LOAD is the pink sticker (not only the newest
+campaign's); the newest campaign's LOAD keeps the first focus. Built, sheet `fixes/SLOTS_c.jpg`.
 
 **SLOTS-03 (P3) Page title.** Build: the REBEL_CELL logo top left. Main: a `CAMPAIGN SLOTS` title
 sticker (the v2 sticker-title rule, as THE GRID / RAID SETUP). View: main is consistent with v2.
@@ -262,7 +270,10 @@ Decision:
 **LOOT-04 (P1) Backdrop.** Concept: the dark, blurred lit city. Main: the bright 2D wireframe
 city (lime / cyan / magenta outlines) at full strength behind the sheet, also behind the event,
 shop overlays and pauses; it competes with every page. Build: the same wireframe city (M13).
-Likely file: `cyberdeck_background.gd` (as TITLE-01). Decision:
+Likely file: `cyberdeck_background.gd` (as TITLE-01). Decision: use the title's blurred city (designer 2026-10-05)
+Fixed (S-BACKDROP): the netrun's loot and event pages show BlurredCityBackdrop (own look
+`content/config/overlay_city_backdrop.tres`, the title's grade); the Mainframe keeps its facade
+(it covers the city); review `fixes/TITLE-01b_LOOT-04.jpg`.
 
 ### HQ sub-pages (`hq_black_market.jpg`, `hq_crew.jpg`, `hq_loadout_deck.jpg`, `hq_loadout_spinner.jpg`, `hq_heat_band.jpg`)
 Ref: art pass build (no concept beyond portraits `round39_portraits/portraits_classes_v2.png`).

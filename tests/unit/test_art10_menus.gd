@@ -258,30 +258,43 @@ func test_the_slots_page_is_three_case_files_in_one_panel() -> void:
 	assert_eq(RunManager.save_slot, "2", "NEW CAMPAIGN starts in its own slot")
 
 
-func test_load_is_the_one_sticker_verb_and_delete_a_harm_chip_that_asks() -> void:
-	_save_slots(2)
+func test_load_and_delete_are_stickers_and_delete_says_cant_undo_in_pencil() -> void:
+	# Designer rulings 2026-10-05 (SLOTS b, c): every used slot carries two sticker verbs, the
+	# pink LOAD and DELETE (4C's baked dialog_delete), with a red grease-pencil "Can't Undo"
+	# arrow pointing at DELETE; the newest campaign's LOAD takes the first focus.
+	_save_slots(3)
 	var t := _title()
 	await _frames(2)
 	t.show_slots()
 	await _frames(3)
 	var cards := _cards(t)
-	var stickers := 0
 	for c in cards:
-		for a in c.actions():
-			if a is VerbSticker:
-				stickers += 1
-	assert_eq(stickers, 1, "one sticker verb on the page (v2 §2.10)")
-	var newest := cards[0] if cards[0].primary else cards[1]
-	assert_true(newest.load_button is VerbSticker and (newest.load_button as VerbSticker).fill == VerbSticker.Fill.PINK, "LOAD on the newest campaign is the pink verb")
+		assert_true(c.load_button is VerbSticker and (c.load_button as VerbSticker).fill == VerbSticker.Fill.PINK, "slot %s: LOAD is the pink sticker" % c.slot)
+		assert_true(c.delete_button is VerbSticker, "slot %s: DELETE is a sticker" % c.slot)
+	var primaries := cards.filter(func(c: CaseFileCard) -> bool: return c.primary)
+	assert_eq(primaries.size(), 1, "one newest campaign")
+	var newest: CaseFileCard = primaries[0]
 	assert_eq(RunManager.latest_slot(), newest.slot, "the newest campaign")
-	assert_eq(t._default_focus(t._panel), newest.load_button, "the pink LOAD takes the focus first")
-	var other := cards[1] if newest == cards[0] else cards[0]
-	assert_true(other.load_button is MenuChip, "the other LOAD is a terminal chip")
-	for c in [cards[0], cards[1]]:
-		var del := c.delete_button as MenuChip
-		assert_not_null(del)
-		assert_eq(del.accent, Palette.HARM, "DELETE is marked destructive (HARM edge and caret)")
-		assert_ne(del.line, "", "and says so in words")
+	assert_eq(t._default_focus(t._panel), newest.load_button, "the newest campaign's LOAD takes the focus first")
+	var other := cards[0] if newest != cards[0] else cards[1]
+	for c: CaseFileCard in cards:
+		var del := c.delete_button as VerbSticker
+		assert_not_null(del, "DELETE is a sticker")
+		assert_true(del.uses_art() and del.art_key == CaseFileCard.DELETE_ART, "4C's baked DELETE sticker")
+		assert_lte(del.size.y, CaseFileCard.DELETE_ART_SCALE * 100.0, "at about LOAD's size, not the dialog's (93 px)")
+		var note := c.cant_undo
+		assert_not_null(note, "Can't Undo in grease pencil at 1.0")
+		assert_eq(note.text.replace("
+", " "), "Can't Undo")
+		assert_eq(note.colour, Palette.PENCIL_THREAT, "red pencil: a loss")
+		var arrow := note.get_node("Arrow") as GreasePencilMark
+		assert_gt(arrow.strokes().size(), 0, "with its arrow")
+		var head: Vector2 = note.get_global_transform() * note.arrow_to
+		assert_lt(head.x, del.get_global_rect().position.x, "the arrow stops short of DELETE (no UI over pencil)")
+		assert_gt(head.x, del.get_global_rect().position.x - 45.0, "pointing at it")
+		assert_eq(PencilLint.violations(c).size(), 0, "nothing in the card covers the pencil: %s; load %s del %s row %s" % [PencilLint.violations(c), c.load_button.size, c.delete_button.size, c.delete_button.get_parent().size])
+	# The paper sliver is the art pass's print stock.
+	assert_not_null(CaseFileCard.print_stock(), "the art pass's paper stock")
 	other.delete_button.pressed.emit()
 	await _frames(2)
 	assert_true(t._confirm is AbandonDialog, "DELETE asks first (the abandon dialog)")
@@ -327,6 +340,18 @@ func test_slots_fit_and_focus_reaches_every_action_at_every_text_scale() -> void
 					assert_true(f.grow(1.0).encloses(r), "%d used, %.1f slot %s: '%s' %s inside its folder %s" % [used, scale, c.slot, (l as Label).text, r, f])
 				for a in c.actions():
 					assert_lte(a.get_global_rect().end.x, f.end.x + 1.0, "%.1f slot %s: %s under its folder" % [scale, c.slot, a.name])
+				if c.delete_button == null:
+					continue
+				# The pencil up to 1.6; at 2.0 its words move into DELETE's tooltip.
+				if scale <= CaseFileCard.PENCIL_UP_TO:
+					assert_not_null(c.cant_undo, "%.1f slot %s: Can't Undo in pencil" % [scale, c.slot])
+					if c.cant_undo != null:
+						var nr := Rect2(c.cant_undo.global_position, c.cant_undo.text_size())
+						assert_lte(nr.end.x, c.delete_button.get_global_rect().position.x, "%.1f slot %s: the words clear of DELETE" % [scale, c.slot])
+						assert_gte(nr.position.x, c.load_button.get_global_rect().end.x, "%.1f slot %s: and of LOAD" % [scale, c.slot])
+				else:
+					assert_null(c.cant_undo, "2.0: no pencil")
+					assert_string_contains(c.delete_button.tooltip_text, "Can't Undo", "2.0: DELETE's tooltip says it")
 			# Pad / keyboard: every LOAD, DELETE and NEW CAMPAIGN and Back reachable from the first.
 			var want: Array[Control] = [back]
 			for c in cards:
@@ -587,11 +612,11 @@ func test_options_stack_and_fit_at_text_scale_two() -> void:
 		assert_lte(panel.get_combined_minimum_size().x, SCREEN.size.x, "%s fits the width at 2.0" % section)
 
 
-func test_the_pause_menu_is_a_terminal_with_its_sticker_and_one_column_options() -> void:
+func test_the_pause_menu_is_a_terminal_with_no_sticker_and_one_column_options() -> void:
 	var menu: PauseMenu = add_child_autofree(PauseMenu.new())
 	await _frames(2)
 	assert_true(menu._panel is CrtWindow, "terminal glass")
-	assert_eq(menu.title_sticker.shown_text(), "PAUSED")
+	assert_null(menu.find_child("TitleSticker", true, false), "PAUSE-01: no PAUSED sticker")
 	menu.show_options()
 	assert_false(menu.settings_panel.two_columns(), "one column inside the menu")
 	assert_lte(menu.settings_panel.get_combined_minimum_size().x, PauseMenu.MENU_SIZE.x)

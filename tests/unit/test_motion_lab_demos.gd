@@ -41,6 +41,7 @@ const HOLDS := {
 	&"resolve_result_hold": "the result shows this long before the screen goes back",
 	&"combat_end_hold": "VICTORY holds before the loot",
 	&"toast_note_hold": "a note stays up to be read",
+	&"dialog_hold_confirm": "the hold on an abandon dialog's verb (an input time: the ring fills under reduce effects too)",
 	&"jack_arrival_wait": "the jack's cover waits (bounded) for the arriving screen",
 	&"asset_drop_wait": "the drop waits for the camera",
 	&"raid_incoming_hold": "RAID INCOMING's reading time",

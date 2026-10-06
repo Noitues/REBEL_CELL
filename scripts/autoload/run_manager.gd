@@ -7,6 +7,9 @@ signal campaign_changed(campaign: CampaignState)
 signal run_changed(netrun: NetrunSession)
 signal run_ended(netrun: NetrunSession)
 signal campaign_ended(campaign: CampaignState)
+## Abandon run (designer ruling 2026-10-05): the run was abandoned with these events; the netrun
+## scene shows the run's end (the pause menu that asked may sit in the fight).
+signal run_abandoned(events: Array[Dictionary])
 
 const DEFAULT_SLOT := "current"
 ## Save slots whose name starts with this keep a private profile (the GUT tests use it).
@@ -363,8 +366,8 @@ func sync_profile_with_campaign() -> void:
 				profile.add_stat("assisted_wins", 1)  # no ICE records, no win-based achievements
 			else:
 				profile.record_win(campaign.corporation_id, campaign.ice_level)
-		elif campaign.outcome == CampaignState.Outcome.LOST:
-			profile.record_loss()
+		elif campaign.outcome == CampaignState.Outcome.LOST or campaign.outcome == CampaignState.Outcome.ABANDONED:
+			profile.record_loss()  # designer ruling 2026-10-05: an abandoned campaign counts as lost
 	var corp_ids := []
 	for id in lookup().ids_of_class(&"CorporationData"):
 		var c := lookup().get_content(id) as CorporationData
@@ -437,8 +440,20 @@ func slot_summary(slot: String) -> Dictionary:
 		return {}
 	var outcome := int(c.get("outcome", 0))
 	return {"corporation": String(data.get("corporation_id", "")), "heat": int(c.get("heat", 0)), "ice": int(c.get("ice_level", 0)),
-		"runs": int(c.get("runs_completed", 0)), "state": "won" if outcome == CampaignState.Outcome.WON else ("lost" if outcome == CampaignState.Outcome.LOST else "active"),
+		"runs": int(c.get("runs_completed", 0)), "state": state_word(outcome),
 		"in_run": not data.get("run", {}).is_empty(), "saved_at": float(data.get("saved_at", 0.0))}
+
+
+## A campaign outcome as a slot summary's "state" word (title_scene STATE_WORDS).
+static func state_word(outcome: int) -> String:
+	match outcome:
+		CampaignState.Outcome.WON:
+			return "won"
+		CampaignState.Outcome.LOST:
+			return "lost"
+		CampaignState.Outcome.ABANDONED:
+			return "abandoned"
+	return "active"
 
 
 ## The slot saved most recently ("" when none), among the numbered slots.
@@ -481,6 +496,44 @@ func quit_game() -> void:
 	save_profile()
 	if scene_switching_enabled:
 		get_tree().quit()
+
+
+# --- Leaving (designer ruling 2026-10-05, GDD 4.5) ---------------------------------------------
+
+## Abandon run: the operative on the run is killed (NetrunSession.abandon, the death rule);
+## the run ends, its outcome is recorded and saved like any death, and the campaign goes on at
+## HQ. Returns the run's events ([] without a run in progress).
+func abandon_run() -> Array[Dictionary]:
+	if not has_active_run():
+		return [] as Array[Dictionary]
+	var events := netrun.abandon()
+	after_step()
+	run_abandoned.emit(events)
+	return events
+
+
+## What abandoning the run would cost (NetrunSession.abandon_preview; {} without a run).
+func abandon_run_preview() -> Dictionary:
+	return netrun.abandon_preview() if has_active_run() else {}
+
+
+## Abandon campaign: it ends as ABANDONED (ExitRules) through the campaign's end: the profile
+## counts a lost campaign, the slot is saved with its end (its case file reads ABANDONED) and
+## HQ shows the end page. Refused while a run is in progress.
+func abandon_campaign() -> Array[Dictionary]:
+	var events := ExitRules.abandon_campaign(campaign, has_active_run())
+	if campaign == null or not campaign.is_over():
+		return events
+	sync_profile_with_campaign()
+	autosave()
+	campaign_ended.emit(campaign)
+	campaign_changed.emit(campaign)
+	return events
+
+
+## What abandoning the campaign would cost (ExitRules.abandon_campaign_preview).
+func abandon_campaign_preview() -> Dictionary:
+	return ExitRules.abandon_campaign_preview(campaign, has_active_run())
 
 
 func resume() -> bool:
