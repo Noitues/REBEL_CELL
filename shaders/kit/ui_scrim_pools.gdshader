@@ -52,6 +52,8 @@ uniform float keep_trace_px = 3.0;
 uniform float keep_node_px = 13.0;
 uniform float keep_bus_gap_px = 4.0;
 uniform float keep_edge_px = 2.0;
+// B4 (perf): the px box round the network (x0, y0, x1, y1); the keep's loops run only inside it.
+uniform vec4 keep_box = vec4(-1e9, -1e9, 1e9, 1e9);
 
 varying vec2 local_px;
 
@@ -129,7 +131,8 @@ void fragment() {
 	// B4 (perf): the network keep runs only under a pool or a band; the map dim (mild inside the
 	// network's rect, where the decal is) lies over the decal too, so the keep loop never runs
 	// over the whole screen.
-	if (keep_on && (pool > 0.0005 || band > 0.0005)) {
+	bool in_box = all(greaterThanEqual(local_px, keep_box.xy)) && all(lessThanEqual(local_px, keep_box.zw));
+	if (keep_on && in_box && (pool > 0.0005 || band > 0.0005)) {
 		float k = 1.0 - network_keep(local_px);
 		pool *= k;
 		band *= k;

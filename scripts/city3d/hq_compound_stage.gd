@@ -148,15 +148,20 @@ static func _fill_landmark(cam: CityIsoCamera, m: Dictionary, at: Transform3D, s
 
 
 ## B4: the landmark box on `cam`'s screen plane (world units along its right and up axes): the
-## eight corners of the manifest's footprint placed at `at`, with the run's points `pts`.
+## run's network `pts` (its entry and nodes, which stand on the compound); with no run, the four
+## ground corners of the manifest's footprint placed at `at`. (Measured, B4 b: the manifests'
+## footprints hold the cleared lot round Meridian's yard and Halcyon's plaza, so with them in
+## the box those compounds stood about 20 % of the height; the network alone is the landmark.)
 static func landmark_box(cam: CityIsoCamera, m: Dictionary, at: Transform3D, pts: Array[Vector3] = []) -> Rect2:
 	var world: Array[Vector3] = []
 	var fp: Dictionary = m.get("footprint", {})
-	if not fp.is_empty():
+	if pts.is_empty() and not fp.is_empty():
 		var lo: Array = fp.get("min", [0, 0, 0])
 		var hi: Array = fp.get("max", [0, 0, 0])
-		for i in 8:
-			world.append(at * Vector3(float(hi[0] if i & 1 else lo[0]), float(hi[1] if i & 2 else lo[1]), float(hi[2] if i & 4 else lo[2])))
+		# The footprint on the ground (its four ground corners): the crane's boom and the spire
+		# never widen the frame; the run's nodes carry the height the page must show.
+		for i in 4:
+			world.append(at * Vector3(float(hi[0] if i & 1 else lo[0]), 0.0, float(hi[2] if i & 2 else lo[2])))
 	world.append_array(pts)
 	var r := cam.right()
 	var u := cam.up()

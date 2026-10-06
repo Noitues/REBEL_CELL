@@ -561,7 +561,7 @@ func _sync_keep() -> void:
 				_mat.set_shader_parameter(&"keep_node_px", cfg.net_node_px)
 				_mat.set_shader_parameter(&"keep_bus_gap_px", cfg.net_bus_gap_px)
 				_mat.set_shader_parameter(&"keep_edge_px", cfg.net_keep_edge_px)
-	var sig := hash([keep.get("o"), keep.get("x"), keep.get("y"), keep.get("bu"), keep.get("mgmt")])
+	var sig := hash([keep.get("o"), keep.get("x"), keep.get("y"), keep.get("bu"), keep.get("mgmt"), keep.get("box")])
 	if sig == _keep_sig:
 		return
 	_keep_sig = sig
@@ -572,6 +572,8 @@ func _sync_keep() -> void:
 		_mat.set_shader_parameter(&"keep_y", keep["y"])
 		_mat.set_shader_parameter(&"keep_bu_per_px", keep["bu"])
 		_mat.set_shader_parameter(&"keep_mgmt", keep["mgmt"])
+		var kb: Rect2 = keep.get("box", Rect2())
+		_mat.set_shader_parameter(&"keep_box", Vector4(kb.position.x, kb.position.y, kb.end.x, kb.end.y))
 
 
 ## The shown map in this layer's world whose network is the 3D city's ground decal (null: none).
@@ -600,13 +602,44 @@ static func keep_from(net: CityNetworkData, o: Vector2, x: Vector2, y: Vector2, 
 	for n in net.nodes:
 		var w: Vector3 = n["world"]
 		nodes.append([Vector2(w.x, w.z), cfg.net_node_px * (1.4 if n["big"] else 1.0) * (1.0 + mgmt * 0.7) + cfg.net_keep_edge_px])
-	return {"segs": segs, "nodes": nodes, "o": o, "x": x, "y": y, "bu": maxf(bu, 0.0001), "mgmt": mgmt}
+	return {"segs": segs, "nodes": nodes, "o": o, "x": x, "y": y, "bu": maxf(bu, 0.0001), "mgmt": mgmt,
+		"box": keep_box(net, o, x, y, bu, mgmt)}
+
+
+## B4 (perf, the art director: "if the HQ goes over budget, B1a's network-keep loop is the first
+## place to optimise"): the layer's px box round `net` (its nodes and segment ends mapped back
+## from the ground through `o`, `x`, `y`, grown by the widest keep): the shader skips the keep's
+## loops outside it (the panels' pools mostly lie away from the network). Rect2() for none.
+static func keep_box(net: CityNetworkData, o: Vector2, x: Vector2, y: Vector2, bu: float, mgmt: float) -> Rect2:
+	var det := x.x * y.y - x.y * y.x
+	if absf(det) < 1e-9 or (net.nodes.is_empty() and net.segments.is_empty()):
+		return Rect2()
+	var to_px := func(w: Vector3) -> Vector2:
+		var d := Vector2(w.x, w.z) - o
+		return Vector2((d.x * y.y - d.y * y.x) / det, (x.x * d.y - x.y * d.x) / det)
+	var box := Rect2()
+	var first := true
+	for n in net.nodes:
+		var q: Vector2 = to_px.call(n["world"])
+		box = Rect2(q, Vector2.ZERO) if first else box.expand(q)
+		first = false
+	for sg in net.segments:
+		for w: Vector3 in [sg["a"], sg["b"]]:
+			var q: Vector2 = to_px.call(w)
+			box = Rect2(q, Vector2.ZERO) if first else box.expand(q)
+			first = false
+	var cfg := CityView3D.CONFIG
+	var grow := (cfg.net_node_px * 1.4 * (1.0 + mgmt * 0.7) + cfg.net_trace_px * 2.0 + cfg.net_keep_edge_px + mgmt * cfg.net_bus_gap_px + 2.0)
+	return box.grow(grow)
 
 
 ## 1 on `k`'s network (keep_from) at `p` (px), 0 off it, as the shader computes it.
 static func keep_at(p: Vector2, k: Dictionary) -> float:
 	if k.is_empty():
 		return 0.0
+	var kb: Rect2 = k.get("box", Rect2())
+	if kb.has_area() and not kb.has_point(p):
+		return 0.0  # B4: the shader's box (outside it the network is never under the pixel)
 	var w: Vector2 = (k["o"] as Vector2) + p.x * (k["x"] as Vector2) + p.y * (k["y"] as Vector2)
 	var bu := float(k["bu"])
 	var out := 0.0

@@ -374,6 +374,6 @@ func test_the_run_stays_clear_of_the_chrome_at_every_text_size() -> void:
 			assert_true(area.has_point(v.screen_of(v.graph.final_node_id())), "%s at %.1f: the server clear of the chrome" % [corp, k])
 			assert_gte(v.chip_rect().position.y, HudBar.BAND_HEIGHT - 0.5, "%s at %.1f: the chip under the HUD band" % [corp, k])
 			var m := HqCompoundStage.manifest(corp)
-			var ref := HqCompoundStage.page_camera(_city, m, HqCompoundStage.place(_city, corp, m), VIEWS[0])
+			var ref := HqCompoundStage.page_camera(_city, m, HqCompoundStage.place(_city, corp, m), VIEWS[0], v.run_points(), free)  # B4: framed on the run
 			assert_lte(v.iso.ortho, ref.ortho * HqRunView.FIT_MAX_SHARE + 0.01, "%s at %.1f: never zoomed far out" % [corp, k])
 			v.free()

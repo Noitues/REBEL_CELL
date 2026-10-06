@@ -31,6 +31,42 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-06 — B4 b — the art director's fixes (HQ to round 44)
+Art director's review of B4 (a07daf9a). Approved as built: the JACK IN fix, the map dim and vignette, one tag,
+selection-only verbs, CORE's card with HEAT SCRUB, the foot holo toast, the polaroids, no Heat stamp, the RAID SETUP
+title, the HQ-run titles, lanes at 100 %. Rulings: MAP KEY chip kept; the minimap hidden by default; ON AIR in the HQ
+foot band; PATCH stays CORE's verb; the top bar's one-strip restyle is B5's; the selection marker is the vignette and the
+one tag. Sheet `docs/art_review/PARITY/fixes/B4_b.jpg`, crop `B4_crops/holo_site_card_1080_b.png`.
+- **Holo body.** The Site file was already B1c's DecryptedHoloPanel; it read as a green box because Solace's green
+  carries twice the luminance of round 44's Meridian orange, at the same 15 % fill and 12 % scanlines. The body's fill and
+  scanline shares now scale by `body_share` (the Meridian hue's luminance over the corp hue's, at most 1), so every corp's
+  body is the same dark glass (measured: the card's body luma 26 against round 44's 39; edge and words keep the full
+  tint). `test_b1c_crt_holo` reads the uniforms on a Meridian panel (the measured reference).
+- **HQ-run framing (D18).** The page frames the run's network (entry and nodes) at 60 % of the frame height
+  (`hq_run_landmark_share`), centred in the page's free part. The art director asked for the union with the compound
+  footprint; measured, the manifests' footprints hold the cleared lots round Meridian's yard and Halcyon's plaza, and with
+  them the compounds stood about 20 % of the height (ortho 436 / 446). The footprint is the fallback when there is no
+  run. Ortho now: Solace 264, Meridian 170, Halcyon 165, Orbital 127 (were 271 / 257 / 245 / 284). The canyon keeps CAM27.
+- **Territory stamps (D5 / D7).** A CLAIMED / TAKEN / DOWN stamp lands once (`influence_mark`), holds
+  `territory_stamp_hold` (1.5 s, a hold), then wipes off over `territory_stamp_wipe` (0.3 s); the marker carries the state.
+  With motion off (headless, reduce effects) the stamps are wiped at once. New entries are in ui_motion.tres,
+  REQUIRED_IDS and the lab's demos (the HQ's influence demo).
+- **System word.** It sits on a small terminal plate and wraps at its spaces. The pink `raid incoming mid-run` line is
+  gone: Q3's words are in the system word's tooltip (the INTERCEPTED toast already says a raid is coming).
+- **Minimap.** Hidden by default; M (`toggle_minimap`, Settings.RUNTIME_ACTIONS) or the opened MAP KEY shows it.
+- **Selection.** The lime ring and roof outline show only while the pad or keyboard is on the map (the MapCursor has
+  the focus): `CityMapOverlay.select_ring_shown` (additive, on by default; B3's file).
+- **Rings.** The idle shows the 4.5 pins only (the review state: 6 nodes of the Cell's with CORE, 3 Exploit Sites, 3
+  Heat Sites, the selection: 14).
+- **Perf.** Measured with two other agents' headless test runs going (no other window): the network keep's loops are
+  culled to the network's px box (`UiScrimPools.keep_box`), so the panels' pools away from the network skip them.
+  Root GPU 2.20 -> 1.15 ms (tier 2). The HQ idle frame is still 10.1 ms mean (tier 2), against 8.6 ms for the raid
+  setup on the same run: the rest is the 3D city at the City Grid look (5.6 ms city GPU against 4.3 at the RAID band's
+  see-through look). Getting under 8 ms needs the city cheaper at the GRID band, or the HQ idle at the RAID band; that is
+  a design call (round 44's solid city) and is listed for the designer.
+- **Tests changed:** `test_parity_hq_run` (the framing on the run; the far-out bound against the same framing),
+  `test_hq_b_defence` (Q3 in the tooltip), `test_b1c_crt_holo` (the reference corp).
+
 ### 2026-10-06 — B4 — HQ to round 44 (integration review)
 Integration review D7, D18, D20, section c "HQ page, direction B", section f (HQ, top bar), Q10, Q11; designer: "build
 the HQ to round 44" (`round44_undesigned/A_map/hq_idle.png`, `hq_node_selected.png`; direction B stays, A and C never
@@ -10390,6 +10426,9 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **B4 b perf (2026-10-06):** the HQ idle at the City Grid look runs about 10 ms a frame (tier 2) on the busy machine,
+  against the 8 ms budget; the RAID band's see-through city costs about 1.3 ms less of city GPU. Keep the City Grid look
+  (round 44), and cut the city's cost at that band, or use the RAID band at the HQ idle? Default: City Grid look.
 - **B4 HQ to round 44 (2026-10-06, see "B4 — HQ to round 44"):** defaults built against the still: (1) the minimap
   terminal and the MAP KEY strip stay at the HQ's top right (section c lists them; round 44 draws neither). Drop them
   (the camera keeps wheel / drag / WASD / the edge arrow; the key would move behind a hover)? (2) ON AIR stays on the HQ
