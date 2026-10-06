@@ -74,18 +74,16 @@ const NUMBER_HOLD_SHARE := 0.66
 ## ANIM-R1 M4: a hit on the home server shows now (its number starts): `damage` from Site
 ## `site` (the screen flies the number into its home counter).
 signal home_hit_shown(damage: int, site: StringName)
-## Alpha of a TAKEN node's corporate tint disc (its reach is CityInfluence.RADIUS lots).
-const TINT_ALPHA := 0.24
 ## ART-0 E (ported from art-pass W6, ART_BIBLE v2 5.3): each drawn effect's motion entry,
-## whose tier it keeps to. All are local (T2 on a node or a threat, T3 for a district's tint
-## and the result banner): nothing here is T4 and nothing covers the screen.
+## whose tier it keeps to. All are local (T2 on a node or a threat, T3 for the result's
+## motion): nothing here is T4 and nothing covers the screen. B3 (review D6): no district
+## tint (the orange influence fill had no job); losses read on the nodes, links and units.
 const FX_MOTION := {"trace": &"turret_trace", "hit": &"raid_hit_effect", "lock": &"ice_lock_ring", "frost": &"ice_lock_ring",
 	"number": &"node_damage_number", "stamp": &"raid_flip", "outcome": &"raid_outcome_stagger", "banner": &"raid_result_banner",
-	"tint": &"influence_spread", "home": &"home_lag", "token": &"raid_move", "withdraw": &"raid_threat_withdraw",
+	"home": &"home_lag", "token": &"raid_move", "withdraw": &"raid_threat_withdraw",
 	"mark": &"raid_mark_write", "breach": &"raid_bits_burst", "field": &"raid_slow_field", "ice": &"raid_ice_grow", "repair": &"raid_repair_rise"}
 ## A raid hit's ring reaches at most this many of its rest radii (its threat's region, T2).
 const HIT_REGION := 2.0
-const TINT_RINGS := 24
 
 # --- ART-6 3A: the raid in grease pencil, vehicle icons v4 and the station bonuses -------------
 ## ART_BIBLE v2 §4.8: state marks (INCOMING, DOWN, TAKEN) write ~0.4 s, hold ~1.5 s, wipe
@@ -177,8 +175,6 @@ var _home_lag_t0: float = -INF
 var _tokens: Dictionary = {}  # threat id (String) -> token
 var _fx: Array[Dictionary] = []
 var _stamps: Dictionary = {}  # site id (String) -> {"word", "color", "t0", "dur"}
-var _tints: Array[Dictionary] = []
-var _tint_fade_t0: float = INF
 var _results: Dictionary = {}
 var _owner_done: bool = false
 ## ANIM-R1 M4: hits on home still to show ({"t0", "damage", "site"}), in time order.
@@ -230,8 +226,6 @@ func setup(results: Dictionary, p_home: StringName, p_home_max: int, color: Colo
 	_tokens.clear()
 	_fx.clear()
 	_stamps.clear()
-	_tints.clear()
-	_tint_fade_t0 = INF
 	_owner_done = false
 	_banner = {}
 	_node_left.clear()
@@ -300,9 +294,6 @@ func _process(delta: float) -> void:
 	_lay_pencil()
 	_refresh_sockets()
 	_show_due_hits()
-	if _tint_fade_t0 == INF and not _tints.is_empty() and overlay != null and overlay.city != null and overlay.city.influence_pin == null \
-			and overlay.city.showing_current_look():
-		_tint_fade_t0 = clock
 	queue_redraw()
 	if _under != null and is_instance_valid(_under):
 		_under.queue_redraw()
@@ -543,7 +534,6 @@ func play_beat(b: Dictionary, t0: float) -> void:
 			_node_left[String(taken_site)] = 0
 			_stamp(taken_site, "taken", Palette.RESIST_GOLD, t0, dur)
 			_mark("taken", taken_site, tr_outcome("taken"), t0, true)
-			_tints.append({"site": StringName(e["site"]), "t0": t0, "dur": RaidBeats.raw_seconds(&"influence_spread")})
 		"home_lost":
 			# ANIM-R3 B5: home's verdict is its banner (no stamp over it).
 			_banner = {"text": CityMapOverlay.tr_word(BANNER_BREACHED), "color": Palette.CELL_PINK, "t0": t0, "breached": true}
@@ -723,9 +713,8 @@ func _draw() -> void:
 	# (_lay_pencil), above every panel.
 
 
-## The moving parts (tints, traces, tokens, ICE locks, hits) on `_ci`.
+## The moving parts (traces, tokens, ICE locks, hits) on `_ci`.
 func _draw_moving(k: float, at: Dictionary) -> void:
-	_draw_tints(k)
 	_draw_fields(k)
 	for f in _fx:
 		if f["kind"] == "trace":
@@ -1297,29 +1286,8 @@ func _lay_pencil() -> void:
 			var y := c.y + size.y * 0.55
 			var line := PackedVector2Array([Vector2(c.x - size.x * 0.56, y), Vector2(c.x + size.x * 0.56, y + size.y * 0.06)])
 			_pool.stroke("under_%d" % i, [line], threat, clampf(pr.x * 1.25 - 0.25, 0.0, 1.0), 0.0, false, 9)
-	# Home's verdict (not BREACHED: that is its own heavy mark). B1b pencil audit: kept for now
-	# (it plays `raid_result_banner`); review RAID-10 moves it to the after-action paper's sticker,
-	# a slice of its own (DECISIONS "B1b — wax pencil material and pencil audit").
-	if not _banner.is_empty() and clock >= float(_banner["t0"]) and not bool(_banner.get("breached", false)):
-		var place := banner_rect()
-		if place.has_area():
-			var u := beat_u(BANNER_MOTION, float(_banner["t0"]), Motion.seconds(BANNER_MOTION))
-			var parts := banner_parts()
-			var total := 0.0
-			for part: Array in parts:
-				total += RaidPencilPool.word_size(String(part[0]), banner_step()).x
-			var c := gxf * place.get_center()
-			var x := c.x - total * 0.5
-			var done := 0.0
-			for j in parts.size():
-				var part: Array = parts[j]
-				var w := RaidPencilPool.word_size(String(part[0]), banner_step()).x
-				var share := w / maxf(total, 1.0)
-				var pu := clampf((u - done) / maxf(share, 0.001), 0.0, 1.0)
-				var ink := plan if (part[1] as Color) == Palette.CELL_ACID else threat
-				_pool.word("banner_%d" % j, String(part[0]), Vector2(x + w * 0.5, c.y), banner_step(), ink, 1.0, pu, 0.0, deg_to_rad(STAMP_TILT))
-				x += w
-				done += share
+	# B3 (review Q7): home's verdict is no banner over the map: the result is CELL HOLDS on the
+	# after-action paper (RaidSticker.slap_result plays `raid_result_banner`); BREACHED stays a mark.
 	# A yellow tick on each node that holds, at the verdict.
 	for id in _stamps:
 		var s: Dictionary = _stamps[id]
@@ -1486,33 +1454,6 @@ func _draw_home(k: float) -> void:
 	var now := clampf(float(home_shown) / home_max, 0.0, 1.0)
 	draw_rect(Rect2(r.position, Vector2(w * lag, h)), Palette.PAPER)
 	draw_rect(Rect2(r.position, Vector2(w * now, h)), Palette.CELL_ACID if now > 0.5 else Palette.CELL_PINK)
-
-
-## TAKEN nodes' corporate tint: a soft disc grows over the streets round the node and
-## holds (the city's own tint is baked at the raid's end) until the city's spread starts.
-func _draw_tints(_k: float) -> void:
-	var fade := 1.0
-	if _tint_fade_t0 != INF:
-		fade = 1.0 - beat_u(&"influence_crossfade", _tint_fade_t0, RaidBeats.raw_seconds(&"influence_crossfade"))
-		if fade <= 0.0:
-			return
-	var reach := CityInfluence.RADIUS * NeonCity.TILE_A
-	for t in _tints:
-		if clock < float(t["t0"]):
-			continue
-		var c := overlay.icon_at(t["site"])
-		if c.x == INF:
-			continue
-		var r := reach * _eased(&"influence_spread", beat_u(&"influence_spread", float(t["t0"]), float(t["dur"])))
-		# ART-0 E: a district's wash, held to its tier's alpha (T3, never full screen).
-		var mid := Color(threat_color, VfxTier.clamp_alpha(fx_tier("tint"), TINT_ALPHA * fade))
-		var edge := Color(threat_color, 0.0)
-		for q in TINT_RINGS:
-			var a0 := TAU * q / TINT_RINGS
-			var a1 := TAU * (q + 1) / TINT_RINGS
-			var p0 := c + Vector2(cos(a0), sin(a0) * 0.5) * r
-			var p1 := c + Vector2(cos(a1), sin(a1) * 0.5) * r
-			draw_polygon(PackedVector2Array([c, p0, p1]), PackedColorArray([mid, edge, edge]))
 
 
 func _dashed(a: Vector2, b: Vector2, col: Color, width: float, dash: float) -> void:

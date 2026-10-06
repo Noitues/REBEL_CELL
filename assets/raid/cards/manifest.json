@@ -128,11 +128,11 @@
   "honeypot_node": {
    "file": "honeypot_node.png",
    "concept_name": "HONEYPOT",
-   "glyph": "placeholder_vault",
+   "glyph": "placeholder_phishing",
    "color": [
-    255,
-    61,
-    168
+    176,
+    140,
+    255
    ],
    "seed": 62,
    "image_px": [

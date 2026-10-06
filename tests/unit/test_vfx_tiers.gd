@@ -358,7 +358,8 @@ func test_raid_effects_have_tiers_and_none_covers_the_screen() -> void:
 		assert_true(VfxTier.valid(tier), "raid %s has a tier" % kind)
 		assert_lt(tier, VfxTier.T4, "raid %s is local, never cinematic" % kind)
 		assert_true(VfxTier.fits(Motion.entry(id)), "raid %s runs within its tier" % kind)
-	assert_true(VfxTier.clamp_alpha(RaidFxLayer.fx_tier("tint"), RaidFxLayer.TINT_ALPHA) == RaidFxLayer.TINT_ALPHA, "the district wash is within T3")
+	# B3 (review D6): the raid draws no district wash at all (the orange influence fill went).
+	assert_false(RaidFxLayer.FX_MOTION.has("tint"), "no influence fill in the raid")
 	var src := FileAccess.get_file_as_string("res://scripts/ui/kit/raid_fx_layer.gd")
 	assert_false(src.contains("Fx.flash("), "no full-screen flash in the raid")
 	for full in ["draw_rect(get_rect()", "draw_rect(Rect2(Vector2.ZERO, size)"]:

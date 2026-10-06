@@ -133,6 +133,12 @@ func test_a_choice_that_differs_further_on_shows_what_only_it_reaches() -> void:
 	await _frames(1)
 	nr.start_run(1)
 	await _frames(2)
+	# B3 (bible 4.6, round 44): the route on the map shows no "then:" rows (its ROUTE window holds
+	# GRID VIEW and Save & quit only); the list (GRID VIEW's) still says what only a choice reaches.
+	assert_null(nr._panel.find_child("Ahead1", true, false), "no then: row on the map's route")
+	nr._grid_zoomed = true
+	nr._show_map()
+	await _frames(2)
 	var s := RunManager.netrun
 	var twins: Dictionary = NetrunScript.choice_twins(s)
 	var differs: Dictionary = NetrunScript.choice_differences(s)

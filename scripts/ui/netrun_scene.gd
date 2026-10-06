@@ -64,13 +64,10 @@ const ROUTE_FITS_MAX := 3
 ## Parity ROUTE-06: passes after ROUTE_FITS_MAX that may bring where the player is and the
 ## next choices back into the free area (pan and zoom out only; `fit_route_map`).
 const ROUTE_RESCUE_PASSES := 2
+## The route's zoom before its fit (the fit then frames it between CityConfig's
+## `route_ortho_near` and `route_ortho_far`, B3: review D14) and where it is anchored.
 const ROUTE_ZOOM := 1.45
 const ROUTE_ANCHOR := Vector2(0.46, 0.58)
-const ROUTE_MIN_ZOOM := 0.7
-## ANIM-R3 B8: the whole route is framed down to this zoom (icons keep their screen size, so
-## a far-out route stays readable); a route that needs less shows the part the player decides
-## on (route_focus_ids) at ROUTE_MIN_ZOOM or closer.
-const ROUTE_FIT_FLOOR := 0.4
 ## The slice tiles in the Mainframe at text scale 1.0 (px): they widen with the text as far as
 ## their window holds them (H24 S10: "BUY 100-150" shrank to fit a fixed tile at 1.6).
 const SLICE_TILE := Vector2(96, 130)
@@ -1156,10 +1153,9 @@ func _modal_open() -> bool:
 
 
 ## Names the screen on the HUD strip from the run phase (STYLE_GUIDE 4, "Neon city").
-## The route's title sticker: parity ROUTE-06, round 37 `city_default`'s THE GRID (the run's
-## map). The word's taller bar at 1.6 had exposed a fit that ended off where the player is;
-## the fit's rescue pass (`fit_route_map`) frames them again.
-const ROUTE_TITLE := "THE GRID" # TR
+## The route's title sticker: round 44 `route_page.png`'s NETRUN (B3; parity ROUTE-06 had round
+## 37's THE GRID). The fit's rescue pass (`fit_route_map`) frames the route under any bar.
+const ROUTE_TITLE := "NETRUN" # TR
 
 
 func _title_screen(s: NetrunSession, screen: String = "") -> void:
@@ -1251,7 +1247,9 @@ func _show_map() -> void:
 	top.add_child(map_view)
 	# The number keys pick nodes on the keyboard; the pad has none, so its hints are blank
 	# (H20: each button carries its own key hint, refreshed when the device changes).
-	var win := TerminalWindow.new(tr("ROUTE // pick the next node"), Palette.CELL_ACID)
+	# B3 (bible 4.6, round 44): on the run's own route the window is "> ROUTE" with GRID VIEW and
+	# Save & quit only (the choices are the map's stickers).
+	var win := TerminalWindow.new(tr("ROUTE") if route_on_map(s) else tr("ROUTE // pick the next node"), Palette.CELL_ACID)
 	win.name = "RouteWindow"
 	win.custom_minimum_size.x = 300
 	win.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -1274,7 +1272,7 @@ func _show_map() -> void:
 	zoom_btn.tooltip_text = UiTip.fold(tr("Zoom out to the whole City Grid.") if not _grid_zoomed else tr("Back to this run's route."))
 	IconMark.attach(zoom_btn, StatIcon.MAP)
 	win.body.add_child(zoom_btn)
-	var quit_btn := _button(tr("Save & quit to start screen"), save_and_quit)
+	var quit_btn := _button(tr("Save & quit"), save_and_quit)
 	quit_btn.name = "SaveQuit"
 	quit_btn.tooltip_text = UiTip.fold(tr("Save the run and leave it; Continue picks it up here."))
 	IconMark.attach(quit_btn, StatIcon.SAVE)
@@ -1322,6 +1320,15 @@ func _show_map() -> void:
 		_fit_route_next_frame()
 		spacer.resized.connect(_refit_route)
 	_mount_route_camera(panel)
+	route_target = null
+	if route_on_map(s) and city_overlay is RouteOverlay and _route_area != null and is_instance_valid(_route_area):
+		# B3 b (art director): the TARGET off the route's frame gets the red pencil edge arrow with
+		# its word (the City Grid's device, TargetEdgeMarker); a click pans to it.
+		route_target = TargetEdgeMarker.make(city_overlay)
+		route_target.avoid.append(route_legend)
+		_route_area.add_child(route_target)
+		if route_controls != null:
+			route_target.pan_requested.connect(route_controls.centre_on)
 	# ANIM-R4 H10: a fight's, a boss's and a raid's music are made ahead (a fight's first frame
 	# built its loop).
 	AudioDirector.prewarm_music(["combat", "boss", "raid"], RunManager.campaign.corporation_id)
@@ -1373,7 +1380,7 @@ func _fill_route_choices(row: VBoxContainer) -> void:
 		# ANIM-R3 B3: what this choice leads to that the others do not (reward and risk
 		# icons: Elite, Shop, Event, Rack, Heat further on); twins lead to the same.
 		var marks := differs.get(id, []) as Array
-		if not twins.has(id) and (not marks.is_empty() or heat != 0):
+		if placer == null and not twins.has(id) and (not marks.is_empty() or heat != 0):  # B3: none on the map (bible 4.6)
 			ahead_rows[i] = _ahead_row(i, marks, heat)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.set_meta(&"route_base", text)
@@ -1390,7 +1397,9 @@ func _fill_route_choices(row: VBoxContainer) -> void:
 		row.add_child(b)
 		if placer != null:
 			placer.add_stop(b, id, _focus_route_choice)
-		if ahead_rows.has(i):
+		if ahead_rows.has(i) and placer == null:
+			# B3: on the map the ROUTE window holds GRID VIEW and Save & quit only (bible 4.6);
+			# what only a choice reaches stays in its stop's tooltip and its node panel.
 			var ahead_row: Control = ahead_rows[i]
 			ahead_row.set_meta(&"route_choice", id)
 			# Parity ROUTE-04: on the map the window shows only the lit choice's "then:" line.
@@ -1476,29 +1485,30 @@ func fit_route_map() -> void:
 		# gets right), checked once more.
 		if _route_fits >= ROUTE_FITS_MAX + ROUTE_RESCUE_PASSES or route_frames(free):
 			return
-		var rescue := LegendSpot.fit_into(city_overlay, free, 1.0, minf(1.0, ROUTE_MIN_ZOOM / city.scale.x), route_focus_ids(), here)
+		var rescue := LegendSpot.fit_into(city_overlay, free, 1.0, minf(1.0, route_zoom_far() / city.scale.x), route_focus_ids(), here)
 		if not rescue.is_empty():
 			_apply_route_fit(rescue)
 		return
-	# ANIM-R3 B8: the whole route when it fits at ROUTE_FIT_FLOOR or closer; else the part the
-	# player decides on (where they are and the next choices) inside the area with its margins
-	# (the whole route squeezed to the minimum zoom jammed its nodes against the screen's edge
-	# and put the current node off it).
-	var fit := LegendSpot.fit_into(city_overlay, free, ROUTE_ZOOM / city.scale.x, 0.0, [], here)
-	if not fit.is_empty() and float(fit["zoom"]) * city.scale.x < ROUTE_FIT_FLOOR and not _route_under_dossier and dossier != null and is_instance_valid(dossier):
-		# ART-7 3B: the whole route does not fit right of the dossier: it may run under the
-		# paper (pinned over the map) rather than under the ROUTE column (from now on this page).
-		var full := _route_area.get_global_rect().intersection(get_global_rect()).grow(-ROUTE_MARGIN * Settings.text_scale)
-		var whole := LegendSpot.fit_into(city_overlay, full, ROUTE_ZOOM / city.scale.x, 0.0, [], here)
-		if whole.is_empty() or float(whole["zoom"]) * city.scale.x >= ROUTE_FIT_FLOOR:
-			_route_under_dossier = true
-			dossier.force_compact = true
-			free = full
-			fit = whole
-	if not fit.is_empty() and float(fit["zoom"]) * city.scale.x < ROUTE_FIT_FLOOR:
-		fit = LegendSpot.fit_into(city_overlay, free, ROUTE_ZOOM / city.scale.x, ROUTE_MIN_ZOOM / city.scale.x, route_focus_ids(), here)
-	elif fit.is_empty() and not route_frames(free):
-		fit = LegendSpot.fit_into(city_overlay, free, ROUTE_ZOOM / city.scale.x, ROUTE_MIN_ZOOM / city.scale.x, route_focus_ids(), here)
+	# B3 b (art director, round 44 `route_page.png`): the frame is the walked path, the current
+	# options and one layer ahead, at ortho `route_ortho_near`..`route_ortho_far`; the TARGET need
+	# not be in it (off frame it gets the red pencil edge arrow, TargetEdgeMarker). A long walked
+	# path that does not fit at the far ortho gives way: then the current node, the options and the
+	# layer ahead; then the current node and the options.
+	var near := route_zoom_near()
+	var far := route_zoom_far()
+	var fit := {}
+	var sets: Array = [route_frame_ids(true), route_frame_ids(false), route_focus_ids()]
+	for i in sets.size():
+		var ids: Array = sets[i]
+		var extra: Array[Rect2] = here.duplicate()
+		extra.append_array(hidden_rects(ids))
+		var f := LegendSpot.fit_into(city_overlay, free, near / city.scale.x, 0.0, ids, extra)
+		var zoom_after := city.scale.x * (float(f["zoom"]) if not f.is_empty() else 1.0)
+		if zoom_after >= far * ROUTE_FAR_TOLERANCE or i == sets.size() - 1:
+			if zoom_after < far * ROUTE_FAR_TOLERANCE:
+				f = LegendSpot.fit_into(city_overlay, free, near / city.scale.x, far / city.scale.x, ids, extra)
+			fit = f
+			break
 	if fit.is_empty():
 		return
 	_apply_route_fit(fit)
@@ -1523,6 +1533,70 @@ func _apply_route_fit(fit: Dictionary) -> void:
 	city.focus_anchor = anchor
 	city.refresh()
 	_fit_route_after_redraw()
+
+
+## B3 (review D14, round 44 `route_page.png`): the city zoom at which the route page shows
+## CityConfig's `route_ortho_near` (the closest the fit goes) and `route_ortho_far` (the
+## furthest it frames the whole drawn route at).
+func route_zoom_near() -> float:
+	return RaidZoomFit.zoom_of(CityView3D.CONFIG.route_ortho_near, size.x)
+
+
+func route_zoom_far() -> float:
+	return RaidZoomFit.zoom_of(CityView3D.CONFIG.route_ortho_far, size.x)
+
+
+## B3: the route page's ortho now (BU across the page; tests and captures).
+func route_ortho() -> float:
+	return RaidZoomFit.ortho_of(background.city.scale.x, size.x)
+
+
+## B3 b (round 44 `route_page.png`): the route nodes the page frames: the walked path (with
+## `walked`), the current node, the options and the layer one step past them.
+func route_frame_ids(walked: bool) -> Array:
+	var s := RunManager.netrun
+	var out: Array = []
+	if s == null or city_overlay == null or not is_instance_valid(city_overlay):
+		return out
+	if walked:
+		for id in s.run.visited:
+			if not out.has(id):
+				out.append(id)
+	for id in route_focus_ids():
+		if not out.has(id):
+			out.append(id)
+	var options := s.available_nodes()
+	for e in city_overlay.edges:
+		if options.has(e["a"]) and not out.has(e["b"]):
+			out.append(e["b"])
+	return out
+
+
+## B3 b: screen rects (global px) of the nodes of `ids` the map hides (the layer ahead): the
+## frame keeps room for them though they are not drawn.
+func hidden_rects(ids: Array) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if city_overlay == null or not is_instance_valid(city_overlay):
+		return out
+	var xf := city_overlay.get_global_transform()
+	var k := xf.get_scale().x
+	for n in city_overlay.nodes:
+		if not ids.has(n["id"]) or city_overlay.marker_shown(n):
+			continue
+		var at := city_overlay.icon_pos(n)
+		if at.x == INF:
+			continue
+		var r := city_overlay.icon_radius(n) * k
+		out.append(Rect2(xf * at - Vector2(r, r), Vector2(r, r) * 2.0))
+	return out
+
+
+## B3 b: a frame set's zoom counts as within the far ortho down to this share of it (float noise).
+const ROUTE_FAR_TOLERANCE := 0.995
+
+
+## B3 b: the route page's off-frame TARGET arrow (null off the run's own route).
+var route_target: TargetEdgeMarker = null
 
 
 ## ANIM-R3 B8: the route nodes the player decides on: where they are and the next choices.
@@ -2013,7 +2087,7 @@ func _wire_route_frame() -> void:
 	overlay.show_all = Settings.always_show_all_nodes
 	overlay.heat_sweeps = route_heat_sweeps()
 	route_legend.set_showing_all(overlay.show_all)
-	route_legend.show_all_hovered.connect(_on_legend_hover)
+	route_legend.show_links_hovered.connect(_on_legend_hover)
 	overlay.node_hovered.connect(func(id: StringName) -> void:
 		if id != &"":
 			show_node_panel(id))
@@ -2021,13 +2095,14 @@ func _wire_route_frame() -> void:
 		Settings.changed.connect(_on_route_settings)
 
 
+## B3 (designer Q4): the strip's hover shows every run link as a hairline (nodes stay hidden).
 func _on_legend_hover(on: bool) -> void:
 	var overlay := city_overlay as RouteOverlay
 	if overlay == null or not is_instance_valid(overlay):
 		return
-	overlay.show_all = on or Settings.always_show_all_nodes
+	overlay.show_links = on
 	if route_legend != null and is_instance_valid(route_legend):
-		route_legend.set_showing_all(overlay.show_all)
+		route_legend.set_showing_links(on)
 
 
 func _on_route_settings() -> void:
@@ -2219,6 +2294,10 @@ func _mount_route(nodes: Array[Dictionary], edges: Array[Dictionary], look: int,
 	# the campaign map's overlay, and so does a raid page (`raid_view`, parity RAID-13: the HQ's
 	# raid view, its sockets and pencil routes).
 	city_overlay = CityMapOverlay.new(city) if _grid_zoomed or raid_view else RouteOverlay.new(city)
+	if raid_view:
+		# B3 (review D5, the clutter rule): no node tags on a raid map (status on the node, the
+		# name in its tooltip).
+		city_overlay.tag_rule = CityMapOverlay.TagRule.LIT
 	# H24 S4: the node tips come translated (the screens build them), shown as given.
 	city_overlay.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	city.add_child(city_overlay)
@@ -2370,7 +2449,7 @@ func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null)
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(spacer)
-	var legend := MapLegend.pin_to(spacer, c.corporation_id)
+	var legend := MapLegend.pin_key_line(spacer, c.corporation_id)  # B3: the key strip, folded to MAP KEY
 	_fight_parts = [spacer, legend]
 	var side := VBoxContainer.new()
 	side.add_theme_constant_override("separation", 12)
@@ -4330,6 +4409,8 @@ func open_overwrite(stock_index: int) -> void:
 func _show_raid() -> void:
 	var s := RunManager.netrun
 	var c := s.campaign
+	# B3 (review section c): from the run page into the raid, one binary-bits INCOMING transition.
+	var from_route := _shown_screen == "route"
 	var pending := s.raid_pending()
 	var raid := CampaignRules.raid_data(pending, s.lookup)
 	var projection := s.raid_projection()
@@ -4449,6 +4530,8 @@ func _show_raid() -> void:
 	city_overlay.avoid_controls([win, run_btn])
 	_raid_map_area = area
 	_frame_raid_map.call_deferred()
+	if from_route:
+		RaidIncoming.play(self)
 	# ANIM-R5 P2: behind the setup (after its own view), the playout's fights; on the 3D city
 	# (parity RAID-13) there is nothing to bake.
 	if not background.city3d:
@@ -5399,7 +5482,14 @@ func _refresh_status() -> void:
 	var stats := [[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency, spent at HQ.")]]
 	# H24 S16: whose numbers these are: the campaign's, then this run's.
 	var captions := [[0, tr("CAMPAIGN"), tr("The campaign's numbers: they stay between runs.")]]
-	if s != null and not s.run.is_over():
+	if route_strip_only(s):
+		# B3 (round 44 `topbar_by_page.png`): the route page's strip is Heat (the gauge), HP and
+		# Cycles; the rest is behind VIEW LOADOUT and the Heat terminal.
+		var hop := s.run.operative
+		stats = [[TextDb.mark("HP"), str(_shown_operative_hp(hop.hp)), "/%d" % hop.max_hp, tr("%s's HP. At 0 the operative flatlines.") % hop.name],
+			[TextDb.mark("CYCLES"), str(s.run.cycles), "", tr("Cycles: this run's money, spent in the Mainframe.")]]
+		captions = []
+	elif s != null and not s.run.is_over():
 		var op := s.run.operative
 		captions.append([stats.size(), tr("THIS RUN"), tr("This run's numbers: the operative's HP, the Cycles to spend, the deck, rank and what the run has banked.")])
 		stats.append_array([[TextDb.mark("HP"), str(_shown_operative_hp(op.hp)), "/%d" % op.max_hp, tr("%s's HP. At 0 the operative flatlines.") % op.name],
@@ -5411,6 +5501,12 @@ func _refresh_status() -> void:
 	hud.loadout_button.visible = s != null and not s.run.is_over()
 	if s != null and not s.run.is_over():
 		hud.set_daemons(s.run.operative.daemon_ids)
+
+
+## B3: true when the top strip shows only the route page's numbers (HP, Cycles; Heat is the
+## gauge): the run's own route on the map (not GRID VIEW, not a boss run's compound).
+func route_strip_only(s: NetrunSession) -> bool:
+	return s != null and not s.run.is_over() and s.run.phase == RunState.Phase.MAP and route_on_map(s)
 
 
 ## ANIM-R6 A5 (combat, a minimal change here): the operative's HP for the top bar: during a

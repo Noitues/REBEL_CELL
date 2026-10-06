@@ -25,6 +25,12 @@ uniform float packet_gap = 30.0;
 uniform vec2 dash_bu = vec2(4.0, 3.0);
 uniform float gain = 1.6;
 uniform float halo = 0.35;
+// B3 (review D5): on the map views (raid, the HQ, the netrun: CityView3D map mode) a node is drawn
+// by its socket or marker over the decal: the decal's glow disc (the lime "spray" pools under the
+// owned nodes) gives way to a thin halo ring (`node_halo_px` wide at `node_halo_alpha`).
+uniform bool node_discs = true;
+uniform float node_halo_px = 2.0;
+uniform float node_halo_alpha = 0.35;
 uniform float strength = 1.0;
 uniform float time_scale = 1.0;
 uniform vec3 keyline = vec3(0.02, 0.02, 0.05);
@@ -100,6 +106,10 @@ void fragment() {
 		float d = length(p - n0.xy) / px;
 		float r = node_px * n0.z * (1.0 + mgmt * 0.7);
 		if (d > r + halo_px * 2.0) {
+			continue;
+		}
+		if (!node_discs) {
+			over(col, al, n1.rgb, line_px(abs(d - r), node_halo_px * 0.5) * node_halo_alpha);
 			continue;
 		}
 		over(col, al, n1.rgb, exp(-pow(d / (r + halo_px), 2.0)) * halo);

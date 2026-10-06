@@ -163,8 +163,9 @@ func test_the_route_marks_you_are_here_and_dims_what_you_cannot_reach() -> void:
 	overlay = scene.city_overlay
 	assert_eq(overlay.here_id(), first[0], "the current node carries the you-are-here mark")
 	assert_false(overlay.is_dimmed(first[0]))
-	assert_true(Array(overlay.label_lines(first[0])).has(CityMapOverlay.HERE_LABEL), "and says so")
-	assert_true(overlay.label_rects().has(String(first[0])), "the you-are-here label is drawn")
+	# B3 (round 44 `route_page.png`): no YOU ARE HERE words on the route: the operative's token
+	# marks the position, the tooltip says so.
+	assert_false(overlay.label_rects().has(String(first[0])), "no you-are-here label")
 	assert_string_contains(overlay.tip_of(first[0]), "You are here")
 	for id in s.available_nodes():
 		assert_false(overlay.is_dimmed(id), "open nodes stay lit")
