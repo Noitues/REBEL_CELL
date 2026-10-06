@@ -205,6 +205,8 @@ const DEMOS := {
 	&"drone_orbit": ["screen", "city_motion"], &"police_strobe": ["screen", "city_motion"],
 	&"alarm_beacon": ["screen", "city_motion"], &"heat_node_light": ["screen", "city_motion"],
 	&"city_light_fade": ["screen", "city_motion"],
+	# ART-5 5e: the Cell's blackout reveal on 5b's district model (CityView3D.play_cell_reveal).
+	&"cell_fist_reveal": ["screen", "cell_fist_reveal"],
 }
 ## ART-11 4D: the lock demo's nodes on the stage (px from its top-left; the first is home).
 const RANSOM_NODES: Array[Vector2] = [Vector2(450, 300), Vector2(250, 180), Vector2(640, 170), Vector2(180, 430), Vector2(700, 420)]
@@ -217,6 +219,8 @@ const CITY_MOTION_ORTHO := 240.0
 const CITY_MOTION_YAW := 135.0
 const CITY_MOTION_PITCH := 40.0
 const CITY_MOTION_DISTANCE := 900.0
+## ART-5 5e: the reveal demo frames the Cell's district at this share of its widest side.
+const CELL_REVEAL_FRAME := 1.25
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
 ## subtitle demo says, and how long the frames between a menu's focus moves are (s).
@@ -924,6 +928,9 @@ func _play_screen(what: String) -> void:
 		"city_motion":
 			_city_motion_demo()
 			length = Motion.entry(&"sky_lane_cars").duration
+		"cell_fist_reveal":
+			_cell_fist_reveal_demo()
+			length = Motion.entry(CityView3D.CELL_REVEAL_MOTION).duration
 		"ransom":
 			# ART-11 4D: Halcyon's lock over the stage: tearing, the wipe, padlocks on five nodes,
 			# the notice and its verb, the countdown, the stickers curling and dropping, the cut.
@@ -1018,6 +1025,54 @@ func _city_motion_demo() -> void:
 	vp.add_child(cam)
 	cam.look_at_from_position(site.home + back * CITY_MOTION_DISTANCE, site.home, Vector3.UP)
 	cam.make_current()
+
+
+## ART-5 5e: the Cell's blackout reveal: 5b's district glTF with its landmark materials
+## (night) under the city's iso camera, the reveal played 0 -> 1 with `cell_fist_reveal`'s
+## timing as CityView3D plays it (the lights go dark until the fist shows).
+func _cell_fist_reveal_demo() -> void:
+	var cfg: CityConfig = CityView3D.CONFIG
+	var box := SubViewportContainer.new()
+	box.stretch = true
+	box.position = Vector2(0, 80)
+	box.size = Vector2(1280 - PANEL_W, 640)
+	var vp := SubViewport.new()
+	vp.own_world_3d = true
+	box.add_child(vp)
+	_screen_host.add_child(box)
+	var env := Environment.new()
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = cfg.sky
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_DISABLED
+	var we := WorldEnvironment.new()
+	we.environment = env
+	vp.add_child(we)
+	var sun := DirectionalLight3D.new()
+	vp.add_child(sun)
+	sun.look_at_from_position(Vector3.ZERO, -cfg.to_light, Vector3.UP)
+	var path := "%s/%s/%s" % [CityView3D.LANDMARKS_DIR, CityView3D.CELL, CityView3D.CELL_DISTRICT_FILE]
+	var district := (load(path) as PackedScene).instantiate() as Node3D
+	vp.add_child(district)
+	var mats := LandmarkMaterials.apply(district, load(LandmarkMaterials.LOOK_PATH) as LandmarkLook, CityView3D.CELL, false)
+	var box3 := CityLandmarks.box_of(path)
+	var iso := CityIsoCamera.make(cfg, box3.get_center() * Vector3(1, 0, 1), maxf(box3.size.x, box3.size.z) * CELL_REVEAL_FRAME,
+		box.size)
+	var cam := Camera3D.new()
+	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
+	cam.keep_aspect = Camera3D.KEEP_WIDTH
+	cam.far = cfg.camera_far
+	vp.add_child(cam)
+	cam.global_transform = iso.transform()
+	cam.size = iso.ortho
+	cam.make_current()
+	var set_q := func(q: float) -> void: LandmarkMaterials.set_reveal(mats, q)
+	set_q.call(0.0)
+	var e := Motion.entry(CityView3D.CELL_REVEAL_MOTION)
+	if Motion.live(CityView3D.CELL_REVEAL_MOTION):
+		var tw := box.create_tween()
+		tw.tween_method(set_q, 0.0, 1.0, Motion.seconds(CityView3D.CELL_REVEAL_MOTION)).set_ease(e.ease).set_trans(e.trans)
+	else:
+		set_q.call(1.0)
 
 
 ## ANIM-R5: the jack under reduce effects (its fade, `jack_fade_reduced`): reduce effects
