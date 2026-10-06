@@ -379,7 +379,7 @@ func test_a_node_down_then_taken_is_one_taken_node_everywhere() -> void:
 	var site_label: String = hq.site_name(site)
 	# ART-6 3A: the report is the corp's after-action report: a row per node (its value says
 	# TAKEN) and the reclaimed Sites' line, each naming the node once.
-	var rows := hq._panel.find_children("ReportRow_%s" % site, "HBoxContainer", true, false)
+	var rows: Array[Node] = hq._panel.find_children("ReportRow_%s" % site, "HBoxContainer", true, false)
 	assert_eq(rows.size(), 1, "the report lists the node once")
 	if rows.size() == 1:
 		assert_string_contains((rows[0].get_child(1) as Label).text, tr("TAKEN"), "the report says TAKEN")
