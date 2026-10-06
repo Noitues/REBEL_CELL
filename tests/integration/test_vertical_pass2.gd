@@ -49,20 +49,18 @@ func test_rank_gating_uses_the_operatives_own_class() -> void:
 
 
 func test_clicking_a_site_on_the_map_selects_it_and_lists_its_actions_first() -> void:
+	# HQ-B (b): the Grid is the HQ's city map; a click on a Site's marker selects it, its card
+	# shows at the right, and JACK IN is the verb slot's sticker.
 	var hq: Control = add_child_autofree(load(HQ).instantiate())
 	hq.new_campaign(4)
 	hq.show_grid()
-	watch_signals(hq.grid_view)
-	hq.grid_view.site_clicked.emit(&"t1_b")
+	hq.city_overlay.node_clicked.emit(&"t1_b")
 	assert_eq(hq.selected_site, &"t1_b")
-	assert_eq(hq.grid_view.selected_id, &"t1_b", "highlighted on the new map")
+	assert_eq(hq.city_overlay.selected_id, &"t1_b", "highlighted on the new map")
 	var picked: Node = hq._panel.find_child("SelectedSite", true, false)
-	assert_not_null(picked, "the selected row is shown")
-	var launch := false
-	for n in _descendants(picked):
-		if n is Button and String(n.text) == "JACK IN":  # H21 #21: one name with the HQ stamp
-			launch = true
-	assert_true(launch, "its launch action is right there")
+	assert_not_null(picked, "the selected Site's card is shown")
+	var launch := hq._panel.find_child("Launch", true, false) as VerbSticker
+	assert_true(launch != null and launch.text == "JACK IN", "its launch action is right there (H21 #21: one name)")
 
 
 func test_netrun_panels_are_zine_styled() -> void:

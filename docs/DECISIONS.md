@@ -86,6 +86,69 @@ binding (also in PROPOSAL.md's rulings section):
   (`test_hq_is_a_cyberdeck...`: no poster, the gauge in the first slot), `test_pad_reachability` (the HQ menu: Scrub
   Heat is reached by View into the Heat terminal, focused).
 
+**HQ-B (b): the HQ on the 3D city at the RAID band, the Grid page folded in.**
+- `show_hq` builds the page `HqPage` on `WireframeBackground` (the unified 3D city, `use_city3d` at the RAID band;
+  the cyberdeck room is gone from the HQ). The map is the Grid's graph (every Site as its v4 marker, links, threat
+  arrows) with the Cell's nodes as their raid sockets (`hq_graph`: `raid_socket`, 6w's uplink pads and stationed
+  beacons); a pending raid's routes are 3A's red pencil, dashed (`RaidRouteLayer.set_what_if`: a what-if until the
+  setup). The pieces sit by `HqLayout` (`scripts/ui/hq_layout.gd`, pure: margins, the 113 x 150 card, the tabs
+  column, the 300 px card column, the 280 x 120 verb slot; words grow, drawn objects stop at x1.3): the compact work
+  order (TARGET / UNITS / ENTRY SITES / TRIGGER, in a scroll that keeps the map its part) with RAID SETUP [R] at
+  the top left, the hand's tabs and cards at the foot, the selected Site's card at the right over the verb slot, the
+  minimap and the folded MAP KEY at the top right, the ON AIR line along the foot.
+- **Camera (Q4, Q5).** First entry fits `hq_fit_lots` (the network, every runnable and patrol Site, a pending raid's
+  routes) into the map's free part with `RaidZoomFit` (clamped to the raid range), then up to `HQ_FIT_PASSES` (4)
+  corrections on the icons as drawn (sockets float over their roofs), never out past `raid_fit_max`; the Central
+  Server shows by 5e's `TargetEdgeMarker` when outside. A rebuild (a pick, a buy, a tab) keeps the camera where
+  the player left it. The player's camera is 5a's `CityGridControls` (wheel, drag, WASD, the right stick, the
+  minimap); past `raid_fit_max` the city takes the GRID band, back inside it the RAID band (`hq_band`).
+- **Selection and the pad.** A map click selects a Site (`select_site`); `HqMapCursor` (`scripts/ui/kit/
+  hq_map_cursor.gd`) is the pad's place on the map: left / right step the Sites (`step_site`, the Grid's order), down
+  goes to the hand (the lifted card), up to RAID SETUP, right to the card's actions; the cards, tabs, card and verb
+  are linked (`_link_hq_focus`). `show_grid` opens the HQ (the Grid page is gone; GRID-01..03/06/12/13 live on the
+  map layer, unchanged).
+- **The hand (built here so the crew, the market and the station / recall paths stay reachable; step c adds the
+  DEFENCE setup in place).** Tabs `Tab_CREW / Tab_MARKET / Tab_DEFENCE` (MenuChips, the open one filled; LB / RB or
+  Q / E switch; DEFENCE is pink while a raid waits and opens the raid setup). CREW: `CrewHandCard`
+  (`scripts/ui/kit/crew_hand_card.gd`): class band, the corp's photo print (PortraitBust), Anton name, rank, a status
+  chip (READY / ON <SITE> / FLATLINED); roster order, the flatlined last; greyed with the rules' own refusal for the
+  selected Site (Q12, `CampaignRules.launch_error`); a press picks the runner (lifted, lime keyline; VIEW LOADOUT and
+  DAEMONS follow); a drag stations on a node, recalls on CORE or picks for a Site. MARKET: HIRE cards (the class's
+  print with the HIRE stamp, the price on the chip), the boosts as BLUE vinyl stickers over `PriceTag`s
+  (`scripts/ui/kit/price_tag.gd`, gold: bible 1.2, a changing value is never on a sticker), Profile unlocks as
+  MenuChips, each group under its caption; `QueuedBoosts` stays the boosts' drop target, the CREW tab the recruits'.
+- **Station / recall / patch.** The node card carries `StationHere` (the runner onto a free post) and `RecallHere`;
+  a posted runner's card has `Recall_<id>` beside it; CORE's card carries `PatchHome` (it was the deck menu's line).
+- **JACK IN** is the verb slot's pink VerbSticker (`Launch`, the kit's VinylSticker) with its system word under it
+  (`> jack --from <owned end> --to <Site>`, plus `raid incoming mid-run` while a raid waits, Q3); the runner is the
+  lifted card (the card names it, or the reason it can't run). A saved run's resume is the same sticker.
+- **Q7:** the pirate radio is one `OnAirTicker` line along the page's foot (the share code in its tooltip). **Q8:**
+  `Codex.entries` heads with a `Story` section (the revealed beats) while a campaign is loaded (pause menu Codex).
+  **Q9:** no City Grid / Codex / Settings / Save lines on the page (Codex and Options are the pause menu's; the game
+  autosaves). **Q13:** the dossiers' inner-ring OptionButtons are gone; the swaps are the Loadout's SPINNER tab
+  chips (drag, or press then pick the segment), as ANIM-4 built them.
+- **Call:** `MapLegend.always_fold` (one new property): the HQ's key is the one-line MAP KEY strip at every text
+  size (round 37), opening over the map (hover, press, Y).
+- **Designer feedback 2026-10-05 (via the orchestrator): "err on showing more city".** The fit frames the lots into
+  `HQ_FIT_SHARE` (0.75) of the free part, so the network sits with city round it; still never past `raid_fit_max`
+  (the wheel goes further, Q4). The "yellowish hue" is being traced by the backdrop agent; nothing here tints the
+  city (the HQ uses the raid band's look unchanged).
+- **Calls at big text:** from text 1.3 the tabs show their word only (the count goes to the tooltip; the top bar
+  shows the same numbers) so the tabs keep the hand's height; the work order's paper scrolls in what RAID SETUP leaves
+  it; the card column scrolls in its room under the minimap and the key; the market's Profile unlocks are two rows
+  of chips; the hand scrolls sideways (focus follows). JACK IN's system word is one clipped line (the whole of it in
+  its tooltip); `raid incoming mid-run` is its own pink line under it (Q3).
+- **Windowed check (b):** `tools/design_lab/hq_b_lab.tscn` (one launch walks idle, site, claim, repair, upgrade, patch,
+  defence, market, zoomed_out, heat at 1.0 and 2.0); read against direction_B*.
+- Tests: new `tests/unit/test_hq_b_city.gd` (fast). Changed (behaviour kept, the page moved): `test_city3d_grid` (a
+  page off the city keeps the 2D city: the start page, as the HQ is on the 3D city now), `test_layout_rules` (the HQ
+  is the wireframe city; crew cards; JACK IN sticker), `test_pad_reachability` (the HQ's tabs / cursor / RAID SETUP
+  instead of the deck menu), `test_art10_menus` (`test_the_hq_is_v2_terminals...`: the Site card terminal, ON AIR,
+  hand cards, the sticker; the corp-paper dossier went with the crew window: look pinned, dropped), `test_art5_grid
+  _markers` (JACK IN in the verb slot), `test_art3_6w_raid_city` (the Grid is the HQ at the RAID band),
+  `test_campaign_flow` (the Grid page is the HQ), `test_horizontal_pass22_city` (the card column is blocked for
+  labels), `test_vertical_pass2` (a map click selects; the sticker launches).
+
 ### 2026-10-05 — Designer ruling — abandon run, abandon campaign, quit
 The designer approved a new rule (2026-10-05): three exit paths, each a screen. Added to the GDD as **4.5 Leaving a
 Run or the Campaign** (a marked addition; no other GDD text changed). It answers the open questions "ART-10 4C: an

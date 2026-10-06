@@ -184,9 +184,11 @@ func test_the_grid_page_is_the_3d_city_and_feeds_the_decal() -> void:
 		assert_eq(Vector2i(lot.floor()), ov.lot_of(n["id"]), "a decal node sits on its Site's building lot")
 	var ortho := CityMapCamera.ortho_of(hq.size.x, wire.city.scale.x)
 	assert_between(ortho, cfg.zoom_ortho_min, cfg.zoom_ortho_max, "the fitted frame is inside the zoom range")
-	hq.show_hq()
+	# HQ-B (b): the HQ is the 3D city too (the Grid page folded into it); a page off the city
+	# (the start page) keeps the 2D one.
+	hq.show_start()
 	await _frames(2)
-	assert_false(wire.city.city3d, "other pages keep the 2D city until they move")
+	assert_false(wire.city.city3d, "a page off the city keeps the 2D city")
 	hq.get_parent().queue_free()
 	await _frames(1)
 

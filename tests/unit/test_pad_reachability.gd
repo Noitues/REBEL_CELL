@@ -237,9 +237,11 @@ func test_hq_menu_is_pad_reachable_with_no_crew_and_a_raid_pending() -> void:
 			await _frames()
 			var label := "hq %s raid=%s" % [scale, raid]
 			_assert_all_reachable(hq._panel, label)
-			var names := ["CityGrid", "SettingsButton", "SaveButton"]
+			# HQ-B (b): the deck menu is gone (Codex / Options in the pause menu, Q9: no Save); the
+			# page's own verbs: the hand's tabs, the map key, RAID SETUP while a raid waits.
+			var names := ["Tab_CREW", "Tab_MARKET", "Tab_DEFENCE", "MapCursor"]
 			if raid:
-				names.append("RaidPending")
+				names.append("RaidSetup")
 			var reach := _reachable(hq._panel)
 			for n in names:
 				var b: Node = hq._panel.find_child(n, true, false)
@@ -253,10 +255,10 @@ func test_hq_menu_is_pad_reachable_with_no_crew_and_a_raid_pending() -> void:
 			await _frames()
 			assert_true(hq.heat_terminal != null and hq.heat_terminal.scrub != null and hq.heat_terminal.scrub.has_focus(), "%s: View drops the Heat terminal, SCRUB HEAT focused" % label)
 			hq.close_heat_terminal()
-			# The menu walks down item by item.
-			var grid: Control = hq._panel.find_child("CityGrid", true, false)
-			var below := grid.find_valid_focus_neighbor(SIDE_BOTTOM)
-			assert_true(below != null and below.get_parent() == grid.get_parent(), "%s: down from City Grid is the next menu item (%s)" % [label, below.name if below != null else "none"])
+			# The tabs walk down item by item.
+			var tab: Control = hq._panel.find_child("Tab_CREW", true, false)
+			var below := tab.find_valid_focus_neighbor(SIDE_BOTTOM)
+			assert_true(below != null and below.name == "Tab_MARKET", "%s: down from CREW is MARKET (%s)" % [label, below.name if below != null else "none"])
 			holder.queue_free()
 			await _frames(1)
 			_end()

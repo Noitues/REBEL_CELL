@@ -64,7 +64,7 @@ func test_new_campaign_shows_hq_and_the_grid_lists_ten_t1_sites() -> void:
 	_hq.new_campaign(3)
 	assert_eq(_hq.panel_name, "hq")
 	_hq.show_grid()
-	assert_eq(_hq.panel_name, "grid")
+	assert_eq(_hq.panel_name, "hq", "HQ-B: the Grid page is the HQ")
 	assert_eq(RunManager.launchable_sites().size(), 10)
 	assert_eq(RunManager.profile.campaigns_started, 1)
 

@@ -345,7 +345,7 @@ func arrival_ready() -> bool:
 		if not city.camera_settled():
 			return false
 		if city.rebuilt.is_connected(fit_grid_map) or get_tree().process_frame.is_connected(fit_grid_map) \
-				or get_tree().process_frame.is_connected(place_raid_legend):
+				or get_tree().process_frame.is_connected(place_raid_legend) or get_tree().process_frame.is_connected(fit_hq_map):
 			return false
 	return true
 
@@ -771,16 +771,9 @@ func drop_error(payload: Dictionary, target: Dictionary) -> String:
 ## ANIM-R1 (designer ruling): picks operative `operative_id` in the Site card's list (a
 ## crew chip dropped on JACK IN) and puts focus on JACK IN; nothing starts.
 func pick_operative(operative_id: StringName) -> void:
-	var pick := _panel.find_child("OperativePick", true, false) as OptionButton if _panel != null else null
-	if pick == null:
-		return
-	var living := RunManager.campaign.living_operatives()
-	for i in living.size():
-		if living[i].id == operative_id and i < pick.item_count:
-			pick.select(i)
-	var go := _panel.find_child("Launch", true, false) as Control
-	if go != null and go.is_visible_in_tree():
-		go.grab_focus.call_deferred()
+	# HQ-B: the runner is the hand's lifted card; the page rebuilds with it, focus on JACK IN.
+	_hq_focus = "Launch"
+	pick_runner(operative_id)
 
 
 ## Why operative `operative_id` can't run Site `site_id` ("" when they can), whatever
@@ -884,7 +877,10 @@ func _on_dropped(payload: Dictionary, target: Dictionary) -> void:
 			_focus_in.call_deferred("Crew_%s" % payload["op"])
 		["crew", "jack"]:
 			# ANIM-R1 (designer ruling 2026-09-27: "prefer select, then jack in"): the drop
-			# picks the operative in the list; only pressing JACK IN starts the run.
+			# picks the operative in the list; only pressing JACK IN starts the run. HQ-B: dropped
+			# on a Site, it selects that Site too.
+			if value is StringName and value != &"":
+				selected_site = value
 			pick_operative(payload["op"])
 		["recruit", "roster"]:
 			_market_apply(payload, flight, func() -> void: recruit(payload["cls"]))
@@ -939,7 +935,9 @@ func _market_node(payload: Dictionary) -> Control:
 		return null
 	if String(payload.get("kind", "")) == "recruit":
 		var c := RunManager.campaign
-		return _panel.find_child("Crew_%s" % c.roster[c.roster.size() - 1].id, true, false) as Control if c != null and not c.roster.is_empty() else null
+		var card := _panel.find_child("Crew_%s" % c.roster[c.roster.size() - 1].id, true, false) as Control if c != null and not c.roster.is_empty() else null
+		# HQ-B: from the MARKET hand the new operative lands on the CREW tab.
+		return card if card != null else _panel.find_child("Tab_CREW", true, false) as Control
 	return _panel.find_child("QueuedBoosts", true, false) as Control
 
 
@@ -985,10 +983,10 @@ func _set_panel(p: Control, name: String) -> void:
 	# playout, report), holding the RAID band (see-through buildings, management lanes). The
 	# other net pages keep the 2D city until their views move onto it.
 	if wireframe != null:
-		wireframe.use_city3d(name == "grid" or name in RAID_CITY_PAGES, CityLod.Band.RAID if name in RAID_CITY_PAGES else CityLod.Band.GRID)
+		wireframe.use_city3d(name in ["grid", "hq"] or name in RAID_CITY_PAGES, CityLod.Band.RAID if name in RAID_CITY_PAGES or name == "hq" else CityLod.Band.GRID)
 	_clear_city_map()
 	# City map screens: clicks fall through the empty panel area to the map.
-	var on_city := name in ["grid", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
+	var on_city := name in ["hq", "grid", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE if on_city else Control.MOUSE_FILTER_STOP
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel = p
@@ -999,7 +997,7 @@ func _set_panel(p: Control, name: String) -> void:
 	panel_name = name
 	# ANIM-5: only the Grid and the playout ease their camera; any other page shows its
 	# frame at once.
-	if wireframe != null and not name in ["grid", "raid", "raid_playout"]:
+	if wireframe != null and not name in ["hq", "grid", "raid", "raid_playout"]:
 		wireframe.settle_camera()
 	# H24 S4: the page shows its words as given (translated once, where they are built).
 	TextDb.shown_as_given(p)
@@ -1032,7 +1030,7 @@ func _set_panel(p: Control, name: String) -> void:
 		UiFocus.focus_first(p)
 	_scroll_to_top.call_deferred()
 	# Worlds (STYLE_GUIDE 1): the room is a cyberdeck, the Grid and raids are wireframe.
-	var net := name in ["grid", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
+	var net := name in ["hq", "grid", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
 	background.visible = not net
 	wireframe.visible = net
 	AudioDirector.play_music("raid" if name.begins_with("raid") else ("grid" if name == "grid" else "hq"),
@@ -1156,11 +1154,22 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	# H24 K1: the pad's key button (Y) opens and folds the Grid's map key at big text.
-	if event.is_action_pressed("cycle_target") and panel_name == "grid" and grid_legend != null \
+	if event.is_action_pressed("cycle_target") and panel_name in ["hq", "grid"] and grid_legend != null \
 			and is_instance_valid(grid_legend) and grid_legend.visible and grid_legend.foldable():
 		grid_legend.set_opened(not grid_legend.opened)
 		get_viewport().set_input_as_handled()
 		return
+	# HQ-B: LB / RB (Q / E) switch the hand's tabs; R opens the raid setup (RAID SETUP [R]).
+	if panel_name == "hq" and _settings_panel == null and not has_node("LoadoutView") and not has_node("DaemonTray"):
+		for step in [[&"nudge_left", -1], [&"nudge_right", 1]]:
+			if event.is_action_pressed(step[0]) and not event.is_echo():
+				open_hand(posmod(hand_tab + int(step[1]), TAB_WORDS.size()))
+				get_viewport().set_input_as_handled()
+				return
+		if event.is_action_pressed(&"toggle_ring") and not event.is_echo() and RunManager.campaign != null and not RunManager.campaign.pending_raids.is_empty():
+			open_hand(HandTab.DEFENCE)
+			get_viewport().set_input_as_handled()
+			return
 	if event.is_action_pressed("cycle_target") and panel_name == "raid" and raid_legend != null \
 			and is_instance_valid(raid_legend) and raid_legend.visible and raid_legend.foldable():
 		# ANIM-R2 R13: the raid's folding key opens and folds as the Grid's does.
@@ -1228,6 +1237,11 @@ static func prompts_for(p_name: String) -> Array:
 		out.append([&"end_turn", "Pick up"]) # TR
 	if p_name in BACK_PANELS:
 		out.append([&"ui_cancel", "Back"]) # TR
+	# HQ-B: the hand's tabs, the Heat terminal and the map key.
+	if p_name == "hq":
+		out.append([&"nudge_right", "Tabs"]) # TR
+		out.append([&"rewind", "Heat"]) # TR
+		out.append([&"cycle_target", KEY_PROMPT])
 	out.append([&"open_settings", "Settings"]) # TR
 	return out
 
@@ -1575,285 +1589,930 @@ func _ice_description(level: int) -> String:
 	return tr("ICE %d: %s") % [level, " | ".join(parts)]
 
 
+## HQ-B (M14, HQ redesign direction B "THE HAND", designer rulings 2026-10-05): the HQ is the
+## live 3D city at the RAID band (the raid setup's view, 6w), and the Grid page folds into it.
+## Over the city: the raid's paper work order at the top left while one is pending (RAID
+## SETUP under it), the hand of cards along the foot behind its CREW / MARKET / DEFENCE tabs,
+## the selected Site's card at the right over the one pink sticker slot (JACK IN), and the
+## minimap with the folded MAP KEY at the top right. Click a Site (or step them with the pad
+## on the map), pick the runner's card, press JACK IN. Every action goes through the rules.
 func show_hq() -> void:
+	var c := RunManager.campaign
+	if c == null:
+		show_start()
+		return
+	var corp := RunManager.corporation
+	var cfg := RunManager.config()
+	# The camera stays where the player left it when the same page rebuilds (a pick, a buy).
+	var keep := _city_frame() if panel_name == "hq" and city_overlay != null and is_instance_valid(city_overlay) else {}
+	_sync_previews()
+	# ANIM-R4 H10: what the pages this one leads to need is made ahead.
+	AudioDirector.prewarm_music(["raid", "netrun", "combat"], c.corporation_id)
+	_warm_previews.call_deferred()
+	_grid_chips.clear()
+	_jack_button = null
+	var launchable := RunManager.launchable_sites()
+	launchable.append_array(RunManager.patrol_sites())
+	if selected_site == &"" or CampaignRules.site_data(corp, selected_site) == null:
+		selected_site = launchable[0].id if not launchable.is_empty() else c.grid.home_site_id
+	if selected_op() != null:
+		selected_operative = selected_op().id
+	var page := Control.new()
+	page.name = "HqPage"
+	hq_page = page
+	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# The map cursor: the pad's place on the map (left / right step the Sites, the map follows).
+	var cursor := HqMapCursor.new()
+	cursor.name = "MapCursor"
+	cursor.stepped.connect(_cursor_step)
+	cursor.tooltip_text = UiTip.fold(UiTip.for_input(tr("The city: click a Site to select it; the wheel zooms, a drag pans."),
+		tr("The city: left and right step through the Sites; down to the hand.")))
+	page.add_child(cursor)
+	# The work order while a raid is pending (corp paper), RAID SETUP under it.
+	var pending := RunManager.pending_raid()
+	if not pending.is_empty():
+		# It scrolls inside its room at big text (the map keeps its part).
+		var order := VBoxContainer.new()
+		order.name = "WorkOrder"
+		order.add_theme_constant_override("separation", 8)
+		order.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var paper_scroll := ScrollContainer.new()
+		paper_scroll.name = "WorkOrderPaper"
+		paper_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		paper_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+		paper_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		order.add_child(paper_scroll)
+		var paper := VBoxContainer.new()
+		paper.name = "WorkOrderBox"
+		paper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		paper_scroll.add_child(paper)
+		var raid := CampaignRules.raid_data(pending, RunManager.lookup())
+		var projection := RunManager.project_raid()
+		paper.add_child(_raid_card(raid, pending, projection, true))
+		var setup := MenuChip.new(tr("RAID SETUP"), "[%s]" % Settings.hint(&"toggle_ring").strip_edges().trim_prefix("[").trim_suffix("]"), Palette.CELL_PINK)
+		setup.name = "RaidSetup"
+		setup.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		setup.pressed.connect(show_raid)
+		setup.tooltip_text = UiTip.fold(tr("RAID SETUP: a raid is coming along the red pencil routes: set up the defence."))
+		order.add_child(setup)
+		page.add_child(order)
+	# The hand: its tabs and the cards of the deck picked.
+	page.add_child(_hand_tabs())
+	var hand := ScrollContainer.new()
+	hand.name = "Hand"
+	hand.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	hand.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	hand.follow_focus = true
+	hand.mouse_filter = Control.MOUSE_FILTER_PASS
+	var cards := HBoxContainer.new()
+	cards.name = "HandCards"
+	cards.alignment = BoxContainer.ALIGNMENT_BEGIN
+	cards.add_theme_constant_override("separation", roundi(HqLayout.GAP * 2.0 * HqLayout.object_scale(Settings.text_scale)))
+	cards.custom_minimum_size.y = (HqLayout.CARD.y + HqLayout.LIFT) * HqLayout.object_scale(Settings.text_scale)
+	hand.add_child(cards)
+	page.add_child(hand)
+	match hand_tab:
+		HandTab.MARKET:
+			_fill_market_hand(cards)
+		HandTab.DEFENCE:
+			_fill_armory_hand(cards)
+		_:
+			_fill_crew_hand(cards, launchable)
+	for k in cards.get_children():
+		(k as Control).size_flags_vertical = Control.SIZE_SHRINK_END  # on the hand's foot
+	# The selected Site's card (its facts, IF CLEARED, its actions).
+	# The column scrolls inside its room at big text (the minimap and the key keep theirs).
+	var column := ScrollContainer.new()
+	column.name = "CardColumn"
+	column.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	column.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	column.follow_focus = true
+	column.mouse_filter = Control.MOUSE_FILTER_PASS
+	var stack := VBoxContainer.new()
+	stack.name = "CardStack"
+	stack.alignment = BoxContainer.ALIGNMENT_END
+	stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(stack)
+	var site := CampaignRules.site_data(corp, selected_site)
+	if site != null:
+		var card := _site_card(site, launchable, c.living_operatives(), _node_choices())
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		stack.add_child(card)
+	page.add_child(column)
+	# The verb slot: the one pink sticker (JACK IN for a runnable Site; a saved run's resume).
+	page.add_child(_verb_slot(site, launchable))
+	# The pirate radio as one ON AIR line (Q7) at the foot, over the hand's room.
+	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, c.corporation_id, &"", c.runs_started + c.runs_completed * 7)
+	var dj_text := Dialogue.voice_text(dj_line) if dj_line != null else tr("lo-fi loop: HQ")
+	var ticker := OnAirTicker.new(PackedStringArray([dj_text, tr("vs %s | ICE %d%s") % [TextDb.t(corp, "display_name"), c.ice_level, tr(" | ASSIST") if c.is_assisted() else ""]]))
+	ticker.name = "OnAir"
+	ticker.tooltip_text = UiTip.fold("%s\n%s" % [dj_text, campaign_code_line()])
+	ticker.mouse_filter = Control.MOUSE_FILTER_PASS
+	page.add_child(ticker)
+	_set_panel(page, "hq")
+	page.resized.connect(_place_hq)
+	for piece in page.get_children():
+		if piece is Control:
+			(piece as Control).minimum_size_changed.connect(_queue_place_hq)
+	for deep in ["WorkOrder/WorkOrderPaper/WorkOrderBox", "Hand/HandCards", "CardColumn/CardStack"]:
+		var n := page.get_node_or_null(deep) as Control
+		if n != null:
+			n.minimum_size_changed.connect(_queue_place_hq)
+	# The map on the city: every Site as its v4 marker, the Cell's nodes as their raid sockets
+	# on uplink pads, the pending raid's routes as red dashed pencil (what-if until the setup).
+	var g := hq_graph()
+	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, keep.get("anchor", HQ_ANCHOR), keep.get("scale", 1.0),
+		keep.get("focus", Vector2.INF))
+	city_overlay.selected_id = selected_site
+	city_overlay.boss_exploits = Vector2i(c.exploits.size(), cfg.min_exploits_for_breach)
+	city_overlay.node_clicked.connect(select_site)
+	_mount_hq_routes()
+	wireframe.city.set_city_life(GridCityLife.of(c, corp, cfg))
+	_mount_hq_map_tools(page)
+	_place_hq()
+	_sync_hq_band()
+	if keep.is_empty():
+		_hq_fit_pending = true
+		_hq_fit_passes = 0
+		if not get_tree().process_frame.is_connected(fit_hq_map):
+			get_tree().process_frame.connect(fit_hq_map, CONNECT_ONE_SHOT)
+	else:
+		wireframe.ease_camera()
+	_register_hq_drops_b(launchable)
+	_link_hq_focus(page)
+	if _hq_focus != "":
+		_focus_named.call_deferred(_hq_focus)
+		_hq_focus = ""
+	if _last_warned_raid != String(pending.get("raid_id", "")) and not pending.is_empty():
+		_last_warned_raid = String(pending.get("raid_id", ""))
+		Dialogue.raid_warning(c.corporation_id, StringName(String(pending.get("raid_id", ""))), c.raids_won + c.raids_lost, "raid")
+
+
+## HQ-B: the hand's decks behind the tabs.
+enum HandTab { CREW, MARKET, DEFENCE }
+## The deck the hand shows (kept across rebuilds).
+var hand_tab: int = HandTab.CREW
+## The tabs' words (translation keys).
+const TAB_WORDS: Array[String] = ["CREW", "MARKET", "DEFENCE"] # TR
+## From this text scale the tabs show their word only (the count in the tooltip).
+const TAB_LINE_BELOW := MapLegend.FOLD_SCALE
+## Where the camera frames the HQ's map before its fit (screen share), and the frame waiting.
+const HQ_ANCHOR := Vector2(0.45, 0.42)
+var _hq_fit_pending: bool = false
+## A control to focus once the HQ page is rebuilt (the map cursor after a step, a card).
+var _hq_focus: String = ""
+## The map tools on the HQ page: the minimap terminal and the folded MAP KEY line.
+var hq_minimap: CityMinimap = null
+var hq_legend: MapLegend = null
+## HQ-B: the HQ page on screen (its name may take a suffix while the last one is freed).
+var hq_page: Control = null
+
+
+## The city camera's frame now: {scale, focus, anchor}.
+func _city_frame() -> Dictionary:
+	var city := wireframe.city
+	return {"scale": city.scale.x, "focus": city.focus_grid if city.focus_grid != Vector2.INF else Vector2.INF, "anchor": city.focus_anchor}
+
+
+## HQ-B: the tabs, one MenuChip each with its count under the word (CREW 3 / 4, MARKET the
+## Schematics, DEFENCE the raids pending or the Armory); the open one is filled. LB / RB
+## (Q / E) switch them.
+func _hand_tabs() -> VBoxContainer:
+	var c := RunManager.campaign
+	var cfg := RunManager.config()
+	var tabs := VBoxContainer.new()
+	tabs.name = "HandTabs"
+	tabs.add_theme_constant_override("separation", 6)
+	tabs.alignment = BoxContainer.ALIGNMENT_END
+	var lines := ["%d / %d" % [c.living_operatives().size(), c.roster.size()], str(c.schematics),
+		(tr("RAID %d") % c.pending_raids.size()) if not c.pending_raids.is_empty() else (tr("ARMORY %d/%d") % [c.armory.size(), cfg.armory_capacity])]
+	var tips := [UiTip.for_input(tr("CREW: your operatives as cards. Pick the runner, drag a card onto one of your nodes to station them."),
+			tr("CREW: your operatives as cards. Pick the runner; pick a card up and move it onto one of your nodes to station them.")),
+		tr("MARKET: recruits, the next run's boosts and Profile unlocks, paid in Schematics."),
+		tr("DEFENCE: the Armory's defence cards; with a raid pending, the raid setup.")]
+	for i in TAB_WORDS.size():
+		var hot := i == HandTab.DEFENCE and not c.pending_raids.is_empty()
+		# At big text the count under the word goes to the tooltip (the column keeps the hand's
+		# height; the top bar shows the same numbers).
+		var small := Settings.text_scale < TAB_LINE_BELOW - 0.001
+		var tab := MenuChip.new(tr(TAB_WORDS[i]), lines[i] if small else "", Palette.CELL_PINK if hot else PaletteSkins.chrome(Palette.NET_CYAN))
+		tab.pre_translated = true
+		tab.name = "Tab_%s" % TAB_WORDS[i]
+		tab.selected = i == hand_tab
+		tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tab.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		tab.tooltip_text = UiTip.fold(tips[i] if small else "%s (%s)" % [tips[i], lines[i]])
+		tab.pressed.connect(open_hand.bind(i))
+		tabs.add_child(tab)
+	return tabs
+
+
+## HQ-B: shows deck `tab` in the hand (CREW, MARKET, DEFENCE). DEFENCE with a raid pending is
+## the raid setup.
+func open_hand(tab: int) -> void:
+	if tab == HandTab.DEFENCE and RunManager.campaign != null and not RunManager.campaign.pending_raids.is_empty():
+		hand_tab = tab
+		show_raid()
+		return
+	hand_tab = tab
+	_hq_focus = "Tab_%s" % TAB_WORDS[tab]
+	if panel_name == "hq":
+		wireframe.hold_camera()
+	show_hq()
+
+
+## HQ-B: the crew as cards in roster order, the flatlined last (Q12); the runner's card is
+## lifted; a card that can't run the selected Site is greyed with the rule's reason. A press
+## picks the runner (VIEW LOADOUT and DAEMONS follow); a drag stations them on one of your
+## nodes, brings them back on CORE, or picks them for a Site.
+func _fill_crew_hand(cards: HBoxContainer, launchable: Array[SiteData]) -> void:
+	var c := RunManager.campaign
+	var lookup := RunManager.lookup()
+	var order: Array[OperativeState] = []
+	for op in c.roster:
+		if op.alive:
+			order.append(op)
+	for op in c.roster:
+		if not op.alive:
+			order.append(op)
+	var runnable := false
+	for s in launchable:
+		if s.id == selected_site:
+			runnable = true
+	for op in order:
+		var where := CampaignRules.stationed_site(c, op.id)
+		var card := CrewHandCard.new(op.class_id, op.id, op.name, op.rank)
+		card.name = "Crew_%s" % op.id
+		card.dead = not op.alive
+		if not op.alive:
+			card.status = tr(CrewHandCard.FLATLINED)
+			card.status_color = Palette.TEXT_MID
+		elif where != &"":
+			card.status = tr(CrewHandCard.ON_SITE) % site_name(where).to_upper()
+			card.status_color = PaletteSkins.chrome(Palette.NET_CYAN)
+		else:
+			card.status = tr(CrewHandCard.READY)
+		if op.alive and runnable:
+			card.refusal = _pick_error(op.id, selected_site)
+			if card.refusal == DropLayer.SKIP:
+				card.refusal = ""
+		card.picked = op.alive and op.id == selected_operative
+		var cls := lookup.get_content(op.class_id) as ClassData
+		card.tooltip_text = UiTip.fold("%s R%d, %s. HP %d/%d, DECK %d, DAEMONS %d.%s%s%s" % [op.name, op.rank, TextDb.t(cls, "display_name") if cls != null else String(op.class_id),
+			op.hp, op.max_hp, op.deck.size(), op.daemon_ids.size(),
+			(" " + tr("Stationed on %s.") % site_name(where)) if where != &"" else "",
+			("\n" + card.refusal) if card.refusal != "" else "",
+			("\n" + UiTip.for_input(tr("Press to pick them as the runner. Drag the card onto one of your nodes to station them there, or onto CORE to bring them back."),
+				tr("Press to pick them as the runner. Pick the card up and move it onto one of your nodes to station them there, or onto CORE to bring them back."))) if op.alive else ""])
+		card.disabled = not op.alive
+		var oid := op.id
+		card.pressed.connect(pick_runner.bind(oid))
+		if op.alive:
+			drops.add_source(card, {"kind": "crew", "op": op.id, "motion": &"crew_assign", "prefer": where}, true)
+		cards.add_child(card)
+		if op.alive and where != &"" and op.id == selected_operative:
+			var recall_chip := MenuChip.new(tr("RECALL"), site_name(where).to_upper())
+			recall_chip.name = "Recall_%s" % op.id
+			recall_chip.pre_translated = true
+			recall_chip.size_flags_vertical = Control.SIZE_SHRINK_END
+			recall_chip.tooltip_text = UiTip.fold(tr("Bring %s back from %s.") % [op.name, site_name(where)])
+			recall_chip.pressed.connect(recall.bind(oid))
+			cards.add_child(recall_chip)
+
+
+## HQ-B: picks operative `operative_id` as the runner (the lifted card); nothing starts.
+func pick_runner(operative_id: StringName) -> void:
+	select_operative(operative_id)
+	_hq_focus = "Crew_%s" % operative_id
+	if panel_name == "hq":
+		wireframe.hold_camera()
+		show_hq()
+
+
+## HQ-B: the Black Market as the hand (direction_B_market.jpg): HIRE cards for the recruits,
+## the next run's boosts as stickers over gold price tags, Profile unlocks as terminal chips,
+## each group under its caption. A press buys (the item flies to where it went); a drag onto
+## its target buys too (a recruit onto the CREW tab, a boost onto the next run's kit).
+func _fill_market_hand(cards: HBoxContainer) -> void:
 	var c := RunManager.campaign
 	var cfg := RunManager.config()
 	var lookup := RunManager.lookup()
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 12)
-	var cols := HBoxContainer.new()
-	cols.add_theme_constant_override("separation", 14)
-	box.add_child(cols)
-	# Right column (built now, added last): wanted poster, pirate radio, JACK IN.
-	var right := VBoxContainer.new()
-	right.add_theme_constant_override("separation", 10)
-	# HQ-B (Q1): no WANTED poster: Heat is the top bar's gauge (its motion moved onto it).
-	# The note shows whole lines at any text size (H21 #15: at 1.6 its last line was cut in
-	# half); the rest scrolls.
-	var line_h := UiTheme.line_px(Palette.mono(), roundi(UiTheme.BASE_SIZE * Settings.text_scale))
-	# ART-10 4C (v2 §1.2): the DJ is a voice on the Cell's feed: a terminal, not a paper note.
-	var radio := CrtText.new(tr("PIRATE RADIO"), Vector2(RADIO_WIDTH, line_h * RADIO_LINES / Settings.text_scale))
-	radio.name = "PirateRadio"
-	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, c.corporation_id, &"", c.runs_started + c.runs_completed * 7)
-	# H24 S3: the DJ's words in the player's language (the voice line's TextDb key).
-	var dj_text := Dialogue.voice_text(dj_line) if dj_line != null else tr("lo-fi loop: HQ")
-	radio.append(dj_text)
-	radio.append(tr("vs %s | ICE %d%s") % [TextDb.t(RunManager.corporation, "display_name"), c.ice_level, tr(" | ASSIST") if c.is_assisted() else ""])
-	# H24 S11: the share code read like debug output on the lore note: it is in the note's
-	# tooltip and on the Settings menu's seed line (PauseMenu.code_line).
-	radio.tooltip_text = UiTip.fold("%s\n%s" % [dj_text, campaign_code_line()])
-	radio.label.scroll_following = false
-	# H23 S6: the note grows to its words (at 1.0 and 1.6 its text was cut, a scroll bar in
-	# the corner); RADIO_LINES is its least height.
-	radio.label.fit_content = true
-	radio.label.scroll_active = false
-	# No key hint: JACK IN is pressed by click or focus (Space does nothing here). It is the
-	# same JACK IN as on a Site's card (H21 #21): here it opens the Grid to pick the Site.
-	var jack := ZineStamp.new(tr(JACK_IN), Palette.CELL_PINK)
-	jack.name = "JackIn"
-	jack.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	jack.tooltip_text = UiTip.fold(tr("JACK IN: pick a Site on the City Grid, then JACK IN on its card to start the netrun."))
-	jack.icon_kind = StatIcon.JACK_IN  # H22 #14: the plug, as on the Site card's JACK IN
-	if RunManager.has_active_run():
-		# ANIM-R1 M1: a run saved and left (Save & quit) waits: JACK IN goes back into it (a
-		# second run can't start over it).
-		jack.tooltip_text = UiTip.fold(tr("JACK IN: back into the run you left."))
-		jack.pressed.connect(func() -> void:
-			if not RunManager.scene_change_pending():
-				RunManager.go_to_netrun())
-	else:
-		jack.pressed.connect(show_grid)
-	var top_right := HBoxContainer.new()
-	top_right.add_theme_constant_override("separation", 10)
-	top_right.add_child(jack)
-	right.add_child(top_right)
-	right.add_child(radio)
-	# ANIM-R4 H10: what the pages this one leads to need is made ahead (their first frames
-	# made it): the Grid's and a raid's music, a run's, and the open runs' previews.
-	AudioDirector.prewarm_music(["grid", "raid", "netrun", "combat"], c.corporation_id)
-	_warm_previews.call_deferred()
-	var left := VBoxContainer.new()
-	left.add_theme_constant_override("separation", 12)
-	left.custom_minimum_size.x = 300
-	cols.add_child(left)
-	# The deck menu (reference: "> OPERATIVES / NETWORK / LOADOUT").
-	var deck := CrtWindow.new(tr("CYBERDECK"))
-	left.add_child(deck)
-	var actions := deck.body
-	# Each item carries its icon (H21 #13): the map, the raid shield, the flame (Heat), the
-	# house (home), the book, the gear, the floppy.
-	var grid_btn := _icon(_button(tr("City Grid"), show_grid), StatIcon.MAP)
-	grid_btn.name = "CityGrid"
-	_add_tip(actions, grid_btn, tr("The campaign map: pick a Site and JACK IN, claim and upgrade nodes."))
-	if not c.pending_raids.is_empty():
-		var raid := CampaignRules.raid_data(c.pending_raids[0], lookup)
-		var raid_btn := _icon(_button(tr("RAID PENDING: %s (%d)") % [TextDb.t(raid, "display_name"), c.pending_raids.size()], show_raid), StatIcon.RAIDS)
-		raid_btn.name = "RaidPending"
-		# Long raid names wrap in the menu column instead of widening the page at big text.
-		raid_btn.autowrap_mode = TextServer.AUTOWRAP_WORD
-		raid_btn.add_theme_color_override("font_color", Palette.CELL_PINK)
-		_add_tip(actions, raid_btn, TextDb.t(raid, "warning_text"))
-	# HQ-B (Q1): SCRUB HEAT lives in the Heat terminal the HEAT gauge drops.
-	if c.grid.home_integrity < c.grid.home_max_integrity:
-		var patch_btn := _icon(_button(tr("Patch home %s (%d)") % [TextDb.signed(c.grid.home_max_integrity - c.grid.home_integrity), CampaignRules.home_repair_price(c, cfg)], repair_home), StatIcon.HOME)
-		patch_btn.autowrap_mode = TextServer.AUTOWRAP_WORD  # ART-0 C: as Scrub Heat
-		_add_tip(actions, patch_btn, tr("Repair the home server to full integrity."))
-	_add_tip(actions, _icon(_button(tr("Codex"), show_codex), StatIcon.CODEX), tr("Everything the Cell knows: slices, cards, Firmware, Daemons, rules."))
-	var settings_btn := _hint_button(tr("Settings"), &"open_settings", open_settings)
-	settings_btn.name = "SettingsButton"
-	_add_tip(actions, _icon(settings_btn, StatIcon.SETTINGS), tr("Options: text size, sound, controls, subtitles."))
-	var save_btn := _icon(_button(tr("Save"), func() -> void: RunManager.autosave(); _log.append_text(tr("Saved.") + "\n"); notify(tr("Saved."))), StatIcon.SAVE)
-	save_btn.name = "SaveButton"
-	_add_tip(actions, save_btn, tr("Save the campaign now (it also saves after every action)."))
-	_as_menu(actions)
-	# HQ-B (Q1): no CELL STATUS badges: Heat and its rules are the gauge and its terminal;
-	# home, Exploits and the crew are the top bar's tags; the Armory is the DEFENCE hand.
-	# The crew: Polaroids with their stats and orders.
-	# The deck monitor: the City Grid at a glance (click or JACK IN to open it).
-	var monitor := CrtWindow.new(tr("CITY GRID // %s") % TextDb.t(RunManager.corporation, "display_name"))
-	monitor.tag_label.text = tr("STATUS: %s") % (tr("RAID INBOUND") if not c.pending_raids.is_empty() else tr("STABLE"))
-	monitor.tag_label.add_theme_color_override("font_color", Palette.CELL_PINK if not c.pending_raids.is_empty() else Palette.CELL_ACID)
-	monitor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var center := VBoxContainer.new()
-	center.add_theme_constant_override("separation", 12)
-	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cols.add_child(center)
-	center.add_child(monitor)
-	# ANIM-5 (4.1): the deck monitor is the CRT jack in pushes into and jack out leaves.
-	monitor.add_to_group(Fx.JACK_FOCUS_GROUP)
-	var mini := GridMapView.new()
-	mini.custom_minimum_size = Vector2(420, 170)
-	mini.track_seen = true  # ANIM-5: a Site whose status changed since last seen pulses once
-	mini.show_grid(c, RunManager.corporation, _threat_paths())
-	mini.site_clicked.connect(func(id: StringName) -> void: selected_site = id; show_grid())
-	mini.tooltip_text = UiTip.for_input(tr("Click a Site to open it on the City Grid."), tr("Press a Site to open it on the City Grid."))
-	monitor.body.add_child(mini)
-	cols.add_child(right)
-	var crew := CrtWindow.new(tr("CREW // ROSTER"), Palette.CELL_PINK)
-	crew.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var roster_box := HFlowContainer.new()
-	roster_box.add_theme_constant_override("h_separation", 18)
-	roster_box.add_theme_constant_override("v_separation", 14)
-	crew.body.add_child(roster_box)
-	for op in c.roster:
-		# A crew dossier: Polaroid, name, tags, HP, kit, then orders.
-		var where := CampaignRules.stationed_site(c, op.id)
-		var cls_data := lookup.get_content(op.class_id) as ClassData
-		var row := CrewCard.new(op.name, TextDb.t(cls_data, "display_name") if cls_data != null else String(op.class_id), op.rank, op.hp, op.max_hp,
-			tr("HP %d/%d · DECK %d · DAEMONS %d%s") % [op.hp, op.max_hp, op.deck.size(), op.daemon_ids.size(),
-			"" if op.alive else tr(" · [DEAD]")], -1.5 if c.roster.find(op) % 2 == 0 else 1.5)
-		row.name = "Crew_%s" % op.id
-		row.set_operative(op.class_id, op.id)
-		row.tooltip_text = UiTip.fold("%s%s%s" % [TextDb.t(cls_data, "description") if cls_data != null else "", (tr("\nStationed on %s.") % site_name(where)) if where != &"" else "",
-			("\n" + UiTip.for_input(tr("Drag the dossier onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back."),
-				tr("Pick the dossier up and move it onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back."))) if op.alive else ""])
-		row.polaroid.glitch = not op.alive or op.hp * 4 <= op.max_hp
-		row.dead = not op.alive
-		if op.alive:
-			# ANIM-4: the dossier drags onto a post on the mini-map (station) or CORE (recall);
-			# a click picks it up, and so does the pick-up key on any of its orders.
-			drops.add_source(row, {"kind": "crew", "op": op.id, "motion": &"crew_assign", "prefer": where}, true)
-		if where != &"" and op.alive:
-			row.stamp_text = tr("ON %s") % site_name(where).to_upper()
-		var orders := row.orders
-		if op.alive:
-			var view_row := HBoxContainer.new()
-			var op_ref := op
-			var loadout_btn := _icon(_button(tr("Loadout"), func() -> void: open_loadout(op_ref)), StatIcon.CARDS)
-			loadout_btn.name = "Loadout"
-			loadout_btn.tooltip_text = UiTip.fold(tr("%s's deck, spinner, hub core and inner ring. VIEW LOADOUT and DAEMONS in the top bar follow them.") % op.name)
-			view_row.add_child(loadout_btn)
-			orders.add_child(view_row)
-			if where != &"":
-				var id := op.id
-				_add_tip(orders, _icon(_button(tr("Recall"), func() -> void: recall(id)), StatIcon.BACK), tr("Bring %s back from %s.") % [op.name, site_name(where)])
-			else:
-				for site_id in c.grid.claimed_ids():
-					var node := lookup.get_content(c.grid.node_type_of(site_id)) as NetworkNodeData
-					if node != null and node.station_slots > 0 and c.grid.stationed_on(site_id) == &"" and c.grid.is_active_node(site_id):
-						var oid := op.id
-						var sid := site_id
-						_add_tip(orders, _icon(_button(tr("Station on %s") % site_name(site_id), func() -> void: station(oid, sid)), StatIcon.RAIDS),
-							tr("%s guards %s (%s): the class's station bonus helps it hold in raids.") % [op.name, site_name(site_id), TextDb.t(node, "display_name")])
-			# Rank 3 Inner Ring segment swaps (GDD 6.4).
-			var cls := lookup.get_content(op.class_id) as ClassData
-			var options := CampaignRules.ring_segment_options(op, cls)
-			if not options.is_empty():
-				for k in RC.RING_SEGMENTS:
-					var pick := OptionButton.new()
-					pick.add_item(tr("seg %d: default") % k)
-					pick.set_item_metadata(0, &"")
-					var current: StringName = op.ring_segment_ids[k] if k < op.ring_segment_ids.size() else &""
-					for i in options.size():
-						var seg := lookup.get_content(options[i]) as RingSegmentData
-						pick.add_item(tr("seg %d: %s") % [k, TextDb.t(seg, "display_name") if seg != null else String(options[i])])
-						pick.set_item_metadata(i + 1, options[i])
-						if options[i] == current:
-							pick.select(i + 1)
-					var oid2 := op.id
-					var index := k
-					pick.item_selected.connect(func(i: int) -> void: swap_segment(oid2, index, pick.get_item_metadata(i)))
-					pick.tooltip_text = UiTip.fold(tr("Inner ring segment %d: Rank 3 lets you swap it for another.") % k)
-					orders.add_child(pick)
-		roster_box.add_child(row)
-	roster_box.name = "Roster"
-	center.add_child(crew)
-	if Settings.text_scale > CrewCard.BIG_FROM:
-		# ART-0 C (text scale 2.0): the crew comes above the City Grid monitor, so the
-		# dossiers' HP and Loadout are on the first screen (under the monitor they ended at
-		# the screen's foot).
-		center.move_child(crew, 0)
-	# The market: recruits, next-run boosts (GDD 11.4) and Profile unlocks (GDD 3.4).
-	var market := CrtWindow.new(tr("BLACK MARKET // SCHEMATICS %d") % c.schematics, Palette.CELL_ACID)
-	market.name = "BlackMarket"
-	box.add_child(market)
-	var recruits := HFlowContainer.new()
-	recruits.name = "Recruits"
-	recruits.add_child(_label(tr("Recruit:")))
+	var recruits := _market_group(cards, "Recruits", tr("RECRUIT"))
 	for cls in RunManager.available_classes():
 		var cid := cls.id
-		# ANIM-4: a click buys as before and the new operative flies to the crew; or drag the
-		# button onto CREW // ROSTER.
 		var pay := {"kind": "recruit", "cls": cid, "motion": &"crew_assign"}
-		var ref: Array = [null]
-		var rb := _icon(_button(tr("Recruit %s (%d)") % [TextDb.t(cls, "display_name"), CampaignRules.rookie_price(c, cfg)],
-			func() -> void: _market_buy(ref[0], pay, func() -> void: recruit(cid))), StatIcon.OPERATIVE)
-		ref[0] = rb
-		rb.name = "Recruit_%s" % cls.id
-		_add_tip(recruits, rb, TextDb.t(cls, "description"))
-		drops.add_source(rb, pay)
-	market.body.add_child(recruits)
-	var boosts := HFlowContainer.new()
-	boosts.name = "Boosts"
-	boosts.add_child(_label(tr("Next-run boosts:")))
+		var price := CampaignRules.rookie_price(c, cfg)
+		var card := CrewHandCard.new(cid, &"", TextDb.t(cls, "display_name"), 0)
+		card.hire = true
+		card.name = "Recruit_%s" % cls.id
+		card.status = tr("%d SCHEMATICS") % price
+		card.status_color = Palette.RESIST_GOLD
+		card.tooltip_text = UiTip.fold("%s\n%s" % [TextDb.t(cls, "description"), UiTip.for_input(tr("Press to hire (it joins the crew), or drag it onto the CREW tab."),
+			tr("Press to hire (it joins the crew), or pick it up and move it onto the CREW tab."))])
+		var ref: Array = [card]
+		card.pressed.connect(func() -> void: _market_buy(ref[0], pay, func() -> void: recruit(cid)))
+		drops.add_source(card, pay)
+		recruits.add_child(card)
+	var boosts := _market_group(cards, "Boosts", tr("NEXT RUN'S BOOSTS"))
 	for b in cfg.netrun_boosts:
 		if b == null:
 			continue
 		var bid := b.id
 		var pay := {"kind": "boost", "boost": bid}
-		var ref: Array = [null]
-		var btn := _button("%s (%d)" % [TextDb.t(b, "display_name"), b.cost], func() -> void: _market_buy(ref[0], pay, func() -> void: buy_boost(bid)))
-		ref[0] = btn
-		btn.name = "Boost_%s" % b.id
-		btn.tooltip_text = UiTip.fold(TextDb.t(b, "description"))
-		btn.disabled = c.pending_boosts.has(b.id) or c.schematics < b.cost
-		boosts.add_child(btn)
-		drops.add_source(btn, pay)
-	# ANIM-4: the next run's kit is a slot of its own (always shown: the boosts' drop target).
+		var stack := VBoxContainer.new()
+		stack.alignment = BoxContainer.ALIGNMENT_END
+		stack.add_theme_constant_override("separation", 4)
+		var sticker := VerbSticker.new(TextDb.t(b, "display_name").to_upper(), VerbSticker.Fill.BLUE, BOOST_STICKER_PX, BOOST_STICKER_TILT)
+		sticker.pre_translated = true
+		sticker.name = "Boost_%s" % b.id
+		sticker.tooltip_text = UiTip.fold(TextDb.t(b, "description"))
+		sticker.disabled = c.pending_boosts.has(b.id) or c.schematics < b.cost
+		var ref: Array = [sticker]
+		sticker.pressed.connect(func() -> void: _market_buy(ref[0], pay, func() -> void: buy_boost(bid)))
+		drops.add_source(sticker, pay)
+		stack.add_child(sticker)
+		var tag := PriceTag.new(tr("%d SCHEMATICS") % b.cost)
+		tag.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		stack.add_child(tag)
+		boosts.add_child(stack)
+	# ANIM-4: the next run's kit (always shown: the boosts' drop target).
 	var queued := PackedStringArray()
 	for bid in c.pending_boosts:
 		for b in cfg.netrun_boosts:
 			if b != null and b.id == bid:
 				queued.append(TextDb.t(b, "display_name"))
-	var queue := _label(tr("queued: %s") % (", ".join(queued) if not queued.is_empty() else "-"))
+	var queue := Label.new()
 	queue.name = "QueuedBoosts"
+	queue.text = tr("queued: %s") % (", ".join(queued) if not queued.is_empty() else "-")
 	queue.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	queue.mouse_filter = Control.MOUSE_FILTER_PASS
+	queue.size_flags_vertical = Control.SIZE_SHRINK_END
 	queue.tooltip_text = UiTip.fold(UiTip.for_input(tr("The boosts bought for the next run. Drag a boost here to buy it."), tr("The boosts bought for the next run. Pick a boost up and move it here to buy it.")))
 	boosts.add_child(queue)
-	market.body.add_child(boosts)
-	var unlocks := HFlowContainer.new()
-	unlocks.add_child(_label(tr("Profile unlocks:")))
-	var any_unlock := false
+	var unlocks := _market_group(cards, "Unlocks", tr("PROFILE UNLOCKS"))
+	# Two rows of chips (one column of them ran up over the map), as many columns as they need.
+	var col := GridContainer.new()
+	col.name = "UnlockGrid"
+	col.add_theme_constant_override("h_separation", 6)
+	col.add_theme_constant_override("v_separation", 6)
+	col.size_flags_vertical = Control.SIZE_SHRINK_END
+	unlocks.add_child(col)
+	var any := false
 	for id in lookup.ids_of_class(&"ProfileUnlockData"):
 		var u := lookup.get_content(id) as ProfileUnlockData
-		if u == null or RunManager.profile.has_unlock(u.id):
-			continue
 		# Free unlocks (REBEL_CELL) open by themselves once their requirements are met.
-		if u.schematic_cost == 0:
+		if u == null or RunManager.profile.has_unlock(u.id) or u.schematic_cost == 0:
 			continue
-		any_unlock = true
+		any = true
 		var uid := u.id
-		var btn := _button("%s (%d)" % [TextDb.t(u, "display_name"), u.schematic_cost], func() -> void: purchase_unlock(uid))
-		btn.name = "Unlock_%s" % u.id
-		btn.tooltip_text = UiTip.fold(TextDb.t(u, "description"))
-		btn.disabled = c.schematics < u.schematic_cost
-		unlocks.add_child(btn)
-	if not any_unlock:
-		unlocks.add_child(_label(tr("everything unlocked")))
-	market.body.add_child(unlocks)
-	var beats := CampaignRules.revealed_beats(c, RunManager.corporation)
-	if not beats.is_empty():
-		var story := CrtWindow.new(tr("Story so far:"), Palette.CRT_AMBER)
-		box.add_child(story)
-		for b in beats:
-			var t := RichTextLabel.new()
-			t.fit_content = true
-			t.custom_minimum_size = Vector2(700, 0)
-			t.text = "  [%s] %s" % [TextDb.t(b, "title"), TextDb.t(b, "text")]
-			story.body.add_child(t)
-	_set_panel(box, "hq")
-	_link_crew_focus(roster_box, jack, market)
-	_register_hq_drops(crew, mini, queue)
-	# HQ idle (ANIM-6, 4.13): the deck monitor hums, JACK IN breathes, and on arrival the
-	# pirate radio types in.
-	CrtHum.attach(monitor)
-	jack.breathe()
-	if entering:
-		Typing.type_in(radio.label, &"radio_type")
-	# ANIM-R2 R1: the Grid is a press away: its city bakes now, behind the HQ (while a jack out
-	# still covers the screen too), so the Grid opens on its image.
-	_prebake_grid.call_deferred()
+		var chip := MenuChip.new(TextDb.t(u, "display_name"), tr("%d SCHEMATICS") % u.schematic_cost)
+		chip.pre_translated = true
+		chip.name = "Unlock_%s" % u.id
+		chip.tooltip_text = UiTip.fold(TextDb.t(u, "description"))
+		chip.disabled = c.schematics < u.schematic_cost
+		chip.pressed.connect(purchase_unlock.bind(uid))
+		col.add_child(chip)
+	col.columns = maxi(1, ceili(col.get_child_count() / float(UNLOCK_ROWS)))
+	if not any:
+		var done := Label.new()
+		done.text = tr("everything unlocked")
+		col.add_child(done)
+
+
+## The boost stickers' lettering (px at 1.0) and tilt (degrees).
+const BOOST_STICKER_PX := 22.0
+const BOOST_STICKER_TILT := -2.0
+## The Profile unlocks' rows in the market hand.
+const UNLOCK_ROWS := 2
+
+
+## A captioned group in the market hand (`id` names it), returned for its items.
+func _market_group(cards: HBoxContainer, id: String, caption: String) -> HBoxContainer:
+	var box := VBoxContainer.new()
+	box.name = id
+	box.add_theme_constant_override("separation", 4)
+	var cap := Label.new()
+	cap.name = "Caption"
+	cap.text = caption
+	cap.add_theme_font_override("font", Palette.mono())
+	cap.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+	cap.add_theme_color_override("font_color", PaletteSkins.chrome(Palette.NET_CYAN))
+	box.add_child(cap)
+	var row := HBoxContainer.new()
+	row.name = "Items"
+	row.add_theme_constant_override("separation", roundi(HqLayout.GAP * HqLayout.object_scale(Settings.text_scale)))
+	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	box.add_child(row)
+	cards.add_child(box)
+	return row
+
+
+## HQ-B (b): the DEFENCE hand with no raid pending: the Armory's defence cards (they deploy in
+## a raid's setup), or what the Armory is when it is empty.
+func _fill_armory_hand(cards: HBoxContainer) -> void:
+	var c := RunManager.campaign
+	var lookup := RunManager.lookup()
+	var seen := {}
+	for aid in c.armory:
+		if seen.has(aid):
+			continue
+		seen[aid] = true
+		var data := lookup.get_content(aid) as DefenseAssetData
+		var card := AssetCard.new(aid, TextDb.t(data, "display_name") if data != null else String(aid), data.integrity if data != null else 0, c.armory.count(aid))
+		card.set_effect(data)
+		card.name = "Armory_%s" % aid
+		card.tooltip_text = UiTip.fold("%s\n%s\n%s" % [TextDb.t(data, "description") if data != null else "", card.numbers_tip(), armory_tip()])
+		card.focus_mode = Control.FOCUS_ALL
+		cards.add_child(card)
+	if c.armory.is_empty():
+		var empty := _para(tr("Armory empty: runs bank assets from their drops."))
+		empty.name = "ArmoryEmpty"
+		empty.custom_minimum_size.x = HqLayout.CARD.x * 2.0
+		cards.add_child(empty)
+
+
+## HQ-B: the one pink sticker slot (bottom right): JACK IN for a runnable Site with the picked
+## runner (the run's resume while a saved run waits); its system word under it. Named "Launch".
+func _verb_slot(site: SiteData, launchable: Array[SiteData]) -> Control:
+	var c := RunManager.campaign
+	var slot := VBoxContainer.new()
+	slot.name = "VerbSlot"
+	slot.alignment = BoxContainer.ALIGNMENT_END
+	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	slot.add_theme_constant_override("separation", 4)
+	var runnable := false
+	for s in launchable:
+		if site != null and s.id == site.id:
+			runnable = true
+	var resume := RunManager.has_active_run()
+	if not runnable and not resume:
+		return slot
+	var jack := VerbSticker.new(tr(JACK_IN), VerbSticker.Fill.PINK, VERB_STICKER_PX, VERB_STICKER_TILT)
+	jack.pre_translated = true
+	jack.name = "Launch"
+	jack.size_flags_horizontal = Control.SIZE_SHRINK_END
+	jack.add_to_group(Fx.JACK_FOCUS_GROUP)
+	if resume:
+		jack.tooltip_text = UiTip.fold(tr("JACK IN: back into the run you left."))
+		jack.pressed.connect(resume_run)
+	else:
+		var sid := site.id
+		jack.tooltip_text = UiTip.fold(tr("JACK IN to %s: start a %s here with %s.") % [site_name(sid), tr(CampaignRules.run_kind_for(c, site)), selected_op().name if selected_op() != null else "-"])
+		jack.pressed.connect(func() -> void:
+			var op := selected_op()
+			if op != null:
+				launch(sid, op.id))
+		jack.disabled = selected_op() == null
+	slot.add_child(jack)
+	_jack_button = jack
+	var word := Label.new()
+	word.name = "SystemWord"
+	word.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	word.text = jack_system_word(site)
+	word.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	# One line under the sticker (a system word, not a sentence): cut with an ellipsis, whole in
+	# its tooltip.
+	word.clip_text = true
+	word.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	word.mouse_filter = Control.MOUSE_FILTER_PASS
+	word.tooltip_text = word.text
+	word.custom_minimum_size.y = Palette.mono().get_height(UiTheme.font_px(UiTheme.CAPTION))  # a clipped Label reports no height
+	word.add_theme_font_override("font", Palette.mono())
+	word.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+	word.add_theme_color_override("font_color", Color(Palette.PAPER, HudSkin.SYSTEM_WORD_ALPHA * 2.0))
+	slot.add_child(word)
+	# Q3: a raid pending fires mid-run (the rule kept); the system word says so, in the raid's pink.
+	if not resume and not c.pending_raids.is_empty():
+		var warn := Label.new()
+		warn.name = "RaidMidRun"
+		warn.text = "> " + tr(RAID_MID_RUN)
+		warn.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		warn.add_theme_font_override("font", Palette.mono())
+		warn.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+		warn.add_theme_color_override("font_color", Palette.CELL_PINK)
+		warn.tooltip_text = UiTip.fold(tr("A raid is pending: JACK IN now and it hits your network as an interlude in the run (or defend first: RAID SETUP)."))
+		warn.mouse_filter = Control.MOUSE_FILTER_PASS
+		slot.add_child(warn)
+	return slot
+
+
+## The verb sticker's lettering (px at 1.0) and tilt (degrees).
+const VERB_STICKER_PX := 46.0
+const VERB_STICKER_TILT := -3.0
+## Q3: the system word while a raid waits (a translation key).
+const RAID_MID_RUN := "raid incoming mid-run" # TR
+
+
+## HQ-B (bible 1.3: a word over its system word): what JACK IN does, as the deck types it:
+## `> jack --from <owned end> --to <Site>`; with a raid pending, `raid incoming mid-run` (Q3).
+func jack_system_word(site: SiteData) -> String:
+	if RunManager.has_active_run():
+		return "> jack --resume"
+	if site == null:
+		return ""
+	var link := RunManager.jack_link(site.id)
+	var word := "> jack --from %s --to %s" % [String(link.get("from", "")), String(link.get("to", site_name(site.id)))]
+	return word
+
+
+## HQ-B: JACK IN while a saved run waits: back into it (one run at a time).
+func resume_run() -> void:
+	if not RunManager.scene_change_pending():
+		RunManager.go_to_netrun()
+
+
+## HQ-B: the HQ's map graph: every Site as the Grid draws it (v4 markers, links, threat
+## arrows), the Cell's nodes as their raid sockets (on uplink pads, with stationed beacons)
+## and the assets placed on them.
+func hq_graph() -> Dictionary:
+	var c := RunManager.campaign
+	var g := grid_graph()
+	for n: Dictionary in g["nodes"]:
+		n["threat_corp"] = String(c.corporation_id)
+		if c.grid.is_claimed(n["id"]):
+			n["socket"] = raid_socket(n["id"], {}, false, c)
+			n["assets"] = c.grid.assets_on(n["id"])
+	return g
+
+
+## HQ-B: the pending raid's routes on the HQ map, as red dashed pencil (a what-if: the setup
+## makes them solid), with their entries lettered; the stationed beacons and uplink pads.
+func _mount_hq_routes() -> void:
+	if city_overlay == null or not is_instance_valid(city_overlay):
+		return
+	raid_routes = RaidRouteLayer.new(city_overlay)
+	city_overlay.add_child(raid_routes)
+	city_overlay.add_child(RaidBeaconLayer.new(city_overlay))
+	var projection := RunManager.project_raid() if not RunManager.pending_raid().is_empty() else null
+	if projection != null:
+		raid_routes.set_routes([] as Array[Array], false)
+		raid_routes.set_what_if(raid_route_paths(projection.events))
+	_mount_uplink_pads()
+
+
+## HQ-B: the minimap terminal and the folded MAP KEY at the top right, the player's camera
+## (wheel, drag, WASD, the right stick; zooming out past the raid range takes the GRID band,
+## Q4) and the off-screen TARGET arrow (Q5: the Central Server outside the fit).
+func _mount_hq_map_tools(page: Control) -> void:
+	var c := RunManager.campaign
+	hq_legend = MapLegend.new(c.corporation_id, true, true)
+	hq_legend.name = "MapLegend"
+	hq_legend.always_fold = true
+	hq_legend.use_site_markers(not c.pending_raids.is_empty())
+	hq_legend.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	page.add_child(hq_legend)
+	TextDb.translates_itself(hq_legend)
+	hq_legend.show_all_changed.connect(func(on: bool) -> void:
+		if city_overlay != null and is_instance_valid(city_overlay):
+			city_overlay.show_all = on)
+	hq_legend.fold_changed.connect(_place_hq)
+	grid_legend = hq_legend
+	grid_controls = null
+	grid_minimap = null
+	grid_target = null
+	hq_minimap = null
+	if wireframe.city3d:
+		hq_minimap = CityMinimap.new()
+		hq_minimap.name = "HqMinimap"
+		hq_minimap.visible = Settings.text_scale < MapLegend.FOLD_SCALE - 0.001
+		page.add_child(hq_minimap)
+		grid_minimap = hq_minimap
+		grid_controls = CityGridControls.new(wireframe.city, self, _hq_apply_frame)
+		grid_controls.sites_of = _minimap_sites
+		page.add_child(grid_controls)
+		grid_controls.attach(city_overlay, hq_minimap)
+		grid_target = TargetEdgeMarker.make(city_overlay)
+		grid_target.avoid.append(hq_legend)
+		grid_target.avoid.append(hq_minimap)
+		page.add_child(grid_target)
+		grid_target.pan_requested.connect(grid_controls.centre_on)
+		if not wireframe.city.rebuilt.is_connected(grid_controls.sync_minimap):
+			wireframe.city.rebuilt.connect(grid_controls.sync_minimap)
+
+
+## HQ-B: a frame the player's camera asks for (wheel, drag, keys, minimap, edge arrow): the
+## city takes it and the view band follows its zoom (Q4).
+func _hq_apply_frame(z: float, f: Vector2, a: Vector2) -> void:
+	_frame_city(z, f, a)
+	_sync_hq_band()
+	wireframe.city.update_camera()
+
+
+## HQ-B (Q4): the HQ holds the RAID band (see-through buildings, management lanes) up to the
+## raid range's widest frame (`raid_fit_max`); zoomed out past it the city takes the GRID band
+## (solid buildings, the whole city).
+func _sync_hq_band() -> void:
+	if wireframe == null or not panel_name == "hq":
+		return
+	wireframe.use_city3d(true, hq_band())
+
+
+## HQ-B (Q4): the view band for the HQ's camera now.
+func hq_band() -> int:
+	var ortho := RaidZoomFit.ortho_of(wireframe.city.scale.x, size.x)
+	return CityLod.Band.RAID if ortho <= CityView3D.CONFIG.raid_fit_max + HQ_BAND_SLACK else CityLod.Band.GRID
+
+
+## Ortho slack (BU) at the band's edge (a fit at the clamp stays in the RAID band).
+const HQ_BAND_SLACK := 1.0
+
+
+## HQ-B: places the page's pieces by HqLayout (on every resize: text scale, window).
+func _place_hq() -> void:
+	if _panel == null or not is_instance_valid(_panel) or _panel != hq_page:
+		return
+	var page := _panel
+	var o_scale := HqLayout.object_scale(Settings.text_scale)
+	# The ON AIR line along the page's foot (Q7); the rest is laid out above it.
+	var ticker := page.get_node_or_null("OnAir") as Control
+	var foot := ticker.get_combined_minimum_size().y if ticker != null else 0.0
+	if ticker != null:
+		ticker.position = Vector2(0.0, page.size.y - foot)
+		ticker.size = Vector2(page.size.x, foot)
+	var area := Vector2(page.size.x, maxf(1.0, page.size.y - foot))
+	var order := page.get_node_or_null("WorkOrder") as Control
+	var r := HqLayout.rects(area, Settings.text_scale, order != null)
+	# The tabs stand on the foot (as tall as their words need), the hand beside them.
+	var tabs := page.get_node("HandTabs") as Control
+	var tmin := tabs.get_combined_minimum_size()
+	var tr_: Rect2 = r["tabs"]
+	tabs.size = Vector2(maxf(tr_.size.x, tmin.x), maxf(tr_.size.y, tmin.y))
+	tabs.position = Vector2(tr_.position.x, area.y - HqLayout.MARGIN - tabs.size.y)
+	var verb := page.get_node("VerbSlot") as Control
+	var vr: Rect2 = r["verb"]
+	var vmin := verb.get_combined_minimum_size()
+	verb.size = Vector2(maxf(vr.size.x, vmin.x), maxf(vr.size.y, vmin.y))
+	verb.position = Vector2(area.x - HqLayout.MARGIN - verb.size.x, area.y - HqLayout.MARGIN - verb.size.y)
+	var hand := page.get_node("Hand") as Control
+	var hr: Rect2 = r["hand"]
+	var hand_h := maxf(hr.size.y, (hand.get_child(0) as Control).get_combined_minimum_size().y)
+	hand.position = Vector2(tabs.position.x + tabs.size.x + HqLayout.GAP, area.y - HqLayout.MARGIN - hand_h)
+	var col_x := area.x - HqLayout.MARGIN - (r["card"] as Rect2).size.x
+	hand.size = Vector2(maxf(1.0, minf(verb.position.x, col_x) - HqLayout.GAP - hand.position.x), hand_h)
+	var foot_top := minf(hand.position.y, tabs.position.y)
+	if order != null:
+		var o: Rect2 = r["order"]
+		# The paper scrolls in what RAID SETUP leaves it (the chip always shows).
+		var paper := order.get_node("WorkOrderPaper/WorkOrderBox") as Control
+		var chip_h := (order.get_node("RaidSetup") as Control).get_combined_minimum_size().y + order.get_theme_constant("separation")
+		order.position = o.position
+		order.size = Vector2(maxf(o.size.x, paper.get_combined_minimum_size().x), minf(paper.get_combined_minimum_size().y + chip_h, maxf(chip_h + 1.0, foot_top - HqLayout.GAP - o.position.y)))
+	var top := HqLayout.MARGIN
+	var cr: Rect2 = r["card"]
+	if hq_minimap != null and is_instance_valid(hq_minimap) and hq_minimap.visible:
+		var ms := hq_minimap.get_combined_minimum_size()
+		hq_minimap.size = ms
+		hq_minimap.position = Vector2(area.x - HqLayout.MARGIN - ms.x, top)
+		top += ms.y + HqLayout.GAP
+	if hq_legend != null and is_instance_valid(hq_legend):
+		var ls := hq_legend.get_combined_minimum_size()
+		hq_legend.size = ls
+		hq_legend.position = Vector2(area.x - HqLayout.MARGIN - ls.x, top)
+		top += hq_legend.fit_size().y + HqLayout.GAP
+	var column := page.get_node("CardColumn") as Control
+	var bottom := verb.position.y - HqLayout.GAP
+	column.size = Vector2(cr.size.x, maxf(1.0, minf((column.get_child(0) as Control).get_combined_minimum_size().y, bottom - top)))
+	column.position = Vector2(area.x - HqLayout.MARGIN - cr.size.x, bottom - column.size.y)
+	_hq_free = Rect2(Vector2(order.position.x + order.size.x + HqLayout.MARGIN if order != null else HqLayout.MARGIN, HqLayout.MARGIN), Vector2.ZERO)
+	_hq_free.end = Vector2(column.position.x - HqLayout.MARGIN, foot_top - HqLayout.MARGIN)
+	_hq_free.size = _hq_free.size.max(Vector2.ONE)
+	var cursor := page.get_node("MapCursor") as Control
+	cursor.position = _hq_free.position
+	cursor.size = _hq_free.size
+	if city_overlay != null and is_instance_valid(city_overlay):
+		city_overlay.screen_rect = page.get_global_rect()
+		var avoid: Array[Control] = [tabs, hand, verb, column]
+		for extra in [order, hq_minimap, hq_legend, ticker]:
+			if extra != null and is_instance_valid(extra):
+				avoid.append(extra)
+		city_overlay.avoid_controls(avoid)
+
+
+## HQ-B: the map's free part as last placed (page px).
+var _hq_free: Rect2 = Rect2()
+
+
+## HQ-B: lays the page out again once this frame's sizes have settled (a piece's minimum size
+## changed: a sticker refitted for the text size, a card's rows wrapped).
+func _queue_place_hq() -> void:
+	if not get_tree().process_frame.is_connected(_place_hq):
+		get_tree().process_frame.connect(_place_hq, CONNECT_ONE_SHOT)
+
+
+## HQ-B: the map's free part (global px, or page px with `local`): the page less the work
+## order, the hand, the tabs, the ON AIR line and the right column, where the camera fits the
+## network.
+func hq_free_rect(local: bool = false) -> Rect2:
+	if _panel == null or not is_instance_valid(_panel) or _panel != hq_page:
+		return Rect2()
+	return _hq_free if local else Rect2(_panel.get_global_rect().position + _hq_free.position, _hq_free.size)
+
+
+## HQ-B (Q5): the lots the HQ's camera fits: the Cell's network, the Sites a run can start
+## from now (patrols too) and a pending raid's routes; the Central Server shows by its edge
+## arrow when it falls outside.
+func hq_fit_lots() -> PackedVector2Array:
+	var out := PackedVector2Array()
+	if city_overlay == null or not is_instance_valid(city_overlay) or RunManager.campaign == null:
+		return out
+	var c := RunManager.campaign
+	var want := {}
+	for id in c.grid.claimed_ids():
+		want[id] = true
+	for s in RunManager.launchable_sites():
+		want[s.id] = true
+	for s in RunManager.patrol_sites():
+		want[s.id] = true
+	for path in CityLayout.threat_paths(c, RunManager.corporation):
+		for id in path:
+			want[id] = true
+	for n in city_overlay.nodes:
+		if want.has(n["id"]):
+			out.append(Vector2(city_overlay.lot_of(n["id"])) + Vector2(0.5, 0.5))
+	return out
+
+
+## HQ-B: frames the HQ's map once its page is laid out: the fit lots in the free part at the
+## raid zoom (RaidZoomFit, clamped to the raid range), then up to HQ_FIT_PASSES corrections
+## on the icons as drawn (a socket floats over its roof: the lots alone frame a little low),
+## never out past the raid range; then the held picture eases to it.
+func fit_hq_map() -> void:
+	if panel_name != "hq" or city_overlay == null or not is_instance_valid(city_overlay):
+		_hq_fit_pending = false
+		return
+	var free := hq_free_rect()
+	var lots := hq_fit_lots()
+	if not free.has_area() or lots.is_empty():
+		_end_hq_fit()
+		return
+	var scr := get_global_rect()
+	var city := wireframe.city
+	if _hq_fit_passes == 0:
+		_frame_city(RaidZoomFit.fit_zoom(CityView3D.CONFIG, lots, free.size * HQ_FIT_SHARE, size.x), _centre_of(lots), (free.get_center() - scr.position) / scr.size)
+	else:
+		var box := hq_fit_box()
+		var aim := Rect2(free.get_center() - free.size * HQ_FIT_SHARE * 0.5, free.size * HQ_FIT_SHARE)
+		if not box.has_area() or aim.encloses(box):
+			_end_hq_fit()
+			return
+		var k := 1.0
+		if box.size.x > aim.size.x or box.size.y > aim.size.y:
+			k = minf(aim.size.x / box.size.x, aim.size.y / box.size.y)
+		var floor_zoom := RaidZoomFit.zoom_of(CityView3D.CONFIG.raid_fit_max, size.x)
+		k = clampf(k, floor_zoom / maxf(floor_zoom, city.scale.x), 1.0)
+		var focus_at := scr.position + city.focus_anchor * scr.size
+		var anchor := (aim.get_center() - (box.get_center() - focus_at) * k - scr.position) / scr.size
+		_frame_city(city.scale.x * k, city.focus_grid, anchor)
+	_hq_fit_passes += 1
+	_sync_hq_band()
+	city.update_camera()
+	if grid_controls != null and is_instance_valid(grid_controls):
+		grid_controls.sync_minimap()
+	if _hq_fit_passes > HQ_FIT_PASSES:
+		_end_hq_fit()
+		return
+	get_tree().process_frame.connect(fit_hq_map, CONNECT_ONE_SHOT)
+
+
+## Correction passes of the HQ's fit after the first frame, and the passes so far.
+const HQ_FIT_PASSES := 4
+## The share of the free part the fitted Sites take (designer 2026-10-05: err on showing more
+## city round the network).
+const HQ_FIT_SHARE := 0.75
+var _hq_fit_passes: int = 0
+
+
+func _end_hq_fit() -> void:
+	_hq_fit_pending = false
+	_hq_fit_passes = 0
+	wireframe.ease_camera()
+
+
+## HQ-B: the screen box (global px) round the icons of the Sites the HQ's camera fits.
+func hq_fit_box() -> Rect2:
+	var c := RunManager.campaign
+	var box := Rect2()
+	var first := true
+	var ids: Array[StringName] = []
+	ids.append_array(c.grid.claimed_ids())
+	for s in RunManager.launchable_sites():
+		ids.append(s.id)
+	for s in RunManager.patrol_sites():
+		ids.append(s.id)
+	for path in CityLayout.threat_paths(c, RunManager.corporation):
+		for id in path:
+			ids.append(StringName(String(id)))
+	for id in ids:
+		var r := _map_node_rect(id)
+		if not r.has_area():
+			continue
+		box = r if first else box.merge(r)
+		first = false
+	return box
+
+
+## HQ-B: the map cursor stepped (pad left / right): the next Site in the Grid's order is
+## selected and the cursor keeps the focus.
+func _cursor_step(step: int) -> void:
+	_hq_focus = "MapCursor"
+	step_site(step)
+
+
+## HQ-B: the HQ's drag targets: your nodes on the map take a crew card (station; CORE
+## recalls), each runnable Site takes one (picks them as its runner), the CREW tab takes a
+## recruit, the next run's kit a boost.
+func _register_hq_drops_b(launchable: Array[SiteData]) -> void:
+	var c := RunManager.campaign
+	for site_id in c.grid.claimed_ids():
+		var sid: StringName = site_id
+		var kind := "recall" if sid == c.grid.home_site_id else "station"
+		drops.add_target("%s:%s" % [kind, sid], ["crew"], kind, sid, _map_node_rect.bind(sid))
+	for s in launchable:
+		if not c.grid.is_claimed(s.id):
+			drops.add_target("site:%s" % s.id, ["crew"], "jack", s.id, _map_node_rect.bind(s.id))
+	var crew_tab := _panel.find_child("Tab_CREW", true, false) as Control
+	if crew_tab != null:
+		drops.add_target("roster", ["recruit"], "roster", null, DropLayer.rect_of(crew_tab))
+	var queue := _panel.find_child("QueuedBoosts", true, false) as Control
+	if queue != null:
+		drops.add_target("queue", ["boost"], "queue", null, DropLayer.rect_of(queue))
+	if _jack_button != null:
+		drops.add_target("jack", ["crew"], "jack", selected_site, DropLayer.rect_of(_jack_button))
+
+
+## HQ-B: the pad's paths on the HQ: the map cursor first; down from it to the hand (the
+## lifted card), up from the hand back to it; the tabs left of the hand, the card's actions
+## and the verb at the right; the work order's RAID SETUP above the map.
+func _link_hq_focus(page: Control) -> void:
+	var cursor := page.get_node("MapCursor") as Control
+	var cards: Array[Control] = []
+	_usable_in(page.get_node("Hand"), cards)
+	var tabs: Array[Control] = []
+	_usable_in(page.get_node("HandTabs"), tabs)
+	var card_actions: Array[Control] = []
+	_usable_in(page.get_node("CardColumn"), card_actions)
+	var verb: Array[Control] = []
+	_usable_in(page.get_node("VerbSlot"), verb)
+	var setup := page.find_child("RaidSetup", true, false) as Control
+	var lifted: Control = null
+	for k in cards:
+		if k is CrewHandCard and (k as CrewHandCard).picked:
+			lifted = k
+	if lifted == null and not cards.is_empty():
+		lifted = cards[0]
+	if lifted != null:
+		cursor.focus_neighbor_bottom = cursor.get_path_to(lifted)
+	elif not tabs.is_empty():
+		cursor.focus_neighbor_bottom = cursor.get_path_to(tabs[0])
+	var key: Control = hq_legend.fold_button if hq_legend != null and is_instance_valid(hq_legend) else null
+	if setup != null:
+		cursor.focus_neighbor_top = cursor.get_path_to(setup)
+		setup.focus_neighbor_bottom = setup.get_path_to(cursor)
+		if key != null:
+			setup.focus_neighbor_right = setup.get_path_to(key)
+	elif key != null:
+		cursor.focus_neighbor_top = cursor.get_path_to(key)
+	if key != null:
+		key.focus_neighbor_bottom = key.get_path_to(cursor)
+		key.focus_neighbor_left = key.get_path_to(setup if setup != null else cursor)
+		if not card_actions.is_empty():
+			card_actions[0].focus_neighbor_top = card_actions[0].get_path_to(key)
+	if not card_actions.is_empty():
+		cursor.focus_neighbor_right = cursor.get_path_to(card_actions[0])
+	for i in cards.size():
+		var k := cards[i]
+		k.focus_neighbor_top = k.get_path_to(cursor)
+		if i > 0:
+			k.focus_neighbor_left = k.get_path_to(cards[i - 1])
+		elif not tabs.is_empty():
+			k.focus_neighbor_left = k.get_path_to(tabs[mini(hand_tab, tabs.size() - 1)])
+		if i + 1 < cards.size():
+			k.focus_neighbor_right = k.get_path_to(cards[i + 1])
+		elif not verb.is_empty():
+			k.focus_neighbor_right = k.get_path_to(verb[0])
+	for i in tabs.size():
+		var t := tabs[i]
+		if i > 0:
+			t.focus_neighbor_top = t.get_path_to(tabs[i - 1])
+		else:
+			t.focus_neighbor_top = t.get_path_to(cursor)
+		if i + 1 < tabs.size():
+			t.focus_neighbor_bottom = t.get_path_to(tabs[i + 1])
+		if not cards.is_empty():
+			t.focus_neighbor_right = t.get_path_to(cards[0])
+	for v in verb:
+		if not card_actions.is_empty():
+			v.focus_neighbor_top = v.get_path_to(card_actions[card_actions.size() - 1])
+		if not cards.is_empty():
+			v.focus_neighbor_left = v.get_path_to(cards[cards.size() - 1])
+	if not card_actions.is_empty() and not verb.is_empty():
+		card_actions[card_actions.size() - 1].focus_neighbor_bottom = card_actions[card_actions.size() - 1].get_path_to(verb[0])
+	for a in card_actions:
+		if a.focus_neighbor_left == NodePath():
+			a.focus_neighbor_left = a.get_path_to(cursor)
 
 
 ## ANIM-R2 R1 (view memory): the bake region the Grid was last framed at, per campaign.
@@ -2008,206 +2667,10 @@ func _node_choices() -> Array[NetworkNodeData]:
 	return out
 
 
+## HQ-B (b): the City Grid page folded into the HQ (the HQ is the raid-band city with every
+## Site on it): the Grid opens the HQ with its selected Site.
 func show_grid() -> void:
-	var c := RunManager.campaign
-	var corp := RunManager.corporation
-	var cfg := RunManager.config()
-	_sync_previews()
-	# ANIM-R4 H10: the run a JACK IN here starts, and a raid, have their music made ahead.
-	AudioDirector.prewarm_music(["netrun", "combat", "raid"], c.corporation_id)
-	_grid_chips.clear()
-	_jack_button = null
-	# The Grid lives on the city (M3: the rest of the city greyed out); the side column
-	# holds the plan, the legend and the Site list. `grid_view` stays as the (hidden)
-	# summary map model: its clicks and selection mirror the city map's.
-	var outer := HBoxContainer.new()
-	outer.add_theme_constant_override("separation", 0)
-	outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var spacer := Control.new()
-	spacer.name = "GridMapArea"
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	outer.add_child(spacer)
-	# H23 #3: the map key sits on the map (in the side column's foot it fell below the fold),
-	# a strip along the map's foot; the map is framed above it (`fit_grid_map`).
-	grid_legend = MapLegend.pin_to(spacer, c.corporation_id, true)
-	grid_legend.use_site_markers(not c.pending_raids.is_empty())  # ART-5 5d: the Grid's key is the v4 markers, in plain words
-	grid_view = GridMapView.new()
-	grid_view.visible = false
-	grid_view.show_grid(c, corp, _threat_paths())
-	grid_view.selected_id = selected_site
-	grid_view.site_clicked.connect(select_site)
-	outer.add_child(grid_view)
-	var side := VBoxContainer.new()
-	side.name = "GridSide"
-	side.custom_minimum_size.x = GRID_SIDE_WIDTH
-	side.add_theme_constant_override("separation", 10)
-	# The column scrolls on its own (H21 #15: at 1.6, or with a raid pending and many
-	# claimed nodes, RUNS OPEN NOW went off the screen; the city page itself never scrolls):
-	# by mouse wheel over it, and by pad as focus moves down (follow_focus).
-	var side_scroll := ScrollContainer.new()
-	side_scroll.name = "GridSideScroll"
-	side_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	side_scroll.follow_focus = true
-	side_scroll.custom_minimum_size.x = GRID_SIDE_WIDTH + SIDE_SCROLLBAR
-	side_scroll.add_child(side)
-	side_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	# The site navigation stays pinned above the scrolling part (merge fix: a taller legend
-	# let follow_focus scroll the nav row under the subtitle band).
-	var column := VBoxContainer.new()
-	column.name = "GridColumn"
-	column.add_theme_constant_override("separation", 10)
-	column.add_child(side_scroll)
-	outer.add_child(column)
-	# H20: no plan note or Site list; the map carries status and objectives, the side
-	# column holds the picked Site's card with its actions, the runs open now, the legend.
-	var launchable := RunManager.launchable_sites()
-	launchable.append_array(RunManager.patrol_sites())
-	if (selected_site == &"" or CampaignRules.site_data(corp, selected_site) == null) and not launchable.is_empty():
-		selected_site = launchable[0].id
-	if selected_site == &"" or CampaignRules.site_data(corp, selected_site) == null:
-		selected_site = c.grid.home_site_id
-	# The card over the full column, then the runs open now (the legend is on the map).
-	var top := GridContainer.new()
-	top.columns = 1
-	side.add_child(top)
-	var site := CampaignRules.site_data(corp, selected_site)
-	if site != null:
-		var card := _site_card(site, launchable, c.living_operatives(), _node_choices())
-		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		top.add_child(card)
-	# Every Site stays reachable without the mouse: step through them, or jump to a run.
-	# First in the column: the city screens don't scroll by mouse wheel, so Back to HQ
-	# must stay on screen at text scale 1.6.
-	# H23 #5: the row wraps inside the column (as one row, with RAID SETUP at text scale 1.6
-	# it widened the column over most of the map).
-	var nav := HFlowContainer.new()
-	nav.name = "SiteNav"
-	nav.add_theme_constant_override("h_separation", 8)
-	nav.add_theme_constant_override("v_separation", 6)
-	# H24 K2: the row keeps inside the column's windows (the scroll bar's strip is not
-	# theirs: Back to HQ reached past their border).
-	var nav_box := MarginContainer.new()
-	nav_box.name = "SiteNavBox"
-	nav_box.add_theme_constant_override("margin_right", int(SIDE_SCROLLBAR))
-	nav_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	nav_box.add_child(nav)
-	column.add_child(nav_box)
-	column.move_child(nav_box, 0)
-	# H23 #7: every Site row and step button carries the map icon of its Site (kind, map
-	# colour, tier pips), so the list and the map read alike.
-	var map_nodes := {}
-	for n in grid_graph()["nodes"]:
-		map_nodes[n["id"]] = n
-	var prev := _step_button(tr("< PREV SITE"), "<", func() -> void: step_site(-1))
-	prev.name = "PrevSite"
-	_site_mark(prev, map_nodes.get(stepped_site(-1), {}), false)
-	_add_tip(nav, prev, tr("PREV SITE: select the previous Site on the Grid: %s (the map follows).") % _site_kind_name(stepped_site(-1)))
-	var next := _step_button(tr("NEXT SITE >"), ">", func() -> void: step_site(1))
-	next.name = "NextSite"
-	_site_mark(next, map_nodes.get(stepped_site(1), {}), false)
-	_add_tip(nav, next, tr("NEXT SITE: select the next Site on the Grid: %s (the map follows).") % _site_kind_name(stepped_site(1)))
-	var back := _icon(_step_button(tr("Back to HQ"), "", show_hq), StatIcon.BACK)
-	back.name = "BackToHq"
-	_add_tip(nav, back, tr("Back to the HQ: crew, Black Market, Cell status."))
-	if not c.pending_raids.is_empty():
-		var raid_btn := _icon(_step_button(tr("RAID SETUP"), "", show_raid), StatIcon.RAIDS)
-		raid_btn.name = "RaidSetup"
-		raid_btn.theme_type_variation = &"HotButton"
-		_add_tip(nav, raid_btn, tr("RAID SETUP: a raid is coming along the dashed routes: set up the defence."))
-	if not launchable.is_empty():
-		var runs := CrtWindow.new(tr("RUNS OPEN NOW"), Palette.CELL_ACID)
-		runs.name = "RunsOpen"
-		side.add_child(runs)
-		# One run a row (H23 #7: wrapped side by side they read as a jumble).
-		var rows := VBoxContainer.new()
-		rows.name = "RunRows"
-		rows.add_theme_constant_override("separation", 6)
-		runs.body.add_child(rows)
-		_run_buttons.clear()
-		for s in launchable:
-			var sid := s.id
-			var mn: Dictionary = map_nodes.get(s.id, {})
-			var kind := String(mn.get("kind", CityMapOverlay.KIND_TIER))
-			# H24 K7: the words translated here, once (the button does not translate them again).
-			var words := "%s %s" % [CityMapOverlay.tier_text(s.tier), site_name(s.id)]
-			if kind != CityMapOverlay.KIND_TIER:
-				words += " · %s" % CityMapOverlay.kind_word(kind).to_upper()  # kind_word translates
-			var b := _button(words, func() -> void: select_site(sid))
-			b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-			b.name = "Run_%s" % s.id
-			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			b.autowrap_mode = TextServer.AUTOWRAP_WORD  # a long name wraps in the column
-			# H22 #14: the Site's own map icon (objective or tier, the map's colour) and its tier
-			# as pips (the harder the run, the more bars).
-			_site_mark(b, mn)
-			if s.id == selected_site:
-				b.add_theme_color_override("font_color", Palette.CELL_ACID)
-			# H24 K4: what clearing it gives and risks, as icons under the row (the rows
-			# looked alike), and the row lights its node on the map (and the node its row).
-			var preview := clear_preview_of(s)
-			var gains := run_gains(s, preview)
-			var said := PackedStringArray()
-			for g: Badge in gains:
-				said.append(g.tooltip_text.replace("\n", " "))
-			_add_tip(rows, b, tr("%s %s: %s. %s %s Select it, then %s on its card.") % [CityMapOverlay.tier_text(s.tier), site_name(s.id), tr(CampaignRules.run_kind_for(c, s)),
-				CityMapOverlay.tr_word(String(CityLayout.KIND_TIPS.get(kind, ""))), " ".join(said), tr(JACK_IN)])
-			var gain_row := HFlowContainer.new()
-			gain_row.name = "Gains_%s" % s.id
-			gain_row.add_theme_constant_override("h_separation", 10)
-			gain_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			var cap := Label.new()
-			cap.name = "GainsCaption"
-			cap.text = tr(GAIN_CAPTION)
-			cap.add_theme_font_override("font", Palette.mono())
-			cap.add_theme_font_size_override("font_size", roundi(GAIN_CAPTION_FONT * Settings.text_scale))
-			cap.add_theme_color_override("font_color", Color(Palette.PAPER, 0.6))
-			cap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			gain_row.add_child(cap)
-			for g: Badge in gains:
-				gain_row.add_child(g)
-			rows.add_child(gain_row)
-			b.set_meta(&"site_id", s.id)
-			b.mouse_entered.connect(_light_site.bind(s.id))
-			b.focus_entered.connect(_light_site.bind(s.id))
-			b.mouse_exited.connect(_unlight_site.bind(s.id))
-			b.focus_exited.connect(_unlight_site.bind(s.id))
-			_run_buttons[s.id] = b
-	_set_panel(outer, "grid")
-	_fit_steps(nav)
-	# More below in the column (the runs at big text): the same tag as the HQ page's.
-	side_hint = ScrollHint.new(side_scroll)
-	side_hint.snap_rows = true  # ANIM-R3 B13: the runs list never ends in a half row
-	side_hint.name = "SideHint"
-	add_child(side_hint)
-	UiFocus.link_layout(column)  # the side column row by row (nav, card actions, runs)
-	var g := grid_graph()
-	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, GRID_ANCHOR, GRID_ZOOM)
-	city_overlay.selected_id = selected_site
-	# ART-5 5d: the boss chip counts the Exploits; the key's SHOW ALL reveals hidden Sites.
-	city_overlay.boss_exploits = Vector2i(c.exploits.size(), cfg.min_exploits_for_breach)
-	grid_legend.show_all_changed.connect(func(on: bool) -> void:
-		if city_overlay != null and is_instance_valid(city_overlay):
-			city_overlay.show_all = on)
-	city_overlay.node_clicked.connect(func(id: StringName) -> void: grid_view.site_clicked.emit(id))
-	city_overlay.node_hovered.connect(light_run_row)
-	city_overlay.avoid_controls([column, grid_legend])  # map labels stay clear of the column and the key
-	_mount_grid_camera(spacer, outer, column)
-	# ART-5 5e: the Grid's city shows the campaign (Heat rig, the Cell's fist, the Site landmark).
-	wireframe.city.set_city_life(GridCityLife.of(c, corp, cfg))
-	_grid_fits = 0
-	_grid_leaned = false
-	_fit_next_frame()
-	spacer.resized.connect(_refit_grid)
-	grid_legend.minimum_size_changed.connect(_on_grid_legend_resized)
-	grid_legend.visibility_changed.connect(_refit_grid)
-	# H24 K1: the folded key opens over the map (no refit) and folds back.
-	grid_legend.fold_changed.connect(_place_grid_legend)
-	if grid_legend.foldable():
-		set_page_prompts(prompts_for("grid") + [[&"cycle_target", KEY_PROMPT]])
-	_register_grid_drops(site)
+	show_hq()
 
 
 ## The Grid map fitted to the part of the screen it shows through (H23 #5: at 1.6 a T3
@@ -2598,7 +3061,7 @@ func _threat_paths() -> Array[Array]:
 ## ANIM-5 (4.14): the picture holds the old frame while the page refits and then eases
 ## to the new one (the camera leans toward the Site, `grid_lean`).
 func select_site(site_id: StringName) -> void:
-	if panel_name == "grid":
+	if panel_name in ["hq", "grid"]:
 		wireframe.hold_camera()
 	selected_site = site_id
 	show_grid()
@@ -2742,43 +3205,45 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		card.body.add_child(note)
 		card.body.move_child(note, row.get_index())
 	if launchable_here and not living.is_empty():
-		var op_pick := OptionButton.new()
-		op_pick.name = "OperativePick"
-		for op in living:
-			var post := CampaignRules.stationed_site(c, op.id)
-			op_pick.add_item(tr("%s R%d%s") % [op.name, op.rank, (tr(" (leaves %s)") % site_name(post)) if post != &"" else ""])
-		op_pick.tooltip_text = tr("Who runs it.")
-		# H22 #14: the dropdown carries the operative icon beside it.
-		var who := IconMark.standalone(StatIcon.OPERATIVE, UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR, Palette.CELL_PINK)
-		who.name = "OperativeIcon"
-		who.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(who)
-		row.add_child(op_pick)
-		var sid := site.id
-		var kind := CampaignRules.run_kind_for(c, site)
-		# One name for one idea (H21 #21): JACK IN, as on the HQ's stamp.
-		var go := _icon(_button(tr(JACK_IN), func() -> void: launch(sid, living[op_pick.selected].id)), StatIcon.JACK_IN)
-		go.add_to_group(Fx.JACK_FOCUS_GROUP)  # ANIM-5: jack in pushes into this JACK IN
-		go.name = "Launch"
-		go.theme_type_variation = &"HotButton"
-		_add_tip(row, go, tr("JACK IN to %s: start a %s here with the picked operative.") % [site_name(site.id), tr(kind)])
-		_jack_button = go
-		# ANIM-4: the crew as small Polaroids: drag one onto JACK IN (or pick it up with a
-		# press) to choose who runs it (ANIM-R1: it picks; the press on JACK IN launches).
-		# The list above stays the button path.
-		var chips := HFlowContainer.new()
-		chips.name = "CrewChips"
-		chips.add_theme_constant_override("h_separation", 6)
-		chips.add_theme_constant_override("v_separation", 6)
-		for op in living:
-			var chip := CrewChip.new(op.class_id, op.id, op.name)
-			chip.name = "Chip_%s" % op.id
-			chip.tooltip_text = UiTip.fold(UiTip.for_input(tr("%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN."),
-				tr("%s: pick them up and move them onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.")) % [op.name, site_name(site.id)])
-			chips.add_child(chip)
-			_grid_chips.append(chip)
-		card.body.add_child(chips)
-		card.body.move_child(chips, row.get_index())
+		# HQ-B: the runner is the hand's lifted card; JACK IN is the verb slot's sticker. The card
+		# names who runs it (or the rule's reason they can't).
+		var runner := selected_op()
+		var runner_line := Label.new()
+		runner_line.name = "Runner"
+		runner_line.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		var why_runner := _pick_error(runner.id, site.id) if runner != null else ""
+		if why_runner == DropLayer.SKIP:
+			why_runner = ""
+		runner_line.text = (tr("RUNNER: %s R%d") % [runner.name, runner.rank]) if runner != null else ""
+		if why_runner != "":
+			runner_line.text += "  //  " + why_runner
+		runner_line.add_theme_color_override("font_color", Palette.HARM if why_runner != "" else Palette.CELL_ACID)
+		UiWrap.whole_words(runner_line)
+		runner_line.custom_minimum_size.x = MIN_NOTE_WIDTH
+		card.body.add_child(runner_line)
+		card.body.move_child(runner_line, row.get_index())
+	# HQ-B (b): the crew's posts on the node card: the runner stations here (a free post on an
+	# active node of yours) or comes back from here.
+	var who := selected_op()
+	if who != null and c.grid.is_active_node(site.id) and site.id != c.grid.home_site_id:
+		var node_data := lookup.get_content(c.grid.node_type_of(site.id)) as NetworkNodeData
+		var here := CampaignRules.stationed_site(c, who.id) == site.id
+		if here:
+			var oid := who.id
+			var rb := _button(tr("Recall %s") % who.name, func() -> void: recall(oid))
+			rb.name = "RecallHere"
+			_add_tip(row, rb, tr("Bring %s back from %s.") % [who.name, site_name(site.id)])
+		elif node_data != null and node_data.station_slots > 0 and c.grid.stationed_on(site.id) == &"":
+			var oid := who.id
+			var sid := site.id
+			var sb := _button(tr("Station %s") % who.name, func() -> void: station(oid, sid))
+			sb.name = "StationHere"
+			_add_tip(row, sb, tr("%s guards %s (%s): the class's station bonus helps it hold in raids.") % [who.name, site_name(site.id), TextDb.t(node_data, "description")])
+	# HQ-B (b): CORE's patch (it was the deck menu's line).
+	if site.id == c.grid.home_site_id and c.grid.home_integrity < c.grid.home_max_integrity:
+		var pb := _button(tr("Patch home %s (%d)") % [TextDb.signed(c.grid.home_max_integrity - c.grid.home_integrity), CampaignRules.home_repair_price(c, cfg)], repair_home)
+		pb.name = "PatchHome"
+		_add_tip(row, pb, tr("Repair the home server to full integrity."))
 	if c.grid.is_cleared(site.id) and site.claimable:
 		var node_pick := OptionButton.new()
 		node_pick.name = "NodePick"
@@ -3145,7 +3610,19 @@ const INTEL_WIDTH := 300.0
 ## now (the forecast is exact), with the Cell's forecast stamp on it; the raid's warning in
 ## the tooltip. Named "RaidCard"; its values keep their names (HomeForecast, ThreatsStopped,
 ## RaidStrength) for the pad and the tests.
-func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult) -> Control:
+## HQ-B: what set a pending raid off, as the work order prints it ("HEAT 50 CROSSED").
+func raid_trigger_words(pending: Dictionary) -> String:
+	match int(pending.get("source", -1)):
+		RC.RaidTriggerSource.HEAT_THRESHOLD:
+			return tr("HEAT %d CROSSED") % int(pending.get("heat", 0))
+		RC.RaidTriggerSource.TERRITORY_CLAIM, RC.RaidTriggerSource.NODE_BUILT:
+			return tr("NODE BUILT")
+		RC.RaidTriggerSource.RETALIATION:
+			return tr("RETALIATION")
+	return tr("ORDERS")
+
+
+func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult, compact: bool = false) -> Control:
 	var c := RunManager.campaign
 	var cfg := RunManager.config()
 	var skin := RaidSkin.of(c.corporation_id)
@@ -3187,6 +3664,17 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 		entries.append(site_name(e))
 	# The entry Sites in the units' tooltip (the pencil circles and letters them on the map).
 	_tip_label(units_l, tr("Threats come into the city at %d Sites: %s. The red pencil routes on the map show where they go.") % [entries.size(), ", ".join(entries)])
+	if compact:
+		# HQ-B (direction_B.png): at the HQ the order reads at a glance: where they come in and what
+		# set them off; the exact forecast is the raid setup's (RAID SETUP / DEFENCE).
+		var letters := PackedStringArray()
+		for i in entries.size():
+			letters.append(RaidRouteMark.letter_of(i))
+		var entry_l := card.add_row(tr("ENTRY SITES"), "%d (%s)" % [entries.size(), ", ".join(letters)], Palette.INK, "RaidEntries")
+		_tip_label(entry_l, ", ".join(entries))
+		card.add_row(tr("TRIGGER"), raid_trigger_words(pending), Palette.INK, "RaidTrigger")
+		card.body = paper_body
+		return card
 	var strength := card.add_row(tr("STRENGTH"), tr("STRENGTH %s%%") % TextDb.signed(roundi(CampaignRules.raid_strength_pct(c, cfg, pending, RunManager.corporation))),
 		Palette.INK, "RaidStrength")
 	_tip_label(strength, tr("How much stronger than normal the threats are (from Heat, ICE and taken Sites). 0% is normal strength."))
@@ -4989,7 +5477,10 @@ func toggle_heat_terminal() -> void:
 	heat_terminal.closed.connect(close_heat_terminal)
 	add_child(heat_terminal)
 	TextDb.shown_as_given(heat_terminal)
-	heat_terminal.drop_under(hud.heat_gauge.get_global_rect(), get_global_rect())
+	# Under the tag and the subtitles' band (a line spoken over it would cover its header).
+	var tag := hud.heat_gauge.get_global_rect()
+	tag.end.y = SubtitleStrip.top_below(tag.end.y)
+	heat_terminal.drop_under(tag, get_global_rect())
 	if heat_terminal.scrub != null:
 		heat_terminal.scrub.grab_focus.call_deferred()
 
@@ -5134,7 +5625,7 @@ func _on_territory_marked(_marks: Array) -> void:
 ## ANIM-R3 B6: the Grid's Site card rebuilt in place for the campaign as it is now (a claim
 ## seen on the map while the card still offered CLAIM); nothing off the Grid.
 func refresh_site_card() -> void:
-	if panel_name != "grid" or _panel == null or RunManager.campaign == null:
+	if not panel_name in ["hq", "grid"] or _panel == null or RunManager.campaign == null:
 		return
 	var old := _panel.find_child("SelectedSite", true, false) as Control
 	var site := CampaignRules.site_data(RunManager.corporation, selected_site)

@@ -75,30 +75,32 @@ func test_combat_zine_elements_never_cover_the_wheels() -> void:
 
 
 func test_hq_is_a_cyberdeck_and_the_grid_is_wireframe() -> void:
+	# HQ-B (b) (designer, direction B): the HQ is the raid-band 3D city (wireframe world), the
+	# Grid page folded into it; the crew are hand cards (photo prints), JACK IN the pink sticker.
 	var hq := _open(HQ)
 	await _layout(hq)
 	hq.new_campaign(2)
-	assert_true(hq.background.visible, "HQ shows the cyberdeck")
-	assert_false(hq.wireframe.visible)
-	assert_not_null(hq._panel.find_child("", true, false) if false else hq._panel, "HQ panel")
+	assert_false(hq.background.visible, "no cyberdeck room: the HQ is the city")
+	assert_true(hq.wireframe.visible, "the HQ is the wireframe city")
+	assert_not_null(hq._panel, "HQ panel")
 	var found_poster := false
-	var found_polaroid := false
-	var found_stamp := false
+	var found_card := false
+	var found_sticker := false
 	for n in _descendants(hq._panel):
 		found_poster = found_poster or n is HeatPoster
-		found_polaroid = found_polaroid or n is Polaroid
-		found_stamp = found_stamp or (n is ZineStamp and n.stamp_text == "JACK IN")
+		found_card = found_card or n is CrewHandCard
+		found_sticker = found_sticker or (n is VerbSticker and n.name == "Launch")
 	# HQ-B (Q1): no WANTED poster: Heat is the top bar's gauge, its first slot.
 	assert_false(found_poster, "no wanted poster on the page")
 	assert_true(hq.hud.heat_gauge.is_visible_in_tree() and hq.hud.heat_gauge.get_index() == 0, "the HEAT gauge in the bar's first slot")
-	assert_true(found_polaroid, "Polaroid roster")
-	assert_true(found_stamp, "JACK IN stamp")
+	assert_true(found_card, "the crew as hand cards")
+	assert_true(found_sticker, "JACK IN sticker")
 	hq.show_grid()
+	assert_eq(hq.panel_name, "hq", "the Grid is the HQ")
 	assert_true(hq.wireframe.visible, "the Grid is wireframe")
 	assert_false(hq.background.visible)
-	assert_not_null(hq.grid_view)
 	# H20: the plan note and the Site list gave way to the picked Site's card.
-	assert_true(hq._panel.find_child("SelectedSite", true, false) is TerminalWindow, "the selected Site's card in the side column")
+	assert_true(hq._panel.find_child("SelectedSite", true, false) is TerminalWindow, "the selected Site's card in the card column")
 
 
 func _descendants(node: Node) -> Array[Node]:
