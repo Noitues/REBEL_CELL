@@ -268,6 +268,43 @@ M13 art-pass build's layout and content, reworked in the locked v2 concept langu
   `test_slots_fit_and_focus_reaches_every_action_at_every_text_scale` (1, 2, 3 used slots at 1.0 / 1.6 / 2.0),
   `test_the_slots_panel_wraps_its_cards_then_scrolls_past_its_room`. No test dropped.
 
+### 2026-10-05 — Parity fix — pause menu as stickers (designer layout)
+Designer layout 2026-10-05, supersedes the icon rows of "Parity fix — pause menu" and options A/B/C of
+`docs/art_review/PARITY/fixes/pause_layouts/` (mockups kept). Files: `scripts/ui/kit/pause_menu.gd`,
+`scripts/ui/kit/chrome/pencil_words.gd` (new `color` and `step`), `tools/visual_qa/review_pack.gd` (the fight-quit screen
+calls `confirm_quit`, the stickers have no text).
+- **Layout.** `Columns`: LEFT = RESUME, OPTIONS, CODEX; RIGHT = ABANDON CAMPAIGN, QUIT TO MAIN MENU, QUIT TO DESKTOP; the
+  code field with copy below. Focus order: left top-down, right top-down, then the code; Left / Right cross to the same
+  row of the other column (explicit neighbours). **"Save & quit to title" is now "Quit to Main Menu"**: it saves and
+  returns to the title, which offers CONTINUE (same code path; the old string is gone, no migration).
+- **ABANDON RUN reading.** The top right slot is ABANDON CAMPAIGN at HQ (a live campaign, no run) and **ABANDON RUN** in a
+  run: same place, same rules, dialogs and hold-to-confirm BURN IT as the merged ExitDialogs (GDD 4.5). With no
+  campaign the slot is simply absent and the two quits move up.
+- **Stickers.** Every row is the kit's `VinylSticker` through `HoloSticker.word` (no new drawing code, the words baked by
+  the kit at run time and translated), always in its role colour, never grey: RESUME `Fill.PINK` (the one primary),
+  ABANDON `Fill.RED` (harm), OPTIONS `Fill.YELLOW`, CODEX and QUIT TO MAIN MENU `Fill.WHITE`, QUIT TO DESKTOP
+  `Fill.HOLO` (the foil; my call: the calm set needed a fourth distinct non-harm colour and INK read black on black).
+  **Selection** = the kit's HOVER state (lift, curl, the `sticker_gloss_sweep`), looping while the sticker has focus
+  (`ambient_sweep`), no lime bracket or halo. The kit's rainbow is the HOLO fill's foil only; the gloss sweep of the other
+  fills is white. Applying HOLO to the focused sticker would change its colour (and make the harm sticker rainbow), so I did
+  not: **open question for the designer** (rainbow on focus for every sticker, yes / no).
+- **Sizes.** Lettering 34 px (Resume) / 22 px (rows) at text 1.0; stickers follow the text size up to 1.5x
+  (`STICKER_SCALE_MAX`, as `VerbSticker.SCALE_MAX`) so the two columns fit the 760 px menu at 2.0.
+- **Notes.** `PencilWords` (the kit's grease pencil, Permanent Marker, drawn so it translates): "Down with the Oligarchy!"
+  (yellow, PENCIL_PLAN) under RESUME's key hint, "No Going Back" (red, PENCIL_THREAT) under the abandon sticker, "Come
+  Back Soon" (yellow) under QUIT TO DESKTOP, each tilted a little and always below its sticker, never over a word.
+  **They are dropped (all together) when the menu would not fit with them, in height or in width: at text 2.0 they go**
+  (the left column's note alone is 455 px there); at 1.6 they stay.
+- **`[Esc]`** is a pink mono label right under RESUME (the key hint by device, `Settings.hint`; with a pad it names the pad's
+  button). `resume_button` is a `HoloSticker` (no `text`); `resume_hint.text` holds the hint.
+- **Strings (once):** `Quit to Main Menu`, `Down with the Oligarchy!`, `No Going Back`, `Come Back Soon` (re-exported).
+- **Tests.** `test_parity_pause`: columns and order, role colours (one pink, abandon red, never grey, only the focused
+  one lifted), ABANDON RUN in the same slot, focus order and Left/Right neighbours, the notes (words, ink, below their
+  sticker), fit at 1.0 / 1.6 / 2.0 (every sticker inside the menu, notes all or none). `test_abandon_quit`: the pause rows
+  now read the stickers (top right slot, `Fill.RED`). `test_horizontal_pass20_screens`: the key hint label. Dropped:
+  none. The MenuItem motion (`MenuMotion`) no longer attaches to the pause menu (its lines are stickers with their own
+  motion); the `menu_*` motion entries stay (the title menu uses them).
+
 ### 2026-10-05 — Parity fix — pause menu (designer decisions)
 Designer decisions 2026-10-05, audit items PAUSE-01..03 (P1/P2/P3, `docs/art_review/PARITY/GAPS.md` "Pause menus"); PAUSE-04
 unchanged (abandon and quit are different dialogs; `confirm_dialog.gd` untouched). Files: `scripts/ui/kit/pause_menu.gd`.

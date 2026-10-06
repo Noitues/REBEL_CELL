@@ -552,6 +552,7 @@ Close,Close
 Cobalt (deep blue terminal),Cobalt (deep blue terminal)
 Codex,Codex
 Colour-blind correction (patterns and glyphs stay the main cue),Colour-blind correction (patterns and glyphs stay the main cue)
+Come Back Soon,Come Back Soon
 Common,Common
 Continue,Continue
 Continue the current run,Continue the current run
@@ -691,6 +692,7 @@ Deploy run asset,Deploy run asset
 Deutan (green-weak),Deutan (green-weak)
 Display,Display
 Do it in the fight to go on (or press NEXT).,Do it in the fight to go on (or press NEXT).
+Down with the Oligarchy!,Down with the Oligarchy!
 Drag Firmware or a slice onto a slot to put it there.,Drag Firmware or a slice onto a slot to put it there.
 Drag a card here to shred it (or select it and press REMOVE).,Drag a card here to shred it (or select it and press REMOVE).
 "Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards.","Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards."
@@ -1643,6 +1645,7 @@ Next threshold at %d.,Next threshold at %d.
 Next-run boosts:,Next-run boosts:
 No Daemons installed.,No Daemons installed.
 No First Turn Free Nudge,No First Turn Free Nudge
+No Going Back,No Going Back
 No campaign filed here yet.,No campaign filed here yet.
 No campaign is saved yet: OVERTHROW starts one.,No campaign is saved yet: OVERTHROW starts one.
 No campaign.,No campaign.
@@ -1809,6 +1812,7 @@ Purge Threshold,Purge Threshold
 QUIT,QUIT
 Quit,Quit
 Quit REBEL_CELL?,Quit REBEL_CELL?
+Quit to Main Menu,Quit to Main Menu
 Quit to desktop,Quit to desktop
 RACK,RACK
 RACK BREACHED,RACK BREACHED
@@ -2054,7 +2058,6 @@ SYSTEM,SYSTEM
 "Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick.","Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick."
 Save,Save
 Save & quit to start screen,Save & quit to start screen
-Save & quit to title,Save & quit to title
 Save the campaign now (it also saves after every action).,Save the campaign now (it also saves after every action).
 Save the run and leave it; Continue picks it up here.,Save the run and leave it; Continue picks it up here.
 Saved.,Saved.
