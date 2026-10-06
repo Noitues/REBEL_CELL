@@ -11383,3 +11383,8 @@ circle: `RouteOverlay.target_reach`) is outside the route's map area or under th
 the key strip is below the area). While the edge arrow shows (`TargetEdgeMarker.showing_changed`), the TARGET's
 sticker, circle and word hide (`RouteOverlay.target_off`; the pencil cloth-wipes), so nothing shows through the bar;
 the arrow keeps off the bar. Test: `test_b3_raid_map_route::test_route_frames_the_options_at_the_round_44_zoom_with_the_target_arrow`.
+
+### 2026-10-06 — B5c — sticker safe margin (art director polish after B5b)
+- **Rule:** every sticker on a page stays at least `Fx.STICKER_SAFE_MARGIN` (24 px) x text scale inside the screen's edges (`Fx.sticker_margin`, `Fx.sticker_safe_rect`, `Fx.stickers_outside_safe`, next to the SAVED stamp's sticker clearance). The top bar's own title sticker is the bar's chrome (its band is the screen's top edge by design) and is not a page sticker.
+- **Fixed:** the netrun loot, event, Mainframe and run-end pages sit in the safe margin at the sides and foot (FIGHT WON touched the left edge, CONTINUE / SKIP the right edge and foot, the event's TERMINAL sticker the right edge); at big text the loot's SKIP and CONTINUE share a row in the side column (a Firmware drop's column ran past the foot at 2.0); the title's sub-page title stickers keep the margin past the page margin at 2.0; START DEFENSE (raid setup) keeps it from the right edge, its Speed / Skip strip under it.
+- **Test:** `tests/unit/test_b5_sticker_safe_margin.gd` (full tier): loot (card and Firmware), event, title, campaign slots, pause (over the HQ) and raid setup at text 1.0 / 1.6 / 2.0.

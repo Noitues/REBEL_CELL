@@ -10,6 +10,7 @@ const TITLE := "res://scenes/menu/title_scene.tscn"
 const SCREEN := Rect2(0, 0, 1280, 720)
 const SCALES: Array[float] = [1.0, 1.6, 2.0]
 const SLOTS: Array[String] = ["1", "2", "3"]
+const OWN_SLOT := "gut_b5c"
 
 var _scale := 1.0
 
@@ -17,15 +18,20 @@ var _scale := 1.0
 func before_each() -> void:
 	_scale = Settings.text_scale
 	Motion.force_live = false
+	RunManager.scene_switching_enabled = false
+	for s in SLOTS + [OWN_SLOT]:
+		RunManager.delete_slot(s)
+	RunManager.save_slot = OWN_SLOT
+	RunManager.reset()
 
 
 func after_each() -> void:
 	Settings.set_text_scale(_scale)
-	for s in SLOTS:
-		RunManager.save_slot = s
-		RunManager.delete_save()
-	RunManager.save_slot = RunManager.DEFAULT_SLOT
+	for s in SLOTS + [OWN_SLOT]:
+		RunManager.delete_slot(s)
 	RunManager.reset()
+	RunManager.save_slot = RunManager.DEFAULT_SLOT
+	RunManager.scene_switching_enabled = true
 
 
 func _frames(n: int = 3) -> void:
@@ -99,7 +105,7 @@ func test_title_and_slots_stickers_keep_the_safe_margin() -> void:
 			RunManager.save_slot = s
 			RunManager.new_campaign(int(s))
 			RunManager.autosave()
-		RunManager.save_slot = "gut_b5c"
+		RunManager.save_slot = OWN_SLOT
 		RunManager.campaign = null
 		var t: Control = load(TITLE).instantiate()
 		_holder().add_child(t)
@@ -127,7 +133,7 @@ func test_pause_stickers_keep_the_safe_margin() -> void:
 		_assert_safe(hq._settings_panel, "pause", scale)
 		hq.get_parent().queue_free()
 		await _frames(1)
-		RunManager.reset()
+		RunManager.campaign = null
 
 
 func test_raid_setup_stickers_keep_the_safe_margin() -> void:
@@ -145,4 +151,4 @@ func test_raid_setup_stickers_keep_the_safe_margin() -> void:
 		_assert_safe(hq, "raid setup", scale)
 		hq.get_parent().queue_free()
 		await _frames(1)
-		RunManager.reset()
+		RunManager.campaign = null
