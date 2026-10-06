@@ -123,7 +123,7 @@ func test_the_status_line_fits_its_width_at_big_text() -> void:
 	assert_eq(st.auto_translate_mode, Node.AUTO_TRANSLATE_MODE_DISABLED, "built from translated parts, not translated twice")
 
 
-func test_the_aim_hint_sits_above_the_ram_row_and_on_screen() -> void:
+func test_the_aim_hint_sits_above_the_hand_clear_of_the_corner_chips() -> void:
 	for pad in [false, true]:
 		Settings.set_pad_active(pad)
 		var scene := await _combat(&"collections_agent", Settings.TEXT_SCALE_MAX)
@@ -140,7 +140,17 @@ func test_the_aim_hint_sits_above_the_ram_row_and_on_screen() -> void:
 		var hint: Rect2 = scene._aim_hint.get_global_rect()
 		var screen: Rect2 = scene.get_global_rect()
 		assert_true(hint.end.x <= screen.end.x + 0.5 and hint.position.x >= screen.position.x - 0.5, "on screen (pad %s): %s" % [pad, hint])
-		assert_true(hint.end.y <= scene.ram_note.get_global_rect().position.y + 0.5, "above the RAM row (pad %s): hint %s ram %s hand %s" % [pad, hint, scene.ram_note.get_global_rect(), scene._hand_box.get_global_rect()])
+		# S-COMBAT-HUD: the hint's home is just above the hand (and above the RAM row while the RAM
+		# panel is in the bottom row), clear of the corner chips (at big text it followed the RAM
+		# panel to the top and sat on Settings).
+		var hand: Rect2 = scene._hand_box.get_global_rect()
+		assert_true(hint.end.y <= hand.position.y + 0.5, "above the hand (pad %s): hint %s hand %s" % [pad, hint, hand])
+		assert_true(hint.position.y >= hand.position.y - hint.size.y * 2.0, "in the room just above it (pad %s): hint %s" % [pad, hint])
+		if scene._cell_panel.get_parent() == scene._bottom_row:
+			assert_true(hint.end.y <= scene.ram_note.get_global_rect().position.y + 0.5, "above the RAM row (pad %s)" % pad)
+		else:
+			assert_false(hint.intersects(scene.ram_note.get_global_rect()), "off the RAM panel up top (pad %s)" % pad)
+		assert_false(hint.intersects(scene._settings_button.get_global_rect()), "clear of the Settings corner chip (pad %s)" % pad)
 		scene.cancel_selection()
 
 
