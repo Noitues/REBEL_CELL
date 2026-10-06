@@ -94,6 +94,39 @@ look of its own, the concept's numbers in config), not its files.
   `night` / `landmarks_night` keys, 3 lines), `scripts/city3d/city_config.gd` (the `backdrop_*` fields),
   `tools/design_lab/arena_lab.gd` (`--site=`; a quit fix when no `--scale` is given),
   `tools/art_pipeline/hq_run/hq_run_lab.gd` (`--raw=`), `tests/unit/test_hq_run_city.gd` (above).
+
+### 2026-10-05 — Parity fix — combat wheels, designer round 2
+
+Designer feedback on the first wheel fix (relayed by the orchestrator). Sheet
+`docs/art_review/PARITY/fixes/WHEEL_b.jpg` (concept | round 1 | round 2).
+
+1. **Less colour pop, per kit.** The tone step is now a table per kit (`WheelKit.TONE`: sat, thresh,
+   gain, pull, expo; the disc gets them in `set_kit`, `WheelKit.tone` mirrors the shader). Player
+   sat 1.15 / lift 0.6 over 0.35, Meridian 1.1 / 0.6, Rebel_Cell 0.9 / 0.4 over 0.4 with exposure
+   0.85; Solace, Halcyon and Orbital keep round 1 (1.4 / 1.1 over 0.3). The table is wheel material
+   in `WheelKit`, like the shader's kit tables (2A), not a `.tres`: no schema change for a look table.
+2. **Slice outlines.** The slicelib hairline (program colour) and the corp tier border were 0.9
+   master units wide: at combat size (about 2.9 master units a pixel) they fell under a pixel and
+   vanished. Both are now at least 1.6 screen px (`OUTLINE_PX`), on every tier; the corp tier border
+   is stronger (0.95, was 0.75) and its edge brighter.
+3. **Muddy screens.** The 3-master-unit scanlines were clamped to 3 screen px at combat size and
+   beat against the screens' own pattern; the concept renders at 2x and downsamples, so they
+   average out. They now fade (mean kept) where their period is under 2.5 screen px
+   (`SCANLINE_FADE_PX`). The baked atlases are unchanged.
+4. **Meridian per the palette.** The baked Meridian atlas reads dark brown; its screens are now
+   pulled 0.65 towards Palette.CORP_MERIDIAN (#FF8C1A, the screen's luma re-coloured in the corp
+   colour) and exposed x1.6 (`pull`, `expo`). Tested: toned Meridian screens within 15 degrees of the
+   palette hue and not dark.
+5. **BOSS-04: keep main's needles.** Round 1's `d4corp.pin` secondary readers are reverted: every
+   needle is a full blade again (crowned on a boss), `pointer_spot` reads the blade window. The
+   crowding fix kept: a multi-needle wheel's rails are +-24 degrees (d4corp), and the corp rim over
+   the phase 3 armour. FIX-REDS c's HP-under-needle layout already assumed full blades for every
+   needle; its test passes with two full blades at 1.0 / 1.6 / 2.0 (captured).
+- `test_parity_wheel.gd` updated: per-kit tone uniforms, two full blades + short rails (replaces the
+  pin test), Meridian palette hue; the NULL-contrast check now asks 3 of 5 families >= 1.5 (the calmer
+  player tone leaves a second dark family under the line; every family is still brighter than NULL
+  and told by its glyph and colour).
+
 ### 2026-10-05 — Parity fix — combat wheels (designer group ruling)
 
 Designer group ruling (2026-10-05): combat matches the concept; mechanics the rules lack stay
