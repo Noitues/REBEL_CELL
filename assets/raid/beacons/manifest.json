@@ -1,0 +1,32 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "raid_beacons",
+ "about": "ART-6 3A R3 class beacons (one idle strip per class). Built by tools/art_pipeline/raid/bake_beacons.py; do not edit by hand.",
+ "source": {
+  "tag": "art-concepts-r43",
+  "script": "docs/concepts/round22_raid_world/scripts/screens21.py (beacon)",
+  "emblems": "docs/concepts/round22_raid_world/scripts/emblems20.py (round6_roster slicelib EM_*)",
+  "colours": "docs/concepts/round22_raid_world/scripts/roof20.py (CLASS_RGB, v2)"
+ },
+ "scale": 0.5,
+ "frame_px": [
+  220,
+  260
+ ],
+ "pad_px": [
+  110,
+  210
+ ],
+ "frames": 16,
+ "loop_seconds": 1.6,
+ "files": [
+  "breaker.png",
+  "wrecker.png",
+  "ghost.png",
+  "phantom.png",
+  "rigger.png",
+  "overclocker.png",
+  "botnet.png",
+  "hivemind.png"
+ ]
+}

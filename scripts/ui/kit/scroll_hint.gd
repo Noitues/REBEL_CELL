@@ -56,6 +56,12 @@ func _ready() -> void:
 		box.move_child(room, scroll.get_index() + 1)
 	var bar := scroll.get_v_scroll_bar()
 	bar.value_changed.connect(func(_v: float) -> void: refresh())
+	# ART-6 3A: an outer scroll view moving this one shows or hides the tag (in_outer_views).
+	var up := scroll.get_parent()
+	while up != null:
+		if up is ScrollContainer:
+			(up as ScrollContainer).get_v_scroll_bar().value_changed.connect(refresh.unbind(1))
+		up = up.get_parent()
 	bar.changed.connect(refresh)
 	scroll.resized.connect(refresh)
 	if room != null:
@@ -161,12 +167,26 @@ func _refresh() -> void:
 		var least := maxf(0.0, _base_min - (snap_reserve if want > 0.0 else 0.0))
 		if not is_equal_approx(scroll.custom_minimum_size.y, least):
 			scroll.custom_minimum_size.y = least
-	visible = more_below()
 	var r := scroll.get_global_rect()
 	if room != null and is_instance_valid(room) and room.custom_minimum_size.y > 0.0:
 		global_position = Vector2(r.get_center().x - size.x * 0.5, room.get_global_rect().position.y + MARGIN.y)
 	else:
 		global_position = Vector2(r.get_center().x - size.x * 0.5, r.end.y - size.y - MARGIN.y)
+	visible = more_below() and in_outer_views()
+
+
+## ART-6 3A (M14 resume): false while the tag's spot is scrolled out of an outer scroll view
+## holding this one (YOUR NETWORK's list inside the raid setup's scrolling column): the tag
+## is not in that view's content, so it drew over what sits below the view (START DEFENSE).
+## The outer view's own tag says there is more.
+func in_outer_views() -> bool:
+	var spot := Rect2(global_position, size)
+	var up := scroll.get_parent()
+	while up != null:
+		if up is ScrollContainer and not (up as ScrollContainer).get_global_rect().grow(0.5).encloses(spot):
+			return false
+		up = up.get_parent()
+	return true
 
 
 ## ART-0 F: the view's own least height is now `h` (px): a FitScroll sizing its view to its
