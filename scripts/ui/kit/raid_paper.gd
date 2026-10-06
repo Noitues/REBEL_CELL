@@ -39,15 +39,11 @@ const STAMP_PX := 26
 const STAMP_TILT := -9.0
 const STAMP_ALPHA := 0.78
 const STAMP_PAD := 6.0
-## The paper clip at the top left (px at 1.0): its x, width and height.
+## The paper clip at the top left (px at 1.0): its x (the clip itself is `PaperStaging`'s).
 const CLIP_X := 34.0
-const CLIP_W := 13.0
-const CLIP_H := 34.0
 ## How far the clip reaches above the paper's top edge (px at 1.0): what sits above the paper
 ## keeps clear of it (parity fix, RAID-02).
-const CLIP_TOP := 10.0
-## The page's own tilt (degrees): stolen paper is never square.
-const PAGE_TILT := 0.0
+const CLIP_TOP := PaperStaging.CLIP_RISE
 
 var skin: RaidSkin
 var stamp_word: String = STAMP_INTERCEPTED
@@ -181,10 +177,26 @@ func _notification(what: int) -> void:
 		_deco_node.position = Vector2.ZERO
 		_deco_node.size = size
 		_deco_node.queue_redraw()
+		# D24: the sheet's slight tilt about its centre (paper is never square).
+		pivot_offset = size * 0.5
+		rotation_degrees = tilt()
+		queue_redraw()
 
 
 func _draw() -> void:
-	pass  # 1B's CorpPaperPanel is the stock; the decorations draw over it (_deco)
+	# 1B's CorpPaperPanel is the stock; the decorations draw over it (_deco). Under it: D24's
+	# 6 px contact shadow (it turns with the sheet's tilt).
+	PaperStaging.draw_shadow(self, size, _k)
+
+
+## The document's id (its number, else its title) the tilt is seeded from (D24).
+func tilt_id() -> String:
+	return "%s|%s" % [skin.corporation_id, number if number != "" else title_label.text]
+
+
+## The sheet's tilt (degrees), PaperStaging's from `tilt_id` (D24).
+func tilt() -> float:
+	return PaperStaging.tilt_degrees(tilt_id())
 
 
 ## The Cell's view of the stolen sheet, over 1B's paper: the corp seal at the letterhead's
@@ -221,21 +233,9 @@ func _grain(r: Rect2) -> void:
 		draw_rect(Rect2(p, Vector2(s, 1.0)), Color(Palette.INK, GRAIN_ALPHA * absf(RaidPencil.noise(9, i))))
 
 
-## The paper clip over the top edge.
+## The paper clip over the top edge (D24: `PaperStaging`'s, shared with the dossier).
 func _clip(on: CanvasItem, k: float) -> void:
-	var x := CLIP_X * k
-	var steel := Palette.TEXT_MID
-	for j in 2:
-		var w := (CLIP_W - j * 4.0) * k
-		var h := (CLIP_H - j * 9.0) * k
-		var top := (-CLIP_TOP + j * 4.0) * k
-		var r := Rect2(x - w * 0.5, top, w, h)
-		on.draw_line(r.position + Vector2(0, w * 0.5), Vector2(r.position.x, r.end.y - w * 0.5), Color(Palette.NIGHT_SKY, 0.6), 3.0 * k)
-		on.draw_line(Vector2(r.end.x, r.position.y + w * 0.5), r.end - Vector2(0, w * 0.5), Color(Palette.NIGHT_SKY, 0.6), 3.0 * k)
-		on.draw_arc(Vector2(x, r.position.y + w * 0.5), w * 0.5, PI, TAU, 10, steel, 2.0 * k)
-		on.draw_arc(Vector2(x, r.end.y - w * 0.5), w * 0.5, 0, PI, 10, steel, 2.0 * k)
-		on.draw_line(r.position + Vector2(0, w * 0.5), Vector2(r.position.x, r.end.y - w * 0.5), steel, 2.0 * k)
-		on.draw_line(Vector2(r.end.x, r.position.y + w * 0.5), r.end - Vector2(0, w * 0.5), steel, 2.0 * k)
+	PaperStaging.draw_clip(on, CLIP_X * k, k)
 
 
 ## An Anton rubber stamp: `word` in a box, tilted `tilt` radians round `c`, in `col` ink.
