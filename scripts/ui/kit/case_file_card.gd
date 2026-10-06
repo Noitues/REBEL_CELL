@@ -15,11 +15,15 @@ extends VBoxContainer
 ##   prints, `CrewChip`; a flatlined operative crossed out in red pencil).
 ## - An empty slot is a dashed outline on the terminal glass: EMPTY SLOT / No campaign filed
 ##   here yet., and its NEW CAMPAIGN terminal chip.
-## - The actions sit under the folder on the glass (materials never mix): the page's one pink
-##   sticker verb is LOAD on the primary slot (§2.10 "one sticker verb per screen": primary =
-##   sticker verb, secondary = terminal chip); every other LOAD is a terminal chip; DELETE is a
-##   terminal chip in HARM (the abandon dialog's destructive chrome: HARM edge and caret, CANNOT
-##   UNDO), and the confirm it opens carries the pink DELETE sticker.
+## - A sliver of paper pokes out of each used folder's top (the art pass's print stock, round
+##   21 `sheet`, `DossierPhoto.STOCK_ART`): a document filed inside.
+## - The actions sit under the folder on the glass (materials never mix). Designer ruling
+##   2026-10-05 (SLOTS b, overriding §2.10's one sticker verb per screen on this page): LOAD on
+##   the primary slot is the pink sticker verb (every other LOAD a terminal chip) and DELETE is
+##   a sticker on every used slot, 4C's own baked `dialog_delete` art (abandon.py), shown at
+##   LOAD's size; a red grease-pencil "Can't Undo" with an arrow points at it (up to
+##   PENCIL_UP_TO; past it the words are in DELETE's tooltip). The confirm DELETE opens is 4C's
+##   abandon dialog.
 ## Signals up; the title screen acts. View only.
 
 signal load_pressed(slot: String)
@@ -40,10 +44,8 @@ const EMBLEM := 40.0
 const EMBLEM_SHARE := 0.62
 ## The most crew chips shown (the rest as "+n").
 const CREW_MAX := 4
-## Big text (from this text scale, as the title's MORE_RIGHT_FROM): DELETE drops its second line
-## (its tooltip says it) and the crew chips stop growing at CREW_SCALE_MAX, so a row of case
-## files fits the page's room above the ticker.
-const BIG_TEXT_FROM := 1.6
+## The crew chips stop growing at this text scale, so a row of case files fits the page's room
+## above the ticker.
 const CREW_SCALE_MAX := 1.3
 ## The Heat bar's height (px at 1.0).
 const HEAT_BAR_H := 10.0
@@ -59,6 +61,26 @@ const TAB_CUT := 12.0
 const VERB_PX := 24.0
 const VERB_TILT := -2.0
 const STAMP_TILT := -6.0
+## DELETE: 4C's baked sticker (abandon.py `dialog_delete`) at this share of its game size (about
+## the LOAD sticker's size), growing with the text only up to DELETE_GROW_MAX (a row of case files
+## still fits the room at 1.6), and its tilt (abandon.py's verb tilt).
+const DELETE_ART := "dialog_delete"
+const DELETE_ART_SCALE := 0.65
+const DELETE_GROW_MAX := 1.15
+const DELETE_TILT := 3.0
+## The "Can't Undo" pencil: shown up to this text scale (past it DELETE's tooltip says it), its
+## lettering grows up to NOTE_SCALE_MAX, its tilt (radians), the least shaft of its arrow and
+## the gap the arrow's head keeps from the sticker (px at 1.0).
+const PENCIL_UP_TO := 1.6
+const NOTE_SCALE_MAX := 1.0
+const NOTE_TILT := -0.06
+const ARROW_MIN := 34.0
+const ARROW_GAP := 4.0
+## The paper sliver poking out of the folder: its rise over the folder's top (share of the tab's
+## height), its inset from the tab and the folder's right edge (px at 1.0) and its tilt (degrees).
+const SLIVER_RISE := 0.55
+const SLIVER_INSET := 10.0
+const SLIVER_TILT := 1.2
 ## The flatlined chip's pencil X: inset and width (shares of the chip's width).
 const KIA_INSET := 0.12
 const KIA_WIDTH := 0.06
@@ -76,6 +98,9 @@ var delete_button: Button = null
 var new_button: Button = null
 var _content: VBoxContainer
 var _tab_words: String = ""
+## The red grease-pencil "Can't Undo" pointing at DELETE (null past PENCIL_UP_TO).
+var cant_undo: PencilNote = null
+var _note_room: Control = null
 
 
 func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], p_primary: bool = false) -> void:
@@ -128,15 +153,36 @@ func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], 
 		load_button = _chip(actions, tr("Load"), "", load_tip)
 	load_button.name = "Load"
 	load_button.pressed.connect(func() -> void: load_pressed.emit(slot))
+	var undo := tr("Can't Undo")
+	var tip := tr("Delete the campaign in slot %s (asks first).") % slot
+	# The room between LOAD and DELETE: it holds the pencil note (never laid out by the row).
 	var gap := Control.new()
+	gap.name = "NoteRoom"
 	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	actions.add_child(gap)
-	var undo := tr("cannot undo")
-	var big := Settings.text_scale >= BIG_TEXT_FROM
-	delete_button = _chip(actions, tr("Delete"), "" if big else undo,
-		"%s (%s)" % [tr("Delete the campaign in slot %s (asks first).") % slot, undo] if big else tr("Delete the campaign in slot %s (asks first).") % slot)
-	(delete_button as MenuChip).accent = Palette.HARM  # the destructive verb: HARM edge and caret
+	if Settings.text_scale <= PENCIL_UP_TO:
+		cant_undo = PencilNote.new("
+".join(undo.split(" ", false, 1)), Palette.PENCIL_THREAT, NOTE_TILT,
+			roundi(PencilNote.FONT_PX * minf(Settings.text_scale, NOTE_SCALE_MAX)))
+		cant_undo.name = "CantUndo"
+		gap.add_child(cant_undo)
+		gap.custom_minimum_size = cant_undo.text_size() + Vector2(ARROW_MIN * Settings.text_scale, 0)
+		gap.resized.connect(_place_note)
+		_note_room = gap
+	else:
+		tip = "%s (%s)" % [tip, undo]
+	var shown := tr("DELETE")
+	var art := DELETE_ART if shown == "DELETE" and ResourceLoader.exists(VerbSticker.ART_DIR + DELETE_ART + ".png") else ""
+	var del := VerbSticker.new(shown, VerbSticker.Fill.PINK, VERB_PX, DELETE_TILT, art)
+	del.pre_translated = true
+	if art != "":
+		var ts := Settings.text_scale
+		del.set_art_scale(DELETE_ART_SCALE * minf(ts, DELETE_GROW_MAX) / clampf(ts, 1.0, VerbSticker.SCALE_MAX))
+	del.tooltip_text = UiTip.fold(tip)
+	del.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	actions.add_child(del)
+	delete_button = del
 	delete_button.name = "Delete"
 	delete_button.pressed.connect(func() -> void: delete_pressed.emit(slot))
 
@@ -151,6 +197,21 @@ func _ready() -> void:
 func _tilt() -> void:
 	folder.pivot_offset = folder.size * 0.5
 	folder.rotation_degrees = TILT
+
+
+## Lays the pencil note in its room: the words at the left, centred, the arrow from them to
+## just short of DELETE (UI drawn after the pencil never covers it: PencilLint).
+func _place_note() -> void:
+	if cant_undo == null or _note_room == null:
+		return
+	var t := cant_undo.text_size()
+	cant_undo.position = Vector2(0.0, floorf((_note_room.size.y - t.y) * 0.5))
+	var y := t.y * 0.5
+	# The head stops short of the row's separation and DELETE by the wax's own reach (half its width,
+	# its under-shadow).
+	var reach := GreasePencilMark.WIDTH * 0.5 + GreasePencilMark.SHADOW_OFFSET.x + GreasePencilMark.SHADOW_GROW
+	var to_x := _note_room.size.x + UiTheme.SP_S - reach - ARROW_GAP * Settings.text_scale
+	cant_undo.with_arrow(Vector2(t.x + ARROW_GAP, y), Vector2(maxf(t.x + ARROW_GAP + 1.0, to_x), y), -t.y * 0.25)
 
 
 ## The tab's height at the text size now (px).
@@ -183,7 +244,7 @@ func actions() -> Array[Control]:
 func _chip(row: HBoxContainer, words: String, line: String, tip: String) -> MenuChip:
 	var b := MenuChip.new(words, line)
 	b.pre_translated = true
-	b.plate = &""  # drawn: the accent marks its edge (HARM for the destructive verb)
+	b.plate = &""  # drawn: the Cell accent marks its edge
 	b.line_step = UiTheme.CAPTION
 	b.tooltip_text = UiTip.fold(tip)
 	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -403,6 +464,16 @@ func _draw_folder() -> void:
 		sh.append(p + SHADOW)
 	folder.draw_colored_polygon(sh, Palette.SHADOW)
 	folder.draw_rect(Rect2(body.position + SHADOW, body.size), Palette.SHADOW)
+	# A document filed inside pokes out of the top, right of the tab (behind the folder's front).
+	var stock := print_stock()
+	if stock != null:
+		var inset := SLIVER_INSET * s
+		var sheet := Rect2(tab_w + inset, tab_h * (1.0 - SLIVER_RISE), sz.x - tab_w - inset * 2.0, tab_h * SLIVER_RISE + inset)
+		folder.draw_set_transform(sheet.get_center(), deg_to_rad(SLIVER_TILT), Vector2.ONE)
+		var local := Rect2(-sheet.size * 0.5, sheet.size)
+		folder.draw_texture_rect_region(stock, local, Rect2(Vector2.ZERO, sheet.size.min(stock.get_size())))
+		folder.draw_rect(local, PaperInk.edge(Color(Palette.INK, EDGE_ALPHA * 0.5)), false, PaperInk.edge_width(1.0))
+		folder.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var manila := manila_stock()
 	if manila != null:
 		folder.draw_texture_rect_region(manila, body, Rect2(Vector2.ZERO, body.size.min(manila.get_size())))
@@ -431,6 +502,16 @@ static func manila_stock() -> Texture2D:
 
 
 static var _manila: Texture2D = null
+
+
+## The art pass's print stock (round 21 `sheet`, DossierPhoto.STOCK_ART), held once.
+static func print_stock() -> Texture2D:
+	if _stock == null:
+		_stock = load(DossierPhoto.STOCK_ART) as Texture2D
+	return _stock
+
+
+static var _stock: Texture2D = null
 
 
 func _dashed(r: Rect2, col: Color) -> void:

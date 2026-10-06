@@ -110,11 +110,17 @@ main's list is legible but plain. Likely cause: the build's `scripts/ui/kit/slot
 Art-pass source: `art-m13-final:scripts/ui/kit/slot_picker.gd`, `title_scene.gd show_slots`.
 Fix: port SlotPicker onto main's v2 kit (paper card = `PaperInk`/`ZinePanel`, terminal chips).
 Decision: **build layout, reworked in the v2 kit**: the build's slot cards brought to main, restyled with the concept philosophy. (designer, 2026-10-05)
+Fixed (S-TITLE, `CaseFileCard`; sheet `fixes/SLOTS.jpg`). Follow-up ruling (designer, 2026-10-05): used slots stay manila
+folders, each with a sliver of paper poking out (the art pass's print stock); built, sheet `fixes/SLOTS_b.jpg`.
 
 **SLOTS-02 (P2) Load / Delete.** Build: pink filled `Load` (primary) and a red-edged `Delete`.
 Main: two equal terminal buttons, `Load` with the lime focus brackets. View: main follows the v2
 rule (one sticker verb per screen, the rest terminal chips); the build's colour split marks the
 destructive action more clearly. Same file as SLOTS-01. Decision: **build's Load / Delete, reworked with the concept** (v2 kit). (designer, 2026-10-05)
+Fixed (S-TITLE): LOAD the pink sticker on the newest campaign, DELETE a HARM chip. Follow-up ruling (designer,
+2026-10-05, overriding v2's one sticker verb per screen on this page): LOAD and DELETE are both stickers (DELETE = 4C's
+baked `dialog_delete` art at LOAD's size), with a red grease-pencil "Can't Undo" and arrow pointing at DELETE (up to
+text scale 1.6; at 2.0 the words move into DELETE's tooltip). Built, sheet `fixes/SLOTS_b.jpg`.
 
 **SLOTS-03 (P3) Page title.** Build: the REBEL_CELL logo top left. Main: a `CAMPAIGN SLOTS` title
 sticker (the v2 sticker-title rule, as THE GRID / RAID SETUP). View: main is consistent with v2.
