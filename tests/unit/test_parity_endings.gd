@@ -52,6 +52,15 @@ func _frames(n: int = 3) -> void:
 		await get_tree().process_frame
 
 
+## Frees an HQ's holder now and drops the save its exit may write (no gut slot is left behind for
+## the title's latest-slot scan in later scripts).
+func _close(holder: Control) -> void:
+	if is_instance_valid(holder):
+		holder.queue_free()
+	await _frames(2)
+	RunManager.delete_save()
+
+
 func _live() -> void:
 	Motion.force_live = true
 	if Settings.reduce_effects:
@@ -148,7 +157,7 @@ func test_end_03_the_corp_down_sticker_never_covers_the_pencil() -> void:
 func test_end_03_the_poster_beat_plays_after_the_stamp_and_one_press_completes_it() -> void:
 	_live()
 	var d := _dossier(CampaignState.Outcome.WON)
-	await _frames(1)
+	await BoundedWait.frozen_frames(get_tree(), 1)
 	assert_true(d.motion_running())
 	assert_true(d.MOTIONS.has(AuditDossier.POSTER))
 	assert_gt(d.poster_write_at(), Motion.delay_of(AuditDossier.STAMP), "the poster lands after the AT LARGE stamp")
@@ -217,8 +226,7 @@ func test_end_03_the_hqs_end_page_fits_its_page_at_1_0_with_the_stickers_on_it()
 		var page := d._page_bottom()
 		for b: Control in [d.main_menu_button, d.new_campaign_button]:
 			assert_lte(b.get_global_rect().end.y, page + 1.0, "%d: %s on the page, no scrolling for it at 1.0 (page foot %.0f)" % [outcome, b.name, page])
-		holder.queue_free()
-		await _frames(2)
+		await _close(holder)
 
 
 func test_end_03_and_end_06_the_ends_fit_at_every_text_size() -> void:
@@ -310,6 +318,7 @@ func test_an_abandoned_campaign_shows_the_dossier_without_the_lock_even_live() -
 	assert_eq(hq.panel_name, "end")
 	assert_true((hq._panel as AuditDossier).facts.abandoned)
 	assert_eq(c.state_hash(), before, "the end screens change nothing")
+	await _close(holder)
 
 
 # --- END-05 and 12p -----------------------------------------------------------------------------
@@ -377,6 +386,7 @@ func test_12p_the_dossier_is_built_in_the_locks_hold_and_the_cut_shows_it() -> v
 			assert_eq(pre.modulate.a, 1.0)
 			assert_true(pre.motion_running(), "its own motion plays from the start")
 	assert_eq(c.state_hash(), before, "the end screens change nothing")
+	await _close(holder)
 
 
 # --- Motion table -------------------------------------------------------------------------------
