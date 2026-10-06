@@ -326,7 +326,9 @@ static func draw(card: ZineCard) -> void:
 	# B2 (art director, bible 2.10): focus is the kit's lime corner brackets round the die-cut and
 	# the hover lift (`card_hover`, 18 px at 1080p), never a lime fill behind the card.
 	if card._lifted:
-		StyleBoxBrackets.draw_on(card, Rect2(Vector2.ZERO, size).grow(ZineCard.CC_EDGE * s))
+		# B2 b: drawn under the face's own draw transform, so they move with the lift (and the hover
+		# growth) and sit on the die-cut's edge (the brackets' own OFFSET taken back): the card as drawn.
+		StyleBoxBrackets.draw_on(card, Rect2(Vector2.ZERO, size).grow(ZineCard.CC_EDGE * s - StyleBoxBrackets.OFFSET))
 	if card.disabled and not card.greyed:
 		card.draw_rect(Rect2(Vector2.ZERO, size), Color(Palette.SHADOW, 0.5))
 	if not card.greyed:

@@ -460,6 +460,10 @@ func _frame_city() -> void:
 		if px.has_area():
 			_focus_radius = px.size.x * 0.5 / maxf(1.0, float(city.size.x)) * CityView3D.CONFIG.backdrop_site_focus_reach
 			axes = Vector2(1.0, px.size.y / px.size.x)
+			# B2 b: the block lit by its own neon (window glow, a rim and the street in its colour).
+			var sz := Vector2(city.size).max(Vector2.ONE)
+			_mat.set_shader_parameter(&"subject_rect", Vector4(px.position.x / sz.x, px.position.y / sz.y, px.size.x / sz.x, px.size.y / sz.y))
+	_mat.set_shader_parameter(&"subject_on", _city_ready and String(shot.get("focus", "")) == "site" and shot.has("subject"))
 	_mat.set_shader_parameter(&"focus_radius", _focus_radius)
 	_mat.set_shader_parameter(&"focus_axes", axes)
 	_mat.set_shader_parameter(&"focus_dim", _focus_dim())
@@ -516,6 +520,12 @@ func _light_city() -> void:
 	_mat.set_shader_parameter(&"city_grade", _city_ready)
 	_mat.set_shader_parameter(&"focus_radius", _focus_radius)
 	_mat.set_shader_parameter(&"focus_blur", cfg.backdrop_focus_blur)
+	var cfg_n := CityView3D.CONFIG
+	_mat.set_shader_parameter(&"neon", Palette.corp_color(place.get("corp", BackdropCatalog.DEFAULT_CORP)))
+	_mat.set_shader_parameter(&"window_gain", cfg_n.backdrop_site_window_gain)
+	_mat.set_shader_parameter(&"rim_gain", cfg_n.backdrop_site_rim_gain)
+	_mat.set_shader_parameter(&"street_gain", cfg_n.backdrop_site_street_gain)
+	_mat.set_shader_parameter(&"subject_on", _city_ready and String(shot.get("focus", "")) == "site" and shot.has("subject"))
 	_mat.set_shader_parameter(&"focus_lift", cfg.backdrop_site_focus_lift if String(shot.get("focus", "")) == "site" else cfg.backdrop_focus_lift)
 	_mat.set_shader_parameter(&"focus_dim", _focus_dim())
 
@@ -556,6 +566,7 @@ func _drop_city() -> void:
 	_city_ready = false
 	_mat.set_shader_parameter(&"city_grade", false)
 	_mat.set_shader_parameter(&"focus_dim", 0.0)
+	_mat.set_shader_parameter(&"subject_on", false)
 
 
 ## The target's top (world): a fitted landmark's own top, the Site building's roof, or the

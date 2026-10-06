@@ -57,6 +57,21 @@ uniform float focus_lift = 1.0;
 // B2 (art director): the focus ellipse's axes (x = 1: focus_radius across; y: its height over
 // its width), so a tall Site block is lit as itself.
 uniform vec2 focus_axes = vec2(1.0, 1.0);
+// B2 b (art director): a Site's subject block is lit by its own neon, not a flat lift: inside the
+// focus its windows (the bright, lit pixels from window_from up) x window_gain, a rim of `neon` (the
+// district / corp colour) on its edges (the luminance edge, rim_gain), and the street in front of
+// it (under subject_rect's foot, street_reach of the view's height down) catching that colour.
+uniform bool subject_on = false;
+uniform vec4 subject_rect = vec4(0.0);
+uniform vec4 neon : source_color = vec4(1.0, 0.24, 0.66, 1.0);
+uniform float window_from = 0.45;
+uniform float window_gain = 2.0;
+// The block's unlit facades inside the focus (the neon, not a lift, lights it).
+uniform float subject_base = 0.72;
+uniform float rim_gain = 0.55;
+uniform float rim_edge = 0.09;
+uniform float street_gain = 0.35;
+uniform float street_reach = 0.12;
 
 vec3 graded(vec3 c) {
 	if (!city_grade) {
@@ -79,6 +94,7 @@ float pool_at(vec2 uv, vec3 p) {
 void fragment() {
 	vec2 texel = TEXTURE_PIXEL_SIZE;
 	vec4 base = texture(TEXTURE, UV);
+	vec3 raw = base.rgb;
 	if (city_grade) {
 		base.rgb = graded(base.rgb);
 	}
@@ -102,8 +118,29 @@ void fragment() {
 		col = mix(col, soft, soften);
 		col *= 1.0 - focus_dim * away;
 	}
-	if (focus_dim > 0.0) {
+	if (focus_dim > 0.0 && !subject_on) {
 		col = min(col * mix(focus_lift, 1.0, away), vec3(1.0));
+	}
+	if (subject_on) {
+		float inside = 1.0 - away;
+		float v = max(max(raw.r, raw.g), raw.b);
+		float win = smoothstep(window_from, 1.0, v);
+		col = min(col * mix(mix(1.0, subject_base, inside), window_gain, win * inside), vec3(1.0));
+		// The rim: the luminance edges of the block, in its neon.
+		vec2 o = texel * 1.5;
+		float lx = dot(texture(TEXTURE, UV + vec2(o.x, 0.0)).rgb - texture(TEXTURE, UV - vec2(o.x, 0.0)).rgb, vec3(0.333));
+		float ly = dot(texture(TEXTURE, UV + vec2(0.0, o.y)).rgb - texture(TEXTURE, UV - vec2(0.0, o.y)).rgb, vec3(0.333));
+		float edge = smoothstep(rim_edge * 0.5, rim_edge, length(vec2(lx, ly)));
+		vec2 lo = subject_rect.xy;
+		vec2 hi = subject_rect.xy + subject_rect.zw;
+		float in_box = step(lo.x, UV.x) * step(UV.x, hi.x) * step(lo.y, UV.y) * step(UV.y, hi.y);
+		col += neon.rgb * rim_gain * edge * in_box * inside;
+		// The street in front catches it: under the block's foot, fading down and to the sides.
+		float below = (UV.y - hi.y) / max(street_reach, 0.001);
+		float across = abs(UV.x - (lo.x + hi.x) * 0.5) / max((hi.x - lo.x) * 0.5, 0.001);
+		float street = step(0.0, below) * (1.0 - clamp(below, 0.0, 1.0)) * (1.0 - smoothstep(0.7, 1.3, across));
+		col += neon.rgb * street_gain * street;
+		col = min(col, vec3(1.0));
 	}
 	vec4 m = texture(won_mask, UV);
 	if (won > 0.0 && !use_mask) {

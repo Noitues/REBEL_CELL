@@ -190,9 +190,15 @@ extends Resource
 @export var backdrop_site_close_min_fov_deg: float = 10.0
 ## ... and its focus: the city outside the block dims by this share, the ellipse (the block's
 ## shape) reaching this times its half width, the block lit by this factor.
-@export var backdrop_site_focus_dim: float = 0.55
+@export var backdrop_site_focus_dim: float = 0.45
 @export var backdrop_site_focus_reach: float = 1.2
 @export var backdrop_site_focus_lift: float = 1.5
+## B2 b (art director): the Site block lit by its own neon instead of backdrop_site_focus_lift (kept
+## for the stills): its windows x this, a rim of the corp colour at this strength on its edges, the
+## street in front catching it at this strength.
+@export var backdrop_site_window_gain: float = 2.0
+@export var backdrop_site_rim_gain: float = 0.9
+@export var backdrop_site_street_gain: float = 0.5
 ## A Site fight's subject when the model has not measured the Site's building yet: a block of
 ## this many lots round the Site's point (half width) and this tall (BU); an HQ with no
 ## landmark is a block of backdrop_site_hq_height over its HQ lots.

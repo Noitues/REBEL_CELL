@@ -141,6 +141,18 @@ func test_a_site_fight_frames_its_building_centred_between_the_wheels_35_to_45_p
 	assert_gt(checked, 40)
 
 
+func test_a_site_block_is_lit_by_its_own_neon_not_a_flat_lift() -> void:
+	var cfg := CityView3D.CONFIG
+	assert_eq(cfg.backdrop_site_window_gain, 2.0, "windows x2 (art director)")
+	assert_gt(cfg.backdrop_site_rim_gain, 0.0, "a rim in the corp colour")
+	assert_gt(cfg.backdrop_site_street_gain, 0.0, "the street catches it")
+	assert_almost_eq(cfg.backdrop_site_focus_dim, 0.45, 0.001, "the rest x0.55")
+	var sh := FileAccess.get_file_as_string("res://shaders/arena/combat_backdrop.gdshader")
+	assert_true(sh.contains("focus_dim > 0.0 && !subject_on"), "no flat lift on a Site block")
+	var src := FileAccess.get_file_as_string("res://scripts/ui/arena/combat_backdrop.gd")
+	assert_true(src.contains("Palette.corp_color(place.get(\"corp\""), "the neon is the corp's colour")
+
+
 func test_the_view_cut_clears_only_what_hides_the_subject() -> void:
 	var cfg := CityView3D.CONFIG
 	var box := AABB(Vector3(-15, 0, -15), Vector3(30, 40, 30))
@@ -307,7 +319,7 @@ func test_the_hand_fans_overlaps_and_rises_at_the_middle() -> void:
 func test_card_focus_is_lime_corner_brackets_and_a_lift_never_a_lime_fill() -> void:
 	var src := FileAccess.get_file_as_string("res://scripts/ui/fx/card_face.gd")
 	assert_false(src.contains("_cc_style"), "no lime-filled plate behind a focused card (bible 2.10)")
-	assert_true(src.contains("StyleBoxBrackets.draw_on(card"), "focus = the kit's lime corner brackets")
+	assert_true(src.contains("StyleBoxBrackets.draw_on(card, Rect2(Vector2.ZERO, size).grow(ZineCard.CC_EDGE * s - StyleBoxBrackets.OFFSET))"), "focus = the kit's lime corner brackets on the drawn (lifted) card's die-cut")
 	assert_almost_eq(Motion.amplitude(&"card_hover") / GreasePencilMark.BOARD_TO_CANVAS, 18.0, 0.5, "an 18 px lift at 1080p")
 	var scene := await _combat()
 	var card := scene._card_node(1) as ZineCard

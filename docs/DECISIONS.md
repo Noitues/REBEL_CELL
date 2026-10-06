@@ -31,6 +31,24 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-06 — B2 c — the Site block lit by its own neon; focus brackets on the lifted card
+Re-check of B2 b (aa815dde; relayed by the orchestrator): boss start, the Meridian / Halcyon Site blocks, the fanned
+hand, the 12 px hub name and the grade approved. Two fixes (resend `B2_b_site_start.png`, Solace, 1:1 1080p, and
+`B2_crop_hand.png`). Test: `test_b2_combat_composition` (`test_a_site_block_is_lit_by_its_own_neon_not_a_flat_lift`,
+`test_card_focus_is_lime_corner_brackets_and_a_lift_never_a_lime_fill`).
+- **(1) The Site block's light** (`combat_backdrop.gdshader` `subject_on`, set by `CombatBackdrop` for a Site close-up):
+  no flat lift (it whitened Solace's facades). Inside the block's focus its unlit facades sit at `subject_base` 0.72,
+  its windows (the ungraded city's lit pixels from `window_from` 0.45) x `backdrop_site_window_gain` 2, a rim of the
+  corp colour (`Palette.corp_color`) on the block's luminance edges inside its screen box (x `backdrop_site_rim_gain`
+  0.9), and the street under its foot catching that colour (x `backdrop_site_street_gain` 0.5, fading down over 12 %
+  of the view's height and to the sides); the rest stays x0.55 (`backdrop_site_focus_dim` 0.45; B2 b had 0.55, i.e.
+  x0.45). `backdrop_site_focus_lift` stays for the HQ / stills path only.
+- **(2) Focus brackets** draw under the card face's own draw transform (they always did: the B2 b crop's corners sat
+  OFFSET outside the control): they now sit on the die-cut's edge (`grow(CC_EDGE * s - StyleBoxBrackets.OFFSET)`), so
+  they frame the lifted card as drawn and move with its 18 px lift and hover growth.
+- **Orbital's Site stays busy** (accepted by the art director): logged against the per-fight backdrops slice (the
+  queued unique backdrops are its fix; the procedural city has no distinct Site building for the block to stand out).
+
 ### 2026-10-06 — B2 b — combat composition, the art director's fixes
 The art-pass review of B2 (29260839; relayed by the orchestrator). Approved as built: the hub (emblem + accent glow,
 statuses as chips), the hub plate's removal, the wax underlines on the HP / result chips, the boss helix framing,
