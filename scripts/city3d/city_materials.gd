@@ -13,6 +13,10 @@ const GROUND := preload("res://shaders/city/city_ground.gdshader")
 const POST := preload("res://shaders/city/city_post.gdshader")
 const NETWORK := preload("res://shaders/city/city_network.gdshader")
 const NETWORK_XRAY := preload("res://shaders/city/city_network_xray.gdshader")
+const MAP_VEIL := preload("res://shaders/city/city_map_veil.gdshader")
+## S-MAPVIEW: the map veil's render priority: after the ambient layers (beams 11) and before
+## the network decal (19 / 20).
+const MAP_VEIL_PRIORITY := 15
 
 
 static func _v3(c: Color) -> Vector3:
@@ -106,6 +110,21 @@ static func post(cfg: CityConfig, q: Dictionary, ground_tex: Texture2D) -> Shade
 	m.set_shader_parameter("rain_color", _v3(cfg.rain))
 	m.set_shader_parameter("rain_alpha", cfg.rain_alpha)
 	m.set_shader_parameter("grade", _v3(cfg.grade))
+	m.set_shader_parameter("map_saturation", cfg.map_saturation)
+	m.set_shader_parameter("map_contrast", cfg.map_contrast)
+	m.set_shader_parameter("map_mid", cfg.map_mid)
+	m.set_shader_parameter("map_bloom", cfg.map_bloom)
+	return m
+
+
+## S-MAPVIEW: the map mode's veil (a full-screen quad between the city's ambient layers and
+## the network decal).
+static func map_veil(cfg: CityConfig) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = MAP_VEIL
+	m.render_priority = MAP_VEIL_PRIORITY
+	m.set_shader_parameter("veil_color", cfg.map_veil)
+	m.set_shader_parameter("veil_alpha", cfg.map_veil_alpha)
 	return m
 
 

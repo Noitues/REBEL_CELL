@@ -166,3 +166,13 @@ card faces, city sky lanes, HQ redesign) has landed:
   jack_in, the raid playout; `--census` on any screen that redraws more than expected.
 - The Deck tier also at 1280x800 (`--size=1280x800`, the Deck's screen) next to the earlier 5e /
   7w Deck numbers; then the real Steam Deck run.
+- **Combat backdrop at the concept's low angle (owed, designer round 2 2026-10-05).** The close-up
+  now looks at 24 degrees (HQ) / 22 degrees (Site) as combat_solace.jpg, accepted over budget: the
+  designer's figure 9-10.5 ms of city GPU at 1080p tier 2 for the HQ views. Measured on a shared
+  machine (hq_run_lab, 1920x1080, close-up rendered at backdrop_render_height 640): tier 2 HQ
+  4.5-8.75 ms, Sites 1.5-8.3 ms, the canyon 3.4-4.2 ms; runs varied by up to 3 ms. Owed: the
+  quiet run of every HQ and Site close-up (`hq_run_lab --states=hq_<corp>,site_<corp> --tier=2`,
+  twice, medians) against the 8 ms line. Proposed optimisation slice (not built): a backdrop LOD
+  for CityView3D (LOD1 facets past a depth along the view, a far-chunk cut beyond the frame's top
+  ground point), and the extension chunks (the city recorded past city_rect round an edge Site)
+  limited to those in the frustum.

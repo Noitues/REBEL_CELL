@@ -42,6 +42,10 @@ const vec3 PAPER_ORB = vec3(0.957, 0.973, 1.0);
 const vec3 GOLD = vec3(1.0, 0.804, 0.353);
 const float ELITE_W = 14.0;
 const vec3 INK_RIM = vec3(0.039, 0.031, 0.059);
+// WHEEL round 2: the slice outline's least width and the scanlines' fade-out period (screen px).
+const float OUTLINE_PX = 1.6;
+const float SCANLINE_FADE_PX = 2.5;
+const float TIER_BORDER = 0.95;
 const vec3 THREAT = vec3(1.0, 0.204, 0.251);
 const vec3 SEG_COL[8] = vec3[8](vec3(0.47, 0.47, 0.53), vec3(1.0, 0.839, 0.251), vec3(0.745, 0.961, 1.0),
 	vec3(1.0, 0.157, 0.627), vec3(0.745, 0.784, 0.843), vec3(1.0, 0.627, 0.157), vec3(0.361, 0.882, 1.0),
@@ -116,6 +120,11 @@ uniform float screen_gain = 1.6;
 uniform float screen_sat = 1.0;
 uniform float bloom_thresh = 1.0;
 uniform float bloom_gain = 0.0;
+// WHEEL round 2 (designer): the kit's hue pulled into its screens: the screen's luma re-coloured in
+// the corp colour (`accent`) by `corp_pull`, then scaled by `screen_expo` (Meridian reads its palette
+// orange, not the baked atlas's dark brown).
+uniform float corp_pull = 0.0;
+uniform float screen_expo = 1.0;
 // The frame's outer radius (master): 414 on the player's D4 frame, 424 on a corp frame (d4corp R1).
 uniform float r_frame = 414.0;
 // The frame's own glow in the kit accent (frames.add_glow on the accent hairlines) and the accent
@@ -214,6 +223,9 @@ float seg_tex(int sk, float u, float rho, float mid_r) {
 // The screens' tone step (CMB-02): WheelKit.tone mirrors it for the tests.
 vec3 tone(vec3 c) {
 	float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+	float la = max(0.05, dot(accent.rgb, vec3(0.2126, 0.7152, 0.0722)));
+	c = mix(c, accent.rgb * (l / la), corp_pull) * screen_expo;
+	l = dot(c, vec3(0.2126, 0.7152, 0.0722));
 	c = max(mix(vec3(l), c, screen_sat), vec3(0.0));
 	return c + max(c - vec3(bloom_thresh), vec3(0.0)) * bloom_gain;
 }
@@ -290,9 +302,13 @@ vec4 slice_tile(vec2 p, int i, float sc) {
 		}
 	}
 	scr = tone(scr);
-	// scanlines: 3 screen px (rows of constant radius, so they bend into arcs)
+	// scanlines: the recipe's 3 master units (rows of constant radius, so they bend into arcs).
+	// WHEEL round 2: the concept renders them at 2x and downsamples, so where a period is under
+	// SCANLINE_FADE_PX screen px they average out (their mean kept) instead of beating against the
+	// screen's own pattern (the "muddy" slices at combat size).
 	float sl_p = max(3.0, 3.0 * px);
-	scr *= 0.70 + 0.30 * (0.5 + 0.5 * cos(2.0 * PI * ty / sl_p));
+	float sl_amp = 0.30 * sm(SCANLINE_FADE_PX * 0.5, SCANLINE_FADE_PX, 3.0 / px);
+	scr *= 0.85 - sl_amp * 0.5 + sl_amp * (0.5 + 0.5 * cos(2.0 * PI * ty / sl_p));
 	scr *= 0.35 + 0.65 * sm(0.0, 26.0, e_scr);
 	// the read plate: an upright ellipse under the glyph + value block
 	float rc = R_IN + 0.6 * (R_OUT - R_IN);
@@ -363,7 +379,11 @@ vec4 slice_tile(vec2 p, int i, float sc) {
 	vec3 bez = base * light;
 	bez += exp(-pow(e_tile / 1.2, 2.0)) * 0.22;
 	bez *= 1.0 - 0.6 * sm(-5.0, 0.0, e_scr);
-	bez += exp(-pow((e_scr + 1.3) / 0.9, 2.0)) * col * 1.1;
+	// the slice's outline in its program colour (slicelib hairline), at least OUTLINE_PX screen px
+	// wide so it survives combat size on every tier (WHEEL round 2: at 0.9 master it fell under a
+	// pixel and the slices lost their edge)
+	float hw = max(0.9, px * OUTLINE_PX * 0.5);
+	bez += exp(-pow((e_scr + max(1.3, hw)) / hw, 2.0)) * col * 1.1;
 	float led_r = R_OUT - GAP - BW * 0.5;
 	float led_lat = radians(half_span - min(4.0, half_span * 0.35)) * led_r * 0.86;
 	float ld = length(vec2(rho * radians(d) - led_lat, rho - led_r));
@@ -377,9 +397,11 @@ vec4 slice_tile(vec2 p, int i, float sc) {
 		vec3 sec = tier_sec.rgb;
 		vec3 tcol = (tier == 2) ? sec : prim;
 		float band_b = clamp(1.0 - abs(e_scr + BW * 0.45) / (BW * 0.42), 0.0, 1.0) * a_tile;
-		rgb = rgb * (1.0 - band_b * 0.75) + tcol * (0.55 + 0.45 * light) * band_b * 0.75;
-		float edge = exp(-pow((e_scr + 1.0) / 0.9, 2.0)) * a_tile;
-		rgb += edge * tcol * 0.9;
+		// WHEEL round 2: the tier border reads as the concept's bright corp outline (was 0.75)
+		rgb = rgb * (1.0 - band_b * TIER_BORDER) + tcol * (0.55 + 0.45 * light) * band_b * TIER_BORDER;
+		float ew = max(0.9, px * OUTLINE_PX * 0.5);
+		float edge = exp(-pow((e_scr + max(1.0, ew)) / ew, 2.0)) * a_tile;
+		rgb += edge * tcol * 1.2;
 		float gb = 10.0;
 		float line = clamp(2.1 - abs(e_scr - gb - 1.1) / 1.0, 0.0, 1.0) * a_scr;
 		if (tier == 2) {

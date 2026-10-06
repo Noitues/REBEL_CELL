@@ -411,8 +411,10 @@ const NUMBER_MIN_FONT := 10.0
 const LANDED_RIM := 4.0
 const NULL_X_SHARE := 0.32
 const NULL_X_WIDTH := 5.0
-## The DEFEATED stamp's lettering (px at text scale 1.0) and tilt (rad).
-const DEFEATED_FONT := 22
+## The DELETED sticker's lettering (px at text scale 1.0), its die-cut (px) and the stamps'
+## tilt (rad).
+const DELETED_FONT := 30
+const DELETED_DIE_CUT := 5.0
 const STAMP_TILT := -0.2
 ## ANIM-R3 A6g: the skull under DEFEATED, its radius as a share of the stamp's lettering.
 const SKULL_SHARE := 0.75
@@ -1312,7 +1314,7 @@ func pointer_spot(index: int) -> Vector2:
 	if ps.is_empty():
 		return global_center()
 	var a := _ang(ps[clampi(index, 0, ps.size() - 1)])
-	return global_center() + Vector2(cos(a), sin(a)) * window_radius_of(clampi(index, 0, ps.size() - 1))
+	return global_center() + Vector2(cos(a), sin(a)) * window_radius()
 
 
 ## Where docked satellite `id` stands on screen (its token), the centre when it's gone.
@@ -1866,11 +1868,6 @@ func window_radius() -> float:
 	return (rt + (WheelFace.WINDOW_IN + WheelFace.BLADE_TOP - WheelFace.WINDOW_OUT) * 0.5) * art_scale()
 
 
-## The radius (px) of needle `index`'s value window: needle 1's blade window, the pins' after it
-## (BOSS-04).
-func window_radius_of(index: int) -> float:
-	return window_radius() if index <= 0 else WheelFace.window_master(index, frame_master()) * art_scale()
-
 
 ## Screen angle of a position `x` ticks round from the top, clockwise on screen when the
 ## wheel's rotation grows (H20: +1 turns the wheel clockwise, as a right nudge reads).
@@ -2021,11 +2018,7 @@ func _draw_view() -> void:
 		var bscale := (WheelFace.LOD_BLADE if radius <= WheelFace.LOD_RADIUS else 1.0) * (pulse_scale if pk == pulse_pointer else 1.0)
 		if pk == pulse_pointer:
 			# The needle resolving now: its window glows.
-			draw_circle(center + Vector2(sin(deg_to_rad(degs[pk])), -cos(deg_to_rad(degs[pk]))) * window_radius_of(pk), WheelFace.WINDOW_HALF * k * 1.6, Color(_col(Palette.CELL_ACID), 0.35))
-		if pk > 0:
-			# BOSS-04 (d4corp.pin): needle 2, 3 ... read on short pins inside the frame.
-			WheelFace.pin(self, center, k, degs[pk], kit.accent, body, _read_value(sl), WheelGlyphs.slice_id(sl), sc, pk + 1, bscale, pointer_alpha)
-			continue
+			draw_circle(center + Vector2(sin(deg_to_rad(degs[pk])), -cos(deg_to_rad(degs[pk]))) * window_radius(), WheelFace.WINDOW_HALF * k * 1.6, Color(_col(Palette.CELL_ACID), 0.35))
 		WheelFace.blade(self, center, k, degs[pk], frame_master(), kit.accent, body, _read_value(sl), WheelGlyphs.slice_id(sl), sc,
 			pk + 1 if ps.size() > 1 else 0, kit.is_boss, bscale, pointer_alpha)
 		if wheel.pointer_orbit != 0:
@@ -2791,34 +2784,40 @@ func _draw_landed(center: Vector2, radius: float, inner: float, tps: float, rot:
 
 
 ## A beaten enemy's empty spot: a dashed ring where the disc was, its name and DEFEATED.
-func _draw_defeated(center: Vector2, radius: float, inner: float) -> void:
-	_draw_dashed_arc(center, radius, 0.0, TAU, _col(Color(wheel_color, 0.45)), 2.0)
-	_draw_dashed_arc(center, inner, 0.0, TAU, _col(Color(wheel_color, 0.3)), 1.5)
-	var hw := (inner - 10) * 2.0
-	var name_lines := hub_name_lines(hw)
-	var name_size := int(name_lines[0])
-	for k in name_lines.size() - 1:
-		var ny := -inner * 0.45 - (name_lines.size() - 2 - k) * (name_size + 1)
-		draw_string(Palette.marker(), center + Vector2(-hw * 0.5, ny), String(name_lines[k + 1]), HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, _col(Color(wheel_color, 0.7)))
-	var word := tr("DEFEATED")
-	var fs := _fs(DEFEATED_FONT)
-	var font := Palette.marker()
+## S-COMBAT-HUD (parity CMB-14, round 23 `fx_enemy_defeated_v2`): the beaten enemy's wheel is
+## gone and a DELETED vinyl sticker stands in its spot: Anton in ink on the wheel's own colour
+## (ANIM-R4 C6g: its own side's colour, never the operative's loss red), a white die-cut, a
+## slight tilt and its shadow; a new enemy can never read as this one coming back. The
+## concept's dashed rings, hub name and skull are gone with the wheel.
+func _draw_defeated(center: Vector2, _r: float, _inner: float) -> void:
+	var dd := deleted_sticker()
+	var word := String(dd["word"])
+	var fs := int(dd["fs"])
+	var box: Rect2 = dd["box"]
+	box.position -= center
+	var font := Palette.display()
+	var cut := DELETED_DIE_CUT * _ts()
+	draw_set_transform(center, STAMP_TILT * 0.5, Vector2.ONE)
+	draw_rect(Rect2(box.position + Vector2(3.0, 5.0) * _ts(), box.size).grow(cut), _col(Color(Palette.NIGHT_SKY, 0.55)))
+	draw_rect(box.grow(cut), _col(Palette.STICKER_DIE_CUT))
+	draw_rect(box, defeated_color())
+	draw_string(font, Vector2(box.position.x + fs * 0.3, fs * 0.35), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _col(Palette.INK))
+	draw_set_transform(Vector2.ZERO)
+
+
+## The DELETED sticker (CMB-14): its word, lettering (px, shrunk to the wheel) and box (local,
+## unrotated).
+func deleted_sticker() -> Dictionary:
+	var center := _center()
+	var radius := _radius()
+	var word := tr("DELETED")
+	var font := Palette.display()
+	var fs := _fs(DELETED_FONT)
 	var ww := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	while fs > NUMBER_MIN_FONT and ww + fs > radius * 1.8:
 		fs -= 1
 		ww = font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var box := Rect2(-ww * 0.5 - fs * 0.3, -fs * 0.7, ww + fs * 0.6, fs * 1.4)
-	# ANIM-R4 C6g: in the beaten wheel's own colour, on its own side (red read as pink under
-	# VICTORY, and as the operative's loss).
-	var dcol := defeated_color()
-	draw_set_transform(center, STAMP_TILT, Vector2.ONE)
-	draw_rect(box, Color(Palette.NIGHT_SKY, 0.85))
-	draw_rect(box, dcol, false, 3.0)
-	draw_string(font, Vector2(-ww * 0.5, fs * 0.35), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, dcol)
-	draw_set_transform(Vector2.ZERO)
-	# ANIM-R3 A6g: a skull under the stamp marks the beaten side without words.
-	var sr := minf(fs * SKULL_SHARE, inner * 0.3)
-	draw_skull(self, center + Vector2(0.0, fs * 0.9 + sr * 1.2), sr, dcol)
+	return {"word": word, "fs": fs, "box": Rect2(center + Vector2(-ww * 0.5 - fs * 0.3, -fs * 0.7), Vector2(ww + fs * 0.6, fs * 1.4))}
 
 
 ## ANIM-R5 combat 2: the operative's wheel once the fight is lost: the disc goes dark and a
@@ -2830,6 +2829,10 @@ var flatline_pop: float = 1.0
 ## The DEFEAT stamp's lettering at text scale 1.0 (px) and the veil over the disc (alpha).
 const FLATLINE_FONT := 34
 const FLATLINE_VEIL := 0.6
+## CMB-16: the FLATLINED box's edge (px), its rule's alpha, and the share of the hub's width it fits.
+const FLATLINE_EDGE := 3.0
+const FLATLINE_RULE_ALPHA := 0.6
+const FLATLINE_HUB_SHARE := 1.9
 
 
 ## The DEFEAT stamp lands on the operative's wheel (and stays).
@@ -2868,28 +2871,32 @@ func flatline_box() -> Dictionary:
 	var font := Palette.display()
 	var fs := _fs(FLATLINE_FONT)
 	var ww := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	while fs > NUMBER_MIN_FONT and ww + fs > radius * 1.8:
+	var room := minf(radius * 1.8, hub_radius() * FLATLINE_HUB_SHARE)  # CMB-16: on the hub
+	while fs > NUMBER_MIN_FONT and ww + fs > room:
 		fs -= 1
 		ww = font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	return {"word": word, "fs": fs, "box": Rect2(center + Vector2(-ww * 0.5 - fs * 0.3, -fs * 0.7), Vector2(ww + fs * 0.6, fs * 1.4))}
 
 
-func _draw_flatlined(center: Vector2, radius: float, inner: float) -> void:
+func _draw_flatlined(center: Vector2, radius: float, _inner: float) -> void:
 	var p := clampf(flatline_pop, 0.0, 1.0)
 	draw_circle(center, radius + 2.0, Color(Palette.NIGHT_SKY, FLATLINE_VEIL * p))
 	var fb := flatline_box()
 	var fs := int(fb["fs"])
 	var box: Rect2 = fb["box"]
-	var col := _col(LOSS_COLOR)
+	# S-COMBAT-HUD (parity CMB-16, round 40 `player_defeat_v2`): FLATLINED stamps in on the hub,
+	# square, a hollow box with a rule under it in the class accent (it was a tilted red stamp
+	# with a skull, the loss colour of every hit).
+	var col := _col(wheel_color)
 	var sc := lerpf(Motion.amplitude(&"defeat_stamp"), 1.0, p) if Motion.live(&"defeat_stamp") else 1.0
-	draw_set_transform(center, STAMP_TILT, Vector2.ONE * sc)
+	draw_set_transform(center, 0.0, Vector2.ONE * sc)
 	var local := Rect2(box.position - center, box.size)
 	draw_rect(local, Color(Palette.NIGHT_SKY, 0.9 * p))
-	draw_rect(local, Color(col, p), false, 4.0)
+	draw_rect(local, Color(col, p), false, FLATLINE_EDGE)
 	draw_string(Palette.display(), Vector2(local.position.x + fs * 0.3, fs * 0.35), String(fb["word"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, p))
+	var rule_y := local.end.y + FLATLINE_EDGE * 2.0
+	draw_line(Vector2(local.position.x, rule_y), Vector2(local.end.x, rule_y), Color(col, p * FLATLINE_RULE_ALPHA), FLATLINE_EDGE * 0.5)
 	draw_set_transform(Vector2.ZERO)
-	var sr := minf(fs * SKULL_SHARE, inner * 0.3)
-	draw_skull(self, center + Vector2(0.0, fs * 0.9 + sr * 1.2), sr, Color(col, p))
 
 
 ## ANIM-R5 combat 3: true when the forecast has this (living) wheel at 0 after SEND IT.

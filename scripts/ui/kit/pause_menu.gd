@@ -33,6 +33,13 @@ var resume_hint: Label = null
 ## Every sticker with its grease-pencil note (null when it has none), in focus order.
 var _stickers: Array[HoloSticker] = []
 var _notes: Array[PencilWords] = []
+## Resume's note: beside the sticker, or (when the width is short) below its key hint; and where it stands now.
+var _resume_beside: PencilWords = null
+var _resume_below: PencilWords = null
+enum NoteMode { BESIDE, BELOW, NONE }
+var note_mode: NoteMode = NoteMode.BESIDE
+## The abandon and quit notes (below their stickers) show.
+var _other_notes: bool = true
 ## The campaign code field (null without a campaign).
 var code_field: CodeField = null
 var _host: VBoxContainer
@@ -101,7 +108,7 @@ func _init() -> void:
 	_left = _column("Left")
 	_right = _column("Right")
 	var resume_cell := _cell(_left, "Resume", tr("Resume"), VinylSticker.Fill.PINK, RESUME_PX, resumed.emit,
-		tr("Down with the Oligarchy!"), Palette.PENCIL_PLAN, RESUME_NOTE_TILT)
+		tr("Down with the Oligarchy!"), Palette.PENCIL_PLAN, RESUME_NOTE_TILT, true)
 	resume_button = resume_cell
 	resume_hint = Label.new()
 	resume_hint.name = "ResumeHint"
@@ -110,8 +117,16 @@ func _init() -> void:
 	resume_hint.add_theme_font_size_override(&"font_size", UiTheme.font_px(UiTheme.LABEL))
 	resume_hint.add_theme_color_override(&"font_color", Palette.CELL_PINK)
 	resume_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	resume_cell.get_parent().add_child(resume_hint)
-	resume_cell.get_parent().move_child(resume_hint, 1)
+	var resume_box := resume_cell.get_parent().get_parent()  # the cell: [sticker + note beside], hint, note below
+	resume_box.add_child(resume_hint)
+	_resume_beside = _notes[0]
+	_resume_below = PencilWords.new(_resume_beside.words, RESUME_NOTE_TILT)
+	_resume_below.color = _resume_beside.color
+	_resume_below.step = NOTE_STEP
+	_resume_below.name = "ResumeNoteBelow"
+	_resume_below.visible = false
+	resume_box.add_child(_resume_below)
+	_notes.append(_resume_below)
 	_relabel()
 	Settings.hints_changed.connect(_relabel)
 	_cell(_left, "Options", tr("Options"), VinylSticker.Fill.YELLOW, ROW_PX, show_options)
@@ -167,49 +182,72 @@ func _fit_height() -> void:
 	var most := MENU_SIZE.y
 	if is_inside_tree():
 		most = minf(most, get_viewport_rect().size.y - global_position.y - FIT_MARGIN)
-	# The grease-pencil notes drop out when the menu would not fit with them (big text).
-	var notes_room := _notes_room()
-	var bare := want - (notes_room if _notes_shown() else 0.0)
-	var show := bare + notes_room <= most and _columns_width(true) <= MENU_SIZE.x - UiTheme.SP_XL
-	if show != _notes_shown():
-		for n in _notes:
-			n.visible = show
-		want = bare + (notes_room if show else 0.0)
+	want = _fit_notes(want, most)
 	var h := clampf(ceilf(want), minf(FIT_MIN_H, most), most)
 	custom_minimum_size = Vector2(MENU_SIZE.x, h)
 	size = custom_minimum_size
 
 
-## The two columns' width (px) with their notes (`with_notes`) or without: the wider of a sticker
-## and its note, per column, and the gap between.
-func _columns_width(with_notes: bool) -> float:
+## The grease-pencil notes (designer 2026-10-05): Resume's sits BESIDE its sticker when the two columns
+## still fit the menu's width; else BELOW its key hint; else (big text) every note drops. The abandon and quit
+## notes sit below their stickers and drop with it. Returns the menu's wanted height with the notes as set.
+func _fit_notes(want: float, most: float) -> float:
+	var bare := want - _notes_extra_h(note_mode, _other_notes)
+	var budget := MENU_SIZE.x - UiTheme.SP_XL
+	var modes: Array = [[NoteMode.BESIDE, true], [NoteMode.BELOW, true], [NoteMode.NONE, false]]
+	var pick: Array = modes[2]
+	for m in modes:
+		if _columns_width(m[0], m[1]) <= budget and bare + _notes_extra_h(m[0], m[1]) <= most:
+			pick = m
+			break
+	note_mode = pick[0]
+	_other_notes = pick[1]
+	if _resume_beside != null:
+		_resume_beside.visible = note_mode == NoteMode.BESIDE
+		_resume_below.visible = note_mode == NoteMode.BELOW
+	for n in _notes:
+		if n != _resume_beside and n != _resume_below:
+			n.visible = _other_notes
+	return bare + _notes_extra_h(note_mode, _other_notes)
+
+
+## The two columns' width (px) with Resume's note in `mode` and the other notes shown or not: the widest
+## line of each column (Resume's sticker and note side by side count together), and the gap between.
+func _columns_width(mode: NoteMode, others: bool) -> float:
 	var total := float(_columns.get_theme_constant(&"separation"))
 	for col in [_left, _right]:
 		var w := 0.0
 		for cell in (col as Control).get_children():
 			for c in cell.get_children():
-				if c is PencilWords and not with_notes:
-					continue
-				w = maxf(w, (c as Control).get_combined_minimum_size().x if not (c is PencilWords) else (c as PencilWords).get_minimum_size().x)
+				var line := 0.0
+				if c is HBoxContainer:  # Resume: the sticker and the note beside it
+					for part in c.get_children():
+						if part is PencilWords:
+							line += (float(c.get_theme_constant(&"separation")) + (part as PencilWords).get_minimum_size().x) if mode == NoteMode.BESIDE else 0.0
+						else:
+							line += (part as Control).get_combined_minimum_size().x
+				elif c is PencilWords:
+					var is_resume := c == _resume_below
+					if (is_resume and mode == NoteMode.BELOW) or (not is_resume and others):
+						line = (c as PencilWords).get_minimum_size().x
+				elif c is Label:
+					line = 0.0
+				else:
+					line = (c as Control).get_combined_minimum_size().x
+				w = maxf(w, line)
 		total += w
 	return total
 
 
-## The height the notes add to the taller column (px).
-func _notes_room() -> float:
-	var left := 0.0
+## The height the notes add to the taller column (px) for Resume's note in `mode`.
+func _notes_extra_h(mode: NoteMode, others: bool) -> float:
+	var left := _resume_below.get_minimum_size().y if _resume_below != null and mode == NoteMode.BELOW else 0.0
 	var right := 0.0
-	for n in _notes:
-		var h := n.get_minimum_size().y
-		if _left != null and _left.is_ancestor_of(n):
-			left += h
-		else:
-			right += h
+	if others:
+		for n in _notes:
+			if n != _resume_beside and n != _resume_below and not _left.is_ancestor_of(n):
+				right += n.get_minimum_size().y
 	return maxf(left, right)
-
-
-func _notes_shown() -> bool:
-	return _notes.is_empty() or _notes[0].visible
 
 
 ## The least the menu is tall and the screen edge it keeps clear of (px).
@@ -294,7 +332,7 @@ func _column(p_name: String) -> VBoxContainer:
 ## grease-pencil note when given. Stickers always show their colour; the focused one lifts and
 ## runs the kit's gloss sweep (ambient while it has focus). Returns the sticker button.
 func _cell(col: VBoxContainer, p_name: String, word: String, fill: int, px: int, on_pressed: Callable,
-		note: String = "", ink: Color = Palette.PENCIL_PLAN, tilt: float = 0.0) -> HoloSticker:
+		note: String = "", ink: Color = Palette.PENCIL_PLAN, tilt: float = 0.0, beside: bool = false) -> HoloSticker:
 	var cell := VBoxContainer.new()
 	cell.name = p_name + "Cell"
 	cell.add_theme_constant_override(&"separation", 0)
@@ -305,14 +343,20 @@ func _cell(col: VBoxContainer, p_name: String, word: String, fill: int, px: int,
 	b.pressed.connect(on_pressed)
 	b.focus_entered.connect(func() -> void: b.sticker.ambient_sweep = true)
 	b.focus_exited.connect(func() -> void: b.sticker.ambient_sweep = false)
-	cell.add_child(b)
+	var row: Container = cell
+	if beside:
+		row = HBoxContainer.new()
+		row.name = p_name + "Row"
+		row.add_theme_constant_override(&"separation", UiTheme.SP_M)
+		cell.add_child(row)
+	row.add_child(b)
 	_stickers.append(b)
 	if note != "":
 		var n := PencilWords.new(note, tilt)
 		n.color = ink
 		n.step = NOTE_STEP
 		n.name = p_name + "Note"
-		cell.add_child(n)
+		row.add_child(n)
 		_notes.append(n)
 	return b
 

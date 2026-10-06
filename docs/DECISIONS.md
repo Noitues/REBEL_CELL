@@ -31,6 +31,313 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-05 — Parity fix — card aiming and combat HUD (designer ruling)
+Designer rulings 2026-10-05: (1) card aiming is drawn in grease pencil, not a dashed line; (2) with the aim over the
+target wheel, the play's result shows on the affected wheel (preview == result, no new rule); (3) combat group ruling:
+match the concept. Audit items CMB-05..08, CMB-10..18 (`docs/art_review/PARITY/GAPS.md`) plus S-CARDFACE's defect (the
+result chips drew over the hovered, grown card at text 1.0). References (art-concepts-r43): `round41_wheel_stack/
+combat_typical_v4.png` / `combat_worst_case_v4.png`, `round19_combat_fx/card_play_v2_storyboard.png` (04 PEEL + AIM,
+05 SLAP) and its `card_play.py` `draw_aim`, `round32_shop_reward/reward_screen_v2.png`, `round23_combat_fx/
+fx_enemy_defeated_v2.gif`, `round40_hub_inner_ring/player_defeat_v2.gif`. Sheet `docs/art_review/PARITY/fixes/
+COMBAT_HUD.jpg` (concept | before | after, plus the aim's frame strip).
+- **Aim in grease pencil (CMB-10, `AimLinePencil`).** The kit's wax (GreasePencilMark through RaidPencilPool, the
+  pencil CanvasLayer 95 above every UI: no UI covers grease pencil, ART_BIBLE §1.2 / §6.4) in the plan yellow, solid
+  (what this play will do): a bowed stroke from the aimed card's top edge with two head flicks, ending at the hub's
+  edge (0.28 of the wheel, the concept's stop) for a play on the whole wheel and 10 px short of any other zone (a
+  nudge button, a slice, a drone); on a target a hand loop writes on round that wheel (or drone, 0.22 of the rim);
+  a card dragged over nothing points at the pointer with no loop. Motion kept and restyled: the arrow writes on over
+  `aim_line_draw` each time the aim moves, the loop over `target_snap`, every mark the aim leaves wipes off with the
+  kit's `pencil_wipe` (trimmed, never faded); MotionSkip passive; reduce effects / headless whole at once. The acid
+  reticle is still tracked (`target_snap`, tests) but no longer drawn in a fight (`CombatFxLayer.reticle_drawn`): the
+  loop is the snap. H24's "aim line under the wheels" is superseded by the pencil rule (test updated, below).
+- **The play's result on the wheel (ruling 2, `PlayResultPlate`).** While the aim is on a target (mouse drag, click
+  aim, keys and pad alike), every wheel the play changes shows it: the aimed wheel always, and any wheel whose result
+  chips differ from the forecast without the card (a spin that makes the enemy hit you shows on your wheel too). On its
+  hub (where the arrow ends) a terminal plate with a plan-yellow edge: `IF YOU PLAY <CARD>`, the HP `from → to` (red
+  for a loss, green for a gain) and that wheel's D15 result chips: the same `ResultChipModel` row as beside the HP, so
+  it is the play then SEND IT and nothing new is computed. The slices whose status it changes are circled in grease
+  pencil (yellow good for you, red bad, the outcome's own status list); spins and nudges keep CardPreviewOverlay's
+  ghost landing, now at full strength with its labels while the aim is on that wheel (it held at 50 % while aimed).
+  A random play (GDD 2.10) keeps its odds on the chips and shows no plate. A hover without aiming keeps the chips only.
+- **The hovered card on top (S-CARDFACE's defect).** The hovered hand card draws at `HOVERED_CARD_Z` over the HUD
+  layer (the chips); the motion layer, toast, inspect popup, aim hint and tutorial stay above it (`OVER_HAND_Z`).
+- **CMB-05 TURN strip.** A slim terminal strip: `TURN 3 | FREE NUDGE 1` (Anton 20) over the fight's address line in
+  mono (`NETRUN // <CORP> // <SITE> // <ENEMY>`, `BOSS: <name>` in a boss fight, `TRAINING SIM` for a fight with
+  no run; mono 13, shrinks to the 12 px caption floor, then drops its leading parts so the Site and enemy stay whole). The key hints are no longer a banner line (the concept has none): they are
+  the strip's tooltip; the outcome word (VICTORY / DEFEAT) follows the address once it lands.
+- **CMB-06 EXECUTE plate.** The system word sits on a dark terminal plate (glass 0.72, dim edge) that holds the
+  terminal line too; SEND IT / the next step's sticker overlaps it (it was a pale outline that read as a fault).
+- **CMB-07 top bar.** No global top bar in a fight (netrun_scene hides the HudBar while the fight's panel shows; its
+  numbers keep updating); the TURN strip and the corner chips (Settings) stand alone and the wheels get the height.
+- **CMB-08 name sticker.** An operative still on the class's numbered name ("Breaker 1") reads `CELL-1 // BREAKER`
+  (the concept's CELL-9 // BREAKER; it said the class twice). The SAVED stamp now avoids the RAM panel and the name
+  sticker (Fx's avoid list).
+- **CMB-12 chips.** The chip glyph box is 20 px (as tall as its number; at 16 it read as a tiny box). The atlas has no
+  shield glyph, so block / shield keep `picto_block` (no glyph redrawn). The octagon chip and the cyan chevron bracket
+  of the audit are no longer drawn on main (gone with S-WHEEL's HP row).
+- **CMB-14 fight won.** The held word says `FIGHT WON` in the sticker yellow (round 32 reward screen; VICTORY in lime
+  collided with the focus colour); the beaten wheel's spot shows a `DELETED` vinyl sticker in its own colour with a
+  white die-cut (round 23 `fx_enemy_defeated_v2`); the dashed rings, hub name and skull went with the wheel. OURS NOW
+  is the arena's (S-ARENA, CombatBackdrop.play_won), not changed here.
+- **CMB-16 defeat.** FLATLINED stamps in on the hub, square, a hollow box in the class accent with a rule under it
+  (round 40 `player_defeat_v2`); it was a tilted red stamp with a skull. The drain is S-WHEEL's (kept).
+- **CMB-18 tutorial.** Designer: the tutorial card sits between the wheels: kept in the notes column, checked clear of
+  both wheels at 1.0 / 1.6 / 2.0 (test).
+- **Kept as is (decision only):** CMB-11 (main follows the concept: precision landing, bit stream), CMB-13 (the
+  refusal toast follows the bible: HARM edge + no-entry mark), CMB-15 / CMB-17 (LOOT / JACK OUT are white die-cut
+  stickers, the sticker rule; they now sit on the dark PROCEED plate of CMB-06).
+- **Tests.** New `tests/unit/test_parity_combat_hud.gd` (full tier): every card in content aimed at its first and last
+  option against three enemies, each plate's chips and HP equal to the real play + SEND IT (spin, nudge, block,
+  damage, evade, drone, status covered); pencil circles per changed slice; no plate on a plain hover, plates on pad
+  aiming; the arrow's start, stop, head flicks and loop; write-on / wipe / one-press skip; the hovered card's draw
+  order; the TURN strip's address and fit; CELL-n; the tutorial between and clear of the wheels; DELETED / FLATLINED
+  on the hub; the plate on screen, on its hub and off the hand at 1.0 / 1.6 / 2.0. **Updated on purpose** (they pinned
+  the superseded look): `test_horizontal_pass24` `test_the_aim_line_draws_under_the_wheels` →
+  `test_the_aim_is_grease_pencil_above_every_ui`; `test_anim_r6_combat` and `test_anim_r4_combat` read FIGHT WON for
+  VICTORY. None dropped.
+- **Files outside the area (smallest edits):** `netrun_scene.gd` (the top bar hidden in a fight), `fx.gd` (SAVED's
+  avoid list), `combat_fx_layer.gd` (`reticle_drawn`), `wheel_view.gd` (DELETED sticker, FLATLINED on the hub;
+  `DEFEATED_FONT` renamed `DELETED_FONT` with the word), `card_preview_overlay.gd` (full strength on target).
+- **Open question (default built):** the key-hint line left the TURN strip with the concept (tooltip only); if the W /
+  R switches need to be on screen, the default proposal is a small key caption under the target's nudge pair.
+### 2026-10-05 — Designer ruling — city as a map in raid and netrun views
+Designer rulings 2026-10-05 (S-MAPVIEW): on a raid view and a netrun view the city and its buildings are slightly
+greyed and lowered in opacity so the nodes and links pop (main's raid view was "a bright colourful mess"); the city
+raid view shows the major (raid) nodes only, never netrun sub-nodes; a netrun's route nodes sit along the link
+between two raid nodes. Refs (art-concepts-r43): round 40 `raid_view_v3` / `raid_gifs/`, round 32
+`city_map_hud.png`, round 37 `city_default.png`; ART_BIBLE v2 §4.1 / §4.3 / §4.8.
+- **Map mode (`CityView3D.map_mode`).** On while the host holds the RAID or NETRUN band (`CityView3D.map_band`:
+  the raid setup / playout / report, and the HQ once it holds RAID as the raid view; the netrun route), off for the
+  Grid (GRID band), the title, the blurred backdrop (GRID), the combat backdrop and the HQ-run views (no band). It
+  follows `band_lock`, so no page calls it. The night look stays underneath: after the post's night grade the city
+  keeps `map_saturation` (0.7) of its colour, its contrast `map_contrast` (0.8) round `map_mid` (0.22), its bloom
+  `map_bloom` (0.45); then a veil (`shaders/city/city_map_veil.gdshader`, `map_veil` night violet at
+  `map_veil_alpha` 0.22) drawn after the city's ambient layers (holo signs, pools 10, beams 11; render priority
+  15) and before the network decal (19 / 20), so sky lanes, searchlights and signs are lowered with the city while
+  the links stay full. The decal's glow halo keeps `map_net_halo` (0.35) of itself (GRID-01's veil under the
+  network); its traces, discs and rings are unchanged. Nodes, links, markers, pencil and stickers are 2D or the
+  decal: full strength on top. All numbers in CityConfig ("Map mode"). `CityView3D.map_graded` mirrors the step on
+  the CPU. **Measured** (map area, mean relative luminance / mean HSV saturation, 1280x720): raid setup Solace
+  0.104 / 0.42 before, 0.071 / 0.29 after; the route 0.063 / 0.38 before, 0.044 / 0.26 after; the concepts 0.08-0.11
+  / 0.41-0.53 (the concept's neon is in its marks; the city's p90 drops from 0.13-0.18 to 0.08-0.11).
+- **Linear-as-sRGB check (S-ARENA's finding).** The raid pages and the route draw the city's ViewportTexture with a
+  plain canvas draw (NeonCity, no shader): the frame equals the render within 1-2 levels in clear patches (raid
+  setup Solace and Meridian, the route; `raid_lab --raw`, `netrun_states --raw`). No darkening on these views;
+  nothing to decode. (Answers part of the "Parity fix combat backdrop" open question 3 for the raid and route.)
+- **Major nodes only (`RaidMapNodes`, pure).** The raid map showed every Site a raid could enter at
+  (`RaidResolver.default_entry_sites`: the whole frontier, `CityLayout.threat_paths` of every pending raid), a T1 /
+  T2 hexagon on each. It now keeps the Cell's network (home and the claimed Sites) and the Sites the shown raid's
+  threats really enter at and cross: the setup's own projection (`RaidResult.events`), the playout's raid projected
+  from the pre-raid state, the report's touched nodes. Preview == result: the map's routes are the routes the raid
+  takes (tested against `fight_raid`'s events). Never a netrun route node (sub-node): every id is a Grid Site.
+  `RaidMapNodes.route_paths` is `hq_scene.raid_route_paths`' code (the relay makes that one delegate to it).
+  **The hookup in `hq_scene.raid_graph` (3 lines) is relayed to HQ-BUILD** (it owns `hq_scene.gd`; the orchestrator asked S-MAPVIEW
+  not to edit it); the after frames of the raid rows in the sheet were taken with it applied locally.
+- **Route nodes along the link (`RouteLinkLayout`, pure).** The link is the one the run jacks along (bible 4.6):
+  `RouteLinkLayout.from_site` (home or a claimed Site linked to the run's Site, lowest content id first; else an
+  owned Site whose links name it) to the run's Site, on CityLayout's Site layout; `RunManager.jack_link` now uses the
+  same function (behaviour unchanged), so the jack rides the link the route lies on. Layer k of L sits k / L of the
+  way along (the final Rack on the target Site), the entry ("you are here" before the first node) on the Cell's node,
+  a layer's nodes side by side across the link `route_link_lateral` (2.0) lots apart in index order (node ids
+  L<layer>N<index>). A link shorter than `route_link_min_lots` (6) reaches back along its heading. No rule change:
+  `netrun_scene.route_graph` only computes the points (the old lattice round the Site goes); the overlay's building
+  snap (radius 4) then puts each sticker on a roof as before.
+- **Kept.** Route generation, raid resolution, the Grid page's look, ANIM motion entries (none touched). The decal's
+  disc fill, the link strokes and the badges stay with S-GRID / S-RAID (GRID-01 / RAID-04, partly resolved here).
+  The playout's orange result spread over the city (NeonCity influence) is unchanged.
+- **Perf** (windowed, 1920x1080, tier 2, other agents running): route 3.08 ms a frame (city GPU 1.77 ms),
+  REBEL_CELL route 3.57 ms (2.19); 7w's were 2.93-3.75 ms: the veil and the map step cost nothing measurable; in
+  the 8 ms budget.
+- **Tests.** New `tests/unit/test_s_mapview.gd` (fast): map mode on for RAID / NETRUN only (and the look it sets),
+  the raid setup and the route hold map bands and the Grid does not; the veil between the ambient layers and the
+  decal; the grade greys and dims but keeps the hue; the marks' contrast over the dimmed city (fixtures
+  `tests/fixtures/mapview/*.png`: the 3D city's own render, network decal off, map mode on and `_off`): lime links /
+  ring states >= 3:1 against the city's 90th percentile, CORE and the threat pencil >= 3:1 against its median, the
+  city's bright part lower than without; the raid view's major nodes (no frontier-only Site, every id a Grid Site);
+  the map's routes == the played raid's; every route node on the link within (widest layer - 1) / 2 x lateral, the
+  final Rack on the Site, the entry on the Cell's node, for seeds 1, 2, 5; seeded replays place identically; the
+  jack starts where the route does. No test dropped or changed.
+- **Tools.** `raid_lab` `--raw` (the city's render, and `_city_raw` with the decal off) and `--size=`;
+  `netrun_states` `--raw`.
+- **Review:** `docs/art_review/PARITY/fixes/MAPVIEW.jpg` (concept | before | after: raid setup Solace, Meridian,
+  Solace at text 2.0, playout end, route underway, REBEL_CELL route start).
+- **Files outside the area (smallest change):** `scripts/autoload/run_manager.gd` (`jack_link` calls
+  `RouteLinkLayout.from_site`), `scripts/ui/netrun_scene.gd` (`route_graph`: the points), the two labs.
+
+### 2026-10-05 — Parity fix — combat backdrop, round 2 (designer answers and feedback)
+Designer round 2 on "Parity fix — combat backdrop" (below): every fight should get its own unique backdrop and the
+HQ boss fight a special view; build the placeholder now. Feedback: "Combat backdrop is improving": fill the blank
+lots, give the camera angle and the target's focus more work. Sheet `docs/art_review/PARITY/fixes/ARENA_b.jpg`
+(concept | round 1 | round 2).
+- **Target (logged, proposed slice, not built): unique per-fight backdrops.** Each Site fight its own composed view
+  of its Site (its own building, light and camera; a perspective camera or the HQ as a layer behind), the boss
+  fight its HQ's special view. Built now as the placeholder below.
+- **Site fights frame the fought Site's own lot** (`BackdropCatalog.site_shot`): its layout point, never moved (the
+  28-lot inset and `site_close_up_lot` are gone); the corp's Site landmark stands only on the Site that carries it
+  (`CityLandmarks.site_of`), never repeated on other lots. The subject is the Site's building, measured on the model
+  (`CombatBackdrop._building_box`, the nearest lot with a roof, grown to `backdrop_site_subject_span` 30 BU), fitted
+  into `backdrop_site_frame` (0.33, 0.24, 0.34, 0.56: between the wheels, above the hand) at a share of the view
+  between `backdrop_site_subject_min` 0.3 and 0.6 (site_solace_night's clinic: 0.38). The camera looks along the
+  city's own diagonal view that points most from the Site toward its corp's HQ (`site_yaw`: the iso look and its
+  light kept; the HQ ahead) and zooms out round the subject while it keeps that share until the HQ shows
+  (`backdrop_site_hq_*`, `backdrop_site_zoom_step`). With the orthographic close-up a far HQ (100-250 BU behind
+  sits 40-90 BU higher on screen) stays out of frame while the Site is large: the HQ shows only for Sites near it
+  (open question 4).
+- **The subject reads first:** outside an ellipse round it (`backdrop_focus_radius` 0.18 of the width) the close-up
+  softens (`backdrop_focus_blur` 3 texels) and dims (`backdrop_focus_dim` 0.22); inside it is lit up
+  (`backdrop_focus_lift` 1.3). Boss views too (round the landmark); not the DISPATCH canyon.
+- **The concept's low angle** (designer: 22-30 now, over budget accepted): `backdrop_hq_pitch_deg` 24,
+  `backdrop_site_pitch_deg` 22. `backdrop_site_ortho` 90 -> 60 (the least Site framing). Owed: the clean-run line
+  in `docs/art_review/ART-12/perf.md` with the proposed optimisation slice (backdrop LOD / far-chunk cut).
+- **Blank lots, cause and fix (shared city view).** A landmark cleared every procedural building inside 92 % of its
+  whole ground box (`CityView3D._place_landmark`), so the ground under Halcyon's eye beam and Meridian's open yard and
+  train line (a 180 BU box) showed as bare lots, on the Grid and raid too. Now a landmark's cleared box keeps a
+  footprint mask (`CityView3D.footprint_lots`, `_clear_masks`): only lots under its triangles that reach the ground
+  and rise (`landmark_footprint_ground` 2 BU, `landmark_footprint_rise` 3 BU, grown `landmark_footprint_grow` 1
+  lot; beams never count) give way. The Cell's district keeps its whole box (it brings its own street grid). The
+  Grid's look is otherwise unchanged (same models, same ink, the gaps filled with the city's own buildings).
+- **The bare plane past the city's edge:** most Sites lie within a few lots of `city_rect`'s edge, and the low angle
+  showed the empty ground past it (and a ~4-lot bare strip just inside). A Site or HQ close-up now records the city
+  past the edge round its target (`BackdropCatalog.extension_keys`, `backdrop_extend_lots` 56) on worker threads
+  into its own copy of the shared model (`CombatBackdrop._extend_city` / `extended_model`; the still shows
+  meanwhile), so the frame is city all round. The shared model and the Grid are unchanged. When the shared model is
+  not built yet (a fight before any city page) the close-up uses it as it is.
+- **Brightness:** `backdrop_exposure` 4.6 -> 5.0; `backdrop_tint_by_corp` lifts Halcyon's violet night (1.1, 1.12,
+  1.14), which sat under the band. Measured (hq_run_lab, 1920x1080, tier 2, between the bands): HQ 0.050-0.086, Site
+  0.056-0.112, won 0.064; band 0.05-0.19. City GPU tier 2 1080p (shared machine): HQ 4.5-8.75 ms, Site 1.5-8.3 ms.
+- **Round 2 finding (3) ruled:** the raid and netrun views grey the city out on purpose so nodes and links pop
+  (another agent builds that look); not changed here.
+- **Tests** (`test_parity_arena_backdrop.gd`): the fixtures are now the settled frames as the screen shows them
+  (point samples of the windowed hq_run_lab frames, grade and focus in; the round-1 model of the shader's input was
+  replaced: it overstated the frame by 1.6-2.5x); new: each Site fight frames its own lot (landmark only on its own
+  Site), the subject's share of the view in the concept range and in its frame, the HQ ahead along one of the city's
+  diagonal views, both pitches in 22-30, no bare plane in the frame (every Site of every corp and every HQ), the
+  landmarks clear only their footprint (Meridian, Halcyon, headless); the grade lifts a dark linear mid-tone 3x
+  without blowing out (replaces "without the grade the close-up drops below the band"). `test_hq_run_city.gd`: a
+  Solace Site that does not carry the landmark is a plain `site` shot on its own lot. No test dropped.
+- **Files outside the area:** `scripts/city3d/city_view_3d.gd` (footprint masks), `scripts/city3d/city_config.gd`
+  (landmark footprint group, backdrop fields), `docs/art_review/ART-12/perf.md` (owed line).
+### 2026-10-05 — Parity fix — combat backdrop (designer group ruling)
+Designer group ruling 2026-10-05: combat matches the concept. Audit items CMB-01, BOSS-03, BACKDROP-01, BACKDROP-02,
+MOTION-07 (`docs/art_review/PARITY/GAPS.md`); references `round26_hq_targets/combat_solace.jpg`,
+`site_solace_night.jpg`, `round41_wheel_stack/combat_worst_case_v4.png` (art-concepts-r43); builds on 8w's D17 city
+backdrop (CombatBackdrop's own CityView3D, `BackdropCatalog.city_mode` / `city_shot`). Ideas from TITLE-01 (a backdrop
+look of its own, the concept's numbers in config), not its files.
+- **Cause of the dim (MOTION-07).** The still (an sRGB JPEG bake of the concept) showed lit; when the city's model came
+  in, `combat_backdrop.gdshader` drew the close-up's ViewportTexture, which reaches the shader as linear values, and
+  showed them as they were: the render's mid-tones about four times darker (measured windowed with the grade off:
+  frame 0.027 against its own render's 0.10), over the Grid's already dark night ramp. No timer or dim step; the
+  hand-over itself darkened the scene.
+- **The lit close-up.** (1) The backdrop's city gets its own lit night look through `CityView3D.set_night_share` at
+  share 0 (`BackdropCatalog.city_look`: CityConfig `backdrop_ramp` (the concept's blue-grey), `backdrop_sky`,
+  `_haze`, `_grade`, `_bloom`, `_glow_threshold`); a new optional `night` key keeps rain and fog, and
+  `landmarks_night` picks the landmarks' look per shot: an HQ in its day materials (the pale lit helix of
+  combat_solace; `backdrop_hq_landmarks_night` false), a Site building and the DISPATCH canyon at night (the lit
+  cross; `backdrop_site_landmarks_night` true). (2) A canvas grade on the city only (`city_grade`, never the stills):
+  each pixel's value V -> 1 - (1 - V)^`backdrop_exposure` (4.6) with its hue kept (no neon clips to white), times
+  `backdrop_tint`, toward its grey by `backdrop_saturation` (0.72, the rain-calmed neon); `CombatBackdrop.graded`
+  mirrors it. **Measured** (windowed hq_run_lab, 1920x1080, tier 2, mean relative luminance between the bands):
+  before 0.017-0.049, after 0.050-0.099; the concept stills (`backdrop_luma_band` 0.05-0.19) 0.053-0.187.
+- **HUD and wheels keep their contrast.** The pools behind the wheels darken more: `backdrop_pool_dark` 0.55 (was the
+  shader's 0.45; leaves 45 %), `backdrop_pool_falloff` 4 (both now config). Checked on the settled close-up: the HP
+  numbers (WheelView.HP_COLOR) 4.5:1, the slice numbers 4.5:1, each wheel's edge (accent ring, HP arc or ink frame)
+  3:1, for every corporation's accent and the Cell's pink.
+- **Framing (BACKDROP-01, 8w's cut helix).** A boss fight fits the corp's whole HQ landmark into
+  `backdrop_hq_frame` (0.32, 0.05, 0.36, 0.85 of the view: between the wheels, its tip under the top bar, its foot
+  behind the hand) with `BackdropCatalog.fit_box` (ortho never under `backdrop_hq_ortho`); only the landmark's body
+  counts (`backdrop_fit_keep` "solid": not the beams and the eye's rays over the ground). Per corp in config:
+  `backdrop_hq_fit_keep_by_corp` (Meridian fits its crane, not the 180 BU yard and train: the concept's crane between
+  the wheels), `backdrop_hq_frame_by_corp`, `backdrop_hq_ortho_by_corp` (empty). The DISPATCH canyon is unchanged.
+- **Site fights (BACKDROP-02).** The corp's Site landmark (`<corp>_site.glb`: Solace's clinic, Halcyon's court,
+  Orbital's) stands on the run's Site lot in the close-up (`CityView3D.set_site_landmark`), as the stills give each
+  corp one Site building, fitted into `backdrop_site_frame`; Meridian (no Site landmark) keeps the lot's nearest
+  building. Sites at the city's edge (the territories reach it) are stood `backdrop_site_inset` (28) lots inside
+  `city_rect` (`site_close_up_lot`), so the frame is city all round rather than half the bare plane past the edge.
+  The won lights (5d) and OURS NOW follow the moved lot.
+- **Camera.** `backdrop_site_pitch_deg` 34 (looking across the city at the building, as site_solace_night);
+  `backdrop_hq_pitch_deg` 40, the city's own: 22-30 read closer to combat_solace's low angle but showed so much
+  city to the horizon that the close-up took 9-10.5 ms at 1080p.
+- **Budget.** The close-up renders at most `backdrop_render_height` 640 px tall and is drawn scaled
+  (`CombatBackdrop.render_px`; it sits softened behind the wheels). Measured windowed (hq_run_lab, 1920x1080, three
+  runs on a shared machine): tier 2 HQ close-ups 5.0-7.8 ms, Sites 4.4-7.8 ms, canyon 4.4 ms; tier 1 1.9-5.1 ms; all
+  under `budget_ms` 8; frames held 16.7 ms.
+- **BOSS-03.** The white bead chain was the helix's chaser lights on the dark night helix; with the day landmark
+  look they sit in the pale green helix as the concept's and no longer read as a UI element. The boss phase look
+  needs nothing more from the backdrop (phase 2 checked).
+- **Kept.** Tier 0 and headless keep the baked stills, ungraded; the masked still won path; reduce effects / skip
+  land the won look at once; no motion entry changed.
+- **Tests.** New `tests/unit/test_parity_arena_backdrop.gd` (fast): the band is the concept stills'; the settled
+  close-up (fixtures `tests/fixtures/arena_backdrop/*.png`: point samples of each close-up's own render from
+  `hq_run_lab --raw`, decoded to linear as the shader receives them, graded by `CombatBackdrop.graded`) stays in the
+  band and without the grade drops under it (MOTION-07 reproduced); the grade keeps neon hues and ink; HUD / slice /
+  wheel-edge contrast over the backdrop; every corp's HQ landmark whole inside its frame at 1280x720 and 1920x1080;
+  every Site of every corp frames its lot (landmark in `backdrop_site_frame`, won lights on it); the look per shot;
+  tier 0 / headless stills. Changed: `test_hq_run_city.gd` `test_the_backdrop_takes_the_city_close_up_by_tier_and_frames_the_place`
+  (a Solace Site is now the `site_landmark` shot on the inset lot, ortho at least the Site framing's). No test dropped.
+- **Review:** `docs/art_review/PARITY/fixes/ARENA.jpg` (concept | before | after: Solace boss phase 2, Solace Site,
+  Meridian boss worst case; Halcyon boss, Orbital Site and the D17 won state after).
+- **Files outside the area (smallest change):** `scripts/city3d/city_view_3d.gd` (`set_night_share`: the optional
+  `night` / `landmarks_night` keys, 3 lines), `scripts/city3d/city_config.gd` (the `backdrop_*` fields),
+  `tools/design_lab/arena_lab.gd` (`--site=`; a quit fix when no `--scale` is given),
+  `tools/art_pipeline/hq_run/hq_run_lab.gd` (`--raw=`), `tests/unit/test_hq_run_city.gd` (above).
+
+### 2026-10-05 — Parity fix — combat wheels, designer round 2
+
+Designer feedback on the first wheel fix (relayed by the orchestrator). Sheet
+`docs/art_review/PARITY/fixes/WHEEL_b.jpg` (concept | round 1 | round 2).
+
+1. **Less colour pop, per kit.** The tone step is now a table per kit (`WheelKit.TONE`: sat, thresh,
+   gain, pull, expo; the disc gets them in `set_kit`, `WheelKit.tone` mirrors the shader). Player
+   sat 1.15 / lift 0.6 over 0.35, Meridian 1.1 / 0.6, Rebel_Cell 0.9 / 0.4 over 0.4 with exposure
+   0.85; Solace, Halcyon and Orbital keep round 1 (1.4 / 1.1 over 0.3). The table is wheel material
+   in `WheelKit`, like the shader's kit tables (2A), not a `.tres`: no schema change for a look table.
+2. **Slice outlines.** The slicelib hairline (program colour) and the corp tier border were 0.9
+   master units wide: at combat size (about 2.9 master units a pixel) they fell under a pixel and
+   vanished. Both are now at least 1.6 screen px (`OUTLINE_PX`), on every tier; the corp tier border
+   is stronger (0.95, was 0.75) and its edge brighter.
+3. **Muddy screens.** The 3-master-unit scanlines were clamped to 3 screen px at combat size and
+   beat against the screens' own pattern; the concept renders at 2x and downsamples, so they
+   average out. They now fade (mean kept) where their period is under 2.5 screen px
+   (`SCANLINE_FADE_PX`). The baked atlases are unchanged.
+4. **Meridian per the palette.** The baked Meridian atlas reads dark brown; its screens are now
+   pulled 0.65 towards Palette.CORP_MERIDIAN (#FF8C1A, the screen's luma re-coloured in the corp
+   colour) and exposed x1.6 (`pull`, `expo`). Tested: toned Meridian screens within 15 degrees of the
+   palette hue and not dark.
+5. **BOSS-04: keep main's needles.** Round 1's `d4corp.pin` secondary readers are reverted: every
+   needle is a full blade again (crowned on a boss), `pointer_spot` reads the blade window. The
+   crowding fix kept: a multi-needle wheel's rails are +-24 degrees (d4corp), and the corp rim over
+   the phase 3 armour. FIX-REDS c's HP-under-needle layout already assumed full blades for every
+   needle; its test passes with two full blades at 1.0 / 1.6 / 2.0 (captured).
+- `test_parity_wheel.gd` updated: per-kit tone uniforms, two full blades + short rails (replaces the
+  pin test), Meridian palette hue; the NULL-contrast check now asks 3 of 5 families >= 1.5 (the calmer
+  player tone leaves a second dark family under the line; every family is still brighter than NULL
+  and told by its glyph and colour).
+
+### 2026-10-05 — Parity fix — one card face: designer answers
+The designer's answers to the S-CARDFACE open questions (2026-10-05). Sheet:
+`docs/art_review/PARITY/fixes/CARDFACE_hand_b.jpg` (combat_start, combat_aiming, combat_hover at 1.0 / 1.6 / 2.0).
+Tests: `tests/unit/test_parity_cardface.gd` (the Hot Patch / Overdrive exception is gone), `test_art2_hud.gd`.
+- **Hand text (CMB-04).** The rules text at rest may go down to **10 px** (`ZineCard.HAND_REST_FLOOR`; was 12, the
+  ART-2 2D audit floor, which stays for the grown card on screen: `grown_floor`). Type: Plex Sans Condensed, TEXT_HI
+  #F2F6FF with a 2 px ink outline at 0.7 alpha (`CardFace.TEXT_OUTLINE`). Contrast against the face art under the
+  text block (face px y 186..272, every kind and rarity): 8.4:1 (WHEEL, SYSTEM) to 11.7:1 (HACK) at the 95th
+  percentile of the background, above WCAG AA (4.5:1) for small text; the only brighter pixels are the gloss streak
+  and the pips, which the outline and the pip rule cover. More of the text shows at rest (tested in characters: a
+  smaller font fits more words a line, so line counts are not the measure).
+- **The grown card.** `ZineCard.HOVER_SCALE` 1.36 -> **1.75**; a hand shrunk under 1.0 to fit beside SEND IT grows its
+  card further (`hover_to` = 1.75 x max(1, 1 / hand scale): never smaller on screen than a 1.0 card grown). The grown
+  face shows every word of every card in content (Hot Patch and Overdrive included) at 1.0 / 1.6 / 2.0 and down to
+  the hand's least scale (MIN_CARD_SCALE 0.6), at 12 px or more on screen. The grown card moves in across so its die-cut
+  stays on the screen (`grown_shift`: the end cards grew past the edge); its neighbours slide aside by its own growth.
+  The hand at rest is unchanged (it fits at every scale as before). The review pack's `combat_hover` now hovers the
+  first card for real (`mouse_entered`), so the capture shows the growth. Seen in the frames: at 1.0 the preview's
+  result chips over the player's wheel draw above the grown card (they live on the combat FX layer); left as is (the
+  card is grown only while the pointer is on it).
+- **Flights to the piles.** Approved for the animation pass (paused until after M14), not built: item F1 in
+  `docs/R7_REEVALUATION_PREP.md` with the entries it needs (`card_draw`, `card_discard`, `card_exhaust`, `card_pile`
+  re-aimed; new `pile_count_tick`, `pile_reshuffle`) and the two tests that pin today's spots.
+- **SHOP-07.** The RECYCLE BIN is confirmed (open question closed).
+
 ### 2026-10-05 — Parity fix — combat wheels (designer group ruling)
 
 Designer group ruling (2026-10-05): combat matches the concept; mechanics the rules lack stay
@@ -550,6 +857,69 @@ M13 art-pass build's layout and content, reworked in the locked v2 concept langu
   `test_slots_fit_and_focus_reaches_every_action_at_every_text_scale` (1, 2, 3 used slots at 1.0 / 1.6 / 2.0),
   `test_the_slots_panel_wraps_its_cards_then_scrolls_past_its_room`. No test dropped.
 
+### 2026-10-05 — Parity fix — baked stickers re-baked with a thinner edge (designer)
+Designer 2026-10-05, after "Parity fix — sticker edge and sticker focus": the baked stickers keep a thinner white edge too,
+matching the drawn ones. Files: `tools/art/bake_menus_r33.py` (`EDGE_SHARE`, `edge_px`, `Thin`; new `--only stickers`),
+`tools/art/export_combat_stickers.py` (`--only send_it`), `assets/ui/menus/stickers/*.png`, `assets/fx/stickers/send_it.png`,
+`vinyl_sticker.gd` (`EDGE_SHARE`), `test_sticker_edge_focus.gd`.
+- **One share for drawn and baked: 0.14 of the lettering** (VinylSticker.EDGE_SHARE, was 0.2; the baked edge in board px =
+  round(0.14 x the lettering size), capped at the concept's 12). My earlier reading "0.2 x lettering" would have baked 10-12
+  board px, i.e. nearly the concept's fixed 12, so the designer's "thinner" needed a smaller share; the drawn stickers moved
+  to 0.14 with them so the two kinds stay the same proportion (drawn menu stickers get 0.7 x their previous edge).
+- **How.** The concept's own code, unchanged: `ui31.sticker(border=...)` for the dialog stickers (CANCEL, BURN IT, DELETE) and
+  the title words, and, for BREACH / SIMULATE / OVERTHROW (title.py `stk`, menu33 fist / glitch sets, which hard-code
+  `border=12` inside the concept), a context (`Thin`) that replaces the `border` argument of `sticker_lib31.build_sticker` for the
+  sticker being baked (and menu33's `_pad`, which pads the glitch art "like build_sticker does (border 12 ...)"). The die-cut
+  `close` follows as 1.25 x the border, as the concept's own SEND IT call does. Sizes: BREACH / SIMULATE / OVERTHROW 60 -> 8,
+  CANCEL 50 -> 7, BURN IT / DELETE 58 -> 8, the title words 54 -> 8, OPTIONS 66 -> 9. SEND IT (`send_sticker`, lettering 74,
+  border 15 -> 10) is re-exported by `--only send_it`. Baked: the title verbs (BREACH, SIMULATE with its bursts, OVERTHROW),
+  the screen-title stickers (OPTIONS, PAUSED, CODEX, STATS, CAMPAIGN SLOTS, NEW CAMPAIGN), the dialog stickers (CANCEL, BURN IT,
+  DELETE: the slots' DELETE and the abandon / quit dialogs), SEND IT. Not baked words: the slots' LOAD, NEW CAMPAIGN's START and
+  RAID START DEFENSE (drawn kit stickers: already on `edge_for`); the landing words PERFECT / GOOD / WEAK are plate stickers
+  (`vinyl_word`, border 7 on a rounded plate, no lettering die-cut) and the EVADE token / drone are not word stickers: unchanged.
+- **Focus kept.** The baked rest textures are what `VerbSticker` draws; the rainbow sweep and the curl are drawn over them.
+  **The unused baked `_focus.png`, `_sweep_NN.png` and `_burst_N_focus.png` frames are deleted** (40 files with their `.import`),
+  with the load code (`_art_focus`, `_art_sweeps`, `_art_bursts_focus`, `_sweep_k`) and the bake steps that made them (the bakers
+  make the rest art, the glitch bursts, the titles and the dialog stickers only). The button's size now follows the rest art (it
+  followed the larger halo image).
+- **Test.** `test_sticker_edge_focus`: every baked lettering size is inside the concept's edge / body range and strictly under
+  the old fixed 12; the CANCEL, BREACH and BURN IT PNGs' opaque height is the lettering block plus 4 x the new border (so an
+  old bake fails it).
+
+### 2026-10-05 — Parity fix — sticker edge and sticker focus (designer)
+Designer 2026-10-05: at text 1.0 the stickers have too much white die-cut edge; and focus on EVERY sticker (all kinds, the
+harm red one too) is a rainbow gloss sweep plus the corner curl, the sticker keeping its fill, no lime brackets or halo.
+Files: `vinyl_sticker.gd` + `shaders/kit/vinyl_sticker.gdshader`, `chrome/verb_sticker.gd` + `shaders/chrome/vinyl_sticker.gdshader`,
+`send_it_sticker.gd`, `raid_sticker.gd`, `pause_menu.gd`, `test_sticker_edge_focus.gd` (new), `test_parity_pause.gd`.
+- **Where the edge came from.** (1) `VinylSticker` (HoloSticker words, the pause rows, LEAVE / FIGHT WON, RaidSticker, SendIt's kit
+  art, SystemWordSticker, VerbSticker's kit fills) used a FIXED `BORDER_PX` 18 px edge for words: on the pause rows (22 px
+  lettering) that is 0.8 of the lettering. (2) `VerbSticker` set it to 0.2 of the lettering. (3) The baked stickers (4C: the
+  title verbs, the slots' LOAD / DELETE, the dialogs' CANCEL / BURN IT) are the concept's own bakes: ui31.sticker `border=12` on
+  the 1920 board, scaled with the bake (1/3 of the 2x bake = 2/3 board px on the 1280 frame), so their edge / body height is the
+  concept's: 12 / (0.74 x size + 24) = 0.17 to 0.21 at sizes 50-66 (0.27 for CANCEL at 28 px in ui_kit, 0.08 for the 144 px
+  title hero). They match the concept at the same on-screen size, so they are **not** re-baked (re-baking with the same code
+  and border gives the same pixels at that size).
+- **The fix (one place).** `VinylSticker.border_px` is automatic (-1): for a WORD `edge_for(px) = min(px x EDGE_SHARE 0.2,
+  EDGE_MAX_PX 8 x text scale)`: proportional on a menu sticker, capped at the concept's 12 board px (8 px at 1280) on a hero
+  one. `VerbSticker` no longer sets its own. Object stickers keep 18 (explicit sets in ransom_lock, raid_drag_pencil and
+  site_marker_view are unchanged). The tests hold edge / body height inside the concept's range 0.07-0.28 for every lettering step
+  at 1.0 / 1.6 / 2.0, for HoloSticker.word, VerbSticker (kit), RaidSticker, and the baked concept sizes by the concept's formula.
+- **Focus = rainbow sweep + curl, built once.** `VinylSticker` (HOVER state = focus or hover): the shader's `rainbow` colours the
+  gloss band in holo-foil hues over the sticker's own fill; the HOVER curl (`fold`) stays. Reduce effects (and headless): the end
+  state is a static sheen (`RAINBOW_STATIC_K` / `_POS`) plus the curl. `VerbSticker` drawn and baked art (title verbs, slots,
+  dialog stickers, NEW CAMPAIGN START): the chrome shader's `rainbow` band swept by the existing sweep tween (replacing the baked
+  white `_sweep_NN` frames), a static sheen at `STATIC_SHEEN_AT` with no motion, and `_draw_curl` (a peeled corner flap and its
+  shadow) as the drawn stand-in for the kit's fold. The lime halo of the baked `_focus` art, the kit frame, SendIt's halo and
+  RaidSticker's bracket box are gone; colour-blind safe (curl + lift read without colour). MotionSkip is unchanged (the sweep and
+  curl are the same motions).
+- **Not changed (not vinyl stickers):** StickerButton (taped paper notes), ChoiceSticker (the event plate) and HudNameSticker
+  (static, no focus) keep their own focus looks: logged for the designer.
+- **Pause menu, same pass (designer):** "Down with the Oligarchy!" sits BESIDE RESUME (right of it, in the gap clear of the
+  right column), the key hint BELOW RESUME. When the two columns would not fit the menu width the note wraps below the hint
+  (x1.6), and at 2.0 every note drops (`note_mode` BESIDE / BELOW / NONE).
+- **Tests:** new `test_sticker_edge_focus` (edge ratios; every kind's focus = HOVER with rainbow + curl; static end state;
+  drawn stickers' shader rainbow and `_focused`), `test_parity_pause` (note beside, hint below, wrap and drop). Dropped: none.
+
 ### 2026-10-05 — Parity fix — pause menu as stickers (designer layout)
 Designer layout 2026-10-05, supersedes the icon rows of "Parity fix — pause menu" and options A/B/C of
 `docs/art_review/PARITY/fixes/pause_layouts/` (mockups kept). Files: `scripts/ui/kit/pause_menu.gd`,
@@ -569,7 +939,7 @@ calls `confirm_quit`, the stickers have no text).
   **Selection** = the kit's HOVER state (lift, curl, the `sticker_gloss_sweep`), looping while the sticker has focus
   (`ambient_sweep`), no lime bracket or halo. The kit's rainbow is the HOLO fill's foil only; the gloss sweep of the other
   fills is white. Applying HOLO to the focused sticker would change its colour (and make the harm sticker rainbow), so I did
-  not: **open question for the designer** (rainbow on focus for every sticker, yes / no).
+  not. **Closed 2026-10-05 (designer): rainbow gloss sweep plus the curl on every sticker's focus; see "Parity fix — sticker edge and sticker focus".**
 - **Sizes.** Lettering 34 px (Resume) / 22 px (rows) at text 1.0; stickers follow the text size up to 1.5x
   (`STICKER_SCALE_MAX`, as `VerbSticker.SCALE_MAX`) so the two columns fit the 760 px menu at 2.0.
 - **Notes.** `PencilWords` (the kit's grease pencil, Permanent Marker, drawn so it translates): "Down with the Oligarchy!"
@@ -732,6 +1102,46 @@ built that way since TITLE-01b.
 - **Review:** `docs/art_review/PARITY/fixes/TITLE-01c.jpg` (round 33 gif frames | the title's frames 80 ms apart; v4 gif
   | the loot page's frames; event, shop, reduce effects, tier 0; right-half details). The capture tool gained
   `--strip=N` (frames 80 ms apart) and `--raw` (the city without the tilt-shift, for diagnosis).
+
+### 2026-10-05 — Parity fix — TITLE-01d no yellow cast, pulled back (designer decision)
+Designer feedback round 4 (2026-10-05): the title city "is looking really good" (unchanged: the control capture
+matches round 3); the loot page and the HQ have a yellowish hue; loot / event (and the HQ) are a little too zoomed in.
+- **Loot / event, cause:** their look shared the title's grade, whose haze lift (0.04, 0.03, 0) has no blue. Over the
+  title's purple Halcyon district it reads pink; over the Solace district (teal / green roofs, amber and orange lane
+  lights) the same lift turned the city olive-yellow (backdrop bright pixels measured (0.44, 0.37, 0.33), blue lowest;
+  round 32 `reward_screen_v2`'s margins are (0.13, 0.10, 0.13), violet). **Fix:** `overlay_city_backdrop.tres` gets
+  its own violet grade: gain (0.80, 0.70, 0.86), lift (0.03, 0, 0.035) (saturation, haze, kept lights and traffic as
+  the title's). The title's look is untouched.
+- **Loot / event, framing:** ortho 300 -> 440 BU (the Grid's own width): more city reads round the page.
+- **HQ, cause:** main's HQ page still draws the 2D NeonCity through CyberdeckBackground (no 3D city there; the shared
+  3D grade, 5e's day look and the Grid / raid are violet, not yellow, so nothing shared changes). Its campaign
+  district's territory and influence inks are the corp colour (Solace lime #96FF46) plus the base neon inks' green
+  and amber, over the default COOL HAZE ink paling (a cyan tint): the window cast lime-yellow (measured mean
+  (0.20, 0.29, 0.24)). Paling the inks lavender (INK_SETS "FADED PRINT") barely moved it (the street inks are never
+  paled). **Fix (minimal, in my file):** `CyberdeckBackground.NIGHT_TINT` (0.94, 0.78, 1.0) as the 2D city's
+  `modulate` (a multiply over its picture, not its bake: no bake key changes, the warm-ups that build the same class
+  match): mean now (0.19, 0.23, 0.24), the green cast gone, the corp's lime kept as an accent.
+  **For HQ-BUILD (replacing the HQ page with the 3D raid-band city):** this is one line in
+  `CyberdeckBackground._init` plus the constant; drop it with the 2D HQ city, or keep it if any page keeps the 2D
+  city. The 3D city needs nothing (its grade is violet). HQ framing: not changed here (the 2D city frames the corp's
+  HQ at `hq_anchor` at zoom 1; HQ-BUILD's 3D framing replaces it); to read more city there, frame wider than the
+  Grid band's default ortho.
+- **Colour space (the arena agent's lead):** not part of this hue. BlurredCityBackdrop draws the city's ViewportTexture
+  with `draw_texture_rect` (no canvas shader reads it as a sampler), and the tilt-shift reads the screen. Probe
+  (`title_backdrop_capture --raw`: the window's frame against `city.get_texture().get_image()`, the tilt-shift off):
+  title frame (0.293, 0.242, 0.376) vs viewport (0.300, 0.246, 0.385), ratio ~0.98, no ~4x mid-tone loss. The HQ page
+  draws no 3D viewport (2D NeonCity bake). The Grid / HQ-run / raid pages were not changed (designer to rule there).
+- **The run pages' bake test:** `test_anim_r5_city.gd::test_the_runs_pages_open_on_their_bake_behind_the_3d_route`
+  asked the shop page's city to be covered by a bake; under the ruling the Mainframe hides the city behind its facade
+  (no city there), so the shop step now checks the facade shows and the city is hidden; loot and event keep the
+  covered-bake check (headless they are the 2D city; windowed, the blurred 3D city).
+- **Note:** the event's CAM feed copies the city behind the page; with the violet, pulled-back city it reads darker.
+- **Measured:** loot tier 2 at 1920x1080, v-sync off: 3.39 ms a frame, backdrop city GPU 1.81 ms (wider view, smaller
+  cars), under the 8 ms budget.
+- **Tests** (`test_parity_title01_backdrop.gd`): the overlay's grade has no yellow cast (blue lift >= green and red,
+  blue gain > green) and its ortho is wider than the title's; a plain CyberdeckBackground carries NIGHT_TINT (green
+  under red and blue).
+- **Review:** `docs/art_review/PARITY/fixes/TITLE-01d.jpg` (concept | before | after: loot, event, HQ; title control).
 
 ### 2026-10-05 — Art direction — ART-3 6w raid on the city
 ART-3 wave 2b, ART-6 on the unified city (ART_BIBLE v2 §4.1, §4.8, Appendix C #13, plan G10; refs round 40
@@ -8951,6 +9361,35 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **Parity fix card aiming and combat HUD (2026-10-05, built, see that entry):** the TURN strip follows the concept
+  (TURN | FREE NUDGE over the address line); the key hints (Q/E nudge, W switch wheel, R ring) are its tooltip only.
+  Keep, or put a small key caption under the target's nudge pair (default proposal)?
+- **S-MAPVIEW (2026-10-05, built, see "Designer ruling — city as a map in raid and netrun views"):** (1) "raid
+  nodes" read as the Cell's network plus the Sites the shown raid really enters at and crosses; the other frontier
+  Sites (possible entries of later raids) are off the raid map: confirm, or should the HQ (the raid view) show every
+  launchable Site too (HQ-BUILD's Q5 framing)? (2) A netrun's route lies on one link, the jack's (Cell's node ->
+  the run's Site); a branching route spreads its layer across the link (2 lots apart). Should the route instead
+  follow several links (a route through intermediate Sites)? That would need the route generation to know the Grid
+  (a rule change): not built. (3) The map-mode numbers (saturation 0.7, veil 0.22, bloom 0.45) are a first pass
+  against the concepts: tune on the sheet.
+- **Parity fix combat backdrop (2026-10-05, built, see "Parity fix — combat backdrop"):** (1) every Site fight of a
+  corporation stands its one Site landmark (Solace's clinic ...) on that Site's lot in the close-up, as the stills
+  did, and a Site at the city's edge is stood 28 lots inside: keep, or only the landmark's own Site gets the
+  building? (2) The HQ close-up keeps the city's 40 degree pitch for the 8 ms budget; combat_solace's lower angle
+  (22-30) costs 9-10.5 ms at 1080p: keep 40, or lower it with a cheaper city for the backdrop (a slice: a backdrop
+  LOD / far-chunk cut in CityView3D)? (3) Finding for the other city views: a 3D city ViewportTexture read in a
+  canvas shader arrives as linear values (shown as they are it is ~4x darker in the mid-tones); the Grid, HQ-run
+  and raid pages draw the same texture and may show the city darker than its render. Proposed slice: measure each
+  view's frame against its `get_texture().get_image()` and, where they differ, decode in that view (designer to rule
+  whether the Grid's current darker look is the intended one).
+- **Parity fix combat backdrop (2026-10-05, ruled round 2, see "Parity fix — combat backdrop, round 2"):** (1)
+  ruled: each Site fight frames its own Site's lot, the Site landmark only on its own Site, no inset. (2) ruled: the
+  concept's low angle now; the overage is owed in ART-12/perf.md, the optimisation slice proposed. (3) ruled: the
+  raid and netrun views grey the city out on purpose (another agent builds that look); not changed. Still open:
+  (4) a Site shot cannot keep a far HQ in frame while the Site stays large (the close-up is an orthographic
+  camera: the HQ 100-250 BU behind sits 40-90 BU higher on screen); the HQ shows only for Sites near it. Default:
+  the Site large. The per-fight unique backdrop slice (below) would give each Site its own composed view (a
+  perspective camera, or the HQ as a painted layer behind).
 - **Parity endings (2026-10-05, default implemented, see "Parity fix — endings (designer group ruling)"):** (1) the
   CORP DOWN beat lives inside the won dossier (the poster at the head of the left page), not as a page of its own
   before the file (the lock's mirror); (2) the build's pink spray X became the Cell's red grease pencil X (spray is
@@ -8960,7 +9399,10 @@ and annotated in the GDD where it changes a rule.
   (`city_quality` 1) was measured on the dev PC only (interim, under load; `docs/art_review/ART-12/perf.md`).
   A real Deck run of `tools/visual_qa/perf_pack.tscn --tiers=1 --size=1280x800` is owed when the
   designer has a Deck; scaling from this PC suggested ~10-12 ms a frame there (5e).
-- **Parity fix S-CARDFACE (2026-10-05, default implemented, see "Parity fix — one card face"):** (1) the combat hand
+- ~~**Parity fix S-CARDFACE (2026-10-05, default implemented, see "Parity fix — one card face"):**~~ **Answered by the
+  designer 2026-10-05, see "Parity fix — one card face: designer answers":** (1) lower floor at rest + bigger grown
+  card (built); (2) flights to the piles: yes, queued for the animation pass (R7_REEVALUATION_PREP F1); (3) RECYCLE
+  BIN confirmed. Original question: (1) the combat hand
   at 1.0 holds one or two lines of rules text at rest (the 12 px floor on a 112 x 148 face); the grown card shows every word
   (all but Hot Patch and Overdrive at 1.0, which need the tooltip / inspect). Keep, or a bigger hand card / a lower
   floor at rest? (2) The deal and discard flights still start and land at the hand row's ends; fly them to the new DECK

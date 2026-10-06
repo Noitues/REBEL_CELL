@@ -47,6 +47,8 @@ const LABEL_CLEAR := 6.0
 ## and extra steps outwards (shares of its height).
 const LABEL_SLIDES: Array[float] = [0.0, 0.6, -0.6, 1.2, -1.2]
 const LABEL_STEPS_OUT: Array[float] = [0.0, 1.6]
+## Screen controls a label keeps off (the combat scene's aim hint joins it).
+const LABEL_BLOCK_GROUP := &"preview_label_block"
 ## How much a blocker grows (px) before a label must clear it.
 const BLOCK_PAD := 3.0
 ## Through peel, drag and slap the preview holds at this alpha (§3.17: 50 %).
@@ -80,7 +82,8 @@ func _init() -> void:
 
 
 func signature() -> String:
-	return "%s|%.3f|%.3f|%s" % [str(ghost), shown_amount, chase, str(committed)]
+	var on_target := host != null and host.view != null and not host.view.hover_zone.is_empty()
+	return "%s|%.3f|%.3f|%s|%s" % [str(ghost), shown_amount, chase, str(committed), str(on_target)]
 
 
 ## The wheel's turn this preview shows (ticks, the shortest way round), 0 when none.
@@ -141,7 +144,9 @@ func _draw() -> void:
 	var dt := delta_ticks()
 	if dt == 0:
 		return
-	var aimed := not v.valid_zones.is_empty()
+	# S-COMBAT-HUD (designer ruling 2026-10-05): with the aim ON this wheel the play's result shows on it at
+	# full strength with its labels; aimed elsewhere (a drag over nothing) it holds at HELD_ALPHA.
+	var aimed := not v.valid_zones.is_empty() and v.hover_zone.is_empty()
 	var alpha := shown_amount * (HELD_ALPHA if aimed else 1.0)
 	var center := host.center()
 	var rim := host.rim()
@@ -297,6 +302,14 @@ func label_blockers() -> Array[Rect2]:
 	var hp: Dictionary = v.hp_layout()
 	if hp.has("hp"):
 		out.append((hp["hp"] as Rect2).grow(BLOCK_PAD))
+	# S-COMBAT-HUD: the labels show while the aim is on the wheel now; they keep off the screen's
+	# own aiming words (the aim hint and any control in LABEL_BLOCK_GROUP).
+	if is_inside_tree():
+		for n in get_tree().get_nodes_in_group(LABEL_BLOCK_GROUP):
+			var c := n as Control
+			if c != null and c.is_visible_in_tree():
+				var r := c.get_global_rect()
+				out.append(Rect2(r.position - global_position, r.size).grow(BLOCK_PAD))
 	var center := host.center()
 	var rr := host.rim() + WheelView.RETICLE_GAP
 	for k in 4:

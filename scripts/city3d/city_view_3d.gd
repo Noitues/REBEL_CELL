@@ -78,8 +78,14 @@ var band_lock: int = -1:
 	set(v):
 		if v != band_lock:
 			band_lock = v
+			_sync_map_mode()
 			if iso != null and camera != null:
 				set_iso(iso)
+## S-MAPVIEW (designer ruling 2026-10-05): the city drawn as a map, greyed and its opacity
+## lowered under the network and the map's marks; on while the host holds the raid or the
+## netrun band (`map_band`), off everywhere else (the Grid, the title, the backdrops, combat).
+var map_mode: bool = false
+var _veil_mi: MeshInstance3D = null
 
 var _layers: Dictionary = {}
 var _chunks: Dictionary = {}  # Vector2i -> {"families": {int: MultiMeshInstance3D}, "ground": MeshInstance3D}
@@ -230,7 +236,10 @@ func host_paused() -> bool:
 ## landmarks' materials to their day or night look. `day` keys: "ramp" (3 Colors: shadow,
 ## mid, lit), "sky", "window_gain", "neon_gain", "haze", "grade", and optionally "bloom" and
 ## "glow_threshold" (ART-5 5e: the post's bloom by day; CityViewMotion.day_look builds it
-## from the motion config). By day there is no rain, and no fog below the Grid.
+## from the motion config), and optionally "night" (bool: rain, fog and the landmarks' night
+## look whatever `n`; the combat backdrop's lit night) and "landmarks_night" (bool: the
+## landmarks' own look, else as "night"). By day there is no rain, and no fog
+## below the Grid.
 func set_night_share(n: float, day: Dictionary) -> void:
 	night_share = clampf(n, 0.0, 1.0)
 	if _building_mat == null or day.is_empty():
@@ -249,12 +258,13 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	_post.set_shader_parameter(&"grade", Vector3(gr.r, gr.g, gr.b))
 	_post.set_shader_parameter(&"bloom", lerpf(float(day.get("bloom", cfg.bloom)), cfg.bloom, night_share))
 	_post.set_shader_parameter(&"glow_threshold", lerpf(float(day.get("glow_threshold", cfg.glow_threshold)), cfg.glow_threshold, night_share))
-	var night := night_share >= 0.5
+	var night := bool(day.get("night", night_share >= 0.5))  # S-ARENA: a lit night look keeps the night
 	_post.set_shader_parameter(&"rain_on", bool(quality.get("rain", true)) and night)
 	_post.set_shader_parameter(&"fog_on", bool(quality.get("fog", true)) and (night or band == CityLod.Band.GRID))
 	_env.background_color = (day["sky"] as Color).lerp(cfg.sky, night_share)
-	if night != _landmarks_night:
-		_landmarks_night = night
+	var lm_night := bool(day.get("landmarks_night", night))
+	if lm_night != _landmarks_night:
+		_landmarks_night = lm_night
 		_restyle_landmarks()
 
 
@@ -513,8 +523,61 @@ func _build_scene() -> void:
 	_net_xray_mi.layers = 1 << (WORLD_LAYER - 1)
 	_net_xray_mi.visible = false
 	layer(&"network").add_child(_net_xray_mi)
+	_veil_mi = MeshInstance3D.new()
+	_veil_mi.name = "MapVeil"
+	var vq := QuadMesh.new()
+	vq.size = Vector2(2, 2)
+	_veil_mi.mesh = vq
+	_veil_mi.material_override = CityMaterials.map_veil(cfg)
+	_veil_mi.extra_cull_margin = 16384.0
+	_veil_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_veil_mi.layers = 1 << (WORLD_LAYER - 1)
+	camera.add_child(_veil_mi)
+	_veil_mi.position = Vector3(0, 0, -10)
+	_sync_map_mode()
 	if network != null:
 		set_network(network)
+
+
+# --- Map mode (S-MAPVIEW) --------------------------------------------------------------------
+
+## True when a host holding view band `lock` (CityLod.Band; -1 none) shows the city as a map:
+## the raid's pages (and the HQ, which is the raid view) hold RAID, the netrun route NETRUN.
+static func map_band(c: CityConfig, lock: int) -> bool:
+	return c.map_mode_on and (lock == CityLod.Band.RAID or lock == CityLod.Band.NETRUN)
+
+
+func _sync_map_mode() -> void:
+	map_mode = map_band(cfg, band_lock)
+	if _post == null:
+		return
+	_post.set_shader_parameter(&"map_on", map_mode)
+	_veil_mi.visible = map_mode
+	for m in [_net_mat, _net_xray_mat]:
+		(m as ShaderMaterial).set_shader_parameter(&"halo", cfg.net_halo * (cfg.map_net_halo if map_mode else 1.0))
+
+
+## The map mode's look as the post and the veil hold it (tests: "map_on", "veil", "halo").
+func map_look() -> Dictionary:
+	if _post == null:
+		return {}
+	return {"map_on": bool(_post.get_shader_parameter(&"map_on")), "veil": _veil_mi.visible,
+		"halo": float(_net_mat.get_shader_parameter(&"halo"))}
+
+
+## The colour a city pixel shows in map mode (CPU mirror of city_post's map step and the veil,
+## for the contrast checks): `display` is the post's graded display (sRGB) value; the result is
+## the display value on screen once the veil is blended over it (in linear, as the renderer
+## blends).
+static func map_graded(c: CityConfig, display: Color) -> Color:
+	var v := Vector3(display.r, display.g, display.b)
+	var grey := v.dot(Vector3(0.2126, 0.7152, 0.0722))
+	v = Vector3(grey, grey, grey).lerp(v, c.map_saturation)
+	var mid := Vector3(c.map_mid, c.map_mid, c.map_mid)
+	v = (mid + (v - mid) * c.map_contrast).clamp(Vector3.ZERO, Vector3.ONE)
+	var lin := Color(v.x, v.y, v.z).srgb_to_linear()
+	var veil := c.map_veil.srgb_to_linear()
+	return lin.lerp(veil, c.map_veil_alpha).linear_to_srgb()
 
 
 ## Uses model `m` (tests and tools: a part of the city; before or after entering the tree).
@@ -743,6 +806,10 @@ func _place_landmark(corp: StringName, path: String, at: Transform3D, look: Land
 		var r := Rect2(box.get_center() - box.size * CLEAR_SHARE * 0.5, box.size * CLEAR_SHARE)
 		_cleared.append(r)
 		_cleared_by[corp] = r
+		# Parity S-ARENA round 2: inside its box only the lots the landmark stands on give way
+		# (not the ground under its light beams, nor its yard's open corners: blank lots).
+		if corp != CELL:  # the Cell's district brings its own street grid: its whole box gives way
+			_clear_masks[r] = footprint_lots(node, cfg)
 	if corp == CELL:
 		LandmarkMaterials.set_reveal(landmark_mats[corp], cell_reveal)
 		LandmarkMaterials.show_dispatch(node, cell_dispatch)
@@ -911,6 +978,54 @@ static func _ground_box(node: Node3D) -> Rect2:
 func _in_cleared(c: Vector2) -> bool:
 	for r in _cleared:
 		if r.has_point(c):
+			var mask: Variant = _clear_masks.get(r)
+			if mask == null or (mask as Dictionary).has(_lot_of(cfg, c)):
+				return true
+	return false
+
+
+## Parity S-ARENA round 2: footprint masks of the landmarks' cleared rects (Rect2 -> {lot: true}).
+var _clear_masks: Dictionary = {}
+
+
+static func _lot_of(c: CityConfig, w: Vector2) -> Vector2i:
+	var l := CityIsoCamera.world_to_lot(c, Vector3(w.x, 0.0, w.y))
+	return Vector2i(floori(l.x), floori(l.y))
+
+
+## The lots (world lot grid, Vector2i -> true) a landmark `node` stands on: under every
+## triangle of its meshes (beams left out: CityConfig.landmark_footprint_skip) that reaches
+## the ground (below landmark_footprint_ground BU) and rises (above landmark_footprint_rise
+## BU), grown by landmark_footprint_grow lots so its neighbours keep clear of its walls.
+static func footprint_lots(node: Node3D, c: CityConfig) -> Dictionary:
+	var out := {}
+	for mi in node.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.mesh == null or _named_any(String(m.name), c.landmark_footprint_skip):
+			continue
+		var xf := m.global_transform if m.is_inside_tree() else node.transform * m.transform
+		for s in m.mesh.get_surface_count():
+			var arr := m.mesh.surface_get_arrays(s)
+			var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var idx: PackedInt32Array = arr[Mesh.ARRAY_INDEX] if arr[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+			var n := idx.size() if not idx.is_empty() else v.size()
+			for t in range(0, n - 2, 3):
+				var a := xf * v[idx[t] if not idx.is_empty() else t]
+				var b := xf * v[idx[t + 1] if not idx.is_empty() else t + 1]
+				var d := xf * v[idx[t + 2] if not idx.is_empty() else t + 2]
+				if minf(a.y, minf(b.y, d.y)) > c.landmark_footprint_ground or maxf(a.y, maxf(b.y, d.y)) < c.landmark_footprint_rise:
+					continue
+				var lo := _lot_of(c, Vector2(minf(a.x, minf(b.x, d.x)), minf(a.z, minf(b.z, d.z))))
+				var hi := _lot_of(c, Vector2(maxf(a.x, maxf(b.x, d.x)), maxf(a.z, maxf(b.z, d.z))))
+				for y in range(lo.y - c.landmark_footprint_grow, hi.y + c.landmark_footprint_grow + 1):
+					for x in range(lo.x - c.landmark_footprint_grow, hi.x + c.landmark_footprint_grow + 1):
+						out[Vector2i(x, y)] = true
+	return out
+
+
+static func _named_any(s: String, words: PackedStringArray) -> bool:
+	for w in words:
+		if s.contains(w):
 			return true
 	return false
 

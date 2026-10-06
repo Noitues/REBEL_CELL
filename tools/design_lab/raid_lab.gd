@@ -5,7 +5,11 @@ extends Control
 ## Godot), with APPDATA pointed at a scratch folder (the HQ autosaves its demo campaign there):
 ##
 ##   python tools/run_windowed.py --log <file> -- res://tools/design_lab/raid_lab.tscn -- --out=<abs dir>
-##       [--states=sheet,setup_solace,...] [--scale=1.0]
+##       [--states=sheet,setup_solace,...] [--scale=1.0] [--raw] [--size=WxH]
+##
+## S-MAPVIEW: `--raw` also writes `<state>_raw.png`, the 3D city's own render (its viewport
+## texture, before the page draws it), to check the page shows it as rendered (S-ARENA's
+## linear-as-sRGB darkening); `--size=WxH` sizes the window (1920x1080 for the frame budget).
 ##
 ## States: `sheet` (the kit: sockets, vehicle icons v4, pencil, stickers, paper, holo,
 ## terminal), `setup_<corp>` (the raid setup against each corporation), `drag_valid`,
@@ -24,6 +28,7 @@ const WAIT := 900
 const UPLINK_CLOSE_ORTHO := 90.0
 
 var out_dir := ""
+var raw := false
 var states: Array = ALL
 var _hq: Node = null
 
@@ -36,6 +41,11 @@ func _ready() -> void:
 			states = Array(a.trim_prefix("--states=").split(","))
 		elif a.begins_with("--scale="):
 			Settings.text_scale = float(a.trim_prefix("--scale="))
+		elif a == "--raw":
+			raw = true
+		elif a.begins_with("--size="):
+			var wh := a.trim_prefix("--size=").split("x")
+			DisplayServer.window_set_size(Vector2i(int(wh[0]), int(wh[1])))
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	_run.call_deferred()
 
@@ -70,6 +80,20 @@ func _until(cond: Callable, limit: int = WAIT) -> bool:
 func _shot(state: String) -> void:
 	await RenderingServer.frame_post_draw
 	var img := get_viewport().get_texture().get_image()
+	if raw and _hq != null and is_instance_valid(_hq) and _hq.wireframe.city.view3d != null:
+		var city: NeonCity = _hq.wireframe.city
+		var r := city.cover_rect()
+		print("raid_lab: RAW %s cover %s at %s view %s" % [state, r, city.get_global_transform_with_canvas() * r.position,
+			city.view3d.size])
+		img.save_png(out_dir.path_join(state + "_full.png"))
+		city.view3d.get_texture().get_image().save_png(out_dir.path_join(state + "_raw.png"))
+		# The city alone (the network decal off for a frame): what the map's marks sit on.
+		var net := city.view3d.network
+		city.view3d.set_network(null)
+		await RenderingServer.frame_post_draw
+		await RenderingServer.frame_post_draw
+		city.view3d.get_texture().get_image().save_png(out_dir.path_join(state + "_city_raw.png"))
+		city.view3d.set_network(net)
 	if img.get_width() != 1280:
 		img.resize(1280, 720, Image.INTERPOLATE_LANCZOS)
 	img.save_png(out_dir.path_join(state + ".png"))
