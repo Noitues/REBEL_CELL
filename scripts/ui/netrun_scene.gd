@@ -728,6 +728,9 @@ func item_target(kind: String) -> Vector2:
 
 func _fly_item(item: Control, kind: String, id: StringName, stamp: String = "", lift: float = 0.0) -> void:
 	if item != null:
+		# FIX-REDS-3: the bar already says the new numbers (Cycles spent: its tags move), so the
+		# flight aims where its tag will rest, not where it stood before the purchase.
+		_refresh_status()
 		FlightFx.fly(self, item, item_target(kind), id, stamp, lift, Rect2(), _land_on.bind(kind))
 
 
@@ -3357,7 +3360,7 @@ static func fit_event_choices(options: Control, gap: float) -> void:
 		if row != null:
 			row.set_beside_width(maxf(0.0, w - plate - gap))
 ## The text size from which the event's CAM feed steps aside (the story takes its room).
-const EVENT_FEED_BELOW := 1.6
+const EVENT_FEED_BELOW := 1.25  # FIX-REDS-3: was 1.6; at 1.3 the feed with the choices beside it left the screen's foot
 ## The CAM feed's copy of the city (a BackBufferCopy after it, while the event shows).
 var _event_bbc: BackBufferCopy = null
 
@@ -4476,24 +4479,10 @@ func raid_map_graph(results: Variant, c: CampaignState) -> Dictionary:
 
 
 ## Parity RAID-13: claimed node `site_id`'s raid socket (RaidSocket spec, as the HQ's raid view
-## builds it: `hq_scene.raid_socket`, owned by HQ-BUILD): its type's glyph, its state, its health
+## builds it: both call `RaidMapNodes.socket_spec`): its type's glyph, its state, its health
 ## now and the projected outcome as a forecast ring (`forecast`: `res` is the projection's).
 static func raid_socket_spec(site_id: StringName, res: Dictionary, forecast: bool, c: CampaignState) -> Dictionary:
-	var s := c.grid.site(site_id)
-	var home := site_id == c.grid.home_site_id
-	var glyph := RaidSocket.GLYPH_CORE if home else RaidSocket.glyph_of(c.grid.node_type_of(site_id))
-	var integ := c.grid.home_integrity if home else int(s.get("integrity", 0))
-	var most := c.grid.home_max_integrity if home else maxi(1, int(s.get("max_integrity", 1)))
-	var state := RaidSocket.STATE_DOWN if not c.grid.is_active_node(site_id) else RaidSocket.STATE_HOLDS
-	var spec := {"glyph": glyph, "state": state, "health": float(integ) / float(maxi(1, most)), "max": most}
-	var op_id := c.grid.stationed_on(site_id)
-	if op_id != &"":
-		for op in c.roster:
-			if op.id == op_id:
-				spec["beacon"] = op.class_id
-	if forecast and not res.is_empty():
-		spec["forecast"] = String(res.get("outcome", ""))
-	return spec
+	return RaidMapNodes.socket_spec(site_id, res, forecast, c)  # FIX-REDS-3: one builder, shared with the HQ
 
 
 ## Parity RAID-13 (ART-6 3A): the raid's threat routes (Site id paths) in red pencil on the map,

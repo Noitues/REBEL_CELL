@@ -176,6 +176,8 @@ func _fit_canvas() -> void:
 	var over := window.position.y + window.get_combined_minimum_size().y - get_viewport_rect().size.y
 	if over > 0.0:
 		_scroll.custom_minimum_size.y = maxf(SCROLL_MIN, _scroll.custom_minimum_size.y - over)
+		# the window's own 540 floor gives up the overshoot too, or it keeps its height past the canvas
+		window.custom_minimum_size.y = maxf(0.0, window.custom_minimum_size.y - over)
 		window.size = window.get_combined_minimum_size()
 
 
