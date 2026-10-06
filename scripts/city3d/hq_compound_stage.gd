@@ -105,25 +105,87 @@ static func camera(cfg: CityConfig, m: Dictionary, at: Transform3D, size: Vector
 	return c
 
 
-## The HQ-run page's camera: the manifest's (`camera`), widened and re-centred to hold every
-## point of `pts` (the run's nodes and its entry) `margin_px` inside the view when the
-## reference framing leaves one out (the entry stands outside some compounds' framing), up to
-## `max_share` times the reference ortho.
-static func run_camera(cfg: CityConfig, m: Dictionary, at: Transform3D, size: Vector2, pts: Array[Vector3], margin_px: float,
-		max_share: float) -> CityIsoCamera:
+## Parity S-HQRUN: the HQ-run page's own framing of the compound: the manifest's camera
+## (`camera`) with the page's per-corporation framing from `cfg` (the round 43 concepts'
+## distance, aim, pitch and yaw: `hq_run_*_by_corp`). The combat backdrop keeps `camera`.
+static func page_camera(cfg: CityConfig, m: Dictionary, at: Transform3D, size: Vector2) -> CityIsoCamera:
 	var cam := camera(cfg, m, at, size)
-	var inner := Rect2(Vector2.ZERO, size).grow(-margin_px)
-	var all_in := true
-	for p in pts:
-		if not inner.has_point(cam.project(p)):
-			all_in = false
-			break
-	if all_in or pts.is_empty():
+	var corp := StringName(String(m.get("corp", "")))
+	cam.ortho *= float(cfg.hq_run_ortho_scale_by_corp.get(corp, 1.0))
+	var shift: Variant = cfg.hq_run_target_by_corp.get(corp)
+	if shift is Vector3:
+		cam.target += at.basis * (shift as Vector3)
+	cam.pitch_deg = float(cfg.hq_run_pitch_by_corp.get(corp, cam.pitch_deg))
+	cam.yaw_deg = float(cfg.hq_run_yaw_by_corp.get(corp, cam.yaw_deg))
+	cam.fov_deg = float(cfg.hq_run_fov_by_corp.get(corp, 0.0))
+	return cam
+
+
+## The HQ-run page's camera: `page_camera`, widened and re-centred to hold every
+## point of `pts` (the run's nodes and its entry) `margin_px` inside the view (inside
+## `free_rect` instead when it has an area: the part of the page its chrome leaves free) when
+## the reference framing leaves one out (the entry stands outside some compounds' framing), up
+## to `max_share` times the reference ortho. An orthographic view fits the points and centres
+## them in the free part; a perspective view keeps its width. Either then aims at the points'
+## middle (`cfg.hq_run_fit_pans` passes) and steps back (`ortho` times `cfg.hq_run_fit_step`)
+## until every point is in.
+static func run_camera(cfg: CityConfig, m: Dictionary, at: Transform3D, size: Vector2, pts: Array[Vector3], margin_px: float,
+		max_share: float, free_rect: Rect2 = Rect2()) -> CityIsoCamera:
+	var cam := page_camera(cfg, m, at, size)
+	var inner := free_rect if free_rect.has_area() else Rect2(Vector2.ZERO, size).grow(-margin_px)
+	if pts.is_empty() or _holds(cam, pts, inner):
 		return cam
 	var ref := cam.ortho
-	var margin_bu := margin_px * ref / maxf(size.x, 1.0)
-	cam.fit(pts, margin_bu, ref, ref * max_share)
+	if not cam.perspective():
+		_fit_into(cam, pts, inner, size, ref, ref * max_share)
+	for i in cfg.hq_run_fit_pans:
+		if _holds(cam, pts, inner):
+			break
+		cam.pan_px(_screen_box(cam, pts).get_center() - inner.get_center())
+	var widest := ref * (minf(max_share, cfg.hq_run_fit_share_perspective) if cam.perspective() else max_share)
+	while cam.ortho < widest and not _holds(cam, pts, inner):
+		cam.ortho = minf(cam.ortho * cfg.hq_run_fit_step, widest)
+	# Still too tall at the widest: the top of the run (the Central Server and its chip) stays
+	# in; the entry may sit under the foot.
+	for i in cfg.hq_run_fit_pans:
+		var top := _screen_box(cam, pts).position.y
+		if top >= inner.position.y - 0.5:
+			break
+		cam.pan_px(Vector2(0.0, top - inner.position.y - cfg.hq_run_fit_slack_px))
 	return cam
+
+
+## Sets an orthographic `cam`'s width (clamped to [lo, hi]) and aim so the points' box fills
+## at most `inner` (screen px of a `size` view) and sits at its centre.
+static func _fit_into(cam: CityIsoCamera, pts: Array[Vector3], inner: Rect2, size: Vector2, lo: float, hi: float) -> void:
+	var r := cam.right()
+	var u := cam.up()
+	var box := Rect2(Vector2(pts[0].dot(r), pts[0].dot(u)), Vector2.ZERO)
+	for w in pts:
+		box = box.expand(Vector2(w.dot(r), w.dot(u)))
+	var need := maxf(box.size.x * size.x / maxf(inner.size.x, 1.0), box.size.y * size.x / maxf(inner.size.y, 1.0))
+	cam.ortho = clampf(need, lo, hi)
+	var oh := cam.ortho * size.y / size.x
+	var xc := (inner.get_center().x / size.x - 0.5) * cam.ortho
+	var yc := (0.5 - inner.get_center().y / size.y) * oh
+	var c := box.get_center()
+	var o := r * (c.x - xc) + u * (c.y - yc)
+	var f := cam.forward()
+	cam.target = o + f * ((0.0 - o.y) / f.y)
+
+
+static func _screen_box(cam: CityIsoCamera, pts: Array[Vector3]) -> Rect2:
+	var b := Rect2(cam.project(pts[0]), Vector2.ZERO)
+	for w in pts:
+		b = b.expand(cam.project(w))
+	return b
+
+
+static func _holds(cam: CityIsoCamera, pts: Array[Vector3], inner: Rect2) -> bool:
+	for p in pts:
+		if not inner.has_point(cam.project(p)):
+			return false
+	return true
 
 
 ## The Central Server's name on the compound (the manifest's, e.g. DISPATCH CORE).
