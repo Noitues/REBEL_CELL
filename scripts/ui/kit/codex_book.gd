@@ -328,7 +328,7 @@ func _entry(name_key: String, item: Dictionary) -> Control:
 	words.add_theme_constant_override("separation", 0)
 	var t := Label.new()
 	t.name = "Title"
-	t.text = String(item.get("title", ""))
+	t.text = title_text(String(item.get("title", "")), String(item.get("text", "")))
 	t.add_theme_font_override(&"font", Chrome.paper_bold_font())
 	t.add_theme_font_size_override(&"font_size", Chrome.px(UiTheme.LABEL))
 	t.add_theme_color_override(&"font_color", Palette.PAPER_TYPE_INK)
@@ -357,6 +357,9 @@ static func body_text(title: String, text: String) -> String:
 		return text
 	if text.begins_with(title + ": "):
 		return text.substr(title.length() + 2)
+	var word := full_word(title, text)
+	if word != "":
+		return text.substr(word.length() + 2)
 	var first := text.get_slice("\n", 0)
 	var rest := text.substr(first.length() + 1) if text.contains("\n") else ""
 	if first == title or first.ends_with(" " + title):
@@ -364,6 +367,25 @@ static func body_text(title: String, text: String) -> String:
 	if first.begins_with(title + " ("):
 		return first.substr(title.length() + 1) + ("\n" + rest if rest != "" else "")
 	return text
+
+
+## A slice's text opens with its full word in CAPS ("OVERFLOW: ...") under its short code
+## ("OVFL"): that word ("" when the text opens otherwise). The title then reads "OVFL  OVERFLOW"
+## and the text goes on after it.
+static func full_word(title: String, text: String) -> String:
+	var at := text.find(": ")
+	if at <= 0:
+		return ""
+	var word := text.substr(0, at)
+	if word == title or word != word.to_upper() or word.contains(" ") or word.to_lower() == word:
+		return ""
+	return word
+
+
+## The title an entry shows: its own, with a slice's full word after its code.
+static func title_text(title: String, text: String) -> String:
+	var word := full_word(title, text)
+	return title if word == "" else "%s  %s" % [title, word]
 
 
 ## The atlas glyph of an entry (an atlas name), or &"" when it has none in the 1C atlas.

@@ -748,11 +748,10 @@ func _fit_pass() -> void:
 	# pre-layout height) left the view scrolled past it: bring it back (the section's first
 	# control shows its heading too: the view's top).
 	var focused := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
-	if focused != null and fit.scroll.is_ancestor_of(focused):
-		if focused == UiFocus.first_focusable(_body):
-			fit.scroll.scroll_vertical = 0
-		else:
-			fit.scroll.ensure_control_visible(focused)
+	if focused != null and fit.scroll.is_ancestor_of(focused) and focused != UiFocus.first_focusable(_body):
+		fit.scroll.ensure_control_visible(focused)
+	else:
+		fit.scroll.scroll_vertical = 0  # the focus on a tab or the section's first row: its top
 	_fit_left -= 1
 	if _fit_left > 0 and is_inside_tree() and not get_tree().process_frame.is_connected(_fit_pass):
 		get_tree().process_frame.connect(_fit_pass, CONNECT_ONE_SHOT)

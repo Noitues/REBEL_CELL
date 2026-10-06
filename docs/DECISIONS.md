@@ -31,6 +31,79 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-06 — Parity fix — codex, stats, options (designer group ruling)
+Designer group ruling 2026-10-05 for the menus: the codex and the stats take the M13 build's structure reworked in
+the v2 kit (CODEX-01, STATS-01); the options match round 31's concept (`round31_ui_chrome/settings_menu.png`,
+OPT-01..03). Kept: HQ-B's STORY section heading the Codex (Q8) and Codex / Options in the pause menu only. Sheet
+`docs/art_review/PARITY/fixes/MENUS.jpg` (concept or build | before | after at 1.0 / 1.6 / 2.0). Files:
+`scripts/ui/kit/codex.gd`, new `codex_book.gd`, `stat_tile.gd`, `achievement_badge.gd`, `run_receipt.gd`,
+`settings_panel.gd`, `title_scene.gd` (show_codex / show_stats / show_options and their helpers only),
+`pause_menu.gd` (its Options / Codex sub-pages), `stat_icon.gd` (five marks), `tools/visual_qa/review_pack.gd`.
+- **CODEX-01, the Codex as a book (`CodexBook`, ported from art-m13-final `scripts/ui/kit/codex_spread.gd`):** the
+  sections as round 31's terminal tab plates (`MenuChip.plate` `tab`), wrapping in rows (two at 1280, the build's),
+  over one paper page (the art pass's paper stock, `corp_paper.gdshader`; the build's cream page) with a Courier
+  caption `CODEX // WHAT THE CELL KNOWS`, the section in Anton ink and its entries in two columns when they fit
+  (title Courier Prime Bold, text Plex, ink). **Glyphs (reuse, nothing redrawn):** the 1C atlas (`GlyphIcon`) for
+  slices (slice colour), statuses (their colours), class hubs, cards (the first effect's pictogram, as the hand's
+  CardFace reads it), Firmware, Daemons and ring segments; the corporation's crest (`CorpSeal.draw_crest`, the art
+  pass's exported emblems) on an ink disc for a corporation and an enemy; the art pass's StatIcon set in ink for the
+  rest (nodes, home servers, defense assets, threats, the lexicon's info mark, STORY's terminal, a secret
+  corporation's lock). `Codex.entries` names each entry's glyph source (`slice`, `status`, `tier`, `corporation`,
+  `hub`, `id`, `effect`; ported from the same tag's codex.gd) and a status's title is its name (its glyph is drawn).
+  An entry never says its title twice (the audit's "SHIM SHIM:": `CodexBook.body_text`).
+  - **Pad:** the tabs are one row of focus stops (LB / RB switch from anywhere in the book, wrapping); the page is
+    ONE focus stop: up / down scroll it by a quarter view and move on at either end (as the terminal reference text
+    did), the tabs above it and Back under it. **Calls:** the page's view scrolls without snapping to its entries
+    (an entry at 2.0 is a third of the view; snapping left most of the room empty), as the slots page.
+  - **Big text (from 1.6):** the tabs are one row that scrolls sideways (focus, wheel, LB / RB; no bar), the page drops
+    its caption and heading (the open tab names the section) and takes the tabs' width: rows of big tabs took the
+    page's room at 2.0.
+  - **Pause menu:** the Codex is the same book, opened centred over the scrim in the sticker menu's place (below).
+- **STATS-01 (ported from art-m13-final `title_scene.gd` show_stats / stat_cells, `kit/achievement_badge.gd`,
+  `kit/run_receipt.gd`):** one sheet scrolling in the page's room: `STATS // RECORDS` as twelve terminal tiles
+  (`StatTile`: a small v2 terminal panel, the art pass's StatIcon in its colour, the number in the mono, the name in
+  terminal CAPS; six a row at 1280), the best ICE per corporation under them (and in the Best ICE tile's tooltip);
+  ACHIEVEMENTS (count on the window's tag) as round badges (earned: the Cell's pink with the vinyl's white die-cut
+  ring and the icon in ink, tilted; not yet: the dashed space, the open icon and a lock; the name under each); RUN
+  HISTORY as paper run cards (`RunReceipt` on the art pass's paper stock: the corporation in Anton, tier and Site
+  typed in Courier Prime, the outcome stamped (HARM for a flatline), Cycles and banked typed by their icons; "NO
+  RUNS YET" card when empty). The PROFILE strip and the paragraph of records are gone (the tiles hold every number).
+  Tiles, badges and cards are focus stops; `link_grid` links each grid (left / right a row, up / down the cell
+  above / below, the last row on to the next grid, the cards down to Back). Calls: the earned badge is drawn (the
+  build's own code) rather than a kit VinylSticker (ten SubViewports for ten badges); the outcome words are new
+  keys (Completed / Died / Aborted / Unfinished).
+- **OPT-01, round 31's framing:** the Options is a centred terminal sized to its words over the page (title: the
+  blurred, dimmed city; pause: the GlassScrim), its OPTIONS sticker on its corner, `> TITLE // OPTIONS` or `> PAUSED
+  // OPTIONS`. Two columns at 980 px (round 31's 880, widened so the four colour-blind tiles keep one row at the
+  game's type steps; the right column 1.1 of the left). From the pause menu it opens in the sticker menu's place,
+  centred under the screen's subtitles' band (`PauseMenu.sub_rect`, followed each frame while open), and closing it
+  shows the menu again (the pause test pinned "one column inside the menu": superseded). **RESET TO DEFAULTS** (the
+  concept's foot; pad Y): the open tab's settings back to the Settings script's own defaults through the same setters
+  (the Controls tab also resets the key binds); the rows show the new values (`sync_widgets`). Close stays beside it
+  (the pointer's way out). **Big text:** one column as wide as the text needs (620 x text scale, up to the room),
+  and from 1.5 the `[LB] [RB] switch tab` hint, the pad prompts and "saved to profile" give their rows to the section
+  (the keys still work). Fit: the section's view is fitted over 3 frames after it is laid out, its MORE BELOW room
+  counted (the panel overran the room by that room).
+- **OPT-02:** the rows' words are the concept's (REDUCE EFFECTS "No scanlines, flicker, chromatic or distortion",
+  FLASH LIMITER "At most 3 flashes a second. On by default.", HIGH CONTRAST "Opaque panels, 7:1 text and thick
+  edges", SUBTITLES "Every spoken line, with the speaker's name", ASSIST MODE "New campaigns: +1 free nudge a turn,
+  +25% HP. No ICE records or achievements." (the numbers stay the config's), HEAT GLITCH "Screen-wide Heat
+  distortion, pulsing harder as Heat rises. Off by default." (the concept's "pulsing on Heat events" said more than
+  the layer does)). The LIMITED chip was already there: the audit's frame had the glitch off (it shows with the glitch
+  on under the flash limiter, as the concept's frame; review_pack `options_glitch` shows it).
+- **OPT-03:** the right column already matched (text scale slider and sample, colour-blind and resolve-speed tiles,
+  the Heat glitch previews); kept, with the slider's 1.0 / 1.5 / 2.0 ticks (the game's range; the concept drew 1.6).
+  The skin picker (ART-12) stays on Display.
+- **StatIcon:** LOCK, CLOSE, CHECK, PLUS, INFO ported from art-m13-final `scripts/ui/kit/stat_icon.gd` (the art
+  pass's W2 marks, with `_round_line`); CLOSE in HARM, LOCK in TEXT_MID.
+- **Strings (once, re-exported):** the stat tiles' names, the run cards' words, the rows' new words, RESET TO
+  DEFAULTS and its tooltip, "reset", "Not earned yet."; the records paragraph's two strings went.
+- **Tests:** new `tests/unit/test_parity_menus.gd` (fast). Changed (the look they pinned is superseded; behaviour
+  kept): `test_art10_menus` (the pause test: Options two columns centred, the Codex a CodexBook; the fit test reads
+  the book and the stats view), `test_title_and_menus` (the pause Codex's words through `all_text`),
+  `test_anim_r5_city::test_the_pause_menu_is_as_tall_as_what_it_shows` (Options no longer grow the menu: they open
+  beside it). Dropped: none.
+
 ### 2026-10-05 — HQ redesign — direction B (designer rulings)
 Design: `docs/art_review/HQ_REDESIGN/PROPOSAL.md` (inventory of the HQ's 26 functions, direction B "THE HAND"), built
 by HQ-BUILD in the brief's order, one commit per step ("HQ-B <step>: <criterion>"). Designer rulings 2026-10-05,
@@ -9728,6 +9801,12 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **Parity fix codex, stats, options (2026-10-06, built, see "Parity fix — codex, stats, options"):** (1) RESET TO
+  DEFAULTS (round 31's foot, pad Y) resets the OPEN TAB's settings only (Accessibility, Display, Audio, Controls with
+  its key binds, Language), to the Settings script's own defaults (a Deck's first-run text size is not restored):
+  keep per tab, or reset every tab at once (and ask first)? (2) The Codex page is paper (the build's, and the ruling's
+  "paper pages"), while v2 §1.2 keeps paper for corp documents: keep paper, or the Cell's terminal glass with the
+  same tabs and glyphs?
 - **HQ redesign B, the raid setup at big text (2026-10-06, built, see "HQ redesign — direction B" (g)):** with the
   round 40 layout (RAID-06) at text 1.3 and up a late network does not fit the map all at once; every node is on
   screen and the map follows the target. Keep, or move YOUR NETWORK under THREAT INTEL at big text? RAID-05: no

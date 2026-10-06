@@ -34,6 +34,7 @@ func _init(p_kind: StringName, p_value: String, p_caption: String, tip: String =
 	caption = p_caption
 	name = "Stat_%s" % String(p_kind)
 	focus_mode = Control.FOCUS_ALL
+	size_flags_horizontal = Control.SIZE_EXPAND_FILL  # a grid's row of tiles fills its window
 	set_meta(UiFocus.META_NO_SCALE, true)
 	tooltip_text = UiTip.fold(p_caption + ("\n" + tip if tip != "" else ""))
 	for box in [&"normal", &"hover", &"pressed", &"hover_pressed", &"disabled", &"focus"]:
