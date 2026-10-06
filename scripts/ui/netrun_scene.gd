@@ -1153,6 +1153,7 @@ func _modal_open() -> bool:
 
 ## Names the screen on the HUD strip from the run phase (STYLE_GUIDE 4, "Neon city").
 func _title_screen(s: NetrunSession, screen: String = "") -> void:
+	close_heat_terminal(false)
 	if s == null:
 		hud.set_screen("", tr("NETRUN"))
 		return
@@ -2065,12 +2066,10 @@ func dossier_data() -> Dictionary:
 				station.append(Codex.describe_triggered(te))
 	var ram := cls.max_ram if cls != null else 0
 	ram = int(s.run.combat_overrides.get("max_ram", ram))
-	var bands := HeatRules.band_levels(c, s.config)
 	return {"corp": TextDb.t(corp, "display_name") if corp != null else "", "corp_color": Palette.corp_color(c.corporation_id),
 		"subject": op.name, "class_word": TextDb.t(cls, "display_name") if cls != null else "", "class_id": op.class_id,
 		"operative_id": op.id, "rank": op.rank, "hp": op.hp, "max_hp": op.max_hp, "ram": ram, "wheel": wheel,
-		"hub": TextDb.t(hub, "display_name") if hub != null else "", "deck": op.deck.size(), "station": station,
-		"heat": c.heat, "band": tr(HeatPoster.BAND_WORDS[mini(HeatPoster.band_of(c.heat, bands), HeatPoster.BAND_WORDS.size() - 1)])}
+		"hub": TextDb.t(hub, "display_name") if hub != null else "", "deck": op.deck.size(), "station": station}
 
 
 ## Calm Heat (4.3): the effect line each node type Heat has made harder carries (type ->
@@ -2481,6 +2480,53 @@ func _show_combat() -> void:
 		scene.connect(&"continue_requested", _leave_fight)
 	if scene.has_signal(&"shown_hp_changed"):
 		scene.connect(&"shown_hp_changed", _on_combat_hp_shown)
+
+
+## HEAT-ALL (Q2): the Heat terminal the gauge dropped, read-only in a run (null when closed).
+var heat_terminal: HeatTerminal = null
+
+
+## HEAT-ALL (Q1 / Q2): the HEAT gauge pressed: the Heat terminal drops from it read-only (no
+## SCRUB in a run: Scrub Heat is at the HQ), or folds back when it is open.
+func toggle_heat_terminal() -> void:
+	if heat_terminal != null and is_instance_valid(heat_terminal):
+		close_heat_terminal()
+		return
+	if RunManager.campaign == null:
+		return
+	heat_terminal = HeatTerminal.new(RunManager.campaign, RunManager.config(), true)
+	heat_terminal.closed.connect(close_heat_terminal)
+	add_child(heat_terminal)
+	TextDb.shown_as_given(heat_terminal)
+	heat_terminal.drop_under(hud.heat_gauge.get_global_rect(), get_global_rect())
+
+
+## HEAT-ALL: folds the Heat terminal away; focus goes back to the gauge.
+func close_heat_terminal(refocus: bool = true) -> void:
+	if heat_terminal != null and is_instance_valid(heat_terminal):
+		heat_terminal.queue_free()
+		if refocus and hud.heat_gauge.is_visible_in_tree() and hud.heat_gauge.focus_mode != Control.FOCUS_NONE:
+			hud.heat_gauge.grab_focus.call_deferred()
+	heat_terminal = null
+
+
+## What the Heat number means now: the next threshold and the rules in force.
+func heat_tip() -> String:
+	var c := RunManager.campaign
+	var cfg := RunManager.config()
+	var next := -1
+	for t in cfg.heat_thresholds:
+		if t != null and t.heat > c.heat and (next < 0 or t.heat < next):
+			next = t.heat
+	var lines := PackedStringArray()
+	lines.append(tr("Heat %d of %d: how hard the corporation hunts the Cell.") % [c.heat, cfg.heat_max])
+	if next >= 0:
+		lines.append(tr("Next threshold at %d.") % next)
+	var mods := PackedStringArray()
+	for m in HeatRules.active_modifiers(c, cfg):
+		mods.append(HeatTerminal.modifier_text(m))
+	lines.append(tr("In force: %s.") % (", ".join(mods) if not mods.is_empty() else tr("nothing yet")))
+	return "\n".join(lines)
 
 
 ## ANIM-R6 A5 (combat, a minimal change here): a SEND IT replay landed its turn: the top bar's
@@ -4792,8 +4838,11 @@ func _refresh_status() -> void:
 		text += " || Run T%d seed %d | %s HP %d/%d Rank %d | Cycles %d | banked %d | node %s" % [s.run.tier, s.run.run_seed, op.name, _shown_operative_hp(op.hp), op.max_hp, op.rank, s.run.cycles, s.run.banked_schematics, s.run.current_node_id]
 	_status.text = text
 	# Every tag says what it means on hover (H21 #9); its icon is the resource's own.
-	var stats := [[TextDb.mark("HEAT"), str(c.heat if hud_heat_shown < 0 else hud_heat_shown), "/%d" % RunManager.resolver.config.heat_max, tr("Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules.")],
-		[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency, spent at HQ.")]]
+	# HEAT-ALL (designer ruling Q1 / Q2): Heat is the gauge in the bar's first slot on every screen
+	# (the HEAT stat tag gave it its place); in a run it opens the Heat terminal read-only.
+	var cfg := RunManager.resolver.config
+	hud.set_heat(c.heat if hud_heat_shown < 0 else hud_heat_shown, cfg.heat_max, HeatRules.band_levels(c, cfg), true, heat_tip())
+	var stats := [[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency, spent at HQ.")]]
 	# H24 S16: whose numbers these are: the campaign's, then this run's.
 	var captions := [[0, tr("CAMPAIGN"), tr("The campaign's numbers: they stay between runs.")]]
 	if s != null and not s.run.is_over():
@@ -4948,6 +4997,7 @@ func _build_ui() -> void:
 	hud = HudBar.new()
 	hud.loadout_pressed.connect(open_loadout)
 	hud.daemons_pressed.connect(open_daemons)
+	hud.heat_pressed.connect(toggle_heat_terminal)
 	root.add_child(hud)
 	_status = hud.label
 	subtitle_strip = SubtitleStrip.new()

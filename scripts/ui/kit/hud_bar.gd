@@ -1,7 +1,7 @@
 class_name HudBar
 extends PanelContainer
-## The top strip of a screen: a slim terminal band with the screen number in pink and its
-## title (neon gauge cluster style, "01 / CYBERDECK HQ"), the campaign's numbers as
+## The top strip of a screen: a slim terminal band with the HEAT gauge in its first slot, the
+## screen's title as a yellow title sticker (v2 page-title rule), the campaign's numbers as
 ## ransom-note paper tags hanging off the band, and VIEW LOADOUT (the deck and spinner of
 ## the current operative). `label` keeps the full status as text (tooltip, screen readers
 ## and tests); the tags are what the player sees.
@@ -12,17 +12,23 @@ signal daemons_pressed
 signal heat_pressed
 
 const BAND_HEIGHT := 56.0
-## The screen title's lettering and the width it may take (px).
-const NUMBER_SIZE := 20
-const TITLE_SIZE := 15
+## The screen title slot's padding and least width (px).
 const TITLE_PAD := 8.0
 const TITLE_MIN_WIDTH := 24.0
-const TITLE_MAX_WIDTH := 250.0
+## The widest the title sticker may be (px): a long title letters smaller rather than push the
+## stat tags (H21: the tags get the rest of the bar).
+const TITLE_MAX_WIDTH := 150.0
+## Designer ruling Q1 (v2 page-title rule): the screen's title is a yellow title sticker, not
+## paper lettering. Its lettering size (px at text scale 1.0) and tilt (degrees).
+const TITLE_STICKER_PX := 16.0
+const TITLE_STICKER_TILT := -2.0
 
 var label: Label
 ## HQ-B (Q1): the one Heat indicator, the bar's first slot on every screen that shows Heat.
 var heat_gauge: HeatGauge
 var title_box: Control
+## The yellow sticker that names the screen (null while the screen has no title).
+var title_sticker: VerbSticker
 var stats: HudStats
 var loadout_button: Button
 ## One DAEMONS icon (stacked sigils + count) that opens the Daemon tray.
@@ -56,7 +62,6 @@ func _init() -> void:
 	title_box = Control.new()
 	title_box.custom_minimum_size = Vector2(250, BAND_HEIGHT)
 	title_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	title_box.draw.connect(_draw_title)
 	row.add_child(title_box)
 	stats = HudStats.new()
 	stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -109,12 +114,33 @@ func complete_motion() -> void:
 func set_screen(number: String, title: String) -> void:
 	_number = number
 	_title = title
-	var w := maxf(Palette.mono().get_string_size(number, HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_SIZE).x,
-		Palette.mono().get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, TITLE_SIZE).x)
-	title_box.custom_minimum_size.x = clampf(ceilf(w) + TITLE_PAD, TITLE_MIN_WIDTH, TITLE_MAX_WIDTH) if (number != "" or title != "") else TITLE_MIN_WIDTH
+	if title_sticker != null:
+		title_box.remove_child(title_sticker)
+		title_sticker.queue_free()
+		title_sticker = null
+	var w := TITLE_MIN_WIDTH
+	if title != "":
+		title_sticker = _sticker(title, TITLE_STICKER_PX)
+		var wide := title_sticker.get_combined_minimum_size().x
+		if wide > TITLE_MAX_WIDTH:
+			title_sticker.free()
+			title_sticker = _sticker(title, TITLE_STICKER_PX * TITLE_MAX_WIDTH / wide)
+		title_box.add_child(title_sticker)
+		var m := title_sticker.get_combined_minimum_size()
+		title_sticker.position = Vector2(0.0, maxf((BAND_HEIGHT - m.y) * 0.5, 0.0))
+		w = maxf(ceilf(m.x) + TITLE_PAD, TITLE_MIN_WIDTH)
+	title_box.custom_minimum_size.x = w
 	# HQ-B (Q1, Q6): a screen with no title (the HQ) gives the slot to the HEAT gauge.
-	title_box.visible = number != "" or title != "" or not heat_gauge.visible
-	title_box.queue_redraw()
+	title_box.visible = title != "" or not heat_gauge.visible
+
+
+func _sticker(title: String, px: float) -> VerbSticker:
+	var st := VerbSticker.new(title, VerbSticker.Fill.YELLOW, px, TITLE_STICKER_TILT)
+	st.pre_translated = true
+	st.name = "TitleSticker"
+	st.focus_mode = Control.FOCUS_NONE
+	st.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return st
 
 
 ## HQ-B (Q1 / Q2): shows the HEAT gauge in the bar's first slot: `value` of `maximum`, the
@@ -125,7 +151,7 @@ func set_heat(value: int, maximum: int, marks: Array[int], interactive: bool, ti
 	heat_gauge.interactive = interactive
 	heat_gauge.tooltip_text = tip
 	heat_gauge.set_heat(value, maximum, marks)
-	title_box.visible = _number != "" or _title != ""
+	title_box.visible = _title != ""
 
 
 ## HQ-B: hides the HEAT gauge (a screen without a campaign).
@@ -183,12 +209,3 @@ func _draw_daemon_icon() -> void:
 	var badge := c + Vector2(17, 12)
 	daemon_button.draw_circle(badge, 9, Palette.CELL_ACID if hot else Palette.NEON_VIOLET)
 	daemon_button.draw_string(Palette.display(), badge + Vector2(-9, 5), str(daemon_ids.size()), HORIZONTAL_ALIGNMENT_CENTER, 18, 13, Palette.INK)
-
-
-func _draw_title() -> void:
-	var y := 24.0
-	if _number != "":
-		title_box.draw_string(Palette.mono(), Vector2(0, y), _number, HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_SIZE, Palette.CELL_PINK)
-		title_box.draw_string(Palette.mono(), Vector2(0, y + 20), _title, HORIZONTAL_ALIGNMENT_LEFT, title_box.size.x, TITLE_SIZE, Palette.PAPER)
-	elif _title != "":
-		title_box.draw_string(Palette.mono(), Vector2(0, 29), _title, HORIZONTAL_ALIGNMENT_LEFT, title_box.size.x, TITLE_SIZE, Palette.PAPER)

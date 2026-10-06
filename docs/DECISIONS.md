@@ -142,6 +142,30 @@ binding (also in PROPOSAL.md's rulings section):
   (`test_hq_is_a_cyberdeck...`: no poster, the gauge in the first slot), `test_pad_reachability` (the HQ menu: Scrub
   Heat is reached by View into the Heat terminal, focused).
 
+### 2026-10-05 — Heat gauge on every screen (designer ruling Q1/Q2/Q10)
+HEAT-ALL (M14). The HQ-B `HeatGauge` (commit 5b9d4c4) is the top bar's first slot on every screen with a bar, not
+only at the HQ. Q1: the netrun scene (route, fights, events, loot, Mainframe, run end) sets it in
+`_refresh_status` (`hud.set_heat(campaign Heat or the raid playout's shown Heat, heat_max, HeatRules.band_levels)`);
+the HEAT stat tag left the bar's tags (the gauge is the one Heat indicator). The HQ pages (grid, raid setup, playout,
+report, end) already set it in `hq_scene.gd`'s status refresh (HQ-B), unchanged here. Q2: in a run the gauge is
+tappable / selectable and opens `HeatTerminal.new(c, cfg, true)` read-only (no SCRUB; it names the HQ as the place to
+scrub): `NetrunScene.toggle_heat_terminal` / `close_heat_terminal`, closed on every page change; it reads the
+campaign and changes nothing (signal up). Q10: the route dossier's Heat stamp is removed (`OperativeDossier.heat_words`,
+`HEAT_STAMP`, `HEAT_TILT`, the dossier data's `heat` / `band` keys, string "HEAT %d: %s"); the dossier stays, its
+footer is shorter (the file's height keeps the AT LARGE stamp's room), which also resolves parity ROUTE-02's overlap.
+- **Titles.** The screen title leaves the bar's paper lettering: `HudBar.set_screen` now makes a yellow `VerbSticker`
+  (`TITLE_STICKER_PX` 16, tilt -2) in the title slot, right of the gauge (v2 page-title rule). The screen number
+  ("04", "05") is no longer shown. Call: the stickers sit in the bar's title slot, not on each page body, because every
+  netrun page is built in its own function and a body title would collide with the route map, the fight's arena and
+  the wheels, which other agents own; the bar is the one place that names every screen the same way. Proposal if the
+  designer wants them on the pages: a `PageTitle` strip per page, a slice of its own.
+- **Motion / accessibility.** The gauge is the HQ-B component, so its motion is unchanged: it joins `MotionSkip`
+  (one press completes the roll and the banner), reduce effects shows its end state, headless never waits.
+- Tests: new `tests/unit/test_heat_all.gd` (fast): the gauge first with the campaign's Heat on route / Mainframe /
+  loot / run end and on the Grid; one Heat indicator; yellow sticker titles and none for combat; read-only terminal in
+  a run (no SCRUB, state unchanged); no Heat on the dossier; fits at 1.0 / 1.6 / 2.0; MotionSkip and reduce effects.
+  Changed: `test_art7_netrun` (the dossier says no Heat). No test dropped.
+
 ### 2026-10-05 — Parity fix — new campaign page (designer decisions)
 Designer rulings NEWC-01..04 (2026-10-05, parity audit `docs/art_review/PARITY/GAPS.md`, branch
 worktree-agent-a99b7a512f1562917): the art pass build was never brought to the v2 concepts, so the build's layout in
