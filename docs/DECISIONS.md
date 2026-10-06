@@ -10298,6 +10298,11 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **B4 HQ to round 44 (2026-10-06, see "B4 — HQ to round 44"):** defaults built against the still: (1) the minimap
+  terminal and the MAP KEY strip stay at the HQ's top right (section c lists them; round 44 draws neither). Drop them
+  (the camera keeps wheel / drag / WASD / the edge arrow; the key would move behind a hover)? (2) ON AIR stays on the HQ
+  (D20) along the foot when the hand leaves no wide gap, where round 44 has the cards reach the foot. Keep, or move ON AIR
+  to the title only? (3) CORE's verb stays PATCH: round 44's UPGRADE on CORE needs a home-upgrade rule the GDD lacks.
 - **B1b pencil audit (2026-10-06, see "B1b — wax pencil material and pencil audit"): answered (art director 2026-10-06: all three stay; the raid verdict slice goes to B3).** Was: three pencil notes are kept only
   because a locked concept draws them, not because they are plans: the title's NEVER SLEEP motto (round 33 title A),
   the Mainframe's "ask about the back room" (bible Mainframe interior; there is no back room in the rules) and the
