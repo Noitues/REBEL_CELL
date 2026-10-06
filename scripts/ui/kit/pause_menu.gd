@@ -116,7 +116,8 @@ func _fit_height() -> void:
 	if title_sticker != null:
 		var m := title_sticker.get_combined_minimum_size()
 		title_sticker.size = m
-		title_sticker.position = Vector2(Chrome.CHAMFER * 2.0, -m.y * STICKER_RISE)
+		# Over the header's right end (as the OPTIONS sticker sits, round 31): the `> PAUSED` words stay clear.
+		title_sticker.position = Vector2(size.x - m.x - Chrome.CHAMFER * 4.0, -m.y * STICKER_RISE)
 
 
 ## The least the menu is tall and the screen edge it keeps clear of (px).

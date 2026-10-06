@@ -154,6 +154,21 @@ func test_the_title_fits_at_every_text_scale() -> void:
 		var more := (page.find_child("More", true, false) as Control).get_global_rect()
 		var verbs := (page.find_child("Verbs", true, false) as Control).get_global_rect()
 		assert_false(more.intersects(verbs.grow(-1.0)), "MORE %s clear of the verbs %s at %.1f" % [more, verbs, scale])
+		# The bottom panels sit above the foot row (the pad prompts), never under it.
+		var foot := (page.find_child("Foot", true, false) as Control).get_global_rect()
+		for n in ["More", "ProfileTags"]:
+			var c := page.find_child(n, true, false) as Control
+			if c.visible:
+				assert_false(c.get_global_rect().intersects(foot.grow(-1.0)), "%s clear of the foot row at %.1f" % [n, scale])
+		# Each MORE line's words end before its key hint starts.
+		for b in page.find_child("MoreList", true, false).get_children():
+			var hint := (b as Node).find_child("KeyHint", false, false) as Control
+			if hint == null:
+				continue
+			var bt := b as Button
+			var words := bt.get_theme_font(&"font").get_string_size(bt.text, HORIZONTAL_ALIGNMENT_LEFT, -1, bt.get_theme_font_size(&"font_size")).x
+			var words_end := bt.global_position.x + bt.get_theme_stylebox(&"normal").get_margin(SIDE_LEFT) + words
+			assert_lt(words_end, hint.global_position.x, "%s clear of its key hint at %.1f" % [bt.text, scale])
 		t.queue_free()
 		await _frames(1)
 
@@ -167,10 +182,14 @@ func test_the_confirm_is_yellow_cancel_by_default_and_a_pink_verb() -> void:
 	t.confirm_delete("1")
 	await _frames(2)
 	var d: ConfirmDialog = t._confirm
-	# 2D's ConfirmDialog (the round 33 abandon dialog look): two vinyl stickers, the delete is
-	# destructive (CANNOT UNDO) and names its verb; CANCEL keeps the focus.
-	assert_true(d.no_button is SendItSticker and d.yes_button is SendItSticker, "two vinyl stickers")
-	assert_eq((d.yes_button as SendItSticker).tag_text, "DELETE", "the committing verb")
+	# The round 33 abandon dialog on 2D's ConfirmDialog: abandon.py's own stickers (yellow
+	# CANCEL, the pink verb, baked with their focus halo), the delete is destructive (CANNOT
+	# UNDO) and names its verb; CANCEL keeps the focus.
+	assert_true(d.no_button is VerbSticker and d.yes_button is VerbSticker, "two vinyl stickers")
+	assert_true((d.no_button as VerbSticker).uses_art() and (d.yes_button as VerbSticker).uses_art(), "the concept's baked stickers")
+	assert_eq((d.no_button as VerbSticker).fill, VerbSticker.Fill.YELLOW, "the safe answer is yellow")
+	assert_eq((d.yes_button as VerbSticker).fill, VerbSticker.Fill.PINK, "the verb is pink")
+	assert_eq(d.yes_button.text, "DELETE", "the committing verb")
 	assert_true(d.panel.destructive, "a delete says it cannot be undone")
 	assert_eq(get_viewport().gui_get_focus_owner(), d.no_button, "CANCEL holds the default focus")
 	var esc := InputEventAction.new()
@@ -179,6 +198,79 @@ func test_the_confirm_is_yellow_cancel_by_default_and_a_pink_verb() -> void:
 	d._unhandled_input(esc)
 	await _frames(2)
 	assert_false(t.confirm_visible(), "B / Esc cancels at once")
+
+
+func test_the_codex_and_stats_pages_fit_over_the_ticker_at_every_text_scale() -> void:
+	_saved_campaign()
+	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+		Settings.set_text_scale(scale)
+		var t := _title()
+		await _frames(2)
+		var floor_y: float = (t.ticker as Control).get_global_rect().position.y
+		for page in ["codex", "stats"]:
+			t.call("show_" + page)
+			await _frames(3)
+			var p := t._panel as Control
+			for n in ["Codex", "Stats", "History"]:
+				var c := p.find_child(n, true, false) as Control
+				if c != null:
+					assert_lte(c.get_global_rect().end.y, floor_y + 1.0, "%s above the ticker at %.1f" % [n, scale])
+			var back: Control = null
+			for b in p.find_children("*", "Button", true, false):
+				if (b as Button).text == tr("Back"):
+					back = b
+			assert_not_null(back, "%s has its Back" % page)
+			if back != null:
+				assert_lte(back.get_global_rect().end.y, floor_y + 1.0, "%s Back above the ticker at %.1f" % [page, scale])
+		t.queue_free()
+		await _frames(1)
+
+
+func test_a_page_entering_late_leaves_the_focus_on_the_open_confirm() -> void:
+	_saved_campaign()
+	var t := _title()
+	await _frames(2)
+	t.confirm_delete("gut_art10")
+	await _frames(2)
+	var d: ConfirmDialog = t._confirm
+	assert_eq(get_viewport().gui_get_focus_owner(), d.no_button, "CANCEL holds the focus")
+	# The main page's enter finishing after the confirm opened (windowed, its motion runs).
+	t._page_focus(t._panel, t.verbs[0])
+	await _frames(1)
+	assert_eq(get_viewport().gui_get_focus_owner(), d.no_button, "the page behind never takes the focus")
+	# The header's words are not under the CRT material (it samples the MSDF atlas raw).
+	var internal := d.panel.get_children(true).filter(func(c: Node) -> bool: return c.name == "HeaderWords")
+	assert_eq(internal.size(), 1, "the header's words have their own canvas item")
+	assert_null((internal[0] as CanvasItem).material, "with no CRT material")
+
+
+func test_the_delete_confirm_is_the_abandon_dialog_with_the_slots_costs() -> void:
+	_saved_campaign()
+	var summary := RunManager.slot_summary("gut_art10")
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+		Settings.set_text_scale(scale)
+		var t := _title()
+		await _frames(2)
+		t.confirm_delete("gut_art10")
+		await _frames(3)
+		var d := t._confirm as AbandonDialog
+		assert_not_null(d, "the delete confirm is the round 33 abandon dialog")
+		if d == null:
+			return
+		# The costs read from the slot (round 33: names in terminal CAPS, values beside them).
+		var words := d.cost_words()
+		assert_eq(words.size(), 8, "four costs, name and value")
+		assert_true(words.has(t.corporation_name(String(summary["corporation"]))), "the target corporation")
+		assert_true(words.has(str(int(summary["heat"]))), "the slot's Heat")
+		assert_true(d.kept_label != null and d.kept_label.text != "", "what stays is said")
+		assert_eq(d.kept_label.get_theme_color(&"font_color"), Palette.GAIN, "what stays reads in GAIN")
+		assert_true(d.panel.destructive, "CANNOT UNDO")
+		# Centred on the screen and on it whole, at every text size.
+		var r := d.panel.get_global_rect()
+		assert_true(SCREEN.encloses(r), "the dialog %s on the screen at %.1f" % [r, scale])
+		assert_almost_eq(r.get_center().x, SCREEN.get_center().x, 2.0, "centred across at %.1f" % scale)
+		t.queue_free()
+		await _frames(1)
 
 
 # --- Vinyl sticker, neon sign, ticker -----------------------------------------------------------

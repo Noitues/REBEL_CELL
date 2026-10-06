@@ -36,6 +36,10 @@ const PROFILE_W := 290.0
 const MORE_RIGHT_FROM := 1.6
 ## The MORE lines' type step (round 33: five lines in 156 px of the board).
 const MORE_STEP := UiTheme.BODY
+## The least gap between a MORE line's words and its key hint (px).
+const HINT_GAP := 12.0
+## The gap between the bottom panels (MORE, PROFILE) and the foot row (px).
+const FOOT_GAP := 6.0
 ## The city's dim behind the title (it reads as the backdrop, round 33's blurred city).
 const CITY_DIM := 0.58
 ## The page widths for the codex / stats / slots terminals (px at 1.0) and the codex text's
@@ -45,6 +49,10 @@ const SLOTS_W := 620.0
 const CODEX_H := 420.0
 const STATS_H := 200.0
 const HISTORY_H := 150.0
+## The least height of a page's reference text (px): it scrolls inside the room it gets.
+const TEXT_FLOOR_H := 72.0
+## The gap between a slot's lines and its buttons (px): the focus brackets reach above a button.
+const SLOT_ROW_GAP := 8
 ## The ON AIR ticker's words (keys; round 33's ticker).
 const TICKER_WORDS := ["PIRATE RADIO 88.1", "HALCYON RAISES FARES AGAIN"] # TR
 ## The confirm's caption under CANCEL (a key).
@@ -189,7 +197,18 @@ func _set_panel(p: Control, name: String) -> void:
 	UiWrap.fit(p)
 	UiFocus.link_layout(p)
 	var first := _default_focus(p)
-	PageTransition.enter(p, PageTransition.look_of(p), (func() -> void: first.grab_focus()) if first != null else UiFocus.focus_first.bind(p), -1 if back else 1)
+	PageTransition.enter(p, PageTransition.look_of(p), _page_focus.bind(p, first), -1 if back else 1)
+
+
+## The page's first focus once it has entered, unless a confirm opened meanwhile (it holds
+## the focus: the page behind never takes it).
+func _page_focus(p: Control, first: Control) -> void:
+	if confirm_visible() or PageTransition.modal_open(self) or not is_instance_valid(p):
+		return
+	if first != null and is_instance_valid(first):
+		first.grab_focus()
+	else:
+		UiFocus.focus_first(p)
 
 
 ## The control a page focuses first: BREACH (or the first live verb) on the main page.
@@ -256,7 +275,9 @@ func show_main() -> void:
 	box.name = "MoreList"
 	_item(box, tr("Campaign slots"), show_slots, StatIcon.SLOTS, tr("The three campaign slots: start, load or delete."), "C")
 	_item(box, tr("Codex"), show_codex, StatIcon.CODEX, tr("Everything the Cell knows: slices, cards, Firmware, Daemons, rules."), "X")
-	_item(box, tr("Stats & achievements"), show_stats, StatIcon.STATS, tr("Your records, achievements and run history."), "S")
+	# Big text: the line reads STATS (its page's title; the tooltip names the achievements) so
+	# MORE fits beside the verbs at 2.0.
+	_item(box, tr("Stats & achievements") if not big_text() else tr("STATS"), show_stats, StatIcon.STATS, tr("Your records, achievements and run history."), "S")
 	_item(box, tr("Options"), show_options, StatIcon.SETTINGS, tr("Text size, sound, controls, subtitles."), "O")
 	_item(box, tr("Quit"), confirm_quit, StatIcon.QUIT, tr("Leave REBEL_CELL (asks first)."), tr("ESC"))
 	# ANIM-6: the highlight slides, the line types in, the caret blinks.
@@ -269,6 +290,7 @@ func show_main() -> void:
 	profile.visible = not big_text()
 	page.add_child(foot)
 	_place_bottom(profile, true)
+	profile.offset_bottom = -foot.get_combined_minimum_size().y - FOOT_GAP  # above the pad prompts (round 33)
 	_place_bottom(foot, false, true)
 	if big_text():
 		# Big text: the left column is full; MORE heads the right column.
@@ -279,7 +301,7 @@ func show_main() -> void:
 		more.offset_top = SubtitleStrip.top_below(PAGE_MARGIN.y)  # the main page starts at the top edge
 	else:
 		_place_bottom(more, false)
-		more.offset_bottom = -foot.get_combined_minimum_size().y - 6.0
+		more.offset_bottom = -foot.get_combined_minimum_size().y - FOOT_GAP
 	_set_panel(page, "main")
 
 
@@ -322,6 +344,7 @@ func _verb(rows: Control, word: String, fill: int, fist: int, label: String, lin
 	chip.min_width = CHIP_MIN_W  # it grows with its label at big text
 	if big_text():
 		chip.label_step = UiTheme.BODY  # the right column is MORE: the chips stay narrower
+		chip.min_width = 0.0  # as wide as its label: MORE needs the room
 	chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	chip.tooltip_text = s.tooltip_text
 	if on_pressed.is_valid():
@@ -435,7 +458,19 @@ func _page(title_word: String, content: Control, page_name: String) -> VBoxConta
 	head.add_child(sticker)
 	box.add_child(head)
 	box.add_child(content)
+	# The page takes the room between the top and the ticker; its reference texts share it.
+	box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	return box
+
+
+## A reference text that shares the page's room (in proportion to `nominal`, its height at
+## text scale 1.0) and scrolls past it, so the page fits from 1.0 to 2.0.
+func _flex(t: CrtText, nominal: float) -> void:
+	t.label.custom_minimum_size.y = minf(nominal, TEXT_FLOOR_H)
+	t.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	t.size_flags_stretch_ratio = nominal
+	t.body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 
 func show_slots() -> void:
@@ -447,7 +482,7 @@ func show_slots() -> void:
 	for slot in SLOTS:
 		var row := VBoxContainer.new()
 		row.name = "Slot%s" % slot
-		row.add_theme_constant_override("separation", 2)
+		row.add_theme_constant_override("separation", SLOT_ROW_GAP)  # room for the focus brackets over the buttons
 		var summary := RunManager.slot_summary(slot)
 		row.add_child(Chrome.caps_label(tr("SLOT %s") % slot, UiTheme.LABEL, Palette.NET_CYAN))
 		row.add_child(_label(_describe(summary)))
@@ -470,6 +505,7 @@ func show_codex() -> void:
 	var note := CrtText.new(tr("CODEX // WHAT THE CELL KNOWS"), Vector2(PAGE_W, CODEX_H)).make_reference()
 	note.name = "Codex"
 	note.fill_codex()
+	_flex(note, CODEX_H)
 	box.add_child(note)
 	_item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
 	_set_panel(_page("CODEX", box, "CodexPage"), "codex")
@@ -485,6 +521,7 @@ func show_stats() -> void:
 	box.add_child(records)
 	var note := CrtText.new(tr("STATS // RECORDS"), Vector2(PAGE_W, STATS_H)).make_reference()
 	note.name = "Stats"
+	_flex(note, STATS_H)
 	note.append(tr("Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost.") % [
 		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost])
 	note.append(tr("Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d.") % [HudStats.ice_value(p.best_ice), int(p.stats.get("perfects", 0)), int(p.stats.get("racks", 0)), int(p.stats.get("cycles", 0)), int(p.stats.get("assisted_wins", 0))])
@@ -499,14 +536,22 @@ func show_stats() -> void:
 		var have := p.achievements.has(d["id"])
 		note.append("[color=#%s]%s[/color] [b]%s[/b]  %s" % [(Palette.CELL_ACID if have else Palette.TEXT_LO).to_html(false), "[x]" if have else "[ ]", d["title"], d["text"]])
 	box.add_child(note)
-	var history := CrtText.new(tr("RUN HISTORY"), Vector2(PAGE_W, HISTORY_H)).make_reference()
-	history.name = "History"
+	# Big text: the run history is a section of the records' text (a second window's frame is
+	# room the page lacks at 1.6 and up).
+	var history := note
+	if big_text():
+		note.heading(tr("RUN HISTORY"))
+	else:
+		history = CrtText.new(tr("RUN HISTORY"), Vector2(PAGE_W, HISTORY_H)).make_reference()
+		history.name = "History"
+		_flex(history, HISTORY_H)
 	if p.run_history.is_empty():
 		history.append(tr("no runs yet"))
 	for r in p.run_history:
 		var corp := RunManager.lookup().get_content(StringName(String(r.get("corporation", "")))) as CorporationData
 		history.append("%s T%d %s: %s, %d Cycles, %d banked" % [TextDb.t(corp, "display_name") if corp != null else r.get("corporation", "?"), int(r.get("tier", 1)), r.get("site", "?"), r.get("outcome", "?"), int(r.get("cycles", 0)), int(r.get("banked", 0))])
-	box.add_child(history)
+	if history != note:
+		box.add_child(history)
 	_item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
 	_set_panel(_page("STATS", box, "StatsPage"), "stats")
 
@@ -557,10 +602,19 @@ func load_slot(slot: String) -> void:
 		show_slots()
 
 
+## The delete-slot confirm: the round 33 abandon dialog (AbandonDialog) with the slot's costs.
 func confirm_delete(slot: String) -> void:
-	_ask(tr("Delete the campaign in slot %s?") % slot, func() -> void:
+	var summary := RunManager.slot_summary(slot)
+	var costs: Array = []
+	if not summary.is_empty():
+		costs = [[TextDb.mark("Target"), corporation_name(String(summary.get("corporation", "")))], [TextDb.mark("Runs"), int(summary.get("runs", 0))],
+			[TextDb.mark("Heat"), int(summary.get("heat", 0))], [TextDb.mark("ICE"), int(summary.get("ice", 0))]]
+	var d := AbandonDialog.new(tr("Delete the campaign in slot %s?") % slot, TextDb.mark("DELETE"), TextDb.mark("DELETE SLOT"),
+		tr("The campaign in slot %s is lost for good, with everything in it:") % slot, costs, "",
+		tr("Your stats and achievements stay."), tr("erase slot %s [A]") % slot, TextDb.mark("keep going [B]"))
+	_open_confirm(d, func() -> void:
 		RunManager.delete_slot(slot)
-		show_slots(), "DELETE", tr("Everything in slot %s is gone for good: its Cell, its city, its Heat.") % slot, "DELETE SLOT", true) # TR
+		show_slots())
 
 
 func confirm_quit() -> void:
@@ -578,13 +632,20 @@ func start_tutorial() -> void:
 ## Opens the confirm: `verb` and `what` are keys (the dialog translates them), `question` and
 ## `detail` come translated.
 func _ask(question: String, on_yes: Callable, verb: String = "Yes", detail: String = "", what: String = "", destructive: bool = false) -> void:
+	# 2D's ConfirmDialog (the round 33 abandon dialog): `what` is its title, `detail` its body.
+	_open_confirm(ConfirmDialog.new(question, verb, "CANCEL", what if what != "" else "ARE YOU SURE?", detail, destructive, "", "keep going [B]"), on_yes)
+
+
+## Shows `d` centred on the page (it re-centres as its panel takes its size) with `on_yes` on
+## its confirm.
+func _open_confirm(d: ConfirmDialog, on_yes: Callable) -> void:
 	if _confirm != null and is_instance_valid(_confirm):
 		_confirm.queue_free()
-	# 2D's ConfirmDialog (the round 33 abandon dialog): `what` is its title, `detail` its body.
-	_confirm = ConfirmDialog.new(question, verb, "CANCEL", what if what != "" else "ARE YOU SURE?", detail, destructive, "", "keep going [B]")
-	_confirm.position = (size - _confirm.custom_minimum_size) * 0.5
-	_confirm.confirmed.connect(on_yes)
-	add_child(_confirm)
+	_confirm = d
+	d.resized.connect(func() -> void: d.position = ((size - d.size) * 0.5).floor())
+	d.position = ((size - d.custom_minimum_size) * 0.5).floor()
+	d.confirmed.connect(on_yes)
+	add_child(d)
 
 
 func confirm_visible() -> bool:
@@ -693,7 +754,11 @@ func _item(box: Control, text: String, on_pressed: Callable, kind: StringName, t
 			h.offset_right = -8
 			h.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			b.add_child(h)
-			b.custom_minimum_size.x = maxf(b.custom_minimum_size.x, 0.0)
+			# The line keeps room for its key hint: the words never run under it.
+			var f := b.get_theme_font(&"font")
+			var sb := b.get_theme_stylebox(&"normal")
+			var words := f.get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, Chrome.px(MORE_STEP)).x
+			b.custom_minimum_size.x = maxf(b.custom_minimum_size.x, ceilf(words + sb.get_margin(SIDE_LEFT) + h.get_combined_minimum_size().x + HINT_GAP - h.offset_right))
 	else:
 		IconMark.attach(b, kind)
 		b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN  # a terminal chip, not a full-width bar

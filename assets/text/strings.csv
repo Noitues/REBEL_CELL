@@ -795,7 +795,6 @@ Entering it changes Heat by %s.,Entering it changes Heat by %s.
 Event,Event
 "Event: a choice, and its price","Event: a choice, and its price"
 "Every Rack you capture banks Schematics for the Cell and adds Heat. Heat thresholds bring raids on your home server. Bank early, cool off at Heat objectives, and never leave loot unbanked when you jack out.","Every Rack you capture banks Schematics for the Cell and adds Heat. Heat thresholds bring raids on your home server. Bank early, cool off at Heat objectives, and never leave loot unbanked when you jack out."
-"Everything in slot %s is gone for good: its Cell, its city, its Heat.","Everything in slot %s is gone for good: its Cell, its city, its Heat."
 "Everything the Cell knows: slices, cards, Firmware, Daemons, rules.","Everything the Cell knows: slices, cards, Firmware, Daemons, rules."
 Exploit,Exploit
 Exploit %s found (%d/%d for the breach).,Exploit %s found (%d/%d for the breach).
@@ -2640,6 +2639,7 @@ TYPE,TYPE
 Take,Take
 Take nothing from this payout.,Take nothing from this payout.
 Taken Raid Strength,Taken Raid Strength
+Target,Target
 Target:,Target:
 Target: the lime brackets mark the wheel your attacks and aimed cards hit.,Target: the lime brackets mark the wheel your attacks and aimed cards hit.
 Terminal,Terminal
@@ -2901,6 +2901,7 @@ The Cell never sleeps. Every word grows with this.,The Cell never sleeps. Every 
 The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.,The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.
 The boosts bought for the next run. Drag a boost here to buy it.,The boosts bought for the next run. Drag a boost here to buy it.
 The boosts bought for the next run. Pick a boost up and move it here to buy it.,The boosts bought for the next run. Pick a boost up and move it here to buy it.
+"The campaign in slot %s is lost for good, with everything in it:","The campaign in slot %s is lost for good, with everything in it:"
 "The campaign map: pick a Site and JACK IN, claim and upgrade nodes.","The campaign map: pick a Site and JACK IN, claim and upgrade nodes."
 The campaign's numbers: they stay between runs.,The campaign's numbers: they stay between runs.
 The corporation's core. The breach needs %d Exploits.,The corporation's core. The breach needs %d Exploits.
@@ -3017,6 +3018,7 @@ Your home Site (CORE),Your home Site (CORE)
 Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.,Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.
 "Your records, achievements and run history.","Your records, achievements and run history."
 Your spinner.,Your spinner.
+Your stats and achievements stay.,Your stats and achievements stay.
 Your uplink has been reassigned to the commons. Burn-up in progress.,Your uplink has been reassigned to the commons. Burn-up in progress.
 Zoom out to the whole City Grid.,Zoom out to the whole City Grid.
 a Daemon to pick,a Daemon to pick
@@ -3051,6 +3053,7 @@ depowered,depowered
 difficulty %d of %d,difficulty %d of %d
 down,down
 empty,empty
+erase slot %s [A],erase slot %s [A]
 everything unlocked,everything unlocked
 exploit,exploit
 exploits,exploits

@@ -91,7 +91,14 @@ func measure() -> Vector2:
 		var sp := Chrome.px(line_step)
 		w = maxf(w, Palette.mono().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, sp).x)
 		h += PAD.z + Palette.mono().get_height(sp)
-	return Vector2(ceilf(w + PAD.x * 2.0), ceilf(h + PAD.y + PAD.w))
+	var g := glow()
+	return Vector2(ceilf(w + PAD.x * 2.0 + g.x + g.z), ceilf(h + PAD.y + PAD.w + g.y + g.w))
+
+
+## The plate's glow margin at game size (left, top, right, bottom; zero for a drawn chip or a
+## tab / tile, whose plates have none).
+func glow() -> Vector4:
+	return CHIP_GLOW * PLATE_SCALE if plate == &"chip" else Vector4.ZERO
 
 
 ## The concept's plates (tools/art/bake_menus_r33.py, wordless): `chip` = the title's terminal
@@ -100,6 +107,9 @@ func measure() -> Vector2:
 const PLATE_DIR := "res://assets/ui/menus/kit/"
 const PLATES := {&"chip": ["chip_hot", "chip_idle", 20], &"tab": ["tab_active", "tab_idle", 10], &"tile": ["tile_selected", "tile_idle", 10]}
 const PLATE_SCALE := 2.0 / 3.0
+## The chip plate's glow round its frame (px of the baked plate: left, top, right, bottom):
+## the words sit inside the frame, not on it.
+const CHIP_GLOW := Vector4(12, 12, 2, 13)
 ## Which concept plate this chip wears (&"" = drawn).
 var plate: StringName = &"chip"
 static var _plates: Dictionary = {}
@@ -148,11 +158,12 @@ func _draw() -> void:
 	var lf := Chrome.caps_font(label_step)
 	var lp := Chrome.px(label_step)
 	var ink := Palette.GLYPH_INK if pressed else (Palette.TEXT_HI if not disabled else Palette.TEXT_LO)
-	var x0 := r.position.x + PAD.x
+	var g := glow()
+	var x0 := r.position.x + PAD.x + g.x
 	if plate != &"chip" and plate != &"":
 		# Tabs and tiles centre their words (ui31.tabs, settings.py tiles).
 		x0 = r.position.x + (r.size.x - lf.get_string_size(shown_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, lp).x) * 0.5
-	var y := r.position.y + PAD.y + lf.get_ascent(lp)
+	var y := r.position.y + PAD.y + g.y + lf.get_ascent(lp)
 	if hot and not disabled:
 		var centred := plate != &"chip" and plate != &""
 		draw_string(lf, Vector2(x0 - (lp * CARET_SHARE if centred else 0.0), y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink if pressed else accent)
@@ -162,6 +173,6 @@ func _draw() -> void:
 	if line != "":
 		var sp := Chrome.px(line_step)
 		var ly := y + lf.get_descent(lp) + PAD.z + Palette.mono().get_ascent(sp)
-		draw_string(Palette.mono(), Vector2(r.position.x + PAD.x, ly), line, HORIZONTAL_ALIGNMENT_CENTER if plate != &"chip" else HORIZONTAL_ALIGNMENT_LEFT, r.size.x - PAD.x * 2.0, sp,
+		draw_string(Palette.mono(), Vector2(r.position.x + PAD.x + g.x, ly), line, HORIZONTAL_ALIGNMENT_CENTER if plate != &"chip" else HORIZONTAL_ALIGNMENT_LEFT, r.size.x - PAD.x * 2.0 - g.x - g.z, sp,
 			Palette.GLYPH_INK if pressed else (Palette.TEXT_MID if not disabled else Palette.TEXT_LO))
 	KitState.draw_frame(self, r, st, false)

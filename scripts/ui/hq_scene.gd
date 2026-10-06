@@ -1215,6 +1215,20 @@ static func prompts_for(p_name: String) -> Array:
 	return out
 
 
+## ART-10 4C: the new-campaign form's gaps (px: between columns, between rows) and the text
+## scale from which it keeps one field a row.
+const FORM_GAP := Vector2i(14, 8)
+const FORM_ONE_PAIR_FROM := 1.6
+
+
+## One control cell of the new-campaign form (its controls in a row), added to `form`.
+func _form_cell(form: Container) -> HBoxContainer:
+	var cell := HBoxContainer.new()
+	cell.add_theme_constant_override(&"separation", 6)
+	form.add_child(cell)
+	return cell
+
+
 func show_start() -> void:
 	var cfg := RunManager.config()
 	var box := VBoxContainer.new()
@@ -1228,48 +1242,56 @@ func show_start() -> void:
 	box.add_child(head)
 	var setup := CrtWindow.new(tr("NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in."))
 	box.add_child(setup)
-	var row := HFlowContainer.new()
+	# ART-10 4C: the setup is a form (a name column, its controls beside it; two fields a row,
+	# one at big text) instead of one wrapping line of words and controls.
+	var row := GridContainer.new()
+	row.name = "SetupForm"
+	row.columns = 2 if Settings.text_scale >= FORM_ONE_PAIR_FROM else 4
+	row.add_theme_constant_override(&"h_separation", FORM_GAP.x)
+	row.add_theme_constant_override(&"v_separation", FORM_GAP.y)
 	setup.body.add_child(row)
 	# ART-10 4C (audit P3): the setup words say what they do, with an icon and a tooltip.
 	var seed_label := _label(tr("City seed (same seed, same city):"))
 	seed_label.mouse_filter = Control.MOUSE_FILTER_PASS
 	seed_label.tooltip_text = UiTip.fold(tr("The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city."))
 	row.add_child(seed_label)
+	var seed_box := _form_cell(row)
 	var seed_spin := SpinBox.new()
 	seed_spin.min_value = 0
 	seed_spin.max_value = 999999
 	seed_spin.value = 1
 	seed_spin.name = "SeedSpin"
-	row.add_child(seed_spin)
+	seed_box.add_child(seed_spin)
 	var next_seed := _icon(_button(tr("Next seed"), func() -> void: seed_spin.value = int(seed_spin.value) + 1), StatIcon.RUNS)
 	next_seed.tooltip_text = UiTip.fold(tr("Try the next city: the seed goes up by one."))
 	next_seed.name = "SeedNext"
-	row.add_child(next_seed)
+	seed_box.add_child(next_seed)
 	row.add_child(_label(tr("Target:")))
 	var corp_pick := OptionButton.new()
 	corp_pick.name = "CorporationPicker"
 	var corps := RunManager.available_corporations()
 	for corp in corps:
 		corp_pick.add_item(TextDb.t(corp, "display_name"))
-	row.add_child(corp_pick)
+	_form_cell(row).add_child(corp_pick)
 	var cap := RunManager.ice_cap(corps[0].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION)
 	var ice_label := _label(tr("ICE difficulty (0-%d):") % cap)
 	ice_label.mouse_filter = Control.MOUSE_FILTER_PASS
 	ice_label.tooltip_text = UiTip.fold(tr("ICE is the difficulty ladder: each level adds a rule against the Cell. Clear a level to unlock the next one for this corporation."))
 	row.add_child(ice_label)
+	var ice_box := _form_cell(row)
 	var ice_spin := SpinBox.new()
 	ice_spin.name = "IceSpin"
 	ice_spin.min_value = 0
 	ice_spin.max_value = cap
 	ice_spin.value = 0
-	row.add_child(ice_spin)
+	ice_box.add_child(ice_spin)
 	# SpinBoxes ignore the D-pad: explicit buttons make ICE and seed pad-reachable.
 	var ice_down := _button("-", func() -> void: ice_spin.value = maxf(ice_spin.min_value, ice_spin.value - 1))
 	ice_down.name = "IceDown"
-	row.add_child(ice_down)
+	ice_box.add_child(ice_down)
 	var ice_up := _button("+", func() -> void: ice_spin.value = minf(ice_spin.max_value, ice_spin.value + 1))
 	ice_up.name = "IceUp"
-	row.add_child(ice_up)
+	ice_box.add_child(ice_up)
 	# Each corporation has its own ICE ladder (GDD 3.4).
 	corp_pick.item_selected.connect(func(i: int) -> void:
 		var corp_cap := RunManager.ice_cap(corps[i].id)
@@ -1286,13 +1308,13 @@ func show_start() -> void:
 	var variants := RunManager.available_home_variants()
 	for v in variants:
 		home_pick.add_item(TextDb.t(v, "display_name"))
-	row.add_child(home_pick)
+	_form_cell(row).add_child(home_pick)
 	row.add_child(_label(tr("Crew:")))
 	var class_pick := OptionButton.new()
 	var classes := RunManager.available_classes()
 	for cls in classes:
 		class_pick.add_item(TextDb.t(cls, "display_name"))
-	row.add_child(class_pick)
+	_form_cell(row).add_child(class_pick)
 	var start_btn := _button(tr("New campaign"), func() -> void:
 		new_campaign(int(seed_spin.value), int(ice_spin.value), variants[home_pick.selected].id if not variants.is_empty() else RunManager.DEFAULT_HOME,
 			classes[class_pick.selected].id if not classes.is_empty() else RunManager.DEFAULT_CLASS,
