@@ -3,14 +3,16 @@ extends TerminalWindow
 ## The netrun route's key (H23 S7: one entry for each node kind the route actually has, in a
 ## fixed order). ART-7 3B (ART_BIBLE v2 §4.6, round 37 / 38 references): one CRT terminal
 ## strip along the foot of the map: each kind's sticker as the map draws it
-## (RouteOverlay.draw_sticker) with its word, the state rings (walked, next, not yet, cut
-## off), then the D13 cue "HOVER HERE: SHOW ALL NODES": hovering the strip shows every node
-## (`show_all_hovered`; the scene tells the map). With Options "Always show all nodes" on it
-## reads "SHOWING ALL NODES". Each entry's tooltip says what the kind does (MEANINGS). Follows
+## (RouteOverlay.draw_sticker) with its word, the two state rings the map draws (walked,
+## next; B3: hidden nodes are fully hidden and cut-off ones never drawn, round 44
+## `route_page.png`), then the cue "HOVER: SHOW ALL LINKS": hovering the strip shows every run
+## link as a hairline (`show_links_hovered`; the scene tells the map; designer Q4), and reads
+## "SHOWING ALL LINKS" while it holds. With Options "Always show all nodes" on it reads
+## "SHOWING ALL NODES". Each entry's tooltip says what the kind does (MEANINGS). Follows
 ## Settings.map_legend and the text size, like MapLegend. View only.
 
-## Emitted when the pointer enters (true) or leaves (false) the strip (D13 legend hover).
-signal show_all_hovered(on: bool)
+## Emitted when the pointer enters (true) or leaves (false) the strip (B3, Q4: every link).
+signal show_links_hovered(on: bool)
 
 ## What each route node kind is and does (the entries' and the nodes' tooltips).
 const MEANINGS := {CityMapOverlay.KIND_FIGHT: "Fight: win it for Cycles and loot", # TR
@@ -18,18 +20,20 @@ const MEANINGS := {CityMapOverlay.KIND_FIGHT: "Fight: win it for Cycles and loot
 	CityMapOverlay.KIND_EVENT: "Event: a choice, and its price", # TR
 	CityMapOverlay.KIND_SHOP: "Shop: spend Cycles (Mainframe)", # TR
 	CityMapOverlay.KIND_RACK: "Rack: fight, then bank Schematics and assets"} # TR
-## The strip's word for each kind (§4.6 legend: COMBAT, ELITE, EVENT, SHOP, RACK).
-const SHORT := {CityMapOverlay.KIND_FIGHT: "COMBAT", CityMapOverlay.KIND_ELITE: "ELITE", # TR
+## The strip's word for each kind (round 44 `route_page.png`: FIGHT, ELITE, EVENT, SHOP, RACK).
+const SHORT := {CityMapOverlay.KIND_FIGHT: "FIGHT", CityMapOverlay.KIND_ELITE: "ELITE", # TR
 	CityMapOverlay.KIND_EVENT: "EVENT", CityMapOverlay.KIND_SHOP: "SHOP", CityMapOverlay.KIND_RACK: "RACK"} # TR
-## ART-7 3B: the state rings the key names (option A), and their words.
-const COLOR_KEYS: Array[String] = ["walked", "next", "later", "cut"]
-## Parity ROUTE-05: round 37's words where the route has the same state (selectable, not yet
-## (hidden)); walked is the route's own (the walked cable).
-const COLOR_WORDS: Array[String] = ["walked", "selectable: pick one (numbered)", "not yet (hidden)", "cut off"] # TR
-## The D13 cue (mouse, shown through UiTip.for_input with PAD_WORDS when pad_active), its pad
-## words (UiTip.for_input(HOVER_WORDS, PAD_WORDS)), and the words while every node shows.
-const HOVER_WORDS := "HOVER HERE: SHOW ALL NODES" # TR
+## ART-7 3B: the state rings the key names (option A), and their words. B3 (round 44): only the
+## rings the map draws by default (walked, next).
+const COLOR_KEYS: Array[String] = ["walked", "next"]
+## Round 44's words ("next" reads alone on the strip; the full words are its tooltip).
+const COLOR_WORDS: Array[String] = ["walked", "next: pick one (numbered)"] # TR
+## The cue (mouse, shown through UiTip.for_input with PAD_WORDS when pad_active), its pad
+## words (UiTip.for_input(HOVER_WORDS, PAD_WORDS)), the words while the hover shows every link,
+## and the words while Options shows every node.
+const HOVER_WORDS := "HOVER: SHOW ALL LINKS" # TR
 const PAD_WORDS := "OPTIONS > DISPLAY: SHOW ALL NODES" # TR
+const LINKS_WORDS := "SHOWING ALL LINKS" # TR
 const SHOWING_WORDS := "SHOWING ALL NODES" # TR
 ## Entry order (the kinds a route can have).
 const ORDER: Array[String] = [CityMapOverlay.KIND_FIGHT, CityMapOverlay.KIND_ELITE, CityMapOverlay.KIND_EVENT,
@@ -64,8 +68,8 @@ func _init(p_kinds: Array = [], p_corp_color: Color = Palette.CORP_SOLACE) -> vo
 	TextDb.shown_as_given(self)
 	# D13: the strip takes the pointer (its hover shows every node); its entries do not.
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	mouse_entered.connect(func() -> void: show_all_hovered.emit(true))
-	mouse_exited.connect(func() -> void: show_all_hovered.emit(false))
+	mouse_entered.connect(func() -> void: show_links_hovered.emit(true))
+	mouse_exited.connect(func() -> void: show_links_hovered.emit(false))
 	for k in ORDER:
 		if p_kinds.has(k):
 			kinds.append(k)
@@ -134,6 +138,17 @@ func set_showing_all(on: bool) -> void:
 		_set_cue()
 
 
+## B3 (Q4): "SHOWING ALL LINKS" while the strip's hover shows every link (`on`), else the cue
+## (or "SHOWING ALL NODES" while Options shows every node).
+func set_showing_links(on: bool) -> void:
+	if cue == null:
+		return
+	if on and not Settings.always_show_all_nodes:
+		cue.text = TranslationServer.translate(LINKS_WORDS)
+	else:
+		_set_cue()
+
+
 func _gap(s: float) -> Control:
 	var g := ColorRect.new()
 	g.color = Color(Palette.CELL_ACID, 0.5)
@@ -166,16 +181,11 @@ func _color_row(key: String, words: String, s: float) -> HBoxContainer:
 	swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# ART-7 3B: the ring as the map draws it, colour and style (never colour alone).
 	swatch.set_meta(&"ring_style", String(RouteOverlay.RING_STYLES.get(key, "")))
-	# Parity ROUTE-05: "not yet (hidden)" is the small disc the map draws for a hidden node.
-	swatch.set_meta(&"ghost", key == RouteOverlay.STATE_LATER)
 	swatch.draw.connect(func() -> void:
-		if key == RouteOverlay.STATE_LATER:
-			RouteOverlay.draw_ghost(swatch, swatch.size * 0.5, side * 0.4, key, s * 0.8 / RouteOverlay.GHOST_SHARE)
-		else:
-			RouteOverlay.draw_state_ring(swatch, swatch.size * 0.5, side * 0.36, key, s * 0.8))
+		RouteOverlay.draw_state_ring(swatch, swatch.size * 0.5, side * 0.36, key, s * 0.8))
 	row.add_child(swatch)
 	var l := Label.new()
-	# "selectable: pick one (numbered)" reads "selectable" on the strip; the full words are its tooltip.
+	# "next: pick one (numbered)" reads "next" on the strip; the full words are its tooltip.
 	l.text = TranslationServer.translate(words).get_slice(":", 0)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l.add_theme_font_size_override("font_size", roundi(FONT * s))

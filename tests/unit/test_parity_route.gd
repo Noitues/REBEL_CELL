@@ -70,78 +70,48 @@ func _overlay(scene: Control) -> RouteOverlay:
 
 # --- ROUTE-01: the whole run drawn ---------------------------------------------------------------
 
-func test_hidden_nodes_are_drawn_as_not_yet_discs_with_no_kind_or_label() -> void:
+## B3 (review Q15, round 44 `route_page.png`; supersedes ROUTE-01's "not yet" discs): a hidden
+## node is fully hidden (not drawn, no label); the strip's hover shows links only (Q4).
+func test_hidden_nodes_are_fully_hidden_and_the_hover_brings_links_not_nodes() -> void:
 	Settings.set_always_show_all_nodes(false)
 	var scene := _netrun()
 	await _frames()
 	var ov := _overlay(scene)
 	var before := RunManager.campaign.state_hash()
 	var run_before := RunManager.netrun.state_hash()
-	var ghosts := ov.ghost_ids()
+	var hidden := ov.hidden_ids()
 	var drawn := ov.drawn_ids()
-	assert_false(ghosts.is_empty(), "the rest of the run shows as discs")
+	assert_false(hidden.is_empty(), "the rest of the run is hidden")
 	for n in ov.nodes:
 		if ov.icon_pos(n).x == INF:
 			continue
 		var id: StringName = n["id"]
-		# Every placed node is drawn one way or the other: the whole run is on the map.
-		assert_true(ghosts.has(id) or drawn.has(id), "%s is drawn" % id)
+		assert_ne(hidden.has(id), drawn.has(id), "%s is either drawn or hidden" % id)
 		if RouteOverlay.pinned(n):
-			assert_false(ghosts.has(id), "%s: walked, a choice or the TARGET is a full sticker" % id)
+			assert_true(drawn.has(id), "%s: walked, a choice or the TARGET is a full sticker" % id)
 		else:
-			assert_true(ghosts.has(id), "%s: hidden is a disc" % id)
-			assert_true(ov.label_lines(id).is_empty(), "%s: a disc has no label (D13 keeps its kind)" % id)
-			assert_true(ov.state_of(n) in [RouteOverlay.STATE_LATER, RouteOverlay.STATE_CUT], "%s: a disc is not yet or cut off" % id)
-	# The legend's hover shows every sticker; the discs give way.
-	scene.route_legend.show_all_hovered.emit(true)
-	ov.all_t = 1.0
-	assert_true(ov.ghost_ids().is_empty(), "every node a sticker on the hover")
-	scene.route_legend.show_all_hovered.emit(false)
-	assert_eq(ov.ghost_ids(), ghosts, "the discs again")
+			assert_true(hidden.has(id), "%s: hidden" % id)
+			assert_eq(ov.shown(n), 0.0, "%s: nothing of it is drawn" % id)
+			assert_true(ov.label_lines(id).is_empty(), "%s: no label" % id)
+			assert_false(ov.marker_shown(n), "%s: takes no room in the fit" % id)
+	scene.route_legend.show_links_hovered.emit(true)
+	ov.links_t = 1.0
+	assert_eq(ov.hidden_ids(), hidden, "the hover keeps the hidden nodes hidden")
+	assert_true(ov.show_links, "the hover shows every link")
+	scene.route_legend.show_links_hovered.emit(false)
+	assert_false(ov.show_links, "and lets them go")
 	assert_eq(RunManager.campaign.state_hash(), before, "views never change the campaign")
 	assert_eq(RunManager.netrun.state_hash(), run_before, "views never change the run")
 
 
-func test_district_plates_sit_clear_of_every_node_label_and_panel() -> void:
-	var plates := 0
-	for corp in CORPORATIONS:
-		RunManager.reset()
-		var scene := _netrun(corp)
-		await _frames()
-		var ov := _overlay(scene)
-		for scale in SCALES:
-			Settings.set_text_scale(scale)
-			await _frames(2)
-			var area := ov.label_area()
-			var avoid: Array[Rect2] = ov.label_blocks()
-			# The top bar (the map runs under it).
-			avoid.append(ov.get_global_transform_with_canvas().affine_inverse() * (scene.hud.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, scene.hud.size)))
-			for r: Rect2 in ov.label_rects().values():
-				avoid.append(r)
-			for n in ov.nodes:
-				var at := ov.icon_pos(n)
-				if at.x != INF:
-					var rr := ov.icon_radius(n)
-					avoid.append(Rect2(at - Vector2(rr, rr), Vector2(rr, rr) * 2.0))
-			var first := ov.landmark_plates()
-			assert_eq(first, ov.landmark_plates(), "%s x%.1f: the plates are placed the same every time" % [corp, scale])
-			var mine: Array[Rect2] = []
-			for p: Dictionary in first:
-				var rect: Rect2 = p["rect"]
-				plates += 1
-				assert_true(area.encloses(rect), "%s x%.1f: %s inside the map" % [corp, scale, p["text"]])
-				assert_false(RouteOverlay.lines_cross(ov.route_lines(), rect), "%s x%.1f: %s covers no route line" % [corp, scale, p["text"]])
-				for r in avoid:
-					assert_false(r.intersects(rect), "%s x%.1f: %s covers nothing" % [corp, scale, p["text"]])
-				for m in mine:
-					assert_false(m.intersects(rect), "%s x%.1f: plates apart" % [corp, scale])
-				mine.append(rect)
-				var id: StringName = p["id"]
-				assert_eq(String(p["text"]), tr(RouteOverlay.SPRAWL_WORD) if id == &"" else HqRunView.corp_word(id), "the district's name")
-		Settings.set_text_scale(1.0)
-		scene.get_parent().queue_free()
-		await _frames(1)
-	assert_gt(plates, 0, "the route names its districts")
+## B3 (the clutter rule, round 44 `route_page.png`; supersedes ROUTE-01's plates): the route
+## page draws no district plates.
+func test_the_route_page_draws_no_district_plates() -> void:
+	var scene := _netrun()
+	await _frames()
+	var ov := _overlay(scene)
+	assert_false(ov.landmarks, "no plates on the route page")
+	assert_true(ov.landmark_plates().is_empty())
 
 
 # --- ROUTE-04: the choices are picked on the map ---------------------------------------------------
@@ -163,13 +133,13 @@ func test_the_choices_are_focus_stops_on_their_map_stickers_in_numbered_order() 
 				assert_true(choices.has(n["id"]), "x%.1f: every numbered sticker has its stop" % scale)
 		var xf := ov.get_global_transform_with_canvas()
 		var row := scene._panel.find_child("RouteNodes", true, false) as Control
-		# The ROUTE window lists no rows (the concept picks on the map): at most the lit choice's
-		# "then:" line shows.
+		# The ROUTE window lists no rows (the concept picks on the map); B3 (bible 4.6, round 44):
+		# no "then:" line either: the window holds GRID VIEW and Save & quit only.
 		var shown_lines := 0
 		for c in row.get_children():
 			if c is Control and (c as Control).visible and not (c as Control).top_level:
 				shown_lines += 1
-		assert_lte(shown_lines, 1, "x%.1f: no list rows in the ROUTE window" % scale)
+		assert_eq(shown_lines, 0, "x%.1f: no list rows in the ROUTE window" % scale)
 		var grid := scene._panel.find_child("GridZoom", true, false) as Control
 		for i in choices.size():
 			var b := buttons[i] as Button
@@ -219,36 +189,27 @@ func test_enter_on_a_focused_stop_picks_that_choice() -> void:
 		"the run goes to that choice (%s)" % s.run.current_node_id)
 
 
-# --- S-ROUTE c: the street marker's YOU ARE HERE is a placed label ---------------------------------
+# --- B3: no YOU ARE HERE words (supersedes S-ROUTE c's placed label) -------------------------------
 
-func test_the_street_marker_words_keep_off_every_choice_sticker_chip_and_label() -> void:
+## B3 (round 44 `route_page.png`): the operative's token marks the position, with no words; no
+## node carries a text tag (the choices keep their number chips).
+func test_no_you_are_here_words_and_no_node_tags_for_every_corporation() -> void:
 	for corp in CORPORATIONS:
 		RunManager.reset()
 		var scene := _netrun(corp)
 		await _frames(4)
 		var ov := _overlay(scene)
 		assert_eq(ov.here_id(), &"", "%s: before the first node the marker stands on the street" % corp)
-		for scale in SCALES:
-			Settings.set_text_scale(scale)
-			await _frames(2)
-			var rects: Dictionary = ov.label_rects()
-			assert_true(rects.has(CityMapOverlay.HERE_KEY), "%s x%.1f: YOU ARE HERE is placed" % [corp, scale])
-			if not rects.has(CityMapOverlay.HERE_KEY):
-				continue
-			var here: Rect2 = rects[CityMapOverlay.HERE_KEY]
-			for n in ov.nodes:
-				if not bool(n.get("next", false)):
-					continue
-				var at := ov.icon_pos(n)
-				if at.x == INF:
-					continue
-				var r := ov.icon_radius(n)
-				assert_false(CityMapOverlay._rect_hits_disc(here, at, r), "%s x%.1f: not on choice %d's sticker" % [corp, scale, int(n["number"])])
-				assert_false(here.intersects(ov.number_rect(at, r)), "%s x%.1f: not on choice %d's number" % [corp, scale, int(n["number"])])
-			for key in rects:
-				if key != CityMapOverlay.HERE_KEY:
-					assert_false(here.intersects(rects[key]), "%s x%.1f: not on %s's label" % [corp, scale, key])
-		Settings.set_text_scale(1.0)
+		assert_ne(ov.here_point().x, INF, "%s: the marker (the token) still stands" % corp)
+		assert_false(ov.here_label_shown(), "%s: no YOU ARE HERE words" % corp)
+		var rects: Dictionary = ov.label_rects()
+		assert_false(rects.has(CityMapOverlay.HERE_KEY), "%s: no YOU ARE HERE label" % corp)
+		for key in rects:
+			var n := ov._node_dict(StringName(key))
+			assert_true(bool(n.get("target", false)), "%s: only the TARGET's pencil word is placed (%s)" % [corp, key])
+		for n in ov.nodes:
+			if int(n.get("number", 0)) > 0:
+				assert_ne(ov.number_rect(ov.icon_pos(n), ov.icon_radius(n)).size, Vector2.ZERO, "%s: choice %d keeps its number chip" % [corp, int(n["number"])])
 		scene.get_parent().queue_free()
 		await _frames(1)
 
@@ -275,31 +236,32 @@ func test_the_dossier_letterhead_keeps_every_word_whole_at_each_text_size() -> v
 # --- ROUTE-05: the key strip -------------------------------------------------------------------
 
 func test_the_key_strip_says_the_concepts_states_and_fits() -> void:
-	assert_eq(RouteLegend.COLOR_WORDS[1].get_slice(":", 0), "selectable", "round 37's word")
-	assert_eq(RouteLegend.COLOR_WORDS[2], "not yet (hidden)", "round 37's word")
+	# B3 (round 44 `route_page.png`): walked and next only (hidden nodes are never drawn).
+	assert_eq(RouteLegend.COLOR_KEYS, ["walked", "next"] as Array[String])
+	assert_eq(RouteLegend.COLOR_WORDS[1].get_slice(":", 0), "next", "round 44's word")
+	assert_eq(RouteLegend.SHORT[CityMapOverlay.KIND_FIGHT], "FIGHT", "round 44's word")
 	var scene := _netrun()
 	await _frames()
 	for scale in SCALES:
 		Settings.set_text_scale(scale)
 		await _frames(2)
 		var legend: RouteLegend = scene.route_legend
-		var later := legend.strip.get_node("Color_%s/Swatch" % RouteOverlay.STATE_LATER) as Control
-		assert_true(bool(later.get_meta(&"ghost", false)), "x%.1f: not yet (hidden) is the map's disc" % scale)
+		assert_null(legend.strip.get_node_or_null("Color_%s" % RouteOverlay.STATE_LATER), "x%.1f: no not-yet entry" % scale)
 		for key in RouteLegend.COLOR_KEYS:
 			var sw := legend.strip.get_node("Color_%s/Swatch" % key) as Control
 			assert_eq(String(sw.get_meta(&"ring_style", "")), String(RouteOverlay.RING_STYLES[key]), "x%.1f: %s's style" % [scale, key])
 		assert_true(SCREEN.grow(1.0).encloses(legend.get_global_rect()), "x%.1f: the strip fits" % scale)
-		assert_eq(legend.cue.text, UiTip.for_input(tr(RouteLegend.HOVER_WORDS), tr(RouteLegend.PAD_WORDS)), "x%.1f: the show-all cue" % scale)
+		assert_eq(legend.cue.text, UiTip.for_input(tr(RouteLegend.HOVER_WORDS), tr(RouteLegend.PAD_WORDS)), "x%.1f: the show-all-links cue" % scale)
 
 
 # --- ROUTE-06: THE GRID and the fit ------------------------------------------------------------
 
-func test_the_route_is_titled_the_grid() -> void:
-	assert_eq(NetrunScript.ROUTE_TITLE, "THE GRID", "round 37's title sticker")
+func test_the_route_is_titled_netrun() -> void:
+	assert_eq(NetrunScript.ROUTE_TITLE, "NETRUN", "round 44's title sticker (B3)")
 	var scene := _netrun()
 	await _frames()
-	assert_eq(scene.hud._title, tr("THE GRID"))
-	assert_eq(scene.hud.title_sticker.text, tr("THE GRID"))
+	assert_eq(scene.hud._title, tr("NETRUN"))
+	assert_eq(scene.hud.title_sticker.text, tr("NETRUN"))
 
 
 func test_the_fit_frames_you_are_here_for_every_corporation_and_text_size() -> void:
@@ -316,7 +278,6 @@ func test_the_fit_frames_you_are_here_for_every_corporation_and_text_size() -> v
 			Settings.set_text_scale(scale)
 			await _frames(2)
 			assert_lte(scene._route_fits, NetrunScript.ROUTE_FITS_MAX + NetrunScript.ROUTE_RESCUE_PASSES, "%s x%.1f: the fit ends" % [corp, scale])
-			assert_true(ov.label_rects().has(String(ov.here_id())), "%s x%.1f: YOU ARE HERE shows" % [corp, scale])
 			var here := ov.get_global_transform_with_canvas() * ov.icon_pos(ov._node_dict(ov.here_id()))
 			assert_true(scene.route_free_area().has_point(here), "%s x%.1f: you are in the map's free area (%s)" % [corp, scale, here])
 			assert_false(scene.route_legend.get_global_rect().has_point(here), "%s x%.1f: not on the key strip" % [corp, scale])

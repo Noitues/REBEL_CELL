@@ -72,6 +72,11 @@ const DASH_PERIOD := 16.0
 ## ANIM-R1 M4: a placed defence's marker on its node (screen px radius), and the chevrons
 ## on threat routes (edges with "arrows"): their spacing and half-size (screen px).
 const ASSET_ICON := 9.0
+## B3 (review D5): a raid socket's own halo in place of the roof's glow pool: its gap off the
+## socket (screen px), width (screen px) and alpha.
+const SOCKET_HALO_GAP := 2.0
+const SOCKET_HALO_PX := 2.0
+const SOCKET_HALO_ALPHA := 0.35
 const ARROW_STEP := 34.0
 const ARROW_SIZE := 6.0
 ## ANIM-R1 M15: the most dashes drawn along one route segment.
@@ -1535,23 +1540,30 @@ func _node(n: Dictionary) -> void:
 	var ink := Color(0, 0, 0, 0.85 * (DIM_ALPHA if dim else 1.0))
 	var at := icon_pos(n)
 	var r := icon_radius(n)
-	match look:
-		Look.PILLARS:
-			_c.draw_colored_polygon(PackedVector2Array([base + Vector2(-7, 0), base + Vector2(7, 0), at + Vector2(3, 0), at + Vector2(-3, 0)]), Color(col, col.a * 0.16))
-			_c.draw_line(base, at, Color(col, col.a * 0.8), 1.5)
-			_c.draw_colored_polygon(roof, Color(col, col.a * 0.3))
-			_c.draw_polyline(closed, ink, 6.0, true)
-			_c.draw_polyline(closed, col, 2.0, true)
-		_:
-			var fill_a := 0.45 if look == Look.ISOLATE or look == Look.XRAY or look == Look.BLUEPRINT else 0.28
-			_c.draw_colored_polygon(roof, Color(col, col.a * fill_a))
-			_c.draw_polyline(closed, ink, 7.0, true)
-			_c.draw_polyline(closed, Color(col, col.a * 0.3), 11.0, true)
-			_c.draw_polyline(closed, col, 2.6, true)
-			if look == Look.ISOLATE or look == Look.XRAY:
-				_c.draw_line(base, top, Color(col, col.a * 0.6), 1.5)
-			# A short stalk ties the floating icon to its roof.
-			_c.draw_line(top, at + Vector2(0, r), Color(col, col.a * 0.7), 1.5)
+	if n.has("socket"):
+		# B3 (review D5): a raid socket carries its own status (its frame, fill and forecast ring;
+		# the riser ties it to its building); under it no roof fill, outline or glow (the lime
+		# "spray" pool), only the socket's own thin halo.
+		var k := _k()
+		_c.draw_arc(at, r + SOCKET_HALO_GAP * k, 0, TAU, 40, Color(col, col.a * SOCKET_HALO_ALPHA), SOCKET_HALO_PX * k, true)
+	else:
+		match look:
+			Look.PILLARS:
+				_c.draw_colored_polygon(PackedVector2Array([base + Vector2(-7, 0), base + Vector2(7, 0), at + Vector2(3, 0), at + Vector2(-3, 0)]), Color(col, col.a * 0.16))
+				_c.draw_line(base, at, Color(col, col.a * 0.8), 1.5)
+				_c.draw_colored_polygon(roof, Color(col, col.a * 0.3))
+				_c.draw_polyline(closed, ink, 6.0, true)
+				_c.draw_polyline(closed, col, 2.0, true)
+			_:
+				var fill_a := 0.45 if look == Look.ISOLATE or look == Look.XRAY or look == Look.BLUEPRINT else 0.28
+				_c.draw_colored_polygon(roof, Color(col, col.a * fill_a))
+				_c.draw_polyline(closed, ink, 7.0, true)
+				_c.draw_polyline(closed, Color(col, col.a * 0.3), 11.0, true)
+				_c.draw_polyline(closed, col, 2.6, true)
+				if look == Look.ISOLATE or look == Look.XRAY:
+					_c.draw_line(base, top, Color(col, col.a * 0.6), 1.5)
+				# A short stalk ties the floating icon to its roof.
+				_c.draw_line(top, at + Vector2(0, r), Color(col, col.a * 0.7), 1.5)
 	if not n.has("socket"):
 		_mark(n, top, col)  # ART-6 3A: a socket carries its own status (no spray ring)
 	if _travel.is_empty():
@@ -2696,11 +2708,43 @@ func label_rects() -> Dictionary:
 	return out
 
 
+## B3 (the clutter rule, review D5 / section d, designer priority): which nodes carry a map
+## label. ALL: every node with words (the old maps, the layout's own checks). FOCUS: only the
+## selected node, the node lit from outside (a list row, the pad: `hover_id`) and a
+## plan-relevant node (`plan: true` on its dictionary); the pointer's node shows its name as the
+## terminal tooltip (`tip_of`), not a tag (the HQ Grid: at most one tag). LIT: only the lit and
+## plan-relevant nodes (the raid maps: no node tags; status lives on the node, round 19).
+enum TagRule { ALL, FOCUS, LIT }
+var tag_rule: int = TagRule.ALL:
+	set(v):
+		if v != tag_rule:
+			tag_rule = v
+			_queue_top()
+
+
+## B3: true when node `n` may carry a label under `tag_rule`.
+func tag_allowed(n: Dictionary) -> bool:
+	if tag_rule == TagRule.ALL or n.is_empty():
+		return true
+	if n["id"] == hover_id or bool(n.get("plan", false)):
+		return true
+	return tag_rule == TagRule.FOCUS and n["id"] == selected_id
+
+
+## B3: the ids carrying a label now (tests: the clutter rule), in placement order.
+func tagged_ids() -> Array[StringName]:
+	var out: Array[StringName] = []
+	for l: Dictionary in _layout_labels():
+		if not out.has(l["id"]) and l["id"] != &"":
+			out.append(l["id"])
+	return out
+
+
 ## The text lines of node `id`'s label ([] when it has none).
 func label_lines(id: StringName) -> PackedStringArray:
 	var n := _node_dict(id)
 	var lines := PackedStringArray()
-	if n.is_empty() or is_dimmed(id):
+	if n.is_empty() or is_dimmed(id) or not tag_allowed(n):
 		return lines
 	var text := String(n.get("label", ""))
 	if text == "" and n.get("here", false):
@@ -2711,7 +2755,9 @@ func label_lines(id: StringName) -> PackedStringArray:
 		text = String(n.get("name", ""))
 	if text != "":
 		lines.append(text)
-	if n.has("result"):
+	if n.has("result") and tag_rule == TagRule.ALL:
+		# B3 (D5): under the clutter rule a node's raid result is on the node (its socket's frame
+		# and forecast ring) and in its tooltip, never a tag.
 		lines.append(String(n["result"]))
 	return lines
 
@@ -2793,7 +2839,7 @@ func _place_labels() -> Array[Dictionary]:
 		var lines := label_lines(n["id"])
 		if not lines.is_empty():
 			todo.append({"key": String(n["id"]), "id": n["id"], "lines": lines, "col": n.get("color", Palette.CELL_PINK), "prio": _prio(n), "at": icon_pos(n), "r": icon_radius(n)})
-		if markers.has(n["id"]) and not (markers[n["id"]] as Array).is_empty():
+		if markers.has(n["id"]) and not (markers[n["id"]] as Array).is_empty() and (tag_rule == TagRule.ALL or n["id"] == hover_id):
 			var names := PackedStringArray()
 			for m in markers[n["id"]]:
 				names.append(String(m))
