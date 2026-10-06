@@ -186,6 +186,35 @@ M13 art-pass build's layout and content, reworked in the locked v2 concept langu
   `test_slots_fit_and_focus_reaches_every_action_at_every_text_scale` (1, 2, 3 used slots at 1.0 / 1.6 / 2.0),
   `test_the_slots_panel_wraps_its_cards_then_scrolls_past_its_room`. No test dropped.
 
+### 2026-10-05 — Parity fix — pause menu (designer decisions)
+Designer decisions 2026-10-05, audit items PAUSE-01..03 (P1/P2/P3, `docs/art_review/PARITY/GAPS.md` "Pause menus"); PAUSE-04
+unchanged (abandon and quit are different dialogs; `confirm_dialog.gd` untouched). Files: `scripts/ui/kit/pause_menu.gd`.
+- **PAUSE-01 / 03: blur and darken.** The menu's click-eating `Backdrop` is a `GlassScrim` now (it was a flat 0.35 black
+  `ColorRect`): the page behind (HQ, route, fight, and the fight's turn banner above the panel) is blurred by
+  `Palette.SCRIM_BLUR_PX` and dimmed by `Palette.SCRIM`, as every other modal; high contrast makes it opaque, as theirs.
+  `glass_scrim.gd` unchanged. **No PAUSED sticker** (removed with its consts); the terminal header keeps its `PAUSED` title
+  word as a window title. The raid playout plays on under an open pause menu (`MotionSkip`/`raid_playout_panel`), so no
+  raid is ever the paused page and nothing says PAUSED over one. No PAUSED note on confirm dialogs (none existed).
+- **PAUSE-02: the build's rows, in v2.** Ported by hand from `art-m13-final:scripts/ui/kit/pause_menu.gd`. `Resume [Esc]`
+  (the hint follows the device; `VerbSticker.set_label`) is the first row, the one pink `VerbSticker`, focused on open.
+  Options / Codex / Save & quit / Quit to desktop keep the terminal `MenuItem` lines (menu motion attached to that
+  `Rows` box, not to the sticker) with an icon in the chevron's place (`IconMark` + `StatIcon.SETTINGS / CODEX / SAVE /
+  QUIT`, the art pass's own icon set that main already carries, reused as is). The campaign code is a `CodeField`
+  (`scripts/ui/kit/code_field.gd`, ported from the same tag: a read-only mono `LineEdit` with a copy button, the button on
+  the v2 `TerminalButton` variation instead of the art pass's tertiary) under a caption; the field keeps the name
+  `SeedLine`. The copy icon is `StatIcon.COPY`, ported from the same tag (drawn with main's `_line` helper).
+  **Icon source:** the 1C atlas (`glyph_table.tres`) has game pictos only (spin, nudge, hp ...), no settings / codex /
+  save / quit / copy glyph, so the art pass's StatIcon kinds (the set its own build used on these rows) are the "reuse" and
+  nothing was redrawn except COPY's two strokes carried over from the same tag.
+- **Test seam:** `CodeField.clipboard_writer` (a Callable, unset in the game) takes the copied text in place of
+  `DisplayServer.clipboard_set`, because a headless display server has no clipboard.
+- **Strings:** `Copy the campaign code`, `Campaign code (share it: it starts this campaign)`, `Copy` (re-exported once).
+  The one-line `PauseMenu.code_line()` stays for the HQ radio's tooltip.
+- **Tests:** new `tests/unit/test_parity_pause.gd` (scrim over HQ, route, route fight and a lone fight; no sticker; Resume
+  first, pink, focused, icons on the rows; the copy button copies the code; fits at text scale 1.0 / 1.6 / 2.0). Changed:
+  `test_art10_menus` (the pause test pinned the PAUSED sticker: now asserts there is none), `test_horizontal_pass24_screens`
+  (the seed line is a `CodeField`, read by `value`). Dropped: none.
+
 ### 2026-10-05 — Parity fix — TITLE-01 title backdrop (designer decision)
 Designer decision 2026-10-05: the title follows concept round 33 (`round33_ui_chrome/title_screen.png` / `.gif`,
 art-concepts-r43). Audit item TITLE-01 (P1, `docs/art_review/PARITY/GAPS.md`): main's title drew the 2D NeonCity
