@@ -773,9 +773,12 @@ locked nodes). View: the full-map look is close to the concept; which one the re
 a rules question. Decision:
 
 **HQRUN-03 (P2) Node markers on the compound.** Concept: route vinyl stickers with state rings and
-small name tabs. Main (`full_solace`): white-dashed rings for not-yet nodes, grey gear discs for cut
-nodes, orange selectable rings; no name tabs. Close in language. Likely file: `hq_run_view.gd`,
-`route_overlay.gd`. Decision:
+small name tabs. Main `run_solace` (crop HQRUN-03): no nodes at all on today's run. Decision:
+
+**HQRUN-04 (P2) Full run map markers (`full_solace`).** Main: white-dashed rings for not-yet nodes,
+grey gear discs for cut nodes, orange selectable rings, a lime walked path; no name tabs, and the
+gears are hard to read on the dark helix. Close to the concept's language. Likely file:
+`hq_run_view.gd`, `route_overlay.gd`. Decision:
 
 **HQRUN-05 (P2) Meridian compound.** Concept: the crane yard at night with lit warm windows, nodes on
 the crane arms and the train, a `NEXT: OFF THE TRAIN` pencil call-out, the master manifest circled.
