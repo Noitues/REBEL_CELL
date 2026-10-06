@@ -118,6 +118,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s is destroyed.,%s is destroyed.
 %s is gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are kept; Cycles and unbanked loot are lost.,%s is gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are kept; Cycles and unbanked loot are lost.
 %s is held at %s (%d more).,%s is held at %s (%d more).
+"%s is lost for good, with everything unbanked:","%s is lost for good, with everything unbanked:"
 %s is lost. The campaign is over.,%s is lost. The campaign is over.
 %s is offline. who signed off on this?,%s is offline. who signed off on this?
 %s moves from %s to %s.,%s moves from %s to %s.
@@ -197,6 +198,9 @@ A raid's route toward your CORE.,A raid's route toward your CORE.
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
 A random roll: the odds are in the breakdown,A random roll: the odds are in the breakdown
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
+ABANDON CAMPAIGN,ABANDON CAMPAIGN
+ABANDON RUN,ABANDON RUN
+ABANDONED,ABANDONED
 ACTIVITY,ACTIVITY
 AFTER-ACTION REPORT,AFTER-ACTION REPORT
 AGAIN,AGAIN
@@ -215,6 +219,8 @@ AT LARGE  (%s offline),AT LARGE  (%s offline)
 AT LARGE (reserve),AT LARGE (reserve)
 AT LARGE (stationed: %s),AT LARGE (stationed: %s)
 AUDIT REPORT,AUDIT REPORT
+Abandon the campaign?,Abandon the campaign?
+Abandon the run?,Abandon the run?
 Accessibility,Accessibility
 Achievements,Achievements
 Achievements earned (Stats & achievements lists them).,Achievements earned (Stats & achievements lists them).
@@ -223,6 +229,7 @@ An operative is stationed here: their class's station bonus helps the node in ra
 Armory,Armory
 Armory empty: runs bank assets from their drops.,Armory empty: runs bank assets from their drops.
 Asset,Asset
+Assets,Assets
 "Assist mode for new campaigns (%s free nudge a turn, %s%% HP; no ICE records or achievements)","Assist mode for new campaigns (%s free nudge a turn, %s%% HP; no ICE records or achievements)"
 At 0 HP you lose the fight.,At 0 HP you lose the fight.
 Audio,Audio
@@ -242,6 +249,7 @@ BREACH PAYOUT,BREACH PAYOUT
 BREACH: start the fight at the Central Server.,BREACH: start the fight at the Central Server.
 BREACHED,BREACHED
 BREACHED: your home server fell. The campaign is lost.,BREACHED: your home server fell. The campaign is lost.
+BURN IT,BURN IT
 BUY,BUY
 Back,Back
 Back to HQ,Back to HQ
@@ -484,6 +492,7 @@ CardData.undock.display_name,Undock
 CardData.whirl.description,Spin a wheel 7 ticks.
 CardData.whirl.display_name,Whirl
 Cards,Cards
+Cards added,Cards added
 Cards in %s's deck (VIEW LOADOUT shows them).,Cards in %s's deck (VIEW LOADOUT shows them).
 "Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on a nudge button (that sets the way they turn), slice cards on a slice. While you aim, the result chips and the dashed acid arc show the result before you commit.","Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on a nudge button (that sets the way they turn), slice cards on a slice. While you aim, the result chips and the dashed acid arc show the result before you commit."
 Cascade: %s takes %d damage: HP %d → %d.,Cascade: %s takes %d damage: HP %d → %d.
@@ -924,6 +933,7 @@ Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP):
 HACK,HACK
 HALCYON RAISES FARES AGAIN,HALCYON RAISES FARES AGAIN
 HEAT,HEAT
+"HEAT  %s   (operative death, tier %d)","HEAT  %s   (operative death, tier %d)"
 HEAT %d · %s,HEAT %d · %s
 HEAT %d · %s (%d+),HEAT %d · %s (%d+)
 HEAT %d: %s,HEAT %d: %s
@@ -1107,6 +1117,7 @@ Instant (results at once),Instant (results at once)
 "Integrity before and after, and whether the node held.","Integrity before and after, and whether the node held."
 Intel,Intel
 Interface skin (terminal colours only; meanings and layout stay),Interface skin (terminal colours only; meanings and layout stay)
+It counts as a lost campaign.,It counts as a lost campaign.
 "It gets %d through, but only %d HP are left to take.","It gets %d through, but only %d HP are left to take."
 It lands on one slice at random; the odds by slice type follow.,It lands on one slice at random; the odds by slice type follow.
 Its needle lands on %s.,Its needle lands on %s.
@@ -1668,6 +1679,7 @@ Off (no correction),Off (no correction)
 "Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for.","Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for."
 Open the key to show every Site; unselectable regular Sites are hidden to keep the map clear.,Open the key to show every Site; unselectable regular Sites are hidden to keep the map clear.
 Operative,Operative
+Operatives,Operatives
 Options,Options
 "Options: text size, sound, controls, subtitles.","Options: text size, sound, controls, subtitles."
 Or drag it onto a slot of your spinner: the chip goes into that slot.,Or drag it onto a slot of your spinner: the chip goes into that slot.
@@ -2034,6 +2046,7 @@ Save the campaign now (it also saves after every action).,Save the campaign now 
 Save the run and leave it; Continue picks it up here.,Save the run and leave it; Continue picks it up here.
 Saved.,Saved.
 Schematics,Schematics
+Schematics already banked at a Server Rack stay banked.,Schematics already banked at a Server Rack stay banked.
 Schematics the run banked for the campaign.,Schematics the run banked for the campaign.
 Schematics this run has banked for the campaign.,Schematics this run has banked for the campaign.
 "Schematics: the campaign's currency, spent at HQ.","Schematics: the campaign's currency, spent at HQ."
@@ -2214,6 +2227,7 @@ SiteData.the_master_manifest.display_name,The Master Manifest
 SiteData.the_panopticon.display_name,The Panopticon
 SiteData.wipe_biometrics.display_name,Wipe Biometrics
 SiteData.wipe_the_citations.display_name,Wipe the Citations
+Sites,Sites
 Sites your network holds besides CORE: claim cleared Sites on the City Grid.,Sites your network holds besides CORE: claim cleared Sites on the City Grid.
 Skip,Skip
 Skip tutorial,Skip tutorial
@@ -2994,6 +3008,7 @@ The Cell never sleeps. Every word grows with this.,The Cell never sleeps. Every 
 The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.,The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.
 The boosts bought for the next run. Drag a boost here to buy it.,The boosts bought for the next run. Drag a boost here to buy it.
 The boosts bought for the next run. Pick a boost up and move it here to buy it.,The boosts bought for the next run. Pick a boost up and move it here to buy it.
+"The campaign against %s ends here, with everything in it:","The campaign against %s ends here, with everything in it:"
 "The campaign in slot %s is lost for good, with everything in it:","The campaign in slot %s is lost for good, with everything in it:"
 "The campaign map: pick a Site and JACK IN, claim and upgrade nodes.","The campaign map: pick a Site and JACK IN, claim and upgrade nodes."
 The campaign's numbers: they stay between runs.,The campaign's numbers: they stay between runs.
@@ -3110,9 +3125,11 @@ You are here.,You are here.
 You can move here now.,You can move here now.
 "Your %s, if you play it:","Your %s, if you play it:"
 Your campaign is autosaved.,Your campaign is autosaved.
+Your campaign is saved: BREACH on the title picks it up.,Your campaign is saved: BREACH on the title picks it up.
 Your home Site (CORE),Your home Site (CORE)
 Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.,Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.
 "Your records, achievements and run history.","Your records, achievements and run history."
+Your run is saved where it is: BREACH on the title picks it up.,Your run is saved where it is: BREACH on the title picks it up.
 Your spinner.,Your spinner.
 Your stats and achievements stay.,Your stats and achievements stay.
 Your uplink has been reassigned to the commons. Burn-up in progress.,Your uplink has been reassigned to the commons. Burn-up in progress.
@@ -3124,6 +3141,9 @@ a Shop,a Shop
 "a choice, and its price","a choice, and its price"
 a practice run in a simulated net,a practice run in a simulated net
 a threat,a threat
+abandon the campaign [hold A],abandon the campaign [hold A]
+"abandon, lose %s [hold A]","abandon, lose %s [hold A]"
+abandoned,abandoned
 active,active
 an Elite fight,an Elite fight
 an Event,an Event
@@ -3177,7 +3197,9 @@ hunted,hunted
 in a run,in a run
 install,install
 it costs you %s,it costs you %s
+keep fighting [B],keep fighting [B]
 keep going [B],keep going [B]
+keep running [B],keep running [B]
 lime=you red=target box=view,lime=you red=target box=view
 lo-fi loop: HQ,lo-fi loop: HQ
 locked,locked
@@ -3220,6 +3242,7 @@ ring_lock_handler,ring_lock_handler
 routing via border link ... ok,routing via border link ... ok
 run %d,run %d
 run: %s,run: %s
+save and quit [A],save and quit [A]
 saved to profile,saved to profile
 schematics,schematics
 seg %d: %s,seg %d: %s
