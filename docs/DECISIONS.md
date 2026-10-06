@@ -628,9 +628,11 @@ matching the drawn ones. Files: `tools/art/bake_menus_r33.py` (`EDGE_SHARE`, `ed
   DELETE: the slots' DELETE and the abandon / quit dialogs), SEND IT. Not baked words: the slots' LOAD, NEW CAMPAIGN's START and
   RAID START DEFENSE (drawn kit stickers: already on `edge_for`); the landing words PERFECT / GOOD / WEAK are plate stickers
   (`vinyl_word`, border 7 on a rounded plate, no lettering die-cut) and the EVADE token / drone are not word stickers: unchanged.
-- **Focus kept.** The baked rest textures are what `VerbSticker` draws; the rainbow sweep and the curl are drawn over them
-  (the baked `_focus` and `_sweep_NN` frames are not used any more). The `_focus` / `_sweep` files stay in the folder (baked by the
-  same script) for the lab and the art notes.
+- **Focus kept.** The baked rest textures are what `VerbSticker` draws; the rainbow sweep and the curl are drawn over them.
+  **The unused baked `_focus.png`, `_sweep_NN.png` and `_burst_N_focus.png` frames are deleted** (40 files with their `.import`),
+  with the load code (`_art_focus`, `_art_sweeps`, `_art_bursts_focus`, `_sweep_k`) and the bake steps that made them (the bakers
+  make the rest art, the glitch bursts, the titles and the dialog stickers only). The button's size now follows the rest art (it
+  followed the larger halo image).
 - **Test.** `test_sticker_edge_focus`: every baked lettering size is inside the concept's edge / body range and strictly under
   the old fixed 12; the CANCEL, BREACH and BURN IT PNGs' opaque height is the lettering block plus 4 x the new border (so an
   old bake fails it).
