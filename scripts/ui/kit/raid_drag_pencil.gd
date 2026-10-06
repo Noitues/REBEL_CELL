@@ -29,6 +29,18 @@ const DOCK_W := 6.0
 ## The IF PLACED terminal's width and its gap from the node (px at 1.0).
 const TERM_W := 230.0
 const TERM_GAP := 26.0
+## Parity RAID-01 (round 40 `raid_view_v3`): the dashed PARKED zone round the parked card (its
+## margin, px at 1.0; dash and gap, px; the line's width and ink) and its word.
+const PARKED := "PARKED" # TR
+const PARK_ZONE_MARGIN := 14.0
+const PARK_ZONE_DASH := 7.0
+const PARK_ZONE_W := 1.5
+const PARK_ZONE_INK := Color(1, 1, 1, 0.55)
+## Parity RAID-07: the map's part, the box round the map's nodes grown by this share of its size
+## each way; a pointer outside it (over a panel, the screen's corner) is off the map and the arrow
+## ends on the nearest node that takes the defence instead. The map's node targets' id prefix.
+const MAP_REACH_SHARE := 0.25
+const MAP_NODE_PREFIX := "node:"
 
 var drops: DropLayer
 ## Is the raid setup showing (the HQ's page)?
@@ -121,7 +133,12 @@ func _park() -> void:
 	vinyl.shape = VinylSticker.Shape.RECT
 	vinyl.stock = VinylSticker.Stock.GLOSS
 	vinyl.border_px = PARK_BORDER
-	vinyl.body_size = copy.size + Vector2(PARK_BORDER, PARK_BORDER) * 2.0
+	if copy is AssetCard:
+		# Parity RAID-01: the concept's card is its own die-cut sticker: the vinyl only carries its
+		# motion (the slap), with no second border round it.
+		vinyl.border_px = 0.0
+		vinyl.corner_radius = (copy as AssetCard).die_cut_radius()
+	vinyl.body_size = copy.size + Vector2(vinyl.border_px, vinyl.border_px) * 2.0
 	vinyl.tilt_deg = PARK_TILT
 	vinyl.lifted_corner = VinylSticker.Lift.TOP_RIGHT
 	add_child(vinyl)
@@ -159,6 +176,71 @@ func pointer() -> Vector2:
 	return get_global_mouse_position()
 
 
+## Parity RAID-07: where the arrow ends with no node docked: the pointer while it is over the
+## map (inside the map nodes' box grown by MAP_REACH_SHARE), else just outside the nearest map
+## node that takes the defence (ties by target id), else the pointer. Returns [end, node id or ""].
+func aim_end(start: Vector2, at: Vector2) -> Array:
+	var box := Rect2()
+	var first := true
+	var best_id := ""
+	var best_d := INF
+	var best_r := Rect2()
+	for t: Dictionary in drops.targets:
+		var id := String(t["id"])
+		if not id.begins_with(MAP_NODE_PREFIX):
+			continue
+		var r := drops.locate(t)
+		if not r.has_area():
+			continue
+		box = r if first else box.merge(r)
+		first = false
+		if not drops.takes(id):
+			continue
+		var d := r.get_center().distance_to(at)
+		if d < best_d - 0.001 or (absf(d - best_d) <= 0.001 and id < best_id):
+			best_d = d
+			best_id = id
+			best_r = r
+	if first or best_id == "" or box.grow_individual(box.size.x * MAP_REACH_SHARE, box.size.y * MAP_REACH_SHARE,
+			box.size.x * MAP_REACH_SHARE, box.size.y * MAP_REACH_SHARE).has_point(at):
+		return [at, ""]
+	var c := best_r.get_center()
+	var rad := maxf(best_r.size.x, best_r.size.y) * 0.5 * DOCK_R
+	return [c + (start - c).normalized() * rad * 1.08, best_id]
+
+
+## The dashed PARKED zone round the parked card (global; empty when nothing is parked).
+func park_zone() -> Rect2:
+	if _parked == null or not is_instance_valid(_parked):
+		return Rect2()
+	var body := Rect2(_parked.global_position + _parked.body_rect.position, _parked.body_rect.size)
+	return body.grow(PARK_ZONE_MARGIN * Settings.text_scale)
+
+
+func _draw() -> void:
+	var zone := park_zone()
+	if not _carrying() or not zone.has_area():
+		return
+	var xf := get_global_transform().affine_inverse()
+	var r := Rect2(xf * zone.position, zone.size)
+	var corners := [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]
+	var word := tr(PARKED)
+	var font := Palette.mono()
+	var fs := UiTheme.font_px(UiTheme.CAPTION)
+	var ww := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var gap := Vector2(r.get_center().x - ww * 0.5 - PARK_ZONE_DASH, r.get_center().x + ww * 0.5 + PARK_ZONE_DASH)
+	for i in 4:
+		var a: Vector2 = corners[i]
+		var b: Vector2 = corners[(i + 1) % 4]
+		if i == 0:
+			# The top edge leaves room for the word.
+			draw_dashed_line(a, Vector2(gap.x, a.y), PARK_ZONE_INK, PARK_ZONE_W, PARK_ZONE_DASH)
+			draw_dashed_line(Vector2(gap.y, a.y), b, PARK_ZONE_INK, PARK_ZONE_W, PARK_ZONE_DASH)
+		else:
+			draw_dashed_line(a, b, PARK_ZONE_INK, PARK_ZONE_W, PARK_ZONE_DASH)
+	draw_string(font, Vector2(r.get_center().x - ww * 0.5, r.position.y + font.get_ascent(fs) * 0.5 - font.get_descent(fs) * 0.5), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, PARK_ZONE_INK)
+
+
 ## Lays the drag's pencil on 1B's grease pencil (RaidPencilPool, above every panel): the
 ## yellow arrow from the parked sticker to the pointer, and the dock circle (yellow; red with
 ## an X where the defence can't go) round the node in reach.
@@ -169,7 +251,8 @@ func _lay() -> void:
 	if _carrying() and _parked != null and is_instance_valid(_parked):
 		var body := Rect2(_parked.global_position + _parked.body_rect.position, _parked.body_rect.size)
 		var start := body.get_center() + Vector2(0, -body.size.y * 0.5)
-		var end := pointer()
+		var aim := aim_end(start, pointer())
+		var end: Vector2 = aim[0]
 		var circle := Rect2()
 		var valid := true
 		if _dock_id != "":
@@ -194,6 +277,7 @@ func _lay() -> void:
 				_pool.stroke("x", [PackedVector2Array([c + Vector2(-a, -a * 0.85), c + Vector2(a, a * 0.8)]),
 					PackedVector2Array([c + Vector2(a, -a * 0.85), c + Vector2(-a * 0.95, a * 0.9)])], GreasePencilMark.Ink.THREAT, DOCK_W, _dock_t, 0.0, false, seed + 3)
 	_pool.end()
+	queue_redraw()
 
 
 func _exit_tree() -> void:
