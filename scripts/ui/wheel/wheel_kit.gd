@@ -22,9 +22,18 @@ const BOSS_HUB := {&"civic_core": &"hub_emergency_powers",
 ## room for (make_combat.bloom over the bright parts, frames.add_glow) folded into one step, so the
 ## slice screens read as saturated as the concept's: saturation away from the luma, then the part
 ## over the threshold lifted. Material, like the shader's kit tables; `tone` mirrors it for tests.
-const SCREEN_SAT := 1.4
-const BLOOM_THRESH := 0.3
-const BLOOM_GAIN := 1.1
+## WHEEL round 2 (designer): per kit. The player, Meridian and Rebel_Cell popped too much (less
+## saturation and lift); Meridian also pulls its screens towards its palette orange (`pull`, the
+## screen's luma re-coloured in the corp colour) and brightens them (`expo`), as the baked atlas's
+## brown read too dark. Keys: sat (saturation), thresh / gain (the lift), pull, expo.
+const TONE := {
+	&"player": {"sat": 1.15, "thresh": 0.35, "gain": 0.6, "pull": 0.0, "expo": 1.0},
+	&"meridian": {"sat": 1.1, "thresh": 0.35, "gain": 0.6, "pull": 0.65, "expo": 1.6},
+	&"solace": {"sat": 1.4, "thresh": 0.3, "gain": 1.1, "pull": 0.0, "expo": 1.0},
+	&"halcyon": {"sat": 1.4, "thresh": 0.3, "gain": 1.1, "pull": 0.0, "expo": 1.0},
+	&"orbital": {"sat": 1.4, "thresh": 0.3, "gain": 1.1, "pull": 0.0, "expo": 1.0},
+	&"rebel_cell": {"sat": 1.05, "thresh": 0.35, "gain": 0.6, "pull": 0.0, "expo": 1.0},
+}
 ## The lit frame (CMB-02): the class accent's wash over the player's outer bevel and the glow of
 ## the frame's accent hairlines; a corp frame wears its rim instead of the wash (CMB-03).
 const PLAYER_FRAME_TINT := 0.62
@@ -99,11 +108,26 @@ func rim_kind() -> int:
 	return theme
 
 
-## The screens' tone step (CMB-02), as the disc shader's `tone` applies it to a screen colour.
-static func tone(c: Color) -> Color:
-	var l := 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
-	var v := Vector3(maxf(0.0, lerpf(l, c.r, SCREEN_SAT)), maxf(0.0, lerpf(l, c.g, SCREEN_SAT)), maxf(0.0, lerpf(l, c.b, SCREEN_SAT)))
-	v += Vector3(maxf(v.x - BLOOM_THRESH, 0.0), maxf(v.y - BLOOM_THRESH, 0.0), maxf(v.z - BLOOM_THRESH, 0.0)) * BLOOM_GAIN
+## This kit's tone step values (TONE[kit_name()]).
+func tone_params() -> Dictionary:
+	return TONE.get(kit_name(), TONE[&"player"])
+
+
+## The screens' tone step (CMB-02, round 2 per kit), as the disc shader's `tone` applies it to a
+## screen colour with this kit's values and accent.
+func tone(c: Color) -> Color:
+	var t := tone_params()
+	var v := Vector3(c.r, c.g, c.b)
+	var luma := Vector3(0.2126, 0.7152, 0.0722)
+	var l := v.dot(luma)
+	var acc := Vector3(accent.r, accent.g, accent.b)
+	var la := maxf(0.05, acc.dot(luma))
+	v = v.lerp(acc * (l / la), float(t["pull"])) * float(t["expo"])
+	l = v.dot(luma)
+	var sat := float(t["sat"])
+	v = Vector3(maxf(0.0, lerpf(l, v.x, sat)), maxf(0.0, lerpf(l, v.y, sat)), maxf(0.0, lerpf(l, v.z, sat)))
+	var th := float(t["thresh"])
+	v += Vector3(maxf(v.x - th, 0.0), maxf(v.y - th, 0.0), maxf(v.z - th, 0.0)) * float(t["gain"])
 	return Color(v.x, v.y, v.z, c.a)
 
 
