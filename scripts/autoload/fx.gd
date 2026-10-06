@@ -396,7 +396,8 @@ const SAVED_INNER_STEP := 40.0
 
 
 ## Screen rects of the controls on screen under `root` the stamp must not cover: usable
-## buttons, fields and sliders, and map legends (as far as a scroll view shows them).
+## buttons, fields and sliders, map legends and the raid's Speed / Skip strip (as far as a
+## scroll view shows them).
 func avoid_rects(root: Node) -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	_collect_avoid(root, out)
@@ -430,7 +431,9 @@ func _collect_avoid(node: Node, out: Array[Rect2]) -> void:
 				if caps is Array:
 					for r: Rect2 in caps:
 						out.append(Rect2(xf * r.position, r.size * xf.get_scale()))
-			if usable or c is MapLegend or c is RouteLegend or c is PadPrompts:
+			# ART-3 6w: and the raid's Speed / Skip strip (its keys are drawn, greyed in setup, not
+			# buttons: SAVED landed on SKIP).
+			if usable or c is MapLegend or c is RouteLegend or c is PadPrompts or c is RaidSpeedStrip:
 				var r := _shown_rect(c)
 				if r.has_area():
 					out.append(r)

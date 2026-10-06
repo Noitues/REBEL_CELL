@@ -22,7 +22,8 @@ var city3d: bool = false:
 		city3d = v
 		if city != null:
 			city.city3d = v
-			# Only the City Grid is on the 3D city yet: it holds the Grid band.
+			# The City Grid holds the Grid band; the raid's pages set the RAID band after this
+			# (ART-3 6w, hq_scene._set_panel).
 			city.band_lock = CityLod.Band.GRID if v else -1
 		if _grid != null:
 			_grid.visible = not v
@@ -208,10 +209,12 @@ func _apply_hold() -> void:
 func frame_points(points: PackedVector2Array, area: Rect2, max_zoom: float, min_zoom: float) -> float:
 	if points.is_empty() or not area.has_area():
 		return 0.0
-	var box := Rect2(NeonCity.world_of(points[0].x, points[0].y), Vector2.ZERO)
+	# ART-3 6w: the ground's row step of the city's projection (the 3D city's on the raid).
+	var tb := city.tile_b()
+	var box := Rect2(Vector2((points[0].x - points[0].y) * NeonCity.TILE_A, (points[0].x + points[0].y) * tb), Vector2.ZERO)
 	var centre := points[0]
 	for i in range(1, points.size()):
-		box = box.expand(NeonCity.world_of(points[i].x, points[i].y))
+		box = box.expand(Vector2((points[i].x - points[i].y) * NeonCity.TILE_A, (points[i].x + points[i].y) * tb))
 		centre += points[i]
 	centre /= points.size()
 	var room := area.size * FIGHT_FIT_SHARE
