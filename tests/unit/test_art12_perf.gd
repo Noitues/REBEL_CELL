@@ -3,7 +3,8 @@ extends GutTest
 ## (tools/visual_qa/perf_pack.gd, docs/art_review/ART-12/perf.md). The telemetry ring turns
 ## without redrawing; the card-play preview's chevron chase redraws the preview alone, never
 ## the firmware sockets or the drone dock; the preview's ghost drones are the dock's layout at
-## the ghost's rotation, re-laid whenever the ghost or the dock changes.
+## the ghost's rotation, re-laid whenever the ghost or the dock changes. The campaign end's
+## paper art (the dossier's manila and print stock, the post-its) is loaded once and held.
 
 const SCENE := "res://scenes/combat/combat_scene.tscn"
 
@@ -120,3 +121,36 @@ func test_the_ghost_drones_follow_the_ghost_and_the_dock() -> void:
 		for i in fresh.size():
 			assert_eq(cached[i]["tile"], fresh[i]["tile"], "drone %d ends where the dock lays it (ghost +%d)" % [i, step])
 			assert_eq(cached[i]["mini"], fresh[i]["mini"], "its mini-wheel too (ghost +%d)" % step)
+
+
+# --- Campaign end: paper art loaded once (an unheld load() decodes the file at every draw) ---
+
+func test_the_dossier_holds_its_manila_and_print_stock_across_redraws() -> void:
+	var c := RunManager.campaign
+	c.outcome = CampaignState.Outcome.LOST
+	var facts := DossierFacts.build(c, RunManager.corporation, RunManager.profile, RunManager.config(), func(id: StringName) -> String: return String(id),
+		func(id: StringName) -> String: return String(id), [] as Array[Dictionary], 3)
+	var d: AuditDossier = add_child_autofree(AuditDossier.new(facts))
+	d.size = Vector2(1280, 720)
+	await _frames(3)
+	assert_not_null(d._manila_tex, "the folder drew its manila")
+	var manila := d._manila_tex
+	d.folder.queue_redraw()
+	d.cover.queue_redraw()
+	await _frames(2)
+	assert_true(is_same(manila, d._manila_tex), "a redraw draws the held manila (no new load)")
+
+
+func test_a_post_it_holds_its_paper_and_reloads_only_for_another_stock() -> void:
+	var note: PostIt = add_child_autofree(PostIt.new("flag ICE 4.", Palette.END_NOTE_YELLOW))
+	await _frames(2)
+	assert_not_null(note._art, "the yellow stock is the concept's paper")
+	var yellow := note._art
+	note.queue_redraw()
+	await _frames(2)
+	assert_true(is_same(yellow, note._art), "a redraw draws the held paper")
+	note.paper = Palette.END_NOTE_PINK
+	note.queue_redraw()
+	await _frames(2)
+	assert_false(is_same(yellow, note._art), "another stock, its own paper")
+	assert_not_null(note._art, "the pink stock is the concept's paper too")
