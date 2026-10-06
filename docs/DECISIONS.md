@@ -435,8 +435,8 @@ unchanged); (3) LOOT-04 "use the title's blurred city" on the loot, event and sh
   band at 0.62, the campaign corp's HQ at (0.82, 0.7)). Tier 0 / headless keep the 2D net city. The event's CAM feed
   copies whatever city is behind it (now the blurred one).
 - **The shop:** the Mainframe page's baked facade (MainframeFacade, SHOP concept round 34 `shop_v5`) hides the city
-  whole, so a blurred city behind it would never show and still cost its render: the shop keeps its facade (my call;
-  open question). BlurredCityBackdrop's `set_shown` is ready if the designer wants the city behind a cut-out facade.
+  whole, so a blurred city behind it would never show and still cost its render: the shop keeps its facade, no city
+  behind it (confirmed by the designer in round 3, "a waste of cycles"; question closed).
 - **Other users unchanged:** only the title calls `use_blurred_city` and only the netrun scene `show_blurred_city`
   (tested by scanning scripts/tools/scenes); the HQ, combat, labs and every other netrun page keep their backdrop.
 - **Measured** (windowed, 1920x1080, v-sync off; the machine was shared with other agents' runs, so frame times were
@@ -449,6 +449,43 @@ unchanged); (3) LOOT-04 "use the title's blurred city" on the loot, event and sh
   shop). GAPS LOOT-04: "Decision: use the title's blurred city (designer 2026-10-05)".
 - Files outside my area (smallest change): `scripts/ui/netrun_scene.gd` (the per-page call and its constants),
   `scripts/ui/kit/wireframe_background.gd` (the hook), `docs/art_review/PARITY/GAPS.md` (LOOT-04's decision).
+
+### 2026-10-05 — Parity fix — TITLE-01c lively city, less haze, lighter overlays (designer decision)
+Designer feedback round 3 (2026-10-05): (1) the title is a little too foggy: less haze, keep the pinker grade; (2) the
+concept's difference is the LIVELY city: the highways with running traffic (ART_BIBLE v2 §4.2 sky lanes v4; refs
+round 26 `city_ambient_night_v4.gif`, round 24 `motion_layers.png`, round 33 `title_screen.gif`); (3) loot and event:
+less blur, a little brighter; (4) the shop keeps its facade with no city behind it (a waste of cycles): **closed**,
+built that way since TITLE-01b.
+- **What main's city motion draws vs v4:** 5c already ported round 26 `roads.py` — `CitySkyLanes` lays all sixteen
+  road shapes (A's double deck, B, C with its flyovers and 1.75-turn spiral, F's cloverleaf of four 270-degree loops,
+  the D / E four-level stack) on the busiest avenues, with v4's cars (head dot + lane-colour streak, dark body,
+  under-glow, faint guide dots, 14–20 gaps per loop, six seeded lane colours) and the street traffic. So nothing to
+  port. Two things hid them on the backdrop: at the backdrop's ortho (300 BU) the FAR cars are ~4 px dots spaced
+  16 BU apart, and the 5 px tilt-shift averaged them into the haze (the concept's render keeps its lights as bright
+  out-of-focus blobs).
+- **The backdrop's own lively motion** (`CityBackdropLook.traffic_density` 2.0, `traffic_light_scale` 1.6):
+  `BlurredCityBackdrop.motion_config` hands its CityViewMotion a **copy** of the shipped CityMotionConfigData with the
+  sky-lane and street car gaps divided by the density and the gaps per loop multiplied by it (same speed), and the head
+  dots, lines and streaks scaled. The loaded resource and the Grid / raid / netrun motion are unchanged (tested); I did
+  not change the shared counts, because the Grid's density is its own reviewed look.
+- **Lights through the blur** (my call, logged): a bokeh-style "kept light" in the tilt-shift shader rather than a
+  second traffic pass after the blur (that would need a second 3D render of the traffic layers with depth against the
+  buildings). Where the view is blurred, the brightest inner-ring tap (read half way down the blur's mip chain, so it
+  is a soft glow, not a sharp copy) above `light_threshold` 0.55 is added back at `light_keep` 0.8. Car streaks, sky
+  lane lights and lit windows stay readable as glowing streaks out of focus, as in round 33; the in-focus band is
+  sharp anyway. `CityBackdropLook.shown` / `worst_behind` include it (the contrast tests read the brightest case).
+- **Less fog:** `haze_out_of_focus` 3.0 -> 1.8 (gain, lift and saturation kept: the pink grade stays).
+- **Loot / event** (`overlay_city_backdrop.tres`): blur 5 -> 3 px, gain 0.62 -> 0.74; the event's terminal words over
+  the worst city behind the page still reach 4.5:1 (new test).
+- **Measured** (windowed, 1920x1080, v-sync off; shared machine): title tier 2 4.40–5.13 ms a frame, backdrop city GPU
+  2.42–2.55 ms; tier 1 4.23 ms, city 2.05 ms; loot tier 2 4.52 ms, city 2.62 ms. One run had a single 487 ms hitch at
+  tier 2 (a one-off: two re-runs peaked at 25.6 and 15.8 ms). Under the 8 ms city budget.
+- **Tests** (`test_parity_title01_backdrop.gd`): `test_the_backdrop_city_is_lively_and_the_grids_motion_is_untouched`,
+  `test_the_overlay_pages_read_over_their_brighter_city`; the grade test includes the kept light. City motion tests
+  (`test_city_motion.gd`, `test_city3d_model.gd`, `test_city3d_grid.gd`) pass unchanged.
+- **Review:** `docs/art_review/PARITY/fixes/TITLE-01c.jpg` (round 33 gif frames | the title's frames 80 ms apart; v4 gif
+  | the loot page's frames; event, shop, reduce effects, tier 0; right-half details). The capture tool gained
+  `--strip=N` (frames 80 ms apart) and `--raw` (the city without the tilt-shift, for diagnosis).
 
 ### 2026-10-05 — Art direction — ART-3 6w raid on the city
 ART-3 wave 2b, ART-6 on the unified city (ART_BIBLE v2 §4.1, §4.8, Appendix C #13, plan G10; refs round 40
@@ -8674,11 +8711,6 @@ and annotated in the GDD where it changes a rule.
   shows as a fifth, CLASSIFIED tile (no name, no crest, "OPENS AT ICE 10 EVERYWHERE") so the Target row has its five
   tiles without a spoiler; the build hid it until unlocked. Keep the classified tile? (2) The pickers start on the
   game's defaults (Solace, standard home server, Breaker) rather than the first choice by id: keep?
-- **Parity fix TITLE-01 (2026-10-05):** answered by the designer the same day (keep the last-played corp; the backdrop
-  gets its own grade; LOOT-04 takes the blurred city): see "Parity fix — TITLE-01b grade and LOOT-04". New question:
-  the Mainframe (shop) page's baked facade covers the whole city, so the blurred city cannot show there without
-  dropping the facade (SHOP concept round 34 `shop_v5`): keep the facade (built), or put the blurred city behind a
-  cut-out facade?
 - **ART-3 6w raid on the city (2026-10-05, defaults built, see "Art direction — ART-3 6w raid on the city"):**
   (1) the raid's widest zoom is ortho 640 (the bible's round 39 clamp 220-380 no longer holds the x2 spread
   network on the setup's map part): keep, or shrink the network's spread for the raid? (2) the sockets float over
