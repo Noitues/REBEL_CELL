@@ -31,6 +31,111 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-06 — Parity fix — netrun pages (designer group ruling)
+Designer group ruling (2026-10-05): netrun pages and endings match the concepts; where the M13 build is richer than
+main but predates v2, the build's layout and content reworked in the v2 language; mechanics the rules lack (G1–G16)
+stay listed, not built. Ids RAID-13, RAID-14, ROUTE-03, ROUTE-06, SHOP-03, SHOP-05, SHOP-06, SHOP-08, EVT-01, EVT-02,
+EVT-03, LOOT-02, LOOT-03, END-01, END-02 (`docs/art_review/PARITY/GAPS.md`). Tests: new
+`tests/unit/test_parity_netrun.gd` (fast; text 1.0 / 1.6 / 2.0 where it applies). Sheet (references and main before |
+after 1.0 | after 2.0): `docs/art_review/PARITY/fixes/NETRUN.jpg`.
+- **RAID-13.** The mid-run raid (its setup and its playout) is the unified 3D city at the RAID band (map mode, as the
+  HQ's raid views): `_set_panel` asks `use_route_city(true, CityLod.Band.RAID)` for `netrun_raid` and the playout screen.
+  The map is the raid view's own (`raid_map_graph`: S-MAPVIEW's major nodes, the Cell's network as `RaidSocket`s with
+  the projection's forecast rings, the links among them) drawn by `CityMapOverlay` (`_mount_route(..., raid_view)`),
+  the threat routes in red pencil (`RaidRouteLayer` with `RaidBeaconLayer`): preview == result, the routes are the
+  projection's (`RaidMapNodes.route_paths(projection.events)`; the playout's are its events'). Zooms are the RAID
+  band's ortho range (`raid_zoom` / `raid_min_zoom`: `raid_fit_min` / `raid_fit_max`). On the 3D city there is nothing
+  to bake: the interlude's 2D playout prebake runs only off the 3D city. **Call:** `raid_socket_spec` repeats
+  `hq_scene.raid_socket` (20 lines, pure) because that file is HQ-BUILD's; proposed: move it to `RaidMapNodes` and
+  have both scenes call it.
+- **RAID-14.** START DEFENSE is the pink vinyl sticker (`VinylButton`, the run end's BACK TO HQ kit, TITLE step) under
+  the window's right corner, off its glass. **Call:** the HQ's `RaidSticker` came out with its die-cut narrower than
+  its word on this page (cut in the terminal's glass and beside it); `VinylButton` is the same 1B vinyl and fits its
+  word. (A focused vinyl's HOVER_CURL folds its right corner over the last letter: VinylSticker's own design, as BACK
+  TO HQ.) Nothing to deploy is the build's line ("No assets to deploy: this run carries none and the Armory is empty.
+  Your nodes hold with what is on them.", ported from art-m13-final `_empty_assets_note`) with the Armory's icon, in
+  place of the two bare "none" captions (the line is the Armory's drop target then).
+- **ROUTE-03.** `RouteNodePanel`: the plate's big DECRYPTED stamp (over the title) is off; DECRYPTED is a small acid
+  keyline chip in the foot beside the seal (round 37 `city_default`'s DEPOT 15 holo); the title has the whole width;
+  every value wraps in its column (whole words, never cut) and the fields end above the foot (seal and chip), so the
+  dial never covers a word. **Call (not built):** the concept's JACK IN sticker under the holo is the HQ's verb (HQ-B:
+  JACK IN starts a run from the Grid); on a run's route the verb is the node itself (a press, or its ROUTE choice).
+  The concept's OPTIONS > MAP switch duplicates the key strip's "HOVER HERE: SHOW ALL NODES" and Options > Display's
+  row: not added (proposed slice if the designer wants it on the page: a one-row terminal under the node panel, shown
+  when the ROUTE column has room).
+- **ROUTE-06 (not done, slice proposed).** Renaming the route's title sticker THE GRID (concept word) was built and
+  reverted: the shorter word changes how the bar wraps its tags at 1.6, and the route's fit (`fit_route_map`, S-ROUTE's)
+  then frames Meridian's YOU ARE HERE on the key strip, where its label has no spot (`test_art7_netrun::test_the_route_
+  sweeps_every_corporation...`, red with the word, green without; checked by swapping only the word). Proposed slice for
+  S-ROUTE: the fit's free area leaves out the key strip the labels avoid (`route_free_area` vs `label_blocks`), then the
+  word changes (one constant, `NetrunScene.ROUTE_TITLE`, and three test strings). Orchestrator relay (S-HQRUN,
+  2026-10-06), built: a boss (HQ) run's map shows no bar title (`set_screen("", "")`): its page has its own title
+  sticker and the band shows the Heat gauge, as the HQ does.
+- **SHOP-03.** `BuyButton.BUY_FONT` 16 (was 13), the concept's tag lettering. At big text (SHOP_WIDE_FROM up) the
+  wallet stands at the end of the Daemons' row (`DaemonShelf`): under the Daemons the stock wheel's right tag, lettered
+  bigger, reached it at 2.0 (`test_art9_4a_shop`'s wallet check); beside the info strip the left tag did; at the
+  DAEMONS tape the subtitle band covered it.
+- **SHOP-05 (reuse rule).** `tools/art_bake/mainframe_parts_bake.py --part leave` runs round 34 `shop2.leave_sticker()`
+  on tag art-concepts-r43 unchanged and saves its arrow sticker placed as `shop2.place_leave` places it (angle -4,
+  scale 0.7) -> `assets/ui/mainframe/leave_arrow.png` (+ parts.json). `LeaveIcon` is a flat Button with that art (a
+  press leaves too; no focus of its own: LEAVE takes the pad), in place of the EXIT IconMark. The bin's place was
+  already the concept's within a few px (the tag hangs under it: BuyButton's place, unchanged).
+- **SHOP-06.** The "Chips go into:" dropdown (its list covered the info strip) is gone: the socket choice is the small
+  spinner itself (`SpinnerMini.make_pickable`: one focus stop; a click on a slot or the arrows and A choose; the chosen
+  slot wears lime brackets; while a Firmware chip is pointed at or focused the slots it cannot go into grey out and
+  are refused). The marks are the rule's own answer: new read-only `NetrunSession.firmware_slot_error(id, slot)` (the
+  socket check `_grant` applied, moved out unchanged; `_grant` calls it). "Chips go into: Slot 1: OVFL 12" stays as a
+  line naming the choice (`SocketChoice`). The loot's FIRMWARE DROP uses the same. **Not built (G14):** the concept's
+  amber REPLACE? on an occupied socket.
+- **SHOP-08.** The UPGRADE viewer's action reads verb and price as one graffiti tag ("UPGRADE · 100 CYCLES",
+  `SpinnerView.action_words`); the price label keeps the number, unshown. File outside the area: `spinner_view.gd`
+  (S-WHEEL's; the smallest change: `_update_price` and one static helper).
+- **EVT-01.** The terminal's header names the run's place ("TERMINAL // SOLACE BIOSYSTEMS // NODE 4 OF 7" on a node);
+  the RUN side terminal (HP, CYCLES, CREW = living operatives; its tag the operative // class) heads the side column
+  above the TERMINAL sticker and the pencil (below text 1.6: above it the bar's tags say the same and the story takes
+  the room). Under a CAM feed the choices take the terminal's width under the story (below text 1.25; from there they
+  stay beside the feed, which would push them off the screen). The CAM feed still copies the city behind the page:
+  there is no per-event render to show (the concept's still is one corp render).
+- **EVT-02.** Outcome chips stand in a column beside each choice sticker (`OutcomeRow.attach_beside`; the sticker
+  takes `EVENT_CHOICE_SHARE` 0.55 of the row, the chips wrap to the rest); PLAY IT SAFE?? points at the NO CHANGE chip.
+  The concept's small mono aside per choice ("the door bites") has no data: not added.
+- **EVT-03.** DISPATCH's story is on the memo paper as a voice transcript (`CorpMemo.as_transcript`: letterhead
+  DISPATCH, VOICE TRANSCRIPT, "TO: CELL OPERATIVE  FROM: DISPATCH  REF: VOICE LOG", the concept's DO NOT FORWARD stamp),
+  the right column headed TRANSCRIPT // DISPATCH // VOICE LOG; the waveform feed is gone from events.
+- **LOOT-02.** The title sticker stays the payout's source (FIGHT WON, ELITE DOWN, RACK BREACHED, as ANIM-R6 B10);
+  the strip is the concept's "LOOT // NETRUN: <SITE> // <NODE> n OF N" (`loot_strip`; the Site only off a node).
+  From text 1.25 the title sticker's words lead a short strip instead ("FIGHT WON // FIGHT 3 OF 7") so the strip and
+  PAYOUT share the top row and the sheet keeps the screen.
+- **LOOT-03.** PAYOUT top right: CYCLES as this payout's `+N` (the session's own `cycles` events, `payout_of`), "wallet
+  a -> b", HP, HEAT (+n, the payout's Heat events); the DECK counter with its "+1 = N" pencil bottom left and SKIP
+  under the sheet. From text 1.25 (`LOOT_SIDE_FROM`) PAYOUT's lines stand side by side (the wallet line and a +0 Heat
+  line go), the DECK counter and SKIP stand in the column beside the sheet, and once laid out with its bar the page's
+  cards give way by what it is over the screen (`_fit_loot_height`: never under 1, nor under `LOOT_BIG_FLOOR` 1.25 where
+  they had grown past it, so H-pass 21's "loot cards grow" holds; it scrolled at 1.6 and 2.0). **Not built:**
+  the concept's CONTINUE (a pick takes the card and goes on; a separate confirm is a flow change, not a look:
+  proposed slice if wanted).
+- **END-01 / END-02.** The run end is the build's RunEndStage in v2: beside the report terminal (main's richer
+  content kept: fate, tags, Heat reason) the operative's Polaroid (4B's `Polaroid`; FLATLINED: `kia`, greyed and struck
+  out in red pencil) with the verdict sticker slapped over its lower half and BACK TO HQ under it; a lost run (FLATLINED,
+  HOME FELL) greys the city behind the page (`shaders/screen_grey.gdshader`, the build's GRADE_CODE: greyscale,
+  dim 0.35; static, the page's entrance brings it in, reduce effects shows it at once); a clean exit keeps its colour.
+  `END_WIDTH` 600 (the verdict column left the window). Motion: the verdict's `sticker_slap` as before; no new entry.
+- **Tests changed (look pinned, behaviour kept):** `test_anim4b_run_drag_drop`, `test_anim_r5_netrun`,
+  `test_horizontal_pass21_screens` (the socket choice is the spinner: `choose`, its slot tips; the run end's row is in
+  the middle, the city greys), `test_anim_r6_netrun`, `test_horizontal_pass21_screens` (LEAVE's mark is the concept's
+  chevron), `test_anim_r5_city` (the interlude is the 3D raid view:
+  nothing baked; it frames CORE and the entries its map shows), `test_anim_r1_campaign`, `test_horizontal_pass21_screens`
+  (outcome chips beside the choice). No test dropped. `tools/visual_qa/review_pack.gd` `mainframe_socket` points at a
+  chip so the spinner's marks show.
+- **Known reds not from this slice (same on main, checked by restoring main's files):**
+  `test_anim4b_run_drag_drop::test_the_new_pieces_keep_the_layout_at_each_text_size` (the deck viewer 6 px over the
+  canvas at 1.3), `test_anim6_screen_motion::test_a_mainframe_purchase_flies...` (CARDS tag 10 px), `::test_end_state_
+  layout_is_the_instant_layout...` (event at 1.3, loot at 2.0), `test_anim_r1_campaign::test_a_saved_run_is_resumed_from
+  _the_hq_jack_in`, `::test_the_arriving_screens_say_when_they_are_ready`, `::test_the_hq_at_big_text...` (HQ-B).
+- **Files outside the area (smallest change):** `scripts/core/netrun_session.gd` (`firmware_slot_error`, extracted),
+  `scripts/ui/kit/spinner_view.gd` (SHOP-08), `scripts/ui/kit/spinner_mini.gd` (the pickable wheel),
+  `scripts/ui/kit/buy_button.gd` (BUY_FONT), `tools/art_bake/mainframe_parts_bake.py` (`--part leave`),
+  `tools/visual_qa/review_pack.gd`, `assets/text/strings.csv` (re-export).
 ### 2026-10-06 — Parity fix — codex, stats, options (designer group ruling)
 Designer group ruling 2026-10-05 for the menus: the codex and the stats take the M13 build's structure reworked in
 the v2 kit (CODEX-01, STATS-01); the options match round 31's concept (`round31_ui_chrome/settings_menu.png`,

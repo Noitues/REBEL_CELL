@@ -23,6 +23,8 @@ recycle.py, lib17/slicekit.py):
                                       wedge at -30 / 0 / +30 degrees cut out with its rim; anchor = the hub
   wheel_stock.png                     assets.shop_wheel12 (the concept's stock wheel), whole
   bin_shut.png, bin_open.png          recycle.scene (the lid at 0 and 96 degrees)
+--part leave (parity SHOP-05; round 34 scripts: shop2.py):
+  leave_arrow.png                     shop2.leave_sticker()'s pink chevron sticker, as drawn
 --part reward (round 31 reward_event/scripts: reward.py, event.py):
   liner.png                           reward.liner, the print band only (no header or footer words)
   slot.png, slot_empty.png            reward.kiss_cut on a clear canvas (a card's slot, before and after)
@@ -129,6 +131,24 @@ def shop(gen: str) -> None:
         save(part, name, anchor=(o[0] - at[0], o[1] - at[1]))
 
 
+def leave(gen: str) -> None:
+    """Parity SHOP-05: the pink chevron sticker beside LEAVE, round 34 shop2.leave_sticker()'s own
+    arrow (its drawing code unchanged: the sticker it caches is saved as drawn)."""
+    d = os.path.join(gen, 'round34_firmware_daemons', 'scripts')
+    sys.path.insert(0, d)
+    sys.path.insert(0, os.path.join(d, 'lib17'))
+    os.chdir(d)
+    from PIL import Image
+    import shop2 as S2
+    import r31lib as L
+    _leave, arrow, _tag = S2.leave_sticker()
+    # placed as shop2.place_leave places it (angle -4, scale 0.7), on a clear canvas
+    canvas = Image.new('RGBA', (400, 300), (0, 0, 0, 0))
+    canvas = L.place_sticker(canvas, arrow, 200, 150, angle=-4, scale=0.7)
+    part, _at = bbox_crop(canvas)
+    save(part, 'leave_arrow')
+
+
 def reward(gen: str) -> None:
     d = os.path.join(gen, 'round31_reward_event', 'scripts')
     sys.path.insert(0, d)
@@ -154,14 +174,14 @@ def reward(gen: str) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument('--gen', required=True, help='the extracted docs/concepts folder')
-    ap.add_argument('--part', choices=['shop', 'reward'], required=True)
+    ap.add_argument('--part', choices=['shop', 'reward', 'leave'], required=True)
     a = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, 'parts.json')
     if os.path.exists(path):
         meta.update(json.load(open(path, encoding='utf-8')))
     gen = os.path.abspath(a.gen)
-    shop(gen) if a.part == 'shop' else reward(gen)
+    {'shop': shop, 'reward': reward, 'leave': leave}[a.part](gen)
     with open(path, 'w', encoding='utf-8') as fh:
         json.dump(meta, fh, indent=1, sort_keys=True)
     print('parts', len(meta))

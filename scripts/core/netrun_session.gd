@@ -541,14 +541,9 @@ func _grant(kind: String, id: StringName, slot: int) -> String:
 			run.operative.deck.append(id)
 			last_events.append({"type": "card_gained", "card": id, "text": "Added %s to the deck." % id})
 		"firmware":
-			var fw := lookup.get_content(id) as FirmwareData
-			if fw == null:
-				return "Unknown Firmware."
-			if slot < 0 or slot >= run.operative.slot_slice_ids.size():
-				return "Choose a wheel slot for the Firmware."
-			var slice := lookup.get_content(run.operative.slot_slice_ids[slot]) as SliceData
-			if not fw.allowed_slice_types.is_empty() and not (slice.slice_type in fw.allowed_slice_types):
-				return "%s does not fit a %s slice." % [id, RC.SliceType.keys()[slice.slice_type]]
+			var why := firmware_slot_error(id, slot)
+			if why != "":
+				return why
 			run.operative.slot_firmware_ids[slot] = id
 			last_events.append({"type": "firmware_socketed", "firmware": id, "slot": slot, "text": "Socketed %s into slot %d." % [id, slot]})
 		"daemon":
@@ -639,6 +634,21 @@ func choice_error(choice: EventChoiceData) -> String:
 		return "%s is already installed." % (choice.reward as DaemonData).display_name
 	if choice.reward is FirmwareData and not _firmware_fits(choice.reward as FirmwareData):
 		return "%s fits no slice on %s's wheel." % [(choice.reward as FirmwareData).display_name, run.operative.name]
+	return ""
+
+
+## Why Firmware `id` cannot be socketed into wheel slot `slot` of the running operative ("" when
+## it can): the socket rule `_grant` applies (parity SHOP-06: the screens read it to grey the
+## slots a chip does not fit; read-only).
+func firmware_slot_error(id: StringName, slot: int) -> String:
+	var fw := lookup.get_content(id) as FirmwareData
+	if fw == null:
+		return "Unknown Firmware."
+	if slot < 0 or slot >= run.operative.slot_slice_ids.size():
+		return "Choose a wheel slot for the Firmware."
+	var slice := lookup.get_content(run.operative.slot_slice_ids[slot]) as SliceData
+	if not fw.allowed_slice_types.is_empty() and not (slice.slice_type in fw.allowed_slice_types):
+		return "%s does not fit a %s slice." % [id, RC.SliceType.keys()[slice.slice_type]]
 	return ""
 
 

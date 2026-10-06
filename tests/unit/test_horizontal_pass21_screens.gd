@@ -335,10 +335,10 @@ func test_socket_lists_name_slots_not_ids() -> void:
 	scene._show_current()
 	await _frames()
 	var raw := _raw_ids(op)
-	var pick := scene._panel.find_child("SocketPick", true, false) as OptionButton
+	var pick := scene._panel.find_child("SpinnerMini", true, false) as SpinnerMini  # parity SHOP-06
 	if pick != null:
-		for i in pick.item_count:
-			var t := pick.get_item_text(i)
+		for i in pick.slices.size():
+			var t := pick.pad(i).tooltip_text
 			assert_string_contains(t, "Slot %d" % (i + 1))
 			for id in raw:
 				assert_false(t.contains(id), "no raw id '%s' in '%s'" % [id, t])
@@ -348,11 +348,11 @@ func test_socket_lists_name_slots_not_ids() -> void:
 			assert_false(t.contains(id), "slot name without '%s': %s" % [id, t])
 	_loot(scene, "firmware", [String(RunManager.lookup().ids_of_class(&"FirmwareData")[0])])
 	await _frames()
-	var slot_pick := scene._panel.find_child("SlotPick", true, false) as OptionButton
-	assert_not_null(slot_pick, "the loot's socket list")
-	for i in slot_pick.item_count:
+	var slot_pick := scene._panel.find_child("SpinnerMini", true, false) as SpinnerMini  # parity SHOP-06
+	assert_not_null(slot_pick, "the loot's socket choice")
+	for i in slot_pick.slices.size():
 		for id in raw:
-			assert_false(slot_pick.get_item_text(i).contains(id), "loot socket list without '%s'" % id)
+			assert_false(slot_pick.pad(i).tooltip_text.contains(id), "loot socket choice without '%s'" % id)
 
 
 # --- #13 event outcomes as icons; icons on menus ---------------------------------------------
@@ -416,7 +416,7 @@ func test_event_choice_outcomes_match_the_data() -> void:
 		assert_not_null(row, "choice %d shows its outcome" % i)
 		assert_eq(row.items.size(), want.size())
 		assert_ne(b.tooltip_text, "", "choice %d has a tooltip" % i)
-		assert_true(Rect2(Vector2.ZERO, b.size).grow(1.0).encloses(Rect2(row.position, row.size)), "the icons sit inside the choice")
+		assert_true(row.position.x >= b.size.x - 0.5, "parity EVT-02: the icons stand beside the choice")
 
 
 func test_menus_and_skip_leave_carry_icons() -> void:
@@ -447,9 +447,9 @@ func test_menus_and_skip_leave_carry_icons() -> void:
 	RunManager.netrun.run.pending_rewards.clear()
 	_shop(scene)
 	await _frames()
-	var leave := scene._panel.find_child("LeaveIcon", true, false) as IconMark
+	var leave := scene._panel.find_child("LeaveIcon", true, false) as Button
 	assert_not_null(leave, "LEAVE MAINFRAME has its icon")
-	assert_eq(leave.kind, StatIcon.EXIT)
+	assert_not_null(leave.icon, "parity SHOP-05: the concept's chevron sticker")
 	assert_ne(leave.tooltip_text, "", "and a tooltip")
 
 

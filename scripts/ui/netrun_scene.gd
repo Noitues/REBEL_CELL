@@ -954,7 +954,12 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	var screen := screen_name(s) if screen_as == "" else screen_as
 	# ART-7 7w: the route page is the unified 3D city at the NETRUN band (GRID VIEW: the
 	# Grid's band); the other pages keep the 2D city until their own views move onto it.
-	use_route_city(screen == "route" and (s == null or s.run.kind != "boss" or _grid_zoomed))  # ART-8 8w: an HQ run draws its own compound city
+	if screen == "netrun_raid" or screen == RAID_PLAYOUT_SCREEN:
+		# Parity RAID-13: the mid-run raid (its setup and its playout) is the unified 3D city at
+		# the RAID band, as every other raid view (the HQ's setup, playout and report).
+		use_route_city(true, CityLod.Band.RAID)
+	else:
+		use_route_city(screen == "route" and (s == null or s.run.kind != "boss" or _grid_zoomed))  # ART-8 8w: an HQ run draws its own compound city
 	# LOOT-04 (designer 2026-10-05): the loot and event pages sit on the title's blurred city.
 	background.show_blurred_city(BLURRED_CITY_SCREENS.has(screen), BLURRED_CITY_LOOK,
 		RunManager.campaign.corporation_id if RunManager.campaign != null else &"")
@@ -1138,6 +1143,12 @@ func _modal_open() -> bool:
 
 
 ## Names the screen on the HUD strip from the run phase (STYLE_GUIDE 4, "Neon city").
+## The route's title sticker. Parity ROUTE-06 (round 37 `city_default` names it THE GRID): not
+## renamed yet: the shorter word changes the bar's wrap at 1.6, and the route's fit then leaves
+## YOU ARE HERE on the key strip (Meridian, test_art7_netrun); proposed to S-ROUTE (DECISIONS).
+const ROUTE_TITLE := "NETRUN // ROUTE" # TR
+
+
 func _title_screen(s: NetrunSession, screen: String = "") -> void:
 	close_heat_terminal(false)
 	if s == null:
@@ -1149,7 +1160,12 @@ func _title_screen(s: NetrunSession, screen: String = "") -> void:
 		return
 	match s.run.phase:
 		RunState.Phase.MAP:
-			hud.set_screen("", tr("NETRUN // ROUTE"))
+			# S-HQRUN (orchestrator 2026-10-06): a boss (HQ) run's map carries its own title
+			# sticker on the page; the band shows only the Heat gauge, as the HQ does.
+			if s.run.kind == "boss" and not _grid_zoomed:
+				hud.set_screen("", "")
+			else:
+				hud.set_screen("", tr(ROUTE_TITLE))
 		RunState.Phase.COMBAT:
 			hud.set_screen("", "")
 		RunState.Phase.REWARD:
@@ -2130,12 +2146,13 @@ func node_panel_data(id: StringName) -> Dictionary:
 		"rewards": rewards, "heat": heat_words, "corp_color": Palette.corp_color(s.campaign.corporation_id)}
 
 
-func _mount_route(nodes: Array[Dictionary], edges: Array[Dictionary], look: int, zoom: float, anchor: Vector2, focus: Vector2) -> void:
+func _mount_route(nodes: Array[Dictionary], edges: Array[Dictionary], look: int, zoom: float, anchor: Vector2, focus: Vector2, raid_view: bool = false) -> void:
 	_clear_route()
 	var city := background.city
 	# ART-7 3B: the run's own route draws in the v2 netrun look (RouteOverlay); GRID VIEW keeps
-	# the campaign map's overlay.
-	city_overlay = CityMapOverlay.new(city) if _grid_zoomed else RouteOverlay.new(city)
+	# the campaign map's overlay, and so does a raid page (`raid_view`, parity RAID-13: the HQ's
+	# raid view, its sockets and pencil routes).
+	city_overlay = CityMapOverlay.new(city) if _grid_zoomed or raid_view else RouteOverlay.new(city)
 	# H24 S4: the node tips come translated (the screens build them), shown as given.
 	city_overlay.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	city.add_child(city_overlay)
@@ -2160,10 +2177,11 @@ var route_controls: CityGridControls = null
 ## ART-7 7w: puts the backdrop on the unified 3D city for the route page (`on`: the NETRUN
 ## band; GRID VIEW holds the Grid's band) or back on the 2D city, with 5c's city motion on
 ## the 3D city (CityViewMotion: cars by zoom, sky lanes, billboards, the light spill).
-func use_route_city(on: bool) -> void:
+func use_route_city(on: bool, band: int = -1) -> void:
 	if background == null:
 		return
-	background.use_city3d(on, CityLod.Band.GRID if _grid_zoomed else CityLod.Band.NETRUN)
+	# Parity RAID-13: a raid page asks for the RAID band (`band`); the route NETRUN, GRID VIEW GRID.
+	background.use_city3d(on, band if band >= 0 else (CityLod.Band.GRID if _grid_zoomed else CityLod.Band.NETRUN))
 	var view := background.city.view3d
 	if on and view != null and not view.has_node(ROUTE_MOTION_NAME):
 		var home := NeonCity.hq_of(&"rebel_cell") + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
@@ -2315,8 +2333,11 @@ func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var pre := before if before != null else c
-	var g := CityLayout.grid_graph(pre, RunManager.corporation, CityLayout.threat_paths(pre, RunManager.corporation))
-	_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, 0.85, PLAYOUT_ANCHOR, Vector2.INF)
+	# Parity RAID-13: the raid view's map (the network as it stood before the raid, the Sites the
+	# raid takes) on the 3D city, the plan in pencil while it plays (the HQ's playout).
+	var g := raid_map_graph({}, pre)
+	_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, raid_min_zoom(), PLAYOUT_ANCHOR, Vector2.INF, true)
+	_mount_raid_routes(RaidMapNodes.route_paths(events))
 	# ANIM-R5 P6: labels and home's banner keep off the key too.
 	city_overlay.avoid_controls([side, legend])
 	playout.grid_view = city_overlay
@@ -2370,7 +2391,7 @@ func _frame_fight(sites: Array[StringName], overlay: CityMapOverlay) -> float:
 	for id in sites:
 		pts.append(Vector2(overlay.lot_of(id)) + Vector2(0.5, 0.5))
 	var hq_script: GDScript = load("res://scripts/ui/hq_scene.gd")
-	return background.frame_points(pts, hq_script.fight_area(_fight_parts), RAID_ZOOM, RAID_MIN_ZOOM)
+	return background.frame_points(pts, hq_script.fight_area(_fight_parts), raid_zoom(), raid_min_zoom())
 
 
 ## ANIM-R3 B5: the interlude's forecast words (the raid setup's, translated once) and its
@@ -2410,7 +2431,7 @@ func _frame_raid_map_now() -> void:
 		return
 	if _raid_map_area == null or not is_instance_valid(_raid_map_area) or city_overlay == null or not is_instance_valid(city_overlay):
 		return
-	background.frame_points(raid_frame_points(), _raid_map_area.get_global_rect().grow(-LegendSpot.MARGIN * 2.0), RAID_ZOOM, RAID_MIN_ZOOM)
+	background.frame_points(raid_frame_points(), _raid_map_area.get_global_rect().grow(-LegendSpot.MARGIN * 2.0), raid_zoom(), raid_min_zoom())
 	background.settle_camera()
 
 
@@ -2692,12 +2713,15 @@ func _show_reward() -> void:
 	var n: int = offer["options"].size()
 	var page := VBoxContainer.new()
 	page.name = "LootPage"
-	page.add_theme_constant_override("separation", roundi(10 * ts))
+	page.add_theme_constant_override("separation", roundi(10 * minf(ts, ShopItem.OBJECT_MAX_SCALE)))
 	# Top: the title sticker and the loot strip; the payout terminal on the right.
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 18)
 	page.add_child(top)
-	var head := VBoxContainer.new()
+	# Big words (LOOT_SIDE_FROM up): the title and the strip share a row (the sheet takes the height).
+	var compact := ts >= LOOT_SIDE_FROM
+	var head: BoxContainer = HBoxContainer.new() if compact else VBoxContainer.new()
+	head.alignment = BoxContainer.ALIGNMENT_BEGIN
 	head.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(head)
 	var title := HoloSticker.word(source, VinylSticker.Fill.YELLOW, os, LOOT_TITLE_PX)
@@ -2706,69 +2730,99 @@ func _show_reward() -> void:
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	title.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	head.add_child(title)
+	# big words: the title's words lead the strip instead (the sheet takes the height)
+	title.visible = not compact
 	# ANIM-R6 B10: the window names what paid out (it said RACK BREACHED after every fight).
-	var win := _crt_one_line(CrtWindow.new(tr("%s // LOOT: pick a %s") % [source, kind_word], Palette.NET_CYAN).with_kind(CrtWindow.kind_for(Palette.NET_CYAN), Palette.NET_CYAN))
+	# Parity LOOT-02 (round 32 `reward_screen_v2`): the strip says where the loot came from on
+	# the run: "LOOT // NETRUN: <SITE> // <NODE> n OF N".
+	var win := _crt_one_line(CrtWindow.new(loot_strip(s, compact, source), Palette.NET_CYAN).with_kind(CrtWindow.kind_for(Palette.NET_CYAN), Palette.NET_CYAN))
 	win.name = "LootWindow"
 	win.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	win.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	win.body.visible = false  # a strip: its header line only
 	head.add_child(win)
 	var payout := _crt_one_line(CrtWindow.new(tr("PAYOUT"), Palette.NET_CYAN).with_kind(CrtWindow.kind_for(Palette.NET_CYAN), Palette.NET_CYAN))
 	payout.name = "Payout"
 	payout.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	var op := s.run.operative
-	for line in [[TextDb.mark("CYCLES"), str(s.run.cycles)], [TextDb.mark("HP"), "%d/%d" % [_shown_operative_hp(op.hp), op.max_hp]]]:
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 24)
-		var k := _label(String(line[0]))
-		k.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		k.add_theme_color_override(&"font_color", Palette.TERMINAL_TEXT)
-		row.add_child(k)
-		var v := _label(String(line[1]))
-		v.add_theme_font_override(&"font", Palette.display())
-		v.add_theme_color_override(&"font_color", Palette.CELL_ACID)
-		row.add_child(v)
-		payout.body.add_child(row)
+	# Parity LOOT-03: what this payout paid (the session's own events: preview equals result),
+	# the wallet before and after, HP, and the Heat it added.
+	var pay := payout_of(s)
+	# big words: the lines stand side by side (one row: the sheet takes the height)
+	var pay_rows: BoxContainer = payout.body
+	if compact:
+		pay_rows = HBoxContainer.new()
+		pay_rows.add_theme_constant_override("separation", roundi(UiTheme.SP_L * ts))
+		payout.body.add_child(pay_rows)
+	var cyc_row := _payout_row(TextDb.mark("CYCLES"), TextDb.signed(int(pay["cycles"])) if bool(pay["paid"]) else str(s.run.cycles), Palette.CELL_ACID)
+	cyc_row.name = "PayoutCycles"
+	pay_rows.add_child(cyc_row)
+	# big words: the wallet line goes (the top bar's CYCLES says it) so SKIP keeps the screen
+	if bool(pay["paid"]) and ts < LOOT_SIDE_FROM:
+		var wallet := _label(tr(PAYOUT_WALLET) % [s.run.cycles - int(pay["cycles"]), s.run.cycles])
+		wallet.name = "PayoutWallet"
+		wallet.add_theme_font_override(&"font", Palette.mono())
+		wallet.add_theme_color_override(&"font_color", Palette.TEXT_MID)
+		payout.body.add_child(wallet)
+	pay_rows.add_child(_payout_row(TextDb.mark("HP"), "%d/%d" % [_shown_operative_hp(op.hp), op.max_hp], Palette.CELL_PINK))
+	var heat_row := _payout_row(TextDb.mark("HEAT"), TextDb.signed(int(pay["heat"])), Palette.HARM if int(pay["heat"]) > 0 else Palette.TEXT_MID)
+	heat_row.name = "PayoutHeat"
+	pay_rows.add_child(heat_row)
+	heat_row.visible = ts < LOOT_SIDE_FROM or int(pay["heat"]) != 0
 	# The loot sheet; beside it PAYOUT, a Firmware drop's terminal, the deck and Skip.
 	var sheet := LootSheet.new(tr("LOOT SHEET // %s // PICK 1 OF %d") % [source, n], "", tr(LOOT_FOOT) % [kind_word.to_upper()], os)
 	var stickers := sheet.row
 	var room := LOOT_ROW_MAX - LOOT_SIDE_W * os
-	var slot_option: OptionButton = null
+	var slot_option: SpinnerMini = null
 	var mini: SpinnerMini = null
 	var loot_row := HBoxContainer.new()
 	loot_row.name = "LootRow"
 	loot_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	loot_row.add_theme_constant_override("separation", 14)
-	page.add_child(loot_row)
+	# Parity LOOT-03 (round 32 `reward_screen_v2`): the page is the screen: title and strip top
+	# left, PAYOUT top right, the sheet (and a Firmware drop beside it) in the middle, the DECK
+	# counter bottom left and SKIP under the sheet.
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var mid := CenterContainer.new()
+	mid.name = "LootMiddle"
+	mid.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(mid)
+	mid.add_child(loot_row)
 	loot_row.add_child(sheet)
 	var side := VBoxContainer.new()
 	side.name = "LootSide"
 	side.add_theme_constant_override("separation", roundi(12 * os))
 	loot_row.add_child(side)
+	# Big words (LOOT_SIDE_FROM up): the sheet takes the height, so the DECK counter and SKIP stand
+	# in the column beside it (as ART-9 4A placed them) and stay on the screen.
+	var foot := HBoxContainer.new()
+	foot.name = "LootFoot"
+	foot.add_theme_constant_override("separation", roundi(LOOT_GAP * os))
+	if not compact:
+		page.add_child(foot)
+	var foot_left := HBoxContainer.new()
+	foot_left.name = "LootFootLeft"
+	foot_left.add_theme_constant_override("separation", 12)
+	foot_left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	(side if compact else foot).add_child(foot_left)
+	var foot_right := Control.new()
+	foot_right.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	foot_right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(payout)
 	if offer["kind"] == "firmware":
 		var drop := _crt_one_line(CrtWindow.new(tr("FIRMWARE DROP"), Palette.CELL_ACID).with_kind(CrtWindow.kind_for(Palette.CELL_ACID), Palette.CELL_ACID))
 		drop.name = "FirmwareDrop"
 		side.add_child(drop)
-		# ANIM-R6 B8: the Mainframe's words for the same list ("Chips go into:").
-		var row := HFlowContainer.new()
-		row.name = "SocketRow"
-		row.add_theme_constant_override("h_separation", 6)
-		var word := _label(tr("Chips go into:"))
-		word.name = "SocketWord"
-		word.tooltip_text = UiTip.fold(tr(LOOT_SOCKET_TIP) + " " + drag_tip("loot_socket"))
-		word.mouse_filter = Control.MOUSE_FILTER_PASS
-		row.add_child(word)
-		slot_option = OptionButton.new()
-		slot_option.name = "SlotPick"
-		for i in s.run.operative.slot_slice_ids.size():
-			slot_option.add_item(slot_name(s.run.operative, i))
-		slot_option.tooltip_text = UiTip.fold(tr(LOOT_SOCKET_TIP) + " " + drag_tip("loot_socket"))
-		row.add_child(slot_option)
-		drop.body.add_child(row)
 		# ANIM-4b: a Firmware chip drags onto a slot of the spinner shown beside the offer.
+		# Parity SHOP-06: the spinner is also the socket choice (it replaced the dropdown);
+		# ANIM-R6 B8: the Mainframe's words name it ("Chips go into:").
 		mini = _spinner_mini()
+		mini.make_pickable(0)
 		mini.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		drop.body.add_child(_socket_row(mini, tr(LOOT_SOCKET_TIP) + " " + drag_tip("loot_socket")))
 		drop.body.add_child(mini)
+		slot_option = mini
 	# ANIM-R2 E8: the gap between stickers keeps room for their rest tilt (it grows with the card).
 	var tilt := sin(deg_to_rad(ZineCard.REST_TILT_MAX))
 	var ls := clampf(minf(ts, (room - LOOT_GAP * (n - 1)) / maxf(1.0, n * (LOOT_CARD.x + LOOT_CARD.y * tilt))), 1.0, Settings.TEXT_SCALE_MAX)
@@ -2791,13 +2845,12 @@ func _show_reward() -> void:
 		sticker.tooltip_text = UiTip.fold(loot_tip(res) + ("\n" + drag_tip(drag_kind) if drag_kind != "" else ""))
 		FocusTip.attach(sticker)
 		var index: int = i
-		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected if slot_option != null else -1))
+		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected() if slot_option != null else -1))
+		if slot_option != null and res is FirmwareData:
+			_mark_socket_fits(sticker, slot_option, id)
 		stickers.add_child(sticker)
 	# The deck counter (a card goes there: "+1 = N" in pencil), then Skip as a sticker.
 	if offer["kind"] == "card":
-		var foot := HBoxContainer.new()  # made only when shown (a Firmware or Daemon offer left it an orphan)
-		foot.add_theme_constant_override("separation", 12)
-		side.add_child(foot)
 		# a small counter (round 31: DECK and the count on one line), no header strip
 		var deck := CrtWindow.new("").with_kind(CrtWindow.kind_for(Palette.CELL_PINK), Palette.CELL_PINK)
 		deck.name = "LootDeck"
@@ -2815,23 +2868,29 @@ func _show_reward() -> void:
 		count.add_theme_font_override(&"font", Palette.display())
 		count.add_theme_color_override(&"font_color", Palette.CELL_PINK)
 		deck_row.add_child(count)
-		foot.add_child(deck)
+		foot_left.add_child(deck)
 		var plus := PencilNote.new(tr("+1 = %d") % (op.deck.size() + 1), Palette.PENCIL_PLAN, -0.12, roundi(PencilNote.FONT_PX * os))
 		plus.name = "DeckNote"
 		plus.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		plus.with_arrow(Vector2(0, plus.custom_minimum_size.y * 0.6), Vector2(-28.0, plus.custom_minimum_size.y * 0.9), 4.0)
-		foot.add_child(plus)
+		foot_left.add_child(plus)
 	var skip := HoloSticker.word(tr("Skip").to_upper(), VinylSticker.Fill.WHITE, os, LOOT_SKIP_PX)
 	skip.name = "Skip"
 	skip.pressed.connect(skip_reward)
 	skip.tooltip_text = tr("Take nothing from this payout.")
 	IconMark.attach(skip, StatIcon.SKIP)
-	# under the deck counter, at the column's left (a focused card's tip keeps the screen's right edge)
-	skip.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	side.add_child(skip)
-	var wrap := CenterContainer.new()
-	wrap.add_child(page)
-	_set_panel(wrap, false)
+	# Parity LOOT-03: under the sheet, in the middle of the foot (the DECK counter on its left)
+	skip.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN if compact else Control.SIZE_SHRINK_CENTER
+	(side if compact else foot).add_child(skip)
+	if compact:
+		foot.queue_free()
+		foot_right.queue_free()
+	else:
+		foot.add_child(foot_right)
+	if side.get_child_count() == 0:
+		side.visible = false
+	_set_panel(page, false)
+	_fit_loot_height(page, stickers, ls, tilt)
 	_register_loot_drops(stickers, mini, slot_option)
 	if entering:
 		_fan_loot.call_deferred(stickers)
@@ -2843,6 +2902,103 @@ const LOOT_TITLE_PX := 56
 const LOOT_SIDE_W := 240.0
 const LOOT_SKIP_PX := 30
 const LOOT_FOOT := "x1 %s TAKEN // UNPICKED STICKERS FALL OFF" # TR
+## Parity LOOT-02 / LOOT-03 (round 32 `reward_screen_v2`): the loot strip's words (the run's
+## Site, the node's word and its layer of the route's layers; the Site only off a node) and the
+## PAYOUT's wallet line.
+const LOOT_STRIP := "LOOT // NETRUN: %s // %s %d OF %d" # TR
+const LOOT_STRIP_SITE := "LOOT // NETRUN: %s" # TR
+const LOOT_STRIP_SHORT := "%s // %s %d OF %d" # TR
+const PAYOUT_WALLET := "wallet %d -> %d" # TR
+## Parity LOOT-03: from this text size the DECK counter and SKIP stand beside the sheet (the
+## concept's foot row would push SKIP under the screen's edge).
+const LOOT_SIDE_FROM := 1.25
+## Parity LOOT-03: the least the cards' scale gives way to at big text (they still grow: H-pass
+## 21, "loot cards grow"), and the page's margin kept under it (px at the text scale).
+const LOOT_PAGE_MARGIN := 8.0
+const LOOT_BIG_FLOOR := 1.25
+
+
+## Parity LOOT-03: the loot page keeps to the room under the bar (at 1.6 its cards grew past the
+## screen's foot and the page scrolled): once laid out with this page's bar, the cards' scale
+## `ls` gives way by what the page is over, never under 1 (nor under LOOT_BIG_FLOOR where they
+## had grown past it); `tilt` keeps their rest tilt's room between them. It looks again on the
+## next frame, when the bar has wrapped its tags for this page.
+func _fit_loot_height(page: Control, stickers: Control, ls: float, tilt: float, low: float = -1.0, again: bool = true) -> void:
+	if low < 0.0:
+		low = maxf(1.0, minf(ls, LOOT_BIG_FLOOR))
+	if again and is_inside_tree():
+		get_tree().process_frame.connect(_refit_loot.bind(weakref(page), weakref(stickers), tilt, low), CONNECT_ONE_SHOT)
+	# the bar as laid out (it wraps its tags at big text past its least height)
+	var room := size.y - maxf(hud.size.y, hud.get_combined_minimum_size().y) - LOOT_PAGE_MARGIN * Settings.text_scale
+	for n: Control in [subtitle_strip, pad_prompts, _log]:
+		if n.visible:
+			room -= n.get_combined_minimum_size().y
+	var over := page.get_combined_minimum_size().y - room
+	if over <= 0.0 or stickers.get_child_count() == 0:
+		return
+	var k := maxf(low, ls - over / LOOT_CARD.y)
+	if k >= ls:
+		return
+	stickers.add_theme_constant_override("separation", roundi(LOOT_GAP + LOOT_CARD.y * k * tilt))
+	for c in stickers.get_children():
+		var card := c as ZineCard
+		if card != null:
+			card.scaled(k)
+			card.custom_minimum_size = LOOT_CARD * k
+
+
+## Parity LOOT-03: the loot page's second look, a frame on (weak refs: the page may be gone).
+func _refit_loot(page_ref: WeakRef, stickers_ref: WeakRef, tilt: float, low: float) -> void:
+	var page := page_ref.get_ref() as Control
+	var stickers := stickers_ref.get_ref() as Control
+	if page == null or stickers == null or not page.is_inside_tree() or stickers.get_child_count() == 0:
+		return
+	var first := stickers.get_child(0) as ZineCard
+	if first != null:
+		_fit_loot_height(page, stickers, first.text_scale, tilt, low, false)
+
+
+## Parity LOOT-02: the loot strip ("LOOT // NETRUN: SOLACE CLINIC // FIGHT 3 OF 7"), translated.
+## `short` (big words): what paid out (`source`, translated: the title sticker's words) and the
+## node's place, so the strip and PAYOUT share a row.
+func loot_strip(s: NetrunSession, short: bool = false, source: String = "") -> String:
+	var site := server_label()
+	var node := s.run.current_node() if s.run.current_node_id != &"" else {}
+	if node.is_empty() or s.run.map == null:
+		return tr(LOOT_STRIP_SITE) % site
+	if short:
+		return tr(LOOT_STRIP_SHORT) % [source, node_word(node).to_upper(), int(node["layer"]), s.run.map.layer_count()]
+	return tr(LOOT_STRIP) % [site, node_word(node).to_upper(), int(node["layer"]), s.run.map.layer_count()]
+
+
+## Parity LOOT-03: what the payout on show paid, from the session's own events of the step that
+## brought it (the fight's win): {"paid": a Cycles event was there, "cycles": their sum,
+## "heat": the Heat added}. The events are the rules' own: the numbers are the result.
+static func payout_of(s: NetrunSession) -> Dictionary:
+	var out := {"paid": false, "cycles": 0, "heat": 0}
+	for e in s.last_events:
+		match String(e.get("type", "")):
+			"cycles":
+				out["paid"] = true
+				out["cycles"] = int(out["cycles"]) + int(e.get("amount", 0))
+			"heat":
+				out["heat"] = int(out["heat"]) + int(e.get("amount", 0))
+	return out
+
+
+## Parity LOOT-03: one PAYOUT line: the word in the terminal's ink, the value in Anton in `col`.
+func _payout_row(word: String, value: String, col: Color) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 24)
+	var k := _label(word)
+	k.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	k.add_theme_color_override(&"font_color", Palette.TERMINAL_TEXT)
+	row.add_child(k)
+	var v := _label(value)
+	v.add_theme_font_override(&"font", Palette.display())
+	v.add_theme_color_override(&"font_color", col)
+	row.add_child(v)
+	return row
 
 
 ## ANIM-R6 B8: what the loot's socket list is for (a key; the Mainframe's SOCKET_TIP without
@@ -2930,7 +3086,9 @@ func _show_event() -> void:
 	var os := minf(ts, ShopItem.OBJECT_MAX_SCALE)
 	var dispatch := ev.speaker == RC.Voice.DISPATCH
 	var corp_id := ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id
-	var memo := ev.speaker == RC.Voice.CORPO
+	# Parity EVT-03 (round 31 `event_screen_memo`): a corp speaker's story is an intercepted memo
+	# and DISPATCH's a transcript on the same paper (the concept's memo, not a waveform).
+	var memo := ev.speaker == RC.Voice.CORPO or dispatch
 	var tint := Palette.HARM if dispatch else Palette.corp_color(corp_id)
 	var corp_res := s.lookup.get_content(corp_id)
 	var corp_name := TextDb.t(corp_res, "display_name") if corp_res != null else String(corp_id)
@@ -2945,9 +3103,11 @@ func _show_event() -> void:
 	var split := HBoxContainer.new()
 	split.add_theme_constant_override("separation", 18)
 	box.add_child(split)
-	var holder := _crt_one_line(CrtWindow.new(tr("TERMINAL // %s") % (tr("DISPATCH") if dispatch else corp_name.to_upper()), tint).with_kind(CrtWindow.kind_for(tint), tint))
+	# Parity EVT-01 (round 31 `event_screen`): the terminal names where the run stands
+	# ("TERMINAL // SOLACE BIOSYSTEMS // NODE 4 OF 7").
+	var holder := _crt_one_line(CrtWindow.new(event_header(s, tr("DISPATCH") if dispatch else corp_name.to_upper()), tint).with_kind(CrtWindow.kind_for(tint), tint))
 	holder.name = "EventPanel"
-	holder.tag_label.text = tr("INTERCEPT") if memo else tr("EVENT")
+	holder.tag_label.text = tr("INTERCEPT") if memo and not dispatch else tr("EVENT")
 	holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	holder.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	split.add_child(holder)
@@ -2965,7 +3125,9 @@ func _show_event() -> void:
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	# Left: the memo (corp speaker), the CAM feed, or DISPATCH's voice.
 	if memo:
-		var paper := CorpMemo.new(corp_name, tint, os)
+		var paper := CorpMemo.new(tr("DISPATCH") if dispatch else corp_name, tint, os)
+		if dispatch:
+			paper.as_transcript()
 		paper.custom_minimum_size = Vector2(EVENT_MEMO_W, 0)
 		paper.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		text.custom_minimum_size = Vector2(EVENT_MEMO_W - CorpMemo.PAD.x * 2.0 * os, 0)
@@ -2989,18 +3151,20 @@ func _show_event() -> void:
 	# H24 S4: the speaker's name comes translated (once).
 	var who: String = Dialogue.speaker_name(ev.speaker, corp_id)
 	if memo:
-		var intercepted := _label(tr("INTERCEPTED // %s INTERNAL MAIL") % corp_name.to_upper())
+		var intercepted := _label(tr(DISPATCH_HEAD) if dispatch else tr("INTERCEPTED // %s INTERNAL MAIL") % corp_name.to_upper())
+		intercepted.name = "EventIntercept"
 		intercepted.add_theme_color_override(&"font_color", tint)
 		intercepted.add_theme_font_override(&"font", Palette.mono())
 		right.add_child(intercepted)
-	var title := _label(TextDb.t(ev, "title").to_upper() if not memo else who)
+	# Naive-reader audit P3: DISPATCH's name once (its title already starts with it).
+	var title := _label(TextDb.t(ev, "title").to_upper() if not memo or dispatch else who)
 	title.name = "EventTitle"
 	title.add_theme_font_override(&"font", Palette.display())
 	title.add_theme_font_size_override(&"font_size", roundi(EVENT_TITLE_PX * os))
 	title.add_theme_color_override(&"font_color", Palette.TEXT_HI)
 	right.add_child(title)
 	# Naive-reader audit P3: DISPATCH's name once (its title already starts with it).
-	var speaker := _label((who + " - " + TextDb.t(ev, "title")) if memo else (tr("voice only // no feed") if dispatch else tr("%s // terminal log, unsigned") % who))
+	var speaker := _label(tr("voice only // transcript") if dispatch else ((who + " - " + TextDb.t(ev, "title")) if memo else tr("%s // terminal log, unsigned") % who))
 	speaker.add_theme_color_override(&"font_color", tint)
 	speaker.add_theme_font_override(&"font", Palette.mono())
 	right.add_child(speaker)
@@ -3008,10 +3172,16 @@ func _show_event() -> void:
 	speaker.visible = ts < EVENT_FEED_BELOW
 	if not memo:
 		right.add_child(text)
+	# Parity EVT-01 / EVT-02: under a CAM feed the choices take the terminal's whole width under
+	# its story (round 31 `event_screen`); beside a memo they stay in the right column
+	# (`event_screen_memo`). Either way each outcome's chips stand in a column beside its row.
+	# From EVENT_CHOICES_BESIDE_FROM up the feed's height would push them off the screen: beside it.
+	var choices_host: VBoxContainer = right if memo or ts >= EVENT_CHOICES_BESIDE_FROM else holder.body
 	var choose := _label(tr("> CHOOSE"))
+	choose.name = "EventChoose"
 	choose.add_theme_color_override(&"font_color", tint)
 	choose.add_theme_font_override(&"font", Palette.mono())
-	right.add_child(choose)
+	choices_host.add_child(choose)
 	choose.visible = ts < EVENT_FEED_BELOW
 	if not _spoken_events.has(ev.id):
 		_spoken_events[ev.id] = true
@@ -3023,7 +3193,7 @@ func _show_event() -> void:
 	options.add_theme_constant_override("separation", roundi(8 * os))
 	options.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	options.theme = ChoiceSticker.theme_for(ts)
-	right.add_child(options)
+	choices_host.add_child(options)
 	var calm: Control = null
 	for i in ev.choices.size():
 		var c := ev.choices[i]
@@ -3044,23 +3214,32 @@ func _show_event() -> void:
 		b.theme_type_variation = ChoiceSticker.TYPE
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD
+		b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		options.add_child(b)
 		b.add_child(ChoiceSticker.new(i + 1, ts))
 		# H23 S9 / H24 S9: a choice that changes nothing says so with the grey NO CHANGE chip.
+		# Parity EVT-02: the chips in a column beside the sticker, readable at a glance.
 		var numbers := OutcomeRow.shown(outcome)
 		var row := OutcomeRow.new(numbers if not numbers.is_empty() else OutcomeRow.no_change())
-		OutcomeRow.attach(b, row)
+		OutcomeRow.attach_beside(b, row, EVENT_CHIPS_GAP * os)
 		if numbers.is_empty() and calm == null:
 			calm = b
 		# ANIM-6: the outcome's chips pop when the choice is hovered or focused.
 		b.mouse_entered.connect(func() -> void: Motion.pop(row, &"event_outcome_pop"))
 		b.focus_entered.connect(func() -> void: Motion.pop(row, &"event_outcome_pop"))
-	# Beside the window: the node's TERMINAL sticker and, at most, one pencil note.
+	# Parity EVT-02: the stickers take EVENT_CHOICE_SHARE of the row, the chips the rest.
+	var chips_gap := EVENT_CHIPS_GAP * os
+	options.resized.connect(func() -> void: fit_event_choices(options, chips_gap))
+	# Beside the window: the RUN terminal, the node's TERMINAL sticker and, at most, one pencil note.
 	var side := VBoxContainer.new()
 	side.name = "EventSide"
 	side.add_theme_constant_override("separation", 24)
-	side.custom_minimum_size.x = EVENT_SIDE_W
+	side.custom_minimum_size.x = EVENT_SIDE_W * (os if ts < EVENT_FEED_BELOW else 1.0)
 	split.add_child(side)
+	# Parity EVT-01 (round 31 `event_screen`): the RUN side terminal (HP, CYCLES, CREW); at big
+	# text the top bar's tags say the same and the story takes the room.
+	if ts < EVENT_FEED_BELOW:
+		side.add_child(_event_run_window(s))
 	var node_sticker := HoloSticker.word(tr("TERMINAL"), VinylSticker.Fill.RED if dispatch else VinylSticker.Fill.WHITE, os, EVENT_STICKER_PX)
 	node_sticker.name = "NodeSticker"
 	node_sticker.focus_mode = Control.FOCUS_NONE
@@ -3077,6 +3256,10 @@ func _show_event() -> void:
 		var aim := func() -> void:
 			if is_instance_valid(note) and is_instance_valid(calm) and calm.is_inside_tree():
 				var target := calm.get_global_rect()
+				# Parity EVT-02: the arrow ends on the choice's NO CHANGE chip beside it.
+				var chips := calm.get_node_or_null(^"OutcomeRow") as Control
+				if chips != null and chips.visible and chips.size.x > 0.0:
+					target = chips.get_global_rect()
 				var to := Vector2(target.end.x + 6.0, target.get_center().y) - note.global_position
 				note.with_arrow(Vector2(0.0, note.custom_minimum_size.y * 0.8), to, 24.0)
 		note.item_rect_changed.connect(aim)
@@ -3092,13 +3275,66 @@ func _show_event() -> void:
 
 
 ## ART-9 4A: the event window's pieces at text scale 1 (px): the CAM feed, the story's width beside
-## it, the memo's width, the title lettering, the TERMINAL sticker and the side column.
+## it, the memo's width, the title lettering, the TERMINAL sticker and the side column (parity
+## EVT-01: wide enough for the RUN terminal).
 const EVENT_CAM := Vector2(320, 230)
 const EVENT_TEXT_W := 320.0
 const EVENT_MEMO_W := 470.0
 const EVENT_TITLE_PX := 34
 const EVENT_STICKER_PX := 40
-const EVENT_SIDE_W := 190.0
+const EVENT_SIDE_W := 220.0
+## Parity EVT-02 (round 31 `event_screen`): a choice sticker's share of its row and the gap (px at
+## 1) before the outcome chips' column beside it.
+const EVENT_CHOICE_SHARE := 0.55
+const EVENT_CHIPS_GAP := 16.0
+## Parity EVT-01: the text size from which the choices stay beside the CAM feed (under it they
+## would leave the screen's foot).
+const EVENT_CHOICES_BESIDE_FROM := 1.25
+## Parity EVT-01 / EVT-03: the terminal's header with the run's place, the RUN terminal's words,
+## and DISPATCH's transcript line.
+const EVENT_HEADER := "TERMINAL // %s // NODE %d OF %d" # TR
+const EVENT_HEADER_SITE := "TERMINAL // %s" # TR
+const DISPATCH_HEAD := "TRANSCRIPT // DISPATCH // VOICE LOG" # TR
+
+
+## Parity EVT-01: the event terminal's header: who it belongs to and the node it stands on of
+## the route's layers ("TERMINAL // SOLACE BIOSYSTEMS // NODE 4 OF 7"), translated.
+func event_header(s: NetrunSession, owner_words: String) -> String:
+	var node := s.run.current_node() if s.run.current_node_id != &"" else {}
+	if node.is_empty() or s.run.map == null:
+		return tr(EVENT_HEADER_SITE) % owner_words
+	return tr(EVENT_HEADER) % [owner_words, int(node["layer"]), s.run.map.layer_count()]
+
+
+## Parity EVT-01 (round 31 `event_screen`): the RUN side terminal: the operative's HP, the
+## run's Cycles and the crew still standing (the campaign's living operatives); its tag names
+## the operative and class.
+func _event_run_window(s: NetrunSession) -> CrtWindow:
+	var op := s.run.operative
+	var win := _crt_one_line(CrtWindow.new(tr("RUN"), Palette.NET_CYAN).with_kind(CrtWindow.kind_for(Palette.NET_CYAN), Palette.NET_CYAN))
+	win.name = "EventRun"
+	win.tag_label.text = "%s // %s" % [op.name.to_upper(), _content_name(op.class_id).to_upper()]
+	win.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	win.body.add_child(_payout_row(TextDb.mark("HP"), "%d/%d" % [_shown_operative_hp(op.hp), op.max_hp], Palette.CELL_PINK))
+	win.body.add_child(_payout_row(TextDb.mark("CYCLES"), str(s.run.cycles), Palette.CELL_ACID))
+	win.body.add_child(_payout_row(TextDb.mark("CREW"), str(s.campaign.living_operatives().size()), Palette.TEXT_HI))
+	return win
+
+
+## Parity EVT-02: the choice stickers take EVENT_CHOICE_SHARE of `options`' width; each one's
+## outcome chips fill the column beside it (after `gap` px).
+static func fit_event_choices(options: Control, gap: float) -> void:
+	if not is_instance_valid(options):
+		return
+	var w := options.size.x
+	var plate := floorf(w * EVENT_CHOICE_SHARE)
+	for b in options.get_children():
+		if not (b is Button):
+			continue
+		(b as Button).custom_minimum_size.x = plate
+		var row := (b as Node).get_node_or_null(^"OutcomeRow") as OutcomeRow
+		if row != null:
+			row.set_beside_width(maxf(0.0, w - plate - gap))
 ## The text size from which the event's CAM feed steps aside (the story takes its room).
 const EVENT_FEED_BELOW := 1.6
 ## The CAM feed's copy of the city (a BackBufferCopy after it, while the event shows).
@@ -3306,11 +3542,13 @@ func _show_shop() -> void:
 	chips.add_theme_constant_override("separation", roundi(SHOP_ROW_GAP * ts))
 	fw_col.add_child(chips)
 	board.foam_row = chips
-	var fw_slot := OptionButton.new()
-	fw_slot.name = "SocketPick"
-	for k in op.slot_slice_ids.size():
-		fw_slot.add_item(slot_name(op, k))
-	var info := _crt_one_line(CrtWindow.new("").with_kind(CrtWindow.kind_for(Palette.NET_CYAN), Palette.NET_CYAN))
+	# ANIM-4b: the spinner in small: Firmware and slice upgrades drag onto its slots. Parity
+	# SHOP-06: with Firmware in stock it is also the socket choice (it replaced the dropdown).
+	var fw_slot := _spinner_mini()
+	var stocks_firmware: bool = not shop.get("firmware", []).is_empty()
+	if stocks_firmware:
+		fw_slot.make_pickable(0)
+	var info :=_crt_one_line(CrtWindow.new("").with_kind(CrtWindow.kind_for(Palette.NET_CYAN), Palette.NET_CYAN))
 	info.name = "ShopInfo"
 	var os := minf(ts, ShopItem.OBJECT_MAX_SCALE)
 	# big words: a narrower strip keeps the spinner beside it clear of the stock wheel's left tag
@@ -3375,23 +3613,15 @@ func _show_shop() -> void:
 				if item.disabled and (ev.is_action_pressed(&"ui_accept") or (ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT)):
 					price_refused(price_i))
 			item.set_meta(STOCK_META, i)
-			item.pressed.connect(func() -> void: buy(k, index, fw_slot.selected if k == "firmware" else -1))
+			item.pressed.connect(func() -> void: buy(k, index, fw_slot.selected() if k == "firmware" else -1))
+			if k == "firmware":
+				_mark_socket_fits(item, fw_slot, id)
 			({"cards": stickers, "firmware": chips}.get(kind, daemon_row) as Control).add_child(item)
 			n += 1
-	if not shop.get("firmware", []).is_empty():
-		# ANIM-R5 B11: the list says what it is for ("Chips go into: Slot 1: OVERFLOW 12").
-		var socket_row := HFlowContainer.new()
-		socket_row.name = "SocketRow"
-		socket_row.add_theme_constant_override("h_separation", 6)
-		var socket_word := _label(tr("Chips go into:"))
-		socket_word.name = "SocketWord"
-		socket_word.add_theme_color_override(&"font_color", Palette.TEXT_HI)
-		socket_word.tooltip_text = UiTip.fold(tr(SOCKET_TIP) + " " + drag_tip("socket"))
-		socket_word.mouse_filter = Control.MOUSE_FILTER_PASS
-		socket_row.add_child(socket_word)
-		fw_slot.tooltip_text = UiTip.fold(tr(SOCKET_TIP) + " " + drag_tip("socket"))
-		socket_row.add_child(fw_slot)
-		cards_col.add_child(socket_row)
+	if stocks_firmware:
+		# ANIM-R5 B11: the list says what it is for ("Chips go into: Slot 1: OVERFLOW 12"); parity
+		# SHOP-06: the choice itself is the spinner beside the info strip, this line names it.
+		cards_col.add_child(_socket_row(fw_slot, tr(SOCKET_TIP) + " " + drag_tip("socket")))
 	var info_row := HBoxContainer.new()
 	info_row.name = "InfoRow"
 	info_row.add_theme_constant_override("separation", roundi(SHOP_ROW_GAP * 2.0 * ts))
@@ -3491,15 +3721,22 @@ func _show_shop() -> void:
 	wallet.mirror = hud.stats  # ANIM-R2 E9: it rolls with the top bar's CYCLES
 	wallet.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	wallet_row.add_child(wallet)
-	# ANIM-4b: the spinner in small: Firmware and slice upgrades drag onto its slots.
-	var mini := _spinner_mini()
+	var mini := fw_slot
 	mini.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	info_row.add_child(mini)
 	if wide:
 		# big words: the wallet joins the info strip and the clerk steps aside (the prices are
 		# on every tag)
-		# under the Daemons (the board's right, clear of where the stock wheel's tags hang)
-		wallet.reparent(dm_col)
+		# parity SHOP-03: at the end of the Daemons' row (under it the stock wheel's tags, lettered
+		# bigger now, reached it at 2.0; over it the subtitle band)
+		var shelf := HBoxContainer.new()
+		shelf.name = "DaemonShelf"
+		shelf.add_theme_constant_override("separation", roundi(SHOP_COL_GAP))
+		dm_col.add_child(shelf)
+		dm_col.move_child(shelf, daemon_row.get_index())
+		daemon_row.reparent(shelf)
+		wallet.reparent(shelf)
+		wallet.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		wallet.custom_minimum_size.x = wallet.full_width(minf(ts, SHOP_WALLET_MAX_SCALE))
 		wallet.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		clerk.visible = false
@@ -3515,10 +3752,11 @@ func _show_shop() -> void:
 	leave.pressed.connect(leave_shop)
 	leave.tooltip_text = tr("Leave the Mainframe and go back to the route.")
 	root.add_child(leave)
-	var leave_icon := IconMark.standalone(StatIcon.EXIT, LEAVE_ICON * os, Palette.CELL_PINK)
-	leave_icon.name = "LeaveIcon"
+	# Parity SHOP-05 (round 34 shop_v5): the concept's own pink chevron sticker beside LEAVE
+	# (shop2.leave_sticker()'s arrow, exported unchanged), pressed it leaves too.
+	var leave_icon := leave_arrow(os)
 	leave_icon.tooltip_text = leave.tooltip_text
-	leave_icon.mouse_filter = Control.MOUSE_FILTER_PASS
+	leave_icon.pressed.connect(leave_shop)
 	root.add_child(leave_icon)
 	# Grease pencil, true to the rules: only the top wedges are for sale; the bin takes cards;
 	# the clerk's note.
@@ -3620,6 +3858,27 @@ const SHOP_INFO_IDLE_PAD := "> focus an item: what it does shows here." # TR
 ## ART-9 4A: the wallet's largest scale at big text (it stands under the Daemons, clear of the
 ## stock wheel's and the bin's tags; the top bar's CYCLES keeps the full size).
 const SHOP_WALLET_MAX_SCALE := 1.35
+## Parity SHOP-05: LEAVE's pink chevron sticker (MainframeArt part, round 34 shop2.leave_sticker()).
+const LEAVE_ARROW := "leave_arrow"
+
+
+## Parity SHOP-05 (round 34 shop_v5): the concept's pink chevron sticker beside LEAVE, at object
+## scale `os` (the art at MainframeArt.SCALE). No focus of its own: LEAVE is the page's verb and
+## takes the pad; a press on the arrow leaves too.
+static func leave_arrow(os: float) -> Button:
+	var b := Button.new()
+	b.name = "LeaveIcon"
+	b.flat = true
+	b.icon = MainframeArt.tex(LEAVE_ARROW)
+	b.expand_icon = true
+	b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	for key in ["normal", "hover", "pressed", "disabled", "hover_pressed", "focus"]:
+		b.add_theme_stylebox_override(key, StyleBoxEmpty.new())
+	var art := b.icon.get_size() * MainframeArt.SCALE if b.icon != null else Vector2(LEAVE_ICON, LEAVE_ICON)
+	b.custom_minimum_size = art * os
+	b.focus_mode = Control.FOCUS_NONE
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	return b
 ## The facade behind the Mainframe (kept while the page is rebuilt on the same visit).
 var _shop_facade: MainframeFacade = null
 var _shop_facade_key: String = ""
@@ -3684,6 +3943,8 @@ func _layout_shop(root: Control) -> void:
 	var bx := clampf(SHOP_BOARD_X - board.size.x * 0.5, minf(left, right_edge - board.size.x), right_edge - board.size.x)
 	board.global_position = Vector2(maxf(SHOP_MARGIN, bx), top + SHOP_BOARD_TOP)
 	leave.size = leave.get_combined_minimum_size()
+	if icon != null:
+		icon.size = icon.get_combined_minimum_size()
 	var icon_w := icon.size.x + SHOP_MARGIN if icon != null else 0.0
 	leave.global_position = screen - leave.size - Vector2(SHOP_MARGIN * 2.0 + icon_w, SHOP_MARGIN)
 	if icon != null:
@@ -4022,24 +4283,31 @@ func _show_raid() -> void:
 	var chips := VBoxContainer.new()
 	chips.name = "RaidAssets"
 	box.add_child(chips)
-	var run_row := HFlowContainer.new()
-	run_row.name = "RunAssetChips"
-	run_row.add_theme_constant_override("h_separation", 8)
-	chips.add_child(run_row)
-	run_row.add_child(_label(tr("RUN ASSETS:")))
-	for i in run_assets.size():
-		run_row.add_child(_asset_chip("RunAsset_%d" % i, run_assets[i]))
-	if run_assets.is_empty():
-		run_row.add_child(_none_label())  # ANIM-R6 C15: never an empty caption
-	var armory_row := HFlowContainer.new()
-	armory_row.name = "ArmoryChips"
-	armory_row.add_theme_constant_override("h_separation", 8)
-	chips.add_child(armory_row)
-	armory_row.add_child(_label(tr("ARMORY:")))
-	for i in c.armory.size():
-		armory_row.add_child(_asset_chip("Armory_%d" % i, c.armory[i]))
-	if c.armory.is_empty():
-		armory_row.add_child(_none_label())
+	var armory_row: Control = null
+	if run_assets.is_empty() and c.armory.is_empty():
+		# Parity RAID-14 (the M13 build's designed empty state, art pass W8c): nothing to deploy
+		# says why in one line (the two bare "none" captions read as a list that failed to load).
+		armory_row = _empty_assets_note()
+		chips.add_child(armory_row)
+	else:
+		var run_row := HFlowContainer.new()
+		run_row.name = "RunAssetChips"
+		run_row.add_theme_constant_override("h_separation", 8)
+		chips.add_child(run_row)
+		run_row.add_child(_label(tr("RUN ASSETS:")))
+		for i in run_assets.size():
+			run_row.add_child(_asset_chip("RunAsset_%d" % i, run_assets[i]))
+		if run_assets.is_empty():
+			run_row.add_child(_none_label())  # ANIM-R6 C15: never an empty caption
+		armory_row = HFlowContainer.new()
+		armory_row.name = "ArmoryChips"
+		armory_row.add_theme_constant_override("h_separation", 8)
+		chips.add_child(armory_row)
+		armory_row.add_child(_label(tr("ARMORY:")))
+		for i in c.armory.size():
+			armory_row.add_child(_asset_chip("Armory_%d" % i, c.armory[i]))
+		if c.armory.is_empty():
+			armory_row.add_child(_none_label())
 	for site_id in c.grid.claimed_ids():
 		var row := HFlowContainer.new()  # wraps inside the 1280 screen (horizontal pass 10)
 		row.name = "RaidRow_%s" % site_id
@@ -4069,9 +4337,15 @@ func _show_raid() -> void:
 				var sid3 := site_id
 				row.add_child(_button(tr("Deploy armory asset"), func() -> void: raid_deploy_armory(pick2.selected, sid3)))
 		box.add_child(row)
-	var run_btn := _button(tr(START_DEFENSE), raid_fight)
-	IconMark.attach(run_btn, StatIcon.RAIDS)
-	box.add_child(run_btn)
+	# Parity RAID-14: START DEFENSE is the raid's pink vinyl sticker, as on every other raid page
+	# (the HQ's DEFENCE slot): one sticker verb on the screen, at the window's foot.
+	# (the run end's VinylButton: the same 1B vinyl as the HQ's RaidSticker, whose die-cut came
+	# out narrower than its word on this page)
+	var run_btn := VinylButton.new(TextDb.mark(START_DEFENSE), VinylSticker.Fill.PINK, START_STICKER_STEP)
+	run_btn.name = "StartDefense"
+	run_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
+	run_btn.pressed.connect(raid_fight)
+	run_btn.tooltip_text = UiTip.fold(tr("Start the defence: the raid plays out on the map; the result matches the forecast."))
 	# ANIM-R1 M8: the interlude is a window beside the raid's map on the city (the Grid, the
 	# threats' routes to CORE), framed before the jack's cover lifts: a jack into a mid-run
 	# raid lands on the setup with its map, not on a dark page of text.
@@ -4083,7 +4357,16 @@ func _show_raid() -> void:
 	win.custom_minimum_size.x = RAID_WINDOW_WIDTH * minf(Settings.text_scale, RAID_WINDOW_GROW)
 	win.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	win.body.add_child(box)
-	root.add_child(win)
+	# The window over its verb: START DEFENSE under the window's right corner, off the glass (in
+	# the window the terminal's own type sizes cut the vinyl's lettering).
+	var left_col := VBoxContainer.new()
+	left_col.name = "RaidColumn"
+	left_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	left_col.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	left_col.add_theme_constant_override("separation", roundi(UiTheme.SP_S * Settings.text_scale))
+	left_col.add_child(win)
+	left_col.add_child(run_btn)
+	root.add_child(left_col)
 	var area := Control.new()
 	area.name = "RaidMapArea"
 	area.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -4092,14 +4375,18 @@ func _show_raid() -> void:
 	_set_panel(root, false)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var g := CityLayout.grid_graph(c, RunManager.corporation, CityLayout.threat_paths(c, RunManager.corporation))
-	_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, RAID_MIN_ZOOM, RAID_MAP_ANCHOR, Vector2.INF)
-	city_overlay.avoid_controls([win])
+	# Parity RAID-13: the raid's own map (the HQ's raid view: the Cell's network as raid sockets,
+	# the Sites the threats really take, their routes in red pencil) on the 3D city.
+	var g := raid_map_graph(projection, c)
+	_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, raid_min_zoom(), RAID_MAP_ANCHOR, Vector2.INF, true)
+	_mount_raid_routes(RaidMapNodes.route_paths(projection.events))
+	city_overlay.avoid_controls([win, run_btn])
 	_raid_map_area = area
 	_frame_raid_map.call_deferred()
-	# ANIM-R5 P2: behind the setup (after its own view), the playout's fights (ART-7 7w: the
-	# route the run goes on to is the 3D city: nothing to bake).
-	_prebake_raid_playout.call_deferred(c, null)
+	# ANIM-R5 P2: behind the setup (after its own view), the playout's fights; on the 3D city
+	# (parity RAID-13) there is nothing to bake.
+	if not background.city3d:
+		_prebake_raid_playout.call_deferred(c, null)
 	_register_raid_drops(run_assets, armory_row)
 
 
@@ -4113,6 +4400,100 @@ func _none_label() -> Label:
 
 
 const NONE_WORD := "none" # TR
+## Parity RAID-14: the interlude's empty state (the M13 build's words) and START DEFENSE's
+## lettering (the HQ's setup letters its sticker at the TITLE step).
+const NO_ASSETS_WORDS := "No assets to deploy: this run carries none and the Armory is empty. Your nodes hold with what is on them." # TR
+const START_STICKER_STEP := UiTheme.TITLE
+
+
+## Parity RAID-14 (ported from art-m13-final netrun_scene.gd `_empty_assets_note`, art pass W8c
+## critique 28; v2 words in the terminal's mid ink): nothing to deploy, in one line with the
+## Armory's icon, never bare "RUN ASSETS:" / "ARMORY:" captions.
+func _empty_assets_note() -> Control:
+	var row := HBoxContainer.new()
+	row.name = "NoAssets"
+	row.add_theme_constant_override("separation", UiTheme.SP_S)
+	var side := UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR
+	row.add_child(IconMark.standalone(StatIcon.ARMORY, side, Palette.TEXT_MID))
+	var l := _label(tr(NO_ASSETS_WORDS))
+	l.name = "NoAssetsWords"
+	UiWrap.whole_words(l)
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.add_theme_color_override("font_color", Palette.TEXT_MID)
+	row.add_child(l)
+	return row
+
+
+## Parity RAID-13: the mid-run raid's map as the HQ's raid view draws it (S-MAPVIEW's major
+## nodes only): the Cell's network as raid sockets (`RaidSocket`: glyph, state, health, the
+## forecast ring of `results` when it is the setup's projection), every Site the raid's threats
+## really take, the links among them; the threat routes are the pencil's (`_mount_raid_routes`).
+## `results`: the projection (setup) or {} (the playout, from the pre-raid `c`).
+func raid_map_graph(results: Variant, c: CampaignState) -> Dictionary:
+	var corp := RunManager.corporation
+	var routes := RaidMapNodes.shown_routes(results, c, corp, RunManager.config(), RunManager.lookup())
+	var g := CityLayout.grid_graph(c, corp, routes)
+	var nodes_res: Dictionary = (results as RaidResolver.RaidResult).nodes if results is RaidResolver.RaidResult else results
+	var network := RaidMapNodes.major_ids(c, routes, nodes_res)
+	var nodes: Array[Dictionary] = []
+	for n in g["nodes"]:
+		if not network.has(n["id"]):
+			continue
+		n["label"] = _site_name(n["id"])
+		n["assets"] = c.grid.assets_on(n["id"])
+		n["threat_corp"] = String(c.corporation_id)
+		if c.grid.is_claimed(n["id"]) or n["id"] == c.grid.home_site_id:
+			n["socket"] = raid_socket_spec(n["id"], nodes_res.get(String(n["id"]), {}), results is RaidResolver.RaidResult, c)
+		nodes.append(n)
+	var edges: Array[Dictionary] = []
+	for e in g["edges"]:
+		if network.has(e["a"]) and network.has(e["b"]):
+			if e.get("arrows", false):
+				e["pencil"] = true
+			edges.append(e)
+	return {"nodes": nodes, "edges": edges}
+
+
+## Parity RAID-13: claimed node `site_id`'s raid socket (RaidSocket spec, as the HQ's raid view
+## builds it: `hq_scene.raid_socket`, owned by HQ-BUILD): its type's glyph, its state, its health
+## now and the projected outcome as a forecast ring (`forecast`: `res` is the projection's).
+static func raid_socket_spec(site_id: StringName, res: Dictionary, forecast: bool, c: CampaignState) -> Dictionary:
+	var s := c.grid.site(site_id)
+	var home := site_id == c.grid.home_site_id
+	var glyph := RaidSocket.GLYPH_CORE if home else RaidSocket.glyph_of(c.grid.node_type_of(site_id))
+	var integ := c.grid.home_integrity if home else int(s.get("integrity", 0))
+	var most := c.grid.home_max_integrity if home else maxi(1, int(s.get("max_integrity", 1)))
+	var state := RaidSocket.STATE_DOWN if not c.grid.is_active_node(site_id) else RaidSocket.STATE_HOLDS
+	var spec := {"glyph": glyph, "state": state, "health": float(integ) / float(maxi(1, most)), "max": most}
+	var op_id := c.grid.stationed_on(site_id)
+	if op_id != &"":
+		for op in c.roster:
+			if op.id == op_id:
+				spec["beacon"] = op.class_id
+	if forecast and not res.is_empty():
+		spec["forecast"] = String(res.get("outcome", ""))
+	return spec
+
+
+## Parity RAID-13 (ART-6 3A): the raid's threat routes (Site id paths) in red pencil on the map,
+## with the stationed operatives' beacons.
+func _mount_raid_routes(paths: Array[Array]) -> void:
+	if city_overlay == null or not is_instance_valid(city_overlay):
+		return
+	var routes := RaidRouteLayer.new(city_overlay)
+	city_overlay.add_child(routes)
+	city_overlay.add_child(RaidBeaconLayer.new(city_overlay))
+	routes.set_routes(paths, entering)
+
+
+## Parity RAID-13: the raid map's closest and furthest zoom: the raid band's ortho range on the
+## 3D city (`raid_fit_min` / `raid_fit_max`, as the HQ's raid views), the 2D city's own else.
+func raid_zoom() -> float:
+	return RaidZoomFit.zoom_of(CityView3D.CONFIG.raid_fit_min, size.x) if background != null and background.city3d else RAID_ZOOM
+
+
+func raid_min_zoom() -> float:
+	return RaidZoomFit.zoom_of(CityView3D.CONFIG.raid_fit_max, size.x) if background != null and background.city3d else RAID_MIN_ZOOM
 
 
 ## ANIM-R3 B5: the interlude's forecast as the raid setup shows it: the dashed stamp ("IF
@@ -4222,13 +4603,47 @@ func _site_name(site_id: StringName) -> String:
 ## red; 1B's `sticker_slap`), what happened to the operative (a flatline is for good: GDD 4.2
 ## permadeath), the run in numbers and why Heat rose, then BACK TO HQ, the screen's one pink
 ## verb. HOME FELL hands over to the HQ's campaign lost lock.
-const END_WIDTH := 760.0
+const END_WIDTH := 600.0
 const END_GROW := 1.3
 ## The verdict sticker's lettering (type step) and tilt (degrees).
 const END_VERDICT_STEP := UiTheme.HEADING
 const END_VERDICT_TILT := -6.0
 ## BACK TO HQ's lettering (type step).
 const END_BACK_STEP := UiTheme.TITLE
+## Parity END-01 (the build's RunEndStage, art pass W8c): the operative's Polaroid at text scale
+## 1 (px; it grows to END_GROW) and its tilt (degrees), how far down the print the verdict
+## sticker is slapped (share of its height), and the lost run's grey city (screen shader: the
+## city greyed and darkened by END_GREY_DIM).
+const END_PHOTO := Vector2(132, 160)
+const END_PHOTO_TILT := -3.0
+const END_VERDICT_OVER := 0.55
+const END_GREY_SHADER := preload("res://shaders/screen_grey.gdshader")
+const END_GREY_DIM := 0.35
+
+
+## Parity END-01 / END-02: the operative's Polaroid with the verdict sticker slapped over its
+## lower half (never over its caption's line), centred over each other.
+func _end_photo(photo: Polaroid, verdict: Control) -> Control:
+	var box := Control.new()
+	box.name = "RunEndPhoto"
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(photo)
+	box.add_child(verdict)
+	var lay := func() -> void:
+		if not is_instance_valid(box) or not is_instance_valid(photo) or not is_instance_valid(verdict):
+			return
+		var ps := photo.get_combined_minimum_size()
+		var vs := verdict.get_combined_minimum_size()
+		box.custom_minimum_size = Vector2(maxf(ps.x, vs.x), maxf(ps.y, ps.y * END_VERDICT_OVER + vs.y))
+		photo.size = ps
+		photo.position = Vector2((box.size.x - ps.x) * 0.5, 0.0)
+		photo.pivot_offset = ps * 0.5
+		verdict.size = vs
+		verdict.position = Vector2((box.size.x - vs.x) * 0.5, ps.y * END_VERDICT_OVER)
+	box.resized.connect(lay)
+	verdict.minimum_size_changed.connect(lay)
+	lay.call()
+	return box
 
 
 func _show_end() -> void:
@@ -4240,10 +4655,13 @@ func _show_end() -> void:
 	var report := TerminalWindow.new(title, col)
 	report.name = "RunReport"
 	report.custom_minimum_size.x = END_WIDTH * minf(Settings.text_scale, END_GROW)
+	# Parity END-01 / END-02 (the M13 build's run end, art pass W8c, reworked in v2): beside the
+	# report, the operative's Polaroid with the verdict sticker slapped over its foot (a flatline
+	# greys the print and strikes it out in red pencil, 4B's KIA), BACK TO HQ under it.
 	var head := HBoxContainer.new()
+	head.name = "RunEndRow"
 	head.add_theme_constant_override("separation", roundi(UiTheme.SP_L * Settings.text_scale))
-	report.body.add_child(head)
-	# The verdict: a sticker on the glass, display only (no focus; its tooltip says what it means).
+	# The verdict: a sticker, display only (no focus; its tooltip says what it means).
 	var stamp := VinylSticker.new()
 	stamp.name = "ResultStamp"
 	stamp.text = tr(end_verdict(s.run.outcome))
@@ -4254,17 +4672,23 @@ func _show_end() -> void:
 	stamp.tooltip_text = UiTip.fold(end_fate(s))
 	# A container resets a child's tilt when it lays it out: the sticker's holder tilts it.
 	var tilted := TiltBox.new(END_VERDICT_TILT, stamp)
-	# The verdict over the screen's one verb (BACK TO HQ, below): the window stays one row tall.
+	var op := s.run.operative
+	var photo := Polaroid.new(op.name, "[PORTRAIT]", END_PHOTO_TILT)
+	photo.name = "RunEndPolaroid"
+	photo.custom_minimum_size = END_PHOTO * minf(Settings.text_scale, END_GROW)
+	photo.set_operative(op.class_id, op.id)
+	photo.kia = s.run.outcome == RunState.Outcome.DIED
 	var side_col := VBoxContainer.new()
 	side_col.name = "RunEndSide"
 	side_col.alignment = BoxContainer.ALIGNMENT_CENTER
-	side_col.add_theme_constant_override("separation", roundi(UiTheme.SP_L * Settings.text_scale))
-	side_col.add_child(tilted)
+	side_col.add_theme_constant_override("separation", roundi(UiTheme.SP_M * Settings.text_scale))
+	side_col.add_child(_end_photo(photo, tilted))
 	head.add_child(side_col)
 	var col_box := VBoxContainer.new()
 	col_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col_box.add_theme_constant_override("separation", 10)
-	head.add_child(col_box)
+	report.body.add_child(col_box)
+	head.add_child(report)
 	# What happened to the operative, in words (a flatline is permanent).
 	var fate := _label(end_fate(s))
 	fate.name = "RunFate"
@@ -4304,12 +4728,35 @@ func _show_end() -> void:
 	back.pressed.connect(finish_run)
 	back.tooltip_text = UiTip.fold(tr("Back to HQ: the campaign, the City Grid and the crew."))
 	foot.add_child(back)
-	# In the middle of the screen, the city round it (a page of windows, not a glass sheet).
+	# In the middle of the screen, the city round it (a page of windows, not a glass sheet);
+	# parity END-01: a lost run (FLATLINED, HOME FELL) greys the city behind it (the build's
+	# flatline context; a clean exit keeps its colour).
+	var page := Control.new()
+	page.name = "RunEndPage"
+	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	if not won:
+		var grey := ColorRect.new()
+		grey.name = "GreyCity"
+		grey.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var mat := ShaderMaterial.new()
+		mat.shader = END_GREY_SHADER
+		mat.set_shader_parameter(&"dim", END_GREY_DIM)
+		grey.material = mat
+		page.add_child(grey)
+		grey.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var wrap := CenterContainer.new()
 	wrap.name = "RunEnd"
-	wrap.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	wrap.add_child(report)
-	_set_panel(wrap, false)
+	wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	page.add_child(wrap)
+	wrap.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	wrap.add_child(head)
+	page.custom_minimum_size = head.get_combined_minimum_size()
+	head.minimum_size_changed.connect(func() -> void:
+		if is_instance_valid(page) and is_instance_valid(head):
+			page.custom_minimum_size = head.get_combined_minimum_size())
+	_set_panel(page, false)
 	if entering:
 		# The verdict slaps onto the glass (a pop from big; at rest at once when it does not play).
 		_slap_verdict.call_deferred(stamp)
@@ -4560,9 +5007,65 @@ func _place_leave(leave: Control, icon: Control, row: Control, root: Control) ->
 	icon.position = at + Vector2(-LEAVE_ICON - 4.0, 4.0)
 
 
+## Parity SHOP-06: the line that names the socket choice: "Chips go into:" and the chosen slot
+## in words (it follows the spinner's choice); `tip` says what it is for.
+func _socket_row(mini: SpinnerMini, tip: String) -> Control:
+	var op := RunManager.netrun.run.operative
+	var row := HFlowContainer.new()
+	row.name = "SocketRow"
+	row.add_theme_constant_override("h_separation", 6)
+	var word := _label(tr("Chips go into:"))
+	word.name = "SocketWord"
+	word.add_theme_color_override(&"font_color", Palette.TEXT_HI)
+	word.tooltip_text = UiTip.fold(tip)
+	word.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.add_child(word)
+	var choice := _label(slot_name(op, mini.selected()))
+	choice.name = "SocketChoice"
+	choice.add_theme_color_override(&"font_color", Palette.CELL_ACID)
+	choice.add_theme_font_override(&"font", Palette.mono())
+	choice.tooltip_text = word.tooltip_text
+	choice.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.add_child(choice)
+	mini.tooltip_text = word.tooltip_text
+	mini.slot_chosen.connect(func(k: int) -> void:
+		if is_instance_valid(choice):
+			choice.text = slot_name(op, k))
+	return row
+
+
+## Parity SHOP-06 (round 34 `firmware_socket`): while Firmware chip `item` (id `id`) is pointed
+## at or focused, the spinner greys the slots it cannot go into (the rules' own answer); off it,
+## the marks clear.
+func _mark_socket_fits(item: Control, mini: SpinnerMini, id: StringName) -> void:
+	var on := func() -> void:
+		if is_instance_valid(mini):
+			mini.set_fits(socket_fits(id))
+	var off := func() -> void:
+		if is_instance_valid(mini):
+			mini.set_fits([] as Array[bool])
+	item.mouse_entered.connect(on)
+	item.focus_entered.connect(on)
+	item.mouse_exited.connect(off)
+	item.focus_exited.connect(off)
+
+
+## Parity SHOP-06: which slots of the running operative's spinner Firmware `id` goes into, by
+## the socket rule itself (`NetrunSession.firmware_slot_error`, read-only): where it fits, not
+## whether it is affordable (its price tag says that).
+static func socket_fits(id: StringName) -> Array[bool]:
+	var out: Array[bool] = []
+	var s := RunManager.netrun
+	if s == null:
+		return out
+	for k in s.run.operative.slot_slice_ids.size():
+		out.append(s.firmware_slot_error(id, k) == "")
+	return out
+
+
 ## Mainframe: cards drag onto the deck, Firmware onto a slot of the small spinner, Daemons
 ## onto the DAEMONS icon, slice upgrades onto the slot they overwrite.
-func _register_shop_drops(mini: SpinnerMini, fw_slot: OptionButton) -> void:
+func _register_shop_drops(mini: SpinnerMini, fw_slot: SpinnerMini) -> void:
 	var shop := RunManager.netrun.run.shop
 	for pair in [["Stickers", "cards", "card"], ["Chips", "firmware", "chip"], ["Daemons", "daemons", "daemon"], ["Slices", "slices", "slice"]]:
 		var row := _panel.find_child(String(pair[0]), true, false) if _panel != null else null
@@ -4576,7 +5079,7 @@ func _register_shop_drops(mini: SpinnerMini, fw_slot: OptionButton) -> void:
 				continue
 			var p := _item_payload(String(pair[2]), "shop", i, StringName(String(stock[i])))
 			if pair[2] == "chip" and fw_slot != null:
-				p["prefer"] = fw_slot.selected
+				p["prefer"] = fw_slot.selected()
 			drops.add_source(c, p)
 	_add_bar_targets(["card"], ["daemon"])
 	if mini != null:
@@ -4585,7 +5088,7 @@ func _register_shop_drops(mini: SpinnerMini, fw_slot: OptionButton) -> void:
 
 ## Loot: the offer drags onto where it goes (a card to the deck, a Firmware chip onto a slot,
 ## a Daemon onto the DAEMONS icon).
-func _register_loot_drops(row: Control, mini: SpinnerMini, slot_option: OptionButton) -> void:
+func _register_loot_drops(row: Control, mini: SpinnerMini, slot_option: SpinnerMini) -> void:
 	var offer := RunManager.netrun.current_reward()
 	var kind := {"card": "card", "firmware": "chip", "daemon": "daemon"}.get(String(offer.get("kind", "")), "") as String
 	if kind == "" or row == null:
@@ -4594,7 +5097,7 @@ func _register_loot_drops(row: Control, mini: SpinnerMini, slot_option: OptionBu
 	for i in mini(row.get_child_count(), options.size()):
 		var p := _item_payload(kind, "loot", i, StringName(String(options[i])))
 		if slot_option != null:
-			p["prefer"] = slot_option.selected
+			p["prefer"] = slot_option.selected()
 		drops.add_source(row.get_child(i) as Control, p)
 	_add_bar_targets(["card"], ["daemon"])
 	if mini != null:

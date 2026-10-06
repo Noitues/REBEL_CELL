@@ -169,6 +169,16 @@ func _update_price() -> void:
 	price_label.add_theme_color_override("font_color", Palette.CELL_PINK if short else Palette.CELL_ACID)
 	if _action_button != null:
 		_action_button.disabled = short
+		# Parity SHOP-08 (the M13 build's one graffiti line): the verb and the slot's price are one
+		# tag, "UPGRADE · 100 CYCLES"; the price label keeps the number but is not shown twice.
+		_action_button.set_tag_text(action_words(tr(action), price))
+		price_label.visible = price < 0
+
+
+## Parity SHOP-08: the action's tag with the selected slot's price folded in ("UPGRADE · 100
+## CYCLES"; the verb alone with no price). `verb` comes translated.
+static func action_words(verb: String, price: int) -> String:
+	return TranslationServer.translate("%s · %d CYCLES") % [verb, price] if price >= 0 else verb
 
 
 ## Shows the hub core and the inner ring in the middle of the wheel (the loadout view),

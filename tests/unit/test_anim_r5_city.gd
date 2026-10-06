@@ -225,6 +225,8 @@ func test_the_runs_pages_open_on_their_bake_behind_the_3d_route() -> void:
 
 
 func test_a_raid_interlude_bakes_its_playout_ahead() -> void:
+	# Parity RAID-13 (updated on purpose): the interlude and its playout are the unified 3D city at
+	# the RAID band, as every other raid view: nothing to bake ahead (as the route, ART-7 7w).
 	CityBakeCache.simulate = true
 	RunManager.new_campaign(2)
 	var scene := _scene(NETRUN)
@@ -234,17 +236,9 @@ func test_a_raid_interlude_bakes_its_playout_ahead() -> void:
 	scene._show_current()
 	await _settle_bakes()
 	var city: NeonCity = scene.background.city
+	assert_true(scene.background.city3d, "the interlude is the 3D city")
+	assert_eq(city.band_lock, CityLod.Band.RAID, "at the RAID band")
 	assert_true(city.view_covered(), "the interlude is covered")
-	var c := RunManager.campaign
-	var look := city.look_key()
-	var g := CityLayout.grid_graph(c, RunManager.corporation, CityLayout.threat_paths(c, RunManager.corporation))
-	var size: Vector2 = scene.size
-	var checked := 0
-	for n: Dictionary in g["nodes"]:
-		var view := city.region_for(Vector2(n["at"]) + Vector2(0.5, 0.5), NetrunScript.PLAYOUT_ANCHOR, NetrunScript.RAID_ZOOM, size).grow(-NeonCity.REGION_MARGIN)
-		assert_ne(CityBakeCache.find(look, view), "", "a fight at %s is baked ahead" % n["id"])
-		checked += 1
-	assert_gt(checked, 1)
 	# START DEFENSE (instant headless) then the route (ART-7 7w: the 3D city, no bake).
 	scene.raid_fight()
 	await _settle_bakes()
@@ -439,7 +433,14 @@ func test_the_interlude_frames_core_and_the_entries_beside_its_window() -> void:
 	var c := RunManager.campaign
 	var pts: PackedVector2Array = scene.raid_frame_points()
 	var entries := CampaignRules.raid_entries(c, RunManager.corporation, RunManager.netrun.raid_pending())
-	assert_eq(pts.size(), entries.size() + 1, "CORE and the raid's entries only (not the whole Grid)")
+	# Parity RAID-13 (updated on purpose): the interlude's map is the raid view's (S-MAPVIEW's
+	# major nodes only), so it frames CORE and the entries that map shows, never the whole Grid.
+	var want := 0
+	for n: Dictionary in scene.city_overlay.nodes:
+		if n["id"] == c.grid.home_site_id or entries.has(n["id"]):
+			want += 1
+	assert_eq(pts.size(), want, "CORE and the raid's entries only (not the whole Grid)")
+	assert_lt(pts.size(), scene.city_overlay.nodes.size() + 1)
 	var overlay: CityMapOverlay = scene.city_overlay
 	var area: Rect2 = scene._raid_map_area.get_global_rect()
 	var win := scene._panel.find_child("RaidWindow", true, false) as Control

@@ -167,6 +167,46 @@ static func attach(b: Button, row: OutcomeRow) -> void:
 	row._fit_parent()
 
 
+## Parity EVT-02 (round 31 `event_screen`): puts `row` in a column beside choice button `b`,
+## `gap` px right of the sticker, centred on it, its chips readable at a glance (the button keeps
+## its styles; the screen gives the column's width with `set_beside_width`).
+static func attach_beside(b: Button, row: OutcomeRow, gap: float) -> void:
+	row.beside = true
+	row.beside_gap = gap
+	b.add_child(row)
+	row._fit_parent()
+
+
+## Parity EVT-02: the row stands beside its choice (attach_beside), not under its words.
+var beside: bool = false
+var beside_gap: float = 0.0
+var _beside_w: float = 0.0
+
+
+## Parity EVT-02: the beside column's width (px); the row wraps to it.
+func set_beside_width(w: float) -> void:
+	if is_equal_approx(w, _beside_w):
+		return
+	_beside_w = w
+	_fitted_h = -1.0
+	_fit_parent.call_deferred()
+
+
+## Parity EVT-02: the row beside its choice: as wide as the column (one line when it holds it),
+## centred on the button's height.
+func _fit_beside(b: Button) -> void:
+	var width := _beside_w if _beside_w > 0.0 else _one_line_width()
+	width = minf(width, _one_line_width() + 1.0)
+	var lines := maxi(1, lines_at(width).size())
+	var h := _line_height() * lines + LINE_GAP * _scale() * (lines - 1)
+	set_anchors_preset(Control.PRESET_TOP_LEFT)
+	position = Vector2(b.size.x + beside_gap, (b.size.y - h) * 0.5)
+	size = Vector2(width, h)
+	_fitted_h = h
+	update_minimum_size()
+	queue_redraw()
+
+
 func _scale() -> float:
 	return maxf(1.0, get_theme_font_size(&"font_size", &"Label") / float(UiTheme.BASE_SIZE))
 
@@ -246,6 +286,9 @@ func _fit_parent() -> void:
 		return  # its theme (and so its boxes) is known once it is in the tree
 	if not b.resized.is_connected(_on_parent_resized):
 		b.resized.connect(_on_parent_resized)
+	if beside:
+		_fit_beside(b)
+		return
 	var left := 0.0
 	var bottom := 0.0
 	var normal := b.get_theme_stylebox(&"normal")

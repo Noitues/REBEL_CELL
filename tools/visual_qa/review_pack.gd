@@ -1149,16 +1149,16 @@ func _s_mainframe() -> void:
 func _s_mainframe_socket() -> void:
 	for seed in range(7, 7 + SOCKET_SEEDS):
 		var net: Node = await _mainframe(seed)
-		# Main: the socket choice is an OptionButton (its list pops up); the art pass's slot
-		# tiles take focus instead.
-		var pick := net._panel.find_child("SocketPick", true, false) as Control if net._panel != null else null
-		if pick != null and pick.is_visible_in_tree():
+		# Parity SHOP-06: the socket choice is the small spinner (pickable): a chip is pointed at
+		# (the slots it does not fit grey out) and the chosen slot wears its brackets.
+		var pick := net._panel.find_child("SpinnerMini", true, false) as Control if net._panel != null else null
+		var chips := net._panel.find_child("Chips", true, false) as Control if net._panel != null else null
+		if pick != null and pick.is_visible_in_tree() and pick.get("pickable") == true and chips != null and chips.get_child_count() > 0:
 			if seed != 7:
 				_warnings.append("campaign seed %d (the first with Firmware in stock)" % seed)
-			if pick.has_method("show_popup"):
-				pick.call("show_popup")
-			else:
-				pick.grab_focus()
+			var chip := chips.get_child(0) as Control
+			chip.grab_focus()
+			chip.mouse_entered.emit()
 			await _frames(SETTLE_FRAMES)
 			return
 		net.queue_free()

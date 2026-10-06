@@ -13,6 +13,15 @@ const META_PX := 12
 const TAPE := Vector2(110, 22)
 ## The stamp word (a key, translated where set).
 const STAMP := "CLASSIFIED" # TR
+## Parity EVT-03 (round 31 `event_screen_memo`): DISPATCH's story on the same paper as a voice
+## transcript: its head, its routing line and the concept's stamp (keys).
+const TRANSCRIPT_HEAD := "VOICE TRANSCRIPT" # TR
+const TRANSCRIPT_ROUTING := "TO: CELL OPERATIVE    FROM: DISPATCH    REF: VOICE LOG" # TR
+const TRANSCRIPT_STAMP := "DO NOT FORWARD" # TR
+## The memo's head and routing line (keys; set by `as_transcript`).
+const MEMO_HEAD := "INTERNAL MEMO" # TR
+var head_word: String = MEMO_HEAD
+var routing: String = ""
 
 var corp_name: String = ""
 var corp_colour: Color = Palette.CORP_SOLACE
@@ -63,6 +72,16 @@ func _get_minimum_size() -> Vector2:
 	return margins.get_combined_minimum_size() if margins != null else Vector2.ZERO
 
 
+## Parity EVT-03: the sheet as DISPATCH's voice transcript (VOICE TRANSCRIPT, the Cell's routing
+## line, DO NOT FORWARD) instead of a corp's internal memo.
+func as_transcript() -> CorpMemo:
+	head_word = TRANSCRIPT_HEAD
+	routing = TRANSCRIPT_ROUTING
+	sheet.stamp = tr(TRANSCRIPT_STAMP)
+	queue_redraw()
+	return self
+
+
 ## The tape, INTERNAL MEMO and the routing line, over the sheet under its letterhead.
 func _draw_head(on: Control) -> void:
 	var s := text_scale
@@ -71,7 +90,8 @@ func _draw_head(on: Control) -> void:
 	var paper := Palette.paper_bold()
 	var ts := roundi(TITLE_PX * s)
 	var y := CorpPaperPanel.LETTERHEAD_H + 6.0 * s + paper.get_ascent(ts)
-	on.draw_string(paper, Vector2(PAD.x * s, y), tr("INTERNAL MEMO"), HORIZONTAL_ALIGNMENT_LEFT, -1, ts, Palette.PAPER_TYPE_INK)
+	on.draw_string(paper, Vector2(PAD.x * s, y), tr(head_word), HORIZONTAL_ALIGNMENT_LEFT, -1, ts, Palette.PAPER_TYPE_INK)
 	var ms := roundi(META_PX * s)
 	y += paper.get_descent(ts) + Palette.paper().get_ascent(ms) + 4.0 * s
-	on.draw_string(Palette.paper(), Vector2(PAD.x * s, y), tr("TO: ALL TIER LEADS    FROM: %s    REF: INTERNAL") % corp_name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - PAD.x * 2.0 * s, ms, Palette.TEXT_LO)
+	var route := tr(routing) if routing != "" else tr("TO: ALL TIER LEADS    FROM: %s    REF: INTERNAL") % corp_name.to_upper()
+	on.draw_string(Palette.paper(), Vector2(PAD.x * s, y), route, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - PAD.x * 2.0 * s, ms, Palette.TEXT_LO)

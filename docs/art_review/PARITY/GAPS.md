@@ -224,7 +224,7 @@ top bar is the one place for Heat. Fixed by HEAT-ALL: the stamp is removed from 
 Cycles and loo` cut at the right edge, the crossed-out dial `5` on the rewards text. Concept: the
 node holo (`DEPOT 15`) with tier / type / rewards, the stamp small in the corner, nothing over text;
 plus a JACK IN sticker and the map option under it. Likely file: `scripts/ui/kit/route_node_panel.gd`,
-`raid_holo.gd` (shared holo), `zine_stamp.gd`. Decision:
+`raid_holo.gd` (shared holo), `zine_stamp.gd`. Decision: Match concept (designer group ruling 2026-10-05): fixed, DECRYPTED a small chip in the foot, every word whole, the seal under no text; JACK IN / OPTIONS switch not added (HQ's verb; duplicate), see DECISIONS; sheet `fixes/NETRUN.jpg`; DECISIONS "Parity fix — netrun pages"
 
 **ROUTE-04 (P2) Route choice panel.** Build and main: `ROUTE // PICK THE NEXT NODE` terminal, rows
 `[1] Fight > Fight · Event`, GRID VIEW, Save & quit. Main's rows have lime focus brackets and
@@ -237,7 +237,7 @@ Decision:
 
 **ROUTE-06 (P2) Page title.** Concept: `THE GRID` title sticker top left (the run's map). Build:
 DISPATCH line under the top bar. Main: top-bar words `NETRUN // ROUTE` only; no DISPATCH line on
-this frame. Decision:
+this frame. Decision: Match concept (designer group ruling 2026-10-05): NOT done yet, built then reverted: the word THE GRID shifts the bar's wrap and S-ROUTE's route fit then hides YOU ARE HERE (Meridian 1.6); slice proposed to S-ROUTE in DECISIONS "Parity fix — netrun pages"
 
 ### Jack-in (`jack_in.jpg`)
 Ref: build `jack_in`; concept `round37_netrun/transition_storyboard.png`.
@@ -260,14 +260,14 @@ main's cards read like placeholders. Likely file: `scripts/ui/kit/loot_sheet.gd`
 
 **LOOT-02 (P2) Page title.** Concept: `FIGHT WON` title sticker + a `LOOT // NETRUN ...` chip.
 Main: `PAYOUT` sticker + `> PAYOUT // LOOT: PICK A CARD` chip. Build: pink pencil `LOOT: PICK A
-CARD`. Content choice. Decision:
+CARD`. Content choice. Decision: Match concept (designer group ruling 2026-10-05): fixed, LOOT // NETRUN: <SITE> // <NODE> n OF N strip (title stays the payout's source); sheet `fixes/NETRUN.jpg`; DECISIONS "Parity fix — netrun pages"
 
 **LOOT-03 (P2) Payout, deck counter, SKIP.** Concept: PAYOUT terminal top right (CYCLES +18, HP,
 HEAT), a DECK 17 counter bottom left with a yellow pencil arrow `+1 = 18` from the picked card,
 SKIP and CONTINUE stickers. Main: PAYOUT terminal (CYCLES 0, HP 60/60) beside the sheet, a small
 `DECK 10` chip with a yellow `+1 = 11` scribble, SKIP sticker, no CONTINUE. View: main's pieces are
 crammed into the right of the sheet. Likely file: `loot_sheet.gd`, `netrun_scene.gd` (loot page).
-Decision:
+Decision: Match concept (designer group ruling 2026-10-05): fixed, PAYOUT +N / wallet / HP / HEAT top right, DECK bottom left, SKIP under the sheet (beside it from 1.25); CONTINUE not built (flow change); sheet `fixes/NETRUN.jpg`; DECISIONS "Parity fix — netrun pages"
 
 **LOOT-04 (P1) Backdrop.** Concept: the dark, blurred lit city. Main: the bright 2D wireframe
 city (lime / cyan / magenta outlines) at full strength behind the sheet, also behind the event,
@@ -397,7 +397,7 @@ type and no glyph art (same card face as LOOT-01). Decision: Match concept (desi
 
 **SHOP-03 (P2) Slice wheel.** Concept and main: the half wheel at the foot with prices on tabs,
 `TOP 3 ONLY` pencil; main's slices are darker and the tab prices smaller. Matches in layout.
-Likely file: `scripts/ui/kit/slice_stock_wheel.gd`. Decision: Match concept (designer group ruling 2026-10-05); wedges already the concept's export (no change); the bigger tag price needs the wallet moved at 2.0 in the shop block: slice proposed (DECISIONS "Parity fix — one card face")
+Likely file: `scripts/ui/kit/slice_stock_wheel.gd`. Decision: Match concept (designer group ruling 2026-10-05); wedges already the concept's export (no change); the bigger tag price needs the wallet moved at 2.0 in the shop block: slice proposed (DECISIONS "Parity fix — one card face") Bigger tag price and the wallet's place at 2.0 fixed by S-NETRUN (BUY_FONT 16; the wallet beside the spinner at big text); sheet `fixes/NETRUN.jpg`; DECISIONS "Parity fix — netrun pages".
 
 **SHOP-04 (P2) Firmware pegs.** Concept: three chips with glowing coloured gems, white bold glyphs,
 names, rarity in colour (COMMON / UNCOMMON blue / RARE gold), allowed slice, kraft price tags, and a
@@ -408,13 +408,13 @@ NEED tag). View: main's red strike reads as "sold" rather than "can't afford yet
 
 **SHOP-05 (P3) LEAVE and the bin.** Concept: `LEAVE THE MAINFRAME` sticker + chevrons bottom
 right, recycle bin top right of the wheel. Main: matches; LEAVE is green-white (concept's is the
-same), the bin sits higher. Decision: Match concept (designer group ruling 2026-10-05); not fixed in S-CARDFACE: `netrun_scene.gd` shop block (S-OVERLAPS); slice proposed (DECISIONS "Parity fix — one card face")
+same), the bin sits higher. Decision: Match concept (designer group ruling 2026-10-05); not fixed in S-CARDFACE: `netrun_scene.gd` shop block (S-OVERLAPS); slice proposed (DECISIONS "Parity fix — one card face") Fixed by S-NETRUN: the concept's own chevron sticker (shop2.leave_sticker export) beside LEAVE; sheet `fixes/NETRUN.jpg`; DECISIONS "Parity fix — netrun pages".
 
 **SHOP-06 (P1) Socket choice.** Concept: drag the chip onto a slice of the wheel; valid slices get
 lime brackets, invalid ones grey out, occupied ones show an amber REPLACE?. Build: a row of numbered
 slot tiles `1 CRIT 12 ... 6 MISS`. Main: a `Chips go into: Slot 1: OVFL 12` OptionButton whose list
 covers the card's description panel. View: the dropdown is the weakest of the three and hides the
-info it needs. Likely file: `netrun_scene.gd` shop socket UI, `shop_item.gd`. Decision:
+info it needs. Likely file: `netrun_scene.gd` shop socket UI, `shop_item.gd`. Decision: Match concept (designer group ruling 2026-10-05): fixed, the socket choice is the spinner (lime brackets on the chosen slot, unfit slots grey while a chip is pointed at); REPLACE? stays G14; sheet `fixes/NETRUN.jpg`; DECISIONS "Parity fix — netrun pages"
 
 **SHOP-07 (P2) Remove a card.** Concept (two options): PURGE `rm -rf` keycap you drop the card on,
 or DEGAUSS coil. Build: card grid + a SHRED sticker. Main: a `RECYCLE BIN // REMOVE A CARD` lime
@@ -423,7 +423,7 @@ option). Designer call between the concept's PURGE (marked "recommended") and ma
 Decision: Match concept (designer group ruling 2026-10-05): the locked round 34 shop_v5 RECYCLE BIN kept over round 32's PURGE; the viewer's cards wear the one face, fixed f90191c; RECYCLE BIN confirmed by the designer 2026-10-05
 
 **SHOP-08 (P3) Upgrade a slice.** Build: `UPGRADE · 100 CYCLES` as one pink graffiti line. Main:
-`UPGRADE` graffiti + `100 CYCLES` in small cyan beside it. Same wheel. Decision: Match concept (designer group ruling 2026-10-05); not fixed in S-CARDFACE: `spinner_view.gd` (S-WHEEL); slice proposed (DECISIONS "Parity fix — one card face")
+`UPGRADE` graffiti + `100 CYCLES` in small cyan beside it. Same wheel. Decision: Match concept (designer group ruling 2026-10-05); not fixed in S-CARDFACE: `spinner_view.gd` (S-WHEEL); slice proposed (DECISIONS "Parity fix — one card face") Fixed by S-NETRUN: UPGRADE · 100 CYCLES on one tag (spinner_view.gd, smallest change); sheet `fixes/NETRUN.jpg`; DECISIONS "Parity fix — netrun pages".
 
 ### Events (`event.jpg`, `event_dispatch.jpg`)
 Refs: build `event`, `event_dispatch` (M13: paper note top left, choice cards right, pink pencil
@@ -434,20 +434,20 @@ body, CHOOSE list, RUN side terminal (HP / CYCLES / CREW), TERMINAL sticker and 
 safe choice. Main: the same pieces, placed top right over the city; no RUN side panel; the CAM
 feed is the wireframe city (concept: a photo-like cam still with a red pencil circle). View: main
 follows the concept; centring it as the concept does would stop it fighting the top bar.
-Likely file: `scripts/ui/kit/cam_feed.gd`, `netrun_scene.gd` (event page). Decision:
+Likely file: `scripts/ui/kit/cam_feed.gd`, `netrun_scene.gd` (event page). Decision: Match concept (designer group ruling 2026-10-05): fixed, NODE n OF N header, RUN side terminal, choices under the story; sheet `fixes/NETRUN.jpg`; DECISIONS "Parity fix — netrun pages"
 
 **EVT-02 (P2) Choice rows.** Concept: yellow numbered tabs, stencil choice names, outcome chips
 (`-12 HP`, `+1 BREAKER`, `NO CHANGE`) in a column to the right of the row. Main: yellow tabs and
 stencil names, outcome chips tucked under the name in tiny type, the row has a lime focus edge.
 View: the concept's chips are readable at a glance. Likely file: `choice_sticker.gd`,
-`outcome_row.gd`. Decision:
+`outcome_row.gd`. Decision: Match concept (designer group ruling 2026-10-05): fixed, outcome chips in a column beside each sticker; sheet `fixes/NETRUN.jpg`; DECISIONS "Parity fix — netrun pages"
 
 **EVT-03 (P1) DISPATCH event.** Concept memo: a paper memo (corp letterhead, highlighted lines,
 red pencil circle, DO NOT FORWARD stamp) on the left of the terminal; INTERCEPTED header; result
 lines and CONTINUE. Main: a red-edged terminal `> TERMINAL // DISPATCH` with a red heartbeat
 `VOICE ONLY // NO FEED` instead of the memo. View: DISPATCH is voice (no document), so main's
 waveform is a reasonable stand-in; the memo concept is for corp intercepts. Designer call.
-Likely file: `corp_memo.gd`, `netrun_scene.gd`. Decision:
+Likely file: `corp_memo.gd`, `netrun_scene.gd`. Decision: Match concept (designer group ruling 2026-10-05): fixed, DISPATCH is a voice transcript on the memo paper (DO NOT FORWARD), no waveform; sheet `fixes/NETRUN.jpg`; DECISIONS "Parity fix — netrun pages"
 
 ### Deck viewer and card detail (`deck_view.jpg`, `card_detail.jpg`)
 Ref: build `deck_view`, `card_detail` (no concept image; the cards should match the hand,
@@ -784,13 +784,13 @@ concept: the sticker centre-left, no disc (the paper carries the numbers). Decis
 arrows) behind the interlude panel. Main: the old 2D wireframe city (green / cyan, no network, no
 threat route), not the unified 3D city used by every other raid view. View: main's backdrop is
 inconsistent with its own raid screens. Likely file: `scripts/ui/netrun_scene.gd` (raid interlude
-page). Decision:
+page). Decision: Match concept (designer group ruling 2026-10-05): fixed, the interlude and its playout are the 3D city's raid view (RAID band, sockets, pencil routes); sheet `fixes/NETRUN.jpg`; DECISIONS "Parity fix — netrun pages"
 
 **RAID-14 (P2) START DEFENSE in the interlude.** Build: the pink START DEFENSE sticker. Main: a
 full-width terminal button with a shield icon. View: every other raid page uses the sticker; this
 one should too (one sticker verb per screen). Also main shows `RUN ASSETS: none / ARMORY: none` as
 two bare lines where the build says why (`No assets to deploy: ...`). Likely file: `netrun_scene.gd`.
-Decision:
+Decision: Match concept (designer group ruling 2026-10-05): fixed, START DEFENSE is the pink vinyl sticker; nothing to deploy said in one line; sheet `fixes/NETRUN.jpg`; DECISIONS "Parity fix — netrun pages"
 
 ### HQ run, Central Server gate, combat backdrops (`hq_run_*.jpg`, `central_server_gate.jpg`, `combat_backdrop_*.jpg`)
 No art-pass build screen exists for these (the HQ run and the gate are v2 work on main). References:
@@ -890,11 +890,11 @@ sticker and a BACK TO HQ sticker inside it, tally chips, a heat line, plus a red
 across the top. No concept image. View: the build's greyscale city and polaroid make the loss land;
 main's panel explains more (permadeath, what is kept). Per the designer's principle a candidate for
 "build layout in v2 language". Likely file: `netrun_scene.gd` (run end), `campaign_end/`.
-Decision:
+Decision: Build layout in v2 (designer group ruling 2026-10-05): fixed, grey city, KIA Polaroid with the verdict sticker, report and BACK TO HQ; sheet `fixes/NETRUN.jpg`; DECISIONS "Parity fix — netrun pages"
 
 **END-02 (P3) Run end, clean exit (main only).** Main: `NETRUN COMPLETE`, a JACKED OUT sticker,
 the same panel; the build has no clean-exit screen (it reuses the jack out). Consistent with END-01.
-Decision:
+Decision: Build layout in v2 (designer group ruling 2026-10-05): fixed, the same page in colour with JACKED OUT on the Polaroid; sheet `fixes/NETRUN.jpg`; DECISIONS "Parity fix — netrun pages"
 
 **END-03 (P1) Campaign won.** Build: a `CORP DOWN` poster with the corp emblem crossed out in
 pink spray, the crew's polaroids, a scrolling STORY UNCOVERED paper (the story beats' text), a
