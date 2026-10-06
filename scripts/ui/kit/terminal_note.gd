@@ -13,7 +13,8 @@ func _init(p_title: String = "", min_size: Vector2 = Vector2(240, 120)) -> void:
 	PaletteSkins.watch(self)  # ART-12 12s-b: the skin's chrome follows a pick
 	super(p_title, min_size)
 	paper_color = HudSkin.TERMINAL_BG
-	material = HudSkin.crt_material()
+	# B5 (B1c follow-up 2): the kit's CRT glass behind the note (the hex dump fades under its words).
+	CrtTerminalPanel.behind(self)
 	label.offset_top = HEADER_H + 4.0 if p_title != "" else 8.0
 	label.add_theme_color_override("default_color", HudSkin.TERMINAL_TEXT)
 	label.add_theme_font_override("normal_font", HudSkin.body())
@@ -21,7 +22,7 @@ func _init(p_title: String = "", min_size: Vector2 = Vector2(240, 120)) -> void:
 
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
-	HudSkin.draw_terminal_panel(self, r, HudSkin.TERMINAL_EDGE, HudSkin.TERMINAL_BG)
+	HudSkin.draw_terminal_edge(self, r, HudSkin.TERMINAL_EDGE)
 	if title == "":
 		return
 	var f := HudSkin.mono()

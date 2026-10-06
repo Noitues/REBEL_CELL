@@ -40,11 +40,14 @@ const FLASH_WORDS := "Flash limiter (at most 3 flashes a second. On by default.)
 const HEAT_GLITCH_WORDS := "Heat glitch (screen-wide Heat distortion, pulsing harder as Heat rises. Off by default.)" # TR
 const SUBTITLES_WORDS := "Subtitles (every spoken line, with the speaker's name)" # TR
 const ASSIST_WORDS := "Assist mode (new campaigns: %s free nudge a turn, %s%% HP. No ICE records or achievements.)" # TR
-## Parity OPT-01 (round 31's foot): RESET TO DEFAULTS resets the open tab's settings; the pad's Y
+## Parity OPT-01 (round 31's foot) and the designer's ruling (Q12, 2026-10-06, round 44 `options.png`): RESET ALL TABS puts
+## every setting of every tab back to its default (a terminal button, never a sticker); the pad's Y
 ## does the same (the prompt row says so).
-const RESET_WORDS := "Reset to defaults" # TR
-const RESET_TIP := "Puts every setting on this tab back to its default." # TR
-const RESET_PROMPT := "reset" # TR
+const RESET_WORDS := "Reset all tabs" # TR
+const RESET_TIP := "Puts every setting on every tab back to its default." # TR
+## The line beside the button (round 44: "every tab back to its defaults").
+const RESET_LINE := "every tab back to its defaults" # TR
+const RESET_PROMPT := "reset all" # TR
 ## The settings each tab's RESET TO DEFAULTS puts back ([Settings property, its setter]); the
 ## Controls tab also resets the key binds (Settings.reset_keybinds).
 const RESETS := {
@@ -283,8 +286,14 @@ func _init() -> void:
 	reset_button.name = "ResetDefaults"
 	reset_button.text = tr(RESET_WORDS).to_upper()
 	reset_button.tooltip_text = UiTip.fold(tr(RESET_TIP))
-	reset_button.pressed.connect(reset_section)
+	reset_button.theme_type_variation = UiTheme.TERMINAL_BUTTON  # B5: a terminal button, never a sticker
+	reset_button.pressed.connect(reset_all_tabs)
 	foot.add_child(reset_button)
+	var reset_line := Chrome.caps_label(tr(RESET_LINE), UiTheme.CAPTION, Palette.TEXT_LO)
+	reset_line.name = "ResetLine"
+	reset_line.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	foot.add_child(reset_line)
+	_hints.append(reset_line)
 	var close := Button.new()
 	close.name = "Close"
 	close_button = close
@@ -566,7 +575,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventJoypadButton and event.pressed:
 		var b := (event as InputEventJoypadButton).button_index
 		if b == JOY_BUTTON_Y:
-			reset_section()
+			reset_all_tabs()
 			get_viewport().set_input_as_handled()
 			return
 		if b == JOY_BUTTON_LEFT_SHOULDER or b == JOY_BUTTON_RIGHT_SHOULDER:
@@ -579,13 +588,15 @@ func _unhandled_input(event: InputEvent) -> void:
 ## default (the Settings script's own initial values: no number is written here), through the
 ## same setters the rows call, then shows the tab again with the new values. The Controls tab
 ## also resets the key binds. Settings only; nothing else changes.
-func reset_section() -> void:
+## B5 (designer ruling Q12, 2026-10-06): RESET ALL TABS: every tab's settings (RESETS, in the tabs' order) and the key
+## binds back to their defaults, then the open tab shows again.
+func reset_all_tabs() -> void:
 	var defaults: Object = (Settings.get_script() as GDScript).new()
-	for pair in RESETS.get(section, []):
-		Settings.call(StringName(pair[1]), defaults.get(StringName(pair[0])))
+	for tab in SECTIONS:
+		for pair in RESETS.get(tab, []):
+			Settings.call(StringName(pair[1]), defaults.get(StringName(pair[0])))
 	(defaults as Node).free()
-	if section == "Controls":
-		Settings.reset_keybinds()
+	Settings.reset_keybinds()
 	sync_widgets()
 	show_section(section)
 

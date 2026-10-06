@@ -99,7 +99,8 @@ func test_two_columns_of_stickers_each_in_its_role_colour() -> void:
 	var menu: PauseMenu = add_child_autofree(PauseMenu.new())
 	await _frames()
 	var resume := menu.resume_button
-	assert_eq(resume.sticker.fill, VinylSticker.Fill.PINK, "Resume is the one pink verb")
+	assert_eq(resume.sticker.fill, VinylSticker.Fill.YELLOW, "B5 (round 44): Resume is the yellow safe verb")
+	assert_true(resume.sticker.sweep_primary, "and the page's one sweep (named)")
 	assert_eq(resume.name, "Resume")
 	assert_eq(UiFocus.first_focusable(menu._menu), resume, "first in the menu (top left)")
 	assert_eq(get_viewport().gui_get_focus_owner(), resume, "focused on open")
@@ -118,9 +119,10 @@ func test_two_columns_of_stickers_each_in_its_role_colour() -> void:
 		pinks += 1 if b.sticker.fill == VinylSticker.Fill.PINK else 0
 		assert_eq(b.sticker.state, VinylSticker.State.HOVER if b.has_focus() else VinylSticker.State.REST, "%s: coloured, only the focused one lifts" % b.name)
 		assert_false(b.sticker.grey > 0.0, "%s is never greyed" % b.name)
-	assert_eq(pinks, 1, "one primary")
-	assert_eq(menu.abandon_campaign_button.sticker.fill, VinylSticker.Fill.RED, "abandon is harm")
-	assert_ne((menu.find_child("Quit", true, false) as HoloSticker).sticker.fill, VinylSticker.Fill.RED, "quit is not destructive")
+	assert_eq(pinks, 1, "one pink: the destructive verb")
+	assert_eq(menu.abandon_campaign_button.sticker.fill, VinylSticker.Fill.PINK, "B5 (round 44): abandon is the pink destructive verb")
+	assert_eq((menu.find_child("QuitMain", true, false) as HoloSticker).sticker.fill, VinylSticker.Fill.WHITE, "the rest neutral white vinyl")
+	assert_eq((menu.find_child("Quit", true, false) as HoloSticker).sticker.fill, VinylSticker.Fill.WHITE, "quit is not destructive: neutral white")
 	var resumed := []
 	menu.resumed.connect(func() -> void: resumed.append(true))
 	resume.pressed.emit()
@@ -134,7 +136,7 @@ func test_a_run_reads_abandon_run_in_the_same_slot() -> void:
 	await _frames()
 	assert_eq(_sticker_in(menu._right.get_child(0)), menu.abandon_run_button, "the top right slot")
 	assert_null(menu.abandon_campaign_button)
-	assert_eq(menu.abandon_run_button.sticker.fill, VinylSticker.Fill.RED)
+	assert_eq(menu.abandon_run_button.sticker.fill, VinylSticker.Fill.PINK)
 
 
 func test_focus_order_and_left_right_across_the_columns() -> void:

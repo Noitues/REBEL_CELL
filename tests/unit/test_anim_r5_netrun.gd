@@ -182,7 +182,7 @@ func test_the_run_end_is_a_window_over_the_city_with_a_verdict_and_reasons() -> 
 		scene._show_current()
 		await _frames(4)
 		assert_true(scene.background.visible, "%.1f: the city shows behind the run's end (it was black)" % scale)
-		assert_ne(scene._panel_host.theme_type_variation, &"GlassPanel", "%.1f: no dark sheet over the city" % scale)
+		assert_ne(scene._panel_host.theme_type_variation, UiTheme.CRT_GLASS_PANEL, "%.1f: no dark sheet over the city" % scale)
 		# ART-11 4D: the verdict is 1B's vinyl sticker on the glass.
 		var stamp := scene._panel.find_child("ResultStamp", true, false) as VinylSticker
 		assert_not_null(stamp, "%.1f: a verdict stamp" % scale)
@@ -285,9 +285,12 @@ func test_a_bought_card_flies_long_enough_and_lands_with_a_pulse() -> void:
 	_live()
 	scene.buy("cards", 0)
 	assert_gt(FlightFx.active_count(scene), 0, "the card flies")
-	assert_true(scene.hud.stats.landing().is_empty(), "no pulse before it lands")
+	# B5 (review section f, expectation changed on purpose): the Mainframe's bar shows only Cycles, so a bought card
+	# flies to VIEW LOADOUT (where the deck is) and that button pulses.
+	var to: Vector2 = FlightFx.existing(scene).flights[0]["to"]
+	assert_almost_eq(to, scene.hud.loadout_button.get_global_rect().get_center(), Vector2.ONE, "to VIEW LOADOUT")
 	assert_true(await BoundedWait.until(get_tree(), func() -> bool: return FlightFx.active_count(scene) == 0, BoundedWait.motion_limit([&"buy_fly", &"sold_stamp"])), "it lands")
-	assert_true(scene.hud.stats.landing().has("CARDS"), "CARDS pulses where the card went")
+	assert_eq(scene.hud.land_pulse("card"), scene.hud.loadout_button, "VIEW LOADOUT pulses where the card went")
 	await _close(scene)
 
 

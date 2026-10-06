@@ -228,6 +228,11 @@ var _built: bool = false
 var _baked: Dictionary = {}
 ## Look the word up in StickerArt (off: always letter it live).
 static var use_baked_art: bool = true
+## B5 (review follow-up 1): a VerbSticker's baked concept art shown as this kit sticker ({} = none; `show_art`).
+var _art_override: Dictionary = {}
+## Where the baked image is drawn in the art (px): its whole image, shadow margin and all; `body_rect` is its
+## opaque die-cut body (the fold's corner, the gloss).
+var _art_rect: Rect2 = Rect2()
 
 
 func _init() -> void:
@@ -347,8 +352,18 @@ func _rebuild() -> void:
 	var body_sz := Vector2.ZERO
 	_glyphs.clear()
 	_lines_y.clear()
-	_baked = StickerArt.lookup(text) if use_baked_art and shape == Shape.WORD else {}
-	if not _baked.is_empty():
+	_baked = _art_override if not _art_override.is_empty() else (StickerArt.lookup(text) if use_baked_art and shape == Shape.WORD else {})
+	if _baked.has("scale"):
+		# A VerbSticker's concept art (it carries its own finish and shadow margin): drawn whole at its scale, the
+		# fold and the gloss on its opaque body.
+		var tex: Texture2D = _baked["tex"]
+		var k := float(_baked["scale"])
+		var opaque: Rect2 = _baked["body"]
+		art = tex.get_size() * k
+		body_pos = opaque.position * k  # the image has its own shadow margin: no pad
+		body_sz = opaque.size * k
+		_art_rect = Rect2(Vector2.ZERO, art)
+	elif not _baked.is_empty():
 		# The art pass's own sticker, at the size this step letters its word.
 		var tex: Texture2D = _baked["tex"]
 		body_sz = tex.get_size() * (float(_px) / float(_baked["lettering_px"]))
@@ -391,7 +406,7 @@ func _rebuild() -> void:
 		body_sz = body_size
 		art = body_sz
 		body_pos = Vector2(SHADOW_PAD, SHADOW_PAD)
-	var full := art + Vector2(SHADOW_PAD, SHADOW_PAD) * 2.0
+	var full := art + (Vector2.ZERO if _baked.has("scale") else Vector2(SHADOW_PAD, SHADOW_PAD) * 2.0)
 	_vp.size = Vector2i(ceili(full.x), ceili(full.y))
 	_base.size = full
 	_fill.size = full
@@ -452,9 +467,32 @@ func is_baked() -> bool:
 	return not _baked.is_empty()
 
 
+## B5 (review follow-up 1): shows a concept's baked sticker image (`tex`, its own finish and shadow drawn in) at
+## `k` x its pixels, its opaque die-cut body `body_px` (texture px), so the kit's fold, peel-back, sweep band,
+## press and grey run on it exactly as on a lettered kit sticker (the fold cuts its corner away and the
+## adhesive back lies over the face).
+func show_art(tex: Texture2D, k: float, body_px: Rect2) -> void:
+	_art_override = {"tex": tex, "scale": k, "body": body_px, "lettering_px": 1.0, "own_finish": true}
+	_rebuild()
+
+
+## Swaps the shown concept image for another of the same size (a glitch burst frame); no re-layout.
+func set_art_texture(tex: Texture2D) -> void:
+	if _art_override.is_empty() or _art_override["tex"] == tex:
+		return
+	_art_override["tex"] = tex
+	_baked = _art_override
+	refresh()
+
+
+## Where the concept image sits in this control (px; `show_art` only): its whole image.
+func art_rect() -> Rect2:
+	return _art_rect
+
+
 func _draw_base() -> void:
 	if not _baked.is_empty():
-		_base.draw_texture_rect(_baked["tex"], body_rect, false)
+		_base.draw_texture_rect(_baked["tex"], _art_rect if _baked.has("scale") else body_rect, false)
 		return
 	if shape == Shape.WORD:
 		_draw_word_base()

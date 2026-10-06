@@ -143,6 +143,7 @@ const SCREENS := [
 	["combat_victory", "_s_combat_victory", "The killing turn: VICTORY."],
 	["combat_defeat", "_s_combat_defeat", "The losing turn: DEFEAT."],
 	["loot", "_s_loot", "Picking a card reward."],
+	["loot_firmware", "_s_loot_firmware", "Picking a Firmware drop (the FIRMWARE DROP terminal)."],
 	["mainframe", "_s_mainframe", "The Mainframe shop."],
 	["mainframe_socket", "_s_mainframe_socket", "The Mainframe with the socket choice open."],
 	["mainframe_remove", "_s_mainframe_remove", "The Mainframe's REMOVE A CARD viewer."],
@@ -150,6 +151,7 @@ const SCREENS := [
 	["event", "_s_event", "A story event with choices."],
 	["event_dispatch", "_s_event_dispatch", "A DISPATCH (terminal) event."],
 	["codex", "_s_codex", "Codex from the title menu."],
+	["codex_corps", "_s_codex_corps", "B5: the Codex's corporations, one picked (its intercepted holo card)."],
 	["options", "_s_options", "Options from the title menu."],
 	["options_glitch", "_s_options_glitch", "Parity OPT-02: Options with the Heat glitch on under the flash limiter (the LIMITED chip)."],
 	["stats", "_s_stats", "Stats and achievements with some history."],
@@ -192,6 +194,8 @@ var save_size := CAPTURE_SIZE
 var native := false
 var native_size := CAPTURE_SIZE
 var screen_timeout := DEFAULT_TIMEOUT_S
+## B5: the frames a screen settles before its picture (`--settle=N`; pencil writes on over ~0.4 s).
+var settle_frames := SETTLE_FRAMES
 var _keep: Array[Node] = []
 var _log: RefCounted = null
 var _warnings: Array[String] = []
@@ -253,6 +257,8 @@ func _ready() -> void:
 				save_size = Vector2i(int(wh[0]), int(wh[1]))
 		elif a.begins_with("--screen-timeout="):
 			screen_timeout = float(a.trim_prefix("--screen-timeout="))
+		elif a.begins_with("--settle="):
+			settle_frames = maxi(SETTLE_FRAMES, int(a.trim_prefix("--settle=")))
 		elif a.begins_with("--skins="):
 			skins = a.trim_prefix("--skins=").split(",", false)
 		elif a.begins_with("--scales="):
@@ -516,7 +522,7 @@ func _until(cond: Callable, why: String, limit: int = WAIT_FRAMES) -> bool:
 
 ## Lets the screen settle: page entrances and deals end, subtitles finish typing.
 func _settle(root: Node, frames: int = SETTLE_FRAMES) -> void:
-	await _frames(frames)
+	await _frames(maxi(frames, settle_frames))
 	# The city's bake lands before the picture (a stand-in city is not the screen). Main's
 	# views hold the bake they draw (ANIM-R6), so "no bake running" is not the test: every
 	# visible city shows its current look from a finished bake, faded in.
@@ -1384,8 +1390,22 @@ func _s_combat_defeat() -> void:
 
 
 func _s_loot() -> void:
+	await _loot_of(["twist", "jam", "cache"], "card")
+
+
+## B5 (D8, art director fix 2): a won fight's loot that drops Firmware (the FIRMWARE DROP terminal with its spinner).
+func _s_loot_firmware() -> void:
+	await _loot_of(["barbed_wire", "bulkhead", "burner"], "firmware")
+
+
+func _loot_of(options: Array, kind: String) -> void:
 	var net: Node = await _netrun()
-	DemoSetup.offer_loot(RunManager.netrun, ["twist", "jam", "cache"])
+	# B5 (D8): the loot a won fight pays out (FIGHT WON on the fought Site): the run stands on a first-layer fight.
+	for id in RunManager.netrun.run.map.first_layer_ids():
+		if int(RunManager.netrun.run.map.get_node(id)["type"]) == RC.InfilNodeType.ROUTER:
+			RunManager.netrun.run.current_node_id = id
+			break
+	DemoSetup.offer_loot(RunManager.netrun, options, kind)
 	net._show_current()
 	await _settle(net)
 
@@ -1475,6 +1495,20 @@ func _s_codex() -> void:
 	await _title_page("show_codex")
 
 
+## B5 (D11 / Q13): the Codex's CORPORATIONS with a corporation picked: its intercepted holo card.
+func _s_codex_corps() -> void:
+	for id in RunManager.lookup().ids_of_class(&"EnemyData"):
+		RunManager.record_seen(id)
+	await _title_page("show_codex")
+	var title: Node = get_tree().root.get_node_or_null("TitleScene")
+	var book := title.find_child("Codex", true, false) as CodexBook if title != null else null
+	if book != null:
+		book.show_section(CodexBook.CORP_SECTION)
+		book.pick_corporation(2)
+		book.page.grab_focus()
+	await _settle(title)
+
+
 func _s_options() -> void:
 	await _title_page("show_options")
 
@@ -1528,6 +1562,10 @@ func _campaign_end(outcome: int) -> void:
 	c.story_beats_revealed = 99
 	DemoSetup.end_campaign(c, outcome)
 	hq.show_end()
+	if outcome != CampaignState.Outcome.LOST:
+		# B5 (Q8): a won or abandoned file shoots its prints from the city first (EndShot), then opens.
+		await _until(func() -> bool: return hq.get(&"_panel") is AuditDossier, "the dossier")
+		await _frames(settle_frames)
 	await _settle(hq)
 
 

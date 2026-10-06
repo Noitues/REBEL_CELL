@@ -59,6 +59,14 @@ const PLATE_SCALE := 2.0 / 3.0
 ## Tiles: {name, meta, locked, unlock, tip, icon} (+ a subclass's own keys); every word
 ## already translated by the caller.
 var tiles: Array[Dictionary] = []
+## B5 (integration review section f, round 44 `new_campaign.png`): false draws the chosen tile as the idle plate with a
+## 3 px cyan edge and a SELECTED word tab on its top edge (never a solid fill: it shouted); true keeps the cyan
+## filled plate (the Options' tiles, round 31).
+var fill_selected: bool = true
+## B5: the chosen edge's stroke at 1080p (round 44: 3 px) and the SELECTED tab's words (a key) and step.
+const EDGE_SELECTED_1080 := 3.0
+const SELECTED_WORD := "SELECTED" # TR
+const SELECTED_STEP := UiTheme.CAPTION
 ## A tile's size at text scale 1.0 (px; it grows to hold its words).
 var tile_size: Vector2 = Vector2(176, 64)
 ## Tiles a row (0 = as many as the width holds).
@@ -471,8 +479,9 @@ func _draw() -> void:
 		r.position.y += KitState.lift(st)
 		var chosen := is_chosen(i) and st != KitState.DISABLED
 		var locked := is_locked(i) or st == KitState.DISABLED
+		var filled := chosen and fill_selected
 		draw_set_transform(r.position, 0.0, Vector2.ONE * PLATE_SCALE)
-		draw_style_box(_plate(PLATE_SELECTED if chosen else PLATE_IDLE), Rect2(Vector2.ZERO, r.size / PLATE_SCALE))
+		draw_style_box(_plate(PLATE_SELECTED if filled else PLATE_IDLE), Rect2(Vector2.ZERO, r.size / PLATE_SCALE))
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		if not chosen and (st == KitState.HOVER or st == KitState.FOCUS or st == KitState.PRESSED):
 			draw_rect(r, Color(KitState.edge_color(st), 0.6), false, 1.0)
@@ -481,9 +490,9 @@ func _draw() -> void:
 		var swr := swatch_rect(i, r)
 		var x := r.position.x + PAD
 		if swr.size.x > 0.0:
-			_draw_swatch(i, swr, st, chosen, locked)
+			_draw_swatch(i, swr, st, filled, locked)
 			x += swr.size.x + PAD
-		var ink := Palette.GLYPH_INK if chosen else (Palette.TEXT_MID if locked else KitState.label_color(st))
+		var ink := Palette.GLYPH_INK if filled else (Palette.TEXT_MID if locked else (Palette.TEXT_HI if chosen else KitState.label_color(st)))
 		var y := r.position.y + PAD
 		for line in name_lines(i):
 			draw_string(nf, Vector2(x, y + nf.get_ascent(_name_px)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, _name_px, ink)
@@ -491,15 +500,32 @@ func _draw() -> void:
 		var ml := meta_lines(i)
 		var my := r.end.y - PAD - ml.size() * mf.get_height(meta_px)
 		for line in ml:
-			draw_string(mf, Vector2(x, my + mf.get_ascent(meta_px)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, meta_px, Palette.GLYPH_INK if chosen else Palette.TEXT_MID)
+			draw_string(mf, Vector2(x, my + mf.get_ascent(meta_px)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, meta_px, Palette.GLYPH_INK if filled else Palette.TEXT_MID)
 			my += mf.get_height(meta_px)
 		if is_locked(i):
 			var lr := LOCK_R * s
 			KitState.draw_lock_badge(self, lock_center(i, r), lr)
-		if chosen:
+		if filled:
 			draw_rect(r.grow(SELECTED_GAP), Palette.SELECTED, false, SELECTED_FRAME)
+		elif chosen:
+			_draw_selected_edge(r)
 		# Focus brackets, the refused HARM outline and no-entry (the lock is drawn above).
 		KitState.draw_frame(self, r, st if st != KitState.DISABLED else KitState.IDLE)
+
+
+## B5 (round 44 `new_campaign.png`): the chosen tile's 3 px cyan edge (1080p) and its SELECTED word tab, a small
+## cyan plate with ink words hanging on the edge's top right.
+func _draw_selected_edge(r: Rect2) -> void:
+	var cyan := PaletteSkins.chrome(Palette.SELECTED)
+	var w := maxf(1.0, EDGE_SELECTED_1080 * get_viewport_rect().size.y / PaperLie.BOARD_H) if is_inside_tree() else EDGE_SELECTED_1080
+	draw_rect(r.grow(-w * 0.5), cyan, false, w)
+	var f := Chrome.caps_font(SELECTED_STEP)
+	var px := Chrome.px(SELECTED_STEP)
+	var word := tr(SELECTED_WORD)
+	var tw := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
+	var tab := Rect2(Vector2(r.end.x - tw - PAD * 2.0, r.position.y - f.get_height(px) * 0.5), Vector2(tw + PAD * 1.5, f.get_height(px)))
+	draw_rect(tab, cyan)
+	draw_string(f, Vector2(tab.position.x + PAD * 0.75, tab.position.y + f.get_ascent(px)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.GLYPH_INK)
 
 
 ## Where tile `i`'s lock sits in its rect `r` while locked: on its swatch's bottom right

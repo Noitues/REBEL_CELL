@@ -82,12 +82,15 @@ const GLOW_ALPHA := 0.3
 const FILL_SHIFT := 0.1
 ## The theme types whose "focus" box is the focus brackets (StyleBoxBrackets).
 const BRACKET_FOCUS_TYPES: Array[StringName] = [&"Button", &"OptionButton", &"CheckButton", &"CheckBox",
-	&"NoteButton", &"MenuItem", &"LineEdit", &"LogText", TERMINAL_BUTTON]
+	&"NoteButton", &"MenuItem", &"LineEdit", &"LogText", CRT_LOG_TEXT, TERMINAL_BUTTON]
 # --- v2 chrome (ART-1 1A; ART_BIBLE v2 §1.2, §2.10, §6.4, ui_kit.jpg) ---------------------
 ## Theme type variations added by ART-1: a standalone terminal chip, decrypted corp intel and
 ## an intercepted corp document (TerminalPanel, GlassPanel, MenuItem etc. are the base set).
 const TERMINAL_BUTTON := &"TerminalButton"
 const HOLO_PANEL := &"HoloPanel"
+## B5: GlassPanel / LogText laid over the kit's CRT glass (no fill of their own).
+const CRT_GLASS_PANEL := &"CrtGlassPanel"
+const CRT_LOG_TEXT := &"CrtLogText"
 const PAPER_PANEL := &"PaperPanel"
 ## A standalone button's padding (label + 2 x SP_M) and a list row's (the plain Button).
 const BUTTON_PAD_H := SP_M
@@ -521,6 +524,14 @@ static func _panels(t: Theme) -> void:
 	var glass := terminal_box(Color(Palette.TERMINAL_EDGE, 0.45), 12, 8)
 	glass.bg_color = Color(Palette.TERMINAL_BG, 0.9)
 	t.set_stylebox("panel", g, glass)
+	# B5 (B1c follow-up 2): "CrtGlassPanel": GlassPanel's margins over the kit's CRT glass (CrtTerminalPanel.behind),
+	# which is its fill and its edge.
+	t.set_type_variation(CRT_GLASS_PANEL, "PanelContainer")
+	var crt_glass := terminal_box(Color(Palette.TERMINAL_EDGE, 0.0), 12, 8)
+	crt_glass.bg_color = Color(Palette.TERMINAL_BG, 0.0)
+	crt_glass.set_border_width_all(0)
+	crt_glass.shadow_size = 0  # the edge glow would show through the clear centre as a wash over the glass
+	t.set_stylebox("panel", CRT_GLASS_PANEL, crt_glass)
 	# "HoloPanel" (§1.2): decrypted corp intel; this box is the corp-tinted plate and edge (the
 	# `holo_panel` shader of the material kit, 1B, draws the scanlines, bands and RGB split
 	# over it). The neutral tint is Halcyon-free violet glass; views set their corp's hue
@@ -548,6 +559,17 @@ static func _panels(t: Theme) -> void:
 	log_box.border_color = Color(Palette.NET_CYAN, 0.6)
 	t.set_stylebox("normal", lg, log_box)
 	t.set_stylebox("focus", lg, focus_box())
+	# B5: "CrtLogText": the log strip over the kit's CRT glass (its fill), its cyan left rule kept.
+	t.set_type_variation(CRT_LOG_TEXT, "RichTextLabel")
+	var crt_log := log_box.duplicate() as StyleBoxFlat
+	crt_log.bg_color = Color(Palette.TERMINAL_BG, 0.0)
+	crt_log.border_width_top = 0
+	crt_log.border_width_right = 0
+	crt_log.border_width_bottom = 0
+	crt_log.shadow_size = 0  # nothing of its own shows through over the kit glass
+	t.set_stylebox("normal", CRT_LOG_TEXT, crt_log)
+	t.set_stylebox("focus", CRT_LOG_TEXT, focus_box())
+	t.set_color("default_color", CRT_LOG_TEXT, Color(Palette.TERMINAL_TEXT, 0.9))
 	t.set_color("default_color", lg, Color(Palette.TERMINAL_TEXT, 0.9))
 	# Tabs (ui_kit.jpg TABS: active = filled cyan, hover = lit edge, the rest navy glass).
 	var tab := box(Palette.TERMINAL_BG, Color(Palette.TERMINAL_EDGE, 0.5), 1, 10, 4)

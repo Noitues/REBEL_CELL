@@ -64,7 +64,7 @@ func _pad(button: JoyButton) -> InputEventJoypadButton:
 
 # --- CODEX-01 -------------------------------------------------------------------------------------
 
-func test_the_codex_is_tabs_over_one_paper_page_with_glyphs() -> void:
+func test_the_codex_is_tabs_over_one_terminal_page_with_glyphs() -> void:
 	var t := _title()
 	await _frames(2)
 	t.show_codex()
@@ -89,15 +89,17 @@ func test_the_codex_is_tabs_over_one_paper_page_with_glyphs() -> void:
 	assert_true(book.current_tab().selected, "its tab is filled")
 	assert_eq(book.column_count(), 2, "two columns of entries on the title page")
 	assert_eq(book.heading.text, tr(String(keys[0])).to_upper(), "the page's heading names the section")
-	assert_not_null(book._paper.material, "the page is the art pass's paper stock")
-	assert_eq((book._paper.material as ShaderMaterial).shader, CodexBook.PAPER_SHADER)
+	# B5 (D11): terminal glass, never paper.
+	assert_true(book.frame is CrtWindow, "B5 (D11): the Codex is one terminal window")
+	assert_true(book.frame.is_ancestor_of(book.page) and book.frame.is_ancestor_of(book.tabs), "holding the tabs and the page")
+	assert_null(book.find_child("Paper", true, false), "no paper page")
 
 
 func test_every_entry_has_its_glyph_from_the_atlas_or_the_icon_set() -> void:
 	var entries := Codex.entries(RunManager.lookup())
 	var book: CodexBook = add_child_autofree(CodexBook.new(entries, 0.0, SCREEN.size.x))
 	await _frames(1)
-	for section in ["Slices", "Statuses & precision", "Firmware", "Daemons", "Ring segments", "Classes", "Cards"]:
+	for section in ["Slices", "Statuses & precision", "Firmware", "Daemons", "Ring segments", "Classes", "Cards", "Corporations"]:
 		book.show_section(section)
 		var glyphs := book.columns.find_children("Glyph", "", true, false)
 		assert_eq(glyphs.size(), (entries[section] as Array).size(), "%s: a glyph per entry" % section)
@@ -143,7 +145,7 @@ func test_the_story_heads_the_tabs_when_a_campaign_has_one() -> void:
 	assert_eq(book.section, Codex.STORY, "STORY first (HQ-B Q8)")
 	assert_eq(book.tabs.get_child(0).name, CodexBook.tab_name(Codex.STORY))
 	assert_true(CodexBook.SECTION_ICONS.has(Codex.STORY), "STORY's entries have their icon")
-	assert_string_contains(book.all_text(), "Beat one")
+	assert_string_contains(book.all_text().to_lower(), "beat one")
 
 
 func test_the_pad_switches_tabs_and_scrolls_the_page() -> void:
@@ -239,17 +241,20 @@ func test_stats_are_tiles_badges_and_run_cards() -> void:
 	assert_eq(by_kind.get(StatIcon.CYCLES), "640")
 	assert_eq(by_kind.get(StatIcon.BADGES), "1/%d" % Achievements.DEFS.size())
 	assert_eq(tiles.columns, 6, "two rows of six at 1280")
-	var ach := t._panel.find_child("Achievements", true, false) as CrtWindow
-	assert_eq(ach.tag_label.text, "1/%d" % Achievements.DEFS.size(), "the count on the window's tag")
+	var ach := t._panel.find_child("Achievements", true, false) as LinerPanel
+	assert_not_null(ach, "B5: the badges on the white liner strip")
+	assert_string_contains((t._panel.find_child("AchievementsHead", true, false) as Label).text, "1 / %d" % Achievements.DEFS.size(), "the count in its caption")
 	var badges: Array[Node] = t._panel.find_children("Badge_*", "AchievementBadge", true, false)
 	assert_eq(badges.size(), Achievements.DEFS.size(), "a badge per achievement")
 	var earned: Array = badges.filter(func(b: Node) -> bool: return (b as AchievementBadge).earned)
 	assert_eq(earned.size(), 1, "one earned")
 	assert_true(String((badges[1] as AchievementBadge).tooltip_text).contains(tr("Not earned yet.")), "a locked badge says so")
-	var cards := t._panel.find_child("Receipts", true, false) as GridContainer
-	assert_eq(cards.get_child_count(), 2, "a paper card per run")
-	var died := cards.get_child(1) as RunReceipt
-	assert_true(died.words().has(tr("Died").to_upper()), "the outcome stamped")
+	var cards := t._panel.find_child("RunLog", true, false) as GridContainer
+	assert_eq(cards.get_child_count(), 2, "B5: a terminal log row per run")
+	var died := cards.get_child(1) as RunLogRow
+	assert_true(died.words().has(tr("FLATLINED")), "B5: the outcome on its sticker")
+	assert_not_null(died.sticker, "FLATLINED is a sticker")
+	assert_true((cards.get_child(0) as RunLogRow).sticker != null, "COMPLETED is a sticker")
 	assert_not_null(t._panel.find_child("BestIceByCorp", true, false), "best ICE per corporation kept")
 
 
@@ -259,7 +264,7 @@ func test_no_runs_is_the_designed_empty_card() -> void:
 	await _frames(2)
 	t.show_stats()
 	await _frames()
-	var cards := t._panel.find_child("Receipts", true, false) as GridContainer
+	var cards := t._panel.find_child("RunLog", true, false) as GridContainer
 	assert_eq(cards.get_child_count(), 1)
 	assert_eq(cards.get_child(0).name, "NoRuns")
 
@@ -278,7 +283,7 @@ func test_the_pad_walks_the_tiles_badges_and_cards() -> void:
 	var last_row := tiles.get_child(tiles.get_child_count() - 1) as Control
 	var badges := t._panel.find_child("Badges", true, false) as GridContainer
 	assert_eq(_focus_down(last_row), badges.get_child(0), "the last row goes down to the badges")
-	var cards := t._panel.find_child("Receipts", true, false) as GridContainer
+	var cards := t._panel.find_child("RunLog", true, false) as GridContainer
 	var back: Node = t._panel.find_child("Back", true, false)
 	assert_eq(_focus_down(cards.get_child(cards.get_child_count() - 1) as Control), back, "the cards go down to Back")
 	for c in tiles.get_children() + badges.get_children() + cards.get_children():
@@ -348,10 +353,12 @@ func test_pause_options_open_centred_in_the_menus_place() -> void:
 	assert_null(menu.settings_panel)
 
 
-func test_reset_to_defaults_resets_the_open_tab_only() -> void:
+func test_reset_all_tabs_resets_every_tab() -> void:
 	var panel: SettingsPanel = add_child_autofree(SettingsPanel.new())
 	await _frames(1)
-	assert_not_null(panel.reset_button, "RESET TO DEFAULTS in the foot")
+	assert_not_null(panel.reset_button, "B5 (designer Q12): RESET ALL TABS in the foot")
+	assert_eq(panel.reset_button.theme_type_variation, UiTheme.TERMINAL_BUTTON, "a terminal button, never a sticker")
+	assert_eq(panel.reset_button.text, tr("Reset all tabs").to_upper())
 	Settings.set_reduce_motion(true)
 	Settings.set_heat_glitch(true)
 	Settings.set_colorblind_mode(&"deutan")
@@ -362,12 +369,16 @@ func test_reset_to_defaults_resets_the_open_tab_only() -> void:
 	assert_false(Settings.reduce_motion, "reduce motion back to off")
 	assert_false(Settings.heat_glitch, "Heat glitch back to off")
 	assert_eq(Settings.colorblind_mode, &"off", "colour-blind back to off")
-	assert_almost_eq(Settings.master_volume, 0.3, 0.001, "another tab's setting is left alone")
+	assert_almost_eq(Settings.master_volume, 1.0, 0.001, "B5: another tab's setting goes back too (every tab)")
 	assert_false(panel.reduce_motion_check.button_pressed, "the row shows it")
 	assert_true(panel.colorblind_tiles.tiles[0].selected, "the OFF tile shows it")
 	panel.show_section("Audio")
+	Settings.set_master_volume(0.4)
+	Settings.set_reduce_motion(true)
+	panel.sync_widgets()
 	panel._unhandled_input(_pad(JOY_BUTTON_Y))
-	assert_almost_eq(Settings.master_volume, 1.0, 0.001, "pad Y resets the open tab (Audio)")
+	assert_almost_eq(Settings.master_volume, 1.0, 0.001, "pad Y resets every tab (Audio, open)")
+	assert_false(Settings.reduce_motion, "and Accessibility, closed")
 	assert_almost_eq(panel.master_slider.value, 1.0, 0.001, "the slider shows it")
 
 

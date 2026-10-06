@@ -76,6 +76,8 @@ var subtitle_strip: SubtitleStrip
 ## "More below" at the foot of a page that scrolls on (H21 #15).
 var more_hint: ScrollHint
 var _panel_host: PanelContainer
+## B5: the kit's CRT glass behind the page host (shown on glass pages).
+var _panel_glass: CrtTerminalPanel = null
 var _log: RichTextLabel
 var _panel: Control = null
 var panel_name: String = ""
@@ -932,13 +934,15 @@ func _set_panel(p: Control, name: String) -> void:
 		more_hint.reset_snap()
 	# Screens built from terminal windows let the city show between them.
 	# ANIM-R5 P4: the campaign's end too (it was a near-opaque glass page of terminal lines).
-	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "raid", "raid_playout", "raid_summary", "end", "end_lock"] or name.begins_with("city") else &"GlassPanel"
+	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "raid", "raid_playout", "raid_summary", "end", "end_lock"] or name.begins_with("city") else UiTheme.CRT_GLASS_PANEL
+	_panel_glass.visible = _panel_host.theme_type_variation != &""  # B5: the kit glass is the glass page's fill
 	# HQ-B (Q6): the HQ shows no title (the HEAT gauge holds the bar's first slot). B3 (review
 	# Q10, round 44 `raid_setup.png`): while the DEFENCE hand is open the page is the raid setup:
 	# its yellow RAID SETUP title sticker.
 	hud.set_screen("" if name in HQ_PAGES else String(SCREEN_NUMBERS.get(name, "")),
 		tr(RAID_SETUP_TITLE) if name == "raid" else ("" if name in HQ_PAGES else screen_title(name)),
 		VerbSticker.title_art(RAID_SETUP_TITLE) if name == "raid" else "")  # B3 b: the title pages' size class
+	hud.visible = name != "start"  # B5 (review section f, round 44 new_campaign): no top bar on the new campaign page
 	if not name in HEAT_BUTTON_PAGES:
 		close_heat_terminal(false)
 	if not name in HQ_PAGES:
@@ -1204,8 +1208,13 @@ static func prompts_for(p_name: String) -> Array:
 func show_start() -> void:
 	# The pickers' tile sizes at text scale 1.0 (px, they grow to hold their words) and the
 	# crew's portrait swatch.
-	const CORP_TILE := Vector2(224, 76)
-	const HOME_TILE := Vector2(168, 64)
+	# Art director (B5 fix 3, round 44): the target and home-server tiles are compact, five to a row at 1.0, so the
+	# crew shows without scrolling beside the right column.
+	const CORP_TILE := Vector2(172, 60)
+	const CORP_TILE_BIG := Vector2(224, 76)  # from COMPACT_UP_TO up the page scrolls and the names need the room
+	const COMPACT_UP_TO := 1.3
+	const CORP_SWATCH := 36.0
+	const HOME_TILE := Vector2(172, 52)
 	const CREW_TILE := Vector2(176, 76)
 	const CREW_SWATCH := 56.0
 	# The START sticker's lettering size (px at 1.0) and tilt (degrees), the seed's top value.
@@ -1217,6 +1226,11 @@ func show_start() -> void:
 	const CODES_STACK_FROM := 1.6
 	# Today's run beside the share codes: its share of the row (the codes' is 1).
 	const DAILY_SHARE := 0.6
+	# B5 (round 44): the TRUST NO ONE slogan sticker's lettering (px at 1.0) and tilt; the right column's width
+	# (today's run and the share codes beside the planning table, px at 1.0).
+	const SLOGAN_PX := 18.0
+	const SLOGAN_TILT := 3.0
+	const SIDE_W := 260.0  # round 44: the right column is about a quarter of the page
 	var lookup := RunManager.lookup()
 	var profile := RunManager.profile
 	var box := VBoxContainer.new()
@@ -1227,6 +1241,16 @@ func show_start() -> void:
 	# ART-10 4C (v2 §1.2, §2.10): the yellow title sticker. B1b (pencil audit): no pencil motto
 	# here; pencil is for true plans (round 19), and TRUST NO ONE plans nothing.
 	head.add_child(_title_sticker(tr("NEW CAMPAIGN"), "NEW CAMPAIGN"))
+	# B5 (round 44 `new_campaign.png`): TRUST NO ONE is a small white-vinyl sticker slogan (a motto, not a plan:
+	# never pencil); not a verb (no focus, no sweep).
+	var slogan := VerbSticker.new(tr("TRUST NO ONE"), VerbSticker.Fill.WHITE, SLOGAN_PX, SLOGAN_TILT)
+	slogan.pre_translated = true
+	slogan.name = "Slogan"
+	slogan.focus_mode = Control.FOCUS_NONE
+	slogan.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	slogan.ambient_sweep = false
+	slogan.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(slogan)
 	var head_gap := Control.new()
 	head_gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1234,7 +1258,16 @@ func show_start() -> void:
 	box.add_child(head)
 	var setup := CrtWindow.new(tr("NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in."))
 	setup.name = "PlanningTable"
-	box.add_child(setup)
+	# B5 (round 44 `new_campaign.png`): today's run and the share codes in a column right of the planning table
+	# (they stack under it at big text, as before).
+	var table_row := HBoxContainer.new()
+	table_row.name = "TableRow"
+	table_row.add_theme_constant_override("separation", 14)
+	setup.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	table_row.add_child(setup)
+	box.add_child(table_row)
+	# B5 (review section f: "Dim the city behind"): the page pools the city under it (UiScrimPools, 0.55).
+	UiScrimPools.mark_panel(box, true, false)
 	# A group's head: its icon and words in terminal CAPS (cyan: the Cell's own system).
 	var plan_head := func(words: String, icon: StringName) -> HBoxContainer:
 		var row := HBoxContainer.new()
@@ -1303,7 +1336,7 @@ func show_start() -> void:
 		corp_tiles.append({"name": tr("CLASSIFIED") if secret else TextDb.t(corp, "display_name"), "corp": corp.id, "redacted": secret,
 			"locked": true, "unlock": unlock_words.call(u), "tip": unlock_tip.call(u)})
 	setup.body.add_child(plan_head.call(tr("Target:"), StatIcon.MAP))
-	var corp_pick := PlanningPicker.new(corp_tiles, 0, CORP_TILE)
+	var corp_pick := PlanningPicker.new(corp_tiles, 0, CORP_TILE if Settings.text_scale < COMPACT_UP_TO else CORP_TILE_BIG, CORP_SWATCH if Settings.text_scale < COMPACT_UP_TO else PlanningPicker.SWATCH_W)
 	corp_pick.name = "CorporationPicker"
 	corp_pick.value = pick_default.call(corps, RunManager.DEFAULT_CORPORATION)
 	corp_pick.refused.connect(refused_note.bind(corp_pick))
@@ -1415,9 +1448,15 @@ func show_start() -> void:
 	# Today's run and the share codes, side by side on plain cyan terminals (NEWC-03).
 	var code_split := BoxContainer.new()
 	code_split.name = "CodesSplit"
-	code_split.vertical = Settings.text_scale >= CODES_STACK_FROM
 	code_split.add_theme_constant_override("separation", 14)
-	box.add_child(code_split)
+	if Settings.text_scale >= CODES_STACK_FROM:
+		code_split.vertical = true
+		box.add_child(code_split)
+	else:
+		code_split.vertical = true  # B5: a column beside the planning table
+		code_split.custom_minimum_size.x = SIDE_W
+		code_split.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		table_row.add_child(code_split)
 	var daily := CrtWindow.new(tr("TODAY'S RUN"))
 	daily.name = "DailyRun"
 	daily.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -3953,11 +3992,22 @@ func _defence_verb(slot: VBoxContainer) -> void:
 	run_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
 	run_btn.pressed.connect(fight_raid)
 	run_btn.tooltip_text = UiTip.fold(tr("Start the defence: the raid plays out on the map; the result matches the forecast."))
-	slot.add_child(run_btn)
+	# B5c (art director): the sticker keeps the screen's sticker safe margin from the right edge (Fx.sticker_margin);
+	# the Speed / Skip strip under it lines up with it.
+	var safe := MarginContainer.new()
+	safe.name = "RunRaidSafe"
+	safe.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	safe.size_flags_horizontal = Control.SIZE_SHRINK_END
+	safe.add_theme_constant_override(&"margin_right", roundi(Fx.sticker_margin()))
+	var verbs := VBoxContainer.new()
+	verbs.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	safe.add_child(verbs)
+	slot.add_child(safe)
+	verbs.add_child(run_btn)
 	var strip := RaidSpeedStrip.new(RunManager.config().raid_step_cap)
 	strip.name = "SpeedStrip"
 	strip.size_flags_horizontal = Control.SIZE_SHRINK_END
-	slot.add_child(strip)
+	verbs.add_child(strip)
 
 
 ## ART-3 6w: the raid's pages on the unified 3D city at the RAID band.
@@ -5083,8 +5133,41 @@ func show_end() -> void:
 	Dialogue.speak("win" if won else "loss", RC.Voice.DISPATCH, c.corporation_id, &"", c.campaign_seed)
 	if c.outcome == CampaignState.Outcome.LOST and RansomLock.plays_now():
 		_show_end_lock()
+	elif DisplayServer.get_name() != "headless" and RansomLock.plays_now():
+		_show_end_shot()
 	else:
 		show_dossier([] as Array[Dictionary])
+
+
+## B5 (review Q8): a won or abandoned campaign's prints are shot from the unified city at its final state, as the
+## lock's are (the network on the city, the camera fitted to it): EndShot reads the frame, the dossier follows.
+func _show_end_shot() -> void:
+	var c := RunManager.campaign
+	var page := Control.new()
+	page.name = "EndShotPage"
+	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_set_panel(page, "end_lock")
+	var g := raid_graph(c.last_raid.get("nodes", {}), {})
+	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.5, 0.5), END_LOCK_ZOOM)
+	city_overlay.packets = false
+	_end_lock_frames = 0
+	_end_lock_fitted = false
+	var shot := EndShot.new(_end_lock_nodes, _end_shot_ready)
+	add_child(shot)
+	shot.taken.connect(func(img: Image, pts: Array) -> void:
+		shot.queue_free()
+		show_dossier(end_photos(img, pts)))
+
+
+## B5 (Q8): the end shot may be taken once the city has baked and settled (or it waited long enough); no lock
+## stands over it, so nothing to keep clear.
+func _end_shot_ready() -> bool:
+	_end_lock_frames += 1
+	var city := wireframe.city
+	var settled := city.showing_current_look() and city.camera_settled() and city.bake_fade >= 1.0
+	return _end_lock_frames >= END_LOCK_WAIT_FRAMES or settled
 
 
 ## The lock's page: the city with the Cell's network, the lock over the whole screen.
@@ -5222,7 +5305,7 @@ func end_photos(shot: Image, points: Array) -> Array[Dictionary]:
 		out.append({"caption": home_caption, "texture": _crop(shot, _below(Rect2(home_at - Vector2(side, side) * 0.5, Vector2(side, side)), city_top))})
 	else:
 		out.append({"caption": home_caption})
-	if shot != null and bounds.size != Vector2.ZERO:
+	if shot != null and not points.is_empty():  # B5 (Q8): a network of one node (the home server) is shot round it
 		var r := bounds.grow(END_PRINT_MARGIN)
 		var side := maxf(r.size.x, r.size.y)
 		out.append({"caption": tr("NODES AT THE END"), "texture": _crop(shot, _below(Rect2(r.get_center() - Vector2(side, side) * 0.5, Vector2(side, side)), city_top))})
@@ -5828,8 +5911,9 @@ func _build_ui() -> void:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(scroll)
 	_panel_host = PanelContainer.new()
-	_panel_host.theme_type_variation = &"GlassPanel"
-	_panel_host.material = UiTheme.crt_material()
+	# B5 (B1c follow-up 2): the kit's CRT glass behind the host (shown on glass pages), not the shared material.
+	_panel_host.theme_type_variation = UiTheme.CRT_GLASS_PANEL
+	_panel_glass = CrtTerminalPanel.behind(_panel_host)
 	_panel_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panel_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_panel_host)
@@ -5837,8 +5921,8 @@ func _build_ui() -> void:
 	pad_prompts = PadPrompts.new()
 	root.add_child(pad_prompts)
 	_log = RichTextLabel.new()
-	_log.theme_type_variation = &"LogText"
-	_log.material = UiTheme.crt_material()
+	_log.theme_type_variation = UiTheme.CRT_LOG_TEXT
+	CrtTerminalPanel.behind(_log)
 	_log.bbcode_enabled = true
 	_log.scroll_following = true
 	_log.custom_minimum_size = Vector2(0, 96)

@@ -21,13 +21,17 @@ var body: VBoxContainer
 ## material (a custom canvas shader samples the MSDF font atlas raw: the words came out dim
 ## and soft). A Node2D: the container never lays it out.
 var _words: Node2D
+## B5: the kit glass behind the panel.
+var _glass: CrtTerminalPanel = null
 
 
 func _init(p_title: String = "", p_destructive: bool = false) -> void:
 	title = p_title
 	destructive = p_destructive
 	name = "DialogPanel"
-	material = HudSkin.crt_material()
+	# B5 (B1c follow-up 2): the kit's CRT glass behind the dialog (the hex dump fades under its words); the panel
+	# draws only its edge and header over it.
+	_glass = CrtTerminalPanel.behind(self, edge_color())
 	var s := Settings.text_scale
 	var sb := StyleBoxEmpty.new()
 	sb.content_margin_left = PAD * s
@@ -59,7 +63,7 @@ func _draw() -> void:
 	var s := Settings.text_scale
 	var r := Rect2(Vector2.ZERO, size)
 	var edge := edge_color()
-	HudSkin.draw_terminal_panel(self, r, edge, HudSkin.TERMINAL_BG)
+	HudSkin.draw_terminal_edge(self, r, edge)
 	var hh := HEADER_H * s
 	draw_rect(Rect2(Vector2(1.0, 1.0), Vector2(size.x - HudSkin.CHAMFER * s - 2.0, hh)), Color(edge, 0.12))
 	draw_line(Vector2(0.0, hh), Vector2(size.x, hh), Color(edge, 0.6), 1.0)
