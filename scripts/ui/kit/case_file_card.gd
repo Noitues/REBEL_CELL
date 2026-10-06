@@ -19,7 +19,8 @@ extends VBoxContainer
 ##   21 `sheet`, `DossierPhoto.STOCK_ART`): a document filed inside.
 ## - The actions sit under the folder on the glass (materials never mix). Designer ruling
 ##   2026-10-05 (SLOTS b, overriding §2.10's one sticker verb per screen on this page): LOAD on
-##   the primary slot is the pink sticker verb (every other LOAD a terminal chip) and DELETE is
+##   every used slot is the pink sticker verb (SLOTS c; the newest campaign's, `primary`, takes
+##   the first focus) and DELETE is
 ##   a sticker on every used slot, 4C's own baked `dialog_delete` art (abandon.py), shown at
 ##   LOAD's size; a red grease-pencil "Can't Undo" with an arrow points at it (up to
 ##   PENCIL_UP_TO; past it the words are in DELETE's tooltip). The confirm DELETE opens is 4C's
@@ -90,7 +91,7 @@ var slot: String = ""
 var summary: Dictionary = {}
 ## [{id, name, class_id, alive}] of the slot's crew.
 var crew: Array = []
-## The page's one sticker verb sits on this card (LOAD).
+## The newest campaign: its LOAD takes the page's first focus.
 var primary: bool = false
 var folder: MarginContainer
 var load_button: Button = null
@@ -142,15 +143,14 @@ func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], 
 		return
 	_fill()
 	var load_tip := tr("Load the campaign in slot %s.") % slot
-	if primary:
-		var verb := VerbSticker.new(tr("LOAD"), VerbSticker.Fill.PINK, VERB_PX, VERB_TILT)
-		verb.pre_translated = true
-		verb.tooltip_text = UiTip.fold(load_tip)
-		verb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		actions.add_child(verb)
-		load_button = verb
-	else:
-		load_button = _chip(actions, tr("Load"), "", load_tip)
+	# Every used slot's LOAD is the pink sticker (designer ruling 2026-10-05, SLOTS c); the
+	# newest campaign's (`primary`) takes the page's first focus.
+	var verb := VerbSticker.new(tr("LOAD"), VerbSticker.Fill.PINK, VERB_PX, VERB_TILT)
+	verb.pre_translated = true
+	verb.tooltip_text = UiTip.fold(load_tip)
+	verb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	actions.add_child(verb)
+	load_button = verb
 	load_button.name = "Load"
 	load_button.pressed.connect(func() -> void: load_pressed.emit(slot))
 	var undo := tr("Can't Undo")
