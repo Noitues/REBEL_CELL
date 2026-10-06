@@ -219,8 +219,10 @@ const CITY_MOTION_ORTHO := 240.0
 const CITY_MOTION_YAW := 135.0
 const CITY_MOTION_PITCH := 40.0
 const CITY_MOTION_DISTANCE := 900.0
-## ART-5 5e: the reveal demo frames the Cell's district at this share of its widest side.
-const CELL_REVEAL_FRAME := 1.25
+## ART-5 5e: the reveal demo's part of the city (lots, round the Cell's district) and its
+## camera (ortho BU).
+const CELL_REVEAL_LOTS := Rect2i(18, 20, 34, 34)
+const CELL_REVEAL_ORTHO := 260.0
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
 ## subtitle demo says, and how long the frames between a menu's focus moves are (s).
@@ -1027,52 +1029,23 @@ func _city_motion_demo() -> void:
 	cam.make_current()
 
 
-## ART-5 5e: the Cell's blackout reveal: 5b's district glTF with its landmark materials
-## (night) under the city's iso camera, the reveal played 0 -> 1 with `cell_fist_reveal`'s
-## timing as CityView3D plays it (the lights go dark until the fist shows).
+## ART-5 5e: the Cell's blackout reveal on the real piece: a CityView3D of the city round
+## the Cell's district (5b's district model on it, where the 3D city draws), framed on the
+## district, playing `play_cell_reveal` (the lights go dark until the fist shows).
 func _cell_fist_reveal_demo() -> void:
 	var cfg: CityConfig = CityView3D.CONFIG
 	var box := SubViewportContainer.new()
 	box.stretch = true
 	box.position = Vector2(0, 80)
 	box.size = Vector2(1280 - PANEL_W, 640)
-	var vp := SubViewport.new()
-	vp.own_world_3d = true
-	box.add_child(vp)
 	_screen_host.add_child(box)
-	var env := Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = cfg.sky
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_DISABLED
-	var we := WorldEnvironment.new()
-	we.environment = env
-	vp.add_child(we)
-	var sun := DirectionalLight3D.new()
-	vp.add_child(sun)
-	sun.look_at_from_position(Vector3.ZERO, -cfg.to_light, Vector3.UP)
-	var path := "%s/%s/%s" % [CityView3D.LANDMARKS_DIR, CityView3D.CELL, CityView3D.CELL_DISTRICT_FILE]
-	var district := (load(path) as PackedScene).instantiate() as Node3D
-	vp.add_child(district)
-	var mats := LandmarkMaterials.apply(district, load(LandmarkMaterials.LOOK_PATH) as LandmarkLook, CityView3D.CELL, false)
-	var box3 := CityLandmarks.box_of(path)
-	var iso := CityIsoCamera.make(cfg, box3.get_center() * Vector3(1, 0, 1), maxf(box3.size.x, box3.size.z) * CELL_REVEAL_FRAME,
-		box.size)
-	var cam := Camera3D.new()
-	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
-	cam.keep_aspect = Camera3D.KEEP_WIDTH
-	cam.far = cfg.camera_far
-	vp.add_child(cam)
-	cam.global_transform = iso.transform()
-	cam.size = iso.ortho
-	cam.make_current()
-	var set_q := func(q: float) -> void: LandmarkMaterials.set_reveal(mats, q)
-	set_q.call(0.0)
-	var e := Motion.entry(CityView3D.CELL_REVEAL_MOTION)
-	if Motion.live(CityView3D.CELL_REVEAL_MOTION):
-		var tw := box.create_tween()
-		tw.tween_method(set_q, 0.0, 1.0, Motion.seconds(CityView3D.CELL_REVEAL_MOTION)).set_ease(e.ease).set_trans(e.trans)
-	else:
-		set_q.call(1.0)
+	var view := CityView3D.new()
+	view.size = Vector2i(box.size)
+	view.use_model(CityModel.build(cfg, CITY_MOTION_SEED, CELL_REVEAL_LOTS))
+	box.add_child(view)
+	var centre := NeonCity.hq_of(CityView3D.CELL) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
+	view.set_iso(CityIsoCamera.make(cfg, view.lot_world(centre), CELL_REVEAL_ORTHO, box.size))
+	view.play_cell_reveal()
 
 
 ## ANIM-R5: the jack under reduce effects (its fade, `jack_fade_reduced`): reduce effects

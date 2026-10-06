@@ -185,7 +185,7 @@
 			"seconds": 0.5,
 			"tier": "fast"
 		},
-"res://tests/unit/test_city3d_model.gd": {
+		"res://tests/unit/test_city3d_model.gd": {
 			"seconds": 4.0,
 			"tier": "fast"
 		},
@@ -583,6 +583,10 @@
 		},
 		"res://tests/unit/test_art11_campaign_end.gd": {
 			"seconds": 12.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_art5_city_integration.gd": {
+			"seconds": 6.0,
 			"tier": "fast"
 		}
 	}

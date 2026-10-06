@@ -67,8 +67,9 @@ const GRID_FITS_MAX := 4
 ## screen fraction) before it is fitted to the screen.
 const GRID_ZOOM := 0.72
 const GRID_ANCHOR := Vector2(0.31, 0.54)
-## The smallest the fit may make the Grid map (the city's zoom).
-const GRID_MIN_ZOOM := 0.3
+## The smallest the fit may make the Grid map (the city's zoom). ART-5 5e: 0.3 -> 0.22 for the x2
+## Site spread (round 39), so a big key at text size 2.0 never covers a node.
+const GRID_MIN_ZOOM := 0.22
 ## H24 K1: from this text scale the Grid's step buttons show their icons (and "<" / ">")
 ## without words, their words in the tooltip, so the column keeps its width (the same
 ## scale the map key folds at).

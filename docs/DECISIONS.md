@@ -110,6 +110,93 @@ Fixes every finding of `docs/handoff/m14_audit/ART-0_horizontal.md` (3 P2, 12 P3
 - **O2** `.github/workflows/ci.yml` fast-checks runs `python3 tools/test_run_tests.py` (triggers stay manual).
 - **O3** `docs/timeline/.gdignore`.
 
+### 2026-10-05 — Art direction — ART-5 5e city integration
+Agent 5e (wave 2b, critical path; ART_BIBLE v2 §4.1, §4.3, §4.4, §4.5, §5.4, §6.1; refs round 34
+`map_fist_reveal`, round 39 `city_grid`, round 40 `unified40` / `three_views_v3`).
+- **Reduce motion is not a pause.** CityView3D keeps `ambient_scale` 0 under reduce motion (its
+  rain, fog and network decal hold), and gains `host_pause_changed` / `host_paused()` (covered or
+  unfocused). CityViewMotion now pauses the layers on the host's pause only, so under reduce motion
+  the street traffic keeps moving at `CityMotionConfigData.reduce_motion_street_rate` (0.4, new
+  field, validated 0..1, smoke-checked in `_art5_city_motion`) without streaks, sky lanes show
+  their markers without cars, everything else holds its steady look (bible 5.4; replaces 5c's
+  "street traffic pauses", open question 5c (2) answered by the art pass). Measured windowed:
+  street clock 0.45 s per wall second under reduce motion (frame-step noise round 0.4).
+- **Day-look API** (5c's open question (3)): `CityView3D.set_night_share(n, day)` lerps the
+  buildings', streets', post's and sky's night look toward `day` and restyles the landmarks (and
+  roof props) day or night; `CityViewMotion.day_look(mcfg)` builds `day` from the motion config,
+  and `_on_night_share` calls it (no more reaching into the view's materials). The Grid stays
+  night: the game has no day / suspicion rule (orchestrator call (c), accepted).
+- **The Grid's city life** (`GridCityLife.of(c, corp, cfg)`, pure, `scripts/city3d/`): the Heat
+  band (`Palette.heat_band` on `HeatRules.band_levels`), the hardened Sites (the launchable Sites
+  while ENEMY_RESISTANCE is on, sorted), the home lot, DISPATCH's fist (`corp.id == rebel_cell`:
+  the REBEL_CELL campaign; orchestrator call (c), accepted), the Site landmark lot.
+  `NeonCity.set_city_life(d)` (called by `hq_scene.show_grid` after `_mount_grid_camera`) sends
+  it down: `view3d.set_site_landmark`, `show_cell_dispatch`, `CityViewMotion.set_heat` (the rig
+  centres on the hardened Sites). Every 3D NeonCity now carries a `CityViewMotion` (motion on the
+  live Grid; its attach is deferred one frame so the host's home lot and Heat land first).
+- **Site landmarks.** 5b's `<corp>_site.glb` stands on the Site named by
+  `CityConfig.site_landmarks` (Solace `t1_c` Patient Records Vault, Halcyon `lose_the_case_file`,
+  Orbital `o1_d` Subscriber Uplink Office: open question below), centred on that Site's lot; the
+  procedural buildings under 92 % of its ground box give way (chunks rebuilt). Meridian and the
+  Cell have no Site model. The overlay's markers float over the landmark: `NeonCity._roof_3d`
+  lifts the roofs of the lots under it (`CityLandmarks.lot_rect`) to the model's top, and
+  `frame_stamp` carries the lifts so overlays re-place.
+- **Crest blackout reveal.** `CityView3D.cell_reveal` is a property (its setter drives 5b's
+  `reveal_q`); `play_cell_reveal()` tweens it 0 -> 1 with the new `cell_fist_reveal` entry (T0,
+  2.0 s, IN_OUT sine; REQUIRED_IDS; motion-lab demo on 5b's district model). It plays once per
+  process when the Grid's 3D city mounts; reduce effects, reduce motion, headless or the entry off
+  show the fist at once; MotionSkip settles it (`Motion.run` hold).
+- **x2 Site spread, aimed into each territory** (orchestrator call (a)). `CityLayout.site_points`
+  spreads the layout by `CityConfig.site_spread` (2.0) round the HQ, the boss end kept 3.5 lots
+  from the HQ's centre, and turns it by `CityConfig.site_aim_deg` (Halcyon 255°, Meridian 140°,
+  Rebel_Cell 270°; Solace and Orbital 0°) with `site_mirror` (none). The aims are the middle of the
+  ranges where every Site stands in its own territory, found by the sweep
+  `tools/city/site_spread_probe.tscn -- --search` (72 headings x mirror): all five corporations
+  32/32 Sites in territory, none on an HQ plaza, none off the city, one Site a lot (was Meridian
+  9/32, Halcyon 6/32, Rebel_Cell 15/32 at 0°). Halcyon's and the Cell's Grids now run up the
+  screen, Meridian's diagonally. Presentation only: no rule reads the layout. The Grid fit lands
+  at ortho ~490-530 on a 1280 px window (the side column takes a third: ~330 on the map's free
+  part); 5a's s = 1 gave 241.
+- **Off-screen TARGET** (`TargetEdgeMarker`, `scripts/ui/kit/`): when the Central Server's marker
+  is off the Grid's map area, a red grease-pencil arrow (PencilShapes.arrow, THREAT ink) sits on
+  the area's edge (EDGE_MARGIN 46 px inside, above the key and the minimap) pointing at it, with
+  the scrawled word TARGET behind it; clicking the arrow asks the page to centre on it
+  (`pan_requested` -> `CityGridControls.centre_on`). The clamp `edge_point` is pure and tested.
+- **Markers stay on the Grid overlay** (orchestrator call (b), accepted): the overlay keeps
+  drawing 5d's SiteMarkerView v4 on the 3D-matched projection (5a); SiteMarkerLayer and
+  `GridMarkerProjection.from_view` serve the views without a NeonCity (6w raid, 7w netrun). They
+  differ by design: the overlay snaps a Site to the nearest building of its layout point (within
+  4 lots), the projection keeps the layout's floor lot; a test pins the 4-lot bound.
+- **Roof props** (bible 4.1: from raid zoom; reuse rule). `tools/art_pipeline/city/
+  build_roof_props_v1.py` runs the round 40 concept's own drawing lines (unified40.py 204-227 and
+  `cyl36` 231-237, vendored unchanged in `concept_r40/`, ported from art-pass ace98b9, on
+  concept_r31's identical target_corps.py) in Blender 5.2, one prop per run with a scripted
+  stand-in for the building's random (every chance passes, ranges at their middle), and exports
+  `assets/city/roof_props/roof_props.glb` (AC unit, water tank, antenna with its red light, four
+  holo billboard colours; toon + neon roles, art_export/1 manifest; `RoofPropAssetChecks` in
+  validate_content). `CityRoofProps.place` applies the concept's rules (flat roofs, footprint >
+  2 BU, AC 0-2, tank 18 %, antenna on roofs over 22 BU at 45 % scaled 3-7 BU, billboard over
+  14 BU at 16 % scaled 4-7.5 BU wide) with a per-building hash, all numbers in CityConfig
+  (`roof_*`). One deviation: a spot whose centre falls off a turned / odd roof is left out (the
+  concept used the roof's bounding box; on the game's footprints that floated props over the
+  street). CityView3D draws one MultiMesh per prop per chunk, shadows off, at ortho <=
+  `roof_props_below` (420); ~15 k instances over the whole city.
+- **Tools.** `tools/city/city_integration_capture.tscn` (one windowed launch: per corp the Grid,
+  the Site landmark close with props, the off-screen TARGET; the Cell's reveal; reduce motion's
+  street rate), `tools/city/site_spread_probe.tscn` (the spread sweep), 5e's
+  `tools/city/city_hosts_check.tscn` (buildings on every host).
+- **Tests.** New `tests/unit/test_art5_city_integration.gd` (fast): reduce motion is not a host
+  pause; the day-look call; the reveal (T0 entry, end state, tween, skip); the spread in every
+  territory and x2; GridCityLife; the roof lift; the TARGET clamp; the roof props (export and
+  rules); the Grid markers vs the projection. `test_city_motion` updated for the 40 % rule.
+  Changed, not dropped: `test_horizontal_pass21_city.test_raid_sway_covers_each_corporations_own_sites`
+  asserted that Halcyon's Grid reaches past its district (a property of the old layout the
+  aimed spread removes); it now asks the border case (H21 #22) directly: a Halcyon Site's lot
+  read as a neighbour's territory is still swayed.
+- **Grid fit room** (file outside the area: `hq_scene.gd`, one constant): `GRID_MIN_ZOOM` 0.3 ->
+  0.22. At 0.3 every corporation's x2 Grid fitted at the clamp (ortho 532 on 1280 px) and
+  Meridian's key covered nodes at text size 2.0 (`test_city_map_sweeps`).
+
 ### 2026-10-05 — Art direction — ART-5 5c city motion
 Agent 5c (ART_BIBLE v2 §4.1 car LOD, §4.2 city motion, §4.3 Heat on maps, §5.3–5.5, §6.1;
 refs round 24 `motion_layers`, round 26 ambient v4, round 37 calm Heat B, round 40 `cars_lod`).
@@ -7450,6 +7537,17 @@ and annotated in the GDD where it changes a rule.
   and tested but only shows below ortho 150 outside the netrun band; should the transit show it?
   (2) reduce motion pauses street traffic (brief) where bible 5.4 says 40 % without streaks.
   (3) 5a: a public day-look call on CityView3D (CityViewMotion sets the view's materials for now).
+  ART-5 5e: (2) and (3) are built (the art pass's 40 % rule; `CityView3D.set_night_share`).
+
+- **ART-5 5e city integration (defaults built, see "Art direction — ART-5 5e city
+  integration"):** (1) which Sites carry the Site landmarks: Solace `t1_c` Patient Records
+  Vault, Halcyon `lose_the_case_file`, Orbital `o1_d` Subscriber Uplink Office
+  (`CityConfig.site_landmarks`); Meridian and the Cell have none. (2) The x2 spread is aimed
+  into each territory (Halcyon and the Cell run up the screen, Meridian diagonally); the
+  alternative was a smaller spread with 5a's left-to-right Grids. (3) The Grid is always night:
+  no rule drives day or suspicion. (4) DISPATCH's fist shows on the Cell's district in the
+  REBEL_CELL campaign only. (5) The Cell's blackout reveal plays once per game session, on the
+  first Grid visit.
 
 - **ART-5 5b: the REBEL_CELL fist on the real city (2026-10-05):** the landmark export carries a standalone district
   patch and the crest as a mask texture; on the unified city the fist must be the city's own buildings' windows
