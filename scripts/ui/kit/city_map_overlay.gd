@@ -1615,6 +1615,9 @@ const TARGET_WORD_SPOTS: Array[Vector2] = [TARGET_WORD_AT, Vector2(0.2, 0.9), Ve
 ## ... then wholly left of the circle, its baseline at these shares of the radius under the
 ## centre (big words: a word wider than the circle never reaches past it).
 const TARGET_WORD_LEFT_ROWS: Array[float] = [0.7, 0.0, -0.7, 1.4, -1.4, 2.1, -2.1]
+## HQ-B: then out from the circle in steps of this share of the word's width (and how many).
+const TARGET_WORD_OUT_SHARE := 0.5
+const TARGET_WORD_OUT_STEPS := 3
 const TARGET_SEED := 351
 const BOSS_CHIP_GAP := 10.0
 ## Parity fix (GRID-03): the chip's slides along the circle (shares of how far it can slide and
@@ -1844,6 +1847,14 @@ func boss_layout(n: Dictionary) -> Dictionary:
 	var circle := _target_circle_rect(at)
 	for sy in TARGET_WORD_LEFT_ROWS:
 		tries.append(Vector2(circle.position.x - wide, at.y + sy * TARGET_RADIUS * k))
+	# HQ-B: then wholly right of it, then a word's width further out either side (the HQ's
+	# wider frame packs Sites round the boss).
+	for sy in TARGET_WORD_LEFT_ROWS:
+		tries.append(Vector2(circle.end.x, at.y + sy * TARGET_RADIUS * k))
+	for step in range(1, TARGET_WORD_OUT_STEPS + 1):
+		for sy in TARGET_WORD_LEFT_ROWS:
+			tries.append(Vector2(circle.position.x - wide * (1.0 + step * TARGET_WORD_OUT_SHARE), at.y + sy * TARGET_RADIUS * k))
+			tries.append(Vector2(circle.end.x + wide * step * TARGET_WORD_OUT_SHARE, at.y + sy * TARGET_RADIUS * k))
 	var least := INF
 	for p in tries:
 		var w := _target_word_rect(p)
@@ -1860,6 +1871,22 @@ func boss_layout(n: Dictionary) -> Dictionary:
 			break
 	if on_map.x != INF:
 		word_at = on_map
+	if on_map.x == INF or least > 0.0:
+		# HQ-B: no clear spot on the map's open part (the HQ's wider frame packs Sites round the
+		# boss; or it lies beyond the fit, its edge arrow showing it): a spot clear of the markers
+		# under a panel beats one on a marker; else the least covered.
+		var fewest := least if on_map.x != INF else INF
+		for p in tries:
+			var w := _target_word_rect(p)
+			var cover := 0.0
+			for o in avoid:
+				if w.intersects(o):
+					cover += w.intersection(o).get_area()
+			if cover < fewest:
+				fewest = cover
+				word_at = p
+			if cover <= 0.0:
+				break
 	_boss_now = {"chip": chip, "circle": _target_circle_rect(at), "word": _target_word_rect(word_at), "word_at": word_at}
 	_boss_key = key
 	return _boss_now

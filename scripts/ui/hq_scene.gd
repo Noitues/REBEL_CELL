@@ -1541,6 +1541,10 @@ func _build_hq_page(page_name: String) -> void:
 	var raid_mode := page_name == "raid"
 	# The camera stays where the player left it when the same page rebuilds (a pick, a buy, a tab).
 	var keep := _city_frame() if panel_name in HQ_PAGES and city_overlay != null and is_instance_valid(city_overlay) else {}
+	# The DEFENCE hand's setup and back: the same camera, corrected only if what the map shows
+	# no longer sits in its room (the setup's map fits its network and the raid's routes).
+	var switched := not keep.is_empty() and panel_name != page_name
+	var shown_before := _built_selection if not keep.is_empty() else &""
 	_sync_previews()
 	# ANIM-R4 H10: what the pages this one leads to need is made ahead.
 	AudioDirector.prewarm_music(["raid", "netrun", "combat"], c.corporation_id)
@@ -1604,7 +1608,10 @@ func _build_hq_page(page_name: String) -> void:
 		setup.visible = not raid_mode
 		order.add_child(setup)
 		if raid_mode:
+			# The setup's one line over the column (parity RAID-02: the paper's clip never
+			# reaches it).
 			order.add_child(_raid_intro())
+			order.move_child(order.get_child(order.get_child_count() - 1), 0)
 		page.add_child(order)
 	# The hand: its tabs and the cards of the deck picked.
 	page.add_child(_hand_tabs())
@@ -1703,17 +1710,27 @@ func _build_hq_page(page_name: String) -> void:
 		city_overlay.node_clicked.connect(select_site)
 	_mount_hq_routes(projection, raid_mode)
 	wireframe.city.set_city_life(GridCityLife.of(c, corp, cfg))
-	_mount_hq_map_tools(page)
+	_mount_hq_map_tools(page, g)
 	hq_map_mode(true)
 	_place_hq()
 	_sync_hq_band()
+	_built_selection = selected_site
 	if keep.is_empty():
 		_hq_fit_pending = true
 		_hq_fit_passes = 0
 		if not get_tree().process_frame.is_connected(fit_hq_map):
 			get_tree().process_frame.connect(fit_hq_map, CONNECT_ONE_SHOT)
+	elif switched:
+		_hq_fit_pending = true
+		_hq_fit_passes = 1  # corrections only: the camera holds when the map already fits
+		if not get_tree().process_frame.is_connected(fit_hq_map):
+			get_tree().process_frame.connect(fit_hq_map, CONNECT_ONE_SHOT)
 	else:
 		wireframe.ease_camera()
+		# The map follows a new selection (a Site or the setup's target picked off the map: the
+		# pad's cursor, a YOUR NETWORK row) once the page is laid out.
+		if selected_site != shown_before:
+			_follow_selected.call_deferred()
 	if raid_mode:
 		_register_raid_drops(c.grid.claimed_ids(), hand)
 		set_page_prompts(prompts_for("raid") + [[&"cycle_target", KEY_PROMPT]])
@@ -1801,7 +1818,7 @@ func _hand_tabs() -> VBoxContainer:
 	tabs.add_theme_constant_override("separation", 6)
 	tabs.alignment = BoxContainer.ALIGNMENT_END
 	var lines := ["%d / %d" % [c.living_operatives().size(), c.roster.size()], str(c.schematics),
-		(tr("RAID %d") % c.pending_raids.size()) if not c.pending_raids.is_empty() else (tr("ARMORY %d/%d") % [c.armory.size(), cfg.armory_capacity])]
+		(tr("RAID %d") % c.pending_raids.size()) if not c.pending_raids.is_empty() else armory_words()]
 	var tips := [UiTip.for_input(tr("CREW: your operatives as cards. Pick the runner, drag a card onto one of your nodes to station them."),
 			tr("CREW: your operatives as cards. Pick the runner; pick a card up and move it onto one of your nodes to station them.")),
 		tr("MARKET: recruits, the next run's boosts and Profile unlocks, paid in Schematics."),
@@ -2242,12 +2259,15 @@ func _mount_hq_routes(projection: RaidResolver.RaidResult = null, solid: bool = 
 ## HQ-B: the minimap terminal and the folded MAP KEY at the top right, the player's camera
 ## (wheel, drag, WASD, the right stick; zooming out past the raid range takes the GRID band,
 ## Q4) and the off-screen TARGET arrow (Q5: the Central Server outside the fit).
-func _mount_hq_map_tools(page: Control) -> void:
+func _mount_hq_map_tools(page: Control, graph: Dictionary = {}) -> void:
 	var c := RunManager.campaign
 	hq_legend = MapLegend.new(c.corporation_id, true, true)
 	hq_legend.name = "MapLegend"
 	hq_legend.always_fold = true
 	hq_legend.use_site_markers(not c.pending_raids.is_empty())
+	if panel_name == "raid":
+		# H23 S4: the raid setup's key lists what its map shows (the major nodes).
+		hq_legend.show_only(MapLegend.keys_of(graph, c.grid))
 	hq_legend.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	page.add_child(hq_legend)
 	TextDb.translates_itself(hq_legend)
@@ -2299,6 +2319,8 @@ func _sync_hq_band() -> void:
 
 ## HQ-B (Q4): the view band for the HQ's camera now.
 func hq_band() -> int:
+	if panel_name == "raid":
+		return CityLod.Band.RAID  # the setup is a raid view (S-MAPVIEW: map mode) at any fit
 	var ortho := RaidZoomFit.ortho_of(wireframe.city.scale.x, size.x)
 	return CityLod.Band.RAID if ortho <= CityView3D.CONFIG.raid_fit_max + HQ_BAND_SLACK else CityLod.Band.GRID
 
@@ -2340,6 +2362,10 @@ func _place_hq() -> void:
 	# The card column: its width, or what its widest card needs.
 	var column := page.get_node("CardColumn") as Control
 	var col_w := maxf((r["card"] as Rect2).size.x, (column.get_child(0) as Control).get_combined_minimum_size().x)
+	if panel_name == "raid":
+		# The setup's right column (THREAT INTEL, IF PLACED) at the objects' scale, never under
+		# what its panels need: YOUR NETWORK took the left (RAID-06), the map keeps its middle.
+		col_w = maxf(HqLayout.CARD_COLUMN * o_scale, (column.get_child(0) as Control).get_combined_minimum_size().x)
 	var col_x := area.x - HqLayout.MARGIN - col_w
 	hand.size = Vector2(maxf(1.0, minf(verb.position.x, col_x) - HqLayout.GAP - hand.position.x), hand_h)
 	var foot_top := minf(hand.position.y, tabs.position.y)
@@ -2366,6 +2392,9 @@ func _place_hq() -> void:
 		hq_minimap.position = Vector2(area.x - HqLayout.MARGIN - ms.x, top)
 		top += ms.y + HqLayout.GAP
 	if hq_legend != null and is_instance_valid(hq_legend):
+		# Opened, the key lays its rows out in columns across its share of the page (one tall
+		# column ran off the screen's foot at big text).
+		hq_legend.set_strip_width(area.x * HQ_KEY_SHARE)
 		var ls := hq_legend.get_combined_minimum_size()
 		hq_legend.size = ls
 		hq_legend.position = Vector2(area.x - HqLayout.MARGIN - ls.x, top)
@@ -2373,12 +2402,27 @@ func _place_hq() -> void:
 	var bottom := verb.position.y - HqLayout.GAP
 	column.size = Vector2(col_w, maxf(1.0, minf((column.get_child(0) as Control).get_combined_minimum_size().y, bottom - top)))
 	column.position = Vector2(col_x, bottom - column.size.y)
+	var was_free := _hq_free
 	_hq_free = Rect2(Vector2(order.position.x + order.size.x + HqLayout.MARGIN if order != null else HqLayout.MARGIN, HqLayout.MARGIN), Vector2.ZERO)
 	_hq_free.end = Vector2(column.position.x - HqLayout.MARGIN, foot_top - HqLayout.MARGIN)
 	_hq_free.size = _hq_free.size.max(Vector2.ONE)
+	# The pieces settled into a new map room after the fit (a panel grew a line): fit again.
+	if was_free.has_area() and not _hq_fit_pending and city_overlay != null and is_instance_valid(city_overlay) \
+			and Engine.get_process_frames() - _hq_fit_ended <= HQ_SETTLE_FRAMES \
+			and (absf(was_free.size.x - _hq_free.size.x) > HQ_REFIT_PX or absf(was_free.size.y - _hq_free.size.y) > HQ_REFIT_PX \
+			or was_free.position.distance_to(_hq_free.position) > HQ_REFIT_PX):
+		_hq_fit_pending = true
+		_hq_fit_passes = 0
+		if not get_tree().process_frame.is_connected(fit_hq_map):
+			get_tree().process_frame.connect(fit_hq_map, CONNECT_ONE_SHOT)
 	var cursor := page.get_node("MapCursor") as Control
 	cursor.position = _hq_free.position
 	cursor.size = _hq_free.size
+	# A relayout moves what has the focus: its scrolling column shows it whole again.
+	var f := get_viewport().gui_get_focus_owner()
+	for sc in [column, order.get_node("WorkOrderPaper") if order != null else null]:
+		if f != null and sc is ScrollContainer and (sc as ScrollContainer).is_ancestor_of(f):
+			(sc as ScrollContainer).ensure_control_visible.call_deferred(f)
 	if city_overlay != null and is_instance_valid(city_overlay):
 		city_overlay.screen_rect = page.get_global_rect()
 		var avoid: Array[Control] = [tabs, hand, verb, column]
@@ -2386,6 +2430,10 @@ func _place_hq() -> void:
 			if extra != null and is_instance_valid(extra):
 				avoid.append(extra)
 		city_overlay.avoid_controls(avoid)
+
+
+## HQ-B: the share of the page's width the opened map key may span.
+const HQ_KEY_SHARE := 0.6
 
 
 ## HQ-B: the map's free part as last placed (page px).
@@ -2429,6 +2477,12 @@ func hq_fit_lots() -> PackedVector2Array:
 func hq_fit_ids() -> Array[StringName]:
 	var c := RunManager.campaign
 	var ids: Array[StringName] = []
+	if panel_name == "raid" and not c.pending_raids.is_empty():
+		# The setup fits what its map shows: the major (raid) nodes (S-MAPVIEW).
+		var projection := RunManager.project_raid()
+		for id in RaidMapNodes.major_ids(c, RaidMapNodes.route_paths(projection.events), projection.nodes).keys():
+			ids.append(StringName(String(id)))
+		return ids
 	ids.append_array(c.grid.claimed_ids())
 	if panel_name != "raid":
 		for s in RunManager.launchable_sites():
@@ -2457,17 +2511,19 @@ func fit_hq_map() -> void:
 	var scr := get_global_rect()
 	var city := wireframe.city
 	if _hq_fit_passes == 0:
-		_frame_city(RaidZoomFit.fit_zoom(CityView3D.CONFIG, lots, free.size * HQ_FIT_SHARE, size.x), _centre_of(lots), (free.get_center() - scr.position) / scr.size)
+		_frame_city(RaidZoomFit.fit_zoom(CityView3D.CONFIG, lots, free.size * hq_fit_share(), size.x), _centre_of(lots), (free.get_center() - scr.position) / scr.size)
 	else:
-		var box := hq_fit_box()
-		var aim := Rect2(free.get_center() - free.size * HQ_FIT_SHARE * 0.5, free.size * HQ_FIT_SHARE)
+		var box: Rect2 = wireframe.unrigged(hq_fit_box)  # the camera's picture, not a held one
+		var aim := Rect2(free.get_center() - free.size * hq_fit_share() * 0.5, free.size * hq_fit_share())
 		if not box.has_area() or aim.encloses(box):
 			_end_hq_fit()
 			return
 		var k := 1.0
 		if box.size.x > aim.size.x or box.size.y > aim.size.y:
 			k = minf(aim.size.x / box.size.x, aim.size.y / box.size.y)
-		var floor_zoom := RaidZoomFit.zoom_of(CityView3D.CONFIG.raid_fit_max, size.x)
+		# The raid setup frames its whole network and the routes (the map stays in the RAID band):
+		# past the raid range when its panels leave the map little room (big text).
+		var floor_zoom := RaidZoomFit.zoom_of(CityView3D.CONFIG.zoom_ortho_max if panel_name == "raid" else CityView3D.CONFIG.raid_fit_max, size.x)
 		k = clampf(k, floor_zoom / maxf(floor_zoom, city.scale.x), 1.0)
 		var focus_at := scr.position + city.focus_anchor * scr.size
 		var anchor := (aim.get_center() - (box.get_center() - focus_at) * k - scr.position) / scr.size
@@ -2483,21 +2539,40 @@ func fit_hq_map() -> void:
 	get_tree().process_frame.connect(fit_hq_map, CONNECT_ONE_SHOT)
 
 
+## How far the map's free part may move or change size (px) before the HQ fits again.
+const HQ_REFIT_PX := 8.0
+## Frames after a fit in which the page may still settle (a later change is the player's:
+## a Site picked, a card lifted; the camera holds).
+const HQ_SETTLE_FRAMES := 12
+var _hq_fit_ended: int = -1000000
+
+
 ## Correction passes of the HQ's fit after the first frame, and the passes so far.
 const HQ_FIT_PASSES := 4
 ## The share of the free part the fitted Sites take (designer 2026-10-05: err on showing more
 ## city round the network).
 const HQ_FIT_SHARE := 0.65
+## The raid setup's share: its map fits the network and the routes (the overlay spreads crowded
+## icons apart, so a further zoom out never helps a big network).
+const HQ_SETUP_FIT_SHARE := 0.9
+
+
+## The share of the free part the fit aims for on this page.
+func hq_fit_share() -> float:
+	return HQ_SETUP_FIT_SHARE if panel_name == "raid" else HQ_FIT_SHARE
 var _hq_fit_passes: int = 0
 
 
 func _end_hq_fit() -> void:
 	_hq_fit_pending = false
+	_hq_fit_ended = Engine.get_process_frames()
 	_hq_fit_passes = 0
 	# Parity GRID-12's idea, carried over (orchestrator 2026-10-05): once fitted, the camera
 	# pans (never zooms) the way that shows the most city in the map, every fitted Site kept in
 	# the free part (a network on the city's edge left a third of the map past the last block).
-	if panel_name in HQ_PAGES and city_overlay != null and is_instance_valid(city_overlay) and hq_page != null:
+	# (Not in the raid setup: it centres its network and the routes; the pan sent them to the
+	# map's edge.)
+	if panel_name == "hq" and city_overlay != null and is_instance_valid(city_overlay) and hq_page != null:
 		var held: Array[Rect2] = []
 		for id in hq_fit_ids():
 			var r := _map_node_rect(id)
@@ -2517,6 +2592,16 @@ func _end_hq_fit() -> void:
 			# selected one is panned in (its card and verb speak of it).
 			_hold_selected_in(free)
 	wireframe.ease_camera()
+
+
+## The selection the page last showed (a rebuild with another one follows it on the map).
+var _built_selection: StringName = &""
+
+
+## HQ-B: the map follows the selection: the selected Site panned into the map's free part.
+func _follow_selected() -> void:
+	if panel_name in HQ_PAGES and not _hq_fit_pending and city_overlay != null and is_instance_valid(city_overlay):
+		_hold_selected_in(hq_free_rect())
 
 
 ## HQ-B: pans (never zooms) the camera the least way that brings the selected Site's icon
@@ -3269,7 +3354,7 @@ func show_if_placed(index: int) -> void:
 		l.add_theme_font_override("font", Palette.mono())
 		l.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION if i > 0 else UiTheme.BODY))
 		l.add_theme_color_override("font_color", Palette.PAPER if i > 0 else PaletteSkins.chrome(Palette.NET_CYAN))
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		UiWrap.whole_words(l)
 		box.add_child(l)
 
 

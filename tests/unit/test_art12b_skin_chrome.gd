@@ -35,7 +35,7 @@ const ALLOWED := {
 	"scripts/ui/campaign_end/dossier_photo.gd": [1, SEM_WORLD],
 	"scripts/ui/combat_scene.gd": [1, SEM_PROTECT],
 	"scripts/ui/fx/heat_city.gd": [1, "SEMANTIC: the cool (negative Heat) blue of the city's Heat recolour"],
-	"scripts/ui/hq_scene.gd": [9, "SEMANTIC: Heat -/ Schematics / opens-one badges, map marks and the Site accent are data colours (net meaning); line 2793 is the accent of a RaidTerminal, which routes it"],
+	"scripts/ui/hq_scene.gd": [8, "SEMANTIC: Heat -/ Schematics / opens-one badges, map marks and the Site accent are data colours (net meaning); line 2793 is the accent of a RaidTerminal, which routes it"],
 	"scripts/ui/kit/asset_icon.gd": [1, SEM_BADGE],
 	"scripts/ui/kit/badge.gd": [1, SEM_BADGE],
 	"scripts/ui/kit/chrome/menu_chip.gd": [1, ROUTED_CARRY],

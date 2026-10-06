@@ -73,9 +73,6 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s (%s): %d/%d HP.,%s (%s): %d/%d HP.
 %s (%s): integrity (HP) now and after the raid.,%s (%s): integrity (HP) now and after the raid.
 %s (%s): make it the target for the Armory's assets.,%s (%s): make it the target for the Armory's assets.
-"%s (Armory %d/%d)
-%s","%s (Armory %d/%d)
-%s"
 %s - OFFLINE,%s - OFFLINE
 %s - press another key.,%s - press another key.
 %s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel,%s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel
@@ -156,10 +153,8 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 - its block and shield %d (absorbed),- its block and shield %d (absorbed)
 -%d RAM,-%d RAM
 // %s // RANK %d,// %s // RANK %d
-1  Pick a node,1  Pick a node
 1x,1x
 1x (full replay),1x (full replay)
-2  Press a card,2  Press a card
 2x,2x
 2x (twice as fast),2x (twice as fast)
 2x NUDGE,2x NUDGE
@@ -296,7 +291,6 @@ CENTRAL SERVER,CENTRAL SERVER
 CENTRAL SERVER // %s,CENTRAL SERVER // %s
 CENTRAL SERVER // EXPLOITS %d/%d,CENTRAL SERVER // EXPLOITS %d/%d
 CHOSEN,CHOSEN
-CITY GRID,CITY GRID
 CIVIC ORDER  //  PUBLIC SAFETY  //  COMPLIANCE,CIVIC ORDER  //  PUBLIC SAFETY  //  COMPLIANCE
 CLAIM,CLAIM
 CLAIM %s: build a %s here (%d Schematics). It joins your network and defends in raids.,CLAIM %s: build a %s here (%d Schematics). It joins your network and defends in raids.
@@ -323,8 +317,8 @@ CONTINUE,CONTINUE
 CORE,CORE
 CORE (home),CORE (home)
 CORE (house): your home server; if its integrity reaches 0 the campaign is lost.,CORE (house): your home server; if its integrity reaches 0 the campaign is lost.
-CORP NEWS // %s. The story so far is in the Codex (pause menu).,CORP NEWS // %s. The story so far is in the Codex (pause menu).
 CORP DOWN,CORP DOWN
+CORP NEWS // %s. The story so far is in the Codex (pause menu).,CORP NEWS // %s. The story so far is in the Codex (pause menu).
 CORPORATE,CORPORATE
 CORRUPTED,CORRUPTED
 CREW,CREW
@@ -574,10 +568,8 @@ DECEASED,DECEASED
 DECK,DECK
 DECRYPTED BY THE CELL  //  KEY %s,DECRYPTED BY THE CELL  //  KEY %s
 DEFEAT,DEFEAT
-DEFEATED,DEFEATED
 DEFENCE,DEFENCE
 "DEFENCE: the Armory's defence cards; with a raid pending, the raid setup.","DEFENCE: the Armory's defence cards; with a raid pending, the raid setup."
-DEFENSE LOADOUT // %s,DEFENSE LOADOUT // %s
 DEFRAG,DEFRAG
 DELETE,DELETE
 DELETE SLOT,DELETE SLOT
@@ -711,7 +703,6 @@ EVENT PAYOUT,EVENT PAYOUT
 "EXHAUST: once played, the card leaves your deck for this fight.","EXHAUST: once played, the card leaves your deck for this fight."
 EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
-EXPLOITS %d/%d,EXPLOITS %d/%d
 EXTRA  (each one weakens the boss further),EXTRA  (each one weakens the boss further)
 "Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The grey LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it.","Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The grey LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it."
 Elite Frequency,Elite Frequency
@@ -851,12 +842,10 @@ Event,Event
 "Every Rack you capture banks Schematics for the Cell and adds Heat. Heat thresholds bring raids on your home server. Bank early, cool off at Heat objectives, and never leave loot unbanked when you jack out.","Every Rack you capture banks Schematics for the Cell and adds Heat. Heat thresholds bring raids on your home server. Bank early, cool off at Heat objectives, and never leave loot unbanked when you jack out."
 "Everything the Cell knows: slices, cards, Firmware, Daemons, rules.","Everything the Cell knows: slices, cards, Firmware, Daemons, rules."
 Exploit,Exploit
-Exploit %s found (%d/%d for the breach).,Exploit %s found (%d/%d for the breach).
 Exploit Heat,Exploit Heat
 Exploit Site,Exploit Site
 Exploit Site (diamond): clearing it gives an Exploit for the Central Server breach.,Exploit Site (diamond): clearing it gives an Exploit for the Central Server breach.
 Exploits,Exploits
-Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the corporation's core needs %d.,Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the corporation's core needs %d.
 Exploits found: %s. The breach on the corporation's core needs %d.,Exploits found: %s. The breach on the corporation's core needs %d.
 FAILED,FAILED
 FIGHT WON,FIGHT WON
@@ -966,7 +955,6 @@ HOLDS: the node survives and keeps fighting.,HOLDS: the node survives and keeps 
 HOME,HOME
 HOME %d > %d,HOME %d > %d
 HOME %d → %d,HOME %d → %d
-HOME %d/%d,HOME %d/%d
 HOME %s,HOME %s
 HOME %s · HOLDS,HOME %s · HOLDS
 HOME FELL,HOME FELL
@@ -980,8 +968,6 @@ HOVER HERE: SHOW ALL NODES,HOVER HERE: SHOW ALL NODES
 HOVER: SHOW ALL,HOVER: SHOW ALL
 HP,HP
 HP %d/%d,HP %d/%d
-HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.,HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.
-HP %d/%d · DECK %d · DAEMONS %d%s,HP %d/%d · DECK %d · DAEMONS %d%s
 HP %s,HP %s
 HP %s (other effects),HP %s (other effects)
 HP %s → %s %s,HP %s → %s %s
@@ -1034,7 +1020,6 @@ HeatThresholdData.heat_90.event_text,An extra elite patrols the next netrun.
 "High contrast (opaque panels, 7:1 text, thick edges)","High contrast (opaque panels, 7:1 text, thick edges)"
 Home integrity before and after the raid.,Home integrity before and after the raid.
 Home server,Home server
-Home server integrity. At 0 the campaign is lost.,Home server integrity. At 0 the campaign is lost.
 Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.,Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.
 Home server:,Home server:
 Home servers,Home servers
@@ -1124,7 +1109,6 @@ INTERCEPT,INTERCEPT
 INTERCEPTED,INTERCEPTED
 INTERCEPTED // %s INTERNAL MAIL,INTERCEPTED // %s INTERNAL MAIL
 INTERNAL MEMO,INTERNAL MEMO
-In force since a Heat threshold. Scrub Heat to fall back under it.,In force since a Heat threshold. Scrub Heat to fall back under it.
 In force: %s.,In force: %s.
 Infection contained. Please remain calm while we sterilise your network.,Infection contained. Please remain calm while we sterilise your network.
 Instant (results at once),Instant (results at once)
@@ -1152,7 +1136,6 @@ LIEN RECOVERY,LIEN RECOVERY
 LIMITED // slow layer only,LIMITED // slow layer only
 "LIMITED: flash limiter on, slow layer only","LIMITED: flash limiter on, slow layer only"
 "LIMITED: reduce effects on, slow layer only","LIMITED: reduce effects on, slow layer only"
-LINES HEARD,LINES HEARD
 LINK,LINK
 LIVE RAID FEED,LIVE RAID FEED
 LOAD,LOAD
@@ -1753,10 +1736,9 @@ Pays %d-%d Cycles.,Pays %d-%d Cycles.
 Pick a card from your deck to remove.,Pick a card from your deck to remove.
 Pick a card up and move it here to shred it (or select it and press REMOVE).,Pick a card up and move it here to shred it (or select it and press REMOVE).
 "Pick a card with %s, choose a glowing target with the D-pad, press %s again (%s cancels).","Pick a card with %s, choose a glowing target with the D-pad, press %s again (%s cancels)."
+"Pick a defence card, then one of your nodes: the forecast's change shows here.","Pick a defence card, then one of your nodes: the forecast's change shows here."
 "Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row).","Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row)."
 "Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot).","Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot)."
-"Pick the target: click a node of yours on the map, or its button in YOUR NODES.","Pick the target: click a node of yours on the map, or its button in YOUR NODES."
-"Pick the target: press a node of yours on the map, or its button in YOUR NODES.","Pick the target: press a node of yours on the map, or its button in YOUR NODES."
 Pick up,Pick up
 Pick up Firmware or a slice and move it onto a slot to put it there.,Pick up Firmware or a slice and move it onto a slot to put it there.
 Pick up the campaign saved most recently.,Pick up the campaign saved most recently.
@@ -1769,7 +1751,6 @@ Press,Press
 Press %s on,Press %s on
 Press NEXT to go on.,Press NEXT to go on.
 "Press a key, then press the new one. Cards stay on 1-9.","Press a key, then press the new one. Cards stay on 1-9."
-Press an asset card: it deploys to the target (%s now).,Press an asset card: it deploys to the target (%s now).
 Press it to play.,Press it to play.
 "Press it, then pick a glowing target.","Press it, then pick a glowing target."
 "Press to hire (it joins the crew), or drag it onto the CREW tab.","Press to hire (it joins the crew), or drag it onto the CREW tab."
@@ -2040,7 +2021,6 @@ SHOWING ALL NODES,SHOWING ALL NODES
 SIGNAL DE-ORBITED,SIGNAL DE-ORBITED
 SIMULATE,SIMULATE
 SINKS,SINKS
-SITES %d,SITES %d
 SITES RECLAIMED,SITES RECLAIMED
 SKIP,SKIP
 SLICE %d DETAIL,SLICE %d DETAIL
@@ -2256,7 +2236,6 @@ SiteData.the_panopticon.display_name,The Panopticon
 SiteData.wipe_biometrics.display_name,Wipe Biometrics
 SiteData.wipe_the_citations.display_name,Wipe the Citations
 Sites,Sites
-Sites your network holds besides CORE: claim cleared Sites on the City Grid.,Sites your network holds besides CORE: claim cleared Sites on the City Grid.
 Skip,Skip
 Skip tutorial,Skip tutorial
 SliceData.citation.display_name,Citation

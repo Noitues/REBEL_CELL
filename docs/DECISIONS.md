@@ -238,7 +238,60 @@ binding (also in PROPOSAL.md's rulings section):
   its scale); `polaroid_tilt` tilts a hovered / focused crew card (`CrewHandCard.tilt`); `minimap_pulse` rings, on the
   HQ's minimap (`CityMinimap.pulse`), the Sites whose status changed since the HQ last showed (`changed_sites`, view
   memory per campaign); `select_ring_ease` is the city map's own; the drag-and-drop motions (`crew_assign`,
-  `drop_buy`, `market_fly` ...) moved with their targets in b. `sticky_bump` plays on the HEAT tag (a).
+  `drop_buy`, `market_fly` ...) moved with their targets in b. `sticky_bump` plays on the Heat gauge (a; `popping()` counts it).
+- **S-RAID's `hq_scene.gd` items (designer group ruling: the raid matches round 40), built in the DEFENCE hand:**
+  RAID-01: the defence cards are the hand's row along the map's foot (`AssetCards`), no steps panel (the setup's
+  one instruction line sits over the left column, clear of the paper's clip, RAID-02). RAID-05: **no RAID SETUP
+  title sticker** (Q6: the HQ shows no title; the DEFENCE tab is the HQ, its tab is the page's name). RAID-06: YOUR
+  NETWORK is top left (over the work order, in the left column that scrolls with the focus); START DEFENSE with the
+  Speed / Skip strip in the verb slot bottom right; on the right THREAT INTEL over a standing **IF PLACED** terminal
+  (`IfPlaced`): what the defence card hovered or focused (else the Armory's first) would change on the target
+  (`if_placed_lines`, the rules on a copy: preview equals result), a hint line when nothing can be placed. RAID-09:
+  Continue keeps its room unseen while the raid plays (no grey waiting sticker) and shows with the verdict. RAID-12:
+  the report has no result disc (the paper carries the numbers), CELL HOLDS slaps centre left on the table
+  (`HOLDS_AT`). The playout's opening frame is `wireframe.frame_points(_playout_open, ...)` on the laid-out fight
+  area (one frame after the page: the old `_frame_city` frame first, then the box fit), so CORE starts on screen.
+- **The setup's map (calls):** entering or leaving the setup keeps the camera and runs correction passes only
+  (`_hq_fit_passes = 1`: nothing moves when the map already fits); the setup fits what its map shows
+  (`RaidMapNodes.major_ids`) into `HQ_SETUP_FIT_SHARE` 0.9 of its free part (the HQ's 0.65 "more city" share made
+  the overlay spread a crowded network's icons past the room), may zoom out past the raid range (it stays in the
+  RAID band, map mode on) and skips GRID-12's pan; the right column takes the objects' scale there
+  (`CARD_COLUMN` x `object_scale`); a page that settles into a new map room within `HQ_SETTLE_FRAMES` of its fit
+  fits again (`HQ_REFIT_PX`); the map follows the selection (`_follow_selected`: a Site or target picked off the
+  map is panned in). **Open question for the designer:** at text 1.3 and up the round 40 setup's two columns
+  (YOUR NETWORK top left, THREAT INTEL / IF PLACED on the right, RAID-06) leave a late network too little map: every
+  node is on screen and each of the Cell's nodes comes into the map when targeted, but not all at once (at 1.0 they
+  are). Default built; the alternative is YOUR NETWORK under THREAT INTEL at big text.
+- **S-END kept:** the campaign-end hold build (the dossier built behind the frozen lock on `holding`), the lock's
+  camera fit, the crop below the top bar and `_set_panel`'s guard for a page already mounted came in with main.
+- **Fixes the port found (behaviour):** the HQ's fit pans the selected Site into the map's free part when the raid
+  range's widest view leaves part of the network out (`_hold_selected_in`; at text 2.0 the selected Site sat under
+  the card column); a CLAIMED / TAKEN stamp tries a second ring of spots before settling for the least covered
+  (`NeonCity.MARK_SPOT_RINGS`; at 2.0 the four next to it were all on words); a focus label's last resort keeps off
+  its own icon too (`CityMapOverlay._loose_spot`); the boss's TARGET word also tries the spots right of its circle;
+  the opened HQ key lays its rows in columns across `HQ_KEY_SHARE` of the page (one tall column ran off the screen
+  at 2.0); the raid setup's key lists what its map shows (`show_only`); `popping()` includes the Heat gauge's bump;
+  the run's end no longer warms a 2D HQ bake (`netrun_scene._warm_hq`: the HQ draws the live 3D city); the DEFENCE
+  tab's line is `armory_words()`. `CrewHandCard.name_font_size` / `name_room` are public (the name's fit).
+- **Tests ported** (behaviour kept, the HQ's new pieces): test_anim4_drag_drop, test_anim5_map_motion,
+  test_anim6_screen_motion, test_anim_r1_campaign, test_anim_r2_city, test_anim_r3_city, test_anim_r3_combat,
+  test_anim_r4_city, test_anim_r5_city, test_anim_r6_city, test_art6_raid_presentation (no result disc, RAID-12),
+  test_city_map_sweeps (the key always folded, the map cursor's steps, the fitted Sites on the free part, a selected
+  Site with no room at big text left unlabelled as the overlay's rule says), test_horizontal_pass20..24 (Heat gauge,
+  crew cards, verb slot, card column, ON AIR, MARKET / DEFENCE hands, the Heat terminal's SCRUB), test_panel_widths,
+  test_parity_overlaps (GRID-12 on the free part), test_s_mapview, test_layout_rules, test_pad_reachability,
+  test_city3d_grid, test_art10_menus, test_art5_grid_markers, test_art3_6w_raid_city, test_campaign_flow,
+  test_horizontal_pass22_city, test_vertical_pass2. **Dropped (look-pinned to pages that went; each listed):**
+  - `test_anim4_drag_drop::test_a_click_picks_up_a_chip_and_a_click_on_the_target_drops_it` (the Site card's crew chips went: a crew card's press picks the runner now; drag and the pick-up key still carry, covered by the ported tests)
+  - `test_horizontal_pass24_city::test_the_decision_log_gives_the_grid_fit_passes_the_code_uses` (the Grid page's fit passes, GRID_FITS_MAX, went with the page)
+  - `test_anim_r3_city::test_the_grid_column_never_ends_in_a_cut_row_at_big_text` (the Grid's side column went; the HQ's card column scrolls in its room, test_hq_b_city fits)
+  - `test_anim_r5_city::test_a_runs_end_warms_the_hq_and_that_bake_outlives_the_run` (the HQ draws the live 3D city: no 2D bake to warm; the run's end twin `_warm_hq` went)
+  - `test_anim_r6_city::test_the_start_page_bakes_the_new_campaigns_hq_and_the_hq_bakes_the_first_grid` (the start page's HQ twin and the Grid's first bake went: the HQ and its folded Grid are the 3D city)
+  - `test_horizontal_pass21_screens::test_cell_status_badges_are_labelled_and_share_the_tag_icons` (CELL STATUS went, designer Q1: HOME and EXPLOITS keep their icons on the top bar's tags, the Armory is the DEFENCE hand's cards; the stat tag test checks both)
+  - `test_horizontal_pass22_screens::test_grid_runs_show_the_map_icon_and_tier_pips` (the Grid's RUNS OPEN NOW rows went with its side column: the Sites are picked on the map, whose icons and tier pips test_city_map_sweeps checks)
+  - `test_horizontal_pass23_city::test_the_hq_mini_map_on_the_hq_page_keeps_labels_apart` (the HQ's Grid mini-map went: the HQ is the city map itself; its minimap terminal draws no labels)
+  - `test_horizontal_pass24_city::test_run_rows_say_what_clearing_gives_and_light_their_node` (the Grid's run rows went: a Site's IF CLEARED gains are on its card, test_anim_r5_city::test_the_grids_run_rows_say_what_a_clear_gives; the map's hover ring stays the overlay's)
+  - `test_horizontal_pass24_city::test_the_step_row_stays_in_the_column_pseudolocalised` (the Grid's PREV / NEXT / BACK step row went: the map cursor steps the Sites, no row to keep in a column)
 
 ### 2026-10-05 — Parity fix — card aiming and combat HUD (designer ruling)
 Designer rulings 2026-10-05: (1) card aiming is drawn in grease pencil, not a dashed line; (2) with the aim over the
@@ -9644,6 +9697,10 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **HQ redesign B, the raid setup at big text (2026-10-06, built, see "HQ redesign — direction B" (g)):** with the
+  round 40 layout (RAID-06) at text 1.3 and up a late network does not fit the map all at once; every node is on
+  screen and the map follows the target. Keep, or move YOUR NETWORK under THREAT INTEL at big text? RAID-05: no
+  RAID SETUP title sticker (Q6 no title on the HQ; the DEFENCE tab names the page). Keep?
 - **Parity fix card aiming and combat HUD (2026-10-05, built, see that entry):** the TURN strip follows the concept
   (TURN | FREE NUDGE over the address line); the key hints (Q/E nudge, W switch wheel, R ring) are its tooltip only.
   Keep, or put a small key caption under the target's nudge pair (default proposal)?

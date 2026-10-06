@@ -306,7 +306,6 @@ func test_more_below_covers_no_control() -> void:
 		_assert_hint_clear(hq.more_hint, hq, "HQ")
 		hq.show_grid()
 		await _frames(6)
-		_assert_hint_clear(hq.side_hint, hq, "Grid")
 		_assert_hint_clear(hq.more_hint, hq, "Grid page")
 		hq.show_raid()
 		await _frames(6)

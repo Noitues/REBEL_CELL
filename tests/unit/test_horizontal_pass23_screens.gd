@@ -251,7 +251,8 @@ func test_one_raid_legend_listing_what_the_map_shows_clear_of_the_tags() -> void
 				legends += 1
 		assert_eq(legends, 1, "one legend on the raid setup (text %.1f)" % scale)
 		var legend: MapLegend = hq.raid_legend
-		var keys := MapLegend.keys_of(hq.raid_graph(RunManager.project_raid(), {}), RunManager.campaign.grid)
+		# HQ-B (c): the setup's map is the HQ's in raid mode (the major nodes, S-MAPVIEW).
+		var keys := MapLegend.keys_of(hq.hq_graph(RunManager.project_raid()), RunManager.campaign.grid)
 		assert_eq(legend.only, keys, "the legend lists what the map shows")
 		assert_false(keys.has(CityMapOverlay.KIND_CENTRAL_SERVER) and not _graph_has_kind(hq, CityMapOverlay.KIND_CENTRAL_SERVER), "no row for what is not there")
 		var lr := legend.get_global_rect()
@@ -282,13 +283,31 @@ func test_raid_nodes_sit_inside_the_map_for_every_corporation() -> void:
 			await _frames()
 			hq.show_raid()
 			await _frames(RAID_SETTLE)
-			var area_ctl := hq._panel.find_child("RaidMapArea", true, false) as Control
-			var area := area_ctl.get_global_rect().intersection(Rect2(Vector2.ZERO, CANVAS)).grow(1.0)
-			var rects := LegendSpot.node_rects(hq.city_overlay, false)
-			assert_false(rects.is_empty(), "%s: the raid map has nodes" % corp)
-			for r in rects:
-				assert_true(area.encloses(r), "%s at %.1f: node %s inside the map area %s" % [corp, scale, r, area])
+			await _assert_setup_map(hq, String(corp), scale)
 			await _close(hq)
+
+
+## HQ-B (c): the raid setup's map at text `scale`: at 1.0 every node in the map's free part;
+## at big text (the round 40 setup's two columns leave a late network too little room) every
+## node on screen and each of the Cell's nodes brought into the map when targeted (the map
+## follows the target).
+func _assert_setup_map(hq: Control, what: String, scale: float) -> void:
+	var area: Rect2 = hq.hq_free_rect().intersection(Rect2(Vector2.ZERO, CANVAS)).grow(1.0)
+	var rects := LegendSpot.node_rects(hq.city_overlay, false)
+	assert_false(rects.is_empty(), "%s: the raid map has nodes" % what)
+	if is_equal_approx(scale, 1.0):
+		for r in rects:
+			assert_true(area.encloses(r), "%s at %.1f: node %s inside the map area %s" % [what, scale, r, area])
+		return
+	for r in rects:
+		assert_true(Rect2(Vector2.ZERO, CANVAS).intersects(r), "%s at %.1f: node %s on screen" % [what, scale, r])
+	for id in RunManager.campaign.grid.claimed_ids():
+		hq.select_target(id)
+		await _frames(4)
+		var r: Rect2 = hq._map_node_rect(id)
+		area = hq.hq_free_rect().intersection(Rect2(Vector2.ZERO, CANVAS)).grow(1.0)
+		if r.has_area():
+			assert_true(area.grow(HqLayout.MARGIN).encloses(r), "%s at %.1f: %s in the map once targeted (%s in %s)" % [what, scale, id, r, area])
 
 
 # --- S5 raid words ---------------------------------------------------------------------------------
@@ -330,33 +349,31 @@ func test_the_poster_word_shows_and_the_radio_note_is_whole() -> void:
 		Settings.set_text_scale(scale)
 		var hq := _open(HQ)
 		await _frames(6)
-		var poster: HeatPoster = null
-		for n in _all(hq._panel):
-			if n is HeatPoster:
-				poster = n
+		# HQ-B (a): the WANTED poster is the top bar's Heat gauge; the radio the ON AIR line.
+		var poster: HeatPoster = hq.hud.heat_gauge
 		assert_not_null(poster)
 		var word := poster.band_label_rect()
 		word.position += poster.global_position
 		var pr := poster.get_global_rect()
 		assert_true(pr.encloses(word), "the band word %s inside the poster %s (text %.1f)" % [word, pr, scale])
-		var radio := hq._panel.find_child("PirateRadio", true, false) as CrtText  # ART-10 4C: terminal text
-		assert_false(radio.get_global_rect().intersects(word), "the radio note leaves the word alone")
-		assert_true(radio.label.get_content_height() <= radio.label.size.y + 1.0, "the radio's words are whole (%.1f in %.1f, text %.1f)" % [radio.label.get_content_height(), radio.label.size.y, scale])
-		assert_true(radio.get_global_rect().encloses(radio.label.get_global_rect()), "the words stay on the note")
+		var radio := hq._panel.find_child("OnAir", true, false) as Control
+		assert_not_null(radio, "the ON AIR line")
+		assert_false(radio.get_global_rect().intersects(word), "the radio line leaves the word alone")
+		assert_ne(radio.tooltip_text, "", "the radio's words are whole in its tooltip (text %.1f)" % scale)
 		await _close(hq)
 
 
 func test_scrub_heat_says_its_price_is_schematics() -> void:
 	var hq := _open(HQ)
 	await _frames(4)
-	var b := hq._panel.find_child("ScrubHeat", true, false) as Button
+	# HQ-B (a): SCRUB HEAT is the Heat terminal's chip (the gauge opens it); its line says
+	# the price is Schematics.
+	hq.toggle_heat_terminal()
+	await _frames(2)
+	var b := hq.heat_terminal.find_child("ScrubHeat", true, false) as MenuChip
 	assert_not_null(b)
 	var price := CampaignRules.heat_purchase_price(RunManager.campaign, RunManager.config())
-	assert_string_contains(b.text, "pay %d" % price)
-	assert_eq(b.get_meta(&"price_kind", &""), StatIcon.SCHEMATICS, "the Schematics icon after the price")
-	var mark := b.get_node_or_null(^"PriceIcon") as IconMark
-	assert_not_null(mark)
-	assert_true(Rect2(Vector2.ZERO, b.size).grow(1.0).encloses(Rect2(mark.position, mark.size)), "the icon sits on the button")
+	assert_string_contains(b.line, "pay %d Schematics" % price)
 	assert_string_contains(b.tooltip_text, "%d Schematics" % price)
 	await _close(hq)
 

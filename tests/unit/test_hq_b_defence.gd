@@ -183,3 +183,68 @@ func test_the_setup_fits_at_every_text_scale() -> void:
 			for j in range(i + 1, parts.size()):
 				assert_false(parts[i].get_global_rect().grow(-1.0).intersects(parts[j].get_global_rect().grow(-1.0)), "x%.1f: %s clear of %s" % [s, parts[i].name, parts[j].name])
 		hq.get_parent().free()
+
+
+# --- S-RAID's page items (designer group ruling: round 40) -----------------------------------------
+
+func test_round_40_your_network_top_left_if_placed_on_the_right_and_its_preview_is_the_result() -> void:
+	var c := RunManager.campaign
+	var hq := await _hq()
+	hq.show_raid()
+	await _frames(4)
+	var page: Control = hq._panel
+	assert_eq(String(hq.hud._title), "", "RAID-05 (Q6): no RAID SETUP title sticker on the HQ")
+	var network := page.find_child("NodeOrders", true, false) as Control
+	var column := page.get_node("CardColumn") as Control
+	assert_true(page.get_node("WorkOrder").is_ancestor_of(network), "RAID-06: YOUR NETWORK in the left column")
+	assert_lt(network.get_global_rect().get_center().x, SCREEN.size.x * 0.5, "top left")
+	var if_placed := page.find_child("IfPlaced", true, false) as Control
+	assert_not_null(if_placed, "the IF PLACED terminal")
+	assert_true(column.is_ancestor_of(if_placed), "on the right, in the card column")
+	assert_true(column.is_ancestor_of(page.find_child("ThreatIntel", true, false)), "under THREAT INTEL")
+	assert_null(page.find_child("DeploySteps", true, false), "RAID-01: no steps panel")
+	# Its lines are the rules' own preview: what the first defence would change on the target.
+	var target: StringName = hq.selected_site
+	var said: Array = []
+	for l in page.find_child("IfPlacedLines", true, false).get_children():
+		said.append((l as Label).text)
+	var expect: Array = hq.if_placed_lines({"kind": "asset", "index": 0, "asset": c.armory[0]}, target)
+	assert_eq(said, expect, "IF PLACED shows the first defence's change")
+	# Hovering another card shows its change; placing it gives the forecast it showed.
+	var card := page.find_child("Asset_%s" % c.armory[1], true, false) as AssetCard
+	card.mouse_entered.emit()
+	await _frames(1)
+	assert_eq(hq.if_placed_index, 1, "the hovered card's change")
+	var copy := c.duplicate_state()
+	CampaignRules.deploy_asset(copy, RunManager.config(), RunManager.lookup(), 1, target)
+	var then := CampaignRules.project_raid(copy, RunManager.corporation, RunManager.config(), RunManager.lookup(), RunManager.pending_raid())
+	card.pressed.emit()
+	await _frames(2)
+	assert_eq(RunManager.project_raid().home_after, then.home_after, "the preview is the result")
+
+
+func test_round_40_continue_waits_unseen_and_the_report_has_no_disc() -> void:
+	var hq := await _hq()
+	hq.show_raid()
+	await _frames(2)
+	Settings.set_reduce_effects(false)
+	hq.fight_raid()
+	await _frames(4)
+	if hq.panel_name == "raid_playout":
+		var cont: Button = null
+		for b in hq._panel.find_children("*", "Button", true, false):
+			if (b as Button).text == tr("Continue"):
+				cont = b
+		assert_not_null(cont, "Continue on the playout")
+		if cont != null and cont.disabled:
+			assert_eq(cont.modulate.a, 0.0, "RAID-09: no grey waiting sticker while the raid plays")
+		hq.show_raid_summary()
+	else:
+		hq.show_raid_summary()
+	await _frames(3)
+	assert_null(hq._panel.find_child("RaidVerdict", true, false), "RAID-12: no result disc on the report")
+	var holds := hq._panel.find_child("CellHolds", true, false) as Control
+	if holds != null:
+		var table := hq._panel.find_child("WarTable", true, false) as Control
+		var t := table.get_global_rect()
+		assert_lt(holds.get_global_rect().get_center().x, t.get_center().x, "CELL HOLDS centre left")

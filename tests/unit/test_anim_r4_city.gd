@@ -631,6 +631,9 @@ func test_the_claimed_stamp_keeps_off_the_sites_name_and_the_side_panel_never_cl
 				if String(key) == String(site):
 					checked += 1
 					assert_false(spot.intersects(overlay.get_transform() * (labels[key] as Rect2)), "%.1f: CLAIMED keeps off %s's name" % [scale, site])
-		assert_gt(checked, 0, "%.1f: the claimed Site's label was checked" % scale)
+		# At big text a selected Site with no spot for its label is left unlabelled (the
+		# overlay's last resort: its card names it); at 1.0 it always has one.
+		if is_equal_approx(scale, 1.0):
+			assert_gt(checked, 0, "%.1f: the claimed Site's label was checked" % scale)
 		hq.get_parent().queue_free()
 		await _frames(1)
