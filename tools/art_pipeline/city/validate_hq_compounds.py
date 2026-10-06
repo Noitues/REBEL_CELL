@@ -89,20 +89,21 @@ def check(corp, errors):
     if A["central_server"] is None or A["entry"] is None or any(p is None for r in rows for p in r):
         err("an anchor found no surface under it")
         return
+    L = SPEC.layout(corp)
     for li, r in enumerate(rows):
-        keys = [p[0] - p[2] for p in r]  # screen right = Blender +x +y = Godot +x -z
+        keys = [SPEC.screen_x(SPEC.to_blender(p), L["yaw"]) for p in r]
         if any(b <= a for a, b in zip(keys, keys[1:])):
             err("row %d is not left to right on screen" % (li + 1))
     ortho = float(m["settings"]["reference_camera"]["ortho"])
     named = [("%d%s" % (li + 1, "abcd"[si]), p) for li, r in enumerate(rows) for si, p in enumerate(r)] + [("server", A["central_server"])]
-    scr = [(n, SPEC.screen_px(p, ortho)) for n, p in named]
+    scr = [(n, SPEC.screen_px(p, ortho, L["yaw"], L["pitch"])) for n, p in named]
     for i, (na, pa) in enumerate(scr):
         for nb, pb in scr[i + 1:]:
             dpx = math.dist(pa, pb)
             if dpx < SPEC.MIN_SLOT_PX:
                 err("slots %s and %s are %.0f px apart at the reference framing (min %.0f)" % (na, nb, dpx, SPEC.MIN_SLOT_PX))
     for s in m.get("slot_surfaces", []):
-        if s["surface"] is None or not (s["z"] - SPEC.SNAP_BELOW <= s["surface"] <= s["z"] + 3.0):
+        if s["surface"] is None or not (s["z"] - L["snap_below"] <= s["surface"] <= s["z"] + 3.0):
             err("layer %d slot %d: surface %s for nominal z %s" % (s["layer"], s["slot"], s["surface"], s["z"]))
     tp = os.path.join(ROOT, "content", "city", "hq_compounds", corp + ".tres")
     if not os.path.isfile(tp):

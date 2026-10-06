@@ -7,8 +7,8 @@
   "spec": "tools/art_pipeline/city/hq_compound_spec.py",
   "driver": "tools/art_pipeline/city/make_hq_compounds.py",
   "vendor": "art-concepts-r43:docs/concepts/round43_hq_mechanics/scripts @ 36d1f34de595297787d06f4f0cc8075018a8b744",
-  "commit": "729e7a10357506d095c3b20d73efcce5d3bf5d16",
-  "scripts_sha256": "db6adbacc2c78192736407de34c705cac327bb7e33ffde658f8a7ccb876ede05"
+  "commit": "582d1842746f8f9e750b30f20a45e0c49d2ac31a",
+  "scripts_sha256": "4f5e8031fca43afccea4f1efe9b6a57341ca5852d40641848e15a69d87465a9e"
  },
  "settings": {
   "blender": "5.2.2 LTS",
@@ -38,6 +38,7 @@
   "layered_sprites": "dropped: 1D chose real-time Godot 3D"
  },
  "origin": "the compound's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot's centre",
+ "place_lot": null,
  "footprint": {
   "min": [
    -28.2,

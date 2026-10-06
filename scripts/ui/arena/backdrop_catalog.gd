@@ -34,10 +34,11 @@ const ANCHOR_FALLBACK := Vector2(0.5, 0.2)
 const WON_STILLS := {&"rebel_cell_hq": "rebel_cell_site_night"}
 
 
-## The place a fight stands in: {corp, kind (hq for a boss fight | site), day}.
-static func place(corporation_id: StringName, boss: bool, day: bool) -> Dictionary:
+## The place a fight stands in: {corp, kind (hq for a boss fight | site), day, site (the
+## run's Site id, &"" when none)}.
+static func place(corporation_id: StringName, boss: bool, day: bool, site_id: StringName = &"") -> Dictionary:
 	var corp := corporation_id if corporation_id != &"" else DEFAULT_CORP
-	return {"corp": corp, "kind": KIND_HQ if boss else KIND_SITE, "day": day and not NIGHT_ONLY.has(corp)}
+	return {"corp": corp, "kind": KIND_HQ if boss else KIND_SITE, "day": day and not NIGHT_ONLY.has(corp), "site": site_id}
 
 
 ## Whether this campaign's current run plays by day (see DAY_EVERY); no campaign: night.
@@ -47,7 +48,7 @@ static func is_day(campaign: CampaignState) -> bool:
 
 ## The place of a fight against `enemies` (EnemyData of each foe that is not a satellite) in
 ## `campaign`: the corporation is the campaign's, else the first enemy's.
-static func place_for(campaign: CampaignState, enemies: Array[EnemyData]) -> Dictionary:
+static func place_for(campaign: CampaignState, enemies: Array[EnemyData], site_id: StringName = &"") -> Dictionary:
 	var corp: StringName = campaign.corporation_id if campaign != null else &""
 	var boss := false
 	for e in enemies:
@@ -56,7 +57,7 @@ static func place_for(campaign: CampaignState, enemies: Array[EnemyData]) -> Dic
 		boss = boss or e.is_boss
 		if corp == &"":
 			corp = e.corporation_id
-	return place(corp, boss, is_day(campaign))
+	return place(corp, boss, is_day(campaign), site_id)
 
 
 ## The file name stem of `p` (corp_kind_time).
@@ -104,3 +105,37 @@ static func _candidates(p: Dictionary) -> Array[String]:
 	var fallback := place(DEFAULT_CORP, true, false)
 	var out: Array[String] = [stem(p), stem(night), stem(boss), stem(fallback)]
 	return out
+
+
+# --- D17 on the city (ART-8 8w): the backdrop is a close-up of the one city ------------------
+
+## True when the backdrop is the city's close-up: a renderer, and the city quality tier
+## `tier` (CityConfig.tier_for) takes it (CityConfig.backdrop_city_tiers); else the stills.
+static func city_mode(cfg: CityConfig, tier: int, can_render: bool) -> bool:
+	return can_render and tier >= 0 and tier < cfg.backdrop_city_tiers.size() and cfg.backdrop_city_tiers[tier]
+
+
+## The city close-up of place `p` (`site_lots`: Site id -> lot point, CityLayout.site_points):
+## {"focus": "compound" | "hq" | "site", "stage": the corp whose HQ compound is staged (the
+## DISPATCH canyon) or &"", "camera": CityIsoCamera, "lot": the target's lot point, "won_site":
+## the Site whose won lights show (&"" for an HQ)}. A boss fight frames the corp's HQ (the
+## Cell's: the staged DISPATCH canyon at the HQ run's camera, closer); a regular fight the
+## run's Site lot; a Site without a lot falls back to the HQ. Pure.
+static func city_shot(cfg: CityConfig, p: Dictionary, site_lots: Dictionary, size: Vector2) -> Dictionary:
+	var corp: StringName = p.get("corp", DEFAULT_CORP)
+	var site: StringName = p.get("site", &"")
+	var boss := StringName(p.get("kind", KIND_HQ)) == KIND_HQ
+	if boss and corp == CityView3D.CELL:
+		var m := HqCompoundStage.manifest(corp)
+		var at := HqCompoundStage.place(cfg, corp, m)
+		var cam := HqCompoundStage.camera(cfg, m, at, size)
+		cam.ortho *= cfg.backdrop_canyon_share
+		return {"focus": "compound", "stage": corp, "camera": cam, "lot": HqCompoundStage.place_lot(corp, m), "won_site": &""}
+	if not boss and site_lots.has(site):
+		var lot: Vector2 = site_lots[site]
+		var c := CityIsoCamera.make(cfg, CityIsoCamera.lot_to_world(cfg, lot, cfg.backdrop_site_lift), cfg.backdrop_site_ortho, size)
+		return {"focus": "site", "stage": &"", "camera": c, "lot": lot, "won_site": site}
+	var hq := NeonCity.hq_of(corp) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
+	var h := CityIsoCamera.make(cfg, CityIsoCamera.lot_to_world(cfg, hq, cfg.backdrop_hq_lift), cfg.backdrop_hq_ortho, size)
+	return {"focus": "hq", "stage": &"", "camera": h, "lot": hq, "won_site": &""}
+

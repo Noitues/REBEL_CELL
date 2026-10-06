@@ -109,6 +109,9 @@ var dossier: OperativeDossier = null
 var node_panel: RouteNodePanel = null
 ## ART-7 3B: the dressed room behind a node's own screen (event, shop, loot).
 var node_backdrop: NodeBackdrop = null
+## ART-8 8w: the HQ run's page on the compound (boss runs) and the Central Server's gate.
+var hq_run_view: HqRunView = null
+var gate: CentralServerGate = null
 ## Pad button prompts at the foot of the screen (H23 S11).
 var pad_prompts: PadPrompts
 ## The screen on show (screen_name) and whether the last page entered a new screen (its
@@ -947,7 +950,7 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	var screen := screen_name(s) if screen_as == "" else screen_as
 	# ART-7 7w: the route page is the unified 3D city at the NETRUN band (GRID VIEW: the
 	# Grid's band); the other pages keep the 2D city until their own views move onto it.
-	use_route_city(screen == "route")
+	use_route_city(screen == "route" and (s == null or s.run.kind != "boss" or _grid_zoomed))  # ART-8 8w: an HQ run draws its own compound city
 	entering = screen != _shown_screen
 	_shown_screen = screen
 	# ANIM-R5 B2: an event's story and the run's end say long lines: their band holds two.
@@ -1197,7 +1200,7 @@ func _show_map() -> void:
 	map_view.show_map(s.run.map, s.run.current_node_id, s.run.visited, s.available_nodes(), s.map_heat())
 	map_view.node_clicked.connect(func(id: StringName) -> void:
 		if RunManager.netrun != null and RunManager.netrun.available_nodes().has(id):
-			enter_node(id))
+			_request_node(id))
 	top.add_child(map_view)
 	# The number keys pick nodes on the keyboard; the pad has none, so its hints are blank
 	# (H20: each button carries its own key hint, refreshed when the device changes).
@@ -1231,6 +1234,8 @@ func _show_map() -> void:
 	win.body.add_child(quit_btn)
 	if _grid_zoomed:
 		win.body.add_child(MapLegend.new(RunManager.campaign.corporation_id))
+	elif s.run.kind == "boss":
+		pass  # ART-8 8w: the HQ run shows its compound (_mount_hq_run), not the transit
 	else:
 		# ART-7 3B (ART_BIBLE v2 4.6): the map area with the dossier pinned at its top left and
 		# the legend strip along its foot; the decrypted node panel at the foot of the column.
@@ -1242,6 +1247,8 @@ func _show_map() -> void:
 		var g := CityLayout.grid_graph(RunManager.campaign, RunManager.corporation, CityLayout.threat_paths(RunManager.campaign, RunManager.corporation), s.run.site_id)
 		_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, 0.85, Vector2(0.4, 0.56), Vector2.INF)
 		city_overlay.avoid_controls([win])  # map labels stay clear of the ROUTE window
+	elif s.run.kind == "boss":
+		_mount_hq_run()
 	else:
 		var r := route_graph()
 		_mount_route(r["nodes"], r["edges"], CityMapOverlay.Look.ISOLATE, ROUTE_ZOOM, ROUTE_ANCHOR, Vector2.INF)
@@ -1304,7 +1311,7 @@ func _fill_route_choices(row: VBoxContainer) -> void:
 		# beyond: the enemy is rolled on entry) says so, on the button and on the map.
 		if twins.has(id):
 			text += "  " + tr(TWIN_WORDS) % (int(twins[id]) + 1)
-		var b := _button(text, func() -> void: enter_node(id))
+		var b := _button(text, func() -> void: _request_node(id))
 		b.name = "Node%d" % (i + 1)
 		# ANIM-R3 B3: what this choice leads to that the others do not (reward and risk
 		# icons: Elite, Shop, Event, Rack, Heat further on); twins lead to the same.
@@ -2180,6 +2187,10 @@ func _clear_route() -> void:
 	if city_overlay != null and is_instance_valid(city_overlay):
 		city_overlay.queue_free()
 	city_overlay = null
+	if hq_run_view != null and is_instance_valid(hq_run_view):
+		hq_run_view.queue_free()
+	hq_run_view = null
+	close_gate()
 	var city := background.city
 	if city.focus_grid != Vector2.INF or city.scale != Vector2.ONE:
 		city.focus_grid = Vector2.INF
@@ -2187,6 +2198,65 @@ func _clear_route() -> void:
 		city.offset_right = 0
 		city.offset_bottom = 0
 		city.refresh()
+
+
+## ART-8 8w: the HQ run's page: the corporation's compound on the city (HqRunView, its own
+## CityView3D) with the run's nodes, instead of the transit route.
+func _mount_hq_run() -> void:
+	var s := RunManager.netrun
+	hq_run_view = HqRunView.new()
+	background.add_child(hq_run_view)
+	hq_run_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hq_run_view.show_run(RunManager.campaign.corporation_id, s.run.map, s.run.current_node_id, s.run.visited, s.available_nodes(), server_label())
+	hq_run_view.node_pressed.connect(_request_node)
+
+
+## ART-8 8w: the Central Server's name on the HQ run's page and gate (the Site's display
+## name, upper case).
+func server_label() -> String:
+	var s := RunManager.netrun
+	var site := CampaignRules.site_data(RunManager.corporation, s.run.site_id) if s != null else null
+	return TextDb.t(site, "display_name").to_upper() if site != null else ""
+
+
+## ART-8 8w: a press on a node (map or ROUTE button). The Central Server's breach opens its
+## gate first (bible 4.9); BREACH there enters the node. Every other node is entered at once.
+## (enter_node itself is unchanged: tests and tools still reach the fight directly.)
+func _request_node(id: StringName) -> void:
+	var s := RunManager.netrun
+	if s != null and s.run.kind == "boss" and gate == null and s.available_nodes().has(id):
+		open_gate(id)
+		return
+	enter_node(id)
+
+
+## ART-8 8w: shows the Central Server's gate for node `id` (the breach preview's boss).
+func open_gate(id: StringName) -> void:
+	var s := RunManager.netrun
+	var c := RunManager.campaign
+	var corp := RunManager.corporation
+	var held: Array[int] = []
+	for ex in c.exploits:
+		held.append(int(ex))
+	gate = CentralServerGate.new()
+	var site := CampaignRules.site_data(corp, s.run.site_id)
+	gate.setup(c.corporation_id, TextDb.t(corp, "display_name"), server_label(), site.tier if site != null else s.run.tier,
+		held, RunManager.config().min_exploits_for_breach, s.breach_preview(), RunManager.lookup())
+	gate.breach_pressed.connect(func() -> void:
+		close_gate()
+		enter_node(id))
+	gate.back_pressed.connect(close_gate.bind(true))
+	add_child(gate)
+
+
+## ART-8 8w: closes the gate (BREACH pressed, or back to the compound: `refocus` puts the
+## focus back on the ROUTE window's choice).
+func close_gate(refocus: bool = false) -> void:
+	if gate != null and is_instance_valid(gate):
+		gate.queue_free()
+	gate = null
+	if refocus and not _route_buttons.is_empty() and is_instance_valid(_route_buttons[0]) and _route_buttons[0].is_inside_tree():
+		_route_buttons[0].grab_focus()
 
 
 ## Raid playout (GDD 7.2): threat markers animate over the Grid; 1x/2x/4x and skip. The

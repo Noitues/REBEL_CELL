@@ -289,12 +289,23 @@ func combat_rewind() -> CombatResult:
 ## elite nodes an elite, Routers a normal enemy; special runs force theirs.
 func _start_combat(elite: bool) -> void:
 	var final_rack := run.kind == "netrun" and run.current_node_id == run.map.final_node_id()
+	var setup := _combat_setup(elite, final_rack, streams.get_stream(&"combat"))
+	var enemy_id: StringName = setup["enemy_id"]
+	combat = _combat_from(setup)
+	run.phase = RunState.Phase.COMBAT
+	last_events.append({"type": "combat_start", "enemy_id": enemy_id, "elite": elite, "mini_boss": final_rack,
+		"text": "Combat: %s%s." % [enemy_id, " (mini-boss)" if final_rack else (" (elite)" if elite else "")]})
+	_apply_campaign_effects(combat.last_events)
+
+
+## The fight a node would start: the foe and the fight seed drawn from `combat_rng` (the
+## run's combat stream, or a copy of it for a preview), and the operative's overrides.
+func _combat_setup(elite: bool, final_rack: bool, combat_rng: RandomNumberGenerator) -> Dictionary:
 	var pool: Array = _pools["elites"] if elite else _pools["enemies"]
 	if final_rack and not _pools["mini_bosses"].is_empty():
 		pool = _pools["mini_bosses"]
 	if pool.is_empty():
 		pool = _pools["enemies"] if elite else _pools["elites"]
-	var combat_rng := streams.get_stream(&"combat")
 	var enemy_id: StringName = pool[combat_rng.randi_range(0, pool.size() - 1)]
 	if run.forced_enemy_id != &"":
 		enemy_id = run.forced_enemy_id
@@ -316,11 +327,23 @@ func _start_combat(elite: bool) -> void:
 	for k in run.combat_overrides:
 		if k != "shop_stock_delta":
 			overrides[k] = run.combat_overrides[k]
-	combat = CombatSession.start(resolver, op.class_id, [enemy_id], seed, op.ring_id(cls), campaign.heat_majors_crossed(config), overrides)
-	run.phase = RunState.Phase.COMBAT
-	last_events.append({"type": "combat_start", "enemy_id": enemy_id, "elite": elite, "mini_boss": final_rack,
-		"text": "Combat: %s%s." % [enemy_id, " (mini-boss)" if final_rack else (" (elite)" if elite else "")]})
-	_apply_campaign_effects(combat.last_events)
+	return {"enemy_id": enemy_id, "seed": seed, "overrides": overrides, "class_id": op.class_id, "ring_id": op.ring_id(cls)}
+
+
+func _combat_from(setup: Dictionary) -> CombatSession:
+	return CombatSession.start(resolver, setup["class_id"], [setup["enemy_id"]], int(setup["seed"]), setup["ring_id"],
+		campaign.heat_majors_crossed(config), setup["overrides"])
+
+
+## ART-8 8w (bible 4.9 "the gate preview equals the fight start"): the fight the Central
+## Server's breach would start, without starting it: the same setup drawn from a COPY of the
+## combat stream, so the run, its streams and the campaign stay as they were. Null outside
+## an HQ breach run or when its node is not open.
+func breach_preview() -> CombatSession:
+	if run.kind != "boss" or run.phase != RunState.Phase.MAP or available_nodes().is_empty():
+		return null
+	var copy := RngStreams.from_dict(streams.to_dict())
+	return _combat_from(_combat_setup(true, false, copy.get_stream(&"combat")))
 
 
 ## GDD 11.6: enemy HP and damage scale by enemy_scale_per_tier^(tier - 1), for every

@@ -82,6 +82,23 @@ extends Resource
 ## Frame budget for the city (ms, plan §5.2).
 @export var budget_ms: float = 8.0
 
+@export_group("Combat backdrop (D17 on the city, ART-8 8w)")
+## Per quality tier: the combat backdrop is a close-up of this city (true) or the baked
+## still (false; the cheaper fallback below the tier).
+@export var backdrop_city_tiers: Array[bool] = [false, true, true]
+## A boss fight's HQ close-up: ortho width (BU) and the camera target's height on the HQ
+## lot (BU); the HQ fills the gap between the wheels.
+@export var backdrop_hq_ortho: float = 140.0
+@export var backdrop_hq_lift: float = 30.0
+## A regular fight's Site close-up: ortho width (BU) and target height (BU).
+@export var backdrop_site_ortho: float = 90.0
+@export var backdrop_site_lift: float = 8.0
+## The DISPATCH canyon's close-up: share of the HQ-run framing's ortho.
+@export var backdrop_canyon_share: float = 0.7
+## Fight won without a won mask: the target's kept (undimmed) ellipse, share of the view's
+## width, round the target's point.
+@export var backdrop_keep_radius: float = 0.16
+
 @export_group("Buildings")
 ## Facet cell (BU) the walls are split into, and the jitter (share of a cell / BU).
 @export var facet_cell: float = 1.7
