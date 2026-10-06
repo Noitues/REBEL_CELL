@@ -31,6 +31,50 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-06 — B1a b — the art director's fixes: pools that read, the network over the scrim
+The art-pass review of B1a (c270cd7f; relayed by the orchestrator): architecture approved; three fixes, Q1 and Q2
+ruled. Sheet `docs/art_review/PARITY/fixes/B1a_b.jpg` (concept | before (main fb216ae1) | after, with the probe
+numbers). Tests: `test_b1a_ui_scrim_pools` (pool shape, saturation, lift, network keep, the fixture luma checks).
+- **(1) Combat pools read.** The wheel pool was a soft disc *centred* on 1.25 R, so it was whole only to 0.94 R:
+  hidden under the disc, half strength at the rim's band. Now every pool holds its full darkness, then fades:
+  wheels x0.55 out to 1.25 R, fading over 0.3 R (`wheel_pool_fade`); panels x0.55 over 70 % of a 120 px margin
+  (`panel_pool_hold`, `panel_pool_margin_px` was 64); bands over 75 % of their reach (`band_hold`). D1's
+  saturation cap is in: pools desaturate toward their own Rec. 709 luma by `pool_saturation` 0.6 (the scrim now
+  reads the screen: a BackBufferCopy right before it, so an earlier screen reader's stale copy is never read, and one
+  after it, so later readers (glass blur, heat glitch) see the pooled world; both off while nothing is registered).
+  Layer order checked (scrim right over the backdrop's Heat lights, under the heat-glitch post and the wheels).
+- **(2) Q1 ruled: the network draws over the scrim (bible 4.1).** World items in `UiScrimPools.LIFT_GROUP` draw over
+  the layer: the world siblings before it sink to z -2, the layer to -1, the lifted item to its host's z (still
+  under every UI sibling by tree order). `CityMapOverlay` (markers, icons, labels, flow, pencil, TARGET) and the HQ
+  run's marks and chrome (`HqRunView`) join it; the HQ run's foot terminals are now pooled panels. The links and
+  node discs of a map on the 3D city are the city's ground decal (inside the 3D render): the scrim keeps them out of
+  its pools and bands (`NETWORK_GROUP`, `keep_network`: the decal's own segments and nodes, mapped from the layer's
+  px to the ground plane of the ortho map camera, out to `CityConfig.net_keep_edge_px` (2) past each trace and disc).
+- **(3) Map pages, measured** (windowed perf pack probes `scrim_luma_*`, 1920x1080 tier 2; Rec. 709 luma on the
+  encoded colour; UI and map hidden, the world with the scrim's pools and bands hidden vs shown; tier 2 / tier 1):
+  combat_start: wheel-pool ring luma 0.43 / 0.43 x the backdrop between the wheels (acceptance <= 0.6; same pixels
+  0.55); combat_aiming 0.44 / 0.45. HQ: panel pool margins 0.62 / 0.62 of the same city unpooled, foot band (ON AIR)
+  0.62 / 0.62 (target 0.55 to 0.65; vs the open map 0.59 and 0.49). Raid setup: 0.61 and 0.62 (vs open 0.55). Route:
+  margins 0.63 / 0.64. The scrim's maths on the raw frame (`ScrimLuma.measure(raw, null, ...)`) matches the real
+  render within 0.02. Perf (perf pack `scrim_probe_*`, 1920x1080, layer shown vs hidden; the machine was shared, so
+  about +-0.5 ms noise): HQ +0.6 to +1.0 ms (most of it the network keep's per-pixel segment loop over the pooled
+  area; segments past the widest trace skip their second fetch), route +0.1 to +0.6, combat +0.05 to +0.5; frames
+  stayed 3 to 9 ms, well inside 16.7 ms at tiers 1 and 2.
+- **Bands** go to x0.58 (42 % black; D1 said "about 35 %") so the city past a foot bar reads 0.55 to 0.65 of its open
+  look, the art director's target.
+- **Fixtures** `tests/fixtures/ui_scrim/{combat_start,hq,raid_setup}.{png,json}`: the probe's raw world (480x270) and
+  the scrim's sources; the tests apply the layer's maths now (`tools/visual_qa/scrim_luma.gd`) and assert the
+  acceptance (combat ring <= 0.6 x between; map margin and foot band 0.55 to 0.65). Recapture with the probe when
+  the world's look changes.
+- **Q2 ruled:** any word placed directly over the world carries its ink keyline (>= 3 px at 1080p) or a plate;
+  contrast is never left to the pool. Bare words found over the world (for B5): combat: the nudge
+  buttons' key hints `[Q] [E] [A] [D]`; HQ: the verb slot's system word (`jack --from HOME_SERVER --to ...`) under
+  JACK IN; raid setup: the intro line over the column ("The corp is raiding your CORE ...") where its plate is thin;
+  title: the foot line `REBEL_CELL v0.9.0 // cell uplink` and the pad prompts (`select / back / codex`). (Pencil
+  words carry their under-shadow; HP numbers and map labels have outlines or plates.)
+- `test_parity_arena_backdrop` keeps passing with the new wheel pool (the HP numbers at 1.1 R now sit in the whole
+  pool).
+
 ### 2026-10-06 — B1a — UI scrim pools, light spill, panel shadows (integration review)
 Shared systems batch B1, review (art-pass `INTEGRATION_REVIEW/REVIEW.md`) D1 (the pools and bands only; its camera,
 haze and saturation cap are other slices), D19 and section d rows "World darkening under the UI" and "Light spill".
@@ -81,7 +125,8 @@ Sheet: `docs/art_review/PARITY/fixes/B1a.jpg` (concept | before | after, text 1.
   inside the run-to-run noise (about 0.3 ms) everywhere; the whole 2D root viewport's GPU time stays 0.45 to 0.59 ms.
   In budget at tiers 1 and 2. (The existing `combat_worst_probe` overran its screen timeout at the end of its part
   list in this run, as before; its scrim line was already taken.)
-- **Open questions for the designer.** (1) The map's network markers are world (drawn inside the city), so a marker
+- **Open questions for the designer** (both ruled 2026-10-06, see "B1a b": the network is lifted over the scrim;
+  words over the world carry a keyline or plate). (1) The map's network markers are world (drawn inside the city), so a marker
   within a panel's 64 px pool margin or a foot band dims with the city (bible 4.1 wants the network at full strength);
   default: kept (the margins are short); the alternative is to lift the marker layer over the scrim (a city overlay
   change). (2) HQ D7's 0.68 "map band" darkening outside the network rect is not this layer (a map-view slice).

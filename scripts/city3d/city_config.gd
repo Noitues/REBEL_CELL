@@ -356,6 +356,9 @@ extends Resource
 @export var net_ring_px: float = 3.0
 ## Management zooms: the 3-trace bus spacing (px) and the packets' speed (BU / s) and gap.
 @export var net_bus_gap_px: float = 4.0
+## B1a b: how far past a trace's core or a node's disc (px, its dark keyline) the UI scrim keeps
+## the network at full strength (UiScrimPools keep).
+@export var net_keep_edge_px: float = 2.0
 @export var net_packet_speed: float = 24.0
 @export var net_packet_gap: float = 30.0
 ## Dash length / gap (BU) of border and not-yet links.

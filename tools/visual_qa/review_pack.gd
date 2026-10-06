@@ -514,6 +514,11 @@ func _cities_ready() -> bool:
 ## Why a visible city is not ready yet ("" when every one is).
 func _city_wait_reason() -> String:
 	for n in get_tree().root.find_children("*", "", true, false):
+		# B1a b: a fight's city close-up (CombatBackdrop on the 3D city) lands before the picture
+		# too (the pack caught the still or the close-up by chance).
+		var backdrop := n as CombatBackdrop
+		if backdrop != null and backdrop.is_visible_in_tree() and backdrop.city != null and not bool(backdrop.get("_city_ready")):
+			return "%s (close-up not ready)" % backdrop.get_path()
 		var city := n as NeonCity
 		if city == null or not city.is_visible_in_tree() or city.hold_landing:
 			# A held city (a fight's, ANIM-R6 A14) lands its bake between turns by design.

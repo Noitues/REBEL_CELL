@@ -17,6 +17,12 @@ const CORPS: Array[String] = ["meridian", "solace", "halcyon", "orbital", "rebel
 const TEXT_MIN := 4.5
 const STILL_STEP := 6
 const EPS := 0.002
+const FIXTURES := "res://tests/fixtures/ui_scrim/"
+const ScrimLuma := preload("res://tools/visual_qa/scrim_luma.gd")
+## The art director's acceptance (B1a review, 2026-10-06): a wheel pool's mean luma at most 0.6 x
+## the backdrop between the wheels; a map's pool margin and foot band 0.55 to 0.65 of the open city.
+const RING_VS_BETWEEN_MAX := 0.6
+const MAP_RATIO := Vector2(0.55, 0.65)
 
 var _settings: Dictionary = {}
 
@@ -82,10 +88,13 @@ func test_a_panel_pool_darkens_the_world_under_it_by_the_configured_amount_and_n
 	assert_eq(scrim.shapes.size(), 1, "one pool")
 	assert_almost_eq(scrim.factor_at(rect.get_center()), LOOK.panel_pool_multiply, EPS, "under the panel: panel_pool_multiply")
 	assert_almost_eq(scrim.factor_at(rect.position + Vector2(1, 1)), LOOK.panel_pool_multiply, EPS, "at its corner too")
-	var edge := scrim.factor_at(Vector2(rect.end.x + LOOK.panel_pool_margin_px * 0.5, rect.get_center().y))
-	assert_between(edge, LOOK.panel_pool_multiply, 1.0, "half the margin out: fading")
-	assert_almost_eq(scrim.factor_at(Vector2(rect.end.x + LOOK.panel_pool_margin_px * 2.0, rect.get_center().y)), 1.0, EPS,
-		"twice the margin out: the world untouched")
+	var m := LOOK.panel_pool_margin_px
+	assert_almost_eq(scrim.factor_at(Vector2(rect.end.x + m * LOOK.panel_pool_hold * 0.95, rect.get_center().y)), LOOK.panel_pool_multiply, EPS,
+		"held out to panel_pool_hold of the margin")
+	var edge := scrim.factor_at(Vector2(rect.end.x + m * (1.0 + LOOK.panel_pool_hold) * 0.5, rect.get_center().y))
+	assert_between(edge, LOOK.panel_pool_multiply + EPS, 1.0 - EPS, "then fading")
+	assert_almost_eq(scrim.factor_at(Vector2(rect.end.x + m + 1.0, rect.get_center().y)), 1.0, EPS,
+		"past the margin: the world untouched")
 	assert_almost_eq(scrim.factor_at(Vector2(1700, 900)), 1.0, EPS, "elsewhere: untouched")
 
 
@@ -101,8 +110,14 @@ func test_a_wheel_pool_is_a_soft_disc_of_its_reach() -> void:
 	var c := Vector2(500, 400)
 	assert_almost_eq(scrim.factor_at(c), LOOK.wheel_pool_multiply, EPS, "at the wheel's centre: wheel_pool_multiply")
 	assert_almost_eq(scrim.factor_at(c), UiScrimPools.wheel_factor(0.0), EPS, "wheel_factor mirrors it")
-	assert_almost_eq(scrim.factor_at(c + Vector2(w.radius, 0)), UiScrimPools.wheel_factor(1.0), EPS, "at the rim")
-	assert_almost_eq(scrim.factor_at(c + Vector2(w.radius * LOOK.wheel_pool_reach * 2.0, 0)), 1.0, EPS, "past twice its reach: untouched")
+	assert_almost_eq(scrim.factor_at(c + Vector2(w.radius, 0)), LOOK.wheel_pool_multiply, EPS, "at the rim: the pool is whole (it shows past the disc)")
+	assert_almost_eq(scrim.factor_at(c + Vector2(w.radius * LOOK.wheel_pool_reach * 0.99, 0)), LOOK.wheel_pool_multiply, EPS,
+		"held out to wheel_pool_reach x R (D1: 1.25 R)")
+	var fading := scrim.factor_at(c + Vector2(w.radius * (LOOK.wheel_pool_reach + LOOK.wheel_pool_fade * 0.5), 0))
+	assert_between(fading, LOOK.wheel_pool_multiply + EPS, 1.0 - EPS, "then fading over wheel_pool_fade x R")
+	assert_almost_eq(fading, UiScrimPools.wheel_factor(LOOK.wheel_pool_reach + LOOK.wheel_pool_fade * 0.5), EPS, "wheel_factor mirrors it")
+	assert_almost_eq(scrim.factor_at(c + Vector2(w.radius * (LOOK.wheel_pool_reach + LOOK.wheel_pool_fade) + 1.0, 0)), 1.0, EPS,
+		"past it: untouched")
 	w.combatant = null
 	scrim.refresh()
 	assert_true(scrim.shapes.is_empty(), "a wheel with no combatant has no pool")
@@ -120,8 +135,10 @@ func test_bands_lie_under_their_bars_and_fade_out_past_them() -> void:
 	assert_almost_eq(scrim.factor_at(Vector2(1900, 1000)), LOOK.band_multiply, EPS, "the hand's band reaches the screen's foot")
 	assert_almost_eq(scrim.factor_at(Vector2(960, 60 + LOOK.band_reach_top_px * 2.0)), 1.0, EPS, "past the top band's reach: untouched")
 	assert_almost_eq(scrim.factor_at(Vector2(960, 820 - LOOK.band_reach_bottom_px * 2.0)), 1.0, EPS, "past the hand band's reach: untouched")
-	var fade := scrim.factor_at(Vector2(960, 820 - LOOK.band_reach_bottom_px * 0.5))
-	assert_between(fade, LOOK.band_multiply, 1.0, "inside the reach: fading")
+	assert_almost_eq(scrim.factor_at(Vector2(960, 820 - LOOK.band_reach_bottom_px * LOOK.band_hold * 0.95)), LOOK.band_multiply, EPS,
+		"held over band_hold of the reach")
+	var fade := scrim.factor_at(Vector2(960, 820 - LOOK.band_reach_bottom_px * (1.0 + LOOK.band_hold) * 0.5))
+	assert_between(fade, LOOK.band_multiply + EPS, 1.0 - EPS, "then fading")
 
 
 func test_hidden_freed_and_world_marks_take_no_pool() -> void:
@@ -178,6 +195,105 @@ func test_mark_panels_in_marks_the_outermost_windows_only() -> void:
 	assert_false(nested.is_in_group(UiScrimPools.PANEL_GROUP), "a window inside a marked one is not marked again")
 	assert_false(bool(outer.get_meta(UiScrimPools.META_POOL)), "pool off as asked")
 	assert_true(bool(outer.get_meta(UiScrimPools.META_SHADOW)), "shadow on")
+
+
+func test_pools_cap_the_world_s_saturation_and_keep_its_luma() -> void:
+	var h := _host()
+	var scrim: UiScrimPools = h["scrim"]
+	var rect := Rect2(200, 300, 400, 200)
+	UiScrimPools.mark_panel(_panel(h["host"], rect))
+	scrim.refresh()
+	var c := Color(0.2, 0.9, 0.7)
+	var l := ScrimLuma.luma(c)
+	var under := scrim.apply_at(rect.get_center(), c)
+	assert_almost_eq(ScrimLuma.luma(under), l * LOOK.panel_pool_multiply, 0.002, "the pool multiplies the luma")
+	# Chroma: the channels' spread round the luma, scaled by pool_saturation (D1: 0.6) then the pool.
+	assert_almost_eq(under.g - under.r, (c.g - c.r) * LOOK.pool_saturation * LOOK.panel_pool_multiply, 0.002, "saturation capped")
+	var out := scrim.apply_at(Vector2(1700, 900), c)
+	assert_true(out.is_equal_approx(c), "outside every shape: untouched")
+	assert_lt(LOOK.pool_saturation, 1.0, "a cap")
+	assert_true(FileAccess.get_file_as_string(UiScrimPools.SHADER.resource_path).contains("pool_saturation"), "the shader applies it")
+
+
+func test_world_items_in_the_lift_group_draw_over_the_layer() -> void:
+	var h := _host()
+	var scrim: UiScrimPools = h["scrim"]
+	var world: Control = h["world"]
+	var map := Control.new()
+	map.name = "Map"
+	world.add_child(map)
+	map.add_to_group(UiScrimPools.LIFT_GROUP)
+	var card := Control.new()
+	map.add_child(card)
+	card.size = Vector2(100, 100)
+	UiScrimPools.mark_panel(card)
+	var ui := _panel(h["host"], Rect2(0, 0, 50, 50))
+	scrim.refresh()
+	assert_true(scrim.lifted.has(map), "lifted")
+	assert_false(map.z_as_relative, "its own z")
+	assert_eq(world.z_index, UiScrimPools.WORLD_Z, "the world sinks under the layer")
+	assert_eq(scrim.z_index, UiScrimPools.SCRIM_Z, "the layer over the world")
+	assert_gt(map.z_index, scrim.z_index, "the lifted item over the layer")
+	assert_eq(map.z_index, ui.z_index, "at the UI's own z: under the UI by tree order")
+	assert_true(scrim.owns(card), "a panel inside a lifted item belongs to the layer")
+	assert_eq(scrim.shapes.size(), 1, "and pools")
+	var overlay := CityMapOverlay.new()
+	assert_true(overlay.is_in_group(UiScrimPools.LIFT_GROUP), "the city map (markers, labels, pencil, TARGET) is lifted")
+	assert_true(overlay.is_in_group(UiScrimPools.NETWORK_GROUP), "and its ground decal network kept")
+	overlay.free()
+
+
+func test_the_ground_decal_network_is_kept_out_of_the_pools() -> void:
+	var net := CityNetworkData.new()
+	net.segments.append({"a": Vector3(0, 0, 0), "b": Vector3(100, 0, 0), "color": Color.WHITE, "flags": 0, "u0": 0.0, "len": 100.0, "width": 1.0})
+	net.nodes.append({"world": Vector3(50, 0, 50), "color": Color.WHITE, "big": false, "state": 0, "tier": 1})
+	# px -> ground: identity, 1 BU per decal px.
+	var k := UiScrimPools.keep_from(net, Vector2.ZERO, Vector2(1, 0), Vector2(0, 1), 1.0, 0.0)
+	assert_almost_eq(UiScrimPools.keep_at(Vector2(40, 0), k), 1.0, EPS, "on a link: kept")
+	assert_almost_eq(UiScrimPools.keep_at(Vector2(50, 50), k), 1.0, EPS, "on a node: kept")
+	assert_almost_eq(UiScrimPools.keep_at(Vector2(40, 30), k), 0.0, EPS, "off the network: pooled")
+	var h := _host()
+	var scrim: UiScrimPools = h["scrim"]
+	UiScrimPools.mark_panel(_panel(h["host"], Rect2(-10, -10, 20, 20)))
+	scrim.refresh()
+	scrim.keep = k
+	assert_almost_eq(scrim.factor_at(Vector2(40, 0)), 1.0, EPS, "the link at full strength inside the pool")
+	assert_almost_eq(scrim.factor_at(Vector2(40, 30)), LOOK.panel_pool_multiply, EPS, "the city beside it pooled")
+
+
+# --- Luma on the real screens (fixtures) --------------------------------------------------------
+
+## The settled world under a screen's scrim, UI hidden (tests/fixtures/ui_scrim/<screen>.png, the
+## windowed perf pack's scrim_luma_<screen> probe at 1920x1080 tier 2, 480x270) and the scrim's
+## sources then (<screen>.json): the layer's maths applied to it now.
+func _fixture_luma(screen: String) -> Dictionary:
+	var img := Image.load_from_file(ProjectSettings.globalize_path(FIXTURES + screen + ".png"))
+	var src: Variant = JSON.parse_string(FileAccess.get_file_as_string(ProjectSettings.globalize_path(FIXTURES + screen + ".json")))
+	assert_not_null(img, "%s fixture" % screen)
+	assert_not_null(src, "%s sources" % screen)
+	if img == null or src == null:
+		return {}
+	return ScrimLuma.measure(img, null, ScrimLuma.from_json(src))
+
+
+func test_combat_wheel_pools_read_against_the_backdrop_between_the_wheels() -> void:
+	var m := _fixture_luma("combat_start")
+	if m.is_empty():
+		return
+	assert_gt(int(m["n_ring"]), 500, "the pools' rings measured")
+	assert_gt(int(m["n_between"]), 500, "the backdrop between the wheels measured")
+	assert_lte(float(m["ring_vs_between"]), RING_VS_BETWEEN_MAX, "mean luma in the wheel pools <= 0.6 x between the wheels (%.2f)" % m["ring_vs_between"])
+
+
+func test_map_pages_pool_margins_and_foot_bands_read() -> void:
+	for screen in ["hq", "raid_setup"]:
+		var m := _fixture_luma(screen)
+		if m.is_empty():
+			continue
+		assert_gt(int(m["n_margin"]), 500, "%s: panel pool margins measured" % screen)
+		assert_gt(int(m["n_foot"]), 300, "%s: the foot band measured" % screen)
+		assert_between(float(m["margin_same"]), MAP_RATIO.x, MAP_RATIO.y, "%s: city luma in the panels' pool margins vs open (%.2f)" % [screen, m["margin_same"]])
+		assert_between(float(m["foot_same"]), MAP_RATIO.x, MAP_RATIO.y, "%s: city luma under the foot band vs open (%.2f)" % [screen, m["foot_same"]])
 
 
 # --- Shadows and spill ----------------------------------------------------------------------

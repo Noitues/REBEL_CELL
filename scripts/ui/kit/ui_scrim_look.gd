@@ -13,26 +13,30 @@ extends Resource
 @export_group("Pools")
 ## What a wheel's pool leaves of the world (review D1: multiply by 0.55 inside the disc).
 @export var wheel_pool_multiply: float = 0.55
-## A wheel's pool is a soft disc of this radius, times its disc radius (review D1: 1.25 R), its
-## edge this share of that radius wide on each side (whole to 0.94 R, half at 1.25 R, none past
-## 1.56 R: the pool shows as a dark ring round the wheel, not hidden under its disc).
+## A wheel's pool holds its full darkness out to this radius, times the wheel's disc radius
+## (review D1: 1.25 R), then fades out over `wheel_pool_fade` x R (B1a b: the pool shows as a
+## dark ring round the wheel, never hidden under its disc).
 @export var wheel_pool_reach: float = 1.25
-@export var wheel_pool_soft: float = 0.25
-## What a panel's pool leaves of the world under it (review section d: 0.55 pools).
+@export var wheel_pool_fade: float = 0.3
+## What a panel's pool leaves of the world round it (review section d: 0.55 pools).
 @export var panel_pool_multiply: float = 0.55
-## How far past a panel's edge its pool fades out (px at 1080).
-@export var panel_pool_margin_px: float = 64.0
-## A panel pool's and a band's edge: exp(-(d / reach) ^ pool_falloff), d past the edge
-## (S-ARENA's backdrop_pool_falloff).
-@export var pool_falloff: float = 4.0
+## How far past a panel's edge its pool reaches (px at 1080), and the share of that it holds at
+## full darkness before it fades out (B1a b: the margin reads at sheet size).
+@export var panel_pool_margin_px: float = 120.0
+@export var panel_pool_hold: float = 0.7
+## The pools' saturation (review D1: the backdrop capped at 0.6 inside the pools; 1 = none),
+## toward the pixel's own luma (Rec. 709), reached where a pool holds its full darkness.
+@export var pool_saturation: float = 0.6
 
 @export_group("Bands")
-## What a bar's band leaves of the world (review D1: about 35 % black).
-@export var band_multiply: float = 0.65
-## How far a band fades out past the bar it lies under (px at 1080; review D1: 70 px under
-## the top strip, 120 px under the hand).
+## What a bar's band leaves of the world (review D1: about 35 % black; B1a b: 42 %, so the city
+## past the bar reads 0.55 to 0.65 of its open look, the art director's target).
+@export var band_multiply: float = 0.58
+## How far a band reaches past the bar it lies under (px at 1080; review D1: 70 px under the top
+## strip, 120 px under the hand), and the share of that it holds at full darkness.
 @export var band_reach_top_px: float = 70.0
 @export var band_reach_bottom_px: float = 120.0
+@export var band_hold: float = 0.75
 
 @export_group("Light spill")
 ## The spill's additive strength at its element's edge (review D19: 20 to 30 %).
