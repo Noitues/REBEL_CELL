@@ -627,6 +627,37 @@ built that way since TITLE-01b.
   | the loot page's frames; event, shop, reduce effects, tier 0; right-half details). The capture tool gained
   `--strip=N` (frames 80 ms apart) and `--raw` (the city without the tilt-shift, for diagnosis).
 
+### 2026-10-05 — Parity fix — TITLE-01d no yellow cast, pulled back (designer decision)
+Designer feedback round 4 (2026-10-05): the title city "is looking really good" (unchanged: the control capture
+matches round 3); the loot page and the HQ have a yellowish hue; loot / event (and the HQ) are a little too zoomed in.
+- **Loot / event, cause:** their look shared the title's grade, whose haze lift (0.04, 0.03, 0) has no blue. Over the
+  title's purple Halcyon district it reads pink; over the Solace district (teal / green roofs, amber and orange lane
+  lights) the same lift turned the city olive-yellow (backdrop bright pixels measured (0.44, 0.37, 0.33), blue lowest;
+  round 32 `reward_screen_v2`'s margins are (0.13, 0.10, 0.13), violet). **Fix:** `overlay_city_backdrop.tres` gets
+  its own violet grade: gain (0.80, 0.70, 0.86), lift (0.03, 0, 0.035) (saturation, haze, kept lights and traffic as
+  the title's). The title's look is untouched.
+- **Loot / event, framing:** ortho 300 -> 440 BU (the Grid's own width): more city reads round the page.
+- **HQ, cause:** main's HQ page still draws the 2D NeonCity through CyberdeckBackground (no 3D city there; the shared
+  3D grade, 5e's day look and the Grid / raid are violet, not yellow, so nothing shared changes). Its campaign
+  district's territory and influence inks are the corp colour (Solace lime #96FF46) plus the base neon inks' green
+  and amber, over the default COOL HAZE ink paling (a cyan tint): the window cast lime-yellow (measured mean
+  (0.20, 0.29, 0.24)). Paling the inks lavender (INK_SETS "FADED PRINT") barely moved it (the street inks are never
+  paled). **Fix (minimal, in my file):** `CyberdeckBackground.NIGHT_TINT` (0.94, 0.78, 1.0) as the 2D city's
+  `modulate` (a multiply over its picture, not its bake: no bake key changes, the warm-ups that build the same class
+  match): mean now (0.19, 0.23, 0.24), the green cast gone, the corp's lime kept as an accent.
+  **For HQ-BUILD (replacing the HQ page with the 3D raid-band city):** this is one line in
+  `CyberdeckBackground._init` plus the constant; drop it with the 2D HQ city, or keep it if any page keeps the 2D
+  city. The 3D city needs nothing (its grade is violet). HQ framing: not changed here (the 2D city frames the corp's
+  HQ at `hq_anchor` at zoom 1; HQ-BUILD's 3D framing replaces it); to read more city there, frame wider than the
+  Grid band's default ortho.
+- **Note:** the event's CAM feed copies the city behind the page; with the violet, pulled-back city it reads darker.
+- **Measured:** loot tier 2 at 1920x1080, v-sync off: 3.39 ms a frame, backdrop city GPU 1.81 ms (wider view, smaller
+  cars), under the 8 ms budget.
+- **Tests** (`test_parity_title01_backdrop.gd`): the overlay's grade has no yellow cast (blue lift >= green and red,
+  blue gain > green) and its ortho is wider than the title's; a plain CyberdeckBackground carries NIGHT_TINT (green
+  under red and blue).
+- **Review:** `docs/art_review/PARITY/fixes/TITLE-01d.jpg` (concept | before | after: loot, event, HQ; title control).
+
 ### 2026-10-05 — Art direction — ART-3 6w raid on the city
 ART-3 wave 2b, ART-6 on the unified city (ART_BIBLE v2 §4.1, §4.8, Appendix C #13, plan G10; refs round 40
 `raid_view_v3`, `raid_gifs/`, `unified40.py` "the Cell's nodes: uplink pads + risers"). Builds on 3A's raid 2D

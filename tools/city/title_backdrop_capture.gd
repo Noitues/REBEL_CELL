@@ -11,6 +11,9 @@ extends Node
 
 const TITLE := preload("res://scenes/menu/title_scene.tscn")
 const NETRUN := preload("res://scenes/netrun_map/netrun_scene.tscn")
+const HQ := preload("res://scenes/hq/hq_scene.tscn")
+## Real time the HQ's 2D city bake gets before its picture (ms).
+const HQ_BAKE_MS := 5000
 const SLOT := "gut_title_backdrop_capture"
 ## name -> [window size, text scale, city quality, reduce effects, kind]
 ## kind: "title", "bare" (the title's backdrop alone), "loot", "event", "shop", "perf" (title),
@@ -28,6 +31,7 @@ const STATES: Dictionary = {
 	"event_t2": [Vector2i(1280, 720), 1.0, 2, false, "event"],
 	"event_t0": [Vector2i(1280, 720), 1.0, 0, false, "event"],
 	"shop_t2": [Vector2i(1280, 720), 1.0, 2, false, "shop"],
+	"hq_t2": [Vector2i(1280, 720), 1.0, 2, false, "hq"],
 	"perf_1080_t2": [Vector2i(1920, 1080), 1.0, 2, false, "perf"],
 	"perf_1080_t1": [Vector2i(1920, 1080), 1.0, 1, false, "perf"],
 	"perf_loot_1080_t2": [Vector2i(1920, 1080), 1.0, 2, false, "perf_loot"],
@@ -88,6 +92,19 @@ func _state(n: String, s: Array) -> void:
 		if kind == "bare":
 			for k in ["margin", "ticker", "subtitle_strip"]:
 				(title.get(k) as CanvasItem).visible = false
+	elif kind == "hq":
+		# The HQ page (its own backdrop, whatever main draws there today), its 2D city's bake
+		# given HQ_BAKE_MS to land.
+		RunManager.reset()
+		var hq: Node = HQ.instantiate()
+		get_tree().root.add_child(hq)
+		root = hq
+		await get_tree().process_frame
+		await get_tree().process_frame
+		hq.new_campaign(7)
+		var until := Time.get_ticks_msec() + HQ_BAKE_MS
+		while Time.get_ticks_msec() < until:
+			await get_tree().process_frame
 	else:
 		RunManager.reset()
 		RunManager.new_campaign(7)
