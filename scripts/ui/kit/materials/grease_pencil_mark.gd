@@ -43,14 +43,25 @@ const WIDTH_1080 := 9.0
 const WIDTH_MIN_1080 := 8.0
 const WIDTH_MAX_1080 := 10.0
 const SHADOW_1080 := Vector2(2.0, 3.0)
+## The under-shadow copy is this much wider (1080p px) so it shows as a dark rim under the wax
+## on a light street as well as on a dark one.
+const SHADOW_GROW_1080 := 2.0
 ## The same in canvas px (at text size 1.0).
 const WIDTH := WIDTH_1080 * BOARD_TO_CANVAS
 const SHADOW_OFFSET := SHADOW_1080 * BOARD_TO_CANVAS
+const SHADOW_GROW := SHADOW_GROW_1080 * BOARD_TO_CANVAS
 ## Wax opacity (bible §1.2: 0.96) and the sheen line's strength (D3: 35 % white).
 const WAX_ALPHA := 0.96
 const SHEEN := 0.35
-## The pressure dropouts' spacing along a stroke (px: D3 "dropouts every 40 to 70 px").
-const DROPOUT_PX := Vector2(40.0, 70.0)
+## The wax dropouts (D3 lock), in 1080p px along a stroke: one stretch a period (its centre
+## jittered by up to half DROPOUT_JITTER either way, so the spacing runs 40-70 px), each
+## DROPOUT_LEN long (2-4 px), where the wax's alpha falls to DROPOUT_ALPHA. Words take fewer
+## (WORD_DROPOUT_PERIOD). The shader draws them with the same hash (`dhash`).
+const DROPOUT_PERIOD := 55.0
+const DROPOUT_JITTER := 15.0
+const DROPOUT_LEN := Vector2(2.0, 4.0)
+const DROPOUT_ALPHA := 0.35
+const WORD_DROPOUT_PERIOD := 90.0
 ## Seeds fold into 0..SEED_FOLD-1 before they reach the shader.
 const SEED_FOLD := 997
 ## The resample step (px).
@@ -142,6 +153,41 @@ static func shader_seed(s: int) -> float:
 	return float(posmod(s, SEED_FOLD))
 
 
+## A 32-bit integer hash in 0..1 (the shader's `dhash`, bit for bit).
+static func dhash(k: int, s: int) -> float:
+	var n := (k * 374761393 + s * 668265263) & 0xFFFFFFFF
+	n = ((n ^ (n >> 13)) * 1274126177) & 0xFFFFFFFF
+	n = n ^ (n >> 16)
+	return float(n & 0xFFFF) / 65535.0
+
+
+## The wax's dropout at `d` (1080p px along a stroke) for `seed`: 1 inside a dropout stretch,
+## 0 outside (the shader's `dropout_at`; its alpha falls to DROPOUT_ALPHA there).
+static func dropout_factor(s: int, d: float, period: float = DROPOUT_PERIOD) -> float:
+	var sd := int(shader_seed(s))
+	var k := floori(d / period)
+	var best := 0.0
+	for i in [-1, 0, 1]:
+		var kk: int = k + i
+		var c := (float(kk) + 0.5) * period + (dhash(kk, sd) - 0.5) * DROPOUT_JITTER
+		var half_len := lerpf(DROPOUT_LEN.x, DROPOUT_LEN.y, dhash(kk, sd + 1)) * 0.5
+		best = maxf(best, 1.0 - smoothstep(half_len - 0.5, half_len + 0.5, absf(d - c)))
+	return best
+
+
+## Local px (under global scale `k`) to the dropouts' 1080p px, at the current text size.
+static func dropout_scale(k: float) -> float:
+	return k / (BOARD_TO_CANVAS * ui_scale())
+
+
+## Sets the dropout uniforms on `mat` (strokes: DROPOUT_PERIOD; words: WORD_DROPOUT_PERIOD).
+static func set_dropouts(mat: ShaderMaterial, period: float) -> void:
+	mat.set_shader_parameter(&"dropout_period", period)
+	mat.set_shader_parameter(&"dropout_jitter", DROPOUT_JITTER)
+	mat.set_shader_parameter(&"dropout_len", DROPOUT_LEN)
+	mat.set_shader_parameter(&"dropout_alpha", DROPOUT_ALPHA)
+
+
 ## The colour of `ink`.
 static func ink_color(i: Ink) -> Color:
 	return Palette.PENCIL_THREAT if i == Ink.THREAT else Palette.PENCIL_PLAN
@@ -195,7 +241,7 @@ func global_rect() -> Rect2:
 	var r := Rect2()
 	var first := true
 	for p in _paths:
-		var b := PencilShapes.bounds(p, width() * 0.5)
+		var b := PencilShapes.bounds(p, (width() + SHADOW_GROW * ui_scale() / _screen_k) * 0.5)
 		b.end += SHADOW_OFFSET / _screen_k
 		r = b if first else r.merge(b)
 		first = false
@@ -270,7 +316,8 @@ func _sync() -> void:
 	_mat.set_shader_parameter(&"smear", smear)
 	_mat.set_shader_parameter(&"alpha_max", WAX_ALPHA)
 	_mat.set_shader_parameter(&"sheen", SHEEN)
-	_mat.set_shader_parameter(&"dropout_px", DROPOUT_PX)
+	set_dropouts(_mat, DROPOUT_PERIOD)
+	set_dropouts(_shadow_mat, DROPOUT_PERIOD)
 	_shadow_mat.set_shader_parameter(&"ink", Palette.PENCIL_SHADOW)
 	_shadow_mat.set_shader_parameter(&"dashed", dashed)
 	_shadow_mat.set_shader_parameter(&"seed", shader_seed(seed))
@@ -291,6 +338,9 @@ func _apply() -> void:
 	if _mat != null:
 		_mat.set_shader_parameter(&"width_px", w)
 		_shadow_mat.set_shader_parameter(&"width_px", w)
+		var ds := dropout_scale(_screen_k)
+		_mat.set_shader_parameter(&"dropout_scale", ds)
+		_shadow_mat.set_shader_parameter(&"dropout_scale", ds)
 	for i in _paths.size():
 		var l := _lens[i]
 		var pts := PencilShapes.trim(_paths[i], clampf(from - acc, 0.0, l), clampf(to - acc, 0.0, l))
@@ -303,7 +353,7 @@ func _apply() -> void:
 		_lines[i].points = pts
 		_lines[i].width = w
 		_shadows[i].points = pts
-		_shadows[i].width = w
+		_shadows[i].width = w + SHADOW_GROW * ui_scale() / _screen_k
 		_shadows[i].position = SHADOW_OFFSET / _screen_k
 		acc += l
 

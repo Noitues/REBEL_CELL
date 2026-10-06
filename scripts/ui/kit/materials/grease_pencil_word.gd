@@ -64,6 +64,7 @@ func _init() -> void:
 	_mat.shader = SHADER
 	_mat.set_shader_parameter(&"mode", 2)
 	_mat.set_shader_parameter(&"alpha_max", GreasePencilMark.WAX_ALPHA)
+	GreasePencilMark.set_dropouts(_mat, GreasePencilMark.WORD_DROPOUT_PERIOD)
 	_wax.material = _mat
 	_wax.draw.connect(_draw_text.bind(false))
 	add_child(_wax)
@@ -83,9 +84,13 @@ func _notification(what: int) -> void:
 func _sync() -> void:
 	if _mat != null:
 		_mat.set_shader_parameter(&"ink", GreasePencilMark.ink_color(ink))
+		_mat.set_shader_parameter(&"seed", GreasePencilMark.shader_seed(absi(text.hash())))
+		var k := absf(get_global_transform().get_scale().x) if is_inside_tree() else 1.0
+		_mat.set_shader_parameter(&"dropout_scale", GreasePencilMark.dropout_scale(maxf(k, 0.0001)))
 
 
 func _redraw() -> void:
+	_sync()
 	if _wax != null:
 		_wax.queue_redraw()
 		_shadow.queue_redraw()

@@ -114,6 +114,17 @@ at text 1.0 and 2.0). Test: `tests/unit/test_b1b_wax_pencil.gd`.
   aim loop, the TARGET circles (grid, route, HQ run, legend) and the raid dock circle all draw through it. Tests:
   `test_b1b_wax_pencil::test_a_loops_radius_jitter_is_seeded_and_about_three_percent`,
   `::test_the_loops_start_and_end_never_meet_cleanly`.
+- **Art-director fixes b (2026-10-06).** (1) The aim read thinner (~5 px) than the TARGET: its geometry was the same 9 px
+  (probed: line width 6 canvas px, no scale on its layer), but the wax's opaque body only covered the middle ~65 % of
+  the stroke at alpha ~0.77 (the bristles carried the rest), which vanished on the light street. The body is now
+  opaque across all but its ragged edge (`marker_stroke` core to 0.8-0.92 of the half width, side shading eased), so
+  every stroke reads its full 8-9 px at 1080p; the under-shadow copy is 2 px wider (`SHADOW_GROW_1080`) with a firmer
+  edge, so it shows as a dark rim under the arc on a light street. (2) The wax dropouts (D3 lock): one 2-4 px
+  stretch every 40-70 px (1080p px; period 55 with its centre jittered +-7.5) where the wax's alpha falls to 0.35,
+  seeded by a 32-bit integer hash the shader and `GreasePencilMark.dhash` / `dropout_factor` compute alike; the
+  shadow thins there too; words take fewer (period 90). Replaces the edge-only dropout that never showed. Tests:
+  `test_b1b_wax_pencil::test_wax_dropouts_every_40_to_70_px_two_to_four_px_long_to_alpha_0_35`,
+  `::test_the_shader_hash_is_the_scripts_hash`. Crops: `B1b_crop_aim.png`, `B1b_crop_target_only.png` (1:1, 1080p).
 
 ### 2026-10-06 — Designer rulings on the art-direction integration review
 The art-pass session reviewed main @ 175377de (`docs/concepts/INTEGRATION_REVIEW/REVIEW.md` on art-pass, D1–D25 and

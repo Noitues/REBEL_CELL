@@ -30,13 +30,18 @@ uniform float glint_strength = 0.55;
 uniform vec2 glint_span = vec2(400.0, 300.0);
 // Wipe smear 0..1: the wax breaks up as the palm drags it (the cloth wipe).
 uniform float smear = 0.0;
-// B1b (integration review D3): the stroke's width in px (UV.x runs in widths along it), the
-// pressure dropouts' spacing along it (px: tg_lib's pressure knots every ~40 px, here 40-70)
-// and how much of the core a dropout takes, and the sheen line's strength (35 % white).
+// B1b (integration review D3): the stroke's width in local px (UV.x runs in widths along it)
+// and the sheen line's strength (35 % white). The wax dropouts (D3 lock): every
+// `dropout_period` +- `dropout_jitter` / 2 px (1080p px: 40-70) a stretch `dropout_len` px long
+// (2-4) where the wax's alpha falls to `dropout_alpha` (0.35), seeded (the same integer hash as
+// GreasePencilMark.dropout_factor); `dropout_scale` turns local px into those 1080p px.
 uniform float width_px = 6.0;
-uniform vec2 dropout_px = vec2(40.0, 70.0);
-uniform float dropout_depth = 0.55;
 uniform float sheen = 0.35;
+uniform float dropout_period = 55.0;
+uniform float dropout_jitter = 30.0;
+uniform vec2 dropout_len = vec2(2.0, 4.0);
+uniform float dropout_alpha = 0.35;
+uniform float dropout_scale = 1.5;
 
 varying vec2 local_px;
 
@@ -53,6 +58,28 @@ float vnoise(vec2 p) {
 	vec2 f = fract(p);
 	vec2 u = f * f * (3.0 - 2.0 * f);
 	return mix(mix(hsh(i), hsh(i + vec2(1.0, 0.0)), u.x), mix(hsh(i + vec2(0.0, 1.0)), hsh(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+
+// A 32-bit integer hash in 0..1 (GreasePencilMark.dhash computes the same).
+float dhash(int k, int s) {
+	uint n = uint(k) * 374761393u + uint(s) * 668265263u;
+	n = (n ^ (n >> 13u)) * 1274126177u;
+	n = n ^ (n >> 16u);
+	return float(n & 65535u) / 65535.0;
+}
+
+// 1 inside a dropout stretch at `d` (1080p px along the stroke), 0 outside (half-px soft ends).
+float dropout_at(float d) {
+	int s = int(seed);
+	float k = floor(d / dropout_period);
+	float best = 0.0;
+	for (int i = -1; i <= 1; i++) {
+		int kk = int(k) + i;
+		float c = (float(kk) + 0.5) * dropout_period + (dhash(kk, s) - 0.5) * dropout_jitter;
+		float half_len = mix(dropout_len.x, dropout_len.y, dhash(kk, s + 1)) * 0.5;
+		best = max(best, 1.0 - smoothstep(half_len - 0.5, half_len + 0.5, abs(d - c)));
+	}
+	return best;
 }
 
 float glint_band(vec2 p) {
@@ -80,6 +107,7 @@ void fragment() {
 		a = smoothstep(0.22, 0.62, a * (0.8 + 0.2 * tooth) + (grain - 0.5) * 0.18);
 		vec3 c = ink.rgb * (0.88 + 0.12 * mid);
 		c += vec3(1.0, 0.98, 0.95) * glint_band(local_px) * a;
+		a = mix(a, min(a, dropout_alpha / alpha_max), dropout_at(local_px.x * dropout_scale));
 		COLOR = vec4(c, a * alpha_max);
 	} else {
 		float across = UV.y * 2.0 - 1.0;
@@ -93,9 +121,12 @@ void fragment() {
 				discard;
 			}
 		}
+		float drop = dropout_at(along * width_px * dropout_scale);
 		if (mode == 1) {
-			// the under-shadow: a copy of the stroke in PENCIL_SHADOW (its alpha: 85 %), soft edge
-			float a = (1.0 - smoothstep(0.7, 1.0, edge_d)) * ink.a;
+			// the under-shadow: a copy of the stroke in PENCIL_SHADOW (its alpha: 85 %), a firm edge
+			// so it reads under the wax on a light street too; thin where the wax drops out
+			float a = (1.0 - smoothstep(0.8, 1.0, edge_d)) * ink.a;
+			a = mix(a, a * dropout_alpha, drop);
 			COLOR = vec4(ink.rgb, a);
 		} else {
 			// bristles: bands across the stroke, each with its own dropouts along it
@@ -105,23 +136,18 @@ void fragment() {
 			float val = vnoise(vec2(along * (1.2 + hsh(vec2(b, seed)) * 0.9), b * 13.0 + seed * 5.0));
 			float thr = 0.02 + 0.30 * pow(bu, 3.0) + smear * 0.55;
 			float bristle = step(thr, val);
-			float core = 1.0 - smoothstep(0.62, 0.72, edge_d);
-			// pressure dropouts: one every 40-70 px along the stroke, the core thins and breaks
-			float along_px = along * width_px;
-			float pitch = mix(dropout_px.x, dropout_px.y, 0.5);
-			float kn = floor(along_px / pitch);
-			float at = (hsh(vec2(kn, seed + 3.0)) * 0.6 + 0.2) * pitch;
-			float span = width_px * (0.6 + 0.5 * hsh(vec2(kn, seed + 7.0)));
-			float drop = 1.0 - smoothstep(0.0, span * 0.5, abs(along_px - kn * pitch - at));
-			core *= 1.0 - dropout_depth * drop * step(0.3, edge_d + hsh(vec2(kn, seed)) * 0.6);
-			float m = max(core * 0.74 * (1.0 - smear * 0.6), bristle * (1.0 - smoothstep(0.86, 1.0, edge_d)));
+			// the opaque body: the full wax across all but its ragged edge (bristles carry the edge)
+			float core = 1.0 - smoothstep(0.8, 0.92, edge_d);
+			float m = max(core * (1.0 - smear * 0.6), bristle * (1.0 - smoothstep(0.86, 1.0, edge_d)));
 			float tooth = smoothstep(0.06, 0.16, grain);
 			float a = m * (0.80 + 0.20 * tooth);
 			a = smoothstep(0.22, 0.62, a + (grain - 0.5) * 0.18) * (0.74 + 0.26 * smoothstep(0.75, 1.0, m));
 			a = clamp(a * 1.08, 0.0, 1.0);
+			// the dropouts: the wax thins to ~0.35 there
+			a = mix(a, min(a, dropout_alpha / alpha_max), drop);
 			vec3 c = ink.rgb * (0.88 + 0.12 * mid + 0.08 * bristle);
 			// the wax's round body: lit along one side, shaded along the other, a sheen line
-			c *= 1.0 + 0.30 * (-across) - 0.10;
+			c *= 1.0 + 0.18 * (-across) - 0.06;
 			// the sheen: a line about 1 px wide at 35 % white along the lit side
 			float sh = exp(-pow((across + 0.42) / max(0.5 / max(width_px * 0.5, 1.0), 0.04), 2.0)) * sheen * (0.8 + 0.4 * mid);
 			c += vec3(1.0, 0.98, 0.95) * (sh + glint_band(local_px) * (0.25 + 0.5 * grain));
