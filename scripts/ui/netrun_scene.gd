@@ -3556,6 +3556,10 @@ const SHOP_MARGIN := 14.0
 ## focused (keys).
 const CLERK_WORDS := "NO REFUNDS.\nNO NAMES.\nCYCLES ONLY." # TR
 const CLERK_NOTE := "ask about the\nback room" # TR
+## Parity fix (SHOP-01): the clerk's note starts this share along the words' width and this
+## far (px) under their last line.
+const CLERK_NOTE_OFFSET := 0.35
+const CLERK_NOTE_GAP := 2.0
 ## The info line by device (UiTip.for_input( picks the pad's when pad_active).
 const SHOP_INFO_IDLE := "> point at an item: what it does shows here. Drag Firmware or a slice onto a slot of your spinner." # TR
 const SHOP_INFO_IDLE_PAD := "> focus an item: what it does shows here." # TR
@@ -3672,7 +3676,14 @@ func _layout_shop(root: Control) -> void:
 		clerk_note.size = clerk_note.custom_minimum_size
 		var words := clerk.find_child("ClerkWords", true, false) as Control
 		var under := words.get_global_rect() if words != null else clerk.get_global_rect()
-		clerk_note.global_position = Vector2(clerk.get_global_rect().end.x - clerk_note.size.x - 4.0, under.end.y - clerk_note.size.y * 0.55)
+		# Parity fix (SHOP-01; concept shop_v5): under the last clerk line, offset right of
+		# the words' start (clear of the wallet beside it), never over "CYCLES ONLY.".
+		var wallet := clerk.find_child("Wallet", true, false) as Control
+		var x := under.position.x + under.size.x * CLERK_NOTE_OFFSET
+		if wallet != null and wallet.is_visible_in_tree():
+			x = maxf(x, wallet.get_global_rect().end.x + SHOP_MARGIN)
+		x = minf(x, clerk.get_global_rect().end.x - clerk_note.size.x - SHOP_MARGIN * 0.5)
+		clerk_note.global_position = Vector2(x, under.end.y + CLERK_NOTE_GAP)
 
 
 ## ART-9 4A: a v2 terminal (4C's CrtWindow) whose `> TITLE` keeps to one line: the strip widens
