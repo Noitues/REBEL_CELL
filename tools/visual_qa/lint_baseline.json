@@ -111,7 +111,7 @@
 			"color": 12
 		},
 		"res://scripts/ui/kit/zine_card.gd": {
-			"color": 9,
+			"color": 8,
 			"draw_size": 4
 		},
 		"res://scripts/ui/kit/zine_note.gd": {
