@@ -23,7 +23,9 @@ const SHORT := {CityMapOverlay.KIND_FIGHT: "COMBAT", CityMapOverlay.KIND_ELITE: 
 	CityMapOverlay.KIND_EVENT: "EVENT", CityMapOverlay.KIND_SHOP: "SHOP", CityMapOverlay.KIND_RACK: "RACK"} # TR
 ## ART-7 3B: the state rings the key names (option A), and their words.
 const COLOR_KEYS: Array[String] = ["walked", "next", "later", "cut"]
-const COLOR_WORDS: Array[String] = ["walked", "next: pick one (numbered)", "not yet", "cut off"] # TR
+## Parity ROUTE-05: round 37's words where the route has the same state (selectable, not yet
+## (hidden)); walked is the route's own (the walked cable).
+const COLOR_WORDS: Array[String] = ["walked", "selectable: pick one (numbered)", "not yet (hidden)", "cut off"] # TR
 ## The D13 cue (mouse, shown through UiTip.for_input with PAD_WORDS when pad_active), its pad
 ## words (UiTip.for_input(HOVER_WORDS, PAD_WORDS)), and the words while every node shows.
 const HOVER_WORDS := "HOVER HERE: SHOW ALL NODES" # TR
@@ -164,11 +166,16 @@ func _color_row(key: String, words: String, s: float) -> HBoxContainer:
 	swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# ART-7 3B: the ring as the map draws it, colour and style (never colour alone).
 	swatch.set_meta(&"ring_style", String(RouteOverlay.RING_STYLES.get(key, "")))
+	# Parity ROUTE-05: "not yet (hidden)" is the small disc the map draws for a hidden node.
+	swatch.set_meta(&"ghost", key == RouteOverlay.STATE_LATER)
 	swatch.draw.connect(func() -> void:
-		RouteOverlay.draw_state_ring(swatch, swatch.size * 0.5, side * 0.36, key, s * 0.8))
+		if key == RouteOverlay.STATE_LATER:
+			RouteOverlay.draw_ghost(swatch, swatch.size * 0.5, side * 0.4, key, s * 0.8 / RouteOverlay.GHOST_SHARE)
+		else:
+			RouteOverlay.draw_state_ring(swatch, swatch.size * 0.5, side * 0.36, key, s * 0.8))
 	row.add_child(swatch)
 	var l := Label.new()
-	# "next: pick one (numbered)" reads "next" on the strip; the full words are its tooltip.
+	# "selectable: pick one (numbered)" reads "selectable" on the strip; the full words are its tooltip.
 	l.text = TranslationServer.translate(words).get_slice(":", 0)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l.add_theme_font_size_override("font_size", roundi(FONT * s))
