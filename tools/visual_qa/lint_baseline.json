@@ -120,7 +120,7 @@
 		"res://scripts/ui/wheel_view.gd": {
 			"color": 3,
 			"draw_size": 2,
-			"font_const": 3
+			"font_const": 2
 		}
 	}
 }

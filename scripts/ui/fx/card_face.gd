@@ -238,8 +238,6 @@ static func draw(card: ZineCard) -> void:
 	var k := size / FACE
 	var dest := Rect2(-FACE_AT * k, IMAGE * k)
 	var tex := face(kind_of(card), card.card_rarity)
-	if card._lifted:
-		card.draw_style_box(card._cc_style(Color(Palette.CELL_ACID, 0.5), ZineCard.CC_EDGE * s + 4.0, ZineCard.CC_CORNER * s + 4.0), Rect2(Vector2.ZERO, size))
 	if tex != null:
 		card.draw_texture_rect(tex, Rect2(dest.position + ZineCard.CC_SHADOW * s, dest.size), false, Color(Palette.SHADOW, SHADOW_ALPHA))
 		card.draw_texture_rect(tex, dest, false)
@@ -325,6 +323,10 @@ static func draw(card: ZineCard) -> void:
 		card.draw_rect(kr, Color(Palette.INK, KEY_CHIP_ALPHA))
 		card.draw_string(Palette.marker(), Vector2(kr.position.x + KEY_PAD * s, kr.position.y + (kr.size.y + Palette.marker().get_ascent(kfs) - Palette.marker().get_descent(kfs)) * 0.5),
 			key_text(card), HORIZONTAL_ALIGNMENT_LEFT, -1, kfs, Palette.TEXT_HI)
+	# B2 (art director, bible 2.10): focus is the kit's lime corner brackets round the die-cut and
+	# the hover lift (`card_hover`, 18 px at 1080p), never a lime fill behind the card.
+	if card._lifted:
+		StyleBoxBrackets.draw_on(card, Rect2(Vector2.ZERO, size).grow(ZineCard.CC_EDGE * s))
 	if card.disabled and not card.greyed:
 		card.draw_rect(Rect2(Vector2.ZERO, size), Color(Palette.SHADOW, 0.5))
 	if not card.greyed:

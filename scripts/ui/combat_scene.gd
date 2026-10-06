@@ -621,6 +621,7 @@ func cancel_selection() -> void:
 func cycle_target() -> void:
 	if _target_option.item_count == 0:
 		return
+	_target_focus = true  # B2 (art director): the key / pad moved focus to a wheel
 	var next := (_target_option.selected + 1) % _target_option.item_count
 	_target_option.select(next)
 	_submit(CombatAction.target(_target_option.get_item_metadata(next)))
@@ -889,6 +890,7 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseMotion or event is InputEventMouseButton:
 		_nav_focus = false
+		_set_target_focus(false)
 	elif event.is_pressed() and not event.is_echo():
 		_nav_focus = event.is_action("ui_left") or event.is_action("ui_right") or event.is_action("ui_up") \
 			or event.is_action("ui_down") or event.is_action("ui_focus_prev") or event.is_action("ui_focus_next")
@@ -1270,6 +1272,25 @@ func _aim_spill_lines() -> Array:
 	for ln in result_underlines():  # B2: the result chips' underlines light it too
 		out.append(AimLinePencil.underline(ln["from"], ln["to"], String(ln["key"]).hash()))
 	return out
+
+
+## B2 (art director): the pad / keyboard focus is on the target wheel (cycle_target); a mouse
+## move or click takes it away. The target's lime brackets show only while it is.
+var _target_focus: bool = false
+
+
+func _set_target_focus(on: bool) -> void:
+	if on == _target_focus:
+		return
+	_target_focus = on
+	for v in _enemy_views.values():
+		(v as WheelView).reticle_shown = on
+		(v as WheelView).queue_redraw()
+
+
+## Whether the target wheel has the pad / keyboard focus now (tests).
+func target_focused() -> bool:
+	return _target_focus
 
 
 ## Fades the cards not being aimed (and restores them).
@@ -2281,9 +2302,9 @@ func _refresh(state: CombatState) -> void:
 			_enemy_views_box.add_child(v)
 		var view: WheelView = _enemy_views[e.id]
 		view.highlighted = e.id == state.target_id
-		# B2 (D4): the lime brackets only while there is another wheel to choose (a drone as the
-		# target keeps its own small crosshair).
-		view.reticle_shown = state.living_enemies(false).size() > 1
+		# B2 (D4, art director): lime = focus: the brackets only while the wheel has the pad /
+		# keyboard focus (the target key moved it there), never a static marker.
+		view.reticle_shown = _target_focus
 		view.targeted_satellite = target.id if target != null and target.is_satellite and target.host_id == e.id else &""
 		var lines: Array[String] = []
 		if reveal:

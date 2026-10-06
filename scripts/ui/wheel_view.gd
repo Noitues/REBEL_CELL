@@ -214,11 +214,11 @@ const LAST_TURN_LINES := 2
 const INTENT_FONT_SIZE := 15
 const CHIP_FONT_SIZE := 13
 const HUB_FONT_SIZE := 10
-## B2 (review D2): the hub's tiny name, 10 px at 1080p (x BOARD_TO_CANVAS: 7 canvas px at text 1.0;
-## round 40 hub_cores_v3), never under NAME_MIN_FONT; it spans HUB_NAME_WIDTH of the hub's diameter.
-const NAME_FONT_SIZE := 7
-const NAME_MIN_FONT := NAME_FONT_SIZE - 1
-const HUB_NAME_WIDTH := 0.8
+## B2 (review D2; art director: the bible 4.2 caption floor wins): the hub's name at 12 canvas px (18 at 1080p)
+## in Plex Condensed caps, never under the floor (two lines first); it spans HUB_NAME_WIDTH of the hub's diameter.
+const NAME_FONT_SIZE := 12
+const NAME_MIN_FONT := NAME_FONT_SIZE
+const HUB_NAME_WIDTH := 0.9
 const VALUE_FONT_SIZE := 20
 const HP_FONT_SIZE := 22
 const INTENT_HEIGHT := 30.0
@@ -2465,7 +2465,7 @@ const HUB_ENEMY := 124.0
 ## B2 (review D2, round 40 hub_cores_v3): the hub is an emblem and a tiny name. The emblem's box is
 ## HUB_EMBLEM_SHARE of the hub's radius each side, lifted HUB_EMBLEM_LIFT of it while the name
 ## shows, over a glow in the accent (radius and alpha); the name is Plex Condensed caps at
-## NAME_FONT_SIZE (10 px at 1080p, scaled with the text) with its baseline HUB_NAME_Y of
+## NAME_FONT_SIZE (12 px, the caption floor, scaled with the text) with its baseline HUB_NAME_Y of
 ## the radius under the centre; under a wheel radius of HUB_NAME_MIN_R_1080 (board px) the hub shows
 ## the emblem alone. Shield, block, resistance, frozen and the passive are chips beside the HP
 ## (WheelView.standing_chips) and lines of the hub's tooltip.
@@ -3625,8 +3625,11 @@ func _draw_hub(center: Vector2, _inner: float, _line: Color) -> void:
 	for i in name_count:
 		# The first line sits at the name's spot; a second goes under it.
 		var ny := base + i * (name_size + 1)
-		draw_string_outline(font, center + Vector2(-hw * 0.5, ny), String(name_lines[i + 1]), HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, maxi(1, roundi(name_size * 0.3)), _col(Palette.INK))
-		draw_string(font, center + Vector2(-hw * 0.5, ny), String(name_lines[i + 1]), HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, _col(Palette.TEXT_HI))
+		# Centred by its own width, never clipped (at the floor a long word may pass the 0.8 share).
+		var line_text := String(name_lines[i + 1])
+		var lw := font.get_string_size(line_text, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size).x
+		draw_string_outline(font, center + Vector2(-lw * 0.5, ny), line_text, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size, maxi(1, roundi(name_size * 0.3)), _col(Palette.INK))
+		draw_string(font, center + Vector2(-lw * 0.5, ny), line_text, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size, _col(Palette.TEXT_HI))
 
 
 ## Target reticle: four bracket arcs on the diagonals with a tick at each (clear of the HP
