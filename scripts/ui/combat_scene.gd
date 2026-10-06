@@ -1277,8 +1277,11 @@ func _show_aim_hint() -> void:
 	# Sized from the font itself: the label's minimum lags a font change by a frame.
 	var hs := Vector2(font.get_string_size(_aim_hint.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, font.get_height(fs))
 	_aim_hint.size = hs
+	# S-COMBAT-HUD: its home is the room just above the hand (and above the RAM row while the RAM
+	# panel stands in the bottom row). At big text the RAM panel moves to the notes column's top:
+	# following it there put the hint over the Settings corner chip at 1.6 / 2.0.
 	var top := hand.position.y
-	if ram_note != null and ram_note.is_visible_in_tree():
+	if ram_note != null and ram_note.is_visible_in_tree() and _cell_panel.get_parent() == _bottom_row:
 		top = minf(top, ram_note.get_global_rect().position.y)
 	_aim_hint.global_position = Vector2(clampf(x, 0.0, maxf(0.0, get_global_rect().end.x - hs.x)), top - hs.y - 4.0)
 	_aim_hint.visible = true
@@ -1993,7 +1996,10 @@ func _build_ui() -> void:
 	_aim_hint = Label.new()
 	_aim_hint.name = "AimHint"
 	_aim_hint.z_index = OVER_HAND_Z
-	_aim_hint.add_to_group(CardPreviewOverlay.LABEL_BLOCK_GROUP)  # the preview's labels keep off it
+	# The preview's labels ("DRONE ENDS HERE") keep off the aim hint and the SEND IT / EXECUTE block
+	# (SEND IT, the next step, RESPIN / UNDO).
+	for block in [_aim_hint, _end_turn_button, _continue_button, _sticker_box]:
+		(block as Node).add_to_group(CardPreviewOverlay.LABEL_BLOCK_GROUP)
 	_aim_hint.visible = false
 	_aim_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_aim_hint.add_theme_color_override("font_color", Palette.CELL_ACID)

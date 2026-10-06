@@ -49,6 +49,8 @@ const LABEL_SLIDES: Array[float] = [0.0, 0.6, -0.6, 1.2, -1.2]
 const LABEL_STEPS_OUT: Array[float] = [0.0, 1.6]
 ## Screen controls a label keeps off (the combat scene's aim hint joins it).
 const LABEL_BLOCK_GROUP := &"preview_label_block"
+## When every spot along a label's own angle is blocked, the turns (rad) it tries round the wheel.
+const LABEL_TURNS: Array[float] = [0.0, 0.35, -0.35, 0.7, -0.7, 1.05, -1.05]
 ## How much a blocker grows (px) before a label must clear it.
 const BLOCK_PAD := 3.0
 ## Through peel, drag and slap the preview holds at this alpha (§3.17: 50 %).
@@ -326,33 +328,36 @@ func label_blockers() -> Array[Rect2]:
 ## the first spot when none is free.
 func label_box(center: Vector2, a: float, dists: Array[float], text: String) -> Rect2:
 	var sz := _label_size(text)
-	var dir := Vector2(cos(a), sin(a))
-	var tan_ := dir.orthogonal()
 	var frame := host.view.frame_master() * host.view.art_scale() if host != null and host.view != null else 0.0
 	var blockers := label_blockers()
 	# the screen, in this layer's space (the label may reach past the wheel's own box)
 	var room := Rect2(-global_position, get_viewport_rect().size)
 	var first := Rect2()
 	var have_first := false
-	for d in dists:
-		for sl in LABEL_SLIDES:
-			var at := center + dir * d + tan_ * sl * sz.x
-			var box := Rect2(at - sz * 0.5, sz)
-			if not have_first:
-				first = box
-				have_first = true
-			if not room.encloses(box):
-				continue
-			var near := Vector2(clampf(center.x, box.position.x, box.end.x), clampf(center.y, box.position.y, box.end.y))
-			if near.distance_to(center) < frame:
-				continue
-			var hit := false
-			for b in blockers:
-				if b.intersects(box):
-					hit = true
-					break
-			if not hit:
-				return box
+	# S-COMBAT-HUD: every spot along its own angle blocked (the SEND IT / EXECUTE block under a
+	# drone's label), the label turns round the wheel a little at a time before it gives up.
+	for turn in LABEL_TURNS:
+		var dir := Vector2(cos(a + turn), sin(a + turn))
+		var tan_ := dir.orthogonal()
+		for d in dists:
+			for sl in LABEL_SLIDES:
+				var at := center + dir * d + tan_ * sl * sz.x
+				var box := Rect2(at - sz * 0.5, sz)
+				if not have_first:
+					first = box
+					have_first = true
+				if not room.encloses(box):
+					continue
+				var near := Vector2(clampf(center.x, box.position.x, box.end.x), clampf(center.y, box.position.y, box.end.y))
+				if near.distance_to(center) < frame:
+					continue
+				var hit := false
+				for b in blockers:
+					if b.intersects(box):
+						hit = true
+						break
+				if not hit:
+					return box
 	first.position.x = clampf(first.position.x, room.position.x, maxf(room.position.x, room.end.x - first.size.x))
 	first.position.y = clampf(first.position.y, room.position.y, maxf(room.position.y, room.end.y - first.size.y))
 	return first

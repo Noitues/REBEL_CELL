@@ -98,6 +98,15 @@ COMBAT_HUD.jpg` (concept | before | after, plus the aim's frame strip).
 - **Files outside the area (smallest edits):** `netrun_scene.gd` (the top bar hidden in a fight), `fx.gd` (SAVED's
   avoid list), `combat_fx_layer.gd` (`reticle_drawn`), `wheel_view.gd` (DELETED sticker, FLATLINED on the hub;
   `DEFEATED_FONT` renamed `DELETED_FONT` with the word), `card_preview_overlay.gd` (full strength on target).
+- **Follow-up b (orchestrator, nothing deferred; sheet `fixes/COMBAT_HUD_b.jpg`).** (1) The aim hint's home is the
+  room just above the hand (above the RAM row only while the RAM panel stands in the bottom row): at 1.6 / 2.0 it had
+  followed the RAM panel to the notes column's top and sat on the Settings corner chip. `test_horizontal_pass24`
+  `test_the_aim_hint_sits_above_the_ram_row_and_on_screen` → `..._above_the_hand_clear_of_the_corner_chips` (above
+  the hand, in the room just above it, above the RAM row while it is in the bottom row, off the RAM panel up top,
+  clear of Settings). (2) SEND IT, the next step and RESPIN / UNDO join CardPreviewOverlay's label-blocker group (with
+  the aim hint); a label whose every spot along its own angle is blocked turns round the wheel (±0.35 rad steps up to
+  ±1.05) before it falls back, so DRONE ENDS HERE no longer sits on the EXECUTE block (test in
+  `test_parity_combat_hud.gd`). The fight's top bar is untouched pending the designer (CMB-07 vs the Heat gauge).
 - **Open question (default built):** the key-hint line left the TURN strip with the concept (tooltip only); if the W /
   R switches need to be on screen, the default proposal is a small key caption under the target's nudge pair.
 ### 2026-10-05 — Designer ruling — city as a map in raid and netrun views
