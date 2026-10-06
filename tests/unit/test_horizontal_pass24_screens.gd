@@ -438,7 +438,7 @@ func test_hq_raid_and_grid_words_are_translated_once() -> void:
 	for key in ["HomeForecast", "ThreatsStopped", "RaidStrength"]:
 		var b := hq._panel.find_child(key, true, false) as Label  # ART-6 3A: the work order's fields
 		assert_true(b.text.begins_with(PSEUDO_PREFIX), "%s: '%s'" % [key, b.text])
-	assert_eq(String(hq.hud._title), "", "HQ-B (Q6): the setup is the HQ's DEFENCE hand, no title")
+	assert_eq(String(hq.hud._title), tr("RAID SETUP"), "B3 (Q10): the setup's RAID SETUP title, translated once")
 	var run := hq._panel.find_child("RunRaid", true, false) as Button
 	assert_true(_shown_text(run).begins_with(PSEUDO_PREFIX), "START DEFENSE translated")
 	await _close(hq)
@@ -1009,7 +1009,17 @@ func test_the_top_bar_says_whose_numbers_it_shows() -> void:
 	var words := []
 	for cp in rs.captions:
 		words.append(cp[1])
-	assert_eq(words, ["CAMPAIGN", "THIS RUN"], "a run: the campaign's numbers, then the run's")
+	# B3 (round 44 `topbar_by_page.png`): the route page's strip is Heat, HP and Cycles, no groups;
+	# the run's other pages keep the campaign's numbers, then the run's.
+	assert_true(words.is_empty(), "the route page: HP and Cycles only, no group captions")
+	scene._refresh_status()
+	RunManager.netrun.run.phase = RunState.Phase.SHOP
+	scene._refresh_status()
+	words.clear()
+	for cp in rs.captions:
+		words.append(cp[1])
+	assert_eq(words, ["CAMPAIGN", "THIS RUN"], "a run's other page: the campaign's numbers, then the run's")
+	RunManager.netrun.run.phase = RunState.Phase.MAP
 	for i in rs.items.size():
 		assert_ne(String(rs.items[i][3]), "", "run tag %s has a tooltip" % rs.items[i][0])
 	await _close(scene)

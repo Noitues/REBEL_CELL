@@ -396,6 +396,8 @@ func test_the_raids_top_bar_changes_with_the_line_that_changes_it() -> void:
 	await _frames(1)
 	hq.show_raid()
 	await _frames(2)
+	# B3: the setup page has no resource bar (round 44); the playout's page carries it.
+	hq.panel_name = "raid_playout"
 	hq.hud_heat_shown = c.heat
 	hq.hud_raids_shown = c.pending_raids.size()
 	var raids_before := c.pending_raids.size()

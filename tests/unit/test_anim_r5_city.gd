@@ -522,6 +522,9 @@ func test_labels_keep_off_the_threat_tokens() -> void:
 	var tok := overlay.token_radius * k
 	var slot := overlay.marker_slot(home, 0, 1)
 	var token := Rect2(slot - Vector2(tok, tok), Vector2(tok, tok) * 2.0)
+	# B3 (the clutter rule): the raid map tags only the node lit from YOUR NETWORK or the pad.
+	overlay.hover_id = home
+	await _frames(2)
 	var rects := overlay.label_rects()
 	assert_true(rects.has(String(home)), "CORE keeps its label")
 	for key in rects:
@@ -571,7 +574,7 @@ func test_your_nodes_never_ends_in_a_cut_row() -> void:
 		await _frames(1)
 		hq.show_raid()
 		await _frames(6)
-		var column := hq._panel.find_child("WorkOrderPaper", true, false) as ScrollContainer
+		var column := hq._panel.find_child("CardColumn", true, false) as ScrollContainer  # B3 (Q9): YOUR NETWORK under THREAT INTEL
 		assert_not_null(column, "%.1f: YOUR NODES is in the left column" % scale)
 		if column == null:
 			return

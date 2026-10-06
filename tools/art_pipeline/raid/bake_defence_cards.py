@@ -13,9 +13,11 @@ concept's 2x supersampling: the image is cropped to the die-cut and saved at 2x.
     assets/raid/cards/<asset id>.png
     assets/raid/cards/manifest.json   (the face's box inside the image, for the live words)
 
-Call (logged in DECISIONS "Parity fix — raid"): HONEYPOT has no concept card; it is the same generator
-with the concept's VAULT glyph (`placeholder_vault`, a honeypot is a fake vault) in the concept's PINK,
-seed 62.
+Call (B3, review Q5, logged in DECISIONS "B3 — raid, map, route, clutter"; it replaces "Parity fix —
+raid"'s vault in pink): HONEYPOT has no concept card; it is the same generator with the atlas's
+placeholder hook (`placeholder_phishing`: a honeypot lures like the decoy) in the decoy violet
+#B08CFF (pink is attack, the vault glyph is VAULT's), seed 62, until the glyph concept slice draws its
+own.
 
 Usage (never from stdin): extract `docs/concepts/round19_raid/scripts/`,
 `docs/concepts/round3_overlay/o_a_tactical_glass/scripts/` and `docs/concepts/round17_slice_system/glyphs/`
@@ -37,6 +39,8 @@ TAG = "art-concepts-r43"
 FACE = (150, 172)
 BORDER = 7
 GLOSS_K = 0.22
+# B3 (review Q5): the honeypot's decoy violet #B08CFF.
+HONEYPOT_VIOLET = (176, 140, 255)
 
 
 def main() -> int:
@@ -58,7 +62,7 @@ def main() -> int:
         "decoy": (tray["DECOY"], 54),
         "tar_pit": (tray["TAR PIT"], 55),
         "sentry": (("SENTRY", "picto_target", 12, 1, ["3 dmg x2", "own node only"], U.GREEN), 61),
-        "honeypot_node": (("HONEYPOT", "placeholder_vault", 8, 1, ["pull 5", "fake vault"], U.PINK), 62),
+        "honeypot_node": (("HONEYPOT", "placeholder_phishing", 8, 1, ["pull 5", "fake vault"], HONEYPOT_VIOLET), 62),
     }
     OUT.mkdir(parents=True, exist_ok=True)
     meta_cards = {}

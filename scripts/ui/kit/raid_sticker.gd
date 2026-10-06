@@ -112,6 +112,24 @@ func slap() -> float:
 	return vinyl.slap() if vinyl != null else 0.0
 
 
+## B3 (review Q7): the raid's result motion, moved off the map's banner onto CELL HOLDS.
+const RESULT_MOTION := &"raid_result_banner"
+
+
+## B3 (review Q7): CELL HOLDS lands as the raid's result on the after-action paper: after
+## `raid_result_banner`'s delay it stamps down from the entry's amplitude (x its size) over its
+## duration while the vinyl slaps on (`sticker_slap`). At rest at once when motion doesn't play
+## (reduce effects, headless). Returns the seconds it takes.
+func slap_result() -> float:
+	if not Motion.live(RESULT_MOTION):
+		Motion.run(RESULT_MOTION, self, ^"scale", Vector2.ONE)
+		return slap()
+	pivot_offset = size * 0.5
+	scale = Vector2.ONE * maxf(1.0, Motion.amplitude(RESULT_MOTION))
+	Motion.run(RESULT_MOTION, self, ^"scale", Vector2.ONE)
+	return maxf(Motion.delay_of(RESULT_MOTION) + Motion.seconds(RESULT_MOTION), slap())
+
+
 ## The vinyl peels away (`sticker_peel`); the button hides once it is gone.
 func peel() -> float:
 	if vinyl == null:
