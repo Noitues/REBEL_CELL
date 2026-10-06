@@ -64,7 +64,7 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	box.add_child(polaroid)
 	var name_label := Label.new()
 	name_label.text = p_name.to_upper()
-	name_label.add_theme_font_override("font", Palette.marker())
+	name_label.add_theme_font_override("font", Palette.paper_bold())  # ART-10 4C (v2 §1.2, §2.9): the dossier is corp paper: Courier Prime
 	name_label.add_theme_font_size_override("font_size", roundi(NAME_SIZE * s))
 	name_label.add_theme_color_override("font_color", text_ink())
 	name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
@@ -74,6 +74,7 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	tags.add_theme_color_override("font_color", PaperInk.text(Color(Palette.INK, TAGS_ALPHA)))
 	tags.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	tags.add_theme_font_size_override("font_size", roundi(DETAIL_SIZE * s))
+	tags.add_theme_font_override("font", Palette.paper())  # ART-10 4C: corp paper fields
 	UiWrap.whole_words(tags)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
 	box.add_child(tags)
 	var hp_strip := Control.new()
@@ -91,6 +92,7 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	info.add_theme_color_override("font_color", text_ink())
 	info.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	info.add_theme_font_size_override("font_size", roundi(DETAIL_SIZE * s))
+	info.add_theme_font_override("font", Palette.paper())  # ART-10 4C: corp paper fields
 	box.add_child(info)
 	if compact:
 		# ANIM-R1 M12: at big text the HP (strip and numbers) comes right under the name, so

@@ -177,6 +177,22 @@ const STICKER_COMMIT := CELL_PINK
 const STICKER_DISABLED_GREY := 0.8
 ## The die-cut border of a vinyl sticker and its ink keyline (§1.2).
 const STICKER_DIE_CUT := Color("#FFFFFF")
+## ART-10 4C (round 33 ui_chrome): OVERTHROW's readable blue vinyl (round 33 §2; top -> bottom
+## of the lettering), the REBEL_CELL neon tube and its hot core, and the title sign's
+## circuit-board backing.
+const STICKER_BLUE := Color("#84C8FF")
+const STICKER_BLUE_LOW := Color("#2268E8")
+const NEON_TUBE := Color("#FF4FD8")
+const NEON_CORE := Color("#FFE3F7")
+const BOARD_BG := Color("#0A1512")
+const BOARD_TRACE := Color("#24493A")
+const BOARD_PAD := Color("#D0663C")
+const BOARD_FRAME := Color("#59606B")
+## The drawn stickers' fill markers (shaders/chrome/vinyl_sticker.gdshader paints them):
+## magenta = the gradient fill, green (blue = burst band / 8) = the CORRUPTED glitch fill.
+## Never shown as colours.
+const STICKER_FILL_MARKER := Color(1, 0, 1)
+const STICKER_GLITCH_MARKER := Color(0, 1, 0)
 
 ## §5.1 "never colour alone": what each meaningful colour token is paired with (a greyscale
 ## reader gets the same information). The token table test checks every entry is filled.

@@ -542,7 +542,7 @@ func test_hq_idle_runs_live_and_rests_headless() -> void:
 	await BoundedWait.frozen_frames(get_tree(), 3)
 	jack = hq._panel.find_child("JackIn", true, false) as ZineStamp
 	assert_true(jack.breathing(), "live: JACK IN breathes")
-	var radio := hq._panel.find_child("PirateRadio", true, false) as ZineNote
+	var radio := hq._panel.find_child("PirateRadio", true, false) as CrtText  # ART-10 4C: the radio is terminal text
 	assert_true(Typing.typing(radio.label), "the pirate radio types in")
 	assert_eq(radio.label.get_parsed_text().strip_edges() != "", true, "its words are all there")
 	var crew := hq._panel.find_child("Roster", true, false).get_child(0) as CrewCard

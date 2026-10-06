@@ -88,13 +88,14 @@ const TARGET_BUTTON_WIDTH := 150.0
 ## Entry Sites shown one badge each up to this many; more collapse into a count.
 const MAX_ENTRY_BADGES := 3
 ## Height of the raid's node orders list (px); more nodes scroll inside it.
-## PIRATE RADIO: width, room for its title and foot (px) and the lines it shows at once.
+## PIRATE RADIO: its text's width (px) and the lines it shows at least.
 const RADIO_WIDTH := 230.0
-const RADIO_TOP := 24.0
-const RADIO_BOTTOM := 8.0
 const RADIO_LINES := 4
 ## The launch button on a Site's card: the same words as the HQ's JACK IN stamp (H21 #21).
 const JACK_IN := "JACK IN" # TR
+## ART-10 4C: the screen-title stickers (lettering px at 1.0, tilt in degrees).
+const TITLE_STICKER_PX := 30.0
+const TITLE_STICKER_TILT := -3.0
 ## Gap round a price's currency icon at a button's right end (px).
 const PRICE_ICON_GAP := 8.0
 ## What each Site status means (the selected Site card's status badge).
@@ -1217,57 +1218,88 @@ static func prompts_for(p_name: String) -> Array:
 	return out
 
 
+## ART-10 4C: the new-campaign form's gaps (px: between columns, between rows) and the text
+## scale from which it keeps one field a row.
+const FORM_GAP := Vector2i(14, 8)
+const FORM_ONE_PAIR_FROM := 1.6
+
+
+## One control cell of the new-campaign form (its controls in a row), added to `form`.
+func _form_cell(form: Container) -> HBoxContainer:
+	var cell := HBoxContainer.new()
+	cell.add_theme_constant_override(&"separation", 6)
+	form.add_child(cell)
+	return cell
+
+
 func show_start() -> void:
 	var cfg := RunManager.config()
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 24)
-	head.add_child(GraffitiTag.new("REBEL_CELL"))
-	head.add_child(GraffitiScrawl.new(tr("TRUST\nNO ONE"), -7.0, 26))
+	# ART-10 4C (v2 §1.2, §2.10): the yellow title sticker and the Cell's motto in grease
+	# pencil (the spray tag and scrawl are rejected media).
+	head.add_child(_title_sticker(tr("NEW CAMPAIGN"), "NEW CAMPAIGN"))
+	head.add_child(PencilWords.new(tr("TRUST NO ONE"), -4.0))
 	box.add_child(head)
-	var setup := TerminalWindow.new(tr("NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in."))
+	var setup := CrtWindow.new(tr("NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in."))
 	box.add_child(setup)
-	var row := HFlowContainer.new()
+	# ART-10 4C: the setup is a form (a name column, its controls beside it; two fields a row,
+	# one at big text) instead of one wrapping line of words and controls.
+	var row := GridContainer.new()
+	row.name = "SetupForm"
+	row.columns = 2 if Settings.text_scale >= FORM_ONE_PAIR_FROM else 4
+	row.add_theme_constant_override(&"h_separation", FORM_GAP.x)
+	row.add_theme_constant_override(&"v_separation", FORM_GAP.y)
 	setup.body.add_child(row)
-	row.add_child(_label(tr("Campaign seed:")))
+	# ART-10 4C (audit P3): the setup words say what they do, with an icon and a tooltip.
+	var seed_label := _label(tr("City seed (same seed, same city):"))
+	seed_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	seed_label.tooltip_text = UiTip.fold(tr("The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city."))
+	row.add_child(seed_label)
+	var seed_box := _form_cell(row)
 	var seed_spin := SpinBox.new()
 	seed_spin.min_value = 0
 	seed_spin.max_value = 999999
 	seed_spin.value = 1
 	seed_spin.name = "SeedSpin"
-	row.add_child(seed_spin)
-	var next_seed := _button("+1", func() -> void: seed_spin.value = int(seed_spin.value) + 1)
+	seed_box.add_child(seed_spin)
+	var next_seed := _icon(_button(tr("Next seed"), func() -> void: seed_spin.value = int(seed_spin.value) + 1), StatIcon.RUNS)
+	next_seed.tooltip_text = UiTip.fold(tr("Try the next city: the seed goes up by one."))
 	next_seed.name = "SeedNext"
-	row.add_child(next_seed)
+	seed_box.add_child(next_seed)
 	row.add_child(_label(tr("Target:")))
 	var corp_pick := OptionButton.new()
 	corp_pick.name = "CorporationPicker"
 	var corps := RunManager.available_corporations()
 	for corp in corps:
 		corp_pick.add_item(TextDb.t(corp, "display_name"))
-	row.add_child(corp_pick)
+	_form_cell(row).add_child(corp_pick)
 	var cap := RunManager.ice_cap(corps[0].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION)
-	var ice_label := _label(tr("ICE (0-%d):") % cap)
+	var ice_label := _label(tr("ICE difficulty (0-%d):") % cap)
+	ice_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	ice_label.tooltip_text = UiTip.fold(tr("ICE is the difficulty ladder: each level adds a rule against the Cell. Clear a level to unlock the next one for this corporation."))
 	row.add_child(ice_label)
+	var ice_box := _form_cell(row)
 	var ice_spin := SpinBox.new()
 	ice_spin.name = "IceSpin"
 	ice_spin.min_value = 0
 	ice_spin.max_value = cap
 	ice_spin.value = 0
-	row.add_child(ice_spin)
+	ice_box.add_child(ice_spin)
 	# SpinBoxes ignore the D-pad: explicit buttons make ICE and seed pad-reachable.
 	var ice_down := _button("-", func() -> void: ice_spin.value = maxf(ice_spin.min_value, ice_spin.value - 1))
 	ice_down.name = "IceDown"
-	row.add_child(ice_down)
+	ice_box.add_child(ice_down)
 	var ice_up := _button("+", func() -> void: ice_spin.value = minf(ice_spin.max_value, ice_spin.value + 1))
 	ice_up.name = "IceUp"
-	row.add_child(ice_up)
+	ice_box.add_child(ice_up)
 	# Each corporation has its own ICE ladder (GDD 3.4).
 	corp_pick.item_selected.connect(func(i: int) -> void:
 		var corp_cap := RunManager.ice_cap(corps[i].id)
 		ice_spin.max_value = corp_cap
-		ice_label.text = tr("ICE (0-%d):") % corp_cap
+		ice_label.text = tr("ICE difficulty (0-%d):") % corp_cap
 		warm_start_hq(corps[i]))
 	# ANIM-R6 C9: the HQ the picked corporation's campaign opens on bakes while this page is open.
 	if not corps.is_empty():
@@ -1279,13 +1311,13 @@ func show_start() -> void:
 	var variants := RunManager.available_home_variants()
 	for v in variants:
 		home_pick.add_item(TextDb.t(v, "display_name"))
-	row.add_child(home_pick)
+	_form_cell(row).add_child(home_pick)
 	row.add_child(_label(tr("Crew:")))
 	var class_pick := OptionButton.new()
 	var classes := RunManager.available_classes()
 	for cls in classes:
 		class_pick.add_item(TextDb.t(cls, "display_name"))
-	row.add_child(class_pick)
+	_form_cell(row).add_child(class_pick)
 	var start_btn := _button(tr("New campaign"), func() -> void:
 		new_campaign(int(seed_spin.value), int(ice_spin.value), variants[home_pick.selected].id if not variants.is_empty() else RunManager.DEFAULT_HOME,
 			classes[class_pick.selected].id if not classes.is_empty() else RunManager.DEFAULT_CLASS,
@@ -1300,7 +1332,7 @@ func show_start() -> void:
 	var code_split := HBoxContainer.new()
 	code_split.add_theme_constant_override("separation", 14)
 	box.add_child(code_split)
-	var daily := TerminalWindow.new(tr("TODAY'S RUN"), Palette.CELL_ACID)
+	var daily := CrtWindow.new(tr("TODAY'S RUN"), Palette.CELL_ACID)
 	daily.name = "DailyRun"
 	daily.custom_minimum_size.x = 420
 	code_split.add_child(daily)
@@ -1310,7 +1342,7 @@ func show_start() -> void:
 	for line in daily_lines(daily_seed):
 		daily.body.add_child(_label(line))
 	daily.body.add_child(_icon(_button(tr("Daily run"), func() -> void: new_campaign(daily_seed)), StatIcon.PLAY))
-	var codes := TerminalWindow.new(tr("SHARE CODES"), Palette.CELL_ACID)
+	var codes := CrtWindow.new(tr("SHARE CODES"), Palette.CELL_ACID)
 	codes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	code_split.add_child(codes)
 	var code_row := HFlowContainer.new()
@@ -1330,11 +1362,11 @@ func show_start() -> void:
 	var lower := HBoxContainer.new()
 	lower.add_theme_constant_override("separation", 14)
 	box.add_child(lower)
-	var menu := TerminalWindow.new(tr("CYBERDECK"))
+	var menu := CrtWindow.new(tr("CYBERDECK"))
 	menu.custom_minimum_size.x = 300
 	menu.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	lower.add_child(menu)
-	var profile := TerminalWindow.new(tr("PROFILE // RECORDS"), Palette.CELL_PINK)
+	var profile := CrtWindow.new(tr("PROFILE // RECORDS"), Palette.CELL_PINK)
 	profile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lower.add_child(profile)
 	if RunManager.has_save():
@@ -1414,7 +1446,8 @@ func show_hq() -> void:
 	# The note shows whole lines at any text size (H21 #15: at 1.6 its last line was cut in
 	# half); the rest scrolls.
 	var line_h := UiTheme.line_px(Palette.mono(), roundi(UiTheme.BASE_SIZE * Settings.text_scale))
-	var radio := ZineNote.new(tr("PIRATE RADIO"), Vector2(RADIO_WIDTH, RADIO_TOP + RADIO_BOTTOM + line_h * RADIO_LINES))
+	# ART-10 4C (v2 §1.2): the DJ is a voice on the Cell's feed: a terminal, not a paper note.
+	var radio := CrtText.new(tr("PIRATE RADIO"), Vector2(RADIO_WIDTH, line_h * RADIO_LINES / Settings.text_scale))
 	radio.name = "PirateRadio"
 	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, c.corporation_id, &"", c.runs_started + c.runs_completed * 7)
 	# H24 S3: the DJ's words in the player's language (the voice line's TextDb key).
@@ -1429,8 +1462,6 @@ func show_hq() -> void:
 	# the corner); RADIO_LINES is its least height.
 	radio.label.fit_content = true
 	radio.label.scroll_active = false
-	radio.label.minimum_size_changed.connect(_fit_radio.bind(radio, line_h))
-	_fit_radio.call_deferred(radio, line_h)
 	# No key hint: JACK IN is pressed by click or focus (Space does nothing here). It is the
 	# same JACK IN as on a Site's card (H21 #21): here it opens the Grid to pick the Site.
 	var jack := ZineStamp.new(tr(JACK_IN), Palette.CELL_PINK)
@@ -1462,7 +1493,7 @@ func show_hq() -> void:
 	left.custom_minimum_size.x = 300
 	cols.add_child(left)
 	# The deck menu (reference: "> OPERATIVES / NETWORK / LOADOUT").
-	var deck := TerminalWindow.new(tr("CYBERDECK"))
+	var deck := CrtWindow.new(tr("CYBERDECK"))
 	left.add_child(deck)
 	var actions := deck.body
 	# Each item carries its icon (H21 #13): the map, the raid shield, the flame (Heat), the
@@ -1502,13 +1533,13 @@ func show_hq() -> void:
 	_price_icon(scrub_btn, StatIcon.SCHEMATICS)
 	# The Cell at a glance (H20: badges, not a text readout): home, Exploits, Armory and the
 	# rules the Heat thresholds added; each badge's tooltip says what it means.
-	var status := TerminalWindow.new(tr("CELL STATUS"))
+	var status := CrtWindow.new(tr("CELL STATUS"))
 	status.name = "CellStatus"
 	left.add_child(status)
 	status.body.add_child(cell_badges())
 	# The crew: Polaroids with their stats and orders.
 	# The deck monitor: the City Grid at a glance (click or JACK IN to open it).
-	var monitor := TerminalWindow.new(tr("CITY GRID // %s") % TextDb.t(RunManager.corporation, "display_name"))
+	var monitor := CrtWindow.new(tr("CITY GRID // %s") % TextDb.t(RunManager.corporation, "display_name"))
 	monitor.tag_label.text = tr("STATUS: %s") % (tr("RAID INBOUND") if not c.pending_raids.is_empty() else tr("STABLE"))
 	monitor.tag_label.add_theme_color_override("font_color", Palette.CELL_PINK if not c.pending_raids.is_empty() else Palette.CELL_ACID)
 	monitor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1527,7 +1558,7 @@ func show_hq() -> void:
 	mini.tooltip_text = UiTip.for_input(tr("Click a Site to open it on the City Grid."), tr("Press a Site to open it on the City Grid."))
 	monitor.body.add_child(mini)
 	cols.add_child(right)
-	var crew := TerminalWindow.new(tr("CREW // ROSTER"), Palette.CELL_PINK)
+	var crew := CrtWindow.new(tr("CREW // ROSTER"), Palette.CELL_PINK)
 	crew.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var roster_box := HFlowContainer.new()
 	roster_box.add_theme_constant_override("h_separation", 18)
@@ -1602,7 +1633,7 @@ func show_hq() -> void:
 		# the screen's foot).
 		center.move_child(crew, 0)
 	# The market: recruits, next-run boosts (GDD 11.4) and Profile unlocks (GDD 3.4).
-	var market := TerminalWindow.new(tr("BLACK MARKET // SCHEMATICS %d") % c.schematics, Palette.CELL_ACID)
+	var market := CrtWindow.new(tr("BLACK MARKET // SCHEMATICS %d") % c.schematics, Palette.CELL_ACID)
 	market.name = "BlackMarket"
 	box.add_child(market)
 	var recruits := HFlowContainer.new()
@@ -1672,7 +1703,7 @@ func show_hq() -> void:
 	market.body.add_child(unlocks)
 	var beats := CampaignRules.revealed_beats(c, RunManager.corporation)
 	if not beats.is_empty():
-		var story := TerminalWindow.new(tr("Story so far:"), Palette.CRT_AMBER)
+		var story := CrtWindow.new(tr("Story so far:"), Palette.CRT_AMBER)
 		box.add_child(story)
 		for b in beats:
 			var t := RichTextLabel.new()
@@ -1787,16 +1818,6 @@ func first_grid_region() -> Rect2:
 	centre /= nodes.size()
 	var frame := wireframe.city.region_for(centre, GRID_ANCHOR, GRID_ZOOM, size)
 	return NeonCity.snap_region(frame.merge(box.grow(NeonCity.REGION_MARGIN)))
-
-
-## PIRATE RADIO as tall as its words (at least RADIO_LINES lines of `line_h`).
-func _fit_radio(note: Variant, line_h: float) -> void:
-	if not is_instance_valid(note) or not (note is ZineNote):
-		return
-	var radio := note as ZineNote
-	var h := RADIO_TOP + RADIO_BOTTOM + maxf(line_h * RADIO_LINES, radio.label.get_combined_minimum_size().y)
-	if not is_equal_approx(radio.custom_minimum_size.y, h):
-		radio.custom_minimum_size.y = h
 
 
 ## D-pad through the crew (H22 #10: the second dossier's Loadout could not be reached; the
@@ -1965,7 +1986,7 @@ func show_grid() -> void:
 		raid_btn.theme_type_variation = &"HotButton"
 		_add_tip(nav, raid_btn, tr("RAID SETUP: a raid is coming along the dashed routes: set up the defence."))
 	if not launchable.is_empty():
-		var runs := TerminalWindow.new(tr("RUNS OPEN NOW"), Palette.CELL_ACID)
+		var runs := CrtWindow.new(tr("RUNS OPEN NOW"), Palette.CELL_ACID)
 		runs.name = "RunsOpen"
 		side.add_child(runs)
 		# One run a row (H23 #7: wrapped side by side they read as a jumble).
@@ -2508,7 +2529,7 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	var s := c.grid.site(site.id)
 	var status := int(s["status"])
 	var accent := Palette.CELL_TURF if status == GridState.SiteStatus.CLAIMED else (Palette.NET_CYAN if status == GridState.SiteStatus.CLEARED else Palette.corp_color(c.corporation_id))
-	var card := TerminalWindow.new(site_name(site.id), accent)
+	var card := CrtWindow.new(site_name(site.id), accent)
 	card.name = "SelectedSite"
 	card.set_meta(&"shows", [site.id, int(status)])  # ANIM-R3 B6: what refresh_site_card compares
 	# H24 K7: tier and status words translated here, once.
@@ -3653,11 +3674,12 @@ func raid_graph(results: Variant, markers: Dictionary, c: CampaignState = null, 
 ## Codex (GDD 8.1): everything the Cell knows, zine-styled, plus the lexicon.
 func show_codex() -> void:
 	var box := VBoxContainer.new()
-	box.add_child(GraffitiTag.new(tr("CODEX")))
+	# ART-10 4C (v2 §2.10): the screen title is a yellow sticker; the codex a terminal.
+	box.add_child(_title_sticker(tr("CODEX"), "CODEX"))
 	var entries := Codex.entries(RunManager.lookup(), RunManager.profile)
 	var tabs := HFlowContainer.new()
 	box.add_child(tabs)
-	var body := ZineNote.new("", Vector2(900, 380)).make_reference()
+	var body := CrtText.new(tr("CODEX // WHAT THE CELL KNOWS"), Vector2(900, 330)).make_reference()
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for section in entries:
 		var name: String = section
@@ -3665,7 +3687,7 @@ func show_codex() -> void:
 	box.add_child(body)
 	_fill_codex(body, "Slices", entries["Slices"])
 	if not Dialogue.history.is_empty():
-		var lines := ZineNote.new(tr("LINES HEARD"), Vector2(900, 100)).make_reference()
+		var lines := CrtText.new(tr("LINES HEARD"), Vector2(900, 100)).make_reference()
 		for h in Dialogue.history.slice(maxi(0, Dialogue.history.size() - 6)):
 			lines.append("[%s] %s" % [Dialogue.speaker_name(int(h["speaker"]), StringName(String(h.get("corporation", "")))), h["text"]])
 		box.add_child(lines)
@@ -3673,9 +3695,9 @@ func show_codex() -> void:
 	_set_panel(box, "codex")
 
 
-func _fill_codex(body: ZineNote, section: String, items: Array) -> void:
+func _fill_codex(body: CrtText, section: String, items: Array) -> void:
 	body.clear()
-	body.append("[b]%s[/b]" % tr(section).to_upper())
+	body.heading(tr(section))
 	for item in items:
 		body.append("[b]%s[/b] - %s" % [item["title"], String(item["text"]).replace("\n", " / ")])
 
@@ -4965,6 +4987,18 @@ func _as_menu(box: Control) -> void:
 
 
 ## A long line of prose that wraps to the panel width (profile, unlocks, records).
+## ART-10 4C (v2 §2.10): a screen's title as a yellow vinyl sticker (never focused, no clicks).
+func _title_sticker(word: String, key: String = "") -> VerbSticker:
+	var s := VerbSticker.new(word, VerbSticker.Fill.YELLOW, TITLE_STICKER_PX, TITLE_STICKER_TILT, VerbSticker.title_art(key))
+	s.pre_translated = true
+	s.name = "TitleSticker"
+	s.focus_mode = Control.FOCUS_NONE
+	s.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	s.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	s.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	return s
+
+
 func _para(text: String) -> Label:
 	var l := _label(text)
 	UiWrap.whole_words(l)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
