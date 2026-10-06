@@ -22,7 +22,7 @@ const BANDS := &"holo_bands"
 ## the tint's strength on the words and the edge (`ink`); the body is FILL_SHARE of the tint
 ## over the dark 0.88 glass (round 21 `intel_decrypt`, round 44 `raid_setup`).
 const TINT_SHARE := 0.78
-const FILL_SHARE := 0.28
+const FILL_SHARE := 0.15
 const GLASS_ALPHA := 0.88
 const SCAN_PX := 4.0
 const SPLIT_PX := 2.0

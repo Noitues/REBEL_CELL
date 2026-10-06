@@ -14,10 +14,10 @@ uniform vec4 panel = vec4(0.0, 0.0, 100.0, 100.0);
 uniform vec4 tint : source_color = vec4(0.24, 1.0, 0.545, 1.0);
 uniform vec4 deep : source_color = vec4(0.008, 0.012, 0.039, 1.0);
 // B1c-b (art director, round 21 / round 44): the body is the dark 0.88 scrim with the corp tint
-// at about 28 % over it; the FULL tint goes on the edge, the scanlines and the bands (and the
+// at 15 % over it (measured on the concepts; see DECISIONS B1c-b); the FULL tint goes on the edge, the scanlines and the bands (and the
 // words, at 78 %, in the script).
 uniform float tint_share : hint_range(0.0, 1.0) = 0.78;
-uniform float fill_share : hint_range(0.0, 1.0) = 0.28;
+uniform float fill_share : hint_range(0.0, 1.0) = 0.15;
 uniform float glass_alpha : hint_range(0.0, 1.0) = 0.88;
 uniform float scan_px = 4.0;
 uniform float scan_strength : hint_range(0.0, 1.0) = 0.12;

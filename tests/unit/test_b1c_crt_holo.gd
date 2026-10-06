@@ -141,7 +141,7 @@ func test_the_holo_uniforms_are_the_reviews() -> void:
 	add_child_autofree(h)
 	var mat := h.get_child(1, true).material as ShaderMaterial
 	assert_almost_eq(float(mat.get_shader_parameter(&"tint_share")), 0.78, 0.0001, "corp tint at 78 % on the words and edge")
-	assert_almost_eq(float(mat.get_shader_parameter(&"fill_share")), 0.28, 0.0001, "the body: the tint at about 28 % over the dark glass")
+	assert_almost_eq(float(mat.get_shader_parameter(&"fill_share")), 0.15, 0.0001, "the body: the tint at 15 % over the dark glass (measured on round 44)")
 	assert_almost_eq(float(mat.get_shader_parameter(&"glass_alpha")), 0.88, 0.0001, "the body's dark glass at 0.88")
 	assert_string_contains(_src(HOLO), "vec3 e = vec3(er, eg, eb) * tint.rgb;", "the full tint on the edge")
 	assert_string_contains(_src(HOLO), "col = vec4(tint.rgb, scan_strength * line);", "the full tint on the scanlines")
@@ -155,7 +155,7 @@ func test_the_holo_uniforms_are_the_reviews() -> void:
 	assert_string_contains(_src(HOLO), "// the edge in three channels, split +-split_px horizontally (edge only)", "the split is on the edge only")
 	assert_almost_eq(Palette.HOLO_SCRIM.a, 0.88, 0.0001, "the scrim at 0.88")
 	assert_true(h.backing, "the 0.88 scrim right behind the plate by default")
-	for k in ["scan_strength : hint_range(0.0, 1.0) = 0.12", "band_count = 3.0", "band_seconds = 6.0", "tint_share : hint_range(0.0, 1.0) = 0.78", "fill_share : hint_range(0.0, 1.0) = 0.28", "glass_alpha : hint_range(0.0, 1.0) = 0.88"]:
+	for k in ["scan_strength : hint_range(0.0, 1.0) = 0.12", "band_count = 3.0", "band_seconds = 6.0", "tint_share : hint_range(0.0, 1.0) = 0.78", "fill_share : hint_range(0.0, 1.0) = 0.15", "glass_alpha : hint_range(0.0, 1.0) = 0.88"]:
 		assert_string_contains(_src(HOLO), k, "shader default %s" % k)
 
 
