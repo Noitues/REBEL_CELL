@@ -37,6 +37,36 @@ func use_city3d(on: bool, band: int) -> void:
 			city.refresh()
 	if _grid != null:
 		_grid.visible = not on
+## LOOT-04 (designer 2026-10-05: "use the title's blurred city"): the blurred 3D city
+## (BlurredCityBackdrop) a host shows behind some pages in place of the 2D city; null until
+## first shown. Only the netrun's loot and event pages ask for it; every other page and user
+## keeps this backdrop as it was.
+var blurred: BlurredCityBackdrop = null
+
+
+## LOOT-04: shows the blurred 3D city of `look` framed on `corp`'s HQ in place of the 2D city
+## (`on`) where the look's city quality tier takes it and a renderer is there, else (or `on`
+## false) the 2D city again. The blurred city is made once and covered while hidden (it stops
+## rendering); the 2D city's process is off while it is hidden. True when the blurred city shows.
+func show_blurred_city(on: bool, look: CityBackdropLook, corp: StringName) -> bool:
+	var want := on and BlurredCityBackdrop.takes(look, Settings.city_quality, CityView3D.can_render())
+	if want and blurred == null:
+		blurred = BlurredCityBackdrop.new(look, corp)
+		add_child(blurred)
+	if blurred != null:
+		blurred.set_shown(want)
+	rig.visible = not want
+	city.process_mode = Node.PROCESS_MODE_DISABLED if want else Node.PROCESS_MODE_INHERIT
+	if _grid != null:
+		_grid.visible = not want and not _city3d
+	return want
+
+
+## LOOT-04: true while the blurred 3D city shows in place of the 2D one.
+func on_blurred_city() -> bool:
+	return blurred != null and blurred.visible
+
+
 var floor_offset: float = 0.0
 var skyline_seed: int = 7
 var city: NeonCity

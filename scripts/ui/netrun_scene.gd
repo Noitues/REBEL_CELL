@@ -38,8 +38,9 @@ const LEAVE_ICON := 34.0
 ## ART-0 C (text scale 2.0): the least gap kept between LEAVE THE MAINFRAME and the REMOVE A
 ## CARD row's pieces it would otherwise cover (px).
 const LEAVE_GAP := 6.0
-## Loot stickers at text scale 1.0 and the most a row of them may grow (px).
-const LOOT_CARD := Vector2(170, 210)
+## Loot stickers at text scale 1.0 (the card face's 3:4, round 32 reward_screen_v2 at 720p; S-CARDFACE) and the
+## most a row of them may grow (px).
+const LOOT_CARD := Vector2(162, 216)
 const LOOT_ROW_MAX := 1150.0
 ## The least gap between loot stickers (px; their tilt's reach is added, ANIM-R2 E8).
 const LOOT_GAP := 14.0
@@ -134,6 +135,7 @@ func _ready() -> void:
 	# Subtitles sit in the top band, clear of every control (H20); combat docks its own.
 	Dialogue.dock_default()
 	Settings.hints_changed.connect(_relabel_route)
+	RunManager.run_abandoned.connect(_on_run_abandoned)  # ABANDON-QUIT: from either pause menu
 	# Capture variants (ANIM-6): --demo-set / --demo-speed tune a copy of the motion table.
 	MotionDemo.apply_args()
 	_build_ui()
@@ -884,6 +886,16 @@ func finish_run() -> void:
 	_show_start()
 
 
+## Abandon run (designer ruling 2026-10-05, GDD 4.5): the run ended as the operative's death
+## (RunManager.abandon_run, from this scene's pause menu or the fight's): the pause closes, the
+## run's report reads the events and the run's end page shows (FAILED - operative lost).
+func _on_run_abandoned(events: Array[Dictionary]) -> void:
+	if _settings_panel != null:
+		open_settings()
+	_report(events)
+	_show_current()
+
+
 func save_and_quit() -> void:
 	if RunManager.scene_change_pending():
 		return
@@ -958,6 +970,9 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	# ART-7 7w: the route page is the unified 3D city at the NETRUN band (GRID VIEW: the
 	# Grid's band); the other pages keep the 2D city until their own views move onto it.
 	use_route_city(screen == "route" and (s == null or s.run.kind != "boss" or _grid_zoomed))  # ART-8 8w: an HQ run draws its own compound city
+	# LOOT-04 (designer 2026-10-05): the loot and event pages sit on the title's blurred city.
+	background.show_blurred_city(BLURRED_CITY_SCREENS.has(screen), BLURRED_CITY_LOOK,
+		RunManager.campaign.corporation_id if RunManager.campaign != null else &"")
 	entering = screen != _shown_screen
 	_shown_screen = screen
 	# ART-9 4A: the Mainframe's facade stays only behind the Mainframe.
@@ -1073,6 +1088,10 @@ func _focus_now(page, first) -> void:
 const FIRST_FOCUS_META := &"first_focus"
 ## ANIM-R5 B2: subtitle lines the band holds on a screen (1 elsewhere).
 const SUBTITLE_LINES := {"event": 2, "run_end": 2}
+## LOOT-04 (designer 2026-10-05): the pages over the title's blurred 3D city (their own look:
+## centred darkening for a centred page); the Mainframe keeps its own facade (SHOP).
+const BLURRED_CITY_SCREENS: Array[String] = ["loot", "event"]
+const BLURRED_CITY_LOOK := preload("res://content/config/overlay_city_backdrop.tres")
 ## ANIM-R5 B8: the mid-run raid's playout, a screen of its own (its title, its lines).
 const RAID_PLAYOUT_SCREEN := "netrun_raid_playout"
 
@@ -2729,6 +2748,9 @@ func _show_reward() -> void:
 		var sticker := ZineCard.new(TextDb.t(res, "display_name"), cost, TextDb.t(res, "description"), i).scaled(ls)
 		if res is CardData:
 			sticker.with_card(res as CardData)
+		elif res is FirmwareData or res is DaemonData:
+			# S-CARDFACE: the one card face; its art panel shows the offer's own concept art
+			sticker.as_offer("firmware" if res is FirmwareData else "daemon", ("chip_%s" if res is FirmwareData else "daemon_%s") % id)
 		sticker.fit_whole = true  # ANIM-R1 M10: the whole text on the card
 		sticker.custom_minimum_size = LOOT_CARD * ls
 		sticker.hotkey = ""  # rewards are picked by click or focus, not number keys

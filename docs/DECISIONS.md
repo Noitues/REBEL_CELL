@@ -94,6 +94,229 @@ look of its own, the concept's numbers in config), not its files.
   `night` / `landmarks_night` keys, 3 lines), `scripts/city3d/city_config.gd` (the `backdrop_*` fields),
   `tools/design_lab/arena_lab.gd` (`--site=`; a quit fix when no `--scale` is given),
   `tools/art_pipeline/hq_run/hq_run_lab.gd` (`--raw=`), `tests/unit/test_hq_run_city.gd` (above).
+### 2026-10-05 — Parity fix — combat wheels (designer group ruling)
+
+Designer group ruling (2026-10-05): combat matches the concept; mechanics the rules lack stay
+listed, not built. Ids CMB-02, CMB-03, CMB-09, BOSS-04 (`docs/art_review/PARITY/GAPS.md`, sheet
+`fixes/WHEEL.jpg`: concept | before | after). Concepts: round 41 `combat_typical_v4` /
+`combat_worst_case_v4`, round 14 `corps_compare` / `preview_indicator` (tag `art-concepts-r43`).
+No asset is redrawn: the slice screens stay the baked art-pass atlases (`assets/wheel/screens`);
+what changed is how the disc composites them and the frame code ported from the round 14 recipe.
+
+- **CMB-02 saturated screens.** main's disc lacked the recipe's composite passes
+  (`make_combat.bloom`, `frames.add_glow`), so its screens read flat (measured p90 value of a lit
+  attack slice 0.35 vs the concept's 0.45-0.66). One tone step in `wheel_disc.gdshader` (`tone`)
+  stands in: saturation x1.4 away from the luma, then the part over 0.3 lifted x1.1
+  (`WheelKit.SCREEN_SAT / BLOOM_THRESH / BLOOM_GAIN`; `WheelKit.tone` mirrors it for the tests).
+  The read plate, scanlines, dim of the other slices (0.68, the recipe's) are kept.
+- **CMB-02 lit frame.** The player's outer bevel takes a wash of the class accent and the frame's
+  hairlines a glow (`PLAYER_FRAME_TINT` 0.62, `PLAYER_FRAME_GLOW` 0.8; corp frames glow 0.35 and
+  wear their rim instead of the wash).
+- **CMB-03 corp frame** (round 14 `d4corp.render` / `corp_rim`, ported into the disc): a corp
+  wheel's frame is R1 424 (the player's stays 414; `WheelKit.frame_radius`, `WheelView.frame_master`
+  adds the elite collar 14 and the threat ring 30); the frame bases and gloss are the recipe's
+  CORP_STYLE (Solace porcelain 0.78/0.80/0.70, gloss 1.1); `corp_rim` per corp (Meridian hazard
+  stripes + corrugation teeth, Solace capsule studs + glass glow ring, Halcyon colonnade + gold
+  halo, Orbital azimuth ticks + ring, Rebel_Cell broken segments with hex rivets, a fixed hash in
+  place of the recipe's seed 5); the elite collar moves beyond the frame as in the recipe (gold
+  rules, corp chevrons). Orbital's azimuth numbers (`000`..`330`) are not drawn: below the 4 px
+  ring-text floor at combat size (MIN_TEXT_PX). Elite crest plates on the collar not added (the
+  recipe's 26 px crests on an elite; the boss lugs stay) — small, listed for the next wheel pass.
+- **Phase 3 armour vs the rim.** The recipe bolts its armour outside the threat ring; main keeps it
+  on the bevel (the wheel never resizes between phases), so the corp rim is drawn over the plates
+  and the corp still reads in phase 3.
+- **BOSS-04 pins.** Needle 2, 3 ... of a multi-needle wheel read on `d4corp.pin` pins
+  (`WheelFace.pin`: tip in the slice, round value window at R_OUT + 20 in the channel, number tab),
+  only needle 1 wears the full (crowned) blade; rails are +-24 degrees on a multi-needle wheel
+  (`WheelFace.rail_half`, the recipe's). `WheelView.window_radius_of(index)` / `pointer_spot` follow
+  the pin's window. `blade_bounds` / `needle_floor` / `hp_layout` are unchanged (every needle is still
+  assumed a full blade there, so the FIX-REDS HP row keeps its place and its test). The lime is
+  Solace's corp hue (ART_BIBLE 2.4, the recipe's accent) and the reticle FOCUS: both kept.
+- **CMB-09 preview.** The landing slice is lit in its program colour (fill 0.24, glow 8 px,
+  dashes 3 px, round 14 `preview_indicator` A); the ghost blade's fill 0.22. The `LANDS HERE` /
+  `DRONE ENDS HERE` tags take the first of a few spots (past the reticle, then the ghost window's
+  spot, slid along the tangent) that stays on screen, off the frame, the target reticle's arcs, the
+  nudge buttons and the HP row (`CardPreviewOverlay.label_box` / `label_blockers`); before, the
+  reticle ran through the tag and at 1.6 the drone tag sat on the HP number.
+- **Kept:** preview == result (draw only; the ghost still comes from `ghost_rotation`), every motion
+  entry (spin, nudge, precision landings, screen loop: nothing in `ui_motion.tres` changed), reduce
+  effects (captured), semantic slice colours never pass a skin (PROTECT stays #5CE1FF on v2 /
+  cobalt / graphite, tested), a glyph per slice kind for greyscale (tested).
+- **Tests:** `tests/unit/test_parity_wheel.gd` (fast): families' toned screens apart (OKLab dE >=
+  0.06), program colours apart (>= 0.08), NULL darker than every lit kind and 4 of 5 families >= 1.5
+  WCAG contrast from it (TROJAN's dark art-pass screen is told by glyph and colour), the read block
+  >= 4.5 on every skin, the disc's tone / frame / rim uniforms, every corp's rim and frame radius,
+  the elite collar, pins and short rails, the preview tags clear of their blockers at 1.0 / 1.6 / 2.0.
+  No test dropped.
+- **Profile** (`profile_frames.gd`, `wheel_lab --case=worst`, 1920x1080 window, 8 other Godot
+  processes on the machine): GPU 0.56 ms, render CPU 0.77 ms a frame (budget: wheels + FX <= 4 ms);
+  mean frame 10.8 ms on the loaded machine (2A's quiet run: 3.8 ms).
+- **Files outside `scripts/ui/wheel/*`:** `shaders/wheel/wheel_disc.gdshader` (the disc the wheel
+  scripts drive) and `scripts/ui/wheel_view.gd` (`frame_master`, the pin call, `window_radius_of`,
+  the rail half: the smallest change). `palette.gd` / `palette_skins.gd` / `hud_wheel_layer.gd` /
+  `spinner_view.gd` unchanged (no slice token needed a new value: the concept's look comes from the
+  composite, the program colours already match ART_BIBLE 2.3).
+
+### 2026-10-05 — Art direction — ART-12 12p perf
+INTERIM (orchestrator: stop measuring while the parity work lands; the machine carried ~9 agents).
+Results and causes in `docs/art_review/ART-12/perf.md`.
+- **Lab:** `tools/visual_qa/perf_pack.tscn` (extends the review pack: its screen drivers, plus
+  `hq_run`, `hq_run_gate`, `combat_worst` / `_send` / `_fx` / `_bare` from arena_lab's worst
+  fixture, and probe screens run only when named). ONE windowed launch walks every screen at each
+  `--tiers` city quality tier; v-sync off (Settings.vsync false and the window's mode reset every
+  warm-up frame, as city_lab does); PERF lines (frame mean / p95 / max, GPU of the root viewport,
+  of every CityView3D and every live SubViewport, render CPU, draws), SPIKES (frames over 16.7 ms),
+  `--census` (redraws per CanvasItem).
+- **Wheels + FX over budget (12 ms on the worst fixture, budget 4) — fixed to 3.1 ms at rest:**
+  `WheelAttachments` redraws the sockets and the dock only when what they read changes; the card
+  preview's chase (its own signature) redraws the preview alone. `DroneDock._draw_aim` uses its
+  entry (it re-laid every drone once per drone). `CardPreviewOverlay._ghost_entries` keeps the
+  ghost drones' layout while the dock and the ghost hold. `WheelTelemetry` extends Node2D: a
+  Control redraws on every rotation change, so both rings redrew their whole text arc every frame
+  of every fight (no test checked its class; nothing else reads it as a Control).
+- **Campaign end:** the dossier's manila, the print stock and the post-it paper were `load()`ed
+  inside `_draw` and held by nothing, so Godot decoded the files again at every draw (the cover
+  redraws every frame while it swings: 43-56 ms frames). Each node now loads its paper once and
+  holds it.
+- **Still over (slices proposed in perf.md):** wheels + FX while landings play (SEND IT 4.9 ms on a
+  busy run; a whole wheel redraws ~2 ms for a landing tween: split the still drawing from the
+  landing layer); the campaign-lost lock -> dossier switch (one 640-870 ms frame under the CRT
+  collapse: build the dossier during the lock's reading hold).
+- **Deck tier** measured at 1920x1080 on this PC only; the real Steam Deck run is owed (open
+  question below). A clean run on a quiet machine after the parity work is owed (perf.md lists
+  what it covers).
+- Tests: `tests/unit/test_art12_perf.gd` (fast). No test dropped. Files outside a 12p area
+  (smallest changes): `scripts/ui/wheel/attach/wheel_attachments.gd`, `drone_dock.gd`,
+  `card_preview_overlay.gd`, `scripts/ui/wheel/wheel_telemetry.gd`,
+  `scripts/ui/campaign_end/audit_dossier.gd`, `dossier_photo.gd`, `post_it.gd`.
+
+### 2026-10-05 — Parity fix — one card face (designer group ruling)
+Designer group ruling (2026-10-05): netrun pages and combat match the concepts; mechanics the rules lack (G1–G16) stay
+listed, not built. Ids LOOT-01, SHOP-02, SHOP-03, SHOP-04, SHOP-05, SHOP-07, SHOP-08, DECK-01, DECK-02, CMB-04 (card
+part), HQ-08 (`docs/art_review/PARITY/GAPS.md`). Sheets: `docs/art_review/PARITY/fixes/CARDFACE*.jpg` (concept | before
+| after). Tests: `tests/unit/test_parity_cardface.gd` (fast tier).
+- **One face.** `ZineCard`'s drawn sticker (`_draw_sticker`: a flat fill by what the card does, a gloss band, a corner
+  chip mark and drawn pictogram arrows) is gone: every sticker card is drawn by `CardFace`, the art pass's own C-C card
+  exported by `tools/art/export_card_faces.py` from round 31 `r31lib.card_sticker` (asset parity; unchanged): the
+  hand, the loot sheet, the Mainframe's CARDS, the deck viewer, the card detail, the loadout's DECK tab (HQ-08: the same
+  `DeckView`), and every ghost and flying copy. `with_face_art()` / `face_art` are removed (no alias). The holo border,
+  pips and kind band are the face art's; the art glyph and pictograms are 1C's atlas glyphs. Concept references: round
+  41 `combat_typical_v4` (hand), round 32 `reward_screen_v2` (loot), round 34 `shop_v5` (shop).
+- **Type band (G16).** The band is drawn for the three kinds the face has (WHEEL / HACK / SYSTEM, by what the card does
+  first). A loot offer that is not a card (Firmware, Daemon) wears the SYSTEM face with its own word on the band
+  (FIRMWARE / DAEMON) and its own concept art (`MainframeArt` chip / cartridge, the round 34 export) in the art panel
+  (`ZineCard.as_offer`). A band word of its own per card (the concept's per-card types) is G16: listed, not built.
+- **Whole text (CardFace.text_fit).** The rules text is lettered in the face's body type (Plex Sans Condensed: it was
+  measured in mono and drawn in Plex). Layouts tried in turn, each stepping down to the card's floor before the next:
+  the generator's block (text_top 228, 13 px, line 1.3), the block closed up under the pictograms on the face's full
+  inner width (line 1.15, down to 272), then the pictogram row's room too (the art glyph still says what the card does).
+  A line that reaches the rarity pips keeps to their left. Loot (162 x 216, the face's 3:4: `LOOT_CARD` was 170 x 210,
+  which stretched the face), Mainframe (112 x 148 with the hanging tag), the deck viewer and the detail show every word of
+  every card in content at 1.0, 1.6 and 2.0 (floor 8 px, ANIM-R1 M10's). Mainframe cards: the tag's foot room is only
+  the tag's top and flap now (the face has no key hint at its foot; it kept the hand's 26 px).
+- **The hand (CMB-04 text).** At rest the hand keeps the 12 px floor (ART-2 2D audit P2) and its glyph and value
+  (`pictos_give_way = false`); a face of the hand's size holds one or two lines there (the hand shrinks under 1.0 to
+  fit beside SEND IT: one line in the 5-card hand of the review pack), so longer texts end in an ellipsis at rest. The
+  card the pointer grows (x1.36) shows every word: it letters at floor / 1.36 local px (12 on screen) and may take the
+  pictogram row. At 1.0 the two 92-character texts (Hot Patch, Overdrive) still need the tooltip / inspect even grown
+  (open question below); at 1.6 and 2.0 every card's grown face holds it all. The key hint moved from the face's foot
+  (over the text's last line) to a dark chip on the art panel's top right corner.
+- **Piles (CMB-04).** New `CardPiles`: DECK over DISCARD (one column, so the hand keeps its width), stacks with their
+  counts and words, left of the hand, at the cards' scale (the fight's draw and discard piles, set each time the hand
+  is built; the hand's scale keeps room for them; the pile card is the deal's pile mark size). Drawn procedurally:
+  the concept's piles are plain dark card backs and no card back was exported. The deal and discard flights keep their
+  spots (the hand row's ends, ANIM-R3 A7 / ANIM-R6 A17): moving them onto the piles is motion (open question below).
+- **DECK-01.** The viewer's row is filled: as many cards as fit at the text size (never under 4), grown to the grid's
+  width, centred (it left the right third empty); the cards fit their whole text.
+- **DECK-02.** The card detail is the build's (ported from art-pass 5355432, `InspectPopup.card_notes` /
+  `card_detail`): the face at twice the hand's size (every word on it) beside CARD NOTES (the band's kind in words, the
+  rarity and what the face shows for it, the keyword notes from the Codex: statuses, slice kinds, SPIN, NUDGE, FLIP,
+  RESPIN, SNAP, RAM, DRAW, EXHAUST); the notes never repeat the rules text (main's three lines did) and scroll past the
+  card's height; the window is centred on the screen; the card keeps room round it for its die-cut and curl (Close sat
+  on them). The M13 build's paper-stock rarity words became the v2 face's
+  (pips, holo die-cut).
+- **SHOP-02.** The Mainframe's cards are the face (pinned, their kraft tags hanging under them as 4A's).
+- **SHOP-03.** The stock wheel's wedges are the concept's own export and match in layout; their brightness is the
+  bake's (no change). The concept letters a tag's price bigger (about 16 px on main's 28 px tag, main: 13): tried, it
+  widens the bin's tag onto the wallet at 2.0 (4A's `test_card_tags_hang_under_the_cards_and_the_notes_cover_no_tag`),
+  whose place is the shop block's (`netrun_scene.gd`, S-OVERLAPS): kept at 13 px; proposed with SHOP-05's slice below
+  (`BuyButton.BUY_FONT` 16 and the wallet's place at 2.0 together).
+- **SHOP-04.** An item out of reach keeps the concept's red print tag and the padlock; the red pencil strike is gone
+  (struck through, the price read as "sold"). Chip and cartridge art, rarity colours and the info strip are 4A's
+  (exported); the concept's three chips vs main's two is the shop's stock (rules), not the look.
+- **SHOP-07 call.** The removal stays the RECYCLE BIN: round 34 `shop_v5` (LOCKED, later than round 32's
+  `removal_options`, where PURGE was "recommended") puts the bin on the board; its viewer's cards are the face now.
+- **Not done here, with the slice proposed (file owned elsewhere):** SHOP-05 (the concept's pink chevron sticker
+  beside LEAVE instead of the EXIT mark, and the bin's height) lives in `netrun_scene.gd`'s shop block, which S-OVERLAPS
+  is editing: proposed slice after it lands: export `shop2.leave_sticker()`'s arrow (round 34 scripts, unchanged) and
+  swap `IconMark.standalone(StatIcon.EXIT…)` for it. SHOP-08 (`UPGRADE · 100 CYCLES` on one line) lives in
+  `spinner_view.gd` (S-WHEEL): proposed: the action's DripButton reads the verb and the slot's price together
+  (`price_label` folded in).
+- Dropped tests: none. `test_art2_hud`'s floor check and `test_horizontal_pass24_screens`' parts check now read the
+  face's layout (`sticker_body_fit` / `sticker_parts` return CardFace's).
+- **Open questions (defaults built; also under "Open questions for the designer"):** (1) the hand at rest shows two
+  lines of rules text at most at 1.0 (12 px floor on a face of the hand's size; one line once the hand shrinks to fit);
+  a bigger hand card or a lower floor would show more; default: glyph + value + what fits at rest, every word on the
+  grown card. (2) Deal and discard flights to the new
+  piles (motion: the animation pass is paused until after M14).
+
+### 2026-10-05 — Designer ruling — abandon run, abandon campaign, quit
+The designer approved a new rule (2026-10-05): three exit paths, each a screen. Added to the GDD as **4.5 Leaving a
+Run or the Campaign** (a marked addition; no other GDD text changed). It answers the open questions "ART-10 4C: an
+in-run abandon run" and "ART-10 4C: hold-to-confirm on the abandon dialog's verb".
+- **Abandon run = the operative's death on the run.** `NetrunSession.abandon()` ends a fight in progress and calls
+  the death path itself (`_die`: `RunState.Outcome.DIED`, the operative not alive, its post freed, `deaths + 1`,
+  banked Schematics and assets kept, unbanked lost, Heat `death_heat_base + tier` + the ICE death modifier through
+  `HeatRules`, so ICE scaling, the cap and threshold raids apply as for any death). No new number. A
+  `run_abandoned` event comes first so the run's report says why. The profile counts an operative lost (the
+  existing run-outcome record); the campaign goes on at HQ. `abandon_preview()` abandons a copy of the run and
+  campaign and reports the costs (operative, Cycles, unbanked assets, cards / Firmware / Daemons gained this run,
+  Rank, the Heat change and the Heat after, Schematics and assets kept, raids queued): the dialog's numbers are the
+  rule's own (preview == result, tested). "Gained this run" = a multiset difference against the roster copy
+  (boost cards not counted).
+- **Abandon campaign** (`ExitRules`, pure core): `CampaignState.Outcome.ABANDONED` (a new outcome; `is_over`, so
+  every existing end path holds: HQ shows the end page, CONTINUE on it shows that page). **Calls:** (1) the profile
+  counts it as a lost campaign (`record_loss`; no win records, no ICE record); (2) the slot is kept and marked, as a
+  lost campaign's is (`slot_summary` state "abandoned"; the case file's stamp reads ABANDONED; the slot is freed by
+  DELETE as before) — simplest consistent with the GDD's loss path; (3) refused while a netrun runs (abandon the run
+  first; the HQ pause is the only entry); (4) the end page is the lost campaign's (the audit dossier, CASE CLOSED);
+  the ransom lock plays only for a breached home server (LOST), not for an abandon.
+- **Quit** saves the exact state: `RunManager.quit_game` already autosaved the campaign, the run (mid-fight
+  included: the combat dict carries its checkpoint and rewind history) and the RNG streams, and the title's BREACH
+  (Continue) resumes the run in the netrun scene or the campaign at HQ. No gap found in the rules' state: the round
+  trip is tested at every page a run reaches (map, a fight a turn in, loot, and event / shop / raid when the seed
+  reaches them) and at HQ. UI-only state (an open picker, the scroll) is not saved, as before.
+- **Dialogs** (`ExitDialogs`, kit/chrome): abandon run is 4C's AbandonDialog as round 33 draws it: `> CONFIRM //
+  ABANDON RUN`, CANNOT UNDO, "Abandon the run?", "<name> is lost for good, with everything unbanked:", the costs
+  CYCLES / CARDS ADDED / FIRMWARE / DAEMONS (round 33's four) plus ASSETS (unbanked) and RANK (what dies with the
+  operative), the HARM line "HEAT +N (operative death, tier T)", the GAIN line "Schematics already banked at a
+  Server Rack stay banked.", yellow CANCEL (default focus, "keep running [B]") and the baked pink BURN IT
+  ("abandon, lose <name> [hold A]"). Abandon campaign: the same family (`ABANDON CAMPAIGN`; RUNS / OPERATIVES /
+  SCHEMATICS / SITES / HEAT / ICE; HARM "It counts as a lost campaign."; GAIN "Your stats and achievements stay.";
+  BURN IT, the baked sticker). Quit stays main's ConfirmDialog (`> CONFIRM // QUIT`, not destructive) with its key
+  hints ("save and quit [A]" / "keep going [B]"; the keys ride as the stickers' key hints, so at big text, where
+  main's sticker line drops its words, "[A]" / "[B]" stay) and a body naming what BREACH resumes.
+- **Hold to confirm (the concept's rule, now built):** on the abandon dialogs the pad / keyboard confirm on BURN IT is
+  a 0.8 s hold (`dialog_hold_confirm` in ui_motion.tres, a HOLD read raw: never sped up, and reduce effects still
+  fills the ring); a lime ring (`HoldRing`, drawn: the concept draws a plain arc over the baked sticker) fills from
+  the top, clockwise; letting go or losing focus empties it; a mouse click confirms at once (the concept: "Mouse:
+  click"). The entry joins REQUIRED_IDS, the motion lab (`hold_confirm` demo on the real dialog) and the lab test's
+  HOLDS. **Call:** the title's DELETE SLOT confirm keeps its plain press (the ruling names BURN IT; a hold there is
+  a one-line `require_hold()` if wanted).
+- **Entry points (after S-PAUSE):** the pause menu's icon rows under Resume (Resume stays first): "Abandon run"
+  (StatIcon OPERATIVE) when a run is in progress, else "Abandon campaign" (StatIcon CAMPAIGNS) when a live campaign is
+  loaded, both above "Quit to desktop" and in HARM (words and icon, as the slots' DELETE marks the destructive verb).
+  **Calls:** the menu decides by the run's state (no HQ edit: the HQ is being redesigned): a run's end page in the
+  netrun scene therefore offers Abandon campaign too (no run is in progress then). BURN IT closes the menu and calls
+  RunManager; an abandoned run is shown by the netrun scene (`RunManager.run_abandoned`, which both its own pause and
+  the fight's pause reach), an abandoned campaign reloads the HQ scene, which opens on the campaign's end page.
+  "Save & quit to title" is unchanged. Review pack screens `pause_fight_abandon`, `pause_fight_abandon_hold`,
+  `hq_pause_abandon`, `hq_pause_quit`.
+- **Outside this area, smallest edits:** `title_scene.gd` STATE_WORDS gains "abandoned"; `case_file_card.gd`
+  `state_word` gains ABANDONED; `netrun_scene.gd` shows the run's end on `run_abandoned`; STYLE_GUIDE 5.5 lists the
+  new hold.
+- Tests: `tests/unit/test_abandon_quit.gd`.
+
 ### 2026-10-05 — Parity fix — new campaign page (designer decisions)
 Designer rulings NEWC-01..04 (2026-10-05, parity audit `docs/art_review/PARITY/GAPS.md`, branch
 worktree-agent-a99b7a512f1562917): the art pass build was never brought to the v2 concepts, so the build's layout in
@@ -190,6 +413,41 @@ Designer (Noitues), 2026-10-05 evening: "I want my main to look just like art pa
   before any fix. This replaces "the art pass design is correct, follow it without asking" for parity work. Bug fixes
   that are not a look choice (test reds, overlaps) still go ahead.
 
+### 2026-10-05 — Parity fix — campaign slots: every LOAD a sticker (designer ruling)
+Designer ruling 2026-10-05 (SLOTS c): every used slot's LOAD is the pink sticker, not only the newest campaign's (the
+other LOADs were cyan terminal chips). The newest campaign's LOAD (`CaseFileCard.primary`) keeps the page's first focus.
+Each used card now has two sticker verbs, LOAD and DELETE, with the "Can't Undo" pencil between them; nothing else
+changed (sizes, focus links, the 2.0 tooltip). Checked with three used slots at 1.0 / 1.6 / 2.0 (one review_pack
+launch): the row of three cards fits at 1.0, one card a row with the view on the focused card at 1.6 and 2.0. Test:
+`test_load_and_delete_are_stickers_and_delete_says_cant_undo_in_pencil` now saves three slots and checks every card's
+LOAD and DELETE are stickers and the newest campaign's LOAD has the first focus. Sheet
+`docs/art_review/PARITY/fixes/SLOTS_c.jpg` (audit build | main before, then 3 used slots at 1.0 / 1.6 / 2.0).
+
+### 2026-10-05 — Parity fix — campaign slots follow-up (designer ruling)
+Designer follow-up 2026-10-05 on the slots page (answers the two SLOTS-01/02 open questions). Sheet
+`docs/art_review/PARITY/fixes/SLOTS_b.jpg` (audit build | main before, then 1, 2, 3 used slots at 1.0; 3 at 1.6; 1 and 3 at 2.0).
+- **Manila stays**, and every used folder has a sliver of paper poking out of its top, right of the tab (a document
+  filed inside): the art pass's print stock (`DossierPhoto.STOCK_ART`, round 21 `sheet`), drawn behind the folder's
+  front, tilted 1.2 degrees, a soft ink edge. No redraw. Empty slots (dashed outlines) have none.
+- **Two sticker verbs on this page (ruling overrides v2 §2.10's "one sticker verb per screen" here only):** LOAD on the
+  newest campaign stays the pink sticker and the first focus (other LOADs stay terminal chips: "LOAD the pink verb as
+  now"); **DELETE is a sticker on every used slot**: 4C's baked `dialog_delete` (abandon.py's art, the confirm's own),
+  shown at about LOAD's size (`DELETE_ART_SCALE` 0.65 of its game size, growing with the text only to 1.15x so a row
+  still fits at 1.6). `VerbSticker` gains `art_scale` / `set_art_scale` (outside the area, smallest change: the baked
+  art was only shown at the board size). A translated DELETE falls back to the kit's pink sticker, as 4C's dialog does.
+- **"Can't Undo" in grease pencil** (`PencilNote`, red `PENCIL_THREAT`, 1B's wax; translated once, the words stacked
+  on two lines at their first space) sits in the room between LOAD and DELETE with an arrow to DELETE. The arrow's
+  head stops short of the sticker by the wax's reach so no UI is drawn over pencil (PencilLint: 0 violations, tested).
+  **At 2.0** a row has no room for it (one card a row, the card taller than the view): the pencil is dropped and
+  DELETE's tooltip says "(Can't Undo)" (`PENCIL_UP_TO` 1.6). The note's lettering stays at 1.0 size (a bigger note made
+  the card taller than the view at 1.6). The "cannot undo" chip line is gone with the chip.
+- Focus order is unchanged (the linker reads each card's actions: LOAD, DELETE; the pencil is not a control).
+- **Tests** (`test_art10_menus.gd`): `test_load_is_the_one_sticker_verb_and_delete_a_harm_chip_that_asks` becomes
+  `test_load_and_delete_are_stickers_and_delete_says_cant_undo_in_pencil` (one sticker LOAD, DELETE the baked
+  sticker at LOAD's size, the red note and its arrow pointing at DELETE without touching it, PencilLint clean, the
+  print stock asset); `test_slots_fit_and_focus_reaches_every_action_at_every_text_scale` checks the note clear of
+  LOAD and DELETE up to 1.6 and the tooltip at 2.0.
+
 ### 2026-10-05 — Parity fix — title spacing and campaign slots (designer decisions)
 Designer decisions 2026-10-05 on audit items TITLE-02 and SLOTS-01..04 (`docs/art_review/PARITY/GAPS.md`): the title
 follows concept round 33 (`round33_ui_chrome/title_screen.png`, keeping main's SIMULATE); the campaign slots take the
@@ -249,6 +507,72 @@ M13 art-pass build's layout and content, reworked in the locked v2 concept langu
   `test_slots_fit_and_focus_reaches_every_action_at_every_text_scale` (1, 2, 3 used slots at 1.0 / 1.6 / 2.0),
   `test_the_slots_panel_wraps_its_cards_then_scrolls_past_its_room`. No test dropped.
 
+### 2026-10-05 — Parity fix — pause menu as stickers (designer layout)
+Designer layout 2026-10-05, supersedes the icon rows of "Parity fix — pause menu" and options A/B/C of
+`docs/art_review/PARITY/fixes/pause_layouts/` (mockups kept). Files: `scripts/ui/kit/pause_menu.gd`,
+`scripts/ui/kit/chrome/pencil_words.gd` (new `color` and `step`), `tools/visual_qa/review_pack.gd` (the fight-quit screen
+calls `confirm_quit`, the stickers have no text).
+- **Layout.** `Columns`: LEFT = RESUME, OPTIONS, CODEX; RIGHT = ABANDON CAMPAIGN, QUIT TO MAIN MENU, QUIT TO DESKTOP; the
+  code field with copy below. Focus order: left top-down, right top-down, then the code; Left / Right cross to the same
+  row of the other column (explicit neighbours). **"Save & quit to title" is now "Quit to Main Menu"**: it saves and
+  returns to the title, which offers CONTINUE (same code path; the old string is gone, no migration).
+- **ABANDON RUN reading.** The top right slot is ABANDON CAMPAIGN at HQ (a live campaign, no run) and **ABANDON RUN** in a
+  run: same place, same rules, dialogs and hold-to-confirm BURN IT as the merged ExitDialogs (GDD 4.5). With no
+  campaign the slot is simply absent and the two quits move up.
+- **Stickers.** Every row is the kit's `VinylSticker` through `HoloSticker.word` (no new drawing code, the words baked by
+  the kit at run time and translated), always in its role colour, never grey: RESUME `Fill.PINK` (the one primary),
+  ABANDON `Fill.RED` (harm), OPTIONS `Fill.YELLOW`, CODEX and QUIT TO MAIN MENU `Fill.WHITE`, QUIT TO DESKTOP
+  `Fill.HOLO` (the foil; my call: the calm set needed a fourth distinct non-harm colour and INK read black on black).
+  **Selection** = the kit's HOVER state (lift, curl, the `sticker_gloss_sweep`), looping while the sticker has focus
+  (`ambient_sweep`), no lime bracket or halo. The kit's rainbow is the HOLO fill's foil only; the gloss sweep of the other
+  fills is white. Applying HOLO to the focused sticker would change its colour (and make the harm sticker rainbow), so I did
+  not: **open question for the designer** (rainbow on focus for every sticker, yes / no).
+- **Sizes.** Lettering 34 px (Resume) / 22 px (rows) at text 1.0; stickers follow the text size up to 1.5x
+  (`STICKER_SCALE_MAX`, as `VerbSticker.SCALE_MAX`) so the two columns fit the 760 px menu at 2.0.
+- **Notes.** `PencilWords` (the kit's grease pencil, Permanent Marker, drawn so it translates): "Down with the Oligarchy!"
+  (yellow, PENCIL_PLAN) under RESUME's key hint, "No Going Back" (red, PENCIL_THREAT) under the abandon sticker, "Come
+  Back Soon" (yellow) under QUIT TO DESKTOP, each tilted a little and always below its sticker, never over a word.
+  **They are dropped (all together) when the menu would not fit with them, in height or in width: at text 2.0 they go**
+  (the left column's note alone is 455 px there); at 1.6 they stay.
+- **`[Esc]`** is a pink mono label right under RESUME (the key hint by device, `Settings.hint`; with a pad it names the pad's
+  button). `resume_button` is a `HoloSticker` (no `text`); `resume_hint.text` holds the hint.
+- **Strings (once):** `Quit to Main Menu`, `Down with the Oligarchy!`, `No Going Back`, `Come Back Soon` (re-exported).
+- **Tests.** `test_parity_pause`: columns and order, role colours (one pink, abandon red, never grey, only the focused
+  one lifted), ABANDON RUN in the same slot, focus order and Left/Right neighbours, the notes (words, ink, below their
+  sticker), fit at 1.0 / 1.6 / 2.0 (every sticker inside the menu, notes all or none). `test_abandon_quit`: the pause rows
+  now read the stickers (top right slot, `Fill.RED`). `test_horizontal_pass20_screens`: the key hint label. Dropped:
+  none. The MenuItem motion (`MenuMotion`) no longer attaches to the pause menu (its lines are stickers with their own
+  motion); the `menu_*` motion entries stay (the title menu uses them).
+
+### 2026-10-05 — Parity fix — pause menu (designer decisions)
+Designer decisions 2026-10-05, audit items PAUSE-01..03 (P1/P2/P3, `docs/art_review/PARITY/GAPS.md` "Pause menus"); PAUSE-04
+unchanged (abandon and quit are different dialogs; `confirm_dialog.gd` untouched). Files: `scripts/ui/kit/pause_menu.gd`.
+- **PAUSE-01 / 03: blur and darken.** The menu's click-eating `Backdrop` is a `GlassScrim` now (it was a flat 0.35 black
+  `ColorRect`): the page behind (HQ, route, fight, and the fight's turn banner above the panel) is blurred by
+  `Palette.SCRIM_BLUR_PX` and dimmed by `Palette.SCRIM`, as every other modal; high contrast makes it opaque, as theirs.
+  `glass_scrim.gd` unchanged. **No PAUSED sticker** (removed with its consts); the terminal header keeps its `PAUSED` title
+  word as a window title. The raid playout plays on under an open pause menu (`MotionSkip`/`raid_playout_panel`), so no
+  raid is ever the paused page and nothing says PAUSED over one. No PAUSED note on confirm dialogs (none existed).
+- **PAUSE-02: the build's rows, in v2.** Ported by hand from `art-m13-final:scripts/ui/kit/pause_menu.gd`. `Resume [Esc]`
+  (the hint follows the device; `VerbSticker.set_label`) is the first row, the one pink `VerbSticker`, focused on open.
+  Options / Codex / Save & quit / Quit to desktop keep the terminal `MenuItem` lines (menu motion attached to that
+  `Rows` box, not to the sticker) with an icon in the chevron's place (`IconMark` + `StatIcon.SETTINGS / CODEX / SAVE /
+  QUIT`, the art pass's own icon set that main already carries, reused as is). The campaign code is a `CodeField`
+  (`scripts/ui/kit/code_field.gd`, ported from the same tag: a read-only mono `LineEdit` with a copy button, the button on
+  the v2 `TerminalButton` variation instead of the art pass's tertiary) under a caption; the field keeps the name
+  `SeedLine`. The copy icon is `StatIcon.COPY`, ported from the same tag (drawn with main's `_line` helper).
+  **Icon source:** the 1C atlas (`glyph_table.tres`) has game pictos only (spin, nudge, hp ...), no settings / codex /
+  save / quit / copy glyph, so the art pass's StatIcon kinds (the set its own build used on these rows) are the "reuse" and
+  nothing was redrawn except COPY's two strokes carried over from the same tag.
+- **Test seam:** `CodeField.clipboard_writer` (a Callable, unset in the game) takes the copied text in place of
+  `DisplayServer.clipboard_set`, because a headless display server has no clipboard.
+- **Strings:** `Copy the campaign code`, `Campaign code (share it: it starts this campaign)`, `Copy` (re-exported once).
+  The one-line `PauseMenu.code_line()` stays for the HQ radio's tooltip.
+- **Tests:** new `tests/unit/test_parity_pause.gd` (scrim over HQ, route, route fight and a lone fight; no sticker; Resume
+  first, pink, focused, icons on the rows; the copy button copies the code; fits at text scale 1.0 / 1.6 / 2.0). Changed:
+  `test_art10_menus` (the pause test pinned the PAUSED sticker: now asserts there is none), `test_horizontal_pass24_screens`
+  (the seed line is a `CodeField`, read by `value`). Dropped: none.
+
 ### 2026-10-05 — Parity fix — TITLE-01 title backdrop (designer decision)
 Designer decision 2026-10-05: the title follows concept round 33 (`round33_ui_chrome/title_screen.png` / `.gif`,
 art-concepts-r43). Audit item TITLE-01 (P1, `docs/art_review/PARITY/GAPS.md`): main's title drew the 2D NeonCity
@@ -292,6 +616,79 @@ line-art city, unblurred and saturated, under a flat 0.58 dim.
   effects; tier 0 fallback). Remaining difference from the concept: its city (round 26's 2D render) shows more
   saturated pink street light and a little more haze than the 3D city's night grade; the framing, blur and darkening
   match. Changing the city's grade would change the Grid too, so it is left for the designer.
+
+### 2026-10-05 — Parity fix — TITLE-01b grade and LOOT-04 (designer decision)
+Designer answers 2026-10-05 to the TITLE-01 questions: (1) keep the last-played corp's HQ (as built); (2) the backdrop
+must look like concept 33: its own colour grade in its CityBackdropLook, not the shared city grade (the Grid is
+unchanged); (3) LOOT-04 "use the title's blurred city" on the loot, event and shop overlays.
+- **The backdrop's own grade** (`CityBackdropLook.grade_saturation`, `grade_gain`, `grade_lift`, `haze_out_of_focus`;
+  `city_tilt_shift.gdshader`): saturate from the Rec. 709 luma, times a gain, plus a haze lift that grows where the
+  view is blurred (lift * (1 + h * (1 - focus))), before the darkening. The city's own post (`CityConfig` grade, haze,
+  ramp) is never touched (tested). Tuned against round 33 `title_screen.png`: a backdrop-only capture with the grade
+  neutral, both images un-darkened by the shared field, then a search matching the right half's channel means,
+  luminance spread and chroma in focus and out of focus: **saturation 1.2, gain 0.765, lift (0.04, 0.03, 0),
+  haze out of focus 3.0** (pink haze, no blue lift). After it the right half's means are within 0.02–0.03 of the
+  concept's per channel (was 0.06 bluer). What still differs is content, not grade: the concept's 2D render has more
+  tiny saturated point lights (bokeh) in its blurred top.
+- **LOOT-04:** `WireframeBackground.show_blurred_city(on, look, corp)` (the net backdrop's twin of
+  `CyberdeckBackground.use_blurred_city`; the same BlurredCityBackdrop, made once, covered while hidden so it stops
+  rendering; the 2D city hidden with its process off). `netrun_scene.gd` asks for it per page (two lines + two
+  constants): `BLURRED_CITY_SCREENS` = loot and event, with their own look `content/config/overlay_city_backdrop.tres`
+  (the title's grade and tiers; a centred page: no menu-side darkening, a centred vignette 0.45, gain 0.62, the focus
+  band at 0.62, the campaign corp's HQ at (0.82, 0.7)). Tier 0 / headless keep the 2D net city. The event's CAM feed
+  copies whatever city is behind it (now the blurred one).
+- **The shop:** the Mainframe page's baked facade (MainframeFacade, SHOP concept round 34 `shop_v5`) hides the city
+  whole, so a blurred city behind it would never show and still cost its render: the shop keeps its facade, no city
+  behind it (confirmed by the designer in round 3, "a waste of cycles"; question closed).
+- **Other users unchanged:** only the title calls `use_blurred_city` and only the netrun scene `show_blurred_city`
+  (tested by scanning scripts/tools/scenes); the HQ, combat, labs and every other netrun page keep their backdrop.
+- **Measured** (windowed, 1920x1080, v-sync off; the machine was shared with other agents' runs, so frame times were
+  noisier than the first pass): title tier 2 frame 6.80 ms avg, backdrop city GPU 2.49 ms; tier 1 5.64 ms, city 1.92 ms;
+  loot tier 2 6.33 ms, city 2.51 ms. City GPU under the 8 ms budget everywhere.
+- **Tests** (`test_parity_title01_backdrop.gd`): `test_loot_and_event_ask_for_the_blurred_city_and_nothing_else_does`,
+  `test_the_backdrop_grade_is_its_own` (the GDScript `shown` equals the shader's maths; the backdrop never writes the
+  city's grade); the legibility test now reads `worst_behind` (white through the grade and darkening).
+- **Review:** `docs/art_review/PARITY/fixes/TITLE-01b_LOOT-04.jpg` (concept | before | after for title, loot, event,
+  shop). GAPS LOOT-04: "Decision: use the title's blurred city (designer 2026-10-05)".
+- Files outside my area (smallest change): `scripts/ui/netrun_scene.gd` (the per-page call and its constants),
+  `scripts/ui/kit/wireframe_background.gd` (the hook), `docs/art_review/PARITY/GAPS.md` (LOOT-04's decision).
+
+### 2026-10-05 — Parity fix — TITLE-01c lively city, less haze, lighter overlays (designer decision)
+Designer feedback round 3 (2026-10-05): (1) the title is a little too foggy: less haze, keep the pinker grade; (2) the
+concept's difference is the LIVELY city: the highways with running traffic (ART_BIBLE v2 §4.2 sky lanes v4; refs
+round 26 `city_ambient_night_v4.gif`, round 24 `motion_layers.png`, round 33 `title_screen.gif`); (3) loot and event:
+less blur, a little brighter; (4) the shop keeps its facade with no city behind it (a waste of cycles): **closed**,
+built that way since TITLE-01b.
+- **What main's city motion draws vs v4:** 5c already ported round 26 `roads.py` — `CitySkyLanes` lays all sixteen
+  road shapes (A's double deck, B, C with its flyovers and 1.75-turn spiral, F's cloverleaf of four 270-degree loops,
+  the D / E four-level stack) on the busiest avenues, with v4's cars (head dot + lane-colour streak, dark body,
+  under-glow, faint guide dots, 14–20 gaps per loop, six seeded lane colours) and the street traffic. So nothing to
+  port. Two things hid them on the backdrop: at the backdrop's ortho (300 BU) the FAR cars are ~4 px dots spaced
+  16 BU apart, and the 5 px tilt-shift averaged them into the haze (the concept's render keeps its lights as bright
+  out-of-focus blobs).
+- **The backdrop's own lively motion** (`CityBackdropLook.traffic_density` 2.0, `traffic_light_scale` 1.6):
+  `BlurredCityBackdrop.motion_config` hands its CityViewMotion a **copy** of the shipped CityMotionConfigData with the
+  sky-lane and street car gaps divided by the density and the gaps per loop multiplied by it (same speed), and the head
+  dots, lines and streaks scaled. The loaded resource and the Grid / raid / netrun motion are unchanged (tested); I did
+  not change the shared counts, because the Grid's density is its own reviewed look.
+- **Lights through the blur** (my call, logged): a bokeh-style "kept light" in the tilt-shift shader rather than a
+  second traffic pass after the blur (that would need a second 3D render of the traffic layers with depth against the
+  buildings). Where the view is blurred, the brightest inner-ring tap (read half way down the blur's mip chain, so it
+  is a soft glow, not a sharp copy) above `light_threshold` 0.55 is added back at `light_keep` 0.8. Car streaks, sky
+  lane lights and lit windows stay readable as glowing streaks out of focus, as in round 33; the in-focus band is
+  sharp anyway. `CityBackdropLook.shown` / `worst_behind` include it (the contrast tests read the brightest case).
+- **Less fog:** `haze_out_of_focus` 3.0 -> 1.8 (gain, lift and saturation kept: the pink grade stays).
+- **Loot / event** (`overlay_city_backdrop.tres`): blur 5 -> 3 px, gain 0.62 -> 0.74; the event's terminal words over
+  the worst city behind the page still reach 4.5:1 (new test).
+- **Measured** (windowed, 1920x1080, v-sync off; shared machine): title tier 2 4.40–5.13 ms a frame, backdrop city GPU
+  2.42–2.55 ms; tier 1 4.23 ms, city 2.05 ms; loot tier 2 4.52 ms, city 2.62 ms. One run had a single 487 ms hitch at
+  tier 2 (a one-off: two re-runs peaked at 25.6 and 15.8 ms). Under the 8 ms city budget.
+- **Tests** (`test_parity_title01_backdrop.gd`): `test_the_backdrop_city_is_lively_and_the_grids_motion_is_untouched`,
+  `test_the_overlay_pages_read_over_their_brighter_city`; the grade test includes the kept light. City motion tests
+  (`test_city_motion.gd`, `test_city3d_model.gd`, `test_city3d_grid.gd`) pass unchanged.
+- **Review:** `docs/art_review/PARITY/fixes/TITLE-01c.jpg` (round 33 gif frames | the title's frames 80 ms apart; v4 gif
+  | the loot page's frames; event, shop, reduce effects, tier 0; right-half details). The capture tool gained
+  `--strip=N` (frames 80 ms apart) and `--raw` (the city without the tilt-shift, for diagnosis).
 
 ### 2026-10-05 — Art direction — ART-3 6w raid on the city
 ART-3 wave 2b, ART-6 on the unified city (ART_BIBLE v2 §4.1, §4.8, Appendix C #13, plan G10; refs round 40
@@ -8521,19 +8918,27 @@ and annotated in the GDD where it changes a rule.
   and raid pages draw the same texture and may show the city darker than its render. Proposed slice: measure each
   view's frame against its `get_texture().get_image()` and, where they differ, decode in that view (designer to rule
   whether the Grid's current darker look is the intended one).
+- **ART-12 12p Steam Deck run (owed, 2026-10-05):** no Steam Deck was available. The Deck tier
+  (`city_quality` 1) was measured on the dev PC only (interim, under load; `docs/art_review/ART-12/perf.md`).
+  A real Deck run of `tools/visual_qa/perf_pack.tscn --tiers=1 --size=1280x800` is owed when the
+  designer has a Deck; scaling from this PC suggested ~10-12 ms a frame there (5e).
+- **Parity fix S-CARDFACE (2026-10-05, default implemented, see "Parity fix — one card face"):** (1) the combat hand
+  at 1.0 holds one or two lines of rules text at rest (the 12 px floor on a 112 x 148 face); the grown card shows every word
+  (all but Hot Patch and Overdrive at 1.0, which need the tooltip / inspect). Keep, or a bigger hand card / a lower
+  floor at rest? (2) The deal and discard flights still start and land at the hand row's ends; fly them to the new DECK
+  and DISCARD piles (motion, after the paused animation pass)? (3) SHOP-07: the RECYCLE BIN (round 34 shop_v5, locked)
+  kept over round 32's recommended PURGE key: confirm.
 - **Parity fix SLOTS-01/02 (2026-10-05, built, see "Parity fix — title spacing and campaign slots"):** (1) the used
   slot is a manila case folder on corp paper (v2: the corporation's file) where the build had white paper: keep, or
   white? (2) LOAD on the newest campaign is the page's one pink sticker and DELETE a HARM terminal chip: or should
   DELETE carry the pink DELETE sticker as the confirm does (that makes a second sticker verb on the page)?
+
+- **Parity fix SLOTS-01/02:** answered by the designer 2026-10-05 (see "Parity fix — campaign slots follow-up"):
+  manila folders stay; DELETE is a sticker too (two sticker verbs on this page).
 - **Parity NEWC (2026-10-05, default implemented, see "Parity fix — new campaign page"):** (1) a locked REBEL_CELL
   shows as a fifth, CLASSIFIED tile (no name, no crest, "OPENS AT ICE 10 EVERYWHERE") so the Target row has its five
   tiles without a spoiler; the build hid it until unlocked. Keep the classified tile? (2) The pickers start on the
   game's defaults (Solace, standard home server, Breaker) rather than the first choice by id: keep?
-- **Parity fix TITLE-01 (2026-10-05, built, see "Parity fix — TITLE-01 title backdrop"):** (1) the title's HQ is the
-  last-played campaign's target, else Halcyon (the concept's): keep, or always Halcyon? (2) the 3D city's night grade
-  is less pink-saturated than round 33's 2D render: leave it (it is the Grid's grade too) or give the backdrop look its
-  own grade? (3) LOOT-04: should the loot / event / shop overlays take the same blurred city (one call with their own
-  `CityBackdropLook`)?
 - **ART-3 6w raid on the city (2026-10-05, defaults built, see "Art direction — ART-3 6w raid on the city"):**
   (1) the raid's widest zoom is ortho 640 (the bible's round 39 clamp 220-380 no longer holds the x2 spread
   network on the setup's map part): keep, or shrink the network's spread for the raid? (2) the sockets float over
@@ -8581,6 +8986,8 @@ and annotated in the GDD where it changes a rule.
 ### 2026-10-05 — ART-10 4C: hold-to-confirm on the abandon dialog's verb
 ART_BIBLE §4.13 calls the pad's 0.8 s hold on the committing verb (BURN IT) a proposal: not built
 (A presses it like any button). Default: no hold. Build it if the designer wants it.
+**Answered (designer ruling 2026-10-05):** built on the abandon dialogs' BURN IT (0.8 s, `dialog_hold_confirm`); see
+"Designer ruling — abandon run, abandon campaign, quit".
 
 ### 2026-10-05 — ART-10 4C: an in-run "abandon run" (the dialog's own subject)
 The round 33 abandon dialog asks "Abandon the run?" (operative lost with everything unbanked, Heat
@@ -8588,6 +8995,8 @@ The round 33 abandon dialog asks "Abandon the run?" (operative lost with everyth
 or completion), so it is a mechanic and is not built. Default: the dialog (`AbandonDialog`, with
 `dialog_burn_it` baked) serves the title's delete slot. If the designer wants an abandon-run line in
 the netrun pause menu, its rule would be the death rule (GDD 4.2) and the dialog takes its costs.
+**Answered (designer ruling 2026-10-05):** built (GDD 4.5): abandon run is the death rule, plus abandon campaign and
+quit; see "Designer ruling — abandon run, abandon campaign, quit".
 
 ### 2026-10-05 — ART-10 4C: the HQ dossier on corp paper and JACK IN as a vinyl sticker
 The crew dossier keeps its paper card with Courier Prime (1B's CorpPaperPanel would need its orders
@@ -8913,3 +9322,15 @@ _(Claude Code: add questions here instead of guessing on design.)_
 - Still open: **ICE levels 10, 15 and 20** have no listed change; `REPAIR_COST_PCT = 25`
   (ICE 13) and `SEIZED_RAID_STRENGTH_PCT = 25` (ICE 14) are placeholders ("when in doubt,
   up elite and boss numbers" applied); MAJOR-threshold RaidData arrives in M3.
+
+## FIX-BAKE (M14) — the city bake teardown error
+- Symptom: `city_bake_cache.gd:476 submit_chunk on a previously freed instance` (and 17 leaked
+  CanvasItem RIDs) at quit of windowed review_pack / capture_pack runs; reproduced with
+  `capture_pack.py --screens title,hq,grid,route,loot,event,raid_setup,combat_start,mainframe`.
+- Cause: the bake coroutine only checked `_live` after its awaits. When the tree went at quit,
+  the holder's viewport and the painter inside it were freed with it while the record was still
+  in `_live` (Fx's `shutdown()` had not stopped it), so the coroutine resumed on a freed painter.
+- Fix: `CityBakeCache._abandoned(key, rec)` after every await in `_bake`: besides the stopped
+  check it ends the bake when the painter or viewport is freed (record dropped, slot given back,
+  queue pumped). `NeonCity` frees its submitted chunk canvas items on PREDELETE (the leaked
+  RIDs). No change to how the city looks. Test: `tests/unit/test_fix_bake.gd` (fast tier).

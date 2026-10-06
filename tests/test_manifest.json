@@ -157,6 +157,10 @@
 			"seconds": 1.4,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_fix_bake.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_bake_crash.gd": {
 			"seconds": 5.8,
 			"tier": "full"
@@ -525,6 +529,10 @@
 			"seconds": 2.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art12_perf.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art12b_skin_chrome.gd": {
 			"seconds": 4.0,
 			"tier": "fast"
@@ -605,6 +613,10 @@
 			"seconds": 12.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_abandon_quit.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art7_netrun_city.gd": {
 			"seconds": 15.0,
 			"tier": "fast"
@@ -625,11 +637,23 @@
 			"seconds": 6.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_parity_wheel.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_parity_title01_backdrop.gd": {
 			"seconds": 4.0,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_parity_arena_backdrop.gd": {
+			"seconds": 6.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_parity_cardface.gd": {
+			"seconds": 12.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_parity_pause.gd": {
 			"seconds": 6.0,
 			"tier": "fast"
 		}

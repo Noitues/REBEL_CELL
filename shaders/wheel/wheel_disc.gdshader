@@ -18,7 +18,6 @@ const float BW = 8.5;
 const float R_LIP = 356.0;
 const float RCH0 = 368.0;
 const float RCH1 = 404.0;
-const float R1 = 414.0;
 const float RING0 = 100.0;
 const float RING1 = 127.0;
 
@@ -26,8 +25,23 @@ const float RING1 = 127.0;
 // `theme` (0 player, 1 meridian, 2 solace, 3 halcyon, 4 orbital, 5 rebel_cell). Not UI tokens: material.
 const vec3 SLICE_BEZEL[6] = vec3[6](vec3(0.085, 0.08, 0.11), vec3(0.17, 0.115, 0.075), vec3(0.22, 0.24, 0.18),
 	vec3(0.16, 0.09, 0.24), vec3(0.20, 0.22, 0.28), vec3(0.11, 0.04, 0.05));
-const vec3 FRAME_BASE[6] = vec3[6](vec3(0.16, 0.15, 0.19), vec3(0.36, 0.21, 0.09), vec3(0.62, 0.66, 0.64),
-	vec3(0.30, 0.18, 0.44), vec3(0.47, 0.55, 0.59), vec3(0.20, 0.05, 0.06));
+// Parity S-WHEEL (CMB-03): the frame bases of the locked corp frame (round 14 d4corp.CORP_STYLE; the
+// player's frames._d4 steel), and each kit's gloss (d4corp.render: Solace's porcelain 1.1).
+const vec3 FRAME_BASE[6] = vec3[6](vec3(0.16, 0.15, 0.19), vec3(0.40, 0.22, 0.08), vec3(0.78, 0.80, 0.70),
+	vec3(0.30, 0.15, 0.46), vec3(0.62, 0.68, 0.72), vec3(0.16, 0.035, 0.045));
+const float GLOSS[6] = float[6](0.8, 0.8, 1.1, 0.8, 0.8, 0.8);
+// d4corp.corp_rim material: Meridian's dark hazard stripe and its corrugation teeth, Solace's capsule
+// stud outline, Rebel_Cell's segment fill; Halcyon / Orbital paper (motifs.ACCENT paper).
+const vec3 HAZARD_DARK = vec3(0.086, 0.063, 0.039);
+const vec3 TOOTH = vec3(0.275, 0.157, 0.063);
+const vec3 STUD_EDGE = vec3(0.078, 0.275, 0.196);
+const vec3 SEG_FILL = vec3(0.133, 0.024, 0.035);
+const vec3 PAPER_HAL = vec3(0.933, 0.878, 1.0);
+const vec3 PAPER_ORB = vec3(0.957, 0.973, 1.0);
+// The elite collar (d4corp.elite_collar): its gold rules and its depth beyond the frame (master).
+const vec3 GOLD = vec3(1.0, 0.804, 0.353);
+const float ELITE_W = 14.0;
+const vec3 INK_RIM = vec3(0.039, 0.031, 0.059);
 const vec3 THREAT = vec3(1.0, 0.204, 0.251);
 const vec3 SEG_COL[8] = vec3[8](vec3(0.47, 0.47, 0.53), vec3(1.0, 0.839, 0.251), vec3(0.745, 0.961, 1.0),
 	vec3(1.0, 0.157, 0.627), vec3(0.745, 0.784, 0.843), vec3(1.0, 0.627, 0.157), vec3(0.361, 0.882, 1.0),
@@ -96,6 +110,22 @@ uniform float needle_gap = 8.0;
 uniform float tier1_gain = 1.0;
 // The screens' phosphor gain at combat size (the recipe's bloom pass, `frames.add_glow`, lifts them).
 uniform float screen_gain = 1.6;
+// Parity S-WHEEL (CMB-02): the concept's saturated screens. The recipe's composite passes the disc
+// lacks (make_combat.bloom over the bright parts, frames.add_glow) as one tone step on the screen:
+// saturation away from its luma, then the part above `bloom_thresh` lifted by `bloom_gain`.
+uniform float screen_sat = 1.0;
+uniform float bloom_thresh = 1.0;
+uniform float bloom_gain = 0.0;
+// The frame's outer radius (master): 414 on the player's D4 frame, 424 on a corp frame (d4corp R1).
+uniform float r_frame = 414.0;
+// The frame's own glow in the kit accent (frames.add_glow on the accent hairlines) and the accent
+// wash over the outer bevel (the concept's lit class / corp rim), 0 = off.
+uniform float frame_glow = 0.0;
+uniform float frame_tint = 0.0;
+// The corp rim (d4corp.corp_rim) on the outer bevel of a corp frame: 0 off, else the kit's theme.
+uniform int rim_kind = 0;
+// Halcyon's gold halo arc (motifs.ACCENT gold; Palette.corp_secondary).
+uniform vec4 rim_gold : source_color = vec4(1.0, 0.667, 0.157, 1.0);
 // Precision landing (3.19): the landed slice's flash tint (gold PERFECT, white GOOD, amber WEAK) and
 // the WEAK slice's dim.
 uniform vec4 land_tint : source_color = vec4(1.0);
@@ -181,6 +211,13 @@ float seg_tex(int sk, float u, float rho, float mid_r) {
 	return (hash(vec2(floor(u * 2.0), 3.0)) - 0.5) * 0.12 + 0.06;
 }
 
+// The screens' tone step (CMB-02): WheelKit.tone mirrors it for the tests.
+vec3 tone(vec3 c) {
+	float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+	c = max(mix(vec3(l), c, screen_sat), vec3(0.0));
+	return c + max(c - vec3(bloom_thresh), vec3(0.0)) * bloom_gain;
+}
+
 vec3 flash_col(int i) {
 	return i == land_slot ? mix(cols[i].rgb, land_tint.rgb, 0.8) : mix(cols[i].rgb, vec3(1.0), 0.45);
 }
@@ -252,6 +289,7 @@ vec4 slice_tile(vec2 p, int i, float sc) {
 			scr = scr * (1.0 - sa) + smp.rgb * sa;
 		}
 	}
+	scr = tone(scr);
 	// scanlines: 3 screen px (rows of constant radius, so they bend into arcs)
 	float sl_p = max(3.0, 3.0 * px);
 	scr *= 0.70 + 0.30 * (0.5 + 0.5 * cos(2.0 * PI * ty / sl_p));
@@ -371,7 +409,7 @@ vec4 slice_tile(vec2 p, int i, float sc) {
 
 // Height derivative of the machined bezel profile (frames._d4 knots), smoothed like the recipe.
 float bezel_slope(float r) {
-	float kr[8] = float[8](R_LIP, R_LIP + 3.0, RCH0 - 3.0, RCH0, RCH1, RCH1 + 3.0, R1 - 4.0, R1);
+	float kr[8] = float[8](R_LIP, R_LIP + 3.0, RCH0 - 3.0, RCH0, RCH1, RCH1 + 3.0, r_frame - 4.0, r_frame);
 	float kh[8] = float[8](0.0, 6.0, 7.0, 2.0, 2.0, 7.0, 8.0, 0.0);
 	float s = 0.0;
 	for (int k = 0; k < 7; k++) {
@@ -394,15 +432,21 @@ vec3 machined(vec2 p, float rho, float th, vec3 base, vec3 acc) {
 	float streak = hash(vec2(floor(rho * 3.0), 1.7));
 	float ang_var = 0.5 + 0.5 * sin(radians(th) * 3.0 + 1.3);
 	vec3 c = base * (0.32 + 0.85 * diff);
-	c += spec * 0.9 * 0.8;
-	c += refl * 0.35 * 0.8 * (0.4 + base);
+	float gl = GLOSS[theme];
+	c += spec * 0.9 * gl;
+	c += refl * 0.35 * gl * (0.4 + base);
 	c += (streak - 0.5) * 0.04 * (0.6 + ang_var);
 	float sm_ch = sm(RCH0, RCH0 + 1.2, rho) * (1.0 - sm(RCH1 - 1.2, RCH1, rho));
 	vec3 glass = vec3(0.012, 0.016, 0.022) + exp(-pow(wrapd(th - 315.0 + 180.0), 2.0) / 2400.0) * 0.05;
 	c = mix(c, glass, sm_ch);
 	c += exp(-pow((rho - RCH0 - 0.5) / max(0.9, px * 0.6), 2.0)) * 0.8 * acc;
 	c += exp(-pow((rho - RCH1 + 0.5) / max(0.9, px * 0.6), 2.0)) * 0.8 * acc;
-	c += exp(-pow((rho - R1 + 0.8) / max(1.0, px * 0.6), 2.0)) * 1.0 * acc;
+	c += exp(-pow((rho - r_frame + 0.8) / max(1.0, px * 0.6), 2.0)) * 1.0 * acc;
+	// CMB-02: the lit frame. The accent washes the outer bevel and the hairlines glow (add_glow).
+	float outer = sm(RCH1, RCH1 + 2.0, rho);
+	c = mix(c, c * 0.45 + acc * 0.7, frame_tint * outer * (0.775 + 0.225 * cos(radians(th - 315.0))));
+	float halo = exp(-pow((rho - RCH0) / max(3.0, px * 1.6), 2.0)) + exp(-pow((rho - r_frame + 1.0) / max(3.0, px * 1.6), 2.0));
+	c += halo * frame_glow * acc;
 	return c;
 }
 
@@ -414,6 +458,97 @@ float near_needle(float th) {
 		}
 	}
 	return best;
+}
+
+// A shape's coverage from its signed distance `e` (master units, inside positive), one pixel soft.
+float cover(float e) {
+	return clamp(e / px + 0.5, 0.0, 1.0);
+}
+
+// `src` (straight colour, coverage `a`) over the premultiplied `dst`.
+vec4 over_p(vec4 dst, vec3 src, float a) {
+	return vec4(src * a, a) + dst * (1.0 - a);
+}
+
+// The corp rim (CMB-03; d4corp.corp_rim, round 14, ported): the corp's own rim language on the outer
+// bevel of its frame (r0..r1, master) and just beyond it. Premultiplied rgba.
+vec4 corp_rim(float rho, float th, float r0, float r1) {
+	vec4 o = vec4(0.0);
+	vec3 acc = accent.rgb;
+	float rm = (r0 + r1) * 0.5;
+	float deg_px = PI / 180.0 * rho;
+	if (rim_kind == 1) {
+		// Meridian: slanted hazard stripes (container corrugation) and notched teeth past the rim
+		float t = clamp((rho - r0) / (r1 - r0), 0.0, 1.0);
+		float u = th - 1.6 * t;
+		float local = mod(u, 4.0);
+		float i = mod(floor(u / 4.0), 90.0);
+		float e = min(local, 1.6 - local) * deg_px;
+		float band = cover(rho - r0) * cover(r1 - rho);
+		o = over_p(o, mod(i, 2.0) > 0.5 ? HAZARD_DARK : acc, cover(e) * band);
+		float s = (rho - r1) / 7.0;
+		float lt = abs(wrapd(th - (12.0 * floor(th / 12.0) + 6.0)));
+		float hw = mix(2.2, 1.0, clamp(s, 0.0, 1.0));
+		float et = min(min((hw - lt) * deg_px, rho - r1), r1 + 7.0 - rho);
+		o = over_p(o, INK_RIM, cover(et + 1.0));
+		o = over_p(o, TOOTH, cover(et));
+	} else if (rim_kind == 2) {
+		// Solace: porcelain with mint capsule studs and a glass glow ring
+		float rg = r1 + 3.0;
+		o = over_p(o, acc, exp(-pow((rho - rg) / 3.0, 2.0)) * 0.86);
+		o = over_p(o, mix(acc, vec3(1.0), 0.5), cover(1.0 - abs(rho - rg)));
+		float a = 30.0 * floor(th / 30.0) + 15.0;
+		float la = wrapd(th - a);
+		float skip = step(14.0, near_needle(a));
+		float es = min((5.0 - abs(la)) * deg_px, 4.0 - abs(rho - rm));
+		o = over_p(o, STUD_EDGE, cover(es + 1.0) * skip);
+		o = over_p(o, acc, cover(es) * skip);
+		float dot_e = 1.5 - length(vec2((la + 2.5) * deg_px, rho - rm - 1.5));
+		o = over_p(o, vec3(1.0), cover(dot_e) * skip * 0.9);
+	} else if (rim_kind == 3) {
+		// Halcyon: a colonnade of pale pillars, a paper ring and a gold halo arc
+		float lp = abs(wrapd(th - 7.5 * floor(th / 7.5 + 0.5)));
+		float ep = min((1.3 - lp) * deg_px, min(rho - r0 - 1.0, r1 - 1.0 - rho));
+		o = over_p(o, PAPER_HAL, cover(ep) * 0.9);
+		o = over_p(o, PAPER_HAL, cover(0.75 - abs(rho - r1 - 1.0)));
+		float rh = r1 + 9.0;
+		float on_arc = step(200.0, th) * step(th, 340.0);
+		o = over_p(o, rim_gold.rgb, exp(-pow((rho - rh) / 3.0, 2.0)) * 0.86 * on_arc);
+		o = over_p(o, rim_gold.rgb, cover(1.25 - abs(rho - rh)) * on_arc);
+	} else if (rim_kind == 4) {
+		// Orbital: an azimuth ring of ticks every 5 degrees (long every 30) and a glow ring
+		float i = floor(th / 5.0 + 0.5);
+		float lt = abs(wrapd(th - 5.0 * i)) * deg_px;
+		float len_t = mod(i, 6.0) < 0.5 ? 7.0 : 3.5;
+		float et = min(0.6 - lt, min(r1 - rho, rho - (r1 - len_t)));
+		o = over_p(o, PAPER_ORB, cover(et));
+		float rg = r1 + 2.0;
+		o = over_p(o, acc, exp(-pow((rho - rg) / 2.5, 2.0)) * 0.78);
+		o = over_p(o, acc, cover(0.75 - abs(rho - rg)));
+	} else if (rim_kind == 5) {
+		// Rebel_Cell: broken, offset black-red segments with hex rivets (a fixed hash, recipe seed 5)
+		float a = 0.0;
+		for (int k = 0; k < 24; k++) {
+			if (a >= 360.0) {
+				break;
+			}
+			float len_s = 18.0 + hash(vec2(float(k), 5.0)) * 26.0;
+			float off = (hash(vec2(float(k), 11.0)) - 0.5) * 5.0;
+			float a0 = a + 1.5;
+			float a1 = a + len_s - 1.5;
+			float tt = th < a0 ? th + 360.0 : th;
+			if (tt >= a0 - 2.0 && tt <= a1 + 2.0) {
+				float es = min(min((tt - a0) * deg_px, (a1 - tt) * deg_px), min(rho - (r0 + 1.0 + off), r1 - 1.0 + off - rho));
+				o = over_p(o, acc, cover(es));
+				o = over_p(o, SEG_FILL, cover(es - 1.0));
+				float am = a + len_s * 0.5;
+				float hx = length(vec2(wrapd(th - am) * deg_px, rho - rm - off));
+				o = over_p(o, acc, cover(3.4 - hx));
+			}
+			a += len_s;
+		}
+	}
+	return o;
 }
 
 vec4 disc_at(vec2 p) {
@@ -451,14 +586,9 @@ vec4 disc_at(vec2 p) {
 	float sh2 = sm(hub_cast + 7.0, hub_cast - 7.0, rs2) * step(hub_cast - 1.0, rho) * step(rho, R_OUT);
 	o.rgb *= 1.0 - 0.45 * sh2;
 	// 4. the D4 machined bezel and its glass telemetry channel
-	if (rho > R_LIP - 1.0 && rho < R1 + 1.0) {
-		float al = clamp((rho - R_LIP) / px + 0.5, 0.0, 1.0) * clamp((R1 - rho) / px + 0.5, 0.0, 1.0);
+	if (rho > R_LIP - 1.0 && rho < r_frame + 1.0) {
+		float al = clamp((rho - R_LIP) / px + 0.5, 0.0, 1.0) * clamp((r_frame - rho) / px + 0.5, 0.0, 1.0);
 		vec3 c = machined(p, rho, th, FRAME_BASE[theme], accent.rgb);
-		// elite collar (3.2): a band of corp-colour chevrons on the outer bevel
-		if (elite && rho > RCH1 + 2.0) {
-			float cv = step(0.5, fract(th / 6.0 + (rho - RCH1) * 0.02));
-			c = mix(c, tier_prim.rgb, 0.55 * cv);
-		}
 		// the readout rail: static, tinted the program colour, bracketed, split round each needle
 		float dn = near_needle(th);
 		float in_ch = sm(RCH0 + 1.0, RCH0 + 3.0, rho) * (1.0 - sm(RCH1 - 3.0, RCH1 - 1.0, rho));
@@ -472,16 +602,44 @@ vec4 disc_at(vec2 p) {
 			float a12 = mod(th, 30.0);
 			float plate_m = step(1.2, a12) * step(a12, 28.8) * step(RCH1 + 1.0, rho);
 			c = mix(c, FRAME_BASE[theme] * 0.7 + 0.05, plate_m);
-			float bolt = 1.0 - sm(2.6, 3.6, length(vec2((a12 - 2.4) * PI / 180.0 * rho, rho - 409.0)));
-			bolt = max(bolt, 1.0 - sm(2.6, 3.6, length(vec2((a12 - 27.6) * PI / 180.0 * rho, rho - 409.0))));
+			float bolt_r = (RCH1 + r_frame) * 0.5;
+			float bolt = 1.0 - sm(2.6, 3.6, length(vec2((a12 - 2.4) * PI / 180.0 * rho, rho - bolt_r)));
+			bolt = max(bolt, 1.0 - sm(2.6, 3.6, length(vec2((a12 - 27.6) * PI / 180.0 * rho, rho - bolt_r))));
 			c = mix(c, vec3(0.8, 0.78, 0.74), bolt * plate_m);
+		}
+		// the corp rim over the plates: the corp still reads in phase 3 (the recipe bolts its armour
+		// outside the threat ring; here it sits on the bevel so the wheel keeps its size)
+		if (rim_kind > 0) {
+			vec4 rm = corp_rim(rho, th, RCH1 + 3.0, r_frame - 1.0);
+			c = c * (1.0 - rm.a) + rm.rgb;
 		}
 		o = vec4(c * al, al) + o * (1.0 - al);
 	}
+	// 4b. the corp rim's parts beyond the frame (teeth, glass ring, halo) and the elite collar
+	// (d4corp.elite_collar: gold-ruled band of corp chevrons, R1 + 1 .. R1 + 14)
+	if (rim_kind > 0 && rho >= r_frame && rho < r_frame + 12.0) {
+		vec4 rm = corp_rim(rho, th, RCH1 + 3.0, r_frame - 1.0);
+		o = rm + o * (1.0 - rm.a);
+	}
+	float r_out_frame = r_frame;
+	if (elite && rho > r_frame && rho < r_frame + ELITE_W + 1.0) {
+		float r0 = r_frame + 1.0;
+		float r1 = r_frame + ELITE_W;
+		float al = clamp((rho - r0) / px + 0.5, 0.0, 1.0) * clamp((r1 - rho) / px + 0.5, 0.0, 1.0);
+		vec3 c = vec3(0.094, 0.078, 0.063);
+		float cv = step(abs(mod(th, 7.5) - 3.75), 1.6) * step(r0 + 3.5, rho) * step(rho, r1 - 3.5);
+		c = mix(c, accent.rgb, cv * (1.0 - step(near_needle(th), 12.0)));
+		float rule = exp(-pow((rho - r0 - 1.5) / max(1.0, px * 0.7), 2.0)) + exp(-pow((rho - r1 + 1.5) / max(1.0, px * 0.7), 2.0));
+		c += rule * GOLD;
+		o = vec4(c * al, al) + o * (1.0 - al);
+	}
+	if (elite) {
+		r_out_frame = r_frame + ELITE_W;
+	}
 	// 5. boss threat ring: counter-rotating red chevrons on a dark band
-	if (boss && rho > R1 && rho < R1 + 32.0) {
-		float r0 = R1 + 1.0;
-		float r1 = R1 + 30.0;
+	if (boss && rho > r_out_frame && rho < r_out_frame + 32.0) {
+		float r0 = r_out_frame + 1.0;
+		float r1 = r_out_frame + 30.0;
 		float al = clamp((rho - r0) / px + 0.5, 0.0, 1.0) * clamp((r1 - rho) / px + 0.5, 0.0, 1.0);
 		vec3 c = vec3(0.118, 0.031, 0.047);
 		c = mix(c, vec3(0.47, 0.1, 0.13), 1.0 - sm(0.0, 2.0 * px, rho - r0));

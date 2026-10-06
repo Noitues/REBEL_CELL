@@ -145,6 +145,10 @@ const SCREENS := [
 	["pause_netrun", "_s_pause_netrun", "The pause menu over a netrun's route."],
 	["pause_fight", "_s_pause_fight", "The pause menu over a fight."],
 	["pause_fight_quit", "_s_pause_fight_quit", "ART-2 2D: the quit confirm (the dialog kit) over a fight's pause menu."],
+	["pause_fight_abandon", "_s_pause_fight_abandon", "ABANDON-QUIT: the in-run pause's Abandon run dialog over a fight (round 33 abandon_dialog)."],
+	["pause_fight_abandon_hold", "_s_pause_fight_abandon_hold", "ABANDON-QUIT: the same with BURN IT focused and held halfway (the lime ring half full)."],
+	["hq_pause_abandon", "_s_hq_pause_abandon", "ABANDON-QUIT: the HQ pause's Abandon campaign dialog."],
+	["hq_pause_quit", "_s_hq_pause_quit", "ABANDON-QUIT: the HQ pause's quit confirm with its key hints."],
 ]
 
 var out_dir := ""
@@ -1326,11 +1330,67 @@ func _s_pause_fight_quit() -> void:
 		return
 	combat.open_settings()
 	await _settle(combat.get_parent())
-	for b in get_tree().root.find_children("*", "Button", true, false):
-		if (b as Button).text == tr("Quit to desktop"):
-			(b as Button).pressed.emit()
-			break
+	var menu := get_tree().root.find_children("*", "PauseMenu", true, false)
+	if not menu.is_empty():
+		(menu[0] as PauseMenu).confirm_quit()
 	await _settle(combat.get_parent())
+
+
+## ABANDON-QUIT: the in-run pause's Abandon run opens its dialog (nothing is confirmed).
+func _s_pause_fight_abandon() -> void:
+	await _pause_fight_dialog(false)
+
+
+## ABANDON-QUIT: the same, BURN IT focused and held for half the hold.
+func _s_pause_fight_abandon_hold() -> void:
+	await _pause_fight_dialog(true)
+
+
+func _pause_fight_dialog(hold: bool) -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	combat.open_settings()
+	await _settle(combat.get_parent())
+	var menu := get_tree().root.find_children("*", "PauseMenu", true, false)
+	if menu.is_empty() or (menu[0] as PauseMenu).abandon_run_button == null:
+		push_error("review_pack: no Abandon run row")
+		return
+	(menu[0] as PauseMenu).abandon_run_button.pressed.emit()
+	await _settle(combat.get_parent())
+	var d := (menu[0] as PauseMenu).exit_dialog as AbandonDialog
+	if hold and d != null:
+		d.yes_button.grab_focus()
+		d.set_process(false)  # the picture holds the ring where it is
+		d.advance_hold(AbandonDialog.hold_seconds() * 0.5)
+		await _frames(2)
+
+
+## ABANDON-QUIT: the HQ pause's Abandon campaign opens its dialog (nothing is confirmed).
+func _s_hq_pause_abandon() -> void:
+	await _hq_pause_dialog("abandon_campaign_button")
+
+
+## ABANDON-QUIT: the HQ pause's Quit to desktop opens its confirm (nothing is confirmed).
+func _s_hq_pause_quit() -> void:
+	await _hq_pause_dialog("")
+
+
+func _hq_pause_dialog(row: String) -> void:
+	var hq: Node = await _hq_with_campaign()
+	await _settle(hq)
+	hq.open_settings()
+	await _settle(hq)
+	var menu := get_tree().root.find_children("*", "PauseMenu", true, false)
+	if menu.is_empty():
+		push_error("review_pack: no pause menu")
+		return
+	var m := menu[0] as PauseMenu
+	if row != "":
+		(m.get(row) as Button).pressed.emit()
+	else:
+		m.confirm_quit()
+	await _settle(hq)
 
 
 # --- Runtime lint export -----------------------------------------------------------------
