@@ -183,7 +183,8 @@ func test_a_failed_bake_shows_the_silhouette_and_is_not_asked_again() -> void:
 # --- P2: pages open on a baked city ----------------------------------------------------------------
 
 ## ART-7 7w: the route is the 3D city (covered, no bake); the pages after it stay 2D and are
-## baked ahead behind it.
+## baked ahead behind it (headless; windowed, loot and event show the blurred 3D city, LOOT-04),
+## except the Mainframe, whose facade hides the city (designer 2026-10-05).
 func test_the_runs_pages_open_on_their_bake_behind_the_3d_route() -> void:
 	CityBakeCache.simulate = true
 	RunManager.new_campaign(1)
@@ -207,7 +208,13 @@ func test_the_runs_pages_open_on_their_bake_behind_the_3d_route() -> void:
 		scene._show_current()
 		await _frames(2)
 		assert_false(city.city3d, "%s: a 2D page" % page)
-		assert_true(city.view_covered(), "%s: its city is covered on its first frames (baked ahead behind the route)" % page)
+		if page == "shop":
+			# Designer 2026-10-05 (TITLE-01c): the Mainframe shows its facade and no city behind it
+			# (a city there would be a waste of cycles), so there is no city view to cover.
+			assert_false(scene.background.visible, "shop: the facade, no city behind it")
+			assert_not_null(scene._shop_facade, "shop: the Mainframe's facade")
+		else:
+			assert_true(city.view_covered(), "%s: its city is covered on its first frames (baked ahead behind the route)" % page)
 		run.pending_rewards.clear()
 		run.phase = RunState.Phase.MAP
 		scene._show_current()
