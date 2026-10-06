@@ -343,6 +343,7 @@ Campaigns,Campaigns
 Campaigns started on this profile.,Campaigns started on this profile.
 Campaigns won.,Campaigns won.
 "Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost.","Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost."
+Can't Undo,Can't Undo
 Cancel,Cancel
 Card,Card
 CardData.arc_flash.description,Deal 3 damage to every enemy.
@@ -669,7 +670,6 @@ DefenseAssetData.tar_pit.description,Holds a threat for 3 steps. Fragile.
 DefenseAssetData.tar_pit.display_name,Tar Pit
 DefenseAssetData.turret.description,"4 damage, range 1, targets the first threat in path."
 DefenseAssetData.turret.display_name,Turret
-Delete,Delete
 Delete the campaign in slot %s (asks first).,Delete the campaign in slot %s (asks first).
 Delete the campaign in slot %s?,Delete the campaign in slot %s?
 Deploy armory asset,Deploy armory asset
@@ -3147,7 +3147,6 @@ asset,asset
 back,back
 boss,boss
 calibrate_handler,calibrate_handler
-cannot undo,cannot undo
 card,card
 card %d-%d · slice %d (NULL %d) · bin %d,card %d-%d · slice %d (NULL %d) · bin %d
 chip,chip

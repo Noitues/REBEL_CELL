@@ -127,6 +127,31 @@ Designer (Noitues), 2026-10-05 evening: "I want my main to look just like art pa
   before any fix. This replaces "the art pass design is correct, follow it without asking" for parity work. Bug fixes
   that are not a look choice (test reds, overlaps) still go ahead.
 
+### 2026-10-05 — Parity fix — campaign slots follow-up (designer ruling)
+Designer follow-up 2026-10-05 on the slots page (answers the two SLOTS-01/02 open questions). Sheet
+`docs/art_review/PARITY/fixes/SLOTS_b.jpg` (audit build | main before, then 1, 2, 3 used slots at 1.0; 3 at 1.6; 1 and 3 at 2.0).
+- **Manila stays**, and every used folder has a sliver of paper poking out of its top, right of the tab (a document
+  filed inside): the art pass's print stock (`DossierPhoto.STOCK_ART`, round 21 `sheet`), drawn behind the folder's
+  front, tilted 1.2 degrees, a soft ink edge. No redraw. Empty slots (dashed outlines) have none.
+- **Two sticker verbs on this page (ruling overrides v2 §2.10's "one sticker verb per screen" here only):** LOAD on the
+  newest campaign stays the pink sticker and the first focus (other LOADs stay terminal chips: "LOAD the pink verb as
+  now"); **DELETE is a sticker on every used slot**: 4C's baked `dialog_delete` (abandon.py's art, the confirm's own),
+  shown at about LOAD's size (`DELETE_ART_SCALE` 0.65 of its game size, growing with the text only to 1.15x so a row
+  still fits at 1.6). `VerbSticker` gains `art_scale` / `set_art_scale` (outside the area, smallest change: the baked
+  art was only shown at the board size). A translated DELETE falls back to the kit's pink sticker, as 4C's dialog does.
+- **"Can't Undo" in grease pencil** (`PencilNote`, red `PENCIL_THREAT`, 1B's wax; translated once, the words stacked
+  on two lines at their first space) sits in the room between LOAD and DELETE with an arrow to DELETE. The arrow's
+  head stops short of the sticker by the wax's reach so no UI is drawn over pencil (PencilLint: 0 violations, tested).
+  **At 2.0** a row has no room for it (one card a row, the card taller than the view): the pencil is dropped and
+  DELETE's tooltip says "(Can't Undo)" (`PENCIL_UP_TO` 1.6). The note's lettering stays at 1.0 size (a bigger note made
+  the card taller than the view at 1.6). The "cannot undo" chip line is gone with the chip.
+- Focus order is unchanged (the linker reads each card's actions: LOAD, DELETE; the pencil is not a control).
+- **Tests** (`test_art10_menus.gd`): `test_load_is_the_one_sticker_verb_and_delete_a_harm_chip_that_asks` becomes
+  `test_load_and_delete_are_stickers_and_delete_says_cant_undo_in_pencil` (one sticker LOAD, DELETE the baked
+  sticker at LOAD's size, the red note and its arrow pointing at DELETE without touching it, PencilLint clean, the
+  print stock asset); `test_slots_fit_and_focus_reaches_every_action_at_every_text_scale` checks the note clear of
+  LOAD and DELETE up to 1.6 and the tooltip at 2.0.
+
 ### 2026-10-05 — Parity fix — title spacing and campaign slots (designer decisions)
 Designer decisions 2026-10-05 on audit items TITLE-02 and SLOTS-01..04 (`docs/art_review/PARITY/GAPS.md`): the title
 follows concept round 33 (`round33_ui_chrome/title_screen.png`, keeping main's SIMULATE); the campaign slots take the
@@ -8448,10 +8473,8 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
-- **Parity fix SLOTS-01/02 (2026-10-05, built, see "Parity fix — title spacing and campaign slots"):** (1) the used
-  slot is a manila case folder on corp paper (v2: the corporation's file) where the build had white paper: keep, or
-  white? (2) LOAD on the newest campaign is the page's one pink sticker and DELETE a HARM terminal chip: or should
-  DELETE carry the pink DELETE sticker as the confirm does (that makes a second sticker verb on the page)?
+- **Parity fix SLOTS-01/02:** answered by the designer 2026-10-05 (see "Parity fix — campaign slots follow-up"):
+  manila folders stay; DELETE is a sticker too (two sticker verbs on this page).
 - **Parity NEWC (2026-10-05, default implemented, see "Parity fix — new campaign page"):** (1) a locked REBEL_CELL
   shows as a fifth, CLASSIFIED tile (no name, no crest, "OPENS AT ICE 10 EVERYWHERE") so the Target row has its five
   tiles without a spoiler; the build hid it until unlocked. Keep the classified tile? (2) The pickers start on the
