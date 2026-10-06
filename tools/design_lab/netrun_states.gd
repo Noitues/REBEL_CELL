@@ -4,7 +4,8 @@ extends Node
 ## (docs/art_reference/netrun/). Run only through tools/run_windowed.py:
 ##   res://tools/design_lab/netrun_states.tscn -- --out=<abs dir> [--states=a,b] [--size=1280x720]
 ## States: start, underway, show_all, heat, meridian_16, halcyon_20, orbital, rebel_cell,
-## close (ART-7 7w: the route zoomed in to a close-up, the CLOSE car tier), event, jack.
+## close (ART-7 7w: the route zoomed in to a close-up, the CLOSE car tier), event, jack, fit (parity
+## S-ROUTE: every corporation one step in at each `--scales=` text size, default 1.0,1.6,2.0).
 ## S-MAPVIEW: `--raw` also writes `<state>_raw.png`, the 3D city's own render behind the page.
 ## `--perf=<s>`: after each route state, a frame-time probe (PERF lines: the frame and the 3D
 ## city's own GPU / CPU time). Every state prints its camera (CAM lines: ortho, band, car tier).
@@ -27,6 +28,10 @@ var _out := ""
 var _perf_s := 0.0
 var _raw := false
 var _scene: Node = null
+## Parity S-ROUTE: the text sizes the `fit` state walks (`--scales=1.0,1.6,2.0`).
+var _scales: Array[float] = [1.0, 1.6, 2.0]
+## Parity S-ROUTE: the corporations the `fit` state walks.
+const FIT_CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
 
 
 func _ready() -> void:
@@ -40,6 +45,10 @@ func _ready() -> void:
 			_raw = true
 		elif a.begins_with("--states="):
 			states = a.trim_prefix("--states=").split(",", false)
+		elif a.begins_with("--scales="):
+			_scales.clear()
+			for v in a.trim_prefix("--scales=").split(",", false):
+				_scales.append(float(v))
 		elif a.begins_with("--size="):
 			# The quiet window ignores --resolution: size it here (e.g. 1920x1080 for the perf budget).
 			var wh := a.trim_prefix("--size=").split("x")
@@ -237,6 +246,15 @@ func _state(st: String) -> void:
 			await _shot("event_first")
 			await _settle(net)
 			await _shot(st)
+		"fit":
+			# Parity S-ROUTE: every corporation's route one step in, at each of `_scales`.
+			for corp in FIT_CORPS:
+				for sc in _scales:
+					var net := await _open_netrun(corp, sc)
+					await _settle(net)
+					_underway(net)
+					await _settle(net)
+					await _shot("fit_%s_%d" % [corp, roundi(sc * 10.0)])
 		"jack":
 			await _jack()
 
