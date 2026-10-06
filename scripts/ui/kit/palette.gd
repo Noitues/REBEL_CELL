@@ -630,3 +630,15 @@ const CHIP_NO_CHANGE := Color("#8C93A3")
 ## ART-6 3A: the raid slow field's blue (round 22 screens22 SLOW_BLUE: the Ghost station's
 ## dashed rings drifting inward).
 const RAID_SLOW_BLUE := Color("#5AAAFF")
+## B5 (round 44 B_menus): the liner's kiss-cut ring and its print, names on the liner (ink and dim).
+const LINER_KISS_CUT := Color("#B0B0AC")
+const LINER_PRINT := Color("#6E6E76")
+const LINER_NAME_INK := Color("#28282E")
+const LINER_NAME_DIM := Color("#828288")
+## B5 (round 44 campaign_slots): the case file's ink and field names on manila, the tab clip's metal and rim.
+const MANILA_INK := Color("#28221E")
+const MANILA_FIELD_INK := Color("#60503C")
+const CLIP_METAL := Color("#96A0B0")
+const CLIP_RIM := Color("#282C36")
+## B5: the Codex glyph tile's fill (deep navy).
+const GLYPH_TILE_FILL := Color("#081222")

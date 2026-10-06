@@ -48,7 +48,7 @@ const ENTRIES_TAG := "%d ENTRIES" # TR
 const CORP_SECTION := "Corporations"
 ## B5: the glyph tile's fill and its edge's alpha (round 44 b44.glyph_tile: navy (8, 18, 34), the accent at 200/255),
 ## and the selected row's cyan wash (alpha).
-const TILE_FILL := Color8(8, 18, 34)
+const TILE_FILL := Palette.GLYPH_TILE_FILL
 const TILE_EDGE_ALPHA := 0.78
 const ROW_WASH := 0.12
 ## B5: the holo card's share of the page's width beside the corporations' list.
@@ -178,7 +178,7 @@ func _init(p_entries: Dictionary, p_max_height: float = 0.0, p_max_width: float 
 	_content.add_theme_constant_override("separation", 2)
 	margin.add_child(_content)
 	# B5: the section's name as the terminal's mono caps heading (the window's header is the caption).
-	heading = Chrome.caps_label("", UiTheme.CAPTION, Palette.NET_CYAN)
+	heading = Chrome.caps_label("", UiTheme.CAPTION, PaletteSkins.chrome(Palette.NET_CYAN))
 	heading.name = "Heading"
 	heading.visible = not one_row()
 	_content.add_child(heading)
@@ -393,7 +393,7 @@ static func glyph_tile_edge(name_key: String, item: Dictionary) -> Color:
 		return Palette.corp_color(corp)
 	if item.has("slice") or item.has("status") or name_key in ICON_FILLED:
 		return glyph_fill(name_key, item)
-	return Palette.NET_CYAN
+	return PaletteSkins.chrome(Palette.NET_CYAN)
 
 
 ## B5 (D11, round 44 b44.glyph_tile): a glyph's tile: the navy chip with the accent edge, under the glyph.

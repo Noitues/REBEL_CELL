@@ -11,8 +11,8 @@ const PAD := Vector2(8.0, 3.0)
 const CLIP := Vector2(4.0, 6.0)
 const CLIP_INSET := 2.0
 ## The clip tabs' metal and its rim (round 44 tab_clip: (150, 160, 176) and (40, 44, 54)).
-const CLIP_METAL := Color8(150, 160, 176)
-const CLIP_RIM := Color8(40, 44, 54)
+const CLIP_METAL := Palette.CLIP_METAL
+const CLIP_RIM := Palette.CLIP_RIM
 
 var text: String = ""
 var _glass: CrtTerminalPanel = null

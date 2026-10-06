@@ -15,7 +15,7 @@ const CAPTION_ROOM := 22.0
 const SLOT_GROW := 5.0
 const CAPTION_STEP := UiTheme.CAPTION
 ## The liner's print ink (round 44: the caption in a soft grey on the white liner) and the drop shadow's offset.
-const PRINT_INK := Color8(110, 110, 118)
+const PRINT_INK := Palette.LINER_PRINT
 const SHADOW_OFFSET := Vector2(5, 8)
 
 var caption: String = ""

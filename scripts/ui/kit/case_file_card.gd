@@ -48,8 +48,8 @@ const HEAT_BAR_H := 8.0
 const DASH := 8.0
 const EDGE_ALPHA := 0.6
 ## Round 44's ink and field-name ink on manila (campaign_slots.py INKP and the field names' (96, 80, 60)).
-const INK := Color8(40, 34, 30)
-const FIELD_INK := Color8(96, 80, 60)
+const INK := Palette.MANILA_INK
+const FIELD_INK := Palette.MANILA_FIELD_INK
 ## The tab's cut corner (px) and the tab clip's inset from the tab's left (px at 1.0).
 const TAB_CUT := 12.0
 const CLIP_INSET := 10.0

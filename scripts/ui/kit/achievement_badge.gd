@@ -35,10 +35,10 @@ var earned: bool = false
 ## liner's ink.
 var on_liner: bool = false
 ## B5: the kiss-cut's ink on the liner and its width (px).
-const KISS_CUT_INK := Color8(176, 176, 172)
+const KISS_CUT_INK := Palette.LINER_KISS_CUT
 const KISS_CUT_W := 1.5
-const LINER_NAME_INK := Color8(40, 40, 46)
-const LINER_NAME_DIM := Color8(130, 130, 136)
+const LINER_NAME_INK := Palette.LINER_NAME_INK
+const LINER_NAME_DIM := Palette.LINER_NAME_DIM
 
 
 func _init(p_id: StringName, p_title: String, p_text: String, p_earned: bool) -> void:

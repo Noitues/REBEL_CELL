@@ -793,7 +793,7 @@ func show_stats() -> void:
 	var got := 0
 	for d in Achievements.DEFS:
 		got += 1 if p.achievements.has(d["id"]) else 0
-	var ach_head := Chrome.caps_label(tr("ACHIEVEMENTS  %d / %d  //  stickers you keep") % [got, Achievements.DEFS.size()], UiTheme.CAPTION, Palette.NET_CYAN)
+	var ach_head := Chrome.caps_label(tr("ACHIEVEMENTS  %d / %d  //  stickers you keep") % [got, Achievements.DEFS.size()], UiTheme.CAPTION, PaletteSkins.chrome(Palette.NET_CYAN))
 	ach_head.name = "AchievementsHead"
 	stats.body.add_child(ach_head)
 	var liner := LinerPanel.new("", tr("REBEL_CELL // MERIT SHEET"))
@@ -805,7 +805,7 @@ func show_stats() -> void:
 		badges.add_child(b)
 	liner.body.add_child(badges)
 	stats.body.add_child(liner)
-	var hist_head := Chrome.caps_label(tr("RUN HISTORY  //  last %d") % p.run_history.size(), UiTheme.CAPTION, Palette.NET_CYAN)
+	var hist_head := Chrome.caps_label(tr("RUN HISTORY  //  last %d") % p.run_history.size(), UiTheme.CAPTION, PaletteSkins.chrome(Palette.NET_CYAN))
 	hist_head.name = "HistoryHead"
 	stats.body.add_child(hist_head)
 	var log_head := RunLogRow.header()
