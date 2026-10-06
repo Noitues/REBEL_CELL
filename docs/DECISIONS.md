@@ -31,6 +31,39 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-05 — Art direction — ART-12 12p perf
+INTERIM (orchestrator: stop measuring while the parity work lands; the machine carried ~9 agents).
+Results and causes in `docs/art_review/ART-12/perf.md`.
+- **Lab:** `tools/visual_qa/perf_pack.tscn` (extends the review pack: its screen drivers, plus
+  `hq_run`, `hq_run_gate`, `combat_worst` / `_send` / `_fx` / `_bare` from arena_lab's worst
+  fixture, and probe screens run only when named). ONE windowed launch walks every screen at each
+  `--tiers` city quality tier; v-sync off (Settings.vsync false and the window's mode reset every
+  warm-up frame, as city_lab does); PERF lines (frame mean / p95 / max, GPU of the root viewport,
+  of every CityView3D and every live SubViewport, render CPU, draws), SPIKES (frames over 16.7 ms),
+  `--census` (redraws per CanvasItem).
+- **Wheels + FX over budget (12 ms on the worst fixture, budget 4) — fixed to 3.1 ms at rest:**
+  `WheelAttachments` redraws the sockets and the dock only when what they read changes; the card
+  preview's chase (its own signature) redraws the preview alone. `DroneDock._draw_aim` uses its
+  entry (it re-laid every drone once per drone). `CardPreviewOverlay._ghost_entries` keeps the
+  ghost drones' layout while the dock and the ghost hold. `WheelTelemetry` extends Node2D: a
+  Control redraws on every rotation change, so both rings redrew their whole text arc every frame
+  of every fight (no test checked its class; nothing else reads it as a Control).
+- **Campaign end:** the dossier's manila, the print stock and the post-it paper were `load()`ed
+  inside `_draw` and held by nothing, so Godot decoded the files again at every draw (the cover
+  redraws every frame while it swings: 43-56 ms frames). Each node now loads its paper once and
+  holds it.
+- **Still over (slices proposed in perf.md):** wheels + FX while landings play (SEND IT 4.9 ms on a
+  busy run; a whole wheel redraws ~2 ms for a landing tween: split the still drawing from the
+  landing layer); the campaign-lost lock -> dossier switch (one 640-870 ms frame under the CRT
+  collapse: build the dossier during the lock's reading hold).
+- **Deck tier** measured at 1920x1080 on this PC only; the real Steam Deck run is owed (open
+  question below). A clean run on a quiet machine after the parity work is owed (perf.md lists
+  what it covers).
+- Tests: `tests/unit/test_art12_perf.gd` (fast). No test dropped. Files outside a 12p area
+  (smallest changes): `scripts/ui/wheel/attach/wheel_attachments.gd`, `drone_dock.gd`,
+  `card_preview_overlay.gd`, `scripts/ui/wheel/wheel_telemetry.gd`,
+  `scripts/ui/campaign_end/audit_dossier.gd`, `dossier_photo.gd`, `post_it.gd`.
+
 ### 2026-10-05 — Art direction — ART-3 6w raid on the city
 ART-3 wave 2b, ART-6 on the unified city (ART_BIBLE v2 §4.1, §4.8, Appendix C #13, plan G10; refs round 40
 `raid_view_v3`, `raid_gifs/`, `unified40.py` "the Cell's nodes: uplink pads + risers"). Builds on 3A's raid 2D
@@ -8073,6 +8106,10 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **ART-12 12p Steam Deck run (owed, 2026-10-05):** no Steam Deck was available. The Deck tier
+  (`city_quality` 1) was measured on the dev PC only (interim, under load; `docs/art_review/ART-12/perf.md`).
+  A real Deck run of `tools/visual_qa/perf_pack.tscn --tiers=1 --size=1280x800` is owed when the
+  designer has a Deck; scaling from this PC suggested ~10-12 ms a frame there (5e).
 - **ART-3 6w raid on the city (2026-10-05, defaults built, see "Art direction — ART-3 6w raid on the city"):**
   (1) the raid's widest zoom is ortho 640 (the bible's round 39 clamp 220-380 no longer holds the x2 spread
   network on the setup's map part): keep, or shrink the network's spread for the raid? (2) the sockets float over
