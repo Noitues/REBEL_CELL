@@ -718,41 +718,16 @@ func _chunk_centre(key: Vector2i) -> Vector2:
 
 func _build_chunk(key: Vector2i) -> void:
 	var ch: Dictionary = model.chunks[key]
-	var idx := PackedInt32Array()
-	for n: int in ch["prisms"]:
-		var pr := model.prisms[n]
-		if pr.get("hq", false) and _hidden_hq.has(pr["terr"]):
-			continue
-		if _in_cleared(pr["centre"]) or in_view_cut(pr["centre"], float(pr["y0"]) + float(pr["h"])):
-			continue
-		idx.append(n)
-	var fams := CityMeshKit.families_of(cfg, model.prisms, idx)
-	var keys: Array = fams.keys()
-	keys.sort()
+	var idx := _chunk_prisms(key)
+	# M14 perf slice: the prisms outside the view's keep rect draw at the far LOD.
+	var split := CityLod.split_far(cfg, model.prisms, idx, far_keep, far_lean)
 	var node := Node3D.new()
 	node.name = "Chunk_%d_%d" % [key.x, key.y]
-	var entry := {"node": node, "families": {}}
-	for fk: int in keys:
-		var ids: PackedInt32Array = fams[fk]
-		var mm := MultiMesh.new()
-		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.use_colors = true
-		mm.use_custom_data = true
-		mm.mesh = CityMeshKit.family_mesh(cfg, fk, maxi(0, building_lod))
-		mm.instance_count = ids.size()
-		mm.buffer = CityMeshKit.instance_buffer(cfg, model.prisms, ids, _inks)
-		# A buffer written whole does not refresh the MultiMesh's bounds: the chunk's box
-		# (its prisms) is the cull box.
-		mm.custom_aabb = model.chunk_aabb(key)
-		var mi := MultiMeshInstance3D.new()
-		mi.multimesh = mm
-		mi.material_override = _building_mat
-		mi.layers = 1 << (WORLD_LAYER - 1)
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if quality["shadows"] else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		node.add_child(mi)
-		entry["families"][fk] = mi
+	var entry := {"node": node, "families": {}, "far_families": {}, "far_sig": far_signature(split["far"])}
+	_add_families(key, node, split["near"], entry["families"], false)
+	_add_families(key, node, split["far"], entry["far_families"], true)
 	layer(&"buildings").add_child(node)
-	entry["props"] = _add_roof_props(node, idx)
+	entry["props"] = _add_roof_props(node, split["near"])
 	var r: Rect2i = ch["rect"]
 	var a := lot_world(Vector2(r.position))
 	var b := lot_world(Vector2(r.end))
@@ -788,11 +763,141 @@ func _free_chunk(key: Vector2i) -> void:
 	_chunks.erase(key)
 
 
+## One MultiMesh per building family of prisms `ids` under `node` into `out` (family key ->
+## MultiMeshInstance3D); `far`: at the far LOD (M14 perf slice), shadows per `far_lod_shadows`.
+func _add_families(key: Vector2i, node: Node3D, ids_all: PackedInt32Array, out: Dictionary, far: bool) -> void:
+	if ids_all.is_empty():
+		return
+	var fams := CityMeshKit.families_of(cfg, model.prisms, ids_all)
+	var keys: Array = fams.keys()
+	keys.sort()
+	var lod := CityLod.far_level(cfg, building_lod) if far else maxi(0, building_lod)
+	var shadows: bool = quality["shadows"] and (not far or cfg.far_lod_shadows)
+	for fk: int in keys:
+		var ids: PackedInt32Array = fams[fk]
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.use_colors = true
+		mm.use_custom_data = true
+		mm.mesh = CityMeshKit.family_mesh(cfg, fk, lod)
+		mm.instance_count = ids.size()
+		mm.buffer = CityMeshKit.instance_buffer(cfg, model.prisms, ids, _inks)
+		# A buffer written whole does not refresh the MultiMesh's bounds: the chunk's box
+		# (its prisms) is the cull box.
+		mm.custom_aabb = model.chunk_aabb(key)
+		var mi := MultiMeshInstance3D.new()
+		mi.name = ("Far_%d" if far else "Fam_%d") % fk
+		mi.multimesh = mm
+		mi.material_override = _building_mat
+		mi.layers = 1 << (WORLD_LAYER - 1)
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if shadows else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		node.add_child(mi)
+		out[fk] = mi
+
+
 func _apply_building_lod() -> void:
 	for key: Vector2i in _chunks:
 		var fams: Dictionary = _chunks[key]["families"]
 		for fk: int in fams:
 			(fams[fk] as MultiMeshInstance3D).multimesh.mesh = CityMeshKit.family_mesh(cfg, fk, building_lod)
+		var far: Dictionary = _chunks[key].get("far_families", {})
+		for fk: int in far:
+			(far[fk] as MultiMeshInstance3D).multimesh.mesh = CityMeshKit.family_mesh(cfg, fk, CityLod.far_level(cfg, building_lod))
+
+
+# --- Far LOD (M14 perf slice) ------------------------------------------------------------------
+
+## The keep rect (world X/Z, snapped by CityLod.snap_keep; no area = far LOD off) and the lean
+## (BU of ground per BU of height) the far LOD tests buildings against (CityLod.prism_far).
+var far_keep: Rect2 = Rect2()
+var far_lean: float = 0.0
+
+
+## M14 perf slice (art director's approach): buildings outside world rect `keep` (X/Z; no area:
+## none) draw at the far LOD (CityLod.prism_far with lean `lean`). The rect is held with
+## hysteresis and snapped outward (CityLod.keep_next), and only the built chunks whose far set
+## changes are rebuilt, so the same rect set again (a still camera, or a pan or drift that
+## unprojects nearly the same world rect) changes nothing.
+func set_far_lod(keep: Rect2, lean: float) -> void:
+	var k := CityLod.keep_next(cfg, far_keep, keep)
+	if k == far_keep and is_equal_approx(lean, far_lean):
+		return
+	far_keep = k
+	far_lean = lean
+	if model == null:
+		return
+	for key: Vector2i in _chunks.keys():
+		var idx := _chunk_prisms(key)
+		var split := CityLod.split_far(cfg, model.prisms, idx, far_keep, far_lean)
+		if far_signature(split["far"]) != int(_chunks[key].get("far_sig", 0)):
+			_free_chunk(key)
+			_build_chunk(key)
+
+
+## The ink box (this view's px; no area: the ink runs everywhere): set_ink_keep.
+var ink_keep: Rect2 = Rect2()
+
+
+## M14 perf slice (HQ idle): the post pass draws its ink edges only inside `px_rect` (this
+## view's px), fading out over `far_ink_feather_share` of the view's height past it; a rect with
+## no area (or `far_lod_skip_ink` off) turns the cut off (ink everywhere).
+func set_ink_keep(px_rect: Rect2) -> void:
+	ink_keep = px_rect if px_rect.has_area() and cfg.far_lod_on and cfg.far_lod_skip_ink else Rect2()
+	if _post == null:
+		return
+	_post.set_shader_parameter(&"ink_keep_on", ink_keep.has_area())
+	if ink_keep.has_area():
+		_post.set_shader_parameter(&"ink_keep", Vector4(ink_keep.position.x, ink_keep.position.y, ink_keep.end.x, ink_keep.end.y))
+		_post.set_shader_parameter(&"ink_keep_feather", cfg.far_ink_feather_share * float(size.y))
+
+
+## The ink weight (0..1) the post pass gives view pixel `p` (CPU mirror of city_post's ink box).
+func ink_weight(p: Vector2) -> float:
+	if not ink_keep.has_area():
+		return 1.0
+	var d := (ink_keep.position - p).max(p - ink_keep.end).max(Vector2.ZERO)
+	return 1.0 - smoothstep(0.0, maxf(cfg.far_ink_feather_share * float(size.y), 0.001), d.length())
+
+
+## A far set's signature (its prism indices; an empty set is 0).
+static func far_signature(far: PackedInt32Array) -> int:
+	return 0 if far.is_empty() else hash(far)
+
+
+## The chunk's prisms the view draws (the hidden HQs, the cleared and cut ones left out).
+func _chunk_prisms(key: Vector2i) -> PackedInt32Array:
+	var idx := PackedInt32Array()
+	for n: int in model.chunks[key]["prisms"]:
+		var pr := model.prisms[n]
+		if pr.get("hq", false) and _hidden_hq.has(pr["terr"]):
+			continue
+		if _in_cleared(pr["centre"]) or in_view_cut(pr["centre"], float(pr["y0"]) + float(pr["h"])):
+			continue
+		idx.append(n)
+	return idx
+
+
+## The built chunks' buildings by LOD: {"near": prisms at the view's LOD, "far": at the far LOD}
+## (tests, the perf probe).
+func far_lod_counts() -> Dictionary:
+	var near := 0
+	var far := 0
+	for key: Vector2i in _chunks:
+		for mi: MultiMeshInstance3D in (_chunks[key]["families"] as Dictionary).values():
+			near += mi.multimesh.instance_count
+		for mi: MultiMeshInstance3D in (_chunks[key].get("far_families", {}) as Dictionary).values():
+			far += mi.multimesh.instance_count
+	return {"near": near, "far": far}
+
+
+## The LOD prism `n` draws at now (-1: not drawn in a built chunk): tests.
+func prism_lod(n: int) -> int:
+	if model == null or n < 0 or n >= model.prisms.size():
+		return -1
+	var key: Vector2i = model.prisms[n].get("chunk", Vector2i(-99999, -99999))
+	if not _chunks.has(key) or not _chunk_prisms(key).has(n):
+		return -1
+	return CityLod.far_level(cfg, building_lod) if CityLod.prism_far(cfg, model.prisms[n], far_keep, far_lean) else maxi(0, building_lod)
 
 
 ## Chunks placed so far (tests, the perf probe).
