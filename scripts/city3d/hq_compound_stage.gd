@@ -118,7 +118,109 @@ static func page_camera(cfg: CityConfig, m: Dictionary, at: Transform3D, size: V
 	cam.pitch_deg = float(cfg.hq_run_pitch_by_corp.get(corp, cam.pitch_deg))
 	cam.yaw_deg = float(cfg.hq_run_yaw_by_corp.get(corp, cam.yaw_deg))
 	cam.fov_deg = float(cfg.hq_run_fov_by_corp.get(corp, 0.0))
+	if not cam.perspective() and cfg.hq_run_landmark_share > 0.0:
+		_fill_landmark(cam, m, at, size, cfg.hq_run_landmark_share, cfg.hq_run_landmark_width_max)
 	return cam
+
+
+## B4 (review D18, round 43 `hq_*_compound.png`): an orthographic page's width and aim so the
+## compound (the manifest's footprint box, placed at `at`) stands `share` of the frame's height,
+## at the frame's middle; a wide, low compound (Meridian's yard) is held to `width_max` of the
+## frame's width instead.
+static func _fill_landmark(cam: CityIsoCamera, m: Dictionary, at: Transform3D, size: Vector2, share: float, width_max: float) -> void:
+	var box := landmark_box(cam, m, at)
+	if not box.has_area():
+		return
+	var aspect := size.x / maxf(size.y, 1.0)
+	cam.ortho = maxf(box.size.y / share * aspect, box.size.x / maxf(width_max, 0.01))
+	var c := box.get_center()
+	var o := cam.right() * c.x + cam.up() * c.y
+	var f := cam.forward()
+	cam.target = o + f * ((0.0 - o.y) / f.y)
+
+
+## B4: the compound's box on `cam`'s screen plane (world units along its right and up axes):
+## its model's own points (`silhouette`) placed at `at`, else the eight corners of the
+## manifest's footprint (a box is wider than a round tower seen corner on).
+static func landmark_box(cam: CityIsoCamera, m: Dictionary, at: Transform3D) -> Rect2:
+	var pts := silhouette(StringName(String(m.get("corp", ""))), m)
+	if pts.is_empty():
+		var fp: Dictionary = m.get("footprint", {})
+		if fp.is_empty():
+			return Rect2()
+		var lo: Array = fp.get("min", [0, 0, 0])
+		var hi: Array = fp.get("max", [0, 0, 0])
+		for i in 8:
+			pts.append(Vector3(float(hi[0] if i & 1 else lo[0]), float(hi[1] if i & 2 else lo[1]), float(hi[2] if i & 4 else lo[2])))
+	var r := cam.right()
+	var u := cam.up()
+	var box := Rect2()
+	var first := true
+	for p0 in pts:
+		var p := at * p0
+		var q := Vector2(p.dot(r), p.dot(u))
+		box = Rect2(q, Vector2.ZERO) if first else box.expand(q)
+		first = false
+	return box
+
+
+static var _silhouettes: Dictionary = {}
+## B4: the most model points a silhouette keeps (an even sample of the vertices).
+const SILHOUETTE_POINTS := 4000
+## B4: a model point counts as the landmark above this height (BU; the ground pieces lie under).
+const SILHOUETTE_MIN_Y := 3.0
+
+
+## B4: up to SILHOUETTE_POINTS of the compound model's own vertices (its frame; read once from
+## the glTF and kept): what the page frames, so a round tower is measured as drawn. Empty when
+## the model can't be read.
+static func silhouette(corp: StringName, m: Dictionary) -> PackedVector3Array:
+	if _silhouettes.has(corp):
+		return _silhouettes[corp]
+	var out := PackedVector3Array()
+	var path := model_path(corp, m)
+	if path != "" and ResourceLoader.exists(path):
+		var scene := load(path) as PackedScene
+		var root := scene.instantiate() as Node3D if scene != null else null
+		if root != null:
+			var all := PackedVector3Array()
+			# The root's own transform is the place's (stage_compound sets it): its children only.
+			for c in root.get_children():
+				_collect(c, Transform3D(), all)
+			# The landmark, not its ground: the plazas, aprons and moats at street level leave it.
+			var raised := PackedVector3Array()
+			for v in all:
+				if v.y > SILHOUETTE_MIN_Y:
+					raised.append(v)
+			var step := maxi(1, ceili(float(raised.size()) / SILHOUETTE_POINTS))
+			for i in range(0, raised.size(), step):
+				out.append(raised[i])
+			root.free()
+	_silhouettes[corp] = out
+	return out
+
+
+static func _collect(n: Node, parent: Transform3D, into: PackedVector3Array) -> void:
+	var xf := parent
+	if n is Node3D:
+		xf = parent * (n as Node3D).transform
+	if n is MeshInstance3D and (n as MeshInstance3D).mesh != null:
+		var mesh := (n as MeshInstance3D).mesh
+		for s in mesh.get_surface_count():
+			var arrays := mesh.surface_get_arrays(s)
+			var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			for v in verts:
+				into.append(xf * v)
+	for c in n.get_children():
+		_collect(c, xf, into)
+
+
+## B4 (D18): the share of a `size` page's height the compound stands on camera `cam`.
+static func landmark_share(cam: CityIsoCamera, m: Dictionary, at: Transform3D, size: Vector2) -> float:
+	if cam.perspective():
+		return 0.0
+	var oh := cam.ortho * size.y / maxf(size.x, 1.0)
+	return landmark_box(cam, m, at).size.y / maxf(oh, 0.001)
 
 
 ## The HQ-run page's camera: `page_camera`, widened and re-centred to hold every

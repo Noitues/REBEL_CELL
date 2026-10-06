@@ -94,7 +94,8 @@ func test_hqrun_01_title_sticker_per_corporation_and_the_state_key() -> void:
 	for corp in CORPS:
 		var v := _page(corp, VIEWS[0])
 		assert_eq(HqRunView.corp_word(corp), words[corp], "%s: the corporation's short name" % corp)
-		assert_eq(v.title_text(), "%s: HQ RUN" % words[corp], "%s: the page's title sticker" % corp)
+		# B4 (review Q11): "<CORPORATION>: <CENTRAL SERVER NAME>" until the mechanic names ship.
+		assert_eq(v.title_text(), "%s: THE CORE" % words[corp], "%s: the page's title sticker" % corp)
 		assert_not_null(v.title_sticker, "%s: the title sticker is built" % corp)
 		assert_eq(v.title_sticker.fill, VerbSticker.Fill.YELLOW, "the concept's yellow title sticker")
 		assert_eq(v.title_sticker.focus_mode, Control.FOCUS_NONE, "a title takes no focus")
@@ -168,12 +169,13 @@ func test_hqrun_04_full_maps_read_on_every_compound() -> void:
 				assert_true(free.has_point(v.screen_of(id)), "%s seed %d: %s clear of the chrome" % [corp, run_seed, id])
 				if v.state_of(id) == RouteOverlay.STATE_CUT:
 					cut += 1
-			assert_gt(cut, 0, "%s seed %d: a half-walked map has cut-off nodes (on their pale backing)" % [corp, run_seed])
+			assert_gt(cut, 0, "%s seed %d: a half-walked map has cut-off nodes (small grey discs)" % [corp, run_seed])
 			for id: StringName in v.available:
 				assert_true(page.encloses(v.tab_rect(id)), "%s seed %d: %s's tab on the page" % [corp, run_seed, id])
 			assert_true(free.has_point(v.entry_screen()), "%s: the entry's diamond clear of the chrome" % corp)
 			v.free()
-	assert_gt(HqRunView.CUT_BACKING_ALPHA, 0.0, "cut-off stickers get a pale backing on a dark compound")
+	# B4 (review D18): a cut-off node is a small grey disc at 60 % of a sticker, no backing.
+	assert_almost_eq(HqRunView.CUT_SHARE, 0.6, 0.001, "cut-off nodes are 60 % discs")
 
 
 # --- HQRUN-05..08: the framing --------------------------------------------------------------------
@@ -194,25 +196,23 @@ func _footprint_screen(corp: StringName, cam: CityIsoCamera) -> Rect2:
 
 
 func test_hqrun_05_06_07_the_corporations_are_framed_as_their_concepts() -> void:
-	for corp in [&"meridian", &"halcyon", &"orbital"]:
+	# B4 (review D18, round 43 `hq_*_compound.png`): an orthographic page stands its landmark
+	# 55 to 65 % of the frame's height (a wide, low compound is held to its width share).
+	for corp in [&"solace", &"meridian", &"halcyon", &"orbital"]:
 		var m := HqCompoundStage.manifest(corp)
 		var at := HqCompoundStage.place(_city, corp, m)
-		var ref := HqCompoundStage.camera(_city, m, at, VIEWS[1])
 		var page := HqCompoundStage.page_camera(_city, m, at, VIEWS[1])
-		assert_eq(page.ortho, ref.ortho * float(_city.hq_run_ortho_scale_by_corp[corp]), "%s: the page's distance from config" % corp)
-		assert_gt(page.ortho, ref.ortho, "%s: further out than the manifest's framing" % corp)
 		assert_false(page.perspective(), "%s: the city's iso camera" % corp)
-		assert_eq(page.pitch_deg, ref.pitch_deg, "%s: the city's pitch" % corp)
+		var share := HqCompoundStage.landmark_share(page, m, at, VIEWS[1])
+		var box := HqCompoundStage.landmark_box(page, m, at)
+		var wide := box.size.x / page.ortho >= _city.hq_run_landmark_width_max - 0.001
+		if wide:
+			assert_lte(share, _city.hq_run_landmark_share + 0.001, "%s: a wide compound held to the width (%.2f of the height)" % [corp, share])
+		else:
+			assert_between(share, 0.55, 0.65, "%s: the landmark stands %.2f of the frame's height" % [corp, share])
 		var l := HqCompoundStage.layout(corp)
 		var inner := Rect2(Vector2.ZERO, VIEWS[1]).grow(-HqRunView.FIT_MARGIN_PX)
 		assert_true(inner.has_point(page.project(HqCompoundStage.server_point(l, at))), "%s: the Central Server well inside the page" % corp)
-		# Further out than the manifest: the compound's footprint takes less of the page.
-		var fp_page := _footprint_screen(corp, page)
-		var fp_ref := _footprint_screen(corp, ref)
-		assert_lt(fp_page.size.x, fp_ref.size.x, "%s: the compound smaller on the page than at the manifest's framing" % corp)
-	# HQRUN-06: Halcyon's ziggurat no longer fills the frame: the concept's distance (the
-	# ziggurat about half the width, the manifest's about four fifths).
-	assert_gte(float(_city.hq_run_ortho_scale_by_corp[&"halcyon"]), 1.3, "Halcyon seen from much further out")
 	# The combat backdrop keeps the manifest's own camera.
 	for corp in CORPS:
 		var m := HqCompoundStage.manifest(corp)

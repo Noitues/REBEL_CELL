@@ -26,6 +26,8 @@ var _perf: Array[float] = []
 var _frame_ms: Array[float] = []
 var _ready_at: int = -1
 var _scale_was: float = -1.0
+## B4: the HQ-run page on show (its landmark share is printed).
+var _view: HqRunView = null
 
 
 func _ready() -> void:
@@ -50,6 +52,7 @@ func _ready() -> void:
 
 func _corp_of(state: String) -> StringName:
 	return StringName(state.split("_", true, 1)[1])
+
 
 
 func _session(corp: StringName) -> NetrunSession:
@@ -83,6 +86,7 @@ func _load(state: String) -> void:
 	_host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_host)
 	_city = null
+	_view = null
 	_backdrop = null
 	_perf.clear()
 	_frame_ms.clear()
@@ -94,6 +98,7 @@ func _load(state: String) -> void:
 		"run", "full", "gate":
 			var s := _session(corp)
 			var v := HqRunView.new()
+			_view = v
 			v.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			_host.add_child(v)
 			var graph := s.run.map
@@ -167,7 +172,11 @@ func _process(delta: float) -> void:
 		var wh := String(_args["raw"]).split("x")
 		raw.resize(int(wh[0]), int(wh[1]), Image.INTERPOLATE_NEAREST)  # point samples: no averaging bias
 		raw.save_png("%s/%s_raw.png" % [out, state])
-	print("HQRUN %s ready=%s gpu_ms=%.2f frame_ms=%.2f ortho=%.1f" % [state, _ready_at >= 0, _avg(_perf), _avg(_frame_ms), _city.iso.ortho if _city != null and _city.iso != null else -1.0])
+	var share := -1.0
+	if _view != null and _view.iso != null:
+		share = HqCompoundStage.landmark_share(_view.iso, _view._manifest, _view._at, _view.size)
+	print("HQRUN %s ready=%s gpu_ms=%.2f frame_ms=%.2f ortho=%.1f landmark=%.2f" % [state, _ready_at >= 0, _avg(_perf), _avg(_frame_ms),
+		_city.iso.ortho if _city != null and _city.iso != null else -1.0, share])
 	_step += 1
 	if _step >= _states.size():
 		RunManager.delete_save()
