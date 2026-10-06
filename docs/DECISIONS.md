@@ -102,7 +102,18 @@ at text 1.0 and 2.0). Test: `tests/unit/test_b1b_wax_pencil.gd`.
   is read in 1080p px; a new mark is completed before it is measured), `test_art6_raid_presentation` (`_mark` has no
   colour). None dropped.
 - Not verified windowed: the HQ run's TARGET (the review pack has no HQ-run screen); it is covered headless by
-  `test_hq_run_city` and the static check.
+  `test_hq_run_city` and the static check (art director: accepted).
+- **Art-director fixes (2026-10-06).** Rulings: NEVER SLEEP, "ask about the back room" and PLAY IT SAFE?? stay (bible
+  appendix A: one pencil slogan per screen); the raid verdict slice goes to B3. (1) 1:1 crops at a true 1080p window,
+  text 1.0, end state: `docs/art_review/PARITY/fixes/B1b_crop_{aim,target,ours_now,cant_undo}.png` and the write-on
+  strip `B1b_strip_write_on.png` (PNG); the review pack gains `--native=WxH` (sizes the window, also saves
+  `<screen>.native.png` unscaled). (2) The loop lock (D3): `PencilShapes.hand_circle` is one hand ellipse that overruns
+  its start by the 20 degree tail, its radius jittered up to `JITTER` (3 %) by seeded KitNoise knots (deterministic,
+  view-only decoration as the kit's other jitter, never game RNG or global randomness), the pen landing `START_IN`
+  (5 %) inside the line and the tail running `TAIL_OUT` (9 %) past it, so start and end never meet cleanly; the
+  aim loop, the TARGET circles (grid, route, HQ run, legend) and the raid dock circle all draw through it. Tests:
+  `test_b1b_wax_pencil::test_a_loops_radius_jitter_is_seeded_and_about_three_percent`,
+  `::test_the_loops_start_and_end_never_meet_cleanly`.
 
 ### 2026-10-06 — Designer rulings on the art-direction integration review
 The art-pass session reviewed main @ 175377de (`docs/concepts/INTEGRATION_REVIEW/REVIEW.md` on art-pass, D1–D25 and
@@ -10165,7 +10176,7 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
-- **B1b pencil audit (2026-10-06, see "B1b — wax pencil material and pencil audit"):** three pencil notes are kept only
+- **B1b pencil audit (2026-10-06, see "B1b — wax pencil material and pencil audit"): answered (art director 2026-10-06: all three stay; the raid verdict slice goes to B3).** Was: three pencil notes are kept only
   because a locked concept draws them, not because they are plans: the title's NEVER SLEEP motto (round 33 title A),
   the Mainframe's "ask about the back room" (bible Mainframe interior; there is no back room in the rules) and the
   event's PLAY IT SAFE?? (the review counts it as matching). Round 19 bans jokes in pencil. Default built: all three

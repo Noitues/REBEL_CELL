@@ -10,6 +10,14 @@ const CIRCLE_POINTS := 120
 ## this many degrees (not a perfect circle, not a second pass).
 const OVERLAP_DEG := 20.0
 const LOOP_TURNS := 1.0 + OVERLAP_DEG / 360.0
+## The loop's irregularity (shares of its radius): the seeded radius jitter (D3: about
+## +-3 %), its knot spacing (deg), how far inside the pen lands (over the first LAND_TURNS of
+## a turn) and how far out the 20 degree tail runs, so start and end never meet cleanly.
+const JITTER := 0.03
+const KNOT_DEG := 55.0
+const START_IN := 0.05
+const LAND_TURNS := 0.12
+const TAIL_OUT := 0.09
 ## Chaikin passes when smoothing a hand path.
 const SMOOTH_PASSES := 2
 ## Arrow head flicks: angle off the shaft (deg) and the share of the head they bend in at.
@@ -85,19 +93,32 @@ static func trim(pts: PackedVector2Array, from_len: float, to_len: float) -> Pac
 	return out
 
 
-## A hand-drawn ellipse round `centre` (radii `radii`), `turns` times round (over 1 so the
-## end overlaps the start: LOOP_TURNS, a 20 degree tail), wobbling and drifting by KitNoise from `seed`, tilted `angle`.
-static func hand_circle(centre: Vector2, radii: Vector2, seed: int, turns: float = LOOP_TURNS, angle: float = 0.0,
-		wobble: float = 0.035) -> PackedVector2Array:
+## The loop's radius share at turn share `u` (0 at the start, 1 a full turn): 1 + its jitter
+## (JITTER at most, seeded KitNoise knots every KNOT_DEG, never game RNG).
+static func jitter(seed: int, u: float) -> float:
+	var x := u * 360.0 / KNOT_DEG
+	var n := KitNoise.smooth(seed + 11, x) * 0.65 + KitNoise.smooth(seed + 29, x * 2.3) * 0.35
+	return JITTER * (n * 2.0 - 1.0)
+
+
+## A hand-drawn ellipse round `centre` (radii `radii`), tilted `angle` (B1b, review D3 lock):
+## one pass that goes `turns` times round (LOOP_TURNS: it overruns its start by a 20 degree
+## tail), its radius jittered by up to JITTER from `seed` (deterministic KitNoise), the pen
+## landing START_IN inside the line and the tail running out TAIL_OUT past it, so the start
+## and the end never meet cleanly.
+static func hand_circle(centre: Vector2, radii: Vector2, seed: int, turns: float = LOOP_TURNS, angle: float = 0.0) -> PackedVector2Array:
 	var out := PackedVector2Array()
 	var n := int(CIRCLE_POINTS * turns)
 	var start := deg_to_rad(lerpf(-150.0, -100.0, KitNoise.h01(seed, 1)))
-	var ph := KitNoise.h01(seed, 2) * 6.0
-	var drift_sign := 1.0 if KitNoise.h01(seed, 3) > 0.5 else -1.0
+	var over := maxf(turns - 1.0, 0.0001)
 	for i in n:
 		var t := float(i) / float(n - 1)
-		var a := start + TAU * turns * t
-		var rr := 1.0 + wobble * sin(a * 2.0 + ph) + 0.05 * t * drift_sign
+		var u := turns * t
+		var a := start + TAU * u
+		var rr := 1.0 + jitter(seed, u)
+		# the pen lands a little inside the line it will draw, and its tail runs out past it
+		rr -= START_IN * (1.0 - smoothstep(0.0, LAND_TURNS, u))
+		rr += TAIL_OUT * clampf((u - 1.0) / over, 0.0, 1.0)
 		var p := Vector2(radii.x * rr * cos(a), radii.y * rr * sin(a)).rotated(angle)
 		out.append(centre + p)
 	return out

@@ -178,6 +178,42 @@ func test_a_hash_seed_reaches_the_shader_folded_so_the_wax_keeps_its_grain() -> 
 	assert_eq(s, GreasePencilMark.shader_seed(m.seed), "the same fold for the shadow and the wax")
 
 
+func test_a_loops_radius_jitter_is_seeded_and_about_three_percent() -> void:
+	var lo := 1.0
+	var hi := -1.0
+	for seed in [1, 5, 7, 351, 352, 9001]:
+		for i in 400:
+			var j := PencilShapes.jitter(seed, i / 360.0)
+			lo = minf(lo, j)
+			hi = maxf(hi, j)
+	assert_gte(lo, -PencilShapes.JITTER - 0.0001, "never more than 3 % in")
+	assert_lte(hi, PencilShapes.JITTER + 0.0001, "never more than 3 % out")
+	assert_gt(hi - lo, PencilShapes.JITTER, "it does wobble (not a perfect circle)")
+	assert_eq(PencilShapes.hand_circle(Vector2.ZERO, Vector2(40, 30), 7), PencilShapes.hand_circle(Vector2.ZERO, Vector2(40, 30), 7),
+		"the same seed draws the same loop")
+	assert_ne(PencilShapes.hand_circle(Vector2.ZERO, Vector2(40, 30), 7), PencilShapes.hand_circle(Vector2.ZERO, Vector2(40, 30), 8),
+		"another seed another loop")
+
+
+func test_the_loops_start_and_end_never_meet_cleanly() -> void:
+	var r := 50.0
+	var loops := {
+		"plain": PencilShapes.hand_circle(Vector2.ZERO, Vector2(r, r), 9),
+		"aim": AimLinePencil.shapes({"from": Vector2(0, 300), "to": Vector2.ZERO, "loop": {"key": "w", "center": Vector2.ZERO, "radius": r}})["loop"][0],
+		"route TARGET": RouteOverlay.target_loop(Vector2.ZERO, r, 351)[0],
+	}
+	for k: String in loops:
+		var pts: PackedVector2Array = loops[k]
+		var a := pts[0]
+		var b := pts[pts.size() - 1]
+		assert_gt(a.distance_to(b), r * 0.08, "%s: the tail ends well clear of where the pen landed" % k)
+		assert_gt(b.length(), a.length() * 1.06, "%s: the tail runs out past the start, the start sits inside" % k)
+		# 20 degrees past the start, the line runs outside its own start (an overrun, not a join)
+		var start_ang := a.angle()
+		var end_ang := b.angle()
+		assert_almost_eq(rad_to_deg(absf(wrapf(end_ang - start_ang, -PI, PI))), 20.0, 3.0, "%s: a 20 degree tail" % k)
+
+
 func test_a_hand_loop_is_one_ellipse_with_a_twenty_degree_tail() -> void:
 	assert_almost_eq(PencilShapes.LOOP_TURNS, 1.0 + 20.0 / 360.0, 0.0001)
 	var pts := PencilShapes.hand_circle(Vector2.ZERO, Vector2(50, 50), 9)

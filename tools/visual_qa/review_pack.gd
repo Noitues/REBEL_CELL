@@ -10,7 +10,7 @@ extends Node
 ##
 ##   res://tools/visual_qa/review_pack.tscn -- --out=<abs dir> [--screens=a,b] [--scale=1.6]
 ##       [--pad] [--reduce-effects] [--filter=none|grey|deutan] [--scramble]
-##       [--high-contrast] [--reduce-motion] [--colorblind=<mode>] [--save-size=800x450]
+##       [--high-contrast] [--reduce-motion] [--colorblind=<mode>] [--save-size=800x450] [--native=1920x1080]
 ##       [--screen-timeout=90] [--list=<file.json>] [--skins=v2,cobalt]
 ## --skins (ART-12 12s) walks the screens once per palette skin, into <out>/<skin>/.
 ## --scales=1.0,1.6,2.0 (parity NEWC) walks them once per text scale, into <out>/s<scale>/
@@ -173,6 +173,10 @@ var skins: PackedStringArray = []
 var scales: PackedStringArray = []
 ## The PNG's size (the layout stays CAPTURE_SIZE; the picture is scaled down to keep packs small).
 var save_size := CAPTURE_SIZE
+## B1b: keep the window's own pixels (a --resolution 1920x1080 run gives true 1080p crops of a
+## material); the lint still reads the layout at CAPTURE_SIZE.
+var native := false
+var native_size := CAPTURE_SIZE
 var screen_timeout := DEFAULT_TIMEOUT_S
 var _keep: Array[Node] = []
 var _log: RefCounted = null
@@ -224,6 +228,11 @@ func _ready() -> void:
 			reduce_motion = true
 		elif a.begins_with("--colorblind="):
 			colorblind = a.trim_prefix("--colorblind=")
+		elif a.begins_with("--native="):
+			var nwh := a.trim_prefix("--native=").split("x")
+			if nwh.size() == 2 and int(nwh[0]) > 0 and int(nwh[1]) > 0:
+				native = true
+				native_size = Vector2i(int(nwh[0]), int(nwh[1]))
 		elif a.begins_with("--save-size="):
 			var wh := a.trim_prefix("--save-size=").split("x")
 			if wh.size() == 2 and int(wh[0]) > 0 and int(wh[1]) > 0:
@@ -293,6 +302,10 @@ func _setup_settings() -> void:
 	Settings.path = SETTINGS_FILE
 	SaveService.save_dir = SAVE_DIR
 	Settings.tutorial_done = true
+	if native:
+		# The window at the asked size (the quiet window keeps Settings.resolution).
+		Settings.resolution = native_size
+		DisplayServer.window_set_size(native_size)
 	if scramble:
 		ProjectSettings.set_setting("internationalization/pseudolocalization/replace_with_accents", true)
 		ProjectSettings.set_setting("internationalization/pseudolocalization/double_vowels", true)
@@ -388,8 +401,11 @@ func _capture(screen: String, method: String, what: String) -> void:
 			status = "failed"
 			errors.append("no viewport image")
 		else:
+			if native:
+				img.save_png(out_dir.path_join(screen + ".native.png"))
 			if img.get_size() != CAPTURE_SIZE:
-				_warnings.append("viewport was %s, resized to %s" % [img.get_size(), CAPTURE_SIZE])
+				if not native:
+					_warnings.append("viewport was %s, resized to %s" % [img.get_size(), CAPTURE_SIZE])
 				img.resize(CAPTURE_SIZE.x, CAPTURE_SIZE.y, Image.INTERPOLATE_LANCZOS)
 			# The lint reads the layout at CAPTURE_SIZE; the PNG may be smaller (lint_report.py
 			# scales it back up to measure contrast).
