@@ -32,7 +32,7 @@ const TONE := {
 	&"solace": {"sat": 1.4, "thresh": 0.3, "gain": 1.1, "pull": 0.0, "expo": 1.0},
 	&"halcyon": {"sat": 1.4, "thresh": 0.3, "gain": 1.1, "pull": 0.0, "expo": 1.0},
 	&"orbital": {"sat": 1.4, "thresh": 0.3, "gain": 1.1, "pull": 0.0, "expo": 1.0},
-	&"rebel_cell": {"sat": 1.05, "thresh": 0.35, "gain": 0.6, "pull": 0.0, "expo": 1.0},
+	&"rebel_cell": {"sat": 0.9, "thresh": 0.4, "gain": 0.4, "pull": 0.0, "expo": 0.85},
 }
 ## The lit frame (CMB-02): the class accent's wash over the player's outer bevel and the glow of
 ## the frame's accent hairlines; a corp frame wears its rim instead of the wash (CMB-03).
