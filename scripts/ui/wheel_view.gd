@@ -1763,13 +1763,49 @@ const ABOVE_SHARE := 0.34
 func _center() -> Vector2:
 	# The centre sits at CENTER_Y, raised when the HP number and the last-turn line need
 	# the room below (H23: the fixed centre left 210 px above and pinned the wheel small).
-	var cy := minf(size.y * CENTER_Y, size.y - _bottom_need() - _radius())
+	var cy := minf(size.y * CENTER_Y, size.y - _below_need(_radius()))
 	return Vector2(left_reserve + (size.x - left_reserve) * center_x + enter_slide, cy) + shake
 
 
 ## Room kept under the disc for the HP number and the last-turn line (px).
 static func _bottom_need() -> float:
 	return HP_TEXT_GAP + _fs(HP_FONT_SIZE) + _fs(HUB_FONT_SIZE) + LAST_TURN_GAP + DISC_MARGIN * 0.2
+
+
+## FIX-REDS (M14): the radius that fits the view's height with `top` px kept over the disc: the
+## disc and its needles' room over it, and under it the HP row and the last-turn line, under the
+## rim (span) or, when a needle points down, under that needle's blade (art pass W3).
+func _fit_radius(top: float) -> float:
+	var span := 2.0 + ABOVE_SHARE
+	var r := (size.y - _bottom_need() - top) / span
+	var dip := _needle_dip()
+	if dip > 0.0:
+		r = minf(r, (size.y - _bottom_need() + _hp_top_gap() - NEEDLE_HP_GAP - top) / (1.0 + ABOVE_SHARE + dip))
+	return r
+
+
+## FIX-REDS (M14): the room (px) kept under the centre for a disc of radius `r`: the rim and the
+## HP row with the last-turn line, or the lowest needle's blade and then that row.
+func _below_need(r: float) -> float:
+	return maxf(r + _bottom_need(), r * _needle_dip() + NEEDLE_HP_GAP + _bottom_need() - _hp_top_gap())
+
+
+## FIX-REDS (M14): how far below the rim (px) the HP number's top sits when no needle is in its way.
+static func _hp_top_gap() -> float:
+	return HP_TEXT_GAP + _fs(HP_FONT_SIZE) * 0.2 - HP_FONT_SIZE
+
+
+## FIX-REDS (M14): how far below the centre the lowest needle's blade reaches, as a share of the
+## radius (0 when none points down). The state's needles, so a migration never resizes the disc.
+func _needle_dip() -> float:
+	var out := 0.0
+	var c := _shown()
+	if c == null or c.wheel == null:
+		return out
+	for p in c.wheel.pointer_ticks:
+		var deg := fposmod(-p * DEG_PER_TICK, 360.0)
+		out = maxf(out, WheelFace.blade_bounds(Vector2.ZERO, 1.0 / WheelFace.R_OUT, deg, frame_master(), kit.is_boss).end.y)
+	return out
 
 
 func _radius() -> float:
@@ -1781,11 +1817,10 @@ func _radius() -> float:
 	# and last-turn line below share the view's height; the centre moves to fit (_center).
 	# Everything fits at r_full; below that the tag may clamp under the arrows down to
 	# RADIUS_FLOOR of the unconstrained size, as long as its title row still fits (H23).
-	var span := 2.0 + ABOVE_SHARE
-	var r_full := (size.y - _bottom_need() - INTENT_HEIGHT - _tag_reserve()) / span
+	var r_full := _fit_radius(INTENT_HEIGHT + _tag_reserve())
 	if hud_results:
-		r_full = (size.y - _bottom_need() - NUDGE_ROOM * minf(_ts(), NUDGE_SCALE_MAX)) / span
-	var r_title := (size.y - _bottom_need() - INTENT_HEIGHT * _ts()) / span
+		r_full = _fit_radius(NUDGE_ROOM * minf(_ts(), NUDGE_SCALE_MAX))
+	var r_title := _fit_radius(INTENT_HEIGHT * _ts())
 	r = minf(r, maxf(r_full, minf(r_title, r * RADIUS_FLOOR)))
 	return maxf(MIN_RADIUS, r)
 
@@ -3188,6 +3223,35 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 			draw_string(Palette.mono(), Vector2(lr.position.x, lr.position.y + LAST_TURN_PAD * 0.5 + ls * (i + 1)), lines[i], HORIZONTAL_ALIGNMENT_CENTER, lr.size.x, ls, _col(Color(Palette.PAPER, 0.92 * reveal)))
 
 
+## FIX-REDS (M14): the room (px) kept between the lowest needle's blade and the HP row.
+const NEEDLE_HP_GAP := 4.0
+
+
+## FIX-REDS (M14): the local box needle `index`'s blade covers as drawn (its crown and glow).
+func blade_rect(index: int) -> Rect2:
+	var ps := shown_pointers()
+	if index < 0 or index >= ps.size():
+		return Rect2()
+	var radius := _radius()
+	var bscale := WheelFace.LOD_BLADE if radius <= WheelFace.LOD_RADIUS else 1.0
+	return WheelFace.blade_bounds(_center(), art_scale(), fposmod(-ps[index] * DEG_PER_TICK, 360.0), frame_master(), kit.is_boss, bscale)
+
+
+## FIX-REDS (M14): the lowest local y any of the state's needles' blades reaches (-INF with no
+## needle; the state's, so the HP row holds still while a needle migrates).
+func needle_floor() -> float:
+	var out := -INF
+	var c := _shown()
+	if c == null or c.wheel == null:
+		return out
+	var radius := _radius()
+	var bscale := WheelFace.LOD_BLADE if radius <= WheelFace.LOD_RADIUS else 1.0
+	for p in c.wheel.pointer_ticks:
+		var deg := fposmod(-p * DEG_PER_TICK, 360.0)
+		out = maxf(out, WheelFace.blade_bounds(_center(), art_scale(), deg, frame_master(), kit.is_boss, bscale).end.y)
+	return out
+
+
 ## Where the HP number, the NEXT plate and the LAST TURN plate go (local rects), with their
 ## texts: one layout for drawing and for keeping satellite tokens and plates off them.
 func hp_layout() -> Dictionary:
@@ -3195,6 +3259,11 @@ func hp_layout() -> Dictionary:
 	var radius := _radius()
 	var hs := _fs(HP_FONT_SIZE)
 	var base_y := center.y + radius + HP_TEXT_GAP + hs - HP_FONT_SIZE
+	# FIX-REDS (M14, art pass W3): the row sits under every needle's reach (a boss's needle at
+	# the bottom in phase 2 stood on the HP number).
+	var reach := needle_floor()
+	if reach + NEEDLE_HP_GAP > base_y - hs * 0.8:
+		base_y = reach + NEEDLE_HP_GAP + hs * 0.8
 	var text := "%d/%d" % [roundi(shown_hp()), combatant.max_hp]
 	var tw := Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
 	var out := {"hp_text": text, "hp": Rect2(center.x - tw * 0.5, base_y - hs * 0.8, tw, hs * 0.8), "next": Rect2(), "next_text": "",

@@ -266,6 +266,32 @@ func test_the_stack_fits_its_view_at_every_text_scale() -> void:
 		await _frames(2)
 
 
+## FIX-REDS (M14): a needle anywhere round the wheel never stands on the HP number (12b's phase-2
+## capture: the boss's second blade at the bottom covered "895/1475"), and the row stays on screen.
+func test_no_needle_covers_the_hp_number_at_every_text_scale() -> void:
+	for scale in SCALES:
+		var scene := await _combat(scale, &"renewal_engine")
+		var bad: Array[String] = []
+		for v: WheelView in scene._views():
+			if v.combatant == null:
+				continue
+			var wheel := v._shown().wheel
+			var keep := wheel.pointer_ticks
+			for t in RC.TICKS:
+				wheel.pointer_ticks = PackedInt32Array([0, t])
+				var hp: Rect2 = v.hp_layout()["hp"]
+				for i in 2:
+					if v.blade_rect(i).intersects(hp):
+						bad.append("%s needle at tick %d covers the HP number" % [v.combatant.id, t])
+				if v.global_position.y + hp.end.y > SCREEN.size.y:
+					bad.append("%s HP number off screen with a needle at tick %d" % [v.combatant.id, t])
+			wheel.pointer_ticks = keep
+		assert_eq(bad, [] as Array[String], "scale %.1f:\n%s" % [scale, "\n".join(bad)])
+		scene.skip_motion()
+		scene.get_parent().queue_free()
+		await _frames(2)
+
+
 # --- seams for 2C (cards and FX) ------------------------------------------------------------------
 
 func test_the_fx_seams_reach_the_disc() -> void:
