@@ -96,6 +96,8 @@ const SCREENS := [
 	["hq_loadout_deck", "_s_hq_loadout_deck", "Loadout modal, DECK tab."],
 	["hq_loadout_spinner", "_s_hq_loadout_spinner", "Loadout modal, SPINNER tab, rank-3 operative."],
 	["hq_pause", "_s_hq_pause", "Pause menu over the HQ."],
+	["hq_pause_codex", "_s_hq_pause_codex", "Parity CODEX-01: the Codex opened from the HQ's pause menu (STORY first)."],
+	["hq_pause_options", "_s_hq_pause_options", "Parity OPT-01: the Options opened from the HQ's pause menu."],
 	["hq_heat_band", "_s_hq_heat_band", "HQ-B: the HEAT gauge crossing a band (banner and note held)."],
 	["grid", "_s_grid", "City Grid, nothing selected."],
 	["grid_site_selected", "_s_grid_site_selected", "City Grid with an Exploit site selected."],
@@ -132,6 +134,7 @@ const SCREENS := [
 	["event_dispatch", "_s_event_dispatch", "A DISPATCH (terminal) event."],
 	["codex", "_s_codex", "Codex from the title menu."],
 	["options", "_s_options", "Options from the title menu."],
+	["options_glitch", "_s_options_glitch", "Parity OPT-02: Options with the Heat glitch on under the flash limiter (the LIMITED chip)."],
 	["stats", "_s_stats", "Stats and achievements with some history."],
 	["run_end", "_s_run_end", "Run end: FLATLINED."],
 	["run_end_clean", "_s_run_end_clean", "main: run end after a clean exit (the verdict stamp)."],
@@ -844,6 +847,28 @@ func _s_hq_pause() -> void:
 	await _settle(hq)
 
 
+## Parity CODEX-01 / OPT-01: the pause menu's Codex and Options over the HQ.
+func _s_hq_pause_codex() -> void:
+	await _hq_pause_sub("show_codex")
+
+
+func _s_hq_pause_options() -> void:
+	await _hq_pause_sub("show_options")
+
+
+func _hq_pause_sub(page: String) -> void:
+	var hq: Node = await _hq_with_campaign()
+	await _settle(hq)
+	hq.open_settings()
+	await _settle(hq)
+	var menu := get_tree().root.find_children("*", "PauseMenu", true, false)
+	if menu.is_empty():
+		push_error("review_pack: no pause menu")
+		return
+	(menu[0] as PauseMenu).call(page)
+	await _settle(hq)
+
+
 ## Main (ANIM-R6): the wanted poster crosses a Heat band where it shows; the picture is taken
 ## during its reading hold (banner and consequence note up). Under reduce effects it is the
 ## end state at once.
@@ -1195,6 +1220,15 @@ func _s_codex() -> void:
 
 
 func _s_options() -> void:
+	await _title_page("show_options")
+
+
+## Parity OPT-02: the Options with the Heat glitch on under the flash limiter (round 31's frame:
+## HEAT GLITCH ON with its LIMITED chip); the setting is put back after the picture.
+func _s_options_glitch() -> void:
+	var was := Settings.heat_glitch
+	Settings.set_heat_glitch(true)
+	_after_capture = func() -> void: Settings.set_heat_glitch(was)
 	await _title_page("show_options")
 
 

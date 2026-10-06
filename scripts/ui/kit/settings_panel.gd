@@ -32,7 +32,32 @@ const RESOLVE_SPEED_WORDS := ["1x (full replay)", "2x (twice as fast)", "Instant
 const GLYPH_WORDS := ["Automatic (match the pad)", "Xbox", "PlayStation", "Switch", "Steam Deck"] # TR
 ## The rows' words (keys).
 const REDUCE_MOTION_WORDS := "Reduce motion (no camera moves or parallax; pages cross-fade)" # TR
-const HIGH_CONTRAST_WORDS := "High contrast (opaque panels, 7:1 text, thick edges)" # TR
+## Parity OPT-02 (designer group ruling 2026-10-05: the options match round 31's concept): the
+## rows' words as the concept prints them, kept true to what each setting does.
+const HIGH_CONTRAST_WORDS := "High contrast (opaque panels, 7:1 text and thick edges)" # TR
+const REDUCE_EFFECTS_WORDS := "Reduce effects (no scanlines, flicker, chromatic or distortion)" # TR
+const FLASH_WORDS := "Flash limiter (at most 3 flashes a second. On by default.)" # TR
+const HEAT_GLITCH_WORDS := "Heat glitch (screen-wide Heat distortion, pulsing harder as Heat rises. Off by default.)" # TR
+const SUBTITLES_WORDS := "Subtitles (every spoken line, with the speaker's name)" # TR
+const ASSIST_WORDS := "Assist mode (new campaigns: %s free nudge a turn, %s%% HP. No ICE records or achievements.)" # TR
+## Parity OPT-01 (round 31's foot): RESET TO DEFAULTS resets the open tab's settings; the pad's Y
+## does the same (the prompt row says so).
+const RESET_WORDS := "Reset to defaults" # TR
+const RESET_TIP := "Puts every setting on this tab back to its default." # TR
+const RESET_PROMPT := "reset" # TR
+## The settings each tab's RESET TO DEFAULTS puts back ([Settings property, its setter]); the
+## Controls tab also resets the key binds (Settings.reset_keybinds).
+const RESETS := {
+	"Accessibility": [[&"reduce_effects", &"set_reduce_effects"], [&"reduce_motion", &"set_reduce_motion"], [&"flash_limiter", &"set_flash_limiter"],
+		[&"heat_glitch", &"set_heat_glitch"], [&"high_contrast", &"set_high_contrast"], [&"subtitles", &"set_subtitles"],
+		[&"subtitle_typing", &"set_subtitle_typing"], [&"assist_mode", &"set_assist_mode"], [&"text_scale", &"set_text_scale"],
+		[&"colorblind_mode", &"set_colorblind_mode"], [&"resolve_speed", &"set_resolve_speed"]],
+	"Display": [[&"window_mode", &"set_window_mode"], [&"resolution", &"set_resolution"], [&"vsync", &"set_vsync"], [&"show_fps", &"set_show_fps"],
+		[&"map_legend", &"set_map_legend"], [&"always_show_all_nodes", &"set_always_show_all_nodes"], [&"system_log", &"set_system_log"],
+		[&"palette_skin", &"set_palette_skin"]],
+	"Audio": [[&"master_volume", &"set_master_volume"], [&"music_volume", &"set_music_volume"], [&"sfx_volume", &"set_sfx_volume"]],
+	"Controls": [[&"pad_glyph_set", &"set_pad_glyph_set"]],
+	"Language": [[&"language", &"set_language"]]}
 const COLORBLIND_HEADING := "Colour-blind correction (patterns and glyphs stay the main cue)" # TR
 const RESOLVE_SPEED_HEADING := "Resolve speed after SEND IT (hold Fast-forward to speed it up)" # TR
 const GLYPH_HEADING := "Pad button glyphs" # TR
@@ -40,7 +65,8 @@ const GLYPH_HEADING := "Pad button glyphs" # TR
 const SKIN_HEADING := "Interface skin (terminal colours only; meanings and layout stay)" # TR
 ## Every word the W9 rows add (tests check each has a strings.csv key and no mouse wording).
 const W9_WORDS := COLORBLIND_WORDS + RESOLVE_SPEED_WORDS + GLYPH_WORDS + [REDUCE_MOTION_WORDS, HIGH_CONTRAST_WORDS,
-	COLORBLIND_HEADING, RESOLVE_SPEED_HEADING, GLYPH_HEADING, "Fast-forward the resolve (hold)"]
+	COLORBLIND_HEADING, RESOLVE_SPEED_HEADING, GLYPH_HEADING, "Fast-forward the resolve (hold)", REDUCE_EFFECTS_WORDS, FLASH_WORDS,
+	HEAT_GLITCH_WORDS, SUBTITLES_WORDS, RESET_WORDS, RESET_TIP]
 ## ART-10 4C: the v2 headings, sample and foot words (keys).
 const V2_WORDS := ["EFFECTS & MOTION", "SUBTITLES & ASSIST", "TEXT SCALE", "COLOUR-BLIND CORRECTION", "RESOLVE SPEED AFTER SEND IT",
 	"HEAT GLITCH PREVIEW (HUNTED, 82)", "The Cell never sleeps. Every word grows with this.", "Patterns and glyphs stay the main cue.",
@@ -52,8 +78,13 @@ const BIND_NOTE_WIDTH := 480.0
 ## ART-10 4C layout (px at 1280x720): the panel's widths with one and two columns, the gap
 ## between the columns, the title sticker's lettering size and tilt, the tick marks under
 ## the text-scale slider, and from which text scale Accessibility stacks its columns.
+## Parity OPT-01: two columns are round 31's centred terminal (1320 of the 1920 board = 880 px),
+## widened to 980 so the four colour-blind tiles keep one row at the game's type steps (they are
+## a third larger than the concept's), the right column a little wider than the left (round 31:
+## 580 to 640 board px of tiles and previews beside the switches).
 const WIDTH_ONE := 620.0
-const WIDTH_TWO := 1040.0
+const WIDTH_TWO := 980.0
+const RIGHT_SHARE := 1.1
 const COLUMN_GAP := 28
 const TITLE_PX := 34.0
 const TITLE_TILT := -3.0
@@ -106,6 +137,8 @@ var log_check: CheckButton
 var all_nodes_check: CheckButton
 var language_option: OptionButton
 var close_button: Button
+## Parity OPT-01: the foot's RESET TO DEFAULTS (the open tab's settings).
+var reset_button: Button
 var section: String = "Accessibility"
 ## Action waiting for a key press (Controls section), or empty.
 var rebinding: StringName = &""
@@ -127,7 +160,12 @@ var fit: FitScroll
 var max_height: float = 0.0:
 	set(v):
 		max_height = v
-		_fit_body.call_deferred()
+		_queue_fit()
+## The widest the panel may be (px; 0 = no cap): the host's room.
+var max_width: float = 0.0
+## The header's and foot's hints (`[LB] [RB] switch tab`, the pad prompts, "saved to profile"):
+## shown below STACK_FROM; at big text they give their rows to the section (the keys still work).
+var _hints: Array[Control] = []
 var _tabs: HFlowContainer
 var _tab_buttons: Dictionary = {}
 var _key_buttons: Dictionary = {}
@@ -168,17 +206,22 @@ func _init() -> void:
 	var switch_hint := Chrome.caps_label("[LB] [RB] %s" % tr("switch tab"), UiTheme.CAPTION, Palette.TEXT_LO)
 	switch_hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	tab_row.add_child(switch_hint)
+	_hints.append(switch_hint)
 	_body = VBoxContainer.new()
 	_body.name = "Body"
 	_body.add_theme_constant_override("separation", 4)
 	_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	fit = FitScroll.new(_body)
 	fit.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# Parity OPT-01: the panel is sized to its words, so a view snapped above a cut row left an
+	# empty band under it inside the terminal (a row is 50 px at 1.6): the view scrolls freely,
+	# MORE BELOW saying there is more (as the codex and slots views).
+	fit.hint.snap_rows = false
 	box.add_child(fit)
 	# Widgets are built once so tests (and Settings.changed) can drive them by name.
-	reduce_check = _check(tr("Reduce effects (no scanlines, flicker, chromatic, distortion)"), Settings.reduce_effects, Settings.set_reduce_effects)
-	flash_check = _check(tr("Flash limiter (max 3 flashes per second)"), Settings.flash_limiter, Settings.set_flash_limiter)
-	heat_glitch_check = _check(tr("Heat glitch (the screen distorts as Heat rises; off by default)"), Settings.heat_glitch, Settings.set_heat_glitch)
+	reduce_check = _check(tr(REDUCE_EFFECTS_WORDS), Settings.reduce_effects, Settings.set_reduce_effects)
+	flash_check = _check(tr(FLASH_WORDS), Settings.flash_limiter, Settings.set_flash_limiter)
+	heat_glitch_check = _check(tr(HEAT_GLITCH_WORDS), Settings.heat_glitch, Settings.set_heat_glitch)
 	heat_glitch_check.name = "HeatGlitchCheck"
 	(heat_glitch_check as CrtSwitch).note = _glitch_note
 	reduce_motion_check = _check(tr(REDUCE_MOTION_WORDS), Settings.reduce_motion, Settings.set_reduce_motion)
@@ -191,11 +234,11 @@ func _init() -> void:
 	glyph_option = _choice("GlyphOption", GLYPH_WORDS, Settings.PAD_GLYPH_SETS, Settings.pad_glyph_set, Settings.set_pad_glyph_set)
 	colorblind_tiles = CrtTiles.new(colorblind_option)
 	resolve_tiles = CrtTiles.new(resolve_speed_option)
-	subtitles_check = _check(tr("Subtitles with speaker names"), Settings.subtitles, Settings.set_subtitles)
+	subtitles_check = _check(tr(SUBTITLES_WORDS), Settings.subtitles, Settings.set_subtitles)
 	typing_check = _check(tr("Subtitles type in (off: each line shows at once)"), Settings.subtitle_typing, Settings.set_subtitle_typing)
 	typing_check.name = "TypingCheck"
 	var cfg := RunManager.config()
-	assist_check = _check(tr("Assist mode for new campaigns (%s free nudge a turn, %s%% HP; no ICE records or achievements)") % [TextDb.signed(cfg.assist_free_nudges), TextDb.signed(roundi((cfg.assist_hp_multiplier - 1.0) * 100.0))], Settings.assist_mode, Settings.set_assist_mode)
+	assist_check = _check(tr(ASSIST_WORDS) % [TextDb.signed(cfg.assist_free_nudges), TextDb.signed(roundi((cfg.assist_hp_multiplier - 1.0) * 100.0))], Settings.assist_mode, Settings.set_assist_mode)
 	assist_check.name = "AssistCheck"
 	scale_slider = _slider("Text scale", Settings.TEXT_SCALE_MIN, Settings.TEXT_SCALE_MAX, 0.1, Settings.text_scale, Settings.set_text_scale)
 	master_slider = _slider("Master volume", 0.0, 1.0, 0.05, Settings.master_volume, Settings.set_master_volume)
@@ -230,11 +273,18 @@ func _init() -> void:
 		if langs[i] == Settings.language:
 			language_option.select(i)
 	language_option.item_selected.connect(func(i: int) -> void: Settings.set_language(langs[i]))
-	# The foot: Close, the pad prompts, "saved to profile".
+	# The foot (round 31): RESET TO DEFAULTS, Close (the pointer's way out; B / Esc close too),
+	# the pad prompts (A toggle, B close, Y reset), "saved to profile".
 	var foot := HFlowContainer.new()
 	foot.name = "Foot"
 	foot.add_theme_constant_override("h_separation", 18)
 	box.add_child(foot)
+	reset_button = Button.new()
+	reset_button.name = "ResetDefaults"
+	reset_button.text = tr(RESET_WORDS).to_upper()
+	reset_button.tooltip_text = UiTip.fold(tr(RESET_TIP))
+	reset_button.pressed.connect(reset_section)
+	foot.add_child(reset_button)
 	var close := Button.new()
 	close.name = "Close"
 	close_button = close
@@ -244,11 +294,15 @@ func _init() -> void:
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	foot.add_child(spacer)
-	for p in [[JOY_BUTTON_A, tr("toggle")], [JOY_BUTTON_B, tr("close")]]:
-		foot.add_child(PadPrompts.make_pair(int(p[0]), String(p[1])))
+	for p in [[JOY_BUTTON_A, tr("toggle")], [JOY_BUTTON_B, tr("close")], [JOY_BUTTON_Y, tr(RESET_PROMPT)]]:
+		var pair := PadPrompts.make_pair(int(p[0]), String(p[1]))
+		foot.add_child(pair)
+		_hints.append(pair)
 	var saved := Chrome.caps_label(tr("saved to profile"), UiTheme.CAPTION, Palette.TEXT_LO)
 	saved.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	foot.add_child(saved)
+	_hints.append(saved)
+	_show_hints()
 	# The yellow OPTIONS title sticker over the header's right end (round 31).
 	title_sticker = VerbSticker.new(tr("OPTIONS"), VerbSticker.Fill.YELLOW, TITLE_PX, TITLE_TILT, VerbSticker.title_art("OPTIONS"))
 	title_sticker.pre_translated = true
@@ -282,6 +336,22 @@ func _place_sticker() -> void:
 	title_sticker.position = Vector2(size.x - m.x - Chrome.CHAMFER * 3.0, -m.y * STICKER_RISE)
 
 
+## How far the OPTIONS sticker rises over the panel's top edge (px; 0 when it is hidden): a
+## host keeps that room above the panel.
+func sticker_rise() -> float:
+	if title_sticker == null or compact:
+		return 0.0
+	return title_sticker.get_combined_minimum_size().y * STICKER_RISE
+
+
+## Parity OPT-01: the panel's width with one column: WIDTH_ONE growing with the text (a centred
+## terminal sized to its words; narrow at big text, its tabs and foot wrapped to rows that took
+## the section's room), up to `max_width` (the host's room; 0 = no cap).
+func one_column_width() -> float:
+	var w := WIDTH_ONE * maxf(1.0, Settings.text_scale)
+	return minf(w, max_width) if max_width > 0.0 else w
+
+
 ## The two columns side by side (wide enough, text below STACK_FROM).
 func two_columns() -> bool:
 	return not compact and Settings.text_scale < STACK_FROM
@@ -307,6 +377,7 @@ func show_section(name: String) -> void:
 			for w in [reduce_check, reduce_motion_check, flash_check, heat_glitch_check, high_contrast_check, subtitles_check, typing_check, assist_check]:
 				left.add_child(w)
 			var right := _column("Right")
+			right.size_flags_stretch_ratio = RIGHT_SHARE
 			right.add_child(_heading(tr("TEXT SCALE")))
 			right.add_child(_scale_block)
 			right.add_child(_heading(tr("COLOUR-BLIND CORRECTION")))
@@ -359,14 +430,14 @@ func show_section(name: String) -> void:
 		"Language":
 			for w in [_heading(tr("Language (translations from assets/text/strings.csv)")), language_option]:
 				_body.add_child(w)
-	custom_minimum_size.x = WIDTH_TWO if (name == "Accessibility" and two_columns()) else WIDTH_ONE
+	custom_minimum_size.x = WIDTH_TWO if (name == "Accessibility" and two_columns()) else one_column_width()
 	UiWrap.fit(self)
 	if trap_focus:
 		UiFocus.trap(self)  # inside the pause menu: focus stays in the panel
 	else:
 		UiFocus.link_layout(self)  # the section swapped its controls
 	UiFocus.focus_first(_body)
-	_fit_body.call_deferred()
+	_queue_fit()
 
 
 ## Takes the built widgets out of `node` (they wait off the tree); frees the rest.
@@ -491,13 +562,57 @@ func _unhandled_input(event: InputEvent) -> void:
 		closed.emit()
 		get_viewport().set_input_as_handled()
 		return
-	# LB / RB switch the tab (round 31).
+	# LB / RB switch the tab (round 31); Y resets the tab (round 31's foot: "Y reset").
 	if event is InputEventJoypadButton and event.pressed:
 		var b := (event as InputEventJoypadButton).button_index
+		if b == JOY_BUTTON_Y:
+			reset_section()
+			get_viewport().set_input_as_handled()
+			return
 		if b == JOY_BUTTON_LEFT_SHOULDER or b == JOY_BUTTON_RIGHT_SHOULDER:
 			var i := SECTIONS.find(section) + (1 if b == JOY_BUTTON_RIGHT_SHOULDER else -1)
 			show_section(SECTIONS[wrapi(i, 0, SECTIONS.size())])
 			get_viewport().set_input_as_handled()
+
+
+## Parity OPT-01 (round 31 RESET TO DEFAULTS): puts every setting of the open tab back to its
+## default (the Settings script's own initial values: no number is written here), through the
+## same setters the rows call, then shows the tab again with the new values. The Controls tab
+## also resets the key binds. Settings only; nothing else changes.
+func reset_section() -> void:
+	var defaults: Object = (Settings.get_script() as GDScript).new()
+	for pair in RESETS.get(section, []):
+		Settings.call(StringName(pair[1]), defaults.get(StringName(pair[0])))
+	(defaults as Node).free()
+	if section == "Controls":
+		Settings.reset_keybinds()
+	sync_widgets()
+	show_section(section)
+
+
+## Shows the Settings' values on the built widgets (no signal: nothing is set twice).
+func sync_widgets() -> void:
+	for pair in [[reduce_check, Settings.reduce_effects], [reduce_motion_check, Settings.reduce_motion], [flash_check, Settings.flash_limiter],
+			[heat_glitch_check, Settings.heat_glitch], [high_contrast_check, Settings.high_contrast], [subtitles_check, Settings.subtitles],
+			[typing_check, Settings.subtitle_typing], [assist_check, Settings.assist_mode], [vsync_check, Settings.vsync], [fps_check, Settings.show_fps],
+			[legend_check, Settings.map_legend], [log_check, Settings.system_log], [all_nodes_check, Settings.always_show_all_nodes]]:
+		(pair[0] as CheckButton).set_pressed_no_signal(bool(pair[1]))
+		(pair[0] as Control).queue_redraw()
+	for pair in [[scale_slider, Settings.text_scale], [master_slider, Settings.master_volume], [music_slider, Settings.music_volume], [sfx_slider, Settings.sfx_volume]]:
+		(pair[0] as HSlider).set_value_no_signal(float(pair[1]))
+	_sync_scale()
+	for pair in [[colorblind_option, Settings.COLORBLIND_MODES, Settings.colorblind_mode], [resolve_speed_option, Settings.RESOLVE_SPEEDS, Settings.resolve_speed],
+			[skin_option, Settings.PALETTE_SKINS, Settings.palette_skin], [glyph_option, Settings.PAD_GLYPH_SETS, Settings.pad_glyph_set]]:
+		(pair[0] as OptionButton).select(maxi(0, (pair[1] as Array).find(pair[2])))
+	for t in [colorblind_tiles, resolve_tiles]:
+		(t as CrtTiles).refresh()
+	mode_option.select(Settings.window_mode)
+	var at := Settings.RESOLUTIONS.find(Settings.resolution)
+	if at >= 0:
+		resolution_option.select(at)
+	var lang := Settings.available_languages().find(Settings.language)
+	if lang >= 0:
+		language_option.select(lang)
 
 
 static func _key_name(physical: int) -> String:
@@ -589,7 +704,14 @@ func _labelled(text: String) -> Label:
 
 ## The section's view: the room `max_height` leaves after the terminal's header, tabs and foot.
 func _on_settings_changed() -> void:
-	_fit_body.call_deferred()
+	_show_hints()
+	_queue_fit()
+
+
+## The hints show below STACK_FROM only.
+func _show_hints() -> void:
+	for h in _hints:
+		h.visible = Settings.text_scale < STACK_FROM
 
 
 func _fit_body() -> void:
@@ -599,10 +721,49 @@ func _fit_body() -> void:
 		fit.max_height = 0.0
 		return
 	var chrome := window.get_combined_minimum_size().y - fit.get_combined_minimum_size().y
-	fit.max_height = maxf(FitScroll.MIN_VIEW * Settings.text_scale, max_height - chrome)
+	if window.is_inside_tree() and window.size.y > 0.0 and fit.size.y > 0.0:
+		chrome = maxf(chrome, window.size.y - fit.size.y)  # as laid out (the tabs and the foot wrapped)
+	# The view's own cap leaves out its MORE BELOW room under it.
+	var hint_room := fit.get_combined_minimum_size().y - fit.scroll.get_combined_minimum_size().y
+	fit.max_height = maxf(FitScroll.MIN_VIEW * Settings.text_scale, max_height - chrome - hint_room)
+
+
+## Parity OPT-01: the panel sized to its words (centred, not stretched over its room) measures
+## its header, tabs and foot only once they are laid out at their width (the tabs and the foot
+## wrap): the view is fitted now and again over FIT_PASSES frames.
+const FIT_PASSES := 3
+var _fit_left: int = 0
+
+
+func _queue_fit() -> void:
+	_fit_left = FIT_PASSES
+	_fit_body.call_deferred()
+	if is_inside_tree() and not get_tree().process_frame.is_connected(_fit_pass):
+		get_tree().process_frame.connect(_fit_pass, CONNECT_ONE_SHOT)
+
+
+func _fit_pass() -> void:
+	_fit_body()
+	# A focus that landed while the rows were still being measured (a row's first frames are a
+	# pre-layout height) left the view scrolled past it: bring it back (the section's first
+	# control shows its heading too: the view's top).
+	var focused := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
+	if focused != null and fit.scroll.is_ancestor_of(focused) and focused != UiFocus.first_focusable(_body):
+		fit.scroll.ensure_control_visible(focused)
+	else:
+		fit.scroll.scroll_vertical = 0  # the focus on a tab or the section's first row: its top
+	_fit_left -= 1
+	if _fit_left > 0 and is_inside_tree() and not get_tree().process_frame.is_connected(_fit_pass):
+		get_tree().process_frame.connect(_fit_pass, CONNECT_ONE_SHOT)
+
+
+func _exit_tree() -> void:
+	if get_tree().process_frame.is_connected(_fit_pass):
+		get_tree().process_frame.disconnect(_fit_pass)
 
 
 func _ready() -> void:
+	_queue_fit()
 	Settings.changed.connect(_on_settings_changed)
 	Settings.hints_changed.connect(_relabel_close)
 	_relabel_close()

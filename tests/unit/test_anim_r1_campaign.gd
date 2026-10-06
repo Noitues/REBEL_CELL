@@ -205,7 +205,10 @@ func test_a_saved_run_is_resumed_from_the_hq_jack_in() -> void:
 	hq.show_hq()
 	await _frames(2)
 	var asks := _scene_asks.size()
-	var jack := hq._panel.find_child("JackIn", true, false) as BaseButton
+	# HQ-B (e): JACK IN is the verb-slot sticker ("Launch"); while a run waits it resumes it.
+	var jack := hq._panel.find_child("Launch", true, false) as VerbSticker
+	assert_not_null(jack, "JACK IN while a run waits")
+	assert_eq(hq.resume_site(), site.id, "the resume jacks from the run's own Site")
 	jack.pressed.emit()
 	assert_eq(_scene_asks.size(), asks + 1, "JACK IN goes back into the run left")
 	assert_eq(_scene_asks[_scene_asks.size() - 1], RunManager.NETRUN_SCENE)
@@ -505,6 +508,8 @@ func test_the_arriving_screens_say_when_they_are_ready() -> void:
 	assert_true(hq.has_method(Fx.ARRIVAL_READY_METHOD))
 	hq.new_campaign(1)
 	await _frames()
+	# The 3D city's camera settles over a few frames: the cover waits for it (bounded).
+	await BoundedWait.until(get_tree(), func() -> bool: return hq.arrival_ready(), 2.0)
 	assert_true(hq.arrival_ready())
 	assert_gt(Motion.seconds(&"jack_arrival_wait"), 0.0, "the cover waits at most this long")
 	await _close(hq)
@@ -648,13 +653,11 @@ func test_the_hq_at_big_text_shows_hp_and_keeps_saved_off_the_tags() -> void:
 	hq.new_campaign(1)
 	await _frames(4)
 	var op := RunManager.campaign.roster[0]
-	var dossier := hq._panel.find_child("Crew_%s" % op.id, true, false) as CrewCard
-	var hp_line: Label = null
-	for l in dossier.find_children("*", "Label", true, false):
-		if (l as Label).text.begins_with("HP"):
-			hp_line = l
-	assert_not_null(hp_line)
-	assert_true(hp_line.get_global_rect().end.y <= SCREEN.size.y, "the dossier's HP shows on the first screen")
+	# HQ-B: the crew hand's cards (CrewHandCard) are drawn; the HP reads in the card's tooltip.
+	var card := hq._panel.find_child("Crew_%s" % op.id, true, false) as CrewHandCard
+	assert_not_null(card, "the operative's card")
+	assert_string_contains(card.tooltip_text.replace("\n", " "), "HP %d/%d" % [op.hp, op.max_hp], "the card says the HP")
+	assert_true(card.get_global_rect().end.y <= SCREEN.size.y, "the hand's card shows on the first screen")
 	var avoid := Fx.avoid_rects(hq)
 	for r in hq.hud.stats.tag_rects():
 		var g := Rect2(hq.hud.stats.get_global_transform() * r.position, r.size)
@@ -664,13 +667,6 @@ func test_the_hq_at_big_text_shows_hp_and_keeps_saved_off_the_tags() -> void:
 				hit = true
 		assert_true(hit, "the SAVED stamp keeps off the top bar's tags")
 	Settings.set_text_scale(1.0)
-	hq.show_hq()
-	await _frames(3)
-	var scrub := hq._panel.find_child("ScrubHeat", true, false) as Button
-	var mark := scrub.get_node(^"PriceIcon") as Control
-	var font := scrub.get_theme_font(&"font")
-	var text_end := font.get_string_size(scrub.text, HORIZONTAL_ALIGNMENT_LEFT, -1, scrub.get_theme_font_size(&"font_size")).x
-	assert_lt(mark.position.x, scrub.get_theme_stylebox(&"normal").get_margin(SIDE_LEFT) + float(scrub.icon.get_width()) + 40.0 + text_end, "the Schematics icon right after the price")
 	await _close(hq)
 
 

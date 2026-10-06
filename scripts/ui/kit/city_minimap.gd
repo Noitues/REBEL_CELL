@@ -52,7 +52,21 @@ func pulse(points: Array[Vector2]) -> void:
 		pulse_t = 1.0
 		return
 	pulse_t = 0.0
-	Motion.run(&"minimap_pulse", self, ^"pulse_t", 1.0)
+	_pulse_tween = Motion.run(&"minimap_pulse", self, ^"pulse_t", 1.0)
+
+
+var _pulse_tween: Tween = null
+
+
+## MotionSkip (ANIM-R6 D7, a short motion: `register_passive`): the ring still lands.
+func motion_running() -> bool:
+	return _pulse_tween != null and _pulse_tween.is_valid() and _pulse_tween.is_running()
+
+
+## MotionSkip: the ring at rest (progress 1).
+func complete_motion() -> void:
+	Motion.settle(self, ^"pulse_t")
+	_pulse_tween = null
 
 
 func _init() -> void:
@@ -69,6 +83,7 @@ func _init() -> void:
 	_map.draw.connect(_draw_map)
 	content.add_child(_map)
 	resized.connect(_place_map)
+	MotionSkip.register_passive(self)  # ANIM-R6 D7
 
 
 func _ready() -> void:

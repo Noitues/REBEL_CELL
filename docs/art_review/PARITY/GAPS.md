@@ -315,14 +315,14 @@ Refs: build `options`, `codex`, `stats`; concept `round31_ui_chrome/settings_men
 **OPT-01 (P2) Options framing.** Concept: a centred terminal ~700 px wide with an `OPTIONS` sticker
 on its corner, the dimmed page behind. Main: a full-width terminal (y 60-720) with the sticker,
 over the undimmed wireframe city (LOOT-04). Build: a left terminal and the logo. Likely file:
-`scripts/ui/kit/settings_panel.gd`, `title_scene.gd show_options`. Decision:
+`scripts/ui/kit/settings_panel.gd`, `title_scene.gd show_options`. Decision: Match the concept (designer group ruling 2026-10-05, menus): a centred terminal sized to its words with the OPTIONS sticker over the dimmed page, from the title and from the pause menu (in its place), RESET TO DEFAULTS in the foot (pad Y); fixed, see DECISIONS "Parity fix — codex, stats, options".
 
 **OPT-02 (P3) Switch rows.** Concept and main: the same rows in caps with a sans hint line,
 `ON`/`OFF` switches, `>` caret and lime brackets on focus. Main: the Heat glitch row lacks the
-concept's `LIMITED: flash limiter on, slow layer only` chip. Matches otherwise. Decision:
+concept's `LIMITED: flash limiter on, slow layer only` chip. Matches otherwise. Decision: Match the concept (designer group ruling 2026-10-05): the rows take the concept's words; the LIMITED chip was there (the glitch was off in the audit's frame), shown with the glitch on; fixed.
 
 **OPT-03 (P3) Right column.** Concept and main: text scale slider with the live sample, colour-blind
-tiles, resolve speed tiles, heat glitch previews; main matches. Decision:
+tiles, resolve speed tiles, heat glitch previews; main matches. Decision: Match the concept (designer group ruling 2026-10-05): already matched; kept, the column a little wider than the left so the tiles keep one row.
 
 **CODEX-01 (P1) Codex layout.** Build: two rows of tabs (Slices, Statuses & precision, Classes,
 Corporations, Cards, Firmware, Daemons, Ring segments, Enemies, Nodes, Home servers, Defense assets,
@@ -331,7 +331,7 @@ colour and a stencil name. Main: a `CODEX` sticker and one long terminal scroll 
 `SHIM SHIM: deals damage...` lines (the code then the name again), no glyphs except a few statuses,
 Plex sans. View: the build's is a reference you can find things in; main's is a wall of text.
 Likely file: `scripts/ui/kit/codex.gd`; art-pass source `art-m13-final:scripts/ui/kit/codex.gd`.
-Decision:
+Decision: The build reworked in v2 (designer group ruling 2026-10-05): tab plates in rows over one paper page with the 1C atlas glyphs / crests / StatIcons, two columns, STORY first with a campaign; fixed (`CodexBook`).
 
 **STATS-01 (P1) Stats layout.** Build: stat tiles with icons (Campaigns started / won / lost,
 Runs, Operatives lost, Raids, Best ICE, Perfects, Racks, Cycles, Assisted wins, Achievements), an
@@ -339,7 +339,7 @@ ACHIEVEMENTS row of round badges (earned in pink, locked with a lock), RUN HISTO
 cards. Main: a PROFILE strip of six numbers, then `STATS // RECORDS` as one paragraph of text
 (`Campaigns: 3 started, 1 won, 0 lost. ...`), achievements as `[x] First Blood` text lines, run
 history as text lines. View: the build is far more readable. Likely file: `title_scene.gd
-show_stats` (~l.514); art-pass source `art-m13-final:scripts/ui/title_scene.gd`. Decision:
+show_stats` (~l.514); art-pass source `art-m13-final:scripts/ui/title_scene.gd`. Decision: The build reworked in v2 (designer group ruling 2026-10-05): terminal stat tiles with icons, round achievement badges, paper run cards; fixed.
 
 ### Pause menus (`hq_pause.jpg`, `pause_netrun.jpg`, `pause_fight.jpg`, `pause_fight_quit.jpg`)
 Refs: build `hq_pause`, `pause_netrun`, `pause_fight` (a compact terminal with a pink `Resume

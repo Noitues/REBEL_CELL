@@ -136,6 +136,78 @@ after 1.0 | after 2.0): `docs/art_review/PARITY/fixes/NETRUN.jpg`.
   `scripts/ui/kit/spinner_view.gd` (SHOP-08), `scripts/ui/kit/spinner_mini.gd` (the pickable wheel),
   `scripts/ui/kit/buy_button.gd` (BUY_FONT), `tools/art_bake/mainframe_parts_bake.py` (`--part leave`),
   `tools/visual_qa/review_pack.gd`, `assets/text/strings.csv` (re-export).
+### 2026-10-06 — Parity fix — codex, stats, options (designer group ruling)
+Designer group ruling 2026-10-05 for the menus: the codex and the stats take the M13 build's structure reworked in
+the v2 kit (CODEX-01, STATS-01); the options match round 31's concept (`round31_ui_chrome/settings_menu.png`,
+OPT-01..03). Kept: HQ-B's STORY section heading the Codex (Q8) and Codex / Options in the pause menu only. Sheet
+`docs/art_review/PARITY/fixes/MENUS.jpg` (concept or build | before | after at 1.0 / 1.6 / 2.0). Files:
+`scripts/ui/kit/codex.gd`, new `codex_book.gd`, `stat_tile.gd`, `achievement_badge.gd`, `run_receipt.gd`,
+`settings_panel.gd`, `title_scene.gd` (show_codex / show_stats / show_options and their helpers only),
+`pause_menu.gd` (its Options / Codex sub-pages), `stat_icon.gd` (five marks), `tools/visual_qa/review_pack.gd`.
+- **CODEX-01, the Codex as a book (`CodexBook`, ported from art-m13-final `scripts/ui/kit/codex_spread.gd`):** the
+  sections as round 31's terminal tab plates (`MenuChip.plate` `tab`), wrapping in rows (two at 1280, the build's),
+  over one paper page (the art pass's paper stock, `corp_paper.gdshader`; the build's cream page) with a Courier
+  caption `CODEX // WHAT THE CELL KNOWS`, the section in Anton ink and its entries in two columns when they fit
+  (title Courier Prime Bold, text Plex, ink). **Glyphs (reuse, nothing redrawn):** the 1C atlas (`GlyphIcon`) for
+  slices (slice colour), statuses (their colours), class hubs, cards (the first effect's pictogram, as the hand's
+  CardFace reads it), Firmware, Daemons and ring segments; the corporation's crest (`CorpSeal.draw_crest`, the art
+  pass's exported emblems) on an ink disc for a corporation and an enemy; the art pass's StatIcon set in ink for the
+  rest (nodes, home servers, defense assets, threats, the lexicon's info mark, STORY's terminal, a secret
+  corporation's lock). `Codex.entries` names each entry's glyph source (`slice`, `status`, `tier`, `corporation`,
+  `hub`, `id`, `effect`; ported from the same tag's codex.gd) and a status's title is its name (its glyph is drawn).
+  An entry never says its title twice (the audit's "SHIM SHIM:": `CodexBook.body_text`).
+  - **Pad:** the tabs are one row of focus stops (LB / RB switch from anywhere in the book, wrapping); the page is
+    ONE focus stop: up / down scroll it by a quarter view and move on at either end (as the terminal reference text
+    did), the tabs above it and Back under it. **Calls:** the page's view scrolls without snapping to its entries
+    (an entry at 2.0 is a third of the view; snapping left most of the room empty), as the slots page.
+  - **Big text (from 1.6):** the tabs are one row that scrolls sideways (focus, wheel, LB / RB; no bar), the page drops
+    its caption and heading (the open tab names the section) and takes the tabs' width: rows of big tabs took the
+    page's room at 2.0.
+  - **Pause menu:** the Codex is the same book, opened centred over the scrim in the sticker menu's place (below).
+- **STATS-01 (ported from art-m13-final `title_scene.gd` show_stats / stat_cells, `kit/achievement_badge.gd`,
+  `kit/run_receipt.gd`):** one sheet scrolling in the page's room: `STATS // RECORDS` as twelve terminal tiles
+  (`StatTile`: a small v2 terminal panel, the art pass's StatIcon in its colour, the number in the mono, the name in
+  terminal CAPS; six a row at 1280), the best ICE per corporation under them (and in the Best ICE tile's tooltip);
+  ACHIEVEMENTS (count on the window's tag) as round badges (earned: the Cell's pink with the vinyl's white die-cut
+  ring and the icon in ink, tilted; not yet: the dashed space, the open icon and a lock; the name under each); RUN
+  HISTORY as paper run cards (`RunReceipt` on the art pass's paper stock: the corporation in Anton, tier and Site
+  typed in Courier Prime, the outcome stamped (HARM for a flatline), Cycles and banked typed by their icons; "NO
+  RUNS YET" card when empty). The PROFILE strip and the paragraph of records are gone (the tiles hold every number).
+  Tiles, badges and cards are focus stops; `link_grid` links each grid (left / right a row, up / down the cell
+  above / below, the last row on to the next grid, the cards down to Back). Calls: the earned badge is drawn (the
+  build's own code) rather than a kit VinylSticker (ten SubViewports for ten badges); the outcome words are new
+  keys (Completed / Died / Aborted / Unfinished).
+- **OPT-01, round 31's framing:** the Options is a centred terminal sized to its words over the page (title: the
+  blurred, dimmed city; pause: the GlassScrim), its OPTIONS sticker on its corner, `> TITLE // OPTIONS` or `> PAUSED
+  // OPTIONS`. Two columns at 980 px (round 31's 880, widened so the four colour-blind tiles keep one row at the
+  game's type steps; the right column 1.1 of the left). From the pause menu it opens in the sticker menu's place,
+  centred under the screen's subtitles' band (`PauseMenu.sub_rect`, followed each frame while open), and closing it
+  shows the menu again (the pause test pinned "one column inside the menu": superseded). **RESET TO DEFAULTS** (the
+  concept's foot; pad Y): the open tab's settings back to the Settings script's own defaults through the same setters
+  (the Controls tab also resets the key binds); the rows show the new values (`sync_widgets`). Close stays beside it
+  (the pointer's way out). **Big text:** one column as wide as the text needs (620 x text scale, up to the room),
+  and from 1.5 the `[LB] [RB] switch tab` hint, the pad prompts and "saved to profile" give their rows to the section
+  (the keys still work). Fit: the section's view is fitted over 3 frames after it is laid out, its MORE BELOW room
+  counted (the panel overran the room by that room).
+- **OPT-02:** the rows' words are the concept's (REDUCE EFFECTS "No scanlines, flicker, chromatic or distortion",
+  FLASH LIMITER "At most 3 flashes a second. On by default.", HIGH CONTRAST "Opaque panels, 7:1 text and thick
+  edges", SUBTITLES "Every spoken line, with the speaker's name", ASSIST MODE "New campaigns: +1 free nudge a turn,
+  +25% HP. No ICE records or achievements." (the numbers stay the config's), HEAT GLITCH "Screen-wide Heat
+  distortion, pulsing harder as Heat rises. Off by default." (the concept's "pulsing on Heat events" said more than
+  the layer does)). The LIMITED chip was already there: the audit's frame had the glitch off (it shows with the glitch
+  on under the flash limiter, as the concept's frame; review_pack `options_glitch` shows it).
+- **OPT-03:** the right column already matched (text scale slider and sample, colour-blind and resolve-speed tiles,
+  the Heat glitch previews); kept, with the slider's 1.0 / 1.5 / 2.0 ticks (the game's range; the concept drew 1.6).
+  The skin picker (ART-12) stays on Display.
+- **StatIcon:** LOCK, CLOSE, CHECK, PLUS, INFO ported from art-m13-final `scripts/ui/kit/stat_icon.gd` (the art
+  pass's W2 marks, with `_round_line`); CLOSE in HARM, LOCK in TEXT_MID.
+- **Strings (once, re-exported):** the stat tiles' names, the run cards' words, the rows' new words, RESET TO
+  DEFAULTS and its tooltip, "reset", "Not earned yet."; the records paragraph's two strings went.
+- **Tests:** new `tests/unit/test_parity_menus.gd` (fast). Changed (the look they pinned is superseded; behaviour
+  kept): `test_art10_menus` (the pause test: Options two columns centred, the Codex a CodexBook; the fit test reads
+  the book and the stats view), `test_title_and_menus` (the pause Codex's words through `all_text`),
+  `test_anim_r5_city::test_the_pause_menu_is_as_tall_as_what_it_shows` (Options no longer grow the menu: they open
+  beside it). Dropped: none.
 ### 2026-10-05 — Parity fix — HQ runs and gate (designer group ruling)
 Designer group ruling 2026-10-05: the HQ run and the Central Server gate match the concepts (round 43
 `hq_{solace,meridian,halcyon,orbital}_compound.png`, `dispatch_idea_1_sync_strike.png`, round 38
@@ -9908,6 +9980,12 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **Parity fix codex, stats, options (2026-10-06, built, see "Parity fix — codex, stats, options"):** (1) RESET TO
+  DEFAULTS (round 31's foot, pad Y) resets the OPEN TAB's settings only (Accessibility, Display, Audio, Controls with
+  its key binds, Language), to the Settings script's own defaults (a Deck's first-run text size is not restored):
+  keep per tab, or reset every tab at once (and ask first)? (2) The Codex page is paper (the build's, and the ruling's
+  "paper pages"), while v2 §1.2 keeps paper for corp documents: keep paper, or the Cell's terminal glass with the
+  same tabs and glyphs?
 - **HQRUN-02, today's HQ run as nodes (2026-10-05, held, not built; see "Parity fix — HQ runs and gate"):** GDD 4.2
   / 11.7 make the HQ run the breach: one node, the Central Server, behind the gate's Exploits; the page draws one
   dashed line from the entry to the server. The round 43 concepts draw a whole compound route (nodes on the helix,
@@ -10396,3 +10474,12 @@ Rulings 2026-10-05: netrun pages match the concepts; motion: add the scan band t
 - **DAEMON-01:** the card follows the art pass (ported from art-pass W8c): the name once (no `Daemon <name>` line; the Daemon's own description), the head, sigil, name and width scale with the text size. The family colour rule stays (concept). Test `test_the_daemon_card_says_the_name_once_at_every_text_size`.
 - **MOTION-06:** `PageTransition` (where `panel_in` is played; `terminal_window.gd` / `menu_motion.gd` do not play it) gets a `ScanBand`: a cyan band with a paper-white leading edge crossing the page's glass top to bottom from the end of the fade to the end of `panel_in`, following the sliding page, clipped to the glass (GLASS_META windows). It plays on the `panel_in` entry's duration (comment updated in `ui_motion.tres`, no new id), is freed by a skip (MotionSkip `complete_motion`) and never exists under reduce effects or reduce motion. The existing one-frame `panel_crt_roll` is unchanged. Tests `test_panel_in_plays_a_scan_band_over_its_own_entry`, `test_a_skip_removes_the_scan_band`, `test_no_scan_band_under_reduce_effects` (all in `tests/unit/test_parity_jack_motion.gd`, fast tier).
 - Dropped tests: none. Sheet: `docs/art_review/PARITY/fixes/JACK_MOTION.jpg`.
+
+## FIX-REDS-2 (M14) — MotionSkip registration of the HQ redesign's two animating kit views
+- `scripts/ui/kit/city_minimap.gd` (the `minimap_pulse` ring) and `scripts/ui/kit/crew_hand_card.gd` (the `polaroid_tilt` hover tilt) animated through `Motion.run` but joined no MotionSkip group, so `test_every_script_that_animates_registers_or_says_why_not` failed. Both are short motions: each calls `MotionSkip.register_passive(self)` and keeps its tween; `motion_running()` is that tween running; `complete_motion()` is `Motion.settle` of the animated property (`pulse_t` to 1, `rotation_degrees` to the tilt's rest). Reduce effects already lands the end state (`Motion.run` returns null and sets the value).
+- The other full-tier ANIM rule scripts (`r2_combat`, `r5_city`, `r6_city`, `r6_netrun`, `r3_city`, `anim4_drag_drop`, `r6_rules`) are green. Three tests in `test_anim_r1_campaign.gd` still fail and are not mechanical rules fixes; they are stale against the HQ redesign and need a rewrite on the new HQ page: `test_a_saved_run_is_resumed_from_the_hq_jack_in` (line 209: no `JackIn` node under `hq._panel`), `test_the_arriving_screens_say_when_they_are_ready` (line 508: `hq.arrival_ready()` is false after `new_campaign`), `test_the_hq_at_big_text_shows_hp_and_keeps_saved_off_the_tags` (line 650: no `Crew_<id>` node, so the lookup is null).
+- Dropped tests: none.
+
+## FIX-REDS-2b (M14) — the three stale test_anim_r1_campaign tests ported to HQ-B
+- `test_a_saved_run_is_resumed_from_the_hq_jack_in`: JACK IN is the "Launch" VerbSticker (as in test_hq_b_jack); it also asserts `resume_site()`. `test_the_arriving_screens_say_when_they_are_ready`: not a bug in hq_scene; the 3D city camera settles over a few frames, so the test waits for `arrival_ready()` with BoundedWait. `test_the_hq_at_big_text_shows_hp_and_keeps_saved_off_the_tags`: reads the `CrewHandCard` (HP now lives in its tooltip; the card must sit on the first screen); the SAVED-stamp part is unchanged.
+- Dropped assertion: the tail of that big-text test (the Schematics `PriceIcon` right after the SCRUB HEAT price). The chip is now a MenuChip in the Heat terminal with the price in words (no PriceIcon exists); its price line stays covered by `test_scrub_heat_says_its_price_is_schematics`.

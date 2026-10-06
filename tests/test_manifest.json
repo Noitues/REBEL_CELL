@@ -681,6 +681,10 @@
 			"seconds": 6.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_parity_menus.gd": {
+			"seconds": 10.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_hq_b_heat_gauge.gd": {
 			"seconds": 4.0,
 			"tier": "fast"
