@@ -183,6 +183,7 @@ static func label_color(state: StringName) -> Color:
 
 ## The edge colour of a state for a glass component whose rest edge is `edge`.
 static func edge_color(state: StringName, edge: Color = Palette.TERMINAL_EDGE) -> Color:
+	edge = PaletteSkins.chrome(edge)  # ART-12 12s-b: a glass component's edge is chrome
 	match state:
 		DISABLED:
 			return Palette.DISABLED

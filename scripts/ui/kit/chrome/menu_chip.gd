@@ -30,6 +30,7 @@ var selected := false:
 
 
 func _init(p_text: String = "", p_line: String = "", p_accent: Color = Palette.NET_CYAN) -> void:
+	PaletteSkins.watch(self)  # ART-12 12s-b: the skin's chrome follows a pick
 	text = p_text
 	line = p_line
 	accent = p_accent
@@ -148,7 +149,7 @@ func _draw() -> void:
 		if plate == &"chip":
 			pressed = false  # the chip's plate stays navy: its words stay white
 	else:
-		var glass := Color(accent, 0.85) if pressed else (Palette.TERMINAL_BG if not hot else Palette.TERMINAL_BG.lerp(accent, 0.12))
+		var glass := Color(PaletteSkins.chrome(accent), 0.85) if pressed else (PaletteSkins.chrome(Palette.TERMINAL_BG) if not hot else PaletteSkins.chrome(Palette.TERMINAL_BG).lerp(PaletteSkins.chrome(accent), 0.12))
 		Chrome.draw_terminal(self, r, accent if not disabled else Palette.DISABLED, glass, Chrome.CHAMFER * 0.8)
 	if disabled:
 		var x := r.position.x
@@ -166,7 +167,7 @@ func _draw() -> void:
 	var y := r.position.y + PAD.y + g.y + lf.get_ascent(lp)
 	if hot and not disabled:
 		var centred := plate != &"chip" and plate != &""
-		draw_string(lf, Vector2(x0 - (lp * CARET_SHARE if centred else 0.0), y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink if pressed else accent)
+		draw_string(lf, Vector2(x0 - (lp * CARET_SHARE if centred else 0.0), y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink if pressed else PaletteSkins.chrome(accent))
 		if not centred:
 			x0 += lp * CARET_SHARE
 	draw_string(lf, Vector2(x0, y), shown_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink)

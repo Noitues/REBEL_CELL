@@ -47,7 +47,7 @@ func _init(p_title: String = "", p_destructive: bool = false) -> void:
 
 ## The edge colour: HARM on a destructive confirm, the terminal cyan otherwise.
 func edge_color() -> Color:
-	return Palette.HARM if destructive else HudSkin.TERMINAL_EDGE
+	return Palette.HARM if destructive else PaletteSkins.chrome(HudSkin.TERMINAL_EDGE)
 
 
 ## The header's words ("> CONFIRM // QUIT"), translated.

@@ -102,6 +102,7 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	PaletteSkins.bind(self, _sync)  # ART-12 12s-b
 	label.add_theme_font_override(&"font", Palette.mono())
 	label.add_theme_font_size_override(&"font_size", UiTheme.font_px(text_step))
 	label.position = PAD
@@ -119,7 +120,7 @@ func accent() -> Color:
 		Accent.SCHEMATICS:
 			return Palette.RESIST_GOLD
 		Accent.CORP:
-			return corp_color
+			return PaletteSkins.chrome(corp_color)  # ART-12 12s-b: a Cell-cyan accent given as a corp colour
 		Accent.DISPATCH:
 			return Palette.HARM
 	return PaletteSkins.chrome(Palette.NET_CYAN)  # ART-12 12s: the Cell's edge follows the skin

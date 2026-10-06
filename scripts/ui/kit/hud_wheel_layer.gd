@@ -154,7 +154,7 @@ func _draw() -> void:
 		var drop := WheelView._zone_is(wv.valid_zones, zone)
 		var rim := HudSkin.FOCUS if drop else wv.wheel_color
 		draw_circle(c + Vector2(2.0, 3.0) * s, r, Color(Palette.NIGHT_SKY, 0.5))
-		draw_circle(c, r, Palette.TERMINAL_BG_HOT if hot else HudSkin.TERMINAL_BG)
+		draw_circle(c, r, PaletteSkins.chrome(Palette.TERMINAL_BG_HOT) if hot else PaletteSkins.chrome(HudSkin.TERMINAL_BG))
 		draw_arc(c, r, 0.0, TAU, 32, rim.lightened(0.25) if hot else rim, RIM_PX * s * (1.4 if hot or drop else 1.0), true)
 		var gc := HudSkin.TERMINAL_HI if hot or drop else HudSkin.TERMINAL_TEXT
 		if HudSkin.glyph_name("ccw" if int(b["direction"]) < 0 else "cw") == &"":

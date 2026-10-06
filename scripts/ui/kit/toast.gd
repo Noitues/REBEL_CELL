@@ -25,8 +25,8 @@ func _init() -> void:
 	visible = false
 	var sb := StyleBoxFlat.new()
 	_panel = sb
-	sb.bg_color = HudSkin.TERMINAL_BG
-	sb.border_color = HudSkin.TERMINAL_EDGE
+	sb.bg_color = PaletteSkins.chrome(HudSkin.TERMINAL_BG)
+	sb.border_color = PaletteSkins.chrome(HudSkin.TERMINAL_EDGE)
 	sb.set_border_width_all(2)
 	sb.set_content_margin_all(8)
 	sb.content_margin_left = MARK_ROOM
@@ -64,6 +64,7 @@ func _show(text: String, anchor: Vector2, is_refusal: bool, max_width: float = 0
 	# edge says what it is: HARM for a refusal, cyan for a note (read each time it shows).
 	label.add_theme_color_override("font_color", HudSkin.TERMINAL_HI if Settings.high_contrast else HudSkin.TERMINAL_TEXT)
 	_panel.border_color = edge_color()
+	_panel.bg_color = PaletteSkins.chrome(HudSkin.TERMINAL_BG)  # ART-12 12s-b: re-valued per show (a skin may have changed)
 	_panel.set_border_width_all(roundi(edge_width()))
 	if max_width > 0.0:
 		var chrome := _panel.content_margin_left + _panel.content_margin_right
@@ -121,7 +122,7 @@ const EDGE_PX := 2.0
 
 ## The toast's edge: HARM on a refusal, the terminal cyan on a note (opaque in high contrast).
 func edge_color() -> Color:
-	var c := Palette.HARM if refusal else HudSkin.TERMINAL_EDGE
+	var c := Palette.HARM if refusal else PaletteSkins.chrome(HudSkin.TERMINAL_EDGE)
 	return Color(c, 1.0) if Settings.high_contrast else c
 
 

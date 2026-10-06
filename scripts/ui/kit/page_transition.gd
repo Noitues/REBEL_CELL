@@ -276,7 +276,7 @@ func _add_roll() -> void:
 		for gr: Rect2 in glass:
 			var h := gr.size.y * band
 			var y := gr.position.y + gr.size.y * 0.3
-			_roll.draw_rect(Rect2(gr.position.x, y, gr.size.x, h), Color(Palette.NET_CYAN, 0.32))
+			_roll.draw_rect(Rect2(gr.position.x, y, gr.size.x, h), Color(PaletteSkins.chrome(Palette.NET_CYAN), 0.32))
 			_roll.draw_rect(Rect2(gr.position.x, y + h * 0.45, gr.size.x, 2.0), Color(Palette.PAPER, 0.7)))
 	page.add_child(_roll)
 

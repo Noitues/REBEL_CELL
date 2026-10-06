@@ -484,7 +484,7 @@ func show_slots() -> void:
 		row.name = "Slot%s" % slot
 		row.add_theme_constant_override("separation", SLOT_ROW_GAP)  # room for the focus brackets over the buttons
 		var summary := RunManager.slot_summary(slot)
-		row.add_child(Chrome.caps_label(tr("SLOT %s") % slot, UiTheme.LABEL, Palette.NET_CYAN))
+		row.add_child(Chrome.caps_label(tr("SLOT %s") % slot, UiTheme.LABEL, PaletteSkins.chrome(Palette.NET_CYAN)))
 		row.add_child(_label(_describe(summary)))
 		var buttons := HFlowContainer.new()
 		buttons.add_theme_constant_override("h_separation", 10)

@@ -275,7 +275,7 @@ func add_tab(text: String, on_pressed: Callable, active: bool = false) -> void:
 	# Same colours for both tabs: the active one is dark with a border, the other in
 	# reverse video (light block, dark text) without one.
 	var fg := Palette.TERMINAL_TEXT
-	var bg := Palette.TERMINAL_BG
+	var bg := PaletteSkins.chrome(Palette.TERMINAL_BG)
 	var style := UiTheme.box(bg if active else fg, fg if active else Color(0, 0, 0, 0), 2 if active else 0, 12, 4)
 	for st in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
 		b.add_theme_stylebox_override(st, style)
