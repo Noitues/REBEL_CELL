@@ -433,7 +433,7 @@ func test_hq_raid_and_grid_words_are_translated_once() -> void:
 	await _frames(8)
 	_assert_once(hq, "raid setup")
 	for key in ["HomeForecast", "ThreatsStopped", "RaidStrength"]:
-		var b := hq._panel.find_child(key, true, false) as Badge
+		var b := hq._panel.find_child(key, true, false) as Label  # ART-6 3A: the work order's fields
 		assert_true(b.text.begins_with(PSEUDO_PREFIX), "%s: '%s'" % [key, b.text])
 	assert_true(String(hq.hud._title).begins_with(PSEUDO_PREFIX), "the raid title")
 	var run := hq._panel.find_child("RunRaid", true, false) as Button

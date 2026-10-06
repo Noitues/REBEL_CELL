@@ -1,0 +1,23 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "raid_bits",
+ "about": "ART-6 3A BREACHED bit explosion. Built by tools/art_pipeline/raid/bake_bits.py; do not edit by hand.",
+ "source": {
+  "tag": "art-concepts-r43",
+  "script": "docs/concepts/round22_raid_ui/scripts/ui21.py (bit_burst)",
+  "call": "docs/concepts/round22_raid_ui/scripts/screens22.py (26_home_breached)"
+ },
+ "frame_px": [
+  460,
+  380
+ ],
+ "centre_px": [
+  230,
+  200
+ ],
+ "radius_px": 190,
+ "frames": 24,
+ "files": [
+  "bits.png"
+ ]
+}

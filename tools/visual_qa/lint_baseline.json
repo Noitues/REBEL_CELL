@@ -91,10 +91,7 @@
 			"color": 16
 		},
 		"res://scripts/ui/kit/raid_fx_layer.gd": {
-			"color": 9
-		},
-		"res://scripts/ui/kit/raid_playout_panel.gd": {
-			"font_override": 1
+			"color": 5
 		},
 		"res://scripts/ui/kit/ram_bar.gd": {
 			"color": 1
