@@ -180,7 +180,8 @@ Agent 5e (wave 2b, critical path; ART_BIBLE v2 §4.1, §4.3, §4.4, §4.5, §5.4
   (`roof_*`). One deviation: a spot whose centre falls off a turned / odd roof is left out (the
   concept used the roof's bounding box; on the game's footprints that floated props over the
   street). CityView3D draws one MultiMesh per prop per chunk, shadows off, at ortho <=
-  `roof_props_below` (420); ~15 k instances over the whole city.
+  `roof_props_below` (420); ~15 k instances over the whole city. Perf (city_lab, 1920x1080, props
+  on): tier 2 raid 3.3 ms avg (GPU 2.4), close 2.4 ms; tier 1 raid 2.5 ms, close 1.75 ms.
 - **Tools.** `tools/city/city_integration_capture.tscn` (one windowed launch: per corp the Grid,
   the Site landmark close with props, the off-screen TARGET; the Cell's reveal; reduce motion's
   street rate), `tools/city/site_spread_probe.tscn` (the spread sweep), 5e's
