@@ -97,8 +97,8 @@ func _type_column() -> Control:
 	# 02 Share Tech Mono: a terminal panel.
 	col.add_child(_caption("02  TERMINAL / SCREENS & DATA - SHARE TECH MONO"))
 	var term := PanelContainer.new()
-	term.theme_type_variation = &"TerminalPanel"
-	term.material = UiTheme.crt_material()
+	term.theme_type_variation = UiTheme.CRT_GLASS_PANEL
+	CrtTerminalPanel.behind(term)  # B5: the kit glass (no shared crt_panel material)
 	var tl := _col()
 	tl.add_child(_text("> YOUR NETWORK", UiTheme.tracked(Palette.mono(), UiTheme.TRACK_MONO_CAPS, UiTheme.LABEL), UiTheme.LABEL, Palette.NET_CYAN))
 	var line1 := _row(UiTheme.SP_L)

@@ -11,6 +11,8 @@ var body: VBoxContainer
 var tag_label: Label
 var _head: Label = null
 var _rule: ColorRect = null
+## B5: the kit glass behind a plain TerminalWindow (CrtWindow has its own).
+var _glass: CrtTerminalPanel = null
 
 
 func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN) -> void:
@@ -18,7 +20,14 @@ func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN) -> void:
 	accent = p_accent
 	theme_type_variation = &"TerminalPanel"
 	PaletteSkins.bind(self, _apply_skin)  # ART-12 12s-b: the accent follows a skin pick
-	material = UiTheme.crt_material()
+	if not (self is CrtWindow):
+		# B5 (B1c follow-up 2): the kit's CRT glass behind the window (the hex dump fades under its words), not the
+		# shared crt_panel material; the window's box keeps its margins and its edge, with no fill of its own.
+		_glass = CrtTerminalPanel.behind(self, p_accent)
+		var sb := UiTheme.terminal_box(Color(p_accent, 0.0))
+		sb.bg_color = Color(sb.bg_color, 0.0)
+		sb.set_border_width_all(0)
+		add_theme_stylebox_override(&"panel", sb)
 	var outer := VBoxContainer.new()
 	outer.add_theme_constant_override("separation", 6)
 	outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -62,6 +71,8 @@ func _apply_skin() -> void:
 		_head.add_theme_color_override("font_color", skin_accent().lerp(Palette.PAPER, 0.35))
 	if _rule != null:
 		_rule.color = Color(skin_accent(), 0.8)
+	if _glass != null:
+		_glass.corp_color = accent
 	queue_redraw()
 
 

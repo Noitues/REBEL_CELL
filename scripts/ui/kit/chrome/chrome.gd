@@ -76,6 +76,28 @@ static func caps_font(step: int) -> Font:
 
 
 ## A label in the terminal mono: CAPS tracked, `step`, `color`.
+## B5 (B1a b ruling Q2, integration review follow-up 3): a word placed straight over the world carries an ink
+## keyline of at least KEYLINE_1080 px at 1080p (its contrast is never left to the pool): the label's outline in the
+## vinyl ink, `outline_size` its whole width (both sides of the contour; the layout is 1280x720).
+const KEYLINE_1080 := 3.0
+const KEYLINE_INK := Palette.VINYL_INK
+## The layout height (the game lays out at 1280x720) and the 1080p board the numbers are measured on.
+const LAYOUT_H := 720.0
+const BOARD_H := 1080.0
+
+
+## The keyline's `outline_size` (px on the 1280x720 layout): twice its reach.
+static func keyline_size() -> int:
+	return ceili(KEYLINE_1080 * LAYOUT_H / BOARD_H) * 2
+
+
+## Gives `l` the ink keyline (see KEYLINE_1080). Returns it.
+static func keyline(l: Label) -> Label:
+	l.add_theme_color_override(&"font_outline_color", KEYLINE_INK)
+	l.add_theme_constant_override(&"outline_size", keyline_size())
+	return l
+
+
 static func caps_label(text: String, step: int, color: Color) -> Label:
 	var l := Label.new()
 	l.text = text
