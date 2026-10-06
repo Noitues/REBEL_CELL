@@ -851,6 +851,10 @@ func _restyle_landmarks() -> void:
 	_prop_mats.clear()
 	for nm: StringName in _prop_meshes:
 		_style_prop_mesh(nm)
+	# ART-3 6w: the uplink pads take the new look too.
+	_uplink_meshes.clear()
+	if not uplink_pads.is_empty():
+		set_uplink_pads(uplink_pads)
 	cell_reveal = cell_reveal
 
 
@@ -947,3 +951,64 @@ func roof_prop_counts() -> Dictionary:
 			var nm := String(mi.name).trim_prefix("Props_")
 			out[nm] = int(out.get(nm, 0)) + mi.multimesh.instance_count
 	return out
+
+
+# --- Raid uplink pads: the concept's own pads and risers (ART-3 6w, RaidUplinkPads) ------------
+
+## The raid's uplink pads shown (RaidUplinkPads.of records; empty: none) and their node.
+var uplink_pads: Array[Dictionary] = []
+var _uplinks: Node3D = null
+## Piece -> this view's copy of its mesh (its surfaces in the landmark materials).
+var _uplink_meshes: Dictionary = {}
+
+
+## Shows the raid's building nodes as uplink pads: `pads` (RaidUplinkPads.of on this view's
+## model) each get the concept's pad on the roof and its riser up the corner facing the
+## node's street (shadows off; empty: none). A view: it reads the records it is given.
+func set_uplink_pads(pads: Array[Dictionary]) -> void:
+	uplink_pads = pads
+	if _uplinks != null and is_instance_valid(_uplinks):
+		_uplinks.queue_free()
+	_uplinks = null
+	if pads.is_empty() or not can_render():
+		return
+	_uplinks = Node3D.new()
+	_uplinks.name = "UplinkPads"
+	for p in pads:
+		var xf := RaidUplinkPads.transforms(p)
+		for piece: StringName in [RaidUplinkPads.PAD, RaidUplinkPads.RISER]:
+			var mesh := _uplink_mesh(piece)
+			if mesh == null:
+				continue
+			var mi := MeshInstance3D.new()
+			mi.name = "%s_%s" % [piece, p["id"]]
+			mi.mesh = mesh
+			mi.transform = xf[piece]
+			mi.layers = 1 << (WORLD_LAYER - 1)
+			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			_uplinks.add_child(mi)
+	add_to_layer(&"props", _uplinks)
+
+
+## The uplink pads placed now (tests, captures).
+func uplink_count() -> int:
+	return _uplinks.get_child_count() if _uplinks != null and is_instance_valid(_uplinks) else 0
+
+
+## This view's copy of uplink piece `piece`'s mesh in the landmark materials (null when the
+## export is missing).
+func _uplink_mesh(piece: StringName) -> Mesh:
+	if not _uplink_meshes.has(piece):
+		var src := RaidUplinkPads.mesh_of(piece)
+		if src == null:
+			return null
+		var m := src.duplicate() as Mesh
+		var look := load(LandmarkMaterials.LOOK_PATH) as LandmarkLook
+		for k in m.get_surface_count():
+			var sm := src.surface_get_material(k)
+			var mat_name := sm.resource_name if sm != null else ""
+			if not _prop_mats.has(mat_name):
+				_prop_mats[mat_name] = LandmarkMaterials.make(mat_name, look, &"", not _landmarks_night)
+			m.surface_set_material(k, _prop_mats[mat_name])
+		_uplink_meshes[piece] = m
+	return _uplink_meshes[piece]

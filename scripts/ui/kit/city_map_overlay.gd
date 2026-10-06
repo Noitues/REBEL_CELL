@@ -702,6 +702,12 @@ func network_data() -> CityNetworkData:
 		func(k: int) -> PackedVector2Array: return _routes[k] if k < _routes.size() else PackedVector2Array())
 
 
+## ART-3 6w: node `id`'s street lot (its building's front door; the raid's uplink riser runs up
+## the corner facing it).
+func street_door(id: StringName) -> Vector2i:
+	return _door(lot_of(id))
+
+
 ## Nearest street lot to a building lot (its "front door").
 func _door(lot: Vector2i) -> Vector2i:
 	for r in range(1, 6):

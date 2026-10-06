@@ -39,8 +39,14 @@ extends Resource
 }
 ## Ortho clamp for a raid fitted to the network (bible Appendix C #13) and its margin (BU).
 @export var raid_fit_min: float = 220.0
-@export var raid_fit_max: float = 380.0
+## ART-3 6w: the widest raid is 640 (round 39's 380 framed the x1 layout; 5e's x2 Site spread
+## doubles the network, which needs ~540-600 on the setup's map part at text 1.0).
+@export var raid_fit_max: float = 640.0
 @export var raid_fit_margin: float = 40.0
+## ART-3 6w uplink pads (unified40 lines 404-434): the pad's half-size as a share of its roof's
+## shorter side, and the lowest roof (BU) that carries one.
+@export var uplink_pad_share: float = 0.32
+@export var uplink_min_top: float = 3.0
 
 @export_group("LOD")
 ## post40.lod_of anchors: lod 2 = city (ortho 820), 1 = raid (176), 0 = transit (88).

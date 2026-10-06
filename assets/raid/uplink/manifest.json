@@ -1,0 +1,99 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "uplink_pads",
+ "about": "ART-3 6w raid uplink pads + risers (bible 4.8 raid language B). Built by tools/art_pipeline/raid/build_uplink_pads_v1.py; do not edit by hand.",
+ "source": {
+  "script": "tools/art_pipeline/raid/build_uplink_pads_v1.py",
+  "vendor": "art-concepts-r43:docs/concepts/round40_city_unified/scripts/unified40.py @ ace98b9 (tools/art_pipeline/city/concept_r40/, lines 420-428 pad and 430-433 riser) on target_corps.py (concept_r31/)",
+  "scripts": [
+   "tools/art_pipeline/raid/build_uplink_pads_v1.py",
+   "tools/art_pipeline/city/concept_r40/unified40.py",
+   "tools/art_pipeline/city/concept_r31/target_corps.py"
+  ],
+  "commit": "76164593ca7d5d0d58e4b7f89a4e0de3eb043500",
+  "scripts_sha256": "a9f23ca22b7f41e3b13efefa0497f48293ddd5c35892a5485906f870b63aad1f"
+ },
+ "settings": {
+  "blender": "5.2.2 LTS",
+  "version": "v1",
+  "units": "1 BU = 1 m",
+  "seed": 4041,
+  "up": "+Y (glTF; Blender (x, y, z) -> (x, z, -y))",
+  "tone": [
+   0.86,
+   1.12
+  ],
+  "part_alpha": [
+   0.55,
+   1.0
+  ],
+  "normals": "none (facet normal from screen derivatives)",
+  "pad_half": 1.0,
+  "riser_h": 10.0,
+  "exporter": {
+   "export_format": "GLB",
+   "export_yup": true,
+   "export_apply": false,
+   "export_texcoords": false,
+   "export_normals": false,
+   "export_materials": "EXPORT",
+   "export_cameras": false,
+   "export_lights": false,
+   "export_animations": false,
+   "export_extras": false,
+   "export_vertex_color": "ACTIVE",
+   "export_all_vertex_colors": false,
+   "export_tangents": false,
+   "export_attributes": false,
+   "export_active_vertex_color_when_no_material": true,
+   "export_shared_accessors": true
+  }
+ },
+ "origin": "uplink_pad: the pad's centre on the roof at (0, 0, 0), pad half-size 1 BU (scale X / Z to the building's); uplink_riser: the building's corner on the ground, roof at riser_h (scale Y)",
+ "materials": [
+  "lm_toon",
+  "lm_neon"
+ ],
+ "pieces": {
+  "uplink_pad": {
+   "min": [
+    -1.1100000143051147,
+    0.0,
+    -1.3700000047683716
+   ],
+   "max": [
+    1.5199999809265137,
+    2.5999999046325684,
+    1.1100000143051147
+   ],
+   "triangles": 32,
+   "materials": [
+    "lm_toon",
+    "lm_neon"
+   ]
+  },
+  "uplink_riser": {
+   "min": [
+    -0.20999999344348907,
+    0.05000000074505806,
+    -0.20999999344348907
+   ],
+   "max": [
+    0.20999999344348907,
+    10.0,
+    0.20999999344348907
+   ],
+   "triangles": 36,
+   "materials": [
+    "lm_neon"
+   ]
+  }
+ },
+ "files": [
+  {
+   "path": "uplink_pads.glb",
+   "bytes": 5040,
+   "sha256": "cf3b1e0e02cd4e03cb8b46cc1ce2ca7c20cccc802760b3dcd0ea5bb58fef0fa2"
+  }
+ ]
+}
