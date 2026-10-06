@@ -831,6 +831,59 @@ city around it. Main: generic dark blocks with neon roof outlines, no Site build
 Likely file: `backdrop_catalog.gd` (`place(...)` for a Site: which building and camera),
 `combat_backdrop.gd`. Decision:
 
+### Endings: run end, campaign won / lost (`run_end*.jpg`, `campaign_*.jpg`)
+Refs: build `run_end`, `campaign_won`, `campaign_lost` (M13: a CELL BURNED / CORP DOWN stamp
+poster, polaroids, story-uncovered paper notes, a small corp summary paper, New campaign / Back to
+title); concepts `round20_raid_world/campaign_lost.png` (LOCKED A, ransomware lock in the corp's
+house style), `round21_raid_world/campaign_dossier.png` (the audit dossier). Main's campaign end
+lock and dossier come from the `campaign_end_lab` (Solace, 1.0), because the review pack's
+`campaign_lost` frame catches the lock mid-tear.
+
+**END-01 (P2) Run end, FLATLINED.** Build: the city drops to greyscale, the operative's polaroid
+with a flatline, a big red FLATLINED stamp, a NETRUN paper slip with the tallies, a pink Back to HQ.
+Main: a terminal `NETRUN FAILED - OPERATIVE LOST` panel over the full-colour city, a FLATLINED
+sticker and a BACK TO HQ sticker inside it, tally chips, a heat line, plus a red DISPATCH voice strip
+across the top. No concept image. View: the build's greyscale city and polaroid make the loss land;
+main's panel explains more (permadeath, what is kept). Per the designer's principle a candidate for
+"build layout in v2 language". Likely file: `netrun_scene.gd` (run end), `campaign_end/`.
+Decision:
+
+**END-02 (P3) Run end, clean exit (main only).** Main: `NETRUN COMPLETE`, a JACKED OUT sticker,
+the same panel; the build has no clean-exit screen (it reuses the jack out). Consistent with END-01.
+Decision:
+
+**END-03 (P1) Campaign won.** Build: a `CORP DOWN` poster with the corp emblem crossed out in
+pink spray, the crew's polaroids, a scrolling STORY UNCOVERED paper (the story beats' text), a
+corp summary slip, New campaign. Main: the audit dossier (the won variant: polaroids
+`Renewal Engine - OFFLINE`, `NODES AT THE END`, the crew; personnel list; annexes; AT LARGE stamp;
+`MOST TROUBLESOME` sticky note), MAIN MENU and NEW CAMPAIGN stickers. View: main follows the
+dossier concept (which was drawn for the loss); the won screen lacks a celebratory beat (the
+build's CORP DOWN) and the story text is reduced to the intercept titles in ANNEX A. Likely file:
+`scripts/ui/campaign_end/`. Decision:
+
+**END-04 (P3) Campaign lost capture timing.** The review pack's frame (`hq.show_end()` + 12 frames)
+lands inside the tear; the harness should wait for the lock's end state (MotionSkip) or the
+dossier. Harness fix only (`tools/visual_qa/review_pack.gd _campaign_end`), not a game gap.
+Decision:
+
+**END-05 (P2) Ransomware lock.** Concept A: the losing corp's notice (`YOUR CELL HAS BEEN
+PROCESSED`, the corp seal, HOME SERVER / NODES ENCRYPTED bar, `WIPE IN 00:02.80` countdown,
+`PROCESSED` stamp) over the city in the corp colour, padlocks on the nodes, the defence stickers
+curling off along the bottom. Main (Solace): a very close match in the Solace style (`TREATED`,
+green notice, pink countdown and bar, padlocks on the top bar). Differences: the city behind is
+a hex pattern rather than the map with padlocked nodes; no defence-sticker row. Likely file:
+`scripts/ui/campaign_end/` (lock). Decision:
+
+**END-06 (P2) Audit dossier.** Concept: a kraft folder on a dark desk, a CELL-03 / CLOSED tab, three
+3D city polaroids (home server, a beacon, nodes at the end), personnel with class icons, deceased
+crossed out in red, colour sticky notes (blue, pink, yellow, green), a heat chart, the CASE CLOSED
+stamp, signature. Main: the same structure and copy, very close; differences: white paper on a
+grey-white folder (concept: kraft), the polaroids are a flat grid, a 2D map shot and a portrait
+(concept: city renders), sticky notes are plain white with blue ink (concept: coloured), the CASE
+CLOSED stamp covers `(cell 01)` and part of the STATUS line, `HEAT ... at closure 82:` cut at the
+left by the note. Build: the CELL BURNED poster. Likely file: `scripts/ui/campaign_end/` (dossier),
+`polaroid.gd`. Decision:
+
 ## Mechanics the rules lack (listed, not built)
 (Filled as the remaining screens are compared; first candidates seen while capturing: the HQ run
 pages' per-corp mechanics (round 43 "climb the helix", "crane + train"; GDD has the HQ run but
