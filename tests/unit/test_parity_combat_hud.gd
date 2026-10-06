@@ -257,15 +257,15 @@ func test_the_aim_writes_on_and_wipes_and_one_press_completes_it() -> void:
 			picked = i
 			break
 	scene.select_card(picked)
-	await _frames(1)
+	await BoundedWait.frozen_frames(get_tree(), 1)
 	assert_true(scene.aim_pencil.motion_running(), "the loop writes on (target_snap)")
 	scene.aim_pencil.complete_motion()
 	assert_false(scene.aim_pencil.motion_running(), "MotionSkip: written whole")
 	scene.cancel_selection()
-	await _frames(1)
+	await BoundedWait.frozen_frames(get_tree(), 1)
 	assert_true(scene.aim_pencil.motion_running(), "it wipes off (pencil_wipe), never fades")
 	scene.aim_pencil.complete_motion()
-	await _frames(1)
+	await BoundedWait.frozen_frames(get_tree(), 1)
 	assert_eq(scene.aim_pencil.shown(), [], "gone")
 	Motion.force_live = false
 	await _close(scene)

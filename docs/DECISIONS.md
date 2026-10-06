@@ -62,8 +62,8 @@ COMBAT_HUD.jpg` (concept | before | after, plus the aim's frame strip).
 - **The hovered card on top (S-CARDFACE's defect).** The hovered hand card draws at `HOVERED_CARD_Z` over the HUD
   layer (the chips); the motion layer, toast, inspect popup, aim hint and tutorial stay above it (`OVER_HAND_Z`).
 - **CMB-05 TURN strip.** A slim terminal strip: `TURN 3 | FREE NUDGE 1` (Anton 20) over the fight's address line in
-  mono 12 (`NETRUN // <CORP> // <SITE> // <ENEMY>`, `BOSS: <name>` in a boss fight, `TRAINING SIM` for a fight with
-  no run; shrinks to 10 px, then clips). The key hints are no longer a banner line (the concept has none): they are
+  mono (`NETRUN // <CORP> // <SITE> // <ENEMY>`, `BOSS: <name>` in a boss fight, `TRAINING SIM` for a fight with
+  no run; mono 13, shrinks to the 12 px caption floor, then drops its leading parts so the Site and enemy stay whole). The key hints are no longer a banner line (the concept has none): they are
   the strip's tooltip; the outcome word (VICTORY / DEFEAT) follows the address once it lands.
 - **CMB-06 EXECUTE plate.** The system word sits on a dark terminal plate (glass 0.72, dim edge) that holds the
   terminal line too; SEND IT / the next step's sticker overlaps it (it was a pale outline that read as a fault).

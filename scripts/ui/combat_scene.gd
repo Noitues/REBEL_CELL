@@ -67,7 +67,7 @@ const BANNER_W := 420.0
 const BANNER_FONT := 20
 const BANNER_PAD_H := 16.0
 const BANNER_PAD_V := 2.0
-const ADDRESS_FONT := 12
+const ADDRESS_FONT := 13
 const SEND_IT_FONT := 58
 const CONTINUE_FONT := 46
 const NAME_OVERLAP := 10
@@ -2510,7 +2510,7 @@ func _fit_address() -> void:
 
 
 ## The smallest the address line shrinks to (px); past it the line drops its leading parts.
-const ADDRESS_MIN_FONT := 10
+const ADDRESS_MIN_FONT := 12
 ## The whole address line (the label may show its end only).
 var _address_full: String = ""
 
