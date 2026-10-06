@@ -682,5 +682,5 @@ func test_placement_loops_end_on_geometry_that_is_not_finite() -> void:
 	assert_true(spot.is_finite() or spot == Vector2.ZERO, "SAVED on an unbounded screen")
 	Fx.saved_spot(Vector2(NAN, NAN), Rect2(0, 0, 1280, 720), [] as Array[Rect2])
 	assert_eq(Engine.get_process_frames(), f0, "returns at once")
-	assert_gt(HQ_SCRIPT.RAID_CHECKS_MAX, 0, "the raid page's framing is bounded")
+	assert_gt(HQ_SCRIPT.HQ_FIT_PASSES, 0, "the HQ page's framing is bounded (HQ-B: the raid setup is the HQ page)")
 	assert_gt(LegendSpot.SPOTS_MAX, 0)

@@ -627,22 +627,17 @@ func test_the_pause_menu_is_a_terminal_with_no_sticker_and_one_column_options() 
 # --- HQ ------------------------------------------------------------------------------------------
 
 func test_the_hq_is_v2_terminals_with_a_corp_paper_dossier() -> void:
+	# HQ-B (b) (designer, direction B): the HQ's windows are the v2 kit: the selected Site's card
+	# is a CRT terminal, the DJ is the ON AIR ticker (Q7), the crew are hand cards with their
+	# photo prints, JACK IN is the pink vinyl sticker. (The corp-paper dossier went with the
+	# crew window; the work order keeps corp paper.)
 	var hq: Control = add_child_autofree(load(HQ).instantiate())
 	hq.new_campaign(2)
 	await _frames(2)
-	var crt := 0
-	for w in hq._panel.find_children("*", "TerminalWindow", true, false):
-		if w is CrtWindow:
-			crt += 1
-	assert_gte(crt, 4, "CYBERDECK, CELL STATUS, CITY GRID, CREW ... are v2 terminals")
-	assert_true(hq._panel.find_child("PirateRadio", true, false) is CrtText, "the DJ on the Cell's feed")
-	var card := hq._panel.find_child("Crew_%s" % RunManager.campaign.roster[0].id, true, false) as CrewCard
-	var name_label: Label = null
-	for l in card.find_children("*", "Label", true, false):
-		if (l as Label).text == RunManager.campaign.roster[0].name.to_upper():
-			name_label = l
-	assert_not_null(name_label)
-	assert_eq(name_label.get_theme_font(&"font"), Palette.paper_bold(), "the dossier's name in Courier Prime (corp paper)")
-	# Every current HQ action stays reachable (G13 not ruled: nothing removed).
-	for n in ["JackIn", "PirateRadio"]:
-		assert_not_null(hq._panel.find_child(n, true, false), "%s still on the HQ" % n)
+	assert_true(hq._panel.find_child("SelectedSite", true, false) is CrtWindow, "the Site's card is a v2 terminal")
+	assert_true(hq._panel.find_child("OnAir", true, false) is OnAirTicker, "the DJ on the Cell's feed (ON AIR)")
+	var card := hq._panel.find_child("Crew_%s" % RunManager.campaign.roster[0].id, true, false) as CrewHandCard
+	assert_not_null(card, "the crew as hand cards")
+	assert_eq(card.display_name, RunManager.campaign.roster[0].name)
+	var jack := hq._panel.find_child("Launch", true, false) as VerbSticker
+	assert_true(jack != null and jack.fill == VerbSticker.Fill.PINK, "JACK IN is the pink vinyl sticker")

@@ -328,7 +328,7 @@ func test_every_code_key_is_in_the_csv() -> void:
 	var keys := TextDb.code_keys(PackedStringArray(["res://scripts/ui", "res://scripts/autoload"]))
 	assert_true(keys.size() > 100, "the code translates its words (%d keys)" % keys.size())
 	assert_true(keys.has("HITS %s %d") and keys.has("LAST TURN: ") and keys.has("NEXT %d (%s)"), "the combat's drawn words are keys")
-	assert_true(keys.has("CYBERDECK HQ") and keys.has("START DEFENSE") and keys.has("PIRATE RADIO"), "and the screens'")
+	assert_true(keys.has("JACK IN") and keys.has("START DEFENSE") and keys.has("MARKET"), "and the screens' (HQ-B: the HQ's verb and tabs)")
 	var csv := {}
 	var f := FileAccess.open("res://assets/text/strings.csv", FileAccess.READ)
 	f.get_csv_line()
@@ -411,17 +411,20 @@ func test_hq_raid_and_grid_words_are_translated_once() -> void:
 		names.append(op.name.to_upper())
 		names.append(op.name)
 	_assert_translated(hq._panel, "HQ", names)
-	assert_true(String(hq.hud._title).begins_with(PSEUDO_PREFIX), "the screen title: %s" % hq.hud._title)
+	# HQ-B (Q6): the HQ shows no title sticker (the hand's tabs say where you are).
+	assert_eq(String(hq.hud._title), "", "no screen title on the HQ")
 	for i in hq.hud.stats.items.size():
 		assert_true(hq.hud.stats.tag_name(i).begins_with(PSEUDO_PREFIX), "top-bar word %s" % hq.hud.stats.tag_name(i))
-	var radio := hq._panel.find_child("PirateRadio", true, false) as CrtText  # ART-10 4C: terminal text
-	assert_true(radio.title.begins_with(PSEUDO_PREFIX), "PIRATE RADIO's title")
-	assert_true(radio.label.get_parsed_text().contains(PSEUDO_PREFIX), "its words")
+	# HQ-B (Q7): the radio is the ON AIR ticker.
+	var radio := hq._panel.find_child("OnAir", true, false) as OnAirTicker
+	assert_true(" ".join(radio.words).contains(PSEUDO_PREFIX), "its words")
 	for n in _all(hq._panel):
 		if n is Badge:
 			assert_true((n as Badge).text.contains(PSEUDO_PREFIX) or (n as Badge).text == "" or (n as Badge).asset_id != &"", "badge '%s'" % (n as Badge).text)
-		if n is CrewCard:
-			assert_true((n as CrewCard).polaroid.caption.contains(PSEUDO_PREFIX), "the rank tag: %s" % (n as CrewCard).polaroid.caption)
+		if n is CrewHandCard:
+			assert_true((n as CrewHandCard).status.contains(PSEUDO_PREFIX), "the crew card's chip: %s" % (n as CrewHandCard).status)
+	hq.open_hand(hq.HandTab.MARKET)
+	await _frames(4)
 	var boosts: Node = hq._panel.find_child("Boosts", true, false)
 	for b in boosts.get_children():
 		if b is Button:
@@ -435,7 +438,7 @@ func test_hq_raid_and_grid_words_are_translated_once() -> void:
 	for key in ["HomeForecast", "ThreatsStopped", "RaidStrength"]:
 		var b := hq._panel.find_child(key, true, false) as Label  # ART-6 3A: the work order's fields
 		assert_true(b.text.begins_with(PSEUDO_PREFIX), "%s: '%s'" % [key, b.text])
-	assert_true(String(hq.hud._title).begins_with(PSEUDO_PREFIX), "the raid title")
+	assert_eq(String(hq.hud._title), "", "HQ-B (Q6): the setup is the HQ's DEFENCE hand, no title")
 	var run := hq._panel.find_child("RunRaid", true, false) as Button
 	assert_true(_shown_text(run).begins_with(PSEUDO_PREFIX), "START DEFENSE translated")
 	await _close(hq)
@@ -533,13 +536,18 @@ func test_translate_once_with_a_translation() -> void:
 	var key := TextDb.key_for(boost, "display_name")
 	var shown := "XX_BOOST"
 	# The translated text is itself a key of the catalogue: shown twice it would change again.
-	_translate({key: shown, shown: "TWICE", "CYBERDECK HQ": "XX_HQ", "XX_HQ": "TWICE", "DISPATCH": "XX_DISPATCH", "XX_DISPATCH": "TWICE"})
+	_translate({key: shown, shown: "TWICE", "MARKET": "XX_MARKET", "XX_MARKET": "TWICE", "DISPATCH": "XX_DISPATCH", "XX_DISPATCH": "TWICE"})
 	var hq := _open(HQ)
+	await _frames(4)
+	# HQ-B (c): the boosts are the MARKET hand's; the tab's word is translated once (the HQ
+	# has no title, Q6).
+	hq.open_hand(hq.HandTab.MARKET)
 	await _frames(4)
 	var b := hq._panel.find_child("Boost_%s" % boost.id, true, false) as Button
 	assert_string_contains(_shown_text(b), "XX_BOOST", "the boost in the player's language")
 	assert_false(_shown_text(b).contains("TWICE"), "and translated once: %s" % _shown_text(b))
-	assert_eq(String(hq.hud._title), "XX_HQ")
+	var tab := hq._panel.find_child("Tab_MARKET", true, false) as Button
+	assert_eq(_shown_text(tab), "XX_MARKET", "the MARKET tab once")
 	assert_eq(Dialogue.speaker_name(RC.Voice.DISPATCH), "XX_DISPATCH", "the speaker's name once")
 	Dialogue.clear()
 	Dialogue.say(RC.Voice.DISPATCH, "A line.")
@@ -576,18 +584,37 @@ func test_late_campaign_raid_map_fits_with_its_key_clear() -> void:
 			await _frames()
 			hq.show_raid()
 			await _frames(RAID_SETTLE)
-			var area_ctl := hq._panel.find_child("RaidMapArea", true, false) as Control
-			var area := area_ctl.get_global_rect().intersection(Rect2(Vector2.ZERO, CANVAS)).grow(1.0)
-			var rects := LegendSpot.node_rects(hq.city_overlay, false)
-			assert_true(rects.size() >= LATE_CLAIMS, "%s: the late network on the map (%d)" % [corp, rects.size()])
-			for r in rects:
-				assert_true(area.encloses(r), "%s at %.1f: node %s inside the map area %s (strip %s)" % [corp, scale, r, area, hq.raid_legend_is_strip()])
+			assert_true(LegendSpot.node_rects(hq.city_overlay, false).size() >= LATE_CLAIMS, "%s: the late network on the map" % corp)
 			var legend: MapLegend = hq.raid_legend
 			if legend.is_visible_in_tree():
 				var lr := Rect2(legend.global_position, legend.size * legend.scale)
 				for r in LegendSpot.node_rects(hq.city_overlay, true):
-					assert_false(lr.intersects(r), "%s at %.1f: the key %s covers a node or label at %s (strip %s)" % [corp, scale, lr, r, hq.raid_legend_is_strip()])
+					assert_false(lr.intersects(r), "%s at %.1f: the key %s covers a node or label at %s" % [corp, scale, lr, r])
+			await _assert_setup_map(hq, String(corp), scale)
 			await _close(hq)
+
+
+## HQ-B (c): the raid setup's map at text `scale`: at 1.0 every node in the map's free part;
+## at big text (the round 40 setup's two columns leave a late network too little room) every
+## node on screen and each of the Cell's nodes brought into the map when targeted (the map
+## follows the target).
+func _assert_setup_map(hq: Control, what: String, scale: float) -> void:
+	var area: Rect2 = hq.hq_free_rect().intersection(Rect2(Vector2.ZERO, CANVAS)).grow(1.0)
+	var rects := LegendSpot.node_rects(hq.city_overlay, false)
+	assert_false(rects.is_empty(), "%s: the raid map has nodes" % what)
+	if is_equal_approx(scale, 1.0):
+		for r in rects:
+			assert_true(area.encloses(r), "%s at %.1f: node %s inside the map area %s" % [what, scale, r, area])
+		return
+	for r in rects:
+		assert_true(Rect2(Vector2.ZERO, CANVAS).intersects(r), "%s at %.1f: node %s on screen" % [what, scale, r])
+	for id in RunManager.campaign.grid.claimed_ids():
+		hq.select_target(id)
+		await _frames(4)
+		var r: Rect2 = hq._map_node_rect(id)
+		area = hq.hq_free_rect().intersection(Rect2(Vector2.ZERO, CANVAS)).grow(1.0)
+		if r.has_area():
+			assert_true(area.grow(HqLayout.MARGIN).encloses(r), "%s at %.1f: %s in the map once targeted (%s in %s)" % [what, scale, id, r, area])
 
 
 # --- S6 B-back only from a pad -----------------------------------------------------------------------
@@ -621,11 +648,12 @@ func test_a_keyboard_esc_never_leaves_when_settings_is_rebound() -> void:
 	_raid_campaign()
 	var hq := _open(HQ)
 	await _frames()
-	hq.show_grid()
+	# HQ-B: the Grid is the HQ; the raid setup (the DEFENCE hand's) is the page B leaves.
+	hq.show_raid()
 	await _frames()
 	hq._unhandled_input(esc)
 	await _frames()
-	assert_eq(hq.panel_name, "grid", "a keyboard's Esc stays on the Grid")
+	assert_eq(hq.panel_name, "raid", "a keyboard's Esc stays in the raid setup")
 	hq._unhandled_input(pad)
 	await _frames()
 	assert_eq(hq.panel_name, "hq", "a pad's B goes back to the HQ")
@@ -804,37 +832,31 @@ func test_mainframe_text_icons_and_stickers_never_overlap() -> void:
 # --- S11 the crew dossiers --------------------------------------------------------------------------
 
 func test_every_crew_dossier_is_reachable_at_big_text() -> void:
+	# HQ-B (c): the dossiers are the crew hand's cards: each shows whole once it has the focus
+	# (the hand scrolls to it); the share code is in the ON AIR line's tooltip, not its words.
 	var c := RunManager.campaign
 	while c.roster.size() < 3:
 		c.recruit(RunManager.lookup().get_content(RunManager.DEFAULT_CLASS) as ClassData)
 	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		var hq := _open(HQ)
+		hq.show_hq()
 		await _frames(6)
-		var scroll := hq.find_child("PageScroll", true, false) as ScrollContainer
-		var view := scroll.get_global_rect()
-		var cards: Array[CrewCard] = []
+		var cards: Array[CrewHandCard] = []
 		for n in _all(hq._panel):
-			if n is CrewCard:
+			if n is CrewHandCard and String(n.name).begins_with("Crew_"):
 				cards.append(n)
-		assert_eq(cards.size(), c.roster.size(), "a dossier per operative")
+		assert_eq(cards.size(), c.roster.size(), "a card per operative")
+		var hand := (hq._panel.find_child("HandCards", true, false) as Control).get_parent() as ScrollContainer
+		var view := hand.get_global_rect()
 		for card in cards:
-			assert_true(card.get_combined_minimum_size().y <= view.size.y, "%s fits the page's view (%.0f in %.0f)" % [card.name, card.get_combined_minimum_size().y, view.size.y])
-			scroll.ensure_control_visible(card)
+			card.grab_focus()
 			await _frames(2)
 			var r := card.get_global_rect()
-			assert_true(view.grow(1.0).encloses(r), "%s: whole on screen once scrolled to (%s in %s, text %.1f)" % [card.name, r, view, scale])
-			var loadout := card.find_child("Loadout", true, false) as Button
-			loadout.grab_focus()
-			await _frames(2)
-			assert_true(view.grow(1.0).encloses(loadout.get_global_rect()), "%s's Loadout reachable by pad" % card.name)
-		if scale > 1.0:
-			assert_true(CrewCard.is_compact(), "compact dossiers at big text")
-			assert_almost_eq(cards[0].get_global_rect().position.y, cards[1].get_global_rect().position.y, 1.0,
-				"the first two dossiers side by side at big text: %s, %s" % [cards[0].get_global_rect(), cards[1].get_global_rect()])
-		var radio := hq._panel.find_child("PirateRadio", true, false) as CrtText  # ART-10 4C: terminal text
-		assert_false(radio.label.get_parsed_text().contains("RC1-"), "no share code on the lore note")
-		assert_string_contains(radio.tooltip_text, "RC1-", "it is in the note's tooltip")
+			assert_true(view.grow(1.0).encloses(r) and Rect2(Vector2.ZERO, CANVAS).grow(1.0).encloses(r), "%s: whole on screen with the focus (%s in %s, text %.1f)" % [card.name, r, view, scale])
+		var radio := hq._panel.find_child("OnAir", true, false) as OnAirTicker
+		assert_false(" ".join(radio.words).contains("RC1-"), "no share code on the radio's words")
+		assert_string_contains(radio.tooltip_text, "RC1-", "it is in the line's tooltip")
 		hq.open_settings()
 		await _frames()
 		var seed_line := hq._settings_panel.find_child("SeedLine", true, false) as CodeField  # PAUSE-02: a field with a copy button
@@ -915,15 +937,19 @@ func test_defence_cards_say_what_they_do_and_the_button_says_defend() -> void:
 				assert_ne(card.effect_kind, "", "%s has a pictogram" % card.asset_id)
 				var er := card.effect_rect()
 				assert_true(Rect2(Vector2.ZERO, card.size).encloses(er), "%s: the effect line on the card at %.1f" % [card.asset_id, scale])
-		var loadout := hq._panel.find_child("DefenseLoadout", true, false) as TerminalWindow
-		assert_string_contains(loadout.title, hq.armory_words(), "the same ARMORY words as the HQ")
-		assert_ne(loadout.tooltip_text, "", "and explained")
 		await _close(hq)
+	# HQ-B (c): the Armory's count is the DEFENCE tab's line (under the word below big text);
+	# its cards explain it.
+	Settings.set_text_scale(1.0)
+	RunManager.campaign.pending_raids.clear()  # with a raid pending the tab says RAID n
 	var hq2 := _open(HQ)
 	await _frames()
-	var badge := hq2._panel.find_child("ArmoryBadge", true, false) as Badge
-	assert_eq(badge.text, hq2.armory_words(), "HQ's ARMORY badge: the same count")
-	assert_string_contains(badge.tooltip_text.replace("\n", " "), "not counting those deployed")  # ART-0 C: folded narrower at 2.0
+	var tab := hq2._panel.find_child("Tab_DEFENCE", true, false) as MenuChip
+	assert_eq(tab.line, hq2.armory_words(), "the DEFENCE tab: the ARMORY count")
+	hq2.open_hand(hq2.HandTab.DEFENCE)
+	await _frames()
+	for n in hq2._panel.find_children("Armory_*", "", true, false):
+		assert_string_contains((n as Control).tooltip_text.replace("\n", " "), "not counting those deployed")  # ART-0 C: folded narrower at 2.0
 	await _close(hq2)
 	assert_eq(AssetCard.effect_of(RunManager.lookup().get_content(&"ice_lock"))[0], "hold")
 	assert_eq(AssetCard.effect_of(RunManager.lookup().get_content(&"decoy"))[0], "lure")

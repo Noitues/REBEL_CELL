@@ -50,6 +50,9 @@ const LOOT_SKIP_GAP := 14.0
 ## Room above the event's paper at text scale 1.0 (px): its tape and title keep clear of
 ## the subtitle band (H23 S10).
 const EVENT_TOP_GAP := 12.0
+## HEAT-ALL: above this text scale the event window has no gap above it: the Heat gauge makes the top bar two
+## rows at the largest text and the gap was the room the choices needed.
+const EVENT_GAP_MAX_SCALE := 1.6
 ## The event's choice column keeps this far from the screen's right edge at text scale 1.0
 ## (px; H24 S9: its buttons ran to x=1280, the right border cut).
 const EVENT_RIGHT_GAP := 16.0
@@ -838,28 +841,6 @@ func prebake_run_end() -> String:
 	return city.prebake(city.view_rect(), null, false, creep_of(RunManager.campaign.heat))
 
 
-## The hidden HQ backdrop twin warming the HQ's bake (`_warm_hq`).
-var _hq_warm: CyberdeckBackground = null
-
-
-## ANIM-R5 P2: the HQ's city baked ahead from the run's end page (the HQ came up with ~3.5 s
-## of black behind its panels): a hidden twin of its backdrop (the same look: its district,
-## the campaign's territory) asks for the HQ's default frame at this screen's size; the bake
-## outlives this scene (the jack out frees it).
-func _warm_hq() -> void:
-	if RunManager.campaign == null or not is_inside_tree():
-		return
-	if _hq_warm != null and is_instance_valid(_hq_warm):
-		_hq_warm.queue_free()
-	_hq_warm = CyberdeckBackground.new()
-	_hq_warm.name = "HqWarm"
-	_hq_warm.visible = false
-	add_child(_hq_warm)
-	_hq_warm.set_district(RunManager.campaign.corporation_id)
-	# The frame's region is worked out from the screen's size (the twin's own layout waits).
-	_hq_warm.city.prebake_frames([size], true)
-
-
 ## ANIM-R1 M8: whether the screen a jack in lands on is built and framed (Fx keeps its
 ## cover up until then, so it never lifts onto an empty dark screen): a page is on, the
 ## city behind it was drawn under the current camera (its placement: the route's nodes and
@@ -1158,6 +1139,7 @@ func _modal_open() -> bool:
 
 ## Names the screen on the HUD strip from the run phase (STYLE_GUIDE 4, "Neon city").
 func _title_screen(s: NetrunSession, screen: String = "") -> void:
+	close_heat_terminal(false)
 	if s == null:
 		hud.set_screen("", tr("NETRUN"))
 		return
@@ -2071,12 +2053,10 @@ func dossier_data() -> Dictionary:
 				station.append(Codex.describe_triggered(te))
 	var ram := cls.max_ram if cls != null else 0
 	ram = int(s.run.combat_overrides.get("max_ram", ram))
-	var bands := HeatRules.band_levels(c, s.config)
 	return {"corp": TextDb.t(corp, "display_name") if corp != null else "", "corp_color": Palette.corp_color(c.corporation_id),
 		"subject": op.name, "class_word": TextDb.t(cls, "display_name") if cls != null else "", "class_id": op.class_id,
 		"operative_id": op.id, "rank": op.rank, "hp": op.hp, "max_hp": op.max_hp, "ram": ram, "wheel": wheel,
-		"hub": TextDb.t(hub, "display_name") if hub != null else "", "deck": op.deck.size(), "station": station,
-		"heat": c.heat, "band": tr(HeatPoster.BAND_WORDS[mini(HeatPoster.band_of(c.heat, bands), HeatPoster.BAND_WORDS.size() - 1)])}
+		"hub": TextDb.t(hub, "display_name") if hub != null else "", "deck": op.deck.size(), "station": station}
 
 
 ## Calm Heat (4.3): the effect line each node type Heat has made harder carries (type ->
@@ -2489,6 +2469,53 @@ func _show_combat() -> void:
 		scene.connect(&"shown_hp_changed", _on_combat_hp_shown)
 
 
+## HEAT-ALL (Q2): the Heat terminal the gauge dropped, read-only in a run (null when closed).
+var heat_terminal: HeatTerminal = null
+
+
+## HEAT-ALL (Q1 / Q2): the HEAT gauge pressed: the Heat terminal drops from it read-only (no
+## SCRUB in a run: Scrub Heat is at the HQ), or folds back when it is open.
+func toggle_heat_terminal() -> void:
+	if heat_terminal != null and is_instance_valid(heat_terminal):
+		close_heat_terminal()
+		return
+	if RunManager.campaign == null:
+		return
+	heat_terminal = HeatTerminal.new(RunManager.campaign, RunManager.config(), true)
+	heat_terminal.closed.connect(close_heat_terminal)
+	add_child(heat_terminal)
+	TextDb.shown_as_given(heat_terminal)
+	heat_terminal.drop_under(hud.heat_gauge.get_global_rect(), get_global_rect())
+
+
+## HEAT-ALL: folds the Heat terminal away; focus goes back to the gauge.
+func close_heat_terminal(refocus: bool = true) -> void:
+	if heat_terminal != null and is_instance_valid(heat_terminal):
+		heat_terminal.queue_free()
+		if refocus and hud.heat_gauge.is_visible_in_tree() and hud.heat_gauge.focus_mode != Control.FOCUS_NONE:
+			hud.heat_gauge.grab_focus.call_deferred()
+	heat_terminal = null
+
+
+## What the Heat number means now: the next threshold and the rules in force.
+func heat_tip() -> String:
+	var c := RunManager.campaign
+	var cfg := RunManager.config()
+	var next := -1
+	for t in cfg.heat_thresholds:
+		if t != null and t.heat > c.heat and (next < 0 or t.heat < next):
+			next = t.heat
+	var lines := PackedStringArray()
+	lines.append(tr("Heat %d of %d: how hard the corporation hunts the Cell.") % [c.heat, cfg.heat_max])
+	if next >= 0:
+		lines.append(tr("Next threshold at %d.") % next)
+	var mods := PackedStringArray()
+	for m in HeatRules.active_modifiers(c, cfg):
+		mods.append(HeatTerminal.modifier_text(m))
+	lines.append(tr("In force: %s.") % (", ".join(mods) if not mods.is_empty() else tr("nothing yet")))
+	return "\n".join(lines)
+
+
 ## ANIM-R6 A5 (combat, a minimal change here): a SEND IT replay landed its turn: the top bar's
 ## HP follows the fight (never before an outcome that still waits for its beat).
 func _on_combat_hp_shown() -> void:
@@ -2767,9 +2794,9 @@ func _show_reward() -> void:
 		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected if slot_option != null else -1))
 		stickers.add_child(sticker)
 	# The deck counter (a card goes there: "+1 = N" in pencil), then Skip as a sticker.
-	var foot := HBoxContainer.new()
-	foot.add_theme_constant_override("separation", 12)
 	if offer["kind"] == "card":
+		var foot := HBoxContainer.new()  # made only when shown (a Firmware or Daemon offer left it an orphan)
+		foot.add_theme_constant_override("separation", 12)
 		side.add_child(foot)
 		# a small counter (round 31: DECK and the count on one line), no header strip
 		var deck := CrtWindow.new("").with_kind(CrtWindow.kind_for(Palette.CELL_PINK), Palette.CELL_PINK)
@@ -2912,7 +2939,7 @@ func _show_event() -> void:
 	# H23 S10: room above the window for its title, clear of the subtitle band.
 	var gap := Control.new()
 	gap.name = "EventTopGap"
-	gap.custom_minimum_size.y = EVENT_TOP_GAP * ts
+	gap.custom_minimum_size.y = EVENT_TOP_GAP * ts if ts <= EVENT_GAP_MAX_SCALE else 0.0
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(gap)
 	var split := HBoxContainer.new()
@@ -3592,7 +3619,7 @@ const SHOP_INFO_IDLE := "> point at an item: what it does shows here. Drag Firmw
 const SHOP_INFO_IDLE_PAD := "> focus an item: what it does shows here." # TR
 ## ART-9 4A: the wallet's largest scale at big text (it stands under the Daemons, clear of the
 ## stock wheel's and the bin's tags; the top bar's CYCLES keeps the full size).
-const SHOP_WALLET_MAX_SCALE := 1.6
+const SHOP_WALLET_MAX_SCALE := 1.35
 ## The facade behind the Mainframe (kept while the page is rebuilt on the same visit).
 var _shop_facade: MainframeFacade = null
 var _shop_facade_key: String = ""
@@ -4206,8 +4233,6 @@ const END_BACK_STEP := UiTheme.TITLE
 
 func _show_end() -> void:
 	var s := RunManager.netrun
-	# ANIM-R5 P2: the HQ's city bakes while the run's report shows.
-	_warm_hq.call_deferred()
 	var won := s.run.outcome == RunState.Outcome.COMPLETED
 	var aborted := s.run.outcome == RunState.Outcome.ABORTED
 	var col := Palette.NET_CYAN if won else Palette.HARM
@@ -4812,8 +4837,11 @@ func _refresh_status() -> void:
 		text += " || Run T%d seed %d | %s HP %d/%d Rank %d | Cycles %d | banked %d | node %s" % [s.run.tier, s.run.run_seed, op.name, _shown_operative_hp(op.hp), op.max_hp, op.rank, s.run.cycles, s.run.banked_schematics, s.run.current_node_id]
 	_status.text = text
 	# Every tag says what it means on hover (H21 #9); its icon is the resource's own.
-	var stats := [[TextDb.mark("HEAT"), str(c.heat if hud_heat_shown < 0 else hud_heat_shown), "/%d" % RunManager.resolver.config.heat_max, tr("Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules.")],
-		[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency, spent at HQ.")]]
+	# HEAT-ALL (designer ruling Q1 / Q2): Heat is the gauge in the bar's first slot on every screen
+	# (the HEAT stat tag gave it its place); in a run it opens the Heat terminal read-only.
+	var cfg := RunManager.resolver.config
+	hud.set_heat(c.heat if hud_heat_shown < 0 else hud_heat_shown, cfg.heat_max, HeatRules.band_levels(c, cfg), true, heat_tip())
+	var stats := [[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency, spent at HQ.")]]
 	# H24 S16: whose numbers these are: the campaign's, then this run's.
 	var captions := [[0, tr("CAMPAIGN"), tr("The campaign's numbers: they stay between runs.")]]
 	if s != null and not s.run.is_over():
@@ -4968,6 +4996,7 @@ func _build_ui() -> void:
 	hud = HudBar.new()
 	hud.loadout_pressed.connect(open_loadout)
 	hud.daemons_pressed.connect(open_daemons)
+	hud.heat_pressed.connect(toggle_heat_terminal)
 	root.add_child(hud)
 	_status = hud.label
 	subtitle_strip = SubtitleStrip.new()

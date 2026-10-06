@@ -91,12 +91,12 @@ const SCREENS := [
 	["new_campaign_crew", "_s_new_campaign_crew", "Parity NEWC: the same page scrolled to the crew tiles and the city seed."],
 	["new_campaign_codes", "_s_new_campaign_codes", "Parity NEWC: the same page scrolled to today's run and the share codes, the code row open."],
 	["hq", "_s_hq", "HQ after starting a new campaign."],
-	["hq_black_market", "_s_hq_black_market", "HQ scrolled to the Black Market."],
-	["hq_crew", "_s_hq_crew", "HQ crew / dossiers with four classes."],
+	["hq_black_market", "_s_hq_black_market", "HQ-B: the HQ's MARKET hand."],
+	["hq_crew", "_s_hq_crew", "HQ-B: the CREW hand with four classes."],
 	["hq_loadout_deck", "_s_hq_loadout_deck", "Loadout modal, DECK tab."],
 	["hq_loadout_spinner", "_s_hq_loadout_spinner", "Loadout modal, SPINNER tab, rank-3 operative."],
 	["hq_pause", "_s_hq_pause", "Pause menu over the HQ."],
-	["hq_heat_band", "_s_hq_heat_band", "main: the HQ's Heat poster crossing a band (banner and note held)."],
+	["hq_heat_band", "_s_hq_heat_band", "HQ-B: the HEAT gauge crossing a band (banner and note held)."],
 	["grid", "_s_grid", "City Grid, nothing selected."],
 	["grid_site_selected", "_s_grid_site_selected", "City Grid with an Exploit site selected."],
 	["grid_raid_pending", "_s_grid_raid_pending", "City Grid with a raid pending (RAID SETUP)."],
@@ -791,14 +791,12 @@ func _s_hq() -> void:
 func _s_hq_black_market() -> void:
 	var hq: Node = await _hq_with_campaign()
 	DemoSetup.set_schematics(RunManager.campaign, 500)
-	hq.show_hq()
+	# HQ-B: the Black Market is the HQ's MARKET hand.
+	hq.open_hand(hq.HandTab.MARKET)
 	await _settle(hq)
-	var market: Control = hq._panel.find_child("BlackMarket", true, false) if hq._panel != null else null
-	var sc := hq._panel_host.get_parent() as ScrollContainer
-	if market == null or sc == null:
-		push_error("review_pack: no BlackMarket / scroll")
+	if hq._panel == null or hq._panel.find_child("Recruits", true, false) == null:
+		push_error("review_pack: no MARKET hand")
 		return
-	sc.ensure_control_visible(market)
 	await _frames(SETTLE_FRAMES)
 
 
@@ -808,14 +806,11 @@ func _s_hq_crew() -> void:
 	for id in [&"ghost", &"rigger", &"botnet", &"wrecker"]:
 		classes.append(RunManager.lookup().get_content(id) as ClassData)
 	DemoSetup.roster_of(RunManager.campaign, classes)
-	hq.show_hq()
+	# HQ-B: the crew is the HQ's CREW hand (cards along the foot).
+	hq.open_hand(hq.HandTab.CREW)
 	await _settle(hq)
-	var roster: Control = hq._panel.find_child("Roster", true, false) if hq._panel != null else null
-	var sc := hq._panel_host.get_parent() as ScrollContainer
-	if roster != null and sc != null:
-		sc.ensure_control_visible(roster)
-	else:
-		_warnings.append("no Roster node to scroll to")
+	if hq._panel == null or hq._panel.find_child("HandCards", true, false) == null:
+		_warnings.append("no CREW hand")
 	await _frames(SETTLE_FRAMES)
 
 

@@ -422,11 +422,12 @@ func test_selecting_a_site_draws_on_and_the_lean_keeps_the_fit() -> void:
 	assert_eq(overlay.select_reveal, 1.0, "headless: the outline is drawn at once")
 	assert_eq(overlay.ring_ease, 1.0)
 	assert_false((hq.wireframe as WireframeBackground).camera_easing(), "no ease headless")
-	var area := (hq.find_child("GridMapArea", true, false) as Control).get_global_rect()
-	for r in LegendSpot.node_rects(overlay, false):
-		assert_true(area.grow(0.5).encloses(r), "every node stays on the map after the lean (%s in %s)" % [r, area])
-	var lean: Vector2 = hq.grid_lean(area.grow(-LegendSpot.MARGIN))
-	assert_true(lean.length() <= Motion.amplitude(&"map_camera_ease") + 0.01, "the lean is bounded")
+	# HQ-B: a selection keeps the camera where the player left it (no lean: the HQ's map is the
+	# player's; the fitted frame holds).
+	var before: Dictionary = hq._city_frame()
+	hq.select_site(hq.stepped_site(1))
+	await _frames(SETTLE)
+	assert_almost_eq(float(hq._city_frame()["scale"]), float(before["scale"]), 0.0001, "the camera holds")
 	assert_eq(RunManager.campaign.to_dict(), snapshot, "selecting and framing changed no game state")
 
 

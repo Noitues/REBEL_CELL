@@ -90,6 +90,8 @@ func test_the_grid_draws_its_nodes_before_any_bake_lands() -> void:
 	assert_eq(_placed_nodes(overlay), overlay.nodes.size(), "every node is placed on the first frame")
 	assert_false(overlay.label_rects().is_empty(), "and the labels")
 	assert_true(city.camera_settled(), "the fit's passes ran under the placement")
+	# HQ-B: the HQ page frames its map over a few passes (HQ_FIT_PASSES), then a jack lands.
+	await _frames(hq.HQ_FIT_PASSES + 3)
 	assert_true(hq.arrival_ready(), "a jack lands on it without waiting for the image")
 
 
@@ -591,13 +593,15 @@ func test_big_text_raid_key_folds_and_the_crew_orders_show() -> void:
 	await _frames()
 	hq.show_raid()
 	await _frames(6)
-	assert_true(hq.raid_legend_is_strip(), "at TEXT_SCALE_MAX the raid key is the folding strip")
-	assert_true(hq.raid_legend.foldable() and hq.raid_legend.is_folded(), "folded to its MAP KEY line")
+	# HQ-B: the setup is the HQ page; its key is the one-line folding strip at every size.
+	assert_true(hq.grid_legend.foldable() and hq.grid_legend.is_folded(), "at TEXT_SCALE_MAX the key is folded to its MAP KEY line")
 	hq.show_hq()
 	await _frames(6)
 	var screen := hq.get_global_rect()
 	var found := 0
-	for b in hq.find_children("Loadout", "Button", true, false):
+	for k in hq._panel.find_children("Crew_*", "", true, false):
 		found += 1
-		assert_true(screen.encloses((b as Button).get_global_rect()), "a dossier's Loadout is on the first screen at TEXT_SCALE_MAX")
-	assert_gt(found, 0, "the dossiers have their Loadout")
+		var hand := hq._panel.get_node("Hand") as Control
+		assert_true(screen.encloses(hand.get_global_rect()), "the crew hand is on the first screen at TEXT_SCALE_MAX")
+	assert_gt(found, 0, "the crew has its cards (VIEW LOADOUT follows the picked one in the top bar)")
+	assert_true(hq.hud.loadout_button.visible, "VIEW LOADOUT in the top bar")

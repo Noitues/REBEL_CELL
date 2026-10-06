@@ -231,7 +231,16 @@ func _build() -> void:
 
 ## H24 K1: true when this key folds to its MAP KEY line (a strip at big text).
 func foldable() -> bool:
-	return strip and Settings.text_scale >= FOLD_SCALE - 0.001
+	return strip and (always_fold or Settings.text_scale >= FOLD_SCALE - 0.001)
+
+
+## HQ-B (round 37 "the key is a one-line strip"): the strip folds to its MAP KEY line at every
+## text size (the HQ's map has no room for the open rows; they open over it).
+var always_fold: bool = false:
+	set(v):
+		if v != always_fold:
+			always_fold = v
+			_build()
 
 
 ## H24 K1: true when the rows are hidden behind the MAP KEY line.

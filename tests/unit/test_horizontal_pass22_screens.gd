@@ -255,7 +255,7 @@ func test_the_raid_legend_covers_no_node_and_stays_on_screen() -> void:
 		assert_true(Rect2(Vector2.ZERO, CANVAS).encloses(lr), "on screen at %.1f: %s" % [scale, lr])
 		var area := (legend.get_parent() as Control).get_global_rect()
 		assert_true(area.grow(0.5).encloses(lr), "inside the map area at %.1f: %s in %s" % [scale, lr, area])
-		var rects: Array[Rect2] = hq.raid_node_rects()
+		var rects: Array[Rect2] = LegendSpot.node_rects(hq.city_overlay)
 		assert_false(rects.is_empty(), "the raid map has nodes")
 		for r in rects:
 			assert_false(lr.intersects(r), "the legend %s covers a node or label at %s (text %.1f)" % [lr, r, scale])
@@ -274,14 +274,13 @@ func test_defence_cards_are_on_screen_readable_and_say_how_to_deploy() -> void:
 				"the %s card is whole on screen at %.1f: %s" % [(card as AssetCard).display_name, scale, (card as Control).get_global_rect()])
 			if hq.more_hint.visible:
 				assert_false(hq.more_hint.get_global_rect().intersects(r), "MORE BELOW covers no card")
-		var steps: Node = hq._panel.find_child("DeploySteps", true, false)
-		assert_not_null(steps, "the deploy steps show")
-		var marks := 0
-		for n in _all(steps):
-			if n is IconMark:
-				marks += 1
-		assert_eq(marks, 2, "each step has its icon")
-		assert_string_contains((steps.find_child("DeployTarget", true, false) as Label).text, hq.site_name(hq.selected_site), "the target is named")
+		# HQ-B (c): the setup's line under the work order says how to deploy; each card names
+		# its target.
+		var intro := hq._panel.find_child("RaidIntro", true, false) as Label
+		assert_not_null(intro, "the deploy line shows")
+		assert_ne(intro.text, "", "it says how to deploy")
+		for card in cards.get_children():
+			assert_string_contains((card as Control).tooltip_text, hq.site_name(hq.selected_site), "the target is named")
 		hq.get_parent().queue_free()
 		await _frames(2)
 	assert_eq(AssetCard.DISABLED_SHADE.a < 0.45, true, "a lighter shade over a disabled card")
@@ -307,7 +306,6 @@ func test_more_below_covers_no_control() -> void:
 		_assert_hint_clear(hq.more_hint, hq, "HQ")
 		hq.show_grid()
 		await _frames(6)
-		_assert_hint_clear(hq.side_hint, hq, "Grid")
 		_assert_hint_clear(hq.more_hint, hq, "Grid page")
 		hq.show_raid()
 		await _frames(6)
@@ -335,30 +333,30 @@ func _dpad_reachable() -> Dictionary:
 
 
 func test_every_dossier_loadout_is_pad_reachable_and_has_its_icon() -> void:
+	# HQ-B (c): the dossiers are the crew hand's cards: each is D-pad reachable (its press
+	# picks the runner; the top bar's LOADOUT opens theirs), and JACK IN too.
 	var c := RunManager.campaign
 	assert_true(c.living_operatives().size() >= 2, "two rookies")
 	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		Settings.set_pad_active(true)
 		var hq := _open(HQ)
+		hq.show_hq()
 		await _frames(6)
 		var reach := _dpad_reachable()
-		var loadouts := 0
-		for n in _all(hq._panel):
-			if n is Button and n.name == &"Loadout":
-				loadouts += 1
-				assert_true(reach.has(n), "dossier Loadout %d reachable by D-pad at %.1f" % [loadouts, scale])
-				assert_eq(IconMark.kind_of(n), StatIcon.CARDS, "the Loadout button has its icon")
-		assert_eq(loadouts, c.living_operatives().size(), "one Loadout a dossier")
-		# The crew shows side by side or says there is more (H22 #10: one dossier at TEXT_SCALE_MAX).
-		var roster: Control = hq._panel.find_child("Roster", true, false)
-		var view := (hq.get_node("PageScroll") if hq.has_node("PageScroll") else hq.find_child("PageScroll", true, false)) as ScrollContainer
-		for card in roster.get_children():
-			var top := (card as Control).get_global_rect().position.y
-			assert_true(top < view.get_global_rect().end.y or hq.more_hint.visible,
-				"a dossier under the fold has MORE BELOW (text %.1f)" % scale)
-		var jack := hq._panel.find_child("JackIn", true, false) as ZineStamp
-		assert_eq(jack.icon_kind, StatIcon.JACK_IN, "JACK IN carries the plug")
+		var cards := 0
+		for op in c.living_operatives():
+			var card := hq._panel.find_child("Crew_%s" % op.id, true, false) as Control
+			assert_not_null(card, "%s's card" % op.name)
+			if card == null:
+				continue
+			cards += 1
+			assert_true(reach.has(card), "crew card %d reachable by D-pad at %.1f" % [cards, scale])
+		assert_eq(cards, c.living_operatives().size(), "one card an operative")
+		var hand := (hq._panel.find_child("HandCards", true, false) as Control).get_parent() as ScrollContainer
+		if hand != null:
+			assert_true(hand.follow_focus, "the hand scrolls to the focused card (text %.1f)" % scale)
+		assert_true(reach.has(hq._panel.find_child("Launch", true, false)), "JACK IN reachable by D-pad at %.1f" % scale)
 		hq.get_parent().queue_free()
 		await _frames(2)
 
@@ -513,25 +511,3 @@ func test_route_buttons_draw_the_map_icon_of_their_node() -> void:
 		assert_eq(mark.color, scene.ROUTE_NEXT_COLOR, "the map's colour for a next node")
 
 
-func test_grid_runs_show_the_map_icon_and_tier_pips() -> void:
-	var hq := _open(HQ)
-	await _frames()
-	hq.show_grid()
-	await _frames()
-	var runs: Node = hq._panel.find_child("RunsOpen", true, false)
-	assert_not_null(runs)
-	var nodes := {}
-	for n in hq.grid_graph()["nodes"]:
-		nodes[n["id"]] = n
-	var checked := 0
-	for b in _all(runs):
-		if b is Button and String(b.name).begins_with("Run_"):
-			var id := StringName(String(b.name).trim_prefix("Run_"))
-			var site := CampaignRules.site_data(RunManager.corporation, id)
-			assert_eq(IconMark.map_kind_of(b), String(nodes[id]["kind"]), "%s: the map's icon kind" % id)
-			assert_eq(int(b.get_meta(&"tier_pips")), site.tier, "%s: a pip a tier" % id)
-			assert_true((b as Button).text.begins_with("T%d" % site.tier), "the tier in words too")
-			checked += 1
-	assert_true(checked > 0, "runs checked")
-	var pick: Node = hq._panel.find_child("OperativeIcon", true, false)
-	assert_not_null(pick, "the operative dropdown has its icon")

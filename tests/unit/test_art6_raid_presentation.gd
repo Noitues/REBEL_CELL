@@ -343,8 +343,8 @@ func test_the_report_is_the_corps_paper_with_cell_holds_when_the_cell_survived()
 		assert_true(hq._panel.find_child("RaidReport", true, false) is RaidPaper, "the after-action report is corp paper")
 		var holds: Node = hq._panel.find_child("CellHolds", true, false)
 		assert_eq(holds != null, not bool(r["campaign_lost"]), "CELL HOLDS only when the Cell survived (lost %s)" % lost)
-		var verdict := hq._panel.find_child("RaidVerdict", true, false) as ForecastStamp
-		assert_not_null(verdict, "the raid's one verdict stays its stamp")
+		# Parity RAID-12 (round 40): no result disc; the paper carries the numbers.
+		assert_null(hq._panel.find_child("RaidVerdict", true, false), "no result disc on the report")
 		hq.get_parent().queue_free()
 		await _frames(1)
 

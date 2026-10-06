@@ -428,7 +428,7 @@ func test_a_site_that_cannot_be_run_says_why_and_what_to_do_first() -> void:
 	hq.show_grid()
 	await _frames(SETTLE)
 	var card := hq.find_child("SelectedSite", true, false) as Control
-	assert_null(card.find_child("Launch", true, false), "no JACK IN on a Site not reachable")
+	assert_null(hq._panel.find_child("Launch", true, false), "no JACK IN on a Site not reachable")
 	var why := card.find_child("WhyNot", true, false) as Label
 	assert_not_null(why, "it says why")
 	var linked := PackedStringArray()
@@ -441,5 +441,5 @@ func test_a_site_that_cannot_be_run_says_why_and_what_to_do_first() -> void:
 	hq.show_grid()
 	await _frames(SETTLE)
 	card = hq.find_child("SelectedSite", true, false) as Control
-	assert_not_null(card.find_child("Launch", true, false), "a reachable Site has JACK IN")
+	assert_not_null(hq._panel.find_child("Launch", true, false), "a reachable Site has JACK IN (HQ-B: the verb slot's sticker)")
 	assert_null(card.find_child("WhyNot", true, false), "and no note")

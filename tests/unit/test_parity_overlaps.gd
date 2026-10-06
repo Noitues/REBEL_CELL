@@ -167,7 +167,7 @@ func test_grid_03_13_the_central_server_chip_and_target_pencil_cover_nothing_and
 ## config's city rect, not the fog past its edge).
 func _on_city_share(hq: Control) -> float:
 	var city: NeonCity = hq.wireframe.city
-	var area: Rect2 = (hq.grid_legend.get_parent() as Control).get_global_rect()
+	var area: Rect2 = hq.hq_free_rect()
 	var to_page: Transform2D = hq.get_global_transform().affine_inverse()
 	var r := Rect2(CityView3D.CONFIG.city_rect)
 	var on := 0
@@ -187,10 +187,16 @@ func test_grid_12_every_corps_fitted_camera_stays_on_the_city() -> void:
 			var share := _on_city_share(hq)
 			gut.p("GRID-12 %s %.1f: %.2f of the map on the city" % [corp, scale, share])
 			assert_true(share >= ON_CITY_MIN, "%s %.1f: the map shows the city, not the fog past its edge (%.2f on the city)" % [corp, scale, share])
-			# The fit still holds every node on the map beside the column.
-			var area: Rect2 = (hq.grid_legend.get_parent() as Control).get_global_rect()
-			for r in LegendSpot.node_rects(hq.city_overlay, false):
-				assert_true(area.grow(LegendSpot.MARGIN).has_point(r.get_center()), "%s %.1f: node %s stays on the map area %s (the fit's margin)" % [corp, scale, r, area])
+			# HQ-B (Q5): the fit still holds the Sites it fits (the network and the runs open now)
+			# in the map's free part, unless the raid range's widest view leaves some out.
+			var free: Rect2 = hq.hq_free_rect()
+			var area: Rect2 = (hq._panel as Control).get_global_rect()
+			var widest := RaidZoomFit.zoom_of(CityView3D.CONFIG.raid_fit_max, hq.size.x)
+			var at_widest: bool = absf(hq.wireframe.city.scale.x - widest) < 0.01
+			for id in hq.hq_fit_ids():
+				var r: Rect2 = hq._map_node_rect(id)
+				if r.has_area() and not at_widest:
+					assert_true(free.grow(LegendSpot.MARGIN).has_point(r.get_center()), "%s %.1f: %s stays on the map's free part %s (the fit's margin)" % [corp, scale, id, free])
 			# The TARGET pencil stays on the map beside the column, off the minimap and the key.
 			for p in hq._grid_pencil_rects():
 				assert_true(p.position.x >= area.position.x - 1.0 and p.end.x <= area.end.x + 1.0, "%s %.1f: the TARGET pencil %s on the map, never under the column (%s)" % [corp, scale, p, area])

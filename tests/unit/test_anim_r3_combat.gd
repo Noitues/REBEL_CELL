@@ -431,6 +431,8 @@ func test_a_subtitle_over_a_menu_passes_a_click_on_a_button() -> void:
 
 
 func test_the_first_press_on_the_city_grid_works_while_the_radio_types() -> void:
+	# HQ-B: the HQ is the Grid; the words typing in are JACK IN's system word (`radio_type`); the
+	# first press on a hand tab (MARKET) works while they type.
 	RunManager.new_campaign(1)
 	var holder: Control = add_child_autofree(Control.new())
 	holder.size = SCREEN.size
@@ -444,33 +446,31 @@ func test_the_first_press_on_the_city_grid_works_while_the_radio_types() -> void
 	await _frames(1)
 	_live()
 	Settings.set_subtitle_typing(true)
-	var grid: Array = hq._panel.find_children("*", "Button", true, false).filter(func(b: Node) -> bool: return String((b as Button).text).begins_with(tr("City Grid")))
-	assert_eq(grid.size(), 1, "the HQ has its City Grid button")
-	if grid.is_empty():
+	var tab := hq._panel.find_child("Tab_MARKET", true, false) as Control
+	assert_not_null(tab, "the HQ has its MARKET tab")
+	if tab == null:
 		return
-	var radio: Label = null
-	for n in hq._panel.find_children("*", "Label", true, false):
-		if (n as Label).is_visible_in_tree() and Typing.type_in(n as Label, &"radio_type") > 0.0:
-			radio = n
-			break
-	assert_not_null(radio, "the pirate radio types in on the HQ page")
-	# A click on City Grid passes on to it (the typing only shows its words).
+	var word := hq._panel.find_child("SystemWord", true, false) as Label
+	assert_true(word != null and Typing.type_in(word, &"radio_type") > 0.0, "JACK IN's system word types in on the HQ page")
+	# A click on the tab passes on to it (the typing only shows its words).
 	var got := counter.got
-	var at := (grid[0] as Control).get_global_rect().get_center()
+	var at := tab.get_global_rect().get_center()
 	get_viewport().push_input(_click(at), true)
-	assert_false(Typing.typing(radio), "the radio's words show whole")
-	assert_eq(counter.got, got + 1, "the click on City Grid is not eaten")
+	assert_false(Typing.typing(word), "the words show whole")
+	assert_eq(counter.got, got + 1, "the click on the tab is not eaten")
 	get_viewport().push_input(_click(at, false), true)
 	await _frames(1)
-	# Accept on City Grid (the pad's A) opens the Grid at the first press.
-	if String(hq.panel_name) != "grid":
-		Typing.type_in(radio, &"radio_type")
-		(grid[0] as Control).grab_focus()
+	# Accept on the tab (the pad's A) opens it at the first press.
+	if hq.hand_tab != hq.HandTab.MARKET:
+		word = hq._panel.find_child("SystemWord", true, false) as Label
+		if word != null:
+			Typing.type_in(word, &"radio_type")
+		(hq._panel.find_child("Tab_MARKET", true, false) as Control).grab_focus()
 		await _frames(1)
 		get_viewport().push_input(_key(KEY_ENTER))
 		get_viewport().push_input(_key(KEY_ENTER, false))
 		await _frames(2)
-	assert_eq(String(hq.panel_name), "grid", "the first press on City Grid opens it (A3: the typing ate it)")
+	assert_eq(hq.hand_tab, hq.HandTab.MARKET, "the first press on the tab opens it (A3: the typing ate it)")
 	await _close(hq)
 
 

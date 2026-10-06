@@ -161,7 +161,9 @@ func test_every_stat_tag_has_its_icon_on_every_screen() -> void:
 	var hq := _open(HQ)
 	await _frames()
 	var st: HudStats = hq.hud.stats
-	assert_eq(st.items.size(), 7, "HEAT SCHEMATICS HOME EXPLOITS RAIDS ICE CREW")
+	# HQ-B (a): Heat is the gauge in the top bar's first slot, the tags the rest.
+	assert_eq(st.items.size(), 6, "SCHEMATICS HOME EXPLOITS RAIDS ICE CREW")
+	assert_ne(hq.hud.heat_gauge.tooltip_text, "", "the Heat gauge says what it means")
 	for i in st.items.size():
 		assert_true(StatIcon.ALL.has(st.icon_of(i)), "HQ tag %s has an icon" % st.items[i][0])
 		assert_ne(st._get_tooltip(st.tag_rects()[i].get_center()), "", "HQ tag %s says what it means" % st.items[i][0])
@@ -206,30 +208,6 @@ func test_every_icon_draws() -> void:
 	assert_false(drawn.is_empty(), "every StatIcon kind drew")
 	for tag in StatIcon.TAG_KINDS:
 		assert_true(StatIcon.ALL.has(StatIcon.kind_for(tag)), "%s maps to an icon" % tag)
-
-
-func test_cell_status_badges_are_labelled_and_share_the_tag_icons() -> void:
-	var c := RunManager.campaign
-	c.armory = [&"turret", &"turret", &"decoy"]
-	var hq := _open(HQ)
-	await _frames()
-	var badges: Node = hq._panel.find_child("CellBadges", true, false)
-	var home := badges.find_child("HomeBadge", false, false) as Badge
-	var exploits := badges.find_child("ExploitsBadge", false, false) as Badge
-	var armory := badges.find_child("ArmoryBadge", false, false) as Badge
-	assert_true(home.text.begins_with("HOME"), "house 50/50 is HOME")
-	assert_true(exploits.text.begins_with("EXPLOITS"), "diamond 0/3 is EXPLOITS")
-	assert_true(armory.text.begins_with("ARMORY"), "the Armory count is ARMORY")
-	assert_eq(home.icon_kind, StatIcon.kind_for("HOME"), "same icon as the HOME tag")
-	assert_eq(exploits.icon_kind, StatIcon.kind_for("EXPLOITS"), "same icon as the EXPLOITS tag")
-	assert_eq(armory.icon_kind, StatIcon.ARMORY)
-	for b in badges.get_children():
-		var badge := b as Badge
-		assert_ne(badge.tooltip_text, "", "%s has a tooltip" % badge.text)
-		if badge.asset_id != &"":
-			var name := TextDb.t(RunManager.lookup().get_content(badge.asset_id), "display_name")
-			assert_true(badge.text.begins_with(name), "the asset icon is named: '%s'" % badge.text)
-			assert_false(badge.text.begins_with("x"), "no bare x1")
 
 
 # --- #11 subtitles clear of controls and stat tags; the wallet ------------------------------
@@ -451,13 +429,12 @@ func test_menus_and_skip_leave_carry_icons() -> void:
 			assert_ne((b as Button).tooltip_text, "", "title item '%s' has a tooltip" % (b as Button).text)
 	var hq := _open(HQ)
 	await _frames()
-	var menu_items := 0
-	for b in _all(hq._panel):
-		if b is Button and (b as Button).theme_type_variation == &"MenuItem":
-			menu_items += 1
-			assert_ne(IconMark.kind_of(b), &"", "CYBERDECK item '%s' has an icon" % (b as Button).text)
-			assert_ne((b as Button).tooltip_text, "", "CYBERDECK item '%s' has a tooltip" % (b as Button).text)
-	assert_true(menu_items >= 5, "the HQ menu")
+	# HQ-B (c): the CYBERDECK menu is the hand's tabs (each says what it holds).
+	var tabs := 0
+	for b in hq._panel.find_children("Tab_*", "", true, false):
+		tabs += 1
+		assert_ne((b as Control).tooltip_text, "", "hand tab '%s' has a tooltip" % b.name)
+	assert_eq(tabs, hq.TAB_WORDS.size(), "the HQ's hand tabs")
 	var scene := _netrun()
 	await _frames()
 	for id in ["GridZoom", "SaveQuit"]:
@@ -524,15 +501,14 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 	await _frames()
 	assert_true(hq._panel.get_combined_minimum_size().x <= CANVAS.x, "the HQ never runs off the side at TEXT_SCALE_MAX (a raid pending)")
 	assert_true(hq.hud.stats.tag_scale > 1.2, "the stat tags grow (%.2f)" % hq.hud.stats.tag_scale)
-	var crew := hq._panel.find_child("Crew_%s" % RunManager.campaign.roster[0].id, true, false) as CrewCard
-	var name_label: Label = null
-	for n in _all(crew):
-		if n is Label and (n as Label).text == RunManager.campaign.roster[0].name.to_upper():
-			name_label = n
-	assert_eq(name_label.get_theme_font_size(&"font_size"), roundi(CrewCard.NAME_SIZE * Settings.TEXT_SCALE_MAX), "the dossier's name grows")
-	# ART-10 4C: the radio is terminal text that grows to its words (fit_content): all shown.
-	var radio := hq._panel.find_child("PirateRadio", true, false) as CrtText
-	assert_true(radio.label.get_content_height() <= radio.label.size.y + 1.0, "the radio shows all its words")
+	# HQ-B (c): the crew's cards grow with the text (to the objects' cap).
+	var crew := hq._panel.find_child("Crew_%s" % RunManager.campaign.roster[0].id, true, false) as CrewHandCard
+	assert_almost_eq(crew.size.x, CrewHandCard.card_size().x, 1.0, "the crew card at its size")
+	assert_gt(CrewHandCard.card_size().x, HqLayout.CARD.x, "the crew card grows")
+	# HQ-B (Q7): the radio is the ON AIR ticker, its words whole in its tooltip.
+	var radio := hq._panel.find_child("OnAir", true, false) as Control
+	assert_not_null(radio, "the ON AIR ticker")
+	assert_ne(radio.tooltip_text, "", "the radio's words")
 	hq.open_loadout()
 	await _frames()
 	var deck := (hq.get_node("LoadoutView") as LoadoutView)._view as DeckView
@@ -573,44 +549,30 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 
 
 func test_grid_side_column_scrolls_and_the_hq_says_there_is_more_below() -> void:
+	# HQ-B (b): the Grid's side column is the HQ's card column (the selected Site's card): it
+	# scrolls by the wheel and the pad's focus and ends on screen; the verb slot is on screen.
 	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		_raid_campaign()
 		var hq := _open(HQ)
+		hq.show_hq()
 		await _frames()
-		var page := hq.get_node("PageScroll") as ScrollContainer if hq.has_node("PageScroll") else null
-		if page == null:
-			for n in _all(hq):
-				if n is ScrollContainer and n.name == "PageScroll":
-					page = n
-		assert_not_null(page)
-		var bar := page.get_v_scroll_bar()
-		if bar.max_value - bar.page > 1.0:
-			assert_true(hq.more_hint.visible, "MORE BELOW while the Black Market is below the fold (text %.1f)" % scale)
-			assert_ne(hq.more_hint.tooltip_text, "")
-			hq.more_hint.scroll_on()
-			await _frames()
-			assert_true(page.scroll_vertical > 0, "pressing it scrolls on")
-		hq.show_grid()
-		await _frames()
-		var side := hq._panel.find_child("GridSideScroll", true, false) as ScrollContainer
-		assert_not_null(side, "the side column scrolls")
+		var side := hq._panel.find_child("CardColumn", true, false) as ScrollContainer
+		assert_not_null(side, "the card column scrolls")
 		assert_true(side.follow_focus, "the pad scrolls it by focus")
 		assert_ne(side.mouse_filter, Control.MOUSE_FILTER_IGNORE, "the wheel reaches it")
 		assert_true(side.get_global_rect().end.y <= CANVAS.y + 0.5, "the column ends on screen (text %.1f): %s" % [scale, side.get_global_rect()])
-		var runs := hq._panel.find_child("RunsOpen", true, false) as Control
-		assert_true(side.is_ancestor_of(runs), "RUNS OPEN NOW is inside the scrolling column")
-		side.ensure_control_visible(runs)
-		await _frames()
-		var first_run: Control = null
-		for n in _all(runs):
-			if n is Button:
-				first_run = n
-				break
-		side.ensure_control_visible(first_run)
-		await _frames()
-		assert_true(side.get_global_rect().grow(1.0).encloses(first_run.get_global_rect()), "a run button scrolls into view (text %.1f)" % scale)
+		var verb := hq._panel.find_child("VerbSlot", true, false) as Control
+		assert_true(Rect2(Vector2.ZERO, CANVAS).grow(0.5).encloses(verb.get_global_rect()), "the verb slot on screen (text %.1f)" % scale)
+		var first: Control = null
+		for n in _all(side):
+			if n is Button and (n as Button).is_visible_in_tree() and (n as Button).focus_mode != Control.FOCUS_NONE:
+				first = n
+		if first != null:
+			first.grab_focus()
+			await _frames()
+			assert_true(side.get_global_rect().grow(1.0).encloses(first.get_global_rect()), "the card's last button scrolls into view (text %.1f)" % scale)
 		hq.get_parent().queue_free()
 		await _frames(2)
 
@@ -635,18 +597,19 @@ func test_new_hq_code_reads_content_text_through_textdb() -> void:
 	TranslationServer.set_locale(TEST_LOCALE)
 	var hq := _open(HQ)
 	await _frames()
-	var recruit := hq._panel.find_child("Recruit_%s" % cls.id, true, false) as Button
-	assert_string_contains(recruit.text, "XL_CLASS", "recruit button")
+	# HQ-B (c): the MARKET hand's recruit cards and boost stickers; the work order's title.
+	hq.open_hand(hq.HandTab.MARKET)
+	await _frames()
+	var recruit := hq._panel.find_child("Recruit_%s" % cls.id, true, false) as CrewHandCard
+	assert_string_contains(recruit.display_name, "XL_CLASS", "recruit card")
 	var boost_btn := hq._panel.find_child("Boost_%s" % boost.id, true, false) as Button
-	assert_string_contains(boost_btn.text, "XL_BOOST", "boost button")
-	var raid_btn := hq._panel.find_child("RaidPending", true, false) as Button
-	assert_string_contains(raid_btn.text, "XL_RAID", "raid pending button")
-	var asset_named := false
-	for b in hq._panel.find_child("CellBadges", true, false).get_children():
-		asset_named = asset_named or (b as Badge).text.begins_with("XL_ASSET")
-	assert_true(asset_named, "asset badge")
+	assert_string_contains(boost_btn.text, "XL_BOOST", "boost sticker")
+	var order := hq._panel.find_child("RaidCard", true, false) as RaidPaper
+	assert_string_contains(order.title_label.text, "XL_RAID", "the HQ's work order")
 	hq.show_raid()
 	await _frames()
+	var asset_card := hq._panel.find_child("Asset_decoy", true, false) as AssetCard
+	assert_string_contains(asset_card.display_name, "XL_ASSET", "the DEFENCE hand's asset card")
 	var card := hq._panel.find_child("RaidCard", true, false) as RaidPaper  # ART-6 3A: the work order is corp paper
 	assert_string_contains(card.title_label.text, "XL_RAID", "raid card title")
 
@@ -654,14 +617,11 @@ func test_new_hq_code_reads_content_text_through_textdb() -> void:
 func test_one_name_for_jack_in_and_names_on_the_title() -> void:
 	var hq := _open(HQ)
 	await _frames()
-	var jack := hq._panel.find_child("JackIn", true, false) as ZineStamp
-	assert_string_contains(jack.tooltip_text, "Site", "the HQ JACK IN says: pick a Site")
-	var jack_text := jack.stamp_text
-	hq.show_grid()
-	await _frames()
-	var go := hq._panel.find_child("Launch", true, false) as Button
-	assert_eq(go.text, jack_text, "the Site card's button is JACK IN too")
-	assert_eq(IconMark.kind_of(go), StatIcon.JACK_IN)
+	# HQ-B (d/e): one JACK IN, the verb slot's sticker for the selected Site.
+	var go := hq._panel.find_child("Launch", true, false) as VerbSticker
+	assert_not_null(go, "JACK IN in the verb slot")
+	assert_eq(go.text, tr(hq.VERB_JACK_IN), "the verb is JACK IN")
+	assert_string_contains(go.tooltip_text, hq.site_name(hq.selected_site), "it says which Site")
 	var title := _open(TITLE)
 	await _frames()
 	var corp := RunManager.lookup().get_content(RunManager.DEFAULT_CORPORATION) as CorporationData

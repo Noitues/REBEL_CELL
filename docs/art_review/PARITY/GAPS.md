@@ -216,7 +216,9 @@ Decision: **Partly resolved by S-MAPVIEW (designer ruling 2026-10-05):** the rou
 
 **ROUTE-02 (P1) Dossier overlaps.** Main: the `AT LARGE` stamp covers the HP value (`60 /` cut) and
 the `HEAT 0: COOL` stamp touches the IF STATIONED box. Concept: stamps in the paper's margins. Likely
-file: `scripts/ui/kit/operative_dossier.gd` (stamp anchors). Decision:
+file: `scripts/ui/kit/operative_dossier.gd` (stamp anchors). Decision: **drop the Heat stamp** (designer Q10, 2026-10-05): the Heat gauge in the
+top bar is the one place for Heat. Fixed by HEAT-ALL: the stamp is removed from the dossier (the file, its height and
+`AT LARGE` keep their places); sheet `docs/art_review/PARITY/fixes/HEAT_ALL.jpg`.
 
 **ROUTE-03 (P1) Node panel.** Main: `DECRYPTED` stamp over the panel header, `Fight: win it for
 Cycles and loo` cut at the right edge, the crossed-out dial `5` on the rewards text. Concept: the

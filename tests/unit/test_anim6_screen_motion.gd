@@ -527,31 +527,32 @@ func test_a_settings_change_animates_nothing() -> void:
 # --- HQ idle ---------------------------------------------------------------------------------------
 
 func test_hq_idle_runs_live_and_rests_headless() -> void:
+	# HQ-B (g): the HQ idle's entries re-pointed: JACK IN's sticker breathes (`jack_ring_breathe`),
+	# its system word types in (`radio_type`), a hovered crew card tilts (`polaroid_tilt`).
 	var holder: Control = add_child_autofree(Control.new())
 	holder.size = Vector2(1280, 720)
 	var hq: Control = load(HQ).instantiate()
 	holder.add_child(hq)
 	hq.new_campaign(1)
 	await _frames()
-	var jack := hq._panel.find_child("JackIn", true, false) as ZineStamp
-	assert_false(jack.breathing(), "headless: JACK IN rests")
-	assert_eq(jack.ring_scale, 1.0)
+	var jack := hq._panel.find_child("Launch", true, false) as Control
+	assert_false(Motion.held(jack, ^"scale"), "headless: JACK IN rests")
+	assert_eq(jack.scale, Vector2.ONE)
 	_live()
 	hq.panel_name = ""
 	hq.show_hq()
-	# Game time held: the radio must still be typing after the layout frames.
+	# Game time held: the word must still be typing after the layout frames.
 	await BoundedWait.frozen_frames(get_tree(), 3)
-	jack = hq._panel.find_child("JackIn", true, false) as ZineStamp
-	assert_true(jack.breathing(), "live: JACK IN breathes")
-	var radio := hq._panel.find_child("PirateRadio", true, false) as CrtText  # ART-10 4C: the radio is terminal text
-	assert_true(Typing.typing(radio.label), "the pirate radio types in")
-	assert_eq(radio.label.get_parsed_text().strip_edges() != "", true, "its words are all there")
-	var crew := hq._panel.find_child("Roster", true, false).get_child(0) as CrewCard
-	var rest := crew.polaroid.rotation_degrees
-	crew.tilt_polaroid(true)
-	var want := rest + Motion.amplitude(&"polaroid_tilt")
-	var took := await _until(func() -> bool: return is_equal_approx(crew.polaroid.rotation_degrees, want))
+	jack = hq._panel.find_child("Launch", true, false) as Control
+	assert_true(Motion.held(jack, ^"scale"), "live: JACK IN breathes")
+	var word := hq._panel.find_child("SystemWord", true, false) as Label
+	assert_true(Typing.typing(word), "JACK IN's system word types in")
+	assert_ne(word.text.strip_edges(), "", "its words are all there")
+	var crew := hq._panel.find_child("Crew_%s" % RunManager.campaign.roster[0].id, true, false) as CrewHandCard
+	crew.tilt(true)
+	var want := Motion.amplitude(&"polaroid_tilt")
+	var took := await _until(func() -> bool: return is_equal_approx(crew.rotation_degrees, want))
 	_assert_in_time(took, Motion.seconds(&"polaroid_tilt"), "the tilt")
-	assert_almost_eq(crew.polaroid.rotation_degrees, rest + Motion.amplitude(&"polaroid_tilt"), 0.01, "the Polaroid tilts on hover")
-	crew.tilt_polaroid(false)
+	assert_almost_eq(crew.rotation_degrees, want, 0.01, "the crew card tilts on hover")
+	crew.tilt(false)
 	PageTransition.settle(hq)

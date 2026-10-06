@@ -26,7 +26,8 @@ const REBINDABLE: Array[StringName] = [&"nudge_left", &"nudge_right", &"cycle_ta
 ## ART-0 C: input actions Settings adds at startup (project.godot is not edited in ART-0):
 ## action -> its default physical key. M13 W9 put `resolve_fast_forward` (Shift) in
 ## project.godot; `reset_keybinds` falls back to these defaults.
-const RUNTIME_ACTIONS := {&"resolve_fast_forward": KEY_SHIFT}
+## HQ-B (M14, Q1): `open_heat` (H) drops the Heat terminal from the HEAT gauge.
+const RUNTIME_ACTIONS := {&"resolve_fast_forward": KEY_SHIFT, &"open_heat": KEY_H}
 
 ## Disables scanlines, flicker, chromatic aberration and the distortion pulse everywhere.
 var reduce_effects: bool = false

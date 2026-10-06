@@ -213,7 +213,7 @@ func _screen(state: String) -> void:
 					if float(pads[k]["half"]) > float(pads[big]["half"]):
 						big = k
 				var at: Vector2 = Vector2(pads[big]["lot"]) + Vector2(0.5, 0.5) if not pads.is_empty() else Vector2(nodes[0]["lot"])
-				hq._raid_passes = hq.RAID_PASSES_MAX  # the page's framing passes are over: the close-up stays
+				hq._hq_fit_passes = 0  # HQ-B: the HQ fit is over (no pass waiting): the close-up stays
 				hq._frame_city(RaidZoomFit.zoom_of(UPLINK_CLOSE_ORTHO, hq.size.x), at, Vector2(0.45, 0.8))
 				await _frames(SETTLE)
 				for p in pads:

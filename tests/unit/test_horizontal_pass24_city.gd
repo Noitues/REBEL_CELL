@@ -177,43 +177,8 @@ func test_the_folded_key_opens_on_hover_press_and_pad_and_does_not_refit() -> vo
 	await _close(hq)
 
 
-# --- K2 a long language ------------------------------------------------------------------------
-
-func test_the_step_row_stays_in_the_column_pseudolocalised() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
-		RunManager.reset()
-		Settings.set_text_scale(scale)
-		var hq := _scene(HQ)
-		hq.new_campaign(1)
-		CampaignRules.queue_raid(RunManager.campaign, RunManager.corporation, RC.RaidTriggerSource.STORY, &"", "test")
-		_pseudo(true)
-		hq.show_grid()
-		await _frames(4)
-		var card := (hq.find_child("SelectedSite", true, false) as Control).get_global_rect()
-		var nav := hq.find_child("SiteNav", true, false) as Control
-		var steps := 0
-		for b in nav.get_children():
-			if b is Button and (b as Control).visible:
-				steps += 1
-				var r := (b as Control).get_global_rect()
-				assert_true(r.end.x <= card.end.x + 0.5 and r.position.x >= card.position.x - 0.5,
-					"x%.1f: %s inside the column (%s vs %s)" % [scale, b.name, r, card])
-		assert_eq(steps, 4 if not RunManager.campaign.pending_raids.is_empty() else 3, "x%.1f: every step shows" % scale)
-		_pseudo(false)
-		await _close(hq)
-
-
 # --- K3 the doc says the code's number -----------------------------------------------------------
 
-func test_the_decision_log_gives_the_grid_fit_passes_the_code_uses() -> void:
-	var text := FileAccess.get_file_as_string("res://docs/DECISIONS.md")
-	var hq_script: GDScript = load("res://scripts/ui/hq_scene.gd")
-	var n := int(hq_script.get_script_constant_map()["GRID_FITS_MAX"])
-	assert_string_contains(text, "GRID_FITS_MAX (%d)" % n, "DECISIONS names GRID_FITS_MAX as the code has it")
-	assert_false(text.contains("GRID_FITS_MAX (%d)" % (n - 1)), "and never the old number")
-
-
-# --- K4 run rows --------------------------------------------------------------------------------
 
 func test_the_clear_preview_is_the_real_result() -> void:
 	for corp in CORPS:
@@ -244,58 +209,6 @@ func test_the_clear_preview_is_the_real_result() -> void:
 				for id in p["opens"]:
 					assert_true(CampaignRules.launchable_sites(copy, RunManager.corporation, RunManager.config()).any(func(x: SiteData) -> bool: return x.id == id),
 						"%s: %s opens" % [what, id])
-
-
-func test_run_rows_say_what_clearing_gives_and_light_their_node() -> void:
-	var hq: Control = await _hq_grid(&"solace", 1.0)
-	var rows := hq.find_child("RunRows", true, false) as VBoxContainer
-	var sets := {}
-	var buttons: Array[Button] = []
-	for b in rows.get_children():
-		if not (b is Button and String(b.name).begins_with("Run_")):
-			continue
-		buttons.append(b)
-		var id := StringName(String(b.name).trim_prefix("Run_"))
-		var gains := rows.get_node_or_null("Gains_%s" % id) as Control
-		assert_not_null(gains, "%s: its gains under it" % id)
-		var icons := PackedStringArray()
-		for g in gains.get_children():
-			if g.name == &"GainsCaption":
-				# ANIM-R5 P8: the row opens with its caption (IF CLEARED:), then the badges.
-				assert_eq(gains.get_child(0), g, "%s: the caption comes first" % id)
-				continue
-			assert_true(g is Badge, "%s: gains are badges" % id)
-			assert_ne((g as Badge).icon_kind, &"", "%s: each gain has its icon" % id)
-			assert_ne((g as Badge).tooltip_text, "", "%s: and says it in words" % id)
-			icons.append("%s %s" % [(g as Badge).icon_kind, (g as Badge).text])
-			assert_string_contains((b as Button).tooltip_text.replace("\n", " "), (g as Badge).tooltip_text.replace("\n", " ").left(20), "%s: the row's tip says it too" % id)
-		assert_false(icons.is_empty(), "%s: something to say" % id)
-		sets[" ".join(icons)] = true
-	assert_gt(buttons.size(), 3)
-	assert_gt(sets.size(), 1, "the rows no longer all look the same: %s" % [sets.keys()])
-	# A row hovered or focused lights its node; the node hovered lights its row.
-	var overlay: CityMapOverlay = hq.city_overlay
-	var b0 := buttons[1]
-	var id0 := StringName(String(b0.name).trim_prefix("Run_"))
-	b0.mouse_entered.emit()
-	assert_eq(overlay.hover_id, id0, "hovering a row lights its node")
-	assert_ne(overlay.hover_centre().x, INF, "with a ring round its icon")
-	assert_true(overlay.label_rects().has(String(id0)), "and its label")
-	b0.mouse_exited.emit()
-	assert_eq(overlay.hover_id, &"", "leaving it unlights it")
-	b0.focus_entered.emit()
-	assert_eq(overlay.hover_id, id0, "the pad's focus lights it too")
-	b0.focus_exited.emit()
-	var n := overlay._node_dict(id0)
-	var at := overlay.icon_pos(n)
-	var ev := InputEventMouseMotion.new()
-	ev.position = at
-	overlay._gui_input(ev)
-	assert_true(bool(b0.get_meta(&"lit", false)), "pointing at the node lights its row")
-	assert_false(bool(buttons[0].get_meta(&"lit", false)), "and no other")
-	overlay.notification(Control.NOTIFICATION_MOUSE_EXIT)
-	assert_false(bool(b0.get_meta(&"lit", false)), "leaving the map unlights it")
-	await _close(hq)
 
 
 # --- K5 icons -----------------------------------------------------------------------------------
@@ -382,16 +295,12 @@ func test_map_words_are_translated_once() -> void:
 		assert_eq((l as Label).auto_translate_mode, Node.AUTO_TRANSLATE_MODE_DISABLED, "%s is translated once" % (l as Label).text)
 	var corporate := legend.body.find_children("*", "Label", true, false).filter(func(l: Node) -> bool: return (l as Label).text == CityMapOverlay.tr_word("corporate"))
 	assert_eq(corporate.size(), 1, "the 'corporate' row is translated")
-	# The run rows and the Site card.
+	# The Site card (HQ-B: the Grid's run rows went; the Sites are picked on the map).
 	_pseudo(false)
 	var hq: Control = await _hq_grid(&"solace", 1.0)
 	_pseudo(true)
 	hq.show_grid()
 	await _frames(2)
-	for b in hq.find_child("RunRows", true, false).get_children():
-		if b is Button:
-			assert_eq((b as Button).auto_translate_mode, Node.AUTO_TRANSLATE_MODE_DISABLED)
-			assert_true((b as Button).text.begins_with(CityMapOverlay.tier_text(1)) or (b as Button).text.begins_with(CityMapOverlay.tier_text(2)), "%s: the tier translated" % b.name)
 	var card := hq.find_child("SelectedSite", true, false) as TerminalWindow
 	assert_eq(card.tag_label.auto_translate_mode, Node.AUTO_TRANSLATE_MODE_DISABLED)
 	assert_string_contains(card.tag_label.text, CityMapOverlay.tr_word("corporate").to_upper(), "the status word translated")

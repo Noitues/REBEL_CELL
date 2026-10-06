@@ -176,4 +176,27 @@ static func entries(lookup: ContentLookup, profile: ProfileState = null) -> Dict
 			out[section].append({"title": String(res.get("display_name")) if res.get("display_name") != "" else String(id), "text": describe(res)})
 	for word in LEXICON:
 		out["Lexicon"].append({"title": word, "text": LEXICON[word]})
+	# HQ-B (designer ruling Q8): the campaign's story so far (its revealed beats) heads the Codex
+	# while a campaign is loaded (it was the HQ's window).
+	var beats := story_entries()
+	if beats.is_empty():
+		return out
+	var with_story := {STORY: beats}
+	with_story.merge(out)
+	return with_story
+
+
+## HQ-B (Q8): the Codex's STORY section's key (a translation key).
+const STORY := "Story" # TR
+
+
+## HQ-B (Q8): the loaded campaign's revealed story beats as Codex entries ([] with no campaign
+## or none revealed yet), the beats' words through TextDb.
+static func story_entries() -> Array:
+	var out: Array = []
+	var c := RunManager.campaign
+	if c == null or RunManager.corporation == null:
+		return out
+	for b in CampaignRules.revealed_beats(c, RunManager.corporation):
+		out.append({"title": TextDb.t(b, "title"), "text": TextDb.t(b, "text")})
 	return out

@@ -148,21 +148,6 @@ func test_mini_map_labels_never_overlap_and_keep_their_tooltips() -> void:
 	assert_true(m.label_rects.has(RunManager.campaign.grid.home_site_id), "CORE is labelled")
 
 
-func test_the_hq_mini_map_on_the_hq_page_keeps_labels_apart() -> void:
-	for scale in SCALES:
-		RunManager.reset()
-		Settings.set_text_scale(scale)
-		var hq := _scene(HQ)
-		hq.new_campaign(1)
-		await _frames(4)
-		var minis := hq.find_children("*", "GridMapView", true, false).filter(func(n: Node) -> bool: return (n as Control).is_visible_in_tree())
-		assert_eq(minis.size(), 1, "the HQ shows its mini-map")
-		var mini: GridMapView = minis[0]
-		_assert_apart(mini.label_rects, "HQ x%.1f" % scale)
-		assert_false(mini.label_rects.is_empty())
-		await _close(hq)
-
-
 # --- #2-#5 and #7 The Grid screen -------------------------------------------------------------
 
 # (#2-#5 and #7 on every corporation's Grid: test_city_map_sweeps.gd.)
@@ -176,6 +161,10 @@ func test_a_hidden_node_has_no_floating_label_and_the_fit_is_measured() -> void:
 		if m.get("big", false) and m["id"] != RunManager.campaign.grid.home_site_id:
 			n = m
 	assert_false(n.is_empty(), "the boss Site")
+	# HQ-B (Q5): the boss may lie outside the HQ's fit (its edge arrow shows it): then the
+	# selected Site is the node checked.
+	if not CityMapOverlay._visible_at(overlay.icon_pos(n), overlay.label_area(), overlay.label_blocks()):
+		n = overlay._node_dict(hq.selected_site)
 	overlay.selected_id = n["id"]
 	assert_true(overlay.label_rects().has(String(n["id"])), "labelled while it shows")
 	# A panel over the node (Renewal Engine floated over PREV SITE): no label anywhere.
@@ -184,7 +173,7 @@ func test_a_hidden_node_has_no_floating_label_and_the_fit_is_measured() -> void:
 	assert_false(overlay.label_rects().has(String(n["id"])), "a hidden node's label is left out, not moved away")
 	overlay.set_blocked_rects([])
 	# The fit: nothing to do with room enough; a small room asks to zoom out.
-	var area := (hq.find_child("GridMapArea", true, false) as Control).get_global_rect()
+	var area: Rect2 = hq.hq_free_rect()
 	assert_true(LegendSpot.fit_into(overlay, SCREEN.grow(4000.0)).is_empty(), "room enough: no change")
 	var fit := LegendSpot.fit_into(overlay, Rect2(area.position, area.size * 0.3))
 	assert_false(fit.is_empty(), "a small room asks for a new frame")

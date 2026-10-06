@@ -25,6 +25,8 @@ const TAG_GAP := 8.0
 ## Full tags (with their names) may shrink to this share of the text scale to fit before
 ## the row goes compact.
 const FULL_MIN_FIT := 0.85
+## The least a tag is drawn at when the bar leaves it almost no room (the compact look's floor).
+const COMPACT_SCALE_FLOOR := 0.5
 ## ART-0 C (text scale 2.0): the tags' floor never asks for more than this scale (about
 ## what the old 1.6 ceiling asked, 1.36, less the raid setup's wider top-bar buttons at
 ## 2.0): at 2.0 a row that fits at it stays one row (two rows of 1.7x tags took 212 px of
@@ -501,7 +503,9 @@ func _relayout() -> void:
 		if fit_one < fit_floor(s) and n > 1:
 			rows = 2
 			split = ceili(n / 2.0)
-			tag_scale = minf(s, room / maxf(1.0, maxf(_fitted_width(0, split), _fitted_width(split, n))))
+			# HEAT-ALL: never below the compact floor: the Heat gauge shares the bar, and a bar with almost no
+			# room left for the tags (a very long title) must still draw them (a zero font size is an error).
+			tag_scale = clampf(room / maxf(1.0, maxf(_fitted_width(0, split), _fitted_width(split, n))), COMPACT_SCALE_FLOOR, s)
 		else:
 			tag_scale = minf(s, fit_one)
 		var t := tag_scale

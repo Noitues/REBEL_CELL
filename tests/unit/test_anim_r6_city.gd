@@ -344,9 +344,21 @@ func test_a_polaroid_caption_follows_the_text_size_and_is_never_cut() -> void:
 		assert_eq(Polaroid.caption_floor(), roundi(12 * scale), "%.1f: the floor is 12 px x the text size" % scale)
 		RunManager.new_campaign(1)
 		var hq := _scene(HQ)
+		hq.show_hq()
 		await _frames(3)
+		# HQ-B (c): the crew are the hand's cards; a name follows the text size and is whole.
+		var cards := 0
+		for n in hq.find_children("*", "CrewHandCard", true, false):
+			var card := n as CrewHandCard
+			if not card.is_visible_in_tree():
+				continue
+			cards += 1
+			assert_gte(card.name_font_size(), CrewHandCard.CHIP_PX, "%.1f: a crew name never under the chip's size" % scale)
+			var w := Palette.display().get_string_size(card.display_name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, card.name_font_size()).x
+			assert_lte(w, card.name_room() + 0.5, "%.1f: '%s' whole on its card" % [scale, card.display_name])
+		assert_gt(cards, 0, "%.1f: the crew's cards were checked" % scale)
 		var seen := 0
-		var list: Array = hq.find_children("*", "Polaroid", true, false)
+		var list: Array = []
 		for w in [110.0, 80.0, 64.0]:
 			var extra := Polaroid.new("Breaker 1 R0", "[BREAKER PORTRAIT]")
 			add_child_autofree(extra)
@@ -367,7 +379,7 @@ func test_a_polaroid_caption_follows_the_text_size_and_is_never_cut() -> void:
 				joined += line
 				assert_true(Palette.marker().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= pol.size.x - Polaroid.CAPTION_INSET * 2.0 + 0.5, "%s: '%s' fits its line" % [tag, line])
 			assert_eq(joined.replace(" ", ""), pol.caption.replace(" ", ""), "%s: every letter shown" % tag)
-		assert_gt(seen, 3, "%.1f: Polaroids checked" % scale)
+		assert_eq(seen, 3, "%.1f: Polaroids checked" % scale)
 		hq.get_parent().queue_free()
 		await _frames(1)
 
@@ -392,6 +404,9 @@ func test_the_maps_drawn_words_are_exported_once() -> void:
 # --- C8: YOUR NODES fills its window and never cuts a row --------------------------------------------
 
 func test_your_nodes_fills_its_window_and_counts_the_withdraw_row() -> void:
+	# HQ-B (c), parity RAID-06: YOUR NODES is a window top left in the raid setup (its column
+	# scrolls, the window does not): the withdraw row is there and every row shows whole with
+	# the focus.
 	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		_raid_campaign()
@@ -406,52 +421,22 @@ func test_your_nodes_fills_its_window_and_counts_the_withdraw_row() -> void:
 		hq.show_raid()
 		await _frames(8)
 		var tag := "%.1f" % scale
-		var win := hq._panel.find_child("NodeOrders", true, false) as TerminalWindow
-		var scroll := hq._panel.find_child("OrdersScroll", true, false) as ScrollContainer
-		assert_not_null(scroll)
-		var hint: ScrollHint = hq.side_hint
-		var room := hint.room.size.y if hint.room != null else 0.0
-		assert_lte(win.get_global_rect().end.y - (scroll.get_global_rect().end.y + room), 24.0,
-			"%s: the list takes the window's height (it scrolled in a strip over empty window)" % tag)
+		var column := hq._panel.find_child("WorkOrderPaper", true, false) as ScrollContainer
+		assert_not_null(column, "%s: the left column" % tag)
+		if column == null:
+			return
+		var win := column.find_child("NodeOrders", true, false) as Control
+		assert_not_null(win, "%s: YOUR NODES" % tag)
 		assert_not_null(hq._panel.find_child("Moves", true, false), "%s: the target's withdraw row is there" % tag)
-		if hint.overflows():
-			var foot := scroll.get_global_rect().end.y
-			for b in scroll.find_children("*", "Button", true, false):
-				var r := (b as Control).get_global_rect()
-				if (b as Control).is_visible_in_tree() and r.position.y > scroll.get_global_rect().position.y:
-					assert_false(r.position.y < foot - 0.5 and r.end.y > foot + 0.5, "%s: '%s' is not cut by the view's foot" % [tag, (b as Button).text])
-			# ART-3 6w: since 3A pinned START under the scrolling side column, the list's own tag
-			# hides while its spot is out of the column's view (ScrollHint.in_outer_views); the
-			# column's own MORE BELOW says there is more then.
-			if hint.in_outer_views():
-				assert_true(hint.visible, "%s: MORE BELOW says there is more" % tag)
-				assert_true(hint.get_global_rect().position.y >= foot - 0.5, "%s: in its own room under the list" % tag)
-			else:
-				assert_not_null(hq.raid_side_hint, "%s: the side column scrolls" % tag)
-				assert_true(hq.raid_side_hint.visible, "%s: the column's MORE BELOW says there is more" % tag)
+		for b in win.find_children("*", "Button", true, false):
+			var btn := b as Button
+			if not btn.is_visible_in_tree() or btn.focus_mode == Control.FOCUS_NONE:
+				continue
+			btn.grab_focus()
+			await _frames(2)
+			assert_true(column.get_global_rect().grow(1.0).encloses(btn.get_global_rect()), "%s: '%s' is not cut by the column's foot" % [tag, btn.text])
 		hq.get_parent().queue_free()
 		await _frames(1)
-
-
-# --- C9: the HQ after New campaign and the Grid's first open are baked ahead ---------------------
-
-func test_the_start_page_bakes_the_new_campaigns_hq_and_the_hq_bakes_the_first_grid() -> void:
-	CityBakeCache.simulate = true
-	var hq := _scene(HQ)
-	await _frames(2)
-	assert_eq(hq.panel_name, "start")
-	await _settle_bakes()
-	assert_not_null(hq._start_warm, "a twin warms the new campaign's HQ")
-	hq.new_campaign(1)
-	await _frames(2)
-	assert_true(hq.background.city.view_covered(), "the HQ opens on its baked city, not the silhouette")
-	# From the HQ page, the Grid's first open.
-	await _settle_bakes()
-	var region: Rect2 = hq.first_grid_region()
-	assert_true(region.has_area(), "the first Grid's region is known from the HQ")
-	hq.show_grid()
-	await _frames(2)
-	assert_true(hq.wireframe.city.view_covered(), "the Grid's first open is covered on its first frames")
 
 
 # --- C10 / C11: the raid's end ---------------------------------------------------------------------
@@ -585,12 +570,14 @@ func test_the_hq_pages_pops_complete_with_a_press() -> void:
 	_live()
 	RunManager.new_campaign(1)
 	var hq := _scene(HQ)
+	hq.show_hq()
 	await _frames(3)
 	assert_true(hq.is_in_group(MotionSkip.GROUP))
-	var badge := hq._panel.find_child("NetworkBadge", true, false) as Control
+	# HQ-B (a): the HQ's sticky bump is the Heat gauge's (the SITES badge went with CELL STATUS).
+	var badge: Control = hq.hud.heat_gauge
 	assert_not_null(badge)
 	Motion.pop(badge, &"sticky_bump")
-	assert_true(hq.motion_running(), "the SITES badge's bump is motion")
+	assert_true(hq.motion_running(), "the Heat gauge's bump is motion")
 	assert_true(hq.popping().has(badge))
 	get_viewport().push_input(_key(KEY_SEMICOLON))
 	assert_false(hq.motion_running(), "a press completes it")
