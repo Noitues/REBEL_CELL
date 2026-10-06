@@ -358,10 +358,10 @@ func _here(at: Vector2, r: float, k: float) -> void:
 	var side := r * RouteOverlay.PIN_SHARE
 	var c := at + Vector2(r * RouteOverlay.PIN_OFFSET.x, r * RouteOverlay.PIN_OFFSET.y)
 	_marks.draw_set_transform(c, RouteOverlay.PIN_TILT)
-	var box := Rect2(-Vector2(side, side) * 0.5, Vector2(side, side))
-	_marks.draw_rect(box.grow(RouteOverlay.DIE_CUT_WIDTH * k + k), Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA))
-	_marks.draw_rect(box.grow(RouteOverlay.DIE_CUT_WIDTH * k), RouteInk.DIE_CUT)
-	_marks.draw_rect(box, Palette.CELL_PINK)
-	StatIcon.draw(_marks, Vector2.ZERO, side * RouteOverlay.PIN_ICON_SHARE * 0.5, StatIcon.OPERATIVE, Palette.PAPER)
+	# The concept's operative token (the route's, round 37 token_sd), die-cut as wide as the pin.
+	var t := RouteOverlay.token_art()
+	var w := side + (RouteOverlay.DIE_CUT_WIDTH * k + k) * 2.0
+	var sz := Vector2(t.get_width(), t.get_height()) * (w / maxf(1.0, t.get_width()))
+	_marks.draw_texture_rect(t, Rect2(-sz * 0.5, sz), false)
 	_marks.draw_set_transform(Vector2.ZERO, 0.0)
 	_marks.draw_line(c + Vector2(-side * 0.2, side * 0.45), at + Vector2(r * 0.35, -r * 0.7), Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA), 2.0 * k)
