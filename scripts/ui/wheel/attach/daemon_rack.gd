@@ -179,7 +179,7 @@ func _draw_tiles() -> void:
 			if f < 1.0:
 				_tiles.draw_texture_rect_region(sheet, r, _cell(frame))
 			if f > 0.0:
-				_tiles.draw_texture_rect_region(sheet, r, _cell(TILE_FRAMES), Color(Color.WHITE, f))
+				_tiles.draw_texture_rect_region(sheet, r, _cell(TILE_FRAMES), Color(Palette.NO_TINT, f))
 		else:
 			# No exported tile for this id (a Daemon the art pass never drew): the drawn stand-in.
 			_tiles.draw_rect(r, AttachStyle.glass(0.95))

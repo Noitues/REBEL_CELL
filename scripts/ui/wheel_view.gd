@@ -2386,10 +2386,8 @@ func _draw_guards(center: Vector2, k: float) -> void:
 		# EVADE: the >> token on the rim, one per charge
 		for e in c.evade_charges:
 			var tp := WheelFace.at(center, k, frame_master() + EVADE_R, EVADE_DEG - e * 14.0)
-			var r := EVADE_R * 0.8 * k
-			draw_circle(tp, r, Color(Palette.NIGHT_SKY, 0.92))
-			draw_arc(tp, r, 0.0, TAU, 20, Palette.GAIN, maxf(1.0, 2.0 * k), true)
-			WheelGlyphs.draw(self, GlyphTableData.key_for_slice_type(RC.SliceType.DETOUR), tp, r * 1.3, Palette.GAIN)
+			var d := EVADE_R * 1.6 * k
+			draw_texture_rect(FxDraw.TOKEN_TEX, Rect2(tp - Vector2(d, d) * 0.5, Vector2(d, d)), false)
 
 
 func _guard_number(center: Vector2, k: float, r: float, deg: float, text: String, col: Color) -> void:

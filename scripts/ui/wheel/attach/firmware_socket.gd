@@ -38,7 +38,7 @@ static func draw_die(ci: CanvasItem, glyphs: GlyphBatch, at: Vector2, size: floa
 	if flash < 1.0:
 		ci.draw_texture_rect(tex, rect, false)
 	if flash > 0.0:
-		ci.draw_texture_rect(LIT[rarity], rect, false, Color(Color.WHITE, flash))
+		ci.draw_texture_rect(LIT[rarity], rect, false, Color(Palette.NO_TINT, flash))
 	ci.draw_set_transform(Vector2.ZERO)
 	if size >= SIMPLE_BELOW and fw != null:
 		var g := AttachStyle.firmware_glyph(fw.id)
