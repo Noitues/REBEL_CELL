@@ -419,8 +419,10 @@ func test_the_pause_menu_is_as_tall_as_what_it_shows() -> void:
 	var short := menu.size.y
 	menu.show_options()
 	await _frames(3)
-	assert_gt(menu.size.y, short, "Options grows it")
-	assert_true(menu.get_global_rect().end.y <= SCREEN.size.y, "never past the screen's foot")
+	# Parity OPT-01 (designer group ruling 2026-10-05): Options open as their own centred page in
+	# the menu's place (round 31), so the menu keeps its size and the page stays on the screen.
+	assert_almost_eq(menu.size.y, short, 1.5, "Options open beside it, not inside it")
+	assert_true(menu.settings_panel.get_global_rect().end.y <= SCREEN.size.y, "never past the screen's foot")
 	hq.open_settings()
 
 

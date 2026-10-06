@@ -93,7 +93,8 @@ func test_pause_menu_opens_from_hq_with_options_and_codex() -> void:
 	menu.show_codex()
 	assert_null(menu.settings_panel, "options closed when the codex opens")
 	assert_not_null(menu.codex_note)
-	assert_true(menu.codex_note.label.get_parsed_text().contains("Lexicon"))
+	# Parity CODEX-01: the Codex is the book (a tab per section; Lexicon among them).
+	assert_true(menu.codex_note.all_text().contains(tr("Lexicon").to_upper()))
 	watch_signals(menu)
 	menu.resumed.emit()
 	assert_null(hq._settings_panel, "resumed closes the menu")

@@ -14,14 +14,16 @@ extends Control
 ##   "No Going Back" (red) under the abandon sticker, "Come Back Soon" under Quit to desktop; they
 ##   drop out when big text leaves no room.
 ## - The campaign code sits in a CodeField with a copy button on the bottom row.
-## ART-10 4C kept: the v2 terminal glass (`> PAUSED // WHERE`), the Codex as terminal text, the
-## Options single-column inside it.
+## ART-10 4C kept: the v2 terminal glass (`> PAUSED // WHERE`). Parity OPT-01 / CODEX-01: Options
+## (round 31's `> PAUSED // OPTIONS` terminal) and the Codex (the title's book) open centred over
+## the scrim in the menu's place.
 
 signal resumed
 signal quit_to_title
 
 var settings_panel: SettingsPanel = null
-var codex_note: CrtText = null
+## Parity CODEX-01: the Codex open from the menu (the title's book), or null.
+var codex_note: CodexBook = null
 var _menu: VBoxContainer
 ## The two columns of stickers (left: Resume, Options, Codex; right: abandon, quit to the main
 ## menu, quit to the desktop) and their box.
@@ -316,6 +318,7 @@ func _cover_screen() -> void:
 		return
 	_backdrop.size = get_viewport_rect().size
 	_backdrop.global_position = Vector2.ZERO
+	_place_sub_host()
 
 
 ## One column of the sticker grid.
@@ -426,46 +429,151 @@ func _relabel() -> void:
 		resume_hint.text = Settings.hint(&"open_settings")
 
 
+## Parity OPT-01 / CODEX-01 (designer group ruling 2026-10-05): Options and the Codex open as
+## their own pages centred over the blurred, dimmed screen (round 31 `> PAUSED // OPTIONS`: the
+## terminal with its OPTIONS sticker; the Codex as the title's book), the sticker menu hidden
+## behind them; closing one shows the menu again. The page keeps SUB_MARGIN off the screen's
+## edges and scrolls inside past that.
+const SUB_MARGIN := 24.0
+## The box over the open page's room (top level: placed on the viewport wherever the menu
+## sits; `_place_sub_host` centres the page in it) and the open page.
+var _sub_host: Control = null
+var _sub: Control = null
+
+
+## The room an open page may take (px): the screen less SUB_MARGIN round it, from the menu's
+## own top down.
+func sub_rect() -> Rect2:
+	var vp := get_viewport_rect().size if is_inside_tree() else Vector2(MENU_SIZE)
+	# The top: where the screen put the menu itself (under its subtitles' band: SubtitleStrip.
+	# top_below), and under the band as tall as a line is at this text size (a band registered
+	# at another size is shorter than the bar), so a line said meanwhile never covers the page.
+	var top := maxf(SUB_MARGIN, global_position.y if is_inside_tree() else 0.0)
+	var bands: Array[Rect2] = [Dialogue.default_rect]
+	if Dialogue.bar != null and Dialogue.bar.is_inside_tree():
+		bands.append(Rect2(Dialogue.bar.global_position, Dialogue.bar.size))  # where the screen docked it
+	for band in bands:
+		if band.get_center().y < vp.y * 0.5:  # a band at the top (a foot band leaves the page be)
+			top = maxf(top, band.position.y + maxf(band.size.y, Dialogue.band_height()) + SubtitleStrip.MODAL_GAP)
+	return Rect2(Vector2(SUB_MARGIN, top), Vector2(vp.x - SUB_MARGIN * 2.0, maxf(FIT_MIN_H, vp.y - top - SUB_MARGIN)))
+
+
+func sub_room() -> Vector2:
+	return sub_rect().size
+
+
 func show_options() -> void:
-	_close_sub()
+	_close_sub(false)
 	settings_panel = SettingsPanel.new()
 	settings_panel.closed.connect(_close_sub)
-	settings_panel.compact = true  # one column inside the menu (MENU_SIZE)
-	settings_panel.show_section(settings_panel.section)
 	settings_panel.trap_focus = true
 	settings_panel.context = tr("PAUSED")
-	_host.add_child(settings_panel)
-	PageTransition.enter(settings_panel, PageTransition.Look.GLASS)
-	UiWrap.fit(settings_panel)
-	UiFocus.trap.call_deferred(settings_panel)
-	UiFocus.focus_first(settings_panel)
+	settings_panel.max_height = sub_room().y - settings_panel.sticker_rise()
+	settings_panel.max_width = sub_room().x
+	_open_sub(settings_panel)
+	settings_panel.show_section(settings_panel.section)
 
 
 func show_codex() -> void:
-	_close_sub()
-	codex_note = CrtText.new(tr("CODEX"), Vector2(520, 220)).make_reference()
-	codex_note.fill_codex()
-	_host.add_child(codex_note)
-	PageTransition.enter(codex_note, PageTransition.Look.GLASS)
+	_close_sub(false)
+	var box := VBoxContainer.new()
+	box.name = "CodexSub"
+	box.add_theme_constant_override("separation", UiTheme.SP_S)
+	var room := sub_room()
+	codex_note = CodexBook.new(Codex.entries(RunManager.lookup(), RunManager.profile), 0.0, room.x)
+	codex_note.name = "Codex"
+	box.add_child(codex_note)
 	var back := Button.new()
 	back.text = tr("Back")
 	back.name = "CodexBack"
+	back.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	back.pressed.connect(_close_sub)
-	_host.add_child(back)
-	UiFocus.trap.call_deferred(_host)
+	box.add_child(back)
+	codex_note.max_height = room.y - back.get_combined_minimum_size().y - UiTheme.SP_S
+	codex_note.section_shown.connect(func(_n: String) -> void: UiFocus.trap(box))
+	_open_sub(box)
 	back.grab_focus.call_deferred()
 
 
-func _close_sub() -> void:
+## Shows `page` centred over the scrim, the sticker menu hidden, focus held inside it.
+func _open_sub(page: Control) -> void:
+	if _sub_host == null or not is_instance_valid(_sub_host):
+		_sub_host = Control.new()
+		_sub_host.name = "SubHost"
+		_sub_host.top_level = true
+		_sub_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(_sub_host)
+	_sub_host.visible = true
+	_sub = page
+	_sub_placed = sub_rect()
+	_sub_host.add_child(page)
+	page.minimum_size_changed.connect(_place_sub_host)
+	_place_sub_host()
+	_panel.visible = false
+	PageTransition.enter(page, PageTransition.Look.GLASS)
+	UiWrap.fit(page)
+	UiFocus.trap.call_deferred(page)
+	UiFocus.focus_first(page)
+
+
+## While a page is open its room follows the screen's subtitles' band (a screen docks it a frame
+## or two after it opens; the band grows with the text size): checked each frame, placed again
+## only when it moved.
+func _process(_delta: float) -> void:
+	if _sub == null or not is_instance_valid(_sub):
+		set_process(false)
+		return
+	var r := sub_rect()
+	if r != _sub_placed:
+		_sub_placed = r
+		# The page's height cap follows its room.
+		if _sub is SettingsPanel:
+			(_sub as SettingsPanel).max_height = r.size.y - (_sub as SettingsPanel).sticker_rise()
+		elif codex_note != null and is_instance_valid(codex_note):
+			var back := _sub.get_node_or_null("CodexBack") as Control
+			codex_note.max_height = r.size.y - (back.get_combined_minimum_size().y if back != null else 0.0) - UiTheme.SP_S
+		_place_sub_host()
+
+
+## The room the open page was last fitted to.
+var _sub_placed: Rect2 = Rect2()
+
+
+## The open page's room (sub_rect) and its place in it: centred while it fits, else from the
+## room's top (its OPTIONS sticker's rise kept inside the room), never above it.
+func _place_sub_host() -> void:
+	if _sub_host == null or not is_inside_tree():
+		return
+	var r := sub_rect()
+	set_process(true)
+	_sub_host.global_position = r.position
+	_sub_host.size = r.size
+	if _sub == null or not is_instance_valid(_sub):
+		return
+	var s := _sub.get_combined_minimum_size()
+	var rise := (_sub as SettingsPanel).sticker_rise() if _sub is SettingsPanel else 0.0
+	_sub.size = s
+	_sub.position = Vector2(maxf(0.0, (r.size.x - s.x) * 0.5), maxf(rise, (r.size.y - s.y + rise) * 0.5)).floor()
+
+
+## Closes the open page (Options or the Codex) and, unless another opens (`back_to_menu`
+## false), shows the sticker menu again with its focus.
+func _close_sub(back_to_menu: bool = true) -> void:
 	if settings_panel != null and is_instance_valid(settings_panel):
 		settings_panel.queue_free()
 	settings_panel = null
-	if codex_note != null and is_instance_valid(codex_note):
-		codex_note.queue_free()
-		var back := _host.get_node_or_null("CodexBack")
-		if back != null:
-			back.queue_free()
+	if _sub != null and is_instance_valid(_sub):
+		if _sub.get_parent() != null:
+			_sub.get_parent().remove_child(_sub)
+		_sub.queue_free()
+	_sub = null
 	codex_note = null
+	if not back_to_menu:
+		return
+	if _sub_host != null and is_instance_valid(_sub_host):
+		_sub_host.visible = false
+	if _panel != null:
+		_panel.visible = true
 	UiFocus.trap.call_deferred(self)
 	UiFocus.focus_first(_menu)
 
