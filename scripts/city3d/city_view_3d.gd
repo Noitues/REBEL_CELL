@@ -78,8 +78,14 @@ var band_lock: int = -1:
 	set(v):
 		if v != band_lock:
 			band_lock = v
+			_sync_map_mode()
 			if iso != null and camera != null:
 				set_iso(iso)
+## S-MAPVIEW (designer ruling 2026-10-05): the city drawn as a map, greyed and its opacity
+## lowered under the network and the map's marks; on while the host holds the raid or the
+## netrun band (`map_band`), off everywhere else (the Grid, the title, the backdrops, combat).
+var map_mode: bool = false
+var _veil_mi: MeshInstance3D = null
 
 var _layers: Dictionary = {}
 var _chunks: Dictionary = {}  # Vector2i -> {"families": {int: MultiMeshInstance3D}, "ground": MeshInstance3D}
@@ -517,8 +523,61 @@ func _build_scene() -> void:
 	_net_xray_mi.layers = 1 << (WORLD_LAYER - 1)
 	_net_xray_mi.visible = false
 	layer(&"network").add_child(_net_xray_mi)
+	_veil_mi = MeshInstance3D.new()
+	_veil_mi.name = "MapVeil"
+	var vq := QuadMesh.new()
+	vq.size = Vector2(2, 2)
+	_veil_mi.mesh = vq
+	_veil_mi.material_override = CityMaterials.map_veil(cfg)
+	_veil_mi.extra_cull_margin = 16384.0
+	_veil_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_veil_mi.layers = 1 << (WORLD_LAYER - 1)
+	camera.add_child(_veil_mi)
+	_veil_mi.position = Vector3(0, 0, -10)
+	_sync_map_mode()
 	if network != null:
 		set_network(network)
+
+
+# --- Map mode (S-MAPVIEW) --------------------------------------------------------------------
+
+## True when a host holding view band `lock` (CityLod.Band; -1 none) shows the city as a map:
+## the raid's pages (and the HQ, which is the raid view) hold RAID, the netrun route NETRUN.
+static func map_band(c: CityConfig, lock: int) -> bool:
+	return c.map_mode_on and (lock == CityLod.Band.RAID or lock == CityLod.Band.NETRUN)
+
+
+func _sync_map_mode() -> void:
+	map_mode = map_band(cfg, band_lock)
+	if _post == null:
+		return
+	_post.set_shader_parameter(&"map_on", map_mode)
+	_veil_mi.visible = map_mode
+	for m in [_net_mat, _net_xray_mat]:
+		(m as ShaderMaterial).set_shader_parameter(&"halo", cfg.net_halo * (cfg.map_net_halo if map_mode else 1.0))
+
+
+## The map mode's look as the post and the veil hold it (tests: "map_on", "veil", "halo").
+func map_look() -> Dictionary:
+	if _post == null:
+		return {}
+	return {"map_on": bool(_post.get_shader_parameter(&"map_on")), "veil": _veil_mi.visible,
+		"halo": float(_net_mat.get_shader_parameter(&"halo"))}
+
+
+## The colour a city pixel shows in map mode (CPU mirror of city_post's map step and the veil,
+## for the contrast checks): `display` is the post's graded display (sRGB) value; the result is
+## the display value on screen once the veil is blended over it (in linear, as the renderer
+## blends).
+static func map_graded(c: CityConfig, display: Color) -> Color:
+	var v := Vector3(display.r, display.g, display.b)
+	var grey := v.dot(Vector3(0.2126, 0.7152, 0.0722))
+	v = Vector3(grey, grey, grey).lerp(v, c.map_saturation)
+	var mid := Vector3(c.map_mid, c.map_mid, c.map_mid)
+	v = (mid + (v - mid) * c.map_contrast).clamp(Vector3.ZERO, Vector3.ONE)
+	var lin := Color(v.x, v.y, v.z).srgb_to_linear()
+	var veil := c.map_veil.srgb_to_linear()
+	return lin.lerp(veil, c.map_veil_alpha).linear_to_srgb()
 
 
 ## Uses model `m` (tests and tools: a part of the city; before or after entering the tree).
