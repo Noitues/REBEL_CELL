@@ -108,6 +108,13 @@ var _art_sweeps: Array[Texture2D] = []
 var _art_bursts: Array[Texture2D] = []
 var _art_bursts_focus: Array[Texture2D] = []
 var _sweep_k: int = -1
+## Hovered or focused (the rainbow sheen and the curl show).
+var _focused: bool = false
+## The corner curl's size as a share of the sticker's shorter side, the sheen's band width as a share of its
+## height, and where the static sheen (no motion) stands across its width.
+const CURL_SHARE := 0.22
+const SWEEP_WIDTH_SHARE := 0.35
+const STATIC_SHEEN_AT := 0.5
 
 
 ## The baked art key for a screen-title word ("OPTIONS" -> "title_options"), or "" when the
@@ -248,9 +255,7 @@ func _fit() -> void:
 		return
 	if vinyl != null:
 		vinyl.font_step = maxi(1, roundi(letter_px() / Settings.text_scale))
-		# The kit's die-cut (18 px) is sized for hero verbs; a menu verb keeps the round 33
-		# proportion (die-cut a share of the lettering), like the BLUE / GLITCH stickers drawn here.
-		vinyl.border_px = roundf(letter_px() * KIT_DIE_CUT)
+		# The die-cut edge is the kit's own, proportional to the lettering (VinylSticker.edge_for).
 		vinyl.text = shown_text()
 		var b := vinyl.body_rect
 		custom_minimum_size = (b.size + Vector2(HALO_ROOM, HALO_ROOM) * 2.0).ceil()
@@ -306,6 +311,18 @@ func _grow(on: bool) -> void:
 	if vinyl != null:
 		vinyl.set_state(VinylSticker.State.DISABLED if disabled else (VinylSticker.State.HOVER if on else VinylSticker.State.REST))
 		return
+	# Focus / hover (designer 2026-10-05): the gloss band runs in holo-foil colours (the shader's
+	# `rainbow`) and the corner curls (_draw_curl); with no sweep playing (reduce effects) the sheen stands.
+	_focused = on and not disabled
+	_mat.set_shader_parameter(&"rainbow", 1.0 if _focused else 0.0)
+	_mat.set_shader_parameter(&"sweep_width", size.y * SWEEP_WIDTH_SHARE)
+	if _sweep_tween != null:
+		_sweep_tween.kill()
+	if _focused and not Motion.live(HOVER_MOTION):
+		_mat.set_shader_parameter(&"sweep", size.x * STATIC_SHEEN_AT)
+	elif not _focused:
+		_mat.set_shader_parameter(&"sweep", SWEEP_OFF)
+	queue_redraw()
 	var to := Vector2.ONE * (Motion.amplitude(HOVER_MOTION) if on and not disabled else 1.0)
 	if _scale_tween != null:
 		_scale_tween.kill()
@@ -335,18 +352,6 @@ func _press(down: bool) -> void:
 ## does not play.
 func _sweep() -> void:
 	if vinyl != null or not Motion.live(HOVER_MOTION):
-		return
-	if uses_art():
-		# The concept's own sweep: its focused frames played once.
-		if _art_sweeps.is_empty():
-			return
-		if _sweep_tween != null:
-			_sweep_tween.kill()
-		_sweep_tween = create_tween()
-		_sweep_tween.tween_method(func(t: float) -> void:
-			_sweep_k = mini(_art_sweeps.size() - 1, int(t * _art_sweeps.size()))
-			queue_redraw(), 0.0, 1.0, Motion.seconds(HOVER_MOTION) * 3.0)
-		_sweep_tween.tween_callback(func() -> void: _sweep_k = -1; queue_redraw())
 		return
 	if _sweep_tween != null:
 		_sweep_tween.kill()
@@ -426,10 +431,7 @@ func _draw() -> void:
 	_mat.set_shader_parameter(&"band_h", cap / BURST_SHIFTS.size())
 	_mat.set_shader_parameter(&"grey", DISABLED_GREY if disabled else 0.0)
 	var outer := roundi((die + key) * 2.0)
-	# The lime die-cut halo (focus, §2.10), then the shadow, the ink rim and the white die-cut.
-	if has_focus() or KitState.of(self) == KitState.FOCUS:
-		draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(s * HALO * 2.0) + roundi(RIM_PX * 2.0), Palette.VINYL_INK)
-		draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(s * HALO * 2.0), Palette.FOCUS)
+	# The shadow, the ink rim and the white die-cut (focus is the rainbow sheen and the curl, never a halo).
 	draw_string_outline(f, origin + Vector2(s * SHADOW_SHARE * 0.5, s * SHADOW_SHARE), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(RIM_PX * 2.0), Color(Palette.VINYL_INK, SHADOW_ALPHA))
 	draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(RIM_PX * 2.0), Palette.VINYL_INK)
 	draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer, Palette.STICKER_DIE_CUT)
@@ -453,44 +455,44 @@ func _draw() -> void:
 		_draw_fist(Rect2(Vector2(origin.x + head_w, top), Vector2(slot_w - head_w, cap)).grow(key * 0.8), key)
 	else:
 		draw_string(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.STICKER_FILL_MARKER)
+	_draw_curl()
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
 
 
 ## The kit sticker's frame: its disabled state follows the Button's, the lime halo round
-## its body on focus (§2.10: a focused sticker gets a lime halo, never brackets).
+## its body on focus (designer 2026-10-05: no halo, no brackets: the kit sticker's own rainbow sheen and curl).
 func _draw_kit_frame() -> void:
 	var want := VinylSticker.State.DISABLED if disabled else vinyl.state
 	if vinyl.state != want or (vinyl.state == VinylSticker.State.DISABLED and not disabled):
 		vinyl.set_state.call_deferred(want if disabled else VinylSticker.State.REST)
-	if has_focus() or KitState.of(self) == KitState.FOCUS:
-		var sb := StyleBoxFlat.new()
-		sb.bg_color = Palette.AUTO
-		sb.border_color = Palette.FOCUS
-		sb.set_border_width_all(int(HALO_STROKE))
-		sb.set_corner_radius_all(HALO_RADIUS)
-		sb.anti_aliasing = true
-		var r := Rect2(Vector2.ZERO, size).grow(-HALO_STROKE * 0.5)
-		var ink := sb.duplicate() as StyleBoxFlat
-		ink.border_color = Palette.VINYL_INK
-		ink.set_border_width_all(int(HALO_STROKE) + 2)
-		draw_style_box(ink, r.grow(1.0))
-		draw_style_box(sb, r)
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
 
 
 ## The concept art: rest, focus (lime halo), the sweep's frame, the glitch's burst frame; centred.
 func _draw_art() -> void:
-	var focused := has_focus() or KitState.of(self) == KitState.FOCUS
-	var tex := _art_focus if focused else _art_rest
+	var tex := _art_rest  # the focus art carries the lime halo: not used (focus = rainbow sheen + curl)
 	var ph := burst_phase()
 	if ph >= 0 and ph < _art_bursts.size():
-		tex = _art_bursts_focus[ph] if focused else _art_bursts[ph]
-	elif _sweep_k >= 0 and _sweep_k < _art_sweeps.size():
-		tex = _art_sweeps[_sweep_k]
+		tex = _art_bursts[ph]
 	var k := ART_TO_GAME * art_scale * clampf(Settings.text_scale, 1.0, SCALE_MAX)
 	var sz := tex.get_size() * k
 	draw_texture_rect(tex, Rect2((size - sz) * 0.5, sz), false)
+	_draw_curl()
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
+
+
+## The focus curl for the drawn and baked stickers: the top right corner peels back (a paper-backed
+## flap over the corner and its cast shadow; the kit sticker's own curl is the shader's fold).
+func _draw_curl() -> void:
+	if not _focused:
+		return
+	var c := minf(size.x, size.y) * CURL_SHARE
+	var tr := Vector2(size.x, 0.0)
+	var flap := PackedVector2Array([tr + Vector2(-c, 0.0), tr + Vector2(0.0, c), tr + Vector2(-c, c)])
+	var shade := PackedVector2Array([tr + Vector2(-c, c), tr + Vector2(0.0, c), tr + Vector2(-c, c * 1.35)])
+	draw_colored_polygon(shade, Color(Palette.VINYL_INK, SHADOW_ALPHA * 0.5))
+	draw_colored_polygon(flap, Palette.VINYL_BACKING)
+	draw_polyline(PackedVector2Array([flap[0], flap[1]]), Color(Palette.STICKER_DIE_CUT, 0.9), 1.0)
 
 
 ## SIMULATE: white letters with a pink split on the left and a green split on the right and

@@ -444,6 +444,40 @@ M13 art-pass build's layout and content, reworked in the locked v2 concept langu
   `test_slots_fit_and_focus_reaches_every_action_at_every_text_scale` (1, 2, 3 used slots at 1.0 / 1.6 / 2.0),
   `test_the_slots_panel_wraps_its_cards_then_scrolls_past_its_room`. No test dropped.
 
+### 2026-10-05 — Parity fix — sticker edge and sticker focus (designer)
+Designer 2026-10-05: at text 1.0 the stickers have too much white die-cut edge; and focus on EVERY sticker (all kinds, the
+harm red one too) is a rainbow gloss sweep plus the corner curl, the sticker keeping its fill, no lime brackets or halo.
+Files: `vinyl_sticker.gd` + `shaders/kit/vinyl_sticker.gdshader`, `chrome/verb_sticker.gd` + `shaders/chrome/vinyl_sticker.gdshader`,
+`send_it_sticker.gd`, `raid_sticker.gd`, `pause_menu.gd`, `test_sticker_edge_focus.gd` (new), `test_parity_pause.gd`.
+- **Where the edge came from.** (1) `VinylSticker` (HoloSticker words, the pause rows, LEAVE / FIGHT WON, RaidSticker, SendIt's kit
+  art, SystemWordSticker, VerbSticker's kit fills) used a FIXED `BORDER_PX` 18 px edge for words: on the pause rows (22 px
+  lettering) that is 0.8 of the lettering. (2) `VerbSticker` set it to 0.2 of the lettering. (3) The baked stickers (4C: the
+  title verbs, the slots' LOAD / DELETE, the dialogs' CANCEL / BURN IT) are the concept's own bakes: ui31.sticker `border=12` on
+  the 1920 board, scaled with the bake (1/3 of the 2x bake = 2/3 board px on the 1280 frame), so their edge / body height is the
+  concept's: 12 / (0.74 x size + 24) = 0.17 to 0.21 at sizes 50-66 (0.27 for CANCEL at 28 px in ui_kit, 0.08 for the 144 px
+  title hero). They match the concept at the same on-screen size, so they are **not** re-baked (re-baking with the same code
+  and border gives the same pixels at that size).
+- **The fix (one place).** `VinylSticker.border_px` is automatic (-1): for a WORD `edge_for(px) = min(px x EDGE_SHARE 0.2,
+  EDGE_MAX_PX 8 x text scale)`: proportional on a menu sticker, capped at the concept's 12 board px (8 px at 1280) on a hero
+  one. `VerbSticker` no longer sets its own. Object stickers keep 18 (explicit sets in ransom_lock, raid_drag_pencil and
+  site_marker_view are unchanged). The tests hold edge / body height inside the concept's range 0.07-0.28 for every lettering step
+  at 1.0 / 1.6 / 2.0, for HoloSticker.word, VerbSticker (kit), RaidSticker, and the baked concept sizes by the concept's formula.
+- **Focus = rainbow sweep + curl, built once.** `VinylSticker` (HOVER state = focus or hover): the shader's `rainbow` colours the
+  gloss band in holo-foil hues over the sticker's own fill; the HOVER curl (`fold`) stays. Reduce effects (and headless): the end
+  state is a static sheen (`RAINBOW_STATIC_K` / `_POS`) plus the curl. `VerbSticker` drawn and baked art (title verbs, slots,
+  dialog stickers, NEW CAMPAIGN START): the chrome shader's `rainbow` band swept by the existing sweep tween (replacing the baked
+  white `_sweep_NN` frames), a static sheen at `STATIC_SHEEN_AT` with no motion, and `_draw_curl` (a peeled corner flap and its
+  shadow) as the drawn stand-in for the kit's fold. The lime halo of the baked `_focus` art, the kit frame, SendIt's halo and
+  RaidSticker's bracket box are gone; colour-blind safe (curl + lift read without colour). MotionSkip is unchanged (the sweep and
+  curl are the same motions).
+- **Not changed (not vinyl stickers):** StickerButton (taped paper notes), ChoiceSticker (the event plate) and HudNameSticker
+  (static, no focus) keep their own focus looks: logged for the designer.
+- **Pause menu, same pass (designer):** "Down with the Oligarchy!" sits BESIDE RESUME (right of it, in the gap clear of the
+  right column), the key hint BELOW RESUME. When the two columns would not fit the menu width the note wraps below the hint
+  (x1.6), and at 2.0 every note drops (`note_mode` BESIDE / BELOW / NONE).
+- **Tests:** new `test_sticker_edge_focus` (edge ratios; every kind's focus = HOVER with rainbow + curl; static end state;
+  drawn stickers' shader rainbow and `_focused`), `test_parity_pause` (note beside, hint below, wrap and drop). Dropped: none.
+
 ### 2026-10-05 — Parity fix — pause menu as stickers (designer layout)
 Designer layout 2026-10-05, supersedes the icon rows of "Parity fix — pause menu" and options A/B/C of
 `docs/art_review/PARITY/fixes/pause_layouts/` (mockups kept). Files: `scripts/ui/kit/pause_menu.gd`,
@@ -463,7 +497,7 @@ calls `confirm_quit`, the stickers have no text).
   **Selection** = the kit's HOVER state (lift, curl, the `sticker_gloss_sweep`), looping while the sticker has focus
   (`ambient_sweep`), no lime bracket or halo. The kit's rainbow is the HOLO fill's foil only; the gloss sweep of the other
   fills is white. Applying HOLO to the focused sticker would change its colour (and make the harm sticker rainbow), so I did
-  not: **open question for the designer** (rainbow on focus for every sticker, yes / no).
+  not. **Closed 2026-10-05 (designer): rainbow gloss sweep plus the curl on every sticker's focus; see "Parity fix — sticker edge and sticker focus".**
 - **Sizes.** Lettering 34 px (Resume) / 22 px (rows) at text 1.0; stickers follow the text size up to 1.5x
   (`STICKER_SCALE_MAX`, as `VerbSticker.SCALE_MAX`) so the two columns fit the 760 px menu at 2.0.
 - **Notes.** `PencilWords` (the kit's grease pencil, Permanent Marker, drawn so it translates): "Down with the Oligarchy!"

@@ -35,6 +35,8 @@ uniform float lift : hint_range(0.0, 1.0) = 0.0;
 uniform float dissolve : hint_range(0.0, 1.0) = 0.0;
 uniform float dissolve_cell = 4.0;
 uniform float grey : hint_range(0.0, 1.0) = 0.0;
+// Focus: the gloss band runs in holo-foil colours (the fill keeps its own colour).
+uniform float rainbow : hint_range(0.0, 1.0) = 0.0;
 uniform float opacity : hint_range(0.0, 1.0) = 1.0;
 
 float h21(vec2 p) {
@@ -127,6 +129,11 @@ void fragment() {
 		float sharp2 = exp(-pow((t - gloss_pos - 0.085) / 0.007, 2.0)) * 0.45 * glossy;
 		float spec = max(max(soft, sharp), sharp2) * gloss_k;
 		rgb = mix(rgb, mix(vec3(1.0, 0.96, 0.88), vec3(1.0), glossy), spec);
+		if (rainbow > 0.0) {
+			float band = exp(-pow((t - gloss_pos) / 0.2, 2.0));
+			vec3 foil = 0.5 + 0.5 * cos(6.28318 * (vec3(0.0, 0.33, 0.67) + (t - gloss_pos) * 2.4));
+			rgb = mix(rgb, foil, clamp(band * min(1.0, gloss_k * 1.4) * 0.8 * rainbow, 0.0, 1.0));
+		}
 	}
 
 	// ---- the flap: the adhesive back folded over the sticker
