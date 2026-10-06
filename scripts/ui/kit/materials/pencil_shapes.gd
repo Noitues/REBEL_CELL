@@ -6,6 +6,10 @@ extends RefCounted
 
 ## A hand circle's points per full turn.
 const CIRCLE_POINTS := 120
+## B1b (integration review D3): a hand loop is one ellipse whose tail overlaps its start by
+## this many degrees (not a perfect circle, not a second pass).
+const OVERLAP_DEG := 20.0
+const LOOP_TURNS := 1.0 + OVERLAP_DEG / 360.0
 ## Chaikin passes when smoothing a hand path.
 const SMOOTH_PASSES := 2
 ## Arrow head flicks: angle off the shaft (deg) and the share of the head they bend in at.
@@ -82,8 +86,8 @@ static func trim(pts: PackedVector2Array, from_len: float, to_len: float) -> Pac
 
 
 ## A hand-drawn ellipse round `centre` (radii `radii`), `turns` times round (over 1 so the
-## end overlaps the start), wobbling and drifting by KitNoise from `seed`, tilted `angle`.
-static func hand_circle(centre: Vector2, radii: Vector2, seed: int, turns: float = 1.12, angle: float = 0.0,
+## end overlaps the start: LOOP_TURNS, a 20 degree tail), wobbling and drifting by KitNoise from `seed`, tilted `angle`.
+static func hand_circle(centre: Vector2, radii: Vector2, seed: int, turns: float = LOOP_TURNS, angle: float = 0.0,
 		wobble: float = 0.035) -> PackedVector2Array:
 	var out := PackedVector2Array()
 	var n := int(CIRCLE_POINTS * turns)

@@ -907,11 +907,11 @@ amplitude = 0.5
 tier = 1
 kind = 2
 
-; aim line draws from the card to the target
+; aim line writes on in grease pencil from the card to the target (B1b, D25: ~0.4 s)
 [sub_resource type="Resource" id="m_aim_line_draw"]
 script = ExtResource("1_entry")
 id = &"aim_line_draw"
-duration = 0.15
+duration = 0.4
 delay = 0.0
 ease = 1
 trans = 7
@@ -2765,22 +2765,22 @@ trans = 4
 amplitude = 0.9
 tier = 1
 
-; grease pencil writes on in writing order by trimming points: amplitude = px per second; duration = the longest a mark takes (s)
+; grease pencil writes on in writing order by trimming points, in its duration (B1b, D25: ~0.4 s; never appears whole)
 [sub_resource type="Resource" id="m_pencil_write_on"]
 script = ExtResource("1_entry")
 id = &"pencil_write_on"
-duration = 0.6
+duration = 0.4
 delay = 0.0
 ease = 2
 trans = 1
-amplitude = 900.0
+amplitude = 0.0
 tier = 2
 
-; a palm drags the pencil off (cloth wipe, never an alpha fade): points trim from the start while the stroke smears; amplitude = the smear (px)
+; a palm drags the pencil off (cloth wipe, never an alpha fade, B1b D25: ~0.4 s): points trim from the start while the stroke smears; amplitude = the smear (px)
 [sub_resource type="Resource" id="m_pencil_wipe"]
 script = ExtResource("1_entry")
 id = &"pencil_wipe"
-duration = 0.3
+duration = 0.4
 delay = 0.0
 ease = 0
 trans = 4
@@ -3522,11 +3522,11 @@ trans = 4
 amplitude = 0.0
 tier = 2
 
-; ART-6 3A: the raid's red pencil routes write on along their length
+; ART-6 3A: the raid's red pencil routes write on along their length (B1b, D25: ~0.4 s)
 [sub_resource type="Resource" id="m_raid_route_write"]
 script = ExtResource("1_entry")
 id = &"raid_route_write"
-duration = 0.6
+duration = 0.4
 delay = 0.0
 ease = 1
 trans = 1
@@ -3544,22 +3544,22 @@ trans = 1
 amplitude = 0.0
 tier = 2
 
-; ART-6 3A: the drag's dock circle draws on round a node (yellow valid, red + X invalid)
+; ART-6 3A: the drag's dock circle writes on round a node (yellow valid, red + X invalid; B1b, D25: ~0.4 s)
 [sub_resource type="Resource" id="m_raid_dock_circle"]
 script = ExtResource("1_entry")
 id = &"raid_dock_circle"
-duration = 0.2
+duration = 0.4
 delay = 0.0
 ease = 1
 trans = 1
 amplitude = 0.0
 tier = 1
 
-; ART-6 3A: the drag's yellow pencil arrow draws from the parked sticker to the cursor
+; ART-6 3A: the drag's yellow pencil arrow writes on from the parked sticker to the cursor (B1b, D25: ~0.4 s)
 [sub_resource type="Resource" id="m_raid_drag_arrow"]
 script = ExtResource("1_entry")
 id = &"raid_drag_arrow"
-duration = 0.15
+duration = 0.4
 delay = 0.0
 ease = 1
 trans = 1
