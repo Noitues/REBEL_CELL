@@ -230,7 +230,10 @@ func host_paused() -> bool:
 ## landmarks' materials to their day or night look. `day` keys: "ramp" (3 Colors: shadow,
 ## mid, lit), "sky", "window_gain", "neon_gain", "haze", "grade", and optionally "bloom" and
 ## "glow_threshold" (ART-5 5e: the post's bloom by day; CityViewMotion.day_look builds it
-## from the motion config). By day there is no rain, and no fog below the Grid.
+## from the motion config), and optionally "night" (bool: rain, fog and the landmarks' night
+## look whatever `n`; the combat backdrop's lit night) and "landmarks_night" (bool: the
+## landmarks' own look, else as "night"). By day there is no rain, and no fog
+## below the Grid.
 func set_night_share(n: float, day: Dictionary) -> void:
 	night_share = clampf(n, 0.0, 1.0)
 	if _building_mat == null or day.is_empty():
@@ -249,12 +252,13 @@ func set_night_share(n: float, day: Dictionary) -> void:
 	_post.set_shader_parameter(&"grade", Vector3(gr.r, gr.g, gr.b))
 	_post.set_shader_parameter(&"bloom", lerpf(float(day.get("bloom", cfg.bloom)), cfg.bloom, night_share))
 	_post.set_shader_parameter(&"glow_threshold", lerpf(float(day.get("glow_threshold", cfg.glow_threshold)), cfg.glow_threshold, night_share))
-	var night := night_share >= 0.5
+	var night := bool(day.get("night", night_share >= 0.5))  # S-ARENA: a lit night look keeps the night
 	_post.set_shader_parameter(&"rain_on", bool(quality.get("rain", true)) and night)
 	_post.set_shader_parameter(&"fog_on", bool(quality.get("fog", true)) and (night or band == CityLod.Band.GRID))
 	_env.background_color = (day["sky"] as Color).lerp(cfg.sky, night_share)
-	if night != _landmarks_night:
-		_landmarks_night = night
+	var lm_night := bool(day.get("landmarks_night", night))
+	if lm_night != _landmarks_night:
+		_landmarks_night = lm_night
 		_restyle_landmarks()
 
 

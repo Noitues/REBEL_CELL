@@ -15,6 +15,9 @@ extends Control
 ## the still shows until the city's model is in, and stays the fallback below the tier. Won on the
 ## city: the Site's windows turn Cell colours (SiteWonLights, 5d) and the district dims outside an
 ## ellipse round the target (no mask).
+## Parity fix S-ARENA: the close-up keeps the concept's lit city once it settles (its own lit
+## night look and a canvas grade, CityConfig backdrop_*), frames the whole HQ landmark or the
+## Site's building (BackdropCatalog.fit_box), and renders at most backdrop_render_height tall.
 ## View only: it reads the wheels it is given (`wheel_source`) and the campaign, never changes them.
 
 const SHADER := preload("res://shaders/arena/combat_backdrop.gdshader")
@@ -75,6 +78,8 @@ func _init() -> void:
 	_mat.set_shader_parameter(&"lime", Palette.CELL_ACID)
 	_mat.set_shader_parameter(&"pink", Palette.CELL_PINK)
 	_mat.set_shader_parameter(&"district_dim", DISTRICT_DIM)
+	_mat.set_shader_parameter(&"pool_dark", CityView3D.CONFIG.backdrop_pool_dark)
+	_mat.set_shader_parameter(&"pool_falloff", CityView3D.CONFIG.backdrop_pool_falloff)
 	_still = _layer("Still", _draw_still)
 	_still.material = _mat
 	_won_still = _layer("WonStill", _draw_won_still)
@@ -235,7 +240,7 @@ func _cover_rect() -> Rect2:
 func _on_resized() -> void:
 	_pools_sig = ""
 	if city != null and size.x >= 2.0 and size.y >= 2.0:
-		city.set_view_size(Vector2i(size))
+		city.set_view_size(render_px(size))
 		_frame_city()
 	_still.queue_redraw()
 	_won_still.queue_redraw()
@@ -257,7 +262,7 @@ func _draw_won_still() -> void:
 ## Where OURS NOW stands (local), on the target's top, clear of the top bar.
 func ours_now_spot() -> Vector2:
 	if _city_ready and city != null and city.iso != null:
-		var top := city.project(_target_top())
+		var top := city.project(_target_top()) * (size / Vector2(city.size).max(Vector2.ONE))
 		return Vector2(top.x, maxf(top.y, size.y * OURS_NOW_MIN_Y))
 	var cover := _cover_rect()
 	var a := BackdropCatalog.anchor(place) if not place.is_empty() else BackdropCatalog.ANCHOR_FALLBACK
@@ -314,7 +319,9 @@ func _use_city() -> void:
 			city.stage_compound(shot["stage"])
 		city.model_ready.connect(_on_city_ready)
 		add_child(city)
-		city.set_view_size(Vector2i(sz))
+		city.set_view_size(render_px(sz))
+	_light_city()
+	city.set_site_landmark(StringName(shot.get("landmark", &"")), shot["lot"])
 	_frame_city()
 	if city.model != null and city.chunks_built() > 0:
 		_on_city_ready()
@@ -326,7 +333,7 @@ func _frame_city() -> void:
 	var cam: CityIsoCamera = (shot["camera"] as CityIsoCamera).copy()
 	cam.viewport = Vector2(city.size)
 	city.set_iso(cam)
-	var t := city.project(cam.target)
+	var t := city.project(shot.get("centre", cam.target))
 	_mat.set_shader_parameter(&"keep_at", Vector2(t.x / maxf(1.0, float(city.size.x)), t.y / maxf(1.0, float(city.size.y))))
 	_mat.set_shader_parameter(&"keep_radius", CityView3D.CONFIG.backdrop_keep_radius)
 
@@ -342,6 +349,7 @@ func _on_city_ready() -> void:
 		(shot["camera"] as CityIsoCamera).target = city.lot_world(lot, cfg.backdrop_site_lift)
 		_frame_city()
 	_city_ready = true
+	_light_city()
 	_tex = city.get_texture()
 	_won_tex = null
 	_mat.set_shader_parameter(&"use_mask", false)
@@ -352,6 +360,41 @@ func _on_city_ready() -> void:
 	_sync_won()
 	_pools_sig = ""
 	_still.queue_redraw()
+
+
+## S-ARENA: the close-up's render size for a backdrop of `sz` px: at most
+## CityConfig.backdrop_render_height px tall (the backdrop sits softened behind the wheels, so a
+## 1080p view renders it at that height and draws it scaled: the wider lit close-up keeps the 8 ms
+## city budget), never more than the view.
+static func render_px(sz: Vector2) -> Vector2i:
+	var cap := float(CityView3D.CONFIG.backdrop_render_height)
+	var k := minf(1.0, cap / maxf(1.0, sz.y)) if cap > 0.0 else 1.0
+	return Vector2i(maxi(2, roundi(sz.x * k)), maxi(2, roundi(sz.y * k)))
+
+
+## S-ARENA (CMB-01, MOTION-07): the close-up keeps the concept's lit night (CityConfig
+## backdrop_*) instead of the Grid's dark grade, so the still -> city hand-over no longer drops
+## the scene to near black; the canvas grade (`city_grade`) applies once the city shows (the
+## stills are the concept already).
+func _light_city() -> void:
+	var cfg := CityView3D.CONFIG
+	city.set_night_share(0.0, BackdropCatalog.city_look(cfg, String(shot.get("focus", "hq"))))
+	_mat.set_shader_parameter(&"city_exposure", cfg.backdrop_exposure)
+	_mat.set_shader_parameter(&"city_tint", cfg.backdrop_tint)
+	_mat.set_shader_parameter(&"city_saturation", cfg.backdrop_saturation)
+	_mat.set_shader_parameter(&"city_grade", _city_ready)
+
+
+## The shader's city grade (`graded`) on `c`, the value the shader samples, for the tests and the contrast
+## checks: value V -> 1 - (1 - V)^exposure, hue kept, times the tint, then the saturation.
+static func graded(cfg: CityConfig, c: Color) -> Color:
+	var v := maxf(c.r, maxf(c.g, c.b))
+	var k := (1.0 - pow(1.0 - clampf(v, 0.0, 1.0), cfg.backdrop_exposure)) / maxf(v, 0.0001)
+	var t := cfg.backdrop_tint
+	var g := Vector3(clampf(c.r * k * t.r, 0.0, 1.0), clampf(c.g * k * t.g, 0.0, 1.0), clampf(c.b * k * t.b, 0.0, 1.0))
+	var grey := g.dot(Vector3(0.2126, 0.7152, 0.0722))
+	var o := Vector3(grey, grey, grey).lerp(g, cfg.backdrop_saturation)
+	return Color(o.x, o.y, o.z, c.a)
 
 
 ## 5d's fight-won lights on the run's Site (hidden until won).
@@ -375,11 +418,15 @@ func _drop_city() -> void:
 	shot = {}
 	_won_lights = null
 	_city_ready = false
+	_mat.set_shader_parameter(&"city_grade", false)
 
 
-## The target's top (world): the Site building's roof, or the HQ / canyon target raised.
+## The target's top (world): a fitted landmark's own top, the Site building's roof, or the
+## HQ / canyon target raised.
 func _target_top() -> Vector3:
 	var cam: CityIsoCamera = shot["camera"]
+	if shot.has("top"):
+		return shot["top"]
 	if String(shot.get("focus", "")) == "site":
 		var lot: Vector2 = shot["lot"]
 		return city.lot_world(lot, city.top_at(Vector2i(lot.floor())))
