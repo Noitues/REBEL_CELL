@@ -66,9 +66,33 @@ func _ready() -> void:
 		city.set_iso(camera(CityView3D.CONFIG, look, corp, _view_px()))
 		city.model_ready.connect(_on_city_ready)
 		add_child(city)
-		city_motion = CityViewMotion.make(city)
+		city_motion = CityViewMotion.make(city, motion_config(look))
 		city.add_child(city_motion)
 	_on_resized()
+
+
+## TITLE-01c: the city motion this backdrop runs: the shipped CityMotionConfigData as it is
+## when the look asks for nothing more, else a copy (the loaded one is never changed; the Grid's
+## city keeps the shipped motion) with the sky-lane and street cars `traffic_density` times as
+## dense at the same speed (gaps per loop scale with the gap) and their lights and streaks
+## `traffic_light_scale` times as big.
+static func motion_config(p_look: CityBackdropLook) -> CityMotionConfigData:
+	var base := CityMotionConfigData.shipped()
+	var d := maxf(p_look.traffic_density, 0.01)
+	var s := p_look.traffic_light_scale
+	if is_equal_approx(d, 1.0) and is_equal_approx(s, 1.0):
+		return base
+	var c := base.duplicate() as CityMotionConfigData
+	c.car_gap = base.car_gap / d
+	c.street_gap = base.street_gap / d
+	c.gaps_per_loop = Vector2i(roundi(base.gaps_per_loop.x * d), roundi(base.gaps_per_loop.y * d))
+	c.far_dot = base.far_dot * s
+	c.far_line = base.far_line * s
+	c.medium_line = base.medium_line * s
+	c.streak_length = base.streak_length * s
+	c.street_dot = base.street_dot * s
+	c.street_streak = base.street_streak * s
+	return c
 
 
 ## True when `p_look` takes the 3D city at Settings.city_quality value `city_quality` where
@@ -137,6 +161,8 @@ func _apply_look() -> void:
 		_mat.set_shader_parameter(p, Vector3(c.r, c.g, c.b))
 	_mat.set_shader_parameter(&"haze_out_of_focus", look.haze_out_of_focus)
 	_mat.set_shader_parameter(&"grade_saturation", look.grade_saturation)
+	_mat.set_shader_parameter(&"light_keep", look.light_keep)
+	_mat.set_shader_parameter(&"light_threshold", look.light_threshold)
 
 
 ## Shows or hides the backdrop (a host that keeps it across pages): hidden, its city is

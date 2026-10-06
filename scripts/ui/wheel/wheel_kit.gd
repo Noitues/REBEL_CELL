@@ -17,6 +17,25 @@ const SPECIAL_ROW := 9
 const BOSS_HUB := {&"civic_core": &"hub_emergency_powers",
 	&"commons_array": &"hub_station_keeping", &"renewal_engine": &"hub_auto_renew", &"dispatch_core": &"hub_root_access"}
 
+## Parity S-WHEEL (CMB-02, designer group ruling 2026-10-05: combat matches the concept). The
+## screens' tone step (the disc shader's `tone`): the round 41 composite passes the disc has no
+## room for (make_combat.bloom over the bright parts, frames.add_glow) folded into one step, so the
+## slice screens read as saturated as the concept's: saturation away from the luma, then the part
+## over the threshold lifted. Material, like the shader's kit tables; `tone` mirrors it for tests.
+const SCREEN_SAT := 1.4
+const BLOOM_THRESH := 0.3
+const BLOOM_GAIN := 1.1
+## The lit frame (CMB-02): the class accent's wash over the player's outer bevel and the glow of
+## the frame's accent hairlines; a corp frame wears its rim instead of the wash (CMB-03).
+const PLAYER_FRAME_TINT := 0.62
+const PLAYER_FRAME_GLOW := 0.8
+const CORP_FRAME_GLOW := 0.35
+## The frame's outer radius (master units): the player's D4 frame and the wider corp frame that
+## carries the corp rim (d4corp.render: R1 = R_OUT + 54 / + 64), and the elite collar beyond it.
+const R_FRAME_PLAYER := 414.0
+const R_FRAME_CORP := 424.0
+const ELITE_COLLAR := 14.0
+
 static var _meta: Dictionary = {}
 
 var theme: int = 0
@@ -66,6 +85,26 @@ static func of(c: CombatantState, lookup: ContentLookup, class_id: StringName = 
 ## Kit `theme`'s name (`player`, a corporation id).
 func kit_name() -> StringName:
 	return THEMES[theme]
+
+
+## The D4 frame's outer radius (master units) before the elite collar and the threat ring.
+func frame_radius() -> float:
+	return R_FRAME_PLAYER if theme == 0 else R_FRAME_CORP
+
+
+## The corp rim this kit's frame wears (the disc's `rim_kind`): 0 on the player's wheel, else the
+## corp's theme index (d4corp.corp_rim: Meridian hazard, Solace studs, Halcyon colonnade,
+## Orbital azimuth, Rebel_Cell broken segments).
+func rim_kind() -> int:
+	return theme
+
+
+## The screens' tone step (CMB-02), as the disc shader's `tone` applies it to a screen colour.
+static func tone(c: Color) -> Color:
+	var l := 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
+	var v := Vector3(maxf(0.0, lerpf(l, c.r, SCREEN_SAT)), maxf(0.0, lerpf(l, c.g, SCREEN_SAT)), maxf(0.0, lerpf(l, c.b, SCREEN_SAT)))
+	v += Vector3(maxf(v.x - BLOOM_THRESH, 0.0), maxf(v.y - BLOOM_THRESH, 0.0), maxf(v.z - BLOOM_THRESH, 0.0)) * BLOOM_GAIN
+	return Color(v.x, v.y, v.z, c.a)
 
 
 ## The hub emblem's glyph id for combatant `c` (3.3): its core's glyph, else its boss's enemy hub,

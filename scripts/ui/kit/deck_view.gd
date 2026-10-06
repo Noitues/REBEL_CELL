@@ -26,8 +26,6 @@ const GRID_GAP := 14.0
 ## ART-9 4A: the grid's edge inside the scroll (px): a focused sticker's outline stays in the glass.
 const GRID_EDGE := 6
 const CARDS_PER_ROW := 4
-## Card rarities in words (keys).
-const RARITY_WORDS: Array[String] = ["Common", "Uncommon", "Rare", "Boss"] # TR
 
 
 func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String = "DECK", p_action: String = "") -> void:
@@ -78,12 +76,16 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	scroll.add_child(room)
 	room.add_child(grid)
 	# Cards follow the text size (H21 #15) while a row still holds CARDS_PER_ROW of them, and
-	# show what they do as pictograms.
-	var ds := clampf(minf(Settings.text_scale, (GRID_WIDTH - GRID_GAP * (CARDS_PER_ROW - 1)) / (CARDS_PER_ROW * ZineCard.STICKER_SIZE.x)), 1.0, Settings.TEXT_SCALE_MAX)
+	# show what they do as pictograms. S-CARDFACE (DECK-01): the row is filled (as many cards as fit
+	# at the text size, then grown to the grid's width) and centred: it left the right third empty.
+	var per_row := maxi(CARDS_PER_ROW, floori((GRID_WIDTH + GRID_GAP) / (ZineCard.STICKER_SIZE.x * Settings.text_scale + GRID_GAP)))
+	var ds := clampf(floorf((GRID_WIDTH - GRID_GAP * (per_row - 1)) / per_row) / ZineCard.STICKER_SIZE.x, 1.0, Settings.TEXT_SCALE_MAX)
+	grid.alignment = FlowContainer.ALIGNMENT_CENTER
 	for i in deck.size():
 		var card := lookup.get_content(deck[i]) as CardData
 		var sticker := ZineCard.new(TextDb.t(card, "display_name") if card != null else String(deck[i]), card.ram_cost if card != null else 0,
 			TextDb.t(card, "description") if card != null else "", i).scaled(ds).with_card(card)
+		sticker.fit_whole = true  # S-CARDFACE: the whole text on the face
 		sticker.hotkey = ""
 		var index := i
 		sticker.pressed.connect(func() -> void: _on_left(index))
@@ -272,31 +274,26 @@ func open_card(index: int) -> void:
 	var card := lookup.get_content(deck[index]) as CardData
 	var pop := TerminalWindow.new(tr("CARD DETAIL"), Palette.CELL_ACID)
 	pop.name = "CardDetail"
-	pop.position = Vector2(360, 130)
-	pop.custom_minimum_size = Vector2(560, 0)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 18)
-	pop.body.add_child(row)
-	var big := ZineCard.new(TextDb.t(card, "display_name") if card != null else String(deck[index]), card.ram_cost if card != null else 0, TextDb.t(card, "description") if card != null else "", index).with_card(card)
-	big.hotkey = ""
-	big.custom_minimum_size = Vector2(170, 224)
-	big.focus_mode = Control.FOCUS_NONE
-	row.add_child(big)
-	var info := VBoxContainer.new()
-	info.custom_minimum_size.x = 320
-	row.add_child(info)
-	if card != null:
-		for line in [tr("%s  //  %d RAM") % [TextDb.t(card, "display_name").to_upper(), card.ram_cost],
-				tr(RARITY_WORDS[clampi(card.rarity, 0, 3)]) + (tr(" // exhausts") if card.exhaust else ""), Codex.describe(card)]:
-			var l := Label.new()
-			l.text = line
-			UiWrap.whole_words(l)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
-			l.custom_minimum_size.x = 320
-			info.add_child(l)
+	# S-CARDFACE (DECK-02, the art pass build's detail): the card at twice the hand's size, its face
+	# showing every word, beside its CARD NOTES (kind, rarity, the keywords it uses), which scroll
+	# when they outgrow the screen.
+	var s := Settings.text_scale
+	var notes_h := ZineCard.STICKER_SIZE.y * InspectPopup.DETAIL_CARD
+	pop.body.add_child(InspectPopup.card_detail(card, TextDb.t(card, "display_name") if card != null else String(deck[index]),
+		TextDb.t(card, "description") if card != null else "", s, notes_h))
 	var close_btn := Button.new()
+	close_btn.name = "Close"
 	close_btn.text = tr("Close")
+	close_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	close_btn.pressed.connect(func() -> void: pop.queue_free(); _popup = null)
 	pop.body.add_child(close_btn)
 	add_child(pop)
+	pop.reset_size()
+	var view := get_viewport_rect().size
+	pop.position = Vector2(maxf(0.0, (view.x - pop.size.x) * 0.5), clampf(DETAIL_TOP, 0.0, maxf(0.0, view.y - pop.size.y)))
 	_popup = pop
 	UiFocus.focus_first.call_deferred(pop)
+
+
+## The card detail's top (px; centred across).
+const DETAIL_TOP := 100.0

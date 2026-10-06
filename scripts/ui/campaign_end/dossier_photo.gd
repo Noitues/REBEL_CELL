@@ -13,6 +13,8 @@ var picture: Texture2D = null
 ## An operative's portrait (PortraitArt subject) when there is no picture.
 var subject: Dictionary = {}
 var tint: Color = Palette.NET_CYAN
+## The stock, loaded once and held (ART-12 12p: an unheld `load()` decodes it at every draw).
+var _stock_tex: Texture2D = null
 
 ## The print's width at text scale 1.0 (px; its height follows), the frame, the caption band
 ## (shares of the width), the tape's size (px at 1.0) and the vignette's strength.
@@ -73,7 +75,9 @@ func _draw() -> void:
 	var s := Settings.text_scale
 	var r := Rect2(Vector2.ZERO, size)
 	draw_rect(Rect2(r.position + Vector2(4, 7) * s, r.size), Palette.SHADOW)
-	draw_texture_rect(load(STOCK_ART) as Texture2D, r, false)
+	if _stock_tex == null:
+		_stock_tex = load(STOCK_ART) as Texture2D
+	draw_texture_rect(_stock_tex, r, false)
 	var img := image_rect()
 	if picture != null:
 		draw_texture_rect(picture, img, false, Palette.PAPER.lerp(Palette.TEXT_HI, 0.5))

@@ -38,8 +38,9 @@ const LEAVE_ICON := 34.0
 ## ART-0 C (text scale 2.0): the least gap kept between LEAVE THE MAINFRAME and the REMOVE A
 ## CARD row's pieces it would otherwise cover (px).
 const LEAVE_GAP := 6.0
-## Loot stickers at text scale 1.0 and the most a row of them may grow (px).
-const LOOT_CARD := Vector2(170, 210)
+## Loot stickers at text scale 1.0 (the card face's 3:4, round 32 reward_screen_v2 at 720p; S-CARDFACE) and the
+## most a row of them may grow (px).
+const LOOT_CARD := Vector2(162, 216)
 const LOOT_ROW_MAX := 1150.0
 ## The least gap between loot stickers (px; their tilt's reach is added, ANIM-R2 E8).
 const LOOT_GAP := 14.0
@@ -2747,6 +2748,9 @@ func _show_reward() -> void:
 		var sticker := ZineCard.new(TextDb.t(res, "display_name"), cost, TextDb.t(res, "description"), i).scaled(ls)
 		if res is CardData:
 			sticker.with_card(res as CardData)
+		elif res is FirmwareData or res is DaemonData:
+			# S-CARDFACE: the one card face; its art panel shows the offer's own concept art
+			sticker.as_offer("firmware" if res is FirmwareData else "daemon", ("chip_%s" if res is FirmwareData else "daemon_%s") % id)
 		sticker.fit_whole = true  # ANIM-R1 M10: the whole text on the card
 		sticker.custom_minimum_size = LOOT_CARD * ls
 		sticker.hotkey = ""  # rewards are picked by click or focus, not number keys
@@ -3574,6 +3578,10 @@ const SHOP_MARGIN := 14.0
 ## focused (keys).
 const CLERK_WORDS := "NO REFUNDS.\nNO NAMES.\nCYCLES ONLY." # TR
 const CLERK_NOTE := "ask about the\nback room" # TR
+## Parity fix (SHOP-01): the clerk's note starts this share along the words' width and this
+## far (px) under their last line.
+const CLERK_NOTE_OFFSET := 0.35
+const CLERK_NOTE_GAP := 2.0
 ## The info line by device (UiTip.for_input( picks the pad's when pad_active).
 const SHOP_INFO_IDLE := "> point at an item: what it does shows here. Drag Firmware or a slice onto a slot of your spinner." # TR
 const SHOP_INFO_IDLE_PAD := "> focus an item: what it does shows here." # TR
@@ -3690,7 +3698,14 @@ func _layout_shop(root: Control) -> void:
 		clerk_note.size = clerk_note.custom_minimum_size
 		var words := clerk.find_child("ClerkWords", true, false) as Control
 		var under := words.get_global_rect() if words != null else clerk.get_global_rect()
-		clerk_note.global_position = Vector2(clerk.get_global_rect().end.x - clerk_note.size.x - 4.0, under.end.y - clerk_note.size.y * 0.55)
+		# Parity fix (SHOP-01; concept shop_v5): under the last clerk line, offset right of
+		# the words' start (clear of the wallet beside it), never over "CYCLES ONLY.".
+		var wallet := clerk.find_child("Wallet", true, false) as Control
+		var x := under.position.x + under.size.x * CLERK_NOTE_OFFSET
+		if wallet != null and wallet.is_visible_in_tree():
+			x = maxf(x, wallet.get_global_rect().end.x + SHOP_MARGIN)
+		x = minf(x, clerk.get_global_rect().end.x - clerk_note.size.x - SHOP_MARGIN * 0.5)
+		clerk_note.global_position = Vector2(x, under.end.y + CLERK_NOTE_GAP)
 
 
 ## ART-9 4A: a v2 terminal (4C's CrtWindow) whose `> TITLE` keeps to one line: the strip widens

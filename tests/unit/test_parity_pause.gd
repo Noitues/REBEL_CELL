@@ -1,7 +1,7 @@
 extends GutTest
 ## M14 parity PAUSE-01..03 (designer 2026-10-05): the pause menu blurs and darkens the page
 ## behind it (GlassScrim) over the HQ, the route and a fight; no PAUSED sticker; `Resume [Esc]`
-## is the first row, the one pink sticker, and takes focus; the other rows carry icons; the
+## is the top left sticker, the one pink one, and takes focus; two columns of stickers in their colours; the
 ## campaign code sits in a field whose copy button copies it; it all fits at every text scale.
 
 const HQ := "res://scenes/hq/hq_scene.tscn"
@@ -90,32 +90,80 @@ func test_a_fight_alone_pauses_over_a_scrim() -> void:
 	scene.open_settings()
 
 
-func test_resume_is_first_pink_and_focused_and_the_rows_have_icons() -> void:
+func test_two_columns_of_stickers_each_in_its_role_colour() -> void:
+	RunManager.new_campaign(1)
 	var menu: PauseMenu = add_child_autofree(PauseMenu.new())
 	await _frames()
-	var resume := menu.resume_button as VerbSticker
-	assert_not_null(resume, "Resume is a verb sticker")
-	assert_eq(resume.fill, VerbSticker.Fill.PINK, "the one pink primary")
+	var resume := menu.resume_button
+	assert_eq(resume.sticker.fill, VinylSticker.Fill.PINK, "Resume is the one pink verb")
 	assert_eq(resume.name, "Resume")
-	assert_string_starts_with(resume.text, "Resume")
-	assert_string_contains(resume.text, Settings.hint(&"open_settings"), "its key shows")
-	assert_eq(UiFocus.first_focusable(menu._menu), resume, "first in the menu")
+	assert_eq(UiFocus.first_focusable(menu._menu), resume, "first in the menu (top left)")
 	assert_eq(get_viewport().gui_get_focus_owner(), resume, "focused on open")
-	var kinds: Array[StringName] = []
-	for b in menu._rows.get_children():
-		kinds.append(StringName(b.get_meta(&"icon_kind", &"")))
-	# ABANDON-QUIT: an abandon row (in HARM) above Quit when there is a run or a campaign to abandon.
-	var want: Array[StringName] = [StatIcon.SETTINGS, StatIcon.CODEX, StatIcon.SAVE]
-	if RunManager.has_active_run():
-		want.append(StatIcon.OPERATIVE)
-	elif RunManager.has_campaign():
-		want.append(StatIcon.CAMPAIGNS)
-	want.append(StatIcon.QUIT)
-	assert_eq(kinds, want, "an icon on every other row")
+	assert_eq(menu.resume_hint.text, Settings.hint(&"open_settings"), "its key hint sits with it")
+	var left: Array[String] = []
+	for c in menu._left.get_children():
+		left.append(String(c.get_child(0).name))
+	var right: Array[String] = []
+	for c in menu._right.get_children():
+		right.append(String(c.get_child(0).name))
+	assert_eq(left, ["Resume", "Options", "Codex"] as Array[String], "left column, top down")
+	assert_eq(right, ["AbandonCampaign", "QuitMain", "Quit"] as Array[String], "right column, top down (at HQ)")
+	var pinks := 0
+	for b in menu._stickers:
+		assert_true(b is HoloSticker, "%s is a vinyl sticker" % b.name)
+		pinks += 1 if b.sticker.fill == VinylSticker.Fill.PINK else 0
+		assert_eq(b.sticker.state, VinylSticker.State.HOVER if b.has_focus() else VinylSticker.State.REST, "%s: coloured, only the focused one lifts" % b.name)
+		assert_false(b.sticker.grey > 0.0, "%s is never greyed" % b.name)
+	assert_eq(pinks, 1, "one primary")
+	assert_eq(menu.abandon_campaign_button.sticker.fill, VinylSticker.Fill.RED, "abandon is harm")
+	assert_ne((menu.find_child("Quit", true, false) as HoloSticker).sticker.fill, VinylSticker.Fill.RED, "quit is not destructive")
 	var resumed := []
 	menu.resumed.connect(func() -> void: resumed.append(true))
 	resume.pressed.emit()
 	assert_eq(resumed.size(), 1)
+
+
+func test_a_run_reads_abandon_run_in_the_same_slot() -> void:
+	RunManager.new_campaign(1)
+	RunManager.start_run()
+	var menu: PauseMenu = add_child_autofree(PauseMenu.new())
+	await _frames()
+	assert_eq(menu._right.get_child(0).get_child(0), menu.abandon_run_button, "the top right slot")
+	assert_null(menu.abandon_campaign_button)
+	assert_eq(menu.abandon_run_button.sticker.fill, VinylSticker.Fill.RED)
+
+
+func test_focus_order_and_left_right_across_the_columns() -> void:
+	RunManager.new_campaign(1)
+	var menu: PauseMenu = add_child_autofree(PauseMenu.new())
+	await _frames()
+	var order: Array[String] = []
+	for b in menu._stickers:
+		order.append(String(b.name))
+	assert_eq(order, ["Resume", "Options", "Codex", "AbandonCampaign", "QuitMain", "Quit"] as Array[String], "left column, right column")
+	var resume := menu.resume_button
+	assert_eq(resume.get_node(resume.focus_neighbor_right), menu.abandon_campaign_button, "Right crosses to the same row")
+	assert_eq(menu.abandon_campaign_button.get_node(menu.abandon_campaign_button.focus_neighbor_left), resume, "and Left comes back")
+	var codex := menu.find_child("Codex", true, false) as Control
+	assert_eq(codex.get_node(codex.focus_neighbor_right), menu.find_child("Quit", true, false), "row 3 crosses to row 3")
+
+
+func test_the_grease_pencil_notes_and_their_ink() -> void:
+	RunManager.new_campaign(1)
+	var menu: PauseMenu = add_child_autofree(PauseMenu.new())
+	await _frames(3)
+	var notes := {}
+	for n in menu._notes:
+		notes[n.name] = n
+	assert_eq(notes.size(), 3)
+	assert_eq((notes["ResumeNote"] as PencilWords).words, "Down with the Oligarchy!")
+	assert_eq((notes["AbandonCampaignNote"] as PencilWords).words, "No Going Back")
+	assert_eq((notes["AbandonCampaignNote"] as PencilWords).color, Palette.PENCIL_THREAT, "red grease ink on the harm sticker")
+	assert_eq((notes["QuitNote"] as PencilWords).words, "Come Back Soon")
+	for n: PencilWords in menu._notes:
+		var cell := n.get_parent() as Control
+		var sticker := cell.get_child(0) as Control
+		assert_gte(n.get_global_rect().position.y, sticker.get_global_rect().end.y - 1.0, "%s sits under its sticker, never over its word" % n.name)
 
 
 func test_the_campaign_code_has_a_field_and_a_copy_button() -> void:
@@ -143,7 +191,13 @@ func test_the_pause_menu_fits_at_every_text_scale() -> void:
 		var view := get_viewport().get_visible_rect()
 		assert_true(view.encloses(menu.get_global_rect()), "x%s: the menu %s is on the %s screen" % [scale, menu.get_global_rect(), view])
 		var body := menu._host.get_combined_minimum_size()
-		assert_lte(body.x, menu.size.x, "x%s: nothing wider than the menu" % scale)
+		assert_lte(body.x, menu.size.x, "x%s: nothing wider than the menu (%s)" % [scale, body])
+		for b in menu._stickers:
+			assert_true(menu.get_global_rect().encloses(b.get_global_rect()), "x%s: %s is inside the menu" % [scale, b.name])
+		var shown := 0
+		for n in menu._notes:
+			shown += 1 if n.visible else 0
+		assert_true(shown == menu._notes.size() or shown == 0, "x%s: the notes are all there or all dropped (%d shown)" % [scale, shown])
 		var code_right := menu.code_field.get_global_rect().end.x
 		assert_lte(code_right, menu.get_global_rect().end.x, "x%s: the code field and its copy button fit" % scale)
 		assert_true(menu.code_field.copy_button.get_global_rect().size.x > 0.0)

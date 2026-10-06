@@ -1330,10 +1330,9 @@ func _s_pause_fight_quit() -> void:
 		return
 	combat.open_settings()
 	await _settle(combat.get_parent())
-	for b in get_tree().root.find_children("*", "Button", true, false):
-		if (b as Button).text == tr("Quit to desktop"):
-			(b as Button).pressed.emit()
-			break
+	var menu := get_tree().root.find_children("*", "PauseMenu", true, false)
+	if not menu.is_empty():
+		(menu[0] as PauseMenu).confirm_quit()
 	await _settle(combat.get_parent())
 
 

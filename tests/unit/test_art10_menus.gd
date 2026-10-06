@@ -259,27 +259,25 @@ func test_the_slots_page_is_three_case_files_in_one_panel() -> void:
 
 
 func test_load_and_delete_are_stickers_and_delete_says_cant_undo_in_pencil() -> void:
-	# Designer ruling 2026-10-05 (SLOTS b): this page carries two sticker verbs, the pink LOAD on
-	# the newest campaign and DELETE (4C's baked dialog_delete) on every used slot, with a red
-	# grease-pencil "Can't Undo" arrow pointing at DELETE.
-	_save_slots(2)
+	# Designer rulings 2026-10-05 (SLOTS b, c): every used slot carries two sticker verbs, the
+	# pink LOAD and DELETE (4C's baked dialog_delete), with a red grease-pencil "Can't Undo"
+	# arrow pointing at DELETE; the newest campaign's LOAD takes the first focus.
+	_save_slots(3)
 	var t := _title()
 	await _frames(2)
 	t.show_slots()
 	await _frames(3)
 	var cards := _cards(t)
-	var loads := 0
 	for c in cards:
-		if c.load_button is VerbSticker:
-			loads += 1
-	assert_eq(loads, 1, "one sticker LOAD on the page")
-	var newest := cards[0] if cards[0].primary else cards[1]
-	assert_true(newest.load_button is VerbSticker and (newest.load_button as VerbSticker).fill == VerbSticker.Fill.PINK, "LOAD on the newest campaign is the pink verb")
+		assert_true(c.load_button is VerbSticker and (c.load_button as VerbSticker).fill == VerbSticker.Fill.PINK, "slot %s: LOAD is the pink sticker" % c.slot)
+		assert_true(c.delete_button is VerbSticker, "slot %s: DELETE is a sticker" % c.slot)
+	var primaries := cards.filter(func(c: CaseFileCard) -> bool: return c.primary)
+	assert_eq(primaries.size(), 1, "one newest campaign")
+	var newest: CaseFileCard = primaries[0]
 	assert_eq(RunManager.latest_slot(), newest.slot, "the newest campaign")
-	assert_eq(t._default_focus(t._panel), newest.load_button, "the pink LOAD takes the focus first")
-	var other := cards[1] if newest == cards[0] else cards[0]
-	assert_true(other.load_button is MenuChip, "the other LOAD is a terminal chip")
-	for c: CaseFileCard in [cards[0], cards[1]]:
+	assert_eq(t._default_focus(t._panel), newest.load_button, "the newest campaign's LOAD takes the focus first")
+	var other := cards[0] if newest != cards[0] else cards[1]
+	for c: CaseFileCard in cards:
 		var del := c.delete_button as VerbSticker
 		assert_not_null(del, "DELETE is a sticker")
 		assert_true(del.uses_art() and del.art_key == CaseFileCard.DELETE_ART, "4C's baked DELETE sticker")
