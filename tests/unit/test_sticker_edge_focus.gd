@@ -75,11 +75,35 @@ func test_every_drawn_sticker_kind_uses_the_proportional_edge() -> void:
 			assert_between(_ratio(v), CONCEPT_MIN, CONCEPT_MAX, "%s: edge / height %.3f" % [k, _ratio(v)])
 
 
-func test_the_baked_concept_stickers_sit_in_the_same_range() -> void:
+func test_the_baked_stickers_have_the_thin_proportional_edge() -> void:
+	# tools/art/bake_menus_r33.py: border = EDGE_SHARE x the lettering (board px, capped at the concept's 12), the
+	# same share as the drawn stickers' (VinylSticker.EDGE_SHARE).
 	for size in BAKED_SIZES:
-		var r := BAKED_BORDER / (size * CAP_SHARE + BAKED_BORDER * 2.0)
-		assert_between(r, CONCEPT_MIN, CONCEPT_MAX, "the concept's bake at lettering %d" % int(size))
-	for key in ["dialog_cancel", "dialog_burn_it", "dialog_delete", "breach", "overthrow", "title_options"]:
+		var edge := minf(roundf(VinylSticker.EDGE_SHARE * size), BAKED_BORDER)
+		var r := edge / (size * CAP_SHARE + edge * 2.0)
+		assert_between(r, CONCEPT_MIN, CONCEPT_MAX, "the bake at lettering %d: edge %.0f, ratio %.3f" % [int(size), edge, r])
+		assert_lt(edge, BAKED_BORDER, "thinner than the concept's fixed 12 at lettering %d" % int(size))
+	# The files really are the thin bakes: the opaque body of a baked sticker (2x board px) is its lettering block
+	# (measured: base 120 for CANCEL at 50, 138 for BREACH at 60) plus 4 x the border (both sides, at 2x).
+	var cases := {"dialog_cancel": [50.0, 120.0], "breach": [60.0, 138.0], "dialog_burn_it": [58.0, 134.0]}
+	for key in cases:
+		var size: float = cases[key][0]
+		var base_h: float = cases[key][1]
+		var tex := load(VerbSticker.ART_DIR + key + ".png") as Texture2D
+		assert_not_null(tex, "%s is baked" % key)
+		var img := tex.get_image()
+		var top := -1
+		var bottom := -1
+		for y in img.get_height():
+			for x in range(0, img.get_width(), 2):
+				if img.get_pixel(x, y).a > 0.78:
+					if top < 0:
+						top = y
+					bottom = y
+					break
+		var edge := minf(roundf(VinylSticker.EDGE_SHARE * size), BAKED_BORDER)
+		assert_almost_eq(float(bottom - top + 1), base_h + 4.0 * edge, 8.0, "%s: the body is the thin bake's height (edge %.0f)" % [key, edge])
+	for key in ["overthrow", "simulate", "title_options", "title_paused", "title_campaign_slots", "dialog_delete"]:
 		assert_true(ResourceLoader.exists(VerbSticker.ART_DIR + key + ".png"), "%s is baked" % key)
 
 

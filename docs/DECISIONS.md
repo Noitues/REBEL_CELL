@@ -608,6 +608,33 @@ M13 art-pass build's layout and content, reworked in the locked v2 concept langu
   `test_slots_fit_and_focus_reaches_every_action_at_every_text_scale` (1, 2, 3 used slots at 1.0 / 1.6 / 2.0),
   `test_the_slots_panel_wraps_its_cards_then_scrolls_past_its_room`. No test dropped.
 
+### 2026-10-05 — Parity fix — baked stickers re-baked with a thinner edge (designer)
+Designer 2026-10-05, after "Parity fix — sticker edge and sticker focus": the baked stickers keep a thinner white edge too,
+matching the drawn ones. Files: `tools/art/bake_menus_r33.py` (`EDGE_SHARE`, `edge_px`, `Thin`; new `--only stickers`),
+`tools/art/export_combat_stickers.py` (`--only send_it`), `assets/ui/menus/stickers/*.png`, `assets/fx/stickers/send_it.png`,
+`vinyl_sticker.gd` (`EDGE_SHARE`), `test_sticker_edge_focus.gd`.
+- **One share for drawn and baked: 0.14 of the lettering** (VinylSticker.EDGE_SHARE, was 0.2; the baked edge in board px =
+  round(0.14 x the lettering size), capped at the concept's 12). My earlier reading "0.2 x lettering" would have baked 10-12
+  board px, i.e. nearly the concept's fixed 12, so the designer's "thinner" needed a smaller share; the drawn stickers moved
+  to 0.14 with them so the two kinds stay the same proportion (drawn menu stickers get 0.7 x their previous edge).
+- **How.** The concept's own code, unchanged: `ui31.sticker(border=...)` for the dialog stickers (CANCEL, BURN IT, DELETE) and
+  the title words, and, for BREACH / SIMULATE / OVERTHROW (title.py `stk`, menu33 fist / glitch sets, which hard-code
+  `border=12` inside the concept), a context (`Thin`) that replaces the `border` argument of `sticker_lib31.build_sticker` for the
+  sticker being baked (and menu33's `_pad`, which pads the glitch art "like build_sticker does (border 12 ...)"). The die-cut
+  `close` follows as 1.25 x the border, as the concept's own SEND IT call does. Sizes: BREACH / SIMULATE / OVERTHROW 60 -> 8,
+  CANCEL 50 -> 7, BURN IT / DELETE 58 -> 8, the title words 54 -> 8, OPTIONS 66 -> 9. SEND IT (`send_sticker`, lettering 74,
+  border 15 -> 10) is re-exported by `--only send_it`. Baked: the title verbs (BREACH, SIMULATE with its bursts, OVERTHROW),
+  the screen-title stickers (OPTIONS, PAUSED, CODEX, STATS, CAMPAIGN SLOTS, NEW CAMPAIGN), the dialog stickers (CANCEL, BURN IT,
+  DELETE: the slots' DELETE and the abandon / quit dialogs), SEND IT. Not baked words: the slots' LOAD, NEW CAMPAIGN's START and
+  RAID START DEFENSE (drawn kit stickers: already on `edge_for`); the landing words PERFECT / GOOD / WEAK are plate stickers
+  (`vinyl_word`, border 7 on a rounded plate, no lettering die-cut) and the EVADE token / drone are not word stickers: unchanged.
+- **Focus kept.** The baked rest textures are what `VerbSticker` draws; the rainbow sweep and the curl are drawn over them
+  (the baked `_focus` and `_sweep_NN` frames are not used any more). The `_focus` / `_sweep` files stay in the folder (baked by the
+  same script) for the lab and the art notes.
+- **Test.** `test_sticker_edge_focus`: every baked lettering size is inside the concept's edge / body range and strictly under
+  the old fixed 12; the CANCEL, BREACH and BURN IT PNGs' opaque height is the lettering block plus 4 x the new border (so an
+  old bake fails it).
+
 ### 2026-10-05 — Parity fix — sticker edge and sticker focus (designer)
 Designer 2026-10-05: at text 1.0 the stickers have too much white die-cut edge; and focus on EVERY sticker (all kinds, the
 harm red one too) is a rainbow gloss sweep plus the corner curl, the sticker keeping its fill, no lime brackets or halo.
