@@ -455,9 +455,10 @@ func test_route_shop_event_loot_words_are_translated_once() -> void:
 	_shop(scene)
 	await _frames(4)
 	_assert_once(scene, "Mainframe")
-	var sign := scene._panel.find_child("MainframeSign", true, false) as MainframeSign
-	for w in sign.shown_words():
-		assert_true(w.begins_with(PSEUDO_PREFIX), "the sign's '%s'" % w)
+	# ART-9 4A: the MAINFRAME sign v4 is the shop's name in the world (diegetic, never
+	# translated, bible v2 §1.2); its words are not the player's to translate.
+	var sign := scene.find_child("MainframeSign", true, false) as MainframeSign
+	assert_eq(sign.shown_words(), PackedStringArray(["MAINFRAME"]), "the sign is the shop's own name")
 	var shred := scene._panel.find_child("RemoveCard", true, false) as ZineCard
 	assert_true(shred.card_title.begins_with(PSEUDO_PREFIX), "SHRED A CARD")
 	assert_true(shred.buy_button.label_text().begins_with(PSEUDO_PREFIX), "its sticker's verb")
@@ -745,7 +746,11 @@ func NetrunScene_EVENT_RIGHT_GAP() -> float:
 func _parts_apart(card: ZineCard, what: String) -> void:
 	var inside := Rect2(Vector2.ZERO, card.size).grow(0.5)
 	var buy := Rect2(card.buy_button.position, card.buy_button.size) if card.buy_button != null else Rect2()
-	if buy.has_area():
+	if buy.has_area() and card.get_meta(BuyButton.TAG_BELOW, false):
+		# ART-9 4A (round 34 shop_v5): a card's kraft tag hangs under it, tied to its foot
+		assert_true(buy.position.y < card.size.y and buy.end.y > card.size.y, "%s: the tag %s hangs from the card's foot %s" % [what, buy, card.size])
+		assert_true(buy.position.x >= -0.5 and buy.end.x <= card.size.x + 0.5, "%s: the tag %s under the card %s" % [what, buy, card.size])
+	elif buy.has_area():
 		assert_true(inside.encloses(buy), "%s: the buy sticker %s inside its tile %s" % [what, buy, card.size])
 	if card.look == ZineCard.Look.STICKER:
 		var p := card.sticker_parts()

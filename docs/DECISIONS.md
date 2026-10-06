@@ -1151,6 +1151,161 @@ route view (the route still sits on the neon city; wave 2 moves it onto the 3D c
   _link_switch, the sequence node), `scripts/ui/kit/jack_input_gate.gd` (on_press),
   `scripts/autoload/run_manager.gd` (jack_link, the launch call), `settings.gd` /
   `settings_panel.gd` (the D13 key and row), `motion_lab.gd` (demos).
+### 2026-10-05 — Art direction — ART-9 4A shop, rewards, events
+ART_BIBLE v2 §1.2, §4.10, §4.11; references `docs/art_reference/shop_events/` (round 12 F1b
+facade, round 33 sign v4 and `slice_wheel_offscreen`, round 34 `shop_v5`, rounds 31–32 reward and
+event screens). Presentation only: prices, removal, rewards and event rules are unchanged.
+- **Facade bakes.** `tools/art_bake/mainframe_facade_bake.py` runs round 33's Blender scene
+  (F1 Tenement, `MF_VAR=b`: magenta spill, two wall-to-wall cables) per state (day, night, rain)
+  three times with one seed (dark sign, blue sign + blue spill, red sign + red spill) and writes
+  `assets/backdrops/shop/facade_<state>.webp` plus the two spill layers (1280x720 WebP, about
+  450 KB in all). The game adds a spill layer at the sign's level over the dark facade (round 33's
+  `dark + a * (normal - dark)`), so the street follows the sign. Rain streaks are left out of the
+  bake and fall in the game (`mainframe_rain`; still under reduce effects). Which state a visit
+  shows is a hash of the visit (night 2 in 4, rain 1, day 1): there is no time of day in the
+  rules (open question below).
+- **Sign v4 as baked light layers.** `tools/art_bake/mainframe_sign_bake.py` renders round 33's
+  `flicker_sign.py` once per element: the dark plate, then the change each tube makes when lit
+  (frame, rails, nine letters in blue and in red, the two A's as an "o"), the red glass tint, the
+  soot and each dead letter's snapped glass, cropped into one atlas (`sign_layers.png`, 400 KB,
+  table `sign_layers.json`). `MainframeSign` draws base + sum(level x layer) with add / subtract
+  blending: exact for one tube, the halos of neighbours add. Data pulses on the traces are not
+  drawn (static traces). The sign is the shop's name in the world: never translated (§1.2 "only
+  diegetic signage"); `test_horizontal_pass24_screens` now checks it shows MAINFRAME.
+- **Takeover.** The three LOCKED sequences play in round 33's frame plan (stutter into red, the
+  Cell's red, dead letters drop out, dark, each word twice with a hum and a stutter between,
+  the old sign flashes back), then the blue returns. Once per visit, `mainframe_takeover`'s delay
+  after the warm-up; amplitude = frames per second. Which sequence: a hash of the visit. Stutters
+  use `hash()`, never an RNG. Ambient: not a MotionSkip motion; off under reduce effects and
+  headless (the lit blue sign is the end state). The warm-up keeps `mainframe_sign_warmup`,
+  `_strike`, `_flicker` and `mainframe_trace` (now the rails lighting).
+- **Spill seams.** The street's spill is the bake (the 1B `LightSpill` would light it twice);
+  1B's `LightSpill` lights the pegboard beside the sign in the sign's colour at its level
+  (`SHOP_SPILL_GAIN` 0.6 of the shop gain, reach 260 px).
+- **The art is the concept's (designer, 2026-10-05: never redraw art the art pass made).**
+  `tools/art_bake/mainframe_parts_bake.py` calls the concept scripts on `art-concepts-r43` with
+  their drawing code unchanged and only crops / saves (`assets/ui/mainframe/`, 7.6 MB at the
+  concepts' 1920 scale, `MainframeArt` draws them at 2/3). Visuals and their sources:
+  | Visual | Source |
+  |---|---|
+  | Facade day / night / rain + spill layers | round 33 `scene.py` + `post.py` (Blender 5.2) via mainframe_facade_bake.py |
+  | MAINFRAME sign v4, takeovers | round 33 `flicker_sign.py` + `board.py` per-letter layers via mainframe_sign_bake.py |
+  | Firmware chips (normal / lit) | round 34 `fwlib.chip(id, 84)` |
+  | Daemon cartridges | round 34 `shop_v5.daemon_row` (housing + `fwlib.daemon_tile`), cropped |
+  | Pink foam strip and lip | `shop_v5.foam` |
+  | Kraft price tags (ok / out of reach / sold) | `r31lib.price_tag("")` (no number: the price is lettered live) |
+  | Pegboard | `shop.pegboard` (frame kept, hole grid cut to size) |
+  | Section tapes CARDS / FIRMWARE / DAEMONS / RECYCLE BIN | `shop.dymo` (English; lettered live in another language) |
+  | Stock wheel and wedges for sale | `assets.shop_wheel12` (the wheel) and `slicekit.wheel` per shop slice, cut at -30 / 0 / +30 so the read blocks stay upright; padlock `shop_layout.lock_icon` |
+  | Recycle bin (shut / lid open on hover) | `recycle.scene` |
+  | Clerk's face | `shop.clerk_panel` crop |
+  | Loot sheet liner and kiss-cut slots | `reward.liner` (print band only), `reward.kiss_cut` |
+  | Event choice stickers (plate, hover) | `event.plate_button("", "")` placed with `r31lib.place_sticker` |
+  | LEAVE, FIGHT WON, SKIP, TERMINAL stickers | 1B `VinylSticker` (the port of the concept's sticker_lib) |
+  | CRT windows (clerk, info strip, PAYOUT, FIRMWARE DROP, event terminal, deck viewer) | 1B `CrtTerminalPanel` inside `CrtWindow` |
+  | Corp memo paper | 1B `CorpPaperPanel` |
+  | Grease pencil notes and arrows | 1B `GreasePencilWord` / `GreasePencilMark` |
+  | Sign light on the pegboard | 1B `LightSpill` |
+  | Glyphs on objects with no baked art (new content only) | 1C `GlyphIcon` |
+  Drawn procedurally, and why: every word and number (names, prices, rarity / slot lines, the
+  sheet's header and foot, outcome chips: data-driven and translated; the concept bakes them as
+  English pixels); the yellow rim arc on a wedge for sale and the acid focus edges (state marks
+  the concept composed with ImageDraw over the art); the unaffordable padlock and pencil strike on
+  a tag (naive-reader audit P2: a second cue the concept lacks); the CAM feed (the concept's feed is
+  a crop of one corp target render; there is no per-event render, so the feed magnifies the game's
+  own city through a BackBufferCopy); the loot sheet's peel flap (the concept's peel is the card
+  sticker's own curl, which is Group 2's card); the rain streaks (the bakes leave them out so they
+  can move).
+- **Layout v5 (round 34 `shop_v5` x 2/3 on 1280x720).** The facade fills the screen behind the
+  page; its picture moves down by what the top bar covers of the sign. Pegboard under the bar
+  between the sign and the bin: CARDS, the socket list, the info strip (the focused item's name and
+  what it does) with your spinner beside it (Firmware and slices still drag onto its slots);
+  FIRMWARE chips in the foam, DAEMONS in cartridges. Clerk CRT bottom left (NO REFUNDS. NO NAMES.
+  CYCLES ONLY., the WALLET, the price list from `campaign_config`). From text size 1.25 DAEMONS
+  stands beside FIRMWARE, the clerk steps aside (the wallet joins the board) and the board may
+  cover the sign; the wheel's hub moves down so its rim stays under the board. Drawn objects stop
+  growing at x1.3 (`ShopItem.OBJECT_MAX_SCALE`) while their words and tags keep growing.
+- **Prices.** Every item's price is its kraft tag (`BuyButton` restyled; the press still buys).
+  Pricing is the current flat rule (no top-3 discount, G14). A card's tag hangs under the card,
+  tied to its foot, as in `shop_v5` (resume, 2026-10-05: the concept tag's height, 28 px at 1.0,
+  inside the card left a long card text no room at 1.0; `BuyButton.TAG_BELOW`, the card keeps the
+  hand's foot, the row keeps the tag's room under it). test_horizontal_pass24_screens' "buy sticker
+  inside its tile" and test_horizontal_pass23_screens' "the button sits on its item" now read "the
+  card's tag hangs from its foot" for cards. A chip or cartridge widens to letter its price at the
+  text size (its art stops at x1.3, the tag does not); a wedge's glyph spot stays inside the wedge's
+  shown box at 2.0; the bin's art keeps the tag's edge above the tag. At big text the wallet stands
+  under the Daemons (it sat at the board's foot, under the stock wheel's tags), and a pencil note
+  (TOP 3 ONLY moves left; BIN IT never leaves its bin) is left out where it would cover an item, a
+  tag, the wallet, the info strip or the spinner. The deck viewer's grid keeps room in the glass
+  for a focused sticker's `card_hover` lift (the first row's card lost its top and left edge).
+  Lint: `Color.WHITE` modulates are `Palette.NO_TINT`; the lint baseline lowered.
+- **Slice stock wheel (option B).** `SliceStockWheel`: hub 100 px under the screen, spins in once
+  (`shop_wheel_spin`, MotionSkip, `PageTransition.settle` lands it; reduce effects and headless: at
+  rest); the stock wheel art turns greyed and darkened (`shaders/grey_dim.gdshader`, 60 %) with
+  padlocks; the slices for sale are its top wedges in colour (ShopItem SLICE, tag on the rim). A
+  wedge still opens the UPGRADE viewer (slot price as before). Pencil "TOP n ONLY" (n = the stock).
+- **Removal = the recycle bin, cards only.** The bin maps 1:1 onto the current removal for cards
+  (press → the deck viewer → pick → removed at the current price; drag a card onto the bin in the
+  viewer). The bible's bin also takes a dropped slice: removing a slice is not a rule, so the bin
+  never takes one. The crumple / fizz / lid-slam animation is not built (the lid lifts on hover;
+  the viewer's `shred_feed` landing plays); proposed slice below.
+- **LEAVE** is a holographic VinylSticker ("LEAVE", holo fill) over a pink "THE MAINFRAME" plate,
+  with the pink EXIT glyph beside it.
+- **Loot sheet (Reward A).** `LootSheet`: a dark header ("LOOT SHEET // FIGHT WON // PICK 1 OF 3"),
+  the concept's liner and a kiss-cut slot under each sticker (the taken slot stays an empty
+  outline), the foot line and a barcode. A pick peels (`loot_peel`: a corner flap on the sheet,
+  MotionSkip) as the existing `loot_pick` flight carries the card to the deck; the rest fall as
+  before (`loot_reject`, inside the sheet). The title sticker (the payout's words), the CRT strip
+  `LootWindow`, PAYOUT (the run's Cycles and HP), a Firmware drop's terminal (socket list + your
+  spinner), the DECK counter with a pencil "+1 = N" (true: one card), Skip. The entrance stays
+  `loot_fan` (the bits-assembling entrance waits for the bits on cards: Group 2).
+- **Events as drawn.** The story is in a CRT terminal (accent = the corp colour, red for
+  DISPATCH) beside a CAM feed of the city (`CamFeed`, `event_cam_noise`); a corp speaker's story is
+  an intercepted memo (`CorpMemo` on CorpPaperPanel: letterhead, Courier Prime, CLASSIFIED stamp,
+  tape) and the terminal says INTERCEPTED; DISPATCH shows VOICE ONLY // NO FEED and says its name
+  once (audit P3). Choices are the plate stickers (`ChoiceSticker`) with their outcome rows as
+  framed chips (green gain, red cost, grey no change) with an up / down mark (audit P2: Heat gained
+  is a cost). The stamp after the pick reads CHOSEN. The one pencil note "PLAY IT SAFE??" shows only
+  when a choice changes nothing, its arrow ending on that choice (audit P3). From text size 1.6 the
+  CAM feed, the speaker line and "> CHOOSE" step aside so the story and the choices fit.
+- **Deck viewer** (now 4A's): the CRT glass, the glass scrim, its REMOVE drop target is the
+  recycle bin; the cards stay Group 2's sticker cards.
+- **Motion.** New entries `mainframe_takeover`, `mainframe_rain`, `shop_wheel_spin`, `loot_peel`,
+  `event_cam_noise` (REQUIRED_IDS, lab demos `takeover`, `rain`, `stock_wheel`, `peel`, `cam`); the
+  `mainframe` demo shows the sign on its facade. Nothing dropped. VFX tiers (ART-12's
+  test_vfx_tiers, met at resume): the takeover, the rain and the CAM feed are T0 ambient (rain and
+  CAM are loops), the stock wheel's spin a T3 moment of 1.2 s (was 1.5 s at T2); `grey_dim.gdshader`
+  includes rc_common. The info strip's idle line has a pad twin (`SHOP_INFO_IDLE_PAD`); at big text
+  the wallet is drawn at most x1.6 (`SHOP_WALLET_MAX_SCALE`) so it stands clear of the bin's tag,
+  and the info strip is at most 0.92 x its width (`SHOP_INFO_WIDE_SCALE`) so the spinner beside it
+  stays clear of the stock wheel's left tag (at 2.0 the strip shows the name and the start of the
+  effect; the whole text is the item's tip).
+- **One CrtWindow (merge with 4C, 2026-10-05).** 4A and 4C each built a `class_name CrtWindow`
+  (TerminalWindow on 1B's CrtTerminalPanel glass); 4C's (`kit/chrome/crt_window.gd`, with the
+  `> TITLE` header strip of §4.13) landed first, so 4A's (`kit/crt_window.gd`) is removed and 4A's
+  windows use 4C's. Smallest edit to 4C's file: `with_kind(kind, corp)` and the static
+  `kind_for(colour)` (the glass accent: FIRMWARE acid, DISPATCH red, CELL cyan / pink, else CORP).
+  4A's titles drop their own "> " (the header letters it); `_crt_one_line` keeps a 4A window's
+  title on one line (the strip widens to it, as the concepts draw them). The loot's strip shows
+  its header line only; the loot's DECK counter is a small glass with DECK and the count on one
+  line (no header strip: at 2.0 the header pushed Skip under a focused card's tip); Skip stands
+  at the side column's left; the deck viewer gives up grid height when the v2 header and words
+  would push it off the canvas (`DeckView._fit_canvas`, never under SCROLL_MIN).
+- **Files outside 4A touched (smallest edits):** `palette.gd` (one ART-9 4A token block),
+  `page_transition.gd` (settle lands the stock wheel), `outcome_row.gd` (chips; event-only),
+  `buy_button.gd` (kraft tag; shop-only).
+- **Tests ported (they pinned the M13 look; the behaviour they guard is kept):** test_vertical_pass2
+  (event panel is a CRT terminal), test_anim6_screen_motion (event enters as glass; the sign is
+  found on the screen, not the page), test_anim_r2_combat (a held choice sits on its sticker box),
+  test_anim_r4_combat (loot title and strip on screen; the terminal sizes to its words),
+  test_anim_r5_netrun (the story on its terminal at every size), test_anim_r6_netrun (the sign
+  has its nine letters; LEAVE keeps EXIT), test_horizontal_pass20_screens (nothing sold back:
+  the clerk's words), test_horizontal_pass24_screens (the sign is the shop's own name),
+  test_anim_r5_netrun socket list (on the pegboard), test_horizontal_pass23_screens (a chip's effect
+  is in its tip and the info strip, not on the tile), test_anim_r1_campaign (Skip beside the sheet:
+  clear of every sticker). None dropped.
+- Capture lab: `tools/design_lab/art9_4a_lab.tscn` (one windowed launch walks every state);
+  review crops in `docs/art_review/ART-9/4A/`.
 
 ### 2026-10-05 — Art direction — ART-8 8p HQ compound prep
 ART_BIBLE v2 §1.2 (World), §4.7 (HQ runs: the compound), §6.1; ART_3_BATCH "Wave 2" 8p; references
@@ -8151,6 +8306,14 @@ and HP strip re-laid round the letterhead and stamp slot); JACK IN keeps its Zin
      covers the Grid too.
   2. The VIRUS badge follows 1C's table (`status_corrupted`), not the bible's INFECT glyph.
   3. A DOWN node's fight-won lights go dark.
+- **MAINFRAME facade state and the recycle bin's slice (2026-10-05, ART-9 4A):** (1) the facade
+  bakes exist for day, night and rain, but the game has no time of day or weather; a visit picks
+  one by hash (night 2 in 4). Default: keep the hash until the city gets a time of day. (2) the
+  bible's recycle bin also takes a dropped slice and plays crumple / fizz / lid; removing a slice
+  is not a rule. Default: the bin takes cards only (the current removal); proposed slice: the
+  bin's lid and crumple animation on a card removal (ART-12 polish), the slice drop only if the
+  designer adds slice removal. (3) the takeover plays once per visit after 6 s; whether it should
+  repeat while the player stays is open. Default: once.
 - ~~**ART-8 8p: where is DISPATCH's HQ run, and does an HQ run become a map? (2026-10-05):**~~ resolved by the
   standing ruling "the art pass design is correct" (orchestrator, 2026-10-05): the latest lock wins, so DISPATCH's
   HQ run is set in the round 43 Tokyo canyon (built in ART-8 wave 2, static until G12); the HQ run stays a single

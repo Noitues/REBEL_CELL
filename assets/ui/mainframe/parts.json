@@ -1,0 +1,959 @@
+{
+ "bin_open": {
+  "anchor": [
+   152.0,
+   380.0
+  ],
+  "size": [
+   336,
+   420
+  ]
+ },
+ "bin_shut": {
+  "anchor": [
+   152.0,
+   298.0
+  ],
+  "size": [
+   336,
+   338
+  ]
+ },
+ "chip_barbed_wire": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_barbed_wire_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_bulkhead": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_bulkhead_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_burner": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_burner_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_coolant_loop": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_coolant_loop_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_counterstrike": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_counterstrike_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_hardened": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_hardened_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_leech": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_leech_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_mirror": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_mirror_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_nanite_mesh": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_nanite_mesh_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_overvolt": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_overvolt_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_patch_plus": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_patch_plus_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_power_cell": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_power_cell_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_recycler": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_recycler_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_shunt": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_shunt_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_siphon": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_siphon_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_skimmer": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_skimmer_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_static_coat": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_static_coat_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_tracer": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "chip_tracer_lit": {
+  "size": [
+   100,
+   110
+  ]
+ },
+ "clerk_face": {
+  "size": [
+   184,
+   162
+  ]
+ },
+ "daemon_adrenal_loop": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_botnet_seed": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_bounty_code": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_cascade": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_clean_signal": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_cold_exit": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_fail_forward": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_fault_tolerance": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_feedback_loop": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_field_medic": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_idle_armor": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_kernel_sync": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_linked_bus": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_log_wiper": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_rack_skimmer": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_salvager": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_scrubber": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_shield_cache": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_static_field": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_stolen_intent": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_tuning_fork": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_twin_pointer": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_warm_boot": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "daemon_zero_day": {
+  "anchor": [
+   4.0,
+   4.0
+  ],
+  "size": [
+   102,
+   108
+  ]
+ },
+ "dymo_cards": {
+  "size": [
+   98,
+   39
+  ]
+ },
+ "dymo_daemons": {
+  "size": [
+   130,
+   39
+  ]
+ },
+ "dymo_firmware": {
+  "size": [
+   138,
+   39
+  ]
+ },
+ "dymo_recycle_bin": {
+  "size": [
+   153,
+   39
+  ]
+ },
+ "foam": {
+  "size": [
+   352,
+   34
+  ]
+ },
+ "foam_lip": {
+  "size": [
+   72,
+   12
+  ]
+ },
+ "liner": {
+  "size": [
+   900,
+   440
+  ]
+ },
+ "lock": {
+  "size": [
+   56,
+   56
+  ]
+ },
+ "pegboard": {
+  "size": [
+   1600,
+   1000
+  ]
+ },
+ "plate": {
+  "anchor": [
+   239.0,
+   59.0
+  ],
+  "size": [
+   490,
+   138
+  ]
+ },
+ "plate_hover": {
+  "anchor": [
+   239.0,
+   59.0
+  ],
+  "size": [
+   490,
+   138
+  ]
+ },
+ "slot": {
+  "size": [
+   240,
+   320
+  ]
+ },
+ "slot_empty": {
+  "size": [
+   240,
+   320
+  ]
+ },
+ "tag": {
+  "size": [
+   96,
+   46
+  ]
+ },
+ "tag_short": {
+  "size": [
+   96,
+   46
+  ]
+ },
+ "tag_sold": {
+  "size": [
+   100,
+   86
+  ]
+ },
+ "wedge_defrag_5_0": {
+  "anchor": [
+   126.5,
+   484.5
+  ],
+  "size": [
+   253,
+   487
+  ]
+ },
+ "wedge_defrag_5_m1": {
+  "anchor": [
+   343.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_defrag_5_p1": {
+  "anchor": [
+   2.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_defrag_8_0": {
+  "anchor": [
+   126.5,
+   484.5
+  ],
+  "size": [
+   253,
+   487
+  ]
+ },
+ "wedge_defrag_8_m1": {
+  "anchor": [
+   343.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_defrag_8_p1": {
+  "anchor": [
+   2.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_detour_1_0": {
+  "anchor": [
+   126.5,
+   484.5
+  ],
+  "size": [
+   253,
+   487
+  ]
+ },
+ "wedge_detour_1_m1": {
+  "anchor": [
+   343.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_detour_1_p1": {
+  "anchor": [
+   2.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_detour_2_0": {
+  "anchor": [
+   126.5,
+   484.5
+  ],
+  "size": [
+   253,
+   487
+  ]
+ },
+ "wedge_detour_2_m1": {
+  "anchor": [
+   343.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_detour_2_p1": {
+  "anchor": [
+   2.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_hotfix_6_0": {
+  "anchor": [
+   126.5,
+   484.5
+  ],
+  "size": [
+   253,
+   487
+  ]
+ },
+ "wedge_hotfix_6_m1": {
+  "anchor": [
+   343.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_hotfix_6_p1": {
+  "anchor": [
+   2.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_overflow_12_0": {
+  "anchor": [
+   126.5,
+   484.5
+  ],
+  "size": [
+   253,
+   487
+  ]
+ },
+ "wedge_overflow_12_m1": {
+  "anchor": [
+   343.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_overflow_12_p1": {
+  "anchor": [
+   2.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_overflow_16_0": {
+  "anchor": [
+   126.5,
+   484.5
+  ],
+  "size": [
+   253,
+   487
+  ]
+ },
+ "wedge_overflow_16_m1": {
+  "anchor": [
+   343.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_overflow_16_p1": {
+  "anchor": [
+   2.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_radius": 470,
+ "wedge_sandbox_5_0": {
+  "anchor": [
+   126.5,
+   484.5
+  ],
+  "size": [
+   253,
+   487
+  ]
+ },
+ "wedge_sandbox_5_m1": {
+  "anchor": [
+   343.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_sandbox_5_p1": {
+  "anchor": [
+   2.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_sandbox_8_0": {
+  "anchor": [
+   126.5,
+   484.5
+  ],
+  "size": [
+   253,
+   487
+  ]
+ },
+ "wedge_sandbox_8_m1": {
+  "anchor": [
+   343.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_sandbox_8_p1": {
+  "anchor": [
+   2.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_shim_10_0": {
+  "anchor": [
+   126.5,
+   484.5
+  ],
+  "size": [
+   253,
+   487
+  ]
+ },
+ "wedge_shim_10_m1": {
+  "anchor": [
+   343.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_shim_10_p1": {
+  "anchor": [
+   2.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_shim_6_0": {
+  "anchor": [
+   126.5,
+   484.5
+  ],
+  "size": [
+   253,
+   487
+  ]
+ },
+ "wedge_shim_6_m1": {
+  "anchor": [
+   343.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_shim_6_p1": {
+  "anchor": [
+   2.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_shim_8_0": {
+  "anchor": [
+   126.5,
+   484.5
+  ],
+  "size": [
+   253,
+   487
+  ]
+ },
+ "wedge_shim_8_m1": {
+  "anchor": [
+   343.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wedge_shim_8_p1": {
+  "anchor": [
+   2.5,
+   468.5
+  ],
+  "size": [
+   346,
+   471
+  ]
+ },
+ "wheel_stock": {
+  "anchor": [
+   532.5,
+   532.5
+  ],
+  "size": [
+   1065,
+   1065
+  ]
+ }
+}

@@ -380,8 +380,9 @@ func test_ram_on_a_card_has_its_icon() -> void:
 # --- B11: the Mainframe's glyphs ------------------------------------------------------------------------
 
 func test_the_mainframe_says_what_it_does_with_glyphs() -> void:
-	assert_eq(MainframeSign.SIGN_GLYPH, StatIcon.SHOP, "a shop bag on the sign")
-	assert_eq(MainframeSign.NOTE_GLYPHS, [StatIcon.CART, StatIcon.SHRED] as Array[StringName], "a cart on BUY, a shredder on SHRED")
+	# ART-9 4A: the sign v4 has no bag or sticky notes (bible v2 §4.10); what the Mainframe does
+	# reads on its shelves' tape and the recycle bin's.
+	assert_eq(MainframeSign.LETTERS, 9, "the sign is MAINFRAME, letter by letter")
 	var scene := await _netrun()
 	DemoSetup.open_shop(RunManager.netrun)
 	scene._show_current()

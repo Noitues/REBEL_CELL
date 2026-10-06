@@ -110,15 +110,17 @@ func test_the_event_paper_holds_its_words_while_they_type_at_every_text_size() -
 		_event(scene)
 		# Typing ON: the story is still typing after the layout's frames (the clock held).
 		await BoundedWait.frozen_frames(get_tree(), 3)
-		var panel := scene._panel.find_child("EventPanel", true, false) as ZinePanel
+		# ART-9 4A: the story is on the event's CRT terminal (bible v2 §4.11).
+		var panel := scene._panel.find_child("EventPanel", true, false) as TerminalWindow
 		var text := scene._panel.find_child("EventText", true, false) as RichTextLabel
-		assert_not_null(panel, "%.1f: the paper" % scale)
+		assert_not_null(panel, "%.1f: the terminal" % scale)
 		assert_true(Typing.typing(text), "%.1f: the story is typing" % scale)
 		var typing_h := text.size.y
-		assert_gte(panel.size.y + 0.5, panel.content.get_combined_minimum_size().y, "%.1f: the paper is as tall as its content" % scale)
-		assert_true(panel.get_global_rect().grow(1.0).encloses(text.get_global_rect()), "%.1f: the words are on the paper (%s in %s)" % [scale, text.get_global_rect(), panel.get_global_rect()])
-		assert_true(Rect2(Vector2.ZERO, panel.size).grow(1.0).encloses(panel.title_rect()), "%.1f: the title is on the paper" % scale)
-		assert_gt(panel.size.y, panel.title_rect().end.y + text.get_line_height(0) * 2.0, "%.1f: not a sliver: the title and two lines of words at least" % scale)
+		assert_gte(panel.size.y + 0.5, panel.body.get_combined_minimum_size().y, "%.1f: the terminal is as tall as its content" % scale)
+		assert_true(panel.get_global_rect().grow(1.0).encloses(text.get_global_rect()), "%.1f: the words are on the terminal (%s in %s)" % [scale, text.get_global_rect(), panel.get_global_rect()])
+		var title := scene._panel.find_child("EventTitle", true, false) as Control
+		assert_true(panel.get_global_rect().grow(1.0).encloses(title.get_global_rect()), "%.1f: the title is on the terminal" % scale)
+		assert_gt(panel.size.y, title.size.y + text.get_line_height(0) * 2.0, "%.1f: not a sliver: the title and two lines of words at least" % scale)
 		Typing.finish_all(get_tree())
 		await _frames(2)
 		assert_almost_eq(typing_h, text.size.y, 1.0, "%.1f: the words kept their height while they typed" % scale)
@@ -398,7 +400,8 @@ func test_the_socket_list_says_what_it_is_for() -> void:
 		assert_true(pick.get_item_text(0).begins_with(tr("Slot %d: %s%s").split(" ")[0]), "items name the slot: %s" % pick.get_item_text(0))
 		assert_string_contains(pick.tooltip_text, "slot", "its tooltip explains it")
 		var win := row.get_parent()
-		while win != null and not (win is TerminalWindow):
+		# ART-9 4A: the socket list is on the Mainframe's pegboard (bible v2 §4.10 layout v5).
+		while win != null and not (win is TerminalWindow or win is ShopPegboard):
 			win = win.get_parent()
-		assert_true((win as Control).get_global_rect().grow(1.0).encloses(row.get_global_rect()), "%.1f: inside FIRMWARE" % scale)
+		assert_true((win as Control).get_global_rect().grow(1.0).encloses(row.get_global_rect()), "%.1f: on the pegboard" % scale)
 		await _close(scene)

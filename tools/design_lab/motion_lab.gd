@@ -189,6 +189,10 @@ const DEMOS := {
 	&"route_node_reveal": ["netrun", "route_heat"], &"route_heat_orbit": ["netrun", "route_heat"], &"route_searchlight": ["netrun", "route_heat"],
 	&"jack_terminal_type": ["jack_link", "stage"], &"jack_link_rain": ["jack_link", "stage"], &"jack_crt_collapse": ["jack_link", "stage"],
 	&"jack_wheel_slap": ["jack_link", "stage"], &"jack_wheel_spin": ["jack_link", "stage"], &"jack_lens": ["jack_link", "stage"],
+	# ART-9 4A: the MAINFRAME's sign takeover and rain on its facade, the stock wheel's spin, the
+	# loot sheet's peel and the event's CAM feed, on the real pieces.
+	&"mainframe_takeover": ["screen", "takeover"], &"mainframe_rain": ["screen", "rain"],
+	&"shop_wheel_spin": ["screen", "stock_wheel"], &"loot_peel": ["screen", "peel"], &"event_cam_noise": ["screen", "cam"],
 	# ART-6 3A (raid presentation): on the HQ's real raid pages.
 	&"raid_mark_write": ["hq", "raid"], &"raid_mark_hold": ["hq", "raid"], &"raid_mark_wipe": ["hq", "raid"],
 	&"raid_breached_write": ["hq", "raid_breached"], &"raid_bits_burst": ["hq", "raid_breached"],
@@ -737,13 +741,56 @@ func _play_screen(what: String) -> void:
 					if w != null:
 						(w.body.get_child(k + 1) as Button).grab_focus())
 			length = MENU_STEP * 4.0
-		"mainframe":
-			var sign := MainframeSign.new()
-			sign.position = Vector2(300, 90)
-			sign.size = Vector2(230, 560)
-			_screen_host.add_child(sign)
-			sign.warm_up()
-			length = Motion.delay_of(&"mainframe_trace") + Motion.seconds(&"mainframe_trace")
+		"mainframe", "takeover", "rain":
+			# ART-9 4A: the sign on its facade (rain on the rain facade).
+			var facade := MainframeFacade.new(&"rain" if what == "rain" else &"night")
+			facade.position = Vector2.ZERO
+			facade.size = Vector2(1280 - PANEL_W, 720)
+			_screen_host.add_child(facade)
+			if what == "takeover":
+				facade.sign.take_over()
+				length = MainframeSign.takeover_frames(MainframeSign.SEQUENCE_ORDER[0]).size() / maxf(1.0, Motion.amplitude(&"mainframe_takeover"))
+			else:
+				facade.sign.warm_up()
+				length = Motion.delay_of(&"mainframe_trace") + Motion.seconds(&"mainframe_trace")
+		"stock_wheel":
+			var wheel := SliceStockWheel.new()
+			wheel.size = Vector2(1280 - PANEL_W, 720)
+			wheel.hub = Vector2((1280 - PANEL_W) * 0.5, 820)
+			_screen_host.add_child(wheel)
+			for k in 3:
+				var it := ShopItem.new("SHIM %d" % (4 + k), -1, "", k).on_shelf(ShopItem.Shelf.SLICE, 1.0, [&"shim_6", &"shim_8", &"shim_10"][k])
+				it.slice_type = RC.SliceType.SHIM
+				it.slice_output = 4 + k
+				it.with_price(100)
+				wheel.add_item(it, k, 3)
+				it.with_buy("BUY")
+			wheel.spin_in()
+			length = Motion.delay_of(&"shop_wheel_spin") + Motion.seconds(&"shop_wheel_spin")
+		"peel":
+			var sheet := LootSheet.new("LOOT SHEET // FIGHT WON // PICK 1 OF 3", "", "x1 CARD TAKEN")
+			sheet.position = Vector2(140, 220)
+			_screen_host.add_child(sheet)
+			for i in 3:
+				var card := ZineCard.new(["OVERCLOCK", "JAM", "CACHE"][i], i + 1, "Deal 8. Nudge +1.", i)
+				card.hotkey = ""
+				sheet.row.add_child(card)
+			await get_tree().process_frame
+			await get_tree().process_frame
+			if not is_instance_valid(sheet):
+				return
+			var first := sheet.row.get_child(1) as ZineCard
+			var at := first.get_global_rect()
+			sheet.peel(Rect2(at.position - sheet.global_position, at.size), first.accent)
+			FlightFx.fly(self, first, _hud.icon_point(StatIcon.CARDS), &"loot_pick", "", Motion.amplitude(&"loot_pick"))
+			first.modulate.a = 0.0
+			length = Motion.seconds(&"loot_peel") + Motion.seconds(&"loot_pick")
+		"cam":
+			var feed := CamFeed.new("CAM 04  LOCKED WARD", Palette.CORP_SOLACE)
+			feed.position = Vector2(200, 200)
+			feed.size = Vector2(420, 300)
+			_screen_host.add_child(feed)
+			length = 2.0
 		"buy", "pick", "loot", "flap":
 			var row := HBoxContainer.new()
 			row.position = Vector2(160, 300)

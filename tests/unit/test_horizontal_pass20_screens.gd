@@ -622,8 +622,8 @@ func test_every_operative_has_its_own_face() -> void:
 # --- #24 kit leftovers, #25 demo profile ------------------------------------------------------
 
 func test_mainframe_sign_and_unused_kit_classes() -> void:
-	assert_false(MainframeSign.NOTES.has("SELL"), "the Mainframe sells nothing back")
-	assert_eq(MainframeSign.PINK, Palette.CELL_PINK)
+	# ART-9 4A: the Mainframe sells nothing back: its clerk says NO REFUNDS.
+	assert_false(load("res://scripts/ui/netrun_scene.gd").CLERK_WORDS.contains("SELL"), "the Mainframe sells nothing back")
 	for f in ["raid_board_view", "drip_label", "neon_sign", "neon_tag", "screen_header"]:
 		assert_false(FileAccess.file_exists("res://scripts/ui/kit/%s.gd" % f), "%s removed" % f)
 

@@ -80,11 +80,11 @@ func test_netrun_panels_are_zine_styled() -> void:
 	assert_true(stickers.get_child(0) is ZineCard)
 	(stickers.get_child(0) as ZineCard).pressed.emit()
 	assert_true(s.run.operative.deck.has(&"twist"), "clicking the sticker takes the card")
-	# Event: paper for a street voice, a dark strip for DISPATCH.
+	# Event (ART-9 4A, bible v2 §4.11): a CRT terminal (corp paper only for a corp memo), none zined.
 	s.run.event_id = &"ev_leash_on_the_floor"
 	s.run.phase = RunState.Phase.EVENT
 	scene._show_current()
-	assert_true(scene._panel.find_child("EventPanel", true, false) is ZinePanel)
+	assert_true(scene._panel.find_child("EventPanel", true, false) is CrtWindow, "the story is on a CRT terminal")
 	s.run.event_id = &"ev_dispatch_early_reply"
 	scene._show_current()
 	var strip: Node = scene._panel.find_child("EventPanel", true, false)

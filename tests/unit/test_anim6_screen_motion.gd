@@ -252,7 +252,8 @@ func test_paper_drops_and_a_refresh_does_not_reenter() -> void:
 	var scene := await _netrun()
 	_live()
 	_to_event(scene)
-	assert_eq(PageTransition.look_of(scene._panel), PageTransition.Look.PAPER, "the event's note is paper")
+	# ART-9 4A (bible v2 §4.11): the event is a CRT terminal: it comes in as glass.
+	assert_eq(PageTransition.look_of(scene._panel), PageTransition.Look.GLASS, "the event's terminal is glass")
 	assert_true(PageTransition.running(scene._panel))
 	PageTransition.settle(scene)
 	# The same screen rebuilt (as the Mainframe after a purchase) just shows.
@@ -388,7 +389,7 @@ func test_a_mainframe_purchase_flies_and_the_state_is_the_purchase() -> void:
 	assert_eq(s.run.cycles, cycles - price, "paid")
 	assert_eq(s.run.operative.deck.size(), deck + 1, "the card is in the deck")
 	assert_true(s.run.operative.deck.has(card_id))
-	assert_true(scene._panel.find_child("MainframeSign", true, false).warming() == false, "the Mainframe does not warm up again")
+	assert_true(scene.find_child("MainframeSign", true, false).warming() == false, "the Mainframe does not warm up again")
 	var took := await _until(func() -> bool: return FlightFx.active_count(scene) == 0)
 	_assert_in_time(took, SETTLE_WAIT, "the flight")
 	assert_eq(FlightFx.active_count(scene), 0, "the flight ends")
@@ -449,7 +450,7 @@ func test_screen_motion_never_changes_game_state() -> void:
 	# Replay every screen motion over the same state.
 	scene._shown_screen = ""
 	scene._show_current()
-	(scene._panel.find_child("MainframeSign", true, false) as MainframeSign).warm_up()
+	(scene.find_child("MainframeSign", true, false) as MainframeSign).warm_up()
 	scene.hud.stats.items = [["CYCLES", "1", ""]]
 	scene._refresh_status()
 	Dialogue.say(RC.Voice.DISPATCH, "No state changes here.")
