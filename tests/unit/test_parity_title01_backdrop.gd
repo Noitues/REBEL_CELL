@@ -120,19 +120,66 @@ func test_loot_and_event_ask_for_the_blurred_city_and_nothing_else_does() -> voi
 
 ## TITLE-01b (designer 2026-10-05): the backdrop's own grade (saturation, gain, haze lift that
 ## grows out of focus) lives in its look; the city's shared grade (the Grid's) is untouched.
+## TITLE-01c (designer 2026-10-05: the lively city): the backdrop runs its own copy of the
+## city motion, denser and brighter at the same speed; the shipped motion (the Grid's) is
+## untouched; the sky lanes are round 26 v4's sixteen road shapes; the lights survive the blur.
+func test_the_backdrop_city_is_lively_and_the_grids_motion_is_untouched() -> void:
+	var look := _look()
+	var shipped := CityMotionConfigData.shipped()
+	var gap0 := shipped.car_gap
+	var c := BlurredCityBackdrop.motion_config(look)
+	assert_ne(c, shipped, "a copy")
+	assert_eq(shipped.car_gap, gap0, "the shipped motion is unchanged")
+	assert_gt(look.traffic_density, 1.0, "denser traffic than the Grid's")
+	assert_almost_eq(c.car_gap, shipped.car_gap / look.traffic_density, 0.0001)
+	assert_almost_eq(c.street_gap, shipped.street_gap / look.traffic_density, 0.0001)
+	# Speed (BU / s) = gaps per loop x gap / loop: the same as the Grid's (to rounding).
+	var v0 := float(shipped.gaps_per_loop.x) * shipped.car_gap
+	var v1 := float(c.gaps_per_loop.x) * c.car_gap
+	assert_almost_eq(v1, v0, shipped.car_gap * 0.5, "the cars keep their speed")
+	assert_almost_eq(c.far_dot, shipped.far_dot * look.traffic_light_scale, 0.0001, "bigger lights")
+	assert_almost_eq(c.streak_length.y, shipped.streak_length.y * look.traffic_light_scale, 0.0001, "longer streaks")
+	var neutral := CityBackdropLook.new()
+	assert_eq(BlurredCityBackdrop.motion_config(neutral), shipped, "a neutral look runs the shipped motion")
+	assert_eq(CitySkyLanes.ROAD_NAMES.size(), 16, "the sky lanes are v4's sixteen road shapes")
+	assert_gt(look.light_keep, 0.0, "the lights are kept through the blur")
+	var shader := FileAccess.get_file_as_string("res://shaders/city/city_tilt_shift.gdshader")
+	assert_true(shader.contains("light_keep") and shader.contains("brightest"), "the shader keeps the brightest tap's light")
+
+
+## Loot and event (designer 2026-10-05: less blur, a little brighter): the page's words still
+## read over the worst city the overlay look leaves behind them, on the event's terminal glass.
+func test_the_overlay_pages_read_over_their_brighter_city() -> void:
+	var overlay := (load("res://scripts/ui/netrun_scene.gd") as GDScript).get_script_constant_map()["BLURRED_CITY_LOOK"] as CityBackdropLook
+	var title_look := _look()
+	assert_lt(overlay.blur_px, title_look.blur_px, "less blur than the title")
+	var size := Vector2(1280, 720)
+	# The event's terminal and the loot sheet sit in the middle of the page.
+	var page := Rect2(Vector2(0, 130), Vector2(1064, 380))
+	var city := overlay.worst_behind(page, size)
+	for g: Color in [Palette.TERMINAL_BG, Color(Palette.CRT_GLASS_TOP, 0.94)]:
+		var bg := Palette.over(city, g)
+		for ink: Color in [Palette.TEXT_HI, Palette.TEXT_MID]:
+			assert_gte(Palette.contrast(ink, bg), TEXT_MIN, "%s on the page glass over the city" % ink.to_html(false))
+
+
 func test_the_backdrop_grade_is_its_own() -> void:
 	var look := _look()
 	assert_gt(look.grade_lift.r, look.grade_lift.b, "a pink haze, not a blue one")
 	assert_gt(look.haze_out_of_focus, 0.0, "hazier where blurred")
 	var uv := Vector2(0.8, 0.1)
-	var c := Color(0.2, 0.4, 0.6)
+	var c0 := Color(0.2, 0.4, 0.6)
+	# The kept light first (a flat city: the brightest tap is the pixel itself).
+	var keep := look.light_keep * (1.0 - look.focus_at(uv))
+	var c := Color(c0.r + keep * maxf(c0.r - look.light_threshold, 0.0), c0.g + keep * maxf(c0.g - look.light_threshold, 0.0),
+		c0.b + keep * maxf(c0.b - look.light_threshold, 0.0))
 	var luma := c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722
 	var s := Color(lerpf(luma, c.r, look.grade_saturation), lerpf(luma, c.g, look.grade_saturation), lerpf(luma, c.b, look.grade_saturation))
 	var lift := 1.0 + look.haze_out_of_focus * (1.0 - look.focus_at(uv))
 	var k := look.field_at(uv)
 	var want := Color((s.r * look.grade_gain.r + look.grade_lift.r * lift) * k, (s.g * look.grade_gain.g + look.grade_lift.g * lift) * k,
 		(s.b * look.grade_gain.b + look.grade_lift.b * lift) * k)
-	var got := look.shown(c, uv)
+	var got := look.shown(c0, uv)
 	for i in 3:
 		assert_almost_eq(got[i], want[i], 0.0001, "shown channel %d" % i)
 	var shader := FileAccess.get_file_as_string("res://shaders/city/city_tilt_shift.gdshader")

@@ -36,8 +36,14 @@ const MODEL_WAIT_FRAMES := 2400
 const SETTLE_FRAMES := 90
 const PERF_SECONDS_DEFAULT := 4.0
 
+## A motion strip's frame step (ms; round 33's gif: 80 ms a frame).
+const STRIP_STEP_MS := 80
+
 var _out := ""
 var _perf_s := PERF_SECONDS_DEFAULT
+## Frames per shot (--strip=N: a motion strip) and the raw city without the tilt-shift (--raw).
+var _strip := 1
+var _raw := false
 
 
 func _ready() -> void:
@@ -49,6 +55,10 @@ func _ready() -> void:
 			names.assign(a.trim_prefix("--states=").split(",", false))
 		elif a.begins_with("--perf="):
 			_perf_s = float(a.trim_prefix("--perf="))
+		elif a.begins_with("--strip="):
+			_strip = int(a.trim_prefix("--strip="))
+		elif a == "--raw":
+			_raw = true
 	if _out != "":
 		DirAccess.make_dir_recursive_absolute(_out)
 	Settings.path = "user://title_backdrop_capture_settings.json"
@@ -111,13 +121,22 @@ func _state(n: String, s: Array) -> void:
 		await get_tree().process_frame
 	print("TITLECAP state=%s blurred=%s city_in=%s corp=%s waited=%d" % [n, blurred != null and blurred.visible,
 		blurred.city_in() if blurred != null else false, blurred.corp if blurred != null else &"", waited])
+	if _raw and blurred != null:
+		(blurred.get_node("TiltShift") as CanvasItem).visible = false
+		await get_tree().process_frame
 	if kind.begins_with("perf"):
 		await _probe(n, blurred)
 	elif _out != "":
-		var img := get_viewport().get_texture().get_image()
-		var path := "%s/%s.png" % [_out, n]
-		img.save_png(path)
-		print("TITLECAP shot %s %dx%d" % [path, img.get_width(), img.get_height()])
+		# A motion strip: `_strip` frames `STRIP_STEP_MS` apart (real time), else one still.
+		for k in maxi(_strip, 1):
+			if k > 0:
+				var until := Time.get_ticks_msec() + STRIP_STEP_MS
+				while Time.get_ticks_msec() < until:
+					await get_tree().process_frame
+			var img := get_viewport().get_texture().get_image()
+			var path := "%s/%s%s.png" % [_out, n, "" if _strip <= 1 else "_f%02d" % k]
+			img.save_png(path)
+			print("TITLECAP shot %s %dx%d" % [path, img.get_width(), img.get_height()])
 	root.queue_free()
 	await get_tree().process_frame
 	await get_tree().process_frame

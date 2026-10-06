@@ -60,6 +60,18 @@ const LUMA := Vector3(0.2126, 0.7152, 0.0722)
 @export var grade_lift: Color = Color(0, 0, 0)
 @export var haze_out_of_focus: float = 0.0
 
+@export_group("Lively city (TITLE-01c: the traffic reads through the blur)")
+## Point lights kept through the blur (a bokeh: round 33's out-of-focus lights stay bright
+## blobs): where the view is blurred, the brightest blur tap's light above `light_threshold`
+## is added back at `light_keep` (0: none). Before the grade.
+@export var light_keep: float = 0.0
+@export var light_threshold: float = 0.45
+## This backdrop's own city motion (a copy of the shipped CityMotionConfigData; the Grid's is
+## untouched): sky-lane and street cars `traffic_density` times as dense at the same speed, their
+## head dots, lines and streaks `traffic_light_scale` times as big (1, 1: the shipped motion).
+@export var traffic_density: float = 1.0
+@export var traffic_light_scale: float = 1.0
+
 
 ## True when city quality tier `tier` takes the 3D city and a renderer can draw it.
 func city_mode(tier: int, can_render: bool) -> bool:
@@ -85,8 +97,12 @@ func field_at(uv: Vector2) -> float:
 ## The colour a city pixel `c` shows at view share `uv` after the grade and the darkening
 ## (the shader's output for that pixel, blur aside).
 func shown(p_c: Color, uv: Vector2) -> Color:
-	var luma := p_c.r * LUMA.x + p_c.g * LUMA.y + p_c.b * LUMA.z
-	var c := Color(lerpf(luma, p_c.r, grade_saturation), lerpf(luma, p_c.g, grade_saturation), lerpf(luma, p_c.b, grade_saturation))
+	# A flat city: every blur tap is `p_c`, so the brightest tap is `p_c` too.
+	var keep := light_keep * (1.0 - focus_at(uv))
+	var lit := Color(p_c.r + keep * maxf(p_c.r - light_threshold, 0.0), p_c.g + keep * maxf(p_c.g - light_threshold, 0.0),
+		p_c.b + keep * maxf(p_c.b - light_threshold, 0.0))
+	var luma := lit.r * LUMA.x + lit.g * LUMA.y + lit.b * LUMA.z
+	var c := Color(lerpf(luma, lit.r, grade_saturation), lerpf(luma, lit.g, grade_saturation), lerpf(luma, lit.b, grade_saturation))
 	var lift := 1.0 + haze_out_of_focus * (1.0 - focus_at(uv))
 	var k := field_at(uv)
 	return Color((c.r * grade_gain.r + grade_lift.r * lift) * k, (c.g * grade_gain.g + grade_lift.g * lift) * k,

@@ -40,14 +40,25 @@ const float W_CENTRE = 0.16;
 const float W_INNER = 0.09;
 const float W_OUTER = 0.05;
 
-vec3 soft_at(vec2 uv, vec2 px) {
+// TITLE-01c: point lights kept through the blur (CityBackdropLook.light_keep / light_threshold).
+uniform float light_keep = 0.0;
+uniform float light_threshold = 0.45;
+// The kept lights are read this share of the way down the blur's mip chain: a soft glow, not a
+// sharp copy of every lit edge.
+const float LIGHT_LOD_SHARE = 0.5;
+
+// The soft copy; `brightest` gets the brightest inner-ring tap (the lights near the pixel, read
+// LIGHT_LOD_SHARE down the mip chain: a car's streak stays a streak-shaped glow, not a smear).
+vec3 soft_at(vec2 uv, vec2 px, inout vec3 brightest) {
 	float r = sigma_px * RING_PER_SIGMA;
 	vec2 step_uv = px * r;
 	float lod = log2(max(r * 0.5, 1.0));
 	vec3 acc = textureLod(screen_texture, uv, lod).rgb * W_CENTRE;
 	for (int k = 0; k < 6; k++) {
 		float a = TAU * float(k) / 6.0;
-		acc += textureLod(screen_texture, uv + vec2(cos(a), sin(a)) * step_uv * 0.5, lod).rgb * W_INNER;
+		vec2 d_in = vec2(cos(a), sin(a)) * step_uv * 0.5;
+		acc += textureLod(screen_texture, uv + d_in, lod).rgb * W_INNER;
+		brightest = max(brightest, textureLod(screen_texture, uv + d_in, lod * LIGHT_LOD_SHARE).rgb);
 		float a2 = a + PI / 6.0;
 		acc += textureLod(screen_texture, uv + vec2(cos(a2), sin(a2)) * step_uv, lod).rgb * W_OUTER;
 	}
@@ -57,9 +68,11 @@ vec3 soft_at(vec2 uv, vec2 px) {
 void fragment() {
 	vec2 uv = UV;
 	vec3 sharp = textureLod(screen_texture, SCREEN_UV, 0.0).rgb;
-	vec3 soft = soft_at(SCREEN_UV, SCREEN_PIXEL_SIZE);
+	vec3 brightest = sharp;
+	vec3 soft = soft_at(SCREEN_UV, SCREEN_PIXEL_SIZE, brightest);
 	float band = pow(clamp(1.0 - abs(uv.y - focus_centre) / max(focus_half, 0.0001), 0.0, 1.0), focus_power);
 	vec3 col = mix(soft, sharp, band);
+	col += light_keep * (1.0 - band) * max(brightest - vec3(light_threshold), vec3(0.0));
 	col = mix(vec3(dot(col, LUMA)), col, grade_saturation);
 	col = col * grade_gain + grade_lift * (1.0 + haze_out_of_focus * (1.0 - band));
 	float side = pow(clamp(1.0 - uv.x / max(side_reach, 0.0001), 0.0, 1.0), side_power);
