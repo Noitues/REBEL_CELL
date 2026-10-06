@@ -1,15 +1,44 @@
 class_name StickerSweepQueue
 extends RefCounted
-## "Gloss 0.22 at rest with one slow sweep on one sticker at a time" (ART_BIBLE v2 §1.2;
-## round 19 sticker_lib19 gloss_k). Stickers that take part (`VinylSticker.ambient_sweep`)
-## join here; the queue hands the sweep to one of them at a time, in the order they joined
-## (deterministic: never dictionary order), with `sticker_gloss_sweep`'s delay of rest
-## between two sweeps. View only: no state of the game is read or changed.
+## The sticker sweep scheduler (designer 2026-10-06, art-pass review D22: "one slow sweep on one sticker at a
+## time"; ART_BIBLE v2 1.2). Of the stickers that take part (`ambient_sweep`) ONE is the screen's primary verb
+## and only it sweeps: first the one that is named primary (rank 0), else the first pink verb (rank 1), else
+## the first to join (rank 2); ties by join order, never dictionary order. One rainbow sweep runs on it every
+## 4 to 6 seconds (the period is drawn from the `sticker_sweep_period` entry's range with a seeded stream, no
+## global randomness) and never two at once. A member offers `sweep_rank() -> int`, `sweep_ready() -> bool`
+## and `run_sweep() -> float`. View only: no state of the game is read or changed.
+
+## The period's entry: delay = the shortest period, duration = the longest (seconds); amplitude = the seed.
+const PERIOD := &"sticker_sweep_period"
+const STREAM := &"sticker_sweep"
 
 static var _members: Array[int] = []
-static var _current: int = 0
 static var _sweeping: int = 0
 static var _next_at_ms: int = 0
+static var _rng: RandomNumberGenerator = null
+## Confirm dialogs that are open: while any is, no sticker sweeps (destructive confirms stay calm).
+static var _calm: Array[int] = []
+
+
+## A confirm dialog opened (`node` is it): no scheduled sweep until it closes.
+static func calm_enter(node: Object) -> void:
+	if not _calm.has(node.get_instance_id()):
+		_calm.append(node.get_instance_id())
+
+
+## The confirm dialog closed.
+static func calm_leave(node: Object) -> void:
+	_calm.erase(node.get_instance_id())
+
+
+## True while a confirm dialog is open.
+static func is_calm() -> bool:
+	var i := _calm.size() - 1
+	while i >= 0:
+		if not is_instance_id_valid(_calm[i]):
+			_calm.remove_at(i)
+		i -= 1
+	return not _calm.is_empty()
 
 
 ## Adds `sticker` to the queue (once).
@@ -19,7 +48,7 @@ static func join(sticker: Object) -> void:
 		_members.append(id)
 
 
-## Removes `sticker`; when it was sweeping, the turn passes on.
+## Removes `sticker`; when it was sweeping, the turn is free again.
 static func leave(sticker: Object) -> void:
 	var id := sticker.get_instance_id()
 	var i := _members.find(id)
@@ -28,29 +57,50 @@ static func leave(sticker: Object) -> void:
 	_members.remove_at(i)
 	if _sweeping == id:
 		_sweeping = 0
-	if _current >= _members.size():
-		_current = 0
 
 
-## True when it is `sticker`'s turn to sweep now (it then sweeps; `done` hands the turn on).
-static func take_turn(sticker: Object, now_ms: int) -> bool:
+## The member that is the screen's primary verb now (null when none can sweep): the lowest rank among the
+## members that are ready, in join order.
+static func primary() -> Object:
 	_prune()
-	if _members.is_empty() or _sweeping != 0 or now_ms < _next_at_ms:
+	var best: Object = null
+	var best_rank := 1 << 30
+	for id in _members:
+		var o := instance_from_id(id)
+		if o == null or not o.has_method(&"sweep_ready") or not bool(o.call(&"sweep_ready")):
+			continue
+		var r := int(o.call(&"sweep_rank"))
+		if r < best_rank:
+			best_rank = r
+			best = o
+	return best
+
+
+## True when it is `sticker`'s turn to sweep now (it then sweeps; `done` hands the turn back).
+static func take_turn(sticker: Object, now_ms: int) -> bool:
+	if _sweeping != 0 or now_ms < _next_at_ms or is_calm():
 		return false
-	if _members[_current % _members.size()] != sticker.get_instance_id():
+	if primary() != sticker:
 		return false
 	_sweeping = sticker.get_instance_id()
 	return true
 
 
-## The sweeping sticker is done: the next one sweeps after `rest_ms`.
-static func done(sticker: Object, now_ms: int, rest_ms: int) -> void:
+## The sweeping sticker is done: the next sweep comes one period (4 to 6 s from the start of this one) later.
+static func done(sticker: Object, now_ms: int, sweep_seconds: float) -> void:
 	if _sweeping != sticker.get_instance_id():
 		return
 	_sweeping = 0
-	_next_at_ms = now_ms + rest_ms
-	if not _members.is_empty():
-		_current = (_current + 1) % _members.size()
+	_next_at_ms = now_ms + int(maxf(0.0, next_period() - sweep_seconds) * 1000.0)
+
+
+## The next period (seconds at the current speed) from the entry's range, by the seeded stream.
+static func next_period() -> float:
+	var lo := Motion.delay_of(PERIOD)
+	var hi := maxf(lo, Motion.seconds(PERIOD))
+	if _rng == null:
+		_rng = RngStreams.make_stream(int(Motion.amplitude(PERIOD)), STREAM)
+	return _rng.randf_range(lo, hi)
 
 
 ## The sticker sweeping now (0 when none): at most one at a time.
@@ -64,12 +114,13 @@ static func size() -> int:
 	return _members.size()
 
 
-## Forgets every member (tests).
+## Forgets every member and restarts the stream (tests).
 static func reset() -> void:
 	_members.clear()
-	_current = 0
 	_sweeping = 0
 	_next_at_ms = 0
+	_rng = null
+	_calm.clear()
 
 
 static func _prune() -> void:
@@ -80,5 +131,3 @@ static func _prune() -> void:
 				_sweeping = 0
 			_members.remove_at(i)
 		i -= 1
-	if _current >= _members.size():
-		_current = 0

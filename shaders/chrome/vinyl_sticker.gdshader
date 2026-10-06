@@ -79,10 +79,12 @@ void fragment() {
 		c = vec4(rgb * v_bright, c.a);
 	}
 	if (rainbow > 0.0 && sweep > -1000.0) {
-		float d = abs((v_local.x - sweep) + v_local.y * 0.45);
-		float band = 1.0 - smoothstep(0.0, sweep_width * 1.6, d);
-		vec3 foil = 0.5 + 0.5 * cos(6.28318 * (vec3(0.0, 0.33, 0.67) + (v_local.x - sweep) * 0.012));
-		c.rgb = mix(c.rgb, foil, band * 0.75 * rainbow * c.a);
+		// ONE narrow band at 45 degrees (x + y = sweep), `sweep_width` its half width across it, soft rainbow across the
+		// band only, added over the vinyl and the letters (`rainbow` carries the band's alpha).
+		float dd = (v_local.x + v_local.y - sweep) * 0.70710678 / max(sweep_width, 1.0);
+		float band = 1.0 - smoothstep(0.0, 1.0, abs(dd));
+		vec3 foil = clamp(pow(0.5 + 0.5 * cos(6.28318 * (vec3(0.0, 0.33, 0.67) + dd * 0.7)), vec3(0.55)) * 1.3, 0.0, 1.0);
+		c.rgb = clamp(mix(c.rgb, foil, clamp(band * rainbow * 1.6, 0.0, 1.0) * c.a) + vec3(band * rainbow * 0.25 * c.a), 0.0, 1.0);
 	}
 	float g = dot(c.rgb, vec3(0.299, 0.587, 0.114));
 	c.rgb = mix(c.rgb, vec3(g), grey);

@@ -332,8 +332,8 @@ func _column(p_name: String) -> VBoxContainer:
 
 
 ## A sticker `p_name` in `col`: the word (caps), its colour `fill`, its press, and under it a
-## grease-pencil note when given. Stickers always show their colour; the focused one lifts and
-## runs the kit's gloss sweep (ambient while it has focus). Returns the sticker button.
+## grease-pencil note when given. Stickers always show their colour; the focused one lifts and curls (the peel-back; the one rainbow sweep is the queue's)
+## (the one rainbow sweep belongs to StickerSweepQueue). Returns the sticker button.
 func _cell(col: VBoxContainer, p_name: String, word: String, fill: int, px: int, on_pressed: Callable,
 		note: String = "", ink: Color = Palette.PENCIL_PLAN, tilt: float = 0.0, beside: bool = false) -> HoloSticker:
 	var cell := VBoxContainer.new()
@@ -344,8 +344,6 @@ func _cell(col: VBoxContainer, p_name: String, word: String, fill: int, px: int,
 	b.name = p_name
 	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	b.pressed.connect(on_pressed)
-	b.focus_entered.connect(func() -> void: b.sticker.ambient_sweep = true)
-	b.focus_exited.connect(func() -> void: b.sticker.ambient_sweep = false)
 	var row: Container = cell
 	if beside:
 		row = HBoxContainer.new()

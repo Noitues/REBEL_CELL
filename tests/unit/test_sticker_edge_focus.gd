@@ -2,9 +2,9 @@ extends GutTest
 ## M14 parity STICKER_EDGE (designer 2026-10-05): (1) the die-cut edge of every lettered sticker is
 ## proportional to its lettering and inside the concept's range (round 33 ui31.sticker: border 12 px on
 ## the 1920 board; edge / body height 0.08 for the title's hero verbs up to 0.27 for CANCEL at 28 px);
-## (2) focus on EVERY sticker kind is a rainbow (holo-foil) gloss sweep plus the corner curl, the sticker
-## keeping its fill, no lime halo or brackets, and under reduce effects (and headless) a static sheen
-## plus the curl as the end state.
+## (2) focus on EVERY sticker kind is the PEEL-BACK only (lift and corner curl), the sticker keeping its
+## fill, no lime halo or brackets and NO rainbow (designer 2026-10-06, B1d: the rainbow sweep is the one
+## scheduled sweep, see test_sticker_sweep_scheduler); under reduce effects the curl is the end state.
 
 ## The concept's edge / body-height range for lettered stickers.
 const CONCEPT_MIN := 0.07
@@ -107,7 +107,7 @@ func test_the_baked_stickers_have_the_thin_proportional_edge() -> void:
 		assert_true(ResourceLoader.exists(VerbSticker.ART_DIR + key + ".png"), "%s is baked" % key)
 
 
-func test_focus_on_the_kit_sticker_is_a_rainbow_sweep_and_the_curl() -> void:
+func test_focus_on_the_kit_sticker_is_the_peel_back_and_no_rainbow() -> void:
 	for fill in [VinylSticker.Fill.PINK, VinylSticker.Fill.RED, VinylSticker.Fill.YELLOW, VinylSticker.Fill.WHITE, VinylSticker.Fill.INK, VinylSticker.Fill.HOLO]:
 		var v := VinylSticker.new()
 		v.shape = VinylSticker.Shape.WORD
@@ -118,17 +118,20 @@ func test_focus_on_the_kit_sticker_is_a_rainbow_sweep_and_the_curl() -> void:
 		assert_eq(v.rainbow, 0.0, "fill %d at rest: the plain gloss" % fill)
 		v.set_state(VinylSticker.State.HOVER)
 		v.complete_motion()
-		assert_eq(v.rainbow, 1.0, "fill %d focused: the rainbow sheen" % fill)
-		assert_gte(v.fold, VinylSticker.HOVER_CURL, "fill %d focused: the corner curls" % fill)
+		assert_eq(v.rainbow, 0.0, "fill %d focused: no rainbow" % fill)
+		assert_eq(v.gloss_k, VinylSticker.GLOSS_REST, "fill %d focused: the rest gloss, no sweep" % fill)
+		assert_false(v.sweep_running(), "focus starts no sweep")
+		assert_eq(v.peel_back, 1.0, "fill %d focused: the corner curls" % fill)
 		assert_eq(v.fill, fill, "the sticker keeps its own fill")
-		assert_eq((v._mat.get_shader_parameter(&"rainbow") as float), 1.0, "the shader gets it")
+		assert_eq((v._mat.get_shader_parameter(&"rainbow") as float), 0.0, "the shader gets none")
 		v.set_state(VinylSticker.State.REST)
 		v.complete_motion()
 		assert_eq(v.rainbow, 0.0, "back to the plain gloss at rest")
 		assert_eq(v.fold, 0.0)
+		assert_eq(v.peel_back, 0.0, "the peel-back lets go")
 
 
-func test_the_static_end_state_under_reduce_effects() -> void:
+func test_the_curl_end_state_under_reduce_effects() -> void:
 	Settings.set_reduce_effects(true)
 	var v := VinylSticker.new()
 	v.shape = VinylSticker.Shape.WORD
@@ -136,10 +139,9 @@ func test_the_static_end_state_under_reduce_effects() -> void:
 	add_child_autofree(v)
 	await _frames(1)
 	v.set_state(VinylSticker.State.HOVER)
-	assert_eq(v.rainbow, 1.0)
-	assert_eq(v.gloss_k, VinylSticker.RAINBOW_STATIC_K, "a static sheen")
-	assert_eq(v.gloss_pos, VinylSticker.RAINBOW_STATIC_POS)
-	assert_gte(v.fold, VinylSticker.HOVER_CURL, "and the curl: focus reads without colour")
+	assert_eq(v.rainbow, 0.0)
+	assert_eq(v.gloss_k, VinylSticker.GLOSS_REST, "the rest gloss is the static sheen")
+	assert_eq(v.peel_back, 1.0, "the curl: focus reads without colour")
 	assert_false(v.motion_running(), "nothing moves")
 
 
@@ -171,11 +173,11 @@ func test_focus_on_every_sticker_wrapper_reaches_the_vinyl_or_the_shader() -> vo
 		if b is HoloSticker:
 			v = (b as HoloSticker).sticker
 		if v != null:
-			assert_eq(v.state, VinylSticker.State.HOVER, "%s: focus puts the vinyl in HOVER (rainbow sweep + curl)" % b.get_class())
-			assert_eq(v.rainbow, 1.0)
+			assert_eq(v.state, VinylSticker.State.HOVER, "%s: focus puts the vinyl in HOVER (the peel-back)" % b.get_class())
+			assert_eq(v.rainbow, 0.0)
 		else:
-			assert_eq((b.get("_mat") as ShaderMaterial).get_shader_parameter(&"rainbow"), 1.0, "%s: the drawn sticker's shader runs the rainbow" % b.get("art_key"))
+			assert_ne((b.get("_mat") as ShaderMaterial).get_shader_parameter(&"rainbow"), 1.0, "%s: the drawn sticker's shader runs no rainbow on focus" % b.get("art_key"))
 			assert_true(bool(b.get("_focused")), "and the curl is drawn")
 	art.release_focus()
 	await _frames(2)
-	assert_eq((art._mat.get_shader_parameter(&"rainbow") as float), 0.0, "off focus: plain again")
+	assert_false(bool(art.get("_focused")), "off focus: no curl")

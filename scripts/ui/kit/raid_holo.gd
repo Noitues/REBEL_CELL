@@ -5,7 +5,8 @@ extends PanelContainer
 ## 4 px scanlines, its slow bands, the RGB split on the edge only, the corp seal cracked by a
 ## red fracture and the DECRYPTED stamp. A container (the raid's column lays it out): the
 ## holo is its backdrop, its words are Labels in `body` under the header (the title, the
-## corp's net and the Cell's key). Its scrim is local (a panel beside the map, not a modal).
+## corp's net and the Cell's key). Its scrim is local (a panel beside the map, not a modal):
+## the holo's own 0.88 backing (B1c, D17).
 
 const KEY_LINE := "DECRYPTED BY THE CELL  //  KEY %s" # TR
 ## The header's height (px at 1.0) and the room round the words.
@@ -16,9 +17,6 @@ const PAD := 12.0
 ## threats strip leaves it its width, and without the strip the holo's foot keeps its height.
 ## The gap round it (px at 1.0).
 const STAMP_GAP := 2.0
-## The local scrim round the plate (px) and its alpha (§1.2: near opaque, 0.88).
-const SCRIM_OUT := 4.0
-const SCRIM_ALPHA := 0.88
 
 var skin: RaidSkin
 var title: String = ""
@@ -46,6 +44,7 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_key: 
 	holo.scrim = false
 	holo.corp_color = skin.hue
 	holo.seal_letter = skin.corp_name().left(1)
+	holo.corporation = p_corporation  # B1c (D17): the seal carries the corp's emblem, cracked
 	holo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(holo, false, Node.INTERNAL_MODE_FRONT)
 	body = VBoxContainer.new()
@@ -61,7 +60,7 @@ func add_line(text: String, col: Color = Palette.AUTO, step: int = UiTheme.CAPTI
 	l.text = text
 	l.add_theme_font_override("font", Palette.mono())
 	l.add_theme_font_size_override("font_size", UiTheme.font_px(step))
-	l.add_theme_color_override("font_color", col if col.a > 0.0 else skin.holo.lerp(Palette.TEXT_HI, 0.55))
+	l.add_theme_color_override("font_color", col if col.a > 0.0 else DecryptedHoloPanel.ink(skin.holo))  # B1c-b: the tint on the words
 	UiWrap.whole_words(l)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	body.add_child(l)
@@ -81,10 +80,6 @@ func _notification(what: int) -> void:
 
 
 var _head: Control = null
-
-func _draw() -> void:
-	var r := Rect2(Vector2.ZERO, size)
-	draw_rect(r.grow(SCRIM_OUT * _k), Color(Palette.NIGHT_SKY, SCRIM_ALPHA))
 
 
 ## Parity RAID-03: where the header's words end (local y): the title, the corp's net, the key.
@@ -136,11 +131,11 @@ func _header(on: Control) -> void:
 	var title_px := UiTheme.font_px(UiTheme.LABEL)
 	var x := PAD * k
 	var room := size.x - x * 2.0  # parity RAID-03: the stamp is under the words now
-	on.draw_string(f, Vector2(x, PAD * 0.5 * k + f.get_ascent(title_px)), title, HORIZONTAL_ALIGNMENT_LEFT, room, title_px, skin.holo.lerp(Palette.TEXT_HI, 0.35))
+	on.draw_string(f, Vector2(x, PAD * 0.5 * k + f.get_ascent(title_px)), title, HORIZONTAL_ALIGNMENT_LEFT, room, title_px, DecryptedHoloPanel.ink(skin.holo))
 	var meta_px := UiTheme.font_px(UiTheme.CAPTION)
 	var mono := Palette.mono()
 	var line_y := PAD * 0.5 * k + f.get_height(title_px) + mono.get_ascent(meta_px)
-	on.draw_string(mono, Vector2(x, line_y), skin.corp_name(), HORIZONTAL_ALIGNMENT_LEFT, room, meta_px, skin.holo.lerp(Palette.TEXT_HI, 0.5))
+	on.draw_string(mono, Vector2(x, line_y), skin.corp_name(), HORIZONTAL_ALIGNMENT_LEFT, room, meta_px, DecryptedHoloPanel.ink(skin.holo))
 	if key != "":
 		on.draw_string(mono, Vector2(x, line_y + mono.get_height(meta_px)), tr(KEY_LINE) % key, HORIZONTAL_ALIGNMENT_LEFT, size.x - x * 2.0, meta_px, Palette.GAIN)
 

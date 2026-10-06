@@ -9,6 +9,8 @@
 // Every effect is a uniform so a view (or high contrast) can zero it.
 shader_type canvas_item;
 #include "res://shaders/lib/rc_common.gdshaderinc"
+// B1c (review D23): the faint scrolling hex dump on the glass, under the text (hexdump = 0.06).
+#include "res://shaders/kit/hex_dump.gdshaderinc"
 
 uniform int mode = 0;
 // The panel itself inside the drawn rect (px, local): x, y, w, h.
@@ -53,6 +55,8 @@ void fragment() {
 			g.rgb *= mix(0.78, 1.0, vig);
 			// faint accent wash near the edge (glass catches the edge light)
 			g.rgb += accent.rgb * (1.0 - smoothstep(0.0, 18.0, -sd)) * inner_glow * 0.5;
+			// the hex dump in the accent colour (hex_tint) at `hexdump`, panel-local
+			g.rgb = mix(g.rgb, hex_tint.rgb, hexdump * rc_hex_dump(p - panel.xy));
 			col = g;
 			// the edge line
 			float edge = 1.0 - smoothstep(edge_px - 0.5, edge_px + 0.5, -sd);

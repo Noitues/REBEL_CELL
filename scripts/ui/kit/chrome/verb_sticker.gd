@@ -20,6 +20,7 @@ enum Fill { PINK, YELLOW, BLUE, GLITCH, GREY }
 const SHADER := preload("res://shaders/chrome/vinyl_sticker.gdshader")
 ## Motion entries: hover growth + gloss sweep, the press squash, the glitch bursts.
 const HOVER_MOTION := &"sticker_hover"
+const SWEEP_MOTION := &"sticker_gloss_sweep"
 const PRESS_MOTION := &"sticker_press"
 const GLITCH_MOTION := &"title_glitch_burst"
 ## Geometry as shares of the lettering size (round 33 sticker_lib: keyline 5 px, extrude
@@ -103,14 +104,18 @@ func set_art_scale(k: float) -> VerbSticker:
 	_fit()
 	return self
 var _art_rest: Texture2D = null
+## The baked art's opaque body (texture px).
+var _art_body: Rect2 = Rect2()
+## The baked art's image (its die-cut silhouette and edge colour for the curl's corner cover).
+var _art_img: Image = null
 var _art_bursts: Array[Texture2D] = []
 ## Hovered or focused (the rainbow sheen and the curl show).
 var _focused: bool = false
 ## The corner curl's size as a share of the sticker's shorter side, the sheen's band width as a share of its
 ## height, and where the static sheen (no motion) stands across its width.
-const CURL_SHARE := 0.22
-const SWEEP_WIDTH_SHARE := 0.35
-const STATIC_SHEEN_AT := 0.5
+const CURL_BACK_LIGHTEN := 0.35
+## The flap's soft shadow below the fold (px).
+const CURL_SHADOW_PX := 3.0
 
 
 ## The baked art key for a screen-title word ("OPTIONS" -> "title_options"), or "" when the
@@ -134,10 +139,30 @@ func _load_art() -> void:
 	if art_key == "" or not ResourceLoader.exists(ART_DIR + art_key + ".png"):
 		return
 	_art_rest = load(ART_DIR + art_key + ".png") as Texture2D
+	_art_img = _art_rest.get_image()
+	_art_body = _opaque_rect(_art_img)  # the opaque body in texture px (the art has a shadow margin)
 	var k := 0
 	while ResourceLoader.exists(ART_DIR + "%s_burst_%d.png" % [art_key, k]):
 		_art_bursts.append(load(ART_DIR + "%s_burst_%d.png" % [art_key, k]) as Texture2D)
 		k += 1
+
+
+## The rect of the pixels of `img` that are mostly opaque (alpha over 0.5), in px; the whole image when none is.
+static func _opaque_rect(img: Image) -> Rect2:
+	var x0 := img.get_width()
+	var y0 := img.get_height()
+	var x1 := -1
+	var y1 := -1
+	for y in img.get_height():
+		for x in img.get_width():
+			if img.get_pixel(x, y).a > 0.5:
+				x0 = mini(x0, x)
+				x1 = maxi(x1, x)
+				y0 = mini(y0, y)
+				y1 = maxi(y1, y)
+	if x1 < 0:
+		return Rect2(Vector2.ZERO, Vector2(img.get_size()))
+	return Rect2(Vector2(x0, y0), Vector2(x1 - x0 + 1, y1 - y0 + 1))
 
 
 func _init(p_text: String = "", p_fill: int = Fill.PINK, p_size: float = 40.0, p_tilt: float = 0.0, p_art: String = "") -> void:
@@ -179,9 +204,10 @@ func complete_motion() -> void:
 	if _scale_tween != null and _scale_tween.is_valid():
 		_scale_tween.kill()
 		scale = _scale_to
-	if _sweep_tween != null and _sweep_tween.is_valid():
+	if sweep_running():
 		_sweep_tween.kill()
-		_mat.set_shader_parameter(&"sweep", SWEEP_OFF)
+		_sweep_tween = null
+		_finish_sweep()
 
 
 func _ready() -> void:
@@ -191,16 +217,23 @@ func _ready() -> void:
 		vinyl.name = "Vinyl"
 		vinyl.fill = VinylSticker.Fill.YELLOW if fill == Fill.YELLOW else VinylSticker.Fill.PINK
 		vinyl.tilt_deg = tilt
+		vinyl.ambient_sweep = true
+		vinyl.sweep_primary = sweep_primary
 		vinyl.seed = hash(text) % 997
 		add_child(vinyl)
 		_fit()
 	Settings.changed.connect(_refit_later)
 	resized.connect(_pivot)
 	_pivot()
-	set_process(fill == Fill.GLITCH)
+	set_process(true)
+
+
+func _enter_tree() -> void:
+	StickerSweepQueue.join(self)
 
 
 func _exit_tree() -> void:
+	StickerSweepQueue.leave(self)
 	if Settings.changed.is_connected(_refit_later):
 		Settings.changed.disconnect(_refit_later)
 
@@ -279,8 +312,6 @@ func set_label(t: String) -> void:
 
 func _hot(on: bool) -> void:
 	_grow(on or has_focus())
-	if on and not disabled:
-		_sweep()
 	queue_redraw()
 
 
@@ -296,17 +327,9 @@ func _grow(on: bool) -> void:
 	if vinyl != null:
 		vinyl.set_state(VinylSticker.State.DISABLED if disabled else (VinylSticker.State.HOVER if on else VinylSticker.State.REST))
 		return
-	# Focus / hover (designer 2026-10-05): the gloss band runs in holo-foil colours (the shader's
-	# `rainbow`) and the corner curls (_draw_curl); with no sweep playing (reduce effects) the sheen stands.
+	# Focus / hover (designer 2026-10-06, B1d): the peel-back only (the corner curl, _draw_curl, and the
+	# grow); the rainbow gloss is the one scheduled sweep (run_sweep), never focus.
 	_focused = on and not disabled
-	_mat.set_shader_parameter(&"rainbow", 1.0 if _focused else 0.0)
-	_mat.set_shader_parameter(&"sweep_width", size.y * SWEEP_WIDTH_SHARE)
-	if _sweep_tween != null:
-		_sweep_tween.kill()
-	if _focused and not Motion.live(HOVER_MOTION):
-		_mat.set_shader_parameter(&"sweep", size.x * STATIC_SHEEN_AT)
-	elif not _focused:
-		_mat.set_shader_parameter(&"sweep", SWEEP_OFF)
 	queue_redraw()
 	var to := Vector2.ONE * (Motion.amplitude(HOVER_MOTION) if on and not disabled else 1.0)
 	if _scale_tween != null:
@@ -333,22 +356,70 @@ func _press(down: bool) -> void:
 	_scale_tween = Motion.run(PRESS_MOTION, self, ^"scale", to)
 
 
-## One gloss sweep across the lettering (§4.13: hover = gloss sweep); none when the motion
-## does not play.
-func _sweep() -> void:
-	if vinyl != null or not Motion.live(HOVER_MOTION):
-		return
+## StickerSweepQueue interface (drawn and baked art; the kit sticker joins through its own vinyl).
+@export var ambient_sweep: bool = true
+## The screen names this sticker its primary verb: the queue sweeps it before any other (rank 0).
+@export var sweep_primary: bool = false:
+	set(v):
+		sweep_primary = v
+		if vinyl != null:
+			vinyl.sweep_primary = v
+
+
+## Order of the primary pick: 0 named, 1 pink, 2 the rest.
+func sweep_rank() -> int:
+	if sweep_primary:
+		return 0
+	return 1 if fill == Fill.PINK else 2
+
+
+## It may take the turn: shown, enabled, drawn here (the kit sticker's vinyl sweeps for itself).
+func sweep_ready() -> bool:
+	return vinyl == null and is_visible_in_tree() and not disabled
+
+
+func sweep_running() -> bool:
+	return _sweep_tween != null and _sweep_tween.is_valid() and _sweep_tween.is_running()
+
+
+## One rainbow gloss sweep across the lettering (`sticker_gloss_sweep`, run by StickerSweepQueue on the
+## primary verb); none when the motion does not play. Returns its seconds.
+func run_sweep() -> float:
+	if vinyl != null or not Motion.live(SWEEP_MOTION):
+		_finish_sweep()
+		return 0.0
 	if _sweep_tween != null:
 		_sweep_tween.kill()
-	var w := size.x
-	_mat.set_shader_parameter(&"sweep", -w * 0.3)
+	var d := Motion.seconds(SWEEP_MOTION)
+	# ONE narrow 45 degree band (x + y = sweep): its width a share of the sticker's width (the entry's `delay`), the
+	# alpha the entry's amplitude; it crosses from off one corner to off the other.
+	var half := Motion.entry(SWEEP_MOTION).delay * size.x * 0.5
+	var from := -half * 2.0
+	var to := size.x + size.y + half * 2.0
+	_mat.set_shader_parameter(&"sweep_width", half)
+	_mat.set_shader_parameter(&"rainbow", Motion.amplitude(SWEEP_MOTION))
+	_mat.set_shader_parameter(&"sweep", from)
 	_sweep_tween = create_tween()
-	_sweep_tween.tween_method(func(x: float) -> void: _mat.set_shader_parameter(&"sweep", x), -w * 0.3, w * 1.3,
-		Motion.seconds(HOVER_MOTION) * 3.0)
-	_sweep_tween.tween_callback(func() -> void: _mat.set_shader_parameter(&"sweep", SWEEP_OFF))
+	_sweep_tween.tween_method(func(x: float) -> void: _mat.set_shader_parameter(&"sweep", x), from, to, d)
+	_sweep_tween.tween_callback(_finish_sweep)
+	return d
+
+
+func _finish_sweep() -> void:
+	_mat.set_shader_parameter(&"sweep", SWEEP_OFF)
+	_mat.set_shader_parameter(&"rainbow", 0.0)
+	StickerSweepQueue.done(self, Time.get_ticks_msec(), Motion.seconds(SWEEP_MOTION))
+
+
+func _process_sweep() -> void:
+	if ambient_sweep and vinyl == null and StickerSweepQueue.take_turn(self, Time.get_ticks_msec()):
+		run_sweep()
 
 
 func _process(delta: float) -> void:
+	_process_sweep()
+	if fill != Fill.GLITCH:
+		return
 	if fill != Fill.GLITCH or not Motion.live(GLITCH_MOTION):
 		if _clock != 0.0:
 			_clock = 0.0
@@ -440,11 +511,13 @@ func _draw() -> void:
 		_draw_fist(Rect2(Vector2(origin.x + head_w, top), Vector2(slot_w - head_w, cap)).grow(key * 0.8), key)
 	else:
 		draw_string(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.STICKER_FILL_MARKER)
-	_draw_curl()
+	var edge := die + key
+	var drawn_body := Rect2(Vector2(origin.x - edge, top - edge), Vector2(w + ext + edge * 2.0, cap + ext + edge * 2.0))
+	_draw_curl(drawn_body, func(y_rel: float) -> float: return rounded_right_edge(drawn_body, edge, y_rel), Palette.STICKER_DIE_CUT)
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
 
 
-## The kit sticker's frame: its disabled state follows the Button's, the lime halo round
+## The concept art: its disabled state follows the Button's, the lime halo round
 ## its body on focus (designer 2026-10-05: no halo, no brackets: the kit sticker's own rainbow sheen and curl).
 func _draw_kit_frame() -> void:
 	var want := VinylSticker.State.DISABLED if disabled else vinyl.state
@@ -462,22 +535,87 @@ func _draw_art() -> void:
 	var k := ART_TO_GAME * art_scale * clampf(Settings.text_scale, 1.0, SCALE_MAX)
 	var sz := tex.get_size() * k
 	draw_texture_rect(tex, Rect2((size - sz) * 0.5, sz), false)
-	_draw_curl()
+	var origin_px := (size - sz) * 0.5
+	var body := Rect2(origin_px + _art_body.position * k, _art_body.size * k)
+	_draw_curl(body, func(y_rel: float) -> float: return origin_px.x + _art_right_edge(int(_art_body.position.y + y_rel / k)) * k, _art_edge_colour())
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
 
 
 ## The focus curl for the drawn and baked stickers: the top right corner peels back (a paper-backed
 ## flap over the corner and its cast shadow; the kit sticker's own curl is the shader's fold).
-func _draw_curl() -> void:
+func _draw_curl(body: Rect2, right_edge: Callable, cover_colour: Color) -> void:
 	if not _focused:
 		return
-	var c := minf(size.x, size.y) * CURL_SHARE
-	var tr := Vector2(size.x, 0.0)
-	var flap := PackedVector2Array([tr + Vector2(-c, 0.0), tr + Vector2(0.0, c), tr + Vector2(-c, c)])
-	var shade := PackedVector2Array([tr + Vector2(-c, c), tr + Vector2(0.0, c), tr + Vector2(-c, c * 1.35)])
+	var c := VinylSticker.peel_leg(body.size.x, get_viewport_rect().size.y)  # round 44: a fixed 45 degree fold
+	var tr := body.position + Vector2(body.size.x, 0.0)
+	# 1. the corner the fold takes away is covered with the die-cut's colour, clipped to the die-cut shape
+	var cover := corner_cover(body, c, right_edge)
+	if cover.size() >= 3:
+		draw_colored_polygon(cover, cover_colour)
+	# 2. the flap (paler adhesive back) and its soft 2-3 px shadow on top
+	var flap := curl_flap(body, c)
+	var shade := PackedVector2Array([tr + Vector2(-c, c), tr + Vector2(0.0, c), tr + Vector2(-c, c + CURL_SHADOW_PX)])
 	draw_colored_polygon(shade, Color(Palette.VINYL_INK, SHADOW_ALPHA * 0.5))
-	draw_colored_polygon(flap, Palette.VINYL_BACKING)
+	draw_colored_polygon(flap, Palette.VINYL_BACKING.lightened(CURL_BACK_LIGHTEN))
 	draw_polyline(PackedVector2Array([flap[0], flap[1]]), Color(Palette.STICKER_DIE_CUT, 0.9), 1.0)
+
+
+## The curl's flap (the folded-over triangle, below the 45 degree fold line) on a sticker whose body is `body`, for a
+## fold leg `c`: the corner's mirror image. Points: top edge, side edge, fold inner.
+static func curl_flap(body: Rect2, c: float) -> PackedVector2Array:
+	var tr := body.position + Vector2(body.size.x, 0.0)
+	return PackedVector2Array([tr + Vector2(-c, 0.0), tr + Vector2(0.0, c), tr + Vector2(-c, c)])
+
+
+## The corner the fold takes away: the part of the top-right corner triangle (top edge, fold line, side) that is
+## inside the die-cut shape. `right_edge` gives the shape's right edge x at `y_rel` px below the body's top. A
+## polygon draw (no texture cutting): it needs no more than the shape's own outline.
+static func corner_cover(body: Rect2, c: float, right_edge: Callable) -> PackedVector2Array:
+	var xr := body.position.x + body.size.x
+	var steps := maxi(4, ceili(c))
+	var left := PackedVector2Array()
+	var right := PackedVector2Array()
+	for i in steps + 1:
+		var y := c * float(i) / float(steps)
+		var xl := xr - c + y  # the fold line
+		var xe := minf(float(right_edge.call(y)), xr)
+		if xe > xl:
+			left.append(Vector2(xl, body.position.y + y))
+			right.append(Vector2(xe, body.position.y + y))
+	if left.is_empty():
+		return PackedVector2Array()
+	right.reverse()
+	left.append_array(right)
+	return left
+
+
+## A rounded rectangle's right edge (radius `r`) at `y_rel` px below its top.
+static func rounded_right_edge(body: Rect2, r: float, y_rel: float) -> float:
+	var xr := body.position.x + body.size.x
+	if y_rel >= r or r <= 0.0:
+		return xr
+	var dy := r - y_rel
+	return xr - r + sqrt(maxf(0.0, r * r - dy * dy))
+
+
+## The baked art's right edge (texture px) on row `y`: the last mostly-opaque pixel, +1.
+func _art_right_edge(y: int) -> float:
+	if _art_img == null:
+		return 0.0
+	y = clampi(y, 0, _art_img.get_height() - 1)
+	for x in range(_art_img.get_width() - 1, -1, -1):
+		if _art_img.get_pixel(x, y).a > 0.5:
+			return float(x + 1)
+	return 0.0
+
+
+## The die-cut edge's colour of the baked art (a pixel just inside its right edge, a third of the way down).
+func _art_edge_colour() -> Color:
+	var y := int(_art_body.position.y + _art_body.size.y * 0.33)
+	var x := int(_art_right_edge(y)) - 2
+	var col := _art_img.get_pixel(clampi(x, 0, _art_img.get_width() - 1), clampi(y, 0, _art_img.get_height() - 1))
+	col.a = 1.0
+	return col
 
 
 ## SIMULATE: white letters with a pink split on the left and a green split on the right and

@@ -109,6 +109,7 @@ const SCREENS := [
 	["grid_orbital", "_s_grid_orbital", "City Grid against Orbital."],
 	["grid_rebel_cell", "_s_grid_rebel_cell", "City Grid against REBEL_CELL."],
 	["raid_setup", "_s_raid_setup", "Raid setup with one asset deployed."],
+	["raid_setup_meridian", "_s_raid_setup_meridian", "Raid setup against Meridian (B1c: an orange corp's THREAT INTEL holo)."],
 	["raid_drag_asset", "_s_raid_drag_asset", "main: an asset carried from the Armory onto the raid map."],
 	["raid_playout", "_s_raid_playout", "Raid playout, mid-way."],
 	["raid_result", "_s_raid_result", "Raid playout at its end (RESULT)."],
@@ -960,8 +961,15 @@ func _s_grid_rebel_cell() -> void:
 	await _grid_of(&"rebel_cell")
 
 
-func _raid_setup(deploy: bool = true) -> Node:
-	var hq: Node = await _hq_with_campaign()
+func _raid_setup(deploy: bool = true, corp_id: StringName = &"") -> Node:
+	var hq: Node
+	if corp_id == &"":
+		hq = await _hq_with_campaign()
+	else:
+		_unlock_all_corps()
+		hq = _open(HQ)
+		await _frames(2)
+		hq.new_campaign(7, 0, RunManager.DEFAULT_HOME, RunManager.DEFAULT_CLASS, corp_id)
 	_prepare_raid(deploy)
 	hq.show_raid()
 	await _until(func() -> bool: return hq.arrival_ready(), "the raid camera")
@@ -971,6 +979,10 @@ func _raid_setup(deploy: bool = true) -> Node:
 
 func _s_raid_setup() -> void:
 	await _raid_setup()
+
+
+func _s_raid_setup_meridian() -> void:
+	await _raid_setup(true, &"meridian")
 
 
 ## Main (ANIM-4): an asset carried from the Armory onto the raid map, mid-path (the HQ's

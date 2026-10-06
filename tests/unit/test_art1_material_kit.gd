@@ -114,7 +114,7 @@ func test_sticker_states_show_their_end_states_at_once_headless() -> void:
 	assert_false(s.motion_running(), "headless never waits")
 	assert_almost_eq(s.scale.x, Motion.amplitude(&"sticker_hover"), 0.001, "hover grows to the entry's scale")
 	assert_almost_eq(s.lift, VinylSticker.HOVER_LIFT, 0.001, "hover lifts 0.6")
-	assert_almost_eq(s.fold, VinylSticker.HOVER_CURL, 0.001, "hover curls the corner 0.12")
+	assert_eq(s.peel_back, 1.0, "hover peels the corner back")
 	s.set_state(VinylSticker.State.PRESSED)
 	assert_almost_eq(s.scale.y, Motion.amplitude(&"sticker_press"), 0.001, "pressed squashes y")
 	assert_almost_eq(s.scale.x, VinylSticker.PRESS_X, 0.001, "and x to 1.04")
@@ -175,10 +175,10 @@ func test_one_gloss_sweep_on_one_sticker_at_a_time() -> void:
 	assert_eq(StickerSweepQueue.size(), 2)
 	assert_true(StickerSweepQueue.take_turn(a, 0), "the first to join sweeps first")
 	assert_false(StickerSweepQueue.take_turn(b, 0), "never two at once")
-	StickerSweepQueue.done(a, 100, 4000)
-	assert_false(StickerSweepQueue.take_turn(b, 200), "the rest between sweeps (the entry's delay)")
-	assert_true(StickerSweepQueue.take_turn(b, 4100), "then the next one")
-	assert_false(StickerSweepQueue.take_turn(a, 4100))
+	StickerSweepQueue.done(a, 100, 1.4)
+	assert_false(StickerSweepQueue.take_turn(a, 200), "the rest between sweeps")
+	assert_false(StickerSweepQueue.take_turn(b, 10000), "only the primary sweeps (designer 2026-10-06): never b")
+	assert_true(StickerSweepQueue.take_turn(a, 10000), "the primary again after its period")
 
 
 func test_the_verb_sticker_sits_over_its_system_word_which_stays_readable() -> void:

@@ -12,7 +12,6 @@ var label: RichTextLabel
 
 func _init(p_title: String = "", min_size: Vector2 = Vector2(240, 120), p_accent: Color = Palette.NET_CYAN) -> void:
 	super(p_title, p_accent)
-	hex = false
 	label = RichTextLabel.new()
 	label.name = "Text"
 	label.bbcode_enabled = true
