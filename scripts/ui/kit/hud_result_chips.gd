@@ -13,7 +13,7 @@ const CHIP_H := 26.0
 const NUMBER_FONT := 20
 const GAP := 6.0
 const PAD := 5.0
-const ICON_BOX := 16.0
+const ICON_BOX := 20.0  # S-COMBAT-HUD (CMB-12): as tall as the number (combat_typical_v4), it read as a tiny box at 16
 const ICON_GAP := 3.0
 ## The lethal skull's size as a share of the chip's height.
 const SKULL_SHARE := 0.28
