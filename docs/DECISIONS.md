@@ -10282,3 +10282,12 @@ _(Claude Code: add questions here instead of guessing on design.)_
   check it ends the bake when the painter or viewport is freed (record dropped, slot given back,
   queue pumped). `NeonCity` frees its submitted chunk canvas items on PREDELETE (the leaked
   RIDs). No change to how the city looks. Test: `tests/unit/test_fix_bake.gd` (fast tier).
+
+
+## Parity fix — jack, daemon tray, panel_in scan band (designer group ruling)
+
+Rulings 2026-10-05: netrun pages match the concepts; motion: add the scan band to `panel_in`, keep everything else as main.
+- **JACK-01:** no concept, bible line or storyboard frame shows the CONNECTING cover, so main's large destination line (ANIM-R6 B13, tested) stays. The check at 1.0 / 1.6 / 2.0 found a defect: `Fx._show_destination` measured the name with the Label's minimum size, which lagged one text size behind, so the first jack after a size change was off-centre. It now measures from the display face. Test `test_the_connecting_line_lays_out_at_every_text_size`. (`scripts/autoload/fx.gd`, outside the owned list: the line lives there, not in `jack_sequence.gd`.)
+- **DAEMON-01:** the card follows the art pass (ported from art-pass W8c): the name once (no `Daemon <name>` line; the Daemon's own description), the head, sigil, name and width scale with the text size. The family colour rule stays (concept). Test `test_the_daemon_card_says_the_name_once_at_every_text_size`.
+- **MOTION-06:** `PageTransition` (where `panel_in` is played; `terminal_window.gd` / `menu_motion.gd` do not play it) gets a `ScanBand`: a cyan band with a paper-white leading edge crossing the page's glass top to bottom from the end of the fade to the end of `panel_in`, following the sliding page, clipped to the glass (GLASS_META windows). It plays on the `panel_in` entry's duration (comment updated in `ui_motion.tres`, no new id), is freed by a skip (MotionSkip `complete_motion`) and never exists under reduce effects or reduce motion. The existing one-frame `panel_crt_roll` is unchanged. Tests `test_panel_in_plays_a_scan_band_over_its_own_entry`, `test_a_skip_removes_the_scan_band`, `test_no_scan_band_under_reduce_effects` (all in `tests/unit/test_parity_jack_motion.gd`, fast tier).
+- Dropped tests: none. Sheet: `docs/art_review/PARITY/fixes/JACK_MOTION.jpg`.

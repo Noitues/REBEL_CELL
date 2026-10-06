@@ -34,9 +34,6 @@
 		"res://scripts/ui/kit/daemon_sigil.gd": {
 			"color": 2
 		},
-		"res://scripts/ui/kit/daemon_tray.gd": {
-			"draw_size": 1
-		},
 		"res://scripts/ui/kit/deck_view.gd": {
 			"color": 1
 		},

@@ -567,7 +567,7 @@ amplitude = 0.5
 tier = 2
 
 ; ---- 4.17 Screen transitions ----
-; panel slides in from the edge; px
+; panel slides in from the edge; px (MOTION-06: a bright scan band sweeps down the glass once it is shown, over the rest of this duration)
 [sub_resource type="Resource" id="m_panel_in"]
 script = ExtResource("1_entry")
 id = &"panel_in"

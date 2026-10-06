@@ -244,7 +244,7 @@ Ref: build `jack_in`; concept `round37_netrun/transition_storyboard.png`.
 
 **JACK-01 (P3) CONNECTING TO.** Build: one small cyan line `CONNECTING TO SOLACE BIOSYSTEMS`. Main:
 small `CONNECTING TO` over a large cream stencil corp name. Same grid and scan band. View: main's is
-stronger. Likely file: `scripts/ui/kit/jack_sequence.gd`. Decision:
+stronger. Likely file: `scripts/ui/kit/jack_sequence.gd`. Decision: Kept as main (no concept or ART_BIBLE line shows the CONNECTING cover; the round 37 storyboard stops at the terminal, wheel and lens; the large destination is ANIM-R6 B13, a readability fix for the smallest type in the biggest beat). Fixed the real layout defect the check found: the name's width came from a Label minimum size one text size stale, so the first jack after a text-size change sat off-centre; now measured from the face (designer group ruling 2026-10-05; DECISIONS "Parity fix — jack, daemon tray, panel_in scan band", sheet fixes/JACK_MOTION.jpg)
 
 ### Loot (`loot.jpg`)
 Refs: build `loot`; concept `round32_shop_reward/reward_screen_v2.png` (LOCKED reward).
@@ -471,7 +471,7 @@ CLEAN SIGNAL card).
 **DAEMON-01 (P3) Daemon tray popup.** Build and main: the same small `DAEMON / CASCADE` terminal
 under the top-right Daemon badge; main's reads `Daemon Cascade` (doubled word). Concept: in combat,
 a CRT rack on the left with a hover card (name, rarity, trigger, family colour, TILE STATES). The
-tray outside combat has no concept. Likely file: `scripts/ui/kit/daemon_tray.gd`. Decision:
+tray outside combat has no concept. Likely file: `scripts/ui/kit/daemon_tray.gd`. Decision: Follow the build / concept card: name once (the doubled `Daemon Cascade` line is gone, the card shows the Daemon's own text), head, name and width grow with the text size (designer group ruling 2026-10-05; DECISIONS "Parity fix — jack, daemon tray, panel_in scan band", sheet fixes/JACK_MOTION.jpg)
 
 ### Combat (`combat_*.jpg`, `tutorial.jpg`)
 Refs: art pass build `combat_*` (M13: bright teal wireframe city, pink/teal sticker-ring wheels,
@@ -977,7 +977,7 @@ static ones (CMB-02/04/06). In-context strips needed only if the designer wants 
 **MOTION-06 (P3) panel_in.** Build: the panel arrives with a bright scan band across it at ~133 ms.
 Main: the panel appears at ~133 ms with no band (its kit's panel-in is a plain fade/scale). Likely
 file: `scripts/ui/kit/terminal_window.gd` / `menu_motion.gd` (`panel_in` entry in
-`content/config/ui_motion.tres`). Decision:
+`content/config/ui_motion.tres`). Decision: Added the scan band: a bright band sweeps down the glass once it is shown, over the rest of `panel_in`'s own duration; skip and reduce effects end it (designer group ruling 2026-10-05; DECISIONS "Parity fix — jack, daemon tray, panel_in scan band", sheet fixes/JACK_MOTION.jpg)
 
 **MOTION-07 (P2) enemy_break.** Same beat timing (break at ~533 ms, the red hit line flies by
 ~667 ms). Main's in-context demo shows the combat backdrop **lit** (a coloured, readable 3D city)

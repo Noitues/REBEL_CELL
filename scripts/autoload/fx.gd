@@ -737,8 +737,10 @@ func _show_destination(vp: Vector2) -> float:
 	var width := 0.0
 	while true:
 		connect_dest.add_theme_font_size_override("font_size", fs)
-		connect_dest.size = Vector2.ZERO
-		connect_dest.size = connect_dest.get_combined_minimum_size()
+		# JACK-01: measured from the face itself: the Label's minimum size lagged one text
+		# size behind (the first jack after a text size change sat off-centre).
+		var face := Palette.display()
+		connect_dest.size = Vector2(face.get_string_size(connect_dest.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, face.get_height(fs))
 		side = fs * CONNECT_ICON_SHARE if _destination_tier > 0 else 0.0
 		width = connect_dest.size.x + (side + CONNECT_ICON_GAP if side > 0.0 else 0.0)
 		if width <= room or fs <= low:

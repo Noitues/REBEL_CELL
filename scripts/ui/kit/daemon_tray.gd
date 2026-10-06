@@ -6,6 +6,14 @@ extends Control
 
 signal closed
 
+## Art pass W8c (§4.2, §12): the card's width, its head's height and the name's gap from the
+## sigil at text scale 1.0 (px; they grow with the text). The body is narrower than the card
+## by the panel's inner gap (UiTheme.SP_M).
+const CARD_W := 320.0
+const HEAD_H := 56.0
+const NAME_X := 62.0
+const SIGIL_R := 24.0
+
 var ids: Array[StringName] = []
 var lookup: ContentLookup
 var _strip: PanelContainer
@@ -79,18 +87,28 @@ func show_card(id: StringName, pinned: bool) -> void:
 	_card_id = id
 	_card = TerminalWindow.new(tr("DAEMON") + (tr(" // PINNED") if pinned else ""), DaemonSigil.color_of(id))
 	_card.name = "DaemonCard"
-	_card.custom_minimum_size.x = 320
-	_card.position = Vector2(minf(_strip.position.x, 1270.0 - 340.0), _strip.position.y + 62)
+	var s := Settings.text_scale
+	_card.custom_minimum_size.x = CARD_W * s
+	_card.position = Vector2(minf(_strip.position.x, 1270.0 - CARD_W * s - UiTheme.SP_M), _strip.position.y + 62)
 	var head := Control.new()
-	head.custom_minimum_size = Vector2(300, 56)
+	head.name = "DaemonHead"
+	head.custom_minimum_size = Vector2(CARD_W * s - UiTheme.SP_M, HEAD_H * s)
+	var title := (TextDb.t(d, "display_name") if d != null else String(id))
+	# DAEMON-01: the name at the `title` step x the text size, centred on the sigil.
 	head.draw.connect(func() -> void:
-		DaemonSigil.draw_sigil(head, Vector2(28, 28), 24, id, d.rarity if d != null else RC.Rarity.UNCOMMON)
-		head.draw_string(Palette.display(), Vector2(62, 36), (TextDb.t(d, "display_name") if d != null else String(id)).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.PAPER))
+		var fs := UiTheme.font_px(UiTheme.TITLE)
+		DaemonSigil.draw_sigil(head, Vector2(HEAD_H, HEAD_H) * s * 0.5, SIGIL_R * s, id, d.rarity if d != null else RC.Rarity.UNCOMMON)
+		var f := Palette.display()
+		head.draw_string(f, Vector2(NAME_X * s, (head.size.y + f.get_ascent(fs) - f.get_descent(fs)) * 0.5), title.to_upper(),
+			HORIZONTAL_ALIGNMENT_LEFT, head.size.x - NAME_X * s, fs, Palette.PAPER))
 	_card.body.add_child(head)
 	var desc := Label.new()
+	desc.name = "DaemonText"
 	UiWrap.whole_words(desc)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
-	desc.custom_minimum_size.x = 300
-	desc.text = Codex.describe(d) if d != null else String(id)
+	desc.custom_minimum_size.x = CARD_W * s - UiTheme.SP_M
+	# DAEMON-01: the card's words never repeat its title ("CASCADE" over "Daemon Cascade"):
+	# the Daemon's own text only.
+	desc.text = TextDb.t(d, "description") if d != null else String(id)
 	_card.body.add_child(desc)
 	add_child(_card)
 
