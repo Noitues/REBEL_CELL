@@ -470,7 +470,7 @@ windows, most of the frame near black; the scene reads much darker than both ref
 concept's lit city gives each corp its place; main's dark field makes the wheels the only colour,
 but it loses the sense of where the fight is. Likely file: `scripts/ui/arena/combat_backdrop.gd`,
 `backdrop_catalog.gd`, `content/config/city_config.tres` (exposure / light at the combat band).
-Decision:
+Decision: Follow the concept: the close-up keeps a lit blue-grey night (own look + canvas grade), every corp's HQ framed whole (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg)
 
 **CMB-02 (P1) Player wheel colour and material.** Concept D4: slices with distinct illustrated
 screen fills (attack red grid, defend teal waves, special skull, debuff purple), a bright pink outer
@@ -570,7 +570,7 @@ Decision:
 
 **BOSS-03 (P2) White bead chain on the backdrop.** Main: a chain of white blobs arcs across the
 boss backdrop between the wheels (the Solace helix's lights?) and reads as a UI element. Build:
-none. Likely file: `combat_backdrop.gd` (boss place). Decision:
+none. Likely file: `combat_backdrop.gd` (boss place). Decision: Follow the concept: the helix in its day materials, its lights sit in the pale helix, no white bead chain (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg)
 
 **BOSS-04 (P2) Phase 3 arcs.** Main phase 3: lime guard arcs, double chevrons and a `13` marker
 crowd the boss wheel's right side; build: an orange dashed arc. View: main's lime again collides
@@ -829,13 +829,13 @@ blurred. Decision:
 pale against a rainy blue-grey city, green beams, readable; the wheels sit in front. Main: the helix
 in near-black navy, a chain of white bead lights (BOSS-03), a few lit windows; the frame is
 mostly black. Same cause as CMB-01 (`combat_backdrop.gd`, the city's light at the combat band).
-Decision:
+Decision: Follow the concept: the whole helix lit pale and framed between the wheels in a lit rainy city (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg)
 
 **BACKDROP-02 (P1) Site fight backdrop (Solace).** Concept `site_solace_night.jpg`: the Site
 building (a clinic with the cross sign and helipad) lit and framed at the centre, a lit blue-grey
 city around it. Main: generic dark blocks with neon roof outlines, no Site building in view.
 Likely file: `backdrop_catalog.gd` (`place(...)` for a Site: which building and camera),
-`combat_backdrop.gd`. Decision:
+`combat_backdrop.gd`. Decision: Follow the concept: the corp's Site building stands on the Site's lot, lit and framed at the centre (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg)
 
 ### Endings: run end, campaign won / lost (`run_end*.jpg`, `campaign_*.jpg`)
 Refs: build `run_end`, `campaign_won`, `campaign_lost` (M13: a CELL BURNED / CORP DOWN stamp
@@ -917,7 +917,7 @@ file: `scripts/ui/kit/terminal_window.gd` / `menu_motion.gd` (`panel_in` entry i
 ~667 ms). Main's in-context demo shows the combat backdrop **lit** (a coloured, readable 3D city)
 for its first ~400 ms and then dropping to the near-black look of CMB-01 when the fight settles:
 the lit city exists in main and is being darkened afterwards. Useful for CMB-01 / BACKDROP-01.
-Likely file: `scripts/ui/arena/combat_backdrop.gd` (the settle / dim step). Decision:
+Likely file: `scripts/ui/arena/combat_backdrop.gd` (the settle / dim step). Decision: Fix the cause: the close-up's texture reached the shader as linear values; graded so the settled city stays lit (designer group ruling 2026-10-05: combat matches the concept; built, see DECISIONS "Parity fix — combat backdrop", sheet fixes/ARENA.jpg)
 
 **MOTION-08 (P3) victory_flash.** Build: VICTORY appears at ~267 ms over the unchanged scene.
 Main: a white flash disc on the enemy wheel at ~133 ms, VICTORY at ~267 ms, OURS NOW from ~533 ms.
