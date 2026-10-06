@@ -386,7 +386,7 @@ slice wheel, recycle bin, LEAVE).
 note's first line runs over the end of `CYCLES ONLY.` (the full stop and the Y are covered).
 Build: no clerk. Likely cause: `scripts/ui/netrun_scene.gd` `CLERK_NOTE` placement (~l.3558), the
 note anchored to the line's right instead of under it. Fix: anchor the note under the last clerk
-line, offset right, as in the concept. Decision:
+line, offset right, as in the concept. Decision: **Defect fixed, designer approved 2026-10-05, 23d1cbc** (the note under the last clerk line, offset right; DECISIONS "Parity fix — overlap defects"; sheet `fixes/SHOP-01.jpg`).
 
 **SHOP-02 (P1) Card stock faces.** Concept: pinned sticker cards with type colour (SYSTEM teal,
 WHEEL grey), a big glyph on a patterned field, type band, value and rule. Main: pinned cards with
@@ -641,7 +641,7 @@ cut by the Site label `The Genome Core` placed over it, and the red TARGET penci
 next marker. Concept: the chip sits clear under the circled HQ (bible rule: no UI over grease
 pencil). Same family on REBEL_CELL (GRID-13). View: a defect either way. Likely file:
 `scripts/ui/kit/city_map_overlay.gd` label placement (the free-space test ~l.1065) does not
-register the chip / pencil; `target_edge_marker.gd`. Decision:
+register the chip / pencil; `target_edge_marker.gd`. Decision: **Defect fixed, designer approved 2026-10-05, 6704881 + 3d67ee6** (the chip and the TARGET pencil are label obstacles at their real size and take spots clear of the other markers; sheet `fixes/GRID-03.jpg`).
 
 **GRID-04 (P2) Right column.** Build: plain terminal panels, a magenta header rule, CLAIM chips.
 Main: both panels have lime 2 px edges with the v2 `>` header and square; the site card holds
@@ -694,11 +694,11 @@ half of the map area is empty purple fog past the last block, the TARGET pencil 
 minimap, and Meridian's HQ is not in view. Halcyon and Orbital frame well; Solace and REBEL_CELL
 are fine. Build: the board fills the area. View: a defect. Likely file: `scripts/ui/kit/grid_map_view.gd`
 / the Grid camera fit (`RaidZoomFit`-style fit for the Grid band), `scripts/core/` city layout for
-Meridian's seed. Decision:
+Meridian's seed. Decision: **Defect fixed, designer approved 2026-10-05, 06b5f55 + 3d67ee6** (the fitted camera pans onto the city, nodes and TARGET pencil held on the map: about 71% city before, 81-88% after; the rest needs a zoom that cuts Sites, an open question; sheet `fixes/GRID-12.jpg`).
 
 **GRID-13 (P1) Label collisions on REBEL_CELL.** Main: `Erase the Ledger` and `Lose the Handler`
 labels touch; `The Cell's Own Patch` sits on a marker; the TARGET pencil runs under `CENTRAL
-SERVER // EXPLOITS 0/3`. Same cause as GRID-03. Decision:
+SERVER // EXPLOITS 0/3`. Same cause as GRID-03. Decision: **Defect fixed, designer approved 2026-10-05, 6704881 + 3d67ee6** (labels keep LABEL_CLEAR apart and off the markers; the chip clear of the pencil; sheet `fixes/GRID-13.jpg`).
 
 ### Raid (`raid_setup.jpg`, `raid_drag_asset.jpg`, `raid_playout.jpg`, `raid_result.jpg`, `raid_report.jpg`, `raid_interlude.jpg`)
 Refs: art pass build `raid_*` (M13: a 2D wireframe city, a terminal column on the right, paper
@@ -721,7 +721,7 @@ the pink `IF THE RAID RUNS NOW: HOME -10` disc sits on the paper's value column 
 `COMPLIA...` is cut at the right edge. Concept: stamp over the redaction bars only, no disc on the
 paper, values clear. Build: no paper (terminal panel). View: main's paper is the right look
 (concept), its placement is a defect. Likely file: `scripts/ui/kit/raid_paper.gd`,
-`corp_memo.gd`, `hq_scene.gd` (where the result disc is placed). Decision:
+`corp_memo.gd`, `hq_scene.gd` (where the result disc is placed). Decision: **Defect fixed, designer approved 2026-10-05, 9707992 + 06b5f55** (INTERCEPTED on the redactions under the rows; the disc already covered no value; the instruction line on a dark plate clear of the clip; the paper position and the disc look stay for the designer; sheet `fixes/RAID-02.jpg`).
 
 **RAID-03 (P2) Threat intel panel.** Concept: corp-tinted holo (orange for Meridian), threat lines
 A/B/C, unit sprites along the bottom. Main: corp-tinted (Solace green) holo, `DECRYPTED` stamp over
@@ -754,7 +754,7 @@ nearest valid node when the pointer is off the map. Likely file: `raid_drag_penc
 sticker is drawn over the MAP LEGEND (tilted, mid-exit) while the units move. Build: the button is
 gone once pressed. View: a defect (either its exit motion is not over at the capture frame, 2 frames
 per step, or it is left behind). Likely file: `hq_scene.gd` raid playout start / `raid_beats.gd`.
-Decision:
+Decision: **Defect fixed, designer approved 2026-10-05, 06b5f55** (START DEFENSE peels off where it was pressed: it was placed from the strip before the playout page was laid out; the red pencil arrow there is the threat route to CORE, an open question; sheet `fixes/RAID-08.jpg`).
 
 **RAID-09 (P2) Live feed and Continue.** Build: a paper `PLAYOUT` note with the steps, pink
 Continue. Main: `> LIVE RAID FEED_` terminal with a red edge, first line clipped at the top, speed
@@ -771,7 +771,7 @@ at a glance. Likely file: `scripts/ui/kit/raid_verdict.gd`, `raid_report_pencil.
 BACK TO THE GRID sticker) but the `CLASSIFIED` stamp covers the CORE row's value
 (`50 > 40 HOLDS`) and `HOSTILE HOME SERVER 40/50` is red where the concept uses red only for
 losses. Concept: the stamp sits on the redaction bars. Build: a terminal list. Likely file:
-`raid_paper.gd` (stamp placement). Decision:
+`raid_paper.gd` (stamp placement). Decision: **Defect fixed, designer approved 2026-10-05, 9707992** (CLASSIFIED on the redactions, never on the CORE row; the red HOSTILE HOME SERVER is a look call, left; sheet `fixes/RAID-11.jpg`).
 
 **RAID-12 (P3) CELL HOLDS and result disc.** Main: result disc top left plus CELL HOLDS sticker;
 concept: the sticker centre-left, no disc (the paper carries the numbers). Decision:
@@ -922,7 +922,7 @@ grey-white folder (concept: kraft), the polaroids are a flat grid, a 2D map shot
 (concept: city renders), sticky notes are plain white with blue ink (concept: coloured), the CASE
 CLOSED stamp covers `(cell 01)` and part of the STATUS line, `HEAT ... at closure 82:` cut at the
 left by the note. Build: the CELL BURNED poster. Likely file: `scripts/ui/campaign_end/` (dossier),
-`polaroid.gd`. Decision:
+`polaroid.gd`. Decision: **Defect fixed (white paper only), designer approved 2026-10-05, d4cfc16**: the white folder was the bug (the manila was loaded inside the draw call and freed before the frame rendered); held once now, the folder draws kraft (at the merge, main's ART-12 12p holder of the same textures is kept). The other differences are look calls, left for the designer; sheet `fixes/END-06.jpg`.
 
 ### Motion (`MOTION-01.jpg` … `MOTION-10.jpg`)
 Each strip: the motion lab's `--demo-anim=<id>` on both builds (Movie Maker 30 fps, one launch per

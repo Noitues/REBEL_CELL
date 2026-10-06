@@ -609,6 +609,10 @@
 			"seconds": 30.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_parity_overlaps.gd": {
+			"seconds": 38.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_art10_menus.gd": {
 			"seconds": 12.0,
 			"tier": "fast"

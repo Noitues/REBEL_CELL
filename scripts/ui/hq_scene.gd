@@ -622,6 +622,10 @@ func fight_raid() -> void:
 	# ANIM-5: the playout starts from the Grid as it stood (a view copy, read only) and the
 	# city holds its pre-raid tint until the raid has played; the result spreads at the end.
 	var before := RunManager.campaign.duplicate_state() if RunManager.campaign != null else null
+	# Parity fix (RAID-08): where START DEFENSE was, for its peel (the playout page is not laid
+	# out yet when the peel starts).
+	var start := _panel.find_child("RunRaid", true, false) as Control if _panel != null and is_instance_valid(_panel) else null
+	_start_was = start.get_global_rect() if start != null and start.is_visible_in_tree() else Rect2()
 	wireframe.city.pin_influence(CityInfluence.of(RunManager.campaign, RunManager.corporation))
 	if Motion.animating() and RunManager.campaign != null:
 		hud_home_shown = RunManager.campaign.grid.home_integrity  # ANIM-R1 M4: HOME rolls down as hits land
@@ -2209,6 +2213,7 @@ func show_grid() -> void:
 	# ART-5 5e: the Grid's city shows the campaign (Heat rig, the Cell's fist, the Site landmark).
 	wireframe.city.set_city_life(GridCityLife.of(c, corp, cfg))
 	_grid_fits = 0
+	_grid_on_city = false
 	_grid_leaned = false
 	_fit_next_frame()
 	spacer.resized.connect(_refit_grid)
@@ -2257,12 +2262,12 @@ func fit_grid_map() -> void:
 		free.size.y = maxf(1.0, area.size.y - _minimap_room().y - LegendSpot.MARGIN * 2.0 - LegendSpot.MARGIN)
 	_place_grid_minimap()
 	if _grid_fits >= GRID_FITS_MAX:
-		_grid_settled(free)
+		_grid_fitted(free, area)
 		return
 	var fit: Dictionary = wireframe.unrigged(func() -> Dictionary:
 		return LegendSpot.fit_into(city_overlay, free, GRID_ZOOM / city.scale.x, GRID_MIN_ZOOM / city.scale.x))
 	if fit.is_empty():
-		_grid_settled(free)
+		_grid_fitted(free, area)
 		return
 	_grid_fits += 1
 	var k := float(fit["zoom"])
@@ -2275,6 +2280,96 @@ func fit_grid_map() -> void:
 	var anchor := (to - (from - focus_at) * k - screen.position) / screen.size
 	_frame_city(city.scale.x * k, city.focus_grid, anchor)
 	_fit_after_redraw()  # check again under the new camera
+
+
+## Parity fix (GRID-12): the Grid's fitted frame keeps to the city. A network on the city's
+## edge (Meridian) was framed with a third of the map past the last block (fog): once the fit
+## holds every node, the camera pans (never zooms) the way that shows the most city in the map
+## `area`, only as far as keeps every node inside `free`. Once per fit; then it settles.
+func _grid_fitted(free: Rect2, area: Rect2) -> void:
+	if _grid_on_city or city_overlay == null or not is_instance_valid(city_overlay):
+		_grid_settled(free)
+		return
+	_grid_on_city = true
+	var pan: Vector2 = wireframe.unrigged(func() -> Vector2: return grid_city_pan(free, area))
+	if pan.length() < GRID_LEAN_MIN:
+		_grid_settled(free)
+		return
+	var city := wireframe.city
+	_frame_city(city.scale.x, city.focus_grid, city.focus_anchor + pan / get_global_rect().size)
+	_fit_after_redraw()  # measured again under the new camera (the fit holds; then it settles)
+
+
+## Parity fix (GRID-12): the boss's TARGET pencil (circle and word) as global rects: the
+## Grid's fit, lean and pan hold it on the map with the nodes (it sat half under the minimap
+## or the side column). Empty without a shown Central Server.
+func _grid_pencil_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if city_overlay == null or not is_instance_valid(city_overlay) or not city_overlay.is_inside_tree():
+		return out
+	var xf := city_overlay.get_global_transform()
+	for n in city_overlay.nodes:
+		if CityMapOverlay.is_boss(n) and city_overlay.marker_shown(n):
+			var l := city_overlay.boss_layout(n)
+			for key in ["circle", "word"]:
+				if l.has(key):
+					out.append(xf * (l[key] as Rect2))
+	return out
+
+
+## Parity fix (GRID-12): the pan (screen px) that shows the most of the city in the map's
+## `area` (global) while every node (icon and tier pips) stays inside `free` (global): the
+## best of GRID_CITY_STEPS² pans over the room the nodes leave, the shortest on a tie.
+func grid_city_pan(free: Rect2, area: Rect2) -> Vector2:
+	var rects := LegendSpot.node_rects(city_overlay, false)
+	rects.append_array(_grid_pencil_rects())
+	if rects.is_empty():
+		return Vector2.ZERO
+	var box := rects[0]
+	for r in rects:
+		box = box.merge(r)
+	var aim := free.grow(-LegendSpot.FIT_INSET) if free.size.x > LegendSpot.FIT_INSET * 4.0 and free.size.y > LegendSpot.FIT_INSET * 4.0 else free
+	# Per axis: the pans that hold the box in `aim` (which may move a node or the pencil back
+	# onto the map); where the box is wider than `aim`, no pan on that axis.
+	var lo := aim.position - box.position
+	var hi := aim.end - box.end
+	for axis in 2:
+		if lo[axis] > hi[axis]:
+			lo[axis] = 0.0
+			hi[axis] = 0.0
+	var best := Vector2.ZERO
+	var best_share := -1.0  # a pan in the range always wins (it may have to move the box in)
+	for i in GRID_CITY_STEPS + 1:
+		for j in GRID_CITY_STEPS + 1:
+			var d := Vector2(lerpf(lo.x, hi.x, float(i) / GRID_CITY_STEPS), lerpf(lo.y, hi.y, float(j) / GRID_CITY_STEPS))
+			var share := grid_on_city_share(area, d)
+			if share > best_share + 0.0001 or (is_equal_approx(share, best_share) and d.length() < best.length()):
+				best = d
+				best_share = share
+	return best
+
+
+## Parity fix (GRID-12): the share of the map `area`'s (global) sample points whose ground lies
+## on the city (the config's city rect), with the camera panned by `pan` screen px.
+func grid_on_city_share(area: Rect2, pan: Vector2 = Vector2.ZERO) -> float:
+	var city := wireframe.city
+	var to_page := get_global_transform().affine_inverse()
+	var cfg_rect := Rect2(CityView3D.CONFIG.city_rect)
+	var focus := city.focus_grid if city.focus_grid != Vector2.INF else Vector2.ZERO
+	var on := 0
+	for i in GRID_CITY_SAMPLES:
+		for j in GRID_CITY_SAMPLES:
+			var p := to_page * (area.position + area.size * Vector2((i + 0.5) / GRID_CITY_SAMPLES, (j + 0.5) / GRID_CITY_SAMPLES))
+			if cfg_rect.has_point(CityMapCamera.grid_at(p - pan, size, focus, city.focus_anchor, city.scale.x, city.tile_b())):
+				on += 1
+	return float(on) / float(GRID_CITY_SAMPLES * GRID_CITY_SAMPLES)
+
+
+## Parity fix (GRID-12): the pans tried per axis and the map's sample points per side.
+const GRID_CITY_STEPS := 8
+const GRID_CITY_SAMPLES := 12
+## The Grid's fitted frame has been kept to the city (once per fit).
+var _grid_on_city: bool = false
 
 
 ## ANIM-5 (4.14): the Grid map has settled into `free`: the camera leans toward the
@@ -2311,6 +2406,7 @@ func grid_lean(free: Rect2) -> Vector2:
 		return Vector2.ZERO
 	var at := city_overlay.icon_at(selected_site)
 	var rects := LegendSpot.node_rects(city_overlay, false)
+	rects.append_array(_grid_pencil_rects())
 	if at.x == INF or rects.is_empty():
 		return Vector2.ZERO
 	var box := rects[0]
@@ -2542,6 +2638,7 @@ func _refit_grid() -> void:
 	if panel_name != "grid" or city_overlay == null or not is_instance_valid(city_overlay):
 		return
 	_grid_fits = 0
+	_grid_on_city = false
 	_fit_next_frame()
 
 
@@ -2923,9 +3020,20 @@ func show_raid() -> void:
 	# H23 S5: what the raid is and what to do, in one plain sentence.
 	var intro := _para(TextDb.ui_text("ui.raid_intro"))
 	intro.name = "RaidIntro"
-	intro.custom_minimum_size.x = RAID_SIDE_WIDTH  # wrapped at the column's width from the start
+	intro.custom_minimum_size.x = RAID_SIDE_WIDTH - UiTheme.SP_S * 2.0  # wrapped at the column's width (inside its plate) from the start
 	intro.add_theme_color_override("font_color", Palette.PAPER)
-	side.add_child(intro)
+	# Parity fix (RAID-02): the line sits on a dark plate (it was set straight on the city),
+	# its foot clear of the work order's paper clip.
+	var intro_box := PanelContainer.new()
+	intro_box.name = "RaidIntroBox"
+	intro_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var plate := StyleBoxFlat.new()
+	plate.bg_color = Color(Palette.SCRIM, RAID_INTRO_PLATE_ALPHA)
+	plate.set_content_margin_all(UiTheme.SP_S)
+	plate.content_margin_bottom = UiTheme.SP_S + RaidPaper.CLIP_TOP * Settings.text_scale
+	intro_box.add_theme_stylebox_override(&"panel", plate)
+	intro_box.add_child(intro)
+	side.add_child(intro_box)
 	side.add_child(_raid_card(raid, pending, projection))
 	# ART-6 3A: YOUR NETWORK is the Cell's own CRT terminal with a status chip per node.
 	var orders_win := RaidTerminal.new(tr("YOUR NETWORK"), Palette.NET_CYAN)
@@ -3148,6 +3256,8 @@ const RAID_SIDE_SCROLL_ABOVE := 0.0
 ## YOUR NETWORK's list view in the scrolling column (px at 1.0; ART-6 3A).
 const ORDERS_SCROLL_MIN_HEIGHT := 150.0
 const INTEL_WIDTH := 300.0
+## Parity fix (RAID-02): the raid instruction line's dark plate (SCRIM's ink, this opaque).
+const RAID_INTRO_PLATE_ALPHA := 0.85
 
 
 ## The raid at a glance as the corp's own intercepted WORK ORDER (ART_BIBLE v2 §4.8: corp
@@ -4086,16 +4196,24 @@ func _peel_start(feed: Control) -> void:
 	if not is_instance_valid(feed) or not feed.is_inside_tree() or not Motion.live(VinylSticker.PEEL):
 		return
 	var strip := feed.find_child("SpeedStrip", true, false) as Control
-	if strip == null:
+	if strip == null and not _start_was.has_area():
 		return
 	var sticker := RaidSticker.new(tr(START_DEFENSE), START_STICKER_STEP, RaidSticker.PINK).stamp_only()
 	sticker.name = "StartPeel"
 	add_child(sticker)
-	var box := strip.get_global_rect()
 	sticker.size = sticker.custom_minimum_size
-	sticker.global_position = Vector2(box.end.x - sticker.size.x, box.position.y - sticker.size.y * 0.85)
+	if _start_was.has_area():
+		# Parity fix (RAID-08): it peels off where it was pressed (the strip under the feed is
+		# not laid out yet on the playout's first frame: the sticker sat over the MAP LEGEND).
+		sticker.global_position = _start_was.get_center() - sticker.size * 0.5
+	else:
+		var box := strip.get_global_rect()
+		sticker.global_position = Vector2(box.end.x - sticker.size.x, box.position.y - sticker.size.y * 0.85)
 	sticker.peel()
 	sticker.vinyl.motion_finished.connect(func(_kind: StringName) -> void: sticker.queue_free(), CONNECT_ONE_SHOT)
+
+## Parity fix (RAID-08): START DEFENSE's rect (global) when it was pressed (empty when none).
+var _start_was: Rect2 = Rect2()
 
 ## ANIM-R6 C10: what the playout opens on (grid points; emptied once it has opened there).
 var _playout_open: PackedVector2Array = PackedVector2Array()
