@@ -205,15 +205,6 @@ func test_the_step_row_stays_in_the_column_pseudolocalised() -> void:
 
 # --- K3 the doc says the code's number -----------------------------------------------------------
 
-func test_the_decision_log_gives_the_grid_fit_passes_the_code_uses() -> void:
-	var text := FileAccess.get_file_as_string("res://docs/DECISIONS.md")
-	var hq_script: GDScript = load("res://scripts/ui/hq_scene.gd")
-	var n := int(hq_script.get_script_constant_map()["GRID_FITS_MAX"])
-	assert_string_contains(text, "GRID_FITS_MAX (%d)" % n, "DECISIONS names GRID_FITS_MAX as the code has it")
-	assert_false(text.contains("GRID_FITS_MAX (%d)" % (n - 1)), "and never the old number")
-
-
-# --- K4 run rows --------------------------------------------------------------------------------
 
 func test_the_clear_preview_is_the_real_result() -> void:
 	for corp in CORPS:

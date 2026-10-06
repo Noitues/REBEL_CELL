@@ -751,6 +751,9 @@ var stamp_avoid: Array[Rect2] = []
 ## The stamp's tilt (degrees) and its gap from what it keeps clear of (screen px).
 const MARK_TILT := -6.0
 const MARK_GAP := 4.0
+## HQ-B: the rings of spots a stamp tries round its Site, each one stamp further out (at big
+## text on the HQ's wider frame the four next to it were all on words).
+const MARK_SPOT_RINGS := 2
 
 
 ## ANIM-R1 M5: a territory change from `prev` to `now` ends in lasting marks: an outline
@@ -873,12 +876,13 @@ func stamp_rect(m: Dictionary) -> Rect2:
 	var ry := TILE_B * MARK_RADIUS
 	var rx := TILE_A * MARK_RADIUS * 0.5
 	var lift := MARK_LIFT * k
-	var spots: Array[Rect2] = [
-		Rect2(Vector2(c.x - size.x * 0.5, c.y - ry - lift - size.y), size),
-		Rect2(Vector2(c.x - size.x * 0.5, c.y + ry * 0.5 + lift * 0.5), size),
-		Rect2(Vector2(c.x + rx + lift * 0.5, c.y - size.y * 0.5), size),
-		Rect2(Vector2(c.x - rx - lift * 0.5 - size.x, c.y - size.y * 0.5), size),
-	]
+	var spots: Array[Rect2] = []
+	for ring in MARK_SPOT_RINGS:
+		var out := Vector2(size.x, size.y) * ring
+		spots.append(Rect2(Vector2(c.x - size.x * 0.5, c.y - ry - lift - size.y - out.y), size))
+		spots.append(Rect2(Vector2(c.x - size.x * 0.5, c.y + ry * 0.5 + lift * 0.5 + out.y), size))
+		spots.append(Rect2(Vector2(c.x + rx + lift * 0.5 + out.x, c.y - size.y * 0.5), size))
+		spots.append(Rect2(Vector2(c.x - rx - lift * 0.5 - size.x - out.x, c.y - size.y * 0.5), size))
 	var best := spots[0]
 	var least := INF
 	for spot in spots:

@@ -377,6 +377,9 @@ func _clipped(root: Node, out: Array) -> void:
 # --- H11 a: raid readability ---------------------------------------------------------------------------
 
 func _hud_value(hq: Control, tag: String) -> String:
+	# HQ-B (a): Heat is the top bar's gauge (its first slot), not a stat tag.
+	if tag == "HEAT":
+		return str(hq.hud.heat_gauge.heat) if hq.hud.heat_gauge.visible else ""
 	for it in hq.hud.stats.items:
 		if String(it[0]) == tag:
 			return String(it[1])

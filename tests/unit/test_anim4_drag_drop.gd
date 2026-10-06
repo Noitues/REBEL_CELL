@@ -242,6 +242,8 @@ func test_crew_station_and_recall_match_their_buttons() -> void:
 ## select, then jack in"): a chip dropped on JACK IN only picks the operative in the list;
 ## the run starts when JACK IN is pressed, the same run as picking them and pressing it.
 func test_a_crew_chip_on_jack_in_picks_them_and_only_the_press_starts_the_run() -> void:
+	# HQ-B: the crew are the hand's cards: a card dragged onto JACK IN (or a Site) picks the runner,
+	# as pressing the card does; only the press on JACK IN starts the run.
 	var results := []
 	for use_drag in [false, true]:
 		var hq := _scene()
@@ -255,37 +257,39 @@ func test_a_crew_chip_on_jack_in_picks_them_and_only_the_press_starts_the_run() 
 		await _frames(4)
 		var living := c.living_operatives()
 		var who := living[living.size() - 1]
-		var pick := hq._panel.find_child("OperativePick", true, false) as OptionButton
+		var card := hq._panel.find_child("Crew_%s" % who.id, true, false) as Control
+		assert_not_null(card, "the crew as hand cards")
 		if use_drag:
-			var chip := hq._panel.find_child("Chip_%s" % who.id, true, false) as Control
-			assert_not_null(chip, "the Site card shows the crew as chips")
 			var before := _hash()
-			assert_eq(_drag(hq.drops, chip, "jack"), "dropped")
+			assert_eq(_drag(hq.drops, card, "jack"), "dropped")
+			await _frames(2)
 			assert_false(RunManager.has_active_run(), "the drop alone starts no run")
 			assert_eq(_hash(), before, "and changes nothing in the campaign")
-			assert_eq(pick.selected, living.size() - 1, "it picks the operative in the list")
 		else:
-			pick.select(living.size() - 1)
+			(card as Button).pressed.emit()
+			await _frames(2)
+		assert_eq(hq.selected_operative, who.id, "it picks the runner")
 		(hq._panel.find_child("Launch", true, false) as Button).pressed.emit()
 		assert_true(RunManager.has_active_run(), "the press on JACK IN starts the run")
 		results.append([_hash(), RunManager.netrun.run.operative.id if RunManager.netrun != null else &""])
 		await _close(hq)
 		RunManager.reset()
-	assert_eq(results[1], results[0], "the chip's pick then JACK IN starts the same run as the list and the button")
+	assert_eq(results[1], results[0], "the card's drag then JACK IN starts the same run as its press and JACK IN")
 
 
 func test_recruit_and_boost_drops_match_their_buttons() -> void:
+	# HQ-B: the Black Market is the MARKET hand (HIRE cards, boost stickers).
 	for kind in ["recruit", "boost"]:
 		var hashes := []
 		for use_drag in [false, true]:
 			var hq := _scene()
 			_campaign(hq)
-			hq.show_hq()
+			hq.open_hand(hq.HandTab.MARKET)
 			await _frames(4)
 			var cfg := RunManager.config()
 			var button: Button
 			if kind == "recruit":
-				button = hq._panel.find_child("Recruits", true, false).get_child(1) as Button
+				button = hq._panel.find_child("Recruit_%s" % RunManager.available_classes()[0].id, true, false) as Button
 			else:
 				button = hq._panel.find_child("Boost_%s" % cfg.netrun_boosts[0].id, true, false) as Button
 			if use_drag:
@@ -421,19 +425,20 @@ func test_keys_and_pad_reach_every_target_and_drop_like_the_mouse() -> void:
 	hq.drops._input(_press(&"ui_cancel"))
 	assert_eq(hq.drops.mode, DropLayer.Mode.IDLE, "B puts it back")
 	assert_eq(_hash(), before)
-	# HQ: a dossier's orders take the pick-up key for their operative; every post is reached.
+	# HQ (HQ-B): a crew card takes the pick-up key for its operative; every post on the map is
+	# reached.
 	hq.show_hq()
 	await _frames(4)
 	var op: OperativeState = RunManager.campaign.living_operatives()[0]
 	var dossier := hq._panel.find_child("Crew_%s" % op.id, true, false) as Control
-	(dossier.find_child("Loadout", true, false) as Button).grab_focus()
+	dossier.grab_focus()
 	hq.drops._input(_press(&"end_turn"))
-	assert_eq(hq.drops.mode, DropLayer.Mode.CARRY, "X on a dossier's order carries the operative")
+	assert_eq(hq.drops.mode, DropLayer.Mode.CARRY, "X on a crew card carries the operative")
 	assert_eq(String(hq.drops.payload.get("op", "")), String(op.id))
 	hq.drops.cancel()
 	values = _walk(hq.drops, dossier)
 	offered = _offered_values(hq.drops)
-	assert_eq(values.size(), offered.size(), "every post on the mini-map is reached")
+	assert_eq(values.size(), offered.size(), "every post on the map is reached")
 	assert_true(values.has(safe), "the safehouse among them")
 	hq.drops.cancel()
 	# The pad prompts follow the carry.
@@ -444,30 +449,6 @@ func test_keys_and_pad_reach_every_target_and_drop_like_the_mouse() -> void:
 	assert_string_contains(" | ".join(hq.pad_prompts.texts()), "Pick up")
 	await _close(hq)
 
-
-func test_a_click_picks_up_a_chip_and_a_click_on_the_target_drops_it() -> void:
-	var hq := _scene()
-	_campaign(hq)
-	hq.selected_site = RunManager.launchable_sites()[0].id
-	hq.show_grid()
-	await _frames(4)
-	var chip: CrewChip = hq._grid_chips[0]
-	chip.pressed.emit()  # a click (or A) on an item that only moves picks it up
-	assert_eq(hq.drops.mode, DropLayer.Mode.CARRY)
-	assert_eq(hq.drops.aimed().get("id", ""), "jack", "JACK IN is aimed")
-	var jack: Rect2 = hq.drops.locate(hq.drops.target("jack"))
-	var click := InputEventMouseButton.new()
-	click.button_index = MOUSE_BUTTON_LEFT
-	click.pressed = true
-	click.global_position = jack.get_center()
-	click.position = jack.get_center()
-	hq.drops._input(click)
-	assert_eq(hq.drops.last_outcome, "dropped", "a click on JACK IN drops the operative there")
-	assert_false(RunManager.has_active_run(), "ANIM-R1 ruling: the drop picks them; no run starts")
-	await _close(hq)
-
-
-# --- End states, layout and state ----------------------------------------------------------------
 
 func test_reduce_effects_and_headless_show_the_end_state_at_once() -> void:
 	for reduce in [false, true]:
@@ -488,13 +469,13 @@ func test_reduce_effects_and_headless_show_the_end_state_at_once() -> void:
 		assert_true(hq.drops.sprites.is_empty(), "no stamp or mark")
 		assert_false(hq.drops.busy())
 		# A click purchase: bought and shown at once.
-		hq.show_hq()
+		hq.open_hand(hq.HandTab.MARKET)
 		await _frames(3)
-		var rb := hq._panel.find_child("Recruits", true, false).get_child(1) as Button
+		var rb := hq._panel.find_child("Recruit_%s" % RunManager.available_classes()[0].id, true, false) as Button  # HQ-B: the MARKET hand
 		rb.pressed.emit()
 		assert_true(hq.drops.flights.is_empty(), "no purchase flight")
 		var c := RunManager.campaign
-		var newest := hq._panel.find_child("Crew_%s" % c.roster[c.roster.size() - 1].id, true, false) as Control
+		var newest: Control = hq._market_node({"kind": "recruit"})  # HQ-B: the recruit lands on the CREW tab
 		assert_eq(newest.modulate.a, 1.0, "the new operative shows")
 		await _close(hq)
 		RunManager.reset()
@@ -504,21 +485,21 @@ func test_reduce_effects_and_headless_show_the_end_state_at_once() -> void:
 func test_motion_plays_live_and_input_completes_it() -> void:
 	var hq := _scene()
 	_campaign(hq)
-	hq.show_hq()
+	hq.open_hand(hq.HandTab.MARKET)
 	await _frames(4)
 	_live()
-	var rb := hq._panel.find_child("Recruits", true, false).get_child(1) as Button
+	var rb := hq._panel.find_child("Recruit_%s" % RunManager.available_classes()[0].id, true, false) as Button  # HQ-B: the MARKET hand
 	rb.pressed.emit()
-	assert_eq(hq.drops.flights.size(), 1, "the new operative flies from the Black Market to the crew")
+	assert_eq(hq.drops.flights.size(), 1, "the new operative flies from the MARKET hand to the CREW tab")
 	var c := RunManager.campaign
-	var newest := hq._panel.find_child("Crew_%s" % c.roster[c.roster.size() - 1].id, true, false) as Control
-	assert_eq(newest.modulate.a, 0.0, "the dossier waits for its copy")
+	var newest: Control = hq._market_node({"kind": "recruit"})  # HQ-B: the recruit lands on the CREW tab
+	assert_eq(newest.modulate.a, 0.0, "the CREW tab waits for its copy")
 	var key := InputEventKey.new()
 	key.keycode = KEY_A
 	key.pressed = true
 	hq.drops._input(key)
 	assert_true(hq.drops.flights.is_empty(), "a press during the flight completes it")
-	assert_eq(newest.modulate.a, 1.0, "and the dossier shows")
+	assert_eq(newest.modulate.a, 1.0, "and the CREW tab shows")
 	await _close(hq)
 
 
@@ -532,18 +513,17 @@ func test_the_new_pieces_keep_the_layout_at_each_text_size() -> void:
 		hq.selected_site = RunManager.launchable_sites()[0].id
 		hq.show_grid()
 		await _frames(6)
-		var card := hq._panel.find_child("SelectedSite", true, false) as Control
-		var chips := hq._panel.find_child("CrewChips", true, false) as Control
+		# HQ-B: the crew are the hand's cards (the drag sources), JACK IN the verb slot's sticker.
+		var hand := hq._panel.find_child("Hand", true, false) as Control
 		var launch := hq._panel.find_child("Launch", true, false) as Control
-		assert_true(card.get_global_rect().grow(0.5).encloses(chips.get_global_rect()), "the chips sit inside the Site card at %.1f" % scale)
-		assert_true(SCREEN.encloses(chips.get_global_rect()), "on screen at %.1f" % scale)
-		for chip in chips.get_children():
-			assert_false((chip as Control).get_global_rect().intersects(launch.get_global_rect()), "a chip covers no JACK IN at %.1f" % scale)
-		hq.show_hq()
+		for k in hand.find_children("Crew_*", "", true, false):
+			assert_false((k as Control).get_global_rect().intersects(launch.get_global_rect()), "a crew card covers no JACK IN at %.1f" % scale)
+		assert_true(SCREEN.encloses(launch.get_global_rect()), "JACK IN on screen at %.1f" % scale)
+		hq.open_hand(hq.HandTab.MARKET)
 		await _frames(6)
 		var queue := hq._panel.find_child("QueuedBoosts", true, false) as Control
-		var market := hq._panel.find_child("BlackMarket", true, false) as Control
-		assert_true(market.get_global_rect().grow(0.5).encloses(queue.get_global_rect()), "the next run's kit sits in the Black Market at %.1f" % scale)
+		var market := hq._panel.find_child("Boosts", true, false) as Control
+		assert_true(market.get_global_rect().grow(0.5).encloses(queue.get_global_rect()), "the next run's kit sits with the boosts at %.1f" % scale)
 		assert_true(hq._panel.get_combined_minimum_size().x <= SCREEN.size.x, "the HQ page stays inside the screen width at %.1f" % scale)
 		var op: OperativeState = RunManager.campaign.living_operatives()[0]
 		op.rank = 3
@@ -594,7 +574,9 @@ func test_views_never_change_game_state() -> void:
 	hq.drops.start_carry(dossier)
 	assert_true(hq.drops.offered("station:%s" % safe), "the safehouse is checked (a dry run)")
 	hq.drops.cancel()
-	var rb := hq._panel.find_child("Recruits", true, false).get_child(1) as Button
+	hq.open_hand(hq.HandTab.MARKET)
+	await _frames(3)
+	var rb := hq._panel.find_child("Recruit_%s" % RunManager.available_classes()[0].id, true, false) as Button  # HQ-B: the MARKET hand
 	hq.drops.begin_drag(rb, rb.get_meta(DropLayer.SOURCE_META))
 	hq.drops.cancel()
 	hq.drops.finish_all()

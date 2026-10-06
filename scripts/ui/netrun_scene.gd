@@ -838,28 +838,6 @@ func prebake_run_end() -> String:
 	return city.prebake(city.view_rect(), null, false, creep_of(RunManager.campaign.heat))
 
 
-## The hidden HQ backdrop twin warming the HQ's bake (`_warm_hq`).
-var _hq_warm: CyberdeckBackground = null
-
-
-## ANIM-R5 P2: the HQ's city baked ahead from the run's end page (the HQ came up with ~3.5 s
-## of black behind its panels): a hidden twin of its backdrop (the same look: its district,
-## the campaign's territory) asks for the HQ's default frame at this screen's size; the bake
-## outlives this scene (the jack out frees it).
-func _warm_hq() -> void:
-	if RunManager.campaign == null or not is_inside_tree():
-		return
-	if _hq_warm != null and is_instance_valid(_hq_warm):
-		_hq_warm.queue_free()
-	_hq_warm = CyberdeckBackground.new()
-	_hq_warm.name = "HqWarm"
-	_hq_warm.visible = false
-	add_child(_hq_warm)
-	_hq_warm.set_district(RunManager.campaign.corporation_id)
-	# The frame's region is worked out from the screen's size (the twin's own layout waits).
-	_hq_warm.city.prebake_frames([size], true)
-
-
 ## ANIM-R1 M8: whether the screen a jack in lands on is built and framed (Fx keeps its
 ## cover up until then, so it never lifts onto an empty dark screen): a page is on, the
 ## city behind it was drawn under the current camera (its placement: the route's nodes and
@@ -4202,8 +4180,6 @@ const END_BACK_STEP := UiTheme.TITLE
 
 func _show_end() -> void:
 	var s := RunManager.netrun
-	# ANIM-R5 P2: the HQ's city bakes while the run's report shows.
-	_warm_hq.call_deferred()
 	var won := s.run.outcome == RunState.Outcome.COMPLETED
 	var aborted := s.run.outcome == RunState.Outcome.ABORTED
 	var col := Palette.NET_CYAN if won else Palette.HARM

@@ -70,12 +70,8 @@ var _status: Label
 var hud: HudBar
 ## The subtitles' band under the top bar (H21 #11).
 var subtitle_strip: SubtitleStrip
-## "More below" at the foot of a page that scrolls on (H21 #15: the HQ's BLACK MARKET),
-## and at the foot of the Grid's side column (freed with the Grid).
+## "More below" at the foot of a page that scrolls on (H21 #15).
 var more_hint: ScrollHint
-var side_hint: ScrollHint = null
-## ART-0 C (text scale 2.0): MORE BELOW at the foot of the raid setup's scrolling side column.
-var raid_side_hint: ScrollHint = null
 var _panel_host: PanelContainer
 var _log: RichTextLabel
 var _panel: Control = null
@@ -894,12 +890,6 @@ func _set_panel(p: Control, name: String) -> void:
 		drops.reset()
 	if _panel != null:
 		_panel.queue_free()
-	if side_hint != null and is_instance_valid(side_hint):
-		side_hint.queue_free()
-	side_hint = null
-	if raid_side_hint != null and is_instance_valid(raid_side_hint):
-		raid_side_hint.queue_free()
-	raid_side_hint = null
 	# ART-5 5a: the City Grid is the unified 3D city; ART-3 6w: the raid's pages too (setup,
 	# playout, report), holding the RAID band (see-through buildings, management lanes). The
 	# other net pages keep the 2D city until their views move onto it.
@@ -1155,6 +1145,9 @@ func popping() -> Array[Node]:
 	for n in _panel.find_children("*", "CanvasItem", true, false):
 		if n.has_meta(key):
 			out.append(n)
+	# HQ-B (a): the Heat gauge's bump (a Site claimed) is the HQ's too.
+	if hud != null and is_instance_valid(hud) and hud.heat_gauge != null and hud.heat_gauge.has_meta(key):
+		out.append(hud.heat_gauge)
 	return out
 
 
@@ -1754,10 +1747,12 @@ const HQ_PAGES: Array[String] = ["hq", "raid"]
 
 ## HQ-B: the one call point where the HQ (and its raid setup) turns the city's map mode on
 ## (designer ruling 2026-10-05: raid and netrun views grey the city and lower its opacity so the
-## nodes and links pop). S-MAPVIEW builds that mode on CityView3D (CityConfig numbers) and hooks
-## it in here; until then the HQ draws the city as the raid band draws it (no dimming of its own).
-func hq_map_mode(_on: bool) -> void:
-	pass
+## nodes and links pop). S-MAPVIEW's map mode follows the view band (on at RAID / NETRUN): the HQ
+## holds the RAID band, zoomed out past the raid range the GRID band (Q4: the whole city, map
+## mode off). The HQ draws no dimming of its own.
+func hq_map_mode(on: bool) -> void:
+	if on:
+		_sync_hq_band()
 
 
 ## HQ-B: the hand's decks behind the tabs.
@@ -1882,7 +1877,7 @@ func _fill_crew_hand(cards: HBoxContainer, launchable: Array[SiteData]) -> void:
 		var oid := op.id
 		card.pressed.connect(pick_runner.bind(oid))
 		if op.alive:
-			drops.add_source(card, {"kind": "crew", "op": op.id, "motion": &"crew_assign", "prefer": where}, true)
+			drops.add_source(card, {"kind": "crew", "op": op.id, "motion": &"crew_assign", "prefer": where})  # a press picks the runner; a drag or the pick-up key carries
 		cards.add_child(card)
 		if op.alive and where != &"" and op.id == selected_operative:
 			var recall_chip := MenuChip.new(tr("RECALL"), site_name(where).to_upper())
@@ -2196,11 +2191,22 @@ func hq_graph(projection: RaidResolver.RaidResult = null) -> Dictionary:
 			n["label"] = site_name(n["id"])
 			n["tip"] = tr("%s: integrity (HP) %s → %s in the raid. %s") % [site_name(n["id"]), res["before"], res["after"], outcome_tip(outcome)]
 		n["socket"] = raid_socket(n["id"], res, projection != null, c)
-	if projection != null:
-		for e in g["edges"]:
+	if projection == null:
+		return g
+	# The raid setup (S-MAPVIEW, designer 2026-10-05): the major (raid) nodes only, the Cell's
+	# network and the Sites its threats take; the HQ's other hands show every Site (the Grid).
+	var major := RaidMapNodes.major_ids(c, RaidMapNodes.route_paths(projection.events), projection.nodes)
+	var nodes: Array[Dictionary] = []
+	for n: Dictionary in g["nodes"]:
+		if major.has(n["id"]):
+			nodes.append(n)
+	var edges: Array[Dictionary] = []
+	for e: Dictionary in g["edges"]:
+		if major.has(e["a"]) and major.has(e["b"]):
 			if e.get("arrows", false):
 				e["pencil"] = true  # ART-6 3A: the threat routes are the pencil's (RaidRouteLayer)
-	return g
+			edges.append(e)
+	return {"nodes": nodes, "edges": edges}
 
 
 ## HQ-B: the pending raid's routes on the HQ map in red pencil, their entries lettered: dashed
@@ -2241,6 +2247,7 @@ func _mount_hq_map_tools(page: Control) -> void:
 			city_overlay.show_all = on)
 	hq_legend.fold_changed.connect(_place_hq)
 	grid_legend = hq_legend
+	raid_legend = hq_legend if panel_name == "raid" else null
 	grid_controls = null
 	grid_minimap = null
 	grid_target = null
@@ -2497,7 +2504,35 @@ func _end_hq_fit() -> void:
 				city.update_camera()
 				if grid_controls != null and is_instance_valid(grid_controls):
 					grid_controls.sync_minimap()
+			# A network wider than the raid range's widest view leaves some Sites out: the
+			# selected one is panned in (its card and verb speak of it).
+			_hold_selected_in(free)
 	wireframe.ease_camera()
+
+
+## HQ-B: pans (never zooms) the camera the least way that brings the selected Site's icon
+## inside `free` (global px, less the layout margin); nothing when it is in already.
+func _hold_selected_in(free: Rect2) -> void:
+	if selected_site == &"":
+		return
+	var r: Rect2 = wireframe.unrigged(func() -> Rect2: return _map_node_rect(selected_site))
+	var room := free.grow(-HqLayout.MARGIN)
+	if not r.has_area() or not room.has_area() or room.encloses(r):
+		return
+	var d := Vector2.ZERO
+	if r.position.x < room.position.x:
+		d.x = room.position.x - r.position.x
+	elif r.end.x > room.end.x:
+		d.x = room.end.x - r.end.x
+	if r.position.y < room.position.y:
+		d.y = room.position.y - r.position.y
+	elif r.end.y > room.end.y:
+		d.y = room.end.y - r.end.y
+	var city := wireframe.city
+	_frame_city(city.scale.x, city.focus_grid, city.focus_anchor + d / get_global_rect().size)
+	city.update_camera()
+	if grid_controls != null and is_instance_valid(grid_controls):
+		grid_controls.sync_minimap()
 
 
 ## HQ-B: the screen box (global px) round the icons of the Sites the HQ's camera fits.
@@ -3203,7 +3238,7 @@ func _defence_verb(slot: VBoxContainer) -> void:
 	run_btn.tooltip_text = UiTip.fold(tr("Start the defence: the raid plays out on the map; the result matches the forecast."))
 	slot.add_child(run_btn)
 	var strip := RaidSpeedStrip.new(RunManager.config().raid_step_cap)
-	strip.name = "RaidSpeedStrip"
+	strip.name = "SpeedStrip"
 	strip.size_flags_horizontal = Control.SIZE_SHRINK_END
 	slot.add_child(strip)
 
@@ -3535,33 +3570,7 @@ static func raid_route_groups(projection: RaidResolver.RaidResult) -> Array[Dict
 ## it moves to), deduplicated, in the order the threats enter (the pencil routes: what the
 ## threats will do, as the forecast is exact).
 static func raid_route_paths(events: Array) -> Array[Array]:
-	var by_threat := {}
-	var order: Array[String] = []
-	for e in events:
-		var t := String(e.get("threat", ""))
-		match String(e.get("type", "")):
-			"threat_enters":
-				if not by_threat.has(t):
-					order.append(t)
-				by_threat[t] = [StringName(String(e.get("site", "")))]
-			"move":
-				if by_threat.has(t):
-					var p: Array = by_threat[t]
-					var to := StringName(String(e.get("to", "")))
-					if p.is_empty() or p[p.size() - 1] != to:
-						p.append(to)
-	var out: Array[Array] = []
-	var seen := {}
-	for t in order:
-		var p: Array = by_threat[t]
-		if p.size() < 2:
-			continue
-		var key := str(p)
-		if seen.has(key):
-			continue
-		seen[key] = true
-		out.append(p)
-	return out
+	return RaidMapNodes.route_paths(events)  # S-MAPVIEW: shared with the raid map's node filter
 
 
 ## ART-6 3A: claimed node `site_id`'s socket on the raid map (RaidSocket spec): its type's
@@ -3729,14 +3738,12 @@ func _placed_payload(site_id: StringName, index: int, asset_id: StringName) -> D
 func raid_graph(results: Variant, markers: Dictionary, c: CampaignState = null, include: Array = []) -> Dictionary:
 	if c == null:
 		c = RunManager.campaign
-	var g := CityLayout.grid_graph(c, RunManager.corporation, CityLayout.threat_paths(c, RunManager.corporation), selected_site)
+	# S-MAPVIEW (designer 2026-10-05): the major (raid) nodes only: the Cell's network and the
+	# Sites the raid's threats really take (its projection), not the whole frontier.
+	var routes := RaidMapNodes.shown_routes(results, c, RunManager.corporation, RunManager.config(), RunManager.lookup())
+	var g := CityLayout.grid_graph(c, RunManager.corporation, routes, selected_site)
 	var nodes_res: Dictionary = results.nodes if results is RaidResolver.RaidResult else results
-	var network := {}
-	for id in c.grid.claimed_ids():
-		network[id] = true
-	for path in CityLayout.threat_paths(c, RunManager.corporation):
-		for id in path:
-			network[id] = true
+	var network := RaidMapNodes.major_ids(c, routes, nodes_res)
 	for id in markers:
 		network[id] = true
 	for id in include:
@@ -4933,6 +4940,19 @@ func refresh_site_card() -> void:
 	parent.add_child(card)
 	parent.move_child(card, at)
 	TextDb.shown_as_given(card)
+	# HQ-B: the verb slot follows (a claim seen on the map leaves no CLAIM sticker).
+	var old_slot := _panel.get_node_or_null("VerbSlot") as Control
+	if old_slot != null and panel_name == "hq":
+		var slot := _verb_slot(site, launchable)
+		var slot_at := old_slot.get_index()
+		_panel.remove_child(old_slot)
+		old_slot.queue_free()
+		_panel.add_child(slot)
+		_panel.move_child(slot, slot_at)
+		TextDb.shown_as_given(slot)
+		slot.minimum_size_changed.connect(_queue_place_hq)
+		_place_hq()
+		_link_hq_focus(_panel)
 
 
 ## Refusals, saves and unlocks the player must see (the log strip is optional): a toast.

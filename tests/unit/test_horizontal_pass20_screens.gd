@@ -149,24 +149,24 @@ func _shop_scene() -> Control:
 # --- No text logs (designer: "ditch any text logs") ---------------------------------------
 
 func test_hq_status_is_badges_not_a_readout() -> void:
+	# HQ-B (Q1): CELL STATUS went; the Heat gauge is the top bar's first slot (it says what it
+	# means), the Armory's assets are the DEFENCE hand's cards (no raid pending: the Armory), and no text readout shows.
 	var c := RunManager.campaign
 	c.armory = [&"turret", &"turret", &"decoy"]
 	var hq := _open(HQ)
 	await _frames()
 	for n in _all(hq._panel):
 		assert_false(n is TerminalWindow and (n as TerminalWindow).title == "SYSTEM ONLINE", "no SYSTEM ONLINE readout")
-	var badges: Node = hq._panel.find_child("CellBadges", true, false)
-	assert_not_null(badges, "CELL STATUS badges")
+	assert_null(hq._panel.find_child("CellBadges", true, false), "no CELL STATUS badges")
+	assert_true(hq.hud.heat_gauge.visible, "the Heat gauge")
+	assert_ne(hq.hud.heat_gauge.tooltip_text, "", "it says what it means")
+	hq.open_hand(hq.HandTab.DEFENCE)
+	await _frames()
 	var assets := 0
-	var home := false
-	for b in badges.get_children():
-		assert_true(b is Badge, "only badges")
-		assert_ne((b as Badge).tooltip_text, "", "every badge says what it means")
-		if (b as Badge).asset_id != &"":
-			assets += 1
-		home = home or (b as Badge).glyph == hq.GLYPH_HOME
-	assert_eq(assets, 2, "one badge per Armory asset kind")
-	assert_true(home, "home integrity badge")
+	for n in hq._panel.find_children("Armory_*", "", true, false):
+		assets += 1
+		assert_ne((n as Control).tooltip_text, "", "%s says what it does" % n.name)
+	assert_eq(assets, 2, "one card per Armory asset kind")
 	assert_false(hq._log.visible, "the log strip stays off by default")
 
 
@@ -177,11 +177,13 @@ func test_the_grid_is_a_site_card_not_a_list_and_every_site_is_reachable() -> vo
 	for n in _all(hq._panel):
 		assert_false(n is ZineNote and (n as ZineNote).title == "THE PLAN", "no plan note")
 		assert_false(n is TerminalWindow and String((n as TerminalWindow).title).begins_with("SITES"), "no Site list")
-	var card := hq._panel.find_child("SelectedSite", true, false) as TerminalWindow
+	var card := hq._panel.find_child("SelectedSite", true, false) as Control
 	assert_not_null(card, "the picked Site's card")
 	assert_ne(hq.selected_site, &"", "a Site is picked from the start")
-	assert_not_null(card.find_child("Launch", true, false), "the first open run is picked, its Launch right there")
-	assert_not_null(hq._panel.find_child("RunsOpen", true, false), "the open runs as buttons")
+	# HQ-B (d): its verb is the sticker in the verb slot (JACK IN for an open run).
+	var verb := hq._panel.find_child("VerbSlot", true, false) as Control
+	assert_not_null(verb, "the verb slot")
+	assert_not_null(verb.find_child("Launch", true, false), "the first open run is picked, its JACK IN right there")
 	for t in _texts(hq._panel):
 		assert_false(t.contains("links:"), "no raw links line: %s" % t)
 		for sd in RunManager.corporation.city_grid.sites:
@@ -191,10 +193,10 @@ func test_the_grid_is_a_site_card_not_a_list_and_every_site_is_reachable() -> vo
 	for i in RunManager.corporation.city_grid.sites.size():
 		seen[hq.selected_site] = true
 		hq.step_site(1)
-	assert_eq(seen.size(), RunManager.corporation.city_grid.sites.size(), "NEXT SITE visits every Site")
+	assert_eq(seen.size(), RunManager.corporation.city_grid.sites.size(), "the map cursor's step visits every Site")
 	await _frames()
 	var reach := _reachable()
-	for id in ["PrevSite", "NextSite", "BackToHq"]:
+	for id in ["MapCursor", "Tab_CREW", "Tab_MARKET", "Launch"]:
 		assert_true(reach.has(hq._panel.find_child(id, true, false)), "%s reachable by pad" % id)
 
 
@@ -317,8 +319,8 @@ func test_subtitles_never_cover_controls_on_any_screen() -> void:
 		var hq := _open(HQ)
 		await _frames()
 		await _assert_clear(hq, "HQ")
-		var crew: Node = hq._panel.find_child("Crew_%s" % RunManager.campaign.roster[0].id, true, false)
-		(crew.find_child("Loadout", true, false) as Button).pressed.emit()
+		# HQ-B (c): the picked runner's loadout opens from the top bar's LOADOUT.
+		hq.hud.loadout_pressed.emit()
 		await _frames()
 		await _assert_clear(hq, "loadout view")
 		(hq.get_node("LoadoutView") as LoadoutView)._view.close()
@@ -475,13 +477,11 @@ func test_upgrade_a_slice_shows_the_picked_slots_own_price() -> void:
 func test_key_hints_follow_the_device_outside_combat() -> void:
 	var hq := _open(HQ)
 	await _frames()
-	var settings_btn := hq._panel.find_child("SettingsButton", true, false) as Button
-	assert_eq(settings_btn.text, ("Settings %s" % Settings.hint(&"open_settings")).strip_edges())
+	# HQ-B (f): the HQ's Options sit in the pause menu (no Settings button on the page).
+	assert_null(hq._panel.find_child("SettingsButton", true, false), "no Settings button on the HQ")
 	Settings.set_pad_active(true)
 	await _frames()
-	assert_eq(settings_btn.text, ("Settings %s" % Settings.hint(&"open_settings")).strip_edges(), "relabelled for the pad")
-	var jack := hq._panel.find_child("JackIn", true, false) as ZineStamp
-	assert_eq(jack.hint, "", "JACK IN names no key (Space does nothing at HQ)")
+	assert_not_null(hq._panel.find_child("Launch", true, false), "JACK IN is the verb slot's sticker")
 	var menu := PauseMenu.new()
 	add_child_autofree(menu)
 	await _frames()
@@ -528,9 +528,9 @@ func test_crew_stamps_and_station_orders_use_site_names() -> void:
 	c.grid.site(node_id)["stationed"] = String(op.id)
 	var hq := _open(HQ)
 	await _frames()
-	var card := hq._panel.find_child("Crew_%s" % op.id, true, false) as CrewCard
-	assert_eq(card.stamp_text, "ON %s" % hq.site_name(node_id).to_upper())
-	assert_false(card.stamp_text.contains(String(node_id).to_upper()), "no raw id on the stamp")
+	var card := hq._panel.find_child("Crew_%s" % op.id, true, false) as CrewHandCard
+	assert_eq(card.status, "ON %s" % hq.site_name(node_id).to_upper())
+	assert_false(card.status.contains(String(node_id).to_upper()), "no raw id on the chip")
 	for t in _texts(hq._panel):
 		assert_false(t.contains("stationed on %s" % node_id) or t.contains("Station on %s" % node_id), "no raw id in '%s'" % t)
 	assert_eq(hq.site_name(c.grid.home_site_id), hq.HOME_LABEL, "the home server is CORE")
@@ -544,13 +544,14 @@ func test_loadout_and_daemons_follow_the_picked_operative() -> void:
 	second.daemon_ids.append(&"shield_cache")
 	var hq := _open(HQ)
 	await _frames()
-	var card := hq._panel.find_child("Crew_%s" % second.id, true, false) as CrewCard
-	var loadout_btn := card.orders.find_child("Loadout", true, false) as Button
-	assert_not_null(loadout_btn, "the dossier has its Loadout button")
-	loadout_btn.pressed.emit()
+	var card := hq._panel.find_child("Crew_%s" % second.id, true, false) as CrewHandCard
+	assert_not_null(card, "the crew hand has their card")
+	card.pressed.emit()
+	await _frames()
+	hq.hud.loadout_pressed.emit()
 	await _frames()
 	var view := hq.get_node("LoadoutView") as LoadoutView
-	assert_eq(view.op.id, second.id, "the dossier opens its own operative")
+	assert_eq(view.op.id, second.id, "LOADOUT opens the picked operative's")
 	assert_eq(hq.selected_operative, second.id)
 	assert_eq(hq.hud.daemon_ids, second.daemon_ids, "the top bar's Daemons follow")
 	var next := view._view.tab_row.find_child("TabNEXT OPERATIVE >", true, false) as Button
@@ -612,11 +613,9 @@ func test_every_operative_has_its_own_face() -> void:
 	var op := c.living_operatives()[0]
 	var hq := _open(HQ)
 	await _frames()
-	var card := hq._panel.find_child("Crew_%s" % op.id, true, false) as CrewCard
-	assert_eq(card.polaroid.subject["key"], PortraitArt.operative_subject(op.class_id, op.id)["key"], "the dossier shows the operative's face")
-	for n in _all(hq._panel):
-		if n is HeatPoster:
-			assert_eq((n as HeatPoster).wanted["key"], card.polaroid.subject["key"], "the wanted poster shows the same face")
+	var card := hq._panel.find_child("Crew_%s" % op.id, true, false) as CrewHandCard
+	assert_eq(card.class_id, op.class_id, "the crew card prints its class's portrait")
+	assert_eq(card.operative_id, op.id, "in the operative's own variant")
 
 
 # --- #24 kit leftovers, #25 demo profile ------------------------------------------------------
@@ -692,22 +691,21 @@ func test_tooltips_are_themed_and_on_the_screens_controls() -> void:
 	# HUD stat tags answer per tag.
 	# At each tag's own rect (H23: tags are sized to their translated names).
 	var rects: Array[Rect2] = hq.hud.stats.tag_rects()
-	assert_ne(hq.hud.stats._get_tooltip(rects[0].get_center()), "", "HEAT tag tooltip")
-	assert_ne(hq.hud.stats._get_tooltip(rects[1].get_center()), "", "SCHEMATICS tag tooltip")
+	assert_ne(hq.hud.stats._get_tooltip(rects[0].get_center()), "", "SCHEMATICS tag tooltip")
 	assert_ne(hq.hud.stats.mouse_filter, Control.MOUSE_FILTER_IGNORE, "the tags take hover")
-	var tipped := {"poster": false, "crew": false, "jack": false}
+	# HQ-B: the Heat gauge (the top bar's first slot), the crew's cards and JACK IN's sticker.
+	var gauge: Control = hq.hud.heat_gauge
+	var tipped := {"poster": gauge.tooltip_text != "" and gauge.mouse_filter != Control.MOUSE_FILTER_IGNORE, "crew": false, "jack": false}
 	for n in _all(hq._panel):
-		if n is HeatPoster:
-			tipped["poster"] = n.tooltip_text != "" and n.mouse_filter != Control.MOUSE_FILTER_IGNORE
-		elif n is CrewCard:
+		if n is CrewHandCard:
 			tipped["crew"] = n.tooltip_text != ""
-		elif n is ZineStamp:
+		elif n is VerbSticker and String(n.name) == "Launch":
 			tipped["jack"] = n.tooltip_text != ""
 	for k in tipped:
 		assert_true(tipped[k], "HQ %s has a tooltip" % k)
 	hq.show_grid()
 	await _frames()
-	for b in _all(hq._panel.find_child("SelectedSite", true, false)):
+	for b in _all(hq._panel.find_child("VerbSlot", true, false)):
 		if b is Button and (b as Button).name == "Launch":  # JACK IN (H21 #21)
 			assert_ne((b as Button).tooltip_text, "", "Launch tooltip")
 	hq.show_raid()

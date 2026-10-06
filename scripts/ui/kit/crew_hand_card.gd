@@ -132,9 +132,7 @@ func _draw() -> void:
 	var name_y := pic.end.y + inset * 0.25 + disp.get_ascent(npx)
 	var rank_text := "R%d" % rank
 	var rw := mono.get_string_size(rank_text, HORIZONTAL_ALIGNMENT_LEFT, -1, rpx).x
-	var name_px := npx
-	while name_px > CHIP_PX and disp.get_string_size(display_name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, name_px).x > r.size.x - inset * 3.0 - rw:
-		name_px -= 1
+	var name_px := name_font_size()
 	draw_string(disp, Vector2(r.position.x + inset, name_y), display_name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, name_px, Palette.PAPER if not grey else Palette.TEXT_MID)
 	draw_string(mono, Vector2(r.end.x - inset - rw, name_y), rank_text, HORIZONTAL_ALIGNMENT_LEFT, -1, rpx, accent if not grey else Palette.TEXT_MID)
 	# The status chip at the foot.
@@ -151,6 +149,23 @@ func _draw() -> void:
 	draw_string(mono, Vector2(chip.get_center().x - tw * 0.5, chip.get_center().y + mono.get_ascent(fs) * 0.5 - mono.get_descent(fs) * 0.3), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 	if has_focus():
 		KitState.draw_frame(self, r, KitState.FOCUS, false)
+
+
+## The name's room on the card (px): the card's width less its insets and the rank.
+func name_room() -> float:
+	var o := HqLayout.object_scale(Settings.text_scale)
+	var rw := Palette.mono().get_string_size("R%d" % rank, HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(RANK_PX * o)).x
+	return size.x - INSET * o * 3.0 - rw
+
+
+## The name's font size: the card's name size, stepped down until the name fits its room
+## (never under the chip's size).
+func name_font_size() -> int:
+	var disp := Palette.display()
+	var px := roundi(NAME_PX * HqLayout.object_scale(Settings.text_scale))
+	while px > CHIP_PX and disp.get_string_size(display_name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, px).x > name_room():
+		px -= 1
+	return px
 
 
 ## The card's words for tests and screen readers: name, rank and the chip.

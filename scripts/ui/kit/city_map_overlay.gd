@@ -2960,7 +2960,8 @@ func _loose_spot(t: Dictionary, box: Vector2, obstacles: Dictionary, may_cover_i
 	for rect in tries:
 		if reach_of(rect, at) > reach or not _on_screen(rect, obstacles) or _hits_label(rect, obstacles):
 			continue
-		if may_cover_icons or not _hits_icon(rect, obstacles, t["id"]):
+		# HQ-B: nor its own icon (shifted inside the map at big text, it landed on it).
+		if may_cover_icons or not _hits_icon(rect, obstacles, &""):
 			return rect
 	return Rect2()
 

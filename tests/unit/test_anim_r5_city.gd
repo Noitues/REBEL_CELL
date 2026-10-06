@@ -251,30 +251,6 @@ func test_a_raid_interlude_bakes_its_playout_ahead() -> void:
 	assert_true(city.view_covered(), "the route after the raid is covered")
 
 
-func test_a_runs_end_warms_the_hq_and_that_bake_outlives_the_run() -> void:
-	CityBakeCache.simulate = true
-	RunManager.new_campaign(1)
-	var scene := _scene(NETRUN)
-	scene.start_run(1)
-	await _settle_bakes()
-	scene._show_end()
-	await _frames(2)
-	var holder_id := CityBakeCache._holder().get_instance_id()
-	var outliving := 0
-	for key: String in CityBakeCache._pending:
-		if (CityBakeCache._pending[key]["waiters"] as Array).has(holder_id):
-			outliving += 1
-	assert_gt(outliving, 0, "the HQ's bake is asked for and outlives the run's scene")
-	scene.get_parent().free()
-	CityBakeCache.drop_stale()
-	assert_gt(CityBakeCache._pending.size(), 0, "the jack out does not drop it")
-	_land_all()
-	var hq := _scene(HQ)
-	hq.show_hq()
-	await _frames(2)
-	assert_true(hq.background.city.view_covered(), "the HQ opens on its baked city")
-
-
 func test_a_claim_stamps_at_once_and_the_tint_follows_its_bake() -> void:
 	CityBakeCache.simulate = true
 	_raid_campaign(&"solace", false)
@@ -574,6 +550,8 @@ func test_the_raid_report_keeps_each_nodes_hp_on_its_row_and_the_forecast_float_
 
 
 func test_your_nodes_never_ends_in_a_cut_row() -> void:
+	# HQ-B (c): YOUR NODES is the raid setup's card column (it scrolls with the focus): every
+	# row's control shows whole in the column once it has the focus.
 	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		_raid_campaign(&"solace", true)
@@ -590,11 +568,23 @@ func test_your_nodes_never_ends_in_a_cut_row() -> void:
 		await _frames(1)
 		hq.show_raid()
 		await _frames(6)
-		var hint: ScrollHint = hq.side_hint
-		assert_not_null(hint, "%.1f: YOUR NODES has its hint" % scale)
-		assert_true(hint.snap_rows)
-		if hint.overflows():
-			assert_almost_eq(hint.cut_row_reserve(), hint.snap_reserve, 1.0, "%.1f: the view ends above the row it would cut" % scale)
+		var column := hq._panel.find_child("CardColumn", true, false) as ScrollContainer
+		assert_not_null(column, "%.1f: YOUR NODES is in the card column" % scale)
+		if column == null:
+			return
+		assert_true(column.follow_focus, "%.1f: the column scrolls with the focus" % scale)
+		var orders := column.find_child("NodeOrders", true, false) as Control
+		assert_not_null(orders, "%.1f: YOUR NODES" % scale)
+		var checked := 0
+		for b in orders.find_children("*", "Button", true, false):
+			var btn := b as Button
+			if not btn.is_visible_in_tree() or btn.focus_mode == Control.FOCUS_NONE:
+				continue
+			btn.grab_focus()
+			await _frames(2)
+			checked += 1
+			assert_true(column.get_global_rect().grow(1.0).encloses(btn.get_global_rect()), "%.1f: %s shows whole when it has the focus" % [scale, btn.name])
+		assert_gt(checked, 0, "%.1f: the rows were checked" % scale)
 		hq.get_parent().queue_free()
 		await _frames(1)
 
@@ -669,14 +659,18 @@ func test_a_polaroid_caption_is_never_cut() -> void:
 		RunManager.new_campaign(1)
 		var hq := _scene(HQ)
 		await _frames(3)
+		# HQ-B (c): the crew are the hand's cards (the dossier's Polaroids went): a name is whole.
+		hq.show_hq()
+		await _frames(3)
 		var seen := 0
-		for p in hq.find_children("*", "Polaroid", true, false):
-			var pol := p as Polaroid
-			if not pol.is_visible_in_tree() or pol.caption == "":
+		for n in hq.find_children("*", "CrewHandCard", true, false):
+			var card := n as CrewHandCard
+			if not card.is_visible_in_tree() or card.display_name == "":
 				continue
 			seen += 1
-			assert_true(_caption_fits(pol), "%.1f: '%s' whole on its Polaroid (%s)" % [scale, pol.caption, pol.caption_layout()])
-		assert_gt(seen, 0, "%.1f: the crew's Polaroids were checked" % scale)
+			var w := Palette.display().get_string_size(card.display_name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, card.name_font_size()).x
+			assert_lte(w, card.name_room() + 0.5, "%.1f: '%s' whole on its card" % [scale, card.display_name])
+		assert_gt(seen, 0, "%.1f: the crew's cards were checked" % scale)
 		hq.get_parent().queue_free()
 		await _frames(1)
 

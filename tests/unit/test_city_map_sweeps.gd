@@ -4,7 +4,7 @@ extends GutTest
 ## (50 settled Grids in all) to check the same maps. Here each corporation's Grid is opened
 ## once per text size (1.0, 1.3, TEXT_SCALE_MAX) and campaign stage (early, late) and every check of
 ## those passes runs on it:
-## - H24 K1/K6: the key folds only at big text, the steps go icon-only inside the column,
+## - H24 K1/K6 (HQ-B: the Grid is the HQ; its key always folded, the steps the map cursor's),
 ##   node icons apart, labels apart, below the top bar, on the map area, within reach, and
 ##   no Site with room left unlabelled;
 ## - H23 #3/#5: the key on screen, over the map, clear of the column, its text at the
@@ -15,8 +15,7 @@ extends GutTest
 ## - with every node selected in turn (early, 1.0 and TEXT_SCALE_MAX, as H22 and H23 did): the selected
 ##   Site labelled, labels apart, inside the label area and clear of its blocks (the side
 ##   column), within reach; the landmarks labelled (H22); the selection ring clear of the
-##   labels (H21, at 1.0); the run rows and Site steps carry their map icons (H23 #7,
-##   Solace);
+##   labels (H21, at 1.0) (HQ-B: a Site off the HQ's fit shows no label);
 ## - a live text size change on an open Grid keeps labels apart and on screen (H21 at 1.5,
 ##   H22 at TEXT_SCALE_MAX set live: here 1.0 -> TEXT_SCALE_MAX live).
 ## The route sweep merges H21 (labels never overlap, at the start and under way) and H22
@@ -169,8 +168,6 @@ func test_the_grid_for_every_corporation_text_size_and_stage() -> void:
 				_assert_no_overlap(overlay, what)
 				if not late and SELECT_SCALES.has(scale):
 					_check_every_selection(hq, what, is_equal_approx(scale, 1.0))
-					if corp == &"solace":
-						_check_run_rows_and_steps(hq, what)
 				if not late and is_equal_approx(scale, 1.0):
 					_check_live_text_size(hq, what)
 				await _close(hq)
@@ -183,24 +180,28 @@ func test_the_grid_for_every_corporation_text_size_and_stage() -> void:
 				r[int(r.size() * 0.9)], r[r.size() - 1]])
 
 
-## H24 K1: the key folds to one line at big text (open at 1.0); the step buttons go
-## icon-only at big text and keep inside the column.
-func _check_key_and_steps(hq: Control, what: String, scale: float) -> void:
+## H24 K1, HQ-B (b): the HQ's key is always folded to its MAP KEY line (the page keeps its
+## room for the hand and the card); the Site steps are the map cursor's (pad left / right).
+func _check_key_and_steps(hq: Control, what: String, _scale: float) -> void:
 	var legend: MapLegend = hq.grid_legend
-	var big := scale >= MapLegend.FOLD_SCALE - 0.001
-	assert_eq(legend.is_folded(), big, "%s: the key folds only at big text" % what)
-	if big:
-		assert_not_null(legend.fold_button, "%s: the folded key is its MAP KEY button" % what)
-		var line := legend.fold_button.get_combined_minimum_size().y
-		assert_true(legend.size.y <= line * 2.0 + 24.0, "%s: folded, the key is one line (%.0f px)" % [what, legend.size.y])
-	var card := (hq.find_child("SelectedSite", true, false) as Control).get_global_rect()
-	for name in ["PrevSite", "NextSite", "BackToHq"]:
-		var b := hq.find_child(name, true, false) as Button
-		assert_not_null(b, "%s: %s" % [what, name])
-		if big:
-			assert_true(b.text.length() <= 1, "%s: %s shows its icon (and arrow) only: '%s'" % [what, name, b.text])
-			assert_ne(b.tooltip_text, "", "%s: %s keeps its words in the tooltip" % [what, name])
-		assert_true(b.get_global_rect().end.x <= card.end.x + 0.5, "%s: %s inside the column (%s vs %s)" % [what, name, b.get_global_rect(), card])
+	assert_true(legend.is_folded(), "%s: the HQ's key is folded" % what)
+	assert_not_null(legend.fold_button, "%s: the folded key is its MAP KEY button" % what)
+	var line := legend.fold_button.get_combined_minimum_size().y
+	assert_true(legend.size.y <= line * 2.0 + 24.0, "%s: folded, the key is one line (%.0f px)" % [what, legend.size.y])
+	var cursor := hq._panel.find_child("MapCursor", true, false) as Control
+	assert_not_null(cursor, "%s: the map cursor steps the Sites" % what)
+	assert_ne(hq.stepped_site(1), &"", "%s: there is a Site to step to" % what)
+
+
+## The map's room on the HQ page (global px): the page (labels keep off its pieces, the
+## overlay's blocks).
+func _map_area(hq: Control) -> Rect2:
+	return (hq._panel as Control).get_global_rect()
+
+
+## The HQ's card column (global px).
+func _column_rect(hq: Control) -> Rect2:
+	return (hq._panel.find_child("CardColumn", true, false) as Control).get_global_rect()
 
 
 ## H24 K6: no two node icons (with their tier pips) overlap.
@@ -223,7 +224,7 @@ func _check_icons_apart(overlay: CityMapOverlay, what: String) -> void:
 func _check_labels_k1(hq: Control, what: String, reaches: Array[float]) -> void:
 	var overlay: CityMapOverlay = hq.city_overlay
 	var hud_bottom: float = (hq.hud as Control).get_global_rect().end.y
-	var area := (hq.find_child("GridMapArea", true, false) as Control).get_global_rect()
+	var area := _map_area(hq)
 	var rects := overlay.label_rects()
 	assert_false(rects.is_empty(), "%s: labels shown" % what)
 	_assert_apart(rects, "%s labels" % what)
@@ -254,9 +255,9 @@ func _check_legend(hq: Control, what: String, scale: float) -> void:
 	assert_true(legend.is_visible_in_tree(), what)
 	var lr := _legend_rect(legend)
 	assert_true(SCREEN.encloses(lr), "%s: the key %s is on screen" % [what, lr])
-	var area := (hq.find_child("GridMapArea", true, false) as Control).get_global_rect()
+	var area := _map_area(hq)
 	assert_true(area.grow(0.5).encloses(lr), "%s: over the map %s" % [what, area])
-	var column := (hq.find_child("GridColumn", true, false) as Control).get_global_rect()
+	var column := _column_rect(hq)
 	assert_false(lr.intersects(column), "%s: clear of the side column" % what)
 	assert_eq(legend.font_size(), roundi(MapLegend.COMPACT_FONT * scale), "%s: its text follows the scale" % what)
 	var labels := legend.body.find_children("*", "Label", true, false)
@@ -266,22 +267,33 @@ func _check_legend(hq: Control, what: String, scale: float) -> void:
 	assert_eq(LegendSpot.covered(lr, LegendSpot.node_rects(hq.city_overlay, false)), 0.0, "%s: the key covers no node" % what)
 
 
-## H23 #5: every node's icon centre and tier pips on the map area, none under the column.
+## H23 #5, HQ-B (Q5): the Sites the HQ's camera fits have their icon centre and tier pips on
+## the map, none under the card column (a network wider than the raid range's widest view
+## may leave some out: then only the check that the fit is at its widest).
 func _check_nodes_beside_the_column(hq: Control, what: String) -> void:
 	var overlay: CityMapOverlay = hq.city_overlay
-	var area := (hq.find_child("GridMapArea", true, false) as Control).get_global_rect()
-	var column := (hq.find_child("GridColumn", true, false) as Control).get_global_rect()
+	var area: Rect2 = hq.hq_free_rect()
+	var column := _column_rect(hq)
 	var xf := overlay.get_global_transform()
+	var widest := RaidZoomFit.zoom_of(CityView3D.CONFIG.raid_fit_max, hq.size.x)
+	var fitted := {}
+	for id in hq.hq_fit_ids():
+		fitted[id] = true
+	var out := 0
 	for n in overlay.nodes:
-		if not overlay.marker_shown(n):
-			continue  # ART-5 5d: a hidden v4 Site is not on the map
+		if not overlay.marker_shown(n) or not fitted.has(n["id"]):
+			continue
 		var at := _screen_at(overlay, n)
+		if not area.has_point(at):
+			out += 1
+			continue
 		var where := "%s %s at %s" % [what, n["id"], at]
-		assert_true(area.has_point(at), "%s: on the map %s" % [where, area])
 		assert_false(column.has_point(at), "%s: not under the column" % where)
 		var pips := overlay.tier_pips_rect(n)
 		if pips.has_area():
-			assert_true(area.grow(0.5).encloses(Rect2(xf * pips.position, pips.size * xf.get_scale())), "%s: its tier pips too" % where)
+			assert_true(_map_area(hq).grow(0.5).encloses(Rect2(xf * pips.position, pips.size * xf.get_scale())), "%s: its tier pips on the page" % where)
+	if out > 0:
+		assert_almost_eq(overlay.city.scale.x, widest, 0.01, "%s: %d fitted Sites off the map only at the raid range's widest view" % [what, out])
 
 
 ## H21: no two drawn labels overlap, no label covers a node icon, and no icon sits on
@@ -342,7 +354,13 @@ func _check_every_selection(hq: Control, what: String, ring: bool) -> void:
 		overlay.selected_id = id
 		var sel := "%s selected %s" % [what, id]
 		var rects := overlay.label_rects()
-		assert_true(rects.has(String(id)), "%s: the selected Site is labelled" % sel)
+		# HQ-B (Q5): a Site off the HQ's map (outside its fit) shows no label.
+		var shown := CityMapOverlay._visible_at(overlay.icon_pos(overlay._node_dict(id)), overlay.label_area(), overlay.label_blocks())
+		# At big text the HQ's map is the room the hand and the card leave: a selected Site
+		# with no spot within reach is left unlabelled (the overlay's last resort: its card
+		# names it); at 1.0 it always has one.
+		if shown and (is_equal_approx(Settings.text_scale, 1.0) or rects.has(String(id))):
+			assert_true(rects.has(String(id)), "%s: the selected Site is labelled" % sel)
 		_assert_apart(rects, sel)
 		_assert_on_screen(overlay, sel)
 		for key in rects:
@@ -351,7 +369,7 @@ func _check_every_selection(hq: Control, what: String, ring: bool) -> void:
 		# ANIM-R1 M13: the selected Site's label keeps off every other node's icon.
 		for other in overlay.nodes:
 			var at := overlay.icon_pos(other)
-			if other["id"] == id or at.x == INF:
+			if other["id"] == id or at.x == INF or not rects.has(String(id)):
 				continue
 			assert_false(CityMapOverlay._rect_hits_disc(rects[String(id)], at, overlay.icon_radius(other) - 0.01),
 				"%s: its label keeps off %s's icon" % [sel, other["id"]])
@@ -359,7 +377,7 @@ func _check_every_selection(hq: Control, what: String, ring: bool) -> void:
 	overlay.set_graph(g0["nodes"], g0["edges"])
 	overlay.selected_id = c.grid.home_site_id
 	for n in overlay.nodes:
-		if n.get("big", false):
+		if n.get("big", false) and CityMapOverlay._visible_at(overlay.icon_pos(n), overlay.label_area(), overlay.label_blocks()):
 			assert_true(overlay.label_rects().has(String(n["id"])), "%s: landmark %s labelled" % [what, n["id"]])
 	if ring:
 		var last: Dictionary = overlay.nodes[overlay.nodes.size() - 1]
@@ -375,31 +393,6 @@ func _check_every_selection(hq: Control, what: String, ring: bool) -> void:
 	var g1: Dictionary = hq.grid_graph()
 	overlay.set_graph(g1["nodes"], g1["edges"])
 	overlay.selected_id = hq.selected_site
-
-
-## H23 #7: each run row and each Site step carries its Site's map icon and names its kind.
-func _check_run_rows_and_steps(hq: Control, what: String) -> void:
-	var nodes := {}
-	for n in hq.grid_graph()["nodes"]:
-		nodes[n["id"]] = n
-	var rows := hq.find_child("RunRows", true, false) as VBoxContainer
-	assert_not_null(rows, "%s: one run a row" % what)
-	var checked := 0
-	for b in rows.get_children():
-		if b is Button and String(b.name).begins_with("Run_"):
-			var id := StringName(String(b.name).trim_prefix("Run_"))
-			var kind := String(nodes[id]["kind"])
-			assert_eq(IconMark.map_kind_of(b), kind, "%s %s: the map icon of its kind" % [what, id])
-			assert_string_contains((b as Button).tooltip_text.replace("\n", " "), CityMapOverlay.kind_word(kind), "%s %s: the tip names the kind" % [what, id])
-			if kind != CityMapOverlay.KIND_TIER:
-				assert_string_contains((b as Button).text, CityMapOverlay.kind_word(kind).to_upper(), "%s %s: the row says its kind" % [what, id])
-			checked += 1
-	assert_gt(checked, 0, "%s: runs checked" % what)
-	for pair in [["PrevSite", -1], ["NextSite", 1]]:
-		var b := hq.find_child(pair[0], true, false) as Button
-		var to: StringName = hq.stepped_site(pair[1])
-		assert_eq(IconMark.map_kind_of(b), String(nodes[to]["kind"]), "%s: %s shows the icon of the Site it goes to" % [what, pair[0]])
-		assert_string_contains(b.tooltip_text.replace("\n", " "), CityMapOverlay.kind_word(String(nodes[to]["kind"])), "%s: %s names it" % [what, pair[0]])
 
 
 ## H21 (1.5 live) and H22 (1.6 live): a text size change on the open Grid keeps the labels

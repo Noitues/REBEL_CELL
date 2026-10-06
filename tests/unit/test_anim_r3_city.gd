@@ -397,14 +397,13 @@ func test_the_cells_territory_is_its_own_colour_and_the_claimed_card_says_so() -
 	assert_eq(badge.icon_kind, StatIcon.CLAIM, "with the claim mark")
 
 
+## HQ-B (d, Q11): CLAIM is the verb slot's sticker.
 func _claim_button(hq: Control) -> Button:
-	var card: Node = hq._panel.find_child("SelectedSite", true, false)
-	if card == null:
+	var slot: Node = hq._panel.get_node_or_null("VerbSlot")
+	if slot == null:
 		return null
-	for b in card.find_children("*", "Button", true, false):
-		if (b as Button).text.contains(tr("Claim")) and not (b as Node).is_queued_for_deletion():
-			return b
-	return null
+	var b := slot.get_node_or_null("Claim") as Button
+	return b if b != null and not b.is_queued_for_deletion() else null
 
 
 # --- B7: the Heat banner -----------------------------------------------------------------------------
@@ -610,24 +609,3 @@ func test_saved_keeps_off_titles_and_buttons_on_the_map_screens() -> void:
 		assert_false(Rect2(at, Vector2(60, 20)).intersects(c), "a free spot inside the screen when every edge is taken")
 
 
-func test_the_grid_column_never_ends_in_a_cut_row_at_big_text() -> void:
-	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
-	var hq := _scene(HQ)
-	await _frames(1)
-	hq.new_campaign(1)
-	hq.show_grid()
-	await _frames(8)
-	var hint: ScrollHint = hq.side_hint
-	assert_not_null(hint)
-	assert_true(hint.snap_rows, "the side column snaps to its rows")
-	hint.refresh()
-	await _frames(3)
-	var view := hint.scroll.get_global_rect()
-	for n in hint.scroll.get_child(0).find_children("*", "Control", true, false):
-		var c := n as Control
-		if not c.is_visible_in_tree() or not (c.get_parent() is BoxContainer):
-			continue
-		var r := c.get_global_rect()
-		if r.size.y <= 0.0 or r.size.y > view.size.y * ScrollHint.ROW_SHARE or r.position.y <= view.position.y:
-			continue
-		assert_false(r.position.y < view.end.y - 0.5 and r.end.y > view.end.y + 0.5, "row %s is not cut by the view's foot (%s in %s)" % [c.name, r, view])

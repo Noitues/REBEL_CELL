@@ -218,6 +218,28 @@ binding (also in PROPOSAL.md's rulings section):
 - Q13: the swaps are the Loadout's SPINNER chips (ANIM-4's, unchanged); the dossiers' OptionButtons went in b.
 - Tests: new `tests/unit/test_hq_b_story.gd` (fast).
 
+**HQ-B (g): cleanup of the old HQ / Grid pages and the test port.**
+- Removed from `hq_scene.gd` (dead since b / c): the Grid page's fit / lean / key / minimap / step-row machinery
+  (`fit_grid_map`, `_grid_settled`, `grid_lean`, `_place_grid_legend`, `_mount_grid_camera`, `_fit_steps` ...), the run
+  rows (`light_run_row`, `_run_buttons`), the HQ mini-map's drops (`_register_hq_drops`, `_mini_rect`), the Grid card's
+  chips (`_register_grid_drops`), the crew focus links of the dossier column (`_link_crew_focus`), CELL STATUS
+  (`cell_badges`), the Grid / HQ prebakes for the cyberdeck HQ (`_prebake_grid`, `first_grid_region`, `warm_start_hq`:
+  the HQ is the wireframe city's page now), the raid side column's layout (`place_raid_legend`, `raid_free_rect`,
+  `_use_raid_strip`, `_deploy_steps`, `_fit_card_row` ...), the HQ's own Codex page (`show_codex`: the pause menu's
+  Codex is the one; the start page's Codex line opens it there, `open_codex`) and their constants. Kept: `show_grid`
+  (opens the HQ), `raid_min_zoom`, GRID-12's `grid_city_pan` (the HQ fit uses it).
+- **S-MAPVIEW hookups (orchestrator relay):** `raid_graph` and the setup's `hq_graph(projection)` draw the major (raid)
+  nodes only (`RaidMapNodes.major_ids` / `shown_routes`), `raid_route_paths` is `RaidMapNodes.route_paths`, and
+  `hq_map_mode(true)` syncs the band (map mode follows RAID; zoomed out past the raid range, the GRID band, map mode
+  off). The HQ's CREW / MARKET / DEFENCE-armory map keeps every Site (it is the Grid, folded in: Sites must be
+  pickable).
+- **Motion entries re-pointed (binding, none dropped):** `hq_crt_hum` hums the selected Site's CRT card; `radio_type`
+  types JACK IN's system word in on arrival; `jack_ring_breathe` breathes the JACK IN sticker (`Motion.loop_pulse` on
+  its scale); `polaroid_tilt` tilts a hovered / focused crew card (`CrewHandCard.tilt`); `minimap_pulse` rings, on the
+  HQ's minimap (`CityMinimap.pulse`), the Sites whose status changed since the HQ last showed (`changed_sites`, view
+  memory per campaign); `select_ring_ease` is the city map's own; the drag-and-drop motions (`crew_assign`,
+  `drop_buy`, `market_fly` ...) moved with their targets in b. `sticky_bump` plays on the HEAT tag (a).
+
 ### 2026-10-05 — Designer ruling — city as a map in raid and netrun views
 Designer rulings 2026-10-05 (S-MAPVIEW): on a raid view and a netrun view the city and its buildings are slightly
 greyed and lowered in opacity so the nodes and links pop (main's raid view was "a bright colourful mess"); the city

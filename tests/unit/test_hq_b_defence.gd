@@ -83,7 +83,7 @@ func test_the_defence_tab_is_the_raid_setup_in_place() -> void:
 	for n in hq.city_overlay.nodes:
 		if RunManager.campaign.grid.is_claimed(n["id"]):
 			assert_true((n["socket"] as Dictionary).has("forecast"), "%s carries its forecast" % n["id"])
-	for name in ["AssetCards", "ThreatIntel", "NodeOrders", "RaidCard", "HomeForecast", "RunRaid", "RaidSpeedStrip"]:
+	for name in ["AssetCards", "ThreatIntel", "NodeOrders", "RaidCard", "HomeForecast", "RunRaid", "SpeedStrip"]:
 		assert_not_null(page.find_child(name, true, false), "%s in the setup" % name)
 	assert_true(page.get_node("VerbSlot").is_ancestor_of(page.find_child("RunRaid", true, false)), "START DEFENSE in the sticker slot")
 	assert_false((page.find_child("RaidSetup", true, false) as Control).visible, "no RAID SETUP chip in the setup itself")
