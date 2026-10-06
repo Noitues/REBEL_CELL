@@ -996,7 +996,8 @@ func _set_panel(p: Control, name: String) -> void:
 	_panel = p
 	# ANIM-6: a new page enters (glass slides in, back to the HQ from the left); the same page
 	# rebuilt after an action just shows.
-	entering = name != panel_name
+	# HQ-B: the HQ and its raid setup are one page (a tab switch, not a new page).
+	entering = name != panel_name and not (name in HQ_PAGES and panel_name in HQ_PAGES)
 	var back := name == "hq" and panel_name != ""
 	panel_name = name
 	# ANIM-5: only the Grid and the playout ease their camera; any other page shows its
@@ -1015,9 +1016,11 @@ func _set_panel(p: Control, name: String) -> void:
 	# ANIM-R5 P4: the campaign's end too (it was a near-opaque glass page of terminal lines).
 	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "grid", "raid", "raid_playout", "raid_summary", "end", "end_lock"] or name.begins_with("city") else &"GlassPanel"
 	# HQ-B (Q6): the HQ shows no title (the HEAT gauge holds the bar's first slot).
-	hud.set_screen("" if name == "hq" else String(SCREEN_NUMBERS.get(name, "")), "" if name == "hq" else screen_title(name))
+	hud.set_screen("" if name in HQ_PAGES else String(SCREEN_NUMBERS.get(name, "")), "" if name in HQ_PAGES else screen_title(name))
 	if not name in HEAT_BUTTON_PAGES:
 		close_heat_terminal(false)
+	if not name in HQ_PAGES:
+		hq_map_mode(false)  # HQ-B: the map mode is the HQ's (and its raid setup's) only
 	# H24 S15: lines tied to the screen being left end here.
 	Dialogue.enter_screen(name)
 	set_page_prompts(prompts_for(name))
@@ -1164,7 +1167,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	# HQ-B: LB / RB (Q / E) switch the hand's tabs; R opens the raid setup (RAID SETUP [R]).
-	if panel_name == "hq" and _settings_panel == null and not has_node("LoadoutView") and not has_node("DaemonTray"):
+	if panel_name in HQ_PAGES and _settings_panel == null and not has_node("LoadoutView") and not has_node("DaemonTray"):
 		for step in [[&"nudge_left", -1], [&"nudge_right", 1]]:
 			if event.is_action_pressed(step[0]) and not event.is_echo():
 				open_hand(posmod(hand_tab + int(step[1]), TAB_WORDS.size()))
@@ -1600,19 +1603,31 @@ func _ice_description(level: int) -> String:
 ## the selected Site's card at the right over the one pink sticker slot (JACK IN), and the
 ## minimap with the folded MAP KEY at the top right. Click a Site (or step them with the pad
 ## on the map), pick the runner's card, press JACK IN. Every action goes through the rules.
+## The DEFENCE tab with a raid pending is the raid setup on this same page (`show_raid`).
 func show_hq() -> void:
-	var c := RunManager.campaign
-	if c == null:
+	if RunManager.campaign == null:
 		show_start()
 		return
+	# Back from the raid setup (B, the CREW tab, a page that left it): the crew's hand.
+	if hand_tab == HandTab.DEFENCE and not RunManager.campaign.pending_raids.is_empty():
+		hand_tab = HandTab.CREW
+	_build_hq_page("hq")
+
+
+## HQ-B: builds the HQ page as `page_name`: "hq" (the CREW / MARKET / DEFENCE hands) or "raid"
+## (the DEFENCE hand as the raid setup, in place: the same city, camera, card row and slot).
+func _build_hq_page(page_name: String) -> void:
+	var c := RunManager.campaign
 	var corp := RunManager.corporation
 	var cfg := RunManager.config()
-	# The camera stays where the player left it when the same page rebuilds (a pick, a buy).
-	var keep := _city_frame() if panel_name == "hq" and city_overlay != null and is_instance_valid(city_overlay) else {}
+	var raid_mode := page_name == "raid"
+	# The camera stays where the player left it when the same page rebuilds (a pick, a buy, a tab).
+	var keep := _city_frame() if panel_name in HQ_PAGES and city_overlay != null and is_instance_valid(city_overlay) else {}
 	_sync_previews()
 	# ANIM-R4 H10: what the pages this one leads to need is made ahead.
 	AudioDirector.prewarm_music(["raid", "netrun", "combat"], c.corporation_id)
-	_warm_previews.call_deferred()
+	if not raid_mode:
+		_warm_previews.call_deferred()
 	_grid_chips.clear()
 	_jack_button = null
 	var launchable := RunManager.launchable_sites()
@@ -1621,6 +1636,9 @@ func show_hq() -> void:
 		selected_site = launchable[0].id if not launchable.is_empty() else c.grid.home_site_id
 	if selected_op() != null:
 		selected_operative = selected_op().id
+	var pending := RunManager.pending_raid()
+	var raid: RaidData = CampaignRules.raid_data(pending, RunManager.lookup()) if not pending.is_empty() else null
+	var projection: RaidResolver.RaidResult = RunManager.project_raid() if not pending.is_empty() else null
 	var page := Control.new()
 	page.name = "HqPage"
 	hq_page = page
@@ -1634,9 +1652,9 @@ func show_hq() -> void:
 	cursor.tooltip_text = UiTip.fold(UiTip.for_input(tr("The city: click a Site to select it; the wheel zooms, a drag pans."),
 		tr("The city: left and right step through the Sites; down to the hand.")))
 	page.add_child(cursor)
-	# The work order while a raid is pending (corp paper), RAID SETUP under it.
-	var pending := RunManager.pending_raid()
-	if not pending.is_empty():
+	# The work order while a raid is pending (corp paper), RAID SETUP under it; in the setup the
+	# whole forecast with the Cell's stamp.
+	if raid != null:
 		# It scrolls inside its room at big text (the map keeps its part).
 		var order := VBoxContainer.new()
 		order.name = "WorkOrder"
@@ -1652,15 +1670,16 @@ func show_hq() -> void:
 		paper.name = "WorkOrderBox"
 		paper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		paper_scroll.add_child(paper)
-		var raid := CampaignRules.raid_data(pending, RunManager.lookup())
-		var projection := RunManager.project_raid()
-		paper.add_child(_raid_card(raid, pending, projection, true))
+		paper.add_child(_raid_card(raid, pending, projection, not raid_mode))
 		var setup := MenuChip.new(tr("RAID SETUP"), "[%s]" % Settings.hint(&"toggle_ring").strip_edges().trim_prefix("[").trim_suffix("]"), Palette.CELL_PINK)
 		setup.name = "RaidSetup"
 		setup.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		setup.pressed.connect(show_raid)
 		setup.tooltip_text = UiTip.fold(tr("RAID SETUP: a raid is coming along the red pencil routes: set up the defence."))
+		setup.visible = not raid_mode
 		order.add_child(setup)
+		if raid_mode:
+			order.add_child(_raid_intro())
 		page.add_child(order)
 	# The hand: its tabs and the cards of the deck picked.
 	page.add_child(_hand_tabs())
@@ -1677,17 +1696,21 @@ func show_hq() -> void:
 	cards.custom_minimum_size.y = (HqLayout.CARD.y + HqLayout.LIFT) * HqLayout.object_scale(Settings.text_scale)
 	hand.add_child(cards)
 	page.add_child(hand)
-	match hand_tab:
-		HandTab.MARKET:
-			_fill_market_hand(cards)
-		HandTab.DEFENCE:
-			_fill_armory_hand(cards)
-		_:
-			_fill_crew_hand(cards, launchable)
+	if raid_mode:
+		_fill_defence_hand(cards)
+	else:
+		match hand_tab:
+			HandTab.MARKET:
+				_fill_market_hand(cards)
+			HandTab.DEFENCE:
+				_fill_armory_hand(cards)
+			_:
+				_fill_crew_hand(cards, launchable)
 	for k in cards.get_children():
 		(k as Control).size_flags_vertical = Control.SIZE_SHRINK_END  # on the hand's foot
-	# The selected Site's card (its facts, IF CLEARED, its actions).
-	# The column scrolls inside its room at big text (the minimap and the key keep theirs).
+	# The card column: the selected Site's card (its facts, IF CLEARED, its actions); in the
+	# setup THREAT INTEL and YOUR NETWORK. It scrolls inside its room at big text (the minimap
+	# and the key keep theirs).
 	var column := ScrollContainer.new()
 	column.name = "CardColumn"
 	column.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -1701,14 +1724,20 @@ func show_hq() -> void:
 	stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(stack)
 	var site := CampaignRules.site_data(corp, selected_site)
-	if site != null:
+	if raid_mode:
+		_defence_cards(stack, raid, pending, projection)
+	elif site != null:
 		var card := _site_card(site, launchable, c.living_operatives(), _node_choices())
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		stack.add_child(card)
 	page.add_child(column)
-	# The verb slot: the one pink sticker (JACK IN for a runnable Site; a saved run's resume).
-	page.add_child(_verb_slot(site, launchable))
-	# The pirate radio as one ON AIR line (Q7) at the foot, over the hand's room.
+	# The verb slot: the one pink sticker (JACK IN for a runnable Site, a saved run's resume;
+	# START DEFENSE with Speed / Skip in the setup).
+	var verb_sites: Array[SiteData] = []
+	if not raid_mode:
+		verb_sites = launchable
+	page.add_child(_verb_slot(site if not raid_mode else null, verb_sites, raid_mode))
+	# The pirate radio as one ON AIR line (Q7) at the foot, under the hand.
 	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, c.corporation_id, &"", c.runs_started + c.runs_completed * 7)
 	var dj_text := Dialogue.voice_text(dj_line) if dj_line != null else tr("lo-fi loop: HQ")
 	var ticker := OnAirTicker.new(PackedStringArray([dj_text, tr("vs %s | ICE %d%s") % [TextDb.t(corp, "display_name"), c.ice_level, tr(" | ASSIST") if c.is_assisted() else ""]]))
@@ -1716,7 +1745,7 @@ func show_hq() -> void:
 	ticker.tooltip_text = UiTip.fold("%s\n%s" % [dj_text, campaign_code_line()])
 	ticker.mouse_filter = Control.MOUSE_FILTER_PASS
 	page.add_child(ticker)
-	_set_panel(page, "hq")
+	_set_panel(page, page_name)
 	page.resized.connect(_place_hq)
 	for piece in page.get_children():
 		if piece is Control:
@@ -1726,16 +1755,23 @@ func show_hq() -> void:
 		if n != null:
 			n.minimum_size_changed.connect(_queue_place_hq)
 	# The map on the city: every Site as its v4 marker, the Cell's nodes as their raid sockets
-	# on uplink pads, the pending raid's routes as red dashed pencil (what-if until the setup).
-	var g := hq_graph()
+	# on uplink pads; a pending raid's routes as red pencil: dashed (a what-if) at the HQ, solid
+	# with each node's forecast in the setup.
+	var g := hq_graph(projection if raid_mode else null)
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, keep.get("anchor", HQ_ANCHOR), keep.get("scale", 1.0),
 		keep.get("focus", Vector2.INF))
 	city_overlay.selected_id = selected_site
 	city_overlay.boss_exploits = Vector2i(c.exploits.size(), cfg.min_exploits_for_breach)
-	city_overlay.node_clicked.connect(select_site)
-	_mount_hq_routes()
+	if raid_mode:
+		city_overlay.node_clicked.connect(func(id: StringName) -> void:
+			if RunManager.campaign.grid.is_claimed(id):
+				select_target(id))
+	else:
+		city_overlay.node_clicked.connect(select_site)
+	_mount_hq_routes(projection, raid_mode)
 	wireframe.city.set_city_life(GridCityLife.of(c, corp, cfg))
 	_mount_hq_map_tools(page)
+	hq_map_mode(true)
 	_place_hq()
 	_sync_hq_band()
 	if keep.is_empty():
@@ -1745,7 +1781,14 @@ func show_hq() -> void:
 			get_tree().process_frame.connect(fit_hq_map, CONNECT_ONE_SHOT)
 	else:
 		wireframe.ease_camera()
-	_register_hq_drops_b(launchable)
+	if raid_mode:
+		_register_raid_drops(c.grid.claimed_ids(), hand)
+		set_page_prompts(prompts_for("raid") + [[&"cycle_target", KEY_PROMPT]])
+		# ANIM-R1 M2: the playout's zoomed map baked behind the setup, so START DEFENSE opens onto
+		# a city that is already there.
+		_prebake_playout.call_deferred(c, null)
+	else:
+		_register_hq_drops_b(launchable)
 	_link_hq_focus(page)
 	if _hq_focus != "":
 		_focus_named.call_deferred(_hq_focus)
@@ -1753,6 +1796,35 @@ func show_hq() -> void:
 	if _last_warned_raid != String(pending.get("raid_id", "")) and not pending.is_empty():
 		_last_warned_raid = String(pending.get("raid_id", ""))
 		Dialogue.raid_warning(c.corporation_id, StringName(String(pending.get("raid_id", ""))), c.raids_won + c.raids_lost, "raid")
+
+
+## H23 S5 / parity RAID-02: what the raid is and what to do, in one plain sentence, on a dark
+## plate; HQ-B (c): under the work order in the setup.
+func _raid_intro() -> Control:
+	var intro := _para(TextDb.ui_text("ui.raid_intro"))
+	intro.name = "RaidIntro"
+	intro.add_theme_color_override("font_color", Palette.PAPER)
+	var intro_box := PanelContainer.new()
+	intro_box.name = "RaidIntroBox"
+	intro_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var plate := StyleBoxFlat.new()
+	plate.bg_color = Color(Palette.SCRIM, RAID_INTRO_PLATE_ALPHA)
+	plate.set_content_margin_all(UiTheme.SP_S)
+	intro_box.add_theme_stylebox_override(&"panel", plate)
+	intro_box.add_child(intro)
+	return intro_box
+
+
+## HQ-B: the pages that are the HQ (its hands, and the DEFENCE hand's raid setup).
+const HQ_PAGES: Array[String] = ["hq", "raid"]
+
+
+## HQ-B: the one call point where the HQ (and its raid setup) turns the city's map mode on
+## (designer ruling 2026-10-05: raid and netrun views grey the city and lower its opacity so the
+## nodes and links pop). S-MAPVIEW builds that mode on CityView3D (CityConfig numbers) and hooks
+## it in here; until then the HQ draws the city as the raid band draws it (no dimming of its own).
+func hq_map_mode(_on: bool) -> void:
+	pass
 
 
 ## HQ-B: the hand's decks behind the tabs.
@@ -1823,7 +1895,7 @@ func open_hand(tab: int) -> void:
 		return
 	hand_tab = tab
 	_hq_focus = "Tab_%s" % TAB_WORDS[tab]
-	if panel_name == "hq":
+	if panel_name in HQ_PAGES:
 		wireframe.hold_camera()
 	show_hq()
 
@@ -2040,13 +2112,16 @@ func _fill_armory_hand(cards: HBoxContainer) -> void:
 
 ## HQ-B: the one pink sticker slot (bottom right): JACK IN for a runnable Site with the picked
 ## runner (the run's resume while a saved run waits); its system word under it. Named "Launch".
-func _verb_slot(site: SiteData, launchable: Array[SiteData]) -> Control:
+func _verb_slot(site: SiteData, launchable: Array[SiteData], raid_mode: bool = false) -> Control:
 	var c := RunManager.campaign
 	var slot := VBoxContainer.new()
 	slot.name = "VerbSlot"
 	slot.alignment = BoxContainer.ALIGNMENT_END
 	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	slot.add_theme_constant_override("separation", 4)
+	if raid_mode:
+		_defence_verb(slot)
+		return slot
 	var runnable := false
 	for s in launchable:
 		if site != null and s.id == site.id:
@@ -2131,29 +2206,48 @@ func resume_run() -> void:
 ## HQ-B: the HQ's map graph: every Site as the Grid draws it (v4 markers, links, threat
 ## arrows), the Cell's nodes as their raid sockets (on uplink pads, with stationed beacons)
 ## and the assets placed on them.
-func hq_graph() -> Dictionary:
+func hq_graph(projection: RaidResolver.RaidResult = null) -> Dictionary:
 	var c := RunManager.campaign
 	var g := grid_graph()
 	for n: Dictionary in g["nodes"]:
 		n["threat_corp"] = String(c.corporation_id)
-		if c.grid.is_claimed(n["id"]):
-			n["socket"] = raid_socket(n["id"], {}, false, c)
-			n["assets"] = c.grid.assets_on(n["id"])
+		if not c.grid.is_claimed(n["id"]):
+			continue
+		n["assets"] = c.grid.assets_on(n["id"])
+		# In the raid setup each node of the Cell's carries its forecast (3A: the ring, the tag).
+		var res: Dictionary = projection.nodes.get(String(n["id"]), {}) if projection != null else {}
+		if not res.is_empty():
+			var outcome := shown_outcome(String(res["outcome"]), n["id"] == c.grid.home_site_id, int(res["after"]))
+			n["color"] = Palette.CELL_ACID if outcome == "holds" else Palette.CELL_PINK
+			n["result"] = "%s → %s %s" % [res["before"], res["after"], outcome_word(outcome)]
+			n["label"] = site_name(n["id"])
+			n["tip"] = tr("%s: integrity (HP) %s → %s in the raid. %s") % [site_name(n["id"]), res["before"], res["after"], outcome_tip(outcome)]
+		n["socket"] = raid_socket(n["id"], res, projection != null, c)
+	if projection != null:
+		for e in g["edges"]:
+			if e.get("arrows", false):
+				e["pencil"] = true  # ART-6 3A: the threat routes are the pencil's (RaidRouteLayer)
 	return g
 
 
-## HQ-B: the pending raid's routes on the HQ map, as red dashed pencil (a what-if: the setup
-## makes them solid), with their entries lettered; the stationed beacons and uplink pads.
-func _mount_hq_routes() -> void:
+## HQ-B: the pending raid's routes on the HQ map in red pencil, their entries lettered: dashed
+## (a what-if) at the HQ, solid (the resolver's projection: preview equals result) in the
+## setup, written on when they change; the stationed beacons and uplink pads.
+func _mount_hq_routes(projection: RaidResolver.RaidResult = null, solid: bool = false) -> void:
 	if city_overlay == null or not is_instance_valid(city_overlay):
 		return
 	raid_routes = RaidRouteLayer.new(city_overlay)
 	city_overlay.add_child(raid_routes)
 	city_overlay.add_child(RaidBeaconLayer.new(city_overlay))
-	var projection := RunManager.project_raid() if not RunManager.pending_raid().is_empty() else null
 	if projection != null:
-		raid_routes.set_routes([] as Array[Array], false)
-		raid_routes.set_what_if(raid_route_paths(projection.events))
+		var paths := raid_route_paths(projection.events)
+		if solid:
+			var key := str(paths)
+			raid_routes.set_routes(paths, key != _routes_shown)
+			_routes_shown = key
+		else:
+			raid_routes.set_routes([] as Array[Array], false)
+			raid_routes.set_what_if(paths)
 	_mount_uplink_pads()
 
 
@@ -2209,7 +2303,7 @@ func _hq_apply_frame(z: float, f: Vector2, a: Vector2) -> void:
 ## raid range's widest frame (`raid_fit_max`); zoomed out past it the city takes the GRID band
 ## (solid buildings, the whole city).
 func _sync_hq_band() -> void:
-	if wireframe == null or not panel_name == "hq":
+	if wireframe == null or not panel_name in HQ_PAGES:
 		return
 	wireframe.use_city3d(true, hq_band())
 
@@ -2254,18 +2348,21 @@ func _place_hq() -> void:
 	var hr: Rect2 = r["hand"]
 	var hand_h := maxf(hr.size.y, (hand.get_child(0) as Control).get_combined_minimum_size().y)
 	hand.position = Vector2(tabs.position.x + tabs.size.x + HqLayout.GAP, area.y - HqLayout.MARGIN - hand_h)
-	var col_x := area.x - HqLayout.MARGIN - (r["card"] as Rect2).size.x
+	# The card column: its width, or what its widest card needs.
+	var column := page.get_node("CardColumn") as Control
+	var col_w := maxf((r["card"] as Rect2).size.x, (column.get_child(0) as Control).get_combined_minimum_size().x)
+	var col_x := area.x - HqLayout.MARGIN - col_w
 	hand.size = Vector2(maxf(1.0, minf(verb.position.x, col_x) - HqLayout.GAP - hand.position.x), hand_h)
 	var foot_top := minf(hand.position.y, tabs.position.y)
 	if order != null:
 		var o: Rect2 = r["order"]
 		# The paper scrolls in what RAID SETUP leaves it (the chip always shows).
 		var paper := order.get_node("WorkOrderPaper/WorkOrderBox") as Control
-		var chip_h := (order.get_node("RaidSetup") as Control).get_combined_minimum_size().y + order.get_theme_constant("separation")
+		# What the paper's scroll leaves (RAID SETUP, the setup's instruction line) and their gaps.
+		var chip_h := order.get_combined_minimum_size().y + order.get_theme_constant("separation")
 		order.position = o.position
 		order.size = Vector2(maxf(o.size.x, paper.get_combined_minimum_size().x), minf(paper.get_combined_minimum_size().y + chip_h, maxf(chip_h + 1.0, foot_top - HqLayout.GAP - o.position.y)))
 	var top := HqLayout.MARGIN
-	var cr: Rect2 = r["card"]
 	if hq_minimap != null and is_instance_valid(hq_minimap) and hq_minimap.visible:
 		var ms := hq_minimap.get_combined_minimum_size()
 		hq_minimap.size = ms
@@ -2276,10 +2373,9 @@ func _place_hq() -> void:
 		hq_legend.size = ls
 		hq_legend.position = Vector2(area.x - HqLayout.MARGIN - ls.x, top)
 		top += hq_legend.fit_size().y + HqLayout.GAP
-	var column := page.get_node("CardColumn") as Control
 	var bottom := verb.position.y - HqLayout.GAP
-	column.size = Vector2(cr.size.x, maxf(1.0, minf((column.get_child(0) as Control).get_combined_minimum_size().y, bottom - top)))
-	column.position = Vector2(area.x - HqLayout.MARGIN - cr.size.x, bottom - column.size.y)
+	column.size = Vector2(col_w, maxf(1.0, minf((column.get_child(0) as Control).get_combined_minimum_size().y, bottom - top)))
+	column.position = Vector2(col_x, bottom - column.size.y)
 	_hq_free = Rect2(Vector2(order.position.x + order.size.x + HqLayout.MARGIN if order != null else HqLayout.MARGIN, HqLayout.MARGIN), Vector2.ZERO)
 	_hq_free.end = Vector2(column.position.x - HqLayout.MARGIN, foot_top - HqLayout.MARGIN)
 	_hq_free.size = _hq_free.size.max(Vector2.ONE)
@@ -2322,21 +2418,30 @@ func hq_fit_lots() -> PackedVector2Array:
 	var out := PackedVector2Array()
 	if city_overlay == null or not is_instance_valid(city_overlay) or RunManager.campaign == null:
 		return out
-	var c := RunManager.campaign
 	var want := {}
-	for id in c.grid.claimed_ids():
+	for id in hq_fit_ids():
 		want[id] = true
-	for s in RunManager.launchable_sites():
-		want[s.id] = true
-	for s in RunManager.patrol_sites():
-		want[s.id] = true
-	for path in CityLayout.threat_paths(c, RunManager.corporation):
-		for id in path:
-			want[id] = true
 	for n in city_overlay.nodes:
 		if want.has(n["id"]):
 			out.append(Vector2(city_overlay.lot_of(n["id"])) + Vector2(0.5, 0.5))
 	return out
+
+
+## HQ-B (Q5): the Sites the HQ's camera fits: the Cell's network and a pending raid's routes,
+## and at the HQ (not in the raid setup) every Site a run can start from now.
+func hq_fit_ids() -> Array[StringName]:
+	var c := RunManager.campaign
+	var ids: Array[StringName] = []
+	ids.append_array(c.grid.claimed_ids())
+	if panel_name != "raid":
+		for s in RunManager.launchable_sites():
+			ids.append(s.id)
+		for s in RunManager.patrol_sites():
+			ids.append(s.id)
+	for path in CityLayout.threat_paths(c, RunManager.corporation):
+		for id in path:
+			ids.append(StringName(String(id)))
+	return ids
 
 
 ## HQ-B: frames the HQ's map once its page is laid out: the fit lots in the free part at the
@@ -2344,7 +2449,7 @@ func hq_fit_lots() -> PackedVector2Array:
 ## on the icons as drawn (a socket floats over its roof: the lots alone frame a little low),
 ## never out past the raid range; then the held picture eases to it.
 func fit_hq_map() -> void:
-	if panel_name != "hq" or city_overlay == null or not is_instance_valid(city_overlay):
+	if not panel_name in HQ_PAGES or city_overlay == null or not is_instance_valid(city_overlay):
 		_hq_fit_pending = false
 		return
 	var free := hq_free_rect()
@@ -2392,24 +2497,33 @@ var _hq_fit_passes: int = 0
 func _end_hq_fit() -> void:
 	_hq_fit_pending = false
 	_hq_fit_passes = 0
+	# Parity GRID-12's idea, carried over (orchestrator 2026-10-05): once fitted, the camera
+	# pans (never zooms) the way that shows the most city in the map, every fitted Site kept in
+	# the free part (a network on the city's edge left a third of the map past the last block).
+	if panel_name in HQ_PAGES and city_overlay != null and is_instance_valid(city_overlay) and hq_page != null:
+		var held: Array[Rect2] = []
+		for id in hq_fit_ids():
+			var r := _map_node_rect(id)
+			if r.has_area():
+				held.append(r)
+		var free := hq_free_rect()
+		var area := hq_page.get_global_rect()
+		if not held.is_empty() and free.has_area():
+			var pan: Vector2 = wireframe.unrigged(func() -> Vector2: return grid_city_pan(free, area, held))
+			if pan.length() >= GRID_LEAN_MIN:
+				var city := wireframe.city
+				_frame_city(city.scale.x, city.focus_grid, city.focus_anchor + pan / get_global_rect().size)
+				city.update_camera()
+				if grid_controls != null and is_instance_valid(grid_controls):
+					grid_controls.sync_minimap()
 	wireframe.ease_camera()
 
 
 ## HQ-B: the screen box (global px) round the icons of the Sites the HQ's camera fits.
 func hq_fit_box() -> Rect2:
-	var c := RunManager.campaign
 	var box := Rect2()
 	var first := true
-	var ids: Array[StringName] = []
-	ids.append_array(c.grid.claimed_ids())
-	for s in RunManager.launchable_sites():
-		ids.append(s.id)
-	for s in RunManager.patrol_sites():
-		ids.append(s.id)
-	for path in CityLayout.threat_paths(c, RunManager.corporation):
-		for id in path:
-			ids.append(StringName(String(id)))
-	for id in ids:
+	for id in hq_fit_ids():
 		var r := _map_node_rect(id)
 		if not r.has_area():
 			continue
@@ -2422,6 +2536,12 @@ func hq_fit_box() -> Rect2:
 ## selected and the cursor keeps the focus.
 func _cursor_step(step: int) -> void:
 	_hq_focus = "MapCursor"
+	if panel_name == "raid":
+		# The setup steps through the Cell's nodes (the defences' targets).
+		var claimed := RunManager.campaign.grid.claimed_ids()
+		if not claimed.is_empty():
+			select_target(claimed[posmod(claimed.find(selected_site) + step, claimed.size())])
+		return
 	step_site(step)
 
 
@@ -2771,8 +2891,9 @@ func _grid_pencil_rects() -> Array[Rect2]:
 ## Parity fix (GRID-12): the pan (screen px) that shows the most of the city in the map's
 ## `area` (global) while every node (icon and tier pips) stays inside `free` (global): the
 ## best of GRID_CITY_STEPS² pans over the room the nodes leave, the shortest on a tie.
-func grid_city_pan(free: Rect2, area: Rect2) -> Vector2:
-	var rects := LegendSpot.node_rects(city_overlay, false)
+func grid_city_pan(free: Rect2, area: Rect2, held: Array[Rect2] = []) -> Vector2:
+	# HQ-B: the HQ holds only its fitted Sites (`held`) in the free part.
+	var rects: Array[Rect2] = held.duplicate() if not held.is_empty() else LegendSpot.node_rects(city_overlay, false)
 	rects.append_array(_grid_pencil_rects())
 	if rects.is_empty():
 		return Vector2.ZERO
@@ -3391,203 +3512,35 @@ func why_not_runnable(site: SiteData, launchable_here: bool, living: Array[Opera
 	return tr(WHY_FROM) % ", ".join(from) if not from.is_empty() else tr(WHY_FAR)
 
 
+## HQ-B (c) (direction_B_defence.jpg): the raid setup is the HQ's DEFENCE hand, in place: the
+## same page, the same camera, the same card row and sticker slot. The routes go solid (the
+## resolver's projection: preview equals result), the Cell's sockets carry their forecast,
+## the work order prints the whole forecast with its stamp, the hand holds the Armory's
+## defence cards (press: deploy to the target; drag onto any of your nodes), the card column
+## holds THREAT INTEL and YOUR NETWORK (each node's forecast; pick the target), and the
+## sticker slot holds START DEFENSE with the Speed / Skip strip under it. B or the CREW tab
+## goes back to the crew; the raid waits until the defence starts.
 func show_raid() -> void:
 	var c := RunManager.campaign
-	var pending := RunManager.pending_raid()
-	if pending.is_empty():
+	if c == null or RunManager.pending_raid().is_empty():
+		hand_tab = HandTab.CREW
 		show_hq()
 		return
-	var lookup := RunManager.lookup()
-	var cfg := RunManager.config()
-	var raid := CampaignRules.raid_data(pending, lookup)
-	var projection := RunManager.project_raid()
+	hand_tab = HandTab.DEFENCE
 	var claimed := c.grid.claimed_ids()
 	if not claimed.has(selected_site):
 		selected_site = claimed[claimed.size() - 1] if not claimed.is_empty() else &""
-	# Raid setup on the city (rest of the city greyed out): the network and the threat
-	# routes on real streets, each node's projected outcome on the map; the raid card, the
-	# node orders and the Armory in the side column and below (H20: no text wall).
-	# H22 #9: the side column takes the page's full height and the Armory sits under the
-	# map beside it (full width under both, it went off the screen at 1.6).
-	var outer := HBoxContainer.new()
-	outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var map_col := VBoxContainer.new()
-	map_col.name = "RaidMapColumn"
-	map_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	map_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	outer.add_child(map_col)
-	var spacer := Control.new()
-	spacer.name = "RaidMapArea"
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	map_col.add_child(spacer)
-	# The raid map has its key too (H20 #22), placed where it covers no node (H22 #9); one
-	# key, listing only what this map shows (H23 S4: all its rows took a quarter of the
-	# screen).
-	var g := raid_graph(projection, {})
-	# H24 S5: the key is a column at the map's left, or a strip along its foot when the
-	# nodes cannot fit beside the column (kept for this layout once chosen).
-	# ANIM-R2 R13: at big text (MapLegend.FOLD_SCALE and up) the key is the Grid's folding
-	# strip from the start (its column covered about half the map at 1.6).
-	_raid_strip = (_raid_strip_key != "" and _raid_strip_key == raid_layout_key()) or Settings.text_scale >= MapLegend.FOLD_SCALE - 0.001
-	raid_legend = MapLegend.pin_to(spacer, c.corporation_id, _raid_strip).show_only(MapLegend.keys_of(g, c.grid))
-	if _raid_strip:
-		raid_legend.minimum_size_changed.disconnect(raid_legend._repin)
-		raid_legend.fold_changed.connect(_place_raid_strip)
-	_raid_reframes = 0
-	_raid_passes = 0
-	_raid_checks = 0
-	_raid_free = Rect2()
-	_raid_fit_for = Rect2()
-	_raid_step = {}
-	_raid_box = Rect2()
-	_raid_same = 0
-	var side := VBoxContainer.new()
-	side.name = "RaidSide"
-	side.custom_minimum_size.x = RAID_SIDE_WIDTH
-	side.add_theme_constant_override("separation", 8)
-	var big_text := Settings.text_scale > RAID_SIDE_LOADOUT_ABOVE
-	var side_scroll: ScrollContainer = null
-	# ART-6 3A: the work order and the terminals take more of the column than the old badges:
-	# above the base text size the column scrolls (the loadout stays under the map to 1.6).
-	if Settings.text_scale > RAID_SIDE_SCROLL_ABOVE:
-		# ART-0 C (text scale 2.0): the side column (the Armory, intro, raid card, YOUR NODES,
-		# START DEFENSE) is taller than the page's view; it scrolls on its own (focus follows).
-		# The bar is never drawn (it would take width from the column and cut its words);
-		# MORE BELOW says there is more, as on the HQ page.
-		var side_box := VBoxContainer.new()
-		side_box.name = "RaidSideBox"
-		side_scroll = ScrollContainer.new()
-		side_scroll.name = "RaidSideScroll"
-		side_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		side_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
-		side_scroll.follow_focus = true
-		side_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		side_scroll.add_child(side)
-		side_box.add_child(side_scroll)
-		outer.add_child(side_box)
-	else:
-		outer.add_child(side)
-	# H23 S5: what the raid is and what to do, in one plain sentence.
-	var intro := _para(TextDb.ui_text("ui.raid_intro"))
-	intro.name = "RaidIntro"
-	intro.custom_minimum_size.x = RAID_SIDE_WIDTH - UiTheme.SP_S * 2.0  # wrapped at the column's width (inside its plate) from the start
-	intro.add_theme_color_override("font_color", Palette.PAPER)
-	# Parity fix (RAID-02): the line sits on a dark plate (it was set straight on the city),
-	# its foot clear of the work order's paper clip.
-	var intro_box := PanelContainer.new()
-	intro_box.name = "RaidIntroBox"
-	intro_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var plate := StyleBoxFlat.new()
-	plate.bg_color = Color(Palette.SCRIM, RAID_INTRO_PLATE_ALPHA)
-	plate.set_content_margin_all(UiTheme.SP_S)
-	plate.content_margin_bottom = UiTheme.SP_S + RaidPaper.CLIP_TOP * Settings.text_scale
-	intro_box.add_theme_stylebox_override(&"panel", plate)
-	intro_box.add_child(intro)
-	side.add_child(intro_box)
-	side.add_child(_raid_card(raid, pending, projection))
-	# ART-6 3A: YOUR NETWORK is the Cell's own CRT terminal with a status chip per node.
-	var orders_win := RaidTerminal.new(tr("YOUR NETWORK"), Palette.NET_CYAN)
-	orders_win.name = "NodeOrders"
-	side.add_child(orders_win)
-	# A fixed-height list (many claimed nodes scroll inside it; follow_focus for the pad).
-	# H22 #9: the list takes the column's spare height (at least ORDERS_MIN_HEIGHT at the
-	# text scale), so the Armory's cards under it stay on screen at big text.
-	var orders_scroll := ScrollContainer.new()
-	orders_scroll.name = "OrdersScroll"
-	# ART-6 3A: in the scrolling column the list keeps a taller view of its own (a picked node's
-	# Withdraw row never ends under its foot).
-	orders_scroll.custom_minimum_size = Vector2(0, (ORDERS_SCROLL_MIN_HEIGHT if side_scroll != null else ORDERS_MIN_HEIGHT) * Settings.text_scale)
-	orders_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	orders_win.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	# ANIM-R6 C8: the window's body takes its height too, so the list fills the window (it
-	# scrolled in a ~100 px strip over empty window at 1.0).
-	orders_win.body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	orders_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	orders_scroll.follow_focus = true
-	orders_win.body.add_child(orders_scroll)
-	var orders := VBoxContainer.new()
-	orders.name = "Orders"
-	orders.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	orders.add_theme_constant_override("separation", 4)
-	orders_scroll.add_child(orders)
-	for site_id in claimed:
-		orders.add_child(_node_order_row(site_id, projection, claimed))
-	var go := HFlowContainer.new()  # wraps at big text (the sticker and Back never widen the column)
-	go.name = "RaidGo"
-	go.add_theme_constant_override("h_separation", 10)
-	go.add_theme_constant_override("v_separation", 6)
-	go.alignment = FlowContainer.ALIGNMENT_END
-	# ART-6 3A (M14 resume): START DEFENSE and the Speed / Skip strip are pinned at the
-	# column's foot, outside its scroll: the work order and YOUR NETWORK scroll above them, so
-	# the page's one action is on the first screen at every text scale (at 1.0 it sat under
-	# MORE BELOW).
-	var foot := VBoxContainer.new()
-	foot.name = "RaidFoot"
-	foot.add_theme_constant_override("separation", 8)
-	foot.add_child(go)
-	if side_scroll != null:
-		side_scroll.get_parent().add_child(foot)
-	else:
-		side.add_child(foot)
-	# H24 S14: "RUN THE RAID" read like attacking; the Cell defends. ART-6 3A: the verb is a
-	# vinyl sticker (§1.2), the Speed / Skip terminal strip sits under it (greyed: nothing
-	# plays yet) and stays when START peels away in the playout.
-	_add_tip(go, _icon(_button(tr("Back to HQ"), show_hq), StatIcon.BACK), tr("Back to the HQ; the raid waits until you start the defence."))
-	var run_btn := RaidSticker.new(tr(START_DEFENSE), START_STICKER_STEP, RaidSticker.PINK)
-	run_btn.name = "RunRaid"
-	run_btn.pressed.connect(fight_raid)
-	_add_tip(go, run_btn, tr("Start the defence: the raid plays out on the map; the result matches the forecast."))
-	var strip := RaidSpeedStrip.new(RunManager.config().raid_step_cap)
-	strip.size_flags_horizontal = Control.SIZE_FILL
-	foot.add_child(strip)
-	# H24 S14: the same words and tooltip as the HQ's ARMORY badge (assets banked, not
-	# deployed, of the Armory's room).
-	var loadout := TerminalWindow.new(tr("DEFENSE LOADOUT // %s") % armory_words(), Palette.CELL_PINK)
-	loadout.name = "DefenseLoadout"
-	loadout.tooltip_text = UiTip.fold(armory_tip())
-	loadout.tag_label.text = tr("TARGET: %s") % site_name(selected_site)
-	# ART-6 3A: THREAT INTEL (the decrypted holo) sits beside the loadout under the map (the
-	# reference's bottom left), or in the side column at big text.
-	var intel := _threat_intel(raid, pending, projection)
-	# Above the base text size the holo's rows would take the map's height: it joins the side
-	# column (which scrolls) under the work order.
-	var intel_in_side := big_text or Settings.text_scale > INTEL_STRIP_SCALE_MAX
-	if intel_in_side:
-		side.add_child(intel)
-		side.move_child(intel, orders_win.get_index() + 1)  # under YOUR NETWORK, above the foot
-	if big_text:
-		side.add_child(loadout)
-		side.move_child(loadout, 0)  # ART-0 C: the cards on the first screen
-	elif intel_in_side:
-		map_col.add_child(loadout)
-	else:
-		var bottom := HBoxContainer.new()
-		bottom.name = "RaidBottom"
-		bottom.add_theme_constant_override("separation", 10)
-		bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		intel.custom_minimum_size.x = INTEL_WIDTH
-		bottom.add_child(intel)
-		loadout.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		bottom.add_child(loadout)
-		map_col.add_child(bottom)
+	_build_hq_page("raid")
 
-	# How to deploy, in pictures (H22 #9): 1 pick a node (map or YOUR NODES), 2 press a
-	# card: it goes to the target. The cards sit beside the steps.
-	var deploy_row: BoxContainer = VBoxContainer.new() if big_text else HBoxContainer.new()
-	deploy_row.add_theme_constant_override("separation", 14)
-	loadout.body.add_child(deploy_row)
-	deploy_row.add_child(_deploy_steps())
-	var cards := HFlowContainer.new()
+
+## HQ-B (c): the DEFENCE hand in the raid setup: the Armory's defence cards (3A's AssetCard,
+## what each does in a line and a pictogram). A press deploys it to the target (the node
+## picked on the map or in YOUR NETWORK); a drag puts it on any of your nodes (the grease
+## pencil's IF PLACED forecast while carried). Named "AssetCards" (the row) for the tests.
+func _fill_defence_hand(cards: HBoxContainer) -> void:
+	var c := RunManager.campaign
+	var lookup := RunManager.lookup()
 	cards.name = "AssetCards"
-	cards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cards.add_theme_constant_override("h_separation", 14)
-	cards.add_theme_constant_override("v_separation", 8)
-	deploy_row.add_child(cards)
-	if big_text:
-		deploy_row.move_child(cards, 0)  # ART-0 C: in the side column the cards come first, the steps under them
 	var seen := {}
 	for i in c.armory.size():
 		var aid: StringName = c.armory[i]
@@ -3596,54 +3549,55 @@ func show_raid() -> void:
 		seen[aid] = true
 		var data := lookup.get_content(aid) as DefenseAssetData
 		var card := AssetCard.new(aid, TextDb.t(data, "display_name") if data != null else String(aid), data.integrity if data != null else 0, c.armory.count(aid))
-		card.set_effect(data)  # H24 S14: what it does, in a line and a pictogram
-		card.tooltip_text = UiTip.fold(tr("%s\n%s\nPress to deploy it to %s (the target: pick another node on the map or in YOUR NODES).") % [TextDb.t(data, "description") if data != null else "", card.numbers_tip(), site_name(selected_site)]
+		card.set_effect(data)
+		card.name = "Asset_%s" % aid
+		card.tooltip_text = UiTip.fold(tr("%s\n%s\nPress to deploy it to %s (the target: pick another node on the map or in YOUR NETWORK).") % [TextDb.t(data, "description") if data != null else "", card.numbers_tip(), site_name(selected_site)]
 			+ " " + UiTip.for_input(tr("Or drag it onto any of your nodes."), tr("Or pick it up and move it onto any of your nodes.")))
 		card.disabled = selected_site == &"" or not c.grid.is_active_node(selected_site)
 		var index := i
 		card.pressed.connect(func() -> void: deploy_asset(index, selected_site))
-		# ANIM-4: or drag it onto a node (the map or YOUR NODES); the pad picks it up.
 		drops.add_source(card, {"kind": "asset", "index": index, "asset": aid, "prefer": selected_site})
 		cards.add_child(card)
 	if c.armory.is_empty():
-		cards.add_child(_para(tr("Armory empty: runs bank assets from their drops.")))  # ART-0 C: wraps (at 2.0 one line widened the page)
-	if big_text:
-		cards.resized.connect(_fit_card_row.bind(cards))
-	_set_panel(outer, "raid")
-	# ANIM-R5 P8: YOUR NODES never ends in a cut row (its last node's "HP 30 → 25 HOLDS" sat
-	# half under the window's foot): the Grid's snap, and MORE BELOW when more nodes follow.
-	side_hint = ScrollHint.new(orders_scroll)
-	side_hint.snap_rows = true
-	side_hint.name = "OrdersHint"
-	add_child(side_hint)
-	if side_scroll != null:
-		raid_side_hint = ScrollHint.new(side_scroll)
-		raid_side_hint.name = "RaidSideHint"
-		add_child(raid_side_hint)
-	if raid_legend.foldable():
-		# ANIM-R2 R13: as the Grid.
-		set_page_prompts(prompts_for("raid") + [[&"cycle_target", KEY_PROMPT]])
-	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.42))
-	city_overlay.selected_id = selected_site
-	city_overlay.node_clicked.connect(func(id: StringName) -> void:
-		if RunManager.campaign.grid.is_claimed(id):
-			select_target(id))
-	# ART-6 3A: the threats' routes in red grease pencil, as the projection runs them.
-	_mount_raid_routes(raid_route_paths(projection.events))
-	_raid_avoid = [side, foot, loadout]
-	city_overlay.avoid_controls([side, foot, loadout, raid_legend])  # labels clear of the panels and the key
-	_register_raid_drops(claimed, loadout)
-	place_raid_legend.call_deferred()
-	# ANIM-R1 M2: the playout's zoomed map baked behind the setup (off the main thread), so
-	# START DEFENSE opens onto a city that is already there.
-	_prebake_playout.call_deferred(RunManager.campaign, null)
-	spacer.resized.connect(place_raid_legend)
-	raid_legend.minimum_size_changed.connect(_on_raid_legend_resized)
-	if not wireframe.city.rebuilt.is_connected(place_raid_legend):
-		wireframe.city.rebuilt.connect(place_raid_legend)
-	if _last_warned_raid != String(pending.get("raid_id", "")):
-		_last_warned_raid = String(pending.get("raid_id", ""))
-		Dialogue.raid_warning(c.corporation_id, StringName(String(pending.get("raid_id", raid.id))), c.raids_won + c.raids_lost, "raid")
+		var empty := _para(tr("Armory empty: runs bank assets from their drops."))
+		empty.name = "ArmoryEmpty"
+		empty.custom_minimum_size.x = HqLayout.CARD.x * 2.0
+		cards.add_child(empty)
+
+
+## HQ-B (c): the raid setup's card column: THREAT INTEL (the decrypted holo: each entry route,
+## its units and what they go for) over YOUR NETWORK (each node's forecast chip; its target
+## button makes it the defences' target, the target's row withdraws or moves its assets).
+func _defence_cards(stack: VBoxContainer, raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult) -> void:
+	var c := RunManager.campaign
+	var claimed := c.grid.claimed_ids()
+	stack.add_child(_threat_intel(raid, pending, projection))
+	var orders_win := RaidTerminal.new(tr("YOUR NETWORK"), Palette.NET_CYAN)
+	orders_win.name = "NodeOrders"
+	orders_win.tag_label.text = tr("TARGET: %s") % site_name(selected_site)
+	var orders := VBoxContainer.new()
+	orders.name = "Orders"
+	orders.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	orders.add_theme_constant_override("separation", 4)
+	orders_win.body.add_child(orders)
+	for site_id in claimed:
+		orders.add_child(_node_order_row(site_id, projection, claimed))
+	stack.add_child(orders_win)
+
+
+## HQ-B (c): the sticker slot in the raid setup: START DEFENSE (3A's pink RaidSticker) with
+## the Speed / Skip strip under it (greyed until the playout).
+func _defence_verb(slot: VBoxContainer) -> void:
+	var run_btn := RaidSticker.new(tr(START_DEFENSE), START_STICKER_STEP, RaidSticker.PINK)
+	run_btn.name = "RunRaid"
+	run_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
+	run_btn.pressed.connect(fight_raid)
+	run_btn.tooltip_text = UiTip.fold(tr("Start the defence: the raid plays out on the map; the result matches the forecast."))
+	slot.add_child(run_btn)
+	var strip := RaidSpeedStrip.new(RunManager.config().raid_step_cap)
+	strip.name = "RaidSpeedStrip"
+	strip.size_flags_horizontal = Control.SIZE_SHRINK_END
+	slot.add_child(strip)
 
 
 ## ART-3 6w: at big text the loadout heads the side column's scroll, whose view now ends at
@@ -3681,12 +3635,13 @@ func select_target(site_id: StringName) -> void:
 		if same != null:
 			same.grab_focus.call_deferred()
 		return
+	var from_cursor := _hq_focus == "MapCursor"  # HQ-B: a pad step on the map keeps the map's focus
 	selected_site = site_id
 	if panel_name == "raid":
 		wireframe.hold_camera()  # ANIM-5: the map holds still while the page rebuilds
 	show_raid()
 	var b := _panel.find_child("Target_%s" % site_id, true, false) as Control if _panel != null else null
-	if b != null:
+	if b != null and not from_cursor:
 		b.grab_focus.call_deferred()
 
 

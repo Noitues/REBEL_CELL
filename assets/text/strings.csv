@@ -56,9 +56,9 @@ Buy: %d Cycles (you have %d).","%s
 Buy: %d Cycles (you have %d)."
 "%s
 %s
-Press to deploy it to %s (the target: pick another node on the map or in YOUR NODES).","%s
+Press to deploy it to %s (the target: pick another node on the map or in YOUR NETWORK).","%s
 %s
-Press to deploy it to %s (the target: pick another node on the map or in YOUR NODES)."
+Press to deploy it to %s (the target: pick another node on the map or in YOUR NETWORK)."
 "%s
 ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds.","%s
 ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds."
@@ -248,7 +248,6 @@ Back to HQ,Back to HQ
 "Back to HQ: the campaign, the City Grid and the crew.","Back to HQ: the campaign, the City Grid and the crew."
 Back to the Armory.,Back to the Armory.
 Back to the HQ.,Back to the HQ.
-Back to the HQ; the raid waits until you start the defence.,Back to the HQ; the raid waits until you start the defence.
 Back to the compound,Back to the compound
 Back to the main menu.,Back to the main menu.
 Back to the title screen.,Back to the title screen.
@@ -576,7 +575,6 @@ DEFEAT,DEFEAT
 DEFEATED,DEFEATED
 DEFENCE,DEFENCE
 "DEFENCE: the Armory's defence cards; with a raid pending, the raid setup.","DEFENCE: the Armory's defence cards; with a raid pending, the raid setup."
-DEFENSE LOADOUT // %s,DEFENSE LOADOUT // %s
 DEFRAG,DEFRAG
 DELETE,DELETE
 DELETE SLOT,DELETE SLOT

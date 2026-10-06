@@ -108,9 +108,13 @@ func test_the_raid_pages_are_on_the_3d_city_at_the_raid_band_and_fitted() -> voi
 	var ortho := RaidZoomFit.ortho_of(city.scale.x, hq.size.x)
 	assert_between(ortho, cfg.raid_fit_min - 0.5, cfg.raid_fit_max + 0.5, "the raid zoom stays in the raid range")
 	assert_almost_eq(hq.raid_min_zoom(), RaidZoomFit.zoom_of(cfg.raid_fit_max, hq.size.x), 0.0001, "the framing passes never go wider")
-	var free: Rect2 = hq.raid_free_rect()
-	var box: Rect2 = hq.wireframe.unrigged(hq.raid_node_box)
-	assert_true(free.grow(1.0).encloses(box), "the nodes sit in the map's free part: %s in %s" % [box, free])
+	# HQ-B (c): the setup is the HQ page in place: its free part and the fitted Sites (the network and the routes).
+	var free: Rect2 = hq.hq_free_rect()
+	var box: Rect2 = hq.wireframe.unrigged(hq.hq_fit_box)
+	# Q5: up to the clamp (a network wider than the raid range at raid_fit_max overflows; the
+	# wheel zooms out to the GRID band, Q4).
+	if ortho < cfg.raid_fit_max - 0.5:
+		assert_true(free.grow(1.0).encloses(box), "the nodes sit in the map's free part: %s in %s" % [box, free])
 	# The pads go on the Cell's nodes only.
 	var ids: Array = []
 	for n in hq.raid_uplink_nodes():

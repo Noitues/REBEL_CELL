@@ -149,6 +149,51 @@ binding (also in PROPOSAL.md's rulings section):
   `test_campaign_flow` (the Grid page is the HQ), `test_horizontal_pass22_city` (the card column is blocked for
   labels), `test_vertical_pass2` (a map click selects; the sticker launches).
 
+**HQ-B (c): the DEFENCE hand is the raid setup, in place.**
+- `show_raid` and `show_hq` both build the one HQ page (`_build_hq_page`, `HQ_PAGES` = hq, raid): the raid setup is
+  the DEFENCE tab with a raid pending (`panel_name` "raid", so the drag pencil, deploy / move / target, the playout
+  and the report work as before). No entrance between them (`entering` is false inside `HQ_PAGES`), the camera kept,
+  the same tabs, card row, card column and sticker slot. B or the CREW tab go back to the crew (`show_hq` turns a
+  DEFENCE tab with a raid pending back to CREW).
+- In the setup: the work order prints 3A's whole forecast with the Cell's stamp (the HQ prints the compact order) and
+  the instruction line (RAID-02's plate, moved from the old side column) under it; the routes go solid (the
+  projection), the sockets carry their forecast ring and `44 → 41 HOLDS` tag (`hq_graph(projection)`, 3A's look); the
+  hand is the Armory's `AssetCard`s (`AssetCards`, `Asset_<id>`: a press deploys to the target, a drag onto any node,
+  3A's pencil and IF PLACED unchanged); the card column holds THREAT INTEL and YOUR NETWORK (`NodeOrders`, a row per
+  node with its target button and the target's Withdraw / move); the sticker slot holds START DEFENSE (`RunRaid`,
+  3A's RaidSticker) over the Speed / Skip strip. A click on a node of the Cell's makes it the target (a corporate
+  Site is none); the pad's map cursor steps the targets.
+- **Kept from S-OVERLAPS (merged):** RAID-02's plate on the instruction line, RAID-08's peel from where START
+  DEFENSE was pressed (`_start_was`, read from the page), GRID-12's fit-then-pan (`grid_city_pan`, now with an
+  optional `held` list): the HQ's fit ends with the pan that shows the most city, its fitted Sites kept in the free
+  part.
+- **Map mode (designer ruling 2026-10-05, S-MAPVIEW):** `hq_map_mode(on)` is the one call point (on when the HQ /
+  setup builds, off when another page opens); a no-op until S-MAPVIEW hooks CityView3D's map mode in. The HQ draws no
+  dimming of its own and its layout does not depend on the city's colours.
+- The bar shows no title on the setup either (Q6: the HQ page).
+- Tests: new `tests/unit/test_hq_b_defence.gd` (fast). Changed: `test_art3_6w_raid_city` (the setup's free part and
+  fitted Sites are the HQ page's; Q5: checked below the clamp).
+
+**HQ-B (d): the verb slot (Q11 final: every node verb is a sticker).**
+- `site_verb(site, runnable)` picks the slot's one verb with its price, from the rules: a DOWN node of the Cell's:
+  REPAIR (`repair_cost`); an active node: UPGRADE (`upgrade_cost`, while it can rise); CORE damaged: PATCH (the points
+  the Schematics buy, `patch_points`, as `repair_home` restores them, at `home_repair_price` for those points); a
+  cleared claimable Site: CLAIM (the picked node's `install_cost`); a Site a run can start from: JACK IN. Each is the
+  kit's pink sticker (`Launch` / `Claim` / `Repair` / `Upgrade` / `Patch`) with its price in a gold `PriceTag`
+  (`VerbPrice`) under it, never on it (bible 1.2); the press makes the same rule call the old buttons made
+  (`press_verb`). **Call:** the words are drawn by the kit's VinylSticker in-engine (1B's port of round 33
+  `ui31.sticker`, the same code JACK IN and START DEFENSE use) rather than baked PNGs: a baked word is English only,
+  the drawn one translates once like every other sticker word; the look is the q11_c bake's.
+- The card loses its Claim / Repair / Upgrade / Patch buttons (the slot has them). CLAIM's card shows PICK THE NODE TO
+  BUILD with the node types as tiles (`NodeTile_<id>`, the price under each, a locked type greyed with its unlock's
+  price); the pick (`claim_pick`, kept across rebuilds) sets the sticker's price. A Site whose verb is not JACK IN
+  but that a run can start from (a cleared or claimed Site's patrol) carries PATROL IT INSTEAD (`PatrolHere`).
+- A runnable Site's card shows IF CLEARED (`IfCleared`: `run_gains` on the rules' `clear_preview`, the Grid's run
+  rows' badges), so the preview the RUNS OPEN NOW rows gave is on the card.
+- A selection with nothing to do (a full CORE, a Site not reachable yet) leaves the slot empty and the card's WHY NOT
+  note says why (5d).
+- Tests: new `tests/unit/test_hq_b_verbs.gd` (fast).
+
 ### 2026-10-05 — Parity fix — combat wheels (designer group ruling)
 
 Designer group ruling (2026-10-05): combat matches the concept; mechanics the rules lack stay
