@@ -280,8 +280,8 @@ func _draw() -> void:
 	# Shadow (snaps in on a press: `send_it_drips` runs it in).
 	var shadow := SHADOW_OFFSET * s * (1.0 - clampf(drip_run / maxf(1.0, Motion.amplitude(&"send_it_drips")), 0.0, 1.0) * 0.6)
 	_stamp(f, at + shadow, shown, fs, cut, Color(Palette.NIGHT_SKY, SHADOW_ALPHA))
-	# The die-cut: white (lime when focused, v2 §2.10).
-	var die := HudSkin.FOCUS if st == KitState.FOCUS and not off else HudSkin.VINYL_DIE_CUT
+	# The die-cut: white (focus is the kit sticker's sheen and curl, never lime).
+	var die := HudSkin.VINYL_DIE_CUT
 	_stamp(f, at, shown, fs, cut, die)
 	_stamp(f, at + Vector2(0.0, ext), shown, fs, cut, die)
 	# Keyline round letters and extrude, then the extrude itself.
@@ -319,11 +319,10 @@ func _stamp(f: Font, at: Vector2, text: String, fs: int, radius: float, col: Col
 
 
 ## With 1B's sticker: the system word and the terminal line here, the sticker is `art`; focus
-## is a lime halo round it (v2 §2.10).
+## is the kit sticker's own rainbow sheen and curl (designer 2026-10-05: no halo, no brackets).
 func _draw_with_art() -> void:
 	_sync_art_words()
 	_sync_art_state()
-	var st := state()
 	var sys := String(TranslationServer.translate(system_word))
 	var sp := _system_px()
 	var sys_base := Vector2(0.0, _system_y())
@@ -331,11 +330,6 @@ func _draw_with_art() -> void:
 		draw_string(HudSkin.mono(), sys_base, sys, HORIZONTAL_ALIGNMENT_LEFT, -1, sp, Color(HudSkin.TERMINAL_TEXT, HudSkin.SYSTEM_WORD_ALPHA))
 		var sr := Rect2(Vector2(-2.0, sys_base.y - HudSkin.mono().get_ascent(sp) - 2.0), Vector2(_system_w() + 4.0, sp + 4.0))
 		draw_rect(sr, Color(PaletteSkins.chrome(HudSkin.TERMINAL_EDGE), HudSkin.SYSTEM_WORD_ALPHA * 0.6), false, 1.0)
-	if st == KitState.FOCUS and not disabled:
-		var r := Rect2(art.position + art.body_rect.position, art.body_rect.size).grow(HALO_PAD)
-		if art.body_rect.size == Vector2.ZERO:
-			r = Rect2(_base() + Vector2(0.0, -font_size), Vector2(lettering_room(), font_size * 1.2)).grow(HALO_PAD)
-		draw_rect(r, HudSkin.FOCUS, false, HALO_PX)
 	var hs := _hint_px()
 	var words := _line_words()
 	if words != "":
@@ -345,4 +339,4 @@ func _draw_with_art() -> void:
 		draw_string(HudSkin.mono(), hp, words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, HudSkin.TERMINAL_TEXT if not disabled else HudSkin.TERMINAL_DIM)
 		if glyph:
 			_draw_glyph(Vector2(hp.x + hw + 6.0 + GLYPH_GAP + hs * 2.0, hp.y - hs * 0.5 + 2.0), hs, paint if not disabled else HudSkin.VINYL_DISABLED)
-	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), st, false)
+	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)

@@ -2428,7 +2428,11 @@ func _make_card(card: CardData, i: int, s: float) -> ZineCard:
 		c.pad_hint = Settings.key_text(&"ui_accept")
 	c.drag_index = i
 	c.fit_whole = true  # ART-2 2D (audit P2): the body shrinks to fit, never under the 12 px floor
-	c.body_floor = ZineCard.BODY_FLOOR
+	# S-CARDFACE b: 10 px at rest, 12 px on screen while grown; a hand shrunk under 1.0 to fit grows its card to a
+	# 1.0 card's growth (every word on it)
+	c.body_floor = ZineCard.HAND_REST_FLOOR
+	c.grown_floor = ZineCard.BODY_FLOOR
+	c.hover_to = ZineCard.HOVER_SCALE * maxf(1.0, 1.0 / maxf(s, 0.01))
 	c.pictos_give_way = false  # S-CARDFACE: glyph and value at rest; the grown card shows every word
 	return c
 

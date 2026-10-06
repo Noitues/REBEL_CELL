@@ -8,6 +8,9 @@ extends Control
 ## does not take the 3D city, headless, or under the 2D city's design-review args, it keeps the
 ## 2D NeonCity. Every other user (the HQ, the warm-ups, the labs) is unchanged.
 
+## The night tint over the 2D city (multiplies its picture: green down, a violet cast).
+const NIGHT_TINT := Palette.CITY_2D_NIGHT_TINT
+
 ## The title's 2D-city design-review args (title_scene `--demo-*`): they keep the 2D city.
 const CITY_2D_DEMOS: Array[String] = ["--demo-district=", "--demo-ink=", "--demo-jitter=", "--demo-texture=", "--demo-cultures",
 	"--demo-bigoverview=", "--demo-nopan", "--demo-overview"]
@@ -31,6 +34,11 @@ func _init() -> void:
 	city.rain = true
 	city.follow_campaign = true  # territory influence (H20)
 	city.dim = 0.2
+	# Parity TITLE-01d (designer 2026-10-05: the HQ's city had a yellowish hue): the 2D city's
+	# corp territory and influence inks (Solace lime, the green and amber neon inks) cast the
+	# whole window yellow-green; a night tint over the city (not its bake) takes the green down
+	# toward the concept's violet night. The 3D city's grade is not involved.
+	city.modulate = NIGHT_TINT
 	add_child(city)
 	_frame = Control.new()
 	_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE

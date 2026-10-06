@@ -42,6 +42,10 @@ func _frames(n: int = 3) -> void:
 		await get_tree().process_frame
 
 
+func _sticker_in(cell: Node) -> HoloSticker:
+	return cell.find_children("*", "HoloSticker", true, false)[0] as HoloSticker
+
+
 func _assert_scrim(menu: PauseMenu, where: String) -> void:
 	var back := menu.get_node("Backdrop") as GlassScrim
 	assert_not_null(back, "%s: the backdrop is a GlassScrim" % where)
@@ -102,10 +106,10 @@ func test_two_columns_of_stickers_each_in_its_role_colour() -> void:
 	assert_eq(menu.resume_hint.text, Settings.hint(&"open_settings"), "its key hint sits with it")
 	var left: Array[String] = []
 	for c in menu._left.get_children():
-		left.append(String(c.get_child(0).name))
+		left.append(String(_sticker_in(c).name))
 	var right: Array[String] = []
 	for c in menu._right.get_children():
-		right.append(String(c.get_child(0).name))
+		right.append(String(_sticker_in(c).name))
 	assert_eq(left, ["Resume", "Options", "Codex"] as Array[String], "left column, top down")
 	assert_eq(right, ["AbandonCampaign", "QuitMain", "Quit"] as Array[String], "right column, top down (at HQ)")
 	var pinks := 0
@@ -128,7 +132,7 @@ func test_a_run_reads_abandon_run_in_the_same_slot() -> void:
 	RunManager.start_run()
 	var menu: PauseMenu = add_child_autofree(PauseMenu.new())
 	await _frames()
-	assert_eq(menu._right.get_child(0).get_child(0), menu.abandon_run_button, "the top right slot")
+	assert_eq(_sticker_in(menu._right.get_child(0)), menu.abandon_run_button, "the top right slot")
 	assert_null(menu.abandon_campaign_button)
 	assert_eq(menu.abandon_run_button.sticker.fill, VinylSticker.Fill.RED)
 
@@ -155,15 +159,42 @@ func test_the_grease_pencil_notes_and_their_ink() -> void:
 	var notes := {}
 	for n in menu._notes:
 		notes[n.name] = n
-	assert_eq(notes.size(), 3)
+	assert_eq(notes.size(), 4, "Resume's (beside, and the below one held back), abandon's and quit's")
 	assert_eq((notes["ResumeNote"] as PencilWords).words, "Down with the Oligarchy!")
+	assert_eq((notes["ResumeNoteBelow"] as PencilWords).words, "Down with the Oligarchy!")
 	assert_eq((notes["AbandonCampaignNote"] as PencilWords).words, "No Going Back")
 	assert_eq((notes["AbandonCampaignNote"] as PencilWords).color, Palette.PENCIL_THREAT, "red grease ink on the harm sticker")
 	assert_eq((notes["QuitNote"] as PencilWords).words, "Come Back Soon")
+	assert_eq(menu.note_mode, PauseMenu.NoteMode.BESIDE, "at 1.0 Resume's note stands beside its sticker")
+	var resume := menu.resume_button
+	var beside := notes["ResumeNote"] as PencilWords
+	assert_true(beside.visible and not (notes["ResumeNoteBelow"] as PencilWords).visible)
+	assert_gte(beside.get_global_rect().position.x, resume.get_global_rect().end.x - 1.0, "to the right of the sticker, never over its word")
+	assert_lte(beside.get_global_rect().end.x, menu._right.get_global_rect().position.x + 1.0, "in the gap: clear of the right column")
+	assert_gte(menu.resume_hint.get_global_rect().position.y, resume.get_global_rect().end.y - 1.0, "the key hint stays below Resume")
 	for n: PencilWords in menu._notes:
-		var cell := n.get_parent() as Control
-		var sticker := cell.get_child(0) as Control
+		if n == beside or not n.visible:
+			continue
+		var sticker := _sticker_in(n.get_parent())
 		assert_gte(n.get_global_rect().position.y, sticker.get_global_rect().end.y - 1.0, "%s sits under its sticker, never over its word" % n.name)
+
+
+func test_the_note_wraps_below_then_drops_as_the_text_grows() -> void:
+	RunManager.new_campaign(1)
+	var modes := {}
+	for scale in SCALES:
+		Settings.set_text_scale(scale)
+		var menu: PauseMenu = add_child_autofree(PauseMenu.new())
+		await _frames(3)
+		modes[scale] = menu.note_mode
+		assert_true(menu.get_global_rect().encloses(menu._columns.get_global_rect()), "x%s: the columns are inside the menu" % scale)
+		for n: PencilWords in menu._notes:
+			if n.visible:
+				for b in menu._stickers:
+					assert_false(n.get_global_rect().intersects(b.get_global_rect().grow(-4.0)), "x%s: %s never covers a sticker" % [scale, n.name])
+	assert_eq(modes[1.0], PauseMenu.NoteMode.BESIDE)
+	assert_eq(modes[2.0], PauseMenu.NoteMode.NONE, "at 2.0 the notes drop")
+	assert_ne(modes[1.6], PauseMenu.NoteMode.BESIDE, "at 1.6 the beside note no longer fits: below, or dropped")
 
 
 func test_the_campaign_code_has_a_field_and_a_copy_button() -> void:
@@ -194,10 +225,9 @@ func test_the_pause_menu_fits_at_every_text_scale() -> void:
 		assert_lte(body.x, menu.size.x, "x%s: nothing wider than the menu (%s)" % [scale, body])
 		for b in menu._stickers:
 			assert_true(menu.get_global_rect().encloses(b.get_global_rect()), "x%s: %s is inside the menu" % [scale, b.name])
-		var shown := 0
-		for n in menu._notes:
-			shown += 1 if n.visible else 0
-		assert_true(shown == menu._notes.size() or shown == 0, "x%s: the notes are all there or all dropped (%d shown)" % [scale, shown])
+		if menu.note_mode == PauseMenu.NoteMode.NONE:
+			for n in menu._notes:
+				assert_false(n.visible, "x%s: dropped notes are all hidden" % scale)
 		var code_right := menu.code_field.get_global_rect().end.x
 		assert_lte(code_right, menu.get_global_rect().end.x, "x%s: the code field and its copy button fit" % scale)
 		assert_true(menu.code_field.copy_button.get_global_rect().size.x > 0.0)
