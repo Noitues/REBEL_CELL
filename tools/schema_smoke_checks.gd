@@ -591,6 +591,16 @@ func _art5_city_motion() -> int:
 	var back: CityMotionConfigData = load("user://smoke_city_motion.tres")
 	print("ART-5 5c: city motion config save=", err, " gap ", back.car_gap if back != null else -1.0)
 	if err != OK or back == null or back.car_gap != 21.0 or back.band_police != [0, 1, 2, 3] or back.validate().size() != 0: fails += 1
+	# ART-5 5e: reduce_motion_street_rate (bible 5.4: 40 %) validated in [0, 1] and saved.
+	var rm := CityMotionConfigData.new()
+	rm.reduce_motion_street_rate = 1.5
+	var rme := rm.validate()
+	print("ART-5 5e: reduce_motion_street_rate 1.5 errors (expect 1): ", rme, " shipped ", shipped.reduce_motion_street_rate if shipped != null else -1.0)
+	if rme.size() != 1 or shipped == null or not is_equal_approx(shipped.reduce_motion_street_rate, 0.4): fails += 1
+	rm.reduce_motion_street_rate = 0.25
+	var rerr := ResourceSaver.save(rm, "user://smoke_city_motion_rm.tres")
+	var rback: CityMotionConfigData = load("user://smoke_city_motion_rm.tres")
+	if rerr != OK or rback == null or not is_equal_approx(rback.reduce_motion_street_rate, 0.25): fails += 1
 	return fails
 
 
