@@ -471,7 +471,8 @@ func test_route_buttons_differ_and_say_what_the_node_is_on_both_devices() -> voi
 			seen[b.text] = true
 			assert_string_contains(b.text, scene.node_word(node), "the button says what the node is")
 			assert_true(b.text.begins_with(scene.route_index_text(i)), "an index on every device: '%s'" % b.text)
-			assert_eq(IconMark.kind_of(b), scene.node_icon(node), "the node type's icon")
+			# Parity ROUTE-04: the choice is a stop on its map sticker (the sticker is its icon).
+			assert_eq(StringName(b.get_meta(&"route_stop", &"")), available[i], "the stop is on its node's sticker")
 			assert_ne(b.tooltip_text, "", "a tooltip")
 		if pad:
 			assert_eq(scene.route_index_text(0), "1", "pad: the number")

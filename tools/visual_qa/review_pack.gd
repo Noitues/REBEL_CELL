@@ -115,6 +115,8 @@ const SCREENS := [
 	["raid_report", "_s_raid_report", "Raid report page after the playout."],
 	["raid_interlude", "_s_raid_interlude", "Raid interlude inside a netrun."],
 	["route", "_s_route", "Netrun route: choosing where to go."],
+	["route_focus", "_s_route_focus", "Parity ROUTE-04: the pad's focus on the route's last choice sticker."],
+	["route_meridian", "_s_route_meridian", "Netrun route against Meridian (the dossier's letterhead)."],
 	["combat_start", "_s_combat_start", "A fight starts."],
 	["combat_hover", "_s_combat_hover", "The pointer over the first card."],
 	["combat_aiming", "_s_combat_aiming", "A card selected, waiting to be aimed."],
@@ -589,6 +591,16 @@ func _netrun(seed: int = 7) -> Node:
 	return net
 
 
+## A netrun against corporation `corp` (every corporation unlocked in the pack's profile).
+func _netrun_against(corp: StringName, seed: int = 7) -> Node:
+	_unlock_all_corps()
+	RunManager.new_campaign(seed, corp)
+	var net: Node = _open(NETRUN)
+	await _frames(2)
+	net.start_run(1)
+	return net
+
+
 ## A netrun with its first fight open and settled; null (with an error) when none opened.
 func _fight(seed: int = 7) -> Control:
 	var net: Node = await _netrun(seed)
@@ -1014,6 +1026,23 @@ func _s_raid_interlude() -> void:
 
 func _s_route() -> void:
 	var net: Node = await _netrun()
+	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
+	await _settle(net)
+
+
+## Parity ROUTE-04: the choices are stops on their stickers; the pad's focus on the last one.
+func _s_route_focus() -> void:
+	var net: Node = await _route_page()
+	Settings.set_pad_active(true)
+	var stops: Array = net.get("_route_buttons")
+	if not stops.is_empty():
+		(stops[stops.size() - 1] as Control).grab_focus()
+	await _settle(net)
+	_after_capture = func() -> void: Settings.set_pad_active(false)
+
+
+func _s_route_meridian() -> void:
+	var net: Node = await _netrun_against(&"meridian")
 	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
 	await _settle(net)
 

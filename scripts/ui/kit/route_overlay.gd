@@ -157,6 +157,9 @@ var heat_sweeps: bool = false:
 func _init(p_city: NeonCity = null) -> void:
 	super(p_city)
 	name = "RouteOverlay"
+	# Parity ROUTE-04 b: a choice's focus ring (the pad's stop on the map, `hover_id`) draws
+	# under the labels, so its ticks never cross a choice's words.
+	move_child(_hi, _tags.get_index())
 
 
 # --- State ------------------------------------------------------------------------------------
@@ -772,6 +775,8 @@ const LANDMARK_FILL_ALPHA := 0.92
 const SPRAWL_WORD := "THE SPRAWL" # TR
 ## Whether the district plates draw (the route page; off for other uses of the overlay).
 var landmarks: bool = true
+## Controls the plates keep off besides the labels' blocks (the page's top bar: the map runs under it).
+var plate_avoid: Array[Control] = []
 
 
 ## The districts the route runs through (NeonCity.territory_at of each node's lot; &"" = the
@@ -809,6 +814,9 @@ func landmark_plates() -> Array[Dictionary]:
 	var k := _k()
 	var area := label_area()
 	var avoid: Array[Rect2] = label_blocks()
+	for c in plate_avoid:
+		if is_instance_valid(c) and c.is_visible_in_tree():
+			avoid.append(_to_local_rect(c.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, c.size)))
 	for r: Rect2 in label_rects().values():
 		avoid.append(r)
 	for n in nodes:
