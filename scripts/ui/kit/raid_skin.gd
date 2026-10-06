@@ -68,16 +68,3 @@ func order_number(raid_id: StringName, heat: int) -> String:
 	var h := absi(hash(String(raid_id))) % 1000
 	return "WO %02d-%s-%03d" % [clampi(heat, 0, 99), String(CODES.get(corporation_id, "XX")), h]
 
-
-## Grease pencil yellow (our plan / valid), red (threat / invalid / loss) and its shadow
-## (ART_BIBLE v2 §2.2 tokens). Seam: 1B's grease pencil material reads the same tokens.
-static func pencil_plan() -> Color:
-	return Palette.PENCIL_PLAN
-
-
-static func pencil_threat() -> Color:
-	return Palette.PENCIL_THREAT
-
-
-static func pencil_shadow() -> Color:
-	return Palette.PENCIL_SHADOW
