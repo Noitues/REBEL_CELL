@@ -2283,7 +2283,7 @@ func hq_graph(projection: RaidResolver.RaidResult = null) -> Dictionary:
 ## map, decluttered from `g` (hq_graph without a projection): the Cell's nodes are their v4
 ## markers (the lime fists, CORE's heart; no raid sockets, pads or asset pips: those are the
 ## DEFENCE hand's), only the Sites bible 4.5 pins show (Exploit and Heat objective, yours,
-## cleared, seized, the boss; a selectable plain Site hides until hovered or selected), one
+## cleared, taken, the boss; a selectable plain Site hides until hovered or selected), one
 ## name tag (the selected Site's; a hovered one gets its tag while pointed at,
 ## `_hq_hover_tag`), and a link only where both its ends show (round 44: a hidden Site's links
 ## hide with it); the threat routes stay. Pure on its input.
@@ -2349,7 +2349,7 @@ func idle_pick(launchable: Array[SiteData]) -> StringName:
 
 ## B4 (bible 4.5 "Pinned (always shown)"): true when a v4 marker `spec` shows on the HQ idle's
 ## map whatever the pointer does: an Exploit, Heat-objective or boss Site, CORE, and every Site
-## that is no longer plainly the corporation's (yours, cleared, seized, down). A selectable
+## that is no longer plainly the corporation's (yours, cleared, taken, down). A selectable
 ## plain Site is not pinned (D7: the ring of orange markers was the clutter).
 static func pinned_at_hq(spec: Dictionary) -> bool:
 	return String(spec.get("kind", "")) != SiteMarker.KIND_SITE or String(spec.get("status", "")) != SiteMarker.ST_CORPORATE
@@ -3281,7 +3281,7 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	var lookup := RunManager.lookup()
 	var s := c.grid.site(site.id)
 	var status := int(s["status"])
-	# B4 (review section c, round 44): a corporate (or seized) Site's file is hacked intel, a
+	# B4 (review section c, round 44): a corporate (or taken) Site's file is hacked intel, a
 	# holo; the Cell's own nodes (cleared, claimed, CORE) keep their terminal cards.
 	if status == GridState.SiteStatus.CORPORATE or status == GridState.SiteStatus.TAKEN:
 		return _site_holo(site, launchable, living)
