@@ -599,6 +599,7 @@ The motion rulings above stay binding; these are the places the M14 art directio
   (the theme and kit painters); semantic colours (PROTECT cyan, GAIN green, HARM, Heat bands) never change.
 - **Campaign end:** campaign lost is the ransomware lock, won and lost end in the corporate audit dossier; run end shows
   a stamp sticker (FLATLINED / JACKED OUT / HOME FELL).
+- **Shop, loot, events and the deck viewer (4A):** the MAINFRAME shop stands on a baked facade (day / night / rain by a hash of the visit) under sign v4, which takes over once per visit; items hang on the pegboard with kraft price tags (a card's tag hangs from its foot), Firmware as chips, Daemons as cartridges, slices as the top wedges of a stock wheel, removal is the recycle bin (cards only). Loot is a loot sheet with kiss-cut slots and a PAYOUT terminal; an event is a CRT terminal with a CAM feed (a corp speaker's story is an intercepted memo) and plate-sticker choices with outcome chips. All glass is the one `CrtWindow` (chrome seam). Big text: drawn objects stop growing at x1.3 while words and tags keep growing; from x1.25 DAEMONS stands beside FIRMWARE and the clerk steps aside; from x1.6 the CAM feed and speaker line step aside; the wallet is capped at x1.6 and the info strip at 0.92 of its width. The sign ambience is off under reduce effects (the lit blue sign is the end state).
 - **Combat HUD:** result chips replace forecast tags and NEXT plates (D15); SEND IT is a vinyl sticker; RESPIN and UNDO are
   terminal chips; the hand uses baked card faces.
 
