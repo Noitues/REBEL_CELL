@@ -54,6 +54,8 @@ const START_DEFENSE := "START DEFENSE" # TR
 ## marker): run kinds, raid outcomes, Exploit types and rule modifier names.
 const RUN_KIND_WORDS := ["netrun", "patrol", "reclaim", "boss"] # TR
 const OUTCOME_WORDS := ["HOLDS", "DOWN", "TAKEN", "PASSED"] # TR
+## ART-6 3A: the home server's label outcome when it falls (shown_outcome; RaidVerdict.BREACHED's word).
+const OUTCOME_BREACHED := "breached"
 const EXPLOIT_WORDS := ["Intel", "Breach", "Virus"] # TR
 const MODIFIER_WORDS := ["Heat Gain", "Heat Sink", "Heat Objective Sites", "Elite Frequency", "Cycle Price", "Shop Stock", # TR
 	"Raid Strength", "Raid Extra Wave", "Enemy Resistance", "Death Heat", "Exploit Heat", "Boss Phase Early", # TR
@@ -2782,7 +2784,18 @@ func show_raid() -> void:
 	go.add_theme_constant_override("h_separation", 10)
 	go.add_theme_constant_override("v_separation", 6)
 	go.alignment = FlowContainer.ALIGNMENT_END
-	side.add_child(go)
+	# ART-6 3A (M14 resume): START DEFENSE and the Speed / Skip strip are pinned at the
+	# column's foot, outside its scroll: the work order and YOUR NETWORK scroll above them, so
+	# the page's one action is on the first screen at every text scale (at 1.0 it sat under
+	# MORE BELOW).
+	var foot := VBoxContainer.new()
+	foot.name = "RaidFoot"
+	foot.add_theme_constant_override("separation", 8)
+	foot.add_child(go)
+	if side_scroll != null:
+		side_scroll.get_parent().add_child(foot)
+	else:
+		side.add_child(foot)
 	# H24 S14: "RUN THE RAID" read like attacking; the Cell defends. ART-6 3A: the verb is a
 	# vinyl sticker (§1.2), the Speed / Skip terminal strip sits under it (greyed: nothing
 	# plays yet) and stays when START peels away in the playout.
@@ -2793,7 +2806,7 @@ func show_raid() -> void:
 	_add_tip(go, run_btn, tr("Start the defence: the raid plays out on the map; the result matches the forecast."))
 	var strip := RaidSpeedStrip.new(RunManager.config().raid_step_cap)
 	strip.size_flags_horizontal = Control.SIZE_FILL
-	side.add_child(strip)
+	foot.add_child(strip)
 	# H24 S14: the same words and tooltip as the HQ's ARMORY badge (assets banked, not
 	# deployed, of the Armory's room).
 	var loadout := TerminalWindow.new(tr("DEFENSE LOADOUT // %s") % armory_words(), Palette.CELL_PINK)
@@ -2808,7 +2821,7 @@ func show_raid() -> void:
 	var intel_in_side := big_text or Settings.text_scale > INTEL_STRIP_SCALE_MAX
 	if intel_in_side:
 		side.add_child(intel)
-		side.move_child(intel, side.get_child_count() - 3)
+		side.move_child(intel, orders_win.get_index() + 1)  # under YOUR NETWORK, above the foot
 	if big_text:
 		side.add_child(loadout)
 		side.move_child(loadout, 0)  # ART-0 C: the cards on the first screen
@@ -2879,8 +2892,8 @@ func show_raid() -> void:
 			select_target(id))
 	# ART-6 3A: the threats' routes in red grease pencil, as the projection runs them.
 	_mount_raid_routes(raid_route_paths(projection.events))
-	_raid_avoid = [side, loadout]
-	city_overlay.avoid_controls([side, loadout, raid_legend])  # labels clear of the panels and the key
+	_raid_avoid = [side, foot, loadout]
+	city_overlay.avoid_controls([side, foot, loadout, raid_legend])  # labels clear of the panels and the key
 	_register_raid_drops(claimed, loadout)
 	place_raid_legend.call_deferred()
 	# ANIM-R1 M2: the playout's zoomed map baked behind the setup (off the main thread), so
@@ -3237,9 +3250,18 @@ static func raid_verdict(projection: RaidResolver.RaidResult) -> String:
 static func outcome_tip(outcome: String) -> String:
 	if outcome == "holds":
 		return TranslationServer.translate("HOLDS: the node survives and keeps fighting.")
+	if outcome == OUTCOME_BREACHED:
+		return TranslationServer.translate("BREACHED: your home server fell. The campaign is lost.")
 	if outcome == "":
 		return ""
 	return TranslationServer.translate("%s: the node falls; threats go on past it.") % outcome_word(outcome)
+
+
+## ART-6 3A (§4.8 BREACHED): the outcome a node's raid label shows: the core's `outcome`,
+## except the home server brought to 0 (`after`), which reads BREACHED (the core keeps it
+## "holds": the campaign is lost, not the node taken), as the map's word and banner do.
+static func shown_outcome(outcome: String, home: bool, after: int) -> String:
+	return OUTCOME_BREACHED if home and after <= 0 else outcome
 
 
 ## A node's raid outcome as the screen writes it ("HOLDS", "BREACHED"), translated.
@@ -3545,7 +3567,7 @@ func _node_order_row(site_id: StringName, projection: RaidResolver.RaidResult, c
 	if not n.is_empty():
 		# H23 S5: the numbers are the node's integrity (HP); HOLDS / BREACHED said in the tip.
 		# ART-6 3A: a status chip in the outcome's colour with its word (round 21 terminal rows).
-		var outcome := String(n.get("outcome", ""))
+		var outcome := shown_outcome(String(n.get("outcome", "")), site_id == c.grid.home_site_id, int(n.get("after", 1)))
 		var chip := RaidChip.new(tr("HP %s → %s %s") % [n.get("before", "?"), n.get("after", "?"), outcome_word(outcome)], RaidChip.outcome_color(outcome))
 		chip.name = "Chip_%s" % site_id
 		chip.add_theme_font_override("font", Palette.mono_arrows())
@@ -3608,11 +3630,12 @@ func raid_graph(results: Variant, markers: Dictionary, c: CampaignState = null, 
 			continue
 		var res: Dictionary = nodes_res.get(String(n["id"]), {})
 		if not res.is_empty():
-			n["color"] = Palette.CELL_ACID if String(res["outcome"]) == "holds" else Palette.CELL_PINK
-			n["result"] = "%s → %s %s" % [res["before"], res["after"], outcome_word(String(res["outcome"]))]
+			var outcome := shown_outcome(String(res["outcome"]), n["id"] == c.grid.home_site_id, int(res["after"]))
+			n["color"] = Palette.CELL_ACID if outcome == "holds" else Palette.CELL_PINK
+			n["result"] = "%s → %s %s" % [res["before"], res["after"], outcome_word(outcome)]
 			n["label"] = site_name(n["id"])  # never the raw id (H20)
 			# H23 S5: the tag's numbers and word explained on hover.
-			n["tip"] = tr("%s: integrity (HP) %s → %s in the raid. %s") % [site_name(n["id"]), res["before"], res["after"], outcome_tip(String(res["outcome"]))]
+			n["tip"] = tr("%s: integrity (HP) %s → %s in the raid. %s") % [site_name(n["id"]), res["before"], res["after"], outcome_tip(outcome)]
 		n["assets"] = c.grid.assets_on(n["id"])
 		n["threat_corp"] = String(c.corporation_id)
 		if c.grid.is_claimed(n["id"]):
@@ -3712,6 +3735,8 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	playout = RaidPlayoutPanel.new(overlay, PLAYOUT_LOG_SIZE)
 	feed.body.add_child(playout)
 	var fx := playout.attach_fx(r, c.grid.home_site_id, c.grid.home_max_integrity, Palette.corp_color(c.corporation_id))
+	if fx != null and raid_routes != null and is_instance_valid(raid_routes):
+		fx.entry_letters = raid_routes.letters.duplicate()  # ART-6 3A: marks stack above the letters
 	# ANIM-R1 M4: each step's fight is framed (the camera eases to it) before it plays, and
 	# every hit on home flies its number into the top bar's HOME, which rolls down.
 	playout.framer = _frame_fight.bind(overlay)
@@ -4127,7 +4152,7 @@ func show_raid_summary() -> void:
 	ids.sort()
 	for id in ids:
 		var n: Dictionary = r["nodes"][id]
-		var outcome := String(n["outcome"])
+		var outcome := shown_outcome(String(n["outcome"]), StringName(String(id)) == c.grid.home_site_id, int(n["after"]))
 		# ANIM-R5 P8: the name and its HP on one row (the name wraps instead).
 		var node_row := HBoxContainer.new()
 		node_row.name = "ReportRow_%s" % String(id)

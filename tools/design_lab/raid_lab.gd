@@ -10,11 +10,13 @@ extends Control
 ## States: `sheet` (the kit: sockets, vehicle icons v4, pencil, stickers, paper, holo,
 ## terminal), `setup_<corp>` (the raid setup against each corporation), `drag_valid`,
 ## `drag_invalid` (a defence carried over a node), `playout_mark` (a pencil mark in its hold),
-## `playout_end`, `report`, `breached`. Writes `<state>.png` (1280x720).
+## `playout_end`, `report`, `breached_bits` (mid bit burst), `breached`, `saved_stamp` (the autosave stamp on the setup). Writes `<state>.png` (1280x720).
 
 const HQ := preload("res://scenes/hq/hq_scene.tscn")
 const ALL := ["sheet", "setup_meridian", "setup_solace", "setup_halcyon", "setup_orbital", "setup_rebel_cell",
-	"drag_valid", "drag_invalid", "playout_mark", "playout_end", "report", "breached"]
+	"drag_valid", "drag_invalid", "playout_mark", "playout_end", "report", "breached_bits", "breached", "saved_stamp"]
+## `breached_bits` is caught this far into the bit burst (its share of raid_bits_burst).
+const BITS_AT := 0.3
 const NODE_TYPES: Array[StringName] = [&"firewall_relay", &"vault_terminal", &"relay", &"safehouse", &"proxy_relay"]
 const SETTLE := 40
 const WAIT := 900
@@ -167,6 +169,18 @@ func _screen(state: String) -> void:
 			await _frames(4)
 			hq.show_raid_summary()
 			await _frames(90)
+		"saved_stamp":
+			await _open_raid(&"solace")
+			Fx.show_saved()
+			await _frames(4)  # placed a frame after the save, then stamped down
+		"breached_bits":
+			var hq: Node = await _open_raid(&"solace", 2, false)
+			hq.fight_raid()
+			await _until(func() -> bool:
+				var fx: RaidFxLayer = hq.playout.fx if hq.playout != null else null
+				if fx == null or fx._breach_t0 == INF:
+					return false
+				return fx.clock >= fx._breach_t0 + RaidBeats.raw_seconds(RaidFxLayer.BREACH_BITS) * BITS_AT, 3000)
 		"breached":
 			var hq: Node = await _open_raid(&"solace", 2, false)
 			hq.fight_raid()

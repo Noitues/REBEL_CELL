@@ -148,9 +148,18 @@ const STREAKS := 5
 const STREAK_SPEED := 1.375
 const STREAK_LEN := 12.0
 const STREAK_PALE := 0.5
-## BREACHED's bits: count and burst radius (screen px x screen_k).
-const BITS := 70
+## BREACHED's bits: the burst radius on screen (screen px x screen_k).
 const BITS_R := 120.0
+## The concept's own bit explosion (ui21.bit_burst, baked by tools/art_pipeline/raid/bake_bits.py):
+## one strip of BITS_FRAMES frames of BITS_FRAME_PX, the burst centred at BITS_CENTRE_PX with
+## radius BITS_ART_R, drawn BITS_LIFT_ART above the node as screens22's home-breached frame
+## does (all in the bake's px; they mirror assets/raid/bits/manifest.json).
+const BITS_SHEET := "res://assets/raid/bits/bits.png"
+const BITS_FRAMES := 24
+const BITS_FRAME_PX := Vector2(460, 380)
+const BITS_CENTRE_PX := Vector2(230, 200)
+const BITS_ART_R := 190.0
+const BITS_LIFT_ART := 10.0
 
 
 ## The VFX tier of drawn effect `kind` (a FX_MOTION key; T2 when unknown).
@@ -190,6 +199,9 @@ var _node_left: Dictionary = {}
 var corporation_id: StringName = &""
 var _real: float = 0.0
 var _marks: Array[Dictionary] = []
+## ART-6 3A: the entry Sites the route pencil letters (A, B, C; RaidRouteLayer.letters): a
+## mark on one stacks above its letter (INCOMING sat on the "A").
+var entry_letters: Dictionary = {}
 var _fields: Array[Dictionary] = []
 var _sparks: Array[Dictionary] = []
 var _breach_t0: float = INF
@@ -1214,21 +1226,15 @@ func _draw_stamp(_site: StringName, _s: Dictionary, _k: float) -> void:
 	pass  # ART-6 3A: outcomes are pencil now (_lay_pencil: a HOLDS tick; DOWN / TAKEN marks)
 
 
-## ART-6 3A: the playout's pencil on 1B's grease pencil (RaidPencilPool, on the raid pencil
-## layer above every panel), anchored through RaidMapAnchor: the state marks (DOWN written
-## over its node, INCOMING / TAKEN above theirs, BREACHED heavy where the verdict sits, with
-## its underline), home's verdict ("HOME -5" red, "HOLDS" yellow), a yellow tick on each
-## node that holds at the verdict, a red X on a threat withdrawing.
-func _lay_pencil() -> void:
-	if overlay == null or overlay.city == null or not is_visible_in_tree():
-		return
-	if _pool == null:
-		_pool = RaidPencilPool.make(self)
-	_pool.begin()
-	var threat := GreasePencilMark.Ink.THREAT
-	var plan := GreasePencilMark.Ink.PLAN
+## ART-6 3A: where each state mark shown now is written (mark index -> its word's centre,
+## global px): DOWN over its node, INCOMING / TAKEN above theirs, BREACHED where the verdict
+## sits. Two marks at once on one node never overlap (the later one stacks above the
+## earlier one's top), and a mark written above an entry clears its pencil letter.
+func mark_centres() -> Dictionary:
+	var out := {}
+	if overlay == null:
+		return out
 	var gxf := get_global_transform()
-	var zoom := RaidMapAnchor.scale(overlay)
 	var tops := {}
 	for i in _marks.size():
 		var m: Dictionary = _marks[i]
@@ -1247,14 +1253,45 @@ func _lay_pencil() -> void:
 				c -= Vector2(0, MARK_LIFT_PX)
 		if c.x == INF:
 			continue
-		var step := UiTheme.DISPLAY if heavy else UiTheme.TITLE
 		if not heavy:
-			# Two marks at once on one node (INCOMING then DOWN at an entry) never overlap: the
-			# later one stacks above the earlier one's top.
-			var h := RaidPencilPool.word_size(String(m["word"]), step).y
+			var h := RaidPencilPool.word_size(String(m["word"]), UiTheme.TITLE).y
+			if bool(m.get("above", false)) and entry_letters.has(site):
+				# A mark written above an entry (INCOMING, TAKEN) clears its pencil letter; DOWN
+				# stays written over the node.
+				var letter := RaidMapAnchor.site(overlay, site) + RaidRouteLayer.LETTER_OFF
+				var letter_top := letter.y - RaidPencilPool.word_size(String(entry_letters[site]), RaidRouteLayer.LETTER_STEP).y * 0.5
+				c.y = minf(c.y, letter_top - h * 0.5 - MARK_STACK_GAP_PX)
 			if tops.has(site):
 				c.y = minf(c.y, float(tops[site]) - h * 0.5 - MARK_STACK_GAP_PX)
 			tops[site] = c.y - h * 0.5
+		out[i] = c
+	return out
+
+
+## ART-6 3A: the playout's pencil on 1B's grease pencil (RaidPencilPool, on the raid pencil
+## layer above every panel), anchored through RaidMapAnchor: the state marks (DOWN written
+## over its node, INCOMING / TAKEN above theirs, BREACHED heavy where the verdict sits, with
+## its underline), home's verdict ("HOME -5" red, "HOLDS" yellow), a yellow tick on each
+## node that holds at the verdict, a red X on a threat withdrawing.
+func _lay_pencil() -> void:
+	if overlay == null or overlay.city == null or not is_visible_in_tree():
+		return
+	if _pool == null:
+		_pool = RaidPencilPool.make(self)
+	_pool.begin()
+	var threat := GreasePencilMark.Ink.THREAT
+	var plan := GreasePencilMark.Ink.PLAN
+	var gxf := get_global_transform()
+	var zoom := RaidMapAnchor.scale(overlay)
+	var centres := mark_centres()
+	for i in _marks.size():
+		if not centres.has(i):
+			continue
+		var m: Dictionary = _marks[i]
+		var pr := mark_progress(m)
+		var heavy := bool(m.get("heavy", false))
+		var c: Vector2 = centres[i]
+		var step := UiTheme.DISPLAY if heavy else UiTheme.TITLE
 		var write := minf(1.0, pr.x * (1.25 if heavy else 1.0))
 		_pool.word("mark_%d" % i, String(m["word"]), c, step, threat, 1.0, write, pr.y, -0.05)
 		if heavy:
@@ -1320,6 +1357,8 @@ func pencil_shown() -> Array[Node2D]:
 var _pool: RaidPencilPool = null
 ## The baked ice steps, loaded once (path -> Texture2D or null).
 static var _ice_tex: Dictionary = {}
+static var _bits_tex: Texture2D = null
+static var _bits_loaded: bool = false
 
 ## ART-6 3A (§4.8 Ghost station bonus, round 22 `bonus_slow_v2`): the slow field under the
 ## units on the node whose operative holds them, drawn as the concept's `fx_slow_v2` draws it
@@ -1410,19 +1449,28 @@ func _draw_breach(k: float) -> void:
 			draw_polyline(dead, Color(Palette.DISABLED, 0.6), 1.5 * k, true)
 	if u >= 1.0 or not Motion.live(BREACH_BITS):
 		return
-	var f := Palette.mono()
-	var px := maxi(1, roundi(14.0 * k))
-	if u < 0.15:
-		draw_circle(c, BITS_R * k * 0.35 * (u / 0.15), Color(Palette.TEXT_HI, 0.6 * (1.0 - u / 0.15)))
-	var red := RaidSkin.pencil_threat()
-	for i in BITS:
-		var a := TAU * absf(RaidPencil.noise(31, i)) - PI
-		var reach := BITS_R * k * (0.3 + 0.7 * absf(RaidPencil.noise(47, i)))
-		var p := c + Vector2(cos(a), sin(a) * 0.7) * reach * minf(1.0, u * 2.2) + Vector2(0, BITS_R * k * 0.6 * u * u)
-		var hot := u < 0.12
-		var col := Color(Palette.TEXT_HI if hot or i % 5 == 0 else red, 1.0 - u)
-		var bit := "1" if (i + int(u * 20.0)) % 2 == 0 else "0"
-		draw_string(f, p, bit, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
+	# The concept's burst (flash, shock ring, 0 / 1 bits blasting out and falling), frame by u.
+	var sheet := bits_sheet()
+	if sheet == null:
+		return
+	var s := BITS_R * k / BITS_ART_R
+	var src := Rect2(Vector2(bits_frame(u) * BITS_FRAME_PX.x, 0.0), BITS_FRAME_PX)
+	var at := c + (Vector2(0.0, -BITS_LIFT_ART) - BITS_CENTRE_PX) * s
+	draw_texture_rect_region(sheet, Rect2(at, BITS_FRAME_PX * s), src)
+
+
+## ART-6 3A: the baked BREACHED strip (null when it is missing), loaded once.
+static func bits_sheet() -> Texture2D:
+	if not _bits_loaded:
+		_bits_loaded = true
+		_bits_tex = load(BITS_SHEET) as Texture2D if ResourceLoader.exists(BITS_SHEET) else null
+	return _bits_tex
+
+
+## ART-6 3A: the strip frame shown at burst progress `u` (0..1): frame i is the concept's
+## bit_burst at t = i / BITS_FRAMES.
+static func bits_frame(u: float) -> int:
+	return clampi(floori(clampf(u, 0.0, 1.0) * BITS_FRAMES), 0, BITS_FRAMES - 1)
 
 func _draw_home(k: float) -> void:
 	if home_id == &"":

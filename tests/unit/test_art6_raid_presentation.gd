@@ -167,6 +167,68 @@ func test_the_setup_shows_the_panels_by_fiction_and_the_projected_routes() -> vo
 		await _frames(1)
 
 
+func test_a_fallen_home_reads_breached_not_holds() -> void:
+	assert_eq(HqScript().shown_outcome("holds", true, 0), "breached", "home at 0: BREACHED")
+	assert_eq(HqScript().shown_outcome("holds", true, 3), "holds", "home standing: HOLDS")
+	assert_eq(HqScript().shown_outcome("holds", false, 0), "holds", "only the home server is BREACHED")
+	assert_eq(HqScript().outcome_word("breached"), String(TranslationServer.translate(RaidVerdict.BREACHED)), "the verdict's word")
+	var checked := false
+	for corp in CORPORATIONS:
+		_raid_campaign(corp, false, 2)
+		var projection := RunManager.project_raid()
+		if not projection.campaign_lost:
+			continue
+		var hq := _scene(HQ)
+		await _frames(1)
+		hq.show_raid()
+		await _frames(4)
+		var home_id := RunManager.campaign.grid.home_site_id
+		var chip := hq._panel.find_child("Chip_%s" % home_id, true, false) as Label
+		if chip != null:
+			assert_string_contains(chip.text, String(TranslationServer.translate(RaidVerdict.BREACHED)), "%s: YOUR NETWORK's home chip" % corp)
+			assert_false(chip.text.contains(HqScript().outcome_word("holds")), "%s: never HOLDS at 0" % corp)
+		var g: Dictionary = hq.raid_graph(projection, {})
+		for n: Dictionary in g["nodes"]:
+			if n["id"] == home_id and n.has("result"):
+				assert_string_contains(String(n["result"]), String(TranslationServer.translate(RaidVerdict.BREACHED)), "%s: the map's home label" % corp)
+				checked = true
+		hq.get_parent().queue_free()
+		await _frames(1)
+	assert_true(checked, "a campaign whose home falls was checked")
+
+
+func test_a_mark_above_an_entry_clears_its_letter() -> void:
+	_raid_campaign(&"meridian", false)
+	var hq := _scene(HQ)
+	await _frames(1)
+	hq.show_raid()
+	await _frames(4)
+	var routes: RaidRouteLayer = hq.raid_routes
+	assert_false(routes.letters.is_empty(), "the raid has a lettered entry")
+	if routes.letters.is_empty():
+		return
+	var entry: StringName = routes.letters.keys()[0]
+	var ov: CityMapOverlay = hq.city_overlay
+	var fx := RaidFxLayer.new(ov)
+	ov.add_child(fx)
+	fx.entry_letters = routes.letters.duplicate()
+	fx._mark("down", entry, "DOWN", Color.RED, 0.0, false)
+	fx._mark("incoming", entry, "INCOMING", Color.RED, 0.0, true)
+	for m: Dictionary in fx._marks:
+		m["started"] = true
+		m["real0"] = fx._real - 0.1  # written part way, never wiped
+	var at := fx.mark_centres()
+	assert_eq(at.size(), 2, "both marks are shown")
+	if at.size() == 2:
+		var letter := RaidMapAnchor.site(ov, entry) + RaidRouteLayer.LETTER_OFF
+		var letter_top := letter.y - RaidPencilPool.word_size(String(routes.letters[entry]), RaidRouteLayer.LETTER_STEP).y * 0.5
+		var h_down := RaidPencilPool.word_size("DOWN", UiTheme.TITLE).y
+		var h_in := RaidPencilPool.word_size("INCOMING", UiTheme.TITLE).y
+		assert_almost_eq(at[0], RaidMapAnchor.site(ov, entry), Vector2(0.01, 0.01), "DOWN is written over its node")
+		assert_true(float(at[1].y) + h_in * 0.5 <= letter_top + 0.01, "INCOMING clears the entry letter")
+		assert_true(float(at[1].y) + h_in * 0.5 <= float(at[0].y) - h_down * 0.5 + 0.01, "INCOMING stacks above DOWN")
+
+
 func HqScript() -> GDScript:
 	return load("res://scripts/ui/hq_scene.gd")
 
@@ -325,3 +387,24 @@ func test_ice_is_the_concepts_baked_crystals_growing_in_steps() -> void:
 	var manifest := JSON.parse_string(FileAccess.get_file_as_string(RaidFxLayer.ICE_DIR + "manifest.json")) as Dictionary
 	assert_true(String(manifest["source"]["script"]).begins_with("docs/concepts/round22_raid_ui/scripts/ui22.py"), "the ice comes from the concept script")
 	assert_eq(int(manifest["steps"]), RaidFxLayer.ICE_STEPS, "every baked step is used")
+
+
+func test_breached_bits_are_the_concepts_baked_burst() -> void:
+	var manifest := JSON.parse_string(FileAccess.get_file_as_string("res://assets/raid/bits/manifest.json")) as Dictionary
+	assert_true(String(manifest["source"]["script"]).begins_with("docs/concepts/round22_raid_ui/scripts/ui21.py"), "the bits come from the concept's bit_burst")
+	assert_eq(int(manifest["frames"]), RaidFxLayer.BITS_FRAMES, "every baked frame is used")
+	assert_eq(Vector2(manifest["frame_px"][0], manifest["frame_px"][1]), RaidFxLayer.BITS_FRAME_PX, "frame size as baked")
+	assert_eq(Vector2(manifest["centre_px"][0], manifest["centre_px"][1]), RaidFxLayer.BITS_CENTRE_PX, "burst centre as baked")
+	assert_eq(float(manifest["radius_px"]), RaidFxLayer.BITS_ART_R, "burst radius as baked")
+	var sheet := RaidFxLayer.bits_sheet()
+	assert_not_null(sheet, "the strip loads")
+	if sheet != null:
+		assert_eq(Vector2(sheet.get_size()), Vector2(RaidFxLayer.BITS_FRAME_PX.x * RaidFxLayer.BITS_FRAMES, RaidFxLayer.BITS_FRAME_PX.y), "one strip, left to right")
+	assert_eq(RaidFxLayer.bits_frame(0.0), 0, "the burst starts on the flash")
+	assert_eq(RaidFxLayer.bits_frame(0.5), RaidFxLayer.BITS_FRAMES / 2, "frame = u x frames")
+	assert_eq(RaidFxLayer.bits_frame(1.0), RaidFxLayer.BITS_FRAMES - 1, "never past the last frame")
+	var prev := -1
+	for i in 101:
+		var f := RaidFxLayer.bits_frame(i / 100.0)
+		assert_true(f >= prev, "frames only move forward")
+		prev = f
