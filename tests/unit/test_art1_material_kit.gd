@@ -241,6 +241,7 @@ func test_pencil_writes_on_and_wipes_by_trimming_points_never_alpha() -> void:
 	Motion.force_live = true
 	_effects(false)
 	var m := _mark()
+	m.complete_motion()  # B1b: a new mark writes itself on; start from it whole
 	var full := (m.get_child(1) as Line2D).points.size()
 	assert_gt(full, 20, "a resampled circle")
 	assert_gt(m.write_on(), 0.0, "it writes on")
@@ -276,7 +277,8 @@ func test_pencil_look_uniforms_width_dashes_and_shadow() -> void:
 	m.dashed = true
 	var line := m.get_child(1) as Line2D
 	var shadow := m.get_child(0) as Line2D
-	assert_between(line.width, 8.0, 10.0, "§6.3 width 8-10")
+	# B1b (review D3): §6.3's 8-10 px are 1080p (board) px: 9 px, 6 px of the 1280x720 canvas.
+	assert_between(line.width / GreasePencilMark.BOARD_TO_CANVAS, 8.0, 10.0, "§6.3 width 8-10 at 1080p")
 	assert_eq(line.begin_cap_mode, Line2D.LINE_CAP_ROUND, "round caps")
 	assert_true(bool((line.material as ShaderMaterial).get_shader_parameter(&"dashed")), "dashed = what-if")
 	assert_eq(shadow.position, GreasePencilMark.SHADOW_OFFSET, "the offset under-shadow")
