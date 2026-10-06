@@ -115,6 +115,17 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_stamp
 	body.add_child(sub_label)
 
 
+## BIG-TEXT: a folded work order (a page of a few rows in a short room) leaves the rubber stamp
+## off its sheet and keeps only the footer's room under the rows (the sub line still says what
+## it is; the whole order, when it fits, wears the stamp).
+func drop_stamp() -> void:
+	paper.stamp = ""
+	var box := get_theme_stylebox(&"panel") as StyleBoxEmpty
+	if box != null:
+		box.content_margin_bottom = FOOTER_H * _k
+		queue_sort()
+
+
 ## The rubber stamp's rect as drawn, global (parity fix, RAID-02 / RAID-11: no row under it).
 func stamp_rect() -> Rect2:
 	if paper == null:

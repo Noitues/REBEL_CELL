@@ -92,6 +92,8 @@ const STAMP_SHADOW_ALPHA := 0.7
 
 ## BIG-TEXT: the text scale the stamp is lettered at (a panel built smaller to fit sets it); 0 = the player's.
 var text_k: float = 0.0
+## BIG-TEXT: the stamp slot and the seal in it at this share of their size (a panel built smaller to fit).
+var slot_k: float = 1.0
 var content: Control = null
 ## The stamp slot (top right): DECRYPTED is drawn here; a caller may add its own stamp.
 var stamp_slot: Control = null
@@ -146,7 +148,7 @@ func _ready() -> void:
 
 
 func _layout() -> void:
-	stamp_slot.size = STAMP_SLOT
+	stamp_slot.size = STAMP_SLOT * slot_k
 	stamp_slot.position = Vector2(size.x - stamp_slot.size.x - UiTheme.SP_M, UiTheme.SP_S)
 	_scrim.visible = scrim
 	_scrim.position = Vector2.ZERO
@@ -195,10 +197,10 @@ func _draw_seal() -> void:
 	var c := seal_center()
 	var ring := corp_color
 	ring.a = 0.8
-	stamp_slot.draw_arc(c, SEAL_R, 0.0, TAU, 48, ring, 3.0, true)
-	stamp_slot.draw_arc(c, SEAL_R - 6.0, 0.0, TAU, 48, ring, 1.0, true)
-	var half := SEAL_R * CREST_SHARE
-	var k := SEAL_R / 40.0
+	stamp_slot.draw_arc(c, SEAL_R * slot_k, 0.0, TAU, 48, ring, 3.0, true)
+	stamp_slot.draw_arc(c, (SEAL_R - 6.0) * slot_k, 0.0, TAU, 48, ring, 1.0, true)
+	var half := SEAL_R * slot_k * CREST_SHARE
+	var k := SEAL_R * slot_k / 40.0
 	var t := CorpSeal.emblem(corporation) if corporation != &"" else null
 	if t != null:
 		var ts := t.get_size()
@@ -213,7 +215,7 @@ func _draw_seal() -> void:
 	# the red fracture down the middle, across the ring
 	var pts := PackedVector2Array()
 	for f: Vector2 in FRACTURE:
-		pts.append(c + (f - Vector2(0.5, 0.5)) * SEAL_R * 2.0)
+		pts.append(c + (f - Vector2(0.5, 0.5)) * SEAL_R * slot_k * 2.0)
 	stamp_slot.draw_polyline(pts, Palette.HARM, FRACTURE_W, true)
 
 

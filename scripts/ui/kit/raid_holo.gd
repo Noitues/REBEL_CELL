@@ -45,6 +45,7 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_key: 
 	holo.corp_color = skin.hue
 	holo.seal_letter = skin.corp_name().left(1)
 	holo.text_k = _k
+	holo.slot_k = minf(_k, 1.0)
 	holo.corporation = p_corporation  # B1c (D17): the seal carries the corp's emblem, cracked
 	holo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(holo, false, Node.INTERNAL_MODE_FRONT)
@@ -107,10 +108,10 @@ func _fit_stamp(_n: Node = null) -> void:
 	for c in body.get_children():
 		if c is RaidIntelStrip and not c.is_queued_for_deletion():
 			strip = c
-	var slot_h := DecryptedHoloPanel.STAMP_SLOT.y + UiTheme.SP_S + STAMP_GAP * _k
+	var slot_h := DecryptedHoloPanel.STAMP_SLOT.y * minf(_k, 1.0) + UiTheme.SP_S + STAMP_GAP * _k
 	var foot := slot_h
 	if strip != null:
-		strip.reserve_right = DecryptedHoloPanel.STAMP_SLOT.x + UiTheme.SP_M - PAD * _k
+		strip.reserve_right = DecryptedHoloPanel.STAMP_SLOT.x * minf(_k, 1.0) + UiTheme.SP_M - PAD * _k
 		foot = 0.0  # beside the strip (the strip's height is about the stamp's)
 	var box := get_theme_stylebox(&"panel") as StyleBoxEmpty
 	if box != null and not is_equal_approx(box.content_margin_bottom, PAD * _k + foot):
