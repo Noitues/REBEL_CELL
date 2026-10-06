@@ -29,12 +29,11 @@ const POOL_UNIFORMS: Array[StringName] = [&"pool_a", &"pool_b", &"pool_c", &"poo
 const POOL_REACH := 1.25
 ## The district outside the target dims to this once won (§3.14: about 62 %).
 const DISTRICT_DIM := 0.62
-## "OURS NOW": size at 720 px of height, tilt (rad), lowest share of the height it stands at (clear
-## of the top bar), and its ink outline (px at 720).
+## "OURS NOW": size at 720 px of height, tilt (rad) and the lowest share of the height it stands
+## at (clear of the top bar). B1b: it is the kit's wax word (GreasePencilWord), written on.
 const OURS_NOW_PX := 34
 const OURS_NOW_TILT := -0.09
 const OURS_NOW_MIN_Y := 0.16
-const OURS_NOW_OUTLINE := 6
 ## The design height the pencil's size is given at.
 const DESIGN_HEIGHT := 720.0
 ## D17 on the city: how far (lots) a Site's point looks for its building.
@@ -57,6 +56,7 @@ var _mat: ShaderMaterial
 var _still: Control
 var _won_still: Control
 var _ink: Control
+var _ours: GreasePencilWord = null
 var _tex: Texture2D = null
 var _won_tex: Texture2D = null
 var _enemy_key: String = ""
@@ -88,7 +88,13 @@ func _init() -> void:
 	_won_still.material = _mat
 	_won_still.visible = false
 	heat_layer = _layer("HeatLayer", Callable())
-	_ink = _layer("OursNow", _draw_ink)
+	_ink = _layer("OursNow", Callable())
+	_ours = GreasePencilWord.new()
+	_ours.name = "Word"
+	_ours.ink = GreasePencilMark.Ink.PLAN
+	_ours.text_step = OURS_NOW_PX
+	_ours.visible = false
+	_ink.add_child(_ours)
 	resized.connect(_on_resized)
 
 
@@ -142,6 +148,7 @@ func play_won(instant: bool = false) -> void:
 	_stop_won()
 	if instant:
 		won = 1.0
+		_ours.complete_motion()
 		return
 	_won_tween = Motion.run(WON_MOTION, self, ^"won", 1.0)
 
@@ -156,6 +163,7 @@ func complete_motion() -> void:
 	if motion_running():
 		_stop_won()
 		won = 1.0
+		_ours.complete_motion()
 
 
 func _stop_won() -> void:
@@ -173,7 +181,7 @@ func _sync_won() -> void:
 	_won_still.visible = _won_tex != null and won > 0.0
 	_won_still.modulate.a = won
 	_won_still.queue_redraw()
-	_ink.queue_redraw()
+	_place_ours()
 
 
 func _process(_delta: float) -> void:
@@ -247,7 +255,7 @@ func _on_resized() -> void:
 		_frame_city()
 	_still.queue_redraw()
 	_won_still.queue_redraw()
-	_ink.queue_redraw()
+	_place_ours()
 
 
 func _draw_still() -> void:
@@ -274,23 +282,27 @@ func ours_now_spot() -> Vector2:
 	return p
 
 
-func _draw_ink() -> void:
-	# The pencil writes once the lights have turned (the last part of the won motion).
-	var show := clampf(won * 2.0 - 1.0, 0.0, 1.0)
-	if show <= 0.0 or place.is_empty():
+## The OURS NOW pencil (tests: the kit's wax word).
+func ours_now() -> GreasePencilWord:
+	return _ours
+
+
+## OURS NOW in yellow grease pencil on the target's top: shown (and so written on, never faded
+## in) once the lights have turned (the last part of the won motion).
+func _place_ours() -> void:
+	if _ours == null:
 		return
-	var k := size.y / DESIGN_HEIGHT
-	var fs := maxi(1, roundi(OURS_NOW_PX * k))
-	var word := tr("OURS NOW")
-	var font := Palette.marker()
-	var w := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var at := ours_now_spot()
-	_ink.draw_set_transform(at, OURS_NOW_TILT, Vector2.ONE)
-	var origin := Vector2(-w * 0.5, fs * 0.35)
-	var ink := Color(Palette.INK, show)
-	_ink.draw_string_outline(font, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(OURS_NOW_OUTLINE * k)), ink)
-	_ink.draw_string(font, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.RESIST_GOLD, show))
-	_ink.draw_set_transform(Vector2.ZERO)
+	var show := won * 2.0 - 1.0 > 0.0 and not place.is_empty()
+	if show:
+		var k := size.y / DESIGN_HEIGHT
+		var s := k / maxf(Settings.text_scale, 0.01)
+		_ours.text = tr("OURS NOW")
+		_ours.scale = Vector2(s, s)
+		_ours.rotation = OURS_NOW_TILT
+		var px := UiTheme.font_px(OURS_NOW_PX) * s
+		var w := Palette.pencil().get_string_size(_ours.text, HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(OURS_NOW_PX)).x * s
+		_ours.position = ours_now_spot() + Vector2(-w * 0.5, px * 0.35).rotated(OURS_NOW_TILT)
+	_ours.visible = show
 
 
 

@@ -371,11 +371,9 @@ func _draw_print(c: Control, subj: Dictionary, kia: bool) -> void:
 	PortraitArt.draw(c, img, subj)
 	if kia:
 		c.draw_rect(img, Color(Palette.INK, Polaroid.KIA_GREY))
-		var inset := img.size.x * Polaroid.KIA_INSET
-		var w := maxf(2.0, img.size.x * Polaroid.KIA_WIDTH)
-		var red := Color(PortraitFeed.pencil_red(), Polaroid.PENCIL_ALPHA)
-		c.draw_line(img.position + Vector2(inset, inset), img.end - Vector2(inset, inset), red, w, true)
-		c.draw_line(Vector2(img.end.x - inset, img.position.y + inset), Vector2(img.position.x + inset, img.end.y - inset), red, w, true)
+	# B1b: the red pencil X is the kit's wax (one material, written on).
+	PencilSet.show_on(c, PencilSet.cross_strokes(img, img.size.x * Polaroid.KIA_INSET) if kia else [] as Array[PackedVector2Array],
+		GreasePencilMark.Ink.THREAT, Polaroid.KIA_SEED)
 	c.draw_rect(r, PaperInk.edge(Color(Palette.INK, Polaroid.EDGE_ALPHA)), false, PaperInk.edge_width(1.0))
 
 
@@ -620,14 +618,12 @@ func poster_write_at() -> float:
 	return Motion.delay_of(POSTER) + Motion.seconds(POSTER) if Motion.live(POSTER) else 0.0
 
 
-## END-03: how long the pencil X takes to write on (s): `pencil_write_on`'s speed over its
-## length, capped at its duration (GreasePencilMark.write_on's rule); 0 when it does not play.
+## END-03: how long the pencil X takes to write on (s): `pencil_write_on`'s duration
+## (GreasePencilMark.write_on's rule, B1b); 0 when it does not play.
 func poster_write_seconds() -> float:
 	if poster == null or not Motion.live(GreasePencilMark.WRITE):
 		return 0.0
-	var e := Motion.entry(GreasePencilMark.WRITE)
-	var by_speed := poster.pencil.total_length() / maxf(e.amplitude, 1.0) / maxf(Motion.speed, Motion.SPEED_MIN)
-	return minf(by_speed, Motion.seconds(GreasePencilMark.WRITE))
+	return Motion.seconds(GreasePencilMark.WRITE)
 
 
 ## END-03: when CORP DOWN slaps on (s): as the pencil X is written.

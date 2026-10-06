@@ -101,7 +101,7 @@ func replace() -> void:
 	var blocked: Array[Rect2] = []
 	for id in discs:
 		if specs[id].get("kind") == SiteMarker.KIND_CENTRAL_SERVER:
-			var t := Vector2(CityMapOverlay.TARGET_RADIUS, CityMapOverlay.TARGET_RADIUS * CityMapOverlay.TARGET_FLAT) + Vector2.ONE * CityMapOverlay.TARGET_WIDTH
+			var t := Vector2(CityMapOverlay.TARGET_RADIUS, CityMapOverlay.TARGET_RADIUS * CityMapOverlay.TARGET_FLAT) + Vector2.ONE * GreasePencilMark.stroke_width()
 			blocked.append(Rect2(discs[id] + Vector2(0, SiteMarker.PAD_DROP) - t, t * 2.0))
 	label_rects = SiteMarkerLayout.place_labels(discs, shown, sizes, prio, Rect2(Vector2.ZERO, size), blocked)
 	for id in discs:
@@ -137,7 +137,6 @@ func _place_target() -> void:
 		target = GreasePencilMark.new()
 		target.name = "Target"
 		target.ink = GreasePencilMark.Ink.THREAT
-		target.width = CityMapOverlay.TARGET_WIDTH
 		target.seed = CityMapOverlay.TARGET_SEED
 		target.add_stroke(PencilShapes.hand_circle(Vector2.ZERO, Vector2(CityMapOverlay.TARGET_RADIUS, CityMapOverlay.TARGET_RADIUS * CityMapOverlay.TARGET_FLAT), CityMapOverlay.TARGET_SEED))
 		add_child(target)

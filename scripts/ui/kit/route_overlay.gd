@@ -68,15 +68,11 @@ const NUMBER_FONT := 13
 const PIN_SHARE := 1.05
 const PIN_TILT := -0.3
 const PIN_OFFSET := Vector2(0.75, -1.45)
-## The TARGET circle: its radius (share of the sticker's), squash, wobble (screen px), the
-## pencil's stroke width (screen px), the second pass's turn offset (rad), and the word's
+## The TARGET circle: its radius (share of the sticker's) and squash (B1b, D3: one hand loop
+## with its 20 degree tail in the kit's wax, PencilShapes.hand_circle), and the word's
 ## lettering (screen px at text scale 1.0) and offset (shares of the circle's radius).
 const TARGET_SHARE := 1.75
 const TARGET_SQUASH := 0.86
-const TARGET_WOBBLE := 2.6
-const TARGET_STROKE := 3.6
-const TARGET_SEGMENTS := 40
-const TARGET_OVERRUN := 0.18
 const TARGET_FONT := 20
 const ROUTE_TARGET_WORD_AT := Vector2(0.7, -0.95)
 const TARGET_WORD_TILT := -0.12
@@ -157,6 +153,8 @@ var heat_sweeps: bool = false:
 func _init(p_city: NeonCity = null) -> void:
 	super(p_city)
 	name = "RouteOverlay"
+	# B1b: the TARGET's circle and word are the kit's wax (a PencilSet over every layer).
+	_target_pencil = PencilSet.under(_pencil_root)
 	# Parity ROUTE-04 b: a choice's focus ring (the pad's stop on the map, `hover_id`) draws
 	# under the labels, so its ticks never cross a choice's words.
 	move_child(_hi, _tags.get_index())
@@ -706,42 +704,92 @@ func label_marks_of(n: Dictionary) -> Array[Rect2]:
 	return out
 
 
-## The TARGET's red grease-pencil circle (two rough passes, a dark under-shadow, wax
-## opacity) and the word beside it. The wobble comes from a hash of the node id.
+## The TARGET's red grease-pencil loop round `at` (radius `rr`): one hand ellipse with its 20
+## degree tail (B1b, D3), its wobble from `seed`.
+static func target_loop(at: Vector2, rr: float, seed: int) -> Array[PackedVector2Array]:
+	return [PencilShapes.hand_circle(at, Vector2(rr, rr * TARGET_SQUASH), seed)] as Array[PackedVector2Array]
+
+
+## The TARGET's red grease-pencil circle and the word beside it, in the kit's wax (B1b: noted
+## while the nodes draw, laid as marks after the draw). The wobble comes from a hash of the
+## node id. The pencil never fades with the sticker: it writes on once the node shows.
 func _target(n: Dictionary, at: Vector2, r: float, a: float) -> void:
-	var k := _k()
-	var seed_v := absi(hash(String(n["id"])))
+	if a <= 0.0:
+		return
+	var id := String(n["id"])
 	var rr := r * TARGET_SHARE
-	for pass_i in 2:
-		var ring := PackedVector2Array()
-		var turn := TAU * (1.0 + TARGET_OVERRUN)
-		var start := float(seed_v % 628) * 0.01 + pass_i * 0.9
-		for q in TARGET_SEGMENTS + 1:
-			var t := start + turn * q / TARGET_SEGMENTS
-			var wob := (sin(t * 3.0 + float(seed_v % 31) + pass_i) + 0.5 * sin(t * 7.0 + pass_i * 2.0)) * TARGET_WOBBLE * k
-			var grow := 1.0 + pass_i * 0.06
-			ring.append(at + Vector2(cos(t), sin(t) * TARGET_SQUASH) * (rr * grow + wob))
-		_c.draw_polyline(ring, Color(RouteInk.PENCIL_SHADOW, RouteInk.PENCIL_SHADOW_ALPHA * a), (TARGET_STROKE + KEYLINE_EXTRA) * k, true)
-		_c.draw_polyline(ring, Color(RouteInk.PENCIL_THREAT, RouteInk.PENCIL_ALPHA * a), TARGET_STROKE * k * (1.0 - pass_i * 0.35), true)
+	_target_loops[id] = target_loop(at, rr, absi(hash(id)))
 	# The word: on its label's spot when the layout placed one (a label never covers another),
 	# else beside the circle.
-	if label_rects().has(String(n["id"])):
+	if not label_rects().has(id):
+		_target_beside[id] = {"at": at + Vector2(rr * ROUTE_TARGET_WORD_AT.x, rr * ROUTE_TARGET_WORD_AT.y), "px": 0.0}
+	_queue_target_pencil()
+
+
+## The TARGET's word in red grease pencil at `wp` (its baseline's start), tilted, noted for the
+## pencil (`size_px`: the lettering's height inside a placed label's box).
+func _pencil_word(id: String, wp: Vector2, size_px: float = 0.0) -> void:
+	_target_labels[id] = {"at": wp, "px": size_px}
+	_queue_target_pencil()
+
+
+## B1b: the TARGET pencil noted in this frame's draws (loops and beside-words from the nodes'
+## layer, label words from the labels' layer).
+var _target_pencil: PencilSet = null
+var _target_loops: Dictionary = {}
+var _target_beside: Dictionary = {}
+var _target_labels: Dictionary = {}
+var _target_queued := false
+
+
+func _queue_target_pencil() -> void:
+	if not _target_queued:
+		_target_queued = true
+		_lay_target_pencil.call_deferred()
+
+
+## Lays the noted TARGET pencil as marks: a loop and a word per TARGET (a label's word wins).
+func _lay_target_pencil() -> void:
+	_target_queued = false
+	if _target_pencil == null or not is_instance_valid(_target_pencil):
 		return
-	_pencil_word(at + Vector2(rr * ROUTE_TARGET_WORD_AT.x, rr * ROUTE_TARGET_WORD_AT.y), tr_word(TARGET_WORD), a)
-
-
-## The TARGET's word in red grease pencil at `wp` (its baseline's start), tilted.
-func _pencil_word(wp: Vector2, word: String, a: float, size_px: float = 0.0) -> void:
 	var k := _k()
-	var f := RouteInk.pencil_font()
-	var fs := maxi(1, roundi(TARGET_FONT * Settings.text_scale * k))
-	if size_px > 0.0:
-		# Inside a placed label's box: the lettering that fills its height.
-		fs = maxi(1, roundi(size_px / maxf(0.01, f.get_height(1))))
-	_c.draw_set_transform(wp, TARGET_WORD_TILT)
-	_c.draw_string_outline(f, Vector2.ZERO, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, roundi(KEYLINE_EXTRA * 2.0 * k), Color(RouteInk.PENCIL_SHADOW, RouteInk.PENCIL_SHADOW_ALPHA * a))
-	_c.draw_string(f, Vector2.ZERO, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(RouteInk.PENCIL_THREAT, RouteInk.PENCIL_ALPHA * a))
-	_c.draw_set_transform(Vector2.ZERO, 0.0)
+	var word := tr_word(TARGET_WORD)
+	_target_pencil.begin()
+	for id: String in _target_loops:
+		_target_pencil.stroke("loop|" + id, _target_loops[id], GreasePencilMark.Ink.THREAT, PencilSet.AUTO, 0.0, false, absi(hash(id)))
+		var spec: Dictionary = _target_labels.get(id, _target_beside.get(id, {}))
+		if spec.is_empty():
+			continue
+		var wk := k
+		var px := float(spec["px"])
+		if px > 0.0:
+			# Inside a placed label's box: the lettering that fills its height.
+			wk = px / maxf(0.01, RouteInk.pencil_font().get_height(maxi(1, UiTheme.font_px(TARGET_FONT))))
+		var c := PencilSet.centre_of(spec["at"], word, TARGET_FONT, wk, TARGET_WORD_TILT)
+		_target_pencil.word("word|" + id, word, c, TARGET_FONT, GreasePencilMark.Ink.THREAT, wk, PencilSet.AUTO, 0.0, TARGET_WORD_TILT)
+	_target_pencil.end()
+
+
+## The TARGET marks laid now (tests).
+func target_pencil() -> PencilSet:
+	return _target_pencil
+
+
+func _draw_top() -> void:
+	_target_loops.clear()
+	_target_beside.clear()
+	if city != null and not nodes.is_empty() and landmarks:
+		_c = _top
+		_landmarks()
+	super()
+	_queue_target_pencil()
+
+
+func _draw_tags() -> void:
+	_target_labels.clear()
+	super()
+	_queue_target_pencil()
 
 
 ## The TARGET's word (a key).
@@ -952,13 +1000,6 @@ func _landmarks() -> void:
 		_c.draw_string(f, Vector2(r.position.x + bw, y), String(p["text"]), HORIZONTAL_ALIGNMENT_CENTER, r.size.x - bw, fs, col.lightened(0.15))
 
 
-func _draw_top() -> void:
-	if city != null and not nodes.is_empty() and landmarks:
-		_c = _top
-		_landmarks()
-	super()
-
-
 # --- Labels -----------------------------------------------------------------------------------
 
 ## A map label as the Cell's terminal tag: navy glass, a hairline in the node's ring colour,
@@ -973,7 +1014,7 @@ func _tag_box(l: Dictionary) -> void:
 		var pfs := maxi(1, roundi(rect.size.y / maxf(0.01, pf.get_height(1))))
 		var pw := pf.get_string_size(lines[0], HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x
 		pfs = maxi(1, roundi(pfs * minf(1.0, rect.size.x / maxf(1.0, pw))))
-		_pencil_word(Vector2(rect.position.x, rect.end.y - pf.get_descent(pfs)), lines[0], 1.0, pf.get_height(pfs))
+		_pencil_word(String(n["id"]), Vector2(rect.position.x, rect.end.y - pf.get_descent(pfs)), pf.get_height(pfs))
 		return
 	var fs: int = l["fs"]
 	var pad: float = l["pad"]

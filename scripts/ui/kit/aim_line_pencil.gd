@@ -9,8 +9,9 @@ extends Node
 ## a hand loop round that wheel (or drone). Solid: it is what this play will do (§1.2).
 ##
 ## Motion (kept entries, restyled): the arrow writes on over `aim_line_draw` each time the aim
-## moves (the scene drives `arrow_t`); the loop writes on over `target_snap` when the aim
-## snaps onto a target; a mark the aim leaves wipes off with the kit's cloth wipe
+## moves (the scene drives `arrow_t`); the loop writes on over `pencil_write_on` when the aim
+## snaps onto a target (B1b, D25: ~0.4 s; `target_snap` stays the reticle's snap); a mark the
+## aim leaves wipes off with the kit's cloth wipe
 ## (`pencil_wipe`, never an alpha fade). Reduce effects / headless: whole at once, gone at
 ## once. MotionSkip passive: one press completes every write and wipe.
 ##
@@ -18,12 +19,10 @@ extends Node
 ## {} for none, else {from, to, arrow_t, hub (bool: the arrow stops at the hub's edge),
 ## stop (px it stops short), loop: {} or {key, center, radius}}). View only.
 
-## The arrow's and the loop's wax width (px), the arrow's bow (share of its length, the
-## concept's quarter bow halved for the shorter combat reach), the loop's size (shares of
-## the target's radius: the concept's 1.12 x 0.97 ellipse) and the share of the hub the
-## arrow stops at (concept: 0.28 of the wheel).
-const ARROW_W := 6.0
-const LOOP_W := 5.0
+## The arrow's bow (share of its length, the concept's quarter bow halved for the shorter
+## combat reach), the loop's size (shares of the target's radius: the concept's 1.12 x 0.97
+## ellipse) and the share of the hub the arrow stops at (concept: 0.28 of the wheel). The wax's
+## width is the kit's one width (GreasePencilMark.stroke_width, B1b).
 const BOW := 0.12
 const LOOP_R := Vector2(1.12, 1.087)
 const HUB_STOP := 0.28
@@ -32,7 +31,7 @@ const SHAFT_POINTS := 24
 const ARROW_SEED := 11
 const LOOP_SEED := 5
 
-const LOOP_MOTION := &"target_snap"
+const LOOP_MOTION := GreasePencilMark.WRITE
 const WIPE_MOTION := GreasePencilMark.WIPE
 
 ## () -> Dictionary: the aim to draw now (see the class doc).
@@ -93,7 +92,7 @@ static func shapes(aim: Dictionary) -> Dictionary:
 		var end := to + (from - to).normalized() * stop
 		var mid := (from + end) * 0.5 + (end - from).orthogonal() * BOW
 		var shaft := PencilShapes.bezier(from, mid, end, SHAFT_POINTS)
-		out["arrow"] = PencilShapes.arrow(shaft, ARROW_W * RaidPencil.HEAD_LEN, ARROW_SEED)
+		out["arrow"] = PencilShapes.arrow(shaft, GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN, ARROW_SEED)
 	var loop: Dictionary = aim.get("loop", {})
 	if not loop.is_empty():
 		var r := float(loop["radius"])
@@ -151,12 +150,12 @@ func _lay(aim: Dictionary) -> void:
 	var arrow: Array[PackedVector2Array] = sh["arrow"]
 	if not arrow.is_empty():
 		var t := clampf(float(aim.get("arrow_t", 1.0)), 0.0, 1.0)
-		_pool.stroke("arrow", arrow, GreasePencilMark.Ink.PLAN, ARROW_W, t, 0.0, false, ARROW_SEED)
-		_last_arrow = {"strokes": arrow, "ink": GreasePencilMark.Ink.PLAN, "width": ARROW_W, "seed": ARROW_SEED}
+		_pool.stroke("arrow", arrow, GreasePencilMark.Ink.PLAN, t, 0.0, false, ARROW_SEED)
+		_last_arrow = {"strokes": arrow, "ink": GreasePencilMark.Ink.PLAN, "seed": ARROW_SEED}
 	var loop: Array[PackedVector2Array] = sh["loop"]
 	if not loop.is_empty():
-		_pool.stroke("loop", loop, GreasePencilMark.Ink.PLAN, LOOP_W, _loop_t, 0.0, false, LOOP_SEED)
-		_last_loop = {"strokes": loop, "ink": GreasePencilMark.Ink.PLAN, "width": LOOP_W, "seed": LOOP_SEED}
+		_pool.stroke("loop", loop, GreasePencilMark.Ink.PLAN, _loop_t, 0.0, false, LOOP_SEED)
+		_last_loop = {"strokes": loop, "ink": GreasePencilMark.Ink.PLAN, "seed": LOOP_SEED}
 	# The slices the play changes: a small hand circle each, written with the loop.
 	var marks: Dictionary = {}
 	for m: Dictionary in aim.get("marks", []):
@@ -164,12 +163,12 @@ func _lay(aim: Dictionary) -> void:
 		var seed := String(m["key"]).hash()
 		var r := float(m["radius"])
 		var strokes: Array[PackedVector2Array] = [PencilShapes.hand_circle(m["center"], Vector2(r, r), seed)]
-		_pool.stroke(key, strokes, m["ink"], LOOP_W, _loop_t, 0.0, false, seed)
-		marks[key] = {"strokes": strokes, "ink": m["ink"], "width": LOOP_W, "seed": seed}
+		_pool.stroke(key, strokes, m["ink"], _loop_t, 0.0, false, seed)
+		marks[key] = {"strokes": strokes, "ink": m["ink"], "seed": seed}
 	for key in _last_marks:
 		if not marks.has(key):
 			_start_wipe(_last_marks[key])
 	_last_marks = marks
 	for w in _wipes:
-		_pool.stroke(String(w["key"]), w["strokes"], w["ink"], float(w["width"]), 1.0, float(w["t"]), false, int(w["seed"]))
+		_pool.stroke(String(w["key"]), w["strokes"], w["ink"], 1.0, float(w["t"]), false, int(w["seed"]))
 	_pool.end()

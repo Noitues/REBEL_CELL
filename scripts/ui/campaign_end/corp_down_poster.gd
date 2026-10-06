@@ -38,8 +38,6 @@ const WORDS_SHARE := 0.66
 const STICKER_STEP := UiTheme.TITLE
 const STICKER_TILT := -5.0
 const STICKER_HANG := 0.5
-## The pencil's width (px at 1.0; the kit's 10 is for maps).
-const PENCIL_W := 8.0
 ## The sticker's jitter seed (the same poster, the same sticker).
 const STICKER_SEED := 7
 
@@ -70,7 +68,7 @@ func _init(corporation_id: StringName = &"", display_name: String = "", p_boss_n
 	pencil = GreasePencilMark.new()
 	pencil.name = "PencilX"
 	pencil.ink = GreasePencilMark.Ink.THREAT
-	pencil.width = PENCIL_W * _k()
+	pencil.auto_write = false  # the file's beat drives its write (END-03); the wax is the kit's one width (B1b)
 	add_child(pencil)
 	sticker = VinylSticker.new()
 	sticker.name = "CorpDown"

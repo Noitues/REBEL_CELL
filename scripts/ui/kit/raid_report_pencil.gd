@@ -12,11 +12,10 @@ const THEY_LOST := "THEY LOST %d" # TR
 const OURS := "OURS! +%d" # TR
 const RIP := "RIP" # TR
 const WRITE := &"raid_mark_write"
-## Pencil: the words' type step, the gap to the paper (px), the stroke (px); the gap between
+## Pencil: the words' type step, the gap to the paper (px); the gap between
 ## marks (x a write).
 const WORD_STEP := UiTheme.TITLE
 const NOTE_GAP := 18.0
-const STROKE := 6.0
 const GAP_SHARE := 0.6
 
 var report: Control
@@ -93,13 +92,13 @@ func _lay() -> void:
 	var units := _value_rect("ReportUnits")
 	if units.has_area() and destroyed > 0:
 		var u := _u(i)
-		_pool.stroke("units", [PencilShapes.hand_circle(units.get_center(), Vector2(units.size.x * 0.62 + 6.0, units.size.y * 0.8), 11)], plan, STROKE, u, 0.0, false, 11)
+		_pool.stroke("units", [PencilShapes.hand_circle(units.get_center(), Vector2(units.size.x * 0.62 + 6.0, units.size.y * 0.8), 11)], plan, u, 0.0, false, 11)
 		_side_word("lost", tr(THEY_LOST) % destroyed, units, plan, u)
 		i += 1
 	var reward_r := _value_rect("ReportReward")
 	if reward_r.has_area() and reward > 0:
 		var u := _u(i)
-		_pool.stroke("reward", [PencilShapes.hand_circle(reward_r.get_center(), Vector2(reward_r.size.x * 0.6 + 6.0, reward_r.size.y * 0.8), 23)], plan, STROKE, u, 0.0, false, 23)
+		_pool.stroke("reward", [PencilShapes.hand_circle(reward_r.get_center(), Vector2(reward_r.size.x * 0.6 + 6.0, reward_r.size.y * 0.8), 23)], plan, u, 0.0, false, 23)
 		_side_word("ours", tr(OURS) % reward, reward_r, plan, u)
 		i += 1
 	var rec := _value_rect("ReportReclaimed")
@@ -111,7 +110,7 @@ func _lay() -> void:
 	if home.has_area() and int(result.get("home_after", 0)) >= int(result.get("home_before", 0)) and held:
 		var s := home.size.y * 0.9
 		var tc := home.position + Vector2(-s, home.size.y * 0.5)
-		_pool.stroke("tick", [PackedVector2Array([tc + Vector2(-s * 0.5, 0), tc + Vector2(-s * 0.1, s * 0.4), tc + Vector2(s * 0.6, -s * 0.55)])], plan, STROKE, _u(i), 0.0, false, 41)
+		_pool.stroke("tick", [PackedVector2Array([tc + Vector2(-s * 0.5, 0), tc + Vector2(-s * 0.1, s * 0.4), tc + Vector2(s * 0.6, -s * 0.55)])], plan, _u(i), 0.0, false, 41)
 	_pool.end()
 
 
@@ -125,7 +124,7 @@ func _side_word(key: String, text: String, at: Rect2, ink: GreasePencilMark.Ink,
 	var to := Vector2(at.position.x - NOTE_GAP * 0.5, at.get_center().y)
 	if to.x > from.x:
 		var shaft := PencilShapes.bezier(from, (from + to) * 0.5 + Vector2(0, -NOTE_GAP * 0.4), to, 16)
-		_pool.stroke(key + "_arrow", PencilShapes.arrow(shaft, STROKE * 2.5, 5), ink, STROKE * 0.8, u, 0.0, false, 5)
+		_pool.stroke(key + "_arrow", PencilShapes.arrow(shaft, GreasePencilMark.stroke_width() * 2.5, 5), ink, u, 0.0, false, 5)
 
 
 var _pool: RaidPencilPool = null

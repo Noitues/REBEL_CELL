@@ -518,9 +518,9 @@ func _marker_row(row_name: String, key: String, swatch: Control, words: String, 
 func _draw_target_swatch(swatch: Control) -> void:
 	var c := swatch.size * 0.5
 	var r := swatch.size.x * 0.42
+	# B1b: the key shows the TARGET in the kit's one wax material (the map's own mark).
 	var pts := PencilShapes.hand_circle(c, Vector2(r, r * CityMapOverlay.TARGET_FLAT), CityMapOverlay.TARGET_SEED)
-	swatch.draw_polyline(pts, Palette.PENCIL_SHADOW, maxf(2.0, r * 0.22), true)
-	swatch.draw_polyline(pts, Palette.PENCIL_THREAT, maxf(1.5, r * 0.14), true)
+	PencilSet.show_on(swatch, [pts] as Array[PackedVector2Array], GreasePencilMark.Ink.THREAT, CityMapOverlay.TARGET_SEED)
 
 
 func _draw_line_swatch(swatch: Control, key: String) -> void:

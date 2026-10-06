@@ -11,9 +11,8 @@ extends Control
 
 const WRITE_MOTION := &"raid_route_write"
 const WIPE_MOTION := &"raid_route_wipe"
-## Stroke width and the entry circle's radii (screen px), the
+## The entry circle's radii (screen px; the stroke is the kit's one wax width, B1b), the
 ## arrow's stop short of the target node (x its icon radius), the letter's size.
-const WIDTH := 7.0
 const ENTRY_R := Vector2(30, 20)
 const ARROW_STOP := 1.9
 const LETTER_STEP := UiTheme.TITLE
@@ -153,13 +152,13 @@ func _lay() -> void:
 		var street := path_points(routes[i])
 		if street.size() < 2:
 			continue
-		var hand := PencilShapes.snap_to(RaidPencil.roughen(street, 31 + i, WIDTH * 0.4, WIDTH * 3.0), street)
-		var strokes := PencilShapes.arrow(hand, WIDTH * RaidPencil.HEAD_LEN, 31 + i)
-		_pool.stroke("route_%d" % i, strokes, threat, WIDTH, write_u, wipe_u, false, 31 + i)
+		var hand := PencilShapes.snap_to(RaidPencil.roughen(street, 31 + i, GreasePencilMark.stroke_width() * 0.4, GreasePencilMark.stroke_width() * 3.0), street)
+		var strokes := PencilShapes.arrow(hand, GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN, 31 + i)
+		_pool.stroke("route_%d" % i, strokes, threat, write_u, wipe_u, false, 31 + i)
 	for i in what_if.size():
 		var street := path_points(what_if[i])
 		if street.size() >= 2:
-			_pool.stroke("whatif_%d" % i, PencilShapes.arrow(street, WIDTH * RaidPencil.HEAD_LEN, 71 + i), threat, WIDTH, 1.0, 0.0, true, 71 + i)
+			_pool.stroke("whatif_%d" % i, PencilShapes.arrow(street, GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN, 71 + i), threat, 1.0, 0.0, true, 71 + i)
 	var ids := letters.keys()
 	ids.sort()
 	for id in ids:
@@ -168,7 +167,7 @@ func _lay() -> void:
 			continue
 		var u := clampf(write_u * 1.5, 0.0, 1.0)
 		var seed := String(id).hash()
-		_pool.stroke("entry_%s" % id, [PencilShapes.hand_circle(c, ENTRY_R, seed)], threat, WIDTH, u, wipe_u, false, seed)
+		_pool.stroke("entry_%s" % id, [PencilShapes.hand_circle(c, ENTRY_R, seed)], threat, u, wipe_u, false, seed)
 		_pool.word("letter_%s" % id, String(letters[id]), c + LETTER_OFF, LETTER_STEP, threat, 1.0, u, wipe_u, -0.08)
 	_pool.end()
 
