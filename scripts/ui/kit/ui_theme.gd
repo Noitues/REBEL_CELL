@@ -566,6 +566,7 @@ static func _panels(t: Theme) -> void:
 	crt_log.border_width_top = 0
 	crt_log.border_width_right = 0
 	crt_log.border_width_bottom = 0
+	crt_log.shadow_size = 0  # nothing of its own shows through over the kit glass
 	t.set_stylebox("normal", CRT_LOG_TEXT, crt_log)
 	t.set_stylebox("focus", CRT_LOG_TEXT, focus_box())
 	t.set_color("default_color", CRT_LOG_TEXT, Color(Palette.TERMINAL_TEXT, 0.9))

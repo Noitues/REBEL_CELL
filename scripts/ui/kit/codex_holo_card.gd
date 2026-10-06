@@ -21,6 +21,8 @@ const HQ_LINE := "HQ: %s" # TR
 var corporation: StringName = &""
 var holo: DecryptedHoloPanel
 var body: VBoxContainer
+## The header's corner the DECRYPTED stamp stands in.
+var stamp_room: Control = null
 var _tint: Color = Palette.CORP_SOLACE
 
 
@@ -35,7 +37,7 @@ func _init(corp_id: StringName = &"", words: String = "", bosses: Array = []) ->
 	var box := StyleBoxEmpty.new()
 	for side in [SIDE_LEFT, SIDE_RIGHT, SIDE_TOP]:
 		box.set_content_margin(side, PAD * k)
-	box.set_content_margin(SIDE_BOTTOM, PAD * k + DecryptedHoloPanel.STAMP_SLOT.y)
+	box.set_content_margin(SIDE_BOTTOM, PAD * k)
 	add_theme_stylebox_override(&"panel", box)
 	holo = DecryptedHoloPanel.new()
 	holo.name = "Holo"
@@ -51,7 +53,21 @@ func _init(corp_id: StringName = &"", words: String = "", bosses: Array = []) ->
 	add_child(body)
 	var corp := RunManager.lookup().get_content(corp_id) as CorporationData
 	var corp_name := TextDb.t(corp, "display_name") if corp != null else String(corp_id)
-	body.add_child(_label(tr(HEADER) % corp_name.to_upper(), Chrome.caps_font(UiTheme.LABEL), UiTheme.LABEL, DecryptedHoloPanel.ink(_tint), "Header"))
+	# Art director (B5 fix 5): the DECRYPTED stamp sits in the header's right corner (always on screen at 720, the
+	# card may scroll); the header's words keep clear of its slot.
+	var head_row := HBoxContainer.new()
+	head_row.name = "HeaderRow"
+	head_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var header := _label(tr(HEADER) % corp_name.to_upper(), Chrome.caps_font(UiTheme.LABEL), UiTheme.LABEL, DecryptedHoloPanel.ink(_tint), "Header")
+	header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head_row.add_child(header)
+	stamp_room = Control.new()
+	stamp_room.name = "StampRoom"
+	stamp_room.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stamp_room.custom_minimum_size = DecryptedHoloPanel.STAMP_SLOT
+	head_row.add_child(stamp_room)
+	body.add_child(head_row)
 	var top := HBoxContainer.new()
 	top.name = "Top"
 	top.add_theme_constant_override(&"separation", roundi(UiTheme.SP_M * k))
@@ -135,5 +151,11 @@ func _notification(what: int) -> void:
 	if (what == NOTIFICATION_RESIZED or what == NOTIFICATION_SORT_CHILDREN) and holo != null:
 		holo.position = Vector2.ZERO
 		holo.size = size
-		# The DECRYPTED stamp at the card's foot (round 44 codex: the chip under the boss rows), never over the header.
-		holo.stamp_slot.position = Vector2(PAD * Settings.text_scale, size.y - DecryptedHoloPanel.STAMP_SLOT.y - PAD * 0.5 * Settings.text_scale)
+		_place_stamp.call_deferred()
+
+
+## The DECRYPTED stamp over the header's corner room (art director B5 fix 5: always on screen, never over words).
+func _place_stamp() -> void:
+	if holo == null or stamp_room == null or not is_instance_valid(stamp_room):
+		return
+	holo.stamp_slot.position = stamp_room.get_global_rect().position - global_position

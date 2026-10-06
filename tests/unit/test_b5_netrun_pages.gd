@@ -72,6 +72,29 @@ func _loot(scene: Control) -> void:
 	await _frames(4)
 
 
+## Art director B5 fix 2: with a FIRMWARE DROP on the page OURS NOW is never under a panel or a sticker: it shows clear
+## of them or not at all.
+func test_ours_now_is_never_under_the_loot_pages_panels() -> void:
+	var scene := _netrun()
+	await _frames(2)
+	var run := RunManager.netrun.run
+	run.pending_rewards.append({"kind": "firmware", "options": ["barbed_wire", "bulkhead", "burner"]})
+	run.phase = RunState.Phase.REWARD
+	scene._show_current()
+	PageTransition.settle(scene)
+	await _frames(6)
+	var ink := scene.site_backdrop.get_node(^"OursNow") as CanvasItem
+	var word: GreasePencilWord = scene.site_backdrop.ours_now()
+	var shown := ink.visible and word.is_visible_in_tree()
+	var under := ""
+	for c in scene._panel.find_children("*", "Control", true, false):
+		var ctl := c as Control
+		if ctl.is_visible_in_tree() and (ctl.has_meta(UiScrimPools.META_POOL) or ctl is BaseButton) and NetrunScript.word_covered_by(word, ctl.get_global_rect()):
+			under = ctl.name
+	assert_true(not shown or under == "", "OURS NOW shown under %s" % under)
+	await _close(scene)
+
+
 func _event(scene: Control, id: StringName) -> void:
 	var run := RunManager.netrun.run
 	run.event_id = id
@@ -98,8 +121,25 @@ func test_the_loot_page_sits_on_the_won_site_and_ends_on_continue() -> void:
 	assert_true(sb.visible, "the run's Site close-up behind the loot")
 	assert_almost_eq(sb.won, 1.0, 0.001, "in its won state (the district dims, the target's lights in Cell colours)")
 	assert_not_null(sb.ours_now(), "OURS NOW in the kit's wax pencil")
-	assert_true(sb.ours_now().is_visible_in_tree(), "written on over the won Site")
+	# Written on over the won Site, or left out where one of the page's panels would cover it (no UI covers pencil).
+	var word := sb.ours_now()
+	var covered := false
+	for c in scene._panel.find_children("*", "Control", true, false):
+		var ctl := c as Control
+		if ctl.is_visible_in_tree() and (ctl.has_meta(UiScrimPools.META_POOL) or ctl is BaseButton) and NetrunScript.word_covered_by(word, ctl.get_global_rect()):
+			covered = true
+	assert_true(word.is_visible_in_tree() != covered, "OURS NOW written on over the won Site unless a panel would cover it")
 	assert_false(scene.site_dim.visible, "no event dim on the loot")
+	# Art director B5 fix 2: the district at about 62 % under the page, the pencil not dimmed.
+	assert_almost_eq((sb.get_node(^"Still") as CanvasItem).modulate.r, NetrunScript.LOOT_DISTRICT, 0.001, "the district dims to ~62 %")
+	assert_eq((sb.get_node(^"OursNow") as CanvasItem).modulate, Color.WHITE, "OURS NOW is never dimmed")
+	# ... and SAVED keeps a sticker's clearance from CONTINUE.
+	var cont := scene._panel.find_child("Continue", true, false) as Control
+	var grown := false
+	for r: Rect2 in Fx.avoid_rects(scene):
+		if r.encloses(cont.get_global_rect()) and r.size.x > cont.size.x:
+			grown = true
+	assert_true(grown, "SAVED keeps clear of CONTINUE's die-cut edge")
 	var title := scene._panel.find_child("LootTitle", true, false) as HoloSticker
 	assert_ne(title.sticker.text, "PAYOUT", "PAYOUT is the terminal's word, never the title sticker")
 	assert_eq(String(scene.hud._title), "", "no bar title over the page's own sticker")

@@ -1128,6 +1128,16 @@ func _show_site_backdrop(screen: String, s: NetrunSession) -> void:
 	var ink := site_backdrop.get_node_or_null(^"OursNow") as CanvasItem
 	if ink != null:
 		ink.visible = screen != "loot" or Settings.text_scale < LOOT_SIDE_FROM
+	_ours_watch = screen == "loot" and ink != null and ink.visible
+	set_process(_ours_watch)
+	# Art director (D8): the loot's district sits at about 62 % under the page (the sheet and FIRMWARE DROP on their
+	# own B1a pools); the picture layers dim (on top of the won look's own district dim round the target), the
+	# OURS NOW pencil over them does not.
+	var shade := Palette.NO_TINT.darkened(1.0 - LOOT_DISTRICT) if screen == "loot" else Palette.NO_TINT
+	for layer in [^"Still", ^"WonStill"]:
+		var pic := site_backdrop.get_node_or_null(layer) as CanvasItem
+		if pic != null:
+			pic.modulate = shade
 	if screen == "loot":
 		# The won look as the fight left it; OURS NOW writes on as the page shows (D25: never faded in).
 		if site_backdrop.won < 1.0:
@@ -1137,6 +1147,47 @@ func _show_site_backdrop(screen: String, s: NetrunSession) -> void:
 		var tint := Palette.corp_color(corp)
 		site_dim.color = Color(EVENT_DIM, EVENT_DIM, EVENT_DIM).lerp(Color(tint.r, tint.g, tint.b) * EVENT_DIM * 2.0, EVENT_TINT_SHARE)
 		site_dim.color.a = 1.0
+
+
+## Art director (B5 fix 2): no UI may cover pencil. OURS NOW stands where the won Site's close-up puts it (its target's
+## top); while the loot page shows, a frame that finds it under one of the page's panels or stickers (FIRMWARE DROP,
+## the sheet, CONTINUE) leaves the word out rather than tuck it under them.
+func _process(_delta: float) -> void:
+	if not _ours_watch or site_backdrop == null or not site_backdrop.visible:
+		_ours_watch = false
+		set_process(false)
+		return
+	var ink := site_backdrop.get_node_or_null(^"OursNow") as CanvasItem if site_backdrop != null else null
+	if ink == null or not ink.visible or _panel == null or not is_instance_valid(_panel):
+		return
+	var word := site_backdrop.ours_now()
+	if word == null or not word.is_visible_in_tree():
+		return
+	if PageTransition.running(_panel) or FlightFx.active_count(self) > 0:
+		return  # the page's parts are still coming in (the loot fans up through the word's place)
+	for c in _panel.find_children("*", "Control", true, false):
+		var ctl := c as Control
+		if not ctl.is_visible_in_tree():
+			continue
+		if (ctl.has_meta(UiScrimPools.META_POOL) or ctl is BaseButton) and word_covered_by(word, ctl.get_global_rect()):
+			ink.visible = false
+			_ours_watch = false
+			return
+
+
+## True when screen rect `r` covers any of pencil word `word` (its tilted letters' box with their shadow: the two
+## boxes are tested in both frames, so a tilted word's empty corners never count).
+static func word_covered_by(word: GreasePencilWord, r: Rect2) -> bool:
+	var font := Palette.pencil()
+	var px := word.font_px()
+	var local := Rect2(Vector2(0, -font.get_ascent(px)), font.get_string_size(word.text, HORIZONTAL_ALIGNMENT_LEFT, -1, px))
+	local.end += GreasePencilMark.SHADOW_OFFSET
+	var xf := word.get_global_transform()
+	return (xf * local).intersects(r) and local.intersects(xf.affine_inverse() * r)
+
+
+## True while the loot page watches OURS NOW against its panels.
+var _ours_watch: bool = false
 
 
 ## B5 (D9): the run's Site close-up as a picture (its city close-up's render, else its still): what the event's CAM
@@ -1152,6 +1203,8 @@ func site_picture() -> Texture2D:
 ## B5 (D8, reward_screen_v2): where the won Site's target stands on the loot page (screen share): low right, clear
 ## of the sheet, so OURS NOW reads over it above CONTINUE.
 const LOOT_SITE_AT := Vector2(0.86, 0.84)
+## Art director (D8): the loot page's district brightness (review: "district at 62 %").
+const LOOT_DISTRICT := 0.62
 ## B5 (D9): the event page's close-up dims to this share, and takes this share of the corp's tint.
 const EVENT_DIM := 0.4
 const EVENT_TINT_SHARE := 0.35
@@ -4795,6 +4848,8 @@ const END_VERDICT_STEP := UiTheme.HEADING
 const END_VERDICT_TILT := -6.0
 ## BACK TO HQ's lettering (type step).
 const END_BACK_STEP := UiTheme.TITLE
+## B5 fix 4: the room kept past BACK TO HQ's last letter for its focus fold (two no-break spaces).
+const END_BACK_FOLD_ROOM := "\u00a0\u00a0"
 ## Parity END-01 (the build's RunEndStage, art pass W8c): the operative's Polaroid at text scale
 ## 1 (px; it grows to END_GROW) and its tilt (degrees), how far down the print the verdict
 ## sticker is slapped (share of its height), and the lost run's grey city (screen shader: the
@@ -4910,6 +4965,9 @@ func _show_end() -> void:
 	side_col.add_child(foot)
 	var back := VinylButton.new(TextDb.mark("Back to HQ"), VinylSticker.Fill.PINK, END_BACK_STEP)
 	back.name = "BackToHq"
+	# Art director (B5 fix 4): BACK TO HQ is the page's first focus, so it shows its peel-back; the sticker keeps the
+	# fold's room past its last letter (a no-break space of the sticker's own lettering) so the whole word shows.
+	back.sticker.text += END_BACK_FOLD_ROOM
 	back.pressed.connect(finish_run)
 	back.tooltip_text = UiTip.fold(tr("Back to HQ: the campaign, the City Grid and the crew."))
 	foot.add_child(back)

@@ -139,6 +139,8 @@ def capture_combo(args, screens: list[str], combo: str, axes: dict, shader_filte
             user.append("--reduce-effects")
         if args.scramble:
             user.append("--scramble")
+        if args.native:
+            user.append("--native=%s" % args.native)
         if args.settle > 0:
             user.append("--settle=%d" % args.settle)
         user += pack_axes.SETTINGS[axes.get("setting", "off")][1]
@@ -233,6 +235,7 @@ def main() -> int:
     ap.add_argument("--scramble", action="store_true")
     ap.add_argument("--save-size", default=DEFAULT_SAVE_SIZE, help="PNG size WxH (layout stays 1280x720)")
     ap.add_argument("--screen-timeout", type=float, default=90.0)
+    ap.add_argument("--native", default="", help="WxH: the window at this size, saved 1:1 (review_pack --native, B1b)")
     ap.add_argument("--settle", type=int, default=0,
                     help="frames a screen settles before its picture (0: the harness's own; B5: more lets pencil finish writing on)")
     ap.add_argument("-j", "--jobs", type=int, default=1, help="Godot runs at once (default 1)")

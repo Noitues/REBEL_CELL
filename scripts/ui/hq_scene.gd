@@ -1196,8 +1196,13 @@ static func prompts_for(p_name: String) -> Array:
 func show_start() -> void:
 	# The pickers' tile sizes at text scale 1.0 (px, they grow to hold their words) and the
 	# crew's portrait swatch.
-	const CORP_TILE := Vector2(224, 76)
-	const HOME_TILE := Vector2(168, 64)
+	# Art director (B5 fix 3, round 44): the target and home-server tiles are compact, five to a row at 1.0, so the
+	# crew shows without scrolling beside the right column.
+	const CORP_TILE := Vector2(172, 60)
+	const CORP_TILE_BIG := Vector2(224, 76)  # from COMPACT_UP_TO up the page scrolls and the names need the room
+	const COMPACT_UP_TO := 1.3
+	const CORP_SWATCH := 36.0
+	const HOME_TILE := Vector2(172, 52)
 	const CREW_TILE := Vector2(176, 76)
 	const CREW_SWATCH := 56.0
 	# The START sticker's lettering size (px at 1.0) and tilt (degrees), the seed's top value.
@@ -1213,7 +1218,7 @@ func show_start() -> void:
 	# (today's run and the share codes beside the planning table, px at 1.0).
 	const SLOGAN_PX := 18.0
 	const SLOGAN_TILT := 3.0
-	const SIDE_W := 330.0
+	const SIDE_W := 260.0  # round 44: the right column is about a quarter of the page
 	var lookup := RunManager.lookup()
 	var profile := RunManager.profile
 	var box := VBoxContainer.new()
@@ -1319,7 +1324,7 @@ func show_start() -> void:
 		corp_tiles.append({"name": tr("CLASSIFIED") if secret else TextDb.t(corp, "display_name"), "corp": corp.id, "redacted": secret,
 			"locked": true, "unlock": unlock_words.call(u), "tip": unlock_tip.call(u)})
 	setup.body.add_child(plan_head.call(tr("Target:"), StatIcon.MAP))
-	var corp_pick := PlanningPicker.new(corp_tiles, 0, CORP_TILE)
+	var corp_pick := PlanningPicker.new(corp_tiles, 0, CORP_TILE if Settings.text_scale < COMPACT_UP_TO else CORP_TILE_BIG, CORP_SWATCH if Settings.text_scale < COMPACT_UP_TO else PlanningPicker.SWATCH_W)
 	corp_pick.name = "CorporationPicker"
 	corp_pick.value = pick_default.call(corps, RunManager.DEFAULT_CORPORATION)
 	corp_pick.refused.connect(refused_note.bind(corp_pick))

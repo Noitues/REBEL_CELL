@@ -391,6 +391,8 @@ static func saved_spot(stamp: Vector2, screen: Rect2, avoid: Array[Rect2]) -> Ve
 	return best
 
 
+## B5: the room the stamp keeps from a sticker's control rect (px at text scale 1.0).
+const SAVED_STICKER_CLEAR := 16.0
 ## ANIM-R3 B13: the step of the whole-screen grid tried after the edges (px).
 const SAVED_INNER_STEP := 40.0
 
@@ -438,6 +440,10 @@ func _collect_avoid(node: Node, out: Array[Rect2]) -> void:
 			if usable or c is MapLegend or c is RouteLegend or c is PadPrompts or c is RaidSpeedStrip or c is RamBar or c is HudNameSticker:
 				var r := _shown_rect(c)
 				if r.has_area():
+					# B5 (art director, D8): a sticker's die-cut border, shadow and tilt reach past its control rect
+					# (SAVED sat against CONTINUE): the stamp keeps a sticker's clearance from it.
+					if c is HoloSticker or c is VerbSticker:
+						r = r.grow(SAVED_STICKER_CLEAR * Settings.text_scale)
 					out.append(r)
 				if usable:
 					continue

@@ -151,6 +151,61 @@ func test_every_terminal_kind_has_the_kit_glass_with_its_word_mask() -> void:
 	assert_eq(tw.get_theme_stylebox(&"panel").get(&"bg_color").a, 0.0, "the window box has no fill: the glass is it")
 
 
+## Art director B5 fix 1: the body of every migrated terminal is the navy glass whatever its accent; the accent is on
+## the edge, title and keyline only. Nothing of the owner's own box (a fill, an edge-glow shadow) shows through.
+func _assert_navy_body(owner: Control, accent: Color, what: String) -> void:
+	var g := _glass_of(owner)
+	assert_not_null(g, "%s: the kit glass" % what)
+	if g == null:
+		return
+	var m := g.material as ShaderMaterial
+	assert_eq(m.get_shader_parameter(&"glass_top"), PaletteSkins.chrome(Palette.CRT_GLASS_TOP), "%s: navy glass top" % what)
+	assert_eq(m.get_shader_parameter(&"glass_bottom"), PaletteSkins.chrome(Palette.CRT_GLASS_BOTTOM), "%s: navy glass foot" % what)
+	assert_eq(Color(m.get_shader_parameter(&"accent")), PaletteSkins.chrome(accent), "%s: the accent is the edge's" % what)
+	for sb_name in [&"panel", &"normal"]:
+		if not owner.has_theme_stylebox(sb_name):
+			continue
+		var sb := owner.get_theme_stylebox(sb_name)
+		if sb is StyleBoxFlat:
+			var f := sb as StyleBoxFlat
+			assert_eq(f.bg_color.a, 0.0, "%s: its own box has no fill over the glass" % what)
+			assert_true(f.shadow_size == 0 or f.shadow_color.a == 0.0, "%s: no edge-glow shadow washing through the clear box" % what)
+	for c in owner.get_children(true):
+		if c is ColorRect and (c as CanvasItem).show_behind_parent:
+			assert_eq((c as ColorRect).color.a, 0.0, "%s: no fill rect over the glass" % what)
+
+
+func test_every_migrated_terminal_body_is_navy_glass_for_every_accent() -> void:
+	var host: Control = add_child_autofree(Control.new())
+	host.size = Vector2(1280, 720)
+	for accent in [Palette.NET_CYAN, Palette.CELL_ACID, Palette.HARM, Palette.CELL_PINK, Palette.NEON_VIOLET, Palette.CORP_SOLACE]:
+		var tw := TerminalWindow.new("REPORT", accent)
+		host.add_child(tw)
+		await _frames(1)
+		_assert_navy_body(tw, accent, "TerminalWindow %s" % accent)
+	var bar := HudBar.new()
+	var dlg := ConfirmDialog.new("Quit?", "QUIT", "CANCEL", "QUIT", "Saved.", true, "", "keep going [B]")
+	var note := TerminalNote.new("TUTORIAL")
+	var zine := ZinePanel.new("OPTIONS", 0.0, true)
+	for c: Control in [bar, dlg, note, zine]:
+		host.add_child(c)
+	await _frames(2)
+	_assert_navy_body(bar, Palette.NET_CYAN, "HudBar")
+	_assert_navy_body(dlg.panel, (dlg.panel as HudDialogPanel).edge_color(), "HudDialogPanel (destructive)")
+	_assert_navy_body(note, Palette.NET_CYAN, "TerminalNote")
+	_assert_navy_body(zine, Palette.NET_CYAN, "ZinePanel terminal")
+	# The netrun / HQ panel hosts and logs: their theme boxes lie clear over the glass.
+	var themed: Control = Control.new()
+	themed.theme = UiTheme.build()
+	host.add_child(themed)
+	for v in [[UiTheme.CRT_GLASS_PANEL, "PanelContainer"], [UiTheme.CRT_LOG_TEXT, "RichTextLabel"]]:
+		var c: Control = PanelContainer.new() if v[1] == "PanelContainer" else RichTextLabel.new()
+		c.theme_type_variation = v[0]
+		themed.add_child(c)
+		CrtTerminalPanel.behind(c)
+		await _frames(1)
+		_assert_navy_body(c, Palette.NET_CYAN, String(v[0]))
+
 # --- Follow-up 3: words over the world carry an ink keyline ------------------------------------
 
 func test_the_title_foot_line_and_pad_prompts_carry_the_ink_keyline() -> void:
@@ -258,6 +313,13 @@ func test_the_codex_corporations_open_an_intercepted_holo_card_never_paper() -> 
 	await _frames(2)
 	assert_not_null(book.holo_card, "the picked corporation's holo card")
 	assert_true(book.holo_card.holo is DecryptedHoloPanel, "the kit's decrypted holo")
+	# Art director B5 fix 5: the DECRYPTED stamp stands in the header's corner, clear of the header's words.
+	await _frames(2)
+	var card := book.holo_card
+	var stamp_r := Rect2(card.global_position + card.holo.stamp_slot.position, card.holo.stamp_slot.size)
+	var header := card.find_child("Header", true, false) as Control
+	assert_lt(stamp_r.position.y - card.global_position.y, DecryptedHoloPanel.STAMP_SLOT.y, "in the card's top corner (seen at 720 without scrolling)")
+	assert_false(stamp_r.intersects(header.get_global_rect()), "never over the header's words")
 	var first: StringName = book.holo_card.corporation
 	book.page.grab_focus()
 	var down := InputEventAction.new()

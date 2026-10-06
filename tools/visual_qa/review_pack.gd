@@ -129,6 +129,7 @@ const SCREENS := [
 	["combat_victory", "_s_combat_victory", "The killing turn: VICTORY."],
 	["combat_defeat", "_s_combat_defeat", "The losing turn: DEFEAT."],
 	["loot", "_s_loot", "Picking a card reward."],
+	["loot_firmware", "_s_loot_firmware", "Picking a Firmware drop (the FIRMWARE DROP terminal)."],
 	["mainframe", "_s_mainframe", "The Mainframe shop."],
 	["mainframe_socket", "_s_mainframe_socket", "The Mainframe with the socket choice open."],
 	["mainframe_remove", "_s_mainframe_remove", "The Mainframe's REMOVE A CARD viewer."],
@@ -1195,13 +1196,22 @@ func _s_combat_defeat() -> void:
 
 
 func _s_loot() -> void:
+	await _loot_of(["twist", "jam", "cache"], "card")
+
+
+## B5 (D8, art director fix 2): a won fight's loot that drops Firmware (the FIRMWARE DROP terminal with its spinner).
+func _s_loot_firmware() -> void:
+	await _loot_of(["barbed_wire", "bulkhead", "burner"], "firmware")
+
+
+func _loot_of(options: Array, kind: String) -> void:
 	var net: Node = await _netrun()
 	# B5 (D8): the loot a won fight pays out (FIGHT WON on the fought Site): the run stands on a first-layer fight.
 	for id in RunManager.netrun.run.map.first_layer_ids():
 		if int(RunManager.netrun.run.map.get_node(id)["type"]) == RC.InfilNodeType.ROUTER:
 			RunManager.netrun.run.current_node_id = id
 			break
-	DemoSetup.offer_loot(RunManager.netrun, ["twist", "jam", "cache"])
+	DemoSetup.offer_loot(RunManager.netrun, options, kind)
 	net._show_current()
 	await _settle(net)
 
