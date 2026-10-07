@@ -17,17 +17,26 @@ const SHADER := preload("res://shaders/kit/marker_stroke.gdshader")
 const WRITE := &"pencil_write_on"
 const WIPE := &"pencil_wipe"
 
+## M14 perf slice: the setters below do nothing when the value (and, for the step, its font
+## px at the current text size) is unchanged: a pool owner lays every word again each frame.
 @export var text: String = "HIT IT":
 	set(v):
+		if v == text:
+			return
 		text = v
 		_redraw()
 @export var ink: GreasePencilMark.Ink = GreasePencilMark.Ink.THREAT:
 	set(v):
+		if v == ink:
+			return
 		ink = v
 		_sync()
 @export var text_step: int = UiTheme.HEADING:
 	set(v):
+		if v == text_step and _drawn_px == UiTheme.font_px(v):
+			return
 		text_step = v
+		_drawn_px = UiTheme.font_px(v)
 		_redraw()
 ## Writes itself on when it first shows (and each time it shows again after being hidden).
 @export var auto_write: bool = true:
@@ -38,12 +47,18 @@ const WIPE := &"pencil_wipe"
 ## Letters shown from (wiped) and up to (written).
 var shown_from: float = 0.0:
 	set(v):
+		if v == shown_from:
+			return
 		shown_from = v
 		_redraw()
 var shown_to: float = 1.0e6:
 	set(v):
+		if v == shown_to:
+			return
 		shown_to = v
 		_redraw()
+## The font px the word was last laid at (text_step's guard).
+var _drawn_px: int = -1
 
 var _wax: Node2D = null
 var _shadow: Node2D = null
