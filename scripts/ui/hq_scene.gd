@@ -1684,7 +1684,7 @@ func _build_hq_page(page_name: String) -> void:
 			# BIG-TEXT: the tab that turns a folded work order to its other page (shown only when
 			# the order did not fit whole; pad and keyboard reach it like any chip).
 			_order_more = false
-			var more := MenuChip.new(tr(ORDER_MORE), "", Palette.NET_CYAN)
+			var more := MenuChip.new(tr(ORDER_MORE), "")
 			more.name = "OrderMore"
 			more.label_step = UiTheme.CAPTION  # a small tab on the paper's foot
 			more.refit()
