@@ -236,6 +236,39 @@ func test_the_ink_runs_in_the_keep_box_and_fades_past_it() -> void:
 	assert_almost_eq(v.ink_weight(Vector2(5000, 5000)), 1.0, 0.0001, "no box: ink everywhere")
 
 
+func test_the_flow_dashes_are_batched_by_default() -> void:
+	# The same picture is checked windowed (perf_pack flow_diff_hq); here the switch's default.
+	var o: CityMapOverlay = autofree(CityMapOverlay.new())
+	assert_true(o.flow_batched, "the dashes draw as one multiline per edge")
+
+
+func test_the_raid_routes_relay_only_when_what_they_show_changes() -> void:
+	var layer := RaidRouteLayer.new()
+	autofree(layer)
+	var a := layer.lay_signature()
+	assert_eq(layer.lay_signature(), a, "the same state: the same signature (no relay at rest)")
+	layer.write_u = 0.5
+	assert_ne(layer.lay_signature(), a, "the write-on moves: relay")
+	var b := layer.lay_signature()
+	layer.routes = [[&"a", &"b"]] as Array[Array]
+	assert_ne(layer.lay_signature(), b, "new routes: relay")
+
+
+func test_a_pencil_mark_set_to_the_same_values_keeps_its_strokes() -> void:
+	var m: GreasePencilMark = autofree(GreasePencilMark.new())
+	m.add_stroke(PackedVector2Array([Vector2(0, 0), Vector2(100, 0), Vector2(100, 50)]))
+	m.progress = 0.5
+	var lines := m.find_children("*", "Line2D", true, false)
+	assert_false(lines.is_empty(), "a stroke")
+	var before: PackedVector2Array = (lines[0] as Line2D).points
+	m.progress = 0.5
+	m.wiped_share = 0.0
+	m.ink = m.ink
+	assert_eq((lines[0] as Line2D).points, before, "unchanged values: the same stroke")
+	m.progress = 1.0
+	assert_ne((lines[0] as Line2D).points, before, "a new progress: the stroke follows")
+
+
 func test_the_thresholds_come_from_the_config() -> void:
 	# The shipped values are in city_config.tres (read, not hardcoded).
 	var text := FileAccess.get_file_as_string(CONFIG.resource_path)

@@ -40,6 +40,8 @@ const PROBE_SCREENS := [
 	["city_probe_combat", "_s_city_probe_combat", "PERF slice: a Site fight's close-up city, each part switched off in turn."],
 	["cpu_probe_hq", "_s_cpu_probe_hq", "PERF slice: the HQ idle's frame with each script class's processing off in turn, and its redraws."],
 	["cpu_probe_combat", "_s_cpu_probe_combat", "PERF slice: a Site fight's frame with each script class's processing off in turn, and its redraws."],
+	["map_probe_hq", "_s_map_probe_hq", "PERF slice: the HQ idle's map overlay and raid pencil, each layer hidden in turn."],
+	["flow_diff_hq", "_s_flow_diff_hq", "PERF slice: the HQ idle's flow layer batched vs one command per dash and wing (reduce motion: a still frame), pixel diff."],
 	["scrim_luma_combat_start", "_s_scrim_luma_combat_start", "B1a b: the fight's world luma in the wheel pools vs between the wheels (+ fixture)."],
 	["scrim_luma_combat_aiming", "_s_scrim_luma_combat_aiming", "B1a b: the same while a card is aimed."],
 	["scrim_luma_hq", "_s_scrim_luma_hq", "B1a b: the HQ's city luma in the panels' pool margins and under the foot band vs open (+ fixture)."],
@@ -593,6 +595,68 @@ func _s_cpu_probe_hq() -> void:
 func _s_cpu_probe_combat() -> void:
 	await _s_combat_start()
 	await _cpu_probe()
+
+
+## PERF slice: the HQ idle's map overlay layers and the raid pencil, each hidden in turn (and
+## the overlay's and the route layer's processing off).
+func _s_map_probe_hq() -> void:
+	await _s_b4_idle()
+	var whole := await _probe_ms()
+	print("PROBE map whole frame_ms=%.2f" % whole)
+	var parts: Array[CanvasItem] = []
+	for o in get_tree().root.find_children("*", "CityMapOverlay", true, false):
+		for n in o.get_children():
+			if n is CanvasItem:
+				parts.append(n)
+	for l in get_tree().root.find_children("RaidPencilLayer", "CanvasLayer", true, false):
+		for n in l.get_children():
+			if n is CanvasItem:
+				parts.append(n)
+	for p in parts:
+		if not is_instance_valid(p) or not p.visible:
+			continue
+		p.visible = false
+		var ms := await _probe_ms()
+		p.visible = true
+		print("PROBE map hidden=%s class=%s frame_ms=%.2f saves_ms=%.2f" % [String(p.get_path()).right(70), _cls(p) if _cls(p) != "" else p.get_class(), ms, whole - ms])
+	for c in ["CityMapOverlay", "RaidRouteLayer", "HqPlanPencil", "UiScrimPools", "RaidBeaconLayer"]:
+		var ns: Array[Node] = []
+		for n in get_tree().root.find_children("*", "Node", true, false):
+			if _cls(n) == c:
+				ns.append(n)
+		for n in ns:
+			n.set_process(false)
+		var ms := await _probe_ms()
+		for n in ns:
+			if is_instance_valid(n):
+				n.set_process(true)
+		print("PROBE map no_process=%s frame_ms=%.2f saves_ms=%.2f" % [c, ms, whole - ms])
+	print("PROBE map whole_again frame_ms=%.2f" % await _probe_ms())
+
+
+## PERF slice: the same picture check of CityMapOverlay.flow_batched: the HQ idle's map held
+## still (its processing off, its clock fixed), frames grabbed batched, unbatched and batched
+## again into <out>/flow_diff_<n>.png (compare them off line, e.g. round the chevrons).
+func _s_flow_diff_hq() -> void:
+	await _s_b4_idle()
+	var overlays: Array[Node] = get_tree().root.find_children("*", "CityMapOverlay", true, false)
+	for o in overlays:
+		o.set_process(false)
+		o.anim_t = 0.0
+	var n := 0
+	for batched in [true, false, true]:
+		for o in overlays:
+			o.flow_batched = batched
+			o._anim.queue_redraw()
+		for i in 30:
+			await get_tree().process_frame
+		var img := get_viewport().get_texture().get_image()
+		img.convert(Image.FORMAT_RGB8)
+		img.save_png(out_dir.path_join("flow_diff_%d.png" % n))
+		n += 1
+	for o in overlays:
+		o.set_process(true)
+	print("PROBE flow frames saved: %s/flow_diff_0..2.png" % out_dir)
 
 
 ## PROBE lines: the CanvasItems redrawn on most frames, then the frame with every node of one
