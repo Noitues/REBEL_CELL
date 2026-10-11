@@ -6,18 +6,19 @@
 #   bash tools/precommit.sh            # staged files
 #   bash tools/precommit.sh --base main  # everything changed vs main (hand-back)
 #
-# Logs go to $SP (default %TEMP%\rebel_cell_precommit). Prints one "name=<exit>" line per step;
+# Logs go to $SP (default %TEMP%\precommit_<worktree folder name>: one per worktree, so runs in two
+# worktrees at once never share or overwrite each other's logs and test shards). Prints one "name=<exit>" line per step;
 # exits non-zero on the first red step. Install as a hook with:
 #   printf '#!/bin/sh\nbash tools/precommit.sh\n' > .git/hooks/pre-commit   (the shebang is required; git cannot spawn the hook without it)
 cd "$(git rev-parse --show-toplevel)" || exit 1
-SP="${SP:-$TEMP/rebel_cell_precommit}"; mkdir -p "$SP"
+SP="${SP:-$TEMP/precommit_$(basename "$PWD")}"; mkdir -p "$SP"   # $PWD is the worktree root (cd above)
 MODE="--staged"; BASE=""
 if [ "$1" = "--base" ]; then MODE=""; BASE="--base $2"; fi
 
 if [ -n "$MODE" ]; then
   FILES=$(git diff --name-only --cached)
 else
-  FILES=$( (git diff --name-only "${2:-main}...HEAD"; git diff --name-only; git ls-files --others --exclude-standard) | sort -u)
+  FILES=$( (git diff --name-only "${2:-main}...HEAD"; git diff --name-only --cached; git diff --name-only; git ls-files --others --exclude-standard) | sort -u)  # committed, staged, unstaged, new
 fi
 [ -z "$FILES" ] && { echo "precommit: nothing changed"; exit 0; }
 
@@ -25,7 +26,8 @@ fi
 rc=0
 for f in $(echo "$FILES" | grep -E '\.gd$' | grep -v '\.uid$'); do
   [ -f "$f" ] || continue
-  timeout 120 godot --headless --path . --check-only -s "$f" > "$SP/check_$(basename "$f").log" 2>&1 || { echo "PARSE FAIL: $f"; tail -n 5 "$SP/check_$(basename "$f").log"; rc=1; }
+  # tools/parse_check.gd, not --check-only: that stops before the autoloads' names exist (Dialogue, Settings).
+  timeout 120 godot --headless --path . -s tools/parse_check.gd -- "$f" >"$SP/check_$(basename "$f").log" 2>&1 || { echo "PARSE FAIL: $f"; tail -n 5 "$SP/check_$(basename "$f").log"; rc=1; }
 done
 echo "parse=$rc"; [ $rc -ne 0 ] && exit 1
 

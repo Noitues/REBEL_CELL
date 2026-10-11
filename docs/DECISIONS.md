@@ -37,6 +37,51 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-11 — Mainframe subtitle fits the screen
+The Mainframe page (ART-9 4A) asked its host for a 1240 px width (`SHOP_ROOM`). B5c's sticker safe margin
+(24 px × text scale at each side) came on top of that, so the netrun's page column (and with it the top bar
+and the subtitle band) was 1288 px wide at text 1.0 and 1342 px at 2.0 on a 1280 screen. The subtitle bar
+ran 62 px past the right edge at 2.0, and the top bar's Daemons chip was cut off. The page now asks for its
+height only (`SHOP_ROOM_HEIGHT` 520), because `_layout_shop` places every piece on the street by global
+position; the top bar and the band are back to 1280 px.
+- **The street starts under the band.** `_layout_shop` took its top from the top bar's foot, so at 2.0 the
+  pegboard's tapes and the CARDS shelf's top sat under the subtitle band. It now starts under the band
+  (as the other pages do), and the sign's plate (`top_clear`) moves down with it.
+- **The board fits the screen.** Under the band, the board at 2.0 (623 px) ran 74 px past the screen's
+  foot and cut the info strip's words. When it would run past, the board shrinks as a whole
+  (`SHOP_BOARD_FIT_FLOOR` 0.8, the 1.6 look at 2.0; 0.86 in practice at 2.0, 1.0 at 1.0). The loot page
+  shrinks only its pictures (LOOT-03); the board's size comes from several scales, so a uniform fit is
+  the one knob.
+- **The grey blur over the left third was a real layer, not a capture artifact.** The sign's LightSpill (1B,
+  4A's `SignSpill`) reads the screen under it. Since B1a b (10-06) the last copy before it is the scrim's
+  AfterScrim, which is stale by the time the spill draws (a screen reader in between rewrites it). So the
+  spill drew a blurred picture over its whole rect (the sign plate ± 260 px of reach), hiding the vertical
+  MAINFRAME sign and the F1b facade that the round-34 `shop_v5` concept shows. Hiding the spill, or a
+  viewport BackBufferCopy just before it, gives the crisp street; a RECT copy left part of it blurred. The
+  page now adds `SignSpillCopy` (viewport mode) just before the spill: one copy, on this page only. Other
+  LightSpills (combat, city) may read the same stale copy: not checked here.
+Test: `test_art9_4a_shop :: test_the_street_starts_under_the_subtitle_band_and_the_board_ends_on_screen`
+(1.0 / 1.6 / 2.0). Sheets (concept | main before | after): `docs/art_review/PARITY/fixes/SUBTITLE_mainframe_1_0.jpg`,
+`SUBTITLE_mainframe_2_0.jpg`.
+
+### 2026-10-11 — M14 RED-SWEEP city: the Grid sweep follows the HQ's one tag (B3 clutter rule, B4 b)
+`test_city_map_sweeps` still expected H22's landmark tags (the boss Site labelled with home selected) and at least one
+tag on every HQ map. B4 (a07daf9a) put the HQ idle on B3's `TagRule.FOCUS`, and the art director's B4 b review approved
+"one tag" (the selection's; a hovered or plan node too), so with home selected the Genome Core / Master Manifest /
+Panopticon / Launch Control carry none, and a selected Site with no room within reach (big text) or off the fit shows
+no tag at all. The sweep now asserts H22's landmark tags only on an `ALL` map and, under FOCUS / LIT, that every tag
+is one `tag_allowed` permits; a selected landmark is still labelled (the every-selection loop). No code change.
+
+### 2026-10-11 — M14 RED-TIP: a crowded focus tip's last resort is a clear spot beside what it keeps off
+`test_a_focus_tip_folds_narrower_to_keep_off_skip_at_big_text` went red after B5 (loot FIGHT WON with the
+SKIP / CONTINUE block level with the row): at text scale 2.0 no fold had a clear spot beside the row and the
+least-covering one (the left margin) lay over the first card. B5's layout is art-direction approved, so the
+test's premise stands and `FocusTip._place` gains a last pass, run only when every fold still covers
+something: the tip at its own columns or its first fold, lettering stepping down (FONT_SHARES), at the first
+fully clear spot from `FocusTip.open_spot` (under / beside / over each kept-off rect and the control, nearest
+the control first), the top bar (HudBar) counted as kept off for this pass. Nothing fully clear: the folds'
+best stays (FOLD_MIN unchanged). Captures: 2.0 sits over the focused card; 1.6 under SKIP / CONTINUE.
+
 ### 2026-10-11 — Designer rulings on the process follow-ups (items 3–9)
 3. **Reading rules enforced by a hook**: `.claude/settings.json` runs `tools/hooks/guard_reads.py` before every
    Read / Bash / PowerShell call; it denies reading `docs/DECISIONS.md`, `docs/decisions/*.md`, `*.log` and
