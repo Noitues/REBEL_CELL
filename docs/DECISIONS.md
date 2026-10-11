@@ -37,6 +37,14 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-11 — M14 RED-SWEEP city: the Grid sweep follows the HQ's one tag (B3 clutter rule, B4 b)
+`test_city_map_sweeps` still expected H22's landmark tags (the boss Site labelled with home selected) and at least one
+tag on every HQ map. B4 (a07daf9a) put the HQ idle on B3's `TagRule.FOCUS`, and the art director's B4 b review approved
+"one tag" (the selection's; a hovered or plan node too), so with home selected the Genome Core / Master Manifest /
+Panopticon / Launch Control carry none, and a selected Site with no room within reach (big text) or off the fit shows
+no tag at all. The sweep now asserts H22's landmark tags only on an `ALL` map and, under FOCUS / LIT, that every tag
+is one `tag_allowed` permits; a selected landmark is still labelled (the every-selection loop). No code change.
+
 ### 2026-10-11 — Designer rulings on the process follow-ups (items 3–9)
 3. **Reading rules enforced by a hook**: `.claude/settings.json` runs `tools/hooks/guard_reads.py` before every
    Read / Bash / PowerShell call; it denies reading `docs/DECISIONS.md`, `docs/decisions/*.md`, `*.log` and

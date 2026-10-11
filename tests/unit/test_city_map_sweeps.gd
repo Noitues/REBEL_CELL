@@ -14,7 +14,8 @@ extends GutTest
 ##   late campaign);
 ## - with every node selected in turn (early, 1.0 and TEXT_SCALE_MAX, as H22 and H23 did): the selected
 ##   Site labelled, labels apart, inside the label area and clear of its blocks (the side
-##   column), within reach; the landmarks labelled (H22); the selection ring clear of the
+##   column), within reach; the landmarks labelled as the tag rule allows (H22; B4 b: the HQ's one
+##   tag, the selection's); the selection ring clear of the
 ##   labels (H21, at 1.0) (HQ-B: a Site off the HQ's fit shows no label);
 ## - a live text size change on an open Grid keeps labels apart and on screen (H21 at 1.5,
 ##   H22 at TEXT_SCALE_MAX set live: here 1.0 -> TEXT_SCALE_MAX live).
@@ -300,8 +301,15 @@ func _check_nodes_beside_the_column(hq: Control, what: String) -> void:
 ## another.
 func _assert_no_overlap(overlay: CityMapOverlay, what: String) -> void:
 	var rects := overlay.label_rects()
-	if not overlay is RouteOverlay:  # B3 (the clutter rule): the route tags no node (the TARGET is pencil)
+	if overlay.tag_rule == CityMapOverlay.TagRule.ALL and not overlay is RouteOverlay:
+		# B3 (the clutter rule): the route tags no node (the TARGET is pencil).
 		assert_gt(rects.size(), 0, "%s draws labels" % what)
+	else:
+		# B3 / B4 b (2026-10-06, approved "one tag"): under FOCUS / LIT only the selected, lit or
+		# plan node carries a tag, and a selected Site with no room within reach (big text) or off
+		# the map's fit shows none, so the map may draw no tag at all.
+		for id in overlay.tagged_ids():
+			assert_true(overlay.tag_allowed(overlay._node_dict(id)), "%s: %s tagged under the clutter rule" % [what, id])
 	for a in overlay.nodes.size():
 		for b in range(a + 1, overlay.nodes.size()):
 			var na: Dictionary = overlay.nodes[a]
@@ -379,7 +387,14 @@ func _check_every_selection(hq: Control, what: String, ring: bool) -> void:
 	overlay.selected_id = c.grid.home_site_id
 	for n in overlay.nodes:
 		if n.get("big", false) and CityMapOverlay._visible_at(overlay.icon_pos(n), overlay.label_area(), overlay.label_blocks()):
-			assert_true(overlay.label_rects().has(String(n["id"])), "%s: landmark %s labelled" % [what, n["id"]])
+			# H22's landmark tags hold on an ALL map; the HQ idle is B3's TagRule.FOCUS (B4 b,
+			# approved "one tag": the selection's), so with home selected a landmark carries
+			# none (selected, it is labelled: the loop above).
+			var tagged := overlay.label_rects().has(String(n["id"]))
+			if overlay.tag_rule == CityMapOverlay.TagRule.ALL:
+				assert_true(tagged, "%s: landmark %s labelled" % [what, n["id"]])
+			else:
+				assert_true(not tagged or overlay.tag_allowed(n), "%s: landmark %s tagged only as the tag rule allows" % [what, n["id"]])
 	if ring:
 		var last: Dictionary = overlay.nodes[overlay.nodes.size() - 1]
 		overlay.selected_id = last["id"]
