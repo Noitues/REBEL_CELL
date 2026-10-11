@@ -1657,9 +1657,36 @@ func _build_hq_page(page_name: String) -> void:
 			var clip_room := Control.new()
 			clip_room.name = "ClipRoom"
 			clip_room.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			clip_room.custom_minimum_size.y = RaidPaper.CLIP_TOP * Settings.text_scale
+			clip_room.custom_minimum_size.y = maxf(RaidPaper.CLIP_TOP * Settings.text_scale - HqLayout.MARGIN, 0.0)  # the page margin holds the rest of the clip
 			paper.add_child(clip_room)
-		paper.add_child(_raid_card(raid, pending, projection, not raid_mode))
+		if raid_mode:
+			# BIG-TEXT: the work order is built to fit its room (`_fit_order`): smaller down to the
+			# floor, then folded to title + TARGET + UNITS with a MORE tab for the rest. BIG-TEXT b:
+			# a folded page is never smaller than the text at 1.0 (`HqLayout.base_floor`).
+			var order_fit := FitBuildBox.new()
+			order_fit.name = "WorkOrderFit"
+			order_fit.builder = func(_m: float, d: int) -> Control: return _raid_card(raid, pending, projection, false, d)
+			# Whole, else folded in two pages, else in three (each page never under the 1.0 size).
+			order_fit.details = [0, FitBuildBox.fold(2), FitBuildBox.fold(3)]
+			order_fit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			# BIG-TEXT b (art director): the tab that turns a folded work order to its other page, a
+			# paper index tab out of the sheet's foot (under the footer, never over its redactions or
+			# meta line), turned with the sheet; shown only when the order is folded. A MenuChip:
+			# pad and keyboard reach it, linked to the map cursor (`_fit_order`).
+			var more := PaperIndexTab.new(ORDER_MORE)
+			more.name = "OrderMore"
+			more.tuck = HqLayout.PAGE_TAB_TUCK * Settings.text_scale
+			more.refit()
+			more.visible = false
+			more.tooltip_text = UiTip.fold(tr("The rest of the work order: the forecast, what it would cost."))
+			more.pressed.connect(toggle_order_page)
+			order_fit.add_child(more)
+			order_fit.tab = more
+			order_fit.tab_tuck = more.tuck
+			order_fit.fit(HqLayout.ORDER_WIDTH * HqLayout.words_scale(Settings.text_scale), INF)
+			paper.add_child(order_fit)
+		else:
+			paper.add_child(_raid_card(raid, pending, projection, true))
 		var setup := MenuChip.new(tr("RAID SETUP"), "[%s]" % Settings.hint(&"toggle_ring").strip_edges().trim_prefix("[").trim_suffix("]"), Palette.CELL_PINK)
 		setup.name = "RaidSetup"
 		setup.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1667,12 +1694,6 @@ func _build_hq_page(page_name: String) -> void:
 		setup.tooltip_text = UiTip.fold(tr("RAID SETUP: a raid is coming along the red pencil routes: set up the defence."))
 		setup.visible = not raid_mode
 		order.add_child(setup)
-		if raid_mode:
-			# B3 b (art director): no instruction panel over the paper (it covered the work order
-			# and said what the paper and START DEFENSE say); its sentence is the paper's tooltip.
-			var order_paper := paper.find_child("RaidCard", true, false) as Control
-			if order_paper != null:
-				order_paper.tooltip_text = UiTip.fold(TextDb.ui_text(RAID_INTRO_KEY) + "\n" + order_paper.tooltip_text)
 		page.add_child(order)
 	# The hand: its tabs and the cards of the deck picked.
 	page.add_child(_hand_tabs())
@@ -2610,14 +2631,25 @@ func _place_hq() -> void:
 	var col_x := area.x - (HqLayout.MARGIN - (DecryptedHoloPanel.BACKING_OUT if panel_name == "raid" else 0.0)) - col_w
 	hand.size = Vector2(maxf(1.0, minf(verb.position.x, col_x) - HqLayout.GAP - hand.position.x), hand_h)
 	var foot_top := minf(hand.position.y, tabs.position.y)
+	# BIG-TEXT: in the raid setup the work order may use the dead room over the tabs and the cards (the hand box and
+	# the tabs box are taller than what shows), down to the lifted card's top.
+	var order_foot := foot_top
+	if panel_name == "raid":
+		var tallest := 0.0
+		for kid in (hand.get_child(0) as Control).get_children():
+			tallest = maxf(tallest, (kid as Control).get_combined_minimum_size().y)
+		order_foot = maxf(foot_top, minf(tabs.position.y + tabs.size.y - tabs.get_combined_minimum_size().y,
+				hand.position.y + hand_h - tallest - HqLayout.LIFT * o_scale))
 	if order != null:
 		var o: Rect2 = r["order"]
-		# The paper scrolls in what RAID SETUP leaves it (the chip always shows).
-		var paper := order.get_node("WorkOrderPaper/WorkOrderBox") as Control
 		# What the paper's scroll leaves (RAID SETUP, the setup's instruction line) and their gaps.
 		var chip_h := order.get_combined_minimum_size().y + order.get_theme_constant("separation")
+		# BIG-TEXT b: the paper is built to what its scroll shows (it never scrolls in the setup).
+		_fit_order(order, o, order_foot - HqLayout.GAP - o.position.y - chip_h)
+		# The paper scrolls in what RAID SETUP leaves it (the chip always shows).
+		var paper := order.get_node("WorkOrderPaper/WorkOrderBox") as Control
 		order.position = o.position
-		order.size = Vector2(maxf(o.size.x, paper.get_combined_minimum_size().x), minf(paper.get_combined_minimum_size().y + chip_h, maxf(chip_h + 1.0, foot_top - HqLayout.GAP - o.position.y)))
+		order.size = Vector2(maxf(o.size.x, paper.get_combined_minimum_size().x), minf(paper.get_combined_minimum_size().y + chip_h, maxf(chip_h + 1.0, order_foot - HqLayout.GAP - o.position.y)))
 	var top := HqLayout.MARGIN
 	var bottom_now := verb.position.y - HqLayout.GAP
 	if hq_minimap != null and is_instance_valid(hq_minimap):
@@ -2657,7 +2689,8 @@ func _place_hq() -> void:
 		# stands on the map) and ends at the verb's sticker.
 		top = RAID_COLUMN_TOP
 		bottom = verb.position.y
-		_fit_network(column.get_child(0) as Control, bottom - top)
+		_fit_intel(column.get_child(0) as Control, col_w, bottom - top)
+		_fit_network(column.get_child(0) as Control, bottom - top, col_w)
 	column.size = Vector2(col_w, maxf(1.0, minf((column.get_child(0) as Control).get_combined_minimum_size().y, bottom - top)))
 	column.position = Vector2(col_x, bottom - column.size.y)
 	var was_free := _hq_free
@@ -3840,7 +3873,34 @@ func _fill_defence_hand(cards: HBoxContainer) -> void:
 func _defence_cards(stack: VBoxContainer, raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult) -> void:
 	stack.alignment = BoxContainer.ALIGNMENT_BEGIN  # B3: THREAT INTEL whole at the column's top
 	stack.add_theme_constant_override("separation", RAID_STACK_GAP)
-	stack.add_child(_threat_intel(raid, pending, projection))
+	# BIG-TEXT: THREAT INTEL is built to fit the column (`_fit_intel`), never cut mid-line. BIG-TEXT
+	# b (art director): whole down to `HqLayout.FIT_FLOOR`, then paged like the work order (page 1
+	# the threats A / B..., page 2 their routes and the scanned strip; MORE / BACK), each page
+	# never smaller than the text at 1.0; a page short even then lists fewer routes.
+	var intel_fit := FitBuildBox.new()
+	intel_fit.name = "ThreatIntelFit"
+	intel_fit.builder = func(_m: float, d: int) -> Control: return _threat_intel(raid, pending, projection, d)
+	_intel_others = -1.0
+	var levels: Array[int] = [0]
+	for step in clampi(raid_route_groups(projection).size(), 1, INTEL_ROWS_MAX):
+		levels.append(FitBuildBox.fold(2, step))
+	intel_fit.details = levels
+	intel_fit.floor_mul = HqLayout.FIT_FLOOR
+	var more := MenuChip.new(ORDER_MORE, "", DecryptedHoloPanel.ink(RaidSkin.of(RunManager.campaign.corporation_id).holo))
+	more.name = "IntelMore"
+	more.plate = &""  # a terminal chip in the holo's ink, out of the holo's foot
+	more.label_step = UiTheme.BODY
+	more.refit()
+	more.visible = false
+	more.tooltip_text = UiTip.fold(tr("The other page of THREAT INTEL: the threats, or their routes and the scanned strip."))
+	more.pressed.connect(toggle_intel_page)
+	intel_fit.add_child(more)
+	intel_fit.tab = more
+	intel_fit.tab_tuck = HqLayout.PAGE_TAB_TUCK * Settings.text_scale
+	intel_fit.tab_x = RaidHolo.PAD * Settings.text_scale
+	intel_fit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	intel_fit.fit(HqLayout.CARD_COLUMN * HqLayout.words_scale(Settings.text_scale), INF)
+	stack.add_child(intel_fit)
 	# B3 (review Q9, round 44): YOUR NETWORK under THREAT INTEL, never over the map or the pencil;
 	# the column scrolls its rows ("more below").
 	stack.add_child(_your_network(projection))
@@ -3934,7 +3994,8 @@ func _your_network(projection: RaidResolver.RaidResult) -> RaidTerminal:
 	_network_rows.clear()
 	_network_core_name = null
 	_network_win = orders_win
-	_network_compact = false
+	_network_mode = NetworkMode.FULL
+	_network_peek = false
 	for site_id in claimed:
 		var row := _node_order_row(site_id, projection, claimed)
 		if site_id != c.grid.home_site_id:
@@ -3942,7 +4003,55 @@ func _your_network(projection: RaidResolver.RaidResult) -> RaidTerminal:
 		else:
 			_network_core_name = row.find_child("Target_%s" % site_id, true, false) as Control
 		orders.add_child(row)
+	# BIG-TEXT b (art director): from 1.6, short of room, the terminal is one row: CORE and its
+	# forecast at the left, the node count at the right; the whole block returns on hover or focus.
+	var one := HBoxContainer.new()
+	one.name = "NetworkRow"
+	one.visible = false
+	one.add_theme_constant_override("separation", UiTheme.SP_S)
+	var home := c.grid.home_site_id
+	var core := Button.new()
+	core.name = "NetworkRowCore"
+	core.flat = true
+	core.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	core.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	core.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	core.text = tr(NETWORK_ROW) % [site_name(home).to_upper(), _network_forecast_words(home, projection)]
+	core.add_theme_font_override("font", Palette.mono_arrows())
+	core.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.BODY))
+	for key in [&"font_color", &"font_hover_color", &"font_focus_color", &"font_pressed_color"]:
+		core.add_theme_color_override(key, PaletteSkins.chrome(Palette.TERMINAL_TEXT))
+	core.tooltip_text = UiTip.fold(tr("YOUR NETWORK, folded to its CORE: point at it or focus it for every node."))
+	core.pressed.connect(func() -> void: select_target(home))
+	one.add_child(core)
+	var count := Label.new()
+	count.name = "NetworkRowCount"
+	count.text = orders_win.tag_label.text
+	count.add_theme_font_override("font", Palette.mono())
+	count.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+	count.add_theme_color_override("font_color", Palette.CELL_ACID)
+	count.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	one.add_child(count)
+	orders_win.body.add_child(one)
+	orders_win.body.move_child(one, 0)
+	orders_win.mouse_entered.connect(_network_hover)
+	orders_win.mouse_exited.connect(_network_hover)
+	if not get_viewport().gui_focus_changed.is_connected(_network_focus):
+		get_viewport().gui_focus_changed.connect(_network_focus)
 	return orders_win
+
+
+## BIG-TEXT b: the one-row YOUR NETWORK's words ("> CORE  HP 50 → 40 HOLDS").
+const NETWORK_ROW := "> %s  %s" # TR
+
+
+## BIG-TEXT b: node `site_id`'s forecast as its chip says it ("HP 50 → 40 HOLDS").
+func _network_forecast_words(site_id: StringName, projection: RaidResolver.RaidResult) -> String:
+	var n: Dictionary = projection.nodes.get(String(site_id), {})
+	if n.is_empty():
+		return ""
+	var outcome := shown_outcome(String(n.get("outcome", "")), site_id == RunManager.campaign.grid.home_site_id, int(n.get("after", 1)))
+	return tr("HP %s → %s %s") % [n.get("before", "?"), n.get("after", "?"), outcome_word(outcome)]
 
 
 ## B3 b: the header's node count (round 44 "9 NODES").
@@ -3950,41 +4059,47 @@ const NETWORK_COUNT := "%d NODES" # TR
 const NETWORK_COUNT_ONE := "1 NODE" # TR
 ## B3 b (art director): YOUR NETWORK collapsed to its header and the CORE row (the other nodes
 ## are picked on the map): the rows it hides, CORE's name button (the pad's stop), the window and
-## whether it is collapsed now.
+## how it shows now. BIG-TEXT b: FULL every row; CORE its header and the CORE row; ROW one row
+## (from `HqLayout.NETWORK_ROW_SCALE`); `_network_peek` while the pointer or the focus is on it.
+enum NetworkMode { FULL, CORE, ROW }
 var _network_rows: Array[Control] = []
 var _network_core_name: Control = null
 var _network_win: Control = null
-var _network_compact: bool = false
+var _network_mode: NetworkMode = NetworkMode.FULL
+var _network_peek: bool = false
 
 
 ## B3 b (art director: at big text YOUR NETWORK stays visible, never below the fold): the
 ## setup's card column holds `room` px; when THREAT INTEL and the whole of YOUR NETWORK need more
 ## (IF PLACED, shown only while a card is pointed at, never counts), YOUR NETWORK keeps its header
 ## and the CORE row. Returns whether it is collapsed.
-func _fit_network(stack_holder: Control, room: float) -> bool:
+func _fit_network(stack_holder: Control, room: float, col_w: float = 0.0) -> bool:
 	if _network_win == null or not is_instance_valid(_network_win):
 		return false
-	var orders := _network_win.find_child("Orders", true, false) as VBoxContainer
-	var sep := float(orders.get_theme_constant("separation")) if orders != null else 0.0
+	_set_network_mode(NetworkMode.FULL)
 	var need := stack_holder.get_combined_minimum_size().y
-	if _network_compact:
-		for r in _network_rows:
-			need += r.get_combined_minimum_size().y + sep
 	var placed := _if_placed_term
 	if placed != null and is_instance_valid(placed) and placed.visible:
 		need -= placed.get_combined_minimum_size().y + float((placed.get_parent() as VBoxContainer).get_theme_constant("separation"))
-	var compact := need > room + 0.5 and not _network_rows.is_empty()
-	if compact != _network_compact:
-		_network_compact = compact
-		for r in _network_rows:
-			r.visible = not compact
+	var mode := NetworkMode.FULL
+	if need > room + 0.5:
+		var small := _network_smallest()
+		if small == NetworkMode.ROW and not _network_peek:
+			mode = NetworkMode.ROW
+		elif small == NetworkMode.CORE and not _network_rows.is_empty():
+			mode = NetworkMode.CORE
+	_set_network_mode(mode)
+	if mode == NetworkMode.ROW:
+		var side := float(stack_holder.get_theme_constant("margin_left")) + float(stack_holder.get_theme_constant("margin_right")) if stack_holder is MarginContainer else 0.0
+		_fit_network_row(col_w - side)
+	var compact := mode != NetworkMode.FULL
 	# Where even THREAT INTEL alone is taller than the column (text 2.0), the collapsed YOUR
 	# NETWORK leads the column, so it is never below the fold (THREAT INTEL scrolls under it).
 	var win := _network_win
 	var stack := win.get_parent()
 	if stack != null:
-		var intel := stack.get_node_or_null("ThreatIntel") as Control
-		var lead := need > room + 0.5 and intel != null and intel.get_combined_minimum_size().y + float((stack as VBoxContainer).get_theme_constant("separation")) \
+		var intel := stack.get_node_or_null("ThreatIntelFit") as Control
+		var lead := not _network_peek and need > room + 0.5 and intel != null and intel.get_combined_minimum_size().y + float((stack as VBoxContainer).get_theme_constant("separation")) \
 			+ (win as Control).get_combined_minimum_size().y > room + 0.5
 		var want := 0 if lead else (intel.get_index() + 1 if intel != null else win.get_index())
 		if win.get_index() != want and (lead or win.get_index() < (intel.get_index() if intel != null else 0)):
@@ -3992,9 +4107,192 @@ func _fit_network(stack_holder: Control, room: float) -> bool:
 	return compact
 
 
+## The smallest YOUR NETWORK at the player's text scale: one row from 1.6, else its header and CORE.
+func _network_smallest() -> NetworkMode:
+	return NetworkMode.ROW if Settings.text_scale >= HqLayout.NETWORK_ROW_SCALE - 0.001 else NetworkMode.CORE
+
+
+## Shows YOUR NETWORK whole (FULL), as its header and CORE row (CORE) or as one row (ROW).
+func _set_network_mode(mode: NetworkMode) -> void:
+	if mode == _network_mode or _network_win == null or not is_instance_valid(_network_win):
+		return
+	_network_mode = mode
+	for r in _network_rows:
+		r.visible = mode == NetworkMode.FULL
+	var orders := _network_win.find_child("Orders", true, false) as Control
+	var one := _network_win.find_child("NetworkRow", true, false) as Control
+	if orders != null:
+		orders.visible = mode != NetworkMode.ROW
+	if one != null:
+		one.visible = mode == NetworkMode.ROW
+	if _network_win is RaidTerminal:
+		(_network_win as RaidTerminal).set_header_shown(mode != NetworkMode.ROW)
+
+
+## BIG-TEXT b: the one row's words at the largest size that fits `width` (px, the terminal's), never
+## smaller than at 1.0 (past that, the row ends in an ellipsis).
+func _fit_network_row(width: float) -> void:
+	var core := _network_win.find_child("NetworkRowCore", true, false) as Button
+	var count := _network_win.find_child("NetworkRowCount", true, false) as Control
+	if core == null or count == null or width <= 0.0:
+		return
+	var one := core.get_parent() as HBoxContainer
+	var box := core.get_theme_stylebox(&"normal")
+	var room := width - float(CrtTerminalPanel.PAD.x) * 2.0 - count.get_combined_minimum_size().x - float(one.get_theme_constant("separation")) \
+		- (box.get_minimum_size().x if box != null else 0.0)
+	var f := Palette.mono_arrows()
+	var px := UiTheme.font_px(UiTheme.BODY)
+	var lo := UiTheme.font_px_at(UiTheme.BODY, 1.0)
+	while px > lo and f.get_string_size(core.text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x > room:
+		px -= 1
+	core.add_theme_font_size_override("font_size", px)
+
+
+## BIG-TEXT b: the pointer came onto or left YOUR NETWORK (its whole block shows while it is there).
+func _network_hover() -> void:
+	if _network_win == null or not is_instance_valid(_network_win):
+		return
+	var over := Rect2(Vector2.ZERO, _network_win.size).has_point(_network_win.get_local_mouse_position())
+	_set_network_peek(over or _network_has_focus())
+
+
+## BIG-TEXT b: the focus moved: YOUR NETWORK shows whole while the focus is in it; focus on its one
+## row opens the block on CORE's name (the pad goes on through the rows).
+func _network_focus(f: Control) -> void:
+	if _network_win == null or not is_instance_valid(_network_win) or not _network_win.is_inside_tree():
+		return
+	var inside := f != null and _network_win.is_ancestor_of(f)
+	var over := Rect2(Vector2.ZERO, _network_win.size).has_point(_network_win.get_local_mouse_position())
+	_set_network_peek(inside or (over and _network_peek))
+	if inside and f.name == "NetworkRowCore" and _network_core_name != null and is_instance_valid(_network_core_name):
+		_network_core_name.grab_focus.call_deferred()
+
+
+func _network_has_focus() -> bool:
+	var f := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
+	return f != null and _network_win.is_ancestor_of(f)
+
+
+func _set_network_peek(on: bool) -> void:
+	if on == _network_peek:
+		return
+	_network_peek = on
+	if on and _network_mode != NetworkMode.ROW:
+		return  # nothing folded to open
+	_place_hq()
+	if on:
+		var column := _network_win.get_parent()
+		while column != null and not (column is ScrollContainer):
+			column = column.get_parent()
+		if column != null:
+			(column as ScrollContainer).ensure_control_visible.call_deferred(_network_win)
+
+
+## BIG-TEXT: THREAT INTEL gets the setup column's height less what YOUR NETWORK needs collapsed
+## (its header and the CORE row), and is built smaller (down to `HqLayout.FIT_FLOOR`, then with
+## fewer routes) until every line of it fits: never cut mid-line, never under the fold.
+func _fit_intel(holder: Control, col_w: float, room: float) -> void:
+	var fit := holder.find_child("ThreatIntelFit", true, false) as FitBuildBox
+	if fit == null:
+		return
+	# Measure with YOUR NETWORK at its smallest; `_fit_network` decides after. BIG-TEXT b: not while
+	# the focus is in it (folding it would drop the focus): the last measure holds.
+	if not (_network_win != null and is_instance_valid(_network_win) and _network_win.is_inside_tree() and _network_has_focus()) or _intel_others < 0.0:
+		_set_network_mode(_network_smallest())
+		_intel_others = holder.get_combined_minimum_size().y - fit.get_combined_minimum_size().y
+	var others := _intel_others
+	var side := float(holder.get_theme_constant("margin_left")) + float(holder.get_theme_constant("margin_right")) if holder is MarginContainer else 0.0
+	# BIG-TEXT b: a page wears its MORE / BACK tab under the holo (that much less room for it).
+	fit.fit(col_w - side, room - others, room - others - _tab_room(fit))
+	_word_tab(fit)
+	fit.show_tab(fit.level != 0)
+
+
+## BIG-TEXT b: the room a fit box's page tab takes under its panel (px).
+func _tab_room(fit: FitBuildBox) -> float:
+	if fit.tab == null or not is_instance_valid(fit.tab):
+		return 0.0
+	return maxf(fit.tab.get_combined_minimum_size().y - fit.tab_tuck, 0.0)
+
+
+## BIG-TEXT b: a paged panel's tab says MORE, and BACK on its last page.
+func _word_tab(fit: FitBuildBox) -> void:
+	var more := fit.tab as MenuChip
+	if more == null:
+		return
+	var n := FitBuildBox.pages_of(fit.level)
+	var word := ORDER_BACK if n > 0 and fit.page >= n - 1 else ORDER_MORE
+	if more.text != word:
+		more.text = word
+		more.refit()
+
+
+## BIG-TEXT b: turns a paged panel to its next page (after the last, back to its first) and lays
+## the page out again; the tab keeps the focus.
+func _turn_page(fit: FitBuildBox) -> void:
+	if fit == null:
+		return
+	var n := maxi(FitBuildBox.pages_of(fit.level), 1)
+	fit.page = (fit.page + 1) % n
+	_place_hq()
+	if fit.tab != null:
+		fit.tab.grab_focus.call_deferred()
+
+
+## BIG-TEXT b: what the column's other panels took at the last THREAT INTEL measure (px; < 0 before one).
+var _intel_others: float = -1.0
+
+
+## BIG-TEXT b: turns a paged THREAT INTEL to its other page (MORE / BACK).
+func toggle_intel_page() -> void:
+	_turn_page(_panel.find_child("ThreatIntelFit", true, false) as FitBuildBox if _panel != null else null)
+
+
+## BIG-TEXT: the folded work order's tab words and the rows on its first page (TARGET, UNITS) when
+## it folds in two.
+const ORDER_MORE := "MORE" # TR
+const ORDER_BACK := "BACK" # TR
+const ORDER_PAGE_ROWS := 2
+
+
+## BIG-TEXT: turns the folded work order to its next page (MORE; BACK on the last).
+func toggle_order_page() -> void:
+	_turn_page(_panel.find_child("WorkOrderFit", true, false) as FitBuildBox if _panel != null else null)
+
+
+## BIG-TEXT: builds the work order to fit `avail` px of height (what the page leaves it) at
+## `width`: the paper, then the MORE / BACK tab when it is folded.
+func _fit_order(order: Control, o: Rect2, avail: float) -> void:
+	var fit := order.find_child("WorkOrderFit", true, false) as FitBuildBox
+	var more := fit.tab as MenuChip if fit != null else null
+	if fit == null or more == null:
+		return
+	var clip_room := order.find_child("ClipRoom", true, false) as Control
+	var clip_h := clip_room.custom_minimum_size.y if clip_room != null else 0.0
+	# BIG-TEXT b: the index tab sticks out under the sheet's foot at its left, inside the sticker
+	# safe margin (B5c) from the screen's edge; a folded page leaves it its room.
+	var paper_x := (order.get_parent() as Control).get_global_rect().position.x + o.position.x
+	fit.tab_x = maxf(RaidPaper.PAD * Settings.text_scale, Fx.sticker_margin() - paper_x)
+	fit.tab_left_min = Fx.sticker_margin()  # its turned corner too
+	fit.fit(o.size.x, avail - clip_h, avail - clip_h - _tab_room(fit))
+	_word_tab(fit)
+	var shown := fit.level != 0
+	if more.visible != shown:
+		fit.show_tab(shown)
+		var cursor := _panel.get_node_or_null("MapCursor") as Control
+		if shown and cursor != null:
+			more.focus_neighbor_bottom = more.get_path_to(cursor)
+			cursor.focus_neighbor_top = cursor.get_path_to(more)
+
+
 ## B3 b: whether YOUR NETWORK is collapsed now (tests).
 func network_collapsed() -> bool:
-	return _network_compact
+	return _network_mode != NetworkMode.FULL
+
+
+## BIG-TEXT b: whether YOUR NETWORK is one row now (tests).
+func network_one_row() -> bool:
+	return _network_mode == NetworkMode.ROW
 
 
 ## HQ-B (c): the sticker slot in the raid setup: START DEFENSE (3A's pink RaidSticker) with
@@ -4082,7 +4380,7 @@ func raid_trigger_words(pending: Dictionary) -> String:
 	return tr("ORDERS")
 
 
-func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult, compact: bool = false) -> Control:
+func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult, compact: bool = false, page: int = 0) -> Control:
 	var c := RunManager.campaign
 	var cfg := RunManager.config()
 	var skin := RaidSkin.of(c.corporation_id)
@@ -4090,6 +4388,10 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	var card := RaidPaper.new(c.corporation_id, TextDb.t(raid, "display_name").to_upper(), RaidPaper.STAMP_INTERCEPTED, number)
 	card.name = "RaidCard"
 	card.tooltip_text = UiTip.fold(TextDb.t(raid, "warning_text"))
+	if not compact:
+		# B3 b (art director): no instruction panel over the paper (it covered the work order and
+		# said what the paper and START DEFENSE say); its sentence is the paper's tooltip.
+		card.tooltip_text = UiTip.fold(TextDb.ui_text(RAID_INTRO_KEY) + "\n" + card.tooltip_text)
 	card.set_sub(tr(ORDER_KIND) % number)
 	var row := HBoxContainer.new()
 	row.name = "RaidFacts"
@@ -4160,7 +4462,45 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	stamp.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	stamp.tooltip_text = UiTip.fold(forecast_tip(projection))
 	row.add_child(stamp)
+	# BIG-TEXT: a folded work order shows TARGET and UNITS on its first page and the rest after
+	# (BIG-TEXT b: over two pages, or three where two are too tall at the 1.0 size), the stamp on
+	# the last; every row is built either way (the pad and the tests find them by name).
+	var p := FitBuildBox.page_of(page)
+	var n := FitBuildBox.pages_of(page)
+	if p != 0:
+		var kids := fields.get_children()
+		var rows := kids.size() / 2
+		# Two pages: TARGET and UNITS, then the rest; three: TARGET alone, then the rest halved.
+		var first := ORDER_PAGE_ROWS if n == 2 else 1
+		for i in kids.size():
+			var r := i / 2  # a row and its rule
+			var on := 1 if r < first else 2 + (r - first) * (n - 1) / maxi(rows - first, 1)
+			(kids[i] as Control).visible = on == p
+		stamp.visible = p == n
+		card.drop_stamp()
+		card.sub_label.visible = p == 1 and n == 2  # later pages are rows: the title says which order
+		# BIG-TEXT b: in three pages (the tightest room) the later pages leave the title to page 1
+		# (the letterhead and the footer say which document).
+		card.title_label.visible = p == 1 or n < 3
+		if p == n:
+			# The forecast stamp stands over the footer's free right side, where the INTERCEPTED
+			# stamp stood (the redactions and the meta line end at RaidPaper.REDACT_SPAN).
+			var k := Settings.text_scale
+			var hold := Control.new()
+			hold.name = "OrderStampHold"
+			hold.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			hold.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+			hold.custom_minimum_size = Vector2(stamp.custom_minimum_size.x, maxf(stamp.custom_minimum_size.y - (RaidPaper.FOOTER_H - ORDER_STAMP_FOOT_GAP) * k, 0.0))
+			row.remove_child(stamp)
+			row.add_child(hold)
+			hold.add_child(stamp)
+			stamp.position = Vector2.ZERO
+			stamp.size = stamp.custom_minimum_size
 	return card
+
+
+## BIG-TEXT b: a folded order's forecast stamp ends this far over the paper's foot (px at 1.0).
+const ORDER_STAMP_FOOT_GAP := 6.0
 
 
 ## ART-6 3A: the raid map's pencil routes (null off a raid page).
@@ -4264,7 +4604,12 @@ static func _raid_dict(p: RaidResolver.RaidResult) -> Dictionary:
 ## corp seal cracked + DECRYPTED, one row per entry route (its letter, the units entering
 ## there, what they go for), the scanned threats under them. From the projection (exact:
 ## the playout matches it). Named "ThreatIntel".
-func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult) -> RaidHolo:
+func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver.RaidResult, detail: int = 0) -> RaidHolo:
+	# BIG-TEXT b: `detail` is the page (0 whole, 1 the threats, 2 their routes and the strip) and a
+	# step that lists fewer routes (and leaves the strip) when even a page at the 1.0 size is too tall.
+	var page := FitBuildBox.page_of(detail)
+	var step := FitBuildBox.step_of(detail)
+	var rows_max := maxi(INTEL_ROWS_MAX - step, 1)
 	var c := RunManager.campaign
 	var holo := RaidHolo.new(c.corporation_id, tr("THREAT INTEL // SCAN"), RaidHolo.key_of(StringName(String(pending.get("raid_id", raid.id)))))
 	holo.name = "ThreatIntel"
@@ -4288,7 +4633,7 @@ func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver
 			if not seen.has(cid):
 				seen[cid] = true
 				units.append({"type": RaidVehicle.type_of(td), "name": nm, "letter": "%s%d" % [g["letter"], units.size() + 1]})
-		if gi >= INTEL_ROWS_MAX:
+		if gi >= rows_max:
 			continue
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 6)
@@ -4304,17 +4649,23 @@ func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver
 		for nm in names:
 			listed.append(nm if int(counts[nm]) == 1 else "%d %s" % [int(counts[nm]), nm])
 		var head := holo.add_line(" + ".join(listed), Palette.AUTO, UiTheme.BODY)
+		head.name = "Threats_%s" % g["letter"]
 		head.reparent(words)
 		var sub := holo.add_line("> " + " / ".join(rules) + "  //  " + site_name(StringName(String(g["entry"]))))
+		sub.name = "Route_%s" % g["letter"]
 		sub.reparent(words)
-	if groups.size() > INTEL_ROWS_MAX:
-		holo.add_line(tr("+%d more routes (the pencil letters them on the map)") % (groups.size() - INTEL_ROWS_MAX))
+		head.visible = page != 2
+		sub.visible = page != 1
+	if groups.size() > rows_max:
+		holo.add_line(tr("+%d more routes (the pencil letters them on the map)") % (groups.size() - rows_max))
 
 	if groups.is_empty():
 		holo.add_line(tr("No threats can reach your network."))
 	# The scanned threats strip at the base text size (bigger text keeps the map its room: the
 	# names say the same).
-	if not units.is_empty() and Settings.text_scale <= INTEL_STRIP_SCALE_MAX:
+	# BIG-TEXT b: a paged THREAT INTEL carries the strip on its second page (at any size).
+	var strip := (page == 0 and Settings.text_scale / FitBuildBox.building_mul <= INTEL_STRIP_SCALE_MAX) or (page == 2 and step == 0)
+	if not units.is_empty() and strip:
 		holo.body.add_child(RaidIntelStrip.new(c.corporation_id, units))
 	return holo
 

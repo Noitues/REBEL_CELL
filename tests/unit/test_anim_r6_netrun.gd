@@ -43,7 +43,7 @@ func after_each() -> void:
 	Motion.use_config(null)
 	Engine.time_scale = 1.0
 	CityBakeCache.simulate = false
-	CityBakeCache.clear()
+	CityBakeCache.shutdown()  # M14 BIG-TEXT b: its queued simulated bakes too (they stayed pending into later scripts: test_horizontal_pass20_city)
 	if Settings.reduce_effects != _reduce:
 		Settings.set_reduce_effects(_reduce)
 	Fx.apply_settings()

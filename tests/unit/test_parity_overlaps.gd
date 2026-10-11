@@ -254,7 +254,9 @@ func test_raid_02_the_work_order_stamp_and_disc_cover_no_value_and_no_line_cover
 		var stamp := card.stamp_rect()
 		for l in _paper_rows(card):
 			assert_false(stamp.intersects(l.get_global_rect()), "%s: INTERCEPTED %s covers no words (%s %s)" % [what, stamp, l.text, l.get_global_rect()])
-		assert_true(card.get_global_rect().grow(1.0).encloses(stamp), "%s: the stamp stays on the paper" % what)
+		# BIG-TEXT: a folded work order (its paper has no stamp) shows its short page without it.
+		if card.paper.stamp != "":
+			assert_true(card.get_global_rect().grow(1.0).encloses(stamp), "%s: the stamp stays on the paper" % what)
 		var disc := card.find_child("Projection", true, false) as Control
 		for l in _values(card):
 			assert_false(disc.get_global_rect().intersects(l.get_global_rect()), "%s: the forecast disc covers no value (%s)" % [what, l.text])

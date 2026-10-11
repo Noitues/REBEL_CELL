@@ -78,6 +78,55 @@ Goal: HQ idle and the combat close-up at <= 8 ms per frame, 1920x1080, default t
   `scripts/ui/arena/combat_backdrop.gd`, `scripts/ui/kit/neon_city.gd`, `tools/visual_qa/perf_pack.gd` (probes:
   `city_probe_*`, `cpu_probe_*`, `map_probe_hq`, `hud_probe_combat`, `flow_diff_hq`).
 
+### 2026-10-11 — Big text — THREAT INTEL and work-order fit (rounds a and b)
+Round a (2026-10-06):
+Art director (B3 review): at text 1.6 / 2.0 THREAT INTEL lost its foot and the raid setup work order was cut by the column. Both are now **built to fit**, never clipped and never `Control.scale`d (rects stay true): `FitBuildBox` (`scripts/ui/kit/fit_build_box.gd`) holds the panel and rebuilds it with `Settings.text_scale` lent at `mul` x the player's (every font, margin and minimum reads the smaller scale; the two kit classes now letter their draw-time text at their own `_k`), shrinking `mul` towards a floor in `HqLayout` (`FIT_FLOOR` 0.85, `INTEL_FIT_FLOOR` 0.4, `FOLD_FIT_FLOOR` 0.55 never below `FOLD_MIN_EFFECTIVE` 0.9 of the base size, `FIT_PASSES`, `FIT_STEP_MIN`); then a **detail level** if the floor is not enough. Heights are measured by a top-down settle of the built tree (`FitBuildBox.settle`), a pure function of (width, room, details, text scale).
+- **THREAT INTEL** (`ThreatIntelFit` > `ThreatIntel`): room = the column less YOUR NETWORK collapsed (`_fit_intel`, before `_fit_network` decides); levels drop routes (`INTEL_ROWS_MAX - d`) and the scanned strip. The strip keys off the player's scale (`FitBuildBox.building_mul`). The DECRYPTED slot and seal scale with the build (`DecryptedHoloPanel.slot_k` / `text_k`). YOUR NETWORK no longer leads the column at 2.0 (the old "later slice").
+- **Work order** (`WorkOrderFit` > `RaidCard`): the order may use the dead room over the hand and tabs boxes (down to the lifted card and the first tab), the clip room is the clip less the page margin. Level 0 = whole (floor 0.85); levels 1/2 = **folded**: page 1 = title + TARGET + UNITS, page 2 = the other rows and the forecast stamp (sub line hidden). A folded paper leaves its INTERCEPTED stamp off (`RaidPaper.drop_stamp`). The **MORE / BACK** tab (`OrderMore`, a `MenuChip`, pad and keyboard reachable, linked to the map cursor) shows only when folded; it hangs off the paper's foot (`ORDER_TAB_HANG`). D24 tilt, clip, contact shadow, CLIP_BITE top pad and the RAID SETUP page title are untouched. Every row is still built (names intact for the pad and tests); the page only hides them.
+- **Layout**: `_place_hq` fits intel and order from the page's measured room; the raid setup's column layout itself is unchanged.
+- **Calls (round a; superseded by round b's 1.0-size floor)**: THREAT INTEL floor 0.4 (0.8 of the base size at 2.0) because YOUR NETWORK collapsed takes 169 px of a 342 px column at 2.0 and the holo's header is fixed; folded work order floor lower than 0.85 for the same reason (a two-row page in a short room). Open question for the designer: is 0.8 of the base size acceptable for THREAT INTEL at 2.0, or should YOUR NETWORK collapse further instead?
+- **Tests**: new `test_big_text_intel_order_fit` (fast): at 1.0 / 1.6 / 2.0, two campaigns, every Label in THREAT INTEL and the order whole inside its panel and what the page shows, floors respected, MORE only when folded, both pages carry every row, BACK returns. Changed: `test_b3_raid_map_route` (THREAT INTEL whole and YOUR NETWORK under it at 2.0 too), `test_hq_b_defence` (the order is clear of the tabs and cards by their buttons), `test_parity_overlaps` (a folded paper has no stamp). None dropped. Sheets: `docs/art_review/PARITY/fixes/BIGTEXT.jpg` (before | after at 1.0 / 1.6 / 2.0), `BIGTEXT_native_1080_x1.6.jpg` (native 1080p crop). The layout is 1280x720 at 1080p too (stretch keeps it).
+- **Seen, not fixed in round a** (fixed in round b, 4a): at 2.0 the letterhead corp name runs under the seal ("SOLACE BIOSYSTEMS", "MERIDIAN FREIGHTS"); it is D24's letterhead, not the fit.
+- **Round b (art director's review of round a), 2026-10-11:**
+  - **Core rule: big text never renders smaller than at 1.0.** `HqLayout.base_floor(s)` = 1 / s (0.5 at 2.0, 1.0 at 1.0) and `FitBuildBox.floor_for` never goes under it, so nothing shrinks at 1.0 and a page at 2.0 is at least the 1.0 size. It replaces `INTEL_FIT_FLOOR` 0.4, `FOLD_FIT_FLOOR` 0.55 and `FOLD_MIN_EFFECTIVE` (removed). The whole panel (detail 0) still stops at `FIT_FLOOR` 0.85 of the player's scale (never under 1/s), then it pages: past the floor a panel folds, never shrinks further.
+  - **Folds are page sets.** `FitBuildBox.fold(n, step)` is a level of n pages (builder details code + 1 .. code + n; `page_of` / `pages_of` / `step_of`); a fold counts as fitting only when every one of its pages fits at its floor, and `page` (the owner's MORE / BACK) picks the page shown. Work order: whole, else two pages (TARGET + UNITS with the sub line | STRENGTH, HOME FORECAST, STOPPED + forecast stamp), else three (TARGET | UNITS, STRENGTH | HOME FORECAST, STOPPED + stamp; pages 2 and 3 leave the title to page 1). On a fold's last page the forecast stamp stands over the footer's free right side (where the dropped INTERCEPTED stamp stood; redactions and meta end at `REDACT_SPAN`), `ORDER_STAMP_FOOT_GAP` above the foot. At 2.0 in the review raid the order folds in three (two pages' second page is 220 px for a 194 px room at the 1.0 size); at 1.6 in two.
+  - **THREAT INTEL pages like the order**: whole, else page 1 = title + the threats A / B ... (their unit names), page 2 = their routes (`> rule // entry Site`) + the scanned strip; the route letter leads both. A step drops a route row (and the strip) when even a page at the 1.0 size is too tall. Its tab (`IntelMore`) is a terminal MenuChip in the holo's ink, body size, under the holo's foot. At 2.0 the review raid's THREAT INTEL pages; the wide network fits whole (YOUR NETWORK one row gives it the room).
+  - **MORE tab = a paper index tab** (`PaperIndexTab`, a MenuChip: pad, keyboard, the focus frame, `focus_neighbor` links with the map cursor kept): paper stock, cut foot corners, ink word at body size, sticking out of the sheet's bottom edge (its top `PAGE_TAB_TUCK` px under the sheet, drawn under it), so never over the footer's redactions or meta line; turned with the sheet (D24 tilt: `FitBuildBox` places it with the panel's transform) and clamped inside the sticker safe margin (B5c, `tab_left_min`, turned corners included). The tab's room comes out of a folded page's room; MORE on every page but the last, BACK on the last (back to page 1). Approved already: folded pages drop the INTERCEPTED stamp.
+  - **YOUR NETWORK one row** (from `HqLayout.NETWORK_ROW_SCALE` 1.6, when the column is short): the terminal shows one row, `> CORE  HP 50 → 40 HOLDS` (key `> %s  %s`, the CORE chip's own words) at the largest size that fits the column, never under the 1.0 size (then an ellipsis), the node count at the right; header, rule and rows hidden (`RaidTerminal.set_header_shown`). The whole block returns on hover (pointer on the terminal) or focus (focus on the row opens it on CORE's name; the column scrolls to it) and folds again when both leave. Below 1.6 the B3 b collapse (header + CORE row) is unchanged. THREAT INTEL is measured against the one row (not while the focus is in YOUR NETWORK: folding it would drop the focus; the last measure holds).
+  - **4a letterhead**: `CorpPaperPanel.fit_name` (pure): one line at the sheet's size, else smaller down to the 1.0 size, else two lines (first line fullest) when they stand in the letterhead, else an ellipsis. RaidPaper gives the letterhead its scaled height (`LETTERHEAD_H` x k, which its rows already started under), its text scale, and `name_reserve` = the seal's width + a gap, so the corp name ends left of the seal at every size. Other papers keep the default (`head_h` 46, no reserve): unchanged unless a name was wider than the sheet.
+  - **Seen**: at 1.0 MERIDIAN FREIGHT SYSTEMS ends in an ellipsis ("MERIDIAN FREIGHT SYS…"): it cannot shrink under the 1.0 size and two lines do not stand in the 46 px letterhead (growing it a line folds Meridian's whole order at 1.0). Open question below.
+  - **4b ghost**: `RaidTerminal` clears its window title's colour (the CRT prompt draws `> TITLE`), but the theme's Label shadow (`NET_BG_OUTER` at 0.6, 1 px) still drew a dark copy two glyphs left of the prompt. Its shadow and outline are cleared too: one clean header at rest.
+  - `RaidIntelStrip` letters at the scale it was built at (it read the player's at draw time, so a smaller build drew too big).
+  - **Tests**: `test_big_text_intel_order_fit` (fast): at 1.0 / 1.6 / 2.0, two campaigns: fit.mul x scale >= 1.0 and no label smaller than at 1.0 on THREAT INTEL and the order; THREAT INTEL whole or paged (page 1 threats only, page 2 routes only, BACK); every order page whole, the pages together carry every row; the paper tab turned with the sheet, its top at the sheet's foot, in view, inside the sticker safe margin; YOUR NETWORK one row only from 1.6 (words whole on one line, never under 1.0, count at the right), whole on focus (CORE's name focused and in view), one row again when the focus leaves; the letterhead name left of the seal for four corps at three sizes, the pure fit's two-line and ellipsis cases; `floor_for` never under 1/s; the fit box folds into pages. Changed: `test_b3_raid_map_route` (in one-row mode the row stands for the CORE row). Sheets: `docs/art_review/PARITY/fixes/BIGTEXT.jpg` (round a | round b at 1.0 / 1.6 / 2.0, page 2s), `BIGTEXT_native_1080_x1.6.jpg`, `BIGTEXT_native_1080_x2.0.jpg`.
+  - **Process fix (outside the area)**: `tools/precommit.sh`'s parse step ran `godot --check-only -s <file>`, which compiles a lone script without the autoloads and failed every script naming `Settings`, `Motion`... (the hook refused every such commit). It now loads the changed scripts through `tools/parse_check.gd` (one launch, autoloads known, `PARSE FAIL: <path>` per failure); the same tool landed with the precommit-tools branch (5cdb47ec), merged here, theirs kept.
+
+### 2026-10-11 — Mainframe subtitle fits the screen
+The Mainframe page (ART-9 4A) asked its host for a 1240 px width (`SHOP_ROOM`). B5c's sticker safe margin
+(24 px × text scale at each side) came on top of that, so the netrun's page column (and with it the top bar
+and the subtitle band) was 1288 px wide at text 1.0 and 1342 px at 2.0 on a 1280 screen. The subtitle bar
+ran 62 px past the right edge at 2.0, and the top bar's Daemons chip was cut off. The page now asks for its
+height only (`SHOP_ROOM_HEIGHT` 520), because `_layout_shop` places every piece on the street by global
+position; the top bar and the band are back to 1280 px.
+- **The street starts under the band.** `_layout_shop` took its top from the top bar's foot, so at 2.0 the
+  pegboard's tapes and the CARDS shelf's top sat under the subtitle band. It now starts under the band
+  (as the other pages do), and the sign's plate (`top_clear`) moves down with it.
+- **The board fits the screen.** Under the band, the board at 2.0 (623 px) ran 74 px past the screen's
+  foot and cut the info strip's words. When it would run past, the board shrinks as a whole
+  (`SHOP_BOARD_FIT_FLOOR` 0.8, the 1.6 look at 2.0; 0.86 in practice at 2.0, 1.0 at 1.0). The loot page
+  shrinks only its pictures (LOOT-03); the board's size comes from several scales, so a uniform fit is
+  the one knob.
+- **The grey blur over the left third was a real layer, not a capture artifact.** The sign's LightSpill (1B,
+  4A's `SignSpill`) reads the screen under it. Since B1a b (10-06) the last copy before it is the scrim's
+  AfterScrim, which is stale by the time the spill draws (a screen reader in between rewrites it). So the
+  spill drew a blurred picture over its whole rect (the sign plate ± 260 px of reach), hiding the vertical
+  MAINFRAME sign and the F1b facade that the round-34 `shop_v5` concept shows. Hiding the spill, or a
+  viewport BackBufferCopy just before it, gives the crisp street; a RECT copy left part of it blurred. The
+  page now adds `SignSpillCopy` (viewport mode) just before the spill: one copy, on this page only. Other
+  LightSpills (combat, city) may read the same stale copy: not checked here.
+Test: `test_art9_4a_shop :: test_the_street_starts_under_the_subtitle_band_and_the_board_ends_on_screen`
+(1.0 / 1.6 / 2.0). Sheets (concept | main before | after): `docs/art_review/PARITY/fixes/SUBTITLE_mainframe_1_0.jpg`,
+`SUBTITLE_mainframe_2_0.jpg`.
+
 ### 2026-10-11 — M14 RED-SWEEP city: the Grid sweep follows the HQ's one tag (B3 clutter rule, B4 b)
 `test_city_map_sweeps` still expected H22's landmark tags (the boss Site labelled with home selected) and at least one
 tag on every HQ map. B4 (a07daf9a) put the HQ idle on B3's `TagRule.FOCUS`, and the art director's B4 b review approved
@@ -85,6 +134,16 @@ tag on every HQ map. B4 (a07daf9a) put the HQ idle on B3's `TagRule.FOCUS`, and 
 Panopticon / Launch Control carry none, and a selected Site with no room within reach (big text) or off the fit shows
 no tag at all. The sweep now asserts H22's landmark tags only on an `ALL` map and, under FOCUS / LIT, that every tag
 is one `tag_allowed` permits; a selected landmark is still labelled (the every-selection loop). No code change.
+
+### 2026-10-11 — M14 RED-TIP: a crowded focus tip's last resort is a clear spot beside what it keeps off
+`test_a_focus_tip_folds_narrower_to_keep_off_skip_at_big_text` went red after B5 (loot FIGHT WON with the
+SKIP / CONTINUE block level with the row): at text scale 2.0 no fold had a clear spot beside the row and the
+least-covering one (the left margin) lay over the first card. B5's layout is art-direction approved, so the
+test's premise stands and `FocusTip._place` gains a last pass, run only when every fold still covers
+something: the tip at its own columns or its first fold, lettering stepping down (FONT_SHARES), at the first
+fully clear spot from `FocusTip.open_spot` (under / beside / over each kept-off rect and the control, nearest
+the control first), the top bar (HudBar) counted as kept off for this pass. Nothing fully clear: the folds'
+best stays (FOLD_MIN unchanged). Captures: 2.0 sits over the focused card; 1.6 under SKIP / CONTINUE.
 
 ### 2026-10-11 — Designer rulings on the process follow-ups (items 3–9)
 3. **Reading rules enforced by a hook**: `.claude/settings.json` runs `tools/hooks/guard_reads.py` before every
@@ -5933,6 +5992,7 @@ Before covers 43 screens; after covers 53. The remaining findings are low-confid
 - Colour-blind support stays a daltonize correction (ART_BIBLE §12 says "remap").
 
 ## Open questions for the designer
+- **2026-10-11 BIG-TEXT b, letterhead at 1.0**: MERIDIAN FREIGHT SYSTEMS no longer runs under the work order's seal; at 1.0 it ends in an ellipsis ("MERIDIAN FREIGHT SYS…"), since the 1.0 size is the floor and a second line would grow the letterhead and fold the whole order at 1.0. Keep the ellipsis, or grow the letterhead (and fold), or a shorter letterhead name per corp (content)?
 - ~~**CP-001 (2026-10-10, process):** rule 6 scope, full-suite cadence wording, Batch API use, playtest gates~~ **Answered 2026-10-11** (1A 2A-never-×3 3A 4A, "Designer rulings CP-001"); only the API key is still open.
   per group — `docs/handoff/CHECKPOINT_PENDING.md`; defaults in force: A / A / B (reports only) / A.
 - **B4 b perf (2026-10-06):** the HQ idle at the City Grid look runs about 10 ms a frame (tier 2) on the busy machine,

@@ -44,6 +44,8 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_key: 
 	holo.scrim = false
 	holo.corp_color = skin.hue
 	holo.seal_letter = skin.corp_name().left(1)
+	holo.text_k = _k
+	holo.slot_k = minf(_k, 1.0)
 	holo.corporation = p_corporation  # B1c (D17): the seal carries the corp's emblem, cracked
 	holo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(holo, false, Node.INTERNAL_MODE_FRONT)
@@ -86,8 +88,8 @@ var _head: Control = null
 func head_bottom() -> float:
 	var f := Palette.display()
 	var mono := Palette.mono()
-	var meta_px := UiTheme.font_px(UiTheme.CAPTION)
-	return PAD * 0.5 * _k + f.get_height(UiTheme.font_px(UiTheme.LABEL)) + mono.get_height(meta_px) * (2.0 if key != "" else 1.0)
+	var meta_px := UiTheme.font_px_at(UiTheme.CAPTION, _k)
+	return PAD * 0.5 * _k + f.get_height(UiTheme.font_px_at(UiTheme.LABEL, _k)) + mono.get_height(meta_px) * (2.0 if key != "" else 1.0)
 
 
 ## Parity RAID-03: the stamp's slot at the holo's foot, at the right (the holo puts it top
@@ -106,10 +108,10 @@ func _fit_stamp(_n: Node = null) -> void:
 	for c in body.get_children():
 		if c is RaidIntelStrip and not c.is_queued_for_deletion():
 			strip = c
-	var slot_h := DecryptedHoloPanel.STAMP_SLOT.y + UiTheme.SP_S + STAMP_GAP * _k
+	var slot_h := DecryptedHoloPanel.STAMP_SLOT.y * minf(_k, 1.0) + UiTheme.SP_S + STAMP_GAP * _k
 	var foot := slot_h
 	if strip != null:
-		strip.reserve_right = DecryptedHoloPanel.STAMP_SLOT.x + UiTheme.SP_M - PAD * _k
+		strip.reserve_right = DecryptedHoloPanel.STAMP_SLOT.x * minf(_k, 1.0) + UiTheme.SP_M - PAD * _k
 		foot = 0.0  # beside the strip (the strip's height is about the stamp's)
 	var box := get_theme_stylebox(&"panel") as StyleBoxEmpty
 	if box != null and not is_equal_approx(box.content_margin_bottom, PAD * _k + foot):
@@ -128,11 +130,11 @@ func stamp_rect() -> Rect2:
 func _header(on: Control) -> void:
 	var k := _k
 	var f := Palette.display()
-	var title_px := UiTheme.font_px(UiTheme.LABEL)
+	var title_px := UiTheme.font_px_at(UiTheme.LABEL, _k)
 	var x := PAD * k
 	var room := size.x - x * 2.0  # parity RAID-03: the stamp is under the words now
 	on.draw_string(f, Vector2(x, PAD * 0.5 * k + f.get_ascent(title_px)), title, HORIZONTAL_ALIGNMENT_LEFT, room, title_px, DecryptedHoloPanel.ink(skin.holo))
-	var meta_px := UiTheme.font_px(UiTheme.CAPTION)
+	var meta_px := UiTheme.font_px_at(UiTheme.CAPTION, _k)
 	var mono := Palette.mono()
 	var line_y := PAD * 0.5 * k + f.get_height(title_px) + mono.get_ascent(meta_px)
 	on.draw_string(mono, Vector2(x, line_y), skin.corp_name(), HORIZONTAL_ALIGNMENT_LEFT, room, meta_px, DecryptedHoloPanel.ink(skin.holo))

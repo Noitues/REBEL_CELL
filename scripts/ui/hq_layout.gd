@@ -31,6 +31,27 @@ const OBJECT_SCALE_MAX := 1.3
 const WORDS_SCALE_MAX := 1.6
 
 
+## M14 BIG-TEXT: a panel that must fit its room (THREAT INTEL, the raid's work order) is built
+## whole at no less than this share of the player's text scale (and never below `base_floor`), in
+## at most this many shrink passes; past it, the panel pages (MORE / BACK).
+const FIT_FLOOR := 0.85
+const FIT_PASSES := 6
+## Each shrink pass takes at least this much off the scale (so a near miss does not spend every pass).
+const FIT_STEP_MIN := 0.02
+## BIG-TEXT b (art director): a page tab (MORE / BACK) tucks this far under its sheet's foot (px at
+## 1.0); the rest of it sticks out below the sheet.
+const PAGE_TAB_TUCK := 4.0
+## BIG-TEXT b: from this text scale, a YOUR NETWORK short of room is one terminal row (CORE and
+## its forecast, the node count at the right); below it, its header and the CORE row.
+const NETWORK_ROW_SCALE := 1.6
+
+
+## BIG-TEXT b (art director): big text never renders smaller than it would at 1.0: the smallest
+## share of text scale `s` a panel may be built at (0.5 at 2.0; 1.0 at 1.0 and below).
+static func base_floor(s: float) -> float:
+	return 1.0 / maxf(s, 1.0)
+
+
 ## A drawn object's growth at text scale `s`.
 static func object_scale(s: float) -> float:
 	return clampf(s, 1.0, OBJECT_SCALE_MAX)
