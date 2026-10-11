@@ -234,6 +234,7 @@ Assisted wins,Assisted wins
 At 0 HP you lose the fight.,At 0 HP you lose the fight.
 Audio,Audio
 Automatic (match the pad),Automatic (match the pad)
+BACK,BACK
 BACK TO THE GRID,BACK TO THE GRID
 BADGES,BADGES
 BANKED,BANKED
@@ -3095,6 +3096,7 @@ The installed Daemons. Opens the tray: each sigil shows what its Daemon does.,Th
 The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for %d step(s).
 The operative on %s patches it: %s.,The operative on %s patches it: %s.
 The operative's deck and spinner (hub core and inner ring included).,The operative's deck and spinner (hub core and inner ring included).
+"The rest of the work order: the forecast, what it would cost.","The rest of the work order: the forecast, what it would cost."
 The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city.,The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city.
 "The three campaign slots: start, load or delete.","The three campaign slots: start, load or delete."
 "The turn, and the free nudges left this turn (each extra nudge costs RAM).","The turn, and the free nudges left this turn (each extra nudge costs RAM)."

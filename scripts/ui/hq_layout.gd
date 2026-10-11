@@ -31,6 +31,22 @@ const OBJECT_SCALE_MAX := 1.3
 const WORDS_SCALE_MAX := 1.6
 
 
+## M14 BIG-TEXT: a panel that must fit its room (THREAT INTEL, the raid's work order) is built at
+## no less than this share of the player's text scale, in at most this many shrink passes.
+const FIT_FLOOR := 0.85
+const FIT_PASSES := 6
+## Each shrink pass takes at least this much off the scale (so a near miss does not spend every pass).
+const FIT_STEP_MIN := 0.02
+## THREAT INTEL (mono captions in a side column) may go lower than the work order: 0.8 of the base size at 2.0.
+const INTEL_FIT_FLOOR := 0.4
+## The work order folded to TARGET and UNITS (or its second page) may be built this small.
+const FOLD_FIT_FLOOR := 0.55
+## ...but never below this effective text scale: at 2.0 the floor is 0.45, not 0.55 (a folded order is two rows).
+const FOLD_MIN_EFFECTIVE := 0.9
+## The MORE tab hangs over the paper's foot edge: this share of its height is over the paper.
+const ORDER_TAB_HANG := 0.5
+
+
 ## A drawn object's growth at text scale `s`.
 static func object_scale(s: float) -> float:
 	return clampf(s, 1.0, OBJECT_SCALE_MAX)

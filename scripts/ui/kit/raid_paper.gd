@@ -115,6 +115,17 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_stamp
 	body.add_child(sub_label)
 
 
+## BIG-TEXT: a folded work order (a page of a few rows in a short room) leaves the rubber stamp
+## off its sheet and keeps only the footer's room under the rows (the sub line still says what
+## it is; the whole order, when it fits, wears the stamp).
+func drop_stamp() -> void:
+	paper.stamp = ""
+	var box := get_theme_stylebox(&"panel") as StyleBoxEmpty
+	if box != null:
+		box.content_margin_bottom = FOOTER_H * _k
+		queue_sort()
+
+
 ## The rubber stamp's rect as drawn, global (parity fix, RAID-02 / RAID-11: no row under it).
 func stamp_rect() -> Rect2:
 	if paper == null:
@@ -200,7 +211,7 @@ func top_pad() -> float:
 ## The size (px) the division line is drawn at for a sheet `width` wide: the caption size, shrunk
 ## so the whole line fits between the side margins (never cut at the paper's edge).
 func division_px(width: float) -> int:
-	var px := UiTheme.font_px(UiTheme.CAPTION)
+	var px := UiTheme.font_px_at(UiTheme.CAPTION, _k)
 	var room := width - UiTheme.SP_L * 2.0
 	var f := Palette.paper()
 	while px > DIVISION_MIN_PX and f.get_string_size(skin.division(), HORIZONTAL_ALIGNMENT_LEFT, -1, px).x > room:
@@ -226,7 +237,7 @@ func _deco(on: Control) -> void:
 	var seal_c := Vector2(r.size.x - (PAD + SEAL_R) * k, (PAD * 0.4 + SEAL_R) * k + top_pad())
 	draw_seal(on, seal_c, SEAL_R * k, skin.paper_hue, false, skin.corporation_id)
 	var meta_font := Palette.paper()
-	var meta_px := UiTheme.font_px(UiTheme.CAPTION)
+	var meta_px := UiTheme.font_px_at(UiTheme.CAPTION, _k)
 	var div_px := division_px(r.size.x)
 	on.draw_string(meta_font, Vector2(UiTheme.SP_L, top_pad() + CorpPaperPanel.LETTERHEAD_H + meta_px * 0.6), skin.division(),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, div_px, Palette.INK.lerp(Palette.PAPER, 0.45))
