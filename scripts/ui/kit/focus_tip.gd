@@ -93,11 +93,7 @@ func _place(control: Control) -> void:
 		for fshare in FONT_SHARES:
 			for share in FOLD_SHARES:
 				var c := maxi(FOLD_MIN, roundi(cols * share))
-				var body := _body(c, fshare)
-				add_child(body)
-				var sz: Vector2 = body.get_combined_minimum_size() + chrome
-				remove_child(body)
-				body.free()
+				var sz := _size_of(c, fshare, chrome)
 				var p := spot(r, sz, screen, avoid)
 				var h := covered(Rect2(p, sz), r, avoid)
 				if h < hits:
@@ -109,6 +105,27 @@ func _place(control: Control) -> void:
 					break
 			if hits == 0.0:
 				break
+		# M14 RED-TIP: the last resort when every fold beside the control still covers
+		# something: the tip at its own columns (shorter, so it fits a gap the narrow folds are
+		# too tall for) or its first fold, lettering stepping down, at the first fully clear
+		# spot next to anything it keeps off, the top bar included (the B5 loot page's SKIP /
+		# CONTINUE block left the big-text tip no spot beside the row: the left margin's spot
+		# lay over the first card). Nothing clear: the folds' best stays.
+		if hits > 0.0:
+			var crowd: Array[Rect2] = avoid.duplicate()
+			_bars(control.get_tree().root, crowd)
+			for fshare in FONT_SHARES:
+				for c in [cols, maxi(FOLD_MIN, roundi(cols * FOLD_SHARES[0]))]:
+					var sz := _size_of(c, fshare, chrome)
+					var p := open_spot(r, sz, screen, crowd)
+					if covered(Rect2(p, sz), r, crowd) == 0.0:
+						hits = 0.0
+						at = p
+						best_cols = c
+						best_font = fshare
+						break
+				if hits == 0.0:
+					break
 		if best_cols > 0:
 			var old := get_child(0)
 			remove_child(old)
@@ -117,6 +134,17 @@ func _place(control: Control) -> void:
 			size = Vector2.ZERO
 			size = get_combined_minimum_size()
 	global_position = at
+
+
+## The size of the tip folded to `cols` columns at `fshare` lettering (`chrome`: the panel's
+## own margins around its body).
+func _size_of(cols: int, fshare: float, chrome: Vector2) -> Vector2:
+	var body := _body(cols, fshare)
+	add_child(body)
+	var sz: Vector2 = body.get_combined_minimum_size() + chrome
+	remove_child(body)
+	body.free()
+	return sz
 
 
 ## The tip's body folded to `cols` columns, its lettering at `fshare` of the theme's.
@@ -183,6 +211,32 @@ static func spot(r: Rect2, tip: Vector2, screen: Rect2, avoid: Array[Rect2]) -> 
 	return best
 
 
+## M14 RED-TIP: a `tip`-sized spot on `screen` beside one of the rects it keeps off (under,
+## right of, left of or over each of `avoid` and the control's own `r`, in that order), the
+## one covering least; ties go to the one nearest the control (then the first). For a crowd
+## where `spot` finds nothing clear beside the control. Pure (tests).
+static func open_spot(r: Rect2, tip: Vector2, screen: Rect2, avoid: Array[Rect2]) -> Vector2:
+	var best := spot(r, tip, screen, avoid)
+	var best_hits := covered(Rect2(best, tip), r, avoid)
+	var best_d := (Rect2(best, tip).get_center() - r.get_center()).length()
+	var rects: Array[Rect2] = avoid.duplicate()
+	rects.append(r)
+	for q in rects:
+		var tries: Array[Vector2] = [Vector2(q.position.x, q.end.y + GAP), Vector2(q.end.x - tip.x, q.end.y + GAP),
+			Vector2(q.end.x + GAP, q.position.y), Vector2(q.position.x - GAP - tip.x, q.position.y),
+			Vector2(q.position.x, q.position.y - GAP - tip.y)]
+		for at in tries:
+			var p := Vector2(clampf(at.x, screen.position.x, maxf(screen.position.x, screen.end.x - tip.x)),
+				clampf(at.y, screen.position.y, maxf(screen.position.y, screen.end.y - tip.y)))
+			var h := covered(Rect2(p, tip), r, avoid)
+			var d := (Rect2(p, tip).get_center() - r.get_center()).length()
+			if h < best_hits or (h == best_hits and d < best_d):
+				best = p
+				best_hits = h
+				best_d = d
+	return best
+
+
 ## What a tip keeps off (screen rects): the usable controls and legends on screen (as the
 ## SAVED stamp does), graffiti titles and terminal window title bars, except `control`
 ## and what is inside it.
@@ -196,6 +250,17 @@ static func avoid_rects(control: Control) -> Array[Rect2]:
 			out.append(r)
 	_titles(control.get_tree().root, out)
 	return out
+
+
+## M14 RED-TIP: the visible top bars (HudBar) under `node`, into `out`.
+static func _bars(node: Node, out: Array[Rect2]) -> void:
+	for c in node.get_children():
+		if c is CanvasItem and not (c as CanvasItem).visible:
+			continue
+		if c is HudBar:
+			out.append((c as Control).get_global_rect())
+			continue
+		_bars(c, out)
 
 
 static func _titles(node: Node, out: Array[Rect2]) -> void:
