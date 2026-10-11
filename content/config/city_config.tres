@@ -8,6 +8,14 @@ district_centre = Vector2(2.5, 2.5)
 district_radius = 120.0
 city_rect = Rect2i(-80, -80, 165, 165)
 chunk_lots = 24
+far_lod_on = true
+far_lod_level = 2
+far_lod_shadows = false
+far_lod_snap_bu = 16.0
+far_lod_pad_px = 40.0
+far_lod_skip_ink = true
+far_ink_feather_share = 0.03
+backdrop_far_lod_reach_bu = 90.0
 site_spread = 2.0
 site_aim_deg = {
 &"halcyon": 255.0,

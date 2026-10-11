@@ -1471,6 +1471,8 @@ func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
 	var width: float = e.get("width", 3.0)
 	if _is_dashed(e):
 		var phase := fmod(anim_t * crawl_speed(), DASH_PERIOD) if e.get("flow", true) else 0.0
+		# M14 perf slice: the edge's dashes as one multiline (the same quads as a draw_line each).
+		var dashes := PackedVector2Array()
 		for k in pts.size() - 1:
 			var a := pts[k]
 			var b := pts[k + 1]
@@ -1482,7 +1484,13 @@ func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
 				continue
 			for q in mini(DASHES_MAX, ceili(maxf(0.0, length - phase) / DASH_PERIOD)):
 				var t := phase + q * DASH_PERIOD
-				_c.draw_line(a + dir * t, a + dir * minf(t + DASH_ON, length), col, width)
+				if flow_batched:
+					dashes.append(a + dir * t)
+					dashes.append(a + dir * minf(t + DASH_ON, length))
+				else:
+					_c.draw_line(a + dir * t, a + dir * minf(t + DASH_ON, length), col, width)
+		if dashes.size() >= 2:
+			_c.draw_multiline(dashes, col, width)
 	if e.get("arrows", false):
 		_chevrons(e, pts)
 	if _is_dashed(e):
@@ -1528,6 +1536,11 @@ func _chevrons(e: Dictionary, pts: PackedVector2Array) -> void:
 			_c.draw_polyline(wing, col, 2.2 * k)
 		# Where the next chevron falls on the next segment (the spacing runs on round corners).
 		carry = maxf(0.0, carry + n * step - length)
+
+
+## M14 perf slice: true draws the flow layer's dashes as one multiline per edge (the default);
+## false one command per dash (the perf probe's same-picture check, flow_diff_hq).
+var flow_batched: bool = true
 
 
 static func _centroid(pts: PackedVector2Array) -> Vector2:

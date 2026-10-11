@@ -2394,6 +2394,19 @@ func hq_map_dim() -> Dictionary:
 	return {"rect": box, "focus": sel.get_center() if sel.has_area() else Vector2.INF}
 
 
+## M14 perf slice (art director's approach): the HQ idle's keep rect for the city's far LOD
+## (NeonCity.far_lod_source), global canvas px: the network rect (hq_map_dim) grown by the map
+## dim's vignette (UiScrimLook margin + feather) and CityConfig.far_lod_pad_px, all at the
+## scrim look's reference height. No area (full quality everywhere) off the idle, as the dim.
+func far_lod_rect() -> Rect2:
+	var d := hq_map_dim()
+	if d.is_empty():
+		return Rect2()
+	var look := UiScrimPools.LOOK
+	var k := get_viewport_rect().size.y / maxf(look.reference_height, 1.0)
+	return (d["rect"] as Rect2).grow((look.map_dim_margin_px + look.map_dim_feather_px + CityView3D.CONFIG.far_lod_pad_px) * k)
+
+
 ## B4 (review section f: "idle verb is JACK IN; UPGRADE / CLAIM only once a node is
 ## selected"): the Site the HQ picks when the player has picked none: the first of `launchable`
 ## (the Grid's order) whose verb is JACK IN (a corporate Site a run can start from), else the
@@ -5888,6 +5901,7 @@ func _build_ui() -> void:
 	scrim = UiScrimPools.attach_after(wireframe)
 	scrim.spill.add_spill_source(_target_spill, Palette.PENCIL_THREAT)
 	scrim.set_map_dim_source(hq_map_dim)  # B4 (D7): the HQ idle's map dim
+	wireframe.city.far_lod_source = far_lod_rect  # M14 perf slice: full quality in the network rect
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE  # city map screens take clicks behind

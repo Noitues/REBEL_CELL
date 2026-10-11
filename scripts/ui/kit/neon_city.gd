@@ -998,8 +998,53 @@ func _followed_influence() -> Dictionary:
 	return influence
 
 
+## M14 perf slice: the page's keep rect source, () -> Rect2 in global canvas px (no area: off):
+## the 3D city keeps full quality there and draws the rest at the far LOD with no ink (the HQ
+## idle sets it: the network rect and its vignette). An empty Callable: full quality everywhere.
+var far_lod_source: Callable = Callable()
+
+
+## M14 perf slice: reads `far_lod_source` into the 3D city: the rect in the view's px is its
+## ink box, its ground under the view's camera (world X/Z) its far-LOD keep rect.
+func sync_far_lod() -> void:
+	if view3d == null or view3d.iso == null or _view == null:
+		return
+	var r := Rect2()
+	if far_lod_source.is_valid() and city3d:
+		r = far_lod_source.call()
+	if not r.has_area():
+		view3d.set_far_lod(Rect2(), 0.0)
+		view3d.set_ink_keep(Rect2())
+		return
+	var px := far_lod_px(r)
+	view3d.set_ink_keep(px)
+	view3d.set_far_lod(ground_rect(view3d.iso, px), 0.0 if view3d.iso.perspective() else CityLod.lean_of(view3d.iso.pitch_deg))
+
+
+## M14 perf slice: global canvas rect `r` in the 3D view's px (the picture is drawn over cover_rect()).
+func far_lod_px(r: Rect2) -> Rect2:
+	var local := _view.get_global_transform().affine_inverse() * r
+	var cover := cover_rect()
+	var k := Vector2(view3d.size) / cover.size.max(Vector2.ONE)
+	return Rect2((local.position - cover.position) * k, local.size * k)
+
+
+## M14 perf slice: the ground (world X/Z box, height 0) under view px rect `px` for camera `iso`.
+static func ground_rect(iso: CityIsoCamera, px: Rect2) -> Rect2:
+	var out := Rect2()
+	var first := true
+	for p: Vector2 in [px.position, Vector2(px.end.x, px.position.y), px.end, Vector2(px.position.x, px.end.y)]:
+		var w := iso.unproject(p, 0.0)
+		var g := Vector2(w.x, w.z)
+		out = Rect2(g, Vector2.ZERO) if first else out.expand(g)
+		first = false
+	return out
+
+
 func _process(delta: float) -> void:
 	_step_silhouette()
+	if view3d != null and (far_lod_source.is_valid() or view3d.far_keep.has_area()):
+		sync_far_lod()
 	if not _want.is_empty() and Engine.get_process_frames() - int(_want["frame"]) >= BAKE_SETTLE_FRAMES:
 		if _want["cam"] == _camera_key():
 			_request_want()

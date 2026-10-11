@@ -772,6 +772,10 @@
 		"res://tests/unit/test_b2_combat_composition.gd": {
 			"seconds": 12.0,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_m14_perf_far_lod.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
 		}
 	}
 }

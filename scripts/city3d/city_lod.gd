@@ -127,6 +127,75 @@ static func ortho_of_lod(cfg: CityConfig, lod: float) -> float:
 	return cfg.lod_ortho_transit * pow(cfg.lod_ortho_raid / cfg.lod_ortho_transit, lod)
 
 
+## M14 perf slice: keep rect `r` (world X/Z) snapped outward to the config's grid
+## (`far_lod_snap_bu`), so the same world rect read with float noise snaps to the same rect.
+## A rect with no area stays empty (far LOD off).
+static func snap_keep(cfg: CityConfig, r: Rect2) -> Rect2:
+	if not r.has_area():
+		return Rect2()
+	var s := maxf(cfg.far_lod_snap_bu, 0.001)
+	var lo := Vector2(floorf(r.position.x / s), floorf(r.position.y / s)) * s
+	var hi := Vector2(ceilf(r.end.x / s), ceilf(r.end.y / s)) * s
+	return Rect2(lo, hi - lo)
+
+
+## M14 perf slice: the keep rect to hold next when the view asks for raw rect `raw` while it
+## holds `current` (the hysteresis): `current` stays while it still holds `raw` and is no more
+## than two snap steps wider on any side than `raw` grown by one, so a drifting or panning camera
+## (the same world rect read again with noise) keeps the same rect; otherwise `raw` grown by one
+## snap step, snapped (CityLod.snap_keep). No area: off.
+static func keep_next(cfg: CityConfig, current: Rect2, raw: Rect2) -> Rect2:
+	if not raw.has_area():
+		return Rect2()
+	var s := maxf(cfg.far_lod_snap_bu, 0.001)
+	if current.has_area() and current.encloses(raw) and raw.grow(s * 3.0).encloses(current):
+		return current
+	return snap_keep(cfg, raw.grow(s))
+
+
+## M14 perf slice: true when prism `pr` (a CityModel prism) stands outside keep rect `keep`
+## (world X/Z) and takes the far LOD: its footprint box, grown by its top's lean on screen
+## (`lean` BU per BU of height: 1 / tan(pitch) for the iso view, 0 for a distance rule),
+## misses the rect. Always false with no keep rect (far LOD off) or with `far_lod_on` off.
+static func prism_far(cfg: CityConfig, pr: Dictionary, keep: Rect2, lean: float) -> bool:
+	if not cfg.far_lod_on or not keep.has_area():
+		return false
+	var poly: PackedVector2Array = pr["poly"]
+	if poly.is_empty():
+		return false
+	var lo := poly[0]
+	var hi := poly[0]
+	for q in poly:
+		lo = lo.min(q)
+		hi = hi.max(q)
+	var top := float(pr["y0"]) + float(pr["h"])
+	return not Rect2(lo, hi - lo).grow(maxf(0.0, top * lean)).intersects(keep, true)
+
+
+## M14 perf slice: prisms `idx` of `prisms` split by `prism_far`: {"near": PackedInt32Array,
+## "far": PackedInt32Array}, each in `idx`'s order.
+static func split_far(cfg: CityConfig, prisms: Array[Dictionary], idx: PackedInt32Array, keep: Rect2, lean: float) -> Dictionary:
+	var near := PackedInt32Array()
+	var far := PackedInt32Array()
+	for n in idx:
+		if prism_far(cfg, prisms[n], keep, lean):
+			far.append(n)
+		else:
+			near.append(n)
+	return {"near": near, "far": far}
+
+
+## M14 perf slice: the building LOD a far prism draws at while the view's LOD is `lod`.
+static func far_level(cfg: CityConfig, lod: int) -> int:
+	return maxi(maxi(0, lod), cfg.far_lod_level)
+
+
+## M14 perf slice: the screen lean of a building's top for the iso view at `pitch_deg` (BU of
+## ground per BU of height; 0 for a near-horizontal or perspective close-up, which keeps by distance).
+static func lean_of(pitch_deg: float) -> float:
+	return 1.0 / tan(deg_to_rad(clampf(pitch_deg, 1.0, 89.0)))
+
+
 ## The render settings of quality tier `tier` (Settings.city_quality; the Deck = 1).
 static func quality(cfg: CityConfig, city_quality: int) -> Dictionary:
 	var t := cfg.tier_for(city_quality)
