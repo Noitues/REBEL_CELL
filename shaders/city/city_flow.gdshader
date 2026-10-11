@@ -1,4 +1,5 @@
 shader_type canvas_item;
+#include "res://shaders/lib/rc_common.gdshaderinc"
 // M14 perf slice: the city map's crawling dashes and threat chevrons (CityMapOverlay's flow
 // layer) as one still mesh (CityFlowMesh): every dash and chevron is laid once at phase 0 in its
 // track's frame (VERTEX = along, across), and this shader slides it along its track by the

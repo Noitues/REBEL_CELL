@@ -1237,7 +1237,7 @@ func _flow_ready(plan: Dictionary) -> bool:
 		if _flow_mesh == null:
 			_flow_mesh = CityFlowMesh.new()
 		var k := _k()
-		_flow_cpu = not _flow_mesh.build(plan["edges"], DASH_ON, DASH_PERIOD, ARROW_STEP * k, ARROW_SIZE * k, k, DASHES_MAX)
+		_flow_cpu = not _flow_mesh.build(plan["edges"], DASH_ON, DASH_PERIOD, ARROW_STEP * k, ARROW_SIZE * k, k, DASHES_MAX, CHEVRON_INK)
 		_flow_sig = plan["sig"]
 		if _flow_layer == null:
 			_flow_layer = Control.new()
@@ -1655,10 +1655,14 @@ func _chevrons(e: Dictionary, pts: PackedVector2Array) -> void:
 			var p := a + dir * (carry + i * step)
 			var tip := p + dir * s
 			var wing := PackedVector2Array([p - dir * s + side * s, tip, p - dir * s - side * s])
-			_c.draw_polyline(wing, Color(0, 0, 0, 0.8), 4.5 * k)
+			_c.draw_polyline(wing, CHEVRON_INK, 4.5 * k)
 			_c.draw_polyline(wing, col, 2.2 * k)
 		# Where the next chevron falls on the next segment (the spacing runs on round corners).
 		carry = maxf(0.0, carry + n * step - length)
+
+
+## The chevrons' dark keyline (the CPU path's and the flow mesh's).
+const CHEVRON_INK := Color(0, 0, 0, 0.8)
 
 
 ## M14 perf slice: true draws the flow layer's dashes as one multiline per edge (the default);

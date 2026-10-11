@@ -276,14 +276,14 @@ func test_the_flow_mesh_lays_each_element_once_on_its_track() -> void:
 	var m := CityFlowMesh.new()
 	var pts := PackedVector2Array([Vector2(0, 0), Vector2(100, 0), Vector2(100, 70)])
 	var edges: Array[Dictionary] = [{"pts": pts, "color": Color.RED, "width": 4.0, "flow": true, "dashed": true, "arrows": true}]
-	assert_true(m.build(edges, 9.0, 16.0, 34.0, 6.0, 1.0, 400), "fits")
+	assert_true(m.build(edges, 9.0, 16.0, 34.0, 6.0, 1.0, 400, CityMapOverlay.CHEVRON_INK), "fits")
 	assert_eq(m.track_count, 4, "two segments, a dash track and a chevron track each")
 	var arrays := m.mesh.surface_get_arrays(0)
 	var verts: PackedVector2Array = arrays[Mesh.ARRAY_VERTEX]
 	# Dashes: ceil(100/16) + ceil(70/16) quads; chevrons: ceil(100/34) + ceil(70/34), two strips of 6.
 	assert_eq(verts.size(), (7 + 5) * 4 + (3 + 3) * 2 * 6, "every dash a quad, every chevron its keyline and colour strips")
 	assert_not_null(m.material, "the crawl shader")
-	assert_true(m.build([] as Array[Dictionary], 9.0, 16.0, 34.0, 6.0, 1.0, 400), "nothing to lay")
+	assert_true(m.build([] as Array[Dictionary], 9.0, 16.0, 34.0, 6.0, 1.0, 400, CityMapOverlay.CHEVRON_INK), "nothing to lay")
 	assert_null(m.mesh, "no mesh")
 
 

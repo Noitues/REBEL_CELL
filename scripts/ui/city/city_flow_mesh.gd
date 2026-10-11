@@ -18,9 +18,8 @@ const KIND_DASH := 0
 const KIND_CHEVRON := 1
 ## Rows the track texture may hold (a texture's height limit); a plan past it stays on the CPU.
 const MAX_TRACKS := 16384
-## The chevrons' keyline (colour, width per unit of the map's scale k) and their colour's width:
-## CityMapOverlay._chevrons' values.
-const CHEVRON_INK := Color(0, 0, 0, 0.8)
+## The chevrons' keyline width and their colour's width per unit of the map's scale k:
+## CityMapOverlay._chevrons' values (its keyline colour comes in with build()).
 const CHEVRON_INK_W := 4.5
 const CHEVRON_W := 2.2
 
@@ -40,9 +39,10 @@ var _idx := PackedInt32Array()
 ## Lays edges `edges` (each {"pts": PackedVector2Array (local px), "color", "width", "flow",
 ## "dashed", "arrows"}) at phase 0: dashes of `dash_on` px every `dash_period` px, chevrons of
 ## half-size `chevron_size` every `chevron_step` px (both already scaled to the map), the map's
-## scale `k` for the chevrons' widths, at most `max_per_segment` of each per segment. False
+## scale `k` for the chevrons' widths, their keyline `chevron_ink`, at most `max_per_segment` of
+## each per segment. False
 ## (nothing built) when the plan does not fit the track texture.
-func build(edges: Array[Dictionary], dash_on: float, dash_period: float, chevron_step: float, chevron_size: float, k: float, max_per_segment: int) -> bool:
+func build(edges: Array[Dictionary], dash_on: float, dash_period: float, chevron_step: float, chevron_size: float, k: float, max_per_segment: int, chevron_ink: Color) -> bool:
 	_rows = PackedFloat32Array()
 	_verts = PackedVector2Array()
 	_uvs = PackedVector2Array()
@@ -76,7 +76,7 @@ func build(edges: Array[Dictionary], dash_on: float, dash_period: float, chevron
 				for i in mini(max_per_segment, ceili(length / chevron_step)):
 					var c := i * chevron_step
 					var wing := PackedVector2Array([Vector2(c - chevron_size, chevron_size), Vector2(c + chevron_size, 0.0), Vector2(c - chevron_size, -chevron_size)])
-					_strip(row, c, polyline_strip(wing, CHEVRON_INK_W * k, -1.0), CHEVRON_INK)
+					_strip(row, c, polyline_strip(wing, CHEVRON_INK_W * k, -1.0), chevron_ink)
 					_strip(row, c, polyline_strip(wing, CHEVRON_W * k, -1.0), col)
 	if track_count > MAX_TRACKS:
 		return false
