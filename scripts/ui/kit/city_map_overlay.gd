@@ -481,7 +481,8 @@ func _process(delta: float) -> void:
 		return
 	# The map's own motion runs at the playout's speed (Motion.speed: 1x outside a raid).
 	anim_t += delta * Motion.speed
-	_anim.queue_redraw()
+	if _flow_tick():
+		_anim.queue_redraw()
 	if selected_id != &"" or not _travel.is_empty():
 		_hi.queue_redraw()
 
@@ -1158,11 +1159,133 @@ func _draw() -> void:
 ## Flowing dashes and packets (redrawn every frame unless reduce-effects).
 func _draw_anim() -> void:
 	if city == null or nodes.is_empty():
+		if _flow_layer != null:
+			_flow_layer.visible = false
 		return
 	_c = _anim
-	for k in edges.size():
-		_edge_flow(edges[k], _route_px(k))
+	var plan := _flow_plan()
+	if _flow_ready(plan):
+		# M14 perf slice: the dashes and chevrons are the still mesh's (the shader crawls them);
+		# only the packets, under them as on the CPU path, are drawn each frame.
+		for k: int in plan["packets"]:
+			_edge_flow(edges[k], _route_px(k))
+	else:
+		for k in edges.size():
+			_edge_flow(edges[k], _route_px(k))
 	_c = self
+
+
+# --- The flow as a still mesh (M14 perf slice) ----------------------------------------------
+
+## M14 perf slice: true lays the flow's dashes and chevrons as one still mesh that
+## shaders/city/city_flow.gdshader crawls (CityFlowMesh; laid again only when the routes on
+## screen change); false lays them on the CPU every frame (the probe's same-picture check,
+## flow_diff_hq). A map whose packets would fall over a later edge's dashes or chevrons stays on
+## the CPU (the mesh draws over every packet).
+var flow_shader: bool = true
+var _flow_mesh: CityFlowMesh = null
+var _flow_layer: Control = null
+## The plan the mesh was laid for ([] none; _flow_cpu: it did not fit, the CPU draws it).
+var _flow_sig: Array = []
+var _flow_cpu: bool = false
+
+
+## The flow plan now: {"ok": the mesh can draw it, "sig": what the mesh shows, "edges": the
+## mesh's edges (CityFlowMesh.build's), "packets": the edges whose packets the CPU draws}.
+func _flow_plan() -> Dictionary:
+	var ok := flow_shader and city != null and not nodes.is_empty()
+	var sig: Array = [_k(), look]
+	var mesh_edges: Array[Dictionary] = []
+	var packet_edges := PackedInt32Array()
+	var live_packets := packets and crawl_speed() > 0.0
+	for i in edges.size():
+		var e: Dictionary = edges[i]
+		if bool(e.get("pencil", false)) or bool(e.get("depowered", false)) or bool(e.get("locked", false)):
+			continue
+		var dashed := _is_dashed(e)
+		var arrows := bool(e.get("arrows", false))
+		var packet := not dashed and bool(e.get("flow", false)) and live_packets
+		if not (dashed or arrows or packet):
+			continue
+		var pts := _route_px(i)
+		if pts.size() < 2:
+			continue
+		if packet:
+			# The CPU's order: a packet over the dashes and chevrons drawn before it.
+			ok = ok and mesh_edges.is_empty() and not arrows
+			packet_edges.append(i)
+		if dashed or arrows:
+			var m := {"pts": pts, "color": _flow_colour(e), "width": float(e.get("width", 3.0)),
+				"flow": bool(e.get("flow", true)), "dashed": dashed, "arrows": arrows}
+			# draw_multiline draws a width under 0 as thin lines: the CPU's.
+			ok = ok and (not dashed or m["width"] >= 0.0)
+			mesh_edges.append(m)
+			sig.append_array([i, pts, m["color"], m["width"], m["flow"], dashed, arrows])
+	return {"ok": ok, "sig": sig, "edges": mesh_edges, "packets": packet_edges}
+
+
+## An edge's flow colour (its own, else the network's cyan): the CPU path's and the mesh's.
+static func _flow_colour(e: Dictionary) -> Color:
+	return e.get("color", Palette.NET_CYAN)
+
+
+## True when the mesh draws `plan`'s dashes and chevrons (_flow_plan): lays it again when the
+## plan changed, sets the frame's phases, shows its layer (hidden when the CPU draws them).
+func _flow_ready(plan: Dictionary) -> bool:
+	var ok: bool = plan["ok"]
+	if ok and plan["sig"] != _flow_sig:
+		if _flow_mesh == null:
+			_flow_mesh = CityFlowMesh.new()
+		var k := _k()
+		_flow_cpu = not _flow_mesh.build(plan["edges"], DASH_ON, DASH_PERIOD, ARROW_STEP * k, ARROW_SIZE * k, k, DASHES_MAX)
+		_flow_sig = plan["sig"]
+		if _flow_layer == null:
+			_flow_layer = Control.new()
+			_flow_layer.name = "FlowMesh"
+			_flow_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_flow_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			_flow_layer.draw.connect(_draw_flow_mesh)
+			_anim.add_child(_flow_layer)
+		_flow_layer.material = _flow_mesh.material
+		_flow_layer.queue_redraw()
+	ok = ok and not _flow_cpu
+	if _flow_layer != null:
+		_flow_layer.visible = ok
+	if ok:
+		_flow_phase()
+	return ok
+
+
+## Sets the mesh's phases from the map's clock (the CPU path's dash and chevron phases).
+func _flow_phase() -> void:
+	if _flow_mesh == null:
+		return
+	var travel := anim_t * crawl_speed()
+	_flow_mesh.set_phase(fmod(travel, DASH_PERIOD), fmod(travel, ARROW_STEP * _k()))
+
+
+func _draw_flow_mesh() -> void:
+	if _flow_mesh != null and _flow_mesh.mesh != null:
+		_flow_layer.draw_mesh(_flow_mesh.mesh, null)
+
+
+## The process frame's flow step: true when the flow layer must redraw (the CPU draws the
+## flow, the plan changed, or packets run); else only the mesh's phases move.
+func _flow_tick() -> bool:
+	var plan := _flow_plan()
+	if not plan["ok"] or plan["sig"] != _flow_sig or _flow_cpu:
+		return true
+	_flow_phase()
+	return not (plan["packets"] as PackedInt32Array).is_empty()
+
+
+## M14 perf slice: the flow's mode on screen: {"mesh": the still mesh draws the dashes and
+## chevrons, "tracks": its track rows, "redraws": the flow layer redraws every frame} (tests).
+func flow_state() -> Dictionary:
+	var plan := _flow_plan()
+	var mesh_on: bool = plan["ok"] and plan["sig"] == _flow_sig and not _flow_cpu
+	return {"mesh": mesh_on, "tracks": _flow_mesh.track_count if _flow_mesh != null else 0,
+		"redraws": not mesh_on or not (plan["packets"] as PackedInt32Array).is_empty()}
 
 
 ## ANIM-R2 R1 / R9: the node layer draws at most once a process frame. A screen's first
@@ -1467,7 +1590,7 @@ func _edge_static(e: Dictionary, pts: PackedVector2Array) -> void:
 func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
 	if pts.size() < 2 or bool(e.get("pencil", false)) or bool(e.get("depowered", false)) or bool(e.get("locked", false)):
 		return
-	var col: Color = e.get("color", Palette.NET_CYAN)
+	var col := _flow_colour(e)
 	var width: float = e.get("width", 3.0)
 	if _is_dashed(e):
 		var phase := fmod(anim_t * crawl_speed(), DASH_PERIOD) if e.get("flow", true) else 0.0

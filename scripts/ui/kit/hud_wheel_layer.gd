@@ -73,10 +73,11 @@ func motion_running() -> bool:
 
 func _process(_delta: float) -> void:
 	place_rows()
-	_place_glyphs()
-	# M14 perf slice: the buttons redraw only when what they draw changes (they redrew every
-	# frame of every fight, ~3 ms of the close-up's frame with their glyphs).
-	var sig := draw_signature()
+	# M14 perf slice: the buttons laid out once a frame (each costs the views' layout), and
+	# redrawn only when what they draw changes (they redrew every frame of every fight).
+	var bs := buttons()
+	_place_glyphs(bs)
+	var sig := draw_signature(bs)
 	if sig != _drawn_sig:
 		_drawn_sig = sig
 		queue_redraw()
@@ -89,11 +90,11 @@ var _drawn_sig: Array = []
 ## M14 perf slice: everything _draw reads (the text scale and skin, the layer's place, and per
 ## button its place, ring, direction, rim colour, hover, drop and key hint), so the layer redraws
 ## only when one of them changes.
-func draw_signature() -> Array:
+func draw_signature(bs: Array[Dictionary] = buttons()) -> Array:
 	var origin := get_global_rect().position
 	var mouse := get_global_mouse_position()
 	var sig: Array = [Settings.text_scale, Settings.palette_skin, origin]
-	for b in buttons():
+	for b in bs:
 		var wv: WheelView = b["view"]
 		var r: float = b["radius"]
 		var zone := {"kind": "arrow", "ring": b["ring"], "direction": b["direction"]}
@@ -105,8 +106,7 @@ func draw_signature() -> Array:
 
 
 ## The buttons' rotate glyphs (picto_spin_ccw / picto_spin), one node per button.
-func _place_glyphs() -> void:
-	var bs := buttons()
+func _place_glyphs(bs: Array[Dictionary] = buttons()) -> void:
 	while _glyphs.size() > bs.size():
 		var g: GlyphIcon = _glyphs.pop_back()
 		g.queue_free()

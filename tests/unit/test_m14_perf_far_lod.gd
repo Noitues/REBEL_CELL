@@ -240,6 +240,83 @@ func test_the_flow_dashes_are_batched_by_default() -> void:
 	# The same picture is checked windowed (perf_pack flow_diff_hq); here the switch's default.
 	var o: CityMapOverlay = autofree(CityMapOverlay.new())
 	assert_true(o.flow_batched, "the dashes draw as one multiline per edge")
+	assert_true(o.flow_shader, "the dashes and chevrons are a still mesh the shader crawls")
+
+
+## The CPU path's chevron spacing round corners (CityMapOverlay._chevrons): the carry into each
+## segment, segment by segment.
+func _cpu_carries(phase: float, step: float, lengths: Array[float]) -> Array[float]:
+	var out: Array[float] = []
+	var carry := phase
+	for length in lengths:
+		out.append(carry)
+		var n := ceili(maxf(0.0, length - carry) / step)
+		carry = maxf(0.0, carry + n * step - length)
+	return out
+
+
+func test_the_flow_mesh_slides_dashes_and_chevrons_as_the_cpu_lays_them() -> void:
+	# The shader's shift per track (CityFlowMesh.shift_of) is the CPU's phase and carry, so the
+	# still mesh slid by it puts every dash and chevron where the CPU drew it (the picture: 0
+	# pixels apart in perf_pack flow_diff_hq, windowed).
+	var step := 34.0 * 0.8
+	var lengths: Array[float] = [100.0, 12.5, 73.3, 0.4, 160.0]
+	for phase: float in [0.0, 5.5, 15.9, 27.1]:
+		var carries := _cpu_carries(phase, step, lengths)
+		var before := 0.0
+		for j in lengths.size():
+			assert_almost_eq(CityFlowMesh.shift_of(phase, step, -before, 1.0), carries[j], 0.001,
+				"phase %.1f: segment %d's chevrons start where the CPU's carry put them" % [phase, j])
+			before += lengths[j]
+		assert_almost_eq(CityFlowMesh.shift_of(phase, 16.0, 0.0, 1.0), fmod(phase, 16.0), 0.0001, "the dashes' phase")
+		assert_eq(CityFlowMesh.shift_of(phase, 16.0, 0.0, 0.0), 0.0, "a still route's dashes do not crawl")
+
+
+func test_the_flow_mesh_lays_each_element_once_on_its_track() -> void:
+	var m := CityFlowMesh.new()
+	var pts := PackedVector2Array([Vector2(0, 0), Vector2(100, 0), Vector2(100, 70)])
+	var edges: Array[Dictionary] = [{"pts": pts, "color": Color.RED, "width": 4.0, "flow": true, "dashed": true, "arrows": true}]
+	assert_true(m.build(edges, 9.0, 16.0, 34.0, 6.0, 1.0, 400), "fits")
+	assert_eq(m.track_count, 4, "two segments, a dash track and a chevron track each")
+	var arrays := m.mesh.surface_get_arrays(0)
+	var verts: PackedVector2Array = arrays[Mesh.ARRAY_VERTEX]
+	# Dashes: ceil(100/16) + ceil(70/16) quads; chevrons: ceil(100/34) + ceil(70/34), two strips of 6.
+	assert_eq(verts.size(), (7 + 5) * 4 + (3 + 3) * 2 * 6, "every dash a quad, every chevron its keyline and colour strips")
+	assert_not_null(m.material, "the crawl shader")
+	assert_true(m.build([] as Array[Dictionary], 9.0, 16.0, 34.0, 6.0, 1.0, 400), "nothing to lay")
+	assert_null(m.mesh, "no mesh")
+
+
+func test_the_chevron_strip_keeps_its_width_round_the_tip() -> void:
+	var wing := PackedVector2Array([Vector2(-6, 6), Vector2(6, 0), Vector2(-6, -6)])
+	var s := CityFlowMesh.polyline_strip(wing, 4.0)
+	assert_eq(s.size(), 6, "two vertices per point")
+	var n0 := (wing[1] - wing[0]).normalized().orthogonal()
+	assert_almost_eq((s[0] - wing[0]).dot(n0), 2.0, 0.0001, "the start squares to its segment, half the width out")
+	# The tip's mitre: on the bisector, the strip's edge half the width off each segment.
+	assert_almost_eq((s[2] - wing[1]).dot(n0), 2.0, 0.0001, "the mitre keeps the width")
+	var m := CityFlowMesh.polyline_strip(wing, 4.0, -1.0)
+	assert_almost_eq(m[0], s[1], Vector2(0.0001, 0.0001), "a mirrored frame swaps each pair (Godot's order)")
+
+
+func test_the_wheel_radius_memo_follows_its_inputs() -> void:
+	var v: WheelView = autofree(WheelView.new())
+	v.size = Vector2(900, 700)
+	assert_almost_eq(v._radius(), v._radius_fit(), 0.0001, "the memo is the fit")
+	v.size = Vector2(600, 500)
+	assert_almost_eq(v._radius(), v._radius_fit(), 0.0001, "a new size: fitted again")
+	v.hud_results = not v.hud_results
+	assert_almost_eq(v._radius(), v._radius_fit(), 0.0001, "the HUD's nudge room: fitted again")
+	var was := Settings.text_scale
+	Settings.text_scale = 1.6
+	assert_almost_eq(v._radius(), v._radius_fit(), 0.0001, "a new text scale: fitted again")
+	Settings.text_scale = was
+
+
+func test_the_hud_buttons_redraw_only_when_what_they_draw_changes() -> void:
+	var layer: HudWheelLayer = add_child_autofree(HudWheelLayer.new())
+	var a := layer.draw_signature()
+	assert_eq(layer.draw_signature(), a, "nothing changed: no redraw")
 
 
 func test_the_raid_routes_relay_only_when_what_they_show_changes() -> void:

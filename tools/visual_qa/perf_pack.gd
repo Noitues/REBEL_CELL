@@ -40,6 +40,7 @@ const PROBE_SCREENS := [
 	["city_probe_combat", "_s_city_probe_combat", "PERF slice: a Site fight's close-up city, each part switched off in turn."],
 	["cpu_probe_hq", "_s_cpu_probe_hq", "PERF slice: the HQ idle's frame with each script class's processing off in turn, and its redraws."],
 	["cpu_probe_combat", "_s_cpu_probe_combat", "PERF slice: a Site fight's frame with each script class's processing off in turn, and its redraws."],
+	["hud_probe_combat", "_s_hud_probe_combat", "PERF slice: a Site fight's HUD layer, each step of its process frame timed."],
 	["map_probe_hq", "_s_map_probe_hq", "PERF slice: the HQ idle's map overlay and raid pencil, each layer hidden in turn."],
 	["flow_diff_hq", "_s_flow_diff_hq", "PERF slice: the HQ idle's flow layer batched vs one command per dash and wing (reduce motion: a still frame), pixel diff."],
 	["scrim_luma_combat_start", "_s_scrim_luma_combat_start", "B1a b: the fight's world luma in the wheel pools vs between the wheels (+ fixture)."],
@@ -595,6 +596,29 @@ func _s_cpu_probe_hq() -> void:
 func _s_cpu_probe_combat() -> void:
 	await _s_combat_start()
 	await _cpu_probe()
+
+
+## PERF slice: the fight's HudWheelLayer, each step of its process frame (and the wheel views'
+## calls they make) timed over HUD_PROBE_N calls (PROBE hud lines, us per call).
+const HUD_PROBE_N := 200
+
+
+func _s_hud_probe_combat() -> void:
+	await _s_combat_start()
+	for h: HudWheelLayer in get_tree().root.find_children("*", "HudWheelLayer", true, false):
+		var steps := {"place_rows": h.place_rows, "place_glyphs": h._place_glyphs, "draw_signature": h.draw_signature, "buttons": h.buttons}
+		for v in h._views():
+			var wv := v as WheelView
+			steps["standing_chips"] = wv.standing_chips
+			steps["hp_layout"] = wv.hp_layout
+			steps["arrows"] = wv.arrows
+			break
+		for key: String in steps:
+			var f: Callable = steps[key]
+			var t0 := Time.get_ticks_usec()
+			for i in HUD_PROBE_N:
+				f.call()
+			print("PROBE hud %s us=%.1f" % [key, float(Time.get_ticks_usec() - t0) / HUD_PROBE_N])
 
 
 ## PERF slice: the HQ idle's map overlay layers and the raid pencil, each hidden in turn (and

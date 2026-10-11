@@ -1822,7 +1822,25 @@ func _needle_dip() -> float:
 	return out
 
 
+## M14 perf slice: _radius()'s last inputs and value. The HUD's nudge buttons, hints and the
+## disc's own drawing ask it many times a frame (each arrow centre ~5 times, each fitting the
+## disc three times over its needles): the same inputs give the same radius.
+var _radius_key: Array = []
+var _radius_val: float = 0.0
+
+
 func _radius() -> float:
+	var c := _shown()
+	var key: Array = [size, left_reserve, center_x, hud_results, _ts(), frame_master(), kit.is_boss,
+		c.wheel.pointer_ticks if c != null and c.wheel != null else PackedInt32Array()]
+	if key != _radius_key:
+		_radius_key = key
+		_radius_val = _radius_fit()
+	return _radius_val
+
+
+## The disc's radius for the view's size, text scale and needles (_radius' memo reads it).
+func _radius_fit() -> float:
 	var r := minf(size.x, size.y) * RADIUS_SHARE
 	if left_reserve > 0.0:
 		var avail := size.x - left_reserve
