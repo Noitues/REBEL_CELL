@@ -86,6 +86,12 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_stamp
 	paper.stamp = tr(p_stamp)
 	paper.seed = absi(p_title.hash()) % 97 + 1
 	paper.top_pad = top_pad()
+	# M14 BIG-TEXT b (art director, 4a): the letterhead grows with the sheet's text (its rows start
+	# under LETTERHEAD_H x k already) and the corp name keeps left of the seal: it fits that width,
+	# then wraps to two lines, then ends in an ellipsis (CorpPaperPanel.fit_name).
+	paper.text_k = _k
+	paper.head_h = CorpPaperPanel.LETTERHEAD_H * _k
+	paper.name_reserve = seal_reserve()
 	add_child(paper, false, Node.INTERNAL_MODE_FRONT)
 	_deco_node = Control.new()
 	_deco_node.name = "Deco"
@@ -203,6 +209,12 @@ func _draw() -> void:
 	PaperStaging.draw_shadow(self, size, _k)
 
 
+## BIG-TEXT b (4a): the room at the letterhead's right the seal takes (px from the sheet's right
+## edge, with a gap before it): the corp name ends left of it.
+func seal_reserve() -> float:
+	return (PAD + SEAL_R * 2.0) * _k + UiTheme.SP_S
+
+
 ## The sheet's top padding (px): the clip's bite, so the letterhead starts below the jaw (D24).
 func top_pad() -> float:
 	return PaperStaging.CLIP_BITE * _k
@@ -239,7 +251,7 @@ func _deco(on: Control) -> void:
 	var meta_font := Palette.paper()
 	var meta_px := UiTheme.font_px_at(UiTheme.CAPTION, _k)
 	var div_px := division_px(r.size.x)
-	on.draw_string(meta_font, Vector2(UiTheme.SP_L, top_pad() + CorpPaperPanel.LETTERHEAD_H + meta_px * 0.6), skin.division(),
+	on.draw_string(meta_font, Vector2(UiTheme.SP_L, top_pad() + paper.head_h + meta_px * 0.6), skin.division(),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, div_px, Palette.INK.lerp(Palette.PAPER, 0.45))
 	# The footer: redacted lines and the meta line.
 	var fy := r.size.y - FOOTER_H * k + 8.0 * k

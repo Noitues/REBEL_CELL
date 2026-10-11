@@ -392,6 +392,9 @@ func test_raid_setup_paper_whole_network_visible_and_a_page_title() -> void:
 		var column := page.get_node("CardColumn") as Control
 		var network := page.find_child("NodeOrders", true, false) as Control
 		var core := network.find_child("Order_%s" % RunManager.campaign.grid.home_site_id, true, false) as Control
+		if hq.network_one_row():
+			# BIG-TEXT b: from 1.6, short of room, YOUR NETWORK is one row that says CORE's forecast.
+			core = network.find_child("NetworkRow", true, false) as Control
 		assert_not_null(core, "%s: the CORE row" % tag)
 		var shown := column.get_global_rect().grow(1.0)
 		assert_true(shown.encloses(core.get_global_rect()), "%s: YOUR NETWORK's CORE row is in view, not below the fold (%s in %s)" % [tag, core.get_global_rect(), shown])

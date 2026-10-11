@@ -119,6 +119,7 @@ const SCREENS := [
 	["grid_rebel_cell", "_s_grid_rebel_cell", "City Grid against REBEL_CELL."],
 	["raid_setup", "_s_raid_setup", "Raid setup with one asset deployed."],
 	["raid_setup_meridian", "_s_raid_setup_meridian", "Raid setup against Meridian (B1c: an orange corp's THREAT INTEL holo)."],
+	["raid_setup_page2", "_s_raid_setup_page2", "Raid setup with the folded work order and a paged THREAT INTEL turned to page 2 (BIG-TEXT b: MORE)."],
 	["raid_drag_asset", "_s_raid_drag_asset", "main: an asset carried from the Armory onto the raid map."],
 	["raid_playout", "_s_raid_playout", "Raid playout, mid-way."],
 	["raid_result", "_s_raid_result", "Raid playout at its end (RESULT)."],
@@ -1142,6 +1143,19 @@ func _s_raid_setup() -> void:
 
 func _s_raid_setup_meridian() -> void:
 	await _raid_setup(true, &"meridian")
+
+
+## BIG-TEXT b: MORE pressed on the work order and on THREAT INTEL where they page (big text).
+func _s_raid_setup_page2() -> void:
+	var hq: Node = await _raid_setup()
+	for tab_name in ["OrderMore", "IntelMore"]:
+		var tab := hq._panel.find_child(tab_name, true, false) as Button if hq._panel != null else null
+		if tab != null and tab.visible:
+			tab.pressed.emit()
+			await _frames(4)
+		else:
+			_warnings.append("%s not shown: that panel is whole at this size" % tab_name)
+	await _settle(hq)
 
 
 ## Main (ANIM-4): an asset carried from the Armory onto the raid map, mid-path (the HQ's

@@ -38,6 +38,18 @@ var top_pad: float = 0.0:
 	set(v):
 		top_pad = v
 		queue_redraw()
+## M14 BIG-TEXT b (art director, 4a): the letterhead's height (px; LETTERHEAD_H unless a sheet
+## scales it), the room at its right the corp name keeps clear of (px from the sheet's right
+## edge: a seal), and the text scale its name is lettered at (< 0: the player's).
+var head_h: float = LETTERHEAD_H:
+	set(v):
+		head_h = v
+		queue_redraw()
+var name_reserve: float = 0.0:
+	set(v):
+		name_reserve = v
+		queue_redraw()
+var text_k: float = -1.0
 
 var content: VBoxContainer = null
 var stamp_slot: Control = null
@@ -107,8 +119,8 @@ func _layout() -> void:
 	_mat.set_shader_parameter(&"stock", Palette.PAPER)
 	_mat.set_shader_parameter(&"fibre", Palette.KRAFT_FIBRE)
 	_mat.set_shader_parameter(&"seed", float(seed))
-	content.position = Vector2(UiTheme.SP_L, top_pad + LETTERHEAD_H + UiTheme.SP_M)
-	content.size = Vector2(size.x - UiTheme.SP_L * 2.0, maxf(size.y - top_pad - LETTERHEAD_H - UiTheme.SP_L * 2.0, 0.0))
+	content.position = Vector2(UiTheme.SP_L, top_pad + head_h + UiTheme.SP_M)
+	content.size = Vector2(size.x - UiTheme.SP_L * 2.0, maxf(size.y - top_pad - head_h - UiTheme.SP_L * 2.0, 0.0))
 	stamp_slot.size = STAMP_SLOT
 	stamp_slot.position = Vector2(size.x - STAMP_SLOT.x - UiTheme.SP_M, size.y - STAMP_SLOT.y - UiTheme.SP_M)
 	# Parity fix (overlap defects, RAID-11): a stamp wider than its slot (big text) stays on
@@ -135,11 +147,77 @@ func _draw() -> void:
 
 
 ## The letterhead (corp name over a rule in the corp colour), on its own layer over the paper.
+## BIG-TEXT b (4a): the name fits the width left of `name_reserve` (`letterhead_fit`).
 func _draw_letterhead(on: Control) -> void:
 	var font := Palette.body_medium()
-	var px := UiTheme.font_px(UiTheme.LABEL)
-	on.draw_string(font, Vector2(UiTheme.SP_L, top_pad + LETTERHEAD_H - UiTheme.SP_M), corp_name, HORIZONTAL_ALIGNMENT_LEFT, -1, px, corp_color.darkened(0.35))
-	on.draw_rect(Rect2(UiTheme.SP_L, top_pad + LETTERHEAD_H - RULE_PX - UiTheme.SP_XS, size.x - UiTheme.SP_L * 2.0, RULE_PX), corp_color.darkened(0.35))
+	var fit := letterhead_fit()
+	var px: int = fit["px"]
+	var lines: PackedStringArray = fit["lines"]
+	var base := top_pad + head_h - UiTheme.SP_M
+	for i in lines.size():
+		var y := base - font.get_height(px) * float(lines.size() - 1 - i)
+		on.draw_string(font, Vector2(UiTheme.SP_L, y), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, px, corp_color.darkened(0.35))
+	on.draw_rect(Rect2(UiTheme.SP_L, top_pad + head_h - RULE_PX - UiTheme.SP_XS, size.x - UiTheme.SP_L * 2.0, RULE_PX), corp_color.darkened(0.35))
+
+
+## BIG-TEXT b (4a): the width (px) the corp name may take: from the letterhead's left margin to
+## `name_reserve` from the right edge (the side margin at least).
+func name_width() -> float:
+	return size.x - UiTheme.SP_L - maxf(UiTheme.SP_L, name_reserve)
+
+
+## BIG-TEXT b (4a): the corp name as the letterhead draws it: {"px": int, "lines": PackedStringArray}.
+func letterhead_fit() -> Dictionary:
+	var k := text_k if text_k > 0.0 else Settings.text_scale
+	return fit_name(Palette.body_medium(), corp_name, UiTheme.font_px_at(UiTheme.LABEL, k), UiTheme.font_px_at(UiTheme.LABEL, 1.0),
+		name_width(), head_h - UiTheme.SP_M)
+
+
+## BIG-TEXT b (art director, 4a): `name` in `width` px: one line at `max_px`, else smaller down to
+## `min_px` (the size at text 1.0, never below); else two lines (the words split where the first
+## line is fullest) at the largest size both fit and stand in `room` px above the last baseline;
+## else ellipsized at `min_px` (two lines when they stand in the room). Pure.
+static func fit_name(font: Font, name: String, max_px: int, min_px: int, width: float, room: float) -> Dictionary:
+	var lo := mini(min_px, max_px)
+	for px in range(max_px, lo - 1, -1):
+		if font.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= width:
+			return {"px": px, "lines": PackedStringArray([name])}
+	var words := name.split(" ", false)
+	if words.size() > 1:
+		for px in range(max_px, lo - 1, -1):
+			if font.get_height(px) + font.get_ascent(px) > room:
+				continue
+			var two := _wrap_two(font, words, px, width)
+			if font.get_string_size(two[1], HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= width and font.get_string_size(two[0], HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= width:
+				return {"px": px, "lines": two}
+	var lines := PackedStringArray([name])
+	if words.size() > 1 and font.get_height(lo) + font.get_ascent(lo) <= room:
+		lines = _wrap_two(font, words, lo, width)
+	for i in lines.size():
+		lines[i] = ellipsize(font, lines[i], lo, width)
+	return {"px": lo, "lines": lines}
+
+
+## The words split in two lines, the first holding as many as fit `width` at `px` (at least one).
+static func _wrap_two(font: Font, words: PackedStringArray, px: int, width: float) -> PackedStringArray:
+	var n := 1
+	while n < words.size() - 1 and font.get_string_size(" ".join(words.slice(0, n + 1)), HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= width:
+		n += 1
+	return PackedStringArray([" ".join(words.slice(0, n)), " ".join(words.slice(n))])
+
+
+## The ellipsis a cut name ends in.
+const ELLIPSIS := "…"
+
+
+## `text` cut to fit `width` at `px`, ending in an ellipsis when cut. Pure.
+static func ellipsize(font: Font, text: String, px: int, width: float) -> String:
+	if font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= width:
+		return text
+	var t := text
+	while t.length() > 1 and font.get_string_size(t.strip_edges() + ELLIPSIS, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x > width:
+		t = t.left(t.length() - 1)
+	return t.strip_edges() + ELLIPSIS
 
 
 ## Parity fix (overlap defects, RAID-02 / RAID-11): the bounding size (px) of the stamp for
