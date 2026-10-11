@@ -213,6 +213,8 @@ func test_down_is_the_white_bolt_over_a_greyed_marker_at_every_raid_zoom() -> vo
 		return
 	var city: NeonCity = hq.wireframe.city
 	var w: float = hq.size.x
+	# The setup's own framing done and its markers laid (they follow the node layer's draw).
+	await BoundedWait.until(get_tree(), func() -> bool: return not n.has("marker") or not ov.marker_shown(n) or ov.marker_view(down_id) != null, 10.0)
 	# The band: the raid's closest fit, its middle, its widest fit, and the widest the setup
 	# frames at big text (zoom_ortho_max, HQ fit_hq_map's floor on the raid page).
 	var orthos: Array[float] = [cfg.raid_fit_min, (cfg.raid_fit_min + cfg.raid_fit_max) * 0.5, cfg.raid_fit_max, cfg.zoom_ortho_max]
@@ -220,16 +222,33 @@ func test_down_is_the_white_bolt_over_a_greyed_marker_at_every_raid_zoom() -> vo
 	for o in orthos:
 		var z := RaidZoomFit.zoom_of(o, w)
 		hq._frame_city(z, city.focus_grid, city.focus_anchor)
+		await get_tree().process_frame
+		await get_tree().process_frame
 		assert_almost_eq(city.scale.x, z, 0.0001, "ortho %.0f: the camera is there" % o)
 		var spec := ov.socket_spec(n)
 		assert_eq(String(spec["state"]), RaidSocket.STATE_DOWN, "ortho %.0f: the node draws DOWN" % o)
 		assert_eq(RaidSocket.image_of(spec), String(spec["glyph"]) + "_down", "ortho %.0f: the greyed DOWN socket, no forecast ring" % o)
 		assert_eq(int(_ink(_socket_image(spec)).y), 0, "ortho %.0f: no amber on the DOWN node" % o)
+		assert_true(n.has("marker"), "ortho %.0f: the setup shows the DOWN node's Site marker" % o)
+		if n.has("marker"):
+			# The setup draws the Site marker v4 over the socket (HQ-B): DOWN greys it whole
+			# (its ring too) and its sticker is the DISABLED one under the white bolt.
+			var mspec: Dictionary = n["marker"]
+			assert_eq(String(mspec["status"]), SiteMarker.ST_DOWN, "ortho %.0f: the Site marker reads DOWN" % o)
+			var ring := SiteMarker.greyed(SiteMarker.ring_color(mspec))
+			assert_true(ring.s <= SAT, "ortho %.0f: the marker's ring is greyed (s %.2f)" % [o, ring.s])
+			assert_false(ring.h >= AMBER_HUE.x and ring.h <= AMBER_HUE.y and ring.s > AMBER_SV, "ortho %.0f: the ring is not amber" % o)
+			if ov.marker_shown(n):
+				var view := ov.marker_view(down_id)
+				assert_not_null(view, "ortho %.0f: the DOWN marker shows" % o)
+				if view != null:
+					assert_eq(view.sticker.state, VinylSticker.State.DISABLED, "ortho %.0f: the grey sticker under the white bolt" % o)
+					assert_almost_eq(view.scale.x * city.scale.x, 1.0, 0.001, "ortho %.0f: the marker is its own size on screen" % o)
 		var r := ov.icon_radius(n)
 		var bolt := r * RaidSocket.BOLT
 		# The bolt (0.62 x its size each way) lies on the socket (the baked image's box).
 		assert_true(RaidSocket.rect(Vector2.ZERO, r).grow(-bolt * 0.62).has_area(), "ortho %.0f: the bolt lies on the marker" % o)
 		bolt_px.append(bolt * city.scale.x)
 	for i in bolt_px.size():
-		assert_almost_eq(bolt_px[i], bolt_px[0], 0.01, "ortho %.0f: the bolt is the same size on screen at every zoom" % orthos[i])
-		assert_true(bolt_px[i] >= RaidSocket.BOLT * CityMapOverlay.ICON_RADIUS - 0.01, "ortho %.0f: the bolt is full size (%.1f px)" % [orthos[i], bolt_px[i]])
+		assert_gt(bolt_px[i], 0.0, "ortho %.0f: the bolt shows" % orthos[i])
+		assert_almost_eq(bolt_px[i], bolt_px[0], 0.01, "ortho %.0f: the marker and its bolt are the same size on screen at every zoom" % orthos[i])

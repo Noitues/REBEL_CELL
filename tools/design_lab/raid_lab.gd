@@ -14,11 +14,21 @@ extends Control
 ## States: `sheet` (the kit: sockets, vehicle icons v4, pencil, stickers, paper, holo,
 ## terminal), `setup_<corp>` (the raid setup against each corporation), `drag_valid`,
 ## `drag_invalid` (a defence carried over a node), `playout_mark` (a pencil mark in its hold),
-## `playout_end`, `report`, `breached_bits` (mid bit burst), `breached`, `saved_stamp` (the autosave stamp on the setup), `uplink_close` (ART-3 6w: a node's uplink pad up close). Writes `<state>.png` (1280x720).
+## `playout_end`, `report`, `breached_bits` (mid bit burst), `breached`, `saved_stamp` (the autosave stamp on the setup), `uplink_close` (ART-3 6w: a node's uplink pad up close).
+## M14 ART-6 acceptance ("every changing state has a capture", ruling 11): `wave_arrival` (the wave
+## on its routes, INCOMING written on its entry), `verdict_down` / `verdict_taken` (that word in its
+## hold), `verdict_holds` (the end: HOLDS ticks), `report_losses` (the after-action report of a raid
+## that cost nodes), `down_zoom_min` / `down_zoom_mid` / `down_zoom_max` (a node DOWN before the
+## raid, the camera on it at raid_fit_min / the middle / raid_fit_max). Writes `<state>.png` (1280x720).
+## The Solace raids' DISPATCH line (BREACHED's) carries into the next state: capture `report`
+## in a launch of its own (sheet docs/art_review/ART-6/RAID_STATES.jpg).
 
 const HQ := preload("res://scenes/hq/hq_scene.tscn")
 const ALL := ["sheet", "setup_meridian", "setup_solace", "setup_halcyon", "setup_orbital", "setup_rebel_cell",
-	"drag_valid", "drag_invalid", "playout_mark", "playout_end", "report", "breached_bits", "breached", "saved_stamp", "uplink_close"]
+	"drag_valid", "drag_invalid", "playout_mark", "playout_end", "report", "breached_bits", "breached", "saved_stamp", "uplink_close",
+	"wave_arrival", "verdict_down", "verdict_taken", "verdict_holds", "report_losses", "down_zoom_min", "down_zoom_mid", "down_zoom_max"]
+## The down_zoom_<name> states' share of the way from raid_fit_min to raid_fit_max (ortho).
+const DOWN_ZOOMS := {"min": 0.0, "mid": 0.5, "max": 1.0}
 ## `breached_bits` is caught this far into the bit burst (its share of raid_bits_burst).
 const BITS_AT := 0.3
 const NODE_TYPES: Array[StringName] = [&"firewall_relay", &"vault_terminal", &"relay", &"safehouse", &"proxy_relay"]
@@ -150,11 +160,13 @@ func _campaign(corp_id: StringName, home_integrity: int = -1, defended: bool = t
 		CampaignRules.queue_raid(c, corp, RC.RaidTriggerSource.STORY, &"", "raid lab")
 
 
-func _open_raid(corp_id: StringName, home_integrity: int = -1, defended: bool = true, weak: bool = false) -> Node:
+func _open_raid(corp_id: StringName, home_integrity: int = -1, defended: bool = true, weak: bool = false, pre: Callable = Callable()) -> Node:
 	_hq = HQ.instantiate()
 	add_child(_hq)
 	await _frames(2)
 	_campaign(corp_id, home_integrity, defended, weak)
+	if pre.is_valid():
+		pre.call()
 	_hq.show_raid()
 	await _until(func() -> bool: return _hq.arrival_ready())
 	# ART-3 6w: the raid is on the 3D city: its model built and every chunk placed.
@@ -167,9 +179,70 @@ func _open_raid(corp_id: StringName, home_integrity: int = -1, defended: bool = 
 	return _hq
 
 
+## M14 ART-6 acceptance: the first claimed node (not home) DOWN before the raid; returns its id.
+func _down_first() -> StringName:
+	var c := RunManager.campaign
+	for id in c.grid.claimed_ids():
+		if id != c.grid.home_site_id:
+			c.grid.sites[id]["condition"] = GridState.Condition.DOWN
+			c.grid.sites[id]["integrity"] = 0
+			return id
+	return &""
+
+
+## Every claimed node but home DOWN before the raid.
+func _down_all() -> void:
+	var c := RunManager.campaign
+	for id in c.grid.claimed_ids():
+		if id != c.grid.home_site_id:
+			c.grid.sites[id]["condition"] = GridState.Condition.DOWN
+			c.grid.sites[id]["integrity"] = 0
+
+
+## The lab sets DOWN nodes after the HQ is up, so its city stamps the territory change (a
+## past raid's, which a freshly loaded HQ never shows): cleared, as the player sees the setup.
+func _fresh_marks(hq: Node) -> void:
+	var city: NeonCity = hq.wireframe.city
+	city.marks = []
+	city.fading_marks = []
+	city.stamp_left = 0.0
+
+
+## Awaits the playout's first pencil mark of `kind` written and in its hold.
+func _until_mark(hq: Node, kind: String) -> void:
+	await _until(func() -> bool:
+		var fx: RaidFxLayer = hq.playout.fx if hq.playout != null else null
+		if fx == null:
+			return false
+		for m in fx._marks:
+			var pr := fx.mark_progress(m)
+			if m["kind"] == kind and pr.x >= 1.0 and pr.y <= 0.0:
+				return true
+		return false, 3000)
+
+
 func _screen(state: String) -> void:
 	if state.begins_with("setup_"):
 		await _open_raid(StringName(state.trim_prefix("setup_")))
+		return
+	if state.begins_with("down_zoom_"):
+		var hq: Node = await _open_raid(&"halcyon", -1, true, false, _down_first)
+		_fresh_marks(hq)
+		var down: StringName = &""
+		for id in RunManager.campaign.grid.claimed_ids():
+			if not RunManager.campaign.grid.is_active_node(id):
+				down = id
+		var at := Vector2.INF
+		for n in hq.raid_uplink_nodes():
+			if n["id"] == down:
+				at = Vector2(n["lot"]) + Vector2(0.5, 0.5)
+		var cfg: CityConfig = CityView3D.CONFIG
+		var ortho := lerpf(cfg.raid_fit_min, cfg.raid_fit_max, float(DOWN_ZOOMS[state.trim_prefix("down_zoom_")]))
+		hq._hq_fit_passes = 0  # the HQ fit is over: the framing stays
+		if at != Vector2.INF:
+			hq._frame_city(RaidZoomFit.zoom_of(ortho, hq.size.x), at, Vector2(0.45, 0.55))
+		await _frames(SETTLE)
+		print("raid_lab: DOWN %s at ortho %.0f (lot %s)" % [down, ortho, at])
 		return
 	match state:
 		"drag_valid", "drag_invalid":
@@ -189,6 +262,32 @@ func _screen(state: String) -> void:
 					if m["kind"] in ["down", "taken"] and pr.x >= 1.0 and pr.y <= 0.0:
 						return true
 				return false, 3000)
+		"wave_arrival":
+			var hq: Node = await _open_raid(&"meridian", -1, false, true)
+			hq.fight_raid()
+			await _until_mark(hq, "incoming")
+		"verdict_down":
+			var hq: Node = await _open_raid(&"meridian", -1, false, true)
+			hq.fight_raid()
+			await _until_mark(hq, "down")
+		"verdict_taken":
+			# Every node DOWN before the raid: a DOWN node hit again is TAKEN (GDD 4, RaidResolver).
+			var hq: Node = await _open_raid(&"solace", -1, false, true, _down_all)
+			_fresh_marks(hq)
+			hq.fight_raid()
+			await _until_mark(hq, "taken")
+		"verdict_holds":
+			var hq: Node = await _open_raid(&"halcyon")
+			hq.fight_raid()
+			await _frames(4)
+			hq.playout.skip_to_end()
+			await _frames(30)
+		"report_losses":
+			var hq: Node = await _open_raid(&"meridian", -1, false, true)
+			hq.fight_raid()
+			await _frames(4)
+			hq.show_raid_summary()
+			await _frames(90)
 		"playout_end":
 			var hq: Node = await _open_raid(&"meridian", -1, false, true)
 			hq.fight_raid()
