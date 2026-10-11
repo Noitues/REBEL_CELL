@@ -193,7 +193,7 @@ if unanswered, and what it blocks. The designer answers with a numbered list (`1
 which is how rulings have been given so far; the orchestrator logs each in DECISIONS with the
 checkpoint id (`CP-007.3`) and updates the GDD line it supersedes.
 
-Rules: at most one checkpoint batch per gate; ≤ 10 items (split by area otherwise); nothing
+Rules: item 1 of a milestone-completion checkpoint is always the replan's "start M-next / reorder / wait" (doc 04 §5); at most one checkpoint batch per gate; ≤ 10 items (split by area otherwise); nothing
 re-asked that DECISIONS already rules on (grep first); an unanswered item keeps its default and
 reappears once, flagged "second ask", then becomes a logged default.
 

@@ -24,7 +24,8 @@ stays the rulebook for the code.
 | `tools/playtest/make_playtest.py` | a prefilled Human Playtest Task List for a gate |
 | `.claude/agents/code-cleanup.md` | the cleanup sub-agent (Haiku, effort low, no tools) |
 | `docs/process/agent_rules/*.md` | stable per-area rules files that briefs reference instead of pasting |
-| `docs/process/templates/` | STATE_HANDOFF, CHECKPOINT, PLAYTEST |
+| `docs/process/templates/` | STATE_HANDOFF, CHECKPOINT, PLAYTEST, GATE_REPORT (verdict, retrospective, replan) |
+| `docs/process/CHANGELOG.md` | every accepted process change, one line, newest first |
 | `docs/handoff/STATE.md`, `docs/handoff/CHECKPOINT_PENDING.md` | the live handoff and the pending designer questions |
 
 ## The loop in one screen
@@ -38,7 +39,7 @@ brief (rules file + footer) ──► agents in worktrees ──► RESULT block
                                                                              ▼
                         GATE: full suite once (isolated) + smoke + validate + windowed checks + push gate
                                                                              ▼
-                        Playtest list PT-nnn + checkpoint batch CP-nnn ──► designer ──► feedback ingested
+          Gate report (retrospective → replan) + playtest list PT-nnn + checkpoint CP-nnn ──► designer ──► feedback ingested
                                                                              ▼
                                    STATE.md updated; handoff if context > 50 %; next slice
 ```

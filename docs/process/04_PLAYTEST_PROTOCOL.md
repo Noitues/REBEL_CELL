@@ -85,3 +85,27 @@ RULINGS: <optional: answers to the checkpoint items shipped with this list, "1A 
 - Mix two gates' changes in one list, or ask rulings that are not in the checkpoint file.
 - Ask the designer to read diffs, logs or test names: the list is the only thing they need.
 - Treat a PASS as approval of the look: visual approval stays with the art-direction session.
+
+## 5. The gate report: retrospective, then replan (added 2026-10-11)
+
+Every gate ships one **gate report** (`docs/process/templates/GATE_REPORT.md`, written to
+`docs/handoff/gates/<PT-nnn>.md`) next to the playtest list and the checkpoint. It has three parts,
+in this order, and the orchestrator writes it before asking anything:
+
+1. **Verdict**: the gate checks and what shipped.
+2. **Retrospective**: this wave against the previous one on six rows (agents and handoffs, test
+   minutes, batch tokens and cache share, hook denials, batch precision, gate outcome), what
+   blocked, and at most three proposed process changes. A proposed change is a checkpoint
+   default (veto by number); when it stands, the process doc is edited in the same commit and
+   `docs/process/CHANGELOG.md` gets its line. This is the only way the process changes.
+3. **Replan**, as the retrospective's last step. **Light** at an ordinary gate: the remaining
+   boxes of the current milestone re-grouped into waves with an estimate, reordered only when a
+   retrospective row says so. **Full** at a milestone-completion gate, or after a second failed
+   gate on the same slice: MILESTONES.md and GAP_ANALYSIS.md re-read, items the finished work
+   made obsolete or urgent flagged, the **next milestone named with its acceptance list** and an
+   estimate in waves and gates, and the proposed order as item 1 of the checkpoint with the
+   recommended option first ("start M-next", reorder, or wait). The designer's answer is the
+   "start M-next" ruling; nothing starts before it.
+
+The report is one page. No agents run for it; it reads STATE.md's cost rows, the ingest reports
+and the milestone file, nothing else.
