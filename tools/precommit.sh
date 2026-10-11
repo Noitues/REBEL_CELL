@@ -17,7 +17,7 @@ if [ "$1" = "--base" ]; then MODE=""; BASE="--base $2"; fi
 if [ -n "$MODE" ]; then
   FILES=$(git diff --name-only --cached)
 else
-  FILES=$( (git diff --name-only "${2:-main}...HEAD"; git diff --name-only; git ls-files --others --exclude-standard) | sort -u)
+  FILES=$( (git diff --name-only "${2:-main}...HEAD"; git diff --name-only --cached; git diff --name-only; git ls-files --others --exclude-standard) | sort -u)  # committed, staged, unstaged, new
 fi
 [ -z "$FILES" ] && { echo "precommit: nothing changed"; exit 0; }
 
