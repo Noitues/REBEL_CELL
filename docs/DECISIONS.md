@@ -45,6 +45,16 @@ Panopticon / Launch Control carry none, and a selected Site with no room within 
 no tag at all. The sweep now asserts H22's landmark tags only on an `ALL` map and, under FOCUS / LIT, that every tag
 is one `tag_allowed` permits; a selected landmark is still labelled (the every-selection loop). No code change.
 
+### 2026-10-11 — M14 RED-TIP: a crowded focus tip's last resort is a clear spot beside what it keeps off
+`test_a_focus_tip_folds_narrower_to_keep_off_skip_at_big_text` went red after B5 (loot FIGHT WON with the
+SKIP / CONTINUE block level with the row): at text scale 2.0 no fold had a clear spot beside the row and the
+least-covering one (the left margin) lay over the first card. B5's layout is art-direction approved, so the
+test's premise stands and `FocusTip._place` gains a last pass, run only when every fold still covers
+something: the tip at its own columns or its first fold, lettering stepping down (FONT_SHARES), at the first
+fully clear spot from `FocusTip.open_spot` (under / beside / over each kept-off rect and the control, nearest
+the control first), the top bar (HudBar) counted as kept off for this pass. Nothing fully clear: the folds'
+best stays (FOLD_MIN unchanged). Captures: 2.0 sits over the focused card; 1.6 under SKIP / CONTINUE.
+
 ### 2026-10-11 — Designer rulings on the process follow-ups (items 3–9)
 3. **Reading rules enforced by a hook**: `.claude/settings.json` runs `tools/hooks/guard_reads.py` before every
    Read / Bash / PowerShell call; it denies reading `docs/DECISIONS.md`, `docs/decisions/*.md`, `*.log` and
