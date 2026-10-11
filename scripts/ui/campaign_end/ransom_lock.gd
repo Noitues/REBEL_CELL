@@ -131,6 +131,9 @@ func setup(corporation_id: StringName, display_name: String, p_home_now: int, p_
 	m.set_shader_parameter(&"back", style.back())
 	m.set_shader_parameter(&"motif_tex", load(MOTIF_ART % MOTIF_NAMES[clampi(style.motif, 0, MOTIF_NAMES.size() - 1)]))
 	glass.material = m
+	# M14 SPILL: the takeover reads the station as drawn under it (the HQ's bars and marks too),
+	# not the scrim layer's AfterScrim copy of the city alone.
+	ScreenCopy.before(glass)
 	add_child(glass)
 	padlocks = Control.new()
 	padlocks.name = "Padlocks"

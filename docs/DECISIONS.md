@@ -37,6 +37,34 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-11 — M14 SPILL: every screen reader over the UI makes its own copy of the screen
+A canvas shader on `hint_screen_texture` reads the last copy of the screen made in its canvas layer. Since
+B1a b (10-06) that is usually the scrim's `AfterScrim`, taken over the pooled world before any UI, so a
+reader drawn later paints that world back over the UI drawn between (the Mainframe's SignSpill, entry below).
+- **Checked.** `LightSpill.new()` has one runtime user (the Mainframe's SignSpill); `GAIN_COMBAT` / `GAIN_CITY`
+  have none (the combat and city spill is the 3D `uniforms_3d` on toon materials, which reads no screen).
+  So every screen reader was probed instead: `tools/visual_qa/spill_probe.tscn` (review pack, all 91
+  screens at text 1.0, windowed) captures each visible reader as is, with a viewport BackBufferCopy
+  inserted just before it, and hidden; a reader whose fresh-copy picture moves more than the noise floor
+  reads a stale copy.
+- **Affected (the page behind vanished; only the city showed through).** The glass blur (`GlassScrim`) of
+  every modal: the title's delete-slot confirm, the HQ / route / fight pause menus (`Backdrop`, except the
+  fight's, first reader on its layer), their quit / abandon confirms (`ModalScrim`, also over the fight's
+  pause, which reused the pause backdrop's copy), the deck viewers (HQ loadout, VIEW LOADOUT, card detail,
+  the Mainframe's REMOVE A CARD). The campaign-lost takeover (`RansomLock` `Takeover`) erased the HQ's top
+  bar and marks it is meant to take over (the station reads darker under it now: its true picture).
+- **Unaffected.** Fx's vignette (layer 100, its own copy), the title / pages' `TiltShift` (before the scrim),
+  the fight's `HeatGlitch` (straight after the scrim; probed with the glitch on), the run end's `GreyCity`,
+  the event's CAM feed (its own copy), the scrim's own pools (BeforeScrim). The 3D city's post passes live in
+  their SubViewport (not probed; M14 PERF owns them).
+- **Fix: a kit helper.** `ScreenCopy.before(reader)` adds a viewport BackBufferCopy as an internal child drawn
+  behind its parent, so the copy is made right before the reader wherever it draws (top level, behind its
+  modal, any layer) and follows its visibility. `GlassScrim`, `LightSpill` and the takeover call it; the
+  Mainframe's sibling `SignSpillCopy` is gone (LightSpill carries the copy). Cost: one viewport copy per
+  visible reader (a modal, a sign).
+Test: `test_art1_material_kit :: test_screen_readers_over_the_ui_carry_their_own_screen_copy`. Probe after the fix:
+every reader clean. Sheet (before | after, text 1.0): `docs/art_review/PARITY/fixes/SPILL.jpg`.
+
 ### 2026-10-11 — Mainframe subtitle fits the screen
 The Mainframe page (ART-9 4A) asked its host for a 1240 px width (`SHOP_ROOM`). B5c's sticker safe margin
 (24 px × text scale at each side) came on top of that, so the netrun's page column (and with it the top bar

@@ -440,6 +440,18 @@ func test_light_spill_breathes_only_while_effects_play_and_packs_3d_sources() ->
 	assert_eq((u["spill_colors"] as Array)[0].w, 2.0)
 
 
+## M14 SPILL: a screen reader drawn over the UI (a sign's light spill, a modal's glass blur) reads a
+## copy of the screen made just before it, not the scrim layer's AfterScrim copy of the world alone.
+func test_screen_readers_over_the_ui_carry_their_own_screen_copy() -> void:
+	for reader: CanvasItem in [LightSpill.new(), GlassScrim.new()]:
+		add_child_autofree(reader)
+		var copies := reader.get_children(true).filter(func(n: Node) -> bool: return n is BackBufferCopy)
+		assert_eq(copies.size(), 1, "%s: one copy of its own" % reader.get_class())
+		var copy := copies[0] as BackBufferCopy
+		assert_eq(copy.copy_mode, BackBufferCopy.COPY_MODE_VIEWPORT, "the whole screen")
+		assert_true(copy.show_behind_parent, "made before the reader draws")
+		assert_eq(reader.get_child_count(), 0, "internal: no page sees it among the reader's children")
+
 func test_the_toon_material_has_three_bands_an_ink_hull_and_spill_uniforms() -> void:
 	var m := ToonInkMaterial.make(Palette.NIGHT_BLOCK_LIT)
 	assert_not_null(m.next_pass, "the ink hull pass")
