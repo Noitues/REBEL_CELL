@@ -1,0 +1,7 @@
+{
+	"name": "docstrings_core",
+	"kind": "docstrings",
+	"files": ["scripts/core/*.gd", "scripts/core/handlers/*.gd"],
+	"context": {"deps": false},
+	"instructions": "Public functions, signals and class_name lines only."
+}

@@ -20,3 +20,6 @@ override.cfg
 
 # Saves and replays of runs from source (ART-0 S0; the folder carries its own .gdignore)
 /saves/
+
+# Batch API working folder (docs/process/02): payloads, results, patches
+batches/

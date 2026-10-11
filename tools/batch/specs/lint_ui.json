@@ -1,0 +1,6 @@
+{
+	"name": "lint_ui",
+	"kind": "lint_report",
+	"files": ["scripts/ui/**/*.gd"],
+	"context": {"deps": false}
+}

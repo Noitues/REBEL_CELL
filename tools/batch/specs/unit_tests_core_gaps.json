@@ -1,0 +1,7 @@
+{
+	"name": "unit_tests_core_gaps",
+	"kind": "unit_tests",
+	"files": ["scripts/core/heat_rules.gd", "scripts/core/exit_rules.gd", "scripts/core/campaign_rules.gd"],
+	"context": {"deps": true},
+	"instructions": "Rules only. Use RngService streams where the API takes one."
+}

@@ -253,7 +253,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("-j", "--jobs", type=int, default=4, help="number of shards (Godot processes)")
     ap.add_argument("--tier", choices=["all", "fast"], default="all")
-    ap.add_argument("--select", default="", help="only scripts whose path contains this text")
+    ap.add_argument("--select", action="append", default=[], help="only scripts whose path contains this text (repeatable: any match)")
     ap.add_argument("--godot", default=os.environ.get("GODOT", "godot"))
     ap.add_argument("--timeout", type=float, default=3600.0, help="seconds per shard")
     ap.add_argument("--out", default="", help="folder for shard logs and results (default: a new temp folder)")
@@ -273,7 +273,7 @@ def main() -> int:
     missing = [s for s in entries if s not in found]
     scripts = [s for s in found if args.tier == "all" or entries.get(s, {}).get("tier") == args.tier]
     if args.select:
-        scripts = [s for s in scripts if args.select in s]
+        scripts = [s for s in scripts if any(sel in s for sel in args.select)]
     if not scripts:
         print("run_tests: no scripts selected")
         return 2
