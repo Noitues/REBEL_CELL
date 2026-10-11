@@ -46,6 +46,8 @@ something: the tip at its own columns or its first fold, lettering stepping down
 fully clear spot from `FocusTip.open_spot` (under / beside / over each kept-off rect and the control, nearest
 the control first), the top bar (HudBar) counted as kept off for this pass. Nothing fully clear: the folds'
 best stays (FOLD_MIN unchanged). Captures: 2.0 sits over the focused card; 1.6 under SKIP / CONTINUE.
+Before | after sheet (loot page, pad focus on JAM, 1.0 / 1.6 / 2.0, the 2.0 tip boxed):
+`docs/art_review/PARITY/fixes/REDTIP.jpg`.
 
 ### 2026-10-11 — Designer rulings on the process follow-ups (items 3–9)
 3. **Reading rules enforced by a hook**: `.claude/settings.json` runs `tools/hooks/guard_reads.py` before every
