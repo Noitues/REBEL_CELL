@@ -1,0 +1,39 @@
+{
+ "name": "lint_ui_retry2",
+ "kind": "lint_report",
+ "max_tokens": 16000,
+ "files": [
+  "scripts/ui/kit/map_legend.gd",
+  "scripts/ui/wheel/attach/drone_dock.gd",
+  "scripts/ui/wheel/attach/card_preview_overlay.gd",
+  "scripts/ui/kit/site_marker.gd",
+  "scripts/ui/kit/palette.gd",
+  "scripts/ui/kit/palette_skins.gd",
+  "scripts/ui/kit/materials/grease_pencil_mark.gd",
+  "scripts/ui/kit/route_overlay.gd",
+  "scripts/ui/kit/heat_poster.gd",
+  "scripts/ui/kit/hud_result_chips.gd",
+  "scripts/ui/wheel/attach/attach_style.gd",
+  "scripts/ui/kit/raid_playout_panel.gd",
+  "scripts/ui/arena/combat_backdrop.gd",
+  "scripts/ui/arena/backdrop_catalog.gd",
+  "scripts/ui/combat_scene.gd",
+  "scripts/ui/campaign_end/ransom_lock.gd",
+  "scripts/ui/campaign_end/audit_dossier.gd",
+  "scripts/ui/wheel/wheel_face.gd",
+  "scripts/ui/kit/drop_layer.gd",
+  "scripts/ui/hq_run/hq_run_view.gd",
+  "scripts/ui/netrun_scene.gd",
+  "scripts/ui/kit/mainframe_sign.gd",
+  "scripts/ui/kit/grid_map_view.gd",
+  "scripts/ui/kit/hud_stats.gd",
+  "scripts/ui/kit/ui_theme.gd",
+  "scripts/ui/kit/portrait_feed.gd",
+  "scripts/ui/kit/ui_scrim_pools.gd",
+  "scripts/ui/kit/send_it_sticker.gd"
+ ],
+ "context": {
+  "deps": false
+ },
+ "instructions": "This file is large. Report at most 40 violations: every R1-R4 and R7 finding first, then R5, then S4, then S1-S3 only if room is left. One line each, no commentary."
+}

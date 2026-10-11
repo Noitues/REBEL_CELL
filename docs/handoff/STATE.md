@@ -32,7 +32,7 @@ Uncommitted: all of the above (stage explicitly); `project.godot` is the designe
 4. At "M14 complete": restore the push / pull_request triggers in `.github/workflows/ci.yml` (ruling 8).
 5. Month end: `python tools/archive_decisions.py` (ruling 5).
 Batches done 2026-10-11: lint_ui (281 Haiku requests: 226 reports, 54 truncated at 4 000 max_tokens → resubmitted as lint_ui_retry = msgbatch_01A3U8oUAhwQkP7q9zLMj6cW at 8 000, 1 no-envelope), decisions_digest (13 Sonnet requests, all ok → `docs/decisions/digests/`). Lint digest: `batches/lint_ui_out/LINT_DIGEST.md` (1 937 leads after noise filtering; R5 magic numbers 1 004, S3 docs 315, S1 types 259, S4 literals 146). Precision is Haiku-at-low: treat as leads for the auditor, not findings; next process step = a Sonnet `lint_verify` kind that confirms each lead against the file before it becomes a slice item.
-Batches in flight: lint_ui_retry (54), watcher running; ingest with `python tools/batch/ingest_results.py batches/lint_ui_retry.results.jsonl` then `python tools/batch/lint_digest.py batches/lint_ui_retry_out`.
+lint_ui_retry done (26 ok, 28 of the largest files still truncated at 8 000 → lint_ui_retry2 at 16 000 with a 40-finding cap). Combined lint digest kept at `docs/handoff/lint/LINT_UI_2026-10-11.md` (2 194 leads, 252 files).
 
 ## Decisions taken since the last STATE
 - CP-001 (1A 2A-never-×3 3A 4A) and follow-ups 3–9 — DECISIONS "2026-10-11 — Designer rulings CP-001" and "... process follow-ups (items 3–9)"
