@@ -922,9 +922,11 @@ func _connect_progress(share: float) -> void:
 ## ANIM-R4 H11a: the RAID INCOMING stamp's reading time (s): `raid_incoming_hold`, a
 ## reading time like CONNECTING's (it holds under reduce effects too; 0 only switched off).
 ## ANIM-R6 C14: read through the kit (Motion.seconds, as every other time), not raw.
+## M14 ART-6 acceptance (R7 C4): longer at a slower speed, never shorter than its raw time at
+## the raid's 2x / 4x (a reading time; Motion.speed is global while a raid plays fast).
 func note_hold() -> float:
 	var e := Motion.entry(NOTE_MOTION)
-	return Motion.seconds(NOTE_MOTION) if e != null and e.enabled else 0.0
+	return maxf(e.duration, Motion.seconds(NOTE_MOTION)) if e != null and e.enabled else 0.0
 
 
 func _hide_connect() -> void:

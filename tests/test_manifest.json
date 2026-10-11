@@ -581,6 +581,10 @@
 			"seconds": 12.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art6_acceptance.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art1_glyphs.gd": {
 			"seconds": 4.0,
 			"tier": "fast"

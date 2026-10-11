@@ -314,10 +314,12 @@ pipeline, the render spike)
 
 **ART-6 — Raid**
 - [x] The raid verdict sweep still matches `raid_verdict` (`test_raid_verdicts_and_numbers_agree_with_the_resolved_raid_for_every_corporation`, `test_the_verdict_is_cell_holds_only_when_nothing_is_lost_for_every_corporation_home_and_ice`; green after B3, 2026-10-11).
-- [ ] Reading holds never shortened at 2x / 4x (R7 C4).
-- [ ] Every changing state has a capture.
-- [ ] DOWN is the Site markers' white bolt over a greyed marker at every zoom; no amber dashed
-      socket (ruling 11).
+- [x] Reading holds never shortened at 2x / 4x (R7 C4) (`test_every_raid_reading_hold_is_never_shortened_at_2x_and_4x`; fix: RAID INCOMING's hold was divided by the speed, 2026-10-11).
+- [x] Every changing state has a capture (sheet `docs/art_review/ART-6/RAID_STATES.jpg`: setup, wave arrival, DOWN, TAKEN, HOLDS,
+      BREACHED, BREACHED bit burst, CELL HOLDS, AFTER-ACTION REPORT, interlude; `tools/design_lab/raid_lab` and the review pack).
+- [x] DOWN is the Site markers' white bolt over a greyed marker at every zoom; no amber dashed
+      socket (ruling 11) (`test_down_is_the_white_bolt_over_a_greyed_marker_at_every_raid_zoom`: raid_fit_min, mid, raid_fit_max,
+      zoom_ortho_max; capture rows 12-15 of `docs/art_review/ART-6/RAID_STATES.jpg`).
 
 **ART-7 — Netrun**
 - [x] The route sweeps for every corporation still pass (labels, you-are-here, fits) (`test_the_route_sweeps_every_corporation_with_labels_and_you_are_here`, `test_parity_route`, `test_route_frames_the_options_at_the_round_44_zoom_with_the_target_arrow`).
@@ -361,9 +363,7 @@ its items)
 the designer review); ART-2 clutter fixture at 1.0 / 1.6 (no fixture test exists);
 ART-5 per-corporation Grid captures vs reference (the Grid sweep follows the HQ's one tag, `test_city_map_sweeps`, but
 no per-corporation capture against the reference is logged) and 60 fps / Deck tier (12p: HQ idle 6.4 ms and combat 5.1 ms median on this
-machine, DECISIONS 2026-10-11 "Perf slice"; the target PC and Deck tier are not measured); ART-6 reading holds at 2x / 4x (no test
-asserts the holds against the speed), a capture for every changing state, and the DOWN bolt line at every zoom (`test_art5_grid_markers` asserts
-the grey sticker under the white bolt; no zoom sweep); ART-12 QA matrix, perf, full suite and audit (the audit is the side-by-side parity
+machine, DECISIONS 2026-10-11 "Perf slice"; the target PC and Deck tier are not measured); ART-12 QA matrix, perf, full suite and audit (the audit is the side-by-side parity
 audit, DECISIONS 2026-10-05 "Designer ruling: the M14 audit is a side-by-side art-pass parity audit").
 
 **After ART-12** (rulings 1, 8, 9; nothing deferred)

@@ -37,6 +37,32 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-11 — M14 ART-6 acceptance: reading holds at 2x / 4x, every state captured, DOWN at every zoom
+The three open ART-6 boxes (MILESTONES "ART-6 — Raid"), with evidence.
+- **Reading holds (R7 C4).** The raid's reading times are the raid_* HOLD entries (`raid_mark_hold`) and
+  the ones their views keep on the real clock (`raid_mark_write`, `raid_breached_write`, `raid_incoming_hold`).
+  `test_art6_acceptance` presses the playout's own 1x / 2x / 4x buttons (`RaidPlayoutPanel.set_speed`, the
+  global `Motion.speed`) and checks each holds at least its 1x time and its raw time, a whole DOWN / TAKEN /
+  INCOMING word and BREACHED's slow pass too; a new raid_* HOLD entry must join the list. **Defect fixed:**
+  `Fx.note_hold` (the jack cover's RAID INCOMING stamp) read `Motion.seconds`, so 2x / 4x cut it to 0.6 / 0.3 s;
+  now `maxf(raw, Motion.seconds)` like `ToastNote.hold_seconds` (a slower speed still holds longer). The
+  playout's own beats (`raid_step_gap`, the flips, the moves) are not reading holds: 2x / 4x speeds them up
+  by design; the result (stamps, CELL HOLDS, the report) stays until the player moves on.
+- **Captures.** `tools/design_lab/raid_lab` gains `wave_arrival`, `verdict_down`, `verdict_taken`,
+  `verdict_holds`, `report_losses` and `down_zoom_min/mid/max`; the interlude comes from the review pack
+  (`raid_incoming`, `raid_interlude`). TAKEN needs every node DOWN before a Solace raid (a DOWN node hit
+  again; the Meridian lab raids take none). Sheet `docs/art_review/ART-6/RAID_STATES.jpg` (15 frames,
+  1280x720 windowed). The lab sets DOWN after the HQ is up, so it clears the city's territory stamp for
+  that change (a past raid's, which a freshly loaded HQ never shows). Seen, not changed: the Solace raids'
+  DISPATCH "Home server lost" line carries into the next lab state's page (one process, many campaigns);
+  `report` is captured in its own launch.
+- **DOWN at every zoom (ruling 11).** `test_down_is_the_white_bolt_over_a_greyed_marker_at_every_raid_zoom`:
+  every socket type's DOWN image is fully grey with no amber pixel (the `fc_down` image, the amber dashed
+  ring, is checked to have them), DOWN wins over a DOWN forecast; on the raid setup a node DOWN before the
+  raid at ortho raid_fit_min, the middle, raid_fit_max and zoom_ortho_max (the setup's big-text floor,
+  `fit_hq_map`) draws the greyed DOWN socket, its Site marker v4 reads DOWN with a greyed ring and the
+  DISABLED sticker under the white bolt, both the same size on screen at every zoom. No defect found.
+
 ### 2026-10-11 — M14 FOLLOW-UP: letterhead names; takeover end frame
 Art director's APPROVED review of the close-out group, two follow-ups.
 - **Letterhead names (schema).** `CorporationData.letterhead_name` (String, "" by default): the
