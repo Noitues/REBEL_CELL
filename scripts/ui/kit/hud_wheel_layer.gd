@@ -74,7 +74,34 @@ func motion_running() -> bool:
 func _process(_delta: float) -> void:
 	place_rows()
 	_place_glyphs()
-	queue_redraw()
+	# M14 perf slice: the buttons redraw only when what they draw changes (they redrew every
+	# frame of every fight, ~3 ms of the close-up's frame with their glyphs).
+	var sig := draw_signature()
+	if sig != _drawn_sig:
+		_drawn_sig = sig
+		queue_redraw()
+
+
+## M14 perf slice: the last drawn draw_signature().
+var _drawn_sig: Array = []
+
+
+## M14 perf slice: everything _draw reads (the text scale and skin, the layer's place, and per
+## button its place, ring, direction, rim colour, hover, drop and key hint), so the layer redraws
+## only when one of them changes.
+func draw_signature() -> Array:
+	var origin := get_global_rect().position
+	var mouse := get_global_mouse_position()
+	var sig: Array = [Settings.text_scale, Settings.palette_skin, origin]
+	for b in buttons():
+		var wv: WheelView = b["view"]
+		var r: float = b["radius"]
+		var zone := {"kind": "arrow", "ring": b["ring"], "direction": b["direction"]}
+		var hot := WheelView._zone_is([wv.hover_zone], zone) or Vector2(b["center"]).distance_to(mouse) <= r
+		sig.append_array([b["center"], r, b["ring"], b["direction"], wv.wheel_color, hot,
+			WheelView._zone_is(wv.valid_zones, zone), wv.global_position,
+			wv.arrow_hint_rect(int(b["ring"]), int(b["direction"])), wv.arrow_hints.get(int(b["direction"]), "")])
+	return sig
 
 
 ## The buttons' rotate glyphs (picto_spin_ccw / picto_spin), one node per button.
@@ -94,10 +121,16 @@ func _place_glyphs() -> void:
 		var g: GlyphIcon = _glyphs[k]
 		var box := maxf(HudSkin.GLYPH_MIN_PX, float(b["radius"]) * 2.0 * GLYPH_SHARE)
 		var cell := GlyphIcon.cell_size_for(box)
-		g.glyph = HudSkin.glyph_name("ccw" if int(b["direction"]) < 0 else "cw")
-		g.box_px = box
+		# M14 perf slice: each setter redraws (or swaps the material): set only what changed.
+		var gn := HudSkin.glyph_name("ccw" if int(b["direction"]) < 0 else "cw")
+		if g.glyph != gn:
+			g.glyph = gn
+		if g.box_px != box:
+			g.box_px = box
 		var hot := Vector2(b["center"]).distance_to(mouse) <= float(b["radius"])
-		g.fill = HudSkin.TERMINAL_HI if hot else HudSkin.TERMINAL_TEXT
+		var fill := HudSkin.TERMINAL_HI if hot else HudSkin.TERMINAL_TEXT
+		if g.fill != fill:
+			g.fill = fill
 		g.position = Vector2(b["center"]) - origin - cell * 0.5
 
 
