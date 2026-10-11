@@ -122,8 +122,9 @@ func test_the_street_starts_under_the_subtitle_band_and_the_board_ends_on_screen
 		var facade := scene.find_child("MainframeFacade", true, false) as MainframeFacade
 		assert_true(facade.plate_rect().position.y + facade.global_position.y >= band.end.y - 0.5, "at %.1f: the sign's plate starts under the band" % scale)
 		var spill := board.get_parent().get_node(^"SignSpill") as LightSpill
-		var before := spill.get_parent().get_child(spill.get_index() - 1) as BackBufferCopy
-		assert_true(before != null and before.copy_mode == BackBufferCopy.COPY_MODE_VIEWPORT, "at %.1f: a fresh copy of the street just before the spill" % scale)
+		# M14 SPILL: the spill carries its own copy (ScreenCopy, an internal child drawn behind it).
+		var before := spill.get_node_or_null(NodePath(ScreenCopy.NODE_NAME)) as BackBufferCopy
+		assert_true(before != null and before.copy_mode == BackBufferCopy.COPY_MODE_VIEWPORT and before.show_behind_parent, "at %.1f: a fresh copy of the street just before the spill" % scale)
 		await _close(scene)
 
 

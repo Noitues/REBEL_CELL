@@ -3855,13 +3855,8 @@ func _show_shop() -> void:
 	var spill := LightSpill.new()
 	spill.name = "SignSpill"
 	spill.gain = LightSpill.GAIN_SHOP * SHOP_SPILL_GAIN
-	# The spill reads the street under it: a copy of the screen just before it. The scrim's
-	# AfterScrim copy is stale by then (a screen reader in the top bar runs between), and the spill
-	# drew that blurred picture over the sign's third of the street (a rect copy left part of it).
-	var spill_copy := BackBufferCopy.new()
-	spill_copy.name = "SignSpillCopy"
-	spill_copy.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
-	root.add_child(spill_copy)
+	# The spill reads the street under it through its own copy of the screen (LightSpill's
+	# ScreenCopy, M14 SPILL): the scrim's AfterScrim copy is stale by then.
 	root.add_child(spill)
 	var cols := HBoxContainer.new()
 	cols.name = "Shelves"

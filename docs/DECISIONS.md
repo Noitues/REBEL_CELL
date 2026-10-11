@@ -100,6 +100,34 @@ Art director (B3 review): at text 1.6 / 2.0 THREAT INTEL lost its foot and the r
   - **Tests**: `test_big_text_intel_order_fit` (fast): at 1.0 / 1.6 / 2.0, two campaigns: fit.mul x scale >= 1.0 and no label smaller than at 1.0 on THREAT INTEL and the order; THREAT INTEL whole or paged (page 1 threats only, page 2 routes only, BACK); every order page whole, the pages together carry every row; the paper tab turned with the sheet, its top at the sheet's foot, in view, inside the sticker safe margin; YOUR NETWORK one row only from 1.6 (words whole on one line, never under 1.0, count at the right), whole on focus (CORE's name focused and in view), one row again when the focus leaves; the letterhead name left of the seal for four corps at three sizes, the pure fit's two-line and ellipsis cases; `floor_for` never under 1/s; the fit box folds into pages. Changed: `test_b3_raid_map_route` (in one-row mode the row stands for the CORE row). Sheets: `docs/art_review/PARITY/fixes/BIGTEXT.jpg` (round a | round b at 1.0 / 1.6 / 2.0, page 2s), `BIGTEXT_native_1080_x1.6.jpg`, `BIGTEXT_native_1080_x2.0.jpg`.
   - **Process fix (outside the area)**: `tools/precommit.sh`'s parse step ran `godot --check-only -s <file>`, which compiles a lone script without the autoloads and failed every script naming `Settings`, `Motion`... (the hook refused every such commit). It now loads the changed scripts through `tools/parse_check.gd` (one launch, autoloads known, `PARSE FAIL: <path>` per failure); the same tool landed with the precommit-tools branch (5cdb47ec), merged here, theirs kept.
 
+### 2026-10-11 — M14 SPILL: every screen reader over the UI makes its own copy of the screen
+A canvas shader on `hint_screen_texture` reads the last copy of the screen made in its canvas layer. Since
+B1a b (10-06) that is usually the scrim's `AfterScrim`, taken over the pooled world before any UI, so a
+reader drawn later paints that world back over the UI drawn between (the Mainframe's SignSpill, entry below).
+- **Checked.** `LightSpill.new()` has one runtime user (the Mainframe's SignSpill); `GAIN_COMBAT` / `GAIN_CITY`
+  have none (the combat and city spill is the 3D `uniforms_3d` on toon materials, which reads no screen).
+  So every screen reader was probed instead: `tools/visual_qa/spill_probe.tscn` (review pack, all 91
+  screens at text 1.0, windowed) captures each visible reader as is, with a viewport BackBufferCopy
+  inserted just before it, and hidden; a reader whose fresh-copy picture moves more than the noise floor
+  reads a stale copy.
+- **Affected (the page behind vanished; only the city showed through).** The glass blur (`GlassScrim`) of
+  every modal: the title's delete-slot confirm, the HQ / route / fight pause menus (`Backdrop`, except the
+  fight's, first reader on its layer), their quit / abandon confirms (`ModalScrim`, also over the fight's
+  pause, which reused the pause backdrop's copy), the deck viewers (HQ loadout, VIEW LOADOUT, card detail,
+  the Mainframe's REMOVE A CARD). The campaign-lost takeover (`RansomLock` `Takeover`) erased the HQ's top
+  bar and marks it is meant to take over (the station reads darker under it now: its true picture).
+- **Unaffected.** Fx's vignette (layer 100, its own copy), the title / pages' `TiltShift` (before the scrim),
+  the fight's `HeatGlitch` (straight after the scrim; probed with the glitch on), the run end's `GreyCity`,
+  the event's CAM feed (its own copy), the scrim's own pools (BeforeScrim). The 3D city's post passes live in
+  their SubViewport (not probed; M14 PERF owns them).
+- **Fix: a kit helper.** `ScreenCopy.before(reader)` adds a viewport BackBufferCopy as an internal child drawn
+  behind its parent, so the copy is made right before the reader wherever it draws (top level, behind its
+  modal, any layer) and follows its visibility. `GlassScrim`, `LightSpill` and the takeover call it; the
+  Mainframe's sibling `SignSpillCopy` is gone (LightSpill carries the copy). Cost: one viewport copy per
+  visible reader (a modal, a sign).
+Test: `test_art1_material_kit :: test_screen_readers_over_the_ui_carry_their_own_screen_copy`. Probe after the fix:
+every reader clean. Sheet (before | after, text 1.0): `docs/art_review/PARITY/fixes/SPILL.jpg`.
+
 ### 2026-10-11 — Mainframe subtitle fits the screen
 The Mainframe page (ART-9 4A) asked its host for a 1240 px width (`SHOP_ROOM`). B5c's sticker safe margin
 (24 px × text scale at each side) came on top of that, so the netrun's page column (and with it the top bar
