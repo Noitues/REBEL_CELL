@@ -289,7 +289,7 @@ pipeline, the render spike)
 
 **ART-2 — Combat wheel stack**
 - [ ] The worst-case clutter fixture renders legibly at 1.0 and 1.6.
-- [ ] Preview == result still holds.
+- [x] Preview == result still holds (`test_slices_a_play_changes_are_circled_in_pencil_true_to_the_preview`, `test_the_card_play_preview_lands_where_the_card_lands`; the result plate on the affected wheel adds no rule, DECISIONS 2026-10-05 "Parity fix — card aiming and combat HUD").
 - [x] Wheel draw time is within budget (3.8 ms mean vs 4 ms, 2A).
 
 **ART-3 — Cards and FX**
@@ -299,7 +299,7 @@ pipeline, the render spike)
 
 **ART-4 — HUD**
 - [x] GDD 2.10 holds: chip == resolve for all enemies × seeds (the H23/H24 sweeps re-used).
-- [ ] Pad reachability.
+- [x] Pad reachability (`test_pad_reachability`: `test_combat_is_pad_reachable`, `test_combat_inside_a_netrun_is_pad_reachable`; `test_every_combat_action_is_reachable_from_a_pad`).
 - [x] Fits at 2.0 (`test_the_hud_fits_at_every_text_size`).
 
 ### Group 3 — City
@@ -313,19 +313,19 @@ pipeline, the render spike)
 - [x] Logic-side tests headless (projection, picking, label placement); render verified windowed.
 
 **ART-6 — Raid**
-- [ ] The raid verdict sweep still matches `raid_verdict`.
+- [x] The raid verdict sweep still matches `raid_verdict` (`test_raid_verdicts_and_numbers_agree_with_the_resolved_raid_for_every_corporation`, `test_the_verdict_is_cell_holds_only_when_nothing_is_lost_for_every_corporation_home_and_ice`; green after B3, 2026-10-11).
 - [ ] Reading holds never shortened at 2x / 4x (R7 C4).
 - [ ] Every changing state has a capture.
 - [ ] DOWN is the Site markers' white bolt over a greyed marker at every zoom; no amber dashed
       socket (ruling 11).
 
 **ART-7 — Netrun**
-- [ ] The route sweeps for every corporation still pass (labels, you-are-here, fits).
-- [ ] The transition skips with one press (STYLE_GUIDE 5.1).
+- [x] The route sweeps for every corporation still pass (labels, you-are-here, fits) (`test_the_route_sweeps_every_corporation_with_labels_and_you_are_here`, `test_parity_route`, `test_route_frames_the_options_at_the_round_44_zoom_with_the_target_arrow`).
+- [x] The transition skips with one press (STYLE_GUIDE 5.1) (`test_one_press_skips_the_link_jack`).
 
 **ART-8 — HQ runs**
-- [ ] Each corporation's HQ run is playable and captured; the boss backdrop matches the city
-      model (D17).
+- [x] Each corporation's HQ run is playable and captured; the boss backdrop matches the city
+      model (D17) (`test_the_canyon_stands_on_its_own_lots_and_the_corps_on_their_hq_lots`, `test_hqrun_04_full_maps_read_on_every_compound`, `test_hqrun_05_06_07_the_corporations_are_framed_as_their_concepts`; sheet `docs/art_review/PARITY/fixes/HQRUN.jpg`, DECISIONS 2026-10-05 "Parity fix — HQ runs and gate").
 
 ### Group 4 — Screens
 - [ ] Group 4 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only").
@@ -357,12 +357,14 @@ its items)
 - [ ] **One full-suite run** in isolation (the only one in M14), then **the M14 audit** (the only one): vertical / horizontal / naive over every ART-0…12 change, fix
       rounds until CLEAN (nothing deferred, P3s included); "M14 complete" logged in DECISIONS.
 
-*Left unticked by ART-12 12b, and why:* the four "Group n merged" boxes (they wait for the full-suite run and
-the designer review); ART-2 clutter fixture at 1.0 / 1.6 and "preview == result still holds" (confirm in the full
-run; no named test here); ART-4 pad reachability; ART-5 per-corporation Grid captures vs reference and 60 fps /
-Deck tier (12p); ART-6 verdict sweep, reading holds at 2x / 4x, a capture for every changing state and the DOWN
-bolt line (3A captured it; the playout capture is for 12q); ART-7 route sweeps and the one-press skip; ART-8
-per-corporation HQ run captures and D17 check; ART-12 QA matrix, perf, full suite and audit.
+*Still open after the 12b-2 pass (2026-10-11), and why:* the four "Group n merged" boxes (they wait for the full-suite run and
+the designer review); ART-2 clutter fixture at 1.0 / 1.6 (no fixture test exists);
+ART-5 per-corporation Grid captures vs reference (the Grid sweep follows the HQ's one tag, `test_city_map_sweeps`, but
+no per-corporation capture against the reference is logged) and 60 fps / Deck tier (12p: HQ idle 6.4 ms and combat 5.1 ms median on this
+machine, DECISIONS 2026-10-11 "Perf slice"; the target PC and Deck tier are not measured); ART-6 reading holds at 2x / 4x (no test
+asserts the holds against the speed), a capture for every changing state, and the DOWN bolt line at every zoom (`test_art5_grid_markers` asserts
+the grey sticker under the white bolt; no zoom sweep); ART-12 QA matrix, perf, full suite and audit (the audit is the side-by-side parity
+audit, DECISIONS 2026-10-05 "Designer ruling: the M14 audit is a side-by-side art-pass parity audit").
 
 **After ART-12** (rulings 1, 8, 9; nothing deferred)
 - [ ] **R7 re-evaluation:** every ANIM-R7 finding (`docs/handoff/anim_r7/`) re-checked against the
