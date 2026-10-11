@@ -42,7 +42,9 @@ GATE ──► python tools/run_tests.py -j 4       ~5 min, isolated   the full 
   `content/` → plus the content guards; a change to a hub class that fans out to more than half
   the scripts → the fast tier instead (the full suite catches the rest at the gate). Nothing
   mapped → the fast tier, never "no tests".
-- **Pre-commit** is `tools/precommit.sh` (install: `printf 'bash tools/precommit.sh\n' > .git/hooks/pre-commit`).
+- **Pre-commit** is `tools/precommit.sh` (installed in this clone on 2026-10-11; elsewhere:
+  `printf '#!/bin/sh\nbash tools/precommit.sh\n' > .git/hooks/pre-commit`, the shebang is required).
+  The hook is shared by every worktree of the clone, so agents' commits run it too.
   Its parse step uses Godot's `--check-only` per changed file (seconds), so a typo never reaches a
   test run.
 - **Gates** are the only place the full suite runs: a User-Ready Gate (doc 04), the end of a

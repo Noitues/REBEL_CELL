@@ -8,7 +8,7 @@
 #
 # Logs go to $SP (default %TEMP%\rebel_cell_precommit). Prints one "name=<exit>" line per step;
 # exits non-zero on the first red step. Install as a hook with:
-#   printf 'bash tools/precommit.sh\n' > .git/hooks/pre-commit
+#   printf '#!/bin/sh\nbash tools/precommit.sh\n' > .git/hooks/pre-commit   (the shebang is required; git cannot spawn the hook without it)
 cd "$(git rev-parse --show-toplevel)" || exit 1
 SP="${SP:-$TEMP/rebel_cell_precommit}"; mkdir -p "$SP"
 MODE="--staged"; BASE=""
