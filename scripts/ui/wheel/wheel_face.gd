@@ -376,7 +376,7 @@ static func banner(ci: CanvasItem, center_x: float, bottom: float, k: float, tit
 	var font := Palette.display()
 	var tf := maxi(1, roundi(BANNER_TITLE * k))
 	var sf := maxi(MIN_TEXT_PX, roundi(BANNER_SUB * k))
-	var tw := maxf(font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, tf).x, Palette.mono().get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, sf).x) + BANNER_PAD * k
+	var tw := _banner_width(title, sub, k)
 	var y1 := bottom
 	var y0 := y1 - BANNER_H * k
 	var x0 := center_x - tw * 0.5
@@ -400,6 +400,18 @@ static func banner(ci: CanvasItem, center_x: float, bottom: float, k: float, tit
 	var sw := Palette.mono().get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, sf).x
 	ci.draw_string(Palette.mono(), Vector2(center_x - sw * 0.5, y1 - 14.0 * k), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, sf, Color(accent, alpha))
 	return Rect2(x0 - 20.0 * k, y0, tw + 40.0 * k, y1 - y0 + 16.0 * k)
+
+
+## The boss banner's rect (`banner` draws it and returns the same) without drawing it.
+static func banner_rect(center_x: float, bottom: float, k: float, title: String, sub: String) -> Rect2:
+	var tw := _banner_width(title, sub, k)
+	return Rect2(center_x - tw * 0.5 - 20.0 * k, bottom - BANNER_H * k, tw + 40.0 * k, BANNER_H * k + 16.0 * k)
+
+
+static func _banner_width(title: String, sub: String, k: float) -> float:
+	var tf := maxi(1, roundi(BANNER_TITLE * k))
+	var sf := maxi(MIN_TEXT_PX, roundi(BANNER_SUB * k))
+	return maxf(Palette.display().get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, tf).x, Palette.mono().get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, sf).x) + BANNER_PAD * k
 
 
 ## Crest lugs (3.16): corp-crest hexagons on the threat ring at 90 and 270 degrees.

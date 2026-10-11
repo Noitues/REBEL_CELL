@@ -573,6 +573,10 @@
 			"seconds": 12.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_art2_clutter_fixture.gd": {
+			"seconds": 4.3,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art2_cards_fx.gd": {
 			"seconds": 8.0,
 			"tier": "fast"
@@ -583,6 +587,10 @@
 		},
 		"res://tests/unit/test_art6_acceptance.gd": {
 			"seconds": 8.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_art5_grid_per_corp.gd": {
+			"seconds": 10.9,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_art1_glyphs.gd": {

@@ -2058,8 +2058,7 @@ func _draw_view() -> void:
 	_draw_landing(center, k)
 	_draw_guards(center, k)
 	if kit.is_boss and radius > WheelFace.LOD_RADIUS:
-		var top := frame_master() + WheelFace.BLADE_TOP
-		WheelFace.banner(self, center.x, center.y - (top + 8.0) * k, k, shown_name().to_upper(), _banner_sub(), kit.accent)
+		WheelFace.banner(self, center.x, _banner_bottom(), k, shown_name().to_upper(), _banner_sub(), kit.accent)
 	# Telegraphed migration (GDD 2.11, 9.2): next turn's needles, dashed and flickering.
 	for p in wheel.pending_pointer_ticks:
 		var a := _ang(p)
@@ -2567,6 +2566,18 @@ func _rail_word_tint(index: int) -> Color:
 		RC.PrecisionTier.WEAK:
 			return Palette.CRT_AMBER
 	return Palette.TEXT_HI
+
+
+## The boss banner's foot (local y): over the blade's top.
+func _banner_bottom() -> float:
+	return _center().y - (frame_master() + WheelFace.BLADE_TOP + 8.0) * art_scale()
+
+
+## The boss banner's rect (local; empty when the wheel shows none): drones keep off it.
+func banner_rect() -> Rect2:
+	if kit == null or not kit.is_boss or _radius() <= WheelFace.LOD_RADIUS or combatant == null:
+		return Rect2()
+	return WheelFace.banner_rect(_center().x, _banner_bottom(), art_scale(), shown_name().to_upper(), _banner_sub())
 
 
 ## The boss banner's second line: corp, rank and phase (frames.banner).

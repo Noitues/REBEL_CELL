@@ -31,6 +31,7 @@ const COMBAT := preload("res://scenes/combat/combat_scene.tscn")
 const NETRUN := preload("res://scenes/netrun_map/netrun_scene.tscn")
 const FILTER_SHADER := preload("res://tools/visual_qa/cvd_filter.gdshader")
 const ErrorLog := preload("res://tools/visual_qa/review_pack_log.gd")
+const ClutterFixture := preload("res://tools/visual_qa/clutter_fixture.gd")
 
 const SLOT := "gut_review_pack"
 const SAVE_DIR := "user://saves/review_pack"
@@ -141,6 +142,7 @@ const SCREENS := [
 	["combat_refused", "_s_combat_refused", "A respin refused for lack of RAM."],
 	["combat_boss_p2", "_s_combat_boss_p2", "Boss fight in phase 2."],
 	["combat_boss_p3", "_s_combat_boss_p3", "Boss fight in phase 3."],
+	["combat_clutter", "_s_combat_clutter", "ART-2 acceptance: the worst-case clutter fixture (arena_lab worst: every slot docked on both wheels, Firmware everywhere, every Daemon, the docks bloomed, a card hovered)."],
 	["combat_victory", "_s_combat_victory", "The killing turn: VICTORY."],
 	["combat_defeat", "_s_combat_defeat", "The losing turn: DEFEAT."],
 	["loot", "_s_loot", "Picking a card reward."],
@@ -1367,6 +1369,15 @@ func _s_combat_boss_p2() -> void:
 
 func _s_combat_boss_p3() -> void:
 	await _boss_phase(BOSS_P3_SHARE)
+
+
+## ART-2 acceptance: the boss fight dressed as the worst-case clutter fixture (ClutterFixture).
+func _s_combat_clutter() -> void:
+	var combat := await _boss_fight()
+	if combat == null:
+		return
+	ClutterFixture.dress(combat)
+	await _settle(combat.get_parent())
 
 
 func _combat_end(kind: String) -> void:

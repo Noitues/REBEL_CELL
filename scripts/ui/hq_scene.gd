@@ -3590,7 +3590,11 @@ const ROW_STATUS := "STATUS" # TR
 ## crew's polaroid names who goes).
 func _site_holo(site: SiteData, launchable: Array[SiteData], living: Array[OperativeState]) -> SiteHoloCard:
 	var c := RunManager.campaign
-	var corp_word := TextDb.t(RunManager.corporation, "display_name").to_upper()
+	# ART-5 acceptance: the corp's letterhead name (MERIDIAN FREIGHT), as the holo's doc says; the
+	# full name cut Meridian's file number off at 1.0.
+	var corp_word := CorpPaperPanel.letterhead_of(RunManager.corporation)
+	if corp_word == "":
+		corp_word = TextDb.t(RunManager.corporation, "display_name").to_upper()
 	var title := "%s  //  %s" % [CityMapOverlay.tier_text(site.tier), site_name(site.id).to_upper()]
 	var card := SiteHoloCard.new(c.corporation_id, title, tr(SiteHoloCard.FILE_LINE) % [corp_word, "%03d" % SiteHoloCard.file_number(site.id)])
 	card.set_meta(&"shows", [site.id, int(c.grid.status_of(site.id))])  # ANIM-R3 B6: what refresh_site_card compares
