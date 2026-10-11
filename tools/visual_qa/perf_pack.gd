@@ -601,6 +601,15 @@ func _s_cpu_probe_combat() -> void:
 ## the overlay's and the route layer's processing off).
 func _s_map_probe_hq() -> void:
 	await _s_b4_idle()
+	for o: CityMapOverlay in get_tree().root.find_children("*", "CityMapOverlay", true, false):
+		var kinds := {}
+		for e: Dictionary in o.edges:
+			var kind := "pencil" if e.get("pencil", false) else ("depowered" if e.get("depowered", false) else ("locked" if e.get("locked", false)
+				else ("dashed" if o._is_dashed(e) else ("flow" if e.get("flow", false) else "still"))))
+			if e.get("arrows", false):
+				kind += "+arrows"
+			kinds[kind] = int(kinds.get(kind, 0)) + 1
+		print("PROBE map edges=%d look=%d packets=%s crawl=%.2f kinds=%s" % [o.edges.size(), o.look, str(o.packets), o.crawl_speed(), str(kinds)])
 	var whole := await _probe_ms()
 	print("PROBE map whole frame_ms=%.2f" % whole)
 	var parts: Array[CanvasItem] = []
@@ -634,49 +643,71 @@ func _s_map_probe_hq() -> void:
 	print("PROBE map whole_again frame_ms=%.2f" % await _probe_ms())
 
 
-## PERF slice: the same picture check of CityMapOverlay.flow_batched: the HQ idle's map held
-## still (its processing off, its clock fixed), frames grabbed batched, unbatched and batched
-## again into <out>/flow_diff_<n>.png (compare them off line, e.g. round the chevrons).
+## PERF slice: the same picture check of the flow layer's modes: the HQ idle's map held still
+## (its processing off, its clock fixed at FLOW_DIFF_T s so the phases are not 0), frames
+## grabbed per mode into <out>/flow_diff_<n>.png: 0 the still mesh (CityMapOverlay.flow_shader),
+## 1 the CPU one command per dash, 2 the CPU batched (flow_batched), 3 the mesh again (compare
+## them off line, e.g. round the chevrons).
+const FLOW_DIFF_T := 1.37
+
+
 func _s_flow_diff_hq() -> void:
 	await _s_b4_idle()
 	var overlays: Array[Node] = get_tree().root.find_children("*", "CityMapOverlay", true, false)
 	for o in overlays:
 		o.set_process(false)
-		o.anim_t = 0.0
+		o.anim_t = FLOW_DIFF_T
+		# Only the flow layer draws (the city, its traffic and rain move): every sibling of each
+		# node on the path from the root to it hidden.
+		var keep: Node = o._anim
+		while keep != null and keep.get_parent() != null:
+			for sib in keep.get_parent().get_children():
+				if sib != keep and (sib is CanvasItem or sib is CanvasLayer):
+					sib.visible = false
+			keep = keep.get_parent()
 	var n := 0
-	for batched in [true, false, true]:
+	for mode in [[true, true], [false, false], [false, true], [true, true]]:
 		for o in overlays:
-			o.flow_batched = batched
+			o.flow_shader = mode[0]
+			o.flow_batched = mode[1]
 			o._anim.queue_redraw()
 		for i in 30:
 			await get_tree().process_frame
 		var img := get_viewport().get_texture().get_image()
 		img.convert(Image.FORMAT_RGB8)
 		img.save_png(out_dir.path_join("flow_diff_%d.png" % n))
+		for o in overlays:
+			print("PROBE flow mode=%d shader=%s batched=%s state=%s" % [n, str(mode[0]), str(mode[1]), str(o.flow_state())])
 		n += 1
 	for o in overlays:
 		o.set_process(true)
-	print("PROBE flow frames saved: %s/flow_diff_0..2.png" % out_dir)
+	print("PROBE flow frames saved: %s/flow_diff_0..3.png" % out_dir)
 
 
 ## PROBE lines: the CanvasItems redrawn on most frames, then the frame with every node of one
 ## script class (or engine class) kept from processing, per class that processes.
 func _cpu_probe() -> void:
 	var counts := {}
-	var items: Array[Node] = get_tree().root.find_children("*", "CanvasItem", true, false)
+	# Untyped and by index: a node freed during the timing (a fight's FX) must not be assigned
+	# to a typed variable (the probe stopped on "previously freed instance").
+	var items: Array = get_tree().root.find_children("*", "CanvasItem", true, false)
+	var ids: Array[int] = []
 	var hooks: Array[Callable] = []
-	for ci in items:
-		var cb := _count_draw.bind(counts, ci.get_instance_id())
+	for i in items.size():
+		var id: int = (items[i] as Object).get_instance_id()
+		ids.append(id)
+		var cb := _count_draw.bind(counts, id)
 		hooks.append(cb)
-		(ci as CanvasItem).draw.connect(cb)
+		(items[i] as CanvasItem).draw.connect(cb)
 	var whole := await _probe_ms()
 	for i in items.size():
 		if is_instance_valid(items[i]):
 			(items[i] as CanvasItem).draw.disconnect(hooks[i])
 	var frames := int(PROBE_S * 1000.0 / maxf(0.1, whole))
-	for ci in items:
-		var k: int = counts.get(ci.get_instance_id(), 0)
-		if is_instance_valid(ci) and k > frames / 4:
+	for i in items.size():
+		var k: int = counts.get(ids[i], 0)
+		if k > frames / 4 and is_instance_valid(items[i]):
+			var ci := items[i] as Node
 			print("PROBE redraws=%d of ~%d frames: %s class=%s" % [k, frames, String(ci.get_path()).right(90), _cls(ci) if _cls(ci) != "" else ci.get_class()])
 	print("PROBE cpu whole frame_ms=%.2f" % whole)
 	var by_cls := {}
@@ -691,14 +722,15 @@ func _cpu_probe() -> void:
 	names.sort()
 	for c in names:
 		var ns: Array = by_cls[c]
-		for n: Node in ns:
-			n.set_process(false)
-			n.set_physics_process(false)
+		for i in ns.size():
+			if is_instance_valid(ns[i]):
+				(ns[i] as Node).set_process(false)
+				(ns[i] as Node).set_physics_process(false)
 		var ms := await _probe_ms()
-		for n: Node in ns:
-			if is_instance_valid(n):
-				n.set_process(true)
-				n.set_physics_process(true)
+		for i in ns.size():
+			if is_instance_valid(ns[i]):
+				(ns[i] as Node).set_process(true)
+				(ns[i] as Node).set_physics_process(true)
 		print("PROBE cpu no_process=%s nodes=%d frame_ms=%.2f saves_ms=%.2f" % [c, ns.size(), ms, whole - ms])
 
 
