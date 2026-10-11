@@ -25,16 +25,22 @@ func _init(p_corporation: StringName = &"", p_units: Array[Dictionary] = []) -> 
 	units = p_units
 	name = "IntelStrip"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var k := Settings.text_scale
+	_k = Settings.text_scale
+	var k := _k
 	var f := Palette.mono()
-	var px := UiTheme.font_px(UiTheme.CAPTION)
+	var px := UiTheme.font_px_at(UiTheme.CAPTION, k)
 	custom_minimum_size = Vector2(0, (ICON_R * RaidVehicle.RING * 2.0 + CAPTION_GAP) * k + f.get_height(px))
 
 
+## M14 BIG-TEXT b: the text scale the strip was built at (a fit box may build it smaller than the
+## player's): it draws at the size it measured.
+var _k: float = 1.0
+
+
 func _draw() -> void:
-	var k := Settings.text_scale
+	var k := _k
 	var f := Palette.mono()
-	var px := UiTheme.font_px(UiTheme.CAPTION)
+	var px := UiTheme.font_px_at(UiTheme.CAPTION, k)
 	var col_w := COLUMN * k
 	var per_row := maxi(1, floori(maxf(0.0, size.x - reserve_right) / col_w))
 	var r := ICON_R * k

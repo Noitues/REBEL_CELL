@@ -3840,7 +3840,10 @@ func _show_shop() -> void:
 	var root := Control.new()
 	root.name = "MainframeRoot"
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.custom_minimum_size = SHOP_ROOM
+	# The height only: the host is the screen less its safe margin and the pieces stand on the street
+	# by global position (a 1240 px width plus B5c's margin made the page, and with it the top bar
+	# and the subtitle band, wider than the screen: 1288 px at text 1.0, 1342 at 2.0).
+	root.custom_minimum_size = Vector2(0.0, SHOP_ROOM_HEIGHT)
 	# The pegboard: CARDS on the left; FIRMWARE, the info strip and DAEMONS on the right.
 	var board := ShopPegboard.new(minf(ts, ShopItem.OBJECT_MAX_SCALE))
 	# Big words: DAEMONS stands beside FIRMWARE (the board keeps its height) and the clerk keeps
@@ -3852,6 +3855,8 @@ func _show_shop() -> void:
 	var spill := LightSpill.new()
 	spill.name = "SignSpill"
 	spill.gain = LightSpill.GAIN_SHOP * SHOP_SPILL_GAIN
+	# The spill reads the street under it through its own copy of the screen (LightSpill's
+	# ScreenCopy, M14 SPILL): the scrim's AfterScrim copy is stale by then.
 	root.add_child(spill)
 	var cols := HBoxContainer.new()
 	cols.name = "Shelves"
@@ -4173,11 +4178,11 @@ func _show_shop() -> void:
 		wheel.spin_in()
 
 
-## ART-9 4A: the room the Mainframe page asks of its host (px; its pieces are placed on the
+## ART-9 4A: the height the Mainframe page asks of its host (px; never a width: its pieces are placed on the
 ## street by `_layout_shop`), the pegboard's column and row gaps, the CARDS shelf's room, the
 ## info strip's width (px at scale 1), the clerk's face (px), the gap kept under the top bar for
 ## the sign, and the wheel's hub below the screen's foot (px).
-const SHOP_ROOM := Vector2(1240, 520)
+const SHOP_ROOM_HEIGHT := 520.0
 const SHOP_COL_GAP := 22.0
 const SHOP_ROW_GAP := 6.0
 const SHOP_CARDS_ROOM := Vector2(470, 300)
@@ -4201,6 +4206,9 @@ const SHOP_SPILL_REACH := 260.0
 ## clerk's and LEAVE's margins from the screen's corners (px).
 const SHOP_BOARD_X := 692.0
 const SHOP_BOARD_TOP := 8.0
+## The least the pegboard shrinks to keep its foot on the screen at big words (1.6 / 2.0: the
+## words never read smaller than at text 1.6).
+const SHOP_BOARD_FIT_FLOOR := 0.8
 const SHOP_WHEEL_X := 672.0
 const SHOP_BIN_AT := Vector2(1090, 392)
 const SHOP_MARGIN := 14.0
@@ -4279,6 +4287,8 @@ func _layout_shop(root: Control) -> void:
 	var screen := get_viewport_rect().size
 	var o := root.global_position
 	var top := hud.get_global_rect().end.y
+	if subtitle_strip.visible:
+		top = maxf(top, subtitle_strip.get_global_rect().end.y)  # the street starts under the subtitle band
 	if _shop_facade != null and is_instance_valid(_shop_facade):
 		_shop_facade.top_clear = top + SHOP_SIGN_GAP
 	var sign_right := _shop_facade.plate_rect().end.x if _shop_facade != null and is_instance_valid(_shop_facade) else 150.0
@@ -4292,15 +4302,20 @@ func _layout_shop(root: Control) -> void:
 	if board == null or clerk == null or wheel == null or bin == null or leave == null:
 		return
 	board.size = board.get_combined_minimum_size()
+	# The board keeps its foot on the screen under the subtitle band: big words shrink it as a whole
+	# when it would run past the foot, never under SHOP_BOARD_FIT_FLOOR (the 1.6 look at 2.0).
+	var fit := clampf((screen.y - SHOP_MARGIN - top - SHOP_BOARD_TOP) / maxf(1.0, board.size.y), SHOP_BOARD_FIT_FLOOR, 1.0)
+	board.scale = Vector2(fit, fit)
+	var board_size := board.size * fit
 	bin.size = bin.get_combined_minimum_size()
 	# Between the sign and the bin; over the sign when the words are big (the sign is the world).
 	var right_edge := screen.x - SHOP_MARGIN * 2.0 - bin.size.x - SHOP_MARGIN
 	clerk.size = clerk.get_combined_minimum_size()
 	clerk.global_position = Vector2(SHOP_MARGIN * 2.0, screen.y - SHOP_MARGIN - clerk.size.y)
 	var left := sign_right + SHOP_MARGIN
-	if clerk.visible and top + SHOP_BOARD_TOP + board.size.y > clerk.global_position.y:
+	if clerk.visible and top + SHOP_BOARD_TOP + board_size.y > clerk.global_position.y:
 		left = maxf(left, clerk.get_global_rect().end.x + SHOP_MARGIN)  # big words: beside the clerk
-	var bx := clampf(SHOP_BOARD_X - board.size.x * 0.5, minf(left, right_edge - board.size.x), right_edge - board.size.x)
+	var bx := clampf(SHOP_BOARD_X - board_size.x * 0.5, minf(left, right_edge - board_size.x), right_edge - board_size.x)
 	board.global_position = Vector2(maxf(SHOP_MARGIN, bx), top + SHOP_BOARD_TOP)
 	leave.size = leave.get_combined_minimum_size()
 	if icon != null:

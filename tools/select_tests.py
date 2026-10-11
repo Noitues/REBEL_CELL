@@ -66,7 +66,7 @@ def changed_files(base: str, staged: bool) -> list[str]:
     if staged:
         out = git("diff", "--name-only", "--cached")
     else:
-        out = git("diff", "--name-only", f"{base}...HEAD") + git("diff", "--name-only") + git(
+        out = git("diff", "--name-only", f"{base}...HEAD") + git("diff", "--name-only", "--cached") + git("diff", "--name-only") + git(
             "ls-files", "--others", "--exclude-standard"
         )
     files = sorted({line.strip().replace("\\", "/") for line in out.splitlines() if line.strip()})

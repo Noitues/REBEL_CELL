@@ -169,6 +169,23 @@ func test_jack_in_with_a_raid_pending_plays_it_mid_run_and_says_so() -> void:
 	assert_true(RunManager.netrun.in_raid(), "the raid is the run's interlude")
 
 
+## What a page piece shows: the hand's tabs and cards stand at the foot of boxes taller than they
+## are (BIG-TEXT: the work order may use that room), so they count by their buttons.
+func _shown_rect(n: Control) -> Rect2:
+	if n.name != "HandTabs" and n.name != "Hand":
+		return n.get_global_rect()
+	var out := Rect2()
+	var first := true
+	var stack: Array[Node] = [n]
+	while not stack.is_empty():
+		var cur: Node = stack.pop_back()
+		if cur is BaseButton and (cur as Control).is_visible_in_tree():
+			out = (cur as Control).get_global_rect() if first else out.merge((cur as Control).get_global_rect())
+			first = false
+		stack.append_array(cur.get_children())
+	return n.get_global_rect() if first else out
+
+
 func test_the_setup_fits_at_every_text_scale() -> void:
 	for s in SCALES:
 		Settings.set_text_scale(s)
@@ -184,7 +201,7 @@ func test_the_setup_fits_at_every_text_scale() -> void:
 			assert_true(screen.encloses(n.get_global_rect()), "x%.1f: %s on the page" % [s, name])
 		for i in parts.size():
 			for j in range(i + 1, parts.size()):
-				assert_false(parts[i].get_global_rect().grow(-1.0).intersects(parts[j].get_global_rect().grow(-1.0)), "x%.1f: %s clear of %s" % [s, parts[i].name, parts[j].name])
+				assert_false(_shown_rect(parts[i]).grow(-1.0).intersects(_shown_rect(parts[j]).grow(-1.0)), "x%.1f: %s clear of %s" % [s, parts[i].name, parts[j].name])
 		hq.get_parent().free()
 
 

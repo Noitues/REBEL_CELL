@@ -90,6 +90,10 @@ const STAMP_SHADOW_ALPHA := 0.7
 		if stamp_slot != null:
 			stamp_slot.queue_redraw()
 
+## BIG-TEXT: the text scale the stamp is lettered at (a panel built smaller to fit sets it); 0 = the player's.
+var text_k: float = 0.0
+## BIG-TEXT: the stamp slot and the seal in it at this share of their size (a panel built smaller to fit).
+var slot_k: float = 1.0
 var content: Control = null
 ## The stamp slot (top right): DECRYPTED is drawn here; a caller may add its own stamp.
 var stamp_slot: Control = null
@@ -144,7 +148,7 @@ func _ready() -> void:
 
 
 func _layout() -> void:
-	stamp_slot.size = STAMP_SLOT
+	stamp_slot.size = STAMP_SLOT * slot_k
 	stamp_slot.position = Vector2(size.x - stamp_slot.size.x - UiTheme.SP_M, UiTheme.SP_S)
 	_scrim.visible = scrim
 	_scrim.position = Vector2.ZERO
@@ -193,10 +197,10 @@ func _draw_seal() -> void:
 	var c := seal_center()
 	var ring := corp_color
 	ring.a = 0.8
-	stamp_slot.draw_arc(c, SEAL_R, 0.0, TAU, 48, ring, 3.0, true)
-	stamp_slot.draw_arc(c, SEAL_R - 6.0, 0.0, TAU, 48, ring, 1.0, true)
-	var half := SEAL_R * CREST_SHARE
-	var k := SEAL_R / 40.0
+	stamp_slot.draw_arc(c, SEAL_R * slot_k, 0.0, TAU, 48, ring, 3.0, true)
+	stamp_slot.draw_arc(c, (SEAL_R - 6.0) * slot_k, 0.0, TAU, 48, ring, 1.0, true)
+	var half := SEAL_R * slot_k * CREST_SHARE
+	var k := SEAL_R * slot_k / 40.0
 	var t := CorpSeal.emblem(corporation) if corporation != &"" else null
 	if t != null:
 		var ts := t.get_size()
@@ -205,13 +209,13 @@ func _draw_seal() -> void:
 		stamp_slot.draw_texture_rect_region(t, Rect2(box.position + Vector2(box.size.x * 0.5, 0.0) + CRACK_RIGHT * k, Vector2(box.size.x * 0.5, box.size.y)), Rect2(Vector2(ts.x * 0.5, 0.0), Vector2(ts.x * 0.5, ts.y)), ring)
 	else:
 		var font := Palette.display()
-		var px := UiTheme.font_px(UiTheme.TITLE)
+		var px := UiTheme.font_px_at(UiTheme.TITLE, text_k if text_k > 0.0 else Settings.text_scale)
 		var w := font.get_string_size(seal_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
 		stamp_slot.draw_string(font, c + Vector2(-w.x * 0.5, w.y * 0.32), seal_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ring)
 	# the red fracture down the middle, across the ring
 	var pts := PackedVector2Array()
 	for f: Vector2 in FRACTURE:
-		pts.append(c + (f - Vector2(0.5, 0.5)) * SEAL_R * 2.0)
+		pts.append(c + (f - Vector2(0.5, 0.5)) * SEAL_R * slot_k * 2.0)
 	stamp_slot.draw_polyline(pts, Palette.HARM, FRACTURE_W, true)
 
 
@@ -221,7 +225,7 @@ func _draw_stamp() -> void:
 	if seal:
 		_draw_seal()
 	var font := Palette.display()
-	var px := UiTheme.font_px(UiTheme.HEADING)
+	var px := UiTheme.font_px_at(UiTheme.HEADING, text_k if text_k > 0.0 else Settings.text_scale)
 	var sz := font.get_string_size(STAMP_WORD, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
 	var col := STAMP_COLOR
 	col.a = STAMP_ALPHA

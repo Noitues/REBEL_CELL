@@ -9,6 +9,8 @@ extends Node2D
 ## `gain` is the per-screen tuning (round 3: combat 1.15, city 0.38, shop 1.2); `lit` (0..1)
 ## follows the source (a dead sign spills nothing; a neon's mean `lit`).
 ## The breathe (`light_spill_breathe`, T0) stops under reduce effects.
+## M14 SPILL: the spill reads a copy of the screen made just before it (ScreenCopy); the scrim
+## layer's AfterScrim copy is stale by the time a spill over the UI's world draws.
 ##
 ## 3D (1D's city, props): `uniforms_3d` packs spill sources for `shaders/kit/toon_ink.gdshader`
 ## (up to MAX_3D, world positions with radius, colour with intensity). A view only.
@@ -57,6 +59,7 @@ func _init() -> void:
 	_mat = ShaderMaterial.new()
 	_mat.shader = SHADER
 	material = _mat
+	ScreenCopy.before(self)
 	_sync()
 
 

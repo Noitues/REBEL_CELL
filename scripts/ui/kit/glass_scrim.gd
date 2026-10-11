@@ -6,6 +6,8 @@ extends ColorRect
 ## high contrast (§5.6: opaque panels, no blur) it is opaque `HighContrast.BG` instead. It
 ## takes no focus; a modal's backdrop stops the clicks meant for the page behind it
 ## (`full_screen`). View only. ART-0 F: ported from art-pass (W8a).
+## M14 SPILL: the blur reads a copy of the screen made just before it (ScreenCopy), so the page
+## behind the modal shows through it; the scrim layer's AfterScrim copy held only the city.
 
 const SHADER := preload("res://shaders/glass_blur.gdshader")
 const NODE_NAME := "GlassScrim"
@@ -17,6 +19,7 @@ func _init() -> void:
 	name = NODE_NAME
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	focus_mode = Control.FOCUS_NONE
+	ScreenCopy.before(self)
 	sync()
 
 

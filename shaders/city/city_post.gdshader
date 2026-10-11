@@ -26,6 +26,11 @@ uniform float ink_depth_edge = 1.2;
 uniform float ink_alpha = 0.85;
 uniform float ink_wobble_px = 1.4;
 uniform float ink_width = 1.0;
+// M14 perf slice: the ink runs only inside this box (view px: x0, y0, x1, y1) while ink_keep_on,
+// fading out over ink_keep_feather px past it (the HQ idle: the network rect and its vignette).
+uniform bool ink_keep_on = false;
+uniform vec4 ink_keep = vec4(0.0, 0.0, 1.0, 1.0);
+uniform float ink_keep_feather = 24.0;
 uniform float ortho = 440.0;
 uniform float cam_distance = 2600.0;
 uniform float grime = 0.15;
@@ -121,7 +126,13 @@ void fragment() {
 	vec3 g0 = glow_at(uv, 0.0);
 	float emis = clamp(max(max(g0.r, g0.g), g0.b) * 2.0, 0.0, 1.0);
 	// Ink: normal, material and depth edges at wobbled offsets (the round 2 wobbly line).
-	if (ink_on) {
+	float ink_k = 1.0;
+	if (ink_keep_on) {
+		vec2 kp = SCREEN_UV * VIEWPORT_SIZE;
+		vec2 kd = max(max(ink_keep.xy - kp, kp - ink_keep.zw), vec2(0.0));
+		ink_k = 1.0 - smoothstep(0.0, max(ink_keep_feather, 0.001), length(kd));
+	}
+	if (ink_on && ink_k > 0.0) {
 		vec2 sp = SCREEN_UV * VIEWPORT_SIZE;
 		vec2 wob = (vec2(vnoise(sp / 7.0), vnoise(sp / 7.0 + 19.0)) - 0.5) * 2.0 * ink_wobble_px * px;
 		vec2 u2 = uv + wob;
@@ -139,7 +150,7 @@ void fragment() {
 			e = max(e, step(ink_normal_edge, length(cn.xyz - c0.xyz) * 0.5 + abs(cn.w - c0.w)));
 			e = max(e, step(dthr, abs(zn - zc)));
 		}
-		float a = e * ink_alpha;
+		float a = e * ink_alpha * ink_k;
 		if (has_ground && opacity < 0.999) {
 			a *= 1.0 - (1.0 - opacity) * 0.55 * bld;
 		}

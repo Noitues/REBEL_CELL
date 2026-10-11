@@ -101,6 +101,33 @@ func test_the_mainframe_stands_on_its_facade_with_the_sign_and_its_stock_wheel()
 	assert_eq(get_tree().root.find_child("MainframeFacade", true, false), null, "the facade goes with the screen")
 
 
+## M14 SUBTITLE (DECISIONS "Mainframe subtitle fits the screen"): the street starts under the subtitle
+## band and the pegboard ends on the screen at every text size; the page never runs wider than the
+## screen; the sign's spill reads a fresh copy of the street (the scrim's was stale: a blurred third).
+func test_the_street_starts_under_the_subtitle_band_and_the_board_ends_on_screen() -> void:
+	var NetrunScript := load("res://scripts/ui/netrun_scene.gd")
+	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+		var scene := await _netrun(scale)
+		await _shop(scene)
+		var band: Rect2 = scene.subtitle_strip.get_global_rect()
+		assert_true(band.end.x <= SCREEN.end.x + 0.5 and scene.hud.get_global_rect().end.x <= SCREEN.end.x + 0.5,
+			"at %.1f: the band and the top bar keep to the screen (%s)" % [scale, band])
+		var board := scene._panel.find_child("Pegboard", true, false) as Control
+		var r := board.get_global_rect()
+		assert_true(r.position.y >= band.end.y - 0.5, "at %.1f: the board (%s) starts under the band (%s)" % [scale, r, band])
+		assert_true(r.end.y <= SCREEN.end.y + 0.5 and r.end.x <= SCREEN.end.x + 0.5, "at %.1f: the board ends on screen (%s)" % [scale, r])
+		assert_true(board.scale.x >= NetrunScript.SHOP_BOARD_FIT_FLOOR - 0.001, "at %.1f: the board never shrinks past its floor (%.2f)" % [scale, board.scale.x])
+		var info := board.find_child("ShopInfo", true, false) as Control
+		assert_true(SCREEN.grow(0.5).encloses(info.get_global_rect()), "at %.1f: the info strip is whole on screen (%s)" % [scale, info.get_global_rect()])
+		var facade := scene.find_child("MainframeFacade", true, false) as MainframeFacade
+		assert_true(facade.plate_rect().position.y + facade.global_position.y >= band.end.y - 0.5, "at %.1f: the sign's plate starts under the band" % scale)
+		var spill := board.get_parent().get_node(^"SignSpill") as LightSpill
+		# M14 SPILL: the spill carries its own copy (ScreenCopy, an internal child drawn behind it).
+		var before := spill.get_node_or_null(NodePath(ScreenCopy.NODE_NAME)) as BackBufferCopy
+		assert_true(before != null and before.copy_mode == BackBufferCopy.COPY_MODE_VIEWPORT and before.show_behind_parent, "at %.1f: a fresh copy of the street just before the spill" % scale)
+		await _close(scene)
+
+
 func test_card_tags_hang_under_the_cards_and_the_notes_cover_no_tag() -> void:
 	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
 		var scene := await _netrun(scale)

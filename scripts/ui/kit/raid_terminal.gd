@@ -38,10 +38,32 @@ func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN) -> void:
 	var head := find_child("TerminalTitle", true, false) as Label
 	if head != null:
 		head.add_theme_color_override("font_color", Palette.AUTO)
+		# M14 BIG-TEXT b (art director, 4b): the clear title drew the theme's dark Label shadow, a ghost
+		# of the title two glyphs left of the CRT's `> TITLE` (doubled glyphs at 1.6): no shadow.
+		head.add_theme_color_override("font_shadow_color", Palette.AUTO)
+		head.add_theme_color_override("font_outline_color", Palette.AUTO)
 		head.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.BODY))
 	var outer := get_child(0) if get_child_count() > 0 else null
 	if outer != null and outer.get_child_count() > 1 and outer.get_child(1) is ColorRect:
 		(outer.get_child(1) as ColorRect).color = Palette.AUTO
+
+
+## M14 BIG-TEXT b: shows or hides the header (the `> TITLE` prompt and its caret, the title bar
+## with its tag, the rule): a terminal folded to one row of its body hides it.
+func set_header_shown(on: bool) -> void:
+	if _head != null and _head.get_parent() is Control:
+		(_head.get_parent() as Control).visible = on
+	if _rule != null:
+		_rule.visible = on
+	if crt != null:
+		crt.label.visible = on
+		crt.caret = on
+		crt.content.queue_redraw()
+
+
+## Whether the header shows (`set_header_shown`).
+func header_shown() -> bool:
+	return crt == null or crt.label.visible
 
 
 ## The title and rule stay clear (the CRT's prompt shows the title); the CRT panel binds its own

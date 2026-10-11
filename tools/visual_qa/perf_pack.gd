@@ -36,6 +36,13 @@ const PROBE_SCREENS := [
 	["scrim_probe_hq", "_s_scrim_probe_hq", "B1a: the HQ page with and without its UiScrimPools layer (pools, shadows, spill)."],
 	["scrim_probe_route", "_s_scrim_probe_route", "B1a: the route page with and without its UiScrimPools layer."],
 	["scrim_probe_combat", "_s_scrim_probe_combat", "B1a b: a fight's frame with and without its UiScrimPools layer."],
+	["city_probe_hq", "_s_city_probe_hq", "PERF slice: the HQ idle's 3D city, each part switched off in turn (frame and city GPU)."],
+	["city_probe_combat", "_s_city_probe_combat", "PERF slice: a Site fight's close-up city, each part switched off in turn."],
+	["cpu_probe_hq", "_s_cpu_probe_hq", "PERF slice: the HQ idle's frame with each script class's processing off in turn, and its redraws."],
+	["cpu_probe_combat", "_s_cpu_probe_combat", "PERF slice: a Site fight's frame with each script class's processing off in turn, and its redraws."],
+	["hud_probe_combat", "_s_hud_probe_combat", "PERF slice: a Site fight's HUD layer, each step of its process frame timed."],
+	["map_probe_hq", "_s_map_probe_hq", "PERF slice: the HQ idle's map overlay and raid pencil, each layer hidden in turn."],
+	["flow_diff_hq", "_s_flow_diff_hq", "PERF slice: the HQ idle's flow layer batched vs one command per dash and wing (reduce motion: a still frame), pixel diff."],
 	["scrim_luma_combat_start", "_s_scrim_luma_combat_start", "B1a b: the fight's world luma in the wheel pools vs between the wheels (+ fixture)."],
 	["scrim_luma_combat_aiming", "_s_scrim_luma_combat_aiming", "B1a b: the same while a card is aimed."],
 	["scrim_luma_hq", "_s_scrim_luma_hq", "B1a b: the HQ's city luma in the panels' pool margins and under the foot band vs open (+ fixture)."],
@@ -236,9 +243,10 @@ func _measure(screen: String) -> void:
 	var sorted := times.duplicate()
 	sorted.sort()
 	var p95: float = sorted[mini(sorted.size() - 1, int(sorted.size() * 0.95))] if not sorted.is_empty() else 0.0
+	var median: float = sorted[sorted.size() / 2] if not sorted.is_empty() else 0.0
 	var rec := {
 		"screen": screen, "tier": _tier, "window": [DisplayServer.window_get_size().x, DisplayServer.window_get_size().y],
-		"frames": n, "frame_mean_ms": total / fn, "frame_p95_ms": p95, "frame_max_ms": worst,
+		"frames": n, "frame_mean_ms": total / fn, "frame_p95_ms": p95, "frame_median_ms": median, "frame_max_ms": worst,
 		"gpu_total_ms": (root_gpu + sub_gpu) / fn, "gpu_root_ms": root_gpu / fn, "gpu_city3d_ms": city_gpu / fn,
 		"gpu_sub_ms": sub_gpu / fn, "subviewports": subs, "render_cpu_ms": cpu / fn,
 		"draws": draws / fn, "prims": prims / fn,
@@ -256,8 +264,8 @@ func _measure(screen: String) -> void:
 	_write_json(out_dir.path_join(screen + ".perf.json"), rec)
 	if not spikes.is_empty():
 		print("SPIKES tier=%d screen=%s %s" % [_tier, screen, " ".join(spikes)])
-	print("PERF tier=%d screen=%s frames=%d frame_mean_ms=%.2f frame_p95_ms=%.2f frame_max_ms=%.1f gpu_total_ms=%.2f gpu_root_ms=%.2f gpu_city3d_ms=%.2f gpu_sub_ms=%.2f subs=%d cpu_ms=%.2f draws=%.0f prims=%.0f vmem_mb=%.0f window=%s" % [
-		_tier, screen, n, rec["frame_mean_ms"], p95, worst, rec["gpu_total_ms"], rec["gpu_root_ms"], rec["gpu_city3d_ms"],
+	print("PERF tier=%d screen=%s frames=%d frame_mean_ms=%.2f frame_median_ms=%.2f frame_p95_ms=%.2f frame_max_ms=%.1f gpu_total_ms=%.2f gpu_root_ms=%.2f gpu_city3d_ms=%.2f gpu_sub_ms=%.2f subs=%d cpu_ms=%.2f draws=%.0f prims=%.0f vmem_mb=%.0f window=%s" % [
+		_tier, screen, n, rec["frame_mean_ms"], median, p95, worst, rec["gpu_total_ms"], rec["gpu_root_ms"], rec["gpu_city3d_ms"],
 		rec["gpu_sub_ms"], subs, rec["render_cpu_ms"], rec["draws"], rec["prims"], rec["vmem_mb"],
 		str(DisplayServer.window_get_size())])
 
@@ -564,6 +572,256 @@ func _grab_luma() -> Image:
 	img.convert(Image.FORMAT_RGB8)
 	img.resize(LUMA_SIZE.x, LUMA_SIZE.y, Image.INTERPOLATE_NEAREST)
 	return img
+
+
+## PERF slice: the HQ idle (b4_idle) with its city's parts switched off in turn.
+func _s_city_probe_hq() -> void:
+	await _s_b4_idle()
+	await _city_probe()
+
+
+## PERF slice: a Site fight's close-up with its city's parts switched off in turn.
+func _s_city_probe_combat() -> void:
+	await _s_combat_start()
+	await _city_probe()
+
+
+## PERF slice: the HQ idle's CPU side (see _cpu_probe).
+func _s_cpu_probe_hq() -> void:
+	await _s_b4_idle()
+	await _cpu_probe()
+
+
+## PERF slice: a Site fight's CPU side (see _cpu_probe).
+func _s_cpu_probe_combat() -> void:
+	await _s_combat_start()
+	await _cpu_probe()
+
+
+## PERF slice: the fight's HudWheelLayer, each step of its process frame (and the wheel views'
+## calls they make) timed over HUD_PROBE_N calls (PROBE hud lines, us per call).
+const HUD_PROBE_N := 200
+
+
+func _s_hud_probe_combat() -> void:
+	await _s_combat_start()
+	for h: HudWheelLayer in get_tree().root.find_children("*", "HudWheelLayer", true, false):
+		var steps := {"place_rows": h.place_rows, "place_glyphs": h._place_glyphs, "draw_signature": h.draw_signature, "buttons": h.buttons}
+		for v in h._views():
+			var wv := v as WheelView
+			steps["standing_chips"] = wv.standing_chips
+			steps["hp_layout"] = wv.hp_layout
+			steps["arrows"] = wv.arrows
+			break
+		for key: String in steps:
+			var f: Callable = steps[key]
+			var t0 := Time.get_ticks_usec()
+			for i in HUD_PROBE_N:
+				f.call()
+			print("PROBE hud %s us=%.1f" % [key, float(Time.get_ticks_usec() - t0) / HUD_PROBE_N])
+
+
+## PERF slice: the HQ idle's map overlay layers and the raid pencil, each hidden in turn (and
+## the overlay's and the route layer's processing off).
+func _s_map_probe_hq() -> void:
+	await _s_b4_idle()
+	for o: CityMapOverlay in get_tree().root.find_children("*", "CityMapOverlay", true, false):
+		var kinds := {}
+		for e: Dictionary in o.edges:
+			var kind := "pencil" if e.get("pencil", false) else ("depowered" if e.get("depowered", false) else ("locked" if e.get("locked", false)
+				else ("dashed" if o._is_dashed(e) else ("flow" if e.get("flow", false) else "still"))))
+			if e.get("arrows", false):
+				kind += "+arrows"
+			kinds[kind] = int(kinds.get(kind, 0)) + 1
+		print("PROBE map edges=%d look=%d packets=%s crawl=%.2f kinds=%s" % [o.edges.size(), o.look, str(o.packets), o.crawl_speed(), str(kinds)])
+	var whole := await _probe_ms()
+	print("PROBE map whole frame_ms=%.2f" % whole)
+	var parts: Array[CanvasItem] = []
+	for o in get_tree().root.find_children("*", "CityMapOverlay", true, false):
+		for n in o.get_children():
+			if n is CanvasItem:
+				parts.append(n)
+	for l in get_tree().root.find_children("RaidPencilLayer", "CanvasLayer", true, false):
+		for n in l.get_children():
+			if n is CanvasItem:
+				parts.append(n)
+	for p in parts:
+		if not is_instance_valid(p) or not p.visible:
+			continue
+		p.visible = false
+		var ms := await _probe_ms()
+		p.visible = true
+		print("PROBE map hidden=%s class=%s frame_ms=%.2f saves_ms=%.2f" % [String(p.get_path()).right(70), _cls(p) if _cls(p) != "" else p.get_class(), ms, whole - ms])
+	for c in ["CityMapOverlay", "RaidRouteLayer", "HqPlanPencil", "UiScrimPools", "RaidBeaconLayer"]:
+		var ns: Array[Node] = []
+		for n in get_tree().root.find_children("*", "Node", true, false):
+			if _cls(n) == c:
+				ns.append(n)
+		for n in ns:
+			n.set_process(false)
+		var ms := await _probe_ms()
+		for n in ns:
+			if is_instance_valid(n):
+				n.set_process(true)
+		print("PROBE map no_process=%s frame_ms=%.2f saves_ms=%.2f" % [c, ms, whole - ms])
+	print("PROBE map whole_again frame_ms=%.2f" % await _probe_ms())
+
+
+## PERF slice: the same picture check of the flow layer's modes: the HQ idle's map held still
+## (its processing off, its clock fixed at FLOW_DIFF_T s so the phases are not 0), frames
+## grabbed per mode into <out>/flow_diff_<n>.png: 0 the still mesh (CityMapOverlay.flow_shader),
+## 1 the CPU one command per dash, 2 the CPU batched (flow_batched), 3 the mesh again (compare
+## them off line, e.g. round the chevrons).
+const FLOW_DIFF_T := 1.37
+
+
+func _s_flow_diff_hq() -> void:
+	await _s_b4_idle()
+	var overlays: Array[Node] = get_tree().root.find_children("*", "CityMapOverlay", true, false)
+	for o in overlays:
+		o.set_process(false)
+		o.anim_t = FLOW_DIFF_T
+		# Only the flow layer draws (the city, its traffic and rain move): every sibling of each
+		# node on the path from the root to it hidden.
+		var keep: Node = o._anim
+		while keep != null and keep.get_parent() != null:
+			for sib in keep.get_parent().get_children():
+				if sib != keep and (sib is CanvasItem or sib is CanvasLayer):
+					sib.visible = false
+			keep = keep.get_parent()
+	var n := 0
+	for mode in [[true, true], [false, false], [false, true], [true, true]]:
+		for o in overlays:
+			o.flow_shader = mode[0]
+			o.flow_batched = mode[1]
+			o._anim.queue_redraw()
+		for i in 30:
+			await get_tree().process_frame
+		var img := get_viewport().get_texture().get_image()
+		img.convert(Image.FORMAT_RGB8)
+		img.save_png(out_dir.path_join("flow_diff_%d.png" % n))
+		for o in overlays:
+			print("PROBE flow mode=%d shader=%s batched=%s state=%s" % [n, str(mode[0]), str(mode[1]), str(o.flow_state())])
+		n += 1
+	for o in overlays:
+		o.set_process(true)
+	print("PROBE flow frames saved: %s/flow_diff_0..3.png" % out_dir)
+
+
+## PROBE lines: the CanvasItems redrawn on most frames, then the frame with every node of one
+## script class (or engine class) kept from processing, per class that processes.
+func _cpu_probe() -> void:
+	var counts := {}
+	# Untyped and by index: a node freed during the timing (a fight's FX) must not be assigned
+	# to a typed variable (the probe stopped on "previously freed instance").
+	var items: Array = get_tree().root.find_children("*", "CanvasItem", true, false)
+	var ids: Array[int] = []
+	var hooks: Array[Callable] = []
+	for i in items.size():
+		var id: int = (items[i] as Object).get_instance_id()
+		ids.append(id)
+		var cb := _count_draw.bind(counts, id)
+		hooks.append(cb)
+		(items[i] as CanvasItem).draw.connect(cb)
+	var whole := await _probe_ms()
+	for i in items.size():
+		if is_instance_valid(items[i]):
+			(items[i] as CanvasItem).draw.disconnect(hooks[i])
+	var frames := int(PROBE_S * 1000.0 / maxf(0.1, whole))
+	for i in items.size():
+		var k: int = counts.get(ids[i], 0)
+		if k > frames / 4 and is_instance_valid(items[i]):
+			var ci := items[i] as Node
+			print("PROBE redraws=%d of ~%d frames: %s class=%s" % [k, frames, String(ci.get_path()).right(90), _cls(ci) if _cls(ci) != "" else ci.get_class()])
+	print("PROBE cpu whole frame_ms=%.2f" % whole)
+	var by_cls := {}
+	for n in get_tree().root.find_children("*", "Node", true, false):
+		if n == self or not (n.is_processing() or n.is_physics_processing()):
+			continue
+		var c := _cls(n) if _cls(n) != "" else n.get_class()
+		if not by_cls.has(c):
+			by_cls[c] = []
+		by_cls[c].append(n)
+	var names: Array = by_cls.keys()
+	names.sort()
+	for c in names:
+		var ns: Array = by_cls[c]
+		for i in ns.size():
+			if is_instance_valid(ns[i]):
+				(ns[i] as Node).set_process(false)
+				(ns[i] as Node).set_physics_process(false)
+		var ms := await _probe_ms()
+		for i in ns.size():
+			if is_instance_valid(ns[i]):
+				(ns[i] as Node).set_process(true)
+				(ns[i] as Node).set_physics_process(true)
+		print("PROBE cpu no_process=%s nodes=%d frame_ms=%.2f saves_ms=%.2f" % [c, ns.size(), ms, whole - ms])
+
+
+## One PROBE line per city part switched off: frame ms and the 3D city's GPU ms.
+func _city_probe() -> void:
+	var views: Array[Node] = get_tree().root.find_children("*", "CityView3D", true, false)
+	if views.is_empty():
+		print("PROBE no city")
+		return
+	var v := views[0] as CityView3D
+	print("PROBE city ortho=%.1f lod=%d band=%d chunks=%d size=%s far_lod=%s" % [v.iso.ortho, v.building_lod, v.band, v.chunks_built(),
+		str(v.size), str(v.far_lod_counts())])
+	print("PROBE city far_keep=%s ink_keep=%s" % [str(v.far_keep), str(v.ink_keep)])
+	var whole := await _probe_gpu(v)
+	print("PROBE city whole frame_ms=%.2f city_gpu_ms=%.2f process_ms=%.2f" % [whole.x, whole.y, whole.z])
+	var post: ShaderMaterial = v._post
+	post.set_shader_parameter(&"ink_on", false)
+	_city_line("ink_off", whole, await _probe_gpu(v))
+	post.set_shader_parameter(&"ink_on", true)
+	v._sun.shadow_enabled = false
+	_city_line("shadows_off", whole, await _probe_gpu(v))
+	v._sun.shadow_enabled = true
+	for k in [&"network"]:
+		v.layer(k).visible = false
+		_city_line("layer_%s_off" % k, whole, await _probe_gpu(v))
+		v.layer(k).visible = true
+	for k in [&"buildings", &"props", &"traffic", &"sky", &"landmarks"]:
+		v.layer(k).visible = false
+		_city_line("layer_%s_off" % k, whole, await _probe_gpu(v))
+		v.layer(k).visible = true
+	var lod := v.building_lod
+	v.building_lod = 2
+	v._apply_building_lod()
+	_city_line("all_lod2", whole, await _probe_gpu(v))
+	v.building_lod = lod
+	v._apply_building_lod()
+	for k in [&"fog_on", &"rain_on"]:
+		post.set_shader_parameter(k, false)
+		_city_line(String(k) + "_false", whole, await _probe_gpu(v))
+		post.set_shader_parameter(k, true)
+	v.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	_city_line("city_not_drawn", whole, await _probe_gpu(v))
+	v.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+
+
+func _city_line(what: String, whole: Vector3, got: Vector3) -> void:
+	print("PROBE city %s frame_ms=%.2f saves_ms=%.2f city_gpu_ms=%.2f gpu_saves_ms=%.2f process_ms=%.2f" % [what, got.x, whole.x - got.x, got.y, whole.y - got.y, got.z])
+
+
+## (mean frame ms, mean GPU ms of view `v`, mean process ms) over PROBE_S seconds after
+## PROBE_WARMUP frames.
+func _probe_gpu(v: SubViewport) -> Vector3:
+	RenderingServer.viewport_set_measure_render_time(v.get_viewport_rid(), true)
+	for i in PROBE_WARMUP:
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+		Engine.max_fps = 0
+		await get_tree().process_frame
+	var started := Time.get_ticks_usec()
+	var n := 0
+	var g := 0.0
+	var pr := 0.0
+	while Time.get_ticks_usec() - started < int(PROBE_S * 1000000.0):
+		await get_tree().process_frame
+		n += 1
+		g += RenderingServer.viewport_get_measured_render_time_gpu(v.get_viewport_rid())
+		pr += Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
+	return Vector3((Time.get_ticks_usec() - started) / 1000.0 / maxf(1.0, n), g / maxf(1.0, n), pr / maxf(1.0, n))
 
 
 ## The mean frame time (ms) over PROBE_S seconds after PROBE_WARMUP frames, v-sync off.

@@ -392,6 +392,9 @@ func test_raid_setup_paper_whole_network_visible_and_a_page_title() -> void:
 		var column := page.get_node("CardColumn") as Control
 		var network := page.find_child("NodeOrders", true, false) as Control
 		var core := network.find_child("Order_%s" % RunManager.campaign.grid.home_site_id, true, false) as Control
+		if hq.network_one_row():
+			# BIG-TEXT b: from 1.6, short of room, YOUR NETWORK is one row that says CORE's forecast.
+			core = network.find_child("NetworkRow", true, false) as Control
 		assert_not_null(core, "%s: the CORE row" % tag)
 		var shown := column.get_global_rect().grow(1.0)
 		assert_true(shown.encloses(core.get_global_rect()), "%s: YOUR NETWORK's CORE row is in view, not below the fold (%s in %s)" % [tag, core.get_global_rect(), shown])
@@ -427,15 +430,10 @@ func test_your_network_and_threat_intel_fit_the_column_at_every_text_size() -> v
 		var intel := page.find_child("ThreatIntel", true, false) as Control
 		var network := page.find_child("NodeOrders", true, false) as Control
 		assert_true(column.is_ancestor_of(network), "x%.1f: YOUR NETWORK in the right column" % scale)
-		if scale <= 1.6:
-			# The review: THREAT INTEL was cut at the column's scroll edge at 1.6 (B1c note).
-			assert_true(column.get_global_rect().grow(1.0).encloses(intel.get_global_rect()), "x%.1f: THREAT INTEL whole in the column" % scale)
-			assert_gt(network.get_global_rect().position.y, intel.get_global_rect().position.y, "x%.1f: under THREAT INTEL" % scale)
-		else:
-			# 2.0 (B3 b): THREAT INTEL alone is taller than the column (its big-text layout is a later
-			# slice): the collapsed YOUR NETWORK leads the column, never below the fold.
-			assert_true(hq.network_collapsed(), "x%.1f: YOUR NETWORK collapsed" % scale)
-			assert_lte(absf(network.get_global_rect().position.y - column.get_global_rect().position.y), 1.0, "x%.1f: YOUR NETWORK at the column's top" % scale)
+		# BIG-TEXT: THREAT INTEL is built to fit the column at every size (test_big_text_intel_order_fit),
+		# so YOUR NETWORK is under it at 2.0 too (it no longer leads the column).
+		assert_true(column.get_global_rect().grow(1.0).encloses(intel.get_global_rect()), "x%.1f: THREAT INTEL whole in the column" % scale)
+		assert_gt(network.get_global_rect().position.y, intel.get_global_rect().position.y, "x%.1f: under THREAT INTEL" % scale)
 		assert_true(SCREEN.grow(1.0).encloses(column.get_global_rect()), "x%.1f: on screen" % scale)
 		hq.get_parent().queue_free()
 		await _frames(1)

@@ -74,17 +74,25 @@ const STEP_PX := 3.0
 ## The wipe drags the wax this way (a palm down-left) while it trims from the start.
 const WIPE_DRAG := Vector2(-0.6, 0.8)
 
+## M14 perf slice: the setters below do nothing when the value is unchanged (a pool owner lays
+## every mark again each frame; a Settings change re-syncs through _on_settings).
 @export var ink: Ink = Ink.PLAN:
 	set(v):
+		if v == ink:
+			return
 		ink = v
 		_sync()
 @export var dashed: bool = false:
 	set(v):
+		if v == dashed:
+			return
 		dashed = v
 		_sync()
 ## The wax's seed (grain and dropouts).
 @export var seed: int = 1:
 	set(v):
+		if v == seed:
+			return
 		seed = v
 		_sync()
 ## Writes itself on when it first shows (and each time it shows again after being hidden).
@@ -96,11 +104,17 @@ const WIPE_DRAG := Vector2(-0.6, 0.8)
 ## Written share 0..1 (by length, in writing order) and the wiped share from the start.
 var progress: float = 1.0:
 	set(v):
-		progress = clampf(v, 0.0, 1.0)
+		var c := clampf(v, 0.0, 1.0)
+		if c == progress:
+			return
+		progress = c
 		_apply()
 var wiped_share: float = 0.0:
 	set(v):
-		wiped_share = clampf(v, 0.0, 1.0)
+		var c := clampf(v, 0.0, 1.0)
+		if c == wiped_share:
+			return
+		wiped_share = c
 		_apply()
 var smear: float = 0.0:
 	set(v):

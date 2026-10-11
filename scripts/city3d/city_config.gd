@@ -363,6 +363,29 @@ extends Resource
 @export var lod_rows_share: Array[float] = [1.0, 0.5, 0.0]
 @export var lod_cols: Array[int] = [4, 2, 1]
 
+@export_group("Far LOD (M14 perf slice)")
+## M14 perf slice (art director's approach): a view may name a keep rect (world X/Z) where the
+## city stays at full quality (the HQ idle: the network rect and its vignette; a fight's
+## close-up: the subject block and its neighbours). Buildings whose footprint (grown by their
+## lean on screen) misses it use building LOD `far_lod_level` at least, cast no shadow unless
+## `far_lod_shadows`, and carry no roof props. Off when `far_lod_on` is false.
+@export var far_lod_on: bool = true
+@export var far_lod_level: int = 2
+@export var far_lod_shadows: bool = false
+## The keep rect is snapped outward to this grid (BU), so a camera pan (which unprojects the same
+## world rect with float noise) never moves a building across the line: no popping at rest.
+@export var far_lod_snap_bu: float = 16.0
+## HQ idle: the keep rect is the network rect grown by the vignette's margin + feather
+## (UiScrimLook.map_dim_margin_px / map_dim_feather_px) and this pad (px at the scrim's
+## reference height), so the LOD line lies in the fully dimmed city.
+@export var far_lod_pad_px: float = 40.0
+## HQ idle: the ink edge pass runs only inside the keep rect's screen box (when
+## `far_lod_skip_ink`); it fades out over this share of the view's height past the box.
+@export var far_lod_skip_ink: bool = true
+@export var far_ink_feather_share: float = 0.03
+## A fight's close-up: full quality within this many BU of the subject block (its neighbours).
+@export var backdrop_far_lod_reach_bu: float = 90.0
+
 @export_group("Zoom and pan (ART-5 5a)")
 ## The City Grid's own zoom (bible §4.1: ortho ~440) and the continuous zoom's range.
 @export var grid_ortho: float = 440.0

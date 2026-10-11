@@ -38,6 +38,8 @@ var wipe_u: float:
 		_mv.put(&"wipe_u", v)
 var _mv := MotionValues.new({&"write_u": 1.0, &"wipe_u": 0.0})
 var _pool: RaidPencilPool = null
+## The signature the pencil was last laid for (0: lay at the next frame).
+var _laid_sig: int = 0
 
 
 func _init(p_overlay: CityMapOverlay = null) -> void:
@@ -140,12 +142,19 @@ func path_points(path: Array) -> PackedVector2Array:
 ## (snapped onto them: the mark says what the rules will do), the entries circled and lettered.
 func _lay() -> void:
 	if overlay == null or overlay.city == null or not is_visible_in_tree():
+		_laid_sig = 0
 		if _pool != null:
 			_pool.begin()
 			_pool.end()
 		return
 	if _pool == null:
 		_pool = RaidPencilPool.make(self)
+	# M14 perf slice: the pencil is laid again only when something it shows changed (the routes,
+	# the progress, the map's camera, the text size); at rest the marks stay as laid.
+	var sig := lay_signature()
+	if sig == _laid_sig:
+		return
+	_laid_sig = sig
 	_pool.begin()
 	var threat := GreasePencilMark.Ink.THREAT
 	for i in routes.size():
@@ -170,6 +179,23 @@ func _lay() -> void:
 		_pool.stroke("entry_%s" % id, [PencilShapes.hand_circle(c, ENTRY_R, seed)], threat, u, wipe_u, false, seed)
 		_pool.word("letter_%s" % id, String(letters[id]), c + LETTER_OFF, LETTER_STEP, threat, 1.0, u, wipe_u, -0.08)
 	_pool.end()
+
+
+## The signature of what the pencil shows (M14 perf slice): the routes, what-ifs and letters,
+## the write and wipe progress, the text size, and where the map puts each route's ends and
+## each entry (the map's camera: with a fixed yaw and pitch, two points pin down a pan and a zoom).
+func lay_signature() -> int:
+	var anchors: Array[Vector2] = []
+	for r: Array in routes + what_if:
+		if r.is_empty():
+			continue
+		anchors.append(RaidMapAnchor.site(overlay, StringName(String(r[0]))))
+		anchors.append(RaidMapAnchor.site(overlay, StringName(String(r[r.size() - 1]))))
+	var ids := letters.keys()
+	ids.sort()
+	for id in ids:
+		anchors.append(RaidMapAnchor.site(overlay, id))
+	return hash([routes, what_if, ids, letters.values(), write_u, wipe_u, anchors, Settings.text_scale, size])
 
 
 ## The entry letters drawn (Site id -> letter; tests).

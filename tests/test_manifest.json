@@ -765,12 +765,20 @@
 			"seconds": 30.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_big_text_intel_order_fit.gd": {
+			"seconds": 15.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_b5_sticker_safe_margin.gd": {
 			"seconds": 15.0,
 			"tier": "full"
 		},
 		"res://tests/unit/test_b2_combat_composition.gd": {
 			"seconds": 12.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_m14_perf_far_lod.gd": {
+			"seconds": 8.0,
 			"tier": "fast"
 		}
 	}
