@@ -17,4 +17,7 @@ RC_NOTES. Produce NO patch (RC_PATCH empty, status: ok). Check, in this order:
   English that reaches the player (string literals shown in UI that are not TextDb keys).
 
 Line format: `- <path>:<line> <rule-id> <what> -> <suggested fix in under 15 words>`.
-End with `- COUNT: <n>` so the report is machine-countable. Say `- none` when clean.
+List **violations only**: never a line for something that passes, is fine, is allowed, or that
+you merely "checked" or want "confirmed". A `const` definition is not a magic number. If you are
+not sure a line breaks a rule, leave it out. End with `- COUNT: <n>` (violations only) so the
+report is machine-countable. Say `- none` when clean.

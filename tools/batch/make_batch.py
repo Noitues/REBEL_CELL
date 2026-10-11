@@ -47,7 +47,7 @@ COMMON_RULES = PROMPTS / "_common_rules.md"
 KIND_DEFAULTS = {
     "docstrings": {"model": "claude-haiku-5-5", "effort": "low", "max_tokens": 8000},
     "cleanup": {"model": "claude-haiku-5-5", "effort": "low", "max_tokens": 8000},
-    "lint_report": {"model": "claude-haiku-5-5", "effort": "low", "max_tokens": 4000},
+    "lint_report": {"model": "claude-haiku-5-5", "effort": "low", "max_tokens": 8000},
     "rename": {"model": "claude-haiku-5-5", "effort": "low", "max_tokens": 8000},
     "unit_tests": {"model": "claude-sonnet-5-5", "effort": "medium", "max_tokens": 16000},
     "refactor": {"model": "claude-sonnet-5-5", "effort": "medium", "max_tokens": 16000},

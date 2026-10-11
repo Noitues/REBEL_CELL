@@ -1,0 +1,114 @@
+## Implementation decisions (slice from DECISIONS.md:3727)
+Note: the slice has no explicit line numbers; citations are by entry. The slice contains no explicit OPEN-question entries, apart from those marked below.
+
+### ART-8 8p HQ compound prep (2026-10-05, ~DECISIONS.md:3727)
+- RULING 2026-10-05 compounds: one static compound per corporation, with every G12 moving part at rest or out. Meridian's gantry is parked and no train runs. Solace's helix does not turn. Halcyon's eye stands at 28° with no searchlight cone. Orbital's silo doors are shut and the rocket is down. REBEL_CELL is DISPATCH's base (round 42 `rebel_base`). Sync Strike, strands, switchback eye, silo loop and crane/train are not built. The city around a compound is ART-5's CityModel; each model stops at its plaza.
+- RULING 2026-10-05 export: glTF is the only export (coordinator, after 1D's pick). The layered sprites are dropped. Path: `assets/city/hq_compounds/<corp>/<corp>_compound.glb` plus `manifest.json`. No Draco.
+- RULING 2026-10-05 glTF look as data: no normals (the shader takes facet normals from derivatives). COLOR_0 is face colour × tone. COLOR_0.a is the part bit, written to ROUGHNESS (1.0 / 0.55). Material roles are in the names: hq_toon, hq_lit, hq_neon, hq_win, hq_sign. The shader is `tools/art_pipeline/city/hq_compound_toon.gdshader`, a prototype until 1B's shared toon/ink lands. DEFAULT hq_lit emission = 0.25 × colour (the concept's 0.42 blew out Meridian).
+- RULING 2026-10-05 manifest: schema `rebel_cell.art_export/1`, a shared export convention for 5b to reuse. A stale export (pipeline changed) fails validation.
+- RULING 2026-10-05 layout table (minimal schema change): `HqCompoundLayoutData` (`scripts/data/`), one per corp at `content/city/hq_compounds/<corp>.tres`, id `hq_compound_<corp>`. Fields: corporation_id, asset_dir, slots_per_layer, layer_slots, central_server, entry. Checked by `_art8_hq_compound` in schema_smoke_checks. Written by `make_hq_compounds.py` from `hq_compound_spec.py`.
+- RULING 2026-10-05 nodes: the breach (`start_special("boss")`) builds one node, the Central Server. A full HQ run map (GDD 4.2) is also covered: a row of `map_nodes_max` slots per layer before the last, with the last layer at the Central Server. `HqCompoundLayout` (pure, core) maps layer L, index i of n to slot round(i·(slots−1)/(n−1)); n=1 gives the middle slot. Test: `tests/unit/test_hq_compound_layout.gd`.
+- RULING 2026-10-05 slots: each snaps onto the first surface under it at build and is never on a G12 moving part. Rows are sorted left to right and kept ≥50 px apart (with the server) at 1920 px reference. Each corp's lane layout is fixed and ends at its server tower. Meridian ends at THE MASTER MANIFEST, Solace at THE GENOME CORE, Halcyon at THE PANOPTICON, Orbital at LAUNCH CONTROL, DISPATCH at DISPATCH CORE.
+- RULING 2026-10-05 validators: `validate_hq_compounds.py` and `tools/validate_content.gd` `_hq_compound_errors`.
+- RULING 2026-10-05 scope: no view, mechanics or HQ run play changes. Review lab: `hq_compound_lab.tscn`; captures in `docs/art_review/ART-8/8p/`.
+- OPEN DISPATCH compound: the round 43 ideas play in the Tokyo canyon instead; the slice says "see the open question" but does not state it. Needs the designer or coordinator. Default taken: the red-lit base.
+
+### ART-2 2A wheel stack (2026-10-05)
+- RULING 2026-10-05 render: one disc pass per wheel (`WheelDisc`, `wheel_disc.gdshader`). This replaces §6.2's Polygon2D-per-slice layout. `WheelView._draw` keeps the upright and line work.
+- RULING 2026-10-05 screens: baked flipbooks, not hand-written shaders (`tools/art/bake_wheel_screens.py`, 12 frames, 10 rows, assets/wheel/screens/). DEFAULT loop: `wheel_screen_loop`, T0, 3 s; frame 0 under reduce effects.
+- RULING 2026-10-05 glyphs: from 1C's atlas via `WheelGlyphs`. Interim corp crest PNGs are in `assets/wheel/glyphs_interim/` until the atlas has them.
+- RULING 2026-10-05 kits (`WheelKit`): tier by rank (regular I, elite II, boss III). Colours from `Palette.corp_color` / `corp_secondary`; the player uses RESIST_GOLD / PAPER. Boss phase 2 = hot threat ring; phase 3 = overdriven screens + armour plates.
+- RULING 2026-10-05 rail text: reads `OVERFLOW 12 // PERFECT //`. The recipe's kind word is a banned pre-rename word and is dropped.
+- RULING 2026-10-05 tier I screen gain = 1.0 (not 60 % per §3.7). `screen_gain` 1.6 stands in for bloom.
+- DEFAULT geometry: R_OUT 360 master; R_IN 130; `BAND_SHARE` 0.639; `ABOVE_SHARE` 0.34; `HP_TEXT_GAP` 54. Badges hide under r 60 px; ×1.5/×0.5 tags hide under r 100 px (720p). No ×N status tab is drawn.
+- RULING 2026-10-05 precision landings (`play_precision`): PERFECT gold jaws (`precision_latch`), GOOD tick ring, WEAK sparks (`precision_stutter`), `precision_word`. The Perfect inversion, freeze and NULL static are kept. Under reduce effects, only the rail's tier colour.
+- RULING 2026-10-05 hub: LOCKDOWN shows while Hub Breach holds and drains on `hub_lockdown_drain`. Defeat uses `hub_defeat_drain`, and the stamp now says FLATLINED (round 40).
+- DEFAULT perf budget: wheels + FX ≤ 4 ms. Measured: 3.8 ms mean for the whole screen, GPU 1.15 ms.
+- RULING 2026-10-05 seams for 2B: `art_scale()`, `frame_master()`, `window_radius()`, `slice_deg()`, `active_slot()`, `badge_spot()`, `WheelFace.at/axis/R_*`.
+- RULING 2026-10-05 1B integration: the slice screens stay a polar CRT in the disc pass, not `CrtTerminalPanel`. The landing word is a `VinylSticker` that dissolves into `BinaryBits`.
+- RULING 2026-10-05 seams taken over from 2C: `WheelView.hp_arc_spot(frac)`, `rgb_split`, `pixelate`, `wheel_texture()`. Standing guards: DEFRAG bricks, SANDBOX hex plates, and the `>>` EVADE token.
+- RULING 2026-10-05 Group 1 audit P2s: one glyph source (`SliceIcon.draw_icon` / `WheelGlyphs`). Text slice symbols are dropped from the odds chips and Codex titles. Boss HP arc phase pips carry P2 / P3 labels and a tooltip.
+- No test dropped.
+
+### ART-2 2D HUD (2026-10-05)
+- RULING 2026-10-05 D15 (confirmed by the designer) result chips: `ResultChipModel` / `HudResultChips`, in the bible's order. They preview the resolve only, never the next turn's start respin. Random rolls show `?` and their odds, never the roll (GDD 2.10). Hover = breakdown tooltip.
+- RULING 2026-10-05 the forecast tag and NEXT plate are off (`WheelView.hud_results`). The tag model stays as the breakdown source. Items not on the chips are tooltip-only (landing title, HUB BREACH, PHASE N, run results and others).
+- OPEN second smaller chip row for run results: proposed slice; the designer decides if wanted. Default: not built.
+- RULING 2026-10-05 nudges sit on one line above each wheel, with 1C glyphs. `NUDGE_SCALE_MAX` = 1.3.
+- OPEN boss keys A / D: not bound. The nudge keys drive one wheel and W switches own/target (H23). Separate binds would be a new rebindable action pair (Settings.REBINDABLE, rebind UI, pad map). Logged under Open questions; default: the W switch stays.
+- RULING 2026-10-05 bottom left: the CELL // CLASS name sticker plus the RAM terminal panel. At text ≥1.6 the pair moves to the notes column's foot. Deck/discard counters are 2C's piles and are not built here.
+- RULING 2026-10-05 SEND IT = `SendItSticker` (DripButton subclass over 1B's `VinylSticker`); the next step (LOOT / CONTINUE / JACK OUT) is the same sticker over `PROCEED`. Entries and API are kept. Seam: `HudSkin.vinyl_material()`.
+- RULING 2026-10-05 RESPIN / UNDO are TerminalChips; UNDO uses KitState's lock tick (D12), never a word. Side by side up to text 1.3, stacked above it.
+- RULING 2026-10-05 TURN banner is a terminal panel at the top ("TURN 3 | FREE NUDGE 1"). HudStats tags are terminal plates. Toast, UiTip and ConfirmDialog are restyled; the quit confirm reads QUIT / CANCEL (CANCEL left, default focus).
+- OPEN pad hold-to-confirm (0.8 s) for the destructive dialog: proposal, not built. There is no in-run abandon flow on main.
+- OPEN tooltip delay (350 ms): a project setting, `project.godot` is not ours; left as is.
+- RULING 2026-10-05 tutorial: TerminalNote with Next / Skip; the words name the chips and the nudge buttons.
+- RULING 2026-10-05 items handed over by the coordinator: `RamBar.pip_spot(k)`; damage numbers use `UiTheme.live_number()`; hand card hover grows to `ZineCard.HOVER_SCALE` 1.36 (pointer only, not pad focus); trigger events get no beat of their own, `ResolveBeats.trigger_marks` times them on the next beat, so the schedule is unchanged.
+- RULING 2026-10-05 colour: pink belongs to the action stickers only. Hit/loss chips use `Palette.HARM`, gains GAIN, plain counters neutral. Cards fit body text (`fit_whole`, `FIT_MIN_TEXT` 12 px floor, ellipsis, full text on hover/tooltip).
+- OPEN tutorial fight has no run top bar (standalone fight): asked under Open questions whether a run bar is wanted. Default: TURN banner + RAM panel only.
+- RULING 2026-10-05 tests: `test_art2_hud.gd` is new. Many tests were updated on purpose because they pinned the tag look; none dropped. `test_the_tape_never_clips_the_tag` has nothing to measure; kept for 2A to retire.
+- Files edited outside 2D: wheel_view.gd (2A), pause_menu.gd, test_art0_kit_words.gd, test_anim_r4_city.gd (combat Heat poster hidden), combat_beat_fx.gd, combat_fx_layer.gd, zine_card.gd.
+
+### ART-11 4D campaign end (2026-10-05)
+- RULING 2026-10-05 4D.1 campaign lost = option A, the ransomware lock (`RansomLock`). BREACHED is the cause (ruling 6.2). It shows before the dossier on outcome LOST. House verbs: PROCESSED (Halcyon), RECLAIMED (Meridian), TREATED (Solace; the bible's locked verb list beats the concept's STERILE), DE-ORBITED (Orbital), OVERWRITTEN (DISPATCH, which keeps Share Tech Mono, §2.9). The Cell's stickers are never tinted; they curl and drop. `ransom_wipe_hold` holds at zero, then the CRT collapses and the dossier shows. Bounded wait `END_LOCK_WAIT_FRAMES` for the city bake. Hand-off from 3A: `_after_playout` calls `show_end`.
+- RULING 2026-10-05 4D.2 summary = the corp's audit dossier (`AuditDossier`, `DossierFacts`). Only true facts: no Heat history is kept, so the trace runs 0 → thresholds crossed → Heat at closure; no "days" (runs instead). NEW CAMPAIGN is pink; MAIN MENU is yellow and gets first focus (§2.10). A won campaign is the same file with AT LARGE. The views emit; the HQ calls.
+- RULING 2026-10-05 4D.3 run end: CRT window (cyan JACKED OUT, red loss); the verdict is a vinyl sticker (JACKED OUT yellow, FLATLINED and HOME FELL red), with BACK TO HQ as the one pink sticker. HOME FELL hands over to the HQ's lock.
+- RULING 2026-10-05 materials: the corp paper uses Courier Prime. Deliberately NOT used: `GreasePencilMark` (the dossier's marks are the auditor's blue ballpoint), `BinaryBits` (the lock's stickers curl, never dissolve), and `CorpPaperPanel` for the ransom notice. `END_*` tokens added to palette.gd (smallest edit, reported). `RubberStamp`, `PostIt`, `DossierPhoto`, `CorpSeal`, `TiltBox` are 4D's.
+- RULING 2026-10-05 motion ids (REQUIRED_IDS): ransom_glitch, ransom_wipe, ransom_padlock, ransom_notice_in, ransom_verb_stamp, ransom_sticker_curl, ransom_sticker_drop, ransom_sticker_stagger, ransom_countdown, ransom_wipe_hold, ransom_cut, dossier_open, dossier_stamp, dossier_note, dossier_note_stagger. One press completes the takeover; a press in the hold cuts at once. Under reduce effects the end state shows at once but the notice is still held to be read. Headless shows no lock and never waits. `forecast_stamp_resolve` is kept (still the raid's).
+- SUPERSEDED the campaign end's see-through page with a verdict stamp: replaced by the audit dossier. Dropped: HQ constants END_STAMP*, END_WINDOW_W, END_HEADLINE*, END_BEAT_TITLE_FONT, END_CAPTION / END_WON / END_LOST, `_land_end_stamp`, and the netrun's END_STAMP, END_CAPTION and `end_icon`. Tests changed: test_anim_r5_city, test_anim_r6_city (C13, C15), test_anim_r5_netrun, test_horizontal_pass20_screens. New: `test_art11_campaign_end.gd`.
+
+### ART-2 2B attachments and arena (2026-10-05)
+- RULING 2026-10-05 seams: `scripts/ui/wheel/attach/` (`WheelAttachments` with layers FirmwareLayer 5, DroneDock 10–12, CardPreviewOverlay 14). `AttachStyle` is the one place that picks tokens, glyphs and faces. The backdrop is `scripts/ui/arena/`; `BackdropCatalog` is the seam for ART-5's real city. Trigger seams: `FirmwareLayer.trigger_origin(slot)`, `DaemonRack.trigger_origin(id)`.
+- RULING 2026-10-05 hooks: `wheel_view.gd` (`WheelAttachments.attach(self)`; `attachments`, `rim_radius()`, `band_width()`) and `combat_scene.gd` (backdrop over the hidden WireframeBackground; `play_won` in `_hold_victory`; `DaemonRack.mount`; right-column DaemonRow hidden but kept as data source). Tests ported as superseded looks, not dropped rules.
+- RULING 2026-10-05 satellites: collapsed band by default; bloom to mini-wheels on hover or card aim. The game docks at most one satellite per slice; the layout handles two for the bible's limit. Not built: parasites (G mechanic), replace/destroyed animations (ART-3).
+- RULING 2026-10-05 firmware socket (§3.9): rarity colours come from Palette tokens (common cool white, uncommon cyan, rare gold, boss pink). `flash_slot` is ART-3's seam.
+- OPEN "spent" dimming of once/twice-per-combat firmware chips: not drawn because the view has no CombatState (`per_combat_uses`). A slice was proposed in the original text (not in this slice); the designer must decide.
+- RULING 2026-10-05 Daemon rack (§3.13): max 6 tiles, then "+N". `AttachStyle.daemon_family` derives the family from the trigger, since DaemonData has no family field. DEFAULT `daemon_rack_scan` 2.4 s. The fire cue is ART-3's (`fire_slot`).
+- RULING 2026-10-05 card-play preview (§3.17): fed only by `WheelView.ghost_rotation` from `engine.preview(action)`. DEFAULT `preview_chevron_chase` 1.2 s loop; all lit and still under reduce effects.
+- RULING 2026-10-05 D17 backdrop on its default: baked 1280x720 JPEG q84 stills, `assets/backdrops/combat/<corp>_<hq|site>_<day|night>.jpg`, without baked wheel pools. Won look: `_won.png` mask + "OURS NOW" (`backdrop_won_lights`, 0.9 s). Day/night follows the campaign's run count (odd runs = day). REBEL_CELL is night only: boss = DISPATCH canyon, regular = HOME canyon, and winning crossfades DISPATCH to HOME. The standalone combat scene uses the enemy's corp. Heat on combat (§3.15) is ART-3's `heat_layer`. HQ-run room backdrops belong to ART-8.
+- Motion ids: backdrop_won_lights, drone_bloom (a hover state, never skipped), preview_chevron_chase, preview_ghost, daemon_rack_scan.
+
+### ART-9 4B dialogue and portraits (2026-10-05)
+- RULING 2026-10-05 busts are pre-rendered (`tools/art_gen/portraits/`): 8 classes × 4 rookie seeds × 4 frames, 240x266 cells, one atlas per class plus corp photo prints. The seed pool is 4 per class.
+- RULING 2026-10-05 which rookie: `PortraitBust.variant_for(class, operative id)` uses a hash, with no game RNG and no state change. An empty id gives variant 0.
+- OPEN storing a roster-RNG seed on the operative (round 38 NOTES): a schema change, left for the portrait pass. Meanwhile, op ids repeat between campaigns, so the first Breaker wears the same rookie each time.
+- RULING 2026-10-05 one feed: `PortraitFeed` + `portrait_feed.gdshader` with modes. Hurt at HP ≤ 25 %. Chrome words show only where they reach the 12 px floor. The flatlined stay flatlined.
+- RULING 2026-10-05 motion (T0): `portrait_feed` (bar period 4 s, 12 fps), `portrait_blink` (0.14 s every 5 s), `portrait_talk` (0.11 s), `dispatch_trace` (1.6 s). Still in their end state under reduce effects or headless.
+- RULING 2026-10-05 paper views draw the print via `PortraitArt`. Enemies, bosses and corp faces keep the M13 styles. `Polaroid.kia` is dimmed and crossed out in pencil red.
+- RULING 2026-10-05 dialogue is on the Cell's CRT terminal (the paper strip is gone, per ART_BIBLE §1.2): cyan for the Cell/operatives/narrator, the corp's colour for a corp, DISPATCH red. An operative's bark shows its own class's bust (`bark` passes the class, not the base class); DISPATCH gets a red voice trace, never a face; narrator/corp/observer lines have no feed. Seam: `Dialogue.crt_style` (1B's CRT replaces the look).
+- OPEN dialogue screen with choices (dialogue.jpg's briefing layout): does not exist in the game, so a briefing screen would be a new screen. The portrait lab composes it for review only.
+
+### ART-1 1D city render spike (2026-10-05)
+- RULING 2026-10-05 choice: (a) real-time Godot 3D, over the Blender bake (b). Reasons: closer to the references, gives §4.1's continuous zoom and see-through band, and a whole-city bake would be about 220 MB per layer. Report: `docs/handoff/art_1/city_spike_report.md`.
+- DEFAULT budget: city ≤ 8 ms. Measured 2.5–2.8 ms (1080p, tier 2); the Deck at tier 1 is 1.81 ms. The Deck itself is not yet measured (about 10–12 ms estimated); tier 0 levers are ready in config.
+- DEFAULT optimisation (config): tier 2 shadow atlas 2048, MSAA off, half-res ground pass.
+- RULING 2026-10-05 calls: (1) see-through band is lod 1.50–1.595 (Grid solid, raid at the locked v3 opacity 0.68); (2) toon band edges N·L 0.118 / 0.363; (3) the post works on display values and Godot's glow is off; (4) sky lanes over the six busiest avenues, car colours from the `RngStreams` stream `city_traffic`; (5) round 34 lock: the Cell's district keeps the street grid, no fist roads, and the HQs are stand-ins (the heroes are ART-5's); (6) the toon, ink and post shaders are prototypes in `tools/spike/city/shaders/`, to be unified with 1B's material.
+- Tests: `test_city3d_spike.gd`. The render is verified windowed only. No shipped screen changed.
+
+### ART-2 2C cards and FX (2026-10-05)
+- RULING 2026-10-05 seams until Group 1: `BitsSeam` (CPU fallback; 1B's emitter replaces it) and `StickerSeam`. `BitPath` is pure numbers with hashed scatter (no RNG). Shard Beziers curve round the wheel, never across its face.
+- RULING 2026-10-05 D16 (confirmed by the designer): a beat in the "act" phase leaves from the card's slap point (`CombatFxLayer.slap_point`, also under reduce effects). Other beats keep their own source.
+- RULING 2026-10-05 reduce effects, headless or an entry switched off: no effect adds anything; the end state shows at once on the wheel and chips.
+- RULING 2026-10-05 effect tiers: T3 = Crit, Enemy defeated, Phase change. T1 = nudge resist and RAM gain. T0 = Heat H1 backdrop. All others T2. Motion ids are in the table of the original entry (e.g. `card_peel`, `hit_shards`, `heal_inflow`, `heat_city_beacon`).
+- DEFAULT durations: `effect_burst` 0.3 → 0.5 s (the dissolve); `card_stamp` 0.1 → 0.18 s (the card is gone before its effect, ANIM-R3 A6i); combat `hit_shake` 3 → 2 px (T2 limit).
+- RULING 2026-10-05 word box replaced by the vinyl word sticker; every `word_stamp` dissolves into bits. Sticker card fill: spin gold, harm pink, guards cyan, else violet, darkened 42 %; Rare and Boss cards get a holo edge.
+- RULING 2026-10-05 schema (minimal): CampaignConfigData "Combat FX" group: `fx_shard_base/per_dmg/max`, `fx_glyph_px_base/per_dmg/max`, `heat_city_*` (5 entries each); smoke check `_art2c`.
+- OPEN copies of `WheelView.hp_ring_spot` and RamBar chip geometry: mirrored, pending a public `hp_arc_spot` (2A) and `pip_spot` (2D). Both have since been provided per the 2A and 2D entries above.
+- OPEN Daemon/firmware triggers: effect and demo exist but no game hook. A non-timed "trigger" beat in ResolveBeats was proposed (adding it moves the replay's pacing). Later resolved by 2D item (4) with `ResolveBeats.trigger_marks`, which leaves the schedule unchanged.
+- OPEN not built, proposed slices: crit RGB split and pixelation (needed the wheel texture, since given by 2A); hover 1.36 growth (done in 2D); card idle bob; standing guards (done in 2A).
+- Dropped tests: none.
+
+### ART-1 1B material kit (2026-10-05)
+- RULING 2026-10-05 register: `KitMaterials.ALL`. Every kit shader includes `rc_common` and reads the `reduce_effects` global; every TIME line goes through `rc_time` / `rc_live`. VfxTier T0 for all except bits (T2). No screen is restyled.
+- RULING 2026-10-05 1B.1 CRT (`CrtTerminalPanel`): accents are cyan (Cell), lime (firmware), gold (Schematics), corp colour, red (DISPATCH). Separate from `crt_panel.gdshader`; 1A's TerminalPanel may adopt it.
+- RULING 2026-10-05 1B.2 vinyl sticker (`VinylSticker`): the art is drawn once into a SubViewport. DEFAULT `gloss_k` 0.22 at rest, 1.0 during a sweep. One sweep on one sticker at a time (`StickerSweepQueue`). `SystemWordSticker` implements §1.3. Runtime sticker only; the per-locale baked atlas is ART-4/10's.
+- RULING 2026-10-05 1B.3 grease pencil: Line2D strokes, width 10, alpha 0.96, shadow offset (3, 4). Write-on and wipe trim points, never alpha. Marker words use the marker face. Lint rule: `PencilLint.violations` (cover, layer; cursor layers ≥128 excepted), exported by review_pack.gd (key `pencil`) and reported by `lint_report.py` as rule f pencil.
+- RULING 2026-10-05 1B.4 light spill: gain per screen, `GAIN_COMBAT` 1.15, `GAIN_CITY` 0.38, `GAIN_SHOP` 1.2. 3D packs up to 8 sources.
+- RULING 2026-10-05 1B.5 holo: scrim `Palette.HOLO_SCRIM` 0.88, RGB split on the edge only (0 under reduce effects). Corp paper uses Courier Prime fields (1A's `Palette.paper()`).
+- RULING 2026-10-05 1B.6 bits: pooled GPUParticles2D (4 kept). The CPU fallback draws the same plan from the node (≤44 bits), not CPUParticles2D. `BitsPath` computes every per-bit number, so arrival times are known up front.
+- RULING 2026-10-05 1B.7 toon/ink: 3 hard bands; ink is an inverted hull of 2.5 px.
+- OPEN for 1D: the city may prefer a depth/normal post-process for ink on large meshes (hull splits at hard corners); the toon pass and spill uniforms are the same either way.
+- DEFAULT motion entries (ui_motion.tres): `crt_type_on` 0.02 s/char T1, `crt_caret_blink` 0.5 s, `crt_hex_scroll` 14 px/s, `sticker_slap` 0.45 s T2, `sticker_peel` 0.30 s, `sticker_dissolve` 0.5 s, `sticker_gloss_sweep` 1.4 s + 4.0 s rest, `sticker_corner_flutter` 2.4 s, `sticker_hover` 0.12 s ×1.05 T1, `sticker_press` 0.08 s T1, `pencil_write_on` 900 px/s capped 0.6 s, `pencil_wipe` 0.30 s, `pencil_glint` 0.6 s every 3 s, `holo_bands` 4 s, `light_spill_breathe` 3.2 s ±8 %, `bits_flight` 0.55 s. All show their end state under reduce effects, headless or switched off; one-shots join MotionSkip (passive).
+- RULING 2026-10-05 palette: 1A's tokens replace 1B's own duplicates (PENCIL_YELLOW, PENCIL_RED, VINYL_WHITE dropped). `Palette.marker()` is now Anton, so the kit's pencil words and kraft notes use `pencil()`.
+- OPEN remaining gaps vs reference: letter bevel highlight not drawn; hand-lettered pencil words (ours use the marker face); the reference's neon sign spells the shop's old name, the sheet's says MAINFRAME.
+- Tests: `test_art1_material_kit.gd`. None dropped.

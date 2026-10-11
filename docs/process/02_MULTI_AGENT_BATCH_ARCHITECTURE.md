@@ -173,6 +173,8 @@ saved next to the payload (`<name>.batch_id`) and in `STATE.md` under Open items
 | `expired` | batch ran past 24 h | resubmit unchanged |
 | `refusal` stop reason | classifier declined (rare on code) | reword the user turn or do it interactively; never loop |
 | `no-envelope` | the model ignored the format | the prompt is unclear for that file; do it interactively, fix the prompt file |
+| marker drift (`<<<RC_NOTES>`, `_END` closers) | Sonnet on long outputs (seen on the first digest batch) | the ingester parses tolerantly and keeps the longer block; the rules block now spells out the six marker lines |
+| many "ok / confirm / no finding" lines in a report | Haiku at low effort lists what passes | `tools/batch/lint_digest.py` drops them; the lint prompt says violations only; a report is a **lead list** until a Sonnet verify pass or an auditor confirms it |
 | patch check FAIL | file changed after the payload was built, or the model paraphrased context lines | rebuild from the current file; if it repeats, the file is too large for one request — split by `<instructions>` |
 
 ## 5. Human-in-the-loop: checkpoints

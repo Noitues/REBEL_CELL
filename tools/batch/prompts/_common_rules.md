@@ -45,6 +45,8 @@ summary: <one line, under 100 chars, imperative: "Add ## docs to 7 public funcs"
  Questions that need a human as "- Q: ...". "none" if nothing.>
 >>>
 ```
-A patch that does not apply cleanly is worthless: copy context lines exactly from the file you
+The six marker lines are exactly `<<<RC_RESULT`, `>>>`, `<<<RC_PATCH`, `>>>`, `<<<RC_NOTES`,
+`>>>`, each alone on its line; no other markers (no `_END`, no closing tags), nothing after
+the last `>>>`. A patch that does not apply cleanly is worthless: copy context lines exactly from the file you
 were given, including indentation and trailing spaces. Prefer several small hunks over one large
 rewrite. Do not reformat lines the task does not touch.

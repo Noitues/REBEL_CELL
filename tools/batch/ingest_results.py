@@ -32,15 +32,45 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
-ENV_RE = re.compile(r"<<<(RC_RESULT|RC_PATCH|RC_NOTES)\n(.*?)\n>>>", re.S)
+# A block may be empty ("<<<RC_PATCH\n>>>"): the closing marker is a line of its own.
+ENV_RE = re.compile(r"<<<(RC_RESULT|RC_PATCH|RC_NOTES)\n(.*?)^>>>", re.S | re.M)
 
 
 def git(*args: str) -> subprocess.CompletedProcess:
     return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)
 
 
+OPEN_RE = re.compile(r"^<<<(RC_RESULT|RC_PATCH|RC_NOTES)>*\s*$")
+CLOSE_RE = re.compile(r"^(>>>+|<<<RC_\w+.*|</RC_\w+>)\s*$")
+
+
 def parse_envelope(text: str) -> dict[str, str]:
-    parts = {m.group(1): m.group(2).strip("\n") for m in ENV_RE.finditer(text)}
+    """Tolerant line-wise parse: a block opens at `<<<RC_X` (stray `>` tolerated) and closes at
+    the next `>>>` line, the next opener, a `<<<RC_X_END` line or `</RC_X>` (models drift)."""
+    parts: dict[str, str] = {}
+    cur: str | None = None
+    buf: list[str] = []
+
+    def close() -> None:
+        # A block name seen twice (a model re-opening RC_NOTES as a "closer") keeps the longer text.
+        if cur:
+            text_ = "\n".join(buf).strip("\n")
+            if len(text_) > len(parts.get(cur, "")):
+                parts[cur] = text_
+
+    for line in text.splitlines():
+        m = OPEN_RE.match(line.strip())
+        if m:
+            close()
+            cur, buf = m.group(1), []
+            continue
+        if cur and CLOSE_RE.match(line.strip()):
+            close()
+            cur, buf = None, []
+            continue
+        if cur:
+            buf.append(line)
+    close()
     return parts
 
 
