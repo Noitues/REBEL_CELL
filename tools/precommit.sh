@@ -6,11 +6,12 @@
 #   bash tools/precommit.sh            # staged files
 #   bash tools/precommit.sh --base main  # everything changed vs main (hand-back)
 #
-# Logs go to $SP (default %TEMP%\rebel_cell_precommit). Prints one "name=<exit>" line per step;
+# Logs go to $SP (default %TEMP%\precommit_<worktree folder name>: one per worktree, so runs in two
+# worktrees at once never share or overwrite each other's logs and test shards). Prints one "name=<exit>" line per step;
 # exits non-zero on the first red step. Install as a hook with:
 #   printf '#!/bin/sh\nbash tools/precommit.sh\n' > .git/hooks/pre-commit   (the shebang is required; git cannot spawn the hook without it)
 cd "$(git rev-parse --show-toplevel)" || exit 1
-SP="${SP:-$TEMP/rebel_cell_precommit}"; mkdir -p "$SP"
+SP="${SP:-$TEMP/precommit_$(basename "$PWD")}"; mkdir -p "$SP"   # $PWD is the worktree root (cd above)
 MODE="--staged"; BASE=""
 if [ "$1" = "--base" ]; then MODE=""; BASE="--base $2"; fi
 
