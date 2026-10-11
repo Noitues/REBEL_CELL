@@ -55,6 +55,11 @@ func _assert_whole(lh: CorpPaperPanel, want: String, tag: String) -> void:
 		var w := Palette.body_medium().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit["px"])).x
 		assert_lte(w, lh.name_width() + 0.5, "%s: '%s' in its room (%.0f in %.0f)" % [tag, line, w, lh.name_width()])
 	assert_gte(int(fit["px"]), UiTheme.font_px_at(UiTheme.LABEL, 1.0), "%s: never smaller than at 1.0" % tag)
+	# On the sheet: the first line's top stays below the sheet's top (the memo's rose over it at 2.0).
+	var f := Palette.body_medium()
+	var px := int(fit["px"])
+	var top := lh.top_pad + lh.head_h - UiTheme.SP_M - f.get_height(px) * float(lines.size() - 1) - f.get_ascent(px)
+	assert_gte(top, 0.0, "%s: the name stands on the sheet (top %.1f)" % [tag, top])
 
 
 func test_every_corp_has_a_short_letterhead_name_through_textdb() -> void:
