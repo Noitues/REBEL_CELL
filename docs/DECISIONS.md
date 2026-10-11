@@ -37,6 +37,47 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-11 — Perf slice — HQ idle and combat far-LOD
+Goal: HQ idle and the combat close-up at <= 8 ms per frame, 1920x1080, default tier (city_quality 2).
+- **Far LOD (art director's approach).** `CityLod.prism_far` / `split_far` / `keep_next` / `snap_keep`: a view
+  names a keep rect (world X/Z); buildings whose footprint (grown by their top's lean on screen) misses it draw at
+  `far_lod_level` (2, the plain extrusion), cast no shadow (`far_lod_shadows`) and carry no roof props. The rect is
+  snapped outward to `far_lod_snap_bu` (16 BU) and held with hysteresis, and only chunks whose far set changes are
+  rebuilt: no popping while the camera is idle or drifts. HQ idle (`HqScene.far_lod_rect`): the network rect grown by
+  the map dim's vignette (margin + feather) and `far_lod_pad_px`, so the line lies in the fully dimmed city; the ink
+  edge pass runs only in that box, fading over `far_ink_feather_share` of the height (`city_post` `ink_keep`).
+  Combat close-up (`CombatBackdrop.far_keep`): the subject block grown by `backdrop_far_lod_reach_bu` (90 BU) keeps
+  full quality. All in `city_config.tres`. Window emissive at half rate was not needed (see numbers).
+- **The frame was CPU-bound, not GPU-bound** (GPU 5-6 ms of a 9-10 ms frame). Same-picture CPU fixes:
+  the map's crawling dashes and threat chevrons are one still mesh (`CityFlowMesh`, `shaders/city/city_flow.gdshader`
+  slides each dash and chevron along its track by the frame's phase; laid again only when the routes on screen
+  change; Godot's own quads and mitred polyline strips, in the CPU's order: 0 pixels apart from the CPU path at a
+  non-zero phase, `perf_pack flow_diff_hq`). The CPU path stays for a map whose packets would fall over later dashes.
+  The HUD's nudge buttons redraw only when what they draw changes and are laid once a frame; `WheelView._radius()` is
+  memoized on its inputs (it was fitted ~5 times per button and per draw). Earlier: the raid pencil relays only on
+  change, the network decal reads a link's data after its reach test, the dashes batch per edge.
+- **Numbers** (windowed `perf_pack --screens=b4_idle,combat_start --tiers=2,1 --perf=4 --warmup=60`, 3 runs each,
+  BEFORE = main 547444a8 copy, AFTER = this branch; shared machine: 1-5 other agents' Godot processes, CPU load
+  26-79 %, the AFTER runs on the busier side):
+
+| Screen | Tier | Median ms BEFORE (3 runs) | Median ms AFTER (3 runs) | p95 BEFORE | p95 AFTER | GPU BEFORE -> AFTER | City GPU BEFORE -> AFTER |
+|---|---|---|---|---|---|---|---|
+| HQ idle | 2 | 9.41 / 9.83 / 9.43 | 6.54 / 6.42 / 6.30 | 15.2 | 13.3 | 7.31 -> 3.95 | 6.21 -> 3.00 |
+| HQ idle | 1 | 11.13 / 10.39 / 10.31 | 8.89 / 6.95 / 6.85 | 14.0 | 13.2 | 6.89 -> 3.42 | 5.36 -> 2.38 |
+| Combat close-up | 2 | 9.11 / 9.52 / 9.18 | 6.09 / 5.07 / 4.99 | 13.7 | 11.1 | 6.36 -> 3.13 | 5.30 -> 1.93 |
+| Combat close-up | 1 | 9.12 / 9.26 / 9.34 | 5.26 / 5.06 / 4.95 | 14.6 | 12.7 | 5.23 -> 2.49 | 4.20 -> 1.34 |
+
+  Medians are inside 8 ms on both tiers; p95 is not (11-13 ms: load spikes from the other agents' runs; a quiet
+  machine run at the gate is owed).
+- **Look trade-off** (sheet `docs/art_review/PARITY/fixes/PERF.jpg`, for the group review): inside the network rect
+  nothing changes. Past it, in the dimmed city, buildings are plain extrusions with no ink; the ink fades out over
+  ~32 px at the box's edge, which shows on the boss's TARGET landmark when it stands outside the box (its ink line
+  softens across the tower). Combat close-up: no visible change.
+- Tests: `tests/unit/test_m14_perf_far_lod.gd` (fast). Files outside the city area (smallest changes):
+  `scripts/ui/kit/city_map_overlay.gd`, `scripts/ui/kit/hud_wheel_layer.gd`, `scripts/ui/wheel_view.gd`,
+  `scripts/ui/arena/combat_backdrop.gd`, `scripts/ui/kit/neon_city.gd`, `tools/visual_qa/perf_pack.gd` (probes:
+  `city_probe_*`, `cpu_probe_*`, `map_probe_hq`, `hud_probe_combat`, `flow_diff_hq`).
+
 ### 2026-10-11 — M14 RED-SWEEP city: the Grid sweep follows the HQ's one tag (B3 clutter rule, B4 b)
 `test_city_map_sweeps` still expected H22's landmark tags (the boss Site labelled with home selected) and at least one
 tag on every HQ map. B4 (a07daf9a) put the HQ idle on B3's `TagRule.FOCUS`, and the art director's B4 b review approved
