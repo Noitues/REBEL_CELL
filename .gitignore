@@ -23,3 +23,6 @@ override.cfg
 
 # Batch API working folder (docs/process/02): payloads, results, patches
 batches/
+
+# agent worktrees (local only)
+.claude/worktrees/

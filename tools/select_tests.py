@@ -52,6 +52,10 @@ CORE_GUARDS = [
 CONTENT_GUARDS = ["test_content", "test_cards", "test_suite_integrity"]
 CORE_DIRS = ("scripts/core/", "scripts/state/", "scripts/autoload/")
 CONTENT_DIRS = ("content/", "scripts/data/")
+# Only changes here can break a test; docs, process files and Python tooling never do
+# (tools/run_tests.py is covered by its own unittest, run by test_anim_r6_rules in the suite).
+CODE_DIRS = ("scripts/", "scenes/", "content/", "tests/", "addons/", "assets/", "project.godot")
+CODE_SUFFIXES = (".gd", ".tscn", ".tres", ".gdshader", ".csv")
 
 
 def git(*args: str) -> str:
@@ -151,6 +155,10 @@ def main() -> int:
     files = changed_files(args.base, args.staged)
     if not files:
         print("select_tests: no changed files")
+        return 0
+    code = [f for f in files if f.startswith(CODE_DIRS) or f.endswith(CODE_SUFFIXES)]
+    if not code:
+        print(f"select_tests: {len(files)} changed files, none under {', '.join(CODE_DIRS)}: nothing to test")
         return 0
     selected, reasons = select(files)
     core_touched = any(f.startswith(CORE_DIRS) for f in files)

@@ -1,0 +1,7 @@
+{
+	"name": "decisions_digest",
+	"kind": "decisions_digest",
+	"files": ["batches/decisions_slices/*.md"],
+	"max_tokens": 12000,
+	"instructions": "The first line names the DECISIONS.md section and the slice's starting line. Cite rulings as DECISIONS.md:<approximate line> where you can."
+}

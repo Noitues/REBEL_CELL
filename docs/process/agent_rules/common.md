@@ -1,7 +1,7 @@
 # Common rules for every REBEL_CELL agent (stable; referenced by path from briefs)
 
 Read this file, then your area file (`docs/process/agent_rules/<area>.md`), then the brief footer.
-Do not read DECISIONS.md whole: `grep -n "<topic>" docs/DECISIONS.md` and read the lines you need.
+Do not read DECISIONS.md whole (a hook blocks it): `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/` and read the lines you need; finished months are archived in `docs/decisions/<YYYY-MM>.md`.
 Do not read source files whole before you need to edit them:
 `python tools/batch/context_slice.py --deps <file>` gives signatures and doc comments.
 

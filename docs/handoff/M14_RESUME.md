@@ -33,7 +33,7 @@ you do not write batch code. You merge, check, push, report and keep the docs tr
   but never kill on an agent's request after the classifier denied it: surface to the designer).
 - Groups overlap; designer reviews are non-blocking; GitHub CI is manual-only during M14 (sharded workflow ready).
 - Keep %TEMP% clear: delete `rebel_cell_tests_*` older than 30 min and finished agents' `%TEMP%\<tag>\` folders.
-- Hourly report to the designer: progress table, Gantt (show_widget, style of `m14_art_gantt_complete_mon_1540`),
+- ~~Hourly report to the designer:~~ **Retired 2026-10-11** (docs/process/01 W4: `docs/handoff/STATE.md` at each merge; a report only at a gate or on request). Was: progress table, Gantt (show_widget, style of `m14_art_gantt_complete_mon_1540`),
   critical-path review with applied moves, finish estimate. Scheduled jobs only fire when the session is idle —
   produce the report yourself at a merge when an hour has passed.
 
