@@ -6,7 +6,28 @@ extends RefCounted
 
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
-	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound()
+	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead()
+
+
+## M14 FOLLOW-UP: CorporationData.letterhead_name: "" by default (no error: the letterhead letters
+## the display name), saved and loaded, and when set in capitals, no longer than the display name.
+func _m14_letterhead() -> int:
+	var fails := 0
+	var corp := CorporationData.new(); corp.id = &"smoke_corp"; corp.display_name = "Meridian Freight Systems"
+	var e := corp.letterhead_errors(); print("M14 letterhead default '", corp.letterhead_name, "' errors (expect 0): ", e)
+	if corp.letterhead_name != "" or e.size() != 0: fails += 1
+	corp.letterhead_name = "MERIDIAN FREIGHT"
+	var err := ResourceSaver.save(corp, "user://smoke_corp_letterhead.tres")
+	var loaded: CorporationData = load("user://smoke_corp_letterhead.tres")
+	print("M14 letterhead save=", err, " loaded='", loaded.letterhead_name, "' errors (expect 0): ", loaded.letterhead_errors())
+	if err != OK or loaded.letterhead_name != "MERIDIAN FREIGHT" or loaded.letterhead_errors().size() != 0: fails += 1
+	corp.letterhead_name = "Meridian Freight"
+	e = corp.letterhead_errors(); print("M14 letterhead lower case (expect 1): ", e)
+	if e.size() != 1: fails += 1
+	corp.letterhead_name = "MERIDIAN FREIGHT SYSTEMS INTERNATIONAL"
+	e = corp.letterhead_errors(); print("M14 letterhead longer than the name (expect 1): ", e)
+	if e.size() != 1: fails += 1
+	return fails
 
 
 func _mk_effect(t, target, amount := 0, scope := RC.RingScope.OUTER, mult := 1.0) -> EffectData:

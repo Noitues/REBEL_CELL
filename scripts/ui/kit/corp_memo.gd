@@ -31,7 +31,10 @@ var sheet: CorpPaperPanel
 var margins: MarginContainer
 
 
-func _init(p_corp: String = "", p_colour: Color = Palette.CORP_SOLACE, ts: float = 1.0) -> void:
+## A memo from corporation `p_corp` (its display name, on the routing line) in `p_colour` at
+## text scale `ts`; M14 FOLLOW-UP: `p_letterhead` is its letterhead name
+## (`CorpPaperPanel.letterhead_of`), "" to letter the display name.
+func _init(p_corp: String = "", p_colour: Color = Palette.CORP_SOLACE, ts: float = 1.0, p_letterhead: String = "") -> void:
 	name = "CorpMemo"
 	corp_name = p_corp
 	corp_colour = p_colour
@@ -40,6 +43,7 @@ func _init(p_corp: String = "", p_colour: Color = Palette.CORP_SOLACE, ts: float
 	sheet = CorpPaperPanel.new()
 	sheet.name = "Paper"
 	sheet.corp_name = p_corp.to_upper()
+	sheet.letterhead_name = p_letterhead.to_upper()
 	sheet.corp_color = p_colour
 	sheet.stamp = tr(STAMP)
 	sheet.mouse_filter = Control.MOUSE_FILTER_IGNORE

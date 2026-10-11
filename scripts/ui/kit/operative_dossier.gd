@@ -48,7 +48,7 @@ const DECK_CARDS := "%d cards" # TR
 const STATION := "IF STATIONED (RAIDS):" # TR
 const AT_LARGE := "AT LARGE" # TR
 
-## What the file shows (the scene reads it from the run): corp, corp_color, subject,
+## What the file shows (the scene reads it from the run): corp, letterhead, corp_color, subject,
 ## class_word, class_id, operative_id, rank, hp, max_hp, ram, wheel (Array[String]), hub,
 ## deck, station (Array[String]). Designer ruling Q10: no Heat stamp (the top bar's gauge is the one
 ## place for Heat).
@@ -104,10 +104,11 @@ func tilt() -> float:
 ## Shows the file for `p_data` (see `data`).
 func show_file(p_data: Dictionary) -> void:
 	data = p_data
-	# The letterhead carries the corp's mark word (MERIDIAN, HALCYON): the sheet's letterhead
-	# is one line at a fixed size.
+	# M14 FOLLOW-UP (art director): the letterhead carries the corp's letterhead name ("MERIDIAN
+	# FREIGHT"), whole; a corp without one keeps its mark word (MERIDIAN, HALCYON).
 	var words := String(data.get("corp", "")).to_upper().split(" ", false)
 	paper.corp_name = words[0] if not words.is_empty() else ""
+	paper.letterhead_name = String(data.get("letterhead", "")).to_upper()
 	paper.corp_color = data.get("corp_color", Palette.CORP_MERIDIAN)
 	_relayout()
 

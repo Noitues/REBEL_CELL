@@ -692,6 +692,7 @@ foreshadows = &"meridian"
 script = ExtResource("1")
 id = &"solace"
 display_name = "Solace Biosystems"
+letterhead_name = "SOLACE BIO"
 description = "Life-critical implants sold as the Continuum subscription. Miss a payment and the implant bricks."
 city_grid = SubResource("grid")
 enemies = Array[ExtResource("9")]([ExtResource("e_collections"), ExtResource("e_triage"), ExtResource("e_compliance"), ExtResource("e_dosage"), ExtResource("e_billing"), ExtResource("e_swarm")])

@@ -127,6 +127,14 @@ func house() -> String:
 	return style.name_shown(facts.corporation_name)
 
 
+## M14 FOLLOW-UP (art director): the letterhead's name: the house's own signature (DISPATCH),
+## else the corp's letterhead name ("MERIDIAN FREIGHT"), else the house; in capitals.
+func letterhead() -> String:
+	if style.house_name == "" and facts.corporation_letterhead != "":
+		return facts.corporation_letterhead.to_upper()
+	return house().to_upper()
+
+
 ## The audit's number on the file (the Cell's number, at least 1).
 func audit_number() -> int:
 	return maxi(1, facts.cell_number)
@@ -495,7 +503,8 @@ func _build_report() -> void:
 	names.add_theme_constant_override(&"separation", 0)
 	head.add_child(names)
 	var corp_line := Label.new()
-	corp_line.text = house().to_upper()
+	corp_line.name = "LetterheadName"
+	corp_line.text = letterhead()
 	corp_line.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	corp_line.add_theme_font_override(&"font", Palette.body_medium())
 	corp_line.add_theme_font_size_override(&"font_size", UiTheme.font_px(UiTheme.TITLE))

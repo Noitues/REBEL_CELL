@@ -163,7 +163,7 @@ static func _gd_files(dir: String) -> PackedStringArray:
 
 
 ## Fields that carry player-facing text on any content resource.
-const TEXT_FIELDS := ["display_name", "description", "text", "title", "premise", "label", "result_text",
+const TEXT_FIELDS := ["display_name", "letterhead_name", "description", "text", "title", "premise", "label", "result_text",
 	"warning_text", "phase_line", "event_text"]
 
 

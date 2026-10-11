@@ -709,6 +709,7 @@ foreshadows = &"dispatch"
 script = ExtResource("main_script")
 id = &"rebel_cell"
 display_name = "REBEL_CELL"
+letterhead_name = "REBEL_CELL"
 description = "Everything the Cell ever built, turned against it by the voice that gave the orders."
 city_grid = SubResource("grid")
 enemies = Array[ExtResource("e8")]([ExtResource("e9"), ExtResource("e10"), ExtResource("e11"), ExtResource("e12"), ExtResource("e13"), ExtResource("e14")])

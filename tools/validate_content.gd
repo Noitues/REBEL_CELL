@@ -15,6 +15,7 @@ func _init() -> void:
 	errors.append_array(_hq_compound_errors(registry))
 	errors.append_array(LandmarkAssetChecks.errors(_corporation_ids(registry)))
 	errors.append_array(RoofPropAssetChecks.errors())  # ART-5 5e
+	errors.append_array(_letterhead_errors(registry))  # M14 FOLLOW-UP
 	for e in errors:
 		printerr("  - ", e)
 	print("Content: %d resources, %d ids, config %s, motion %s." % [
@@ -24,6 +25,17 @@ func _init() -> void:
 	print("CONTENT VALIDATION: ", "PASS" if errors.is_empty() else "FAIL (%d)" % errors.size())
 	registry.free()
 	quit(0 if errors.is_empty() else 1)
+
+
+## M14 FOLLOW-UP (art director, 2026-10-11): every shipped corporation letters its paper with
+## a letterhead name (CorporationData.validate checks its form).
+func _letterhead_errors(registry: Node) -> PackedStringArray:
+	var errors := PackedStringArray()
+	for id in _corporation_ids(registry):
+		var corp := registry.get_content(id) as CorporationData
+		if corp.letterhead_name == "":
+			errors.append("Corporation %s has no letterhead_name." % id)
+	return errors
 
 
 ## ART-5 5b: the corporation ids (each owns a landmark under assets/city/landmarks/), sorted.

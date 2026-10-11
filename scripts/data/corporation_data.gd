@@ -4,6 +4,10 @@ extends Resource
 
 @export var id: StringName
 @export var display_name: String
+## M14 FOLLOW-UP (art director, 2026-10-11): the short form the corporation letters its own
+## paper with ("MERIDIAN FREIGHT"), in capitals; the full `display_name` stays in bodies and
+## fields. "" for none: a letterhead then shows the display name.
+@export var letterhead_name: String = ""
 @export_multiline var description: String
 @export var logo: Texture2D
 @export var city_grid: CityGridData
@@ -35,4 +39,18 @@ func validate(min_exploits: int = 3) -> PackedStringArray:
 	for e in enemies + elites:
 		if e:
 			errors.append_array(e.validate())
+	errors.append_array(letterhead_errors())
+	return errors
+
+
+## M14 FOLLOW-UP: a letterhead name, when set, is in capitals and no longer than the display
+## name (a short form of it).
+func letterhead_errors() -> PackedStringArray:
+	var errors := PackedStringArray()
+	if letterhead_name == "":
+		return errors
+	if letterhead_name != letterhead_name.to_upper():
+		errors.append("Corporation %s: letterhead_name '%s' must be in capitals." % [id, letterhead_name])
+	if letterhead_name.length() > display_name.length():
+		errors.append("Corporation %s: letterhead_name '%s' is longer than its display name." % [id, letterhead_name])
 	return errors
