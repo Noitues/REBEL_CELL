@@ -45,6 +45,8 @@ var campaigns_lost: int = 0
 var best_ice: int = -1
 var next_ice: int = 0
 var corporation_name: String = ""
+## M14 FOLLOW-UP: its letterhead name ("MERIDIAN FREIGHT"), "" when it has none.
+var corporation_letterhead: String = ""
 var boss_name: String = ""
 
 
@@ -104,6 +106,7 @@ static func build(c: CampaignState, corp: CorporationData, profile: ProfileState
 		f.best_ice = profile.best_ice
 	f.next_ice = p_next_ice
 	f.corporation_name = TextDb.t(corp, "display_name") if corp != null else String(c.corporation_id)
+	f.corporation_letterhead = CorpPaperPanel.letterhead_of(corp)
 	f.boss_name = TextDb.t(corp.final_boss, "display_name") if corp != null and corp.final_boss != null else ""
 	return f
 

@@ -2356,7 +2356,8 @@ func dossier_data() -> Dictionary:
 				station.append(Codex.describe_triggered(te))
 	var ram := cls.max_ram if cls != null else 0
 	ram = int(s.run.combat_overrides.get("max_ram", ram))
-	return {"corp": TextDb.t(corp, "display_name") if corp != null else "", "corp_color": Palette.corp_color(c.corporation_id),
+	return {"corp": TextDb.t(corp, "display_name") if corp != null else "", "letterhead": CorpPaperPanel.letterhead_of(corp),
+		"corp_color": Palette.corp_color(c.corporation_id),
 		"subject": op.name, "class_word": TextDb.t(cls, "display_name") if cls != null else "", "class_id": op.class_id,
 		"operative_id": op.id, "rank": op.rank, "hp": op.hp, "max_hp": op.max_hp, "ram": ram, "wheel": wheel,
 		"hub": TextDb.t(hub, "display_name") if hub != null else "", "deck": op.deck.size(), "station": station}
@@ -3467,7 +3468,7 @@ func _show_event() -> void:
 	var cam_row: HBoxContainer = null
 	# Left: the memo (corp speaker), the CAM feed, or DISPATCH's voice.
 	if memo:
-		var paper := CorpMemo.new(corp_name, tint, os)
+		var paper := CorpMemo.new(corp_name, tint, os, CorpPaperPanel.letterhead_of(corp_res))
 		paper.custom_minimum_size = Vector2(EVENT_MEMO_W, 0)
 		paper.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		text.custom_minimum_size = Vector2(EVENT_MEMO_W - CorpMemo.PAD.x * 2.0 * os, 0)

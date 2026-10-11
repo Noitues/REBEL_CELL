@@ -22,6 +22,13 @@ const SHADOW_OFFSET := Vector2(3, 5)
 	set(v):
 		corp_name = v
 		queue_redraw()
+## M14 FOLLOW-UP (art director, 2026-10-11): the corp's letterhead name ("MERIDIAN FREIGHT",
+## `letterhead_of`), lettered whole in place of `corp_name`; "" for none (then `corp_name`,
+## with its ellipsis as the fallback).
+var letterhead_name: String = "":
+	set(v):
+		letterhead_name = v
+		queue_redraw()
 @export var corp_color: Color = Palette.CORP_SOLACE:
 	set(v):
 		corp_color = v
@@ -166,11 +173,43 @@ func name_width() -> float:
 	return size.x - UiTheme.SP_L - maxf(UiTheme.SP_L, name_reserve)
 
 
+## M14 FOLLOW-UP: the name the letterhead letters: the letterhead name, else `corp_name`.
+func letterhead_text() -> String:
+	return letterhead_name if letterhead_name != "" else corp_name
+
+
+## M14 FOLLOW-UP: corporation `corp`'s letterhead name in capitals (its TextDb key), "" for none.
+static func letterhead_of(corp: Resource) -> String:
+	return TextDb.t(corp, "letterhead_name").to_upper() if corp != null else ""
+
+
 ## BIG-TEXT b (4a): the corp name as the letterhead draws it: {"px": int, "lines": PackedStringArray}.
+## M14 FOLLOW-UP: a letterhead name is always whole (`fit_whole`); `corp_name` keeps the ellipsis.
 func letterhead_fit() -> Dictionary:
 	var k := text_k if text_k > 0.0 else Settings.text_scale
-	return fit_name(Palette.body_medium(), corp_name, UiTheme.font_px_at(UiTheme.LABEL, k), UiTheme.font_px_at(UiTheme.LABEL, 1.0),
-		name_width(), head_h - UiTheme.SP_M)
+	var max_px := UiTheme.font_px_at(UiTheme.LABEL, k)
+	var min_px := UiTheme.font_px_at(UiTheme.LABEL, 1.0)
+	var room := head_h - UiTheme.SP_M
+	if letterhead_name != "":
+		return fit_whole(Palette.body_medium(), letterhead_name, max_px, min_px, name_width(), room)
+	return fit_name(Palette.body_medium(), corp_name, max_px, min_px, name_width(), room)
+
+
+## M14 FOLLOW-UP: `fit_name` without its ellipsis: when the name would be cut at `min_px`, the
+## largest smaller size it stands whole at (one line, else two in `room`). Pure.
+static func fit_whole(font: Font, name: String, max_px: int, min_px: int, width: float, room: float) -> Dictionary:
+	var fit := fit_name(font, name, max_px, min_px, width, room)
+	if " ".join(fit["lines"]) == name:
+		return fit
+	var words := name.split(" ", false)
+	for px in range(mini(min_px, max_px) - 1, 0, -1):
+		if font.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= width:
+			return {"px": px, "lines": PackedStringArray([name])}
+		if words.size() > 1 and font.get_height(px) + font.get_ascent(px) <= room:
+			var two := _wrap_two(font, words, px, width)
+			if font.get_string_size(two[0], HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= width and font.get_string_size(two[1], HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= width:
+				return {"px": px, "lines": two}
+	return {"px": 1, "lines": PackedStringArray([name])}
 
 
 ## BIG-TEXT b (art director, 4a): `name` in `width` px: one line at `max_px`, else smaller down to

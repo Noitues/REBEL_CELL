@@ -37,6 +37,36 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-11 — M14 FOLLOW-UP: letterhead names; takeover end frame
+Art director's APPROVED review of the close-out group, two follow-ups.
+- **Letterhead names (schema).** `CorporationData.letterhead_name` (String, "" by default): the
+  short form a corporation letters its own paper with, in capitals. Chosen as brand + one word,
+  the way a house trims its legal suffix: MERIDIAN FREIGHT (Meridian Freight Systems), SOLACE BIO
+  (Solace Biosystems), HALCYON CIVIC, ORBITAL COMMONS, REBEL_CELL (already short). A TextDb field
+  (`TEXT_FIELDS`), so each is a `CorporationData.<id>.letterhead_name` key in strings.csv.
+  `validate()` checks the form when set (capitals, no longer than the display name); content
+  validation requires one on every shipped corporation; schema smoke `_m14_letterhead`.
+- **Where it shows.** Every corp-paper letterhead: `CorpPaperPanel.letterhead_name` (RaidPaper's
+  work order and report via `RaidSkin.letterhead_name()`, CorpMemo's new 4th argument, the operative
+  dossier's `letterhead` field), and the audit dossier's letterhead line (`AuditDossier.letterhead()`:
+  a house that signs as someone else, DISPATCH, keeps its signature). The full legal name stays in
+  bodies and fields (the work order's footer, the memo's FROM line, the notice, the dossier fields).
+- **Fit.** A letterhead name is always whole (`CorpPaperPanel.fit_whole`: `fit_name`, then a smaller
+  size only if nothing else fits; never an ellipsis). `fit_name`'s ellipsis stays for a corp with no
+  letterhead name. MERIDIAN FREIGHT is 154 px at the 1.0 size on the 228 px work order, 2 px over its
+  room left of the seal: the gap before the seal (`RaidPaper.seal_reserve`) is SP_XS (was SP_S), so
+  it stands whole at the 1.0 size. CorpMemo's letterhead now grows with its text scale (head_h and
+  text_k, like the raid papers): at 2.0 the name rose over the sheet's top edge under the tape.
+  Test `test_m14_followup_letterhead` (1.0 / 1.6 / 2.0, every corp, every document); sheet
+  `docs/art_review/PARITY/fixes/LETTERHEAD.jpg` (probe `tools/visual_qa/letterhead_probe.tscn`).
+- **Takeover end frame (gate check, no change).** The campaign-lost RansomLock's settled end frame
+  at 1.0, windowed (campaign_end_lab, every corp), reduce effects off and on: the same end state
+  (house-coloured notice, 00:00.00, the verb stamp, padlocks on the nodes, the HQ's bars and network
+  tinted under it); never mostly black (frame luma 0.10–0.15, round 20 concept 0.17). Measured
+  against the HQ uncovered at 1.1 s, the takeover keeps 0.70–0.87 of the HQ's light, above the 0.45
+  floor the review set, so no lift: what reads darker than the concept is the HQ's own city under
+  the lock (the ISOLATE look), not the takeover. Sheet `TAKEOVER_END.jpg`.
+
 ### 2026-10-11 — Perf slice — HQ idle and combat far-LOD
 Goal: HQ idle and the combat close-up at <= 8 ms per frame, 1920x1080, default tier (city_quality 2).
 - **Far LOD (art director's approach).** `CityLod.prism_far` / `split_far` / `keep_next` / `snap_keep`: a view

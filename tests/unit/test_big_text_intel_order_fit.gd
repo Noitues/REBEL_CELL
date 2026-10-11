@@ -401,7 +401,7 @@ func test_the_letterhead_name_keeps_left_of_the_seal() -> void:
 			assert_lte(right, sheet.size.x - sheet.seal_reserve() + 0.5, "%s: the name's room ends left of the seal" % tag)
 			for line: String in fit["lines"]:
 				assert_lte(font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit["px"])).x, lh.name_width() + 0.5, "%s: '%s' fits left of the seal" % [tag, line])
-			assert_true(" ".join(fit["lines"]) == lh.corp_name or String(fit["lines"][-1]).ends_with(CorpPaperPanel.ELLIPSIS), "%s: the whole name, or cut with an ellipsis" % tag)
+			assert_true(" ".join(fit["lines"]) == lh.letterhead_text() or String(fit["lines"][-1]).ends_with(CorpPaperPanel.ELLIPSIS), "%s: the whole name (M14 FOLLOW-UP: the letterhead name), or cut with an ellipsis" % tag)
 			sheet.queue_free()
 	# The pure fit: wider than the room -> two lines -> an ellipsis.
 	var f := Palette.body_medium()

@@ -558,14 +558,19 @@ Copy the campaign code,Copy the campaign code
 Corporate: run it to clear it.,Corporate: run it to clear it.
 CorporationData.halcyon.description,"The contractor that runs the city: water, power, transit and the police, billed per resident."
 CorporationData.halcyon.display_name,Halcyon Civic
+CorporationData.halcyon.letterhead_name,HALCYON CIVIC
 CorporationData.meridian.description,"The logistics giant that moves everything, loses what it likes and bills you for the search."
 CorporationData.meridian.display_name,Meridian Freight Systems
+CorporationData.meridian.letterhead_name,MERIDIAN FREIGHT
 CorporationData.orbital.description,"It owns the sky: every satellite, every signal, every forecast. The commons, by subscription."
 CorporationData.orbital.display_name,Orbital Commons
+CorporationData.orbital.letterhead_name,ORBITAL COMMONS
 CorporationData.rebel_cell.description,"Everything the Cell ever built, turned against it by the voice that gave the orders."
 CorporationData.rebel_cell.display_name,REBEL_CELL
+CorporationData.rebel_cell.letterhead_name,REBEL_CELL
 CorporationData.solace.description,Life-critical implants sold as the Continuum subscription. Miss a payment and the implant bricks.
 CorporationData.solace.display_name,Solace Biosystems
+CorporationData.solace.letterhead_name,SOLACE BIO
 Corporations,Corporations
 Costs %d Schematics (you have %d): Heat changes by %d.,Costs %d Schematics (you have %d): Heat changes by %d.
 Costs: %s.,Costs: %s.

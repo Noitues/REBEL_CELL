@@ -689,6 +689,7 @@ finale = SubResource("b_smart_meters_f")
 script = ExtResource("main_script")
 id = &"halcyon"
 display_name = "Halcyon Civic"
+letterhead_name = "HALCYON CIVIC"
 description = "The contractor that runs the city: water, power, transit and the police, billed per resident."
 city_grid = SubResource("grid")
 enemies = Array[ExtResource("e8")]([ExtResource("e9"), ExtResource("e10"), ExtResource("e11"), ExtResource("e12"), ExtResource("e13"), ExtResource("e14")])

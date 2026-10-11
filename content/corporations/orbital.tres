@@ -685,6 +685,7 @@ finale = SubResource("b_the_commons_f")
 script = ExtResource("main_script")
 id = &"orbital"
 display_name = "Orbital Commons"
+letterhead_name = "ORBITAL COMMONS"
 description = "It owns the sky: every satellite, every signal, every forecast. The commons, by subscription."
 city_grid = SubResource("grid")
 enemies = Array[ExtResource("e8")]([ExtResource("e9"), ExtResource("e10"), ExtResource("e11"), ExtResource("e12"), ExtResource("e13"), ExtResource("e14")])

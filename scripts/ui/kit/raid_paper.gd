@@ -82,13 +82,17 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_stamp
 	paper.name = "Paper"
 	paper.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	paper.corp_name = skin.corp_name()
+	# M14 FOLLOW-UP (art director): the letterhead letters the corp's short form, whole; the full
+	# name stays on the footer.
+	paper.letterhead_name = skin.letterhead_name()
 	paper.corp_color = skin.paper_hue.lightened(0.35) if Palette.luminance(skin.hue) > Palette.luminance(Palette.TEXT_MID) else skin.hue
 	paper.stamp = tr(p_stamp)
 	paper.seed = absi(p_title.hash()) % 97 + 1
 	paper.top_pad = top_pad()
 	# M14 BIG-TEXT b (art director, 4a): the letterhead grows with the sheet's text (its rows start
 	# under LETTERHEAD_H x k already) and the corp name keeps left of the seal: it fits that width,
-	# then wraps to two lines, then ends in an ellipsis (CorpPaperPanel.fit_name).
+	# then wraps to two lines; only a corp without a letterhead name ends in an ellipsis
+	# (CorpPaperPanel.fit_whole / fit_name).
 	paper.text_k = _k
 	paper.head_h = CorpPaperPanel.LETTERHEAD_H * _k
 	paper.name_reserve = seal_reserve()
@@ -210,9 +214,10 @@ func _draw() -> void:
 
 
 ## BIG-TEXT b (4a): the room at the letterhead's right the seal takes (px from the sheet's right
-## edge, with a gap before it): the corp name ends left of it.
+## edge, with a gap before it): the corp name ends left of it. M14 FOLLOW-UP: the gap is SP_XS so
+## the letterhead name ("MERIDIAN FREIGHT", 154 px) stands whole at the 1.0 size on the 228 px order.
 func seal_reserve() -> float:
-	return (PAD + SEAL_R * 2.0) * _k + UiTheme.SP_S
+	return (PAD + SEAL_R * 2.0) * _k + UiTheme.SP_XS
 
 
 ## The sheet's top padding (px): the clip's bite, so the letterhead starts below the jaw (D24).

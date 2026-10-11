@@ -31,7 +31,10 @@ var sheet: CorpPaperPanel
 var margins: MarginContainer
 
 
-func _init(p_corp: String = "", p_colour: Color = Palette.CORP_SOLACE, ts: float = 1.0) -> void:
+## A memo from corporation `p_corp` (its display name, on the routing line) in `p_colour` at
+## text scale `ts`; M14 FOLLOW-UP: `p_letterhead` is its letterhead name
+## (`CorpPaperPanel.letterhead_of`), "" to letter the display name.
+func _init(p_corp: String = "", p_colour: Color = Palette.CORP_SOLACE, ts: float = 1.0, p_letterhead: String = "") -> void:
 	name = "CorpMemo"
 	corp_name = p_corp
 	corp_colour = p_colour
@@ -40,6 +43,11 @@ func _init(p_corp: String = "", p_colour: Color = Palette.CORP_SOLACE, ts: float
 	sheet = CorpPaperPanel.new()
 	sheet.name = "Paper"
 	sheet.corp_name = p_corp.to_upper()
+	sheet.letterhead_name = p_letterhead.to_upper()
+	# M14 FOLLOW-UP: the letterhead grows with the memo's text (as the raid papers'), so its name
+	# stands whole on the sheet at 2.0 (it rose over the sheet's top edge, under the tape).
+	sheet.text_k = ts
+	sheet.head_h = head_h()
 	sheet.corp_color = p_colour
 	sheet.stamp = tr(STAMP)
 	sheet.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -51,7 +59,7 @@ func _init(p_corp: String = "", p_colour: Color = Palette.CORP_SOLACE, ts: float
 	margins.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margins.add_theme_constant_override(&"margin_left", roundi(PAD.x * ts))
 	margins.add_theme_constant_override(&"margin_right", roundi(PAD.x * ts))
-	margins.add_theme_constant_override(&"margin_top", roundi(CorpPaperPanel.LETTERHEAD_H + (TITLE_PX + META_PX) * 1.7 * ts + PAD.y * ts))
+	margins.add_theme_constant_override(&"margin_top", roundi(head_h() + (TITLE_PX + META_PX) * 1.7 * ts + PAD.y * ts))
 	margins.add_theme_constant_override(&"margin_bottom", roundi(CorpPaperPanel.STAMP_SLOT.y + PAD.y * ts))
 	add_child(margins)
 	margins.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -66,6 +74,11 @@ func _init(p_corp: String = "", p_colour: Color = Palette.CORP_SOLACE, ts: float
 	add_child(over)
 	over.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	resized.connect(func() -> void: pivot_offset = size * 0.5)
+
+
+## M14 FOLLOW-UP: the letterhead's height (px) at the memo's text scale.
+func head_h() -> float:
+	return CorpPaperPanel.LETTERHEAD_H * text_scale
 
 
 func _get_minimum_size() -> Vector2:
@@ -89,7 +102,7 @@ func _draw_head(on: Control) -> void:
 	on.draw_rect(Rect2(Vector2((r.size.x - TAPE.x * s) * 0.5, -TAPE.y * s * 0.45), TAPE * s), Palette.NOTE_TAPE)
 	var paper := Palette.paper_bold()
 	var ts := roundi(TITLE_PX * s)
-	var y := CorpPaperPanel.LETTERHEAD_H + 6.0 * s + paper.get_ascent(ts)
+	var y := head_h() + 6.0 * s + paper.get_ascent(ts)
 	on.draw_string(paper, Vector2(PAD.x * s, y), tr(head_word), HORIZONTAL_ALIGNMENT_LEFT, -1, ts, Palette.PAPER_TYPE_INK)
 	var ms := roundi(META_PX * s)
 	y += paper.get_descent(ts) + Palette.paper().get_ascent(ms) + 4.0 * s

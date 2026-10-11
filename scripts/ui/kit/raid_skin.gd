@@ -63,6 +63,12 @@ func corp_name() -> String:
 	return (TextDb.t(corp, "display_name") if corp != null else String(corporation_id)).to_upper()
 
 
+## M14 FOLLOW-UP: the corporation's letterhead name in capitals ("MERIDIAN FREIGHT"), from
+## content; "" when it has none (the letterhead then shows `corp_name`).
+func letterhead_name() -> String:
+	return CorpPaperPanel.letterhead_of(RunManager.lookup().get_content(corporation_id) if RunManager != null else null)
+
+
 ## A work-order number for raid `raid_id` (deterministic: the id's hash, never an RNG).
 func order_number(raid_id: StringName, heat: int) -> String:
 	var h := absi(hash(String(raid_id))) % 1000
