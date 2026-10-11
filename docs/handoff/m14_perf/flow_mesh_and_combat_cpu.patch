@@ -1,0 +1,615 @@
+diff --git a/scripts/ui/city/city_flow_mesh.gd b/scripts/ui/city/city_flow_mesh.gd
+new file mode 100644
+index 00000000..1ef7a36e
+--- /dev/null
++++ b/scripts/ui/city/city_flow_mesh.gd
+@@ -0,0 +1,175 @@
++class_name CityFlowMesh
++extends RefCounted
++## M14 perf slice (HQ idle CPU): the city map's crawling dashes and threat chevrons
++## (CityMapOverlay's flow layer) as ONE still mesh, laid only when the routes on screen change;
++## shaders/city/city_flow.gdshader slides each dash and chevron along its track by the frame's
++## phase. The CPU path laid every dash and every chevron again on every frame (~1-5 ms of the
++## HQ idle's frame with its threat routes). Same picture: the same quads and polyline strips at
++## the same places, in the same order (the CPU's: per edge its dashes, then its chevrons, each
++## chevron's keyline before its colour).
++##
++## A track is one segment of one edge for one kind (its dashes, or its chevrons); its row in the
++## track texture: (origin.xy, dir.xy), (length, period, base, flow), (kind, 0, 0, 0). A dash
++## track's base is 0; a chevron track's base is minus the edge's length before the segment (the
++## CPU carried the chevrons' spacing on round the corners: carry = (phase - before) mod step).
++
++const SHADER := preload("res://shaders/city/city_flow.gdshader")
++const KIND_DASH := 0
++const KIND_CHEVRON := 1
++## Rows the track texture may hold (a texture's height limit); a plan past it stays on the CPU.
++const MAX_TRACKS := 16384
++## The chevrons' keyline (colour, width per unit of the map's scale k) and their colour's width:
++## CityMapOverlay._chevrons' values.
++const CHEVRON_INK := Color(0, 0, 0, 0.8)
++const CHEVRON_INK_W := 4.5
++const CHEVRON_W := 2.2
++
++var mesh: ArrayMesh = null
++var tracks: ImageTexture = null
++var material: ShaderMaterial = null
++## Track rows of the last build (tests, the probe).
++var track_count: int = 0
++
++var _rows := PackedFloat32Array()
++var _verts := PackedVector2Array()
++var _uvs := PackedVector2Array()
++var _cols := PackedColorArray()
++var _idx := PackedInt32Array()
++
++
++## Lays edges `edges` (each {"pts": PackedVector2Array (local px), "color", "width", "flow",
++## "dashed", "arrows"}) at phase 0: dashes of `dash_on` px every `dash_period` px, chevrons of
++## half-size `chevron_size` every `chevron_step` px (both already scaled to the map), the map's
++## scale `k` for the chevrons' widths, at most `max_per_segment` of each per segment. False
++## (nothing built) when the plan does not fit the track texture.
++func build(edges: Array[Dictionary], dash_on: float, dash_period: float, chevron_step: float, chevron_size: float, k: float, max_per_segment: int) -> bool:
++	_rows = PackedFloat32Array()
++	_verts = PackedVector2Array()
++	_uvs = PackedVector2Array()
++	_cols = PackedColorArray()
++	_idx = PackedInt32Array()
++	track_count = 0
++	for e: Dictionary in edges:
++		var pts: PackedVector2Array = e["pts"]
++		var col: Color = e["color"]
++		var w: float = e["width"]
++		var flow := 1.0 if bool(e["flow"]) else 0.0
++		if bool(e["dashed"]):
++			for q in pts.size() - 1:
++				var a := pts[q]
++				var length := a.distance_to(pts[q + 1])
++				if not is_finite(length) or length <= 0.0:
++					continue
++				var row := _track(a, (pts[q + 1] - a) / length, length, dash_period, 0.0, flow, KIND_DASH)
++				for i in mini(max_per_segment, ceili(length / dash_period)):
++					var t := i * dash_period
++					_quad(row, t, t + dash_on, w, col)
++		if bool(e["arrows"]):
++			var before := 0.0
++			for q in pts.size() - 1:
++				var a := pts[q]
++				var length := a.distance_to(pts[q + 1])
++				if not is_finite(length) or length <= 0.0:
++					continue
++				var row := _track(a, (pts[q + 1] - a) / length, length, chevron_step, -before, flow, KIND_CHEVRON)
++				before += length
++				for i in mini(max_per_segment, ceili(length / chevron_step)):
++					var c := i * chevron_step
++					var wing := PackedVector2Array([Vector2(c - chevron_size, chevron_size), Vector2(c + chevron_size, 0.0), Vector2(c - chevron_size, -chevron_size)])
++					_strip(row, c, polyline_strip(wing, CHEVRON_INK_W * k, -1.0), CHEVRON_INK)
++					_strip(row, c, polyline_strip(wing, CHEVRON_W * k, -1.0), col)
++	if track_count > MAX_TRACKS:
++		return false
++	mesh = null
++	if _idx.is_empty():
++		return true
++	var arrays := []
++	arrays.resize(Mesh.ARRAY_MAX)
++	arrays[Mesh.ARRAY_VERTEX] = _verts
++	arrays[Mesh.ARRAY_TEX_UV] = _uvs
++	arrays[Mesh.ARRAY_COLOR] = _cols
++	arrays[Mesh.ARRAY_INDEX] = _idx
++	mesh = ArrayMesh.new()
++	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, Mesh.ARRAY_FLAG_USE_2D_VERTICES)
++	var img := Image.create_from_data(3, track_count, false, Image.FORMAT_RGBAF, _rows.to_byte_array())
++	if tracks == null or tracks.get_size() != Vector2(img.get_size()):
++		tracks = ImageTexture.create_from_image(img)
++	else:
++		tracks.update(img)
++	if material == null:
++		material = ShaderMaterial.new()
++		material.shader = SHADER
++	material.set_shader_parameter(&"tracks", tracks)
++	return true
++
++
++## Sets the frame's phases (px): the dashes' fmod(travel, dash period), the chevrons'
++## fmod(travel, chevron step).
++func set_phase(dash_phase: float, chevron_phase: float) -> void:
++	if material == null:
++		return
++	material.set_shader_parameter(&"dash_phase", dash_phase)
++	material.set_shader_parameter(&"chevron_phase", chevron_phase)
++
++
++## The shift (px along its track) a track of `period`, `base` and `flow` (0 or 1) gives its
++## elements at phase `phase`: the shader's mod(phase * flow + base, period).
++static func shift_of(phase: float, period: float, base: float, flow: float) -> float:
++	var x := phase * flow + base
++	return x - period * floorf(x / period)
++
++
++## The triangle strip (2 vertices per point) Godot lays for a polyline of `width` through `pts`
++## (no antialiasing): the ends square to their segment, a corner mitred on the bisector of its
++## two segments' normals. `frame_sign` -1: `pts` are in a track's frame (x along the track, y
++## along its dir.orthogonal(): a mirror of the canvas), so the canvas' normals are negated and
++## the strip's vertices come in Godot's order.
++static func polyline_strip(pts: PackedVector2Array, width: float, frame_sign: float = 1.0) -> PackedVector2Array:
++	var out := PackedVector2Array()
++	var hw := width * 0.5 * frame_sign
++	var n := pts.size()
++	for i in n:
++		var off: Vector2
++		if i == 0:
++			off = (pts[1] - pts[0]).normalized().orthogonal()
++		elif i == n - 1:
++			off = (pts[i] - pts[i - 1]).normalized().orthogonal()
++		else:
++			var n0 := (pts[i] - pts[i - 1]).normalized().orthogonal()
++			var n1 := (pts[i + 1] - pts[i]).normalized().orthogonal()
++			var bis := (n0 + n1).normalized()
++			off = bis / maxf(bis.dot(n0), 0.001)
++		out.append(pts[i] + off * hw)
++		out.append(pts[i] - off * hw)
++	return out
++
++
++func _track(a: Vector2, dir: Vector2, length: float, period: float, base: float, flow: float, kind: int) -> int:
++	_rows.append_array(PackedFloat32Array([a.x, a.y, dir.x, dir.y, length, period, base, flow, float(kind), 0.0, 0.0, 0.0]))
++	track_count += 1
++	return track_count - 1
++
++
++## A dash from `t0` to `t1` along track `row`, `w` px wide (draw_multiline's quad).
++func _quad(row: int, t0: float, t1: float, w: float, col: Color) -> void:
++	var hw := w * 0.5
++	var b := _verts.size()
++	for p: Vector2 in [Vector2(t0, hw), Vector2(t1, hw), Vector2(t1, -hw), Vector2(t0, -hw)]:
++		_verts.append(p)
++		_uvs.append(Vector2(row, t0))
++		_cols.append(col)
++	_idx.append_array(PackedInt32Array([b, b + 1, b + 2, b, b + 2, b + 3]))
++
++
++## Triangle strip `strip` (track-frame px) on track `row`, anchored at `anchor`.
++func _strip(row: int, anchor: float, strip: PackedVector2Array, col: Color) -> void:
++	var b := _verts.size()
++	for p in strip:
++		_verts.append(p)
++		_uvs.append(Vector2(row, anchor))
++		_cols.append(col)
++	for i in strip.size() - 2:
++		if i % 2 == 0:
++			_idx.append_array(PackedInt32Array([b + i, b + i + 1, b + i + 2]))
++		else:
++			_idx.append_array(PackedInt32Array([b + i + 1, b + i, b + i + 2]))
+diff --git a/scripts/ui/city/city_flow_mesh.gd.uid b/scripts/ui/city/city_flow_mesh.gd.uid
+new file mode 100644
+index 00000000..00645148
+--- /dev/null
++++ b/scripts/ui/city/city_flow_mesh.gd.uid
+@@ -0,0 +1 @@
++uid://4sbgq0v577hr
+diff --git a/scripts/ui/kit/city_map_overlay.gd b/scripts/ui/kit/city_map_overlay.gd
+index 69495d61..bbafd615 100644
+--- a/scripts/ui/kit/city_map_overlay.gd
++++ b/scripts/ui/kit/city_map_overlay.gd
+@@ -481,7 +481,8 @@ func _process(delta: float) -> void:
+ 		return
+ 	# The map's own motion runs at the playout's speed (Motion.speed: 1x outside a raid).
+ 	anim_t += delta * Motion.speed
+-	_anim.queue_redraw()
++	if _flow_tick():
++		_anim.queue_redraw()
+ 	if selected_id != &"" or not _travel.is_empty():
+ 		_hi.queue_redraw()
+ 
+@@ -1158,13 +1159,135 @@ func _draw() -> void:
+ ## Flowing dashes and packets (redrawn every frame unless reduce-effects).
+ func _draw_anim() -> void:
+ 	if city == null or nodes.is_empty():
++		if _flow_layer != null:
++			_flow_layer.visible = false
+ 		return
+ 	_c = _anim
+-	for k in edges.size():
+-		_edge_flow(edges[k], _route_px(k))
++	var plan := _flow_plan()
++	if _flow_ready(plan):
++		# M14 perf slice: the dashes and chevrons are the still mesh's (the shader crawls them);
++		# only the packets, under them as on the CPU path, are drawn each frame.
++		for k: int in plan["packets"]:
++			_edge_flow(edges[k], _route_px(k))
++	else:
++		for k in edges.size():
++			_edge_flow(edges[k], _route_px(k))
+ 	_c = self
+ 
+ 
++# --- The flow as a still mesh (M14 perf slice) ----------------------------------------------
++
++## M14 perf slice: true lays the flow's dashes and chevrons as one still mesh that
++## shaders/city/city_flow.gdshader crawls (CityFlowMesh; laid again only when the routes on
++## screen change); false lays them on the CPU every frame (the probe's same-picture check,
++## flow_diff_hq). A map whose packets would fall over a later edge's dashes or chevrons stays on
++## the CPU (the mesh draws over every packet).
++var flow_shader: bool = true
++var _flow_mesh: CityFlowMesh = null
++var _flow_layer: Control = null
++## The plan the mesh was laid for ([] none; _flow_cpu: it did not fit, the CPU draws it).
++var _flow_sig: Array = []
++var _flow_cpu: bool = false
++
++
++## The flow plan now: {"ok": the mesh can draw it, "sig": what the mesh shows, "edges": the
++## mesh's edges (CityFlowMesh.build's), "packets": the edges whose packets the CPU draws}.
++func _flow_plan() -> Dictionary:
++	var ok := flow_shader and city != null and not nodes.is_empty()
++	var sig: Array = [_k(), look]
++	var mesh_edges: Array[Dictionary] = []
++	var packet_edges := PackedInt32Array()
++	var live_packets := packets and crawl_speed() > 0.0
++	for i in edges.size():
++		var e: Dictionary = edges[i]
++		if bool(e.get("pencil", false)) or bool(e.get("depowered", false)) or bool(e.get("locked", false)):
++			continue
++		var dashed := _is_dashed(e)
++		var arrows := bool(e.get("arrows", false))
++		var packet := not dashed and bool(e.get("flow", false)) and live_packets
++		if not (dashed or arrows or packet):
++			continue
++		var pts := _route_px(i)
++		if pts.size() < 2:
++			continue
++		if packet:
++			# The CPU's order: a packet over the dashes and chevrons drawn before it.
++			ok = ok and mesh_edges.is_empty() and not arrows
++			packet_edges.append(i)
++		if dashed or arrows:
++			var m := {"pts": pts, "color": _flow_colour(e), "width": float(e.get("width", 3.0)),
++				"flow": bool(e.get("flow", true)), "dashed": dashed, "arrows": arrows}
++			# draw_multiline draws a width under 0 as thin lines: the CPU's.
++			ok = ok and (not dashed or m["width"] >= 0.0)
++			mesh_edges.append(m)
++			sig.append_array([i, pts, m["color"], m["width"], m["flow"], dashed, arrows])
++	return {"ok": ok, "sig": sig, "edges": mesh_edges, "packets": packet_edges}
++
++
++## An edge's flow colour (its own, else the network's cyan): the CPU path's and the mesh's.
++static func _flow_colour(e: Dictionary) -> Color:
++	return e.get("color", Palette.NET_CYAN)
++
++
++## True when the mesh draws `plan`'s dashes and chevrons (_flow_plan): lays it again when the
++## plan changed, sets the frame's phases, shows its layer (hidden when the CPU draws them).
++func _flow_ready(plan: Dictionary) -> bool:
++	var ok: bool = plan["ok"]
++	if ok and plan["sig"] != _flow_sig:
++		if _flow_mesh == null:
++			_flow_mesh = CityFlowMesh.new()
++		var k := _k()
++		_flow_cpu = not _flow_mesh.build(plan["edges"], DASH_ON, DASH_PERIOD, ARROW_STEP * k, ARROW_SIZE * k, k, DASHES_MAX)
++		_flow_sig = plan["sig"]
++		if _flow_layer == null:
++			_flow_layer = Control.new()
++			_flow_layer.name = "FlowMesh"
++			_flow_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
++			_flow_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
++			_flow_layer.draw.connect(_draw_flow_mesh)
++			_anim.add_child(_flow_layer)
++		_flow_layer.material = _flow_mesh.material
++		_flow_layer.queue_redraw()
++	ok = ok and not _flow_cpu
++	if _flow_layer != null:
++		_flow_layer.visible = ok
++	if ok:
++		_flow_phase()
++	return ok
++
++
++## Sets the mesh's phases from the map's clock (the CPU path's dash and chevron phases).
++func _flow_phase() -> void:
++	if _flow_mesh == null:
++		return
++	var travel := anim_t * crawl_speed()
++	_flow_mesh.set_phase(fmod(travel, DASH_PERIOD), fmod(travel, ARROW_STEP * _k()))
++
++
++func _draw_flow_mesh() -> void:
++	if _flow_mesh != null and _flow_mesh.mesh != null:
++		_flow_layer.draw_mesh(_flow_mesh.mesh, null)
++
++
++## The process frame's flow step: true when the flow layer must redraw (the CPU draws the
++## flow, the plan changed, or packets run); else only the mesh's phases move.
++func _flow_tick() -> bool:
++	var plan := _flow_plan()
++	if not plan["ok"] or plan["sig"] != _flow_sig or _flow_cpu:
++		return true
++	_flow_phase()
++	return not (plan["packets"] as PackedInt32Array).is_empty()
++
++
++## M14 perf slice: the flow's mode on screen: {"mesh": the still mesh draws the dashes and
++## chevrons, "tracks": its track rows, "redraws": the flow layer redraws every frame} (tests).
++func flow_state() -> Dictionary:
++	var plan := _flow_plan()
++	var mesh_on: bool = plan["ok"] and plan["sig"] == _flow_sig and not _flow_cpu
++	return {"mesh": mesh_on, "tracks": _flow_mesh.track_count if _flow_mesh != null else 0,
++		"redraws": not mesh_on or not (plan["packets"] as PackedInt32Array).is_empty()}
++
++
+ ## ANIM-R2 R1 / R9: the node layer draws at most once a process frame. A screen's first
+ ## frame moved its column and key many times over (each container sort asked again), and
+ ## each ask drew every node and label anew (8 draws, ~130 ms, in the Grid's first frame); a
+@@ -1467,7 +1590,7 @@ func _edge_static(e: Dictionary, pts: PackedVector2Array) -> void:
+ func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
+ 	if pts.size() < 2 or bool(e.get("pencil", false)) or bool(e.get("depowered", false)) or bool(e.get("locked", false)):
+ 		return
+-	var col: Color = e.get("color", Palette.NET_CYAN)
++	var col := _flow_colour(e)
+ 	var width: float = e.get("width", 3.0)
+ 	if _is_dashed(e):
+ 		var phase := fmod(anim_t * crawl_speed(), DASH_PERIOD) if e.get("flow", true) else 0.0
+diff --git a/scripts/ui/kit/hud_wheel_layer.gd b/scripts/ui/kit/hud_wheel_layer.gd
+index aba5e70c..16db0395 100644
+--- a/scripts/ui/kit/hud_wheel_layer.gd
++++ b/scripts/ui/kit/hud_wheel_layer.gd
+@@ -73,10 +73,11 @@ func motion_running() -> bool:
+ 
+ func _process(_delta: float) -> void:
+ 	place_rows()
+-	_place_glyphs()
+-	# M14 perf slice: the buttons redraw only when what they draw changes (they redrew every
+-	# frame of every fight, ~3 ms of the close-up's frame with their glyphs).
+-	var sig := draw_signature()
++	# M14 perf slice: the buttons laid out once a frame (each costs the views' layout), and
++	# redrawn only when what they draw changes (they redrew every frame of every fight).
++	var bs := buttons()
++	_place_glyphs(bs)
++	var sig := draw_signature(bs)
+ 	if sig != _drawn_sig:
+ 		_drawn_sig = sig
+ 		queue_redraw()
+@@ -89,11 +90,11 @@ var _drawn_sig: Array = []
+ ## M14 perf slice: everything _draw reads (the text scale and skin, the layer's place, and per
+ ## button its place, ring, direction, rim colour, hover, drop and key hint), so the layer redraws
+ ## only when one of them changes.
+-func draw_signature() -> Array:
++func draw_signature(bs: Array[Dictionary] = buttons()) -> Array:
+ 	var origin := get_global_rect().position
+ 	var mouse := get_global_mouse_position()
+ 	var sig: Array = [Settings.text_scale, Settings.palette_skin, origin]
+-	for b in buttons():
++	for b in bs:
+ 		var wv: WheelView = b["view"]
+ 		var r: float = b["radius"]
+ 		var zone := {"kind": "arrow", "ring": b["ring"], "direction": b["direction"]}
+@@ -105,8 +106,7 @@ func draw_signature() -> Array:
+ 
+ 
+ ## The buttons' rotate glyphs (picto_spin_ccw / picto_spin), one node per button.
+-func _place_glyphs() -> void:
+-	var bs := buttons()
++func _place_glyphs(bs: Array[Dictionary] = buttons()) -> void:
+ 	while _glyphs.size() > bs.size():
+ 		var g: GlyphIcon = _glyphs.pop_back()
+ 		g.queue_free()
+diff --git a/scripts/ui/wheel_view.gd b/scripts/ui/wheel_view.gd
+index e60570b9..ecef3871 100644
+--- a/scripts/ui/wheel_view.gd
++++ b/scripts/ui/wheel_view.gd
+@@ -1822,7 +1822,25 @@ func _needle_dip() -> float:
+ 	return out
+ 
+ 
++## M14 perf slice: _radius()'s last inputs and value. The HUD's nudge buttons, hints and the
++## disc's own drawing ask it many times a frame (each arrow centre ~5 times, each fitting the
++## disc three times over its needles): the same inputs give the same radius.
++var _radius_key: Array = []
++var _radius_val: float = 0.0
++
++
+ func _radius() -> float:
++	var c := _shown()
++	var key: Array = [size, left_reserve, center_x, hud_results, _ts(), frame_master(), kit.is_boss,
++		c.wheel.pointer_ticks if c != null and c.wheel != null else PackedInt32Array()]
++	if key != _radius_key:
++		_radius_key = key
++		_radius_val = _radius_fit()
++	return _radius_val
++
++
++## The disc's radius for the view's size, text scale and needles (_radius' memo reads it).
++func _radius_fit() -> float:
+ 	var r := minf(size.x, size.y) * RADIUS_SHARE
+ 	if left_reserve > 0.0:
+ 		var avail := size.x - left_reserve
+diff --git a/shaders/city/city_flow.gdshader b/shaders/city/city_flow.gdshader
+new file mode 100644
+index 00000000..f5587cb2
+--- /dev/null
++++ b/shaders/city/city_flow.gdshader
+@@ -0,0 +1,42 @@
++shader_type canvas_item;
++// M14 perf slice: the city map's crawling dashes and threat chevrons (CityMapOverlay's flow
++// layer) as one still mesh (CityFlowMesh): every dash and chevron is laid once at phase 0 in its
++// track's frame (VERTEX = along, across), and this shader slides it along its track by the
++// track's phase, so the map no longer re-lays them on the CPU every frame. A track's row in
++// `tracks`: (origin.xy, dir.xy), (length, period, base, flow), (kind, 0, 0, 0). UV = (row,
++// anchor: the element's start along the track at phase 0). A dash (kind 0) is clipped at the
++// track's end per pixel (the CPU's min(t + on, length)); a chevron (kind 1) is drawn whole
++// while its anchor lies before the end, else not at all (the CPU's count of them).
++
++uniform sampler2D tracks : filter_nearest, repeat_disable;
++// The dashes' and the chevrons' phase (px; CityMapOverlay: fmod(travel, period)).
++uniform float dash_phase = 0.0;
++uniform float chevron_phase = 0.0;
++
++varying float v_u;
++varying float v_end;
++
++void vertex() {
++	int row = int(UV.x + 0.5);
++	vec4 t0 = texelFetch(tracks, ivec2(0, row), 0);
++	vec4 t1 = texelFetch(tracks, ivec2(1, row), 0);
++	float kind = texelFetch(tracks, ivec2(2, row), 0).x;
++	float phase = kind < 0.5 ? dash_phase : chevron_phase;
++	float shift = mod(phase * t1.w + t1.z, t1.y);
++	vec2 dir = t0.zw;
++	vec2 side = vec2(dir.y, -dir.x);
++	float along = VERTEX.x + shift;
++	v_u = along;
++	v_end = kind < 0.5 ? t1.x : 1e30;
++	if (UV.y + shift >= t1.x) {
++		VERTEX = t0.xy;
++	} else {
++		VERTEX = t0.xy + dir * along + side * VERTEX.y;
++	}
++}
++
++void fragment() {
++	if (v_u > v_end) {
++		discard;
++	}
++}
+diff --git a/shaders/city/city_flow.gdshader.uid b/shaders/city/city_flow.gdshader.uid
+new file mode 100644
+index 00000000..11a9bfb5
+--- /dev/null
++++ b/shaders/city/city_flow.gdshader.uid
+@@ -0,0 +1 @@
++uid://cwgvq1fjybys2
+diff --git a/tests/unit/test_m14_perf_far_lod.gd b/tests/unit/test_m14_perf_far_lod.gd
+index 9f1e579a..30eebcf4 100644
+--- a/tests/unit/test_m14_perf_far_lod.gd
++++ b/tests/unit/test_m14_perf_far_lod.gd
+@@ -240,6 +240,83 @@ func test_the_flow_dashes_are_batched_by_default() -> void:
+ 	# The same picture is checked windowed (perf_pack flow_diff_hq); here the switch's default.
+ 	var o: CityMapOverlay = autofree(CityMapOverlay.new())
+ 	assert_true(o.flow_batched, "the dashes draw as one multiline per edge")
++	assert_true(o.flow_shader, "the dashes and chevrons are a still mesh the shader crawls")
++
++
++## The CPU path's chevron spacing round corners (CityMapOverlay._chevrons): the carry into each
++## segment, segment by segment.
++func _cpu_carries(phase: float, step: float, lengths: Array[float]) -> Array[float]:
++	var out: Array[float] = []
++	var carry := phase
++	for length in lengths:
++		out.append(carry)
++		var n := ceili(maxf(0.0, length - carry) / step)
++		carry = maxf(0.0, carry + n * step - length)
++	return out
++
++
++func test_the_flow_mesh_slides_dashes_and_chevrons_as_the_cpu_lays_them() -> void:
++	# The shader's shift per track (CityFlowMesh.shift_of) is the CPU's phase and carry, so the
++	# still mesh slid by it puts every dash and chevron where the CPU drew it (the picture: 0
++	# pixels apart in perf_pack flow_diff_hq, windowed).
++	var step := 34.0 * 0.8
++	var lengths: Array[float] = [100.0, 12.5, 73.3, 0.4, 160.0]
++	for phase: float in [0.0, 5.5, 15.9, 27.1]:
++		var carries := _cpu_carries(phase, step, lengths)
++		var before := 0.0
++		for j in lengths.size():
++			assert_almost_eq(CityFlowMesh.shift_of(phase, step, -before, 1.0), carries[j], 0.001,
++				"phase %.1f: segment %d's chevrons start where the CPU's carry put them" % [phase, j])
++			before += lengths[j]
++		assert_almost_eq(CityFlowMesh.shift_of(phase, 16.0, 0.0, 1.0), fmod(phase, 16.0), 0.0001, "the dashes' phase")
++		assert_eq(CityFlowMesh.shift_of(phase, 16.0, 0.0, 0.0), 0.0, "a still route's dashes do not crawl")
++
++
++func test_the_flow_mesh_lays_each_element_once_on_its_track() -> void:
++	var m := CityFlowMesh.new()
++	var pts := PackedVector2Array([Vector2(0, 0), Vector2(100, 0), Vector2(100, 70)])
++	var edges: Array[Dictionary] = [{"pts": pts, "color": Color.RED, "width": 4.0, "flow": true, "dashed": true, "arrows": true}]
++	assert_true(m.build(edges, 9.0, 16.0, 34.0, 6.0, 1.0, 400), "fits")
++	assert_eq(m.track_count, 4, "two segments, a dash track and a chevron track each")
++	var arrays := m.mesh.surface_get_arrays(0)
++	var verts: PackedVector2Array = arrays[Mesh.ARRAY_VERTEX]
++	# Dashes: ceil(100/16) + ceil(70/16) quads; chevrons: ceil(100/34) + ceil(70/34), two strips of 6.
++	assert_eq(verts.size(), (7 + 5) * 4 + (3 + 3) * 2 * 6, "every dash a quad, every chevron its keyline and colour strips")
++	assert_not_null(m.material, "the crawl shader")
++	assert_true(m.build([] as Array[Dictionary], 9.0, 16.0, 34.0, 6.0, 1.0, 400), "nothing to lay")
++	assert_null(m.mesh, "no mesh")
++
++
++func test_the_chevron_strip_keeps_its_width_round_the_tip() -> void:
++	var wing := PackedVector2Array([Vector2(-6, 6), Vector2(6, 0), Vector2(-6, -6)])
++	var s := CityFlowMesh.polyline_strip(wing, 4.0)
++	assert_eq(s.size(), 6, "two vertices per point")
++	var n0 := (wing[1] - wing[0]).normalized().orthogonal()
++	assert_almost_eq((s[0] - wing[0]).dot(n0), 2.0, 0.0001, "the start squares to its segment, half the width out")
++	# The tip's mitre: on the bisector, the strip's edge half the width off each segment.
++	assert_almost_eq((s[2] - wing[1]).dot(n0), 2.0, 0.0001, "the mitre keeps the width")
++	var m := CityFlowMesh.polyline_strip(wing, 4.0, -1.0)
++	assert_almost_eq(m[0], s[1], Vector2(0.0001, 0.0001), "a mirrored frame swaps each pair (Godot's order)")
++
++
++func test_the_wheel_radius_memo_follows_its_inputs() -> void:
++	var v: WheelView = autofree(WheelView.new())
++	v.size = Vector2(900, 700)
++	assert_almost_eq(v._radius(), v._radius_fit(), 0.0001, "the memo is the fit")
++	v.size = Vector2(600, 500)
++	assert_almost_eq(v._radius(), v._radius_fit(), 0.0001, "a new size: fitted again")
++	v.hud_results = not v.hud_results
++	assert_almost_eq(v._radius(), v._radius_fit(), 0.0001, "the HUD's nudge room: fitted again")
++	var was := Settings.text_scale
++	Settings.text_scale = 1.6
++	assert_almost_eq(v._radius(), v._radius_fit(), 0.0001, "a new text scale: fitted again")
++	Settings.text_scale = was
++
++
++func test_the_hud_buttons_redraw_only_when_what_they_draw_changes() -> void:
++	var layer: HudWheelLayer = add_child_autofree(HudWheelLayer.new())
++	var a := layer.draw_signature()
++	assert_eq(layer.draw_signature(), a, "nothing changed: no redraw")
+ 
+ 
+ func test_the_raid_routes_relay_only_when_what_they_show_changes() -> void:
+diff --git a/tests/unit/test_m14_perf_far_lod.gd.uid b/tests/unit/test_m14_perf_far_lod.gd.uid
+new file mode 100644
+index 00000000..165ed16b
+--- /dev/null
++++ b/tests/unit/test_m14_perf_far_lod.gd.uid
+@@ -0,0 +1 @@
++uid://cou83gm0dxrvg
+diff --git a/tools/visual_qa/perf_pack.gd b/tools/visual_qa/perf_pack.gd
+index ca6434b5..dcc374ff 100644
+--- a/tools/visual_qa/perf_pack.gd
++++ b/tools/visual_qa/perf_pack.gd
+@@ -40,6 +40,7 @@ const PROBE_SCREENS := [
+ 	["city_probe_combat", "_s_city_probe_combat", "PERF slice: a Site fight's close-up city, each part switched off in turn."],
+ 	["cpu_probe_hq", "_s_cpu_probe_hq", "PERF slice: the HQ idle's frame with each script class's processing off in turn, and its redraws."],
+ 	["cpu_probe_combat", "_s_cpu_probe_combat", "PERF slice: a Site fight's frame with each script class's processing off in turn, and its redraws."],
++	["hud_probe_combat", "_s_hud_probe_combat", "PERF slice: a Site fight's HUD layer, each step of its process frame timed."],
+ 	["map_probe_hq", "_s_map_probe_hq", "PERF slice: the HQ idle's map overlay and raid pencil, each layer hidden in turn."],
+ 	["flow_diff_hq", "_s_flow_diff_hq", "PERF slice: the HQ idle's flow layer batched vs one command per dash and wing (reduce motion: a still frame), pixel diff."],
+ 	["scrim_luma_combat_start", "_s_scrim_luma_combat_start", "B1a b: the fight's world luma in the wheel pools vs between the wheels (+ fixture)."],
+@@ -597,6 +598,29 @@ func _s_cpu_probe_combat() -> void:
+ 	await _cpu_probe()
+ 
+ 
++## PERF slice: the fight's HudWheelLayer, each step of its process frame (and the wheel views'
++## calls they make) timed over HUD_PROBE_N calls (PROBE hud lines, us per call).
++const HUD_PROBE_N := 200
++
++
++func _s_hud_probe_combat() -> void:
++	await _s_combat_start()
++	for h: HudWheelLayer in get_tree().root.find_children("*", "HudWheelLayer", true, false):
++		var steps := {"place_rows": h.place_rows, "place_glyphs": h._place_glyphs, "draw_signature": h.draw_signature, "buttons": h.buttons}
++		for v in h._views():
++			var wv := v as WheelView
++			steps["standing_chips"] = wv.standing_chips
++			steps["hp_layout"] = wv.hp_layout
++			steps["arrows"] = wv.arrows
++			break
++		for key: String in steps:
++			var f: Callable = steps[key]
++			var t0 := Time.get_ticks_usec()
++			for i in HUD_PROBE_N:
++				f.call()
++			print("PROBE hud %s us=%.1f" % [key, float(Time.get_ticks_usec() - t0) / HUD_PROBE_N])
++
++
+ ## PERF slice: the HQ idle's map overlay layers and the raid pencil, each hidden in turn (and
+ ## the overlay's and the route layer's processing off).
+ func _s_map_probe_hq() -> void:
