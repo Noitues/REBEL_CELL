@@ -573,36 +573,55 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   destination large and bright under CONNECTING TO, with the Site's tier icon. A landing
   pulse waits its entry's delay; a toast holds longer at a slower speed, never shorter.
 
-### 5.6 Where behaviour changed in M14 (ART-12 12b; the code is the source, DECISIONS "Art direction — ..." has the detail)
+### 5.6 Where behaviour changed in M14 (ART-12 12b, updated 12b-2 on 2026-10-11; the code is the source, DECISIONS "Art direction — ..." has the detail)
 
 The motion rulings above stay binding; these are the places the M14 art direction changed what a screen does.
 - **The Grid runs on the real-time 3D city** (`CityView3D` through `WireframeBackground.city3d`, the GRID band; the
   Grid holds that band, `band_lock`). Site markers are v4 (`SiteMarker`, vinyl discs, DOWN = white bolt over a greyed
   disc, TAKEN = seizure slip, Exploit = the single gold key); nodes the player cannot see are hidden unless
   Options "Always show all nodes" (D13) is on. TARGET is a red pencil circle and, when the boss is off screen, an edge arrow.
-  The Grid is always night. Motion layers (traffic, billboards, aviation, Heat rig) pause under reduce motion except
+  The Grid is always night. The HQ is the raid-band city with the Grid folded in (direction B); on raid and netrun
+  views the city is greyed and lowered so nodes and links pop. Map tags follow the clutter rule: only the selected,
+  hovered and plan nodes carry a tag (`TagRule.FOCUS`). Motion layers (traffic, billboards, aviation, Heat rig) pause under reduce motion except
   street traffic at 40 % (`reduce_motion_street_rate`); reduce effects shows the end state.
 - **The raid is drawn on the city at the RAID band** (6w): the camera fits the raid's Sites (`RaidZoomFit`), Cell nodes
   stand on uplink pads with risers, the setup / playout panels are CRT / corp paper / holo, routes and marks are grease
   pencil. A view cover hides camera eases. The SAVED stamp stays clear of the Speed / Skip strip.
-- **The netrun route runs on the city at the NETRUN band** (7w) with transit cables and sticker nodes; other netrun pages
-  (event, shop, loot) are still on the 2D city until 4A lands.
+- **The netrun route runs on the city at the NETRUN band** (7w) with transit cables and sticker nodes. Event, shop, loot and the other netrun pages open over a bake of the
+  city behind the 3D route, and a mid-run raid plays on the 3D city at the RAID band.
 - **HQ runs and fights (D17):** a boss fight's backdrop is the corporation's HQ on the city, a regular fight's is the
   target Site, and a win turns the building's lights to Cell colours. REBEL_CELL's HQ is the DISPATCH canyon and its
   Central Server is **DISPATCH CORE**. Baked stills remain the tier-0 fallback.
 - **Day look:** `CityView3D.set_night_share(n, day)` blends towards a cool day look (landmarks and roof props follow);
   backdrops use day on odd runs; the Grid does not use it. Roof props (AC, tank, antenna, billboards) show at close zoom.
 - **Title and menus:** option A (BREACH = Continue, SIMULATE = Tutorial, OVERTHROW = New campaign), MORE column with key
-  hints, ON AIR ticker. Options is two columns of switches and tiles on the CRT kit with a Heat glitch preview.
+  hints, ON AIR ticker. The title's backdrop is the blurred, lit 3D city (`BlurredCityBackdrop`, its own grade); loot,
+  event and Mainframe pages open over the same blurred city. Options is two columns of switches and tiles on the CRT kit with a Heat glitch preview.
 - **Abandon dialog:** the title's delete-slot confirm is `AbandonDialog` (CANCEL / DELETE vinyl stickers on a red CRT
-  window, CANNOT UNDO chip). There is no in-run abandon and no hold-to-confirm (open questions).
+  window, CANNOT UNDO chip). Abandon run (the operative dies, the campaign continues), abandon campaign and quit are three
+  exit paths (GDD 4.5); the abandon dialogs' BURN IT needs a 0.8 s hold (`dialog_hold_confirm`).
 - **Skins:** Options > Display "Interface skin": v2 (default), cobalt, graphite. A skin re-values chrome tokens only
   (the theme and kit painters); semantic colours (PROTECT cyan, GAIN green, HARM, Heat bands) never change.
 - **Campaign end:** campaign lost is the ransomware lock, won and lost end in the corporate audit dossier; run end shows
   a stamp sticker (FLATLINED / JACKED OUT / HOME FELL).
 - **Shop, loot, events and the deck viewer (4A):** the MAINFRAME shop stands on a baked facade (day / night / rain by a hash of the visit) under sign v4, which takes over once per visit; items hang on the pegboard with kraft price tags (a card's tag hangs from its foot), Firmware as chips, Daemons as cartridges, slices as the top wedges of a stock wheel, removal is the recycle bin (cards only). Loot is a loot sheet with kiss-cut slots and a PAYOUT terminal; an event is a CRT terminal with a CAM feed (a corp speaker's story is an intercepted memo) and plate-sticker choices with outcome chips. All glass is the one `CrtWindow` (chrome seam). Big text: drawn objects stop growing at x1.3 while words and tags keep growing; from x1.25 DAEMONS stands beside FIRMWARE and the clerk steps aside; from x1.6 the CAM feed and speaker line step aside; the wallet is capped at x1.6 and the info strip at 0.92 of its width. The sign ambience is off under reduce effects (the lit blue sign is the end state).
-- **Combat HUD:** result chips replace forecast tags and NEXT plates (D15); SEND IT is a vinyl sticker; RESPIN and UNDO are
-  terminal chips; the hand uses baked card faces.
+- **Combat HUD:** every card (hand, loot, shop, deck viewer, detail, loadout) is one `CardFace`; hand text is 10 px and the
+  hovered card grows to x1.75 and shows every word. Aiming is a grease-pencil line with a target loop; the play's result
+  shows on the affected wheel's HP chips, underlined in pencil. Every fight is a perspective close-up (Site: the fought
+  building; boss: the corp HQ) with an emblem hub, a fanned hand, EXECUTE under SEND IT (a vinyl sticker), RESPIN and UNDO
+  as terminal chips, and the Heat chip top left.
+- **Stickers:** focus and hover show a peel-back fold; the rainbow gloss sweep is one narrow 45-degree band on the primary
+  verb every 4-6 s from a scheduler (`StickerSweepQueue`); reduce effects = a static sheen. Every sticker stays at least
+  24 px x text scale inside the screen edges (`Fx.sticker_safe_rect`).
+- **Pencil:** one wax pencil material everywhere (opaque wax, edge-nibble dropouts, hand loops with an overrun, a short
+  write-on and wipe); no UI rect sits over a pencil stroke (PencilLint).
+- **Big text:** texts that would not fit are built to fit (`FitBuildBox`): never clipped, never scaled with
+  `Control.scale`, never smaller than at text 1.0; past that floor a panel folds into pages with a MORE / BACK index tab
+  (work order, THREAT INTEL). YOUR NETWORK collapses to one terminal row from 1.6 when the column is short.
+- **Paper:** corp papers sit on the table with a seeded 1-2 degree tilt, a 6 px contact shadow and a steel clip
+  (`PaperStaging`); each corporation letters its paper with a short `letterhead_name`, never an ellipsis.
+- **Every screen:** the Heat gauge is the first slot of every top bar. Screen readers (glass blur, light spill, the
+  campaign-lost takeover) take their own copy of the screen just before they draw (`ScreenCopy.before`).
 
 ## 6. Accessibility
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every
