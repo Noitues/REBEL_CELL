@@ -116,6 +116,22 @@ pull_request triggers are kept as a commented block to restore after ART-12).
   check. `test_anim_r6_rules.gd` runs it, so the full suite covers the runner (pending when
   Python isn't on PATH).
 
+## Diff-based selection between gates (2026-10-10, docs/process/01)
+
+| What | Command | Wall time |
+|---|---|---|
+| Pre-commit: parse-check staged `.gd`, smoke / validate only when touched, diff-selected tests | `bash tools/precommit.sh` | seconds to ~1 min |
+| Hand-back: the same over the whole branch vs main | `bash tools/precommit.sh --base main` | 1–3 min |
+| See which scripts a change selects and why | `python tools/select_tests.py --list [--base main]` | |
+| Several path substrings at once | `python tools/run_tests.py --select wheel --select rng` | |
+
+`select_tests.py` maps changed files to test scripts (a changed test selects itself; a changed
+script selects every test naming its `class_name`, basename or `res://` path; `scripts/core` /
+`scripts/state` add the rule guards and the integrity check; `content/` adds the content guards).
+Nothing mapped, or a hub class that fans out to more than half the scripts, runs the fast tier
+instead. The full suite runs **once per gate** in isolation (never ×3, CP-001.2: a red run is read through the rerun-alone verdict, fixed, run once more), never per
+hand-back. `--check-only` parse errors (Godot 4.7) show before any test starts.
+
 ## Tiers and the manifest
 
 `tests/test_manifest.json` lists every test script once with its measured seconds and its

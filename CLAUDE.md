@@ -23,9 +23,14 @@ spinning 30-tick wheels; a campaign layer adds a City Grid map, Heat, and raid d
   lab, profiling): `python tools/run_windowed.py --log <file> -- <godot args>`, from a
   worktree or a copy. Never launch a windowed `godot` directly: it can take the user's
   keyboard and mouse focus and play sound. See `docs/TEST_SUITE.md` "Windowed checks".
-- Run all three before declaring any task done, with the **full** suite (single process or
-  the parallel runner; the fast tier alone never counts). A new test script goes into
-  `tests/test_manifest.json` with its tier (`test_suite_integrity.gd` checks it).
+- Between gates (an edit, a commit, an agent hand-back): `bash tools/precommit.sh [--base main]`
+  (parse check, smoke / validate only when touched, diff-selected tests). At a **User-Ready
+  Gate** (a merged feature, a milestone group, before any push of main): all three, with the
+  **full** suite (single process or the parallel runner) run **once**, in isolation. Never run
+  the full suite three times: a red run is investigated with the runner's rerun-alone verdict
+  (`ORDER-DEPENDENT` / `fails alone too`), fixed, and run once more. A new test script goes into
+  `tests/test_manifest.json` with its tier (`test_suite_integrity.gd` checks it). Process:
+  `docs/process/00_README.md` (CP-001 rulings, 2026-10-11).
 
 ## Non-negotiable rules
 1. **Deterministic core.** Game rules live in pure `RefCounted` classes under
@@ -38,7 +43,11 @@ spinning 30-tick wheels; a campaign layer adds a City Grid map, Heat, and raid d
 5. **No magic numbers.** Tuning comes from `content/config/campaign_config.tres` or
    content `.tres` files.
 6. **Every rule gets a test.** Preview must equal the real result; rewind must not cross a
-   checkpoint; seeded replays must match.
+   checkpoint; seeded replays must match. "Rule" means rule-bearing code: `scripts/core/`,
+   `scripts/state/`, resolvers, save, RNG, content validation, layout at 1.0 / 1.6 / 2.0, reduce
+   effects = end state. View glue, labs and tools get one flow test per screen and the Human
+   Playtest gate, not unit tests; no tests for getters, setters or data round trips without
+   logic (CP-001.1, 2026-10-11).
 7. Break ties deterministically (content id, then node id), never by dictionary order.
 8. Keep `scripts/data/` schema changes minimal; add its check to `tools/schema_smoke_checks.gd` and
    log the change in `docs/DECISIONS.md`.

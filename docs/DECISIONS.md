@@ -31,6 +31,38 @@ superseded instead.
   events.
 
 ## Implementation decisions
+### 2026-10-11 — Designer rulings CP-001 (process redesign)
+1. **Rule 6 scoped to rule-bearing code** (CP-001.1 = A): core, state, resolvers, save, RNG, content, layout at
+   1.0 / 1.6 / 2.0, reduce effects = end state. View glue, labs and tools: one flow test per screen and the
+   playtest gate; no unit tests for getters, setters or data round trips without logic. CLAUDE.md rule 6 updated.
+2. **Full suite once per gate, never three times** (CP-001.2 = A, amended "never run ×3 tests"): between gates
+   `tools/precommit.sh`; at a gate the full suite once in isolation; a red run is read through the runner's
+   rerun-alone verdict, fixed, and run once more. Supersedes every "×3" cadence (ANIM-R6 rules, "check cadence
+   for M14", "one full run, one audit at the end" where it said two more runs after a failure). CLAUDE.md
+   "Commands" updated.
+3. **Batch API lane in use for code changes** (CP-001.3 = A): docstrings, cleanup, unit tests, refactors and
+   renames may run through Message Batches; results land on `batch/<name>` branches and go through the normal
+   hand-back and gate. `anthropic` 1.13.0 installed; a key (`ANTHROPIC_API_KEY`) is the designer's to set — no
+   batch is submitted until it is present.
+4. **Playtest gates per group** (CP-001.4 = A): one Human Playtest Task List and one checkpoint batch per
+   User-Ready Gate (group end, ART-12, each queued pass). First list: the M14 completion gate.
+
+### 2026-10-10 — Process redesign: diff-based checks, batch lane, cleanup sub-agent, playtest gates (proposed, CP-001)
+`docs/process/00..04` restructure how work runs (not what runs next; the M14 pause stands). In place now:
+`tools/precommit.sh` + `tools/select_tests.py` (parse check and diff-selected tests between gates; the full
+suite once per gate, never ×3), `tools/run_tests.py --select` repeatable, the Batch API lane
+(`tools/batch/`: spec → `.jsonl` with one cached system block → submit → `INGEST_REPORT.md` → `batch/<name>`
+branch; kinds docstrings / cleanup / lint_report / text_audit / unit_tests / refactor / rename /
+decisions_digest on Haiku 5.5 or Sonnet 5.5 at 50 % price), the `code-cleanup` sub-agent (Haiku, effort low,
+one diff in, one RC-envelope patch out; `.claude/agents/code-cleanup.md`, prompt in `docs/process/03`), stable
+per-area agent rules (`docs/process/agent_rules/`) referenced by path, the State Handoff Document at 65 %
+(orchestrator) / 60 % (agents) context into `docs/handoff/STATE.md`, checkpoint batches (`docs/handoff/
+CHECKPOINT_PENDING.md`), and the Human Playtest Task List per User-Ready Gate (`tools/playtest/
+make_playtest.py`, feedback schema PLAYTEST / STATUS / STEPS / LOGS / NOTES / RULINGS). Waiting on the
+designer (CP-001): rule 6 scoped to rule-bearing code, full-suite cadence wording in CLAUDE.md, Batch API use
+(needs a key), playtest gates per group. Until then: rule 6 and the "full suite before done" line of CLAUDE.md
+are unchanged; batch work is reports-only; `batches/` is git-ignored.
+
 ### 2026-10-06 — B4 b — the art director's fixes (HQ to round 44)
 Art director's review of B4 (a07daf9a). Approved as built: the JACK IN fix, the map dim and vignette, one tag,
 selection-only verbs, CORE's card with HEAT SCRUB, the foot holo toast, the polaroids, no Heat stamp, the RAID SETUP
@@ -10613,6 +10645,8 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- ~~**CP-001 (2026-10-10, process):** rule 6 scope, full-suite cadence wording, Batch API use, playtest gates~~ **Answered 2026-10-11** (1A 2A-never-×3 3A 4A, "Designer rulings CP-001"); only the API key is still open.
+  per group — `docs/handoff/CHECKPOINT_PENDING.md`; defaults in force: A / A / B (reports only) / A.
 - **B4 b perf (2026-10-06):** the HQ idle at the City Grid look runs about 10 ms a frame (tier 2) on the busy machine,
   against the 8 ms budget; the RAID band's see-through city costs about 1.3 ms less of city GPU. Keep the City Grid look
   (round 44), and cut the city's cost at that band, or use the RAID band at the HQ idle? Default: City Grid look.
