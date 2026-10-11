@@ -25,11 +25,8 @@ fi
 rc=0
 for f in $(echo "$FILES" | grep -E '\.gd$' | grep -v '\.uid$'); do
   [ -f "$f" ] || continue
-  # --check-only compiles without the autoloads: a script loading a scene script that names one
-  # fails there though it compiles in the game; tools/parse_check.gd loads it with them (M14 PERF).
-  timeout 120 godot --headless --path . --check-only -s "$f" > "$SP/check_$(basename "$f").log" 2>&1 \
-    || timeout 300 godot --headless --path . -s tools/parse_check.gd -- "$f" > "$SP/check2_$(basename "$f").log" 2>&1 \
-    || { echo "PARSE FAIL: $f"; tail -n 5 "$SP/check_$(basename "$f").log"; rc=1; }
+  # tools/parse_check.gd, not --check-only: that stops before the autoloads' names exist (Dialogue, Settings).
+  timeout 120 godot --headless --path . -s tools/parse_check.gd -- "$f" >"$SP/check_$(basename "$f").log" 2>&1 || { echo "PARSE FAIL: $f"; tail -n 5 "$SP/check_$(basename "$f").log"; rc=1; }
 done
 echo "parse=$rc"; [ $rc -ne 0 ] && exit 1
 

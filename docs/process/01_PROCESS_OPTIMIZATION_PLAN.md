@@ -20,7 +20,7 @@ CP-001 rulings of 2026-10-11 (1A 2A 3A 4A; the designer added "never run ×3 tes
 | W9 | Handoffs written by hand at the end, when the context was already full (M14_RESUME: 90 lines written at 90 %+) | Late handoffs lose the reasoning; the next session re-derives it | A **State Handoff Document** at a hard threshold (§4), from a template, in under 5 minutes. |
 | W10 | Designer questions asked one at a time as they come up, or buried in reports | Interrupt loops; some questions answered twice, some never | Checkpoint batches (doc 02 §5): BLOCKING questions only when nothing else can proceed; everything else waits for the next gate. |
 
-Expected effect (measured against the ANIM-R6 round, where numbers exist): per fix wave, test
+Expected effect (measured against the ANIM-R6 round, where numbers exist; from now on every gate report's retrospective compares the wave with the previous one, doc 04 §5): per fix wave, test
 CPU time 6 h → under 1 h; agent context at start 60 k → under 15 k tokens; orchestrator context
 per wave about halved (no log dumps, no hourly Gantt). Verification: `docs/handoff/STATE.md`
 keeps a "cost" row per wave (test minutes, agent count, handoffs) so the next plan has data.
