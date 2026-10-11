@@ -37,6 +37,25 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-11 — M14 LEAK: a line said in one campaign never shows in the next
+ART-6 acceptance saw Solace's campaign-lost DISPATCH line ("Home server lost …") on the next raid_lab
+state. Two causes, reproduced headless in `test_m14_dialogue_leak`:
+- **Game (real leak).** `show_end` says the campaign's end line (`win` / `loss`) with no screen scope, and
+  unscoped lines play out across screens (H24 S15). NEW CAMPAIGN on the dossier (`_on_end_new_campaign`) goes
+  to the start page on the same HQ, so the line (and anything queued behind it) showed on the new campaign
+  page and, after a quick START, on the new campaign's HQ. Scoping it to one screen does not work (the end
+  moves end_lock → end). Fix: `RunManager.new_campaign` clears the Dialogue (every way a campaign starts: the
+  start page, a code, the daily run, dev shortcuts), as `go_to_title` already did, and NEW CAMPAIGN clears it
+  on leaving the end. `history` (the session log the codex reads) is kept.
+- **Dialogue.clear.** It now also forgets the line on show (`_shown_line`, `_shown`): before, a dock change
+  after a clear had nothing visible to repage, but the stale line was still held. The old page timer was
+  already harmless (its timeout checks it is still `_timer`); the test fires it after a clear.
+- **Lab only.** The raid lab opens each state's HQ before making that state's campaign, so after `breached`
+  (a Solace raid that loses) the next HQ's `_ready` found a campaign over and played its end (the loss line,
+  and in a window the ransom lock) over the next state; no clear before it could help. `raid_lab._clear` now
+  drops a campaign that is over (and its slot) and clears the Dialogue; every state can share one launch.
+  The game does show a finished campaign's end when the HQ opens on it (resume): correct, not changed.
+
 ### 2026-10-11 — M14 ART-6 acceptance: reading holds at 2x / 4x, every state captured, DOWN at every zoom
 The three open ART-6 boxes (MILESTONES "ART-6 — Raid"), with evidence.
 - **Reading holds (R7 C4).** The raid's reading times are the raid_* HOLD entries (`raid_mark_hold`) and
