@@ -573,6 +573,10 @@
 			"seconds": 12.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_art2_clutter_fixture.gd": {
+			"seconds": 4.3,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art2_cards_fx.gd": {
 			"seconds": 8.0,
 			"tier": "fast"
