@@ -891,7 +891,7 @@ func _focus_named(node_name: String) -> void:
 func _set_panel(p: Control, name: String) -> void:
 	# ART-11 4D: the campaign lost lock goes with its page.
 	if name != "end_lock" and end_lock != null and is_instance_valid(end_lock):
-		end_lock.queue_free()
+		_free_end_lock(end_lock)
 		end_lock = null
 	# 12p: a dossier built ahead in the lock's hold goes too when another page comes instead.
 	if _end_dossier != null and is_instance_valid(_end_dossier) and p != _end_dossier:
@@ -5534,6 +5534,19 @@ func _end_shot_ready() -> bool:
 	return _end_lock_frames >= END_LOCK_WAIT_FRAMES or settled
 
 
+## M14 FIX-2: the lock's own canvas layer (over the subtitles').
+const END_LOCK_LAYER_NAME := "EndLockLayer"
+
+
+## M14 FIX-2: `lock` goes, with its own layer.
+func _free_end_lock(lock: RansomLock) -> void:
+	var layer := lock.get_parent() as CanvasLayer
+	if layer != null and layer.name == END_LOCK_LAYER_NAME:
+		layer.queue_free()
+	else:
+		lock.queue_free()
+
+
 ## The lock's page: the city with the Cell's network, the lock over the whole screen.
 func _show_end_lock() -> void:
 	var c := RunManager.campaign
@@ -5547,9 +5560,16 @@ func _show_end_lock() -> void:
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.5, 0.5), END_LOCK_ZOOM)
 	city_overlay.packets = false
 	if end_lock != null and is_instance_valid(end_lock):
-		end_lock.queue_free()
+		_free_end_lock(end_lock)
 	end_lock = RansomLock.new()
-	add_child(end_lock)
+	# M14 FIX-2: the lock takes the whole station, the subtitle band too: it stands on its own
+	# layer just over the subtitles' (Dialogue), so DISPATCH's last line is read through the
+	# takeover's glass (tinted, under the notice) and never drawn untinted over it.
+	var layer := CanvasLayer.new()
+	layer.name = END_LOCK_LAYER_NAME
+	layer.layer = Dialogue.layer + 1
+	add_child(layer)
+	layer.add_child(end_lock)
 	end_lock.nodes_provider = _end_lock_nodes
 	end_lock.ready_check = _end_lock_ready
 	end_lock.setup(c.corporation_id, TextDb.t(RunManager.corporation, "display_name"), c.grid.home_integrity, c.grid.home_max_integrity, end_stickers())
@@ -5631,14 +5651,14 @@ func _on_end_lock_finished() -> void:
 		var d := _end_dossier
 		_end_dossier = null
 		if end_lock != null and is_instance_valid(end_lock):
-			end_lock.queue_free()
+			_free_end_lock(end_lock)
 		end_lock = null
 		_set_panel(d, "end")
 		d.release()
 		return
 	var photos := end_photos(end_lock.snapshot, end_lock.snapshot_points)
 	if end_lock != null and is_instance_valid(end_lock):
-		end_lock.queue_free()
+		_free_end_lock(end_lock)
 	end_lock = null
 	show_dossier(photos)
 

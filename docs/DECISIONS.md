@@ -62,6 +62,32 @@ The three open ART-6 boxes (MILESTONES "ART-6 — Raid"), with evidence.
   raid at ortho raid_fit_min, the middle, raid_fit_max and zoom_ortho_max (the setup's big-text floor,
   `fit_hq_map`) draws the greyed DOWN socket, its Site marker v4 reads DOWN with a greyed ring and the
   DISABLED sticker under the white bolt, both the same size on screen at every zoom. No defect found.
+### 2026-10-11 — M14 FIX-2: no raid toast after the loss, the subtitle under the takeover; the memo's routing line
+- **Raid toast after the loss (found by FOLLOW-UP, `TAKEOVER_END.jpg` bottom row).** The toast was the Heat
+  gauge's consequence note ("A raid is queued. While Heat stays at 75 or more..."): after the final raid the HQ
+  resets `hud_heat_shown` (`_after_playout`), the top bar shows the campaign's last Heat and its threshold
+  crossing stamps the banner and its note (top level, z 50) over the takeover. `HeatPoster.campaign_over()`
+  (the campaign lost, won or abandoned): no crossing banner is stamped and a note still holding goes on its next
+  frame; the Heat number itself still shows. The guard sits in the poster, the only place the note is drawn,
+  so the netrun's gauge keeps it too. View only (reads `CampaignState.is_over`).
+- **DISPATCH's campaign-lost line under the lock.** The subtitles are the Dialogue autoload's CanvasLayer (90),
+  over every node of the HQ, so the line drew untinted over the takeover. The HQ now puts the `RansomLock` on
+  its own CanvasLayer `EndLockLayer` at `Dialogue.layer + 1` (under the raid pencils 95 and Fx 100): the
+  takeover's glass (its own ScreenCopy) reads the subtitle band with the top bar and tints it in the house's
+  colour, as round 20 takes the whole station; the line still speaks and is read through it, never over the
+  notice. The layer goes with the lock (`_free_end_lock`). The lock consumes every press, so the pause menu
+  (layer 0) cannot open under it.
+- **Corp memo routing line.** It was one `draw_string` clipped at the sheet's width (at 2.0 every corp lost
+  FROM and REF; at 1.0 SOLACE and ORBITAL lost the end of REF). `CorpMemo.wrap_routing`: whole fields (TO /
+  FROM / REF, apart by four spaces) packed per line, a field wider than the line folded at its words, a word
+  never cut; lettered at META_PX x the text size, never under the 1.0 size; the margin over the story grows by
+  the extra lines (`top_margin`, refit on resize). At 2.0 in 470 px: three lines (MERIDIAN four: FROM folds).
+- Test `test_m14_fix2_takeover_memo` (fast): a crossing after the loss shows no banner and no note (the same
+  crossing while the campaign runs shows it); the HQ's live loss under reduce effects raises no toast, the lock's
+  layer is over the subtitles' and goes with it, state unchanged; every corp's memo and the transcript at
+  1.0 / 1.6 / 2.0: every routing line inside the sheet, every word in order, never under 1.0, the story under it.
+  Sheet `docs/art_review/PARITY/fixes/FIX2.jpg` (before | after: the end frame with reduce effects on for
+  MERIDIAN and ORBITAL at 1.0; the memo at 2.0 for every corp); probe `tools/visual_qa/memo_routing_probe.tscn`.
 
 ### 2026-10-11 — M14 FOLLOW-UP: letterhead names; takeover end frame
 Art director's APPROVED review of the close-out group, two follow-ups.

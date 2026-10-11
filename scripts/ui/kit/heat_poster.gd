@@ -351,7 +351,7 @@ func _stamp_band() -> void:
 ## ANIM-R6 C1: its phases (`_banner_phase`): the hold is a reading time, the fade is motion.
 func _stamp_banner() -> void:
 	var e := Motion.entry(&"heat_banner")
-	if e == null or not e.enabled or not is_inside_tree():
+	if e == null or not e.enabled or not is_inside_tree() or campaign_over():
 		banner_alpha = 0.0
 		return
 	banner_alpha = 1.0
@@ -540,8 +540,14 @@ func note_avoid() -> Array[Rect2]:
 	return out
 
 
+## M14 FIX-2: the campaign is over (lost, won or abandoned): no crossing's banner and no "a raid
+## is queued" note any more (after BREACHED the HQ's last Heat showed one over the takeover).
+static func campaign_over() -> bool:
+	return RunManager.campaign != null and RunManager.campaign.is_over()
+
+
 func _update_note() -> void:
-	var show := banner_alpha > 0.0 and note_text() != "" and is_visible_in_tree()
+	var show := banner_alpha > 0.0 and note_text() != "" and is_visible_in_tree() and not campaign_over()
 	if not show:
 		if _note != null:
 			_note.visible = false
