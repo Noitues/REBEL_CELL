@@ -11,4 +11,6 @@ BLOCKING questions go to chat at once, not here.
   Defaults D1–D5 stood unvetoed.
 
 ## Items queued for CP-002
-- none yet
+- none open. Settled by the art director (2026-10-11, close-out group review), reported to the designer as
+  "settled unless you object": Mainframe pegboard at 0.86 at text 2.0 (art, not text: the text floor does not apply);
+  corp letterheads use a short `letterhead_name` per corp instead of an ellipsis (M14 FOLLOW-UP slice).

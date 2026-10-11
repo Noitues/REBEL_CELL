@@ -2,55 +2,46 @@
 
 | | |
 |---|---|
-| Session | 2a7871f4-0280-4717-882b-1aecd7b4e4f2 (process redesign) |
-| Branch / commit | main @ 42faacd3 + follow-up commits of 2026-10-11 (see git log; pushed by the push gate) |
-| Context at handoff | ~10 % |
-| Reason | end of the process-redesign task; M14 pause stands (memory: pause-after-m14) |
+| Session | 6861ffb8-a708-44f6-8e46-9fde265474d1 ("Resume M14") |
+| Branch / commit | main @ 4bb749ad (+ STATE commit) |
+| Reason | designer: "Resume M14 per docs/process/00_README.md and docs/handoff/STATE.md" (M14 pause lifted for M14 close-out only) |
 
 ## Current goal
-Process redesign delivered and ruled (CP-001: 1A 2A-never-×3 3A 4A, applied to CLAUDE.md and DECISIONS).
-No M14 or post-M14 work starts without the designer (memory: pause-after-m14).
+Close M14, then report "M14 complete" and pause (memory: pause-after-m14).
 
-## Modified files delta (vs 72dfe6b8)
-- `docs/process/` — the four process docs, README, templates (STATE_HANDOFF, CHECKPOINT, PLAYTEST), per-area agent rules
-- `tools/precommit.sh`, `tools/select_tests.py` — diff-based checks; `tools/run_tests.py` — `--select` repeatable
-- `tools/batch/` — make / submit / ingest / context_slice, prompts (cached rules + kinds), example specs
-- `tools/playtest/make_playtest.py` — playtest list generator
-- `.claude/agents/code-cleanup.md` — the cleanup sub-agent (untracked `.claude/`, designer's folder)
-- `docs/handoff/CHECKPOINT_PENDING.md` — CP-001; `docs/DECISIONS.md` — entry + open question; `docs/TEST_SUITE.md` — section; `.gitignore` — `batches/`
-Uncommitted: all of the above (stage explicitly); `project.godot` is the designer's — never stage.
+## Correction to the previous STATE
+PERF (worktree-agent-a83770e7cc90b1b21, 6 commits) and BIG-TEXT (worktree-agent-a9abc5cb8da94c21f, 4 commits)
+were **not** merged into main. Both agents hit the monthly API spend limit on 2026-10-06 ~17:10: PERF before its
+final "after" measurement (no sheet, no DECISIONS), BIG-TEXT mid-way through the art director's round-b fixes
+(uncommitted edits lost with the worktree removal). The art director's round-b list is recovered (see the
+BIG-TEXT b brief in this session's transcript; source: old orchestrator subagent jsonl fba00c79…/agent-a9abc5cb8da94c21f).
+
+## M14 close-out list (updated 2026-10-11 evening)
+| # | Item | State |
+|---|---|---|
+| 1 | BIG-TEXT round b | DONE db29f599 on worktree-agent-a50e122cd5d6512b2 (carries SUBTITLE + RED-TIP + main 8404830a) |
+| 2 | PERF finish | numbers done (HQ idle t2 9.4->6.4 ms, t1 10.4->6.9; combat t2 9.2->5.1, t1 9.3->5.1 median, loaded machine); committing CPU fixes after merging #1's branch |
+| 3a | pass21 Mainframe subtitle red + pegboard under band + SignSpill grey blur | DONE 5cdb47ec (in #1) |
+| 3b | test_anim_r2_combat focus-tip red | DONE bfb47cc5 (REDTIP.jpg; 93ef9f3b in #1) |
+| 3c | test_city_map_sweeps landmark red | MERGED to main 8404830a (test-only, B4 b one-tag rule) |
+| 3d | SPILL: other LightSpills reading the stale AfterScrim copy | agent running |
+| 4 | Art-pass group review (sheet M14_CLOSEOUT_GROUP.jpg, ruling 9 told) | APPROVED 2026-10-11; follow-ups: letterhead_name per corp + takeover end frame at 1.0 (~0.45 HQ floor) = M14 FOLLOW-UP agent |
+| 5 | Merge group head into main, checks, push gate | merged 4bb749ad; push gate running |
+| 6 | Quiet-machine perf run (p95 still > 8 ms under load) | after 5 |
+| 7 | 12q QA matrix on db29f599 | auditor running |
+| 8 | 12b bookkeeping refresh | after 7 |
+| 9 | Gate: full suite ONCE + smoke + validate; GATE_REPORT (retro + replan), PT list, CP-002 | after 8 |
+| 10 | CI triggers restored, "M14 complete", report, pause | last |
+
+Retro note for the gate report: the commit hook blocks every agent while main carries reds; fix main's reds first, before
+spawning slices (cost ~1 h of blocked agents today). precommit's shared log folder and autoload parse check fixed (5cdb47ec).
 
 ## Checks (sha they ran on)
-- `python tools/test_run_tests.py`: 14 tests OK @ 72dfe6b8 + runner change
-- checks_fast: import=0 fast=0 (1371 tests) smoke=0 validate=0 @ 72dfe6b8 + process files (2026-10-10); rerun by the push gate at commit time
-- full suite: not run (tooling and docs only; no `.gd` changed)
-
-## Open items
-1. Ingest lint_ui_retry when it ends (see below); decide whether to build the `lint_verify` kind before the M14 audit (`python tools/batch/submit_batch.py --status <id>`; then `--fetch <id> --out batches/<name>.results.jsonl`; `python tools/batch/ingest_results.py batches/<name>.results.jsonl`). lint_ui is report-only (feeds the next audit); decisions_digest notes go to `docs/decisions/digests/` for agent briefs.
-2. First real use of `code-cleanup` on a hand-back diff → keep the diff and patch under `docs/process/examples/`.
-3. Tell the art-pass session (not running on 2026-10-11) that reviews are per group (ruling 9).
-4. At "M14 complete": restore the push / pull_request triggers in `.github/workflows/ci.yml` (ruling 8).
-5. Month end: `python tools/archive_decisions.py` (ruling 5).
-Batches done 2026-10-11: lint_ui (281 Haiku requests: 226 reports, 54 truncated at 4 000 max_tokens → resubmitted as lint_ui_retry = msgbatch_01A3U8oUAhwQkP7q9zLMj6cW at 8 000, 1 no-envelope), decisions_digest (13 Sonnet requests, all ok → `docs/decisions/digests/`). Lint digest: `batches/lint_ui_out/LINT_DIGEST.md` (1 937 leads after noise filtering; R5 magic numbers 1 004, S3 docs 315, S1 types 259, S4 literals 146). Precision is Haiku-at-low: treat as leads for the auditor, not findings; next process step = a Sonnet `lint_verify` kind that confirms each lead against the file before it becomes a slice item.
-lint_ui complete: 280 of 281 files reported (lint_ui + retry + retry2; one file ignored the format). Combined lint digest at `docs/handoff/lint/LINT_UI_2026-10-11.md` (2 743 leads after noise filtering). Batches in flight: none.
-
-## Decisions taken since the last STATE
-- CP-001 (1A 2A-never-×3 3A 4A) and follow-ups 3–9 — DECISIONS "2026-10-11 — Designer rulings CP-001" and "... process follow-ups (items 3–9)"
-- Worktrees: 89 removed, only main and `art-pass` remain (2.3 GB from 27 GB); no branch deleted.
+- pass20_screens + pass21_screens @ 547444a8: pass20 green; pass21_screens 1 red (item 3), fails alone too.
+- fast=0 smoke=0 validate=0 @ 547444a8 (previous session's push gate).
 
 ## Questions pending (designer)
-- none (CP-001 answered; CP-002 opens at the next gate)
+- none new (CP-002 opens at the gate).
 
-## Next three actions
-1. Wait for the designer's next instruction (M14 pause stands).
-2. When work resumes: briefs reference `docs/process/agent_rules/<area>.md`; hand-backs use `precommit.sh --base main`; full suite once at the gate, never ×3.
-3. At the first gate: `tools/playtest/make_playtest.py` + CP-002.
-
-## Gotchas (new this session only)
-- **Lost work, reported:** three dirty worktrees (branches worktree-agent-a0855db0bb959add2 = ART-6 3A paused 10-05, a83770e7cc90b1b21 = ART-3 PERF, a9abc5cb8da94c21f = ART-3 BIG-TEXT) had modified tracked files; my "commit WIP then remove" loop removed them with --force although the WIP commit failed (the new pre-commit hook ran inside the worktree), so those uncommitted modifications are gone. The branches' committed work is intact; PERF and BIG-TEXT were already merged into main.
-- The pre-commit hook runs in every worktree sharing `.git/hooks`; agents' commits now run `precommit.sh` too (docs-only commits skip tests since the CODE_DIRS filter).
-- `python -` hung twice more this session even with `< /dev/null`; the only safe form is a `.py` file.
-- Git output on this PC decodes as cp1252 unless `encoding="utf-8"` is passed to subprocess (the new tools do).
-
-## Cost row
-wave process-redesign: agents 0, test minutes ~8 (fast checks ×3 gates), batches 3 (lint_ui 1.85M in / 0.55M out, cache 26 %; decisions_digest 0.44M in / 0.11M out, cache 3 %; retry pending), handoffs 0. At batch prices that is under $1 for lint_ui and about $1.50 for the digest.
+## Gotchas
+- DECISIONS on main is newest-first with dated `###` headings and 2026-09 archived; old branches appended at the file end — agents told to move their entries to the top.
