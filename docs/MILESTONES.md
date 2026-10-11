@@ -288,7 +288,7 @@ pipeline, the render spike)
 - [ ] Group 2 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only").
 
 **ART-2 — Combat wheel stack**
-- [ ] The worst-case clutter fixture renders legibly at 1.0 and 1.6.
+- [x] The worst-case clutter fixture renders legibly at 1.0 and 1.6 (review pack `combat_clutter` on `ClutterFixture`; `test_the_clutter_fixture_keeps_every_word_on_screen_and_apart_at_1_0_and_1_6`, every boss; bloomed drones now keep off the HP number, result chips, tag, boss banner, nudges and Daemon rack; sheet `docs/art_review/ART-2/CLUTTER.jpg`, DECISIONS 2026-10-11 "M14 ART-2/ART-5 acceptance").
 - [x] Preview == result still holds (`test_slices_a_play_changes_are_circled_in_pencil_true_to_the_preview`, `test_the_card_play_preview_lands_where_the_card_lands`; the result plate on the affected wheel adds no rule, DECISIONS 2026-10-05 "Parity fix — card aiming and combat HUD").
 - [x] Wheel draw time is within budget (3.8 ms mean vs 4 ms, 2A).
 
@@ -306,7 +306,7 @@ pipeline, the render spike)
 - [ ] Group 3 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only").
 
 **ART-5 — Unified city model and motion**
-- [ ] Each corporation's Grid capture vs the reference.
+- [x] Each corporation's Grid capture vs the reference (review pack `grid`, `grid_meridian`, `grid_halcyon`, `grid_orbital`, `grid_rebel_cell` at 1.0, windowed; sheet `docs/art_review/ART-5/GRID_PER_CORP.jpg`; every visible difference listed for the art director in DECISIONS 2026-10-11 "M14 ART-2/ART-5 acceptance"; the cut Site-file header fixed, `test_the_site_file_header_fits_whole_on_every_corporations_grid`).
 - [x] Motion layers pause under reduce motion (`test_the_pause_and_reduce_rules`).
 - [x] LOD switches at the configured zooms (`test_the_car_lod_swaps_at_the_configured_zooms`).
 - [ ] 60 fps at 1080p on the target PC, and the Deck tier.
@@ -358,9 +358,7 @@ its items)
       rounds until CLEAN (nothing deferred, P3s included); "M14 complete" logged in DECISIONS.
 
 *Still open after the 12b-2 pass (2026-10-11), and why:* the four "Group n merged" boxes (they wait for the full-suite run and
-the designer review); ART-2 clutter fixture at 1.0 / 1.6 (no fixture test exists);
-ART-5 per-corporation Grid captures vs reference (the Grid sweep follows the HQ's one tag, `test_city_map_sweeps`, but
-no per-corporation capture against the reference is logged) and 60 fps / Deck tier (12p: HQ idle 6.4 ms and combat 5.1 ms median on this
+the designer review); ART-5 60 fps / Deck tier (12p: HQ idle 6.4 ms and combat 5.1 ms median on this
 machine, DECISIONS 2026-10-11 "Perf slice"; the target PC and Deck tier are not measured); ART-6 reading holds at 2x / 4x (no test
 asserts the holds against the speed), a capture for every changing state, and the DOWN bolt line at every zoom (`test_art5_grid_markers` asserts
 the grey sticker under the white bolt; no zoom sweep); ART-12 QA matrix, perf, full suite and audit (the audit is the side-by-side parity

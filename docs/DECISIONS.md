@@ -37,6 +37,60 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-11 — M14 ART-2/ART-5 acceptance: the clutter fixture at 1.0 / 1.6; each corporation's Grid vs the reference
+Two open M14 boxes, each with evidence; defects fixed, look differences listed for the art director (not changed).
+- **ART-2 clutter fixture.** arena_lab's worst fixture (a drone on every player slot, a satellite on every boss
+  slot, Firmware in every slot, every lab Daemon, every dock bloomed, a card hovered) is one shared dressing,
+  `tools/visual_qa/clutter_fixture.gd`, used by the review pack's new `combat_clutter` screen (the boss fight), the
+  perf pack's `combat_worst*` screens (its own copy removed) and the test. Captured windowed at 1.0 and 1.6.
+- **Defect found and fixed (combat).** A bloomed drone's mini-wheel only kept inside the view: at 1.0 and 1.6 it
+  stood on the player's and the boss's HP numbers, the result chips beside them, the boss banner (RENEWAL ENGINE)
+  and the Daemon rack, and at 1.6 on the E nudge button. `DroneDock._mini_turn` now turns it round the rim
+  (MIRROR_STEP at a time, clockwise first) to the nearest spot clear of `mini_blocks()` (the HP number, NEXT /
+  LAST TURN plates, both result-chip lanes beside and under the HP, kept whole so a drone never jumps as the chips
+  change, the tag, the boss banner (`WheelView.banner_rect`, `WheelFace.banner_rect`), the nudge buttons and key
+  hints, the Daemon rack) and of the drones already placed; else, as before, the nearest that fits the view.
+  Test `test_art2_clutter_fixture` (every corporation's boss x 1.0 / 1.6: layout rules, every word block on screen,
+  no two owners' words overlapping, no drone on a word block or another drone, hand body lines inside their cards
+  at the rest floor). Sheet `docs/art_review/ART-2/CLUTTER.jpg` (reference | 1.0 | 1.6, and the before row).
+- **Not changed (D15 look):** in the fanned hand each card lies under its right neighbour by HAND_OVERLAP (12 %),
+  so at rest the end of a long body line and the first card's key hint sit under the next card (at 1.0 and 1.6, in
+  every fight, not only the fixture); the hovered card grows and reads whole (S-CARDFACE b). For the art director.
+- **ART-5 per-corporation Grid.** `grid`, `grid_meridian`, `grid_halcyon`, `grid_orbital`, `grid_rebel_cell`
+  captured at 1.0, windowed. References: the locked Grid concept `city/round39_city_unified/city_grid.jpg` (a
+  Meridian campaign) for every corporation, beside the corporation's own city concept (Solace / Halcyon / Orbital:
+  `round26_hq_targets/hq_<corp>_close_night.jpg`; Meridian: art-pass `round30_meridian_castle/city_night_hq_v6.jpg`;
+  REBEL_CELL: `round34_rebel_cell/map_A_home.jpg`). Sheet `docs/art_review/ART-5/GRID_PER_CORP.jpg`.
+- **Defect found and fixed (city).** The selected Site's decrypted file (SiteHoloCard) drew its header lines with
+  draw_string, which cuts at the card's edge: Meridian's "MERIDIAN FREIGHT SYSTEMS // SITE FILE 331" lost its file
+  number at 1.0, and at 2.0 long titles (PARKING ENFORCEMENT OFFICE) and file lines were cut on every corporation.
+  The file line now names the corp by its letterhead name (MERIDIAN FREIGHT, SOLACE BIO; as the card's doc always
+  said), and a header line wider than the card wraps at a word, the header growing to hold it
+  (`SiteHoloCard.header_lines`, `_fit_head`). Test `test_art5_grid_per_corp` (every corporation x 1.0 / 1.6 / 2.0).
+  The hq_scene change is one line (screens' file, smallest change).
+- **Visible differences, reference vs main, for the art director (not changed):**
+  - All: the concept's yellow vinyl THE GRID title sticker (top left) is not on main; main shows the resource strip (HEAT, SCHEMATICS, HOME, EXPLOITS, RAIDS, ICE, CREW) across the top.
+  - All: the concept's corp-paper operative dossier on the left (AT LARGE, HEAT stamp) is not on main; main has the CREW / MARKET / DEFENCE hand and runner polaroids at the bottom left.
+  - All: the concept's minimap (bottom left) is not on main.
+  - All: the concept's legend strip along the foot (owned / selectable / not yet) is a collapsed MAP KEY button at the top right on main; main's foot is the ON AIR ticker.
+  - All: the concept's "Always show all nodes" toggle (bottom right) is not on main (it is in Options).
+  - All: the concept's network is a thick yellow cable lattice joining every Site; main draws only the walked / claimed links in yellow from CORE, the other links pale.
+  - All: the concept's Site markers are orange hex badges with tier pips; main's are the round white-ringed v4 stickers with objective glyphs (round 42, locked after round 39).
+  - All: the concept's Site card is orange corp paper (FORGE THE MANIFEST: TIER / TYPE / REWARDS); main's is the decrypted holo in the corp's tint (TYPE / LINK / IF CLEARED, DECRYPTED stamp).
+  - All: the concept's PATROL [P] chip on the map is not on main.
+  - All: the concept's target is a red ring and a "TARGET: MERIDIAN HQ // EXPLOITS 0/3" chip at the top; main's is the red pencil TARGET scrawl round the Central Server with a "CENTRAL SERVER // EXPLOITS 0/3" chip.
+  - All: the concept frames a closer, brighter violet city filling the view with other corps' landmarks and district labels (HALCYON eye pyramid, THE SPRAWL); main frames wider and darker, no other landmark or district label in view.
+  - All: main adds the jack command line ("> jack --from HOME_SERVER --to ...") under JACK IN; the concept has none.
+  - Solace: the helix landmark of the R26 concept is at the top edge of main's frame, not in view; the network sits in the upper left.
+  - Meridian: the network sits in the upper right with about half the view past the city's edge (known GRID-12); Meridian's castle HQ of the R30 concept is not in frame; no orange territory reads.
+  - Halcyon: the eye pyramid and its beam (R26 concept) are not in frame; the right third of the view is past the city's edge; JACK IN was caught in its focus look (the rainbow curl over the J, designer 2026-10-05).
+  - Orbital: the dish and launch-pad landmark (R26 concept) is not in frame; the lower right of the view is past the city's edge.
+  - REBEL_CELL: the red-window fist across the district (R34 map_A_home) is not in main's frame; the TARGET pencil arrow points at a Site marker above the Central Server chip, labels crowding near it (known GRID-13); the lower right is past the city's edge.
+- **Observed, not a picture defect:** every Grid capture (and the 2026-10-05 parity pack's) warns "waited 20 s
+  for the city bake; not ready (old look)": `NeonCity.showing_current_look()` stays false on the Grid's 3D city
+  while `view_covered()` is true for it; the pictures show the full 3D city. At 2.0 the selected Site's card runs
+  under JACK IN in the card column (before and after this fix). Both for the 12q QA matrix.
+
 ### 2026-10-11 — M14 FOLLOW-UP: letterhead names; takeover end frame
 Art director's APPROVED review of the close-out group, two follow-ups.
 - **Letterhead names (schema).** `CorporationData.letterhead_name` (String, "" by default): the
