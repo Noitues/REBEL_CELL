@@ -458,7 +458,7 @@ func play_beat(b: Dictionary, t0: float) -> void:
 			_tokens[String(e["threat"])] = {"site": StringName(e["site"]), "enter_at": t0, "enter_at_dur": dur,
 				"type": RaidVehicle.type_of(td), "max": maxi(1, most), "hits": []}
 			var entry := StringName(e["site"])
-			if not _incoming.has(entry):
+			if _incoming.is_empty():  # G2R-6: one word for the raid, at the first entry Site
 				_incoming[entry] = true
 				_mark("incoming", entry, CityMapOverlay.tr_word(MARK_INCOMING), t0, true)
 		"move":

@@ -44,6 +44,19 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-12 — M14 G2R-RAID: the raid pages after the art-pass review of group 2 (G2R-5..8)
+- **G2R-5 report verdict at 2.0.** From text scale 1.8 (`HOLDS_FOLD_SCALE`) the after-action paper gives CELL HOLDS its own room
+  (`HoldsRoom`, 0.9 of the sticker's height) right under the order line, at the paper's right; the table rows (units, home,
+  Heat, node rows) fold below it. The verdict is on page 1. At 1.0 it stays over the paper's lower part as before.
+- **G2R-6 INCOMING once.** `RaidFxLayer` pencils INCOMING once for the raid, at the first entry Site (it was once per Site,
+  so two entries overlapped). One word, a true plan.
+- **G2R-7 no standing corp band.** The raid setup's corp warning goes through `intercept_raid_warning` (the holo toast), not
+  a `raid`-scoped Dialogue line (the band under the title). `Fx.avoid_rects`: a top-level MapLegend (the setup's MAP KEY in the
+  top bar) is avoided at its folded chip's rect (the page's scroll clipped it away, so SAVED sat on it), with the B5c sticker
+  clearance.
+- **G2R-8 Continue.** The playout / result's Continue is the kit's `HoloSticker` verb (pink, as on loot), named `Continue`.
+- Tests in `test_hq_m14_12q_raid` (g2r5..g2r8). Sheet `docs/art_review/ART-12/12q/fixes/G2R_RAID.jpg` (before | after, 1.0 / 2.0, hc row for raid_setup).
+
 ### 2026-10-12 — M14 G2R city (art-pass review of group 2): the Grid camera off the city's edge, the TARGET arrow clear
 Before | after per corporation at 1.0 and 2.0 plus the REBEL_CELL TARGET crop: `docs/art_review/ART-12/12q/fixes/G2R_CITY.jpg`.
 - **G2R-1 the frame never shows past the city edge (network wins).** `CityMapCamera.keep_on_city` (pure): the focus
