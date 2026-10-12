@@ -209,7 +209,7 @@ func _draw() -> void:
 	# Under the sheet's letterhead: "<CORP> SECURITY // PERSON OF INTEREST // FILE".
 	# Parity: wrapped at word breaks, every word whole.
 	for line in sub_lines(w):
-		draw_string(pf, Vector2(x, head_h + pf.get_ascent(sfs)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, RouteInk.PAPER_FIELD)
+		HighContrast.draw_text(self, pf, Vector2(x, head_h + pf.get_ascent(sfs)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, RouteInk.PAPER_FIELD)
 		head_h += pf.get_height(sfs)
 	# The mugshot and the fields.
 	var y := head_h + MARGIN * s
@@ -225,8 +225,8 @@ func _draw() -> void:
 	var label_w := (w - fx - MARGIN * s) * 0.42
 	var ry := y + pf.get_ascent(fs)
 	for row in _rows:
-		draw_string(pf, Vector2(fx, ry), String(row[0]), HORIZONTAL_ALIGNMENT_LEFT, label_w, fs, RouteInk.PAPER_FIELD)
-		draw_string(pf, Vector2(fx + label_w, ry), String(row[1]), HORIZONTAL_ALIGNMENT_LEFT, w - fx - label_w - MARGIN * s, fs, RouteInk.PAPER_INK)
+		HighContrast.draw_text(self, pf, Vector2(fx, ry), String(row[0]), HORIZONTAL_ALIGNMENT_LEFT, label_w, fs, RouteInk.PAPER_FIELD)
+		HighContrast.draw_text(self, pf, Vector2(fx + label_w, ry), String(row[1]), HORIZONTAL_ALIGNMENT_LEFT, w - fx - label_w - MARGIN * s, fs, RouteInk.PAPER_INK)
 		ry += lh
 	# AT LARGE beside the name (rubber stamp).
 	# AT LARGE by the name, over the short rows' free right side (HP, RAM); the compact file
@@ -246,9 +246,9 @@ func _draw() -> void:
 		for wd in wheel:
 			parts.append(String(wd))
 		for pair in [[tr(F_WHEEL), " ".join(parts)], [tr(F_HUB), String(data.get("hub", ""))], [tr(F_DECK), tr(DECK_CARDS) % int(data.get("deck", 0))]]:
-			draw_string(pf, Vector2(x, y + pf.get_ascent(fs)), String(pair[0]), HORIZONTAL_ALIGNMENT_LEFT, w - x * 2.0, fs, RouteInk.PAPER_FIELD)
+			HighContrast.draw_text(self, pf, Vector2(x, y + pf.get_ascent(fs)), String(pair[0]), HORIZONTAL_ALIGNMENT_LEFT, w - x * 2.0, fs, RouteInk.PAPER_FIELD)
 			y += lh
-			draw_string(pf, Vector2(x, y + pf.get_ascent(fs)), String(pair[1]), HORIZONTAL_ALIGNMENT_LEFT, w - x * 2.0, fs, RouteInk.PAPER_INK)
+			HighContrast.draw_text(self, pf, Vector2(x, y + pf.get_ascent(fs)), String(pair[1]), HORIZONTAL_ALIGNMENT_LEFT, w - x * 2.0, fs, RouteInk.PAPER_INK)
 			y += lh
 		var station: Array = data.get("station", [])
 		if not station.is_empty():
@@ -256,10 +256,10 @@ func _draw() -> void:
 			var box := Rect2(Vector2(x, y), Vector2(w - x * 2.0, lh * (1.0 + station.size()) + MARGIN * s * 0.5))
 			draw_rect(box, RouteInk.PAPER_STAMP, false, STAMP_RULE * s * 0.6)
 			var sy := y + MARGIN * s * 0.25 + pf.get_ascent(fs)
-			draw_string(pf, Vector2(x + MARGIN * s * 0.5, sy), tr(STATION), HORIZONTAL_ALIGNMENT_LEFT, box.size.x - MARGIN * s, fs, RouteInk.PAPER_STAMP)
+			HighContrast.draw_text(self, pf, Vector2(x + MARGIN * s * 0.5, sy), tr(STATION), HORIZONTAL_ALIGNMENT_LEFT, box.size.x - MARGIN * s, fs, RouteInk.PAPER_STAMP)
 			for line in station:
 				sy += lh
-				draw_string(pf, Vector2(x + MARGIN * s * 0.5, sy), String(line), HORIZONTAL_ALIGNMENT_LEFT, box.size.x - MARGIN * s, fs, RouteInk.PAPER_INK)
+				HighContrast.draw_text(self, pf, Vector2(x + MARGIN * s * 0.5, sy), String(line), HORIZONTAL_ALIGNMENT_LEFT, box.size.x - MARGIN * s, fs, RouteInk.PAPER_INK)
 			y = box.end.y + MARGIN * s * 0.5
 	draw_set_transform(Vector2.ZERO, 0.0)
 	PaperStaging.draw_clip(self, CLIP_X * s, s)
@@ -278,5 +278,5 @@ func _stamp(right: Vector2, text: String, tilt: float, ruled: bool) -> void:
 	draw_set_transform(right, tilt)
 	if ruled:
 		draw_rect(box, col, false, STAMP_RULE * s)
-	draw_string(f, Vector2(box.position.x + pad, box.position.y + pad * 0.5 + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	HighContrast.draw_text(self, f, Vector2(box.position.x + pad, box.position.y + pad * 0.5 + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 	draw_set_transform(Vector2.ZERO, 0.0)

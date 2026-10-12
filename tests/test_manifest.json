@@ -793,6 +793,10 @@
 			"seconds": 20.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_m14_12q_access.gd": {
+			"seconds": 30.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_big_text_intel_order_fit.gd": {
 			"seconds": 15.0,
 			"tier": "fast"

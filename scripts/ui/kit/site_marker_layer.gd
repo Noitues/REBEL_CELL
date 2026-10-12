@@ -162,7 +162,7 @@ func _draw() -> void:
 		var r: Rect2 = label_rects[id]
 		draw_rect(r, Color(Palette.NIGHT_SKY, 0.86))
 		draw_rect(Rect2(r.position, Vector2(maxf(1.0, pad * 0.6), r.size.y)), SiteMarker.ring_color(specs[id]))
-		draw_string(f, r.position + Vector2(pad, pad + f.get_ascent(fs)), String(labels[id]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.TEXT_HI)
+		HighContrast.draw_text(self, f, r.position + Vector2(pad, pad + f.get_ascent(fs)), String(labels[id]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.TEXT_HI)
 
 
 func _gui_input(event: InputEvent) -> void:

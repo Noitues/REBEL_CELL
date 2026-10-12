@@ -78,8 +78,8 @@ func _draw() -> void:
 		var face := Rect2(top.position + Vector2(0.0, LAYER_STEP * (LAYERS - 1)), top.size)
 		var count := str(n)
 		var cw := display.get_string_size(count, HORIZONTAL_ALIGNMENT_LEFT, -1, cfs).x
-		draw_string(display, Vector2(face.position.x + (face.size.x - cw) * 0.5, face.position.y + face.size.y * 0.5 + (display.get_ascent(cfs) - display.get_descent(cfs)) * 0.5),
+		HighContrast.draw_text(self, display, Vector2(face.position.x + (face.size.x - cw) * 0.5, face.position.y + face.size.y * 0.5 + (display.get_ascent(cfs) - display.get_descent(cfs)) * 0.5),
 			count, HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Palette.TEXT_HI)
 		var word := tr(WORDS[i])
 		var ww := mono.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, wfs).x
-		draw_string(mono, Vector2((size.x - ww) * 0.5, face.end.y + WORD_GAP * s + mono.get_ascent(wfs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, wfs, Palette.TEXT_LO)
+		HighContrast.draw_text(self, mono, Vector2((size.x - ww) * 0.5, face.end.y + WORD_GAP * s + mono.get_ascent(wfs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, wfs, Palette.TEXT_LO)

@@ -350,6 +350,6 @@ func _draw() -> void:
 		var outline := _line.get_theme_constant(&"outline_size")
 		if outline > 0 and _type_outline.a > 0.0:
 			draw_string_outline(font, base, part, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, outline, _type_outline)
-		draw_string(font, base, part, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _type_color)
+		HighContrast.draw_text(self, font, base, part, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _type_color)
 	if _line.has_focus() and _caret_on() and _line.text != "" and _line.alignment == HORIZONTAL_ALIGNMENT_LEFT:
 		draw_rect(caret_rect(), Color(_line.get_theme_color(&"font_focus_color"), 0.85))

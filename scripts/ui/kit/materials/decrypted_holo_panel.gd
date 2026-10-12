@@ -45,6 +45,12 @@ const SEAL_R := 30.0
 const STAMP_TILT_DEG := -8.0
 const STAMP_WORD := "DECRYPTED"
 const STAMP_SLOT := Vector2(180, 48)
+## M14 12Q-ACCESS: the stamp box's room round its lettering (px each side) and the least lettering
+## the stamp shrinks to (px) to stay in its slot.
+const STAMP_BOX_PAD := Vector2(8, 2)
+const STAMP_MIN_PX := 10
+## The holo's edge (px; the shader's edge_px), doubled in high contrast (HighContrast.edge).
+const EDGE_PX := 1.5
 ## B1c: the stamp's ink (the Cell's acid, as the route holo's DECRYPTED chip) and its alpha.
 const STAMP_COLOR := Palette.CELL_ACID
 const STAMP_ALPHA := 0.9
@@ -164,26 +170,33 @@ func _sync() -> void:
 		return
 	var live := Motion.live(BANDS)
 	var k := body_share(corp_color)
+	# M14 12Q-ACCESS (L78): high contrast: opaque black glass with no tint, scanlines, bands or
+	# split, and a thick solid edge in the corp's colour (HighContrast).
+	var hc := HighContrast.on()
 	for m in [_glass_mat, _over_mat]:
 		var sm := m as ShaderMaterial
 		sm.set_shader_parameter(&"panel", Vector4(0, 0, size.x, size.y))
-		sm.set_shader_parameter(&"tint", corp_color)
-		sm.set_shader_parameter(&"deep", Palette.NET_BG_OUTER)
+		sm.set_shader_parameter(&"tint", HighContrast.lift(corp_color) if hc else corp_color)
+		sm.set_shader_parameter(&"deep", HighContrast.BG if hc else Palette.NET_BG_OUTER)
 		sm.set_shader_parameter(&"tint_share", TINT_SHARE)
-		sm.set_shader_parameter(&"fill_share", FILL_SHARE * k)
-		sm.set_shader_parameter(&"glass_alpha", GLASS_ALPHA)
+		sm.set_shader_parameter(&"fill_share", 0.0 if hc else FILL_SHARE * k)
+		sm.set_shader_parameter(&"glass_alpha", 1.0 if hc else GLASS_ALPHA)
 		sm.set_shader_parameter(&"scan_px", SCAN_PX)
-		sm.set_shader_parameter(&"scan_strength", SCAN_STRENGTH * k)
+		sm.set_shader_parameter(&"scan_strength", 0.0 if hc else SCAN_STRENGTH * k)
 		sm.set_shader_parameter(&"band_count", BAND_COUNT)
-		sm.set_shader_parameter(&"split_px", SPLIT_PX if Fx.effects_enabled() else 0.0)
+		sm.set_shader_parameter(&"split_px", SPLIT_PX if Fx.effects_enabled() and not hc else 0.0)
+		sm.set_shader_parameter(&"edge_px", HighContrast.edge(EDGE_PX))
 		sm.set_shader_parameter(&"band_seconds", maxf(Motion.seconds(BANDS), 0.1))
-		sm.set_shader_parameter(&"band_strength", Motion.amplitude(BANDS) if live or not Motion.animating() else 0.0)
+		sm.set_shader_parameter(&"band_strength", 0.0 if hc else (Motion.amplitude(BANDS) if live or not Motion.animating() else 0.0))
+	queue_redraw()
+	if stamp_slot != null:
+		stamp_slot.queue_redraw()
 
 
 ## B1c (D17): the local 0.88 scrim right behind the plate.
 func _draw() -> void:
 	if backing:
-		draw_rect(Rect2(Vector2.ZERO, size).grow(BACKING_OUT), Palette.HOLO_SCRIM)
+		draw_rect(Rect2(Vector2.ZERO, size).grow(BACKING_OUT), HighContrast.plate(Palette.HOLO_SCRIM))
 
 
 ## The seal's centre (stamp-slot local): under the stamp, the stamp's centre.
@@ -211,7 +224,7 @@ func _draw_seal() -> void:
 		var font := Palette.display()
 		var px := UiTheme.font_px_at(UiTheme.TITLE, text_k if text_k > 0.0 else Settings.text_scale)
 		var w := font.get_string_size(seal_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
-		stamp_slot.draw_string(font, c + Vector2(-w.x * 0.5, w.y * 0.32), seal_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ring)
+		HighContrast.draw_text(stamp_slot, font, c + Vector2(-w.x * 0.5, w.y * 0.32), seal_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ring)
 	# the red fracture down the middle, across the ring
 	var pts := PackedVector2Array()
 	for f: Vector2 in FRACTURE:
@@ -225,19 +238,42 @@ func _draw_stamp() -> void:
 	if seal:
 		_draw_seal()
 	var font := Palette.display()
-	var px := UiTheme.font_px_at(UiTheme.HEADING, text_k if text_k > 0.0 else Settings.text_scale)
+	var px := stamp_px(stamp_slot.size, text_k if text_k > 0.0 else Settings.text_scale)
 	var sz := font.get_string_size(STAMP_WORD, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
-	var col := STAMP_COLOR
-	col.a = STAMP_ALPHA
+	var col := HighContrast.ink(STAMP_COLOR)
+	col.a = 1.0 if HighContrast.on() else STAMP_ALPHA
 	var centre := stamp_slot.size * 0.5
-	var box := Rect2(-sz * 0.5 - Vector2(8, 2), sz + Vector2(16, 4))
+	var box := stamp_box(sz)
 	for pass_shadow in [true, false]:
 		var at: Vector2 = centre + (STAMP_SHADOW_OFFSET if pass_shadow else Vector2.ZERO)
 		var ink: Color = stamp_shadow_color() if pass_shadow else col
 		stamp_slot.draw_set_transform(at, deg_to_rad(STAMP_TILT_DEG))
 		stamp_slot.draw_rect(box, ink, false, 3.0)
-		stamp_slot.draw_string(font, Vector2(-sz.x * 0.5, sz.y * 0.32), STAMP_WORD, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ink)
+		HighContrast.draw_text(stamp_slot, font, Vector2(-sz.x * 0.5, sz.y * 0.32), STAMP_WORD, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ink)
 	stamp_slot.draw_set_transform(Vector2.ZERO, 0.0)
+
+
+## M14 12Q-ACCESS (12Q-HQ, seen at text 2.0): the stamp's ruled box round lettering of size `sz`.
+static func stamp_box(sz: Vector2) -> Rect2:
+	return Rect2(-sz * 0.5 - STAMP_BOX_PAD, sz + STAMP_BOX_PAD * 2.0)
+
+
+## M14 12Q-ACCESS: the stamp's lettering (px) at text scale `k` in a slot of `slot` px: the
+## HEADING step, made smaller only as far as the tilted box must to stay inside the slot's width
+## (at text 2.0 the stamp reached past the HQ Site holo's right edge).
+static func stamp_px(slot: Vector2, k: float) -> int:
+	var font := Palette.display()
+	var px := UiTheme.font_px_at(UiTheme.HEADING, k)
+	while px > STAMP_MIN_PX and stamp_width(font.get_string_size(STAMP_WORD, HORIZONTAL_ALIGNMENT_LEFT, -1, px)) > slot.x:
+		px -= 1
+	return px
+
+
+## M14 12Q-ACCESS: the width the tilted stamp box round lettering of size `sz` takes on screen.
+static func stamp_width(sz: Vector2) -> float:
+	var b := stamp_box(sz).size
+	var a := absf(deg_to_rad(STAMP_TILT_DEG))
+	return b.x * cos(a) + b.y * sin(a)
 
 
 ## B4 (art director, round 44 `hq_idle.png`): the body's tint fill and scanlines are FILL_SHARE /

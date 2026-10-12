@@ -297,8 +297,7 @@ static func draw(card: ZineCard) -> void:
 			var lw := display.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			if x + lw > size.x - 4.0:
 				break
-			card.draw_string_outline(display, Vector2(x, py + fs * 0.36), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(2, roundi(fs * 0.12)), Palette.INK)
-			card.draw_string(display, Vector2(x, py + fs * 0.36), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER)
+			HighContrast.draw_text(card, display, Vector2(x, py + fs * 0.36), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER, maxi(2, roundi(fs * 0.12)), Palette.INK)
 			x += lw + 6.0 * s
 		if x > size.x - pic:
 			break
@@ -314,14 +313,18 @@ static func draw(card: ZineCard) -> void:
 		var y := float(fit["top"]) + i * float(fit["line"]) + bfs * TEXT_BASE
 		var rw: float = (fit["widths"] as PackedFloat32Array)[i]
 		# S-CARDFACE b: an ink outline keeps small words legible where the face's gloss streak crosses them
-		card.draw_string_outline(body, Vector2((size.x - rw) * 0.5, y), t, HORIZONTAL_ALIGNMENT_CENTER, rw, bfs, TEXT_OUTLINE, Color(Palette.INK, TEXT_OUTLINE_ALPHA))
-		card.draw_string(body, Vector2((size.x - rw) * 0.5, y), t, HORIZONTAL_ALIGNMENT_CENTER, rw, bfs, Palette.TEXT_HI)
+		# M14 12Q-ACCESS (L78): high contrast backs the rules text with an opaque plate and a thick
+		# outline (7:1 whatever the face's art and gloss behind).
+		if HighContrast.on():
+			var pad := float(HighContrast.outline_px(bfs)) * 0.5
+			card.draw_rect(Rect2((size.x - rw) * 0.5 - pad, y - body.get_ascent(bfs) - pad, rw + pad * 2.0, body.get_height(bfs) + pad * 2.0), HighContrast.BG)
+		HighContrast.draw_text(card, body, Vector2((size.x - rw) * 0.5, y), t, HORIZONTAL_ALIGNMENT_CENTER, rw, bfs, Palette.TEXT_HI, TEXT_OUTLINE, Color(Palette.INK, TEXT_OUTLINE_ALPHA))
 	# The key hint on a dark chip at the art panel's corner.
 	var kr := key_rect(card)
 	if kr.has_area():
 		var kfs := maxi(1, roundi(KEY_PX * s))
-		card.draw_rect(kr, Color(Palette.INK, KEY_CHIP_ALPHA))
-		card.draw_string(Palette.marker(), Vector2(kr.position.x + KEY_PAD * s, kr.position.y + (kr.size.y + Palette.marker().get_ascent(kfs) - Palette.marker().get_descent(kfs)) * 0.5),
+		card.draw_rect(kr, HighContrast.plate(Color(Palette.INK, KEY_CHIP_ALPHA)))
+		HighContrast.draw_text(card, Palette.marker(), Vector2(kr.position.x + KEY_PAD * s, kr.position.y + (kr.size.y + Palette.marker().get_ascent(kfs) - Palette.marker().get_descent(kfs)) * 0.5),
 			key_text(card), HORIZONTAL_ALIGNMENT_LEFT, -1, kfs, Palette.TEXT_HI)
 	# B2 (art director, bible 2.10): focus is the kit's lime corner brackets round the die-cut and
 	# the hover lift (`card_hover`, 18 px at 1080p), never a lime fill behind the card.
@@ -350,7 +353,7 @@ static func draw_need(ci: CanvasItem, card: ZineCard) -> void:
 	var tag := Rect2(Vector2(cc.x - cr, cc.y + cr + 3.0), Vector2(nw + ZineCard.NEED_PAD * 2.0, nfs * 1.3))
 	ci.draw_rect(tag.grow(2.0), Palette.PAPER)
 	ci.draw_rect(tag, Palette.HARM)
-	ci.draw_string(display, tag.position + Vector2(ZineCard.NEED_PAD, nfs * 1.0), word, HORIZONTAL_ALIGNMENT_LEFT, -1, nfs, Palette.PAPER)
+	HighContrast.draw_text(ci, display, tag.position + Vector2(ZineCard.NEED_PAD, nfs * 1.0), word, HORIZONTAL_ALIGNMENT_LEFT, -1, nfs, Palette.PAPER)
 
 
 ## A pictogram's value as drawn next to its glyph.
@@ -371,4 +374,4 @@ static func _label(p: Dictionary) -> String:
 
 static func _centred(ci: CanvasItem, font: Font, at: Vector2, text: String, fs: int, col: Color) -> void:
 	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	ci.draw_string(font, Vector2(at.x - w * 0.5, at.y + (font.get_ascent(fs) - font.get_descent(fs)) * 0.5), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	HighContrast.draw_text(ci, font, Vector2(at.x - w * 0.5, at.y + (font.get_ascent(fs) - font.get_descent(fs)) * 0.5), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)

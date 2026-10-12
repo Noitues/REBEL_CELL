@@ -60,9 +60,9 @@ func _draw() -> void:
 	var col := HudSkin.TERMINAL_HI if not disabled else KitState.label_color(st)
 	var x := r.position.x + (CHIP_PAD + CARET_ROOM) * s
 	if st == KitState.HOVER or st == KitState.FOCUS:
-		draw_string(f, Vector2(r.position.x + CHIP_PAD * 0.5 * s, r.position.y + CHIP_PAD * 0.4 * s + f.get_ascent(wf)), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, wf, HudSkin.FOCUS)
-	draw_string(f, Vector2(x, r.position.y + CHIP_PAD * 0.4 * s + f.get_ascent(wf)), p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, wf, col)
+		HighContrast.draw_text(self, f, Vector2(r.position.x + CHIP_PAD * 0.5 * s, r.position.y + CHIP_PAD * 0.4 * s + f.get_ascent(wf)), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, wf, HudSkin.FOCUS)
+	HighContrast.draw_text(self, f, Vector2(x, r.position.y + CHIP_PAD * 0.4 * s + f.get_ascent(wf)), p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, wf, col)
 	if p[1] != "":
-		draw_string(f, Vector2(x, r.end.y - CHIP_PAD * 0.5 * s), p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, sf,
+		HighContrast.draw_text(self, f, Vector2(x, r.end.y - CHIP_PAD * 0.5 * s), p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, sf,
 			HudSkin.PIP_ON if not disabled else HudSkin.TERMINAL_DIM)
 	KitState.draw_frame(self, r, st, true)

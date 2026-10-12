@@ -616,16 +616,21 @@ static var _live: Dictionary = {}
 ## LabelSettings per (step, colour, scale); never changed after it is made.
 static func live_number(step: int, color: Color, scale: float = -1.0) -> LabelSettings:
 	var s := Settings.text_scale if scale < 0.0 else scale
-	var key := "%d|%s|%.2f" % [step, color.to_html(), s]
+	var hc := Settings.high_contrast
+	var key := "%d|%s|%.2f|%s" % [step, color.to_html(), s, hc]
 	if not _live.has(key):
 		var ls := LabelSettings.new()
 		ls.font = tracked(Palette.display(), TRACK_DISPLAY, step, s)
 		ls.font_size = font_px_at(step, s)
-		ls.font_color = color
+		# M14 12Q-ACCESS (L78): high contrast: 7:1 on an opaque BG rim at least HighContrast.outline_px, no glow.
+		ls.font_color = HighContrast.lift(color) if hc else color
 		ls.outline_size = maxi(LIVE_RIM_PX, roundi(LIVE_RIM_PX * s)) * 2
 		ls.outline_color = Palette.LIVE_NUMBER_RIM
+		if hc:
+			ls.outline_size = maxi(ls.outline_size, HighContrast.outline_px(ls.font_size))
+			ls.outline_color = HighContrast.BG
 		ls.shadow_size = LIVE_GLOW_PX
-		ls.shadow_color = Color(color, LIVE_GLOW_ALPHA)
+		ls.shadow_color = Color(color, 0.0 if hc else LIVE_GLOW_ALPHA)
 		ls.shadow_offset = Vector2.ZERO
 		_live[key] = ls
 	return _live[key]
@@ -695,6 +700,7 @@ static func apply(root: Control) -> void:
 	root.theme = build(Settings.text_scale)
 	crt_material()
 	UiFocus.install_on(root)  # ART-0 F (§6): the pad focus scale on this root's viewport
+	HighContrastWalk.install()  # M14 12Q-ACCESS (L78): high contrast reaches the views' own colours and boxes
 	_roots.append(weakref(root))
 	if not _listening:
 		_listening = true

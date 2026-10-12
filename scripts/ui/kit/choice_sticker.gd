@@ -47,7 +47,7 @@ func _draw() -> void:
 	var f := Palette.display()
 	var fs := roundi(WORDS_PX * 1.4 * minf(text_scale, WORDS_MAX_SCALE))
 	var tab := Rect2(Vector2.ZERO, Vector2(TAB_W * minf(text_scale, WORDS_MAX_SCALE), r.size.y))
-	draw_string(f, Vector2(tab.position.x, tab.get_center().y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5), str(number), HORIZONTAL_ALIGNMENT_CENTER, tab.size.x, fs, Palette.INK)
+	HighContrast.draw_text(self, f, Vector2(tab.position.x, tab.get_center().y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5), str(number), HORIZONTAL_ALIGNMENT_CENTER, tab.size.x, fs, Palette.INK)
 
 
 func _notification(what: int) -> void:

@@ -56,5 +56,5 @@ func _draw() -> void:
 			y += SCAN_PITCH
 		var cap := "%s %s" % [String(u.get("letter", "")), String(u.get("name", ""))]
 		var w := minf(f.get_string_size(cap, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x, col_w - 4.0)
-		draw_string(f, Vector2(cx - w * 0.5, c.y + r * RaidVehicle.RING + CAPTION_GAP * k + f.get_ascent(px)), cap, HORIZONTAL_ALIGNMENT_LEFT, col_w - 4.0, px,
+		HighContrast.draw_text(self, f, Vector2(cx - w * 0.5, c.y + r * RaidVehicle.RING + CAPTION_GAP * k + f.get_ascent(px)), cap, HORIZONTAL_ALIGNMENT_LEFT, col_w - 4.0, px,
 			skin.holo.lerp(Palette.TEXT_HI, 0.35))

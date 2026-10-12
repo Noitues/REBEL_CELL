@@ -186,6 +186,11 @@ func _lay() -> void:
 		var street := path_points(what_if[i])
 		if street.size() >= 2:
 			_pool.stroke("whatif_%d" % i, PencilShapes.arrow(street, GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN, 71 + i), threat, 1.0, 0.0, true, 71 + i)
+			if cues:
+				# M14 12Q-ACCESS (L79): the HQ's what-if route carries the barbed line too (the Grid's
+				# pending raid read red-on-lime alone with the colour-blind setting on).
+				var w := GreasePencilMark.stroke_width()
+				_pool.stroke("whatif_ticks_%d" % i, RaidPencil.hazard_ticks(street, w * RaidPencil.TICK_STEP, w * RaidPencil.TICK_HALF), threat, 1.0, 0.0, false, 171 + i)
 	var ids := letters.keys()
 	ids.sort()
 	for id in ids:

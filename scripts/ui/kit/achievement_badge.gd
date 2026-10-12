@@ -136,6 +136,6 @@ func _draw() -> void:
 	var name_col := Palette.TEXT_HI if earned else Palette.TEXT_MID
 	if on_liner:
 		name_col = LINER_NAME_INK if earned else LINER_NAME_DIM
-	draw_multiline_string(cf, Vector2(0, side() + NAME_GAP + cf.get_ascent(cp)), shown_name(), HORIZONTAL_ALIGNMENT_CENTER, size.x, cp, -1,
+	HighContrast.draw_lines(self, cf, Vector2(0, side() + NAME_GAP + cf.get_ascent(cp)), shown_name(), HORIZONTAL_ALIGNMENT_CENTER, size.x, cp, -1,
 		name_col, CrtSwitch.WRAP)
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), st)

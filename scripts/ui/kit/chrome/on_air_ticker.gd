@@ -51,7 +51,7 @@ func _draw() -> void:
 	var px := Chrome.px(STEP)
 	var f := Chrome.caps_font(STEP)
 	var r := Rect2(Vector2.ZERO, size)
-	draw_rect(r, Color(Palette.NET_BG_OUTER, 0.92))
+	draw_rect(r, HighContrast.plate(Color(Palette.NET_BG_OUTER, 0.92)))  # M14 12Q-ACCESS: opaque under high contrast
 	draw_line(Vector2(0, 0.5), Vector2(size.x, 0.5), Color(PaletteSkins.chrome(Palette.NET_CYAN), 0.6), 1.0)
 	# The concept's ON AIR block (round 33 title.py ticker(), baked), at the band's height.
 	var tex := Chrome.held(_held, ON_AIR_ART)
@@ -61,10 +61,10 @@ func _draw() -> void:
 	var w := maxf(1.0, f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x)
 	var x := block.end.x + 12.0 - fmod(_offset, w)
 	while x < size.x:
-		draw_string(f, Vector2(x, base), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, PaletteSkins.chrome(Palette.NET_CYAN))
+		HighContrast.draw_text(self, f, Vector2(x, base), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, PaletteSkins.chrome(Palette.NET_CYAN))
 		x += w
 	if tex != null:
 		draw_texture_rect(tex, block, false)
 	else:
 		draw_rect(block, PaletteSkins.chrome(Palette.NET_CYAN))
-		draw_string(f, Vector2(block.position.x, base), tr("ON AIR"), HORIZONTAL_ALIGNMENT_CENTER, block.size.x, px, Palette.GLYPH_INK)
+		HighContrast.draw_text(self, f, Vector2(block.position.x, base), tr("ON AIR"), HORIZONTAL_ALIGNMENT_CENTER, block.size.x, px, Palette.GLYPH_INK)

@@ -76,5 +76,5 @@ func _draw() -> void:
 	var f := HudSkin.display()
 	var fs := font_px()
 	var base := Vector2(r.position.x + PAD_X * s, r.position.y + (r.size.y + f.get_ascent(fs) - f.get_descent(fs)) * 0.5)
-	draw_string(f, base, words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HudSkin.VINYL_KEYLINE)
+	HighContrast.draw_text(self, f, base, words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HudSkin.VINYL_KEYLINE)
 	draw_set_transform(Vector2.ZERO)

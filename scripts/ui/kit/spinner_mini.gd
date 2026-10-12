@@ -235,7 +235,7 @@ func _draw() -> void:
 		_draw_brackets(chosen)
 	var fs := _caption_size()
 	var font := Palette.mono()
-	draw_string(font, Vector2(0, RADIUS * 2.0 + CAPTION_GAP + font.get_ascent(fs)), tr(CAPTION), HORIZONTAL_ALIGNMENT_CENTER, size.x, fs, Palette.TERMINAL_TEXT)
+	HighContrast.draw_text(self, font, Vector2(0, RADIUS * 2.0 + CAPTION_GAP + font.get_ascent(fs)), tr(CAPTION), HORIZONTAL_ALIGNMENT_CENTER, size.x, fs, Palette.TERMINAL_TEXT)
 
 
 ## Parity SHOP-06: a slot's marks while the wheel is the socket choice: greyed when the

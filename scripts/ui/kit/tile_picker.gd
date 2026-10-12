@@ -495,12 +495,12 @@ func _draw() -> void:
 		var ink := Palette.GLYPH_INK if filled else (Palette.TEXT_MID if locked else (Palette.TEXT_HI if chosen else KitState.label_color(st)))
 		var y := r.position.y + PAD
 		for line in name_lines(i):
-			draw_string(nf, Vector2(x, y + nf.get_ascent(_name_px)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, _name_px, ink)
+			HighContrast.draw_text(self, nf, Vector2(x, y + nf.get_ascent(_name_px)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, _name_px, ink)
 			y += nf.get_height(_name_px)
 		var ml := meta_lines(i)
 		var my := r.end.y - PAD - ml.size() * mf.get_height(meta_px)
 		for line in ml:
-			draw_string(mf, Vector2(x, my + mf.get_ascent(meta_px)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, meta_px, Palette.GLYPH_INK if filled else Palette.TEXT_MID)
+			HighContrast.draw_text(self, mf, Vector2(x, my + mf.get_ascent(meta_px)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, meta_px, Palette.GLYPH_INK if filled else Palette.TEXT_MID)
 			my += mf.get_height(meta_px)
 		if is_locked(i):
 			var lr := LOCK_R * s
@@ -525,7 +525,7 @@ func _draw_selected_edge(r: Rect2) -> void:
 	var tw := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 	var tab := Rect2(Vector2(r.end.x - tw - PAD * 2.0, r.position.y - f.get_height(px) * 0.5), Vector2(tw + PAD * 1.5, f.get_height(px)))
 	draw_rect(tab, cyan)
-	draw_string(f, Vector2(tab.position.x + PAD * 0.75, tab.position.y + f.get_ascent(px)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.GLYPH_INK)
+	HighContrast.draw_text(self, f, Vector2(tab.position.x + PAD * 0.75, tab.position.y + f.get_ascent(px)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.GLYPH_INK)
 
 
 ## Where tile `i`'s lock sits in its rect `r` while locked: on its swatch's bottom right

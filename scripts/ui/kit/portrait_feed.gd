@@ -352,7 +352,7 @@ func _draw_chrome() -> void:
 				c.draw_rect(strip, Color(Palette.NIGHT_SKY, 0.8 * a))
 				var words := tr("ON %s") % site.to_upper() if site != "" else tr("STATIONED")
 				words += " // " + tr("%d fps") % roundi(Motion.amplitude(MOTION_FEED))
-				c.draw_string(mono, Vector2(inset * 1.5, h - fs * 0.6), words, HORIZONTAL_ALIGNMENT_LEFT, s.x - inset * 3.0, fs, Color(accent(), a))
+				HighContrast.draw_text(c, mono, Vector2(inset * 1.5, h - fs * 0.6), words, HORIZONTAL_ALIGNMENT_LEFT, s.x - inset * 3.0, fs, Color(accent(), a))
 		Mode.DEAD:
 			_draw_dead(c, s, a)
 		Mode.RECRUIT:
@@ -361,7 +361,7 @@ func _draw_chrome() -> void:
 		Mode.VOICE:
 			if fs > 0:
 				var foot := tr("VOICE ONLY // NO FEED")
-				c.draw_string(mono, Vector2(0, h - inset - fs * 0.4), foot, HORIZONTAL_ALIGNMENT_CENTER, s.x, fs, Color(dispatch_red(), 0.6 * a))
+				HighContrast.draw_text(c, mono, Vector2(0, h - inset - fs * 0.4), foot, HORIZONTAL_ALIGNMENT_CENTER, s.x, fs, Color(dispatch_red(), 0.6 * a))
 	# The label strip.
 	if fs > 0:
 		var words := label_words()
@@ -379,14 +379,14 @@ func _draw_chrome() -> void:
 			c.draw_circle(Vector2(x + dot_r, strip.get_center().y), dot_r, Color(dispatch_red(), a))
 			x += dot_r * 2.0 + pad
 		var ink := Palette.TEXT_MID if mode in [Mode.DEAD, Mode.RECRUIT] else accent()
-		c.draw_string(mono, Vector2(x, strip.position.y + fs * 1.1), words, HORIZONTAL_ALIGNMENT_LEFT, strip.end.x - x, fs, Color(ink, a))
+		HighContrast.draw_text(c, mono, Vector2(x, strip.position.y + fs * 1.1), words, HORIZONTAL_ALIGNMENT_LEFT, strip.end.x - x, fs, Color(ink, a))
 		if mode == Mode.HURT and max_hp > 0:
 			var chip := tr("HP %d/%d") % [maxi(0, hp), max_hp]
 			var cw := mono.get_string_size(chip, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + pad * 2.0
 			var cr := Rect2(s.x - inset - cw, inset, cw, fs * 1.5)
 			c.draw_rect(cr, Color(Palette.HARM.darkened(0.45), a))
 			c.draw_rect(cr, Color(Palette.HARM, a), false, 1.0)
-			c.draw_string(mono, Vector2(cr.position.x + pad, cr.position.y + fs * 1.1), chip, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.TEXT_HI, a))
+			HighContrast.draw_text(c, mono, Vector2(cr.position.x + pad, cr.position.y + fs * 1.1), chip, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.TEXT_HI, a))
 	# The LED and the bezel.
 	if mode != Mode.VOICE:
 		var led_r := maxf(2.0, h * LED_SHARE)
@@ -437,7 +437,7 @@ func _draw_dead(c: Control, s: Vector2, a: float) -> void:
 	if big >= roundi(WORD_FLOOR * Settings.text_scale):
 		var band := Rect2(0, s.y * 0.43, s.x, big * 1.5)
 		c.draw_rect(band, Color(Palette.INK, 0.85 * a))
-		c.draw_string(Palette.display(), Vector2(0, band.position.y + big * 1.15), tr("NO SIGNAL"), HORIZONTAL_ALIGNMENT_CENTER, s.x, big, Color(Palette.TEXT_HI, a))
+		HighContrast.draw_text(c, Palette.display(), Vector2(0, band.position.y + big * 1.15), tr("NO SIGNAL"), HORIZONTAL_ALIGNMENT_CENTER, s.x, big, Color(Palette.TEXT_HI, a))
 	# B1b: the red pencil X is the kit's wax, written on over the feed (never faded with it).
 	PencilSet.show_on(c, PencilSet.cross_strokes(Rect2(Vector2.ZERO, s), s.y * X_INSET) if a > 0.0 else [] as Array[PackedVector2Array],
 		GreasePencilMark.Ink.THREAT, X_SEED)
@@ -455,5 +455,5 @@ func _draw_stamp(c: Control, at: Vector2, words: String, col: Color, a: float) -
 	var box := Rect2(-tw * 0.5 - fs * 0.3, -fs * 0.75, tw + fs * 0.6, fs * 1.4)
 	c.draw_set_transform(at, deg_to_rad(STAMP_TILT))
 	c.draw_rect(box, Color(col, a), false, maxf(1.5, fs * 0.08))
-	c.draw_string(f, Vector2(-tw * 0.5, fs * 0.38), words, HORIZONTAL_ALIGNMENT_LEFT, tw, fs, Color(col, a))
+	HighContrast.draw_text(c, f, Vector2(-tw * 0.5, fs * 0.38), words, HORIZONTAL_ALIGNMENT_LEFT, tw, fs, Color(col, a))
 	c.draw_set_transform(Vector2.ZERO)

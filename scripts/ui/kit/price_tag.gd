@@ -60,5 +60,5 @@ func _draw() -> void:
 	var x := (size.x - _width()) * 0.5
 	var y := size.y * 0.5 + f.get_ascent(px) * 0.5 - f.get_descent(px) * 0.3
 	for ch in text:
-		draw_string(f, Vector2(x, y), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, color)
+		HighContrast.draw_text(self, f, Vector2(x, y), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, color)
 		x += f.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x + LETTER_SPACING

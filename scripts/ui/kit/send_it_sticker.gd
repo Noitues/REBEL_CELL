@@ -343,7 +343,7 @@ func _draw() -> void:
 		var hp := Vector2(6.0, size.y - 5.0)
 		if sys == "":
 			draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 5)), Color(PaletteSkins.chrome(HudSkin.TERMINAL_BG), 0.85))
-		draw_string(HudSkin.mono(), hp, words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, HudSkin.TERMINAL_TEXT if not off else HudSkin.TERMINAL_DIM)
+		HighContrast.draw_text(self, HudSkin.mono(), hp, words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, HudSkin.TERMINAL_TEXT if not off else HudSkin.TERMINAL_DIM)
 		if glyph:
 			_draw_glyph(Vector2(hp.x + hw + 6.0 + GLYPH_GAP + hs * 2.0, hp.y - hs * 0.5 + 2.0), hs, paint_col)
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), st, false)
@@ -394,7 +394,7 @@ func _draw_with_art() -> void:
 		var hp := Vector2(6.0, size.y - 5.0)
 		if sys == "":
 			draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 5)), Color(PaletteSkins.chrome(HudSkin.TERMINAL_BG), 0.85))
-		draw_string(HudSkin.mono(), hp, words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, HudSkin.TERMINAL_TEXT if not disabled else HudSkin.TERMINAL_DIM)
+		HighContrast.draw_text(self, HudSkin.mono(), hp, words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, HudSkin.TERMINAL_TEXT if not disabled else HudSkin.TERMINAL_DIM)
 		if glyph:
 			_draw_glyph(Vector2(hp.x + hw + 6.0 + GLYPH_GAP + hs * 2.0, hp.y - hs * 0.5 + 2.0), hs, paint if not disabled else HudSkin.VINYL_DISABLED)
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)

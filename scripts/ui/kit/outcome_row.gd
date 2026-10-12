@@ -368,7 +368,7 @@ func _draw() -> void:
 				StatIcon.draw(self, Vector2(x + ICON_R * s, mid), ICON_R * s, StringName(it["kind"]), col)
 			x += (ICON_R * 2.0 + ICON_GAP) * s
 			var t := String(it["text"])
-			draw_string(font, Vector2(x, mid + font.get_ascent(fs) * 0.5 - font.get_descent(fs) * 0.25), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+			HighContrast.draw_text(self, font, Vector2(x, mid + font.get_ascent(fs) * 0.5 - font.get_descent(fs) * 0.25), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 			x += font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			if StringName(it["kind"]) != NO_CHANGE and not bool(it.get("neutral", false)):
 				var mc := Vector2(x + MARK_W * 0.5 * s, mid)

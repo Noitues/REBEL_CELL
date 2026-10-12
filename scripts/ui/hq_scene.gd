@@ -5533,6 +5533,13 @@ func _fly_home_number(damage: int, site: StringName) -> void:
 	if p.x == INF:
 		_home_number_landed(damage)
 		return
+	# M14 12Q-ACCESS (L82): a hit while a number still flies joins it: one number, the sum (two
+	# "-5" flights left the same node on the same frame, stacked on one spot); HOME drops by the
+	# sum when it lands.
+	if _home_flight != null and is_instance_valid(_home_flight) and not _home_flight.is_queued_for_deletion():
+		_home_flight_damage += damage
+		_home_flight.text = "-%d" % _home_flight_damage
+		return
 	var from := city_overlay.get_global_transform() * p
 	var num := Label.new()
 	num.name = "HomeHitNumber"
@@ -5547,9 +5554,24 @@ func _fly_home_number(damage: int, site: StringName) -> void:
 	var sz := num.get_combined_minimum_size()
 	# It leaves the node big (`home_number_fly`'s amplitude) and shrinks into HOME.
 	num.scale = Vector2.ONE * Motion.amplitude(&"home_number_fly")
-	var flown := FlightFx.fly_node(self, num, Rect2(from - sz * 0.5, sz), to, &"home_number_fly", "", 0.0, Rect2(), _home_number_landed.bind(damage))
+	_home_flight = num
+	_home_flight_damage = damage
+	var flown := FlightFx.fly_node(self, num, Rect2(from - sz * 0.5, sz), to, &"home_number_fly", "", 0.0, Rect2(), _home_flight_landed)
 	if flown == null:
-		_home_number_landed(damage)
+		_home_flight_landed()
+
+
+## M14 12Q-ACCESS (L82): the home-hit number in flight (null: none) and the hits it carries.
+var _home_flight: Label = null
+var _home_flight_damage: int = 0
+
+
+## M14 12Q-ACCESS (L82): the flying number has landed: HOME drops by every hit it carried.
+func _home_flight_landed() -> void:
+	var damage := _home_flight_damage
+	_home_flight = null
+	_home_flight_damage = 0
+	_home_number_landed(damage)
 
 
 ## ANIM-R6 C2: a home-hit number has reached HOME (or a press completed its flight): HOME

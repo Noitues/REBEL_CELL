@@ -110,7 +110,7 @@ func show_card(id: StringName, pinned: bool) -> void:
 		var fs := UiTheme.font_px(UiTheme.TITLE)
 		DaemonSigil.draw_sigil(head, Vector2(HEAD_H, HEAD_H) * s * 0.5, SIGIL_R * s, id, d.rarity if d != null else RC.Rarity.UNCOMMON)
 		var f := Palette.display()
-		head.draw_string(f, Vector2(NAME_X * s, (head.size.y + f.get_ascent(fs) - f.get_descent(fs)) * 0.5), title.to_upper(),
+		HighContrast.draw_text(head, f, Vector2(NAME_X * s, (head.size.y + f.get_ascent(fs) - f.get_descent(fs)) * 0.5), title.to_upper(),
 			HORIZONTAL_ALIGNMENT_LEFT, head.size.x - NAME_X * s, fs, Palette.PAPER))
 	_card.body.add_child(head)
 	var desc := Label.new()

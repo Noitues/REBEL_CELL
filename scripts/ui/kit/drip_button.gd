@@ -399,7 +399,7 @@ func _draw() -> void:
 		var hw := Palette.mono().get_string_size(key_hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
 		var hp := Vector2(12 + (tw - hw) * 0.5, size.y - 6)
 		draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 6)), Color(Palette.NIGHT_SKY, 0.8))
-		draw_string(Palette.mono(), hp, key_hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, Palette.PAPER)
+		HighContrast.draw_text(self, Palette.mono(), hp, key_hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, Palette.PAPER)
 		if glyph:
 			_draw_glyph(Vector2(hp.x - 6.0 - GLYPH_GAP, hp.y - hs * 0.5 + 3.0), hs, col)
 	elif glyph:

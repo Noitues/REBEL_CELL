@@ -248,7 +248,7 @@ static func draw_equation(ci: CanvasItem, left_mid: Vector2, items: Array, fs: i
 		var col := Color(it.get("color", Palette.PAPER), alpha)
 		var sep := String(it.get("sep", ""))
 		if sep != "":
-			ci.draw_string(font, Vector2(x, mid + fs * 0.35), sep, HORIZONTAL_ALIGNMENT_CENTER, fs * EQ_SEP_SHARE, fs, Color(Palette.PAPER, alpha))
+			HighContrast.draw_text(ci, font, Vector2(x, mid + fs * 0.35), sep, HORIZONTAL_ALIGNMENT_CENTER, fs * EQ_SEP_SHARE, fs, Color(Palette.PAPER, alpha))
 			x += fs * EQ_SEP_SHARE
 		if int(it.get("icon", -1)) >= 0:
 			SliceIcon.draw_icon(ci, Vector2(x + fs * EQ_ICON_SHARE * 0.5, mid), fs * 0.45, int(it["icon"]), col)
@@ -256,7 +256,7 @@ static func draw_equation(ci: CanvasItem, left_mid: Vector2, items: Array, fs: i
 		var t := String(it["text"])
 		if outline > 0:
 			ci.draw_string_outline(font, Vector2(x, mid + fs * 0.35), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, outline, Color(Palette.NIGHT_SKY, alpha))
-		ci.draw_string(font, Vector2(x, mid + fs * 0.35), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+		HighContrast.draw_text(ci, font, Vector2(x, mid + fs * 0.35), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 		x += font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * EQ_GAP_SHARE
 
 
@@ -1017,7 +1017,7 @@ func _draw_number(s: Dictionary) -> void:
 	var lf: Font = ls.font if ls.font != null else f
 	draw_string_outline(lf, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, ls.outline_size + ls.shadow_size, Color(ls.shadow_color, ls.shadow_color.a * alpha))
 	draw_string_outline(lf, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, ls.outline_size, Color(ls.outline_color, alpha))
-	draw_string(lf, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(s["color"], alpha))
+	HighContrast.draw_text(self, lf, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(s["color"], alpha))
 
 
 ## ANIM-R3 A6a: a hit's outcome where it struck: its glyph and "0", popping in and fading.
@@ -1035,7 +1035,8 @@ func _draw_impact(s: Dictionary) -> void:
 	var w := equation_width(items, fs, f) if not items.is_empty() else f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + gw
 	var c := _local(s["at"])
 	var col := Color(s["color"], alpha)
-	draw_rect(Rect2(c - Vector2(w * 0.5 + fs * 0.2, fs * 0.65), Vector2(w + fs * 0.4, fs * 1.3)), Color(Palette.NIGHT_SKY, 0.85 * alpha))
+	var plate := HighContrast.plate(Color(Palette.NIGHT_SKY, 0.85))  # M14 12Q-ACCESS: opaque under high contrast
+	draw_rect(Rect2(c - Vector2(w * 0.5 + fs * 0.2, fs * 0.65), Vector2(w + fs * 0.4, fs * 1.3)), Color(plate, plate.a * alpha))
 	draw_rect(Rect2(c - Vector2(w * 0.5 + fs * 0.2, fs * 0.65), Vector2(w + fs * 0.4, fs * 1.3)), col, false, 2.0)
 	if not items.is_empty():
 		# ANIM-R4 C6c: the hit meets its guard: sword 8 - shield 8 = 0.
@@ -1044,7 +1045,7 @@ func _draw_impact(s: Dictionary) -> void:
 	SliceIcon.draw_icon(self, c + Vector2(-w * 0.5 + fs * GLYPH_SHARE * 0.5, 0.0), fs * GLYPH_SHARE * 0.45, int(s["icon"]), col)
 	var base := c + Vector2(-w * 0.5 + gw, fs * 0.35)
 	draw_string_outline(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, NUMBER_OUTLINE, Color(Palette.NIGHT_SKY, alpha))
-	draw_string(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	HighContrast.draw_text(self, f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 
 func _draw_travel(s: Dictionary) -> void:
@@ -1075,7 +1076,7 @@ func _draw_travel(s: Dictionary) -> void:
 	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, isz).x
 	var base := at + Vector2(-w * 0.5, isz * 0.35)
 	draw_string_outline(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, isz, NUMBER_OUTLINE, Color(Palette.PAPER, alpha))
-	draw_string(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, isz, Color(s["color"], alpha))
+	HighContrast.draw_text(self, f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, isz, Color(s["color"], alpha))
 
 
 func _draw_tag(s: Dictionary) -> void:
@@ -1111,13 +1112,13 @@ func _draw_tag(s: Dictionary) -> void:
 	if icon == GUARD_NULL and -w * 0.5 >= cut_x:
 		draw_guard_null(self, Vector2(-w * 0.5 + fs * GLYPH_SHARE * 0.5, 0.0), fs * GLYPH_SHARE * 0.5, Color(ink, alpha))
 	if cut <= 0.0:
-		draw_string(font, Vector2(-w * 0.5 + iw, fs * 0.35), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(ink, alpha))
+		HighContrast.draw_text(self, font, Vector2(-w * 0.5 + iw, fs * 0.35), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(ink, alpha))
 	else:
 		var x := -w * 0.5 + iw
 		for ch in text:
 			var cw := font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			if x + cw * 0.5 >= cut_x:
-				draw_string(font, Vector2(x, fs * 0.35), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(ink, alpha))
+				HighContrast.draw_text(self, font, Vector2(x, fs * 0.35), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(ink, alpha))
 			x += cw
 	draw_set_transform(Vector2.ZERO)
 
@@ -1185,7 +1186,7 @@ func _draw_line(s: Dictionary) -> void:
 				off = -off
 			var base := head + off + Vector2(-w * 0.5, fs * 0.35)
 			draw_string_outline(f, base, shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, NUMBER_OUTLINE, Palette.NIGHT_SKY)
-			draw_string(f, base, shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col.lightened(0.2))
+			HighContrast.draw_text(self, f, base, shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col.lightened(0.2))
 
 
 func _draw_stamp(s: Dictionary) -> void:
@@ -1199,7 +1200,7 @@ func _draw_stamp(s: Dictionary) -> void:
 	draw_circle(c, STAMP_DISC * Settings.text_scale * sc, Color(Palette.NIGHT_SKY, 0.9 * alpha))
 	draw_arc(c, STAMP_DISC * Settings.text_scale * sc, 0, TAU, 20, Color(s["color"], alpha), 2.0)
 	var w := Palette.mono().get_string_size(String(s["glyph"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	draw_string(Palette.mono(), c + Vector2(-w * 0.5, fs * 0.35), String(s["glyph"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(s["color"], alpha))
+	HighContrast.draw_text(self, Palette.mono(), c + Vector2(-w * 0.5, fs * 0.35), String(s["glyph"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(s["color"], alpha))
 
 
 func _draw_shards(s: Dictionary) -> void:
@@ -1254,7 +1255,7 @@ func _draw_shards(s: Dictionary) -> void:
 			SliceIcon.draw_on_slice(self, art["icon_at"], float(art["icon_r"]), int(art["type"]), Color(art["slice_col"], fade))
 		if String(art.get("value", "")) != "":
 			var vfs := int(art["value_fs"])
-			draw_string(Palette.display(), (art["value_at"] as Vector2) + Vector2(-vfs, vfs * 0.4), String(art["value"]), HORIZONTAL_ALIGNMENT_CENTER, vfs * 2, vfs,
+			HighContrast.draw_text(self, Palette.display(), (art["value_at"] as Vector2) + Vector2(-vfs, vfs * 0.4), String(art["value"]), HORIZONTAL_ALIGNMENT_CENTER, vfs * 2, vfs,
 				Color(rim, fade))
 		# The crack: a white line along the piece's border, drawn on over the first frames.
 		if crack > 0.0 and fade > 0.0:
@@ -1309,7 +1310,7 @@ func _draw_word(s: Dictionary) -> void:
 	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var base := _local(s["at"]) + Vector2(-w * 0.5, fs * 0.35)
 	draw_string_outline(Palette.marker(), base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, NUMBER_OUTLINE + 2, Color(Palette.NIGHT_SKY, alpha))
-	draw_string(Palette.marker(), base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(s["color"], alpha))
+	HighContrast.draw_text(self, Palette.marker(), base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(s["color"], alpha))
 
 
 func _draw_pile(s: Dictionary) -> void:

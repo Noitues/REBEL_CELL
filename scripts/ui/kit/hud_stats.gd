@@ -626,11 +626,11 @@ func _draw() -> void:
 		for k in mini(order.size(), _caption_rects.size()):
 			var cr := _caption_rects[k]
 			draw_line(Vector2(cr.end.x + CAPTION_GAP * s * 0.5, cr.position.y), Vector2(cr.end.x + CAPTION_GAP * s * 0.5, cr.end.y), Color(Palette.CELL_ACID, 0.35 * _caption_fade), 1.0)
-			draw_string(mono, Vector2(cr.position.x, cr.get_center().y + mono.get_ascent(cfs) * 0.5 - mono.get_descent(cfs) * 0.25), String(order[k][1]), HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(Palette.CELL_ACID, _caption_fade))
+			HighContrast.draw_text(self, mono, Vector2(cr.position.x, cr.get_center().y + mono.get_ascent(cfs) * 0.5 - mono.get_descent(cfs) * 0.25), String(order[k][1]), HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(Palette.CELL_ACID, _caption_fade))
 		# The old captions fade out where they were (the cross-fade).
 		for oc in _old_captions:
 			var orr: Rect2 = oc[0]
-			draw_string(mono, Vector2(orr.position.x, orr.get_center().y + mono.get_ascent(cfs) * 0.5 - mono.get_descent(cfs) * 0.25), String(oc[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(Palette.CELL_ACID, 1.0 - _caption_fade))
+			HighContrast.draw_text(self, mono, Vector2(orr.position.x, orr.get_center().y + mono.get_ascent(cfs) * 0.5 - mono.get_descent(cfs) * 0.25), String(oc[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(Palette.CELL_ACID, 1.0 - _caption_fade))
 	for i in mini(items.size(), _rects.size()):
 		var it: Array = items[i]
 		var box := _rects[i]
@@ -645,16 +645,16 @@ func _draw() -> void:
 			icon_c = r.position + Vector2(PAD + ICON_R, COMPACT_H * 0.5) * s
 			value_at = r.position + Vector2(PAD + ICON_R * 2.0 + 5.0, COMPACT_H * 0.5 + VALUE_SIZE * 0.36) * s
 		else:
-			draw_string(HudSkin.mono(), r.position + Vector2(PAD, 14) * s, tag_name(i).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 10.0 * s, roundi(NAME_SIZE * s), HudSkin.TERMINAL_TEXT)
+			HighContrast.draw_text(self, HudSkin.mono(), r.position + Vector2(PAD, 14) * s, tag_name(i).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 10.0 * s, roundi(NAME_SIZE * s), HudSkin.TERMINAL_TEXT)
 			icon_c = r.position + Vector2(PAD + ICON_R, 30) * s
 			value_at = r.position + Vector2(PAD + ICON_R * 2.0 + 5.0, 38) * s
 		# ART-10 4C (audit P2, §2.8): Heat's icon and value in its band's colour; the rest plain.
 		var heat_tone := heat_tone_of(i)
 		StatIcon.draw(self, icon_c, ICON_R * s, icon_of(i), heat_tone if heat_tone != Palette.AUTO else HudSkin.TERMINAL_TEXT)
-		draw_string(Palette.display(), value_at, value, HORIZONTAL_ALIGNMENT_LEFT, -1, vs, heat_tone if heat_tone != Palette.AUTO else HudSkin.TERMINAL_HI)
+		HighContrast.draw_text(self, Palette.display(), value_at, value, HORIZONTAL_ALIGNMENT_LEFT, -1, vs, heat_tone if heat_tone != Palette.AUTO else HudSkin.TERMINAL_HI)
 		if it.size() > 2 and String(it[2]) != "":
 			var vw := Palette.display().get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, vs).x
-			draw_string(HudSkin.mono(), value_at + Vector2(vw + 2.0 * s, -1.0 * s), String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(SUFFIX_SIZE * s), HudSkin.TERMINAL_TEXT)
+			HighContrast.draw_text(self, HudSkin.mono(), value_at + Vector2(vw + 2.0 * s, -1.0 * s), String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(SUFFIX_SIZE * s), HudSkin.TERMINAL_TEXT)
 		if _refused_tag != "" and String(it[0]) == _refused_tag:
 			# ANIM-R2 E9: a refusal for want of this (Cycles): the tag flashes red and
 			# "PRICE > MONEY" shows under it.
@@ -669,5 +669,5 @@ func _draw() -> void:
 				var tw := Palette.display().get_string_size(lines[li], HORIZONTAL_ALIGNMENT_LEFT, -1, rfs).x
 				var at := Vector2(r.get_center().x - tw * 0.5, r.end.y + rfs * (li + 1))
 				draw_string_outline(Palette.display(), at, lines[li], HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, 4, Palette.NIGHT_SKY)
-				draw_string(Palette.display(), at, lines[li], HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, red)
+				HighContrast.draw_text(self, Palette.display(), at, lines[li], HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, red)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

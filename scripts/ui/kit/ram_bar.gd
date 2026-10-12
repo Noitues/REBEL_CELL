@@ -330,16 +330,16 @@ func _draw() -> void:
 		head = owner_words  # ART-2 2D: the name sticker's words at big text (the count says RAM)
 	if pending != 0:
 		head += "  (%+d)" % pending
-	draw_string(mono, Vector2(pad, pad + mono.get_ascent(hf)), head, HORIZONTAL_ALIGNMENT_LEFT, -1, hf, HudSkin.TERMINAL_TEXT)
+	HighContrast.draw_text(self, mono, Vector2(pad, pad + mono.get_ascent(hf)), head, HORIZONTAL_ALIGNMENT_LEFT, -1, hf, HudSkin.TERMINAL_TEXT)
 	var refusal := refusal_text()
 	if refusal != "":
 		var red := Color(REFUSED_COLOR, maxf(MISSING_ALPHA, flash_alpha))
 		var rw := mono.get_string_size(refusal, HORIZONTAL_ALIGNMENT_LEFT, -1, hf).x
-		draw_string(mono, Vector2(size.x - pad - rw, pad + mono.get_ascent(hf)), refusal, HORIZONTAL_ALIGNMENT_LEFT, -1, hf, red)
+		HighContrast.draw_text(self, mono, Vector2(size.x - pad - rw, pad + mono.get_ascent(hf)), refusal, HORIZONTAL_ALIGNMENT_LEFT, -1, hf, red)
 	var cf := roundi(COUNT_FONT * s)
 	var lr := label_rect()
 	draw_string_outline(HudSkin.display(), Vector2(lr.position.x, size.y - pad), _count(), HORIZONTAL_ALIGNMENT_LEFT, -1, cf, 2, Palette.LIVE_NUMBER_RIM)
-	draw_string(HudSkin.display(), Vector2(lr.position.x, size.y - pad), _count(), HORIZONTAL_ALIGNMENT_LEFT, -1, cf, HudSkin.PIP_ON)
+	HighContrast.draw_text(self, HudSkin.display(), Vector2(lr.position.x, size.y - pad), _count(), HORIZONTAL_ALIGNMENT_LEFT, -1, cf, HudSkin.PIP_ON)
 	var lit := shown_ram
 	var after := clampi(lit + pending, 0, max_ram)
 	var pips := pip_rects()
@@ -376,4 +376,4 @@ func _draw() -> void:
 		var sfs := roundi(roundi(FONT_SIZE * s) * SPEND_FONT_SHARE)
 		var at := Vector2(r.position.x, r.position.y + Palette.display().get_ascent(sfs))
 		draw_string_outline(Palette.display(), at, spend_text, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, 4, Color(Palette.NIGHT_SKY, a))
-		draw_string(Palette.display(), at, spend_text, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, Color(spend_color, a))
+		HighContrast.draw_text(self, Palette.display(), at, spend_text, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, Color(spend_color, a))

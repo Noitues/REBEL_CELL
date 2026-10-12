@@ -188,11 +188,11 @@ func _draw_head(on: Control) -> void:
 	var paper := Palette.paper_bold()
 	var ts := roundi(TITLE_PX * s)
 	var y := head_h() + 6.0 * s + paper.get_ascent(ts)
-	on.draw_string(paper, Vector2(PAD.x * s, y), tr(head_word), HORIZONTAL_ALIGNMENT_LEFT, -1, ts, Palette.PAPER_TYPE_INK)
+	HighContrast.draw_text(on, paper, Vector2(PAD.x * s, y), tr(head_word), HORIZONTAL_ALIGNMENT_LEFT, -1, ts, Palette.PAPER_TYPE_INK)
 	var ms := meta_px()
 	var meta := Palette.paper()
 	y += paper.get_descent(ts) + meta.get_ascent(ms) + 4.0 * s
 	# M14 FIX-2: wrapped and folded to the sheet's width (it was clipped at 2.0), never under 1.0.
 	for line in routing_lines():
-		on.draw_string(meta, Vector2(PAD.x * s, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, ms, Palette.TEXT_LO)
+		HighContrast.draw_text(on, meta, Vector2(PAD.x * s, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, ms, Palette.TEXT_LO)
 		y += meta.get_height(ms)

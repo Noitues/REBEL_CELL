@@ -118,7 +118,7 @@ func _draw() -> void:
 	var font := _font()
 	var mid := size.y * 0.5
 	var base := mid + font.get_ascent(fs) * 0.5 - font.get_descent(fs) * 0.25
-	draw_string(font, Vector2(0, base), lead, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)
+	HighContrast.draw_text(self, font, Vector2(0, base), lead, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)
 	var x := font.get_string_size(lead, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	for it in items:
 		x += ITEM_GAP * s
@@ -126,5 +126,5 @@ func _draw() -> void:
 		StatIcon.draw(self, Vector2(x + ICON_R * s, mid), ICON_R * s, kind, StatIcon.color_of(kind))
 		x += (ICON_R * 2.0 + ICON_GAP) * s
 		var t := String(it["text"])
-		draw_string(font, Vector2(x, base), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)
+		HighContrast.draw_text(self, font, Vector2(x, base), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)
 		x += font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x

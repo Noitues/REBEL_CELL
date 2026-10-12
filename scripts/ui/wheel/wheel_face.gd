@@ -112,8 +112,8 @@ static func read_block(ci: CanvasItem, center: Vector2, k: float, deg: float, gl
 	WheelGlyphs.draw(ci, glyph, Vector2(x0 + gs * 0.5, c.y), gs, white, ink)
 	var base := Vector2(x0 + gs + gap, c.y + cap_height(font, fs) * 0.5)
 	var ow := maxi(1, roundi(gs * WheelGlyphs.OUTLINE_SHARE * 2.0))
-	ci.draw_string_outline(font, base, value, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ow, ink)
-	ci.draw_string(font, base, value, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, white)
+	# M14 12Q-ACCESS (L78): high contrast thickens the ink outline (HighContrast.draw_text).
+	HighContrast.draw_text(ci, font, base, value, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.TEXT_HI, ow, Palette.INK, alpha)
 
 
 ## The height of a capital in `font` at `fs` (centring numbers on a point).
@@ -189,8 +189,7 @@ static func blade(ci: CanvasItem, center: Vector2, k: float, deg: float, rt: flo
 		var font := Palette.display()
 		var base := Vector2(mid.x, mid.y + cap_height(font, fs) * 0.5)
 		var tw := font.get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		ci.draw_string_outline(font, base - Vector2(tw * 0.5, 0.0), value, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(3.0 * k)), ink)
-		ci.draw_string(font, base - Vector2(tw * 0.5, 0.0), value, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.TEXT_HI, alpha))
+		HighContrast.draw_text(ci, font, base - Vector2(tw * 0.5, 0.0), value, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.TEXT_HI, maxi(1, roundi(3.0 * k)), Palette.INK, alpha)
 	else:
 		WheelGlyphs.draw(ci, glyph, mid, hgt * 0.8, Color(Palette.TEXT_HI, alpha), ink)
 	# the program colour pip strip on the window's lower edge
@@ -205,7 +204,7 @@ static func blade(ci: CanvasItem, center: Vector2, k: float, deg: float, rt: flo
 		var t := str(index)
 		var font2 := Palette.display()
 		var tw2 := font2.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, nf).x
-		ci.draw_string(font2, Vector2(tab.x - tw2 * 0.5, tab.y + cap_height(font2, nf) * 0.5), t, HORIZONTAL_ALIGNMENT_LEFT, -1, nf, ink)
+		HighContrast.draw_text(ci, font2, Vector2(tab.x - tw2 * 0.5, tab.y + cap_height(font2, nf) * 0.5), t, HORIZONTAL_ALIGNMENT_LEFT, -1, nf, ink)
 
 
 ## The rail over a needle (3.2): the channel tinted the program colour with brackets, its text
@@ -338,8 +337,7 @@ static func hp_arc(ci: CanvasItem, center: Vector2, k: float, rt: float, frac: f
 		var lp := at(center, k, r1 + PIP_LABEL_R, a)
 		var tw := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var base := Vector2(lp.x - tw * 0.5, lp.y + cap_height(font, fs) * 0.5)
-		ci.draw_string_outline(font, base, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(fs * 0.25)), Color(Palette.INK, alpha))
-		ci.draw_string(font, base, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.RESIST_GOLD if lit else Palette.TEXT_MID, alpha))
+		HighContrast.draw_text(ci, font, base, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.RESIST_GOLD if lit else Palette.TEXT_MID, maxi(1, roundi(fs * 0.25)), Palette.INK, alpha)
 
 
 ## The corner badge of a slice's state (3.8): the status glyph on its shape (circle helps,
@@ -366,7 +364,7 @@ static func badge(ci: CanvasItem, center: Vector2, k: float, deg: float, span: f
 		var box := Rect2(tp - Vector2(tw * 0.5 + 3.0, fs * 0.55), Vector2(tw + 6.0, fs * 1.1))
 		ci.draw_rect(box, Color(Palette.INK, 0.92 * alpha))
 		ci.draw_rect(box, Color(Palette.RESIST_GOLD, alpha), false, 1.0)
-		ci.draw_string(font, Vector2(box.position.x + 3.0, tp.y + cap_height(font, fs) * 0.5), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.RESIST_GOLD, alpha))
+		HighContrast.draw_text(ci, font, Vector2(box.position.x + 3.0, tp.y + cap_height(font, fs) * 0.5), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.RESIST_GOLD, alpha))
 
 
 ## The boss nameplate banner as the blade's mount (frames.banner, mount): dark plate with the corp
@@ -395,10 +393,9 @@ static func banner(ci: CanvasItem, center_x: float, bottom: float, k: float, tit
 	ci.draw_line(Vector2(x0 + 14.0 * k, y1 - 9.0 * k), Vector2(x1 - 14.0 * k, y1 - 9.0 * k), Color(accent, alpha), maxf(1.0, 2.0 * k))
 	var ttw := font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, tf).x
 	var tb := Vector2(center_x - ttw * 0.5, y0 + 6.0 * k + font.get_ascent(tf) * 0.92)
-	ci.draw_string_outline(font, tb, title, HORIZONTAL_ALIGNMENT_LEFT, -1, tf, maxi(1, roundi(4.0 * k)), Color(Palette.INK, alpha))
-	ci.draw_string(font, tb, title, HORIZONTAL_ALIGNMENT_LEFT, -1, tf, Color(Palette.TEXT_HI, alpha))
+	HighContrast.draw_text(ci, font, tb, title, HORIZONTAL_ALIGNMENT_LEFT, -1, tf, Palette.TEXT_HI, maxi(1, roundi(4.0 * k)), Palette.INK, alpha)
 	var sw := Palette.mono().get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, sf).x
-	ci.draw_string(Palette.mono(), Vector2(center_x - sw * 0.5, y1 - 14.0 * k), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, sf, Color(accent, alpha))
+	HighContrast.draw_text(ci, Palette.mono(), Vector2(center_x - sw * 0.5, y1 - 14.0 * k), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, sf, accent, 0, Palette.CLEAR, alpha)
 	return Rect2(x0 - 20.0 * k, y0, tw + 40.0 * k, y1 - y0 + 16.0 * k)
 
 

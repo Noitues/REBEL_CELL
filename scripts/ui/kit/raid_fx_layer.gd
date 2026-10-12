@@ -1195,7 +1195,7 @@ func _draw_number(f: Dictionary, k: float, where: Dictionary = {}) -> void:
 		at = p + Vector2(CityMapOverlay.ICON_RADIUS_BIG * k + NUMBER_GAP * k, font.get_ascent(fs) * 0.5 - rise - _stack_of(f) * fs * NUMBER_STACK)
 	var a := 1.0 if u < NUMBER_HOLD_SHARE or not live else (1.0 - u) / (1.0 - NUMBER_HOLD_SHARE)
 	draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(4.0 * k)), Color(0, 0, 0, 0.9 * a))
-	draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(f["color"], a))
+	HighContrast.draw_text(self, font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(f["color"], a))
 
 
 ## How many numbers on the same Site show now and started before `f` (its row in the stack).

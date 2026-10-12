@@ -160,11 +160,11 @@ func _draw() -> void:
 	var cap: Rect2 = l["caption"]
 	var y := cap.position.y + cf.get_ascent(cs)
 	for line in shown_caption().split("\n"):
-		draw_string(cf, Vector2(cap.position.x, y), line, HORIZONTAL_ALIGNMENT_CENTER, cap.size.x, cs, Color(Palette.PAPER, 0.85))
+		HighContrast.draw_text(self, cf, Vector2(cap.position.x, y), line, HORIZONTAL_ALIGNMENT_CENTER, cap.size.x, cs, Color(Palette.PAPER, 0.85))
 		y += cf.get_height(cs)
 	var vs := int(l["verdict_size"])
 	var ver: Rect2 = l["verdict"]
 	var vy := ver.position.y + Palette.display().get_ascent(vs)
 	for line in verdict_lines():
-		draw_string(Palette.display(), Vector2(ver.position.x, vy), line, HORIZONTAL_ALIGNMENT_CENTER, ver.size.x, vs, color)
+		HighContrast.draw_text(self, Palette.display(), Vector2(ver.position.x, vy), line, HORIZONTAL_ALIGNMENT_CENTER, ver.size.x, vs, color)
 		vy += Palette.display().get_height(vs)

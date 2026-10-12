@@ -325,6 +325,30 @@ func test_the_raid_routes_carry_hazard_ticks_only_with_the_colour_blind_setting(
 	Settings.set_colorblind_mode(&"off")
 
 
+## M14 12Q-ACCESS (L79): the Grid's pending raid (the HQ's dashed what-if route, before RAID SETUP)
+## is barbed too with the colour-blind setting on; off, it keeps the approved look.
+func test_the_grids_pending_raid_route_is_barbed_with_the_colour_blind_setting() -> void:
+	_raid_campaign()
+	for mode in [&"off", &"deutan"]:
+		Settings.set_colorblind_mode(mode)
+		var hq := _scene(HQ)
+		await _frames(6)
+		var layers: Array[Node] = hq.city_overlay.find_children("*", "RaidRouteLayer", true, false)
+		assert_eq(layers.size(), 1, "%s: the pending raid's route in pencil" % mode)
+		var layer := layers[0] as RaidRouteLayer
+		assert_gt(layer.what_if.size(), 0, "the Grid shows the what-if route")
+		layer.complete_motion()
+		layer._laid_sig = 0
+		layer._lay()
+		var used: Array = layer._pool._marks.keys().filter(func(k: String) -> bool: return k.begins_with("whatif_ticks_") and layer._pool._used.has(k))
+		if mode == &"off":
+			assert_eq(used.size(), 0, "off: no ticks")
+		else:
+			assert_gt(used.size(), 0, "deutan: the what-if route is barbed")
+		await _close(hq)
+	Settings.set_colorblind_mode(&"off")
+
+
 # --- L46: the Grid's drag demo carries an operative --------------------------------------------
 
 func test_the_grid_drag_demo_carries_an_operative_to_jack_in() -> void:

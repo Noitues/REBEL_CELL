@@ -171,7 +171,7 @@ func _draw() -> void:
 	draw_rect(bar, style.color())
 	var mono := Palette.mono()
 	var fs := UiTheme.font_px_at(UiTheme.CAPTION, k)  # it grows as far as the poster does
-	draw_string(mono, Vector2(PAD * k, (bar.size.y + mono.get_ascent(fs) - mono.get_descent(fs)) * 0.5), house_shown.to_upper(),
+	HighContrast.draw_text(self, mono, Vector2(PAD * k, (bar.size.y + mono.get_ascent(fs) - mono.get_descent(fs)) * 0.5), house_shown.to_upper(),
 		HORIZONTAL_ALIGNMENT_LEFT, r.size.x - PAD * 2.0 * k, fs, style.back())
 	# The seal on the left, the boss's name and the house's division beside it.
 	var rad := b.size.y * SEAL_SHARE
@@ -188,11 +188,11 @@ func _draw() -> void:
 	var block := lines.size() * head.get_height(hs) + div.size() * mono.get_height(fs)
 	var y := b.position.y + PAD * k + maxf(0.0, (b.size.y * WORDS_SHARE - PAD * k - block) * 0.5) + head.get_ascent(hs)
 	for line in lines:
-		draw_string(head, Vector2(x, y), line, HORIZONTAL_ALIGNMENT_LEFT, room, hs, Palette.END_HOUSE_TEXT)
+		HighContrast.draw_text(self, head, Vector2(x, y), line, HORIZONTAL_ALIGNMENT_LEFT, room, hs, Palette.END_HOUSE_TEXT)
 		y += head.get_height(hs)
 	y += mono.get_ascent(fs) - head.get_ascent(hs)
 	for line in div:
-		draw_string(mono, Vector2(x, y), line, HORIZONTAL_ALIGNMENT_LEFT, room, fs, style.color())
+		HighContrast.draw_text(self, mono, Vector2(x, y), line, HORIZONTAL_ALIGNMENT_LEFT, room, fs, style.color())
 		y += mono.get_height(fs)
 	draw_rect(r, style.color(), false, maxf(1.0, 2.0 * k))
 	# Taped to the folder at its top corners.

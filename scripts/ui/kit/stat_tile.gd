@@ -83,9 +83,9 @@ func _draw() -> void:
 	var ir := vp * ICON_SHARE
 	var top := r.position.y + PAD.y
 	StatIcon.draw(self, Vector2(r.position.x + PAD.x + ir, top + vf.get_height(vp) * 0.5), ir, kind, StatIcon.color_of(kind))
-	draw_string(vf, Vector2(r.position.x + PAD.x + ir * 2.0 + ICON_GAP, top + vf.get_ascent(vp)), value, HORIZONTAL_ALIGNMENT_LEFT, -1, vp, Palette.TEXT_HI)
+	HighContrast.draw_text(self, vf, Vector2(r.position.x + PAD.x + ir * 2.0 + ICON_GAP, top + vf.get_ascent(vp)), value, HORIZONTAL_ALIGNMENT_LEFT, -1, vp, Palette.TEXT_HI)
 	var cf := Chrome.caps_font(NAME_STEP)
 	var cp := Chrome.px(NAME_STEP)
-	draw_multiline_string(cf, Vector2(r.position.x + PAD.x, top + vf.get_height(vp) + cf.get_ascent(cp)), shown_caption(), HORIZONTAL_ALIGNMENT_LEFT,
+	HighContrast.draw_lines(self, cf, Vector2(r.position.x + PAD.x, top + vf.get_height(vp) + cf.get_ascent(cp)), shown_caption(), HORIZONTAL_ALIGNMENT_LEFT,
 		r.size.x - PAD.x * 2.0, cp, -1, Palette.TEXT_MID, CrtSwitch.WRAP)
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), st)

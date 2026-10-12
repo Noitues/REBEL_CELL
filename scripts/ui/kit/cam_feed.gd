@@ -92,7 +92,7 @@ func _draw() -> void:
 		var line_h := UiTheme.line_px(f, fs)
 		var top := inner.end.y - VOICE_PAD - line_h * lines.size()
 		for i in lines.size():
-			draw_string(f, Vector2(inner.position.x, top + line_h * i + ceilf(f.get_ascent(fs))), lines[i], HORIZONTAL_ALIGNMENT_CENTER, inner.size.x, fs, Palette.HARM)
+			HighContrast.draw_text(self, f, Vector2(inner.position.x, top + line_h * i + ceilf(f.get_ascent(fs))), lines[i], HORIZONTAL_ALIGNMENT_CENTER, inner.size.x, fs, Palette.HARM)
 		# a red voice trace across the black, in the room over the words
 		var mid := (inner.position.y + top) * 0.5
 		var amp := minf(r.size.y * 0.3, maxf(0.0, top - inner.position.y))
@@ -163,5 +163,5 @@ func _ready() -> void:
 		var box := Rect2(Vector2(10, 10) * s, Vector2(tw + REC_R * 4.0 * s + 12.0, f.get_height(fs) + 6.0))
 		cap.draw_rect(box, Color(Palette.NIGHT_SKY, 0.75))
 		cap.draw_circle(box.position + Vector2(REC_R * 2.0 * s, box.size.y * 0.5), REC_R * s, Palette.HARM)
-		cap.draw_string(f, box.position + Vector2(REC_R * 4.0 * s, 3.0 + f.get_ascent(fs)), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.TEXT_HI))
+		HighContrast.draw_text(cap, f, box.position + Vector2(REC_R * 4.0 * s, 3.0 + f.get_ascent(fs)), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.TEXT_HI))
 	add_child(cap)

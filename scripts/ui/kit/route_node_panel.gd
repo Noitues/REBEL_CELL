@@ -166,7 +166,7 @@ func _draw() -> void:
 	var tfs := roundi(TITLE_FONT * s)
 	# Parity ROUTE-03: the title has the whole width (the stamp is a chip in the foot).
 	var ty := m + tf.get_ascent(tfs)
-	draw_string(tf, Vector2(m, ty), String(data.get("title", "")).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - m * 2.0, tfs, corp.lerp(RouteInk.HOLO_TEXT, 0.35))
+	HighContrast.draw_text(self, tf, Vector2(m, ty), String(data.get("title", "")).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - m * 2.0, tfs, corp.lerp(RouteInk.HOLO_TEXT, 0.35))
 	var f := Palette.body()
 	var mono := Palette.mono()
 	var fs := roundi(FIELD_FONT * s)
@@ -177,8 +177,8 @@ func _draw() -> void:
 		for line: String in row[1]:
 			y2 += f.get_ascent(fs)
 			if first:
-				draw_string(mono, Vector2(m, y2), String(row[0]), HORIZONTAL_ALIGNMENT_LEFT, lw, fs, RouteInk.HOLO_FIELD)
-			draw_string(f, Vector2(m + lw, y2), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, RouteInk.HOLO_TEXT)
+				HighContrast.draw_text(self, mono, Vector2(m, y2), String(row[0]), HORIZONTAL_ALIGNMENT_LEFT, lw, fs, RouteInk.HOLO_FIELD)
+			HighContrast.draw_text(self, f, Vector2(m + lw, y2), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, RouteInk.HOLO_TEXT)
 			y2 += f.get_descent(fs)
 			first = false
 	# The DECRYPTED chip: a small keyline box in the foot's corner (round 37's holo).
@@ -186,4 +186,4 @@ func _draw() -> void:
 	var px := UiTheme.font_px(CHIP_STEP)
 	draw_rect(chip, Color(Palette.NIGHT_SKY, 0.6))
 	draw_rect(chip, Palette.CELL_ACID, false, CHIP_LINE)
-	draw_string(mono, chip.position + Vector2(CHIP_PAD.x * s, CHIP_PAD.y * s + mono.get_ascent(px)), tr(STAMP_WORD), HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.CELL_ACID)
+	HighContrast.draw_text(self, mono, chip.position + Vector2(CHIP_PAD.x * s, CHIP_PAD.y * s + mono.get_ascent(px)), tr(STAMP_WORD), HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.CELL_ACID)
