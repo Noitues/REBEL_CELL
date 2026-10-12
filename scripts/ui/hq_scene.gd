@@ -2609,6 +2609,7 @@ func _mount_hq_map_tools(page: Control, graph: Dictionary = {}) -> void:
 		grid_target = TargetEdgeMarker.make(city_overlay)
 		grid_target.avoid.append(hq_legend)
 		grid_target.avoid.append(hq_minimap)
+		grid_target.limit = func() -> Rect2: return hq_free_rect()  # G2R-2: the chip never runs under the Site card
 		page.add_child(grid_target)
 		grid_target.pan_requested.connect(grid_controls.centre_on)
 		# B4 (round 44): the off-screen TARGET carries its boss chip beside the red pencil.
@@ -3169,6 +3170,8 @@ func hq_fit_ids() -> Array[StringName]:
 	return ids
 
 
+
+
 ## HQ-B: frames the HQ's map once its page is laid out: the fit lots in the free part at the
 ## raid zoom (RaidZoomFit, clamped to the raid range), then up to HQ_FIT_PASSES corrections
 ## on the icons as drawn (a socket floats over its roof: the lots alone frame a little low),
@@ -3248,6 +3251,9 @@ func _end_hq_fit() -> void:
 	# (Not in the raid setup: it centres its network and the routes; the pan sent them to the
 	# map's edge.)
 	if panel_name == "hq" and city_overlay != null and is_instance_valid(city_overlay) and hq_page != null:
+		# G2R-1: first the frame off the city's edge (the network kept in view), then the lean.
+		_frame_grid(wireframe.city.scale.x, wireframe.city.focus_grid, wireframe.city.focus_anchor)
+		wireframe.city.update_camera()
 		var held: Array[Rect2] = []
 		for id in hq_fit_ids():
 			var r := _map_node_rect(id)
@@ -3260,7 +3266,7 @@ func _end_hq_fit() -> void:
 			var pan: Vector2 = wireframe.unrigged(func() -> Vector2: return grid_city_pan(free, area, held))
 			if pan.length() >= GRID_LEAN_MIN:
 				var city := wireframe.city
-				_frame_city(city.scale.x, city.focus_grid, city.focus_anchor + pan / get_global_rect().size)
+				_frame_grid(city.scale.x, city.focus_grid, city.focus_anchor + pan / get_global_rect().size)
 				city.update_camera()
 				if grid_controls != null and is_instance_valid(grid_controls):
 					grid_controls.sync_minimap()
@@ -3299,7 +3305,7 @@ func _hold_selected_in(free: Rect2) -> void:
 	elif r.end.y > room.end.y:
 		d.y = room.end.y - r.end.y
 	var city := wireframe.city
-	_frame_city(city.scale.x, city.focus_grid, city.focus_anchor + d / get_global_rect().size)
+	_frame_grid(city.scale.x, city.focus_grid, city.focus_anchor + d / get_global_rect().size)
 	city.update_camera()
 	if grid_controls != null and is_instance_valid(grid_controls):
 		grid_controls.sync_minimap()
@@ -3602,6 +3608,46 @@ func _mount_city_map(nodes: Array[Dictionary], edges: Array[Dictionary], look: i
 	city_overlay.set_look(look)
 	city_overlay.set_graph(nodes, edges)
 	_frame_city(zoom, city_overlay.centre() if focus == Vector2.INF else focus, anchor)
+
+
+## G2R-1: `_frame_city` for the HQ's own framing (once fitted, lean, follow the selection): the frame
+## never shows past the city's edge, but only so far as the network (the fitted Sites and the
+## selected one) stays in the map's free part; the network wins over the edge.
+func _frame_grid(zoom: float, focus: Vector2, anchor: Vector2) -> void:
+	var free := hq_free_rect()
+	if panel_name == "hq" and free.has_area() and wireframe.city.city3d and focus != Vector2.INF:
+		var scr := get_global_rect()
+		# The network: the fitted Sites and the selected one, each held where its icon is drawn (the
+		# icon floats over its lot: its offset from the lot's ground point, at the camera now).
+		var city := wireframe.city
+		var cur_focus: Vector2 = city.focus_grid if city.focus_grid != Vector2.INF else Vector2.ZERO
+		var ids := hq_fit_ids()
+		if selected_site != &"" and not ids.has(selected_site):
+			ids.append(selected_site)
+		var keep := PackedVector2Array()
+		var keep_off := PackedVector2Array()
+		var half := 0.0
+		for n in city_overlay.nodes:
+			if not ids.has(n["id"]):
+				continue
+			var r := _map_node_rect(n["id"])
+			if not r.has_area():
+				continue
+			var g := Vector2(city_overlay.lot_of(n["id"])) + Vector2(0.5, 0.5)
+			keep.append(g)
+			var off := r.get_center() - scr.position - CityMapCamera.screen_of(g, size, cur_focus, city.focus_anchor, city.scale.x, city.tile_b())
+			keep_off.append(off * (zoom / maxf(city.scale.x, 0.0001)))  # measured at the camera now, held at `zoom`
+			half = maxf(half, r.size.y * 0.5)
+		var rect := Rect2(free.position - scr.position, free.size)
+		if rect.size.x > LegendSpot.FIT_INSET * 4.0 and rect.size.y > LegendSpot.FIT_INSET * 4.0:
+			rect = rect.grow(-LegendSpot.FIT_INSET)
+		if rect.size.y > half * 6.0 and rect.size.x > half * 6.0:
+			rect = rect.grow(-half)  # the whole icon, not only its centre, stays in the free part
+		var f := CityMapCamera.keep_on_city(CityView3D.CONFIG, size, focus, anchor, zoom, wireframe.city.tile_b(), keep, rect, keep_off)
+		zoom = float(f["scale"])
+		focus = f["focus"]
+		anchor = f["anchor"]
+	_frame_city(zoom, focus, anchor)
 
 
 ## Camera on the net city: zoom and put grid point `focus` at screen fraction `anchor`.
