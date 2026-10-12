@@ -37,6 +37,46 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-11 — M14 12Q-ACCESS: high contrast on every screen through the kit; SAVED, Next, one home-hit number, the stamp
+Pack B items of the 12q QA matrix audit (`docs/handoff/m14_12q/qa_matrix_audit.md` L78-L83, tree db29f599), re-checked
+on m14-group2. Before | after: `docs/art_review/ART-12/12q/fixes/ACCESS.jpg`.
+- **High contrast keeps its promise (L78).** `HighContrast.apply` only reached the shared theme; most views give their
+  words and boxes their own colours (theme overrides) or draw them, so combat, HQ, Grid, raid and route barely changed.
+  Two kit pieces now carry it, never per screen: (1) `HighContrastWalk` (installed by `UiTheme.apply`) restyles every
+  Control's own overrides while the setting is on and puts them back when it goes off: a see-through StyleBoxFlat
+  (panel, label, button states) becomes a copy in opaque `HighContrast.BG` with its tint as a solid edge and every edge
+  at least `HC_EDGE_MIN` (2 px); an opaque box (a sticker's paper) keeps its fill; words are lifted the least that
+  reaches 7:1 (`HighContrast.lift`) against their backing: their own opaque box, else (light words) a black outline of
+  `outline_px` = max(4, 0.25 x the font px) that backs them on the city and the art, else (ink, under 2.5:1 on black)
+  the paper. LabelSettings get the same on a copy (live numbers are built hc-aware in `UiTheme.live_number`). Controls
+  are restyled after they enter the tree, again when a view re-colours them (`theme_changed`, at most 8 passes a frame),
+  and all at once when the setting or the text scale changes; hidden words (alpha < 0.05) stay hidden. (2) Text and
+  plates a view draws go through `HighContrast.draw_text` / `plate` / `ink` / `edge`: the LAST TURN plate and line, the
+  wheel's slice numbers, needle windows, phase pips and hub title, card rules text (an opaque plate per line) and
+  pictogram values, the Grid's and route's tags, landmark plates and boss chip, the CRT terminal glass (black, no glow,
+  scanlines or hex dump, edge doubled), the decrypted holo (black glass, no tint or bands, edge doubled), the ON AIR
+  ticker. Reduce effects and skins compose: skins re-value the theme before hc, and the walk lifts what a skin gives.
+  Test: `test_m14_12q_access.gd` sweeps title, hq, raid_setup, route and combat_start at 1.0 and 2.0 (every visible
+  panel opaque, every visible word 7:1 on its backing; without the walk the same sweep finds 154 failures).
+- **Colour-blind route vs network (L79): partly fixed by 12Q-RAID, finished here.** Re-checked through
+  `tools/visual_qa/filters.py` (deutan) on the mode-on frames: raid_setup and b4_defence carry 12Q-RAID's hazard ticks
+  and reticles; the Grid's pending raid (grid_raid_pending: the HQ's dashed what-if route) had none. `RaidRouteLayer`
+  now barbs the what-if routes too under `RaidPencil.hostile_cues()`.
+- **SAVED under high contrast (L80).** The stamp faded through 1.1:1 on run_end. Under hc it shows whole for its hold
+  and fade time, then goes at once (the reduce-motion path), in the high-contrast white on an opaque black keyline at
+  least `outline_px` (the pink lifted to 7:1 on black still read 4.3:1 against the city in the lint).
+- **The tutorial's Next under high contrast (L81).** 4.42:1 was the alpha pulse caught mid-dip: under hc Next does not
+  pulse (alpha 1, the theme's 7:1 terminal button); its tooltip still says what moves the tutorial on.
+- **One home-hit number (L82).** Two hits on home in one playout step launched two "-5" flights from the same node on
+  the same frame. A hit while a number flies now joins it (the label shows the sum); HOME drops by the sum on landing.
+- **Filled cyan buttons (L83): a lint false positive.** The drawn fill under hc is #000 with the 3 px cyan edge
+  (Daily run, RESET ALL TABS, GRID VIEW, VIEW LOADOUT, MAP KEY; crops in ACCESS.jpg): white on black. The lint's
+  ring round the words fell on the edge; `review_pack._box_color` now reads a Button's own opaque box as drawn (as it did
+  for Labels), and the pack's hc lint no longer lists them.
+- **The DECRYPTED stamp at text 2.0 (12Q-HQ).** The stamp's lettering grew with the text size inside a fixed slot and
+  reached past the HQ Site holo's right edge. `DecryptedHoloPanel.stamp_px` keeps the HEADING step and shrinks it only as
+  far as the tilted box must to stay inside the slot's width (unchanged at 1.0).
+
 ### 2026-10-11 — M14 12Q-RAID: the raid pages at big text, the colour-blind cue, the drag demo, the 3D city's look
 Items from the 12q QA matrix audit (`docs/handoff/m14_12q/qa_matrix_audit.md`, tree db29f599), re-checked on m14-group2.
 - **Stat tags keep one row (L51, the cause of L29).** `HudStats` wrapped fitted tags to two rows under `fit_floor`
