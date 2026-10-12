@@ -214,7 +214,7 @@ func _draw_caret() -> void:
 	if caret and _caret_on and not typing():
 		var at := caret_position()
 		var px := UiTheme.font_px(text_step)
-		content.draw_string(Palette.mono(), at, CARET_GLYPH, HORIZONTAL_ALIGNMENT_LEFT, -1, px, accent())
+		HighContrast.draw_text(content, Palette.mono(), at, CARET_GLYPH, HORIZONTAL_ALIGNMENT_LEFT, -1, px, accent())
 
 
 ## Where the caret sits (after the shown text; unwrapped text), local px.

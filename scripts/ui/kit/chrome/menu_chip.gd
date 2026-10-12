@@ -196,17 +196,17 @@ func _draw() -> void:
 	var y := r.position.y + PAD.y + g.y + lf.get_ascent(lp)
 	if hot and not disabled:
 		var centred := plate != &"chip" and plate != &""
-		draw_string(lf, Vector2(x0 - (lp * CARET_SHARE if centred else 0.0), y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink if pressed else PaletteSkins.chrome(accent))
+		HighContrast.draw_text(self, lf, Vector2(x0 - (lp * CARET_SHARE if centred else 0.0), y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink if pressed else PaletteSkins.chrome(accent))
 		if not centred:
 			x0 += lp * CARET_SHARE
 	var words := label_lines()
 	for i in words.size():
 		if i > 0:
 			y += lf.get_height(lp)  # 12Q-HQ: a wrapped label's next line
-		draw_string(lf, Vector2(x0, y), words[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink)
+		HighContrast.draw_text(self, lf, Vector2(x0, y), words[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink)
 	if line != "":
 		var sp := Chrome.px(line_step)
 		var ly := y + lf.get_descent(lp) + PAD.z + Palette.mono().get_ascent(sp)
-		draw_string(Palette.mono(), Vector2(r.position.x + PAD.x + g.x, ly), line, HORIZONTAL_ALIGNMENT_CENTER if plate != &"chip" else HORIZONTAL_ALIGNMENT_LEFT, r.size.x - PAD.x * 2.0 - g.x - g.z, sp,
+		HighContrast.draw_text(self, Palette.mono(), Vector2(r.position.x + PAD.x + g.x, ly), line, HORIZONTAL_ALIGNMENT_CENTER if plate != &"chip" else HORIZONTAL_ALIGNMENT_LEFT, r.size.x - PAD.x * 2.0 - g.x - g.z, sp,
 			Palette.GLYPH_INK if pressed else (Palette.TEXT_MID if not disabled else Palette.TEXT_LO))
 	KitState.draw_frame(self, r, st, false)

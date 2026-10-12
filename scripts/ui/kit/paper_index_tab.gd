@@ -55,6 +55,6 @@ func _draw() -> void:
 	var ink := Palette.INK if not disabled else Palette.INK.lerp(Palette.PAPER, 0.5)
 	if hot and not disabled:
 		x += lp * CARET_SHARE * 0.5
-		draw_string(lf, Vector2(x - lp * CARET_SHARE, y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, lp, Palette.CELL_PINK)
-	draw_string(lf, Vector2(x, y), word, HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink)
+		HighContrast.draw_text(self, lf, Vector2(x - lp * CARET_SHARE, y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, lp, Palette.CELL_PINK)
+	HighContrast.draw_text(self, lf, Vector2(x, y), word, HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink)
 	KitState.draw_frame(self, r, st, false)

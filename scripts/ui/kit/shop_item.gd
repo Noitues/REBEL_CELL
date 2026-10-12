@@ -268,14 +268,14 @@ func _caption(y: float) -> float:
 	var f := Palette.display()
 	var tr0: Rect2 = c["title"]
 	var fs := int(c["fs"])
-	draw_string(f, Vector2(0, tr0.position.y + f.get_ascent(fs)) + Vector2(1, 1), card_title.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, size.x, fs, Palette.INK)
-	draw_string(f, Vector2(0, tr0.position.y + f.get_ascent(fs)), card_title.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, size.x, fs, _ink())
+	HighContrast.draw_text(self, f, Vector2(0, tr0.position.y + f.get_ascent(fs)) + Vector2(1, 1), card_title.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, size.x, fs, Palette.INK)
+	HighContrast.draw_text(self, f, Vector2(0, tr0.position.y + f.get_ascent(fs)), card_title.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, size.x, fs, _ink())
 	if kind_line != "":
 		var kr: Rect2 = c["kind"]
 		var m := Palette.mono()
 		var ms := int(c["ms"])
 		draw_string_outline(m, Vector2(0, kr.position.y + m.get_ascent(ms)), kind_line, HORIZONTAL_ALIGNMENT_CENTER, size.x, ms, 3, Palette.INK)
-		draw_string(m, Vector2(0, kr.position.y + m.get_ascent(ms)), kind_line, HORIZONTAL_ALIGNMENT_CENTER, size.x, ms, Color(RARITY_COLOURS[clampi(rarity, 0, 3)], 0.95 if not disabled else 0.5))
+		HighContrast.draw_text(self, m, Vector2(0, kr.position.y + m.get_ascent(ms)), kind_line, HORIZONTAL_ALIGNMENT_CENTER, size.x, ms, Color(RARITY_COLOURS[clampi(rarity, 0, 3)], 0.95 if not disabled else 0.5))
 	return float(c["end"])
 
 
@@ -367,7 +367,7 @@ func _draw_bin() -> void:
 		var fs := roundi(NAME_PX * 1.2 * text_scale)
 		while fs > FIT_MIN_TEXT and f.get_string_size(card_title.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > size.x - 12.0:
 			fs -= 1
-		draw_string(f, Vector2(tape.position.x, tape.position.y + 2.0 + f.get_ascent(fs)), card_title.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, tape.size.x, fs, Palette.TEXT_HI)
+		HighContrast.draw_text(self, f, Vector2(tape.position.x, tape.position.y + 2.0 + f.get_ascent(fs)), card_title.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, tape.size.x, fs, Palette.TEXT_HI)
 	var r := object_rect()
 	var name := art_name()
 	var t := MainframeArt.tex(name)
@@ -430,7 +430,7 @@ func _draw_sold() -> void:
 	var w := Palette.display().get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var box := Rect2(Vector2(-w * 0.5 - 6.0, -fs * 0.7), Vector2(w + 12.0, fs * 1.3))
 	draw_rect(box, Palette.KRAFT_RED, false, 3.0)
-	draw_string(Palette.display(), Vector2(-w * 0.5, fs * 0.36), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.KRAFT_RED)
+	HighContrast.draw_text(self, Palette.display(), Vector2(-w * 0.5, fs * 0.36), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.KRAFT_RED)
 	draw_set_transform(Vector2.ZERO)
 
 

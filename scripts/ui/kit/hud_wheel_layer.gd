@@ -205,7 +205,7 @@ func _draw() -> void:
 			var at := wv.global_position + Vector2(hr.get_center().x - kw * 0.5, hr.position.y) - origin
 			# B2 (B1a Q2 ruling): a word over the world wears its ink keyline (>= 3 px at 1080p).
 			draw_string_outline(mono, at + Vector2(0.0, mono.get_ascent(kf)), key, HORIZONTAL_ALIGNMENT_LEFT, -1, kf, keyline_px(), Palette.INK)
-			draw_string(mono, at + Vector2(0.0, mono.get_ascent(kf)), key, HORIZONTAL_ALIGNMENT_LEFT, -1, kf, HudSkin.TERMINAL_HI)
+			HighContrast.draw_text(self, mono, at + Vector2(0.0, mono.get_ascent(kf)), key, HORIZONTAL_ALIGNMENT_LEFT, -1, kf, HudSkin.TERMINAL_HI)
 
 
 ## B2 (designer Q2; concept HUD v4): the key under a nudge button is its letter alone ("[Q]" -> "Q").

@@ -1928,7 +1928,7 @@ func _wedge(center: Vector2, r0: float, r1: float, a0: float, a1: float) -> Pack
 
 func _draw() -> void:
 	if combatant == null or combatant.wheel == null:
-		draw_string(Palette.mono(), Vector2(8, 20), "(no wheel)", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.PAPER)
+		HighContrast.draw_text(self, Palette.mono(), Vector2(8, 20), "(no wheel)", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.PAPER)
 		return
 	if shown_state == null:
 		_draw_view()
@@ -2011,7 +2011,7 @@ func _draw_view() -> void:
 			# when it clears).
 			_draw_dashed_arc(sp, 10, 0, TAU, _col(Palette.CELL_ACID), 1.5)
 			var g: int = status_ghosts[i]
-			draw_string(Palette.mono(), sp + Vector2(-7, 5), Palette.STATUS_GLYPHS.get(g, "×") if g != RC.Status.NONE else "×", HORIZONTAL_ALIGNMENT_CENTER, 14, 11, _col(Palette.CELL_ACID))
+			HighContrast.draw_text(self, Palette.mono(), sp + Vector2(-7, 5), Palette.STATUS_GLYPHS.get(g, "×") if g != RC.Status.NONE else "×", HORIZONTAL_ALIGNMENT_CENTER, 14, 11, _col(Palette.CELL_ACID))
 		if wheel.slot_firmware_ids[i] != &"" and attachments == null:
 			var dir := Vector2(cos(mid), sin(mid))
 			var fp := center + dir * (inner + 5) - dir.orthogonal() * band * 0.3
@@ -2069,7 +2069,7 @@ func _draw_view() -> void:
 		for d in n:
 			if d % 2 == 0:
 				draw_line(hub.lerp(ntip, float(d) / n), hub.lerp(ntip, float(d + 1) / n), mcol, 3.0)
-		draw_string(Palette.mono(), hub + Vector2(10, -4), tr("next"), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(HUB_FONT_SIZE), mcol)
+		HighContrast.draw_text(self, Palette.mono(), hub + Vector2(10, -4), tr("next"), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(HUB_FONT_SIZE), mcol)
 	if not replaying and attachments == null:
 		_draw_ghost(center, radius, wheel)
 		_draw_inner_ghost(center, radius, wheel)
@@ -2465,7 +2465,7 @@ func _guard_number(center: Vector2, k: float, r: float, deg: float, text: String
 	var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var base := Vector2(p.x - tw * 0.5, p.y + WheelFace.cap_height(font, fs) * 0.5)
 	draw_string_outline(font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(fs * 0.2)), Palette.INK)
-	draw_string(font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	HighContrast.draw_text(self, font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 
 # --- ART-2 2A: the wheel stack -----------------------------------------------------------------
@@ -2805,9 +2805,9 @@ func _draw_lockdown(center: Vector2, hr: float) -> void:
 	draw_rect(plate, Palette.NET_CYAN.darkened(0.55))
 	draw_rect(plate, Palette.NET_CYAN, false, 1.0)
 	WheelGlyphs.draw(self, WheelGlyphs.status_id(RC.Status.ENCRYPTED), plate.position + Vector2(pf * 0.55, plate.size.y * 0.5), pf * 0.8, Palette.TEXT_HI)
-	draw_string(Palette.display(), Vector2(plate.position.x + pf, plate.end.y - pf * 0.25), label, HORIZONTAL_ALIGNMENT_LEFT, -1, pf, Palette.TEXT_HI)
+	HighContrast.draw_text(self, Palette.display(), Vector2(plate.position.x + pf, plate.end.y - pf * 0.25), label, HORIZONTAL_ALIGNMENT_LEFT, -1, pf, Palette.TEXT_HI)
 	var turns := str(combatant.hub_breached_turns)
-	draw_string(Palette.display(), center + Vector2(hr * 0.62, -hr * 0.55), turns, HORIZONTAL_ALIGNMENT_LEFT, -1, pf, Palette.NET_CYAN)
+	HighContrast.draw_text(self, Palette.display(), center + Vector2(hr * 0.62, -hr * 0.55), turns, HORIZONTAL_ALIGNMENT_LEFT, -1, pf, Palette.NET_CYAN)
 
 
 ## The tag's content as text (title and chips): a change flips the tag, the same content
@@ -2896,7 +2896,7 @@ func _draw_defeated(center: Vector2, _r: float, _inner: float) -> void:
 	draw_rect(Rect2(box.position + Vector2(3.0, 5.0) * _ts(), box.size).grow(cut), _col(Color(Palette.NIGHT_SKY, 0.55)))
 	draw_rect(box.grow(cut), _col(Palette.STICKER_DIE_CUT))
 	draw_rect(box, defeated_color())
-	draw_string(font, Vector2(box.position.x + fs * 0.3, fs * 0.35), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _col(Palette.INK))
+	HighContrast.draw_text(self, font, Vector2(box.position.x + fs * 0.3, fs * 0.35), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _col(Palette.INK))
 	draw_set_transform(Vector2.ZERO)
 
 
@@ -2988,7 +2988,7 @@ func _draw_flatlined(center: Vector2, radius: float, _inner: float) -> void:
 	var local := Rect2(box.position - center, box.size)
 	draw_rect(local, Color(Palette.NIGHT_SKY, 0.9 * p))
 	draw_rect(local, Color(col, p), false, FLATLINE_EDGE)
-	draw_string(Palette.display(), Vector2(local.position.x + fs * 0.3, fs * 0.35), String(fb["word"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, p))
+	HighContrast.draw_text(self, Palette.display(), Vector2(local.position.x + fs * 0.3, fs * 0.35), String(fb["word"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, p))
 	var rule_y := local.end.y + FLATLINE_EDGE * 2.0
 	draw_line(Vector2(local.position.x, rule_y), Vector2(local.end.x, rule_y), Color(col, p * FLATLINE_RULE_ALPHA), FLATLINE_EDGE * 0.5)
 	draw_set_transform(Vector2.ZERO)
@@ -3051,7 +3051,7 @@ func _draw_caption(text: String, shown: float) -> void:
 	draw_rect(Rect2(r.position + Vector2(3, 4), r.size), Color(Palette.SHADOW, Palette.SHADOW.a * a))
 	draw_rect(r, Color(Palette.INK, 0.92 * a))
 	draw_rect(r, Color(Palette.PAPER, 0.8 * a), false, 1.5)
-	draw_string(font, Vector2(r.position.x, r.position.y + h * 0.7), text, HORIZONTAL_ALIGNMENT_CENTER, w, fs, Color(Palette.PAPER, a))
+	HighContrast.draw_text(self, font, Vector2(r.position.x, r.position.y + h * 0.7), text, HORIZONTAL_ALIGNMENT_CENTER, w, fs, Color(Palette.PAPER, a))
 
 
 ## NULL landing: static flecks over one slice only (hash scatter, a new pattern each frame).
@@ -3095,7 +3095,7 @@ func _draw_satellites() -> void:
 		var lfs := _fs(HUB_FONT_SIZE + 1)
 		var plate := satellite_plate_rect(sat, sat_text)
 		draw_rect(plate, Color(Palette.NIGHT_SKY, 0.85))
-		draw_string(Palette.mono(), plate.position + Vector2(3, lfs), sat_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, sat_col)
+		HighContrast.draw_text(self, Palette.mono(), plate.position + Vector2(3, lfs), sat_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, sat_col)
 		if sat.id == targeted_satellite and valid_zones.is_empty():
 			_draw_crosshair(satp, (SATELLITE_TOKEN + 5.0) * _ts())
 		if _zone_is(valid_zones, {"kind": "satellite", "id": sat.id}):
@@ -3235,7 +3235,7 @@ func _draw_arrows() -> void:
 		if hr.has_area():
 			# ANIM-R4 C4: the key hint sits where it is clear of the tag (arrow_hint_rect).
 			var fs := _fs(HUB_FONT_SIZE + 1)
-			draw_string(Palette.mono(), hr.position + Vector2(0.0, Palette.mono().get_ascent(fs)), String(arrow_hints[d]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _col(Palette.CELL_ACID))
+			HighContrast.draw_text(self, Palette.mono(), hr.position + Vector2(0.0, Palette.mono().get_ascent(fs)), String(arrow_hints[d]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _col(Palette.CELL_ACID))
 
 
 ## ANIM-R4 C4: where the key hint of nudge arrow (`ring`, `d`) is drawn (local rect of its
@@ -3298,7 +3298,7 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 	var lay := hp_layout()
 	var hs := _fs(HP_FONT_SIZE)
 	var hp_rect: Rect2 = lay["hp"]
-	draw_string(Palette.display(), Vector2(hp_rect.position.x, hp_rect.end.y), String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hp_col)
+	HighContrast.draw_text(self, Palette.display(), Vector2(hp_rect.position.x, hp_rect.end.y), String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hp_col)
 	if not hud_results and not replaying and is_nan(anim_hp) and (after != combatant.hp or bool(lay.get("lethal", false))):
 		var fs := int(lay.get("next_fs", _fs(HUB_FONT_SIZE + 3)))
 		var ftext := String(lay["next_text"])
@@ -3313,7 +3313,7 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 			_draw_dashed_rect(fr, fcol)
 		var ay := fr.position.y + fr.size.y * 0.5
 		draw_colored_polygon(PackedVector2Array([Vector2(fr.position.x + 5, ay - 5), Vector2(fr.position.x + 13, ay), Vector2(fr.position.x + 5, ay + 5)]), fcol)
-		draw_string(Palette.mono(), Vector2(fr.position.x + 17, fr.position.y + fs), ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fcol)
+		HighContrast.draw_text(self, Palette.mono(), Vector2(fr.position.x + 17, fr.position.y + fs), ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fcol)
 		if lethal:
 			# The skull sits in the gap before LETHAL.
 			var head := String(lay.get("next_head", next_head(after)))
@@ -3336,7 +3336,7 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 		var lines: PackedStringArray = lay["last_lines"]
 		var words := HighContrast.ink(_col(Color(Palette.PAPER, 0.92)))
 		for i in lines.size():
-			draw_string(Palette.mono(), Vector2(lr.position.x, lr.position.y + LAST_TURN_PAD * 0.5 + ls * (i + 1)), lines[i], HORIZONTAL_ALIGNMENT_CENTER, lr.size.x, ls, Color(words, words.a * reveal))
+			HighContrast.draw_text(self, Palette.mono(), Vector2(lr.position.x, lr.position.y + LAST_TURN_PAD * 0.5 + ls * (i + 1)), lines[i], HORIZONTAL_ALIGNMENT_CENTER, lr.size.x, ls, Color(words, words.a * reveal))
 
 
 ## FIX-REDS (M14): the room (px) kept between the lowest needle's blade and the HP row.
@@ -3661,7 +3661,7 @@ func _draw_hub(center: Vector2, _inner: float, _line: Color) -> void:
 		var line_text := String(name_lines[i + 1])
 		var lw := font.get_string_size(line_text, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size).x
 		draw_string_outline(font, center + Vector2(-lw * 0.5, ny), line_text, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size, maxi(1, roundi(name_size * 0.3)), _col(Palette.INK))
-		draw_string(font, center + Vector2(-lw * 0.5, ny), line_text, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size, _col(Palette.TEXT_HI))
+		HighContrast.draw_text(self, font, center + Vector2(-lw * 0.5, ny), line_text, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size, _col(Palette.TEXT_HI))
 
 
 ## Target reticle: four bracket arcs on the diagonals with a tick at each (clear of the HP
@@ -3929,17 +3929,17 @@ func _draw_was(r: Rect2, alpha: float) -> void:
 		draw_rect(cr, Color(Palette.PAPER, alpha))
 		draw_rect(cr, Color(Palette.INK, alpha), false, 1.5)
 		x += cw + TAPE_PAD * 0.5
-		draw_string(font, Vector2(x, base), String(lay["play"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.INK, alpha))
+		HighContrast.draw_text(self, font, Vector2(x, base), String(lay["play"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.INK, alpha))
 		x += font.get_string_size(String(lay["play"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	if String(lay["was"]) == "":
 		return
 	var head := String(lay["head"])
-	draw_string(font, Vector2(x, base), head, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.INK, alpha))
+	HighContrast.draw_text(self, font, Vector2(x, base), head, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.INK, alpha))
 	x += font.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var line := String(lay["was"])
 	var lw := font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var ink := Color(Palette.INK, WAS_INK * alpha)
-	draw_string(font, Vector2(x, base), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
+	HighContrast.draw_text(self, font, Vector2(x, base), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
 	# A thin strike, lighter than the words, so they stay readable.
 	var sy := base - fs * 0.32
 	draw_line(Vector2(x, sy), Vector2(x + lw, sy), Color(Palette.INK, WAS_STRIKE * alpha), 1.0)
@@ -4022,7 +4022,7 @@ func _intent_tag(r: Rect2, alpha: float = 1.0) -> void:
 		_draw_was(was_tape, alpha)
 	else:
 		draw_rect(tape, fade.call(Palette.NOTE_TAPE))
-		draw_string(Palette.mono(), Vector2(tape.position.x, tape.position.y + cap_fs), cap_text, HORIZONTAL_ALIGNMENT_CENTER, cap_w, cap_fs, fade.call(Palette.INK))
+		HighContrast.draw_text(self, Palette.mono(), Vector2(tape.position.x, tape.position.y + cap_fs), cap_text, HORIZONTAL_ALIGNMENT_CENTER, cap_w, cap_fs, fade.call(Palette.INK))
 	var tx := r.position.x + 8
 	var title_h := INTENT_HEIGHT * ts
 	if type >= 0:
@@ -4038,7 +4038,7 @@ func _intent_tag(r: Rect2, alpha: float = 1.0) -> void:
 			else:
 				draw_arc(pc, PIP_RADIUS * ts, 0, TAU, 10, fade.call(Palette.INK), 1.2)
 		tx += PIP_RADIUS * 2.6 * ts * 3 + 4 * ts
-	draw_string(f, Vector2(tx, r.position.y + title_h * 0.7 + TAPE_INSET * ts * 0.5), text, HORIZONTAL_ALIGNMENT_LEFT, r.end.x - tx - 4, _fs(INTENT_FONT_SIZE), fade.call(Palette.INK))
+	HighContrast.draw_text(self, f, Vector2(tx, r.position.y + title_h * 0.7 + TAPE_INSET * ts * 0.5), text, HORIZONTAL_ALIGNMENT_LEFT, r.end.x - tx - 4, _fs(INTENT_FONT_SIZE), fade.call(Palette.INK))
 	var fs := chip_font()
 	var chip_h := CHIP_HEIGHT * ts
 	var boxes := chip_layout(r)
@@ -4050,7 +4050,7 @@ func _intent_tag(r: Rect2, alpha: float = 1.0) -> void:
 		var chip: Dictionary = bx["chip"]
 		var cr: Rect2 = bx["rect"]
 		draw_rect(cr, fade.call(Color(chip.get("color", Palette.INK))))
-		draw_string(Palette.mono(), Vector2(cr.position.x + 4, cr.position.y + chip_h * 0.75), String(chip["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fade.call(Color(chip.get("ink", Palette.PAPER))))
+		HighContrast.draw_text(self, Palette.mono(), Vector2(cr.position.x + 4, cr.position.y + chip_h * 0.75), String(chip["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fade.call(Color(chip.get("ink", Palette.PAPER))))
 		var tick := _chip_tick(chip, shown)
 		if tick >= 0.0 and (bx["tick"] as Rect2).has_area():
 			_draw_tick((bx["tick"] as Rect2).get_center(), chip_h, tick, alpha)

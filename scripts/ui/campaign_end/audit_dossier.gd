@@ -839,7 +839,7 @@ func _draw_folder() -> void:
 	var f := EndFaces.typed_bold()
 	var fs := UiTheme.font_px(UiTheme.BODY)
 	var tab_text := tr("CELL-%02d / %s") % [audit_number(), tr("AT LARGE") if facts.won else tr("CLOSED")]
-	folder.draw_string(f, Vector2(tab.position.x + UiTheme.SP_M * s, tab.position.y + (tab.size.y + f.get_ascent(fs)) * 0.5 - 2.0), tab_text, HORIZONTAL_ALIGNMENT_LEFT, tab.size.x - UiTheme.SP_M * s, fs, PaperInk.text(Palette.END_TYPE_SOFT))
+	HighContrast.draw_text(folder, f, Vector2(tab.position.x + UiTheme.SP_M * s, tab.position.y + (tab.size.y + f.get_ascent(fs)) * 0.5 - 2.0), tab_text, HORIZONTAL_ALIGNMENT_LEFT, tab.size.x - UiTheme.SP_M * s, fs, PaperInk.text(Palette.END_TYPE_SOFT))
 	_manila(folder, r, Palette.NO_TINT)
 	if not spread.vertical:
 		var x := (_rect_in_self(left_page).end.x + _rect_in_self(right_page).position.x) * 0.5 - folder.position.x
@@ -872,6 +872,6 @@ func _draw_cover() -> void:
 	cover.draw_rect(label, PaperInk.opaque(Palette.PAPER))
 	var y := label.position.y + fs * 1.3
 	for t in [tr("%s  //  AUDIT %d") % [house().to_upper(), audit_number()], tr("SUBJECT: REBEL_CELL"), tr("CELL %02d  //  %d RUNS") % [audit_number(), facts.runs_started]]:
-		cover.draw_string(f, Vector2(label.position.x + UiTheme.SP_S * s, y), t, HORIZONTAL_ALIGNMENT_LEFT, label.size.x - UiTheme.SP_M * s, fs, PaperInk.text(Palette.END_TYPE_INK))
+		HighContrast.draw_text(cover, f, Vector2(label.position.x + UiTheme.SP_S * s, y), t, HORIZONTAL_ALIGNMENT_LEFT, label.size.x - UiTheme.SP_M * s, fs, PaperInk.text(Palette.END_TYPE_INK))
 		y += fs * 1.25
 	CorpSeal.draw_seal(cover, Vector2(r.size.x * 0.5, r.size.y * 0.72), minf(r.size.x, r.size.y) * 0.14, style.corp_id, letterhead_ink(), house())

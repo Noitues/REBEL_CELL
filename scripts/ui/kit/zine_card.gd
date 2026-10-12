@@ -554,7 +554,7 @@ func _draw() -> void:
 		var w := Palette.display().get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var box := Rect2(Vector2(-w * 0.5 - 6.0, -fs * 0.7), Vector2(w + 12.0, fs * 1.3))
 		draw_rect(box, Palette.CELL_PINK, false, 3.0)
-		draw_string(Palette.display(), Vector2(-w * 0.5, fs * 0.36), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.CELL_PINK)
+		HighContrast.draw_text(self, Palette.display(), Vector2(-w * 0.5, fs * 0.36), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.CELL_PINK)
 		draw_set_transform(Vector2.ZERO)
 	match mark:
 		Mark.CROSS:
@@ -601,7 +601,7 @@ func _draw_tile() -> void:
 		draw_polyline(pts, sc, 1.5)
 		SliceIcon.draw_on_slice(self, icon_c + Vector2(0, -15), 11, slice_type, sc)
 		if slice_output > 0:
-			draw_string(Palette.display(), icon_c + Vector2(-20, 22), str(slice_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 20, Palette.PAPER)
+			HighContrast.draw_text(self, Palette.display(), icon_c + Vector2(-20, 22), str(slice_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 20, Palette.PAPER)
 	elif icon_kind == "shred":
 		_mini_card(icon_c + Vector2(0, -8), accent, false)
 		draw_rect(Rect2(icon_c + Vector2(-30, 10), Vector2(60, 12)), Palette.DESK_METAL)
@@ -621,14 +621,14 @@ func _draw_tile() -> void:
 		draw_rect(rect, Color(0, 0, 0, 0.55))
 	var name_lines := _wrap(card_title.to_upper(), 13)
 	for i in mini(name_lines.size(), 2):
-		draw_string(Palette.mono(), Vector2(4, 100 + i * 13), name_lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, 11, Palette.TERMINAL_TEXT)
+		HighContrast.draw_text(self, Palette.mono(), Vector2(4, 100 + i * 13), name_lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, 11, Palette.TERMINAL_TEXT)
 	if cost >= 0:
 		var price := "%d" % cost
 		var pw := Palette.mono().get_string_size(price, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
 		var px := size.x / 2.0 - (pw + 18) / 2.0
 		draw_arc(Vector2(px + 6, size.y - 15), 6, 0, TAU, 16, Palette.CELL_ACID, 1.5)
 		draw_circle(Vector2(px + 6, size.y - 15), 2, Palette.CELL_ACID)
-		draw_string(Palette.mono(), Vector2(px + 17, size.y - 10), price, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.CELL_ACID)
+		HighContrast.draw_text(self, Palette.mono(), Vector2(px + 17, size.y - 10), price, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.CELL_ACID)
 
 
 ## The reference's glowing Firmware chip: a die with pins and a circuit square inside.
@@ -661,7 +661,7 @@ func _mini_card(c: Vector2, col: Color, initials_on: bool = true) -> void:
 	for w in card_title.split(" "):
 		if w != "" and initials.length() < 2 and initials_on:
 			initials += w[0].to_upper()
-	draw_string(Palette.display(), Vector2(-22, 8), initials, HORIZONTAL_ALIGNMENT_CENTER, 40, 22, col.darkened(0.2))
+	HighContrast.draw_text(self, Palette.display(), Vector2(-22, 8), initials, HORIZONTAL_ALIGNMENT_CENTER, 40, 22, col.darkened(0.2))
 	draw_set_transform_matrix(_icon_xf)
 
 
@@ -796,7 +796,7 @@ func _draw_price_tag() -> void:
 	var coin := rt.position + Vector2(h * 0.45 + PRICE_COIN_R * s, h * 0.5)
 	StatIcon.draw(self, coin, PRICE_COIN_R * s, StatIcon.CYCLES, Palette.INK)
 	var fs := roundi(PRICE_FONT * s)
-	draw_string(Palette.display(), Vector2(coin.x + PRICE_COIN_R * s + 3.0 * s, rt.position.y + h * 0.5 + fs * 0.36), price_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.INK)
+	HighContrast.draw_text(self, Palette.display(), Vector2(coin.x + PRICE_COIN_R * s + 3.0 * s, rt.position.y + h * 0.5 + fs * 0.36), price_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.INK)
 
 
 ## Tiles at text scale 1.0 draw as before; at other scales, or with a buy sticker at the
@@ -942,7 +942,7 @@ func _draw_tile_scaled() -> void:
 		SliceIcon.draw_on_slice(self, icon_c + Vector2(0, -15), 11, slice_type, sc)
 		if slice_output > 0:
 			var vs := roundi(TILE_VALUE_SIZE * minf(s, TILE_VALUE_MAX_SCALE))
-			draw_string(Palette.display(), icon_c + Vector2(-20, 22), str(slice_output), HORIZONTAL_ALIGNMENT_CENTER, 40, vs, Palette.PAPER)
+			HighContrast.draw_text(self, Palette.display(), icon_c + Vector2(-20, 22), str(slice_output), HORIZONTAL_ALIGNMENT_CENTER, 40, vs, Palette.PAPER)
 	elif icon_kind == "shred":
 		_mini_card(icon_c + Vector2(0, -8), accent, false)
 		draw_rect(Rect2(icon_c + Vector2(-30, 10), Vector2(60, 12)), Palette.DESK_METAL)
@@ -959,14 +959,14 @@ func _draw_tile_scaled() -> void:
 		draw_rect(rect, Color(0, 0, 0, 0.55))
 	var mono := Palette.mono()
 	for i in shown:
-		draw_string(mono, Vector2(4, name_top + mono.get_ascent(fs) + i * line_h), lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.TERMINAL_TEXT)
+		HighContrast.draw_text(self, mono, Vector2(4, name_top + mono.get_ascent(fs) + i * line_h), lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.TERMINAL_TEXT)
 	if cost >= 0 and buy_button == null:
 		var pfs := roundi(14 * s)
 		var cost_text := "%d" % cost
 		var pw := Palette.mono().get_string_size(cost_text, HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x
 		var px := size.x / 2.0 - (pw + 18 * s) / 2.0
 		StatIcon.draw(self, Vector2(px + 6 * s, size.y - 15 * s), 6 * s, StatIcon.CYCLES, Palette.CELL_ACID)
-		draw_string(Palette.mono(), Vector2(px + 17 * s, size.y - 10 * s), cost_text, HORIZONTAL_ALIGNMENT_LEFT, -1, pfs, Palette.CELL_ACID)
+		HighContrast.draw_text(self, Palette.mono(), Vector2(px + 17 * s, size.y - 10 * s), cost_text, HORIZONTAL_ALIGNMENT_LEFT, -1, pfs, Palette.CELL_ACID)
 
 
 # --- H23 screens: chips say what they do, a buy button on every shop item ------------------
@@ -1039,7 +1039,7 @@ func _draw_chip_tile() -> void:
 	var lines: PackedStringArray = parts["lines"]
 	var names: Array[Rect2] = parts["names"]
 	for i in names.size():
-		draw_string(mono, Vector2(4, names[i].position.y + mono.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.TERMINAL_TEXT)
+		HighContrast.draw_text(self, mono, Vector2(4, names[i].position.y + mono.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.TERMINAL_TEXT)
 	var dfs: int = parts["dfs"]
 	var desc: PackedStringArray = parts["desc_lines"]
 	var rows_at: Array[Rect2] = parts["desc"]
@@ -1048,7 +1048,7 @@ func _draw_chip_tile() -> void:
 		var t := desc[i]
 		if i == rows - 1 and desc.size() > rows:
 			t = t.substr(0, maxi(0, t.length() - 1)) + "…"
-		draw_string(mono, Vector2(4, rows_at[i].position.y + mono.get_ascent(dfs)), t, HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, dfs, Color(Palette.TERMINAL_TEXT, 0.85))
+		HighContrast.draw_text(self, mono, Vector2(4, rows_at[i].position.y + mono.get_ascent(dfs)), t, HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, dfs, Color(Palette.TERMINAL_TEXT, 0.85))
 
 
 ## The chip's effect lines shown on the tile now (tests: at least one at every text size).

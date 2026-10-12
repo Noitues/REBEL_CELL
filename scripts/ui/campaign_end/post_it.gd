@@ -97,7 +97,7 @@ func _draw() -> void:
 	var lines := HeatPoster.wrap_words(f, words, fs, size.x - PAD * 2.0 * s + 1.0)
 	var y := band + PAD * s + f.get_ascent(fs)
 	for line in lines:
-		draw_string(f, Vector2(PAD * s, y), line, HORIZONTAL_ALIGNMENT_LEFT, size.x - PAD * 2.0 * s, fs, PaperInk.text(Palette.END_BALLPOINT))
+		HighContrast.draw_text(self, f, Vector2(PAD * s, y), line, HORIZONTAL_ALIGNMENT_LEFT, size.x - PAD * 2.0 * s, fs, PaperInk.text(Palette.END_BALLPOINT))
 		y += f.get_height(fs) * LINE_SHARE
 	if PaperInk.on():
 		draw_rect(r, PaperInk.edge(Palette.INK), false, PaperInk.edge_width(1.0))

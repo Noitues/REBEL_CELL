@@ -364,7 +364,7 @@ static func _wire(ci: CanvasItem, rect: Rect2, subj: Dictionary) -> void:
 		ci.draw_line(p, p + Vector2(0, dy), Palette.NET_CYAN, 1.5)
 	if kind == Kind.BOSS:
 		ci.draw_arc(c, r * 1.8, -PI * 0.9, -PI * 0.1, 24, Palette.CELL_PINK, 2.0, true)
-		ci.draw_string(Palette.mono(), rect.position + Vector2(6, 12), "THREAT: MAX", HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(7, int(rect.size.x / 14.0)), Palette.CELL_PINK)
+		HighContrast.draw_text(ci, Palette.mono(), rect.position + Vector2(6, 12), "THREAT: MAX", HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(7, int(rect.size.x / 14.0)), Palette.CELL_PINK)
 
 
 # --- Style 3: MUGSHOT -----------------------------------------------------------------------
@@ -413,7 +413,7 @@ static func _mugshot(ci: CanvasItem, rect: Rect2, subj: Dictionary) -> void:
 	ci.draw_rect(pl, Color(0.05, 0.05, 0.06))
 	ci.draw_rect(pl, Color(1, 1, 1, 0.6), false, 1.0)
 	var fs := maxi(6, int(pl.size.y * 0.42))
-	ci.draw_string(Palette.mono(), pl.position + Vector2(3, pl.size.y * 0.5 + fs * 0.35), String(subj.get("name", "")).to_upper(), HORIZONTAL_ALIGNMENT_CENTER, pl.size.x - 6, fs, Color(1, 1, 1, 0.9))
+	HighContrast.draw_text(ci, Palette.mono(), pl.position + Vector2(3, pl.size.y * 0.5 + fs * 0.35), String(subj.get("name", "")).to_upper(), HORIZONTAL_ALIGNMENT_CENTER, pl.size.x - 6, fs, Color(1, 1, 1, 0.9))
 	if kind == Kind.BOSS:
 		ci.draw_rect(Rect2(rect.position + Vector2(4, 4), Vector2(rect.size.x * 0.4, rect.size.y * 0.1)), Palette.CELL_PINK)
-		ci.draw_string(Palette.mono(), rect.position + Vector2(8, 4 + rect.size.y * 0.075), "MOST WANTED", HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(6, int(rect.size.y * 0.06)), Palette.INK)
+		HighContrast.draw_text(ci, Palette.mono(), rect.position + Vector2(8, 4 + rect.size.y * 0.075), "MOST WANTED", HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(6, int(rect.size.y * 0.06)), Palette.INK)

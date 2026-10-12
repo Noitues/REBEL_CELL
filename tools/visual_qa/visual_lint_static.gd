@@ -13,7 +13,8 @@ extends RefCounted
 ##   WHITE_HOT, HC_BG). `palette.gd` (the token file) is exempt.
 ## - `font_override`: `add_theme_font_size_override(<name>, <int literal>)`.
 ## - `draw_size`: `draw_string` / `draw_multiline_string` (and their `_outline` forms) whose
-##   font-size argument is an integer literal.
+##   font-size argument is an integer literal; and the same calls through HighContrast.draw_text /
+##   draw_lines (12Q-ACCESS), whose size argument is one further on.
 ## - `font_const`: a constant or variable whose name holds `FONT` set to an integer literal
 ##   below `FLOOR_PX` (the §4.2 `caption` floor).
 ## - `font_size_assign`: `font_size = <int literal>` (a property or a local).
@@ -34,6 +35,7 @@ static var _re_override: RegEx
 static var _re_const: RegEx
 static var _re_assign: RegEx
 static var _re_draw: RegEx
+static var _re_hc_draw: RegEx
 static var _re_int: RegEx
 
 
@@ -45,6 +47,7 @@ static func _init_res() -> void:
 	_re_const = RegEx.create_from_string("^\\s*(?:static\\s+)?(?:const|var)\\s+([A-Za-z0-9_]*FONT[A-Za-z0-9_]*)\\s*(?::\\s*int\\s*)?:?=\\s*([0-9]+)\\s*$")
 	_re_assign = RegEx.create_from_string("(?<![A-Za-z0-9_])font_size\\s*(?::\\s*int\\s*)?:?=\\s*[0-9]+\\s*$")
 	_re_draw = RegEx.create_from_string("\\b(draw_string|draw_multiline_string|draw_string_outline|draw_multiline_string_outline)\\s*\\(")
+	_re_hc_draw = RegEx.create_from_string("\\bHighContrast\\.(draw_text|draw_lines)\\s*\\(")
 	_re_int = RegEx.create_from_string("^[0-9]+$")
 
 
@@ -114,6 +117,13 @@ static func scan_text(path: String, text: String) -> Dictionary:
 	for m in _re_draw.search_all(joined):
 		var args := _call_args(joined, m.get_end())
 		if args.size() > SIZE_ARG and _re_int.search(args[SIZE_ARG].strip_edges()) != null:
+			var line_no := joined.substr(0, m.get_start()).count("\n") + 1
+			(out["draw_size"] as Array).append(line_no)
+	# M14 12Q-ACCESS: words drawn through the high-contrast kit (its canvas item first, then
+	# draw_string's arguments: the size one further on).
+	for m in _re_hc_draw.search_all(joined):
+		var args := _call_args(joined, m.get_end())
+		if args.size() > SIZE_ARG + 1 and _re_int.search(args[SIZE_ARG + 1].strip_edges()) != null:
 			var line_no := joined.substr(0, m.get_start()).count("\n") + 1
 			(out["draw_size"] as Array).append(line_no)
 	return out

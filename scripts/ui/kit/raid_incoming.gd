@@ -96,7 +96,7 @@ func _draw() -> void:
 	var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 	var base := Vector2((size.x - tw) * 0.5, plate.get_center().y + (f.get_ascent(px) - f.get_descent(px)) * 0.5)
 	draw_string_outline(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, roundi(KEYLINE_PX * Settings.text_scale) * 2, Color(Palette.INK, a))
-	draw_string(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(Palette.HARM, a))
+	HighContrast.draw_text(self, f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(Palette.HARM, a))
 
 
 ## MotionSkip: true while the transition runs.

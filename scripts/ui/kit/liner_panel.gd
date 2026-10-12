@@ -87,6 +87,6 @@ func _draw() -> void:
 	var s := Settings.text_scale
 	var base := (PAD.y + CAPTION_ROOM * 0.5) * s + (mono.get_ascent(px) - mono.get_descent(px)) * 0.5
 	if caption != "":
-		draw_string(mono, Vector2(PAD.x * s, base), caption, HORIZONTAL_ALIGNMENT_LEFT, r.size.x * 0.6, px, PRINT_INK)
+		HighContrast.draw_text(self, mono, Vector2(PAD.x * s, base), caption, HORIZONTAL_ALIGNMENT_LEFT, r.size.x * 0.6, px, PRINT_INK)
 	if tag != "":
-		draw_string(mono, Vector2(r.size.x * 0.6, base), tag, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x * 0.4 - PAD.x * s, px, PRINT_INK)
+		HighContrast.draw_text(self, mono, Vector2(r.size.x * 0.6, base), tag, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x * 0.4 - PAD.x * s, px, PRINT_INK)

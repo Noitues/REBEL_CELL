@@ -558,7 +558,7 @@ func _draw_folder() -> void:
 		# An empty slot: a dashed outline on the glass, nothing filed.
 		_dashed(body, Palette.TEXT_MID)
 		_dashed(Rect2(Vector2.ZERO, Vector2(tab_w, tab_h)), Palette.TEXT_MID)
-		folder.draw_string(Chrome.caps_font(UiTheme.CAPTION), words_at, _tab_words, HORIZONTAL_ALIGNMENT_LEFT, tab_w - UiTheme.SP_S, px, Palette.TEXT_HI)
+		HighContrast.draw_text(folder, Chrome.caps_font(UiTheme.CAPTION), words_at, _tab_words, HORIZONTAL_ALIGNMENT_LEFT, tab_w - UiTheme.SP_S, px, Palette.TEXT_HI)
 		return
 	var screen_h := folder.get_viewport_rect().size.y
 	# D24: the folder's soft contact shadow on the glass (lifted further while it holds the focus).

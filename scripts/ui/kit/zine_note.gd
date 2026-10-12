@@ -87,7 +87,7 @@ func _draw() -> void:
 	_tape(Vector2(14, -6), -0.12)
 	_tape(Vector2(size.x - 50, -5), 0.1)
 	if title != "":
-		draw_string(Palette.marker(), Vector2(10, 18), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, PaperInk.text(Palette.INK))
+		HighContrast.draw_text(self, Palette.marker(), Vector2(10, 18), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, PaperInk.text(Palette.INK))
 
 
 func _tape(at: Vector2, angle: float) -> void:

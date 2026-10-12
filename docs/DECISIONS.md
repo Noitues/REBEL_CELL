@@ -58,6 +58,16 @@ on m14-group2. Before | after: `docs/art_review/ART-12/12q/fixes/ACCESS.jpg`.
   ticker. Reduce effects and skins compose: skins re-value the theme before hc, and the walk lifts what a skin gives.
   Test: `test_m14_12q_access.gd` sweeps title, hq, raid_setup, route and combat_start at 1.0 and 2.0 (every visible
   panel opaque, every visible word 7:1 on its backing; without the walk the same sweep finds 154 failures).
+- **Drawn words (follow-up).** Every `draw_string` / `draw_multiline_string` of player-facing words in `scripts/ui`
+  goes through `HighContrast.draw_text` / `draw_lines` (251 sites in 94 files, combat FX numbers and the cards'
+  names included): off, they draw exactly as before; under hc ink (under 2.5:1 on black: a sticker's or paper's
+  lettering) darkens to 7:1 on PAPER, any other words lift to 7:1 over a black outline of `outline_px`, and a fade
+  baked into the colour shows whole (readable or not shown, as SAVED). Exempt (decoration, not words to read): the hex
+  dump (`Chrome.draw_hex`, already off under hc), the jack-in bit rain, the wall graffiti and its smears, the mugshot's
+  height ruler, the city's billboard signs, the motion streak glyphs, the washed-out EXECUTE system word under SEND IT,
+  and the sticker lettering layers (verb, SEND IT, drip button and vinyl stickers: the sticker's own die-cut and ink
+  rim back its letters). `test_drawn_words_keep_the_promise_under_high_contrast_combat_numbers_and_card_names` records
+  what `draw_text` draws in a fight at 1.0 and 2.0 (`HighContrast.drawn`) and measures it as the Control sweep does.
 - **Colour-blind route vs network (L79): partly fixed by 12Q-RAID, finished here.** Re-checked through
   `tools/visual_qa/filters.py` (deutan) on the mode-on frames: raid_setup and b4_defence carry 12Q-RAID's hazard ticks
   and reticles; the Grid's pending raid (grid_raid_pending: the HQ's dashed what-if route) had none. `RaidRouteLayer`

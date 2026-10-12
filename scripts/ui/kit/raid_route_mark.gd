@@ -41,4 +41,4 @@ func _draw() -> void:
 	var f := Palette.display()
 	var px := roundi(r * 1.25)
 	var w := f.get_string_size(letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
-	draw_string(f, c + Vector2(-w * 0.5, f.get_ascent(px) * 0.5 - px * 0.08), letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px, red)
+	HighContrast.draw_text(self, f, c + Vector2(-w * 0.5, f.get_ascent(px) * 0.5 - px * 0.08), letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px, red)

@@ -147,7 +147,7 @@ func _draw_text(shadow: bool) -> void:
 		var ch := text[i]
 		var adv := font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 		if float(i) >= shown_from and float(i) < shown_to:
-			node.draw_string(font, Vector2(x, 0), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
+			HighContrast.draw_text(node, font, Vector2(x, 0), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
 		x += adv
 
 

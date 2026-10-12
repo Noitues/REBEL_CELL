@@ -725,7 +725,7 @@ func _number(at: Vector2, r: float, number: int, a: float) -> void:
 	var fs := maxi(1, roundi(NUMBER_FONT * Settings.text_scale * k))
 	var text := str(number)
 	var y := c.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
-	_c.draw_string(f, Vector2(box.position.x, y), text, HORIZONTAL_ALIGNMENT_CENTER, side, fs, Color(RouteInk.KEYLINE, a))
+	HighContrast.draw_text(_c, f, Vector2(box.position.x, y), text, HORIZONTAL_ALIGNMENT_CENTER, side, fs, Color(RouteInk.KEYLINE, a))
 
 
 ## The choice number's chip box (local px) on a sticker at `at` of reach `r`.
@@ -1063,7 +1063,7 @@ func _landmarks() -> void:
 		_c.draw_colored_polygon(PackedVector2Array([r.position + Vector2(sl, 0.0), r.position + Vector2(sl + bw, 0.0),
 			Vector2(r.position.x + bw * 0.6, r.end.y), Vector2(r.position.x, r.end.y)]), col)
 		var y := r.get_center().y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
-		_c.draw_string(f, Vector2(r.position.x + bw, y), String(p["text"]), HORIZONTAL_ALIGNMENT_CENTER, r.size.x - bw, fs, HighContrast.ink(col.lightened(0.15)))
+		HighContrast.draw_text(_c, f, Vector2(r.position.x + bw, y), String(p["text"]), HORIZONTAL_ALIGNMENT_CENTER, r.size.x - bw, fs, HighContrast.ink(col.lightened(0.15)))
 
 
 # --- Labels -----------------------------------------------------------------------------------
@@ -1099,7 +1099,7 @@ func _tag_box(l: Dictionary) -> void:
 	var chip := String(n.get("heat_chip", "")) if not n.is_empty() else ""
 	for line in lines:
 		var lc := RouteInk.heat_b().lightened(0.25) if chip != "" and line == chip else Palette.TEXT_HI
-		_c.draw_string(Palette.mono_for(line), Vector2(rect.position.x + pad, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HighContrast.ink(lc))
+		HighContrast.draw_text(_c, Palette.mono_for(line), Vector2(rect.position.x + pad, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HighContrast.ink(lc))
 		y += f.get_height(fs)
 
 

@@ -106,7 +106,7 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2(5, size.y), Vector2(size.x - 5, 6)), Palette.SHADOW)
 	draw_rect(Rect2(Vector2.ZERO, size), Palette.INK, false, 2.0)
 	if title != "":
-		draw_string(Palette.marker(), Vector2(12, 20.0 * title_size / TITLE_SIZE), title, HORIZONTAL_ALIGNMENT_LEFT, size.x - 24.0, title_size, Palette.INK)
+		HighContrast.draw_text(self, Palette.marker(), Vector2(12, 20.0 * title_size / TITLE_SIZE), title, HORIZONTAL_ALIGNMENT_LEFT, size.x - 24.0, title_size, Palette.INK)
 	if tape:
 		draw_rect(Rect2(size.x * 0.35, -6, 60, 14), Palette.TAPE)
 		draw_rect(Rect2(-8, size.y * 0.4, 16, 40), Palette.TAPE)
@@ -121,7 +121,7 @@ func _draw_terminal() -> void:
 	draw_rect(Rect2(Vector2(6, size.y), Vector2(size.x - 6, 8)), Palette.SHADOW)
 	draw_rect(r, PaletteSkins.chrome(Palette.TERMINAL_EDGE), false, 1.0)
 	if title != "":
-		draw_string(Palette.mono(), Vector2(14, 22), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.PAPER)
+		HighContrast.draw_text(self, Palette.mono(), Vector2(14, 22), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.PAPER)
 		draw_rect(Rect2(12, 28, size.x - 24, 2), Color(Palette.CELL_PINK, 0.85))
 	for c in [r.position, Vector2(r.end.x, 0), r.end, Vector2(0, r.end.y)]:
 		var sx := 1.0 if c.x <= 0.0 else -1.0

@@ -220,4 +220,4 @@ func _draw() -> void:
 	var lh := f.get_height(fs) * LINE_SHARE
 	var first := (rr.size.y - lh * (_lines.size() - 1) + f.get_ascent(fs) - f.get_descent(fs)) * 0.5
 	for i in _lines.size():
-		draw_string(f, Vector2(left, first + i * lh), _lines[i], HORIZONTAL_ALIGNMENT_LEFT, rr.size.x - left, fs, ink)
+		HighContrast.draw_text(self, f, Vector2(left, first + i * lh), _lines[i], HORIZONTAL_ALIGNMENT_LEFT, rr.size.x - left, fs, ink)

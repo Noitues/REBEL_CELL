@@ -112,7 +112,7 @@ static func draw_centred(ci: CanvasItem, font: Font, at: Vector2, text: String, 
 	var base := at + Vector2(-w * 0.5, size * 0.36)
 	if outline > 0:
 		ci.draw_string_outline(font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, outline, Color(Palette.INK, col.a))
-	ci.draw_string(font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+	HighContrast.draw_text(ci, font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
 
 
 ## A dashed polyline (ghosts, waiting rings): `dash` px on, `gap` px off.

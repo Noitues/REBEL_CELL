@@ -88,4 +88,4 @@ func _draw() -> void:
 	var r := Rect2(Vector2.ONE * line * 0.5, size - Vector2.ONE * line)
 	draw_rect(r, color, false, line)
 	var gap := fs * GAP_SHARE
-	draw_string(f, Vector2(gap, gap + f.get_ascent(fs) * 0.92), text, HORIZONTAL_ALIGNMENT_CENTER, size.x - gap * 2.0, fs, color)
+	HighContrast.draw_text(self, f, Vector2(gap, gap + f.get_ascent(fs) * 0.92), text, HORIZONTAL_ALIGNMENT_CENTER, size.x - gap * 2.0, fs, color)

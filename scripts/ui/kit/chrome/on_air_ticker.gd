@@ -61,10 +61,10 @@ func _draw() -> void:
 	var w := maxf(1.0, f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x)
 	var x := block.end.x + 12.0 - fmod(_offset, w)
 	while x < size.x:
-		draw_string(f, Vector2(x, base), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, PaletteSkins.chrome(Palette.NET_CYAN))
+		HighContrast.draw_text(self, f, Vector2(x, base), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, PaletteSkins.chrome(Palette.NET_CYAN))
 		x += w
 	if tex != null:
 		draw_texture_rect(tex, block, false)
 	else:
 		draw_rect(block, PaletteSkins.chrome(Palette.NET_CYAN))
-		draw_string(f, Vector2(block.position.x, base), tr("ON AIR"), HORIZONTAL_ALIGNMENT_CENTER, block.size.x, px, Palette.GLYPH_INK)
+		HighContrast.draw_text(self, f, Vector2(block.position.x, base), tr("ON AIR"), HORIZONTAL_ALIGNMENT_CENTER, block.size.x, px, Palette.GLYPH_INK)

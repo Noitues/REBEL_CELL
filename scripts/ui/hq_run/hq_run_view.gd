@@ -616,7 +616,7 @@ func _tab(id: StringName, k: float) -> void:
 	var fs := maxi(1, roundi(TAB_FONT * k))
 	_marks.draw_rect(r, Color(Palette.NIGHT_SKY, TAB_GLASS_ALPHA))
 	_marks.draw_rect(r, PaletteSkins.chrome(Palette.NET_CYAN), false, TAB_BORDER * k)
-	_marks.draw_string(f, r.position + Vector2(TAB_PAD.x * k, TAB_PAD.y * k + f.get_ascent(fs)), tab_text(id),
+	HighContrast.draw_text(_marks, f, r.position + Vector2(TAB_PAD.x * k, TAB_PAD.y * k + f.get_ascent(fs)), tab_text(id),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER)
 
 
@@ -718,7 +718,7 @@ func _chip(k: float) -> void:
 	var fs := maxi(1, roundi(CHIP_FONT * k))
 	_marks.draw_rect(r, Color(Palette.NIGHT_SKY, CHIP_GLASS_ALPHA))
 	_marks.draw_rect(r, Palette.RESIST_GOLD, false, maxf(1.0, k))
-	_marks.draw_string(f, r.position + Vector2(CHIP_PAD, CHIP_PAD + f.get_ascent(fs)), _chip_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.RESIST_GOLD)
+	HighContrast.draw_text(_marks, f, r.position + Vector2(CHIP_PAD, CHIP_PAD + f.get_ascent(fs)), _chip_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.RESIST_GOLD)
 
 
 ## The operative pin over "you are here" (the route's pin).

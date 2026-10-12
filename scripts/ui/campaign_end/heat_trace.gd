@@ -42,7 +42,7 @@ func _draw() -> void:
 		while x < size.x:
 			draw_line(Vector2(x, y), Vector2(minf(x + DASH * s, size.x), y), PaperInk.text(Palette.END_TYPE_SOFT), 1.0)
 			x += (DASH + DASH_GAP) * s
-		draw_string(f, Vector2(0, y + f.get_ascent(fs) * 0.4), str(lv), HORIZONTAL_ALIGNMENT_LEFT, left, fs, PaperInk.text(Palette.END_TYPE_SOFT))
+		HighContrast.draw_text(self, f, Vector2(0, y + f.get_ascent(fs) * 0.4), str(lv), HORIZONTAL_ALIGNMENT_LEFT, left, fs, PaperInk.text(Palette.END_TYPE_SOFT))
 	var values: Array[int] = [0]
 	values.append_array(marks)
 	values.append(heat)

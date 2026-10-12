@@ -43,6 +43,7 @@ func before_each() -> void:
 
 func after_each() -> void:
 	Motion.force_live = false
+	HighContrast.drawn = null
 	if Settings.high_contrast != _hc:
 		Settings.set_high_contrast(_hc)
 	if not is_equal_approx(Settings.text_scale, _scale):
@@ -343,6 +344,69 @@ func test_every_screen_the_pack_reaches_headless_keeps_the_promise_under_high_co
 		RunManager.reset()
 	assert_gt(_measured, 100, "the sweep read the screens' words (%d)" % _measured)
 	assert_eq(found, [] as Array[String], "high contrast: opaque panels and 7:1 words on every screen reached")
+
+
+# --- Drawn words (a view's own _draw) ----------------------------------------------------------------
+
+## Every word HighContrast.draw_text / draw_lines drew under high contrast: light words at 7:1 on
+## a BG outline at least outline_px thick, ink at 7:1 on PAPER; [] when so.
+func _drawn_violations(drawn: Array) -> Array[String]:
+	var out: Array[String] = []
+	for d: Dictionary in drawn:
+		var col: Color = d["color"]
+		var fs: int = d["fs"]
+		if int(d["outline"]) > 0:
+			if int(d["outline"]) < HighContrast.outline_px(fs) or not Color(d["outline_color"], 1.0).is_equal_approx(HighContrast.BG):
+				out.append("\"%s\": outline %d < %d" % [d["text"], d["outline"], HighContrast.outline_px(fs)])
+			elif Palette.contrast(Color(col, 1.0), HighContrast.BG) < HighContrast.HC_MIN_CONTRAST - 0.01:
+				out.append("\"%s\": %.2f:1 on its outline" % [d["text"], Palette.contrast(Color(col, 1.0), HighContrast.BG)])
+		elif Palette.contrast(Color(col, 1.0), Palette.PAPER) < HighContrast.HC_MIN_CONTRAST - 0.01:
+			out.append("\"%s\": ink %.2f:1 on paper" % [d["text"], Palette.contrast(Color(col, 1.0), Palette.PAPER)])
+	return out
+
+
+func _redraw_all(root: Node) -> void:
+	for n in root.find_children("*", "CanvasItem", true, false):
+		(n as CanvasItem).queue_redraw()
+	if root is CanvasItem:
+		(root as CanvasItem).queue_redraw()
+
+
+func test_drawn_words_keep_the_promise_under_high_contrast_combat_numbers_and_card_names() -> void:
+	Settings.set_high_contrast(true)
+	for k in [1.0, 2.0]:
+		Settings.set_text_scale(k)
+		RunManager.new_campaign(1)
+		var holder := _holder()
+		var combat: Control = load(COMBAT).instantiate()
+		combat.auto_start = false
+		holder.add_child(combat)
+		combat.start_fight(&"collections_agent", 5)
+		await _settle_hc(combat)
+		combat.skip_motion()
+		Motion.force_live = true
+		var drawn: Array = []
+		HighContrast.drawn = drawn
+		combat.fx_layer.number(Vector2(400, 300), "-11", Palette.HARM, &"number_float")
+		combat.fx_layer.number(Vector2(800, 300), "+3", Palette.CELL_ACID, &"number_float")
+		_redraw_all(combat)
+		await _frames(2)
+		HighContrast.drawn = null
+		Motion.force_live = false
+		var texts: Array = drawn.map(func(d: Dictionary) -> String: return String(d["text"]))
+		assert_has(texts, "-11", "x%.1f: the FX damage number is drawn through the kit" % k)
+		assert_has(texts, "+3", "x%.1f: and a gain" % k)
+		var cards: Array[Node] = combat.find_children("*", "ZineCard", true, false)
+		assert_gt(cards.size(), 0, "a hand to read")
+		for c: Node in cards:
+			if (c as CanvasItem).is_visible_in_tree():
+				assert_has(texts, String(c.card_title).to_upper(), "x%.1f: card name %s drawn through the kit" % [k, c.card_title])
+		assert_gt(drawn.size(), 30, "x%.1f: the fight's drawn words were read (%d)" % [k, drawn.size()])
+		assert_eq(_drawn_violations(drawn), [] as Array[String], "x%.1f: every drawn word at 7:1 on its backing" % k)
+		combat.skip_motion()
+		holder.queue_free()
+		await _frames(2)
+		RunManager.reset()
 
 
 # --- L80, L81: SAVED and the tutorial's Next --------------------------------------------------------

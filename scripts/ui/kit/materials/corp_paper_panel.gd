@@ -163,7 +163,7 @@ func _draw_letterhead(on: Control) -> void:
 	var base := top_pad + head_h - UiTheme.SP_M
 	for i in lines.size():
 		var y := base - font.get_height(px) * float(lines.size() - 1 - i)
-		on.draw_string(font, Vector2(UiTheme.SP_L, y), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, px, corp_color.darkened(0.35))
+		HighContrast.draw_text(on, font, Vector2(UiTheme.SP_L, y), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, px, corp_color.darkened(0.35))
 	on.draw_rect(Rect2(UiTheme.SP_L, top_pad + head_h - RULE_PX - UiTheme.SP_XS, size.x - UiTheme.SP_L * 2.0, RULE_PX), corp_color.darkened(0.35))
 
 
@@ -296,7 +296,7 @@ func _draw_stamp() -> void:
 	col.a = 0.85
 	stamp_slot.draw_set_transform(STAMP_SLOT * 0.5, deg_to_rad(STAMP_TILT_DEG))
 	stamp_slot.draw_rect(Rect2(-(sz + STAMP_BOX_PAD) * 0.5, sz + STAMP_BOX_PAD), col, false, STAMP_LINE)
-	stamp_slot.draw_string(font, Vector2(-sz.x * 0.5, sz.y * 0.32), stamp, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
+	HighContrast.draw_text(stamp_slot, font, Vector2(-sz.x * 0.5, sz.y * 0.32), stamp, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
 	stamp_slot.draw_set_transform(Vector2.ZERO, 0.0)
 
 

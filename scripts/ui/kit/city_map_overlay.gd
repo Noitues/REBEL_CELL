@@ -1486,8 +1486,8 @@ func _draw_changes() -> void:
 		_hi.draw_rect(box, Color(plate, plate.a * a))
 		_hi.draw_rect(box, Color(col, a), false, HighContrast.edge(2.0 * k))
 		var cap := HighContrast.ink(Color(Palette.PAPER, 0.85))
-		_hi.draw_string(cf, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_ascent(cfs)), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(cap, cap.a * a))
-		_hi.draw_string(f, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_height(cfs) + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(HighContrast.ink(col), a))
+		HighContrast.draw_text(_hi, cf, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_ascent(cfs)), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(cap, cap.a * a))
+		HighContrast.draw_text(_hi, f, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_height(cfs) + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(HighContrast.ink(col), a))
 
 
 ## ANIM-R5 P8: the forecast change's caption and its lettering (px at text scale 1.0).
@@ -1784,7 +1784,7 @@ func _node(n: Dictionary) -> void:
 			var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			var lab_at := slot + Vector2(-w * 0.5, ar * 1.25 + LABEL_GAP * _k() + f.get_ascent(fs))
 			_c.draw_rect(Rect2(lab_at - Vector2(TAG_PAD * _k(), f.get_ascent(fs) + TAG_PAD * _k()), Vector2(w, f.get_height(fs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * _k()), HighContrast.plate(Color(Palette.NIGHT_SKY, 0.86)))
-			_c.draw_string(f, lab_at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HighContrast.ink(AssetIcon.color_of(assets[k])))
+			HighContrast.draw_text(_c, f, lab_at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HighContrast.ink(AssetIcon.color_of(assets[k])))
 	if draw_markers and markers.has(n["id"]):
 		var names: Array = markers[n["id"]]
 		var row := _marker_row(n)
@@ -1919,7 +1919,7 @@ func _draw_boss_chip(n: Dictionary, at: Vector2) -> void:
 	boss_chip_rect = r
 	_c.draw_rect(r, HighContrast.plate(Color(Palette.NIGHT_SKY, 0.9)))
 	_c.draw_rect(r, Palette.RESIST_GOLD, false, HighContrast.edge(maxf(1.0, k)))
-	_c.draw_string(f, r.position + Vector2(pad, pad + f.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HighContrast.ink(Palette.RESIST_GOLD))
+	HighContrast.draw_text(_c, f, r.position + Vector2(pad, pad + f.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HighContrast.ink(Palette.RESIST_GOLD))
 
 
 ## True when node `n` is the Central Server (the boss: its chip and TARGET pencil).
@@ -3354,7 +3354,7 @@ func _tag_box(l: Dictionary) -> void:
 	for line in l["lines"]:
 		# ANIM-R4 H11b: a result line "50 → 40 HOLDS" draws its arrow from the fallback face.
 		# The street marker's words stay the Cell's pink (S-ROUTE c).
-		_c.draw_string(Palette.mono_for(line), Vector2(rect.position.x + pad, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
+		HighContrast.draw_text(_c, Palette.mono_for(line), Vector2(rect.position.x + pad, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
 			HighContrast.ink(Palette.CELL_PINK if l.get("key", "") == HERE_KEY else Palette.PAPER))
 		y += f.get_height(fs)
 
@@ -3496,4 +3496,4 @@ static func draw_icon(ci: CanvasItem, kind: String, p: Vector2, r: float, col: C
 static func _icon_text(ci: CanvasItem, f: Font, text: String, p: Vector2, r: float, col: Color) -> void:
 	var fs := maxi(1, roundi(r * (1.25 if text.length() == 1 else 0.95)))
 	var y := p.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
-	ci.draw_string(f, Vector2(p.x - r, y), text, HORIZONTAL_ALIGNMENT_CENTER, r * 2.0, fs, col)
+	HighContrast.draw_text(ci, f, Vector2(p.x - r, y), text, HORIZONTAL_ALIGNMENT_CENTER, r * 2.0, fs, col)

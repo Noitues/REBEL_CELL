@@ -654,13 +654,13 @@ func _draw_wheel() -> void:
 		var am := _angle(i)
 		SliceIcon.draw_on_slice(_wheel, c + Vector2(cos(am), sin(am)) * 140.0, 16, type, col)
 		if s != null and s.base_output > 0:
-			_wheel.draw_string(Palette.display(), c + Vector2(cos(am), sin(am)) * 208.0 + Vector2(-20, 10), str(s.base_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 26, col.lightened(0.35))
+			HighContrast.draw_text(_wheel, Palette.display(), c + Vector2(cos(am), sin(am)) * 208.0 + Vector2(-20, 10), str(s.base_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 26, col.lightened(0.35))
 		if i < firmware.size() and firmware[i] != &"":
 			_wheel.draw_rect(Rect2(c + Vector2(cos(am), sin(am)) * 116.0 - Vector2(5, 5), Vector2(10, 10)), Palette.NET_CYAN)
 	_wheel.draw_circle(c, r0 - 6, Color("#07080F"))
 	_wheel.draw_arc(c, r1, 0, TAU, 64, wheel_color, 2.5)
 	if hub == null and ring.is_empty():
-		_wheel.draw_string(Palette.marker(), c + Vector2(-60, 8), tr("%d SLICES") % n, HORIZONTAL_ALIGNMENT_CENTER, 120, 18, wheel_color)
+		HighContrast.draw_text(_wheel, Palette.marker(), c + Vector2(-60, 8), tr("%d SLICES") % n, HORIZONTAL_ALIGNMENT_CENTER, 120, 18, wheel_color)
 	_draw_core(c)
 	if selected >= 0:
 		var am := _angle(selected)
@@ -681,7 +681,7 @@ func open_slot(index: int) -> void:
 	var type := s.slice_type if s != null else RC.SliceType.NULL
 	icon.draw.connect(func() -> void:
 		SliceIcon.draw_icon(icon, Vector2(34, 32), 24, type, Palette.slice_color(type))
-		icon.draw_string(Palette.display(), Vector2(76, 44), _slice_text(index), HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Palette.PAPER))
+		HighContrast.draw_text(icon, Palette.display(), Vector2(76, 44), _slice_text(index), HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Palette.PAPER))
 	pop.body.add_child(icon)
 	var desc := Label.new()
 	UiWrap.whole_words(desc)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
@@ -726,19 +726,19 @@ func _draw_core(c: Vector2) -> void:
 		_wheel.draw_polyline(pts, Palette.CELL_ACID if hot else Palette.NEON_VIOLET, 1.5)
 		var label := ring[k].display_name.left(3).to_upper() if ring[k] != null else "?"
 		var at := c + Vector2(cos(mid), sin(mid)) * (RING_INNER + RING_OUTER) * 0.5
-		_wheel.draw_string(Palette.mono(), at + Vector2(-20, 5), label, HORIZONTAL_ALIGNMENT_CENTER, 40, 13, Palette.PAPER)
+		HighContrast.draw_text(_wheel, Palette.mono(), at + Vector2(-20, 5), label, HORIZONTAL_ALIGNMENT_CENTER, 40, 13, Palette.PAPER)
 	if hub != null:
 		var hot_hub := not _core_pads.is_empty() and _core_pads[0].has_focus()
 		_wheel.draw_circle(c, HUB_RADIUS, Color(Palette.NIGHT_SKY, 0.95))
 		_wheel.draw_arc(c, HUB_RADIUS, 0, TAU, 48, Palette.CELL_ACID if hot_hub else wheel_color, 2.0)
-		_wheel.draw_string(Palette.mono(), c + Vector2(-HUB_RADIUS, -4), tr("HUB"), HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0, 11, Color(Palette.PAPER, 0.7))
+		HighContrast.draw_text(_wheel, Palette.mono(), c + Vector2(-HUB_RADIUS, -4), tr("HUB"), HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0, 11, Color(Palette.PAPER, 0.7))
 		# The hub's name shrinks to fit the disc.
 		var hub_name := TextDb.t(hub, "display_name").to_upper()
 		var fs := HUB_FONT_SIZE
 		var w := Palette.marker().get_string_size(hub_name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		if w > HUB_RADIUS * 2.0 - 8.0:
 			fs = maxi(HUB_MIN_FONT_SIZE, floori(fs * (HUB_RADIUS * 2.0 - 8.0) / w))
-		_wheel.draw_string(Palette.marker(), c + Vector2(-HUB_RADIUS + 4, 14), hub_name, HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0 - 8, fs, wheel_color)
+		HighContrast.draw_text(_wheel, Palette.marker(), c + Vector2(-HUB_RADIUS + 4, 14), hub_name, HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0 - 8, fs, wheel_color)
 
 
 ## The detail popup of the hub core or an inner ring segment.

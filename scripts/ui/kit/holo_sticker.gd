@@ -108,4 +108,4 @@ func _draw_plate() -> void:
 	var r := Rect2(Vector2.ZERO, _plate.size)
 	_plate.draw_rect(r, Palette.CELL_PINK)
 	_plate.draw_rect(r, Palette.STICKER_DIE_CUT, false, 2.0)
-	_plate.draw_string(f, Vector2(PLATE_PAD.x * text_scale, PLATE_PAD.y * text_scale + f.get_ascent(ps)), plate, HORIZONTAL_ALIGNMENT_LEFT, -1, ps, Palette.STICKER_DIE_CUT)
+	HighContrast.draw_text(_plate, f, Vector2(PLATE_PAD.x * text_scale, PLATE_PAD.y * text_scale + f.get_ascent(ps)), plate, HORIZONTAL_ALIGNMENT_LEFT, -1, ps, Palette.STICKER_DIE_CUT)

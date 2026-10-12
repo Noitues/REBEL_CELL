@@ -224,7 +224,7 @@ func _draw_seal() -> void:
 		var font := Palette.display()
 		var px := UiTheme.font_px_at(UiTheme.TITLE, text_k if text_k > 0.0 else Settings.text_scale)
 		var w := font.get_string_size(seal_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
-		stamp_slot.draw_string(font, c + Vector2(-w.x * 0.5, w.y * 0.32), seal_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ring)
+		HighContrast.draw_text(stamp_slot, font, c + Vector2(-w.x * 0.5, w.y * 0.32), seal_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ring)
 	# the red fracture down the middle, across the ring
 	var pts := PackedVector2Array()
 	for f: Vector2 in FRACTURE:
@@ -249,7 +249,7 @@ func _draw_stamp() -> void:
 		var ink: Color = stamp_shadow_color() if pass_shadow else col
 		stamp_slot.draw_set_transform(at, deg_to_rad(STAMP_TILT_DEG))
 		stamp_slot.draw_rect(box, ink, false, 3.0)
-		stamp_slot.draw_string(font, Vector2(-sz.x * 0.5, sz.y * 0.32), STAMP_WORD, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ink)
+		HighContrast.draw_text(stamp_slot, font, Vector2(-sz.x * 0.5, sz.y * 0.32), STAMP_WORD, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ink)
 	stamp_slot.draw_set_transform(Vector2.ZERO, 0.0)
 
 

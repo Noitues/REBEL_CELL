@@ -58,9 +58,9 @@ func _draw() -> void:
 	var npx := roundi(NUMBER_PX * k)
 	var mpx := roundi(MAX_PX * k)
 	var base := disp.get_ascent(npx)
-	draw_string(disp, Vector2(0, base), str(value), HORIZONTAL_ALIGNMENT_LEFT, -1, npx, color)
+	HighContrast.draw_text(self, disp, Vector2(0, base), str(value), HORIZONTAL_ALIGNMENT_LEFT, -1, npx, color)
 	var x := disp.get_string_size(str(value), HORIZONTAL_ALIGNMENT_LEFT, -1, npx).x + GAP * k
-	draw_string(mono, Vector2(x, base), "/ %d" % most, HORIZONTAL_ALIGNMENT_LEFT, -1, mpx, Palette.TEXT_MID)
+	HighContrast.draw_text(self, mono, Vector2(x, base), "/ %d" % most, HORIZONTAL_ALIGNMENT_LEFT, -1, mpx, Palette.TEXT_MID)
 	x += mono.get_string_size("/ %d" % most, HORIZONTAL_ALIGNMENT_LEFT, -1, mpx).x + GAP * 2.0 * k
 	var lit := lit_pips(value, most)
 	var y := (size.y - PIP.y * k) * 0.5

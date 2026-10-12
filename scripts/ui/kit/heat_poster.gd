@@ -616,7 +616,7 @@ func _draw_note() -> void:
 	var fs := note_font_size()
 	var lines := note_lines()
 	for i in lines.size():
-		_note.draw_string(f, Vector2(NOTE_PAD, NOTE_PAD + fs * BANNER_LINE * i + f.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER)
+		HighContrast.draw_text(_note, f, Vector2(NOTE_PAD, NOTE_PAD + fs * BANNER_LINE * i + f.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER)
 
 
 ## True while the consequence note shows (tests).
@@ -940,7 +940,7 @@ func _draw() -> void:
 	if poster:
 		draw_rect(Rect2(Vector2.ZERO, size), Palette.PAPER_ALT)
 		draw_rect(Rect2(Vector2.ZERO, size), Palette.INK, false, 3.0)
-		draw_string(Palette.display(), Vector2(10, 30), tr("WANTED"), HORIZONTAL_ALIGNMENT_LEFT, size.x - 20, 26, Palette.INK)
+		HighContrast.draw_text(self, Palette.display(), Vector2(10, 30), tr("WANTED"), HORIZONTAL_ALIGNMENT_LEFT, size.x - 20, 26, Palette.INK)
 		PortraitArt.draw(self, Rect2(size.x * 0.5 - MUG_SIZE * 0.5, 38, MUG_SIZE, MUG_SIZE), wanted)
 		y = POSTER_BLOCK_TOP
 	# The ransom-note word, cut into letters (translated; H24).
@@ -965,7 +965,7 @@ func _draw() -> void:
 		var lfs := 18
 		while lfs > 8 and lf.get_string_size(letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > strip_w - 4.0:
 			lfs -= 1
-		draw_string(lf, strip.position + Vector2(maxf(2.0, (strip_w - lf.get_string_size(letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x) * 0.5), 22), letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, Palette.INK)
+		HighContrast.draw_text(self, lf, strip.position + Vector2(maxf(2.0, (strip_w - lf.get_string_size(letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x) * 0.5), 22), letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, Palette.INK)
 		x += step
 	x = minf(x, size.x - 6.0 - num_w)
 	# ANIM-R1 M6: the number rolls, grows and flashes white on a crossing.
@@ -977,9 +977,9 @@ func _draw() -> void:
 		num_col = num_col.lerp(Palette.PAPER, clampf((number_scale - 1.0) / maxf(0.001, Motion.amplitude(&"heat_number_pop") - 1.0), 0.0, 1.0))
 	var num_at := Vector2(x + 6, y + 30)
 	draw_set_transform(num_at + Vector2(0, -NUMBER_FONT * 0.35), 0.0, Vector2.ONE * number_scale)
-	draw_string(Palette.display(), Vector2(0, NUMBER_FONT * 0.35), "%d" % roundi(shown_heat), HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_FONT, num_col)
+	HighContrast.draw_text(self, Palette.display(), Vector2(0, NUMBER_FONT * 0.35), "%d" % roundi(shown_heat), HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_FONT, num_col)
 	draw_set_transform(Vector2.ZERO)
-	draw_string(Palette.mono(), Vector2(x + 6, y + 44), "/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.INK if poster else Palette.PAPER)
+	HighContrast.draw_text(self, Palette.mono(), Vector2(x + 6, y + 44), "/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.INK if poster else Palette.PAPER)
 	var bar := Rect2(8, y + 44, size.x - 16, 8)
 	draw_rect(bar, Color(Palette.INK, 0.3) if poster else Color(Palette.PAPER, 0.15))
 	draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(float(heat) / maxf(1.0, heat_max), 0.0, 1.0), bar.size.y)), band_color())
@@ -994,10 +994,10 @@ func _draw() -> void:
 		draw_set_transform(c, 0.0, Vector2.ONE * stamp_scale)
 		var box := Rect2(r.position - c, r.size).grow(STAMP_BOX_PAD)
 		draw_rect(box, Color(hot_color, clampf((stamp_scale - 1.0) * 4.0, 0.0, 1.0)), false, 2.0)
-		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE) - c, tr(BAND_WORDS[mini(shown_band(), BAND_WORDS.size() - 1)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
+		HighContrast.draw_text(self, Palette.marker(), Vector2(8, y + BAND_BASELINE) - c, tr(BAND_WORDS[mini(shown_band(), BAND_WORDS.size() - 1)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
 		draw_set_transform(Vector2.ZERO)
 	else:
-		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE), tr(BAND_WORDS[mini(shown_band(), BAND_WORDS.size() - 1)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
+		HighContrast.draw_text(self, Palette.marker(), Vector2(8, y + BAND_BASELINE), tr(BAND_WORDS[mini(shown_band(), BAND_WORDS.size() - 1)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
 	if banner_alpha > 0.0:
 		_draw_banner(y)
 
@@ -1030,10 +1030,10 @@ func _draw_banner(y: float) -> void:
 	_draw_eye(Vector2(x + fs * EYE_W * 0.5, top + line_h * lines.size() * 0.5), fs, Color(col, a))
 	x += fs * (EYE_W + EYE_GAP)
 	for i in lines.size():
-		draw_string(f, Vector2(x, top + line_h * i + f.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col.lerp(Palette.PAPER, 0.25), a))
+		HighContrast.draw_text(self, f, Vector2(x, top + line_h * i + f.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col.lerp(Palette.PAPER, 0.25), a))
 	var sy := top + line_h * lines.size()
 	for i in subs.size():
-		draw_string(Palette.mono(), Vector2(box.position.x + BANNER_PAD, sy + sfs * BANNER_LINE * i + Palette.mono().get_ascent(sfs)), subs[i],
+		HighContrast.draw_text(self, Palette.mono(), Vector2(box.position.x + BANNER_PAD, sy + sfs * BANNER_LINE * i + Palette.mono().get_ascent(sfs)), subs[i],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, Color(Palette.PAPER, a))
 	draw_set_transform(Vector2.ZERO)
 

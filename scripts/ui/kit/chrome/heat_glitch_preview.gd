@@ -65,5 +65,5 @@ func _draw() -> void:
 		var chosen := Settings.heat_glitch == on
 		draw_rect(r, PaletteSkins.chrome(Palette.NET_CYAN) if chosen else Color(PaletteSkins.chrome(Palette.NET_CYAN), 0.3), false, 2.0 if chosen else 1.0)
 		var words := (tr("LIMITED // slow layer only") if limited() else tr("ON // slip + split")) if on else tr("OFF // static edge tint")
-		draw_string(f, Vector2(r.position.x, r.end.y + 4.0 + f.get_ascent(cp)), words, HORIZONTAL_ALIGNMENT_LEFT, FRAME.x, cp,
+		HighContrast.draw_text(self, f, Vector2(r.position.x, r.end.y + 4.0 + f.get_ascent(cp)), words, HORIZONTAL_ALIGNMENT_LEFT, FRAME.x, cp,
 			PaletteSkins.chrome(Palette.NET_CYAN) if chosen else Palette.TEXT_LO)

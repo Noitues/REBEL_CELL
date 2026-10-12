@@ -176,12 +176,12 @@ static func draw_header(ci: CanvasItem, r: Rect2, title: String, accent: Color, 
 	ci.draw_line(Vector2(strip.position.x, strip.end.y), Vector2(strip.end.x, strip.end.y), Color(accent, 0.6), 1.0)
 	var f := caps_font(step)
 	var base := strip.position.y + (h + f.get_ascent(size) - f.get_descent(size)) * 0.5
-	ci.draw_string(f, Vector2(strip.position.x + size * 0.6, base), "> " + title, HORIZONTAL_ALIGNMENT_LEFT, -1, size, accent)
+	HighContrast.draw_text(ci, f, Vector2(strip.position.x + size * 0.6, base), "> " + title, HORIZONTAL_ALIGNMENT_LEFT, -1, size, accent)
 	var right := strip.end.x - CHAMFER - SQUARE - size * 0.4
 	ci.draw_rect(Rect2(Vector2(right, strip.position.y + (h - SQUARE) * 0.5), Vector2(SQUARE, SQUARE)), accent)
 	if tag != "":
 		var tw := f.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 		var chip := Rect2(Vector2(right - tw - size * 1.4, strip.position.y + h * 0.18), Vector2(tw + size * 0.8, h * 0.64))
 		ci.draw_rect(chip, Color(accent, 0.9), false, 1.0)
-		ci.draw_string(f, Vector2(chip.position.x + size * 0.4, base), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, size, accent)
+		HighContrast.draw_text(ci, f, Vector2(chip.position.x + size * 0.4, base), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, size, accent)
 	return h

@@ -278,7 +278,7 @@ func _draw() -> void:
 				var mp := p + Vector2(-20 + k * 14, -h - 22)
 				draw_circle(mp, 6, corp_col)
 				draw_circle(mp, 9, Color(corp_col, 0.35))
-			draw_string(Palette.mono(), p + Vector2(-40, -h - 30), ", ".join(names), HORIZONTAL_ALIGNMENT_LEFT, 140 * Settings.text_scale, label_size(DETAIL_FONT), corp_col)
+			HighContrast.draw_text(self, Palette.mono(), p + Vector2(-40, -h - 30), ", ".join(names), HORIZONTAL_ALIGNMENT_LEFT, 140 * Settings.text_scale, label_size(DETAIL_FONT), corp_col)
 	for l in layout_labels(jobs, bodies):
 		_draw_label(l)
 
@@ -405,7 +405,7 @@ func _draw_label(l: Dictionary) -> void:
 		x += pips.x + PIP_TEXT_GAP
 	for k in lines.size():
 		var line: Array = lines[k]
-		draw_string(f, Vector2(x if k == 0 else r.position.x + LABEL_PAD, y + f.get_ascent(line[1])), line[0], HORIZONTAL_ALIGNMENT_LEFT, -1, line[1], line[2])
+		HighContrast.draw_text(self, f, Vector2(x if k == 0 else r.position.x + LABEL_PAD, y + f.get_ascent(line[1])), line[0], HORIZONTAL_ALIGNMENT_LEFT, -1, line[1], line[2])
 		drawn_labels.append({"text": line[0], "size": line[1]})
 		y += f.get_height(line[1])
 

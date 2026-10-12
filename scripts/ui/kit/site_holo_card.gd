@@ -121,10 +121,10 @@ func _header(on: Control) -> void:
 	var spx := int(lay["sub_px"])
 	var y := PAD * 0.5 * _k
 	for line in lay["title"] as PackedStringArray:
-		on.draw_string(f, Vector2(x, y + f.get_ascent(tpx)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, tpx, ink)
+		HighContrast.draw_text(on, f, Vector2(x, y + f.get_ascent(tpx)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, tpx, ink)
 		y += f.get_height(tpx)
 	for line in lay["sub"] as PackedStringArray:
-		on.draw_string(mono, Vector2(x, y + mono.get_ascent(spx)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, spx, ink)
+		HighContrast.draw_text(on, mono, Vector2(x, y + mono.get_ascent(spx)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, spx, ink)
 		y += mono.get_height(spx)
 
 

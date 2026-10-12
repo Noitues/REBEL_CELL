@@ -204,7 +204,7 @@ static func blade(ci: CanvasItem, center: Vector2, k: float, deg: float, rt: flo
 		var t := str(index)
 		var font2 := Palette.display()
 		var tw2 := font2.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, nf).x
-		ci.draw_string(font2, Vector2(tab.x - tw2 * 0.5, tab.y + cap_height(font2, nf) * 0.5), t, HORIZONTAL_ALIGNMENT_LEFT, -1, nf, ink)
+		HighContrast.draw_text(ci, font2, Vector2(tab.x - tw2 * 0.5, tab.y + cap_height(font2, nf) * 0.5), t, HORIZONTAL_ALIGNMENT_LEFT, -1, nf, ink)
 
 
 ## The rail over a needle (3.2): the channel tinted the program colour with brackets, its text
@@ -364,7 +364,7 @@ static func badge(ci: CanvasItem, center: Vector2, k: float, deg: float, span: f
 		var box := Rect2(tp - Vector2(tw * 0.5 + 3.0, fs * 0.55), Vector2(tw + 6.0, fs * 1.1))
 		ci.draw_rect(box, Color(Palette.INK, 0.92 * alpha))
 		ci.draw_rect(box, Color(Palette.RESIST_GOLD, alpha), false, 1.0)
-		ci.draw_string(font, Vector2(box.position.x + 3.0, tp.y + cap_height(font, fs) * 0.5), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.RESIST_GOLD, alpha))
+		HighContrast.draw_text(ci, font, Vector2(box.position.x + 3.0, tp.y + cap_height(font, fs) * 0.5), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.RESIST_GOLD, alpha))
 
 
 ## The boss nameplate banner as the blade's mount (frames.banner, mount): dark plate with the corp

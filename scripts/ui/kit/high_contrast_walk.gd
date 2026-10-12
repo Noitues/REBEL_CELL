@@ -38,9 +38,9 @@ const FIELD_BOXES: Array[StringName] = [&"normal", &"focus", &"read_only"]
 ## A box this opaque already backs its words (a sticker's paper): it keeps its fill.
 const OPAQUE_ALPHA := 0.9
 ## Words a view gives less alpha than this are hidden (a layout stand-in, a reveal not begun).
-const HIDDEN_ALPHA := 0.05
+const HIDDEN_ALPHA := HighContrast.HIDDEN_ALPHA
 ## Words with less contrast than this on HighContrast.BG are ink: they sit on paper or a sticker.
-const INK_MAX_CONTRAST := 2.5
+const INK_MAX_CONTRAST := HighContrast.INK_MAX_CONTRAST
 
 static var _installed := false
 static var _pending: Array = []

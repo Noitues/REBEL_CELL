@@ -124,10 +124,10 @@ func _draw() -> void:
 	var ps := roundi(PRINT_PX * s)
 	draw_rect(Rect2(r.position, Vector2(r.size.x, HEAD_H * s)), Palette.LABEL_TAPE)
 	var hs := roundi(HEAD_PX * s)
-	draw_string(mono, Vector2(PAD * s, (HEAD_H * s + mono.get_ascent(hs) - mono.get_descent(hs)) * 0.5), head_text, HORIZONTAL_ALIGNMENT_LEFT, r.size.x * 0.7, hs, Palette.TEXT_HI)
-	draw_string(mono, Vector2(r.size.x * 0.7, (HEAD_H * s + mono.get_ascent(hs) - mono.get_descent(hs)) * 0.5), head_tag, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x * 0.3 - PAD * s, hs, Palette.CRT_AMBER)
+	HighContrast.draw_text(self, mono, Vector2(PAD * s, (HEAD_H * s + mono.get_ascent(hs) - mono.get_descent(hs)) * 0.5), head_text, HORIZONTAL_ALIGNMENT_LEFT, r.size.x * 0.7, hs, Palette.TEXT_HI)
+	HighContrast.draw_text(self, mono, Vector2(r.size.x * 0.7, (HEAD_H * s + mono.get_ascent(hs) - mono.get_descent(hs)) * 0.5), head_tag, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x * 0.3 - PAD * s, hs, Palette.CRT_AMBER)
 	var fy := r.end.y - FOOT_H * s * 0.4
-	draw_string(mono, Vector2(PAD * s, fy), foot_text, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - BARCODE.x * s - PAD * 3.0 * s, ps, Palette.TEXT_LO)
+	HighContrast.draw_text(self, mono, Vector2(PAD * s, fy), foot_text, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - BARCODE.x * s - PAD * 3.0 * s, ps, Palette.TEXT_LO)
 	var bx := r.end.x - PAD * s - BARCODE.x * s
 	for i in int(BARCODE.x * s / 2.0):
 		if absi(hash([i, 3])) % 3 != 0:

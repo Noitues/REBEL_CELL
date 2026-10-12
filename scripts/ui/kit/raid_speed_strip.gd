@@ -68,11 +68,11 @@ func _draw_keys() -> void:
 		_keys.draw_rect(box, Color(PaletteSkins.chrome(Palette.NET_CYAN), a), false, 1.0)
 		var word := tr(key)
 		var tw := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
-		_keys.draw_string(f, Vector2(box.get_center().x - tw * 0.5, box.get_center().y + f.get_ascent(px) * 0.4), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(PaletteSkins.chrome(Palette.NET_CYAN), a))
+		HighContrast.draw_text(_keys, f, Vector2(box.get_center().x - tw * 0.5, box.get_center().y + f.get_ascent(px) * 0.4), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(PaletteSkins.chrome(Palette.NET_CYAN), a))
 		x += w + GAP * k
 	if size.x - x < _step_w():
 		return
-	_keys.draw_string(f, Vector2(x + GAP * k, size.y * 0.5 + f.get_ascent(px) * 0.4), tr(STEP_IDLE) % steps_max, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(Palette.TERMINAL_TEXT, a))
+	HighContrast.draw_text(_keys, f, Vector2(x + GAP * k, size.y * 0.5 + f.get_ascent(px) * 0.4), tr(STEP_IDLE) % steps_max, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(Palette.TERMINAL_TEXT, a))
 
 
 ## Dresses a live playout button `b` as a key of this strip: navy key with a cyan edge, lit

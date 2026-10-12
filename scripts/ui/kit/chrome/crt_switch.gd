@@ -155,9 +155,9 @@ func _draw() -> void:
 	var y := PAD.y + nf.get_ascent(np)
 	var dim := disabled
 	if hot and not dim:
-		draw_string(nf, Vector2(PAD.x, y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, np, Palette.FOCUS if st == KitState.FOCUS else PaletteSkins.chrome(Palette.NET_CYAN))
+		HighContrast.draw_text(self, nf, Vector2(PAD.x, y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, np, Palette.FOCUS if st == KitState.FOCUS else PaletteSkins.chrome(Palette.NET_CYAN))
 	var name_h := nf.get_multiline_string_size(p[0], HORIZONTAL_ALIGNMENT_LEFT, _line_room(size.x), np, -1, WRAP).y
-	draw_multiline_string(nf, Vector2(x, y), p[0], HORIZONTAL_ALIGNMENT_LEFT, _line_room(size.x), np, -1, Palette.TEXT_LO if dim else Palette.TEXT_HI, WRAP)
+	HighContrast.draw_lines(self, nf, Vector2(x, y), p[0], HORIZONTAL_ALIGNMENT_LEFT, _line_room(size.x), np, -1, Palette.TEXT_LO if dim else Palette.TEXT_HI, WRAP)
 	var s := Settings.text_scale
 	var pill := Rect2(Vector2(r.end.x - PAD.x - PILL.x * s, PAD.y + (nf.get_height(np) - PILL.y * s) * 0.5), PILL * s)
 	var line_y := y + name_h - nf.get_ascent(np)
@@ -166,7 +166,7 @@ func _draw() -> void:
 		line_y += LINE_GAP + Chrome.body_font().get_ascent(lp)
 		var bf := Chrome.body_font()
 		var room := _line_room(size.x)
-		draw_multiline_string(bf, Vector2(x, line_y), p[1], HORIZONTAL_ALIGNMENT_LEFT, room, lp, -1, Palette.TEXT_LO if dim else Palette.TEXT_MID,
+		HighContrast.draw_lines(self, bf, Vector2(x, line_y), p[1], HORIZONTAL_ALIGNMENT_LEFT, room, lp, -1, Palette.TEXT_LO if dim else Palette.TEXT_MID,
 			TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND)
 		line_y += bf.get_multiline_string_size(p[1], HORIZONTAL_ALIGNMENT_LEFT, room, lp, -1, TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND).y - bf.get_ascent(lp)
 	var n := _note_text()
@@ -177,7 +177,7 @@ func _draw() -> void:
 		var chip := Rect2(Vector2(r.end.x - PAD.x - tw - 10.0, line_y + LINE_GAP * 2.0), Vector2(tw + 8.0, cf.get_height(cp) + 2.0))
 		draw_rect(chip, Color(Palette.WARN, 0.12))
 		draw_rect(chip, Palette.WARN, false, 1.0)
-		draw_string(cf, Vector2(chip.position.x + 4.0, chip.position.y + 1.0 + cf.get_ascent(cp)), n, HORIZONTAL_ALIGNMENT_LEFT, -1, cp, Palette.WARN)
+		HighContrast.draw_text(self, cf, Vector2(chip.position.x + 4.0, chip.position.y + 1.0 + cf.get_ascent(cp)), n, HORIZONTAL_ALIGNMENT_LEFT, -1, cp, Palette.WARN)
 	_draw_pill(pill, button_pressed, dim)
 	KitState.draw_frame(self, r, st, false)
 
@@ -213,7 +213,7 @@ func _draw_pill(pill: Rect2, on: bool, dim: bool) -> void:
 	var cp := Chrome.px(UiTheme.CAPTION)
 	var word := tr("ON") if on else tr("OFF")
 	var tx := pill.position.x + rad * 0.5 if on else pill.position.x + rad * 2.0
-	draw_string(f, Vector2(tx, pill.position.y + (pill.size.y + f.get_ascent(cp) - f.get_descent(cp)) * 0.5), word, HORIZONTAL_ALIGNMENT_LEFT, pill.size.x - rad * 2.2, cp,
+	HighContrast.draw_text(self, f, Vector2(tx, pill.position.y + (pill.size.y + f.get_ascent(cp) - f.get_descent(cp)) * 0.5), word, HORIZONTAL_ALIGNMENT_LEFT, pill.size.x - rad * 2.2, cp,
 		Palette.GLYPH_INK if on else cyan)
 
 

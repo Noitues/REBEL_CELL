@@ -44,6 +44,10 @@ const HC_EDGE_SCALE := 2.0
 ## HC_MIN_CONTRAST against it whatever is behind.
 const HC_OUTLINE_SHARE := 0.25
 const HC_OUTLINE_MIN := 4
+## Words with less contrast than this on BG are ink: they sit on paper or a sticker.
+const INK_MAX_CONTRAST := 2.5
+## Words given less alpha than this are hidden (a layout stand-in, a reveal not begun).
+const HIDDEN_ALPHA := 0.05
 ## The steps of the search for the least change that lifts a colour to HC_MIN_CONTRAST.
 const LIFT_STEPS := 14
 ## Theme types whose boxes are buttons (their variations are found by base type).
@@ -154,15 +158,59 @@ static func outline_px(font_px: int) -> int:
 ## `outline` px outline in `outline_col` (none when 0). Under high contrast the words are
 ## lifted to 7:1 and backed by an opaque BG outline at least outline_px wide, whatever they
 ## sit on; `fade` (0..1, a reveal) multiplies the alpha either way.
+## M14 12Q-ACCESS follow-up: ink (words under INK_MAX_CONTRAST on BG: a sticker's or a paper's
+## lettering) is darkened to 7:1 on PAPER and gets no outline; every other colour of words is
+## lifted to 7:1 on BG over a BG outline. Hidden words (alpha under HIDDEN_ALPHA) stay hidden.
 static func draw_text(ci: CanvasItem, font: Font, pos: Vector2, text: String, align: HorizontalAlignment, width: float,
 		fs: int, col: Color, outline: int = 0, outline_col: Color = Palette.CLEAR, fade: float = 1.0) -> void:
-	if on():
-		ci.draw_string_outline(font, pos, text, align, width, fs, maxi(outline, outline_px(fs)), Color(BG, fade))
-		ci.draw_string(font, pos, text, align, width, fs, Color(lift(col), fade))
+	if on() and col.a * fade >= HIDDEN_ALPHA:
+		var a := fade if col.a >= HIDDEN_ALPHA else col.a * fade
+		if is_ink(col):
+			var dark := Color(lift(col, Palette.PAPER), a)
+			_note(text, fs, dark, 0, Palette.CLEAR)
+			ci.draw_string(font, pos, text, align, width, fs, dark)
+			return
+		var o := maxi(outline, outline_px(fs))
+		var lit := Color(lift(col), a)
+		_note(text, fs, lit, o, BG)
+		ci.draw_string_outline(font, pos, text, align, width, fs, o, Color(BG, a))
+		ci.draw_string(font, pos, text, align, width, fs, lit)
 		return
 	if outline > 0 and outline_col.a > 0.0:
 		ci.draw_string_outline(font, pos, text, align, width, fs, outline, Color(outline_col, outline_col.a * fade))
 	ci.draw_string(font, pos, text, align, width, fs, Color(col, col.a * fade))
+
+
+## M14 12Q-ACCESS follow-up: draw_multiline_string through the same rules as draw_text.
+static func draw_lines(ci: CanvasItem, font: Font, pos: Vector2, text: String, align: HorizontalAlignment, width: float,
+		fs: int, max_lines: int, col: Color, brk: int = TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND) -> void:
+	if on() and col.a >= HIDDEN_ALPHA:
+		if is_ink(col):
+			var dark := lift(col, Palette.PAPER)
+			_note(text, fs, dark, 0, Palette.CLEAR)
+			ci.draw_multiline_string(font, pos, text, align, width, fs, max_lines, dark, brk)
+			return
+		var o := outline_px(fs)
+		_note(text, fs, lift(col), o, BG)
+		ci.draw_multiline_string_outline(font, pos, text, align, width, fs, max_lines, o, BG, brk)
+		ci.draw_multiline_string(font, pos, text, align, width, fs, max_lines, lift(col), brk)
+		return
+	ci.draw_multiline_string(font, pos, text, align, width, fs, max_lines, col, brk)
+
+
+## True when `c` is ink: words for a light ground (under INK_MAX_CONTRAST on BG).
+static func is_ink(c: Color) -> bool:
+	return Palette.contrast(Color(c, 1.0), BG) < INK_MAX_CONTRAST
+
+
+## Tests: while not null, every word draw_text / draw_lines draws under high contrast is noted
+## here as {text, fs, color, outline, outline_color}.
+static var drawn: Variant = null
+
+
+static func _note(text: String, fs: int, col: Color, outline: int, outline_col: Color) -> void:
+	if drawn != null:
+		(drawn as Array).append({"text": text, "fs": fs, "color": col, "outline": outline, "outline_color": outline_col})
 
 
 static func _is_button(theme: Theme, type: StringName) -> bool:
