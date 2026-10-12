@@ -460,7 +460,9 @@ static func own_speaker(name: String, words: String) -> PackedStringArray:
 	return PackedStringArray([tag, words.substr(colon + 2)])
 
 
-## Clears the queue and hides the bar (scene changes).
+## Clears the queue and hides the bar (scene changes, a campaign left or started: M14 LEAK).
+## The line on show is forgotten too, so no later dock change pages it again; its page timer
+## is dropped (its timeout checks it is still the current one).
 func clear() -> void:
 	_queue.clear()
 	_timer = null
@@ -468,6 +470,8 @@ func clear() -> void:
 	Motion.stop(bar)
 	bar.visible = false
 	_shown_scope = ""
+	_shown_line = {}
+	_shown = ""
 
 
 # --- Typing (Animation pass ANIM-6, ANIMATION_HANDOFF 4.21) ------------------------------------

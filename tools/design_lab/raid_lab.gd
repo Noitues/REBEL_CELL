@@ -20,8 +20,9 @@ extends Control
 ## hold), `verdict_holds` (the end: HOLDS ticks), `report_losses` (the after-action report of a raid
 ## that cost nodes), `down_zoom_min` / `down_zoom_mid` / `down_zoom_max` (a node DOWN before the
 ## raid, the camera on it at raid_fit_min / the middle / raid_fit_max). Writes `<state>.png` (1280x720).
-## The Solace raids' DISPATCH line (BREACHED's) carries into the next state: capture `report`
-## in a launch of its own (sheet docs/art_review/ART-6/RAID_STATES.jpg).
+## M14 LEAK: a state that loses the campaign no longer carries its DISPATCH line (or its end)
+## into the next state (`_clear`); every state can share one launch
+## (sheet docs/art_review/ART-6/RAID_STATES.jpg).
 
 const HQ := preload("res://scenes/hq/hq_scene.tscn")
 const ALL := ["sheet", "setup_meridian", "setup_solace", "setup_halcyon", "setup_orbital", "setup_rebel_cell",
@@ -116,6 +117,14 @@ func _clear() -> void:
 	for c in get_children():
 		c.queue_free()
 	Motion.set_speed(1.0)
+	# M14 LEAK: a state whose raid lost the campaign (`breached`) left it over in RunManager
+	# and in the slot, so the next state's HQ opened on that end (its DISPATCH "Home server
+	# lost" line and the ransom lock) before the lab's next campaign replaced it. The next
+	# state starts from no campaign instead, and with an empty subtitle bar.
+	if RunManager.campaign != null and RunManager.campaign.is_over():
+		RunManager.delete_save()
+		RunManager.campaign = null
+	Dialogue.clear()
 
 
 # --- Screens -----------------------------------------------------------------------------------

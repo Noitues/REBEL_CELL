@@ -5744,6 +5744,9 @@ func _build_dossier(photos: Array[Dictionary]) -> AuditDossier:
 
 
 func _on_end_new_campaign() -> void:
+	# M14 LEAK: the ended campaign's lines (its DISPATCH end line) end with it, not on the new
+	# campaign page.
+	Dialogue.clear()
 	RunManager.campaign = null
 	show_start()
 
