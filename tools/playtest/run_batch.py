@@ -43,14 +43,37 @@ def log(batch: str, msg: str) -> None:
         f.write(line + "\n")
 
 
+def session_spent(session: Path) -> float:
+    try:
+        return json.loads((session / "cost.json").read_text())["usd"]
+    except (OSError, ValueError, KeyError):
+        return 0.0
+
+
 def spent(batch: str) -> float:
-    total = 0.0
-    for c in (SESSIONS / batch).glob("*/cost.json"):
-        try:
-            total += json.loads(c.read_text())["usd"]
-        except (OSError, ValueError, KeyError):
-            pass
-    return total
+    return sum(session_spent(c.parent) for c in (SESSIONS / batch).glob("*/cost.json"))
+
+
+def alive(pid: int) -> bool:
+    sys.path.insert(0, str(TOOLS))
+    import blackbox
+
+    return blackbox._alive(pid)
+
+
+def running_harnesses(batch: str) -> dict[str, int]:
+    """handle -> pid of harness.py processes already playing this batch (for --resume)."""
+    ps = ("Get-CimInstance Win32_Process -Filter \"Name like 'python%'\" | "
+          "ForEach-Object { '{0}|{1}' -f $_.ProcessId, $_.CommandLine }")
+    out = subprocess.run(["powershell", "-NoProfile", "-Command", ps], capture_output=True, text=True).stdout
+    found = {}
+    for line in out.splitlines():
+        pid, _, cmd = line.partition("|")
+        cmd = cmd.replace("\\", "/")
+        if "harness.py" in cmd and ("/%s/" % batch) in cmd:
+            handle = cmd.split("/%s/" % batch, 1)[1].split("/", 1)[0]
+            found[handle] = int(pid)
+    return found
 
 
 def roll(a) -> None:
@@ -105,27 +128,34 @@ def main() -> int:
             sys.exit("run_batch: %s is already rolled; use --resume" % a.batch)
         roll(a)
     todo = [t for t in plan(a.batch) if not t["done"]]
+    running: list[tuple[dict, int]] = []  # (tester, harness pid)
+    if a.resume:
+        live = running_harnesses(a.batch)
+        for t in list(todo):
+            if t["handle"] in live:
+                todo.remove(t)
+                running.append((t, live[t["handle"]]))
+                log(a.batch, "adopt: %s (%s) still playing, pid %d" % (t["handle"], t["kind"], live[t["handle"]]))
     log(a.batch, "start: %d tester(s) to play, budget $%.2f (reserve $%.2f), %d at a time, seed %d"
         % (len(todo), a.budget, a.judge_reserve, a.parallel, a.seed))
 
-    running: list[tuple[dict, subprocess.Popen]] = []
-    committed = 0.0  # caps of the running testers, not yet spent
+    def room() -> float:
+        # What is spent, plus what the running testers may still spend up to their caps.
+        held = sum(max(0.0, t["cap"] - session_spent(t["session"])) for t, _ in running)
+        return a.budget - a.judge_reserve - spent(a.batch) - held
+
     while todo or running:
-        for t, p in list(running):
-            if p.poll() is not None:
-                running.remove((t, p))
-                committed -= t["cap"]
-                log(a.batch, "done: %s (%s) exit %d, batch spend $%.2f" % (t["handle"], t["kind"], p.returncode, spent(a.batch)))
+        for t, pid in list(running):
+            if not alive(pid):
+                running.remove((t, pid))
+                log(a.batch, "done: %s (%s), batch spend $%.2f" % (t["handle"], t["kind"], spent(a.batch)))
         while todo and len(running) < a.parallel:
-            t = todo[0]
-            room = a.budget - a.judge_reserve - spent(a.batch) - committed
-            if room < t["cap"]:
-                log(a.batch, "skip: %s (%s) cap $%.2f > room $%.2f" % (t["handle"], t["kind"], t["cap"], room))
-                todo.pop(0)
+            t = todo.pop(0)
+            r = room()
+            if r < t["cap"]:
+                log(a.batch, "skip: %s (%s) cap $%.2f > room $%.2f" % (t["handle"], t["kind"], t["cap"], r))
                 continue
-            todo.pop(0)
-            running.append((t, launch(t)))
-            committed += t["cap"]
+            running.append((t, launch(t).pid))
             log(a.batch, "play: %s (%s, %d min, cap $%.2f)" % (t["handle"], t["kind"], t["minutes"], t["cap"]))
             time.sleep(20)  # stagger the game launches
         time.sleep(15)
