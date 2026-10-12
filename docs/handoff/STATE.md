@@ -29,7 +29,13 @@ All six 12q slices are now on m14-group2.
 Worktrees cleaned 2026-10-11 22:05: all agent worktrees removed (0 live; the stale locks were from dead pid 23352). ~100 merged
 worktree-agent-* branches remain (deletion not done).
 Group sheet docs/art_review/PARITY/fixes/M14_GROUP2.jpg committed (m14-group2 @ 8fbf6117) and sent 2026-10-12 to the art-pass session
-("REBEL_CELL art direction and integration") with Qs a-d below; awaiting APPROVED.
+("REBEL_CELL art direction and integration") with Qs a-d below. Review 2026-10-12: CHANGES, 7 ART items (rest APPROVED; Qs a/b/c OK,
+c = cost + title visible at rest). Three fix-visual slices on 8fbf6117: m14-g2r-city (Grid camera clamp, GRID-13 TARGET / JACK IN),
+m14-g2r-menus (slots at 2.0, codex pager arrows, verify hand c), m14-g2r-raid (report verdict p1, single INCOMING, no corp band +
+MAP KEY SAVED clearance, Continue sticker). All three merged (m14-group2 @ 36503678; NB the
+m14-group2 worktree needed `godot --headless --import` after the ACCESS merge or every UiTheme user fails to compile).
+Round 2 sheet M14_GROUP2_R2.jpg (@ 641523ef) sent with Qs: REBEL_CELL TARGET zoom-out vs arrow; 2.0 save folder shrink vs paging;
+JACK IN overlap not reproduced. Awaiting APPROVED.
 Next: art-pass review (incl. Qs: takeover city darker than round 20 (ISOLATE look);
 seal gap 8→4 px; fanned hand hides line ends at rest; Grid per-corp differences list in DECISIONS "ART-2/ART-5 acceptance") → merge →
 push gate → quiet perf run → GATE (full suite once, GATE_REPORT, PT list, CP-002) → CI → "M14 complete".
