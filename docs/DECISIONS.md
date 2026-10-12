@@ -33,6 +33,16 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
   events.
 
 ## Implementation decisions
+- **G2R2-MENUS (M14 group 2 art-pass review round 2, 2026-10-12).** G2R2-3 (supersedes G2R-3's paging at 2.0): no paging
+  inside a folder. From text scale 1.6 (`CaseFileCard.BRIEF_FROM`) a used slot's folder is brief: tab, corporation and the
+  Heat line only (no stamp); ICE, RUNS, FILED, the state and the crew names move to LOAD's focus tooltip
+  (`CaseFileCard.details`), and the CAN'T UNDO pencil lies on one line. Text never goes under 1.0 size. Folder + LOAD +
+  DELETE + pencil are one 2.0 case file, whole in the slots view; pages switch per folder. `test_m14_12q_menus` and
+  `test_art10_menus` assert the whole case file at 1.0 / 1.6 / 2.0 again. G2R2-c: in the fanned hand each card knows the
+  share its right neighbour covers (`ZineCard.tucked`, HAND_OVERLAP; the last card 0): `CardFace.title_layout` keeps the
+  title clear of it (left end stays put, the title shrinks to fit); the cost dot sits at the left and was never covered;
+  `test_g2r2_the_fanned_cards_cost_and_title_show_at_rest_at_every_scale` asserts both at 1.0 / 1.6 / 2.0. Sheet:
+  `docs/art_review/ART-12/12q/fixes/G2R2_MENUS.jpg`.
 - **G2R-MENUS (M14 group 2 art-pass review, 2026-10-12).** G2R-3: at every text scale each slot's folder keeps LOAD + DELETE and
   the grease-pencil CAN'T UNDO under it (the designer's ruling; 12Q-MENUS' side-column layout at 2.0 is gone, so is
   `CaseFileCard.side_actions` / `PENCIL_UP_TO`). At 2.0 a case file (317 px) is taller than the slots view on a 720p

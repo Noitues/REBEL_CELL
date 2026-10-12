@@ -62,6 +62,8 @@ const DELETE_TILT := 2.0
 ## COMPACT_FROM the ICE / RUNS / FILED fields share a line (the folder stays short enough).
 const VERB_GROW_MAX := 1.0
 const COMPACT_FROM := 1.3
+## G2R2-3: from this text scale the folder is brief (tab, corporation, Heat); ICE / RUNS / FILED and the crew go to the tooltip.
+const BRIEF_FROM := 1.6
 ## The Cell stamp's seeded tilt range (degrees; round 44: -6 + 2 n).
 const STAMP_TILT := -6.0
 const STAMP_TILT_STEP := 2.0
@@ -162,7 +164,7 @@ func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], 
 	var verb := VerbSticker.new(tr("LOAD"), VerbSticker.Fill.PINK, VERB_PX * verb_grow(), VERB_TILT)
 	verb.pre_translated = true
 	verb.sweep_primary = primary
-	verb.tooltip_text = UiTip.fold(load_tip)
+	verb.tooltip_text = UiTip.fold(load_tip + (("\n" + details()) if brief() else ""))
 	verb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	actions.add_child(verb)
 	load_button = verb
@@ -177,7 +179,8 @@ func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], 
 	actions.add_child(gap)
 	var undo := tr("Can't Undo")
 	var tip := tr("Delete the campaign in slot %s (asks first).") % slot
-	cant_undo = PencilNote.new("
+	# G2R2-3: on the brief folder the words lie on one line (the case file must fit the slots view at 2.0).
+	cant_undo = PencilNote.new(undo if brief() else "
 ".join(undo.split(" ", false, 1)), Palette.PENCIL_THREAT, NOTE_TILT,
 		roundi(PencilNote.FONT_PX * (Settings.text_scale if Settings.text_scale >= NOTE_BIG_FROM else minf(Settings.text_scale, NOTE_SCALE_MAX))))
 	cant_undo.name = "CantUndo"
@@ -286,6 +289,26 @@ static func verb_grow() -> float:
 
 
 ## The tab's height at the text size now (px).
+## G2R2-3: true from text 1.6: the folder shows only its tab, corporation and Heat line.
+static func brief() -> bool:
+	return Settings.text_scale >= BRIEF_FROM - 0.001
+
+
+## The focus tooltip's details for a used slot (what the brief folder leaves off).
+func details() -> String:
+	var parts: Array[String] = ["%s %d" % [tr("ICE"), int(summary.get("ice", 0))], "%s %d" % [tr("RUNS"), int(summary.get("runs", 0))]]
+	var when := last_played(float(summary.get("saved_at", 0.0)))
+	if when != "":
+		parts.append("%s %s" % [tr("FILED"), when])
+	parts.append(state_word())
+	var names: Array[String] = []
+	for op in crew:
+		names.append(String((op as Dictionary).get("name", "")))
+	if not names.is_empty():
+		parts.append(", ".join(names))
+	return " / ".join(parts)
+
+
 static func tab_height() -> float:
 	return TAB_H * minf(Settings.text_scale, TAB_SCALE_MAX)
 
@@ -401,39 +424,42 @@ func _fill() -> void:
 	bar.draw.connect(_draw_heat.bind(bar, heat))
 	heat_row.add_child(bar)
 	_content.add_child(heat_row)
-	# ICE / RUNS / FILED: a printed line each (round 44); from COMPACT_FROM they share lines (a flow).
-	var facts: Container = VBoxContainer.new() if Settings.text_scale < COMPACT_FROM else HFlowContainer.new()
-	facts.name = "Facts"
-	facts.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if facts is HFlowContainer:
-		facts.add_theme_constant_override("h_separation", UiTheme.SP_M)
-	else:
-		facts.add_theme_constant_override("separation", UiTheme.SP_XS)
-	_content.add_child(facts)
-	facts.add_child(_pair(tr("ICE"), str(int(summary.get("ice", 0))), "Ice"))
-	facts.add_child(_pair(tr("RUNS"), str(int(summary.get("runs", 0))), "Runs"))
-	var when := last_played(float(summary.get("saved_at", 0.0)))
-	if when != "":
-		var date := _pair(tr("FILED"), when, "LastPlayed")
-		date.tooltip_text = tr("Last played")
-		date.mouse_filter = Control.MOUSE_FILTER_PASS
-		facts.add_child(date)
-	var foot := HBoxContainer.new()
-	foot.name = "Foot"
-	foot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	foot.add_theme_constant_override("separation", UiTheme.SP_XS)
-	var shown := 0
-	for op in crew:
-		if shown >= CREW_MAX:
-			break
-		foot.add_child(_crew_chip(op as Dictionary))
-		shown += 1
-	if crew.size() > CREW_MAX:
-		var more := _field("+%d" % (crew.size() - CREW_MAX), true)
-		more.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		foot.add_child(more)
-	_content.add_child(foot)
+	if not brief():
+		# ICE / RUNS / FILED: a printed line each (round 44); from COMPACT_FROM they share lines (a flow).
+		var facts: Container = VBoxContainer.new() if Settings.text_scale < COMPACT_FROM else HFlowContainer.new()
+		facts.name = "Facts"
+		facts.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if facts is HFlowContainer:
+			facts.add_theme_constant_override("h_separation", UiTheme.SP_M)
+		else:
+			facts.add_theme_constant_override("separation", UiTheme.SP_XS)
+		_content.add_child(facts)
+		facts.add_child(_pair(tr("ICE"), str(int(summary.get("ice", 0))), "Ice"))
+		facts.add_child(_pair(tr("RUNS"), str(int(summary.get("runs", 0))), "Runs"))
+		var when := last_played(float(summary.get("saved_at", 0.0)))
+		if when != "":
+			var date := _pair(tr("FILED"), when, "LastPlayed")
+			date.tooltip_text = tr("Last played")
+			date.mouse_filter = Control.MOUSE_FILTER_PASS
+			facts.add_child(date)
+		var foot := HBoxContainer.new()
+		foot.name = "Foot"
+		foot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		foot.add_theme_constant_override("separation", UiTheme.SP_XS)
+		var shown := 0
+		for op in crew:
+			if shown >= CREW_MAX:
+				break
+			foot.add_child(_crew_chip(op as Dictionary))
+			shown += 1
+		if crew.size() > CREW_MAX:
+			var more := _field("+%d" % (crew.size() - CREW_MAX), true)
+			more.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			foot.add_child(more)
+		_content.add_child(foot)
 	# The Cell's own rubber stamp: the campaign's state (it overlaps the fields as a stamp does; no layout room).
+	if brief():
+		return
 	stamp = CellStamp.new(state_word(), STAMP_TILT + STAMP_TILT_STEP * slot.to_int())
 	stamp.name = "State"
 	_folder_marks().add_child(stamp)  # over the fields, placed by _lay

@@ -2735,6 +2735,8 @@ func _fan_hand(s: float) -> Array[Dictionary]:
 		var card := _hand_box.get_child(k) as ZineCard
 		if card != null:
 			card.set_fan(float(f["deg"]), float(f["rise"]))
+			card.tucked = HAND_OVERLAP if k < n - 1 else 0.0  # G2R2-c: the next card lies over its right edge
+			card.queue_redraw()
 	return out
 
 
