@@ -785,6 +785,10 @@
 			"seconds": 10.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_m14_12q_menus.gd": {
+			"seconds": 45.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_big_text_intel_order_fit.gd": {
 			"seconds": 15.0,
 			"tier": "fast"

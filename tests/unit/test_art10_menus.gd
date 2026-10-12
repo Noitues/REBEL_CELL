@@ -325,13 +325,12 @@ func test_slots_fit_and_focus_reaches_every_action_at_every_text_scale() -> void
 			var back := t._panel.find_child("Back", true, false) as Control
 			assert_true(SCREEN.encloses(win.get_global_rect()), "%d used, %.1f: the panel %s on the screen" % [used, scale, win.get_global_rect()])
 			assert_lte(back.get_global_rect().end.y, floor_y + 1.0, "%d used, %.1f: Back above the ticker" % [used, scale])
-			# Up to 1.6 a whole case file (tab to actions) shows in the panel's view; at 2.0 a
-			# card is taller than the room left under the sticker, and the view follows the focus:
-			# the focused card's actions are in sight.
+			# A whole case file (tab to actions) shows in the panel's view at every scale (M14 12Q-MENUS: at 2.0
+			# the actions stand beside the folder, so the card is as tall as its folder).
 			var view := win.fit.scroll.get_global_rect()
 			var focused := get_viewport().gui_get_focus_owner()
 			for c in cards:
-				if scale < Settings.TEXT_SCALE_MAX and focused != null and c.is_ancestor_of(focused):
+				if focused != null and c.is_ancestor_of(focused):
 					assert_true(view.grow(1.0).encloses(c.get_global_rect()), "%d used, %.1f: the focused case file %s whole in the view %s" % [used, scale, c.get_global_rect(), view])
 			assert_not_null(focused, "%d used, %.1f: an action holds the focus" % [used, scale])
 			if focused != null:
@@ -345,7 +344,12 @@ func test_slots_fit_and_focus_reaches_every_action_at_every_text_scale() -> void
 				# B5 (D24): the folder lies tilted round its centre; the actions sit under its laid-out (straight) rect.
 				var straight := Rect2(c.global_position + c.folder.position, c.folder.size)
 				for a in c.actions():
-					assert_lte(a.get_global_rect().end.x, straight.end.x + 1.0, "%.1f slot %s: %s under its folder" % [scale, c.slot, a.name])
+					if CaseFileCard.side_actions():
+						# M14 12Q-MENUS: past the pencil's scale the actions stand beside the folder.
+						assert_gte(a.get_global_rect().position.x, straight.end.x - 1.0, "%.1f slot %s: %s beside its folder" % [scale, c.slot, a.name])
+						assert_lte(a.get_global_rect().end.y, straight.end.y + 1.0, "%.1f slot %s: %s within its folder's height" % [scale, c.slot, a.name])
+					else:
+						assert_lte(a.get_global_rect().end.x, straight.end.x + 1.0, "%.1f slot %s: %s under its folder" % [scale, c.slot, a.name])
 				if c.delete_button == null:
 					continue
 				# The pencil up to 1.6; at 2.0 its words move into DELETE's tooltip.

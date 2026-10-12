@@ -184,14 +184,43 @@ func _init() -> void:
 func _fit_height() -> void:
 	if _panel == null or _host == null:
 		return
+	# M14 12Q-MENUS (QA matrix P3: at 2.0 "PAUSED // HQ // SOLACE BIOSYSTEMS" wrapped): as wide as the header's
+	# words need, about the same centre (the hosts place the menu by MENU_SIZE).
+	var w := menu_width() if is_inside_tree() else MENU_SIZE.x  # (its header's words are styled in the tree)
+	custom_minimum_size.x = w
+	size.x = w
 	var want := _panel.get_combined_minimum_size().y + _host.get_combined_minimum_size().y
 	var most := MENU_SIZE.y
 	if is_inside_tree():
 		most = minf(most, get_viewport_rect().size.y - global_position.y - FIT_MARGIN)
 	want = _fit_notes(want, most)
 	var h := clampf(ceilf(want), minf(FIT_MIN_H, most), most)
-	custom_minimum_size = Vector2(MENU_SIZE.x, h)
+	custom_minimum_size = Vector2(w, h)
 	size = custom_minimum_size
+	if is_inside_tree() and not is_equal_approx(size.x, _placed_w):
+		position.x -= (size.x - _placed_w) * 0.5
+		_placed_w = size.x
+
+
+## M14 12Q-MENUS: the width the menu was placed at (the hosts centre MENU_SIZE); a wider menu keeps that centre.
+var _placed_w: float = MENU_SIZE.x
+
+
+## M14 12Q-MENUS: the menu's width (px): MENU_SIZE.x, or wider so the header's words stand on one line, never past
+## the screen less FIT_MARGIN a side.
+func menu_width() -> float:
+	var head := _panel.find_child("TerminalTitle", true, false) as Label if _panel != null else null
+	if head == null:
+		return MENU_SIZE.x
+	var words := head.get_theme_font(&"font").get_string_size(head.text, HORIZONTAL_ALIGNMENT_LEFT, -1, head.get_theme_font_size(&"font_size")).x
+	var bar := head.get_parent() as Control
+	var chrome := bar.get_combined_minimum_size().x - head.get_combined_minimum_size().x + CrtWindow.PAD_H * 2.0 + HEADER_SLACK
+	var most := (get_viewport_rect().size.x if is_inside_tree() else float(Settings.RESOLUTIONS[0].x)) - FIT_MARGIN * 2.0
+	return clampf(ceilf(words + chrome), MENU_SIZE.x, maxf(MENU_SIZE.x, most))
+
+
+## M14 12Q-MENUS: room kept beside the header's measured words (px; rounding, the label's own margins).
+const HEADER_SLACK := 8.0
 
 
 ## The grease-pencil notes (designer 2026-10-05): Resume's sits BESIDE its sticker when the two columns
@@ -199,7 +228,7 @@ func _fit_height() -> void:
 ## notes sit below their stickers and drop with it. Returns the menu's wanted height with the notes as set.
 func _fit_notes(want: float, most: float) -> float:
 	var bare := want - _notes_extra_h(note_mode, _other_notes)
-	var budget := MENU_SIZE.x - UiTheme.SP_XL
+	var budget := maxf(MENU_SIZE.x, custom_minimum_size.x) - UiTheme.SP_XL  # M14 12Q-MENUS: the width the header took
 	var modes: Array = [[NoteMode.BESIDE, true], [NoteMode.BELOW, true], [NoteMode.NONE, false]]
 	var pick: Array = modes[2]
 	for m in modes:

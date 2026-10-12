@@ -180,6 +180,16 @@ var pad_active: bool = false
 var _pad_device: int = -1
 ## Stick motion below this doesn't count as switching to the pad.
 const PAD_SWITCH_DEADZONE := 0.5
+## M14 12Q-MENUS: whether the last input was the mouse (a click, or a move of at least POINTER_SWITCH_PX): the
+## focus cue only pad / keyboard focus shows (VerbSticker's lime brackets) hides then. Session only; true before
+## any input (a mouse player never sees it on a page's first focus).
+var pointer_active: bool = true
+const POINTER_SWITCH_PX := 2.0
+
+
+## M14 12Q-MENUS: true when the focus was moved by the pad or the keys (the kit's focus cue shows).
+func device_focus() -> bool:
+	return pad_active or not pointer_active
 ## Xbox-layout button names for hints (Godot maps other pads onto this layout).
 const PAD_NAMES := {
 	JOY_BUTTON_A: "A", JOY_BUTTON_B: "B", JOY_BUTTON_X: "X", JOY_BUTTON_Y: "Y",
@@ -211,6 +221,11 @@ func observe_device(event: InputEvent) -> void:
 			device = event.device
 	elif event is InputEventKey or event is InputEventMouseButton:
 		pad = false
+	# M14 12Q-MENUS: a click or a pointer move is the mouse's; a key or a pad press is not.
+	if event is InputEventMouseButton or (event is InputEventMouseMotion and (event as InputEventMouseMotion).relative.length() >= POINTER_SWITCH_PX):
+		pointer_active = true
+	elif event is InputEventKey or event is InputEventJoypadButton or (event is InputEventJoypadMotion and pad):
+		pointer_active = false
 	if device != _pad_device:
 		_pad_device = device
 		if pad == pad_active and pad and pad_glyph_set == &"auto":

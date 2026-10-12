@@ -1485,7 +1485,14 @@ func show_start() -> void:
 	var code_edit := LineEdit.new()
 	code_edit.name = "CodeEdit"
 	code_edit.placeholder_text = tr("RC1-corporation-ice-seed-home-class")
-	code_edit.custom_minimum_size.x = 360
+	code_edit.custom_minimum_size.x = CODE_FIELD_MIN
+	# M14 12Q-MENUS (QA matrix P3: at 2.0 the placeholder read "RC1-corporation-ice-s"): the field is as wide as its
+	# whole placeholder at the text size (the row wraps Start from code under it when it must).
+	var fit_code := func() -> void:
+		if code_row.is_visible_in_tree() and code_row.size.x > 0.0:
+			code_edit.custom_minimum_size.x = code_field_width(code_edit)
+	code_row.resized.connect(fit_code)
+	code_row.visibility_changed.connect(fit_code)
 	# Esc leaves the field (a focused LineEdit would otherwise swallow it).
 	code_edit.gui_input.connect(func(ev: InputEvent) -> void:
 		if ev.is_action_pressed("ui_cancel") or ev.is_action_pressed("open_settings"):
@@ -1532,6 +1539,21 @@ func show_start() -> void:
 	menu.body.add_child(_icon(_button(tr("Back to title"), RunManager.go_to_title), StatIcon.EXIT))
 	_as_menu(menu.body)
 	_set_panel(box, "start")
+
+
+## M14 12Q-MENUS: the share-code field's width (px): its whole placeholder at its font, its box's margins and a
+## caret's room, at least CODE_FIELD_MIN, never past its row.
+static func code_field_width(edit: LineEdit) -> float:
+	var words := edit.get_theme_font(&"font").get_string_size(edit.placeholder_text, HORIZONTAL_ALIGNMENT_LEFT, -1, edit.get_theme_font_size(&"font_size")).x
+	var box := edit.get_theme_stylebox(&"normal")
+	var w := ceilf(words + (box.get_minimum_size().x if box != null else 0.0) + edit.get_theme_constant(&"caret_width") + CODE_FIELD_SLACK)
+	var row := edit.get_parent() as Control
+	var most := row.size.x if row != null and row.size.x > 0.0 else w
+	return clampf(w, minf(CODE_FIELD_MIN, most), maxf(most, CODE_FIELD_MIN))
+
+
+const CODE_FIELD_MIN := 360.0
+const CODE_FIELD_SLACK := 8.0
 
 
 ## Today's daily run as display lines: the fixed setup, then the day's modifiers (the

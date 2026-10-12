@@ -40,9 +40,39 @@ func _init(p_scroll: ScrollContainer) -> void:
 	focus_mode = Control.FOCUS_NONE
 	tooltip_text = UiTip.fold(tr("There is more further down this page: scroll, or press this."))
 	visible = false
-	IconMark.attach(self, StatIcon.MORE, Palette.CELL_ACID)
+	_mark = IconMark.attach(self, StatIcon.MORE, Palette.CELL_ACID)
 	add_theme_color_override("font_color", Palette.CELL_ACID)
 	pressed.connect(scroll_on)
+
+
+## M14 12Q-MENUS (QA matrix P2: the campaign slots scrolled to slot 3 said nothing of the slots above it): opt-in;
+## at the foot of a page with more above its view and none below, the tag says MORE ABOVE (its chevrons turned up)
+## and a press scrolls back.
+var show_above: bool = false
+var _mark: IconMark = null
+var _above: bool = false
+
+
+## M14 12Q-MENUS: whether the page has more above its view now.
+func more_above() -> bool:
+	var bar := scroll.get_v_scroll_bar()
+	return bar.max_value - bar.page > 1.0 and bar.value > bar.min_value + 1.0
+
+
+## M14 12Q-MENUS: true while the tag says MORE ABOVE.
+func says_above() -> bool:
+	return _above
+
+
+func _set_above(on: bool) -> void:
+	if on == _above:
+		return
+	_above = on
+	text = tr("MORE ABOVE") if on else tr("MORE BELOW")
+	tooltip_text = UiTip.fold(tr("There is more further up this page: scroll, or press this.") if on else tr("There is more further down this page: scroll, or press this."))
+	if _mark != null:
+		_mark.pivot_offset = _mark.size * 0.5
+		_mark.scale.y = -1.0 if on else 1.0
 
 
 func _ready() -> void:
@@ -122,6 +152,7 @@ var _snap_total: int = 0
 
 
 func _refresh() -> void:
+	_set_above(show_above and not more_below() and more_above() and not degenerate_view())
 	size = get_combined_minimum_size()
 	# ART-0 F (ported from art-pass WF): a view not laid out yet (a pre-layout height past any
 	# real page) says nothing about what is below; its resize calls back in here once it is.
@@ -172,7 +203,9 @@ func _refresh() -> void:
 		global_position = Vector2(r.get_center().x - size.x * 0.5, room.get_global_rect().position.y + MARGIN.y)
 	else:
 		global_position = Vector2(r.get_center().x - size.x * 0.5, r.end.y - size.y - MARGIN.y)
-	visible = more_below() and in_outer_views()
+	visible = (more_below() or _above) and in_outer_views()
+	if _mark != null and _above:
+		_mark.pivot_offset = _mark.size * 0.5
 
 
 ## ART-6 3A (M14 resume): false while the tag's spot is scrolled out of an outer scroll view
@@ -242,6 +275,9 @@ func reset_snap() -> void:
 ## Scrolls the page on by most of a view.
 func scroll_on() -> void:
 	var bar := scroll.get_v_scroll_bar()
+	if _above:
+		scroll.scroll_vertical = int(maxf(bar.min_value, bar.value - bar.page * PAGE_STEP))  # M14 12Q-MENUS: MORE ABOVE scrolls back
+		return
 	scroll.scroll_vertical = int(minf(bar.max_value - bar.page, bar.value + bar.page * PAGE_STEP))
 
 

@@ -228,6 +228,13 @@ func _ready() -> void:
 	Settings.changed.connect(_refit_later)
 	resized.connect(_pivot)
 	_pivot()
+	# M14 12Q-MENUS: the pad / keyboard focus cue, over the sticker (after the kit vinyl).
+	pad_focus_mark = Control.new()
+	pad_focus_mark.name = "PadFocus"
+	pad_focus_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pad_focus_mark.draw.connect(_draw_pad_focus)
+	add_child(pad_focus_mark)
+	pad_focus_mark.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	set_process(true)
 
 
@@ -424,8 +431,40 @@ func _process_sweep() -> void:
 		run_sweep()
 
 
+## M14 12Q-MENUS (QA matrix P3: on the title and slots the pad's focus looked just like the mouse's hover): the
+## kit's lime corner brackets round the sticker's die-cut while it holds a pad / keyboard focus (B2 b: the
+## cards' focus); a mouse player's focus shows none (the sheen and the curl stay hover's).
+var pad_focus_mark: Control = null
+var _pad_focus_shown: bool = false
+
+
+## M14 12Q-MENUS: whether the pad / keyboard focus brackets show now (a greyed sticker too: the pad sees where
+## it stands).
+func pad_focus_shown() -> bool:
+	return has_focus() and Settings.device_focus()
+
+
+## M14 12Q-MENUS: the sticker's die-cut in its own space (the kit vinyl's body, else the whole control).
+func die_cut_rect() -> Rect2:
+	if vinyl != null and vinyl.body_rect.has_area():
+		var xf := vinyl.get_transform()
+		var r := Rect2(xf * vinyl.body_rect.position, Vector2.ZERO)
+		for corner in [Vector2(vinyl.body_rect.end.x, vinyl.body_rect.position.y), vinyl.body_rect.end, Vector2(vinyl.body_rect.position.x, vinyl.body_rect.end.y)]:
+			r = r.expand(xf * corner)
+		return r
+	return Rect2(Vector2.ZERO, size)
+
+
+func _draw_pad_focus() -> void:
+	if pad_focus_shown():
+		StyleBoxBrackets.draw_on(pad_focus_mark, die_cut_rect())
+
+
 func _process(delta: float) -> void:
 	_process_sweep()
+	if pad_focus_mark != null and pad_focus_shown() != _pad_focus_shown:
+		_pad_focus_shown = not _pad_focus_shown
+		pad_focus_mark.queue_redraw()
 	if fill != Fill.GLITCH:
 		return
 	if fill != Fill.GLITCH or not Motion.live(GLITCH_MOTION):

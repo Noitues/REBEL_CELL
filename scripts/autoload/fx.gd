@@ -454,6 +454,8 @@ static func stickers_outside_safe(root: Node, screen: Rect2) -> Array:
 	return out
 ## ANIM-R3 B13: the step of the whole-screen grid tried after the edges (px).
 const SAVED_INNER_STEP := 40.0
+## M14 12Q-MENUS: meta on a control the SAVED stamp never covers though it is no button (a pad prompt pair).
+const META_SAVED_AVOID := &"saved_avoid"
 
 
 ## Screen rects of the controls on screen under `root` the stamp must not cover: usable
@@ -496,7 +498,10 @@ func _collect_avoid(node: Node, out: Array[Rect2]) -> void:
 			# buttons: SAVED landed on SKIP).
 			# S-COMBAT-HUD (parity CMB-08): and the fight's RAM panel and name sticker (SAVED sat inside
 			# the RAM plate).
-			if usable or c is MapLegend or c is RouteLegend or c is PadPrompts or c is RaidSpeedStrip or c is RamBar or c is HudNameSticker:
+			# M14 12Q-MENUS (QA matrix P3: SAVED sat on the title's ON AIR ticker and on a page's "back" prompt): and
+			# the ticker and every pad prompt pair (PadPrompts.make_pair marks them META_SAVED_AVOID).
+			if usable or c is MapLegend or c is RouteLegend or c is PadPrompts or c is RaidSpeedStrip or c is RamBar or c is HudNameSticker \
+					or c is OnAirTicker or c.has_meta(META_SAVED_AVOID):
 				var r := _shown_rect(c)
 				if r.has_area():
 					# B5 (art director, D8): a sticker's die-cut border, shadow and tilt reach past its control rect

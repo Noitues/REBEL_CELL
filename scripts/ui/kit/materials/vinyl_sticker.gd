@@ -821,7 +821,16 @@ static func peel_leg(body_w: float, screen_h: float) -> float:
 	var e := Motion.entry(PEEL_BACK)
 	var k := screen_h / PEEL_BACK_BOARD_H * Settings.text_scale
 	var short := body_w / maxf(k, 0.01) < e.delay
-	return (e.duration if short else e.amplitude) * k
+	var leg := (e.duration if short else e.amplitude) * k
+	# M14 12Q-MENUS (QA matrix P2: at 2.0 the slots' LOAD read "LOA"): the fold grows with the text only as far as
+	# PEEL_MAX_SHARE of the body; a sticker held at its 1.0 size (CaseFileCard's LOAD) keeps its 1.0 fold.
+	var k1 := screen_h / PEEL_BACK_BOARD_H
+	var leg1 := (e.duration if body_w / maxf(k1, 0.01) < e.delay else e.amplitude) * k1
+	return minf(leg, maxf(leg1, body_w * PEEL_MAX_SHARE))
+
+
+## M14 12Q-MENUS: the most of a sticker's body width the peel-back's fold grows to past its 1.0 size.
+const PEEL_MAX_SHARE := 0.18
 
 
 func _sweep_step(t: float) -> void:
