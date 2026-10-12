@@ -56,6 +56,8 @@ team, by filling the template exactly. Rules:
 - Areas: combat (wheel fights, cards, hand), city (City Grid, raids, map), screens (title, HQ,
   menus, rewards, shops, dialogs, settings), rules (outcomes that contradict what the game told
   the player).
+- Severity: P1 only when it blocks progress, loses saved state, or 2+ testers hit it with steps that
+  agree; everything else P2. Polish-level items belong in section 3 or 5, not section 2.
 - Rank by how many testers it affected, then severity. Keep it tight: the team reads this first.
 Output only the markdown document."""
 AUDIT_MODELS = {"sonnet": "claude-sonnet-5-5", "opus": "claude-opus-5-5"}
@@ -275,6 +277,7 @@ def stage_c(batch: str, compare: str) -> tuple[list[dict], dict]:
         if prev.exists():
             parts.append("# Previous batch findings (%s), for the trend column and to mark fixed or recurring items\n%s"
                          % (compare, prev.read_text(encoding="utf-8")))
+    parts.insert(0, "# Date\n%s" % time.strftime("%Y-%m-%d"))
     prompt = "\n\n".join(parts) + "\n\n# Template\n" + FINDINGS_TEMPLATE.read_text(encoding="utf-8")
     req = {"custom_id": "s-findings", "params": dict(
         model=AUDIT_MODELS["opus"], max_tokens=32000, system=[{"type": "text", "text": SYNTH_RULES}],
