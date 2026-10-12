@@ -462,7 +462,10 @@ func test_stat_tags_keep_their_words_at_big_text() -> void:
 				_event(scene)
 		await _frames()
 		var st: HudStats = scene.hud.stats
-		assert_false(st.compact, "%s: the tags keep their names at TEXT_SCALE_MAX" % screen)
+		# M14 12Q-RAID: one row; the names stay unless even the 1.0 size does not fit them, then they
+		# fold on that row (never under the 1.0 size; each name in its tag's tooltip), never two rows.
+		assert_eq(st.rows, 1, "%s: one row at TEXT_SCALE_MAX" % screen)
+		assert_true(not st.compact or st.tag_scale >= HudStats.ROW_FLOOR - 0.01, "%s: the tags keep their names, or fold them at the 1.0 size at least" % screen)
 		for r in st.tag_rects():
 			assert_true(r.end.x <= st.size.x + 0.5, "%s: a tag stays in the row" % screen)
 	# A fight keeps its height (compact tags are still allowed there).

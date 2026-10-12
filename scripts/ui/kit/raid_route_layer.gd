@@ -157,6 +157,7 @@ func _lay() -> void:
 	_laid_sig = sig
 	_pool.begin()
 	var threat := GreasePencilMark.Ink.THREAT
+	var cues := RaidPencil.hostile_cues()
 	for i in routes.size():
 		var street := path_points(routes[i])
 		if street.size() < 2:
@@ -164,6 +165,10 @@ func _lay() -> void:
 		var hand := PencilShapes.snap_to(RaidPencil.roughen(street, 31 + i, GreasePencilMark.stroke_width() * 0.4, GreasePencilMark.stroke_width() * 3.0), street)
 		var strokes := PencilShapes.arrow(hand, GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN, 31 + i)
 		_pool.stroke("route_%d" % i, strokes, threat, write_u, wipe_u, false, 31 + i)
+		if cues:
+			# M14 12Q-RAID: the colour-blind setting's barbed line (hostile by shape, RaidPencil).
+			var w := GreasePencilMark.stroke_width()
+			_pool.stroke("ticks_%d" % i, RaidPencil.hazard_ticks(hand, w * RaidPencil.TICK_STEP, w * RaidPencil.TICK_HALF), threat, write_u, wipe_u, false, 131 + i)
 	for i in what_if.size():
 		var street := path_points(what_if[i])
 		if street.size() >= 2:
@@ -178,6 +183,8 @@ func _lay() -> void:
 		var seed := String(id).hash()
 		_pool.stroke("entry_%s" % id, [PencilShapes.hand_circle(c, ENTRY_R, seed)], threat, u, wipe_u, false, seed)
 		_pool.word("letter_%s" % id, String(letters[id]), c + LETTER_OFF, LETTER_STEP, threat, 1.0, u, wipe_u, -0.08)
+		if cues:
+			_pool.stroke("reticle_%s" % id, RaidPencil.reticle_ticks(c, ENTRY_R), threat, u, wipe_u, false, seed + 1)
 	_pool.end()
 
 
@@ -195,7 +202,7 @@ func lay_signature() -> int:
 	ids.sort()
 	for id in ids:
 		anchors.append(RaidMapAnchor.site(overlay, id))
-	return hash([routes, what_if, ids, letters.values(), write_u, wipe_u, anchors, Settings.text_scale, size])
+	return hash([routes, what_if, ids, letters.values(), write_u, wipe_u, anchors, Settings.text_scale, size, RaidPencil.hostile_cues()])
 
 
 ## The entry letters drawn (Site id -> letter; tests).

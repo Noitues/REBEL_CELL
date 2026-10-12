@@ -10,6 +10,50 @@ extends RefCounted
 
 ## Arrow head length (x the stroke width).
 const HEAD_LEN := 3.0
+## M14 12Q-RAID (ART_BIBLE v2 §5.1 "never colour alone"): with the colour-blind setting on, a
+## threat's route carries hazard ticks (short bars across it, a barbed line) and its entry marks a
+## reticle's four ticks, so hostile reads from the Cell's lime network by shape, not red alone
+## (deutan: both read yellow). The ticks' spacing along the route and their half length (x the
+## stroke width), the first tick's distance from the start, and the reticle ticks' reach outside a
+## ring (x its radius) at the four diagonals.
+const TICK_STEP := 7.0
+const TICK_HALF := 1.6
+const TICK_LEAD := 0.5
+const RETICLE_FROM := 1.12
+const RETICLE_TO := 1.5
+
+
+## M14 12Q-RAID: true when the raid's hostile marks carry their shape cues (the colour-blind
+## setting is on: Settings.colorblind_mode, which also adds its daltonize pass).
+static func hostile_cues() -> bool:
+	return Settings.colorblind_mode != &"off"
+
+
+## M14 12Q-RAID: hazard ticks across route `pts`: a bar `half` px each side of it every `step` px,
+## the first `step` x TICK_LEAD from the start, none in the last `step` (the arrow head's room).
+static func hazard_ticks(pts: PackedVector2Array, step: float, half: float) -> Array[PackedVector2Array]:
+	var out: Array[PackedVector2Array] = []
+	var total := length_of(pts)
+	if pts.size() < 2 or step <= 0.0:
+		return out
+	var d := step * TICK_LEAD
+	while d <= total - step:
+		var p := _at(pts, d)
+		var n := _dir_at(pts, d).orthogonal()
+		out.append(PackedVector2Array([p - n * half, p + n * half]))
+		d += step
+	return out
+
+
+## M14 12Q-RAID: a reticle's four ticks round an ellipse at `centre` with `radii` (the
+## diagonals, from RETICLE_FROM to RETICLE_TO of the radius).
+static func reticle_ticks(centre: Vector2, radii: Vector2) -> Array[PackedVector2Array]:
+	var out: Array[PackedVector2Array] = []
+	for k in 4:
+		var a := PI * 0.25 + PI * 0.5 * k
+		var u := Vector2(cos(a) * radii.x, sin(a) * radii.y)
+		out.append(PackedVector2Array([centre + u * RETICLE_FROM, centre + u * RETICLE_TO]))
+	return out
 
 
 ## A repeatable pseudo-random value in [-1, 1] for stroke `seed` at `i` (a hash: no RNG).

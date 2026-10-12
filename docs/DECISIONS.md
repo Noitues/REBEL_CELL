@@ -37,6 +37,57 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-11 — M14 12Q-RAID: the raid pages at big text, the colour-blind cue, the drag demo, the 3D city's look
+Items from the 12q QA matrix audit (`docs/handoff/m14_12q/qa_matrix_audit.md`, tree db29f599), re-checked on m14-group2.
+- **Stat tags keep one row (L51, the cause of L29).** `HudStats` wrapped fitted tags to two rows under `fit_floor`
+  (1.3 at 1.6 / 2.0); a page with a title sticker (RAID IN PROGRESS, RAID REPORT, NETRUN // RAID) left the six tags
+  room for 1.0-1.1 only, so the bar grew to ~160 px. BIG-TEXT b's rule now holds: one row down to the 1.0 size
+  (`ROW_FLOOR`, `one_row_floor(s)` = min(fit_floor, 1.0); at 1.0 the 0.85 share is unchanged); past that the names
+  fold (one row of icon-and-value tags, never under 1.0; each name stays in its tooltip, as a fight's bar); two rows
+  only when even that does not fit. The HQ's raid pages show the names at 1.0-1.1 on one row (bar 60 px at 2.0);
+  the netrun's raid interlude (a wider Heat gauge with its banner) folds them at 1.6 / 2.0 (icon and value).
+- **Raid report exit (L29).** With one row the report fits at 1.0 / 1.6. At 2.0 the paper alone is ~640 px for
+  ~600: `_report_exit_on_screen` (on the page's sort) moves BACK TO THE GRID above the paper (right-aligned, under
+  the top bar) when the page is taller than its room, so the exit is whole on screen and the paper starts under the
+  bar; its foot scrolls (MORE BELOW). The war table is the page's visible height (`SIZE_SHRINK_BEGIN`, its least
+  height = the scroll's room): MAP KEY, pinned to its foot and the page's first focus, stays in view, so the scroll
+  stays at the top (before, the focus on MAP KEY at the column's foot scrolled the letterhead under the bar).
+- **START DEFENSE during the playout (L36).** The peel (ART-6 3A) is ~0.3 s from where it was pressed; the pack's
+  mid-playout picture reached step 2 two frames in and caught the peel's first frame. The peel now draws under the
+  playout page (`page_root`: over the city, under the feed and the Speed / Skip strip), so at 1.6 / 2.0 it never
+  covers the LIVE RAID FEED; the review pack's raid_playout waits for the peel to end. Look of the peel unchanged.
+- **Heat note over the raid panel (L58).** FIX-2's `campaign_over` guard is not involved: under reduce effects the
+  crossing placed the note before the netrun's raid interlude had laid out (its words clumped unlaid), on the
+  spot its RAID // title took a frame later. During the hold the note re-checks `NOTE_FIRST_RECHECK` (2) frames after
+  it is placed, then every `NOTE_RECHECK_FRAMES` (10),
+  and searches again when its spot covers a button or words (same search; on a full screen the least covered spot
+  again). The search slides on to the screen's far edge past `NOTE_SLIDE_STEPS` (at 1.6 / 2.0 the interlude's panel
+  ran past 16 slides: the note sat on its last row with the screen free below); within 16 slides nothing changes.
+  The pack's raid_incoming under reduce effects (no INCOMING to hold) now settles before its picture (it was the
+  page's first frame). The note also keeps off terminal windows whole (`note_avoid`): the interlude draws its HOME
+  50 → 40 row and forecast disc itself, so a spot free of its Labels still stood on them; now the note stands
+  clear of the panel (under it at 1.0 / 1.6 / 2.0). Changed: `test_horizontal_pass22_screens`
+  (stat tags at TEXT_SCALE_MAX: one row, names kept or folded never under 1.0; it asserted names, which two rows kept).
+- **Hostile vs ours for deutan (L45).** The colour-blind setting's existing hook is the daltonize pass
+  (`ColorblindLayer`); the shape cue now rides the same setting (`RaidPencil.hostile_cues()`, colorblind_mode not
+  off): the threat routes get hazard ticks (bars across the line every `TICK_STEP` x the wax width, a barbed line),
+  the map's entry circles and THREAT INTEL's A / B marks a reticle's four ticks. Setting off: the approved look,
+  unchanged (open question below). The Grid's raid routes already carry their chevrons.
+- **grid_drag_crew (L46).** `_demo_drag_pick` took the Site card's crew chips (`_grid_chips`, gone with HQ-B, never
+  filled: "drag_crew has nothing to drag"); it carries the runner's polaroid (`Crew_<id>`) now; the dead field went.
+- **City bake wait (L64).** The flag was wrong for the 3D city: `showing_current_look` compared `_baked_key`, which
+  the 3D city never sets (no bake: a territory change lands on it at once). For `city3d` it is now
+  `CityView3D.built()` (model built, every chunk placed; true with no 3D view). Side effect: the HQ's end lock and the
+  motion demos stop waiting their frame cap on the 3D city and play once its camera settles. The netrun's raid
+  pages also waited on "fading in": a 2D frame that showed the sky before the page turned the 3D city on left
+  `bake_fade` at 0 (its lights and beacons layers at 0 alpha); `_sync_city3d` settles it at 1 on the 3D city.
+  With the 20 s gone the pack's raid_interlude caught the INCOMING transition: it now waits for it to end.
+- **THREAT INTEL at 2.0 (L38): by design.** BIG-TEXT b's rule (never smaller than 1.0, page past the floor): the
+  routes are on page 2 behind MORE (IntelMore) and BACK returns; nothing unreachable.
+- hq_scene.gd functions touched: `_peel_start`, `page_root` (new), `show_raid_summary`, `_report_exit_on_screen`
+  (new), `_demo_drag_pick`, `_build_hq_page` (one dead line), the `_grid_chips` field (removed).
+- Test `test_hq_m14_12q_raid` (fast). Sheet `docs/art_review/ART-12/12q/fixes/RAID.jpg` (before | after).
+
 ### 2026-10-11 — M14 LEAK: a line said in one campaign never shows in the next
 ART-6 acceptance saw Solace's campaign-lost DISPATCH line ("Home server lost …") on the next raid_lab
 state. Two causes, reproduced headless in `test_m14_dialogue_leak`:
@@ -6176,6 +6227,7 @@ Before covers 43 screens; after covers 53. The remaining findings are low-confid
 - Colour-blind support stays a daltonize correction (ART_BIBLE §12 says "remap").
 
 ## Open questions for the designer
+- **2026-10-11 12Q-RAID, hostile shape cue**: the raid's hazard ticks and reticles show only with the colour-blind setting on (default look unchanged). ART_BIBLE §5.1 says never colour alone: show them always (a deutan player who never opens Options sees red and lime both as yellow), or keep them behind the setting?
 - **2026-10-11 BIG-TEXT b, letterhead at 1.0**: MERIDIAN FREIGHT SYSTEMS no longer runs under the work order's seal; at 1.0 it ends in an ellipsis ("MERIDIAN FREIGHT SYS…"), since the 1.0 size is the floor and a second line would grow the letterhead and fold the whole order at 1.0. Keep the ellipsis, or grow the letterhead (and fold), or a shorter letterhead name per corp (content)?
 - ~~**CP-001 (2026-10-10, process):** rule 6 scope, full-suite cadence wording, Batch API use, playtest gates~~ **Answered 2026-10-11** (1A 2A-never-×3 3A 4A, "Designer rulings CP-001"); only the API key is still open.
   per group — `docs/handoff/CHECKPOINT_PENDING.md`; defaults in force: A / A / B (reports only) / A.

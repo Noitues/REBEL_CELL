@@ -5,6 +5,8 @@ extends Control
 ## row so the intel and the map's routes name the same entry.
 
 const SIZE := 24.0
+## M14 12Q-RAID: the reticle ticks' radius (x the ring's): they cross the ring and stay in the box.
+const RETICLE_FIT := 0.79
 
 var letter: String = "A"
 
@@ -17,6 +19,10 @@ func _init(p_letter: String = "A") -> void:
 	size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 
+func _ready() -> void:
+	Settings.changed.connect(queue_redraw)  # M14 12Q-RAID: the colour-blind setting's reticle
+
+
 ## The letter of entry `i` (0 = A).
 static func letter_of(i: int) -> String:
 	return String.chr(65 + posmod(i, 26))
@@ -26,7 +32,12 @@ func _draw() -> void:
 	var c := size * 0.5
 	var r := minf(size.x, size.y) * 0.42
 	var red := Palette.HARM  # B1b audit: the concept's crisp HARM ring (ui19 route row), not pencil
-	draw_arc(c, r, 0.0, TAU, 28, red, maxf(2.0, r * 0.16), true)
+	var ink_w := maxf(2.0, r * 0.16)
+	draw_arc(c, r, 0.0, TAU, 28, red, ink_w, true)
+	if RaidPencil.hostile_cues():
+		# M14 12Q-RAID: hostile by shape as well as red (the map's entry marks carry the same).
+		for t in RaidPencil.reticle_ticks(c, Vector2(r, r) * RETICLE_FIT):
+			draw_line(t[0], t[1], red, ink_w, true)
 	var f := Palette.display()
 	var px := roundi(r * 1.25)
 	var w := f.get_string_size(letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
