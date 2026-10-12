@@ -13,6 +13,15 @@ validate 0, quiet perf inside 8 ms), pushed, tagged gate/PT-001. Report: docs/ha
 playtest feedback, act on NONE of it until the designer says; then analyze → decide (change / ignore) → plan. R7 retired
 (informs only). Item 7 = B (hostile ticks off by default, colour-blind setting only; long term removed). CP-002 fully answered.
 m14-cleanup merged 2026-10-12. Repo cleaned for playtest feedback (see "Clean state" below).
+
+## Clean state (2026-10-12, main @ ae9ad538, pushed; fast 1473 / 0, smoke 0, validate 0)
+- Worktrees: only `art-pass` (kept by design) and `playtest-build` (the designer's PT-001 build, detached @ 19ad76a3).
+- Branches: 115 merged branches deleted. Kept, not ancestors of main (mostly 10-05 work landed by squash):
+  `backup/main-before-msg-clean`, `qa12q` (116 pack-A sheets never merged), 11 old `worktree-agent-*` from 10-05.
+- Not mine, left untouched in main's tree: the Claude-playtester setup in progress (`.claude/settings.json`, `.gitignore`,
+  `guard_agents.py`, `docs/process/00_README.md` + `CHANGELOG.md`, `05_CLAUDE_PLAYTESTER.md`, `tools/playtest/*`,
+  `guard_playtester.py`, `.claude/agents/playtester.md`) and older untracked files (`.claude/HANDOFF.md`,
+  `docs/HANDOFF_H20_MERGE.md`, `docs/art_asset.md`, `du.exe.stackdump`).
 Designer (2026-10-12) asked for three things in parallel while they playtest PT-001: (1) M14 retrospective
 (Explore agent gathering facts → write docs/handoff/gates/M14_RETROSPECTIVE.md), (2) full project replan (Plan agent
 draft → docs/handoff/gates/M14_REPLAN.md, feeds CP-002), (3) code cleanup of the gate-scope GDScript diff
