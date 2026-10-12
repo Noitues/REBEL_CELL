@@ -494,7 +494,10 @@ func _note_spot(s: Vector2, avoid: Array[Rect2]) -> Array:
 	var steps: Array[Vector2] = [Vector2(0, NOTE_SLIDE), Vector2(0, -NOTE_SLIDE), Vector2(NOTE_SLIDE, 0), Vector2(-NOTE_SLIDE, 0)]
 	var best := Rect2()
 	var best_cover := INF
-	for i in NOTE_SLIDE_STEPS + 1:
+	# M14 12Q-RAID: past NOTE_SLIDE_STEPS it slides on to the screen's far edge (at 1.6 the raid
+	# interlude's panel ran past 16 steps, so the note sat on its last row with the screen free below).
+	var reach := maxi(NOTE_SLIDE_STEPS, ceili(maxf(screen.size.x, screen.size.y) / NOTE_SLIDE))
+	for i in reach + 1:
 		for d in starts.size():
 			var r := starts[d]
 			r.position += steps[d] * i
@@ -533,9 +536,10 @@ func note_avoid() -> Array[Rect2]:
 			if not (c as BaseButton).disabled:
 				out.append(c.get_global_rect())
 		elif (c is Label and (c as Label).text != "") or (c is RichTextLabel and (c as RichTextLabel).get_parsed_text() != "") \
-				or c is HudStats or c is PadPrompts or c is SubtitleStrip:
+				or c is HudStats or c is PadPrompts or c is SubtitleStrip or c is TerminalWindow:
 			# Drawn words too: the top bar's tags, the pad prompts, the subtitles (at 1.6 the note
-			# went up over the CREW tag).
+			# went up over the CREW tag). M14 12Q-RAID: and terminal windows whole (the raid
+			# interlude draws its HOME row and forecast disc itself: the note clear of the panel).
 			out.append(c.get_global_rect())
 	return out
 
@@ -561,9 +565,11 @@ func _update_note() -> void:
 		_note.draw.connect(_draw_note)
 		add_child(_note, false, Node.INTERNAL_MODE_BACK)
 	var at := get_global_rect()
-	if _note_at == Rect2() or at != _note_from:
+	if _note_at == Rect2() or at != _note_from or _note_covers_now():
 		_note_from = at
 		_note_at = note_rect()
+		# The first re-check comes NOTE_FIRST_RECHECK frames on (the page laid out), then every NOTE_RECHECK_FRAMES.
+		_note_checked = Engine.get_process_frames() - NOTE_RECHECK_FRAMES + NOTE_FIRST_RECHECK
 	_note.position = _note_at.position
 	_note.size = _note_at.size
 	_note.modulate.a = banner_alpha
@@ -573,6 +579,31 @@ func _update_note() -> void:
 
 ## The note's draw order over the page (it is read over whatever it passes).
 const NOTE_Z := 50
+## M14 12Q-RAID: every this many frames of the hold the note looks again at what it covers: a
+## page laid out after the crossing (the netrun's raid interlude under reduce effects, its
+## RAID // title right under the gauge) took the spot the note had found free.
+const NOTE_RECHECK_FRAMES := 10
+const NOTE_FIRST_RECHECK := 2
+var _note_checked: int = -1
+
+
+## M14 12Q-RAID: true when, at a re-check, the note's spot covers a button or words (laid out
+## since, or clumped unlaid when it was placed): it looks for its spot again (`note_rect`, the
+## same search: a free spot if there is one; on a full screen the least covered one again).
+func _note_covers_now() -> bool:
+	if _note_at == Rect2() or Engine.get_process_frames() - _note_checked < NOTE_RECHECK_FRAMES:
+		return false
+	_note_checked = Engine.get_process_frames()
+	return _note_cover(_note_at) > 0.0
+
+
+## The area of what the note keeps off (`note_avoid`) that rect `r` covers (px²).
+func _note_cover(r: Rect2) -> float:
+	var cover := 0.0
+	for o in note_avoid():
+		if o.intersects(r):
+			cover += o.intersection(r).get_area()
+	return cover
 
 
 func _draw_note() -> void:

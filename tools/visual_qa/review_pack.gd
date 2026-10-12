@@ -1184,6 +1184,9 @@ func _s_raid_playout() -> void:
 	await _frames(2)
 	if hq.playout != null:
 		await _until(func() -> bool: return not is_instance_valid(hq.playout) or hq.playout.current_step() >= MID_PLAYOUT_STEP, "playout step %d" % MID_PLAYOUT_STEP)
+	# M14 12Q-RAID: START DEFENSE's peel (~0.3 s) has gone: step 2 comes a couple of frames in, and
+	# the picture caught the peel's first frame as if the setup's sticker stayed over the playout.
+	await _until(func() -> bool: return hq.get_node_or_null(^"StartPeel") == null, "the START DEFENSE peel")
 
 
 func _s_raid_result() -> void:
@@ -1239,6 +1242,7 @@ func _s_raid_incoming() -> void:
 	var layer: RaidIncoming = net.get_node_or_null("RaidIncoming") as RaidIncoming
 	if layer == null:
 		_warnings.append("no INCOMING layer (motion off?)")
+		await _settle(net)  # M14 12Q-RAID: the page as it stands (it was caught on its first frame)
 		return
 	# Held mid-way for the picture (the plate and the word at full, the bits in flight).
 	var tw: Tween = layer.get(&"_tween")
@@ -1253,6 +1257,9 @@ func _s_raid_interlude() -> void:
 	DemoSetup.queue_raid_interlude(RunManager.netrun, RunManager.config())
 	net._show_current()
 	await _until(func() -> bool: return net.arrival_ready(), "the interlude camera")
+	# M14 12Q-RAID: the INCOMING transition has played (the 20 s the pack waited on the 3D city's
+	# wrong "old look" flag used to cover it).
+	await _until(func() -> bool: return net.get_node_or_null(^"RaidIncoming") == null, "the INCOMING transition")
 	await _settle(net)
 
 

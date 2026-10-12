@@ -595,6 +595,12 @@ func spreading() -> bool:
 func showing_current_look() -> bool:
 	if not is_baked():
 		return true
+	if city3d:
+		# M14 12Q-RAID: the 3D city has no bake: a territory change lands on it at once (see
+		# `_draw_view_3d`), so it shows its current look once its model is built and placed
+		# (with no 3D view it draws nothing to wait for). `_baked_key` stays empty here, and the
+		# review pack waited 20 s on every 3D page for a bake that never comes.
+		return view3d == null or view3d.built()
 	return spreading() or (CityBakeCache.has(_baked_key) and String(CityBakeCache.entry(_baked_key).get("look", "")) == look_key())
 
 
@@ -1386,6 +1392,12 @@ func _sync_city3d() -> void:
 	# (a page that turns the 3D city on after a 2D frame left it showing: flat roof slabs).
 	if _sil != null and city3d:
 		_sil.visible = false
+	# M14 12Q-RAID: nor its fade over the sky: a 2D frame that showed the sky before the page
+	# turned the 3D city on left `bake_fade` at 0 (no 2D bake lands on a 3D city), the lights and
+	# beacons layers at 0 alpha and the review pack's wait on "fading in".
+	if city3d:
+		Motion.settle(self, ^"bake_fade")
+		bake_fade = 1.0
 	refresh()
 
 

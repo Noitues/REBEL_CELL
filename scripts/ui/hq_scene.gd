@@ -116,8 +116,7 @@ var pad_prompts: PadPrompts
 var _page_prompts: Array = []
 ## ANIM-4: drag and drop on the HQ, the Grid and the raid setup (DropLayer).
 var drops: DropLayer
-## ANIM-4: the Grid's Site card crew chips and its JACK IN (drop targets and sources).
-var _grid_chips: Array[CrewChip] = []
+## ANIM-4: the Grid's JACK IN (a drop target).
 var _jack_button: Button = null
 ## ANIM-4: pages whose items the pick-up key takes (the pad prompt names it).
 const DRAG_PANELS: Array[String] = ["hq", "raid"]
@@ -1604,7 +1603,6 @@ func _build_hq_page(page_name: String) -> void:
 	AudioDirector.prewarm_music(["raid", "netrun", "combat"], c.corporation_id)
 	if not raid_mode:
 		_warm_previews.call_deferred()
-	_grid_chips.clear()
 	_jack_button = null
 	var launchable := RunManager.launchable_sites()
 	launchable.append_array(RunManager.patrol_sites())
@@ -5024,6 +5022,10 @@ func _peel_start(feed: Control) -> void:
 	var sticker := RaidSticker.new(tr(START_DEFENSE), START_STICKER_STEP, RaidSticker.PINK).stamp_only()
 	sticker.name = "StartPeel"
 	add_child(sticker)
+	# M14 12Q-RAID: it peels under the playout's page (over the city, under the feed and the
+	# strip): at 1.6 / 2.0 the LIVE RAID FEED stands where START DEFENSE was, and the peel drew
+	# over its first lines.
+	move_child(sticker, page_root().get_index())
 	sticker.size = sticker.custom_minimum_size
 	if _start_was.has_area():
 		# Parity fix (RAID-08): it peels off where it was pressed (the strip under the feed is
@@ -5034,6 +5036,14 @@ func _peel_start(feed: Control) -> void:
 		sticker.global_position = Vector2(box.end.x - sticker.size.x, box.position.y - sticker.size.y * 0.85)
 	sticker.peel()
 	sticker.vinyl.motion_finished.connect(func(_kind: StringName) -> void: sticker.queue_free(), CONNECT_ONE_SHOT)
+
+## M14 12Q-RAID: the scene's child that holds the top bar and the page (the peel goes under it).
+func page_root() -> Control:
+	var n: Node = _panel_host
+	while n.get_parent() != self:
+		n = n.get_parent()
+	return n as Control
+
 
 ## Parity fix (RAID-08): START DEFENSE's rect (global) when it was pressed (empty when none).
 var _start_was: Rect2 = Rect2()
@@ -5407,6 +5417,11 @@ func show_raid_summary() -> void:
 	back.pressed.connect(show_hq)
 	back.size_flags_horizontal = Control.SIZE_SHRINK_END
 	_add_tip(side, back, tr("Back to the HQ."))
+	# M14 12Q-RAID: the war table is the page's visible height (below), not the column's: MAP KEY,
+	# pinned to its foot and the page's first focus, stays in view (at 2.0 the scroll followed it
+	# down the column's foot and put the paper's letterhead under the top bar).
+	table.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	outer.sort_children.connect(_report_exit_on_screen.bind(side, back, table))
 	_set_panel(outer, "raid_summary")
 	var g := raid_graph(r.get("nodes", {}), {})
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.55))
@@ -5431,6 +5446,26 @@ func show_raid_summary() -> void:
 		pin.add_child(holds)
 		pin.resized.connect(_place_holds.bind(holds, pin))
 		_slap_holds.call_deferred(holds, table, pin)
+
+
+## M14 12Q-RAID: BACK TO THE GRID stays on screen: when the report's page is taller than its
+## room (text 2.0: the paper alone is ~640 px for ~600), it goes above the paper, right-aligned
+## under the top bar, and the paper's foot scrolls (MORE BELOW); under it the focus on the exit
+## scrolled the paper's letterhead under the top bar and still cut the sticker at the bottom.
+## The war table (the map's key at its foot) is as tall as the page's room.
+func _report_exit_on_screen(side: Control, back: Control, table: Control) -> void:
+	if not is_instance_valid(back) or not is_instance_valid(table) or back.get_parent() != side:
+		return
+	var scroll := _panel_host.get_parent() as Control
+	if scroll.size.y <= 1.0:
+		return
+	var margins := _panel_host.get_combined_minimum_size().y - (side.get_parent() as Control).get_combined_minimum_size().y
+	var room := maxf(scroll.size.y - margins, 0.0)
+	if not is_equal_approx(table.custom_minimum_size.y, room):
+		table.custom_minimum_size.y = room
+	# The page's least height (not its size: the host may not have grown yet when the page sorts).
+	if back.get_index() != 0 and _panel_host.get_combined_minimum_size().y > scroll.size.y + 0.5:
+		side.move_child(back, 0)
 
 
 ## ART-6 3A / B3 (Q7): CELL HOLDS slaps onto the after-action paper, over its lower right (the
@@ -5943,7 +5978,9 @@ func _demo_drag_pick(id: String) -> void:
 		src = _panel.find_child("Crew_%s" % c.living_operatives()[0].id, true, false) as Control
 		target_id = "station:%s" % c.grid.claimed_ids()[c.grid.claimed_ids().size() - 1]
 	elif id.begins_with("drag_crew"):
-		src = _grid_chips[0] if not _grid_chips.is_empty() else null
+		# M14 12Q-RAID: the Grid's crew are the hand's polaroids now (the Site card's crew chips,
+		# which this took, are gone: the capture carried nothing).
+		src = _panel.find_child("Crew_%s" % c.living_operatives()[0].id, true, false) as Control
 		target_id = "jack"
 		if id == "drag_crew_cancel":
 			end = Vector2(size.x * 0.3, size.y * 0.45)
