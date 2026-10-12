@@ -519,8 +519,12 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 		if n is ZineCard and (n as ZineCard).focus_mode != Control.FOCUS_NONE:
 			# ART-0 C: the cards grow while a row still holds CARDS_PER_ROW (DeckView's rule): at
 			# 2.0 that cap (1.83) is reached first.
+			# M14 12Q-MAIN: ... unless a whole row has to fit the glass (then never under the 1.0 size).
 			var row_cap := (DeckView.GRID_WIDTH - DeckView.GRID_GAP * (DeckView.CARDS_PER_ROW - 1)) / (DeckView.CARDS_PER_ROW * ZineCard.STICKER_SIZE.x)
-			assert_almost_eq((n as ZineCard).text_scale, minf(Settings.TEXT_SCALE_MAX, row_cap), 0.01, "deck view cards grow")
+			var ds := (n as ZineCard).text_scale
+			assert_true(ds <= minf(Settings.TEXT_SCALE_MAX, row_cap) + 0.01 and ds > DeckView.card_scale_at(1.0), "deck view cards grow (%.2f)" % ds)
+			var glass := deck.find_child("DeckGridRoom", true, false).get_parent() as Control
+			assert_true(DeckView.row_height(ds) <= glass.size.y + 0.5, "a whole row in the glass")
 			assert_false((n as ZineCard).pictos.is_empty(), "deck view cards show pictograms")
 			break
 	var scene := _netrun()

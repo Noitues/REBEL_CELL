@@ -2742,7 +2742,17 @@ func _make_card(card: CardData, i: int, s: float) -> ZineCard:
 	c.grown_floor = ZineCard.BODY_FLOOR
 	c.hover_to = ZineCard.HOVER_SCALE * maxf(1.0, 1.0 / maxf(s, 0.01))
 	c.pictos_give_way = false  # S-CARDFACE: glyph and value at rest; the grown card shows every word
+	c.grown_clear_of = player_hp_rect  # M14 12Q-MAIN (audit L50): the zoom stands beside the HP readout
 	return c
+
+
+## M14 12Q-MAIN (audit L50: the hovered card's zoom covered the player's HP at 1.6 / 2.0): the player's
+## HP readout on screen (global; empty while the wheel is not laid out). A grown hand card stands beside it.
+func player_hp_rect() -> Rect2:
+	if _player_view == null or not is_instance_valid(_player_view) or not _player_view.is_inside_tree() or _player_view.combatant == null:
+		return Rect2()
+	var r: Rect2 = _player_view.hp_layout()["hp"]
+	return _player_view.get_global_transform() * r
 
 
 ## ART-2 2D (§3.18): the hovered card's neighbours slide aside (-1 = all back in place).
