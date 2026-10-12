@@ -129,6 +129,8 @@ func _ready() -> void:
 	sub_foot.offset_left = PAGE_MARGIN.x
 	sub_foot.offset_right = -PAGE_MARGIN.x
 	sub_foot.offset_top = -ticker.get_combined_minimum_size().y
+	sub_foot.offset_bottom = 0.0
+	sub_foot.grow_vertical = Control.GROW_DIRECTION_BEGIN  # M14 12Q-MENUS: a wrapped foot line grows up, never off screen
 	sub_foot.visible = false
 	add_child(sub_foot)
 	_panel_host = VBoxContainer.new()
@@ -258,6 +260,12 @@ func _set_sub_foot(page_name: String) -> void:
 	l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# M14 12Q-MENUS (QA matrix P3: at 2.0 the slots' line pushed its pad prompts past the screen's right edge): the
+	# line wraps at its words in the room the prompts leave.
+	l.custom_minimum_size.x = 0.0
+	UiWrap.whole_words(l)
+	if line != "":
+		l.set_meta(Fx.META_SAVED_AVOID, true)  # M14 12Q-MENUS: SAVED keeps off the line too
 	sub_foot.add_child(l)
 	var row := HBoxContainer.new()
 	row.name = "Prompts"
@@ -587,6 +595,8 @@ func show_slots() -> void:
 	# The view scrolls whole case files: no snap to the lines inside a card (it shrank the view
 	# under a card's height at 1.6).
 	win.fit.hint.snap_rows = false
+	# M14 12Q-MENUS (QA matrix P2): scrolled to the last slot, the tag says the slots above it are there.
+	win.fit.hint.show_above = true
 	win.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	var grid := GridContainer.new()
 	grid.name = "Cards"
@@ -599,6 +609,10 @@ func show_slots() -> void:
 		card.load_pressed.connect(load_slot)
 		card.delete_pressed.connect(confirm_delete)
 		card.new_pressed.connect(new_in_slot)
+		# M14 12Q-MENUS (QA matrix P2): an action taking the focus brings its whole case file into the view (its tab
+		# and corporation, not only the action: walking up from slot 3 left slot 1's name above the view).
+		for b in card.actions():
+			b.focus_entered.connect(_show_card.bind(win, card, b), CONNECT_DEFERRED)
 		# The slot in words on hover (a screen reader's line too).
 		card.folder.tooltip_text = UiTip.fold("%s: %s" % [tr("SLOT %s") % slot, _describe(summary)])
 		card.folder.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -626,6 +640,14 @@ func show_slots() -> void:
 		get_tree().process_frame.connect(_trim_slots, CONNECT_ONE_SHOT)
 
 
+## M14 12Q-MENUS: brings `card` whole into the slots' view (when it fits), then its focused action `b`.
+func _show_card(win: CrtWindow, card: CaseFileCard, b: Control) -> void:
+	if not is_instance_valid(win) or not is_instance_valid(card) or win.fit == null or not b.has_focus():
+		return
+	win.fit.scroll.ensure_control_visible(card)
+	win.fit.scroll.ensure_control_visible(b)
+
+
 ## The case file holding the focus on the slots page (null when none).
 func focused_card() -> CaseFileCard:
 	var f := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
@@ -636,7 +658,10 @@ func focused_card() -> CaseFileCard:
 
 ## The page's room under the subtitles' band and over the ticker (px).
 func page_room() -> float:
-	return get_viewport_rect().size.y - SubtitleStrip.top_below(PAGE_MARGIN.y) - PAGE_MARGIN.z - ticker.get_combined_minimum_size().y
+	var foot := ticker.get_combined_minimum_size().y
+	if sub_foot != null and sub_foot.visible:
+		foot = maxf(foot, sub_foot.get_combined_minimum_size().y)  # M14 12Q-MENUS: a wrapped foot line's rows
+	return get_viewport_rect().size.y - SubtitleStrip.top_below(PAGE_MARGIN.y) - PAGE_MARGIN.z - foot
 
 
 ## Frames the slots page still checks its fit (see _trim_slots).
@@ -675,6 +700,8 @@ func _trim_slots() -> void:
 ## Case files per row: 3 while three fit the screen, then 2, then 1 (ported from
 ## art-m13-final title_scene.gd slot_columns).
 func slot_columns() -> int:
+	if CaseFileCard.side_actions():
+		return 1  # M14 12Q-MENUS: a case file with its actions beside it takes the row
 	var room := get_viewport_rect().size.x - PAGE_MARGIN.x * 2 - CrtWindow.PAD_H * 2
 	var w := CaseFileCard.width() + UiTheme.GUTTER
 	return clampi(int((room + UiTheme.GUTTER) / w), 1, SLOTS.size())
@@ -706,6 +733,21 @@ func _link_slots(page: Control) -> void:
 			cards.append(c)
 	var cols := maxi(1, grid.columns)
 	var rows := ceili(float(cards.size()) / cols)
+	if CaseFileCard.side_actions():
+		# M14 12Q-MENUS: the actions in a column beside each folder: up / down walk them all in order (LOAD, DELETE,
+		# the next case file's LOAD...), the last down to Back.
+		var chain: Array[Control] = []
+		for card in cards:
+			chain.append_array(card.actions())
+		for i in chain.size():
+			var c := chain[i]
+			c.focus_neighbor_left = NodePath()
+			c.focus_neighbor_right = NodePath()
+			c.focus_neighbor_top = c.get_path_to(chain[i - 1]) if i > 0 else NodePath()
+			c.focus_neighbor_bottom = c.get_path_to(chain[i + 1]) if i + 1 < chain.size() else (c.get_path_to(back) if back != null else NodePath())
+		if back != null and not chain.is_empty():
+			back.focus_neighbor_top = back.get_path_to(chain[chain.size() - 1])
+		return
 	for k in cards.size():
 		var r := k / cols
 		var line: Array[Control] = []

@@ -686,12 +686,23 @@ static func _grabber() -> Texture2D:
 	return _grab_tex
 
 
+## M14 12Q-MENUS: the room under a heading's words (px): the focus brackets' reach outside a row (their offset and
+## stroke), so a focused row's brackets never touch the heading over it.
+static func heading_clearance() -> float:
+	return StyleBoxBrackets.OFFSET + StyleBoxBrackets.current_thickness()
+
+
 ## A section heading: terminal CAPS, cyan, caption step (round 31 "EFFECTS & MOTION").
 func _heading(text: String) -> Label:
 	var l := Chrome.caps_label(text.to_upper(), UiTheme.CAPTION, PaletteSkins.chrome(Palette.NET_CYAN))
 	l.custom_minimum_size.x = 0.0  # a long heading wraps at its words (big text, the pause menu)
-	l.custom_minimum_size.y = Chrome.px(UiTheme.CAPTION) * HEADING_LINES
 	l.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	# M14 12Q-MENUS (QA matrix P3: the first row's focus bracket was drawn over "EFFECTS & MOTION"): the words stand
+	# the brackets' reach above the row under them.
+	var clear := StyleBoxEmpty.new()
+	clear.content_margin_bottom = heading_clearance()
+	l.add_theme_stylebox_override(&"normal", clear)
+	l.custom_minimum_size.y = Chrome.px(UiTheme.CAPTION) * HEADING_LINES + clear.content_margin_bottom
 	_label_counter += 1
 	l.name = "_tmp_%d" % _label_counter
 	return l

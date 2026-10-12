@@ -78,6 +78,11 @@ var section: String = ""
 ## in `tab_scroll` (one row that scrolls sideways).
 var tabs: Container
 var tab_scroll: ScrollContainer = null
+## M14 12Q-MENUS: at big text the row of tabs with its two cue chips (null below ONE_ROW_FROM): `tab_prev`
+## ("< +n", the tabs hidden left) and `tab_next` ("+n >", the tabs hidden right).
+var tab_row: HBoxContainer = null
+var tab_prev: MenuChip = null
+var tab_next: MenuChip = null
 ## The page: one focus stop (a Button) over its paper, holding the heading and the scroll.
 var page: Button
 var heading: Label
@@ -122,14 +127,29 @@ func _init(p_entries: Dictionary, p_max_height: float = 0.0, p_max_width: float 
 	if one_row():
 		# Big text: the tabs in one row that scrolls sideways (focus follows), so the page keeps
 		# its room (rows of big tabs took most of the screen at 2.0).
+		# M14 12Q-MENUS (QA matrix P1: past the fifth tab nothing said there were more, and a mouse could not
+		# reach them): the row sits between two cue chips, "< +n" and "+n >", that count the tabs hidden on
+		# their side and, clicked, scroll the row to them (greyed at an end with none hidden).
+		tab_row = HBoxContainer.new()
+		tab_row.name = "TabRow"
+		tab_row.add_theme_constant_override("separation", UiTheme.SP_XS)
+		tab_row.custom_minimum_size.x = p_max_width - CrtWindow.PAD_H * 2.0
+		frame.body.add_child(tab_row)
+		tab_prev = _cue_chip("TabsPrev", -1)
+		tab_row.add_child(tab_prev)
 		tab_scroll = ScrollContainer.new()
 		tab_scroll.name = "TabScroll"
 		tab_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		# No bar (its room is the page's): the wheel, the focus and LB / RB move the row.
+		# No bar (its room is the page's): the cues, the wheel, the focus and LB / RB move the row.
 		tab_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 		tab_scroll.follow_focus = true
-		tab_scroll.custom_minimum_size.x = p_max_width - CrtWindow.PAD_H * 2.0
-		frame.body.add_child(tab_scroll)
+		tab_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tab_row.add_child(tab_scroll)
+		tab_next = _cue_chip("TabsNext", 1)
+		tab_row.add_child(tab_next)
+		tab_scroll.get_h_scroll_bar().value_changed.connect(func(_v: float) -> void: _refresh_cues())
+		tab_scroll.get_h_scroll_bar().changed.connect(_refresh_cues)
+		tab_scroll.resized.connect(_refresh_cues)
 		tabs = HBoxContainer.new()
 		tabs.add_theme_constant_override("separation", UiTheme.SP_XS)
 		tab_scroll.add_child(tabs)
@@ -210,6 +230,8 @@ func _init(p_entries: Dictionary, p_max_height: float = 0.0, p_max_width: float 
 
 func _ready() -> void:
 	tabs.resized.connect(_fit_page)
+	if tab_scroll != null:
+		tabs.resized.connect(_refresh_cues)
 	_queue_fit()
 
 
@@ -330,6 +352,94 @@ func step_section(step: int) -> void:
 	show_section(String(keys[i]))
 	if current_tab() != null and current_tab().is_inside_tree():
 		current_tab().grab_focus()
+
+
+## M14 12Q-MENUS: the cues' words, a key each ("< +%d" left, "+%d >" right).
+const CUE_PREV := "< +%d" # TR
+const CUE_NEXT := "+%d >" # TR
+## M14 12Q-MENUS: a cue chip's alpha with no tab hidden on its side.
+const CUE_IDLE_ALPHA := 0.35
+
+
+## M14 12Q-MENUS: whether the cue on `side` (-1 left, 1 right) has tabs to scroll to (it takes clicks then).
+func cue_live(side: int) -> bool:
+	var c := tab_prev if side < 0 else tab_next
+	return c != null and c.visible and c.mouse_filter != Control.MOUSE_FILTER_IGNORE
+
+
+## M14 12Q-MENUS: a cue chip beside the tabs' row (`side` -1 left, 1 right): a tab plate counting the tabs hidden
+## on its side; a click scrolls the row to them. Never a focus stop (the pad's focus walks the tabs and the row
+## follows it; LB / RB switch them).
+func _cue_chip(p_name: String, side: int) -> MenuChip:
+	var c := MenuChip.new(tr(CUE_PREV if side < 0 else CUE_NEXT) % 0)
+	c.name = p_name
+	c.plate = &"tab"
+	c.pre_translated = true
+	c.focus_mode = Control.FOCUS_NONE
+	c.set_meta(UiFocus.META_NO_SCALE, true)
+	c.tooltip_text = UiTip.fold(tr("More sections this way: the tabs scroll to them."))
+	c.pressed.connect(scroll_tabs.bind(side))
+	return c
+
+
+## M14 12Q-MENUS: the tabs hidden (wholly or in part) on `side` of the row's view (-1 left, 1 right); 0 with no
+## scrolling row.
+func hidden_tabs(side: int) -> int:
+	if tab_scroll == null:
+		return 0
+	var left := float(tab_scroll.scroll_horizontal)
+	var right := left + tab_scroll.size.x
+	var n := 0
+	for b in tabs.get_children():
+		var c := b as Control
+		if side < 0 and c.position.x < left - 0.5:
+			n += 1
+		elif side > 0 and c.position.x + c.size.x > right + 0.5:
+			n += 1
+	return n
+
+
+## M14 12Q-MENUS: scrolls the tabs' row on `side` (-1 left, 1 right): the first tab hidden on that side comes
+## whole to the view's edge it was hidden past (the cue chips' press).
+func scroll_tabs(side: int) -> void:
+	if tab_scroll == null:
+		return
+	var left := float(tab_scroll.scroll_horizontal)
+	var view := tab_scroll.size.x
+	var kids := tabs.get_children()
+	if side > 0:
+		for b in kids:
+			var c := b as Control
+			if c.position.x + c.size.x > left + view + 0.5:
+				tab_scroll.scroll_horizontal = roundi(c.position.x)
+				break
+	else:
+		for i in range(kids.size() - 1, -1, -1):
+			var c := kids[i] as Control
+			if c.position.x < left - 0.5:
+				tab_scroll.scroll_horizontal = maxi(0, roundi(c.position.x + c.size.x - view))
+				break
+	_refresh_cues()
+
+
+## M14 12Q-MENUS: the cue chips' counts; both hide while every tab fits the view, a side with none hidden greys.
+func _refresh_cues() -> void:
+	if tab_scroll == null or tab_prev == null or tab_next == null:
+		return
+	var l := hidden_tabs(-1)
+	var r := hidden_tabs(1)
+	var any := tabs.get_combined_minimum_size().x > tab_scroll.size.x + 0.5 or l > 0 or r > 0
+	for pair in [[tab_prev, l, CUE_PREV], [tab_next, r, CUE_NEXT]]:
+		var c := pair[0] as MenuChip
+		c.visible = any
+		# Nothing hidden on its side: dimmed and no click (a disabled chip's lock read as a locked section).
+		var live := int(pair[1]) > 0
+		c.modulate.a = 1.0 if live else CUE_IDLE_ALPHA
+		c.mouse_filter = Control.MOUSE_FILTER_STOP if live else Control.MOUSE_FILTER_IGNORE
+		var words := tr(String(pair[2])) % int(pair[1])
+		if c.text != words:
+			c.text = words
+			c.refit()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -632,7 +742,7 @@ func _fit_page() -> void:
 	# Everything but the view, measured part by part (the page's own least size follows its
 	# content a frame later): the tabs' rows, the gap, the paper's margins, the caption and the
 	# heading with their gaps, and the view's MORE BELOW room under it.
-	var tabs_part: Control = tab_scroll if tab_scroll != null else tabs
+	var tabs_part: Control = tab_row if tab_row != null else tabs
 	var gap := float(get_theme_constant(&"separation"))
 	var inner := float(_content.get_theme_constant(&"separation"))
 	var chrome := tabs_part.get_combined_minimum_size().y + gap + page_pad_y() * 2.0

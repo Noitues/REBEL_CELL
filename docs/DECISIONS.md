@@ -87,6 +87,50 @@ Items from the 12q QA matrix audit (`docs/handoff/m14_12q/qa_matrix_audit.md`, t
 - hq_scene.gd functions touched: `_peel_start`, `page_root` (new), `show_raid_summary`, `_report_exit_on_screen`
   (new), `_demo_drag_pick`, `_build_hq_page` (one dead line), the `_grid_chips` field (removed).
 - Test `test_hq_m14_12q_raid` (fast). Sheet `docs/art_review/ART-12/12q/fixes/RAID.jpg` (before | after).
+### 2026-10-11 — M14 12Q-MENUS: the menu screens' QA-matrix layout defects (codex tabs, slots, tutorial, SAVED, pause, options, share code, the pad focus peel on concept-art stickers)
+From the 12q QA matrix (`docs/handoff/m14_12q/qa_matrix_audit.md`), re-checked on m14-group2 6cc7de06; text is
+never smaller than at 1.0 and nothing is clipped or scaled (`test_m14_12q_menus`, layout at 1.0 / 1.6 / 2.0;
+before | after `docs/art_review/ART-12/12q/fixes/MENUS.jpg`).
+- **L28 codex tabs (P1).** From 1.6 the tabs stay one sideways-scrolling row (rows of big tabs took the page's
+  room) but it now sits between two cue chips, `< +n` and `+n >` (tab plates, never focus stops), that count the
+  tabs hidden on their side and scroll the row to them on a click; dimmed and unclickable at an end (a disabled
+  chip's lock read as a locked section), hidden while every tab fits. The pad keeps LB / RB and the row follows its focus. Title, pause-menu codex and the corporations' page
+  share CodexBook.
+- **L42 slots (P2).** Past PENCIL_UP_TO (1.6, where the Can't Undo pencil already moves into DELETE's tooltip)
+  a case file stands its LOAD / DELETE in a column beside the folder (CaseFileCard is now a BoxContainer:
+  vertical below, horizontal above), one case file a row; the window's header fits one line and the view holds a
+  whole folder (tab, corporation, LOAD) at 2.0. An action taking the focus brings its whole case file into view.
+  The view's tag says MORE ABOVE (chevrons up; a press scrolls back) when the slots above are hidden and none
+  below (ScrollHint `show_above`, opt-in). The pad walks the column (LOAD, DELETE, the next LOAD..., Back). The
+  slots' foot line wraps at its words, growing up, so its pad prompts stay on screen (they ran off at 2.0).
+  "LOA": the focus peel-back's fold grew with the text on a LOAD held at its 1.0 size; the fold now grows past its
+  1.0 leg only up to `VinylSticker.PEEL_MAX_SHARE` (0.18) of the body (stickers that grow with the text keep the
+  round-44 fold: 54 px at 1080p / 1.6).
+- **L39 tutorial (P2).** A step's pages are shortened until the note's own label fits every one of them (the
+  title or the line under it wrapped past the estimate); one paging per step, so its page count holds. When one
+  line of text still does not fit (2.0 in the fight's 300 x 222 box: the title and the line under it wrapped to
+  two lines each, 20 pages of one line, still cut) the pages go compact: the title without its page count, no
+  line under the page (NEXT pulses, as before, and its tooltip carries that line), the room to the text. The
+  last line carries no trailing line break.
+- **L47 SAVED (P3).** The stamp also keeps off the ON AIR ticker and every pad prompt pair
+  (`Fx.META_SAVED_AVOID`, set by `PadPrompts.make_pair` and on the slots' foot line). loot / loot_firmware:
+  already clear on this tree.
+- **L55 pause (P3).** The menu widens (about its centre, to the screen less FIT_MARGIN) so `PAUSED // HQ // corp`
+  stands on one line; the notes' room follows the width. The pencil taglines are whole with reduce effects on;
+  the RE-off truncation in the matrix is the pencil still writing on at the harness's settle (an animation, not a
+  clip); at 2.0 they drop knowingly when the columns leave no room (designer 2026-10-05).
+- **L56 options (P3).** A section heading keeps the focus brackets' reach (offset + stroke) under its words.
+- **L57 pad focus (P3).** Designer ruling 2026-10-06 (3): focus and hover on a sticker show the peel-back
+  (corner curl) only, never brackets (a first take with pad-only lime brackets was withdrawn before merge). The
+  pad / keyboard focus already takes the hover state (VerbSticker NOTIFICATION_FOCUS_ENTER -> VinylSticker
+  HOVER), and the matrix's pad and mouse frames of title / slots match by design: both open with the page's
+  default focus on BREACH / LOAD. But on a concept-art sticker (BREACH, SIMULATE, OVERTHROW, the dialogs'
+  stickers) the fold was measured from the image's opaque rect, whose corner lies outside the rounded die-cut,
+  so the peel cut mostly empty corner and barely showed: the pad's focus read as none. The fold's leg now grows
+  by the die-cut's corner inset (`VinylSticker.fold_inset`, walked once per image), so the flap shows as on a
+  drawn sticker (LOAD). `test_l57_*`; MENUS.jpg L57 rows (BREACH x3 before | after; slots 1.6 mouse | pad).
+- **L62 share code (P3).** The share-code field is as wide as its whole placeholder at the text size (at least
+  360 px, never past its row; the row wraps Start from code under it).
 
 ### 2026-10-11 — M14 LEAK: a line said in one campaign never shows in the next
 ART-6 acceptance saw Solace's campaign-lost DISPATCH line ("Home server lost …") on the next raid_lab

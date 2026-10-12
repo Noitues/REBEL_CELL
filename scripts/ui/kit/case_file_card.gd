@@ -1,5 +1,5 @@
 class_name CaseFileCard
-extends VBoxContainer
+extends BoxContainer
 ## One campaign slot as a case file on the title's CAMPAIGN SLOTS page. Parity SLOTS-01 /
 ## SLOTS-02 (designer 2026-10-05: take the M13 build's slot cards, rework them in the v2
 ## concept language): ported from art-m13-final `scripts/ui/kit/case_file_card.gd` (the
@@ -113,6 +113,7 @@ var _held: bool = false
 
 
 func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], p_primary: bool = false) -> void:
+	vertical = true  # the folder over its actions (M14 12Q-MENUS: beside them past PENCIL_UP_TO)
 	slot = p_slot
 	summary = p_summary
 	crew = p_crew
@@ -139,11 +140,19 @@ func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], 
 	_content.add_theme_constant_override("separation", UiTheme.SP_XS)
 	_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	folder.add_child(_content)
-	var actions := HBoxContainer.new()
+	var actions := BoxContainer.new()
 	actions.name = "Actions"
 	actions.add_theme_constant_override("separation", UiTheme.SP_S)
 	actions.alignment = BoxContainer.ALIGNMENT_BEGIN
 	add_child(actions)
+	if side_actions():
+		# M14 12Q-MENUS (QA matrix P2: at 2.0 the slots' view showed a folder's fields or its LOAD, never both): past
+		# the pencil note's scale the actions stand in a column beside the folder, so a case file is as tall as its
+		# folder and the view holds it whole (its tab, the corporation and LOAD at once).
+		vertical = false
+		add_theme_constant_override("separation", UiTheme.SP_M)
+		actions.vertical = true
+		actions.alignment = BoxContainer.ALIGNMENT_CENTER
 	if summary.is_empty():
 		_fill_empty()
 		new_button = _chip(actions, tr("New campaign"), "", tr("Start a new campaign in slot %s.") % slot)
@@ -291,7 +300,13 @@ static func tab_height() -> float:
 	return TAB_H * minf(Settings.text_scale, TAB_SCALE_MAX)
 
 
-## The card's width at the text size now (px).
+## M14 12Q-MENUS: true when the actions stand in a column beside the folder (past PENCIL_UP_TO: no pencil note
+## between LOAD and DELETE there).
+static func side_actions() -> bool:
+	return Settings.text_scale > PENCIL_UP_TO
+
+
+## The folder's width at the text size now (px; the card is wider by its actions' column when side_actions).
 static func width() -> float:
 	return FOLDER_W * Settings.text_scale
 
@@ -312,7 +327,7 @@ func actions() -> Array[Control]:
 
 ## A terminal chip (MenuChip, drawn: the Cell's cyan edge and caret, following the skin) under
 ## the folder.
-func _chip(row: HBoxContainer, words: String, line: String, tip: String) -> MenuChip:
+func _chip(row: BoxContainer, words: String, line: String, tip: String) -> MenuChip:
 	var b := MenuChip.new(words, line)
 	b.pre_translated = true
 	b.plate = &""  # drawn: the Cell accent marks its edge
