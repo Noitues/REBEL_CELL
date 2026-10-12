@@ -33,6 +33,7 @@ PINNED = {
     "code-cleanup": ("haiku", "low"),
     "fix-rules": ("opus", "medium"),
     "auditor": ("opus", "medium"),
+    "playtester": ("sonnet", "medium"),
 }
 PASS_THROUGH = {"Explore", "Plan", "claude-code-guide", "statusline-setup"}
 EFFORT_RANK = {"low": 0, "medium": 1, "high": 2, "xhigh": 3, "max": 4}
@@ -67,7 +68,7 @@ def main() -> int:
         return 0
     if stype not in PINNED:
         deny("Agent routing (docs/process/02 §3): spawn only a pinned type: fix-visual (Sonnet), fix-mechanical (Sonnet), "
-             "code-cleanup (Haiku), fix-rules (Opus), auditor (Opus), or a read-only Explore/Plan. "
+             "code-cleanup (Haiku), fix-rules (Opus), auditor (Opus), playtester (Sonnet), or a read-only Explore/Plan. "
              f"Got subagent_type={stype or 'none'}. The type carries the model and effort; do not pick them per call.")
         return 0
     fam, max_eff = PINNED[stype]

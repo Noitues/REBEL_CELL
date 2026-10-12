@@ -9,6 +9,7 @@ stays the rulebook for the code.
 | [02 Multi-agent and Batch API architecture](02_MULTI_AGENT_BATCH_ARCHITECTURE.md) | real-time vs batch routing, briefs and reports, the `.jsonl` pipeline, ingestion, checkpoints | before spawning an agent or starting bulk work |
 | [03 Code Review & Cleanup sub-agent](03_CODE_CLEANUP_AGENT.md) | the Haiku cleanup agent, its prompt, how to apply its patch | at every hand-back with a diff over ~50 lines |
 | [04 Playtest protocol](04_PLAYTEST_PROTOCOL.md) | User-Ready Gates, the Human Playtest Task List, the feedback schema and its ingestion | at every gate |
+| [05 Claude playtesters](05_CLAUDE_PLAYTESTER.md) | black-box Claude testers playing full campaigns by persona and focus, batches, the roll-up | before rolling a playtest batch |
 
 ## Tooling added with the process
 
@@ -22,6 +23,7 @@ stays the rulebook for the code.
 | `tools/batch/submit_batch.py` | submit / status / fetch results (`pip install anthropic`) |
 | `tools/batch/ingest_results.py` | results → patches, `git apply --check`, `INGEST_REPORT.md`, retry file, optional commits on `batch/<name>` |
 | `tools/playtest/make_playtest.py` | a prefilled Human Playtest Task List for a gate |
+| `tools/playtest/roll_testers.py`, `blackbox.py`, `aggregate.py` | Claude playtester batches: roll personas, play through the screen, roll up the reports (doc 05) |
 | `.claude/agents/*.md` | pinned agents: fix-visual / fix-mechanical (Sonnet medium), code-cleanup (Haiku low), fix-rules / auditor (Opus medium); `tools/hooks/guard_agents.py` enforces them |
 | `.claude/settings.json` | hooks (reading rules, agent routing) and the project default model: Opus 5.5 at effort medium |
 | `docs/process/agent_rules/*.md` | stable per-area rules files that briefs reference instead of pasting |

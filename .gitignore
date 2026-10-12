@@ -26,3 +26,6 @@ batches/
 
 # agent worktrees (local only)
 .claude/worktrees/
+
+# Claude playtester sessions (tools/playtest/roll_testers.py): screenshots, journals, per-tester user://
+.playtest_sessions/
