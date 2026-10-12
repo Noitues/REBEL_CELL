@@ -37,6 +37,40 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-11 — M14 12Q-WORDS: whole lines, the kit header inset, the route key at the text size, the lint leads
+QA matrix audit (`docs/handoff/m14_12q/qa_matrix_audit.md`) items L40 L41 L48 L52 L54 L59 L61 L65, re-checked on
+m14-group2 (6cc7de06). Test `test_m14_12q_words` (full tier); sheet `docs/art_review/ART-12/12q/fixes/WORDS.jpg`.
+- **L40 the fight's outcome line.** The "…" was the page mark (H23 S3): combat docked its subtitle box with a fixed
+  SUBTITLE_LINES (3) while the box is taller at big text, and the mark's reserve re-wrapped the page narrower, so
+  "Perfect. Tell the board the …" filled two of the box's five lines. `Dialogue.page_lines_in(rect)` counts the
+  lines a dock holds under the name row; the fight pages by `max(SUBTITLE_LINES, page_lines_in(box))`. The whole
+  line shows on one page at 1.0 / 1.6 / 2.0 (longer lines still page).
+- **L41 the campaign end's DISPATCH.** The lint's terminal_note.gd owner was wrong: it is the HQ's subtitle band,
+  one line, paging the verdict ("… just went quiet. …"). The campaign end pages (`end_lock`, `end`) give the band
+  two lines (`HqScene.END_SUBTITLE_LINES`), as the netrun's run end already does; every other page one line.
+- **L48 VOICE ONLY // NO FEED.** `CamFeed` breaks the words at their spaces to the feed's inner width
+  (`voice_lines`) and stands them at the frame's foot, the voice trace in the room above; never smaller, never clipped.
+- **L52 campaign lost, reduce effects off.** Confirmed, no change: windowed at a 2 s settle the glitch is gone (the
+  wipe is rolling) and at 5 s the notice reads (countdown 00:04.17). The audit's frame was the lock's first 0.6 s.
+- **L54 the route key.** It was fitted by `Control.scale` (15.5 px at 1.6, under the 19 px floor). The strip is an
+  HFlowContainer: one row when its row has the room (`RouteLegend.one_row_width`), else it wraps; scale stays 1.
+  The run end's small "title chips" were the terminal window titles (next item).
+- **L59 header flush to the border.** A plain `TerminalWindow`'s CRT glass is an internal child, and the
+  PanelContainer fitted it to its content rect, so the glass's edge hugged the words. The glass now covers the
+  whole window (after each sort); the content margins are the header's inset. The title and the tag were 15 / 14 px
+  whatever the text scale: they take the body step at the text size and the title wraps at its words (the
+  static lint baseline drops terminal_window.gd's two literal font sizes).
+- **L61 OURS NOW under the speech box.** `CombatBackdrop.keep_clear` (the fight's subtitle box) moves the pencil
+  under a rect it would meet (ART_BIBLE v2 1.2: no UI covers grease pencil).
+- **L65 lint leads.** Real: raid_paper's soft ink (INK→PAPER 0.42 / 0.45 / 0.5: 3.4–4.3:1) is a token,
+  `Palette.PAPER_INK_SOFT` #5C5B58 (5.3:1 on PAPER_ALT); `MANILA_FIELD_INK` #60503C → #564633 (4.4 → 5.1:1);
+  SAVED and CONNECTING on the title step (20 → 22 at 1.0); the fight banner's title on the steps under its cap
+  (`banner_title_px`: 22 / 29 / 30 at 1.0 / 1.6 / 2.0, was 20 / 30 / 30); its address line takes the body or caption
+  step at the text size (it shrank to a fixed 12 px, half the floor at 2.0) and keeps the outcome's word when it
+  drops the place; terminal_window.gd titles (above). False positives: fx.gd SAVED contrast (the ring misses its
+  6 px NIGHT_SKY keyline: 6.3:1 against it; the #C02F82 rows are the stamp fading in), value_stepper.gd (the ring
+  samples the light -/+ plates beside the value; the value has its dark rim on the dark panel).
+
 ### 2026-10-11 — M14 LEAK: a line said in one campaign never shows in the next
 ART-6 acceptance saw Solace's campaign-lost DISPATCH line ("Home server lost …") on the next raid_lab
 state. Two causes, reproduced headless in `test_m14_dialogue_leak`:
