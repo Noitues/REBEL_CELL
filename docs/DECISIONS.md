@@ -57,6 +57,20 @@ Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_deci
 - **G2R-8 Continue.** The playout / result's Continue is the kit's `HoloSticker` verb (pink, as on loot), named `Continue`.
 - Tests in `test_hq_m14_12q_raid` (g2r5..g2r8). Sheet `docs/art_review/ART-12/12q/fixes/G2R_RAID.jpg` (before | after, 1.0 / 2.0, hc row for raid_setup).
 
+### 2026-10-12 — M14 G2R2 city (art-pass review R2 of group 2): no UI over grease pencil on the Grid
+Before | after, Meridian and REBEL_CELL at 1.0 and 2.0: `docs/art_review/ART-12/12q/fixes/G2R2_CITY.jpg`.
+- **G2R2-1 standing rule: pencil under UI counts as off-frame.** `TargetEdgeMarker.panels` (the HQ's hand, tabs, card
+  column, work order, verb, key, minimap, ticker; set where the page lays out) joins the off-frame test: when the TARGET's
+  circle or word sits under any panel the edge arrow shows, exactly as when off-screen (Meridian at 1.0 / 2.0 put the
+  circle under the crew hand). Ruling kept: never zoom out to take the server. While the arrow shows the overlay hides
+  the boss's own circle, word and chip (`CityMapOverlay.target_hidden`).
+- **Labels yield to the pencil.** The arrow, its word (its own `global_rect`: the word's origin is its baseline) and its chip are
+  published to the overlay (`set_pencil_rects`); a Site name label that overlaps them, or the in-frame TARGET circle / word /
+  chip, moves to its node's other side or hides until hover (a focus label's last resort `_loose_spot` no longer
+  ignores pencil). The arrow's swing (G2R-2) now keeps clear of icons and tier pips only, since the labels move for it.
+- Tests: `test_hq_g2r2_target` (every corporation at 1.0 / 1.6 / 2.0: arrow, word and chip clear of every panel, no label
+  on the pencil; an in-frame TARGET never under a panel). The headless camera differs from a real render; the sheet is the real check.
+
 ### 2026-10-12 — M14 G2R city (art-pass review of group 2): the Grid camera off the city's edge, the TARGET arrow clear
 Before | after per corporation at 1.0 and 2.0 plus the REBEL_CELL TARGET crop: `docs/art_review/ART-12/12q/fixes/G2R_CITY.jpg`.
 - **G2R-1 the frame never shows past the city edge (network wins).** `CityMapCamera.keep_on_city` (pure): the focus
