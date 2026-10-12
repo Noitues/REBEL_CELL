@@ -66,6 +66,17 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-12 — M14 follow-ups for the next pass (art-pass review of the gate perf frames)
+Gate perf APPROVED by the art-pass session (873a362e). Not blocking M14; queued for the first post-M14 pass (CP-002 item 1):
+- **F1 CLAIMED stamps stack.** HQ idle tier-1 frame (`GATE_PERF.jpg`): four CLAIMED stamps overlap over the network,
+  with a lime wash across the Cell's nodes. B4 rule: a stamp lands once, wipes after 1.5 s, never stacks; a territory-
+  claim playout queues its stamps one at a time or merges them into one. Also check the perf fixture (`b4_idle`) does
+  not replay claims on every load.
+- **F2 raid-queued note covers paper.** HQ idle: "A raid is queued. While Heat stays at 50 or more…" sits over the top
+  of the work-order paper. Notes never cover paper: move it to the foot-band toast (as the raid warning, G2R2-2) or
+  into the work order's tooltip.
+- **Perf watch:** HQ idle tier-1 p95 11–12 ms (spikes; medians inside 8 ms) accepted for now; re-measure in the next pass.
+
 ### 2026-10-12 — M14 gate (PT-001): checks green, quiet perf run, **M14 complete**
 First User-Ready Gate under `docs/process/` (playtest `docs/playtest/PT-001_m14-close-out-group-2.md`, report
 `docs/handoff/gates/PT-001.md`, checkpoint CP-002). main @ 4780b5c0 (group 2 merged after the art-pass session's

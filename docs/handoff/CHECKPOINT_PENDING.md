@@ -12,7 +12,9 @@ Report: `docs/handoff/gates/PT-001.md`. Playtest: `docs/playtest/PT-001_m14-clos
 ### 1. What starts after M14
 Context: M14 is complete; work is paused per "pause after M14". MILESTONES "After ART-12" lists R7, G1–G16, the
 horizontal list, then H25+ and the Queued passes.
-- **A (recommended)**: start the After-ART-12 list with the R7 re-evaluation (Animation pass resumes): ~2 waves, 1 gate.
+- **A (recommended)**: start the After-ART-12 list with the R7 re-evaluation (Animation pass resumes): ~2 waves, 1 gate;
+  the art-pass follow-ups F1 (CLAIMED stamps stack) and F2 (raid-queued note over the paper) ride its first wave
+  (DECISIONS "M14 follow-ups for the next pass").
 - B: G1–G16 re-evaluation with you first (a ruling session), R7 after.
 - C: wait: nothing starts until you say.
 Default if unanswered: C (nothing starts without you). Blocks: all post-M14 work.
