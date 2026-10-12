@@ -69,6 +69,8 @@ const STAMP_TILT_STEP := 2.0
 ## lettering grows up to NOTE_SCALE_MAX, its tilt (radians), and the gap the arrow's head keeps from the sticker
 ## (px at 1.0).
 const NOTE_SCALE_MAX := 1.0
+## From this text scale the pencil grows with the text (G2R-3: at 2.0 the words were too small beside the big stickers).
+const NOTE_BIG_FROM := 2.0
 const NOTE_TILT := -0.06
 const ARROW_GAP := 4.0
 const ARROW_MIN := 34.0
@@ -177,7 +179,7 @@ func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], 
 	var tip := tr("Delete the campaign in slot %s (asks first).") % slot
 	cant_undo = PencilNote.new("
 ".join(undo.split(" ", false, 1)), Palette.PENCIL_THREAT, NOTE_TILT,
-		roundi(PencilNote.FONT_PX * minf(Settings.text_scale, NOTE_SCALE_MAX)))
+		roundi(PencilNote.FONT_PX * (Settings.text_scale if Settings.text_scale >= NOTE_BIG_FROM else minf(Settings.text_scale, NOTE_SCALE_MAX))))
 	cant_undo.name = "CantUndo"
 	_note_layer().add_child(cant_undo)  # placed in its room by _place_note (a Node2D layer: never laid out by the card)
 	_note_layer().z_index = 1  # over the stickers beside it (no UI ever covers pencil)

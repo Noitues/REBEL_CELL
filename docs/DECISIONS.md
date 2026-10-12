@@ -33,6 +33,13 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
   events.
 
 ## Implementation decisions
+- **G2R-MENUS (M14 group 2 art-pass review, 2026-10-12).** G2R-3: at every text scale each slot's folder keeps LOAD + DELETE and
+  the grease-pencil CAN'T UNDO under it (the designer's ruling; 12Q-MENUS' side-column layout at 2.0 is gone, so is
+  `CaseFileCard.side_actions` / `PENCIL_UP_TO`). At 2.0 a case file (317 px) is taller than the slots view on a 720p
+  screen (227 px with the cue), so the page shows one folder at a time and pages with MORE BELOW / MORE ABOVE; the
+  tests there require the focused LOAD and DELETE whole in the view, not the whole folder. G2R-4: the codex tab pager's
+  arrows are invisible (and take no clicks) while no tab is hidden on their side; their room stays so the row does not
+  reflow. G2R-c (verify only): see the RESULT of this round. Sheet `docs/art_review/ART-12/12q/fixes/G2R_MENUS.jpg`.
 ## Archives
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
