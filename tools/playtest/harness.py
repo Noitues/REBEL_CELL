@@ -633,6 +633,9 @@ class Tester:
 
 
 def main() -> int:
+    # Output goes to log files; the Windows console code page cannot encode every character a model writes.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--brief", required=True)
     ap.add_argument("--minutes", type=float, default=240)

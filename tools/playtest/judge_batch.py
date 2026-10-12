@@ -291,6 +291,10 @@ def submit_and_wait(c, reqs: list[dict], work: Path, name: str, poll: int) -> li
     work.mkdir(parents=True, exist_ok=True)
     state_f = work / ("%s.json" % name)
     state = json.loads(state_f.read_text()) if state_f.exists() else {}
+    if not reqs and not state.get("id"):
+        print("%s: nothing to judge (no session_end.json?)" % name, flush=True)
+        (work / ("%s.results.jsonl" % name)).write_text("", encoding="utf-8")
+        return []
     if not state.get("id"):
         b = c.messages.batches.create(requests=reqs)
         state = {"id": b.id, "n": len(reqs), "submitted": time.strftime("%Y-%m-%d %H:%M:%S")}
@@ -389,6 +393,9 @@ def write_audit_md(session: Path) -> None:
 
 
 def main() -> int:
+    # Output goes to log files; the Windows console code page cannot encode every character a model writes.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=["run", "status"])
     ap.add_argument("--batch", required=True)
