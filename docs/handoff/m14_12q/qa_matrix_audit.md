@@ -1,4 +1,4 @@
-PARTIAL — P1 4 / P2 15 / P3 19 (settings combos hc / rm / cb-deutan not reviewed: the helper's matrix_b had no DONE at hand-back)
+P1 4 / P2 17 / P3 23 (L28–L65 plus Pack B findings L78–L83; every axis of the matrix reviewed)
 
 # M14 ART-12 12q: QA matrix audit (vertical)
 
@@ -12,7 +12,7 @@ Coverage
 - Pack B (`%TEMP%/qa12q/matrix_b`, helper agent): 2.0 mouse / pad × RE off / on were captured (92/92 each) and read
   from raw frames; my interim sheets are `docs/art_review/ART-12/12q/sheets_auditor/s20_NN.jpg` (2.0 mouse RE off,
   capture order, 6 per sheet) and `pad20_00.jpg` (2.0 pad). Pack B's own sheets / lint, and the high contrast,
-  reduce motion and colour-blind (deutan setting) combos at 1.0 and 2.0, were NOT reviewed: still capturing.
+  reduce motion and colour-blind (deutan setting) combos at 1.0 and 2.0: see "Pack B findings" at the end.
 - Godot logs: 0 ERROR / SCRIPT ERROR / WARNING lines in the 8 pack-A runs. No failed, crashed or skipped screen.
 - Compared against the parity sheets (`docs/art_review/PARITY/<screen>.jpg`) for the look; findings below are
   layout / accessibility defects only.
@@ -69,6 +69,15 @@ RE on is an end state on every pack-A screen compared (largest RE off/on differe
 report, campaign_lost shows its end page, title / hq / jack_in drop scanlines and glitch). No RE-on frame showed a
 half-finished animation. sheets_a/screen_raid_result.jpg, sheets_auditor/re16_00.jpg.
 
-## Not covered (PARTIAL)
-High contrast, reduce motion and the colour-blind setting (deutan) at 1.0 and 2.0, and pack B's own sheets and lint
-report: matrix_b had captured only the four 2.0 combos when this report was handed back.
+## Pack B findings
+Pack B root a: 2.0 × mouse / pad × RE off / on × none / grey / deutan, 1104 entries; root b: hc / rm / cb-deutan at 1.0 and 2.0
+(mouse, RE off), 552 entries. Both manifests: 0 not ok, skipped []. Sheets: `docs/art_review/ART-12/12q/sheets_b/` (root b);
+lint: `lint_report_b.md` (root a, 2.0), `lint_report_b2.md` (root b, settings). Reduce motion: an end state everywhere (hq,
+title, raid_playout, jack_in drop the camera and parallax moves; nothing else changes). Root a's 2.0 lint clipped / overlap
+lines are all dup of L39 (tutorial), L40 (combat line), L41 (dispatch), L47 (SAVED toast), L29 (raid_report_meridian paper).
+- P2 combat_*, hq*, grid*, b4_*, raid_*, route* hc 1.0 / 2.0: high contrast leaves these screens almost unchanged (mean pixel difference vs off 0.2–2 of 255; combat identical): card rules text, LAST TURN captions and slice labels stay thin on the busy city, panels stay translucent; only the pause / confirm scrims and modals go opaque — the setting's own promise ("Opaque panels, 7:1 text and thick edges") on every screen — sheets_auditor/hccmp_00.jpg, hc10_00.jpg; sheets_b/screen_combat_after.jpg, screen_grid_site_selected.jpg
+- P2 grid_raid_pending, raid_setup, b4_idle, b4_defence cb-deutan 1.0 / 2.0: the colour-blind mode (deutan) does not change the map; the raid route stays red against the lime network, and through a deutan simulation of the mode's own frames both still read yellow, so turning the mode on does not fix L45 — with the mode on, the hostile path gets a pattern or glyph cue ("Patterns and glyphs stay the main cue") — sheets_auditor/cb_00.jpg (columns: off, mode on, mode on seen as deutan); sheets_b/screen_grid_raid_pending.jpg, screen_raid_setup.jpg
+- P3 run_end, run_end_clean hc 1.0 / 2.0: the SAVED toast is 1.08–1.11:1 on the dark page (invisible) — readable or not shown — lint_report_b2.md (fx.gd contrast)
+- P3 tutorial hc 1.0 / 2.0: the tutorial's "Next" measures 4.42:1, under the 7:1 high contrast promises — 7:1 — lint_report_b2.md (tutorial_overlay.gd contrast)
+- P3 raid_result, raid_result_meridian 2.0: two "-5" Heat flight labels are stacked on the same spot (65×121 px overlap) — one number — lint_report_b.md (flight_fx.gd overlap)
+- P3 new_campaign*, options*, hq_pause_options, route*, raid_result*, raid_report* hc (lint lead): the filled cyan selected buttons (Daily run, RESET ALL TABS, GRID VIEW, VIEW LOADOUT, MAP KEY) declare white on cyan at 2.1–2.6:1 (measured 7.5–9.3:1, low confidence); hc doubles the contrast findings vs off (168 vs 74 at 1.0) — confirm the drawn colours; if the fill is that cyan the label fails 7:1 — lint_report_b2.md (crt_window.gd, terminal_window.gd, hud_bar.gd, map_legend.gd contrast)
