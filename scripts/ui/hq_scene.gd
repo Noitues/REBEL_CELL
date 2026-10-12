@@ -1902,10 +1902,9 @@ func _build_hq_page(page_name: String) -> void:
 		_hq_focus = ""
 	if _last_warned_raid != String(pending.get("raid_id", "")) and not pending.is_empty():
 		_last_warned_raid = String(pending.get("raid_id", ""))
-		if raid_mode:
-			Dialogue.raid_warning(c.corporation_id, StringName(String(pending.get("raid_id", ""))), c.raids_won + c.raids_lost, "raid")
-		else:
-			intercept_raid_warning(StringName(String(pending.get("raid_id", ""))))
+		# G2R-7 (D7, bible 4.13): corp news is the holo toast at the foot, on the raid setup too: never a
+		# standing band under the title.
+		intercept_raid_warning(StringName(String(pending.get("raid_id", ""))))
 
 
 ## HQ-B: the pages that are the HQ (its hands, and the DEFENCE hand's raid setup).
@@ -5219,8 +5218,11 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	var feed := RaidTerminal.new(tr("LIVE RAID FEED"), Palette.HARM)
 	feed.name = "RaidFeedWindow"
 	side.add_child(feed)
-	var cont := _button(tr("Continue"), _after_playout)
-	cont.theme_type_variation = &"HotButton"
+	# G2R-8: the Continue verb sticker from the kit (as on loot), not a flat bar.
+	var cont := HoloSticker.word(tr("CONTINUE"), VinylSticker.Fill.PINK, minf(Settings.text_scale, ShopItem.OBJECT_MAX_SCALE), RAID_CONTINUE_PX)
+	cont.name = "Continue"
+	cont.pressed.connect(_after_playout)
+	cont.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	cont.disabled = true
 	# Parity RAID-09: while the raid plays, Continue keeps its room unseen (a grey waiting
 	# sticker read as broken); it shows with the verdict.
@@ -5767,6 +5769,16 @@ func show_raid_summary() -> void:
 		report.add_child(pin)
 		pin.add_child(holds)
 		pin.resized.connect(_place_holds.bind(holds, pin))
+		# G2R-5: at big text the page folds (its table rows run below the fold); the verdict then gets its
+		# own room under the order line, at the paper's right, and the table rows fold below it.
+		if Settings.text_scale >= HOLDS_FOLD_SCALE:
+			var room := Control.new()
+			room.name = "HoldsRoom"
+			room.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			room.custom_minimum_size.y = holds.custom_minimum_size.y * HOLDS_ROOM_SHARE
+			box.add_child(room)
+			box.move_child(room, facts.get_index())
+			room.item_rect_changed.connect(_place_holds.bind(holds, pin))
 		_slap_holds.call_deferred(holds, table, pin)
 
 
@@ -5809,6 +5821,11 @@ func _place_holds(holds: RaidSticker, pin: Control) -> void:
 	var paper := pin.get_parent() as Control
 	var whole := Rect2(-pin.position, paper.size) if paper != null else Rect2(Vector2.ZERO, pin.size)
 	holds.position = holds_spot(whole, holds.size)
+	var room := paper.find_child("HoldsRoom", true, false) as Control if paper != null else null
+	if room != null and room.is_inside_tree() and room.size.y > 0.0:
+		# The folded page: the verdict stands in its room (the paper's right, vertically centred on it).
+		var at := paper.get_global_transform().affine_inverse() * room.get_global_transform().origin - pin.position
+		holds.position = Vector2(whole.end.x - holds.size.x - Fx.sticker_margin() * 0.5, at.y + (room.size.y - holds.size.y) * 0.5)
 
 
 ## B3 (Q7): where CELL HOLDS stands on the after-action paper `paper` (any px) for a sticker
@@ -5821,6 +5838,12 @@ static func holds_spot(paper: Rect2, size: Vector2) -> Vector2:
 ## Where CELL HOLDS sits on the report (share of the paper: over its lower left, under the rows and
 ## beside the CLASSIFIED stamp).
 const HOLDS_AT := Vector2(0.27, 0.8)
+## G2R-5: from this text scale the report folds, and CELL HOLDS gets a room of this share of its height
+## under the order line (the table rows fold below it).
+const HOLDS_FOLD_SCALE := 1.8
+## G2R-8: the raid result's Continue sticker lettering (the loot page's size, px at 1.0).
+const RAID_CONTINUE_PX := 32
+const HOLDS_ROOM_SHARE := 0.9
 
 ## ART-11 4D (ART_BIBLE v2 §4.8; refs `docs/art_reference/campaign_end/`): the campaign's end.
 ## Lost (the home server BREACHED, ruling 6.2): the winning corporation's ransomware lock over

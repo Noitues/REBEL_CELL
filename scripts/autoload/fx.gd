@@ -518,10 +518,14 @@ func _collect_avoid(node: Node, out: Array[Rect2]) -> void:
 			if usable or c is MapLegend or c is RouteLegend or c is PadPrompts or c is RaidSpeedStrip or c is RamBar or c is HudNameSticker \
 					or c is OnAirTicker or c.has_meta(META_SAVED_AVOID):
 				var r := _shown_rect(c)
+				if c is MapLegend and c.top_level:
+					# G2R-7: a top-level key (the raid setup's, in the top bar) is not under its page's scroll and draws
+					# as its folded chip: that chip's rect, not the scroll-clipped one.
+					r = Rect2(c.global_position, (c as MapLegend).fit_size())
 				if r.has_area():
 					# B5 (art director, D8): a sticker's die-cut border, shadow and tilt reach past its control rect
 					# (SAVED sat against CONTINUE): the stamp keeps a sticker's clearance from it.
-					if c is HoloSticker or c is VerbSticker:
+					if c is HoloSticker or c is VerbSticker or c is MapLegend:  # G2R-7: the MAP KEY chip too (its border and glow reach past the control)
 						r = r.grow(SAVED_STICKER_CLEAR * Settings.text_scale)
 					out.append(r)
 				if usable:

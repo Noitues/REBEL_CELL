@@ -384,3 +384,87 @@ func test_the_3d_city_shows_its_current_look_once_built() -> void:
 	await _frames(1)
 	assert_true(city.is_baked(), "the 3D city counts as baked (it never draws procedurally)")
 	assert_true(city.showing_current_look(), "with no bake to wait for, it shows its current look (no 3D view headless)")
+
+
+# --- G2R-5..8: the group-2 art review's raid fixes -----------------------------------------------
+
+func test_g2r5_at_big_text_the_cell_holds_verdict_is_on_the_reports_first_page() -> void:
+	Settings.set_text_scale(2.0)
+	_raid_campaign()
+	var hq := _scene(HQ)
+	await _frames(1)
+	hq.show_raid()
+	await _frames(2)
+	hq.fight_raid()
+	await _frames(4)
+	hq.show_raid_summary()
+	await _frames(8)
+	var holds := hq._panel.find_child("CellHolds", true, false) as Control
+	if holds != null:  # the raid held (a lost raid has no verdict sticker)
+		var shown := Rect2(Vector2.ZERO, SCREEN.size)
+		var scroll := hq._panel_host.get_parent() as Control
+		var r := holds.get_global_rect()
+		assert_true(shown.encloses(r) and r.end.y <= scroll.get_global_rect().end.y + 0.5, "CELL HOLDS above the fold at 2.0 (%s, page %s)" % [r, scroll.get_global_rect()])
+		var rows := hq._panel.find_child("RaidResult", true, false) as Control
+		assert_gte(rows.get_global_rect().position.y, holds.get_global_rect().end.y - holds.size.y * 0.3, "the table rows fold below the verdict")
+	await _close(hq)
+
+
+func test_g2r6_incoming_is_pencilled_once_for_the_raid() -> void:
+	_raid_campaign()
+	var hq := _scene(HQ)
+	await _frames(1)
+	hq.show_raid()
+	await _frames(2)
+	hq.fight_raid()
+	await _frames(4)
+	var fx := RaidFxLayer.new(hq.city_overlay)
+	hq.city_overlay.add_child(fx)
+	for site in [&"a", &"b", &"c"]:
+		fx.play_beat({"type": "threat_enters", "dur": 0.2, "event": {"threat": "t_%s" % site, "site": site, "threat_content": "", "integrity": 1}}, 0.0)
+	var n := 0
+	for m in fx.marks():
+		if m["kind"] == "incoming":
+			n += 1
+	assert_eq(n, 1, "one INCOMING for the raid, not one per entry Site")
+	await _close(hq)
+
+
+func test_g2r7_the_raid_setup_has_no_standing_corp_band_and_the_key_chip_is_cleared_by_saved() -> void:
+	for scale in [1.0, 2.0]:
+		Settings.set_text_scale(scale)
+		_raid_campaign()
+		var hq := _scene(HQ)
+		await _frames(1)
+		hq._last_warned_raid = ""  # the warning arrives with this page (the HQ page before it has told it already)
+		hq.show_raid()
+		await _frames(6)
+		assert_true(Dialogue._shown_line.is_empty() or String(Dialogue._shown_line.get("scope", "")) != "raid", "%.1f: the corp's warning is not a subtitle band" % scale)
+		var toast := hq._panel.find_child(CorpNewsToast.NODE_NAME, true, false) as Control
+		assert_not_null(toast, "%.1f: the warning is the corp news toast" % scale)
+		if toast != null:
+			assert_true(toast.visible, "%.1f: the toast shows" % scale)
+		var key := hq.hq_legend as MapLegend
+		if key != null and key.top_level:
+			var chip := Rect2(key.global_position, key.fit_size())
+			var covered := false
+			for a in Fx.avoid_rects(get_tree().root):
+				if a.encloses(chip):
+					covered = true
+			assert_true(covered, "%.1f: SAVED keeps off the MAP KEY chip (%s)" % [scale, chip])
+		await _close(hq)
+		RunManager.reset()
+
+
+func test_g2r8_the_result_pages_continue_is_the_kits_verb_sticker() -> void:
+	_raid_campaign()
+	var hq := _scene(HQ)
+	await _frames(1)
+	hq.show_raid()
+	await _frames(2)
+	hq.fight_raid()
+	await _frames(4)
+	if hq.panel_name == "raid_playout":  # headless may go straight to the report
+		var cont: Node = hq._panel.find_child("Continue", true, false)
+		assert_true(cont is HoloSticker, "Continue is a verb sticker")
+	await _close(hq)
