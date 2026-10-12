@@ -35,7 +35,12 @@ m14-g2r-menus (slots at 2.0, codex pager arrows, verify hand c), m14-g2r-raid (r
 MAP KEY SAVED clearance, Continue sticker). All three merged (m14-group2 @ 36503678; NB the
 m14-group2 worktree needed `godot --headless --import` after the ACCESS merge or every UiTheme user fails to compile).
 Round 2 sheet M14_GROUP2_R2.jpg (@ 641523ef) sent with Qs: REBEL_CELL TARGET zoom-out vs arrow; 2.0 save folder shrink vs paging;
-JACK IN overlap not reproduced. Awaiting APPROVED.
+JACK IN overlap not reproduced. R2 review: CHANGES 4 (rest APPROVED; keep the edge arrow). Slices on 641523ef: m14-g2r2-city
+(pencil under UI = off-frame, labels yield to TARGET), m14-g2r2-raid (setup toast in the foot band in place of ON AIR; Continue fold room),
+m14-g2r2-menus (compact folder at >=1.6, no paging inside a folder; hand cost + title at 1.6 / 2.0 tested). All three merged (m14-group2 @ a5b86304);
+R3 sheet M14_GROUP2_R3.jpg (@ 3591b032) sent 2026-10-12: **APPROVED** after 3 polish items (no review loop): Continue fold room
+at 1.0, slots 1.6 CAN'T UNDO unclipped, 6 px label gap from the TARGET chip. Polish merged (m14-group2 @ 512fc1ae). Merging m14-group2
+into main, then the GATE (PT-001 / CP-002, first gate under docs/process; M14-completion gate = full replan). Art-pass session says it supplies the HQ idle + combat quiet-machine perf numbers for the gate report.
 Next: art-pass review (incl. Qs: takeover city darker than round 20 (ISOLATE look);
 seal gap 8→4 px; fanned hand hides line ends at rest; Grid per-corp differences list in DECISIONS "ART-2/ART-5 acceptance") → merge →
 push gate → quiet perf run → GATE (full suite once, GATE_REPORT, PT list, CP-002) → CI → "M14 complete".
