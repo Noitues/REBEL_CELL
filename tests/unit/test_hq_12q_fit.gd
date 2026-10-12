@@ -387,3 +387,48 @@ func test_card_split_keeps_captions_with_their_row_and_empty_rows_free() -> void
 	var pages := CardPager.split(h, nxt, 4.0, 90.0)
 	assert_eq(pages, [0, 0, 0, 1, 1] as Array[int], "an empty row costs nothing; a caption goes with the row after it")
 	assert_eq(CardPager.split([200.0] as Array[float], [false] as Array[bool], 4.0, 90.0), [0] as Array[int], "a row taller than the room takes its own page")
+
+
+## G2R2-2: the raid setup's INTERCEPTED toast takes the ON AIR line's place in the foot band for its
+## hold (never over the map, the pencil or the paper), then the line returns; it never stands.
+func test_the_raid_setup_toast_takes_the_on_air_lines_place_and_gives_it_back() -> void:
+	for s in SCALES:
+		Settings.set_text_scale(s)
+		_b4()
+		var hq := await _hq()
+		hq.show_raid()
+		await _frames(4)
+		hq.intercept_raid_warning(&"raid_heat_25")
+		await _frames(4)
+		var toast := hq._panel.get_node(CorpNewsToast.NODE_NAME) as CorpNewsToast
+		var ticker := hq._panel.get_node("OnAir") as Control
+		assert_true(toast.visible, "x%.1f: the toast is up" % s)
+		var tr_ := toast.get_global_rect()
+		var kr := ticker.get_global_rect()
+		assert_almost_eq(tr_.end.y, kr.end.y, 1.5, "x%.1f: the toast stands on the foot band" % s)
+		assert_true(tr_.position.x >= kr.position.x - 1.0 and tr_.end.x <= kr.end.x + 1.0, "x%.1f: within the band's width" % s)
+		assert_eq(ticker.modulate.a, 0.0, "x%.1f: the ticker waits under it" % s)
+		assert_lt(CorpNewsToast.hold_for(toast.text()), 10.0, "x%.1f: the toast is transient (hold then fade)" % s)
+		toast.hide()
+		await _frames(2)
+		assert_eq(ticker.modulate.a, 1.0, "x%.1f: the ON AIR line returns" % s)
+		hq.get_parent().free()
+
+
+## G2R2-4: the raid result's CONTINUE (built as the playout page builds it; headless the page
+## goes straight on to the summary) keeps the focus fold's room after its last letter.
+func test_the_raid_result_continue_keeps_room_for_its_focus_fold() -> void:
+	var hq_script := load("res://scripts/ui/hq_scene.gd")
+	for s in SCALES:
+		Settings.set_text_scale(s)
+		var cont := HoloSticker.word(tr("CONTINUE"), VinylSticker.Fill.PINK, minf(Settings.text_scale, ShopItem.OBJECT_MAX_SCALE), hq_script.RAID_CONTINUE_PX)
+		cont.add_fold_room()
+		add_child_autofree(cont)
+		await _frames(2)
+		var v := cont.sticker
+		var last_end := 0.0
+		for g in v.get(&"_glyphs"):
+			if g[0] != "\u00a0":
+				last_end = maxf(last_end, (g[1] as Vector2).x + Palette.display().get_string_size(g[0], HORIZONTAL_ALIGNMENT_LEFT, -1, v.get(&"_px")).x)
+		assert_gt(last_end, 0.0, "x%.1f: the word is laid out" % s)
+		assert_gte(v.body_rect.end.x - last_end, v.peel_px(), "x%.1f: the fold lies past the last letter" % s)

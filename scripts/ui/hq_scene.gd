@@ -3072,6 +3072,17 @@ func _place_corp_news() -> void:
 	var x := gap.position.x
 	var room := gap.size.x
 	var over_hand := -1.0
+	if panel_name == "raid":
+		# G2R2-2: on the raid setup the toast takes the ON AIR line's place in the foot band for its
+		# hold, then the line returns: never over the map (CORE, the pencil, the paper).
+		t.set_width(ticker.size.x)
+		t.position = Vector2(ticker.position.x, ticker.position.y + ticker.size.y - t.size.y)
+		if t.visible:
+			_settle_corp_news.call_deferred()
+		ticker.modulate.a = 0.0 if t.visible else 1.0
+		if not t.visibility_changed.is_connected(_place_corp_news):
+			t.visibility_changed.connect(_place_corp_news)
+		return
 	if room < CORP_NEWS_MIN_W * HqLayout.object_scale(Settings.text_scale):
 		# A full hand (big text): 12Q-HQ (L49: it covered the polaroids' names) over the map, its
 		# foot on the hand's top, between the work order (or the tabs) and the card column.
@@ -5267,6 +5278,7 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	# G2R-8: the Continue verb sticker from the kit (as on loot), not a flat bar.
 	var cont := HoloSticker.word(tr("CONTINUE"), VinylSticker.Fill.PINK, minf(Settings.text_scale, ShopItem.OBJECT_MAX_SCALE), RAID_CONTINUE_PX)
 	cont.name = "Continue"
+	cont.add_fold_room()  # G2R2-4: the focus fold never covers the word
 	cont.pressed.connect(_after_playout)
 	cont.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	cont.disabled = true

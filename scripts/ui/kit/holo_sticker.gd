@@ -102,6 +102,16 @@ func _set_hot(on: bool) -> void:
 	sticker.set_state(VinylSticker.State.HOVER if on else VinylSticker.State.REST)
 
 
+## G2R2-4: pads the sticker's right edge with the focus fold's room (no-break spaces of its own
+## lettering, as the run end's BACK TO HQ does), so the peel-back never covers the last letters.
+func add_fold_room() -> void:
+	var body_w := sticker.body_rect.size.x if sticker.body_rect.size.x > 1.0 else sticker_size().x
+	var leg := VinylSticker.peel_leg(body_w, 720.0)
+	var space_w := maxf(1.0, Palette.display().get_string_size(" ", HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(verb_px_base * text_scale)).x)
+	sticker.text += " ".repeat(ceili(leg / space_w))
+	_fit()
+
+
 func _draw_plate() -> void:
 	var f := Palette.display()
 	var ps := roundi(PLATE_PX * text_scale)

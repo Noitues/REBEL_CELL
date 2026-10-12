@@ -44,6 +44,14 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-12 — M14 G2R2-RAID: raid toast in the foot band, CONTINUE fold room (review R2)
+- **G2R2-2.** On the raid setup the INTERCEPTED toast (`intercept_raid_warning`) is placed over the ON AIR line's own rect
+  (`_place_corp_news`, `panel_name == "raid"`): the foot band, the ticker waits (alpha 0) for the toast's hold (`toast` entry,
+  2.4 s or reading time) and returns when it hides; never over CORE, the pencil or the paper. Transient: hold then fade, hide.
+- **G2R2-4.** `HoloSticker.add_fold_room()` pads the sticker's right edge with no-break spaces worth the peel-back leg
+  (as BACK TO HQ's `END_BACK_FOLD_ROOM`, B5 fix 4); the raid result's Continue uses it. Tests in test_hq_12q_fit.gd.
+  Sheet `docs/art_review/ART-12/12q/fixes/G2R2_RAID.jpg`.
+
 ### 2026-10-12 — M14 G2R-RAID: the raid pages after the art-pass review of group 2 (G2R-5..8)
 - **G2R-5 report verdict at 2.0.** From text scale 1.8 (`HOLDS_FOLD_SCALE`) the after-action paper gives CELL HOLDS its own room
   (`HoldsRoom`, 0.9 of the sticker's height) right under the order line, at the paper's right; the table rows (units, home,
