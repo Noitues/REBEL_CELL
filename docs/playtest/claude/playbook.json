@@ -89,17 +89,6 @@
    ]
   },
   {
-   "id": "combat-aim-enemy-wheel-only",
-   "rule": "In practice, Jolt, Brute Spin and Fine Tune could only be aimed at the enemy wheel; about 25 clicks on the player's own wheel never registered (though low RAM may have been the cause in some cases).",
-   "category": "combat",
-   "certainty": "observed",
-   "confirmations": 1,
-   "contradictions": 0,
-   "builds": [
-    "19ad76a3"
-   ]
-  },
-  {
    "id": "combat-incoming-damage-badge",
    "rule": "Check the incoming-damage badge on your HP each turn and prioritise defence or Mirror Flip when it threatens lethal.",
    "category": "combat",

@@ -40,6 +40,24 @@ import harness as hz  # noqa: E402
 ROOT = hz.ROOT
 SESSIONS = ROOT / ".playtest_sessions"
 PLAYBOOK = ROOT / "docs" / "playtest" / "claude" / "playbook.json"
+REPORTS = ROOT / "docs" / "playtest" / "claude"
+FINDINGS_TEMPLATE = ROOT / "docs" / "process" / "templates" / "PLAYTEST_FINDINGS.md"
+SYNTH_RULES = """You turn a batch of game playtest reports into one findings document for the development
+team, by filling the template exactly. Rules:
+- Deduplicate across testers: one finding per underlying problem, listing every tester who hit it.
+- Every finding cites evidence that exists in the inputs (tester handle + report section, shot file,
+  or contact sheet). Never invent a finding, a number or a repro step.
+- A click, drag or key press that "did nothing" is confidence unconfirmed-input unless another
+  tester got past the same control: the testers' input is simulated and some controls ignore it.
+- Screen-audit items count only when they are blocker/major or a tester also tripped on them;
+  merge repeats of the same issue on near-identical screens.
+- Balance and design opinions go to section 4 as questions with options for the designer; never
+  propose numbers as decisions.
+- Areas: combat (wheel fights, cards, hand), city (City Grid, raids, map), screens (title, HQ,
+  menus, rewards, shops, dialogs, settings), rules (outcomes that contradict what the game told
+  the player).
+- Rank by how many testers it affected, then severity. Keep it tight: the team reads this first.
+Output only the markdown document."""
 AUDIT_MODELS = {"sonnet": "claude-sonnet-5-5", "opus": "claude-opus-5-5"}
 BATCH_DISCOUNT = 0.5
 OPUS_PRICE = (4.00, 20.00, 0.40, 5.00)  # in, out, cache read, cache write
@@ -223,6 +241,47 @@ def stage_b(batch: str) -> tuple[list[dict], dict]:
     return reqs, index
 
 
+def stage_c(batch: str, compare: str) -> tuple[list[dict], dict]:
+    """One Opus request: the batch's reports, audits and motion problems into _FINDINGS.md."""
+    folder = REPORTS / batch
+    parts = []
+    bp = folder / "_BATCH.md"
+    if bp.exists():
+        parts.append("# Batch statistics\n" + bp.read_text(encoding="utf-8"))
+    mf = SESSIONS / batch / "batch.json"
+    if mf.exists():
+        m = json.loads(mf.read_text(encoding="utf-8"))
+        parts.append("# Testers\n" + "\n".join("- %s: tier %s, persona %s, focus %s" % (
+            t["handle"], t.get("tier", "?"), t["persona"], t["focus"]) for t in m["testers"]))
+    for rp in sorted(p for p in folder.glob("*.md") if not p.name.startswith("_")):
+        parts.append("# Report: %s\n%s" % (rp.stem, rp.read_text(encoding="utf-8")))
+    for sdir in sessions_of(batch):
+        af = sdir / "audit.jsonl"
+        if af.exists():
+            rows = [json.loads(l) for l in af.read_text(encoding="utf-8").splitlines() if l.strip()]
+            hits = ["- %s %s (%s) %s at %s: %s" % (r["shot"], i["severity"], r["screen"][:50], i["type"], i["where"], i["detail"])
+                    for r in rows for i in r["issues"] if i["severity"] in ("blocker", "major")]
+            if hits:
+                parts.append("# Screen audit, blocker/major only: %s\n%s" % (sdir.name, "\n".join(hits)))
+        mj = sdir / "motion.jsonl"
+        if mj.exists():
+            rows = [json.loads(l) for l in mj.read_text(encoding="utf-8").splitlines() if l.strip()]
+            bad = ["- motion/%s %s %s (%.2fs): %s" % (r["sheet"], r["verdict"], r["moment"], r["duration_s"], r["notes"])
+                   for r in rows if r["verdict"] not in ("clear_and_satisfying", "clear_but_flat")]
+            if bad:
+                parts.append("# Motion problems: %s\n%s" % (sdir.name, "\n".join(bad)))
+    if compare:
+        prev = REPORTS / compare / "_FINDINGS.md"
+        if prev.exists():
+            parts.append("# Previous batch findings (%s), for the trend column and to mark fixed or recurring items\n%s"
+                         % (compare, prev.read_text(encoding="utf-8")))
+    prompt = "\n\n".join(parts) + "\n\n# Template\n" + FINDINGS_TEMPLATE.read_text(encoding="utf-8")
+    req = {"custom_id": "s-findings", "params": dict(
+        model=AUDIT_MODELS["opus"], max_tokens=32000, system=[{"type": "text", "text": SYNTH_RULES}],
+        messages=[{"role": "user", "content": prompt}], output_config={"effort": "medium"})}
+    return [req], {"s-findings": {"session": "", "kind": "findings", "batch": batch}}
+
+
 # ---------------------------------------------------------------- batch plumbing
 
 def submit_and_wait(c, reqs: list[dict], work: Path, name: str, poll: int) -> list[dict]:
@@ -274,6 +333,11 @@ def ingest(results: list[dict], index: dict, cost: dict) -> None:
         cost["usd"] = cost.get("usd", 0.0) + usd
         text = next((b["text"] for b in msg["content"] if b.get("type") == "text"), "")
         s = Path(meta["session"]) if meta["session"] else None
+        if meta["kind"] == "findings":
+            out = REPORTS / meta["batch"] / "_FINDINGS.md"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(text, encoding="utf-8")
+            continue
         if meta["kind"] == "report":
             end = json.loads((s / "session_end.json").read_text(encoding="utf-8"))
             out = Path(end["report"])
@@ -295,6 +359,8 @@ def ingest(results: list[dict], index: dict, cost: dict) -> None:
                 f.write(json.dumps(data) + "\n")
         elif meta["kind"] == "lessons":
             (s / "lessons.json").write_text(json.dumps(data, indent=1), encoding="utf-8")
+        elif meta["kind"] == "findings":
+            (REPORTS / meta["batch"] / "_FINDINGS.md").write_text(text, encoding="utf-8")
         elif meta["kind"] == "playbook":
             PLAYBOOK.parent.mkdir(parents=True, exist_ok=True)
             PLAYBOOK.write_text(json.dumps(data, indent=1), encoding="utf-8")
@@ -326,6 +392,8 @@ def main() -> int:
     ap.add_argument("--audit-model", choices=sorted(AUDIT_MODELS), default="sonnet")
     ap.add_argument("--audit-max", type=int, default=40, help="most distinct screens audited per session (0 = no audit)")
     ap.add_argument("--poll", type=int, default=60, help="seconds between status polls")
+    ap.add_argument("--compare", default="", help="previous batch id, for trends in the findings")
+    ap.add_argument("--no-synthesis", action="store_true", help="skip stage C (_FINDINGS.md)")
     a = ap.parse_args()
     work = SESSIONS / a.batch / "judge"
     c = client()
@@ -350,6 +418,13 @@ def main() -> int:
         reqs, index = stage_b(a.batch)
         (work / "stage_b.index.json").write_text(json.dumps(index))
         res = submit_and_wait(c, reqs, work, "stage_b", a.poll)
+        ingest(res, index, cost)
+        cost_f.write_text(json.dumps(cost, indent=1))
+    if not a.no_synthesis and not (work / "stage_c.results.jsonl").exists():
+        import subprocess
+        subprocess.run([sys.executable, str(Path(__file__).parent / "aggregate.py"), "--batch", a.batch])
+        reqs, index = stage_c(a.batch, a.compare)
+        res = submit_and_wait(c, reqs, work, "stage_c", a.poll)
         ingest(res, index, cost)
         cost_f.write_text(json.dumps(cost, indent=1))
     print("judge done: usd=%.3f %s" % (cost.get("usd", 0.0), {k: v for k, v in cost.items() if isinstance(v, dict)}))

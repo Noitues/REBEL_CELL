@@ -165,6 +165,9 @@ How to play:
 - Hover (move) or right-click to read tooltips when your persona would. Use zoom to read small
   numbers or text before acting (it costs one step; do not overuse it).
 - Cards cannot be dragged: click the card, then click its target.
+- Some dialog buttons (confirm boxes over a blurred screen) may not take your clicks. Use the
+  keyboard there: arrow keys or Tab move the highlight, Enter presses it, Esc cancels. That is a
+  limit of your controls, not a game bug: do not report it.
 - Frames are taken once the screen is still, so you never need to wait for animations, except for
   long automatic playouts (use wait 3-10).
 - escalate=true hands this screen to a stronger player who will act instead of you. Escalate on

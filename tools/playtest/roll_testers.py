@@ -201,9 +201,12 @@ def main() -> int:
         manifest.append({"handle": handle, "persona": persona["id"], "tier": persona["tier"], "focus": focus["id"],
                          "quirks": quirks, "brief": brief.as_posix(), "report": report.as_posix()})
         print(brief.as_posix())
-    (batch_dir / "batch.json").write_text(json.dumps(
-        {"batch": a.batch, "seed": seed, "build": sha, "rolled": dt.datetime.now().isoformat(timespec="seconds"),
-         "mix": a.mix or "", "testers": manifest}, indent=1), encoding="utf-8")
+    mf = batch_dir / "batch.json"
+    earlier = json.loads(mf.read_text(encoding="utf-8")) if mf.exists() else {}
+    rolls = earlier.get("rolls", []) + [{"seed": seed, "mix": a.mix or "", "count": a.count,
+                                         "rolled": dt.datetime.now().isoformat(timespec="seconds")}]
+    mf.write_text(json.dumps({"batch": a.batch, "build": sha, "rolls": rolls,
+                              "testers": earlier.get("testers", []) + manifest}, indent=1), encoding="utf-8")
     print("seed: %d | build: %s | %d tester(s) in %s" % (seed, sha[:8], a.count, batch_dir.as_posix()))
     return 0
 
