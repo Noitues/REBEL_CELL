@@ -21,10 +21,16 @@ Main: 8df81af7 group 1 + FOLLOW-UP pushed at 6fb177a4/gate; since then merged AR
 Group 1 (BIG-TEXT b, SUBTITLE, RED-TIP, PERF, SPILL) APPROVED + merged; FOLLOW-UP (letterhead_name, takeover end frame) merged.
 **Group 2** = branch m14-group2 (worktree .claude/worktrees/m14-group2) @ 6cc7de06: FIX-2 (no raid toast after loss, subtitle under the
 takeover, memo routing wrap), ART-2/5 acceptance (clutter fixture + drone dock fix, per-corp Grid + holo header wrap), LEAK
-(Dialogue cleared on new_campaign), 12q audit file. Five 12q fix slices running on it: 12Q-MENUS, 12Q-WORDS, 12Q-HQ, 12Q-RAID, 12Q-MAIN.
-12q audit PARTIAL (P1 4 / P2 15 / P3 19): hc / rm / cb-deutan combos still capturing (helper → %TEMP%/qa12q/matrix_b/DONE); then resume the
-auditor (it was agent a847db03…) to review them and drop PARTIAL.
-Next: merge the five slices into m14-group2 → one group sheet → art-pass review (incl. Qs: takeover city darker than round 20 (ISOLATE look);
+(Dialogue cleared on new_campaign), 12q audit file. m14-group2 now @ 4dc8a120: 12Q-MENUS, 12Q-WORDS, 12Q-HQ, 12Q-RAID, 12Q-MAIN merged;
+12q audit complete (P1 4 / P2 17 / P3 23, pack B L78-L83). Pack-A contact sheets (sheets_a, 116 jpgs) live only on branch qa12q (never merged).
+**12Q-ACCESS** (L78-L83) = branch worktree-agent-aadb763b66a03c656: 4 finished commits + 5e3e0821 = the dead agent's staged "drawn words"
+follow-up saved as WIP; verified by a fix-visual agent (f96975a8, precommit=0 incl. fast tier, base m14-group2) and merged: m14-group2 @ e47285d1.
+All six 12q slices are now on m14-group2.
+Worktrees cleaned 2026-10-11 22:05: all agent worktrees removed (0 live; the stale locks were from dead pid 23352). ~100 merged
+worktree-agent-* branches remain (deletion not done).
+Group sheet docs/art_review/PARITY/fixes/M14_GROUP2.jpg committed (m14-group2 @ 8fbf6117) and sent 2026-10-12 to the art-pass session
+("REBEL_CELL art direction and integration") with Qs a-d below; awaiting APPROVED.
+Next: art-pass review (incl. Qs: takeover city darker than round 20 (ISOLATE look);
 seal gap 8→4 px; fanned hand hides line ends at rest; Grid per-corp differences list in DECISIONS "ART-2/ART-5 acceptance") → merge →
 push gate → quiet perf run → GATE (full suite once, GATE_REPORT, PT list, CP-002) → CI → "M14 complete".
 
