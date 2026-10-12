@@ -49,6 +49,10 @@ var limit: Callable = Callable()
 ## B3 c: controls drawn over the area (the top bar): the TARGET counts as off frame when any part
 ## of it sits under one, and the arrow keeps off them.
 var covers: Array[Control] = []
+## G2R2-1 (standing rule: no UI over grease pencil): the page's panels (hand, tabs, card column,
+## work order, verb, key, minimap). The TARGET's pencil (circle, word) counts as off frame when
+## any part of it sits under one, and the edge arrow shows instead.
+var panels: Array[Control] = []
 var _mark: GreasePencilMark
 var _word: GreasePencilWord
 var _hit: Control
@@ -160,7 +164,7 @@ func refresh() -> void:
 	var reach := 0.0
 	if overlay.has_method(&"target_reach"):
 		reach = float(overlay.call(&"target_reach", _boss)) * overlay.get_global_transform().get_scale().x / maxf(get_global_transform().get_scale().x, 0.001)
-	if seen.grow(-reach).has_point(local):
+	if seen.grow(-reach).has_point(local) and not _pencil_under_panel(local, reach):
 		_show(false)
 		return
 	var e := edge_point(free, local, EDGE_MARGIN)
@@ -188,6 +192,7 @@ func refresh() -> void:
 		_hit.position = at - dir * SHAFT_PX * 0.5 - _hit.size * 0.5
 		_place_chip(wsize)
 	_show(true)
+	_publish_pencil()
 
 
 ## B4: the chip under the word (or over it when the word is low), kept inside the free area and
@@ -213,12 +218,12 @@ func _chip_spot(cs: Vector2, word_box: Rect2, arrow_box: Rect2) -> Vector2:
 	return p
 
 
-## G2R-2: the Site markers' rects (icons, tier pips and name labels; local px, MARKER_CLEAR
+## G2R-2: the Site markers' rects (icons and tier pips; the name labels yield to the pencil, G2R2-1; local px, MARKER_CLEAR
 ## round) the arrow, its word and its chip keep off.
 func _marker_rects() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var inv := get_global_transform().affine_inverse()
-	for r in LegendSpot.node_rects(overlay, true):
+	for r in LegendSpot.node_rects(overlay, false):
 		out.append((inv * r).grow(MARKER_CLEAR))
 	return out
 
@@ -290,10 +295,58 @@ func free_rect(limited: bool = true) -> Rect2:
 	return r
 
 
+## G2R2-1: true when the TARGET's circle (radius `reach` round `local`) or its word sits under
+## any of the `panels` (local px).
+func _pencil_under_panel(local: Vector2, reach: float) -> bool:
+	var inv := get_global_transform().affine_inverse()
+	var boxes: Array[Rect2] = [Rect2(local - Vector2(reach, reach), Vector2(reach, reach) * 2.0)]
+	if overlay != null and not _boss.is_empty():
+		var l: Dictionary = overlay.boss_layout(_boss)
+		if not l.is_empty():
+			var ox := overlay.get_global_transform()
+			boxes.append(inv * (ox * (l["word"] as Rect2)))
+			boxes.append(inv * (ox * (l["circle"] as Rect2)))
+	for c in panels:
+		if c == null or not is_instance_valid(c) or not c.is_visible_in_tree() or c.size == Vector2.ZERO:
+			continue
+		var b := inv * c.get_global_rect()
+		for r in boxes:
+			if b.intersects(r):
+				return true
+	return false
+
+
+## G2R2-1: the arrow, its word and its chip as drawn (global px; empty while the arrow hides).
+func pencil_rects() -> Array[Rect2]:
+	var rects: Array[Rect2] = []
+	if _drawn.is_empty() or not _mark.visible:
+		return rects
+	var at: Vector2 = _drawn[0]
+	var dir: Vector2 = _drawn[1]
+	var tail := at - dir * SHAFT_PX
+	var x := get_global_transform()
+	rects.append(x * Rect2(tail, Vector2.ZERO).expand(at).grow(HEAD_PX))
+	rects.append(_word.global_rect())  # the word's origin is its baseline: its own rect, as drawn
+	if _chip.visible and _chip.size.x > 0.0:
+		rects.append(x * Rect2(_chip.position, _chip.size))
+	return rects
+
+
+## G2R2-1: the arrow, its word and its chip are pencil too: the overlay's Site name labels make way
+## for them, and take their places back when the arrow hides.
+func _publish_pencil() -> void:
+	if overlay != null and is_instance_valid(overlay):
+		overlay.set_pencil_rects(pencil_rects())
+
+
 func _show(on: bool) -> void:
 	if _mark.visible == on:
 		return
+	if not on and overlay != null and is_instance_valid(overlay):
+		overlay.set_pencil_rects([] as Array[Rect2])
 	showing_changed.emit(on)
+	if overlay != null and is_instance_valid(overlay):
+		overlay.target_hidden = on  # G2R2-1: the arrow speaks for the TARGET: its circle, word and chip hide
 	_mark.visible = on
 	_word.visible = on
 	_hit.visible = on

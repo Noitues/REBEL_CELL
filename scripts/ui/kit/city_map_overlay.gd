@@ -516,6 +516,33 @@ func avoid_controls(controls: Array[Control]) -> void:
 	_queue_tags()
 
 
+## G2R2-1: true while the TARGET's edge arrow stands in for the boss's own pencil (circle, word)
+## and chip: they hide (the standing rule: no UI over pencil, no pencil under UI).
+var target_hidden: bool = false:
+	set(v):
+		if v == target_hidden:
+			return
+		target_hidden = v
+		if _target_mark != null and is_instance_valid(_target_mark):
+			_target_mark.visible = not v
+			_target_word.visible = not v
+		queue_redraw()
+		_queue_tags()
+
+
+## G2R2-1: pencil the labels make way for (the TARGET edge arrow, its word and chip), viewport px.
+var _pencil_rects: Array[Rect2] = []
+
+
+## G2R2-1: sets the grease pencil drawn over the map (viewport px) that the Site name labels keep
+## off: they move to their node's other side, or hide until hover. Empty clears it.
+func set_pencil_rects(rects: Array[Rect2]) -> void:
+	if rects == _pencil_rects:
+		return
+	_pencil_rects = rects.duplicate()
+	_queue_tags()
+
+
 ## The area map labels may use (local px): the overlay's own rect (or `screen_rect` within
 ## it) less EDGE_MARGIN.
 func label_area() -> Rect2:
@@ -1871,7 +1898,10 @@ func _marker_node(n: Dictionary, rec: Dictionary) -> void:
 	var at := icon_pos(n)
 	if spec.get("kind") == SiteMarker.KIND_CENTRAL_SERVER:
 		SiteMarker.draw_pad(_c, spec, top, k * 1.4)
-		_draw_boss_chip(n, at)
+		if target_hidden:
+			boss_chip_rect = boss_layout(n).get("chip", _boss_chip_box(at))  # the arrow's chip stands in
+		else:
+			_draw_boss_chip(n, at)
 		return
 	SiteMarker.draw_pad(_c, spec, top, k)
 	var rc := SiteMarker.ring_color(spec)
@@ -2177,6 +2207,8 @@ func _sync_target(boss: Dictionary) -> void:
 		_target_word.text = tr_word("TARGET")
 		_target_word.ink = GreasePencilMark.Ink.THREAT
 		_pencil_root.add_child(_target_word)
+	_target_mark.visible = not target_hidden
+	_target_word.visible = not target_hidden
 	_target_mark.clear()
 	_target_mark.add_stroke(PencilShapes.hand_circle(Vector2.ZERO, Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT), TARGET_SEED))
 	_target_mark.position = at
@@ -2952,7 +2984,7 @@ func _layout_labels() -> Array[Dictionary]:
 	var sig := []
 	for n in nodes:
 		sig.append([n["id"], label_lines(n["id"]), _prio(n)])
-	var key := [Settings.text_scale, selected_id, hover_id, hash(sig), var_to_str(markers), label_area(), label_blocks(), ring_radius(), token_radius,
+	var key := [Settings.text_scale, selected_id, hover_id, hash(sig), var_to_str(markers), label_area(), label_blocks(), _pencil_rects, ring_radius(), token_radius,
 		here_point() if here_label_shown() else Vector2.INF]
 	if key == _labels_key:
 		return _labels_now
@@ -2970,6 +3002,7 @@ func _place_labels() -> Array[Dictionary]:
 	var line_h := f.get_height(fs)
 	var icons: Array[Dictionary] = []
 	var marks: Array[Rect2] = []
+	var pencil: Array[Rect2] = []
 	var tok := token_radius * k
 	for n in nodes:
 		if not _roof(n["id"]).is_empty():
@@ -2979,6 +3012,7 @@ func _place_labels() -> Array[Dictionary]:
 			marks.append_array(label_marks_of(n))  # S-ROUTE c: a subclass's chips (the route's number chips)
 			if is_boss(n) and marker_shown(n):
 				marks.append_array(boss_rects(n))  # parity fix GRID-03: the chip and the TARGET pencil
+				pencil.append_array(boss_rects(n))  # G2R2-1: no label, a focus label's last resort included, on the pencil
 			# ANIM-R5 P8: a raid's threat tokens (RaidFxLayer: much bigger than the map's
 			# markers) are obstacles too: no label (CORE's included) is placed under one.
 			if tok > 0.0 and markers.has(n["id"]):
@@ -2989,6 +3023,9 @@ func _place_labels() -> Array[Dictionary]:
 						marks.append(Rect2(slot - Vector2(tok, tok), Vector2(tok, tok) * 2.0))
 	var area := label_area()
 	var blocks := label_blocks()
+	for pr in _pencil_rects:
+		marks.append(_to_local_rect(pr))  # an obstacle, not a block: a node under it keeps its label
+		pencil.append(_to_local_rect(pr))
 	var ring_c := ring_centre()
 	var ring_r := ring_radius()
 	var todo: Array[Dictionary] = []
@@ -3022,7 +3059,7 @@ func _place_labels() -> Array[Dictionary]:
 		# label moved in for it would float with nothing to point at.
 		if not _visible_at(t["at"], area, blocks):
 			continue
-		var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_c, "ring_r": ring_r, "area": area, "blocks": blocks, "clear": LABEL_CLEAR * k}
+		var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_c, "ring_r": ring_r, "area": area, "blocks": blocks, "clear": LABEL_CLEAR * k, "pencil": pencil}
 		# H24 K1: a long name with no room on one line tries two (narrower) lines.
 		var variants: Array[PackedStringArray] = [t["lines"]]
 		var wrapped := wrap_lines(t["lines"])
@@ -3235,10 +3272,20 @@ func _loose_spot(t: Dictionary, box: Vector2, obstacles: Dictionary, may_cover_i
 	for rect in tries:
 		if reach_of(rect, at) > reach or not _on_screen(rect, obstacles) or _hits_label(rect, obstacles):
 			continue
+		if _hits_rects(rect, obstacles.get("pencil", [])):
+			continue  # G2R2-1: never on grease pencil: the label hides until hover
 		# HQ-B: nor its own icon (shifted inside the map at big text, it landed on it).
 		if may_cover_icons or not _hits_icon(rect, obstacles, &""):
 			return rect
 	return Rect2()
+
+
+## True when `rect` touches any of `rects`.
+static func _hits_rects(rect: Rect2, rects: Array) -> bool:
+	for r: Rect2 in rects:
+		if r.intersects(rect):
+			return true
+	return false
 
 
 ## True when `rect` covers the icon of a node other than `own`.

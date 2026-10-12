@@ -2832,6 +2832,8 @@ func _place_hq() -> void:
 			if extra != null and is_instance_valid(extra):
 				avoid.append(extra)
 		city_overlay.avoid_controls(avoid)
+		if grid_target != null and is_instance_valid(grid_target):
+			grid_target.panels = avoid.duplicate()  # G2R2-1: pencil under a panel counts as off frame
 	_place_corp_news()
 
 
