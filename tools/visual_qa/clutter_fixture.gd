@@ -13,7 +13,7 @@ const ARENA_LAB := preload("res://tools/design_lab/arena_lab.gd")
 ## Dresses `combat` (a combat scene with its fight started; its first enemy is the host of the
 ## satellites) as the worst fixture and refreshes it. Returns the dressed state.
 static func dress(combat: Control) -> CombatState:
-	var engine = combat.engine
+	var engine: CombatEngine = combat.engine
 	var st: CombatState = engine.state()
 	var lookup: ContentLookup = engine.resolver.lookup
 	var foe := st.enemies[0]
