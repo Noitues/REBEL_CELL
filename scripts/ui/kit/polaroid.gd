@@ -58,7 +58,7 @@ func _draw() -> void:
 	var f := Palette.marker()
 	for i in lines.size():
 		var y := size.y - CAPTION_BOTTOM - (lines.size() - 1 - i) * f.get_height(fs)
-		draw_string(f, Vector2(CAPTION_INSET, y), lines[i], HORIZONTAL_ALIGNMENT_LEFT, size.x - CAPTION_INSET * 2.0, fs, caption_ink())
+		HighContrast.draw_text(self, f, Vector2(CAPTION_INSET, y), lines[i], HORIZONTAL_ALIGNMENT_LEFT, size.x - CAPTION_INSET * 2.0, fs, caption_ink())
 
 
 ## The caption's lettering (px at text scale 1.0) at rest, the least it shrinks to (ANIM-R6

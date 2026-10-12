@@ -53,6 +53,9 @@ const HUB_MIN_FONT_SIZE := 8
 const D4_WINDOW := Vector2(1160, 580)
 const D4_POOL := Vector2(600, 440)
 const D4_ROWS_W := 500.0
+## M14 12Q-MAIN: the least height the D4 pool (and the rows beside it) keeps when the window gives up
+## height to keep on the canvas at big text (px; the wheel is drawn to the pool).
+const D4_POOL_MIN_H := 300.0
 const D4_POOL_DIM := Color(0.02, 0.02, 0.05, 0.55)
 ## The D4 wheel's box reaches this far past the pool's top and foot (px): WheelView keeps room round its disc for
 ## the needle and the HP line, which the pool's own margins already give, so the disc comes to r = 220 at 1080p.
@@ -186,6 +189,7 @@ func use_d4(c: CombatantState) -> void:
 	rows_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rows_scroll.add_child(_rows)
 	row.add_child(rows_scroll)
+	_rows_scroll = rows_scroll
 	_rows.add_child(_caption(tr("SLICES  //  read clockwise from the needle")))
 	_slice_rows = VBoxContainer.new()
 	_slice_rows.name = "SliceRows"
@@ -209,6 +213,30 @@ func use_d4(c: CombatantState) -> void:
 		crt.tag_label.text = ""
 
 
+## The rows' scroll beside the pool on the D4 tab (null otherwise).
+var _rows_scroll: ScrollContainer = null
+
+
+## M14 12Q-MAIN (audit L35: at 1.6 / 2.0 the HP gauge and Close [Esc] were under the screen's foot): the
+## D4 window keeps to the canvas: the pool and the rows beside it give up the height the header and the
+## words take at big text (the wheel is drawn to the smaller pool, never under D4_POOL_MIN_H), and the
+## window stays centred.
+func _fit_d4_window() -> void:
+	if d4 == null or not is_inside_tree():
+		return
+	var view := get_viewport_rect().size
+	var top := minf(SubtitleStrip.top_below(50.0), CANVAS_BOTTOM - D4_WINDOW.y)
+	var over := top + window.get_combined_minimum_size().y - CANVAS_BOTTOM
+	if over > 0.0:
+		var h := maxf(D4_POOL_MIN_H, _wheel.custom_minimum_size.y - over)
+		_wheel.custom_minimum_size.y = h
+		if _rows_scroll != null:
+			_rows_scroll.custom_minimum_size.y = h
+		window.custom_minimum_size.y = maxf(0.0, window.custom_minimum_size.y - over)
+	window.size = window.get_combined_minimum_size()
+	window.position = Vector2(maxf(0.0, (view.x - window.size.x) * 0.5), maxf(0.0, minf(top, CANVAS_BOTTOM - window.size.y)))
+
+
 ## What a part does in one line: its Codex description past its name line ("" when none).
 static func _rule_line(res: Resource) -> String:
 	if res == null:
@@ -220,6 +248,10 @@ static func _rule_line(res: Resource) -> String:
 func _caption(words: String) -> Label:
 	var l := Chrome.caps_label(words, UiTheme.CAPTION, Palette.CELL_PINK)
 	l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	# M14 12Q-MAIN (audit L35): whole words on more lines at big text, never wider than the rows (at
+	# 2.0 the caption pushed the window past the screen's right edge)
+	l.custom_minimum_size.x = D4_ROWS_W
+	UiWrap.whole_words(l)
 	return l
 
 
@@ -247,6 +279,7 @@ func _glyph_row(glyph: StringName, col: Color, title: String, words: String) -> 
 	var t := Label.new()
 	t.text = title.to_upper()
 	t.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	UiWrap.whole_words(t)  # M14 12Q-MAIN: a long name wraps in the rows' width
 	t.add_theme_font_override(&"font", Palette.body_medium())
 	t.add_theme_font_size_override(&"font_size", UiTheme.font_px(UiTheme.LABEL))
 	t.add_theme_color_override(&"font_color", Palette.TEXT_HI)
@@ -275,6 +308,8 @@ func _ready() -> void:
 	Settings.hints_changed.connect(_relabel)
 	_relabel()
 	_place_pads.call_deferred()
+	if d4 != null:
+		_fit_d4_window.call_deferred()
 	if not _pads.is_empty():
 		_pads[0].grab_focus.call_deferred()
 	else:
@@ -377,12 +412,17 @@ const SIDE_GAP := 6
 ## ART-0 C: above this text scale the column scrolls inside the wheel area.
 const SIDE_SCROLL_ABOVE := 1.6
 var _side: VBoxContainer = null
+## M14 12Q-MAIN (audit L35: "Accelera", "Clas defa" at 1.0 / 2.0): the column's width now: SIDE_W, or
+## wider so the longest word of every piece in it shows whole (`fit_side`).
+var side_w: float = SIDE_W
+## The column's least gap from the D4 wheel's pool edge when it widens (px).
+const SIDE_INSET := 2.0
 
 
 ## Adds `control` to the column right of the wheel.
 ## The side column's x in the wheel area: SIDE_X, or on the D4 tab the pool's right edge less its width.
 func side_x() -> float:
-	return D4_POOL.x - SIDE_W - SIDE_GAP if d4 != null else SIDE_X
+	return _wheel.custom_minimum_size.x - side_w - SIDE_GAP if d4 != null else SIDE_X
 
 
 func add_side(control: Control) -> void:
@@ -391,7 +431,7 @@ func add_side(control: Control) -> void:
 		_side.name = "Side"
 		# B5: on the D4 tab the column sits at the pool's right edge, clear of the D4 wheel's disc.
 		_side.position = Vector2(side_x(), SIDE_Y)
-		_side.custom_minimum_size.x = SIDE_W
+		_side.custom_minimum_size.x = side_w
 		_side.add_theme_constant_override("separation", SIDE_GAP)
 		if Settings.text_scale > SIDE_SCROLL_ABOVE:
 			# ART-0 C (text scale 2.0): the column scrolls inside the wheel area (focus follows)
@@ -405,12 +445,44 @@ func add_side(control: Control) -> void:
 			scroll.follow_focus = true
 			scroll.add_child(_side)
 			_wheel.add_child(scroll)
-			var fit := func() -> void: scroll.size = Vector2(SIDE_W, maxf(0.0, _wheel.size.y - SIDE_Y * 2.0))
+			var fit := func() -> void: scroll.size = Vector2(side_w, maxf(0.0, _wheel.size.y - SIDE_Y * 2.0))
 			_wheel.resized.connect(fit)
 			fit.call()
 		else:
 			_wheel.add_child(_side)
+		fit_side.call_deferred()
 	_side.add_child(control)
+
+
+## M14 12Q-MAIN (audit L35): the side column widens until the longest word of each of its buttons
+## fits on the button (words wrap whole, never cut); on the D4 tab the wheel steps left by what the
+## column grew, so the column stays clear of its disc. Never narrower than SIDE_W.
+func fit_side() -> void:
+	if _side == null or not _side.is_inside_tree():
+		return
+	var w := SIDE_W
+	for c in _side.get_children():
+		var b := c as Button
+		if b == null:
+			continue
+		var f := b.get_theme_font(&"font")
+		var fs := b.get_theme_font_size(&"font_size")
+		var style := b.get_theme_stylebox(&"normal")
+		var margins := style.get_minimum_size().x if style != null else 0.0
+		for word in b.text.split(" ", false):
+			w = maxf(w, ceilf(f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x) + margins + SIDE_INSET * 2.0)
+	_side.custom_minimum_size.x = w
+	for c in _side.get_children():
+		(c as Control).custom_minimum_size.x = w
+	var scroll := _side.get_parent() as ScrollContainer
+	if scroll != null:
+		w += scroll.get_v_scroll_bar().get_combined_minimum_size().x  # the bar beside the chips, not over them
+	side_w = w
+	var holder: Control = scroll if scroll != null else _side
+	holder.position.x = side_x()
+	holder.size.x = w
+	if d4 != null:
+		d4.offset_right = -maxf(0.0, w - SIDE_W)
 
 
 ## Slot `k`'s pad (null when there is no such slot).
@@ -582,13 +654,13 @@ func _draw_wheel() -> void:
 		var am := _angle(i)
 		SliceIcon.draw_on_slice(_wheel, c + Vector2(cos(am), sin(am)) * 140.0, 16, type, col)
 		if s != null and s.base_output > 0:
-			_wheel.draw_string(Palette.display(), c + Vector2(cos(am), sin(am)) * 208.0 + Vector2(-20, 10), str(s.base_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 26, col.lightened(0.35))
+			HighContrast.draw_text(_wheel, Palette.display(), c + Vector2(cos(am), sin(am)) * 208.0 + Vector2(-20, 10), str(s.base_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 26, col.lightened(0.35))
 		if i < firmware.size() and firmware[i] != &"":
 			_wheel.draw_rect(Rect2(c + Vector2(cos(am), sin(am)) * 116.0 - Vector2(5, 5), Vector2(10, 10)), Palette.NET_CYAN)
 	_wheel.draw_circle(c, r0 - 6, Color("#07080F"))
 	_wheel.draw_arc(c, r1, 0, TAU, 64, wheel_color, 2.5)
 	if hub == null and ring.is_empty():
-		_wheel.draw_string(Palette.marker(), c + Vector2(-60, 8), tr("%d SLICES") % n, HORIZONTAL_ALIGNMENT_CENTER, 120, 18, wheel_color)
+		HighContrast.draw_text(_wheel, Palette.marker(), c + Vector2(-60, 8), tr("%d SLICES") % n, HORIZONTAL_ALIGNMENT_CENTER, 120, 18, wheel_color)
 	_draw_core(c)
 	if selected >= 0:
 		var am := _angle(selected)
@@ -609,7 +681,7 @@ func open_slot(index: int) -> void:
 	var type := s.slice_type if s != null else RC.SliceType.NULL
 	icon.draw.connect(func() -> void:
 		SliceIcon.draw_icon(icon, Vector2(34, 32), 24, type, Palette.slice_color(type))
-		icon.draw_string(Palette.display(), Vector2(76, 44), _slice_text(index), HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Palette.PAPER))
+		HighContrast.draw_text(icon, Palette.display(), Vector2(76, 44), _slice_text(index), HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Palette.PAPER))
 	pop.body.add_child(icon)
 	var desc := Label.new()
 	UiWrap.whole_words(desc)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
@@ -654,19 +726,19 @@ func _draw_core(c: Vector2) -> void:
 		_wheel.draw_polyline(pts, Palette.CELL_ACID if hot else Palette.NEON_VIOLET, 1.5)
 		var label := ring[k].display_name.left(3).to_upper() if ring[k] != null else "?"
 		var at := c + Vector2(cos(mid), sin(mid)) * (RING_INNER + RING_OUTER) * 0.5
-		_wheel.draw_string(Palette.mono(), at + Vector2(-20, 5), label, HORIZONTAL_ALIGNMENT_CENTER, 40, 13, Palette.PAPER)
+		HighContrast.draw_text(_wheel, Palette.mono(), at + Vector2(-20, 5), label, HORIZONTAL_ALIGNMENT_CENTER, 40, 13, Palette.PAPER)
 	if hub != null:
 		var hot_hub := not _core_pads.is_empty() and _core_pads[0].has_focus()
 		_wheel.draw_circle(c, HUB_RADIUS, Color(Palette.NIGHT_SKY, 0.95))
 		_wheel.draw_arc(c, HUB_RADIUS, 0, TAU, 48, Palette.CELL_ACID if hot_hub else wheel_color, 2.0)
-		_wheel.draw_string(Palette.mono(), c + Vector2(-HUB_RADIUS, -4), tr("HUB"), HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0, 11, Color(Palette.PAPER, 0.7))
+		HighContrast.draw_text(_wheel, Palette.mono(), c + Vector2(-HUB_RADIUS, -4), tr("HUB"), HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0, 11, Color(Palette.PAPER, 0.7))
 		# The hub's name shrinks to fit the disc.
 		var hub_name := TextDb.t(hub, "display_name").to_upper()
 		var fs := HUB_FONT_SIZE
 		var w := Palette.marker().get_string_size(hub_name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		if w > HUB_RADIUS * 2.0 - 8.0:
 			fs = maxi(HUB_MIN_FONT_SIZE, floori(fs * (HUB_RADIUS * 2.0 - 8.0) / w))
-		_wheel.draw_string(Palette.marker(), c + Vector2(-HUB_RADIUS + 4, 14), hub_name, HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0 - 8, fs, wheel_color)
+		HighContrast.draw_text(_wheel, Palette.marker(), c + Vector2(-HUB_RADIUS + 4, 14), hub_name, HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0 - 8, fs, wheel_color)
 
 
 ## The detail popup of the hub core or an inner ring segment.

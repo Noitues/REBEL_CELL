@@ -850,6 +850,12 @@ func test_every_crew_dossier_is_reachable_at_big_text() -> void:
 		var hand := (hq._panel.find_child("HandCards", true, false) as Control).get_parent() as ScrollContainer
 		var view := hand.get_global_rect()
 		for card in cards:
+			# 12Q-HQ: a hand wider than its box pages; MORE turns to the card's page first.
+			for turn in hq._hand_pages:
+				if card.is_visible_in_tree():
+					break
+				hq.turn_hand_page()
+				await _frames(2)
 			card.grab_focus()
 			await _frames(2)
 			var r := card.get_global_rect()

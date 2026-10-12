@@ -5,6 +5,18 @@ superseded instead. Finished months of "Implementation decisions" are moved verb
 `docs/decisions/<YYYY-MM>.md` by `tools/archive_decisions.py` (2026-10-11, CP-001 follow-up);
 search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
+## 2026-10-12 M14 group 2 polish (G2_POLISH, art-pass)
+- P1 `HoloSticker.add_fold_room` pads with spaces until the room past the last letter holds the sticker's own
+  `peel_px` (plus 0.1 of the lettering px for outline and slant), measured again in `_ready` once the viewport is
+  known (it was sized once from a 720 px screen and the unpadded body). Test: every glyph rect clear of the fold square
+  at 1.0 / 1.6 / 2.0 (`test_hq_12q_fit`).
+- P2 The CAN'T UNDO pencil: the slots' pencil was clipped by nothing; its words are drawn at the px their text step
+  lands on (one px over the nominal) and the arrow started under the last O. `PencilNote.text_size` now measures what is
+  drawn and the arrow keeps 2 x ARROW_GAP past it. Test: whole word written and the arrow past it at every scale
+  (`test_m14_12q_menus`).
+- P3 `CityMapOverlay.PENCIL_CLEAR` (6 px): a label never sits within 6 px of the TARGET's word, arrow or chip, the
+  yielded last-resort labels included (a link line under a label is fine). Test: `test_hq_g2r2_target`.
+
 ## Locked design decisions (v0.9)
 - Wheel is 30 ticks / 6 slices / 5 ticks per slice (was 24). Enables a true centre tick.
 - No Miss precision tier; "Miss" means the Miss slice only.
@@ -33,6 +45,23 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
   events.
 
 ## Implementation decisions
+- **G2R2-MENUS (M14 group 2 art-pass review round 2, 2026-10-12).** G2R2-3 (supersedes G2R-3's paging at 2.0): no paging
+  inside a folder. From text scale 1.6 (`CaseFileCard.BRIEF_FROM`) a used slot's folder is brief: tab, corporation and the
+  Heat line only (no stamp); ICE, RUNS, FILED, the state and the crew names move to LOAD's focus tooltip
+  (`CaseFileCard.details`), and the CAN'T UNDO pencil lies on one line. Text never goes under 1.0 size. Folder + LOAD +
+  DELETE + pencil are one 2.0 case file, whole in the slots view; pages switch per folder. `test_m14_12q_menus` and
+  `test_art10_menus` assert the whole case file at 1.0 / 1.6 / 2.0 again. G2R2-c: in the fanned hand each card knows the
+  share its right neighbour covers (`ZineCard.tucked`, HAND_OVERLAP; the last card 0): `CardFace.title_layout` keeps the
+  title clear of it (left end stays put, the title shrinks to fit); the cost dot sits at the left and was never covered;
+  `test_g2r2_the_fanned_cards_cost_and_title_show_at_rest_at_every_scale` asserts both at 1.0 / 1.6 / 2.0. Sheet:
+  `docs/art_review/ART-12/12q/fixes/G2R2_MENUS.jpg`.
+- **G2R-MENUS (M14 group 2 art-pass review, 2026-10-12).** G2R-3: at every text scale each slot's folder keeps LOAD + DELETE and
+  the grease-pencil CAN'T UNDO under it (the designer's ruling; 12Q-MENUS' side-column layout at 2.0 is gone, so is
+  `CaseFileCard.side_actions` / `PENCIL_UP_TO`). At 2.0 a case file (317 px) is taller than the slots view on a 720p
+  screen (227 px with the cue), so the page shows one folder at a time and pages with MORE BELOW / MORE ABOVE; the
+  tests there require the focused LOAD and DELETE whole in the view, not the whole folder. G2R-4: the codex tab pager's
+  arrows are invisible (and take no clicks) while no tab is hidden on their side; their room stays so the row does not
+  reflow. G2R-c (verify only): see the RESULT of this round. Sheet `docs/art_review/ART-12/12q/fixes/G2R_MENUS.jpg`.
 ## Archives
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
@@ -55,6 +84,350 @@ Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_deci
    "batch tokens" row must say what was routed to batch or why nothing was (doc 04 §5).
 Superseds the model/effort line of "2026-10-11 — Designer rulings on the process follow-ups" item 6.
 
+### 2026-10-12 — M14 G2R2-RAID: raid toast in the foot band, CONTINUE fold room (review R2)
+- **G2R2-2.** On the raid setup the INTERCEPTED toast (`intercept_raid_warning`) is placed over the ON AIR line's own rect
+  (`_place_corp_news`, `panel_name == "raid"`): the foot band, the ticker waits (alpha 0) for the toast's hold (`toast` entry,
+  2.4 s or reading time) and returns when it hides; never over CORE, the pencil or the paper. Transient: hold then fade, hide.
+- **G2R2-4.** `HoloSticker.add_fold_room()` pads the sticker's right edge with no-break spaces worth the peel-back leg
+  (as BACK TO HQ's `END_BACK_FOLD_ROOM`, B5 fix 4); the raid result's Continue uses it. Tests in test_hq_12q_fit.gd.
+  Sheet `docs/art_review/ART-12/12q/fixes/G2R2_RAID.jpg`.
+
+### 2026-10-12 — M14 G2R-RAID: the raid pages after the art-pass review of group 2 (G2R-5..8)
+- **G2R-5 report verdict at 2.0.** From text scale 1.8 (`HOLDS_FOLD_SCALE`) the after-action paper gives CELL HOLDS its own room
+  (`HoldsRoom`, 0.9 of the sticker's height) right under the order line, at the paper's right; the table rows (units, home,
+  Heat, node rows) fold below it. The verdict is on page 1. At 1.0 it stays over the paper's lower part as before.
+- **G2R-6 INCOMING once.** `RaidFxLayer` pencils INCOMING once for the raid, at the first entry Site (it was once per Site,
+  so two entries overlapped). One word, a true plan.
+- **G2R-7 no standing corp band.** The raid setup's corp warning goes through `intercept_raid_warning` (the holo toast), not
+  a `raid`-scoped Dialogue line (the band under the title). `Fx.avoid_rects`: a top-level MapLegend (the setup's MAP KEY in the
+  top bar) is avoided at its folded chip's rect (the page's scroll clipped it away, so SAVED sat on it), with the B5c sticker
+  clearance.
+- **G2R-8 Continue.** The playout / result's Continue is the kit's `HoloSticker` verb (pink, as on loot), named `Continue`.
+- Tests in `test_hq_m14_12q_raid` (g2r5..g2r8). Sheet `docs/art_review/ART-12/12q/fixes/G2R_RAID.jpg` (before | after, 1.0 / 2.0, hc row for raid_setup).
+
+### 2026-10-12 — M14 G2R2 city (art-pass review R2 of group 2): no UI over grease pencil on the Grid
+Before | after, Meridian and REBEL_CELL at 1.0 and 2.0: `docs/art_review/ART-12/12q/fixes/G2R2_CITY.jpg`.
+- **G2R2-1 standing rule: pencil under UI counts as off-frame.** `TargetEdgeMarker.panels` (the HQ's hand, tabs, card
+  column, work order, verb, key, minimap, ticker; set where the page lays out) joins the off-frame test: when the TARGET's
+  circle or word sits under any panel the edge arrow shows, exactly as when off-screen (Meridian at 1.0 / 2.0 put the
+  circle under the crew hand). Ruling kept: never zoom out to take the server. While the arrow shows the overlay hides
+  the boss's own circle, word and chip (`CityMapOverlay.target_hidden`).
+- **Labels yield to the pencil.** The arrow, its word (its own `global_rect`: the word's origin is its baseline) and its chip are
+  published to the overlay (`set_pencil_rects`); a Site name label that overlaps them, or the in-frame TARGET circle / word /
+  chip, moves to its node's other side or hides until hover (a focus label's last resort `_loose_spot` no longer
+  ignores pencil). The arrow's swing (G2R-2) now keeps clear of icons and tier pips only, since the labels move for it.
+- Tests: `test_hq_g2r2_target` (every corporation at 1.0 / 1.6 / 2.0: arrow, word and chip clear of every panel, no label
+  on the pencil; an in-frame TARGET never under a panel). The headless camera differs from a real render; the sheet is the real check.
+
+### 2026-10-12 — M14 G2R city (art-pass review of group 2): the Grid camera off the city's edge, the TARGET arrow clear
+Before | after per corporation at 1.0 and 2.0 plus the REBEL_CELL TARGET crop: `docs/art_review/ART-12/12q/fixes/G2R_CITY.jpg`.
+- **G2R-1 the frame never shows past the city edge (network wins).** `CityMapCamera.keep_on_city` (pure): the focus
+  shifts onto the city (`clamp_focus`: the frame's four ground corners inside `city_rect`) as far as every fitted Site
+  (and the selected one) stays in the map's free part where its icon is drawn (its offset from its lot taken from the
+  camera now, less half an icon's room); if the frame still shows ground past the
+  edge it closes in by `KEEP_ZOOM_STEPS` steps about the anchor, never past `raid_fit_min`, the network kept in the free
+  part throughout, until the edge is gone; when no frame clears it, the one with least ground past the edge wins
+  (`void_area`, the earliest and least zoomed on a tie). The page applies it once, when the HQ fit ends (before the
+  lean), and on the lean and the follow-the-selection pans (`_frame_grid`); the fit passes and the player's own camera
+  are unchanged. Reading of "the ortho grows to cover the gap": a frame that cannot be shifted off the edge closes in
+  (its ortho shrinks), since zooming out can only show more edge; the network is never given up for it, so a very wide
+  network on a corner can still show a little edge (the Meridian and REBEL_CELL frames at 2.0). Tests:
+  `test_frame_keeps_off_the_edge_and_the_network_in_view` (screen widths 1280 / 1920, network on the edge
+  and in the middle; the network stays in the free part, never more edge than before, only ever closes in).
+- **G2R-2 TARGET.** The Central Server of REBEL_CELL (and Halcyon) lies about twice the raid range's widest frame
+  from the network (fit needs 480 px against the 255 the free part gives), so its pencil circle cannot be in the frame
+  without giving the network up; the round 44 off-screen arrow stays, and is fixed instead: `TargetEdgeMarker`
+  swings the arrow round the area's centre (6 degree steps, 12 either way) to the first edge spot where the arrow, its
+  word and its chip are clear of every Site marker, pip and name label (`LegendSpot.node_rects`), the arrow pointing
+  from there at the boss; where nothing is clear (2.0's small free part) the boss's own line stands. The arrow, word and
+  chip also stay inside the HQ's free part (`limit`), so the chip no longer runs under the Site card; whether the
+  arrow shows is still decided on the whole map (a boss visible stays circled). Differs from the brief's "circle the
+  Central Server itself" for REBEL_CELL: see Q below.
+- **JACK IN at 2.0.** `HqLayout.rects` already ends the card column a GAP above the verb slot at every text scale
+  (`test_hq_card_column_ends_above_the_jack_in_slot_at_every_scale`); no overlap reproduced in the 2.0 captures
+  (the card pages with MORE), nothing changed.
+- Q (designer): REBEL_CELL's TARGET circle needs the frame to take the network and the Central Server together
+  (about twice the raid range). Zoom the HQ out to take it (the network then reads small), or keep the arrow?
+
+### 2026-10-11 — M14 12Q-ACCESS: high contrast on every screen through the kit; SAVED, Next, one home-hit number, the stamp
+Pack B items of the 12q QA matrix audit (`docs/handoff/m14_12q/qa_matrix_audit.md` L78-L83, tree db29f599), re-checked
+on m14-group2. Before | after: `docs/art_review/ART-12/12q/fixes/ACCESS.jpg`.
+- **High contrast keeps its promise (L78).** `HighContrast.apply` only reached the shared theme; most views give their
+  words and boxes their own colours (theme overrides) or draw them, so combat, HQ, Grid, raid and route barely changed.
+  Two kit pieces now carry it, never per screen: (1) `HighContrastWalk` (installed by `UiTheme.apply`) restyles every
+  Control's own overrides while the setting is on and puts them back when it goes off: a see-through StyleBoxFlat
+  (panel, label, button states) becomes a copy in opaque `HighContrast.BG` with its tint as a solid edge and every edge
+  at least `HC_EDGE_MIN` (2 px); an opaque box (a sticker's paper) keeps its fill; words are lifted the least that
+  reaches 7:1 (`HighContrast.lift`) against their backing: their own opaque box, else (light words) a black outline of
+  `outline_px` = max(4, 0.25 x the font px) that backs them on the city and the art, else (ink, under 2.5:1 on black)
+  the paper. LabelSettings get the same on a copy (live numbers are built hc-aware in `UiTheme.live_number`). Controls
+  are restyled after they enter the tree, again when a view re-colours them (`theme_changed`, at most 8 passes a frame),
+  and all at once when the setting or the text scale changes; hidden words (alpha < 0.05) stay hidden. (2) Text and
+  plates a view draws go through `HighContrast.draw_text` / `plate` / `ink` / `edge`: the LAST TURN plate and line, the
+  wheel's slice numbers, needle windows, phase pips and hub title, card rules text (an opaque plate per line) and
+  pictogram values, the Grid's and route's tags, landmark plates and boss chip, the CRT terminal glass (black, no glow,
+  scanlines or hex dump, edge doubled), the decrypted holo (black glass, no tint or bands, edge doubled), the ON AIR
+  ticker. Reduce effects and skins compose: skins re-value the theme before hc, and the walk lifts what a skin gives.
+  Test: `test_m14_12q_access.gd` sweeps title, hq, raid_setup, route and combat_start at 1.0 and 2.0 (every visible
+  panel opaque, every visible word 7:1 on its backing; without the walk the same sweep finds 154 failures).
+- **Drawn words (follow-up).** Every `draw_string` / `draw_multiline_string` of player-facing words in `scripts/ui`
+  goes through `HighContrast.draw_text` / `draw_lines` (251 sites in 94 files, combat FX numbers and the cards'
+  names included): off, they draw exactly as before; under hc ink (under 2.5:1 on black: a sticker's or paper's
+  lettering) darkens to 7:1 on PAPER, any other words lift to 7:1 over a black outline of `outline_px`, and a fade
+  baked into the colour shows whole (readable or not shown, as SAVED). Exempt (decoration, not words to read): the hex
+  dump (`Chrome.draw_hex`, already off under hc), the jack-in bit rain, the wall graffiti and its smears, the mugshot's
+  height ruler, the city's billboard signs, the motion streak glyphs, the washed-out EXECUTE system word under SEND IT,
+  and the sticker lettering layers (verb, SEND IT, drip button and vinyl stickers: the sticker's own die-cut and ink
+  rim back its letters). `test_drawn_words_keep_the_promise_under_high_contrast_combat_numbers_and_card_names` records
+  what `draw_text` draws in a fight at 1.0 and 2.0 (`HighContrast.drawn`) and measures it as the Control sweep does.
+- **Colour-blind route vs network (L79): partly fixed by 12Q-RAID, finished here.** Re-checked through
+  `tools/visual_qa/filters.py` (deutan) on the mode-on frames: raid_setup and b4_defence carry 12Q-RAID's hazard ticks
+  and reticles; the Grid's pending raid (grid_raid_pending: the HQ's dashed what-if route) had none. `RaidRouteLayer`
+  now barbs the what-if routes too under `RaidPencil.hostile_cues()`.
+- **SAVED under high contrast (L80).** The stamp faded through 1.1:1 on run_end. Under hc it shows whole for its hold
+  and fade time, then goes at once (the reduce-motion path), in the high-contrast white on an opaque black keyline at
+  least `outline_px` (the pink lifted to 7:1 on black still read 4.3:1 against the city in the lint).
+- **The tutorial's Next under high contrast (L81).** 4.42:1 was the alpha pulse caught mid-dip: under hc Next does not
+  pulse (alpha 1, the theme's 7:1 terminal button); its tooltip still says what moves the tutorial on.
+- **One home-hit number (L82).** Two hits on home in one playout step launched two "-5" flights from the same node on
+  the same frame. A hit while a number flies now joins it (the label shows the sum); HOME drops by the sum on landing.
+- **Filled cyan buttons (L83): a lint false positive.** The drawn fill under hc is #000 with the 3 px cyan edge
+  (Daily run, RESET ALL TABS, GRID VIEW, VIEW LOADOUT, MAP KEY; crops in ACCESS.jpg): white on black. The lint's
+  ring round the words fell on the edge; `review_pack._box_color` now reads a Button's own opaque box as drawn (as it did
+  for Labels), and the pack's hc lint no longer lists them.
+- **The DECRYPTED stamp at text 2.0 (12Q-HQ).** The stamp's lettering grew with the text size inside a fixed slot and
+  reached past the HQ Site holo's right edge. `DecryptedHoloPanel.stamp_px` keeps the HEADING step and shrinks it only as
+  far as the tilted box must to stay inside the slot's width (unchanged at 1.0).
+
+### 2026-10-11 — M14 12Q-RAID: the raid pages at big text, the colour-blind cue, the drag demo, the 3D city's look
+Items from the 12q QA matrix audit (`docs/handoff/m14_12q/qa_matrix_audit.md`, tree db29f599), re-checked on m14-group2.
+- **Stat tags keep one row (L51, the cause of L29).** `HudStats` wrapped fitted tags to two rows under `fit_floor`
+  (1.3 at 1.6 / 2.0); a page with a title sticker (RAID IN PROGRESS, RAID REPORT, NETRUN // RAID) left the six tags
+  room for 1.0-1.1 only, so the bar grew to ~160 px. BIG-TEXT b's rule now holds: one row down to the 1.0 size
+  (`ROW_FLOOR`, `one_row_floor(s)` = min(fit_floor, 1.0); at 1.0 the 0.85 share is unchanged); past that the names
+  fold (one row of icon-and-value tags, never under 1.0; each name stays in its tooltip, as a fight's bar); two rows
+  only when even that does not fit. The HQ's raid pages show the names at 1.0-1.1 on one row (bar 60 px at 2.0);
+  the netrun's raid interlude (a wider Heat gauge with its banner) folds them at 1.6 / 2.0 (icon and value).
+- **Raid report exit (L29).** With one row the report fits at 1.0 / 1.6. At 2.0 the paper alone is ~640 px for
+  ~600: `_report_exit_on_screen` (on the page's sort) moves BACK TO THE GRID above the paper (right-aligned, under
+  the top bar) when the page is taller than its room, so the exit is whole on screen and the paper starts under the
+  bar; its foot scrolls (MORE BELOW). The war table is the page's visible height (`SIZE_SHRINK_BEGIN`, its least
+  height = the scroll's room): MAP KEY, pinned to its foot and the page's first focus, stays in view, so the scroll
+  stays at the top (before, the focus on MAP KEY at the column's foot scrolled the letterhead under the bar).
+- **START DEFENSE during the playout (L36).** The peel (ART-6 3A) is ~0.3 s from where it was pressed; the pack's
+  mid-playout picture reached step 2 two frames in and caught the peel's first frame. The peel now draws under the
+  playout page (`page_root`: over the city, under the feed and the Speed / Skip strip), so at 1.6 / 2.0 it never
+  covers the LIVE RAID FEED; the review pack's raid_playout waits for the peel to end. Look of the peel unchanged.
+- **Heat note over the raid panel (L58).** FIX-2's `campaign_over` guard is not involved: under reduce effects the
+  crossing placed the note before the netrun's raid interlude had laid out (its words clumped unlaid), on the
+  spot its RAID // title took a frame later. During the hold the note re-checks `NOTE_FIRST_RECHECK` (2) frames after
+  it is placed, then every `NOTE_RECHECK_FRAMES` (10),
+  and searches again when its spot covers a button or words (same search; on a full screen the least covered spot
+  again). The search slides on to the screen's far edge past `NOTE_SLIDE_STEPS` (at 1.6 / 2.0 the interlude's panel
+  ran past 16 slides: the note sat on its last row with the screen free below); within 16 slides nothing changes.
+  The pack's raid_incoming under reduce effects (no INCOMING to hold) now settles before its picture (it was the
+  page's first frame). The note also keeps off terminal windows whole (`note_avoid`): the interlude draws its HOME
+  50 → 40 row and forecast disc itself, so a spot free of its Labels still stood on them; now the note stands
+  clear of the panel (under it at 1.0 / 1.6 / 2.0). Changed: `test_horizontal_pass22_screens`
+  (stat tags at TEXT_SCALE_MAX: one row, names kept or folded never under 1.0; it asserted names, which two rows kept).
+- **Hostile vs ours for deutan (L45).** The colour-blind setting's existing hook is the daltonize pass
+  (`ColorblindLayer`); the shape cue now rides the same setting (`RaidPencil.hostile_cues()`, colorblind_mode not
+  off): the threat routes get hazard ticks (bars across the line every `TICK_STEP` x the wax width, a barbed line),
+  the map's entry circles and THREAT INTEL's A / B marks a reticle's four ticks. Setting off: the approved look,
+  unchanged (open question below). The Grid's raid routes already carry their chevrons.
+- **grid_drag_crew (L46).** `_demo_drag_pick` took the Site card's crew chips (`_grid_chips`, gone with HQ-B, never
+  filled: "drag_crew has nothing to drag"); it carries the runner's polaroid (`Crew_<id>`) now; the dead field went.
+- **City bake wait (L64).** The flag was wrong for the 3D city: `showing_current_look` compared `_baked_key`, which
+  the 3D city never sets (no bake: a territory change lands on it at once). For `city3d` it is now
+  `CityView3D.built()` (model built, every chunk placed; true with no 3D view). Side effect: the HQ's end lock and the
+  motion demos stop waiting their frame cap on the 3D city and play once its camera settles. The netrun's raid
+  pages also waited on "fading in": a 2D frame that showed the sky before the page turned the 3D city on left
+  `bake_fade` at 0 (its lights and beacons layers at 0 alpha); `_sync_city3d` settles it at 1 on the 3D city.
+  With the 20 s gone the pack's raid_interlude caught the INCOMING transition: it now waits for it to end.
+- **THREAT INTEL at 2.0 (L38): by design.** BIG-TEXT b's rule (never smaller than 1.0, page past the floor): the
+  routes are on page 2 behind MORE (IntelMore) and BACK returns; nothing unreachable.
+- hq_scene.gd functions touched: `_peel_start`, `page_root` (new), `show_raid_summary`, `_report_exit_on_screen`
+  (new), `_demo_drag_pick`, `_build_hq_page` (one dead line), the `_grid_chips` field (removed).
+- Test `test_hq_m14_12q_raid` (fast). Sheet `docs/art_review/ART-12/12q/fixes/RAID.jpg` (before | after).
+### 2026-10-11 — M14 12Q-MENUS: the menu screens' QA-matrix layout defects (codex tabs, slots, tutorial, SAVED, pause, options, share code, the pad focus peel on concept-art stickers)
+From the 12q QA matrix (`docs/handoff/m14_12q/qa_matrix_audit.md`), re-checked on m14-group2 6cc7de06; text is
+never smaller than at 1.0 and nothing is clipped or scaled (`test_m14_12q_menus`, layout at 1.0 / 1.6 / 2.0;
+before | after `docs/art_review/ART-12/12q/fixes/MENUS.jpg`).
+- **L28 codex tabs (P1).** From 1.6 the tabs stay one sideways-scrolling row (rows of big tabs took the page's
+  room) but it now sits between two cue chips, `< +n` and `+n >` (tab plates, never focus stops), that count the
+  tabs hidden on their side and scroll the row to them on a click; dimmed and unclickable at an end (a disabled
+  chip's lock read as a locked section), hidden while every tab fits. The pad keeps LB / RB and the row follows its focus. Title, pause-menu codex and the corporations' page
+  share CodexBook.
+- **L42 slots (P2).** Past PENCIL_UP_TO (1.6, where the Can't Undo pencil already moves into DELETE's tooltip)
+  a case file stands its LOAD / DELETE in a column beside the folder (CaseFileCard is now a BoxContainer:
+  vertical below, horizontal above), one case file a row; the window's header fits one line and the view holds a
+  whole folder (tab, corporation, LOAD) at 2.0. An action taking the focus brings its whole case file into view.
+  The view's tag says MORE ABOVE (chevrons up; a press scrolls back) when the slots above are hidden and none
+  below (ScrollHint `show_above`, opt-in). The pad walks the column (LOAD, DELETE, the next LOAD..., Back). The
+  slots' foot line wraps at its words, growing up, so its pad prompts stay on screen (they ran off at 2.0).
+  "LOA": the focus peel-back's fold grew with the text on a LOAD held at its 1.0 size; the fold now grows past its
+  1.0 leg only up to `VinylSticker.PEEL_MAX_SHARE` (0.18) of the body (stickers that grow with the text keep the
+  round-44 fold: 54 px at 1080p / 1.6).
+- **L39 tutorial (P2).** A step's pages are shortened until the note's own label fits every one of them (the
+  title or the line under it wrapped past the estimate); one paging per step, so its page count holds. When one
+  line of text still does not fit (2.0 in the fight's 300 x 222 box: the title and the line under it wrapped to
+  two lines each, 20 pages of one line, still cut) the pages go compact: the title without its page count, no
+  line under the page (NEXT pulses, as before, and its tooltip carries that line), the room to the text. The
+  last line carries no trailing line break.
+- **L47 SAVED (P3).** The stamp also keeps off the ON AIR ticker and every pad prompt pair
+  (`Fx.META_SAVED_AVOID`, set by `PadPrompts.make_pair` and on the slots' foot line). loot / loot_firmware:
+  already clear on this tree.
+- **L55 pause (P3).** The menu widens (about its centre, to the screen less FIT_MARGIN) so `PAUSED // HQ // corp`
+  stands on one line; the notes' room follows the width. The pencil taglines are whole with reduce effects on;
+  the RE-off truncation in the matrix is the pencil still writing on at the harness's settle (an animation, not a
+  clip); at 2.0 they drop knowingly when the columns leave no room (designer 2026-10-05).
+- **L56 options (P3).** A section heading keeps the focus brackets' reach (offset + stroke) under its words.
+- **L57 pad focus (P3).** Designer ruling 2026-10-06 (3): focus and hover on a sticker show the peel-back
+  (corner curl) only, never brackets (a first take with pad-only lime brackets was withdrawn before merge). The
+  pad / keyboard focus already takes the hover state (VerbSticker NOTIFICATION_FOCUS_ENTER -> VinylSticker
+  HOVER), and the matrix's pad and mouse frames of title / slots match by design: both open with the page's
+  default focus on BREACH / LOAD. But on a concept-art sticker (BREACH, SIMULATE, OVERTHROW, the dialogs'
+  stickers) the fold was measured from the image's opaque rect, whose corner lies outside the rounded die-cut,
+  so the peel cut mostly empty corner and barely showed: the pad's focus read as none. The fold's leg now grows
+  by the die-cut's corner inset (`VinylSticker.fold_inset`, walked once per image), so the flap shows as on a
+  drawn sticker (LOAD). `test_l57_*`; MENUS.jpg L57 rows (BREACH x3 before | after; slots 1.6 mouse | pad).
+- **L62 share code (P3).** The share-code field is as wide as its whole placeholder at the text size (at least
+  360 px, never past its row; the row wraps Start from code under it).
+### 2026-10-11 — M14 12Q-WORDS: whole lines, the kit header inset, the route key at the text size, the lint leads
+QA matrix audit (`docs/handoff/m14_12q/qa_matrix_audit.md`) items L40 L41 L48 L52 L54 L59 L61 L65, re-checked on
+m14-group2 (6cc7de06). Test `test_m14_12q_words` (full tier); sheet `docs/art_review/ART-12/12q/fixes/WORDS.jpg`.
+- **L40 the fight's outcome line.** The "…" was the page mark (H23 S3): combat docked its subtitle box with a fixed
+  SUBTITLE_LINES (3) while the box is taller at big text, and the mark's reserve re-wrapped the page narrower, so
+  "Perfect. Tell the board the …" filled two of the box's five lines. `Dialogue.page_lines_in(rect)` counts the
+  lines a dock holds under the name row; the fight pages by `max(SUBTITLE_LINES, page_lines_in(box))`. The whole
+  line shows on one page at 1.0 / 1.6 / 2.0 (longer lines still page).
+- **L41 the campaign end's DISPATCH.** The lint's terminal_note.gd owner was wrong: it is the HQ's subtitle band,
+  one line, paging the verdict ("… just went quiet. …"). The campaign end pages (`end_lock`, `end`) give the band
+  two lines (`HqScene.END_SUBTITLE_LINES`), as the netrun's run end already does; every other page one line.
+- **L48 VOICE ONLY // NO FEED.** `CamFeed` breaks the words at their spaces to the feed's inner width
+  (`voice_lines`) and stands them at the frame's foot, the voice trace in the room above; never smaller, never clipped.
+- **L52 campaign lost, reduce effects off.** Confirmed, no change: windowed at a 2 s settle the glitch is gone (the
+  wipe is rolling) and at 5 s the notice reads (countdown 00:04.17). The audit's frame was the lock's first 0.6 s.
+- **L54 the route key.** It was fitted by `Control.scale` (15.5 px at 1.6, under the 19 px floor). The strip is an
+  HFlowContainer: one row when its row has the room (`RouteLegend.one_row_width`), else it wraps; scale stays 1.
+  The run end's small "title chips" were the terminal window titles (next item).
+- **L59 header flush to the border.** A plain `TerminalWindow`'s CRT glass is an internal child, and the
+  PanelContainer fitted it to its content rect, so the glass's edge hugged the words. The glass now covers the
+  whole window (after each sort); the content margins are the header's inset. The title and the tag were 15 / 14 px
+  whatever the text scale: they take the body step at the text size and the title wraps at its words (the
+  static lint baseline drops terminal_window.gd's two literal font sizes).
+- **L61 OURS NOW under the speech box.** `CombatBackdrop.keep_clear` (the fight's subtitle box) moves the pencil
+  under a rect it would meet (ART_BIBLE v2 1.2: no UI covers grease pencil).
+- **L65 lint leads.** Real: raid_paper's soft ink (INK→PAPER 0.42 / 0.45 / 0.5: 3.4–4.3:1) is a token,
+  `Palette.PAPER_INK_SOFT` #5C5B58 (5.3:1 on PAPER_ALT); `MANILA_FIELD_INK` #60503C → #564633 (4.4 → 5.1:1);
+  SAVED and CONNECTING on the title step (20 → 22 at 1.0); the fight banner's title on the steps under its cap
+  (`banner_title_px`: 22 / 29 / 30 at 1.0 / 1.6 / 2.0, was 20 / 30 / 30); its address line takes the body or caption
+  step at the text size (it shrank to a fixed 12 px, half the floor at 2.0) and keeps the outcome's word when it
+  drops the place; terminal_window.gd titles (above). False positives: fx.gd SAVED contrast (the ring misses its
+  6 px NIGHT_SKY keyline: 6.3:1 against it; the #C02F82 rows are the stamp fading in), value_stepper.gd (the ring
+  samples the light -/+ plates beside the value; the value has its dark rim on the dark panel).
+### 2026-10-11 — M14 12Q-MAIN: the Mainframe, the loadout spinner, the Daemon tray and the hover zoom fit at big text
+QA matrix audit (`docs/handoff/m14_12q/qa_matrix_audit.md`) items, re-checked on m14-group2 6cc7de06 (all
+still present) and fixed; tests `test_m14_12q_main` (1.0 / 1.6 / 2.0); sheet `docs/art_review/ART-12/12q/fixes/MAINFRAME.jpg`.
+- **L37 Mainframe wheel.** The stock wheel's hub is held so the wedges' read blocks (glyph and value) stand above
+  the screen's foot (`SliceStockWheel.READ_FOOT` 0.49 of the radius, measured on the side wedges' art), in place of
+  the old 120 px `SHOP_WEDGE_SHOWN`; 1.0 is unchanged (its hub was already higher).
+- **L37 info strip ("clerk" text).** No ellipsis or line cap: the strip reserves the height of the longest text it
+  can show (idle line, every item's; shaped by the label itself) so it never resizes between items. From text 1.25
+  (`SHOP_WIDE_FROM`) the small spinner stands under the wallet beside the Daemons and the strip takes the CARDS
+  row's width, narrowed only as far as the stock wheel's left tag needs (`_info_clear_of_tags`, only ever narrows);
+  its words follow the text scale up to 1.6 (`SHOP_INFO_TEXT_MAX_SCALE`: at 2.0 the longest text otherwise kept
+  the pegboard past the foot at its 0.8 floor; on the floored board they still read larger than at 1.0). The pegboard's
+  fit now also keeps it left of the recycle bin (width as well as height, same 0.8 floor; at 1.6 it ran under the
+  bin's tape, where the spinner now stands). The tag-clearing applies only from `SHOP_WIDE_FROM`. The BIN IT
+  note tries a second spot lower down the bin (`BIN_NOTE_LOW`) before it is left out.
+- **L63 REMOVE A CARD.** `DeckView._fit_canvas`: the title keeps to one line (the window widens, centred, within
+  `CANVAS_SIDE`), and the glass always holds a whole row: the stickers shrink to fit (`row_height`), never under
+  their text-1.0 size (`card_scale_at(1.0)`); the rest scrolls.
+- **L35 loadout spinner.** The Rank 3 swap column widens to its longest word (`SpinnerView.fit_side`; the D4 wheel
+  steps left by the growth, the scrolling column keeps room for its bar); the rows' caption and titles wrap whole
+  words; the D4 window gives up pool height (wheel drawn smaller, floor `D4_POOL_MIN_H` 300) to keep Close [Esc]
+  and the HP gauge on the canvas, centred (it also ran past the right edge at 2.0).
+- **L44 Daemon tray.** `DaemonTray` takes a keep-clear rect (the ROUTE window): strip and card stand left of it.
+- **L50 hover zoom.** `ZineCard.grown_clear_of` (the combat scene's `player_hp_rect`): a grown hand card moves
+  aside (nearer side that stays on screen, eased with the growth) so it never covers the player's HP number.
+### 2026-10-11 — M14 12Q-HQ: the HQ page pages its hand, its card and the Heat terminal; map marks under its panels
+12q QA matrix audit (L30, L31, L32, L33, L34, L43, L49, L53; ART-5 acceptance "at 2.0 the selected Site's card runs under
+JACK IN"). Re-checked on m14-group2 @ 6cc7de06 (captures `docs/art_review/ART-12/12q/fixes/HQ.jpg`, before | after at
+1.0 / 1.6 / 2.0): every item still showed. Rule kept: text never smaller than at 1.0; nothing clipped or `Control.scale`d;
+what is short of room **pages** behind a MORE tab (BACK on the last page; a plate-less MenuChip at body size, pad and
+keyboard reachable, its tooltip says what is behind it).
+- **The hand** (L30, L53; `HandPager`, `scripts/ui/hq/hand_pager.gd`, pure `split`): a CREW or MARKET row wider than its
+  box is dealt into pages in order (units: crew polaroids; recruit cards, boost stickers, Profile unlock columns inside
+  their captioned groups; a group's caption on every page it has units on; the queued-boosts line and a RECALL chip stay
+  with their neighbour). The MORE tab ends the row below text 1.3; from 1.3 (one-line deck tabs) it heads the CREW /
+  MARKET / DEFENCE column so the row keeps its width. The page resets when another deck opens. The raid setup's defence
+  hand is not paged (12Q-RAID's page).
+- **Profile unlock chips** (L30): at text >= 1.3 a chip's name wraps at `UNLOCK_WRAP` x scale (150 px at 1.0) and the
+  chips stand one per column (two below 1.3, as before). `MenuChip.wrap_px` / `label_lines()` (kit; default 0 = one line,
+  every other chip unchanged).
+- **The selected card** (L31-L34; `CardPager`, `scripts/ui/hq/card_pager.gd`, pure `split` / `units`): the Site's holo
+  file, CORE's / a node's terminal and the CLAIM terminal keep their header on every page and deal their body rows into the
+  column's room; a caption goes with the row it heads (PICK THE NODE TO BUILD, > HQ ACTIONS); a row taller than a page by
+  itself is dealt in parts: a wrapped Label by whole lines (`lines_skipped` / `max_lines_visible`, its height set to its
+  shown lines), a GridContainer by rows of tiles (the CLAIM tiles), a FlowContainer by its lines (IF CLEARED's badges at
+  2.0). Rows are measured all shown once per width and text scale (again when a shown row or the header changed height: a
+  label's words wrap a frame after the build); the column keeps the width of the card's widest page. The holo's MORE tab
+  stands in its foot at the left (the room it keeps for the DECRYPTED stamp, which stays at the right); a terminal card's
+  stands in the verb slot left of its sticker (`_beside_card_foot`), else on the map beside the card's foot when nothing
+  of the page is there, else under the card in room the column keeps.
+- **Card column room**: it ends above the verb sticker as drawn (`_column_foot`: its tilt and `VERB_CLEAR` 6 px x object
+  scale for the breathing ring; the ART-5 "runs under JACK IN"); with no verb (a Site not reachable yet) it runs down
+  through the empty slot. At text >= 1.3: the column widens to `CARD_COLUMN` x scale (<= half the page,
+  `CARD_COLUMN_SHARE`; 480 at 1.6 as before, 600 at 2.0) and the verb slot is as wide as the column (JACK IN's system
+  word wraps on two lines at 2.0, not three: the card keeps that room; the hand ends at the column either way).
+  `SiteHoloCard`'s header floor (RaidHolo's HEAD_H) and its pads above the header and under the rows stop growing at x1.3
+  (`HEAD_SCALE_MAX`, STYLE 5.6), so at 2.0 the file's header is as tall as its words. The MAP KEY stays over the column
+  (on the map left of it, it covered nodes: `test_city_map_sweeps`).
+- **Heat terminal** (L43): it ends over the hand and its tabs: its rows (IN FORCE, NEXT, SINKS) page above SCRUB HEAT, the
+  MORE tab beside SCRUB (no row of its own).
+- **Map marks under the HQ's panels** (L31, L43): the raid's red pencil was on the scene's raid pencil CanvasLayer (95,
+  over every UI, ART-6 3A). On the HQ page `RaidRouteLayer.pool_host` lays it in the page's own `MapMarks` layer (right
+  over the map cursor, under the work order, hand, card, verb and the Heat terminal); the pool undoes its host's canvas
+  transform (points stay global). The raid playout keeps the pencil layer over the UI (12Q-RAID's page; unchanged).
+- **INTERCEPTED toast** (L49): when the foot's gap is too narrow (big text) it stands on the map with its foot on the
+  hand's top, between the work order (or the tabs, when the order leaves it too little) and the card column, never over
+  the polaroids.
+- **Tests**: new `test_hq_12q_fit` (fast): at 1.0 / 1.6 / 2.0 every market offer and every operative whole on some page
+  (tab clear of them, BACK returns), CLAIM / CORE / node / DOWN node / four corps' Site files / the Exploit file: every
+  row, line, tile and badge whole on some page, the column on the page and above the sticker as drawn, MORE clear of the
+  rows and the verb; the Heat terminal above the hand and its tabs with every row on a page and SCRUB on each; the pencil
+  in the page's marks layer under the panels; the toast clear of the crew; the pure splits. Changed:
+  `test_horizontal_pass24_screens` (crew dossiers: MORE turns to a card's page before it takes the focus).
+- **hq_scene.gd functions touched**: `_build_hq_page`, `_place_hq`, `_place_corp_news`, `_link_hq_focus`, `open_hand`,
+  `refresh_site_card`, `toggle_heat_terminal`, `_mount_hq_routes`, `_fill_crew_hand`, `_fill_market_hand`,
+  `_site_card`, `_node_rows`; new `_page_tab`, `_page_hand`, `_page_card`, `_beside_card_foot`, `_place_card_tab`,
+  `_column_foot`, `_relink_hq_focus`, `turn_hand_page`, `turn_card_page`, `turn_heat_page`, `_page_heat_terminal`,
+  `_hq_marks_layer`, `_unlock_column`. Outside the area (smallest change): `scripts/ui/kit/chrome/menu_chip.gd`
+  (`wrap_px`), `scripts/ui/kit/raid_route_layer.gd` (`pool_host`), `scripts/ui/kit/site_holo_card.gd` (`HEAD_SCALE_MAX`).
+- **Open question for the designer** (below): at 2.0 a Site file pages in three or four (one row a page) and the crew hand
+  shows two polaroids a page.
+
+### 2026-10-11 — M14 LEAK: a line said in one campaign never shows in the next
+ART-6 acceptance saw Solace's campaign-lost DISPATCH line ("Home server lost …") on the next raid_lab
+state. Two causes, reproduced headless in `test_m14_dialogue_leak`:
+- **Game (real leak).** `show_end` says the campaign's end line (`win` / `loss`) with no screen scope, and
+  unscoped lines play out across screens (H24 S15). NEW CAMPAIGN on the dossier (`_on_end_new_campaign`) goes
+  to the start page on the same HQ, so the line (and anything queued behind it) showed on the new campaign
+  page and, after a quick START, on the new campaign's HQ. Scoping it to one screen does not work (the end
+  moves end_lock → end). Fix: `RunManager.new_campaign` clears the Dialogue (every way a campaign starts: the
+  start page, a code, the daily run, dev shortcuts), as `go_to_title` already did, and NEW CAMPAIGN clears it
+  on leaving the end. `history` (the session log the codex reads) is kept.
+- **Dialogue.clear.** It now also forgets the line on show (`_shown_line`, `_shown`): before, a dock change
+  after a clear had nothing visible to repage, but the stale line was still held. The old page timer was
+  already harmless (its timeout checks it is still `_timer`); the test fires it after a clear.
+- **Lab only.** The raid lab opens each state's HQ before making that state's campaign, so after `breached`
+  (a Solace raid that loses) the next HQ's `_ready` found a campaign over and played its end (the loss line,
+  and in a window the ransom lock) over the next state; no clear before it could help. `raid_lab._clear` now
+  drops a campaign that is over (and its slot) and clears the Dialogue; every state can share one launch.
+  The game does show a finished campaign's end when the HQ opens on it (resume): correct, not changed.
+
+### 2026-10-11 — M14 ART-6 acceptance: reading holds at 2x / 4x, every state captured, DOWN at every zoom
 The three open ART-6 boxes (MILESTONES "ART-6 — Raid"), with evidence.
 - **Reading holds (R7 C4).** The raid's reading times are the raid_* HOLD entries (`raid_mark_hold`) and
   the ones their views keep on the real clock (`raid_mark_write`, `raid_breached_write`, `raid_incoming_hold`).
@@ -79,8 +452,86 @@ The three open ART-6 boxes (MILESTONES "ART-6 — Raid"), with evidence.
   raid at ortho raid_fit_min, the middle, raid_fit_max and zoom_ortho_max (the setup's big-text floor,
   `fit_hq_map`) draws the greyed DOWN socket, its Site marker v4 reads DOWN with a greyed ring and the
   DISABLED sticker under the white bolt, both the same size on screen at every zoom. No defect found.
+### 2026-10-11 — M14 FIX-2: no raid toast after the loss, the subtitle under the takeover; the memo's routing line
+- **Raid toast after the loss (found by FOLLOW-UP, `TAKEOVER_END.jpg` bottom row).** The toast was the Heat
+  gauge's consequence note ("A raid is queued. While Heat stays at 75 or more..."): after the final raid the HQ
+  resets `hud_heat_shown` (`_after_playout`), the top bar shows the campaign's last Heat and its threshold
+  crossing stamps the banner and its note (top level, z 50) over the takeover. `HeatPoster.campaign_over()`
+  (the campaign lost, won or abandoned): no crossing banner is stamped and a note still holding goes on its next
+  frame; the Heat number itself still shows. The guard sits in the poster, the only place the note is drawn,
+  so the netrun's gauge keeps it too. View only (reads `CampaignState.is_over`).
+- **DISPATCH's campaign-lost line under the lock.** The subtitles are the Dialogue autoload's CanvasLayer (90),
+  over every node of the HQ, so the line drew untinted over the takeover. The HQ now puts the `RansomLock` on
+  its own CanvasLayer `EndLockLayer` at `Dialogue.layer + 1` (under the raid pencils 95 and Fx 100): the
+  takeover's glass (its own ScreenCopy) reads the subtitle band with the top bar and tints it in the house's
+  colour, as round 20 takes the whole station; the line still speaks and is read through it, never over the
+  notice. The layer goes with the lock (`_free_end_lock`). The lock consumes every press, so the pause menu
+  (layer 0) cannot open under it.
+- **Corp memo routing line.** It was one `draw_string` clipped at the sheet's width (at 2.0 every corp lost
+  FROM and REF; at 1.0 SOLACE and ORBITAL lost the end of REF). `CorpMemo.wrap_routing`: whole fields (TO /
+  FROM / REF, apart by four spaces) packed per line, a field wider than the line folded at its words, a word
+  never cut; lettered at META_PX x the text size, never under the 1.0 size; the margin over the story grows by
+  the extra lines (`top_margin`, refit on resize). At 2.0 in 470 px: three lines (MERIDIAN four: FROM folds).
+- Test `test_m14_fix2_takeover_memo` (fast): a crossing after the loss shows no banner and no note (the same
+  crossing while the campaign runs shows it); the HQ's live loss under reduce effects raises no toast, the lock's
+  layer is over the subtitles' and goes with it, state unchanged; every corp's memo and the transcript at
+  1.0 / 1.6 / 2.0: every routing line inside the sheet, every word in order, never under 1.0, the story under it.
+  Sheet `docs/art_review/PARITY/fixes/FIX2.jpg` (before | after: the end frame with reduce effects on for
+  MERIDIAN and ORBITAL at 1.0; the memo at 2.0 for every corp); probe `tools/visual_qa/memo_routing_probe.tscn`.
+### 2026-10-11 — M14 ART-2/ART-5 acceptance: the clutter fixture at 1.0 / 1.6; each corporation's Grid vs the reference
+Two open M14 boxes, each with evidence; defects fixed, look differences listed for the art director (not changed).
+- **ART-2 clutter fixture.** arena_lab's worst fixture (a drone on every player slot, a satellite on every boss
+  slot, Firmware in every slot, every lab Daemon, every dock bloomed, a card hovered) is one shared dressing,
+  `tools/visual_qa/clutter_fixture.gd`, used by the review pack's new `combat_clutter` screen (the boss fight), the
+  perf pack's `combat_worst*` screens (its own copy removed) and the test. Captured windowed at 1.0 and 1.6.
+- **Defect found and fixed (combat).** A bloomed drone's mini-wheel only kept inside the view: at 1.0 and 1.6 it
+  stood on the player's and the boss's HP numbers, the result chips beside them, the boss banner (RENEWAL ENGINE)
+  and the Daemon rack, and at 1.6 on the E nudge button. `DroneDock._mini_turn` now turns it round the rim
+  (MIRROR_STEP at a time, clockwise first) to the nearest spot clear of `mini_blocks()` (the HP number, NEXT /
+  LAST TURN plates, both result-chip lanes beside and under the HP, kept whole so a drone never jumps as the chips
+  change, the tag, the boss banner (`WheelView.banner_rect`, `WheelFace.banner_rect`), the nudge buttons and key
+  hints, the Daemon rack) and of the drones already placed; else, as before, the nearest that fits the view.
+  Test `test_art2_clutter_fixture` (every corporation's boss x 1.0 / 1.6: layout rules, every word block on screen,
+  no two owners' words overlapping, no drone on a word block or another drone, hand body lines inside their cards
+  at the rest floor). Sheet `docs/art_review/ART-2/CLUTTER.jpg` (reference | 1.0 | 1.6, and the before row).
+- **Not changed (D15 look):** in the fanned hand each card lies under its right neighbour by HAND_OVERLAP (12 %),
+  so at rest the end of a long body line and the first card's key hint sit under the next card (at 1.0 and 1.6, in
+  every fight, not only the fixture); the hovered card grows and reads whole (S-CARDFACE b). For the art director.
+- **ART-5 per-corporation Grid.** `grid`, `grid_meridian`, `grid_halcyon`, `grid_orbital`, `grid_rebel_cell`
+  captured at 1.0, windowed. References: the locked Grid concept `city/round39_city_unified/city_grid.jpg` (a
+  Meridian campaign) for every corporation, beside the corporation's own city concept (Solace / Halcyon / Orbital:
+  `round26_hq_targets/hq_<corp>_close_night.jpg`; Meridian: art-pass `round30_meridian_castle/city_night_hq_v6.jpg`;
+  REBEL_CELL: `round34_rebel_cell/map_A_home.jpg`). Sheet `docs/art_review/ART-5/GRID_PER_CORP.jpg`.
+- **Defect found and fixed (city).** The selected Site's decrypted file (SiteHoloCard) drew its header lines with
+  draw_string, which cuts at the card's edge: Meridian's "MERIDIAN FREIGHT SYSTEMS // SITE FILE 331" lost its file
+  number at 1.0, and at 2.0 long titles (PARKING ENFORCEMENT OFFICE) and file lines were cut on every corporation.
+  The file line now names the corp by its letterhead name (MERIDIAN FREIGHT, SOLACE BIO; as the card's doc always
+  said), and a header line wider than the card wraps at a word, the header growing to hold it
+  (`SiteHoloCard.header_lines`, `_fit_head`). Test `test_art5_grid_per_corp` (every corporation x 1.0 / 1.6 / 2.0).
+  The hq_scene change is one line (screens' file, smallest change).
+- **Visible differences, reference vs main, for the art director (not changed):**
+  - All: the concept's yellow vinyl THE GRID title sticker (top left) is not on main; main shows the resource strip (HEAT, SCHEMATICS, HOME, EXPLOITS, RAIDS, ICE, CREW) across the top.
+  - All: the concept's corp-paper operative dossier on the left (AT LARGE, HEAT stamp) is not on main; main has the CREW / MARKET / DEFENCE hand and runner polaroids at the bottom left.
+  - All: the concept's minimap (bottom left) is not on main.
+  - All: the concept's legend strip along the foot (owned / selectable / not yet) is a collapsed MAP KEY button at the top right on main; main's foot is the ON AIR ticker.
+  - All: the concept's "Always show all nodes" toggle (bottom right) is not on main (it is in Options).
+  - All: the concept's network is a thick yellow cable lattice joining every Site; main draws only the walked / claimed links in yellow from CORE, the other links pale.
+  - All: the concept's Site markers are orange hex badges with tier pips; main's are the round white-ringed v4 stickers with objective glyphs (round 42, locked after round 39).
+  - All: the concept's Site card is orange corp paper (FORGE THE MANIFEST: TIER / TYPE / REWARDS); main's is the decrypted holo in the corp's tint (TYPE / LINK / IF CLEARED, DECRYPTED stamp).
+  - All: the concept's PATROL [P] chip on the map is not on main.
+  - All: the concept's target is a red ring and a "TARGET: MERIDIAN HQ // EXPLOITS 0/3" chip at the top; main's is the red pencil TARGET scrawl round the Central Server with a "CENTRAL SERVER // EXPLOITS 0/3" chip.
+  - All: the concept frames a closer, brighter violet city filling the view with other corps' landmarks and district labels (HALCYON eye pyramid, THE SPRAWL); main frames wider and darker, no other landmark or district label in view.
+  - All: main adds the jack command line ("> jack --from HOME_SERVER --to ...") under JACK IN; the concept has none.
+  - Solace: the helix landmark of the R26 concept is at the top edge of main's frame, not in view; the network sits in the upper left.
+  - Meridian: the network sits in the upper right with about half the view past the city's edge (known GRID-12); Meridian's castle HQ of the R30 concept is not in frame; no orange territory reads.
+  - Halcyon: the eye pyramid and its beam (R26 concept) are not in frame; the right third of the view is past the city's edge; JACK IN was caught in its focus look (the rainbow curl over the J, designer 2026-10-05).
+  - Orbital: the dish and launch-pad landmark (R26 concept) is not in frame; the lower right of the view is past the city's edge.
+  - REBEL_CELL: the red-window fist across the district (R34 map_A_home) is not in main's frame; the TARGET pencil arrow points at a Site marker above the Central Server chip, labels crowding near it (known GRID-13); the lower right is past the city's edge.
+- **Observed, not a picture defect:** every Grid capture (and the 2026-10-05 parity pack's) warns "waited 20 s
+  for the city bake; not ready (old look)": `NeonCity.showing_current_look()` stays false on the Grid's 3D city
+  while `view_covered()` is true for it; the pictures show the full 3D city. At 2.0 the selected Site's card runs
+  under JACK IN in the card column (before and after this fix). Both for the 12q QA matrix.
 
-### 2026-10-11 — M14 ART-6 acceptance: reading holds at 2x / 4x, every state captured, DOWN at every zoom
 ### 2026-10-11 — M14 FOLLOW-UP: letterhead names; takeover end frame
 Art director's APPROVED review of the close-out group, two follow-ups.
 - **Letterhead names (schema).** `CorporationData.letterhead_name` (String, "" by default): the
@@ -6096,6 +6547,8 @@ Before covers 43 screens; after covers 53. The remaining findings are low-confid
 - Colour-blind support stays a daltonize correction (ART_BIBLE §12 says "remap").
 
 ## Open questions for the designer
+- **2026-10-11 12Q-RAID, hostile shape cue**: the raid's hazard ticks and reticles show only with the colour-blind setting on (default look unchanged). ART_BIBLE §5.1 says never colour alone: show them always (a deutan player who never opens Options sees red and lime both as yellow), or keep them behind the setting?
+- **2026-10-11 12Q-HQ, the HQ at text 2.0**: the selected Site's file pages one row a page (its header and foot take about 150 of the column's 215 px) and the crew hand shows two polaroids a page. Keep paging, or move JACK IN's system word beside the sticker at big text (bible 1.3 says under it) or the MAP KEY off the column to give the card its room?
 - **2026-10-11 BIG-TEXT b, letterhead at 1.0**: MERIDIAN FREIGHT SYSTEMS no longer runs under the work order's seal; at 1.0 it ends in an ellipsis ("MERIDIAN FREIGHT SYS…"), since the 1.0 size is the floor and a second line would grow the letterhead and fold the whole order at 1.0. Keep the ellipsis, or grow the letterhead (and fold), or a shorter letterhead name per corp (content)?
 - ~~**CP-001 (2026-10-10, process):** rule 6 scope, full-suite cadence wording, Batch API use, playtest gates~~ **Answered 2026-10-11** (1A 2A-never-×3 3A 4A, "Designer rulings CP-001"); only the API key is still open.
   per group — `docs/handoff/CHECKPOINT_PENDING.md`; defaults in force: A / A / B (reports only) / A.

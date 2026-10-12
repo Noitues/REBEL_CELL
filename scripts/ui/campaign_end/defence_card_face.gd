@@ -33,4 +33,4 @@ func _draw() -> void:
 	# The name steps down to the caption floor to fit the card.
 	while fs > UiTheme.font_px(UiTheme.CAPTION) and f.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
 		fs -= 1
-	draw_string(f, Vector2(PAD * s, size.y - PAD * 2.0 * s), title, HORIZONTAL_ALIGNMENT_LEFT, room, fs, Palette.TEXT_HI)
+	HighContrast.draw_text(self, f, Vector2(PAD * s, size.y - PAD * 2.0 * s), title, HORIZONTAL_ALIGNMENT_LEFT, room, fs, Palette.TEXT_HI)

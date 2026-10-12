@@ -119,7 +119,7 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_stamp
 	sub_label.name = "PaperSub"
 	sub_label.add_theme_font_override("font", Palette.paper())
 	sub_label.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
-	sub_label.add_theme_color_override("font_color", Palette.INK.lerp(Palette.PAPER, 0.42))
+	sub_label.add_theme_color_override("font_color", Palette.PAPER_INK_SOFT)
 	UiWrap.whole_words(sub_label)
 	sub_label.visible = false
 	body.add_child(sub_label)
@@ -256,8 +256,8 @@ func _deco(on: Control) -> void:
 	var meta_font := Palette.paper()
 	var meta_px := UiTheme.font_px_at(UiTheme.CAPTION, _k)
 	var div_px := division_px(r.size.x)
-	on.draw_string(meta_font, Vector2(UiTheme.SP_L, top_pad() + paper.head_h + meta_px * 0.6), skin.division(),
-		HORIZONTAL_ALIGNMENT_LEFT, -1, div_px, Palette.INK.lerp(Palette.PAPER, 0.45))
+	HighContrast.draw_text(on, meta_font, Vector2(UiTheme.SP_L, top_pad() + paper.head_h + meta_px * 0.6), skin.division(),
+		HORIZONTAL_ALIGNMENT_LEFT, -1, div_px, Palette.PAPER_INK_SOFT)
 	# The footer: redacted lines and the meta line.
 	var fy := r.size.y - FOOTER_H * k + 8.0 * k
 	for row in REDACT_ROWS:
@@ -268,8 +268,8 @@ func _deco(on: Control) -> void:
 			on.draw_rect(Rect2(bx, fy + row * (REDACT_H + 5.0) * k, ln, REDACT_H * k), Palette.INK)
 			bx += ln + (6.0 + 6.0 * absf(RaidPencil.noise(row * 17 + 3, i))) * k
 			i += 1
-	on.draw_string(meta_font, Vector2(PAD * k, r.size.y - 7.0 * k), tr(FOOTER) % skin.corp_name(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x * REDACT_SPAN, meta_px,
-		Palette.INK.lerp(Palette.PAPER, 0.5))
+	HighContrast.draw_text(on, meta_font, Vector2(PAD * k, r.size.y - 7.0 * k), tr(FOOTER) % skin.corp_name(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x * REDACT_SPAN, meta_px,
+		Palette.PAPER_INK_SOFT)
 	_clip(on, k)
 
 ## Paper grain: deterministic specks (a hash, no RNG).
@@ -295,7 +295,7 @@ static func draw_stamp(ci: CanvasItem, c: Vector2, word: String, px: int, col: C
 	var ink := Color(col, STAMP_ALPHA)
 	ci.draw_set_transform(c, tilt, Vector2.ONE)
 	ci.draw_rect(box, ink, false, maxf(2.0, px * 0.12))
-	ci.draw_string(f, Vector2(-sz.x * 0.5, -sz.y * 0.5 + f.get_ascent(px)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ink)
+	HighContrast.draw_text(ci, f, Vector2(-sz.x * 0.5, -sz.y * 0.5 + f.get_ascent(px)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ink)
 	# Worn ink: a few paper-coloured nicks across the word.
 	for i in 5:
 		var p := Vector2(RaidPencil.noise(13, i) * sz.x * 0.5, RaidPencil.noise(29, i) * sz.y * 0.4)

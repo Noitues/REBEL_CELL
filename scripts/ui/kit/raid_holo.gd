@@ -133,13 +133,13 @@ func _header(on: Control) -> void:
 	var title_px := UiTheme.font_px_at(UiTheme.LABEL, _k)
 	var x := PAD * k
 	var room := size.x - x * 2.0  # parity RAID-03: the stamp is under the words now
-	on.draw_string(f, Vector2(x, PAD * 0.5 * k + f.get_ascent(title_px)), title, HORIZONTAL_ALIGNMENT_LEFT, room, title_px, DecryptedHoloPanel.ink(skin.holo))
+	HighContrast.draw_text(on, f, Vector2(x, PAD * 0.5 * k + f.get_ascent(title_px)), title, HORIZONTAL_ALIGNMENT_LEFT, room, title_px, DecryptedHoloPanel.ink(skin.holo))
 	var meta_px := UiTheme.font_px_at(UiTheme.CAPTION, _k)
 	var mono := Palette.mono()
 	var line_y := PAD * 0.5 * k + f.get_height(title_px) + mono.get_ascent(meta_px)
-	on.draw_string(mono, Vector2(x, line_y), skin.corp_name(), HORIZONTAL_ALIGNMENT_LEFT, room, meta_px, DecryptedHoloPanel.ink(skin.holo))
+	HighContrast.draw_text(on, mono, Vector2(x, line_y), skin.corp_name(), HORIZONTAL_ALIGNMENT_LEFT, room, meta_px, DecryptedHoloPanel.ink(skin.holo))
 	if key != "":
-		on.draw_string(mono, Vector2(x, line_y + mono.get_height(meta_px)), tr(KEY_LINE) % key, HORIZONTAL_ALIGNMENT_LEFT, size.x - x * 2.0, meta_px, Palette.GAIN)
+		HighContrast.draw_text(on, mono, Vector2(x, line_y + mono.get_height(meta_px)), tr(KEY_LINE) % key, HORIZONTAL_ALIGNMENT_LEFT, size.x - x * 2.0, meta_px, Palette.GAIN)
 
 
 func _ready() -> void:

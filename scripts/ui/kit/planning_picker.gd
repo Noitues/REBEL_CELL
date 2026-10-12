@@ -137,7 +137,7 @@ func _draw_swatch(i: int, sw: Rect2, st: StringName, chosen: bool, locked: bool)
 			var f := Palette.display()
 			var px := roundi(side)
 			var w := f.get_string_size(REDACTED_MARK, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
-			draw_string(f, Vector2(block.get_center().x - w * 0.5, block.get_center().y + (f.get_ascent(px) - f.get_descent(px)) * 0.5), REDACTED_MARK, HORIZONTAL_ALIGNMENT_LEFT, -1, px, hue)
+			HighContrast.draw_text(self, f, Vector2(block.get_center().x - w * 0.5, block.get_center().y + (f.get_ascent(px) - f.get_descent(px)) * 0.5), REDACTED_MARK, HORIZONTAL_ALIGNMENT_LEFT, -1, px, hue)
 			return
 		var tex := crest(corp)
 		if tex != null:

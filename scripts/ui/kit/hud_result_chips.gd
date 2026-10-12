@@ -413,12 +413,12 @@ func _draw() -> void:
 		var base := r.position.y + (h + font.get_ascent(fs) - font.get_descent(fs)) * 0.5
 		var words := String(p["words"])
 		draw_string_outline(font, Vector2(float(xs["words"]), base), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 2, Color(HudSkin.CHIP_INK, ca))
-		draw_string(font, Vector2(float(xs["words"]), base), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
+		HighContrast.draw_text(self, font, Vector2(float(xs["words"]), base), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
 		if String(p["mark"]) != "":
 			var gp := glyph_px()
 			HudSkin.draw_glyph(self, String(p["mark"]), Vector2(float(xs["glyph"]) + gp * 0.5, r.position.y + h * 0.5), gp * 0.5, ink)
 		if String(p["close"]) != "":
-			draw_string(font, Vector2(float(xs["close"]), base), String(p["close"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
+			HighContrast.draw_text(self, font, Vector2(float(xs["close"]), base), String(p["close"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
 		if bool(c.get("lethal", false)):
 			WheelView.draw_skull(self, Vector2(r.end.x - CHIP_H * SKULL_SHARE * 1.4 * s, r.position.y + h * 0.5), CHIP_H * SKULL_SHARE * s, ink)
 		if t > 0.0:
@@ -442,7 +442,7 @@ func _draw_standing() -> void:
 		draw_rect(r, Color(HudSkin.CHIP_INK, 0.7))
 		draw_rect(r, col, false, STANDING_RIM)
 		var base := r.position.y + (r.size.y + font.get_ascent(fs) - font.get_descent(fs)) * 0.5
-		draw_string(font, Vector2(r.position.x + PAD * s, base), String(standing[i]["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+		HighContrast.draw_text(self, font, Vector2(r.position.x + PAD * s, base), String(standing[i]["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 
 func _make_custom_tooltip(for_text: String) -> Object:

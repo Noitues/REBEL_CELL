@@ -595,6 +595,12 @@ func spreading() -> bool:
 func showing_current_look() -> bool:
 	if not is_baked():
 		return true
+	if city3d:
+		# M14 12Q-RAID: the 3D city has no bake: a territory change lands on it at once (see
+		# `_draw_view_3d`), so it shows its current look once its model is built and placed
+		# (with no 3D view it draws nothing to wait for). `_baked_key` stays empty here, and the
+		# review pack waited 20 s on every 3D page for a bake that never comes.
+		return view3d == null or view3d.built()
 	return spreading() or (CityBakeCache.has(_baked_key) and String(CityBakeCache.entry(_baked_key).get("look", "")) == look_key())
 
 
@@ -891,7 +897,7 @@ func _draw_mark_stamp(ci: CanvasItem, m: Dictionary, grow: float, alpha: float, 
 	var box := Rect2(-spot.size * 0.5, spot.size)
 	ci.draw_rect(box, Color(Palette.NIGHT_SKY, 0.9 * alpha))
 	ci.draw_rect(box, Color(col, alpha), false, 3.0 * k)
-	ci.draw_string(font, box.position + Vector2(MARK_PAD * k, MARK_PAD * k + font.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, alpha))
+	HighContrast.draw_text(ci, font, box.position + Vector2(MARK_PAD * k, MARK_PAD * k + font.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, alpha))
 	ci.draw_set_transform(Vector2.ZERO)
 
 
@@ -1386,6 +1392,12 @@ func _sync_city3d() -> void:
 	# (a page that turns the 3D city on after a 2D frame left it showing: flat roof slabs).
 	if _sil != null and city3d:
 		_sil.visible = false
+	# M14 12Q-RAID: nor its fade over the sky: a 2D frame that showed the sky before the page
+	# turned the 3D city on left `bake_fade` at 0 (no 2D bake lands on a 3D city), the lights and
+	# beacons layers at 0 alpha and the review pack's wait on "fading in".
+	if city3d:
+		Motion.settle(self, ^"bake_fade")
+		bake_fade = 1.0
 	refresh()
 
 
@@ -3959,7 +3971,7 @@ func _draw_fx() -> void:
 				p.y -= FIST_SIZE.y * 0.56  # above the fist, not over it
 			var col := Palette.PAPER if t["id"] == &"" else Palette.corp_color(t["id"])
 			_fx.draw_rect(Rect2(p - Vector2(8, 30) * k, Vector2(260, 40) * k), Color(0, 0, 0, 0.75))
-			_fx.draw_string(Palette.display(), p, name, HORIZONTAL_ALIGNMENT_LEFT, -1, int(30 * k), col)
+			HighContrast.draw_text(_fx, Palette.display(), p, name, HORIZONTAL_ALIGNMENT_LEFT, -1, int(30 * k), col)
 	# Everything below was recorded in the image's space (baked) or the city's (not).
 	_fx.draw_set_transform(_shift)
 	var flicker := Motion.live(SIGN_MOTION)

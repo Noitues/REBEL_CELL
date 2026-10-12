@@ -86,8 +86,8 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	# Cards follow the text size (H21 #15) while a row still holds CARDS_PER_ROW of them, and
 	# show what they do as pictograms. S-CARDFACE (DECK-01): the row is filled (as many cards as fit
 	# at the text size, then grown to the grid's width) and centred: it left the right third empty.
-	var per_row := maxi(CARDS_PER_ROW, floori((GRID_WIDTH + GRID_GAP) / (ZineCard.STICKER_SIZE.x * Settings.text_scale + GRID_GAP)))
-	var ds := clampf(floorf((GRID_WIDTH - GRID_GAP * (per_row - 1)) / per_row) / ZineCard.STICKER_SIZE.x, 1.0, Settings.TEXT_SCALE_MAX)
+	var ds := card_scale_at(Settings.text_scale)
+	_card_scale = ds
 	grid.alignment = FlowContainer.ALIGNMENT_CENTER
 	for i in deck.size():
 		var card := lookup.get_content(deck[i]) as CardData
@@ -170,6 +170,10 @@ const BOTTOM_ROOM := 64.0
 const SCROLL_MIN := 160.0
 var _bottom: HBoxContainer = null
 var _scroll: ScrollContainer = null
+## M14 12Q-MAIN: the deck's sticker scale now (card_scale_at, less when a row has to fit the glass).
+var _card_scale: float = 1.0
+## M14 12Q-MAIN: the least gap kept between the window and the canvas's sides (px).
+const CANVAS_SIDE := 20.0
 
 
 ## Deck card `i`'s sticker (null when there is none).
@@ -177,17 +181,54 @@ func card(i: int) -> ZineCard:
 	return _cards[i] if i >= 0 and i < _cards.size() else null
 
 
+## The deck's sticker scale at text scale `ts`: as many cards as fit a row at that size (at least
+## CARDS_PER_ROW), grown to fill the grid's width (S-CARDFACE DECK-01).
+static func card_scale_at(ts: float) -> float:
+	var per_row := maxi(CARDS_PER_ROW, floori((GRID_WIDTH + GRID_GAP) / (ZineCard.STICKER_SIZE.x * ts + GRID_GAP)))
+	return clampf(floorf((GRID_WIDTH - GRID_GAP * (per_row - 1)) / per_row) / ZineCard.STICKER_SIZE.x, 1.0, Settings.TEXT_SCALE_MAX)
+
+
+## The height a row of stickers at scale `ds` takes in the glass: the card, the hover lift's room
+## and the grid's edges (px).
+static func row_height(ds: float) -> float:
+	return ZineCard.STICKER_SIZE.y * ds + ceilf(absf(Motion.amplitude(&"card_hover"))) + GRID_EDGE * 2.0
+
+
 ## The window stays on the canvas: the card grid gives up what the v2 terminal's header and the
-## words take at big text (never under SCROLL_MIN).
+## words take at big text (never under SCROLL_MIN). M14 12Q-MAIN (audit L63: at 2.0 the REMOVE A CARD
+## row was cut at the cards' middle): the title keeps to one line (the window widens, centred, as far as
+## the canvas allows), and the glass always shows a whole row: the stickers shrink to fit it, never
+## under their size at text 1.0 (the glass then takes a row's height and the window rises to keep on
+## the canvas); the rest scrolls.
 func _fit_canvas() -> void:
 	if not is_inside_tree() or window == null or _scroll == null:
 		return
-	var over := window.position.y + window.get_combined_minimum_size().y - get_viewport_rect().size.y
+	var view := get_viewport_rect().size
+	var head := window.find_child("TerminalTitle", true, false) as Label
+	if head != null:
+		var need := ceilf(head.get_theme_font(&"font").get_string_size(head.text, HORIZONTAL_ALIGNMENT_LEFT, -1, head.get_theme_font_size(&"font_size")).x) + 2.0
+		head.custom_minimum_size.x = need
+		var wide := window.get_combined_minimum_size().x - (view.x - CANVAS_SIDE * 2.0)
+		if wide > 0.0:
+			head.custom_minimum_size.x = maxf(0.0, need - wide)  # past the canvas the title wraps
+		window.size = window.get_combined_minimum_size()
+		window.position.x = maxf(CANVAS_SIDE, (view.x - window.size.x) * 0.5)
+	var over := window.position.y + window.get_combined_minimum_size().y - view.y
 	if over > 0.0:
 		_scroll.custom_minimum_size.y = maxf(SCROLL_MIN, _scroll.custom_minimum_size.y - over)
 		# the window's own 540 floor gives up the overshoot too, or it keeps its height past the canvas
 		window.custom_minimum_size.y = maxf(0.0, window.custom_minimum_size.y - over)
 		window.size = window.get_combined_minimum_size()
+	var glass := _scroll.custom_minimum_size.y
+	if row_height(_card_scale) > glass + 0.5:
+		var floor_ds := card_scale_at(1.0)
+		_card_scale = maxf(floor_ds, (glass - row_height(0.0)) / ZineCard.STICKER_SIZE.y)
+		for c in _cards:
+			c.scaled(_card_scale)
+		if row_height(_card_scale) > glass:
+			_scroll.custom_minimum_size.y = row_height(_card_scale)
+			window.size = window.get_combined_minimum_size()
+			window.position.y = maxf(0.0, minf(window.position.y, view.y - window.size.y))
 
 
 func _ready() -> void:

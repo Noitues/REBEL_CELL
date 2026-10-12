@@ -214,7 +214,7 @@ static func _letter(ci: CanvasItem, c: Vector2, h: float, text: String, col: Col
 	var f := Palette.display()
 	var px := maxi(UiTheme.font_px_at(UiTheme.CAPTION, 1.0), roundi(h * LETTER))
 	var sz := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
-	ci.draw_string(f, Vector2(c.x - sz.x * 0.5, c.y + (f.get_ascent(px) - f.get_descent(px)) * 0.5), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
+	HighContrast.draw_text(ci, f, Vector2(c.x - sz.x * 0.5, c.y + (f.get_ascent(px) - f.get_descent(px)) * 0.5), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
 
 
 static func _face(ci: CanvasItem, c: Vector2, r: float, w: float, b: int, gset: StringName) -> void:

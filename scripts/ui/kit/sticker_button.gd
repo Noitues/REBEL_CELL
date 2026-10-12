@@ -120,7 +120,7 @@ func _draw() -> void:
 		_draw_icon(ic, 7.0 * s, ink)
 		text_x += ICON_ROOM * s
 		text_w -= ICON_ROOM * s
-	draw_string(Palette.marker(), Vector2(text_x, baseline), shown_text(), HORIZONTAL_ALIGNMENT_CENTER, text_w, fs, ink)
+	HighContrast.draw_text(self, Palette.marker(), Vector2(text_x, baseline), shown_text(), HORIZONTAL_ALIGNMENT_CENTER, text_w, fs, ink)
 	# ART-0 F (§6): the disabled lock and the refused mark on the sticker's face; its focus is
 	# the lime halo above (a sticker's focus, v2 §2.10), never brackets.
 	KitState.draw_frame(self, rr, st, false)

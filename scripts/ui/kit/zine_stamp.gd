@@ -97,9 +97,9 @@ func _draw() -> void:
 	if icon_kind != &"":
 		StatIcon.draw(self, c + Vector2(0, -r * ICON_LIFT), r * ICON_SHARE, icon_kind, col)
 		drop = r * WORD_DROP
-	draw_string(Palette.display(), c + Vector2(-r + 12, 8 + drop), stamp_text, HORIZONTAL_ALIGNMENT_CENTER, r * 2 - 24, WORD_SIZE, col)
+	HighContrast.draw_text(self, Palette.display(), c + Vector2(-r + 12, 8 + drop), stamp_text, HORIZONTAL_ALIGNMENT_CENTER, r * 2 - 24, WORD_SIZE, col)
 	if hint != "":
-		draw_string(Palette.mono(), c + Vector2(-r + 12, 26), hint, HORIZONTAL_ALIGNMENT_CENTER, r * 2 - 24, roundi(HINT_SIZE * Settings.text_scale), col)
+		HighContrast.draw_text(self, Palette.mono(), c + Vector2(-r + 12, 26), hint, HORIZONTAL_ALIGNMENT_CENTER, r * 2 - 24, roundi(HINT_SIZE * Settings.text_scale), col)
 	# ART-0 F (§6): the disabled lock and the refused mark; focus is the stamp's own lime
 	# halo (a sticker's focus, v2 §2.10), never brackets.
 	KitState.draw_frame(self, Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0), st, false)

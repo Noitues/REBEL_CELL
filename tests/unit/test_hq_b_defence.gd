@@ -259,7 +259,7 @@ func test_round_40_continue_waits_unseen_and_the_report_has_no_disc() -> void:
 	if hq.panel_name == "raid_playout":
 		var cont: Button = null
 		for b in hq._panel.find_children("*", "Button", true, false):
-			if (b as Button).text == tr("Continue"):
+			if b.name == &"Continue":
 				cont = b
 		assert_not_null(cont, "Continue on the playout")
 		if cont != null and cont.disabled:

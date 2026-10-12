@@ -725,7 +725,7 @@ func _number(at: Vector2, r: float, number: int, a: float) -> void:
 	var fs := maxi(1, roundi(NUMBER_FONT * Settings.text_scale * k))
 	var text := str(number)
 	var y := c.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
-	_c.draw_string(f, Vector2(box.position.x, y), text, HORIZONTAL_ALIGNMENT_CENTER, side, fs, Color(RouteInk.KEYLINE, a))
+	HighContrast.draw_text(_c, f, Vector2(box.position.x, y), text, HORIZONTAL_ALIGNMENT_CENTER, side, fs, Color(RouteInk.KEYLINE, a))
 
 
 ## The choice number's chip box (local px) on a sticker at `at` of reach `r`.
@@ -1054,15 +1054,16 @@ func _landmarks() -> void:
 		var sl := fs * LANDMARK_SLANT
 		var plate := PackedVector2Array([r.position + Vector2(sl, 0.0), Vector2(r.end.x, r.position.y), r.end - Vector2(sl, 0.0),
 			Vector2(r.position.x, r.end.y)])
-		_c.draw_colored_polygon(plate, Color(PaletteSkins.chrome(Palette.TERMINAL_BG), LANDMARK_FILL_ALPHA))
+		# M14 12Q-ACCESS (L78): high contrast: an opaque plate, a thick edge and 7:1 words.
+		_c.draw_colored_polygon(plate, HighContrast.plate(Color(PaletteSkins.chrome(Palette.TERMINAL_BG), LANDMARK_FILL_ALPHA)))
 		var ring := plate.duplicate()
 		ring.append(plate[0])
-		_c.draw_polyline(ring, Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA), maxf(k, fs * LANDMARK_KEYLINE), true)
+		_c.draw_polyline(ring, Color(col, 1.0) if HighContrast.on() else Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA), HighContrast.edge(maxf(k, fs * LANDMARK_KEYLINE)), true)
 		var bw := fs * LANDMARK_BAR
 		_c.draw_colored_polygon(PackedVector2Array([r.position + Vector2(sl, 0.0), r.position + Vector2(sl + bw, 0.0),
 			Vector2(r.position.x + bw * 0.6, r.end.y), Vector2(r.position.x, r.end.y)]), col)
 		var y := r.get_center().y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
-		_c.draw_string(f, Vector2(r.position.x + bw, y), String(p["text"]), HORIZONTAL_ALIGNMENT_CENTER, r.size.x - bw, fs, col.lightened(0.15))
+		HighContrast.draw_text(_c, f, Vector2(r.position.x + bw, y), String(p["text"]), HORIZONTAL_ALIGNMENT_CENTER, r.size.x - bw, fs, HighContrast.ink(col.lightened(0.15)))
 
 
 # --- Labels -----------------------------------------------------------------------------------
@@ -1091,14 +1092,14 @@ func _tag_box(l: Dictionary) -> void:
 	var near := Vector2(clampf(l["at"].x, rect.position.x, rect.end.x), clampf(l["at"].y, rect.position.y, rect.end.y))
 	if near.distance_to(l["at"]) > float(l["r"]) + LABEL_GAP * k * 2.0:
 		_c.draw_line(l["at"] + (near - l["at"]).normalized() * float(l["r"]), near, Color(col, 0.7), k)
-	_c.draw_rect(rect, PaletteSkins.chrome(Palette.TERMINAL_BG))
-	_c.draw_rect(rect, Color(col, 0.85), false, k)
+	_c.draw_rect(rect, HighContrast.plate(PaletteSkins.chrome(Palette.TERMINAL_BG)))
+	_c.draw_rect(rect, HighContrast.ink(Color(col, 0.85)) if HighContrast.on() else Color(col, 0.85), false, HighContrast.edge(k))
 	_c.draw_rect(Rect2(rect.position, Vector2(2.0 * k, rect.size.y)), col)
 	var y := rect.position.y + pad + f.get_ascent(fs)
 	var chip := String(n.get("heat_chip", "")) if not n.is_empty() else ""
 	for line in lines:
 		var lc := RouteInk.heat_b().lightened(0.25) if chip != "" and line == chip else Palette.TEXT_HI
-		_c.draw_string(Palette.mono_for(line), Vector2(rect.position.x + pad, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, lc)
+		HighContrast.draw_text(_c, Palette.mono_for(line), Vector2(rect.position.x + pad, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HighContrast.ink(lc))
 		y += f.get_height(fs)
 
 

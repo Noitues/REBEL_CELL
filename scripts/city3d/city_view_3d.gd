@@ -905,6 +905,12 @@ func chunks_built() -> int:
 	return _chunks.size()
 
 
+## M14 12Q-RAID: the model is built and every chunk is placed (the view draws the whole city;
+## `model_ready` has fired).
+func built() -> bool:
+	return model != null and _pending.is_empty()
+
+
 # --- Landmarks: the art pass's own models (5b), never re-modelled -----------------------------
 
 ## Where 5b's landmark glTFs live (assets/city/landmarks/<corp>/<file>, with a manifest).

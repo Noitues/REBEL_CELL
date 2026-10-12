@@ -229,7 +229,7 @@ static func stamp_mark(onto: Control, box: Rect2, word: String) -> Control:
 		mark.draw_set_transform(box.size * 0.5, STAMP_TILT, Vector2.ONE)
 		mark.draw_rect(Rect2(-w * 0.5, -h * 0.5, w, h), Color(Palette.PAPER, 0.85))
 		mark.draw_rect(Rect2(-w * 0.5, -h * 0.5, w, h), Palette.CELL_PINK, false, STAMP_BORDER)
-		mark.draw_string(f, Vector2(-w * 0.5, fs * 0.4), word, HORIZONTAL_ALIGNMENT_CENTER, w, fs, Palette.CELL_PINK))
+		HighContrast.draw_text(mark, f, Vector2(-w * 0.5, fs * 0.4), word, HORIZONTAL_ALIGNMENT_CENTER, w, fs, Palette.CELL_PINK))
 	onto.add_child(mark)
 	return mark
 

@@ -58,4 +58,4 @@ func _draw() -> void:
 	var f := Palette.mono()
 	var px := font_px()
 	var base := (size.y + f.get_ascent(px) - f.get_descent(px)) * 0.5
-	draw_string(f, Vector2(PAD.x * Settings.text_scale, base), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, PaletteSkins.chrome(Palette.NET_CYAN))
+	HighContrast.draw_text(self, f, Vector2(PAD.x * Settings.text_scale, base), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, PaletteSkins.chrome(Palette.NET_CYAN))

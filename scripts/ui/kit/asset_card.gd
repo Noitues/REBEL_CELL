@@ -219,19 +219,19 @@ func _draw() -> void:
 	var plex := Palette.body_medium()
 	var name_up := display_name.to_upper()
 	var ns := _fit(disp, name_up, int(lay["name"]), width)
-	draw_string(disp, Vector2(left, float(lay["name_y"])), name_up, HORIZONTAL_ALIGNMENT_LEFT, width, ns, Palette.PAPER)
+	HighContrast.draw_text(self, disp, Vector2(left, float(lay["name_y"])), name_up, HORIZONTAL_ALIGNMENT_LEFT, width, ns, Palette.PAPER)
 	# INT n in the asset's colour, xN at the right edge (paper).
 	var num := int(lay["num"])
 	var it := integrity_text()
 	var ct := count_text()
 	var cw := mono.get_string_size(ct, HORIZONTAL_ALIGNMENT_LEFT, -1, num).x
-	draw_string(mono, Vector2(left, float(lay["num_y"])), it, HORIZONTAL_ALIGNMENT_LEFT, width - cw, num, col)
-	draw_string(mono, Vector2(right - cw, float(lay["num_y"])), ct, HORIZONTAL_ALIGNMENT_LEFT, -1, num, Palette.PAPER)
+	HighContrast.draw_text(self, mono, Vector2(left, float(lay["num_y"])), it, HORIZONTAL_ALIGNMENT_LEFT, width - cw, num, col)
+	HighContrast.draw_text(self, mono, Vector2(right - cw, float(lay["num_y"])), ct, HORIZONTAL_ALIGNMENT_LEFT, -1, num, Palette.PAPER)
 	var rs := int(lay["rule"])
 	if effect_text != "":
-		draw_string(plex, Vector2(left, float(lay["effect_y"])), effect_text, HORIZONTAL_ALIGNMENT_LEFT, width, _fit(plex, effect_text, rs, width), RULE_COLOR)
+		HighContrast.draw_text(self, plex, Vector2(left, float(lay["effect_y"])), effect_text, HORIZONTAL_ALIGNMENT_LEFT, width, _fit(plex, effect_text, rs, width), RULE_COLOR)
 	if rule_text != "":
-		draw_string(plex, Vector2(left, float(lay["rule_y"])), rule_text, HORIZONTAL_ALIGNMENT_LEFT, width, _fit(plex, rule_text, rs, width), RULE_COLOR)
+		HighContrast.draw_text(self, plex, Vector2(left, float(lay["rule_y"])), rule_text, HORIZONTAL_ALIGNMENT_LEFT, width, _fit(plex, rule_text, rs, width), RULE_COLOR)
 	if disabled:
 		round_box.call(DISABLED_SHADE, face)
 	draw_set_transform(Vector2.ZERO)

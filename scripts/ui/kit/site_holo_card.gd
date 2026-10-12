@@ -16,6 +16,11 @@ const FILE_NUMBERS := 1000
 ## A row's caption column (px at text scale 1.0) and the gap to its value.
 const CAPTION_W := 96.0
 const ROW_GAP := 10.0
+## M14 12Q-HQ: the header's least height (RaidHolo's HEAD_H) and the pad above the header and under
+## the rows grow with the text only to this scale (STYLE 5.6's x1.3 for drawn objects); past it the
+## header is as tall as its words (at 2.0 the floor and pads left the rows no room in the HQ's card
+## column).
+const HEAD_SCALE_MAX := 1.3
 
 ## The sub line under the title (already translated).
 var sub: String = ""
@@ -25,6 +30,7 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_sub: 
 	super(p_corporation, p_title, "")
 	sub = p_sub
 	name = "SelectedSite"
+	resized.connect(_fit_head)
 
 
 ## The file number of Site `site_id` (a hash, stable across runs).
@@ -80,8 +86,8 @@ func _place_stamp() -> void:
 func _fit_stamp(_n: Node = null) -> void:
 	var foot := DecryptedHoloPanel.STAMP_SLOT.y * STAMP_SHARE + UiTheme.SP_XS
 	var box := get_theme_stylebox(&"panel") as StyleBoxEmpty
-	if box != null and not is_equal_approx(box.content_margin_bottom, PAD * _k + foot):
-		box.content_margin_bottom = PAD * _k + foot
+	if box != null and not is_equal_approx(box.content_margin_bottom, PAD * minf(_k, HEAD_SCALE_MAX) + foot):
+		box.content_margin_bottom = PAD * minf(_k, HEAD_SCALE_MAX) + foot
 		queue_sort()
 
 
@@ -102,14 +108,72 @@ func rows_text() -> PackedStringArray:
 
 
 ## The header: the title in the display face and the sub line in the mono, both in the holo's
-## ink (RaidHolo's header with the Site's own sub line).
+## ink (RaidHolo's header with the Site's own sub line), each wrapped at a word onto more lines
+## when it is wider than the card (ART-5 acceptance: draw_string cut the line at the card's edge;
+## Meridian's file number was lost at 1.0, every long title at 2.0). The header grows to hold them.
 func _header(on: Control) -> void:
-	var f := Palette.display()
-	var title_px := UiTheme.font_px(UiTheme.LABEL)
+	var lay := header_lines()
 	var x := PAD * _k
-	var room := size.x - x * 2.0
-	on.draw_string(f, Vector2(x, PAD * 0.5 * _k + f.get_ascent(title_px)), title, HORIZONTAL_ALIGNMENT_LEFT, room, title_px, DecryptedHoloPanel.ink(skin.holo))
-	var meta_px := UiTheme.font_px(UiTheme.CAPTION)
+	var ink := DecryptedHoloPanel.ink(skin.holo)
+	var f := Palette.display()
 	var mono := Palette.mono()
-	on.draw_string(mono, Vector2(x, PAD * 0.5 * _k + f.get_height(title_px) + mono.get_ascent(meta_px)), sub, HORIZONTAL_ALIGNMENT_LEFT, room, meta_px,
-		DecryptedHoloPanel.ink(skin.holo))
+	var tpx := int(lay["title_px"])
+	var spx := int(lay["sub_px"])
+	var y := PAD * 0.5 * _k
+	for line in lay["title"] as PackedStringArray:
+		HighContrast.draw_text(on, f, Vector2(x, y + f.get_ascent(tpx)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, tpx, ink)
+		y += f.get_height(tpx)
+	for line in lay["sub"] as PackedStringArray:
+		HighContrast.draw_text(on, mono, Vector2(x, y + mono.get_ascent(spx)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, spx, ink)
+		y += mono.get_height(spx)
+
+
+## The header as drawn: {"title", "sub" (each one's lines), "title_px", "sub_px", "room" (px
+## the lines get), "widest" (px of the widest line), "height" (px the header takes: never under
+## RaidHolo's HEAD_H)}.
+func header_lines() -> Dictionary:
+	var room := size.x - PAD * _k * 2.0
+	var tpx := UiTheme.font_px(UiTheme.LABEL)
+	var spx := UiTheme.font_px(UiTheme.CAPTION)
+	var f := Palette.display()
+	var mono := Palette.mono()
+	var tl := _wrap_line(title, f, tpx, room)
+	var sl := _wrap_line(sub, mono, spx, room)
+	var widest := 0.0
+	for line in tl:
+		widest = maxf(widest, f.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, tpx).x)
+	for line in sl:
+		widest = maxf(widest, mono.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, spx).x)
+	var h := PAD * minf(_k, HEAD_SCALE_MAX) + tl.size() * f.get_height(tpx) + sl.size() * mono.get_height(spx)
+	return {"title": tl, "sub": sl, "title_px": tpx, "sub_px": spx, "room": room, "widest": widest, "height": maxf(HEAD_H * minf(_k, HEAD_SCALE_MAX), h)}
+
+
+## `text` as one line when it fits `room` px, else wrapped at its words (a word longer than the
+## room stands alone on its line).
+static func _wrap_line(text: String, font: Font, px: int, room: float) -> PackedStringArray:
+	if room <= 0.0 or font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= room:
+		return PackedStringArray([text])
+	var out := PackedStringArray()
+	var line := ""
+	for word in text.split(" ", false):
+		var trial := word if line == "" else line + " " + word
+		if line != "" and font.get_string_size(trial, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x > room:
+			out.append(line)
+			line = word
+		else:
+			line = trial
+	if line != "":
+		out.append(line)
+	return out
+
+
+## Grows the header's room (the panel's top margin) to the wrapped header's height.
+func _fit_head() -> void:
+	var box := get_theme_stylebox(&"panel") as StyleBoxEmpty
+	if box == null:
+		return
+	var h := float(header_lines()["height"])
+	if not is_equal_approx(box.content_margin_top, h):
+		box.content_margin_top = h
+		queue_sort()
+		update_minimum_size()

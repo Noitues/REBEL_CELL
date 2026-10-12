@@ -458,7 +458,7 @@ func play_beat(b: Dictionary, t0: float) -> void:
 			_tokens[String(e["threat"])] = {"site": StringName(e["site"]), "enter_at": t0, "enter_at_dur": dur,
 				"type": RaidVehicle.type_of(td), "max": maxi(1, most), "hits": []}
 			var entry := StringName(e["site"])
-			if not _incoming.has(entry):
+			if _incoming.is_empty():  # G2R-6: one word for the raid, at the first entry Site
 				_incoming[entry] = true
 				_mark("incoming", entry, CityMapOverlay.tr_word(MARK_INCOMING), t0, true)
 		"move":
@@ -1195,7 +1195,7 @@ func _draw_number(f: Dictionary, k: float, where: Dictionary = {}) -> void:
 		at = p + Vector2(CityMapOverlay.ICON_RADIUS_BIG * k + NUMBER_GAP * k, font.get_ascent(fs) * 0.5 - rise - _stack_of(f) * fs * NUMBER_STACK)
 	var a := 1.0 if u < NUMBER_HOLD_SHARE or not live else (1.0 - u) / (1.0 - NUMBER_HOLD_SHARE)
 	draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(4.0 * k)), Color(0, 0, 0, 0.9 * a))
-	draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(f["color"], a))
+	HighContrast.draw_text(self, font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(f["color"], a))
 
 
 ## How many numbers on the same Site show now and started before `f` (its row in the stack).

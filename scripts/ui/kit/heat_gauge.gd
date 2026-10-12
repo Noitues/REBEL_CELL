@@ -142,14 +142,14 @@ func _draw() -> void:
 	# The caption and the number (it rolls, grows and flashes on a crossing: the poster's).
 	var cap_px := roundi(look.caption_px * g)
 	if cap_px > 0:  # B2: the fight's corner chip (Q1 c) has no caption
-		draw_string(mono, Vector2(look.pad.x * g, look.pad.y * g + mono.get_ascent(cap_px)), tr(CAPTION), HORIZONTAL_ALIGNMENT_LEFT, -1, cap_px, HudSkin.TERMINAL_TEXT)
+		HighContrast.draw_text(self, mono, Vector2(look.pad.x * g, look.pad.y * g + mono.get_ascent(cap_px)), tr(CAPTION), HORIZONTAL_ALIGNMENT_LEFT, -1, cap_px, HudSkin.TERMINAL_TEXT)
 	var num_col := col
 	if number_scale > 1.0:
 		num_col = num_col.lerp(Palette.PAPER, clampf((number_scale - 1.0) / maxf(0.001, Motion.amplitude(&"heat_number_pop") - 1.0), 0.0, 1.0))
 	var npx := roundi(look.number_px * g)
 	var num_at := Vector2(look.pad.x * g, size.y - look.pad.y * g)
 	draw_set_transform(num_at + Vector2(0, -npx * 0.35), 0.0, Vector2.ONE * number_scale)
-	draw_string(disp, Vector2(0, npx * 0.35), "%d" % roundi(shown_heat), HORIZONTAL_ALIGNMENT_LEFT, -1, npx, num_col)
+	HighContrast.draw_text(self, disp, Vector2(0, npx * 0.35), "%d" % roundi(shown_heat), HORIZONTAL_ALIGNMENT_LEFT, -1, npx, num_col)
 	draw_set_transform(Vector2.ZERO)
 	# The band word, printed (never colour alone); it pops when the band changes. B4 (review D7:
 	# "no stamp on the Heat gauge; the Heat change is the gauge's roll"): the band stamp's motion
@@ -170,7 +170,7 @@ func _draw() -> void:
 	var max_text := "/%d" % heat_max
 	if mpx > 0:  # B2: the fight's corner chip has no "/max"
 		var mw := mono.get_string_size(max_text, HORIZONTAL_ALIGNMENT_LEFT, -1, mpx).x
-		draw_string(mono, Vector2(strip.end.x - mw, look.pad.y * g + mono.get_ascent(mpx)), max_text, HORIZONTAL_ALIGNMENT_LEFT, -1, mpx, HudSkin.TERMINAL_TEXT)
+		HighContrast.draw_text(self, mono, Vector2(strip.end.x - mw, look.pad.y * g + mono.get_ascent(mpx)), max_text, HORIZONTAL_ALIGNMENT_LEFT, -1, mpx, HudSkin.TERMINAL_TEXT)
 	_draw_strip(strip, g)
 	if interactive:
 		var cp := look.caret_px * g
@@ -184,7 +184,7 @@ func _draw() -> void:
 func _draw_spaced(f: Font, at: Vector2, text: String, px: int, col: Color) -> void:
 	var x := at.x
 	for ch in text:
-		draw_string(f, Vector2(x, at.y), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
+		HighContrast.draw_text(self, f, Vector2(x, at.y), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
 		x += f.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x + look.band_spacing * grow()
 
 

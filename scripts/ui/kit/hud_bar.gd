@@ -225,9 +225,9 @@ func _draw_daemon_icon() -> void:
 		DaemonSigil.draw_sigil(daemon_button, c + Vector2(6, -3), 14, daemon_ids[1])
 	if daemon_ids.is_empty():
 		daemon_button.draw_arc(c, 15, 0, TAU, 24, Color(Palette.NEON_VIOLET, 0.6), 1.5)
-		daemon_button.draw_string(Palette.mono(), c + Vector2(-12, 5), "D", HORIZONTAL_ALIGNMENT_CENTER, 24, 14, Color(Palette.NEON_VIOLET, 0.8))
+		HighContrast.draw_text(daemon_button, Palette.mono(), c + Vector2(-12, 5), "D", HORIZONTAL_ALIGNMENT_CENTER, 24, 14, Color(Palette.NEON_VIOLET, 0.8))
 	else:
 		DaemonSigil.draw_sigil(daemon_button, c, 16, daemon_ids[0])
 	var badge := c + Vector2(17, 12)
 	daemon_button.draw_circle(badge, 9, Palette.CELL_ACID if hot else Palette.NEON_VIOLET)
-	daemon_button.draw_string(Palette.display(), badge + Vector2(-9, 5), str(daemon_ids.size()), HORIZONTAL_ALIGNMENT_CENTER, 18, 13, Palette.INK)
+	HighContrast.draw_text(daemon_button, Palette.display(), badge + Vector2(-9, 5), str(daemon_ids.size()), HORIZONTAL_ALIGNMENT_CENTER, 18, 13, Palette.INK)

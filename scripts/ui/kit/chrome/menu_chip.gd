@@ -82,12 +82,41 @@ func refit() -> void:
 	custom_minimum_size = Vector2(maxf(min_width, m.x), m.y)
 
 
+## M14 12Q-HQ: the widest the label may run (px; 0 = one line, as ever): past it the label wraps
+## at its words onto more lines (a long Profile unlock's name in the HQ hand at big text).
+var wrap_px: float = 0.0
+
+
+## The label's lines as drawn: one, or its words wrapped at `wrap_px` (a word wider stands alone).
+func label_lines() -> PackedStringArray:
+	var t := shown_text()
+	if wrap_px <= 0.0:
+		return PackedStringArray([t])
+	var lf := Chrome.caps_font(label_step)
+	var lp := Chrome.px(label_step)
+	var out := PackedStringArray()
+	var cur := ""
+	for word in t.split(" ", false):
+		var trial := word if cur == "" else cur + " " + word
+		if cur != "" and lf.get_string_size(trial, HORIZONTAL_ALIGNMENT_LEFT, -1, lp).x > wrap_px:
+			out.append(cur)
+			cur = word
+		else:
+			cur = trial
+	out.append(cur)
+	return out
+
+
 ## The size the label, the caret's room and the line need (px).
 func measure() -> Vector2:
 	var lf := Chrome.caps_font(label_step)
 	var lp := Chrome.px(label_step)
-	var w := lf.get_string_size(shown_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, lp).x + lp * CARET_SHARE
-	var h := lf.get_height(lp)
+	var lines := label_lines()
+	var w := 0.0
+	for l in lines:
+		w = maxf(w, lf.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, lp).x)
+	w += lp * CARET_SHARE
+	var h := lf.get_height(lp) * lines.size()
 	if line != "":
 		var sp := Chrome.px(line_step)
 		w = maxf(w, Palette.mono().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, sp).x)
@@ -167,13 +196,17 @@ func _draw() -> void:
 	var y := r.position.y + PAD.y + g.y + lf.get_ascent(lp)
 	if hot and not disabled:
 		var centred := plate != &"chip" and plate != &""
-		draw_string(lf, Vector2(x0 - (lp * CARET_SHARE if centred else 0.0), y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink if pressed else PaletteSkins.chrome(accent))
+		HighContrast.draw_text(self, lf, Vector2(x0 - (lp * CARET_SHARE if centred else 0.0), y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink if pressed else PaletteSkins.chrome(accent))
 		if not centred:
 			x0 += lp * CARET_SHARE
-	draw_string(lf, Vector2(x0, y), shown_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink)
+	var words := label_lines()
+	for i in words.size():
+		if i > 0:
+			y += lf.get_height(lp)  # 12Q-HQ: a wrapped label's next line
+		HighContrast.draw_text(self, lf, Vector2(x0, y), words[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink)
 	if line != "":
 		var sp := Chrome.px(line_step)
 		var ly := y + lf.get_descent(lp) + PAD.z + Palette.mono().get_ascent(sp)
-		draw_string(Palette.mono(), Vector2(r.position.x + PAD.x + g.x, ly), line, HORIZONTAL_ALIGNMENT_CENTER if plate != &"chip" else HORIZONTAL_ALIGNMENT_LEFT, r.size.x - PAD.x * 2.0 - g.x - g.z, sp,
+		HighContrast.draw_text(self, Palette.mono(), Vector2(r.position.x + PAD.x + g.x, ly), line, HORIZONTAL_ALIGNMENT_CENTER if plate != &"chip" else HORIZONTAL_ALIGNMENT_LEFT, r.size.x - PAD.x * 2.0 - g.x - g.z, sp,
 			Palette.GLYPH_INK if pressed else (Palette.TEXT_MID if not disabled else Palette.TEXT_LO))
 	KitState.draw_frame(self, r, st, false)

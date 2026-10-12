@@ -12,6 +12,8 @@ const ZOOM := 2.4
 const CAPTION_PX := 13
 const REC_R := 5.0
 const FRAME := 3.0
+## The voice-only words' inset from the frame's foot (px).
+const VOICE_PAD := 2.0
 
 var caption: String = ""
 var tint: Color = Palette.CORP_SOLACE
@@ -82,17 +84,61 @@ func _draw() -> void:
 	var f := Palette.mono()
 	var fs := roundi(CAPTION_PX * s)
 	if voice_only:
-		# a red voice trace across the black
+		# M14 12Q-WORDS (L48): the words stand whole inside the frame, on as many lines as the feed's
+		# width needs (at 1.6 / 2.0 one line ran past it: "VOICE ONLY // NO FEE"), at the foot; the
+		# red voice trace fills the room above them.
+		var inner := r.grow(-FRAME * 2.0)
+		var lines := voice_lines(tr("VOICE ONLY // NO FEED"), f, fs, inner.size.x)
+		var line_h := UiTheme.line_px(f, fs)
+		var top := inner.end.y - VOICE_PAD - line_h * lines.size()
+		for i in lines.size():
+			HighContrast.draw_text(self, f, Vector2(inner.position.x, top + line_h * i + ceilf(f.get_ascent(fs))), lines[i], HORIZONTAL_ALIGNMENT_CENTER, inner.size.x, fs, Palette.HARM)
+		# a red voice trace across the black, in the room over the words
+		var mid := (inner.position.y + top) * 0.5
+		var amp := minf(r.size.y * 0.3, maxf(0.0, top - inner.position.y))
 		var pts := PackedVector2Array()
 		var steps := 48
 		for i in steps + 1:
 			var x := r.size.x * 0.1 + r.size.x * 0.8 * i / steps
 			var h := float(absi(hash([i, 9])) % 100) / 100.0
-			pts.append(Vector2(x, r.size.y * 0.5 + (h - 0.5) * r.size.y * 0.3 * sin(PI * i / steps)))
+			pts.append(Vector2(x, mid + (h - 0.5) * amp * sin(PI * i / steps)))
 		draw_polyline(pts, Palette.HARM, 2.0, true)
-		var w := tr("VOICE ONLY // NO FEED")
-		draw_string(f, Vector2(0, r.size.y * 0.8), w, HORIZONTAL_ALIGNMENT_CENTER, r.size.x, fs, Palette.HARM)
 		return
+
+
+## `words` broken into lines at most `width` px wide in `font` at `fs`: one line when it fits,
+## else at its " // " first ("VOICE ONLY //" / "NO FEED"), then at its spaces (a word wider
+## than a line stands alone, whole).
+static func voice_lines(words: String, font: Font, fs: int, width: float) -> PackedStringArray:
+	if font.get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= width:
+		return PackedStringArray([words])
+	var parts := words.split(VOICE_BREAK)
+	if parts.size() > 1:
+		var out := PackedStringArray()
+		for i in parts.size():
+			out.append_array(_wrap_words(parts[i] + (VOICE_BREAK if i < parts.size() - 1 else ""), font, fs, width))
+		return out
+	return _wrap_words(words, font, fs, width)
+
+
+## The separator voice_lines breaks at first.
+const VOICE_BREAK := " //"
+
+
+## `words` broken at its spaces into lines at most `width` px wide (a longer word alone, whole).
+static func _wrap_words(words: String, font: Font, fs: int, width: float) -> PackedStringArray:
+	var out := PackedStringArray()
+	var cur := ""
+	for word in words.split(" ", false):
+		var trial := word if cur == "" else cur + " " + word
+		if cur != "" and font.get_string_size(trial, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width:
+			out.append(cur)
+			cur = word
+		else:
+			cur = trial
+	if cur != "":
+		out.append(cur)
+	return out
 
 
 ## The REC dot and the caption over the picture (a child: it draws after the picture).
@@ -117,5 +163,5 @@ func _ready() -> void:
 		var box := Rect2(Vector2(10, 10) * s, Vector2(tw + REC_R * 4.0 * s + 12.0, f.get_height(fs) + 6.0))
 		cap.draw_rect(box, Color(Palette.NIGHT_SKY, 0.75))
 		cap.draw_circle(box.position + Vector2(REC_R * 2.0 * s, box.size.y * 0.5), REC_R * s, Palette.HARM)
-		cap.draw_string(f, box.position + Vector2(REC_R * 4.0 * s, 3.0 + f.get_ascent(fs)), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.TEXT_HI))
+		HighContrast.draw_text(cap, f, box.position + Vector2(REC_R * 4.0 * s, 3.0 + f.get_ascent(fs)), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.TEXT_HI))
 	add_child(cap)

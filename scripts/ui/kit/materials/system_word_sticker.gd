@@ -74,7 +74,7 @@ func _draw() -> void:
 	if hint != "":
 		var hp := UiTheme.font_px(UiTheme.CAPTION)
 		var hw := font.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hp).x
-		draw_string(font, Vector2((size.x - hw) * 0.5, size.y - UiTheme.SP_S), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hp, col)
+		HighContrast.draw_text(self, font, Vector2((size.x - hw) * 0.5, size.y - UiTheme.SP_S), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hp, col)
 	# the static scanlines over the washed word
 	var dark := Palette.CRT_GLASS_BOTTOM
 	dark.a = WORD_ALPHA

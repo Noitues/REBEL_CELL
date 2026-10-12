@@ -52,4 +52,4 @@ func _draw() -> void:
 	var fs := roundi(CAPTION_SIZE * s)
 	while fs > CAPTION_MIN and f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > size.x - b:
 		fs -= 1
-	draw_string(f, Vector2(b * 0.5, size.y - b), text, HORIZONTAL_ALIGNMENT_CENTER, size.x - b, fs, Palette.INK)
+	HighContrast.draw_text(self, f, Vector2(b * 0.5, size.y - b), text, HORIZONTAL_ALIGNMENT_CENTER, size.x - b, fs, Palette.INK)

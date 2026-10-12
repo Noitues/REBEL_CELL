@@ -2260,19 +2260,22 @@ func _on_route_settings() -> void:
 		route_legend.set_showing_all(overlay.show_all)
 
 
-## The strip at the map's foot, scaled down when wider than its row (big text).
+## The strip at the map's foot, on one row when its row has the room, else wrapped to more rows
+## (M14 12Q-WORDS L54: it was scaled down at big text, its words under the text size).
 func _fit_route_strip() -> void:
 	var row := route_legend.get_parent() as Control
 	if row == null:
 		return
-	var own := route_legend.get_combined_minimum_size()
-	var k := minf(1.0, (row.size.x - LegendSpot.MARGIN * 2.0) / maxf(1.0, own.x)) if row.size.x > 0.0 else 1.0
-	k = maxf(k, 0.1)
-	route_legend.size = own
-	route_legend.scale = Vector2(k, k)
-	route_legend.position = Vector2(maxf(0.0, (row.size.x - own.x * k) * 0.5), 0.0)
-	if not is_equal_approx(row.custom_minimum_size.y, ceilf(own.y * k)):
-		row.custom_minimum_size.y = ceilf(own.y * k)
+	var one := route_legend.one_row_width()
+	var room := row.size.x - LegendSpot.MARGIN * 2.0 if row.size.x > 0.0 else one
+	var w := minf(one, room)
+	route_legend.scale = Vector2.ONE
+	# The height follows the rows the flow lays out at this width (its minimum).
+	route_legend.size = Vector2(w, 0.0)
+	var h := ceilf(route_legend.size.y)
+	route_legend.position = Vector2(maxf(0.0, (row.size.x - route_legend.size.x) * 0.5), 0.0)
+	if not is_equal_approx(row.custom_minimum_size.y, h):
+		row.custom_minimum_size.y = h
 	_fit_node_panel()
 
 
@@ -3917,31 +3920,38 @@ func _show_shop() -> void:
 	var info :=_crt_one_line(CrtWindow.new("").with_kind(CrtWindow.kind_for(Palette.NET_CYAN), Palette.NET_CYAN))
 	info.name = "ShopInfo"
 	var os := minf(ts, ShopItem.OBJECT_MAX_SCALE)
-	# big words: a narrower strip keeps the spinner beside it clear of the stock wheel's left tag
-	var iw := SHOP_INFO_W * (minf(os, SHOP_INFO_WIDE_SCALE) if wide else os)
-	info.custom_minimum_size = Vector2(iw, 0)
-	var info_text := Label.new()
-	info_text.name = "ShopInfoText"
-	info_text.autowrap_mode = TextServer.AUTOWRAP_WORD
-	info_text.custom_minimum_size = Vector2(iw - 24.0, 0)
-	info_text.add_theme_color_override(&"font_color", Palette.TEXT_MID)
-	info_text.add_theme_font_override(&"font", Palette.mono())
-	info_text.text = UiTip.for_input(tr(SHOP_INFO_IDLE), tr(SHOP_INFO_IDLE_PAD))
-	# the strip keeps to a few lines (the item's whole text is its tip)
-	info_text.max_lines_visible = SHOP_INFO_LINES
-	info_text.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	info.body.add_child(info_text)
-	var daemon_row := HBoxContainer.new()
-	daemon_row.name = "Daemons"
-	daemon_row.add_theme_constant_override("separation", roundi(SHOP_ROW_GAP * ts))
-	var n := 0
-	# ANIM-R1 M11: what the Mainframe offered when the player came in; a bought item stays as a
-	# SOLD stub in its place (the rest keep their spots).
 	var seen := _shop_seen(s)
 	var card_count: int = (seen["cards"] as Array).size()
 	var card_fit := minf((SHOP_CARDS_ROOM.x - QUAD_GAP * maxi(0, card_count - 1)) / maxf(1.0, card_count * ZineCard.STICKER_SIZE.x),
 		SHOP_CARDS_ROOM.y / ZineCard.STICKER_SIZE.y)
 	var cs := clampf(minf(ts, card_fit), 1.0, Settings.TEXT_SCALE_MAX)
+	# big words: a narrower strip keeps the spinner beside it clear of the stock wheel's left tag
+	var iw := SHOP_INFO_W * (minf(os, SHOP_INFO_WIDE_SCALE) if wide else os)
+	if wide:
+		# M14 12Q-MAIN (audit L37): the strip takes the CARDS row's width (the spinner stands under the
+		# wallet beside the Daemons), so its whole text fits in few lines.
+		iw = maxf(iw, card_count * ZineCard.STICKER_SIZE.x * cs + QUAD_GAP * maxi(0, card_count - 1))
+	info.custom_minimum_size = Vector2(iw, 0)
+	var info_text := Label.new()
+	info_text.name = "ShopInfoText"
+	info_text.autowrap_mode = TextServer.AUTOWRAP_WORD
+	info_text.custom_minimum_size = Vector2(iw - SHOP_INFO_INSET, 0)
+	info_text.add_theme_color_override(&"font_color", Palette.TEXT_MID)
+	info_text.add_theme_font_override(&"font", Palette.mono())
+	# M14 12Q-MAIN: the strip's words grow with the text no further than SHOP_INFO_TEXT_MAX_SCALE (the
+	# pegboard's 1.6 look at 2.0; on the board at its floor they still read larger than at 1.0).
+	info_text.add_theme_font_size_override(&"font_size", UiTheme.font_px_at(UiTheme.BODY, minf(ts, SHOP_INFO_TEXT_MAX_SCALE)))
+	info_text.text = UiTip.for_input(tr(SHOP_INFO_IDLE), tr(SHOP_INFO_IDLE_PAD))
+	# M14 12Q-MAIN (audit L37): every text the strip shows is whole: it keeps the lines its longest
+	# text takes (_reserve_info_lines), never an ellipsis.
+	info_text.set_meta(INFO_TEXTS_META, PackedStringArray([info_text.text]))
+	info.body.add_child(info_text)
+	var daemon_row := HBoxContainer.new()
+	daemon_row.name = "Daemons"
+	daemon_row.add_theme_constant_override("separation", roundi(SHOP_ROW_GAP * ts))
+	var n := 0
+	# ANIM-R1 M11: what the Mainframe offered when the player came in (`seen`); a bought item stays
+	# as a SOLD stub in its place (the rest keep their spots).
 	for kind in ["cards", "firmware", "daemons"]:
 		var prices: Array = shop.get(kind.trim_suffix("s") + "_prices", [])
 		for slot: Array in shop_slots(seen[kind], shop.get(kind, [])):
@@ -4101,10 +4111,18 @@ func _show_shop() -> void:
 		dm_col.add_child(shelf)
 		dm_col.move_child(shelf, daemon_row.get_index())
 		daemon_row.reparent(shelf)
-		wallet.reparent(shelf)
+		# M14 12Q-MAIN (audit L37): the small spinner stands under the wallet (the Daemons' row is
+		# taller than the two), so the info strip takes the CARDS row's width and the board its height.
+		var stack := VBoxContainer.new()
+		stack.name = "WalletStack"
+		stack.add_theme_constant_override("separation", roundi(SHOP_ROW_GAP * ts))
+		shelf.add_child(stack)
+		wallet.reparent(stack)
 		wallet.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		wallet.custom_minimum_size.x = wallet.full_width(minf(ts, SHOP_WALLET_MAX_SCALE))
 		wallet.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		mini.reparent(stack)
+		mini.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN  # clear of the bin's tape beside it
 		clerk.visible = false
 	var prices_line := _label(tr("card %d-%d · slice %d (NULL %d) · bin %d") % [RunManager.config().card_price_range.x, RunManager.config().card_price_range.y,
 		RunManager.config().slice_overwrite_price, RunManager.config().null_slice_overwrite_price, s.card_removal_price()])
@@ -4173,6 +4191,7 @@ func _show_shop() -> void:
 			sg.light_changed.disconnect(follow), CONNECT_ONE_SHOT)
 	follow.call()
 	_layout_shop.call_deferred(root)
+	_reserve_info_lines.call_deferred(info_text)
 	_register_shop_drops(mini, fw_slot)
 	if entering:
 		facade.sign.warm_up()
@@ -4191,12 +4210,19 @@ const SHOP_INFO_W := 250.0
 const CLERK_FACE := 48.0
 const SHOP_SIGN_GAP := 6.0
 const SHOP_HUB_BELOW := 100.0
-## The least of the wheel's wedges kept on screen (px).
-const SHOP_WEDGE_SHOWN := 120.0
 ## ART-9 4A: from this text size DAEMONS stands beside FIRMWARE and the clerk shows only the wallet
-## and the prices; the info strip's most lines.
+## and the prices (M14 12Q-MAIN: the info strip keeps as many lines as its longest text takes).
 const SHOP_WIDE_FROM := 1.25
-const SHOP_INFO_LINES := 3
+## The info strip's words are this much narrower than the strip (its frame and inner margins, px).
+const SHOP_INFO_INSET := 24.0
+## M14 12Q-MAIN: the BIN IT note's second spot down the bin's side (a share of its height), when the
+## first (beside the lid) covers an item.
+const BIN_NOTE_LOW := 0.6
+## M14 12Q-MAIN: the largest text scale the info strip's words follow (at 2.0 its longest text kept
+## the pegboard past the screen's foot at its 0.8 floor).
+const SHOP_INFO_TEXT_MAX_SCALE := 1.6
+## M14 12Q-MAIN: the label meta listing every text the info strip may show (its idle line, each item's).
+const INFO_TEXTS_META := &"shop_info_texts"
 ## ART-9 4A: the info strip's largest width scale at big text (its spinner stays clear of the wheel).
 const SHOP_INFO_WIDE_SCALE := 0.92
 ## ART-9 4A: the sign's spill on the pegboard: its share of the shop gain and its reach (px).
@@ -4305,12 +4331,14 @@ func _layout_shop(root: Control) -> void:
 	board.size = board.get_combined_minimum_size()
 	# The board keeps its foot on the screen under the subtitle band: big words shrink it as a whole
 	# when it would run past the foot, never under SHOP_BOARD_FIT_FLOOR (the 1.6 look at 2.0).
-	var fit := clampf((screen.y - SHOP_MARGIN - top - SHOP_BOARD_TOP) / maxf(1.0, board.size.y), SHOP_BOARD_FIT_FLOOR, 1.0)
-	board.scale = Vector2(fit, fit)
-	var board_size := board.size * fit
 	bin.size = bin.get_combined_minimum_size()
 	# Between the sign and the bin; over the sign when the words are big (the sign is the world).
 	var right_edge := screen.x - SHOP_MARGIN * 2.0 - bin.size.x - SHOP_MARGIN
+	# M14 12Q-MAIN: nor past the bin at big words (the small spinner under the wallet stood under its tape).
+	var fit := clampf(minf((screen.y - SHOP_MARGIN - top - SHOP_BOARD_TOP) / maxf(1.0, board.size.y),
+		(right_edge - SHOP_MARGIN) / maxf(1.0, board.size.x)), SHOP_BOARD_FIT_FLOOR, 1.0)
+	board.scale = Vector2(fit, fit)
+	var board_size := board.size * fit
 	clerk.size = clerk.get_combined_minimum_size()
 	clerk.global_position = Vector2(SHOP_MARGIN * 2.0, screen.y - SHOP_MARGIN - clerk.size.y)
 	var left := sign_right + SHOP_MARGIN
@@ -4332,14 +4360,17 @@ func _layout_shop(root: Control) -> void:
 		tape.size = tape.get_combined_minimum_size()
 		tape.global_position = bin_at + Vector2((bin.size.x - tape.size.x) * 0.5, -tape.size.y - 4.0)
 	# The hub stays below the screen and the rim below the board (its tags hang over the board's
-	# foot), but some wedge always shows.
+	# foot), but the wedges' read blocks (glyph and value) always stand whole above the screen's
+	# foot (M14 12Q-MAIN, audit L37: at 1.6 / 2.0 only the wheel's top arc showed).
 	var tag_h := SliceStockWheel.TAG_ROOM * Settings.text_scale
-	var hub_y := clampf(board.get_global_rect().end.y - tag_h * 0.5 + SliceStockWheel.R_OUT, screen.y + SHOP_HUB_BELOW, screen.y + SliceStockWheel.R_OUT - SHOP_WEDGE_SHOWN)
+	var read_foot := screen.y - SHOP_MARGIN + SliceStockWheel.R_OUT * SliceStockWheel.READ_FOOT
+	var hub_y := clampf(board.get_global_rect().end.y - tag_h * 0.5 + SliceStockWheel.R_OUT, screen.y + SHOP_HUB_BELOW, read_foot)
 	wheel.hub = Vector2(SHOP_WHEEL_X, hub_y) - o
 	wheel.inner_visible = hub_y - screen.y + SHOP_MARGIN
 	wheel.position = Vector2.ZERO
 	wheel.size = root.size
 	wheel.place_items()
+	_info_clear_of_tags(board, wheel)
 	var spill := root.get_node_or_null(^"SignSpill") as LightSpill
 	if spill != null and _shop_facade != null and is_instance_valid(_shop_facade):
 		var plate := _shop_facade.plate_rect()
@@ -4362,6 +4393,12 @@ func _layout_shop(root: Control) -> void:
 		_shop_note_clear(top_note, root, true)
 	if bin_note != null:
 		_shop_note_clear(bin_note, root, false)  # it points at the bin: never moved away from it
+		if not bin_note.visible:
+			# M14 12Q-MAIN: covered beside the bin's lid (the small spinner under the wallet at big
+			# words): lower down the bin's side, still pointing at it
+			bin_note.visible = true
+			bin_note.global_position.y = bin_at.y + bin.size.y * BIN_NOTE_LOW
+			_shop_note_clear(bin_note, root, false)
 	var clerk_note := root.get_node_or_null(^"ClerkNote") as PencilNote
 	if clerk_note != null:
 		clerk_note.size = clerk_note.custom_minimum_size
@@ -4444,12 +4481,63 @@ func _shop_shelf_look(item: ShopItem, kind: String, res: Resource, id: StringNam
 
 ## The info strip shows `text` (an item's whole text) while `item` is hovered or focused.
 func _shop_info_on(item: Control, label: Label, text: String) -> void:
+	var line := "> " + text.replace("\n", "  ")
+	var texts: PackedStringArray = label.get_meta(INFO_TEXTS_META, PackedStringArray())
+	texts.append(line)
+	label.set_meta(INFO_TEXTS_META, texts)
 	var show := func() -> void:
 		if is_instance_valid(label):
-			label.text = "> " + text.replace("\n", "  ")
+			label.text = line
 			label.add_theme_color_override(&"font_color", Palette.TERMINAL_TEXT)
 	item.focus_entered.connect(show)
 	item.mouse_entered.connect(show)
+
+
+## M14 12Q-MAIN (audit L37: the strip cut an item's text to "Blocked while..." at 1.6 / 2.0): the info
+## strip keeps the lines the longest of its texts (INFO_TEXTS_META) takes at its width, so every text
+## shows whole and the strip never changes size between items.
+func _reserve_info_lines(label: Label) -> void:
+	if not is_instance_valid(label) or not label.is_inside_tree():
+		return
+	# each text shaped by the label itself at its least width (its own wrap, spacing and style; the
+	# strip is laid out at least this wide)
+	var keep := label.text
+	label.size.x = label.custom_minimum_size.x
+	label.custom_minimum_size.y = 0.0
+	var tallest := 0.0
+	for t: String in label.get_meta(INFO_TEXTS_META, PackedStringArray()):
+		label.text = t
+		tallest = maxf(tallest, label.get_minimum_size().y)
+	label.text = keep
+	label.custom_minimum_size.y = tallest
+
+
+## M14 12Q-MAIN (audit L37): the info strip's words end left of the stock wheel's tags beside them (at
+## big words the strip takes the CARDS row's width and the wheel's left tag hung over its end): the
+## strip narrows (it only ever narrows, so the layout settles) and keeps the lines its texts then take.
+func _info_clear_of_tags(board: Control, wheel: SliceStockWheel) -> void:
+	var info := board.find_child("ShopInfo", true, false) as Control
+	var label := board.find_child("ShopInfoText", true, false) as Label
+	if info == null or label == null or not label.is_inside_tree() or Settings.text_scale < SHOP_WIDE_FROM:
+		return  # under SHOP_WIDE_FROM the strip keeps its own width above the wheel's tags
+	var t := label.get_global_transform()
+	var words := Rect2(t.origin, t.basis_xform(label.size))
+	# down to the board's foot: the strip grows with its reserved lines after this pass
+	var foot := (board.get_global_transform() * Vector2(0.0, board.size.y)).y
+	words.end.y = maxf(words.end.y, foot)
+	var limit := INF
+	for it in wheel.items:
+		if not is_instance_valid(it) or it.buy_button == null:
+			continue
+		var tag := it.buy_button.get_global_rect()
+		if tag.position.y < words.end.y and tag.end.y > words.position.y and tag.position.x > words.position.x:
+			limit = minf(limit, tag.position.x - SHOP_MARGIN)
+	var room := (limit - words.position.x) / maxf(0.01, board.scale.x)
+	if room < label.size.x - 1.0:
+		var inset := maxf(SHOP_INFO_INSET, info.size.x - label.size.x)  # the strip's frame round its words
+		label.custom_minimum_size.x = maxf(SHOP_INFO_INSET, room)
+		info.custom_minimum_size.x = label.custom_minimum_size.x + inset
+		_reserve_info_lines.call_deferred(label)
 
 
 ## The clerk's face on its screen: the concept's pixel grin (shop.clerk_panel, MainframeArt
@@ -5818,7 +5906,10 @@ func open_daemons() -> void:
 	if s == null or has_node("DaemonTray"):
 		return
 	var at := hud.daemon_button.get_global_rect().end.x
-	add_child(DaemonTray.new(s.run.operative.daemon_ids, s.lookup, at, s.run.operative.name))
+	# M14 12Q-MAIN (audit L44): the tray stands beside the ROUTE window (GRID VIEW, Save & quit stay seen)
+	var route := find_child("RouteWindow", true, false) as Control
+	var clear := route.get_global_rect() if route != null and route.is_visible_in_tree() else Rect2()
+	add_child(DaemonTray.new(s.run.operative.daemon_ids, s.lookup, at, s.run.operative.name, clear))
 
 
 ## VIEW LOADOUT: the running operative's deck and spinner.

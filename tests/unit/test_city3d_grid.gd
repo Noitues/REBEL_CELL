@@ -145,6 +145,48 @@ func test_pan_follows_the_drag_and_stays_in_the_city() -> void:
 	assert_almost_eq(CityMapCamera.screen_of(quad[2], screen, f["focus"], f["anchor"], s0, tb), screen, Vector2(0.01, 0.01))
 
 
+## G2R-1: the frame keeps off the city's edge, the network kept in view (the network wins).
+func test_frame_keeps_off_the_edge_and_the_network_in_view() -> void:
+	var tb := NeonCity.TILE_A * sin(deg_to_rad(cfg.pitch_deg))
+	var r := Rect2(cfg.city_rect)
+	for width in [1280.0, 1920.0]:
+		var screen := Vector2(width, width * 0.5625)
+		var s0 := CityMapCamera.scale_for_ortho(screen.x, cfg.raid_fit_max)
+		var anchor := Vector2(0.4, 0.45)
+		# A network (and its frame) on the city's north edge, then one in the middle.
+		for focus in [Vector2(r.position.x + 12.0, r.position.y + 6.0), Vector2(5.0, 5.0)]:
+			var net := PackedVector2Array([focus, focus + Vector2(3, 2), focus + Vector2(-2, 4)])
+			var room := Rect2(Vector2(40, 100), screen - Vector2(500, 260))
+			var f := CityMapCamera.keep_on_city(cfg, screen, focus, anchor, s0, tb, net, room)
+			var fr := {"scale": f["scale"], "focus": f["focus"], "anchor": f["anchor"]}
+			for g in net:
+				assert_true(room.has_point(CityMapCamera.screen_of(g, screen, f["focus"], f["anchor"], f["scale"], tb)),
+					"the network stays in the free part (x%d)" % int(width))
+			var before := CityMapCamera.void_area(cfg, screen, {"scale": s0, "focus": focus, "anchor": anchor}, tb)
+			assert_lte(CityMapCamera.void_area(cfg, screen, fr, tb), before + 0.001, "never more edge than the frame had")
+			assert_gte(float(f["scale"]), s0 - 0.000001, "it only ever closes in")
+	# A frame wholly on the city is left alone.
+	var screen := Vector2(1280, 720)
+	var s0 := CityMapCamera.scale_for_ortho(screen.x, cfg.raid_fit_max)
+	var mid := PackedVector2Array([Vector2(0, 0)])
+	var same := CityMapCamera.keep_on_city(cfg, screen, Vector2(0, 0), Vector2(0.5, 0.5), s0, tb, mid, Rect2(Vector2.ZERO, screen))
+	assert_eq(same["focus"], Vector2(0, 0))
+	assert_eq(same["scale"], s0)
+	# Without a network to hold, the frame ends clear of the edge.
+	var edge := CityMapCamera.keep_on_city(cfg, screen, Vector2(r.position.x + 2.0, r.position.y + 2.0), Vector2(0.5, 0.5), s0, tb,
+		PackedVector2Array(), Rect2(Vector2.ZERO, screen))
+	assert_lte(CityMapCamera.void_area(cfg, screen, edge, tb), CityMapCamera.VOID_EPS)
+
+
+func test_hq_card_column_ends_above_the_jack_in_slot_at_every_scale() -> void:
+	for s in [1.0, 1.6, 2.0]:
+		var rects := HqLayout.rects(Vector2(1280, 720), s, false)
+		var card: Rect2 = rects["card"]
+		var verb: Rect2 = rects["verb"]
+		assert_lte(card.end.y + HqLayout.GAP, verb.position.y + 0.001, "the card keeps off JACK IN at x%.1f" % s)
+		assert_false(card.intersects(verb), "no overlap at x%.1f" % s)
+
+
 func test_the_minimap_iso_round_trips() -> void:
 	var m: CityMinimap = add_child_autofree(CityMinimap.new())
 	m.size = cfg.minimap_size

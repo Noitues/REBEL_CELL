@@ -227,7 +227,9 @@ func _check_labels_k1(hq: Control, what: String, reaches: Array[float]) -> void:
 	var hud_bottom: float = (hq.hud as Control).get_global_rect().end.y
 	var area := _map_area(hq)
 	var rects := overlay.label_rects()
-	assert_false(rects.is_empty(), "%s: labels shown" % what)
+	# G2R2-1: a label that cannot clear the TARGET pencil (the edge arrow stands) hides until hover.
+	if hq.grid_target == null or not hq.grid_target.showing():
+		assert_false(rects.is_empty(), "%s: labels shown" % what)
 	_assert_apart(rects, "%s labels" % what)
 	var reach := CityMapOverlay.LABEL_REACH * overlay._k()
 	for key in rects:

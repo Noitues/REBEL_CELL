@@ -26,6 +26,8 @@ const SCAN_PX := 3.0
 const SCAN_STRENGTH := 0.10
 const HEX_ALPHA := 0.06
 const GLOW_PX := 10.0
+## The accent edge (px; the shader's edge_px), doubled in high contrast (HighContrast.edge).
+const EDGE_PX := 1.5
 const PAD := Vector2(UiTheme.PANEL_PAD_H, UiTheme.PANEL_PAD_V)
 ## The prompt before typed text, and the caret glyph.
 const PROMPT := "> "
@@ -119,6 +121,8 @@ func _init() -> void:
 
 func _ready() -> void:
 	PaletteSkins.bind(self, _sync)  # ART-12 12s-b
+	if not Settings.changed.is_connected(_sync):
+		Settings.changed.connect(_sync)  # M14 12Q-ACCESS: high contrast switches the glass
 	label.add_theme_font_override(&"font", Palette.mono())
 	label.add_theme_font_size_override(&"font_size", UiTheme.font_px(text_step))
 	label.position = PAD
@@ -165,20 +169,31 @@ func _sync() -> void:
 	if _glass_mat == null:
 		return
 	var c := accent()
+	# M14 12Q-ACCESS (L78): high contrast: opaque black glass, no glow, scanlines, roll or hex
+	# dump, a thick solid accent edge and 7:1 words (HighContrast).
+	var hc := HighContrast.on()
 	for m in [_glass_mat, _over_mat]:
 		var sm := m as ShaderMaterial
 		sm.set_shader_parameter(&"panel", Vector4(0.0, 0.0, size.x, size.y))
-		sm.set_shader_parameter(&"accent", c)
-		sm.set_shader_parameter(&"glass_top", PaletteSkins.chrome(Palette.CRT_GLASS_TOP))
-		sm.set_shader_parameter(&"glass_bottom", PaletteSkins.chrome(Palette.CRT_GLASS_BOTTOM))
+		sm.set_shader_parameter(&"accent", HighContrast.lift(c) if hc else c)
+		sm.set_shader_parameter(&"glass_top", HighContrast.BG if hc else PaletteSkins.chrome(Palette.CRT_GLASS_TOP))
+		sm.set_shader_parameter(&"glass_bottom", HighContrast.BG if hc else PaletteSkins.chrome(Palette.CRT_GLASS_BOTTOM))
 		sm.set_shader_parameter(&"glow_px", GLOW_PX)
 		sm.set_shader_parameter(&"scan_px", SCAN_PX)
-		sm.set_shader_parameter(&"scan_strength", SCAN_STRENGTH)
-	sync_hex(_glass_mat, c, hex_dump, seed)
+		sm.set_shader_parameter(&"scan_strength", 0.0 if hc else SCAN_STRENGTH)
+		if hc:
+			sm.set_shader_parameter(&"glow_strength", 0.0)
+			sm.set_shader_parameter(&"inner_glow", 0.0)
+			sm.set_shader_parameter(&"roll_strength", 0.0)
+		else:
+			for p in [&"glow_strength", &"inner_glow", &"roll_strength"]:
+				sm.set_shader_parameter(p, null)  # the shader's own default
+		sm.set_shader_parameter(&"edge_px", HighContrast.edge(EDGE_PX))
+	sync_hex(_glass_mat, c, hex_dump and not hc, seed)
 	refresh_text_mask()
 	_over_mat.set_shader_parameter(&"hexdump", 0.0)  # the dump sits under the text only
 	if label != null:
-		label.add_theme_color_override(&"font_color", PaletteSkins.chrome(Palette.TERMINAL_TEXT))
+		label.add_theme_color_override(&"font_color", HighContrast.ink(PaletteSkins.chrome(Palette.TERMINAL_TEXT)))
 
 
 ## The glass, grown by the glow (the shader's panel rect sits GLOW_PX in).
@@ -199,7 +214,7 @@ func _draw_caret() -> void:
 	if caret and _caret_on and not typing():
 		var at := caret_position()
 		var px := UiTheme.font_px(text_step)
-		content.draw_string(Palette.mono(), at, CARET_GLYPH, HORIZONTAL_ALIGNMENT_LEFT, -1, px, accent())
+		HighContrast.draw_text(content, Palette.mono(), at, CARET_GLYPH, HORIZONTAL_ALIGNMENT_LEFT, -1, px, accent())
 
 
 ## Where the caret sits (after the shown text; unwrapped text), local px.

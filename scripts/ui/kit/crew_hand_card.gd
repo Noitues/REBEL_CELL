@@ -239,7 +239,7 @@ func _draw() -> void:
 		# B4 (round 44): the runner's polaroid carries a cyan RUNNER tag over it.
 		var mono_t := Palette.mono()
 		var tpx := roundi(CHIP_PX * o)
-		draw_string(mono_t, Vector2(r.position.x + INSET * o, r.position.y - KEYLINE * o - mono_t.get_descent(tpx) - TAG_GAP * o), tr(RUNNER), HORIZONTAL_ALIGNMENT_LEFT, -1, tpx,
+		HighContrast.draw_text(self, mono_t, Vector2(r.position.x + INSET * o, r.position.y - KEYLINE * o - mono_t.get_descent(tpx) - TAG_GAP * o), tr(RUNNER), HORIZONTAL_ALIGNMENT_LEFT, -1, tpx,
 			PaletteSkins.chrome(Palette.NET_CYAN))
 	elif _hot and not disabled:
 		draw_rect(r.grow(KEYLINE * o * 0.6), Color(Palette.CELL_ACID, 0.55))
@@ -261,8 +261,8 @@ func _draw() -> void:
 	var rank_text := "R%d" % rank
 	var rw := mono.get_string_size(rank_text, HORIZONTAL_ALIGNMENT_LEFT, -1, rpx).x
 	var name_px := name_font_size()
-	draw_string(disp, Vector2(r.position.x + inset, name_y), display_name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, name_px, Palette.INK if not grey else Palette.INK.lightened(GREY_INK))
-	draw_string(mono, Vector2(r.end.x - inset - rw, name_y), rank_text, HORIZONTAL_ALIGNMENT_LEFT, -1, rpx, accent if not grey else Palette.INK.lightened(GREY_INK))
+	HighContrast.draw_text(self, disp, Vector2(r.position.x + inset, name_y), display_name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, name_px, Palette.INK if not grey else Palette.INK.lightened(GREY_INK))
+	HighContrast.draw_text(self, mono, Vector2(r.end.x - inset - rw, name_y), rank_text, HORIZONTAL_ALIGNMENT_LEFT, -1, rpx, accent if not grey else Palette.INK.lightened(GREY_INK))
 	# The status on a clipped terminal chip at the foot (it changes, so it is not printed).
 	var cpx := roundi(CHIP_PX * o)
 	var chip := Rect2(r.position.x + inset, chip_top, r.size.x - inset * 2.0, CHIP_H * o)
@@ -274,7 +274,7 @@ func _draw() -> void:
 	while fs > 6 and mono.get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > chip.size.x - 4.0:
 		fs -= 1
 	var tw := mono.get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	draw_string(mono, Vector2(chip.get_center().x - tw * 0.5, chip.get_center().y + mono.get_ascent(fs) * 0.5 - mono.get_descent(fs) * 0.3), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	HighContrast.draw_text(self, mono, Vector2(chip.get_center().x - tw * 0.5, chip.get_center().y + mono.get_ascent(fs) * 0.5 - mono.get_descent(fs) * 0.3), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 
 ## The name's room on the card (px): the card's width less its insets and the rank.

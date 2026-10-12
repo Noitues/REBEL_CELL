@@ -158,6 +158,9 @@ const LABEL_GAP := 4.0
 ## Parity fix (GRID-13): the least room between a label and another label or a marker (px x
 ## the map's k): labels never touch.
 const LABEL_CLEAR := 3.0
+## G2 polish P3: the least room (px) between a label and the TARGET's grease pencil (its word, arrow and chip):
+## a label pushed aside by the pencil never touches it (a link line under a label is fine).
+const PENCIL_CLEAR := 6.0
 ## Candidate rings a label may step out to when its first spots are taken.
 const LABEL_RINGS := 3
 ## Label priorities (lower is placed first).
@@ -513,6 +516,33 @@ func avoid_controls(controls: Array[Control]) -> void:
 	for c in _blocked_controls:
 		if is_instance_valid(c) and not c.item_rect_changed.is_connected(_queue_tags):
 			c.item_rect_changed.connect(_queue_tags)
+	_queue_tags()
+
+
+## G2R2-1: true while the TARGET's edge arrow stands in for the boss's own pencil (circle, word)
+## and chip: they hide (the standing rule: no UI over pencil, no pencil under UI).
+var target_hidden: bool = false:
+	set(v):
+		if v == target_hidden:
+			return
+		target_hidden = v
+		if _target_mark != null and is_instance_valid(_target_mark):
+			_target_mark.visible = not v
+			_target_word.visible = not v
+		queue_redraw()
+		_queue_tags()
+
+
+## G2R2-1: pencil the labels make way for (the TARGET edge arrow, its word and chip), viewport px.
+var _pencil_rects: Array[Rect2] = []
+
+
+## G2R2-1: sets the grease pencil drawn over the map (viewport px) that the Site name labels keep
+## off: they move to their node's other side, or hide until hover. Empty clears it.
+func set_pencil_rects(rects: Array[Rect2]) -> void:
+	if rects == _pencil_rects:
+		return
+	_pencil_rects = rects.duplicate()
 	_queue_tags()
 
 
@@ -1482,10 +1512,12 @@ func _draw_changes() -> void:
 		var at := p + Vector2(-size.x * 0.5, -ICON_RADIUS_BIG * k - LABEL_GAP * k - size.y - rise)
 		var box := Rect2(at, size)
 		_hi.draw_rect(box.grow(2.0 * k), Color(0, 0, 0, 0.85 * a))
-		_hi.draw_rect(box, Color(Palette.NIGHT_SKY, 0.95 * a))
-		_hi.draw_rect(box, Color(col, a), false, 2.0 * k)
-		_hi.draw_string(cf, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_ascent(cfs)), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(Palette.PAPER, 0.85 * a))
-		_hi.draw_string(f, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_height(cfs) + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, a))
+		var plate := HighContrast.plate(Color(Palette.NIGHT_SKY, 0.95))
+		_hi.draw_rect(box, Color(plate, plate.a * a))
+		_hi.draw_rect(box, Color(col, a), false, HighContrast.edge(2.0 * k))
+		var cap := HighContrast.ink(Color(Palette.PAPER, 0.85))
+		HighContrast.draw_text(_hi, cf, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_ascent(cfs)), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(cap, cap.a * a))
+		HighContrast.draw_text(_hi, f, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_height(cfs) + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(HighContrast.ink(col), a))
 
 
 ## ANIM-R5 P8: the forecast change's caption and its lettering (px at text scale 1.0).
@@ -1781,8 +1813,8 @@ func _node(n: Dictionary) -> void:
 			var word: String = str(_drop["label"])
 			var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			var lab_at := slot + Vector2(-w * 0.5, ar * 1.25 + LABEL_GAP * _k() + f.get_ascent(fs))
-			_c.draw_rect(Rect2(lab_at - Vector2(TAG_PAD * _k(), f.get_ascent(fs) + TAG_PAD * _k()), Vector2(w, f.get_height(fs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * _k()), Color(Palette.NIGHT_SKY, 0.86))
-			_c.draw_string(f, lab_at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, AssetIcon.color_of(assets[k]))
+			_c.draw_rect(Rect2(lab_at - Vector2(TAG_PAD * _k(), f.get_ascent(fs) + TAG_PAD * _k()), Vector2(w, f.get_height(fs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * _k()), HighContrast.plate(Color(Palette.NIGHT_SKY, 0.86)))
+			HighContrast.draw_text(_c, f, lab_at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HighContrast.ink(AssetIcon.color_of(assets[k])))
 	if draw_markers and markers.has(n["id"]):
 		var names: Array = markers[n["id"]]
 		var row := _marker_row(n)
@@ -1869,7 +1901,10 @@ func _marker_node(n: Dictionary, rec: Dictionary) -> void:
 	var at := icon_pos(n)
 	if spec.get("kind") == SiteMarker.KIND_CENTRAL_SERVER:
 		SiteMarker.draw_pad(_c, spec, top, k * 1.4)
-		_draw_boss_chip(n, at)
+		if target_hidden:
+			boss_chip_rect = boss_layout(n).get("chip", _boss_chip_box(at))  # the arrow's chip stands in
+		else:
+			_draw_boss_chip(n, at)
 		return
 	SiteMarker.draw_pad(_c, spec, top, k)
 	var rc := SiteMarker.ring_color(spec)
@@ -1915,9 +1950,9 @@ func _draw_boss_chip(n: Dictionary, at: Vector2) -> void:
 	var pad := TAG_PAD * k
 	var r: Rect2 = boss_layout(n).get("chip", _boss_chip_box(at))
 	boss_chip_rect = r
-	_c.draw_rect(r, Color(Palette.NIGHT_SKY, 0.9))
-	_c.draw_rect(r, Palette.RESIST_GOLD, false, maxf(1.0, k))
-	_c.draw_string(f, r.position + Vector2(pad, pad + f.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.RESIST_GOLD)
+	_c.draw_rect(r, HighContrast.plate(Color(Palette.NIGHT_SKY, 0.9)))
+	_c.draw_rect(r, Palette.RESIST_GOLD, false, HighContrast.edge(maxf(1.0, k)))
+	HighContrast.draw_text(_c, f, r.position + Vector2(pad, pad + f.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HighContrast.ink(Palette.RESIST_GOLD))
 
 
 ## True when node `n` is the Central Server (the boss: its chip and TARGET pencil).
@@ -2175,6 +2210,8 @@ func _sync_target(boss: Dictionary) -> void:
 		_target_word.text = tr_word("TARGET")
 		_target_word.ink = GreasePencilMark.Ink.THREAT
 		_pencil_root.add_child(_target_word)
+	_target_mark.visible = not target_hidden
+	_target_word.visible = not target_hidden
 	_target_mark.clear()
 	_target_mark.add_stroke(PencilShapes.hand_circle(Vector2.ZERO, Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT), TARGET_SEED))
 	_target_mark.position = at
@@ -2950,7 +2987,7 @@ func _layout_labels() -> Array[Dictionary]:
 	var sig := []
 	for n in nodes:
 		sig.append([n["id"], label_lines(n["id"]), _prio(n)])
-	var key := [Settings.text_scale, selected_id, hover_id, hash(sig), var_to_str(markers), label_area(), label_blocks(), ring_radius(), token_radius,
+	var key := [Settings.text_scale, selected_id, hover_id, hash(sig), var_to_str(markers), label_area(), label_blocks(), _pencil_rects, ring_radius(), token_radius,
 		here_point() if here_label_shown() else Vector2.INF]
 	if key == _labels_key:
 		return _labels_now
@@ -2968,6 +3005,7 @@ func _place_labels() -> Array[Dictionary]:
 	var line_h := f.get_height(fs)
 	var icons: Array[Dictionary] = []
 	var marks: Array[Rect2] = []
+	var pencil: Array[Rect2] = []
 	var tok := token_radius * k
 	for n in nodes:
 		if not _roof(n["id"]).is_empty():
@@ -2977,6 +3015,7 @@ func _place_labels() -> Array[Dictionary]:
 			marks.append_array(label_marks_of(n))  # S-ROUTE c: a subclass's chips (the route's number chips)
 			if is_boss(n) and marker_shown(n):
 				marks.append_array(boss_rects(n))  # parity fix GRID-03: the chip and the TARGET pencil
+				pencil.append_array(boss_rects(n))  # G2R2-1: no label, a focus label's last resort included, on the pencil
 			# ANIM-R5 P8: a raid's threat tokens (RaidFxLayer: much bigger than the map's
 			# markers) are obstacles too: no label (CORE's included) is placed under one.
 			if tok > 0.0 and markers.has(n["id"]):
@@ -2987,6 +3026,9 @@ func _place_labels() -> Array[Dictionary]:
 						marks.append(Rect2(slot - Vector2(tok, tok), Vector2(tok, tok) * 2.0))
 	var area := label_area()
 	var blocks := label_blocks()
+	for pr in _pencil_rects:
+		marks.append(_to_local_rect(pr))  # an obstacle, not a block: a node under it keeps its label
+		pencil.append(_to_local_rect(pr))
 	var ring_c := ring_centre()
 	var ring_r := ring_radius()
 	var todo: Array[Dictionary] = []
@@ -3020,7 +3062,7 @@ func _place_labels() -> Array[Dictionary]:
 		# label moved in for it would float with nothing to point at.
 		if not _visible_at(t["at"], area, blocks):
 			continue
-		var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_c, "ring_r": ring_r, "area": area, "blocks": blocks, "clear": LABEL_CLEAR * k}
+		var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_c, "ring_r": ring_r, "area": area, "blocks": blocks, "clear": LABEL_CLEAR * k, "pencil": pencil}
 		# H24 K1: a long name with no room on one line tries two (narrower) lines.
 		var variants: Array[PackedStringArray] = [t["lines"]]
 		var wrapped := wrap_lines(t["lines"])
@@ -3233,10 +3275,20 @@ func _loose_spot(t: Dictionary, box: Vector2, obstacles: Dictionary, may_cover_i
 	for rect in tries:
 		if reach_of(rect, at) > reach or not _on_screen(rect, obstacles) or _hits_label(rect, obstacles):
 			continue
+		if _hits_rects(rect.grow(PENCIL_CLEAR), obstacles.get("pencil", [])):
+			continue  # G2R2-1: never on grease pencil: the label hides until hover
 		# HQ-B: nor its own icon (shifted inside the map at big text, it landed on it).
 		if may_cover_icons or not _hits_icon(rect, obstacles, &""):
 			return rect
 	return Rect2()
+
+
+## True when `rect` touches any of `rects`.
+static func _hits_rects(rect: Rect2, rects: Array) -> bool:
+	for r: Rect2 in rects:
+		if r.intersects(rect):
+			return true
+	return false
 
 
 ## True when `rect` covers the icon of a node other than `own`.
@@ -3313,6 +3365,8 @@ static func _clamp_into(rect: Rect2, area: Rect2) -> Rect2:
 ## True when `rect` overlaps a placed label, a node icon, a tier pip row or the
 ## selection ring.
 static func _blocked(rect: Rect2, obstacles: Dictionary) -> bool:
+	if _hits_rects(rect.grow(PENCIL_CLEAR), obstacles.get("pencil", [])):
+		return true
 	rect = rect.grow(float(obstacles.get("clear", 0.0)))  # parity fix GRID-13: never touching
 	for other: Dictionary in obstacles["placed"]:
 		if rect.intersects(other["rect"]):
@@ -3343,14 +3397,17 @@ func _tag_box(l: Dictionary) -> void:
 	var near := Vector2(clampf(l["at"].x, rect.position.x, rect.end.x), clampf(l["at"].y, rect.position.y, rect.end.y))
 	if near.distance_to(l["at"]) > float(l["r"]) + LABEL_GAP * _k() * 2.0:
 		_c.draw_line(l["at"] + (near - l["at"]).normalized() * float(l["r"]), near, Color(col, 0.7), 1.0)
-	_c.draw_rect(rect, Color(Palette.NIGHT_SKY, 0.86))
+	# M14 12Q-ACCESS (L78): words over the city on an opaque plate, edged, at 7:1 in high contrast.
+	_c.draw_rect(rect, HighContrast.plate(Color(Palette.NIGHT_SKY, 0.86)))
+	if HighContrast.on():
+		_c.draw_rect(rect, col, false, HighContrast.edge(1.0))
 	_c.draw_rect(Rect2(rect.position, Vector2(2.0 * _k(), rect.size.y)), col)
 	var y := rect.position.y + pad + f.get_ascent(fs)
 	for line in l["lines"]:
 		# ANIM-R4 H11b: a result line "50 → 40 HOLDS" draws its arrow from the fallback face.
 		# The street marker's words stay the Cell's pink (S-ROUTE c).
-		_c.draw_string(Palette.mono_for(line), Vector2(rect.position.x + pad, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
-			Palette.CELL_PINK if l.get("key", "") == HERE_KEY else Palette.PAPER)
+		HighContrast.draw_text(_c, Palette.mono_for(line), Vector2(rect.position.x + pad, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
+			HighContrast.ink(Palette.CELL_PINK if l.get("key", "") == HERE_KEY else Palette.PAPER))
 		y += f.get_height(fs)
 
 
@@ -3491,4 +3548,4 @@ static func draw_icon(ci: CanvasItem, kind: String, p: Vector2, r: float, col: C
 static func _icon_text(ci: CanvasItem, f: Font, text: String, p: Vector2, r: float, col: Color) -> void:
 	var fs := maxi(1, roundi(r * (1.25 if text.length() == 1 else 0.95)))
 	var y := p.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
-	ci.draw_string(f, Vector2(p.x - r, y), text, HORIZONTAL_ALIGNMENT_CENTER, r * 2.0, fs, col)
+	HighContrast.draw_text(ci, f, Vector2(p.x - r, y), text, HORIZONTAL_ALIGNMENT_CENTER, r * 2.0, fs, col)

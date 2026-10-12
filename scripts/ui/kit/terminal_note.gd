@@ -27,5 +27,5 @@ func _draw() -> void:
 		return
 	var f := HudSkin.mono()
 	var fs := roundi(HEADER_FONT * minf(Settings.text_scale, 1.0))
-	draw_string(f, Vector2(10.0, (HEADER_H + f.get_ascent(fs) - f.get_descent(fs)) * 0.5), "> " + title.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HudSkin.TERMINAL_HI)
+	HighContrast.draw_text(self, f, Vector2(10.0, (HEADER_H + f.get_ascent(fs) - f.get_descent(fs)) * 0.5), "> " + title.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HudSkin.TERMINAL_HI)
 	draw_line(Vector2(0.0, HEADER_H), Vector2(size.x - HudSkin.CHAMFER, HEADER_H), Color(PaletteSkins.chrome(HudSkin.TERMINAL_EDGE), 0.6), 1.0)

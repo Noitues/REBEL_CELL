@@ -97,6 +97,9 @@ func entries(rot: Variant = null) -> Array[Dictionary]:
 	var span := TAU / maxi(1, c.wheel.slice_count) * BAND_SHARE
 	var view_rect := Rect2(Vector2.ZERO, size).grow(-2.0)
 	var slot_lay := {}
+	var blocks: Array[Rect2] = []
+	var blocks_read := false
+	var placed: Array[Vector3] = []
 	for s in sats:
 		var count := int(per_slot[s.dock_slot])
 		var index := int(seen.get(s.dock_slot, 0))
@@ -127,20 +130,15 @@ func entries(rot: Variant = null) -> Array[Dictionary]:
 			off = lerpf(-half, half, float(index) / (count - 1))
 		var a := mid + off
 		var mini := host.center() + Vector2(cos(a), sin(a)) * d
-		# Mirror away from the edges: the nearest turn round the rim (clockwise first) that fits.
-		if not _fits(view_rect, mini, mini_r):
-			for k in range(1, MIRROR_STEPS + 1):
-				var found := false
-				for sgn in [1.0, -1.0]:
-					var t: float = a + sgn * k * MIRROR_STEP
-					var p := host.center() + Vector2(cos(t), sin(t)) * d
-					if _fits(view_rect, p, mini_r):
-						a = t
-						mini = p
-						found = true
-						break
-				if found:
-					break
+		# Mirror away from the edges and the HUD: the nearest turn round the rim (clockwise first)
+		# that fits and keeps off the wheel's words and the drones already placed (ART-2 acceptance,
+		# the clutter fixture: a bloomed drone stood on the HP number and on the boss's tag).
+		if not blocks_read:
+			blocks = mini_blocks()
+			blocks_read = true
+		a = _mini_turn(view_rect, a, d, mini_r, blocks, placed)
+		mini = host.center() + Vector2(cos(a), sin(a)) * d
+		placed.append(Vector3(mini.x, mini.y, mini_r))
 		out.append({"sat": s, "slot": s.dock_slot, "index": index, "count": count, "mid": mid, "r0": r0, "r1": r0 + depth,
 			"a0": a0, "a1": a1, "tile": tile, "mini": mini, "mini_r": mini_r, "up": a, "depth": depth})
 	return out
@@ -183,6 +181,76 @@ func _band_clear(mid: float, r0: float, depth: float, band_span: float, count: i
 
 static func _fits(r: Rect2, at: Vector2, radius: float) -> bool:
 	return r.encloses(Rect2(at - Vector2(radius, radius), Vector2(radius, radius) * 2.0))
+
+
+## What a bloomed mini-wheel keeps off (local): the view's HP number, NEXT and LAST TURN plates, the
+## result chips' lanes beside the HP, its tag, the boss banner, the nudge buttons and their key
+## hints, and the Daemon rack beside it.
+func mini_blocks() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if host == null or host.view == null:
+		return out
+	var v := host.view
+	out.append_array(v._hp_block_rects())
+	var tag := v._intent_rect_local()
+	if tag.has_area():
+		out.append(tag)
+	var banner := v.banner_rect()
+	if banner.has_area():
+		out.append(banner)
+	# The nudge buttons and their key hints (at 1.6 a bloomed drone sat on the E button).
+	var hit := HudWheelLayer.BUTTON_R * minf(Settings.text_scale, WheelView.NUDGE_SCALE_MAX) if v.hud_results else WheelView.ARROW_HIT * Settings.text_scale
+	for ar in v.arrows():
+		var c := v.arrow_center(int(ar["ring"]), int(ar["direction"])) - v.global_position
+		out.append(Rect2(c - Vector2(hit, hit), Vector2(hit, hit) * 2.0))
+		var hint := v.arrow_hint_rect(int(ar["ring"]), int(ar["direction"]))
+		if hint.has_area():
+			out.append(hint)
+	var rack := v.get_node_or_null("DaemonRack") as Control
+	if rack != null and rack.visible:
+		out.append(Rect2(rack.position, rack.size))
+	# The result chips' lanes: HudWheelLayer.place_rows puts the row right of the HP number, or under
+	# it near the screen's edge. Both whole lanes are kept, whatever the chips say now, so a bloomed
+	# drone never jumps as they change.
+	var hp: Rect2 = v.hp_layout()["hp"]
+	if hp.has_area():
+		var s := Settings.text_scale
+		var h := maxf(hp.size.y, HudResultChips.CHIP_H * s)
+		out.append(Rect2(hp.end.x, hp.get_center().y - h * 0.5, maxf(0.0, size.x - hp.end.x), h))
+		var half := maxf(hp.size.x * 0.5, size.x - hp.get_center().x)
+		out.append(Rect2(hp.get_center().x - half, hp.end.y, half * 2.0, (HudResultChips.CHIP_H + HudWheelLayer.CHIP_GAP) * s))
+	return out
+
+
+## The turn round the rim (rad) a bloomed mini-wheel `radius` big, `d` from the centre, stands at:
+## `a` when it fits the view and keeps off `blocks` and the drones `placed` (x, y, radius), else the
+## nearest turn that does (clockwise first, MIRROR_STEP at a time), else the nearest that fits the
+## view, else `a`.
+func _mini_turn(view_rect: Rect2, a: float, d: float, radius: float, blocks: Array[Rect2], placed: Array[Vector3]) -> float:
+	var fallback := NAN
+	for k in range(0, MIRROR_STEPS + 1):
+		for sgn in ([1.0] if k == 0 else [1.0, -1.0]):
+			var t: float = a + sgn * k * MIRROR_STEP
+			var p := host.center() + Vector2(cos(t), sin(t)) * d
+			if not _fits(view_rect, p, radius):
+				continue
+			if is_nan(fallback):
+				fallback = t
+			if _disc_clear(p, radius, blocks, placed):
+				return t
+	return a if is_nan(fallback) else fallback
+
+
+## True when a disc at `at`, `radius` big, meets none of `blocks` and none of the discs `placed`.
+static func _disc_clear(at: Vector2, radius: float, blocks: Array[Rect2], placed: Array[Vector3]) -> bool:
+	for b in blocks:
+		var q := Vector2(clampf(at.x, b.position.x, b.end.x), clampf(at.y, b.position.y, b.end.y))
+		if q.distance_to(at) < radius + HP_PAD:
+			return false
+	for o in placed:
+		if Vector2(o.x, o.y).distance_to(at) < radius + o.z:
+			return false
+	return true
 
 
 ## Where `sat` stands now (local): its tile, moving out to its mini-wheel as its slice blooms.

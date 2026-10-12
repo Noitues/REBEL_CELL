@@ -58,8 +58,15 @@ func text_size() -> Vector2:
 	var f := Palette.pencil()
 	var w := 0.0
 	var lines := text.split("\n")
+	# G2 polish P2: the words are drawn letter by letter at the px their text step lands on (a word's
+	# step is rounded, so that px can stand a pixel over `font_px`): measure the same, so the arrow
+	# never starts under the last letter.
+	var px := UiTheme.font_px(maxi(1, roundi(font_px / maxf(0.01, Settings.text_scale))))
 	for l in lines:
-		w = maxf(w, f.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, font_px).x)
+		var lw := 0.0
+		for i in l.length():
+			lw += f.get_string_size(l[i], HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
+		w = maxf(w, lw)
 	return Vector2(w, f.get_height(font_px) * lines.size()) + GreasePencilMark.SHADOW_OFFSET
 
 

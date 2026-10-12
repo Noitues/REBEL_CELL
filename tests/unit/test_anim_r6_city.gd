@@ -232,6 +232,33 @@ func test_a_home_hit_number_is_a_flight_a_press_lands() -> void:
 	hq.playout.skip_to_end()
 
 
+## M14 12Q-ACCESS (L82): two hits on home while a number flies are one number (the sum), never
+## two "-5" labels stacked on one spot; HOME drops by both when it lands.
+func test_two_home_hits_in_flight_are_one_number() -> void:
+	_live()
+	_raid_campaign(true)
+	var hq := _scene(HQ)
+	await _frames(1)
+	hq.show_raid()
+	await _frames(3)
+	hq.fight_raid()
+	await _frames(4)
+	var home := RunManager.campaign.grid.home_site_id
+	hq.hud_home_shown = 50
+	hq._fly_home_number(5, home)
+	hq._fly_home_number(5, home)
+	assert_eq(FlightFx.active_count(hq), 1, "one number flies")
+	var nums: Array[Node] = FlightFx.existing(hq).find_children("*", "Label", true, false).filter(func(n: Node) -> bool: return (n as Label).text.begins_with("-"))
+	assert_eq(nums.size(), 1, "one label")
+	assert_eq((nums[0] as Label).text, "-10", "carrying both hits")
+	MotionSkip.complete_all(hq)
+	assert_eq(hq.hud_home_shown, 40, "HOME drops by both")
+	hq._fly_home_number(5, home)
+	assert_eq((FlightFx.existing(hq).find_children("*", "Label", true, false).filter(func(n: Node) -> bool: return (n as Label).text.begins_with("-") and not n.is_queued_for_deletion())[0] as Label).text, "-5", "a later hit flies on its own")
+	MotionSkip.complete_all(hq)
+	hq.playout.skip_to_end()
+
+
 # --- C3: a drawn bake outlives its cache entry ------------------------------------------------
 
 func test_a_view_holds_the_bake_it_draws_past_its_eviction() -> void:

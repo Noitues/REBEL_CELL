@@ -76,7 +76,7 @@ func _draw_words() -> void:
 	var hh := HEADER_H * s
 	var f := HudSkin.mono()
 	var hf := roundi(HEADER_FONT * s)
-	_words.draw_string(f, Vector2(PAD * 0.5 * s, (hh + f.get_ascent(hf) - f.get_descent(hf)) * 0.5), header_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, hf, edge.lightened(0.2))
+	HighContrast.draw_text(_words, f, Vector2(PAD * 0.5 * s, (hh + f.get_ascent(hf) - f.get_descent(hf)) * 0.5), header_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, hf, edge.lightened(0.2))
 	if destructive:
 		var tf := roundi(TAG_FONT * s)
 		var tag := tr("CANNOT UNDO")
@@ -85,4 +85,4 @@ func _draw_words() -> void:
 		_words.draw_rect(tr_, edge, false, 1.0)
 		# Round 33: a lit pip after the tag (term_panel's header square).
 		_words.draw_rect(Rect2(Vector2(tr_.end.x + PIP_GAP * s, (hh - PIP * s) * 0.5), Vector2(PIP, PIP) * s), edge)
-		_words.draw_string(f, tr_.position + Vector2(5.0 * s, 3.0 + f.get_ascent(tf)), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, tf, edge)
+		HighContrast.draw_text(_words, f, tr_.position + Vector2(5.0 * s, 3.0 + f.get_ascent(tf)), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, tf, edge)

@@ -108,7 +108,7 @@ func _draw() -> void:
 	var line_h := f.get_height(fs)
 	var y := img.end.y + (size.y - img.end.y - line_h * lines.size()) * 0.5 + f.get_ascent(fs)
 	for line in lines:
-		draw_string(f, Vector2(m, y), line, HORIZONTAL_ALIGNMENT_CENTER, size.x - m * 2.0, fs, PaperInk.text(Palette.END_BALLPOINT))
+		HighContrast.draw_text(self, f, Vector2(m, y), line, HORIZONTAL_ALIGNMENT_CENTER, size.x - m * 2.0, fs, PaperInk.text(Palette.END_BALLPOINT))
 		y += line_h
 	# The tape over the top edge.
 	var t := TAPE * s

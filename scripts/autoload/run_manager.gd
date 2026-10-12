@@ -171,6 +171,10 @@ func recruit(class_id: StringName = DEFAULT_CLASS) -> Array[Dictionary]:
 
 
 func new_campaign(campaign_seed: int, corporation_id: StringName = DEFAULT_CORPORATION, ice_level: int = 0, home_variant_id: StringName = DEFAULT_HOME, class_id: StringName = DEFAULT_CLASS) -> CampaignState:
+	# M14 LEAK: a new campaign never shows a line said in the one before (the campaign end's
+	# DISPATCH line has no screen scope and played out over the next campaign).
+	if has_node("/root/Dialogue"):
+		get_node("/root/Dialogue").clear()
 	_ensure_resolver()
 	_restore_lookup()
 	corporation = lookup().get_content(corporation_id) as CorporationData

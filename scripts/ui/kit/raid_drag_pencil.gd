@@ -236,7 +236,7 @@ func _draw() -> void:
 			draw_dashed_line(Vector2(gap.y, a.y), b, PARK_ZONE_INK, PARK_ZONE_W, PARK_ZONE_DASH)
 		else:
 			draw_dashed_line(a, b, PARK_ZONE_INK, PARK_ZONE_W, PARK_ZONE_DASH)
-	draw_string(font, Vector2(r.get_center().x - ww * 0.5, r.position.y + font.get_ascent(fs) * 0.5 - font.get_descent(fs) * 0.5), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, PARK_ZONE_INK)
+	HighContrast.draw_text(self, font, Vector2(r.get_center().x - ww * 0.5, r.position.y + font.get_ascent(fs) * 0.5 - font.get_descent(fs) * 0.5), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, PARK_ZONE_INK)
 
 
 ## Lays the drag's pencil on 1B's grease pencil (RaidPencilPool, above every panel): the

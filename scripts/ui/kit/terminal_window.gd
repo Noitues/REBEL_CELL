@@ -13,6 +13,8 @@ var _head: Label = null
 var _rule: ColorRect = null
 ## B5: the kit glass behind a plain TerminalWindow (CrtWindow has its own).
 var _glass: CrtTerminalPanel = null
+## The title's and the tag's type step (scaled by the text size).
+const TITLE_STEP := UiTheme.BODY
 
 
 func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN) -> void:
@@ -30,6 +32,10 @@ func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN) -> void:
 		sb.shadow_size = 0  # the box's accent glow drew through its clear centre as a wash over the glass
 		sb.shadow_color = Color(sb.shadow_color, 0.0)
 		add_theme_stylebox_override(&"panel", sb)
+		# M14 12Q-WORDS (L59): the PanelContainer fits its internal glass to the content rect, so the
+		# glass's edge hugged the words ("RAID // ..." flush on the border). The glass covers the
+		# whole window; the content margins are the header's and the body's inset from its edge.
+		sort_children.connect(_place_backing)
 	var outer := VBoxContainer.new()
 	outer.add_theme_constant_override("separation", 6)
 	outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -39,14 +45,18 @@ func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN) -> void:
 		head.text = title.to_upper()
 		head.add_theme_color_override("font_color", skin_accent().lerp(Palette.PAPER, 0.35))
 		_head = head
-		head.add_theme_font_size_override("font_size", 15)
+		# M14 12Q-WORDS (lint L65): the title on the type scale, at the player's text size (it was
+		# 15 px whatever the text scale).
+		head.add_theme_font_size_override("font_size", UiTheme.font_px(TITLE_STEP))
 		head.name = "TerminalTitle"
 		head.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		# A long title wraps at its words at big text (it never widens the window past its body).
+		UiWrap.whole_words(head)
 		var bar := HBoxContainer.new()
 		bar.add_child(head)
 		tag_label = Label.new()
 		tag_label.add_theme_color_override("font_color", Palette.CELL_ACID)
-		tag_label.add_theme_font_size_override("font_size", 14)
+		tag_label.add_theme_font_size_override("font_size", UiTheme.font_px(TITLE_STEP))
 		bar.add_child(tag_label)
 		outer.add_child(bar)
 		var rule := ColorRect.new()
@@ -64,6 +74,22 @@ func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN) -> void:
 ## the skin). ART-12 12s-b.
 func skin_accent() -> Color:
 	return PaletteSkins.chrome(accent)
+
+
+## The kit glass over the whole window (the container laid it out at its content rect).
+func _place_backing() -> void:
+	if _glass == null or not is_instance_valid(_glass):
+		return
+	# Top-left anchors first: a size set on crt_backing's full-rect anchors warns before the
+	# window is ready (and the container's own fit already set its rect).
+	_glass.set_anchors_preset(Control.PRESET_TOP_LEFT, true)
+	_glass.position = Vector2.ZERO
+	_glass.size = size
+
+
+## The glass behind a plain window (null for a CrtWindow, which has its own; tests).
+func backing() -> CrtTerminalPanel:
+	return _glass
 
 
 ## Re-values the colours this window caches (its title and rule) and redraws; CrtWindow adds

@@ -95,12 +95,12 @@ func _draw() -> void:
 	elif icon_kind != &"":
 		StatIcon.draw(self, c, r * 0.62, icon_kind, color)
 	elif glyph != "":
-		draw_string(Palette.mono(), c + Vector2(-r, r * 0.42), glyph, HORIZONTAL_ALIGNMENT_CENTER, r * 2.0, int(r * 1.1), color)
+		HighContrast.draw_text(self, Palette.mono(), c + Vector2(-r, r * 0.42), glyph, HORIZONTAL_ALIGNMENT_CENTER, r * 2.0, int(r * 1.1), color)
 	var font := _font()
 	var fs := _font_size()
 	var x := r * 2.0 + GAP + 2.0
 	var base := (size.y - (METER_H + 2.0 if fill >= 0.0 else 0.0)) * 0.5 + font.get_ascent(fs) * 0.5 - font.get_descent(fs) * 0.25
-	draw_string(font, Vector2(x, base), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color.lerp(Palette.PAPER, 0.35))
+	HighContrast.draw_text(self, font, Vector2(x, base), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color.lerp(Palette.PAPER, 0.35))
 	if fill >= 0.0:
 		var bar := Rect2(x, size.y - METER_H - 1.0, size.x - x - 1.0, METER_H)
 		draw_rect(bar, Color(Palette.PAPER, 0.15))

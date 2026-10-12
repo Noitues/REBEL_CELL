@@ -120,7 +120,8 @@ func _room(p_size: Vector2) -> Dictionary:
 	var h := p_size.y - BUTTON_ROW_HEIGHT - note.label.offset_top + note.label.offset_bottom
 	# ART-2 2D (audit P2: a page was cut mid-sentence): room for the title and the line that
 	# says how to go on, and a line of margin (the label's own wrap can take one more line).
-	return {"font": font, "fs": fs, "line_h": line_h, "w": w, "lines": maxi(1, floori(h / line_h) - 1 - REASON_LINES)}
+	# M14 12Q-MENUS: compact (big text in a short box), the line under the page goes to NEXT's tooltip.
+	return {"font": font, "fs": fs, "line_h": line_h, "w": w, "lines": maxi(1, floori(h / line_h) - 1 - (0 if _compact else REASON_LINES))}
 
 
 ## ANIM-R6 A16: `text` wrapped at word breaks to `width` px in `font` at `fs`.
@@ -151,7 +152,7 @@ func needed_height(width: float) -> float:
 func pages() -> PackedStringArray:
 	var r := _room(size)
 	var lines := wrap_words(step_text(step), r["font"], int(r["fs"]), float(r["w"]))
-	var per := int(r["lines"])
+	var per := maxi(1, int(r["lines"]) - _cut)
 	var out := PackedStringArray()
 	var i := 0
 	while i < lines.size():
@@ -169,32 +170,89 @@ const REASON_LINES := 2
 ## The page of the current step on show.
 var page: int = 0
 var _pulse: Tween = null
+## M14 12Q-MENUS (QA matrix P2: "11 of 12 lines visible" at 1.0, at 2.0 the page ended "More on the next"): lines
+## taken off the measured page size after the note's own label said the page ran past its room (the title or
+## the line under the page wrapped to more lines than the estimate kept).
+var _cut: int = 0
+## M14 12Q-MENUS: the most lines a page is shortened by (the estimate is never further off).
+const CUT_MAX := 6
+## M14 12Q-MENUS (2.0 in the fight's short notes box: the title, one line of text and the line under it did not
+## fit): compact pages: the title on one line without the page count, no line under the page (NEXT pulses and
+## its tooltip says what moves the tutorial on), the room to the text.
+var _compact: bool = false
 
 
 func _show() -> void:
+	_cut = 0
+	_compact = false
+	# M14 12Q-MENUS: every line of every page shows: the step's pages are shortened until the label's own wrap
+	# fits each of them, then they go compact (one paging for the whole step, so its page count holds).
+	var shown := page
+	while not _all_pages_fit():
+		if _cut < CUT_MAX and int(_room(size)["lines"]) - _cut > 1:
+			_cut += 1
+		elif not _compact:
+			_compact = true
+			_cut = 0
+		else:
+			break
+	page = shown
+	_render()
+
+
+## M14 12Q-MENUS: whether every page of the step, as paged now, fits the note (each is rendered to measure).
+func _all_pages_fit() -> bool:
+	for p in pages().size():
+		page = p
+		_render()
+		if not page_fits():
+			return false
+	return true
+
+
+## M14 12Q-MENUS: true while the pages are compact (tests).
+func compact() -> bool:
+	return _compact
+
+
+## M14 12Q-MENUS: whether the note's label shows the whole page (title, text and the line under it) unscrolled.
+func page_fits() -> bool:
+	var l := note.label
+	return l.size.y <= 0.0 or float(l.get_content_height()) <= l.size.y + 1.0
+
+
+func _render() -> void:
 	note.clear()
 	var s: Dictionary = STEPS[step]
 	var all := pages()
 	page = clampi(page, 0, all.size() - 1)
 	var head := "[b]%d/%d %s[/b]" % [step + 1, STEPS.size(), tr(String(s["title"]))]
-	if all.size() > 1:
+	if all.size() > 1 and not _compact:
 		head += " (%d/%d)" % [page + 1, all.size()]
-	note.append(head)
-	note.append(all[page])
 	# ART-2 2D (audit P2: "Next" read as greyed with no reason): what moves it on, in words.
 	var more := page < all.size() - 1
 	var reason := tr("More on the next page: press NEXT.") if more else (tr("Press NEXT to go on.") if String(s["until"]) == "" else tr("Do it in the fight to go on (or press NEXT)."))
-	note.append("[color=#%s]%s[/color]" % [HudSkin.TERMINAL_HI.to_html(false), reason])
+	next_button.tooltip_text = UiTip.fold(reason)
+	note.append(head)
+	if _compact:
+		note.label.append_text(all[page])  # M14 12Q-MENUS: the last line has no line break after it
+	else:
+		note.append(all[page])
+		# M14 12Q-MENUS: the last line has no line break after it (an empty line under the page).
+		note.label.append_text("[color=#%s]%s[/color]" % [HudSkin.TERMINAL_HI.to_html(false), reason])
 	note.label.scroll_to_line.call_deferred(0)  # the step title first, at any text scale
 	var last := step == STEPS.size() - 1 and page == all.size() - 1
 	next_button.text = tr("Finish") if last else tr("Next")
 	# ANIM-R6 A16: Next pulses when it is what moves the tutorial on (a step no play of the
 	# fight ends, or a page to turn), so the box never sits unread on one step.
-	var waits := String(s["until"]) == "" or page < all.size() - 1
+	# M14 12Q-ACCESS (L81): not under high contrast: the pulse dips Next's alpha, and its words
+	# under 7:1 (4.42:1 caught mid-pulse); Next stays whole, its tip says what moves it on.
+	var waits := (String(s["until"]) == "" or page < all.size() - 1) and not HighContrast.on()
 	if waits and (_pulse == null or not _pulse.is_valid()):
 		_pulse = Motion.loop_pulse(next_button, ^"modulate:a", &"tutorial_next_pulse")
 	elif not waits:
 		Motion.stop(next_button)
+		next_button.modulate.a = 1.0
 		_pulse = null
 
 

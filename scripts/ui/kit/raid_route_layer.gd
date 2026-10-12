@@ -38,6 +38,10 @@ var wipe_u: float:
 		_mv.put(&"wipe_u", v)
 var _mv := MotionValues.new({&"write_u": 1.0, &"wipe_u": 0.0})
 var _pool: RaidPencilPool = null
+## M14 12Q-HQ: where the pencil is laid (null: the scene's raid pencil layer, over every UI). A
+## page that keeps its map marks under its own panels (the HQ: its terminals over the routes)
+## gives a Control in its draw order; the pool maps the global points into it.
+var pool_host: Control = null
 ## The signature the pencil was last laid for (0: lay at the next frame).
 var _laid_sig: int = 0
 
@@ -148,7 +152,16 @@ func _lay() -> void:
 			_pool.end()
 		return
 	if _pool == null:
-		_pool = RaidPencilPool.make(self)
+		if pool_host != null and is_instance_valid(pool_host):
+			_pool = RaidPencilPool.new()
+			pool_host.add_child(_pool)
+		else:
+			_pool = RaidPencilPool.make(self)
+	if pool_host != null and is_instance_valid(pool_host) and _pool.get_parent() == pool_host:
+		# The points are global px: the pool undoes its host's canvas transform (a page that slides).
+		var undo := pool_host.get_global_transform_with_canvas().affine_inverse()
+		if _pool.transform != undo:
+			_pool.transform = undo
 	# M14 perf slice: the pencil is laid again only when something it shows changed (the routes,
 	# the progress, the map's camera, the text size); at rest the marks stay as laid.
 	var sig := lay_signature()
@@ -157,6 +170,7 @@ func _lay() -> void:
 	_laid_sig = sig
 	_pool.begin()
 	var threat := GreasePencilMark.Ink.THREAT
+	var cues := RaidPencil.hostile_cues()
 	for i in routes.size():
 		var street := path_points(routes[i])
 		if street.size() < 2:
@@ -164,10 +178,19 @@ func _lay() -> void:
 		var hand := PencilShapes.snap_to(RaidPencil.roughen(street, 31 + i, GreasePencilMark.stroke_width() * 0.4, GreasePencilMark.stroke_width() * 3.0), street)
 		var strokes := PencilShapes.arrow(hand, GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN, 31 + i)
 		_pool.stroke("route_%d" % i, strokes, threat, write_u, wipe_u, false, 31 + i)
+		if cues:
+			# M14 12Q-RAID: the colour-blind setting's barbed line (hostile by shape, RaidPencil).
+			var w := GreasePencilMark.stroke_width()
+			_pool.stroke("ticks_%d" % i, RaidPencil.hazard_ticks(hand, w * RaidPencil.TICK_STEP, w * RaidPencil.TICK_HALF), threat, write_u, wipe_u, false, 131 + i)
 	for i in what_if.size():
 		var street := path_points(what_if[i])
 		if street.size() >= 2:
 			_pool.stroke("whatif_%d" % i, PencilShapes.arrow(street, GreasePencilMark.stroke_width() * RaidPencil.HEAD_LEN, 71 + i), threat, 1.0, 0.0, true, 71 + i)
+			if cues:
+				# M14 12Q-ACCESS (L79): the HQ's what-if route carries the barbed line too (the Grid's
+				# pending raid read red-on-lime alone with the colour-blind setting on).
+				var w := GreasePencilMark.stroke_width()
+				_pool.stroke("whatif_ticks_%d" % i, RaidPencil.hazard_ticks(street, w * RaidPencil.TICK_STEP, w * RaidPencil.TICK_HALF), threat, 1.0, 0.0, false, 171 + i)
 	var ids := letters.keys()
 	ids.sort()
 	for id in ids:
@@ -178,6 +201,8 @@ func _lay() -> void:
 		var seed := String(id).hash()
 		_pool.stroke("entry_%s" % id, [PencilShapes.hand_circle(c, ENTRY_R, seed)], threat, u, wipe_u, false, seed)
 		_pool.word("letter_%s" % id, String(letters[id]), c + LETTER_OFF, LETTER_STEP, threat, 1.0, u, wipe_u, -0.08)
+		if cues:
+			_pool.stroke("reticle_%s" % id, RaidPencil.reticle_ticks(c, ENTRY_R), threat, u, wipe_u, false, seed + 1)
 	_pool.end()
 
 
@@ -195,7 +220,7 @@ func lay_signature() -> int:
 	ids.sort()
 	for id in ids:
 		anchors.append(RaidMapAnchor.site(overlay, id))
-	return hash([routes, what_if, ids, letters.values(), write_u, wipe_u, anchors, Settings.text_scale, size])
+	return hash([routes, what_if, ids, letters.values(), write_u, wipe_u, anchors, Settings.text_scale, size, RaidPencil.hostile_cues()])
 
 
 ## The entry letters drawn (Site id -> letter; tests).

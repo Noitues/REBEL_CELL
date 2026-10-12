@@ -33,6 +33,8 @@ const COST_PX := 30.0
 const TITLE_AT := Vector2(127, 30)
 const TITLE_W := 126.0
 const TITLE_PX := 23.0
+## G2R2-c: px (x text scale) the title keeps from the edge of the card lying over its right side.
+const TITLE_TUCK_GAP := 3.0
 const ART := Rect2(14, 52, 182, 102)
 const ART_GLYPH := 0.74
 const BAND := Rect2(14, 154, 182, 24)
@@ -231,6 +233,33 @@ static func key_text(card: ZineCard) -> String:
 	return "[%s]" % key if key != "" else ""
 
 
+## G2R2-c: where the title is drawn: {at (centre, card px), fs (font px), rect (the ink's box, card px)}. The title
+## shrinks to its room, which stops short of the card lying over the right edge in a fanned hand (`tucked`).
+static func title_layout(card: ZineCard) -> Dictionary:
+	var display := Palette.display()
+	var size := card.size
+	var title := card.card_title.to_upper()
+	var title_at := at_px(card, TITLE_AT)
+	var tw := TITLE_W * size.x / UNIT.x
+	if card.tucked > 0.0:
+		var left := title_at.x - tw * 0.5
+		var right := minf(title_at.x + tw * 0.5, size.x * (1.0 - card.tucked) - TITLE_TUCK_GAP * card.text_scale)
+		tw = right - left
+		title_at.x = (left + right) * 0.5
+	var tfs := font_px(card, TITLE_PX)
+	while tfs > 9 and display.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, tfs).x > tw:
+		tfs -= 1
+	var w := display.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, tfs).x
+	var h := display.get_height(tfs)
+	return {"at": title_at, "fs": tfs, "rect": Rect2(title_at.x - w * 0.5, title_at.y - h * 0.5, w, h)}
+
+
+## The RAM cost dot's box (card px).
+static func cost_rect(card: ZineCard) -> Rect2:
+	var cr := COST_R * card.size.x / UNIT.x
+	return Rect2(at_px(card, COST_AT) - Vector2(cr, cr), Vector2(cr, cr) * 2.0)
+
+
 ## Draws the card's face (the caller has set the hover / lift transform).
 static func draw(card: ZineCard) -> void:
 	var s := card.text_scale
@@ -262,12 +291,8 @@ static func draw(card: ZineCard) -> void:
 		var cfs := font_px(card, COST_PX * (0.8 if card.cost >= 10 else 1.0))
 		_centred(card, display, cc, str(card.cost), cfs, Palette.INK)
 	# The title, centred right of the cost dot, shrinking to fit.
-	var title := card.card_title.to_upper()
-	var tw := TITLE_W * size.x / UNIT.x
-	var tfs := font_px(card, TITLE_PX)
-	while tfs > 9 and display.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, tfs).x > tw:
-		tfs -= 1
-	_centred(card, display, at_px(card, TITLE_AT), title, tfs, Palette.PAPER)
+	var tl := title_layout(card)
+	_centred(card, display, tl["at"], card.card_title.to_upper(), int(tl["fs"]), Palette.PAPER)
 	# The art: the first pictogram's glyph, big in the panel.
 	var art := Rect2(at_px(card, ART.position), ART.size * size / UNIT)
 	var offer := MainframeArt.tex(card.offer_art) if card.offer_art != "" else null
@@ -297,8 +322,7 @@ static func draw(card: ZineCard) -> void:
 			var lw := display.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			if x + lw > size.x - 4.0:
 				break
-			card.draw_string_outline(display, Vector2(x, py + fs * 0.36), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(2, roundi(fs * 0.12)), Palette.INK)
-			card.draw_string(display, Vector2(x, py + fs * 0.36), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER)
+			HighContrast.draw_text(card, display, Vector2(x, py + fs * 0.36), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER, maxi(2, roundi(fs * 0.12)), Palette.INK)
 			x += lw + 6.0 * s
 		if x > size.x - pic:
 			break
@@ -314,14 +338,18 @@ static func draw(card: ZineCard) -> void:
 		var y := float(fit["top"]) + i * float(fit["line"]) + bfs * TEXT_BASE
 		var rw: float = (fit["widths"] as PackedFloat32Array)[i]
 		# S-CARDFACE b: an ink outline keeps small words legible where the face's gloss streak crosses them
-		card.draw_string_outline(body, Vector2((size.x - rw) * 0.5, y), t, HORIZONTAL_ALIGNMENT_CENTER, rw, bfs, TEXT_OUTLINE, Color(Palette.INK, TEXT_OUTLINE_ALPHA))
-		card.draw_string(body, Vector2((size.x - rw) * 0.5, y), t, HORIZONTAL_ALIGNMENT_CENTER, rw, bfs, Palette.TEXT_HI)
+		# M14 12Q-ACCESS (L78): high contrast backs the rules text with an opaque plate and a thick
+		# outline (7:1 whatever the face's art and gloss behind).
+		if HighContrast.on():
+			var pad := float(HighContrast.outline_px(bfs)) * 0.5
+			card.draw_rect(Rect2((size.x - rw) * 0.5 - pad, y - body.get_ascent(bfs) - pad, rw + pad * 2.0, body.get_height(bfs) + pad * 2.0), HighContrast.BG)
+		HighContrast.draw_text(card, body, Vector2((size.x - rw) * 0.5, y), t, HORIZONTAL_ALIGNMENT_CENTER, rw, bfs, Palette.TEXT_HI, TEXT_OUTLINE, Color(Palette.INK, TEXT_OUTLINE_ALPHA))
 	# The key hint on a dark chip at the art panel's corner.
 	var kr := key_rect(card)
 	if kr.has_area():
 		var kfs := maxi(1, roundi(KEY_PX * s))
-		card.draw_rect(kr, Color(Palette.INK, KEY_CHIP_ALPHA))
-		card.draw_string(Palette.marker(), Vector2(kr.position.x + KEY_PAD * s, kr.position.y + (kr.size.y + Palette.marker().get_ascent(kfs) - Palette.marker().get_descent(kfs)) * 0.5),
+		card.draw_rect(kr, HighContrast.plate(Color(Palette.INK, KEY_CHIP_ALPHA)))
+		HighContrast.draw_text(card, Palette.marker(), Vector2(kr.position.x + KEY_PAD * s, kr.position.y + (kr.size.y + Palette.marker().get_ascent(kfs) - Palette.marker().get_descent(kfs)) * 0.5),
 			key_text(card), HORIZONTAL_ALIGNMENT_LEFT, -1, kfs, Palette.TEXT_HI)
 	# B2 (art director, bible 2.10): focus is the kit's lime corner brackets round the die-cut and
 	# the hover lift (`card_hover`, 18 px at 1080p), never a lime fill behind the card.
@@ -350,7 +378,7 @@ static func draw_need(ci: CanvasItem, card: ZineCard) -> void:
 	var tag := Rect2(Vector2(cc.x - cr, cc.y + cr + 3.0), Vector2(nw + ZineCard.NEED_PAD * 2.0, nfs * 1.3))
 	ci.draw_rect(tag.grow(2.0), Palette.PAPER)
 	ci.draw_rect(tag, Palette.HARM)
-	ci.draw_string(display, tag.position + Vector2(ZineCard.NEED_PAD, nfs * 1.0), word, HORIZONTAL_ALIGNMENT_LEFT, -1, nfs, Palette.PAPER)
+	HighContrast.draw_text(ci, display, tag.position + Vector2(ZineCard.NEED_PAD, nfs * 1.0), word, HORIZONTAL_ALIGNMENT_LEFT, -1, nfs, Palette.PAPER)
 
 
 ## A pictogram's value as drawn next to its glyph.
@@ -371,4 +399,4 @@ static func _label(p: Dictionary) -> String:
 
 static func _centred(ci: CanvasItem, font: Font, at: Vector2, text: String, fs: int, col: Color) -> void:
 	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	ci.draw_string(font, Vector2(at.x - w * 0.5, at.y + (font.get_ascent(fs) - font.get_descent(fs)) * 0.5), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	HighContrast.draw_text(ci, font, Vector2(at.x - w * 0.5, at.y + (font.get_ascent(fs) - font.get_descent(fs)) * 0.5), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)

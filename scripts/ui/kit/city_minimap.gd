@@ -200,9 +200,9 @@ func _draw_map() -> void:
 	var hint := UiTip.for_input(CityMapOverlay.tr_word("DRAG / WASD"), CityMapOverlay.tr_word("RIGHT STICK"))
 	var hw := f.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 	# The hint sits on the title line, right-aligned (drawn from the map's layer).
-	_map.draw_string(f, Vector2(_map.size.x - hw, -_map.position.y + f.get_ascent(px) + PAD.y * 0.5), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(Palette.TERMINAL_TEXT, 0.7))
+	HighContrast.draw_text(_map, f, Vector2(_map.size.x - hw, -_map.position.y + f.get_ascent(px) + PAD.y * 0.5), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(Palette.TERMINAL_TEXT, 0.7))
 	var key := CityMapOverlay.tr_word("lime=you red=target box=view")
-	_map.draw_string(f, Vector2(0, _map.size.y + f.get_ascent(px) + 2.0), key, HORIZONTAL_ALIGNMENT_LEFT, _map.size.x, px, Color(Palette.TERMINAL_TEXT, 0.6))
+	HighContrast.draw_text(_map, f, Vector2(0, _map.size.y + f.get_ascent(px) + 2.0), key, HORIZONTAL_ALIGNMENT_LEFT, _map.size.x, px, Color(Palette.TERMINAL_TEXT, 0.6))
 
 
 func _gui_input(event: InputEvent) -> void:

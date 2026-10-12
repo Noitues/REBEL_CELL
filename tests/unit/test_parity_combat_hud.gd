@@ -298,7 +298,9 @@ func test_the_turn_strip_says_where_the_fight_is_and_fits() -> void:
 		assert_string_contains(scene._address.text, scene._name_of(scene.engine.state().enemies[0]).to_upper(), "x%.1f: the enemy stays on it" % scale)
 		var fs: int = scene._address.get_theme_font_size("font_size")
 		var w := HudSkin.mono().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		var min_fs := int((scene.get_script() as Script).get_script_constant_map()["ADDRESS_MIN_FONT"])
+		# M14 12Q-WORDS: the address steps down the type scale (ADDRESS_STEPS), its last step is the floor.
+		var steps: Array = (scene.get_script() as Script).get_script_constant_map()["ADDRESS_STEPS"]
+		var min_fs := UiTheme.font_px(int(steps[steps.size() - 1]))
 		assert_true(w <= scene._address.size.x + 1.0 or fs == min_fs, "x%.1f: the address fits its strip (%.0f in %.0f)" % [scale, w, scene._address.size.x])
 		assert_false(scene._status.visible, "the key hints are the strip's tooltip, not a line")
 		assert_string_contains(scene._banner.tooltip_text, Settings.key_text(&"toggle_nudge_wheel"))

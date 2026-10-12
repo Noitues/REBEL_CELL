@@ -13,18 +13,27 @@ const CARD_W := 320.0
 const HEAD_H := 56.0
 const NAME_X := 62.0
 const SIGIL_R := 24.0
+## M14 12Q-MAIN: the gap kept between the tray and the screen piece it stands beside (px).
+const CLEAR_GAP := 8.0
+## The screen's edge margin the tray keeps (px).
+const EDGE := 10.0
 
 var ids: Array[StringName] = []
 var lookup: ContentLookup
 var _strip: PanelContainer
 var _card: TerminalWindow = null
 var _card_id: StringName = &""
+## M14 12Q-MAIN (audit L44: the strip and the card sat over the ROUTE window, hiding GRID VIEW and Save &
+## quit): a screen rect (global) the strip and the card stand beside, never over; empty for none.
+var keep_clear: Rect2 = Rect2()
 
 
-## `owner_name` (the operative whose Daemons these are) leads the strip when given.
-func _init(p_ids: Array[StringName], p_lookup: ContentLookup, anchor_x: float, owner_name: String = "") -> void:
+## `owner_name` (the operative whose Daemons these are) leads the strip when given; `p_keep_clear`
+## (global) is a piece of the screen the tray stands beside (the ROUTE window).
+func _init(p_ids: Array[StringName], p_lookup: ContentLookup, anchor_x: float, owner_name: String = "", p_keep_clear: Rect2 = Rect2()) -> void:
 	ids = p_ids
 	lookup = p_lookup
+	keep_clear = p_keep_clear
 	name = "DaemonTray"
 	# H24 S4: its words come translated (tr, TextDb) and show as given.
 	TextDb.shown_as_given(self)
@@ -71,6 +80,8 @@ func _init(p_ids: Array[StringName], p_lookup: ContentLookup, anchor_x: float, o
 
 
 func _ready() -> void:
+	_strip.resized.connect(_clear_strip)
+	_clear_strip.call_deferred()
 	UiFocus.hold(self)  # modal for keys and the pad (H20)
 	UiFocus.focus_first.call_deferred(_strip)
 	# ART-0 F (ported from art-pass W8a, §10): a modal: it opens with the modal motion and a
@@ -99,7 +110,7 @@ func show_card(id: StringName, pinned: bool) -> void:
 		var fs := UiTheme.font_px(UiTheme.TITLE)
 		DaemonSigil.draw_sigil(head, Vector2(HEAD_H, HEAD_H) * s * 0.5, SIGIL_R * s, id, d.rarity if d != null else RC.Rarity.UNCOMMON)
 		var f := Palette.display()
-		head.draw_string(f, Vector2(NAME_X * s, (head.size.y + f.get_ascent(fs) - f.get_descent(fs)) * 0.5), title.to_upper(),
+		HighContrast.draw_text(head, f, Vector2(NAME_X * s, (head.size.y + f.get_ascent(fs) - f.get_descent(fs)) * 0.5), title.to_upper(),
 			HORIZONTAL_ALIGNMENT_LEFT, head.size.x - NAME_X * s, fs, Palette.PAPER))
 	_card.body.add_child(head)
 	var desc := Label.new()
@@ -111,6 +122,28 @@ func show_card(id: StringName, pinned: bool) -> void:
 	desc.text = TextDb.t(d, "description") if d != null else String(id)
 	_card.body.add_child(desc)
 	add_child(_card)
+	_card.resized.connect(_clear_card.bind(_card))
+	_clear_card.call_deferred(_card)
+
+
+## M14 12Q-MAIN (audit L44): `rect` moved left so it stands beside `keep_clear` (its right edge before
+## the clear rect's left) when it would cover it; kept on screen.
+func beside_clear(rect: Rect2) -> Rect2:
+	if not keep_clear.has_area() or not rect.intersects(keep_clear):
+		return rect
+	rect.position.x = maxf(EDGE, keep_clear.position.x - CLEAR_GAP - rect.size.x)
+	return rect
+
+
+func _clear_strip() -> void:
+	if is_instance_valid(_strip):
+		_strip.position = beside_clear(Rect2(_strip.position, _strip.size)).position
+
+
+func _clear_card(card: Control) -> void:
+	if is_instance_valid(card) and is_instance_valid(_strip):
+		var r := Rect2(Vector2(minf(_strip.position.x, 1270.0 - card.size.x), card.position.y), card.size)
+		card.position = beside_clear(r).position
 
 
 func _gui_input(event: InputEvent) -> void:

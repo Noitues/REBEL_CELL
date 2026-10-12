@@ -144,6 +144,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 (same road as choice %d),(same road as choice %d)
 "(seed %d): %d Schematics, %d rookies.","(seed %d): %d Schematics, %d rookies."
 "(seed %d, ICE %d, %s) against %s. Story path: %s.","(seed %d, ICE %d, %s) against %s. Story path: %s."
++%d >,+%d >
 +%d BLOCK,+%d BLOCK
 +%d DRONE,+%d DRONE
 +%d EVADE,+%d EVADE
@@ -170,6 +171,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 2× NUDGE CARDS NEXT,2× NUDGE CARDS NEXT
 4x,4x
 ": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next",": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next"
+< +%d,< +%d
 = %s HP  (%d -> %d),= %s HP  (%d -> %d)
 > %s  %s,> %s  %s
 > CHOOSE,> CHOOSE
@@ -1575,6 +1577,7 @@ MARKET,MARKET
 MINI BOSS,MINI BOSS
 MINIMAP,MINIMAP
 MORE,MORE
+MORE ABOVE,MORE ABOVE
 MORE BELOW,MORE BELOW
 MOST TROUBLESOME -> %s,MOST TROUBLESOME -> %s
 Main menu,Main menu
@@ -1585,6 +1588,7 @@ Manifest closed: every node repossessed under freight lien.,Manifest closed: eve
 Map legend on the city views,Map legend on the city views
 Master volume,Master volume
 More on the next page: press NEXT.,More on the next page: press NEXT.
+More sections this way: the tabs scroll to them.,More sections this way: the tabs scroll to them.
 Move it to %s.,Move it to %s.
 Music volume,Music volume
 NEED %d,NEED %d
@@ -3084,16 +3088,19 @@ The Armory is empty: runs bank defence assets from their drops.,The Armory is em
 "The Armory: defence assets banked from runs, deployed on your nodes in raid setup.","The Armory: defence assets banked from runs, deployed on your nodes in raid setup."
 The Cell never sleeps. Every word grows with this.,The Cell never sleeps. Every word grows with this.
 The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.,The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.
+The Heat terminal's next page: the rest of its rows.,The Heat terminal's next page: the rest of its rows.
 The boosts bought for the next run. Drag a boost here to buy it.,The boosts bought for the next run. Drag a boost here to buy it.
 The boosts bought for the next run. Pick a boost up and move it here to buy it.,The boosts bought for the next run. Pick a boost up and move it here to buy it.
 "The campaign against %s ends here, with everything in it:","The campaign against %s ends here, with everything in it:"
 "The campaign in slot %s is lost for good, with everything in it:","The campaign in slot %s is lost for good, with everything in it:"
 The campaign's numbers: they stay between runs.,The campaign's numbers: they stay between runs.
+The card's next page: the rest of its rows and actions.,The card's next page: the rest of its rows and actions.
 "The city: click a Site to select it; the wheel zooms, a drag pans.","The city: click a Site to select it; the wheel zooms, a drag pans."
 The city: left and right step through the Sites; down to the hand.,The city: left and right step through the Sites; down to the hand.
 The corporation's core. The breach needs %d Exploits.,The corporation's core. The breach needs %d Exploits.
 The crew still standing.,The crew still standing.
 "The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead centre).","The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead centre)."
+The hand's next page: the rest of the cards and offers.,The hand's next page: the rest of the cards and offers.
 The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.,The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.
 The home server fell: the campaign is lost.,The home server fell: the campaign is lost.
 The home server is BREACHED. Campaign lost.,The home server is BREACHED. Campaign lost.
@@ -3109,6 +3116,7 @@ The seed builds the campaign's city and runs: the same seed gives the same campa
 "The turn, and the free nudges left this turn (each extra nudge costs RAM).","The turn, and the free nudges left this turn (each extra nudge costs RAM)."
 Then you can go to: %s.,Then you can go to: %s.
 "There is more further down this page: scroll, or press this.","There is more further down this page: scroll, or press this."
+"There is more further up this page: scroll, or press this.","There is more further up this page: scroll, or press this."
 This Site's Heat objective is switched off at this ICE level.,This Site's Heat objective is switched off at this ICE level.
 "This is your CORE, your home server: you defend it in raids; you never run it.","This is your CORE, your home server: you defend it in raids; you never run it."
 "This run's numbers: the operative's HP, the Cycles to spend, the deck, rank and what the run has banked.","This run's numbers: the operative's HP, the Cycles to spend, the deck, rank and what the run has banked."

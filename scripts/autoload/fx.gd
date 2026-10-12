@@ -66,7 +66,8 @@ const NOTE_TILT := -4.0
 const NOTE_RULE := 4
 const NOTE_PAD := 14
 ## The CONNECTING line's lettering at text scale 1.0 and the bar's height and gap (px).
-const CONNECT_FONT := 20
+## M14 12Q-WORDS (lint L65): on the type scale (title step; it was 20, off the scale).
+const CONNECT_FONT := UiTheme.TITLE
 const CONNECT_BAR_H := 4.0
 const CONNECT_GAP := 12.0
 ## ANIM-R6 B13: the destination's own line under CONNECTING TO: large, bright, with the
@@ -262,6 +263,7 @@ func _process(_delta: float) -> void:
 func show_saved() -> void:
 	saved_label.text = tr("SAVED")
 	saved_label.modulate.a = 0.0
+	_saved_look()
 	if _saved_tween != null and _saved_tween.is_valid():
 		_saved_tween.kill()
 	_saved_live = false
@@ -279,13 +281,25 @@ func show_saved() -> void:
 	_saved_live = true
 	var e := Motion.entry(&"saved_stamp")
 	_saved_tween = create_tween()
-	if Motion.live(&"saved_stamp"):
+	if Motion.live(&"saved_stamp") and not HighContrast.on():
 		_saved_tween.tween_property(saved_label, "modulate:a", 0.0, Motion.seconds(&"saved_stamp")).set_delay(Motion.delay_of(&"saved_stamp")).set_ease(e.ease).set_trans(e.trans)
 	else:
 		# ANIM-R1 M3: no fade when the entry is off (or no motion plays): the stamp shows
-		# still for its hold and fade time, then goes at once.
+		# still for its hold and fade time, then goes at once. M14 12Q-ACCESS (L80): high
+		# contrast too: a fading stamp passed through 1.1:1 (readable or not shown).
 		_saved_tween.tween_interval(Motion.delay_of(&"saved_stamp") + Motion.seconds(&"saved_stamp"))
 		_saved_tween.tween_callback(func() -> void: saved_label.modulate.a = 0.0)
+
+
+## M14 12Q-ACCESS (L80): the stamp's lettering for the current settings: the Cell's pink on its
+## dark keyline, or under high contrast the high-contrast text white on an opaque BG keyline at
+## least HighContrast.outline_px thick (the pink, lifted to 7:1 on black, read 4.3:1 on the city).
+func _saved_look() -> void:
+	var hc := HighContrast.on()
+	saved_label.add_theme_color_override("font_color", HighContrast.TEXT if hc else Palette.CELL_PINK)
+	saved_label.add_theme_color_override("font_outline_color", HighContrast.BG if hc else SAVED_KEYLINE)
+	var outline := maxi(SAVED_OUTLINE, HighContrast.outline_px(UiTheme.font_px(SAVED_FONT))) if hc else SAVED_OUTLINE
+	saved_label.add_theme_constant_override("outline_size", outline)
 
 
 ## The stamp is up and follows the layout (H24 S7), and its fade.
@@ -303,7 +317,8 @@ func saved_showing() -> bool:
 
 
 ## The SAVED stamp's lettering at text scale 1.0 and its margin from the screen edge (px).
-const SAVED_FONT := 20
+## M14 12Q-WORDS (lint L65): on the type scale (title step; it was 20, off the scale).
+const SAVED_FONT := UiTheme.TITLE
 ## ART-6 3A: its dark keyline (px) and colour, so it reads over any page and in greyscale.
 const SAVED_OUTLINE := 6
 const SAVED_KEYLINE := Color(Palette.NIGHT_SKY, 0.9)
@@ -321,7 +336,7 @@ const SAVED_SCREEN_MAX := 16384.0
 func place_saved(screen: Rect2 = Rect2()) -> Rect2:
 	if not screen.has_area():
 		screen = get_viewport().get_visible_rect()
-	var fs := roundi(SAVED_FONT * Settings.text_scale)
+	var fs := UiTheme.font_px(SAVED_FONT)
 	saved_label.add_theme_font_size_override("font_size", fs)
 	saved_label.size = Vector2.ZERO
 	var own := saved_label.get_combined_minimum_size()
@@ -454,6 +469,8 @@ static func stickers_outside_safe(root: Node, screen: Rect2) -> Array:
 	return out
 ## ANIM-R3 B13: the step of the whole-screen grid tried after the edges (px).
 const SAVED_INNER_STEP := 40.0
+## M14 12Q-MENUS: meta on a control the SAVED stamp never covers though it is no button (a pad prompt pair).
+const META_SAVED_AVOID := &"saved_avoid"
 
 
 ## Screen rects of the controls on screen under `root` the stamp must not cover: usable
@@ -496,12 +513,19 @@ func _collect_avoid(node: Node, out: Array[Rect2]) -> void:
 			# buttons: SAVED landed on SKIP).
 			# S-COMBAT-HUD (parity CMB-08): and the fight's RAM panel and name sticker (SAVED sat inside
 			# the RAM plate).
-			if usable or c is MapLegend or c is RouteLegend or c is PadPrompts or c is RaidSpeedStrip or c is RamBar or c is HudNameSticker:
+			# M14 12Q-MENUS (QA matrix P3: SAVED sat on the title's ON AIR ticker and on a page's "back" prompt): and
+			# the ticker and every pad prompt pair (PadPrompts.make_pair marks them META_SAVED_AVOID).
+			if usable or c is MapLegend or c is RouteLegend or c is PadPrompts or c is RaidSpeedStrip or c is RamBar or c is HudNameSticker \
+					or c is OnAirTicker or c.has_meta(META_SAVED_AVOID):
 				var r := _shown_rect(c)
+				if c is MapLegend and c.top_level:
+					# G2R-7: a top-level key (the raid setup's, in the top bar) is not under its page's scroll and draws
+					# as its folded chip: that chip's rect, not the scroll-clipped one.
+					r = Rect2(c.global_position, (c as MapLegend).fit_size())
 				if r.has_area():
 					# B5 (art director, D8): a sticker's die-cut border, shadow and tilt reach past its control rect
 					# (SAVED sat against CONTINUE): the stamp keeps a sticker's clearance from it.
-					if c is HoloSticker or c is VerbSticker:
+					if c is HoloSticker or c is VerbSticker or c is MapLegend:  # G2R-7: the MAP KEY chip too (its border and glow reach past the control)
 						r = r.grow(SAVED_STICKER_CLEAR * Settings.text_scale)
 					out.append(r)
 				if usable:
@@ -765,7 +789,7 @@ func jack_out(on_switch: Callable, seconds: float = -1.0, destination: String = 
 ## only when the line may animate (reduce effects: the words alone).
 func _show_connect() -> void:
 	var vp := get_viewport().get_visible_rect().size
-	var fs := roundi(CONNECT_FONT * Settings.text_scale)
+	var fs := UiTheme.font_px(CONNECT_FONT)
 	connect_label.add_theme_font_size_override("font_size", fs)
 	connect_label.text = tr("CONNECTING TO") if _destination != "" else tr("CONNECTING")
 	_show_note(vp)

@@ -60,6 +60,7 @@ static func make_pair(button: int, verb: String) -> HBoxContainer:
 	var pair := HBoxContainer.new()
 	pair.name = "Prompt"
 	pair.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pair.set_meta(Fx.META_SAVED_AVOID, true)  # M14 12Q-MENUS: the SAVED stamp keeps off a prompt
 	pair.add_theme_constant_override("separation", roundi(GLYPH_GAP * Settings.text_scale))
 	var g := PadGlyph.new(button)
 	g.size_flags_vertical = Control.SIZE_SHRINK_CENTER

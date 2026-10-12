@@ -31,6 +31,7 @@ const COMBAT := preload("res://scenes/combat/combat_scene.tscn")
 const NETRUN := preload("res://scenes/netrun_map/netrun_scene.tscn")
 const FILTER_SHADER := preload("res://tools/visual_qa/cvd_filter.gdshader")
 const ErrorLog := preload("res://tools/visual_qa/review_pack_log.gd")
+const ClutterFixture := preload("res://tools/visual_qa/clutter_fixture.gd")
 
 const SLOT := "gut_review_pack"
 const SAVE_DIR := "user://saves/review_pack"
@@ -141,6 +142,7 @@ const SCREENS := [
 	["combat_refused", "_s_combat_refused", "A respin refused for lack of RAM."],
 	["combat_boss_p2", "_s_combat_boss_p2", "Boss fight in phase 2."],
 	["combat_boss_p3", "_s_combat_boss_p3", "Boss fight in phase 3."],
+	["combat_clutter", "_s_combat_clutter", "ART-2 acceptance: the worst-case clutter fixture (arena_lab worst: every slot docked on both wheels, Firmware everywhere, every Daemon, the docks bloomed, a card hovered)."],
 	["combat_victory", "_s_combat_victory", "The killing turn: VICTORY."],
 	["combat_defeat", "_s_combat_defeat", "The losing turn: DEFEAT."],
 	["loot", "_s_loot", "Picking a card reward."],
@@ -1182,6 +1184,9 @@ func _s_raid_playout() -> void:
 	await _frames(2)
 	if hq.playout != null:
 		await _until(func() -> bool: return not is_instance_valid(hq.playout) or hq.playout.current_step() >= MID_PLAYOUT_STEP, "playout step %d" % MID_PLAYOUT_STEP)
+	# M14 12Q-RAID: START DEFENSE's peel (~0.3 s) has gone: step 2 comes a couple of frames in, and
+	# the picture caught the peel's first frame as if the setup's sticker stayed over the playout.
+	await _until(func() -> bool: return hq.get_node_or_null(^"StartPeel") == null, "the START DEFENSE peel")
 
 
 func _s_raid_result() -> void:
@@ -1237,6 +1242,7 @@ func _s_raid_incoming() -> void:
 	var layer: RaidIncoming = net.get_node_or_null("RaidIncoming") as RaidIncoming
 	if layer == null:
 		_warnings.append("no INCOMING layer (motion off?)")
+		await _settle(net)  # M14 12Q-RAID: the page as it stands (it was caught on its first frame)
 		return
 	# Held mid-way for the picture (the plate and the word at full, the bits in flight).
 	var tw: Tween = layer.get(&"_tween")
@@ -1251,6 +1257,9 @@ func _s_raid_interlude() -> void:
 	DemoSetup.queue_raid_interlude(RunManager.netrun, RunManager.config())
 	net._show_current()
 	await _until(func() -> bool: return net.arrival_ready(), "the interlude camera")
+	# M14 12Q-RAID: the INCOMING transition has played (the 20 s the pack waited on the 3D city's
+	# wrong "old look" flag used to cover it).
+	await _until(func() -> bool: return net.get_node_or_null(^"RaidIncoming") == null, "the INCOMING transition")
 	await _settle(net)
 
 
@@ -1367,6 +1376,15 @@ func _s_combat_boss_p2() -> void:
 
 func _s_combat_boss_p3() -> void:
 	await _boss_phase(BOSS_P3_SHARE)
+
+
+## ART-2 acceptance: the boss fight dressed as the worst-case clutter fixture (ClutterFixture).
+func _s_combat_clutter() -> void:
+	var combat := await _boss_fight()
+	if combat == null:
+		return
+	ClutterFixture.dress(combat)
+	await _settle(combat.get_parent())
 
 
 func _combat_end(kind: String) -> void:
@@ -2055,11 +2073,22 @@ func _text_record(c: Control, screen_rect: Rect2) -> Dictionary:
 
 
 ## The colour of the opaque box a Label draws behind its own words (a sticker's paper:
-## SAVED), or [] when it has none: the text's real background.
+## SAVED), or [] when it has none: the text's real background. M14 12Q-ACCESS (L83): a Button's
+## too (its box as drawn now: hovered, pressed or normal): the ring round a button's words fell on
+## its high-contrast edge (the cyan), not the black fill the words sit on.
 func _box_color(c: Control) -> Array:
-	if not (c is Label):
+	if not (c is Label or c is Button):
 		return []
-	var sb := c.get_theme_stylebox(&"normal") as StyleBoxFlat
+	var box_name := &"normal"
+	if c is Button:
+		var b := c as Button
+		if b.disabled:
+			box_name = &"disabled"
+		elif b.button_pressed or b.is_pressed():
+			box_name = &"pressed"
+		elif b.is_hovered():
+			box_name = &"hover"
+	var sb := c.get_theme_stylebox(box_name) as StyleBoxFlat
 	if sb == null or not sb.draw_center or sb.bg_color.a < 0.9:
 		return []
 	return [sb.bg_color.r, sb.bg_color.g, sb.bg_color.b]

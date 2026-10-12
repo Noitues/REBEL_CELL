@@ -53,6 +53,9 @@ const HOVER_SCALE := 1.75
 var hover_to: float = HOVER_SCALE
 ## B2 (D15): the fanned hand's arc rise (px up, drawn only) and whether the fan set the rest tilt.
 var fan_rise: float = 0.0
+## G2R2-c: the share of this card's width the next card in the fanned hand lies over (0 = none, the last card).
+## The face keeps its cost and title out of it (only the body lines' ends may tuck under, D15).
+var tucked: float = 0.0
 ## B2 (D15): the fan's angle for this card (degrees) and the turn drawn now (0 while lifted).
 var fan_deg: float = 0.0
 var fan_turn: float = 0.0:
@@ -334,9 +337,46 @@ func grown_shift() -> float:
 	if look != Look.STICKER or hover_scale <= 1.0 or not is_inside_tree():
 		return 0.0
 	var view := get_viewport_rect()
-	var half := size.x * hover_scale * (0.5 + CardFace.FACE_AT.x / CardFace.FACE.x)
+	var k := 0.5 + CardFace.FACE_AT.x / CardFace.FACE.x
 	var foot := get_global_transform() * Vector2(size.x * 0.5 + spread, size.y)
-	return maxf(0.0, view.position.x - (foot.x - half)) - maxf(0.0, (foot.x + half) - view.end.x)
+	return _edge_shift(foot.x, size.x * hover_scale * k, view) + _clear_shift(foot, k, view)
+
+
+## M14 12Q-MAIN (audit L50: the zoom covered the player's HP readout at 1.6 / 2.0): a global rect the
+## grown sticker stands beside, never over (`grown_clear_of` returns it; an empty rect for none).
+var grown_clear_of: Callable = Callable()
+## The gap kept between the grown sticker and that rect (px).
+const CLEAR_GAP := 8.0
+
+
+## How far (px) a sticker grown to half width `half` about foot x `foot_x` moves in to stay on screen.
+static func _edge_shift(foot_x: float, half: float, view: Rect2) -> float:
+	return maxf(0.0, view.position.x - (foot_x - half)) - maxf(0.0, (foot_x + half) - view.end.x)
+
+
+## M14 12Q-MAIN: how far (px) the grown sticker moves aside so its full growth (`hover_to`) clears
+## `grown_clear_of`'s rect: the nearer side that keeps it on screen, eased in with the growth.
+func _clear_shift(foot: Vector2, k: float, view: Rect2) -> float:
+	if not grown_clear_of.is_valid() or hover_to <= 1.0:
+		return 0.0
+	var clear: Rect2 = grown_clear_of.call()
+	if not clear.has_area():
+		return 0.0
+	var half := size.x * hover_to * k
+	var at := foot.x + _edge_shift(foot.x, half, view)
+	var top := foot.y - size.y * hover_to - lift - fan_rise
+	if at - half >= clear.end.x or at + half <= clear.position.x or top >= clear.end.y or foot.y <= clear.position.y:
+		return 0.0
+	var right := clear.end.x + CLEAR_GAP - (at - half)
+	var left := (at + half) - (clear.position.x - CLEAR_GAP)
+	var fits_right := at + right + half <= view.end.x
+	var fits_left := at - left - half >= view.position.x
+	var move := 0.0
+	if fits_right and (not fits_left or right <= left):
+		move = right
+	elif fits_left:
+		move = -left
+	return move * clampf((hover_scale - 1.0) / (hover_to - 1.0), 0.0, 1.0)
 
 
 ## ART-2 2D: how far a neighbour slides aside when the card `away` slots off is hovered
@@ -517,7 +557,7 @@ func _draw() -> void:
 		var w := Palette.display().get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var box := Rect2(Vector2(-w * 0.5 - 6.0, -fs * 0.7), Vector2(w + 12.0, fs * 1.3))
 		draw_rect(box, Palette.CELL_PINK, false, 3.0)
-		draw_string(Palette.display(), Vector2(-w * 0.5, fs * 0.36), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.CELL_PINK)
+		HighContrast.draw_text(self, Palette.display(), Vector2(-w * 0.5, fs * 0.36), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.CELL_PINK)
 		draw_set_transform(Vector2.ZERO)
 	match mark:
 		Mark.CROSS:
@@ -564,7 +604,7 @@ func _draw_tile() -> void:
 		draw_polyline(pts, sc, 1.5)
 		SliceIcon.draw_on_slice(self, icon_c + Vector2(0, -15), 11, slice_type, sc)
 		if slice_output > 0:
-			draw_string(Palette.display(), icon_c + Vector2(-20, 22), str(slice_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 20, Palette.PAPER)
+			HighContrast.draw_text(self, Palette.display(), icon_c + Vector2(-20, 22), str(slice_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 20, Palette.PAPER)
 	elif icon_kind == "shred":
 		_mini_card(icon_c + Vector2(0, -8), accent, false)
 		draw_rect(Rect2(icon_c + Vector2(-30, 10), Vector2(60, 12)), Palette.DESK_METAL)
@@ -584,14 +624,14 @@ func _draw_tile() -> void:
 		draw_rect(rect, Color(0, 0, 0, 0.55))
 	var name_lines := _wrap(card_title.to_upper(), 13)
 	for i in mini(name_lines.size(), 2):
-		draw_string(Palette.mono(), Vector2(4, 100 + i * 13), name_lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, 11, Palette.TERMINAL_TEXT)
+		HighContrast.draw_text(self, Palette.mono(), Vector2(4, 100 + i * 13), name_lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, 11, Palette.TERMINAL_TEXT)
 	if cost >= 0:
 		var price := "%d" % cost
 		var pw := Palette.mono().get_string_size(price, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
 		var px := size.x / 2.0 - (pw + 18) / 2.0
 		draw_arc(Vector2(px + 6, size.y - 15), 6, 0, TAU, 16, Palette.CELL_ACID, 1.5)
 		draw_circle(Vector2(px + 6, size.y - 15), 2, Palette.CELL_ACID)
-		draw_string(Palette.mono(), Vector2(px + 17, size.y - 10), price, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.CELL_ACID)
+		HighContrast.draw_text(self, Palette.mono(), Vector2(px + 17, size.y - 10), price, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.CELL_ACID)
 
 
 ## The reference's glowing Firmware chip: a die with pins and a circuit square inside.
@@ -624,7 +664,7 @@ func _mini_card(c: Vector2, col: Color, initials_on: bool = true) -> void:
 	for w in card_title.split(" "):
 		if w != "" and initials.length() < 2 and initials_on:
 			initials += w[0].to_upper()
-	draw_string(Palette.display(), Vector2(-22, 8), initials, HORIZONTAL_ALIGNMENT_CENTER, 40, 22, col.darkened(0.2))
+	HighContrast.draw_text(self, Palette.display(), Vector2(-22, 8), initials, HORIZONTAL_ALIGNMENT_CENTER, 40, 22, col.darkened(0.2))
 	draw_set_transform_matrix(_icon_xf)
 
 
@@ -759,7 +799,7 @@ func _draw_price_tag() -> void:
 	var coin := rt.position + Vector2(h * 0.45 + PRICE_COIN_R * s, h * 0.5)
 	StatIcon.draw(self, coin, PRICE_COIN_R * s, StatIcon.CYCLES, Palette.INK)
 	var fs := roundi(PRICE_FONT * s)
-	draw_string(Palette.display(), Vector2(coin.x + PRICE_COIN_R * s + 3.0 * s, rt.position.y + h * 0.5 + fs * 0.36), price_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.INK)
+	HighContrast.draw_text(self, Palette.display(), Vector2(coin.x + PRICE_COIN_R * s + 3.0 * s, rt.position.y + h * 0.5 + fs * 0.36), price_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.INK)
 
 
 ## Tiles at text scale 1.0 draw as before; at other scales, or with a buy sticker at the
@@ -905,7 +945,7 @@ func _draw_tile_scaled() -> void:
 		SliceIcon.draw_on_slice(self, icon_c + Vector2(0, -15), 11, slice_type, sc)
 		if slice_output > 0:
 			var vs := roundi(TILE_VALUE_SIZE * minf(s, TILE_VALUE_MAX_SCALE))
-			draw_string(Palette.display(), icon_c + Vector2(-20, 22), str(slice_output), HORIZONTAL_ALIGNMENT_CENTER, 40, vs, Palette.PAPER)
+			HighContrast.draw_text(self, Palette.display(), icon_c + Vector2(-20, 22), str(slice_output), HORIZONTAL_ALIGNMENT_CENTER, 40, vs, Palette.PAPER)
 	elif icon_kind == "shred":
 		_mini_card(icon_c + Vector2(0, -8), accent, false)
 		draw_rect(Rect2(icon_c + Vector2(-30, 10), Vector2(60, 12)), Palette.DESK_METAL)
@@ -922,14 +962,14 @@ func _draw_tile_scaled() -> void:
 		draw_rect(rect, Color(0, 0, 0, 0.55))
 	var mono := Palette.mono()
 	for i in shown:
-		draw_string(mono, Vector2(4, name_top + mono.get_ascent(fs) + i * line_h), lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.TERMINAL_TEXT)
+		HighContrast.draw_text(self, mono, Vector2(4, name_top + mono.get_ascent(fs) + i * line_h), lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.TERMINAL_TEXT)
 	if cost >= 0 and buy_button == null:
 		var pfs := roundi(14 * s)
 		var cost_text := "%d" % cost
 		var pw := Palette.mono().get_string_size(cost_text, HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x
 		var px := size.x / 2.0 - (pw + 18 * s) / 2.0
 		StatIcon.draw(self, Vector2(px + 6 * s, size.y - 15 * s), 6 * s, StatIcon.CYCLES, Palette.CELL_ACID)
-		draw_string(Palette.mono(), Vector2(px + 17 * s, size.y - 10 * s), cost_text, HORIZONTAL_ALIGNMENT_LEFT, -1, pfs, Palette.CELL_ACID)
+		HighContrast.draw_text(self, Palette.mono(), Vector2(px + 17 * s, size.y - 10 * s), cost_text, HORIZONTAL_ALIGNMENT_LEFT, -1, pfs, Palette.CELL_ACID)
 
 
 # --- H23 screens: chips say what they do, a buy button on every shop item ------------------
@@ -1002,7 +1042,7 @@ func _draw_chip_tile() -> void:
 	var lines: PackedStringArray = parts["lines"]
 	var names: Array[Rect2] = parts["names"]
 	for i in names.size():
-		draw_string(mono, Vector2(4, names[i].position.y + mono.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.TERMINAL_TEXT)
+		HighContrast.draw_text(self, mono, Vector2(4, names[i].position.y + mono.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.TERMINAL_TEXT)
 	var dfs: int = parts["dfs"]
 	var desc: PackedStringArray = parts["desc_lines"]
 	var rows_at: Array[Rect2] = parts["desc"]
@@ -1011,7 +1051,7 @@ func _draw_chip_tile() -> void:
 		var t := desc[i]
 		if i == rows - 1 and desc.size() > rows:
 			t = t.substr(0, maxi(0, t.length() - 1)) + "…"
-		draw_string(mono, Vector2(4, rows_at[i].position.y + mono.get_ascent(dfs)), t, HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, dfs, Color(Palette.TERMINAL_TEXT, 0.85))
+		HighContrast.draw_text(self, mono, Vector2(4, rows_at[i].position.y + mono.get_ascent(dfs)), t, HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, dfs, Color(Palette.TERMINAL_TEXT, 0.85))
 
 
 ## The chip's effect lines shown on the tile now (tests: at least one at every text size).

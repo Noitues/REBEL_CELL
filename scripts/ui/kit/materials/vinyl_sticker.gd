@@ -353,6 +353,7 @@ func _rebuild() -> void:
 	_glyphs.clear()
 	_lines_y.clear()
 	_baked = _art_override if not _art_override.is_empty() else (StickerArt.lookup(text) if use_baked_art and shape == Shape.WORD else {})
+	_fold_inset = 0.0
 	if _baked.has("scale"):
 		# A VerbSticker's concept art (it carries its own finish and shadow margin): drawn whole at its scale, the
 		# fold and the gloss on its opaque body.
@@ -363,6 +364,7 @@ func _rebuild() -> void:
 		body_pos = opaque.position * k  # the image has its own shadow margin: no pad
 		body_sz = opaque.size * k
 		_art_rect = Rect2(Vector2.ZERO, art)
+		_fold_inset = fold_inset(tex.get_image(), opaque, lifted_corner) * k
 	elif not _baked.is_empty():
 		# The art pass's own sticker, at the size this step letters its word.
 		var tex: Texture2D = _baked["tex"]
@@ -812,7 +814,40 @@ func band_share() -> float:
 ## The peel-back's fold leg in px (round 44: ~34 px at 1080p, 24 on short words; scales with the screen height and
 ## the text size, ~54 px at 1080p and text 1.6): from the `sticker_peel_back` entry.
 func peel_px() -> float:
-	return peel_leg(body_rect.size.x, get_viewport_rect().size.y if is_inside_tree() else 720.0)
+	return peel_leg(body_rect.size.x, get_viewport_rect().size.y if is_inside_tree() else 720.0) + _fold_inset
+
+
+## M14 12Q-MENUS (QA matrix P3: the pad's focus on BREACH read as no focus at all): a concept image's die-cut is
+## rounded inside its opaque rect, so the fold, measured from the rect's corner, mostly cut empty corner away and
+## barely showed. The fold's leg grows by this (px; 0 on a drawn sticker) so its visible flap is the drawn kit's.
+var _fold_inset: float = 0.0
+
+
+## M14 12Q-MENUS: how far (along the fold's leg, texture px) the die-cut's first opaque pixel stands in from
+## `corner` of `body` on `img`: twice the diagonal steps walked (a leg of 2t moves the 45 degree fold line t*sqrt2
+## along the diagonal). 0 when the corner is opaque.
+static func fold_inset(img: Image, body: Rect2, corner: Lift) -> float:
+	if img == null or not body.has_area():
+		return 0.0
+	var right := corner == Lift.TOP_RIGHT or corner == Lift.BOTTOM_RIGHT
+	var bottom := corner == Lift.BOTTOM_LEFT or corner == Lift.BOTTOM_RIGHT
+	var x0 := int(body.end.x) - 1 if right else int(body.position.x)
+	var y0 := int(body.end.y) - 1 if bottom else int(body.position.y)
+	var dx := -1 if right else 1
+	var dy := -1 if bottom else 1
+	var most := int(minf(body.size.x, body.size.y) * FOLD_INSET_MAX_SHARE)
+	for t in most:
+		var x := x0 + dx * t
+		var y := y0 + dy * t
+		if x < 0 or y < 0 or x >= img.get_width() or y >= img.get_height():
+			break
+		if img.get_pixel(x, y).a > 0.5:
+			return 2.0 * t
+	return 0.0
+
+
+## M14 12Q-MENUS: the most of the body's short side the inset walk looks in (a corner never sits further in).
+const FOLD_INSET_MAX_SHARE := 0.4
 
 
 ## The fold leg (px) of a sticker whose body is `body_w` px wide on a screen `screen_h` px high (the drawn and baked
@@ -821,7 +856,16 @@ static func peel_leg(body_w: float, screen_h: float) -> float:
 	var e := Motion.entry(PEEL_BACK)
 	var k := screen_h / PEEL_BACK_BOARD_H * Settings.text_scale
 	var short := body_w / maxf(k, 0.01) < e.delay
-	return (e.duration if short else e.amplitude) * k
+	var leg := (e.duration if short else e.amplitude) * k
+	# M14 12Q-MENUS (QA matrix P2: at 2.0 the slots' LOAD read "LOA"): the fold grows with the text only as far as
+	# PEEL_MAX_SHARE of the body; a sticker held at its 1.0 size (CaseFileCard's LOAD) keeps its 1.0 fold.
+	var k1 := screen_h / PEEL_BACK_BOARD_H
+	var leg1 := (e.duration if body_w / maxf(k1, 0.01) < e.delay else e.amplitude) * k1
+	return minf(leg, maxf(leg1, body_w * PEEL_MAX_SHARE))
+
+
+## M14 12Q-MENUS: the most of a sticker's body width the peel-back's fold grows to past its 1.0 size.
+const PEEL_MAX_SHARE := 0.18
 
 
 func _sweep_step(t: float) -> void:

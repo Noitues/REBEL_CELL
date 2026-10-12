@@ -163,7 +163,7 @@ func _draw() -> void:
 		var w := Palette.display().get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		if w > STAMP_WIDTH - 8.0:
 			fs = maxi(STAMP_MIN_FONT_SIZE, floori(fs * (STAMP_WIDTH - 8.0) / w))
-		draw_string(Palette.display(), Vector2(-STAMP_WIDTH * 0.5, 10), t, HORIZONTAL_ALIGNMENT_CENTER, STAMP_WIDTH, fs, Color(Palette.CELL_PINK, 0.9))
+		HighContrast.draw_text(self, Palette.display(), Vector2(-STAMP_WIDTH * 0.5, 10), t, HORIZONTAL_ALIGNMENT_CENTER, STAMP_WIDTH, fs, Color(Palette.CELL_PINK, 0.9))
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 

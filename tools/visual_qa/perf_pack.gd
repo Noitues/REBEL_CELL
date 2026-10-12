@@ -17,7 +17,6 @@ extends "res://tools/visual_qa/review_pack.gd"
 ## --tiers sets Settings.city_quality per pass (each screen builds its city fresh, so it reads
 ## the tier); <out>/tier<N>/ holds the pictures and <screen>.perf.json.
 
-const ARENA_LAB := preload("res://tools/design_lab/arena_lab.gd")
 ## The profile's own screens (after the review pack's).
 const PERF_SCREENS := [
 	["hq_run", "_s_hq_run", "ART-8 8w: the HQ run's page on the corp's compound (boss run)."],
@@ -314,54 +313,16 @@ func _s_hq_run_gate() -> void:
 	await _settle(net)
 
 
-## The boss fight dressed as arena_lab's worst fixture (every slot docked on both wheels,
-## firmware in every slot, every Daemon, the dock bloomed, a card hovered).
+## The boss fight dressed as arena_lab's worst fixture (ClutterFixture: every slot docked on both
+## wheels, firmware in every slot, every Daemon, the dock bloomed, a card hovered).
 func _worst() -> Control:
 	var combat := await _boss_fight()
 	if combat == null:
 		return null
-	var engine = combat.engine
-	var st: CombatState = engine.state()
-	var lookup: ContentLookup = engine.resolver.lookup
-	var boss := st.enemies[0]
-	for i in st.player.wheel.slice_count:
-		if st.satellite_at(st.player.id, i) == null:
-			_dock(st, st.player, lookup.get_content(ARENA_LAB.DRONE) as EnemyData, i)
-	for i in boss.wheel.slice_count:
-		if st.satellite_at(boss.id, i) == null:
-			_dock(st, boss, lookup.get_content(ARENA_LAB.SAT_TEMPLATES[i % ARENA_LAB.SAT_TEMPLATES.size()]) as EnemyData, i)
-	for i in st.player.wheel.slice_count:
-		st.player.wheel.slot_firmware_ids[i] = ARENA_LAB.FIRMWARE[i % ARENA_LAB.FIRMWARE.size()]
-	for i in boss.wheel.slice_count:
-		boss.wheel.slot_firmware_ids[i] = ARENA_LAB.FIRMWARE[(i + 2) % ARENA_LAB.FIRMWARE.size()]
-	st.daemon_ids.clear()
-	for d in ARENA_LAB.DAEMONS:
-		st.daemon_ids.append(d)
-	st.hand[0] = ARENA_LAB.SPIN_CARD
-	combat._refresh(st)
-	for v in combat._views():
-		v.attachments.dock.force_bloom = true
-	combat._preview_card(0)
+	ClutterFixture.dress(combat)
 	await _settle(combat.get_parent())
 	_combat = combat
 	return combat
-
-
-## arena_lab's `_dock` (a satellite docked on `owner`'s slot `slot`).
-func _dock(st: CombatState, owner: CombatantState, data: EnemyData, slot: int) -> void:
-	if data == null:
-		return
-	var d := EffectInterpreter.make_combatant(data, StringName("%s_lab_%d" % [owner.id, slot]), true)
-	d.is_player = owner.is_player
-	d.host_id = owner.id
-	d.dock_slot = slot
-	d.hp = maxi(1, d.max_hp - slot % 3)
-	if d.wheel != null:
-		d.wheel.rotation = (slot * 7) % RC.TICKS
-	if owner.is_player:
-		st.drones.append(d)
-	else:
-		st.enemies.append(d)
 
 
 func _s_combat_worst() -> void:

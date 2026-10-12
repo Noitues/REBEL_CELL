@@ -1,5 +1,5 @@
 class_name CaseFileCard
-extends VBoxContainer
+extends BoxContainer
 ## One campaign slot as a case file on the title's CAMPAIGN SLOTS page. Parity SLOTS-01 /
 ## SLOTS-02 (designer 2026-10-05: take the M13 build's slot cards, rework them in the v2
 ## concept language): ported from art-m13-final `scripts/ui/kit/case_file_card.gd` (the
@@ -19,8 +19,8 @@ extends VBoxContainer
 ## - The actions sit under the folder on the glass (materials never mix). Designer ruling 2026-10-06 (2): LOAD and
 ##   DELETE stickers on every folder: LOAD is the pink verb (the newest campaign's, `primary`, takes the first focus
 ##   and the page's one scheduled sweep), DELETE the neutral white vinyl (round 44 FILL_WHITE: it is not the page's
-##   verb), and each DELETE carries the red grease-pencil "Can't Undo" under it with its arrow up to it (up to
-##   PENCIL_UP_TO; past it the words are in DELETE's tooltip). The confirm DELETE opens is 4C's abandon dialog.
+##   verb), and each DELETE carries the red grease-pencil "Can't Undo" under it with its arrow up to it (at
+##   every text scale, G2R-3). The confirm DELETE opens is 4C's abandon dialog.
 ## Signals up; the title screen acts. View only.
 
 signal load_pressed(slot: String)
@@ -62,14 +62,17 @@ const DELETE_TILT := 2.0
 ## COMPACT_FROM the ICE / RUNS / FILED fields share a line (the folder stays short enough).
 const VERB_GROW_MAX := 1.0
 const COMPACT_FROM := 1.3
+## G2R2-3: from this text scale the folder is brief (tab, corporation, Heat); ICE / RUNS / FILED and the crew go to the tooltip.
+const BRIEF_FROM := 1.6
 ## The Cell stamp's seeded tilt range (degrees; round 44: -6 + 2 n).
 const STAMP_TILT := -6.0
 const STAMP_TILT_STEP := 2.0
-## The "Can't Undo" pencil: shown up to this text scale (past it DELETE's tooltip says it), its
+## The "Can't Undo" pencil: shown at every text scale (G2R-3), its
 ## lettering grows up to NOTE_SCALE_MAX, its tilt (radians), and the gap the arrow's head keeps from the sticker
 ## (px at 1.0).
-const PENCIL_UP_TO := 1.6
 const NOTE_SCALE_MAX := 1.0
+## From this text scale the pencil grows with the text (G2R-3: at 2.0 the words were too small beside the big stickers).
+const NOTE_BIG_FROM := 2.0
 const NOTE_TILT := -0.06
 const ARROW_GAP := 4.0
 const ARROW_MIN := 34.0
@@ -104,7 +107,7 @@ var tab_clip: TabClipLabel = null
 var stamp: CellStamp = null
 var _content: VBoxContainer
 var _tab_words: String = ""
-## The red grease-pencil "Can't Undo" pointing at DELETE (null past PENCIL_UP_TO).
+## The red grease-pencil "Can't Undo" pointing at DELETE .
 var cant_undo: PencilNote = null
 var _note_room: Control = null
 ## The folder's seeded tilt (degrees; D24) and whether the slot holds the focus (it lies straight then).
@@ -113,6 +116,7 @@ var _held: bool = false
 
 
 func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], p_primary: bool = false) -> void:
+	vertical = true  # the folder over its actions
 	slot = p_slot
 	summary = p_summary
 	crew = p_crew
@@ -139,7 +143,7 @@ func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], 
 	_content.add_theme_constant_override("separation", UiTheme.SP_XS)
 	_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	folder.add_child(_content)
-	var actions := HBoxContainer.new()
+	var actions := BoxContainer.new()
 	actions.name = "Actions"
 	actions.add_theme_constant_override("separation", UiTheme.SP_S)
 	actions.alignment = BoxContainer.ALIGNMENT_BEGIN
@@ -160,7 +164,7 @@ func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], 
 	var verb := VerbSticker.new(tr("LOAD"), VerbSticker.Fill.PINK, VERB_PX * verb_grow(), VERB_TILT)
 	verb.pre_translated = true
 	verb.sweep_primary = primary
-	verb.tooltip_text = UiTip.fold(load_tip)
+	verb.tooltip_text = UiTip.fold(load_tip + (("\n" + details()) if brief() else ""))
 	verb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	actions.add_child(verb)
 	load_button = verb
@@ -175,20 +179,18 @@ func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], 
 	actions.add_child(gap)
 	var undo := tr("Can't Undo")
 	var tip := tr("Delete the campaign in slot %s (asks first).") % slot
-	if Settings.text_scale <= PENCIL_UP_TO:
-		cant_undo = PencilNote.new("
+	# G2R2-3: on the brief folder the words lie on one line (the case file must fit the slots view at 2.0).
+	cant_undo = PencilNote.new(undo if brief() else "
 ".join(undo.split(" ", false, 1)), Palette.PENCIL_THREAT, NOTE_TILT,
-			roundi(PencilNote.FONT_PX * minf(Settings.text_scale, NOTE_SCALE_MAX)))
-		cant_undo.name = "CantUndo"
-		_note_layer().add_child(cant_undo)  # placed in its room by _place_note (a Node2D layer: never laid out by the card)
-		_note_layer().z_index = 1  # over the stickers beside it (no UI ever covers pencil)
-		gap.custom_minimum_size = cant_undo.text_size() + Vector2(ARROW_MIN * Settings.text_scale, 0)
-		gap.resized.connect(_place_note)
-		actions.sort_children.connect(_place_note)
-		sort_children.connect(_place_note)
-		_note_room = gap
-	else:
-		tip = "%s (%s)" % [tip, undo]
+		roundi(PencilNote.FONT_PX * (Settings.text_scale if Settings.text_scale >= NOTE_BIG_FROM else minf(Settings.text_scale, NOTE_SCALE_MAX))))
+	cant_undo.name = "CantUndo"
+	_note_layer().add_child(cant_undo)  # placed in its room by _place_note (a Node2D layer: never laid out by the card)
+	_note_layer().z_index = 1  # over the stickers beside it (no UI ever covers pencil)
+	gap.custom_minimum_size = cant_undo.text_size() + Vector2(ARROW_MIN * Settings.text_scale, 0)
+	gap.resized.connect(_place_note)
+	actions.sort_children.connect(_place_note)
+	sort_children.connect(_place_note)
+	_note_room = gap
 	# DELETE: the neutral white vinyl (round 44 FILL_WHITE; not the page's verb, so never pink).
 	var del := VerbSticker.new(tr("DELETE"), VerbSticker.Fill.WHITE, DELETE_PX * verb_grow(), DELETE_TILT)
 	del.pre_translated = true
@@ -252,7 +254,7 @@ func _place_note() -> void:
 	var reach := GreasePencilMark.stroke_width() * 0.5 + GreasePencilMark.SHADOW_OFFSET.x
 	var del_top := (room.y - delete_button.size.y) * 0.5
 	var head := Vector2(room.x + UiTheme.SP_S - reach - ARROW_GAP * s, del_top + delete_button.size.y * ARROW_LAND)
-	var from := Vector2(t.x + ARROW_GAP, t.y * 0.5)
+	var from := Vector2(t.x + ARROW_GAP * 2.0, t.y * 0.5)  # G2 polish P2: clear of the last letter's tail
 	# The head in the note's space (the note sits at the room's left, `y` down it).
 	cant_undo.with_arrow(from, Vector2(maxf(from.x + 1.0, head.x), head.y - floorf(y)), -t.y * ARROW_BEND)
 
@@ -287,11 +289,31 @@ static func verb_grow() -> float:
 
 
 ## The tab's height at the text size now (px).
+## G2R2-3: true from text 1.6: the folder shows only its tab, corporation and Heat line.
+static func brief() -> bool:
+	return Settings.text_scale >= BRIEF_FROM - 0.001
+
+
+## The focus tooltip's details for a used slot (what the brief folder leaves off).
+func details() -> String:
+	var parts: Array[String] = ["%s %d" % [tr("ICE"), int(summary.get("ice", 0))], "%s %d" % [tr("RUNS"), int(summary.get("runs", 0))]]
+	var when := last_played(float(summary.get("saved_at", 0.0)))
+	if when != "":
+		parts.append("%s %s" % [tr("FILED"), when])
+	parts.append(state_word())
+	var names: Array[String] = []
+	for op in crew:
+		names.append(String((op as Dictionary).get("name", "")))
+	if not names.is_empty():
+		parts.append(", ".join(names))
+	return " / ".join(parts)
+
+
 static func tab_height() -> float:
 	return TAB_H * minf(Settings.text_scale, TAB_SCALE_MAX)
 
 
-## The card's width at the text size now (px).
+## The folder's width at the text size now (px).
 static func width() -> float:
 	return FOLDER_W * Settings.text_scale
 
@@ -312,7 +334,7 @@ func actions() -> Array[Control]:
 
 ## A terminal chip (MenuChip, drawn: the Cell's cyan edge and caret, following the skin) under
 ## the folder.
-func _chip(row: HBoxContainer, words: String, line: String, tip: String) -> MenuChip:
+func _chip(row: BoxContainer, words: String, line: String, tip: String) -> MenuChip:
 	var b := MenuChip.new(words, line)
 	b.pre_translated = true
 	b.plate = &""  # drawn: the Cell accent marks its edge
@@ -402,39 +424,42 @@ func _fill() -> void:
 	bar.draw.connect(_draw_heat.bind(bar, heat))
 	heat_row.add_child(bar)
 	_content.add_child(heat_row)
-	# ICE / RUNS / FILED: a printed line each (round 44); from COMPACT_FROM they share lines (a flow).
-	var facts: Container = VBoxContainer.new() if Settings.text_scale < COMPACT_FROM else HFlowContainer.new()
-	facts.name = "Facts"
-	facts.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if facts is HFlowContainer:
-		facts.add_theme_constant_override("h_separation", UiTheme.SP_M)
-	else:
-		facts.add_theme_constant_override("separation", UiTheme.SP_XS)
-	_content.add_child(facts)
-	facts.add_child(_pair(tr("ICE"), str(int(summary.get("ice", 0))), "Ice"))
-	facts.add_child(_pair(tr("RUNS"), str(int(summary.get("runs", 0))), "Runs"))
-	var when := last_played(float(summary.get("saved_at", 0.0)))
-	if when != "":
-		var date := _pair(tr("FILED"), when, "LastPlayed")
-		date.tooltip_text = tr("Last played")
-		date.mouse_filter = Control.MOUSE_FILTER_PASS
-		facts.add_child(date)
-	var foot := HBoxContainer.new()
-	foot.name = "Foot"
-	foot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	foot.add_theme_constant_override("separation", UiTheme.SP_XS)
-	var shown := 0
-	for op in crew:
-		if shown >= CREW_MAX:
-			break
-		foot.add_child(_crew_chip(op as Dictionary))
-		shown += 1
-	if crew.size() > CREW_MAX:
-		var more := _field("+%d" % (crew.size() - CREW_MAX), true)
-		more.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		foot.add_child(more)
-	_content.add_child(foot)
+	if not brief():
+		# ICE / RUNS / FILED: a printed line each (round 44); from COMPACT_FROM they share lines (a flow).
+		var facts: Container = VBoxContainer.new() if Settings.text_scale < COMPACT_FROM else HFlowContainer.new()
+		facts.name = "Facts"
+		facts.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if facts is HFlowContainer:
+			facts.add_theme_constant_override("h_separation", UiTheme.SP_M)
+		else:
+			facts.add_theme_constant_override("separation", UiTheme.SP_XS)
+		_content.add_child(facts)
+		facts.add_child(_pair(tr("ICE"), str(int(summary.get("ice", 0))), "Ice"))
+		facts.add_child(_pair(tr("RUNS"), str(int(summary.get("runs", 0))), "Runs"))
+		var when := last_played(float(summary.get("saved_at", 0.0)))
+		if when != "":
+			var date := _pair(tr("FILED"), when, "LastPlayed")
+			date.tooltip_text = tr("Last played")
+			date.mouse_filter = Control.MOUSE_FILTER_PASS
+			facts.add_child(date)
+		var foot := HBoxContainer.new()
+		foot.name = "Foot"
+		foot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		foot.add_theme_constant_override("separation", UiTheme.SP_XS)
+		var shown := 0
+		for op in crew:
+			if shown >= CREW_MAX:
+				break
+			foot.add_child(_crew_chip(op as Dictionary))
+			shown += 1
+		if crew.size() > CREW_MAX:
+			var more := _field("+%d" % (crew.size() - CREW_MAX), true)
+			more.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			foot.add_child(more)
+		_content.add_child(foot)
 	# The Cell's own rubber stamp: the campaign's state (it overlaps the fields as a stamp does; no layout room).
+	if brief():
+		return
 	stamp = CellStamp.new(state_word(), STAMP_TILT + STAMP_TILT_STEP * slot.to_int())
 	stamp.name = "State"
 	_folder_marks().add_child(stamp)  # over the fields, placed by _lay
@@ -543,7 +568,7 @@ func _draw_folder() -> void:
 		# An empty slot: a dashed outline on the glass, nothing filed.
 		_dashed(body, Palette.TEXT_MID)
 		_dashed(Rect2(Vector2.ZERO, Vector2(tab_w, tab_h)), Palette.TEXT_MID)
-		folder.draw_string(Chrome.caps_font(UiTheme.CAPTION), words_at, _tab_words, HORIZONTAL_ALIGNMENT_LEFT, tab_w - UiTheme.SP_S, px, Palette.TEXT_HI)
+		HighContrast.draw_text(folder, Chrome.caps_font(UiTheme.CAPTION), words_at, _tab_words, HORIZONTAL_ALIGNMENT_LEFT, tab_w - UiTheme.SP_S, px, Palette.TEXT_HI)
 		return
 	var screen_h := folder.get_viewport_rect().size.y
 	# D24: the folder's soft contact shadow on the glass (lifted further while it holds the focus).

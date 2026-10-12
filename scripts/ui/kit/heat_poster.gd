@@ -351,7 +351,7 @@ func _stamp_band() -> void:
 ## ANIM-R6 C1: its phases (`_banner_phase`): the hold is a reading time, the fade is motion.
 func _stamp_banner() -> void:
 	var e := Motion.entry(&"heat_banner")
-	if e == null or not e.enabled or not is_inside_tree():
+	if e == null or not e.enabled or not is_inside_tree() or campaign_over():
 		banner_alpha = 0.0
 		return
 	banner_alpha = 1.0
@@ -494,7 +494,10 @@ func _note_spot(s: Vector2, avoid: Array[Rect2]) -> Array:
 	var steps: Array[Vector2] = [Vector2(0, NOTE_SLIDE), Vector2(0, -NOTE_SLIDE), Vector2(NOTE_SLIDE, 0), Vector2(-NOTE_SLIDE, 0)]
 	var best := Rect2()
 	var best_cover := INF
-	for i in NOTE_SLIDE_STEPS + 1:
+	# M14 12Q-RAID: past NOTE_SLIDE_STEPS it slides on to the screen's far edge (at 1.6 the raid
+	# interlude's panel ran past 16 steps, so the note sat on its last row with the screen free below).
+	var reach := maxi(NOTE_SLIDE_STEPS, ceili(maxf(screen.size.x, screen.size.y) / NOTE_SLIDE))
+	for i in reach + 1:
 		for d in starts.size():
 			var r := starts[d]
 			r.position += steps[d] * i
@@ -533,15 +536,22 @@ func note_avoid() -> Array[Rect2]:
 			if not (c as BaseButton).disabled:
 				out.append(c.get_global_rect())
 		elif (c is Label and (c as Label).text != "") or (c is RichTextLabel and (c as RichTextLabel).get_parsed_text() != "") \
-				or c is HudStats or c is PadPrompts or c is SubtitleStrip:
+				or c is HudStats or c is PadPrompts or c is SubtitleStrip or c is TerminalWindow:
 			# Drawn words too: the top bar's tags, the pad prompts, the subtitles (at 1.6 the note
-			# went up over the CREW tag).
+			# went up over the CREW tag). M14 12Q-RAID: and terminal windows whole (the raid
+			# interlude draws its HOME row and forecast disc itself: the note clear of the panel).
 			out.append(c.get_global_rect())
 	return out
 
 
+## M14 FIX-2: the campaign is over (lost, won or abandoned): no crossing's banner and no "a raid
+## is queued" note any more (after BREACHED the HQ's last Heat showed one over the takeover).
+static func campaign_over() -> bool:
+	return RunManager.campaign != null and RunManager.campaign.is_over()
+
+
 func _update_note() -> void:
-	var show := banner_alpha > 0.0 and note_text() != "" and is_visible_in_tree()
+	var show := banner_alpha > 0.0 and note_text() != "" and is_visible_in_tree() and not campaign_over()
 	if not show:
 		if _note != null:
 			_note.visible = false
@@ -555,9 +565,11 @@ func _update_note() -> void:
 		_note.draw.connect(_draw_note)
 		add_child(_note, false, Node.INTERNAL_MODE_BACK)
 	var at := get_global_rect()
-	if _note_at == Rect2() or at != _note_from:
+	if _note_at == Rect2() or at != _note_from or _note_covers_now():
 		_note_from = at
 		_note_at = note_rect()
+		# The first re-check comes NOTE_FIRST_RECHECK frames on (the page laid out), then every NOTE_RECHECK_FRAMES.
+		_note_checked = Engine.get_process_frames() - NOTE_RECHECK_FRAMES + NOTE_FIRST_RECHECK
 	_note.position = _note_at.position
 	_note.size = _note_at.size
 	_note.modulate.a = banner_alpha
@@ -567,6 +579,31 @@ func _update_note() -> void:
 
 ## The note's draw order over the page (it is read over whatever it passes).
 const NOTE_Z := 50
+## M14 12Q-RAID: every this many frames of the hold the note looks again at what it covers: a
+## page laid out after the crossing (the netrun's raid interlude under reduce effects, its
+## RAID // title right under the gauge) took the spot the note had found free.
+const NOTE_RECHECK_FRAMES := 10
+const NOTE_FIRST_RECHECK := 2
+var _note_checked: int = -1
+
+
+## M14 12Q-RAID: true when, at a re-check, the note's spot covers a button or words (laid out
+## since, or clumped unlaid when it was placed): it looks for its spot again (`note_rect`, the
+## same search: a free spot if there is one; on a full screen the least covered one again).
+func _note_covers_now() -> bool:
+	if _note_at == Rect2() or Engine.get_process_frames() - _note_checked < NOTE_RECHECK_FRAMES:
+		return false
+	_note_checked = Engine.get_process_frames()
+	return _note_cover(_note_at) > 0.0
+
+
+## The area of what the note keeps off (`note_avoid`) that rect `r` covers (px²).
+func _note_cover(r: Rect2) -> float:
+	var cover := 0.0
+	for o in note_avoid():
+		if o.intersects(r):
+			cover += o.intersection(r).get_area()
+	return cover
 
 
 func _draw_note() -> void:
@@ -579,7 +616,7 @@ func _draw_note() -> void:
 	var fs := note_font_size()
 	var lines := note_lines()
 	for i in lines.size():
-		_note.draw_string(f, Vector2(NOTE_PAD, NOTE_PAD + fs * BANNER_LINE * i + f.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER)
+		HighContrast.draw_text(_note, f, Vector2(NOTE_PAD, NOTE_PAD + fs * BANNER_LINE * i + f.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER)
 
 
 ## True while the consequence note shows (tests).
@@ -903,7 +940,7 @@ func _draw() -> void:
 	if poster:
 		draw_rect(Rect2(Vector2.ZERO, size), Palette.PAPER_ALT)
 		draw_rect(Rect2(Vector2.ZERO, size), Palette.INK, false, 3.0)
-		draw_string(Palette.display(), Vector2(10, 30), tr("WANTED"), HORIZONTAL_ALIGNMENT_LEFT, size.x - 20, 26, Palette.INK)
+		HighContrast.draw_text(self, Palette.display(), Vector2(10, 30), tr("WANTED"), HORIZONTAL_ALIGNMENT_LEFT, size.x - 20, 26, Palette.INK)
 		PortraitArt.draw(self, Rect2(size.x * 0.5 - MUG_SIZE * 0.5, 38, MUG_SIZE, MUG_SIZE), wanted)
 		y = POSTER_BLOCK_TOP
 	# The ransom-note word, cut into letters (translated; H24).
@@ -928,7 +965,7 @@ func _draw() -> void:
 		var lfs := 18
 		while lfs > 8 and lf.get_string_size(letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > strip_w - 4.0:
 			lfs -= 1
-		draw_string(lf, strip.position + Vector2(maxf(2.0, (strip_w - lf.get_string_size(letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x) * 0.5), 22), letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, Palette.INK)
+		HighContrast.draw_text(self, lf, strip.position + Vector2(maxf(2.0, (strip_w - lf.get_string_size(letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x) * 0.5), 22), letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, Palette.INK)
 		x += step
 	x = minf(x, size.x - 6.0 - num_w)
 	# ANIM-R1 M6: the number rolls, grows and flashes white on a crossing.
@@ -940,9 +977,9 @@ func _draw() -> void:
 		num_col = num_col.lerp(Palette.PAPER, clampf((number_scale - 1.0) / maxf(0.001, Motion.amplitude(&"heat_number_pop") - 1.0), 0.0, 1.0))
 	var num_at := Vector2(x + 6, y + 30)
 	draw_set_transform(num_at + Vector2(0, -NUMBER_FONT * 0.35), 0.0, Vector2.ONE * number_scale)
-	draw_string(Palette.display(), Vector2(0, NUMBER_FONT * 0.35), "%d" % roundi(shown_heat), HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_FONT, num_col)
+	HighContrast.draw_text(self, Palette.display(), Vector2(0, NUMBER_FONT * 0.35), "%d" % roundi(shown_heat), HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_FONT, num_col)
 	draw_set_transform(Vector2.ZERO)
-	draw_string(Palette.mono(), Vector2(x + 6, y + 44), "/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.INK if poster else Palette.PAPER)
+	HighContrast.draw_text(self, Palette.mono(), Vector2(x + 6, y + 44), "/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.INK if poster else Palette.PAPER)
 	var bar := Rect2(8, y + 44, size.x - 16, 8)
 	draw_rect(bar, Color(Palette.INK, 0.3) if poster else Color(Palette.PAPER, 0.15))
 	draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(float(heat) / maxf(1.0, heat_max), 0.0, 1.0), bar.size.y)), band_color())
@@ -957,10 +994,10 @@ func _draw() -> void:
 		draw_set_transform(c, 0.0, Vector2.ONE * stamp_scale)
 		var box := Rect2(r.position - c, r.size).grow(STAMP_BOX_PAD)
 		draw_rect(box, Color(hot_color, clampf((stamp_scale - 1.0) * 4.0, 0.0, 1.0)), false, 2.0)
-		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE) - c, tr(BAND_WORDS[mini(shown_band(), BAND_WORDS.size() - 1)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
+		HighContrast.draw_text(self, Palette.marker(), Vector2(8, y + BAND_BASELINE) - c, tr(BAND_WORDS[mini(shown_band(), BAND_WORDS.size() - 1)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
 		draw_set_transform(Vector2.ZERO)
 	else:
-		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE), tr(BAND_WORDS[mini(shown_band(), BAND_WORDS.size() - 1)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
+		HighContrast.draw_text(self, Palette.marker(), Vector2(8, y + BAND_BASELINE), tr(BAND_WORDS[mini(shown_band(), BAND_WORDS.size() - 1)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
 	if banner_alpha > 0.0:
 		_draw_banner(y)
 
@@ -993,10 +1030,10 @@ func _draw_banner(y: float) -> void:
 	_draw_eye(Vector2(x + fs * EYE_W * 0.5, top + line_h * lines.size() * 0.5), fs, Color(col, a))
 	x += fs * (EYE_W + EYE_GAP)
 	for i in lines.size():
-		draw_string(f, Vector2(x, top + line_h * i + f.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col.lerp(Palette.PAPER, 0.25), a))
+		HighContrast.draw_text(self, f, Vector2(x, top + line_h * i + f.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col.lerp(Palette.PAPER, 0.25), a))
 	var sy := top + line_h * lines.size()
 	for i in subs.size():
-		draw_string(Palette.mono(), Vector2(box.position.x + BANNER_PAD, sy + sfs * BANNER_LINE * i + Palette.mono().get_ascent(sfs)), subs[i],
+		HighContrast.draw_text(self, Palette.mono(), Vector2(box.position.x + BANNER_PAD, sy + sfs * BANNER_LINE * i + Palette.mono().get_ascent(sfs)), subs[i],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, Color(Palette.PAPER, a))
 	draw_set_transform(Vector2.ZERO)
 
