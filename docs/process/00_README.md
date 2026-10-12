@@ -22,7 +22,8 @@ stays the rulebook for the code.
 | `tools/batch/submit_batch.py` | submit / status / fetch results (`pip install anthropic`) |
 | `tools/batch/ingest_results.py` | results → patches, `git apply --check`, `INGEST_REPORT.md`, retry file, optional commits on `batch/<name>` |
 | `tools/playtest/make_playtest.py` | a prefilled Human Playtest Task List for a gate |
-| `.claude/agents/code-cleanup.md` | the cleanup sub-agent (Haiku, effort low, no tools) |
+| `.claude/agents/*.md` | pinned agents: fix-visual / fix-mechanical (Sonnet medium), code-cleanup (Haiku low), fix-rules / auditor (Opus medium); `tools/hooks/guard_agents.py` enforces them |
+| `.claude/settings.json` | hooks (reading rules, agent routing) and the project default model: Opus 5.5 at effort medium |
 | `docs/process/agent_rules/*.md` | stable per-area rules files that briefs reference instead of pasting |
 | `docs/process/templates/` | STATE_HANDOFF, CHECKPOINT, PLAYTEST, GATE_REPORT (verdict, retrospective, replan) |
 | `docs/process/CHANGELOG.md` | every accepted process change, one line, newest first |

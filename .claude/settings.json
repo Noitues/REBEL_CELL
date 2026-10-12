@@ -1,4 +1,7 @@
 {
+	"model": "opus",
+	"effortLevel": "medium",
+	"maxEffortLevel": "high",
 	"hooks": {
 		"PreToolUse": [
 			{
@@ -9,6 +12,17 @@
 						"command": "python \"$CLAUDE_PROJECT_DIR/tools/hooks/guard_reads.py\"",
 						"timeout": 10,
 						"statusMessage": "Checking the reading rules"
+					}
+				]
+			},
+			{
+				"matcher": "Agent",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "python \"$CLAUDE_PROJECT_DIR/tools/hooks/guard_agents.py\"",
+						"timeout": 15,
+						"statusMessage": "Checking the agent routing"
 					}
 				]
 			}

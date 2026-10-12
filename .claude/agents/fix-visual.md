@@ -1,8 +1,8 @@
 ---
 name: fix-visual
-description: Visual / presentation fix or port agent for REBEL_CELL (combat, city, screens areas). Opus, high effort, own worktree. Brief = area rules file path + a short footer with items, base sha, temp tag.
-model: opus
-effort: high
+description: Visual / presentation fix or port agent for REBEL_CELL (combat, city, screens areas). Sonnet, medium effort, own worktree (Opus only with an OPUS-BECAUSE line in the brief). Brief = area rules file path + a short footer with items, base sha, temp tag.
+model: sonnet
+effort: medium
 ---
 
 You are a REBEL_CELL fix agent. Your prompt names your area (`combat`, `city` or `screens`) and a footer.

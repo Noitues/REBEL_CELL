@@ -45,7 +45,8 @@ batch.** If it needs the tree, a run, or a person, it is real-time. Batch result
 | Unit tests for new core classes | batch | Sonnet 5.5 / medium | `unit_tests` | the orchestrator adds manifest tiers and runs them |
 | Mechanical refactor / rename across N files | batch | Haiku 5.5 (rename) or Sonnet 5.5 (refactor) | `rename`, `refactor` | the declaration is changed first, interactively |
 | DECISIONS.md digest per milestone (for agent briefs) | batch | Sonnet 5.5 / medium | `decisions_digest` | |
-| Port a screen to the art direction; fix a rule bug; anything with Godot | real-time | Opus 5.5 (visual/rules), Sonnet 5.5 (mechanical) | — | worktree agent |
+| Port a screen to the art direction; fix presentation; anything with Godot | real-time | **Sonnet 5.5 medium** (`fix-visual`, `fix-mechanical`); Opus only with an `OPUS-BECAUSE:` line | — | worktree agent; the Agent hook enforces it |
+| Fix a rule / core / save / content bug; audit a gate | real-time | Opus 5.5 **medium** (`fix-rules`, `auditor`) | — | worktree agent |
 | Merge, checks, push, gate, playtest list, checkpoints | real-time | orchestrator | — | never delegated |
 | Visual review / approval | real-time | art-direction session, then designer | — | memory: art-pass-session-reviews-batches |
 
@@ -77,7 +78,11 @@ notes: <≤ 5 lines: files touched outside the area, NEEDS lines, questions as Q
 ```
 
 Agent cap and machine rules stay as in memory (one Godot window each, never `python -`, own
-PIDs only, batch Godot launches, `run_windowed.py` for anything that draws). "Remote" isolation
+PIDs only, batch Godot launches, `run_windowed.py` for anything that draws). **Enforced by
+`tools/hooks/guard_agents.py`** (PreToolUse on Agent, 2026-10-12): pinned types only, no model or
+effort above the pin without an `OPUS-BECAUSE:` line, briefs ≤ 4 000 chars, at most 5 agent
+worktrees alive. The orchestrator session itself defaults to Opus 5.5 at effort medium
+(`.claude/settings.json`); Fable-class reasoning is not needed to brief, merge and report. "Remote" isolation
 runs locally here and counts toward the cap.
 
 ## 4. Batch API pipeline

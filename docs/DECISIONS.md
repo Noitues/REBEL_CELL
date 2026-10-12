@@ -37,7 +37,24 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
-### 2026-10-11 — M14 ART-6 acceptance: reading holds at 2x / 4x, every state captured, DOWN at every zoom
+### 2026-10-12 — Designer ruling: token efficiency (the M14 session ran every sub-agent on Opus, no batch lane)
+"I need more efficiency in the overall token usage." Applied mechanically, not by instruction:
+1. **Agent routing hook** (`tools/hooks/guard_agents.py`, PreToolUse on Agent): only the pinned types spawn
+   (fix-visual, fix-mechanical, code-cleanup, fix-rules, auditor, or read-only Explore/Plan); a `model` override to
+   Opus on a Sonnet/Haiku type needs an `OPUS-BECAUSE: <reason>` line in the brief (reported in the gate
+   retrospective); Fable sub-agents never; effort above the pin never; briefs over 4 000 chars never (reference
+   `docs/process/agent_rules/<area>.md`, put item lists in a handoff file); at most 5 agent worktrees alive.
+2. **Re-pinned**: fix-visual **Sonnet 5.5 medium** (was Opus high), fix-mechanical Sonnet medium, code-cleanup
+   Haiku low, fix-rules Opus **medium** (was high), auditor Opus **medium** (was high). Visual fixes with a clear
+   brief and a reference image do not need Opus; art-direction *judgement* stays with the art-pass session.
+3. **Orchestrator model**: project settings now default sessions in this clone to **Opus 5.5 at effort medium**
+   (`.claude/settings.json`: model, effortLevel, maxEffortLevel high). Orchestration (briefs, merges, gates,
+   reports) does not need Fable-class reasoning; Fable is 2.5× Opus per token and the orchestrator's context is
+   re-sent on every turn. The designer can still pick another model per session in the picker.
+4. **Batch lane** stays as ruled; the M14 close-out is Godot-bound so little of it is batchable. The retrospective's
+   "batch tokens" row must say what was routed to batch or why nothing was (doc 04 §5).
+Superseds the model/effort line of "2026-10-11 — Designer rulings on the process follow-ups" item 6.
+
 The three open ART-6 boxes (MILESTONES "ART-6 — Raid"), with evidence.
 - **Reading holds (R7 C4).** The raid's reading times are the raid_* HOLD entries (`raid_mark_hold`) and
   the ones their views keep on the real clock (`raid_mark_write`, `raid_breached_write`, `raid_incoming_hold`).
@@ -63,6 +80,7 @@ The three open ART-6 boxes (MILESTONES "ART-6 — Raid"), with evidence.
   `fit_hq_map`) draws the greyed DOWN socket, its Site marker v4 reads DOWN with a greyed ring and the
   DISABLED sticker under the white bolt, both the same size on screen at every zoom. No defect found.
 
+### 2026-10-11 — M14 ART-6 acceptance: reading holds at 2x / 4x, every state captured, DOWN at every zoom
 ### 2026-10-11 — M14 FOLLOW-UP: letterhead names; takeover end frame
 Art director's APPROVED review of the close-out group, two follow-ups.
 - **Letterhead names (schema).** `CorporationData.letterhead_name` (String, "" by default): the

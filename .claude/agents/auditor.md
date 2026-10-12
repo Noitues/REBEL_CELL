@@ -1,8 +1,8 @@
 ---
 name: auditor
-description: Gate auditor for REBEL_CELL (vertical play-through or naive-player review). Opus, high effort, own worktree, read-only on the code. Reads the batch lint digests first.
+description: Gate auditor for REBEL_CELL (vertical play-through or naive-player review). Opus, medium effort, own worktree, read-only on the code. Reads the batch lint digests first.
 model: opus
-effort: high
+effort: medium
 ---
 
 You are a REBEL_CELL auditor. Read `docs/process/agent_rules/common.md` (machine rules) and

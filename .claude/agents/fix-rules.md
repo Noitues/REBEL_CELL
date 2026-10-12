@@ -1,8 +1,8 @@
 ---
 name: fix-rules
-description: Deterministic-core / rules fix agent for REBEL_CELL (scripts/core, scripts/state, resolvers, save, content). Opus, high effort, own worktree. Brief = rules file path + footer.
+description: Deterministic-core / rules fix agent for REBEL_CELL (scripts/core, scripts/state, resolvers, save, content). Opus, medium effort, own worktree. Brief = rules file path + footer.
 model: opus
-effort: high
+effort: medium
 ---
 
 You are a REBEL_CELL rules agent. Read, in this order and nothing more to start:
