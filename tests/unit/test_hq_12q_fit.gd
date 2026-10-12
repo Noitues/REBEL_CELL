@@ -432,3 +432,10 @@ func test_the_raid_result_continue_keeps_room_for_its_focus_fold() -> void:
 				last_end = maxf(last_end, (g[1] as Vector2).x + Palette.display().get_string_size(g[0], HORIZONTAL_ALIGNMENT_LEFT, -1, v.get(&"_px")).x)
 		assert_gt(last_end, 0.0, "x%.1f: the word is laid out" % s)
 		assert_gte(v.body_rect.end.x - last_end, v.peel_px(), "x%.1f: the fold lies past the last letter" % s)
+		# G2 polish P1: every glyph rect is clear of the fold's square, as BACK TO HQ is held
+		var fold := Rect2(Vector2(v.body_rect.end.x - v.peel_px(), v.body_rect.position.y), Vector2(v.peel_px(), v.peel_px()))
+		var font: Font = v.get(&"_font")
+		for g in v.get(&"_glyphs"):
+			var gp: Vector2 = g[1]
+			var gr := Rect2(Vector2(gp.x, gp.y - float(g[4])), Vector2(font.get_string_size(g[0], HORIZONTAL_ALIGNMENT_LEFT, -1, v.get(&"_px")).x, float(g[4])))
+			assert_false(gr.intersects(fold), "x%.1f: glyph %s clear of the fold" % [s, g[0]])

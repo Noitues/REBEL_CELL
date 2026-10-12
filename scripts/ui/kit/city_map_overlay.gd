@@ -158,6 +158,9 @@ const LABEL_GAP := 4.0
 ## Parity fix (GRID-13): the least room between a label and another label or a marker (px x
 ## the map's k): labels never touch.
 const LABEL_CLEAR := 3.0
+## G2 polish P3: the least room (px) between a label and the TARGET's grease pencil (its word, arrow and chip):
+## a label pushed aside by the pencil never touches it (a link line under a label is fine).
+const PENCIL_CLEAR := 6.0
 ## Candidate rings a label may step out to when its first spots are taken.
 const LABEL_RINGS := 3
 ## Label priorities (lower is placed first).
@@ -3272,7 +3275,7 @@ func _loose_spot(t: Dictionary, box: Vector2, obstacles: Dictionary, may_cover_i
 	for rect in tries:
 		if reach_of(rect, at) > reach or not _on_screen(rect, obstacles) or _hits_label(rect, obstacles):
 			continue
-		if _hits_rects(rect, obstacles.get("pencil", [])):
+		if _hits_rects(rect.grow(PENCIL_CLEAR), obstacles.get("pencil", [])):
 			continue  # G2R2-1: never on grease pencil: the label hides until hover
 		# HQ-B: nor its own icon (shifted inside the map at big text, it landed on it).
 		if may_cover_icons or not _hits_icon(rect, obstacles, &""):
@@ -3362,6 +3365,8 @@ static func _clamp_into(rect: Rect2, area: Rect2) -> Rect2:
 ## True when `rect` overlaps a placed label, a node icon, a tier pip row or the
 ## selection ring.
 static func _blocked(rect: Rect2, obstacles: Dictionary) -> bool:
+	if _hits_rects(rect.grow(PENCIL_CLEAR), obstacles.get("pencil", [])):
+		return true
 	rect = rect.grow(float(obstacles.get("clear", 0.0)))  # parity fix GRID-13: never touching
 	for other: Dictionary in obstacles["placed"]:
 		if rect.intersects(other["rect"]):

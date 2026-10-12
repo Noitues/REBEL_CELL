@@ -63,6 +63,8 @@ func _init(p_verb: String = "", p_plate: String = "", ts: float = 1.0, fill: int
 
 
 func _ready() -> void:
+	if _fold_room_base != "":
+		_apply_fold_room()  # in the tree the fold's real px (the viewport's height) is known
 	_fit()
 
 
@@ -104,12 +106,41 @@ func _set_hot(on: bool) -> void:
 
 ## G2R2-4: pads the sticker's right edge with the focus fold's room (no-break spaces of its own
 ## lettering, as the run end's BACK TO HQ does), so the peel-back never covers the last letters.
+## G2 polish P1: the room is measured against the fold itself (`peel_px`: it follows the text scale and the
+## viewport) and again when the sticker is ready in the tree, where the real viewport height is known.
 func add_fold_room() -> void:
-	var body_w := sticker.body_rect.size.x if sticker.body_rect.size.x > 1.0 else sticker_size().x
-	var leg := VinylSticker.peel_leg(body_w, 720.0)
-	var space_w := maxf(1.0, Palette.display().get_string_size(" ", HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(verb_px_base * text_scale)).x)
-	sticker.text += " ".repeat(ceili(leg / space_w))
+	if _fold_room_base == "":
+		_fold_room_base = sticker.text
+	_apply_fold_room()
+
+
+var _fold_room_base: String = ""
+
+## A runaway guard for the fold room's spaces, not a tuning value.
+const FOLD_ROOM_MAX_SPACES := 40
+## The share of the lettering's px the fold keeps clear past a letter's advance (the drawn glyph's outline and slant).
+const FOLD_ROOM_OVERHANG_SHARE := 0.1
+
+
+func _apply_fold_room() -> void:
+	sticker.text = _fold_room_base
+	var guard := 0
+	# the drawn letter stands a little past its advance (outline, slant): keep a share of the lettering clear too
+	var overhang := float(sticker.get(&"_px")) * FOLD_ROOM_OVERHANG_SHARE
+	while guard < FOLD_ROOM_MAX_SPACES and room_past_last_letter() < sticker.peel_px() + overhang:
+		sticker.text += " "
+		guard += 1
 	_fit()
+
+
+## px between the last drawn letter's right edge and the sticker body's right edge.
+func room_past_last_letter() -> float:
+	var f := Palette.display()  # the display face's own advances (the same as the run end's BACK TO HQ is held to)
+	var px: int = sticker.get(&"_px")
+	var last_end := 0.0
+	for g in sticker.get(&"_glyphs"):
+		last_end = maxf(last_end, (g[1] as Vector2).x + f.get_string_size(g[0], HORIZONTAL_ALIGNMENT_LEFT, -1, px).x)
+	return sticker.body_rect.end.x - last_end
 
 
 func _draw_plate() -> void:

@@ -254,7 +254,7 @@ func _place_note() -> void:
 	var reach := GreasePencilMark.stroke_width() * 0.5 + GreasePencilMark.SHADOW_OFFSET.x
 	var del_top := (room.y - delete_button.size.y) * 0.5
 	var head := Vector2(room.x + UiTheme.SP_S - reach - ARROW_GAP * s, del_top + delete_button.size.y * ARROW_LAND)
-	var from := Vector2(t.x + ARROW_GAP, t.y * 0.5)
+	var from := Vector2(t.x + ARROW_GAP * 2.0, t.y * 0.5)  # G2 polish P2: clear of the last letter's tail
 	# The head in the note's space (the note sits at the room's left, `y` down it).
 	cant_undo.with_arrow(from, Vector2(maxf(from.x + 1.0, head.x), head.y - floorf(y)), -t.y * ARROW_BEND)
 

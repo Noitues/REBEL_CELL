@@ -67,7 +67,7 @@ func test_the_target_pencil_is_never_under_a_panel_and_no_label_sits_on_it() -> 
 						assert_false(p.intersects(b), "%s: the arrow, word and chip clear of every panel" % where)
 					for key in ov.label_rects():
 						var lr: Rect2 = ov.get_global_transform() * (ov.label_rects()[key] as Rect2)
-						assert_false(p.intersects(lr), "%s: label %s clear of the TARGET pencil" % [where, key])
+						assert_false(p.grow(CityMapOverlay.PENCIL_CLEAR).intersects(lr), "%s: label %s keeps %.0f px from the TARGET pencil" % [where, key, CityMapOverlay.PENCIL_CLEAR])
 			else:
 				for n in ov.nodes:
 					if not CityMapOverlay.is_boss(n):
@@ -82,6 +82,6 @@ func test_the_target_pencil_is_never_under_a_panel_and_no_label_sits_on_it() -> 
 					for key in ov.label_rects():
 						var lr: Rect2 = xf * (ov.label_rects()[key] as Rect2)
 						for r in ov.boss_rects(n):
-							assert_false((xf * r).intersects(lr), "%s: label %s clear of the TARGET circle, word and chip" % [where, key])
+							assert_false((xf * r).grow(CityMapOverlay.PENCIL_CLEAR).intersects(lr), "%s: label %s keeps %.0f px from the TARGET circle, word and chip" % [where, key, CityMapOverlay.PENCIL_CLEAR])
 			hq.get_parent().queue_free()
 			await get_tree().process_frame

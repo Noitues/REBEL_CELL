@@ -5,6 +5,18 @@ superseded instead. Finished months of "Implementation decisions" are moved verb
 `docs/decisions/<YYYY-MM>.md` by `tools/archive_decisions.py` (2026-10-11, CP-001 follow-up);
 search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
+## 2026-10-12 M14 group 2 polish (G2_POLISH, art-pass)
+- P1 `HoloSticker.add_fold_room` pads with spaces until the room past the last letter holds the sticker's own
+  `peel_px` (plus 0.1 of the lettering px for outline and slant), measured again in `_ready` once the viewport is
+  known (it was sized once from a 720 px screen and the unpadded body). Test: every glyph rect clear of the fold square
+  at 1.0 / 1.6 / 2.0 (`test_hq_12q_fit`).
+- P2 The CAN'T UNDO pencil: the slots' pencil was clipped by nothing; its words are drawn at the px their text step
+  lands on (one px over the nominal) and the arrow started under the last O. `PencilNote.text_size` now measures what is
+  drawn and the arrow keeps 2 x ARROW_GAP past it. Test: whole word written and the arrow past it at every scale
+  (`test_m14_12q_menus`).
+- P3 `CityMapOverlay.PENCIL_CLEAR` (6 px): a label never sits within 6 px of the TARGET's word, arrow or chip, the
+  yielded last-resort labels included (a link line under a label is fine). Test: `test_hq_g2r2_target`.
+
 ## Locked design decisions (v0.9)
 - Wheel is 30 ticks / 6 slices / 5 ticks per slice (was 24). Enables a true centre tick.
 - No Miss precision tier; "Miss" means the Miss slice only.

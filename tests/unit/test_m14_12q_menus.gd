@@ -319,6 +319,35 @@ func test_l42_the_focused_slot_shows_its_name_and_load_whole_with_a_cue_for_the_
 	_clear_slots()
 
 
+## G2 polish P2: the CAN'T UNDO pencil is drawn whole at every scale, and its arrow starts past the last
+## letter (at 1.6 the words stood a pixel wider than measured and the arrow began under the final O).
+func test_g2_polish_the_cant_undo_pencil_is_whole_and_clear_of_its_arrow() -> void:
+	if not _fill_slots(3):
+		pending("a campaign already sits in slots 1-3")
+		return
+	for scale in SCALES:
+		Settings.set_text_scale(scale)
+		var t := _title()
+		await _frames(2)
+		t.show_slots()
+		await _frames(8)
+		for s in SLOTS:
+			var c := t._panel.find_child("Slot" + s, true, false) as CaseFileCard
+			var n := c.cant_undo
+			assert_not_null(n, "x%.1f slot %s: the pencil is there" % [scale, s])
+			var f := Palette.pencil()
+			for w in n.get(&"_words"):
+				assert_eq(w.shown_to >= float(w.text.length()), true, "x%.1f slot %s: every letter written" % [scale, s])
+				var drawn := 0.0
+				for i in w.text.length():
+					drawn += f.get_string_size(w.text[i], HORIZONTAL_ALIGNMENT_LEFT, -1, w.font_px()).x
+				assert_gte(n.text_size().x + 0.01, drawn, "x%.1f slot %s: the note's room holds the whole word" % [scale, s])
+				assert_gte(n.arrow_from.x + 0.01, drawn, "x%.1f slot %s: the arrow starts past the last letter" % [scale, s])
+		t.queue_free()
+		await _frames(1)
+	_clear_slots()
+
+
 func test_l42_the_pad_walks_the_actions_under_each_folder_at_2_0() -> void:
 	if not _fill_slots(2):
 		pending("a campaign already sits in slots 1-3")
