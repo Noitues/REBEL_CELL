@@ -362,7 +362,7 @@ its items)
 *Closed at the M14 gate (2026-10-12):* every M14 box above is ticked; the "After ART-12" list below waits for the designer (CP-002).
 
 **After ART-12** (rulings 1, 8, 9; nothing deferred)
-- [ ] **R7 re-evaluation:** every ANIM-R7 finding (`docs/handoff/anim_r7/`) re-checked against the
+- [ ] ~~**R7 re-evaluation:**~~ **Retired (CP-002 ruling 2, 2026-10-12): R7 only informs the post-feedback plan.** every ANIM-R7 finding (`docs/handoff/anim_r7/`) re-checked against the
       ported screens, then the ones still valid fixed (batches A–E re-cut), incl. the overkill
       wording "→ N LEFT" (ruling 9).
 - [ ] **G1–G16 re-evaluation with the designer** (plan §3.2, ruling 8); approved ones become

@@ -8,9 +8,11 @@
 
 ## Current goal
 **M14 COMPLETE (2026-10-12)** — gate PT-001 passed its checks on main @ 4780b5c0 (suite 2207 / 0 failing, smoke 0,
-validate 0, quiet perf inside 8 ms), pushed, tagged gate/PT-001. PAUSED (memory: pause-after-m14): waiting for the
-designer's PT-001 playtest feedback and CP-002 answers (docs/handoff/CHECKPOINT_PENDING.md). Start nothing post-M14
-until then. Report: docs/handoff/gates/PT-001.md.
+validate 0, quiet perf inside 8 ms), pushed, tagged gate/PT-001. Report: docs/handoff/gates/PT-001.md.
+**CP-002 answered 2026-10-12** (DECISIONS "Designer rulings CP-002"; memory playtest-feedback-triage-first): GATHER
+playtest feedback, act on NONE of it until the designer says; then analyze → decide (change / ignore) → plan. R7 retired
+(informs only). Only CP-002 item 7 (raid hostile cue A always / B colour-blind only) is open: side by side
+docs/art_review/PARITY/fixes/HOSTILE_CUE_AB.jpg. m14-cleanup (dc5860ff) waits for the designer too.
 Designer (2026-10-12) asked for three things in parallel while they playtest PT-001: (1) M14 retrospective
 (Explore agent gathering facts → write docs/handoff/gates/M14_RETROSPECTIVE.md), (2) full project replan (Plan agent
 draft → docs/handoff/gates/M14_REPLAN.md, feeds CP-002), (3) code cleanup of the gate-scope GDScript diff

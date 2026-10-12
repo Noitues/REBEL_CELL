@@ -66,6 +66,23 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-12 — Designer rulings CP-002 (M14 completion gate)
+1. **Feedback first, action later.** Playtest feedback is gathered from every source and none of it is acted on until
+   the designer says so. Then: analyze the responses, decide with the designer what changes and what feedback is
+   ignored, and build a plan for the approved changes only. Supersedes the replan's recommended order
+   (`docs/handoff/gates/M14_REPLAN.md` §5), which becomes input to that analysis.
+2. **R7 retired.** The ANIM-R7 findings (`docs/handoff/anim_r7/`) are not executed as a fix list (as written they would
+   regress the ported screens); they only inform the new set of updates. MILESTONES "R7 re-evaluation" is replaced by this.
+3. **M0–M4 boxes** are decided from the playtest evaluation.
+4. **No timed netrun step** in a PT list.
+5. **Overkill wording:** show only the result clamped to the minimum: "→ 0" (or "→ 0 LEFT"); never the over-damage
+   (today "HITS YOU 8 → 1 LEFT" / "%d LEFT", `scripts/ui/combat_scene.gd:3429`, `:4677`). Not implemented until the plan.
+6. **Pacing later,** after gameplay polish.
+7. **Raid hostile cue without colour:** pending; the designer will rule from the A / B side by side
+   (`docs/art_review/PARITY/fixes/HOSTILE_CUE_AB.jpg`).
+Defaults D6–D14 (gate report PT-001, M14 retrospective §5, replan §3) stand, unvetoed; D11 and D14 now apply to the plan
+that follows the feedback, not to R7.
+
 ### 2026-10-12 — M14 follow-ups for the next pass (art-pass review of the gate perf frames)
 Gate perf APPROVED by the art-pass session (873a362e). Not blocking M14; queued for the first post-M14 pass (CP-002 item 1):
 - **F1 CLAIMED stamps stack.** HQ idle tier-1 frame (`GATE_PERF.jpg`): four CLAIMED stamps overlap over the network,
