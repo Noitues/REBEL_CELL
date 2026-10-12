@@ -44,6 +44,36 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-12 — M14 G2R city (art-pass review of group 2): the Grid camera off the city's edge, the TARGET arrow clear
+Before | after per corporation at 1.0 and 2.0 plus the REBEL_CELL TARGET crop: `docs/art_review/ART-12/12q/fixes/G2R_CITY.jpg`.
+- **G2R-1 the frame never shows past the city edge (network wins).** `CityMapCamera.keep_on_city` (pure): the focus
+  shifts onto the city (`clamp_focus`: the frame's four ground corners inside `city_rect`) as far as every fitted Site
+  (and the selected one) stays in the map's free part where its icon is drawn (its offset from its lot taken from the
+  camera now, less half an icon's room); if the frame still shows ground past the
+  edge it closes in by `KEEP_ZOOM_STEPS` steps about the anchor, never past `raid_fit_min`, the network kept in the free
+  part throughout, until the edge is gone; when no frame clears it, the one with least ground past the edge wins
+  (`void_area`, the earliest and least zoomed on a tie). The page applies it once, when the HQ fit ends (before the
+  lean), and on the lean and the follow-the-selection pans (`_frame_grid`); the fit passes and the player's own camera
+  are unchanged. Reading of "the ortho grows to cover the gap": a frame that cannot be shifted off the edge closes in
+  (its ortho shrinks), since zooming out can only show more edge; the network is never given up for it, so a very wide
+  network on a corner can still show a little edge (the Meridian and REBEL_CELL frames at 2.0). Tests:
+  `test_frame_keeps_off_the_edge_and_the_network_in_view` (screen widths 1280 / 1920, network on the edge
+  and in the middle; the network stays in the free part, never more edge than before, only ever closes in).
+- **G2R-2 TARGET.** The Central Server of REBEL_CELL (and Halcyon) lies about twice the raid range's widest frame
+  from the network (fit needs 480 px against the 255 the free part gives), so its pencil circle cannot be in the frame
+  without giving the network up; the round 44 off-screen arrow stays, and is fixed instead: `TargetEdgeMarker`
+  swings the arrow round the area's centre (6 degree steps, 12 either way) to the first edge spot where the arrow, its
+  word and its chip are clear of every Site marker, pip and name label (`LegendSpot.node_rects`), the arrow pointing
+  from there at the boss; where nothing is clear (2.0's small free part) the boss's own line stands. The arrow, word and
+  chip also stay inside the HQ's free part (`limit`), so the chip no longer runs under the Site card; whether the
+  arrow shows is still decided on the whole map (a boss visible stays circled). Differs from the brief's "circle the
+  Central Server itself" for REBEL_CELL: see Q below.
+- **JACK IN at 2.0.** `HqLayout.rects` already ends the card column a GAP above the verb slot at every text scale
+  (`test_hq_card_column_ends_above_the_jack_in_slot_at_every_scale`); no overlap reproduced in the 2.0 captures
+  (the card pages with MORE), nothing changed.
+- Q (designer): REBEL_CELL's TARGET circle needs the frame to take the network and the Central Server together
+  (about twice the raid range). Zoom the HQ out to take it (the network then reads small), or keep the arrow?
+
 ### 2026-10-11 — M14 12Q-ACCESS: high contrast on every screen through the kit; SAVED, Next, one home-hit number, the stamp
 Pack B items of the 12q QA matrix audit (`docs/handoff/m14_12q/qa_matrix_audit.md` L78-L83, tree db29f599), re-checked
 on m14-group2. Before | after: `docs/art_review/ART-12/12q/fixes/ACCESS.jpg`.
