@@ -37,7 +37,7 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
-### 2026-10-11 — M14 12Q-MENUS: the menu screens' QA-matrix layout defects (codex tabs, slots, tutorial, SAVED, pause, options, pad focus, share code)
+### 2026-10-11 — M14 12Q-MENUS: the menu screens' QA-matrix layout defects (codex tabs, slots, tutorial, SAVED, pause, options, share code, the pad focus peel on concept-art stickers)
 From the 12q QA matrix (`docs/handoff/m14_12q/qa_matrix_audit.md`), re-checked on m14-group2 6cc7de06; text is
 never smaller than at 1.0 and nothing is clipped or scaled (`test_m14_12q_menus`, layout at 1.0 / 1.6 / 2.0;
 before | after `docs/art_review/ART-12/12q/fixes/MENUS.jpg`).
@@ -70,11 +70,15 @@ before | after `docs/art_review/ART-12/12q/fixes/MENUS.jpg`).
   the RE-off truncation in the matrix is the pencil still writing on at the harness's settle (an animation, not a
   clip); at 2.0 they drop knowingly when the columns leave no room (designer 2026-10-05).
 - **L56 options (P3).** A section heading keeps the focus brackets' reach (offset + stroke) under its words.
-- **L57 pad focus (P3).** A VerbSticker holding a pad / keyboard focus draws the kit's lime corner brackets round
-  its die-cut (as B2 b's cards); a mouse player's focus draws none. `Settings.pointer_active` (session only, set
-  by a click or a pointer move of 2 px and more, cleared by a key or pad press) with `Settings.device_focus()`.
-  Rule note for the art director: the sticker's own focus look (sheen and curl) is unchanged; the brackets are
-  additive and only under pad / keys.
+- **L57 pad focus (P3).** Designer ruling 2026-10-06 (3): focus and hover on a sticker show the peel-back
+  (corner curl) only, never brackets (a first take with pad-only lime brackets was withdrawn before merge). The
+  pad / keyboard focus already takes the hover state (VerbSticker NOTIFICATION_FOCUS_ENTER -> VinylSticker
+  HOVER), and the matrix's pad and mouse frames of title / slots match by design: both open with the page's
+  default focus on BREACH / LOAD. But on a concept-art sticker (BREACH, SIMULATE, OVERTHROW, the dialogs'
+  stickers) the fold was measured from the image's opaque rect, whose corner lies outside the rounded die-cut,
+  so the peel cut mostly empty corner and barely showed: the pad's focus read as none. The fold's leg now grows
+  by the die-cut's corner inset (`VinylSticker.fold_inset`, walked once per image), so the flap shows as on a
+  drawn sticker (LOAD). `test_l57_*`; MENUS.jpg L57 rows (BREACH x3 before | after; slots 1.6 mouse | pad).
 - **L62 share code (P3).** The share-code field is as wide as its whole placeholder at the text size (at least
   360 px, never past its row; the row wraps Start from code under it).
 

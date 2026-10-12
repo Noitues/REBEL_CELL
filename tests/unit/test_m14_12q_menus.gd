@@ -3,7 +3,7 @@ extends GutTest
 ## defects, at text 1.0 / 1.6 / 2.0: the codex's tabs all reachable (L28), the campaign slots' name and LOAD
 ## whole with a cue for the slots out of view (L42), every line of every tutorial page shown (L39), SAVED clear
 ## of the hints and the ticker (L47), the pause menu's header on one line (L55), the options' focus brackets
-## inside their row (L56), a pad / keyboard-only focus cue on the stickers (L57), the share-code placeholder
+## inside their row (L56), the pad's focus peeling a sticker back as hover does (L57), the share-code placeholder
 ## whole (L62).
 
 const TITLE := "res://scenes/menu/title_scene.tscn"
@@ -14,12 +14,10 @@ const SLOTS: Array[String] = ["1", "2", "3"]
 
 var _saved: Dictionary
 var _profile: ProfileState
-var _pointer: bool = true
 
 
 func before_each() -> void:
 	_saved = Settings.snapshot()
-	_pointer = Settings.pointer_active
 	Settings.set_text_scale(1.0)
 	AudioDirector.muted = true
 	RunManager.scene_switching_enabled = false
@@ -36,7 +34,6 @@ func after_each() -> void:
 	RunManager.save_slot = RunManager.DEFAULT_SLOT
 	RunManager.scene_switching_enabled = true
 	AudioDirector.muted = false
-	Settings.pointer_active = _pointer
 	Settings.restore(_saved)
 
 
@@ -199,39 +196,50 @@ func test_l47_saved_keeps_clear_of_the_ticker_and_the_prompts() -> void:
 		await _frames(1)
 
 
-# --- L57 the pad / keyboard focus cue --------------------------------------------------------------------
+# --- L57 the pad focus on a sticker -------------------------------------------------------------------------
 
-func test_l57_only_pad_or_keyboard_focus_shows_the_sticker_brackets() -> void:
+## Designer ruling 2026-10-06 (3): focus and hover on a sticker show the peel-back (the corner curl) only, never
+## brackets. The pad's focus on the title's verbs and on the slots' LOAD peels the sticker as the mouse's hover does
+## (the QA matrix's pad and mouse frames matched because the page's default focus peels BREACH / LOAD in both).
+func test_l57_pad_focus_peels_the_sticker_as_hover_does_and_draws_no_brackets() -> void:
 	for scale in SCALES:
 		Settings.set_text_scale(scale)
+		Settings.set_pad_active(true)
 		var t := _title()
 		await _frames(3)
+		for i in t.verbs.size():
+			var v := t.verbs[i] as VerbSticker
+			if v.vinyl == null:
+				continue
+			v.grab_focus()
+			await _frames(1)
+			assert_true(v.has_focus(), "%.1f %s: the pad's focus" % [scale, v.name])
+			assert_eq(v.vinyl.state, VinylSticker.State.DISABLED if v.disabled else VinylSticker.State.HOVER,
+				"%.1f %s: focus peels the sticker back (the hover state)" % [scale, v.name])
+			assert_eq(v.find_children("PadFocus", "", true, false).size(), 0,
+				"%.1f %s: no focus brackets on a sticker" % [scale, v.name])
 		var breach := t.verbs[0] as VerbSticker
-		Settings.set_pad_active(false)
-		Settings.pointer_active = true
-		await _frames(2)
-		breach.grab_focus()
-		await _frames(1)
-		assert_true(breach.has_focus(), "%.1f: BREACH holds the focus" % scale)
-		assert_false(breach.pad_focus_shown(), "%.1f: a mouse player's focus shows no brackets" % scale)
-		Settings.set_pad_active(true)
-		await _frames(1)
-		assert_true(breach.pad_focus_shown(), "%.1f: the pad's focus shows the brackets" % scale)
-		Settings.set_pad_active(false)
-		var key := InputEventKey.new()
-		key.physical_keycode = KEY_DOWN
-		key.pressed = true
-		Settings.observe_device(key)
-		assert_true(breach.pad_focus_shown(), "%.1f: so does the keyboard's" % scale)
-		var move := InputEventMouseMotion.new()
-		move.relative = Vector2(10, 0)
-		Settings.observe_device(move)
-		assert_false(breach.pad_focus_shown(), "%.1f: the mouse moving hides them again" % scale)
-		Settings.pointer_active = false
-		var die := breach.die_cut_rect()
-		assert_true(die.has_area(), "%.1f: brackets round the die-cut" % scale)
-		assert_true(Rect2(Vector2.ZERO, breach.size).grow(1.0).encloses(die), "%.1f: the die-cut inside the sticker's rect" % scale)
-		assert_eq(breach.pad_focus_mark.get_index(), breach.get_child_count() - 1, "the cue draws over the vinyl")
+		if breach.uses_art():
+			# The concept image's rounded die-cut sits inside its opaque rect: the fold reaches past that corner, so
+			# the flap the pad's focus peels shows as on a drawn sticker (it barely showed: the matrix's pad frame).
+			assert_gt(breach.vinyl._fold_inset, 0.0, "%.1f: BREACH's fold starts at its die-cut, not its rect's corner" % scale)
+			assert_almost_eq(breach.vinyl.peel_px() - breach.vinyl._fold_inset,
+				VinylSticker.peel_leg(breach.vinyl.body_rect.size.x, breach.vinyl.get_viewport_rect().size.y), 0.01,
+				"%.1f: the flap itself is the kit's leg" % scale)
+		var other := t.verbs[0] as VerbSticker
+		var live: VerbSticker = null
+		for v in t.verbs:
+			if not (v as VerbSticker).disabled and v != other:
+				live = v
+		if live != null:
+			other.grab_focus()
+			await _frames(1)
+			assert_eq(live.vinyl.state, VinylSticker.State.REST, "%.1f: a sticker the focus left lies flat" % scale)
+			Settings.set_pad_active(false)
+			live.mouse_entered.emit()
+			await _frames(1)
+			assert_eq(live.vinyl.state, VinylSticker.State.HOVER, "%.1f: the mouse's hover is the same peel-back" % scale)
+			live.mouse_exited.emit()
 		t.queue_free()
 		await _frames(1)
 
@@ -403,3 +411,16 @@ func test_l42_a_sticker_held_at_its_size_keeps_its_fold() -> void:
 		assert_lte(VinylSticker.peel_leg(90.0, 720.0), maxf(small_1, 90.0 * VinylSticker.PEEL_MAX_SHARE) + 0.01,
 			"%.1f: LOAD's fold (a 90 px body) never grows past its share of the body (it read LOA)" % scale)
 		assert_almost_eq(VinylSticker.peel_leg(900.0, 720.0), big_1 * scale, 0.01, "%.1f: a sticker that grows keeps the growing fold" % scale)
+
+
+func test_l57_the_fold_inset_finds_a_rounded_die_cuts_corner() -> void:
+	var img := Image.create(40, 30, false, Image.FORMAT_RGBA8)
+	img.fill(Color(1, 1, 1, 1))
+	var body := Rect2(0, 0, 40, 30)
+	assert_eq(VinylSticker.fold_inset(img, body, VinylSticker.Lift.TOP_RIGHT), 0.0, "a square corner: no inset")
+	for y in 6:
+		for x in range(34 + y, 40):
+			img.set_pixel(x, y, Color(0, 0, 0, 0))  # the top-right corner cut away (a rounded die-cut's empty corner)
+	var inset := VinylSticker.fold_inset(img, body, VinylSticker.Lift.TOP_RIGHT)
+	assert_gt(inset, 0.0, "the empty corner is walked past")
+	assert_eq(VinylSticker.fold_inset(img, body, VinylSticker.Lift.TOP_LEFT), 0.0, "only the lifted corner counts")
