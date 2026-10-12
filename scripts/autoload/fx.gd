@@ -263,6 +263,7 @@ func _process(_delta: float) -> void:
 func show_saved() -> void:
 	saved_label.text = tr("SAVED")
 	saved_label.modulate.a = 0.0
+	_saved_look()
 	if _saved_tween != null and _saved_tween.is_valid():
 		_saved_tween.kill()
 	_saved_live = false
@@ -280,13 +281,25 @@ func show_saved() -> void:
 	_saved_live = true
 	var e := Motion.entry(&"saved_stamp")
 	_saved_tween = create_tween()
-	if Motion.live(&"saved_stamp"):
+	if Motion.live(&"saved_stamp") and not HighContrast.on():
 		_saved_tween.tween_property(saved_label, "modulate:a", 0.0, Motion.seconds(&"saved_stamp")).set_delay(Motion.delay_of(&"saved_stamp")).set_ease(e.ease).set_trans(e.trans)
 	else:
 		# ANIM-R1 M3: no fade when the entry is off (or no motion plays): the stamp shows
-		# still for its hold and fade time, then goes at once.
+		# still for its hold and fade time, then goes at once. M14 12Q-ACCESS (L80): high
+		# contrast too: a fading stamp passed through 1.1:1 (readable or not shown).
 		_saved_tween.tween_interval(Motion.delay_of(&"saved_stamp") + Motion.seconds(&"saved_stamp"))
 		_saved_tween.tween_callback(func() -> void: saved_label.modulate.a = 0.0)
+
+
+## M14 12Q-ACCESS (L80): the stamp's lettering for the current settings: the Cell's pink on its
+## dark keyline, or under high contrast the high-contrast text white on an opaque BG keyline at
+## least HighContrast.outline_px thick (the pink, lifted to 7:1 on black, read 4.3:1 on the city).
+func _saved_look() -> void:
+	var hc := HighContrast.on()
+	saved_label.add_theme_color_override("font_color", HighContrast.TEXT if hc else Palette.CELL_PINK)
+	saved_label.add_theme_color_override("font_outline_color", HighContrast.BG if hc else SAVED_KEYLINE)
+	var outline := maxi(SAVED_OUTLINE, HighContrast.outline_px(UiTheme.font_px(SAVED_FONT))) if hc else SAVED_OUTLINE
+	saved_label.add_theme_constant_override("outline_size", outline)
 
 
 ## The stamp is up and follows the layout (H24 S7), and its fade.

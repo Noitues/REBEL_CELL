@@ -245,11 +245,14 @@ func _render() -> void:
 	next_button.text = tr("Finish") if last else tr("Next")
 	# ANIM-R6 A16: Next pulses when it is what moves the tutorial on (a step no play of the
 	# fight ends, or a page to turn), so the box never sits unread on one step.
-	var waits := String(s["until"]) == "" or page < all.size() - 1
+	# M14 12Q-ACCESS (L81): not under high contrast: the pulse dips Next's alpha, and its words
+	# under 7:1 (4.42:1 caught mid-pulse); Next stays whole, its tip says what moves it on.
+	var waits := (String(s["until"]) == "" or page < all.size() - 1) and not HighContrast.on()
 	if waits and (_pulse == null or not _pulse.is_valid()):
 		_pulse = Motion.loop_pulse(next_button, ^"modulate:a", &"tutorial_next_pulse")
 	elif not waits:
 		Motion.stop(next_button)
+		next_button.modulate.a = 1.0
 		_pulse = null
 
 

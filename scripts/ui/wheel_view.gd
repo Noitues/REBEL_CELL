@@ -3330,10 +3330,13 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 		# ANIM-2: it slides up into place and fades in once a SEND IT has played out.
 		var reveal := clampf(last_turn_shown, 0.0, 1.0)
 		lr.position.y += (1.0 - last_turn_shown) * Motion.amplitude(&"last_turn_reveal")
-		draw_rect(lr, Color(Palette.NIGHT_SKY, 0.8 * reveal))
+		# M14 12Q-ACCESS (L78): high contrast: an opaque plate and 7:1 words (HighContrast).
+		var plate := HighContrast.plate(Color(Palette.NIGHT_SKY, 0.8))
+		draw_rect(lr, Color(plate, plate.a * reveal))
 		var lines: PackedStringArray = lay["last_lines"]
+		var words := HighContrast.ink(_col(Color(Palette.PAPER, 0.92)))
 		for i in lines.size():
-			draw_string(Palette.mono(), Vector2(lr.position.x, lr.position.y + LAST_TURN_PAD * 0.5 + ls * (i + 1)), lines[i], HORIZONTAL_ALIGNMENT_CENTER, lr.size.x, ls, _col(Color(Palette.PAPER, 0.92 * reveal)))
+			draw_string(Palette.mono(), Vector2(lr.position.x, lr.position.y + LAST_TURN_PAD * 0.5 + ls * (i + 1)), lines[i], HORIZONTAL_ALIGNMENT_CENTER, lr.size.x, ls, Color(words, words.a * reveal))
 
 
 ## FIX-REDS (M14): the room (px) kept between the lowest needle's blade and the HP row.

@@ -51,7 +51,7 @@ func _draw() -> void:
 	var px := Chrome.px(STEP)
 	var f := Chrome.caps_font(STEP)
 	var r := Rect2(Vector2.ZERO, size)
-	draw_rect(r, Color(Palette.NET_BG_OUTER, 0.92))
+	draw_rect(r, HighContrast.plate(Color(Palette.NET_BG_OUTER, 0.92)))  # M14 12Q-ACCESS: opaque under high contrast
 	draw_line(Vector2(0, 0.5), Vector2(size.x, 0.5), Color(PaletteSkins.chrome(Palette.NET_CYAN), 0.6), 1.0)
 	# The concept's ON AIR block (round 33 title.py ticker(), baked), at the band's height.
 	var tex := Chrome.held(_held, ON_AIR_ART)

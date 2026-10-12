@@ -2073,11 +2073,22 @@ func _text_record(c: Control, screen_rect: Rect2) -> Dictionary:
 
 
 ## The colour of the opaque box a Label draws behind its own words (a sticker's paper:
-## SAVED), or [] when it has none: the text's real background.
+## SAVED), or [] when it has none: the text's real background. M14 12Q-ACCESS (L83): a Button's
+## too (its box as drawn now: hovered, pressed or normal): the ring round a button's words fell on
+## its high-contrast edge (the cyan), not the black fill the words sit on.
 func _box_color(c: Control) -> Array:
-	if not (c is Label):
+	if not (c is Label or c is Button):
 		return []
-	var sb := c.get_theme_stylebox(&"normal") as StyleBoxFlat
+	var box_name := &"normal"
+	if c is Button:
+		var b := c as Button
+		if b.disabled:
+			box_name = &"disabled"
+		elif b.button_pressed or b.is_pressed():
+			box_name = &"pressed"
+		elif b.is_hovered():
+			box_name = &"hover"
+	var sb := c.get_theme_stylebox(box_name) as StyleBoxFlat
 	if sb == null or not sb.draw_center or sb.bg_color.a < 0.9:
 		return []
 	return [sb.bg_color.r, sb.bg_color.g, sb.bg_color.b]

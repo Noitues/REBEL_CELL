@@ -1482,10 +1482,12 @@ func _draw_changes() -> void:
 		var at := p + Vector2(-size.x * 0.5, -ICON_RADIUS_BIG * k - LABEL_GAP * k - size.y - rise)
 		var box := Rect2(at, size)
 		_hi.draw_rect(box.grow(2.0 * k), Color(0, 0, 0, 0.85 * a))
-		_hi.draw_rect(box, Color(Palette.NIGHT_SKY, 0.95 * a))
-		_hi.draw_rect(box, Color(col, a), false, 2.0 * k)
-		_hi.draw_string(cf, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_ascent(cfs)), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(Palette.PAPER, 0.85 * a))
-		_hi.draw_string(f, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_height(cfs) + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, a))
+		var plate := HighContrast.plate(Color(Palette.NIGHT_SKY, 0.95))
+		_hi.draw_rect(box, Color(plate, plate.a * a))
+		_hi.draw_rect(box, Color(col, a), false, HighContrast.edge(2.0 * k))
+		var cap := HighContrast.ink(Color(Palette.PAPER, 0.85))
+		_hi.draw_string(cf, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_ascent(cfs)), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(cap, cap.a * a))
+		_hi.draw_string(f, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_height(cfs) + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(HighContrast.ink(col), a))
 
 
 ## ANIM-R5 P8: the forecast change's caption and its lettering (px at text scale 1.0).
@@ -1781,8 +1783,8 @@ func _node(n: Dictionary) -> void:
 			var word: String = str(_drop["label"])
 			var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			var lab_at := slot + Vector2(-w * 0.5, ar * 1.25 + LABEL_GAP * _k() + f.get_ascent(fs))
-			_c.draw_rect(Rect2(lab_at - Vector2(TAG_PAD * _k(), f.get_ascent(fs) + TAG_PAD * _k()), Vector2(w, f.get_height(fs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * _k()), Color(Palette.NIGHT_SKY, 0.86))
-			_c.draw_string(f, lab_at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, AssetIcon.color_of(assets[k]))
+			_c.draw_rect(Rect2(lab_at - Vector2(TAG_PAD * _k(), f.get_ascent(fs) + TAG_PAD * _k()), Vector2(w, f.get_height(fs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * _k()), HighContrast.plate(Color(Palette.NIGHT_SKY, 0.86)))
+			_c.draw_string(f, lab_at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HighContrast.ink(AssetIcon.color_of(assets[k])))
 	if draw_markers and markers.has(n["id"]):
 		var names: Array = markers[n["id"]]
 		var row := _marker_row(n)
@@ -1915,9 +1917,9 @@ func _draw_boss_chip(n: Dictionary, at: Vector2) -> void:
 	var pad := TAG_PAD * k
 	var r: Rect2 = boss_layout(n).get("chip", _boss_chip_box(at))
 	boss_chip_rect = r
-	_c.draw_rect(r, Color(Palette.NIGHT_SKY, 0.9))
-	_c.draw_rect(r, Palette.RESIST_GOLD, false, maxf(1.0, k))
-	_c.draw_string(f, r.position + Vector2(pad, pad + f.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.RESIST_GOLD)
+	_c.draw_rect(r, HighContrast.plate(Color(Palette.NIGHT_SKY, 0.9)))
+	_c.draw_rect(r, Palette.RESIST_GOLD, false, HighContrast.edge(maxf(1.0, k)))
+	_c.draw_string(f, r.position + Vector2(pad, pad + f.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HighContrast.ink(Palette.RESIST_GOLD))
 
 
 ## True when node `n` is the Central Server (the boss: its chip and TARGET pencil).
@@ -3343,14 +3345,17 @@ func _tag_box(l: Dictionary) -> void:
 	var near := Vector2(clampf(l["at"].x, rect.position.x, rect.end.x), clampf(l["at"].y, rect.position.y, rect.end.y))
 	if near.distance_to(l["at"]) > float(l["r"]) + LABEL_GAP * _k() * 2.0:
 		_c.draw_line(l["at"] + (near - l["at"]).normalized() * float(l["r"]), near, Color(col, 0.7), 1.0)
-	_c.draw_rect(rect, Color(Palette.NIGHT_SKY, 0.86))
+	# M14 12Q-ACCESS (L78): words over the city on an opaque plate, edged, at 7:1 in high contrast.
+	_c.draw_rect(rect, HighContrast.plate(Color(Palette.NIGHT_SKY, 0.86)))
+	if HighContrast.on():
+		_c.draw_rect(rect, col, false, HighContrast.edge(1.0))
 	_c.draw_rect(Rect2(rect.position, Vector2(2.0 * _k(), rect.size.y)), col)
 	var y := rect.position.y + pad + f.get_ascent(fs)
 	for line in l["lines"]:
 		# ANIM-R4 H11b: a result line "50 → 40 HOLDS" draws its arrow from the fallback face.
 		# The street marker's words stay the Cell's pink (S-ROUTE c).
 		_c.draw_string(Palette.mono_for(line), Vector2(rect.position.x + pad, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
-			Palette.CELL_PINK if l.get("key", "") == HERE_KEY else Palette.PAPER)
+			HighContrast.ink(Palette.CELL_PINK if l.get("key", "") == HERE_KEY else Palette.PAPER))
 		y += f.get_height(fs)
 
 

@@ -35,6 +35,17 @@ const HC_BUTTON_BORDER := 3
 const HC_FOCUS_BORDER := 4
 ## Edge width given to a box whose state was only a tint, px.
 const HC_TINT_BORDER := 2
+## M14 12Q-ACCESS (L78): the least edge any edged box keeps in high contrast, px ("thick edges").
+const HC_EDGE_MIN := 2
+## M14 12Q-ACCESS: an edge a view draws itself is this much wider in high contrast.
+const HC_EDGE_SCALE := 2.0
+## M14 12Q-ACCESS: the BG outline that backs light words over the city and the art in high
+## contrast (outline_size, as a share of the font px, and its least px): the words reach
+## HC_MIN_CONTRAST against it whatever is behind.
+const HC_OUTLINE_SHARE := 0.25
+const HC_OUTLINE_MIN := 4
+## The steps of the search for the least change that lifts a colour to HC_MIN_CONTRAST.
+const LIFT_STEPS := 14
 ## Theme types whose boxes are buttons (their variations are found by base type).
 const BUTTON_TYPES: Array[StringName] = [&"Button", &"OptionButton", &"CheckButton", &"CheckBox", &"MenuButton"]
 ## Stylebox names whose fill is the information (kept, made opaque).
@@ -87,6 +98,73 @@ static func is_text_box(box_name: StringName) -> bool:
 	return not FILL_BOXES.has(box_name)
 
 
+## M14 12Q-ACCESS (L78): restyles box `sb` (named `box_name`; `is_button` for a button's states)
+## as `apply` restyles the theme's: see-through fills opaque BG, a tint kept as an edge, edges
+## thicker. The walk (HighContrastWalk) calls it on a copy of a view's own box.
+static func restyle_box(sb: StyleBoxFlat, box_name: StringName, is_button: bool) -> void:
+	_box(sb, box_name, is_button)
+
+
+## True while high contrast is on (the view helpers below read it).
+static func on() -> bool:
+	return Settings.high_contrast
+
+
+## M14 12Q-ACCESS (L78): `c` changed as little as it must to reach HC_MIN_CONTRAST on `bg`
+## (towards TEXT on a dark backing, towards INK on a light one); opaque. Pure; `lift(lift(c))`
+## is `lift(c)`.
+static func lift(c: Color, bg: Color = BG) -> Color:
+	var out := Color(c, 1.0)
+	if Palette.contrast(out, bg) >= HC_MIN_CONTRAST:
+		return out
+	var to := TEXT if Palette.contrast(TEXT, bg) >= Palette.contrast(Palette.INK, bg) else Palette.INK
+	var lo := 0.0
+	var hi := 1.0
+	for _i in LIFT_STEPS:
+		var mid := (lo + hi) * 0.5
+		if Palette.contrast(out.lerp(to, mid), bg) >= HC_MIN_CONTRAST:
+			hi = mid
+		else:
+			lo = mid
+	return Color(out.lerp(to, hi), 1.0)
+
+
+## Words a view draws in colour `c`: lifted to 7:1 on BG and opaque under high contrast (a
+## fade is the caller's, multiplied on after), `c` otherwise.
+static func ink(c: Color) -> Color:
+	return lift(c) if on() else c
+
+
+## The fill of a see-through plate or panel a view draws: opaque BG under high contrast.
+static func plate(c: Color) -> Color:
+	return BG if on() else c
+
+
+## An edge `w` px wide a view draws: HC_EDGE_SCALE x wider (at least HC_EDGE_MIN) under high contrast.
+static func edge(w: float) -> float:
+	return maxf(w * HC_EDGE_SCALE, float(HC_EDGE_MIN)) if on() else w
+
+
+## The BG outline (px, outline_size) that backs light words of `font_px` under high contrast.
+static func outline_px(font_px: int) -> int:
+	return maxi(HC_OUTLINE_MIN, roundi(font_px * HC_OUTLINE_SHARE))
+
+
+## M14 12Q-ACCESS (L78): draws `text` on `ci` as draw_string does, in `col`, over its own
+## `outline` px outline in `outline_col` (none when 0). Under high contrast the words are
+## lifted to 7:1 and backed by an opaque BG outline at least outline_px wide, whatever they
+## sit on; `fade` (0..1, a reveal) multiplies the alpha either way.
+static func draw_text(ci: CanvasItem, font: Font, pos: Vector2, text: String, align: HorizontalAlignment, width: float,
+		fs: int, col: Color, outline: int = 0, outline_col: Color = Palette.CLEAR, fade: float = 1.0) -> void:
+	if on():
+		ci.draw_string_outline(font, pos, text, align, width, fs, maxi(outline, outline_px(fs)), Color(BG, fade))
+		ci.draw_string(font, pos, text, align, width, fs, Color(lift(col), fade))
+		return
+	if outline > 0 and outline_col.a > 0.0:
+		ci.draw_string_outline(font, pos, text, align, width, fs, outline, Color(outline_col, outline_col.a * fade))
+	ci.draw_string(font, pos, text, align, width, fs, Color(col, col.a * fade))
+
+
 static func _is_button(theme: Theme, type: StringName) -> bool:
 	var t := type
 	for _i in 8:
@@ -128,6 +206,10 @@ static func _box(sb: StyleBoxFlat, box_name: StringName, is_button: bool) -> voi
 		sb.border_color = Color(sb.border_color, 1.0)
 	if filled:
 		sb.bg_color = BG
+	# M14 12Q-ACCESS (L78): "thick edges": every edge at least HC_EDGE_MIN.
+	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+		if sb.get_border_width(side) > 0:
+			sb.set_border_width(side, maxi(sb.get_border_width(side), HC_EDGE_MIN))
 	if is_button:
 		for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
 			sb.set_border_width(side, maxi(sb.get_border_width(side), HC_BUTTON_BORDER))
