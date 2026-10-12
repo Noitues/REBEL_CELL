@@ -198,6 +198,20 @@ func lines_fitting(rect: Rect2) -> int:
 	return maxi(1, floori((rect.size.y - BAR_PADDING) / UiTheme.line_px(Palette.mono(), fs)))
 
 
+## M14 12Q-WORDS (L40): how many lines of words a dock `rect` holds under the speaker's name
+## row at the current text size (at least 1): a column dock pages by its room, not a fixed count
+## (at 1.6 the fight's box paged "Perfect. Tell the board the …" with half its height empty).
+func page_lines_in(rect: Rect2) -> int:
+	var s := _text_scale()
+	var mono := Palette.mono()
+	var name_row := UiTheme.line_px(mono, roundi(SPEAKER_FONT_SIZE * s))
+	var box := speaker_label.get_parent() as BoxContainer if speaker_label != null else null
+	if box != null:
+		name_row += box.get_theme_constant("separation")
+	var room := rect.size.y - BAR_PADDING - name_row
+	return maxi(1, floori(room / UiTheme.line_px(mono, roundi(TEXT_FONT_SIZE * s))))
+
+
 ## The subtitle bar in a screen rect (combat puts it at the top, clear of the hand). With
 ## `max_lines` > 0 a longer line is shown as pages of at most that many lines, one after
 ## the other, so the bar never grows past the rect's neighbours at any text scale.

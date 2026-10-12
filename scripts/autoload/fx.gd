@@ -66,7 +66,8 @@ const NOTE_TILT := -4.0
 const NOTE_RULE := 4
 const NOTE_PAD := 14
 ## The CONNECTING line's lettering at text scale 1.0 and the bar's height and gap (px).
-const CONNECT_FONT := 20
+## M14 12Q-WORDS (lint L65): on the type scale (title step; it was 20, off the scale).
+const CONNECT_FONT := UiTheme.TITLE
 const CONNECT_BAR_H := 4.0
 const CONNECT_GAP := 12.0
 ## ANIM-R6 B13: the destination's own line under CONNECTING TO: large, bright, with the
@@ -303,7 +304,8 @@ func saved_showing() -> bool:
 
 
 ## The SAVED stamp's lettering at text scale 1.0 and its margin from the screen edge (px).
-const SAVED_FONT := 20
+## M14 12Q-WORDS (lint L65): on the type scale (title step; it was 20, off the scale).
+const SAVED_FONT := UiTheme.TITLE
 ## ART-6 3A: its dark keyline (px) and colour, so it reads over any page and in greyscale.
 const SAVED_OUTLINE := 6
 const SAVED_KEYLINE := Color(Palette.NIGHT_SKY, 0.9)
@@ -321,7 +323,7 @@ const SAVED_SCREEN_MAX := 16384.0
 func place_saved(screen: Rect2 = Rect2()) -> Rect2:
 	if not screen.has_area():
 		screen = get_viewport().get_visible_rect()
-	var fs := roundi(SAVED_FONT * Settings.text_scale)
+	var fs := UiTheme.font_px(SAVED_FONT)
 	saved_label.add_theme_font_size_override("font_size", fs)
 	saved_label.size = Vector2.ZERO
 	var own := saved_label.get_combined_minimum_size()
@@ -765,7 +767,7 @@ func jack_out(on_switch: Callable, seconds: float = -1.0, destination: String = 
 ## only when the line may animate (reduce effects: the words alone).
 func _show_connect() -> void:
 	var vp := get_viewport().get_visible_rect().size
-	var fs := roundi(CONNECT_FONT * Settings.text_scale)
+	var fs := UiTheme.font_px(CONNECT_FONT)
 	connect_label.add_theme_font_size_override("font_size", fs)
 	connect_label.text = tr("CONNECTING TO") if _destination != "" else tr("CONNECTING")
 	_show_note(vp)

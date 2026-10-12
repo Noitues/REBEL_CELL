@@ -64,10 +64,17 @@ const MIN_CARD_SCALE := 0.6
 ## S-COMBAT-HUD (CMB-05, combat_typical_v4): a slim terminal strip, "TURN 3 | FREE NUDGE 1"
 ## over the fight's address line in small mono (the key hints are its tooltip).
 const BANNER_W := 420.0
-const BANNER_FONT := 20
+## M14 12Q-WORDS (lint L65): the title's type step, and the most it grows to (px; the old
+## 20 px x BANNER_SCALE_MAX): past it the title takes the largest step at the text size under it.
+const BANNER_STEP := UiTheme.TITLE
+const BANNER_TITLE_MAX_PX := 30
 const BANNER_PAD_H := 16.0
 const BANNER_PAD_V := 2.0
-const ADDRESS_FONT := 13
+## The address line's type steps, largest first: it takes the first that fits the banner (M14
+## 12Q-WORDS, lint L65: it was 13 px shrinking to a fixed 12, under the floor at 1.6 / 2.0).
+const ADDRESS_STEPS: Array[int] = [UiTheme.BODY, UiTheme.CAPTION]
+## What joins the outcome's word to the address line.
+const OUTCOME_GLUE := "  ·  "
 const SEND_IT_FONT := 58
 const CONTINUE_FONT := 46
 const NAME_OVERLAP := 10
@@ -1796,6 +1803,7 @@ func _build_ui() -> void:
 	add_child(background)
 	arena_backdrop = CombatBackdrop.new()  # ART-2 2B: the target's close-up covers the net city (§3.14)
 	arena_backdrop.wheel_source = _views
+	arena_backdrop.keep_clear = func() -> Array: return [_subtitle_dock]  # M14 12Q-WORDS (L61)
 	add_child(arena_backdrop)
 	background.visible = false
 	# ART-2 2C §3.15: Heat on the backdrop (H1, the city reacts), behind every wheel.
@@ -2151,6 +2159,10 @@ func _view_of(id: StringName) -> WheelView:
 	return _enemy_views.get(id)
 
 
+## The subtitle box's rect (global; the last layout's): OURS NOW stands clear of it (M14 12Q-WORDS).
+var _subtitle_dock: Rect2 = Rect2()
+
+
 ## Lays out the right column's free area: the subtitle dock on top (paged so it never
 ## grows past it), the tutorial under it (GDD 9.2: nothing on a wheel or a tag).
 func _relayout() -> void:
@@ -2168,16 +2180,22 @@ func _relayout() -> void:
 	while tutoring and lines > 1 and area.size.y - dock_h - NOTE_GAP < want:
 		lines -= 1
 		dock_h = (SUBTITLE_CHROME_PX + lines * SUBTITLE_LINE_PX) * ts
-	Dialogue.dock_at(Rect2(area.position, Vector2(area.size.x, dock_h)), lines)
+	# M14 12Q-WORDS (L40): a page holds the lines the box has room for (at big text the box is
+	# taller than SUBTITLE_LINES lines: the outcome's line paged "Tell the board the …").
+	var dock := Rect2(area.position, Vector2(area.size.x, dock_h))
+	Dialogue.dock_at(dock, maxi(lines, Dialogue.page_lines_in(dock)))
+	_subtitle_dock = dock
+	if arena_backdrop != null:
+		arena_backdrop.refresh_ours()
 	_place_stickers()
-	_banner_title.add_theme_font_size_override("font_size", roundi(BANNER_FONT * minf(ts, BANNER_SCALE_MAX)))
+	_banner_title.add_theme_font_size_override("font_size", banner_title_px())
 	name_sticker._fit()
 	# At big text RESPIN and UNDO stack (the row's width is the hand's).
 	_sticker_box.vertical = ts > STICKERS_SIDE_BY_SIDE_UP_TO
 	_banner_rows.vertical = ts <= STICKERS_SIDE_BY_SIDE_UP_TO
 	_banner_rows.add_theme_constant_override("separation", 0 if _banner_rows.vertical else roundi(BANNER_PAD_H))
 	# CMB-05: wide enough for the address line at its size, within the share.
-	var address_w := HudSkin.mono().get_string_size(_address_full, HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(ADDRESS_FONT * minf(ts, BANNER_SCALE_MAX))).x + BANNER_PAD_H * 2.0
+	var address_w := HudSkin.mono().get_string_size(_address_full, HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(ADDRESS_STEPS[0])).x + BANNER_PAD_H * 2.0
 	_banner.custom_minimum_size.x = minf(maxf(BANNER_W * ts, address_w), size.x * (BANNER_MAX_SHARE if _banner_rows.vertical else BANNER_WIDE_SHARE))
 	_fit_address()
 	# At big text the name sticker and RAM panel leave the bottom row for the notes column's top;
@@ -2559,7 +2577,7 @@ func _refresh_status() -> void:
 	# S-COMBAT-HUD (CMB-05): the address line, and the outcome's word after it once it lands.
 	var line := address_line()
 	if not _outcome_held and state.outcome != CombatState.Outcome.NONE:
-		line += "  ·  " + _status.text
+		line += OUTCOME_GLUE + _status.text
 	_address_full = line
 	_address.text = line
 	_banner.tooltip_text = _status.text if state.outcome == CombatState.Outcome.NONE else ""
@@ -2593,31 +2611,43 @@ func address_line() -> String:
 	return " // ".join(parts).to_upper()
 
 
-## The address line's font: ADDRESS_FONT at the text scale (capped like the title), smaller
-## until it fits the banner's width.
+## The banner title's size (px): its step at the text size, never past BANNER_TITLE_MAX_PX (the
+## largest step at the text size under it then; M14 12Q-WORDS: every size on the type scale).
+static func banner_title_px() -> int:
+	return mini(UiTheme.font_px(BANNER_STEP), UiTheme.font_px(UiTheme.step_of(BANNER_TITLE_MAX_PX)))
+
+
+## The address line's font: the first of ADDRESS_STEPS at the text size that fits the banner's
+## width (never under the caption step: the floor).
 func _fit_address() -> void:
 	if _address == null:
 		return
 	var font := HudSkin.mono()
-	var fs := roundi(ADDRESS_FONT * minf(Settings.text_scale, BANNER_SCALE_MAX))
 	var room := maxf(_banner.custom_minimum_size.x, _banner.size.x) - BANNER_PAD_H * 2.0
 	if not _banner_rows.vertical:
 		room -= _banner_title.get_combined_minimum_size().x + BANNER_PAD_H
 	if _address.size.x > 0.0:
 		room = minf(room, _address.size.x)  # laid out: the room it really has
-	while fs > ADDRESS_MIN_FONT and font.get_string_size(_address_full, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
-		fs -= 1
+	var fs := UiTheme.font_px(ADDRESS_STEPS[0])
+	for step in ADDRESS_STEPS:
+		fs = UiTheme.font_px(step)
+		if font.get_string_size(_address_full, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= room:
+			break
 	# At its smallest it drops its leading parts (NETRUN, the corporation...) so the Site and
-	# the enemy stay whole; the ellipsis only past that.
-	var parts := _address_full.split(" // ")
-	while parts.size() > 1 and font.get_string_size(" // ".join(parts), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
+	# the enemy stay whole, then (M14 12Q-WORDS) the place for the outcome's word alone; the
+	# ellipsis only past that.
+	var cut := _address_full.find(OUTCOME_GLUE)
+	var tail := _address_full.substr(cut) if cut >= 0 else ""
+	var parts := (_address_full.substr(0, cut) if cut >= 0 else _address_full).split(" // ")
+	while parts.size() > 1 and font.get_string_size(" // ".join(parts) + tail, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
 		parts.remove_at(0)
-	_address.text = " // ".join(parts)
+	var shown := " // ".join(parts) + tail
+	if tail != "" and font.get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
+		shown = tail.trim_prefix(OUTCOME_GLUE)
+	_address.text = shown
 	_address.add_theme_font_size_override("font_size", fs)
 
 
-## The smallest the address line shrinks to (px); past it the line drops its leading parts.
-const ADDRESS_MIN_FONT := 12
 ## The whole address line (the label may show its end only).
 var _address_full: String = ""
 
