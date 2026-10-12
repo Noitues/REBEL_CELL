@@ -53,6 +53,9 @@ const HOVER_SCALE := 1.75
 var hover_to: float = HOVER_SCALE
 ## B2 (D15): the fanned hand's arc rise (px up, drawn only) and whether the fan set the rest tilt.
 var fan_rise: float = 0.0
+## G2R2-c: the share of this card's width the next card in the fanned hand lies over (0 = none, the last card).
+## The face keeps its cost and title out of it (only the body lines' ends may tuck under, D15).
+var tucked: float = 0.0
 ## B2 (D15): the fan's angle for this card (degrees) and the turn drawn now (0 while lifted).
 var fan_deg: float = 0.0
 var fan_turn: float = 0.0:

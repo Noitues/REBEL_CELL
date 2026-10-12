@@ -330,7 +330,7 @@ func test_slots_fit_and_focus_reaches_every_action_at_every_text_scale() -> void
 			var view := win.fit.scroll.get_global_rect()
 			var focused := get_viewport().gui_get_focus_owner()
 			for c in cards:
-				if scale <= 1.6 and focused != null and c.is_ancestor_of(focused):  # G2R-3: at 2.0 one folder pages (MORE ABOVE / BELOW)
+				if focused != null and c.is_ancestor_of(focused):  # G2R2-3: the brief folder at 1.6+ shows the whole case file at 2.0 too
 					assert_true(view.grow(1.0).encloses(c.get_global_rect()), "%d used, %.1f: the focused case file %s whole in the view %s" % [used, scale, c.get_global_rect(), view])
 			assert_not_null(focused, "%d used, %.1f: an action holds the focus" % [used, scale])
 			if focused != null:

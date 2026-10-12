@@ -289,10 +289,12 @@ func test_l42_the_focused_slot_shows_its_name_and_load_whole_with_a_cue_for_the_
 			assert_true(card.held(), "%.1f slot %s: the focused slot lies straight" % [scale, card.slot])
 			# G2R-3: at 2.0 a case file (folder + LOAD, DELETE and the pencil under it) is taller than the view
 			# on a 720p screen: one folder per page, so the view holds the actions and the folder pages with MORE ABOVE / BELOW.
-			if scale <= 1.6:
-				assert_true(view.encloses(card.folder.get_global_rect()), "%.1f slot %s: the whole folder %s in the view %s (its tab and name)" % [scale, card.slot, card.folder.get_global_rect(), view])
-				var name_l := card.folder.find_child("CorpName", true, false) as Control
-				assert_true(view.encloses(name_l.get_global_rect()), "%.1f slot %s: the corporation's name shows" % [scale, card.slot])
+			assert_true(view.encloses(card.get_global_rect()), "%.1f slot %s: the whole case file %s (folder, LOAD, DELETE, pencil) in the view %s" % [scale, card.slot, card.get_global_rect(), view])
+			assert_true(view.encloses(card.folder.get_global_rect()), "%.1f slot %s: the whole folder %s in the view %s (its tab and name)" % [scale, card.slot, card.folder.get_global_rect(), view])
+			var name_l := card.folder.find_child("CorpName", true, false) as Control
+			assert_true(view.encloses(name_l.get_global_rect()), "%.1f slot %s: the corporation's name shows" % [scale, card.slot])
+			assert_eq(card.folder.find_child("Facts", true, false) == null, scale >= 1.6, "%.1f slot %s: ICE / RUNS / FILED move to the tooltip from 1.6" % [scale, card.slot])
+			assert_gte(float(name_l.get_theme_font_size(&"font_size")), UiTheme.font_px(UiTheme.LABEL), "text never under 1.0 size")
 			assert_true(view.encloses(card.load_button.get_global_rect()), "%.1f slot %s: LOAD whole in the view" % [scale, card.slot])
 			assert_true(view.encloses(card.delete_button.get_global_rect()), "%.1f slot %s: DELETE whole in the view" % [scale, card.slot])
 			var hidden_above := false

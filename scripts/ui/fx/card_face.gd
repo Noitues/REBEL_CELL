@@ -33,6 +33,8 @@ const COST_PX := 30.0
 const TITLE_AT := Vector2(127, 30)
 const TITLE_W := 126.0
 const TITLE_PX := 23.0
+## G2R2-c: px (x text scale) the title keeps from the edge of the card lying over its right side.
+const TITLE_TUCK_GAP := 3.0
 const ART := Rect2(14, 52, 182, 102)
 const ART_GLYPH := 0.74
 const BAND := Rect2(14, 154, 182, 24)
@@ -231,6 +233,33 @@ static func key_text(card: ZineCard) -> String:
 	return "[%s]" % key if key != "" else ""
 
 
+## G2R2-c: where the title is drawn: {at (centre, card px), fs (font px), rect (the ink's box, card px)}. The title
+## shrinks to its room, which stops short of the card lying over the right edge in a fanned hand (`tucked`).
+static func title_layout(card: ZineCard) -> Dictionary:
+	var display := Palette.display()
+	var size := card.size
+	var title := card.card_title.to_upper()
+	var title_at := at_px(card, TITLE_AT)
+	var tw := TITLE_W * size.x / UNIT.x
+	if card.tucked > 0.0:
+		var left := title_at.x - tw * 0.5
+		var right := minf(title_at.x + tw * 0.5, size.x * (1.0 - card.tucked) - TITLE_TUCK_GAP * card.text_scale)
+		tw = right - left
+		title_at.x = (left + right) * 0.5
+	var tfs := font_px(card, TITLE_PX)
+	while tfs > 9 and display.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, tfs).x > tw:
+		tfs -= 1
+	var w := display.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, tfs).x
+	var h := display.get_height(tfs)
+	return {"at": title_at, "fs": tfs, "rect": Rect2(title_at.x - w * 0.5, title_at.y - h * 0.5, w, h)}
+
+
+## The RAM cost dot's box (card px).
+static func cost_rect(card: ZineCard) -> Rect2:
+	var cr := COST_R * card.size.x / UNIT.x
+	return Rect2(at_px(card, COST_AT) - Vector2(cr, cr), Vector2(cr, cr) * 2.0)
+
+
 ## Draws the card's face (the caller has set the hover / lift transform).
 static func draw(card: ZineCard) -> void:
 	var s := card.text_scale
@@ -262,12 +291,8 @@ static func draw(card: ZineCard) -> void:
 		var cfs := font_px(card, COST_PX * (0.8 if card.cost >= 10 else 1.0))
 		_centred(card, display, cc, str(card.cost), cfs, Palette.INK)
 	# The title, centred right of the cost dot, shrinking to fit.
-	var title := card.card_title.to_upper()
-	var tw := TITLE_W * size.x / UNIT.x
-	var tfs := font_px(card, TITLE_PX)
-	while tfs > 9 and display.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, tfs).x > tw:
-		tfs -= 1
-	_centred(card, display, at_px(card, TITLE_AT), title, tfs, Palette.PAPER)
+	var tl := title_layout(card)
+	_centred(card, display, tl["at"], card.card_title.to_upper(), int(tl["fs"]), Palette.PAPER)
 	# The art: the first pictogram's glyph, big in the panel.
 	var art := Rect2(at_px(card, ART.position), ART.size * size / UNIT)
 	var offer := MainframeArt.tex(card.offer_art) if card.offer_art != "" else null

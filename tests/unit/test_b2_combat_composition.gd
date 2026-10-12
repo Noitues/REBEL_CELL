@@ -316,6 +316,28 @@ func test_the_hand_fans_overlaps_and_rises_at_the_middle() -> void:
 	await _close(scene)
 
 
+## G2R2-c: at rest, each fanned card's RAM cost and title lie wholly in the part its right neighbour leaves
+## showing, at every text scale (only the body lines' ends may tuck under, D15).
+func test_g2r2_the_fanned_cards_cost_and_title_show_at_rest_at_every_scale() -> void:
+	for scale in SCALES:
+		var scene := await _combat(scale)
+		var n: int = scene._hand_box.get_child_count()
+		assert_gt(n, 2, "%.1f: a hand" % scale)
+		for k in n - 1:
+			var card := scene._hand_box.get_child(k) as ZineCard
+			var next := scene._hand_box.get_child(k + 1) as ZineCard
+			if card == null or next == null:
+				continue
+			var shown: float = next.position.x - card.position.x  # the part of this card the next one leaves
+			assert_lt(shown, card.size.x, "%.1f card %d: the next card lies over it" % [scale, k])
+			var cost := CardFace.cost_rect(card)
+			assert_lte(cost.end.x, shown + 0.5, "%.1f card %d: the cost number clear of the next card (%s vs %.1f)" % [scale, k, cost, shown])
+			var title: Rect2 = CardFace.title_layout(card)["rect"]
+			assert_lte(title.end.x, shown + 0.5, "%.1f card %d '%s': the title clear of the next card (%s vs %.1f)" % [scale, k, card.card_title, title, shown])
+			assert_gte(title.position.x, cost.end.x - 1.0, "%.1f card %d: the title clear of the cost dot" % [scale, k])
+		await _close(scene)
+
+
 func test_card_focus_is_lime_corner_brackets_and_a_lift_never_a_lime_fill() -> void:
 	var src := FileAccess.get_file_as_string("res://scripts/ui/fx/card_face.gd")
 	assert_false(src.contains("_cc_style"), "no lime-filled plate behind a focused card (bible 2.10)")
