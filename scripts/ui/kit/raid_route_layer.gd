@@ -38,6 +38,10 @@ var wipe_u: float:
 		_mv.put(&"wipe_u", v)
 var _mv := MotionValues.new({&"write_u": 1.0, &"wipe_u": 0.0})
 var _pool: RaidPencilPool = null
+## M14 12Q-HQ: where the pencil is laid (null: the scene's raid pencil layer, over every UI). A
+## page that keeps its map marks under its own panels (the HQ: its terminals over the routes)
+## gives a Control in its draw order; the pool maps the global points into it.
+var pool_host: Control = null
 ## The signature the pencil was last laid for (0: lay at the next frame).
 var _laid_sig: int = 0
 
@@ -148,7 +152,16 @@ func _lay() -> void:
 			_pool.end()
 		return
 	if _pool == null:
-		_pool = RaidPencilPool.make(self)
+		if pool_host != null and is_instance_valid(pool_host):
+			_pool = RaidPencilPool.new()
+			pool_host.add_child(_pool)
+		else:
+			_pool = RaidPencilPool.make(self)
+	if pool_host != null and is_instance_valid(pool_host) and _pool.get_parent() == pool_host:
+		# The points are global px: the pool undoes its host's canvas transform (a page that slides).
+		var undo := pool_host.get_global_transform_with_canvas().affine_inverse()
+		if _pool.transform != undo:
+			_pool.transform = undo
 	# M14 perf slice: the pencil is laid again only when something it shows changed (the routes,
 	# the progress, the map's camera, the text size); at rest the marks stay as laid.
 	var sig := lay_signature()

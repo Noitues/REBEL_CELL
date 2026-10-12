@@ -37,6 +37,63 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-11 — M14 12Q-HQ: the HQ page pages its hand, its card and the Heat terminal; map marks under its panels
+12q QA matrix audit (L30, L31, L32, L33, L34, L43, L49, L53; ART-5 acceptance "at 2.0 the selected Site's card runs under
+JACK IN"). Re-checked on m14-group2 @ 6cc7de06 (captures `docs/art_review/ART-12/12q/fixes/HQ.jpg`, before | after at
+1.0 / 1.6 / 2.0): every item still showed. Rule kept: text never smaller than at 1.0; nothing clipped or `Control.scale`d;
+what is short of room **pages** behind a MORE tab (BACK on the last page; a plate-less MenuChip at body size, pad and
+keyboard reachable, its tooltip says what is behind it).
+- **The hand** (L30, L53; `HandPager`, `scripts/ui/hq/hand_pager.gd`, pure `split`): a CREW or MARKET row wider than its
+  box is dealt into pages in order (units: crew polaroids; recruit cards, boost stickers, Profile unlock columns inside
+  their captioned groups; a group's caption on every page it has units on; the queued-boosts line and a RECALL chip stay
+  with their neighbour). The MORE tab ends the row below text 1.3; from 1.3 (one-line deck tabs) it heads the CREW /
+  MARKET / DEFENCE column so the row keeps its width. The page resets when another deck opens. The raid setup's defence
+  hand is not paged (12Q-RAID's page).
+- **Profile unlock chips** (L30): at text >= 1.3 a chip's name wraps at `UNLOCK_WRAP` x scale (150 px at 1.0) and the
+  chips stand one per column (two below 1.3, as before). `MenuChip.wrap_px` / `label_lines()` (kit; default 0 = one line,
+  every other chip unchanged).
+- **The selected card** (L31-L34; `CardPager`, `scripts/ui/hq/card_pager.gd`, pure `split` / `units`): the Site's holo
+  file, CORE's / a node's terminal and the CLAIM terminal keep their header on every page and deal their body rows into the
+  column's room; a caption goes with the row it heads (PICK THE NODE TO BUILD, > HQ ACTIONS); a row taller than a page by
+  itself is dealt in parts: a wrapped Label by whole lines (`lines_skipped` / `max_lines_visible`, its height set to its
+  shown lines), a GridContainer by rows of tiles (the CLAIM tiles), a FlowContainer by its lines (IF CLEARED's badges at
+  2.0). Rows are measured all shown once per width and text scale (again when a shown row or the header changed height: a
+  label's words wrap a frame after the build); the column keeps the width of the card's widest page. The holo's MORE tab
+  stands in its foot at the left (the room it keeps for the DECRYPTED stamp, which stays at the right); a terminal card's
+  stands in the verb slot left of its sticker (`_beside_card_foot`), else on the map beside the card's foot when nothing
+  of the page is there, else under the card in room the column keeps.
+- **Card column room**: it ends above the verb sticker as drawn (`_column_foot`: its tilt and `VERB_CLEAR` 6 px x object
+  scale for the breathing ring; the ART-5 "runs under JACK IN"); with no verb (a Site not reachable yet) it runs down
+  through the empty slot. At text >= 1.3: the column widens to `CARD_COLUMN` x scale (<= half the page,
+  `CARD_COLUMN_SHARE`; 480 at 1.6 as before, 600 at 2.0) and the verb slot is as wide as the column (JACK IN's system
+  word wraps on two lines at 2.0, not three: the card keeps that room; the hand ends at the column either way).
+  `SiteHoloCard`'s header floor (RaidHolo's HEAD_H) and its pads above the header and under the rows stop growing at x1.3
+  (`HEAD_SCALE_MAX`, STYLE 5.6), so at 2.0 the file's header is as tall as its words. The MAP KEY stays over the column
+  (on the map left of it, it covered nodes: `test_city_map_sweeps`).
+- **Heat terminal** (L43): it ends over the hand and its tabs: its rows (IN FORCE, NEXT, SINKS) page above SCRUB HEAT, the
+  MORE tab beside SCRUB (no row of its own).
+- **Map marks under the HQ's panels** (L31, L43): the raid's red pencil was on the scene's raid pencil CanvasLayer (95,
+  over every UI, ART-6 3A). On the HQ page `RaidRouteLayer.pool_host` lays it in the page's own `MapMarks` layer (right
+  over the map cursor, under the work order, hand, card, verb and the Heat terminal); the pool undoes its host's canvas
+  transform (points stay global). The raid playout keeps the pencil layer over the UI (12Q-RAID's page; unchanged).
+- **INTERCEPTED toast** (L49): when the foot's gap is too narrow (big text) it stands on the map with its foot on the
+  hand's top, between the work order (or the tabs, when the order leaves it too little) and the card column, never over
+  the polaroids.
+- **Tests**: new `test_hq_12q_fit` (fast): at 1.0 / 1.6 / 2.0 every market offer and every operative whole on some page
+  (tab clear of them, BACK returns), CLAIM / CORE / node / DOWN node / four corps' Site files / the Exploit file: every
+  row, line, tile and badge whole on some page, the column on the page and above the sticker as drawn, MORE clear of the
+  rows and the verb; the Heat terminal above the hand and its tabs with every row on a page and SCRUB on each; the pencil
+  in the page's marks layer under the panels; the toast clear of the crew; the pure splits. Changed:
+  `test_horizontal_pass24_screens` (crew dossiers: MORE turns to a card's page before it takes the focus).
+- **hq_scene.gd functions touched**: `_build_hq_page`, `_place_hq`, `_place_corp_news`, `_link_hq_focus`, `open_hand`,
+  `refresh_site_card`, `toggle_heat_terminal`, `_mount_hq_routes`, `_fill_crew_hand`, `_fill_market_hand`,
+  `_site_card`, `_node_rows`; new `_page_tab`, `_page_hand`, `_page_card`, `_beside_card_foot`, `_place_card_tab`,
+  `_column_foot`, `_relink_hq_focus`, `turn_hand_page`, `turn_card_page`, `turn_heat_page`, `_page_heat_terminal`,
+  `_hq_marks_layer`, `_unlock_column`. Outside the area (smallest change): `scripts/ui/kit/chrome/menu_chip.gd`
+  (`wrap_px`), `scripts/ui/kit/raid_route_layer.gd` (`pool_host`), `scripts/ui/kit/site_holo_card.gd` (`HEAD_SCALE_MAX`).
+- **Open question for the designer** (below): at 2.0 a Site file pages in three or four (one row a page) and the crew hand
+  shows two polaroids a page.
+
 ### 2026-10-11 — M14 LEAK: a line said in one campaign never shows in the next
 ART-6 acceptance saw Solace's campaign-lost DISPATCH line ("Home server lost …") on the next raid_lab
 state. Two causes, reproduced headless in `test_m14_dialogue_leak`:
@@ -6176,6 +6233,7 @@ Before covers 43 screens; after covers 53. The remaining findings are low-confid
 - Colour-blind support stays a daltonize correction (ART_BIBLE §12 says "remap").
 
 ## Open questions for the designer
+- **2026-10-11 12Q-HQ, the HQ at text 2.0**: the selected Site's file pages one row a page (its header and foot take about 150 of the column's 215 px) and the crew hand shows two polaroids a page. Keep paging, or move JACK IN's system word beside the sticker at big text (bible 1.3 says under it) or the MAP KEY off the column to give the card its room?
 - **2026-10-11 BIG-TEXT b, letterhead at 1.0**: MERIDIAN FREIGHT SYSTEMS no longer runs under the work order's seal; at 1.0 it ends in an ellipsis ("MERIDIAN FREIGHT SYS…"), since the 1.0 size is the floor and a second line would grow the letterhead and fold the whole order at 1.0. Keep the ellipsis, or grow the letterhead (and fold), or a shorter letterhead name per corp (content)?
 - ~~**CP-001 (2026-10-10, process):** rule 6 scope, full-suite cadence wording, Batch API use, playtest gates~~ **Answered 2026-10-11** (1A 2A-never-×3 3A 4A, "Designer rulings CP-001"); only the API key is still open.
   per group — `docs/handoff/CHECKPOINT_PENDING.md`; defaults in force: A / A / B (reports only) / A.
