@@ -16,22 +16,17 @@ final "after" measurement (no sheet, no DECISIONS), BIG-TEXT mid-way through the
 (uncommitted edits lost with the worktree removal). The art director's round-b list is recovered (see the
 BIG-TEXT b brief in this session's transcript; source: old orchestrator subagent jsonl fba00c79…/agent-a9abc5cb8da94c21f).
 
-## M14 close-out list (updated 2026-10-11 evening)
-| # | Item | State |
-|---|---|---|
-| 1 | BIG-TEXT round b | DONE db29f599 on worktree-agent-a50e122cd5d6512b2 (carries SUBTITLE + RED-TIP + main 8404830a) |
-| 2 | PERF finish | numbers done (HQ idle t2 9.4->6.4 ms, t1 10.4->6.9; combat t2 9.2->5.1, t1 9.3->5.1 median, loaded machine); committing CPU fixes after merging #1's branch |
-| 3a | pass21 Mainframe subtitle red + pegboard under band + SignSpill grey blur | DONE 5cdb47ec (in #1) |
-| 3b | test_anim_r2_combat focus-tip red | DONE bfb47cc5 (REDTIP.jpg; 93ef9f3b in #1) |
-| 3c | test_city_map_sweeps landmark red | MERGED to main 8404830a (test-only, B4 b one-tag rule) |
-| 3d | SPILL: other LightSpills reading the stale AfterScrim copy | agent running |
-| 4 | Art-pass group review (sheet M14_CLOSEOUT_GROUP.jpg, ruling 9 told) | APPROVED 2026-10-11; follow-ups: letterhead_name per corp + takeover end frame at 1.0 (~0.45 HQ floor) = M14 FOLLOW-UP agent |
-| 5 | Merge group head into main, checks, push gate | merged 4bb749ad; push gate running |
-| 6 | Quiet-machine perf run (p95 still > 8 ms under load) | after 5 |
-| 7 | 12q QA matrix on db29f599 | auditor running |
-| 8 | 12b bookkeeping refresh | after 7 |
-| 9 | Gate: full suite ONCE + smoke + validate; GATE_REPORT (retro + replan), PT list, CP-002 | after 8 |
-| 10 | CI triggers restored, "M14 complete", report, pause | last |
+## M14 close-out list (updated 2026-10-11 night)
+Main: 8df81af7 group 1 + FOLLOW-UP pushed at 6fb177a4/gate; since then merged ART-6 acceptance 13b942d8, 12b-2 docs 618b4bd7, STYLE_GUIDE b215beed (not pushed yet).
+Group 1 (BIG-TEXT b, SUBTITLE, RED-TIP, PERF, SPILL) APPROVED + merged; FOLLOW-UP (letterhead_name, takeover end frame) merged.
+**Group 2** = branch m14-group2 (worktree .claude/worktrees/m14-group2) @ 6cc7de06: FIX-2 (no raid toast after loss, subtitle under the
+takeover, memo routing wrap), ART-2/5 acceptance (clutter fixture + drone dock fix, per-corp Grid + holo header wrap), LEAK
+(Dialogue cleared on new_campaign), 12q audit file. Five 12q fix slices running on it: 12Q-MENUS, 12Q-WORDS, 12Q-HQ, 12Q-RAID, 12Q-MAIN.
+12q audit PARTIAL (P1 4 / P2 15 / P3 19): hc / rm / cb-deutan combos still capturing (helper → %TEMP%/qa12q/matrix_b/DONE); then resume the
+auditor (it was agent a847db03…) to review them and drop PARTIAL.
+Next: merge the five slices into m14-group2 → one group sheet → art-pass review (incl. Qs: takeover city darker than round 20 (ISOLATE look);
+seal gap 8→4 px; fanned hand hides line ends at rest; Grid per-corp differences list in DECISIONS "ART-2/ART-5 acceptance") → merge →
+push gate → quiet perf run → GATE (full suite once, GATE_REPORT, PT list, CP-002) → CI → "M14 complete".
 
 Retro note for the gate report: the commit hook blocks every agent while main carries reds; fix main's reds first, before
 spawning slices (cost ~1 h of blocked agents today). precommit's shared log folder and autoload parse check fixed (5cdb47ec).
