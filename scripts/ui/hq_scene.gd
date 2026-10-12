@@ -911,6 +911,10 @@ func _set_panel(p: Control, name: String) -> void:
 	var on_city := name in ["hq", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE if on_city else Control.MOUSE_FILTER_STOP
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# M14 12Q-WORDS (L41): the campaign's end pages give DISPATCH's verdict a two-line band (at big
+	# text it ended in "…" on one line), as the netrun's run end does; every other page one line.
+	if subtitle_strip != null and is_instance_valid(subtitle_strip):
+		subtitle_strip.set_lines(END_SUBTITLE_LINES if name in END_PAGES else 1)
 	_panel = p
 	# ANIM-6: a new page enters (glass slides in, back to the HQ from the left); the same page
 	# rebuilt after an action just shows.
@@ -5545,6 +5549,10 @@ const END_PRINT_MARGIN := 60.0
 const END_LOCK_MARGIN := 40.0
 const END_LOCK_ZOOM_MIN := 0.8
 
+## M14 12Q-WORDS (L41): the campaign end's pages and the subtitle lines their band holds.
+const END_PAGES: Array[String] = ["end_lock", "end"]
+const END_SUBTITLE_LINES := 2
+
 var end_lock: RansomLock = null
 var _end_lock_frames: int = 0
 var _end_lock_fitted: bool = false
@@ -5555,6 +5563,8 @@ var _end_dossier: AuditDossier = null
 func show_end() -> void:
 	var c := RunManager.campaign
 	var won := c.outcome == CampaignState.Outcome.WON
+	if subtitle_strip != null and is_instance_valid(subtitle_strip):
+		subtitle_strip.set_lines(END_SUBTITLE_LINES)  # before the line is paged for the band
 	Dialogue.speak("win" if won else "loss", RC.Voice.DISPATCH, c.corporation_id, &"", c.campaign_seed)
 	if c.outcome == CampaignState.Outcome.LOST and RansomLock.plays_now():
 		_show_end_lock()

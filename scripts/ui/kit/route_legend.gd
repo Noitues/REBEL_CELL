@@ -53,8 +53,9 @@ var _built_all: bool = false
 var _built_pad: bool = false
 ## The corporation's colour (kept for callers; option A's stickers keep their kind colours).
 var corp_color: Color = Palette.CORP_SOLACE
-## The strip's row (every entry is in it).
-var strip: HBoxContainer
+## The strip's rows (every entry is in it). M14 12Q-WORDS (L54): a flow, so at big text it wraps
+## to a second row at the room it is given instead of being scaled down under the text size.
+var strip: HFlowContainer
 ## The D13 cue's label.
 var cue: Label
 
@@ -97,10 +98,12 @@ func _build() -> void:
 	for child in body.get_children():
 		body.remove_child(child)
 		child.free()
-	strip = HBoxContainer.new()
+	strip = HFlowContainer.new()
 	strip.name = "Strip"
 	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	strip.add_theme_constant_override("separation", roundi(GAP * s))
+	strip.alignment = FlowContainer.ALIGNMENT_CENTER
+	strip.add_theme_constant_override("h_separation", roundi(GAP * s))
+	strip.add_theme_constant_override("v_separation", roundi(GAP * s * 0.5))
 	body.add_child(strip)
 	for k in kinds:
 		strip.add_child(_row(k, s))
@@ -117,6 +120,23 @@ func _build() -> void:
 	strip.add_child(cue)
 	_set_cue()
 	update_minimum_size()
+
+
+## The strip's width on one row (px, local, with the window's margins): the most room it takes.
+func one_row_width() -> float:
+	if strip == null:
+		return get_combined_minimum_size().x
+	var w := 0.0
+	var n := 0
+	for c in strip.get_children():
+		if c is Control and (c as Control).visible:
+			w += (c as Control).get_combined_minimum_size().x
+			n += 1
+	w += strip.get_theme_constant("h_separation") * maxi(0, n - 1)
+	var sb := get_theme_stylebox("panel")
+	if sb != null:
+		w += sb.get_margin(SIDE_LEFT) + sb.get_margin(SIDE_RIGHT)
+	return ceilf(w)
 
 
 func _set_cue() -> void:

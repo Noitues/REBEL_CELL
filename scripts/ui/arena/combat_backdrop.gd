@@ -35,6 +35,8 @@ const DISTRICT_DIM := 0.62
 const OURS_NOW_PX := 34
 const OURS_NOW_TILT := -0.09
 const OURS_NOW_MIN_Y := 0.16
+## M14 12Q-WORDS (L61): OURS NOW's gap under a rect it stands clear of (px).
+const OURS_NOW_CLEAR_GAP := 6.0
 ## The design height the pencil's size is given at.
 const DESIGN_HEIGHT := 720.0
 ## D17 on the city: how far (lots) a Site's point looks for its building.
@@ -43,6 +45,10 @@ const SITE_SEARCH := 4
 ## Returns the WheelViews (or anything with `combatant`, `lookup`, `global_center()` and
 ## `disc_radius()`) whose pools this backdrop softens; the combat scene sets it.
 var wheel_source: Callable = Callable()
+## M14 12Q-WORDS (L61): returns the rects (global) OURS NOW stands clear of (ART_BIBLE v2 1.2: no
+## UI covers grease pencil; at 1.0 the fight's subtitle box covered its top). The pencil moves
+## under one it would meet. The combat scene sets it (its subtitle dock).
+var keep_clear: Callable = Callable()
 ## Heat on combat (ART-3, §3.15) draws here: above the still, under the pencil.
 var heat_layer: Control
 ## The place shown ({corp, kind, day}: BackdropCatalog.place).
@@ -313,7 +319,23 @@ func _place_ours() -> void:
 		var px := UiTheme.font_px(OURS_NOW_PX) * s
 		var w := Palette.pencil().get_string_size(_ours.text, HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(OURS_NOW_PX)).x * s
 		_ours.position = ours_now_spot() + Vector2(-w * 0.5, px * 0.35).rotated(OURS_NOW_TILT)
+		_clear_ours()
 	_ours.visible = show
+
+
+## Places OURS NOW again (the combat scene's layout moved what it stands clear of).
+func refresh_ours() -> void:
+	_place_ours()
+
+
+## Moves OURS NOW down under each `keep_clear` rect it meets (in the order given).
+func _clear_ours() -> void:
+	if not keep_clear.is_valid() or not _ours.is_inside_tree():
+		return
+	for r: Rect2 in keep_clear.call():
+		var g := _ours.global_rect()
+		if r.has_area() and g.intersects(r):
+			_ours.global_position.y += r.end.y + OURS_NOW_CLEAR_GAP - g.position.y
 
 
 

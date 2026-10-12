@@ -2260,19 +2260,22 @@ func _on_route_settings() -> void:
 		route_legend.set_showing_all(overlay.show_all)
 
 
-## The strip at the map's foot, scaled down when wider than its row (big text).
+## The strip at the map's foot, on one row when its row has the room, else wrapped to more rows
+## (M14 12Q-WORDS L54: it was scaled down at big text, its words under the text size).
 func _fit_route_strip() -> void:
 	var row := route_legend.get_parent() as Control
 	if row == null:
 		return
-	var own := route_legend.get_combined_minimum_size()
-	var k := minf(1.0, (row.size.x - LegendSpot.MARGIN * 2.0) / maxf(1.0, own.x)) if row.size.x > 0.0 else 1.0
-	k = maxf(k, 0.1)
-	route_legend.size = own
-	route_legend.scale = Vector2(k, k)
-	route_legend.position = Vector2(maxf(0.0, (row.size.x - own.x * k) * 0.5), 0.0)
-	if not is_equal_approx(row.custom_minimum_size.y, ceilf(own.y * k)):
-		row.custom_minimum_size.y = ceilf(own.y * k)
+	var one := route_legend.one_row_width()
+	var room := row.size.x - LegendSpot.MARGIN * 2.0 if row.size.x > 0.0 else one
+	var w := minf(one, room)
+	route_legend.scale = Vector2.ONE
+	# The height follows the rows the flow lays out at this width (its minimum).
+	route_legend.size = Vector2(w, 0.0)
+	var h := ceilf(route_legend.size.y)
+	route_legend.position = Vector2(maxf(0.0, (row.size.x - route_legend.size.x) * 0.5), 0.0)
+	if not is_equal_approx(row.custom_minimum_size.y, h):
+		row.custom_minimum_size.y = h
 	_fit_node_panel()
 
 
