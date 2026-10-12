@@ -700,8 +700,6 @@ func _trim_slots() -> void:
 ## Case files per row: 3 while three fit the screen, then 2, then 1 (ported from
 ## art-m13-final title_scene.gd slot_columns).
 func slot_columns() -> int:
-	if CaseFileCard.side_actions():
-		return 1  # M14 12Q-MENUS: a case file with its actions beside it takes the row
 	var room := get_viewport_rect().size.x - PAGE_MARGIN.x * 2 - CrtWindow.PAD_H * 2
 	var w := CaseFileCard.width() + UiTheme.GUTTER
 	return clampi(int((room + UiTheme.GUTTER) / w), 1, SLOTS.size())
@@ -733,21 +731,6 @@ func _link_slots(page: Control) -> void:
 			cards.append(c)
 	var cols := maxi(1, grid.columns)
 	var rows := ceili(float(cards.size()) / cols)
-	if CaseFileCard.side_actions():
-		# M14 12Q-MENUS: the actions in a column beside each folder: up / down walk them all in order (LOAD, DELETE,
-		# the next case file's LOAD...), the last down to Back.
-		var chain: Array[Control] = []
-		for card in cards:
-			chain.append_array(card.actions())
-		for i in chain.size():
-			var c := chain[i]
-			c.focus_neighbor_left = NodePath()
-			c.focus_neighbor_right = NodePath()
-			c.focus_neighbor_top = c.get_path_to(chain[i - 1]) if i > 0 else NodePath()
-			c.focus_neighbor_bottom = c.get_path_to(chain[i + 1]) if i + 1 < chain.size() else (c.get_path_to(back) if back != null else NodePath())
-		if back != null and not chain.is_empty():
-			back.focus_neighbor_top = back.get_path_to(chain[chain.size() - 1])
-		return
 	for k in cards.size():
 		var r := k / cols
 		var line: Array[Control] = []

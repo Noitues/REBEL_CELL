@@ -19,8 +19,8 @@ extends BoxContainer
 ## - The actions sit under the folder on the glass (materials never mix). Designer ruling 2026-10-06 (2): LOAD and
 ##   DELETE stickers on every folder: LOAD is the pink verb (the newest campaign's, `primary`, takes the first focus
 ##   and the page's one scheduled sweep), DELETE the neutral white vinyl (round 44 FILL_WHITE: it is not the page's
-##   verb), and each DELETE carries the red grease-pencil "Can't Undo" under it with its arrow up to it (up to
-##   PENCIL_UP_TO; past it the words are in DELETE's tooltip). The confirm DELETE opens is 4C's abandon dialog.
+##   verb), and each DELETE carries the red grease-pencil "Can't Undo" under it with its arrow up to it (at
+##   every text scale, G2R-3). The confirm DELETE opens is 4C's abandon dialog.
 ## Signals up; the title screen acts. View only.
 
 signal load_pressed(slot: String)
@@ -65,10 +65,9 @@ const COMPACT_FROM := 1.3
 ## The Cell stamp's seeded tilt range (degrees; round 44: -6 + 2 n).
 const STAMP_TILT := -6.0
 const STAMP_TILT_STEP := 2.0
-## The "Can't Undo" pencil: shown up to this text scale (past it DELETE's tooltip says it), its
+## The "Can't Undo" pencil: shown at every text scale (G2R-3), its
 ## lettering grows up to NOTE_SCALE_MAX, its tilt (radians), and the gap the arrow's head keeps from the sticker
 ## (px at 1.0).
-const PENCIL_UP_TO := 1.6
 const NOTE_SCALE_MAX := 1.0
 const NOTE_TILT := -0.06
 const ARROW_GAP := 4.0
@@ -104,7 +103,7 @@ var tab_clip: TabClipLabel = null
 var stamp: CellStamp = null
 var _content: VBoxContainer
 var _tab_words: String = ""
-## The red grease-pencil "Can't Undo" pointing at DELETE (null past PENCIL_UP_TO).
+## The red grease-pencil "Can't Undo" pointing at DELETE .
 var cant_undo: PencilNote = null
 var _note_room: Control = null
 ## The folder's seeded tilt (degrees; D24) and whether the slot holds the focus (it lies straight then).
@@ -113,7 +112,7 @@ var _held: bool = false
 
 
 func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], p_primary: bool = false) -> void:
-	vertical = true  # the folder over its actions (M14 12Q-MENUS: beside them past PENCIL_UP_TO)
+	vertical = true  # the folder over its actions
 	slot = p_slot
 	summary = p_summary
 	crew = p_crew
@@ -145,14 +144,6 @@ func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], 
 	actions.add_theme_constant_override("separation", UiTheme.SP_S)
 	actions.alignment = BoxContainer.ALIGNMENT_BEGIN
 	add_child(actions)
-	if side_actions():
-		# M14 12Q-MENUS (QA matrix P2: at 2.0 the slots' view showed a folder's fields or its LOAD, never both): past
-		# the pencil note's scale the actions stand in a column beside the folder, so a case file is as tall as its
-		# folder and the view holds it whole (its tab, the corporation and LOAD at once).
-		vertical = false
-		add_theme_constant_override("separation", UiTheme.SP_M)
-		actions.vertical = true
-		actions.alignment = BoxContainer.ALIGNMENT_CENTER
 	if summary.is_empty():
 		_fill_empty()
 		new_button = _chip(actions, tr("New campaign"), "", tr("Start a new campaign in slot %s.") % slot)
@@ -184,20 +175,17 @@ func _init(p_slot: String = "", p_summary: Dictionary = {}, p_crew: Array = [], 
 	actions.add_child(gap)
 	var undo := tr("Can't Undo")
 	var tip := tr("Delete the campaign in slot %s (asks first).") % slot
-	if Settings.text_scale <= PENCIL_UP_TO:
-		cant_undo = PencilNote.new("
+	cant_undo = PencilNote.new("
 ".join(undo.split(" ", false, 1)), Palette.PENCIL_THREAT, NOTE_TILT,
-			roundi(PencilNote.FONT_PX * minf(Settings.text_scale, NOTE_SCALE_MAX)))
-		cant_undo.name = "CantUndo"
-		_note_layer().add_child(cant_undo)  # placed in its room by _place_note (a Node2D layer: never laid out by the card)
-		_note_layer().z_index = 1  # over the stickers beside it (no UI ever covers pencil)
-		gap.custom_minimum_size = cant_undo.text_size() + Vector2(ARROW_MIN * Settings.text_scale, 0)
-		gap.resized.connect(_place_note)
-		actions.sort_children.connect(_place_note)
-		sort_children.connect(_place_note)
-		_note_room = gap
-	else:
-		tip = "%s (%s)" % [tip, undo]
+		roundi(PencilNote.FONT_PX * minf(Settings.text_scale, NOTE_SCALE_MAX)))
+	cant_undo.name = "CantUndo"
+	_note_layer().add_child(cant_undo)  # placed in its room by _place_note (a Node2D layer: never laid out by the card)
+	_note_layer().z_index = 1  # over the stickers beside it (no UI ever covers pencil)
+	gap.custom_minimum_size = cant_undo.text_size() + Vector2(ARROW_MIN * Settings.text_scale, 0)
+	gap.resized.connect(_place_note)
+	actions.sort_children.connect(_place_note)
+	sort_children.connect(_place_note)
+	_note_room = gap
 	# DELETE: the neutral white vinyl (round 44 FILL_WHITE; not the page's verb, so never pink).
 	var del := VerbSticker.new(tr("DELETE"), VerbSticker.Fill.WHITE, DELETE_PX * verb_grow(), DELETE_TILT)
 	del.pre_translated = true
@@ -300,13 +288,7 @@ static func tab_height() -> float:
 	return TAB_H * minf(Settings.text_scale, TAB_SCALE_MAX)
 
 
-## M14 12Q-MENUS: true when the actions stand in a column beside the folder (past PENCIL_UP_TO: no pencil note
-## between LOAD and DELETE there).
-static func side_actions() -> bool:
-	return Settings.text_scale > PENCIL_UP_TO
-
-
-## The folder's width at the text size now (px; the card is wider by its actions' column when side_actions).
+## The folder's width at the text size now (px).
 static func width() -> float:
 	return FOLDER_W * Settings.text_scale
 

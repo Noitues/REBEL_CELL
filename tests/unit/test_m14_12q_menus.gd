@@ -60,6 +60,8 @@ func _assert_every_tab_reached(book: CodexBook, where: String) -> void:
 	assert_gt(book.hidden_tabs(1), 0, "%s: tabs run past the view" % where)
 	assert_eq(book.tab_next.text, tr(CodexBook.CUE_NEXT) % book.hidden_tabs(1), "%s: the right cue counts them" % where)
 	assert_false(book.cue_live(-1), "%s: nothing hidden on the left yet (the left cue idle)" % where)
+	assert_eq(book.tab_prev.modulate.a, 0.0, "%s: G2R-4 the left arrow hidden with nothing to page to" % where)
+	assert_eq(book.tab_next.modulate.a, 1.0, "%s: G2R-4 the right arrow shows with tabs to page to" % where)
 	var seen := {}
 	for step in n + 1:
 		var left := float(book.tab_scroll.scroll_horizontal)
@@ -74,6 +76,7 @@ func _assert_every_tab_reached(book: CodexBook, where: String) -> void:
 	assert_eq(seen.size(), n, "%s: every tab came whole into view (%s)" % [where, seen.keys()])
 	assert_eq(book.hidden_tabs(1), 0, "%s: the row's end reached" % where)
 	assert_false(book.cue_live(1), "%s: the right cue idles at the end" % where)
+	assert_eq(book.tab_next.modulate.a, 0.0, "%s: G2R-4 the right arrow hidden at the end" % where)
 	assert_gt(book.hidden_tabs(-1), 0, "%s: the left cue counts the tabs passed" % where)
 	for step in n + 1:
 		if book.hidden_tabs(-1) == 0:
@@ -278,18 +281,20 @@ func test_l42_the_focused_slot_shows_its_name_and_load_whole_with_a_cue_for_the_
 		var view := win.fit.scroll.get_global_rect().grow(1.0)
 		var cards: Array[Node] = t._panel.find_children("Slot*", "CaseFileCard", true, false)
 		assert_eq(cards.size(), 3, "three case files")
-		assert_eq(CaseFileCard.side_actions(), scale > CaseFileCard.PENCIL_UP_TO, "%.1f: the actions beside the folder past the pencil" % scale)
 		for k in [cards.size() - 1, 0]:
 			var card := cards[k] as CaseFileCard
 			card.load_button.grab_focus()
 			await _frames(6)
 			view = win.fit.scroll.get_global_rect().grow(1.0)
 			assert_true(card.held(), "%.1f slot %s: the focused slot lies straight" % [scale, card.slot])
-			assert_true(view.encloses(card.folder.get_global_rect()), "%.1f slot %s: the whole folder %s in the view %s (its tab and name)" % [scale, card.slot, card.folder.get_global_rect(), view])
+			# G2R-3: at 2.0 a case file (folder + LOAD, DELETE and the pencil under it) is taller than the view
+			# on a 720p screen: one folder per page, so the view holds the actions and the folder pages with MORE ABOVE / BELOW.
+			if scale <= 1.6:
+				assert_true(view.encloses(card.folder.get_global_rect()), "%.1f slot %s: the whole folder %s in the view %s (its tab and name)" % [scale, card.slot, card.folder.get_global_rect(), view])
+				var name_l := card.folder.find_child("CorpName", true, false) as Control
+				assert_true(view.encloses(name_l.get_global_rect()), "%.1f slot %s: the corporation's name shows" % [scale, card.slot])
 			assert_true(view.encloses(card.load_button.get_global_rect()), "%.1f slot %s: LOAD whole in the view" % [scale, card.slot])
 			assert_true(view.encloses(card.delete_button.get_global_rect()), "%.1f slot %s: DELETE whole in the view" % [scale, card.slot])
-			var name_l := card.folder.find_child("CorpName", true, false) as Control
-			assert_true(view.encloses(name_l.get_global_rect()), "%.1f slot %s: the corporation's name shows" % [scale, card.slot])
 			var hidden_above := false
 			var hidden_below := false
 			for c in cards:
@@ -312,7 +317,7 @@ func test_l42_the_focused_slot_shows_its_name_and_load_whole_with_a_cue_for_the_
 	_clear_slots()
 
 
-func test_l42_the_pad_walks_a_column_of_actions_beside_the_folders() -> void:
+func test_l42_the_pad_walks_the_actions_under_each_folder_at_2_0() -> void:
 	if not _fill_slots(2):
 		pending("a campaign already sits in slots 1-3")
 		return
@@ -323,14 +328,11 @@ func test_l42_the_pad_walks_a_column_of_actions_beside_the_folders() -> void:
 	await _frames(6)
 	var one := t._panel.find_child("Slot1", true, false) as CaseFileCard
 	var two := t._panel.find_child("Slot2", true, false) as CaseFileCard
-	var down := func(c: Control) -> Control: return c.get_node_or_null(c.focus_neighbor_bottom) as Control
-	assert_eq(down.call(one.load_button), one.delete_button, "LOAD down: its DELETE (under it)")
-	assert_eq(down.call(one.delete_button), two.load_button, "DELETE down: the next slot's LOAD")
-	var three := t._panel.find_child("Slot3", true, false) as CaseFileCard
-	assert_eq(down.call(two.delete_button), three.new_button, "on to the empty slot's NEW CAMPAIGN")
-	assert_eq(down.call(three.new_button), t._panel.find_child("Back", true, false), "the last down: Back")
-	var up := func(c: Control) -> Control: return c.get_node_or_null(c.focus_neighbor_top) as Control
-	assert_eq(up.call(two.load_button), one.delete_button, "up walks back")
+	var nb := func(c: Control, p: NodePath) -> Control: return c.get_node_or_null(p) as Control
+	assert_not_null(one.cant_undo, "G2R-3: the CAN'T UNDO pencil stays at 2.0")
+	assert_eq(nb.call(one.load_button, one.load_button.focus_neighbor_right), one.delete_button, "LOAD right: its DELETE (beside it, under the folder)")
+	assert_eq(nb.call(one.load_button, one.load_button.focus_neighbor_bottom), two.load_button, "LOAD down: the next slot's LOAD")
+	assert_eq(nb.call(two.delete_button, two.delete_button.focus_neighbor_top), one.delete_button, "up walks back")
 	t.queue_free()
 	await _frames(1)
 	_clear_slots()

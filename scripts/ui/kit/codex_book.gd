@@ -357,8 +357,6 @@ func step_section(step: int) -> void:
 ## M14 12Q-MENUS: the cues' words, a key each ("< +%d" left, "+%d >" right).
 const CUE_PREV := "< +%d" # TR
 const CUE_NEXT := "+%d >" # TR
-## M14 12Q-MENUS: a cue chip's alpha with no tab hidden on its side.
-const CUE_IDLE_ALPHA := 0.35
 
 
 ## M14 12Q-MENUS: whether the cue on `side` (-1 left, 1 right) has tabs to scroll to (it takes clicks then).
@@ -432,9 +430,9 @@ func _refresh_cues() -> void:
 	for pair in [[tab_prev, l, CUE_PREV], [tab_next, r, CUE_NEXT]]:
 		var c := pair[0] as MenuChip
 		c.visible = any
-		# Nothing hidden on its side: dimmed and no click (a disabled chip's lock read as a locked section).
+		# Nothing hidden on its side: invisible and no click.
 		var live := int(pair[1]) > 0
-		c.modulate.a = 1.0 if live else CUE_IDLE_ALPHA
+		c.modulate.a = 1.0 if live else 0.0  # G2R-4: an arrow shows only with something to page to (its room stays, so the row never reflows)
 		c.mouse_filter = Control.MOUSE_FILTER_STOP if live else Control.MOUSE_FILTER_IGNORE
 		var words := tr(String(pair[2])) % int(pair[1])
 		if c.text != words:

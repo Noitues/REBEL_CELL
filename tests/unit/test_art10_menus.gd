@@ -330,7 +330,7 @@ func test_slots_fit_and_focus_reaches_every_action_at_every_text_scale() -> void
 			var view := win.fit.scroll.get_global_rect()
 			var focused := get_viewport().gui_get_focus_owner()
 			for c in cards:
-				if focused != null and c.is_ancestor_of(focused):
+				if scale <= 1.6 and focused != null and c.is_ancestor_of(focused):  # G2R-3: at 2.0 one folder pages (MORE ABOVE / BELOW)
 					assert_true(view.grow(1.0).encloses(c.get_global_rect()), "%d used, %.1f: the focused case file %s whole in the view %s" % [used, scale, c.get_global_rect(), view])
 			assert_not_null(focused, "%d used, %.1f: an action holds the focus" % [used, scale])
 			if focused != null:
@@ -344,24 +344,15 @@ func test_slots_fit_and_focus_reaches_every_action_at_every_text_scale() -> void
 				# B5 (D24): the folder lies tilted round its centre; the actions sit under its laid-out (straight) rect.
 				var straight := Rect2(c.global_position + c.folder.position, c.folder.size)
 				for a in c.actions():
-					if CaseFileCard.side_actions():
-						# M14 12Q-MENUS: past the pencil's scale the actions stand beside the folder.
-						assert_gte(a.get_global_rect().position.x, straight.end.x - 1.0, "%.1f slot %s: %s beside its folder" % [scale, c.slot, a.name])
-						assert_lte(a.get_global_rect().end.y, straight.end.y + 1.0, "%.1f slot %s: %s within its folder's height" % [scale, c.slot, a.name])
-					else:
-						assert_lte(a.get_global_rect().end.x, straight.end.x + 1.0, "%.1f slot %s: %s under its folder" % [scale, c.slot, a.name])
+					assert_lte(a.get_global_rect().end.x, straight.end.x + 1.0, "%.1f slot %s: %s under its folder" % [scale, c.slot, a.name])
 				if c.delete_button == null:
 					continue
-				# The pencil up to 1.6; at 2.0 its words move into DELETE's tooltip.
-				if scale <= CaseFileCard.PENCIL_UP_TO:
-					assert_not_null(c.cant_undo, "%.1f slot %s: Can't Undo in pencil" % [scale, c.slot])
-					if c.cant_undo != null:
-						var nr := Rect2(c.cant_undo.global_position, c.cant_undo.text_size())
-						assert_lte(nr.end.x, c.delete_button.get_global_rect().position.x, "%.1f slot %s: the words clear of DELETE" % [scale, c.slot])
-						assert_gte(nr.position.x, c.load_button.get_global_rect().end.x, "%.1f slot %s: and of LOAD" % [scale, c.slot])
-				else:
-					assert_null(c.cant_undo, "2.0: no pencil")
-					assert_string_contains(c.delete_button.tooltip_text, "Can't Undo", "2.0: DELETE's tooltip says it")
+				# G2R-3: the pencil at every scale, 2.0 too.
+				assert_not_null(c.cant_undo, "%.1f slot %s: Can't Undo in pencil" % [scale, c.slot])
+				if c.cant_undo != null:
+					var nr := Rect2(c.cant_undo.global_position, c.cant_undo.text_size())
+					assert_lte(nr.end.x, c.delete_button.get_global_rect().position.x, "%.1f slot %s: the words clear of DELETE" % [scale, c.slot])
+					assert_gte(nr.position.x, c.load_button.get_global_rect().end.x, "%.1f slot %s: and of LOAD" % [scale, c.slot])
 			# Pad / keyboard: every LOAD, DELETE and NEW CAMPAIGN and Back reachable from the first.
 			var want: Array[Control] = [back]
 			for c in cards:
