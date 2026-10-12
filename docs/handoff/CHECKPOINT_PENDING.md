@@ -1,18 +1,11 @@
 # Checkpoint queue
 
-Pending: **CP-002 item 7** only (below; the full CP-002 as asked: `docs/handoff/gates/CP-002_as_asked.md`). Add items as they come up (template
-`docs/process/templates/CHECKPOINT.md`); BLOCKING questions go to chat at once, not here.
-
-# CP-002 — open item
-
-### 7. Raid hostile cue without colour (only item still open)
-Context: the raid's hazard ticks and reticles (`RaidPencil.hostile_cues()`) show only with the colour-blind setting on.
-- A: always shown.
-- B: only with the colour-blind setting (today).
-Side by side: `docs/art_review/PARITY/fixes/HOSTILE_CUE_AB.jpg` (default look and deutan simulation, four raid screens).
+Pending: **none**. Next: CP-003, after the playtest feedback is analyzed (CP-002 ruling 1). The full CP-002 as asked:
+`docs/handoff/gates/CP-002_as_asked.md`. Add items as they come up (template `docs/process/templates/CHECKPOINT.md`);
+BLOCKING questions go to chat at once, not here.
 
 ## Answered
-- **CP-002** (2026-10-12 → answered 2026-10-12, except item 7):
+- **CP-002** (2026-10-12 → answered 2026-10-12):
   1. Wait for playtest feedback: gather it all, act on none until the designer says; analyze → decide what changes and what is
      ignored → plan only the approved changes.
   2. R7 is retired as a fix list; it only informs a new set of updates (applying it as written would cause regressions).
@@ -20,7 +13,7 @@ Side by side: `docs/art_review/PARITY/fixes/HOSTILE_CUE_AB.jpg` (default look an
   4. No timed netrun step (the M2 "12–18 min" box is not checked by a PT step).
   5. Overkill shows only the result clamped to the minimum: "→ 0" (or "→ 0 LEFT"), never the over-damage.
   6. Pacing comes later in the plan, after gameplay polish.
-  7. Pending: the designer wants the A / B side by side first.
+  7. B: hostile tick marks / reticles stay off by default, behind the colour-blind setting only; long term removed entirely.
   Defaults D6–D14 stand (none vetoed); D11 and D14 now apply to whatever plan follows the feedback, not to R7.
   Logged: DECISIONS "Designer rulings CP-002".
 - **CP-001** (2026-10-10 → answered 2026-10-11): 1A rule 6 scoped to rule-bearing code; 2A full suite once per

@@ -11,8 +11,8 @@
 validate 0, quiet perf inside 8 ms), pushed, tagged gate/PT-001. Report: docs/handoff/gates/PT-001.md.
 **CP-002 answered 2026-10-12** (DECISIONS "Designer rulings CP-002"; memory playtest-feedback-triage-first): GATHER
 playtest feedback, act on NONE of it until the designer says; then analyze → decide (change / ignore) → plan. R7 retired
-(informs only). Only CP-002 item 7 (raid hostile cue A always / B colour-blind only) is open: side by side
-docs/art_review/PARITY/fixes/HOSTILE_CUE_AB.jpg. m14-cleanup (dc5860ff) waits for the designer too.
+(informs only). Item 7 = B (hostile ticks off by default, colour-blind setting only; long term removed). CP-002 fully answered.
+m14-cleanup merged 2026-10-12. Repo cleaned for playtest feedback (see "Clean state" below).
 Designer (2026-10-12) asked for three things in parallel while they playtest PT-001: (1) M14 retrospective
 (Explore agent gathering facts → write docs/handoff/gates/M14_RETROSPECTIVE.md), (2) full project replan (Plan agent
 draft → docs/handoff/gates/M14_REPLAN.md, feeds CP-002), (3) code cleanup of the gate-scope GDScript diff

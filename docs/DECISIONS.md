@@ -78,8 +78,9 @@ Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_deci
 5. **Overkill wording:** show only the result clamped to the minimum: "→ 0" (or "→ 0 LEFT"); never the over-damage
    (today "HITS YOU 8 → 1 LEFT" / "%d LEFT", `scripts/ui/combat_scene.gd:3429`, `:4677`). Not implemented until the plan.
 6. **Pacing later,** after gameplay polish.
-7. **Raid hostile cue without colour:** pending; the designer will rule from the A / B side by side
-   (`docs/art_review/PARITY/fixes/HOSTILE_CUE_AB.jpg`).
+7. **Raid hostile cue without colour: B** (designer, from `docs/art_review/PARITY/fixes/HOSTILE_CUE_AB.jpg`): the
+   designer dislikes the tick marks and reticles. They stay **off by default**, behind the colour-blind setting only
+   (today's behaviour, no code change). **Long term they are removed entirely** (candidate for the post-feedback plan).
 Defaults D6–D14 (gate report PT-001, M14 retrospective §5, replan §3) stand, unvetoed; D11 and D14 now apply to the plan
 that follows the feedback, not to R7.
 
