@@ -7,7 +7,10 @@
 | Reason | designer: "Resume M14 per docs/process/00_README.md and docs/handoff/STATE.md" (M14 pause lifted for M14 close-out only) |
 
 ## Current goal
-Close M14, then report "M14 complete" and pause (memory: pause-after-m14).
+**M14 COMPLETE (2026-10-12)** — gate PT-001 passed its checks on main @ 4780b5c0 (suite 2207 / 0 failing, smoke 0,
+validate 0, quiet perf inside 8 ms), pushed, tagged gate/PT-001. PAUSED (memory: pause-after-m14): waiting for the
+designer's PT-001 playtest feedback and CP-002 answers (docs/handoff/CHECKPOINT_PENDING.md). Start nothing post-M14
+until then. Report: docs/handoff/gates/PT-001.md.
 
 ## Correction to the previous STATE
 PERF (worktree-agent-a83770e7cc90b1b21, 6 commits) and BIG-TEXT (worktree-agent-a9abc5cb8da94c21f, 4 commits)

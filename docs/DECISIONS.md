@@ -66,6 +66,34 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-12 — M14 gate (PT-001): checks green, quiet perf run, **M14 complete**
+First User-Ready Gate under `docs/process/` (playtest `docs/playtest/PT-001_m14-close-out-group-2.md`, report
+`docs/handoff/gates/PT-001.md`, checkpoint CP-002). main @ 4780b5c0 (group 2 merged after the art-pass session's
+APPROVED: R1 7 items, R2 4 items, R3 + 3 polish items).
+- **Checks:** full suite once in isolation (`run_tests.py -j 4`): 2207 tests, 0 failing, 528 s wall; schema smoke PASS;
+  content validation PASS. The m14-group2 merge commits each passed precommit (one first attempt failed only because the
+  worktree had not been re-imported after the ACCESS merge added `HighContrastWalk`: import after merging class_names).
+- **Designer rulings (2026-10-12):** this PC is the target PC for the perf boxes; tier 1 on this PC counts as the Deck tier
+  (no real Steam Deck run owed; supersedes the open item in "ART-12 12p").
+- **Quiet perf run** (windowed `perf_pack --screens=b4_idle,combat_start --tiers=2,1 --perf=4 --warmup=60` at 1920x1080,
+  3 runs, no other Godot process; median of the run medians, p95 range):
+
+| Screen | Tier | Median ms (runs) | Median | p95 | GPU total |
+|---|---|---|---|---|---|
+| HQ idle | 2 | 6.04 / 5.78 / 5.94 | 5.94 | 6.7–7.3 | 3.8–3.9 |
+| HQ idle | 1 (Deck) | 6.69 / 6.54 / 6.97 | 6.69 | 10.9–12.2 | 4.7–5.3 |
+| Combat close-up | 2 | 5.14 / 4.85 / (6.90*) | 5.14 | 8.0–8.3 | 3.4–3.5 |
+| Combat close-up | 1 (Deck) | 4.93 / 4.85 / 5.64 | 4.93 | 7.7–8.4 | 3.3–3.8 |
+
+  \* run 3, tier 2 combat timed a flat 6.90 ms with 0.00 ms city GPU (the city view stopped updating during timing; its
+  capture before timing shows the city): not counted; the other two runs agree. Every median is inside the 8 ms budget,
+  so the "plainer HQ idle look vs higher frame time" choice does not arise. HQ idle at tier 1 has a p95 of 11-12 ms
+  (spikes, not the steady frame). Frames: `docs/art_review/PARITY/fixes/GATE_PERF.jpg`; before frames: `PERF.jpg`.
+- **QA matrix:** the 12q audit's 44 findings (L28–L65, L78–L83) are all fixed (group-1 FOLLOW-UP, 12Q-MENUS / WORDS / HQ
+  / RAID / MAIN / ACCESS), group 2 reviewed and APPROVED.
+- **M14 complete** (MILESTONES: every M14 box ticked). Per the standing ruling, work stops here; the "After ART-12"
+  list (R7, G1–G16, horizontal list, H25+) waits for the designer (CP-002 item 1).
+
 ### 2026-10-12 — Designer ruling: token efficiency (the M14 session ran every sub-agent on Opus, no batch lane)
 "I need more efficiency in the overall token usage." Applied mechanically, not by instruction:
 1. **Agent routing hook** (`tools/hooks/guard_agents.py`, PreToolUse on Agent): only the pinned types spawn

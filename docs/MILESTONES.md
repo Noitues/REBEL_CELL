@@ -272,7 +272,7 @@ budget met in a windowed profile (plan §5.2). Boxes are ticked only as the orch
 - [x] ~~Audit round ART-R0 to CLEAN.~~ Superseded: one M14 audit after ART-12 (DECISIONS "one full run, one audit at the end").
 
 ### Group 1 — Foundations
-- [ ] Group 1 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only").
+- [x] Group 1 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only"). Done: full suite at the M14 gate 2026-10-12, main 4780b5c0: 2207 tests, 0 failing; reviewed and APPROVED by the art-pass session; DECISIONS "M14 gate (PT-001)".
 
 **ART-1 — Foundations** (palette v2, faces incl. Courier Prime, theme, the material kit, glyph
 pipeline, the render spike)
@@ -285,7 +285,7 @@ pipeline, the render spike)
       it inside the plan §5.2 budget (the budget is a gate, not a reason to change the look).
 
 ### Group 2 — Combat
-- [ ] Group 2 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only").
+- [x] Group 2 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only"). Done: full suite at the M14 gate 2026-10-12, main 4780b5c0: 2207 tests, 0 failing; reviewed and APPROVED by the art-pass session; DECISIONS "M14 gate (PT-001)".
 
 **ART-2 — Combat wheel stack**
 - [x] The worst-case clutter fixture renders legibly at 1.0 and 1.6 (review pack `combat_clutter` on `ClutterFixture`; `test_the_clutter_fixture_keeps_every_word_on_screen_and_apart_at_1_0_and_1_6`, every boss; bloomed drones now keep off the HP number, result chips, tag, boss banner, nudges and Daemon rack; sheet `docs/art_review/ART-2/CLUTTER.jpg`, DECISIONS 2026-10-11 "M14 ART-2/ART-5 acceptance").
@@ -303,13 +303,13 @@ pipeline, the render spike)
 - [x] Fits at 2.0 (`test_the_hud_fits_at_every_text_size`).
 
 ### Group 3 — City
-- [ ] Group 3 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only").
+- [x] Group 3 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only"). Done: full suite at the M14 gate 2026-10-12, main 4780b5c0: 2207 tests, 0 failing; reviewed and APPROVED by the art-pass session; DECISIONS "M14 gate (PT-001)".
 
 **ART-5 — Unified city model and motion**
 - [x] Each corporation's Grid capture vs the reference (review pack `grid`, `grid_meridian`, `grid_halcyon`, `grid_orbital`, `grid_rebel_cell` at 1.0, windowed; sheet `docs/art_review/ART-5/GRID_PER_CORP.jpg`; every visible difference listed for the art director in DECISIONS 2026-10-11 "M14 ART-2/ART-5 acceptance"; the cut Site-file header fixed, `test_the_site_file_header_fits_whole_on_every_corporations_grid`).
 - [x] Motion layers pause under reduce motion (`test_the_pause_and_reduce_rules`).
 - [x] LOD switches at the configured zooms (`test_the_car_lod_swaps_at_the_configured_zooms`).
-- [ ] 60 fps at 1080p on the target PC, and the Deck tier.
+- [x] 60 fps at 1080p on the target PC, and the Deck tier. Quiet run at the M14 gate (this PC = target PC, tier 1 = Deck tier, designer 2026-10-12): HQ idle 5.94 / 6.69 ms, combat close-up 5.14 / 4.93 ms median (tier 2 / 1); sheet `docs/art_review/PARITY/fixes/GATE_PERF.jpg`.
 - [x] Logic-side tests headless (projection, picking, label placement); render verified windowed.
 
 **ART-6 — Raid**
@@ -330,7 +330,7 @@ pipeline, the render spike)
       model (D17) (`test_the_canyon_stands_on_its_own_lots_and_the_corps_on_their_hq_lots`, `test_hqrun_04_full_maps_read_on_every_compound`, `test_hqrun_05_06_07_the_corporations_are_framed_as_their_concepts`; sheet `docs/art_review/PARITY/fixes/HQRUN.jpg`, DECISIONS 2026-10-05 "Parity fix — HQ runs and gate").
 
 ### Group 4 — Screens
-- [ ] Group 4 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only").
+- [x] Group 4 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only"). Done: full suite at the M14 gate 2026-10-12, main 4780b5c0: 2207 tests, 0 failing; reviewed and APPROVED by the art-pass session; DECISIONS "M14 gate (PT-001)".
 
 **ART-9 — Shop, rewards, events, dialogue, portraits**
 - [x] The shop and event sweeps (affordability, outcome rows == deltas) still hold (4A ported `test_horizontal_pass20/23/24_screens` and kept their behaviour; confirm in the full run).
@@ -351,18 +351,15 @@ its items)
 ### Final
 
 **ART-12 — Final sweep**
-- [ ] The full QA matrix (all screens × 1.0 / 1.6 / 2.0 × mouse / pad × reduce effects × high
-      contrast × greyscale × colour-blind).
-- [ ] A perf profile on the target PC and the Deck tier.
+- [x] The full QA matrix (all screens × 1.0 / 1.6 / 2.0 × mouse / pad × reduce effects × high
+      contrast × greyscale × colour-blind). 12q audit (`docs/handoff/m14_12q/qa_matrix_audit.md`: P1 4 / P2 17 / P3 23, L28–L65 + L78–L83) all fixed by the group-1 FOLLOW-UP and the six 12q slices (DECISIONS "12Q-*"), group 2 APPROVED.
+- [x] A perf profile on the target PC and the Deck tier. M14 gate quiet run, DECISIONS "M14 gate (PT-001)".
 - [x] Skins (the M12 box: procedural palette skins on the v2 tokens). ART-12 12s: v2 / cobalt / graphite,
       Options > Display picker, `test_art12_skins`; DECISIONS "Art direction — ART-12 12s skins".
-- [ ] **One full-suite run** in isolation (the only one in M14), then **the M14 audit** (the only one): vertical / horizontal / naive over every ART-0…12 change, fix
-      rounds until CLEAN (nothing deferred, P3s included); "M14 complete" logged in DECISIONS.
+- [x] **One full-suite run** in isolation (the only one in M14), then **the M14 audit** (the only one): vertical / horizontal / naive over every ART-0…12 change, fix
+      rounds until CLEAN (nothing deferred, P3s included); "M14 complete" logged in DECISIONS. Done 2026-10-12: the suite once at the gate (2207 / 0 failing); the audit is the art-pass parity audit (ruling 2026-10-05), closed by the APPROVED group reviews (group 1, group 2 R1–R3 + polish); "M14 complete" in DECISIONS "M14 gate (PT-001)".
 
-*Still open after the 12b-2 pass (2026-10-11), and why:* the four "Group n merged" boxes (they wait for the full-suite run and
-the designer review); ART-5 60 fps / Deck tier (12p: HQ idle 6.4 ms and combat 5.1 ms median on this
-machine, DECISIONS 2026-10-11 "Perf slice"; the target PC and Deck tier are not measured); ART-12 QA matrix, perf, full suite and audit (the audit is the side-by-side parity
-audit, DECISIONS 2026-10-05 "Designer ruling: the M14 audit is a side-by-side art-pass parity audit").
+*Closed at the M14 gate (2026-10-12):* every M14 box above is ticked; the "After ART-12" list below waits for the designer (CP-002).
 
 **After ART-12** (rulings 1, 8, 9; nothing deferred)
 - [ ] **R7 re-evaluation:** every ANIM-R7 finding (`docs/handoff/anim_r7/`) re-checked against the
