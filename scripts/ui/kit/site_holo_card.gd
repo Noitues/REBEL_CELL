@@ -16,6 +16,11 @@ const FILE_NUMBERS := 1000
 ## A row's caption column (px at text scale 1.0) and the gap to its value.
 const CAPTION_W := 96.0
 const ROW_GAP := 10.0
+## M14 12Q-HQ: the header's least height (RaidHolo's HEAD_H) and the pad above the header and under
+## the rows grow with the text only to this scale (STYLE 5.6's x1.3 for drawn objects); past it the
+## header is as tall as its words (at 2.0 the floor and pads left the rows no room in the HQ's card
+## column).
+const HEAD_SCALE_MAX := 1.3
 
 ## The sub line under the title (already translated).
 var sub: String = ""
@@ -81,8 +86,8 @@ func _place_stamp() -> void:
 func _fit_stamp(_n: Node = null) -> void:
 	var foot := DecryptedHoloPanel.STAMP_SLOT.y * STAMP_SHARE + UiTheme.SP_XS
 	var box := get_theme_stylebox(&"panel") as StyleBoxEmpty
-	if box != null and not is_equal_approx(box.content_margin_bottom, PAD * _k + foot):
-		box.content_margin_bottom = PAD * _k + foot
+	if box != null and not is_equal_approx(box.content_margin_bottom, PAD * minf(_k, HEAD_SCALE_MAX) + foot):
+		box.content_margin_bottom = PAD * minf(_k, HEAD_SCALE_MAX) + foot
 		queue_sort()
 
 
@@ -139,8 +144,8 @@ func header_lines() -> Dictionary:
 		widest = maxf(widest, f.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, tpx).x)
 	for line in sl:
 		widest = maxf(widest, mono.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, spx).x)
-	var h := PAD * _k + tl.size() * f.get_height(tpx) + sl.size() * mono.get_height(spx)
-	return {"title": tl, "sub": sl, "title_px": tpx, "sub_px": spx, "room": room, "widest": widest, "height": maxf(HEAD_H * _k, h)}
+	var h := PAD * minf(_k, HEAD_SCALE_MAX) + tl.size() * f.get_height(tpx) + sl.size() * mono.get_height(spx)
+	return {"title": tl, "sub": sl, "title_px": tpx, "sub_px": spx, "room": room, "widest": widest, "height": maxf(HEAD_H * minf(_k, HEAD_SCALE_MAX), h)}
 
 
 ## `text` as one line when it fits `room` px, else wrapped at its words (a word longer than the

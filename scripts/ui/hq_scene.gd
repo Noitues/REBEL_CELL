@@ -1639,6 +1639,8 @@ func _build_hq_page(page_name: String) -> void:
 		selected_site = resume_site()
 	if selected_op() != null:
 		selected_operative = selected_op().id
+	if selected_site != _built_selection:
+		card_page = 0  # 12Q-HQ: a new selection opens its card on its first page
 	var pending := RunManager.pending_raid()
 	var raid: RaidData = CampaignRules.raid_data(pending, RunManager.lookup()) if not pending.is_empty() else null
 	var projection: RaidResolver.RaidResult = RunManager.project_raid() if not pending.is_empty() else null
@@ -1746,6 +1748,18 @@ func _build_hq_page(page_name: String) -> void:
 				_fill_crew_hand(cards, launchable)
 	for k in cards.get_children():
 		(k as Control).size_flags_vertical = Control.SIZE_SHRINK_END  # on the hand's foot
+	# 12Q-HQ (L30, L53): a hand wider than its box pages (HandPager, `_place_hq`); this tab turns it.
+	if not raid_mode:
+		var hand_more := _page_tab(HandPager.TAB_NAME, tr("The hand's next page: the rest of the cards and offers."), turn_hand_page)
+		if Settings.text_scale < TAB_LINE_BELOW - 0.001:
+			cards.add_child(hand_more)  # at the row's end (the tabs carry their counts)
+		else:
+			# At big text it heads the tabs column (one-line tabs leave it the room): the row keeps its width.
+			var deck_tabs := page.get_node("HandTabs") as VBoxContainer
+			hand_more.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			hand_more.alignment = HORIZONTAL_ALIGNMENT_CENTER
+			deck_tabs.add_child(hand_more)
+			deck_tabs.move_child(hand_more, 0)
 	# The card column: the selected Site's card (its facts, IF CLEARED, its actions); in the
 	# setup THREAT INTEL and YOUR NETWORK. It scrolls inside its room at big text (the minimap
 	# and the key keep theirs).
@@ -1779,6 +1793,10 @@ func _build_hq_page(page_name: String) -> void:
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		stack.add_child(card)
 	page.add_child(column)
+	if site != null and not raid_mode:
+		# 12Q-HQ (L31-L34): a card taller than its column pages its rows (CardPager); this tab turns
+		# it, placed with the column (`_place_card_tab`) and drawn over it.
+		page.add_child(_page_tab(CARD_TAB_NAME, tr("The card's next page: the rest of its rows and actions."), turn_card_page))
 	# The verb slot: the one pink sticker (JACK IN for a runnable Site, a saved run's resume;
 	# START DEFENSE with Speed / Skip in the setup).
 	var verb_sites: Array[SiteData] = []
@@ -1972,6 +1990,8 @@ func open_hand(tab: int) -> void:
 		hand_tab = tab
 		show_raid()
 		return
+	if tab != hand_tab:
+		hand_page = 0  # 12Q-HQ: another deck opens on its first page
 	hand_tab = tab
 	_hq_focus = "Tab_%s" % TAB_WORDS[tab]
 	if panel_name in HQ_PAGES:
@@ -2035,6 +2055,7 @@ func _fill_crew_hand(cards: HBoxContainer, launchable: Array[SiteData]) -> void:
 			recall_chip.name = "Recall_%s" % op.id
 			recall_chip.pre_translated = true
 			recall_chip.size_flags_vertical = Control.SIZE_SHRINK_END
+			recall_chip.set_meta(HandPager.GLUE, true)  # 12Q-HQ: on its card's page
 			recall_chip.tooltip_text = UiTip.fold(tr("Bring %s back from %s.") % [op.name, site_name(where)])
 			recall_chip.pressed.connect(recall.bind(oid))
 			cards.add_child(recall_chip)
@@ -2111,17 +2132,16 @@ func _fill_market_hand(cards: HBoxContainer) -> void:
 	queue.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	queue.mouse_filter = Control.MOUSE_FILTER_PASS
 	queue.size_flags_vertical = Control.SIZE_SHRINK_END
+	queue.set_meta(HandPager.GLUE, true)  # 12Q-HQ: with the last boost (its drop target)
 	queue.tooltip_text = UiTip.fold(UiTip.for_input(tr("The boosts bought for the next run. Drag a boost here to buy it."), tr("The boosts bought for the next run. Pick a boost up and move it here to buy it.")))
 	boosts.add_child(queue)
 	var unlocks := _market_group(cards, "Unlocks", tr("PROFILE UNLOCKS"))
-	# Two rows of chips (one column of them ran up over the map), as many columns as they need.
-	var col := GridContainer.new()
-	col.name = "UnlockGrid"
-	col.add_theme_constant_override("h_separation", 6)
-	col.add_theme_constant_override("v_separation", 6)
-	col.size_flags_vertical = Control.SIZE_SHRINK_END
-	unlocks.add_child(col)
+	# Two rows of chips (one column of them ran up over the map; one at big text), as many columns as they need;
+	# 12Q-HQ: each column is a unit of the hand's pages (HandPager).
+	unlocks.add_theme_constant_override("separation", UNLOCK_GAP)
+	var col: VBoxContainer = null
 	var any := false
+	var big := Settings.text_scale >= TAB_LINE_BELOW - 0.001
 	for id in lookup.ids_of_class(&"ProfileUnlockData"):
 		var u := lookup.get_content(id) as ProfileUnlockData
 		# Free unlocks (REBEL_CELL) open by themselves once their requirements are met.
@@ -2135,12 +2155,30 @@ func _fill_market_hand(cards: HBoxContainer) -> void:
 		chip.tooltip_text = UiTip.fold(TextDb.t(u, "description"))
 		chip.disabled = c.schematics < u.schematic_cost
 		chip.pressed.connect(purchase_unlock.bind(uid))
+		if big:
+			chip.wrap_px = UNLOCK_WRAP * Settings.text_scale  # 12Q-HQ: a long name wraps in the hand
+			chip.refit()
+		if col == null or col.get_child_count() >= (1 if big else UNLOCK_ROWS):
+			col = _unlock_column(unlocks)
 		col.add_child(chip)
-	col.columns = maxi(1, ceili(col.get_child_count() / float(UNLOCK_ROWS)))
 	if not any:
 		var done := Label.new()
 		done.text = tr("everything unlocked")
-		col.add_child(done)
+		_unlock_column(unlocks).add_child(done)
+
+
+## 12Q-HQ: a column of the market's Profile unlock chips (UNLOCK_ROWS of them) in `row`.
+func _unlock_column(row: HBoxContainer) -> VBoxContainer:
+	var col := VBoxContainer.new()
+	col.name = "UnlockCol_%d" % row.get_child_count()
+	col.add_theme_constant_override("separation", UNLOCK_GAP)
+	col.size_flags_vertical = Control.SIZE_SHRINK_END
+	row.add_child(col)
+	return col
+
+
+## 12Q-HQ: the gap between the Profile unlock chips (px), across and down.
+const UNLOCK_GAP := 6
 
 
 ## The boost stickers' lettering (px at 1.0) and tilt (degrees).
@@ -2148,6 +2186,9 @@ const BOOST_STICKER_PX := 22.0
 const BOOST_STICKER_TILT := -2.0
 ## The Profile unlocks' rows in the market hand.
 const UNLOCK_ROWS := 2
+## 12Q-HQ: at big text an unlock chip's name wraps past this width (px at 1.0, x the text scale), one
+## chip a column (a wrapped chip stands as tall as the hand).
+const UNLOCK_WRAP := 150.0
 
 
 ## A captioned group in the market hand (`id` names it), returned for its items.
@@ -2490,6 +2531,9 @@ func _mount_hq_routes(projection: RaidResolver.RaidResult = null, solid: bool = 
 	if city_overlay == null or not is_instance_valid(city_overlay):
 		return
 	raid_routes = RaidRouteLayer.new(city_overlay)
+	# 12Q-HQ (L31, L43): the HQ's map marks lie under its panels and terminals (the red pencil was
+	# on the scene's raid pencil layer, over every UI): laid in the page's own marks layer.
+	raid_routes.pool_host = _hq_marks_layer()
 	city_overlay.add_child(raid_routes)
 	city_overlay.add_child(RaidBeaconLayer.new(city_overlay))
 	if projection != null:
@@ -2502,6 +2546,29 @@ func _mount_hq_routes(projection: RaidResolver.RaidResult = null, solid: bool = 
 			raid_routes.set_routes([] as Array[Array], false)
 			raid_routes.set_what_if(paths)
 	_mount_uplink_pads()
+
+
+## 12Q-HQ: the HQ page's map marks layer (the raid's red pencil): over the map and the map
+## cursor, under every panel of the page (the work order, the hand, the card, the verb) and the
+## Heat terminal over it. Null off the HQ page.
+func _hq_marks_layer() -> Control:
+	if hq_page == null or not is_instance_valid(hq_page):
+		return null
+	var marks := hq_page.get_node_or_null(HQ_MARKS) as Control
+	if marks == null:
+		marks = Control.new()
+		marks.name = HQ_MARKS
+		marks.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		marks.focus_mode = Control.FOCUS_NONE
+		hq_page.add_child(marks)
+		marks.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		var cursor := hq_page.get_node_or_null("MapCursor")
+		hq_page.move_child(marks, cursor.get_index() + 1 if cursor != null else 0)
+	return marks
+
+
+## 12Q-HQ: the marks layer's name in the HQ page.
+const HQ_MARKS := "MapMarks"
 
 
 ## HQ-B: the minimap terminal and the folded MAP KEY at the top right, the player's camera
@@ -2650,10 +2717,25 @@ func _place_hq() -> void:
 		# The setup's right column (THREAT INTEL, YOUR NETWORK, IF PLACED; B3, Q9) at the objects' scale,
 		# never under what its panels need; the map keeps its middle.
 		col_w = maxf(HqLayout.CARD_COLUMN * o_scale, (column.get_child(0) as Control).get_combined_minimum_size().x)
+	else:
+		# 12Q-HQ (L33, L34): at big text the selected card widens with the words (its title and rows
+		# wrap less, so fewer pages), up to a share of the page; the hand pages in what is left.
+		col_w = maxf(col_w, minf(HqLayout.CARD_COLUMN * Settings.text_scale, area.x * CARD_COLUMN_SHARE))
+		# A paged card keeps the width its widest page needs (the CLAIM tiles): no page narrows it.
+		var shown_card := column.find_child("SelectedSite", true, false) as Control
+		var margin := column.get_child(0) as MarginContainer
+		if shown_card != null and margin != null:
+			col_w = maxf(col_w, CardPager.full_width(shown_card) + float(margin.get_theme_constant("margin_left") + margin.get_theme_constant("margin_right")))
 	# B3: in the setup the column's card margin (the holo backing's room) reaches into the page margin, so
 	# YOUR NETWORK under THREAT INTEL leaves the defence hand its three cards whole at 2.0.
 	var col_x := area.x - (HqLayout.MARGIN - (DecryptedHoloPanel.BACKING_OUT if panel_name == "raid" else 0.0)) - col_w
+	if panel_name != "raid" and Settings.text_scale >= TAB_LINE_BELOW - 0.001 and verb.size.x < col_w:
+		# 12Q-HQ (L33): at big text the verb slot is as wide as the card column over it: its system word
+		# wraps on fewer lines, so the card keeps that room (the hand ends at the column either way).
+		verb.size.x = col_w
+		verb.position.x = area.x - HqLayout.MARGIN - verb.size.x
 	hand.size = Vector2(maxf(1.0, minf(verb.position.x, col_x) - HqLayout.GAP - hand.position.x), hand_h)
+	_page_hand(hand)  # 12Q-HQ: a hand wider than its box pages (HandPager)
 	var foot_top := minf(hand.position.y, tabs.position.y)
 	# BIG-TEXT: in the raid setup the work order may use the dead room over the tabs and the cards (the hand box and
 	# the tabs box are taller than what shows), down to the lifted card's top.
@@ -2675,7 +2757,7 @@ func _place_hq() -> void:
 		order.position = o.position
 		order.size = Vector2(maxf(o.size.x, paper.get_combined_minimum_size().x), minf(paper.get_combined_minimum_size().y + chip_h, maxf(chip_h + 1.0, order_foot - HqLayout.GAP - o.position.y)))
 	var top := HqLayout.MARGIN
-	var bottom_now := verb.position.y - HqLayout.GAP
+	var bottom_now := _column_foot(verb)
 	if hq_minimap != null and is_instance_valid(hq_minimap):
 		# The minimap is optional at the raid zoom (proposal §1 #20): it gives its room to a card
 		# that needs it (CLAIM's tiles), and shows only below the key's fold scale.
@@ -2707,7 +2789,7 @@ func _place_hq() -> void:
 		else:
 			hq_legend.position = Vector2(area.x - HqLayout.MARGIN - ls.x, top)
 			top += hq_legend.fit_size().y + HqLayout.GAP
-	var bottom := verb.position.y - HqLayout.GAP
+	var bottom := _column_foot(verb)
 	if panel_name == "raid":
 		# B3 (the THREAT INTEL fit at 1.6): the setup's column starts at the page's top (its key
 		# stands on the map) and ends at the verb's sticker.
@@ -2715,8 +2797,13 @@ func _place_hq() -> void:
 		bottom = verb.position.y
 		_fit_intel(column.get_child(0) as Control, col_w, bottom - top)
 		_fit_network(column.get_child(0) as Control, bottom - top, col_w)
+	if panel_name != "raid":
+		# 12Q-HQ: the card pages in its room (CardPager); a terminal card's MORE tab takes its room under it.
+		bottom -= _page_card(column, col_w, bottom - top, col_x, bottom)
 	column.size = Vector2(col_w, maxf(1.0, minf((column.get_child(0) as Control).get_combined_minimum_size().y, bottom - top)))
 	column.position = Vector2(col_x, bottom - column.size.y)
+	if panel_name != "raid":
+		_place_card_tab(column)
 	var was_free := _hq_free
 	_hq_free = Rect2(Vector2(order.position.x + order.size.x + HqLayout.MARGIN if order != null else HqLayout.MARGIN, HqLayout.MARGIN), Vector2.ZERO)
 	_hq_free.end = Vector2(column.position.x - HqLayout.MARGIN, foot_top - HqLayout.MARGIN)
@@ -2752,6 +2839,177 @@ func _place_hq() -> void:
 const RAID_COLUMN_TOP := 0.0
 ## B3 b: the gap between THREAT INTEL, YOUR NETWORK and IF PLACED in the setup's column (px).
 const RAID_STACK_GAP := 0
+
+
+## 12Q-HQ (QA matrix L30-L34, L53): the page of the hand and of the selected card shown (view
+## memory: another tab or another selection opens on the first page), and their page counts.
+var hand_page: int = 0
+var card_page: int = 0
+var _hand_pages: int = 1
+var _card_pages: int = 1
+## 12Q-HQ: the selected card's MORE tab in the card column.
+const CARD_TAB_NAME := "CardMore"
+## 12Q-HQ: the most of the page's width the selected card's column widens to at big text.
+const CARD_COLUMN_SHARE := 0.5
+## 12Q-HQ (ART-5 acceptance): room kept between the card column's foot and the verb sticker as
+## drawn (px at 1.0, x the objects' scale: the breathing ring's swell).
+const VERB_CLEAR := 6.0
+
+
+## 12Q-HQ: a MORE / BACK tab (a slim terminal MenuChip at body size, as THREAT INTEL's) that
+## `turn` pages; as wide as its widest word, so a turn never moves what is beside it. Hidden
+## until paged.
+func _page_tab(node_name: String, tip: String, turn: Callable) -> MenuChip:
+	var tab := MenuChip.new(tr(ORDER_BACK), "", PaletteSkins.chrome(Palette.NET_CYAN))
+	tab.name = node_name
+	tab.pre_translated = true
+	tab.plate = &""
+	tab.label_step = UiTheme.BODY
+	tab.refit()
+	var widest := tab.custom_minimum_size.x
+	tab.text = tr(ORDER_MORE)
+	tab.min_width = widest
+	tab.refit()
+	tab.visible = false
+	tab.size_flags_vertical = Control.SIZE_SHRINK_END
+	tab.tooltip_text = UiTip.fold(tip)
+	tab.pressed.connect(turn)
+	return tab
+
+
+## 12Q-HQ (L30, L53): deals the hand into pages of its box (HandPager) and shows `hand_page`.
+func _page_hand(hand: Control) -> void:
+	var cards := hand.get_node_or_null("HandCards") as HBoxContainer
+	var tab := _panel.find_child(HandPager.TAB_NAME, true, false) as MenuChip if cards != null else null
+	if tab == null:
+		return
+	var r := HandPager.apply(cards, hand.size.x, hand_page, tab, tr(ORDER_MORE), tr(ORDER_BACK))
+	_hand_pages = int(r["pages"])
+	hand_page = int(r["page"])
+	if bool(r["changed"]):
+		(hand as ScrollContainer).scroll_horizontal = 0
+		_relink_hq_focus.call_deferred()
+
+
+## 12Q-HQ (L31-L34): deals the selected card's rows into pages of the column's `room` (px) at
+## width `col_w` (CardPager) and shows `card_page`; the column stands at `col_x` and ends at `foot`
+## (page px). Returns the room the column keeps under the card for its MORE tab (px; 0 when the
+## tab stands in a holo's foot beside the stamp or on the map beside a terminal card's foot, or
+## when the card does not page).
+func _page_card(column: Control, col_w: float, room: float, col_x: float, foot: float) -> float:
+	var margin := column.get_child(0) as MarginContainer
+	var stack := margin.get_child(0) as Control if margin != null else null
+	var card := stack.get_node_or_null("SelectedSite") as Control if stack != null else null
+	var tab := _panel.get_node_or_null(CARD_TAB_NAME) as MenuChip
+	if card == null or tab == null:
+		return 0.0
+	var side := float(margin.get_theme_constant("margin_left") + margin.get_theme_constant("margin_right"))
+	var vert := float(margin.get_theme_constant("margin_top") + margin.get_theme_constant("margin_bottom"))
+	var ts := tab.get_combined_minimum_size()
+	_card_tab_beside = _beside_card_foot(col_x, foot, ts)
+	var tab_h := 0.0 if card is RaidHolo or _card_tab_beside.has_area() else ts.y + HqLayout.GAP
+	var r := CardPager.apply(card, col_w - side, room - vert, card_page, tab, tab_h, tr(ORDER_MORE), tr(ORDER_BACK))
+	_card_pages = int(r["pages"])
+	card_page = int(r["page"])
+	if bool(r["changed"]):
+		_relink_hq_focus.call_deferred()
+	return tab_h if tab.visible else 0.0
+
+
+## 12Q-HQ: where a terminal card's MORE tab of size `ts` stands outside the column: in the verb slot left of
+## its sticker when the slot has the room, else on the map left of the card's foot
+## (the column at `col_x`, ending at `foot`), when nothing of the page is there (the work order,
+## the hand and its tabs, the map key); an empty rect when the spot is taken.
+func _beside_card_foot(col_x: float, foot: float, ts: Vector2) -> Rect2:
+	# In the verb slot left of its sticker, under the card's foot (the slot is as wide as the column
+	# at big text; nothing else stands left of the sticker's row).
+	var verb := _panel.get_node_or_null("VerbSlot") as Control
+	if verb != null:
+		for k in verb.get_children():
+			if k is VerbSticker:
+				var sw := (k as Control).get_combined_minimum_size()
+				if verb.size.x - sw.x - HqLayout.GAP >= ts.x and sw.y >= ts.y:
+					return Rect2(Vector2(verb.position.x, verb.position.y + verb.size.y - verb.get_combined_minimum_size().y), ts)
+				break
+	var spot := Rect2(Vector2(col_x - HqLayout.GAP - ts.x, foot - ts.y), ts)
+	if spot.position.x < HqLayout.MARGIN or spot.position.y < HqLayout.MARGIN:
+		return Rect2()
+	for name in ["WorkOrder", "Hand", "HandTabs"]:
+		var n := _panel.get_node_or_null(name) as Control
+		if n != null and n.visible and Rect2(n.position, n.size).intersects(spot):
+			return Rect2()
+	if hq_legend != null and is_instance_valid(hq_legend) and not hq_legend.top_level and Rect2(hq_legend.position, hq_legend.size).intersects(spot):
+		return Rect2()
+	return spot
+
+
+## 12Q-HQ: the spot beside a terminal card's foot its MORE tab took at the last page (empty: none).
+var _card_tab_beside: Rect2 = Rect2()
+
+
+## 12Q-HQ: puts the card's MORE tab at the card's foot, at its left: in a holo's foot (the room it
+## keeps under its rows for the DECRYPTED stamp, which stands at the right), on the map beside a
+## terminal card's foot when that spot is free, else under it in the room the column kept for it
+## (page px, from the column as placed).
+func _place_card_tab(column: Control) -> void:
+	var tab := _panel.get_node_or_null(CARD_TAB_NAME) as Control
+	var margin := column.get_child(0) as MarginContainer
+	var card := column.find_child("SelectedSite", true, false) as Control
+	if tab == null or margin == null or card == null or not tab.visible:
+		return
+	var ts := tab.get_combined_minimum_size()
+	tab.size = ts
+	var left := column.position.x + float(margin.get_theme_constant("margin_left"))
+	var foot := column.position.y + column.size.y - float(margin.get_theme_constant("margin_bottom"))
+	if card is RaidHolo:
+		var box := card.get_theme_stylebox(&"panel")
+		var rows_end := foot - (box.content_margin_bottom if box != null else 0.0)
+		tab.position = Vector2(left + RaidHolo.PAD * Settings.text_scale, maxf(rows_end, foot - ts.y))
+	elif _card_tab_beside.has_area():
+		tab.position = _card_tab_beside.position
+	else:
+		tab.position = Vector2(left, column.position.y + column.size.y + HqLayout.GAP)
+
+
+## 12Q-HQ: the pad's paths again once a page turned (the shown cards and actions changed).
+func _relink_hq_focus() -> void:
+	if _panel != null and is_instance_valid(_panel) and _panel == hq_page:
+		_link_hq_focus(_panel)
+
+
+## 12Q-HQ: turns the hand to its next page (after the last, its first); the tab keeps the focus.
+func turn_hand_page() -> void:
+	hand_page = (hand_page + 1) % maxi(_hand_pages, 1)
+	_turned(HandPager.TAB_NAME)
+
+
+## 12Q-HQ: turns the selected card to its next page (after the last, its first).
+func turn_card_page() -> void:
+	card_page = (card_page + 1) % maxi(_card_pages, 1)
+	_turned(CARD_TAB_NAME)
+
+
+func _turned(tab_name: String) -> void:
+	_place_hq()
+	var tab := _panel.find_child(tab_name, true, false) as Control if _panel != null and is_instance_valid(_panel) else null
+	if tab != null and tab.is_visible_in_tree():
+		tab.grab_focus.call_deferred()
+
+
+## 12Q-HQ (ART-5 acceptance: at 2.0 the selected Site's card ran under JACK IN): where the card
+## column ends over the verb slot (page px): above the verb sticker as drawn (its tilt lifts a
+## corner over its box, the breathing ring swells it), a gap above that.
+func _column_foot(verb: Control) -> float:
+	if verb.get_child_count() == 0:
+		return verb.position.y + verb.size.y  # no verb (a Site not reachable yet): the card takes its room too
+	var foot := verb.position.y
+	for k in verb.get_children():
+		if k is VerbSticker:
+			var s := (k as Control).get_combined_minimum_size()
+			var turn := (k as Control).rotation
+			foot -= maxf(0.5 * (absf(s.x * sin(turn)) + s.y * cos(turn)) - 0.5 * s.y, 0.0) + VERB_CLEAR * HqLayout.object_scale(Settings.text_scale)
+			break
+	return foot - HqLayout.GAP
 
 
 ## B4 (art director: "the minimap is hidden by default, toggled with [M] and the MAP KEY,
@@ -2813,14 +3071,25 @@ func _place_corp_news() -> void:
 	var in_gap := ticker.size.x < _panel.size.x - 1.0
 	var x := gap.position.x
 	var room := gap.size.x
+	var over_hand := -1.0
 	if room < CORP_NEWS_MIN_W * HqLayout.object_scale(Settings.text_scale):
-		# A full hand (big text): over the hand's cards for its 2.4 s, between the tabs and the verb.
+		# A full hand (big text): 12Q-HQ (L49: it covered the polaroids' names) over the map, its
+		# foot on the hand's top, between the work order (or the tabs) and the card column.
 		var tabs := _panel.get_node("HandTabs") as Control
-		var verb := _panel.get_node("VerbSlot") as Control
+		var hand := _panel.get_node("Hand") as Control
+		var column := _panel.get_node("CardColumn") as Control
+		var order := _panel.get_node_or_null("WorkOrder") as Control
 		x = tabs.position.x + tabs.size.x + HqLayout.GAP
-		room = maxf(1.0, verb.position.x - HqLayout.GAP - x)
+		var past_order := order.position.x + order.size.x + HqLayout.GAP if order != null and order.visible else x
+		# Right of the work order when that leaves it its room; else from the tabs (over the order's foot).
+		if column.position.x - HqLayout.GAP - past_order >= CORP_NEWS_MIN_W * HqLayout.object_scale(Settings.text_scale):
+			x = maxf(x, past_order)
+		room = maxf(1.0, column.position.x - HqLayout.GAP - x)
+		over_hand = hand.position.y - HqLayout.GAP
 	t.set_width(room)
 	var foot := ticker.position.y + ticker.size.y if in_gap else ticker.position.y - HqLayout.GAP
+	if over_hand >= 0.0:
+		foot = over_hand
 	t.position = Vector2(x, foot - t.size.y)
 	if t.visible:
 		_settle_corp_news.call_deferred()  # a wrapped label reports its height a frame late
@@ -3095,6 +3364,9 @@ func _link_hq_focus(page: Control) -> void:
 	_usable_in(page.get_node("HandTabs"), tabs)
 	var card_actions: Array[Control] = []
 	_usable_in(page.get_node("CardColumn"), card_actions)
+	var card_more := page.get_node_or_null(CARD_TAB_NAME) as Control
+	if card_more != null and card_more.is_visible_in_tree():
+		card_actions.append(card_more)  # 12Q-HQ: the card's MORE tab, after its actions
 	var verb: Array[Control] = []
 	_usable_in(page.get_node("VerbSlot"), verb)
 	var setup := page.find_child("RaidSetup", true, false) as Control
@@ -3551,6 +3823,7 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	if c.grid.is_cleared(site.id) and site.claimable:
 		var cap := Label.new()
 		cap.name = "PickCaption"
+		cap.set_meta(CardPager.WITH_NEXT, true)  # 12Q-HQ: on its tiles' page
 		cap.text = tr("PICK THE NODE TO BUILD")
 		cap.add_theme_font_override("font", Palette.mono())
 		cap.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
@@ -3716,6 +3989,7 @@ func _node_rows(card: TerminalWindow, site: SiteData, facts: HFlowContainer) -> 
 		return
 	var head := Label.new()
 	head.name = "HqActionsCaption"
+	head.set_meta(CardPager.WITH_NEXT, true)  # 12Q-HQ: on HEAT SCRUB's page
 	head.text = tr("> HQ ACTIONS")
 	head.add_theme_font_override("font", Palette.mono())
 	head.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
@@ -6162,6 +6436,20 @@ func toggle_heat_terminal() -> void:
 	var tag := hud.heat_gauge.get_global_rect()
 	tag.end.y = SubtitleStrip.top_below(tag.end.y)
 	heat_terminal.drop_under(tag, get_global_rect())
+	_heat_tag_foot = tag.end.y
+	# 12Q-HQ (L43): the terminal ends over the hand and its tabs: its rows page (MORE) in that room.
+	# Its MORE tab stands beside SCRUB HEAT (no row of its own: the rows keep the room).
+	var heat_more := _page_tab(HEAT_TAB_NAME, tr("The Heat terminal's next page: the rest of its rows."), turn_heat_page)
+	var heat_foot := HBoxContainer.new()
+	heat_foot.name = "HeatFoot"
+	heat_foot.add_theme_constant_override("separation", roundi(HqLayout.GAP))
+	if heat_terminal.scrub != null:
+		heat_terminal.body.remove_child(heat_terminal.scrub)
+		heat_foot.add_child(heat_terminal.scrub)
+	heat_foot.add_child(heat_more)
+	heat_terminal.body.add_child(heat_foot)
+	heat_page = 0
+	_page_heat_terminal()
 	if heat_terminal.scrub != null:
 		heat_terminal.scrub.grab_focus.call_deferred()
 
@@ -6173,6 +6461,44 @@ func close_heat_terminal(refocus: bool = true) -> void:
 		if refocus and hud.heat_gauge.is_visible_in_tree() and hud.heat_gauge.focus_mode != Control.FOCUS_NONE:
 			hud.heat_gauge.grab_focus.call_deferred()
 	heat_terminal = null
+
+
+## 12Q-HQ (L43): the Heat terminal's page shown, its page count and its MORE tab's name.
+var heat_page: int = 0
+var _heat_pages: int = 1
+## 12Q-HQ: the foot of the gauge the Heat terminal drops from (global px).
+var _heat_tag_foot: float = 0.0
+const HEAT_TAB_NAME := "HeatMore"
+
+
+## 12Q-HQ (L43): pages the Heat terminal's rows (IN FORCE, NEXT, SINKS) into the room between
+## its top and the HQ hand's (the polaroids and the tabs stay clear); SCRUB HEAT is on every page.
+func _page_heat_terminal() -> void:
+	if heat_terminal == null or not is_instance_valid(heat_terminal) or _panel == null or _panel != hq_page:
+		return
+	var rows := heat_terminal.body.get_node_or_null("HeatRows") as VBoxContainer
+	var tab := heat_terminal.body.find_child(HEAT_TAB_NAME, true, false) as MenuChip
+	var hand := _panel.get_node_or_null("Hand") as Control
+	var tabs := _panel.get_node_or_null("HandTabs") as Control
+	if rows == null or tab == null or hand == null or tabs == null:
+		return
+	var foot := minf(hand.get_global_rect().position.y, tabs.get_global_rect().position.y) - HqLayout.GAP
+	# Its top as it drops under the gauge (its own position settles a frame later).
+	var room := foot - (_heat_tag_foot + HeatTerminal.GAP)
+	var tab_h := 0.0  # beside SCRUB HEAT: no room of its own
+	var r := CardPager.apply(heat_terminal, heat_terminal.get_combined_minimum_size().x, room, heat_page, tab, tab_h,
+		tr(ORDER_MORE), tr(ORDER_BACK), rows)
+	_heat_pages = int(r["pages"])
+	heat_page = int(r["page"])
+
+
+## 12Q-HQ: turns the Heat terminal to its next page; the tab keeps the focus.
+func turn_heat_page() -> void:
+	heat_page = (heat_page + 1) % maxi(_heat_pages, 1)
+	_page_heat_terminal()
+	var tab := heat_terminal.body.find_child(HEAT_TAB_NAME, true, false) as Control if heat_terminal != null and is_instance_valid(heat_terminal) else null
+	if tab != null:
+		tab.grab_focus.call_deferred()
 
 
 func _scrub_from_terminal() -> void:
@@ -6280,6 +6606,7 @@ func refresh_site_card() -> void:
 	old.queue_free()
 	parent.add_child(card)
 	parent.move_child(card, at)
+	card_page = 0  # 12Q-HQ: the new card opens on its first page
 	TextDb.shown_as_given(card)
 	# HQ-B: the verb slot follows (a claim seen on the map leaves no CLAIM sticker).
 	var old_slot := _panel.get_node_or_null("VerbSlot") as Control
