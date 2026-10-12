@@ -816,6 +816,10 @@
 		"res://tests/unit/test_m14_12q_words.gd": {
 			"seconds": 15.3,
 			"tier": "full"
+		},
+		"res://tests/unit/test_m14_12q_main.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
 		}
 	}
 }

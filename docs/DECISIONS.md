@@ -164,6 +164,31 @@ m14-group2 (6cc7de06). Test `test_m14_12q_words` (full tier); sheet `docs/art_re
   drops the place; terminal_window.gd titles (above). False positives: fx.gd SAVED contrast (the ring misses its
   6 px NIGHT_SKY keyline: 6.3:1 against it; the #C02F82 rows are the stamp fading in), value_stepper.gd (the ring
   samples the light -/+ plates beside the value; the value has its dark rim on the dark panel).
+### 2026-10-11 — M14 12Q-MAIN: the Mainframe, the loadout spinner, the Daemon tray and the hover zoom fit at big text
+QA matrix audit (`docs/handoff/m14_12q/qa_matrix_audit.md`) items, re-checked on m14-group2 6cc7de06 (all
+still present) and fixed; tests `test_m14_12q_main` (1.0 / 1.6 / 2.0); sheet `docs/art_review/ART-12/12q/fixes/MAINFRAME.jpg`.
+- **L37 Mainframe wheel.** The stock wheel's hub is held so the wedges' read blocks (glyph and value) stand above
+  the screen's foot (`SliceStockWheel.READ_FOOT` 0.49 of the radius, measured on the side wedges' art), in place of
+  the old 120 px `SHOP_WEDGE_SHOWN`; 1.0 is unchanged (its hub was already higher).
+- **L37 info strip ("clerk" text).** No ellipsis or line cap: the strip reserves the height of the longest text it
+  can show (idle line, every item's; shaped by the label itself) so it never resizes between items. From text 1.25
+  (`SHOP_WIDE_FROM`) the small spinner stands under the wallet beside the Daemons and the strip takes the CARDS
+  row's width, narrowed only as far as the stock wheel's left tag needs (`_info_clear_of_tags`, only ever narrows);
+  its words follow the text scale up to 1.6 (`SHOP_INFO_TEXT_MAX_SCALE`: at 2.0 the longest text otherwise kept
+  the pegboard past the foot at its 0.8 floor; on the floored board they still read larger than at 1.0). The pegboard's
+  fit now also keeps it left of the recycle bin (width as well as height, same 0.8 floor; at 1.6 it ran under the
+  bin's tape, where the spinner now stands). The tag-clearing applies only from `SHOP_WIDE_FROM`. The BIN IT
+  note tries a second spot lower down the bin (`BIN_NOTE_LOW`) before it is left out.
+- **L63 REMOVE A CARD.** `DeckView._fit_canvas`: the title keeps to one line (the window widens, centred, within
+  `CANVAS_SIDE`), and the glass always holds a whole row: the stickers shrink to fit (`row_height`), never under
+  their text-1.0 size (`card_scale_at(1.0)`); the rest scrolls.
+- **L35 loadout spinner.** The Rank 3 swap column widens to its longest word (`SpinnerView.fit_side`; the D4 wheel
+  steps left by the growth, the scrolling column keeps room for its bar); the rows' caption and titles wrap whole
+  words; the D4 window gives up pool height (wheel drawn smaller, floor `D4_POOL_MIN_H` 300) to keep Close [Esc]
+  and the HP gauge on the canvas, centred (it also ran past the right edge at 2.0).
+- **L44 Daemon tray.** `DaemonTray` takes a keep-clear rect (the ROUTE window): strip and card stand left of it.
+- **L50 hover zoom.** `ZineCard.grown_clear_of` (the combat scene's `player_hp_rect`): a grown hand card moves
+  aside (nearer side that stays on screen, eased with the growth) so it never covers the player's HP number.
 
 ### 2026-10-11 — M14 LEAK: a line said in one campaign never shows in the next
 ART-6 acceptance saw Solace's campaign-lost DISPATCH line ("Home server lost …") on the next raid_lab

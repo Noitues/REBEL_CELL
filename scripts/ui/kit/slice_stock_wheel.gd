@@ -17,6 +17,10 @@ const R_IN := 92.0
 const TAG_ROOM := 34.0
 ## The padlock's place on a wedge not for sale (share of the radius).
 const LOCK_AT := 0.5
+## M14 12Q-MAIN (audit L37): the lowest foot of a wedge's read block (its glyph and value) above
+## the hub, as a share of the radius: the side wedges' upright blocks reach lowest (wedge art
+## `wedge_*_p1`: the value's foot 233 px of the 470 px radius from the hub). The shop keeps it on screen.
+const READ_FOOT := 0.49
 ## Darkening of the stock not on sale (bible: greyscale, darkened 60 %), through this shader.
 const DIM := 0.6
 const GREY := preload("res://shaders/grey_dim.gdshader")

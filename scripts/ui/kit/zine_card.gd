@@ -334,9 +334,46 @@ func grown_shift() -> float:
 	if look != Look.STICKER or hover_scale <= 1.0 or not is_inside_tree():
 		return 0.0
 	var view := get_viewport_rect()
-	var half := size.x * hover_scale * (0.5 + CardFace.FACE_AT.x / CardFace.FACE.x)
+	var k := 0.5 + CardFace.FACE_AT.x / CardFace.FACE.x
 	var foot := get_global_transform() * Vector2(size.x * 0.5 + spread, size.y)
-	return maxf(0.0, view.position.x - (foot.x - half)) - maxf(0.0, (foot.x + half) - view.end.x)
+	return _edge_shift(foot.x, size.x * hover_scale * k, view) + _clear_shift(foot, k, view)
+
+
+## M14 12Q-MAIN (audit L50: the zoom covered the player's HP readout at 1.6 / 2.0): a global rect the
+## grown sticker stands beside, never over (`grown_clear_of` returns it; an empty rect for none).
+var grown_clear_of: Callable = Callable()
+## The gap kept between the grown sticker and that rect (px).
+const CLEAR_GAP := 8.0
+
+
+## How far (px) a sticker grown to half width `half` about foot x `foot_x` moves in to stay on screen.
+static func _edge_shift(foot_x: float, half: float, view: Rect2) -> float:
+	return maxf(0.0, view.position.x - (foot_x - half)) - maxf(0.0, (foot_x + half) - view.end.x)
+
+
+## M14 12Q-MAIN: how far (px) the grown sticker moves aside so its full growth (`hover_to`) clears
+## `grown_clear_of`'s rect: the nearer side that keeps it on screen, eased in with the growth.
+func _clear_shift(foot: Vector2, k: float, view: Rect2) -> float:
+	if not grown_clear_of.is_valid() or hover_to <= 1.0:
+		return 0.0
+	var clear: Rect2 = grown_clear_of.call()
+	if not clear.has_area():
+		return 0.0
+	var half := size.x * hover_to * k
+	var at := foot.x + _edge_shift(foot.x, half, view)
+	var top := foot.y - size.y * hover_to - lift - fan_rise
+	if at - half >= clear.end.x or at + half <= clear.position.x or top >= clear.end.y or foot.y <= clear.position.y:
+		return 0.0
+	var right := clear.end.x + CLEAR_GAP - (at - half)
+	var left := (at + half) - (clear.position.x - CLEAR_GAP)
+	var fits_right := at + right + half <= view.end.x
+	var fits_left := at - left - half >= view.position.x
+	var move := 0.0
+	if fits_right and (not fits_left or right <= left):
+		move = right
+	elif fits_left:
+		move = -left
+	return move * clampf((hover_scale - 1.0) / (hover_to - 1.0), 0.0, 1.0)
 
 
 ## ART-2 2D: how far a neighbour slides aside when the card `away` slots off is hovered
