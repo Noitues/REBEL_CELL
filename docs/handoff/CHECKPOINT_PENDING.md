@@ -9,26 +9,60 @@ Answer as a numbered list (`1A 2C 3: free text`). Unanswered items keep their de
 Report: `docs/handoff/gates/PT-001.md`. Playtest: `docs/playtest/PT-001_m14-close-out-group-2.md`.
 
 ## Questions (GATE class)
-### 1. What starts after M14
-Context: M14 is complete; work is paused per "pause after M14". MILESTONES "After ART-12" lists R7, G1–G16, the
-horizontal list, then H25+ and the Queued passes.
-- **A (recommended)**: start the After-ART-12 list with the R7 re-evaluation (Animation pass resumes): ~2 waves, 1 gate;
-  the art-pass follow-ups F1 (CLAIMED stamps stack) and F2 (raid-queued note over the paper) ride its first wave
-  (DECISIONS "M14 follow-ups for the next pass").
-- B: G1–G16 re-evaluation with you first (a ruling session), R7 after.
-- C: wait: nothing starts until you say.
-Default if unanswered: C (nothing starts without you). Blocks: all post-M14 work.
+Full replan: `docs/handoff/gates/M14_REPLAN.md`. Retrospective: `docs/handoff/gates/M14_RETROSPECTIVE.md`.
 
-### 2. M0–M4 acceptance boxes never ticked
-Context: 37 boxes in M0 (4), M1 (11), M2 (6), M3 (6), M4 (6) were never ticked, though later milestones built on them.
-- **A (recommended)**: one bookkeeping slice: an agent checks each box against tests / DECISIONS, ticks it with evidence or lists it as open.
-- B: leave them; MILESTONES is read from M14 on.
-Default if unanswered: B. Blocks: nothing.
+### 1. What starts after M14
+Context: M14 is complete and work is paused. Remaining: about 30–45 waves and 12–18 gates (replan §4).
+- **A (recommended)**: replan order: wave 1 = R7 re-audit + housekeeping + sim baseline, with your G1–G16 ruling
+  session in parallel; then R7 A–E with F1 / F2 (4–5 waves, gate PT-002); H25; balance; G-passes; daily modifiers last.
+- B: gameplay first: G rulings and G-passes, R7 and H25 once at the end (replan §5 alt B).
+- C: ship scope: R7, H25 and the Queued passes only, plus small G items (replan §5 alt C).
+- D: wait.
+Default if unanswered: D (nothing starts without you). Blocks: all post-M14 work.
+
+### 2. How R7 closes
+- **A (recommended)**: H25 is R7's closing audit loop (saves a separate audit wave).
+- B: a separate R7 audit loop, then H25.
+Default: A. Blocks: nothing until R7 ends.
+
+### 3. M0–M4 acceptance boxes (33 never ticked)
+Context: replan §2: 29 done (named tests), 2 superseded, 1 partial (Firmware / Daemon per-id coverage), 1 open (netrun minutes).
+- **A (recommended)**: tick the 29 with evidence, reword Pierce / WEAK / DOWN-TAKEN, mark the 2 superseded, add a per-id
+  Firmware / Daemon coverage test.
+- B: leave them.
+Default: B. Blocks: nothing.
+
+### 4. M2 "tier 1 netrun takes 12–18 min"
+- **A (recommended)**: a timed step in the next PT list (you time one run).
+- B: drop it in favour of the simulator's run counts.
+Default: A. Blocks: nothing.
+
+### 5. Overkill wording (ruling 9; "→ N LEFT" still live, combat_scene.gd:3429 / :4677)
+- **A (recommended)**: "→ 0 HP" plus a skull on a kill (R7 A5).
+- B: keep "→ N LEFT".
+Default: A. Blocks: R7 batch A.
+
+### 6. Pacing (last sim: ~43–49 runs at ICE 5 vs the 24-run target)
+- **A (recommended)**: sim baseline now (wave 1), tuned in the balance pass.
+- B: wait until the G-passes are done.
+Default: A. Blocks: the balance pass.
+
+### 7. Raid hostile cue without colour
+Context: it shows only with the colour-blind setting on; ART_BIBLE §5.1 says never colour alone.
+- **A (recommended)**: always shown.
+- B: only with the colour-blind setting.
+Default: A. Blocks: nothing (rides R7 batch C).
 
 ## Defaults taken (FYI class; veto by number, otherwise they stand)
 - D6. `tools/precommit.sh` re-imports when the staged diff adds or renames a `class_name` (a stale class cache failed one merge run) — gate report PT-001 §2.
 - D7. Brief footer adds "stop your own background runs before the RESULT block; one precommit at a time" — gate report PT-001 §2.
 - D8. `run_tests.py` uses a fresh shard directory per invocation (overlapping runs collided) — gate report PT-001 §2.
+- D9. Agents commit WIP on their own branch at least every ~30 min and before long runs (three losses of uncommitted work in M14) — `docs/handoff/gates/M14_RETROSPECTIVE.md` §5.
+- D10. Fast tier on main must be green before a wave is spawned; reds fixed first — M14 retrospective §5.
+- D11. One comparison sheet per group is the only review unit for every art pass, incl. R7 — M14 retrospective §5.
+- D12. Gate reports record agents × model × effort; more than 5 agents at once or any Opus agent needs a stated reason in the brief — M14 retrospective §5.
+- D13. G10 (raid zoom, built as `RaidZoomFit`) and G13 (HQ actions, answered by HQ direction B) close as done; G16 keeps only its per-card type field — replan §3.
+- D14. A mechanical rule-5 slice moves the ~190 literals the cleanup listed (absolute px in ~15 kit files) into consts / config, in R7 wave 1 — replan §3.
 
 ## Already ruled, not re-asked (for reference)
 - This PC is the target PC; tier 1 here is the Deck tier → DECISIONS "M14 gate (PT-001)" (2026-10-12).

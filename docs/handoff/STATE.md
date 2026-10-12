@@ -11,6 +11,10 @@
 validate 0, quiet perf inside 8 ms), pushed, tagged gate/PT-001. PAUSED (memory: pause-after-m14): waiting for the
 designer's PT-001 playtest feedback and CP-002 answers (docs/handoff/CHECKPOINT_PENDING.md). Start nothing post-M14
 until then. Report: docs/handoff/gates/PT-001.md.
+Designer (2026-10-12) asked for three things in parallel while they playtest PT-001: (1) M14 retrospective
+(Explore agent gathering facts → write docs/handoff/gates/M14_RETROSPECTIVE.md), (2) full project replan (Plan agent
+draft → docs/handoff/gates/M14_REPLAN.md, feeds CP-002), (3) code cleanup of the gate-scope GDScript diff
+(6fb177a4..19ad76a3): done, tag m14-cleanup @ dc5860ff (1 type added; scope already clean; ~190 literals listed → D14). Merge after PT-001 feedback. Retrospective + replan written (docs/handoff/gates/M14_*.md), CP-002 recast (7 questions, D6–D14).
 
 ## Correction to the previous STATE
 PERF (worktree-agent-a83770e7cc90b1b21, 6 commits) and BIG-TEXT (worktree-agent-a9abc5cb8da94c21f, 4 commits)
