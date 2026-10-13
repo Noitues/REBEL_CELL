@@ -12,7 +12,7 @@ extends Control
 const ICON_R := 8.0
 const ICON_GAP := 3.0
 ## W2-A4 (R4): a Daemon / Firmware reward shows its own art, in a square of this half-side (px at scale 1.0).
-const ART_R := 13.0
+const ART_R := 15.0
 const ITEM_GAP := 12.0
 ## ART-9 4A (ART_BIBLE v2 §4.11 "outcome chips (green gain, red cost, grey no change)"): each
 ## item is a framed chip on the dark choice sticker, its icon and amount in the chip's colour.
