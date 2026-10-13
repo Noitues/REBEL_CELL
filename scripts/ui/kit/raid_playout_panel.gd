@@ -90,7 +90,9 @@ const FEED_HEAT_STANDING := "Heat %s: %s not destroyed: %d → %d." # TR
 const FEED_HEAT_UNSTOPPED := "Heat %s: not every threat was destroyed: %d → %d." # TR
 ## ANIM-R4 H11a: a Heat threshold the raid's Heat crossed, and what it brings.
 const FEED_THRESHOLD := "Heat %d crossed: %s" # TR
-const FEED_STEP := "Step %d" # TR
+const FEED_STEP := "— STEP %d —" # TR
+## The divider's alpha against the feed's terminal text (muted).
+const FEED_DIVIDER_ALPHA := 0.55
 ## The resolved raid (RaidResult.to_dict) the feed's end tally reads.
 var results: Dictionary = {}
 ## ANIM-R4 H11a: each node's integrity as the feed has told it so far (site id -> HP; home
@@ -99,7 +101,7 @@ var results: Dictionary = {}
 var _hp: Dictionary = {}
 ## ANIM-R5 P3: the threats the feed has told of, for the raid's Heat line: threat id -> its
 ## name (entered), and the ids destroyed and the ids that hit CORE (with damage).
-## B8: the step whose "Step N:" prefix the feed has shown.
+## B8: the step whose divider the feed has shown.
 var _prefixed_step: int = -1
 var _told_threats: Dictionary = {}
 var _told_gone: Dictionary = {}
@@ -386,12 +388,13 @@ func _apply_step(events: Array, start: float = 0.0, tl: Dictionary = {}) -> void
 				# first step only and its token stayed nameless on CORE.
 				for id in _threat_sites:
 					_dead[id] = true
-		# B8: a step's "Step N:" prefix shows on its first line only.
+		# One muted divider line per step, fed before that step's first event line.
 		var step_no := int(e.get("step", 0))
-		var line := feed_line(e, step_no != _prefixed_step)
+		var line := feed_line(e)
 		if line != "":
-			if t != "raid_end" and step_no > 0:
+			if t != "raid_end" and step_no > 0 and step_no != _prefixed_step:
 				_prefixed_step = step_no
+				_log(step_divider(step_no))
 			_log(line)
 		event_shown.emit(e)
 		if t == "raid_end":
@@ -411,14 +414,20 @@ func _apply_step(events: Array, start: float = 0.0, tl: Dictionary = {}) -> void
 		grid_view.queue_redraw()
 
 
+## The feed's divider line for step `step_no` ("— STEP 2 —"), muted terminal text.
+func step_divider(step_no: int) -> String:
+	var c := Color(Palette.TERMINAL_TEXT, FEED_DIVIDER_ALPHA)
+	return "[color=#%s]%s[/color]" % [c.to_html(true), tr(FEED_STEP) % step_no]
+
+
 func _log(line: String) -> void:
 	log_note.append(line)
 
 
 ## ANIM-R3 B5: event `e`'s RAID FEED sentence, translated, with display names (a Site's name,
-## CORE for home, a threat's and a defence's names), "Step N: " before a step's lines; "" for
+## CORE for home, a threat's and a defence's names), no step prefix (`step_divider` heads a step); "" for
 ## an event the feed does not tell. Never a content or Site id.
-func feed_line(e: Dictionary, with_step: bool = true) -> String:
+func feed_line(e: Dictionary) -> String:
 	var text := ""
 	var t := String(e.get("type", ""))
 	_note_threat(t, e)
@@ -491,8 +500,6 @@ func feed_line(e: Dictionary, with_step: bool = true) -> String:
 			text = tr(FEED_THRESHOLD) % [int(e.get("heat", 0)), brings]
 		_:
 			return ""
-	if with_step and e.has("step") and int(e["step"]) > 0 and t != "raid_end":
-		text = tr(FEED_STEP) % int(e["step"]) + ": " + text
 	return text
 
 
