@@ -13,6 +13,11 @@ validate 0, quiet perf inside 8 ms), pushed, tagged gate/PT-001. Report: docs/ha
 playtest feedback, act on NONE of it until the designer says; then analyze → decide (change / ignore) → plan. R7 retired
 (informs only). Item 7 = B (hostile ticks off by default, colour-blind setting only; long term removed). CP-002 fully answered.
 m14-cleanup merged 2026-10-12. Repo cleaned for playtest feedback (see "Clean state" below).
+**CP-003 answered** (1A–9A) → docs/handoff/gates/CHANGE_PLAN_1.md. Designer order: push, then the two playtest-cost
+tooling slices (docs/handoff/tooling1/SLICES.md, review docs/process/PLAYTEST_COST_REVIEW.md) BEFORE wave 0.
+Motion tooling HELD until the animation slices. In flight: T1 (fix-mechanical, tag tooling1-t1: gate profiles, no
+combat escalation, audit on changed screens, cost double-count fix, parity pairing, doc 05) and T2 (fix-rules, tag
+tooling1-t2: HeuristicStrategist + $12-capped calibration + 2-turn lookahead boss numbers). Then wave 0.
 **Claude playtesters (2026-10-12, merged @ 5fc4903f, fast 1473 / 0):** black-box screen testers, batch judging, routes and
 saves, a headless state tester, replay audit, Perfect quiz, decision parity, gate routine (docs/process/05). Feedback gathered
 (PB-010, PB-012, probes, parity, state sweep SA-001; $57 API in all) and analysed in
