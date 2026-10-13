@@ -27,6 +27,9 @@ signal drag_dropped(zone: Dictionary, data: Dictionary)
 var combatant: CombatantState = null
 var satellites: Array[CombatantState] = []
 var readouts: Array[Dictionary] = []
+## W2-A1: the precision tags on the needles (`PointerTag.model`), the tier each needle reads after the
+## play being forecast; empty = each reads as it does now. Set by the scene with the forecast.
+var pointer_tags: Array[Dictionary] = []
 var lookup: ContentLookup = null
 ## This wheel is the current target (drawn as a crosshair ring).
 var highlighted: bool = false
@@ -286,6 +289,9 @@ const TAG_AFTER_TIP := "This tag shows where the needle lands after this play." 
 func _get_tooltip(at_position: Vector2) -> String:
 	if combatant == null:
 		return ""
+	var tag_i := pointer_tag_at(at_position)
+	if tag_i >= 0:
+		return PointerTag.tooltip(pointer_tag_model()[tag_i], combatant.is_player)
 	if _intent_rect_local().has_point(at_position):
 		var tip := String(intent.get("tooltip", ""))
 		# W1R1-MISC: the tag reads the previewed pointer, so it says it is the position after the hovered play.
@@ -373,6 +379,7 @@ func show_combatant(c: CombatantState, p_satellites: Array[CombatantState], p_re
 	combatant = c
 	satellites = p_satellites
 	readouts = p_readouts
+	pointer_tags = []
 	lookup = p_lookup
 	wheel_color = Palette.CELL_PINK if c.is_player else Palette.corp_color(_corporation_of(c))
 	if c.is_hub_breached():
@@ -1623,7 +1630,7 @@ func arrows() -> Array[Dictionary]:
 	if combatant.wheel.has_inner_ring():
 		rings.append(RC.RingScope.INNER)
 	for ring in rings:
-		for d in [-1, 1]:
+		for d: int in [-1, 1]:
 			out.append({"ring": ring, "direction": d})
 	return out
 
@@ -2119,9 +2126,110 @@ func _draw_view() -> void:
 			draw_set_transform(Vector2(0.0, tag.position.y * (1.0 - s)), 0.0, Vector2(1.0, s))
 		_intent_tag(tag)
 		draw_set_transform(Vector2.ZERO)
+	_draw_pointer_tags()
 	_draw_arrows()  # after the tag: the arrows stay on top at big text (H22)
 	if attachments == null:
 		_draw_satellites()
+
+
+# --- W2-A1: the precision tag on each needle ----------------------------------------------------
+
+const POINTER_TAG_FONT := 13
+const POINTER_TAG_PAD := 6.0
+const POINTER_TAG_GAP := 4.0
+## Half the blade's width (master units): the tag stands this far off the needle's line.
+const POINTER_TAG_BLADE := 30.0
+
+
+## The tags the needles wear: the forecast's while one is shown, else what each needle reads now.
+func pointer_tag_model() -> Array[Dictionary]:
+	if not replaying and not intent.is_empty() and pointer_tags.size() == readouts.size():
+		return pointer_tags
+	return PointerTag.model(readouts, readouts)
+
+
+## Needle `i`'s tag (local rect) on the view: above its blade, clear of a boss's banner, inside the view.
+func pointer_tag_rect(i: int) -> Rect2:
+	var model := pointer_tag_model()
+	var ps := shown_pointers()
+	if combatant == null or kit == null or i < 0 or i >= model.size() or i >= ps.size():
+		return Rect2()
+	var f := Palette.marker()
+	var fs := _fs(POINTER_TAG_FONT)
+	var ts := _ts()
+	var text := PointerTag.text(model[i])
+	var sz := Vector2(f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + POINTER_TAG_PAD * 2.0 * ts, fs + 6.0 * ts)
+	var deg := fposmod(-ps[i] * DEG_PER_TICK, 360.0)
+	var dir := Vector2(sin(deg_to_rad(deg)), -cos(deg_to_rad(deg)))
+	# Beside the blade at the level of its tip (clear of the nudge buttons above and a boss's banner over it).
+	var reach := (frame_master() + WheelFace.BLADE_TOP) * art_scale()
+	# Candidates: right of the blade, left of it, then centred over it; the first that covers no nudge
+	# button or key hint wins (else the first).
+	var first := Rect2()
+	for cand in 3:
+		var r := _tag_candidate(dir, reach, sz, cand)
+		if cand == 0:
+			first = r
+		if not _tag_meets_controls(r):
+			return r
+	return first
+
+
+## Candidate `cand` (0 right of the blade, 1 left of it, 2 centred over its tip) for a tag of size `sz` (local).
+func _tag_candidate(dir: Vector2, reach: float, sz: Vector2, cand: int) -> Rect2:
+	var pos := Vector2.ZERO
+	if cand == 2:
+		var tip := _center() + dir * (reach + POINTER_TAG_GAP * _ts())
+		pos = tip - Vector2(sz.x * 0.5, sz.y * (0.5 + 0.5 * -dir.y))
+	else:
+		var perp: Vector2 = Vector2(-dir.y, dir.x) * (1.0 if cand == 0 else -1.0)
+		var at := _center() + dir * reach + perp * (POINTER_TAG_BLADE * art_scale() + POINTER_TAG_GAP * _ts())
+		pos = Vector2(at.x if perp.x >= 0.0 else at.x - sz.x, at.y - sz.y * 0.5 * (1.0 + dir.y))
+	pos.x = clampf(pos.x, 0.0, maxf(0.0, size.x - sz.x))
+	pos.y = clampf(pos.y, 0.0, maxf(0.0, size.y - sz.y))
+	return Rect2(pos, sz)
+
+
+## True when `r` (local) covers a nudge button or a key hint.
+func _tag_meets_controls(r: Rect2) -> bool:
+	for ar in arrows():
+		var ring: int = ar["ring"]
+		var d: int = ar["direction"]
+		var hr: Rect2 = arrow_hint_rect(ring, d)
+		if hr.has_area() and r.intersects(hr.grow(2.0)):
+			return true
+		var ac := arrow_center(ring, d) - global_position
+		if r.intersects(Rect2(ac - Vector2(ARROW_HIT, ARROW_HIT) * _ts(), Vector2(ARROW_HIT, ARROW_HIT) * 2.0 * _ts())):
+			return true
+	return false
+
+
+## The needle whose tag is under `at` (local), -1 when none.
+func pointer_tag_at(at: Vector2) -> int:
+	if combatant == null or kit == null:
+		return -1
+	for i in pointer_tag_model().size():
+		if pointer_tag_rect(i).has_point(at):
+			return i
+	return -1
+
+
+func _draw_pointer_tags() -> void:
+	if combatant == null or kit == null or lookup == null or not combatant.is_alive():
+		return
+	var model := pointer_tag_model()
+	var f := Palette.marker()
+	var fs := _fs(POINTER_TAG_FONT)
+	for i in model.size():
+		var r := pointer_tag_rect(i)
+		if not r.has_area():
+			continue
+		var tint := PointerTag.tint(model[i])
+		draw_rect(Rect2(r.position + Vector2(2, 2), r.size), _col(Palette.SHADOW))
+		draw_rect(r, _col(Palette.INK))
+		draw_rect(r, _col(tint), false, 2.0)
+		HighContrast.draw_text(self, f, Vector2(r.position.x, r.position.y + r.size.y * 0.5 + fs * 0.35), PointerTag.text(model[i]),
+			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, fs, _col(tint))
 
 
 # --- ART-2 2A: precision landings (ART_BIBLE 3.19) and the player's defeat (3.3) ----------------

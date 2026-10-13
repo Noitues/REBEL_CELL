@@ -34,6 +34,9 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-13 — Plan 1 W2-A1: the precision tag on each pointer
+- Every needle (yours and the enemy's) wears a PERFECT / GOOD / WEAK / NULL tag (`PointerTag`, `WheelView.pointer_tag_rect`), beside the blade at tip level; it moves to the other side or over the tip when it would cover a nudge button or key hint. It reads the same landing the forecast title uses (`_show_outcome`'s `landing`, set as `pointer_tags`), so it updates live with queued plays, hovers and nudges; without a forecast it reads the needle now. When the forecast moves the tier it says `NOW → AFTER`. The tooltip names the element and each tier (Codex tier text); the enemy's says it shows the landing after this play. The word is the non-colour cue. Test: `test_w1_tag_preview.gd` (tag == the tier the end-turn replay resolves, seeds x hovers x 0/1/2 plays).
+
 ### 2026-10-13 — Raid feed: one STEP divider per step (PT-002a item 6, option A)
 The LIVE RAID FEED no longer prefixes event lines with "Step N:". `RaidPlayoutPanel.step_divider` feeds one muted
 terminal line, "— STEP N —" (TERMINAL_TEXT at `FEED_DIVIDER_ALPHA`, body size), before a step's first fed event;

@@ -1154,8 +1154,10 @@ Instant (results at once),Instant (results at once)
 Intel,Intel
 Interface skin (terminal colors only; meanings and layout stay),Interface skin (terminal colors only; meanings and layout stay)
 It counts as a lost campaign.,It counts as a lost campaign.
+It follows the plays you queue or hover: this is the tier SEND IT resolves.,It follows the plays you queue or hover: this is the tier SEND IT resolves.
 "It gets %d through, but only %d HP are left to take.","It gets %d through, but only %d HP are left to take."
 It lands on one slice at random; the odds by slice type follow.,It lands on one slice at random; the odds by slice type follow.
+It shows where the needle lands after this play.,It shows where the needle lands after this play.
 Its needle lands on %s.,Its needle lands on %s.
 JACK A CAMPAIGN IN,JACK A CAMPAIGN IN
 JACK IN,JACK IN
@@ -1634,6 +1636,7 @@ NUDGE,NUDGE
 NUDGE CARDS: every card whose effect is a nudge.,NUDGE CARDS: every card whose effect is a nudge.
 NUDGE: moves a ring one tick either way; resistance can refuse it.,NUDGE: moves a ring one tick either way; resistance can refuse it.
 NULL,NULL
+"NULL: the needle sits on a NULL slice, so nothing happens.","NULL: the needle sits on a NULL slice, so nothing happens."
 NetrunBoostData.boost_field_kit.description,+2 max RAM in every combat of the next netrun.
 NetrunBoostData.boost_field_kit.display_name,Field Kit
 NetrunBoostData.boost_overclocked_deck.description,Two extra Jolt cards for the next netrun only.
@@ -1774,6 +1777,7 @@ PIRATE RADIO 88.1,PIRATE RADIO 88.1
 SAFE??","PLAY IT
 SAFE??"
 PLAYOUT,PLAYOUT
+PRECISION TAG: how well this needle lands on its slice.,PRECISION TAG: how well this needle lands on its slice.
 PROCESSED,PROCESSED
 PROFILE // RECORDS,PROFILE // RECORDS
 PROFILE // THE CELL,PROFILE // THE CELL
@@ -2026,6 +2030,7 @@ Rank,Rank
 "Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 "Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 Rank: runs survived. It brings wheel upgrades and higher netrun tiers.,Rank: runs survived. It brings wheel upgrades and higher netrun tiers.
+Reads %s now.,Reads %s now.
 Recall %s,Recall %s
 "Reduce effects (no scanlines, flicker, chromatic or distortion)","Reduce effects (no scanlines, flicker, chromatic or distortion)"
 Reduce motion (no camera moves or parallax; pages cross-fade),Reduce motion (no camera moves or parallax; pages cross-fade)
