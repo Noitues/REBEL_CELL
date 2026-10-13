@@ -27,6 +27,9 @@ signal drag_dropped(zone: Dictionary, data: Dictionary)
 var combatant: CombatantState = null
 var satellites: Array[CombatantState] = []
 var readouts: Array[Dictionary] = []
+## W2-A1: the precision tags on the needles (`PointerTag.model`), the tier each needle reads after the
+## play being forecast; empty = each reads as it does now. Set by the scene with the forecast.
+var pointer_tags: Array[Dictionary] = []
 var lookup: ContentLookup = null
 ## This wheel is the current target (drawn as a crosshair ring).
 var highlighted: bool = false
@@ -286,6 +289,9 @@ const TAG_AFTER_TIP := "This tag shows where the needle lands after this play." 
 func _get_tooltip(at_position: Vector2) -> String:
 	if combatant == null:
 		return ""
+	var tag_i := pointer_tag_at(at_position)
+	if tag_i >= 0:
+		return PointerTag.tooltip(pointer_tag_model()[tag_i], combatant.is_player)
 	if _intent_rect_local().has_point(at_position):
 		var tip := String(intent.get("tooltip", ""))
 		# W1R1-MISC: the tag reads the previewed pointer, so it says it is the position after the hovered play.
@@ -373,6 +379,7 @@ func show_combatant(c: CombatantState, p_satellites: Array[CombatantState], p_re
 	combatant = c
 	satellites = p_satellites
 	readouts = p_readouts
+	pointer_tags = []
 	lookup = p_lookup
 	wheel_color = Palette.CELL_PINK if c.is_player else Palette.corp_color(_corporation_of(c))
 	if c.is_hub_breached():
@@ -1623,7 +1630,7 @@ func arrows() -> Array[Dictionary]:
 	if combatant.wheel.has_inner_ring():
 		rings.append(RC.RingScope.INNER)
 	for ring in rings:
-		for d in [-1, 1]:
+		for d: int in [-1, 1]:
 			out.append({"ring": ring, "direction": d})
 	return out
 
@@ -2119,9 +2126,110 @@ func _draw_view() -> void:
 			draw_set_transform(Vector2(0.0, tag.position.y * (1.0 - s)), 0.0, Vector2(1.0, s))
 		_intent_tag(tag)
 		draw_set_transform(Vector2.ZERO)
+	_draw_pointer_tags()
 	_draw_arrows()  # after the tag: the arrows stay on top at big text (H22)
 	if attachments == null:
 		_draw_satellites()
+
+
+# --- W2-A1: the precision tag on each needle ----------------------------------------------------
+
+const POINTER_TAG_FONT := 13
+const POINTER_TAG_PAD := 6.0
+const POINTER_TAG_GAP := 4.0
+## Half the blade's width (master units): the tag stands this far off the needle's line.
+const POINTER_TAG_BLADE := 30.0
+
+
+## The tags the needles wear: the forecast's while one is shown, else what each needle reads now.
+func pointer_tag_model() -> Array[Dictionary]:
+	if not replaying and not intent.is_empty() and pointer_tags.size() == readouts.size():
+		return pointer_tags
+	return PointerTag.model(readouts, readouts)
+
+
+## Needle `i`'s tag (local rect) on the view: above its blade, clear of a boss's banner, inside the view.
+func pointer_tag_rect(i: int) -> Rect2:
+	var model := pointer_tag_model()
+	var ps := shown_pointers()
+	if combatant == null or kit == null or i < 0 or i >= model.size() or i >= ps.size():
+		return Rect2()
+	var f := Palette.marker()
+	var fs := _fs(POINTER_TAG_FONT)
+	var ts := _ts()
+	var text := PointerTag.text(model[i])
+	var sz := Vector2(f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + POINTER_TAG_PAD * 2.0 * ts, fs + 6.0 * ts)
+	var deg := fposmod(-ps[i] * DEG_PER_TICK, 360.0)
+	var dir := Vector2(sin(deg_to_rad(deg)), -cos(deg_to_rad(deg)))
+	# Beside the blade at the level of its tip (clear of the nudge buttons above and a boss's banner over it).
+	var reach := (frame_master() + WheelFace.BLADE_TOP) * art_scale()
+	# Candidates: right of the blade, left of it, then centred over it; the first that covers no nudge
+	# button or key hint wins (else the first).
+	var first := Rect2()
+	for cand in 3:
+		var r := _tag_candidate(dir, reach, sz, cand)
+		if cand == 0:
+			first = r
+		if not _tag_meets_controls(r):
+			return r
+	return first
+
+
+## Candidate `cand` (0 right of the blade, 1 left of it, 2 centred over its tip) for a tag of size `sz` (local).
+func _tag_candidate(dir: Vector2, reach: float, sz: Vector2, cand: int) -> Rect2:
+	var pos := Vector2.ZERO
+	if cand == 2:
+		var tip := _center() + dir * (reach + POINTER_TAG_GAP * _ts())
+		pos = tip - Vector2(sz.x * 0.5, sz.y * (0.5 + 0.5 * -dir.y))
+	else:
+		var perp: Vector2 = Vector2(-dir.y, dir.x) * (1.0 if cand == 0 else -1.0)
+		var at := _center() + dir * reach + perp * (POINTER_TAG_BLADE * art_scale() + POINTER_TAG_GAP * _ts())
+		pos = Vector2(at.x if perp.x >= 0.0 else at.x - sz.x, at.y - sz.y * 0.5 * (1.0 + dir.y))
+	pos.x = clampf(pos.x, 0.0, maxf(0.0, size.x - sz.x))
+	pos.y = clampf(pos.y, 0.0, maxf(0.0, size.y - sz.y))
+	return Rect2(pos, sz)
+
+
+## True when `r` (local) covers a nudge button or a key hint.
+func _tag_meets_controls(r: Rect2) -> bool:
+	for ar in arrows():
+		var ring: int = ar["ring"]
+		var d: int = ar["direction"]
+		var hr: Rect2 = arrow_hint_rect(ring, d)
+		if hr.has_area() and r.intersects(hr.grow(2.0)):
+			return true
+		var ac := arrow_center(ring, d) - global_position
+		if r.intersects(Rect2(ac - Vector2(ARROW_HIT, ARROW_HIT) * _ts(), Vector2(ARROW_HIT, ARROW_HIT) * 2.0 * _ts())):
+			return true
+	return false
+
+
+## The needle whose tag is under `at` (local), -1 when none.
+func pointer_tag_at(at: Vector2) -> int:
+	if combatant == null or kit == null:
+		return -1
+	for i in pointer_tag_model().size():
+		if pointer_tag_rect(i).has_point(at):
+			return i
+	return -1
+
+
+func _draw_pointer_tags() -> void:
+	if combatant == null or kit == null or lookup == null or not combatant.is_alive():
+		return
+	var model := pointer_tag_model()
+	var f := Palette.marker()
+	var fs := _fs(POINTER_TAG_FONT)
+	for i in model.size():
+		var r := pointer_tag_rect(i)
+		if not r.has_area():
+			continue
+		var tint := PointerTag.tint(model[i])
+		draw_rect(Rect2(r.position + Vector2(2, 2), r.size), _col(Palette.SHADOW))
+		draw_rect(r, _col(Palette.INK))
+		draw_rect(r, _col(tint), false, 2.0)
+		HighContrast.draw_text(self, f, Vector2(r.position.x, r.position.y + r.size.y * 0.5 + fs * 0.35), PointerTag.text(model[i]),
+			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, fs, _col(tint))
 
 
 # --- ART-2 2A: precision landings (ART_BIBLE 3.19) and the player's defeat (3.3) ----------------
@@ -2500,7 +2608,23 @@ const HUB_NAME_Y := 0.58
 const HUB_NAME_MIN_R_1080 := 90.0
 ## Segment plates on the inner ring (3.10): glyph box and radius (master units).
 const RING_PLATE := 20.0
-const RING_PLATE_R := 113.5
+const RING_PLATE_R := 128.0
+## plan1 W2-A6: the plates' word and glyph sizes (px at text scale 1.0), the padding and the active caret.
+const RING_LABEL_FONT := 10
+const RING_GLYPH_PX := 13.0
+const RING_PLATE_PAD := 2.0
+const RING_CARET := 4.0
+## The word on each segment's plate (the segment's name, short enough for the plate).
+const RING_WORDS := {
+	&"seg_x2": "DOUBLE", # TR
+	&"seg_pierce": "PIERCE", # TR
+	&"seg_corrupt": "CORRUPT", # TR
+	&"seg_anchor": "ANCHOR", # TR
+	&"seg_accelerator": "ACCEL", # TR
+	&"seg_echo": "ECHO", # TR
+	&"seg_blank": "EMPTY", # TR
+}
+const RING_WORD_FALLBACK := "EMPTY"
 ## The segment kinds the disc shader textures (its SEG_COL order).
 const SEG_KINDS := {&"seg_blank": 0, &"seg_x2": 1, &"seg_pierce": 2, &"seg_corrupt": 3, &"seg_anchor": 4,
 	&"seg_accelerator": 5, &"seg_echo": 6}
@@ -2700,18 +2824,75 @@ func _sync_disc(center: Vector2, radius: float, rot: float) -> int:
 	return active
 
 
-## The inner ring's segment plates (3.10): each segment's glyph on a small dark plate.
+## The inner ring's segment plates (3.10; plan1 W2-A6): each segment's glyph and its name on a dark plate big
+## enough to read at 1.0, over the ring, the hub's rim and the slices' inner edge. The segment the first
+## pointer reads (the one that modifies the slice that resolves) is lit: a bright rim, the accent fill, the
+## full-strength word and a caret pointing out at its slice; the others are dimmed.
 func _draw_ring_plates(center: Vector2, k: float) -> void:
 	var wheel := combatant.wheel
 	var irot := shown_inner_rotation()
+	var active := -1
+	if not readouts.is_empty():
+		active = int(readouts[0].get("segment_index", -1))
+	var ts := _ts()
+	var font := Palette.mono()
+	var fs := roundi(RING_LABEL_FONT * ts)
+	var gpx := RING_GLYPH_PX * ts
+	var pad := RING_PLATE_PAD * ts
 	for seg in RC.RING_SEGMENTS:
-		var deg := fposmod((irot - seg * 10) * DEG_PER_TICK, 360.0)
-		var at := WheelFace.at(center, k, RING_PLATE_R, deg)
-		var r := RING_PLATE * 0.62 * k
-		draw_circle(at, r, Color(Palette.NIGHT_SKY, 0.9))
-		draw_arc(at, r, 0.0, TAU, 16, Color(kit.accent, 0.8), maxf(1.0, k * 1.5), true)
+		var at := WheelFace.at(center, k, RING_PLATE_R, fposmod((irot - seg * 10) * DEG_PER_TICK, 360.0))
 		var seg_id: StringName = wheel.ring_segment_ids[seg] if seg < wheel.ring_segment_ids.size() else &""
-		WheelGlyphs.draw(self, WheelGlyphs.segment_id(seg_id), at, RING_PLATE * k * 0.8, Palette.TEXT_HI)
+		var word := ring_word(seg_id)
+		var lit := seg == active
+		var tw := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var rect := ring_plate_rect(center, k, seg)
+		var box := rect.size
+		var rim := _col(Palette.PAPER if lit else Color(kit.accent, 0.75))
+		_draw_plate(rect, _col(Color(kit.accent.darkened(0.45), 0.96) if lit else Color(Palette.NIGHT_SKY, 0.92)), rim, (2.5 if lit else 1.0) * ts)
+		var ink := _col(Palette.TEXT_HI if lit else Color(Palette.TEXT_HI, 0.82))
+		WheelGlyphs.draw(self, WheelGlyphs.segment_id(seg_id), rect.position + Vector2(box.x * 0.5, pad + gpx * 0.5), gpx, ink)
+		draw_string(font, rect.position + Vector2((box.x - tw) * 0.5, pad + gpx + font.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
+		if lit:
+			# A caret on the plate's outer edge: this segment is the one acting on the slice out there.
+			var dir := (at - center).normalized()
+			var size := RING_CARET * ts
+			var tip := at + dir * (box.y * 0.5 + size)
+			var side := dir.orthogonal() * size
+			draw_colored_polygon(PackedVector2Array([tip, tip - dir * size * 1.4 + side, tip - dir * size * 1.4 - side]), _col(Palette.PAPER))
+
+
+## plan1 W2-A6: the word on segment `seg_id`'s plate, translated.
+func ring_word(seg_id: StringName) -> String:
+	return tr(String(RING_WORDS.get(seg_id, RING_WORD_FALLBACK)))
+
+
+## plan1 W2-A6: where ring segment `seg`'s plate is (local to the view) for a wheel centred on `center` at art
+## scale `k`: its glyph over its word, on the segment's centre at the shown inner rotation.
+func ring_plate_rect(center: Vector2, k: float, seg: int) -> Rect2:
+	var ts := _ts()
+	var font := Palette.mono()
+	var fs := roundi(RING_LABEL_FONT * ts)
+	var seg_id: StringName = combatant.wheel.ring_segment_ids[seg] if seg < combatant.wheel.ring_segment_ids.size() else &""
+	var at := WheelFace.at(center, k, RING_PLATE_R, fposmod((shown_inner_rotation() - seg * 10) * DEG_PER_TICK, 360.0))
+	var gpx := RING_GLYPH_PX * ts
+	var pad := RING_PLATE_PAD * ts
+	var tw := font.get_string_size(ring_word(seg_id), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var box := Vector2(maxf(tw, gpx) + pad * 2.0, gpx + font.get_height(fs) + pad * 2.0)
+	return Rect2(at - box * 0.5, box)
+
+
+## A plate: the fill with a rim `width` px wide (corners clipped by 2 px).
+func _draw_plate(rect: Rect2, fill: Color, rim: Color, width: float) -> void:
+	var c := 2.0
+	var r := rect
+	var pts := PackedVector2Array([
+		r.position + Vector2(c, 0.0), Vector2(r.end.x - c, r.position.y), Vector2(r.end.x, r.position.y + c),
+		Vector2(r.end.x, r.end.y - c), Vector2(r.end.x - c, r.end.y), Vector2(r.position.x + c, r.end.y),
+		Vector2(r.position.x, r.end.y - c), Vector2(r.position.x, r.position.y + c)])
+	draw_colored_polygon(pts, fill)
+	var closed := pts.duplicate()
+	closed.append(pts[0])
+	draw_polyline(closed, rim, width, true)
 
 
 ## The hub's emblem (3.3; B2, review D2: round 40 hub_cores_v3 / combat_typical_v4): its core
@@ -3506,7 +3687,7 @@ func icon_row_items() -> Array[Dictionary]:
 		out.append({"icon": RC.SliceType.DETOUR, "text": str(evaded), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
 	out.append({"icon": -1, "text": str(through), "color": LOSS_COLOR if through > 0 else Palette.NET_CYAN, "sep": "="})
 	if dealt < through:
-		out.append({"icon": -1, "text": tr("%d LEFT") % dealt, "color": LOSS_COLOR, "sep": CLAMP_ARROW})
+		out.append({"icon": -1, "text": "0", "color": LOSS_COLOR, "sep": CLAMP_ARROW})  # W2-A2 (CP-002 ruling 5): "→ 0", never the over-damage
 	# The rest of the HP change (a heal, corruption): what the hits took off is `dealt`.
 	var rest := hp + dealt
 	if rest != 0:

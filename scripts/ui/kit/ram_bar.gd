@@ -47,9 +47,16 @@ func set_ram(value: int, maximum: int) -> void:
 	_tick_to(from, value)
 	custom_minimum_size = panel_size()
 	# ANIM-R5 combat 9: translated here, shown as given.
-	tooltip_text = tr("RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn.") % [value, maximum]
-	tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_refresh_tip()
 	queue_redraw()
+
+
+func _refresh_tip() -> void:
+	tooltip_text = tr("RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn.") % [ram, max_ram]
+	if next_turn >= 0:
+		tooltip_text += "
+" + tr("If the turn ends as planned, the next one starts with %d RAM.") % next_turn
+	tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 
 
 ## ANIM-R2 E9: what a respin, a card or an extra nudge just spent rises off the count as
@@ -224,6 +231,23 @@ func set_pending(delta: int) -> void:
 		queue_redraw()
 
 
+## W2-A2 (RAM after SEND IT): the RAM the next turn starts with if the turn ended as planned
+## (the resolver's `ram_next_turn`); -1 = none shown. The count is RAM now, this is after.
+var next_turn: int = -1
+
+
+func set_next_turn(value: int) -> void:
+	if value != next_turn:
+		next_turn = value
+		_refresh_tip()
+		queue_redraw()
+
+
+## "NEXT TURN 9" as the header writes it ("" = none).
+func next_turn_words() -> String:
+	return "" if next_turn < 0 else tr("NEXT TURN %d") % next_turn
+
+
 ## ART-2 2D (ART_BIBLE v2 §3.1): the RAM readout is a terminal panel: a "RAM" header, the
 ## count in big numbers, then the pips (lit = available). Sizes at text scale 1.0 (px).
 const PANEL_W := 240.0
@@ -281,7 +305,9 @@ var _glass: CrtTerminalPanel = null
 func _label() -> String:
 	var label := tr("RAM %d/%d") % [ram, max_ram]
 	if pending != 0:
-		label += " (%+d)" % pending
+		label += " " + tr("(%+d THIS PLAY)") % pending
+	if next_turn >= 0:
+		label += " " + next_turn_words()
 	return label
 
 
@@ -329,9 +355,15 @@ func _draw() -> void:
 	if owner_words != "":
 		head = owner_words  # ART-2 2D: the name sticker's words at big text (the count says RAM)
 	if pending != 0:
-		head += "  (%+d)" % pending
+		head += "  " + tr("(%+d THIS PLAY)") % pending  # W2-A3: the bare "(-1)" said nothing
 	HighContrast.draw_text(self, mono, Vector2(pad, pad + mono.get_ascent(hf)), head, HORIZONTAL_ALIGNMENT_LEFT, -1, hf, HudSkin.TERMINAL_TEXT)
+	var after_words := next_turn_words()
 	var refusal := refusal_text()
+	if after_words != "" and refusal == "":
+		var aw := mono.get_string_size(after_words, HORIZONTAL_ALIGNMENT_LEFT, -1, hf).x
+		var used := mono.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, hf).x
+		if pad + used + hf < size.x - pad - aw:  # only where it fits clear of the header's own words
+			HighContrast.draw_text(self, mono, Vector2(size.x - pad - aw, pad + mono.get_ascent(hf)), after_words, HORIZONTAL_ALIGNMENT_LEFT, -1, hf, HudSkin.TERMINAL_HI)
 	if refusal != "":
 		var red := Color(REFUSED_COLOR, maxf(MISSING_ALPHA, flash_alpha))
 		var rw := mono.get_string_size(refusal, HORIZONTAL_ALIGNMENT_LEFT, -1, hf).x

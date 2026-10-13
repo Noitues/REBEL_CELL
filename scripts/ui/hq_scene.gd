@@ -1061,8 +1061,16 @@ func open_loadout(op: OperativeState = null) -> void:
 	select_operative(op.id)
 	var view := LoadoutView.new(op, RunManager.lookup(), RunManager.config().shop_slices, c.living_operatives())
 	view.operative_changed.connect(select_operative)
+	view.closed.connect(_on_loadout_closed)
 	add_child(view)
 	_wire_drops(view.drops)  # ANIM-4: ring segment swaps dropped in the view come here
+
+
+## F15: CLOSE leaves the crew hand's picked polaroid on the operative the top bar shows
+## (NEXT OPERATIVE moved the selection while the hand was behind the view).
+func _on_loadout_closed() -> void:
+	if panel_name == "hq" and selected_operative != &"":
+		pick_runner(selected_operative)
 
 
 ## The Daemon tray of the selected operative (top bar DAEMONS icon).

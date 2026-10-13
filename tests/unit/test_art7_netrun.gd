@@ -359,3 +359,34 @@ func test_the_node_room_shows_behind_an_event_only() -> void:
 	await _frames()
 	if s.run.current_node_id != &"":
 		assert_true(scene.node_backdrop != null and scene.node_backdrop.visible, "behind the event")
+
+
+func test_f13_the_key_hover_never_resizes_the_strip_or_refits_the_map() -> void:
+	Settings.set_always_show_all_nodes(false)
+	var scene := _netrun()
+	await _frames()
+	var legend: RouteLegend = scene.route_legend
+	var size_before := legend.get_combined_minimum_size()
+	var fits_before: int = scene._route_fits
+	scene.route_legend.show_links_hovered.emit(true)
+	await _frames()
+	assert_eq(legend.get_combined_minimum_size(), size_before, "the SHOWING words take the cue's room: the strip keeps its size")
+	scene.route_legend.show_links_hovered.emit(false)
+	await _frames()
+	assert_eq(legend.get_combined_minimum_size(), size_before)
+	assert_eq(scene._route_fits, fits_before, "leaving the key does not refit (zoom and pan stay the player's)")
+
+
+func test_f14_a_hovered_key_row_rings_every_node_of_its_kind() -> void:
+	var scene := _netrun()
+	await _frames()
+	var ov := _overlay(scene)
+	var legend: RouteLegend = scene.route_legend
+	var kind: String = legend.kinds[0]
+	var row := legend.strip.get_node("Kind_%s" % kind) as Control
+	assert_eq(legend.kind_at(row.get_global_rect().get_center()), kind, "the point over a row names its kind")
+	assert_eq(legend.kind_at(Vector2(-9999.0, -9999.0)), "")
+	legend.kind_hovered.emit(kind)
+	assert_eq(ov.highlight_kind, kind, "the map rings that kind")
+	legend.kind_hovered.emit("")
+	assert_eq(ov.highlight_kind, "", "leaving the row clears it")

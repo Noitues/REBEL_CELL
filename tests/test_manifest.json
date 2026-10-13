@@ -869,7 +869,15 @@
 			"seconds": 20.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_w2_a5a6_ring.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_w1_tag_preview.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_w2_a3_labels.gd": {
 			"seconds": 20.0,
 			"tier": "fast"
 		},
@@ -887,6 +895,10 @@
 		},
 		"res://tests/unit/test_plan1_1b_menu.gd": {
 			"seconds": 15.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_plan1_a2_preview.gd": {
+			"seconds": 60.0,
 			"tier": "fast"
 		}
 	}

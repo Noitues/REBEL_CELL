@@ -129,11 +129,15 @@ const SCREENS := [
 	["raid_result_meridian", "_s_raid_result_meridian", "B3 (review D6): a Meridian raid's playout at its end (no orange influence fill)."],
 	["raid_report_meridian", "_s_raid_report_meridian", "B3 (review Q7): a Meridian raid's report (CELL HOLDS on the paper)."],
 	["route_hover_all", "_s_route_hover_all", "B3 (designer Q4): the route while the key strip is hovered (every link a hairline)."],
+	["w1b_map_keep", "_s_w1b_map_keep", "1B-MAP F13: the route zoomed out and panned, then the key hovered and left (the framing stays)."],
+	["w1b_map_kind", "_s_w1b_map_kind", "1B-MAP F14: a key row hovered (every node of its kind ringed)."],
+	["w1b_loadout_close", "_s_w1b_loadout_close", "1B-MAP F15: HQ after VIEW LOADOUT, NEXT OPERATIVE, CLOSE (polaroid and top bar on one operative)."],
 	["route_mid", "_s_route_mid", "B3 b: the route mid-run (two nodes walked; the frame on the walked path, the options and a layer ahead)."],
 	["raid_incoming", "_s_raid_incoming", "B3 (review section c): the raid interlude's INCOMING transition, mid-way."],
 	["route", "_s_route", "Netrun route: choosing where to go."],
 	["route_focus", "_s_route_focus", "Parity ROUTE-04: the pad's focus on the route's last choice sticker."],
 	["route_meridian", "_s_route_meridian", "Netrun route against Meridian (the dossier's letterhead)."],
+	["a3_legend", "_s_a3_legend", "W2-A3: the combat legend open."],
 	["v1_hover", "_s_v1_hover", "V1: one card hovered."],
 	["v1_aim", "_s_v1_aim", "V1: one card selected and aimed."],
 	["v1_chain2", "_s_v1_chain2", "V1: one card played, a second hovered."],
@@ -154,6 +158,7 @@ const SCREENS := [
 	["combat_boss_p2", "_s_combat_boss_p2", "Boss fight in phase 2."],
 	["combat_boss_p3", "_s_combat_boss_p3", "Boss fight in phase 3."],
 	["combat_clutter", "_s_combat_clutter", "ART-2 acceptance: the worst-case clutter fixture (arena_lab worst: every slot docked on both wheels, Firmware everywhere, every Daemon, the docks bloomed, a card hovered)."],
+	["combat_ring_busy", "_s_combat_ring_busy", "plan1 W2-A6: the player's inner ring busy (three different segments, statuses on slices, a card hovered): the ring's labels and the active segment."],
 	["combat_victory", "_s_combat_victory", "The killing turn: VICTORY."],
 	["combat_defeat", "_s_combat_defeat", "The losing turn: DEFEAT."],
 	["loot", "_s_loot", "Picking a card reward."],
@@ -1309,6 +1314,65 @@ func _s_route_focus() -> void:
 
 
 ## B3 b: the route two steps into the run (view state: the first two choices walked).
+func _s_w1b_map_keep() -> void:
+	var net: Node = await _netrun()
+	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
+	await _settle(net)
+	var mid: Vector2 = net.size * 0.5
+	net.route_controls.zoom_at(mid, 2.0)
+	net.route_controls.pan_by(Vector2(-90.0, 50.0))
+	await _settle(net)
+	var before: Vector2 = net.background.city.scale
+	var pos_before: Vector2 = net.background.city.position
+	net.route_legend.show_links_hovered.emit(true)
+	await _settle(net)
+	net.route_legend.show_links_hovered.emit(false)
+	await _settle(net)
+	if not net.background.city.scale.is_equal_approx(before) or not net.background.city.position.is_equal_approx(pos_before):
+		_warnings.append("the key hover moved the camera (%s %s -> %s %s)" % [before, pos_before, net.background.city.scale, net.background.city.position])
+
+
+func _s_w1b_map_kind() -> void:
+	var net: Node = await _netrun()
+	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
+	var s := RunManager.netrun
+	for step in 2:
+		var options: Array = s.available_nodes()
+		if options.is_empty():
+			break
+		var id: StringName = options[0]
+		s.run.current_node_id = id
+		s.run.visited.append(id)
+	net._show_map()
+	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
+	await _settle(net)
+	if net.route_legend.has_signal("kind_hovered") and not net.route_legend.kinds.is_empty():
+		net.route_legend.kind_hovered.emit(net.route_legend.kinds[0])
+	await _settle(net)
+
+
+func _s_w1b_loadout_close() -> void:
+	var hq: Node = await _hq_with_campaign()
+	var classes: Array[ClassData] = []
+	for id in [&"ghost", &"rigger"]:
+		classes.append(RunManager.lookup().get_content(id) as ClassData)
+	DemoSetup.roster_of(RunManager.campaign, classes)
+	hq.open_hand(hq.HandTab.CREW)
+	await _settle(hq)
+	hq.pick_runner(RunManager.campaign.living_operatives()[0].id)
+	await _settle(hq)
+	hq.open_loadout()
+	await _frames(2)
+	var view := hq.get_node_or_null("LoadoutView")
+	if view == null:
+		push_error("review_pack: no LoadoutView")
+		return
+	view.next_operative()
+	await _frames(2)
+	view._view.close()
+	await _settle(hq)
+
+
 func _s_route_mid() -> void:
 	var net: Node = await _netrun()
 	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
@@ -1329,6 +1393,14 @@ func _s_route_meridian() -> void:
 	var net: Node = await _netrun_against(&"meridian")
 	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
 	await _settle(net)
+
+
+func _s_a3_legend() -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	combat.open_legend()
+	await _frames(SETTLE_FRAMES)
 
 
 func _s_combat_start() -> void:
@@ -1412,6 +1484,21 @@ func _s_combat_clutter() -> void:
 	if combat == null:
 		return
 	ClutterFixture.dress(combat)
+	await _settle(combat.get_parent())
+
+
+func _s_combat_ring_busy() -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	var st: CombatState = combat.engine.state()
+	var w := st.player.wheel
+	w.ring_segment_ids = [&"seg_x2", &"seg_pierce", &"seg_corrupt"]
+	w.inner_rotation = 4
+	w.slice_statuses[1] = RC.Status.CORRUPTED
+	w.slice_statuses[3] = RC.Status.ENCRYPTED
+	combat._refresh(st)
+	combat._preview_card(0)
 	await _settle(combat.get_parent())
 
 

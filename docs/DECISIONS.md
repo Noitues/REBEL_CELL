@@ -34,6 +34,30 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-13 — W2-A3: labels in place, combat legend, status definitions, loot slot hover
+Chips beside a wheel's HP carry a word ("HP -11", "BLOCKED (3", "GUARD +3", "RAM -1", "HEAT +2"; `HudResultChips.tag_of`;
+`ResultChipModel.label` unchanged). The RAM header reads "(-1 THIS PLAY)". The "D 0" badge's tooltip says what it counts.
+A "?" chip beside Settings and key L (`open_legend`, runtime action) open `CombatLegend` (slices incl. the 1/0 Null and
+OVFL / DFRG codes, statuses, PERFECT / GOOD / WEAK, HP / RAM / chip readouts, D n). R2: `Codex.describe`, `loot_tip` and
+`ZineCard` tooltips append the definition of every status they name (`Codex.with_status_defs`). R3: loot / Mainframe
+spinner slots hover as slot name + what the slice does + what its Firmware does (`NetrunScene.slot_tip`). Codex slice texts
+unchanged (the shop info strip's layout depends on their length). Pad: reached through the "?" chip's focus (no new pad
+button); designer ruling 2026-10-13: 1.0 mouse / keyboard only.
+
+### 2026-10-13 — W2-A5 / W2-A6: the inner ring is readable at 1.0; Q / E show what they drive; the tutorial teaches the free nudge
+- **A6 (the designer, twice: "near impossible to read"):** each inner-ring segment's plate is now a dark plate with
+  its glyph over its name (DOUBLE, PIERCE, CORRUPT, ANCHOR, ACCEL, ECHO, EMPTY), about 40 x 26 px at 1.0 (it was a
+  5 px disc with an 8 px glyph). The plates sit on the ring's outer lip (`RING_PLATE_R` 128), so they clear the hub's
+  emblem and name. The segment the first pointer reads (the one that modifies the slice that resolves) is lit: a
+  paper rim, an accent fill, the word at full strength and a caret pointing out at its slice; the others are dimmed.
+  Sizes are constants in `wheel_view.gd` (`RING_LABEL_FONT`, `RING_GLYPH_PX`, ...). No ring geometry or shader change.
+- **A5:** the nudge button pair Q / E drive wears an acid rim (the key letters were its only mark); on a wheel with an
+  inner ring the word OUTER or INNER sits under each key letter. The tutorial's NUDGE step (still step 1, so the
+  step numbers hold) says FREE NUDGE in the title bar counts the free nudges, each extra costs RAM, and that the
+  lit pair with its ring word is what Q / E nudge (W switches wheel, R ring).
+- Test: `test_w2_a5a6_ring.gd` (every segment has a word, plates never overlap at any inner rotation, tutorial text).
+  Review pack screen `combat_ring_busy` (player ring with three segments and two statuses) makes the sheet.
+
 ### 2026-10-13 — W2-A4: card and chip faces state their condition and direction; the event Daemon reward has its icon
 - **6A (offers unchanged):** `FaceText` (`scripts/ui/kit/face_text.gd`) reads the conditions from the content and adds them
   after the description on every face and tooltip that shows a card or chip (combat hand, loot, shop, deck viewer / detail,
@@ -49,6 +73,33 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 - **R4:** an event choice that rewards a Daemon (or a chip) shows that item's own art on its outcome chip
   (`OutcomeRow` item key `art`, a `MainframeArt` part) and its name and description in the sticker's tooltip; hovering the
   chips gives the same tooltip as the sticker. Test `test_w2_a4_faces`; captures `docs/art_review/PLAN1/W2_A4.jpg`.
+
+### 2026-10-13 — Plan 1 W2-A2: the planned outcome (V1's gaps, F11, CP-002 ruling 5)
+Built only what `docs/handoff/plan1/V1_PREVIEW_GAPS.md` listed; every number is read from the resolver's after-state.
+- **HP before → after.** `ResultChipModel` gains `HP_LINE` ("60→49", a kill "1→0": clamped to the minimum, never the
+  over-damage), `LETHAL` (your row, when *your* HP would hit 0), `SPIN` (the ticks the hovered play turns that wheel's
+  outer or inner ring: the enemy's too, which is also F11's visible preview), `NULL_LAND` (a needle on NULL). `build`
+  takes the state right after the hovered play (`landing`) and `null_hit`; the scene passes both from the same
+  `pointer_readouts` the tag uses. A chip's own `tip` shows on hover (`HudResultChips._get_tooltip`; the row's
+  breakdown still follows): the random status says its odds and who puts it there, the spin where the needle goes.
+- **CP-002 ruling 5 built.** "HITS YOU 8 → 1 LEFT" is "HITS YOU → 0"; the equation's tail and the LAST TURN row say "→ 0".
+- **Queue readout.** `TurnQueue` (pure, view-side) keeps one copy of the state per action since the turn began (rewind
+  drops a step, SEND IT starts over); `TurnQueuePanel` between the wheels lists THIS TURN with the chain's RAM total, the
+  played actions (last 3 / 2 / 1 at text 1.0 / 1.6 / 2.0), the hovered play as "> NAME", each wheel's HP net (turn start →
+  after SEND IT), a lethal warning and "RAM a→b NEXT n". It shows only once an action has been played. Its lettering stops at
+  1.4× (the room between the discs does not grow with text); long names end in "…".
+- **RAM after SEND IT.** `CombatResolver.ram_next_turn(resolved)` = regen then banked bonus, capped as `start_turn` caps
+  them (test: equals the real next-turn RAM, 12 cases). The RAM panel header says "NEXT TURN n" where it fits; its
+  tooltip always does. Turn-start Daemon triggers are not forecast.
+- **Satellites** get a row of their own under the host's chip row (`HudWheelLayer.sat_row_for`).
+- **F11.** Hovering the enemy's nudge arrows already ran the same preview as yours; what the player lacked was anything to
+  read when the slices did not change. The SPIN chip, the tag's play note and the queue's "> NUDGE name +1" now show.
+- Tests: `tests/unit/test_plan1_a2_preview.gd` (HP lines = resolver; kill/lethal; spin = real rotation for both wheels;
+  NULL iff a needle is on it; ram_next_turn; queue rows, UNDO and a new turn; layout at 1.0 / 1.6 / 2.0; satellite row;
+  random status tip). `test_anim_r6_combat.gd` follows the new "→ 0" wording.
+
+### 2026-10-13 — Plan 1 W2-A1: the precision tag on each pointer
+- Every needle (yours and the enemy's) wears a PERFECT / GOOD / WEAK / NULL tag (`PointerTag`, `WheelView.pointer_tag_rect`), beside the blade at tip level; it moves to the other side or over the tip when it would cover a nudge button or key hint. It reads the same landing the forecast title uses (`_show_outcome`'s `landing`, set as `pointer_tags`), so it updates live with queued plays, hovers and nudges; without a forecast it reads the needle now. When the forecast moves the tier it says `NOW → AFTER`. The tooltip names the element and each tier (Codex tier text); the enemy's says it shows the landing after this play. The word is the non-colour cue. Test: `test_w1_tag_preview.gd` (tag == the tier the end-turn replay resolves, seeds x hovers x 0/1/2 plays).
 
 ### 2026-10-13 — Raid feed: one STEP divider per step (PT-002a item 6, option A)
 The LIVE RAID FEED no longer prefixes event lines with "Step N:". `RaidPlayoutPanel.step_divider` feeds one muted
@@ -76,6 +127,9 @@ feeds every divider. `test_plan1_b_repro` B8 asserts N dividers for an N-step ra
 ## Archives
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
+
+### 2026-10-13 — Plan 1 1B-MAP: the key hover keeps the player's camera; key rows ring their kind; CLOSE keeps the picked operative
+F13 root cause: hovering the route key swapped the cue words (HOVER: SHOW ALL LINKS -> SHOWING ALL LINKS), which changed the strip's size, which resized the map row and called `_refit_route`, re-framing the map on the current node. `RouteLegend` now sizes the cue to the widest of its four wordings, so a hover never changes the layout. F14: `RouteLegend.kind_hovered(kind)` (pointer over a kind row, `kind_at`) -> `RouteOverlay.highlight_kind` draws a cyan ring (outside the sticker, so the icon stays clear; acid blended with the walked rings) on every drawn node of that kind (hidden nodes stay hidden). F15: `hq_scene._on_loadout_closed` re-picks the selected operative on CLOSE (`pick_runner`), so the polaroids match the top bar after NEXT OPERATIVE. Tests: `test_art7_netrun` (F13, F14), `test_horizontal_pass20_screens` (F15). Headless drops pushed mouse events, so the tests drive the signals and handlers. Sheet: `docs/art_review/PLAN1/W1B_MAP.jpg` (review-pack screens `w1b_map_keep`, `w1b_map_kind`, `w1b_loadout_close`; before = main d5730350).
 
 ### 2026-10-13 — 1B-PLAYOUT (F3): captures no longer write the player's settings.json
 

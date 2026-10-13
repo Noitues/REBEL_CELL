@@ -258,17 +258,23 @@ func test_a_turn_start_kill_lands_its_outcome_after_the_hp_roll() -> void:
 
 # --- A4: every shown number is the applied one ------------------------------------------------------
 
-## The (through, applied) pairs the wheel-own hit chips of `chips` say: "HITS X 8" = (8, 8),
-## "HITS X 8 → 1 LEFT" = (8, 1). Sorted.
+## The (through, applied) pairs the wheel-own hit chips of `chips` say: "HITS X 8" = (8, 8); a hit that
+## takes the last HP says only "HITS X → 0" (W2-A2, CP-002 ruling 5: never the over-damage) = (-1, 0).
+## Sorted.
 static func _chip_hits(chips: Array) -> Array:
-	var re := RegEx.create_from_string("^HITS .* (\\d+)(?: → (\\d+) LEFT)?$")
+	var re := RegEx.create_from_string("^HITS .* (\\d+)$")
+	var clamped := RegEx.create_from_string("^HITS .* → 0$")
 	var out: Array = []
 	for c in chips:
-		var m := re.search(String(c["text"]))
+		var text := String(c["text"])
+		if clamped.search(text) != null:
+			out.append([-1, 0])
+			continue
+		var m := re.search(text)
 		if m == null:
 			continue
 		var through := m.get_string(1).to_int()
-		out.append([through, m.get_string(2).to_int() if m.get_string(2) != "" else through])
+		out.append([through, through])
 	out.sort()
 	return out
 
@@ -284,7 +290,7 @@ static func _event_hits(events: Array[Dictionary], id: StringName) -> Array:
 		p[0] += maxi(0, int(e["amount"]) - int(e.get("blocked", 0)) - int(e.get("shielded", 0)))
 		p[1] += int(e.get("hp_damage", 0))
 		per[t] = p
-	var out: Array = per.values()
+	var out: Array = per.values().map(func(p: Array) -> Array: return [-1, 0] if int(p[1]) < int(p[0]) else p)
 	out.sort()
 	return out
 
@@ -357,14 +363,14 @@ func test_every_number_on_the_forecast_is_the_applied_one() -> void:
 func test_a_clamped_hit_says_so_and_the_ride_is_whole() -> void:
 	var script: Script = load("res://scripts/ui/combat_scene.gd")
 	assert_eq(script.hit_chip_text("YOU", 8, 8), tr("HITS %s %d") % ["YOU", 8])
-	assert_eq(script.hit_chip_text("YOU", 8, 1), tr("HITS %s %d → %d LEFT") % ["YOU", 8, 1], "8 → 1 left")
+	assert_eq(script.hit_chip_text("YOU", 8, 1), tr("HITS %s → 0") % "YOU", "a hit that takes the last HP says → 0, never the 8")
 	var events: Array[Dictionary] = [{"type": "damage", "attacker": &"e0", "target": &"player", "amount": 10, "blocked": 2, "shielded": 0, "hp_damage": 1}]
 	var totals: Dictionary = script.hit_totals(events)
 	assert_eq(totals[&"e0"][&"player"], {"through": 8, "applied": 1}, "after the guard, and what it really took")
-	# The equation where it struck: sword 10 − shield 2 = 8 → 1 LEFT.
+	# The equation where it struck: sword 10 − shield 2 = 8 → 0.
 	var b := {"kind": "damage", "source": &"e0", "target": &"player", "amount": 1, "raw": 10, "soaked": 2}
 	var eq: Array = script.hit_equation(b)
-	assert_eq(eq.map(func(it: Dictionary) -> String: return String(it["text"])), ["10", "2", "8", tr("%d LEFT") % 1])
+	assert_eq(eq.map(func(it: Dictionary) -> String: return String(it["text"])), ["10", "2", "8", "0"])
 	# The icon row: no guard = one "-N HP"; a guard keeps the equation and its clamp.
 	var scene := await _combat()
 	var pv: WheelView = scene._player_view
@@ -372,7 +378,7 @@ func test_a_clamped_hit_says_so_and_the_ride_is_whole() -> void:
 	pv.last_turn_icons = {"hit": 8, "soaked": 0, "evaded": 0, "hp": -1, "dealt": 1}
 	assert_eq(pv.icon_row_items().map(func(it: Dictionary) -> String: return String(it["text"])), ["-1 " + tr("HP")], "'↓8 = 8' is now '-1 HP'")
 	pv.last_turn_icons = {"hit": 10, "soaked": 2, "evaded": 0, "hp": -1, "dealt": 1}
-	assert_eq(pv.icon_row_items().map(func(it: Dictionary) -> String: return String(it["text"])), ["10", "2", "8", tr("%d LEFT") % 1])
+	assert_eq(pv.icon_row_items().map(func(it: Dictionary) -> String: return String(it["text"])), ["10", "2", "8", "0"])
 	# A hit at half power rides a whole number.
 	var st: CombatState = scene.engine.state()
 	var hit := {"kind": "damage", "source": st.player.id, "target": st.enemies[0].id, "amount": 3, "raw": 3, "soaked": 0,

@@ -213,7 +213,7 @@ static func font_px() -> int:
 static func parts(c: Dictionary) -> Dictionary:
 	var kind := StringName(c["kind"])
 	var icon := String(c.get("icon", ""))
-	var out := {"lead": &"", "words": ResultChipModel.label(c), "glyph": HudSkin.glyph_name(icon), "mark": "", "close": ""}
+	var out := {"lead": &"", "words": tag_of(kind) + ResultChipModel.label(c), "glyph": HudSkin.glyph_name(icon), "mark": "", "close": ""}
 	if icon != "" and out["glyph"] == &"":
 		out["mark"] = icon
 	if kind == ResultChipModel.ABSORBED:
@@ -228,6 +228,26 @@ static func parts(c: Dictionary) -> Dictionary:
 				out["lead"] = &""
 				out["glyph"] = g
 	return out
+
+
+## W2-A3: the word that labels a chip in place ("HP -11", "RAM -1"), with its trailing space;
+## "" for a chip whose glyph says it (statuses, odds).
+static func tag_of(kind: StringName) -> String:
+	var word := ""
+	match kind:
+		ResultChipModel.DAMAGE, ResultChipModel.HEALED, ResultChipModel.HP_OTHER, ResultChipModel.HP_LINE:
+			word = "HP"
+		ResultChipModel.ABSORBED:
+			word = "BLOCKED"
+		ResultChipModel.GAINED:
+			word = "GUARD"
+		ResultChipModel.EVADE:
+			word = "EVADE"
+		ResultChipModel.RAM:
+			word = "RAM"
+		ResultChipModel.HEAT:
+			word = "HEAT"
+	return "" if word == "" else TranslationServer.translate(word) + " "
 
 
 ## The glyph box in a chip (px; never under the 16 px glyph rule).
@@ -309,8 +329,10 @@ static func chip_color(c: Dictionary) -> Color:
 			return HudSkin.CHIP_ABSORBED
 		ResultChipModel.GAINED, ResultChipModel.HEALED, ResultChipModel.EVADE:
 			return HudSkin.CHIP_GAIN
-		ResultChipModel.ODDS:
+		ResultChipModel.ODDS, ResultChipModel.SPIN, ResultChipModel.NULL_LAND:
 			return HudSkin.CHIP_OTHER
+		ResultChipModel.LETHAL:
+			return HudSkin.CHIP_DAMAGE
 		ResultChipModel.RAM, ResultChipModel.HEAT, ResultChipModel.HP_OTHER:
 			return HudSkin.CHIP_GAIN if bool(c.get("good", false)) else HudSkin.CHIP_OTHER
 	return HudSkin.CHIP_GAIN if bool(c.get("good", false)) else HudSkin.CHIP_DAMAGE
@@ -321,7 +343,7 @@ func _ink(i: int, c: Dictionary) -> Color:
 	var a := held_alpha if holding else 1.0
 	var t := float(ticks.get(i, 0.0)) if holding else 0.0
 	var ca := a * (1.0 - (1.0 - TICKED_ALPHA) * t)
-	var col := HudSkin.TERMINAL_HI if StringName(c["kind"]) == ResultChipModel.DAMAGE else chip_color(c)
+	var col := HudSkin.TERMINAL_HI if StringName(c["kind"]) in [ResultChipModel.DAMAGE, ResultChipModel.LETHAL] else chip_color(c)
 	return Color(col, ca)
 
 
@@ -400,7 +422,7 @@ func _draw() -> void:
 		var kind := StringName(c["kind"])
 		var ink := _ink(i, c)
 		match kind:
-			ResultChipModel.DAMAGE:
+			ResultChipModel.DAMAGE, ResultChipModel.LETHAL:
 				draw_rect(r, Color(HudSkin.CHIP_DAMAGE, ca))
 				draw_rect(r, Color(HudSkin.CHIP_INK, ca), false, 1.5)
 			ResultChipModel.GAINED:
@@ -443,6 +465,22 @@ func _draw_standing() -> void:
 		draw_rect(r, col, false, STANDING_RIM)
 		var base := r.position.y + (r.size.y + font.get_ascent(fs) - font.get_descent(fs)) * 0.5
 		HighContrast.draw_text(self, font, Vector2(r.position.x + PAD * s, base), String(standing[i]["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+
+
+## W2-A2: hovering a chip says what that chip is (its own `tip`, else its words); anywhere else in
+## the row, the breakdown. The row's tooltip text stays the breakdown.
+func _get_tooltip(at_position: Vector2) -> String:
+	var row := shown()
+	var rs := chip_rects()
+	for i in mini(row.size(), rs.size()):
+		if rs[i].has_point(at_position):
+			var tip := String(row[i].get("tip", ""))
+			if tip == "":
+				tip = ResultChipModel.words(row[i])
+			if tip != "":
+				return tip + (("
+" + tooltip_text) if tooltip_text != "" else "")
+	return tooltip_text
 
 
 func _make_custom_tooltip(for_text: String) -> Object:
