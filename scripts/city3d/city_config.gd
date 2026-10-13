@@ -232,6 +232,10 @@ extends Resource
 ## to the view (CombatBackdrop.render_px): the backdrop sits softened behind the wheels, and
 ## its wider lit framing keeps the 8 ms city budget at 1080p (budget_ms).
 @export var backdrop_render_height: int = 640
+## plan1 1B-COMBAT F10 (one backdrop per fight): how long (s) a fight's backdrop waits on its
+## night sky for the close-up; a close-up not ready by then is dropped and the still shows for
+## the rest of the fight (the still is never swapped for the close-up mid-fight).
+@export var backdrop_city_wait_s: float = 2.0
 
 @export_group("Landmark footprints (parity S-ARENA round 2)")
 ## Inside a landmark's cleared box the procedural buildings give way only on the lots it
