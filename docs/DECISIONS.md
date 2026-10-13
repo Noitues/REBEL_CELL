@@ -138,6 +138,17 @@ MISS on wins (heuristic 15/20 vs LLM 0/5 on this build; one tune, boosts out of 
 on deaths and mean Heat peak. `gate.py --state-mode` now defaults to `heuristic`; the balance profile sweeps with
 `--lookahead 2` (Genome Core: 16 wins in 22 attempts vs 15 in 25 without).
 
+### 2026-10-13 — V4: the designer's Genome Core attempt (CP-003 3A) and the "Step N:" ruling
+- **V4 (boss save seed 1017, `.playtest_saves/boss/1017`):** WON, ending at 53 / 60 HP, in about 20 turns. "Never had
+  trouble with the boss, just tediously long." This matches the heuristic sweeps (60–73 % of breach attempts won;
+  `SA-002_heuristic_calibration.md`): the Genome Core is **not** a difficulty wall for a competent player. The problem
+  is **length**. D1 is reframed from "tune the difficulty" to "the boss fight runs too long". Per CP-002 ruling 1 nothing
+  is tuned yet; options for the designer (the boss's HP pool or phase lengths, faster phase transitions, a damage
+  ramp) go into the next checkpoint. The screen testers' boss deaths were skill-limited (analysis §1).
+- Inner ring still illegible (the designer, again): already R1, wave 2 (A6).
+- **"Step N:" in the raid feed: option A.** One divider line per step ("— STEP 2 —"); event lines lose the prefix;
+  the footer STEP counter stays.
+
 ### 2026-10-13 — Designer rulings on the PT-002a triage
 Triage: `docs/playtest/PT-002a_TRIAGE.md` (feedback verbatim in `PT-002a_FEEDBACK.md`).
 1. **Wave 1b** (the wave 1 fails, the Esc crash, the new P1 bugs) goes ahead with **no separate gate**: it rides
@@ -151,7 +162,7 @@ Triage: `docs/playtest/PT-002a_TRIAGE.md` (feedback verbatim in `PT-002a_FEEDBAC
    raid-report pencil cleanup (R8).
 5. **US English everywhere, always.** A one-time mechanical pass converts existing text (code sources +
    `strings.csv`) after wave 1b merges; new text is US English.
-6. **"Step N:" in the raid feed:** pending; the designer asked what it is (explained in chat: the raid's rounds;
+6. **"Step N:" in the raid feed: option A** (a divider per step; see the V4 entry above). Was pending; the designer asked what it is (the raid's rounds;
    options: a divider per step, drop it from the feed, or rename to "Round").
 7. **Netrun node animation along the route:** the static part goes to wave 3 (C7); the animation goes to the
    animation pass.
