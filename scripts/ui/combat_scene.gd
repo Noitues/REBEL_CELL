@@ -2060,6 +2060,7 @@ func _build_ui() -> void:
 	# ANIM-R3 A6h: once the fight is over, SEND IT, RESPIN and UNDO go and the next step's
 	# action takes their place at once (the netrun names it: LOOT, CONTINUE).
 	_continue_button = SendItSticker.new("CONTINUE", "[%s]" % Settings.key_text(&"end_turn"), HudSkin.VINYL_PINK, CONTINUE_FONT)
+	(_continue_button as SendItSticker).fold_room = true  # W1-R1: the fold keeps off the last letter
 	(_continue_button as SendItSticker).system_word = "PROCEED"
 	(_continue_button as SendItSticker).system_line = "> next_step.exe"
 	_continue_button.name = "Continue"

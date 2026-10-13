@@ -5301,9 +5301,8 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	feed.name = "RaidFeedWindow"
 	side.add_child(feed)
 	# G2R-8: the Continue verb sticker from the kit (as on loot), not a flat bar.
-	var cont := HoloSticker.word(tr("CONTINUE"), VinylSticker.Fill.PINK, minf(Settings.text_scale, ShopItem.OBJECT_MAX_SCALE), RAID_CONTINUE_PX)
-	cont.name = "Continue"
-	cont.add_fold_room()  # G2R2-4: the focus fold never covers the word
+	var cont := HoloSticker.verb_word(tr("CONTINUE"), VinylSticker.Fill.PINK, minf(Settings.text_scale, ShopItem.OBJECT_MAX_SCALE), RAID_CONTINUE_PX)
+	cont.name = "Continue"  # G2R2-4: verb_word keeps the focus fold off the word
 	cont.pressed.connect(_after_playout)
 	cont.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	cont.disabled = true

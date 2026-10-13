@@ -54,6 +54,11 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-13 — W1-R1 R1-STICKER: CONTINUE keeps its fold room everywhere
+- **Root cause: G2 polish P1 did not land on these stickers.** `add_fold_room` was only called on the HQ raid-result CONTINUE; the loot CONTINUE (`HoloSticker.word`) and the tutorial-win / netrun-fight CONTINUE (`SendItSticker`, art = a bare VinylSticker) never had it, so the focus fold covered the last E (two letters at 2.0). The tutorial-win sticker also sat against the right edge (button end 1266 > 1256, B5c). The glyph-vs-fold test only built a synthetic HoloSticker, never a real screen.
+- **Fix once:** `VinylSticker.fit_fold_room` / `room_past_last_letter` are the one rule (HoloSticker delegates); `HoloSticker.verb_word` makes a verb that folds (loot and raid CONTINUE); `SendItSticker.fold_room` (set for combat CONTINUE) pads its art and keeps its body inside `Fx.sticker_margin`.
+- **Test:** `tests/unit/test_w1r1_sticker_fold.gd` (full): tutorial win, loot (card, Firmware), raid result CONTINUE and run-end BACK TO HQ, real scenes, 1.0 / 1.6 / 2.0: no glyph under the fold, sticker inside the safe margin.
+
 ### 2026-10-13 — W1-TAG: enemy precision tag vs pointer (not a bug)
 - V1's "NULL . good aim" on the Agent tag while its pointer read OVERFLOW/PERFECT (two actions chained) is by design: the tag is the pointer's projection AFTER the hovered play (`_show_outcome(landing, ...)`), the pointer is the state NOW (ghost needle and WAS row show the move). `tests/unit/test_w1_tag_preview.gd` proves, across seeds and 0-2 prior plays, tag == the pointer read from the state after really playing the hovered card. No code changed.
 

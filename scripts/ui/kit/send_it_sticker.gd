@@ -63,6 +63,11 @@ const CAP_PROBE_PX := 100
 ## covering about (1 - x) x (1 - y) = half of the word.
 const COVER_AT := Vector2(0.25, 0.35)
 
+## W1-R1: keep the focus fold's room past the last letter (a verb that is not SEND IT: CONTINUE).
+var fold_room: bool = false:
+	set(v):
+		fold_room = v
+		_sync_art_words()
 ## 1B's vinyl sticker drawing this button's lettering (null = the drawn fallback).
 var art: VinylSticker = null
 ## Draw with 1B's sticker (the kit material); off = the drawn fallback.
@@ -98,7 +103,10 @@ func _sync_art_words() -> void:
 	if art == null:
 		return
 	var shown := String(shown_lettering()[0])
-	if art.text != shown:
+	if fold_room:
+		# W1-R1: the focus fold never covers the word (the one rule, `VinylSticker.fit_fold_room`)
+		art.fit_fold_room(shown)
+	elif art.text != shown:
 		art.text = shown
 	if art.fill != kit_fill():
 		art.fill = kit_fill()
@@ -133,6 +141,12 @@ func _place_art() -> void:
 	var over := art.position.x + art.body_rect.end.x - size.x
 	if over > 0.0:
 		art.position.x -= over
+	# W1-R1 (B5c): the body also stays inside the screen's sticker safe margin (the button sits against the edge).
+	if is_inside_tree() and fold_room:
+		var safe_end := get_viewport_rect().size.x - Fx.sticker_margin()
+		var body_end := get_global_transform().origin.x + art.position.x + art.body_rect.end.x
+		if body_end > safe_end:
+			art.position.x -= body_end - safe_end
 
 
 ## This button's state on the kit sticker (rest, hover, pressed, disabled).

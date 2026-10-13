@@ -556,6 +556,14 @@ func _settle(root: Node, frames: int = SETTLE_FRAMES) -> void:
 	Dialogue.finish_typing()
 	Typing.finish_all(get_tree())
 	await _frames(4)
+	# W1-R1: a settled picture has no gloss sweep mid-frame (the rainbow band read as a clipped last letter):
+	# no new sweep starts, a running one finishes (bounded).
+	StickerSweepQueue.calm_enter(self)
+	var swept := 0
+	while StickerSweepQueue.sweeping() > 0 and swept < SETTLE_FRAMES * 20:
+		await get_tree().process_frame
+		swept += 1
+	await _frames(2)
 
 
 ## True when every visible city draws its current look, its view covered by a finished

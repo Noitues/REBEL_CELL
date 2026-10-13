@@ -3189,7 +3189,7 @@ func _show_reward() -> void:
 	# B5 (designer ruling 6, review D8: "the page ends on a sticker verb"): CONTINUE, the pink verb bottom right: the
 	# same press as taking the lit sticker (the one holding the focus, the first by default), so the flow is the
 	# rules' own pick.
-	var go := HoloSticker.word(tr("CONTINUE"), VinylSticker.Fill.PINK, os, LOOT_CONTINUE_PX)
+	var go := HoloSticker.verb_word(tr("CONTINUE"),VinylSticker.Fill.PINK, os, LOOT_CONTINUE_PX)
 	go.name = "Continue"
 	go.sticker.sweep_primary = true
 	go.tooltip_text = UiTip.fold(tr("Take the lit sticker and go on."))

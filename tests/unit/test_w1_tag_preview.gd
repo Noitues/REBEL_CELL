@@ -10,12 +10,17 @@ const SCREEN := Vector2(1280, 720)
 func before_each() -> void:
 	AudioDirector.muted = true
 	RunManager.scene_switching_enabled = false
+	# its own save slot: new_campaign autosaves, and a save in the default slot leaked into the title's tests
+	RunManager.save_slot = "gut_w1_tag"
+	RunManager.delete_save()
 	RunManager.reset()
 
 
 func after_each() -> void:
 	AudioDirector.muted = false
+	RunManager.delete_save()
 	RunManager.reset()
+	RunManager.save_slot = RunManager.DEFAULT_SLOT
 	RunManager.scene_switching_enabled = true
 
 
