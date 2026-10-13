@@ -841,6 +841,10 @@
 			"seconds": 20.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_w1_tag_preview.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_plan1_b_repro.gd": {
 			"seconds": 20.0,
 			"tier": "full"

@@ -5,6 +5,9 @@ superseded instead. Finished months of "Implementation decisions" are moved verb
 `docs/decisions/<YYYY-MM>.md` by `tools/archive_decisions.py` (2026-10-11, CP-001 follow-up);
 search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
+## 2026-10-13 W1-TAG: enemy precision tag vs pointer (not a bug)
+- V1's "NULL . good aim" on the Agent tag while its pointer read OVERFLOW/PERFECT (two actions chained) is by design: the tag is the pointer's projection AFTER the hovered play (`_show_outcome(landing, ...)`), the pointer is the state NOW (ghost needle and WAS row show the move). `tests/unit/test_w1_tag_preview.gd` proves, across seeds and 0-2 prior plays, tag == the pointer read from the state after really playing the hovered card. No code changed.
+
 ## 2026-10-13 M0–M4 systems ticks (CP-003 ruling 8)
 - The 33 M0–M4 acceptance boxes in `docs/MILESTONES.md` were walked against `docs/handoff/gates/M14_REPLAN.md` §2 and the
   heuristic state sweep (`docs/playtest/claude/state/SA-002_heuristic_calibration.md`: campaigns won, raids, Exploits, the
