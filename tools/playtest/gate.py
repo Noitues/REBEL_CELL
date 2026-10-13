@@ -81,7 +81,7 @@ PROFILES: dict[str, dict] = {
         "mix": "expert=1",
         "starts": {"expert": "save:heat>=25"},
         "limits": {"expert": "30:3.0"},
-        "state": "mode", "seeds": "1000-1019", "parity": False,
+        "state": "mode", "seeds": "1000-1019", "parity": False, "lookahead": 2,
         "skips": "novices, motion, parity, rest of the screen batch",
     },
     "milestone": {
@@ -196,11 +196,11 @@ def print_plan(p: dict) -> str:
     return "\n".join(lines)
 
 
-def state_cmd(mode: str, name: str, seeds: str, budget: float) -> list[str]:
+def state_cmd(mode: str, name: str, seeds: str, budget: float, lookahead: int = 0) -> list[str]:
     cmd = [sys.executable, str(TOOLS / "state_agent.py"), "--name", name, "--seeds", seeds]
     if mode == "heuristic":
         if "--strategist" in (TOOLS / "state_agent.py").read_text(encoding="utf-8"):
-            return cmd + ["--strategist", "heuristic"]
+            return cmd + ["--strategist", "heuristic"] + (["--lookahead", str(lookahead)] if lookahead else [])
         return cmd + ["--builtin", "all"]  # the strategist (slice T2) has not landed: the free built-in baseline
     return cmd + ["--tier", "intermediate", "--budget", str(budget)]
 
@@ -214,8 +214,8 @@ def main() -> int:
     ap.add_argument("--budget", type=float, default=0.0, help="hard cap in dollars for the whole gate (default: the profile's own)")
     ap.add_argument("--state-budget", type=float, default=DEFAULT_STATE_BUDGET)
     ap.add_argument("--seeds", default="", help="state sweep seeds (default: the profile's)")
-    ap.add_argument("--state-mode", choices=["heuristic", "llm"], default="llm",
-                    help="which strategist the state sweep uses (slice T2 flips the default to heuristic)")
+    ap.add_argument("--state-mode", choices=["heuristic", "llm"], default="heuristic",
+                    help="which strategist the state sweep uses (default: the free HeuristicStrategist, slice T2)")
     ap.add_argument("--at", default="route:to_netrun", help="start of the testers who play the changed area: route:NAME | save:SPEC | title")
     ap.add_argument("--build", default="main")
     ap.add_argument("--combat-escalation", action="store_true", help="screen testers escalate combat turn starts (a targeted probe)")
@@ -260,7 +260,7 @@ def main() -> int:
             work / "state_base.log")
         for m in plan["state_runs"]:
             name = sa + ("-" + m if len(plan["state_runs"]) > 1 else "")
-            run(state_cmd(m, name, seeds_for(m, plan["seeds"]), a.state_budget), work / ("state_%s.log" % m))
+            run(state_cmd(m, name, seeds_for(m, plan["seeds"]), a.state_budget, PROFILES[plan["profile"]].get("lookahead", 0)), work / ("state_%s.log" % m))
             ran_state.append((m, name))
             if m == "llm":
                 llm_spent_cap = a.state_budget

@@ -91,10 +91,14 @@ class GateProfiles(unittest.TestCase):
         self.assertIn("keyboard_only", text)
         self.assertIn("Estimated spend", text)
 
-    def test_default_state_mode_is_llm_and_default_profile_is_milestone(self) -> None:
+    def test_default_state_mode_is_heuristic_and_default_profile_is_milestone(self) -> None:
         self.assertEqual(gate.DEFAULT_PROFILE, "milestone")
         src = (Path(gate.__file__)).read_text(encoding="utf-8")
-        self.assertIn('"--state-mode", choices=["heuristic", "llm"], default="llm"', src)
+        self.assertIn('"--state-mode", choices=["heuristic", "llm"], default="heuristic"', src)
+
+    def test_balance_sweep_uses_the_two_turn_lookahead(self) -> None:
+        self.assertEqual(gate.state_cmd("heuristic", "x", "1000-1019", 0.0, gate.PROFILES["balance"].get("lookahead", 0))[-2:], ["--lookahead", "2"])
+        self.assertNotIn("--lookahead", gate.state_cmd("heuristic", "x", "1000-1019", 0.0, gate.PROFILES["flow"].get("lookahead", 0)))
 
     def test_access_profile_pins_focus_and_keyboard_persona(self) -> None:
         roster = json.loads(roll_testers.ROSTER.read_text(encoding="utf-8"))
