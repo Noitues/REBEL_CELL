@@ -205,6 +205,19 @@ MISS on wins (heuristic 15/20 vs LLM 0/5 on this build; one tune, boosts out of 
 on deaths and mean Heat peak. `gate.py --state-mode` now defaults to `heuristic`; the balance profile sweeps with
 `--lookahead 2` (Genome Core: 16 wins in 22 attempts vs 15 in 25 without).
 
+### 2026-10-13 — Designer ruling: finalize gameplay at text 1.0, mouse / keyboard; defer scale, contrast, pad, accessibility
+"We spend a lot of cycles on text scales, high contrast, gamepad and accessibility. We haven't finalized the gameplay,
+so stop all of those efforts till much later; we finalize the game at 1.0, mouse / keyboard."
+- **In scope until gameplay is final:** text scale 1.0, mouse and keyboard.
+- **Deferred:** text scales 1.6 / 2.0, high contrast, gamepad (pad focus, glyphs, PT-002a D-UX2's per-device prompts),
+  colour-blind / greyscale, and other accessibility work. Agents neither test, capture nor fix them. Briefs, sheets,
+  PT lists and screen testers (no `access` profile, no pad) use 1.0 mouse / keyboard. Tests that exist only for the
+  deferred items move to a `deferred` manifest tier that no default run includes (they are kept, not deleted, and
+  revived when accessibility resumes).
+- Still in scope from the PT-002a rulings: the Menu button (D-UX3) and click-outside-closes-menus (D-UX4). The
+  per-device glyph unification (D-UX2) is deferred.
+- CLAUDE.md rule 6 and `docs/process/agent_rules/common.md` updated to match.
+
 ### 2026-10-13 — V4: the designer's Genome Core attempt (CP-003 3A) and the "Step N:" ruling
 - **V4 (boss save seed 1017, `.playtest_saves/boss/1017`):** WON, ending at 53 / 60 HP, in about 20 turns. "Never had
   trouble with the boss, just tediously long." This matches the heuristic sweeps (60–73 % of breach attempts won;

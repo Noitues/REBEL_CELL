@@ -44,10 +44,10 @@ spinning 30-tick wheels; a campaign layer adds a City Grid map, Heat, and raid d
    content `.tres` files.
 6. **Every rule gets a test.** Preview must equal the real result; rewind must not cross a
    checkpoint; seeded replays must match. "Rule" means rule-bearing code: `scripts/core/`,
-   `scripts/state/`, resolvers, save, RNG, content validation, layout at 1.0 / 1.6 / 2.0, reduce
+   `scripts/state/`, resolvers, save, RNG, content validation, layout at text 1.0 (1.6 / 2.0 deferred), reduce
    effects = end state. View glue, labs and tools get one flow test per screen and the Human
    Playtest gate, not unit tests; no tests for getters, setters or data round trips without
-   logic (CP-001.1, 2026-10-11).
+   logic (CP-001.1, 2026-10-11). **Scope until gameplay is final (designer 2026-10-13):** text 1.0 and mouse/keyboard only; no text-scale, high-contrast, gamepad or accessibility work (deferred tier).
 7. Break ties deterministically (content id, then node id), never by dictionary order.
 8. Keep `scripts/data/` schema changes minimal; add its check to `tools/schema_smoke_checks.gd` and
    log the change in `docs/DECISIONS.md`.
