@@ -869,6 +869,10 @@
 			"seconds": 20.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_w2_a3_labels.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_w1r1_misc.gd": {
 			"seconds": 20.0,
 			"tier": "fast"

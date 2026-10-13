@@ -130,7 +130,7 @@ func _init(p_title: String = "", p_cost: int = 0, p_description: String = "", in
 	focus_mode = Control.FOCUS_ALL
 	# Draws its own hover/focus glow; no theme box around the sticker.
 	add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	tooltip_text = p_description
+	tooltip_text = Codex.with_status_defs(p_description)  # W2-A3 R2: a named status comes with its definition
 	mouse_entered.connect(_set_lift.bind(true))
 	mouse_entered.connect(grow_hover.bind(true))  # ART-2 2D: the pointer grows a card; focus only lifts it
 	mouse_exited.connect(_set_lift.bind(false))

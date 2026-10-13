@@ -143,6 +143,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s: select a card to %s. %s: details.,%s: select a card to %s. %s: details.
 %s: select the slot to %s. %s: details.,%s: select the slot to %s. %s: details.
 %s: the node falls; threats go on past it.,%s: the node falls; threats go on past it.
+(%+d THIS PLAY),(%+d THIS PLAY)
 (same road as choice %d),(same road as choice %d)
 "(seed %d): %d Schematics, %d rookies.","(seed %d): %d Schematics, %d rookies."
 "(seed %d, ICE %d, %s) against %s. Story path: %s.","(seed %d, ICE %d, %s) against %s. Story path: %s."
@@ -206,6 +207,7 @@ ACTIVE,ACTIVE
 ACTIVITY,ACTIVITY
 AFTER-ACTION REPORT,AFTER-ACTION REPORT
 AGAIN,AGAIN
+AIM (the tag on a pointer),AIM (the tag on a pointer)
 AIRMAIL,AIRMAIL
 ALL BLOCKED,ALL BLOCKED
 ALL RESULTS: %s,ALL RESULTS: %s
@@ -318,6 +320,7 @@ CLASSIFIED,CLASSIFIED
 CLEANSE,CLEANSE
 CLEARED,CLEARED
 CLEARS %s,CLEARS %s
+CLOSE,CLOSE
 CLOSED,CLOSED
 CODEX,CODEX
 CODEX // WHAT THE CELL KNOWS,CODEX // WHAT THE CELL KNOWS
@@ -669,6 +672,7 @@ DaemonData.warm_boot.display_name,Warm Boot
 DaemonData.zero_day.description,A Perfect on the NULL slice resolves as a 3x OVERFLOW.
 DaemonData.zero_day.display_name,Zero Day
 Daemons,Daemons
+Daemons installed: %d (the badge). Opens the tray: each sigil shows what its Daemon does.,Daemons installed: %d (the badge). Opens the tray: each sigil shows what its Daemon does.
 Daemons: permanent programs of this operative (none installed).,Daemons: permanent programs of this operative (none installed).
 Daily run,Daily run
 Death Heat,Death Heat
@@ -1168,6 +1172,7 @@ KEEP GOING,KEEP GOING
 Key,Key
 LAST TURN: ,LAST TURN: 
 LEAVE,LEAVE
+LEGEND // WHAT THE FIGHT'S MARKS MEAN,LEGEND // WHAT THE FIGHT'S MARKS MEAN
 LETHAL,LETHAL
 LETHAL: this turn takes it to 0 HP.,LETHAL: this turn takes it to 0 HP.
 LETHAL: this turn takes you to 0 HP.,LETHAL: this turn takes you to 0 HP.
@@ -1200,6 +1205,7 @@ Leave,Leave
 Leave REBEL_CELL (asks first).,Leave REBEL_CELL (asks first).
 Leave the Mainframe and go back to the route.,Leave the Mainframe and go back to the route.
 Left click,Left click
+Legend,Legend
 Lexicon,Lexicon
 "Lime fist: your node, a claimed Site. Raids attack these; runs start from them.","Lime fist: your node, a claimed Site. Raids attack these; runs start from them."
 LineSetData.barks_botnet.lines.0,Perfect Trojan. Something of mine is inside theirs now.
@@ -1675,7 +1681,9 @@ New campaign,New campaign
 Next,Next
 Next seed,Next seed
 Next threshold at %d.,Next threshold at %d.
+No Daemons installed (D 0: the badge counts them). Opens the tray.,No Daemons installed (D 0: the badge counts them). Opens the tray.
 No Daemons installed.,No Daemons installed.
+No Firmware installed in this slot.,No Firmware installed in this slot.
 No First Turn Free Nudge,No First Turn Free Nudge
 No Going Back,No Going Back
 No assets to deploy: this run carries none and the Armory is empty. Your nodes hold with what is on them.,No assets to deploy: this run carries none and the Armory is empty. Your nodes hold with what is on them.
@@ -1888,6 +1896,7 @@ RANK,RANK
 RARE,RARE
 "RARE · three pips, holo die-cut","RARE · three pips, holo die-cut"
 RC1-corporation-ice-seed-home-class,RC1-corporation-ice-seed-home-class
+"READOUTS (HP, RAM and the chips)","READOUTS (HP, RAM and the chips)"
 READY,READY
 REBEL_CELL  (cell %02d),REBEL_CELL  (cell %02d)
 REBEL_CELL // MERIT SHEET,REBEL_CELL // MERIT SHEET
@@ -2093,6 +2102,7 @@ SITES RECLAIMED,SITES RECLAIMED
 SKIP,SKIP
 SLICE %d DETAIL,SLICE %d DETAIL
 SLICES  //  read clockwise from the needle,SLICES  //  read clockwise from the needle
+SLICES (on the wheels),SLICES (on the wheels)
 SLOT %s,SLOT %s
 SLOT %s // CELL-%02d,SLOT %s // CELL-%02d
 SNAP,SNAP
@@ -2107,6 +2117,7 @@ STATIONED,STATIONED
 STATS,STATS
 STATS // RECORDS,STATS // RECORDS
 STATUS,STATUS
+STATUSES (on a slice),STATUSES (on a slice)
 STEP %d/%d,STEP %d/%d
 STEP -- / %d,STEP -- / %d
 STOOD DOWN  (operations abandoned),STOOD DOWN  (operations abandoned)
@@ -3202,6 +3213,7 @@ WIN,WIN
 WIPE IN,WIPE IN
 WON,WON
 Walk the compound layer by layer to the Central Server (%d layers). Its gate takes %d Exploits.,Walk the compound layer by layer to the Central Server (%d layers). Its gate takes %d Exploits.
+"What every symbol, chip and status in a fight means.","What every symbol, chip and status in a fight means."
 What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.,What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.
 What the threats go for (their routing rule).,What the threats go for (their routing rule).
 What this wheel's needles land on. Nothing else changes this turn.,What this wheel's needles land on. Nothing else changes this turn.

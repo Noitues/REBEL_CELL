@@ -143,6 +143,9 @@ var _picker_controls: Array[Control] = []
 var controls_row: HFlowContainer
 var _settings_panel: PauseMenu = null
 var _settings_button: Button
+## W2-A3: the legend chip beside Settings, and the legend while it is open.
+var _legend_button: Button
+var _legend: CombatLegend = null
 var _nudge_minus_button: Button
 var _nudge_plus_button: Button
 var _menu_layer: CanvasLayer = null
@@ -701,6 +704,22 @@ func start_tutorial() -> void:
 	tutorial.finished.connect(func() -> void: tutorial = null; _relayout.call_deferred())
 
 
+## W2-A3: opens the legend (or closes it when it is open): every symbol and status a fight draws.
+func open_legend() -> void:
+	if _legend != null and is_instance_valid(_legend):
+		_legend.close()
+		return
+	cancel_selection()
+	if _menu_layer == null:
+		_menu_layer = CanvasLayer.new()
+		_menu_layer.layer = MENU_LAYER
+		add_child(_menu_layer)
+	_legend = CombatLegend.new()
+	_legend.closed.connect(func() -> void: _legend = null)
+	_menu_layer.add_child(_legend)
+	UiTheme.apply(_legend)
+
+
 func open_settings() -> void:
 	if _settings_panel != null:
 		_settings_panel.queue_free()
@@ -1003,6 +1022,10 @@ func _link_hand_focus() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(CombatLegend.ACTION) and _settings_panel == null:
+		open_legend()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("open_settings"):
 		open_settings()
 		get_viewport().set_input_as_handled()
@@ -1900,6 +1923,10 @@ func _build_ui() -> void:
 	banner_rows.add_child(_address)
 	top.add_child(_banner)
 	# B2 (review section c): Settings is a 32 px terminal icon chip; its name and key are its tooltip.
+	_legend_button = LegendChip.new()
+	_legend_button.pressed.connect(open_legend)
+	_legend_button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	top.add_child(_legend_button)
 	_settings_button = SettingsIconChip.new()
 	_settings_button.pressed.connect(open_settings)
 	_settings_button.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # ANIM-R6 A12: its words come translated
@@ -2259,6 +2286,7 @@ func _refresh_key_hints() -> void:
 	_nudge_minus_button.text = "-1 %s" % Settings.hint(&"nudge_left")
 	_nudge_plus_button.text = "+1 %s" % Settings.hint(&"nudge_right")
 	# ANIM-R6 A12: its word translated once here (the button shows it as given).
+	shown_tip(_legend_button, "%s\n%s" % [("%s %s" % [tr("Legend"), Settings.hint(CombatLegend.ACTION)]).strip_edges(), tr("What every symbol, chip and status in a fight means.")])
 	shown_tip(_settings_button, "%s\n%s" % [("%s %s" % [tr("Settings"), Settings.hint(&"open_settings")]).strip_edges(), tr("Pause: options, codex, save and quit.")])
 	(_end_turn_button as DripButton).set_key_hint(Settings.hint(&"end_turn"))
 	(_continue_button as DripButton).set_key_hint(Settings.hint(&"end_turn"))

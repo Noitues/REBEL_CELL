@@ -44,8 +44,27 @@ const LEXICON := {
 }
 
 
-## One-paragraph description of any content resource, for tooltips.
+## One-paragraph description of any content resource, for tooltips. W2-A3 (R2): a status the
+## text names comes with its definition (HARDENED's "ENCRYPTED" says what ENCRYPTED does).
 static func describe(res: Resource) -> String:
+	return with_status_defs(_describe_base(res))
+
+
+## `text` followed by the definition of every status it names that it does not define itself
+## (in status order; one pass, so a definition's own mentions add nothing).
+static func with_status_defs(text: String) -> String:
+	if text == "":
+		return text
+	var out := text
+	for st in STATUS_TEXT:
+		var word := String(Palette.STATUS_WORDS.get(st, ""))
+		var def: String = STATUS_TEXT[st]
+		if word != "" and text.contains(word) and not text.contains(def):
+			out += "\n" + def
+	return out
+
+
+static func _describe_base(res: Resource) -> String:
 	if res == null:
 		return ""
 	if res is SliceData:

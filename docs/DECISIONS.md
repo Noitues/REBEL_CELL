@@ -34,6 +34,16 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-13 — W2-A3: labels in place, combat legend, status definitions, loot slot hover
+Chips beside a wheel's HP carry a word ("HP -11", "BLOCKED (3", "GUARD +3", "RAM -1", "HEAT +2"; `HudResultChips.tag_of`;
+`ResultChipModel.label` unchanged). The RAM header reads "(-1 THIS PLAY)". The "D 0" badge's tooltip says what it counts.
+A "?" chip beside Settings and key L (`open_legend`, runtime action) open `CombatLegend` (slices incl. the 1/0 Null and
+OVFL / DFRG codes, statuses, PERFECT / GOOD / WEAK, HP / RAM / chip readouts, D n). R2: `Codex.describe`, `loot_tip` and
+`ZineCard` tooltips append the definition of every status they name (`Codex.with_status_defs`). R3: loot / Mainframe
+spinner slots hover as slot name + what the slice does + what its Firmware does (`NetrunScene.slot_tip`). Codex slice texts
+unchanged (the shop info strip's layout depends on their length). Pad: reached through the "?" chip's focus (no new pad
+button); designer ruling 2026-10-13: 1.0 mouse / keyboard only.
+
 ### 2026-10-13 — Raid feed: one STEP divider per step (PT-002a item 6, option A)
 The LIVE RAID FEED no longer prefixes event lines with "Step N:". `RaidPlayoutPanel.step_divider` feeds one muted
 terminal line, "— STEP N —" (TERMINAL_TEXT at `FEED_DIVIDER_ALPHA`, body size), before a step's first fed event;
