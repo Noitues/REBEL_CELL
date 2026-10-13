@@ -179,7 +179,7 @@ func _build() -> void:
 				fold_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 				fold_button.add_theme_font_size_override("font_size", fs)
 				fold_button.tooltip_text = UiTip.fold(CityMapOverlay.tr_word("The map key: what the icons, colours and lines mean. Point at it or press it to open it; the pad's key button too."))
-				fold_button.pressed.connect(func() -> void: set_opened(not opened))
+				fold_button.pressed.connect(_on_key_pressed)
 				fold_button.mouse_entered.connect(_on_hover_open)
 				IconMark.attach(fold_button, StatIcon.MORE if not opened else StatIcon.CODEX)
 				body.add_child(fold_button)
@@ -271,6 +271,25 @@ func set_opened(value: bool, by_hover: bool = false) -> void:
 	fold_changed.emit()
 	if site_markers:
 		show_all_changed.emit(opened)  # ART-5 5d: the opened key (pad, pointer) shows every Site
+
+
+## B7: true when a click (or the pad's key button) holds the key open: it stays until a second
+## click, Esc or the pad's button folds it; the pointer leaving does not.
+func is_pinned() -> bool:
+	return opened and not _hover_opened
+
+
+## B7: a click on MAP KEY. Pointing already opened it (hover), so the click pins it open; a
+## pinned key folds on the next click.
+func _on_key_pressed() -> void:
+	set_opened(not is_pinned())
+
+
+## B7: Esc folds a pinned key.
+func _input(event: InputEvent) -> void:
+	if is_pinned() and event.is_action_pressed("ui_cancel") and not event.is_echo():
+		set_opened(false)
+		get_viewport().set_input_as_handled()
 
 
 func _on_hover_open() -> void:

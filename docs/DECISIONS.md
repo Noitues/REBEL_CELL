@@ -78,6 +78,13 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-13 — Plan 1 W1-HQ: Map Key pin, raid result title, pinned START (B7, B8, B9)
+B7: MAP KEY opens on hover; a click pins it (`MapLegend.is_pinned`), a pinned key folds on a second click or Esc and
+ignores the pointer leaving (the click no longer folds a hover-opened key). B8: when the playout finishes the page title
+reads the RaidVerdict (`HqScript.raid_result_title`), and the feed's "Step N:" prefix shows on a step's first line only.
+B9: at text 2.0 (`START_PIN_FROM`) START sits in a bar under the scrolling New Campaign page; 1.0 / 1.6 keep it in the
+head; the page's foot tag also says MORE ABOVE. No motion changed. Tests: `test_plan1_b_repro.gd`.
+
 ### 2026-10-12 — Tooling 1 T2: HeuristicStrategist for the state tester (schema `HeuristicStrategistConfigData`)
 Playtest tooling only (no game rule changes). New schema `scripts/data/heuristic_strategist_config_data.gd`, shipped
 values in `content/config/heuristic_strategist.tres` (the game never reads it; smoke check `_t2_heuristic_strategist`).

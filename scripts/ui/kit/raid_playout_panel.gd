@@ -99,6 +99,8 @@ var results: Dictionary = {}
 var _hp: Dictionary = {}
 ## ANIM-R5 P3: the threats the feed has told of, for the raid's Heat line: threat id -> its
 ## name (entered), and the ids destroyed and the ids that hit CORE (with damage).
+## B8: the step whose "Step N:" prefix the feed has shown.
+var _prefixed_step: int = -1
 var _told_threats: Dictionary = {}
 var _told_gone: Dictionary = {}
 var _told_reached: Dictionary = {}
@@ -173,6 +175,7 @@ func play(events: Array[Dictionary], instant: bool = false, start_now: bool = tr
 	_threat_names.clear()
 	_reset_hp()
 	_told_threats.clear()
+	_prefixed_step = -1
 	_told_gone.clear()
 	_told_reached.clear()
 	_dead.clear()
@@ -383,8 +386,12 @@ func _apply_step(events: Array, start: float = 0.0, tl: Dictionary = {}) -> void
 				# first step only and its token stayed nameless on CORE.
 				for id in _threat_sites:
 					_dead[id] = true
-		var line := feed_line(e)
+		# B8: a step's "Step N:" prefix shows on its first line only.
+		var step_no := int(e.get("step", 0))
+		var line := feed_line(e, step_no != _prefixed_step)
 		if line != "":
+			if t != "raid_end" and step_no > 0:
+				_prefixed_step = step_no
 			_log(line)
 		event_shown.emit(e)
 		if t == "raid_end":
@@ -411,7 +418,7 @@ func _log(line: String) -> void:
 ## ANIM-R3 B5: event `e`'s RAID FEED sentence, translated, with display names (a Site's name,
 ## CORE for home, a threat's and a defence's names), "Step N: " before a step's lines; "" for
 ## an event the feed does not tell. Never a content or Site id.
-func feed_line(e: Dictionary) -> String:
+func feed_line(e: Dictionary, with_step: bool = true) -> String:
 	var text := ""
 	var t := String(e.get("type", ""))
 	_note_threat(t, e)
@@ -484,7 +491,7 @@ func feed_line(e: Dictionary) -> String:
 			text = tr(FEED_THRESHOLD) % [int(e.get("heat", 0)), brings]
 		_:
 			return ""
-	if e.has("step") and int(e["step"]) > 0 and t != "raid_end":
+	if with_step and e.has("step") and int(e["step"]) > 0 and t != "raid_end":
 		text = tr(FEED_STEP) % int(e["step"]) + ": " + text
 	return text
 

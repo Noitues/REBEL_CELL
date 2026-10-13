@@ -482,12 +482,9 @@ func test_b6_random_cards_and_respin_block_undo() -> void:
 
 # --- B7: the MAP KEY opens empty / needs a second click / stays wedged ---------------------------------------------
 
-## PB-010 B7. `MapLegend.fold_button` has both `mouse_entered -> _on_hover_open` (opens by hover) and
-## `pressed -> set_opened(not opened)`: pointing at MAP KEY opens it, so the click that follows FOLDS it again (the
-## rows slide out over `legend_fold`, 0.18 s, leaving the empty frame of PB-010 shot quietcarrier/0319); a second
-## click opens it (0320). A key opened by the click (not by hover) has `_hover_opened` false, so it never folds on
-## mouse exit and stays over the grid.
-func test_b7_map_key_hover_then_click_folds_it_again_and_a_clicked_key_stays_open() -> void:
+## W1-HQ B7. Pointing at MAP KEY opens it; a click pins it open (it must not fold it again); a pinned key stays
+## when the pointer leaves, and folds on a second click or Esc.
+func test_b7_map_key_hover_opens_click_pins_second_click_or_esc_folds() -> void:
 	RunManager.new_campaign(7)
 	var holder := _holder()
 	var hq: Control = load(HQ).instantiate()
@@ -497,31 +494,32 @@ func test_b7_map_key_hover_then_click_folds_it_again_and_a_clicked_key_stays_ope
 	var legend: MapLegend = hq.hq_legend
 	assert_not_null(legend, "the HQ's MAP KEY exists")
 	if legend == null or legend.fold_button == null:
-		pending("B7 not checkable: no foldable MAP KEY on the HQ page at scale %.1f" % Settings.text_scale)
+		fail_test("no foldable MAP KEY on the HQ page at scale %.1f" % Settings.text_scale)
 		holder.queue_free()
 		return
-	var notes: Array[String] = []
-	notes.append("start: opened=%s folded=%s" % [legend.opened, legend.is_folded()])
 	legend.fold_button.mouse_entered.emit()
 	await _frames(3)
-	notes.append("pointer on MAP KEY: opened=%s hover_opened=%s rows=%d" % [legend.opened, legend._hover_opened, legend._grid.get_child_count()])
-	var opened_by_pointer := legend.opened
+	assert_true(legend.opened, "pointing opens it")
+	assert_false(legend.is_pinned(), "a hover-opened key is not pinned")
 	legend.fold_button.pressed.emit()
 	await _frames(3)
-	notes.append("then the click: opened=%s" % legend.opened)
-	var folded_by_click := opened_by_pointer and not legend.opened
-	legend.fold_button.pressed.emit()
-	await _frames(3)
-	notes.append("second click: opened=%s hover_opened=%s" % [legend.opened, legend._hover_opened])
+	assert_true(legend.opened, "the click keeps it open")
+	assert_true(legend.is_pinned(), "the click pins it")
 	legend.notification(Control.NOTIFICATION_MOUSE_EXIT)
 	await _frames(3)
-	var wedged := legend.opened
-	notes.append("pointer leaves a clicked-open key: opened=%s" % legend.opened)
-	print("B7: " + " | ".join(notes))
-	if folded_by_click or wedged:
-		pending("B7 REPRODUCED (logic level; mouse not routable headless): folded_by_click=%s stays_open_after_leave=%s | %s" % [folded_by_click, wedged, " | ".join(notes)])
-	else:
-		assert_true(true, "B7 not reproduced: " + " | ".join(notes))
+	assert_true(legend.opened, "a pinned key stays when the pointer leaves")
+	legend.fold_button.pressed.emit()
+	await _frames(3)
+	assert_false(legend.opened, "a second click closes it")
+	legend.fold_button.pressed.emit()
+	await _frames(3)
+	assert_true(legend.is_pinned(), "a click on a closed key pins it")
+	var esc := InputEventAction.new()
+	esc.action = "ui_cancel"
+	esc.pressed = true
+	legend._input(esc)
+	await _frames(3)
+	assert_false(legend.opened, "Esc closes a pinned key")
 	holder.queue_free()
 	await _frames(2)
 
@@ -575,10 +573,10 @@ func test_b8_raid_title_stays_in_progress_after_raid_over() -> void:
 		if line.begins_with("Step 1:"):
 			step1 += 1
 	print("B8: finished=%s page=%s title='%s' step_label='%s' lines starting 'Step 1:' = %d\n%s" % [ok, page, title, step_text, step1, log_text])
-	if ok and page == "raid_playout" and title == HqScript.screen_title("raid_playout"):
-		pending("B8 REPRODUCED: feed ended (step label '%s') but page=%s title='%s'; 'Step 1:' prefixes %d times" % [step_text, page, title, step1])
-	else:
-		assert_ne(title, HqScript.screen_title("raid_playout"), "B8 fixed or not reached (finished=%s page=%s title=%s)" % [ok, page, title])
+	assert_true(ok, "the playout finished")
+	assert_ne(title, HqScript.screen_title("raid_playout"), "the title no longer says RAID IN PROGRESS after Raid over (page=%s title=%s)" % [page, title])
+	assert_eq(title, HqScript.raid_result_title(RaidVerdict.of_result(RunManager.campaign.last_raid)), "the title reads the raid's result")
+	assert_lt(step1, 2, "Step 1: is shown once, not on every line (%d)" % step1)
 	holder.queue_free()
 	await _frames(2)
 
@@ -591,6 +589,7 @@ func test_b8_raid_title_stays_in_progress_after_raid_over() -> void:
 func test_b9_start_position_on_new_campaign_setup_at_2_0() -> void:
 	var notes: Array[String] = []
 	var visible_at_top := {}
+	var pinned_at := {}
 	for scale in [1.0, 1.6, 2.0]:
 		Settings.set_text_scale(scale)
 		RunManager.reset()
@@ -601,7 +600,7 @@ func test_b9_start_position_on_new_campaign_setup_at_2_0() -> void:
 		await _frames(4)
 		hq.show_start()
 		await _frames(8)
-		var start := hq._panel.find_child("StartCampaign", true, false) as Control
+		var start := hq.find_child("StartCampaign", true, false) as Control
 		var scroll := hq._panel_host.get_parent() as ScrollContainer
 		if start == null:
 			notes.append("%.1f: no StartCampaign" % scale)
@@ -611,7 +610,8 @@ func test_b9_start_position_on_new_campaign_setup_at_2_0() -> void:
 		await _frames(2)
 		var r0 := start.get_global_rect()
 		var view := scroll.get_global_rect()
-		var in_view := view.encloses(r0) and SCREEN.encloses(r0)
+		var in_view := (view.encloses(r0) or start.get_parent().name == &"StartBar") and SCREEN.encloses(r0)
+		pinned_at[scale] = String(start.get_parent().name)
 		var vbar := scroll.get_v_scroll_bar()
 		var content_h := (hq._panel_host as Control).size.y
 		notes.append("%.1f: START rect=%s scroll view=%s in view at scroll 0=%s | page height %.0f, view %.0f, max scroll %.0f, step/notch %.0f" % [
@@ -620,9 +620,8 @@ func test_b9_start_position_on_new_campaign_setup_at_2_0() -> void:
 		holder.queue_free()
 		await _frames(2)
 	print("B9:\n  " + "\n  ".join(notes))
-	if not bool(visible_at_top.get(2.0, true)):
-		pending("B9 REPRODUCED (START not on screen at scroll 0, text 2.0): %s" % " || ".join(notes))
-	else:
-		assert_true(bool(visible_at_top.get(2.0, true)), "B9 not reproduced geometrically: " + " || ".join(notes))
-
-
+	for sc in [1.0, 1.6, 2.0]:
+		assert_true(bool(visible_at_top.get(sc, false)), "START on screen at text %.1f: %s" % [sc, " || ".join(notes)])
+	assert_eq(String(pinned_at.get(2.0, "")), "StartBar", "at 2.0 START is pinned in the bar under the page")
+	assert_eq(String(pinned_at.get(1.0, "")), "PageHead", "at 1.0 START stays in the head")
+	assert_eq(String(pinned_at.get(1.6, "")), "PageHead", "at 1.6 START stays in the head")
