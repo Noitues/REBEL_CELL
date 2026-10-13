@@ -193,6 +193,13 @@ def main() -> int:
             time.sleep(20)  # stagger the game launches
         time.sleep(15)
 
+    for t in plan(a.batch):  # ground truth for combat skill: rebuild every fight from its replay
+        replays = t["session"] / "game" / "saves" / "replays"
+        if replays.is_dir():
+            with open(t["session"] / "replay_audit.log", "w", encoding="utf-8") as f:
+                subprocess.run(["godot", "--headless", "--path", str(ROOT), "-s", "tools/agent/replay_audit.gd", "--",
+                                "in=%s" % replays.resolve().as_posix(), "out=%s" % (t["session"] / "replay_audit.jsonl").resolve().as_posix(),
+                                "tag=%s/%s" % (a.batch, t["handle"])], stdout=f, stderr=subprocess.STDOUT, timeout=900)
     played = sum(1 for t in plan(a.batch) if t["done"])
     log(a.batch, "play finished: %d session(s), spend $%.2f; judging" % (played, spent(a.batch)))
     if played == 0:

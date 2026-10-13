@@ -35,6 +35,15 @@ def summarize(path: Path) -> dict:
             "taken_no_action": round(sum(r["no_action"]["taken"] for r in rows) / n, 1)}
 
 
+def table(paths: list[Path]) -> str:
+    rows = [summarize(p) for p in paths if p.exists() and p.stat().st_size > 0]
+    if not rows:
+        return ""
+    keys = list(rows[0].keys())
+    return "\n".join(["| " + " | ".join(keys) + " |", "|" + "---|" * len(keys)]
+                     + ["| " + " | ".join(str(r[k]) for k in keys) + " |" for r in rows])
+
+
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     rows = [summarize(Path(p)) for p in sys.argv[1:]]

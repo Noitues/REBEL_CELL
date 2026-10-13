@@ -123,6 +123,11 @@ def main() -> int:
               "**Called weak:** " + (", ".join("%s ×%d" % kv for kv in weak.most_common()) or "none"),
               ""]
     lines += skill_section(a.batch, rows)
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import audit_summary
+    truth = audit_summary.table(sorted((SESSIONS / a.batch).glob("*/replay_audit.jsonl")))
+    if truth:
+        lines += ["", "## Combat skill, ground truth (fights rebuilt from replays)", "", truth]
     lines += ["", "## Top frustrations", ""]
     lines += ["- **%s** (%s): %s" % (s.get("handle", f.stem), s.get("persona", ""), s.get("top_frustration", "")) for f, s in rows]
     lines += ["", "## One change each", ""]

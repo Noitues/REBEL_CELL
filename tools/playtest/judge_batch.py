@@ -287,6 +287,12 @@ def stage_c(batch: str, compare: str) -> tuple[list[dict], dict]:
             parts.append("# Previous batch findings (%s), for the trend column and to mark fixed or recurring items\n%s"
                          % (compare, prev.read_text(encoding="utf-8")))
     parts.insert(0, "# Date\n%s" % time.strftime("%Y-%m-%d"))
+    import audit_summary
+    truth = audit_summary.table([s / "replay_audit.jsonl" for s in sessions_of(batch)])
+    if truth:
+        parts.insert(1, "# Combat skill, ground truth (every fight rebuilt from its replay; per tester, per turn: was a Perfect "
+                        "reachable, did the tester land one, damage dealt/taken vs the best available plan and vs doing nothing). "
+                        "Use this, not the testers' own counts, for every skill and difficulty statement.\n" + truth)
     prompt = "\n\n".join(parts) + "\n\n# Template\n" + FINDINGS_TEMPLATE.read_text(encoding="utf-8")
     req = {"custom_id": "s-findings", "params": dict(
         model=AUDIT_MODELS["opus"], max_tokens=32000, system=[{"type": "text", "text": SYNTH_RULES}],
