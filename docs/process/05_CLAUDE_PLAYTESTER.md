@@ -47,9 +47,13 @@ decisions. Testers log every fight as `FIGHT won|lost turns=N hp_lost=N perfects
 almost no damage over 4–5 netruns, so deaths and "too hard" from testers that do not align well are
 **tester skill-limited**, and the findings synthesis labels them so.
 
-"Decision screens" = combat turn starts, rewards, shops, map and Site choices, events, raid setup,
-HQ; the harness escalates them itself from the actor's `kind` label, plus any screen the actor
-flags, plus any screen it has been stuck on.
+"Decision screens" = rewards, shops, map and Site choices, events, raid setup, HQ; the harness
+escalates them itself from the actor's `kind` label, plus any screen the actor flags, plus any
+screen the watchdog or the stuck-step guard says it is stuck on. **Combat turn starts are not
+escalated by default** (since 2026-10-12): the replay audit measures combat skill exactly for $0,
+and vision cannot tell the centre of a slice from +-1 tick anyway. `harness.py --combat-escalation`
+(or `gate.py --combat-escalation`, `run_batch.py --combat-escalation`) turns it back on for a
+targeted probe; the tiers' wheel close-ups then apply again.
 
 **The playbook** (`docs/playtest/claude/playbook.json`) is what testers learned by playing, never
 from code or docs: after each batch, the journals are distilled into lessons and merged (§6), each
@@ -116,7 +120,10 @@ the sheets queue in `motion/pending.jsonl` and are judged in the batch at half t
 python tools/playtest/judge_batch.py run --batch PB-010 [--audit-model opus] [--audit-max 40]
 ```
 - **Stage A:** the queued motion sheets; a **screen audit** of the distinct screens each tester
-  saw (near-duplicates dropped, at most `--audit-max`): clipped or overlapping text,
+  saw (near-duplicates dropped, at most `--audit-max`; **only screens that changed**: a screen
+  matching one the `--compare` batch's testers saw is skipped, `--audit-all` audits everything and
+  also passes audit-only rows to the findings; by default audit rows reach `_FINDINGS.md` only
+  through the testers' reports): clipped or overlapping text,
   placeholder strings, contrast, colour-only information, glitches, and what a newcomer would
   try next (`audit.jsonl`, `audit.md`); and **lessons** distilled from each journal.
 - **Stage B:** every report (journal + motion judgements + audit findings) and the **playbook
@@ -179,7 +186,7 @@ spent $14 on the New Campaign page). Testers now skip what they are not there to
 | **Watchdog** | Levels: a hint after 5 min on navigation screens or 15 min without a fight / reward / map move; a forced stronger look 3–5 min later; then a restart + Continue (or the start route), twice at most, then the session ends "blocked: …". A setup cap (10 min to the first fight) applies to testers that start on a route. |
 | **Shared blockers** (`<batch>/blockers.jsonl`) | Every watchdog obstacle, and how a tester got past it, is shown to the other testers of the batch: they note "seen" and move on. |
 | **Coverage plan** (`run_batch.py`) | Novices and the opening focuses (onboarding, UI flow, readability, story) play from the title; raids / economy / campaign focuses start from a Heat ≥ 25 save; everyone else starts at the first netrun. Someone always plays the opening. |
-| **Escalation throttle** | A decision screen goes to the stronger model when it is new (or every 4 steps), not on every browsing step; combat turn starts always do, with an alignment plan required in the answer. |
+| **Escalation throttle** | A non-combat decision screen goes to the stronger model when it is new (or every 4 steps), not on every browsing step. Combat turn starts no longer do by default (`--combat-escalation` restores it, with the alignment plan required in the answer). |
 | **Batch-wide audit dedupe** | A screen already audited for one tester of the batch is not audited again; at most 25 per tester. |
 
 PB-012 (3 testers, 30 min): the route tester reached the netrun map in 0.6 min (PB-010: 10–25 min,
@@ -196,7 +203,7 @@ per pick. Menus: whole-turn combat plans from a beam search over the preview (ca
 RAM, each with damage dealt / taken, kills, RAM and where every pointer lands: PERFECT / GOOD / WEAK),
 map nodes with Heat, rewards (Firmware per empty slot), events with costs, launches, raid placements
 with their exact projected outcome. Option 0 is always the built-in policy, so `--builtin all` is the
-free baseline (greedy `CombatBot`). Shops and HQ upkeep stay built-in (v1).
+free baseline (greedy `CombatBot`). Shops and HQ upkeep are decisions too (kinds `shop` and `hq`, the v2 sinks).
 
 ```bash
 python tools/playtest/state_agent.py --name SA-001 --seeds 1000-1004 --tier intermediate --persona strategist --budget 10
@@ -204,8 +211,8 @@ python tools/playtest/state_agent.py --name SA-000 --seeds 1000-1004 --builtin a
 ```
 Tiers: novice = Haiku everywhere; intermediate = Haiku in combat, nodes and events, Sonnet on rewards,
 launches and raids; expert = Sonnet everywhere. First runs: 2 netruns, ~70 decisions, $0.09; a full
-campaign is ~$2–3 at intermediate. Baseline (greedy bot, ICE 0, 60-run cap): seeds 1000 and 1001 never
-won (19 deaths each), 1002 won in 11 runs. Output: `.playtest_sessions/state/<name>/<seed>/` (report,
+campaign is ~$2–3 at intermediate. Baseline SA-000 (greedy bot, ICE 0, 60-run cap, seeds 1000-1004): no
+seed won; 17-19 deaths each, Heat peak 100 on every seed. Output: `.playtest_sessions/state/<name>/<seed>/` (report,
 decisions with reasons) and `docs/playtest/claude/state/<name>.md`.
 
 ## 11. Next: decision parity, visual vs headless (designer idea 2026-10-12)
@@ -216,22 +223,49 @@ and turn every disagreement into a single-turn visual probe ("what on screen wou
 the other plan?"). The output is a list of visual changes that would let a player make the decision
 the numbers support: developer-facing findings with the exact turn and screenshot.
 
-## 12. At every User-Ready Gate (designer ruling 2026-10-12)
+## 12. At every User-Ready Gate (designer rulings 2026-10-12; cost review PLAYTEST_COST_REVIEW.md)
 
 ```bash
-python tools/playtest/gate.py --gate PT-014 --compare <previous screen batch> --budget 50
+python tools/playtest/gate.py --gate PT-014 --profile combat --compare <previous screen batch>
+python tools/playtest/gate.py --gate PT-014 --profile city --dry-run      # the plan and the $ caps; no API calls
 ```
+`--profile` picks the tester mix, start points, caps and skips by **wave type**. No profile = `milestone`.
+Defaults: no expert at an ordinary gate (the state sweep and the replay audit measure expert play exactly);
+no motion tester in any profile (motion is held until the animation pass resumes); screen testers do not
+escalate on combat; every tester starts from a route or save at the changed area (`--at route:to_netrun`
+by default; `--at title`, `--at save:heat>=25`) except novices on onboarding / city clarity, who start at
+the title; the screen audit judges only changed screens.
+
+| Profile | Testers (box, cap) | Start | State sweep | Also | Typical $ | Worst case $ |
+|---|---|---|---|---|---|---|
+| `flow` | 2 novice (40 min, $1), 1 intermediate (60, $2) | `--at` | sweep, free with the heuristic | | 2.8 (llm sweep: +9.4) | 5.8 (llm: +12) |
+| `combat` | 2 novice, 1 intermediate, 1 `keyboard_only` | `--at` | none | decision parity on the first intermediate session (skipped when 0 turns pair); the Perfect quiz is a separate on-demand probe | 4.4 | 10.2 |
+| `access` | 1 novice + 1 `keyboard_only`, both focus readability (text 2.0, reduce effects, high contrast) | `--at` | none | | 2.3 | 4.4 |
+| `city` | 3 novice (title), 1 intermediate `explorer` | novices title, explorer `--at` | none | | 3.3 | 7.2 |
+| `balance` | 1 expert (30 min, $3) | save `heat>=25` | 20 seeds, 2-turn lookahead once the strategist supports it | | 3.2 heuristic (llm: +9.4) | 4.0 (llm: +12) |
+| `milestone` | 2 novice (title), 2 intermediate, 1 expert (120 min, $8) | expert save `heat>=25` | LLM calibration sweep (5 seeds, $12 cap) **and** the free heuristic sweep (20 seeds) | | 19.9 | 28.6 |
+
+`--state-mode heuristic|llm` (default `llm`) picks the state-sweep strategist; the heuristic strategist
+(slice T2: `state_agent.py --strategist heuristic`) costs $0 and takes any number of seeds, an LLM
+sweep is always the 5-seed calibration (about $9.4). Until the heuristic lands and the default flips,
+`heuristic` falls back to the free built-in baseline. `gate.py --dry-run --profile X` prints the exact table
+for a profile with its current options.
+
 1. **Build and routes:** the build copy is pointed at main and every recorded route is replayed on a
    fresh copy. A broken route means that screen changed: re-record it (§9) and note it in the gate
-   report; until then the coverage plan starts testers from the title.
-2. **State sweep:** the free baseline and an intermediate LLM run on the same seeds (≈ $12): win
-   rate, deaths, Heat, raids and the reasons behind picks.
-3. **Screen batch:** the standard mix (3 novice, 3 intermediate, 1 expert, 1 motion) with the rest of
-   the budget, judged in batch, `_FINDINGS.md` compared with the previous batch. Combat skill comes from
-   the **replay audit** (every fight rebuilt from the game's combat replays: was a Perfect reachable,
-   did the tester land it, damage vs the best plan), not from the testers' own counts.
-Output: `docs/playtest/claude/gates/<gate>.md`. The findings feed doc 04 §3 (bugs and clarity → slice
-items, balance and design → checkpoint questions); the next gate's batch shows what landed.
+   report; until then testers start from the title.
+2. **State sweep** (profiles that have one): win rate, deaths, Heat, raids and the reasons behind picks.
+3. **Screen batch:** the profile's mix with `caps + judge reserve` as its budget, judged in batch,
+   `_FINDINGS.md` compared with the previous batch. Combat skill comes from the **replay audit** (every
+   fight rebuilt from the game's combat replays: was a Perfect reachable, did the tester land it, damage vs
+   the best plan), not from the testers' own counts.
+4. **Decision parity** (`combat` profile): pairs the screen tester's turns with the replays' turns by
+   order, replay end time and the on-screen TURN header, and exits without spending when 0 turns pair.
+Output: `docs/playtest/claude/gates/<gate>.md`. The findings feed doc 04 section 3 (bugs and clarity ->
+slice items, balance and design -> checkpoint questions); the next gate's batch shows what landed.
+
+Cost accounting: `run_batch.py` counts the judge's cost once (the testers' spend excludes `judge/cost.json`,
+the judge's is added once at the end); the budget check no longer includes it a second time.
 
 First audit (PB-010, 574 turns): a Perfect was reachable on 93–100 % of turns; testers landed one on
 ~20 %, the same as taking no action; the best plan takes ~0.8 damage per turn vs the testers' ~3.5.

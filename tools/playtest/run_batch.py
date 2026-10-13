@@ -51,7 +51,17 @@ def session_spent(session: Path) -> float:
 
 
 def spent(batch: str) -> float:
-    return sum(session_spent(c.parent) for c in (SESSIONS / batch).glob("*/cost.json"))
+    """Dollars the testers spent. The judge's own cost.json (judge/) is NOT included: it is counted once, by judge_spent()
+    (PLAYTEST_COST_REVIEW 1: the old glob took it in here and the final log line added it again)."""
+    return sum(session_spent(c.parent) for c in (SESSIONS / batch).glob("*/cost.json") if c.parent.name != "judge")
+
+
+def judge_spent(batch: str) -> float:
+    return session_spent(SESSIONS / batch / "judge")
+
+
+def batch_total(batch: str) -> float:
+    return spent(batch) + judge_spent(batch)
 
 
 def alive(pid: int) -> bool:
@@ -89,12 +99,33 @@ def roll(a) -> None:
 LATE_FOCUSES = {"raids": "heat>=25", "economy_balance": "heat>=25", "campaign_layer": "heat>=25"}
 
 
-def start_for(t: dict, build: str) -> tuple[str, str]:
-    """(route, start_save) for a tester; ('', '') means it plays everything from the title."""
+def parse_kv(spec: str) -> dict[str, str]:
+    """'novice=title,intermediate=save:heat>=25' -> {'novice': 'title', 'intermediate': 'save:heat>=25'}"""
+    out = {}
+    for tok in [x for x in spec.split(",") if x.strip()]:
+        k, _, v = tok.partition("=")
+        out[k.strip()] = v.strip()
+    return out
+
+
+def start_for(t: dict, build: str | None, starts: dict[str, str] | None = None) -> tuple[str, str]:
+    """(route, start_save) for a tester; ('', '') means it plays everything from the title.
+    `starts` (gate profiles) maps a tier, a persona id or 'default' to: title | route:NAME | save:SPEC | auto.
+    A route or save that is not recorded for this build falls back to the title. build=None skips that check (dry run)."""
     sys.path.insert(0, str(TOOLS))
     import routes
     import streamline
 
+    spec = (starts or {}).get(t.get("persona", "")) or (starts or {}).get(t["tier"]) or (starts or {}).get("default") or "auto"
+    if spec == "title":
+        return "", ""
+    if spec.startswith("route:"):
+        name = spec[6:]
+        return (name, "") if build is None or routes.load(name, build) else ("", "")
+    if spec.startswith("save:"):
+        if build is None or (streamline.pick_save(build, spec[5:]) and routes.load("continue", build)):
+            return "continue", spec[5:]
+        return ("to_netrun", "") if routes.load("to_netrun", build) else ("", "")
     if t["tier"] == "novice" or t["focus"] in streamline.FULL_FOCUSES:
         return "", ""
     spec = LATE_FOCUSES.get(t["focus"])
@@ -105,22 +136,39 @@ def start_for(t: dict, build: str) -> tuple[str, str]:
     return "", ""
 
 
-def plan(batch: str, minutes_override: int = 0) -> list[dict]:
-    m = json.loads((SESSIONS / batch / "batch.json").read_text(encoding="utf-8"))
+def parse_limits(spec: str) -> dict[str, tuple[int, float]]:
+    """'expert=30:3.0,intermediate=60:2' -> {'expert': (30, 3.0), ...}: minutes and dollar cap per tier."""
+    out = {}
+    for k, v in parse_kv(spec).items():
+        mins, _, cap = v.partition(":")
+        out[k] = (int(mins), float(cap))
+    return out
+
+
+def plan_for(testers: list[dict], build: str | None, sessions: Path | None = None, minutes_override: int = 0,
+             starts: dict[str, str] | None = None, limits: dict[str, tuple[int, float]] | None = None) -> list[dict]:
     out = []
-    for t in m["testers"]:
-        session = SESSIONS / batch / t["handle"]
+    for t in testers:
+        session = (sessions / t["handle"]) if sessions else Path(t["handle"])
         kind = "motion" if t["focus"] == "animation_feel" else t["tier"]
-        minutes, cap = TIERS[kind]
+        minutes, cap = (limits or {}).get(kind) or TIERS[kind]
         if minutes_override:  # a shorter box gets a proportionally smaller cap
             cap = round(cap * minutes_override / minutes, 2)
             minutes = minutes_override
-        route, save = start_for(t, m["build"])
+        route, save = start_for(t, build, starts)
         out.append({"handle": t["handle"], "kind": kind, "minutes": minutes, "cap": cap, "session": session,
-                    "route": route, "save": save, "done": (session / "session_end.json").exists()})
-    if out and not any(not x["route"] for x in out):  # someone always plays the opening
+                    "route": route, "save": save, "tier": t["tier"], "focus": t["focus"], "persona": t.get("persona", ""),
+                    "done": (session / "session_end.json").exists()})
+    # With the automatic start someone always plays the opening; an explicit start is taken as asked.
+    if not starts and out and not any(not x["route"] for x in out):
         out[0]["route"], out[0]["save"] = "", ""
     return sorted(out, key=lambda x: -x["minutes"])
+
+
+def plan(batch: str, minutes_override: int = 0, starts: dict[str, str] | None = None,
+         limits: dict[str, tuple[int, float]] | None = None) -> list[dict]:
+    m = json.loads((SESSIONS / batch / "batch.json").read_text(encoding="utf-8"))
+    return plan_for(m["testers"], m["build"], SESSIONS / batch, minutes_override, starts, limits)
 
 
 def launch(t: dict) -> subprocess.Popen:
@@ -128,6 +176,8 @@ def launch(t: dict) -> subprocess.Popen:
            "--minutes", str(t["minutes"]), "--max-usd", str(t["cap"]), "--defer"]
     if t["kind"] == "motion":
         cmd.append("--motion")
+    if t.get("combat_escalation"):
+        cmd.append("--combat-escalation")
     if t["route"]:
         cmd += ["--route", t["route"]]
     if t["save"]:
@@ -150,6 +200,11 @@ def main() -> int:
     ap.add_argument("--parallel", type=int, default=4)
     ap.add_argument("--minutes", type=int, default=0, help="time box for every tester (default: per tier)")
     ap.add_argument("--compare", default="", help="previous batch id for the findings' trend column")
+    ap.add_argument("--starts", default="", help="start point per tier or persona: title | route:NAME | save:SPEC | auto, e.g. "
+                    "novice=title,intermediate=route:to_netrun (default: auto, doc 05 section 10)")
+    ap.add_argument("--limits", default="", help="minutes:dollar cap per tier, e.g. expert=30:3.0,intermediate=60:2.0")
+    ap.add_argument("--combat-escalation", action="store_true", help="screen testers escalate combat turn starts (a targeted probe)")
+    ap.add_argument("--audit-all", action="store_true", help="screen audit judges every distinct screen, not only changed ones")
     ap.add_argument("--resume", action="store_true", help="the batch is rolled already: play what is left, then judge")
     a = ap.parse_args()
 
@@ -158,7 +213,10 @@ def main() -> int:
         if (SESSIONS / a.batch / "batch.json").exists():
             sys.exit("run_batch: %s is already rolled; use --resume" % a.batch)
         roll(a)
-    todo = [t for t in plan(a.batch, a.minutes) if not t["done"]]
+    starts, limits = parse_kv(a.starts), parse_limits(a.limits)
+    todo = [t for t in plan(a.batch, a.minutes, starts, limits) if not t["done"]]
+    for t in todo:
+        t["combat_escalation"] = a.combat_escalation
     running: list[tuple[dict, int]] = []  # (tester, harness pid)
     if a.resume:
         live = running_harnesses(a.batch)
@@ -207,12 +265,12 @@ def main() -> int:
     cmd = [sys.executable, "-u", str(TOOLS / "judge_batch.py"), "run", "--batch", a.batch, "--poll", "60"]
     if a.compare:
         cmd += ["--compare", a.compare]
+    if a.audit_all:
+        cmd.append("--audit-all")
     with open(SESSIONS / a.batch / "judge.out", "a", encoding="utf-8") as out:
         code = subprocess.run(cmd, cwd=str(ROOT), stdout=out, stderr=subprocess.STDOUT).returncode
-    jc = SESSIONS / a.batch / "judge" / "cost.json"
-    judge = json.loads(jc.read_text())["usd"] if jc.exists() else 0.0
     log(a.batch, "judge exit %d, judge $%.2f; batch total $%.2f; findings: docs/playtest/claude/%s/_FINDINGS.md"
-        % (code, judge, spent(a.batch) + judge, a.batch))
+        % (code, judge_spent(a.batch), batch_total(a.batch), a.batch))
     return code
 
 

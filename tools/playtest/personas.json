@@ -213,7 +213,7 @@
     {
       "id": "readability_accessibility",
       "label": "Readability and accessibility",
-      "brief": "Before starting, go to OPTIONS and set the large text scale (the biggest one offered) and turn on reduce effects if available. Judge clipping, overlapping, contrast, and whether any information relies on colour alone.",
+      "brief": "Before starting, go to OPTIONS and set the large text scale (the biggest one offered), turn on reduce effects, and turn on high contrast if available. Judge clipping, overlapping, contrast, and whether any information relies on colour alone.",
       "questions": [
         "Which screens clipped or overlapped at the large text scale?",
         "Was anything hard to read against its background?",
@@ -221,7 +221,8 @@
       ],
       "settings": [
         "largest text scale",
-        "reduce effects on"
+        "reduce effects on",
+        "high contrast on"
       ]
     },
     {

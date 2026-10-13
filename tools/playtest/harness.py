@@ -81,6 +81,10 @@ SCREEN_KINDS = ["menu", "dialog_or_tutorial_text", "combat_turn_start", "combat_
                 "raid_playout", "summary_or_end", "pause_menu", "other"]
 # Moments that shape a run: the harness hands them to the stronger model whatever the actor says.
 DECISION_KINDS = {"combat_turn_start", "reward_choice", "shop", "map_choice", "event_choice", "raid_setup", "hq_or_city"}
+# Combat skill is measured exactly by the replay audit at $0, so by default screen testers do not escalate on
+# combat (PLAYTEST_COST_REVIEW 2.2); `--combat-escalation` turns it back on for a targeted probe.
+NON_COMBAT_DECISION_KINDS = DECISION_KINDS - {"combat_turn_start"}
+COMBAT_ESCALATION_LINE = "planning a combat turn (at its start), "
 STUCK_STEPS = 6
 # Where the two wheels (with their HP and result chips) sit on the 1280x720 screen. The close-up is a
 # player leaning in to read small numbers; it carries no game state. Re-measure if the combat layout moves.
@@ -202,6 +206,17 @@ Notes (your memory; you see only these and the screenshot):
   menu, the title and Continue cannot get you playing again; "time" after you used the in-game Quit
   when told time is up.
 """
+
+
+def should_escalate(d: dict, fresh: bool, stuck: bool, combat_escalation: bool) -> bool:
+    """Whether this decision goes to the stronger model. Non-combat decision screens, the watchdog (`stuck`) and the
+    actor's own `escalate` always do; combat steps only with `combat_escalation`."""
+    if stuck:
+        return True
+    if d["kind"] in COMBAT_KINDS and not combat_escalation:
+        return False
+    kinds = DECISION_KINDS if combat_escalation else NON_COMBAT_DECISION_KINDS
+    return bool(d["escalate"] or (d["kind"] in kinds and fresh))
 
 
 def api_key() -> str:
@@ -369,7 +384,9 @@ class Tester:
         tier = tiers[self.tier]
         coaching = ("\n\n# Coaching\n" + tier["coaching"]) if tier.get("coaching") else ""
         self.closeups = tier.get("wheel_closeup", [])
-        self.system = [{"type": "text", "text": RULES + "\n\n# Your brief\n\n" + self.persona + coaching
+        self.combat_escalation = bool(a.combat_escalation)
+        rules = RULES if self.combat_escalation else RULES.replace(COMBAT_ESCALATION_LINE, "")
+        self.system = [{"type": "text", "text": rules + "\n\n# Your brief\n\n" + self.persona + coaching
                         + playbook_text(tier["playbook"]), "cache_control": {"type": "ephemeral"}}]
         self.session = bb.Session(self.dir)
         self.actor = MODELS[a.actor or tier["actor"]]
@@ -573,7 +590,7 @@ class Tester:
         stuck = self.no_change >= STUCK_STEPS or self.wd_level >= 2
         steps = self.cost["steps"]
         fresh = d and (d["kind"] == "combat_turn_start" or d["kind"] != self.prev_kind or steps - self.last_esc_step >= 4)
-        if d and self.escalate_to and (d["escalate"] or (d["kind"] in DECISION_KINDS and fresh) or stuck):
+        if d and self.escalate_to and should_escalate(d, bool(fresh), stuck, self.combat_escalation):
             self.last_esc_step = steps
             self.cost["escalations"] += 1
             extra = []
@@ -827,6 +844,8 @@ def main() -> int:
                     help="skill tier (default: the brief's 'Skill tier:' line)")
     ap.add_argument("--actor", choices=["haiku", "sonnet"], help="override the tier's actor model (escalation to Sonnet when haiku)")
     ap.add_argument("--no-report", action="store_true")
+    ap.add_argument("--combat-escalation", action="store_true",
+                    help="escalate combat turn starts to the stronger model (off by default: the replay audit measures combat skill)")
     ap.add_argument("--probe-perfect", type=int, default=0,
                     help="Perfect probe: in N fights only screenshot each turn start and send (pairs with replay_audit)")
     ap.add_argument("--route", default="", help="comma-separated routes (routes.py) to play at the start, e.g. to_netrun")
