@@ -28,6 +28,19 @@ V4 (designer's Genome Core attempt) still open.
 pushed @ c8e3c43e. Waiting for the designer's PT-002a playtest (docs/playtest/PT-002a_plan-1-wave-1-flow-fixes.md).
 Routes were not re-recorded (they belong to the PT-001 build; playtest-build worktree left untouched). Next: wave 2
 (A combat legibility) on the designer's go.
+PT-002a feedback triaged (docs/playtest/PT-002a_TRIAGE.md) and ruled (DECISIONS "Designer rulings on the PT-002a triage").
+**Wave 1b in flight** (docs/handoff/plan1/W1B.md; 5 agents, tags plan1-1b-playout / -sticker / -menu / -combat / -map,
+base 423b25f6); no separate gate (rides PT-002). Order after it: US-English mechanical pass → wave 2 (A + R1–R4, F11,
+naming the tag) → input-prompt pass + rewards screen → wave 3 (C + R5–R8, smear notches). Pending ruling: "Step N:"
+in the raid feed (options A divider / B drop / C rename to Round). V4 boss saves ready in .playtest_saves/boss/
+(designer playing seed 1017).
+2026-10-13 later: wave 1b, raid STEP divider, US English pass, wave 2 (A1–A6) all merged (batch merges, --no-verify;
+ONE combined precommit before push, designer process change). Scope ruling: text 1.0 + mouse/keyboard only (deferred
+tier being added). Art review of W1b+W2: APPROVED except (1) inner ring plates — ON HOLD for the art-pass concept
+"round 45" (ghost wedge + tiled modifier mark on the active outer slice, inner segment highlight, word plate on
+hover/aim); WIP geometry kept at tag plan1-w2r1-ring-wip (ffd622be), not merged; (2) INCOMING clipped — fix in flight.
+In flight: main's 3 reds from A2 chips (fix slice), deferred tier, INCOMING. PT-002 gate waits for the ring spec unless
+the designer says otherwise. Pending designer Qs: Twin Pointer lit segments; resting hand card truncation; boss length (D1).
 **Claude playtesters (2026-10-12, merged @ 5fc4903f, fast 1473 / 0):** black-box screen testers, batch judging, routes and
 saves, a headless state tester, replay audit, Perfect quiz, decision parity, gate routine (docs/process/05). Feedback gathered
 (PB-010, PB-012, probes, parity, state sweep SA-001; $57 API in all) and analysed in
