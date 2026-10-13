@@ -5,44 +5,6 @@ superseded instead. Finished months of "Implementation decisions" are moved verb
 `docs/decisions/<YYYY-MM>.md` by `tools/archive_decisions.py` (2026-10-11, CP-001 follow-up);
 search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
-## 2026-10-13 W1-TAG: enemy precision tag vs pointer (not a bug)
-- V1's "NULL . good aim" on the Agent tag while its pointer read OVERFLOW/PERFECT (two actions chained) is by design: the tag is the pointer's projection AFTER the hovered play (`_show_outcome(landing, ...)`), the pointer is the state NOW (ghost needle and WAS row show the move). `tests/unit/test_w1_tag_preview.gd` proves, across seeds and 0-2 prior plays, tag == the pointer read from the state after really playing the hovered card. No code changed.
-
-## 2026-10-13 W1-TUT: tutorial fight way on, undo copy (plan1 B1, B6)
-- B1: the stand-alone tutorial fight now shows CONTINUE on FIGHT WON (`combat_scene._tutorial_run`, set by `start_tutorial`,
-  cleared by `attach_netrun`). It ends the tutorial (as the last NEXT does) and returns to the title. Netrun fights unchanged.
-- B6 (ruling 1): the undo rule is unchanged. Tutorial step 5 now says undo rewinds nudges and card plays this turn and stops
-  at a Respin or random-slice card; "free and unlimited" is gone. Still completable: nudge, then undo.
-## 2026-10-13 Plan 1 W1-LOOT: B2 loot Firmware slot
-- The loot's socket spinner starts on the first slot the first offered chip fits (else the first slot any offered chip
-  fits, else 0), so CONTINUE no longer defaults to a misfit. A refused Firmware take leaves the page as is (the spinner keeps
-  the player's slot) and writes the reason beside CONTINUE (`LootNote`: the chip, the slot, the slots it fits) until the
-  player picks a slot or takes something; the toast stays. Skip is untouched. Test: `test_plan1_b_repro.gd` B2.
-
-## 2026-10-13 M0–M4 systems ticks (CP-003 ruling 8)
-- The 33 M0–M4 acceptance boxes in `docs/MILESTONES.md` were walked against `docs/handoff/gates/M14_REPLAN.md` §2 and the
-  heuristic state sweep (`docs/playtest/claude/state/SA-002_heuristic_calibration.md`: campaigns won, raids, Exploits, the
-  boss, no soft-lock). Every named test was confirmed to exist under `tests/` first.
-- Result: 28 ticked (each with its test under the box), 1 held (readable: M4 "distinguishable without colour"; the glyph
-  tests pass, the at-a-glance read waits for the A + B re-test), 2 superseded (`[~]`: M4 mockup match, replaced by ART_BIBLE
-  v2 and the M14 parity audit; M4 60 fps, closed by the ART-5 perf box and the target-PC ruling), 2 open (M2 "every card,
-  Firmware and Daemon has a unit test": Firmware and Daemons lack a per-id coverage check; M2 "Tier 1 netrun in 12–18
-  minutes": needs a timed human playtest).
-- Reworded: M1 precision tiers use WEAK (was Partial); M1 Pierce ignores block and shield, not satellites (GDD §2,
-  `test_pierce_still_hits_the_bodyguard_satellite`); M3 Disabled / Seized read DOWN / TAKEN (ruling 6.2).
-
-## 2026-10-12 M14 group 2 polish (G2_POLISH, art-pass)
-- P1 `HoloSticker.add_fold_room` pads with spaces until the room past the last letter holds the sticker's own
-  `peel_px` (plus 0.1 of the lettering px for outline and slant), measured again in `_ready` once the viewport is
-  known (it was sized once from a 720 px screen and the unpadded body). Test: every glyph rect clear of the fold square
-  at 1.0 / 1.6 / 2.0 (`test_hq_12q_fit`).
-- P2 The CAN'T UNDO pencil: the slots' pencil was clipped by nothing; its words are drawn at the px their text step
-  lands on (one px over the nominal) and the arrow started under the last O. `PencilNote.text_size` now measures what is
-  drawn and the arrow keeps 2 x ARROW_GAP past it. Test: whole word written and the arrow past it at every scale
-  (`test_m14_12q_menus`).
-- P3 `CityMapOverlay.PENCIL_CLEAR` (6 px): a label never sits within 6 px of the TARGET's word, arrow or chip, the
-  yielded last-resort labels included (a link line under a label is fine). Test: `test_hq_g2r2_target`.
-
 ## Locked design decisions (v0.9)
 - Wheel is 30 ticks / 6 slices / 5 ticks per slice (was 24). Enables a true centre tick.
 - No Miss precision tier; "Miss" means the Miss slice only.
@@ -91,6 +53,44 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 ## Archives
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
+
+### 2026-10-13 — W1-TAG: enemy precision tag vs pointer (not a bug)
+- V1's "NULL . good aim" on the Agent tag while its pointer read OVERFLOW/PERFECT (two actions chained) is by design: the tag is the pointer's projection AFTER the hovered play (`_show_outcome(landing, ...)`), the pointer is the state NOW (ghost needle and WAS row show the move). `tests/unit/test_w1_tag_preview.gd` proves, across seeds and 0-2 prior plays, tag == the pointer read from the state after really playing the hovered card. No code changed.
+
+### 2026-10-13 — W1-TUT: tutorial fight way on, undo copy (plan1 B1, B6)
+- B1: the stand-alone tutorial fight now shows CONTINUE on FIGHT WON (`combat_scene._tutorial_run`, set by `start_tutorial`,
+  cleared by `attach_netrun`). It ends the tutorial (as the last NEXT does) and returns to the title. Netrun fights unchanged.
+- B6 (ruling 1): the undo rule is unchanged. Tutorial step 5 now says undo rewinds nudges and card plays this turn and stops
+  at a Respin or random-slice card; "free and unlimited" is gone. Still completable: nudge, then undo.
+### 2026-10-13 — Plan 1 W1-LOOT: B2 loot Firmware slot
+- The loot's socket spinner starts on the first slot the first offered chip fits (else the first slot any offered chip
+  fits, else 0), so CONTINUE no longer defaults to a misfit. A refused Firmware take leaves the page as is (the spinner keeps
+  the player's slot) and writes the reason beside CONTINUE (`LootNote`: the chip, the slot, the slots it fits) until the
+  player picks a slot or takes something; the toast stays. Skip is untouched. Test: `test_plan1_b_repro.gd` B2.
+
+### 2026-10-13 — M0–M4 systems ticks (CP-003 ruling 8)
+- The 33 M0–M4 acceptance boxes in `docs/MILESTONES.md` were walked against `docs/handoff/gates/M14_REPLAN.md` §2 and the
+  heuristic state sweep (`docs/playtest/claude/state/SA-002_heuristic_calibration.md`: campaigns won, raids, Exploits, the
+  boss, no soft-lock). Every named test was confirmed to exist under `tests/` first.
+- Result: 28 ticked (each with its test under the box), 1 held (readable: M4 "distinguishable without colour"; the glyph
+  tests pass, the at-a-glance read waits for the A + B re-test), 2 superseded (`[~]`: M4 mockup match, replaced by ART_BIBLE
+  v2 and the M14 parity audit; M4 60 fps, closed by the ART-5 perf box and the target-PC ruling), 2 open (M2 "every card,
+  Firmware and Daemon has a unit test": Firmware and Daemons lack a per-id coverage check; M2 "Tier 1 netrun in 12–18
+  minutes": needs a timed human playtest).
+- Reworded: M1 precision tiers use WEAK (was Partial); M1 Pierce ignores block and shield, not satellites (GDD §2,
+  `test_pierce_still_hits_the_bodyguard_satellite`); M3 Disabled / Seized read DOWN / TAKEN (ruling 6.2).
+
+### 2026-10-12 — M14 group 2 polish (G2_POLISH, art-pass)
+- P1 `HoloSticker.add_fold_room` pads with spaces until the room past the last letter holds the sticker's own
+  `peel_px` (plus 0.1 of the lettering px for outline and slant), measured again in `_ready` once the viewport is
+  known (it was sized once from a 720 px screen and the unpadded body). Test: every glyph rect clear of the fold square
+  at 1.0 / 1.6 / 2.0 (`test_hq_12q_fit`).
+- P2 The CAN'T UNDO pencil: the slots' pencil was clipped by nothing; its words are drawn at the px their text step
+  lands on (one px over the nominal) and the arrow started under the last O. `PencilNote.text_size` now measures what is
+  drawn and the arrow keeps 2 x ARROW_GAP past it. Test: whole word written and the arrow past it at every scale
+  (`test_m14_12q_menus`).
+- P3 `CityMapOverlay.PENCIL_CLEAR` (6 px): a label never sits within 6 px of the TARGET's word, arrow or chip, the
+  yielded last-resort labels included (a link line under a label is fine). Test: `test_hq_g2r2_target`.
 
 ### 2026-10-13 — Plan 1 W1-HQ: Map Key pin, raid result title, pinned START (B7, B8, B9)
 B7: MAP KEY opens on hover; a click pins it (`MapLegend.is_pinned`), a pinned key folds on a second click or Esc and
