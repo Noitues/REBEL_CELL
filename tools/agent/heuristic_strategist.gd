@@ -234,7 +234,21 @@ func _launch(ctx: Dictionary, meta: Array) -> Dictionary:
 			var h := _best_launch(meta, func(m: Dictionary) -> bool: return int(m["heat_change"]) == cut, not rotate)
 			if h >= 0:
 				return _pick(h, "launch: Heat %d, take the %d Heat Site%s" % [heat, cut, " (crew rotation)" if rotate else ""])
-	# 4. The deepest Heat-neutral Site up to idle_max_tier, no Heat added.
+	# 4. Expand the map: an uncleared (non-patrol) Heat-neutral Site opens new links, and with them
+	# new Exploit Sites (patrols alone never do): the shallowest while Exploits are missing, the
+	# deepest (toward the Central Server) once there are enough to breach.
+	var toward_core := int(ctx.get("exploits", 0)) >= int(ctx.get("exploits_needed", 0))
+	var shallowest := -1
+	for m in meta:
+		if not bool(m["patrol"]) and int(m["heat_change"]) <= 0 and int(m["objective"]) != RC.SiteObjective.CENTRAL_SERVER:
+			var t := int(m["tier"])
+			shallowest = t if shallowest < 0 else (maxi(shallowest, t) if toward_core else mini(shallowest, t))
+	if shallowest >= 0:
+		var x := _best_launch(meta, func(m: Dictionary) -> bool: return not bool(m["patrol"]) and int(m["heat_change"]) <= 0 \
+			and int(m["objective"]) != RC.SiteObjective.CENTRAL_SERVER and int(m["tier"]) == shallowest, not (rotate and shallowest <= config.idle_max_tier))
+		if x >= 0:
+			return _pick(x, "launch: expand the map, tier %d%s" % [shallowest, " (crew rotation)" if rotate else ""])
+	# 5. Else the deepest Heat-neutral patrol up to idle_max_tier.
 	var deepest := -1
 	for m in meta:
 		if int(m["heat_change"]) <= 0 and int(m["objective"]) != RC.SiteObjective.CENTRAL_SERVER and int(m["tier"]) <= config.idle_max_tier:
@@ -341,7 +355,7 @@ func _hq(ctx: Dictionary, meta: Array) -> Dictionary:
 				"scrub":
 					ok = int(ctx["heat"]) >= config.hq_scrub_min_heat and schematics - price >= reserve
 				"boost":
-					ok = schematics - price >= reserve
+					ok = schematics - price >= maxi(reserve, config.hq_boost_min_schematics)
 				"claim":
 					ok = int(ctx["claims"]) < config.hq_max_claims and schematics - price >= reserve
 			if ok:

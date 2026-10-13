@@ -103,7 +103,7 @@ func _pick_launch(c: CampaignState) -> Dictionary:
 		var patrol := CampaignRules.is_patrol(c, site)
 		meta.append({"op_rank": (p["op"] as OperativeState).rank, "tier": site.tier, "heat_change": site.heat_change,
 			"objective": RC.SiteObjective.NONE if patrol else CampaignRules.site_objective(c, site), "patrol": patrol})
-	var r := ask("launch", _campaign_state(c), options, meta, {"heat": c.heat, "exploits": c.exploits.size()})
+	var r := ask("launch", _campaign_state(c), options, meta, {"heat": c.heat, "exploits": c.exploits.size(), "exploits_needed": config.min_exploits_for_breach})
 	return picks[int(r["choice"])]
 
 
@@ -348,13 +348,13 @@ func _shop(s: NetrunSession) -> void:
 						var slice := lookup.get_content(s.run.operative.slot_slice_ids[slot]) as SliceData
 						var k := i
 						var sl := slot
-						acts.append(func() -> bool: s.buy("firmware", k, sl); return true)
+						acts.append(func() -> bool: return _bought(s.buy("firmware", k, sl)))
 						options.append("%s (into slot %d, %s)" % [label, slot + 1, slice.display_name if slice != null else "?"])
 						meta.append({"action": "buy", "kind": "firmware", "id": String(items[i]), "price": price})
 				else:
 					var k := i
 					var kd: String = kind
-					acts.append(func() -> bool: s.buy(kd, k); return true)
+					acts.append(func() -> bool: return _bought(s.buy(kd, k)))
 					options.append(label)
 					meta.append({"action": "buy", "kind": "card" if kind == "cards" else "daemon", "id": String(items[i]), "price": price})
 		if s.run.cycles >= s.card_removal_price():
@@ -455,3 +455,8 @@ func _choose_event(s: NetrunSession) -> void:
 
 func _builtin_maintain(c: CampaignState) -> void:
 	super._maintain(c)
+
+
+## True when a shop purchase went through (a refused one ends the visit, so it is never retried).
+static func _bought(events: Array[Dictionary]) -> bool:
+	return events.is_empty() or String(events[events.size() - 1].get("type", "")) != "refused"

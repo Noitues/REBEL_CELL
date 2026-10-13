@@ -82,7 +82,9 @@ const HQ_ACTIONS: Array[String] = ["repair_node", "repair_home", "recruit", "scr
 ## Scrub Heat at HQ at or above this.
 @export var hq_scrub_min_heat: int = 10
 ## Optional sinks (scrub, boost, claim) keep this many rookies' price in reserve.
-@export var hq_reserve_rookies: int = 2
+@export var hq_reserve_rookies: int = 1
+## Next-run boosts only while this many Schematics stay after the purchase (Heat scrubs come first).
+@export var hq_boost_min_schematics: int = 150
 ## Claim at most this many nodes besides home.
 @export var hq_max_claims: int = 2
 
