@@ -114,7 +114,7 @@ func test_the_raid_interlude_is_the_raid_view_on_the_3d_city_with_a_start_sticke
 # --- ROUTE-03 / ROUTE-06 --------------------------------------------------------------------------
 
 func test_the_node_panel_keeps_every_word_whole_and_its_stamp_off_the_text() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var panel := RouteNodePanel.new()
 		add_child_autofree(panel)
@@ -150,7 +150,7 @@ func test_a_boss_runs_map_has_no_bar_title() -> void:
 
 func test_the_mainframe_tags_leave_arrow_and_wallet() -> void:
 	assert_eq(BuyButton.BUY_FONT, 16, "SHOP-03: the price lettered at the concept's 16 px")
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := _netrun(scale)
 		DemoSetup.open_shop(RunManager.netrun)
 		await _show(scene)
@@ -237,7 +237,7 @@ func test_upgrade_reads_its_price_on_one_tag() -> void:
 # --- EVT-01 / EVT-02 / EVT-03 ---------------------------------------------------------------------
 
 func test_the_event_terminal_has_its_place_the_run_panel_and_chips_beside_the_choices() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := _netrun(scale)
 		var s := RunManager.netrun
 		DemoSetup.open_event(s, &"ev_leash_on_the_floor")
@@ -283,7 +283,7 @@ func test_dispatch_is_a_voice_trace_and_a_crt_transcript_never_paper() -> void:
 # --- LOOT-02 / LOOT-03 ----------------------------------------------------------------------------
 
 func test_the_loot_page_says_where_it_came_from_and_what_it_paid() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := _netrun(scale)
 		var s := RunManager.netrun
 		var node: Dictionary = s.run.map.nodes_in_layer(1)[0]
@@ -323,7 +323,7 @@ func test_the_loot_page_says_where_it_came_from_and_what_it_paid() -> void:
 
 func test_a_flatline_greys_the_city_and_prints_the_operative_struck_out() -> void:
 	for kind in ["died", "completed"]:
-		for scale in SCALES:
+		for scale in TestScope.scales(SCALES):
 			var scene := _netrun(scale)
 			var s := RunManager.netrun
 			DemoSetup.end_run(s, kind)

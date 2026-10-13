@@ -445,7 +445,7 @@ func test_the_pause_quit_asks_with_the_plain_quit_confirm() -> void:
 
 func test_the_quit_confirm_keeps_its_key_hints_at_big_text() -> void:
 	var was := Settings.text_scale
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.text_scale = scale
 		var d: ConfirmDialog = add_child_autofree(ExitDialogs.quit(false))
 		await _frames(1)

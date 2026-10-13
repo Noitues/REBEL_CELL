@@ -418,7 +418,7 @@ func test_no_test_instantiates_the_combat_scene_for_its_statics() -> void:
 # --- C4: nudge key hints off the tags ------------------------------------------------------------------------
 
 func test_nudge_key_hints_keep_off_the_tags_at_every_text_size() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(&"collections_agent", scale)
 		await _frames(2)
 		var hints := 0
@@ -712,7 +712,7 @@ func test_statuses_show_whose_win_they_are() -> void:
 # --- C6g: the break and VICTORY apart --------------------------------------------------------------------------
 
 func test_victory_stands_clear_of_the_beaten_wheel_and_defeated_wears_its_colour() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(&"collections_agent", scale)
 		var ev: WheelView = scene._enemy_views.values()[0]
 		var word := tr("FIGHT WON")  # S-COMBAT-HUD CMB-14: the won fight's word
@@ -728,7 +728,7 @@ func test_victory_stands_clear_of_the_beaten_wheel_and_defeated_wears_its_colour
 # --- C6h: RAM floats -------------------------------------------------------------------------------------------
 
 func test_ram_says_refill_and_never_floats_a_refusal() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(&"collections_agent", scale)
 		_live()
 		var bar: RamBar = scene.ram_note

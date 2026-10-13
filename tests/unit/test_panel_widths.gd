@@ -69,6 +69,9 @@ func test_hq_panels_fit_the_screen_with_everything_unlocked() -> void:
 
 
 func test_the_mid_run_raid_screen_fits_the_screen() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	RunManager.save_slot = "gut_test_widths_raid"
 	RunManager.scene_switching_enabled = false
 	RunManager.delete_save()
@@ -111,6 +114,9 @@ func test_the_mid_run_raid_screen_fits_the_screen() -> void:
 ## Horizontal pass 11: the widest text scale (GDD 9.6) still fits the combat controls and
 ## the Grid list.
 func test_the_largest_text_scale_still_fits() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var before := Settings.text_scale
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	RunManager.save_slot = "gut_test_widths_scale"

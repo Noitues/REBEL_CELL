@@ -36,6 +36,9 @@ func test_reset_to_defaults_keeps_the_pad_buttons() -> void:
 
 
 func test_the_combat_pause_menu_follows_the_text_scale() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	RunManager.save_slot = "gut_test_pause_theme_h18"
 	RunManager.scene_switching_enabled = false
 	RunManager.delete_save()
@@ -59,6 +62,9 @@ func test_the_combat_pause_menu_follows_the_text_scale() -> void:
 
 
 func test_subtitles_follow_the_text_scale() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(1.0)
 	var small := Dialogue.text_label.get_theme_font_size("normal_font_size")
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)

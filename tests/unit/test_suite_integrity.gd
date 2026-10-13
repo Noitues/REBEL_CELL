@@ -9,7 +9,8 @@ extends GutTest
 
 const MANIFEST := "res://tests/test_manifest.json"
 const TEST_DIRS: Array[String] = ["res://tests/unit", "res://tests/integration"]
-const TIERS: Array[String] = ["fast", "full"]
+## deferred: text scale > 1.0, high contrast, gamepad, colour-blind (skipped by every default run).
+const TIERS: Array[String] = ["fast", "full", "deferred"]
 ## The guards the fast tier must always run (CLAUDE.md rule 6 and TECH_SPEC 9): preview ==
 ## result, rewind never crosses a checkpoint, seeded replay, determinism, save round trip.
 const FAST_GUARDS: Array[String] = [
@@ -71,7 +72,7 @@ func test_every_test_script_is_in_the_manifest_once_with_a_tier() -> void:
 		var e: Variant = entries[p]
 		assert_true(e is Dictionary, "%s: an entry" % p)
 		if e is Dictionary:
-			assert_true(TIERS.has(String((e as Dictionary).get("tier", ""))), "%s: tier fast or full" % p)
+			assert_true(TIERS.has(String((e as Dictionary).get("tier", ""))), "%s: tier fast, full or deferred" % p)
 			assert_true(float((e as Dictionary).get("seconds", -1.0)) >= 0.0, "%s: a measured time" % p)
 	# Keys of a JSON object are unique, so each script sits in exactly one tier.
 	var text := FileAccess.get_file_as_string(MANIFEST)

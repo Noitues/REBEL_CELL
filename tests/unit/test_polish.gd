@@ -14,6 +14,9 @@ func before_all() -> void:
 
 
 func test_every_combat_action_has_a_controller_button() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	for action in Settings.CONTROLLER_BINDS:
 		var found := false
 		for ev in InputMap.action_get_events(action):
@@ -28,6 +31,9 @@ func test_every_combat_action_has_a_controller_button() -> void:
 
 
 func test_rebinding_a_key_keeps_the_pad_button() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var snap := Settings.snapshot()  # ANIM-R6 D9: rebinding back left the key saved as a keybind
 	Settings.rebind(&"end_turn", KEY_ENTER)
 	var pad := false

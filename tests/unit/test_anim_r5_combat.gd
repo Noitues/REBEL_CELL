@@ -253,7 +253,7 @@ func test_the_defeat_stamp_stays_and_shows_at_once_under_reduce_effects() -> voi
 # --- 3: LETHAL by the HP --------------------------------------------------------------------------
 
 func test_a_lethal_forecast_says_so_by_the_hp_and_once_on_the_tag() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		assert_true(_ending(scene, CombatState.Outcome.DEFEAT))
 		await _frames(1)
@@ -289,7 +289,7 @@ func test_an_enemy_taken_to_zero_shows_lethal_too() -> void:
 # --- 4: ticks at the chip's end -------------------------------------------------------------------
 
 func test_ticks_sit_at_the_chip_end_off_its_words() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		for v in scene._views():
 			var wv := v as WheelView
@@ -350,7 +350,7 @@ func test_a_doomed_wheel_acts_before_its_hp_reaches_zero() -> void:
 # --- 6: NO DAMAGE off the hub's name --------------------------------------------------------------
 
 func test_no_damage_never_sits_on_the_hub_name() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		for guard in [[0, 0], [5, 0], [5, 4]]:
 			for v in scene._views():
@@ -373,7 +373,7 @@ func test_no_damage_never_sits_on_the_hub_name() -> void:
 
 func test_a_card_preview_shows_what_the_tag_was() -> void:
 	var seen := 0
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		for i in scene.engine.state().hand.size():
 			scene._preview_card(i)

@@ -529,7 +529,7 @@ func test_the_heat_banner_fits_its_poster_at_every_text_size_and_a_long_translat
 	var locale := TranslationServer.get_locale()
 	var holder: Control = add_child_autofree(Control.new())
 	holder.size = SCREEN.size
-	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		for loc in [locale, "xx"]:
 			TranslationServer.set_locale(loc)
@@ -588,6 +588,9 @@ func test_equal_route_choices_say_they_are_the_same() -> void:
 # --- R13: big text -------------------------------------------------------------------------------------
 
 func test_big_text_raid_key_folds_and_the_crew_orders_show() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	var hq := _hq_raid()
 	await _frames()

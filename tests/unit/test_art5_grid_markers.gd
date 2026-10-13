@@ -177,6 +177,9 @@ func test_v4_graph_depowers_links_to_taken_and_down_nodes_and_shows_locked_links
 # --- The key ---------------------------------------------------------------------------
 
 func test_every_key_entry_differs_in_greyscale() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	# The Grid key (v4): every marker row apart without colour.
 	var legend: MapLegend = add_child_autofree(MapLegend.new(&"meridian", true).use_site_markers())
 	var seen := {}
@@ -250,7 +253,7 @@ func test_markers_project_place_apart_and_pick_on_the_city_model() -> void:
 				assert_false(a.intersects(SiteMarker.box(specs[ids[j]], discs[ids[j]])), "%s: %s and %s apart" % [corp_id, ids[i], ids[j]])
 		for id in ids:
 			assert_eq(SiteMarkerLayout.pick(discs, specs, discs[id]), id, "%s: its disc picks %s" % [corp_id, id])
-		for scale in SCALES:
+		for scale in TestScope.scales(SCALES):
 			var sizes := {}
 			for id in ids:
 				sizes[id] = LABEL_BOX * scale

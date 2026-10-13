@@ -175,7 +175,7 @@ func test_a_bark_shows_its_class_bust_in_the_bar() -> void:
 
 func test_the_feed_stays_inside_the_bar_at_every_text_size() -> void:
 	Settings.subtitles = true
-	for ts in [1.0, 1.6, 2.0]:
+	for ts in TestScope.scales([1.0, 1.6, 2.0]):
 		Settings.set_text_scale(ts)
 		for speaker in [[RC.Voice.DISPATCH, &""], [RC.Voice.STREET_MERC, &"ghost"]]:
 			Dialogue.clear()

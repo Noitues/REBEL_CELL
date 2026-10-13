@@ -126,6 +126,9 @@ func test_the_suite_snapshot_covers_the_new_settings() -> void:
 # --- 1. Text scale 2.0 ------------------------------------------------------------------
 
 func test_text_scale_reaches_two_and_clamps_there() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	assert_eq(Settings.TEXT_SCALE_MAX, 2.0, "Q5: the ceiling is 2.0")
 	Settings.set_text_scale(2.0)
 	assert_eq(Settings.text_scale, 2.0)
@@ -149,6 +152,9 @@ func _layers() -> int:
 
 
 func test_each_colorblind_mode_adds_the_layer_and_off_removes_it() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_colorblind_mode(&"off")
 	assert_null(Settings.colorblind_layer(), "off: no layer")
 	assert_eq(_layers(), 0, "off: nothing in the tree, no cost")
@@ -168,6 +174,9 @@ func test_each_colorblind_mode_adds_the_layer_and_off_removes_it() -> void:
 
 
 func test_correction_layer_sits_above_the_game_and_below_the_review_filter() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	assert_gt(ColorblindLayer.LAYER, Fx.layer, "over Fx (and every game layer)")
 	assert_lt(ColorblindLayer.LAYER, 128, "under the visual QA simulation filter (layer 128)")
 	var layer: ColorblindLayer = autofree(ColorblindLayer.new(&"protan"))
@@ -183,6 +192,9 @@ func _separation(a: Color, b: Color, mode: StringName) -> float:
 
 
 func test_the_correction_separates_hues_the_deficiency_merges() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	# Red / green pairs for deutan and protan (Solace green vs harm red, gain vs harm), a
 	# blue / green pair for tritan: after the correction, the simulated viewer sees them
 	# further apart than before.
@@ -205,6 +217,9 @@ func test_the_correction_separates_hues_the_deficiency_merges() -> void:
 # --- 3. High contrast -------------------------------------------------------------------
 
 func test_high_contrast_theme_reaches_seven_to_one() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var t := UiTheme.build(1.0)
 	HighContrast.apply(t)
 	for panel in [&"TerminalPanel", &"GlassPanel"]:
@@ -232,6 +247,9 @@ func test_high_contrast_theme_reaches_seven_to_one() -> void:
 
 
 func test_high_contrast_gives_buttons_and_focus_a_solid_thick_edge() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var t := UiTheme.build(1.0)
 	HighContrast.apply(t)
 	for kind in [&"Button", &"HotButton"]:
@@ -250,6 +268,9 @@ func test_high_contrast_gives_buttons_and_focus_a_solid_thick_edge() -> void:
 
 
 func test_the_setting_rebuilds_the_theme_through_settings_changed() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var root: Control = add_child_autofree(Control.new())
 	UiTheme.apply(root)
 	Settings.set_high_contrast(false)
@@ -334,6 +355,9 @@ func test_resolve_speed_scales_and_instant_is_zero() -> void:
 
 
 func test_fast_forward_is_an_input_action_with_a_key_and_a_pad_binding() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	assert_true(InputMap.has_action(Motion.FAST_FORWARD_ACTION))
 	var key := false
 	var pad := false
@@ -405,6 +429,9 @@ func test_the_combat_replay_runs_on_the_resolve_clock_and_gives_it_back() -> voi
 # --- 6. Pad glyph set -------------------------------------------------------------------
 
 func test_glyph_set_detection_from_joy_names() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var cases := {
 		"Xbox Series Controller": &"xbox", "XInput Gamepad (GLFW)": &"xbox", "Xbox 360 Controller": &"xbox",
 		"PS5 Controller": &"playstation", "DualSense Wireless Controller": &"playstation",
@@ -418,6 +445,9 @@ func test_glyph_set_detection_from_joy_names() -> void:
 
 
 func test_effective_glyph_set_follows_the_setting_or_the_pad() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	for set_name in [&"xbox", &"playstation", &"switch", &"deck"]:
 		Settings.set_pad_glyph_set(set_name)
 		assert_eq(Settings.effective_glyph_set(), set_name, "a fixed set wins")
@@ -434,6 +464,9 @@ func _probe(feature: bool = false, env: String = "", os_name: String = "Windows"
 
 
 func test_steam_deck_detection_from_an_injected_probe() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	assert_true(Settings.is_steam_deck_from(_probe(true)), "the steamdeck feature tag")
 	assert_true(Settings.is_steam_deck_from(_probe(false, "1")), "SteamDeck=1")
 	assert_false(Settings.is_steam_deck_from(_probe(false, "0")))
@@ -444,6 +477,9 @@ func test_steam_deck_detection_from_an_injected_probe() -> void:
 
 
 func test_first_run_on_a_steam_deck_defaults_text_scale_and_city_quality() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var deck := _fresh()
 	deck.apply_first_run_defaults(_probe(true))
 	assert_eq(deck.text_scale, Settings.TEXT_SCALE_STEAM_DECK)
@@ -486,6 +522,9 @@ func _choose(o: OptionButton, i: int) -> void:
 
 
 func test_options_rows_drive_the_new_settings() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var panel: SettingsPanel = add_child_autofree(SettingsPanel.new())
 	panel.show_section("Accessibility")
 	for w in [panel.colorblind_option, panel.high_contrast_check, panel.reduce_motion_check, panel.resolve_speed_option]:
@@ -515,6 +554,9 @@ func test_options_rows_drive_the_new_settings() -> void:
 
 
 func test_options_panel_fits_the_screen_at_text_scale_two() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	var panel: SettingsPanel = add_child_autofree(SettingsPanel.new())
 	for section in SettingsPanel.SECTIONS:

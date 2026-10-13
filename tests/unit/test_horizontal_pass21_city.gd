@@ -216,6 +216,9 @@ func test_node_icons_are_distinct_and_the_legend_draws_them() -> void:
 # --- Labels ---------------------------------------------------------------------------------
 
 func test_label_size_follows_the_text_scale_live() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var hq: Control = await _hq_grid(&"solace")
 	var overlay: CityMapOverlay = hq.city_overlay
 	Settings.set_text_scale(1.0)

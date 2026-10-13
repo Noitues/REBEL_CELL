@@ -77,7 +77,7 @@ func _mainframe(scale: float) -> Control:
 # --- L37: the Mainframe's stock wheel and info strip -----------------------------------------------
 
 func test_the_stock_wheel_shows_its_read_blocks_on_screen_at_every_text_size() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _mainframe(scale)
 		var wheel := scene._panel.find_child("Slices", true, false) as SliceStockWheel
 		assert_false(wheel.items.is_empty(), "at %.1f: slices for sale" % scale)
@@ -100,7 +100,7 @@ func test_the_stock_wheel_shows_its_read_blocks_on_screen_at_every_text_size() -
 
 func test_the_info_strip_shows_every_text_whole_at_every_text_size() -> void:
 	var NetrunScript := load("res://scripts/ui/netrun_scene.gd")
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _mainframe(scale)
 		var board := scene._panel.find_child("Pegboard", true, false) as Control
 		var info := board.find_child("ShopInfo", true, false) as Control
@@ -125,7 +125,7 @@ func test_the_info_strip_shows_every_text_whole_at_every_text_size() -> void:
 # --- L63: the REMOVE A CARD viewer -----------------------------------------------------------------
 
 func test_the_remove_viewer_shows_whole_cards_and_keeps_on_the_canvas() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _mainframe(scale)
 		scene.open_remove()
 		await _frames(6)
@@ -161,7 +161,7 @@ func _loadout_spinner(scale: float) -> LoadoutView:
 
 
 func test_the_loadout_spinner_keeps_its_swap_words_whole_and_its_window_on_screen() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var view := await _loadout_spinner(scale)
 		var sv := view.find_child("SpinnerView", true, false) as SpinnerView
 		var side := sv.find_child("Side", true, false) as Control
@@ -191,7 +191,7 @@ func test_the_loadout_spinner_keeps_its_swap_words_whole_and_its_window_on_scree
 # --- L44: the Daemon tray ----------------------------------------------------------------------------
 
 func test_the_daemon_tray_stands_beside_the_route_window() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _netrun(scale)
 		var ids: Array = RunManager.lookup().ids_of_class(&"DaemonData")
 		ids.sort()
@@ -219,7 +219,7 @@ func test_the_daemon_tray_stands_beside_the_route_window() -> void:
 # --- L50: the hovered hand card's zoom ----------------------------------------------------------------
 
 func test_the_hover_zoom_keeps_the_players_hp_readable() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene: Control = load(COMBAT).instantiate()

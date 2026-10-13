@@ -92,7 +92,7 @@ func _check(c: Node, what: String, scale: float) -> void:
 
 
 func test_tutorial_win_continue() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		Settings.set_tutorial_done(false)
 		RunManager.new_campaign(1)
@@ -118,7 +118,7 @@ func test_tutorial_win_continue() -> void:
 
 
 func test_loot_continue() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		for kind in ["card", "firmware"]:
 			var scene := _mount(NETRUN)
@@ -139,7 +139,7 @@ func test_loot_continue() -> void:
 
 ## 1B-STICKER F2: SKIP on the loot sheet is a verb sticker too: its fold room, and nothing drawn over its letters.
 func test_loot_skip() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var scene := _mount(NETRUN)
 		RunManager.new_campaign(1)
@@ -160,7 +160,7 @@ func test_loot_skip() -> void:
 
 
 func test_run_end_back_to_hq() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var scene := _mount(NETRUN)
 		RunManager.new_campaign(1)
@@ -177,7 +177,7 @@ func test_run_end_back_to_hq() -> void:
 
 
 func test_raid_result_continue() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(7)
 		var c := RunManager.campaign

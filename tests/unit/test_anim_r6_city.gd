@@ -366,7 +366,7 @@ func test_no_inline_motion_numbers_left_in_the_raid_heat_and_marks() -> void:
 # --- C6: the Polaroid caption follows the text size ----------------------------------------------
 
 func test_a_polaroid_caption_follows_the_text_size_and_is_never_cut() -> void:
-	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		assert_eq(Polaroid.caption_floor(), roundi(12 * scale), "%.1f: the floor is 12 px x the text size" % scale)
 		RunManager.new_campaign(1)
@@ -434,7 +434,7 @@ func test_your_nodes_fills_its_window_and_counts_the_withdraw_row() -> void:
 	# HQ-B (c), parity RAID-06: YOUR NODES is a window top left in the raid setup (its column
 	# scrolls, the window does not): the withdraw row is there and every row shows whole with
 	# the focus.
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		_raid_campaign()
 		var c := RunManager.campaign

@@ -51,7 +51,7 @@ func _assert_safe(root: Node, what: String, scale: float) -> void:
 
 
 func test_the_safe_margin_is_24_px_times_the_text_scale() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		assert_almost_eq(Fx.sticker_margin(), 24.0 * scale, 0.001)
 		assert_eq(Fx.sticker_safe_rect(SCREEN), SCREEN.grow(-24.0 * scale))
@@ -73,7 +73,7 @@ func _netrun() -> Control:
 
 
 func test_loot_and_event_stickers_keep_the_safe_margin() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		for kind in ["card", "firmware"]:
 			var scene := _netrun()
@@ -99,7 +99,7 @@ func test_loot_and_event_stickers_keep_the_safe_margin() -> void:
 
 
 func test_title_and_slots_stickers_keep_the_safe_margin() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		for s in SLOTS:
 			RunManager.save_slot = s
@@ -119,7 +119,7 @@ func test_title_and_slots_stickers_keep_the_safe_margin() -> void:
 
 
 func test_pause_stickers_keep_the_safe_margin() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		# As the game opens it: over the HQ, centred under the subtitle band.
 		RunManager.new_campaign(1)
@@ -137,7 +137,7 @@ func test_pause_stickers_keep_the_safe_margin() -> void:
 
 
 func test_raid_setup_stickers_keep_the_safe_margin() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var c := RunManager.campaign

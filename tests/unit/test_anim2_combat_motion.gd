@@ -302,7 +302,7 @@ func test_rewind_scrub_never_crosses_the_checkpoint() -> void:
 # --- Readability ------------------------------------------------------------------------------
 
 func test_numbers_never_cover_the_next_resolving_needle() -> void:
-	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 		for enemy in ENEMIES:
 			var scene := await _combat(enemy, scale)
 			var before: CombatState = scene.engine.state().duplicate_state()
@@ -332,7 +332,7 @@ func test_numbers_never_cover_the_next_resolving_needle() -> void:
 
 
 func test_no_layout_violation_at_the_end_state() -> void:
-	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 		var scene := await _combat(&"collections_agent", scale)
 		_live()
 		scene.end_turn()

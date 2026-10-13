@@ -112,6 +112,9 @@ func test_drawn_kit_words_translate() -> void:
 
 
 func test_the_status_line_fits_its_width_at_big_text() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_pad_active(true)
 	var scene := await _combat(&"compliance_officer", Settings.TEXT_SCALE_MAX)
 	scene._refresh_status()
@@ -124,6 +127,9 @@ func test_the_status_line_fits_its_width_at_big_text() -> void:
 
 
 func test_the_aim_hint_is_the_aimed_cards_tooltip_never_a_caption_line() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	# B2 (designer Q2, 2026-10-06): key hints only in the tooltip; no caption line over the hand
 	# (it replaces "the aim hint sits above the hand clear of the corner chips").
 	for pad in [false, true]:
@@ -161,7 +167,7 @@ func test_soaked_damage_is_counted_and_shown() -> void:
 
 
 func test_toasts_sit_in_the_right_column_off_the_cards() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		var scene := await _combat(&"collections_agent", scale)
 		var s: CombatState = scene.engine.state()
 		s.ram = 0
@@ -203,7 +209,7 @@ func test_the_aim_is_grease_pencil_above_every_ui() -> void:
 
 
 func test_the_nearest_arrow_or_satellite_takes_the_click() -> void:
-	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 		var scene := await _combat(&"collections_agent", scale)
 		for v in scene._views():
 			var wv: WheelView = v
@@ -221,7 +227,7 @@ func test_the_nearest_arrow_or_satellite_takes_the_click() -> void:
 
 func test_satellite_tokens_and_plates_keep_off_hp_next_and_last_turn() -> void:
 	for enemy in [&"collections_agent", &"geostationary_guard", &"care_swarm"]:
-		for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+		for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 			var scene := await _combat(enemy, scale)
 			scene.end_turn()  # a LAST TURN line and (with a preview) a NEXT plate
 			await _frames(1)
@@ -247,6 +253,9 @@ func _token_rect(host: WheelView, sat: CombatantState) -> Rect2:
 
 
 func test_last_turn_never_draws_smaller_than_at_normal_text() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var scene := await _combat(&"compliance_officer", Settings.TEXT_SCALE_MAX)
 	var v: WheelView = scene._player_view
 	# A usual line keeps at least the 1.0 size; the longest possible one stays in its view.
@@ -286,6 +295,9 @@ func test_signed_numbers_avoid_the_plus_format() -> void:
 
 
 func test_long_hub_names_take_two_lines_before_shrinking() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var scene := await _combat(&"compliance_officer", Settings.TEXT_SCALE_MAX)
 	var v: WheelView = scene._player_view
 	var lines: Array = v.hub_name_lines(60.0)

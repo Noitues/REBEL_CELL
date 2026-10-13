@@ -72,7 +72,7 @@ func _grid(corp: StringName) -> Control:
 
 func test_the_site_file_header_fits_whole_on_every_corporations_grid() -> void:
 	for corp in CORPS:
-		for scale in SCALES:
+		for scale in TestScope.scales(SCALES):
 			Settings.set_text_scale(scale)
 			var hq := await _grid(corp)
 			assert_eq(RunManager.campaign.corporation_id, corp, "the campaign is against %s" % corp)

@@ -142,7 +142,7 @@ func test_the_route_dossier_has_no_heat_stamp() -> void:
 
 
 func test_the_gauge_and_title_fit_at_every_text_scale() -> void:
-	for s in SCALES:
+	for s in TestScope.scales(SCALES):
 		Settings.set_text_scale(s)
 		var scene := _netrun()
 		await _frames()

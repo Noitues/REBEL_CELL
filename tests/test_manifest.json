@@ -1,5 +1,5 @@
 {
-	"about": "Measured seconds per test script (median of runs) for tools/run_tests.py shard balancing, and each script's tier: fast = the iteration tier, full = only in the full suite. Every test script is listed exactly once (test_suite_integrity.gd). See docs/TEST_SUITE.md.",
+	"about": "Measured seconds per test script (median of runs) for tools/run_tests.py shard balancing, and each script's tier: fast = the iteration tier, full = only in the full suite, deferred = text scale > 1.0 / high contrast / gamepad / colour-blind scripts, skipped by every default run (run_tests.py --tier deferred runs only them). Every test script is listed exactly once (test_suite_integrity.gd). See docs/TEST_SUITE.md.",
 	"scripts": {
 		"res://tests/unit/test_us_english.gd": {
 			"seconds": 0.2,
@@ -439,7 +439,7 @@
 		},
 		"res://tests/unit/test_pad_reachability.gd": {
 			"seconds": 5.7,
-			"tier": "fast"
+			"tier": "deferred"
 		},
 		"res://tests/unit/test_panel_widths.gd": {
 			"seconds": 4.9,
@@ -827,11 +827,11 @@
 		},
 		"res://tests/unit/test_m14_12q_access.gd": {
 			"seconds": 30.0,
-			"tier": "fast"
+			"tier": "deferred"
 		},
 		"res://tests/unit/test_big_text_intel_order_fit.gd": {
 			"seconds": 15.0,
-			"tier": "fast"
+			"tier": "deferred"
 		},
 		"res://tests/unit/test_w1r1_sticker_fold.gd": {
 			"seconds": 25.0,

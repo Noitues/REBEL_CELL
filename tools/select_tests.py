@@ -82,10 +82,21 @@ def class_name_of(path: Path) -> str:
     return m.group(1) if m else ""
 
 
+def deferred_scripts() -> set[str]:
+    """res:// paths of the manifest's deferred tier: skipped in every default run (designer ruling 2026-10-13)."""
+    try:
+        entries = json.loads(MANIFEST.read_text(encoding="utf-8")).get("scripts", {})
+    except (OSError, ValueError):
+        return set()
+    return {p for p, e in entries.items() if e.get("tier") == "deferred"}
+
+
 def all_tests() -> list[Path]:
+    """Every test script a default run can pick: the deferred tier is left out."""
+    skip = deferred_scripts()
     tests: list[Path] = []
     for d in TEST_DIRS:
-        tests.extend(sorted(d.rglob("test_*.gd")))
+        tests.extend(t for t in sorted(d.rglob("test_*.gd")) if "res://" + t.relative_to(ROOT).as_posix() not in skip)
     return tests
 
 
@@ -105,7 +116,8 @@ def select(files: list[str]) -> tuple[set[str], list[str]]:
     for f in files:
         p = ROOT / f
         if f.startswith("tests/") and f.endswith(".gd") and Path(f).name.startswith("test_"):
-            add(p, "changed test")
+            if "res://" + f not in deferred_scripts():
+                add(p, "changed test")
             continue
         if f == "tests/test_manifest.json":
             for t in tests:
