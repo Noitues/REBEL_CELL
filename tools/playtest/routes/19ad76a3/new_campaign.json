@@ -1,0 +1,69 @@
+{
+ "name": "new_campaign",
+ "build": "19ad76a3a10c260a760667a0d6dde27156508740",
+ "start": "title",
+ "steps": [
+  {
+   "do": [
+    {
+     "type": "wait",
+     "seconds": 3.0
+    }
+   ],
+   "expect": "01.png",
+   "tol": 0.1,
+   "timeout": 12,
+   "note": "title settled",
+   "region": [
+    355,
+    230,
+    645,
+    440
+   ]
+  },
+  {
+   "do": [
+    {
+     "type": "move",
+     "x": 500,
+     "y": 410
+    },
+    {
+     "type": "click",
+     "x": 500,
+     "y": 410
+    }
+   ],
+   "expect": "03.png",
+   "tol": 0.1,
+   "timeout": 12,
+   "note": "new campaign setup",
+   "region": [
+    0,
+    120,
+    1000,
+    480
+   ]
+  },
+  {
+   "do": [
+    {
+     "type": "click",
+     "x": 1210,
+     "y": 68
+    }
+   ],
+   "expect": "04.png",
+   "tol": 0.06,
+   "timeout": 12,
+   "note": "HQ after START",
+   "region": [
+    300,
+    0,
+    960,
+    56
+   ]
+  }
+ ],
+ "end": "HQ city map of a fresh campaign (Solace, ICE 0, standard home, two Breakers, city seed 1)"
+}

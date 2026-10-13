@@ -7,6 +7,8 @@ windowed checks where rendering changed, push gate). At that point the orchestra
 a gate starts until the playtest feedback is ingested or the designer says to go on.
 
 Gates so far map to: each M14 group end, ART-12, each queued pass, each R7/G re-evaluation batch.
+Alongside the Human Playtest list, run the Claude playtest routine (`tools/playtest/gate.py`, doc 05 §12): it
+checks the routes, plays a screen batch and a state sweep, and writes `docs/playtest/claude/gates/<gate>.md`.
 Smaller slices do not get a gate; their checks are the agent hand-back and the merge wave.
 
 ## 1. Generating the list

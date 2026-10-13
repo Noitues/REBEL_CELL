@@ -4,6 +4,7 @@ One line per accepted process change, newest first: date, gate or checkpoint tha
 what changed, why (the retrospective row that justified it). The process docs are edited in the
 same commit; nothing changes silently.
 
+- 2026-10-12 · designer, chat · Claude playtesters (doc 05): black-box `playtester` agent (Sonnet medium, pinned), `tools/playtest/blackbox.py` / `roll_testers.py` / `aggregate.py`, persona × focus × quirk roster, `guard_playtester.py` hook, feedback template `CLAUDE_PLAYTEST_FEEDBACK.md`.
 - 2026-10-12 · designer ("more efficiency") · Agent routing hook (`tools/hooks/guard_agents.py`): pinned
   types only, Opus needs `OPUS-BECAUSE:`, no Fable sub-agents, effort capped at the pin, briefs ≤ 4 000
   chars, ≤ 5 agent worktrees; fix-visual re-pinned to Sonnet medium, fix-rules / auditor to Opus medium;

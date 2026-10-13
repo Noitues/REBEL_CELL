@@ -1,0 +1,1258 @@
+{
+ "rules": [
+  {
+   "id": "controls-click-card-then-target",
+   "rule": "Play a card by dragging it onto a glowing target or by clicking it and then clicking the target (clicking is the most reliable method); right-click cancels the aim. A dashed or yellow arc with a 'LANDS HERE' tag previews the result before you commit; nudge cards go on nudge buttons and slice cards on slices. Clicking a wheel with no card selected does nothing.",
+   "category": "controls",
+   "certainty": "observed",
+   "confirmations": 10,
+   "contradictions": 1,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "controls-undo-free",
+   "rule": "Undo (Z) is free and unlimited within a turn and refunds cards and RAM, but it stops at a respin or random pick/event. The UNDO button sits bottom right and is easy to miss-click.",
+   "category": "controls",
+   "certainty": "observed",
+   "confirmations": 12,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "controls-esc-pauses",
+   "rule": "Esc usually opens the pause menu instead of cancelling a card aim (one session found Esc did clear a stuck aim, and in the training sim Esc did nothing so use the gear icon); to clear a stuck aim, right-click, re-select a card from the hand, press Undo, or try Esc.",
+   "category": "controls",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 2,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "controls-number-keys-space",
+   "rule": "Number keys 1-5 select hand cards and Space sends the turn; keyboard was more reliable than clicking wheels, but hand order shifts between turns so re-read card keys before pressing. Keys only pick the card; aiming usually still needs a mouse click (one session played a whole fight keyboard-only).",
+   "category": "controls",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "controls-nudge-keys",
+   "rule": "Use Q/E to nudge the active wheel one tick (Q is anticlockwise), W to switch wheels, and R to switch between rings; each turn starts with one free nudge that is spent at 0 and refreshes next turn.",
+   "category": "controls",
+   "certainty": "observed",
+   "confirmations": 6,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "controls-free-nudge-button",
+   "rule": "Nudge cards (Fine Tune, etc.) go on the Q/E nudge arrow buttons above a wheel, not the wheel body; with no nudge card in hand the free nudge does nothing useful.",
+   "category": "controls",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "controls-enemy-nudge-mouse",
+   "rule": "Enemy-wheel nudge buttons show no key hint and must be clicked with the mouse.",
+   "category": "controls",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "controls-nudge-late-resolve",
+   "rule": "Nudge effects can resolve late: a Fine Tune that showed no change was applied at turn resolution.",
+   "category": "controls",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "controls-loot-click-card-before-continue",
+   "rule": "On the loot sheet, Space only lights card 1 and Continue takes the lit card; click the card you want before Continue. Stray number or Space presses can auto-take cards, and Continue stays unresponsive while a firmware pick is pending (try Enter or Skip if clicks are ignored).",
+   "category": "controls",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "controls-menu-buttons-mouse",
+   "rule": "Most menu buttons (JACK IN, CONTINUE, node picks, Back to HQ, tutorial NEXT/FINISH, loot Continue, pause items) show no key and need a mouse click; Enter or Space rarely work there. In the tutorial only Space advances Next.",
+   "category": "controls",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "controls-event-options",
+   "rule": "Event options: if clicking an option does nothing, try the number key (1, 2...); one session found number keys did nothing (key 3 on a terminal did not register), so try both.",
+   "category": "controls",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 1,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "controls-fight-won-banner",
+   "rule": "The fight-won banner may show no Continue button and ignore clicks; open the pause menu (Esc or gear) to get out.",
+   "category": "controls",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "controls-scroll-small",
+   "rule": "Scroll wheel jumps on long setup pages are large at 2.0x text, so scroll in small increments to avoid overshooting the start controls.",
+   "category": "controls",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "controls-quit-main-menu",
+   "rule": "Quit to Main Menu is available from the pause menu.",
+   "category": "controls",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-check-outcome-chips",
+   "rule": "Before Send It, check the outcome chips (red skull/negative numbers) and damage preview numbers beside each HP bar and hover Send It: they show expected damage to both sides, blocks, who hits whom and lethal flags. Blind sending cost about 12 HP per turn. Send It resolves all needles at once: defensive slices, then offensive slices, then statuses. Enemy HP doesn't change until you send.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 14,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-lethal-chip-dont-send",
+   "rule": "If the preview shows a lethal chip on you, do not send; use a card or nudge to move the needles until the red chip disappears (undo and re-roll with Brute Spin or nudges).",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-low-hp-no-fight",
+   "rule": "Don't enter fights at low HP: HP carries over, healing is scarce, and Breakers arriving at 2-28 HP repeatedly flatlined within a few turns, especially against elites (11 HP vs a Billing Daemon showed a lethal first-turn preview). Defend or heal rather than just sending.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 9,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-resistance-blocks",
+   "rule": "Enemy resistance absorbs one tick per point before the wheel moves, so you cannot just spin past it; count the nudges a resisted wheel needs. Flip (Mirror Flip) and Respin are blocked while resistance is up; Jam nudges \\u00b11 and ignores resistance, and Jolt can lower resist.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 10,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-undo-blocked-after-random",
+   "rule": "Undo is blocked after a random event or a respin, so commit to a plan before triggering those.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-false-lethal-preview",
+   "rule": "A \"lethal\" preview against a healing or blocking enemy can be false, so expect heal and block to eat part of the damage and don't rely on the number alone.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-natural-landing-save-ram",
+   "rule": "Read the preview and the needle position each turn: sending without playing cards when the needle lands on a good slice saves RAM, and a natural landing on your biggest slice can finish a fight. An enemy needle on its block slice gives a breather turn.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-aim-big-slice",
+   "rule": "Aim to put the needle on your big overflow 12 slice, since most damage comes from it; use Fine Tune, Jolt or a Respin to move it there.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-respin-when-stuck",
+   "rule": "Respin (4 RAM, random result) is worth paying for when the needle is stuck on a null or low slice; it once produced a 12 slice.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-enemy-block-slices",
+   "rule": "Enemy wheels can have block slices (e.g. a 14 block) that absorb your attack, so check what the enemy needle sits on before attacking.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-enemy-pointer-before-spin",
+   "rule": "Check where the enemy's pointer sits before spinning its wheel; a spin can land it on a big attack slice such as 14 or 15.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-long-attrition",
+   "rule": "Early fights can take 10+ turns (Triage fights up to ~20, tutorial fights ~11 and can drain 44-59 HP; a first Billing Daemon fight (42 HP) was lost over 13 turns), with several turns of spins landing on block and no damage dealt, so plan for long attrition; HP carries over between tutorial fights.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-burst-healers",
+   "rule": "Healer enemies like Triage Unit regenerate about 3-8 per turn and block small slices, so burst them on a big slice (12+; Jolt or Brute Spin can rotate them off block/heal) rather than chipping.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-wheel-colours",
+   "rule": "Wheel colours: red is damage, blue is shields, green is RAM and statuses.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-ram-debt-respin",
+   "rule": "Cards can be overspent; the shortfall shows as a negative RAM debt chip (hatched segment) that can persist across turns, and overdrawing RAM preceded a lost fight. Respin costs 4 RAM, rerolls the wheel and cleared one debt.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 4,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-check-ram-before-play",
+   "rule": "Check the RAM counter before playing a card; a card that costs more RAM than you have is refused and a red 'Not enough RAM' banner explains why (this can look like a targeting failure). Mirror Flip (3 RAM) is unplayable at low RAM; Brute Spin needs 2. RAM pays for cards, respins and extra nudges and refills each turn.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 7,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-opening-half-ram",
+   "rule": "Fights can start with only 6/12 RAM on turn 1, so plan the opening turn around about half RAM.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-free-nudge-use",
+   "rule": "Use the free nudge each turn before Send It; it is one free tick per turn and the counter shows how many remain (a turn may show none).",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-incoming-damage-badge",
+   "rule": "Check the incoming-damage badge on your HP each turn and prioritise defence or Mirror Flip when it threatens lethal; Mirror Flip turned a -24 incoming preview into -9.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-enemy-dud-slices",
+   "rule": "Enemies' 1/0 dud slices mean little or no incoming damage, so those turns are safe windows to attack or skip cards.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-enemy-slice-effects",
+   "rule": "Enemy slices apply effects such as Shim damage or Dose (applies CORRUPTED or a drain to your wheel); hover slices to read them. NULL slices do nothing unless a Daemon says otherwise.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-win-lose-conditions",
+   "rule": "You win by bringing the enemy's HP to 0; if the Breaker's HP hits 0 the fight is lost and that Breaker is permanently killed.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-carry-cards-ram-regen",
+   "rule": "Cards can be left in the tray or queued across a turn, and RAM regenerates between turns, so unspent cheap cards carry value into the next turn.",
+   "category": "combat",
+   "certainty": "inferred",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-ram-tax-marker",
+   "rule": "A negative number beside the RAM counter, with a hatched pink pip, is RAM committed or debt; it also appears as the price of a selected card (e.g. (-3) for Jolt), can persist for many turns then vanish, and is not explained on screen.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-conserve-hp-early",
+   "rule": "Conserve HP early, since the map offered no heal between several straight fights and HP carries over.",
+   "category": "combat",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "combat-precision-grades",
+   "rule": "Precision grades are PERFECT/GOOD/WEAK at offsets 0/1/2 from the needle's ideal position (per Codex).",
+   "category": "combat",
+   "certainty": "inferred",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-overdrive-corrupts",
+   "rule": "Overdrive costs 1 RAM, multiplies the pointer slice by 1.5x on its next trigger, then makes it CORRUPTED (-1 RAM), so use it only when a single big hit is worth it.",
+   "category": "cards_and_pickups",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-fight-rewards",
+   "rule": "Fights reward Cycles (about 15-25) and a pick of one of three cards (or skip), and some fights also offer a Firmware chip such as Patch+ (+50% slice output) versus Shunt, Bulkhead or Barbed Wire; node previews say when a chip is possible.",
+   "category": "cards_and_pickups",
+   "certainty": "observed",
+   "confirmations": 12,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-skip-loot-lean",
+   "rule": "On loot sheets you may skip to keep the deck lean; prefer cards usable on your wheel, since inner-ring or corruption-based cards can be dead picks. Space auto-takes card 1.",
+   "category": "cards_and_pickups",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-no-inner-ring-cards",
+   "rule": "Don't take inner-ring cards such as Inner Drift, Inner Snap, Ring Tap or Gear Shift if the target wheel has no inner ring; they are dead cards ('Target has no inner ring').",
+   "category": "cards_and_pickups",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-firmware-fit",
+   "rule": "Firmware chips only install on a matching slice type; Siphon and Static Coat were rejected on an OVERFLOW slice ('does not fit', shown only after you try), so check compatibility and try another slot or chip (e.g. Hardened, Shunt) or Continue stays blocked.",
+   "category": "cards_and_pickups",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-firmware-patch-preview",
+   "rule": "Firmware chips like Patch+ raise a slice's value (the 12 slice became 18), and the wheel preview shows where the chip will land before you socket it. Patch+ on the OVFL 12 slot makes your main damage slice hit harder.",
+   "category": "cards_and_pickups",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-firmware-slot-competition",
+   "rule": "The game chooses the firmware slot, so two offers aimed at the same slot (Patch+ and Bulkhead both on Slot 1) compete; take the one that fits your build.",
+   "category": "cards_and_pickups",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-ram-budget",
+   "rule": "Cards cost RAM, with a budget of 12 per turn that refills each turn, shown in the RAM readout.",
+   "category": "cards_and_pickups",
+   "certainty": "observed",
+   "confirmations": 4,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-high-cost-cards",
+   "rule": "Higher-cost cards like Mirror Flip (3 RAM) and Brute Spin (2 RAM) may be unplayable early, so spend RAM on cheap cards first and plan the turn around the cost.",
+   "category": "cards_and_pickups",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-card-basics",
+   "rule": "Card basics: Jolt spins a wheel 3 ticks, Brute Spin 6 ticks for 2 RAM, Fine Tune is two \\u00b11 nudges on one ring for 1 RAM, Mirror Flip flips a wheel (3 RAM; blocked while the target has resistance), Jam nudges an enemy wheel ignoring resistance. Brute Spin was one tester's main damage card.",
+   "category": "cards_and_pickups",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-brute-spin-full-lap",
+   "rule": "Brute Spin is useless on a wheel of mostly small equal slices (e.g. 6 slices) because it just goes a full lap.",
+   "category": "cards_and_pickups",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-wheel-alter-cards",
+   "rule": "Cards that rotate or alter wheels (Fine Tune, Hub Breach, Mirror Flip) move a lethal slice away from the needle, but Mirror Flip was refused on a Daemon wheel with a lockdown hub, with no message.",
+   "category": "cards_and_pickups",
+   "certainty": "inferred",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-freeze-not-enough",
+   "rule": "Freeze applies a FROZEN tag to the enemy but will not save you from heavy incoming damage when your HP is low; it may not cancel the hit shown in the incoming preview.",
+   "category": "cards_and_pickups",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-block-cards",
+   "rule": "Block cards like Firewall are worth playing when low on HP, but alone they do not beat an elite at low HP.",
+   "category": "cards_and_pickups",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-sanitize-block",
+   "rule": "Sanitize only removes CORRUPTED cards or slices, so it is a dead pick when nothing is corrupted; it may also give block.",
+   "category": "cards_and_pickups",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-strip-resist",
+   "rule": "Armour-style cards like Strip, which reduce enemy resistance, may help against resistant enemies (effect unconfirmed).",
+   "category": "cards_and_pickups",
+   "certainty": "inferred",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "cards_and_pickups-card-number-not-heat",
+   "rule": "The number on cards like Mirror Flip is RAM cost; Heat did not change when it was played.",
+   "category": "cards_and_pickups",
+   "certainty": "inferred",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "map_and_nodes-hp-carries",
+   "rule": "HP carries between fights with little healing on the route map, so avoid taking big damage early; entering later nodes at low HP is very dangerous (one Breaker went 60\\u219210\\u21927 and died at L4). The map may force a hard node with no heal option. Look for heal events or a Terminal.",
+   "category": "map_and_nodes",
+   "certainty": "observed",
+   "confirmations": 10,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "map_and_nodes-elite-low-hp",
+   "rule": "Elite fights (about 106-112 HP: Claims Adjuster, Recall Unit) are very dangerous for a Breaker below about 30 HP; take the plain fight instead when a choice exists. At low HP the route can leave only an Elite next (16/60 then Elite L3 killed one Breaker), so avoid damage earlier.",
+   "category": "map_and_nodes",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "map_and_nodes-rack-low-hp",
+   "rule": "Do not enter a Rack node (extra Schematics, +2 Heat, a 112 HP enemy such as Claims Adjuster, a long fight) at low HP; it can end the run. Routes can force a Rack as the only next node, so keep HP in reserve (a forced Rack at 11/60 killed two runs).",
+   "category": "map_and_nodes",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "map_and_nodes-event-heal",
+   "rule": "Event nodes can heal or cut Heat: Wellness Kiosk gives +10 HP for +2 Heat, Patient Records gives -2 Heat for -5 HP. But an event node can turn out to be a fight, and some free-looking options lead to one.",
+   "category": "map_and_nodes",
+   "certainty": "observed",
+   "confirmations": 4,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "map_and_nodes-event-costs",
+   "rule": "Event option costs are shown as chips, and you cannot pay a cost you cannot afford (e.g. -12 HP or -60 Cycles); pick the free option.",
+   "category": "map_and_nodes",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "map_and_nodes-equivalent-fights",
+   "rule": "Check the route tooltip before choosing a node: two fights with identical follow-ups are equivalent because the enemy is rolled on entry.",
+   "category": "map_and_nodes",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "map_and_nodes-hover-tooltips",
+   "rule": "Hover route-map nodes to see tooltips with type, tier, rewards and Heat cost, such as Elite (+1 Heat, Firmware) or T1 fights paying 15-25 Cycles, and check them before choosing. Orange-ringed circles are the nodes you can walk to; the bottom legend decodes icons.",
+   "category": "map_and_nodes",
+   "certainty": "observed",
+   "confirmations": 6,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "map_and_nodes-select-jack-in",
+   "rule": "On the campaign map, select a site (its panel shows what it opens) then press JACK IN, which starts a netrun with your first ready Breaker; routes are then chosen layer by layer showing Fight, RACK and SHOP nodes. The opening site is Continuum Billing Farm (T1); clearing it opens Pricing Memo Archive and Scrub Records.",
+   "category": "map_and_nodes",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "map_and_nodes-site-gating",
+   "rule": "Sites on the city grid are gated: hover or select a locked site to see which site must be cleared first; clicking a locked node does nothing, so don't re-click it.",
+   "category": "map_and_nodes",
+   "certainty": "observed",
+   "confirmations": 6,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "map_and_nodes-rack-heal-uncertain",
+   "rule": "The legend lists RACK as healing, but other sessions saw no heal at Racks (they bank and cost Heat); don't count on a Rack to heal.",
+   "category": "map_and_nodes",
+   "certainty": "inferred",
+   "confirmations": 1,
+   "contradictions": 2,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "economy-fight-cycles",
+   "rule": "Fights pay about 20 Cycles each, and Cycles accumulate in the wallet.",
+   "category": "economy",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "economy-shop-prices",
+   "rule": "Shop prices start around 50+ cycles (cards 56-72, slices 100), so early wallets (~39-42) can't afford anything; save before visiting or skip it.",
+   "category": "economy",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "economy-market-boosts",
+   "rule": "The Market sells next-run boosts with Schematics (Warm Cache 10 gives 40 starting Cycles, Overclocked Deck 15, Field Kit 20), a Breaker recruit for 15 and a class unlock for 60; hover to confirm effects. The charge is taken when you queue the item.",
+   "category": "economy",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "economy-heat-scrub-cost",
+   "rule": "Heat Scrub costs 25 Schematics (-5 Heat) at the Core, so save Schematics for it; it can't be used with only 10.",
+   "category": "economy",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "economy-locked-ward",
+   "rule": "A Locked Ward terminal costs 60 cycles to rescue an operative.",
+   "category": "economy",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "economy-keep-schematics",
+   "rule": "Keep Schematics banked: with only 5 you cannot recruit (15) or buy boosts, though after a wipe a recruit can cost 0 even if the card shows 15.",
+   "category": "economy",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "economy-flatline-loses-loot",
+   "rule": "A flatline (losing a fight) loses the run's cycles and unbanked loot; banked Schematics are kept.",
+   "category": "economy",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "economy-ram-budget-turn",
+   "rule": "RAM is the per-turn resource for card plays and Respin; budget it each turn (a turn can end at 0 RAM after spends).",
+   "category": "economy",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "heat-bank-schematics-early",
+   "rule": "Bank Schematics at the Cell/Rack early and never jack out with unbanked loot (it is lost); banking cools Heat per the tooltip, but high Heat brings raids.",
+   "category": "heat",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 1,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "heat-rack-structure",
+   "rule": "A Rack is a fight then a bank, costs +2 Heat, and the enemy has far more HP (112) than normal fights (38-45).",
+   "category": "heat",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "heat-elite-nodes",
+   "rule": "Elite nodes add Heat (+1) but give Firmware rewards.",
+   "category": "heat",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "heat-flatline-adds",
+   "rule": "Each flatline adds about +11-12 Heat plus a few per node cleared (e.g. +14 total); a raider reaching CORE adds more, and a raid itself adds Heat (+5 from four units). Heat accumulates across flatlines (11, 22, 25+) and crossing a threshold triggers a raid.",
+   "category": "heat",
+   "certainty": "observed",
+   "confirmations": 9,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "heat-thresholds-raids",
+   "rule": "Heat thresholds trigger raids from Collections (about 25, 50-57, 75) and effects like Elite Frequency +25% at 38; Heat 30 means the Mainframe carries one fewer item. Hover the Heat counter for the next threshold; Heat is a 0-100 hunt meter with a first threshold at 10.",
+   "category": "heat",
+   "certainty": "observed",
+   "confirmations": 7,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "heat-above-80-continues",
+   "rule": "Heat 80 did not end the campaign in one session: the bar runs to 100 (HUNTED) and HQ continued at Heat 81 and 86.",
+   "category": "heat",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 1,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "heat-high-resistance",
+   "rule": "High Heat (e.g. 70) adds a '+1 RESISTANCE' modifier to enemies, making fights harder.",
+   "category": "heat",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "heat-major-threshold-self-damage",
+   "rule": "MAJOR Heat thresholds may make Null/corrupted slices cost 3 self-damage per threshold, so Heat can hurt you in combat.",
+   "category": "heat",
+   "certainty": "inferred",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "heat-normal-fights-zero",
+   "rule": "Normal fights did not raise Heat in the first site (it stayed 0 through three fights, and a new netrun starts at 0); per-card Heat isn't shown.",
+   "category": "heat",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "heat-reduce",
+   "rule": "To lower Heat, clear Heat-reduction sites (Scrub Records, Purge Camera Logs, Wipe Biometrics, Burn the Ledger; all locked behind other sites, so clear early sites first) or pay Heat Scrub (25 Schematics, -5 Heat, key H).",
+   "category": "heat",
+   "certainty": "observed",
+   "confirmations": 7,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "raids-no-defence-cost",
+   "rule": "A raid with no crew or armory still plays out and costs Home HP and adds Heat (50>40, then 40>27, Heat 53>58; one raid cost Home -29); raid setup shows the stakes and crew ready.",
+   "category": "raids",
+   "certainty": "observed",
+   "confirmations": 7,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "raids-projection-reliable",
+   "rule": "Raid Setup's projection (e.g. Core 50>40 HOLDS) matched the playout result exactly, so it can be trusted; check it after every change.",
+   "category": "raids",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "raids-patch-before-raid",
+   "rule": "Spend Schematics on PATCH (+5 CORE integrity, found in the Crew tab) before a raid; it turned a projected BREACHED (27>0) into HOLDS (34>5).",
+   "category": "raids",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "raids-report-mouse",
+   "rule": "The raid report ends with BACK TO THE GRID, which needs a mouse click; Enter and Esc do nothing.",
+   "category": "raids",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "raids-total-wipe-campaign-loss",
+   "rule": "A raid with every Breaker flatlined can breach HQ and end the campaign, so keep at least one operative alive or recruited before a raid.",
+   "category": "raids",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "raids-setup-r-key",
+   "rule": "Press R at HQ to open Raid Setup when a raid is incoming; START DEFENSE needs a mouse click.",
+   "category": "raids",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "raids-defence-armory-empty",
+   "rule": "The Defence armory fills only from assets banked by runs, so you can't prepare raid defence from HQ alone.",
+   "category": "raids",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "raids-core-not-runnable",
+   "rule": "CORE is your home server: you defend it in raids and never run it.",
+   "category": "raids",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "hq_and_campaign-breaker-death",
+   "rule": "Breaker death is permanent: you lose the run's cycles, gain Heat (+11), and return to HQ; Schematics and Home are kept. Jack in with the next crew member at full HP; with zero ready crew Jack In is blocked. A flatline can queue a raid.",
+   "category": "hq_and_campaign",
+   "certainty": "observed",
+   "confirmations": 12,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "hq_and_campaign-market-recruit",
+   "rule": "Recruit Breakers in the HQ Market tab, not Crew (the CREW tab did nothing); after a total wipe the first recruit costs 0 Schematics, later ones 15.",
+   "category": "hq_and_campaign",
+   "certainty": "observed",
+   "confirmations": 8,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "hq_and_campaign-win-three-exploits",
+   "rule": "The win condition is collecting 3 Exploits from gold Exploit Sites to open the Central Server (Genome Core); you start with two Breakers.",
+   "category": "hq_and_campaign",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "hq_and_campaign-orange-ring-map-key",
+   "rule": "HQ sites are chained and locked behind prerequisites; the first runnable site has an orange ring. Open the MAP KEY (explains rings) and look/pan to the far left rather than clicking locked sites.",
+   "category": "hq_and_campaign",
+   "certainty": "observed",
+   "confirmations": 6,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "hq_and_campaign-relay-nest-locked",
+   "rule": "The Relay Nest server is locked behind 50 Schematics (bought in the Black Market), so unlock it through campaign progress.",
+   "category": "hq_and_campaign",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "hq_and_campaign-new-campaign-setup",
+   "rule": "New Campaign setup has locked targets, servers and crew that need unlock counts (60/80); only Solace Biosystems, Standard and Breaker are unlocked at first. Today's Run and Share Codes sit below the start controls.",
+   "category": "hq_and_campaign",
+   "certainty": "observed",
+   "confirmations": 4,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "hq_and_campaign-save-resume",
+   "rule": "The campaign autosaves; Save & Quit (or quitting, including to desktop or mid-fight via the pause menu) stores it and Continue/BREACH on the title resumes it with HP and Heat. Save & Quit may need repeated clicks to show, and is on the run map rather than the pause menu in one build view. Quit to Desktop's Save & Quit confirm was unresponsive in one session.",
+   "category": "hq_and_campaign",
+   "certainty": "observed",
+   "confirmations": 8,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "hq_and_campaign-patch-core",
+   "rule": "Patch on the HQ crew panel costs 5 Schematics for +5 integrity on CORE only; it does not revive Breakers.",
+   "category": "hq_and_campaign",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "hq_and_campaign-crew-button-unresponsive",
+   "rule": "The CREW button can read 0/2 and be unresponsive when no breaker is ready, and the CORE panel can capture map clicks.",
+   "category": "hq_and_campaign",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "ui-hover-card-text",
+   "rule": "Read card text and rules by hovering or right-clicking the card, because the on-card text is truncated and tooltips (not the tutorial) explain nudge, targeting and costs. Hover bars and chips (Heat bar, RAM) too; the Codex Slices entry has full slice text.",
+   "category": "ui",
+   "certainty": "observed",
+   "confirmations": 4,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "ui-hover-ram-bar",
+   "rule": "Hover the RAM bar for its explanation: RAM pays for cards, respins and extra nudges, and refills each turn.",
+   "category": "ui",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "ui-negative-ram-marker",
+   "rule": "A negative RAM figure beside the bar (e.g. (-2)) appeared during fights and while aiming, and cleared when an enemy fell, after Undo, or after several turns; the game never explained it.",
+   "category": "ui",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "ui-tutorial-win-no-continue",
+   "rule": "The tutorial/training sim win screen and FIGHT WON banner show no Continue prompt and clicks or Enter do nothing; open the gear-icon pause menu (or Esc) and Quit to Main Menu to leave, and the tutorial saves no campaign.",
+   "category": "ui",
+   "certainty": "observed",
+   "confirmations": 6,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "ui-key-hints-some-screens",
+   "rule": "Some screens do show key hints: the loot/result footer shows Space as next step, Raid Setup is [R], Heat Scrub is [H], RESUME is [Esc], and the quit confirm shows Save & Quit [A] / Keep Going [B]. SEND IT [Space] appeared only once the turn's cards were set.",
+   "category": "ui",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "ui-red-hp-numbers",
+   "rule": "Red numbers on the HP bars are last turn's SEND IT HP change; hover to confirm.",
+   "category": "ui",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "ui-codex-limits",
+   "rule": "The Codex (214 entries, Lexicon tab) is reachable from the pause menu and has no search or how-to-play page; hover tooltips are the faster source for basic rules.",
+   "category": "ui",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "ui-map-key",
+   "rule": "Open the MAP KEY button (top right) to learn node icons (next, cleared, yours, down, taken, heat objective, locked, exploit).",
+   "category": "ui",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "ui-locked-site-panel",
+   "rule": "Read the side panel or tooltip of a locked site to learn its gate instead of re-clicking it; selecting a site on the HQ map shows what gates it.",
+   "category": "ui",
+   "certainty": "observed",
+   "confirmations": 3,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "ui-overlapping-cards",
+   "rule": "Overlapping cards in hand make it easy to select the wrong one, so confirm the selection through the wheel chips or tooltip before spending RAM.",
+   "category": "ui",
+   "certainty": "observed",
+   "confirmations": 1,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "ui-pause-menu-dangers",
+   "rule": "The pause menu (Resume, Options, Codex, Quit to Main Menu, Quit to Desktop) places Abandon Run/Campaign right next to Resume and Quit, so click carefully; it has no retry (after a tutorial loss, quit to menu and re-enter).",
+   "category": "ui",
+   "certainty": "observed",
+   "confirmations": 5,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  },
+  {
+   "id": "ui-text-scale",
+   "rule": "Raise the text scale slider (1.0-2.0x) in Options > Accessibility only if needed, because at 2.0x setup screens need lots of scrolling and START is hard to find; other options include reduce effects, colour-blind modes and high contrast.",
+   "category": "ui",
+   "certainty": "observed",
+   "confirmations": 2,
+   "contradictions": 0,
+   "builds": [
+    "19ad76a3"
+   ]
+  }
+ ]
+}

@@ -16,6 +16,17 @@
 				]
 			},
 			{
+				"matcher": ".*",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "python \"$CLAUDE_PROJECT_DIR/tools/hooks/guard_playtester.py\"",
+						"timeout": 10,
+						"statusMessage": "Checking the playtester rules"
+					}
+				]
+			},
+			{
 				"matcher": "Agent",
 				"hooks": [
 					{
