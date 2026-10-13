@@ -166,3 +166,52 @@ Batch judging (`judge_batch.py`, 50 %):
 
 The screen audit is thorough but loud (~8 issues per screen, ~20 % blocker/major; the same menu
 issue repeats on near-identical screens): read `audit.md` top-down and stop at the polish rows.
+
+## 9. Streamlining: spend the budget on decisions (designer ruling 2026-10-12)
+
+PB-010 lost roughly 40–50 % of play to menus, setup, the Site hunt and stuck screens (one expert
+spent $14 on the New Campaign page). Testers now skip what they are not there to test:
+
+| Piece | What it does |
+|---|---|
+| **Checked routes** (`tools/playtest/routes.py`, `routes/<build8>/*.json`) | Recorded inputs with a checkpoint frame per step, compared by pixels (no model call), optionally on a static region (`--region`) where the background animates. A mismatch stops the route and hands the tester the screen with "the route broke here" (a sign the UI changed). Recorded per build: `new_campaign` (title → HQ, city seed 1), `to_netrun` (→ the first netrun map), `continue` (title → CONTINUE). Record: `rec-start`, `rec <action>`, `rec-fix --region`, `rec-end`; check: `test`. |
+| **Save library** (`tools/playtest/streamline.py`, `.playtest_saves/<build8>/`) | Saves collected from testers' private copies on every HQ arrival and the first raid setup (and `saves harvest --batch` from finished sessions). `--start-save heat>=25` installs one and the `continue` route loads it. The picker skips dying campaigns (home under half, crew wiped) and prefers the Heat closest to the floor. |
+| **Watchdog** | Levels: a hint after 5 min on navigation screens or 15 min without a fight / reward / map move; a forced stronger look 3–5 min later; then a restart + Continue (or the start route), twice at most, then the session ends "blocked: …". A setup cap (10 min to the first fight) applies to testers that start on a route. |
+| **Shared blockers** (`<batch>/blockers.jsonl`) | Every watchdog obstacle, and how a tester got past it, is shown to the other testers of the batch: they note "seen" and move on. |
+| **Coverage plan** (`run_batch.py`) | Novices and the opening focuses (onboarding, UI flow, readability, story) play from the title; raids / economy / campaign focuses start from a Heat ≥ 25 save; everyone else starts at the first netrun. Someone always plays the opening. |
+| **Escalation throttle** | A decision screen goes to the stronger model when it is new (or every 4 steps), not on every browsing step; combat turn starts always do, with an alignment plan required in the answer. |
+| **Batch-wide audit dedupe** | A screen already audited for one tester of the batch is not audited again; at most 25 per tester. |
+
+PB-012 (3 testers, 30 min): the route tester reached the netrun map in 0.6 min (PB-010: 10–25 min,
+one never), the save tester loaded a Heat 70 campaign in 0.3 min. Screen testers still report
+**0 Perfects** in every fight, coached or not, while the state tester (§10) picks PERFECT landings
+from its menu: the screen may not make a Perfect legible (see §11).
+
+## 10. State tester: decisions from exact menus (designer ruling 2026-10-12)
+
+For balance and difficulty, not for clarity: `tools/agent/agent_bridge.gd` runs a campaign headless
+(`AgentSimulator` = `CampaignSimulator` with its decisions handed out through request/response files),
+and `tools/playtest/state_agent.py` answers with an LLM in a persona's style, with a one-line reason
+per pick. Menus: whole-turn combat plans from a beam search over the preview (cards and nudges within
+RAM, each with damage dealt / taken, kills, RAM and where every pointer lands: PERFECT / GOOD / WEAK),
+map nodes with Heat, rewards (Firmware per empty slot), events with costs, launches, raid placements
+with their exact projected outcome. Option 0 is always the built-in policy, so `--builtin all` is the
+free baseline (greedy `CombatBot`). Shops and HQ upkeep stay built-in (v1).
+
+```bash
+python tools/playtest/state_agent.py --name SA-001 --seeds 1000-1004 --tier intermediate --persona strategist --budget 10
+python tools/playtest/state_agent.py --name SA-000 --seeds 1000-1004 --builtin all          # free baseline
+```
+Tiers: novice = Haiku everywhere; intermediate = Haiku in combat, nodes and events, Sonnet on rewards,
+launches and raids; expert = Sonnet everywhere. First runs: 2 netruns, ~70 decisions, $0.09; a full
+campaign is ~$2–3 at intermediate. Baseline (greedy bot, ICE 0, 60-run cap): seeds 1000 and 1001 never
+won (19 deaths each), 1002 won in 11 runs. Output: `.playtest_sessions/state/<name>/<seed>/` (report,
+decisions with reasons) and `docs/playtest/claude/state/<name>.md`.
+
+## 11. Next: decision parity, visual vs headless (designer idea 2026-10-12)
+
+Once both testers perform well: rebuild a screen tester's fights from its combat replays
+(`saves/replays`, seed + actions) headless, ask the state tester what it would do at the same turn,
+and turn every disagreement into a single-turn visual probe ("what on screen would have led you to
+the other plan?"). The output is a list of visual changes that would let a player make the decision
+the numbers support: developer-facing findings with the exact turn and screenshot.
