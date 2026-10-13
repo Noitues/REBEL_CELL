@@ -18,6 +18,8 @@ const GLYPH_SHARE := 0.75
 ## The inner ring's mark: a dot in the glyph (share of the radius).
 const INNER_DOT := 0.16
 const KEY_FONT := 13
+## plan1 W2-A5: the ring word under a key letter (INNER / OUTER).
+const RING_WORD_FONT := 10
 ## B2: the key letters' keyline outside the glyph, in 1080p (board) px (B1a Q2: at least 3).
 const KEYLINE_1080 := 3.0
 ## The chips' gap from the HP number and from the screen's edge (px at text scale 1.0).
@@ -304,7 +306,9 @@ func _draw() -> void:
 		var zone := {"kind": "arrow", "ring": b["ring"], "direction": b["direction"]}
 		var hot := WheelView._zone_is([wv.hover_zone], zone) or Vector2(b["center"]).distance_to(mouse) <= r
 		var drop := WheelView._zone_is(wv.valid_zones, zone)
-		var rim := HudSkin.FOCUS if drop else wv.wheel_color
+		# plan1 W2-A5: the pair Q / E drive wears a lit acid rim (its key letters show under it).
+		var keyed := wv.arrow_hint_rect(int(b["ring"]), int(b["direction"])).has_area()
+		var rim := HudSkin.FOCUS if drop else (Palette.CELL_ACID if keyed else wv.wheel_color)
 		draw_circle(c + Vector2(2.0, 3.0) * s, r, Color(Palette.NIGHT_SKY, 0.5))
 		draw_circle(c, r, PaletteSkins.chrome(Palette.TERMINAL_BG_HOT) if hot else PaletteSkins.chrome(HudSkin.TERMINAL_BG))
 		draw_arc(c, r, 0.0, TAU, 32, rim.lightened(0.25) if hot else rim, RIM_PX * s * (1.4 if hot or drop else 1.0), true)
@@ -322,6 +326,14 @@ func _draw() -> void:
 			# B2 (B1a Q2 ruling): a word over the world wears its ink keyline (>= 3 px at 1080p).
 			draw_string_outline(mono, at + Vector2(0.0, mono.get_ascent(kf)), key, HORIZONTAL_ALIGNMENT_LEFT, -1, kf, keyline_px(), Palette.INK)
 			HighContrast.draw_text(self, mono, at + Vector2(0.0, mono.get_ascent(kf)), key, HORIZONTAL_ALIGNMENT_LEFT, -1, kf, HudSkin.TERMINAL_HI)
+			# plan1 W2-A5: on a wheel with an inner ring, the word under the key says which ring it nudges.
+			if wv.combatant != null and wv.combatant.wheel != null and wv.combatant.wheel.has_inner_ring():
+				var word := tr("INNER") if int(b["ring"]) == RC.RingScope.INNER else tr("OUTER")
+				var wf := roundi(RING_WORD_FONT * s)
+				var ww := mono.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, wf).x
+				var wat := Vector2(at.x + kw * 0.5 - ww * 0.5, at.y + mono.get_height(kf) - 1.0) + Vector2(0.0, mono.get_ascent(wf))
+				draw_string_outline(mono, wat, word, HORIZONTAL_ALIGNMENT_LEFT, -1, wf, keyline_px(), Palette.INK)
+				HighContrast.draw_text(self, mono, wat, word, HORIZONTAL_ALIGNMENT_LEFT, -1, wf, Palette.CELL_ACID)
 
 
 ## B2 (designer Q2; concept HUD v4): the key under a nudge button is its letter alone ("[Q]" -> "Q").

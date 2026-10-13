@@ -2608,7 +2608,23 @@ const HUB_NAME_Y := 0.58
 const HUB_NAME_MIN_R_1080 := 90.0
 ## Segment plates on the inner ring (3.10): glyph box and radius (master units).
 const RING_PLATE := 20.0
-const RING_PLATE_R := 113.5
+const RING_PLATE_R := 128.0
+## plan1 W2-A6: the plates' word and glyph sizes (px at text scale 1.0), the padding and the active caret.
+const RING_LABEL_FONT := 10
+const RING_GLYPH_PX := 13.0
+const RING_PLATE_PAD := 2.0
+const RING_CARET := 4.0
+## The word on each segment's plate (the segment's name, short enough for the plate).
+const RING_WORDS := {
+	&"seg_x2": "DOUBLE", # TR
+	&"seg_pierce": "PIERCE", # TR
+	&"seg_corrupt": "CORRUPT", # TR
+	&"seg_anchor": "ANCHOR", # TR
+	&"seg_accelerator": "ACCEL", # TR
+	&"seg_echo": "ECHO", # TR
+	&"seg_blank": "EMPTY", # TR
+}
+const RING_WORD_FALLBACK := "EMPTY"
 ## The segment kinds the disc shader textures (its SEG_COL order).
 const SEG_KINDS := {&"seg_blank": 0, &"seg_x2": 1, &"seg_pierce": 2, &"seg_corrupt": 3, &"seg_anchor": 4,
 	&"seg_accelerator": 5, &"seg_echo": 6}
@@ -2808,18 +2824,75 @@ func _sync_disc(center: Vector2, radius: float, rot: float) -> int:
 	return active
 
 
-## The inner ring's segment plates (3.10): each segment's glyph on a small dark plate.
+## The inner ring's segment plates (3.10; plan1 W2-A6): each segment's glyph and its name on a dark plate big
+## enough to read at 1.0, over the ring, the hub's rim and the slices' inner edge. The segment the first
+## pointer reads (the one that modifies the slice that resolves) is lit: a bright rim, the accent fill, the
+## full-strength word and a caret pointing out at its slice; the others are dimmed.
 func _draw_ring_plates(center: Vector2, k: float) -> void:
 	var wheel := combatant.wheel
 	var irot := shown_inner_rotation()
+	var active := -1
+	if not readouts.is_empty():
+		active = int(readouts[0].get("segment_index", -1))
+	var ts := _ts()
+	var font := Palette.mono()
+	var fs := roundi(RING_LABEL_FONT * ts)
+	var gpx := RING_GLYPH_PX * ts
+	var pad := RING_PLATE_PAD * ts
 	for seg in RC.RING_SEGMENTS:
-		var deg := fposmod((irot - seg * 10) * DEG_PER_TICK, 360.0)
-		var at := WheelFace.at(center, k, RING_PLATE_R, deg)
-		var r := RING_PLATE * 0.62 * k
-		draw_circle(at, r, Color(Palette.NIGHT_SKY, 0.9))
-		draw_arc(at, r, 0.0, TAU, 16, Color(kit.accent, 0.8), maxf(1.0, k * 1.5), true)
+		var at := WheelFace.at(center, k, RING_PLATE_R, fposmod((irot - seg * 10) * DEG_PER_TICK, 360.0))
 		var seg_id: StringName = wheel.ring_segment_ids[seg] if seg < wheel.ring_segment_ids.size() else &""
-		WheelGlyphs.draw(self, WheelGlyphs.segment_id(seg_id), at, RING_PLATE * k * 0.8, Palette.TEXT_HI)
+		var word := ring_word(seg_id)
+		var lit := seg == active
+		var tw := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var rect := ring_plate_rect(center, k, seg)
+		var box := rect.size
+		var rim := _col(Palette.PAPER if lit else Color(kit.accent, 0.75))
+		_draw_plate(rect, _col(Color(kit.accent.darkened(0.45), 0.96) if lit else Color(Palette.NIGHT_SKY, 0.92)), rim, (2.5 if lit else 1.0) * ts)
+		var ink := _col(Palette.TEXT_HI if lit else Color(Palette.TEXT_HI, 0.82))
+		WheelGlyphs.draw(self, WheelGlyphs.segment_id(seg_id), rect.position + Vector2(box.x * 0.5, pad + gpx * 0.5), gpx, ink)
+		draw_string(font, rect.position + Vector2((box.x - tw) * 0.5, pad + gpx + font.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
+		if lit:
+			# A caret on the plate's outer edge: this segment is the one acting on the slice out there.
+			var dir := (at - center).normalized()
+			var size := RING_CARET * ts
+			var tip := at + dir * (box.y * 0.5 + size)
+			var side := dir.orthogonal() * size
+			draw_colored_polygon(PackedVector2Array([tip, tip - dir * size * 1.4 + side, tip - dir * size * 1.4 - side]), _col(Palette.PAPER))
+
+
+## plan1 W2-A6: the word on segment `seg_id`'s plate, translated.
+func ring_word(seg_id: StringName) -> String:
+	return tr(String(RING_WORDS.get(seg_id, RING_WORD_FALLBACK)))
+
+
+## plan1 W2-A6: where ring segment `seg`'s plate is (local to the view) for a wheel centred on `center` at art
+## scale `k`: its glyph over its word, on the segment's centre at the shown inner rotation.
+func ring_plate_rect(center: Vector2, k: float, seg: int) -> Rect2:
+	var ts := _ts()
+	var font := Palette.mono()
+	var fs := roundi(RING_LABEL_FONT * ts)
+	var seg_id: StringName = combatant.wheel.ring_segment_ids[seg] if seg < combatant.wheel.ring_segment_ids.size() else &""
+	var at := WheelFace.at(center, k, RING_PLATE_R, fposmod((shown_inner_rotation() - seg * 10) * DEG_PER_TICK, 360.0))
+	var gpx := RING_GLYPH_PX * ts
+	var pad := RING_PLATE_PAD * ts
+	var tw := font.get_string_size(ring_word(seg_id), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var box := Vector2(maxf(tw, gpx) + pad * 2.0, gpx + font.get_height(fs) + pad * 2.0)
+	return Rect2(at - box * 0.5, box)
+
+
+## A plate: the fill with a rim `width` px wide (corners clipped by 2 px).
+func _draw_plate(rect: Rect2, fill: Color, rim: Color, width: float) -> void:
+	var c := 2.0
+	var r := rect
+	var pts := PackedVector2Array([
+		r.position + Vector2(c, 0.0), Vector2(r.end.x - c, r.position.y), Vector2(r.end.x, r.position.y + c),
+		Vector2(r.end.x, r.end.y - c), Vector2(r.end.x - c, r.end.y), Vector2(r.position.x + c, r.end.y),
+		Vector2(r.position.x, r.end.y - c), Vector2(r.position.x, r.position.y + c)])
+	draw_colored_polygon(pts, fill)
+	var closed := pts.duplicate()
+	closed.append(pts[0])
+	draw_polyline(closed, rim, width, true)
 
 
 ## The hub's emblem (3.3; B2, review D2: round 40 hub_cores_v3 / combat_typical_v4): its core

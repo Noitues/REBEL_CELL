@@ -158,6 +158,7 @@ const SCREENS := [
 	["combat_boss_p2", "_s_combat_boss_p2", "Boss fight in phase 2."],
 	["combat_boss_p3", "_s_combat_boss_p3", "Boss fight in phase 3."],
 	["combat_clutter", "_s_combat_clutter", "ART-2 acceptance: the worst-case clutter fixture (arena_lab worst: every slot docked on both wheels, Firmware everywhere, every Daemon, the docks bloomed, a card hovered)."],
+	["combat_ring_busy", "_s_combat_ring_busy", "plan1 W2-A6: the player's inner ring busy (three different segments, statuses on slices, a card hovered): the ring's labels and the active segment."],
 	["combat_victory", "_s_combat_victory", "The killing turn: VICTORY."],
 	["combat_defeat", "_s_combat_defeat", "The losing turn: DEFEAT."],
 	["loot", "_s_loot", "Picking a card reward."],
@@ -1483,6 +1484,21 @@ func _s_combat_clutter() -> void:
 	if combat == null:
 		return
 	ClutterFixture.dress(combat)
+	await _settle(combat.get_parent())
+
+
+func _s_combat_ring_busy() -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	var st: CombatState = combat.engine.state()
+	var w := st.player.wheel
+	w.ring_segment_ids = [&"seg_x2", &"seg_pierce", &"seg_corrupt"]
+	w.inner_rotation = 4
+	w.slice_statuses[1] = RC.Status.CORRUPTED
+	w.slice_statuses[3] = RC.Status.ENCRYPTED
+	combat._refresh(st)
+	combat._preview_card(0)
 	await _settle(combat.get_parent())
 
 

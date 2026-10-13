@@ -44,6 +44,20 @@ spinner slots hover as slot name + what the slice does + what its Firmware does 
 unchanged (the shop info strip's layout depends on their length). Pad: reached through the "?" chip's focus (no new pad
 button); designer ruling 2026-10-13: 1.0 mouse / keyboard only.
 
+### 2026-10-13 — W2-A5 / W2-A6: the inner ring is readable at 1.0; Q / E show what they drive; the tutorial teaches the free nudge
+- **A6 (the designer, twice: "near impossible to read"):** each inner-ring segment's plate is now a dark plate with
+  its glyph over its name (DOUBLE, PIERCE, CORRUPT, ANCHOR, ACCEL, ECHO, EMPTY), about 40 x 26 px at 1.0 (it was a
+  5 px disc with an 8 px glyph). The plates sit on the ring's outer lip (`RING_PLATE_R` 128), so they clear the hub's
+  emblem and name. The segment the first pointer reads (the one that modifies the slice that resolves) is lit: a
+  paper rim, an accent fill, the word at full strength and a caret pointing out at its slice; the others are dimmed.
+  Sizes are constants in `wheel_view.gd` (`RING_LABEL_FONT`, `RING_GLYPH_PX`, ...). No ring geometry or shader change.
+- **A5:** the nudge button pair Q / E drive wears an acid rim (the key letters were its only mark); on a wheel with an
+  inner ring the word OUTER or INNER sits under each key letter. The tutorial's NUDGE step (still step 1, so the
+  step numbers hold) says FREE NUDGE in the title bar counts the free nudges, each extra costs RAM, and that the
+  lit pair with its ring word is what Q / E nudge (W switches wheel, R ring).
+- Test: `test_w2_a5a6_ring.gd` (every segment has a word, plates never overlap at any inner rotation, tutorial text).
+  Review pack screen `combat_ring_busy` (player ring with three segments and two statuses) makes the sheet.
+
 ### 2026-10-13 — W2-A4: card and chip faces state their condition and direction; the event Daemon reward has its icon
 - **6A (offers unchanged):** `FaceText` (`scripts/ui/kit/face_text.gd`) reads the conditions from the content and adds them
   after the description on every face and tooltip that shows a card or chip (combat hand, loot, shop, deck viewer / detail,
