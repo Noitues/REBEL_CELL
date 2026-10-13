@@ -33,6 +33,13 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
   events.
 
 ## Implementation decisions
+
+### 2026-10-13 — Raid feed: one STEP divider per step (PT-002a item 6, option A)
+The LIVE RAID FEED no longer prefixes event lines with "Step N:". `RaidPlayoutPanel.step_divider` feeds one muted
+terminal line, "— STEP N —" (TERMINAL_TEXT at `FEED_DIVIDER_ALPHA`, body size), before a step's first fed event;
+`feed_line` returns the bare sentence. The footer STEP counter is unchanged and matches. Instant mode (reduce effects)
+feeds every divider. `test_plan1_b_repro` B8 asserts N dividers for an N-step raid and no "Step" prefix on event lines.
+
 - **G2R2-MENUS (M14 group 2 art-pass review round 2, 2026-10-12).** G2R2-3 (supersedes G2R-3's paging at 2.0): no paging
   inside a folder. From text scale 1.6 (`CaseFileCard.BRIEF_FROM`) a used slot's folder is brief: tab, corporation and the
   Heat line only (no stamp); ICE, RUNS, FILED, the state and the crew names move to LOAD's focus tooltip

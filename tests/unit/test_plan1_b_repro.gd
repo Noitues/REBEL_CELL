@@ -561,7 +561,7 @@ func _raid_campaign() -> void:
 ## PB-010 B8 / PB-012 B4. The strip title comes from `HqScript.screen_title(panel_name)`: "raid_playout" is RAID IN
 ## PROGRESS, "raid_summary" RAID REPORT, and the playout's `finished` handler (hq_scene.gd ~5330) enables CONTINUE but does
 ## not change the page, so the title says IN PROGRESS from "Raid over" until CONTINUE is pressed. The feed prefixes
-## every step line with "Step N: " (`feed_line`), so "Step 1" repeats once per event of that step.
+## one "— STEP N —" divider per step (`step_divider`); event lines carry no prefix.
 func test_b8_raid_title_stays_in_progress_after_raid_over() -> void:
 	Settings.set_text_scale(1.0)
 	_raid_campaign()
@@ -587,15 +587,21 @@ func test_b8_raid_title_stays_in_progress_after_raid_over() -> void:
 	var title: String = hq.hud._title
 	var step_text := playout.step_label.text
 	var log_text := playout.log_note.label.get_parsed_text()
-	var step1 := 0
+	var dividers := 0
+	var prefixed := 0
 	for line in log_text.split("\n"):
-		if line.begins_with("Step 1:"):
-			step1 += 1
-	print("B8: finished=%s page=%s title='%s' step_label='%s' lines starting 'Step 1:' = %d\n%s" % [ok, page, title, step_text, step1, log_text])
+		if line.begins_with("— STEP "):
+			dividers += 1
+		elif line.begins_with("Step "):
+			prefixed += 1
+	var steps := int(RunManager.campaign.last_raid.get("steps_run", 0))
+	print("B8: finished=%s page=%s title='%s' step_label='%s' dividers = %d\n%s" % [ok, page, title, step_text, dividers, log_text])
 	assert_true(ok, "the playout finished")
 	assert_ne(title, HqScript.screen_title("raid_playout"), "the title no longer says RAID IN PROGRESS after Raid over (page=%s title=%s)" % [page, title])
 	assert_eq(title, HqScript.raid_result_title(RaidVerdict.of_result(RunManager.campaign.last_raid)), "the title reads the raid's result")
-	assert_lt(step1, 2, "Step 1: is shown once, not on every line (%d)" % step1)
+	assert_gt(steps, 0, "the raid ran steps")
+	assert_eq(dividers, steps, "one STEP divider per step of the raid (%d of %d)" % [dividers, steps])
+	assert_eq(prefixed, 0, "no event line carries a Step prefix")
 	holder.queue_free()
 	await _frames(2)
 

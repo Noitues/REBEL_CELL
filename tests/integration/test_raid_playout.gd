@@ -29,7 +29,7 @@ func test_playout_steps_through_a_raid_and_moves_markers() -> void:
 	assert_true(panel.is_done())
 	assert_eq(panel.current_step(), panel.steps_total())
 	assert_true(panel.steps_total() >= result.steps_run + 1, "setup plus every step")
-	assert_true(panel.log_note.label.get_parsed_text().contains("Step 1"))
+	assert_true(panel.log_note.label.get_parsed_text().contains("— STEP 1 —"))
 	# Non-instant: the first step shows, the rest wait on the timer; skip finishes.
 	var panel2 := RaidPlayoutPanel.new(view)
 	add_child_autofree(panel2)
