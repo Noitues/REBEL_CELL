@@ -198,7 +198,7 @@ def stage_a(batch: str, audit_model: str, audit_max: int) -> tuple[list[dict], d
                     model=AUDIT_MODELS[audit_model], max_tokens=4000,
                     system=[{"type": "text", "text": AUDIT_RULES, "cache_control": {"type": "ephemeral"}}],
                     messages=[{"role": "user", "content": [
-                        {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": hz.png_b64(img)}},
+                        {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": hz.jpeg_b64(img)}},
                         {"type": "text", "text": "Audit this screen."}]}],
                     output_config={"effort": "low", "format": {"type": "json_schema", "schema": AUDIT_SCHEMA}})})
                 index[cid] = {"session": str(s), "kind": "audit", "shot": shot.name}
@@ -293,27 +293,47 @@ def stage_c(batch: str, compare: str) -> tuple[list[dict], dict]:
 
 # ---------------------------------------------------------------- batch plumbing
 
+MAX_BATCH_BYTES = 150 * 1024 * 1024  # the API takes 256 MB per batch; stay well under it
+
+
+def chunks(reqs: list[dict]) -> list[list[dict]]:
+    out, cur, size = [], [], 0
+    for r in reqs:
+        n = len(json.dumps(r))
+        if cur and size + n > MAX_BATCH_BYTES:
+            out.append(cur)
+            cur, size = [], 0
+        cur.append(r)
+        size += n
+    if cur:
+        out.append(cur)
+    return out
+
+
 def submit_and_wait(c, reqs: list[dict], work: Path, name: str, poll: int) -> list[dict]:
+    """Submits `reqs` as one or more batches (each under MAX_BATCH_BYTES), waits, returns all results."""
     work.mkdir(parents=True, exist_ok=True)
     state_f = work / ("%s.json" % name)
     state = json.loads(state_f.read_text()) if state_f.exists() else {}
-    if not reqs and not state.get("id"):
+    if "id" in state:  # written by an older version: one batch
+        state["ids"] = [state.pop("id")]
+    if not reqs and not state.get("ids"):
         print("%s: nothing to judge (no session_end.json?)" % name, flush=True)
         (work / ("%s.results.jsonl" % name)).write_text("", encoding="utf-8")
         return []
-    if not state.get("id"):
-        b = c.messages.batches.create(requests=reqs)
-        state = {"id": b.id, "n": len(reqs), "submitted": time.strftime("%Y-%m-%d %H:%M:%S")}
-        state_f.write_text(json.dumps(state, indent=1))
-        print("%s: submitted %s (%d requests)" % (name, b.id, len(reqs)), flush=True)
-    while True:
-        b = c.messages.batches.retrieve(state["id"])
-        if b.processing_status == "ended":
-            break
-        time.sleep(poll)
+    if not state.get("ids"):
+        state = {"ids": [], "n": len(reqs), "submitted": time.strftime("%Y-%m-%d %H:%M:%S")}
+        for part in chunks(reqs):
+            b = c.messages.batches.create(requests=part)
+            state["ids"].append(b.id)
+            state_f.write_text(json.dumps(state, indent=1))
+            print("%s: submitted %s (%d requests)" % (name, b.id, len(part)), flush=True)
     out = []
-    for r in c.messages.batches.results(state["id"]):
-        out.append(r.model_dump() if hasattr(r, "model_dump") else dict(r))
+    for bid in state["ids"]:
+        while c.messages.batches.retrieve(bid).processing_status != "ended":
+            time.sleep(poll)
+        for r in c.messages.batches.results(bid):
+            out.append(r.model_dump() if hasattr(r, "model_dump") else dict(r))
     (work / ("%s.results.jsonl" % name)).write_text("\n".join(json.dumps(r) for r in out), encoding="utf-8")
     state["ended"] = time.strftime("%Y-%m-%d %H:%M:%S")
     state_f.write_text(json.dumps(state, indent=1))
@@ -414,10 +434,11 @@ def main() -> int:
     work = SESSIONS / a.batch / "judge"
     c = client()
     if a.cmd == "status":
-        for f in sorted(work.glob("stage_*.json")):
+        for f in sorted(work.glob("stage_?.json")):
             st = json.loads(f.read_text())
-            b = c.messages.batches.retrieve(st["id"])
-            print("%s %s %s %s" % (f.stem, st["id"], b.processing_status, b.request_counts))
+            for bid in st.get("ids") or [st.get("id")]:
+                b = c.messages.batches.retrieve(bid)
+                print("%s %s %s %s" % (f.stem, bid, b.processing_status, b.request_counts))
         return 0
     cost_f = work / "cost.json"
     cost = json.loads(cost_f.read_text()) if cost_f.exists() else {}

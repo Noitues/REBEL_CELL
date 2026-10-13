@@ -242,6 +242,13 @@ def stable_frame(hwnd: int, timeout: float = 8.0, still: float = 0.012):
     return prev
 
 
+def jpeg_b64(img, quality: int = 88) -> str:
+    """JPEG for images that only travel in batch requests (a fifth of a PNG; the batch limit is 256 MB)."""
+    buf = io.BytesIO()
+    img.convert("RGB").save(buf, format="JPEG", quality=quality, optimize=True)
+    return base64.standard_b64encode(buf.getvalue()).decode("ascii")
+
+
 def png_b64(img, size: tuple[int, int] | None = None) -> str:
     if size:
         img = img.resize(size)
@@ -302,7 +309,7 @@ def motion_request(meta: dict, sheet_path: Path) -> dict:
     content = [{"type": "text", "text": "Moment kind: %s. The player did: %s. Burst: %d frames over %.2f s; "
                                         "the sheet shows %d of them." % (meta["kind"], meta["actions"], meta["frames"],
                                                                         meta["burst_s"], min(meta["frames"], SHEET_FRAMES))},
-               {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": png_b64(sheet)}},
+               {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": jpeg_b64(sheet)}},
                {"type": "text", "text": "Judge this motion."}]
     return dict(model=MODELS["sonnet"], max_tokens=4000,
                 system=[{"type": "text", "text": MOTION_RULES, "cache_control": {"type": "ephemeral"}}],
