@@ -80,6 +80,10 @@ SCREEN_KINDS = ["menu", "dialog_or_tutorial_text", "combat_turn_start", "combat_
 # Moments that shape a run: the harness hands them to the stronger model whatever the actor says.
 DECISION_KINDS = {"combat_turn_start", "reward_choice", "shop", "map_choice", "event_choice", "raid_setup", "hq_or_city"}
 STUCK_STEPS = 6
+# Where the two wheels (with their HP and result chips) sit on the 1280x720 screen. The close-up is a
+# player leaning in to read small numbers; it carries no game state. Re-measure if the combat layout moves.
+WHEEL_REGIONS = {"own": (80, 140, 420, 560), "enemy": (850, 140, 1240, 560)}
+COMBAT_KINDS = {"combat_turn_start", "combat_mid_turn"}
 MOTION_TEMPLATE = ROOT / "docs" / "process" / "templates" / "CLAUDE_MOTION_FEEDBACK.md"
 BURST_FPS = 15
 BURST_MAX_S = 5.0
@@ -185,6 +189,8 @@ Notes (your memory; you see only these and the screenshot):
   roster, Schematics, run/layer, HP, deck highlights, current plan). Empty keeps the old one.
 - watch: true when your actions will set off an animation (a card played, a spin or nudge, SEND IT,
   a reward reveal, a map move, a screen transition, a raid playout); false for plain menu clicks.
+- When a fight ends, write the note as: FIGHT won|lost turns=N hp_lost=N perfects=N (your own Perfects
+  you saw land), then anything else about the fight.
 - kind: label the moment honestly. combat_turn_start = your turn begins and nothing is played yet.
 - When you cannot find a way forward: note it as a possible bug with what you tried, then get out
   the way a player would: the pause menu (Esc or the gear icon), back to the title or HQ, Continue,
@@ -351,7 +357,9 @@ class Tester:
         m = re.search(r"^Skill tier: (\w+)", brief, re.M)
         self.tier = a.tier or (m.group(1) if m else "intermediate")
         tier = tiers[self.tier]
-        self.system = [{"type": "text", "text": RULES + "\n\n# Your brief\n\n" + self.persona
+        coaching = ("\n\n# Coaching\n" + tier["coaching"]) if tier.get("coaching") else ""
+        self.closeups = tier.get("wheel_closeup", [])
+        self.system = [{"type": "text", "text": RULES + "\n\n# Your brief\n\n" + self.persona + coaching
                         + playbook_text(tier["playbook"]), "cache_control": {"type": "ephemeral"}}]
         self.session = bb.Session(self.dir)
         self.actor = MODELS[a.actor or tier["actor"]]
@@ -521,8 +529,17 @@ class Tester:
         stuck = self.no_change >= STUCK_STEPS
         if d and self.escalate_to and (d["escalate"] or d["kind"] in DECISION_KINDS or stuck):
             self.cost["escalations"] += 1
-            content2 = content[:-1] + [{"type": "text", "text": "Current screen (960x540). You are the stronger player this "
-                                        "step: decide fully (escalate is ignored)."}]
+            extra = []
+            if d["kind"] in COMBAT_KINDS:
+                for side in self.closeups:
+                    crop = frame.crop(WHEEL_REGIONS[side])
+                    crop = crop.resize((crop.width * 3 // 2, crop.height * 3 // 2))
+                    extra += [{"type": "text", "text": "Close-up of %s wheel (needle, slices, HP and result chips):"
+                                                       % ("your" if side == "own" else "the enemy's")},
+                              {"type": "image", "source": {"type": "base64", "media_type": "image/png",
+                                                           "data": png_b64(crop)}}]
+            content2 = content[:-1] + extra + [{"type": "text", "text": "Current screen (960x540). You are the stronger "
+                                                "player this step: decide fully (escalate is ignored)."}]
             d2 = self.ask(self.escalate_to, content2, "medium")
             d = d2 or d
         self.cost["steps"] += 1

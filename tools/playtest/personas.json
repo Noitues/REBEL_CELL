@@ -5,19 +5,30 @@
       "actor": "haiku",
       "escalate_to": "",
       "playbook": "none",
-      "about": "First contact: plays only from what the screen teaches. Reports confusion and onboarding."
+      "about": "First contact: no advice, plays only from what the screen teaches. Reports confusion and onboarding.",
+      "coaching": "",
+      "wheel_closeup": []
     },
     "intermediate": {
       "actor": "haiku",
       "escalate_to": "sonnet",
       "playbook": "observed",
-      "about": "Knows the basics other testers confirmed; decision screens go to Sonnet."
+      "about": "Knows the confirmed basics; coached to play its own wheel for Perfects; decision screens go to Sonnet.",
+      "coaching": "How you fight (advice from the designer, who has played a lot): a Perfect is your needle on the CENTRE of a slice. Before SEND IT, nudge and spin so your own needle sits on the centre of your highest-value slice. The screen shows the result of the current setup (the chips beside each HP): read it before you send, and use UNDO to try another setup when it is poor. Clear bad statuses with cards when you can. Take Firmware that raises your damage or turns a weak slice into a good one. If you cannot find or trust the shown result, that is worth a note.",
+      "wheel_closeup": [
+        "own"
+      ]
     },
     "expert": {
       "actor": "sonnet",
       "escalate_to": "opus",
       "playbook": "all",
-      "about": "Starts from the whole playbook; acts with Sonnet, decides turn plans, rewards and campaign moves with Opus. Built to reach the end."
+      "about": "Starts from the whole playbook; coached to play both wheels; acts with Sonnet, decides with Opus. Built to reach the end.",
+      "coaching": "How you fight (advice from the designer, who has played a lot): a Perfect is your needle on the CENTRE of a slice. Before SEND IT, nudge and spin so your own needle sits on the centre of your highest-value slice. The screen shows the result of the current setup (the chips beside each HP): read it before you send, and use UNDO to try another setup when it is poor. Clear bad statuses with cards when you can. Take Firmware that raises your damage or turns a weak slice into a good one. If you cannot find or trust the shown result, that is worth a note. Also work the enemy's wheel: push its needle off centre and onto a low-damage or block slice, so its turn hits soft. Plan both wheels together each turn: your Perfect on high damage, theirs on low damage or block.",
+      "wheel_closeup": [
+        "own",
+        "enemy"
+      ]
     }
   },
   "personas": [

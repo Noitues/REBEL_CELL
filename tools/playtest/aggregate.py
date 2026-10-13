@@ -14,6 +14,7 @@ Written as a file on purpose: never run Python from stdin on this machine.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from collections import Counter
@@ -43,6 +44,41 @@ def num(v: str) -> float | None:
 
 def names(v: str) -> list[str]:
     return [] if not v or v.lower().startswith("none") or v.startswith("<") else [x.strip() for x in v.split(",") if x.strip()]
+
+
+FIGHT = re.compile(r"FIGHT (won|lost) turns=(\d+) hp_lost=(\d+) perfects=(\d+)", re.I)
+SESSIONS = ROOT / ".playtest_sessions"
+
+
+def skill_section(batch: str, rows: list) -> list[str]:
+    """How well each tester actually played, from the FIGHT lines in its journal (harness testers)."""
+    manifest = SESSIONS / batch / "batch.json"
+    tiers = {}
+    if manifest.exists():
+        tiers = {t["handle"]: t.get("tier", "?") for t in json.loads(manifest.read_text(encoding="utf-8"))["testers"]}
+    out = ["## Combat skill (from the testers' FIGHT lines)", "",
+           "Difficulty signals only count from testers who play well (designer: Perfects on high slices take almost no damage).", "",
+           "| Tester | Tier | Fights | Won | Avg turns | Avg HP lost | Perfects / turn |", "|---|---|---|---|---|---|---|"]
+    any_row = False
+    for f, s in rows:
+        h = s.get("handle", f.stem)
+        j = SESSIONS / batch / h / "journal.md"
+        if not j.exists():
+            continue
+        fights = [(m.group(1).lower(), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+                  for m in FIGHT.finditer(j.read_text(encoding="utf-8"))]
+        if not fights:
+            out.append("| %s | %s | 0 | — | — | — | — |" % (h, tiers.get(h, "?")))
+            continue
+        any_row = True
+        turns = sum(x[1] for x in fights)
+        out.append("| %s | %s | %d | %d | %.1f | %.1f | %.2f |" % (
+            h, tiers.get(h, "?"), len(fights), sum(1 for x in fights if x[0] == "won"), turns / len(fights),
+            sum(x[2] for x in fights) / len(fights), sum(x[3] for x in fights) / max(1, turns)))
+    if not any_row:
+        out.append("")
+        out.append("(No FIGHT lines yet: testers from before 2026-10-12 evening did not log them.)")
+    return out
 
 
 def main() -> int:
@@ -85,7 +121,9 @@ def main() -> int:
               "**Campaign length:** " + ", ".join("%s %d" % kv for kv in camp.most_common()),
               "**Called overpowered:** " + (", ".join("%s ×%d" % kv for kv in op.most_common()) or "none"),
               "**Called weak:** " + (", ".join("%s ×%d" % kv for kv in weak.most_common()) or "none"),
-              "", "## Top frustrations", ""]
+              ""]
+    lines += skill_section(a.batch, rows)
+    lines += ["", "## Top frustrations", ""]
     lines += ["- **%s** (%s): %s" % (s.get("handle", f.stem), s.get("persona", ""), s.get("top_frustration", "")) for f, s in rows]
     lines += ["", "## One change each", ""]
     lines += ["- **%s** (%s): %s" % (s.get("handle", f.stem), s.get("persona", ""), s.get("top_change", "")) for f, s in rows]

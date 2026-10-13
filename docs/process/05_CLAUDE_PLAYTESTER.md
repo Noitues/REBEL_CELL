@@ -34,11 +34,18 @@ by click → target (the game supports both). Keyboard, hover, right-click, scro
 **The skill tier is the main axis**: random, blind play does not get far, so how well a tester
 plays, and how much it already knows, is what changes what it can reach and report.
 
-| Tier | Acts with | Decision screens go to | Starts with the playbook | What it is for |
-|---|---|---|---|---|
-| novice | Haiku | — | nothing | onboarding, confusion, the first hour |
-| intermediate | Haiku | Sonnet | rules observed by 2+ sessions | the mid-campaign loop, economy, raids |
-| expert | Sonnet | Opus | everything, unconfirmed rules marked | reaching the end, balance, dominant strategies |
+| Tier | Acts with | Decision screens go to | Playbook | Combat coaching (designer, 2026-10-12) | Wheel close-ups | What it is for |
+|---|---|---|---|---|---|---|
+| novice | Haiku | — | nothing | none | none | onboarding, confusion, the first hour |
+| intermediate | Haiku | Sonnet | rules observed by 2+ sessions | own wheel: needle on the centre of a high-value slice (a Perfect), read the shown result before SEND IT, UNDO to retry, clear statuses, damage Firmware | own | the mid-campaign loop, economy, raids |
+| expert | Sonnet | Opus | everything, unconfirmed rules marked | both wheels: also push the enemy needle off centre onto a low or block slice | own + enemy | reaching the end, balance, dominant strategies |
+
+Coaching lives in `personas.json` (`tiers.<tier>.coaching`); close-ups are full-resolution crops
+of the wheel areas (`WHEEL_REGIONS` in harness.py) added to the stronger model's view on combat
+decisions. Testers log every fight as `FIGHT won|lost turns=N hp_lost=N perfects=N`, and
+`_BATCH.md` gets a combat-skill table from those lines. The designer, playing for Perfects, takes
+almost no damage over 4–5 netruns, so deaths and "too hard" from testers that do not align well are
+**tester skill-limited**, and the findings synthesis labels them so.
 
 "Decision screens" = combat turn starts, rewards, shops, map and Site choices, events, raid setup,
 HQ; the harness escalates them itself from the actor's `kind` label, plus any screen the actor

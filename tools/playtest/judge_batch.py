@@ -53,6 +53,12 @@ team, by filling the template exactly. Rules:
   merge repeats of the same issue on near-identical screens.
 - Balance and design opinions go to section 4 as questions with options for the designer; never
   propose numbers as decisions.
+- Difficulty is skill-limited: the designer, playing for Perfects (own needle on a high-damage slice,
+  the enemy's pushed onto a low or block slice, statuses cleared, damage Firmware installed), takes
+  almost no damage over 4-5 netruns. Simulated testers often do not align well. Label any death,
+  "too hard", HP-attrition or difficulty-curve signal "tester skill-limited" unless the report shows
+  the tester aligned for Perfects and still lost; put those in section 4 only as tester-skill
+  observations, and list what the tester failed to read or do (that is a clarity finding).
 - Areas: combat (wheel fights, cards, hand), city (City Grid, raids, map), screens (title, HQ,
   menus, rewards, shops, dialogs, settings), rules (outcomes that contradict what the game told
   the player).
