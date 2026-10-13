@@ -169,17 +169,36 @@ def distinct_shots(session: Path, cap: int, seen: list | None = None) -> list[Pa
     return paths
 
 
+def previous_signatures(compare: str, cap: int = 80) -> list[bytes]:
+    """Signatures of the distinct screens the previous gate's batch saw (its shots are kept in .playtest_sessions).
+    A screen of this batch that matches one of them has not changed since the last gate (PLAYTEST_COST_REVIEW 2.5)."""
+    from PIL import Image
+
+    if not compare or not (SESSIONS / compare).is_dir():
+        return []
+    sigs: list[bytes] = []
+    for s in sessions_of(compare):
+        for shot in distinct_shots(s, cap, sigs):
+            try:
+                sigs.append(hz._sig(Image.open(shot).convert("RGB")))
+            except OSError:
+                continue
+    return sigs
+
+
 def journal_text(session: Path) -> str:
     return (session / "journal.md").read_text(encoding="utf-8")
 
 
 # ---------------------------------------------------------------- stage builders
 
-def stage_a(batch: str, audit_model: str, audit_max: int) -> tuple[list[dict], dict]:
+def stage_a(batch: str, audit_model: str, audit_max: int, compare: str = "", audit_all: bool = False) -> tuple[list[dict], dict]:
     from PIL import Image
 
     reqs, index = [], {}
-    seen: list[bytes] = []  # screens already audited for another tester of this batch
+    # Screens already audited for another tester of this batch, plus (unless --audit-all) every screen the previous
+    # gate's batch saw: only screens that changed since then are audited.
+    seen: list[bytes] = [] if audit_all else previous_signatures(compare)
     for s in sessions_of(batch):
         h = s.name
         pending = s / "motion" / "pending.jsonl"
@@ -252,7 +271,7 @@ def stage_b(batch: str) -> tuple[list[dict], dict]:
     return reqs, index
 
 
-def stage_c(batch: str, compare: str) -> tuple[list[dict], dict]:
+def stage_c(batch: str, compare: str, audit_all: bool = False) -> tuple[list[dict], dict]:
     """One Opus request: the batch's reports, audits and motion problems into _FINDINGS.md."""
     folder = REPORTS / batch
     parts = []
@@ -266,7 +285,7 @@ def stage_c(batch: str, compare: str) -> tuple[list[dict], dict]:
             t["handle"], t.get("tier", "?"), t["persona"], t["focus"]) for t in m["testers"]))
     for rp in sorted(p for p in folder.glob("*.md") if not p.name.startswith("_")):
         parts.append("# Report: %s\n%s" % (rp.stem, rp.read_text(encoding="utf-8")))
-    for sdir in sessions_of(batch):
+    for sdir in (sessions_of(batch) if audit_all else []):  # audit-only rows reach the findings only through the reports
         af = sdir / "audit.jsonl"
         if af.exists():
             rows = [json.loads(l) for l in af.read_text(encoding="utf-8").splitlines() if l.strip()]
@@ -438,6 +457,9 @@ def main() -> int:
     ap.add_argument("--audit-max", type=int, default=25, help="most distinct screens audited per session (0 = no audit)")
     ap.add_argument("--poll", type=int, default=60, help="seconds between status polls")
     ap.add_argument("--compare", default="", help="previous batch id, for trends in the findings")
+    ap.add_argument("--audit-all", action="store_true",
+                    help="audit every distinct screen and pass audit-only rows to the findings (default: only screens that "
+                         "changed since --compare's batch, and audit rows reach the findings through the reports)")
     ap.add_argument("--no-synthesis", action="store_true", help="skip stage C (_FINDINGS.md)")
     a = ap.parse_args()
     work = SESSIONS / a.batch / "judge"
@@ -452,7 +474,7 @@ def main() -> int:
     cost_f = work / "cost.json"
     cost = json.loads(cost_f.read_text()) if cost_f.exists() else {}
     if not (work / "stage_a.results.jsonl").exists():
-        reqs, index = stage_a(a.batch, a.audit_model, a.audit_max)
+        reqs, index = stage_a(a.batch, a.audit_model, a.audit_max, a.compare, a.audit_all)
         work.mkdir(parents=True, exist_ok=True)
         (work / "stage_a.index.json").write_text(json.dumps(index))
         res = submit_and_wait(c, reqs, work, "stage_a", a.poll)
@@ -469,7 +491,7 @@ def main() -> int:
     if not a.no_synthesis and not (work / "stage_c.results.jsonl").exists():
         import subprocess
         subprocess.run([sys.executable, str(Path(__file__).parent / "aggregate.py"), "--batch", a.batch])
-        reqs, index = stage_c(a.batch, a.compare)
+        reqs, index = stage_c(a.batch, a.compare, a.audit_all)
         res = submit_and_wait(c, reqs, work, "stage_c", a.poll)
         ingest(res, index, cost)
         cost_f.write_text(json.dumps(cost, indent=1))

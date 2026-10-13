@@ -66,6 +66,27 @@ def prepare_build(ref: str, godot: str) -> None:
     print("build: %s @ %s (imported)" % (BUILD, sha[:8]))
 
 
+def parse_mix(spec: str, roster: dict) -> list[tuple[str, str, str]]:
+    """'novice=2,keyboard_only=1:readability_accessibility' -> [(tier, persona id or '', focus id or '')] per tester.
+    A key is a skill tier or a persona id (which fixes the tier); ':focus' pins the focus (profiles in gate.py)."""
+    pids = {p["id"]: p["tier"] for p in roster["personas"]}
+    focuses = {f["id"] for f in roster["focuses"]}
+    plan: list[tuple[str, str, str]] = []
+    for tok in spec.split(","):
+        key, _, rest = tok.partition("=")
+        n, _, focus = rest.partition(":")
+        if key in roster["tiers"]:
+            tier, persona = key, ""
+        elif key in pids:
+            tier, persona = pids[key], key
+        else:
+            sys.exit("roll_testers: mix key %r is neither a tier nor a persona id" % key)
+        if focus and focus not in focuses:
+            sys.exit("roll_testers: mix focus %r unknown" % focus)
+        plan += [(tier, persona, focus)] * int(n)
+    return plan
+
+
 def pick(rng: random.Random, items: list[dict], wanted: str | None) -> dict:
     if wanted:
         for it in items:
@@ -148,7 +169,8 @@ def main() -> int:
     ap.add_argument("--count", type=int, default=1)
     ap.add_argument("--seed", type=int, default=None, help="roster RNG seed (default: from the clock, printed)")
     ap.add_argument("--persona", help="force this persona id for every tester")
-    ap.add_argument("--mix", help="testers per skill tier, e.g. novice=6,intermediate=3,expert=1 (overrides --count)")
+    ap.add_argument("--mix", help="testers per skill tier or persona id, e.g. novice=6,intermediate=3,expert=1 or "
+                                  "keyboard_only=1:readability_accessibility (':focus' pins the focus; overrides --count)")
     ap.add_argument("--focus", help="force this focus id for every tester")
     ap.add_argument("--hours", type=float, default=4.0, help="wall-clock time box per tester")
     ap.add_argument("--build", metavar="REF", help="point the shared game copy at REF and import it first")
@@ -174,22 +196,27 @@ def main() -> int:
 
     # Spread personas and focuses across the batch before repeating any.
     personas = list(roster["personas"])
+    mix_focus: list[str] = []
     if a.mix:
-        want = [t.split("=") for t in a.mix.split(",")]
-        plan = [tier for tier, n in want for _ in range(int(n))]
+        plan = parse_mix(a.mix, roster)
         a.count = len(plan)
         by_tier = {t: [p for p in personas if p["tier"] == t] for t in roster["tiers"]}
         for t in by_tier.values():
             rng.shuffle(t)
-        personas = [by_tier[t][i % len(by_tier[t])] for i, t in enumerate(plan)]
+        personas = [by_tier[t][i % len(by_tier[t])] for i, (t, _, _) in enumerate(plan)]
+        pid = {p["id"]: p for p in roster["personas"]}
+        personas = [pid[x[1]] if x[1] else p for x, p in zip(plan, personas)]
+        mix_focus = [x[2] for x in plan]
     focuses = [f for f in roster["focuses"] if not f.get("motion_only")]  # the motion focus is only dealt on request
-    rng.shuffle(personas)
+    if not a.mix:  # a mix is dealt in order so pinned personas and focuses stay with their slot
+        rng.shuffle(personas)
     rng.shuffle(focuses)
     manifest = []
     for i in range(a.count):
         handle = handles[i]
         persona = pick(rng, roster["personas"], a.persona) if a.persona else personas[i % len(personas)]
-        focus = pick(rng, roster["focuses"], a.focus) if a.focus else focuses[i % len(focuses)]
+        wanted_focus = a.focus or (mix_focus[i] if i < len(mix_focus) else "")
+        focus = pick(rng, roster["focuses"], wanted_focus) if wanted_focus else focuses[i % len(focuses)]
         quirks = rng.sample(roster["quirks"], rng.choice([1, 2]))
         session = batch_dir / handle
         session.mkdir(parents=True, exist_ok=True)

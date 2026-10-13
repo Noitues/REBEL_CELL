@@ -153,6 +153,10 @@
 			"seconds": 4.7,
 			"tier": "full"
 		},
+		"res://tests/unit/test_playtest_tools.gd": {
+			"seconds": 1.5,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_audio_director.gd": {
 			"seconds": 1.4,
 			"tier": "fast"
