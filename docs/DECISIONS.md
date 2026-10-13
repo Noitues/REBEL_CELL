@@ -54,6 +54,18 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-13 — 1B-PLAYOUT (F3): captures no longer write the player's settings.json
+
+- **Cause.** Every playout (SEND IT replay, tutorial win, START DEFENSE raid) asks `Motion.animating()`, which is false
+  under reduce effects (`motion.gd`, `animating()`; `Fx.effects_enabled()` = `not Settings.reduce_effects`). The player's
+  `user://settings.json` had `reduce_effects: true` (and `text_scale: 0.8`, `music_volume: 0.0`, the signature of a
+  capture run). Labs and capture runs (`campaign_end_lab.gd:54` `set_reduce_effects(true)`, `wheel_lab.gd:47`, `review_pack.gd:354`)
+  share the player's user:// and any later setter (`_apply()` -> `save_settings()`, since f190e89d) saves the whole
+  state. Settings defaults, `resolve_speed` (x1), `Motion.force_live` and MotionSkip are not involved.
+- **Fix.** `Settings.path_for()`: a quiet windowed run (`run_windowed.py`) keeps `user://settings_windowed.json`,
+  deleted at start, like a test run. Test `test_w1b_playout.gd`: defaults, file choice, SEND IT replays with defaults.
+- **Machine note.** The existing bad `settings.json` is not repaired by code: set Reduce effects off in Settings.
+
 ### 2026-10-13 — W1 polish: a refused Firmware take is one message
 A refused Firmware take on the loot page showed two messages: the rules' id-worded toast ("barbed_wire does not fit a OVERFLOW slice.") and the W1-LOOT red `LootNote` beside CONTINUE. Now one: a terminal-styled note (`RefusalNote`, a `ToastNote` pink-edged box, no timer) worded in `netrun_scene._refusal_note` with display names ("BARBED WIRE doesn't fit Slot 1 (OVFL). It fits Slot 5: pick it on the spinner."; "... fits no slot. Pick another, or Skip."); the rules' toast is dropped and `LootNote` is gone (pencil/red lines are not for errors). It stays until the player acts (picks a slot: `_clear_refusal`; any take or Skip rebuilds the page), so B2's original defect (a refusal that vanishes) does not return. It stands in the loot head where the page's `LootWindow` strip is (the strip hides meanwhile): the head column has the room at 1.0 / 1.6 / 2.0 without moving the sheet, drop, SKIP or CONTINUE, inside the safe margin, body text size (the box takes the strip's width and wraps). `NetrunSession.firmware_slot_error` still returns an id string (core stays as is; the view names it). Tests: `test_w1r1_misc` (1.0 / 1.6 / 2.0: still visible 400 frames later, no overlap with sheet / drop / SKIP / CONTINUE, inside the safe rect, names not ids, clears on a slot pick), `test_plan1_b_repro` B2. Sheet: `docs/art_review/PLAN1/W1_POLISH.jpg`.
 
