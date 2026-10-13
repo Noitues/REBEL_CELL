@@ -114,6 +114,9 @@ feeds every divider. `test_plan1_b_repro` B8 asserts N dividers for an N-step ra
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-13 — Plan 1 1B-MAP: the key hover keeps the player's camera; key rows ring their kind; CLOSE keeps the picked operative
+F13 root cause: hovering the route key swapped the cue words (HOVER: SHOW ALL LINKS -> SHOWING ALL LINKS), which changed the strip's size, which resized the map row and called `_refit_route`, re-framing the map on the current node. `RouteLegend` now sizes the cue to the widest of its four wordings, so a hover never changes the layout. F14: `RouteLegend.kind_hovered(kind)` (pointer over a kind row, `kind_at`) -> `RouteOverlay.highlight_kind` draws a cyan ring (outside the sticker, so the icon stays clear; acid blended with the walked rings) on every drawn node of that kind (hidden nodes stay hidden). F15: `hq_scene._on_loadout_closed` re-picks the selected operative on CLOSE (`pick_runner`), so the polaroids match the top bar after NEXT OPERATIVE. Tests: `test_art7_netrun` (F13, F14), `test_horizontal_pass20_screens` (F15). Headless drops pushed mouse events, so the tests drive the signals and handlers. Sheet: `docs/art_review/PLAN1/W1B_MAP.jpg` (review-pack screens `w1b_map_keep`, `w1b_map_kind`, `w1b_loadout_close`; before = main d5730350).
+
 ### 2026-10-13 — 1B-PLAYOUT (F3): captures no longer write the player's settings.json
 
 - **Cause.** Every playout (SEND IT replay, tutorial win, START DEFENSE raid) asks `Motion.animating()`, which is false
