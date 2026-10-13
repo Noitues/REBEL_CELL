@@ -13,6 +13,8 @@ extends TerminalWindow
 
 ## Emitted when the pointer enters (true) or leaves (false) the strip (B3, Q4: every link).
 signal show_links_hovered(on: bool)
+## F14: the pointer is over the row of node kind `kind` ("" = no row).
+signal kind_hovered(kind: String)
 
 ## What each route node kind is and does (the entries' and the nodes' tooltips).
 const MEANINGS := {CityMapOverlay.KIND_FIGHT: "Fight: win it for Cycles and loot", # TR
@@ -70,13 +72,41 @@ func _init(p_kinds: Array = [], p_corp_color: Color = Palette.CORP_SOLACE) -> vo
 	# D13: the strip takes the pointer (its hover shows every node); its entries do not.
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	mouse_entered.connect(func() -> void: show_links_hovered.emit(true))
-	mouse_exited.connect(func() -> void: show_links_hovered.emit(false))
+	mouse_exited.connect(func() -> void:
+		_set_hovered_kind("")
+		show_links_hovered.emit(false))
 	for k in ORDER:
 		if p_kinds.has(k):
 			kinds.append(k)
 	_build()
 	visible = Settings.map_legend
 	Settings.changed.connect(_on_settings_changed)
+
+
+var _hovered_kind: String = ""
+
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		_set_hovered_kind(kind_at((event as InputEventMouseMotion).global_position))
+
+
+## The node kind of the row under global point `p` ("" = none).
+func kind_at(p: Vector2) -> String:
+	if strip == null:
+		return ""
+	for k in kinds:
+		var row := strip.get_node_or_null("Kind_%s" % k) as Control
+		if row != null and row.get_global_rect().has_point(p):
+			return k
+	return ""
+
+
+func _set_hovered_kind(k: String) -> void:
+	if k == _hovered_kind:
+		return
+	_hovered_kind = k
+	kind_hovered.emit(k)
 
 
 ## The route kinds of every node in `graph_nodes` (route_graph's "kind"), in ORDER.
@@ -118,6 +148,14 @@ func _build() -> void:
 	cue.add_theme_color_override("font_color", Palette.CELL_ACID)
 	cue.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	strip.add_child(cue)
+	# F13: the cue keeps one width whichever words it shows, so hovering the key never resizes
+	# the strip (a resize refits the map and snapped the player's zoom and pan back).
+	var font := cue.get_theme_font("font")
+	var fsize := roundi(FONT * s)
+	var widest := 0.0
+	for w in [HOVER_WORDS, PAD_WORDS, LINKS_WORDS, SHOWING_WORDS]:
+		widest = maxf(widest, font.get_string_size(TranslationServer.translate(w), HORIZONTAL_ALIGNMENT_LEFT, -1.0, fsize).x)
+	cue.custom_minimum_size.x = ceilf(widest)
 	_set_cue()
 	update_minimum_size()
 

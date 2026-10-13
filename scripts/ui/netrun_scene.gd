@@ -2244,11 +2244,19 @@ func _wire_route_frame() -> void:
 	overlay.heat_sweeps = route_heat_sweeps()
 	route_legend.set_showing_all(overlay.show_all)
 	route_legend.show_links_hovered.connect(_on_legend_hover)
+	route_legend.kind_hovered.connect(_on_legend_kind_hover)
 	overlay.node_hovered.connect(func(id: StringName) -> void:
 		if id != &"":
 			show_node_panel(id))
 	if not Settings.changed.is_connected(_on_route_settings):
 		Settings.changed.connect(_on_route_settings)
+
+
+## F14: the hovered key row's node kind rings every node of that kind on the map.
+func _on_legend_kind_hover(kind: String) -> void:
+	var overlay := city_overlay as RouteOverlay
+	if overlay != null and is_instance_valid(overlay):
+		overlay.highlight_kind = kind
 
 
 ## B3 (designer Q4): the strip's hover shows every run link as a hairline (nodes stay hidden).

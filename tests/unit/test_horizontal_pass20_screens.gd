@@ -562,6 +562,12 @@ func test_loadout_and_daemons_follow_the_picked_operative() -> void:
 	assert_eq(hq.selected_operative, view.op.id)
 	view._view.close()
 	await _frames()
+	# F15: after CLOSE the picked polaroid is the operative the top bar shows.
+	var picked: Array[StringName] = []
+	for n in hq._panel.find_children("Crew_*", "CrewHandCard", true, false):
+		if (n as CrewHandCard).picked:
+			picked.append(StringName((n as CrewHandCard).name.trim_prefix("Crew_")))
+	assert_eq(picked, [hq.selected_operative] as Array[StringName], "CLOSE leaves the polaroids on the selected operative")
 	hq.select_operative(second.id)
 	hq.open_daemons()
 	await _frames()
