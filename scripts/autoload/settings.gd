@@ -9,6 +9,8 @@ signal changed
 signal hints_changed
 
 const PATH := "user://settings.json"
+## Where a quiet windowed run (capture, lab, profile) keeps its settings, never PATH.
+const WINDOWED_PATH := "user://settings_windowed.json"
 ## Where settings live this session: PATH, or under a GUT run a file of this process's own
 ## (deleted on exit), so test runs never read or write the player's settings and parallel
 ## runs never leak text scale or keybinds into each other (H24).
@@ -147,8 +149,12 @@ const UI_PAD_BINDS := {
 
 
 func _ready() -> void:
-	if is_test_run():
-		path = TEST_PATH_FORMAT % OS.get_process_id()
+	# 1B-PLAYOUT: a capture or lab run (run_windowed.py) shared the player's user:// and
+	# saved every Settings change (reduce effects, text scale 0.8) into settings.json, so the
+	# next real session started with reduce effects on: no SEND IT playout, no raid playout.
+	# A test or windowed run keeps a throwaway file of its own, always starting from defaults.
+	path = path_for(is_test_run(), quiet_window(), OS.get_process_id())
+	if path != PATH:
 		DirAccess.remove_absolute(path)
 	add_runtime_actions()
 	load_settings()
@@ -156,6 +162,14 @@ func _ready() -> void:
 	apply_controller_bindings()
 	apply_display()
 	sync_colorblind_layer()
+
+
+## The settings file of a process: PATH for the player's session, a file of its own for a
+## test run (H24) or a quiet windowed run (1B-PLAYOUT).
+static func path_for(test_run: bool, quiet: bool, pid: int) -> String:
+	if test_run:
+		return TEST_PATH_FORMAT % pid
+	return WINDOWED_PATH if quiet else PATH
 
 
 func set_reduce_effects(value: bool) -> void:
