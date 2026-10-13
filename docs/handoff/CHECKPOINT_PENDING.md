@@ -1,6 +1,7 @@
 # Checkpoint queue
 
-Pending: **none**. Next: CP-003, after the playtest feedback is analyzed (CP-002 ruling 1). The full CP-002 as asked:
+Pending: **CP-003** (2026-10-12): `docs/handoff/gates/CP-003.md`, from the playtest analysis `docs/playtest/claude/ANALYSIS_2026-10-12.md`.
+The full CP-002 as asked:
 `docs/handoff/gates/CP-002_as_asked.md`. Add items as they come up (template `docs/process/templates/CHECKPOINT.md`);
 BLOCKING questions go to chat at once, not here.
 

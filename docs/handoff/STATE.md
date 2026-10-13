@@ -13,6 +13,12 @@ validate 0, quiet perf inside 8 ms), pushed, tagged gate/PT-001. Report: docs/ha
 playtest feedback, act on NONE of it until the designer says; then analyze → decide (change / ignore) → plan. R7 retired
 (informs only). Item 7 = B (hostile ticks off by default, colour-blind setting only; long term removed). CP-002 fully answered.
 m14-cleanup merged 2026-10-12. Repo cleaned for playtest feedback (see "Clean state" below).
+**Claude playtesters (2026-10-12, merged @ 5fc4903f, fast 1473 / 0):** black-box screen testers, batch judging, routes and
+saves, a headless state tester, replay audit, Perfect quiz, decision parity, gate routine (docs/process/05). Feedback gathered
+(PB-010, PB-012, probes, parity, state sweep SA-001; $57 API in all) and analysed in
+docs/playtest/claude/ANALYSIS_2026-10-12.md. **CP-003 pending** (docs/handoff/gates/CP-003.md): per CP-002 ruling 1 nothing is
+planned until it is answered. Headline: combat is unreadable, not too hard (Perfect reachable 93–100 % of turns, testers land
+~20 % = no action); the campaign is survivable; The Genome Core walls skilled play (11/12 breaches died).
 
 ## Clean state (2026-10-12, main @ ae9ad538, pushed; fast 1473 / 0, smoke 0, validate 0)
 - Worktrees: only `art-pass` (kept by design) and `playtest-build` (the designer's PT-001 build, detached @ 19ad76a3).
