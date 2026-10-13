@@ -129,6 +129,9 @@ const SCREENS := [
 	["raid_result_meridian", "_s_raid_result_meridian", "B3 (review D6): a Meridian raid's playout at its end (no orange influence fill)."],
 	["raid_report_meridian", "_s_raid_report_meridian", "B3 (review Q7): a Meridian raid's report (CELL HOLDS on the paper)."],
 	["route_hover_all", "_s_route_hover_all", "B3 (designer Q4): the route while the key strip is hovered (every link a hairline)."],
+	["w1b_map_keep", "_s_w1b_map_keep", "1B-MAP F13: the route zoomed out and panned, then the key hovered and left (the framing stays)."],
+	["w1b_map_kind", "_s_w1b_map_kind", "1B-MAP F14: a key row hovered (every node of its kind ringed)."],
+	["w1b_loadout_close", "_s_w1b_loadout_close", "1B-MAP F15: HQ after VIEW LOADOUT, NEXT OPERATIVE, CLOSE (polaroid and top bar on one operative)."],
 	["route_mid", "_s_route_mid", "B3 b: the route mid-run (two nodes walked; the frame on the walked path, the options and a layer ahead)."],
 	["raid_incoming", "_s_raid_incoming", "B3 (review section c): the raid interlude's INCOMING transition, mid-way."],
 	["route", "_s_route", "Netrun route: choosing where to go."],
@@ -1303,6 +1306,65 @@ func _s_route_focus() -> void:
 
 
 ## B3 b: the route two steps into the run (view state: the first two choices walked).
+func _s_w1b_map_keep() -> void:
+	var net: Node = await _netrun()
+	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
+	await _settle(net)
+	var mid: Vector2 = net.size * 0.5
+	net.route_controls.zoom_at(mid, 2.0)
+	net.route_controls.pan_by(Vector2(-90.0, 50.0))
+	await _settle(net)
+	var before: Vector2 = net.background.city.scale
+	var pos_before: Vector2 = net.background.city.position
+	net.route_legend.show_links_hovered.emit(true)
+	await _settle(net)
+	net.route_legend.show_links_hovered.emit(false)
+	await _settle(net)
+	if not net.background.city.scale.is_equal_approx(before) or not net.background.city.position.is_equal_approx(pos_before):
+		_warnings.append("the key hover moved the camera (%s %s -> %s %s)" % [before, pos_before, net.background.city.scale, net.background.city.position])
+
+
+func _s_w1b_map_kind() -> void:
+	var net: Node = await _netrun()
+	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
+	var s := RunManager.netrun
+	for step in 2:
+		var options: Array = s.available_nodes()
+		if options.is_empty():
+			break
+		var id: StringName = options[0]
+		s.run.current_node_id = id
+		s.run.visited.append(id)
+	net._show_map()
+	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
+	await _settle(net)
+	if net.route_legend.has_signal("kind_hovered") and not net.route_legend.kinds.is_empty():
+		net.route_legend.kind_hovered.emit(net.route_legend.kinds[0])
+	await _settle(net)
+
+
+func _s_w1b_loadout_close() -> void:
+	var hq: Node = await _hq_with_campaign()
+	var classes: Array[ClassData] = []
+	for id in [&"ghost", &"rigger"]:
+		classes.append(RunManager.lookup().get_content(id) as ClassData)
+	DemoSetup.roster_of(RunManager.campaign, classes)
+	hq.open_hand(hq.HandTab.CREW)
+	await _settle(hq)
+	hq.pick_runner(RunManager.campaign.living_operatives()[0].id)
+	await _settle(hq)
+	hq.open_loadout()
+	await _frames(2)
+	var view := hq.get_node_or_null("LoadoutView")
+	if view == null:
+		push_error("review_pack: no LoadoutView")
+		return
+	view.next_operative()
+	await _frames(2)
+	view._view.close()
+	await _settle(hq)
+
+
 func _s_route_mid() -> void:
 	var net: Node = await _netrun()
 	await _until(func() -> bool: return net.arrival_ready(), "the route camera")

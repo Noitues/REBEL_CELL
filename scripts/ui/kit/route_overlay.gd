@@ -111,8 +111,8 @@ const HEAT_LIGHT_GLOW := 2.4
 const HEAT_ORBIT_MOTION := &"route_heat_orbit"
 ## F14: the ring that marks every node of the kind the key's hovered row names: its gap off
 ## the sticker and width (screen px).
-const KIND_RING_GAP := 8.0
-const KIND_RING_WIDTH := 2.6
+const KIND_RING_GAP := 10.0
+const KIND_RING_WIDTH := 3.2
 ## Searchlights: their motion (one sweep per duration; amplitude = the sweep's half angle in
 ## degrees), the cone's half width (rad), reach (share of the map's diagonal), alpha, and the
 ## two lights' phase offset (share of a period) and base angles (rad from straight down).
@@ -631,7 +631,7 @@ func _node(n: Dictionary) -> void:
 	if highlight_kind != "" and String(n.get("kind", "")) == highlight_kind:
 		var kr := r + KIND_RING_GAP * k
 		_c.draw_arc(at, kr, 0, TAU, 48, Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA * a), (KIND_RING_WIDTH + KEYLINE_EXTRA) * k)
-		_c.draw_arc(at, kr, 0, TAU, 48, Color(Palette.CELL_ACID, a), KIND_RING_WIDTH * k)
+		_c.draw_arc(at, kr, 0, TAU, 48, Color(PaletteSkins.chrome(Palette.NET_CYAN), a), KIND_RING_WIDTH * k)
 	var chip := String(n.get("heat_chip", ""))
 	if chip != "":
 		var hr := r + HEAT_RING_GAP * k
