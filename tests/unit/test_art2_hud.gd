@@ -95,7 +95,7 @@ func _rows(scene: Control) -> Dictionary:
 ## Holds a row shown before an action to what the action really did: the chips the real
 ## resolve gives (same model, the real events and states) and the HP, RAM, guard and status
 ## changes themselves. A random roll shows its odds, never the roll: it must still have landed.
-func _check(label: String, shown: Dictionary, before: CombatState, after: CombatState, events: Array[Dictionary]) -> int:
+func _check(label: String, shown: Dictionary, before: CombatState, landing: CombatState, after: CombatState, events: Array[Dictionary], resolver: CombatResolver) -> int:
 	var checked := 0
 	for id in shown:
 		var chips: Array = shown[id]
@@ -104,7 +104,7 @@ func _check(label: String, shown: Dictionary, before: CombatState, after: Combat
 			if StringName(c["kind"]) == ResultChipModel.STATUS and bool(c.get("random", false)):
 				random_status = int(c["status"])
 		var heat := ResultChipModel.value_of(chips, ResultChipModel.HEAT)
-		var real := ResultChipModel.build(before, after, events, id, random_status, heat)
+		var real := RealChips.build(resolver, before, landing, after, events, id, random_status, heat)
 		assert_eq(HudResultChips.signature(chips), HudResultChips.signature(real), "%s %s: chip == resolve" % [label, id])
 		var b := before.get_combatant(id)
 		var a := after.get_combatant(id)
@@ -163,7 +163,7 @@ func test_d15_chips_equal_the_resolve_for_every_enemy_and_seed() -> void:
 			var shown := _rows(scene)
 			var before: CombatState = eng.state().duplicate_state()
 			var real := _real_end_turn(scene)
-			checked += _check("%s seed %d send" % [enemy, combat_seed], shown, before, real[0], real[1])
+			checked += _check("%s seed %d send" % [enemy, combat_seed], shown, before, before, real[0], real[1], eng.resolver)
 			# A card's hover then its play and SEND IT, on the next turn.
 			if eng.state().is_over():
 				continue
@@ -190,9 +190,10 @@ func test_d15_chips_equal_the_resolve_for_every_enemy_and_seed() -> void:
 				assert_true(eng.submit(action), "%s seed %d: the card plays" % [enemy, combat_seed])
 				all.append_array(_events)
 				scene.skip_motion()
+				var landing_card: CombatState = eng.state().duplicate_state()
 				var real_card := _real_end_turn(scene)
 				all.append_array(real_card[1])
-				checked += _check("%s seed %d card %d" % [enemy, combat_seed, i], hovered, before_card, real_card[0], all)
+				checked += _check("%s seed %d card %d" % [enemy, combat_seed, i], hovered, before_card, landing_card, real_card[0], all, eng.resolver)
 				break
 	eng.state_changed.disconnect(_on_state)
 	assert_gt(fights, enemies.size(), "fights swept")
@@ -221,20 +222,26 @@ func test_d15_chip_format_and_order() -> void:
 	]
 	var chips := ResultChipModel.build(before, after, events, &"player")
 	var labels: Array = chips.map(func(c: Dictionary) -> String: return ResultChipModel.label(c))
-	assert_eq(labels, ["-6", "(4", "+4", "-1", "%s×2" % Palette.STATUS_GLYPHS[RC.Status.CORRUPTED]], "D15: [final damage] (N shield) +N shield -N RAM status×N")
-	assert_eq(StringName(chips[0]["kind"]), ResultChipModel.DAMAGE)
-	assert_eq(StringName(chips[3]["kind"]), ResultChipModel.RAM, "only RAM lost shows (the refill comes from the TURN banner)")
+	assert_eq(labels, ["40→34", "-6", "(4", "+4", "-1", "%s×2" % Palette.STATUS_GLYPHS[RC.Status.CORRUPTED]], "D15 (W2-A2): HP line, [final damage] (N shield) +N shield -N RAM status×N")
+	assert_eq(StringName(chips[0]["kind"]), ResultChipModel.HP_LINE)
+	assert_eq(StringName(chips[1]["kind"]), ResultChipModel.DAMAGE)
+	assert_eq(StringName(chips[4]["kind"]), ResultChipModel.RAM, "only RAM lost shows (the refill comes from the TURN banner)")
 	assert_eq(ResultChipModel.hp_change(chips), -6)
-	assert_eq(HudResultChips.chip_color(chips[0]), HudSkin.CHIP_DAMAGE, "red")
-	assert_eq(HudResultChips.chip_color(chips[1]), HudSkin.CHIP_ABSORBED, "blue")
-	assert_eq(HudResultChips.chip_color(chips[2]), HudSkin.CHIP_GAIN, "green")
+	assert_eq(HudResultChips.chip_color(chips[1]), HudSkin.CHIP_DAMAGE, "red")
+	assert_eq(HudResultChips.chip_color(chips[2]), HudSkin.CHIP_ABSORBED, "blue")
+	assert_eq(HudResultChips.chip_color(chips[3]), HudSkin.CHIP_GAIN, "green")
 	for c in chips:
 		assert_ne(ResultChipModel.words(c), "", "every chip says itself in words")
 	# A lethal hit: the damage chip says so.
 	var dead := before.duplicate_state()
 	dead.player.hp = 0
 	var lethal := ResultChipModel.build(before, dead, [{"type": "damage", "attacker": &"e0", "target": &"player", "amount": 50, "blocked": 0, "shielded": 0, "hp_damage": 40}] as Array[Dictionary], &"player")
-	assert_true(bool(lethal[0]["lethal"]), "LETHAL")
+	assert_eq(StringName(lethal[0]["kind"]), ResultChipModel.LETHAL, "the operative's death leads with the LETHAL chip")
+	var dmg_chip := {}
+	for c in lethal:
+		if StringName(c["kind"]) == ResultChipModel.DAMAGE:
+			dmg_chip = c
+	assert_true(bool(dmg_chip["lethal"]), "the damage chip says LETHAL")
 
 
 func test_the_chip_row_shows_beside_each_hp_with_its_breakdown() -> void:

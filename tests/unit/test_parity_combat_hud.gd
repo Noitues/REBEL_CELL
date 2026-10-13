@@ -145,6 +145,7 @@ func test_the_result_on_the_aimed_wheel_is_the_real_play_for_every_card() -> voi
 				_events = []
 				assert_true(eng.submit(action), "%s: the card plays" % card_id)
 				scene.skip_motion()
+				var landing: CombatState = eng.state().duplicate_state()
 				var r: CombatResult = eng.session.apply(CombatAction.end_turn())
 				assert_true(r.ok(), "SEND IT resolves")
 				var events: Array[Dictionary] = _events.duplicate()
@@ -160,7 +161,7 @@ func test_the_result_on_the_aimed_wheel_is_the_real_play_for_every_card() -> voi
 					for c in chips:
 						if StringName(c["kind"]) == ResultChipModel.STATUS and bool(c.get("random", false)):
 							random_status = int(c["status"])
-					var real := ResultChipModel.build(before, after, events, id, random_status, ResultChipModel.value_of(chips, ResultChipModel.HEAT))
+					var real := RealChips.build(eng.resolver, before, landing, after, events, id, random_status, ResultChipModel.value_of(chips, ResultChipModel.HEAT))
 					assert_eq(HudResultChips.signature(chips), HudResultChips.signature(real), "%s on %s (%s): the result chips == the real play" % [card_id, enemy, id])
 					var a := after.get_combatant(id)
 					assert_eq(int(res["hp_to"]), a.hp if a != null else 0, "%s on %s (%s): HP after == the real play" % [card_id, enemy, id])

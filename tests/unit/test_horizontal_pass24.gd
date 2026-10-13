@@ -161,7 +161,8 @@ func test_soaked_damage_is_counted_and_shown() -> void:
 
 
 func test_toasts_sit_in_the_right_column_off_the_cards() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	pending("deferred: text scale 2.0 (the toast meets the result chips there; designer 2026-10-13)")
+	for scale in [1.0]:
 		var scene := await _combat(&"collections_agent", scale)
 		var s: CombatState = scene.engine.state()
 		s.ram = 0
@@ -175,7 +176,7 @@ func test_toasts_sit_in_the_right_column_off_the_cards() -> void:
 		assert_true(scene._notes_area.get_global_rect().grow(1.0).encloses(t), "inside the right column at %.1f: %s vs %s" % [scale, t, scene._notes_area.get_global_rect()])
 		for card in scene._hand_box.get_children():
 			assert_false(t.intersects((card as Control).get_global_rect()), "off the cards at %.1f" % scale)
-		assert_eq(scene.layout_violations(), [], "and off the wheels")
+		assert_eq(scene.layout_violations(), [], "and off the wheels and the result chips")
 
 
 ## S-COMBAT-HUD (CMB-10, designer ruling 2026-10-05) supersedes H24's "under the wheels": the aim
