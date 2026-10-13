@@ -840,6 +840,10 @@
 		"res://tests/unit/test_m14_12q_main.gd": {
 			"seconds": 20.0,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_plan1_b_repro.gd": {
+			"seconds": 20.0,
+			"tier": "full"
 		}
 	}
 }
