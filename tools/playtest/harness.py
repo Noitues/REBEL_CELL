@@ -398,6 +398,12 @@ class Tester:
         self.prev_kind = ""
         self.last_esc_step = -99
         self.raid_saved = False
+        # Perfect probe (doc 05 §11): in fights, only screenshot each turn start and press SEND IT, so the
+        # k-th screenshot is exactly the replay's turn k (no other combat input is made).
+        self.probe_fights = a.probe_perfect
+        self.probe_fight = 0
+        self.probe_turn = 0
+        self.probe_in_fight = False
         self.motion = a.motion
         self.defer = a.defer
         self.motion_left = a.motion_max
@@ -555,6 +561,14 @@ class Tester:
                     {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": png_b64(crop)}},
                     {"type": "text", "text": "Decide now (no further zoom this step)."}]
                 d = self.ask(self.actor, content, "low")
+        if d and self.probe_fights and d["kind"] in COMBAT_KINDS:
+            return self.probe_step(hwnd, frame)
+        if d and self.probe_fights and self.probe_in_fight and d["kind"] not in COMBAT_KINDS:
+            self.probe_in_fight = False
+            self.probe_fight += 1
+            self.log.append("%5.1fm [system] probe: fight %d done after %d turns" % (self.elapsed_min(), self.probe_fight, self.probe_turn))
+            if self.probe_fight >= self.probe_fights:
+                return "time"
         stuck = self.no_change >= STUCK_STEPS or self.wd_level >= 2
         steps = self.cost["steps"]
         fresh = d and (d["kind"] == "combat_turn_start" or d["kind"] != self.prev_kind or steps - self.last_esc_step >= 4)
@@ -606,6 +620,28 @@ class Tester:
         self.cost["elapsed_min"] = round(self.elapsed_min(), 2)
         (self.dir / "cost.json").write_text(json.dumps(self.cost, indent=1))
         return d["done"]
+
+    def probe_step(self, hwnd: int, frame) -> str:
+        if not self.probe_in_fight:
+            self.probe_in_fight, self.probe_turn = True, 0
+        pdir = self.dir / "probe"
+        pdir.mkdir(exist_ok=True)
+        frame.save(pdir / ("f%02d_t%02d.png" % (self.probe_fight, self.probe_turn)))
+        with open(pdir / "probe.jsonl", "a", encoding="utf-8") as f:
+            f.write(json.dumps({"fight": self.probe_fight, "turn": self.probe_turn,
+                                "shot": "f%02d_t%02d.png" % (self.probe_fight, self.probe_turn), "t": round(self.elapsed_min(), 2)}) + "\n")
+        self.probe_turn += 1
+        before = _sig(frame)
+        bb.key(hwnd, "space")
+        self.session.log("key space (probe)")
+        self.cost["steps"] += 1
+        after = stable_frame(hwnd)
+        if changed_fraction(before, _sig(after)) < 0.02:  # SEND IT did not take: try the button
+            bb.click(hwnd, 1145, 625, right=False, double=False)
+            self.session.log("click 1145,625 (probe SEND IT)")
+            stable_frame(hwnd)
+        self.save_journal()
+        return ""
 
     def after_decision(self, d: dict) -> None:
         now = self.elapsed_min()
@@ -775,6 +811,8 @@ def main() -> int:
                     help="skill tier (default: the brief's 'Skill tier:' line)")
     ap.add_argument("--actor", choices=["haiku", "sonnet"], help="override the tier's actor model (escalation to Sonnet when haiku)")
     ap.add_argument("--no-report", action="store_true")
+    ap.add_argument("--probe-perfect", type=int, default=0,
+                    help="Perfect probe: in N fights only screenshot each turn start and send (pairs with replay_audit)")
     ap.add_argument("--route", default="", help="comma-separated routes (routes.py) to play at the start, e.g. to_netrun")
     ap.add_argument("--start-save", default="", help="start from a library save (streamline.py): a name, raid_setup, heat>=N")
     ap.add_argument("--setup-cap", type=float, default=None,

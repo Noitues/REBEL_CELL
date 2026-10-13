@@ -174,10 +174,7 @@ func _play_run(s: NetrunSession, stats: Dictionary) -> void:
 			RunState.Phase.EVENT:
 				_choose_event(s)
 			RunState.Phase.SHOP:
-				var bug := s.run.operative.deck.find(&"bug")
-				if bug >= 0 and s.run.cycles >= s.card_removal_price():
-					s.remove_card(bug)
-				s.leave_shop()
+				_shop(s)
 			RunState.Phase.RAID:
 				for i in range(s.run_assets().size() - 1, -1, -1):
 					s.raid_deploy_run_asset(i, s.campaign.grid.home_site_id)
@@ -270,6 +267,95 @@ func _take_reward(s: NetrunSession) -> void:
 		s.skip_reward()
 
 
+## Mainframe: buy, remove a card, or leave; one purchase per decision, until the agent leaves.
+func _shop(s: NetrunSession) -> void:
+	for round in 6:
+		var acts: Array[Callable] = []
+		var options: Array[String] = []
+		var bug := s.run.operative.deck.find(&"bug")
+		acts.append(func() -> bool:
+			if bug >= 0 and s.run.cycles >= s.card_removal_price():
+				s.remove_card(bug)
+			return false)
+		options.append("Leave (default: remove the Bug card first if affordable)")
+		for kind in ["cards", "firmware", "daemons"]:
+			var items: Array = s.run.shop.get(kind, [])
+			var prices: Array = s.run.shop.get(kind.trim_suffix("s") + "_prices", [])
+			for i in items.size():
+				var price := int(prices[i])
+				if price > s.run.cycles:
+					continue
+				var res := lookup.get_content(StringName(String(items[i])))
+				var label := "%s %s for %d Cycles: %s" % [kind.trim_suffix("s").capitalize(), res.get("display_name") if res != null else items[i], price, res.get("description") if res != null else ""]
+				if kind == "firmware":
+					for slot in range(1, s.run.operative.slot_slice_ids.size()):
+						if s.run.operative.slot_firmware_ids[slot] != &"":
+							continue
+						var slice := lookup.get_content(s.run.operative.slot_slice_ids[slot]) as SliceData
+						var k := i
+						var sl := slot
+						acts.append(func() -> bool: s.buy("firmware", k, sl); return true)
+						options.append("%s (into slot %d, %s)" % [label, slot + 1, slice.display_name if slice != null else "?"])
+				else:
+					var k := i
+					var kd: String = kind
+					acts.append(func() -> bool: s.buy(kd, k); return true)
+					options.append(label)
+		if s.run.cycles >= s.card_removal_price():
+			var seen := {}
+			for di in s.run.operative.deck.size():
+				var id: StringName = s.run.operative.deck[di]
+				if seen.has(id):
+					continue
+				seen[id] = true
+				var card := lookup.get_content(id) as CardData
+				var dk := di
+				acts.append(func() -> bool: s.remove_card(dk); return true)
+				options.append("Remove %s from the deck for %d Cycles" % [card.display_name if card != null else String(id), s.card_removal_price()])
+		var st := _run_state(s)
+		var r := ask("shop", st, options)
+		if not acts[int(r["choice"])].call():
+			break
+	if s.run.phase == RunState.Phase.SHOP:
+		s.leave_shop()
+
+
+## HQ between runs: the built-in upkeep (option 0) or one purchase at a time until the agent is done.
+func _maintain(c: CampaignState) -> void:
+	for round in 8:
+		var acts: Array[Callable] = []
+		var options: Array[String] = []
+		acts.append(func() -> bool: _builtin_maintain(c); return false)
+		options.append("Default upkeep: repair DOWN nodes and home, recruit to two operatives, scrub Heat at %d+ keeping a reserve, claim one Firewall Relay when rich" % HEAT_SCRUB_FLOOR)
+		acts.append(func() -> bool: return false)
+		options.append("Done at HQ: launch the next netrun now")
+		if c.schematics >= CampaignRules.rookie_price(c, config):
+			acts.append(func() -> bool: CampaignRules.recruit(c, config, class_data); return true)
+			options.append("Recruit a rookie %s for %d Schematics (living operatives: %d)" % [class_data.display_name, CampaignRules.rookie_price(c, config), c.living_operatives().size()])
+		if c.heat > 0 and c.schematics >= CampaignRules.heat_purchase_price(c, config):
+			acts.append(func() -> bool: CampaignRules.buy_heat_reduction(c, config); return true)
+			options.append("Scrub Heat for %d Schematics (Heat now %d)" % [CampaignRules.heat_purchase_price(c, config), c.heat])
+		if c.grid.home_integrity < c.grid.home_max_integrity and c.schematics >= CampaignRules.home_repair_price(c, config):
+			acts.append(func() -> bool: CampaignRules.repair_home(c, config); return true)
+			options.append("Patch the home server to full for %d Schematics (now %d/%d)" % [CampaignRules.home_repair_price(c, config), c.grid.home_integrity, c.grid.home_max_integrity])
+		for b in config.netrun_boosts:
+			if b != null and not c.pending_boosts.has(b.id) and c.schematics >= b.cost:
+				var bid: StringName = b.id
+				acts.append(func() -> bool: CampaignRules.buy_boost(c, config, bid); return true)
+				options.append("Buy next-run boost %s for %d Schematics: %s" % [b.display_name, b.cost, b.get("description") if b.get("description") != null else ""])
+		var relay := lookup.get_content(&"firewall_relay") as NetworkNodeData
+		if relay != null and c.schematics >= relay.install_cost:
+			for n in c.grid.neighbors(c.grid.home_site_id, corp.city_grid):
+				var sd := corp.city_grid.get_site(n)
+				if c.grid.is_cleared(n) and not c.grid.is_claimed(n) and sd != null and sd.claimable:
+					var nid: StringName = n
+					acts.append(func() -> bool: CampaignRules.claim(c, corp, config, lookup, nid, relay.id); return true)
+					options.append("Claim %s next to home as a Firewall Relay for %d Schematics" % [sd.display_name, relay.install_cost])
+		var r := ask("hq", _campaign_state(c), options)
+		if not acts[int(r["choice"])].call():
+			return
+
+
 func _choose_event(s: NetrunSession) -> void:
 	var ev := s.current_event()
 	var idx: Array[int] = []
@@ -290,3 +376,7 @@ func _choose_event(s: NetrunSession) -> void:
 	var st := _run_state(s)
 	st["event"] = "%s: %s" % [ev.title, ev.text.substr(0, 400)]
 	s.choose_event_option(idx[int(ask("event", st, options)["choice"])])
+
+
+func _builtin_maintain(c: CampaignState) -> void:
+	super._maintain(c)

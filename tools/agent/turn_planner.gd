@@ -82,12 +82,19 @@ static func _finish(session: CombatSession, node: Dictionary) -> Dictionary:
 		parts.append("%s %d->%d" % [e.display_name, was, maxi(e.hp, 0)])
 	var taken := before_hp - s.player.hp
 	var pointers := PackedStringArray()
+	var own_tiers: Array[int] = []
+	var enemy_tiers: Array[int] = []
 	for ev in events:
 		if String(ev.get("type", "")) == "pointer":
 			pointers.append(String(ev["text"]).trim_suffix("."))
+			if StringName(String(ev.get("owner", ""))) == state.player.id:
+				own_tiers.append(int(ev["tier"]))
+			else:
+				enemy_tiers.append(int(ev["tier"]))
 	var acts: Array[CombatAction] = node["actions"]
 	var ram := session.state.ram - state.ram
 	var outcome := {"dealt": dealt, "taken": taken, "kills": kills, "ram_spent": ram, "player_hp_after": s.player.hp,
+		"own_perfect": own_tiers.has(RC.PrecisionTier.PERFECT), "own_tiers": own_tiers, "enemy_tiers": enemy_tiers,
 		"enemies": ", ".join(parts), "pointers": pointers, "key": "%d|%d|%d|%d|%s" % [dealt, taken, kills, ram, ";".join(pointers)]}
 	var score := float(node.get("score", CombatBot._score(session, state, CombatResolver.clone_rng(session.rng))))
 	return {"actions": acts, "score": score, "outcome": outcome,

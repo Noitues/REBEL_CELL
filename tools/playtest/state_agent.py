@@ -25,6 +25,7 @@ import json
 import shutil
 import subprocess
 import sys
+import re
 import threading
 import time
 from pathlib import Path
@@ -36,12 +37,15 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 OUT = ROOT / ".playtest_sessions" / "state"
 DOCS = ROOT / "docs" / "playtest" / "claude" / "state"
 ROSTER = ROOT / "tools" / "playtest" / "personas.json"
-KINDS = ["combat", "node", "reward", "event", "launch", "raid"]
+KINDS = ["combat", "node", "reward", "event", "launch", "raid", "shop", "hq"]
 # Per tier: model per decision kind ("" = built-in policy, no call).
 TIER_MODELS = {
-    "novice": {"combat": "haiku", "node": "haiku", "reward": "haiku", "event": "haiku", "launch": "haiku", "raid": "haiku"},
-    "intermediate": {"combat": "haiku", "node": "haiku", "reward": "sonnet", "event": "haiku", "launch": "sonnet", "raid": "sonnet"},
-    "expert": {"combat": "sonnet", "node": "sonnet", "reward": "sonnet", "event": "sonnet", "launch": "sonnet", "raid": "sonnet"},
+    "novice": {"combat": "haiku", "node": "haiku", "reward": "haiku", "event": "haiku", "launch": "haiku", "raid": "haiku",
+               "shop": "haiku", "hq": "haiku"},
+    "intermediate": {"combat": "haiku", "node": "haiku", "reward": "sonnet", "event": "haiku", "launch": "sonnet", "raid": "sonnet",
+                     "shop": "haiku", "hq": "sonnet"},
+    "expert": {"combat": "sonnet", "node": "sonnet", "reward": "sonnet", "event": "sonnet", "launch": "sonnet", "raid": "sonnet",
+               "shop": "sonnet", "hq": "sonnet"},
 }
 SCHEMA = {"type": "object", "properties": {"choice": {"type": "integer"}, "reason": {"type": "string"}},
           "required": ["choice", "reason"], "additionalProperties": False}
@@ -55,6 +59,23 @@ At each decision you get the state and a numbered menu. Combat options are whole
 their exact outcome (the game's preview is exact): damage dealt and taken, kills, RAM, and where
 each pointer lands. Pick one option by its number, in your persona's style, and give a one-line
 reason a designer would learn from (what you weighed, what you avoided and why)."""
+
+
+OUTCOME = re.compile(r"you deal (\d+), take (\d+)(?:, (\d+) kill)?")
+
+
+def dominant(options: list[str]) -> bool:
+    """True when option 0 is at least as good as every other plan on damage dealt, taken and kills."""
+    parsed = [OUTCOME.search(o) for o in options]
+    if not parsed or parsed[0] is None:
+        return False
+    d0, t0, k0 = int(parsed[0].group(1)), int(parsed[0].group(2)), int(parsed[0].group(3) or 0)
+    for m in parsed[1:]:
+        if m is None:
+            return False
+        if int(m.group(1)) > d0 or int(m.group(2)) < t0 or int(m.group(3) or 0) > k0:
+            return False
+    return True
 
 
 class Agent:
@@ -78,6 +99,8 @@ class Agent:
             over = self.cost["usd"] >= self.a.budget
         if not model or over:
             return {"choice": 0, "reason": "builtin" if not model else "budget reached: builtin"}
+        if kind == "combat" and dominant(options):
+            return {"choice": 0, "reason": "dominant: deals the most, takes the least, kills the most"}
         menu = "\n".join("%d. %s" % (i, o) for i, o in enumerate(options))
         text = ("Decision: %s\nState: %s\nRecent decisions:\n%s\n\nOptions:\n%s\n\nPick one number." % (
             kind, json.dumps(req["state"]), "\n".join(self.memory[-8:]) or "(none)", menu))
