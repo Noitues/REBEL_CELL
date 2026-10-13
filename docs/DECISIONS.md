@@ -7667,3 +7667,14 @@ neither paper is interactive (B5's folders are). RaidPaper's tilt is set in its 
 INTEL untouched. Removed unused constants: `RaidPaper.CLIP_W/CLIP_H/PAGE_TILT`, `OperativeDossier.PAPER_TILT/SHADOW_OFFSET`.
 Test: `test_d24_paper_staging`. Sheet `docs/art_review/PARITY/fixes/D24.jpg` (round 21 raid_report concept | before |
 after; `D24_route.jpg` the route dossier before | after; `D24_crop.jpg` a paper crop). Ids: D24.
+
+## plan1 W2R1 (city) — the INCOMING pencil word stays whole in the playout map's free part
+- The "INCOMI" in `RAID_FEED_STEP.jpg` was the write-on caught mid-stroke (the word writes on in
+  ~0.4 s of real time; the capture's step-2 wait landed inside it; at 2.0 it read "INCOM" for the
+  same reason). Nothing clipped it. Recaptured settled (`W2R1_INCOMING.jpg`).
+- The real gap: nothing kept a state mark inside the map's free part, so an entry near the top
+  edge put its word under the top bar. `RaidFxLayer.free_rect` (a Callable, global px) now keeps
+  every non-heavy mark's whole tilted box inside it (`mark_centres`, after stacking); the playout
+  sets it to `fight_area(_fight_area)` (right of the key, under the bar, left of the feed column).
+  Pencil words are never clipped (G2R2); they move instead. Test:
+  `test_the_incoming_word_stays_whole_in_the_maps_free_part` (art6 raid presentation).
