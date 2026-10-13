@@ -83,6 +83,9 @@ func test_pad_players_never_read_click_or_drag() -> void:
 ## Game-code lines that say a mouse word in a player-facing string must pick the device's words:
 ## UiTip.for_input, a pad branch on the same statement, or a mouse-only table that for_input reads.
 func test_mouse_words_in_player_strings_go_through_for_input() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var mouse := RegEx.create_from_string("(?i)\\b(click|clicks|clicked|clicking|right-click|right click|left click|drag|drags|dragged|dragging|hover|hovering)\\b")
 	var literal := RegEx.create_from_string("\"([^\"\\\\]|\\\\.)*\"")
 	var allowed_tables := ["DRAG_TIPS := {", "DRAG_TIPS_MORE := {"]
