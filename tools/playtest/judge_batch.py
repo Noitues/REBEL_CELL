@@ -14,7 +14,7 @@ Stage A (one batch):
     "would a newcomer know what to do here?"
   - lessons: what each tester learned about playing, from its journal only (never code or docs)
 Stage B (one batch, after A):
-  - each tester's report, from its journal + motion judgements + audit findings
+  - each tester's report, from its journal + motion verdicts + audit findings
   - the playbook merge: every session's lessons into docs/playtest/claude/playbook.json, the
     shared, black-box knowledge that experienced testers start from (each rule with how many
     sessions confirmed it and which contradicted it)

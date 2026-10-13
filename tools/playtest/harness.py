@@ -324,7 +324,7 @@ def motion_digest(session_dir: Path) -> str:
     if not f.exists():
         return ""
     rows = [json.loads(l) for l in f.read_text(encoding="utf-8").splitlines() if l.strip()]
-    return "\n\n## Motion judgements (one per captured moment)\n" + "\n".join(
+    return "\n\n## Motion verdicts (one per captured moment)\n" + "\n".join(
         "- %s %.1fm %s | %s | %.2fs | %s | %s | sheet motion/%s" % (r["kind"], r["t_min"], r["moment"], r["verdict"],
                                                                  r["duration_s"], r["what_happened"], r["notes"], r["sheet"])
         for r in rows)
@@ -781,7 +781,7 @@ def main() -> int:
                     help="minutes allowed before the first fight (default 10 with a route, off for opening focuses; 0 = off)")
     ap.add_argument("--motion", action="store_true",
                     help="motion tester: capture a frame burst after actions that should animate and have Sonnet judge it")
-    ap.add_argument("--motion-max", type=int, default=40, help="most motion judgements per session")
+    ap.add_argument("--motion-max", type=int, default=40, help="most motion verdicts per session")
     ap.add_argument("--defer", action="store_true",
                     help="play only: queue motion sheets and leave the report to tools/playtest/judge_batch.py (Batch API, half price)")
     a = ap.parse_args()
