@@ -176,20 +176,39 @@ func test_b2_loot_continue_refused_for_a_chip_that_does_not_fit_slot_0() -> void
 	await _frames(6)
 	var go := scene._panel.find_child("Continue", true, false) as Control
 	assert_not_null(go, "the loot sheet has CONTINUE")
+	var spinner := scene._panel.find_child("SpinnerMini", true, false) as SpinnerMini
+	if spinner == null:
+		spinner = _find_mini(scene._panel)
+	assert_not_null(spinner, "the Firmware drop has its socket spinner")
+	assert_eq(s.firmware_slot_error(misfit, spinner.selected()), "", "B2: the spinner starts on a slot the chip fits")
+	assert_ne(spinner.selected(), 0, "B2: not slot 0 when the chip misfits it")
+	# a refused take (an explicit misfit slot) leaves its reason beside CONTINUE, past the toast
 	var left := s.run.pending_rewards.size()
+	scene.choose_reward(0, 0)
+	await _frames(60)
+	var note := scene._panel.find_child("LootNote", true, false) as Label
+	assert_eq(s.run.pending_rewards.size(), left, "the refused take changes nothing")
+	assert_not_null(note, "the loot page has a note beside CONTINUE")
+	assert_true(note != null and note.visible and note.text != "", "B2: the reason stays visible after the toast is gone")
+	assert_true(note != null and note.text.contains("slot"), "B2: the reason names where it fits")
+	# choosing a slot is acting: the note goes; CONTINUE then takes the chip
+	spinner.choose(spinner.selected())
+	assert_false(note.visible, "B2: the note clears once the player acts")
 	go.pressed.emit()
 	await _frames(3)
-	var refused := s.run.pending_rewards.size() == left and s.run.phase == RunState.Phase.REWARD
-	var toast := scene.get_node_or_null(ToastNote.NODE_NAME)
-	await _frames(40)
-	var toast_later := scene.get_node_or_null(ToastNote.NODE_NAME)
-	if refused:
-		pending("B2 REPRODUCED: CONTINUE on first chip '%s' with slot 0 (%s) refused: %s | toast at once=%s after 40 frames=%s, hold=%.2fs" % [
-			misfit, s.run.operative.slot_slice_ids[0], s.firmware_slot_error(misfit, 0), toast != null, toast_later != null, ToastNote.hold_seconds()])
-	else:
-		assert_false(refused, "B2 fixed: CONTINUE no longer refuses")
+	assert_true(s.run.pending_rewards.size() < left or s.run.phase != RunState.Phase.REWARD, "B2: CONTINUE takes the first chip")
 	scene.get_parent().queue_free()
 	await _frames(2)
+
+
+func _find_mini(n: Node) -> SpinnerMini:
+	if n is SpinnerMini:
+		return n as SpinnerMini
+	for c in n.get_children():
+		var f := _find_mini(c)
+		if f != null:
+			return f
+	return null
 
 
 # --- B3: the aim sticks after Esc / Z / undo ---------------------------------------------------------------------

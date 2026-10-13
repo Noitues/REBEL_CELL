@@ -100,8 +100,10 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s a slice for details.,%s a slice for details.
 "%s and %s nudge the wheel the arrows mark; %s switches between yours and the target, %s between the outer and inner ring.","%s and %s nudge the wheel the arrows mark; %s switches between yours and the target, %s between the outer and inner ring."
 %s cuts a new route: %s - %s.,%s cuts a new route: %s - %s.
+%s does not fit %s. It fits slot %s: choose it on the wheel.,%s does not fit %s. It fits slot %s: choose it on the wheel.
 %s enters at %s.,%s enters at %s.
 %s finds no locked route to open near %s.,%s finds no locked route to open near %s.
+"%s fits no slot of your wheel. Pick another, or Skip.","%s fits no slot of your wheel. Pick another, or Skip."
 %s freezes the link %s - %s for this raid.,%s freezes the link %s - %s for this raid.
 %s guards %s (%s): the class's station bonus helps it hold in raids.,%s guards %s (%s): the class's station bonus helps it hold in raids.
 %s is DOWN.,%s is DOWN.

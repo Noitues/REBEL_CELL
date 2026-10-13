@@ -13,6 +13,11 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
   cleared by `attach_netrun`). It ends the tutorial (as the last NEXT does) and returns to the title. Netrun fights unchanged.
 - B6 (ruling 1): the undo rule is unchanged. Tutorial step 5 now says undo rewinds nudges and card plays this turn and stops
   at a Respin or random-slice card; "free and unlimited" is gone. Still completable: nudge, then undo.
+## 2026-10-13 Plan 1 W1-LOOT: B2 loot Firmware slot
+- The loot's socket spinner starts on the first slot the first offered chip fits (else the first slot any offered chip
+  fits, else 0), so CONTINUE no longer defaults to a misfit. A refused Firmware take leaves the page as is (the spinner keeps
+  the player's slot) and writes the reason beside CONTINUE (`LootNote`: the chip, the slot, the slots it fits) until the
+  player picks a slot or takes something; the toast stays. Skip is untouched. Test: `test_plan1_b_repro.gd` B2.
 
 ## 2026-10-13 M0–M4 systems ticks (CP-003 ruling 8)
 - The 33 M0–M4 acceptance boxes in `docs/MILESTONES.md` were walked against `docs/handoff/gates/M14_REPLAN.md` §2 and the
