@@ -108,6 +108,10 @@ const HOLDS_TICK := 16.0
 const MARK_LIFT_PX := 46.0
 ## Screen px between two marks shown at once on one node (the later one stacks above).
 const MARK_STACK_GAP_PX := 6.0
+## W2R1: a word's ink padding and its tilt's sine (written at -0.05 rad), for the box that must
+## stay in the map's free part.
+const MARK_PAD_PX := 4.0
+const MARK_TILT_SIN := 0.05
 ## The vehicle icon's radius (screen px x screen_k), the ice round a frozen one (its half
 ## width x radius; the baked concept ice: folder, growth steps, the ellipse's half width in
 ## the image px, manifest.json), the slow field's radius (x the node icon) and rings.
@@ -196,6 +200,10 @@ var _marks: Array[Dictionary] = []
 ## ART-6 3A: the entry Sites the route pencil letters (A, B, C; RaidRouteLayer.letters): a
 ## mark on one stacks above its letter (INCOMING sat on the "A").
 var entry_letters: Dictionary = {}
+## G2R2 / W2R1: () -> Rect2 (global px), the map's free part (the page less every panel and the
+## top bar); the screen sets it. A pencil word is never clipped or put under a panel, so a
+## written mark is kept whole inside it (unset or empty: the mark stays where its node puts it).
+var free_rect: Callable = Callable()
 var _fields: Array[Dictionary] = []
 var _sparks: Array[Dictionary] = []
 var _breach_t0: float = INF
@@ -1250,9 +1258,24 @@ func mark_centres() -> Dictionary:
 				c.y = minf(c.y, letter_top - h * 0.5 - MARK_STACK_GAP_PX)
 			if tops.has(site):
 				c.y = minf(c.y, float(tops[site]) - h * 0.5 - MARK_STACK_GAP_PX)
+			c = _keep_in_free(c, RaidPencilPool.word_size(String(m["word"]), UiTheme.TITLE))
 			tops[site] = c.y - h * 0.5
 		out[i] = c
 	return out
+
+
+## W2R1: the centre `c` of a word of `size`, moved the least that keeps its whole tilted box
+## inside `free_rect` (a word wider than the room is centred in it).
+func _keep_in_free(c: Vector2, size: Vector2) -> Vector2:
+	if not free_rect.is_valid():
+		return c
+	var room: Rect2 = free_rect.call()
+	if not room.has_area():
+		return c
+	var half := size * 0.5 + Vector2(MARK_PAD_PX, MARK_PAD_PX) + Vector2(size.y, size.x) * 0.5 * MARK_TILT_SIN
+	var lo := room.position + half
+	var hi := room.end - half
+	return Vector2(clampf(c.x, lo.x, maxf(lo.x, hi.x)), clampf(c.y, lo.y, maxf(lo.y, hi.y)))
 
 
 ## ART-6 3A: the playout's pencil on 1B's grease pencil (RaidPencilPool, on the raid pencil

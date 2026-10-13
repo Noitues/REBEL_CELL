@@ -229,6 +229,46 @@ func test_a_mark_above_an_entry_clears_its_letter() -> void:
 		assert_true(float(at[1].y) + h_in * 0.5 <= float(at[0].y) - h_down * 0.5 + 0.01, "INCOMING stacks above DOWN")
 
 
+## W2R1: the INCOMING word (written whole, never clipped: G2R2) lies inside the map's free part,
+## clear of every panel, also for an entry near the top edge.
+func test_the_incoming_word_stays_whole_in_the_maps_free_part() -> void:
+	_raid_campaign(&"meridian", false)
+	var hq := _scene(HQ)
+	await _frames(1)
+	hq.show_raid()
+	await _frames(4)
+	var routes: RaidRouteLayer = hq.raid_routes
+	if routes.letters.is_empty():
+		fail_test("the raid has a lettered entry")
+		return
+	var entry: StringName = routes.letters.keys()[0]
+	var ov: CityMapOverlay = hq.city_overlay
+	var fx := RaidFxLayer.new(ov)
+	ov.add_child(fx)
+	fx.entry_letters = routes.letters.duplicate()
+	fx._mark("incoming", entry, "INCOMING", 0.0, true)
+	for m: Dictionary in fx._marks:
+		m["started"] = true
+		m["real0"] = fx._real - 0.1
+	var site := RaidMapAnchor.site(ov, entry)
+	var size := RaidPencilPool.word_size("INCOMING", UiTheme.TITLE)
+	var rooms: Array[Rect2] = [
+		Rect2(Vector2(0, 56), Vector2(SCREEN.size.x - 280.0, SCREEN.size.y - 56.0)),  # the bar above, the feed column right
+		Rect2(Vector2(site.x - size.x, site.y - 20.0), Vector2(size.x * 2.0, 600.0)),  # the entry just under the top edge
+		Rect2(Vector2(site.x - size.x * 0.4, site.y - 200.0), Vector2(size.x * 1.5, 600.0)),  # the entry by the left edge
+	]
+	for room in rooms:
+		fx.free_rect = func() -> Rect2: return room
+		var at := fx.mark_centres()
+		assert_eq(at.size(), 1, "INCOMING is shown")
+		if at.size() != 1:
+			continue
+		var c: Vector2 = at[0]
+		var box := Rect2(c - size * 0.5, size)
+		assert_true(room.encloses(box), "INCOMING's whole word %s is inside the free part %s" % [box, room])
+	fx.free_rect = Callable()
+
+
 func HqScript() -> GDScript:
 	return load("res://scripts/ui/hq_scene.gd")
 
