@@ -5,6 +5,18 @@ superseded instead. Finished months of "Implementation decisions" are moved verb
 `docs/decisions/<YYYY-MM>.md` by `tools/archive_decisions.py` (2026-10-11, CP-001 follow-up);
 search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
+## 2026-10-13 M0–M4 systems ticks (CP-003 ruling 8)
+- The 33 M0–M4 acceptance boxes in `docs/MILESTONES.md` were walked against `docs/handoff/gates/M14_REPLAN.md` §2 and the
+  heuristic state sweep (`docs/playtest/claude/state/SA-002_heuristic_calibration.md`: campaigns won, raids, Exploits, the
+  boss, no soft-lock). Every named test was confirmed to exist under `tests/` first.
+- Result: 28 ticked (each with its test under the box), 1 held (readable: M4 "distinguishable without colour"; the glyph
+  tests pass, the at-a-glance read waits for the A + B re-test), 2 superseded (`[~]`: M4 mockup match, replaced by ART_BIBLE
+  v2 and the M14 parity audit; M4 60 fps, closed by the ART-5 perf box and the target-PC ruling), 2 open (M2 "every card,
+  Firmware and Daemon has a unit test": Firmware and Daemons lack a per-id coverage check; M2 "Tier 1 netrun in 12–18
+  minutes": needs a timed human playtest).
+- Reworded: M1 precision tiers use WEAK (was Partial); M1 Pierce ignores block and shield, not satellites (GDD §2,
+  `test_pierce_still_hits_the_bodyguard_satellite`); M3 Disabled / Seized read DOWN / TAKEN (ruling 6.2).
+
 ## 2026-10-12 M14 group 2 polish (G2_POLISH, art-pass)
 - P1 `HoloSticker.add_fold_room` pads with spaces until the room past the last letter holds the sticker's own
   `peel_px` (plus 0.1 of the lettering px for outline and slant), measured again in `_ready` once the viewport is

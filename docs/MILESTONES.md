@@ -8,6 +8,8 @@ Placeholder art is expected until M4 (see `STYLE_GUIDE.md` §7).
 
 ---
 
+Legend (M0-M4, CP-003 ruling 8, 2026-10-13): `[x]` ticked with a named test or sweep; `[~]` superseded (ruling named); `[ ]` held or open, with the reason under the box.
+
 ## M0 — Foundation
 **Build**
 - Project structure per `TECH_SPEC.md` §2; move provided schemas to `scripts/data/`.
@@ -20,10 +22,14 @@ Placeholder art is expected until M4 (see `STYLE_GUIDE.md` §7).
 - Input map for GDD §9.5 bindings.
 
 **Acceptance**
-- [ ] `godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit` exits 0.
-- [ ] `tools/schema_smoke_test.gd` and `tools/validate_content.gd` exit 0.
-- [ ] `RngService` streams: same seed → same sequences; streams are independent (test).
-- [ ] `ContentRegistry` resolves every content id; duplicate ids fail validation.
+- [x] `godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit` exits 0.
+      _Evidence: full suite green at PT-001 (2207 / 0 failing); `tests/unit/test_suite_integrity.gd`_
+- [x] `tools/schema_smoke_test.gd` and `tools/validate_content.gd` exit 0.
+      _Evidence: smoke and validate both 0 at PT-001; `tests/unit/test_content_registry.gd::test_real_content_scans_cleanly_and_every_id_resolves`_
+- [x] `RngService` streams: same seed → same sequences; streams are independent (test).
+      _Evidence: `tests/unit/test_rng_service.gd`: `test_same_seed_gives_same_sequence_on_every_stream`, `test_drawing_from_other_streams_never_changes_a_stream`_
+- [x] `ContentRegistry` resolves every content id; duplicate ids fail validation.
+      _Evidence: `tests/unit/test_content_registry.gd`: `test_duplicate_ids_fail_validation`, `test_real_content_scans_cleanly_and_every_id_resolves`_
 
 ## M1 — Combat Core
 **Build**
@@ -35,21 +41,32 @@ Placeholder art is expected until M4 (see `STYLE_GUIDE.md` §7).
   nudge, end turn, rewind, log.
 
 **Acceptance**
-- [ ] Wheel math matches GDD §2.3 for all 30 ticks, flipped and unflipped (table test).
-- [ ] Precision tiers: offsets 0/±1/±2 → Perfect/Good/Partial; no Miss tier exists.
-- [ ] Resistance absorbs nudges and spins tick-for-tick; Flip and Respin are blocked while
+- [x] Wheel math matches GDD §2.3 for all 30 ticks, flipped and unflipped (table test).
+      _Evidence: `tests/unit/test_wheel_math.gd`: `test_mirror_tick_matches_gdd_2_3_for_all_30_ticks`, `test_flipped_wheel_table_for_all_30_rotations`_
+- [x] Precision tiers: offsets 0/±1/±2 → Perfect/Good/WEAK (was "Partial", renamed in M14); no Miss tier exists.
+      _Evidence: `tests/unit/test_wheel_math.gd::test_precision_tiers_have_no_miss_tier`, `test_slice_and_offset_table_for_all_30_ticks`_
+- [x] Resistance absorbs nudges and spins tick-for-tick; Flip and Respin are blocked while
       resistance > 0; passive resistance restores each player turn; Hub Breach disables
       Hub resistance for one turn.
-- [ ] Resolution order: defensive → offensive → statuses, simultaneous on both sides.
-- [ ] Pointer rule and satellite bodyguard work; Pierce ignores satellites and block.
-- [ ] Breaker Perfect hook resolves the slice twice; Inner Ring ×2/Pierce apply.
-- [ ] CORRUPTED, OVERCLOCKED, ENCRYPTED behave per GDD §2.9.
-- [ ] **Preview equals actual** for 500 random seeded turns.
-- [ ] **Rewind** restores exactly and cannot cross a checkpoint; checkpoints survive
+      _Evidence: `tests/unit/test_resistance.gd` (nudges, spin, Flip/Respin blocked, passive restore, Hub Breach)_
+- [x] Resolution order: defensive → offensive → statuses, simultaneous on both sides.
+      _Evidence: `tests/unit/test_resolution_order.gd::test_passes_run_defensive_then_offensive_then_statuses`, `test_both_sides_resolve_even_when_one_dies`_
+- [x] Pointer rule and satellite bodyguard work; Pierce ignores block and shield, **not** satellites (GDD §2; ruling 2026-09-24).
+      _Evidence: `tests/unit/test_targeting.gd::test_pointer_rule_hits_every_pointer_of_the_target_wheel`, `test_satellite_docked_on_the_resolved_slice_takes_the_hit`, `test_pierce_still_hits_the_bodyguard_satellite`_
+- [x] Breaker Perfect hook resolves the slice twice; Inner Ring ×2/Pierce apply.
+      _Evidence: `tests/unit/test_breaker.gd::test_perfect_resolves_the_slice_twice`, `test_ring_x2_doubles_output_and_stacks_with_the_perfect_hook`, `test_ring_pierce_ignores_block`_
+- [x] CORRUPTED, OVERCLOCKED, ENCRYPTED behave per GDD §2.9.
+      _Evidence: `tests/unit/test_statuses.gd` (corrupted, overclocked, encrypted)_
+- [x] **Preview equals actual** for 500 random seeded turns.
+      _Evidence: `tests/unit/test_preview.gd::test_preview_equals_actual_for_500_random_turns`_
+- [x] **Rewind** restores exactly and cannot cross a checkpoint; checkpoints survive
       save/load.
-- [ ] **Determinism:** replaying a recorded fight from its seed gives an identical state
+      _Evidence: `tests/unit/test_rewind.gd::test_rewind_restores_the_exact_previous_state`, `test_rewind_cannot_cross_the_start_of_turn_checkpoint`, `test_checkpoints_survive_save_and_load`_
+- [x] **Determinism:** replaying a recorded fight from its seed gives an identical state
       hash.
-- [ ] A full fight against each of the three enemies is playable in the scene.
+      _Evidence: `tests/unit/test_replay.gd::test_replaying_a_recorded_fight_gives_the_same_hash`_
+- [x] A full fight against each of the three enemies is playable in the scene.
+      _Evidence: `tests/integration/test_combat_scene.gd::test_full_fight_against_each_enemy_reaches_an_outcome`_
 
 ## M2 — Netrun Loop
 **Build**
@@ -61,13 +78,19 @@ Placeholder art is expected until M4 (see `STYLE_GUIDE.md` §7).
 - Run save/resume.
 
 **Acceptance**
-- [ ] 1,000 seeds generate valid maps (reachability + guarantees); same seed = same map.
-- [ ] Banking: Schematics and assets bank on Rack capture; death loses only unbanked items;
+- [x] 1,000 seeds generate valid maps (reachability + guarantees); same seed = same map.
+      _Evidence: `tests/unit/test_map_generator.gd::test_1000_seeds_generate_valid_maps`, `test_same_seed_gives_the_same_map`_
+- [x] Banking: Schematics and assets bank on Rack capture; death loses only unbanked items;
       death adds 10 + tier Heat.
-- [ ] Completion: Cycles convert 10:1; operative keeps deck/Firmware/Daemons; Rank +1.
+      _Evidence: `tests/integration/test_netrun.gd::test_rack_capture_banks_schematics_and_assets`, `test_death_loses_unbanked_loot_keeps_banked_and_adds_heat`_
+- [x] Completion: Cycles convert 10:1; operative keeps deck/Firmware/Daemons; Rank +1.
+      _Evidence: `tests/integration/test_netrun.gd::test_completion_converts_cycles_keeps_everything_and_ranks_up`_
 - [ ] Every card, Firmware and Daemon in the slice has at least one unit test.
-- [ ] Quit mid-run (including mid-combat) and resume to the identical state.
+      _OPEN, partial: cards are swept (`tests/unit/test_pools.gd`, `test_cards.gd`), but Firmware and Daemons are hand-picked tests (`test_firmware.gd`, `test_daemons.gd`) with no per-id coverage check. Needs the per-id coverage test (M14_REPLAN §4 housekeeping)_
+- [x] Quit mid-run (including mid-combat) and resume to the identical state.
+      _Evidence: `tests/integration/test_netrun.gd::test_quit_and_resume_on_the_map_is_identical`, `test_quit_and_resume_mid_combat_is_identical`_
 - [ ] A Tier 1 netrun is completable in roughly 12–18 minutes of play.
+      _OPEN (human): not machine-checkable; the simulator counts runs, not minutes. Needs a timed human playtest_
 
 ## M3 — Campaign & Raids
 **Build**
@@ -78,13 +101,19 @@ Placeholder art is expected until M4 (see `STYLE_GUIDE.md` §7).
   placeholder story beats, Renewal Engine boss with phases, win/loss flow.
 
 **Acceptance**
-- [ ] Threshold events fire once only; modifiers switch off when Heat drops below.
-- [ ] Raid projection equals the real raid result (golden tests for 5 layouts).
-- [ ] Disabled/Seized rules, cascade (50%), step cap and home-server loss per GDD §7.
-- [ ] Deployed assets persist and can be repositioned; Armory cap 6 enforced.
-- [ ] Beating the Renewal Engine with 3 Exploits wins the campaign; home integrity 0 loses
+- [x] Threshold events fire once only; modifiers switch off when Heat drops below.
+      _Evidence: `tests/unit/test_heat_rules.gd::test_a_threshold_never_fires_twice`, `test_ongoing_modifiers_apply_only_while_at_or_above`_
+- [x] Raid projection equals the real raid result (golden tests for 5 layouts).
+      _Evidence: `tests/unit/test_raid_resolver.gd`: `test_layout_1_undefended_relay_is_passed_and_home_takes_the_hit` through `test_layout_5_six_enforcers_take_the_home_server_down` (5 layouts), `test_projection_equals_the_real_result_and_apply_writes_it`_
+- [x] DOWN / TAKEN rules (formerly Disabled / Seized, ruling 6.2), cascade (50%), step cap and home-server loss per GDD §7.
+      _Evidence: `tests/unit/test_raid_resolver.gd`: `test_layout_3_enforcer_disables_a_relay_and_cascades_half_the_excess`, `test_layout_4_step_cap_takes_the_node_a_threat_still_stands_on`, `test_layout_5_six_enforcers_take_the_home_server_down`, `test_a_down_node_hit_again_is_taken`_
+- [x] Deployed assets persist and can be repositioned; Armory cap 6 enforced.
+      _Evidence: `tests/unit/test_campaign_rules.gd::test_deployed_assets_persist_can_be_repositioned_and_the_armory_is_capped`_
+- [x] Beating the Renewal Engine with 3 Exploits wins the campaign; home integrity 0 loses
       it; profile records update.
-- [ ] Campaign save/load round-trip is exact.
+      _Evidence: `tests/integration/test_campaign_flow.gd::test_winning_the_breach_with_three_exploits_wins_the_campaign_and_records_it`, `test_home_integrity_zero_loses_the_campaign_and_records_it`; heuristic state sweep SA-002 (15-16 of 20 campaigns won, no soft-lock)_
+- [x] Campaign save/load round-trip is exact.
+      _Evidence: `tests/integration/test_campaign_flow.gd::test_campaign_save_and_resume_are_exact_through_the_manager`_
 
 ## M4 — Look, Feel & Accessibility
 **Build**
@@ -94,13 +123,19 @@ Placeholder art is expected until M4 (see `STYLE_GUIDE.md` §7).
   music by context, accessibility settings.
 
 **Acceptance**
-- [ ] Combat, Grid and HQ screens match the approved mockups' layout and style rules.
-- [ ] Reduce-effects toggle disables scanlines, flicker and chromatic effects everywhere.
-- [ ] Flash limiter: never more than 3 flashes per second (automated check on the event
+- [~] Combat, Grid and HQ screens match the approved mockups' layout and style rules.
+      _SUPERSEDED: the ART_BIBLE v2 replaced the mockups; the M14 parity audit approved the screens (M14_REPLAN §2)_
+- [x] Reduce-effects toggle disables scanlines, flicker and chromatic effects everywhere.
+      _Evidence: `tests/unit/test_accessibility.gd::test_reduce_effects_disables_scanlines_and_distortion_everywhere`, `test_art1_material_kit.gd::test_every_kit_shader_reads_the_reduce_effects_global_and_freezes_its_clock`_
+- [x] Flash limiter: never more than 3 flashes per second (automated check on the event
       stream).
+      _Evidence: `tests/unit/test_flash_limiter.gd::test_combat_event_stream_never_flashes_more_than_three_times_per_second`_
 - [ ] Every slice type and status is distinguishable without colour.
-- [ ] Full keyboard play is possible for combat.
-- [ ] 60 fps at 1080p on a mid-range PC.
+      _HELD (readable): the systems half is tested (`tests/unit/test_accessibility.gd::test_every_slice_type_and_status_has_a_distinct_glyph`, `test_art1_glyphs.gd`), but whether the cues read at a glance waits for the A + B re-test; the raid hostile cue shows only with the colour-blind setting on (DECISIONS)_
+- [x] Full keyboard play is possible for combat.
+      _Evidence: `tests/integration/test_keyboard_combat.gd::test_every_combat_action_has_a_key`, `test_number_keys_play_cards`, `test_q_and_e_nudge_w_r_t_toggle_tab_targets_space_ends_z_rewinds`_
+- [~] 60 fps at 1080p on a mid-range PC.
+      _SUPERSEDED: closed by the ART-5 perf box and the target-PC ruling (`tests/unit/test_art12_perf.gd`; PT-001 perf medians inside 8 ms)_
 
 ---
 
