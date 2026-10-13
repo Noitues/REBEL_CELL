@@ -92,7 +92,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	for i in deck.size():
 		var card := lookup.get_content(deck[i]) as CardData
 		var sticker := ZineCard.new(TextDb.t(card, "display_name") if card != null else String(deck[i]), card.ram_cost if card != null else 0,
-			TextDb.t(card, "description") if card != null else "", i).scaled(ds).with_card(card)
+			FaceText.card_text(card) if card != null else "", i).scaled(ds).with_card(card)
 		sticker.fit_whole = true  # S-CARDFACE: the whole text on the face
 		sticker.hotkey = ""
 		var index := i
@@ -332,7 +332,7 @@ func open_card(index: int) -> void:
 	var s := Settings.text_scale
 	var notes_h := ZineCard.STICKER_SIZE.y * InspectPopup.DETAIL_CARD
 	pop.body.add_child(InspectPopup.card_detail(card, TextDb.t(card, "display_name") if card != null else String(deck[index]),
-		TextDb.t(card, "description") if card != null else "", s, notes_h))
+		FaceText.card_text(card) if card != null else "", s, notes_h))
 	var close_btn := Button.new()
 	close_btn.name = "Close"
 	close_btn.text = tr("Close")

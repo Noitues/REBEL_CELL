@@ -7,6 +7,7 @@ keys,en
  (run in progress), (run in progress)
  // PINNED, // PINNED
  AGAIN, AGAIN
+ or , or 
  | ASSIST, | ASSIST
  · %s/%s NUDGE %s%s, · %s/%s NUDGE %s%s
  · %s: %s RING, · %s: %s RING
@@ -369,7 +370,7 @@ CardData.backspin.description,Spin a wheel 9 ticks counter-clockwise.
 CardData.backspin.display_name,Backspin
 CardData.blind_spot.description,The target skips its next respin and loses 1 resistance.
 CardData.blind_spot.display_name,Blind Spot
-CardData.brute_spin.description,Spin a wheel 6 ticks.
+CardData.brute_spin.description,Spin a wheel 6 ticks clockwise.
 CardData.brute_spin.display_name,Brute Spin
 CardData.bug.description,Corrupted code. Drains 1 RAM when played. Exhaust.
 CardData.bug.display_name,Bug
@@ -393,31 +394,31 @@ CardData.deep_calibrate.description,Your next 3 nudges this turn are free. Exhau
 CardData.deep_calibrate.display_name,Deep Calibrate
 CardData.deep_strip.description,Remove 4 resistance from the target.
 CardData.deep_strip.display_name,Deep Strip
-CardData.double_jam.description,"Nudge an enemy wheel +-1 twice, ignoring resistance."
+CardData.double_jam.description,"Nudge an enemy wheel ±1 twice, ignoring resistance."
 CardData.double_jam.display_name,Double Jam
 CardData.duck.description,Evade the next incoming attack this turn.
 CardData.duck.display_name,Duck
 CardData.encrypt.description,ENCRYPT a chosen slice: it absorbs the next status.
 CardData.encrypt.display_name,Encrypt
-CardData.feather_touch.description,One +-1 nudge.
+CardData.feather_touch.description,One ±1 nudge.
 CardData.feather_touch.display_name,Feather Touch
-CardData.fine_tune.description,Two +-1 nudges on one ring.
+CardData.fine_tune.description,Two ±1 nudges on one ring.
 CardData.fine_tune.display_name,Fine Tune
 CardData.firewall.description,Gain 6 block.
 CardData.firewall.display_name,Firewall
-CardData.flick.description,Spin a wheel 1 tick.
+CardData.flick.description,Spin a wheel 1 tick clockwise.
 CardData.flick.display_name,Flick
 CardData.flip_switch.description,Flip your own wheel.
 CardData.flip_switch.display_name,Flip Switch
 CardData.freeze.description,Target wheel skips its next respin. Exhaust.
 CardData.freeze.display_name,Freeze
-CardData.gear_mesh.description,Spin the target and your own wheel 5 ticks.
+CardData.gear_mesh.description,Spin the target and your own wheel 5 ticks clockwise.
 CardData.gear_mesh.display_name,Gear Mesh
-CardData.gear_shift.description,Move your inner ring 5 ticks.
+CardData.gear_shift.description,Move your inner ring 5 ticks clockwise.
 CardData.gear_shift.display_name,Gear Shift
-CardData.ghost_step.description,"Two nudges on an enemy wheel, ignoring resistance."
+CardData.ghost_step.description,"Two ±1 nudges on an enemy wheel, ignoring resistance."
 CardData.ghost_step.display_name,Ghost Step
-CardData.heavy_spin.description,Spin a wheel 9 ticks.
+CardData.heavy_spin.description,Spin a wheel 9 ticks clockwise.
 CardData.heavy_spin.display_name,Heavy Spin
 CardData.hot_patch.description,"OVERCLOCK a chosen slice of your wheel: 1.5x on its next trigger, then it becomes CORRUPTED."
 CardData.hot_patch.display_name,Hot Patch
@@ -425,13 +426,13 @@ CardData.hot_swap.description,Snap your outer ring to the slice center and gain 
 CardData.hot_swap.display_name,Hot Swap
 CardData.hub_breach.description,Disable the target Hub for 1 turn.
 CardData.hub_breach.display_name,Hub Breach
-CardData.inner_drift.description,Move your inner ring 3 ticks.
+CardData.inner_drift.description,Move your inner ring 3 ticks clockwise.
 CardData.inner_drift.display_name,Inner Drift
 CardData.inner_snap.description,Move your inner ring to the nearest segment center.
 CardData.inner_snap.display_name,Inner Snap
-CardData.jam.description,"Nudge an enemy wheel +-1, ignoring resistance."
+CardData.jam.description,"Nudge an enemy wheel ±1, ignoring resistance."
 CardData.jam.display_name,Jam
-CardData.jolt.description,Spin a wheel 3 ticks.
+CardData.jolt.description,Spin a wheel 3 ticks clockwise.
 CardData.jolt.display_name,Jolt
 CardData.leech_worm.description,The enemy slice under your pointer gets a PARASITE (half output). Exhaust.
 CardData.leech_worm.display_name,Leech Worm
@@ -439,11 +440,11 @@ CardData.lock_on.description,Move your outer ring to the nearest slice center (P
 CardData.lock_on.display_name,Lock On
 CardData.malware_drop.description,CORRUPT a random non-NULL slice of the target.
 CardData.malware_drop.display_name,Malware Drop
-CardData.micro_adjust.description,Two +-1 nudges. Exhaust.
+CardData.micro_adjust.description,Two ±1 nudges. Exhaust.
 CardData.micro_adjust.display_name,Micro-Adjust
 CardData.mirror_flip.description,Flip a wheel. Blocked while the target has resistance.
 CardData.mirror_flip.display_name,Mirror Flip
-CardData.momentum.description,Spin 2; spin 5 instead if you already spun this turn.
+CardData.momentum.description,Spin 2 ticks clockwise; spin 5 instead if you already spun this turn.
 CardData.momentum.display_name,Momentum
 CardData.overclock_nudges.description,Nudge cards trigger twice next turn.
 CardData.overclock_nudges.display_name,Nudge Driver
@@ -459,13 +460,13 @@ CardData.power_tap.description,Gain 2 RAM and take 3 damage.
 CardData.power_tap.display_name,Power Tap
 CardData.pull.description,Draw 2 cards.
 CardData.pull.display_name,Pull
-CardData.ratchet.description,Move your inner ring 8 ticks.
+CardData.ratchet.description,Move your inner ring 8 ticks clockwise.
 CardData.ratchet.display_name,Ratchet
 CardData.reroll.description,Respin a wheel to a random tick.
 CardData.reroll.display_name,Reroll
 CardData.ring_lock.description,"This turn, spins do not move your inner ring."
 CardData.ring_lock.display_name,Ring Lock
-CardData.ring_tap.description,Two +-1 nudges on your inner ring.
+CardData.ring_tap.description,Two ±1 nudges on your inner ring.
 CardData.ring_tap.display_name,Ring Tap
 CardData.sanitize.description,Remove CORRUPTED from a chosen slice and gain 3 block.
 CardData.sanitize.display_name,Sanitize
@@ -481,7 +482,7 @@ CardData.snap.description,Move your outer ring to the nearest slice center (Perf
 CardData.snap.display_name,Snap
 CardData.spawn_drone.description,Dock a drone on a chosen slice of your wheel.
 CardData.spawn_drone.display_name,Spawn Drone
-CardData.spin_cycle.description,Spin a wheel 12 ticks.
+CardData.spin_cycle.description,Spin a wheel 12 ticks clockwise.
 CardData.spin_cycle.display_name,Spin Cycle
 CardData.static_shock.description,Deal 4 damage to the target.
 CardData.static_shock.display_name,Static Shock
@@ -491,17 +492,17 @@ CardData.stim_patch.description,Heal 12. Exhaust.
 CardData.stim_patch.display_name,Stim Patch
 CardData.strip.description,Remove 2 resistance from the target.
 CardData.strip.display_name,Strip
-CardData.tailspin.description,Spin a wheel 4 ticks and draw 1 card.
+CardData.tailspin.description,Spin a wheel 4 ticks clockwise and draw 1 card.
 CardData.tailspin.display_name,Tailspin
-CardData.tap_tap.description,Three +-1 nudges on one ring.
+CardData.tap_tap.description,Three ±1 nudges on one ring.
 CardData.tap_tap.display_name,Tap Tap
-CardData.torque_wrench.description,Spin a wheel 5 ticks and gain a free nudge.
+CardData.torque_wrench.description,Spin a wheel 5 ticks clockwise and gain a free nudge.
 CardData.torque_wrench.display_name,Torque Wrench
-CardData.twist.description,Spin a wheel 4 ticks.
+CardData.twist.description,Spin a wheel 4 ticks clockwise.
 CardData.twist.display_name,Twist
 CardData.undock.description,Move a satellite to an adjacent slice.
 CardData.undock.display_name,Undock
-CardData.whirl.description,Spin a wheel 7 ticks.
+CardData.whirl.description,Spin a wheel 7 ticks clockwise.
 CardData.whirl.display_name,Whirl
 Cards,Cards
 Cards added,Cards added
@@ -938,6 +939,7 @@ FirmwareData.static_coat.description,DEFRAG slice also grants 2 shield.
 FirmwareData.static_coat.display_name,Static Coat
 FirmwareData.tracer.description,SHIM or OVERFLOW slice strips 1 resistance from the target on a Perfect.
 FirmwareData.tracer.display_name,Tracer
+Fits %s slices only.,Fits %s slices only.
 Flame: a Heat objective Site. Clearing it lowers Heat.,Flame: a Heat objective Site. Clearing it lowers Heat.
 Flash limiter (at most 3 flashes a second. On by default.),Flash limiter (at most 3 flashes a second. On by default.)
 "Forecast, not a result: if you start the defense now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it.","Forecast, not a result: if you start the defense now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it."
@@ -1634,6 +1636,7 @@ NUDGE,NUDGE
 NUDGE CARDS: every card whose effect is a nudge.,NUDGE CARDS: every card whose effect is a nudge.
 NUDGE: moves a ring one tick either way; resistance can refuse it.,NUDGE: moves a ring one tick either way; resistance can refuse it.
 NULL,NULL
+Needs an inner ring.,Needs an inner ring.
 NetrunBoostData.boost_field_kit.description,+2 max RAM in every combat of the next netrun.
 NetrunBoostData.boost_field_kit.display_name,Field Kit
 NetrunBoostData.boost_overclocked_deck.description,Two extra Jolt cards for the next netrun only.
