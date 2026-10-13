@@ -103,25 +103,37 @@ func test_refused_firmware_note_is_one_named_message_clear_of_the_sheet_skip_and
 					scene.choose_reward(i, k)
 					refused = true
 		assert_true(refused, "a chip that does not fit some slot exists to be refused")
-		await _frames(40)
+		# the note stays well past a toast's hold (visible N frames later), nothing else says it
+		await _frames(400)
 		assert_null(scene._panel.find_child("LootNote", true, false), "%.1f: no second (pencil / red) line beside CONTINUE" % scale)
-		var toast := scene.find_child("Toast", true, false) as ToastNote
-		assert_not_null(toast, "%.1f: the one message is the terminal note" % scale)
+		assert_null(scene.find_child("Toast", true, false), "%.1f: no second (timed) toast" % scale)
+		var toast := scene._panel.find_child("RefusalNote", true, false) as ToastNote
+		assert_not_null(toast, "%.1f: the one message is the terminal note, still there" % scale)
 		if toast == null:
 			holder.queue_free()
 			continue
+		assert_true(toast.is_visible_in_tree(), "%.1f: visible 400 frames later" % scale)
 		var text := toast.label.text
 		assert_false(text.contains("_"), "%.1f: names, never ids: %s" % [scale, text])
 		assert_true(text.contains("Slot ") and text.contains("It fits Slot"), "%.1f: says where it fits: %s" % [scale, text])
 		assert_true(toast.whole(), "%.1f: every line shows" % scale)
+		var ref := Label.new()
+		scene._panel.add_child(ref)
+		assert_eq(toast.label.get_theme_font_size("font_size"), ref.get_theme_font_size("font_size"), "%.1f: body text size, not shrunk" % scale)
+		ref.queue_free()
 		var nr := toast.get_global_rect()
 		var safe := Fx.sticker_safe_rect(SCREEN)
 		assert_true(safe.encloses(nr), "%.1f: the note %s is inside the safe rect %s" % [scale, nr, safe])
-		for node_name in ["FirmwareDrop", "Skip", "Continue"]:
+		for node_name in ["LootSheet", "FirmwareDrop", "Skip", "Continue"]:
 			var other := scene._panel.find_child(node_name, true, false) as Control
 			assert_not_null(other, "%s exists" % node_name)
 			if other != null:
 				assert_false(nr.intersects(other.get_global_rect()), "%.1f: the note %s does not cover %s %s" % [scale, nr, node_name, other.get_global_rect()])
+		# choosing a slot is acting: the note goes
+		var mini := _find_mini(scene._panel)
+		if mini != null:
+			mini.choose(mini.selected())
+			assert_null(scene._panel.find_child("RefusalNote", true, false), "%.1f: the note clears once the player acts" % scale)
 		holder.queue_free()
 		await _frames(2)
 
@@ -139,3 +151,13 @@ func test_enemy_tag_tooltip_says_after_this_play() -> void:
 	var tip := String(scene.hud_layer.row_for(view).tooltip_text)
 	assert_true(tip.contains(tr(WheelView.TAG_AFTER_TIP)), "the tag's tooltip says it is the position after this play: %s" % tip)
 	assert_true(tip.to_lower().contains("after this play"), "the tooltip carries 'after this play'")
+
+
+func _find_mini(n: Node) -> SpinnerMini:
+	if n is SpinnerMini:
+		return n as SpinnerMini
+	for c in n.get_children():
+		var f := _find_mini(c)
+		if f != null:
+			return f
+	return null

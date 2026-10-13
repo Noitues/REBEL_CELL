@@ -566,12 +566,13 @@ func _choose_reward(index: int, slot: int, fly: bool) -> void:
 	_report(s.choose_reward(index, slot))
 	if s.run.pending_rewards.size() >= left and s.run.phase == RunState.Phase.REWARD and String(offer.get("kind", "")) == "firmware" and slot >= 0:
 		# the page stays as it is (the spinner keeps the player's slot) and says why
-		# one message: the terminal toast, worded here with the chip and slot names (the rules speak in ids)
-		var note := ToastNote.show_on(self, _refusal_note(offer, index, slot), true)
-		for node_name in ["Skip", "Continue", "FirmwareDrop"]:
-			var held := _panel.find_child(node_name, true, false) as Control if _panel != null else null
-			if held != null:
-				note.keep_clear.append(held.get_global_rect())
+		# one message: the terminal note, worded here with the chip and slot names (the rules speak in ids); the
+		# rules' own id-worded toast is dropped. It stays until the player acts.
+		var rules_toast := get_node_or_null(ToastNote.NODE_NAME)
+		if rules_toast != null:
+			remove_child(rules_toast)
+			rules_toast.queue_free()
+		_show_refusal(_refusal_note(offer, index, slot))
 		return
 	# The picked card lifts and flies to the deck (ANIM-6); the page is rebuilt under it.
 	if s.run.pending_rewards.size() < left and not offer.is_empty():
@@ -3128,6 +3129,7 @@ func _show_reward() -> void:
 		drop.body.add_child(mini)
 		slot_option = mini
 		# B2: choosing a slot is acting: the refusal's note goes.
+		mini.slot_chosen.connect(func(_k: int) -> void: _clear_refusal())
 	# ANIM-R2 E8: the gap between stickers keeps room for their rest tilt (it grows with the card).
 	var tilt := sin(deg_to_rad(ZineCard.REST_TILT_MAX))
 	var ls := clampf(minf(ts, (room - LOOT_GAP * (n - 1)) / maxf(1.0, n * (LOOT_CARD.x + LOOT_CARD.y * tilt))), 1.0, Settings.TEXT_SCALE_MAX)
@@ -3250,6 +3252,40 @@ static func first_fitting_slot(options: Array) -> int:
 			if s.firmware_slot_error(StringName(String(o)), k) == "":
 				return k
 	return 0
+
+
+## W1 polish: the refused take's one message, a terminal-styled note (pink edge) in the loot head where the page's
+## strip stands (the strip hides meanwhile), so it covers nothing and sits inside the safe margin at every text
+## scale; it stays until the player acts (`_clear_refusal`; any take or Skip rebuilds the page).
+func _show_refusal(text: String) -> void:
+	var strip := _panel.find_child("LootWindow", true, false) as Control if _panel != null else null
+	if strip == null:
+		ToastNote.show_on(self, text, true)
+		return
+	var note := strip.get_parent().get_node_or_null("RefusalNote") as ToastNote
+	if note == null:
+		note = ToastNote.new(text, true)
+		note.name = "RefusalNote"
+		UiWrap.whole_words(note.label)
+		strip.get_parent().add_child(note)
+		strip.get_parent().move_child(note, strip.get_index() + 1)
+		var pad := note.get_combined_minimum_size().x - note.label.get_combined_minimum_size().x
+		note.label.custom_minimum_size.x = maxf(1.0, maxf(strip.size.x, strip.get_combined_minimum_size().x) - pad)
+	else:
+		note.label.text = UiTip.fold(text)
+	strip.visible = false
+
+
+## The refusal note goes and the page's strip returns (the player chose a slot).
+func _clear_refusal() -> void:
+	var note := _panel.find_child("RefusalNote", true, false) if _panel != null else null
+	if note == null:
+		return
+	var strip := _panel.find_child("LootWindow", true, false) as Control
+	note.get_parent().remove_child(note)
+	note.queue_free()
+	if strip != null:
+		strip.visible = true
 
 
 ## B2: why taking option `index` into `slot` was refused: the chip, the slot, and where it does fit
