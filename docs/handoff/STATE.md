@@ -18,6 +18,11 @@ tooling slices (docs/handoff/tooling1/SLICES.md, review docs/process/PLAYTEST_CO
 Motion tooling HELD until the animation slices. In flight: T1 (fix-mechanical, tag tooling1-t1: gate profiles, no
 combat escalation, audit on changed screens, cost double-count fix, parity pairing, doc 05) and T2 (fix-rules, tag
 tooling1-t2: HeuristicStrategist + $12-capped calibration + 2-turn lookahead boss numbers). Then wave 0.
+2026-10-13: tooling T1 + T2 merged and pushed; wave 0 (V1 preview gaps, V2 B repro, V5 M0–M4 ticks) merged and pushed
+@ 5e0c5f04. Rulings after wave 0 logged (DECISIONS 2026-10-13). **Wave 1 in flight** (docs/handoff/plan1/W1.md): 5 agents,
+temp tags plan1-w1-tut / -loot / -hq / -tag / -mech, base 1cdb987b. Next: merge each (import after class_names),
+one group sheet → art-pass session review, then gate PT-002a = human list + `gate.py --profile flow --skip-screen` (routes + heuristic sweep, $0; designer: no screen testers until PT-002).
+V4 (designer's Genome Core attempt) still open.
 **Claude playtesters (2026-10-12, merged @ 5fc4903f, fast 1473 / 0):** black-box screen testers, batch judging, routes and
 saves, a headless state tester, replay audit, Perfect quiz, decision parity, gate routine (docs/process/05). Feedback gathered
 (PB-010, PB-012, probes, parity, state sweep SA-001; $57 API in all) and analysed in

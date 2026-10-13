@@ -32,7 +32,7 @@ Standing rules this plan follows:
 | B-city | B7 Map Key opens empty · B8 raid banner stays "RAID IN PROGRESS" after the raid · B9 START unreachable at text 2.0 | city + screens / fix-visual |
 
 Every fix gets a test (rule 6). Then the merge, one group sheet to the art-pass session, then **gate PT-002a**: the
-human list for B plus `tools/playtest/gate.py` (9A, ~$50).
+human list for B plus `gate.py --profile flow --skip-screen`: route check and heuristic sweep, **$0 API** (designer 2026-10-13: no screen testers for a wave of reproduced, tested bugs; they return at PT-002 for the A+B re-test).
 
 ## Wave 2 — A: combat legibility (one group, one sheet)
 | Slice | Items |
@@ -72,7 +72,7 @@ Gate PT-003.
 | Phase | Agents and size | Cost | Gate |
 |---|---|---|---|
 | Wave 0 | 3 agents + 1 state run | ~$5 API | — |
-| Wave 1 | 4 fix-visual | — | PT-002a (~$50) |
+| Wave 1 | 4 fix-visual | — | PT-002a ($0 API) |
 | Wave 2 | 5 fix-visual (A1 may need Opus for the resolver hook, stated as OPUS-BECAUSE) | — | PT-002 (~$50 plus re-tests) |
 | Wave 3 | 4–5 slices | — | PT-003 |
 
