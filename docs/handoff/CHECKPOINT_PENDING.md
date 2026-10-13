@@ -1,11 +1,11 @@
 # Checkpoint queue
 
-Pending: **CP-003** (2026-10-12): `docs/handoff/gates/CP-003.md`, from the playtest analysis `docs/playtest/claude/ANALYSIS_2026-10-12.md`.
-The full CP-002 as asked:
-`docs/handoff/gates/CP-002_as_asked.md`. Add items as they come up (template `docs/process/templates/CHECKPOINT.md`);
-BLOCKING questions go to chat at once, not here.
+Pending: **none**. Asked forms: `docs/handoff/gates/CP-002_as_asked.md`, `docs/handoff/gates/CP-003.md`. Add items as
+they come up (template `docs/process/templates/CHECKPOINT.md`); BLOCKING questions go to chat at once, not here.
 
 ## Answered
+- **CP-003** (2026-10-12 → answered 2026-10-12, designer confirmed in chat): 1A 2A 3A 4A 5A 6A 7A 8A 9A; D1–D3 stand.
+  Plan: `docs/handoff/gates/CHANGE_PLAN_1.md`. Logged: DECISIONS "Designer rulings CP-003".
 - **CP-002** (2026-10-12 → answered 2026-10-12):
   1. Wait for playtest feedback: gather it all, act on none until the designer says; analyze → decide what changes and what is
      ignored → plan only the approved changes.

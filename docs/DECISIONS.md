@@ -66,6 +66,27 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-12 — Designer rulings CP-003 (playtest analysis) → change plan 1
+Evidence: `docs/playtest/claude/ANALYSIS_2026-10-12.md`; questions `docs/handoff/gates/CP-003.md`; plan
+`docs/handoff/gates/CHANGE_PLAN_1.md`. All recommended options:
+1. **Order:** A (combat legibility A1–A5) + B (flow bugs B1, B2, B3, B5, B6, B7, B8, B9) first; then C (city clarity);
+   D (balance) only after a re-test.
+2. **A1:** a PERFECT / GOOD / WEAK tag on each pointer and in the preview, live as cards and nudges are queued; no tick
+   marks or reticles (CP-002 ruling 7 stands).
+3. **Genome Core:** verify before tuning: a 2-turn-lookahead state run (`tools/agent/turn_planner.gd`) and one human
+   attempt from a strong library save; then rule.
+4. **Pacing:** recorded only (CP-002 ruling 6).
+5. **Schematics surplus:** re-measured with the v2 HQ agent at the next gate.
+6. **Conditional cards / Firmware:** state the condition on the card / chip face (with A4); keep offering them.
+7. **HP recovery on routes:** make recovery and carry-over visible first (C7), re-check with coached testers.
+8. **M0–M4:** tick the systems criteria now (state sweep: whole campaigns, wins, raids, Exploits, boss, no soft-lock);
+   hold the readable / learnable criteria until A + B pass a re-test.
+9. **Claude playtests at every User-Ready Gate** (`tools/playtest/gate.py`, doc 05 §12) alongside the human list;
+   routes re-recorded per build (a broken route = that screen changed). Cost to be reviewed (designer asked, same day).
+Defaults D1 (input "click did nothing" held until a human repeats it), D2 (motion findings queued, animation pass
+paused), D3 (playtest tooling merged; no game code) stand. A2 caveat: check what the live preview already shows after
+aiming before building it.
+
 ### 2026-10-12 — Designer rulings CP-002 (M14 completion gate)
 1. **Feedback first, action later.** Playtest feedback is gathered from every source and none of it is acted on until
    the designer says so. Then: analyze the responses, decide with the designer what changes and what feedback is
