@@ -187,6 +187,9 @@ func test_focus_brackets_draw_outside_and_never_change_min_size() -> void:
 
 
 func test_high_contrast_thickens_the_brackets() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var th := UiTheme.build(1.0)
 	HighContrast.apply(th)
 	for kind in UiTheme.BRACKET_FOCUS_TYPES:
@@ -200,6 +203,9 @@ func test_high_contrast_thickens_the_brackets() -> void:
 
 
 func test_focus_scale_is_1_03_about_the_centre_and_never_reflows() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Motion.force_live = true
 	Settings.set_reduce_effects(true)  # the end state at once
 	Settings.set_pad_active(true)  # the scale is for pad focus (TV distance)
@@ -235,6 +241,9 @@ func test_focus_scale_is_1_03_about_the_centre_and_never_reflows() -> void:
 
 
 func test_mouse_and_headless_focus_never_scale() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	assert_eq(UiFocus.focus_scale(), 1.0, "headless keeps every rect exact")
 	Motion.force_live = true
 	Settings.set_pad_active(false)
@@ -259,6 +268,9 @@ func test_cards_and_tilted_controls_keep_their_own_focus_look() -> void:
 # --- §12 pad glyphs ------------------------------------------------------------------------------
 
 func test_every_pad_glyph_set_has_every_button() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	assert_eq(PadGlyph.SETS, [PadGlyph.SET_XBOX, PadGlyph.SET_PLAYSTATION, PadGlyph.SET_SWITCH, PadGlyph.SET_DECK])
 	for s in PadGlyph.SETS:
 		assert_true(Settings.PAD_GLYPH_SETS.has(s), "%s is a set Settings stores" % s)
@@ -272,6 +284,9 @@ func test_every_pad_glyph_set_has_every_button() -> void:
 
 
 func test_pad_glyphs_draw_every_button_in_every_set() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var h := _holder()
 	for s in PadGlyph.SETS:
 		for b in PadGlyph.BUTTONS:
@@ -284,6 +299,9 @@ func test_pad_glyphs_draw_every_button_in_every_set() -> void:
 
 
 func test_the_glyph_set_is_the_one_settings_stores_or_detects() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	assert_eq(PadGlyph.detect_set("Xbox Series Controller"), PadGlyph.SET_XBOX)
 	assert_eq(PadGlyph.detect_set("PS5 Controller"), PadGlyph.SET_PLAYSTATION)
 	assert_eq(PadGlyph.detect_set("DualShock 4"), PadGlyph.SET_PLAYSTATION)
@@ -299,6 +317,9 @@ func test_the_glyph_set_is_the_one_settings_stores_or_detects() -> void:
 
 
 func test_prompts_are_glyph_and_word_never_bracketed_letters() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var h := _holder()
 	var row := PadPrompts.new()
 	h.add_child(row)
@@ -421,6 +442,9 @@ func test_a_confirm_sits_on_a_scrim_that_takes_the_page_clicks_and_traps_the_pad
 
 
 func test_high_contrast_makes_the_scrim_opaque() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_high_contrast(true)
 	var s := GlassScrim.new()
 	add_child_autofree(s)

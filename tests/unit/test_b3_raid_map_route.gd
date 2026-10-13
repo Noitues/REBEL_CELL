@@ -196,7 +196,7 @@ func test_route_frames_the_options_at_the_round_44_zoom_with_the_target_arrow() 
 	assert_almost_eq(cfg.route_ortho_far, 190.0, 0.001)
 	for corp in CORPORATIONS:
 		for mid in [false, true]:
-			for scale in [1.0, 1.6, 2.0]:
+			for scale in TestScope.scales([1.0, 1.6, 2.0]):
 				Settings.set_text_scale(scale)
 				RunManager.reset()
 				var scene := _netrun(corp)
@@ -322,7 +322,7 @@ func test_cell_holds_is_a_sticker_on_the_after_action_paper_with_the_result_moti
 
 func test_the_raid_legend_is_the_folded_key_strip_at_every_text_size() -> void:
 	_raid_campaign()
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var hq := await _hq()
 		hq.show_raid()
@@ -374,7 +374,7 @@ func test_defence_cards_are_the_concept_size_at_1080p_and_the_honeypot_is_the_de
 ## fold; the RAID SETUP title is a page title sticker (about 220 px wide, 48 px cap at 1080p).
 func test_raid_setup_paper_whole_network_visible_and_a_page_title() -> void:
 	_raid_campaign()
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var hq := await _hq()
 		hq.show_raid()
@@ -420,7 +420,7 @@ func test_raid_setup_paper_whole_network_visible_and_a_page_title() -> void:
 
 func test_your_network_and_threat_intel_fit_the_column_at_every_text_size() -> void:
 	_raid_campaign()
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var hq := await _hq()
 		hq.show_raid()

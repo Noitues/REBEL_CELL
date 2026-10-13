@@ -252,6 +252,9 @@ func test_the_target_is_marked() -> void:
 # --- Hints, text scale, tooltips, tutorial ---------------------------------------------------
 
 func test_pad_players_see_pad_buttons() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var scene := await _combat()
 	Settings.set_pad_active(true)
 	await _frames()
@@ -264,6 +267,9 @@ func test_pad_players_see_pad_buttons() -> void:
 
 
 func test_the_text_scale_reaches_tags_chips_and_cards() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var small := await _combat(&"compliance_officer", 1.0)
 	# ART-2 2D (D15): the result chips are the tag now.
 	var tag_small: float = small.chip_row(&"player").size.y
@@ -283,7 +289,7 @@ func test_combat_controls_have_tooltips() -> void:
 
 
 func test_the_tutorial_and_subtitles_share_the_right_column() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		var scene := await _combat(&"compliance_officer", scale)
 		scene.start_tutorial()
 		Dialogue.say(RC.Voice.DISPATCH, "Runner, keep the needle off the NULL slice and bank the Rack before the audit lands.")
@@ -306,6 +312,9 @@ func test_pad_inspect_on_a_card_says_what_it_does() -> void:
 
 
 func test_a_netrun_fight_shows_the_whole_hand_and_send_it_at_1_6() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	# Pass-20 P1 (a height test): at the largest text scale the fight inside a netrun keeps
 	# every card and SEND IT on the 720-px canvas.
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)

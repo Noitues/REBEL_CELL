@@ -22,6 +22,9 @@ func _frames(n: int = 3) -> void:
 
 
 func test_a_refused_rebind_keeps_the_panel_on_screen() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	var menu := PauseMenu.new()
 	menu.position = Vector2((1280 - PauseMenu.MENU_SIZE.x) / 2.0, 100)

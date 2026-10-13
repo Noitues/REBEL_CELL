@@ -68,7 +68,7 @@ func _close(scene: Control) -> void:
 ## `peel_px`. A word sticker's die-cut ran only round its letters, so its fold room was empty air and the fold cut
 ## nothing: the tab the room draws (`fold_room_rect`) stands inside that corner, and the flap covers it.
 func test_f1_the_fold_cuts_a_drawn_corner_beside_the_word() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _loot("card", scale)
 		var go := scene._panel.find_child("Continue", true, false) as HoloSticker
 		assert_not_null(go, "x%.1f: CONTINUE" % scale)
@@ -87,7 +87,7 @@ func test_f1_the_fold_cuts_a_drawn_corner_beside_the_word() -> void:
 # --- F2: SKIP is a verb sticker like CONTINUE --------------------------------------------------------------------
 
 func test_f2_skip_has_no_icon_over_its_letters_and_keeps_its_fold_room() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _loot("card", scale)
 		var skip := scene._panel.find_child("Skip", true, false) as HoloSticker
 		assert_not_null(skip, "x%.1f: SKIP" % scale)
@@ -100,7 +100,7 @@ func test_f2_skip_has_no_icon_over_its_letters_and_keeps_its_fold_room() -> void
 # --- F4: a hovered reward card stays whole under the page's clip --------------------------------------------------
 
 func test_f4_a_grown_reward_card_stays_inside_the_page() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _loot("card", scale)
 		var top: float = scene._page_top()
 		for c in scene._panel.find_children("*", "ZineCard", true, false):
@@ -131,7 +131,7 @@ func _inside_room(scene: Control, what: String) -> void:
 
 
 func test_f5_the_loot_foot_is_on_screen_and_stays_after_the_room_shrinks() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		for kind in ["card", "firmware"]:
 			var scene := await _loot(kind, scale)
 			_inside_room(scene, "%s x%.1f" % [kind, scale])

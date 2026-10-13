@@ -50,7 +50,7 @@ func test_every_defence_asset_has_the_concepts_baked_card_and_colour() -> void:
 
 
 func test_card_words_are_the_concepts_and_sit_on_the_face_at_every_text_size() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.text_scale = scale
 		for d in _assets():
 			var card: AssetCard = add_child_autofree(AssetCard.new(d.id, d.display_name, d.integrity, 2))
@@ -92,7 +92,7 @@ func test_a_narrowed_card_shrinks_evenly_never_squashed() -> void:
 # --- RAID-03: DECRYPTED under the holo's header ------------------------------------------------------
 
 func test_decrypted_stamp_never_covers_the_holo_header_or_a_row() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.text_scale = scale
 		for with_strip in [false, true]:
 			var holo: RaidHolo = add_child_autofree(RaidHolo.new(&"meridian", "THREAT INTEL // SCAN", "4C-E7"))
@@ -168,7 +168,7 @@ func test_each_step_frames_core_and_the_route_ends() -> void:
 # --- RAID-09: the feed never shows a cut line ---------------------------------------------------------
 
 func test_the_feed_shows_its_newest_line_and_a_whole_top_line() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.text_scale = scale
 		var feed: RaidFeed = add_child_autofree(RaidFeed.new("PLAYOUT", Vector2(330, 150)))
 		feed.label.add_theme_font_override("normal_font", Palette.mono_arrows())

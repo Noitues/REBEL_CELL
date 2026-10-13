@@ -269,7 +269,7 @@ func test_new_cards_deal_in_from_the_deck_pile() -> void:
 
 
 func test_no_layout_violation_at_the_end_state_after_card_motion() -> void:
-	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 		var scene := await _combat(&"collections_agent", scale)
 		_live()
 		scene.play_card(_playable(scene))

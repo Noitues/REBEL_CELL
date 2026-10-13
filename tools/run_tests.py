@@ -7,6 +7,7 @@ exits non-zero on any failure, crash or timeout.
     python tools/run_tests.py                 # full suite, 4 shards
     python tools/run_tests.py -j 2            # full suite, 2 shards
     python tools/run_tests.py --tier fast     # the fast tier only (iteration)
+    python tools/run_tests.py --tier deferred # only the deferred scripts (text scale > 1.0, high contrast, gamepad, colour-blind)
     python tools/run_tests.py --select pass24 # scripts whose path contains "pass24"
     python tools/run_tests.py --update-times  # also write measured times to the manifest
     python tools/run_tests.py --no-isolate    # don't rerun failing scripts alone
@@ -249,10 +250,19 @@ def isolate(scripts: list[str], out: Path, args, not_run: list[str] | None = Non
         time.sleep(0.5)
 
 
+def tier_selected(script_tier: str | None, wanted: str) -> bool:
+    """Whether a script of `script_tier` runs under --tier `wanted`: the deferred tier runs only
+    under --tier deferred and in no other run (designer ruling 2026-10-13)."""
+    if wanted == "all":
+        return script_tier != "deferred"
+    return script_tier == wanted
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("-j", "--jobs", type=int, default=4, help="number of shards (Godot processes)")
-    ap.add_argument("--tier", choices=["all", "fast"], default="all")
+    ap.add_argument("--tier", choices=["all", "fast", "deferred"], default="all",
+                    help="all = every script except the deferred tier; fast; deferred = only the deferred scripts (text scale > 1.0, high contrast, gamepad, colour-blind)")
     ap.add_argument("--select", action="append", default=[], help="only scripts whose path contains this text (repeatable: any match)")
     ap.add_argument("--godot", default=os.environ.get("GODOT", "godot"))
     ap.add_argument("--timeout", type=float, default=3600.0, help="seconds per shard")
@@ -271,7 +281,7 @@ def main() -> int:
     found = discover()
     unlisted = [s for s in found if s not in entries]
     missing = [s for s in entries if s not in found]
-    scripts = [s for s in found if args.tier == "all" or entries.get(s, {}).get("tier") == args.tier]
+    scripts = [s for s in found if tier_selected(entries.get(s, {}).get("tier"), args.tier)]
     if args.select:
         scripts = [s for s in scripts if any(sel in s for sel in args.select)]
     if not scripts:

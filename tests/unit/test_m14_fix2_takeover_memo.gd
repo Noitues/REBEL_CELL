@@ -156,8 +156,11 @@ func _assert_routing_fits(memo: CorpMemo, tag: String) -> void:
 
 
 func test_the_memo_routing_line_wraps_then_folds_for_every_corp_at_every_size() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var wrapped_at_2 := false
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		for id: StringName in RaidSkin.CORPS:
 			var corp := RunManager.lookup().get_content(id) as CorporationData

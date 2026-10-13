@@ -113,7 +113,7 @@ static func _on_steps(px: int, scale: float) -> bool:
 # --- L40 / L61: the fight's subtitle box and OURS NOW -------------------------------------------
 
 func test_the_fight_box_pages_by_its_room_and_ours_now_stands_clear_of_it() -> void:
-	for scale in [1.0, 1.6]:
+	for scale in TestScope.scales([1.0, 1.6]):
 		var combat := await _won_fight(scale)
 		var dock: Rect2 = combat._subtitle_dock
 		assert_true(dock.has_area(), "x%.1f: the box's rect is kept" % scale)
@@ -137,7 +137,7 @@ func test_the_fight_box_pages_by_its_room_and_ours_now_stands_clear_of_it() -> v
 
 
 func test_page_lines_in_counts_the_lines_under_the_name_row() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var h := (COMBAT.SUBTITLE_CHROME_PX + COMBAT.SUBTITLE_LINES * COMBAT.SUBTITLE_LINE_PX) * scale
 		var n := Dialogue.page_lines_in(Rect2(0, 0, 300, h))
@@ -151,7 +151,7 @@ func test_page_lines_in_counts_the_lines_under_the_name_row() -> void:
 
 func test_the_campaign_end_gives_dispatch_a_two_line_band() -> void:
 	for outcome in [CampaignState.Outcome.WON, CampaignState.Outcome.LOST]:
-		for scale in SCALES:
+		for scale in TestScope.scales(SCALES):
 			Settings.set_text_scale(scale)
 			RunManager.new_campaign(1)
 			var hq: Control = load(HQ).instantiate()
@@ -180,7 +180,7 @@ func test_the_campaign_end_gives_dispatch_a_two_line_band() -> void:
 # --- L48: VOICE ONLY // NO FEED --------------------------------------------------------------------
 
 func test_voice_only_words_stand_whole_inside_the_feed() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var os := minf(scale, ShopItem.OBJECT_MAX_SCALE)
 		var box: Vector2 = NETRUN_SCRIPT.EVENT_CAM * os
 		if scale >= NETRUN_SCRIPT.EVENT_FEED_BELOW:
@@ -202,7 +202,7 @@ func test_voice_only_words_stand_whole_inside_the_feed() -> void:
 # --- L54: the route key wraps, never scaled ------------------------------------------------------
 
 func test_the_route_key_follows_the_text_size_and_wraps_instead_of_scaling() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _netrun(scale)
 		await _frames(4)
 		var legend: RouteLegend = scene.route_legend
@@ -220,6 +220,9 @@ func test_the_route_key_follows_the_text_size_and_wraps_instead_of_scaling() -> 
 
 
 func test_a_narrow_route_key_wraps_to_more_rows() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(2.0)
 	var legend: RouteLegend = add_child_autofree(RouteLegend.new(RouteLegend.ORDER))
 	await _frames()
@@ -236,7 +239,7 @@ func test_a_narrow_route_key_wraps_to_more_rows() -> void:
 # --- L59: a terminal window's glass and header ----------------------------------------------------
 
 func test_a_terminal_windows_glass_covers_it_and_its_title_follows_the_text_size() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var w: TerminalWindow = add_child_autofree(TerminalWindow.new("RAID // COLLECTIONS: FIRST NOTICE", Palette.CORP_SOLACE))
 		w.body.add_child(Label.new())
@@ -269,7 +272,7 @@ func test_paper_and_manila_soft_ink_read_at_four_and_a_half_to_one() -> void:
 
 
 func test_saved_connecting_and_the_fight_banner_are_on_the_type_scale() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		assert_true(_on_steps(UiTheme.font_px(Fx.SAVED_FONT), scale), "x%.1f: SAVED" % scale)
 		assert_true(_on_steps(UiTheme.font_px(Fx.CONNECT_FONT), scale), "x%.1f: CONNECTING" % scale)
@@ -283,7 +286,7 @@ func test_saved_connecting_and_the_fight_banner_are_on_the_type_scale() -> void:
 
 
 func test_the_fight_address_keeps_the_outcome_word_and_the_floor() -> void:
-	for scale in [1.6, 2.0]:
+	for scale in TestScope.scales([1.6, 2.0]):
 		var combat := await _won_fight(scale)
 		var address := combat._address as Label
 		var fs := address.get_theme_font_size(&"font_size")

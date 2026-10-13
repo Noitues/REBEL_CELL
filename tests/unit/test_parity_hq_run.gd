@@ -122,7 +122,7 @@ func test_hqrun_01_the_terminal_presents_the_rules_that_exist() -> void:
 
 func test_hqrun_01_the_page_chrome_fits_at_every_text_size() -> void:
 	for view in VIEWS:
-		for k in SCALES:
+		for k in TestScope.scales(SCALES):
 			Settings.set_text_scale(k)
 			var v := _page(&"meridian", view)
 			await _frames()
@@ -307,7 +307,7 @@ func test_gate_01_the_panel_is_the_concepts_bordered_card() -> void:
 func test_gate_01_breach_under_the_panel_and_everything_fits_at_every_text_size() -> void:
 	var all: Array[int] = [RC.ExploitType.INTEL, RC.ExploitType.BREACH, RC.ExploitType.VIRUS]
 	for view in VIEWS:
-		for k in SCALES:
+		for k in TestScope.scales(SCALES):
 			Settings.set_text_scale(k)
 			var host := Control.new()
 			host.size = view
@@ -362,7 +362,7 @@ func test_gate_03_the_page_behind_is_blurred_and_dimmed() -> void:
 ## as laid out. At 1.6 and 2.0 on a 1280 x 720 page the foot is tall: the run stays on the page and
 ## the chip under the band, the frame at most FIT_MAX_SHARE wider than the concept's.
 func test_the_run_stays_clear_of_the_chrome_at_every_text_size() -> void:
-	for k in SCALES:
+	for k in TestScope.scales(SCALES):
 		Settings.set_text_scale(k)
 		for corp in CORPS:
 			var v := _page(corp, VIEWS[0])

@@ -181,6 +181,9 @@ func test_confirm_dialogs_and_the_pause_menu_trap_focus() -> void:
 
 
 func test_netrun_screens_fit_at_the_largest_text_scale() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	RunManager.save_slot = "gut_test_netrun_root_h14"
 	RunManager.scene_switching_enabled = false
 	RunManager.delete_save()

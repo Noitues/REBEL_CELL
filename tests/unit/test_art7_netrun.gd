@@ -96,6 +96,9 @@ func test_the_route_view_draws_option_a_states_and_the_target() -> void:
 
 
 func test_every_state_has_a_second_cue_besides_colour() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	# The greyscale audit: each ring state has its own style, so states differ without colour.
 	var styles := {}
 	for st in [RouteOverlay.STATE_WALKED, RouteOverlay.STATE_NEXT, RouteOverlay.STATE_LATER, RouteOverlay.STATE_CUT]:
@@ -210,7 +213,7 @@ func test_the_route_sweeps_every_corporation_with_labels_and_you_are_here() -> v
 		await _frames()
 		var ov := _overlay(scene)
 		assert_not_null(ov, "%s: RouteOverlay" % corp)
-		for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+		for scale in TestScope.scales([1.0, 1.6, Settings.TEXT_SCALE_MAX]):
 			Settings.set_text_scale(scale)
 			await _frames(2)
 			# B3 (round 44): no YOU ARE HERE words; the token marks the position.
@@ -272,6 +275,9 @@ func test_the_dossier_and_node_panel_say_what_the_rules_say() -> void:
 
 
 func test_the_dossier_folds_at_big_text() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var scene := _netrun()
 	await _frames()
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)

@@ -188,7 +188,7 @@ func test_type_steps_have_their_sizes_and_line_heights() -> void:
 
 
 func test_font_px_scales_every_step_at_every_text_scale() -> void:
-	for scale in [0.8, 1.0, 1.6, 2.0]:
+	for scale in TestScope.scales([0.8, 1.0, 1.6, 2.0]):
 		for step in UiTheme.STEPS:
 			assert_eq(UiTheme.font_px_at(step, scale), roundi(step * scale), "%d at %.1f" % [step, scale])
 	assert_eq(UiTheme.font_px_at(UiTheme.CAPTION, 2.0), 24)
@@ -212,7 +212,7 @@ func test_step_of_finds_the_step_a_size_belongs_to() -> void:
 
 func test_header_label_scales_with_the_text_as_before() -> void:
 	# The header kept main's size (22 x the scale); it now reads it from the TITLE step.
-	for scale in [0.8, 1.0, 1.6, 2.0]:
+	for scale in TestScope.scales([0.8, 1.0, 1.6, 2.0]):
 		var t := UiTheme.build(scale)
 		assert_eq(t.get_font_size(&"font_size", &"HeaderLabel"), roundi(22 * scale), "HeaderLabel at %.1f" % scale)
 		assert_eq(t.get_font_size(&"font_size", &"HeaderLabel"), UiTheme.font_px_at(UiTheme.TITLE, scale))
@@ -311,7 +311,7 @@ func test_body_face_is_plex_with_its_licence() -> void:
 
 
 func test_body_text_variation_serves_label_and_rich_text() -> void:
-	for scale in [1.0, 1.6, 2.0]:
+	for scale in TestScope.scales([1.0, 1.6, 2.0]):
 		var t := UiTheme.build(scale)
 		var px := UiTheme.font_px_at(UiTheme.BODY, scale)
 		var v := UiTheme.BODY_TEXT

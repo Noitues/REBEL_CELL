@@ -114,7 +114,7 @@ func test_loot_cards_keep_the_face_aspect_and_show_every_word() -> void:
 	var loot: Vector2 = load("res://scripts/ui/netrun_scene.gd").LOOT_CARD
 	assert_almost_eq(loot.x / loot.y, CardFace.UNIT.x / CardFace.UNIT.y, 0.02, "the loot card is the face's 3:4 (never stretched)")
 	var cards := _cards()
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		for id in cards:
 			var z := _card(cards[id], loot * scale, ZineCard.FIT_MIN_TEXT, true)
 			assert_true(z.text_whole(), "loot x%.1f %s: every word on the face" % [scale, id])
@@ -122,7 +122,7 @@ func test_loot_cards_keep_the_face_aspect_and_show_every_word() -> void:
 
 func test_mainframe_cards_show_every_word_above_their_hanging_tag() -> void:
 	var cards := _cards()
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		for id in cards:
 			var c: CardData = cards[id]
 			var item := ShopItem.new(TextDb.t(c, "display_name"), c.ram_cost, FaceText.card_text(c), 0)
@@ -148,7 +148,7 @@ func test_hand_cards_keep_the_floor_at_rest_and_show_every_word_grown() -> void:
 	# at every text size and in a hand shrunk to fit (down to the scene's MIN_CARD_SCALE)
 	var cards := _cards()
 	var least: float = load("res://scripts/ui/combat_scene.gd").MIN_CARD_SCALE
-	for ts in SCALES:
+	for ts in TestScope.scales(SCALES):
 		for hand in [ts, ts * 0.9, least]:
 			for id in cards:
 				var z := _card(cards[id], ZineCard.STICKER_SIZE * hand, ZineCard.HAND_REST_FLOOR, false)
@@ -191,7 +191,7 @@ func _shown_chars(fit: Dictionary) -> int:
 
 
 func test_the_scene_grows_a_shrunk_hands_card_further_and_keeps_it_on_screen() -> void:
-	for ts in SCALES:
+	for ts in TestScope.scales(SCALES):
 		Settings.set_text_scale(ts)
 		RunManager.new_campaign(1)
 		var holder: Control = add_child_autofree(Control.new())
@@ -240,7 +240,7 @@ func test_no_rules_line_runs_under_the_rarity_pips_or_off_the_face() -> void:
 # --- the detail ---------------------------------------------------------------------------------------
 
 func test_the_card_detail_is_the_face_at_twice_the_hand_with_its_notes() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var lookup := RunManager.lookup()
 		var deck: Array[StringName] = [&"overdrive", &"jolt"]
@@ -283,7 +283,7 @@ func test_the_deck_viewer_fills_its_rows() -> void:
 # --- the piles ----------------------------------------------------------------------------------------
 
 func test_the_deck_and_discard_piles_show_their_counts_beside_the_hand() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var holder: Control = add_child_autofree(Control.new())

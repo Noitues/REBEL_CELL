@@ -261,7 +261,7 @@ func test_the_head_ends_on_start_and_the_code_terminals_are_cyan() -> void:
 # --- Fits at every text scale -------------------------------------------------------------------
 
 func test_the_page_fits_at_every_text_scale() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		RunManager.reset()
 		RunManager.profile.unlocks.clear()

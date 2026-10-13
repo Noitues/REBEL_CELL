@@ -39,7 +39,7 @@ func _ratio(v: VinylSticker) -> float:
 
 
 func test_the_lettered_vinyl_edge_is_proportional_and_in_the_concept_range() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		for step in STEPS:
 			var v := VinylSticker.new()

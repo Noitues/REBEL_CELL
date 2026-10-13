@@ -184,7 +184,7 @@ func test_the_dossiers_buttons_emit_and_are_stickers_the_pad_reaches() -> void:
 
 
 func test_the_dossier_fits_at_every_text_size() -> void:
-	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.6, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		var d: AuditDossier = add_child_autofree(AuditDossier.new(_facts(false)))
 		d.size = SCREEN.size

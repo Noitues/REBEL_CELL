@@ -282,7 +282,7 @@ func test_the_off_screen_target_carries_its_boss_chip() -> void:
 func test_the_page_fits_with_the_toast_at_every_text_scale() -> void:
 	_network()
 	RunManager.campaign.pending_raids.append({"raid_id": "raid_heat_25", "source": RC.RaidTriggerSource.HEAT_THRESHOLD, "heat": 25})
-	for s in [1.0, 1.6, 2.0]:
+	for s in TestScope.scales([1.0, 1.6, 2.0]):
 		Settings.set_text_scale(s)
 		var hq := await _hq()
 		await _frames(3)

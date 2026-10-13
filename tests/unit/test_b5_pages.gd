@@ -250,6 +250,9 @@ func test_a_slot_folder_is_the_cells_own_file_lying_tilted_on_the_glass() -> voi
 
 
 func test_the_pad_x_deletes_the_focused_slot_and_it_asks_first() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	RunManager.save_slot = "1"
 	RunManager.new_campaign(3)
 	RunManager.autosave()

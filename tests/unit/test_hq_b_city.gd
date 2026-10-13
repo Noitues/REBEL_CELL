@@ -335,7 +335,7 @@ func test_the_pad_reaches_the_map_the_hand_the_tabs_the_card_and_the_verb() -> v
 func test_the_page_fits_at_every_text_scale() -> void:
 	_network()
 	CampaignRules.queue_raid(RunManager.campaign, RunManager.corporation, RC.RaidTriggerSource.STORY, &"", "test")
-	for s in SCALES:
+	for s in TestScope.scales(SCALES):
 		Settings.set_text_scale(s)
 		var hq := await _hq()
 		await _frames(3)

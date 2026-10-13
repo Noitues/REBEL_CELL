@@ -105,7 +105,7 @@ func _one_row(st: HudStats, what: String) -> void:
 
 func test_the_raid_pages_keep_one_row_of_stat_tags_and_the_report_exit_on_screen() -> void:
 	for corp in [&"", &"meridian"]:
-		for scale in [1.0, 1.6, 2.0]:
+		for scale in TestScope.scales([1.0, 1.6, 2.0]):
 			Settings.set_text_scale(scale)
 			_raid_campaign(corp)
 			var hq := _scene(HQ)
@@ -130,6 +130,9 @@ func test_the_raid_pages_keep_one_row_of_stat_tags_and_the_report_exit_on_screen
 
 
 func test_with_motion_the_report_opens_on_its_exit_under_the_top_bar() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(2.0)
 	_raid_campaign()
 	var hq := _scene(HQ)
@@ -176,6 +179,9 @@ func test_the_netrun_raid_interlude_keeps_one_row_of_stat_tags() -> void:
 
 
 func test_past_the_one_row_floor_the_names_fold_before_two_rows() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(2.0)
 	var st := HudStats.new()
 	add_child_autofree(st)
@@ -261,7 +267,7 @@ func test_the_heat_note_moves_off_words_laid_out_after_it() -> void:
 
 func test_the_raid_interlude_heat_note_keeps_off_the_raid_panel_under_reduce_effects() -> void:
 	Settings.set_reduce_effects(true)
-	for scale in [1.0, 1.6, 2.0]:
+	for scale in TestScope.scales([1.0, 1.6, 2.0]):
 		Settings.set_text_scale(scale)
 		var net := _scene(NETRUN)
 		RunManager.new_campaign(1)
@@ -301,6 +307,9 @@ func test_hazard_ticks_cross_the_route_and_the_reticle_rings_the_mark() -> void:
 
 
 func test_the_raid_routes_carry_hazard_ticks_only_with_the_colour_blind_setting() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	_raid_campaign()
 	for mode in [&"off", &"deutan"]:
 		Settings.set_colorblind_mode(mode)
@@ -328,6 +337,9 @@ func test_the_raid_routes_carry_hazard_ticks_only_with_the_colour_blind_setting(
 ## M14 12Q-ACCESS (L79): the Grid's pending raid (the HQ's dashed what-if route, before RAID SETUP)
 ## is barbed too with the colour-blind setting on; off, it keeps the approved look.
 func test_the_grids_pending_raid_route_is_barbed_with_the_colour_blind_setting() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	_raid_campaign()
 	for mode in [&"off", &"deutan"]:
 		Settings.set_colorblind_mode(mode)
@@ -389,6 +401,9 @@ func test_the_3d_city_shows_its_current_look_once_built() -> void:
 # --- G2R-5..8: the group-2 art review's raid fixes -----------------------------------------------
 
 func test_g2r5_at_big_text_the_cell_holds_verdict_is_on_the_reports_first_page() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(2.0)
 	_raid_campaign()
 	var hq := _scene(HQ)
@@ -431,7 +446,7 @@ func test_g2r6_incoming_is_pencilled_once_for_the_raid() -> void:
 
 
 func test_g2r7_the_raid_setup_has_no_standing_corp_band_and_the_key_chip_is_cleared_by_saved() -> void:
-	for scale in [1.0, 2.0]:
+	for scale in TestScope.scales([1.0, 2.0]):
 		Settings.set_text_scale(scale)
 		_raid_campaign()
 		var hq := _scene(HQ)

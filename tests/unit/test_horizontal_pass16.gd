@@ -88,6 +88,9 @@ func test_arrow_keys_can_be_rebound() -> void:
 
 
 func test_the_netrun_fight_pause_menu_is_not_clipped() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	RunManager.save_slot = "gut_test_pause_clip_h16"
 	RunManager.scene_switching_enabled = false
 	RunManager.delete_save()

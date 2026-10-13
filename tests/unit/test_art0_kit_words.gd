@@ -64,6 +64,9 @@ func _all(node: Node) -> Array[Node]:
 # --- §6.8 / §12 input-aware words ------------------------------------------------------------------
 
 func test_pad_players_never_read_click_or_drag() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_pad_active(false)
 	assert_eq(UiTip.for_input("Click to buy", "Press A to buy"), "Click to buy")
 	Settings.set_pad_active(true)
@@ -113,6 +116,9 @@ func test_mouse_words_in_player_strings_go_through_for_input() -> void:
 
 
 func test_every_drag_tip_has_a_pad_line_without_mouse_words() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var scene: Script = load("res://scripts/ui/netrun_scene.gd")
 	var consts := scene.get_script_constant_map()
 	var pad: Dictionary = consts["DRAG_TIPS_PAD"]
@@ -123,6 +129,9 @@ func test_every_drag_tip_has_a_pad_line_without_mouse_words() -> void:
 
 
 func test_focus_tip_never_shows_mouse_words_to_a_pad() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_pad_active(true)
 	var b: Button = add_child_autofree(Button.new())
 	b.text = "x"
@@ -151,6 +160,9 @@ func _assert_pad_words(root: Node, where: String) -> void:
 
 
 func test_pad_pages_speak_pad_and_show_glyph_prompts() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	AudioDirector.muted = true
 	RunManager.save_slot = SLOT
 	RunManager.scene_switching_enabled = false
@@ -229,6 +241,9 @@ func test_whole_words_keeps_a_label_as_wide_as_its_longest_word() -> void:
 
 
 func test_crew_card_class_tag_never_breaks_mid_word_at_the_ceiling() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	var box: HBoxContainer = add_child_autofree(HBoxContainer.new())
 	var card := CrewCard.new("BREAKER 1", "Breaker", 0, 50, 50, "", 0.0)
@@ -359,6 +374,9 @@ func _paper_pieces() -> Dictionary:
 
 
 func test_paper_pieces_in_high_contrast_keep_their_paper_with_ink_words_and_edges() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.high_contrast = true
 	var p := _paper_pieces()
 	await _frames(2)
@@ -382,6 +400,9 @@ func test_paper_pieces_in_high_contrast_keep_their_paper_with_ink_words_and_edge
 
 
 func test_out_of_high_contrast_the_paper_pieces_look_as_before() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var p := _paper_pieces()
 	await _frames(1)
 	assert_eq((p["photo"] as Polaroid).edge_color(), Color(Palette.INK, Polaroid.EDGE_ALPHA), "the Polaroid's soft edge")

@@ -117,7 +117,7 @@ func test_the_route_page_draws_no_district_plates() -> void:
 # --- ROUTE-04: the choices are picked on the map ---------------------------------------------------
 
 func test_the_choices_are_focus_stops_on_their_map_stickers_in_numbered_order() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		RunManager.reset()
 		var scene := _netrun()
@@ -219,7 +219,7 @@ func test_no_you_are_here_words_and_no_node_tags_for_every_corporation() -> void
 func test_the_dossier_letterhead_keeps_every_word_whole_at_each_text_size() -> void:
 	var scene := _netrun(&"meridian")
 	await _frames()
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		await _frames(2)
 		var d: OperativeDossier = scene.dossier
@@ -242,7 +242,7 @@ func test_the_key_strip_says_the_concepts_states_and_fits() -> void:
 	assert_eq(RouteLegend.SHORT[CityMapOverlay.KIND_FIGHT], "FIGHT", "round 44's word")
 	var scene := _netrun()
 	await _frames()
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		await _frames(2)
 		var legend: RouteLegend = scene.route_legend
@@ -274,7 +274,7 @@ func test_the_fit_frames_you_are_here_for_every_corporation_and_text_size() -> v
 		scene._show_map()
 		await _frames()
 		var ov := _overlay(scene)
-		for scale in SCALES:
+		for scale in TestScope.scales(SCALES):
 			Settings.set_text_scale(scale)
 			await _frames(2)
 			assert_lte(scene._route_fits, NetrunScript.ROUTE_FITS_MAX + NetrunScript.ROUTE_RESCUE_PASSES, "%s x%.1f: the fit ends" % [corp, scale])

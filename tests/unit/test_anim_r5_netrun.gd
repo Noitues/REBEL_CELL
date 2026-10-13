@@ -104,7 +104,7 @@ func _key(k: Key) -> InputEventKey:
 # --- B1: the event's paper ------------------------------------------------------------------------
 
 func test_the_event_paper_holds_its_words_while_they_type_at_every_text_size() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _netrun(scale)
 		_live()
 		_event(scene)
@@ -132,7 +132,7 @@ func test_the_event_paper_holds_its_words_while_they_type_at_every_text_size() -
 # --- B2: the subtitle ------------------------------------------------------------------------------
 
 func test_the_event_subtitle_has_two_lines_at_a_readable_size() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _netrun(scale)
 		_event(scene)
 		await _frames(4)
@@ -173,7 +173,7 @@ func test_a_line_paged_for_another_dock_is_paged_again_not_squeezed() -> void:
 # --- B3: the run's end -----------------------------------------------------------------------------
 
 func test_the_run_end_is_a_window_over_the_city_with_a_verdict_and_reasons() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		var scene := await _netrun(scale)
 		scene.background.visible = false  # as a fight leaves it
 		var s := RunManager.netrun
@@ -391,7 +391,7 @@ func test_the_raid_framing_stops_when_the_scene_left_the_tree() -> void:
 
 
 func test_the_socket_list_says_what_it_is_for() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		var scene := await _netrun(scale)
 		RunManager.netrun._open_shop()
 		scene._show_current()

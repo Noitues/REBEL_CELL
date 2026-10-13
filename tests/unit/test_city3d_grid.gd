@@ -179,7 +179,7 @@ func test_frame_keeps_off_the_edge_and_the_network_in_view() -> void:
 
 
 func test_hq_card_column_ends_above_the_jack_in_slot_at_every_scale() -> void:
-	for s in [1.0, 1.6, 2.0]:
+	for s in TestScope.scales([1.0, 1.6, 2.0]):
 		var rects := HqLayout.rects(Vector2(1280, 720), s, false)
 		var card: Rect2 = rects["card"]
 		var verb: Rect2 = rects["verb"]

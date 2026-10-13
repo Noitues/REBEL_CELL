@@ -196,7 +196,7 @@ func test_a_runnable_site_shows_if_cleared_with_the_rules_preview() -> void:
 
 
 func test_the_verb_is_reachable_by_pad_and_fits_at_big_text() -> void:
-	for s in [1.0, 2.0]:
+	for s in TestScope.scales([1.0, 2.0]):
 		Settings.set_text_scale(s)
 		var hq := await _hq()
 		hq.select_site(_node(&"safehouse"))

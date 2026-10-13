@@ -136,7 +136,7 @@ func test_a_read_only_terminal_has_no_scrub() -> void:
 
 
 func test_the_gauge_fits_and_stays_a_drawn_object_at_every_text_scale() -> void:
-	for s in SCALES:
+	for s in TestScope.scales(SCALES):
 		Settings.set_text_scale(s)
 		var hq := await _hq()
 		var g: HeatGauge = hq.hud.heat_gauge

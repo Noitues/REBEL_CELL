@@ -94,9 +94,12 @@ func test_the_dump_scrolls_only_while_its_motion_is_live() -> void:
 # --- B1c-b: the dump reads as texture, never as text ------------------------------------------
 
 func test_the_dump_glyphs_are_a_fixed_small_size_at_every_text_scale() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	assert_almost_eq(CrtTerminalPanel.HEX_GLYPH_PX * 1.5, 11.0, 0.01, "about 11 px on a 1080p screen")
 	var cells: Array[Vector2] = []
-	for scale in [1.0, 1.6, 2.0]:
+	for scale in TestScope.scales([1.0, 1.6, 2.0]):
 		Settings.text_scale = scale
 		var p := CrtTerminalPanel.new()
 		add_child_autofree(p)

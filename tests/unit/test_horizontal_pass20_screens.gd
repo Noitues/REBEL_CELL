@@ -312,7 +312,7 @@ func _assert_clear(root: Node, label: String) -> void:
 
 
 func test_subtitles_never_cover_controls_on_any_screen() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		_raid_campaign()
@@ -357,6 +357,9 @@ func test_subtitles_never_cover_controls_on_any_screen() -> void:
 
 
 func test_the_default_dock_pages_and_names_the_speaker_inline() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Dialogue.dock_default()
 	assert_true(Dialogue.inline_speaker)
 	Dialogue.say(RC.Voice.DISPATCH, "Short line.")
@@ -475,6 +478,9 @@ func test_upgrade_a_slice_shows_the_picked_slots_own_price() -> void:
 # --- #16 key hints ---------------------------------------------------------------------------
 
 func test_key_hints_follow_the_device_outside_combat() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var hq := _open(HQ)
 	await _frames()
 	# HQ-B (f): the HQ's Options sit in the pause menu (no Settings button on the page).
@@ -500,6 +506,9 @@ func test_key_hints_follow_the_device_outside_combat() -> void:
 
 
 func test_viewer_close_and_route_hints_follow_the_device() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var scene := _open(NETRUN)
 	scene.start_run(1)
 	await _frames()

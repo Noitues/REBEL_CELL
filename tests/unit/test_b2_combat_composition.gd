@@ -319,7 +319,7 @@ func test_the_hand_fans_overlaps_and_rises_at_the_middle() -> void:
 ## G2R2-c: at rest, each fanned card's RAM cost and title lie wholly in the part its right neighbour leaves
 ## showing, at every text scale (only the body lines' ends may tuck under, D15).
 func test_g2r2_the_fanned_cards_cost_and_title_show_at_rest_at_every_scale() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		var n: int = scene._hand_box.get_child_count()
 		assert_gt(n, 2, "%.1f: a hand" % scale)
@@ -390,7 +390,7 @@ func test_cards_rest_full_bright_dim_to_75_while_aiming_and_short_ram_goes_grey(
 # --- D16: EXECUTE ---------------------------------------------------------------------------------------
 
 func test_execute_is_washed_out_smaller_than_send_it_and_half_covered() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		await _frames(2)
 		var send := scene._end_turn_button as SendItSticker
@@ -406,7 +406,7 @@ func test_execute_is_washed_out_smaller_than_send_it_and_half_covered() -> void:
 # --- Q1 (c): the Heat chip ------------------------------------------------------------------------------
 
 func test_the_heat_chip_sits_top_left_and_reuses_the_heat_gauge() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		await _frames(2)
 		var chip: Control = scene.heat_poster

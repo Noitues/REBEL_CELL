@@ -80,7 +80,7 @@ func _open_all() -> void:
 # --- SHOP-01 ------------------------------------------------------------------------------------
 
 func test_shop_01_the_clerk_note_sits_under_the_clerk_words() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var net := _scene(NETRUN)
 		net.new_campaign(1)
@@ -133,7 +133,7 @@ func _boss(overlay: CityMapOverlay) -> Dictionary:
 
 func test_grid_03_13_the_central_server_chip_and_target_pencil_cover_nothing_and_labels_keep_apart() -> void:
 	for corp in CORPS:
-		for scale in SCALES:
+		for scale in TestScope.scales(SCALES):
 			var hq := await _hq_grid(corp, scale)
 			var ov: CityMapOverlay = hq.city_overlay
 			var boss := _boss(ov)
@@ -182,7 +182,7 @@ func _on_city_share(hq: Control) -> float:
 
 func test_grid_12_every_corps_fitted_camera_stays_on_the_city() -> void:
 	for corp in CORPS:
-		for scale in SCALES:
+		for scale in TestScope.scales(SCALES):
 			var hq := await _hq_grid(corp, scale)
 			var share := _on_city_share(hq)
 			gut.p("GRID-12 %s %.1f: %.2f of the map on the city" % [corp, scale, share])
@@ -241,7 +241,7 @@ func _paper_rows(paper: RaidPaper) -> Array[Control]:
 
 
 func test_raid_02_the_work_order_stamp_and_disc_cover_no_value_and_no_line_covers_it() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		_raid_campaign()
 		var hq := _scene(HQ)
@@ -267,7 +267,7 @@ func test_raid_02_the_work_order_stamp_and_disc_cover_no_value_and_no_line_cover
 
 
 func test_raid_11_the_report_classified_stamp_covers_no_row() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		_raid_campaign()
 		var hq := _scene(HQ)

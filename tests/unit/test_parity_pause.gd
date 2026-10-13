@@ -182,9 +182,12 @@ func test_the_grease_pencil_notes_and_their_ink() -> void:
 
 
 func test_the_note_wraps_below_then_drops_as_the_text_grows() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	RunManager.new_campaign(1)
 	var modes := {}
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var menu: PauseMenu = add_child_autofree(PauseMenu.new())
 		await _frames(3)
@@ -213,7 +216,7 @@ func test_the_campaign_code_has_a_field_and_a_copy_button() -> void:
 
 
 func test_the_pause_menu_fits_at_every_text_scale() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var hq: Control = load(HQ).instantiate()
 		add_child(hq)

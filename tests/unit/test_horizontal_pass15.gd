@@ -80,6 +80,9 @@ func test_hotkeys_do_nothing_behind_the_pause_menu() -> void:
 
 
 func test_pause_menu_options_grow_with_their_section() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	var menu := PauseMenu.new()
 	add_child_autofree(menu)

@@ -151,7 +151,7 @@ func test_the_grid_for_every_corporation_text_size_and_stage() -> void:
 	var reaches := {}
 	var zooms := PackedStringArray()
 	for corp in CORPS:
-		for scale in SCALES:
+		for scale in TestScope.scales(SCALES):
 			for late in [false, true]:
 				var hq: Control = await _hq_grid(corp, scale, late)
 				var what := "%s x%.1f %s" % [corp, scale, "late" if late else "early"]

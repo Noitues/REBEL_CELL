@@ -153,6 +153,9 @@ func test_a_hit_on_your_wheel_reads_as_damage_taken() -> void:
 
 
 func test_the_folded_chip_says_more() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var scene := await _combat(&"collections_agent", Settings.TEXT_SCALE_MAX)
 	var v: WheelView = scene._player_view
 	var many: Array = []
@@ -165,7 +168,7 @@ func test_the_folded_chip_says_more() -> void:
 
 
 func test_the_wheel_centre_leaves_room_for_the_hp_block() -> void:
-	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 		var scene := await _combat(&"compliance_officer", scale)
 		for v in [scene._player_view] + scene._enemy_views.values():
 			var wv: WheelView = v
@@ -174,7 +177,7 @@ func test_the_wheel_centre_leaves_room_for_the_hp_block() -> void:
 
 
 func test_satellite_tokens_keep_off_the_hp_block() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		var scene := await _combat(&"collections_agent", scale)
 		var host: WheelView = scene._enemy_views.values()[0]
 		for rot in 30:
@@ -190,7 +193,7 @@ func test_satellite_tokens_keep_off_the_hp_block() -> void:
 
 func test_satellite_hp_plates_keep_clear_of_the_tag() -> void:
 	for enemy in [&"collections_agent", &"geostationary_guard", &"care_swarm"]:
-		for scale in [1.3, Settings.TEXT_SCALE_MAX]:
+		for scale in TestScope.scales([1.3, Settings.TEXT_SCALE_MAX]):
 			var scene := await _combat(enemy, scale)
 			for v in scene._enemy_views.values():
 				var host: WheelView = v

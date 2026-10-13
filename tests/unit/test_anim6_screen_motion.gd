@@ -476,7 +476,7 @@ func _button_rects(page: Control) -> Array:
 
 
 func test_end_state_layout_is_the_instant_layout_at_every_text_size() -> void:
-	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 		for screen in ["shop", "loot", "event"]:
 			var scene := await _netrun(scale)
 			match screen:

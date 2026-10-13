@@ -180,7 +180,7 @@ func test_the_pad_switches_tabs_and_scrolls_the_page() -> void:
 
 
 func test_the_codex_fits_on_the_title_and_in_the_pause_menu_at_every_text_scale() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var t := _title()
 		await _frames(2)
@@ -292,7 +292,7 @@ func test_the_pad_walks_the_tiles_badges_and_cards() -> void:
 
 func test_the_stats_fit_at_every_text_scale() -> void:
 	RunManager.profile = _stats_profile()
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var t := _title()
 		await _frames(2)
@@ -312,7 +312,7 @@ func test_the_stats_fit_at_every_text_scale() -> void:
 # --- OPT-01 / OPT-02 / OPT-03 -----------------------------------------------------------------------
 
 func test_title_options_are_a_centred_terminal_with_its_sticker() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var t := _title()
 		await _frames(2)

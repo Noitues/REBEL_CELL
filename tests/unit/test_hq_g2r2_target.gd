@@ -41,7 +41,7 @@ func _panel_rects(t: TargetEdgeMarker) -> Array[Rect2]:
 
 func test_the_target_pencil_is_never_under_a_panel_and_no_label_sits_on_it() -> void:
 	for corp in CORPORATIONS:
-		for s in SCALES:
+		for s in TestScope.scales(SCALES):
 			Settings.set_text_scale(s)
 			var holder: Control = add_child_autofree(Control.new())
 			holder.size = Vector2(1280, 720)

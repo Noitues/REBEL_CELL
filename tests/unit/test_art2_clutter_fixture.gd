@@ -150,7 +150,7 @@ func test_the_fixture_is_dressed_worst_case() -> void:
 
 func test_the_clutter_fixture_keeps_every_word_on_screen_and_apart_at_1_0_and_1_6() -> void:
 	for boss in BOSSES:
-		for scale in SCALES:
+		for scale in TestScope.scales(SCALES):
 			var scene := await _clutter(scale, boss)
 			var bad: Array[String] = []
 			for v in scene.layout_violations():

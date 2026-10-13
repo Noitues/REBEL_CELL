@@ -579,7 +579,7 @@ func test_the_settings_button_stickers_and_notes_translate() -> void:
 # --- A13: the play marker on the tape ------------------------------------------------------------------------
 
 func test_a_hovered_card_names_itself_on_the_tape_not_as_a_chip() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		var seen := 0
 		for i in scene.engine.state().hand.size():
@@ -645,7 +645,7 @@ func test_a_skipped_win_still_shows_victory() -> void:
 # --- A16: the tutorial box ---------------------------------------------------------------------------------------
 
 func test_the_tutorial_box_fits_its_text_and_moves_on() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		scene.start_tutorial()
 		await _frames(3)
@@ -691,7 +691,7 @@ func test_next_pulses_when_it_moves_the_tutorial_on() -> void:
 # --- A17: the arrows clear of the tag, the inner ring's mark, the play mark ------------------------------------
 
 func test_the_tags_never_cover_the_nudge_arrows() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		for i in [-1] + range(scene.engine.state().hand.size()):
 			if i >= 0:
@@ -826,7 +826,7 @@ func test_the_city_waits_to_land_until_the_replay_ends() -> void:
 
 
 func test_a_card_dealt_in_starts_whole_on_screen() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		var half: float = ZineCard.STICKER_SIZE.x * scene._hand_scale * 0.5
 		var spot: Vector2 = scene._deck_spot()

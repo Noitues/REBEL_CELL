@@ -140,7 +140,7 @@ func test_end_03_a_won_file_leads_with_the_corp_down_poster() -> void:
 
 
 func test_end_03_the_corp_down_sticker_never_covers_the_pencil() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		var d := _dossier(CampaignState.Outcome.WON)
 		await _frames(3)
@@ -230,7 +230,7 @@ func test_end_03_the_hqs_end_page_fits_its_page_at_1_0_with_the_stickers_on_it()
 
 
 func test_end_03_and_end_06_the_ends_fit_at_every_text_size() -> void:
-	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.6, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		for outcome in [CampaignState.Outcome.WON, CampaignState.Outcome.LOST, CampaignState.Outcome.ABANDONED]:
 			var d := _dossier(outcome)

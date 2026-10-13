@@ -54,7 +54,7 @@ func _combat(enemy: StringName = &"collections_agent", scale: float = 1.0) -> Co
 
 
 func test_satellites_dock_outside_the_values_and_are_aimed_before_the_arrows() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		var scene := await _combat(&"collections_agent", scale)
 		var host: WheelView = scene._enemy_views.values()[0]
 		assert_false(host.satellites.is_empty(), "the drone is docked")
@@ -88,6 +88,9 @@ func test_the_hp_number_is_now_and_the_forecast_is_separate() -> void:
 
 
 func test_the_wheel_keeps_most_of_its_size_at_big_text() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var small := await _combat(&"compliance_officer", 1.0)
 	var r1: float = small._player_view._radius()
 	var big := await _combat(&"compliance_officer", Settings.TEXT_SCALE_MAX)

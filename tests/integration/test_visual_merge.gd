@@ -80,7 +80,7 @@ func test_stickers_and_send_it_show_the_bound_keys() -> void:
 
 
 func test_stickers_and_intent_tags_stay_off_the_wheels_at_every_text_scale() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		var scene := await _combat(scale)
 		assert_eq(scene.layout_violations(), [], "text scale %.1f" % scale)
 		# ART-2 2D (D15): the forecast is the result chips beside the HP, not a tag.
@@ -91,7 +91,7 @@ func test_stickers_and_intent_tags_stay_off_the_wheels_at_every_text_scale() -> 
 
 
 func test_the_combat_subtitle_pages_and_never_reaches_a_wheel() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		var scene := await _combat(scale)
 		Dialogue.say(RC.Voice.DISPATCH, LONG_LINE)
 		await _frames()

@@ -140,7 +140,7 @@ func test_the_keys_open_the_pages_and_back_returns() -> void:
 
 func test_the_title_fits_at_every_text_scale() -> void:
 	_saved_campaign()
-	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.6, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		var t := _title()
 		t.continue_slot = "gut_art10"
@@ -179,7 +179,7 @@ func test_the_more_panel_keeps_a_clear_gap_under_overthrow() -> void:
 	# Parity TITLE-02 (designer 2026-10-05: concept 33): a clear gap from the OVERTHROW sticker
 	# down to the MORE panel, at every text scale MORE sits under the verbs.
 	_saved_campaign()
-	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.6, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		var t := _title()
 		t.continue_slot = "gut_art10"
@@ -313,7 +313,7 @@ func test_slots_fit_and_focus_reaches_every_action_at_every_text_scale() -> void
 		for slot in SLOT_IDS:
 			RunManager.delete_slot(slot)
 		_save_slots(used)
-		for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+		for scale in TestScope.scales([1.0, 1.6, Settings.TEXT_SCALE_MAX]):
 			Settings.set_text_scale(scale)
 			var t := _title()
 			await _frames(2)
@@ -376,6 +376,9 @@ func test_slots_fit_and_focus_reaches_every_action_at_every_text_scale() -> void
 
 
 func test_the_slots_panel_wraps_its_cards_then_scrolls_past_its_room() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	_save_slots(1)
 	var t := _title()
 	await _frames(2)
@@ -433,7 +436,7 @@ func test_the_confirm_is_yellow_cancel_by_default_and_a_pink_verb() -> void:
 
 func test_the_codex_and_stats_pages_fit_over_the_ticker_at_every_text_scale() -> void:
 	_saved_campaign()
-	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.6, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		var t := _title()
 		await _frames(2)
@@ -480,7 +483,7 @@ func test_a_page_entering_late_leaves_the_focus_on_the_open_confirm() -> void:
 func test_the_delete_confirm_is_the_abandon_dialog_with_the_slots_costs() -> void:
 	_saved_campaign()
 	var summary := RunManager.slot_summary("gut_art10")
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		var t := _title()
 		await _frames(2)
@@ -606,6 +609,9 @@ func test_heat_glitch_says_limited_under_the_flash_limiter() -> void:
 
 
 func test_options_stack_and_fit_at_text_scale_two() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	var panel: SettingsPanel = add_child_autofree(SettingsPanel.new())
 	await _frames(1)

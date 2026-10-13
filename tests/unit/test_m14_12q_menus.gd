@@ -89,7 +89,7 @@ func _assert_every_tab_reached(book: CodexBook, where: String) -> void:
 
 
 func test_l28_every_codex_tab_is_reachable_on_the_title_and_in_the_pause_menu() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var t := _title()
 		await _frames(2)
@@ -108,6 +108,9 @@ func test_l28_every_codex_tab_is_reachable_on_the_title_and_in_the_pause_menu() 
 
 
 func test_l28_the_pad_focus_brings_its_tab_into_view() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(2.0)
 	var t := _title()
 	await _frames(2)
@@ -127,7 +130,7 @@ func test_l28_the_pad_focus_brings_its_tab_into_view() -> void:
 # --- L39 tutorial -----------------------------------------------------------------------------------
 
 func test_l39_every_line_of_every_tutorial_page_shows() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		# The fight's own box (the notes column's room at this text size), then a few others.
 		RunManager.new_campaign(1)
@@ -179,7 +182,7 @@ func _hint_rects(root: Node) -> Array[Rect2]:
 
 func test_l47_saved_keeps_clear_of_the_ticker_and_the_prompts() -> void:
 	Fx.saved_screen = SCREEN
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var t := _title()
 		await _frames(3)
@@ -205,7 +208,10 @@ func test_l47_saved_keeps_clear_of_the_ticker_and_the_prompts() -> void:
 ## brackets. The pad's focus on the title's verbs and on the slots' LOAD peels the sticker as the mouse's hover does
 ## (the QA matrix's pad and mouse frames matched because the page's default focus peels BREACH / LOAD in both).
 func test_l57_pad_focus_peels_the_sticker_as_hover_does_and_draws_no_brackets() -> void:
-	for scale in SCALES:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		Settings.set_pad_active(true)
 		var t := _title()
@@ -271,7 +277,7 @@ func test_l42_the_focused_slot_shows_its_name_and_load_whole_with_a_cue_for_the_
 	if not _fill_slots(3):
 		pending("a campaign already sits in slots 1-3")
 		return
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var t := _title()
 		await _frames(2)
@@ -325,7 +331,7 @@ func test_g2_polish_the_cant_undo_pencil_is_whole_and_clear_of_its_arrow() -> vo
 	if not _fill_slots(3):
 		pending("a campaign already sits in slots 1-3")
 		return
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var t := _title()
 		await _frames(2)
@@ -349,6 +355,9 @@ func test_g2_polish_the_cant_undo_pencil_is_whole_and_clear_of_its_arrow() -> vo
 
 
 func test_l42_the_pad_walks_the_actions_under_each_folder_at_2_0() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	if not _fill_slots(2):
 		pending("a campaign already sits in slots 1-3")
 		return
@@ -373,7 +382,7 @@ func test_l42_the_pad_walks_the_actions_under_each_folder_at_2_0() -> void:
 
 func test_l55_the_pause_header_stands_on_one_line_and_the_menu_on_screen() -> void:
 	RunManager.new_campaign(4)
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var menu := PauseMenu.new()
 		menu.position = Vector2((SCREEN.size.x - PauseMenu.MENU_SIZE.x) / 2.0, 60.0)  # as the hosts place it, before it enters
@@ -395,7 +404,7 @@ func test_l55_the_pause_header_stands_on_one_line_and_the_menu_on_screen() -> vo
 # --- L56 the options' focus brackets ---------------------------------------------------------------
 
 func test_l56_a_focused_rows_brackets_keep_off_the_heading_over_it() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var panel: SettingsPanel = add_child_autofree(SettingsPanel.new())
 		await _frames(3)
@@ -419,7 +428,7 @@ func test_l56_a_focused_rows_brackets_keep_off_the_heading_over_it() -> void:
 # --- L62 the share-code placeholder -------------------------------------------------------------------
 
 func test_l62_the_share_code_field_shows_its_whole_placeholder() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var hq: Control = add_child_autofree(load("res://scenes/hq/hq_scene.tscn").instantiate())
 		hq.show_start()
@@ -439,7 +448,7 @@ func test_l42_a_sticker_held_at_its_size_keeps_its_fold() -> void:
 	Settings.set_text_scale(1.0)
 	var small_1 := VinylSticker.peel_leg(90.0, 720.0)
 	var big_1 := VinylSticker.peel_leg(900.0, 720.0)
-	for scale in [1.6, 2.0]:
+	for scale in TestScope.scales([1.6, 2.0]):
 		Settings.set_text_scale(scale)
 		assert_lte(VinylSticker.peel_leg(90.0, 720.0), maxf(small_1, 90.0 * VinylSticker.PEEL_MAX_SHARE) + 0.01,
 			"%.1f: LOAD's fold (a 90 px body) never grows past its share of the body (it read LOA)" % scale)

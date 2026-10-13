@@ -238,7 +238,7 @@ func _assert_clear(root: Node, label: String) -> void:
 
 
 func test_subtitles_cover_no_control_and_no_stat_tag_on_any_screen() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		_raid_campaign()
@@ -287,7 +287,7 @@ func test_a_fight_gets_its_height_back_and_its_own_dock() -> void:
 
 
 func test_the_mainframe_shows_the_wallet() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()
@@ -458,6 +458,9 @@ func test_menus_and_skip_leave_carry_icons() -> void:
 # --- #14 route buttons ---------------------------------------------------------------------
 
 func test_route_buttons_differ_and_say_what_the_node_is_on_both_devices() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var scene := _netrun()
 	await _frames()
 	var s := RunManager.netrun
@@ -498,6 +501,9 @@ func test_route_buttons_differ_and_say_what_the_node_is_on_both_devices() -> voi
 # --- #15 big text ----------------------------------------------------------------------------
 
 func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	_raid_campaign()
 	var hq := _open(HQ)
@@ -558,7 +564,7 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 func test_grid_side_column_scrolls_and_the_hq_says_there_is_more_below() -> void:
 	# HQ-B (b): the Grid's side column is the HQ's card column (the selected Site's card): it
 	# scrolls by the wheel and the pad's focus and ends on screen; the verb slot is on screen.
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		_raid_campaign()
