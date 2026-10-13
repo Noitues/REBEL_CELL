@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="l0"]
 script = ExtResource("2")
 key = "bark:perfect"
-text = "Dead centre. Feel that? That is the wheel agreeing with me."
+text = "Dead center. Feel that? That is the wheel agreeing with me."
 
 [sub_resource type="Resource" id="l1"]
 script = ExtResource("2")

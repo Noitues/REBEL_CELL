@@ -160,7 +160,7 @@ const BAND_LOOKS := 4
 @export var spot_alpha: float = 0.16
 @export var pool_alpha: float = 0.35
 
-@export_group("Heat lights (ART_BIBLE 4.3: calm, centred on hardened nodes)")
+@export_group("Heat lights (ART_BIBLE 4.3: calm, centered on hardened nodes)")
 ## Per band look (COOL, NOTICED, FLAGGED, HUNTED; PURGE uses HUNTED's): searchlights,
 ## alarm beacons, police strobes, choppers, drones, and the searchlights' alpha (calm Heat B:
 ## lower intensity).
@@ -220,7 +220,7 @@ const BAND_LOOKS := 4
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
 	if lane_colors.size() != 6:
-		errors.append("City motion: lane_colors needs the six lane colours.")
+		errors.append("City motion: lane_colors needs the six lane colors.")
 	if gaps_per_loop.x < 1 or gaps_per_loop.y < gaps_per_loop.x:
 		errors.append("City motion: gaps_per_loop must be 1 <= min <= max.")
 	if car_gap <= 0.0 or street_gap <= 0.0 or guide_spacing <= 0.0 or path_step_lots <= 0.0:

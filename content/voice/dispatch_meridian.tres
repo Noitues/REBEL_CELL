@@ -68,7 +68,7 @@ text = "Route audit in progress. Meridian is counting your links."
 [sub_resource type="Resource" id="l12"]
 script = ExtResource("e1")
 key = "threshold:75"
-text = "Freight seizure authorised. Haulers are rolling."
+text = "Freight seizure authorized. Haulers are rolling."
 
 [sub_resource type="Resource" id="l13"]
 script = ExtResource("e1")
@@ -123,7 +123,7 @@ text = "Tracking Beacon Array. It knows where every van is, and where you are. B
 [sub_resource type="Resource" id="l23"]
 script = ExtResource("e1")
 key = "site:m1_d"
-text = "Returns Processing Centre. Where Meridian sends the things it does not want. Including people's claims."
+text = "Returns Processing Center. Where Meridian sends the things it does not want. Including people's claims."
 
 [sub_resource type="Resource" id="l24"]
 script = ExtResource("e1")
@@ -253,7 +253,7 @@ text = "Reroute the Audit. Meridian's auditors are looking at you. Make them loo
 [sub_resource type="Resource" id="l49"]
 script = ExtResource("e1")
 key = "site:sink_the_cargo_logs"
-text = "Sink the Cargo Logs. Every log that mentions the Cell, at the bottom of the harbour."
+text = "Sink the Cargo Logs. Every log that mentions the Cell, at the bottom of the harbor."
 
 [sub_resource type="Resource" id="l50"]
 script = ExtResource("e1")

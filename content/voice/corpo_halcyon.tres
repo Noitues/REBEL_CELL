@@ -33,7 +33,7 @@ text = "HALCYON CIVIC: Your district has been scheduled for urban renewal. We ap
 [sub_resource type="Resource" id="l5"]
 script = ExtResource("e1")
 key = "raid:raid_hal_claim"
-text = "HALCYON CIVIC: Unlicensed premises detected. An Inspector will verify your licence."
+text = "HALCYON CIVIC: Unlicensed premises detected. An Inspector will verify your license."
 
 [sub_resource type="Resource" id="l6"]
 script = ExtResource("e1")

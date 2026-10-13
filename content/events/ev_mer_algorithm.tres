@@ -16,7 +16,7 @@ amount = 2
 [sub_resource type="Resource" id="c0"]
 script = ExtResource("e3")
 label = "Accept (Card: Gear Mesh, +2 Heat)"
-result_text = "The route is better. The favour is logged."
+result_text = "The route is better. The favor is logged."
 effects = Array[ExtResource("e1")]([SubResource("fx0_0")])
 reward = ExtResource("e2")
 
@@ -42,7 +42,7 @@ script = ExtResource("main_script")
 id = &"ev_mer_algorithm"
 title = "The Algorithm"
 speaker = 3
-text = "A routing algorithm wants to renegotiate. It offers you a better route in exchange for a small favour."
+text = "A routing algorithm wants to renegotiate. It offers you a better route in exchange for a small favor."
 choices = Array[ExtResource("e3")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
 corporation_id = &"meridian"
 min_tier = 2

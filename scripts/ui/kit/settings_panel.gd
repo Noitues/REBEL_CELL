@@ -18,7 +18,7 @@ signal closed
 ## H24 S3/S4: the section names and action labels are keys ("# TR"); the panel shows its
 ## words as given, translated where they are set.
 const SECTIONS := ["Accessibility", "Display", "Audio", "Controls", "Language"] # TR
-const ACTION_LABELS := {&"nudge_left": "Nudge anticlockwise", &"nudge_right": "Nudge clockwise", &"cycle_target": "Cycle target", # TR
+const ACTION_LABELS := {&"nudge_left": "Nudge counterclockwise", &"nudge_right": "Nudge clockwise", &"cycle_target": "Cycle target", # TR
 	&"end_turn": "End turn", &"rewind": "Rewind", &"toggle_ring": "Nudge ring (outer / inner)", # TR
 	&"toggle_nudge_wheel": "Nudge wheel (mine / target)", # TR
 	&"respin": "Respin", &"open_settings": "Pause / options", # TR
@@ -61,17 +61,17 @@ const RESETS := {
 	"Audio": [[&"master_volume", &"set_master_volume"], [&"music_volume", &"set_music_volume"], [&"sfx_volume", &"set_sfx_volume"]],
 	"Controls": [[&"pad_glyph_set", &"set_pad_glyph_set"]],
 	"Language": [[&"language", &"set_language"]]}
-const COLORBLIND_HEADING := "Colour-blind correction (patterns and glyphs stay the main cue)" # TR
+const COLORBLIND_HEADING := "Color-blind correction (patterns and glyphs stay the main cue)" # TR
 const RESOLVE_SPEED_HEADING := "Resolve speed after SEND IT (hold Fast-forward to speed it up)" # TR
 const GLYPH_HEADING := "Pad button glyphs" # TR
 ## ART-12 12s: the palette skin row (Display); its choices are PaletteSkins.WORDS.
-const SKIN_HEADING := "Interface skin (terminal colours only; meanings and layout stay)" # TR
+const SKIN_HEADING := "Interface skin (terminal colors only; meanings and layout stay)" # TR
 ## Every word the W9 rows add (tests check each has a strings.csv key and no mouse wording).
 const W9_WORDS := COLORBLIND_WORDS + RESOLVE_SPEED_WORDS + GLYPH_WORDS + [REDUCE_MOTION_WORDS, HIGH_CONTRAST_WORDS,
 	COLORBLIND_HEADING, RESOLVE_SPEED_HEADING, GLYPH_HEADING, "Fast-forward the resolve (hold)", REDUCE_EFFECTS_WORDS, FLASH_WORDS,
 	HEAT_GLITCH_WORDS, SUBTITLES_WORDS, RESET_WORDS, RESET_TIP]
 ## ART-10 4C: the v2 headings, sample and foot words (keys).
-const V2_WORDS := ["EFFECTS & MOTION", "SUBTITLES & ASSIST", "TEXT SCALE", "COLOUR-BLIND CORRECTION", "RESOLVE SPEED AFTER SEND IT",
+const V2_WORDS := ["EFFECTS & MOTION", "SUBTITLES & ASSIST", "TEXT SCALE", "COLOR-BLIND CORRECTION", "RESOLVE SPEED AFTER SEND IT",
 	"HEAT GLITCH PREVIEW (HUNTED, 82)", "The Cell never sleeps. Every word grows with this.", "Patterns and glyphs stay the main cue.",
 	"saved to profile", "switch tab", "toggle", "close", "OPTIONS", "PAUSED", "LIMITED: flash limiter on, slow layer only",
 	"LIMITED: reduce effects on, slow layer only"] # TR
@@ -389,7 +389,7 @@ func show_section(name: String) -> void:
 			right.size_flags_stretch_ratio = RIGHT_SHARE
 			right.add_child(_heading(tr("TEXT SCALE")))
 			right.add_child(_scale_block)
-			right.add_child(_heading(tr("COLOUR-BLIND CORRECTION")))
+			right.add_child(_heading(tr("COLOR-BLIND CORRECTION")))
 			right.add_child(colorblind_tiles)
 			right.add_child(_note(tr("Patterns and glyphs stay the main cue.")))
 			right.add_child(_heading(tr("RESOLVE SPEED AFTER SEND IT")))

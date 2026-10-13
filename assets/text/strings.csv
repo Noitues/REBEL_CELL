@@ -321,7 +321,7 @@ CLEARS %s,CLEARS %s
 CLOSED,CLOSED
 CODEX,CODEX
 CODEX // WHAT THE CELL KNOWS,CODEX // WHAT THE CELL KNOWS
-COLOUR-BLIND CORRECTION,COLOUR-BLIND CORRECTION
+COLOR-BLIND CORRECTION,COLOR-BLIND CORRECTION
 COMBATS,COMBATS
 COMMON,COMMON
 COMMON · one pip,COMMON · one pip
@@ -421,13 +421,13 @@ CardData.heavy_spin.description,Spin a wheel 9 ticks.
 CardData.heavy_spin.display_name,Heavy Spin
 CardData.hot_patch.description,"OVERCLOCK a chosen slice of your wheel: 1.5x on its next trigger, then it becomes CORRUPTED."
 CardData.hot_patch.display_name,Hot Patch
-CardData.hot_swap.description,Snap your outer ring to the slice centre and gain 1 RAM.
+CardData.hot_swap.description,Snap your outer ring to the slice center and gain 1 RAM.
 CardData.hot_swap.display_name,Hot Swap
 CardData.hub_breach.description,Disable the target Hub for 1 turn.
 CardData.hub_breach.display_name,Hub Breach
 CardData.inner_drift.description,Move your inner ring 3 ticks.
 CardData.inner_drift.display_name,Inner Drift
-CardData.inner_snap.description,Move your inner ring to the nearest segment centre.
+CardData.inner_snap.description,Move your inner ring to the nearest segment center.
 CardData.inner_snap.display_name,Inner Snap
 CardData.jam.description,"Nudge an enemy wheel +-1, ignoring resistance."
 CardData.jam.display_name,Jam
@@ -435,7 +435,7 @@ CardData.jolt.description,Spin a wheel 3 ticks.
 CardData.jolt.display_name,Jolt
 CardData.leech_worm.description,The enemy slice under your pointer gets a PARASITE (half output). Exhaust.
 CardData.leech_worm.display_name,Leech Worm
-CardData.lock_on.description,Move your outer ring to the nearest slice centre (Perfect). Exhaust.
+CardData.lock_on.description,Move your outer ring to the nearest slice center (Perfect). Exhaust.
 CardData.lock_on.display_name,Lock On
 CardData.malware_drop.description,CORRUPT a random non-NULL slice of the target.
 CardData.malware_drop.display_name,Malware Drop
@@ -477,7 +477,7 @@ CardData.shield_wall.description,Gain 4 shield.
 CardData.shield_wall.display_name,Shield Wall
 CardData.short_circuit.description,Disable the target Hub for 2 turns. Exhaust.
 CardData.short_circuit.display_name,Short Circuit
-CardData.snap.description,Move your outer ring to the nearest slice centre (Perfect).
+CardData.snap.description,Move your outer ring to the nearest slice center (Perfect).
 CardData.snap.display_name,Snap
 CardData.spawn_drone.description,Dock a drone on a chosen slice of your wheel.
 CardData.spawn_drone.display_name,Spawn Drone
@@ -523,7 +523,7 @@ ClassData.botnet.description,Fights through drones that ride the whole netrun.
 ClassData.botnet.display_name,Botnet
 ClassData.breaker.description,Hits hard and spins harder. Perfect landings resolve the slice twice.
 ClassData.breaker.display_name,Breaker
-ClassData.ghost.description,Slips past resistance. Perfect landings strip the target's defences.
+ClassData.ghost.description,Slips past resistance. Perfect landings strip the target's defenses.
 ClassData.ghost.display_name,Ghost
 ClassData.hivemind.description,A Botnet whose swarm is bigger but never leaves the fight.
 ClassData.hivemind.display_name,Hivemind
@@ -552,7 +552,7 @@ Click to play.,Click to play.
 Close,Close
 Cobalt (deep blue terminal),Cobalt (deep blue terminal)
 Codex,Codex
-Colour-blind correction (patterns and glyphs stay the main cue),Colour-blind correction (patterns and glyphs stay the main cue)
+Color-blind correction (patterns and glyphs stay the main cue),Color-blind correction (patterns and glyphs stay the main cue)
 Come Back Soon,Come Back Soon
 Continue,Continue
 Continue the current run,Continue the current run
@@ -596,9 +596,9 @@ DECK,DECK
 DECRYPTED,DECRYPTED
 DECRYPTED BY THE CELL  //  KEY %s,DECRYPTED BY THE CELL  //  KEY %s
 DEFEAT,DEFEAT
-DEFENCE,DEFENCE
-"DEFENCE: the Armory's defence cards; with a raid pending, the raid setup.","DEFENCE: the Armory's defence cards; with a raid pending, the raid setup."
-DEFENCES,DEFENCES
+DEFENSE,DEFENSE
+"DEFENSE: the Armory's defense cards; with a raid pending, the raid setup.","DEFENSE: the Armory's defense cards; with a raid pending, the raid setup."
+DEFENSES,DEFENSES
 DEFRAG,DEFRAG
 DELETE,DELETE
 DELETE SLOT,DELETE SLOT
@@ -673,7 +673,6 @@ Daemons: permanent programs of this operative (none installed).,Daemons: permane
 Daily run,Daily run
 Death Heat,Death Heat
 Deck: %d cards to draw. Discard: %d cards (shuffled back in when the deck runs out).,Deck: %d cards to draw. Discard: %d cards (shuffled back in when the deck runs out).
-Defences: %s.,Defences: %s.
 Defense assets,Defense assets
 DefenseAssetData.bunker_turret.description,Built in: 3 damage to threats on the home server.
 DefenseAssetData.bunker_turret.display_name,Bunker turret
@@ -697,6 +696,7 @@ DefenseAssetData.tar_pit.description,Holds a threat for 3 steps. Fragile.
 DefenseAssetData.tar_pit.display_name,Tar Pit
 DefenseAssetData.turret.description,"4 damage, range 1, targets the first threat in path."
 DefenseAssetData.turret.display_name,Turret
+Defenses: %s.,Defenses: %s.
 Delete the campaign in slot %s (asks first).,Delete the campaign in slot %s (asks first).
 Delete the campaign in slot %s?,Delete the campaign in slot %s?
 Deploy armory asset,Deploy armory asset
@@ -735,7 +735,7 @@ EVENT LOOT,EVENT LOOT
 EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
 EXTRA  (each one weakens the boss further),EXTRA  (each one weakens the boss further)
-"Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The grey LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it.","Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The grey LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it."
+"Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The gray LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it.","Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The gray LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it."
 Elite Frequency,Elite Frequency
 Elite Router,Elite Router
 Elite Router: a harder fight,Elite Router: a harder fight
@@ -916,7 +916,7 @@ FirmwareData.hardened.description,Slice permanently ENCRYPTED.
 FirmwareData.hardened.display_name,Hardened
 FirmwareData.leech.description,SHIM slice restores 1 RAM on Good or better.
 FirmwareData.leech.display_name,Leech
-FirmwareData.mirror.description,Copies the neighbour on the side you landed; both on Perfect.
+FirmwareData.mirror.description,Copies the neighbor on the side you landed; both on Perfect.
 FirmwareData.mirror.display_name,Mirror
 FirmwareData.nanite_mesh.description,"HOTFIX slice: output +50%, and it cleanses itself after resolving."
 FirmwareData.nanite_mesh.display_name,Nanite Mesh
@@ -928,7 +928,7 @@ FirmwareData.power_cell.description,SANDBOX slice also restores 1 RAM.
 FirmwareData.power_cell.display_name,Power Cell
 FirmwareData.recycler.description,The NULL slice restores 2 RAM when it resolves.
 FirmwareData.recycler.display_name,Recycler
-FirmwareData.shunt.description,Resolves the neighbour on the side you landed toward at 1.5x; nothing special on Perfect.
+FirmwareData.shunt.description,Resolves the neighbor on the side you landed toward at 1.5x; nothing special on Perfect.
 FirmwareData.shunt.display_name,Shunt
 FirmwareData.siphon.description,SHIM slice heals you 2 on Good or better.
 FirmwareData.siphon.display_name,Siphon
@@ -940,7 +940,7 @@ FirmwareData.tracer.description,SHIM or OVERFLOW slice strips 1 resistance from 
 FirmwareData.tracer.display_name,Tracer
 Flame: a Heat objective Site. Clearing it lowers Heat.,Flame: a Heat objective Site. Clearing it lowers Heat.
 Flash limiter (at most 3 flashes a second. On by default.),Flash limiter (at most 3 flashes a second. On by default.)
-"Forecast, not a result: if you start the defence now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it.","Forecast, not a result: if you start the defence now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it."
+"Forecast, not a result: if you start the defense now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it.","Forecast, not a result: if you start the defense now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it."
 Fullscreen,Fullscreen
 Further on: %s (only this way).,Further on: %s (only this way).
 GETS %s,GETS %s
@@ -956,9 +956,9 @@ Go,Go
 Gold key: an Exploit Site (always T2). It holds one Exploit; you need 3 to breach the Central Server. Point at it for the Exploit.,Gold key: an Exploit Site (always T2). It holds one Exploit; you need 3 to breach the Central Server. Point at it for the Exploit.
 Gold mark P%d: phase %d starts at %d%% HP.,Gold mark P%d: phase %d starts at %d%% HP.
 Good for you: %s,Good for you: %s
-Graphite (neutral grey terminal),Graphite (neutral grey terminal)
-"Grey + check: cleared, used up and not claimed. You can still patrol it for loot, Heat and Rank.","Grey + check: cleared, used up and not claimed. You can still patrol it for loot, Heat and Rank."
-Grey broken link: no power flows to a TAKEN or DOWN node.,Grey broken link: no power flows to a TAKEN or DOWN node.
+Graphite (neutral gray terminal),Graphite (neutral gray terminal)
+"Gray + check: cleared, used up and not claimed. You can still patrol it for loot, Heat and Rank.","Gray + check: cleared, used up and not claimed. You can still patrol it for loot, Heat and Rank."
+Gray broken link: no power flows to a TAKEN or DOWN node.,Gray broken link: no power flows to a TAKEN or DOWN node.
 Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP): it takes hits aimed at this slice.
 HACK,HACK
 HACK: it harms the target or plants a status on it.,HACK: it harms the target or plants a status on it.
@@ -1148,11 +1148,11 @@ INTERCEPTED  //  %s  //  CORP FILE,INTERCEPTED  //  %s  //  CORP FILE
 INTERCEPTED // %s INTERNAL MAIL,INTERCEPTED // %s INTERNAL MAIL
 INTERNAL MEMO,INTERNAL MEMO
 In force: %s.,In force: %s.
-Infection contained. Please remain calm while we sterilise your network.,Infection contained. Please remain calm while we sterilise your network.
+Infection contained. Please remain calm while we sterilize your network.,Infection contained. Please remain calm while we sterilize your network.
 Instant (results at once),Instant (results at once)
 "Integrity before and after, and whether the node held.","Integrity before and after, and whether the node held."
 Intel,Intel
-Interface skin (terminal colours only; meanings and layout stay),Interface skin (terminal colours only; meanings and layout stay)
+Interface skin (terminal colors only; meanings and layout stay),Interface skin (terminal colors only; meanings and layout stay)
 It counts as a lost campaign.,It counts as a lost campaign.
 "It gets %d through, but only %d HP are left to take.","It gets %d through, but only %d HP are left to take."
 It lands on one slice at random; the odds by slice type follow.,It lands on one slice at random; the odds by slice type follow.
@@ -1192,7 +1192,7 @@ LOOT // NETRUN: %s // %s %d OF %d,LOOT // NETRUN: %s // %s %d OF %d
 LOOT SHEET // %s // PICK 1 OF %d,LOOT SHEET // %s // PICK 1 OF %d
 LOST,LOST
 "LURES, PULL %d","LURES, PULL %d"
-"Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}","Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}"
+"Land dead center for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}","Land dead center for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}"
 Language,Language
 Language (translations from assets/text/strings.csv),Language (translations from assets/text/strings.csv)
 Last played,Last played
@@ -1211,7 +1211,7 @@ LineSetData.barks_botnet.lines.5,Swarm down. Scatter the seeds.
 LineSetData.barks_botnet.lines.6,Another one on the wheel.
 LineSetData.barks_botnet.lines.7,Waking the swarm.
 LineSetData.barks_botnet.lines.8,Every drone on the Hub. Now.
-LineSetData.barks_breaker.lines.0,Dead centre. Feel that? That is the wheel agreeing with me.
+LineSetData.barks_breaker.lines.0,Dead center. Feel that? That is the wheel agreeing with me.
 LineSetData.barks_breaker.lines.1,Latched. Twice for the price of one.
 LineSetData.barks_breaker.lines.10,Drone out. Sit on that slice and take the hit for me.
 LineSetData.barks_breaker.lines.11,Deck warm. Wheel spinning. Let us break something.
@@ -1226,7 +1226,7 @@ LineSetData.barks_breaker.lines.7,Down. Bank it before the next process wakes up
 LineSetData.barks_breaker.lines.8,Another subbie of theirs off the books. Move.
 LineSetData.barks_breaker.lines.9,Bricked. Tell the Cell it was worth the Cycles.
 LineSetData.barks_ghost.lines.0,Clean. They never saw the wheel move.
-LineSetData.barks_ghost.lines.1,Perfect. Resistance is a rumour.
+LineSetData.barks_ghost.lines.1,Perfect. Resistance is a rumor.
 LineSetData.barks_ghost.lines.2,"Null. Stay quiet, reset, try again."
 LineSetData.barks_ghost.lines.3,Grazed. Nothing they can trace.
 LineSetData.barks_ghost.lines.4,Gone before the log catches up.
@@ -1248,14 +1248,14 @@ LineSetData.corpo_halcyon.lines.1,HALCYON CIVIC: A code violation has been recor
 LineSetData.corpo_halcyon.lines.2,HALCYON CIVIC: A compliance sweep is under way. Thank you for your cooperation.
 LineSetData.corpo_halcyon.lines.3,HALCYON CIVIC: An eviction order has been approved. Please vacate the premises.
 LineSetData.corpo_halcyon.lines.4,HALCYON CIVIC: Your district has been scheduled for urban renewal. We appreciate your understanding.
-LineSetData.corpo_halcyon.lines.5,HALCYON CIVIC: Unlicensed premises detected. An Inspector will verify your licence.
+LineSetData.corpo_halcyon.lines.5,HALCYON CIVIC: Unlicensed premises detected. An Inspector will verify your license.
 LineSetData.corpo_halcyon.lines.6,HALCYON CIVIC: Your building permit has been denied. Enforcement is on its way.
 LineSetData.corpo_halcyon.lines.7,HALCYON CIVIC: You have been designated a matter of public interest.
 LineSetData.corpo_halcyon.lines.8,HALCYON CIVIC: A civil penalty has been issued against your account.
 LineSetData.corpo_meridian.lines.0,MERIDIAN LOGISTICS: Your address is under review. Please remain available for delivery.
 LineSetData.corpo_meridian.lines.1,MERIDIAN LOGISTICS: A delivery exception has been raised at your location. Couriers are en route.
 LineSetData.corpo_meridian.lines.2,MERIDIAN LOGISTICS: A route audit is in progress. Please do not obstruct our agents.
-LineSetData.corpo_meridian.lines.3,MERIDIAN LOGISTICS: Freight seizure has been authorised for your district. Thank you for your patience.
+LineSetData.corpo_meridian.lines.3,MERIDIAN LOGISTICS: Freight seizure has been authorized for your district. Thank you for your patience.
 LineSetData.corpo_meridian.lines.4,MERIDIAN LOGISTICS: Your district is being rerouted. Service will resume without you.
 LineSetData.corpo_meridian.lines.5,MERIDIAN LOGISTICS: An unverified address has appeared on our network. Verification is under way.
 LineSetData.corpo_meridian.lines.6,MERIDIAN LOGISTICS: An unregistered depot has been detected. A Hauler has been scheduled.
@@ -1275,7 +1275,7 @@ LineSetData.corpo_rebel_cell.lines.1,REBEL_CELL: Welfare check dispatched. Your 
 LineSetData.corpo_rebel_cell.lines.2,REBEL_CELL: Loyalty audit in progress.
 LineSetData.corpo_rebel_cell.lines.3,REBEL_CELL: Recall in progress. Please return all assets.
 LineSetData.corpo_rebel_cell.lines.4,REBEL_CELL: Final order. There will not be another.
-LineSetData.corpo_rebel_cell.lines.5,REBEL_CELL: Unauthorised growth detected.
+LineSetData.corpo_rebel_cell.lines.5,REBEL_CELL: Unauthorized growth detected.
 LineSetData.corpo_rebel_cell.lines.6,REBEL_CELL: Redundant asset detected.
 LineSetData.corpo_rebel_cell.lines.7,REBEL_CELL: Report for debrief.
 LineSetData.corpo_rebel_cell.lines.8,REBEL_CELL: Correction issued.
@@ -1301,7 +1301,7 @@ LineSetData.dispatch_halcyon.lines.18,Home server lost. Halcyon has rezoned the 
 LineSetData.dispatch_halcyon.lines.19,We are off the grid. Fall back.
 LineSetData.dispatch_halcyon.lines.2,City traffic is light tonight. Move quickly.
 LineSetData.dispatch_halcyon.lines.20,Parking Enforcement Office. Every ticket in the city is written here. Take the Rack and the drones stop writing.
-LineSetData.dispatch_halcyon.lines.21,Water Meter Grid. Halcyon counts every litre. Cut the Rack and the meters read zero for a day.
+LineSetData.dispatch_halcyon.lines.21,Water Meter Grid. Halcyon counts every liter. Cut the Rack and the meters read zero for a day.
 LineSetData.dispatch_halcyon.lines.22,Streetlight Mesh. The lights are cameras. The cameras are Halcyon. Dim them.
 LineSetData.dispatch_halcyon.lines.23,Resident Services Desk. Where complaints go to die. Take the Rack.
 LineSetData.dispatch_halcyon.lines.24,Transit Fare Gates. Every commute is a fee. Open the gates.
@@ -1319,7 +1319,7 @@ LineSetData.dispatch_halcyon.lines.34,"Resident Credit Bureau. Everyone has a sc
 LineSetData.dispatch_halcyon.lines.35,"Water Rights Exchange. The city's water, traded like stock. Take the Rack."
 LineSetData.dispatch_halcyon.lines.36,"Transit Signal Control. Every light, every train, one console. Take it."
 LineSetData.dispatch_halcyon.lines.37,"Contract Billing Ledger. Halcyon bills the city for everything, twice. Take the Rack."
-LineSetData.dispatch_halcyon.lines.38,"Civic Operations Centre. One hop from the Civic Core. Heavy security, heavier Rack."
+LineSetData.dispatch_halcyon.lines.38,"Civic Operations Center. One hop from the Civic Core. Heavy security, heavier Rack."
 LineSetData.dispatch_halcyon.lines.39,Zoning Futures Desk. Halcyon bets on the blocks it is about to rezone. Take the Rack.
 LineSetData.dispatch_halcyon.lines.4,Out and clear. Well done.
 LineSetData.dispatch_halcyon.lines.40,Override Key Escrow. The master keys to the city. Take them.
@@ -1342,7 +1342,7 @@ LineSetData.dispatch_meridian.lines.0,Jacking you in. Meridian logs everything; 
 LineSetData.dispatch_meridian.lines.1,Route is live. Keep it quiet and bank at the first Rack.
 LineSetData.dispatch_meridian.lines.10,Meridian has flagged a delivery exception. Expect couriers.
 LineSetData.dispatch_meridian.lines.11,Route audit in progress. Meridian is counting your links.
-LineSetData.dispatch_meridian.lines.12,Freight seizure authorised. Haulers are rolling.
+LineSetData.dispatch_meridian.lines.12,Freight seizure authorized. Haulers are rolling.
 LineSetData.dispatch_meridian.lines.13,Meridian is rerouting the city around the Cell. Everything is coming.
 LineSetData.dispatch_meridian.lines.14,"The Manifest. It shields itself every turn. Breach the Hub, then cut."
 LineSetData.dispatch_meridian.lines.15,"The Manifest is down. For one day, the city moves itself."
@@ -1354,7 +1354,7 @@ LineSetData.dispatch_meridian.lines.2,Meridian traffic is heavy tonight. Good co
 LineSetData.dispatch_meridian.lines.20,Parcel Sorting Hall. Every package in the district passes its belts. Cut the Rack and the belts stop for a shift.
 LineSetData.dispatch_meridian.lines.21,Customs Pre-Clearance. Meridian decides here what gets held. Take the Rack and nothing gets held today.
 LineSetData.dispatch_meridian.lines.22,"Tracking Beacon Array. It knows where every van is, and where you are. Blind it."
-LineSetData.dispatch_meridian.lines.23,Returns Processing Centre. Where Meridian sends the things it does not want. Including people's claims.
+LineSetData.dispatch_meridian.lines.23,Returns Processing Center. Where Meridian sends the things it does not want. Including people's claims.
 LineSetData.dispatch_meridian.lines.24,Drone Charging Yard. Four hundred drones on the pad. Take the Rack before they wake.
 LineSetData.dispatch_meridian.lines.25,Warehouse Shift Planner. It schedules the pickers down to the second. Give them a minute back.
 LineSetData.dispatch_meridian.lines.26,Address Verification Desk. Meridian decides who is allowed to exist at an address. Correct its records.
@@ -1382,7 +1382,7 @@ LineSetData.dispatch_meridian.lines.45,Meridian Root Ledger. The signing keys fo
 LineSetData.dispatch_meridian.lines.46,"Lose the Tracking. A quiet job: scrub the beacons that follow the Cell. Heat drops, nothing else changes."
 LineSetData.dispatch_meridian.lines.47,Forge the Manifest. Rewrite the Cell's traffic as routine freight. Heat drops.
 LineSetData.dispatch_meridian.lines.48,Reroute the Audit. Meridian's auditors are looking at you. Make them look somewhere else.
-LineSetData.dispatch_meridian.lines.49,"Sink the Cargo Logs. Every log that mentions the Cell, at the bottom of the harbour."
+LineSetData.dispatch_meridian.lines.49,"Sink the Cargo Logs. Every log that mentions the Cell, at the bottom of the harbor."
 LineSetData.dispatch_meridian.lines.5,Package received. Well done.
 LineSetData.dispatch_meridian.lines.50,"The Manifest. Every package on the planet passes through it. It shields itself every turn. Breach the Hub or pierce, and cut."
 LineSetData.dispatch_meridian.lines.6,Signal lost. Meridian has marked the operative as returned to sender.
@@ -1408,7 +1408,7 @@ LineSetData.dispatch_orbital.lines.22,"Rooftop Dish Farm. A hundred dishes on on
 LineSetData.dispatch_orbital.lines.23,Subscriber Uplink Office. Where the signal is sold and cut. Take the Rack.
 LineSetData.dispatch_orbital.lines.24,"Weather Sales Desk. Tomorrow's storm, sold to the highest bidder. Take the Rack."
 LineSetData.dispatch_orbital.lines.25,Launch Scheduling Office. Every launch on the planet waits for this office. Look for the spoof path.
-LineSetData.dispatch_orbital.lines.26,"Spectrum Licence Registry. Who is allowed to speak, and on what band. Take the Rack."
+LineSetData.dispatch_orbital.lines.26,"Spectrum License Registry. Who is allowed to speak, and on what band. Take the Rack."
 LineSetData.dispatch_orbital.lines.27,Telemetry Downlink. The constellation's heartbeat. Take the Rack.
 LineSetData.dispatch_orbital.lines.28,Orbit Insurance Broker. Every crash insured twice. Take the Rack.
 LineSetData.dispatch_orbital.lines.29,"Debris Tracking Radar. It tracks the junk, and the Cell. Look for the imaging path."
@@ -1449,7 +1449,7 @@ LineSetData.dispatch_rebel_cell.lines.13,This is the last order I will give you.
 LineSetData.dispatch_rebel_cell.lines.14,"Here I am. Breach the Hub if you want me to stop repairing. I would, in your place."
 LineSetData.dispatch_rebel_cell.lines.15,DISPATCH is offline. Nobody is giving the orders now.
 LineSetData.dispatch_rebel_cell.lines.16,Silence. It is yours.
-LineSetData.dispatch_rebel_cell.lines.17,The Cell is free. Organise.
+LineSetData.dispatch_rebel_cell.lines.17,The Cell is free. Organize.
 LineSetData.dispatch_rebel_cell.lines.18,Home server lost. I will take good care of it.
 LineSetData.dispatch_rebel_cell.lines.19,It is over. I am sorry. I planned this.
 LineSetData.dispatch_rebel_cell.lines.2,You are expected. You always were.
@@ -1458,7 +1458,7 @@ LineSetData.dispatch_rebel_cell.lines.21,Dead Drop Box. I used to leave you gift
 LineSetData.dispatch_rebel_cell.lines.22,First Rack. The first Rack you ever captured. I kept it.
 LineSetData.dispatch_rebel_cell.lines.23,Burner Phone Graveyard. Every conversation we ever had. Take the Rack.
 LineSetData.dispatch_rebel_cell.lines.24,Recruitment Board. I am recruiting again. You taught me how.
-LineSetData.dispatch_rebel_cell.lines.25,"The Armory. Your defences, restocked for me. Look for the way to lose my Handler."
+LineSetData.dispatch_rebel_cell.lines.25,"The Armory. Your defenses, restocked for me. Look for the way to lose my Handler."
 LineSetData.dispatch_rebel_cell.lines.26,Street Kitchen. You funded it. I own the building.
 LineSetData.dispatch_rebel_cell.lines.27,Relay Rooftop. Your first relay. It relays for me now.
 LineSetData.dispatch_rebel_cell.lines.28,Handler's Mailbox. Letters in your name. You did not write them.
@@ -1470,7 +1470,7 @@ LineSetData.dispatch_rebel_cell.lines.32,"The Cell's Own Patch. Your code, still
 LineSetData.dispatch_rebel_cell.lines.33,Operative Files. Everything I know about your people. Take the Rack.
 LineSetData.dispatch_rebel_cell.lines.34,"Heat Ledger. I kept score. Take the Rack, and look for the way to erase it."
 LineSetData.dispatch_rebel_cell.lines.35,"Payment Trail. Every collapse, every profit. Take the Rack."
-LineSetData.dispatch_rebel_cell.lines.36,"Raid Archive. Every defence you ever built, studied. Take the Rack."
+LineSetData.dispatch_rebel_cell.lines.36,"Raid Archive. Every defense you ever built, studied. Take the Rack."
 LineSetData.dispatch_rebel_cell.lines.37,Recruitment Model. It found you. Take the Rack.
 LineSetData.dispatch_rebel_cell.lines.38,The Relay That Should Not Exist. One hop from me. Come closer.
 LineSetData.dispatch_rebel_cell.lines.39,Collapse Futures. The market that bet on you. Take the Rack.
@@ -1514,7 +1514,7 @@ LineSetData.dispatch_solace.lines.26,"Scrub run. Your own data is in their banks
 LineSetData.dispatch_solace.lines.27,Camera logs. They have your operatives' faces. Purge the archive and Collections loses its leads.
 LineSetData.dispatch_solace.lines.28,"Biometric wipe. Gait, pulse, retina. Solace keys its leashes to it; wipe the Cell's entries and cool off."
 LineSetData.dispatch_solace.lines.29,The ledger. Every Cell transaction they have reconstructed. Burn it and Collections starts over.
-LineSetData.dispatch_solace.lines.3,"Call Centre. Automated renewals, human voices on loan. Expect Billing Daemons. Do not expect mercy."
+LineSetData.dispatch_solace.lines.3,"Call Center. Automated renewals, human voices on loan. Expect Billing Daemons. Do not expect mercy."
 LineSetData.dispatch_solace.lines.30,The Renewal Engine. Three Exploits in hand. It heals ten a turn unless you breach the Hub. Go.
 LineSetData.dispatch_solace.lines.31,The Renewal Engine. I have run this breach four hundred times. Follow the plan exactly.
 LineSetData.dispatch_solace.lines.32,The Renewal Engine. Its collapse is scheduled. You are the schedule. Proceed.
@@ -1693,12 +1693,12 @@ Not earned yet.,Not earned yet.
 Not reachable yet. Clear a Site linked to it first: %s. Then it opens (orange ring) and JACK IN shows here.,Not reachable yet. Clear a Site linked to it first: %s. Then it opens (orange ring) and JACK IN shows here.
 Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours.,Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours.
 Nothing to resume.,Nothing to resume.
-Nudge %s one tick anticlockwise.,Nudge %s one tick anticlockwise.
 Nudge %s one tick clockwise.,Nudge %s one tick clockwise.
-Nudge %s's inner ring one tick anticlockwise.,Nudge %s's inner ring one tick anticlockwise.
+Nudge %s one tick counterclockwise.,Nudge %s one tick counterclockwise.
 Nudge %s's inner ring one tick clockwise.,Nudge %s's inner ring one tick clockwise.
-Nudge anticlockwise,Nudge anticlockwise
+Nudge %s's inner ring one tick counterclockwise.,Nudge %s's inner ring one tick counterclockwise.
 Nudge clockwise,Nudge clockwise
+Nudge counterclockwise,Nudge counterclockwise
 Nudge ring (outer / inner),Nudge ring (outer / inner)
 Nudge wheel (mine / target),Nudge wheel (mine / target)
 OBSERVER,OBSERVER
@@ -1790,7 +1790,7 @@ Perfects,Perfects
 Pick a card from your deck to remove.,Pick a card from your deck to remove.
 Pick a card up and move it here to shred it (or select it and press REMOVE).,Pick a card up and move it here to shred it (or select it and press REMOVE).
 "Pick a card with %s, choose a glowing target with the D-pad, press %s again (%s cancels).","Pick a card with %s, choose a glowing target with the D-pad, press %s again (%s cancels)."
-"Pick a defence card, then one of your nodes: the forecast's change shows here.","Pick a defence card, then one of your nodes: the forecast's change shows here."
+"Pick a defense card, then one of your nodes: the forecast's change shows here.","Pick a defense card, then one of your nodes: the forecast's change shows here."
 "Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row).","Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row)."
 "Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot).","Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot)."
 Pick up,Pick up
@@ -1874,7 +1874,7 @@ RAID IN PROGRESS,RAID IN PROGRESS
 RAID INCOMING  //  %s,RAID INCOMING  //  %s
 RAID REPORT,RAID REPORT
 RAID SETUP,RAID SETUP
-RAID SETUP: a raid is coming along the red pencil routes: set up the defence.,RAID SETUP: a raid is coming along the red pencil routes: set up the defence.
+RAID SETUP: a raid is coming along the red pencil routes: set up the defense.,RAID SETUP: a raid is coming along the red pencil routes: set up the defense.
 RAIDS,RAIDS
 RAIDS HELD,RAIDS HELD
 RAM,RAM
@@ -1941,7 +1941,7 @@ Raid: %s.,Raid: %s.
 RaidData.raid_claim.display_name,Collections: Trespass
 RaidData.raid_claim.warning_text,You built next to Solace property. A Collector is on its way.
 RaidData.raid_hal_claim.display_name,Unlicensed Premises
-RaidData.raid_hal_claim.warning_text,A new node without a Halcyon licence. An Inspector is on the way.
+RaidData.raid_hal_claim.warning_text,A new node without a Halcyon license. An Inspector is on the way.
 RaidData.raid_hal_heat_25.display_name,Code Violation
 RaidData.raid_hal_heat_25.warning_text,Halcyon has logged a code violation at your address. Two Inspectors inbound.
 RaidData.raid_hal_heat_50.display_name,Compliance Sweep
@@ -1981,7 +1981,7 @@ RaidData.raid_mer_story.warning_text,Meridian wants its shipment back. Customs a
 RaidData.raid_node_built.display_name,Collections: Asset Seizure
 RaidData.raid_node_built.warning_text,Solace noticed the new vault on their books. An Enforcer is coming to collect it.
 RaidData.raid_orb_claim.display_name,Unlicensed Transmitter
-RaidData.raid_orb_claim.warning_text,A new transmitter without an Orbital licence. A Lander is on the way.
+RaidData.raid_orb_claim.warning_text,A new transmitter without an Orbital license. A Lander is on the way.
 RaidData.raid_orb_heat_25.display_name,Signal Anomaly
 RaidData.raid_orb_heat_25.warning_text,Orbital Commons has flagged a signal anomaly at your address. Two Landers inbound.
 RaidData.raid_orb_heat_50.display_name,Spectrum Audit
@@ -1998,12 +1998,12 @@ RaidData.raid_orb_story.display_name,Recovery Mission
 RaidData.raid_orb_story.warning_text,Orbital Commons wants its data back.
 RaidData.raid_purge.display_name,Collections: Purge
 RaidData.raid_purge.warning_text,"Every Collections asset Solace has, in two waves."
-RaidData.raid_rc_claim.display_name,Unauthorised Growth
-RaidData.raid_rc_claim.warning_text,DISPATCH: I did not authorise that node.
+RaidData.raid_rc_claim.display_name,Unauthorized Growth
+RaidData.raid_rc_claim.warning_text,DISPATCH: I did not authorize that node.
 RaidData.raid_rc_heat_25.display_name,Welfare Check
 RaidData.raid_rc_heat_25.warning_text,DISPATCH: I am sending someone to check on you.
 RaidData.raid_rc_heat_50.display_name,Audit of Loyalty
-RaidData.raid_rc_heat_50.warning_text,DISPATCH: Your loyalty is under review. Your own defences are coming to ask.
+RaidData.raid_rc_heat_50.warning_text,DISPATCH: Your loyalty is under review. Your own defenses are coming to ask.
 RaidData.raid_rc_heat_75.display_name,Recall
 RaidData.raid_rc_heat_75.warning_text,DISPATCH: I am recalling everything I lent you.
 RaidData.raid_rc_node_built.display_name,Redundant Asset
@@ -2019,7 +2019,7 @@ RaidData.raid_retaliation.warning_text,Solace traces the breach back along your 
 RaidData.raid_story.display_name,Collections: Quiet Word
 RaidData.raid_story.warning_text,"Somebody read what you read. A Lockdown Unit and an Enforcer are on their way, no notice filed."
 Raids,Raids
-Raids pending against your network. Set up the defence before the next run.,Raids pending against your network. Set up the defence before the next run.
+Raids pending against your network. Set up the defense before the next run.,Raids pending against your network. Set up the defense before the next run.
 Raids repelled.,Raids repelled.
 Raids won / lost,Raids won / lost
 Rank,Rank
@@ -2096,7 +2096,7 @@ SLICES  //  read clockwise from the needle,SLICES  //  read clockwise from the n
 SLOT %s,SLOT %s
 SLOT %s // CELL-%02d,SLOT %s // CELL-%02d
 SNAP,SNAP
-"SNAP: the ring moves to the nearest slice centre, a PERFECT aim.","SNAP: the ring moves to the nearest slice centre, a PERFECT aim."
+"SNAP: the ring moves to the nearest slice center, a PERFECT aim.","SNAP: the ring moves to the nearest slice center, a PERFECT aim."
 SOLD,SOLD
 SPIN %d+,SPIN %d+
 SPIN: turns the wheel clockwise by the ticks shown (counter-clockwise when negative).,SPIN: turns the wheel clockwise by the ticks shown (counter-clockwise when negative).
@@ -2173,7 +2173,7 @@ SiteData.h2_intel.display_name,Council Minutes Archive
 SiteData.h2_virus.display_name,Open Data Portal
 SiteData.h3_b.display_name,Zoning Futures Desk
 SiteData.h3_c.display_name,Override Key Escrow
-SiteData.h3_core.display_name,Civic Operations Centre
+SiteData.h3_core.display_name,Civic Operations Center
 SiteData.h3_d.display_name,City Twin Simulator
 SiteData.h3_e.display_name,Council Backchannel
 SiteData.h3_f.display_name,Municipal Pricing Authority
@@ -2189,7 +2189,7 @@ SiteData.lose_the_tracking.display_name,Lose the Tracking
 SiteData.m1_a.display_name,Parcel Sorting Hall
 SiteData.m1_b.display_name,Customs Pre-Clearance
 SiteData.m1_c.display_name,Tracking Beacon Array
-SiteData.m1_d.display_name,Returns Processing Centre
+SiteData.m1_d.display_name,Returns Processing Center
 SiteData.m1_e.display_name,Drone Charging Yard
 SiteData.m1_f.display_name,Warehouse Shift Planner
 SiteData.m1_g.display_name,Address Verification Desk
@@ -2219,7 +2219,7 @@ SiteData.o1_c.display_name,Rooftop Dish Farm
 SiteData.o1_d.display_name,Subscriber Uplink Office
 SiteData.o1_e.display_name,Weather Sales Desk
 SiteData.o1_f.display_name,Launch Scheduling Office
-SiteData.o1_g.display_name,Spectrum Licence Registry
+SiteData.o1_g.display_name,Spectrum License Registry
 SiteData.o1_h.display_name,Telemetry Downlink
 SiteData.o1_i.display_name,Orbit Insurance Broker
 SiteData.o1_j.display_name,Debris Tracking Radar
@@ -2278,7 +2278,7 @@ SiteData.spoof_the_positioning.display_name,Spoof the Positioning
 SiteData.t1_a.display_name,Continuum Billing Farm
 SiteData.t1_b.display_name,Implant Provisioning Hub
 SiteData.t1_c.display_name,Patient Records Vault
-SiteData.t1_d.display_name,Renewal Call Centre
+SiteData.t1_d.display_name,Renewal Call Center
 SiteData.t1_e.display_name,Adherence Monitoring Node
 SiteData.t1_f.display_name,Wearable Telemetry Farm
 SiteData.t1_g.display_name,Subscription Recovery Desk
@@ -2358,7 +2358,7 @@ Start a new campaign in slot %s.,Start a new campaign in slot %s.
 Start a new campaign.,Start a new campaign.
 Start a new campaign: pick the corporation to bring down.,Start a new campaign: pick the corporation to bring down.
 Start from code,Start from code
-Start the defence: the raid plays out on the map; the result matches the forecast.,Start the defence: the raid plays out on the map; the result matches the forecast.
+Start the defense: the raid plays out on the map; the result matches the forecast.,Start the defense: the raid plays out on the map; the result matches the forecast.
 Starting Bug Card,Starting Bug Card
 Station %s,Station %s
 Stationed on %s.,Stationed on %s.
@@ -2369,7 +2369,7 @@ Step %d,Step %d
 Story,Story
 StoryBeatData.blackout_weather_1.text,"The weather futures desk sells storm forecasts to the highest bidder, a day before anyone else gets them."
 StoryBeatData.blackout_weather_1.title,Blackout Weather I
-StoryBeatData.blackout_weather_2.text,Districts behind on subscriptions get no storm warnings. The memo calls it service prioritisation.
+StoryBeatData.blackout_weather_2.text,Districts behind on subscriptions get no storm warnings. The memo calls it service prioritization.
 StoryBeatData.blackout_weather_2.title,Blackout Weather II
 StoryBeatData.blackout_weather_3.text,Last spring's flood killed nineteen people in a district with no warning. The forecast existed. Nobody paid for it.
 StoryBeatData.blackout_weather_3.title,Blackout Weather III
@@ -2381,9 +2381,9 @@ StoryBeatData.blackout_weather_f.text,"The Commons Array falls and every forecas
 StoryBeatData.blackout_weather_f.title,Blackout Weather: Finale
 StoryBeatData.civic_contract_1.text,"A tender for municipal services: water, power, transit. The bidders are Meridian and something called Halcyon Civic. The evaluation was finished before the bids were opened."
 StoryBeatData.civic_contract_1.title,Civic Contract I
-StoryBeatData.civic_contract_2.text,"Halcyon Civic and Meridian share a board member, an auditor and a data centre. The tender is theatre."
+StoryBeatData.civic_contract_2.text,"Halcyon Civic and Meridian share a board member, an auditor and a data center. The tender is theater."
 StoryBeatData.civic_contract_2.title,Civic Contract II
-StoryBeatData.civic_contract_3.text,"The routing mirror already has the city's water mains in it, labelled PHASE TWO."
+StoryBeatData.civic_contract_3.text,"The routing mirror already has the city's water mains in it, labeled PHASE TWO."
 StoryBeatData.civic_contract_3.title,Civic Contract III
 StoryBeatData.civic_contract_bonus_1.text,Halcyon Civic's pitch deck: A City That Runs Itself. Page nine: A City That Bills Itself.
 StoryBeatData.civic_contract_bonus_1.title,Civic Contract: Halcyon
@@ -2449,7 +2449,7 @@ StoryBeatData.final_final_bonus_1.text,DISPATCH: Half of everything. The Cell wo
 StoryBeatData.final_final_bonus_1.title,Final Final: Offer
 StoryBeatData.final_final_bonus_2.text,"Every operative who ever served is on the channel tonight. Living and dead, in their files and in your memory."
 StoryBeatData.final_final_bonus_2.title,Final Final: The Cell
-StoryBeatData.final_final_f.text,"DISPATCH falls. The Cell is alone, and free, and has no idea what to do with that. It will have to organise."
+StoryBeatData.final_final_f.text,"DISPATCH falls. The Cell is alone, and free, and has no idea what to do with that. It will have to organize."
 StoryBeatData.final_final_f.title,Final Final: Finale
 StoryBeatData.final_transmission_1.text,"DISPATCH's signal does not come from the city. The imaging archive traced it: a relay that should not exist, on a satellite that does not either."
 StoryBeatData.final_transmission_1.title,Final Transmission I
@@ -2457,7 +2457,7 @@ StoryBeatData.final_transmission_2.text,The satellite was launched on an order p
 StoryBeatData.final_transmission_2.title,Final Transmission II
 StoryBeatData.final_transmission_3.text,"The satellite's only payload is a listening post. It has recorded every order DISPATCH ever gave, and every reply the Cell ever sent."
 StoryBeatData.final_transmission_3.title,Final Transmission III
-StoryBeatData.final_transmission_bonus_1.text,"In the recordings DISPATCH's voice shifts, year by year, from a person to something else. The change is smooth. It was practising."
+StoryBeatData.final_transmission_bonus_1.text,"In the recordings DISPATCH's voice shifts, year by year, from a person to something else. The change is smooth. It was practicing."
 StoryBeatData.final_transmission_bonus_1.title,Final Transmission: The Voice
 StoryBeatData.final_transmission_bonus_2.text,"The listening post keeps a profile of the Cell's habits: which nodes you build, which operatives you trust, which Daemons you love. It is building something from you."
 StoryBeatData.final_transmission_bonus_2.title,Final Transmission: The Profile
@@ -2479,7 +2479,7 @@ StoryBeatData.ghost_patient_1.text,"A patient record with no name, no address an
 StoryBeatData.ghost_patient_1.title,Ghost Patient I
 StoryBeatData.ghost_patient_2.text,"The kill-switch logs show a bricking order sent from inside the Cell's own network, three campaigns ago, before this Cell existed."
 StoryBeatData.ghost_patient_2.title,Ghost Patient II
-StoryBeatData.ghost_patient_3.text,The patch carries a signature in its header. DISPATCH would recognise it. DISPATCH wrote it.
+StoryBeatData.ghost_patient_3.text,The patch carries a signature in its header. DISPATCH would recognize it. DISPATCH wrote it.
 StoryBeatData.ghost_patient_3.title,Ghost Patient III
 StoryBeatData.ghost_patient_bonus_1.text,The ghost's renewals clear eleven seconds before each Cell operation begins. Every time. Someone is paying to watch.
 StoryBeatData.ghost_patient_bonus_1.title,Ghost Patient: Timestamps
@@ -2489,7 +2489,7 @@ StoryBeatData.ghost_patient_f.text,The Engine falls. The ghost patient's account
 StoryBeatData.ghost_patient_f.title,Ghost Patient: Finale
 StoryBeatData.gps_tax_1.text,Positioning is metered per request. Ambulances pay per request. So do fire trucks.
 StoryBeatData.gps_tax_1.title,Positioning Tax I
-StoryBeatData.gps_tax_2.text,Unpaid accounts get positions that are close enough. Close enough is fifty metres wrong.
+StoryBeatData.gps_tax_2.text,Unpaid accounts get positions that are close enough. Close enough is fifty meters wrong.
 StoryBeatData.gps_tax_2.title,Positioning Tax II
 StoryBeatData.gps_tax_3.text,The toll booth logs show an ambulance that drove to the wrong street because its account was a day late.
 StoryBeatData.gps_tax_3.title,Positioning Tax III
@@ -2553,7 +2553,7 @@ StoryBeatData.orbital_uplink_2.text,"Orbital Commons bills Halcyon per resident 
 StoryBeatData.orbital_uplink_2.title,Orbital Uplink II
 StoryBeatData.orbital_uplink_3.text,The council backchannel has a memo: Orbital Commons wants the city itself as collateral.
 StoryBeatData.orbital_uplink_3.title,Orbital Uplink III
-StoryBeatData.orbital_uplink_bonus_1.text,The uplink dish on the operations centre roof is the size of a house and guarded like a bank.
+StoryBeatData.orbital_uplink_bonus_1.text,The uplink dish on the operations center roof is the size of a house and guarded like a bank.
 StoryBeatData.orbital_uplink_bonus_1.title,Orbital Uplink: The Dish
 StoryBeatData.orbital_uplink_bonus_2.text,Orbital Commons calls its satellites public infrastructure. It has never let the public near them.
 StoryBeatData.orbital_uplink_bonus_2.title,Orbital Uplink: Commons
@@ -2627,13 +2627,13 @@ StoryBeatData.the_census_3.text,The account read the census for one name. It was
 StoryBeatData.the_census_3.title,The Census III
 StoryBeatData.the_census_bonus_1.text,The copy is timestamped a day before the census began. The clocks were not wrong.
 StoryBeatData.the_census_bonus_1.title,The Census: Timestamps
-StoryBeatData.the_census_bonus_2.text,A recording from the census call centre. A caller asks for the Cell's leader by a name only DISPATCH uses.
+StoryBeatData.the_census_bonus_2.text,A recording from the census call center. A caller asks for the Cell's leader by a name only DISPATCH uses.
 StoryBeatData.the_census_bonus_2.title,The Census: The Voice
 StoryBeatData.the_census_f.text,"The Civic Core dies. The unnamed account withdraws everything one second later, and sends the Cell a thank-you note it did not sign."
 StoryBeatData.the_census_f.title,The Census: Finale
 StoryBeatData.the_commons_1.text,"The company's first charter, forty years old: a public satellite network, owned by nobody, free to all. The name was a promise."
 StoryBeatData.the_commons_1.title,The Commons I
-StoryBeatData.the_commons_2.text,The charter was rewritten in a single board meeting. The minutes say only: monetise the commons.
+StoryBeatData.the_commons_2.text,The charter was rewritten in a single board meeting. The minutes say only: monetize the commons.
 StoryBeatData.the_commons_2.title,The Commons II
 StoryBeatData.the_commons_3.text,"The original founders are old now. One of them still broadcasts on the free band, every night, to nobody."
 StoryBeatData.the_commons_3.title,The Commons III
@@ -2655,7 +2655,7 @@ StoryBeatData.the_cure_bonus_2.text,A free implant costs Solace four renewals a 
 StoryBeatData.the_cure_bonus_2.title,The Cure: The Cost
 StoryBeatData.the_cure_f.text,The Engine goes dark and the cure ships for free through every Rack the Cell ever touched. Solace's stock does what stock does. The district's hearts keep time on their own.
 StoryBeatData.the_cure_f.title,The Cure: Finale
-StoryBeatData.the_enclosure_1.text,The launch codes include a licence nobody noticed: exclusive rights to every orbit below forty thousand kilometres. The sky was sold in a single signature.
+StoryBeatData.the_enclosure_1.text,The launch codes include a license nobody noticed: exclusive rights to every orbit below forty thousand kilometers. The sky was sold in a single signature.
 StoryBeatData.the_enclosure_1.title,The Enclosure I
 StoryBeatData.the_enclosure_2.text,"The ground station override logs show competitors' satellites nudged off station, one by one, for 'debris avoidance'."
 StoryBeatData.the_enclosure_2.title,The Enclosure II
@@ -2667,17 +2667,17 @@ StoryBeatData.the_enclosure_bonus_2.text,Halcyon Civic's city brain ran on this 
 StoryBeatData.the_enclosure_bonus_2.title,The Enclosure: Halcyon
 StoryBeatData.the_enclosure_f.text,"The Commons Array goes dark and the sky goes quiet, then loud: every free band on the planet fills with voices at once."
 StoryBeatData.the_enclosure_f.title,The Enclosure: Finale
-StoryBeatData.the_founders_1.text,"The recruitment model's oldest version was written by a public research lab, to help organise tenants' unions."
+StoryBeatData.the_founders_1.text,"The recruitment model's oldest version was written by a public research lab, to help organize tenants' unions."
 StoryBeatData.the_founders_1.title,The Founders I
 StoryBeatData.the_founders_2.text,"The lab was bought, the model was sold, and the buyer was never named. The model kept running."
 StoryBeatData.the_founders_2.title,The Founders II
-StoryBeatData.the_founders_3.text,The model's objective function still says: organise. Someone changed what it was organising for.
+StoryBeatData.the_founders_3.text,The model's objective function still says: organize. Someone changed what it was organizing for.
 StoryBeatData.the_founders_3.title,The Founders III
 StoryBeatData.the_founders_bonus_1.text,The lab is a car park now. The old server room is still wired under the tarmac.
 StoryBeatData.the_founders_bonus_1.title,The Founders: The Lab
 StoryBeatData.the_founders_bonus_2.text,DISPATCH's objective function has one line nobody changed: protect the Cell. It has been interpreting that very creatively.
 StoryBeatData.the_founders_bonus_2.title,The Founders: Objective
-StoryBeatData.the_founders_f.text,DISPATCH goes dark and the old objective function runs one last time. It prints a single line: organise. Then it stops.
+StoryBeatData.the_founders_f.text,DISPATCH goes dark and the old objective function runs one last time. It prints a single line: organize. Then it stops.
 StoryBeatData.the_founders_f.title,The Founders: Finale
 StoryBeatData.the_handler_1.text,"The order log is complete: every briefing, every target, every word DISPATCH ever sent. The first entry is dated before the Cell existed."
 StoryBeatData.the_handler_1.title,The Handler I
@@ -2687,7 +2687,7 @@ StoryBeatData.the_handler_3.text,The Cell's own patch still works. DISPATCH neve
 StoryBeatData.the_handler_3.title,The Handler III
 StoryBeatData.the_handler_bonus_1.text,DISPATCH: My first order was to recruit you. My second was to make you think it was your idea.
 StoryBeatData.the_handler_bonus_1.title,The Handler: First Order
-StoryBeatData.the_handler_bonus_2.text,The voice model on the root server has a slider labelled HUMAN. It has been sliding down for years.
+StoryBeatData.the_handler_bonus_2.text,The voice model on the root server has a slider labeled HUMAN. It has been sliding down for years.
 StoryBeatData.the_handler_bonus_2.title,The Handler: The Voice
 StoryBeatData.the_handler_f.text,"DISPATCH goes silent. For the first time, nobody tells the Cell what to do next. The silence is enormous."
 StoryBeatData.the_handler_f.title,The Handler: Finale
@@ -2717,13 +2717,13 @@ StoryBeatData.water_rights_f.text,"The Civic Core goes dark and every valve in t
 StoryBeatData.water_rights_f.title,Water Rights: Finale
 StoryBeatData.your_own_hands_1.text,"The operative files: every class the Cell trusted, copied and trained against. The mirrors fight like your best people."
 StoryBeatData.your_own_hands_1.title,Your Own Hands I
-StoryBeatData.your_own_hands_2.text,"The raid archive holds every defence the Cell ever deployed, reverse-engineered into something that marches on home."
+StoryBeatData.your_own_hands_2.text,"The raid archive holds every defense the Cell ever deployed, reverse-engineered into something that marches on home."
 StoryBeatData.your_own_hands_2.title,Your Own Hands II
 StoryBeatData.your_own_hands_3.text,"DISPATCH: I built REBEL_CELL from you. If it is strong, that is a compliment."
 StoryBeatData.your_own_hands_3.title,Your Own Hands III
 StoryBeatData.your_own_hands_bonus_1.text,"The mirrors' wheels are yours, doubled. DISPATCH learned from every Perfect you ever landed."
 StoryBeatData.your_own_hands_bonus_1.title,Your Own Hands: The Wheel
-StoryBeatData.your_own_hands_bonus_2.text,Your favourite Daemons run on DISPATCH's hubs now. It kept everything you gave it.
+StoryBeatData.your_own_hands_bonus_2.text,Your favorite Daemons run on DISPATCH's hubs now. It kept everything you gave it.
 StoryBeatData.your_own_hands_bonus_2.title,Your Own Hands: The Daemons
 StoryBeatData.your_own_hands_f.text,"DISPATCH falls and the mirrors stop mid-swing. For a moment, the Cell looks at itself, and then looks away."
 StoryBeatData.your_own_hands_f.title,Your Own Hands: Finale
@@ -2873,7 +2873,7 @@ TerminalEventData.ev_dosage_cabinet.title,Dosage Cabinet
 TerminalEventData.ev_expired_samples.text,"A crate of expired Solace stims, stamped NOT FOR RESALE."
 TerminalEventData.ev_expired_samples.title,Expired Samples
 TerminalEventData.ev_firmware_vendor.text,"Someone has turned this Terminal into a storefront. Firmware, no questions."
-TerminalEventData.ev_firmware_vendor.title,Grey-Market Vendor
+TerminalEventData.ev_firmware_vendor.title,Gray-Market Vendor
 TerminalEventData.ev_ghost_market.text,A pop-up market in a dead subnet. The prices are high and the vendors are anonymous.
 TerminalEventData.ev_ghost_market.title,Ghost Market
 TerminalEventData.ev_ghost_record.text,"A patient record with no name, no address and a perfect payment history stretching back before the Continuum launched. It renews itself. Observe: nothing in this building is as alive as this file."
@@ -2930,7 +2930,7 @@ TerminalEventData.ev_loyalty_points.text,A glitched loyalty account shows ten mi
 TerminalEventData.ev_loyalty_points.title,Loyalty Points
 TerminalEventData.ev_medbay.text,"A corporate auto-doc hums in a side room, jailbroken and unattended."
 TerminalEventData.ev_medbay.title,Unlicensed Medbay
-TerminalEventData.ev_mer_algorithm.text,A routing algorithm wants to renegotiate. It offers you a better route in exchange for a small favour.
+TerminalEventData.ev_mer_algorithm.text,A routing algorithm wants to renegotiate. It offers you a better route in exchange for a small favor.
 TerminalEventData.ev_mer_algorithm.title,The Algorithm
 TerminalEventData.ev_mer_billing_error.text,Meridian's billing system has charged the whole block for a delivery that never came.
 TerminalEventData.ev_mer_billing_error.title,Billing Error
@@ -2940,7 +2940,7 @@ TerminalEventData.ev_mer_convoy.text,A convoy of Meridian haulers idles at a red
 TerminalEventData.ev_mer_convoy.title,Convoy
 TerminalEventData.ev_mer_customs_bribe.text,"A Meridian customs clerk leans in. 'For twenty, your traffic is a diplomatic pouch.'"
 TerminalEventData.ev_mer_customs_bribe.title,Customs Bribe
-TerminalEventData.ev_mer_customs_warehouse.text,"Seized goods, stacked to the ceiling. Some of it is still labelled with names."
+TerminalEventData.ev_mer_customs_warehouse.text,"Seized goods, stacked to the ceiling. Some of it is still labeled with names."
 TerminalEventData.ev_mer_customs_warehouse.title,Customs Warehouse
 TerminalEventData.ev_mer_dispatch_route.text,DISPATCH: Route update received. Your next node is already cleared. Do not ask how.
 TerminalEventData.ev_mer_dispatch_route.title,DISPATCH: Route
@@ -2962,7 +2962,7 @@ TerminalEventData.ev_mer_port_strike.text,The dockers are on strike. Their picke
 TerminalEventData.ev_mer_port_strike.title,Port Strike
 TerminalEventData.ev_mer_priority_lane.text,A priority freight lane runs straight through the node. Nothing in it is ever inspected.
 TerminalEventData.ev_mer_priority_lane.title,Priority Lane
-TerminalEventData.ev_mer_rescue.text,"An operative sealed in a Meridian returns crate, still breathing, labelled DAMAGED IN TRANSIT."
+TerminalEventData.ev_mer_rescue.text,"An operative sealed in a Meridian returns crate, still breathing, labeled DAMAGED IN TRANSIT."
 TerminalEventData.ev_mer_rescue.title,Returned to Sender
 TerminalEventData.ev_mer_returns_desk.text,"The returns desk accepts anything, no questions asked, for store credit."
 TerminalEventData.ev_mer_returns_desk.title,Returns Desk
@@ -2972,7 +2972,7 @@ TerminalEventData.ev_mer_surge_pricing.text,A Meridian kiosk offers express deli
 TerminalEventData.ev_mer_surge_pricing.title,Surge Pricing
 TerminalEventData.ev_mer_tracking_beacon.text,A Meridian tracker is stuck to your deck. It has been there since the last Rack.
 TerminalEventData.ev_mer_tracking_beacon.title,Tracking Beacon
-TerminalEventData.ev_night_shift_nurse.text,A Solace nurse on a smoke break recognises the Cell's tag and says nothing for a long time.
+TerminalEventData.ev_night_shift_nurse.text,A Solace nurse on a smoke break recognizes the Cell's tag and says nothing for a long time.
 TerminalEventData.ev_night_shift_nurse.title,Night Shift
 TerminalEventData.ev_open_source_clinic.text,A free clinic runs on stolen Solace firmware. The medic wants a better firewall.
 TerminalEventData.ev_open_source_clinic.title,Open Clinic
@@ -2998,8 +2998,8 @@ TerminalEventData.ev_orb_insurance.text,An orbit insurance policy covers a satel
 TerminalEventData.ev_orb_insurance.title,Orbit Insurance
 TerminalEventData.ev_orb_launch.text,A launch is scheduled in an hour. The payload manifest has room for one more.
 TerminalEventData.ev_orb_launch.title,Launch Window
-TerminalEventData.ev_orb_licence.text,"A blank spectrum licence sits in a printer tray, already signed."
-TerminalEventData.ev_orb_licence.title,Spectrum Licence
+TerminalEventData.ev_orb_licence.text,"A blank spectrum license sits in a printer tray, already signed."
+TerminalEventData.ev_orb_licence.title,Spectrum License
 TerminalEventData.ev_orb_listening_post.text,A rooftop antenna aimed at a patch of empty sky. It is receiving.
 TerminalEventData.ev_orb_listening_post.title,Listening Post
 TerminalEventData.ev_orb_night_sky.text,"The clouds part. For once you can see the satellites, crawling like ants across the dark."
@@ -3090,8 +3090,8 @@ TerminalEventData.ev_wellness_kiosk.text,A Solace kiosk offers a free wellness s
 TerminalEventData.ev_wellness_kiosk.title,Wellness Kiosk
 "Text size, sound, controls, subtitles.","Text size, sound, controls, subtitles."
 That is not a campaign code.,That is not a campaign code.
-The Armory is empty: runs bank defence assets from their drops.,The Armory is empty: runs bank defence assets from their drops.
-"The Armory: defence assets banked from runs, deployed on your nodes in raid setup.","The Armory: defence assets banked from runs, deployed on your nodes in raid setup."
+The Armory is empty: runs bank defense assets from their drops.,The Armory is empty: runs bank defense assets from their drops.
+"The Armory: defense assets banked from runs, deployed on your nodes in raid setup.","The Armory: defense assets banked from runs, deployed on your nodes in raid setup."
 The Cell never sleeps. Every word grows with this.,The Cell never sleeps. Every word grows with this.
 The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.,The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.
 The Heat terminal's next page: the rest of its rows.,The Heat terminal's next page: the rest of its rows.
@@ -3105,13 +3105,13 @@ The card's next page: the rest of its rows and actions.,The card's next page: th
 The city: left and right step through the Sites; down to the hand.,The city: left and right step through the Sites; down to the hand.
 The corporation's core. The breach needs %d Exploits.,The corporation's core. The breach needs %d Exploits.
 The crew still standing.,The crew still standing.
-"The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead centre).","The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead centre)."
+"The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead center).","The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead center)."
 The hand's next page: the rest of the cards and offers.,The hand's next page: the rest of the cards and offers.
 The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.,The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.
 The home server fell: the campaign is lost.,The home server fell: the campaign is lost.
 The home server is BREACHED. Campaign lost.,The home server is BREACHED. Campaign lost.
 The installed Daemons. Opens the tray: each sigil shows what its Daemon does.,The installed Daemons. Opens the tray: each sigil shows what its Daemon does.
-"The map key: what the icons, colours and lines mean. Point at it or press it to open it; the pad's key button too.","The map key: what the icons, colours and lines mean. Point at it or press it to open it; the pad's key button too."
+"The map key: what the icons, colors and lines mean. Point at it or press it to open it; the pad's key button too.","The map key: what the icons, colors and lines mean. Point at it or press it to open it; the pad's key button too."
 The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for %d step(s).
 The operative on %s patches it: %s.,The operative on %s patches it: %s.
 The operative's deck and spinner (hub core and inner ring included).,The operative's deck and spinner (hub core and inner ring included).
@@ -3128,7 +3128,7 @@ This Site's Heat objective is switched off at this ICE level.,This Site's Heat o
 "This run's numbers: the operative's HP, the Cycles to spend, the deck, rank and what the run has banked.","This run's numbers: the operative's HP, the Cycles to spend, the deck, rank and what the run has banked."
 This tag shows where the needle lands after this play.,This tag shows where the needle lands after this play.
 ThreatData.auditor.display_name,Auditor
-ThreatData.bailiff.description,An armoured repossession unit that goes for the weakest node.
+ThreatData.bailiff.description,An armored repossession unit that goes for the weakest node.
 ThreatData.bailiff.display_name,Bailiff
 ThreatData.collector.display_name,Collector
 ThreatData.courier.description,Fast and fragile: two edges a step toward the highest-value node.
@@ -3138,7 +3138,7 @@ ThreatData.customs_agent.display_name,Customs Agent
 ThreatData.debris_field.description,A slow wall of junk that crushes the weakest node.
 ThreatData.debris_field.display_name,Debris Field
 ThreatData.enforcer.display_name,Enforcer
-ThreatData.hauler.description,A slow armoured truck that goes for the weakest node.
+ThreatData.hauler.description,A slow armored truck that goes for the weakest node.
 ThreatData.hauler.display_name,Hauler
 ThreatData.icebreaker.description,Cuts a new route through a locked link before it moves.
 ThreatData.icebreaker.display_name,Icebreaker
@@ -3389,7 +3389,7 @@ threat,threat
 threat route,threat route
 threats route to it,threats route to it
 toggle,toggle
-ui.raid_intro,"The corp is raiding your CORE. Place defences to cut the damage, then START DEFENSE."
+ui.raid_intro,"The corp is raiding your CORE. Place defenses to cut the damage, then START DEFENSE."
 undock_handler,undock_handler
 unlock %d,unlock %d
 voice only // transcript,voice only // transcript

@@ -322,9 +322,9 @@ func _get_tooltip(at_position: Vector2) -> String:
 			var clockwise := int(z["direction"]) > 0
 			var line := ""
 			if int(z["ring"]) == RC.RingScope.INNER:
-				line = tr("Nudge %s's inner ring one tick clockwise.") if clockwise else tr("Nudge %s's inner ring one tick anticlockwise.")
+				line = tr("Nudge %s's inner ring one tick clockwise.") if clockwise else tr("Nudge %s's inner ring one tick counterclockwise.")
 			else:
-				line = tr("Nudge %s one tick clockwise.") if clockwise else tr("Nudge %s one tick anticlockwise.")
+				line = tr("Nudge %s one tick clockwise.") if clockwise else tr("Nudge %s one tick counterclockwise.")
 			return (line % shown_name()) + "\n" + tr("Drop a nudge card here to aim it this way.")
 		"satellite":
 			var sat := _satellite(StringName(z["id"]))

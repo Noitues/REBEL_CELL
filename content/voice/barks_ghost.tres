@@ -11,7 +11,7 @@ text = "Clean. They never saw the wheel move."
 [sub_resource type="Resource" id="l1"]
 script = ExtResource("e1")
 key = "bark:perfect"
-text = "Perfect. Resistance is a rumour."
+text = "Perfect. Resistance is a rumor."
 
 [sub_resource type="Resource" id="l2"]
 script = ExtResource("e1")

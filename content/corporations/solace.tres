@@ -92,7 +92,7 @@ map_position = Vector2(200, 162)
 [sub_resource type="Resource" id="site_t1_d"]
 script = ExtResource("3")
 id = &"t1_d"
-display_name = "Renewal Call Centre"
+display_name = "Renewal Call Center"
 tier = 1
 links = Array[StringName]([&"t2_d"])
 locked_links = Array[StringName]([&"t1_e"])
@@ -603,7 +603,7 @@ script = ExtResource("6")
 id = &"ghost_patient_3"
 title = "Ghost Patient III"
 speaker = 3
-text = "The patch carries a signature in its header. DISPATCH would recognise it. DISPATCH wrote it."
+text = "The patch carries a signature in its header. DISPATCH would recognize it. DISPATCH wrote it."
 dispatch_clue = true
 
 [sub_resource type="Resource" id="b_ghost_patient_bonus_1"]

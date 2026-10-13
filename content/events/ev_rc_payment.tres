@@ -33,7 +33,7 @@ amount = -3
 [sub_resource type="Resource" id="c1"]
 script = ExtResource("e2")
 label = "Freeze the account (-3 Heat, 6 damage)"
-result_text = "The account's defences are your defences."
+result_text = "The account's defenses are your defenses."
 hp_cost = 6
 effects = Array[ExtResource("e1")]([SubResource("fx1_0")])
 

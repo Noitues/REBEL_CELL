@@ -16,7 +16,7 @@ amount = 20
 [sub_resource type="Resource" id="c0"]
 script = ExtResource("e2")
 label = "Split it (+20 Cycles)"
-result_text = "Honour among thieves, for once."
+result_text = "Honor among thieves, for once."
 effects = Array[ExtResource("e1")]([SubResource("fx0_0")])
 
 [sub_resource type="Resource" id="fx1_0"]

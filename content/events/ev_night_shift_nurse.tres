@@ -35,6 +35,6 @@ script = ExtResource("main_script")
 id = &"ev_night_shift_nurse"
 title = "Night Shift"
 speaker = 1
-text = "A Solace nurse on a smoke break recognises the Cell's tag and says nothing for a long time."
+text = "A Solace nurse on a smoke break recognizes the Cell's tag and says nothing for a long time."
 choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
 corporation_id = &"solace"

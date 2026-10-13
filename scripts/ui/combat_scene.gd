@@ -3496,7 +3496,7 @@ static func _chips_tooltip(chips: Array) -> String:
 	var extra := ("\n" + "\n".join(notes)) if not notes.is_empty() else ""
 	return String(TranslationServer.translate("When you SEND IT: %s.")) % ", ".join(parts) + extra + "\n" \
 		+ String(TranslationServer.translate("HITS = damage this wheel deals and to whom; HP = health change; BLOCK / SHIELD soak damage; glyphs = statuses on a slice (dashed ring on the wheel).")) + "\n" \
-		+ String(TranslationServer.translate("The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead centre)."))
+		+ String(TranslationServer.translate("The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead center)."))
 
 
 # --- HUD v4 (ART-2 2D, ART_BIBLE v2 §3.1) ----------------------------------------------

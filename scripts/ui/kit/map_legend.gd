@@ -178,7 +178,7 @@ func _build() -> void:
 				fold_button.text = CityMapOverlay.tr_word("MAP KEY")
 				fold_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 				fold_button.add_theme_font_size_override("font_size", fs)
-				fold_button.tooltip_text = UiTip.fold(CityMapOverlay.tr_word("The map key: what the icons, colours and lines mean. Point at it or press it to open it; the pad's key button too."))
+				fold_button.tooltip_text = UiTip.fold(CityMapOverlay.tr_word("The map key: what the icons, colors and lines mean. Point at it or press it to open it; the pad's key button too."))
 				fold_button.pressed.connect(_on_key_pressed)
 				fold_button.mouse_entered.connect(_on_hover_open)
 				IconMark.attach(fold_button, StatIcon.MORE if not opened else StatIcon.CODEX)

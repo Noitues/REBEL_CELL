@@ -8,7 +8,7 @@
 script = ExtResource("main_script")
 id = &"hauler"
 display_name = "Hauler"
-description = "A slow armoured truck that goes for the weakest node."
+description = "A slow armored truck that goes for the weakest node."
 integrity = 28
 damage = 10
 edges_per_step = 1

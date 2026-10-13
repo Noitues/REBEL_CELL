@@ -19,6 +19,6 @@ display_name = "Audit of Loyalty"
 trigger_source = 0
 waves = Array[ExtResource("e4")]([SubResource("wave0")])
 schematic_reward = 14
-warning_text = "DISPATCH: Your loyalty is under review. Your own defences are coming to ask."
+warning_text = "DISPATCH: Your loyalty is under review. Your own defenses are coming to ask."
 corporation_id = &"rebel_cell"
 replaces = &"raid_heat_50"

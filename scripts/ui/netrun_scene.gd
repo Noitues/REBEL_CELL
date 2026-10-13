@@ -4911,7 +4911,7 @@ func _show_raid() -> void:
 	run_btn.name = "StartDefense"
 	run_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
 	run_btn.pressed.connect(raid_fight)
-	run_btn.tooltip_text = UiTip.fold(tr("Start the defence: the raid plays out on the map; the result matches the forecast."))
+	run_btn.tooltip_text = UiTip.fold(tr("Start the defense: the raid plays out on the map; the result matches the forecast."))
 	# ANIM-R1 M8: the interlude is a window beside the raid's map on the city (the Grid, the
 	# threats' routes to CORE), framed before the jack's cover lifts: a jack into a mid-run
 	# raid lands on the setup with its map, not on a dark page of text.
@@ -5093,7 +5093,7 @@ func _raid_node_badge(site_id: StringName, n: Dictionary) -> Control:
 	for a in c.grid.assets_on(site_id):
 		names.append(_content_name(a))
 	if not names.is_empty():
-		tip += " " + tr("Defences: %s.") % ", ".join(names)
+		tip += " " + tr("Defenses: %s.") % ", ".join(names)
 	var b := Badge.new(text, col, "", tip)
 	b.name = "RaidNode_%s" % site_id
 	return b

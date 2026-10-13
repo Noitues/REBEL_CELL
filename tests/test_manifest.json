@@ -1,6 +1,10 @@
 {
 	"about": "Measured seconds per test script (median of runs) for tools/run_tests.py shard balancing, and each script's tier: fast = the iteration tier, full = only in the full suite. Every test script is listed exactly once (test_suite_integrity.gd). See docs/TEST_SUITE.md.",
 	"scripts": {
+		"res://tests/unit/test_us_english.gd": {
+			"seconds": 0.2,
+			"tier": "fast"
+		},
 		"res://tests/integration/test_campaign_flow.gd": {
 			"seconds": 5.7,
 			"tier": "fast"

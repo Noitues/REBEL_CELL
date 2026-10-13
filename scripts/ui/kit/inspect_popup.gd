@@ -73,7 +73,7 @@ const KEYWORD_TEXT := {
 	RC.EffectType.FLIP: "FLIP: mirrors the wheel, so each slice swaps with the one opposite.", # TR
 	RC.EffectType.RESPIN: "RESPIN: the wheel lands on a random tick.", # TR
 	RC.EffectType.FREEZE: "FREEZE: the wheel skips its next respin.", # TR
-	RC.EffectType.SNAP_TO_CENTER: "SNAP: the ring moves to the nearest slice centre, a PERFECT aim.", # TR
+	RC.EffectType.SNAP_TO_CENTER: "SNAP: the ring moves to the nearest slice center, a PERFECT aim.", # TR
 	RC.EffectType.MODIFY_RESISTANCE: "RESISTANCE: how many nudges a wheel shrugs off each turn.", # TR
 	RC.EffectType.HUB_BREACH: "BREACH: the hub core's bonus and resistance are off while it lasts.", # TR
 	RC.EffectType.GAIN_RAM: "RAM: what cards cost to play; it refills each turn.", # TR
