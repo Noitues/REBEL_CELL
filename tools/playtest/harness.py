@@ -622,6 +622,7 @@ class Tester:
         return d["done"]
 
     def probe_step(self, hwnd: int, frame) -> str:
+        self.watchdog.observe("combat_turn_start", "", self.elapsed_min())  # probe turns are fights too
         if not self.probe_in_fight:
             self.probe_in_fight, self.probe_turn = True, 0
         pdir = self.dir / "probe"
