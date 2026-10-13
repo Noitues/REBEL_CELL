@@ -888,6 +888,10 @@
 		"res://tests/unit/test_plan1_1b_menu.gd": {
 			"seconds": 15.0,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_plan1_a2_preview.gd": {
+			"seconds": 60.0,
+			"tier": "fast"
 		}
 	}
 }

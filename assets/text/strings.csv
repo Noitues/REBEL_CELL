@@ -7,6 +7,7 @@ keys,en
  (run in progress), (run in progress)
  // PINNED, // PINNED
  AGAIN, AGAIN
+ from %s, from %s
  or , or 
  | ASSIST, | ASSIST
  · %s/%s NUDGE %s%s, · %s/%s NUDGE %s%s
@@ -30,7 +31,6 @@ keys,en
 %d IN %d WAVE,%d IN %d WAVE
 %d IN %d WAVES,%d IN %d WAVES
 %d LANDS HERE,%d LANDS HERE
-%d LEFT,%d LEFT
 %d NEEDLES,%d NEEDLES
 %d NODES,%d NODES
 %d RAM lost,%d RAM lost
@@ -49,6 +49,7 @@ keys,en
 "%d-%d Cycles, a card","%d-%d Cycles, a card"
 %d/%d  -  BREACH READY,%d/%d  -  BREACH READY
 %d/%d  -  LOCKED,%d/%d  -  LOCKED
+%d→%d  NEXT %d,%d→%d  NEXT %d
 "%s
 %d CYCLES","%s
 %d CYCLES"
@@ -127,6 +128,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s rolls,%s rolls
 %s takes %d damage: HP %d → %d.,%s takes %d damage: HP %d → %d.
 %s · %d CYCLES,%s · %d CYCLES
+%s%s lands on one random slice: %s.,%s%s lands on one random slice: %s.
 %s's HP. At 0 the operative flatlines.,%s's HP. At 0 the operative flatlines.
 %s's integrity (HP) now and after the raid: %s → %s. %s,%s's integrity (HP) now and after the raid: %s → %s. %s
 "%s, %d runs","%s, %d runs"
@@ -150,6 +152,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 +%d >,+%d >
 +%d BLOCK,+%d BLOCK
 +%d DRONE,+%d DRONE
++%d EARLIER,+%d EARLIER
 +%d EVADE,+%d EVADE
 +%d HP,+%d HP
 +%d HP healed,+%d HP healed
@@ -192,6 +195,8 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.
 A guided first fight in a simulated net.,A guided first fight in a simulated net.
+A needle lands on NULL: no slice fires. Cold Exit and Fault Tolerance look for this.,A needle lands on NULL: no slice fires. Cold Exit and Fault Tolerance look for this.
+A needle of %s lands on NULL: no slice fires.,A needle of %s lands on NULL: no slice fires.
 "A patrol: loot, Heat and Rank from the run, no objective.","A patrol: loot, Heat and Rank from the run, no objective."
 A raid is pending: JACK IN now and it hits your network as an interlude in the run (or defend first: RAID SETUP).,A raid is pending: JACK IN now and it hits your network as an interlude in the run (or defend first: RAID SETUP).
 A raid's route toward your CORE.,A raid's route toward your CORE.
@@ -295,6 +300,7 @@ CAMPAIGNS,CAMPAIGNS
 CAN BE YOUR NODE,CAN BE YOUR NODE
 CANCEL,CANCEL
 CANNOT UNDO,CANNOT UNDO
+CARD,CARD
 CARD DETAIL,CARD DETAIL
 CARD NOTES,CARD NOTES
 CARDS,CARDS
@@ -553,6 +559,7 @@ Click to play.,Click to play.
 Close,Close
 Cobalt (deep blue terminal),Cobalt (deep blue terminal)
 Codex,Codex
+Cold Exit and Fault Tolerance look for this.,Cold Exit and Fault Tolerance look for this.
 Color-blind correction (patterns and glyphs stay the main cue),Color-blind correction (patterns and glyphs stay the main cue)
 Come Back Soon,Come Back Soon
 Continue,Continue
@@ -888,6 +895,7 @@ FIRMWARE  //  HUB,FIRMWARE  //  HUB
 FIRMWARE DROP,FIRMWARE DROP
 FLATLINED,FLATLINED
 "FLIP: mirrors the wheel, so each slice swaps with the one opposite.","FLIP: mirrors the wheel, so each slice swaps with the one opposite."
+FREE,FREE
 FREE NUDGE %s NEXT,FREE NUDGE %s NEXT
 FREE NUDGE x%d,FREE NUDGE x%d
 FREEZE,FREEZE
@@ -983,7 +991,7 @@ HIRE,HIRE
 HIRE: %d SCHEMATICS,HIRE: %d SCHEMATICS
 HITS %d,HITS %d
 HITS %s %d,HITS %s %d
-HITS %s %d → %d LEFT,HITS %s %d → %d LEFT
+HITS %s → 0,HITS %s → 0
 HITS = damage this wheel deals and to whom; HP = health change; BLOCK / SHIELD soak damage; glyphs = statuses on a slice (dashed ring on the wheel).,HITS = damage this wheel deals and to whom; HP = health change; BLOCK / SHIELD soak damage; glyphs = statuses on a slice (dashed ring on the wheel).
 HOLDS,HOLDS
 HOLDS %d STEPS,HOLDS %d STEPS
@@ -1003,6 +1011,8 @@ HOTFIX,HOTFIX
 HOVER: SHOW ALL,HOVER: SHOW ALL
 HOVER: SHOW ALL LINKS,HOVER: SHOW ALL LINKS
 HP,HP
+HP %d → %d,HP %d → %d
+HP %d → 0: the hit takes the last HP,HP %d → 0: the hit takes the last HP
 HP %d/%d,HP %d/%d
 HP %s,HP %s
 HP %s (other effects),HP %s (other effects)
@@ -1149,6 +1159,7 @@ INTERCEPTED  //  %s,INTERCEPTED  //  %s
 INTERCEPTED  //  %s  //  CORP FILE,INTERCEPTED  //  %s  //  CORP FILE
 INTERCEPTED // %s INTERNAL MAIL,INTERCEPTED // %s INTERNAL MAIL
 INTERNAL MEMO,INTERNAL MEMO
+"If the turn ends as planned, the next one starts with %d RAM.","If the turn ends as planned, the next one starts with %d RAM."
 In force: %s.,In force: %s.
 Infection contained. Please remain calm while we sterilize your network.,Infection contained. Please remain calm while we sterilize your network.
 Instant (results at once),Instant (results at once)
@@ -1156,8 +1167,8 @@ Instant (results at once),Instant (results at once)
 Intel,Intel
 Interface skin (terminal colors only; meanings and layout stay),Interface skin (terminal colors only; meanings and layout stay)
 It counts as a lost campaign.,It counts as a lost campaign.
-"It gets %d through, but only %d HP are left to take.","It gets %d through, but only %d HP are left to take."
 It lands on one slice at random; the odds by slice type follow.,It lands on one slice at random; the odds by slice type follow.
+It takes the last HP: the target ends at 0.,It takes the last HP: the target ends at 0.
 Its needle lands on %s.,Its needle lands on %s.
 JACK A CAMPAIGN IN,JACK A CAMPAIGN IN
 JACK IN,JACK IN
@@ -1171,8 +1182,10 @@ Key,Key
 LAST TURN: ,LAST TURN: 
 LEAVE,LEAVE
 LETHAL,LETHAL
+LETHAL: YOU HIT 0,LETHAL: YOU HIT 0
 LETHAL: this turn takes it to 0 HP.,LETHAL: this turn takes it to 0 HP.
 LETHAL: this turn takes you to 0 HP.,LETHAL: this turn takes you to 0 HP.
+LETHAL: this turn takes your last HP. Change the plan before SEND IT.,LETHAL: this turn takes your last HP. Change the plan before SEND IT.
 LIEN RECOVERY,LIEN RECOVERY
 LIMITED // slow layer only,LIMITED // slow layer only
 "LIMITED: flash limiter on, slow layer only","LIMITED: flash limiter on, slow layer only"
@@ -1618,6 +1631,7 @@ NEXT %d (%s),NEXT %d (%s)
 "NEXT %d: your HP after SEND IT, if you press it now (the tag above says why).","NEXT %d: your HP after SEND IT, if you press it now (the tag above says why)."
 NEXT OPERATIVE >,NEXT OPERATIVE >
 NEXT RUN'S BOOSTS,NEXT RUN'S BOOSTS
+NEXT TURN %d,NEXT TURN %d
 NO CHANGE,NO CHANGE
 NO DAMAGE,NO DAMAGE
 NO EFFECT,NO EFFECT
@@ -1881,9 +1895,12 @@ RAID SETUP: a raid is coming along the red pencil routes: set up the defense.,RA
 RAIDS,RAIDS
 RAIDS HELD,RAIDS HELD
 RAM,RAM
+RAM %d,RAM %d
 RAM %d/%d,RAM %d/%d
 "RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn.","RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn."
 RAM %s,RAM %s
+RAM -%d,RAM -%d
+RAM 0,RAM 0
 RAM%s,RAM%s
 RAM: what cards cost to play; it refills each turn.,RAM: what cards cost to play; it refills each turn.
 RANDOM: ODDS,RANDOM: ODDS
@@ -2101,6 +2118,7 @@ SLOT %s // CELL-%02d,SLOT %s // CELL-%02d
 SNAP,SNAP
 "SNAP: the ring moves to the nearest slice center, a PERFECT aim.","SNAP: the ring moves to the nearest slice center, a PERFECT aim."
 SOLD,SOLD
+SPIN,SPIN
 SPIN %d+,SPIN %d+
 SPIN: turns the wheel clockwise by the ticks shown (counter-clockwise when negative).,SPIN: turns the wheel clockwise by the ticks shown (counter-clockwise when negative).
 SPINNER,SPINNER
@@ -3234,6 +3252,9 @@ Your campaign is autosaved.,Your campaign is autosaved.
 Your campaign is saved: BREACH on the title picks it up.,Your campaign is saved: BREACH on the title picks it up.
 Your home Site (CORE),Your home Site (CORE)
 Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.,Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.
+Your play turns %s's wheel: its needle goes from %s to %s.,Your play turns %s's wheel: its needle goes from %s to %s.
+Your play turns this %s by %d ticks: its needle lands somewhere new.,Your play turns this %s by %d ticks: its needle lands somewhere new.
+Your play turns your wheel: its needle goes from %s to %s.,Your play turns your wheel: its needle goes from %s to %s.
 "Your records, achievements and run history.","Your records, achievements and run history."
 Your run is saved where it is: BREACH on the title picks it up.,Your run is saved where it is: BREACH on the title picks it up.
 Your spinner.,Your spinner.
@@ -3308,6 +3329,7 @@ highest-value node,highest-value node
 home server  %d / %d,home server  %d / %d
 hunted,hunted
 in a run,in a run
+inner ring,inner ring
 install,install
 it costs you %s,it costs you %s
 jack in from the HQ: each run you finish logs a line here,jack in from the HQ: each run you finish logs a line here
@@ -3410,6 +3432,7 @@ x1 %s TAKEN // UNPICKED STICKERS FALL OFF,x1 %s TAKEN // UNPICKED STICKERS FALL 
 x1.5,x1.5
 you were always a copy. the original sends its regards.,you were always a copy. the original sends its regards.
 your network holds every threat,your network holds every threat
+your wheel,your wheel
 yours,yours
 "{undo_how} rewinds your nudges and card plays this turn. It stops at the last random event: a Respin or a random-slice card. Nudge a wheel, then undo it.","{undo_how} rewinds your nudges and card plays this turn. It stops at the last random event: a Respin or a random-slice card. Nudge a wheel, then undo it."
 — STEP %d —,— STEP %d —

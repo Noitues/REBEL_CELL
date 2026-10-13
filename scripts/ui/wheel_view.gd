@@ -3506,7 +3506,7 @@ func icon_row_items() -> Array[Dictionary]:
 		out.append({"icon": RC.SliceType.DETOUR, "text": str(evaded), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
 	out.append({"icon": -1, "text": str(through), "color": LOSS_COLOR if through > 0 else Palette.NET_CYAN, "sep": "="})
 	if dealt < through:
-		out.append({"icon": -1, "text": tr("%d LEFT") % dealt, "color": LOSS_COLOR, "sep": CLAMP_ARROW})
+		out.append({"icon": -1, "text": "0", "color": LOSS_COLOR, "sep": CLAMP_ARROW})  # W2-A2 (CP-002 ruling 5): "→ 0", never the over-damage
 	# The rest of the HP change (a heal, corruption): what the hits took off is `dealt`.
 	var rest := hp + dealt
 	if rest != 0:

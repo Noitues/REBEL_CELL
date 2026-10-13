@@ -50,6 +50,30 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
   (`OutcomeRow` item key `art`, a `MainframeArt` part) and its name and description in the sticker's tooltip; hovering the
   chips gives the same tooltip as the sticker. Test `test_w2_a4_faces`; captures `docs/art_review/PLAN1/W2_A4.jpg`.
 
+### 2026-10-13 — Plan 1 W2-A2: the planned outcome (V1's gaps, F11, CP-002 ruling 5)
+Built only what `docs/handoff/plan1/V1_PREVIEW_GAPS.md` listed; every number is read from the resolver's after-state.
+- **HP before → after.** `ResultChipModel` gains `HP_LINE` ("60→49", a kill "1→0": clamped to the minimum, never the
+  over-damage), `LETHAL` (your row, when *your* HP would hit 0), `SPIN` (the ticks the hovered play turns that wheel's
+  outer or inner ring: the enemy's too, which is also F11's visible preview), `NULL_LAND` (a needle on NULL). `build`
+  takes the state right after the hovered play (`landing`) and `null_hit`; the scene passes both from the same
+  `pointer_readouts` the tag uses. A chip's own `tip` shows on hover (`HudResultChips._get_tooltip`; the row's
+  breakdown still follows): the random status says its odds and who puts it there, the spin where the needle goes.
+- **CP-002 ruling 5 built.** "HITS YOU 8 → 1 LEFT" is "HITS YOU → 0"; the equation's tail and the LAST TURN row say "→ 0".
+- **Queue readout.** `TurnQueue` (pure, view-side) keeps one copy of the state per action since the turn began (rewind
+  drops a step, SEND IT starts over); `TurnQueuePanel` between the wheels lists THIS TURN with the chain's RAM total, the
+  played actions (last 3 / 2 / 1 at text 1.0 / 1.6 / 2.0), the hovered play as "> NAME", each wheel's HP net (turn start →
+  after SEND IT), a lethal warning and "RAM a→b NEXT n". It shows only once an action has been played. Its lettering stops at
+  1.4× (the room between the discs does not grow with text); long names end in "…".
+- **RAM after SEND IT.** `CombatResolver.ram_next_turn(resolved)` = regen then banked bonus, capped as `start_turn` caps
+  them (test: equals the real next-turn RAM, 12 cases). The RAM panel header says "NEXT TURN n" where it fits; its
+  tooltip always does. Turn-start Daemon triggers are not forecast.
+- **Satellites** get a row of their own under the host's chip row (`HudWheelLayer.sat_row_for`).
+- **F11.** Hovering the enemy's nudge arrows already ran the same preview as yours; what the player lacked was anything to
+  read when the slices did not change. The SPIN chip, the tag's play note and the queue's "> NUDGE name +1" now show.
+- Tests: `tests/unit/test_plan1_a2_preview.gd` (HP lines = resolver; kill/lethal; spin = real rotation for both wheels;
+  NULL iff a needle is on it; ram_next_turn; queue rows, UNDO and a new turn; layout at 1.0 / 1.6 / 2.0; satellite row;
+  random status tip). `test_anim_r6_combat.gd` follows the new "→ 0" wording.
+
 ### 2026-10-13 — Raid feed: one STEP divider per step (PT-002a item 6, option A)
 The LIVE RAID FEED no longer prefixes event lines with "Step N:". `RaidPlayoutPanel.step_divider` feeds one muted
 terminal line, "— STEP N —" (TERMINAL_TEXT at `FEED_DIVIDER_ALPHA`, body size), before a step's first fed event;
