@@ -74,3 +74,8 @@ on until the designer decides.** Each item gets an id, a class, and a proposed d
    - D-UX6, smear notches: art slice when?
    - C-1, spelling: US everywhere?
    - "Step N:" in the raid feed: keep or drop?
+
+## 7. Found by the orchestrator (2026-10-13, raid feed capture)
+| Id | Where | Bug | Proposed |
+|---|---|---|---|
+| F18 | Raid playout | The INCOMING pencil word is clipped by the top HUD ("INCOMI" at 1.0, "INCOM" at 2.0; `RAID_FEED_STEP.jpg`). Pencil is never under UI (art-pass ruling, G2R2) | Wave 1b follow-up / wave 3 (city): place the word inside the map's free area |
