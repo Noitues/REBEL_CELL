@@ -54,6 +54,11 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-13 — Plan 1 W1R1-MISC: pinned START margin, loot note capture, "after this play" tooltip
+- New Campaign at 2.0: the pinned START (`StartBar`) keeps the sticker safe margin (`Fx.sticker_margin()`) from the right and bottom edges (a `StartMargin` spacer, the bar's minimum height). Only one `StartCampaign` is ever in the tree (the head's is reparented); the duplicate seen in review did not reproduce, the test asserts one per scale. 1.0 / 1.6 unchanged.
+- LootNote: review-pack screen `loot_refused`; the note already cleared sheet, FIRMWARE DROP and CONTINUE inside the safe rect at 1.0, now asserted.
+- The previewed tag / pointer tooltips (HUD row breakdown, `WheelView.TAG_AFTER_TIP`) say "This tag shows where the needle lands after this play." Tests: `test_w1r1_misc.gd`.
+
 ### 2026-10-13 — W1-TAG: enemy precision tag vs pointer (not a bug)
 - V1's "NULL . good aim" on the Agent tag while its pointer read OVERFLOW/PERFECT (two actions chained) is by design: the tag is the pointer's projection AFTER the hovered play (`_show_outcome(landing, ...)`), the pointer is the state NOW (ghost needle and WAS row show the move). `tests/unit/test_w1_tag_preview.gd` proves, across seeds and 0-2 prior plays, tag == the pointer read from the state after really playing the hovered card. No code changed.
 

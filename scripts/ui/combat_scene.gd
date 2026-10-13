@@ -3504,6 +3504,9 @@ static func _chips_tooltip(chips: Array) -> String:
 func _set_chips(view: WheelView, chips: Array, title: String, body: String) -> void:
 	if hud_layer == null or view == null:
 		return
+	# W1R1-MISC: the previewed pointer / tag is the position after the hovered play; the tooltip says so.
+	if body != "":
+		body += "\n" + tr(WheelView.TAG_AFTER_TIP)
 	hud_layer.row_for(view).set_result(chips, title, body)
 
 

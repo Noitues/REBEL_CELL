@@ -158,6 +158,7 @@ const SCREENS := [
 	["combat_defeat", "_s_combat_defeat", "The losing turn: DEFEAT."],
 	["loot", "_s_loot", "Picking a card reward."],
 	["loot_firmware", "_s_loot_firmware", "Picking a Firmware drop (the FIRMWARE DROP terminal)."],
+	["loot_refused", "_s_loot_refused", "W1R1-MISC: a Firmware take refused (a chip that does not fit the slot): the note beside CONTINUE."],
 	["mainframe", "_s_mainframe", "The Mainframe shop."],
 	["mainframe_socket", "_s_mainframe_socket", "The Mainframe with the socket choice open."],
 	["mainframe_remove", "_s_mainframe_remove", "The Mainframe's REMOVE A CARD viewer."],
@@ -1443,7 +1444,20 @@ func _s_loot_firmware() -> void:
 	await _loot_of(["barbed_wire", "bulkhead", "burner"], "firmware")
 
 
-func _loot_of(options: Array, kind: String) -> void:
+## W1R1-MISC: the loot sheet after a refused Firmware take (the chip does not fit the slot asked for).
+func _s_loot_refused() -> void:
+	var options: Array = ["barbed_wire", "bulkhead", "burner"]
+	var net: Node = await _loot_of(options, "firmware")
+	var s := RunManager.netrun
+	for k in s.run.operative.slot_slice_ids.size():
+		for i in options.size():
+			if s.firmware_slot_error(StringName(options[i]), k) != "":
+				net.choose_reward(i, k)
+				await _settle(net)
+				return
+
+
+func _loot_of(options: Array, kind: String) -> Node:
 	var net: Node = await _netrun()
 	# B5 (D8): the loot a won fight pays out (FIGHT WON on the fought Site): the run stands on a first-layer fight.
 	for id in RunManager.netrun.run.map.first_layer_ids():
@@ -1453,6 +1467,7 @@ func _loot_of(options: Array, kind: String) -> void:
 	DemoSetup.offer_loot(RunManager.netrun, options, kind)
 	net._show_current()
 	await _settle(net)
+	return net
 
 
 func _mainframe(seed: int) -> Node:

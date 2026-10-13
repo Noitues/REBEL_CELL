@@ -1,0 +1,133 @@
+extends GutTest
+## Change plan 1, W1 review R1 (R1-MISC): New Campaign shows one START (pinned at 2.0, inside the safe margin), the
+## loot note of a refused Firmware take stays clear of the sheet / FIRMWARE DROP / CONTINUE and inside the safe margin,
+## and the enemy precision tag's tooltip says it is the position after the hovered play.
+
+const COMBAT := "res://scenes/combat/combat_scene.tscn"
+const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
+const HQ := "res://scenes/hq/hq_scene.tscn"
+const SCREEN := Rect2(0, 0, 1280, 720)
+
+var _scale: float
+
+
+func before_each() -> void:
+	_scale = Settings.text_scale
+	AudioDirector.muted = true
+	RunManager.save_slot = "gut_w1r1_misc"
+	RunManager.scene_switching_enabled = false
+	RunManager.delete_save()
+	RunManager.reset()
+	Motion.force_live = false
+
+
+func after_each() -> void:
+	Motion.force_live = false
+	if not is_equal_approx(Settings.text_scale, _scale):
+		Settings.set_text_scale(_scale)
+	Dialogue.clear()
+	AudioDirector.muted = false
+	RunManager.delete_save()
+	DirAccess.remove_absolute(RunManager.profile_path())
+	RunManager.save_slot = RunManager.DEFAULT_SLOT
+	RunManager.reset()
+	RunManager.scene_switching_enabled = true
+
+
+func _frames(n: int = 3) -> void:
+	for i in n:
+		await get_tree().process_frame
+
+
+func _holder() -> Control:
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = SCREEN.size
+	return holder
+
+
+## Every visible "START" sticker under `root` (the campaign's verb, by its node name).
+func _starts(root: Node) -> Array[Control]:
+	var out: Array[Control] = []
+	for n in root.find_children("StartCampaign", "", true, false):
+		var c := n as Control
+		if c != null and c.is_visible_in_tree():
+			out.append(c)
+	return out
+
+
+func test_new_campaign_shows_one_start_and_the_pinned_one_keeps_the_safe_margin() -> void:
+	for scale in [1.0, 1.6, 2.0]:
+		Settings.set_text_scale(scale)
+		RunManager.reset()
+		var holder := _holder()
+		var hq: Control = load(HQ).instantiate()
+		holder.add_child(hq)
+		hq.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		await _frames(4)
+		hq.show_start()
+		await _frames(8)
+		var starts := _starts(hq)
+		assert_eq(starts.size(), 1, "text %.1f: one START on New Campaign" % scale)
+		if starts.size() == 1:
+			var r := starts[0].get_global_rect()
+			if scale >= 2.0:
+				assert_eq(String(starts[0].get_parent().name), "StartBar", "2.0: START is the pinned one")
+				assert_true(Fx.sticker_safe_rect(SCREEN).encloses(r), "2.0: the pinned START (%s) is inside the safe rect %s" % [r, Fx.sticker_safe_rect(SCREEN)])
+			else:
+				assert_eq(String(starts[0].get_parent().name), "PageHead", "%.1f: START stays in the head" % scale)
+		holder.queue_free()
+		await _frames(2)
+
+
+func test_refused_firmware_note_clears_the_sheet_drop_and_continue_inside_the_safe_margin() -> void:
+	Settings.set_text_scale(1.0)
+	RunManager.new_campaign(7)
+	var holder := _holder()
+	var scene: Control = load(NETRUN).instantiate()
+	holder.add_child(scene)
+	scene.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scene.start_run(1)
+	await _frames(2)
+	var s := RunManager.netrun
+	var options: Array = ["barbed_wire", "bulkhead", "burner"]
+	s.run.pending_rewards.append({"kind": "firmware", "options": options})
+	s.run.phase = RunState.Phase.REWARD
+	scene._show_current()
+	PageTransition.settle(scene)
+	await _frames(6)
+	var refused := false
+	for k in s.run.operative.slot_slice_ids.size():
+		for i in options.size():
+			if not refused and s.firmware_slot_error(StringName(options[i]), k) != "":
+				scene.choose_reward(i, k)
+				refused = true
+	assert_true(refused, "a chip that does not fit some slot exists to be refused")
+	await _frames(40)
+	var note := scene._panel.find_child("LootNote", true, false) as Label
+	assert_not_null(note)
+	assert_true(note != null and note.visible and note.text != "", "the refusal's note shows")
+	if note == null:
+		return
+	var nr := note.get_global_rect()
+	var safe := Fx.sticker_safe_rect(SCREEN)
+	assert_true(safe.encloses(nr), "the note %s is inside the safe rect %s" % [nr, safe])
+	for node_name in ["LootSheet", "FirmwareDrop", "Continue"]:
+		var other := scene._panel.find_child(node_name, true, false) as Control
+		assert_not_null(other, "%s exists" % node_name)
+		if other != null:
+			assert_false(nr.intersects(other.get_global_rect()), "the note %s does not cover %s %s" % [nr, node_name, other.get_global_rect()])
+
+
+func test_enemy_tag_tooltip_says_after_this_play() -> void:
+	RunManager.new_campaign(1)
+	var holder := _holder()
+	var scene: Control = load(COMBAT).instantiate()
+	scene.auto_start = false
+	holder.add_child(scene)
+	scene.start_fight(&"collections_agent", 5)
+	await _frames()
+	var st: CombatState = scene.engine.state()
+	var view: WheelView = scene._enemy_views[st.enemies[0].id]
+	var tip := String(scene.hud_layer.row_for(view).tooltip_text)
+	assert_true(tip.contains(tr(WheelView.TAG_AFTER_TIP)), "the tag's tooltip says it is the position after this play: %s" % tip)
+	assert_true(tip.to_lower().contains("after this play"), "the tooltip carries 'after this play'")

@@ -894,6 +894,7 @@ func _set_panel(p: Control, name: String) -> void:
 	# B9: the pinned START leaves with its page.
 	if _start_bar != null and is_instance_valid(_start_bar):
 		_start_bar.visible = false
+		_start_bar.custom_minimum_size.y = 0.0
 		for pinned in _start_bar.get_children():
 			_start_bar.remove_child(pinned)
 			pinned.queue_free()
@@ -1564,6 +1565,13 @@ func show_start() -> void:
 	if Settings.text_scale >= START_PIN_FROM - 0.001 and start_btn.get_parent() == head:
 		head.remove_child(start_btn)
 		_start_bar.add_child(start_btn)
+		# W1R1-MISC: the pinned START keeps the sticker safe margin from the right and bottom edges.
+		var gap := Control.new()
+		gap.name = "StartMargin"
+		gap.custom_minimum_size = Vector2(Fx.sticker_margin(), 0.0)
+		_start_bar.add_child(gap)
+		start_btn.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		_start_bar.custom_minimum_size.y = start_btn.get_combined_minimum_size().y + Fx.sticker_margin()
 		_start_bar.visible = true
 
 
