@@ -3122,6 +3122,7 @@ Then you can go to: %s.,Then you can go to: %s.
 This Site's Heat objective is switched off at this ICE level.,This Site's Heat objective is switched off at this ICE level.
 "This is your CORE, your home server: you defend it in raids; you never run it.","This is your CORE, your home server: you defend it in raids; you never run it."
 "This run's numbers: the operative's HP, the Cycles to spend, the deck, rank and what the run has banked.","This run's numbers: the operative's HP, the Cycles to spend, the deck, rank and what the run has banked."
+This tag shows where the needle lands after this play.,This tag shows where the needle lands after this play.
 ThreatData.auditor.display_name,Auditor
 ThreatData.bailiff.description,An armoured repossession unit that goes for the weakest node.
 ThreatData.bailiff.display_name,Bailiff

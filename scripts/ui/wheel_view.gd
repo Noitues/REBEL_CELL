@@ -279,12 +279,17 @@ static func _fs(base: int) -> int:
 	return roundi(base * _ts())
 
 
+const TAG_AFTER_TIP := "This tag shows where the needle lands after this play." # TR
+
+
 ## Hover: what is under the mouse (a nudge arrow, a slice, a satellite, the hub).
 func _get_tooltip(at_position: Vector2) -> String:
 	if combatant == null:
 		return ""
 	if _intent_rect_local().has_point(at_position):
 		var tip := String(intent.get("tooltip", ""))
+		# W1R1-MISC: the tag reads the previewed pointer, so it says it is the position after the hovered play.
+		tip = tr(TAG_AFTER_TIP) + ("\n" + tip if tip != "" else "")
 		if was_text() != "":
 			tip += "\n" + tr("Before this play: %s") % was_text()
 		return tip
