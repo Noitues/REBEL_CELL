@@ -27,7 +27,7 @@ const STEPS: Array[Dictionary] = [
 		"title":
 			"NUDGE",  # TR
 		"text":
-			"Land dead center for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}",  # TR
+			"Land dead center for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. FREE NUDGE in the title bar counts the nudges you still get free this turn; each extra nudge costs RAM. {nudge_how}",  # TR
 		"until": "nudge",
 	},
 	{
@@ -272,7 +272,7 @@ static func step_text(i: int) -> String:
 	var pad := Settings.pad_active
 	var t := func(k: String) -> String: return message(k)
 	keys.inspect_how = t.call("Press %s on") % Settings.key_text(&"inspect") if pad else t.call("Hover or right-click")  # TR
-	keys.nudge_how = (t.call("%s and %s nudge the wheel the arrows mark; %s switches between yours and the target, %s between the outer and inner ring.") % [Settings.key_text(&"nudge_left"), Settings.key_text(&"nudge_right"), Settings.key_text(&"toggle_nudge_wheel"), Settings.key_text(&"toggle_ring")]) if Settings.key_text(&"nudge_left") != "" else ""  # TR
+	keys.nudge_how = (t.call("%s and %s nudge the wheel whose buttons show the key letters (they wear a lit rim, and a word under them says OUTER or INNER ring); %s switches between yours and the target, %s between the outer and inner ring.") % [Settings.key_text(&"nudge_left"), Settings.key_text(&"nudge_right"), Settings.key_text(&"toggle_nudge_wheel"), Settings.key_text(&"toggle_ring")]) if Settings.key_text(&"nudge_left") != "" else ""  # TR
 	keys.card_how = (t.call("Pick a card with %s, choose a glowing target with the D-pad, press %s again (%s cancels).") % [Settings.key_text(&"ui_accept"), Settings.key_text(&"ui_accept"), Settings.key_text(&"ui_cancel")]) if pad else t.call("Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards.")  # TR
 	keys.undo_how = t.call("UNDO %s") % Settings.hint(&"rewind")  # TR
 	# ANIM-R5 combat 9: the step translated, its keys filled in, then pseudolocalised once (so the

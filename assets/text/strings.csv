@@ -100,7 +100,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s Site,%s Site
 %s a card for details.,%s a card for details.
 %s a slice for details.,%s a slice for details.
-"%s and %s nudge the wheel the arrows mark; %s switches between yours and the target, %s between the outer and inner ring.","%s and %s nudge the wheel the arrows mark; %s switches between yours and the target, %s between the outer and inner ring."
+"%s and %s nudge the wheel whose buttons show the key letters (they wear a lit rim, and a word under them says OUTER or INNER ring); %s switches between yours and the target, %s between the outer and inner ring.","%s and %s nudge the wheel whose buttons show the key letters (they wear a lit rim, and a word under them says OUTER or INNER ring); %s switches between yours and the target, %s between the outer and inner ring."
 %s cuts a new route: %s - %s.,%s cuts a new route: %s - %s.
 %s doesn't fit %s. It fits Slot %s: pick it on the spinner.,%s doesn't fit %s. It fits Slot %s: pick it on the spinner.
 %s enters at %s.,%s enters at %s.
@@ -207,6 +207,7 @@ A run is already in progress: finish it first.,A run is already in progress: fin
 ABANDON CAMPAIGN,ABANDON CAMPAIGN
 ABANDON RUN,ABANDON RUN
 ABANDONED,ABANDONED
+ACCEL,ACCEL
 ACHIEVEMENTS  %d / %d  //  stickers you keep,ACHIEVEMENTS  %d / %d  //  stickers you keep
 ACTIVE,ACTIVE
 ACTIVITY,ACTIVITY
@@ -216,6 +217,7 @@ AIRMAIL,AIRMAIL
 ALL BLOCKED,ALL BLOCKED
 ALL RESULTS: %s,ALL RESULTS: %s
 ALTERED,ALTERED
+ANCHOR,ANCHOR
 ANNEX A  //  RECOVERED INTERCEPTS,ANNEX A  //  RECOVERED INTERCEPTS
 ANNEX B  //  RESIDUAL RISK,ANNEX B  //  RESIDUAL RISK
 ANY SLICE,ANY SLICE
@@ -345,6 +347,7 @@ CORE (house): your home server; if its integrity reaches 0 the campaign is lost.
 CORP DOWN,CORP DOWN
 CORP NEWS // %s. The story so far is in the Codex (pause menu).,CORP NEWS // %s. The story so far is in the Codex (pause menu).
 CORPORATE,CORPORATE
+CORRUPT,CORRUPT
 CORRUPTED,CORRUPTED
 CREW,CREW
 "CREW: your operatives as cards. Pick the runner, drag a card onto one of your nodes to station them.","CREW: your operatives as cards. Pick the runner, drag a card onto one of your nodes to station them."
@@ -619,6 +622,7 @@ DISPATCH  //  INTERNAL AFFAIRS  //  CLEAN-UP,DISPATCH  //  INTERNAL AFFAIRS  // 
 DISPATCH // ECHO 00,DISPATCH // ECHO 00
 DISPATCH HAS YOUR CELL,DISPATCH HAS YOUR CELL
 DO NOT FORWARD,DO NOT FORWARD
+DOUBLE,DOUBLE
 DOWN,DOWN
 DOWN / TAKEN,DOWN / TAKEN
 DOWN: repair the node on the Grid.,DOWN: repair the node on the Grid.
@@ -730,6 +734,7 @@ EFFECTS & MOTION,EFFECTS & MOTION
 ELITE,ELITE
 ELITE DOWN,ELITE DOWN
 ELITES,ELITES
+EMPTY,EMPTY
 EMPTY SLOT,EMPTY SLOT
 ENCRYPTED,ENCRYPTED
 ENCRYPTED STOPPED %d,ENCRYPTED STOPPED %d
@@ -1207,7 +1212,7 @@ LOOT // NETRUN: %s // %s %d OF %d,LOOT // NETRUN: %s // %s %d OF %d
 LOOT SHEET // %s // PICK 1 OF %d,LOOT SHEET // %s // PICK 1 OF %d
 LOST,LOST
 "LURES, PULL %d","LURES, PULL %d"
-"Land dead center for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}","Land dead center for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}"
+"Land dead center for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. FREE NUDGE in the title bar counts the nudges you still get free this turn; each extra nudge costs RAM. {nudge_how}","Land dead center for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. FREE NUDGE in the title bar counts the nudges you still get free this turn; each extra nudge costs RAM. {nudge_how}"
 Language,Language
 Language (translations from assets/text/strings.csv),Language (translations from assets/text/strings.csv)
 Last played,Last played
@@ -1786,6 +1791,7 @@ PERSON OF INTEREST // FILE,PERSON OF INTEREST // FILE
 PERSONNEL  //  IDENTIFIED OPERATIVES,PERSONNEL  //  IDENTIFIED OPERATIVES
 PHASE %d,PHASE %d
 PICK THE NODE TO BUILD,PICK THE NODE TO BUILD
+PIERCE,PIERCE
 PIRATE RADIO 88.1,PIRATE RADIO 88.1
 "PLAY IT
 SAFE??","PLAY IT
