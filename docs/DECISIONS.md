@@ -66,6 +66,27 @@ Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_deci
   deleted at start, like a test run. Test `test_w1b_playout.gd`: defaults, file choice, SEND IT replays with defaults.
 - **Machine note.** The existing bad `settings.json` is not repaired by code: set Reduce effects off in Settings.
 
+### 2026-10-13 — Plan 1 1B-COMBAT: one backdrop per fight (F10); Freeze and SKIP verified (F9, F12)
+- **F10 cause.** Hover never touched the backdrop. `CombatBackdrop` drew the corporation's still (Solace: the
+  Solace General painting) while its own `CityView3D` close-up built, then swapped to the close-up once
+  `model_ready` fired (about 20 frames in the arena lab, longer in a session when the shared model or a Site
+  extension still records). The swap happened to coincide with the playtester's hover. Reproduced windowed with
+  `arena_lab --enemy=compliance_officer --site=t1_a --shots_at=… --hover_enemy_at=…` (new lab flags).
+- **Fix.** A new place waits on the night sky (the still's fallback draw) while its close-up builds
+  (`CombatBackdrop.holding()`), then shows the close-up. If the close-up is not ready within
+  `CityConfig.backdrop_city_wait_s` (2.0 s, `content/config/city_config.tres`), it is dropped, and the still is that
+  fight's picture to the end (`CombatBackdrop.hold_step`, pure). Once chosen, nothing chooses again in that fight.
+  Headless and tier-0 (no close-up) are unchanged: the still shows at once. The netrun's loot / event `site_backdrop`
+  works the same way. Test: `test_plan1_1b_combat` (hold_step; enemy-wheel hover through the real combat scene leaves
+  place and picture unchanged). Sheet: `docs/art_review/PLAN1/W1B_COMBAT.jpg`.
+- **F9 (no change).** GDD 2.5 / A.2 list Freeze as "Enemy control" ("Target wheel skips its next respin"). The card's
+  `wheel_target` is ENEMY. The GDD never says it applies to the player's wheel (Respin's row names "your own wheel"
+  where that is meant; the Anchor segment is the player's own respin skip). Reported to the designer; nothing changed.
+- **F12 (verified, no change).** `NetrunSession.skip_reward` pops only the current offer, and the loot page's SKIP
+  calls it once and then shows the next offer. A router fight often offers only a card (Firmware by
+  `router_firmware_chance`), so one SKIP can end the payout. The test above guards it (card + Firmware: SKIP leaves
+  the Firmware offer). The one-screen rewards redesign (D-UX1) stays its own slice.
+
 ### 2026-10-13 — W1 polish: a refused Firmware take is one message
 A refused Firmware take on the loot page showed two messages: the rules' id-worded toast ("barbed_wire does not fit a OVERFLOW slice.") and the W1-LOOT red `LootNote` beside CONTINUE. Now one: a terminal-styled note (`RefusalNote`, a `ToastNote` pink-edged box, no timer) worded in `netrun_scene._refusal_note` with display names ("BARBED WIRE doesn't fit Slot 1 (OVFL). It fits Slot 5: pick it on the spinner."; "... fits no slot. Pick another, or Skip."); the rules' toast is dropped and `LootNote` is gone (pencil/red lines are not for errors). It stays until the player acts (picks a slot: `_clear_refusal`; any take or Skip rebuilds the page), so B2's original defect (a refusal that vanishes) does not return. It stands in the loot head where the page's `LootWindow` strip is (the strip hides meanwhile): the head column has the room at 1.0 / 1.6 / 2.0 without moving the sheet, drop, SKIP or CONTINUE, inside the safe margin, body text size (the box takes the strip's width and wraps). `NetrunSession.firmware_slot_error` still returns an id string (core stays as is; the view names it). Tests: `test_w1r1_misc` (1.0 / 1.6 / 2.0: still visible 400 frames later, no overlap with sheet / drop / SKIP / CONTINUE, inside the safe rect, names not ids, clears on a slot pick), `test_plan1_b_repro` B2. Sheet: `docs/art_review/PLAN1/W1_POLISH.jpg`.
 

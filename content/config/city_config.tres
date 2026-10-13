@@ -16,6 +16,7 @@ far_lod_pad_px = 40.0
 far_lod_skip_ink = true
 far_ink_feather_share = 0.03
 backdrop_far_lod_reach_bu = 90.0
+backdrop_city_wait_s = 2.0
 site_spread = 2.0
 site_aim_deg = {
 &"halcyon": 255.0,
