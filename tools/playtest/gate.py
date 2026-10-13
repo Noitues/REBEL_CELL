@@ -13,7 +13,7 @@ no profile contains a motion tester.
 1. Build and routes: points the build copy at main (roll_testers --build), replays every recorded route on a fresh
    copy (routes.py test). A route that breaks means the UI changed; it is listed in the gate summary to re-record
    and testers fall back to starting from the title.
-2. State sweep (state_agent.py), when the profile has one: `--state-mode heuristic` (free, deterministic) or `llm`.
+2. State sweep (state_agent.py), when the profile has one: the free deterministic heuristic sweep always; the LLM sweep only with `--llm-sweep` (opt-in in every profile).
 3. Screen batch (run_batch.py): the profile's mix, judged in batch (screen audit only on screens that changed since
    `--compare`), findings compared with --compare, combat skill from the replays (ground truth). Screen testers do
    not escalate on combat turn starts unless `--combat-escalation`.
@@ -85,11 +85,11 @@ PROFILES: dict[str, dict] = {
         "skips": "novices, motion, parity, rest of the screen batch",
     },
     "milestone": {
-        "about": "milestone gate: 2 novices, 2 intermediates, 1 expert from saves, plus an LLM sweep (and the free heuristic sweep)",
+        "about": "milestone gate: 2 novices, 2 intermediates, 1 expert from saves, plus the free heuristic sweep (LLM sweep on request: --llm-sweep)",
         "mix": "novice=2,intermediate=2,expert=1",
         "starts": {"novice": "title", "intermediate": "{at}", "expert": "save:heat>=25"},
         "limits": {"novice": BOX_NOVICE, "intermediate": BOX_INTERMEDIATE, "expert": "120:8.0"},
-        "state": "both", "seeds": "1000-1019", "parity": False,
+        "state": "mode", "seeds": "1000-1019", "parity": False,
         "skips": "motion",
     },
 }
@@ -128,13 +128,11 @@ def seeds_for(mode: str, seeds: str) -> str:
     return LLM_SWEEP_SEEDS if mode == "llm" and seed_count(seeds) > 5 else seeds
 
 
-def state_runs(profile: dict, mode: str) -> list[str]:
-    """The state sweeps this profile runs with --state-mode `mode`: 'heuristic' and/or 'llm'."""
+def state_runs(profile: dict, llm_sweep: bool) -> list[str]:
+    """The state sweeps this profile runs: the free 'heuristic' one, plus 'llm' only when `llm_sweep` (opt-in, every profile)."""
     if profile["state"] == "none":
         return []
-    if profile["state"] == "both":
-        return ["llm", "heuristic"]
-    return [mode]
+    return ["heuristic", "llm"] if llm_sweep else ["heuristic"]
 
 
 def make_plan(name: str, a: argparse.Namespace) -> dict:
@@ -156,7 +154,7 @@ def make_plan(name: str, a: argparse.Namespace) -> dict:
         r["start"] = ("save " + r["save"]) if r["save"] else (("route " + r["route"]) if r["route"] else "title")
         r["typical"] = (r["cap"] * EXPERT_TYPICAL_OF_CAP) if r["tier"] == "expert" else TYPICAL[r["tier"]]
     n = len(rows)
-    runs = state_runs(prof, a.state_mode)
+    runs = state_runs(prof, a.llm_sweep)
     state_cap = {}
     state_est = {}
     for m in runs:
@@ -214,8 +212,8 @@ def main() -> int:
     ap.add_argument("--budget", type=float, default=0.0, help="hard cap in dollars for the whole gate (default: the profile's own)")
     ap.add_argument("--state-budget", type=float, default=DEFAULT_STATE_BUDGET)
     ap.add_argument("--seeds", default="", help="state sweep seeds (default: the profile's)")
-    ap.add_argument("--state-mode", choices=["heuristic", "llm"], default="heuristic",
-                    help="which strategist the state sweep uses (default: the free HeuristicStrategist, slice T2)")
+    ap.add_argument("--llm-sweep", action="store_true",
+                    help="also run the LLM state sweep (5-seed calibration, about $9); off by default in every profile")
     ap.add_argument("--at", default="route:to_netrun", help="start of the testers who play the changed area: route:NAME | save:SPEC | title")
     ap.add_argument("--build", default="main")
     ap.add_argument("--combat-escalation", action="store_true", help="screen testers escalate combat turn starts (a targeted probe)")

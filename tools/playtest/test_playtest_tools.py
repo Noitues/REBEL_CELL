@@ -23,7 +23,7 @@ import run_batch  # noqa: E402
 
 
 def args(**kw) -> argparse.Namespace:
-    d = dict(at="route:to_netrun", state_mode="llm", state_budget=12.0, combat_escalation=False, audit_all=False)
+    d = dict(at="route:to_netrun", llm_sweep=False, state_budget=12.0, combat_escalation=False, audit_all=False)
     d.update(kw)
     return argparse.Namespace(**d)
 
@@ -76,25 +76,33 @@ class GateProfiles(unittest.TestCase):
             self.assertGreaterEqual(plan["screen_budget"], plan["caps_total"])  # every tester's cap fits
         self.assertEqual(gate.make_plan("balance", args())["testers"][0]["minutes"], 30)
 
-    def test_state_mode(self) -> None:
-        flow_llm = gate.make_plan("flow", args(state_mode="llm"))
-        flow_h = gate.make_plan("flow", args(state_mode="heuristic"))
-        self.assertEqual(flow_llm["state_runs"], ["llm"])
-        self.assertEqual(flow_h["state_runs"], ["heuristic"])
+    def test_llm_sweep_is_opt_in_in_every_profile(self) -> None:
+        for name, prof in gate.PROFILES.items():
+            off = gate.make_plan(name, args(llm_sweep=False))["state_runs"]
+            on = gate.make_plan(name, args(llm_sweep=True))["state_runs"]
+            if prof["state"] == "none":
+                self.assertEqual((off, on), ([], []), name)
+            else:
+                self.assertEqual(off, ["heuristic"], name)
+                self.assertEqual(on, ["heuristic", "llm"], name)
+        flow_h = gate.make_plan("flow", args(llm_sweep=False))
         self.assertEqual(flow_h["state_est"]["heuristic"], 0.0)
+        self.assertNotIn("llm", flow_h["state_est"])
         self.assertLess(flow_h["est_typical"], 4.0)
-        self.assertEqual(gate.make_plan("combat", args())["state_runs"], [])
-        self.assertEqual(sorted(gate.make_plan("milestone", args(state_mode="heuristic"))["state_runs"]), ["heuristic", "llm"])
+        milestone = gate.make_plan("milestone", args(llm_sweep=False))
+        self.assertEqual(milestone["state_runs"], ["heuristic"])
+        self.assertEqual(milestone["state_cap"].get("llm", 0.0), 0.0)
 
     def test_dry_run_prints_without_running(self) -> None:
         text = gate.print_plan(gate.make_plan("combat", args()))
         self.assertIn("keyboard_only", text)
         self.assertIn("Estimated spend", text)
 
-    def test_default_state_mode_is_heuristic_and_default_profile_is_milestone(self) -> None:
+    def test_llm_sweep_flag_exists_and_default_profile_is_milestone(self) -> None:
         self.assertEqual(gate.DEFAULT_PROFILE, "milestone")
         src = (Path(gate.__file__)).read_text(encoding="utf-8")
-        self.assertIn('"--state-mode", choices=["heuristic", "llm"], default="heuristic"', src)
+        self.assertIn('"--llm-sweep", action="store_true"', src)
+        self.assertNotIn("--state-mode", src)
 
     def test_balance_sweep_uses_the_two_turn_lookahead(self) -> None:
         self.assertEqual(gate.state_cmd("heuristic", "x", "1000-1019", 0.0, gate.PROFILES["balance"].get("lookahead", 0))[-2:], ["--lookahead", "2"])

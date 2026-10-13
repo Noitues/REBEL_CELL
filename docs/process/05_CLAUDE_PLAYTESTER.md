@@ -238,17 +238,18 @@ the title; the screen audit judges only changed screens.
 
 | Profile | Testers (box, cap) | Start | State sweep | Also | Typical $ | Worst case $ |
 |---|---|---|---|---|---|---|
-| `flow` | 2 novice (40 min, $1), 1 intermediate (60, $2) | `--at` | sweep, free with the heuristic | | 2.8 (llm sweep: +9.4) | 5.8 (llm: +12) |
+| `flow` | 2 novice (40 min, $1), 1 intermediate (60, $2) | `--at` | sweep, free with the heuristic | | 2.8 (`--llm-sweep`: +9.4) | 5.8 (llm: +12) |
 | `combat` | 2 novice, 1 intermediate, 1 `keyboard_only` | `--at` | none | decision parity on the first intermediate session (skipped when 0 turns pair); the Perfect quiz is a separate on-demand probe | 4.4 | 10.2 |
 | `access` | 1 novice + 1 `keyboard_only`, both focus readability (text 2.0, reduce effects, high contrast) | `--at` | none | | 2.3 | 4.4 |
 | `city` | 3 novice (title), 1 intermediate `explorer` | novices title, explorer `--at` | none | | 3.3 | 7.2 |
 | `balance` | 1 expert (30 min, $3) | save `heat>=25` | 20 seeds, 2-turn lookahead once the strategist supports it | | 3.2 heuristic (llm: +9.4) | 4.0 (llm: +12) |
-| `milestone` | 2 novice (title), 2 intermediate, 1 expert (120 min, $8) | expert save `heat>=25` | LLM calibration sweep (5 seeds, $12 cap) **and** the free heuristic sweep (20 seeds) | | 19.9 | 28.6 |
+| `milestone` | 2 novice (title), 2 intermediate, 1 expert (120 min, $8) | expert save `heat>=25` | the free heuristic sweep (20 seeds); LLM calibration sweep (5 seeds, $12 cap) only with `--llm-sweep` | | 10.5 (`--llm-sweep`: +9.4) | 16.6 (llm: +12) |
 
-`--state-mode heuristic|llm` (default `llm`) picks the state-sweep strategist; the heuristic strategist
-(slice T2: `state_agent.py --strategist heuristic`) costs $0 and takes any number of seeds, an LLM
-sweep is always the 5-seed calibration (about $9.4). Until the heuristic lands and the default flips,
-`heuristic` falls back to the free built-in baseline. `gate.py --dry-run --profile X` prints the exact table
+The state sweep is the free heuristic strategist (`state_agent.py --strategist heuristic`, $0, any number of
+seeds) in every profile that has one. The LLM sweep is **opt-in in every profile, the milestone included**:
+add `--llm-sweep` (designer ruling 4, 2026-10-13); it is always the 5-seed calibration (about $9.4, $12 cap) and
+runs in addition to the heuristic sweep. `gate.py --dry-run --profile X [--llm-sweep]` prints the exact table
+for a profile with its current options.
 for a profile with its current options.
 
 1. **Build and routes:** the build copy is pointed at main and every recorded route is replayed on a
