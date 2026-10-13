@@ -1353,3 +1353,4 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
 - **Route page:** round 44 `route_page*.png` zoom and declutter are the target.
 - **Heat number:** lives in the terminal top strip, not on the dossier stamp (bible 4.3 updated).
 - **Per-fight backdrops (2026-10-06):** unique buildings for non-HQ Site fights stay deferred. Gameplay polish passes come first, then another content and visual pass. Site fight subjects (Solace, Orbital) are interim through M14.
+- **Inner ring (round 45, 2026-10-13):** ghost wedge over the affected outer slice, the modifier's mark tiled inside it (stronger: 38 %, 1.3x), the active inner segment raised and lit with a tick on the needle line, the word plate and tooltip on hover or aim only. One modifier per slice. Supersedes the bible 3.10 standing ring plates.

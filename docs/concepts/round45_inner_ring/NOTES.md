@@ -130,3 +130,8 @@ Every pattern is laid out in the slice's own polar frame, so it turns with the s
 - **PIERCE (white) and OVERCLOCKED** are the weakest marks over the pink attack screen at 1:1. They are readable but quiet, so the edge colour carries the family there.
 - **How a slice gets a second modifier** (card, Firmware, status) is not defined in the GDD. This round only renders the display.
 - **The firmware socket sits over the tick tip** on the active slice. That is fine at r = 220, but tick vs socket needs a z-rule: the tick stays under the socket.
+
+## Designer rulings (2026-10-13), override the specs above
+1. **Stronger pattern.** Marks at **38 %** (was 24 %), halo 40 %, every mark about **1.3x** larger (DOUBLE 58 -> 75), spacing kept. The slice's number and icon still draw on top, with the marks halved under them. PIERCE and OVERCLOCKED get the largest boost: chevrons and bolts at 1.4x with a 2 px ink keyline.
+2. **One modifier per slice.** The split wedge and `two_mods.png` are dropped. Shader uniforms drop to `mod`, `tint`. The plate and tooltip show a single modifier.
+3. **Approved to build.**
