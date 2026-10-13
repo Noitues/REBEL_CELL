@@ -134,6 +134,17 @@ const SCREENS := [
 	["route", "_s_route", "Netrun route: choosing where to go."],
 	["route_focus", "_s_route_focus", "Parity ROUTE-04: the pad's focus on the route's last choice sticker."],
 	["route_meridian", "_s_route_meridian", "Netrun route against Meridian (the dossier's letterhead)."],
+	["v1_hover", "_s_v1_hover", "V1: one card hovered."],
+	["v1_aim", "_s_v1_aim", "V1: one card selected and aimed."],
+	["v1_chain2", "_s_v1_chain2", "V1: one card played, a second hovered."],
+	["v1_chain3", "_s_v1_chain3", "V1: two cards played, a third hovered."],
+	["v1_nudge", "_s_v1_nudge", "V1: a nudge made, the forecast after it."],
+	["v1_kill", "_s_v1_kill", "V1: a damaging card hovered on a 1 HP enemy."],
+	["v1_kill_you", "_s_v1_kill_you", "V1: the player at 5 HP, a card hovered."],
+	["v1_nudge_hover", "_s_v1_nudge_hover", "V1: a nudge arrow hovered."],
+	["v1_enemy", "_s_v1_enemy", "V1: nothing hovered, the enemy side of SEND IT."],
+	["v1_enemy_fx", "_s_v1_enemy_fx", "V1: a status card hovered."],
+	["v1_null", "_s_v1_null", "V1: the pointer on the NULL slice."],
 	["combat_start", "_s_combat_start", "A fight starts."],
 	["combat_hover", "_s_combat_hover", "The pointer over the first card."],
 	["combat_aiming", "_s_combat_aiming", "A card selected, waiting to be aimed."],
@@ -2113,3 +2124,244 @@ func _write_text(path: String, text: String) -> void:
 	if f != null:
 		f.store_string(text)
 		f.close()
+
+
+# --- V1 (plan1): what the live preview shows versus the real result -----------------------
+
+## Everything the preview shows now, per combatant (chips, tag title, forecast HP, pointer) and the RAM bar.
+func _v1_shown(combat: Control) -> Dictionary:
+	var st: CombatState = combat.engine.state()
+	var rows := []
+	for v in combat._views():
+		var c: CombatantState = v.combatant
+		var row: HudResultChips = combat.hud_layer.row_for(v)
+		var labels := []
+		for ch in row.chips:
+			labels.append(ResultChipModel.label(ch))
+		var ptr := []
+		for r in combat.engine.resolver.pointer_readouts(st, c):
+			ptr.append("%s/%s" % [RC.SliceType.keys()[(r["slice"] as SliceData).slice_type], RC.PrecisionTier.keys()[int(r["tier"])]])
+		rows.append({"who": String(c.id), "name": c.display_name, "hp": c.hp, "max_hp": c.max_hp, "block": c.block, "shield": c.shield,
+			"chips": labels, "title": String(v.intent.get("text", "")), "hp_after": v.outcome.get("hp_after", null),
+			"alive_after": v.outcome.get("alive_after", null), "pointer": ptr})
+	return {"rows": rows, "ram": st.ram, "ram_pending": combat.ram_note.pending, "selecting": combat.selecting,
+		"hand": Array(st.hand).map(func(h: StringName) -> String: return String(h)),
+		"notes": combat.preview_note.label.get_parsed_text() if combat.preview_note != null else ""}
+
+
+func _v1_real(combat: Control) -> Dictionary:
+	var st: CombatState = combat.engine.state()
+	var rows := []
+	var all: Array = [st.player]
+	all.append_array(st.enemies)
+	for c in all:
+		var cs: CombatantState = c
+		var sl := []
+		if cs.wheel != null:
+			for i in cs.wheel.slice_statuses.size():
+				if cs.wheel.slice_statuses[i] != RC.Status.NONE:
+					sl.append("%d:%s" % [i, RC.Status.keys()[cs.wheel.slice_statuses[i]]])
+		rows.append({"who": String(cs.id), "hp": cs.hp, "block": cs.block, "shield": cs.shield, "alive": cs.is_alive(), "statuses": sl})
+	return {"rows": rows, "ram": st.ram}
+
+
+## Dumps the shown preview, then (after the picture) really plays `action` (when valid) and SEND IT, and dumps the result.
+func _v1_finish(combat: Control, name: String, extra: Dictionary, action: CombatAction) -> void:
+	await _frames(SETTLE_FRAMES)
+	var base := {"case": name, "shown": _v1_shown(combat), "before": _v1_real(combat), "extra": extra}
+	_after_capture = func() -> void:
+		combat.cancel_selection()
+		var played := "none"
+		if action != null:
+			played = "refused: " + combat.engine.validate(action)
+			if combat.engine.validate(action) == "":
+				combat._submit(action)
+				played = "played"
+		var mid := _v1_real(combat)
+		combat.end_turn()
+		await _frames(2)
+		combat.skip_motion()
+		await _until(func() -> bool: return not combat.motion_busy(), "the replay to end")
+		await _frames(SETTLE_FRAMES)
+		base["action"] = played
+		base["after_play"] = mid
+		base["real"] = _v1_real(combat)
+		_write_json(out_dir.path_join("%s.v1.json" % name), base)
+
+
+func _v1_pick(combat: Control, want_multi: bool = false) -> int:
+	var st: CombatState = combat.engine.state()
+	for i in st.hand.size():
+		var card := combat.engine.content(st.hand[i]) as CardData
+		var opts := CardTargeting.options(combat.engine.resolver, st, i)
+		if opts.is_empty() or combat.engine.validate(opts[0]) != "":
+			continue
+		if want_multi and opts.size() < 2:
+			continue
+		if card != null and card.ram_cost <= st.ram:
+			return i
+	return -1
+
+
+func _s_v1_hover() -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	var i := _v1_pick(combat)
+	combat._preview_card(i)
+	await _v1_finish(combat, "v1_hover", {"card": String(combat.engine.state().hand[i])}, combat._card_action(i))
+
+
+func _s_v1_aim() -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	var i := _v1_pick(combat, true)
+	if i < 0:
+		_warnings.append("no multi-target card; hovering instead")
+		i = _v1_pick(combat)
+		combat._preview_card(i)
+		await _v1_finish(combat, "v1_aim", {"fallback": "hover"}, combat._card_action(i))
+		return
+	combat.select_card(i)
+	await _frames(SETTLE_FRAMES)
+	await _v1_finish(combat, "v1_aim", {"card": String(combat.engine.state().hand[i]), "options": combat.selection_options().size()}, combat.aimed_action())
+
+
+func _v1_chain(n_played: int, name: String) -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	var log_ := []
+	for k in n_played:
+		var i := _v1_pick(combat)
+		if i < 0:
+			break
+		log_.append(String(combat.engine.state().hand[i]))
+		combat.play_card(i)
+		await _frames(4)
+		combat.skip_motion()
+		await _until(func() -> bool: return not combat.motion_busy(), "the card to play")
+		await _frames(SETTLE_FRAMES)
+	var j := _v1_pick(combat)
+	if j >= 0:
+		combat._preview_card(j)
+		log_.append("hover:" + String(combat.engine.state().hand[j]))
+	await _v1_finish(combat, name, {"sequence": log_, "ram_now": combat.engine.state().ram}, combat._card_action(j) if j >= 0 else null)
+
+
+func _s_v1_chain2() -> void:
+	await _v1_chain(1, "v1_chain2")
+
+
+func _s_v1_chain3() -> void:
+	await _v1_chain(2, "v1_chain3")
+
+
+func _s_v1_nudge() -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	var pid: StringName = combat.engine.state().player.id
+	combat.nudge_wheel(pid, 1, RC.RingScope.OUTER)
+	await _frames(4)
+	combat.skip_motion()
+	await _until(func() -> bool: return not combat.motion_busy(), "the nudge")
+	await _frames(SETTLE_FRAMES)
+	await _v1_finish(combat, "v1_nudge", {"nudged": String(pid)}, null)
+
+
+## V1: the player's pointer set on a damaging OVERFLOW slice and the foe at `foe_hp`; `you_hp` > 0 sets the player's HP.
+func _v1_kill_case(name: String, foe_hp: int, you_hp: int, hover_jolt: bool) -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	var st: CombatState = combat.engine.state()
+	var foe: CombatantState = st.living_enemies(false)[0]
+	if foe_hp > 0:
+		foe.hp = foe_hp
+	if you_hp > 0:
+		st.player.hp = you_hp
+	var found := false
+	if foe_hp > 0:
+		for rot in 30:
+			st.player.wheel.rotation = rot
+			var rs: Array = combat.engine.resolver.pointer_readouts(st, st.player)
+			if not rs.is_empty() and (rs[0]["slice"] as SliceData).slice_type == RC.SliceType.OVERFLOW and int(rs[0]["tier"]) == RC.PrecisionTier.PERFECT:
+				found = true
+				break
+	var act: CombatAction = null
+	if hover_jolt:
+		var i := _v1_pick(combat)
+		combat._preview_card(i)
+		act = combat._card_action(i)
+	else:
+		combat._show_end_turn_preview()
+	await _v1_finish(combat, name, {"foe_hp": foe_hp, "you_hp": you_hp, "overflow_perfect": found, "rotation": st.player.wheel.rotation}, act)
+
+
+func _s_v1_kill() -> void:
+	await _v1_kill_case("v1_kill", 1, 0, false)
+
+
+func _s_v1_kill_you() -> void:
+	await _v1_kill_case("v1_kill_you", 0, 5, true)
+
+
+func _s_v1_nudge_hover() -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	var pid: StringName = combat.engine.state().player.id
+	var zone := {"direction": 1, "ring": RC.RingScope.OUTER}
+	combat._preview_nudge(pid, zone)
+	await _v1_finish(combat, "v1_nudge_hover", {}, CombatAction.nudge(pid, 1, RC.RingScope.OUTER))
+
+
+func _s_v1_enemy() -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	combat._show_end_turn_preview()
+	await _v1_finish(combat, "v1_enemy", {}, null)
+
+
+func _s_v1_enemy_fx() -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	var st: CombatState = combat.engine.state()
+	var pick := -1
+	for i in st.hand.size():
+		var card := combat.engine.content(st.hand[i]) as CardData
+		var opts := CardTargeting.options(combat.engine.resolver, st, i)
+		if card == null or opts.is_empty() or combat.engine.validate(opts[0]) != "":
+			continue
+		for e in card.effects:
+			if e != null and ("status" in e) and int(e.status) != RC.Status.NONE:
+				pick = i
+		if pick >= 0:
+			break
+	if pick < 0:
+		_warnings.append("no status card in this hand; the first playable card shown")
+		pick = _v1_pick(combat)
+	combat._preview_card(pick)
+	await _v1_finish(combat, "v1_enemy_fx", {"card": String(st.hand[pick])}, combat._card_action(pick))
+
+
+func _s_v1_null() -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	var st: CombatState = combat.engine.state()
+	var found := false
+	for rot in 30:
+		st.player.wheel.rotation = rot
+		var rs: Array = combat.engine.resolver.pointer_readouts(st, st.player)
+		if not rs.is_empty() and (rs[0]["slice"] as SliceData).slice_type == RC.SliceType.NULL:
+			found = true
+			break
+	if not found:
+		_warnings.append("no rotation puts the pointer on NULL")
+	combat._show_end_turn_preview()
+	await _v1_finish(combat, "v1_null", {"found": found, "rotation": st.player.wheel.rotation}, null)
