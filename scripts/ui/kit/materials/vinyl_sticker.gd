@@ -943,3 +943,30 @@ func _process(delta: float) -> void:
 			fold = lerpf(FLUTTER_LOW, Motion.amplitude(FLUTTER), t)
 		elif fold != rest_curl:
 			fold = rest_curl
+
+
+## A runaway guard for the fold room's spaces, not a tuning value.
+const FOLD_ROOM_MAX_SPACES := 40
+## The share of the lettering's px the fold keeps clear past a letter's advance (the drawn glyph's outline and slant).
+const FOLD_ROOM_OVERHANG_SHARE := 0.1
+
+
+## W1-R1 (R1-STICKER): the one fold-room rule for every verb sticker that folds (HoloSticker, SendItSticker): `text`
+## becomes `base` plus no-break spaces until the room past the last letter holds the focus fold (`peel_px`) and the
+## glyph's overhang, so the peel-back never covers the word.
+func fit_fold_room(base: String) -> void:
+	text = base
+	var guard := 0
+	var overhang := float(_px) * FOLD_ROOM_OVERHANG_SHARE
+	while guard < FOLD_ROOM_MAX_SPACES and room_past_last_letter() < peel_px() + overhang:
+		text += " "
+		guard += 1
+
+
+## px between the last drawn letter's right edge and the sticker body's right edge.
+func room_past_last_letter() -> float:
+	var f := Palette.display()
+	var last_end := 0.0
+	for g in _glyphs:
+		last_end = maxf(last_end, (g[1] as Vector2).x + f.get_string_size(g[0], HORIZONTAL_ALIGNMENT_LEFT, -1, _px).x)
+	return body_rect.end.x - last_end

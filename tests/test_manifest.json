@@ -817,6 +817,10 @@
 			"seconds": 15.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_w1r1_sticker_fold.gd": {
+			"seconds": 25.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_b5_sticker_safe_margin.gd": {
 			"seconds": 15.0,
 			"tier": "full"

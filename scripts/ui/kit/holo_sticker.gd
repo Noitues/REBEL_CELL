@@ -116,31 +116,22 @@ func add_fold_room() -> void:
 
 var _fold_room_base: String = ""
 
-## A runaway guard for the fold room's spaces, not a tuning value.
-const FOLD_ROOM_MAX_SPACES := 40
-## The share of the lettering's px the fold keeps clear past a letter's advance (the drawn glyph's outline and slant).
-const FOLD_ROOM_OVERHANG_SHARE := 0.1
-
 
 func _apply_fold_room() -> void:
-	sticker.text = _fold_room_base
-	var guard := 0
-	# the drawn letter stands a little past its advance (outline, slant): keep a share of the lettering clear too
-	var overhang := float(sticker.get(&"_px")) * FOLD_ROOM_OVERHANG_SHARE
-	while guard < FOLD_ROOM_MAX_SPACES and room_past_last_letter() < sticker.peel_px() + overhang:
-		sticker.text += " "
-		guard += 1
+	sticker.fit_fold_room(_fold_room_base)
 	_fit()
 
 
 ## px between the last drawn letter's right edge and the sticker body's right edge.
 func room_past_last_letter() -> float:
-	var f := Palette.display()  # the display face's own advances (the same as the run end's BACK TO HQ is held to)
-	var px: int = sticker.get(&"_px")
-	var last_end := 0.0
-	for g in sticker.get(&"_glyphs"):
-		last_end = maxf(last_end, (g[1] as Vector2).x + f.get_string_size(g[0], HORIZONTAL_ALIGNMENT_LEFT, -1, px).x)
-	return sticker.body_rect.end.x - last_end
+	return sticker.room_past_last_letter()
+
+
+## W1-R1: a verb sticker that folds (CONTINUE, SKIP): a word sticker that keeps its fold room from the start.
+static func verb_word(p_text: String, p_fill: int, ts: float = 1.0, verb_px: int = VERB_PX) -> HoloSticker:
+	var h := HoloSticker.new(p_text, "", ts, p_fill, verb_px)
+	h.add_fold_room()
+	return h
 
 
 func _draw_plate() -> void:
