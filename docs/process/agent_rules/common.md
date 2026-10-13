@@ -20,8 +20,8 @@ content id then node id; static typing, snake_case, `##` on public functions, on
 Every **rule** gets a test (preview == result, rewind never crosses a checkpoint, seeded replay
 matches). View glue needs no unit test; a flow test per screen and the playtest gate cover it.
 Text reaches the player only through TextDb keys (`strings.csv`; re-export with
-`godot --headless --path . -s tools/export_text.gd`, then import). Layout holds at text scale
-1.0 / 1.6 / 2.0; reduce effects = end state; headless never waits.
+`godot --headless --path . -s tools/export_text.gd`, then import). Layout holds at text scale 1.0 only; 1.6 / 2.0, high contrast, gamepad and accessibility are DEFERRED until gameplay is final (designer 2026-10-13): do not test, capture or fix them, and never let them block a slice;
+reduce effects = end state; headless never waits.
 
 ## Tests
 - New test script → `tests/test_manifest.json` with a tier (`fast` for rules, `full` for sweeps).

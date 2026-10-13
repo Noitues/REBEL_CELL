@@ -44,6 +44,46 @@ spinner slots hover as slot name + what the slice does + what its Firmware does 
 unchanged (the shop info strip's layout depends on their length). Pad: reached through the "?" chip's focus (no new pad
 button); designer ruling 2026-10-13: 1.0 mouse / keyboard only.
 
+### 2026-10-13 — W2-A4: card and chip faces state their condition and direction; the event Daemon reward has its icon
+- **6A (offers unchanged):** `FaceText` (`scripts/ui/kit/face_text.gd`) reads the conditions from the content and adds them
+  after the description on every face and tooltip that shows a card or chip (combat hand, loot, shop, deck viewer / detail,
+  drag ghost): a card with an INNER-ring effect ends "Needs an inner ring." (Ring Tap, Gear Shift, Inner Drift, Ratchet,
+  Inner Snap; the Ring Tap trap in PB-010), a Firmware chip limited to slice types ends "Fits DEFRAG slices only." /
+  "Fits SHIM or OVERFLOW slices only." (Static Coat, Siphon, ...). No rule, offer or content number changed.
+- **Direction and distance:** every fixed-direction spin / move card now says "clockwise" (the counter-clockwise ones
+  already did); the nudge cards read "+-1" as "±1" (the sign is in the body face). Rules and amounts are untouched.
+- **Full text on the face:** the loot, shop, deck and detail faces already fit the whole text (tested at 1.0 / 1.6 / 2.0
+  with the condition added); the combat hand at rest keeps its ruled 10 px floor (S-CARDFACE b), so a long text still
+  ends in an ellipsis on a 1.0 resting card and is whole on the grown card, the tooltip and the inspect. Q: raise the
+  resting hand card, or accept the grown card as "the face" for long texts?
+- **R4:** an event choice that rewards a Daemon (or a chip) shows that item's own art on its outcome chip
+  (`OutcomeRow` item key `art`, a `MainframeArt` part) and its name and description in the sticker's tooltip; hovering the
+  chips gives the same tooltip as the sticker. Test `test_w2_a4_faces`; captures `docs/art_review/PLAN1/W2_A4.jpg`.
+
+### 2026-10-13 — Plan 1 W2-A2: the planned outcome (V1's gaps, F11, CP-002 ruling 5)
+Built only what `docs/handoff/plan1/V1_PREVIEW_GAPS.md` listed; every number is read from the resolver's after-state.
+- **HP before → after.** `ResultChipModel` gains `HP_LINE` ("60→49", a kill "1→0": clamped to the minimum, never the
+  over-damage), `LETHAL` (your row, when *your* HP would hit 0), `SPIN` (the ticks the hovered play turns that wheel's
+  outer or inner ring: the enemy's too, which is also F11's visible preview), `NULL_LAND` (a needle on NULL). `build`
+  takes the state right after the hovered play (`landing`) and `null_hit`; the scene passes both from the same
+  `pointer_readouts` the tag uses. A chip's own `tip` shows on hover (`HudResultChips._get_tooltip`; the row's
+  breakdown still follows): the random status says its odds and who puts it there, the spin where the needle goes.
+- **CP-002 ruling 5 built.** "HITS YOU 8 → 1 LEFT" is "HITS YOU → 0"; the equation's tail and the LAST TURN row say "→ 0".
+- **Queue readout.** `TurnQueue` (pure, view-side) keeps one copy of the state per action since the turn began (rewind
+  drops a step, SEND IT starts over); `TurnQueuePanel` between the wheels lists THIS TURN with the chain's RAM total, the
+  played actions (last 3 / 2 / 1 at text 1.0 / 1.6 / 2.0), the hovered play as "> NAME", each wheel's HP net (turn start →
+  after SEND IT), a lethal warning and "RAM a→b NEXT n". It shows only once an action has been played. Its lettering stops at
+  1.4× (the room between the discs does not grow with text); long names end in "…".
+- **RAM after SEND IT.** `CombatResolver.ram_next_turn(resolved)` = regen then banked bonus, capped as `start_turn` caps
+  them (test: equals the real next-turn RAM, 12 cases). The RAM panel header says "NEXT TURN n" where it fits; its
+  tooltip always does. Turn-start Daemon triggers are not forecast.
+- **Satellites** get a row of their own under the host's chip row (`HudWheelLayer.sat_row_for`).
+- **F11.** Hovering the enemy's nudge arrows already ran the same preview as yours; what the player lacked was anything to
+  read when the slices did not change. The SPIN chip, the tag's play note and the queue's "> NUDGE name +1" now show.
+- Tests: `tests/unit/test_plan1_a2_preview.gd` (HP lines = resolver; kill/lethal; spin = real rotation for both wheels;
+  NULL iff a needle is on it; ram_next_turn; queue rows, UNDO and a new turn; layout at 1.0 / 1.6 / 2.0; satellite row;
+  random status tip). `test_anim_r6_combat.gd` follows the new "→ 0" wording.
+
 ### 2026-10-13 — Raid feed: one STEP divider per step (PT-002a item 6, option A)
 The LIVE RAID FEED no longer prefixes event lines with "Step N:". `RaidPlayoutPanel.step_divider` feeds one muted
 terminal line, "— STEP N —" (TERMINAL_TEXT at `FEED_DIVIDER_ALPHA`, body size), before a step's first fed event;
@@ -198,6 +238,19 @@ report gains `schematics_end`, `boss_attempts`, `boss_wins`, `win_run`. Calibrat
 MISS on wins (heuristic 15/20 vs LLM 0/5 on this build; one tune, boosts out of `hq_priority`, changed 16 → 15), ACCEPT
 on deaths and mean Heat peak. `gate.py --state-mode` now defaults to `heuristic`; the balance profile sweeps with
 `--lookahead 2` (Genome Core: 16 wins in 22 attempts vs 15 in 25 without).
+
+### 2026-10-13 — Designer ruling: finalize gameplay at text 1.0, mouse / keyboard; defer scale, contrast, pad, accessibility
+"We spend a lot of cycles on text scales, high contrast, gamepad and accessibility. We haven't finalized the gameplay,
+so stop all of those efforts till much later; we finalize the game at 1.0, mouse / keyboard."
+- **In scope until gameplay is final:** text scale 1.0, mouse and keyboard.
+- **Deferred:** text scales 1.6 / 2.0, high contrast, gamepad (pad focus, glyphs, PT-002a D-UX2's per-device prompts),
+  colour-blind / greyscale, and other accessibility work. Agents neither test, capture nor fix them. Briefs, sheets,
+  PT lists and screen testers (no `access` profile, no pad) use 1.0 mouse / keyboard. Tests that exist only for the
+  deferred items move to a `deferred` manifest tier that no default run includes (they are kept, not deleted, and
+  revived when accessibility resumes).
+- Still in scope from the PT-002a rulings: the Menu button (D-UX3) and click-outside-closes-menus (D-UX4). The
+  per-device glyph unification (D-UX2) is deferred.
+- CLAUDE.md rule 6 and `docs/process/agent_rules/common.md` updated to match.
 
 ### 2026-10-13 — V4: the designer's Genome Core attempt (CP-003 3A) and the "Step N:" ruling
 - **V4 (boss save seed 1017, `.playtest_saves/boss/1017`):** WON, ending at 53 / 60 HP, in about 20 turns. "Never had

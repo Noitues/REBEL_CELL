@@ -877,6 +877,14 @@ func layout_violations() -> Array[String]:
 		for cv in covers:
 			if (cv[1] as Rect2).intersects(rr):
 				out.append("%s covers %s's result chips" % [cv[0], w.combatant.display_name])
+	# W2-A2: the queue readout stays on screen and off every wheel.
+	if _queue_panel != null and _queue_panel.visible:
+		var qr := _queue_panel.get_global_rect()
+		if not screen.grow(0.5).encloses(qr):
+			out.append("the queue readout leaves the screen")
+		for w in wheels:
+			if w.combatant != null and w.covers(qr):
+				out.append("the queue readout covers %s's wheel" % w.combatant.display_name)
 	# ANIM-R4 C4: the nudge arrows' key hints ([Q] / [E], [LB] / [RB]) never sit on a tag.
 	for w in wheels:
 		if w.combatant == null:
@@ -1506,6 +1514,7 @@ func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 	for e in state.enemies:
 		RunManager.record_seen(e.source_id)
 	_play_log(events)
+	_sync_queue(state)
 	# ANIM-2 / ANIM-3: the state is final now; motion replays it on top. A replay still
 	# running ends first, except queued nudge steps, which a new nudge joins.
 	var live := Motion.animating() and not events.is_empty()
@@ -2101,7 +2110,12 @@ func _build_ui() -> void:
 	hud_layer = HudWheelLayer.new()
 	hud_layer.name = "HudLayer"
 	hud_layer.views_of = _views
+	hud_layer.avoid = _hud_avoid_rects
 	add_child(hud_layer)
+	# W2-A2: the queue readout between the wheels, under the motion overlay.
+	_queue_panel = TurnQueuePanel.new()
+	_queue_panel.name = "QueuePanel"
+	add_child(_queue_panel)
 	# The motion overlay: over the arena and the hand, under the toast and popups.
 	fx_layer = CombatFxLayer.new()
 	fx_layer.name = "MotionLayer"
@@ -2222,6 +2236,7 @@ func _relayout() -> void:
 	if arena_backdrop != null:
 		arena_backdrop.refresh_ours()
 	_place_stickers()
+	_refresh_queue_panel()
 	_banner_title.add_theme_font_size_override("font_size", banner_title_px())
 	name_sticker._fit()
 	# At big text RESPIN and UNDO stack (the row's width is the hand's).
@@ -2802,7 +2817,7 @@ func _card_pressed(index: int) -> void:
 ## A hand card sticker for `card` at hand index `i` and scale `s` (no signals: the hand
 ## connects its own; flights use the bare copy).
 func _make_card(card: CardData, i: int, s: float) -> ZineCard:
-	var c := ZineCard.new(TextDb.t(card, "display_name"), card.ram_cost, TextDb.t(card, "description"), i).scaled(s).with_card(card)
+	var c := ZineCard.new(TextDb.t(card, "display_name"), card.ram_cost, FaceText.card_text(card), i).scaled(s).with_card(card)
 	if Settings.pad_active:
 		c.hotkey = ""
 		c.pad_hint = Settings.key_text(&"ui_accept")
@@ -2947,6 +2962,7 @@ func _preview_action(action: CombatAction) -> void:
 	var base := {}
 	for v in _views():
 		base[v] = hud_layer.row_for(v).chips.duplicate(true)
+	_queue_pending = TurnQueue.step_between(state, result.state, _queue_label(state, action))  # W2-A2: the hovered play joins the list
 	_preview_result(action, state, result)
 	_mark_was(was)
 	if selecting >= 0 and _option_index >= 0 and action.type == CombatAction.Type.PLAY_CARD:
@@ -3004,6 +3020,8 @@ func _preview_result(action: CombatAction, state: CombatState, result: CombatRes
 	if card != null and CardTargeting.is_random(card):
 		var target := engine.resolver.card_target(state, card, action)
 		_show_end_turn_preview()
+		_queue_pending = TurnQueue.step_between(state, result.state, _queue_label(state, action))
+		_refresh_queue_panel()
 		ram_note.set_pending(-card.ram_cost)
 		var host := (target.host_id if target.is_satellite else target.id) if target != null else &""
 		var v := _view_of(host)
@@ -3082,6 +3100,7 @@ func _show_end_turn_preview() -> void:
 		return
 	var state := engine.state()
 	preview_note.clear()
+	_queue_pending = {}  # W2-A2: no hovered play in the plain forecast
 	for v in _views():
 		v.was_tag = {}  # ANIM-R5 combat 7: the forecast itself has no "before"
 		v.play_note = ""  # ANIM-R6 A13: nor a card being previewed
@@ -3097,6 +3116,9 @@ func _show_end_turn_preview() -> void:
 			v.queue_redraw()
 			_set_chips(v, [], "", "")
 		ram_note.set_pending(0)
+		ram_note.set_next_turn(-1)
+		_queue_resolved = null
+		_refresh_queue_panel()
 		return
 	if state.is_over() or _hold_forecast:
 		preview_note.append("Combat over.")
@@ -3106,6 +3128,9 @@ func _show_end_turn_preview() -> void:
 			v.queue_redraw()
 			_set_chips(v, [], "", "")
 		ram_note.set_pending(0)
+		ram_note.set_next_turn(-1)
+		_queue_resolved = null
+		_refresh_queue_panel()
 		return
 	var result := engine.preview_end_turn()
 	for e in result.events:
@@ -3187,9 +3212,36 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 		if c.is_player:
 			for h in o.heat_events:
 				heat += HeatRules.scaled_delta(RunManager.campaign, h, RunManager.config()) if RunManager.campaign != null else h
-		var result := ResultChipModel.build(state, resolved, events, id, int(random_picks.get(id, -1)), heat)
+		var null_hit := false
+		if lc != null:
+			for rd in engine.resolver.pointer_readouts(landing, lc):
+				if (rd["slice"] as SliceData).slice_type == RC.SliceType.NULL:
+					null_hit = true
+		var result := ResultChipModel.build(state, resolved, events, id, int(random_picks.get(id, -1)), heat, landing, null_hit)
+		_decorate_chips(result, state, landing, events, id)
 		_set_chips(view, result, tr("IF YOU SEND IT NOW: %s") % _who(c), breakdown(landing, state, resolved, events, id, result, chips))
+		# W2-A2 (V1 gap 3): a row for each satellite docked here (a Drone's block, HP, statuses).
+		for sat in state.satellites_of(id):
+			if not sat.is_alive():
+				continue
+			var srow := ResultChipModel.build(state, resolved, events, sat.id, -1, 0, landing)
+			if srow.is_empty():
+				continue
+			_decorate_chips(srow, state, landing, events, sat.id)
+			hud_layer.sat_row_for(view, sat.id, _name_of(sat).to_upper()).set_result(srow, tr("IF YOU SEND IT NOW: %s") % _who(sat), "")
+			# Said in the wheel's own breakdown too, for when the satellite's row has no room.
+			var words := PackedStringArray()
+			for ch in srow:
+				words.append(ResultChipModel.words(ch))
+			var host_row := hud_layer.row_for(view)
+			host_row.tip_body += "
+%s: %s" % [_who(sat), ", ".join(words)]
+			host_row.tooltip_text = host_row.tip_body
 	ram_note.set_pending(o.ram_delta)
+	# W2-A2 (V1 gap 5): the RAM the next turn starts with if the turn ends as this plan says.
+	ram_note.set_next_turn(-1 if resolved.is_over() else engine.resolver.ram_next_turn(resolved))
+	_queue_resolved = resolved
+	_refresh_queue_panel()
 
 
 ## ANIM-R4 C6f: the chip for a status a random slice will get: which status (its glyph and
@@ -3268,6 +3320,178 @@ func _landing_title(s: CombatState, c: CombatantState) -> Dictionary:
 		else:
 			parts.append("%s·%s" % [tr(String(Palette.SLICE_NAMES.get(slice.slice_type, "?"))), tr(String(Palette.TIER_NAMES.get(r["tier"], ""))).left(1)])
 	return {"type": type, "tier": tier if rs.size() == 1 else -1, "text": " + ".join(parts)}
+
+
+## W2-A2: what each new chip says when hovered (the row's tooltip is the breakdown): the odds and
+## the source on a random status, where a spin leaves the needle.
+func _decorate_chips(chips: Array[Dictionary], state: CombatState, landing: CombatState, events: Array[Dictionary], id: StringName) -> void:
+	var c := state.get_combatant(id)
+	if c == null:
+		return
+	for ch in chips:
+		match StringName(ch["kind"]):
+			ResultChipModel.STATUS:
+				if bool(ch.get("random", false)):
+					var word := tr(String(Palette.STATUS_WORDS.get(int(ch["status"]), "")))
+					var src := _status_source(state, events, id)
+					var from := (tr(" from %s") % src) if src != "" else ""
+					ch["tip"] = tr("%s%s lands on one random slice: %s.") % [word, from, odds_text(c, true)]
+			ResultChipModel.SPIN:
+				var lc := landing.get_combatant(id) if landing != null else null
+				if lc != null:
+					var was := String(_landing_title(state, c)["text"]).to_upper()
+					var now := String(_landing_title(landing, lc)["text"]).to_upper()
+					ch["tip"] = ((tr("Your play turns your wheel: its needle goes from %s to %s.") % [was, now]) if c.is_player
+						else (tr("Your play turns %s's wheel: its needle goes from %s to %s.") % [_name_of(c).to_upper(), was, now]))
+			ResultChipModel.NULL_LAND:
+				ch["tip"] = tr("A needle of %s lands on NULL: no slice fires.") % (tr("your wheel") if c.is_player else _name_of(c).to_upper()) \
+					+ " " + tr("Cold Exit and Fault Tolerance look for this.")
+
+
+## Who puts a random status on `target_id` in `events` (their name in capitals), "" when no beat says.
+func _status_source(state: CombatState, events: Array[Dictionary], target_id: StringName) -> String:
+	for b in ResolveBeats.build(state, events, engine.resolver.lookup):
+		if b["kind"] != "status" or b["phase"] == "act" or StringName(String(b["target"])) != target_id:
+			continue
+		var src := StringName(String(b["source"]))
+		var host := state.get_combatant(src)
+		if host != null and host.is_satellite:
+			host = state.get_combatant(host.host_id)
+		if host != null and host.id != target_id:
+			return _who(host)
+	return ""
+
+
+## W2-A2: what the result chip rows keep clear of when they have another place to go: SEND IT, the
+## RESPIN / UNDO stickers, the hand and the RAM panel (global rects of the ones showing).
+func _hud_avoid_rects() -> Array:
+	var out: Array = []
+	for c: Control in [_end_turn_button, _sticker_box, _hand_box, ram_note]:
+		if c != null and c.is_visible_in_tree():
+			out.append(c.get_global_rect())
+	return out
+
+
+# --- W2-A2: the queue readout (V1 gap 2) ------------------------------------------------------
+
+## The plays made this turn (and the one hovered), kept from the turn's start.
+var _turn_queue := TurnQueue.new()
+var _queue_panel: TurnQueuePanel = null
+## The hovered play as `TurnQueue.step_between` says it ({} = none) and the End Turn resolve the plan ends in.
+var _queue_pending: Dictionary = {}
+var _queue_resolved: CombatState = null
+## Gap round the panel (px at text 1.0), its narrowest and the most played steps it lists at each text size.
+const QUEUE_GAP := 10.0
+const QUEUE_MIN_W := 150.0
+
+
+## Keeps the queue up to the session after every state change.
+func _sync_queue(state: CombatState) -> void:
+	if engine.session == null:
+		return
+	_turn_queue.sync(engine.session.get_instance_id(), engine.session.history, state, _queue_label)
+
+
+## An action's name in the list: the card, "NUDGE +1" (with the wheel when it isn't yours), "RESPIN".
+func _queue_label(prev: CombatState, action: CombatAction) -> String:
+	match action.type:
+		CombatAction.Type.PLAY_CARD:
+			var card := engine.content(prev.hand[action.hand_index]) as CardData if action.hand_index >= 0 and action.hand_index < prev.hand.size() else null
+			return TextDb.t(card, "display_name").to_upper() if card != null else tr("CARD")
+		CombatAction.Type.NUDGE:
+			var who := prev.get_combatant(action.wheel_id)
+			var ring := (tr("INNER") + " ") if action.ring == RC.RingScope.INNER else ""
+			var on := "" if who == null or who.is_player else (" " + _name_of(who).to_upper())
+			return tr("NUDGE") + on + " " + ring + signed(action.direction)
+		CombatAction.Type.RESPIN:
+			return tr("RESPIN")
+	return ""
+
+
+## The rows the panel shows now: [] unless a play has been made this turn.
+func queue_rows() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	var played := _turn_queue.steps()
+	var state := engine.state() if engine.has_fight() else null
+	if played.is_empty() or state == null or state.is_over() or _queue_resolved == null or _hold_forecast:
+		return rows
+	var ts := Settings.text_scale
+	var keep := 3 if ts <= 1.2 else (2 if ts <= 1.7 else 1)
+	var spent := TurnQueue.ram_spent(played, _queue_pending)
+	rows.append({"left": tr("THIS TURN"), "right": (tr("RAM -%d") % spent) if spent > 0 else tr("RAM 0"), "color": HudSkin.TERMINAL_HI})
+	var first := maxi(0, played.size() - keep)
+	if first > 0:
+		rows.append({"left": tr("+%d EARLIER") % first, "right": "", "color": HudSkin.TERMINAL_DIM})
+	for i in range(first, played.size()):
+		rows.append({"left": "%d %s" % [i + 1, played[i][TurnQueue.KEY_LABEL]], "right": _step_cost(played[i]), "color": HudSkin.TERMINAL_TEXT})
+	if not _queue_pending.is_empty():
+		rows.append({"left": "> " + String(_queue_pending[TurnQueue.KEY_LABEL]), "right": _step_cost(_queue_pending), "color": HudSkin.TERMINAL_HI})
+	var base := _turn_queue.base_state()
+	for n in TurnQueue.net(base, _queue_resolved):
+		if bool(n["is_satellite"]) or (not bool(n["is_player"]) and int(n["before"]) == int(n["after"])):
+			continue
+		var c := state.get_combatant(n["id"])
+		rows.append({"left": _who(c) if c != null else "?", "right": "%d→%d" % [int(n["before"]), int(n["after"])],
+			"color": CHIP_LOSS if bool(n["is_player"]) and int(n["after"]) < int(n["before"]) else CHIP_GAIN})
+	var projected_player := _queue_resolved.player
+	if not projected_player.is_alive():
+		rows.append({"left": tr("LETHAL: YOU HIT 0"), "right": "", "color": CHIP_LOSS})
+	if base != null:
+		rows.append({"left": tr("RAM"), "right": tr("%d→%d  NEXT %d") % [base.ram, _queue_resolved.ram, engine.resolver.ram_next_turn(_queue_resolved)],
+			"color": HudSkin.TERMINAL_TEXT})
+	return rows
+
+
+func _step_cost(step: Dictionary) -> String:
+	var ram := int(step[TurnQueue.KEY_RAM])
+	if ram < 0:
+		return tr("RAM %d") % ram
+	return tr("FREE") if bool(step[TurnQueue.KEY_FREE]) else tr("RAM 0")
+
+
+## Redraws the panel from the queue and the last forecast, between the wheels under the banner.
+func _refresh_queue_panel() -> void:
+	if _queue_panel == null or not is_inside_tree():
+		return
+	_queue_panel.set_rows(queue_rows(), _queue_room())
+	_place_queue_panel()
+
+
+## The width between the two wheels' discs (px), 0 when there is no enemy view to measure from.
+func _queue_room() -> float:
+	var ev := _first_enemy_view()
+	if ev == null or _player_view == null:
+		return 0.0
+	var gap := QUEUE_GAP * minf(Settings.text_scale, TurnQueuePanel.SCALE_MAX)
+	return maxf(QUEUE_MIN_W,
+		ev.global_center().x - ev.extent_radius() - (_player_view.global_center().x + _player_view.extent_radius()) - gap * 2.0)
+
+
+func _first_enemy_view() -> WheelView:
+	for id in _enemy_views:
+		var v: WheelView = _enemy_views[id]
+		if v.is_visible_in_tree() and v.combatant != null:
+			return v
+	return null
+
+
+func _place_queue_panel() -> void:
+	if _queue_panel == null or not _queue_panel.visible:
+		return
+	var ev := _first_enemy_view()
+	if ev == null or _player_view == null:
+		return
+	var gap := QUEUE_GAP * minf(Settings.text_scale, TurnQueuePanel.SCALE_MAX)
+	var left := _player_view.global_center().x + _player_view.extent_radius() + gap
+	var right := ev.global_center().x - ev.extent_radius() - gap
+	var w := _queue_panel.size.x
+	var x := left + (maxf(right - left, w) - w) * 0.5
+	var top := _banner.get_global_rect().end.y + gap
+	if ram_note != null and ram_note.is_visible_in_tree():
+		var rr := ram_note.get_global_rect()
+		if rr.position.x < x + w and rr.end.x > x and rr.end.y > top - gap and rr.position.y < top + _queue_panel.size.y:
+			top = maxf(top, rr.end.y + gap)
+	_queue_panel.global_position = Vector2(x, top)
 
 
 ## Result chips for one combatant (and, on the operative, the run-wide results).
@@ -3463,10 +3687,11 @@ static func hp_sources(events: Array[Dictionary]) -> Dictionary:
 
 
 ## ANIM-R6 A4: a hit chip's words: "HITS YOU 8", or, when the victim had fewer HP left than it
-## gets through, "HITS YOU 8 → 1 LEFT" (the HP it really takes; never a sum to do).
+## gets through, "HITS YOU → 0": W2-A2 (CP-002 ruling 5) shows only the result clamped to the
+## minimum, never the over-damage.
 static func hit_chip_text(who: String, through: int, applied: int) -> String:
 	if applied < through:
-		return String(TranslationServer.translate("HITS %s %d → %d LEFT")) % [who, through, applied]
+		return String(TranslationServer.translate("HITS %s → 0")) % who
 	return String(TranslationServer.translate("HITS %s %d")) % [who, through]
 
 
@@ -3474,7 +3699,7 @@ static func hit_chip_text(who: String, through: int, applied: int) -> String:
 static func clamp_tip(through: int, applied: int) -> String:
 	if applied >= through:
 		return ""
-	return String(TranslationServer.translate("It gets %d through, but only %d HP are left to take.")) % [through, applied]
+	return String(TranslationServer.translate("It takes the last HP: the target ends at 0."))
 
 
 ## ANIM-R1 C8: chips in order of importance, stable within a rank: damage to you, damage
@@ -3536,6 +3761,7 @@ func _set_chips(view: WheelView, chips: Array, title: String, body: String) -> v
 	# W1R1-MISC: the previewed pointer / tag is the position after the hovered play; the tooltip says so.
 	if body != "":
 		body += "\n" + tr(WheelView.TAG_AFTER_TIP)
+	hud_layer.clear_sat_rows(view)
 	hud_layer.row_for(view).set_result(chips, title, body)
 
 
@@ -4714,13 +4940,13 @@ static func hit_equation(b: Dictionary) -> Array:
 	return items
 
 
-## ANIM-R6 A4: the "→ N LEFT" part of a hit that takes a victim's last HP (fewer than it gets
+## ANIM-R6 A4 / W2-A2: the "→ 0" part of a hit that takes a victim's last HP (fewer than it gets
 ## through), for an equation (CombatFxLayer.draw_equation).
-static func clamp_item(applied: int) -> Dictionary:
-	return {"icon": -1, "text": String(TranslationServer.translate("%d LEFT")) % applied, "color": WheelView.LOSS_COLOR, "sep": CLAMP_ARROW}
+static func clamp_item(_applied: int) -> Dictionary:
+	return {"icon": -1, "text": "0", "color": WheelView.LOSS_COLOR, "sep": CLAMP_ARROW}
 
 
-## The sign before a clamped hit's "N LEFT" (drawing).
+## The sign before a clamped hit's "0" (drawing).
 const CLAMP_ARROW := "→"
 
 

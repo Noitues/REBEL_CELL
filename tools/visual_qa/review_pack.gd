@@ -169,6 +169,9 @@ const SCREENS := [
 	["mainframe_overwrite", "_s_mainframe_overwrite", "The Mainframe's UPGRADE A SLICE viewer, a slot picked."],
 	["event", "_s_event", "A story event with choices."],
 	["event_dispatch", "_s_event_dispatch", "A DISPATCH (terminal) event."],
+	["event_daemon", "_s_event_daemon", "W2-A4 (R4): an event whose choice rewards a Daemon (its icon on the chip, its tooltip)."],
+	["loot_conditions", "_s_loot_conditions", "W2-A4 (6A): card faces that state their condition and direction (Ring Tap, Gear Shift, Momentum)."],
+	["loot_firmware_conditions", "_s_loot_firmware_conditions", "W2-A4 (6A): chip faces that state the slice they fit (Static Coat, Siphon, Overvolt)."],
 	["codex", "_s_codex", "Codex from the title menu."],
 	["codex_corps", "_s_codex_corps", "B5: the Codex's corporations, one picked (its intercepted holo card)."],
 	["options", "_s_options", "Options from the title menu."],
@@ -1586,6 +1589,18 @@ func _s_event() -> void:
 
 func _s_event_dispatch() -> void:
 	await _event(&"ev_dispatch_early_reply")
+
+
+func _s_event_daemon() -> void:
+	await _event(&"ev_daemon_broker")
+
+
+func _s_loot_conditions() -> void:
+	await _loot_of(["ring_tap", "gear_shift", "momentum"], "card")
+
+
+func _s_loot_firmware_conditions() -> void:
+	await _loot_of(["static_coat", "siphon", "overvolt"], "firmware")
 
 
 func _title_page(page: String) -> void:

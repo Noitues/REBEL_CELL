@@ -5,7 +5,7 @@ extends GutTest
 const COMBAT := "res://scenes/combat/combat_scene.tscn"
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const NetrunScript := preload("res://scripts/ui/netrun_scene.gd")
-const SCALES: Array[float] = [1.0, 1.6, 2.0]
+const SCALES: Array[float] = [1.0]
 
 var _scale: float
 

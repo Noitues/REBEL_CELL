@@ -56,7 +56,7 @@ func _cards() -> Dictionary:
 
 
 func _card(c: CardData, at: Vector2, floor_px: int, give_way: bool) -> ZineCard:
-	var z := ZineCard.new(TextDb.t(c, "display_name"), c.ram_cost, TextDb.t(c, "description"), 0).with_card(c)
+	var z := ZineCard.new(TextDb.t(c, "display_name"), c.ram_cost, FaceText.card_text(c), 0).with_card(c)
 	z.size = at
 	z.fit_whole = true
 	z.body_floor = floor_px
@@ -125,7 +125,7 @@ func test_mainframe_cards_show_every_word_above_their_hanging_tag() -> void:
 	for scale in SCALES:
 		for id in cards:
 			var c: CardData = cards[id]
-			var item := ShopItem.new(TextDb.t(c, "display_name"), c.ram_cost, TextDb.t(c, "description"), 0)
+			var item := ShopItem.new(TextDb.t(c, "display_name"), c.ram_cost, FaceText.card_text(c), 0)
 			item.fit_whole = true
 			item.hotkey = ""
 			item.with_price(50)
