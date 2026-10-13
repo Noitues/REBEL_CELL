@@ -231,7 +231,10 @@ func _render() -> void:
 		head += " (%d/%d)" % [page + 1, all.size()]
 	# ART-2 2D (audit P2: "Next" read as greyed with no reason): what moves it on, in words.
 	var more := page < all.size() - 1
+	var is_last := step == STEPS.size() - 1 and not more
 	var reason := tr("More on the next page: press NEXT.") if more else (tr("Press NEXT to go on.") if String(s["until"]) == "" else tr("Do it in the fight to go on (or press NEXT)."))
+	if is_last:  # C-2: the button says FINISH on the last page, so the line says FINISH
+		reason = tr("Press FINISH to close the tutorial.") if String(s["until"]) == "" else tr("Do it in the fight to finish (or press FINISH).")
 	next_button.tooltip_text = UiTip.fold(reason)
 	note.append(head)
 	if _compact:

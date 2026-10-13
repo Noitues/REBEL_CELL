@@ -1029,7 +1029,36 @@ func new_in_slot(slot: String) -> void:
 		return
 	RunManager.save_slot = slot
 	RunManager.reset()
+	# D-UX5: building the HQ takes about a second; say so at once, and let the overlay draw before the scene loads.
+	show_loading()
+	await get_tree().process_frame
+	await get_tree().process_frame
 	RunManager.change_scene(RunManager.HQ_SCENE)
+
+
+## D-UX5: a full-page dim with LOADING in the middle; it takes the clicks, so a second press does nothing.
+## Returns the overlay (one at a time).
+func show_loading() -> Control:
+	var old := get_node_or_null("LoadingOverlay")
+	if old != null:
+		return old as Control
+	var dim := ColorRect.new()
+	dim.name = "LoadingOverlay"
+	dim.color = Color(Palette.SCRIM, 0.85)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.z_index = 100
+	var l := Label.new()
+	l.text = tr("LOADING...")
+	l.add_theme_font_override("font", HudSkin.mono())
+	l.add_theme_font_size_override("font_size", Chrome.px(MORE_STEP))
+	l.add_theme_color_override("font_color", Palette.TEXT_HI)
+	l.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	dim.add_child(l)
+	add_child(dim)
+	return dim
 
 
 ## OVERTHROW: a new campaign in the first empty slot (the slots page when all three hold one).

@@ -385,7 +385,16 @@ func test_a_confirm_sits_on_a_scrim_that_takes_the_page_clicks_and_traps_the_pad
 	await _frames(2)
 	var scrim := d.get_node_or_null("ModalScrim") as GlassScrim
 	assert_not_null(scrim, "a GlassScrim behind the confirm")
-	assert_eq(scrim.mouse_filter, Control.MOUSE_FILTER_STOP, "it takes the clicks meant for the page")
+	# Plan 1 F7: a top-level STOP scrim is hit-tested before the dialog's buttons, so it ignores the mouse and the
+	# dialog itself swallows the clicks meant for the page (`ConfirmDialog._input`).
+	assert_eq(scrim.mouse_filter, Control.MOUSE_FILTER_IGNORE, "it must not sit over the dialog's buttons")
+	var stray := InputEventMouseButton.new()
+	stray.button_index = MOUSE_BUTTON_LEFT
+	stray.pressed = true
+	stray.global_position = Vector2(2, 2)
+	stray.position = stray.global_position
+	d._input(stray)
+	assert_true(get_viewport().is_input_handled(), "the dialog takes the clicks meant for the page")
 	# ART-10 4C: a plain child behind the dialog (top-level, it drew over the dialog's words),
 	# still over the whole screen.
 	assert_true(scrim.show_behind_parent)

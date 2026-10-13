@@ -63,7 +63,10 @@ static func backdrop_for(modal: Control, view_size: Vector2) -> GlassScrim:
 	s.name = "ModalScrim"
 	s.top_level = true
 	s.show_behind_parent = true
-	s.mouse_filter = Control.MOUSE_FILTER_STOP
+	# F7: a top-level control is hit-tested before the modal's own panel whatever the z_index, so a STOP scrim ate
+	# every click meant for the dialog's buttons. The scrim ignores the mouse; the modal blocks the page itself
+	# (ConfirmDialog._input swallows mouse events outside its panel).
+	s.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	s.position = Vector2.ZERO
 	s.size = view_size
 	modal.add_child(s)

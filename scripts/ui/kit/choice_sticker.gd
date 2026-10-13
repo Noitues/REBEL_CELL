@@ -34,15 +34,21 @@ func _init(p_number: int = 1, ts: float = 1.0) -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 
 
+## True when the plate is drawn lit: its choice is focused or hovered (and not disabled).
+func is_lit() -> bool:
+	var b := get_parent() as Button
+	return b != null and not b.disabled and (b.has_focus() or b.is_hovered())
+
+
 func _draw() -> void:
 	var b := get_parent() as Button
 	var off := b != null and b.disabled
-	var hot := b != null and not off and (b.has_focus() or b.is_hovered())
+	var hot := is_lit()
 	var r := Rect2(Vector2.ZERO, size)
 	var k := r.size.y / ART_BODY_H
 	var art := r.grow_individual(ART_PAD.x * k, ART_PAD.y * k, ART_PAD.z * k, ART_PAD.w * k)
 	MainframeArt.draw_h3(self, "plate_hover" if hot else "plate", art, ART_LEFT, ART_RIGHT, Color(Palette.NO_TINT, 0.55) if off else Palette.NO_TINT)
-	if hot and b.has_focus():
+	if hot:
 		draw_rect(r.grow(3), Palette.CELL_ACID, false, 2.0)
 	var f := Palette.display()
 	var fs := roundi(WORDS_PX * 1.4 * minf(text_scale, WORDS_MAX_SCALE))
