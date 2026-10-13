@@ -76,6 +76,9 @@ var subtitle_strip: SubtitleStrip
 ## "More below" at the foot of a page that scrolls on (H21 #15).
 var more_hint: ScrollHint
 var _panel_host: PanelContainer
+## B9: the bar under the page that pins START at big text; the text scale it pins from.
+var _start_bar: HBoxContainer = null
+const START_PIN_FROM := 2.0
 ## B5: the kit's CRT glass behind the page host (shown on glass pages).
 var _panel_glass: CrtTerminalPanel = null
 var _log: RichTextLabel
@@ -888,6 +891,12 @@ func _focus_named(node_name: String) -> void:
 # --- Panels ---------------------------------------------------------------------------------
 
 func _set_panel(p: Control, name: String) -> void:
+	# B9: the pinned START leaves with its page.
+	if _start_bar != null and is_instance_valid(_start_bar):
+		_start_bar.visible = false
+		for pinned in _start_bar.get_children():
+			_start_bar.remove_child(pinned)
+			pinned.queue_free()
 	# ART-11 4D: the campaign lost lock goes with its page.
 	if name != "end_lock" and end_lock != null and is_instance_valid(end_lock):
 		_free_end_lock(end_lock)
@@ -931,6 +940,8 @@ func _set_panel(p: Control, name: String) -> void:
 	if p.get_parent() != _panel_host:  # 12p: a page built ahead is already mounted (the dossier)
 		_panel_host.add_child(p)
 	if more_hint != null and is_instance_valid(more_hint):
+		# B9: the setup page scrolls at big text with START in its head: the foot tag says MORE ABOVE.
+		more_hint.show_above = name == "start"
 		# ANIM-R6 C15: the HQ page's own snap (the others keep theirs: the raid setup's card row
 		# is taller than any snap would keep whole).
 		more_hint.snap_rows = name == "hq"
@@ -981,6 +992,12 @@ func _set_panel(p: Control, name: String) -> void:
 		background.set_district(RunManager.campaign.corporation_id)
 		wireframe.set_district(RunManager.campaign.corporation_id)
 	_refresh_status()
+
+
+## B8: the playout page's title once the raid is over: the RaidVerdict's words on one line
+## ("CELL HOLDS", "BREACHED", "1 DOWN, 1 TAKEN").
+static func raid_result_title(verdict: String) -> String:
+	return verdict.replace("\n", ", ")
 
 
 ## Panel `p_name`'s title on the HUD strip, translated (H24 S3: the drawn titles never
@@ -1542,6 +1559,12 @@ func show_start() -> void:
 	menu.body.add_child(_icon(_button(tr("Back to title"), RunManager.go_to_title), StatIcon.EXIT))
 	_as_menu(menu.body)
 	_set_panel(box, "start")
+	# B9: at 2.0 the page is far taller than the screen and START scrolls away with its head: it
+	# is pinned in a bar under the page instead (1.0 and 1.6 keep it in the head).
+	if Settings.text_scale >= START_PIN_FROM - 0.001 and start_btn.get_parent() == head:
+		head.remove_child(start_btn)
+		_start_bar.add_child(start_btn)
+		_start_bar.visible = true
 
 
 ## M14 12Q-MENUS: the share-code field's width (px): its whole placeholder at its font, its box's margins and a
@@ -5343,6 +5366,8 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 		if dealt:
 			hud.stats.land_pulse(StatIcon.RAIDS)
 		forecast.resolve(RESULT_CAPTION, verdict)
+		# B8: the page and the top bar read the result from "Raid over" on, not RAID IN PROGRESS.
+		hud.set_screen(String(SCREEN_NUMBERS.get("raid_playout", "")), raid_result_title(verdict))
 		# ART-6 3A: the plan is done: its pencil routes cloth-wipe off.
 		if raid_routes != null and is_instance_valid(raid_routes):
 			raid_routes.wipe()
@@ -6810,6 +6835,12 @@ func _build_ui() -> void:
 	_panel_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panel_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_panel_host)
+	# B9: the New Campaign page's START, pinned under the page at big text (empty otherwise).
+	_start_bar = HBoxContainer.new()
+	_start_bar.name = "StartBar"
+	_start_bar.alignment = BoxContainer.ALIGNMENT_END
+	_start_bar.visible = false
+	root.add_child(_start_bar)
 	# Pad prompts in a row of their own under the page (H23 S11).
 	pad_prompts = PadPrompts.new()
 	root.add_child(pad_prompts)

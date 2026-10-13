@@ -269,7 +269,7 @@ func test_the_page_fits_at_every_text_scale() -> void:
 		var hq := await _open()
 		await _frames(2)
 		assert_true(hq._panel.get_combined_minimum_size().x <= SCREEN.x, "the page fits the screen's width at %.1f" % scale)
-		var start := hq._panel.find_child("StartCampaign", true, false) as Control
+		var start := hq.find_child("StartCampaign", true, false) as Control
 		assert_true(Rect2(Vector2.ZERO, SCREEN).encloses(start.get_global_rect()), "START on the first screen at %.1f: %s" % [scale, start.get_global_rect()])
 		for pick_name in PICKERS:
 			var p := _pick(hq, pick_name)
