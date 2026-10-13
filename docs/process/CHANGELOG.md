@@ -4,6 +4,7 @@ One line per accepted process change, newest first: date, gate or checkpoint tha
 what changed, why (the retrospective row that justified it). The process docs are edited in the
 same commit; nothing changes silently.
 
+- 2026-10-13 · designer, chat ("can we run anything in parallel / precommit every time / faster") · (1) merges within a wave are committed without the per-merge hook (`--no-verify`); after the last slice of the wave merges, ONE `bash tools/precommit.sh --base <pre-wave sha>` runs on the combined tree before any push (both sides already passed precommit on their branches); (2) precommit runs tests at `-j 4` by default (`JOBS`; measured 7.3 min vs 10-15 at -j 2); (3) the next step starts while the previous group is in art review. Gates unchanged (full suite once in isolation).
 - 2026-10-12 · designer, chat · Claude playtesters (doc 05): black-box `playtester` agent (Sonnet medium, pinned), `tools/playtest/blackbox.py` / `roll_testers.py` / `aggregate.py`, persona × focus × quirk roster, `guard_playtester.py` hook, feedback template `CLAUDE_PLAYTEST_FEEDBACK.md`.
 - 2026-10-12 · designer ("more efficiency") · Agent routing hook (`tools/hooks/guard_agents.py`): pinned
   types only, Opus needs `OPUS-BECAUSE:`, no Fable sub-agents, effort capped at the pin, briefs ≤ 4 000

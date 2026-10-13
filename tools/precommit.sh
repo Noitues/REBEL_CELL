@@ -45,6 +45,6 @@ if echo "$FILES" | grep -qE '^content/'; then
 fi
 
 # 4. Diff-selected tests (falls back to the fast tier when nothing maps).
-python tools/select_tests.py $MODE $BASE -j "${JOBS:-2}" --out "$SP/tests" > "$SP/tests.log" 2>&1 < /dev/null; r=$?
+python tools/select_tests.py $MODE $BASE -j "${JOBS:-4}" --out "$SP/tests" > "$SP/tests.log" 2>&1 < /dev/null; r=$?
 echo "tests=$r"; tail -n 3 "$SP/tests.log"
 exit $r
