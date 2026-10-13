@@ -3177,6 +3177,8 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 		view.outcome = {"hp_after": int(d.get("hp_after", c.hp)), "alive_after": bool(d.get("alive_after", true)),
 			"statuses": shown_statuses, "satellites": sats}
 		view.intent = {"type": title["type"], "tier": title.get("tier", -1), "text": title["text"], "chips": chips, "tooltip": _chips_tooltip(chips)}
+		# W2-A1: the tag on each needle reads the same landing as the title (the tier SEND IT resolves).
+		view.pointer_tags = PointerTag.model(engine.resolver.pointer_readouts(landing, lc if lc != null else c), engine.readouts(c))
 		view.queue_redraw()
 		# ART-2 2D, D15: the result chips beside the HP are this preview (the tag's model above
 		# stays the breakdown's source and the replay's tick list).

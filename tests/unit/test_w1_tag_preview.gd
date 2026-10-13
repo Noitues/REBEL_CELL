@@ -143,3 +143,86 @@ func test_real_play_moves_the_pointer_to_the_tag() -> void:
 		scene.get_parent().queue_free()
 		await _frames(2)
 	assert_gt(checked, 0, "some chains were checked")
+
+
+# --- Plan 1 W2-A1: the precision tag on each needle (PERFECT / GOOD / WEAK / NULL) ---------------
+
+## What the tag on `view`'s needle `i` says.
+func _pointer_word(view: WheelView, i: int) -> String:
+	var tag: Dictionary = view.pointer_tag_model()[i]
+	return PointerTag.word(int(tag["tier"]), bool(tag["is_null"]))
+
+
+## The word SEND IT really resolves for needle `i` of `owner` once `action` is made: the end-turn replay's own pointer event.
+func _resolved_word(scene: Control, action: CombatAction, owner: StringName, i: int) -> String:
+	var first: CombatResult = scene.engine.preview(action)
+	var turn: CombatResult = scene.engine.preview_turn_after(action)
+	for e in turn.events:
+		if String(e.get("type", "")) == "pointer" and e.get("owner") == owner and int(e.get("pointer_index", -1)) == i:
+			var c: CombatantState = first.state.get_combatant(owner)
+			var slice: SliceData = scene.engine.resolver.fx.slice_of(c.wheel, int(e["slice_index"]))
+			return PointerTag.word(int(e["tier"]), slice != null and slice.slice_type == RC.SliceType.NULL)
+	return "?"
+
+
+func test_pointer_tag_equals_resolved_tier_for_every_hovered_play() -> void:
+	var checked := 0
+	for combat_seed in [5, 7, 11]:
+		for played in [0, 1, 2]:
+			var scene: Control = await _combat(combat_seed)
+			var ok := true
+			for k in played:
+				var p := _pick(scene)
+				if p < 0:
+					ok = false
+					break
+				scene.play_card(p)
+				scene.skip_motion()
+				await _frames(2)
+			if not ok:
+				scene.get_parent().queue_free()
+				continue
+			var st: CombatState = scene.engine.state()
+			for i in st.hand.size():
+				var card := scene.engine.content(st.hand[i]) as CardData
+				var opts := CardTargeting.options(scene.engine.resolver, st, i)
+				if card == null or opts.is_empty() or CardTargeting.is_random(card) or scene.engine.validate(opts[0]) != "" or card.ram_cost > st.ram:
+					continue
+				scene._preview_card(i)
+				await _frames(2)
+				var action: CombatAction = scene._card_action(i)
+				for who in [st.player.id, st.enemies[0].id]:
+					var view: WheelView = scene._player_view if who == st.player.id else scene._enemy_views[who]
+					for n in view.pointer_tag_model().size():
+						assert_eq(_pointer_word(view, n), _resolved_word(scene, action, who, n),
+							"seed %d after %d plays, hover %s, %s needle %d: the tag says the tier SEND IT resolves" % [combat_seed, played, st.hand[i], who, n])
+						checked += 1
+			scene.get_parent().queue_free()
+			await _frames(2)
+	assert_gt(checked, 0, "some tags were checked")
+
+
+func test_pointer_tag_without_a_forecast_reads_the_needle_now() -> void:
+	var scene: Control = await _combat(5)
+	var st: CombatState = scene.engine.state()
+	for view in [scene._player_view, scene._enemy_views[st.enemies[0].id]]:
+		view.intent = {}
+		for tag in view.pointer_tag_model():
+			assert_false(PointerTag.changed(tag), "no forecast: nothing to change")
+	var now: Array[Dictionary] = scene.engine.readouts(st.player)
+	var tag: Dictionary = scene._player_view.pointer_tag_model()[0]
+	assert_eq(int(tag["tier"]), int(now[0]["tier"]), "the tier the needle reads now")
+	scene.get_parent().queue_free()
+	await _frames(2)
+
+
+func test_pointer_tag_model_says_null_and_the_move() -> void:
+	var slice := SliceData.new()
+	slice.slice_type = RC.SliceType.NULL
+	var attack := SliceData.new()
+	attack.slice_type = RC.SliceType.OVERFLOW
+	var tags := PointerTag.model([{"tier": RC.PrecisionTier.GOOD, "slice": slice}], [{"tier": RC.PrecisionTier.PERFECT, "slice": attack}])
+	assert_eq(PointerTag.word(int(tags[0]["tier"]), bool(tags[0]["is_null"])), "NULL", "a NULL landing says NULL, not a tier")
+	assert_true(PointerTag.changed(tags[0]))
+	assert_true(PointerTag.text(tags[0]).begins_with("PERFECT"), "the move reads NOW → AFTER")
+	assert_true(PointerTag.tooltip(tags[0], false).contains("WEAK"), "the tooltip lists every tier")
