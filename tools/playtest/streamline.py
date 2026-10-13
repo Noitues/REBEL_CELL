@@ -126,6 +126,19 @@ def heat_of(text: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
+HOME = re.compile(r"Home\D{0,3}(\d{1,3})\s*/\s*(\d{1,3})", re.I)
+
+
+CREW_GONE = re.compile(r"crew\D{0,3}0\s*/|total wipe|no crew", re.I)
+
+
+def healthy(state_text: str) -> bool:
+    m = HOME.search(state_text or "")
+    if CREW_GONE.search(state_text or ""):
+        return False
+    return m is None or int(m.group(1)) * 2 >= int(m.group(2))
+
+
 def harvest(session: Path, build: str, label: str, now_text: str, meta: dict) -> Path | None:
     """Copies the session's current saves into the library under build/label."""
     src = session / "game" / "saves"
@@ -155,14 +168,16 @@ def library(build: str) -> list[dict]:
 
 def pick_save(build: str, spec: str) -> dict | None:
     """spec: a folder name, 'raid_setup', or 'heat>=N' / 'heat<N'. Latest match wins."""
-    saves = library(build)
+    # A start point should be a campaign a player could still turn around: home at half integrity or more.
+    saves = [s for s in library(build) if healthy(s.get("state", ""))]
     if not saves:
         return None
     m = re.match(r"heat(>=|<)(\d+)$", spec)
     if m:
         op, n = m.group(1), int(m.group(2))
         saves = [s for s in saves if s["heat"] is not None and (s["heat"] >= n if op == ">=" else s["heat"] < n)]
-        saves.sort(key=lambda s: (s["heat"], s["saved"]))
+        # Prefer saves taken on arrival at HQ (full HP, between runs) over end-of-session ones (often mid-netrun, hurt).
+        saves.sort(key=lambda s: (-s["heat"] if op == ">=" else s["heat"], s["label"] == "hq", s["saved"]))
     else:
         saves = [s for s in saves if Path(s["path"]).name == spec or s["label"] == spec]
         saves.sort(key=lambda s: s["saved"])
