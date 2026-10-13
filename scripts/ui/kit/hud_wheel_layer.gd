@@ -54,6 +54,32 @@ func row_for(view: WheelView) -> HudResultChips:
 	return row
 
 
+## W2-A2: a row of its own per satellite docked at `view`'s wheel (its HP, block, statuses), under
+## the wheel's row, led by the satellite's name: {view: {satellite id: row}}.
+var sat_rows: Dictionary = {}
+
+
+## The satellite `sat_id`'s chip row under `view`'s row (made the first time), led by `name_text`.
+func sat_row_for(view: WheelView, sat_id: StringName, name_text: String) -> HudResultChips:
+	var per: Dictionary = sat_rows.get(view, {})
+	var row: HudResultChips = per.get(sat_id)
+	if row == null or not is_instance_valid(row):
+		row = HudResultChips.new()
+		row.name = "SatelliteChips"
+		add_child(row)
+		per[sat_id] = row
+		sat_rows[view] = per
+	row.set_standing([{"text": name_text, "color": HudSkin.CHIP_OTHER}])
+	return row
+
+
+## Empties `view`'s satellite rows (a new preview sets the ones it needs).
+func clear_sat_rows(view: WheelView) -> void:
+	for row in (sat_rows.get(view, {}) as Dictionary).values():
+		if is_instance_valid(row):
+			(row as HudResultChips).set_result([], "", "")
+
+
 ## Every row back to its live chips, motions at rest (a replay ended or was skipped).
 func release_rows() -> void:
 	for v in rows.keys():
@@ -134,18 +160,31 @@ func _place_glyphs(bs: Array[Dictionary] = buttons()) -> void:
 		g.position = Vector2(b["center"]) - origin - cell * 0.5
 
 
-## Puts each row beside its view's HP number (right of it; under it when the screen's edge
-## is too close); a row whose view went is freed.
+## W2-A2: global rects the chip rows keep clear of when another place for them is free (the scene gives
+## the stickers, SEND IT and the hand); empty = none.
+var avoid: Callable
+
+
+## Puts each row beside its view's HP number: right of it, else left of it, else under it (the first
+## place that is on screen and clear of the rows already placed and of `avoid`; under it when none
+## is); a row whose view went is freed. A wheel's satellite rows stack under its row.
 func place_rows() -> void:
 	var s := Settings.text_scale
 	var origin := get_global_rect().position
 	var screen := get_global_rect()
+	var blockers: Array = avoid.call() if avoid.is_valid() else []
+	blockers.append_array(_drone_boxes())
+	var placed: Array[Rect2] = []
 	for v in rows.keys():
 		var row: HudResultChips = rows[v]
 		if not is_instance_valid(v) or not is_instance_valid(row):
 			if is_instance_valid(row):
 				row.queue_free()
 			rows.erase(v)
+			for srow in (sat_rows.get(v, {}) as Dictionary).values():
+				if is_instance_valid(srow):
+					(srow as Node).queue_free()
+			sat_rows.erase(v)
 			continue
 		var wv := v as WheelView
 		row.visible = wv.is_visible_in_tree() and wv.combatant != null and not wv.defeated()
@@ -154,11 +193,88 @@ func place_rows() -> void:
 		row.set_standing(wv.standing_chips())  # B2 (D2): what the hub used to write
 		var hp: Rect2 = wv.hp_layout()["hp"]
 		var g := Rect2(wv.global_position + hp.position, hp.size)
-		var at := Vector2(g.end.x + CHIP_GAP * s, g.get_center().y - row.size.y * 0.5)
-		if at.x + row.size.x > screen.end.x - EDGE * s:
-			at = Vector2(g.get_center().x - row.size.x * 0.5, g.end.y + CHIP_GAP * 0.5 * s)
+		var gap := CHIP_GAP * s
+		var cands: Array[Vector2] = [
+			Vector2(g.end.x + gap, g.get_center().y - row.size.y * 0.5),
+			Vector2(g.position.x - gap - row.size.x, g.get_center().y - row.size.y * 0.5),
+		]
+		var under := Vector2(g.get_center().x - row.size.x * 0.5, g.end.y + CHIP_GAP * 0.5 * s)
+		var at := under
+		var found := false
+		for c in cands:
+			if _free(Rect2(c, row.size), screen, s, placed, blockers):
+				at = c
+				found = true
+				break
+		if not found and cands[0].x + row.size.x <= screen.end.x - EDGE * s:
+			at = cands[0]  # nothing is free: the place that was always allowed
 		at.x = clampf(at.x, screen.position.x + EDGE * s, maxf(screen.position.x + EDGE * s, screen.end.x - EDGE * s - row.size.x))
 		row.position = at - origin
+		var mine := Rect2(at, row.size)
+		if not row.chips.is_empty() or not row.standing.is_empty():
+			placed.append(mine)
+		# W2-A2: the wheel's satellites, one row each: under the row (left edges together, else right edges
+		# together), else beside it on the left. A row with no free place stays folded into the tooltip
+		# (the scene writes the satellite's changes there too) rather than cover a button or a wheel.
+		var below := mine.end.y + CHIP_GAP * 0.4 * s
+		var keep_clear: Array = blockers.duplicate()
+		for other in _views():
+			var ow := other as WheelView
+			if ow != null and is_instance_valid(ow) and ow.is_visible_in_tree() and ow.combatant != null:
+				keep_clear.append(ow.wheel_rect())
+				var ohp: Rect2 = ow.hp_layout()["hp"]
+				keep_clear.append(Rect2(ow.global_position + ohp.position, ohp.size))
+		var ids: Array = (sat_rows.get(v, {}) as Dictionary).keys()
+		ids.sort()
+		for sid in ids:
+			var srow: HudResultChips = sat_rows[v][sid]
+			if not is_instance_valid(srow):
+				continue
+			srow.visible = false
+			if srow.chips.is_empty():
+				continue
+			var spots: Array[Vector2] = [
+				Vector2(at.x, below),
+				Vector2(mine.end.x - srow.size.x, below),
+				Vector2(mine.position.x - gap - srow.size.x, mine.position.y),
+			]
+			for spot in spots:
+				var sr := Rect2(spot, srow.size)
+				if _free(sr, screen, s, placed, keep_clear):
+					srow.position = spot - origin
+					srow.visible = true
+					placed.append(sr)
+					below += srow.size.y + CHIP_GAP * 0.4 * s
+					break
+
+
+## The boxes of every bloomed drone or satellite token as drawn (a row never sits on one).
+func _drone_boxes() -> Array:
+	var out: Array = []
+	for v in _views():
+		var wv := v as WheelView
+		if wv == null or not is_instance_valid(wv) or wv.combatant == null or wv.attachments == null or wv.attachments.dock == null:
+			continue
+		var dock: DroneDock = wv.attachments.dock
+		for e in dock.entries():
+			var b := float(dock.bloom.get(int(e["slot"]), 0.0))
+			var at: Vector2 = (e["tile"] as Vector2).lerp(e["mini"], b)
+			var r := float(e["mini_r"]) * lerpf(DroneDock.BLOOM_FROM, 1.0, b)
+			out.append(Rect2(dock.global_position + at - Vector2(r, r), Vector2(r, r) * 2.0))
+	return out
+
+
+## Whether a row at `r` is on screen (with the edge margin) and clear of `placed` and `blockers`.
+func _free(r: Rect2, screen: Rect2, s: float, placed: Array[Rect2], blockers: Array) -> bool:
+	if not screen.grow(-EDGE * s).encloses(r):
+		return false
+	for p in placed:
+		if p.intersects(r):
+			return false
+	for b in blockers:
+		if (b as Rect2).intersects(r):
+			return false
+	return true
 
 
 ## Every button on screen: {view, ring, direction, center (global), radius}.

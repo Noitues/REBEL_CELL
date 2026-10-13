@@ -296,6 +296,17 @@ func preview_end_turn(state: CombatState, rng: RandomNumberGenerator) -> CombatR
 	return result
 
 
+## The RAM the operative starts the next turn with when the turn ends in `resolved` (the End
+## Turn preview's state): the regen, then the banked bonus, both capped as `start_turn` caps
+## them. Turn-start triggers a Daemon adds are not forecast. W2-A2: "RAM after SEND IT".
+func ram_next_turn(resolved: CombatState) -> int:
+	var cls := fx.class_of(resolved)
+	var ram := mini(resolved.ram + (cls.ram_regen if cls != null else 0), resolved.max_ram)
+	if resolved.ram_bonus_next_turn > 0:
+		ram = mini(ram + resolved.ram_bonus_next_turn, resolved.max_ram)
+	return ram
+
+
 static func clone_rng(rng: RandomNumberGenerator) -> RandomNumberGenerator:
 	var copy := RandomNumberGenerator.new()
 	copy.seed = rng.seed

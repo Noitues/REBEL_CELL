@@ -19,19 +19,29 @@ const HEAT := &"heat"
 const HP_OTHER := &"hp_other"
 const STATUS := &"status"
 const CLEARS := &"clears"
+## W2-A2: HP before -> after ("60→49", a kill "1→0": the overkill is never shown).
+const HP_LINE := &"hp_line"
+## W2-A2: the hovered play turns this wheel (outer ring or inner ring) by N ticks.
+const SPIN := &"spin"
+## W2-A2: a pointer of this wheel lands on NULL: nothing fires.
+const NULL_LAND := &"null_land"
+## W2-A2: the operative's HP would hit 0 this turn.
+const LETHAL := &"lethal"
 ## A random roll (a random card, a respin): the odds are in the tooltip, never the roll (GDD 2.10).
 const ODDS := &"odds"
 ## The order the chips stand in (D15).
-const ORDER: Array[StringName] = [DAMAGE, ABSORBED, GAINED, HEALED, EVADE, RAM, HEAT, HP_OTHER, STATUS, CLEARS, ODDS]
+const ORDER: Array[StringName] = [LETHAL, HP_LINE, DAMAGE, ABSORBED, GAINED, HEALED, EVADE, RAM, HEAT, HP_OTHER, SPIN, NULL_LAND, STATUS, CLEARS, ODDS]
 
 
 ## The chips for combatant `id` between `before` and `after` (the state the resolve leaves),
 ## from the resolve's `events`. `random_status` (a status a random slice pick will put on it;
 ## -1 = none) shows as one chip with odds instead of the slot the roll picked (GDD 2.10).
 ## `heat` is the run's Heat change this turn, already scaled (shown on the operative's row).
-## Each chip: {kind, value, icon, good, lethal, status, count, random, beats}.
+## `landing` (W2-A2) is the state right after the hovered play, before the End Turn resolve:
+## the spin chip is what that play turned. `null_hit` says one of the wheel's pointers lands on
+## NULL there. Each chip: {kind, value, icon, good, lethal, status, count, random, beats, tip}.
 static func build(before: CombatState, after: CombatState, events: Array[Dictionary], id: StringName,
-		random_status: int = -1, heat: int = 0) -> Array[Dictionary]:
+		random_status: int = -1, heat: int = 0, landing: CombatState = null, null_hit: bool = false) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var b := before.get_combatant(id)
 	if b == null:
@@ -43,6 +53,11 @@ static func build(before: CombatState, after: CombatState, events: Array[Diction
 	var healed := int(sums["healed"])
 	var rest := hp_after - b.hp + dmg - healed
 	var lethal := b.is_alive() and (a == null or not a.is_alive())
+	if lethal and b.is_player:
+		out.append({"kind": LETHAL, "value": 0, "icon": "", "good": false})
+	if hp_after != b.hp or lethal:
+		out.append({"kind": HP_LINE, "value": hp_after - b.hp, "before": b.hp, "after": maxi(0, hp_after), "icon": "",
+			"good": (hp_after >= b.hp) if b.is_player else (hp_after <= b.hp), "lethal": false})  # green = good for the operative
 	if dmg > 0 or lethal:
 		out.append({"kind": DAMAGE, "value": dmg, "icon": "", "good": false, "lethal": lethal,
 			"beats": ForecastTicks.filter(["damage", "corrupted"], &"", id, true)})
@@ -65,6 +80,17 @@ static func build(before: CombatState, after: CombatState, events: Array[Diction
 		out.append({"kind": HEAT, "value": heat, "icon": "heat", "good": heat < 0})
 	if rest != 0:
 		out.append({"kind": HP_OTHER, "value": rest, "icon": "hp", "good": rest > 0})
+	if landing != null:
+		var lw := landing.get_combatant(id)
+		if lw != null and lw.wheel != null and b.wheel != null:
+			var outer := spin_ticks(b.wheel.rotation, lw.wheel.rotation)
+			if outer != 0:
+				out.append({"kind": SPIN, "value": outer, "ring": "outer", "icon": "", "good": true})
+			var inner := spin_ticks(b.wheel.inner_rotation, lw.wheel.inner_rotation)
+			if inner != 0:
+				out.append({"kind": SPIN, "value": inner, "ring": "inner", "icon": "", "good": true})
+	if null_hit:
+		out.append({"kind": NULL_LAND, "value": 0, "icon": "", "good": false})
 	if random_status >= 0 and random_status != RC.Status.NONE:
 		out.append({"kind": STATUS, "status": random_status, "count": 1, "random": true,
 			"good": WheelView.status_good_for_you(random_status, b.is_player),
@@ -123,6 +149,12 @@ static func sums_for(events: Array[Dictionary], id: StringName, is_player: bool)
 	return s
 
 
+## A turn from rotation `from` to `to` as signed ticks, the short way round (0 = it did not move).
+static func spin_ticks(from: int, to: int) -> int:
+	var half := RC.TICKS / 2
+	return posmod(to - from + half, RC.TICKS) - half
+
+
 ## The HP change a chip row says: −damage +healed ± the rest (tests: equals the resolve's).
 static func hp_change(chips: Array) -> int:
 	var n := 0
@@ -163,6 +195,15 @@ static func label(c: Dictionary) -> String:
 			return "×%s" % Palette.STATUS_GLYPHS.get(int(c["status"]), "?")
 		ODDS:
 			return "?"
+		HP_LINE:
+			return "%d→%d" % [int(c["before"]), int(c["after"])]
+		SPIN:
+			var word := String(TranslationServer.translate("INNER")) if String(c.get("ring", "")) == "inner" else String(TranslationServer.translate("SPIN"))
+			return "%s %s" % [word, ("+%d" % v) if v > 0 else str(v)]
+		NULL_LAND:
+			return String(TranslationServer.translate("NULL"))
+		LETHAL:
+			return String(TranslationServer.translate("LETHAL"))
 	return ""
 
 
@@ -195,6 +236,17 @@ static func words(c: Dictionary) -> String:
 			return String(TranslationServer.translate("CLEARS %s")) % String(TranslationServer.translate(String(Palette.STATUS_WORDS.get(int(c["status"]), ""))))
 		ODDS:
 			return String(TranslationServer.translate("A random roll: the odds are in the breakdown"))
+		HP_LINE:
+			if int(c["after"]) <= 0:
+				return String(TranslationServer.translate("HP %d → 0: the hit takes the last HP")) % int(c["before"])
+			return String(TranslationServer.translate("HP %d → %d")) % [int(c["before"]), int(c["after"])]
+		SPIN:
+			var which := String(TranslationServer.translate("inner ring")) if String(c.get("ring", "")) == "inner" else String(TranslationServer.translate("wheel"))
+			return String(TranslationServer.translate("Your play turns this %s by %d ticks: its needle lands somewhere new.")) % [which, absi(v)]
+		NULL_LAND:
+			return String(TranslationServer.translate("A needle lands on NULL: no slice fires. Cold Exit and Fault Tolerance look for this."))
+		LETHAL:
+			return String(TranslationServer.translate("LETHAL: this turn takes your last HP. Change the plan before SEND IT."))
 	return ""
 
 
