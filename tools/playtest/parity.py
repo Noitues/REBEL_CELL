@@ -7,8 +7,9 @@ Needs a harness session with combat_steps.jsonl (every combat step's screenshot,
 sent the turn). Steps:
 1. Ground truth: every fight rebuilt from the game's combat replays (tools/agent/replay_audit.gd):
    per turn, what the tester did (in player words, with its exact result) and the best whole-turn plan.
-2. Pairing: fight k of the session = the k-th of the last fights' replays; the first screenshot of
-   each turn = that replay turn (fights whose turn counts disagree are skipped).
+2. Pairing (pair_turns): the last K step-fights in play order = the K replays by end time (or the fight ending
+   within 30 s of the replay's end); the n-th turn start = replay turn n when the counts agree, else the turn
+   start whose on-screen TURN header says n. With 0 paired turns it exits 2 and spends nothing.
 3. Disagreements: turns where the best plan deals 8+ more, takes 4+ less, or lands a Perfect the
    tester's did not.
 4. For each (up to --max): Sonnet sees the turn-start screenshot (and both wheel close-ups) with both
@@ -50,9 +51,9 @@ def truth(session: Path, godot: str) -> list[dict]:
     return [json.loads(l) for l in out.read_text(encoding="utf-8").splitlines() if l.strip()]
 
 
-def fights_from_steps(session: Path) -> list[list[str]]:
-    """[[turn-start shot, ...] per fight] from combat_steps.jsonl."""
-    steps = [json.loads(l) for l in (session / "combat_steps.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+def fights_from_steps(steps: list[dict]) -> list[list[dict]]:
+    """[[first step of each turn, ...] per fight] from the combat_steps rows. A fight ends at a combat_result step; a turn
+    ends at a step that sends (SEND IT). Each row keeps its shot, the TURN number the tester read on screen and epoch_ms."""
     fights, turns, new_turn = [], [], True
     for s in steps:
         if s["kind"] == "combat_result":
@@ -61,13 +62,52 @@ def fights_from_steps(session: Path) -> list[list[str]]:
             turns, new_turn = [], True
             continue
         if new_turn:
-            turns.append(s["shot"])
+            turns.append(s)
             new_turn = False
-        if s["sends"]:
+        if s.get("sends"):
             new_turn = True
     if turns:
         fights.append(turns)
     return fights
+
+
+def pair_turns(by_replay: dict[str, list[dict]], steps: list[dict]) -> tuple[list[dict], int]:
+    """Pairs the replays' turns with the first screenshot of each turn: ([{shot, truth}], fights left unpaired).
+
+    1. Fights: replay files sort by their write time (replay_<ms>_<seed>.json, the fight's end), and the harness logs
+       fights in play order, so the last K step-fights are matched to the K replays in order (extra earlier step-fights,
+       e.g. a fight whose replay was not written, fall off the front). When the end times are usable (every
+       step row has epoch_ms) a step-fight whose last row is within 30 s of the replay's end is preferred.
+    2. Turns: replay turn n is the n-th turn start of its fight when the counts agree; otherwise it is the turn start
+       whose on-screen TURN header says n (PB-014 paired nothing because it matched only on that header).
+    """
+    names = sorted(by_replay)
+    fights = fights_from_steps(steps)
+    pairs, unpaired = [], 0
+    offset = max(0, len(fights) - len(names))
+    for k, rep in enumerate(names):
+        idx = k + offset
+        # prefer the step-fight that ends nearest this replay's end time, when the times are there
+        end = int(rep.split("_")[1]) if rep.split("_")[1].isdigit() else 0
+        timed = [(abs(f[-1].get("epoch_ms", 0) - end), i) for i, f in enumerate(fights) if f and f[-1].get("epoch_ms")]
+        if end and timed:
+            gap, best = min(timed)
+            if gap <= 30000:
+                idx = best
+        if idx >= len(fights):
+            unpaired += 1
+            continue
+        starts, truth = fights[idx], by_replay[rep]
+        by_header = {int(r.get("turn", 0)): r for r in starts if r.get("turn")}
+        got = 0
+        for i, t in enumerate(truth):
+            row = starts[i] if len(starts) == len(truth) else by_header.get(t["turn"])
+            if row is not None:
+                pairs.append({"shot": row["shot"], "truth": t})
+                got += 1
+        if not got:
+            unpaired += 1
+    return pairs, unpaired
 
 
 def main() -> int:
@@ -86,25 +126,16 @@ def main() -> int:
     for r in rows:
         by_replay.setdefault(r["replay"], []).append(r)
     steps = [json.loads(l) for l in (session / "combat_steps.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
-    pairs, skipped, prev_end = [], 0, 0
+    pairs, skipped = pair_turns(by_replay, steps)
     fights = sorted(by_replay)
-    for rep in fights:
-        end = int(rep.split("_")[1])  # replay_<ms written>_<seed>.json: the fight's end time
-        mine = [s for s in steps if prev_end < s.get("epoch_ms", 0) <= end + 2000 and s["kind"] != "combat_result"]
-        prev_end = end + 2000
-        if not mine:
-            skipped += 1
-            continue
-        for t in by_replay[rep]:
-            # The first screenshot showing this turn number is the turn's start (before any action).
-            first = next((s for s in mine if s.get("turn") == t["turn"]), None)
-            if first is not None:
-                pairs.append({"shot": first["shot"], "truth": t})
     worse = [p for p in pairs if p["truth"]["best"]["dealt"] - p["truth"]["tester"]["dealt"] >= 8
              or p["truth"]["tester"]["taken"] - p["truth"]["best"]["taken"] >= 4
              or (p["truth"]["best"]["own_perfect"] and not p["truth"]["tester"]["own_perfect"])]
     print("%d fights, %d paired turns (%d fights without screenshots), %d clearly worse than the best plan" % (
         len(fights), len(pairs), skipped, len(worse)))
+    if not pairs:  # nothing to show a model: do not spend (PB-014 paid $1.18 for 0 paired turns)
+        print("parity: 0 paired turns; refusing to spend on probes (check combat_steps.jsonl and the replays)", file=sys.stderr)
+        return 2
     client = anthropic.Anthropic(api_key=hz.api_key(), base_url="https://api.anthropic.com", max_retries=5)
     usd, probes = 0.0, []
     for p in worse[: a.max]:
