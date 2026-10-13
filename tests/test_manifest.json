@@ -872,6 +872,10 @@
 		"res://tests/unit/test_plan1_b_repro.gd": {
 			"seconds": 20.0,
 			"tier": "full"
+		},
+		"res://tests/unit/test_plan1_1b_sticker.gd": {
+			"seconds": 30.0,
+			"tier": "fast"
 		}
 	}
 }

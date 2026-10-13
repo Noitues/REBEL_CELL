@@ -545,6 +545,10 @@ func _draw_word_base() -> void:
 	for g in _glyphs:
 		_glyph(_base, g, Vector2.ZERO, reach * OUTLINE_PER_REACH, Palette.STICKER_DIE_CUT)
 	_base.draw_set_transform(Vector2.ZERO, 0.0)
+	var room := fold_room_rect()
+	if room.has_area():
+		# 1B-STICKER F1: the fold room is a drawn tab of the die-cut (white edge), so the focus fold has a corner to cut
+		_draw_tab(room.grow(edge()), Palette.STICKER_DIE_CUT, reach)
 	var cap := float(_px) * CAP_SHARE
 	for y in _lines_y:
 		var x0 := body_rect.position.x + reach * 0.6
@@ -562,10 +566,44 @@ func _draw_word_base() -> void:
 		for g in _glyphs:
 			_glyph(_base, g, Vector2(step * EXTRUDE_SLANT, step), KEYLINE_PX * OUTLINE_PER_REACH, Palette.VINYL_EXTRUDE)
 		step += 1.0
+	if room.has_area():
+		var ex := 1.0
+		while ex <= EXTRUDE_PX:
+			_draw_tab(Rect2(room.position + Vector2(ex * EXTRUDE_SLANT, ex), room.size), Palette.VINYL_EXTRUDE, KEYLINE_PX)
+			ex += 1.0
 	# 3. the keyline.
 	for g in _glyphs:
 		_glyph(_base, g, Vector2.ZERO, KEYLINE_PX * OUTLINE_PER_REACH, Palette.VINYL_INK)
+	if room.has_area():
+		_draw_tab(room, Palette.VINYL_INK, KEYLINE_PX)
 	_base.draw_set_transform(Vector2.ZERO, 0.0)
+
+
+## 1B-STICKER F1: the fold room's tab (ink body inside the die-cut) as a body-rect-wide rounded box: the part of a
+## word sticker that has room past its last letter (`fit_fold_room`), empty when it has none (px in this control).
+func fold_room_rect() -> Rect2:
+	if shape != Shape.WORD or not _baked.is_empty() or _glyphs.is_empty() or text == text.rstrip(" "):
+		return Rect2()
+	var f := _font
+	var last_end := 0.0
+	for g in _glyphs:
+		last_end = maxf(last_end, (g[1] as Vector2).x + f.get_string_size(g[0], HORIZONTAL_ALIGNMENT_LEFT, -1, _px).x)
+	var reach := edge() + KEYLINE_PX
+	var cap := float(_px) * CAP_SHARE
+	var x0 := last_end - KEYLINE_PX
+	var x1 := body_rect.end.x - reach
+	var y0 := body_rect.position.y + reach - KEYLINE_PX
+	if x1 - x0 < KEYLINE_PX * 2.0:
+		return Rect2()
+	return Rect2(Vector2(x0, y0), Vector2(x1 - x0, cap + KEYLINE_PX * 2.0))
+
+
+func _draw_tab(r: Rect2, col: Color, radius: float) -> void:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = col
+	sb.set_corner_radius_all(int(radius))
+	sb.anti_aliasing = true
+	_base.draw_style_box(sb, r)
 
 
 ## A holo object's foil face: the body inset by the border, drawn through the holo shader.

@@ -157,6 +157,9 @@ const SCREENS := [
 	["combat_victory", "_s_combat_victory", "The killing turn: VICTORY."],
 	["combat_defeat", "_s_combat_defeat", "The losing turn: DEFEAT."],
 	["loot", "_s_loot", "Picking a card reward."],
+	["loot_hover_continue", "_s_loot_hover_continue", "1B-STICKER F1: the loot sheet's CONTINUE focused (its fold beside the word)."],
+	["loot_hover_skip", "_s_loot_hover_skip", "1B-STICKER F2: the loot sheet's SKIP focused (no mark over its S)."],
+	["loot_hover_card", "_s_loot_hover_card", "1B-STICKER F4: a reward card hovered (whole on screen at every text size)."],
 	["loot_firmware", "_s_loot_firmware", "Picking a Firmware drop (the FIRMWARE DROP terminal)."],
 	["loot_refused", "_s_loot_refused", "W1R1-MISC: a Firmware take refused (a chip that does not fit the slot): the note beside CONTINUE."],
 	["mainframe", "_s_mainframe", "The Mainframe shop."],
@@ -1445,6 +1448,33 @@ func _s_combat_defeat() -> void:
 
 func _s_loot() -> void:
 	await _loot_of(["twist", "jam", "cache"], "card")
+
+
+## 1B-STICKER F1: the loot sheet with CONTINUE holding the focus (the fold plays in a real window).
+func _s_loot_hover_continue() -> void:
+	var net: Node = await _loot_of(["twist", "jam", "cache"], "card")
+	await _focus_loot(net, "Continue")
+
+
+func _s_loot_hover_skip() -> void:
+	var net: Node = await _loot_of(["twist", "jam", "cache"], "card")
+	await _focus_loot(net, "Skip")
+
+
+func _focus_loot(net: Node, node_name: String) -> void:
+	var b := net.find_child(node_name, true, false) as Control
+	if b != null:
+		b.grab_focus()
+	await _frames(SETTLE_FRAMES * 3)
+
+
+## 1B-STICKER F4: the first reward card hovered (its zoom must stay whole on screen).
+func _s_loot_hover_card() -> void:
+	var net: Node = await _loot_of(["twist", "jam", "cache"], "card")
+	for c in net.find_children("*", "ZineCard", true, false):
+		(c as Control).mouse_entered.emit()
+		break
+	await _frames(SETTLE_FRAMES * 3)
 
 
 ## B5 (D8, art director fix 2): a won fight's loot that drops Firmware (the FIRMWARE DROP terminal with its spinner).

@@ -2903,9 +2903,13 @@ func _hold_then_show(generation: int = -1) -> void:
 	timer.timeout.connect(_leave_after_hold.bind(generation if generation >= 0 else _leave_generation))
 
 
-## The hold ran out: the netrun moves on, unless the player already did.
+## The hold ran out: the netrun moves on, unless the player already did. 1B-STICKER F8: when the fight shows its next
+## step (LOOT / CONTINUE) the player's press leaves, never the clock (the loot sheet opened on its own while the
+## pointer was on its way to LOOT, which read as opening on hover).
 func _leave_after_hold(generation: int) -> void:
 	if generation == _leave_generation and combat_scene != null:
+		if combat_scene.has_method(&"continue_shown") and bool(combat_scene.call(&"continue_shown")):
+			return
 		_show_current()
 
 
@@ -3151,6 +3155,7 @@ func _show_reward() -> void:
 		var drag_kind := String({"card": "card", "firmware": "chip", "daemon": "daemon"}.get(String(offer["kind"]), ""))
 		sticker.tooltip_text = UiTip.fold(loot_tip(res) + ("\n" + drag_tip(drag_kind) if drag_kind != "" else ""))
 		FocusTip.attach(sticker)
+		sticker.grown_top_limit = _page_top  # 1B-STICKER F4: the zoom stays whole under the page's clip
 		var index: int = i
 		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected() if slot_option != null else -1))
 		sticker.focus_entered.connect(func() -> void: _loot_lit = sticker)
@@ -3183,11 +3188,11 @@ func _show_reward() -> void:
 		plus.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		plus.with_arrow(Vector2(0, plus.custom_minimum_size.y * 0.6), Vector2(-28.0, plus.custom_minimum_size.y * 0.9), 4.0)
 		foot_left.add_child(plus)
-	var skip := HoloSticker.word(tr("Skip").to_upper(), VinylSticker.Fill.WHITE, os, LOOT_SKIP_PX)
+	# 1B-STICKER F2: a verb sticker keeps its fold room, and carries no icon mark (the ">>" sat over its S)
+	var skip := HoloSticker.verb_word(tr("Skip").to_upper(), VinylSticker.Fill.WHITE, os, LOOT_SKIP_PX)
 	skip.name = "Skip"
 	skip.pressed.connect(skip_reward)
 	skip.tooltip_text = tr("Take nothing from this payout.")
-	IconMark.attach(skip, StatIcon.SKIP)
 	# Parity LOOT-03: under the sheet, in the middle of the foot (the DECK counter on its left)
 	skip.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN if compact else Control.SIZE_SHRINK_CENTER
 	(side if compact else foot).add_child(skip)
@@ -3204,7 +3209,7 @@ func _show_reward() -> void:
 		# screen's foot and its safe margin at 2.0).
 		var verbs := HBoxContainer.new()
 		verbs.name = "LootVerbs"
-		verbs.add_theme_constant_override(&"separation", roundi(UiTheme.SP_M * os))
+		verbs.add_theme_constant_override(&"separation", roundi(UiTheme.SP_XS * os))  # (the fold rooms are the air between)
 		side.add_child(verbs)
 		side.move_child(verbs, skip.get_index())
 		skip.reparent(verbs, false)
@@ -3219,6 +3224,7 @@ func _show_reward() -> void:
 	if side.get_child_count() == 0:
 		side.visible = false
 	_set_panel(page, false)
+	_loot_fit = {"page": weakref(page), "stickers": weakref(stickers), "tilt": tilt}
 	_fit_loot_height(page, stickers, ls, tilt)
 	_register_loot_drops(stickers, mini, slot_option)
 	if entering:
@@ -3330,19 +3336,19 @@ const LOOT_SIDE_FROM := 1.25
 ## Parity LOOT-03: the least the cards' scale gives way to at big text (they still grow: H-pass
 ## 21, "loot cards grow"), and the page's margin kept under it (px at the text scale).
 const LOOT_PAGE_MARGIN := 8.0
-const LOOT_BIG_FLOOR := 1.25
 
 
 ## Parity LOOT-03: the loot page keeps to the room under the bar (at 1.6 its cards grew past the
 ## screen's foot and the page scrolled): once laid out with this page's bar, the cards' scale
-## `ls` gives way by what the page is over, never under 1 (nor under LOOT_BIG_FLOOR where they
-## had grown past it); `tilt` keeps their rest tilt's room between them. It looks again on the
+## `ls` gives way by what the page is over, never under 1; `tilt` keeps their rest tilt's room between them. It looks again on the
 ## next frame, when the bar has wrapped its tags for this page.
 func _fit_loot_height(page: Control, stickers: Control, ls: float, tilt: float, low: float = -1.0, again: bool = true) -> void:
 	if low < 0.0:
-		low = maxf(1.0, minf(ls, LOOT_BIG_FLOOR))
+		low = 1.0  # 1B-STICKER F5: never cut off: the cards give way down to their 1.0 size when the page is over
 	if again and is_inside_tree():
-		get_tree().process_frame.connect(_refit_loot.bind(weakref(page), weakref(stickers), tilt, low), CONNECT_ONE_SHOT)
+		# (one look a frame on, for the page on show: `_loot_fit` names it; a page rebuilt in the same frame shares it)
+		if not get_tree().process_frame.is_connected(_on_page_room_changed):
+			get_tree().process_frame.connect(_on_page_room_changed, CONNECT_ONE_SHOT)
 	# the bar as laid out (it wraps its tags at big text past its least height)
 	var room := size.y - maxf(hud.size.y, hud.get_combined_minimum_size().y) - LOOT_PAGE_MARGIN * Settings.text_scale
 	for n: Control in [subtitle_strip, pad_prompts, _log]:
@@ -3362,15 +3368,28 @@ func _fit_loot_height(page: Control, stickers: Control, ls: float, tilt: float, 
 			card.custom_minimum_size = LOOT_CARD * k
 
 
-## Parity LOOT-03: the loot page's second look, a frame on (weak refs: the page may be gone).
-func _refit_loot(page_ref: WeakRef, stickers_ref: WeakRef, tilt: float, low: float) -> void:
-	var page := page_ref.get_ref() as Control
-	var stickers := stickers_ref.get_ref() as Control
+## 1B-STICKER F4: the global y the page's clip starts at (a card grown under the pointer never rises above it).
+func _page_top() -> float:
+	var host := _panel_host.get_parent() as Control if _panel_host != null else null
+	return host.get_global_rect().position.y if host != null else 0.0
+
+
+## 1B-STICKER F5: the loot page on show (weak refs and the cards' rest tilt), so a later change of the room under the
+## bar (the subtitle band, the pad prompts, the system log, a wrapped bar) fits it again instead of cutting its foot off.
+var _loot_fit: Dictionary = {}
+
+
+func _on_page_room_changed() -> void:
+	if _loot_fit.is_empty():
+		return
+	var page := (_loot_fit["page"] as WeakRef).get_ref() as Control
+	var stickers := (_loot_fit["stickers"] as WeakRef).get_ref() as Control
 	if page == null or stickers == null or not page.is_inside_tree() or stickers.get_child_count() == 0:
+		_loot_fit = {}
 		return
 	var first := stickers.get_child(0) as ZineCard
 	if first != null:
-		_fit_loot_height(page, stickers, first.text_scale, tilt, low, false)
+		_fit_loot_height(page, stickers, first.text_scale, float(_loot_fit["tilt"]), -1.0, false)
 
 
 ## Parity LOOT-02: the loot strip ("LOOT // NETRUN: SOLACE CLINIC // FIGHT 3 OF 7"), translated.
@@ -6142,6 +6161,7 @@ func _build_ui() -> void:
 	scroll.follow_focus = true
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.resized.connect(_on_page_room_changed, CONNECT_DEFERRED)  # 1B-STICKER F5: the room under the bar changed
 	root.add_child(scroll)
 	_panel_host = PanelContainer.new()
 	# B5 (B1c follow-up 2): the kit's CRT glass behind the host (shown on glass pages), not the shared material.

@@ -328,7 +328,25 @@ func _set_lift(on: bool) -> void:
 ## ART-2 2D (§3.18): the pointer over the sticker grows it to HOVER_SCALE (`card_hover`).
 func grow_hover(on: bool) -> void:
 	if look == Look.STICKER and is_inside_tree():
-		Motion.run(&"card_hover", self, ^"hover_scale", hover_to if on and not disabled else 1.0)
+		Motion.run(&"card_hover", self, ^"hover_scale", hover_target() if on and not disabled else 1.0)
+
+
+## 1B-STICKER F4: a global y the grown sticker's top never goes above (a page's clip: the loot sheet's zoom was cut off
+## at the top at text 2.0). Empty = no limit.
+var grown_top_limit: Callable = Callable()
+## Room (px) kept between the grown sticker's top and that limit.
+const TOP_GAP := 8.0
+
+
+## How far this card grows now: `hover_to`, less where the growth about its foot would pass `grown_top_limit`.
+func hover_target() -> float:
+	if not grown_top_limit.is_valid() or not is_inside_tree():
+		return hover_to
+	var xf := get_global_transform()
+	var foot_y := (xf * Vector2(0.0, size.y)).y
+	var height := maxf(size.y * absf(xf.get_scale().y), 1.0)
+	var room := foot_y - Motion.amplitude(&"card_hover") - (float(grown_top_limit.call()) + TOP_GAP)
+	return clampf(room / height, 1.0, hover_to)
 
 
 ## S-CARDFACE b: how far (px, local x) the grown sticker moves in so its die-cut stays on the screen (the hand's

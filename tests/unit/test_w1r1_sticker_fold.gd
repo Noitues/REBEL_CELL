@@ -137,6 +137,28 @@ func test_loot_continue() -> void:
 			RunManager.reset()
 
 
+## 1B-STICKER F2: SKIP on the loot sheet is a verb sticker too: its fold room, and nothing drawn over its letters.
+func test_loot_skip() -> void:
+	for scale in SCALES:
+		Settings.set_text_scale(scale)
+		var scene := _mount(NETRUN)
+		RunManager.new_campaign(1)
+		scene.start_run(1)
+		await _frames(2)
+		var run := RunManager.netrun.run
+		run.pending_rewards.append({"kind": "card", "options": ["twist", "jam", "cache"]})
+		run.phase = RunState.Phase.REWARD
+		scene._show_current()
+		PageTransition.settle(scene)
+		await _frames(4)
+		var skip: Node = scene._panel.find_child("Skip", true, false)
+		_check(skip, "loot SKIP", scale)
+		assert_null(skip.get_node_or_null(^"IconMark") if skip != null else null, "loot SKIP x%.1f: no icon over its letters" % scale)
+		scene.get_parent().queue_free()
+		await _frames(1)
+		RunManager.reset()
+
+
 func test_run_end_back_to_hq() -> void:
 	for scale in SCALES:
 		Settings.set_text_scale(scale)
