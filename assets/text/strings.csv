@@ -3402,3 +3402,5 @@ you were always a copy. the original sends its regards.,you were always a copy. 
 your network holds every threat,your network holds every threat
 yours,yours
 {undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; UNDO stops at a Respin or a random slice pick.,{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; UNDO stops at a Respin or a random slice pick.
+"%s fits no slot of your wheel. Pick another, or Skip.","%s fits no slot of your wheel. Pick another, or Skip."
+%s does not fit %s. It fits slot %s: choose it on the wheel.,%s does not fit %s. It fits slot %s: choose it on the wheel.

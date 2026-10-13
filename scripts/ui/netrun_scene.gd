@@ -564,6 +564,11 @@ func _choose_reward(index: int, slot: int, fly: bool) -> void:
 	# B5 (section f): the loot page's bar (CARDS) stays while the page does, so the pick flies to the tag it shows.
 	_held_bar = bar_keys(s)
 	_report(s.choose_reward(index, slot))
+	if s.run.pending_rewards.size() >= left and s.run.phase == RunState.Phase.REWARD and String(offer.get("kind", "")) == "firmware" and slot >= 0:
+		# the page stays as it is (the spinner keeps the player's slot) and says why
+		_set_loot_note(_refusal_note(offer, index, slot))
+		return
+	_set_loot_note("")
 	# The picked card lifts and flies to the deck (ANIM-6); the page is rebuilt under it.
 	if s.run.pending_rewards.size() < left and not offer.is_empty():
 		if fly:
@@ -3113,11 +3118,13 @@ func _show_reward() -> void:
 		# Parity SHOP-06: the spinner is also the socket choice (it replaced the dropdown);
 		# ANIM-R6 B8: the Mainframe's words name it ("Chips go into:").
 		mini = _spinner_mini()
-		mini.make_pickable(0)
+		mini.make_pickable(first_fitting_slot(offer["options"] as Array))
 		mini.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		drop.body.add_child(_socket_row(mini, tr(LOOT_SOCKET_TIP) + " " + drag_tip("loot_socket")))
 		drop.body.add_child(mini)
 		slot_option = mini
+		# B2: choosing a slot is acting: the refusal's note goes.
+		mini.slot_chosen.connect(func(_k: int) -> void: _set_loot_note(""))
 	# ANIM-R2 E8: the gap between stickers keeps room for their rest tilt (it grows with the card).
 	var tilt := sin(deg_to_rad(ZineCard.REST_TILT_MAX))
 	var ls := clampf(minf(ts, (room - LOOT_GAP * (n - 1)) / maxf(1.0, n * (LOOT_CARD.x + LOOT_CARD.y * tilt))), 1.0, Settings.TEXT_SCALE_MAX)
@@ -3187,6 +3194,15 @@ func _show_reward() -> void:
 	go.sticker.sweep_primary = true
 	go.tooltip_text = UiTip.fold(tr("Take the lit sticker and go on."))
 	go.pressed.connect(func() -> void: _continue_loot(stickers, slot_option))
+	# B2: why a take was refused stays beside CONTINUE until the player acts (not only the toast).
+	_loot_note = _label("")
+	_loot_note.name = "LootNote"
+	UiWrap.whole_words(_loot_note)
+	_loot_note.custom_minimum_size.x = 200.0 * os
+	_loot_note.add_theme_color_override(&"font_color", Palette.HARM)
+	_loot_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_loot_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_loot_note.visible = false
 	if compact:
 		# B5c: SKIP and CONTINUE share a row in the side column (stacked, a Firmware drop's column ran past the
 		# screen's foot and its safe margin at 2.0).
@@ -3198,11 +3214,14 @@ func _show_reward() -> void:
 		skip.reparent(verbs, false)
 		go.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		verbs.add_child(go)
+		_loot_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		side.add_child(_loot_note)
 		foot.queue_free()
 		foot_right.queue_free()
 	else:
 		foot.add_child(foot_right)
 		go.size_flags_horizontal = Control.SIZE_SHRINK_END
+		foot.add_child(_loot_note)
 		foot.add_child(go)
 	if side.get_child_count() == 0:
 		side.visible = false
@@ -3227,6 +3246,43 @@ func _continue_loot(stickers: Control, slot_option: SpinnerMini) -> void:
 		if items[i] == owner or items[i] == _loot_lit:
 			at = i
 	choose_reward(at, slot_option.selected() if slot_option != null else -1)
+
+
+## B2: the slot the socket spinner starts on: the first slot the first offered chip fits, else the first slot any
+## offered chip fits, else 0.
+static func first_fitting_slot(options: Array) -> int:
+	var s := RunManager.netrun
+	if s == null:
+		return 0
+	for o in options:
+		for k in s.run.operative.slot_slice_ids.size():
+			if s.firmware_slot_error(StringName(String(o)), k) == "":
+				return k
+	return 0
+
+
+## B2: the refusal's reason beside CONTINUE ("" clears it).
+var _loot_note: Label = null
+
+
+func _set_loot_note(text: String) -> void:
+	if _loot_note != null and is_instance_valid(_loot_note):
+		_loot_note.text = text
+		_loot_note.visible = text != ""
+
+
+## B2: why taking option `index` into `slot` was refused: the chip, the slot, and where it does fit.
+func _refusal_note(offer: Dictionary, index: int, slot: int) -> String:
+	var s := RunManager.netrun
+	var id := StringName(String(offer["options"][index]))
+	var fits: Array[String] = []
+	for k in s.run.operative.slot_slice_ids.size():
+		if s.firmware_slot_error(id, k) == "":
+			fits.append(str(k + 1))
+	var chip := TextDb.t(s.lookup.get_content(id), "display_name")
+	if fits.is_empty():
+		return tr("%s fits no slot of your wheel. Pick another, or Skip.") % chip
+	return tr("%s does not fit %s. It fits slot %s: choose it on the wheel.") % [chip, slot_name(s.run.operative, slot), ", ".join(fits)]
 
 
 ## B5: the loot sticker last hovered or focused (CONTINUE's pick).

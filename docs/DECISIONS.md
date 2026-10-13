@@ -5,6 +5,12 @@ superseded instead. Finished months of "Implementation decisions" are moved verb
 `docs/decisions/<YYYY-MM>.md` by `tools/archive_decisions.py` (2026-10-11, CP-001 follow-up);
 search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
+## 2026-10-13 Plan 1 W1-LOOT: B2 loot Firmware slot
+- The loot's socket spinner starts on the first slot the first offered chip fits (else the first slot any offered chip
+  fits, else 0), so CONTINUE no longer defaults to a misfit. A refused Firmware take leaves the page as is (the spinner keeps
+  the player's slot) and writes the reason beside CONTINUE (`LootNote`: the chip, the slot, the slots it fits) until the
+  player picks a slot or takes something; the toast stays. Skip is untouched. Test: `test_plan1_b_repro.gd` B2.
+
 ## 2026-10-13 M0–M4 systems ticks (CP-003 ruling 8)
 - The 33 M0–M4 acceptance boxes in `docs/MILESTONES.md` were walked against `docs/handoff/gates/M14_REPLAN.md` §2 and the
   heuristic state sweep (`docs/playtest/claude/state/SA-002_heuristic_calibration.md`: campaigns won, raids, Exploits, the
