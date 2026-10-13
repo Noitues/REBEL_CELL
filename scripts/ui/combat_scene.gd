@@ -245,6 +245,7 @@ func _ready() -> void:
 # --- Public (also used by the integration tests) ----------------------------------
 
 func attach_netrun(netrun: NetrunSession) -> void:
+	_tutorial_run = false
 	log_note.clear()
 	for child in _picker_controls:
 		child.visible = false
@@ -690,6 +691,7 @@ func selected_direction() -> int:
 func start_tutorial() -> void:
 	if tutorial != null and is_instance_valid(tutorial):
 		return
+	_tutorial_run = true
 	tutorial = TutorialOverlay.new(TUTORIAL_RECT.size)
 	tutorial.position = TUTORIAL_RECT.position  # the right column: never on a wheel (GDD 9.2)
 	tutorial.z_index = OVER_HAND_Z  # its words and NEXT stay over a hovered card
@@ -1568,12 +1570,16 @@ func _ram_need(action: CombatAction) -> int:
 	return 0
 
 
+## True for the stand-alone tutorial fight (no netrun owns it): its CONTINUE ends the tutorial.
+var _tutorial_run: bool = false
 ## The action being sent or checked now (a refusal names what it cost), null otherwise.
 var _acting: CombatAction = null
 
 
 func _on_fight_ended(outcome: int) -> void:
 	log_note.append("[b]%s[/b]" % ("VICTORY" if outcome == CombatState.Outcome.VICTORY else "DEFEAT"))
+	if _tutorial_run:
+		show_continue("CONTINUE")  # W1-TUT B1: the stand-alone tutorial fight has a way on
 	# With motion, the VICTORY beat of the replay flashes (after the last hit lands).
 	if outcome == CombatState.Outcome.VICTORY and not motion_busy():
 		_victory_flash()
@@ -2545,6 +2551,11 @@ func _continue_pressed() -> void:
 		return
 	skip_motion()
 	continue_requested.emit()
+	if _tutorial_run:
+		# Where the tutorial's last NEXT leads: it is done, back to the title.
+		if tutorial != null and is_instance_valid(tutorial):
+			tutorial.skip()
+		RunManager.go_to_title()
 
 
 ## The status line: turn, free nudges, and on a pad the triggers that pick which wheel and

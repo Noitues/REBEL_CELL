@@ -135,10 +135,7 @@ func test_b1_tutorial_fight_won_has_no_continue() -> void:
 		var b := c as BaseButton
 		if b.is_visible_in_tree() and not b.disabled and b.get_global_rect().has_area():
 			buttons.append(String(b.name))
-	if not shown:
-		pending("B1 REPRODUCED: tutorial FIGHT WON, continue_shown()=false; visible live buttons: %s" % [buttons])
-	else:
-		assert_true(shown, "B1 fixed: the tutorial's won fight shows a way on")
+	assert_true(shown, "B1: the tutorial's won fight shows a way on (live buttons: %s)" % [buttons])
 	scene.get_parent().queue_free()
 	await _frames(2)
 
@@ -423,10 +420,14 @@ func test_b6_undo_is_blocked_at_turn_start_and_after_a_random_pick_while_the_tut
 		if String(step["title"]) == "UNDO" and String(step["text"]).contains("free and unlimited"):
 			teaches_free = true
 	print("B6: " + " | ".join(log_lines) + " | tutorial text says free and unlimited: %s" % teaches_free)
-	if not after_random and teaches_free:
-		pending("B6 REPRODUCED (by rule): %s" % " | ".join(log_lines))
-	else:
-		assert_true(after_random, "B6 changed: " + " | ".join(log_lines))
+	# W1-TUT B6 (ruling 1): the rule stays; the copy stops promising a free, unlimited undo.
+	assert_false(teaches_free, "B6: the tutorial no longer calls undo free and unlimited")
+	assert_true(after_nudge, "B6: the step stays completable, a nudge can be undone")
+	var undo_text := ""
+	for step in TutorialOverlay.STEPS:
+		if String(step["title"]) == "UNDO":
+			undo_text = String(step["text"])
+	assert_true(undo_text.contains("Respin") and undo_text.contains("random"), "B6: the step names what stops undo")
 	scene.get_parent().queue_free()
 	await _frames(2)
 
@@ -472,10 +473,8 @@ func test_b6_random_cards_and_respin_block_undo() -> void:
 	var post_respin := eng.can_rewind()
 	notes.append("respin: can_rewind %s -> %s" % [pre_respin, post_respin])
 	print("B6 variant: " + " | ".join(notes))
-	if blocked_by_card or (pre_respin and not post_respin):
-		pending("B6 REPRODUCED (by rule): UNDO blocked after a random event: %s" % " | ".join(notes))
-	else:
-		assert_true(false, "B6 variant: nothing blocked UNDO: " + " | ".join(notes))
+	# The rule stays (W1-TUT B6): a random event is a checkpoint, undo does not cross it.
+	assert_true(blocked_by_card or (pre_respin and not post_respin), "B6 variant: a random event blocks UNDO: " + " | ".join(notes))
 	scene.get_parent().queue_free()
 	await _frames(2)
 
