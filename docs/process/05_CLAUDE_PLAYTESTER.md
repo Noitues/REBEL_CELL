@@ -215,3 +215,23 @@ Once both testers perform well: rebuild a screen tester's fights from its combat
 and turn every disagreement into a single-turn visual probe ("what on screen would have led you to
 the other plan?"). The output is a list of visual changes that would let a player make the decision
 the numbers support: developer-facing findings with the exact turn and screenshot.
+
+## 12. At every User-Ready Gate (designer ruling 2026-10-12)
+
+```bash
+python tools/playtest/gate.py --gate PT-014 --compare <previous screen batch> --budget 50
+```
+1. **Build and routes:** the build copy is pointed at main and every recorded route is replayed on a
+   fresh copy. A broken route means that screen changed: re-record it (§9) and note it in the gate
+   report; until then the coverage plan starts testers from the title.
+2. **State sweep:** the free baseline and an intermediate LLM run on the same seeds (≈ $12): win
+   rate, deaths, Heat, raids and the reasons behind picks.
+3. **Screen batch:** the standard mix (3 novice, 3 intermediate, 1 expert, 1 motion) with the rest of
+   the budget, judged in batch, `_FINDINGS.md` compared with the previous batch. Combat skill comes from
+   the **replay audit** (every fight rebuilt from the game's combat replays: was a Perfect reachable,
+   did the tester land it, damage vs the best plan), not from the testers' own counts.
+Output: `docs/playtest/claude/gates/<gate>.md`. The findings feed doc 04 §3 (bugs and clarity → slice
+items, balance and design → checkpoint questions); the next gate's batch shows what landed.
+
+First audit (PB-010, 574 turns): a Perfect was reachable on 93–100 % of turns; testers landed one on
+~20 %, the same as taking no action; the best plan takes ~0.8 damage per turn vs the testers' ~3.5.
