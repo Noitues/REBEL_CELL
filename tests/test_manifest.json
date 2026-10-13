@@ -257,6 +257,10 @@
 			"seconds": 0.1,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_firmware_daemon_coverage.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_firmware.gd": {
 			"seconds": 0.3,
 			"tier": "fast"

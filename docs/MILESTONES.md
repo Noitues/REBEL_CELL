@@ -85,12 +85,12 @@ Legend (M0-M4, CP-003 ruling 8, 2026-10-13): `[x]` ticked with a named test or s
       _Evidence: `tests/integration/test_netrun.gd::test_rack_capture_banks_schematics_and_assets`, `test_death_loses_unbanked_loot_keeps_banked_and_adds_heat`_
 - [x] Completion: Cycles convert 10:1; operative keeps deck/Firmware/Daemons; Rank +1.
       _Evidence: `tests/integration/test_netrun.gd::test_completion_converts_cycles_keeps_everything_and_ranks_up`_
-- [ ] Every card, Firmware and Daemon in the slice has at least one unit test.
-      _OPEN, partial: cards are swept (`tests/unit/test_pools.gd`, `test_cards.gd`), but Firmware and Daemons are hand-picked tests (`test_firmware.gd`, `test_daemons.gd`) with no per-id coverage check. Needs the per-id coverage test (M14_REPLAN §4 housekeeping)_
+- [x] Every card, Firmware and Daemon in the slice has at least one unit test.
+      _Evidence: `tests/unit/test_pools.gd` (cards); `tests/unit/test_firmware_daemon_coverage.gd::test_every_firmware_and_daemon_id_names_a_unit_test_that_exists` (all 18 Firmware and 24 Daemons, each mapped to a test that exists and mentions the id; 9 Firmware and 7 Daemons got new tests there)_
 - [x] Quit mid-run (including mid-combat) and resume to the identical state.
       _Evidence: `tests/integration/test_netrun.gd::test_quit_and_resume_on_the_map_is_identical`, `test_quit_and_resume_mid_combat_is_identical`_
-- [ ] A Tier 1 netrun is completable in roughly 12–18 minutes of play.
-      _OPEN (human): not machine-checkable; the simulator counts runs, not minutes. Needs a timed human playtest_
+- [~] A Tier 1 netrun is completable in roughly 12–18 minutes of play.
+      _SUPERSEDED (designer ruling 3, 2026-10-13); was OPEN (human): not machine-checkable; the simulator counts runs, not minutes. Needs a timed human playtest_
 
 ## M3 — Campaign & Raids
 **Build**
