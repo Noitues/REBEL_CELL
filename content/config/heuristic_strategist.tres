@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="HeuristicStrategistConfigData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/heuristic_strategist_config_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+combat_tie_epsilon = 0.001
+lookahead_turns = 1
+lookahead_next_weight = 1.0
+lookahead_win_bonus = 1000.0
+elite_min_hp_share = 0.6
+low_hp_share = 0.5
+node_value_router = 40.0
+node_value_elite = 30.0
+node_value_terminal = 20.0
+node_value_mainframe = 10.0
+node_value_server_rack = 50.0
+node_low_hp_bonus = 35.0
+node_value_elite_low = -50.0
+mainframe_rich_cycles = 75
+node_value_mainframe_rich = 60.0
+node_heat_weight = 3.0
+node_heat_scale = 25.0
+card_min_value = 1.5
+deck_max = 16
+synergy_per_match = 0.25
+synergy_cap = 1.0
+rarity_bonus = 0.25
+firmware_min_score = 0.0
+daemon_min_score = 0.0
+breach_max_heat = 10
+breach_min_rank = 3
+exploit_max_heat = 40
+scrub_min_heat = 10
+idle_max_tier = 2
+rotate_rank_gap = 4
+hq_priority = Array[String](["repair_node", "repair_home", "recruit", "scrub", "boost", "claim"])
+hq_min_operatives = 2
+hq_scrub_min_heat = 10
+hq_reserve_rookies = 2
+hq_max_claims = 2
+shop_cycle_reserve = 0
+shop_daemon_min_score = 2.0
+shop_thin_deck_min = 10
+shop_remove_max_value = 1.0

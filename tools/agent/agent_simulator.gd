@@ -4,7 +4,9 @@ extends CampaignSimulator
 ## waits for `<dir>/resp_<n>.json` ({"choice": i, "reason": "..."}); the menu's option 0 is
 ## always what the built-in policy would do, so a timeout or `builtin` for a kind keeps the
 ## simulator's behaviour. Decision kinds: combat (whole-turn plans from turn_planner.gd), node,
-## reward, event, launch, raid. Shops and HQ upkeep stay with the built-in policy (v1).
+## reward, event, launch, raid, shop, hq (v2 sinks). With a `strategist`
+## (heuristic_strategist.gd) set, each decision is answered in process from its options'
+## structured `meta`, with no files and no LLM (Tooling 1 T2).
 
 const TurnPlanner := preload("res://tools/agent/turn_planner.gd")
 const POLL_MS := 15
@@ -16,6 +18,12 @@ var builtin: Dictionary = {}
 var seq: int = 0
 var decisions: Array[Dictionary] = []
 var transcript: Array[String] = []
+## In-process answerer (heuristic_strategist.gd); null = the request/response files.
+var strategist: RefCounted = null
+## Breach (boss) runs launched and won, and the run that won, for the report.
+var boss_attempts: int = 0
+var boss_wins: int = 0
+var win_run: int = -1
 
 
 func _init(p_resolver: CombatResolver, p_dir: String, p_builtin: Array, corporation_id: StringName = &"solace", class_id: StringName = &"breaker") -> void:
@@ -25,12 +33,19 @@ func _init(p_resolver: CombatResolver, p_dir: String, p_builtin: Array, corporat
 		builtin[String(k)] = true
 
 
-## Asks the agent; returns {"choice": int, "reason": String}.
-func ask(kind: String, state: Dictionary, options: Array[String]) -> Dictionary:
+## Asks the agent; returns {"choice": int, "reason": String}. `meta` (one dictionary per
+## option) and `ctx` feed the in-process strategist; the file agent reads `state` and `options`.
+func ask(kind: String, state: Dictionary, options: Array[String], meta: Array = [], ctx: Dictionary = {}) -> Dictionary:
 	seq += 1
 	if builtin.has(kind) or options.size() <= 1:
 		decisions.append({"seq": seq, "kind": kind, "choice": 0, "reason": "builtin", "options": options.size()})
 		return {"choice": 0, "reason": "builtin"}
+	if strategist != null:
+		var h: Dictionary = strategist.choose(kind, ctx, meta)
+		var c := clampi(int(h["choice"]), 0, options.size() - 1)
+		decisions.append({"seq": seq, "kind": kind, "choice": c, "reason": String(h["reason"]), "options": options.size(),
+			"chosen": options[c], "state": state})
+		return {"choice": c, "reason": String(h["reason"])}
 	var req := "%s/req_%06d.json" % [dir, seq]
 	var resp := "%s/resp_%06d.json" % [dir, seq]
 	var tmp := req + ".tmp"
@@ -82,8 +97,34 @@ func _pick_launch(c: CampaignState) -> Dictionary:
 				continue
 			picks.append({"op": op, "site": site})
 			options.append(_launch_text(c, picks[-1]))
-	var r := ask("launch", _campaign_state(c), options)
+	var meta: Array = []
+	for p in picks:
+		var site: SiteData = p["site"]
+		var patrol := CampaignRules.is_patrol(c, site)
+		meta.append({"op_rank": (p["op"] as OperativeState).rank, "tier": site.tier, "heat_change": site.heat_change,
+			"objective": RC.SiteObjective.NONE if patrol else CampaignRules.site_objective(c, site), "patrol": patrol})
+	var r := ask("launch", _campaign_state(c), options, meta, {"heat": c.heat, "exploits": c.exploits.size()})
 	return picks[int(r["choice"])]
+
+
+## Counts breach runs for the report (boss attempts; a completed one is the win).
+func _start(c: CampaignState, op: OperativeState, site: SiteData, run_seed: int) -> NetrunSession:
+	if CampaignRules.run_kind_for(c, site) == "boss":
+		boss_attempts += 1
+	return super(c, op, site, run_seed)
+
+
+## The CampaignSimulator report plus Schematics at the end, boss attempts and wins, and the run of the win.
+func _report(c: CampaignState, stats: Dictionary, campaign_seed: int, ice: int) -> Dictionary:
+	var rep := super(c, stats, campaign_seed, ice)
+	if c.outcome == CampaignState.Outcome.WON:
+		boss_wins = 1
+		win_run = int(stats["runs"])
+	rep["schematics_end"] = c.schematics
+	rep["boss_attempts"] = boss_attempts
+	rep["boss_wins"] = boss_wins
+	rep["win_run"] = win_run
+	return rep
 
 
 func _launch_text(c: CampaignState, pick: Dictionary) -> String:
@@ -120,17 +161,20 @@ func _place_for_raid(c: CampaignState) -> void:
 		rev.append(c.grid.home_site_id)
 		plans.append({"name": "outer nodes first, home last", "order": rev})
 	var options: Array[String] = []
+	var meta: Array = []
 	for p in plans:
 		var trial := c.duplicate_state()
 		_deploy_in_order(trial, p["order"])
 		var proj := CampaignRules.project_raid(trial, corp, config, lookup, trial.pending_raids[0])
+		meta.append({"won": proj.won, "campaign_lost": proj.campaign_lost, "home_after": proj.home_after,
+			"threats_destroyed": proj.threats_destroyed, "down": proj.down.size(), "taken": proj.taken.size()})
 		options.append("%s: projected %s, home %d -> %d, threats destroyed %d, reached home %d, DOWN %s, TAKEN %s" % [
 			p["name"], "CELL HOLDS" if proj.won else ("BREACHED" if proj.campaign_lost else "lost"), proj.home_before, proj.home_after,
 			proj.threats_destroyed, proj.threats_reached_home, ",".join(proj.down) if not proj.down.is_empty() else "none",
 			",".join(proj.taken) if not proj.taken.is_empty() else "none"])
 	var state := _campaign_state(c)
 	state["raid"] = String(c.pending_raids[0].get("raid_id", ""))
-	var r := ask("raid", state, options)
+	var r := ask("raid", state, options, meta)
 	_deploy_in_order(c, plans[int(r["choice"])]["order"])
 
 
@@ -196,13 +240,16 @@ func _play_fight(s: NetrunSession, stats: Dictionary) -> void:
 		CombatBot._retarget(s.combat, s.combat_action)
 		var plans := TurnPlanner.plans(s.combat)
 		var options: Array[String] = []
+		var meta: Array = []
 		for p in plans:
 			options.append(String(p["text"]))
+			var o: Dictionary = p["outcome"]
+			meta.append({"score": p["score"], "dealt": o["dealt"], "taken": o["taken"], "kills": o["kills"], "actions": p["actions"]})
 		var st := _run_state(s)
 		st["turn"] = s.combat.state.turn
 		st["ram"] = s.combat.state.ram
 		st["fight"] = ", ".join(foes)
-		var r := ask("combat", st, options)
+		var r := ask("combat", st, options, meta, {"session": s.combat})
 		for a in plans[int(r["choice"])]["actions"]:
 			var res := s.combat_action(a)
 			if res == null or not res.ok():
@@ -223,13 +270,16 @@ func _pick_node(s: NetrunSession) -> StringName:
 		if id != default:
 			ids.append(id)
 	var options: Array[String] = []
+	var meta: Array = []
 	for id in ids:
 		var node := s.run.map.get_node(id)
 		var kind: String = RC.InfilNodeType.keys()[int(node["type"])]
 		if node["elite"]:
 			kind = "ELITE " + kind
 		options.append("%s at layer %d (Heat %+d)" % [kind, int(node["layer"]), s.node_heat(id)])
-	return ids[int(ask("node", _run_state(s), options)["choice"])]
+		meta.append({"type": int(node["type"]), "elite": bool(node["elite"]), "layer": int(node["layer"]), "heat": s.node_heat(id)})
+	var ctx := {"hp": s.run.operative.hp, "max_hp": s.run.operative.max_hp, "cycles": s.run.cycles, "campaign_heat": s.campaign.heat}
+	return ids[int(ask("node", _run_state(s), options, meta, ctx)["choice"])]
 
 
 func _take_reward(s: NetrunSession) -> void:
@@ -257,7 +307,10 @@ func _take_reward(s: NetrunSession) -> void:
 			options.append("%s %s: %s" % [kind.capitalize(), name, desc])
 	picks.insert(0, [])
 	options.insert(0, "Skip this reward")
-	var r := ask("reward", _run_state(s), options)
+	var meta: Array = []
+	for p in picks:
+		meta.append({} if p.is_empty() else {"kind": kind, "id": String(raw[int(p[0])]), "slot": int(p[1])})
+	var r := ask("reward", _run_state(s), options, meta, {"deck": s.run.operative.deck.duplicate()})
 	var pick: Array = picks[int(r["choice"])]
 	if pick.is_empty():
 		s.skip_reward()
@@ -272,6 +325,7 @@ func _shop(s: NetrunSession) -> void:
 	for round in 6:
 		var acts: Array[Callable] = []
 		var options: Array[String] = []
+		var meta: Array = [{"action": "leave"}]
 		var bug := s.run.operative.deck.find(&"bug")
 		acts.append(func() -> bool:
 			if bug >= 0 and s.run.cycles >= s.card_removal_price():
@@ -296,11 +350,13 @@ func _shop(s: NetrunSession) -> void:
 						var sl := slot
 						acts.append(func() -> bool: s.buy("firmware", k, sl); return true)
 						options.append("%s (into slot %d, %s)" % [label, slot + 1, slice.display_name if slice != null else "?"])
+						meta.append({"action": "buy", "kind": "firmware", "id": String(items[i]), "price": price})
 				else:
 					var k := i
 					var kd: String = kind
 					acts.append(func() -> bool: s.buy(kd, k); return true)
 					options.append(label)
+					meta.append({"action": "buy", "kind": "card" if kind == "cards" else "daemon", "id": String(items[i]), "price": price})
 		if s.run.cycles >= s.card_removal_price():
 			var seen := {}
 			for di in s.run.operative.deck.size():
@@ -312,8 +368,9 @@ func _shop(s: NetrunSession) -> void:
 				var dk := di
 				acts.append(func() -> bool: s.remove_card(dk); return true)
 				options.append("Remove %s from the deck for %d Cycles" % [card.display_name if card != null else String(id), s.card_removal_price()])
+				meta.append({"action": "remove", "id": String(id), "price": s.card_removal_price()})
 		var st := _run_state(s)
-		var r := ask("shop", st, options)
+		var r := ask("shop", st, options, meta, {"deck": s.run.operative.deck.duplicate(), "cycles": s.run.cycles})
 		if not acts[int(r["choice"])].call():
 			break
 	if s.run.phase == RunState.Phase.SHOP:
@@ -327,22 +384,34 @@ func _maintain(c: CampaignState) -> void:
 		var options: Array[String] = []
 		acts.append(func() -> bool: _builtin_maintain(c); return false)
 		options.append("Default upkeep: repair DOWN nodes and home, recruit to two operatives, scrub Heat at %d+ keeping a reserve, claim one Firewall Relay when rich" % HEAT_SCRUB_FLOOR)
+		var meta: Array = [{"action": "default"}, {"action": "done"}]
 		acts.append(func() -> bool: return false)
 		options.append("Done at HQ: launch the next netrun now")
+		for site_id in c.grid.claimed_ids():
+			if int(c.grid.site(site_id).get("condition", 0)) == GridState.Condition.DOWN \
+					and c.schematics >= CampaignRules.repair_cost(c, config, lookup, site_id):
+				var rid: StringName = site_id
+				acts.append(func() -> bool: CampaignRules.repair(c, config, lookup, rid); return true)
+				options.append("Repair the DOWN node on %s for %d Schematics" % [rid, CampaignRules.repair_cost(c, config, lookup, rid)])
+				meta.append({"action": "repair_node", "price": CampaignRules.repair_cost(c, config, lookup, rid)})
 		if c.schematics >= CampaignRules.rookie_price(c, config):
 			acts.append(func() -> bool: CampaignRules.recruit(c, config, class_data); return true)
 			options.append("Recruit a rookie %s for %d Schematics (living operatives: %d)" % [class_data.display_name, CampaignRules.rookie_price(c, config), c.living_operatives().size()])
+			meta.append({"action": "recruit", "price": CampaignRules.rookie_price(c, config)})
 		if c.heat > 0 and c.schematics >= CampaignRules.heat_purchase_price(c, config):
 			acts.append(func() -> bool: CampaignRules.buy_heat_reduction(c, config); return true)
 			options.append("Scrub Heat for %d Schematics (Heat now %d)" % [CampaignRules.heat_purchase_price(c, config), c.heat])
+			meta.append({"action": "scrub", "price": CampaignRules.heat_purchase_price(c, config)})
 		if c.grid.home_integrity < c.grid.home_max_integrity and c.schematics >= CampaignRules.home_repair_price(c, config):
 			acts.append(func() -> bool: CampaignRules.repair_home(c, config); return true)
 			options.append("Patch the home server to full for %d Schematics (now %d/%d)" % [CampaignRules.home_repair_price(c, config), c.grid.home_integrity, c.grid.home_max_integrity])
+			meta.append({"action": "repair_home", "price": CampaignRules.home_repair_price(c, config)})
 		for b in config.netrun_boosts:
 			if b != null and not c.pending_boosts.has(b.id) and c.schematics >= b.cost:
 				var bid: StringName = b.id
 				acts.append(func() -> bool: CampaignRules.buy_boost(c, config, bid); return true)
 				options.append("Buy next-run boost %s for %d Schematics: %s" % [b.display_name, b.cost, b.get("description") if b.get("description") != null else ""])
+				meta.append({"action": "boost", "price": b.cost, "id": String(b.id)})
 		var relay := lookup.get_content(&"firewall_relay") as NetworkNodeData
 		if relay != null and c.schematics >= relay.install_cost:
 			for n in c.grid.neighbors(c.grid.home_site_id, corp.city_grid):
@@ -351,7 +420,10 @@ func _maintain(c: CampaignState) -> void:
 					var nid: StringName = n
 					acts.append(func() -> bool: CampaignRules.claim(c, corp, config, lookup, nid, relay.id); return true)
 					options.append("Claim %s next to home as a Firewall Relay for %d Schematics" % [sd.display_name, relay.install_cost])
-		var r := ask("hq", _campaign_state(c), options)
+					meta.append({"action": "claim", "price": relay.install_cost})
+		var ctx := {"heat": c.heat, "schematics": c.schematics, "living": c.living_operatives().size(),
+			"rookie_price": CampaignRules.rookie_price(c, config), "claims": c.grid.claimed_ids().size() - 1}
+		var r := ask("hq", _campaign_state(c), options, meta, ctx)
 		if not acts[int(r["choice"])].call():
 			return
 
@@ -375,7 +447,10 @@ func _choose_event(s: NetrunSession) -> void:
 	options.reverse()
 	var st := _run_state(s)
 	st["event"] = "%s: %s" % [ev.title, ev.text.substr(0, 400)]
-	s.choose_event_option(idx[int(ask("event", st, options)["choice"])])
+	var meta: Array = []
+	for i in idx:
+		meta.append({"index": i})
+	s.choose_event_option(idx[int(ask("event", st, options, meta)["choice"])])
 
 
 func _builtin_maintain(c: CampaignState) -> void:

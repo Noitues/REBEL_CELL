@@ -6,7 +6,32 @@ extends RefCounted
 
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
-	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead()
+	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
+		+ _t2_heuristic_strategist()
+
+
+## Tooling 1 T2: HeuristicStrategistConfigData (the playtest strategist's thresholds): the shipped
+## one validates; a 3-turn lookahead and an unknown HQ action are each refused; a save keeps its values.
+func _t2_heuristic_strategist() -> int:
+	var fails := 0
+	var shipped := HeuristicStrategistConfigData.shipped()
+	var se := shipped.validate() if shipped != null else PackedStringArray(["missing"])
+	print("T2 shipped heuristic strategist config errors (expect 0): ", se)
+	if se.size() != 0: fails += 1
+	var bad := HeuristicStrategistConfigData.new()
+	bad.lookahead_turns = 3
+	bad.hq_priority = ["scrub", "buy_everything"]
+	var be := bad.validate()
+	print("T2 bad heuristic strategist config errors (expect 2): ", be)
+	if be.size() != 2: fails += 1
+	var t := HeuristicStrategistConfigData.new()
+	t.breach_max_heat = 7
+	t.hq_priority = ["recruit", "scrub"]
+	var err := ResourceSaver.save(t, "user://smoke_heuristic_strategist.tres")
+	var back: HeuristicStrategistConfigData = load("user://smoke_heuristic_strategist.tres")
+	print("T2 heuristic strategist config save=", err, " breach_max_heat ", back.breach_max_heat if back != null else -1)
+	if err != OK or back == null or back.breach_max_heat != 7 or back.hq_priority != ["recruit", "scrub"] or back.validate().size() != 0: fails += 1
+	return fails
 
 
 ## M14 FOLLOW-UP: CorporationData.letterhead_name: "" by default (no error: the letterhead letters
