@@ -34,6 +34,16 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-13 — W2-A3: labels in place, combat legend, status definitions, loot slot hover
+Chips beside a wheel's HP carry a word ("HP -11", "BLOCKED (3", "GUARD +3", "RAM -1", "HEAT +2"; `HudResultChips.tag_of`;
+`ResultChipModel.label` unchanged). The RAM header reads "(-1 THIS PLAY)". The "D 0" badge's tooltip says what it counts.
+A "?" chip beside Settings and key L (`open_legend`, runtime action) open `CombatLegend` (slices incl. the 1/0 Null and
+OVFL / DFRG codes, statuses, PERFECT / GOOD / WEAK, HP / RAM / chip readouts, D n). R2: `Codex.describe`, `loot_tip` and
+`ZineCard` tooltips append the definition of every status they name (`Codex.with_status_defs`). R3: loot / Mainframe
+spinner slots hover as slot name + what the slice does + what its Firmware does (`NetrunScene.slot_tip`). Codex slice texts
+unchanged (the shop info strip's layout depends on their length). Pad: reached through the "?" chip's focus (no new pad
+button); designer ruling 2026-10-13: 1.0 mouse / keyboard only.
+
 ### 2026-10-13 — W2-A4: card and chip faces state their condition and direction; the event Daemon reward has its icon
 - **6A (offers unchanged):** `FaceText` (`scripts/ui/kit/face_text.gd`) reads the conditions from the content and adds them
   after the description on every face and tooltip that shows a card or chip (combat hand, loot, shop, deck viewer / detail,

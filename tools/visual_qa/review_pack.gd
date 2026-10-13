@@ -134,6 +134,7 @@ const SCREENS := [
 	["route", "_s_route", "Netrun route: choosing where to go."],
 	["route_focus", "_s_route_focus", "Parity ROUTE-04: the pad's focus on the route's last choice sticker."],
 	["route_meridian", "_s_route_meridian", "Netrun route against Meridian (the dossier's letterhead)."],
+	["a3_legend", "_s_a3_legend", "W2-A3: the combat legend open."],
 	["v1_hover", "_s_v1_hover", "V1: one card hovered."],
 	["v1_aim", "_s_v1_aim", "V1: one card selected and aimed."],
 	["v1_chain2", "_s_v1_chain2", "V1: one card played, a second hovered."],
@@ -1329,6 +1330,14 @@ func _s_route_meridian() -> void:
 	var net: Node = await _netrun_against(&"meridian")
 	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
 	await _settle(net)
+
+
+func _s_a3_legend() -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	combat.open_legend()
+	await _frames(SETTLE_FRAMES)
 
 
 func _s_combat_start() -> void:

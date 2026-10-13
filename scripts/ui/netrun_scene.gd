@@ -3925,6 +3925,23 @@ static func slot_name(op: OperativeState, k: int) -> String:
 	return TranslationServer.translate("Slot %d: %s%s") % [k + 1, slice, (" + %s" % TextDb.t(fw, "display_name")) if fw != null else ""]
 
 
+## W2-A3 (R3): what hovering slot `k` of the spinner says: its name, what its slice does and
+## what its installed Firmware does (or that none is installed).
+static func slot_tip(op: OperativeState, k: int) -> String:
+	var lookup := RunManager.lookup()
+	var lines := PackedStringArray([slot_name(op, k)])
+	var sd := lookup.get_content(op.slot_slice_ids[k]) as SliceData
+	if sd != null:
+		lines.append(Codex.describe(sd))
+	var fw_id: StringName = op.slot_firmware_ids[k] if k < op.slot_firmware_ids.size() else &""
+	var fw: Resource = lookup.get_content(fw_id) if fw_id != &"" else null
+	if fw != null:
+		lines.append(Codex.describe(fw))
+	else:
+		lines.append(TranslationServer.translate("No Firmware installed in this slot."))
+	return "\n".join(lines)
+
+
 ## A Terminal choice's label with its costs from the data, replacing the hand-written
 ## "(...)" summary so a hidden or unscaled cost can't slip through.
 static func _choice_text(label: String, costs: String) -> String:
@@ -4737,7 +4754,7 @@ static func loot_tip(res: Resource) -> String:
 	if res == null:
 		return ""
 	var d := FaceText.offer_text(res) if "description" in res else ""
-	return "%s\n%s" % [TextDb.t(res, "display_name"), d if d != "" else Codex.describe(res)]
+	return "%s\n%s" % [TextDb.t(res, "display_name"), Codex.with_status_defs(d) if d != "" else Codex.describe(res)]
 
 
 ## A slice tile's size in the Mainframe's SLICES window for `count` tiles at text scale `ts`
@@ -5550,7 +5567,7 @@ func _spinner_mini() -> SpinnerMini:
 	var op := RunManager.netrun.run.operative
 	var tips: Array = []
 	for k in op.slot_slice_ids.size():
-		tips.append(slot_name(op, k))
+		tips.append(UiTip.fold(slot_tip(op, k)))
 	var mini := SpinnerMini.new(op.slot_slice_ids, op.slot_firmware_ids, RunManager.lookup(), tips)
 	mini.tooltip_text = UiTip.fold(tr("Your spinner.") + " " + drag_tip("spinner"))
 	return mini

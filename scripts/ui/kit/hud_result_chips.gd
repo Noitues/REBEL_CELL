@@ -213,7 +213,7 @@ static func font_px() -> int:
 static func parts(c: Dictionary) -> Dictionary:
 	var kind := StringName(c["kind"])
 	var icon := String(c.get("icon", ""))
-	var out := {"lead": &"", "words": ResultChipModel.label(c), "glyph": HudSkin.glyph_name(icon), "mark": "", "close": ""}
+	var out := {"lead": &"", "words": tag_of(kind) + ResultChipModel.label(c), "glyph": HudSkin.glyph_name(icon), "mark": "", "close": ""}
 	if icon != "" and out["glyph"] == &"":
 		out["mark"] = icon
 	if kind == ResultChipModel.ABSORBED:
@@ -228,6 +228,26 @@ static func parts(c: Dictionary) -> Dictionary:
 				out["lead"] = &""
 				out["glyph"] = g
 	return out
+
+
+## W2-A3: the word that labels a chip in place ("HP -11", "RAM -1"), with its trailing space;
+## "" for a chip whose glyph says it (statuses, odds).
+static func tag_of(kind: StringName) -> String:
+	var word := ""
+	match kind:
+		ResultChipModel.DAMAGE, ResultChipModel.HEALED, ResultChipModel.HP_OTHER, ResultChipModel.HP_LINE:
+			word = "HP"
+		ResultChipModel.ABSORBED:
+			word = "BLOCKED"
+		ResultChipModel.GAINED:
+			word = "GUARD"
+		ResultChipModel.EVADE:
+			word = "EVADE"
+		ResultChipModel.RAM:
+			word = "RAM"
+		ResultChipModel.HEAT:
+			word = "HEAT"
+	return "" if word == "" else TranslationServer.translate(word) + " "
 
 
 ## The glyph box in a chip (px; never under the 16 px glyph rule).

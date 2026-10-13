@@ -214,6 +214,9 @@ func land_pulse(kind: String) -> Control:
 ## The Daemons installed on the current operative (the icon shows the first and a count).
 func set_daemons(ids: Array[StringName]) -> void:
 	daemon_ids = ids
+	# W2-A3: the "D 0" badge says what it counts.
+	daemon_button.tooltip_text = UiTip.fold(tr("Daemons installed: %d (the badge). Opens the tray: each sigil shows what its Daemon does.") % ids.size() if not ids.is_empty()
+		else tr("No Daemons installed (D 0: the badge counts them). Opens the tray."))
 	daemon_button.visible = true
 	daemon_button.queue_redraw()
 

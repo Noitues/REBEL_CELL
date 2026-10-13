@@ -305,7 +305,7 @@ var _glass: CrtTerminalPanel = null
 func _label() -> String:
 	var label := tr("RAM %d/%d") % [ram, max_ram]
 	if pending != 0:
-		label += " (%+d)" % pending
+		label += " " + tr("(%+d THIS PLAY)") % pending
 	if next_turn >= 0:
 		label += " " + next_turn_words()
 	return label
@@ -355,7 +355,7 @@ func _draw() -> void:
 	if owner_words != "":
 		head = owner_words  # ART-2 2D: the name sticker's words at big text (the count says RAM)
 	if pending != 0:
-		head += "  (%+d)" % pending
+		head += "  " + tr("(%+d THIS PLAY)") % pending  # W2-A3: the bare "(-1)" said nothing
 	HighContrast.draw_text(self, mono, Vector2(pad, pad + mono.get_ascent(hf)), head, HORIZONTAL_ALIGNMENT_LEFT, -1, hf, HudSkin.TERMINAL_TEXT)
 	var after_words := next_turn_words()
 	var refusal := refusal_text()
