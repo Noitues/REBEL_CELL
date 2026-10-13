@@ -126,6 +126,24 @@ MISS on wins (heuristic 15/20 vs LLM 0/5 on this build; one tune, boosts out of 
 on deaths and mean Heat peak. `gate.py --state-mode` now defaults to `heuristic`; the balance profile sweeps with
 `--lookahead 2` (Genome Core: 16 wins in 22 attempts vs 15 in 25 without).
 
+### 2026-10-13 — Designer rulings on the PT-002a triage
+Triage: `docs/playtest/PT-002a_TRIAGE.md` (feedback verbatim in `PT-002a_FEEDBACK.md`).
+1. **Wave 1b** (the wave 1 fails, the Esc crash, the new P1 bugs) goes ahead with **no separate gate**: it rides
+   PT-002 (wave 2's gate). Briefs: `docs/handoff/plan1/W1B.md`.
+2. **One rewards screen** listing every reward gained (Slay the Spire style; click a reward to pick from it) is
+   approved as its own slice, after wave 2.
+3. **Input prompts** in one pass: only the active device's glyphs, the same button look for pad and mouse/keyboard
+   ("[ESC]" vs "[B]"), a Menu button at the top left (left of the Heat widget), and menus close on an outside click
+   (not dialogs, events or gameplay). The orchestrator schedules it: after wave 2, before wave 3.
+4. **Grease-pencil glitch notches** become a smear texture with alpha. No separate art slice: it rides wave 3 with the
+   raid-report pencil cleanup (R8).
+5. **US English everywhere, always.** A one-time mechanical pass converts existing text (code sources +
+   `strings.csv`) after wave 1b merges; new text is US English.
+6. **"Step N:" in the raid feed:** pending; the designer asked what it is (explained in chat: the raid's rounds;
+   options: a divider per step, drop it from the feed, or rename to "Round").
+7. **Netrun node animation along the route:** the static part goes to wave 3 (C7); the animation goes to the
+   animation pass.
+
 ### 2026-10-13 — Designer rulings after wave 0 (change plan 1)
 Evidence: `docs/handoff/plan1/B_REPRO.md`, `V1_PREVIEW_GAPS.md`, `docs/playtest/claude/state/SA-002_heuristic_calibration.md`.
 1. **B6:** the rule stays (rewind never crosses a respin or a random-slice card: deterministic replays); the tutorial
