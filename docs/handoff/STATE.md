@@ -23,6 +23,11 @@ tooling1-t2: HeuristicStrategist + $12-capped calibration + 2-turn lookahead bos
 temp tags plan1-w1-tut / -loot / -hq / -tag / -mech, base 1cdb987b. Next: merge each (import after class_names),
 one group sheet → art-pass session review, then gate PT-002a = human list + `gate.py --profile flow --skip-screen` (routes + heuristic sweep, $0; designer: no screen testers until PT-002).
 V4 (designer's Genome Core attempt) still open.
+2026-10-13: wave 1 APPROVED by the art-pass session (R1 + polish) and merged; **gate PT-002a passed its checks** on
+627f32a6 (suite 2250 / 0 failing, smoke 0, validate 0, heuristic sweep SA-003 15/20 = baseline), tagged gate/PT-002a,
+pushed @ c8e3c43e. Waiting for the designer's PT-002a playtest (docs/playtest/PT-002a_plan-1-wave-1-flow-fixes.md).
+Routes were not re-recorded (they belong to the PT-001 build; playtest-build worktree left untouched). Next: wave 2
+(A combat legibility) on the designer's go.
 **Claude playtesters (2026-10-12, merged @ 5fc4903f, fast 1473 / 0):** black-box screen testers, batch judging, routes and
 saves, a headless state tester, replay audit, Perfect quiz, decision parity, gate routine (docs/process/05). Feedback gathered
 (PB-010, PB-012, probes, parity, state sweep SA-001; $57 API in all) and analysed in
