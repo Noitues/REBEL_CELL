@@ -53,6 +53,13 @@ func _run() -> void:
 				if bool(p["outcome"]["own_perfect"]):
 					any_perfect = true
 			var start := TurnPlanner._finish(session, {"state": session.state, "actions": [] as Array[CombatAction]})
+			var planned: Array[CombatAction] = []
+			var j := i
+			while j < actions.size() and actions[j].type != CombatAction.Type.END_TURN:
+				if actions[j].type != CombatAction.Type.TARGET:
+					planned.append(actions[j])
+				j += 1
+			var tester_text := TurnPlanner.describe_actions(session, planned)
 			var mine: Array[CombatAction] = []
 			while i < actions.size() and actions[i].type != CombatAction.Type.END_TURN:
 				var r := session.apply(actions[i])
@@ -63,7 +70,7 @@ func _run() -> void:
 			var did := TurnPlanner._finish(session, {"state": session.state, "actions": [] as Array[CombatAction]})
 			var best: Dictionary = plans[0]
 			out.store_line(JSON.stringify({"tag": opts["tag"], "replay": name, "turn": turn,
-				"tester_actions": mine.size(), "tester": {"dealt": did["outcome"]["dealt"], "taken": did["outcome"]["taken"],
+				"tester_actions": mine.size(), "tester": {"text": tester_text, "dealt": did["outcome"]["dealt"], "taken": did["outcome"]["taken"],
 					"own_perfect": did["outcome"]["own_perfect"], "pointers": did["outcome"]["pointers"]},
 				"no_action": {"dealt": start["outcome"]["dealt"], "taken": start["outcome"]["taken"], "own_perfect": start["outcome"]["own_perfect"]},
 				"best": {"text": best["text"], "dealt": best["outcome"]["dealt"], "taken": best["outcome"]["taken"], "own_perfect": best["outcome"]["own_perfect"]},

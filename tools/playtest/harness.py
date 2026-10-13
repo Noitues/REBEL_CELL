@@ -613,6 +613,7 @@ class Tester:
                 if self.motion_seen.get(sig, 0) < 3:
                     self.motion_seen[sig] = self.motion_seen.get(sig, 0) + 1
                     watch_kind = d["kind"]
+            self.log_combat_step(d, shot)
             result = self.run_actions(hwnd, d["actions"], _sig(frame), watch_kind)
             self.last_actions += result
             self.no_change = self.no_change + 1 if result[0].endswith("NO visible change") else 0
@@ -620,6 +621,18 @@ class Tester:
         self.cost["elapsed_min"] = round(self.elapsed_min(), 2)
         (self.dir / "cost.json").write_text(json.dumps(self.cost, indent=1))
         return d["done"]
+
+    def log_combat_step(self, d: dict, shot: Path) -> None:
+        """combat_steps.jsonl: every combat step with its screenshot and whether it sends the turn, so
+        parity.py can pair the first screenshot of each turn with the replay's turn (doc 05 §11)."""
+        if d["kind"] not in COMBAT_KINDS and d["kind"] != "combat_result":
+            return
+        sends = any((a["type"] == "key" and "space" in (a["keys"] or "").split())
+                    or (a["type"] == "click" and 790 <= a["x"] <= 935 and 440 <= a["y"] <= 500)  # SEND IT (960x540)
+                    for a in d["actions"])
+        with open(self.dir / "combat_steps.jsonl", "a", encoding="utf-8") as f:
+            f.write(json.dumps({"step": self.cost["steps"], "shot": shot.name, "kind": d["kind"], "sends": sends,
+                                "t": round(self.elapsed_min(), 2)}) + "\n")
 
     def probe_step(self, hwnd: int, frame) -> str:
         self.watchdog.observe("combat_turn_start", "", self.elapsed_min())  # probe turns are fights too
