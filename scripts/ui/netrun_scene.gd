@@ -3142,7 +3142,7 @@ func _show_reward() -> void:
 		var id := StringName(String(offer["options"][i]))
 		var res := s.lookup.get_content(id)
 		var cost := int(res.get("ram_cost")) if res is CardData else -1
-		var sticker := ZineCard.new(TextDb.t(res, "display_name"), cost, TextDb.t(res, "description"), i).scaled(ls)
+		var sticker := ZineCard.new(TextDb.t(res, "display_name"), cost, FaceText.offer_text(res), i).scaled(ls)
 		if res is CardData:
 			sticker.with_card(res as CardData)
 		elif res is FirmwareData or res is DaemonData:
@@ -3660,6 +3660,10 @@ func _show_event() -> void:
 		b.disabled = err != ""
 		var tip := err if err != "" else ((tr("Costs: %s.") % costs) if costs != "" else "")
 		tip += ("\n" if tip != "" else "") + (OutcomeRow.describe(outcome) if not outcome.is_empty() else tr("No change to your numbers."))
+		# W2-A4 (R4): what a reward does (a Daemon, a chip, a card) is in the sticker's tooltip.
+		var reward_tip := OutcomeRow.reward_tips(outcome)
+		if reward_tip != "":
+			tip += "\n" + reward_tip
 		b.tooltip_text = UiTip.fold(tip)
 		var index := i
 		b.name = "Choice%d" % (i + 1)
@@ -3731,6 +3735,13 @@ func _show_event() -> void:
 	if cam != null and not cam.voice_only:
 		cam.show_picture(site_picture())
 	_register_event_drops(ev, options)
+	# W2-A4 (R4): hovering a choice's icons says the same as its sticker.
+	for i in ev.choices.size():
+		var cb := options.find_child("Choice%d" % (i + 1), false, false) as Button
+		var chips_row := cb.get_node_or_null(^"OutcomeRow") as Control if cb != null else null
+		if chips_row != null:
+			chips_row.tooltip_text = cb.tooltip_text
+			chips_row.mouse_filter = Control.MOUSE_FILTER_PASS
 	# ANIM-R4 C7: the story types within `event_type`'s cap (0.8 s).
 	if entering and Typing.type_in(text, &"event_type") > 0.0:
 		_hold_choices(options, text)
@@ -4716,7 +4727,7 @@ func _sold_stub(title: String, ram: int, index: int, kind: String, cs: float, ts
 ## What a shop item does in words (H23 S8: Firmware showed no description): the
 ## content's translated description, else the Codex's.
 static func shop_text(res: Resource) -> String:
-	var d := TextDb.t(res, "description") if res != null else ""
+	var d := FaceText.offer_text(res) if res != null else ""
 	return d if d != "" else (Codex.describe(res) if res != null else "")
 
 
@@ -4725,7 +4736,7 @@ static func shop_text(res: Resource) -> String:
 static func loot_tip(res: Resource) -> String:
 	if res == null:
 		return ""
-	var d := TextDb.t(res, "description") if "description" in res else ""
+	var d := FaceText.offer_text(res) if "description" in res else ""
 	return "%s\n%s" % [TextDb.t(res, "display_name"), d if d != "" else Codex.describe(res)]
 
 
@@ -5771,7 +5782,7 @@ func drop_ghost(payload: Dictionary, source: Control) -> Control:
 	var id := StringName(String(payload.get("item", payload.get("asset", ""))))
 	var res := lookup.get_content(id) if id != &"" else null
 	if res is CardData:
-		var card := ZineCard.new(TextDb.t(res, "display_name"), (res as CardData).ram_cost, TextDb.t(res, "description"), 0).scaled(Settings.text_scale).with_card(res as CardData)
+		var card := ZineCard.new(TextDb.t(res, "display_name"), (res as CardData).ram_cost, FaceText.card_text(res as CardData), 0).scaled(Settings.text_scale).with_card(res as CardData)
 		card.hotkey = ""
 		card.size = card.custom_minimum_size
 		return card

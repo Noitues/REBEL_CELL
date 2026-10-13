@@ -11,6 +11,8 @@ extends Control
 ## Icon radius, gap after an icon and between items at text scale 1.0 (px).
 const ICON_R := 8.0
 const ICON_GAP := 3.0
+## W2-A4 (R4): a Daemon / Firmware reward shows its own art, in a square of this half-side (px at scale 1.0).
+const ART_R := 13.0
 const ITEM_GAP := 12.0
 ## ART-9 4A (ART_BIBLE v2 §4.11 "outcome chips (green gain, red cost, grey no change)"): each
 ## item is a framed chip on the dark choice sticker, its icon and amount in the chip's colour.
@@ -98,6 +100,14 @@ static func of_choice(s: NetrunSession, choice: EventChoiceData) -> Array[Dictio
 		var it := _item(kind, 1, true)
 		# A rescue's class is rolled from the roster: no class name (H22 #12).
 		it["name"] = TextDb.t(choice.reward, "display_name") if kind != StatIcon.OPERATIVE and "display_name" in choice.reward else ""
+		# W2-A4 (R4): the reward's own icon, and what it does (the sticker's tooltip says it too).
+		if kind == StatIcon.DAEMON or kind == StatIcon.FIRMWARE:
+			var part := ("daemon_%s" if kind == StatIcon.DAEMON else "chip_%s") % String(choice.reward.get("id"))
+			if MainframeArt.has(part):
+				it["art"] = part
+			it["tip"] = "%s\n%s" % [it["name"], FaceText.offer_text(choice.reward)]
+		elif kind == StatIcon.CARDS:
+			it["tip"] = "%s\n%s" % [it["name"], FaceText.offer_text(choice.reward)]
 		out.append(it)
 	return out
 
@@ -144,6 +154,16 @@ static func _item(kind: StringName, amount: int, good: bool) -> Dictionary:
 ## change".
 static func no_change() -> Array[Dictionary]:
 	return [{"kind": NO_CHANGE, "amount": 0, "text": TranslationServer.translate("no change"), "good": true, "neutral": true, "name": "", "capped": false}] as Array[Dictionary]
+
+
+## W2-A4 (R4): what the rewards in `p_items` do, one paragraph each ("" without one): the words the
+## choice's sticker and its icons share as their tooltip.
+static func reward_tips(p_items: Array[Dictionary]) -> String:
+	var parts := PackedStringArray()
+	for it in p_items:
+		if String(it.get("tip", "")) != "":
+			parts.append(String(it["tip"]))
+	return "\n".join(parts)
 
 
 ## The row in words (a tooltip line): "Cycles -25, Heat +2, Card: Jam".
@@ -230,7 +250,8 @@ func _get_minimum_size() -> Vector2:
 func _item_width(it: Dictionary) -> float:
 	var s := _scale()
 	var fs := get_theme_font_size(&"font_size", &"Label")
-	return (ICON_R * 2.0 + ICON_GAP + CHIP_PAD * 2.0 + MARK_W) * s + _font().get_string_size(String(it["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var icon := ART_R if it.has("art") else ICON_R
+	return (icon * 2.0 + ICON_GAP + CHIP_PAD * 2.0 + MARK_W) * s + _font().get_string_size(String(it["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 
 
 ## Every item on one line (px).
@@ -243,7 +264,11 @@ func _one_line_width() -> float:
 
 func _line_height() -> float:
 	var fs := get_theme_font_size(&"font_size", &"Label")
-	return maxf(ICON_R * 2.0 * _scale(), _font().get_height(fs)) + CHIP_PAD * _scale()
+	var icon := ICON_R
+	for it in items:
+		if it.has("art"):
+			icon = ART_R
+	return maxf(icon * 2.0 * _scale(), _font().get_height(fs)) + CHIP_PAD * _scale()
 
 
 ## ANIM-R1 M9: the items laid out in lines no wider than `width` (each line an Array of
@@ -364,9 +389,14 @@ func _draw() -> void:
 				draw_arc(c, ring, 0.0, TAU, 18, col, 1.6 * s, true)
 				var arm := Vector2(ring, -ring) * NULL_SLASH
 				draw_line(c - arm, c + arm, col, 1.6 * s, true)
+			elif it.has("art") and MainframeArt.tex(String(it["art"])) != null:
+				var tex := MainframeArt.tex(String(it["art"]))
+				var fit_k := minf(ART_R * 2.0 * s / tex.get_size().x, ART_R * 2.0 * s / tex.get_size().y)
+				var box := tex.get_size() * fit_k
+				draw_texture_rect(tex, Rect2(Vector2(x + ART_R * s, mid) - box * 0.5, box), false)
 			else:
 				StatIcon.draw(self, Vector2(x + ICON_R * s, mid), ICON_R * s, StringName(it["kind"]), col)
-			x += (ICON_R * 2.0 + ICON_GAP) * s
+			x += ((ART_R if it.has("art") else ICON_R) * 2.0 + ICON_GAP) * s
 			var t := String(it["text"])
 			HighContrast.draw_text(self, font, Vector2(x, mid + font.get_ascent(fs) * 0.5 - font.get_descent(fs) * 0.25), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 			x += font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
