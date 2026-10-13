@@ -186,14 +186,13 @@ func test_b2_loot_continue_refused_for_a_chip_that_does_not_fit_slot_0() -> void
 	var left := s.run.pending_rewards.size()
 	scene.choose_reward(0, 0)
 	await _frames(60)
-	var note := scene._panel.find_child("LootNote", true, false) as Label
 	assert_eq(s.run.pending_rewards.size(), left, "the refused take changes nothing")
-	assert_not_null(note, "the loot page has a note beside CONTINUE")
-	assert_true(note != null and note.visible and note.text != "", "B2: the reason stays visible after the toast is gone")
-	assert_true(note != null and note.text.contains("slot"), "B2: the reason names where it fits")
-	# choosing a slot is acting: the note goes; CONTINUE then takes the chip
+	assert_null(scene._panel.find_child("LootNote", true, false), "W1 polish: no second line beside CONTINUE")
+	var toast := scene.find_child("Toast", true, false) as ToastNote
+	assert_not_null(toast, "B2: the reason shows in the terminal note")
+	assert_true(toast != null and toast.label.text.contains("Slot"), "B2: the reason names where it fits")
+	# CONTINUE then takes the chip
 	spinner.choose(spinner.selected())
-	assert_false(note.visible, "B2: the note clears once the player acts")
 	go.pressed.emit()
 	await _frames(3)
 	assert_true(s.run.pending_rewards.size() < left or s.run.phase != RunState.Phase.REWARD, "B2: CONTINUE takes the first chip")

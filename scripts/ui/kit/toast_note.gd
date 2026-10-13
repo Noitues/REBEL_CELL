@@ -15,6 +15,9 @@ const SIDE_GAP := 24.0
 const NODE_NAME := "Toast"
 
 var label: Label
+## Global rects of the controls this note must not cover (W1 polish: a loot page's SKIP, CONTINUE and drop);
+## empty = the plain bottom-centre place. A note with some also stays inside the sticker safe margin.
+var keep_clear: Array[Rect2] = []
 
 
 func _init(text: String = "", warn: bool = false) -> void:
@@ -89,6 +92,19 @@ func _resize() -> void:
 
 func _put(host: Control) -> void:
 	position = Vector2(clampf((host.size.x - size.x) * 0.5, 0.0, maxf(0.0, host.size.x - size.x)), host.size.y - size.y - BOTTOM_GAP)
+	if keep_clear.is_empty():
+		return
+	var safe := Fx.sticker_safe_rect(Rect2(Vector2.ZERO, host.size))
+	position = Vector2(clampf(position.x, safe.position.x, maxf(safe.position.x, safe.end.x - size.x)), minf(position.y, safe.end.y - size.y))
+	for g in keep_clear:
+		var r := Rect2(g.position - host.global_position, g.size).grow(BOTTOM_GAP * 0.5)
+		if not Rect2(position, size).intersects(r):
+			continue
+		# beside it (to its left) when the safe margin allows, else above it
+		if r.position.x - size.x >= safe.position.x:
+			position.x = r.position.x - size.x
+		else:
+			position.y = r.position.y - size.y
 
 
 ## True when every line of the note's words shows (tests).

@@ -79,43 +79,51 @@ func test_new_campaign_shows_one_start_and_the_pinned_one_keeps_the_safe_margin(
 		await _frames(2)
 
 
-func test_refused_firmware_note_clears_the_sheet_drop_and_continue_inside_the_safe_margin() -> void:
-	Settings.set_text_scale(1.0)
-	RunManager.new_campaign(7)
-	var holder := _holder()
-	var scene: Control = load(NETRUN).instantiate()
-	holder.add_child(scene)
-	scene.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	scene.start_run(1)
-	await _frames(2)
-	var s := RunManager.netrun
-	var options: Array = ["barbed_wire", "bulkhead", "burner"]
-	s.run.pending_rewards.append({"kind": "firmware", "options": options})
-	s.run.phase = RunState.Phase.REWARD
-	scene._show_current()
-	PageTransition.settle(scene)
-	await _frames(6)
-	var refused := false
-	for k in s.run.operative.slot_slice_ids.size():
-		for i in options.size():
-			if not refused and s.firmware_slot_error(StringName(options[i]), k) != "":
-				scene.choose_reward(i, k)
-				refused = true
-	assert_true(refused, "a chip that does not fit some slot exists to be refused")
-	await _frames(40)
-	var note := scene._panel.find_child("LootNote", true, false) as Label
-	assert_not_null(note)
-	assert_true(note != null and note.visible and note.text != "", "the refusal's note shows")
-	if note == null:
-		return
-	var nr := note.get_global_rect()
-	var safe := Fx.sticker_safe_rect(SCREEN)
-	assert_true(safe.encloses(nr), "the note %s is inside the safe rect %s" % [nr, safe])
-	for node_name in ["LootSheet", "FirmwareDrop", "Continue"]:
-		var other := scene._panel.find_child(node_name, true, false) as Control
-		assert_not_null(other, "%s exists" % node_name)
-		if other != null:
-			assert_false(nr.intersects(other.get_global_rect()), "the note %s does not cover %s %s" % [nr, node_name, other.get_global_rect()])
+func test_refused_firmware_note_is_one_named_message_clear_of_the_sheet_skip_and_continue() -> void:
+	for scale in [1.0, 1.6, 2.0]:
+		Settings.set_text_scale(scale)
+		RunManager.new_campaign(7)
+		var holder := _holder()
+		var scene: Control = load(NETRUN).instantiate()
+		holder.add_child(scene)
+		scene.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		scene.start_run(1)
+		await _frames(2)
+		var s := RunManager.netrun
+		var options: Array = ["barbed_wire", "bulkhead", "burner"]
+		s.run.pending_rewards.append({"kind": "firmware", "options": options})
+		s.run.phase = RunState.Phase.REWARD
+		scene._show_current()
+		PageTransition.settle(scene)
+		await _frames(6)
+		var refused := false
+		for k in s.run.operative.slot_slice_ids.size():
+			for i in options.size():
+				if not refused and s.firmware_slot_error(StringName(options[i]), k) != "":
+					scene.choose_reward(i, k)
+					refused = true
+		assert_true(refused, "a chip that does not fit some slot exists to be refused")
+		await _frames(40)
+		assert_null(scene._panel.find_child("LootNote", true, false), "%.1f: no second (pencil / red) line beside CONTINUE" % scale)
+		var toast := scene.find_child("Toast", true, false) as ToastNote
+		assert_not_null(toast, "%.1f: the one message is the terminal note" % scale)
+		if toast == null:
+			holder.queue_free()
+			continue
+		var text := toast.label.text
+		assert_false(text.contains("_"), "%.1f: names, never ids: %s" % [scale, text])
+		assert_true(text.contains("Slot ") and text.contains("It fits Slot"), "%.1f: says where it fits: %s" % [scale, text])
+		assert_true(toast.whole(), "%.1f: every line shows" % scale)
+		var nr := toast.get_global_rect()
+		var safe := Fx.sticker_safe_rect(SCREEN)
+		assert_true(safe.encloses(nr), "%.1f: the note %s is inside the safe rect %s" % [scale, nr, safe])
+		for node_name in ["FirmwareDrop", "Skip", "Continue"]:
+			var other := scene._panel.find_child(node_name, true, false) as Control
+			assert_not_null(other, "%s exists" % node_name)
+			if other != null:
+				assert_false(nr.intersects(other.get_global_rect()), "%.1f: the note %s does not cover %s %s" % [scale, nr, node_name, other.get_global_rect()])
+		holder.queue_free()
+		await _frames(2)
 
 
 func test_enemy_tag_tooltip_says_after_this_play() -> void:

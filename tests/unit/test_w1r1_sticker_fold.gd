@@ -10,10 +10,12 @@ const SCREEN := Rect2(0, 0, 1280, 720)
 const SCALES: Array[float] = [1.0, 1.6, 2.0]
 
 var _scale := 1.0
+var _tutorial_done := true
 
 
 func before_each() -> void:
 	_scale = Settings.text_scale
+	_tutorial_done = Settings.tutorial_done
 	AudioDirector.muted = true
 	Motion.force_live = false
 	RunManager.save_slot = "gut_w1r1_sticker"
@@ -24,7 +26,8 @@ func before_each() -> void:
 
 func after_each() -> void:
 	Settings.set_text_scale(_scale)
-	Settings.set_tutorial_done(true)
+	Settings.set_tutorial_done(_tutorial_done)
+	Motion.force_live = false
 	RunManager.pending_tutorial = false
 	AudioDirector.muted = false
 	RunManager.delete_save()

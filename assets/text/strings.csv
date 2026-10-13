@@ -100,10 +100,10 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s a slice for details.,%s a slice for details.
 "%s and %s nudge the wheel the arrows mark; %s switches between yours and the target, %s between the outer and inner ring.","%s and %s nudge the wheel the arrows mark; %s switches between yours and the target, %s between the outer and inner ring."
 %s cuts a new route: %s - %s.,%s cuts a new route: %s - %s.
-%s does not fit %s. It fits slot %s: choose it on the wheel.,%s does not fit %s. It fits slot %s: choose it on the wheel.
+%s doesn't fit %s. It fits Slot %s: pick it on the spinner.,%s doesn't fit %s. It fits Slot %s: pick it on the spinner.
 %s enters at %s.,%s enters at %s.
 %s finds no locked route to open near %s.,%s finds no locked route to open near %s.
-"%s fits no slot of your wheel. Pick another, or Skip.","%s fits no slot of your wheel. Pick another, or Skip."
+"%s fits no slot. Pick another, or Skip.","%s fits no slot. Pick another, or Skip."
 %s freezes the link %s - %s for this raid.,%s freezes the link %s - %s for this raid.
 %s guards %s (%s): the class's station bonus helps it hold in raids.,%s guards %s (%s): the class's station bonus helps it hold in raids.
 %s is DOWN.,%s is DOWN.
@@ -2345,6 +2345,7 @@ SliceData.shim_9.display_name,Shim 9
 SliceData.solar_flare.display_name,Solar Flare
 SliceData.trojan_1.display_name,Trojan 1
 Slices,Slices
+Slot %d (%s),Slot %d (%s)
 Slot %d: %s%s,Slot %d: %s%s
 "Slot %s: %s. Heat %d, ICE %d, %d runs completed. Campaign %s%s.","Slot %s: %s. Heat %d, ICE %d, %d runs completed. Campaign %s%s."
 Something opens at ICE %d everywhere (%d/%d).,Something opens at ICE %d everywhere (%d/%d).
