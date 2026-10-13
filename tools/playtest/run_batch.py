@@ -85,6 +85,26 @@ def roll(a) -> None:
                                "--seed", str(a.seed + 1)], check=True)
 
 
+# Coverage (doc 05 §10): who plays the opening, who starts at the first netrun, who starts from a save.
+LATE_FOCUSES = {"raids": "heat>=25", "economy_balance": "heat>=25", "campaign_layer": "heat>=25"}
+
+
+def start_for(t: dict, build: str) -> tuple[str, str]:
+    """(route, start_save) for a tester; ('', '') means it plays everything from the title."""
+    sys.path.insert(0, str(TOOLS))
+    import routes
+    import streamline
+
+    if t["tier"] == "novice" or t["focus"] in streamline.FULL_FOCUSES:
+        return "", ""
+    spec = LATE_FOCUSES.get(t["focus"])
+    if spec and streamline.pick_save(build, spec) and routes.load("continue", build):
+        return "continue", spec
+    if routes.load("to_netrun", build):
+        return "to_netrun", ""
+    return "", ""
+
+
 def plan(batch: str, minutes_override: int = 0) -> list[dict]:
     m = json.loads((SESSIONS / batch / "batch.json").read_text(encoding="utf-8"))
     out = []
@@ -92,9 +112,14 @@ def plan(batch: str, minutes_override: int = 0) -> list[dict]:
         session = SESSIONS / batch / t["handle"]
         kind = "motion" if t["focus"] == "animation_feel" else t["tier"]
         minutes, cap = TIERS[kind]
-        minutes = minutes_override or minutes
+        if minutes_override:  # a shorter box gets a proportionally smaller cap
+            cap = round(cap * minutes_override / minutes, 2)
+            minutes = minutes_override
+        route, save = start_for(t, m["build"])
         out.append({"handle": t["handle"], "kind": kind, "minutes": minutes, "cap": cap, "session": session,
-                    "done": (session / "session_end.json").exists()})
+                    "route": route, "save": save, "done": (session / "session_end.json").exists()})
+    if out and not any(not x["route"] for x in out):  # someone always plays the opening
+        out[0]["route"], out[0]["save"] = "", ""
     return sorted(out, key=lambda x: -x["minutes"])
 
 
@@ -103,6 +128,10 @@ def launch(t: dict) -> subprocess.Popen:
            "--minutes", str(t["minutes"]), "--max-usd", str(t["cap"]), "--defer"]
     if t["kind"] == "motion":
         cmd.append("--motion")
+    if t["route"]:
+        cmd += ["--route", t["route"]]
+    if t["save"]:
+        cmd += ["--start-save", t["save"]]
     out = open(t["session"] / "harness.out", "a", encoding="utf-8")
     return subprocess.Popen(cmd, cwd=str(ROOT), stdout=out, stderr=subprocess.STDOUT)
 
@@ -158,7 +187,9 @@ def main() -> int:
                 log(a.batch, "skip: %s (%s) cap $%.2f > room $%.2f" % (t["handle"], t["kind"], t["cap"], r))
                 continue
             running.append((t, launch(t).pid))
-            log(a.batch, "play: %s (%s, %d min, cap $%.2f)" % (t["handle"], t["kind"], t["minutes"], t["cap"]))
+            log(a.batch, "play: %s (%s, %d min, cap $%.2f, start: %s)" % (
+                t["handle"], t["kind"], t["minutes"], t["cap"],
+                ("save %s" % t["save"]) if t["save"] else (("route " + t["route"]) if t["route"] else "title")))
             time.sleep(20)  # stagger the game launches
         time.sleep(15)
 

@@ -29,3 +29,6 @@ batches/
 
 # Claude playtester sessions (tools/playtest/roll_testers.py): screenshots, journals, per-tester user://
 .playtest_sessions/
+
+# Claude playtester save library (tools/playtest/streamline.py): saves are per build, local
+.playtest_saves/

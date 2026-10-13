@@ -149,7 +149,7 @@ def sessions_of(batch: str) -> list[Path]:
     return sorted(p for p in (SESSIONS / batch).iterdir() if (p / "session_end.json").exists())
 
 
-def distinct_shots(session: Path, cap: int) -> list[Path]:
+def distinct_shots(session: Path, cap: int, seen: list | None = None) -> list[Path]:
     from PIL import Image
 
     kept: list[tuple[Path, bytes]] = []
@@ -160,7 +160,7 @@ def distinct_shots(session: Path, cap: int) -> list[Path]:
             sig = hz._sig(Image.open(shot).convert("RGB"))
         except OSError:
             continue
-        if all(hz.changed_fraction(sig, k) > DISTINCT for _, k in kept):
+        if all(hz.changed_fraction(sig, k) > DISTINCT for _, k in kept) and all(hz.changed_fraction(sig, k) > DISTINCT for k in (seen or [])):
             kept.append((shot, sig))
     paths = [p for p, _ in kept]
     if len(paths) > cap:
@@ -179,6 +179,7 @@ def stage_a(batch: str, audit_model: str, audit_max: int) -> tuple[list[dict], d
     from PIL import Image
 
     reqs, index = [], {}
+    seen: list[bytes] = []  # screens already audited for another tester of this batch
     for s in sessions_of(batch):
         h = s.name
         pending = s / "motion" / "pending.jsonl"
@@ -191,7 +192,9 @@ def stage_a(batch: str, audit_model: str, audit_max: int) -> tuple[list[dict], d
                 reqs.append({"custom_id": cid, "params": hz.motion_request(meta, s / "motion" / meta["sheet"])})
                 index[cid] = {"session": str(s), "kind": "motion", "meta": meta}
         if audit_max > 0:
-            for shot in distinct_shots(s, audit_max):
+            picked = distinct_shots(s, audit_max, seen)
+            seen += [hz._sig(Image.open(p).convert("RGB")) for p in picked]
+            for shot in picked:
                 cid = "a-%s-%s" % (h, shot.stem.split("_")[0])
                 img = Image.open(shot).convert("RGB")
                 reqs.append({"custom_id": cid, "params": dict(
@@ -426,7 +429,7 @@ def main() -> int:
     ap.add_argument("cmd", choices=["run", "status"])
     ap.add_argument("--batch", required=True)
     ap.add_argument("--audit-model", choices=sorted(AUDIT_MODELS), default="sonnet")
-    ap.add_argument("--audit-max", type=int, default=40, help="most distinct screens audited per session (0 = no audit)")
+    ap.add_argument("--audit-max", type=int, default=25, help="most distinct screens audited per session (0 = no audit)")
     ap.add_argument("--poll", type=int, default=60, help="seconds between status polls")
     ap.add_argument("--compare", default="", help="previous batch id, for trends in the findings")
     ap.add_argument("--no-synthesis", action="store_true", help="skip stage C (_FINDINGS.md)")

@@ -40,6 +40,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import blackbox as bb  # noqa: E402
+import routes  # noqa: E402
+import streamline  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 TEMPLATE = ROOT / "docs" / "process" / "templates" / "CLAUDE_PLAYTEST_FEEDBACK.md"
@@ -381,6 +383,21 @@ class Tester:
         self.t0 = time.time()
         self.no_change = 0
         self.end_claimed = ""
+        # Streamlining (doc 05 §10): routes, a start save, the watchdog, shared blockers, save harvest.
+        self.routes = [r for r in (a.route or "").split(",") if r]
+        self.start_save = a.start_save
+        self.build = subprocess.run(["git", "rev-parse", "HEAD"], cwd=BUILD, capture_output=True, text=True).stdout.strip()
+        focus = re.search(r"^## Your focus: (.+)$", brief, re.M)
+        full = any(f.replace("_", " ") in (focus.group(1).lower() if focus else "") for f in ("onboarding", "menus", "readability", "story"))
+        cap = None if (a.setup_cap == 0 or (a.setup_cap is None and (full or not self.routes))) else (a.setup_cap or 10.0)
+        self.watchdog = streamline.Watchdog(setup_cap=cap)
+        self.wd_level = 0
+        self.wd_reported = ""
+        self.recoveries = 0
+        self.blockers = streamline.Blockers(self.dir.parent, self.dir.name)
+        self.prev_kind = ""
+        self.last_esc_step = -99
+        self.raid_saved = False
         self.motion = a.motion
         self.defer = a.defer
         self.motion_left = a.motion_max
@@ -462,6 +479,11 @@ class Tester:
                          "campaign's final screen." % self.end_claimed)
         if self.no_change >= STUCK_STEPS:
             parts.append("You have had %d steps in a row with NO visible change. Note it once as a possible bug, then get out through the pause menu (Esc or the gear icon, top right) to the title or HQ and carry on." % self.no_change)
+        if self.wd_level:
+            parts.append(streamline.hint(self.wd_level, self.watchdog.reason))
+        known = self.blockers.others()
+        if known:
+            parts.append(known)
         if time_up:
             parts.append("TIME IS UP: open the pause menu, use the in-game Quit (it saves), then set done=\"time\".")
         parts.append("## NOW\n" + self.now)
@@ -533,8 +555,11 @@ class Tester:
                     {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": png_b64(crop)}},
                     {"type": "text", "text": "Decide now (no further zoom this step)."}]
                 d = self.ask(self.actor, content, "low")
-        stuck = self.no_change >= STUCK_STEPS
-        if d and self.escalate_to and (d["escalate"] or d["kind"] in DECISION_KINDS or stuck):
+        stuck = self.no_change >= STUCK_STEPS or self.wd_level >= 2
+        steps = self.cost["steps"]
+        fresh = d and (d["kind"] == "combat_turn_start" or d["kind"] != self.prev_kind or steps - self.last_esc_step >= 4)
+        if d and self.escalate_to and (d["escalate"] or (d["kind"] in DECISION_KINDS and fresh) or stuck):
+            self.last_esc_step = steps
             self.cost["escalations"] += 1
             extra = []
             if d["kind"] in COMBAT_KINDS:
@@ -545,8 +570,15 @@ class Tester:
                                                        % ("your" if side == "own" else "the enemy's")},
                               {"type": "image", "source": {"type": "base64", "media_type": "image/png",
                                                            "data": png_b64(crop)}}]
+            plan = ""
+            if d["kind"] == "combat_turn_start" and self.closeups:
+                plan = (" Combat turn start: in `thought`, first write your alignment plan: where your needle points now "
+                        "(which slice, centre or edge), the slice you want it on and its value, how many ticks and with "
+                        "which cards or nudges, what the result chips say for that setup" + (
+                            ", and the same for the enemy needle (push it off centre onto low damage or block)"
+                            if "enemy" in self.closeups else "") + ". Then act on that plan.")
             content2 = content[:-1] + extra + [{"type": "text", "text": "Current screen (960x540). You are the stronger "
-                                                "player this step: decide fully (escalate is ignored)."}]
+                                                "player this step: decide fully (escalate is ignored)." + plan}]
             d2 = self.ask(self.escalate_to, content2, "medium")
             d = d2 or d
         self.cost["steps"] += 1
@@ -559,6 +591,7 @@ class Tester:
         if d["now"]:
             self.now = d["now"]
         print("%s %-22s %s" % (stamp, d["screen"][:22], d["thought"][:110]), flush=True)
+        self.after_decision(d)
         if d["actions"] and not d["done"]:
             watch_kind = ""
             if self.motion and d["watch"] and self.motion_left > 0:
@@ -573,6 +606,74 @@ class Tester:
         self.cost["elapsed_min"] = round(self.elapsed_min(), 2)
         (self.dir / "cost.json").write_text(json.dumps(self.cost, indent=1))
         return d["done"]
+
+    def after_decision(self, d: dict) -> None:
+        now = self.elapsed_min()
+        level = self.watchdog.observe(d["kind"], d["note"], now)
+        if level and self.watchdog.reason != self.wd_reported:
+            self.wd_reported = self.watchdog.reason
+            last = next((l for l in reversed(self.log) if "[system]" not in l), "")
+            self.blockers.add(d["kind"], d["screen"], "%s; last note: %s" % (self.watchdog.reason, last[-160:]))
+            self.log.append("%5.1fm [system] watchdog level %d: %s" % (now, level, self.watchdog.reason))
+        if not level and self.wd_level >= 1 and self.wd_reported:
+            self.blockers.add(self.prev_kind, d["screen"], "got past: " + self.wd_reported, "; ".join(self.last_actions[-2:])[:200])
+            self.wd_reported = ""
+        self.wd_level = level
+        # Save library: an HQ arrival (by Heat) and the first raid setup are good start points for others.
+        if d["kind"] == "hq_or_city" and self.prev_kind != "hq_or_city":
+            streamline.harvest(self.dir, self.build, "hq", self.now, {"minutes": round(now, 1)})
+        if d["kind"] == "raid_setup" and not self.raid_saved:
+            self.raid_saved = bool(streamline.harvest(self.dir, self.build, "raid_setup", self.now, {"minutes": round(now, 1)}))
+        self.prev_kind = d["kind"]
+
+    def recover(self) -> bool:
+        """Watchdog level 3: restart the game and Continue (or replay the start route) once; else give up."""
+        self.recoveries += 1
+        self.log.append("%5.1fm [system] watchdog: %s; recovering (%d)" % (self.elapsed_min(), self.watchdog.reason, self.recoveries))
+        if self.recoveries > 2:
+            return False
+        subprocess.run([sys.executable, str(Path(bb.__file__)), "--session", str(self.dir), "stop"], capture_output=True)
+        self.session.state["launcher_pid"] = 0
+        self.ensure_game()
+        has_save = (self.dir / "game" / "saves" / streamline.SAVE_FILES[0]).exists()
+        plan = ["continue"] if has_save else self.routes[:1]
+        for name in plan:
+            ok, where = routes.play(self.session.hwnd, name, self.build, log=lambda m: None)
+            self.log.append("%5.1fm [system] recovery route %s: %s" % (self.elapsed_min(), name, "ok" if ok else "broke at " + where))
+            if not ok:
+                return False
+        self.watchdog.reset(self.elapsed_min())
+        self.wd_level, self.no_change = 0, 0
+        return bool(plan)
+
+    def start(self) -> None:
+        """First launch: install the start save, start the game, run the start routes."""
+        fresh = self.cost["steps"] == 0 and not (self.dir / "game" / "saves" / streamline.SAVE_FILES[0]).exists()
+        if self.start_save and fresh:
+            save = streamline.pick_save(self.build, self.start_save)
+            if save:
+                bb.private_copy(BUILD, self.dir / "game")
+                streamline.install_save(save, self.dir / "game")
+                self.log.append("0.0m [system] started from a saved campaign (%s, Heat %s): you have played up to here "
+                                "before; press on from where it is." % (Path(save["path"]).name, save["heat"]))
+                self.now = "Resuming a campaign you were playing: " + save.get("state", "")[:400]
+                self.routes = ["continue"]
+            else:
+                self.log.append("0.0m [system] no library save matches %r; starting fresh" % self.start_save)
+        self.ensure_game()
+        if not fresh:
+            return
+        for name in self.routes:
+            ok, where = routes.play(self.session.hwnd, name, self.build, log=lambda m: None)
+            r = routes.load(name, self.build) or {}
+            if ok:
+                self.log.append("%5.1fm [system] autopilot: %s -> %s. You have done this part before; it was skipped "
+                                "to save time. Carry on from here." % (self.elapsed_min(), name, r.get("end", "")))
+            else:
+                self.log.append("%5.1fm [system] autopilot route %s broke (%s): play on from this screen yourself."
+                                % (self.elapsed_min(), name, where))
+                break
+        self.save_journal()
 
     # -- motion
     def critique(self, frames: list, kind: str, actions: str) -> None:
@@ -613,7 +714,7 @@ class Tester:
         self.session = bb.Session(self.dir)
 
     def play(self) -> str:
-        self.ensure_game()
+        self.start()
         outcome, grace = "", 0
         while True:
             time_up = self.elapsed_min() >= self.minutes or self.cost["usd"] >= self.max_usd
@@ -628,6 +729,11 @@ class Tester:
             except SystemExit as e:  # game window gone
                 print("harness: %s" % e, file=sys.stderr)
                 self.ensure_game()
+                continue
+            if self.wd_level >= 3 and not done:
+                if not self.recover():
+                    self.blockers.add(self.prev_kind, "", "ended the session: " + self.watchdog.reason)
+                    return "blocked: " + self.watchdog.reason
                 continue
             if done == "time" and not time_up:
                 self.log.append("%5.1fm [system] ignored done=time before the time box" % self.elapsed_min())
@@ -669,6 +775,10 @@ def main() -> int:
                     help="skill tier (default: the brief's 'Skill tier:' line)")
     ap.add_argument("--actor", choices=["haiku", "sonnet"], help="override the tier's actor model (escalation to Sonnet when haiku)")
     ap.add_argument("--no-report", action="store_true")
+    ap.add_argument("--route", default="", help="comma-separated routes (routes.py) to play at the start, e.g. to_netrun")
+    ap.add_argument("--start-save", default="", help="start from a library save (streamline.py): a name, raid_setup, heat>=N")
+    ap.add_argument("--setup-cap", type=float, default=None,
+                    help="minutes allowed before the first fight (default 10 with a route, off for opening focuses; 0 = off)")
     ap.add_argument("--motion", action="store_true",
                     help="motion tester: capture a frame burst after actions that should animate and have Sonnet judge it")
     ap.add_argument("--motion-max", type=int, default=40, help="most motion judgements per session")
