@@ -85,13 +85,14 @@ def roll(a) -> None:
                                "--seed", str(a.seed + 1)], check=True)
 
 
-def plan(batch: str) -> list[dict]:
+def plan(batch: str, minutes_override: int = 0) -> list[dict]:
     m = json.loads((SESSIONS / batch / "batch.json").read_text(encoding="utf-8"))
     out = []
     for t in m["testers"]:
         session = SESSIONS / batch / t["handle"]
         kind = "motion" if t["focus"] == "animation_feel" else t["tier"]
         minutes, cap = TIERS[kind]
+        minutes = minutes_override or minutes
         out.append({"handle": t["handle"], "kind": kind, "minutes": minutes, "cap": cap, "session": session,
                     "done": (session / "session_end.json").exists()})
     return sorted(out, key=lambda x: -x["minutes"])
@@ -118,6 +119,7 @@ def main() -> int:
     ap.add_argument("--budget", type=float, default=40.0, help="dollars for the whole batch, judging included")
     ap.add_argument("--judge-reserve", type=float, default=6.0, help="dollars kept back for judging and synthesis")
     ap.add_argument("--parallel", type=int, default=4)
+    ap.add_argument("--minutes", type=int, default=0, help="time box for every tester (default: per tier)")
     ap.add_argument("--compare", default="", help="previous batch id for the findings' trend column")
     ap.add_argument("--resume", action="store_true", help="the batch is rolled already: play what is left, then judge")
     a = ap.parse_args()
@@ -127,7 +129,7 @@ def main() -> int:
         if (SESSIONS / a.batch / "batch.json").exists():
             sys.exit("run_batch: %s is already rolled; use --resume" % a.batch)
         roll(a)
-    todo = [t for t in plan(a.batch) if not t["done"]]
+    todo = [t for t in plan(a.batch, a.minutes) if not t["done"]]
     running: list[tuple[dict, int]] = []  # (tester, harness pid)
     if a.resume:
         live = running_harnesses(a.batch)
