@@ -703,6 +703,7 @@ Deploy armory asset,Deploy armory asset
 Deploy run asset,Deploy run asset
 Deutan (green-weak),Deutan (green-weak)
 Display,Display
+Do it in the fight to finish (or press FINISH).,Do it in the fight to finish (or press FINISH).
 Do it in the fight to go on (or press NEXT).,Do it in the fight to go on (or press NEXT).
 Down with the Oligarchy!,Down with the Oligarchy!
 Drag Firmware or a slice onto a slot to put it there.,Drag Firmware or a slice onto a slot to put it there.
@@ -1178,6 +1179,7 @@ LINK,LINK
 LINKS,LINKS
 LIVE RAID FEED,LIVE RAID FEED
 LOAD,LOAD
+LOADING...,LOADING...
 LOADOUT // %s // DECK,LOADOUT // %s // DECK
 LOADOUT // %s // SPINNER // %d SLICES,LOADOUT // %s // SPINNER // %d SLICES
 LOADOUT SHEET  //  %d STICKERS,LOADOUT SHEET  //  %d STICKERS
@@ -1801,6 +1803,7 @@ PlayStation,PlayStation
 Point here to show every Site; unselectable regular Sites are hidden to keep the map clear.,Point here to show every Site; unselectable regular Sites are hidden to keep the map clear.
 Press,Press
 Press %s on,Press %s on
+Press FINISH to close the tutorial.,Press FINISH to close the tutorial.
 Press NEXT to go on.,Press NEXT to go on.
 "Press a key, then press the new one. Cards stay on 1-9.","Press a key, then press the new one. Cards stay on 1-9."
 Press it to play.,Press it to play.

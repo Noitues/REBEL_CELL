@@ -115,6 +115,13 @@ func use_terminal_yes(word: String, key_hint: String = "") -> Button:
 	return b
 
 
+## F7: the dialog is modal: mouse events outside its panel never reach the page behind (the scrim cannot take them
+## itself, see `GlassScrim.backdrop_for`). Events over the panel go on to its buttons.
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouse and is_inside_tree() and not panel.get_global_rect().has_point((event as InputEventMouse).global_position):
+		get_viewport().set_input_as_handled()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		cancelled.emit()

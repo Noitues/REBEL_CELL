@@ -102,6 +102,21 @@ Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_deci
 - **F8:** nothing opened the sheet on hover; a won fight left on the `combat_end_hold` clock (1.4 s after the replay settles) while the pointer was on its way to LOOT. A win now waits for the LOOT / CONTINUE press like a defeat does (`_leave_after_hold` returns when the fight shows its next step). The hold still delays nothing else. Designer: tell me if the auto-advance should come back for CONTINUE (no loot).
 - Tests: `test_plan1_1b_sticker` (F1, F2, F4, F5, F8, real scenes), `test_w1r1_sticker_fold` (loot SKIP), `test_netrun_scene` presses the fight's next step. Review pack screens `loot_hover_continue`, `loot_hover_skip`, `loot_hover_card`. Sheet: `docs/art_review/PLAN1/W1B_STICKER.jpg`.
 
+### 2026-10-13 - Plan 1 wave 1b, 1B-MENU (F6, F7, C-2, D-UX5, F16)
+- **F7 cause (B5 reopened):** a top-level control is hit-tested before the dialog's own panel whatever the `z_index`.
+  `GlassScrim.backdrop_for` made the modal scrim top-level with `MOUSE_FILTER_STOP`, so every click aimed at QUIT /
+  KEEP GOING hit `ModalScrim` (windowed probe, pushed motion over each button: hovered = `ModalScrim`; after the fix =
+  `Yes` / `No`). Fix: the scrim ignores the mouse; `ConfirmDialog._input` swallows mouse events outside its panel so
+  the page behind stays blocked. Keys: Enter / pad A press the focused answer (the safe one first), Left / Right reach
+  the other, Esc / pad B cancel (unchanged, now under test).
+- **F6:** `SettingsPanel._unhandled_input` marks the event handled before emitting `closed` (which frees the panel).
+- **C-2:** the last tutorial page's reason line names FINISH ("Press FINISH to close the tutorial." / "Do it in the
+  fight to finish (or press FINISH).").
+- **D-UX5:** `TitleScene.new_in_slot` shows a `LoadingOverlay` (dim, LOADING..., takes clicks) and waits two frames before
+  the HQ scene loads. `load_slot` is unchanged.
+- **F16:** hovering an event choice focuses it, so the one lit plate and acid edge follow both the arrow keys and the
+  mouse; `ChoiceSticker.is_lit()` (focus or hover) draws the edge. Tests: `test_plan1_1b_menu.gd`.
+
 ### 2026-10-13 — W1 polish: a refused Firmware take is one message
 A refused Firmware take on the loot page showed two messages: the rules' id-worded toast ("barbed_wire does not fit a OVERFLOW slice.") and the W1-LOOT red `LootNote` beside CONTINUE. Now one: a terminal-styled note (`RefusalNote`, a `ToastNote` pink-edged box, no timer) worded in `netrun_scene._refusal_note` with display names ("BARBED WIRE doesn't fit Slot 1 (OVFL). It fits Slot 5: pick it on the spinner."; "... fits no slot. Pick another, or Skip."); the rules' toast is dropped and `LootNote` is gone (pencil/red lines are not for errors). It stays until the player acts (picks a slot: `_clear_refusal`; any take or Skip rebuilds the page), so B2's original defect (a refusal that vanishes) does not return. It stands in the loot head where the page's `LootWindow` strip is (the strip hides meanwhile): the head column has the room at 1.0 / 1.6 / 2.0 without moving the sheet, drop, SKIP or CONTINUE, inside the safe margin, body text size (the box takes the strip's width and wraps). `NetrunSession.firmware_slot_error` still returns an id string (core stays as is; the view names it). Tests: `test_w1r1_misc` (1.0 / 1.6 / 2.0: still visible 400 frames later, no overlap with sheet / drop / SKIP / CONTINUE, inside the safe rect, names not ids, clears on a slot pick), `test_plan1_b_repro` B2. Sheet: `docs/art_review/PLAN1/W1_POLISH.jpg`.
 

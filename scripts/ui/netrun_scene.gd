@@ -3679,6 +3679,11 @@ func _show_event() -> void:
 			calm = b
 		# ANIM-6: the outcome's chips pop when the choice is hovered or focused.
 		b.mouse_entered.connect(func() -> void: Motion.pop(row, &"event_outcome_pop"))
+		# F16: the lit plate and its acid edge are the focus's: hovering a choice focuses it, so one band follows
+		# both the arrow keys and the mouse.
+		b.mouse_entered.connect(func() -> void:
+			if not b.disabled and b.is_inside_tree() and not b.has_focus():
+				b.grab_focus())
 		b.focus_entered.connect(func() -> void: Motion.pop(row, &"event_outcome_pop"))
 	# Parity EVT-02: the stickers take EVENT_CHOICE_SHARE of the row, the chips the rest.
 	var chips_gap := EVENT_CHIPS_GAP * os

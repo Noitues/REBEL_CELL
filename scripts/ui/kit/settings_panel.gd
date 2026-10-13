@@ -568,8 +568,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and rebinding != &"":
 		return
 	if event.is_action_pressed("ui_cancel"):
-		closed.emit()
+		# F6: mark it handled first; `closed` frees the panel and a freed node has no viewport.
 		get_viewport().set_input_as_handled()
+		closed.emit()
 		return
 	# LB / RB switch the tab (round 31); Y resets the tab (round 31's foot: "Y reset").
 	if event is InputEventJoypadButton and event.pressed:
