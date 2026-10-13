@@ -2,6 +2,12 @@
 
     python tools/playtest/state_agent.py --name SA-001 --seed 1000 --tier intermediate --persona strategist
     python tools/playtest/state_agent.py --name SA-002 --seeds 1000-1004 --tier expert --parallel 3 --budget 5
+    python tools/playtest/state_agent.py --name SA-H --seeds 1000-1019 --strategist heuristic --parallel 6   # $0
+    python tools/playtest/state_agent.py --name SA-H2 --seeds 1000-1019 --strategist heuristic --lookahead 2
+
+`--strategist heuristic` answers every decision in process with tools/agent/heuristic_strategist.gd
+(thresholds in content/config/heuristic_strategist.tres): no API key, no cost, deterministic per seed,
+the same report and decisions.jsonl. `--lookahead 2` gives its combat planner a 2-turn lookahead.
 
 No screen: tools/agent/agent_bridge.gd runs the deterministic campaign headless and, at each
 decision, writes the state and a menu of options (whole-turn combat plans with their exact
@@ -124,10 +130,7 @@ class Agent:
 
     def play(self) -> dict:
         log = open(self.dir / "godot.log", "w", encoding="utf-8")
-        cmd = [self.a.godot, "--headless", "--path", str(ROOT), "-s", "tools/agent/agent_bridge.gd", "--",
-               "dir=%s" % self.dir.as_posix(), "seed=%d" % self.seed, "ice=%d" % self.a.ice, "class=%s" % self.a.cls,
-               "corp=%s" % self.a.corp, "max_runs=%d" % self.a.max_runs,
-               "builtin=%s" % ",".join(k for k in KINDS if not self.models.get(k))]
+        cmd = bridge_cmd(self.a, self.seed, self.dir, [k for k in KINDS if not self.models.get(k)])
         p = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT)
         seen = set()
         with open(self.dir / "decisions.jsonl", "a", encoding="utf-8") as dl:
@@ -152,18 +155,68 @@ class Agent:
         return json.loads(rep.read_text(encoding="utf-8")) if rep.exists() else {"outcome": "CRASHED", "seed": self.seed}
 
 
+def bridge_cmd(a, seed: int, out: Path, builtin: list[str]) -> list[str]:
+    """The agent bridge command line for one campaign."""
+    cmd = [a.godot, "--headless", "--path", str(ROOT), "-s", "tools/agent/agent_bridge.gd", "--",
+           "dir=%s" % out.as_posix(), "seed=%d" % seed, "ice=%d" % a.ice, "class=%s" % a.cls,
+           "corp=%s" % a.corp, "max_runs=%d" % a.max_runs, "builtin=%s" % ",".join(builtin)]
+    if a.strategist == "heuristic":
+        cmd += ["strategist=heuristic"] + (["lookahead=%d" % a.lookahead] if a.lookahead else [])
+    return cmd
+
+
+def play_heuristic(a, seed: int, builtin: list[str]) -> dict:
+    """One campaign answered in process by the HeuristicStrategist; writes report.json and decisions.jsonl."""
+    out = OUT / a.name / str(seed)
+    shutil.rmtree(out, ignore_errors=True)
+    out.mkdir(parents=True)
+    with open(out / "godot.log", "w", encoding="utf-8") as log:
+        subprocess.run(bridge_cmd(a, seed, out, builtin), stdout=log, stderr=subprocess.STDOUT)
+    rep = out / "report.json"
+    if not rep.exists():
+        return {"outcome": "CRASHED", "seed": seed}
+    r = json.loads(rep.read_text(encoding="utf-8"))
+    with open(out / "decisions.jsonl", "w", encoding="utf-8") as dl:
+        for d in r.get("decisions", []):
+            dl.write(json.dumps({"seq": d["seq"], "kind": d["kind"], "state": d.get("state", {}), "chosen": d.get("chosen", ""),
+                                 "choice": d["choice"], "n_options": d["options"], "reason": d["reason"]}) + "\n")
+    return r
+
+
+def totals(reports: list[dict]) -> list[str]:
+    """Headline bands: wins, run of the win, deaths, Heat peak, Schematics at the end, boss attempts."""
+    ok = [r for r in reports if r.get("outcome") != "CRASHED"]
+    if not ok:
+        return ["No campaign finished."]
+    wins = [r for r in ok if r.get("outcome") == "WON"]
+    win_runs = sorted(int(r.get("win_run", r.get("runs", 0))) for r in wins)
+    deaths = [int(r.get("deaths", 0)) for r in ok]
+    peaks = [int(r.get("heat_peak", 0)) for r in ok]
+    schem = [int(r.get("schematics_end", 0)) for r in ok if "schematics_end" in r]
+    boss = sum(int(r.get("boss_attempts", 0)) for r in ok)
+    return ["**Totals over %d seeds:** wins %d (%.0f%%); run of the win %s; deaths %d (mean %.1f, max %d); Heat peak max %d (mean %.0f); "
+            "Schematics at the end mean %s; boss attempts %d, boss wins %d." % (
+                len(ok), len(wins), 100.0 * len(wins) / len(ok), ", ".join(map(str, win_runs)) or "none", sum(deaths),
+                sum(deaths) / len(ok), max(deaths), max(peaks), sum(peaks) / len(ok),
+                ("%.0f" % (sum(schem) / len(schem))) if schem else "n/a", boss, len(wins))]
+
+
 def summarize(a, reports: list[dict], cost: dict, persona: dict) -> Path:
     DOCS.mkdir(parents=True, exist_ok=True)
-    lines = ["# State playtest %s — %s tier, persona %s, ICE %d, %s vs %s" % (a.name, a.tier, persona["id"], a.ice, a.cls, a.corp),
+    who = ("heuristic strategist%s" % (", %d-turn lookahead" % a.lookahead if a.lookahead else "")) if a.strategist == "heuristic" \
+        else "%s tier, persona %s" % (a.tier, persona["id"])
+    lines = ["# State playtest %s — %s, ICE %d, %s vs %s" % (a.name, who, a.ice, a.cls, a.corp),
              "", "Cost: $%.2f (%d LLM calls). Option 0 of every menu = the built-in policy (greedy CombatBot)." % (cost["usd"], cost.get("calls", 0)),
-             "", "| Seed | Outcome | Runs | Completed | Deaths | Raids (won) | Heat peak | Breach Heat | Fights | Decisions off-default |",
-             "|---|---|---|---|---|---|---|---|---|---|"]
+             "", *totals(reports),
+             "", "| Seed | Outcome | Runs | Win run | Completed | Deaths | Raids (won) | Heat peak | Breach Heat | Schematics end | Boss attempts | Fights | Decisions off-default |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for r in reports:
         dec = r.get("decisions", [])
         off = sum(1 for d in dec if int(d.get("choice", 0)) != 0)
-        lines.append("| %s | %s | %s | %s | %s | %s (%s) | %s | %s | %s | %d of %d |" % (
-            r.get("seed"), r.get("outcome"), r.get("runs"), r.get("completed"), r.get("deaths"), r.get("raids"),
-            r.get("raids_won"), r.get("heat_peak"), r.get("heat_at_breach"), r.get("fights"), off, len(dec)))
+        lines.append("| %s | %s | %s | %s | %s | %s | %s (%s) | %s | %s | %s | %s | %s | %d of %d |" % (
+            r.get("seed"), r.get("outcome"), r.get("runs"), r.get("win_run", "-") if r.get("outcome") == "WON" else "-",
+            r.get("completed"), r.get("deaths"), r.get("raids"), r.get("raids_won"), r.get("heat_peak"), r.get("heat_at_breach"),
+            r.get("schematics_end", "?"), r.get("boss_attempts", "?"), r.get("fights"), off, len(dec)))
     lines += ["", "## Reasons by decision kind (sample)", ""]
     for seed_dir in sorted((OUT / a.name).iterdir()):
         dj = seed_dir / "decisions.jsonl"
@@ -199,6 +252,9 @@ def main() -> int:
     ap.add_argument("--budget", type=float, default=3.0, help="dollars for the whole command; then the built-in policy answers")
     ap.add_argument("--parallel", type=int, default=3)
     ap.add_argument("--godot", default="godot")
+    ap.add_argument("--strategist", choices=["llm", "heuristic"], default="llm",
+                    help="heuristic = tools/agent/heuristic_strategist.gd answers in process, $0, no API key")
+    ap.add_argument("--lookahead", type=int, default=0, help="heuristic only: combat lookahead turns (2 = CP-003 3A); 0 = the config's")
     a = ap.parse_args()
     seeds = list(range(int(a.seeds.split("-")[0]), int(a.seeds.split("-")[1]) + 1)) if a.seeds else [a.seed]
     roster = json.loads(ROSTER.read_text(encoding="utf-8"))
@@ -208,8 +264,14 @@ def main() -> int:
         models[k] = ""
     cost, lock, reports = {"usd": 0.0}, threading.Lock(), []
 
+    if a.lookahead and a.strategist != "heuristic":
+        ap.error("--lookahead needs --strategist heuristic")
+
     def run(seed: int) -> None:
-        r = Agent(a, seed, persona, models, cost, lock).play()
+        if a.strategist == "heuristic":
+            r = play_heuristic(a, seed, [k for k in KINDS if not models.get(k)] if a.builtin else [])
+        else:
+            r = Agent(a, seed, persona, models, cost, lock).play()
         with lock:
             reports.append(r)
             print("seed %s: %s in %s runs (%s deaths), %s raids, Heat peak %s; $%.2f so far" % (

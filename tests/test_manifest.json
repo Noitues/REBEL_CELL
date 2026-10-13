@@ -265,6 +265,10 @@
 			"seconds": 0.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_heuristic_strategist.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_heat_glitch.gd": {
 			"seconds": 1.5,
 			"tier": "fast"

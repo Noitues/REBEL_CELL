@@ -66,6 +66,20 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 Finished months live in `docs/decisions/` (moved verbatim by `tools/archive_decisions.py`; grep both places):
 - Archive 2026-09: `docs/decisions/2026-09.md`
 
+### 2026-10-12 — Tooling 1 T2: HeuristicStrategist for the state tester (schema `HeuristicStrategistConfigData`)
+Playtest tooling only (no game rule changes). New schema `scripts/data/heuristic_strategist_config_data.gd`, shipped
+values in `content/config/heuristic_strategist.tres` (the game never reads it; smoke check `_t2_heuristic_strategist`).
+`tools/agent/heuristic_strategist.gd` answers every state decision in process (`state_agent.py --strategist heuristic`,
+$0): combat = TurnPlanner option 0, ties on HP taken then kills (`--lookahead 2`: plus the next turn's best plan, which
+peeks at the cloned combat RNG, so it plays slightly better than a player could); node = HP-aware value; reward =
+CampaignSimulator scores + rarity + deck synergy; event = the built-in (safest) pick; launch = SA-001's rules (breach at
+low Heat, then Exploits, then the biggest Heat cut, else tier <= 2, crew rotation when ranks drift apart); raid = best
+exact projection; HQ / shop = priority lists. AgentSimulator's HQ menu gains "repair the DOWN node" options and its
+report gains `schematics_end`, `boss_attempts`, `boss_wins`, `win_run`. Calibration: `docs/playtest/claude/state/SA-002_heuristic_calibration.md`:
+MISS on wins (heuristic 15/20 vs LLM 0/5 on this build; one tune, boosts out of `hq_priority`, changed 16 → 15), ACCEPT
+on deaths and mean Heat peak. `gate.py --state-mode` now defaults to `heuristic`; the balance profile sweeps with
+`--lookahead 2` (Genome Core: 16 wins in 22 attempts vs 15 in 25 without).
+
 ### 2026-10-12 — Designer rulings CP-003 (playtest analysis) → change plan 1
 Evidence: `docs/playtest/claude/ANALYSIS_2026-10-12.md`; questions `docs/handoff/gates/CP-003.md`; plan
 `docs/handoff/gates/CHANGE_PLAN_1.md`. All recommended options:
