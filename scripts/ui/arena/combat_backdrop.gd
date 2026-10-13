@@ -39,6 +39,9 @@ const OURS_NOW_MIN_Y := 0.16
 const OURS_NOW_CLEAR_GAP := 6.0
 ## The design height the pencil's size is given at.
 const DESIGN_HEIGHT := 720.0
+## plan1 1B-COMBAT F10: hold_step's answers (a wait in seconds is >= 0).
+const HOLD_DONE := -1.0
+const HOLD_GIVE_UP := -2.0
 ## D17 on the city: how far (lots) a Site's point looks for its building.
 const SITE_SEARCH := 4
 
@@ -76,6 +79,9 @@ var _city_ready: bool = false
 var _won_lights: SiteWonLights = null
 var _site_lots: Dictionary = {}
 var _ext_job: Dictionary = {}
+## plan1 1B-COMBAT F10 (one backdrop per fight): seconds this place has waited on the night sky
+## for its close-up (see hold_step); HOLD_DONE once the fight's one picture is chosen.
+var _hold_s: float = HOLD_DONE
 ## B2: the subject's focus ellipse radius (share of the width) now.
 var _focus_radius: float = CityView3D.CONFIG.backdrop_focus_radius
 
@@ -146,6 +152,8 @@ func show_place(p: Dictionary) -> void:
 	# A won look that is another still crossfades to it; the district does not dim twice.
 	_mat.set_shader_parameter(&"district_dim", 1.0 if _won_tex != null else DISTRICT_DIM)
 	_use_city()
+	# F10: a close-up still coming shows the night sky, never the still it would replace mid-fight.
+	_hold_s = 0.0 if city != null and not _city_ready else HOLD_DONE
 	if _tex != null:
 		_mat.set_shader_parameter(&"aspect", float(_tex.get_width()) / float(_tex.get_height()))
 	if not fresh:
@@ -201,13 +209,39 @@ func _sync_won() -> void:
 	_place_ours()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_poll_extension()
+	_step_hold(delta)
 	if not wheel_source.is_valid():
 		return
 	var views: Array = wheel_source.call()
 	_follow_fight(views)
 	_follow_pools(views)
+
+
+## plan1 1B-COMBAT F10 (one backdrop per fight): the wait for the close-up after `delta` more
+## seconds: HOLD_DONE once it is ready (it shows), HOLD_GIVE_UP when `wait_s` has passed first
+## (the still shows for the rest of the fight), else the seconds waited. HOLD_DONE stays done.
+static func hold_step(waited: float, delta: float, city_ready: bool, wait_s: float) -> float:
+	if waited < 0.0 or city_ready:
+		return HOLD_DONE
+	var w := waited + maxf(0.0, delta)
+	return HOLD_GIVE_UP if w >= wait_s else w
+
+
+## True while the backdrop holds on the night sky for its close-up (F10).
+func holding() -> bool:
+	return _hold_s >= 0.0
+
+
+func _step_hold(delta: float) -> void:
+	if _hold_s < 0.0:
+		return
+	_hold_s = hold_step(_hold_s, delta, _city_ready, CityView3D.CONFIG.backdrop_city_wait_s)
+	if _hold_s == HOLD_GIVE_UP:
+		_hold_s = HOLD_DONE
+		_drop_city()  # too slow for this fight: the still is its one picture
+		_still.queue_redraw()
 
 
 ## Picks the place from the fight the wheels show (a boss among the enemies: its HQ) and the
@@ -276,7 +310,7 @@ func _on_resized() -> void:
 
 
 func _draw_still() -> void:
-	if _tex == null:
+	if _tex == null or holding():
 		_still.draw_rect(Rect2(Vector2.ZERO, size), Palette.NIGHT_SKY)
 		return
 	_still.draw_texture_rect(_tex, _cover_rect(), false)
@@ -518,6 +552,7 @@ func _on_city_ready() -> void:
 			shot["lot"] = lot
 			_frame_city()
 	_city_ready = true
+	_hold_s = HOLD_DONE
 	_light_city()
 	_tex = city.get_texture()
 	_won_tex = null

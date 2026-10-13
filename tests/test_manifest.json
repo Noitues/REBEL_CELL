@@ -453,6 +453,10 @@
 			"seconds": 1.8,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_w1b_playout.gd": {
+			"seconds": 5.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_quiet_window.gd": {
 			"seconds": 0.0,
 			"tier": "fast"
@@ -703,6 +707,10 @@
 		},
 		"res://tests/unit/test_parity_hq_run.gd": {
 			"seconds": 8.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_plan1_1b_combat.gd": {
+			"seconds": 6.0,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_parity_arena_backdrop.gd": {

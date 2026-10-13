@@ -11,6 +11,8 @@ extends Control
 ##       --phase=2 (FIX-REDS: the boss in that phase: its HP under the threshold, its needles)
 ##       --scales=1.0,1.6,2.0 (one shot per text scale in one launch: <shot>_<scale>.png)
 ##       --site=auto|<site id> (S-ARENA: a regular fight's backdrop at that Site; auto: the first tier 1)
+##       --enemy=<enemy id> --shots_at=2,30,400 (one shot per frame listed: <shot>_fNNNN.png)
+##       --hover_enemy_at=<frame> (plan1 1B-COMBAT F10: a pushed mouse move over the enemy wheel)
 
 const COMBAT := preload("res://scenes/combat/combat_scene.tscn")
 const BOSSES := {&"meridian": &"the_manifest", &"solace": &"renewal_engine", &"halcyon": &"civic_core",
@@ -54,6 +56,8 @@ func _start() -> void:
 	_scene.auto_start = false
 	add_child(_scene)
 	var enemy: StringName = BOSSES[corp] if _args.has("boss") else REGULARS[corp]
+	if _args.has("enemy"):
+		enemy = StringName(_args["enemy"])  # plan1 1B-COMBAT F10: any foe (the Compliance Officer)
 	_scene.start_fight(enemy, 7)
 	_dress.call_deferred()
 
@@ -107,6 +111,18 @@ func _dress() -> void:
 		_scene.arena_backdrop.play_won(true)
 
 
+## plan1 1B-COMBAT F10: a mouse move over the first enemy wheel (pushed events: the real cursor stays).
+func _hover_enemy() -> void:
+	for v in _scene._views():
+		if v.combatant != null and not v.combatant.is_player:
+			var ev := InputEventMouseMotion.new()
+			ev.position = v.global_center()
+			ev.global_position = ev.position
+			Input.parse_input_event(ev)
+			print("arena_lab: hover enemy at ", ev.position)
+			return
+
+
 ## S-ARENA: a regular fight at a Site (the lab has no netrun): `site` is a Site id, or "auto"
 ## for the corp's first tier-1 Site, as hq_run_lab's site_<corp>.
 func _show_site(corp: StringName, site: String) -> void:
@@ -143,6 +159,12 @@ func _process(_delta: float) -> void:
 		_show_site(StringName(_args.get("corp", "meridian")), String(_args["site"]))
 		if _args.has("won"):
 			_scene.arena_backdrop.play_won(true)
+	if _args.has("hover_enemy_at") and _frames == int(_args["hover_enemy_at"]):
+		_hover_enemy()
+	if _args.has("shots_at") and _args.has("shot") and String.num_int64(_frames) in String(_args["shots_at"]).split(","):
+		var p := "%s_f%04d.png" % [String(_args["shot"]).get_basename(), _frames]
+		get_viewport().get_texture().get_image().save_png(p)
+		print("arena_lab: saved ", p, " on_city=", _scene.arena_backdrop.on_city(), " place=", _scene.arena_backdrop.place)
 	if _frames == int(_args.get("frames", "40")) and _args.has("shot"):
 		var img := get_viewport().get_texture().get_image()
 		var path := String(_args["shot"])
