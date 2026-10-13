@@ -177,6 +177,8 @@ const SCREENS := [
 	["card_detail", "_s_card_detail", "A card's detail over the deck viewer."],
 	["daemon_tray", "_s_daemon_tray", "The Daemon tray with an installed Daemon."],
 	["tutorial", "_s_tutorial", "The tutorial's first step over its fight."],
+	["tutorial_undo", "_s_tutorial_undo", "The tutorial's UNDO step (W1-TUT B6 copy)."],
+	["tutorial_won", "_s_tutorial_won", "The tutorial fight won: its way on (W1-TUT B1)."],
 	["jack_in", "_s_jack_in", "The jack-in transition, its cover up."],
 	["pause_netrun", "_s_pause_netrun", "The pause menu over a netrun's route."],
 	["pause_fight", "_s_pause_fight", "The pause menu over a fight."],
@@ -1666,6 +1668,37 @@ func _s_tutorial() -> void:
 	RunManager.pending_tutorial = true
 	var combat: Node = _open(COMBAT)
 	await _frames(4)
+	await _settle(combat)
+	Settings.tutorial_done = true
+
+
+func _s_tutorial_undo() -> void:
+	RunManager.new_campaign(7)
+	Settings.tutorial_done = false
+	RunManager.pending_tutorial = true
+	var combat: Node = _open(COMBAT)
+	await _frames(4)
+	combat.tutorial.step = 4
+	combat.tutorial.page = 0
+	combat.tutorial._show()
+	await _settle(combat)
+	Settings.tutorial_done = true
+
+
+func _s_tutorial_won() -> void:
+	RunManager.new_campaign(7)
+	Settings.tutorial_done = false
+	RunManager.pending_tutorial = true
+	var combat: Node = _open(COMBAT)
+	await _frames(4)
+	for sd in 40:
+		combat.start_fight(&"collections_agent", 100 + sd)
+		combat.skip_motion()
+		combat.engine.state().enemies[0].hp = 1
+		if combat.engine.preview_end_turn().state.outcome == CombatState.Outcome.VICTORY:
+			break
+	combat.end_turn()
+	combat.skip_motion()
 	await _settle(combat)
 	Settings.tutorial_done = true
 

@@ -48,7 +48,7 @@ const STEPS: Array[Dictionary] = [
 		"title":
 			"UNDO",  # TR
 		"text":
-			"{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; UNDO stops at a Respin or a random slice pick.",  # TR
+			"{undo_how} rewinds your nudges and card plays this turn. It stops at the last random event: a Respin or a random-slice card. Nudge a wheel, then undo it.",  # TR
 		"until": "rewind",
 	},
 	{

@@ -5,6 +5,12 @@ superseded instead. Finished months of "Implementation decisions" are moved verb
 `docs/decisions/<YYYY-MM>.md` by `tools/archive_decisions.py` (2026-10-11, CP-001 follow-up);
 search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
+## 2026-10-13 W1-TUT: tutorial fight way on, undo copy (plan1 B1, B6)
+- B1: the stand-alone tutorial fight now shows CONTINUE on FIGHT WON (`combat_scene._tutorial_run`, set by `start_tutorial`,
+  cleared by `attach_netrun`). It ends the tutorial (as the last NEXT does) and returns to the title. Netrun fights unchanged.
+- B6 (ruling 1): the undo rule is unchanged. Tutorial step 5 now says undo rewinds nudges and card plays this turn and stops
+  at a Respin or random-slice card; "free and unlimited" is gone. Still completable: nudge, then undo.
+
 ## 2026-10-13 M0–M4 systems ticks (CP-003 ruling 8)
 - The 33 M0–M4 acceptance boxes in `docs/MILESTONES.md` were walked against `docs/handoff/gates/M14_REPLAN.md` §2 and the
   heuristic state sweep (`docs/playtest/claude/state/SA-002_heuristic_calibration.md`: campaigns won, raids, Exploits, the
