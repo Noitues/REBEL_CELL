@@ -107,7 +107,7 @@ const WON_LIME_SHARE := 0.3
 const MEANINGS := {
 	"next": "Orange ring: a corporate Site you can run now. Clear it, then claim it to grow your network.", # TR
 	"notyet": "White ring: not reachable yet. Clear a linked Site first.", # TR
-	"cleared": "Grey + check: cleared, used up and not claimed. You can still patrol it for loot, Heat and Rank.", # TR
+	"cleared": "Gray + check: cleared, used up and not claimed. You can still patrol it for loot, Heat and Rank.", # TR
 	"yours": "Lime fist: your node, a claimed Site. Raids attack these; runs start from them.", # TR
 	"down": "White bolt: DOWN, your node hit 0 integrity. No bonus and no power to its links until you repair it.", # TR
 	"taken": "Seizure notice: TAKEN, the corporation took the Site back. Run a Reclaim (one fight) to retake it; it is a raid entry point.", # TR
@@ -117,7 +117,7 @@ const MEANINGS := {
 	"pips": "Pips: the Site's tier, 1 to 3 (harder runs, better rewards). Gold pips: an Exploit Site.", # TR
 	"target": "TARGET: the Central Server, the boss fight. The chip counts your Exploits.", # TR
 	"locked": "Padlock: a locked link. An Intel Exploit or an objective opens it.", # TR
-	"depowered": "Grey broken link: no power flows to a TAKEN or DOWN node.", # TR
+	"depowered": "Gray broken link: no power flows to a TAKEN or DOWN node.", # TR
 }
 ## The chip over the boss (TARGET).
 const BOSS_CHIP := "CENTRAL SERVER // EXPLOITS %d/%d" # TR

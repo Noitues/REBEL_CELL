@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"shunt"
 display_name = "Shunt"
-description = "Resolves the neighbour on the side you landed toward at 1.5x; nothing special on Perfect."
+description = "Resolves the neighbor on the side you landed toward at 1.5x; nothing special on Perfect."
 cycle_cost = 100
 neighbor_rule = 2
 neighbor_multiplier = 1.5

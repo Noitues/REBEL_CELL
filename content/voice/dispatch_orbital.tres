@@ -138,7 +138,7 @@ text = "Launch Scheduling Office. Every launch on the planet waits for this offi
 [sub_resource type="Resource" id="l26"]
 script = ExtResource("e1")
 key = "site:o1_g"
-text = "Spectrum Licence Registry. Who is allowed to speak, and on what band. Take the Rack."
+text = "Spectrum License Registry. Who is allowed to speak, and on what band. Take the Rack."
 
 [sub_resource type="Resource" id="l27"]
 script = ExtResource("e1")

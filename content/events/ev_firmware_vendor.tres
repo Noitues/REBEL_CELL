@@ -9,7 +9,7 @@
 [sub_resource type="Resource" id="c_buy"]
 script = ExtResource("2")
 label = "Buy the Patch+ chip (30 Cycles)"
-result_text = "A grey-market Patch+ chip, still in its anti-static bag."
+result_text = "A gray-market Patch+ chip, still in its anti-static bag."
 cycle_cost = 30
 reward = ExtResource("fw")
 
@@ -21,7 +21,7 @@ result_text = "The vendor shrugs and dims the Terminal."
 [resource]
 script = ExtResource("1")
 id = &"ev_firmware_vendor"
-title = "Grey-Market Vendor"
+title = "Gray-Market Vendor"
 speaker = 1
 text = "Someone has turned this Terminal into a storefront. Firmware, no questions."
 choices = Array[ExtResource("2")]([SubResource("c_buy"), SubResource("c_leave")])

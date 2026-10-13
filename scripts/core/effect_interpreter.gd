@@ -512,7 +512,7 @@ func snap_to_center(c: CombatantState, ring: int, events: Array[Dictionary]) -> 
 		wheel.inner_rotation += -WheelMath.offset_at(wheel.inner_tick_at(0), RC.RING_SEGMENTS)
 	else:
 		wheel.rotation += WheelMath.snap_delta(wheel.tick_at(0), wheel.slice_count)
-	events.append({"type": "snap", "target": c.id, "text": "%s snaps to the slice centre." % c.display_name})
+	events.append({"type": "snap", "target": c.id, "text": "%s snaps to the slice center." % c.display_name})
 
 
 ## Draws up to `count` cards, reshuffling the discard pile in when the draw pile runs

@@ -21,7 +21,7 @@ const DEFAULT := &"v2"
 ## Every skin, the default first (Settings.PALETTE_SKINS and the Options picker follow it).
 const IDS: Array[StringName] = [&"v2", &"cobalt", &"graphite"]
 ## The picker's words, in IDS order (keys).
-const WORDS := ["Cell cyan (palette v2, the default)", "Cobalt (deep blue terminal)", "Graphite (neutral grey terminal)"] # TR
+const WORDS := ["Cell cyan (palette v2, the default)", "Cobalt (deep blue terminal)", "Graphite (neutral gray terminal)"] # TR
 ## The chrome tokens a skin re-values (Palette constant names). NET_CYAN, NET_BG_OUTER share
 ## the edge's and the selected words' values, so in the chrome they follow them; where cyan
 ## means PROTECT (shield slices and FX, the TURN Daemon, Uncommon) it is drawn from those

@@ -113,7 +113,7 @@ text = "Parking Enforcement Office. Every ticket in the city is written here. Ta
 [sub_resource type="Resource" id="l21"]
 script = ExtResource("e1")
 key = "site:h1_b"
-text = "Water Meter Grid. Halcyon counts every litre. Cut the Rack and the meters read zero for a day."
+text = "Water Meter Grid. Halcyon counts every liter. Cut the Rack and the meters read zero for a day."
 
 [sub_resource type="Resource" id="l22"]
 script = ExtResource("e1")
@@ -198,7 +198,7 @@ text = "Contract Billing Ledger. Halcyon bills the city for everything, twice. T
 [sub_resource type="Resource" id="l38"]
 script = ExtResource("e1")
 key = "site:h3_core"
-text = "Civic Operations Centre. One hop from the Civic Core. Heavy security, heavier Rack."
+text = "Civic Operations Center. One hop from the Civic Core. Heavy security, heavier Rack."
 
 [sub_resource type="Resource" id="l39"]
 script = ExtResource("e1")

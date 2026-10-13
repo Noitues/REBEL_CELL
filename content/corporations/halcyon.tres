@@ -223,7 +223,7 @@ map_position = Vector2(430, 600)
 [sub_resource type="Resource" id="site_h3_core"]
 script = ExtResource("e1")
 id = &"h3_core"
-display_name = "Civic Operations Centre"
+display_name = "Civic Operations Center"
 tier = 3
 links = Array[StringName]([&"the_panopticon"])
 locked_links = Array[StringName]([&"h3_b"])
@@ -565,7 +565,7 @@ script = ExtResource("e6")
 id = &"the_census_bonus_2"
 title = "The Census: The Voice"
 speaker = 3
-text = "A recording from the census call centre. A caller asks for the Cell's leader by a name only DISPATCH uses."
+text = "A recording from the census call center. A caller asks for the Cell's leader by a name only DISPATCH uses."
 
 [sub_resource type="Resource" id="b_the_census_f"]
 script = ExtResource("e6")
@@ -609,7 +609,7 @@ script = ExtResource("e6")
 id = &"orbital_uplink_bonus_1"
 title = "Orbital Uplink: The Dish"
 speaker = 0
-text = "The uplink dish on the operations centre roof is the size of a house and guarded like a bank."
+text = "The uplink dish on the operations center roof is the size of a house and guarded like a bank."
 
 [sub_resource type="Resource" id="b_orbital_uplink_bonus_2"]
 script = ExtResource("e6")

@@ -18,5 +18,5 @@ display_name = "Unlicensed Premises"
 trigger_source = 1
 waves = Array[ExtResource("e3")]([SubResource("wave0")])
 schematic_reward = 8
-warning_text = "A new node without a Halcyon licence. An Inspector is on the way."
+warning_text = "A new node without a Halcyon license. An Inspector is on the way."
 corporation_id = &"halcyon"

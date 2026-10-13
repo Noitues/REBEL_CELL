@@ -20,14 +20,14 @@ const STEPS: Array[Dictionary] = [
 		"title":
 			"THE WHEEL",  # TR
 		"text":
-			"Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The grey LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it.",  # TR
+			"Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The gray LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it.",  # TR
 		"until": "",
 	},
 	{
 		"title":
 			"NUDGE",  # TR
 		"text":
-			"Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}",  # TR
+			"Land dead center for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}",  # TR
 		"until": "nudge",
 	},
 	{

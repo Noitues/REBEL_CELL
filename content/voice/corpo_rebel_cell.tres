@@ -33,7 +33,7 @@ text = "REBEL_CELL: Final order. There will not be another."
 [sub_resource type="Resource" id="l5"]
 script = ExtResource("e1")
 key = "raid:raid_rc_claim"
-text = "REBEL_CELL: Unauthorised growth detected."
+text = "REBEL_CELL: Unauthorized growth detected."
 
 [sub_resource type="Resource" id="l6"]
 script = ExtResource("e1")

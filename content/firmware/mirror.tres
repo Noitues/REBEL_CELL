@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"mirror"
 display_name = "Mirror"
-description = "Copies the neighbour on the side you landed; both on Perfect."
+description = "Copies the neighbor on the side you landed; both on Perfect."
 cycle_cost = 100
 neighbor_rule = 1
 neighbor_multiplier = 1.0

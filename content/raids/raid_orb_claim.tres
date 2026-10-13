@@ -18,5 +18,5 @@ display_name = "Unlicensed Transmitter"
 trigger_source = 1
 waves = Array[ExtResource("e3")]([SubResource("wave0")])
 schematic_reward = 8
-warning_text = "A new transmitter without an Orbital licence. A Lander is on the way."
+warning_text = "A new transmitter without an Orbital license. A Lander is on the way."
 corporation_id = &"orbital"

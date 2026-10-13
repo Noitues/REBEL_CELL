@@ -1748,7 +1748,7 @@ func _build_hq_page(page_name: String) -> void:
 		setup.name = "RaidSetup"
 		setup.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		setup.pressed.connect(show_raid)
-		setup.tooltip_text = UiTip.fold(tr("RAID SETUP: a raid is coming along the red pencil routes: set up the defence."))
+		setup.tooltip_text = UiTip.fold(tr("RAID SETUP: a raid is coming along the red pencil routes: set up the defense."))
 		setup.visible = not raid_mode
 		order.add_child(setup)
 		page.add_child(order)
@@ -1957,7 +1957,9 @@ enum HandTab { CREW, MARKET, DEFENCE }
 ## The deck the hand shows (kept across rebuilds).
 var hand_tab: int = HandTab.CREW
 ## The tabs' words (translation keys).
-const TAB_WORDS: Array[String] = ["CREW", "MARKET", "DEFENCE"] # TR
+const TAB_WORDS: Array[String] = ["CREW", "MARKET", "DEFENSE"] # TR
+## Node-name ids of the hand tabs (kept as shipped; the shown words are TAB_WORDS).
+const TAB_IDS: Array[String] = ["CREW", "MARKET", "DEFENCE"]
 ## From this text scale the tabs show their word only (the count in the tooltip).
 const TAB_LINE_BELOW := MapLegend.FOLD_SCALE
 ## Where the camera frames the HQ's map before its fit (screen share), and the frame waiting.
@@ -1993,7 +1995,7 @@ func _hand_tabs() -> VBoxContainer:
 	var tips := [UiTip.for_input(tr("CREW: your operatives as cards. Pick the runner, drag a card onto one of your nodes to station them."),
 			tr("CREW: your operatives as cards. Pick the runner; pick a card up and move it onto one of your nodes to station them.")),
 		tr("MARKET: recruits, the next run's boosts and Profile unlocks, paid in Schematics."),
-		tr("DEFENCE: the Armory's defence cards; with a raid pending, the raid setup.")]
+		tr("DEFENSE: the Armory's defense cards; with a raid pending, the raid setup.")]
 	for i in TAB_WORDS.size():
 		var hot := i == HandTab.DEFENCE and not c.pending_raids.is_empty()
 		# At big text the count under the word goes to the tooltip (the column keeps the hand's
@@ -2001,7 +2003,7 @@ func _hand_tabs() -> VBoxContainer:
 		var small := Settings.text_scale < TAB_LINE_BELOW - 0.001
 		var tab := MenuChip.new(tr(TAB_WORDS[i]), lines[i] if small else "", Palette.CELL_PINK if hot else PaletteSkins.chrome(Palette.NET_CYAN))
 		tab.pre_translated = true
-		tab.name = "Tab_%s" % TAB_WORDS[i]
+		tab.name = "Tab_%s" % TAB_IDS[i]
 		tab.plate = &"tab"  # ui31.tabs: the open one filled
 		tab.refit()
 		tab.selected = i == hand_tab
@@ -2023,7 +2025,7 @@ func open_hand(tab: int) -> void:
 	if tab != hand_tab:
 		hand_page = 0  # 12Q-HQ: another deck opens on its first page
 	hand_tab = tab
-	_hq_focus = "Tab_%s" % TAB_WORDS[tab]
+	_hq_focus = "Tab_%s" % TAB_IDS[tab]
 	if panel_name in HQ_PAGES:
 		wireframe.hold_camera()
 	show_hq()
@@ -4059,7 +4061,7 @@ func _node_rows(card: TerminalWindow, site: SiteData, facts: HFlowContainer) -> 
 	var defences := PackedStringArray()
 	for aid in c.grid.assets_on(site.id):
 		defences.append(_display(aid).to_upper())
-	_kv_row(card.body, "DefencesRow", tr("DEFENCES"), _kv_value("  +  ".join(defences) if not defences.is_empty() else tr("none")))
+	_kv_row(card.body, "DefencesRow", tr("DEFENSES"), _kv_value("  +  ".join(defences) if not defences.is_empty() else tr("none")))
 	var powered := 0
 	var sd := CampaignRules.site_data(RunManager.corporation, site.id)
 	for other in RunManager.corporation.city_grid.sites:
@@ -4365,7 +4367,7 @@ func show_if_placed(index: int) -> void:
 
 
 ## The IF PLACED terminal's line when no defence can be placed on the target.
-const IF_PLACED_HINT := "Pick a defence card, then one of your nodes: the forecast's change shows here." # TR
+const IF_PLACED_HINT := "Pick a defense card, then one of your nodes: the forecast's change shows here." # TR
 
 
 ## Parity RAID-06 (round 40): YOUR NETWORK (each node's forecast chip; its target button makes
@@ -4693,7 +4695,7 @@ func _defence_verb(slot: VBoxContainer) -> void:
 	run_btn.name = "RunRaid"
 	run_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
 	run_btn.pressed.connect(fight_raid)
-	run_btn.tooltip_text = UiTip.fold(tr("Start the defence: the raid plays out on the map; the result matches the forecast."))
+	run_btn.tooltip_text = UiTip.fold(tr("Start the defense: the raid plays out on the map; the result matches the forecast."))
 	# B5c (art director): the sticker keeps the screen's sticker safe margin from the right edge (Fx.sticker_margin);
 	# the Speed / Skip strip under it lines up with it.
 	var safe := MarginContainer.new()
@@ -5140,7 +5142,7 @@ func forecast_tip(projection: RaidResolver.RaidResult) -> String:
 		# ANIM-R4 H3: the losses, in the verdict's words (a DOWN node with every threat
 		# stopped is not "holds every threat").
 		what = tr("it costs you %s") % raid_verdict(projection).replace("\n", ", ")
-	return tr("Forecast, not a result: if you start the defence now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it.") % what
+	return tr("Forecast, not a result: if you start the defense now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it.") % what
 
 
 ## ortho (`raid_fit_max`, Appendix C #13).
@@ -6502,7 +6504,7 @@ func armory_words() -> String:
 func armory_tip() -> String:
 	var c := RunManager.campaign
 	var cfg := RunManager.config()
-	var what := tr("The Armory: defence assets banked from runs, deployed on your nodes in raid setup.") if not c.armory.is_empty() else tr("The Armory is empty: runs bank defence assets from their drops.")
+	var what := tr("The Armory: defense assets banked from runs, deployed on your nodes in raid setup.") if not c.armory.is_empty() else tr("The Armory is empty: runs bank defense assets from their drops.")
 	return tr("%s\nARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds.") % [what, c.armory.size(), cfg.armory_capacity, c.armory.size(), cfg.armory_capacity]
 
 
@@ -6537,7 +6539,7 @@ func _refresh_status() -> void:
 	hud.set_stats([[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks.")],
 		[TextDb.mark("HOME"), str(c.grid.home_integrity if hud_home_shown < 0 else hud_home_shown), "/%d" % c.grid.home_max_integrity, tr("Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.")],
 		[TextDb.mark("EXPLOITS"), str(c.exploits.size()), "/%d" % cfg.min_exploits_for_breach, tr("Exploits found: %s. The breach on the corporation's core needs %d.") % [_exploit_names(c), cfg.min_exploits_for_breach]],
-		[TextDb.mark("RAIDS"), str(c.pending_raids.size() if hud_raids_shown < 0 else hud_raids_shown), "", tr("Raids pending against your network. Set up the defence before the next run.")],
+		[TextDb.mark("RAIDS"), str(c.pending_raids.size() if hud_raids_shown < 0 else hud_raids_shown), "", tr("Raids pending against your network. Set up the defense before the next run.")],
 		[TextDb.mark("ICE"), str(c.ice_level), "", _ice_description(c.ice_level)],
 		[TextDb.mark("CREW"), str(c.living_operatives().size()), "", tr("Living operatives in the Cell.")]],
 		# H24 S16: whose numbers these are (a run adds its own group).

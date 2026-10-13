@@ -56,7 +56,7 @@ script = ExtResource("e9")
 hp_threshold_pct = 0.25
 pointer_behavior = 3
 orbit_ticks_per_turn = 2
-phase_line = "Recess cancelled: the readers wander."
+phase_line = "Recess canceled: the readers wander."
 
 [resource]
 script = ExtResource("main_script")

@@ -80,7 +80,7 @@ script = ExtResource("4")
 hp_threshold_pct = 0.25
 pointer_behavior = 2
 pointer_ticks = PackedInt32Array(5, 20)
-phase_line = "Final notice: the readers drift off-centre."
+phase_line = "Final notice: the readers drift off-center."
 
 [resource]
 script = ExtResource("1")

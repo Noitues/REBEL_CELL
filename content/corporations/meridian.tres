@@ -91,7 +91,7 @@ map_position = Vector2(200, 163)
 [sub_resource type="Resource" id="site_m1_d"]
 script = ExtResource("e1")
 id = &"m1_d"
-display_name = "Returns Processing Centre"
+display_name = "Returns Processing Center"
 tier = 1
 links = Array[StringName]([&"m2_d"])
 map_position = Vector2(200, 230)
@@ -596,14 +596,14 @@ script = ExtResource("e6")
 id = &"civic_contract_2"
 title = "Civic Contract II"
 speaker = 3
-text = "Halcyon Civic and Meridian share a board member, an auditor and a data centre. The tender is theatre."
+text = "Halcyon Civic and Meridian share a board member, an auditor and a data center. The tender is theater."
 
 [sub_resource type="Resource" id="b_civic_contract_3"]
 script = ExtResource("e6")
 id = &"civic_contract_3"
 title = "Civic Contract III"
 speaker = 2
-text = "The routing mirror already has the city's water mains in it, labelled PHASE TWO."
+text = "The routing mirror already has the city's water mains in it, labeled PHASE TWO."
 
 [sub_resource type="Resource" id="b_civic_contract_bonus_1"]
 script = ExtResource("e6")

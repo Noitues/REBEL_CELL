@@ -115,7 +115,7 @@ map_position = Vector2(200, 363)
 [sub_resource type="Resource" id="site_o1_g"]
 script = ExtResource("e1")
 id = &"o1_g"
-display_name = "Spectrum Licence Registry"
+display_name = "Spectrum License Registry"
 tier = 1
 links = Array[StringName]([&"o2_g"])
 locked_links = Array[StringName]([&"o1_h"])
@@ -382,7 +382,7 @@ script = ExtResource("e6")
 id = &"the_enclosure_1"
 title = "The Enclosure I"
 speaker = 3
-text = "The launch codes include a licence nobody noticed: exclusive rights to every orbit below forty thousand kilometres. The sky was sold in a single signature."
+text = "The launch codes include a license nobody noticed: exclusive rights to every orbit below forty thousand kilometers. The sky was sold in a single signature."
 
 [sub_resource type="Resource" id="b_the_enclosure_2"]
 script = ExtResource("e6")
@@ -439,7 +439,7 @@ script = ExtResource("e6")
 id = &"blackout_weather_2"
 title = "Blackout Weather II"
 speaker = 2
-text = "Districts behind on subscriptions get no storm warnings. The memo calls it service prioritisation."
+text = "Districts behind on subscriptions get no storm warnings. The memo calls it service prioritization."
 triggers_raid = true
 
 [sub_resource type="Resource" id="b_blackout_weather_3"]
@@ -490,7 +490,7 @@ script = ExtResource("e6")
 id = &"gps_tax_2"
 title = "Positioning Tax II"
 speaker = 2
-text = "Unpaid accounts get positions that are close enough. Close enough is fifty metres wrong."
+text = "Unpaid accounts get positions that are close enough. Close enough is fifty meters wrong."
 
 [sub_resource type="Resource" id="b_gps_tax_3"]
 script = ExtResource("e6")
@@ -555,7 +555,7 @@ script = ExtResource("e6")
 id = &"final_transmission_bonus_1"
 title = "Final Transmission: The Voice"
 speaker = 3
-text = "In the recordings DISPATCH's voice shifts, year by year, from a person to something else. The change is smooth. It was practising."
+text = "In the recordings DISPATCH's voice shifts, year by year, from a person to something else. The change is smooth. It was practicing."
 
 [sub_resource type="Resource" id="b_final_transmission_bonus_2"]
 script = ExtResource("e6")
@@ -643,7 +643,7 @@ script = ExtResource("e6")
 id = &"the_commons_2"
 title = "The Commons II"
 speaker = 2
-text = "The charter was rewritten in a single board meeting. The minutes say only: monetise the commons."
+text = "The charter was rewritten in a single board meeting. The minutes say only: monetize the commons."
 
 [sub_resource type="Resource" id="b_the_commons_3"]
 script = ExtResource("e6")

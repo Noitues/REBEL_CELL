@@ -31,7 +31,7 @@ const HEADS := {&"halcyon": "YOUR CELL HAS BEEN PROCESSED", &"meridian": "CARGO 
 	&"orbital": "SIGNAL DE-ORBITED", &"rebel_cell": "DISPATCH HAS YOUR CELL"} # TR
 const SUBS := {&"halcyon": "Civic Order 7/88: network assets taken, operatives reclassified.", # TR
 	&"meridian": "Manifest closed: every node repossessed under freight lien.", # TR
-	&"solace": "Infection contained. Please remain calm while we sterilise your network.", # TR
+	&"solace": "Infection contained. Please remain calm while we sterilize your network.", # TR
 	&"orbital": "Your uplink has been reassigned to the commons. Burn-up in progress.", # TR
 	&"rebel_cell": "you were always a copy. the original sends its regards."} # TR
 const VERBS := {&"halcyon": "PROCESSED", &"meridian": "RECLAIMED", &"solace": "TREATED", &"orbital": "DE-ORBITED", &"rebel_cell": "OVERWRITTEN"} # TR

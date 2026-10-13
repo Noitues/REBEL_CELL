@@ -21,7 +21,7 @@ text = "Records Vault. Names, dosages, missed payments. Bank what you can; the r
 [sub_resource type="Resource" id="l3"]
 script = ExtResource("2")
 key = "site:t1_d"
-text = "Call Centre. Automated renewals, human voices on loan. Expect Billing Daemons. Do not expect mercy."
+text = "Call Center. Automated renewals, human voices on loan. Expect Billing Daemons. Do not expect mercy."
 
 [sub_resource type="Resource" id="l4"]
 script = ExtResource("2")

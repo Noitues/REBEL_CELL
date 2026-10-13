@@ -23,7 +23,7 @@ text = "MERIDIAN LOGISTICS: A route audit is in progress. Please do not obstruct
 [sub_resource type="Resource" id="l3"]
 script = ExtResource("e1")
 key = "raid:raid_heat_75"
-text = "MERIDIAN LOGISTICS: Freight seizure has been authorised for your district. Thank you for your patience."
+text = "MERIDIAN LOGISTICS: Freight seizure has been authorized for your district. Thank you for your patience."
 
 [sub_resource type="Resource" id="l4"]
 script = ExtResource("e1")

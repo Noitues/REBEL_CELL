@@ -33,7 +33,7 @@ amount = 2
 [sub_resource type="Resource" id="c1"]
 script = ExtResource("e2")
 label = "Sell it (+3 Schematics banked, +2 Heat)"
-result_text = "Licences are rare and expensive."
+result_text = "Licenses are rare and expensive."
 effects = Array[ExtResource("e1")]([SubResource("fx1_0"), SubResource("fx1_1")])
 
 [sub_resource type="Resource" id="c2"]
@@ -44,8 +44,8 @@ result_text = "You keep your head down. The sky keeps watching."
 [resource]
 script = ExtResource("main_script")
 id = &"ev_orb_licence"
-title = "Spectrum Licence"
+title = "Spectrum License"
 speaker = 2
-text = "A blank spectrum licence sits in a printer tray, already signed."
+text = "A blank spectrum license sits in a printer tray, already signed."
 choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
 corporation_id = &"orbital"

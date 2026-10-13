@@ -93,7 +93,7 @@ text = "Silence. It is yours."
 [sub_resource type="Resource" id="l17"]
 script = ExtResource("e1")
 key = "win"
-text = "The Cell is free. Organise."
+text = "The Cell is free. Organize."
 
 [sub_resource type="Resource" id="l18"]
 script = ExtResource("e1")
@@ -133,7 +133,7 @@ text = "Recruitment Board. I am recruiting again. You taught me how."
 [sub_resource type="Resource" id="l25"]
 script = ExtResource("e1")
 key = "site:r1_f"
-text = "The Armory. Your defences, restocked for me. Look for the way to lose my Handler."
+text = "The Armory. Your defenses, restocked for me. Look for the way to lose my Handler."
 
 [sub_resource type="Resource" id="l26"]
 script = ExtResource("e1")
@@ -188,7 +188,7 @@ text = "Payment Trail. Every collapse, every profit. Take the Rack."
 [sub_resource type="Resource" id="l36"]
 script = ExtResource("e1")
 key = "site:r2_g"
-text = "Raid Archive. Every defence you ever built, studied. Take the Rack."
+text = "Raid Archive. Every defense you ever built, studied. Take the Rack."
 
 [sub_resource type="Resource" id="l37"]
 script = ExtResource("e1")
