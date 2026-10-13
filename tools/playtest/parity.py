@@ -85,19 +85,25 @@ def main() -> int:
     by_replay: dict[str, list[dict]] = {}
     for r in rows:
         by_replay.setdefault(r["replay"], []).append(r)
-    fights = fights_from_steps(session)
-    tail = sorted(by_replay)[-len(fights):] if fights else []
-    pairs, skipped = [], 0
-    for shots, rep in zip(fights, tail):
-        turns = by_replay[rep]
-        if len(shots) != len(turns):
+    steps = [json.loads(l) for l in (session / "combat_steps.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+    pairs, skipped, prev_end = [], 0, 0
+    fights = sorted(by_replay)
+    for rep in fights:
+        end = int(rep.split("_")[1])  # replay_<ms written>_<seed>.json: the fight's end time
+        mine = [s for s in steps if prev_end < s.get("epoch_ms", 0) <= end + 2000 and s["kind"] != "combat_result"]
+        prev_end = end + 2000
+        if not mine:
             skipped += 1
             continue
-        pairs += [{"shot": s, "truth": t} for s, t in zip(shots, turns)]
+        for t in by_replay[rep]:
+            # The first screenshot showing this turn number is the turn's start (before any action).
+            first = next((s for s in mine if s.get("turn") == t["turn"]), None)
+            if first is not None:
+                pairs.append({"shot": first["shot"], "truth": t})
     worse = [p for p in pairs if p["truth"]["best"]["dealt"] - p["truth"]["tester"]["dealt"] >= 8
              or p["truth"]["tester"]["taken"] - p["truth"]["best"]["taken"] >= 4
              or (p["truth"]["best"]["own_perfect"] and not p["truth"]["tester"]["own_perfect"])]
-    print("%d fights, %d paired turns (%d fights skipped: turn counts differ), %d clearly worse than the best plan" % (
+    print("%d fights, %d paired turns (%d fights without screenshots), %d clearly worse than the best plan" % (
         len(fights), len(pairs), skipped, len(worse)))
     client = anthropic.Anthropic(api_key=hz.api_key(), base_url="https://api.anthropic.com", max_retries=5)
     usd, probes = 0.0, []

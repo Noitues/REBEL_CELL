@@ -119,6 +119,7 @@ DECISION_SCHEMA = {
     "type": "object",
     "properties": {
         "screen": {"type": "string", "description": "short name of the screen you are looking at"},
+        "turn_number": {"type": "integer", "description": "in a fight: the TURN number shown at the top centre; else 0"},
         "kind": {"type": "string", "enum": SCREEN_KINDS,
                  "description": "what kind of moment this is (decision moments go to the stronger player)"},
         "thought": {"type": "string", "description": "1-3 sentences in your persona's voice: what you see and why you act"},
@@ -152,7 +153,7 @@ DECISION_SCHEMA = {
         "escalate": {"type": "boolean", "description": "true to hand this exact screen to a stronger player before acting"},
         "done": {"type": "string", "enum": ["", "won", "lost", "stuck", "time"]},
     },
-    "required": ["screen", "kind", "thought", "zoom", "actions", "note", "now", "watch", "escalate", "done"],
+    "required": ["screen", "turn_number", "kind", "thought", "zoom", "actions", "note", "now", "watch", "escalate", "done"],
     "additionalProperties": False,
 }
 
@@ -632,6 +633,7 @@ class Tester:
                     for a in d["actions"])
         with open(self.dir / "combat_steps.jsonl", "a", encoding="utf-8") as f:
             f.write(json.dumps({"step": self.cost["steps"], "shot": shot.name, "kind": d["kind"], "sends": sends,
+                                "turn": int(d.get("turn_number", 0) or 0), "epoch_ms": int(time.time() * 1000),
                                 "t": round(self.elapsed_min(), 2)}) + "\n")
 
     def probe_step(self, hwnd: int, frame) -> str:
