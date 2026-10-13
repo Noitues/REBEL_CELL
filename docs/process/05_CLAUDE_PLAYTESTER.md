@@ -215,6 +215,25 @@ campaign is ~$2–3 at intermediate. Baseline SA-000 (greedy bot, ICE 0, 60-run 
 seed won; 17-19 deaths each, Heat peak 100 on every seed. Output: `.playtest_sessions/state/<name>/<seed>/` (report,
 decisions with reasons) and `docs/playtest/claude/state/<name>.md`.
 
+## 10b. Boss save (V4)
+
+A save at the Genome Core breach, for a human (or a tester) who wants the boss without 25 runs of
+set-up. `tools/agent/make_boss_save.gd` plays a campaign with the HeuristicStrategist (same as
+`state_agent.py --strategist heuristic`) and stops at the first moment it would launch the breach
+(3 Exploits, crew ready), then writes that campaign through `SaveService.save_dict` (the layout
+`RunManager.autosave()` uses, so the title's CONTINUE / slot list loads it) as `campaign_<slot>.json`
+plus a `profile.json` (which also lists the slot), and prints one summary line (seed, run, Heat, crew
+with Rank and HP, deck, Firmware, Daemons, Schematics). Exit 1 if no breach within 60 runs.
+
+```bash
+godot --headless --path . -s tools/agent/make_boss_save.gd -- seed=1002 out=<abs dir> [slot=1]
+python tools/agent/make_boss_saves.py --seeds 1002,1017,1018      # into .playtest_saves/boss/<seed>/ + meta.json (label boss)
+python tools/playtest/streamline.py saves list --build boss       # the library
+```
+Play one: copy a seed's `campaign_1.json` and `profile.json` into the game's `saves/` folder (back up
+the old ones), then CONTINUE. Test: `tests/unit/test_boss_save_writer.gd` (round trip on a one-run
+fixture; the 60-run play is not in the suite).
+
 ## 11. Next: decision parity, visual vs headless (designer idea 2026-10-12)
 
 Once both testers perform well: rebuild a screen tester's fights from its combat replays
