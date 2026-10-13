@@ -83,6 +83,7 @@ func _init(question: String, yes_text: String = "YES", no_text: String = "CANCEL
 func _sticker(row: Container, word: String, note: String, paint: Color) -> Button:  # ART-10 4C: AbandonDialog overrides it
 	var b := SendItSticker.new(word, "", paint, STICKER_FONT)
 	b.system_word = ""
+	b.fold_room = true  # 1B-STICKER F2: every verb sticker keeps its fold room
 	b.system_line = note
 	b.tilt = -2.0
 	b.tooltip_text = tr(note) if note != "" else ""

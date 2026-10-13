@@ -445,7 +445,7 @@ func test_menus_and_skip_leave_carry_icons() -> void:
 		assert_ne(b.tooltip_text, "", "%s has a tooltip" % id)
 	_loot(scene)
 	await _frames()
-	assert_eq(IconMark.kind_of(scene._panel.find_child("Skip", true, false)), StatIcon.SKIP, "Skip has its icon")
+	assert_eq(IconMark.kind_of(scene._panel.find_child("Skip", true, false)), &"", "Skip is a verb sticker: no icon over its letters (1B-STICKER F2)")
 	RunManager.netrun.run.pending_rewards.clear()
 	_shop(scene)
 	await _frames()

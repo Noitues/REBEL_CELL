@@ -386,7 +386,7 @@ func _cell(col: VBoxContainer, p_name: String, word: String, fill: int, px: int,
 	cell.name = p_name + "Cell"
 	cell.add_theme_constant_override(&"separation", 0)
 	col.add_child(cell)
-	var b := HoloSticker.word(word.to_upper(), fill, minf(Settings.text_scale, STICKER_SCALE_MAX), px)  # (it divides by the text scale itself)
+	var b := HoloSticker.verb_word(word.to_upper(), fill, minf(Settings.text_scale, STICKER_SCALE_MAX), px)  # (it divides by the text scale itself)
 	b.name = p_name
 	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	b.pressed.connect(on_pressed)
