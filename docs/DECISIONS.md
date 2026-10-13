@@ -34,6 +34,22 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-13 — W2-A4: card and chip faces state their condition and direction; the event Daemon reward has its icon
+- **6A (offers unchanged):** `FaceText` (`scripts/ui/kit/face_text.gd`) reads the conditions from the content and adds them
+  after the description on every face and tooltip that shows a card or chip (combat hand, loot, shop, deck viewer / detail,
+  drag ghost): a card with an INNER-ring effect ends "Needs an inner ring." (Ring Tap, Gear Shift, Inner Drift, Ratchet,
+  Inner Snap; the Ring Tap trap in PB-010), a Firmware chip limited to slice types ends "Fits DEFRAG slices only." /
+  "Fits SHIM or OVERFLOW slices only." (Static Coat, Siphon, ...). No rule, offer or content number changed.
+- **Direction and distance:** every fixed-direction spin / move card now says "clockwise" (the counter-clockwise ones
+  already did); the nudge cards read "+-1" as "±1" (the sign is in the body face). Rules and amounts are untouched.
+- **Full text on the face:** the loot, shop, deck and detail faces already fit the whole text (tested at 1.0 / 1.6 / 2.0
+  with the condition added); the combat hand at rest keeps its ruled 10 px floor (S-CARDFACE b), so a long text still
+  ends in an ellipsis on a 1.0 resting card and is whole on the grown card, the tooltip and the inspect. Q: raise the
+  resting hand card, or accept the grown card as "the face" for long texts?
+- **R4:** an event choice that rewards a Daemon (or a chip) shows that item's own art on its outcome chip
+  (`OutcomeRow` item key `art`, a `MainframeArt` part) and its name and description in the sticker's tooltip; hovering the
+  chips gives the same tooltip as the sticker. Test `test_w2_a4_faces`; captures `docs/art_review/PLAN1/W2_A4.jpg`.
+
 ### 2026-10-13 — Raid feed: one STEP divider per step (PT-002a item 6, option A)
 The LIVE RAID FEED no longer prefixes event lines with "Step N:". `RaidPlayoutPanel.step_divider` feeds one muted
 terminal line, "— STEP N —" (TERMINAL_TEXT at `FEED_DIVIDER_ALPHA`, body size), before a step's first fed event;
