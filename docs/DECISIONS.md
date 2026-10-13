@@ -92,6 +92,17 @@ MISS on wins (heuristic 15/20 vs LLM 0/5 on this build; one tune, boosts out of 
 on deaths and mean Heat peak. `gate.py --state-mode` now defaults to `heuristic`; the balance profile sweeps with
 `--lookahead 2` (Genome Core: 16 wins in 22 attempts vs 15 in 25 without).
 
+### 2026-10-13 — Designer rulings after wave 0 (change plan 1)
+Evidence: `docs/handoff/plan1/B_REPRO.md`, `V1_PREVIEW_GAPS.md`, `docs/playtest/claude/state/SA-002_heuristic_calibration.md`.
+1. **B6:** the rule stays (rewind never crosses a respin or a random-slice card: deterministic replays); the tutorial
+   copy that calls undo "free and unlimited" is corrected.
+2. **B3 / B5:** the designer could not reproduce them (aim clears, Quit works); closed for now, re-checked during the
+   animation pass.
+3. **M2 "Tier 1 netrun in roughly 12–18 minutes":** superseded (CP-002 ruling 4: no timed step).
+4. **Gate state sweep:** the free heuristic strategist is the default at every gate, milestone gates included. The LLM
+   sweep (~$10) runs only when the designer asks for it as a gate approaches (`gate.py` opt-in flag).
+Wave 1 starts: `docs/handoff/plan1/W1.md`.
+
 ### 2026-10-12 — Designer rulings CP-003 (playtest analysis) → change plan 1
 Evidence: `docs/playtest/claude/ANALYSIS_2026-10-12.md`; questions `docs/handoff/gates/CP-003.md`; plan
 `docs/handoff/gates/CHANGE_PLAN_1.md`. All recommended options:
