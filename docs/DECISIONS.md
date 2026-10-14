@@ -78,6 +78,17 @@ runs out, start the animation work; use Haiku and the Batch API as needed. Orche
 - **7A.** `RouteHp.arrival(session)` is the run state's HP (moving never changes it; fights, event choices and Daemons do; the run's end heals fully). The node file shows "HP: n / max on arrival" and "HEALS: events can heal; the run's end heals fully" (Terminals only). Test: the shown HP = the run state's HP after each node, and the next fight starts with it.
 - **AT LARGE stamp** has its own line at the foot of the operative file (both sizes), clear of HP and RAM.
 - R5's hover "animate out to its building" stays queued for the animation pass (ruling 7).
+### 2026-10-13 — W3-RAID: raid setup and report clarity (C9, F17, R8, D-UX6, F18)
+Unattended (designer away); simplest GDD-consistent readings, all open to the designer.
+- **Name:** the GDD's term is "home server". The map label, legend, tooltips, work order, HUD prose and the raid-setup sentence now say **HOME SERVER** (was CORE / CORE (home) / Home). The `core` marker kind and the Hub Core / Class Core items are unchanged (different things).
+- **0 crew (C9):** "crew" = living operatives (`CampaignRules.raid_crew_warning`, a pure rule). At 0 the raid setup shows a NO CREW line over START DEFENSE, and the press opens a confirm (START DEFENSE / CANCEL); YES runs the raid (still allowed). With any crew it starts at once.
+- **Outcome wording:** the report's OUTCOME is the stamp's own verdict (`RaidVerdict.of_result`: CELL HOLDS, BREACHED, "1 DOWN, 1 TAKEN"), never the corp's FAILED / SUCCESS. On the work order the row reads THREATS STOPPED with the bare count (it said STOPPED STOPPED x/y beside the INTERCEPTED stamp); the stamp stays (we intercepted the order).
+- **Intercept toast:** no line cap, no ellipsis; it grows up from the foot.
+- **R8:** the report pencil is CELL HOLDS only, a pencil word (title step) at the paper's lower left; the sticker, the circles, THEY LOST / OURS / RIP and the tick are gone. `CellHolds` stays a plain Control (the position anchor). Report line space +3 px.
+- **D-UX6:** the wax dropout bite (`bite_at` in marker_stroke.gdshader) is a smear: a wide soft edge and a streaky alpha. Dropout geometry is unchanged (it mirrors GreasePencilMark.dropout_hit).
+- **F17:** the socket spec carries `defence` (the node's placed-asset count); the socket draws a pink ring and one pip per defence on the node. The map's asset markers beside the node stay.
+- **F18:** already met: INCOMING is clamped into `fight_area` (W2R1 `_keep_in_free`, tested) and clears its letter (d086ca5a); no further change.
+- Open question for the designer: should "crew" for the warning mean stationed operatives (nodes with a Safehouse crew) rather than any living operative?
 
 ### 2026-10-13 — Round 45 inner ring built (designer-approved concept, art-pass 2216c126; replaces W2-A6's standing plates)
 - **Ghost wedge:** `WheelWedge` (one quad per wheel over the disc, under the view's drawing and the firmware sockets) runs

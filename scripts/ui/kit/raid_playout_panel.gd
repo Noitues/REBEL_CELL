@@ -593,7 +593,7 @@ func site_word(id: Variant) -> String:
 	if sid == &"":
 		return "-"
 	if sid == _home():
-		return tr("CORE")
+		return tr("HOME SERVER")
 	var sd := CampaignRules.site_data(RunManager.corporation, sid) if RunManager.corporation != null else null
 	return TextDb.t(sd, "display_name") if sd != null else String(sid)
 

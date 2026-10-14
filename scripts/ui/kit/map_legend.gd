@@ -30,7 +30,7 @@ signal show_all_changed(on: bool)
 ## ART-5 5d: the Grid's key as the v4 Site markers (`use_site_markers`): each row draws the
 ## map's own marker (SiteMarkerView) and names it in a word or two; pointing at a row tells
 ## what it means in the game, in plain words (SiteMarker.MEANINGS). [key, strip words].
-const MARKER_ROWS := [["next", "next"], ["notyet", "not yet"], ["cleared", "cleared"], ["yours", "yours"], ["core", "CORE"], # TR
+const MARKER_ROWS := [["next", "next"], ["notyet", "not yet"], ["cleared", "cleared"], ["yours", "yours"], ["core", "HOME SERVER"], # TR
 	["down", "DOWN"], ["taken", "TAKEN"], ["exploit", "exploit"], ["heat", "heat obj."], ["target", "TARGET"]] # TR
 ## The line rows of the v4 key: [key, strip words].
 const MARKER_LINE_ROWS := [["locked", "locked link"], ["depowered", "no power"], ["threat", "threat route"]] # TR
@@ -52,7 +52,7 @@ const ROWS := [["○", "#D4FF00", "claimed (yours): spray ring"], ["◇", "#5CE1
 ## The node icons (H21 #14), drawn by CityMapOverlay.draw_icon exactly as on the map:
 ## [kind, text shown in the icon, meaning].
 const ICON_ROWS := [[CityMapOverlay.KIND_EXPLOIT, "", "exploit"], [CityMapOverlay.KIND_HEAT, "", "heat reduction"],
-	[CityMapOverlay.KIND_CENTRAL_SERVER, "", "central server"], [CityMapOverlay.KIND_HOME, "", "CORE (your home)"], [CityMapOverlay.KIND_TIER, "T2", "Site tier: more lit pips, harder"]]
+	[CityMapOverlay.KIND_CENTRAL_SERVER, "", "central server"], [CityMapOverlay.KIND_HOME, "", "HOME SERVER (yours)"], [CityMapOverlay.KIND_TIER, "T2", "Site tier: more lit pips, harder"]]
 ## The tier row's example tier (its icon text above is "T2").
 const TIER_EXAMPLE := 2
 ## Legend width, glyph column width, the full and compact variants' font sizes (legends
@@ -75,7 +75,7 @@ const PIN_MARGIN := 10.0
 ## fewer words, in as many columns as its width holds; gaps between them (px at text
 ## scale 1.0).
 const STRIP_ROWS := ["claimed: spray ring", "cleared", "corporate", "taken: crossed out", "your network link", "threat route"]
-const STRIP_ICON_ROWS := ["exploit", "heat reduction", "central server", "CORE (your home)", "tier: more pips, harder"]
+const STRIP_ICON_ROWS := ["exploit", "heat reduction", "central server", "HOME SERVER (yours)", "tier: more pips, harder"]
 const STRIP_H_GAP := 16
 const STRIP_V_GAP := 2
 
@@ -525,7 +525,7 @@ func _marker_row(row_name: String, key: String, swatch: Control, words: String, 
 	row.set_meta(&"meaning", key)
 	row.mouse_filter = Control.MOUSE_FILTER_PASS
 	row.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # translated here, once
-	row.tooltip_text = UiTip.fold(SiteMarker.meaning(key) if SiteMarker.MEANINGS.has(key) else CityMapOverlay.tr_word("A raid's route toward your CORE."))
+	row.tooltip_text = UiTip.fold(SiteMarker.meaning(key) if SiteMarker.MEANINGS.has(key) else CityMapOverlay.tr_word("A raid's route toward your HOME SERVER."))
 	row.add_theme_constant_override("separation", roundi(ICON_SWATCH_GAP * Settings.text_scale * 0.5))
 	row.add_child(swatch)
 	var l := _text(words, fs)

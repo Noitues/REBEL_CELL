@@ -16,7 +16,7 @@ const STATUS_NAMES := {GridState.SiteStatus.CORPORATE: "corporate", GridState.Si
 const SCREEN_NUMBERS := {"start": "00", "hq": "01", "raid": "03", "raid_playout": "03", "raid_summary": "03"}
 
 ## The home server's name on the Grid, the raid map and the orders (never its id).
-const HOME_LABEL := "CORE" # TR
+const HOME_LABEL := "HOME SERVER" # TR
 ## Event types that pop a toast (H20: the log strip is optional): refusals in pink,
 ## news in acid.
 const TOAST_WARN_EVENTS: Array[String] = ["refused", "deploy_failed", "undock_failed"]
@@ -570,6 +570,30 @@ func move_asset(from_site: StringName, index: int, to_site: StringName) -> void:
 	_report(CampaignRules.move_asset(RunManager.campaign, RunManager.config(), RunManager.lookup(), from_site, index, to_site))
 	RunManager.autosave()
 	show_raid()
+
+
+## C9 (W3-RAID): the NO CREW line over START DEFENSE, and the confirm's words.
+const NO_CREW_WARNING := "NO CREW: nobody is left to help your nodes." # TR
+const NO_CREW_ASK := "You have no crew. Start the defense anyway?" # TR
+const NO_CREW_BODY := "Recruit or revive an operative at HQ first, or the raid hits an unaided network." # TR
+## The open START DEFENSE confirm (null when none).
+var _defense_confirm: ConfirmDialog = null
+
+
+## C9 (W3-RAID): START DEFENSE. At 0 crew it asks first (the defense stays allowed: YES runs it);
+## otherwise it starts at once. `fight_raid` is the start itself.
+func request_start_defense() -> void:
+	if not CampaignRules.raid_crew_warning(RunManager.campaign):
+		fight_raid()
+		return
+	if _defense_confirm != null and is_instance_valid(_defense_confirm):
+		return
+	var d := ConfirmDialog.new(tr(NO_CREW_ASK), "START DEFENSE", "CANCEL", "NO CREW", tr(NO_CREW_BODY), false, "", "") # TR
+	_defense_confirm = d
+	d.confirmed.connect(fight_raid)
+	d.resized.connect(func() -> void: d.position = ((size - d.size) * 0.5).floor())
+	d.position = ((size - d.custom_minimum_size) * 0.5).floor()
+	add_child(d)
 
 
 func fight_raid() -> void:
@@ -2085,8 +2109,8 @@ func _fill_crew_hand(cards: HBoxContainer, launchable: Array[SiteData]) -> void:
 			op.hp, op.max_hp, op.deck.size(), op.daemon_ids.size()],
 			(" " + tr("Stationed on %s.") % site_name(where)) if where != &"" else "",
 			("\n" + card.refusal) if card.refusal != "" else "",
-			("\n" + UiTip.for_input(tr("Press to pick them as the runner. Drag the card onto one of your nodes to station them there, or onto CORE to bring them back."),
-				tr("Press to pick them as the runner. Pick the card up and move it onto one of your nodes to station them there, or onto CORE to bring them back."))) if op.alive else ""])
+			("\n" + UiTip.for_input(tr("Press to pick them as the runner. Drag the card onto one of your nodes to station them there, or onto your HOME SERVER to bring them back."),
+				tr("Press to pick them as the runner. Pick the card up and move it onto one of your nodes to station them there, or onto your HOME SERVER to bring them back."))) if op.alive else ""])
 		card.disabled = not op.alive
 		var oid := op.id
 		card.pressed.connect(pick_runner.bind(oid))
@@ -2418,7 +2442,7 @@ func verb_tip(v: Dictionary, site: SiteData) -> String:
 		VERB_UPGRADE:
 			return tr("UPGRADE %s: one level up from level %d (%d Schematics).") % [site_name(site.id), c.grid.upgrade_level_of(site.id), int(v["price"])]
 		VERB_PATCH:
-			return tr("PATCH CORE: +%d integrity (%d Schematics).") % [int(v.get("points", 0)), int(v["price"])]
+			return tr("PATCH HOME SERVER: +%d integrity (%d Schematics).") % [int(v.get("points", 0)), int(v["price"])]
 	return ""
 
 
@@ -4250,7 +4274,7 @@ func _unlock_cost_of(node: NetworkNodeData) -> int:
 
 ## ART-5 5d: the "why not" note's narrowest width (px; it wraps inside the card).
 const MIN_NOTE_WIDTH := 120.0
-const WHY_CORE := "This is your CORE, your home server: you defend it in raids; you never run it." # TR
+const WHY_CORE := "This is your HOME SERVER: you defend it in raids; you never run it." # TR
 const WHY_BREACH := "The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first." # TR
 const WHY_FROM := "Not reachable yet. Clear a Site linked to it first: %s (ringed on the map). Then it opens with an orange ring and JACK IN shows here." # TR
 const WHY_FAR := "Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours." # TR
@@ -4540,7 +4564,7 @@ func _your_network(projection: RaidResolver.RaidResult) -> RaidTerminal:
 	core.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.BODY))
 	for key in [&"font_color", &"font_hover_color", &"font_focus_color", &"font_pressed_color"]:
 		core.add_theme_color_override(key, PaletteSkins.chrome(Palette.TERMINAL_TEXT))
-	core.tooltip_text = UiTip.fold(tr("YOUR NETWORK, folded to its CORE: point at it or focus it for every node."))
+	core.tooltip_text = UiTip.fold(tr("YOUR NETWORK, folded to your HOME SERVER: point at it or focus it for every node."))
 	core.pressed.connect(func() -> void: select_target(home))
 	one.add_child(core)
 	var count := Label.new()
@@ -4820,7 +4844,7 @@ func _defence_verb(slot: VBoxContainer) -> void:
 	var run_btn := RaidSticker.new(tr(START_DEFENSE), START_STICKER_STEP, RaidSticker.PINK)
 	run_btn.name = "RunRaid"
 	run_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
-	run_btn.pressed.connect(fight_raid)
+	run_btn.pressed.connect(request_start_defense)
 	run_btn.tooltip_text = UiTip.fold(tr("Start the defense: the raid plays out on the map; the result matches the forecast."))
 	# B5c (art director): the sticker keeps the screen's sticker safe margin from the right edge (Fx.sticker_margin);
 	# the Speed / Skip strip under it lines up with it.
@@ -4833,6 +4857,18 @@ func _defence_verb(slot: VBoxContainer) -> void:
 	verbs.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	safe.add_child(verbs)
 	slot.add_child(safe)
+	if CampaignRules.raid_crew_warning(RunManager.campaign):
+		# C9: no crew at all: the warning stands over the sticker (the press then asks first).
+		var warn := Label.new()
+		warn.name = "NoCrewWarning"
+		warn.text = tr(NO_CREW_WARNING)
+		warn.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		warn.add_theme_font_override("font", Palette.display())
+		warn.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+		warn.add_theme_color_override("font_color", Palette.HARM_INK)
+		warn.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		UiWrap.whole_words(warn)
+		verbs.add_child(warn)
 	verbs.add_child(run_btn)
 	var strip := RaidSpeedStrip.new(RunManager.config().raid_step_cap)
 	strip.name = "SpeedStrip"
@@ -4866,7 +4902,7 @@ func select_target(site_id: StringName) -> void:
 
 # --- ART-6 3A raid presentation: setup panels (ART_BIBLE v2 §4.8 "Panels by fiction") -----------
 ## The raid's words for its targets' routing rules (THREAT INTEL and the work order's TARGET).
-const RAID_TARGETS := {RC.ThreatRouting.SHORTEST_TO_HOME: "CORE (home)", RC.ThreatRouting.HIGHEST_VALUE: "highest-value node", # TR
+const RAID_TARGETS := {RC.ThreatRouting.SHORTEST_TO_HOME: "HOME SERVER", RC.ThreatRouting.HIGHEST_VALUE: "highest-value node", # TR
 	RC.ThreatRouting.WEAKEST_NODE: "weakest node"} # TR
 ## The intercepted work order's lines (corp paper, §1.2).
 const ORDER_KIND := "RAID INCOMING  //  %s" # TR
@@ -4960,10 +4996,10 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 		Palette.INK, "RaidStrength")
 	_tip_label(strength, tr("How much stronger than normal the threats are (from Heat, ICE and taken Sites). 0% is normal strength."))
 	var lost_home := projection.home_after < projection.home_before
-	var home := card.add_row(tr("IF IT RAN NOW"), tr("HOME %d > %d") % [projection.home_before, projection.home_after],
+	var home := card.add_row(tr("IF IT RAN NOW"), tr("HOME SERVER %d > %d") % [projection.home_before, projection.home_after],
 		Palette.HARM_INK if lost_home else Palette.INK, "HomeForecast")
-	_tip_label(home, tr("Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.") % [projection.home_before, projection.home_after])
-	var stopped := card.add_row(tr("STOPPED"), tr("STOPPED %d/%d") % [projection.threats_destroyed, total], Palette.GAIN_INK if projection.threats_destroyed == total and total > 0 else Palette.INK, "ThreatsStopped")
+	_tip_label(home, tr("Your home server now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.") % [projection.home_before, projection.home_after])
+	var stopped := card.add_row(tr("THREATS STOPPED"), tr("%d / %d") % [projection.threats_destroyed, total], Palette.GAIN_INK if projection.threats_destroyed == total and total > 0 else Palette.INK, "ThreatsStopped")
 	_tip_label(stopped, tr("Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.") % [projection.threats_destroyed, total])
 	var l := RaidVerdict.losses(_raid_dict(projection))
 	if int(l["down"]) + int(l["taken"]) > 0:
@@ -5104,7 +5140,7 @@ func if_placed_lines(payload: Dictionary, site_id: Variant) -> Array:
 	var b: Dictionary = then.nodes.get(String(sid), {})
 	if not a.is_empty() and not b.is_empty():
 		lines.append("%s  %s > %s" % [site_name(sid).to_upper(), outcome_word(String(a["outcome"])), outcome_word(String(b["outcome"]))])
-	lines.append(tr("HOME %d > %d") % [now.home_after, then.home_after])
+	lines.append(tr("HOME SERVER %d > %d") % [now.home_after, then.home_after])
 	return lines
 
 
@@ -5832,17 +5868,21 @@ func _after_playout() -> void:
 ## verdict (RaidVerdict) still lands as its stamp on the table. Heat settles here.
 const REPORT_TITLE := "AFTER-ACTION REPORT" # TR
 const REPORT_OPERATION := "OPERATION: %s  //  TARGET: CELL NETWORK  //  OUTCOME: %s" # TR
-const REPORT_FAILED := "FAILED" # TR
-const REPORT_SUCCESS := "SUCCESS" # TR
+## C9 (W3-RAID): the report's OUTCOME is the stamp's own word (RaidVerdict: CELL HOLDS, BREACHED,
+## "1 DOWN, 1 TAKEN"), never the corp's FAILED / SUCCESS beside a CELL HOLDS stamp.
+static func report_outcome_words(result: Dictionary) -> String:
+	return RaidVerdict.of_result(result).replace("
+", ", ")
 const REPORT_INTACT := "%d / %d INTACT" # TR
 const REPORT_DAMAGED := "%d / %d" # TR
 const REPORT_SCHEMATICS := "%d SCHEMATICS" # TR
 const REPORT_HEAT := "%d > %d" # TR
 const REPORT_NO_CHANGE := "%d > %d NO CHANGE" # TR
 const REPORT_BACK := "BACK TO THE GRID" # TR
-## The report's paper width (px at 1.0) and the CELL HOLDS sticker's lettering (px at 1.0).
+## The report's paper width (px at 1.0).
 const REPORT_WIDTH := 400.0
-const HOLDS_STICKER_STEP := UiTheme.DISPLAY
+## R8 (W3-RAID): the gap between the report's lines (px at 1.0).
+const REPORT_LINE_SPACE := 3.0
 ## The Heat and the reward the last raid's feed told ([before, after], Schematics; -1 none).
 var _raid_heat: Array[int] = []
 var _raid_reward: int = -1
@@ -5888,7 +5928,7 @@ func show_raid_summary() -> void:
 	var report := RaidPaper.new(c.corporation_id, tr(REPORT_TITLE), RaidPaper.STAMP_CLASSIFIED, number)
 	report.name = "RaidReport"
 	report.custom_minimum_size.x = REPORT_WIDTH * Settings.text_scale
-	report.set_sub(tr(REPORT_OPERATION) % [raid_name, tr(REPORT_FAILED) if held else tr(REPORT_SUCCESS)])
+	report.set_sub(tr(REPORT_OPERATION) % [raid_name, report_outcome_words(r)])
 	var side := VBoxContainer.new()
 	side.name = "ReportColumn"
 	side.add_theme_constant_override("separation", 10)
@@ -5898,7 +5938,8 @@ func show_raid_summary() -> void:
 	# The result as the corp wrote it (H20: home, threats, then each node by name).
 	var facts := VBoxContainer.new()
 	facts.name = "RaidResult"
-	facts.add_theme_constant_override("separation", 0)
+	facts.add_theme_constant_override("separation", roundi(REPORT_LINE_SPACE * Settings.text_scale))  # R8: more line space
+	box.add_theme_constant_override("separation", roundi(REPORT_LINE_SPACE * Settings.text_scale))
 	facts.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(facts)
 	report.body = facts
@@ -5926,7 +5967,7 @@ func show_raid_summary() -> void:
 	var ha := int(r.get("home_after", 0))
 	var home := report.add_row(tr("HOSTILE HOME SERVER"), (tr(REPORT_INTACT) % [ha, c.grid.home_max_integrity]) if ha >= hb else (tr(REPORT_DAMAGED) % [ha, c.grid.home_max_integrity]),
 		Palette.HARM_INK if ha < hb else Palette.INK, "ReportHome")
-	_tip_label(home, tr("Home integrity before and after the raid."))
+	_tip_label(home, tr("Home server integrity before and after the raid."))
 	if not _raid_heat.is_empty():
 		var hv := report.add_row(tr("SUSPECT FILE (HEAT)"), (tr(REPORT_NO_CHANGE) if _raid_heat[0] == _raid_heat[1] else tr(REPORT_HEAT)) % [_raid_heat[0], _raid_heat[1]], Palette.INK, "ReportHeat")
 		_tip_label(hv, tr("Heat settles here: what the raid changed."))
@@ -5984,8 +6025,12 @@ func show_raid_summary() -> void:
 		# B3 (review Q7, bible 4.8): the result is CELL HOLDS slapped on the after-action paper
 		# (a fixed fact: a sticker), not a banner over the map; it plays the result banner's
 		# motion (`raid_result_banner`).
-		var holds := RaidSticker.new(tr(RaidVerdict.CELL_HOLDS), HOLDS_STICKER_STEP, RaidSticker.YELLOW, -6.0).stamp_only()
+		# R8 (W3-RAID): CELL HOLDS is the Cell's pencil word, not a sticker: this plain spot (sized to
+		# the word) keeps its place on the paper; RaidReportPencil writes the word there.
+		var holds := Control.new()
+		holds.custom_minimum_size = RaidPencilPool.word_size(tr(RaidVerdict.CELL_HOLDS), RaidReportPencil.WORD_STEP)
 		holds.name = "CellHolds"
+		holds.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		# On a pin over the paper (the paper's own child: it follows the paper as the page lays out).
 		var pin := Control.new()
 		pin.name = "HoldsPin"
@@ -6003,7 +6048,7 @@ func show_raid_summary() -> void:
 			box.add_child(room)
 			box.move_child(room, facts.get_index())
 			room.item_rect_changed.connect(_place_holds.bind(holds, pin))
-		_slap_holds.call_deferred(holds, table, pin)
+		_place_holds.call_deferred(holds, pin)
 
 
 ## M14 12Q-RAID: BACK TO THE GRID stays on screen: when the report's page is taller than its
@@ -6026,17 +6071,8 @@ func _report_exit_on_screen(side: Control, back: Control, table: Control) -> voi
 		side.move_child(back, 0)
 
 
-## ART-6 3A / B3 (Q7): CELL HOLDS slaps onto the after-action paper, over its lower right (the
-## result banner's motion, RaidSticker.slap_result; at rest at once when motion doesn't play).
-func _slap_holds(holds: RaidSticker, _table: Control, pin: Control) -> void:
-	if not is_instance_valid(holds) or not is_instance_valid(pin):
-		return
-	_place_holds(holds, pin)
-	holds.slap_result()
-
-
 ## B3 (Q7): CELL HOLDS at its spot on the paper's pin (local to the paper).
-func _place_holds(holds: RaidSticker, pin: Control) -> void:
+func _place_holds(holds: Control, pin: Control) -> void:
 	if not is_instance_valid(holds) or not is_instance_valid(pin):
 		return
 	holds.size = holds.custom_minimum_size
@@ -6061,7 +6097,7 @@ static func holds_spot(paper: Rect2, size: Vector2) -> Vector2:
 
 ## Where CELL HOLDS sits on the report (share of the paper: over its lower left, under the rows and
 ## beside the CLASSIFIED stamp).
-const HOLDS_AT := Vector2(0.27, 0.8)
+const HOLDS_AT := Vector2(0.27, 0.86)
 ## G2R-5: from this text scale the report folds, and CELL HOLDS gets a room of this share of its height
 ## under the order line (the table rows fold below it).
 const HOLDS_FOLD_SCALE := 1.8

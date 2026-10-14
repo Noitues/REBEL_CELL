@@ -296,7 +296,7 @@ func test_the_raid_draws_no_influence_fill_and_no_verdict_over_the_map() -> void
 	assert_false(src.contains("\"banner_%d\""), "Q7: home's verdict is no pencil banner over the map")
 
 
-func test_cell_holds_is_a_sticker_on_the_after_action_paper_with_the_result_motion() -> void:
+func test_cell_holds_is_a_pencil_word_on_the_after_action_paper() -> void:
 	_raid_campaign()
 	var hq := await _hq()
 	hq.show_raid()
@@ -305,16 +305,13 @@ func test_cell_holds_is_a_sticker_on_the_after_action_paper_with_the_result_moti
 	await _frames(2)
 	hq.show_raid_summary()
 	await _frames(4)
-	var holds := hq._panel.find_child("CellHolds", true, false) as RaidSticker
+	var holds := hq._panel.find_child("CellHolds", true, false) as Control
 	if holds == null:
 		pass_test("the raid was lost: no CELL HOLDS")
 		return
 	var paper := hq._panel.find_child("RaidReport", true, false) as Control
 	assert_true(paper.get_global_rect().has_point(holds.get_global_rect().get_center()), "on the paper")
-	assert_eq(holds.scale, Vector2.ONE, "at rest headless (the result motion's end state)")
-	assert_eq(RaidSticker.RESULT_MOTION, &"raid_result_banner", "the banner's motion moved onto the sticker")
-	var src := FileAccess.get_file_as_string("res://scripts/ui/kit/raid_sticker.gd")
-	assert_string_contains(src, "Motion.run(RESULT_MOTION", "the sticker plays the result motion")
+	assert_false(holds is RaidSticker, "R8: pencil, not a sticker")
 	# The report's map: no node tags; the key is the strip.
 	assert_eq(hq.city_overlay.tag_rule, CityMapOverlay.TagRule.LIT)
 	var legend := hq._panel.find_child("MapLegend", true, false) as MapLegend

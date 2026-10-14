@@ -7,7 +7,7 @@ extends RefCounted
 const RIGHT := Vector2(1, -1)
 const DOWN := Vector2(1, 1)
 ## The home Site's name on the maps (never its id).
-const HOME_LABEL := "CORE"
+const HOME_LABEL := "HOME SERVER"
 ## What a Site's status means (map tooltips).
 const STATUS_TIPS := {GridState.SiteStatus.CORPORATE: "Corporate: run it to clear it.",
 	GridState.SiteStatus.CLEARED: "Cleared: claim it to build a node of your network.",
@@ -22,7 +22,7 @@ const KIND_TIPS := {CityMapOverlay.KIND_TIER: "Site (hexagon, its tier inside): 
 	CityMapOverlay.KIND_EXPLOIT: "Exploit Site (diamond): clearing it gives an Exploit for the Central Server breach.", # TR
 	CityMapOverlay.KIND_HEAT: "Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat.", # TR
 	CityMapOverlay.KIND_CENTRAL_SERVER: "Central Server (star): the corporation's core.", # TR
-	CityMapOverlay.KIND_HOME: "CORE (house): your home server; if its integrity reaches 0 the campaign is lost."} # TR
+	CityMapOverlay.KIND_HOME: "HOME SERVER: your network's heart; if its integrity reaches 0 the campaign is lost."} # TR
 
 
 ## The map kind (CityMapOverlay.KIND_*) of Site `sd` in campaign `c`: home, objective or

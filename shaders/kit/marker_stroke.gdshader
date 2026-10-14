@@ -112,10 +112,16 @@ vec4 dropout_hit(float d, float pad) {
 
 // How much of the bite covers the point `across` (-1..1 over the width) for hit `h`: a ragged
 // bite from the hit's side, deepest mid-stretch (`grain` roughens its front).
+const float SMEAR_SOFT = 0.28;
+const float SMEAR_STREAK_MIN = 0.55;
 float bite_at(vec4 h, float across, float grain) {
 	float depth = h.w * (0.7 + 0.3 * sin(3.14159 * h.y)) + (grain - 0.5) * 0.12;
 	float into = h.z * across;  // 1 at the bitten edge, -1 at the far one
-	return h.x * smoothstep(1.0 - 2.0 * depth - 0.06, 1.0 - 2.0 * depth + 0.06, into);
+	// D-UX6 (W3-RAID): a smear, not a flat square: a wide soft edge across the stroke and a
+	// streaky alpha (the wax dragged thin, never one grey level).
+	float soft = smoothstep(1.0 - 2.0 * depth - SMEAR_SOFT, 1.0 - 2.0 * depth + SMEAR_SOFT, into);
+	float streak = clamp(SMEAR_STREAK_MIN + (1.0 - SMEAR_STREAK_MIN) * (grain * 2.0), 0.0, 1.0);
+	return h.x * soft * streak;
 }
 
 float glint_band(vec2 p) {

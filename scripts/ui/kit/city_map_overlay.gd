@@ -106,7 +106,7 @@ const KIND_TIER := "tier"
 const KIND_NAMES := {KIND_FIGHT: "Router: a fight", KIND_ELITE: "Elite Router: a harder fight", # TR
 	KIND_SHOP: "Mainframe: the cyber shop", KIND_EVENT: "Terminal: an event with choices", # TR
 	KIND_RACK: "Server Rack: the Site's guardian", KIND_CENTRAL_SERVER: "Central Server: the corporation's core", # TR
-	KIND_EXPLOIT: "Exploit Site", KIND_HEAT: "Heat reduction Site", KIND_HOME: "Your home Site (CORE)", # TR
+	KIND_EXPLOIT: "Exploit Site", KIND_HEAT: "Heat reduction Site", KIND_HOME: "Your home server Site", # TR
 	KIND_TIER: "Site"} # TR
 ## ANIM-R4 H7: the hover text's own sentences, translated once where the tip is built (they
 ## showed in English in every language). Each takes the words noted.
@@ -133,7 +133,7 @@ const KIND_SYMBOLS := {KIND_FIGHT: "crossed_blades", KIND_ELITE: "crossed_blades
 ## H23 #6: the one word naming each kind (it leads every node tooltip).
 const KIND_WORDS := {KIND_FIGHT: "Router", KIND_ELITE: "Elite Router", KIND_SHOP: "Mainframe", KIND_EVENT: "Terminal", # TR
 	KIND_RACK: "Server Rack", KIND_CENTRAL_SERVER: "Central Server", KIND_EXPLOIT: "Exploit", KIND_HEAT: "Heat reduction", # TR
-	KIND_HOME: "CORE", KIND_TIER: "Site"} # TR
+	KIND_HOME: "HOME SERVER", KIND_TIER: "Site"} # TR
 ## Icon radius on screen (px, undoing the city's zoom), for normal and big nodes, and
 ## how far above the roof the icon floats (px, local).
 const ICON_RADIUS := 13.0
