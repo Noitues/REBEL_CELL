@@ -88,7 +88,13 @@ const DEMOS := {
 	# ANIM-2 / ANIM-3 (combat): "view" plays on the lab's wheel / card / SEND IT; "scene"
 	# plays in a live combat scene over the whole lab (1280x720).
 	&"resolve_sequence": ["scene", "send_hit"], &"hit_line": ["scene", "send_hit"], &"victory_stamp": ["scene", "victory"],
-	&"combat_end_hold": ["netrun", "fight_won"], &"wheel_flip": ["view", "flip"], &"dead_wheel_fade": ["scene", "break"],
+	&"combat_end_hold": ["netrun", "fight_won"],
+	# Plan 1 ANIM-FLOW: the fight dissolves in over the route (a real fight), the loot sheet dims and the rewards
+	# page rebuilds on a real pick, a menu's lines dip and its rows come in.
+	&"combat_enter": ["netrun", "fight_won"], &"backdrop_reveal": ["netrun", "fight_won"],
+	&"loot_page_dim": ["netrun", "loot_pick"], &"reward_page_in": ["netrun", "loot_pick"],
+	&"press_dip": ["screen", "rows"], &"menu_page_in": ["screen", "rows"], &"raid_continue_in": ["hq", "raid"],
+	&"route_hover_out": ["netrun", "route_hover"], &"wheel_flip": ["view", "flip"], &"dead_wheel_fade": ["scene", "break"],
 	&"drag_ghost_tilt": ["scene", "drag"], &"card_pile": ["scene", "deal"], &"hand_reflow": ["scene", "play"],
 	&"ram_tick": ["scene", "ram"], &"ram_pending_blink": ["scene", "aim"],
 	# ANIM-5 (map, raid, jack and Heat):
@@ -258,6 +264,13 @@ const HQ_SCENE := "res://scenes/hq/hq_scene.tscn"
 const NETRUN_SCENE := "res://scenes/netrun_map/netrun_scene.tscn"
 const LAB_SLOT := "motion_lab"
 const CONTEXT_SETTLE := 20
+## Plan 1 M10: the menu-rows demo presses its first line this many seconds in, for this long.
+const PRESS_DEMO_AT := 0.5
+const PRESS_DEMO_HOLD := 0.15
+## Plan 1 ANIM-FLOW: the loot demo waits at most this many frames for the reward page, then this
+## many after opening a list row before it picks.
+const LOOT_DEMO_WAIT := 900
+const LOOT_DEMO_BEAT := 30
 const CONTEXT_BAKE_FRAMES := 240
 const CONTEXT_LOOP := 6.0
 const DEMO_CAMPAIGN_SEED := 1
@@ -745,6 +758,29 @@ func _play_screen(what: String) -> void:
 					if w != null:
 						(w.body.get_child(k + 1) as Button).grab_focus())
 			length = MENU_STEP * 4.0
+		"rows":
+			# Plan 1 M10: a menu's plain lines dip when pressed and come in one after another.
+			var rows_win := TerminalWindow.new("REBEL_CELL // MENU")
+			rows_win.position = Vector2(120, 140)
+			rows_win.custom_minimum_size = Vector2(420, 0)
+			_screen_host.add_child(rows_win)
+			for t in ["Continue", "Campaigns", "Options"]:
+				var rb := Button.new()
+				rb.text = t
+				rows_win.body.add_child(rb)
+			PressDip.attach(rows_win.body)
+			PressDip.rise(rows_win.body.get_children())
+			# Held weakly: the next demo may free the window before a step.
+			var row_ref: WeakRef = weakref(rows_win.body.get_child(0))
+			get_tree().create_timer(PRESS_DEMO_AT).timeout.connect(func() -> void:
+				var down := row_ref.get_ref() as Button
+				if down != null:
+					down.button_down.emit()
+					get_tree().create_timer(PRESS_DEMO_HOLD).timeout.connect(func() -> void:
+						var up := row_ref.get_ref() as Button
+						if up != null:
+							up.button_up.emit()))
+			length = PRESS_DEMO_AT + PRESS_DEMO_HOLD + Motion.seconds(&"press_dip")
 		"mainframe", "takeover", "rain":
 			# ART-9 4A: the sign on its facade (rain on the rain facade).
 			var facade := MainframeFacade.new(&"rain" if what == "rain" else &"night")
@@ -1223,7 +1259,7 @@ func _play_context(scene: String, what: String) -> void:
 		_context.new_campaign(DEMO_CAMPAIGN_SEED)
 		_context.start_run(1)
 		var s := RunManager.netrun
-		if what == "fight_won":
+		if what == "fight_won" or what == "loot_pick":
 			# ANIM-R6 A15: the run's first node is a fight (as --demo-combat); it is won there.
 			_context.enter_node(s.available_nodes()[0])
 		else:
@@ -1255,6 +1291,15 @@ func _play_context(scene: String, what: String) -> void:
 	var hq := _context
 	var c := RunManager.campaign
 	match what:
+		"loot_pick":
+			# Plan 1 ANIM-FLOW: won, then the first reward is picked (a list opens its first row first).
+			hq._demo_combat_end("win")
+			_pick_first_reward(hq)
+		"route_hover":
+			# Plan 1 W3-ROUTE R5: the pointer lights the first open node: its sticker reaches out to its building.
+			var ov := hq.city_overlay as RouteOverlay
+			if ov != null:
+				ov.hover_id = RunManager.netrun.available_nodes()[0]
 		"fight_won":
 			# The fight is won by SEND IT; VICTORY stands until the netrun opens the loot after
 			# `combat_end_hold`. The scene waits for its fight itself (the jack may still run).
@@ -1373,6 +1418,39 @@ func _defended_site(c: CampaignState) -> StringName:
 ## cleared and claimed, defended by a turret, a decoy and an ICE lock, and a raid queued.
 ## ART-6 3A: the repair demo's Safehouse integrity (of 30: hurt, standing).
 const REPAIR_DEMO_INTEGRITY := 15
+
+
+## Plan 1 ANIM-FLOW: once the won fight's reward page is up, opens the first row of a list and
+## picks the first option, as a player does (the offers not taken fall, the page dims, the page rebuilds).
+func _pick_first_reward(net: Node) -> void:
+	for f in LOOT_DEMO_WAIT:
+		if not is_instance_valid(net) or net != _context:
+			return
+		var s := RunManager.netrun
+		if s != null and s.run.phase == RunState.Phase.REWARD and not PageTransition.running(net):
+			break
+		await get_tree().process_frame
+	if not is_instance_valid(net) or RunManager.netrun == null or RunManager.netrun.run.phase != RunState.Phase.REWARD:
+		return
+	var s2 := RunManager.netrun
+	if s2.run.pending_rewards.size() < 2:
+		# One payout: a second offer makes the list (the page the pick returns to).
+		var rng := RandomNumberGenerator.new()
+		rng.seed = DEMO_CAMPAIGN_SEED
+		s2._offer(&"card", s2._card_pool(), 3, rng)
+		net._show_current()
+		PageTransition.settle(net)
+		for f in LOOT_DEMO_BEAT:
+			await get_tree().process_frame
+		if not is_instance_valid(net):
+			return
+	if net.rewards_list_on():
+		net.open_reward(0)
+		for f in LOOT_DEMO_BEAT:
+			await get_tree().process_frame
+		if not is_instance_valid(net):
+			return
+	net.choose_reward(0)
 
 
 func _demo_campaign(what: String) -> void:

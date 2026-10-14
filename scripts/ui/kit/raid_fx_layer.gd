@@ -115,7 +115,7 @@ const MARK_TILT_SIN := 0.05
 ## The vehicle icon's radius (screen px x screen_k), the ice round a frozen one (its half
 ## width x radius; the baked concept ice: folder, growth steps, the ellipse's half width in
 ## the image px, manifest.json), the slow field's radius (x the node icon) and rings.
-const VEHICLE_R := 11.0
+const VEHICLE_R := 15.0
 const ICE_BLOCK := 2.1
 const ICE_DIR := "res://assets/raid/ice/"
 const ICE_STEPS := 8
@@ -1031,7 +1031,7 @@ func _draw_token(id: String, at: Dictionary, k: float) -> void:
 			var tp := _along_move(mv, _eased(&"raid_move", maxf(0.0, u - q * TRAIL_STEP)))
 			if tp.x != INF:
 				var fade := 1.0 - float(q) / (TRAIL_DOTS + 1)
-				_ci.draw_circle(tp, s * 0.3 * fade, Color(trail, 0.75 * fade * alpha))
+				_ci.draw_circle(tp, s * 0.4 * fade, Color(trail, 0.9 * fade * alpha))
 	# ART-6 3A: the heading arrow rides the ring on hover only (§4.8).
 	if _hovered == id:
 		heading = _heading_of(t, p)

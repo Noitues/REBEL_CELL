@@ -32,6 +32,9 @@ var jack_cover: ColorRect
 var heat_pulses: int = 0
 var _jacking: bool = false
 var _cover_opaque: bool = false
+## Plan 1 M9: the jack cover starts to lift (the arriving screen shows from here): a page that
+## entered under the opaque cover plays its entrance now, where it can be seen.
+signal cover_lifting
 var limiter := FlashLimiter.new(3)
 var fps_label: Label
 var saved_label: Label
@@ -775,6 +778,7 @@ func _link_switch(on_switch: Callable) -> void:
 		await _hold_connect()
 	_hide_connect()
 	_cover_opaque = false
+	cover_lifting.emit()
 
 
 func jack_out(on_switch: Callable, seconds: float = -1.0, destination: String = "") -> void:
@@ -1064,6 +1068,7 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 		fresh.scale = Vector2.ONE * (arrive if inward else zoom)
 		tw2.tween_property(fresh, "scale", Vector2.ONE, reveal).set_ease(ae.ease).set_trans(ae.trans)
 	_cover_opaque = false
+	cover_lifting.emit()
 	tw2.tween_method(func(v: float) -> void: _set_cover(v, _roll(t0)), 1.0, 0.0, reveal).set_ease(ae.ease).set_trans(ae.trans)
 	await tw2.finished
 	if is_instance_valid(fresh):
@@ -1132,6 +1137,7 @@ func _fade_switch(on_switch: Callable) -> void:
 	await _hold_connect()
 	_hide_connect()
 	_cover_opaque = false
+	cover_lifting.emit()
 	var tw2 := create_tween()
 	tw2.tween_property(transition_rect, "color:a", 0.0, times.y).set_ease(e.ease).set_trans(e.trans)
 	await tw2.finished

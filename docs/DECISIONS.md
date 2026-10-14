@@ -49,6 +49,37 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 - **D-UX4.** A left click on the pause menu's backdrop resumes. Not while a confirm or a page (Options / Codex) is open,
   and never for dialogs, events or gameplay (rule: `PauseMenu.outside_click_closes`).
 - Capture: `docs/art_review/PLAN1/W4_PROMPTS.jpg` (before above, after below: top bar, pause menu).
+### 2026-10-14 — ANIM-FLOW: M5, M6, M8, M9, M10 + the queued route items (plan 1 animation round P1)
+
+Designer away; simplest option consistent with ANIMATION_HANDOFF. Eight new `ui_motion.tres` entries (all in REQUIRED_IDS, lab demos in
+`motion_lab.gd`): `combat_enter`, `backdrop_reveal`, `loot_page_dim`, `reward_page_in`, `press_dip`, `menu_page_in`, `raid_continue_in`
+and `route_hover_out`. Changed values: `jack_connect` 0.35 -> 0.2 s, `forecast_stamp_resolve` 0.25 s x1.3 -> 0.32 s x1.6.
+- **M5 (map -> fight).** The move already acknowledged the click (the pulse leaves the pressed node at once); the dead time was after it:
+  the page waited for the arrived node's pop and dim (0.3 s) before opening. `CityMapOverlay.travel(..., settle)` returns the pulse time
+  only when the node entered is a fight, so the fight opens as the pulse lands (the pop plays under the dissolve). The fight page then
+  dissolves in over the route's city (`combat_enter`, `NetrunScene._show_combat` keeps the city visible until the fade ends) instead of
+  hard-cutting to a dark frame; the close-up behind the wheels crossfades in over the night sky it replaces (`CombatBackdrop.reveal`,
+  `backdrop_reveal`; none when the city landed before any sky was drawn). Reduce effects / headless: whole in 0 frames.
+- **M6 (reward pick).** Pick flights already existed; the blank slots read as a hole. While the offers not taken fall and the pick flies,
+  the loot sheet dims to 40 % (`loot_page_dim`); the page rebuilt on the same screen (the W4 list coming back, the next offer) fades in
+  (`reward_page_in`) and the list's rows come in one after another (`PressDip.rise`, `menu_page_in`).
+- **M8 (raid playout).** Threat vehicles 11 -> 15 px and a heavier trail (the "tiny dots"); CONTINUE comes in with the verdict as a fade and
+  a pop (`raid_continue_in`), the verdict stamp lands harder (0.32 s, x1.6) with a hit-stop (`Fx.freeze_frames`, none under reduce effects).
+  The flicker was not reproduced from code: no node in the playout draws a blinking icon (the vehicle's phase argument is unused), so I
+  left it; a windowed look would tell.
+- **M9 (HQ arrival).** The HQ page's entrance (and focus) now waits for the jack cover to start lifting (new `Fx.cover_lifting` signal)
+  instead of playing behind the opaque cover, so the layout settles in where it can be seen; the CONNECTING reading time is 0.2 s (it
+  overlaps the arrival wait; the dead hold was the longer of the two).
+- **M10 (press feedback / entrance).** New kit helper `PressDip`: `attach(root)` dips every plain button on a press (`press_dip`, x0.94 about
+  its centre); stickers, drips, card faces and menu chips keep their own press. It is attached by `PageTransition.enter`, `open_modal`
+  and the title page, so every page and dialog gets it without per-screen code. Pause menu, loot stickers and the defeat stamp already
+  had their own press and entrance motion (`sticker_press`, `modal_in`, `defeat_stamp`); nothing was added there.
+- **Queued: netrun node along the route.** Already met: `CityMapOverlay.travel` rides the operative token (`_here`) along the cable
+  with a lit trail, and the pick-then-confirm flow (W3-ROUTE) enters it on confirm; a test now pins that the marker is mid-route during the move.
+- **Queued: hover out to the building (R5).** The lit route node (pointer or list/pad) grows a stem from its sticker down to its building's
+  roof and rings the roof (`route_hover_out`, 0.22 s; `RouteOverlay._draw_hi`). Reduce effects: the stem is whole at once.
+- Tests: `test_anim_p1_flow.gd` (schedule / end-state / 0-frame reduce cases). Strip: `docs/art_review/PLAN1/ANIM_FLOW.jpg`.
+
 ### 2026-10-14 — ANIM-COMBAT: M1, M2, M3, M4, M7 (plan 1 animation round P1)
 
 Designer away; simplest option consistent with ANIMATION_HANDOFF.

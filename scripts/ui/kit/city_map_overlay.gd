@@ -244,7 +244,7 @@ var ring_ease: float:
 	set(v):
 		_mv.put(&"ring_ease", v)
 ## ANIM-R2 R9: the values this map's motion tweens (a tween step redraws only its layer).
-var _mv := MotionValues.new({&"select_reveal": 1.0, &"ring_ease": 1.0, &"drop_t": 1.0, &"drop_stamp_t": 1.0, &"travel_t": 1.0, &"arrive_t": 1.0, &"dim_t": 1.0, &"change_t": 1.0, &"road_t": 1.0})
+var _mv := MotionValues.new({&"select_reveal": 1.0, &"ring_ease": 1.0, &"drop_t": 1.0, &"drop_stamp_t": 1.0, &"travel_t": 1.0, &"arrive_t": 1.0, &"dim_t": 1.0, &"change_t": 1.0, &"road_t": 1.0, &"hover_out_t": 1.0})
 ## ANIM-5: an asset landing on a node (`drop_asset`): {"site", "index"} and its fall (0..1).
 var _drop: Dictionary = {}
 var drop_t: float:
@@ -285,6 +285,7 @@ var hover_id: StringName = &"":
 		if v == hover_id:
 			return
 		hover_id = v
+		_hover_out_changed()
 		if _top != null:
 			_queue_tags()
 			_hi.queue_redraw()
@@ -931,10 +932,29 @@ func _notification(what: int) -> void:
 			city.view3d.set_network(null)
 
 
+## Plan 1 ANIM-FLOW (W3-ROUTE R5): true on a map whose lit node reaches out to its building
+## (`route_hover_out`): the route map.
+var hover_out: bool = false
+## The node lit now: the pointer's, else the one lit from outside (a list row, the pad).
+func lit_id() -> StringName:
+	return _pointer_id if _pointer_id != &"" else hover_id
+
+
+## The lit node changed: the reach out to its building starts over (at rest at once when the
+## motion doesn't play).
+func _hover_out_changed() -> void:
+	if not hover_out or _mv == null:
+		return
+	_mv.put(&"hover_out_t", 0.0 if lit_id() != &"" else 1.0)
+	if lit_id() != &"":
+		Motion.run(&"route_hover_out", _mv, ^"hover_out_t", 1.0)
+
+
 ## H24 K4: the pointer is over node `id` now: tell the screen when that changes.
 func _point_at(id: StringName) -> void:
 	if id != _pointer_id:
 		_pointer_id = id
+		_hover_out_changed()
 		node_hovered.emit(id)
 		_queue_sync()  # ART-5 5d: an Exploit Site's file shows while pointed at
 
@@ -2736,8 +2756,9 @@ func drop_waiting() -> bool:
 
 ## ANIM-5 (4.16): the netrun moves from node `from` to node `to`: a light pulse runs the
 ## link with the "you are here" marker, the new node pops up, the old one dims. Returns
-## the seconds it takes (0 when motion doesn't play: the end state at once).
-func travel(from: StringName, to: StringName, on_land: Callable = Callable()) -> float:
+## the seconds it takes (0 when motion doesn't play: the end state at once). `settle` false:
+## the seconds to the pulse landing only (the screen after it opens at once).
+func travel(from: StringName, to: StringName, on_land: Callable = Callable(), settle: bool = true) -> float:
 	_travel = {"from": from, "to": to}
 	_on_land = on_land
 	travel_t = 1.0
@@ -2760,7 +2781,16 @@ func travel(from: StringName, to: StringName, on_land: Callable = Callable()) ->
 		Motion.run(&"visited_dim", _mv, ^"dim_t", 1.0))
 	_travel_tween = pop
 	queue_redraw()
+	if not settle:
+		# Plan 1 M5: the next page (a fight) opens as the pulse lands, or after the node's pop when there is no
+		# pulse (the first move); the pop plays under the page's dissolve.
+		return maxf(lead, Motion.seconds(&"node_pop") + Motion.delay_of(&"node_pop")) + TRAVEL_LAND_GAP
 	return lead + maxf(Motion.seconds(&"node_pop") + Motion.delay_of(&"node_pop"), Motion.seconds(&"visited_dim") + Motion.delay_of(&"visited_dim"))
+
+
+## Plan 1 M5: seconds (two frames) the screen after a move waits past the pulse's landing, so the
+## landing's own motions (the node's pop and dim) have started when it opens.
+const TRAVEL_LAND_GAP := 0.034
 
 
 ## ANIM-R1 M7: what the screen does when the pulse lands (the route's new state: the choice

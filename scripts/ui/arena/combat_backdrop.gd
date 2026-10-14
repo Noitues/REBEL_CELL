@@ -61,6 +61,15 @@ var won: float = 0.0:
 	set(v):
 		won = v
 		_sync_won()
+## Plan 1 M5: 0..1, how far the close-up has crossfaded in over the night sky it replaces (1 when the
+## sky was never on show: a cached city lands in the fight's first frame).
+var reveal: float = 1.0:
+	set(v):
+		reveal = v
+		if _still != null:
+			_still.queue_redraw()
+## True once a frame drew the night sky (the close-up then fades in over it, `reveal`).
+var _sky_drawn: bool = false
 
 var _mat: ShaderMaterial
 var _still: Control
@@ -312,8 +321,11 @@ func _on_resized() -> void:
 func _draw_still() -> void:
 	if _tex == null or holding():
 		_still.draw_rect(Rect2(Vector2.ZERO, size), Palette.NIGHT_SKY)
+		_sky_drawn = true
 		return
-	_still.draw_texture_rect(_tex, _cover_rect(), false)
+	if reveal < 1.0:
+		_still.draw_rect(Rect2(Vector2.ZERO, size), Palette.NIGHT_SKY)
+	_still.draw_texture_rect(_tex, _cover_rect(), false, Color(1.0, 1.0, 1.0, reveal))
 
 
 func _draw_won_still() -> void:
@@ -555,6 +567,12 @@ func _on_city_ready() -> void:
 	_hold_s = HOLD_DONE
 	_light_city()
 	_tex = city.get_texture()
+	# Plan 1 M5: the close-up crossfades in over the night sky that was on show (no pop); reduce
+	# effects, headless and a city that landed before any sky was drawn show it whole at once.
+	reveal = 1.0
+	if _sky_drawn and Motion.live(&"backdrop_reveal"):
+		reveal = 0.0
+		Motion.run(&"backdrop_reveal", self, ^"reveal", 1.0)
 	_won_tex = null
 	_mat.set_shader_parameter(&"use_mask", false)
 	_mat.set_shader_parameter(&"won_mask", null)
