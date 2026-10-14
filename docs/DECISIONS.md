@@ -34,6 +34,56 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-14 — Designer rulings on the overnight open questions (PT-003)
+1. **Route number keys travel at once** (no CONFIRM). Kept as built; only a mouse click selects first.
+2. **No "what only this choice reaches" text anywhere.** The maps must show the node graph itself (nodes as icons,
+   the paths between them) well enough that no tooltip or row has to say it. The Ahead rows stay gone. The graph
+   presentation isn't good enough yet: it goes into the **route map redesign** (below).
+3. **The rewards list shows even for a single pick** (W4-REWARDS' direct-open exception is removed).
+4. **Crew reads "X (Stationed: Y)"**: X = living operatives, Y = stationed. Raid Setup shows both. The orchestrator's
+   call: the 0-crew warning fires on **0 stationed**, since a raid is defended by the stationed crew; the text names
+   both numbers.
+5. **The player at 0 is a loss**, including a mutual zero (B5 stands).
+6. **Reachable Sites' name tags (round 44 relaxation):** pending. The designer wants to see it first (sheet
+   `docs/art_review/PLAN1/W3_GRID.jpg` panel 1; also in the PT-003 playtest).
+- **Route map redesign:** not planned until now. W3-ROUTE was incremental: CONFIRM, corner badges, HP on arrival.
+  It is now a slice of its own, concept first (bold concept art before code, per the art-ambition feedback), with
+  the art-pass session. Open: does showing the graph override D13's fog (only the next layer is drawn)?
+
+### 2026-10-14 — Art-pass review of the overnight sheets (REBEL_CELL art direction session)
+- **Approved:**
+  - W3_ROUTE (as an interim; for the redesign, the corner badges are too small at 1.0, so type must read from the
+    sticker itself);
+  - W3B, W4_PROMPTS, W4_PROMPTS_2, ANIM_COMBAT;
+  - W3_POLISH except F7;
+  - the approved parts of GRID, RAID and HQ: the double ring, FLATLINE row, Scrub reason, HOME SERVER once, GRID VIEW
+    framing, 0-crew warning, smear notches, FREE HIRE card, no tab counts, JACK IN tooltip;
+  - W4_REWARDS: terminal rows are right, they're the Cell's own system.
+- **Changes (follow-up slice ART-R1; no reverts):**
+  - **3a:** the raid report's verdict is a STICKER on the paper (Q7, rounds 20 / 21 lock); pencil may only add a tick.
+    Restore the CELL HOLDS sticker and drop the pencil verdict. This supersedes R8's "CELL HOLDS as pencil".
+  - **4a:** no lime spray wash under claimed territory; socket halos only (2 px, 35 %), per D5.
+  - **5 / F7:** toasts never cover controls; the nudge refusal goes above the tutorial box or beside the wheel.
+  - **7:** the loot sheet's BACK becomes a terminal chip at the sheet's top right; SKIP and CONTINUE stay stickers.
+  - **9a:** M6 must never show the empty map (a flat purple plane at +800 ms): hold the previous frame or cover with
+    the bits transition until the city has drawn.
+  - **9b:** capture M8–M10 and the route hover-out for review.
+- **1a, the designer's call:** tags on every reachable Site bring the clutter back (10+ stacked, worst in W3_HQ
+  frame 5). The art-pass session recommends tags on the selection, the next-step Sites (orange ring) and hover only.
+  Otherwise all reachable tags need collision handling (leader lines, never overlapping each other, the route or the
+  pencil).
+- Resend as one group sheet: 1a (after the ruling), 3a, 4a, F7, 7, 9a, 9b.
+
+### 2026-10-14 — Designer rulings: map tags (1a) and the route map graph (D13 reinterpreted)
+- **1a, map name tags:** none at rest, on any node. A tag shows only on **hover** of that node, and the map legend
+  hover shows them all. This supersedes W3-GRID's reachable-Site tags and round 44's "the selection keeps its tag".
+  It applies to the City Grid (HQ) and the netrun maps.
+- **D13 misread the ask.** The **full graph is always shown.** Past and non-reachable nodes and links are heavily
+  greyed and translucent. The current node and the reachable nodes are full colour, using today's colour approach.
+  **Map legend hover brings the whole graph to full opacity.** This replaces D13's fog (only the next layer drawn).
+- **Node type reads from the node itself** (its sticker / icon), not a corner badge (art-pass note, agreed).
+- These drive the **route map redesign**: concept first with the art-pass session, then the build.
+
 ### 2026-10-14 — W4-PROMPTS-2: the red tests fixed, D-UX2 finished in combat and the HQ
 
 - The "gauge first in the bar" tests (test_heat_all x2, test_hq_b_heat_gauge, test_layout_rules) now assert D-UX3: the gauge is
