@@ -34,6 +34,8 @@ func _ready() -> void:
 			await _toast()
 		"loot":
 			await _loot()
+		"rdbg":
+			await _rdbg()
 		"dbg":
 			await _dbg()
 		"cover":
@@ -242,3 +244,12 @@ func _dbg() -> void:
 	hq.wireframe.city.pin_influence({})
 	await _frames(60)
 	await _shot("dbg_2_noinfl")
+
+
+func _rdbg() -> void:
+	await _report()
+	var v3 = holder.get_child(0).wireframe.city.view3d
+	print("MAPLOOK ", v3.map_look(), " mode ", v3.map_mode, " lock ", v3.band_lock, " rh ", v3.ring_halos)
+	holder.get_child(0).wireframe.city.pin_influence({})
+	await _frames(60)
+	await _shot("rdbg_noinfl")

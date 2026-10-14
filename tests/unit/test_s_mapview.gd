@@ -355,3 +355,23 @@ func test_the_hq_and_the_netrun_build_the_same_raid_socket() -> void:
 			var want := RaidMapNodes.socket_spec(id, res, forecast, c)
 			assert_eq(hq.raid_socket(id, res, forecast, c), want, "%s: the HQ's socket (forecast %s)" % [id, forecast])
 			assert_eq(netrun_script.raid_socket_spec(id, res, forecast, c), want, "%s: the netrun's socket (forecast %s)" % [id, forecast])
+
+
+## ART-R2 3a (D5): the raid report, playout and setup take 4a's treatment: ring halos on their city, no area
+## fill (no lasting lime tint over a changed district, a mark is a thin ring), not just the HQ idle.
+func test_art_r2_3a_the_raid_pages_hold_ring_halos_and_no_area_fill() -> void:
+	RunManager.new_campaign(3)
+	var hq := _scene(HQ)
+	await _frames(3)
+	for page in ["raid", "raid_playout", "raid_summary"]:
+		hq._set_panel(Control.new(), page)
+		assert_true(hq.wireframe.city.ring_halos, "%s: ring halos on the city" % page)
+	var city: NeonCity = hq.wireframe.city
+	city.ring_halos = true
+	city._spread_origins = [Vector2(2, 2)]
+	city._spread_color = Palette.CELL_ACID
+	city._show_tint(Motion.amplitude(&"influence_tint"))
+	assert_eq(city.lasting_tint().a, 0.0, "no lime wash over the territory")
+	city.ring_halos = false
+	city._show_tint(Motion.amplitude(&"influence_tint"))
+	assert_gt(city.lasting_tint().a, 0.0, "(the other pages keep the tint)")

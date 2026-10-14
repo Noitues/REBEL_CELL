@@ -88,7 +88,8 @@ func test_the_grid_draws_its_nodes_before_any_bake_lands() -> void:
 	assert_true(city.city3d and city.view_covered(), "the 3D city covers the Grid at once")
 	var overlay: CityMapOverlay = hq.city_overlay
 	assert_eq(_placed_nodes(overlay), overlay.nodes.size(), "every node is placed on the first frame")
-	assert_false(overlay.label_rects().is_empty(), "and the labels")
+	overlay.tags_all = true  # ART-R1 1a: tags show on hover or the legend only
+	assert_false(overlay.label_rects().is_empty(), "and the labels (legend hover shows them all)")
 	assert_true(city.camera_settled(), "the fit's passes ran under the placement")
 	# HQ-B: the HQ page frames its map over a few passes (HQ_FIT_PASSES), then a jack lands.
 	await _frames(hq.HQ_FIT_PASSES + 3)

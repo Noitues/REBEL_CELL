@@ -245,3 +245,28 @@ func test_each_netrun_page_bar_shows_only_what_it_is_about() -> void:
 	await _frames(3)
 	assert_eq(_bar_tags(scene), PackedStringArray(["CYCLES"]), "the Mainframe: Cycles")
 	await _close(scene)
+
+
+## ART-R2 7: the pencil stays inside the safe margin and meets no control (the BACK chip, the sheet, a button).
+func test_art_r2_7_ours_now_stays_in_the_safe_margin_and_clear_of_every_control() -> void:
+	var screen := Rect2(0, 0, 1280, 720)
+	var word := GreasePencilWord.new()
+	word.text = "OURS NOW"
+	add_child_autofree(word)
+	word.position = Vector2(1200, 40)  # runs off the top right
+	assert_false(NetrunScript.word_in_safe_margin(word, screen), "off the edge is outside the margin")
+	word.position = Vector2(600, 400)
+	assert_true(NetrunScript.word_in_safe_margin(word, screen))
+	var chip := Control.new()
+	chip.mouse_filter = Control.MOUSE_FILTER_STOP
+	chip.position = Vector2(560, 380)
+	chip.size = Vector2(200, 60)
+	add_child_autofree(chip)
+	assert_true(NetrunScript.word_blocked_by(word, chip, screen), "a chip (not a BaseButton) the pencil meets blocks it")
+	chip.position = Vector2(0, 0)
+	assert_false(NetrunScript.word_blocked_by(word, chip, screen), "one it does not meet does not")
+	var host := Control.new()
+	host.mouse_filter = Control.MOUSE_FILTER_STOP
+	host.size = screen.size
+	add_child_autofree(host)
+	assert_false(NetrunScript.word_blocked_by(word, host, screen), "the page's full-screen host is not UI the word stands clear of")

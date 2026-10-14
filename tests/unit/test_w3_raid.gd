@@ -249,3 +249,23 @@ func test_dropping_a_defence_on_a_node_changes_the_node_itself() -> void:
 	await _frames(3)
 	var after := int(RaidMapNodes.socket_spec(target, {}, true, c)["defence"])
 	assert_eq(after, before + 1, "the node's socket counts the placed defence")
+
+
+## ART-R2 M8: the raid result page has no SEND IT control (the one in the motion lab's M8 strip is the lab's chrome).
+func test_art_r2_no_send_it_control_on_the_raid_result() -> void:
+	_raid_campaign(2)
+	var hq := await _hq()
+	hq.show_raid()
+	await _frames(2)
+	RunManager.fight_raid()
+	hq.show_raid_summary()
+	await _frames(4)
+	for c in hq._panel.find_children("*", "", true, false):
+		var text := ""
+		if c is BaseButton:
+			text = (c as BaseButton).text
+		elif c is Label:
+			text = (c as Label).text
+		assert_false(text.to_upper().contains("SEND IT"), "%s says SEND IT" % c.name)
+		if c.has_method("get_text"):
+			assert_false(String(c.get_text()).to_upper().contains("SEND IT"), "%s says SEND IT" % c.name)

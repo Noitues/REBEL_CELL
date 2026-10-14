@@ -254,7 +254,13 @@ var view3d: CityView3D = null
 ## The view band the 3D city holds (CityView3D.band_lock; -1: by zoom).
 var band_lock: int = -1
 ## ART-R1 4a: the 3D city's decal draws ring halos, not glow pools (CityView3D.ring_halos).
-var ring_halos: bool = false
+## ART-R2 3a: the same treatment holds for the territory marks: no lime area fill (the lasting
+## tint over a changed district, the mark's wash and hatch), the map's thin socket ring instead.
+var ring_halos: bool = false:
+	set(v):
+		ring_halos = v
+		if v and _front_layer != null and _spread_elapsed < 0.0:
+			_front_layer.visible = false
 ## ART-5 5e: the 3D city's motion layers (5c's CityViewMotion on view3d; null headless).
 var city_motion: CityViewMotion = null
 ## ART-5 5e: what the live Grid's city shows of the campaign (GridCityLife.of; {} none).
@@ -689,7 +695,8 @@ var tint_wash: float = 0.0:
 
 
 ## ANIM-R2 R7: the lasting tint alone (the front at full reach, its band gone) at `wash`.
-func _show_tint(wash: float) -> void:
+func _show_tint(wash_in: float) -> void:
+	var wash := 0.0 if ring_halos else wash_in
 	var m := _front_layer.material as ShaderMaterial
 	m.set_shader_parameter("origins", _spread_origins)
 	m.set_shader_parameter("origin_count", _spread_origins.size())
@@ -868,7 +875,11 @@ func draw_marks_on(ci: CanvasItem, rings: bool = true, stamps: bool = true) -> v
 		for q in 33:
 			var t := TAU * q / 32.0
 			ring.append(c + Vector2(cos(t) * TILE_A, sin(t) * TILE_B) * MARK_RADIUS)
-		if rings:
+		if rings and ring_halos:
+			# ART-R2 3a (D5): the map's socket halo weight (2 px at 35 %), no area fill.
+			var halo_cfg: CityConfig = CityView3D.CONFIG
+			_marks_layer.draw_polyline(ring, Color(col, halo_cfg.map_node_halo_alpha), halo_cfg.map_node_halo_px * k, true)
+		elif rings:
 			_marks_layer.draw_colored_polygon(ring, Color(col, MARK_FILL))
 			_hatch(_marks_layer, c, Vector2(TILE_A, TILE_B) * MARK_RADIUS, Color(col, MARK_HATCH_ALPHA), k)
 			_marks_layer.draw_polyline(ring, Color(0, 0, 0, 0.8), 6.0 * k, true)

@@ -30,3 +30,12 @@ func test_the_map_is_not_revealed_before_its_city_is_drawn() -> void:
 	assert_true(cover.holding(), "a flicker restarts the count")
 	cover._process(1.0 / 60.0)
 	assert_false(cover.holding(), "the city has drawn: the page shows")
+
+
+## ART-R2 9a: the cover holds the dark page, never the last frame (a half-dissolved loot sheet).
+func test_art_r2_9a_the_hold_is_the_dark_page_not_a_frame_of_the_loot() -> void:
+	var cover := RouteCover.make(null, func() -> bool: return false)
+	add_child_autofree(cover)
+	assert_not_null(cover.texture)
+	assert_eq((cover.texture as Texture2D).get_image().get_pixel(0, 0), Palette.NIGHT_SKY, "the night's colour")
+	assert_eq(cover.texture.get_width(), 1, "one pixel: no card, no sheet, nothing half dissolved to show")
