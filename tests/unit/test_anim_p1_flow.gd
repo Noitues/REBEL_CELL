@@ -102,7 +102,7 @@ func test_a_fight_dissolves_in_over_the_route_and_the_city_goes_when_it_is_whole
 	assert_true(scene.background.visible, "the route's city shows through it, not a dark frame")
 	var whole := await _until(func() -> bool: return not scene.combat_entering())
 	assert_true(whole, "the dissolve ends")
-	await _frames(1)
+	await BoundedWait.frozen_frames(get_tree(), 1)
 	assert_eq(scene.combat_scene.modulate.a, 1.0, "whole")
 	assert_false(scene.background.visible, "the arena draws its own world once it is whole")
 
@@ -157,8 +157,8 @@ func test_the_loot_sheet_dims_while_the_offers_leave() -> void:
 	assert_not_null(scene._panel.find_child("Stickers", true, false), "the pick page")
 	scene.choose_reward(0)
 	assert_true(scene.loot_leaving(), "the page waits for its flights")
-	await _frames(2)
-	assert_lt(scene._panel.modulate.a, 1.0, "the emptied sheet recedes")
+	var receding := await _until(func() -> bool: return scene._panel.modulate.a < 1.0, 2.0)
+	assert_true(receding, "the emptied sheet recedes")
 	# Frame-count independent (a loaded machine runs fewer tween steps per frame): it reaches the entry's alpha.
 	var dim := Motion.amplitude(&"loot_page_dim")
 	var dimmed := await _until(func() -> bool: return scene._panel.modulate.a <= dim + 0.05, Motion.seconds(&"loot_page_dim") + 2.0)
@@ -282,8 +282,8 @@ func test_plain_buttons_dip_when_pressed_and_stickers_keep_their_own_press() -> 
 	var b := box.get_child(0) as Button
 	_live()
 	b.button_down.emit()
-	await _frames(3)
-	assert_lt(b.scale.x, 1.0, "the press is acknowledged within frames")
+	var dipped := await _until(func() -> bool: return b.scale.x < 1.0, 1.0)
+	assert_true(dipped, "the press is acknowledged within frames")
 	b.button_up.emit()
 	var back := await _until(func() -> bool: return is_equal_approx(b.scale.x, 1.0))
 	assert_true(back, "and springs back")

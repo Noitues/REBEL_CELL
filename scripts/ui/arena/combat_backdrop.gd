@@ -325,7 +325,7 @@ func _draw_still() -> void:
 		return
 	if reveal < 1.0:
 		_still.draw_rect(Rect2(Vector2.ZERO, size), Palette.NIGHT_SKY)
-	_still.draw_texture_rect(_tex, _cover_rect(), false, Color(1.0, 1.0, 1.0, reveal))
+	_still.draw_texture_rect(_tex, _cover_rect(), false, Color(Palette.WHITE_HOT, reveal))
 
 
 func _draw_won_still() -> void:

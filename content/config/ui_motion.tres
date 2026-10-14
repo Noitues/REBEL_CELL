@@ -3757,7 +3757,7 @@ tier = 2
 [sub_resource type="Resource" id="m_combat_enter"]
 script = ExtResource("1_entry")
 id = &"combat_enter"
-duration = 0.28
+duration = 0.25
 delay = 0.0
 ease = 1
 trans = 4
