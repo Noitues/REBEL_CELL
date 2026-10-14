@@ -315,6 +315,9 @@ var _outcome_held: bool = false
 ## once without motion); the netrun then moves its top bar on.
 signal outcome_landed
 var _shown_turn: int = -1
+## Plan 1 M4: the highest turn the banner has shown this fight; the header never counts back
+## (a rewind or a new fight resets it), so a late second write cannot flip 1 -> 2 -> 1.
+var _banner_turn_hi: int = -1
 ## Last-turn line per combatant id (kept until the player acts).
 var _last_turn: Dictionary = {}
 ## ANIM-R3 A6f / A6j: the last turn's icon numbers and plate tooltips per wheel id.
@@ -1538,6 +1541,8 @@ func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 	var rewind_from := _rewind_from
 	var play := _pending_play
 	var discard := _pending_discard
+	if rewind_from != null or _has_event(events, "combat_start"):
+		_banner_turn_hi = -1  # a rewind or a new fight may legitimately show a lower turn
 	_before_action = null
 	_rewind_from = null
 	_pending_play = {}
@@ -2653,7 +2658,10 @@ func _refresh_status() -> void:
 		return
 	var state := engine.state()
 	# ART-2 2D: the banner's title says the turn; the status line under it, the keys.
-	_banner_title.text = tr("TURN %d  |  FREE NUDGE %d") % [state.turn if _shown_turn < 0 else _shown_turn, state.free_nudges]
+	var shown_turn := state.turn if _shown_turn < 0 else _shown_turn
+	shown_turn = maxi(shown_turn, _banner_turn_hi)
+	_banner_turn_hi = shown_turn
+	_banner_title.text = tr("TURN %d  |  FREE NUDGE %d") % [shown_turn, state.free_nudges]
 	var text := ""
 	if _outcome_held:
 		pass  # ANIM-R5 combat 1: the outcome's word waits for its beat (no key hints: SEND IT is spent)
@@ -4461,8 +4469,11 @@ func _play_action(before: CombatState, state: CombatState, events: Array[Diction
 ## respins turn from the old rotation, flips squash, moved needles glide, all after
 ## `delay` (the card's flight). Returns when the last turn or needle move lands (s from
 ## now; 0 when none plays).
-func _animate_wheels(before: CombatState, events: Array[Dictionary], delay: float) -> float:
+func _animate_wheels(before: CombatState, events: Array[Dictionary], card_delay: float) -> float:
 	var lands := 0.0
+	# Plan 1 M1: the wheels answer a played card partway through its flight (`card_effect_lead`),
+	# so a nudge / Fine Tune turns the wheel as the card lands, not after.
+	var delay := card_delay * clampf(Motion.amplitude(&"card_effect_lead"), 0.0, 1.0)
 	for v in _views():
 		if v.combatant == null:
 			continue
@@ -5213,6 +5224,7 @@ func _land(b: Dictionary, s: CombatState) -> void:
 	var tier := int(b["tier"])
 	AudioDirector.play_precision(tier, is_null_slice)
 	if not is_null_slice:
+		v.payoff_to = _payoff_point(s)
 		v.play_precision(tier, slot, int(b["pointer_index"]))  # ART-2 2A: the landing's shape (ART_BIBLE 3.19)
 	if is_null_slice:
 		v.play_null_static(slot)
@@ -5224,6 +5236,15 @@ func _land(b: Dictionary, s: CombatState) -> void:
 		_stutter_view(v)
 	else:
 		v.play_good_ring()
+
+
+## Plan 1 M3: the first living enemy wheel's centre, where a Perfect tag resolves into
+## (INF when none stands).
+func _payoff_point(s: CombatState) -> Vector2:
+	for e in s.enemies:
+		if e.hp > 0 and _enemy_views.has(e.id):
+			return (_enemy_views[e.id] as WheelView).global_center()
+	return Vector2.INF
 
 
 ## A wheel goes down (its HP was seen reaching 0 first: the schedule waits): an enemy's

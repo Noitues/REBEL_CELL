@@ -7851,3 +7851,17 @@ after; `D24_route.jpg` the route dossier before | after; `D24_crop.jpg` a paper 
   `raid_fight` run only from the START DEFENSE sticker, plus demo flags). Did not reproduce: frames and Enter / Space
   on the HQ raid setup never resolve the raid (a stray Enter leaves the page for the HQ without playing it). Test:
   `test_b9_raid_waits_for_start_defense`. Left as is; likely a tester click on the sticker.
+
+## 2026-10-13 - plan1 ANIM-COMBAT (M1, M2, M3, M4, M7)
+Implementation decisions (designer away; simplest option consistent with ANIMATION_HANDOFF):
+- **M4 (header 1 -> 2 -> 1):** the replay guard (`_shown_turn`) already held the turn; seeded headless replays never flipped back
+  (`test_the_turn_header_never_flips_back`). The remaining double write could not be reproduced, so the banner now keeps the highest
+  turn it has shown (`_banner_turn_hi`); a rewind or a new fight resets it. A legitimate undo still shows the lower turn.
+- **M1:** new motion entry `card_effect_lead` (amplitude = share of the card's flight, 0.55; OFF_PARTS 1.0 = old behaviour): a
+  played card's wheel effect (spin, nudge, flip) starts inside the flight, so Fine Tune turns the wheel as the card lands. RAM chip
+  ticks and the flight itself were already built (ANIM-3).
+- **M2:** floating numbers 24 -> 30 px (`CombatFxLayer.NUMBER_FONT`). Ordering (one wheel at a time, hit_line spacing, enemy_turn_spin
+  transitions) was already built in R2-R4 and is unchanged.
+- **M3:** the PERFECT tag's dissolve bits now fly to the first living enemy wheel (`WheelView.payoff_to`), so the tag resolves into the hit.
+- **M7:** `resolve_side_gap` 0.2 -> 0.06 s: the enemy's return strike follows the player's last impact with no dead lull.
+Open questions for the designer: no windowed before/after strips were captured in this run; judge M1/M3/M7 by eye.

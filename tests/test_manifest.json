@@ -113,6 +113,10 @@
 			"seconds": 30.6,
 			"tier": "full"
 		},
+		"res://tests/unit/test_anim_p1_combat.gd": {
+			"seconds": 20.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_anim_r1_combat.gd": {
 			"seconds": 36.1,
 			"tier": "full"

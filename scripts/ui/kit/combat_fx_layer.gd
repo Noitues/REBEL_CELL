@@ -10,7 +10,7 @@ extends Control
 ## scatter comes from hashes, never from an RNG. It takes no input.
 
 ## Floating number lettering at text scale 1.0 (px) and its white outline.
-const NUMBER_FONT := 24
+const NUMBER_FONT := 30
 const NUMBER_OUTLINE := 6
 ## Star burst: spikes round a crit, and their inner radius share.
 const BURST_SPIKES := 10

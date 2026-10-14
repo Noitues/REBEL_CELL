@@ -80,6 +80,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"resolve_side_gap", &"resolve_attacker_gap", &"ram_refill_float", &"event_type",
 	# ANIM-R5 combat: the lost fight's DEFEAT stamp that stays.
 	&"defeat_stamp",
+	# Plan 1 M1: a played card's wheel effect starts partway through its flight (a share).
+	&"card_effect_lead",
 	# ANIM-R5 netrun screens: a flight's landing pulses its top bar tag.
 	&"flight_land_pulse",
 	# ANIM-R6 rules: a flight's lift and fade shares and a stamp's down and hold shares
@@ -164,7 +166,7 @@ const REQUIRED_IDS: Array[StringName] = [
 const OFF_PARTS: Dictionary = {
 	&"hit_line_flight": 0.0, &"ride_swap": 0.0, &"ride_shrink": 1.0, &"ride_perfect": 1.0,
 	&"break_crack": 0.0, &"mainframe_sign_strike": 0.0, &"mainframe_sign_flicker": 0.0,
-	&"forecast_change_fade": 0.0, &"resolve_side_gap": 0.0, &"resolve_attacker_gap": 0.0,
+	&"card_effect_lead": 1.0, &"forecast_change_fade": 0.0, &"resolve_side_gap": 0.0, &"resolve_attacker_gap": 0.0,
 	&"drag_ghost_tilt": 0.0, &"hit_freeze": 0.0, &"stamp_fade_in": 0.0,
 	# ANIM-R6 city: the gap between raid steps and the raid volley's stagger (a share).
 	&"raid_step_gap": 0.0, &"raid_shot_stagger": 0.0,

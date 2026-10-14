@@ -2270,6 +2270,9 @@ var landing_slot_shown: int = -1
 var land_fx: float = 0.0
 ## 0 -> 1 through the landing word's life: it holds, then leaves as bits.
 var land_word: float = 0.0
+## Plan 1 M3: where a PERFECT tag's bits fly when it dissolves (a global point: the wheel the
+## hit is for); INF = into this wheel's hub.
+var payoff_to: Vector2 = Vector2.INF
 ## PERFECT: the jaws clamping the needle tip (0 open .. 1 shut).
 var latch: float = 0.0
 ## WEAK: the stutter's offset (degrees) on the shown rotation.
@@ -2372,7 +2375,8 @@ func _dissolve_land_sticker() -> void:
 		bits = BinaryBits.new()
 		bits.name = "Bits"
 		add_child(bits)
-	_land_sticker.dissolve(bits, global_center())
+	var to := payoff_to if landing_tier == RC.PrecisionTier.PERFECT and payoff_to != Vector2.INF else global_center()
+	_land_sticker.dissolve(bits, to)
 
 
 func _drop_land_sticker() -> void:
