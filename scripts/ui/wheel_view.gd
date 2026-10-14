@@ -2821,6 +2821,7 @@ func _sync_disc(center: Vector2, radius: float, rot: float) -> int:
 	if ring:
 		# round 45: any number of segments of any span (the ring's own frame), each one a needle reads raised
 		disc.set_ring(ring_segments(), shown_segments(), shown_inner_rotation() * DEG_PER_TICK, SEG_KINDS)
+		disc.set_partial(partial_segments(), ring_segments().size())
 	_sync_wedge(center, radius)
 	disc.put(&"lockdown", lockdown_level)
 	disc.put(&"rgb_split", rgb_split)
@@ -2874,6 +2875,16 @@ func shown_segments() -> Array[int]:
 		var s := shown_segment(i)
 		if s >= 0:
 			out.append(s)
+	return out
+
+
+## The segments a needle reads whose wedge covers only part of its slice (their clockwise end caps draw cream).
+func partial_segments() -> Array[int]:
+	var out: Array[int] = []
+	for i in shown_pointers().size():
+		var st := wedge_state(i)
+		if not st.is_empty() and float(st["cover"]) < 1.0 - COVER_EPS:
+			out.append(int(st["seg"]))
 	return out
 
 
@@ -3002,15 +3013,61 @@ func _word_plate_geometry(center: Vector2, k: float, pointer: int) -> Dictionary
 	var gw := h * 0.7 + RingMods.PLATE_GAP * ts if glyph else 0.0
 	var w := font.get_string_size(plate_words(seg_id), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + gw + RingMods.PLATE_PAD * ts * 2.0
 	var needle := fposmod(-shown_pointers()[pointer] * DEG_PER_TICK, 360.0)
-	var side := 1.0
-	var at := WheelFace.at(center, k, RingMods.PLATE_R, needle + RingMods.PLATE_DEG)
-	var rect := Rect2(at - Vector2(0.0, h * 0.5), Vector2(w, h))
-	var right_edge := get_viewport_rect().size.x - global_position.x - RingMods.PLATE_MARGIN
-	if rect.end.x > right_edge:
-		side = -1.0
-		at = WheelFace.at(center, k, RingMods.PLATE_R, needle - RingMods.PLATE_DEG)
-		rect = Rect2(at - Vector2(w, h * 0.5), Vector2(w, h))
-	return {"rect": rect, "at": at, "side": side, "needle": needle, "fs": fs, "glyph": glyph, "seg_id": seg_id}
+	var edge_hi := get_viewport_rect().size.x - global_position.x - RingMods.PLATE_MARGIN
+	var edge_lo := -global_position.x + RingMods.PLATE_MARGIN
+	var avoid := _plate_obstacles()
+	var chosen := {}
+	var fallback := {}
+	# The offsets to try: the usual 9 degrees clockwise, the mirror, then sliding along the rim each way.
+	var offs: Array[Vector2] = []
+	for n in RingMods.PLATE_SLIDE_STEPS + 1:
+		var off := RingMods.PLATE_DEG + RingMods.PLATE_SLIDE_DEG * n
+		offs.append(Vector2(1.0, off))
+		offs.append(Vector2(-1.0, off))
+	for o in offs:
+		var side: float = o.x
+		var at := WheelFace.at(center, k, RingMods.PLATE_R, needle + o.y * side)
+		var rect := Rect2(at - Vector2(0.0, h * 0.5), Vector2(w, h)) if side > 0.0 else Rect2(at - Vector2(w, h * 0.5), Vector2(w, h))
+		if rect.end.x > edge_hi or rect.position.x < edge_lo:
+			continue
+		var cand := {"rect": rect, "at": at, "side": side, "lead": needle + o.y * side}
+		if fallback.is_empty():
+			fallback = cand
+		var clear := true
+		for ob in avoid:
+			if rect.grow(RingMods.PLATE_CLEAR * ts).intersects(ob):
+				clear = false
+				break
+		if clear:
+			chosen = cand
+			break
+	if chosen.is_empty():
+		chosen = fallback
+	if chosen.is_empty():
+		var at0 := WheelFace.at(center, k, RingMods.PLATE_R, needle - RingMods.PLATE_DEG)
+		chosen = {"rect": Rect2(at0 - Vector2(w, h * 0.5), Vector2(w, h)), "at": at0, "side": -1.0, "lead": needle - RingMods.PLATE_DEG}
+	chosen["needle"] = needle
+	chosen["fs"] = fs
+	chosen["glyph"] = glyph
+	chosen["seg_id"] = seg_id
+	return chosen
+
+
+## What a word plate keeps off (local rects): every numbered needle tag, the HP number and its row, and the
+## HP gauge's arc (sampled along its length).
+func _plate_obstacles() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for i in pointer_tag_model().size():
+		var r := pointer_tag_rect(i)
+		if r.has_area():
+			out.append(r)
+	if combatant != null:
+		out.append_array(_hp_block_rects())
+		var half := RingMods.PLATE_GAUGE_DOT * _ts()
+		for j in RingMods.PLATE_GAUGE_SAMPLES + 1:
+			var at := hp_arc_spot(float(j) / float(RingMods.PLATE_GAUGE_SAMPLES)) - global_position
+			out.append(Rect2(at - Vector2(half, half), Vector2(half, half) * 2.0))
+	return out
 
 
 func _draw_word_plates(center: Vector2, k: float) -> void:
@@ -3024,7 +3081,7 @@ func _draw_word_plate(center: Vector2, k: float, pointer: int) -> void:
 	var seg_id: StringName = g["seg_id"]
 	var tint := RingMods.tint(seg_id)
 	var ts := _ts()
-	var lead_deg := float(g["needle"]) + RingMods.PLATE_DEG * float(g["side"])
+	var lead_deg := float(g["lead"])
 	draw_line(g["at"], WheelFace.at(center, k, RingMods.PLATE_LEADER_R, lead_deg), _col(tint), RingMods.PLATE_BORDER * ts, true)
 	var box := StyleBoxFlat.new()
 	box.bg_color = _col(RingMods.PLATE_FILL)

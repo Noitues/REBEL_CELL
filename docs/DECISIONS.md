@@ -7718,3 +7718,16 @@ after; `D24_route.jpg` the route dossier before | after; `D24_crop.jpg` a paper 
   sets it to `fight_area(_fight_area)` (right of the key, under the bar, left of the feed column).
   Pencil words are never clipped (G2R2); they move instead. Test:
   `test_the_incoming_word_stays_whole_in_the_maps_free_part` (art6 raid presentation).
+
+## 2026-10-13 â€” plan1 W2 R2 polish (ring marks, word plate, partial cover)
+- **Keyline rule (`RingMods.keyline_for`):** a modifier whose tint luminance is under 0.6 or whose mark `stroke` (master
+  units, new table field) is under 4 px at 1.0 (0.5 px per unit) wears a 2 px ink keyline at the 38 % mark, whatever its row
+  declares; a row's own keyline still counts (PIERCE). ANCHOR, ACCEL and ECHO marks go 1.4x (57 -> 80) with the keyline; row
+  and arc pitch kept. Test: `test_w2r2_polish.gd`.
+- **Word plate avoids tags and the gauge:** it keeps 4 px off every numbered needle tag / precision tag
+  (`pointer_tag_rect`), the HP number row and the HP gauge arc (sampled): 9 deg clockwise, the mirror, then slides along the
+  rim 3 deg at a time (8 steps each way), screen-edge flip as before; if all are blocked the first on-screen spot stays.
+- **Partial cover:** the active segment's clockwise end cap draws cream (`Palette.RING_CREAM`, 3 px) while its wedge
+  covers under 100 % of the slice (`seg_partial` mask, `WheelView.partial_segments`).
+- Sheet: `docs/art_review/PLAN1/W2R2_POLISH.jpg` (tool: `tools/design_lab/w2r2_polish_capture.tscn`).
+

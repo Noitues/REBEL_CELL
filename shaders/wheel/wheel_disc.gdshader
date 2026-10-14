@@ -110,6 +110,10 @@ uniform float seg_plate_light = 1.15;
 uniform float seg_lip_w = 1.1;
 uniform float seg_cap_w = 5.0;
 uniform float seg_cap_over = 2.0;
+// A partly covered active segment (bitmask): its clockwise end cap is drawn cream, seg_cap_partial_w wide.
+uniform int seg_partial = 0;
+uniform float seg_cap_partial_w = 3.0;
+uniform vec4 seg_cap_cream : source_color = vec4(0.949, 0.933, 0.894, 1.0);
 uniform float seg_glow_px = 7.0;
 uniform float seg_glow_a = 0.85;
 uniform vec4 seg_blank : source_color = vec4(0.949, 0.933, 0.894, 0.8);
@@ -829,6 +833,10 @@ vec4 disc_at(vec2 p) {
 		}
 		float cap = cover(seg_cap_w * 0.5 - abs(arc_out)) * cover(min(rho - ra + seg_cap_over, rb + seg_cap_over - rho));
 		o = over_p(o, tf, cap);
+		if (((seg_partial >> sa) & 1) == 1 && local > 0.0) {
+			float cc = cover(seg_cap_partial_w * 0.5 - abs(arc_out)) * cover(min(rho - ra + seg_cap_over, rb + seg_cap_over - rho));
+			o = over_p(o, seg_cap_cream.rgb, cc);
+		}
 	}
 	// 8. the glass crescent over the disc (d3-lite)
 	float cres = exp(-pow((rho / R_LIP - 0.88) / 0.06, 2.0)) * pow(clamp(cos(radians(th - 315.0)), 0.0, 1.0), 2.0) * 0.10;

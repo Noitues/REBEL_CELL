@@ -35,6 +35,8 @@ func _init() -> void:
 	mat.set_shader_parameter(&"seg_lip_w", RingMods.LIP_W)
 	mat.set_shader_parameter(&"seg_cap_w", RingMods.CAP_W)
 	mat.set_shader_parameter(&"seg_cap_over", RingMods.CAP_OVER)
+	mat.set_shader_parameter(&"seg_cap_partial_w", RingMods.CAP_PARTIAL_W)
+	mat.set_shader_parameter(&"seg_cap_cream", RingMods.CAP_PARTIAL)
 	mat.set_shader_parameter(&"seg_glow_px", RingMods.GLOW_PX)
 	mat.set_shader_parameter(&"seg_glow_a", RingMods.GLOW_A)
 	mat.set_shader_parameter(&"seg_blank", RingMods.BLANK_TINT)
@@ -50,6 +52,12 @@ func set_ring(segs: Array[Dictionary], lit: Array[int], rot: float, kinds: Dicti
 		mat.set_shader_parameter(key, p[key])
 	mat.set_shader_parameter(&"seg_lit", lit_mask(lit, int(p[&"seg_n"])))
 	mat.set_shader_parameter(&"ring_rot", fposmod(rot, 360.0))
+
+
+## Round 45 polish: the segment indices (a bitmask built like `lit_mask`) whose slice they cover only in part: each one's
+## clockwise end cap is drawn cream so the partial cover reads.
+func set_partial(partial: Array[int], n: int) -> void:
+	mat.set_shader_parameter(&"seg_partial", lit_mask(partial, n))
 
 
 ## The shader's `seg_lit` bits for segment indices `lit` (those past `n` dropped).

@@ -23,18 +23,26 @@ const NONE := -1
 ## encrypted cyan (the ring's own echo colour), ANCHOR in the ring's own anchor steel (DECISIONS 2026-10-13).
 const MODS := {
 	&"seg_x2": {"mod": 0, "kind": Kind.GLYPH, "tint": Palette.RING_DOUBLE, "size": 100.0, "row": 68.0, "arc": 92.0,
-		"glyph": &"seg_x2", "keyline": 0.0, "mark": "×2"},
+		"glyph": &"seg_x2", "stroke": 12.0, "keyline": 0.0, "mark": "×2"},
 	&"seg_pierce": {"mod": 1, "kind": Kind.CHEVRON, "tint": Palette.RING_PIERCE, "size": 50.0, "row": 30.0, "arc": 14.0,
-		"glyph": &"seg_pierce", "keyline": 2.0, "mark": ""},
+		"glyph": &"seg_pierce", "stroke": 12.0, "keyline": 2.0, "mark": ""},
 	&"seg_corrupt": {"mod": 2, "kind": Kind.GLITCH, "tint": Palette.RING_CORRUPT, "size": 29.0, "row": 29.0, "arc": 29.0,
-		"glyph": &"seg_corrupt", "keyline": 0.0, "mark": ""},
-	&"seg_anchor": {"mod": 3, "kind": Kind.GLYPH, "tint": Palette.RING_ANCHOR, "size": 57.0, "row": 64.0, "arc": 78.0,
-		"glyph": &"seg_anchor", "keyline": 0.0, "mark": ""},
-	&"seg_accelerator": {"mod": 4, "kind": Kind.GLYPH, "tint": Palette.RING_ACCEL, "size": 57.0, "row": 64.0, "arc": 78.0,
-		"glyph": &"seg_accelerator", "keyline": 2.0, "mark": ""},
-	&"seg_echo": {"mod": 5, "kind": Kind.GLYPH, "tint": Palette.RING_ECHO, "size": 57.0, "row": 64.0, "arc": 78.0,
-		"glyph": &"seg_echo", "keyline": 0.0, "mark": ""},
+		"glyph": &"seg_corrupt", "stroke": 29.0, "keyline": 0.0, "mark": ""},
+	&"seg_anchor": {"mod": 3, "kind": Kind.GLYPH, "tint": Palette.RING_ANCHOR, "size": 80.0, "row": 64.0, "arc": 78.0,
+		"glyph": &"seg_anchor", "stroke": 7.0, "keyline": 2.0, "mark": ""},
+	&"seg_accelerator": {"mod": 4, "kind": Kind.GLYPH, "tint": Palette.RING_ACCEL, "size": 80.0, "row": 64.0, "arc": 78.0,
+		"glyph": &"seg_accelerator", "stroke": 7.0, "keyline": 2.0, "mark": ""},
+	&"seg_echo": {"mod": 5, "kind": Kind.GLYPH, "tint": Palette.RING_ECHO, "size": 80.0, "row": 64.0, "arc": 78.0,
+		"glyph": &"seg_echo", "stroke": 6.0, "keyline": 2.0, "mark": ""},
 }
+## The keyline rule (plan1 W2 R2 polish): a modifier whose tint is dark (luminance under KEYLINE_LUM_MIN) or whose
+## mark stroke (`stroke`, master units) comes under KEYLINE_STROKE_MIN_PX at text 1.0 gets the ink keyline of
+## KEYLINE_W, whatever its table row declares, so a future modifier cannot ship thin and unlined. One master unit
+## is about PX_PER_UNIT_1_0 px at 1.0 (the slice rim is about 0.5 of R_OUT).
+const KEYLINE_W := 2.0
+const KEYLINE_LUM_MIN := 0.6
+const KEYLINE_STROKE_MIN_PX := 4.0
+const PX_PER_UNIT_1_0 := 0.5
 ## CORRUPT's second colour: a block whose hash passes GLITCH_PINK_AT is pink; one past GLITCH_FILL_AT fills.
 const GLITCH_PINK := Palette.RING_GLITCH_PINK
 ## A blank segment's active plate and tick dot: cream at 80 %.
@@ -53,6 +61,9 @@ const PLATE_LIGHT := 1.15
 const LIP_W := 1.1
 const CAP_W := 5.0
 const CAP_OVER := 2.0
+## A partly covered active segment: its clockwise end cap in cream, this wide.
+const CAP_PARTIAL := Palette.RING_CREAM
+const CAP_PARTIAL_W := 3.0
 const GLOW_PX := 7.0
 const GLOW_A := 0.85
 
@@ -109,6 +120,14 @@ const PLATE_PAD := 10.0
 const PLATE_GAP := 6.0
 const PLATE_LEADER_R := 320.0
 const PLATE_MARGIN := 8.0
+## The plate keeps clear (PLATE_CLEAR px) of the numbered needle tags, the precision tags and the HP gauge: it flips
+## to the other side of the blade, then slides along the rim PLATE_SLIDE_DEG degrees at a time, up to
+## PLATE_SLIDE_STEPS times each way. The gauge's arc counts as PLATE_GAUGE_SAMPLES + 1 squares of PLATE_GAUGE_DOT px.
+const PLATE_CLEAR := 4.0
+const PLATE_SLIDE_DEG := 3.0
+const PLATE_SLIDE_STEPS := 8
+const PLATE_GAUGE_DOT := 6.0
+const PLATE_GAUGE_SAMPLES := 12
 
 
 ## The table entry of segment `seg_id` (empty for a blank or unknown segment: no wedge, no notch).
@@ -124,3 +143,24 @@ static func mod_id(seg_id: StringName) -> int:
 ## Segment `seg_id`'s tint (cream at 80 % for a blank).
 static func tint(seg_id: StringName) -> Color:
 	return of(seg_id).get("tint", BLANK_TINT)
+
+
+## Relative luminance of `c` (Rec. 709 on the stored values).
+static func luminance(c: Color) -> float:
+	return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
+
+
+## The ink keyline (master units) segment `seg_id`'s mark wears: its table row's, or KEYLINE_W when the rule
+## above asks for one.
+static func keyline_of(seg_id: StringName) -> float:
+	return keyline_for(of(seg_id))
+
+
+## The same rule for a table row `m` (tests feed it rows of their own).
+static func keyline_for(m: Dictionary) -> float:
+	if m.is_empty():
+		return 0.0
+	var k := float(m.get("keyline", 0.0))
+	if luminance(m["tint"]) < KEYLINE_LUM_MIN or float(m.get("stroke", 0.0)) * PX_PER_UNIT_1_0 < KEYLINE_STROKE_MIN_PX:
+		k = maxf(k, KEYLINE_W)
+	return k
