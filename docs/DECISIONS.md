@@ -7915,3 +7915,22 @@ after; `D24_route.jpg` the route dossier before | after; `D24_crop.jpg` a paper 
   `raid_fight` run only from the START DEFENSE sticker, plus demo flags). Did not reproduce: frames and Enter / Space
   on the HQ raid setup never resolve the raid (a stray Enter leaves the page for the HQ without playing it). Test:
   `test_b9_raid_waits_for_start_defense`. Left as is; likely a tester click on the sticker.
+
+## 2026-10-14 - plan1 W5-RULE5 (D14 rule-5 sweep, batch lane)
+Implementation decisions (designer away; decided and logged):
+- **Scope:** 19 `scripts/ui/kit/*.gd` files chosen by the 2026-10-11 lint digest's R5 counts (the "~190 literal list" was
+  never kept as a file). Excluded as briefed (other agents editing): `city_map_overlay`, `neon_city`, `heat_poster`,
+  `wheel_view`, `combat_fx_layer`, `combat_scene`, `hq_scene`, `netrun_scene`, `scripts/ui/raid/`, `scripts/ui/hq/`.
+  The lint digest counted R5 lines there: combat_scene 26, heat_poster 29, combat_fx_layer 15, city_map_overlay 12,
+  wheel_view 8, neon_city 1 (the others had none listed); these are the follow-up.
+- **Why a new answer format:** Haiku 5.5 as unified diffs failed `git apply` on 13 of 19 (wrong hunk counts) and its
+  hidden thinking ate `max_tokens` on 13 (run 1). New kind `const_edits` (`tools/batch/prompts/const_edits.md`,
+  `tools/batch/apply_edits.py`): the model answers exact-text REPLACE / INSERT_AFTER blocks; the applier requires a
+  unique match, puts the new consts' values back into each replacement and drops any block that is not the original
+  line (int vs float spelling of the same number tolerated), and removes consts left unused. `make_batch.py` gained an
+  optional spec `thinking` field. Haiku (thinking off) then produced consts but mostly no-op replacements, so the
+  final run used **Sonnet 5.5** (designer's "cheapest first" still held: it is the doc's own model for `refactor`).
+- **Reviewed by eye:** every applied hunk read; reverted the model's `HALF = 0.5` consts (no meaning) and one const
+  Array (`ACTION_DRIP`, a const array is read-only where the callee may expect a mutable one).
+- **Baseline:** the visual lint (colour and font-size literals) is not touched by this sweep, so
+  `tools/visual_qa/lint_baseline.json` stays as it is (unchanged, never up).

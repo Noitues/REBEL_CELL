@@ -28,6 +28,24 @@ const GRID_GAP := 14.0
 ## ART-9 4A: the grid's edge inside the scroll (px): a focused sticker's outline stays in the glass.
 const GRID_EDGE := 6
 const CARDS_PER_ROW := 4
+## The deck window's minimum size (px).
+const WINDOW_MIN_SIZE := Vector2(900, 540)
+## The deck window's x position and the top gap below the subtitles (px).
+const WINDOW_POS_X: float = 190.0
+const WINDOW_TOP_GAP: float = 70.0
+## The scroll's width and height before the liner pad is taken off (px).
+const SCROLL_BASE_W: float = 880.0
+const SCROLL_BASE_H: float = 380.0
+## The gap between the grid's cards, both ways (px).
+const GRID_SEP: int = 14
+## The gap between bottom row items (px).
+const BOTTOM_SEP: int = 20
+## The action button's font size.
+const ACTION_BUTTON_SIZE: int = 34
+## The width of the title label slack (px).
+const TITLE_SLACK: float = 2.0
+## The tolerance when comparing a row height to the glass (px).
+const ROW_TOLERANCE: float = 0.5
 
 
 func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String = "DECK", p_action: String = "") -> void:
@@ -45,8 +63,8 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	TextDb.shown_as_given(self)
 	var accent := Palette.CELL_ACID if p_action == "REMOVE" else Palette.CELL_PINK
 	window = CrtWindow.new(tr("%s // %d CARDS") % [p_title, deck.size()], accent).with_kind(CrtWindow.kind_for(accent), accent)
-	window.custom_minimum_size = Vector2(900, 540)
-	window.position = Vector2(190, SubtitleStrip.top_below(70.0))  # under the subtitles (H21)
+	window.custom_minimum_size = WINDOW_MIN_SIZE
+	window.position = Vector2(WINDOW_POS_X, SubtitleStrip.top_below(WINDOW_TOP_GAP))  # under the subtitles (H21)
 	add_child(window)
 	tab_row = HBoxContainer.new()
 	window.body.add_child(tab_row)
@@ -57,7 +75,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	window.body.add_child(hint)
 	var scroll := ScrollContainer.new()
 	_scroll = scroll
-	scroll.custom_minimum_size = Vector2(880 - LinerPanel.PAD.x * 2.0, 380 - LinerPanel.PAD.y * 2.0 - LinerPanel.CAPTION_ROOM)
+	scroll.custom_minimum_size = Vector2(SCROLL_BASE_W - LinerPanel.PAD.x * 2.0, SCROLL_BASE_H - LinerPanel.PAD.y * 2.0 - LinerPanel.CAPTION_ROOM)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
 	# B5 (review section c / f: "Put the cards on the white liner sheet"; round 44 `deck_viewer.png`): the deck's
@@ -69,8 +87,8 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	var grid := HFlowContainer.new()
 	grid.name = "DeckGrid"
 	grid.custom_minimum_size.x = GRID_WIDTH
-	grid.add_theme_constant_override("h_separation", 14)
-	grid.add_theme_constant_override("v_separation", 14)
+	grid.add_theme_constant_override("h_separation", GRID_SEP)
+	grid.add_theme_constant_override("v_separation", GRID_SEP)
 	# room in the glass for a focused sticker's lift (`card_hover`) and its outline: the scroll
 	# clips, and the first row's lifted card lost its top and left edge
 	var room := MarginContainer.new()
@@ -107,7 +125,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 		grid.add_child(sticker)
 		_cards.append(sticker)
 	var bottom := HBoxContainer.new()
-	bottom.add_theme_constant_override("separation", 20)
+	bottom.add_theme_constant_override("separation", BOTTOM_SEP)
 	window.body.add_child(bottom)
 	_bottom = bottom
 	var close_btn := Button.new()
@@ -118,7 +136,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	bottom.add_child(close_btn)
 	InputPrompt.after(close_btn, &"ui_cancel")
 	if action != "":
-		_action_button = DripButton.new(tr(action), "", DripButton.DRIP_PINK, 34, [[0, 26, 0.3]])
+		_action_button = DripButton.new(tr(action), "", DripButton.DRIP_PINK, ACTION_BUTTON_SIZE, [[0, 26, 0.3]])
 		_action_button.name = "ActionButton"
 		_action_button.visible = false
 		_action_button.pressed.connect(confirm)
@@ -207,7 +225,7 @@ func _fit_canvas() -> void:
 	var view := get_viewport_rect().size
 	var head := window.find_child("TerminalTitle", true, false) as Label
 	if head != null:
-		var need := ceilf(head.get_theme_font(&"font").get_string_size(head.text, HORIZONTAL_ALIGNMENT_LEFT, -1, head.get_theme_font_size(&"font_size")).x) + 2.0
+		var need := ceilf(head.get_theme_font(&"font").get_string_size(head.text, HORIZONTAL_ALIGNMENT_LEFT, -1, head.get_theme_font_size(&"font_size")).x) + TITLE_SLACK
 		head.custom_minimum_size.x = need
 		var wide := window.get_combined_minimum_size().x - (view.x - CANVAS_SIDE * 2.0)
 		if wide > 0.0:
@@ -221,7 +239,7 @@ func _fit_canvas() -> void:
 		window.custom_minimum_size.y = maxf(0.0, window.custom_minimum_size.y - over)
 		window.size = window.get_combined_minimum_size()
 	var glass := _scroll.custom_minimum_size.y
-	if row_height(_card_scale) > glass + 0.5:
+	if row_height(_card_scale) > glass + ROW_TOLERANCE:
 		var floor_ds := card_scale_at(1.0)
 		_card_scale = maxf(floor_ds, (glass - row_height(0.0)) / ZineCard.STICKER_SIZE.y)
 		for c in _cards:

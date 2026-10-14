@@ -160,6 +160,42 @@ const BITS_FRAME_PX := Vector2(460, 380)
 const BITS_CENTRE_PX := Vector2(230, 200)
 const BITS_ART_R := 190.0
 const BITS_LIFT_ART := 10.0
+## ICE lock / frost ring line widths and tick length (screen px x screen_k).
+const LOCK_RING_W: float = 3.0
+const LOCK_TICK_LEN: float = 4.0
+const LOCK_TICK_W: float = 1.5
+const FROST_RING_W: float = 2.0
+const FROST_GROW: float = 0.3
+## Hit ring widths (screen px x screen_k).
+const HIT_RING_W: float = 2.5
+const HIT_SPARK_W: float = 2.0
+## Damage number outline width (screen px x screen_k).
+const NUMBER_OUTLINE_W: float = 4.0
+## Token trail dot radius share of the token size.
+const TRAIL_DOT_SHARE: float = 0.3
+## Home bar: keyline growth (screen px x screen_k).
+const HOME_BAR_KEYLINE: float = 1.5
+## Home bar acid / pink threshold.
+const HOME_BAR_OK_SHARE: float = 0.5
+## Breach de-powered link widths (screen px x screen_k) and alpha.
+const BREACH_LINK_W: float = 7.0
+const BREACH_LINK_CORE_W: float = 1.5
+const BREACH_LINK_SPEED: float = 1.3
+## Ice block: closeness (px) below which a heading uses the last move's direction.
+const HEADING_NEAR_PX: float = 2.0
+## Heavy BREACHED mark writing speed-up and underline geometry.
+const HEAVY_WRITE_BOOST: float = 1.25
+const UNDER_DROP: float = 0.55
+const UNDER_WIDTH: float = 0.56
+const UNDER_SLANT: float = 0.06
+const UNDER_LEAD: float = 0.25
+const UNDER_SEED: int = 9
+## Withdrawal X proportions.
+const X_UP: float = 0.85
+const X_DOWN: float = 0.8
+const X_LEFT: float = 0.95
+const X_BOTTOM: float = 0.9
+const FIELD_ARC_POINTS: int = 5
 
 
 ## The VFX tier of drawn effect `kind` (a FX_MOTION key; T2 when unknown).
@@ -1031,7 +1067,7 @@ func _draw_token(id: String, at: Dictionary, k: float) -> void:
 			var tp := _along_move(mv, _eased(&"raid_move", maxf(0.0, u - q * TRAIL_STEP)))
 			if tp.x != INF:
 				var fade := 1.0 - float(q) / (TRAIL_DOTS + 1)
-				_ci.draw_circle(tp, s * 0.3 * fade, Color(trail, 0.75 * fade * alpha))
+				_ci.draw_circle(tp, s * TRAIL_DOT_SHARE * fade, Color(trail, 0.75 * fade * alpha))
 	# ART-6 3A: the heading arrow rides the ring on hover only (§4.8).
 	if _hovered == id:
 		heading = _heading_of(t, p)
@@ -1072,7 +1108,7 @@ func _heading_of(t: Dictionary, p: Vector2) -> float:
 	var from := overlay.icon_at(mv["from"])
 	if to.x == INF:
 		return NAN
-	var d := to - p if p.distance_to(to) > 2.0 else to - from
+	var d := to - p if p.distance_to(to) > HEADING_NEAR_PX else to - from
 	return d.angle() if d.length() > 0.1 else NAN
 
 
@@ -1151,12 +1187,12 @@ func _draw_lock(f: Dictionary, at: Dictionary, k: float) -> void:
 		# ANIM-R6 C4: off, the ring stands closed for its time (no closing).
 		var shut := u if Motion.live(&"ice_lock_ring") else 1.0
 		var r := lerpf(rest * Motion.amplitude(&"ice_lock_ring"), rest, _eased(&"ice_lock_ring", shut))
-		_ci.draw_arc(p, r, 0, TAU, 28, Color(Palette.NET_CYAN, 0.35 + 0.65 * shut), 3.0 * k)
+		_ci.draw_arc(p, r, 0, TAU, 28, Color(Palette.NET_CYAN, 0.35 + 0.65 * shut), LOCK_RING_W * k)
 		for q in 6:
 			var d := Vector2.from_angle(TAU * q / 6.0)
-			_ci.draw_line(p + d * r, p + d * (r + 4.0 * k), Palette.NET_CYAN, 1.5 * k)
+			_ci.draw_line(p + d * r, p + d * (r + LOCK_TICK_LEN * k), Palette.NET_CYAN, LOCK_TICK_W * k)
 	else:
-		_ci.draw_arc(p, rest * (1.0 + 0.3 * (1.0 - u)), 0, TAU, 20, Color(Palette.NET_CYAN, 1.0 - u), 2.0 * k)
+		_ci.draw_arc(p, rest * (1.0 + FROST_GROW * (1.0 - u)), 0, TAU, 20, Color(Palette.NET_CYAN, 1.0 - u), FROST_RING_W * k)
 
 
 func _draw_hit(f: Dictionary, at: Dictionary, k: float) -> void:
@@ -1169,10 +1205,10 @@ func _draw_hit(f: Dictionary, at: Dictionary, k: float) -> void:
 	var r := HIT_RING * k * lerpf(1.0, Motion.amplitude(&"raid_hit_effect"), _eased(&"raid_hit_effect", u))
 	# ART-0 E: held to its tier's reach (the threat's own spot, never the map).
 	r = VfxTier.clamp_radius(fx_tier("hit"), r, HIT_RING * k, HIT_RING * k * HIT_REGION)
-	_ci.draw_arc(p, r, 0, TAU, 20, Color(Palette.PAPER, 1.0 - u), 2.5 * k)
+	_ci.draw_arc(p, r, 0, TAU, 20, Color(Palette.PAPER, 1.0 - u), HIT_RING_W * k)
 	for q in 4:
 		var d := Vector2.from_angle(PI * 0.25 + q * PI * 0.5)
-		_ci.draw_line(p + d * r * 0.6, p + d * r * 1.2, Color(Palette.CELL_ACID, 1.0 - u), 2.0 * k)
+		_ci.draw_line(p + d * r * 0.6, p + d * r * 1.2, Color(Palette.CELL_ACID, 1.0 - u), HIT_SPARK_W * k)
 
 
 func _draw_number(f: Dictionary, k: float, where: Dictionary = {}) -> void:
@@ -1202,7 +1238,7 @@ func _draw_number(f: Dictionary, k: float, where: Dictionary = {}) -> void:
 	else:
 		at = p + Vector2(CityMapOverlay.ICON_RADIUS_BIG * k + NUMBER_GAP * k, font.get_ascent(fs) * 0.5 - rise - _stack_of(f) * fs * NUMBER_STACK)
 	var a := 1.0 if u < NUMBER_HOLD_SHARE or not live else (1.0 - u) / (1.0 - NUMBER_HOLD_SHARE)
-	draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(4.0 * k)), Color(0, 0, 0, 0.9 * a))
+	draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(NUMBER_OUTLINE_W * k)), Color(0, 0, 0, 0.9 * a))
 	HighContrast.draw_text(self, font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(f["color"], a))
 
 
@@ -1305,13 +1341,13 @@ func _lay_pencil() -> void:
 		var heavy := bool(m.get("heavy", false))
 		var c: Vector2 = centres[i]
 		var step := UiTheme.DISPLAY if heavy else UiTheme.TITLE
-		var write := minf(1.0, pr.x * (1.25 if heavy else 1.0))
+		var write := minf(1.0, pr.x * (HEAVY_WRITE_BOOST if heavy else 1.0))
 		_pool.word("mark_%d" % i, String(m["word"]), c, step, threat, 1.0, write, pr.y, -0.05)
 		if heavy:
 			var size := RaidPencilPool.word_size(String(m["word"]), step)
-			var y := c.y + size.y * 0.55
-			var line := PackedVector2Array([Vector2(c.x - size.x * 0.56, y), Vector2(c.x + size.x * 0.56, y + size.y * 0.06)])
-			_pool.stroke("under_%d" % i, [line], threat, clampf(pr.x * 1.25 - 0.25, 0.0, 1.0), 0.0, false, 9)
+			var y := c.y + size.y * UNDER_DROP
+			var line := PackedVector2Array([Vector2(c.x - size.x * UNDER_WIDTH, y), Vector2(c.x + size.x * UNDER_WIDTH, y + size.y * UNDER_SLANT)])
+			_pool.stroke("under_%d" % i, [line], threat, clampf(pr.x * HEAVY_WRITE_BOOST - UNDER_LEAD, 0.0, 1.0), 0.0, false, UNDER_SEED)
 	# B3 (review Q7): home's verdict is no banner over the map: the result is CELL HOLDS on the
 	# after-action paper (RaidSticker.slap_result plays `raid_result_banner`); BREACHED stays a mark.
 	# A yellow tick on each node that holds, at the verdict.
@@ -1338,8 +1374,8 @@ func _lay_pencil() -> void:
 			continue
 		var g := gxf * p
 		var arm := VEHICLE_R * zoom * Motion.amplitude(WITHDRAW_MOTION)
-		_pool.stroke("x_%s" % id, [PackedVector2Array([g + Vector2(-arm, -arm * 0.85), g + Vector2(arm, arm * 0.8)]),
-			PackedVector2Array([g + Vector2(arm, -arm * 0.85), g + Vector2(-arm * 0.95, arm * 0.9)])], threat, 1.0, du, false, String(id).hash())
+		_pool.stroke("x_%s" % id, [PackedVector2Array([g + Vector2(-arm, -arm * X_UP), g + Vector2(arm, arm * X_DOWN)]),
+			PackedVector2Array([g + Vector2(arm, -arm * X_UP), g + Vector2(-arm * X_LEFT, arm * X_BOTTOM)])], threat, 1.0, du, false, String(id).hash())
 	_pool.end()
 
 
@@ -1385,7 +1421,7 @@ func _dashed_ring(R: float, n: int, phase: float, width: float, alpha: float) ->
 	for i in n:
 		var a0 := TAU * (i + phase) / n
 		var a1 := TAU * (i + phase + 1.0 - FIELD_GAP) / n
-		_ci.draw_arc(Vector2.ZERO, R, a0, a1, 5, Color(Palette.RAID_SLOW_BLUE, alpha), width)
+		_ci.draw_arc(Vector2.ZERO, R, a0, a1, FIELD_ARC_POINTS, Color(Palette.RAID_SLOW_BLUE, alpha), width)
 
 ## ART-6 3A (§4.8 Rigger repair, round 22 `bonus_repair_v2`): health goes UP. The socket's
 ## baked fill steps back up (RaidSocket health v2) while the concept's `fx_repair_v2` marks
@@ -1437,10 +1473,10 @@ func _draw_breach(k: float) -> void:
 		var pts := PackedVector2Array([c])
 		for q in overlay.route_between(home_id, other):
 			pts.append(overlay.grid_point_local(q))
-		var dead := RaidPencil.trimmed(pts, 0.0, clampf(u * 1.3, 0.0, 1.0))
+		var dead := RaidPencil.trimmed(pts, 0.0, clampf(u * BREACH_LINK_SPEED, 0.0, 1.0))
 		if dead.size() >= 2:
-			draw_polyline(dead, Color(Palette.NIGHT_SKY, 0.85), 7.0 * k, true)
-			draw_polyline(dead, Color(Palette.DISABLED, 0.6), 1.5 * k, true)
+			draw_polyline(dead, Color(Palette.NIGHT_SKY, 0.85), BREACH_LINK_W * k, true)
+			draw_polyline(dead, Color(Palette.DISABLED, 0.6), BREACH_LINK_CORE_W * k, true)
 	if u >= 1.0 or not Motion.live(BREACH_BITS):
 		return
 	# The concept's burst (flash, shock ring, 0 / 1 bits blasting out and falling), frame by u.
@@ -1475,11 +1511,11 @@ func _draw_home(k: float) -> void:
 	var w := HOME_BAR.x * k
 	var h := HOME_BAR.y * k
 	var r := Rect2(p + Vector2(-w * 0.5, CityMapOverlay.ICON_RADIUS_BIG * k + HOME_BAR_GAP * k), Vector2(w, h))
-	draw_rect(r.grow(1.5 * k), Color(0, 0, 0, 0.85))
+	draw_rect(r.grow(HOME_BAR_KEYLINE * k), Color(0, 0, 0, 0.85))
 	var lag := clampf(_home_lag_value() / home_max, 0.0, 1.0)
 	var now := clampf(float(home_shown) / home_max, 0.0, 1.0)
 	draw_rect(Rect2(r.position, Vector2(w * lag, h)), Palette.PAPER)
-	draw_rect(Rect2(r.position, Vector2(w * now, h)), Palette.CELL_ACID if now > 0.5 else Palette.CELL_PINK)
+	draw_rect(Rect2(r.position, Vector2(w * now, h)), Palette.CELL_ACID if now > HOME_BAR_OK_SHARE else Palette.CELL_PINK)
 
 
 func _dashed(a: Vector2, b: Vector2, col: Color, width: float, dash: float) -> void:

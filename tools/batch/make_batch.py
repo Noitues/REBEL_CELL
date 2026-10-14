@@ -53,6 +53,8 @@ KIND_DEFAULTS = {
     "refactor": {"model": "claude-sonnet-5-5", "effort": "medium", "max_tokens": 16000},
     "decisions_digest": {"model": "claude-sonnet-5-5", "effort": "medium", "max_tokens": 8000},
     "text_audit": {"model": "claude-haiku-5-5", "effort": "low", "max_tokens": 4000},
+    # Answered as exact-text edit blocks (tools/batch/apply_edits.py), not a unified diff.
+    "const_edits": {"model": "claude-haiku-5-5", "effort": "low", "max_tokens": 16000},
 }
 CUSTOM_ID_RE = re.compile(r"[^A-Za-z0-9_-]")
 
@@ -129,6 +131,8 @@ def main() -> int:
             "messages": [{"role": "user", "content": user_turn(f, spec, idx)}],
             "output_config": {"effort": effort},
         }
+        if spec.get("thinking"):  # optional, e.g. {"type": "disabled"}: stops hidden thinking eating max_tokens
+            params["thinking"] = spec["thinking"]
         lines.append({"custom_id": custom_id, "params": params})
 
     approx_tokens = sum(len(json.dumps(l["params"]["messages"])) for l in lines) // 4

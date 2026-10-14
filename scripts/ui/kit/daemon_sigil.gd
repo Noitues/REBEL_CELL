@@ -8,6 +8,26 @@ extends RefCounted
 const FRAMES := 4
 const MOTIFS := 6
 const HUES: Array[Color] = [Color("#B04DFF"), Color("#FF3DA8"), Color("#5CE1FF"), Color("#3DFF8B"), Color("#FFB000"), Color("#FF5A5A")]
+## Number of vertices of the hexagon frame.
+const HEX_SIDES: float = 6.0
+## Number of segments used to approximate the circle frame.
+const CIRCLE_SEGMENTS: float = 24.0
+## Alpha of the sigil's backing fill.
+const FILL_ALPHA: float = 0.95
+## Alpha of the hue tint over the backing fill.
+const TINT_ALPHA: float = 0.15
+## Alpha of the rim glow stroke.
+const RIM_GLOW_ALPHA: float = 0.3
+## Width of the rim glow stroke.
+const RIM_GLOW_WIDTH: float = 5.0
+## Width of the rim stroke.
+const RIM_WIDTH: float = 1.8
+## Motif radius as a fraction of the sigil radius.
+const MOTIF_RATIO: float = 0.55
+## Motif stroke width as a fraction of the sigil radius.
+const MOTIF_STROKE_RATIO: float = 0.12
+## Minimum motif stroke width.
+const MOTIF_STROKE_MIN: float = 1.5
 
 
 static func _code(id: StringName) -> int:
@@ -31,23 +51,23 @@ static func draw_sigil(ci: CanvasItem, c: Vector2, r: float, id: StringName, rar
 	match frame:
 		0:
 			for k in 7:
-				pts.append(c + Vector2(cos(TAU * k / 6.0 + PI / 6.0), sin(TAU * k / 6.0 + PI / 6.0)) * r)
+				pts.append(c + Vector2(cos(TAU * k / HEX_SIDES + PI / 6.0), sin(TAU * k / HEX_SIDES + PI / 6.0)) * r)
 		1:
 			for k in 25:
-				pts.append(c + Vector2(cos(TAU * k / 24.0), sin(TAU * k / 24.0)) * r)
+				pts.append(c + Vector2(cos(TAU * k / CIRCLE_SEGMENTS), sin(TAU * k / CIRCLE_SEGMENTS)) * r)
 		2:
 			pts = PackedVector2Array([c + Vector2(0, -r), c + Vector2(r, 0), c + Vector2(0, r), c + Vector2(-r, 0), c + Vector2(0, -r)])
 		_:
 			pts = PackedVector2Array([c + Vector2(-r * 0.85, -r * 0.8), c + Vector2(r * 0.85, -r * 0.8), c + Vector2(r * 0.85, r * 0.1), c + Vector2(0, r), c + Vector2(-r * 0.85, r * 0.1), c + Vector2(-r * 0.85, -r * 0.8)])
 	var fill := pts.duplicate()
 	fill.remove_at(fill.size() - 1)
-	ci.draw_colored_polygon(fill, Color(Palette.NIGHT_SKY, 0.95))
-	ci.draw_colored_polygon(fill, Color(col, 0.15))
+	ci.draw_colored_polygon(fill, Color(Palette.NIGHT_SKY, FILL_ALPHA))
+	ci.draw_colored_polygon(fill, Color(col, TINT_ALPHA))
 	var rim: Color = [Color("#C9CED8"), col, Palette.RESIST_GOLD, Palette.CELL_PINK][clampi(rarity, 0, 3)]
-	ci.draw_polyline(pts, Color(rim, 0.3), 5.0, true)
-	ci.draw_polyline(pts, rim, 1.8, true)
-	var m := r * 0.55
-	var w := maxf(1.5, r * 0.12)
+	ci.draw_polyline(pts, Color(rim, RIM_GLOW_ALPHA), RIM_GLOW_WIDTH, true)
+	ci.draw_polyline(pts, rim, RIM_WIDTH, true)
+	var m := r * MOTIF_RATIO
+	var w := maxf(MOTIF_STROKE_MIN, r * MOTIF_STROKE_RATIO)
 	match motif:
 		0:  # eye
 			ci.draw_arc(c + Vector2(0, m * 0.5), m, PI * 1.15, PI * 1.85, 12, col, w)

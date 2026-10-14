@@ -58,6 +58,18 @@ const STAMP_TILT := -8.0
 ## B1b: the flatlined X's inset (share of the feed's height) and its wax seed.
 const X_INSET := 0.05
 const X_SEED := 43
+## Darken share applied to PAPER_ALT for the print paper.
+const PAPER_DARKEN: float = 0.12
+## Stationed strip height in label sizes.
+const STRIP_HEIGHT_MULT: float = 2.0
+## Stationed strip background alpha.
+const STRIP_ALPHA: float = 0.8
+## Stationed strip text baseline offset in label sizes.
+const STRIP_BASELINE_MULT: float = 0.6
+## Label strip height in label sizes.
+const LABEL_STRIP_HEIGHT_MULT: float = 1.5
+## Label strip text baseline offset in label sizes.
+const LABEL_BASELINE_MULT: float = 1.1
 
 var class_id: StringName = &""
 var operative_id: StringName = &""
@@ -256,7 +268,7 @@ func _apply() -> void:
 	_mat.set_shader_parameter(&"has_bust", bust)
 	_mat.set_shader_parameter(&"tint", accent())
 	_mat.set_shader_parameter(&"backdrop", Palette.NIGHT_SKY.lightened(BACKDROP_LIFT))
-	_mat.set_shader_parameter(&"paper", Palette.PAPER_ALT.darkened(0.12))
+	_mat.set_shader_parameter(&"paper", Palette.PAPER_ALT.darkened(PAPER_DARKEN))
 	_mat.set_shader_parameter(&"alarm", dispatch_red())
 	_mat.set_shader_parameter(&"split", float(look[0]))
 	_mat.set_shader_parameter(&"tear", float(look[1]))
@@ -348,11 +360,11 @@ func _draw_chrome() -> void:
 			_draw_cracks(c, s, a)
 		Mode.STATIONED:
 			if fs > 0:
-				var strip := Rect2(0, h - fs * 2.0, s.x, fs * 2.0)
-				c.draw_rect(strip, Color(Palette.NIGHT_SKY, 0.8 * a))
+				var strip := Rect2(0, h - fs * STRIP_HEIGHT_MULT, s.x, fs * STRIP_HEIGHT_MULT)
+				c.draw_rect(strip, Color(Palette.NIGHT_SKY, STRIP_ALPHA * a))
 				var words := tr("ON %s") % site.to_upper() if site != "" else tr("STATIONED")
 				words += " // " + tr("%d fps") % roundi(Motion.amplitude(MOTION_FEED))
-				HighContrast.draw_text(c, mono, Vector2(inset * 1.5, h - fs * 0.6), words, HORIZONTAL_ALIGNMENT_LEFT, s.x - inset * 3.0, fs, Color(accent(), a))
+				HighContrast.draw_text(c, mono, Vector2(inset * 1.5, h - fs * STRIP_BASELINE_MULT), words, HORIZONTAL_ALIGNMENT_LEFT, s.x - inset * 3.0, fs, Color(accent(), a))
 		Mode.DEAD:
 			_draw_dead(c, s, a)
 		Mode.RECRUIT:
@@ -372,21 +384,21 @@ func _draw_chrome() -> void:
 		var chip_room := 0.0
 		if mode == Mode.HURT and max_hp > 0:
 			chip_room = mono.get_string_size(tr("HP %d/%d") % [maxi(0, hp), max_hp], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + pad * 3.0
-		var strip := Rect2(inset, inset, minf(s.x - inset * 2.0 - chip_room, tw + pad * 2.0 + (dot_r * 2.0 + pad if dot else 0.0)), fs * 1.5)
+		var strip := Rect2(inset, inset, minf(s.x - inset * 2.0 - chip_room, tw + pad * 2.0 + (dot_r * 2.0 + pad if dot else 0.0)), fs * LABEL_STRIP_HEIGHT_MULT)
 		c.draw_rect(strip, Color(Palette.NIGHT_SKY, 0.72 * a))
 		var x := strip.position.x + pad
 		if dot:
 			c.draw_circle(Vector2(x + dot_r, strip.get_center().y), dot_r, Color(dispatch_red(), a))
 			x += dot_r * 2.0 + pad
 		var ink := Palette.TEXT_MID if mode in [Mode.DEAD, Mode.RECRUIT] else accent()
-		HighContrast.draw_text(c, mono, Vector2(x, strip.position.y + fs * 1.1), words, HORIZONTAL_ALIGNMENT_LEFT, strip.end.x - x, fs, Color(ink, a))
+		HighContrast.draw_text(c, mono, Vector2(x, strip.position.y + fs * LABEL_BASELINE_MULT), words, HORIZONTAL_ALIGNMENT_LEFT, strip.end.x - x, fs, Color(ink, a))
 		if mode == Mode.HURT and max_hp > 0:
 			var chip := tr("HP %d/%d") % [maxi(0, hp), max_hp]
 			var cw := mono.get_string_size(chip, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + pad * 2.0
-			var cr := Rect2(s.x - inset - cw, inset, cw, fs * 1.5)
+			var cr := Rect2(s.x - inset - cw, inset, cw, fs * LABEL_STRIP_HEIGHT_MULT)
 			c.draw_rect(cr, Color(Palette.HARM.darkened(0.45), a))
 			c.draw_rect(cr, Color(Palette.HARM, a), false, 1.0)
-			HighContrast.draw_text(c, mono, Vector2(cr.position.x + pad, cr.position.y + fs * 1.1), chip, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.TEXT_HI, a))
+			HighContrast.draw_text(c, mono, Vector2(cr.position.x + pad, cr.position.y + fs * LABEL_BASELINE_MULT), chip, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.TEXT_HI, a))
 	# The LED and the bezel.
 	if mode != Mode.VOICE:
 		var led_r := maxf(2.0, h * LED_SHARE)

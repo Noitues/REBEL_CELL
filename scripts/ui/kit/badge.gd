@@ -13,6 +13,24 @@ const GAP := 6.0
 ## Mini meter height and width (px).
 const METER_H := 4.0
 const METER_W := 64.0
+## Hex centre inset from the left edge (px).
+const HEX_INSET_PX: float = 1.0
+## Hex rotation offset, a twelfth of a turn (radians).
+const HEX_ROT_OFFSET: float = PI / 6.0
+## Hex outline width (px).
+const HEX_LINE_W: float = 1.6
+## Opacity of the hex fill.
+const HEX_FILL_ALPHA: float = 0.92
+## Asset icon radius as a fraction of the hex radius.
+const ASSET_ICON_SCALE: float = 0.8
+## Stat icon radius as a fraction of the hex radius.
+const STAT_ICON_SCALE: float = 0.62
+## Glyph baseline drop as a fraction of the hex radius.
+const GLYPH_BASE_DROP: float = 0.42
+## Glyph font size as a fraction of the hex radius.
+const GLYPH_SIZE_SCALE: float = 1.1
+## Amount the value text colour is mixed toward paper.
+const TEXT_PAPER_MIX: float = 0.35
 
 var glyph: String = ""
 var asset_id: StringName = &""
@@ -83,24 +101,24 @@ func _make_custom_tooltip(for_text: String) -> Object:
 
 func _draw() -> void:
 	var r := HEX_R * _scale()
-	var c := Vector2(r + 1.0, size.y * 0.5)
+	var c := Vector2(r + HEX_INSET_PX, size.y * 0.5)
 	var pts := PackedVector2Array()
 	for k in 7:
-		var t := PI / 6.0 + TAU * k / 6.0
+		var t := HEX_ROT_OFFSET + TAU * k / 6.0
 		pts.append(c + Vector2(cos(t), sin(t)) * r)
-	draw_colored_polygon(pts, Color(Palette.NIGHT_SKY, 0.92))
-	draw_polyline(pts, color, 1.6)
+	draw_colored_polygon(pts, Color(Palette.NIGHT_SKY, HEX_FILL_ALPHA))
+	draw_polyline(pts, color, HEX_LINE_W)
 	if asset_id != &"":
-		AssetIcon.draw_icon(self, c, r * 0.8, asset_id, false)
+		AssetIcon.draw_icon(self, c, r * ASSET_ICON_SCALE, asset_id, false)
 	elif icon_kind != &"":
-		StatIcon.draw(self, c, r * 0.62, icon_kind, color)
+		StatIcon.draw(self, c, r * STAT_ICON_SCALE, icon_kind, color)
 	elif glyph != "":
-		HighContrast.draw_text(self, Palette.mono(), c + Vector2(-r, r * 0.42), glyph, HORIZONTAL_ALIGNMENT_CENTER, r * 2.0, int(r * 1.1), color)
+		HighContrast.draw_text(self, Palette.mono(), c + Vector2(-r, r * GLYPH_BASE_DROP), glyph, HORIZONTAL_ALIGNMENT_CENTER, r * 2.0, int(r * GLYPH_SIZE_SCALE), color)
 	var font := _font()
 	var fs := _font_size()
 	var x := r * 2.0 + GAP + 2.0
 	var base := (size.y - (METER_H + 2.0 if fill >= 0.0 else 0.0)) * 0.5 + font.get_ascent(fs) * 0.5 - font.get_descent(fs) * 0.25
-	HighContrast.draw_text(self, font, Vector2(x, base), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color.lerp(Palette.PAPER, 0.35))
+	HighContrast.draw_text(self, font, Vector2(x, base), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color.lerp(Palette.PAPER, TEXT_PAPER_MIX))
 	if fill >= 0.0:
 		var bar := Rect2(x, size.y - METER_H - 1.0, size.x - x - 1.0, METER_H)
 		draw_rect(bar, Color(Palette.PAPER, 0.15))

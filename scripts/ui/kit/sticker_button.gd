@@ -17,6 +17,41 @@ const FONT_SIZE := 14
 const HEIGHT := 30.0
 const MIN_WIDTH := 64.0
 const PADDING := 22.0
+## Alpha of the acid glow behind a hot sticker.
+const GLOW_ALPHA: float = 0.5
+## How far the glow grows past the sticker rect (px).
+const GLOW_GROW_PX: float = 3.0
+## Drop shadow offset (px).
+const SHADOW_OFFSET: Vector2 = Vector2(3, 4)
+## Alpha of the paper outline.
+const OUTLINE_ALPHA: float = 0.45
+## Alpha of the disabled ink.
+const DISABLED_INK_ALPHA: float = 0.5
+## Darkening of the paper when disabled.
+const DISABLED_DARKEN: float = 0.45
+## Tape strip: left offset x (px).
+const TAPE_OFFSET_X: float = -12.0
+## Tape strip: rise above the sticker top (px).
+const TAPE_RISE_PX: float = 5.0
+## Tape strip size (px).
+const TAPE_SIZE: Vector2 = Vector2(24, 9)
+## Stroke width of drawn icons (px).
+const ICON_LINE_PX: float = 2.0
+## Point count of icon arcs.
+const ARC_POINTS_RESPIN: int = 14
+const ARC_POINTS_UNDO: int = 10
+## Arrowhead half-sizes for the respin icon (px).
+const RESPIN_HEAD_TANGENT_PX: float = 5.0
+const RESPIN_HEAD_NORMAL_PX: float = 4.0
+## Undo icon geometry.
+const UNDO_CENTER_SHIFT: Vector2 = Vector2(1, 1)
+const UNDO_ARC_RATIO: float = 0.8
+const UNDO_TIP_EXTRA_PX: float = 2.0
+const UNDO_HEAD_LEN_PX: float = 5.0
+const UNDO_HEAD_HALF_PX: float = 4.0
+## Fraction of PI for the respin arc start and end angle.
+const RESPIN_ARC_START: float = 0.8
+const RESPIN_ARC_END: float = 0.9
 
 
 func _init(p_text: String = "", p_paper: Color = Palette.NOTE_YELLOW, p_tilt: float = 0.0) -> void:
@@ -78,16 +113,16 @@ func refit() -> void:
 func _draw_icon(c: Vector2, r: float, col: Color) -> void:
 	match drawn_icon:
 		"respin":
-			draw_arc(c, r, -PI * 0.8, PI * 0.9, 14, col, 2.0)
-			var a := PI * 0.9
+			draw_arc(c, r, -PI * RESPIN_ARC_START, PI * RESPIN_ARC_END, ARC_POINTS_RESPIN, col, ICON_LINE_PX)
+			var a := PI * RESPIN_ARC_END
 			var tip := c + Vector2(cos(a), sin(a)) * r
 			var tg := Vector2(-sin(a), cos(a))
-			draw_colored_polygon(PackedVector2Array([tip + tg * 5.0, tip + tg.orthogonal() * 4.0, tip - tg.orthogonal() * 4.0]), col)
+			draw_colored_polygon(PackedVector2Array([tip + tg * RESPIN_HEAD_TANGENT_PX, tip + tg.orthogonal() * RESPIN_HEAD_NORMAL_PX, tip - tg.orthogonal() * RESPIN_HEAD_NORMAL_PX]), col)
 		"undo":
-			draw_arc(c + Vector2(1, 1), r * 0.8, -PI * 0.5, PI * 0.5, 10, col, 2.0)
-			draw_line(c + Vector2(1, -r * 0.8 + 1), c + Vector2(-r, -r * 0.8 + 1), col, 2.0)
-			var tip := c + Vector2(-r - 2, -r * 0.8 + 1)
-			draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(5, -4), tip + Vector2(5, 4)]), col)
+			draw_arc(c + UNDO_CENTER_SHIFT, r * UNDO_ARC_RATIO, -PI * 0.5, PI * 0.5, ARC_POINTS_UNDO, col, ICON_LINE_PX)
+			draw_line(c + Vector2(1, -r * UNDO_ARC_RATIO + 1), c + Vector2(-r, -r * UNDO_ARC_RATIO + 1), col, ICON_LINE_PX)
+			var tip := c + Vector2(-r - UNDO_TIP_EXTRA_PX, -r * UNDO_ARC_RATIO + 1)
+			draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(UNDO_HEAD_LEN_PX, -UNDO_HEAD_HALF_PX), tip + Vector2(UNDO_HEAD_LEN_PX, UNDO_HEAD_HALF_PX)]), col)
 
 
 func set_label(t: String) -> void:
@@ -104,14 +139,14 @@ func _draw() -> void:
 	draw_set_transform(size * 0.5 + Vector2(0, KitState.lift(st)), deg_to_rad(tilt), Vector2.ONE)
 	var rr := Rect2(-size * 0.5, size)
 	if _hot and not disabled:
-		draw_rect(rr.grow(3), Color(Palette.CELL_ACID, 0.5))
-	draw_rect(Rect2(rr.position + Vector2(3, 4), rr.size), Palette.SHADOW)
-	draw_rect(rr, paper if not disabled else paper.darkened(0.45))
-	draw_rect(rr, Color(Palette.INK, 0.45), false, 1.0)
-	draw_rect(Rect2(Vector2(-12, rr.position.y - 5), Vector2(24, 9)), Palette.NOTE_TAPE)
+		draw_rect(rr.grow(GLOW_GROW_PX), Color(Palette.CELL_ACID, GLOW_ALPHA))
+	draw_rect(Rect2(rr.position + SHADOW_OFFSET, rr.size), Palette.SHADOW)
+	draw_rect(rr, paper if not disabled else paper.darkened(DISABLED_DARKEN))
+	draw_rect(rr, Color(Palette.INK, OUTLINE_ALPHA), false, 1.0)
+	draw_rect(Rect2(Vector2(TAPE_OFFSET_X, rr.position.y - TAPE_RISE_PX), TAPE_SIZE), Palette.NOTE_TAPE)
 	var fs := font_px()
 	var baseline := rr.position.y + (rr.size.y + Palette.marker().get_ascent(fs) - Palette.marker().get_descent(fs)) * 0.5
-	var ink := Palette.INK if not disabled else Color(Palette.INK, 0.5)
+	var ink := Palette.INK if not disabled else Color(Palette.INK, DISABLED_INK_ALPHA)
 	var text_x := rr.position.x
 	var text_w := rr.size.x
 	if drawn_icon != "":

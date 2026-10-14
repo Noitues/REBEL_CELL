@@ -85,6 +85,20 @@ var _caption_rects: Array[Rect2] = []
 ## Caption lettering and the gap after a caption at scale 1.0 (px).
 const CAPTION_SIZE := 10
 const CAPTION_GAP := 6.0
+## Suffix offset right of its value (px at scale 1.0).
+const SUFFIX_OFFSET_X: float = 2.0
+## Suffix offset up from the value baseline (px at scale 1.0).
+const SUFFIX_OFFSET_Y: float = 1.0
+## Share of the caption descent used when centring a caption's baseline.
+const CAPTION_DESCENT_SHARE: float = 0.25
+## Alpha of the divider line after a caption.
+const CAPTION_LINE_ALPHA: float = 0.35
+## Width of the divider line after a caption (px).
+const CAPTION_LINE_W: float = 1.0
+## Width of the refusal outline on a tag (px).
+const REFUSAL_EDGE_W: float = 2.0
+## Width of the refusal text's dark outline (px).
+const REFUSAL_OUTLINE_W: int = 4
 
 
 ## Animation pass ANIM-6 (ANIMATION_HANDOFF 4.24): a tag whose value changed bumps
@@ -625,12 +639,12 @@ func _draw() -> void:
 		var mono := Palette.mono()
 		for k in mini(order.size(), _caption_rects.size()):
 			var cr := _caption_rects[k]
-			draw_line(Vector2(cr.end.x + CAPTION_GAP * s * 0.5, cr.position.y), Vector2(cr.end.x + CAPTION_GAP * s * 0.5, cr.end.y), Color(Palette.CELL_ACID, 0.35 * _caption_fade), 1.0)
-			HighContrast.draw_text(self, mono, Vector2(cr.position.x, cr.get_center().y + mono.get_ascent(cfs) * 0.5 - mono.get_descent(cfs) * 0.25), String(order[k][1]), HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(Palette.CELL_ACID, _caption_fade))
+			draw_line(Vector2(cr.end.x + CAPTION_GAP * s * 0.5, cr.position.y), Vector2(cr.end.x + CAPTION_GAP * s * 0.5, cr.end.y), Color(Palette.CELL_ACID, CAPTION_LINE_ALPHA * _caption_fade), CAPTION_LINE_W)
+			HighContrast.draw_text(self, mono, Vector2(cr.position.x, cr.get_center().y + mono.get_ascent(cfs) * 0.5 - mono.get_descent(cfs) * CAPTION_DESCENT_SHARE), String(order[k][1]), HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(Palette.CELL_ACID, _caption_fade))
 		# The old captions fade out where they were (the cross-fade).
 		for oc in _old_captions:
 			var orr: Rect2 = oc[0]
-			HighContrast.draw_text(self, mono, Vector2(orr.position.x, orr.get_center().y + mono.get_ascent(cfs) * 0.5 - mono.get_descent(cfs) * 0.25), String(oc[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(Palette.CELL_ACID, 1.0 - _caption_fade))
+			HighContrast.draw_text(self, mono, Vector2(orr.position.x, orr.get_center().y + mono.get_ascent(cfs) * 0.5 - mono.get_descent(cfs) * CAPTION_DESCENT_SHARE), String(oc[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(Palette.CELL_ACID, 1.0 - _caption_fade))
 	for i in mini(items.size(), _rects.size()):
 		var it: Array = items[i]
 		var box := _rects[i]
@@ -654,13 +668,13 @@ func _draw() -> void:
 		HighContrast.draw_text(self, Palette.display(), value_at, value, HORIZONTAL_ALIGNMENT_LEFT, -1, vs, heat_tone if heat_tone != Palette.AUTO else HudSkin.TERMINAL_HI)
 		if it.size() > 2 and String(it[2]) != "":
 			var vw := Palette.display().get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, vs).x
-			HighContrast.draw_text(self, HudSkin.mono(), value_at + Vector2(vw + 2.0 * s, -1.0 * s), String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(SUFFIX_SIZE * s), HudSkin.TERMINAL_TEXT)
+			HighContrast.draw_text(self, HudSkin.mono(), value_at + Vector2(vw + SUFFIX_OFFSET_X * s, -SUFFIX_OFFSET_Y * s), String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(SUFFIX_SIZE * s), HudSkin.TERMINAL_TEXT)
 		if _refused_tag != "" and String(it[0]) == _refused_tag:
 			# ANIM-R2 E9: a refusal for want of this (Cycles): the tag flashes red and
 			# "PRICE > MONEY" shows under it.
 			var red := Color(REFUSED_COLOR, maxf(REFUSED_MIN_ALPHA, refusal_alpha))
 			draw_rect(r, Color(red, red.a * REFUSED_FILL), true)
-			draw_rect(r, red, false, 2.0)
+			draw_rect(r, red, false, REFUSAL_EDGE_W)
 			var rfs := roundi(VALUE_SIZE * s * REFUSED_TEXT_SHARE)
 			# ANIM-R4 C7: wider than its tag, the words wrap at their dot (NEED 53 over HAVE 5):
 			# on one line they ran past the Mainframe's panel edge at 1.6.
@@ -668,6 +682,6 @@ func _draw() -> void:
 			for li in lines.size():
 				var tw := Palette.display().get_string_size(lines[li], HORIZONTAL_ALIGNMENT_LEFT, -1, rfs).x
 				var at := Vector2(r.get_center().x - tw * 0.5, r.end.y + rfs * (li + 1))
-				draw_string_outline(Palette.display(), at, lines[li], HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, 4, Palette.NIGHT_SKY)
+				draw_string_outline(Palette.display(), at, lines[li], HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, REFUSAL_OUTLINE_W, Palette.NIGHT_SKY)
 				HighContrast.draw_text(self, Palette.display(), at, lines[li], HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, red)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

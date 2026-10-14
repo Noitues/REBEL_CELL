@@ -29,6 +29,19 @@ var standing: Array[Dictionary] = []
 ## The standing chips' lettering (px at text scale 1.0) and outline (px).
 const STANDING_FONT := 13
 const STANDING_RIM := 1.0
+## Alpha of a standing chip's dark backing.
+const STANDING_BACK_ALPHA: float = 0.7
+## Stroke width of a result chip's rim (px).
+const CHIP_RIM_PX: float = 1.5
+## Stroke width of the lettering outline (px).
+const TEXT_OUTLINE_PX: int = 2
+## Lowest vertical scale of the flip, so the row never collapses.
+const FLIP_MIN_SCALE: float = 0.05
+## Check mark's size as a share of chip height, and its inner points' shares.
+const CHECK_SHARE: float = 0.3
+const CHECK_MID_X: float = 0.3
+const CHECK_MID_Y: float = 0.7
+const CHECK_END_Y: float = 0.8
 
 var chips: Array[Dictionary] = []
 ## The breakdown tooltip: its title and its lines.
@@ -394,7 +407,7 @@ func _layout_glyphs() -> void:
 		g.box_px = gp
 		g.fill = want[k][2]
 		g.position = Vector2(want[k][1]) - (cell - Vector2(gp, gp)) * 0.5
-		g.scale = Vector2(1.0, maxf(0.05, flip))
+		g.scale = Vector2(1.0, maxf(FLIP_MIN_SCALE, flip))
 		g.visible = (held_alpha if holding else 1.0) > 0.0
 
 
@@ -411,7 +424,7 @@ func _draw() -> void:
 	var font := HudSkin.display()
 	var h := CHIP_H * s
 	if flip < 1.0:
-		draw_set_transform(Vector2(0.0, h * 0.5 * (1.0 - flip)), 0.0, Vector2(1.0, maxf(0.05, flip)))
+		draw_set_transform(Vector2(0.0, h * 0.5 * (1.0 - flip)), 0.0, Vector2(1.0, maxf(FLIP_MIN_SCALE, flip)))
 	var rs := chip_rects()
 	for i in row.size():
 		var c := row[i]
@@ -424,7 +437,7 @@ func _draw() -> void:
 		match kind:
 			ResultChipModel.DAMAGE, ResultChipModel.LETHAL:
 				draw_rect(r, Color(HudSkin.CHIP_DAMAGE, ca))
-				draw_rect(r, Color(HudSkin.CHIP_INK, ca), false, 1.5)
+				draw_rect(r, Color(HudSkin.CHIP_INK, ca), false, CHIP_RIM_PX)
 			ResultChipModel.GAINED:
 				draw_rect(r, Color(HudSkin.CHIP_INK, 0.7 * ca))
 				draw_rect(r, Color(col, ca), false, 1.5)
@@ -434,7 +447,7 @@ func _draw() -> void:
 		var xs := _piece_xs(r, c)
 		var base := r.position.y + (h + font.get_ascent(fs) - font.get_descent(fs)) * 0.5
 		var words := String(p["words"])
-		draw_string_outline(font, Vector2(float(xs["words"]), base), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 2, Color(HudSkin.CHIP_INK, ca))
+		draw_string_outline(font, Vector2(float(xs["words"]), base), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, TEXT_OUTLINE_PX, Color(HudSkin.CHIP_INK, ca))
 		HighContrast.draw_text(self, font, Vector2(float(xs["words"]), base), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
 		if String(p["mark"]) != "":
 			var gp := glyph_px()
@@ -446,8 +459,8 @@ func _draw() -> void:
 		if t > 0.0:
 			# The replay did it: a check pops over the chip.
 			var cc := r.get_center()
-			var k := h * 0.3 * t
-			draw_polyline(PackedVector2Array([cc + Vector2(-k, 0), cc + Vector2(-k * 0.3, k * 0.7), cc + Vector2(k, -k * 0.8)]), Color(HudSkin.TERMINAL_HI, a), CHECK_PX * s, true)
+			var k := h * CHECK_SHARE * t
+			draw_polyline(PackedVector2Array([cc + Vector2(-k, 0), cc + Vector2(-k * CHECK_MID_X, k * CHECK_MID_Y), cc + Vector2(k, -k * CHECK_END_Y)]), Color(HudSkin.TERMINAL_HI, a), CHECK_PX * s, true)
 	draw_set_transform(Vector2.ZERO)
 	_layout_glyphs.call_deferred()
 
@@ -461,7 +474,7 @@ func _draw_standing() -> void:
 	for i in standing.size():
 		var r := rs[i]
 		var col: Color = standing[i]["color"]
-		draw_rect(r, Color(HudSkin.CHIP_INK, 0.7))
+		draw_rect(r, Color(HudSkin.CHIP_INK, STANDING_BACK_ALPHA))
 		draw_rect(r, col, false, STANDING_RIM)
 		var base := r.position.y + (r.size.y + font.get_ascent(fs) - font.get_descent(fs)) * 0.5
 		HighContrast.draw_text(self, font, Vector2(r.position.x + PAD * s, base), String(standing[i]["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)

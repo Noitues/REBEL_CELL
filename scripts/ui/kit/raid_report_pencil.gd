@@ -11,6 +11,8 @@ const WRITE := &"raid_mark_write"
 ## Pencil: the word's type step (a title step) and its slant (rad).
 const WORD_STEP := UiTheme.TITLE
 const WORD_TILT := -0.1
+## Smallest write-on duration divisor guard (s).
+const WRITE_MIN_DURATION: float = 0.001
 
 var report: Control
 var result: Dictionary = {}
@@ -85,6 +87,6 @@ func _lay() -> void:
 	_pool.begin()
 	var spot := _spot()
 	if held and spot.has_area():
-		var u := clampf(_t / maxf(_total(), 0.001), 0.0, 1.0)
+		var u := clampf(_t / maxf(_total(), WRITE_MIN_DURATION), 0.0, 1.0)
 		_pool.word("holds", tr(RaidVerdict.CELL_HOLDS), spot.get_center(), WORD_STEP, GreasePencilMark.Ink.PLAN, 1.0, u, 0.0, WORD_TILT)
 	_pool.end()

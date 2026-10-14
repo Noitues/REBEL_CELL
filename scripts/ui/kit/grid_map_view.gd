@@ -37,6 +37,16 @@ const LABEL_PAD := 2.0
 const LABEL_EDGE := 2.0
 const LABEL_GAP := 3.0
 const BADGE_LIFT := 12.0
+## Pointer hit radius of a Site (px).
+const SITE_HIT_RADIUS: float = 24.0
+## Floating badge radius on a dense and a sparse Grid (px).
+const BADGE_R_DENSE: float = 9.0
+const BADGE_R_SPARSE: float = 11.0
+## Block width and depth on a dense and a sparse Grid (px).
+const BLOCK_W_DENSE: float = 16.0
+const BLOCK_W_SPARSE: float = 26.0
+const BLOCK_D_DENSE: float = 9.0
+const BLOCK_D_SPARSE: float = 14.0
 
 var campaign: CampaignState = null
 var corp: CorporationData = null
@@ -156,7 +166,7 @@ func _layout_positions() -> void:
 
 func site_at(point: Vector2) -> StringName:
 	for id in _positions:
-		if point.distance_to(_positions[id]) < 24:
+		if point.distance_to(_positions[id]) < SITE_HIT_RADIUS:
 			return id
 	return &""
 
@@ -222,8 +232,8 @@ func _draw() -> void:
 			continue
 		var p: Vector2 = _positions[s.id]
 		var h := (12.0 + s.tier * 6.0) if dense else (18.0 + s.tier * 9.0)
-		var w := 16.0 if dense else 26.0
-		var d := 9.0 if dense else 14.0
+		var w := BLOCK_W_DENSE if dense else BLOCK_W_SPARSE
+		var d := BLOCK_D_DENSE if dense else BLOCK_D_SPARSE
 		var col := corp_col
 		var status := campaign.grid.status_of(s.id)
 		match status:
@@ -253,7 +263,7 @@ func _draw() -> void:
 		# city map and the key).
 		var kind := CityLayout.site_kind(campaign, s)
 		var floats := kind != CityMapOverlay.KIND_TIER
-		var badge_r := 9.0 if dense else 11.0
+		var badge_r := BADGE_R_DENSE if dense else BADGE_R_SPARSE
 		if floats:
 			CityMapOverlay.draw_icon(self, kind, p + Vector2(0, -h - d - BADGE_LIFT), badge_r, col)
 			drawn_icons[s.id] = kind
