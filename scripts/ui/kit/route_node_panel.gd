@@ -24,6 +24,8 @@ const F_TIER := "TIER" # TR
 const F_TYPE := "TYPE" # TR
 const F_REWARDS := "REWARDS" # TR
 const F_HEAT := "HEAT" # TR
+const F_HP := "HP" # TR
+const F_HEALS := "HEALS" # TR
 ## Parity ROUTE-03 (round 37 `city_default`: the DEPOT 15 holo): DECRYPTED is a small chip in the
 ## foot's corner beside the seal, never over the title or a field; its lettering (px at 1.0),
 ## padding (px) and keyline (px). Every field's words wrap in their column (none is cut) and end
@@ -87,6 +89,11 @@ func _rows() -> Array:
 		out.append([tr(F_REWARDS) if i == 0 else "", String(rewards[i])])
 	if String(data.get("heat", "")) != "":
 		out.append([tr(F_HEAT), String(data["heat"])])
+	# W3-ROUTE (7A): the HP the operative arrives with and where the route heals.
+	if String(data.get("hp", "")) != "":
+		out.append([tr(F_HP), String(data["hp"])])
+	if String(data.get("heals", "")) != "":
+		out.append([tr(F_HEALS), String(data["heals"])])
 	return out
 
 

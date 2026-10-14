@@ -228,14 +228,9 @@ func _draw() -> void:
 		HighContrast.draw_text(self, pf, Vector2(fx, ry), String(row[0]), HORIZONTAL_ALIGNMENT_LEFT, label_w, fs, RouteInk.PAPER_FIELD)
 		HighContrast.draw_text(self, pf, Vector2(fx + label_w, ry), String(row[1]), HORIZONTAL_ALIGNMENT_LEFT, w - fx - label_w - MARGIN * s, fs, RouteInk.PAPER_INK)
 		ry += lh
-	# AT LARGE beside the name (rubber stamp).
-	# AT LARGE by the name, over the short rows' free right side (HP, RAM); the compact file
-	# gives it a row of its own at the foot.
-	if not compact:
-		var stamp_y := y + lh * minf(3.5, _rows.size() - 0.5)
-		_stamp(Vector2(w - MARGIN * s, stamp_y), tr(AT_LARGE), AT_LARGE_TILT, true)
-	else:
-		_stamp(Vector2(w - MARGIN * s, h - MARGIN * s - STAMP_FONT * s * 0.6), tr(AT_LARGE), AT_LARGE_TILT, true)
+	# W3-ROUTE (C7): the AT LARGE stamp has its own line at the foot of the file in both sizes,
+	# clear of the HP and RAM values (beside the short rows it covered max HP).
+	_stamp(Vector2(w - MARGIN * s, h - MARGIN * s - STAMP_FONT * s * 0.6), tr(AT_LARGE), AT_LARGE_TILT, true)
 	y = maxf(y + (MUG * s if not compact else 0.0), y + lh * _rows.size())
 	if not compact:
 		y += MARGIN * s * 0.5

@@ -115,6 +115,13 @@ var _spoken_events: Dictionary = {}
 var _settings_panel: PauseMenu = null
 ## The route's node buttons (their key hints follow the device).
 var _route_buttons: Array[Button] = []
+## W3-ROUTE (C7): the node a click on the map selected (&"" = none), whether the press now
+## reaching a stop came from the mouse, and the pick prompt and the confirm button in the
+## ROUTE window.
+var _route_selected: StringName = &""
+var _route_mouse_pick := false
+var _route_prompt: Label = null
+var _route_confirm: Button = null
 ## The route view's key: the route's node kinds (placed clear of the nodes; null when
 ## zoomed out, where the campaign map's MapLegend shows in the ROUTE window).
 var route_legend: RouteLegend = null
@@ -1413,7 +1420,12 @@ func _show_map() -> void:
 	var row := VBoxContainer.new()
 	row.name = "RouteNodes"
 	win.body.add_child(row)
+	_route_selected = &""
 	_fill_route_choices(row)
+	_route_prompt = null
+	_route_confirm = null
+	if route_on_map(s) and s.run.phase == RunState.Phase.MAP:
+		_build_route_confirm(win.body)
 	var zoom_btn := _button(tr("GRID VIEW") if not _grid_zoomed else tr("ROUTE VIEW"), func() -> void:
 		_grid_zoomed = not _grid_zoomed
 		_show_map())
@@ -1454,7 +1466,9 @@ func _show_map() -> void:
 		var plate_bar: Array[Control] = [hud]
 		(city_overlay as RouteOverlay).plate_avoid = plate_bar
 		route_legend.minimum_size_changed.connect(func() -> void: place_route_legend.call_deferred())
-		city_overlay.node_clicked.connect(func(id: StringName) -> void: map_view.node_clicked.emit(id))
+		city_overlay.node_clicked.connect(func(id: StringName) -> void:
+			_route_mouse_pick = true
+			_route_press(id))
 		_wire_route_frame()
 		place_route_legend.call_deferred()
 		route_legend.get_parent().resized.connect(place_route_legend)
@@ -1556,8 +1570,11 @@ func _fill_route_choices(row: VBoxContainer) -> void:
 		# beyond: the enemy is rolled on entry) says so, on the button and on the map.
 		if twins.has(id):
 			text += "  " + tr(TWIN_WORDS) % (int(twins[id]) + 1)
-		var b := _button(text, func() -> void: _request_node(id))
+		var b := _button(text, func() -> void: _route_press(id))
 		b.name = "Node%d" % (i + 1)
+		b.gui_input.connect(func(ev: InputEvent) -> void:
+			if ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+				_route_mouse_pick = true)
 		# ANIM-R3 B3: what this choice leads to that the others do not (reward and risk
 		# icons: Elite, Shop, Event, Rack, Heat further on); twins lead to the same.
 		var marks := differs.get(id, []) as Array
@@ -1587,6 +1604,74 @@ func _fill_route_choices(row: VBoxContainer) -> void:
 			ahead_row.visible = placer == null
 			row.add_child(ahead_row)
 	_label_route_buttons()
+
+
+## W3-ROUTE (C7): a press on route node `id`. On the map a mouse click only selects the node
+## (its file shows and the confirm button names it); a second click on it, the confirm button
+## or Enter on its focused stop travels. The number keys and a pad's A stay direct.
+func _route_press(id: StringName) -> void:
+	var by_mouse := _route_mouse_pick
+	_route_mouse_pick = false
+	var s := RunManager.netrun
+	if by_mouse and s != null and route_on_map(s) and _route_confirm != null and is_instance_valid(_route_confirm) and _route_selected != id:
+		select_route_node(id)
+		return
+	_request_node(id)
+
+
+## W3-ROUTE (C7): selects choice `id` on the route map: its file shows, it lights on the map
+## and the confirm button names it. View state only.
+func select_route_node(id: StringName) -> void:
+	_route_selected = id
+	show_node_panel(id)
+	if city_overlay != null and is_instance_valid(city_overlay):
+		city_overlay.hover_id = id
+	_update_route_confirm()
+
+
+## W3-ROUTE (C7): the node selected on the map (&"" = none).
+func route_selected() -> StringName:
+	return _route_selected
+
+
+## W3-ROUTE (C7): confirms the selected node (the confirm button, Enter): travels to it.
+func confirm_route_node() -> void:
+	if _route_selected != &"" and RunManager.netrun != null and RunManager.netrun.available_nodes().has(_route_selected):
+		_request_node(_route_selected)
+
+
+const ROUTE_PROMPT := "PICK A NODE: click one of the numbered stickers, then confirm." # TR
+const ROUTE_PROMPT_TIP := "Click a numbered node to see its file, then confirm with the button or Enter. Keys 1-3 go straight there. The shape in each sticker's corner is its type: circle fight, star elite, square event, tag shop, tower rack. The red TARGET circle is the Site this run ends at; walked links are lime, the next choices orange." # TR
+const ROUTE_CONFIRM_NONE := "CONFIRM (pick a node first)" # TR
+const ROUTE_CONFIRM := "CONFIRM: %s (Enter)" # TR
+
+
+## W3-ROUTE (C7): the pick prompt and the confirm button under the choices in the ROUTE window.
+func _build_route_confirm(body: Control) -> void:
+	_route_prompt = Label.new()
+	_route_prompt.name = "RoutePrompt"
+	_route_prompt.text = tr(ROUTE_PROMPT)
+	_route_prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_route_prompt.custom_minimum_size.x = 260.0
+	_route_prompt.mouse_filter = Control.MOUSE_FILTER_PASS
+	_route_prompt.tooltip_text = UiTip.fold(tr(ROUTE_PROMPT_TIP))
+	body.add_child(_route_prompt)
+	_route_confirm = _button(tr(ROUTE_CONFIRM_NONE), confirm_route_node)
+	_route_confirm.name = "RouteConfirm"
+	_route_confirm.disabled = true
+	body.add_child(_route_confirm)
+
+
+func _update_route_confirm() -> void:
+	if _route_confirm == null or not is_instance_valid(_route_confirm):
+		return
+	var s := RunManager.netrun
+	var ok := _route_selected != &"" and s != null and s.available_nodes().has(_route_selected)
+	_route_confirm.disabled = not ok
+	if ok:
+		_route_confirm.text = tr(ROUTE_CONFIRM) % node_word(s.run.map.get_node(_route_selected))
+	else:
+		_route_confirm.text = tr(ROUTE_CONFIRM_NONE)
 
 
 ## Parity ROUTE-04: a stop on the map took the focus or the pointer: its node's file in the
@@ -2200,6 +2285,10 @@ const REWARD_OBJECTIVE := "the Site's objective" # TR
 const REWARD_SHOP := "spend Cycles: cards, Firmware, slices" # TR
 const REWARD_EVENT := "a choice, and its price" # TR
 const PANEL_HEAT := "%s Heat on entry" # TR
+## W3-ROUTE (7A): the HP the operative arrives with, and where the route heals.
+const PANEL_HP := "%d / %d on arrival" # TR
+const PANEL_HEALS_EVENT := "events can heal; the run's end heals fully" # TR
+const PANEL_HEALS_NONE := "not here; the run's end heals fully" # TR
 ## The node panel's title: the node's word and its layer.
 const PANEL_TITLE := "%s // L%d" # TR
 
@@ -2475,7 +2564,10 @@ func node_panel_data(id: StringName) -> Dictionary:
 	var mark := String(route_heat_marks(s).get(int(node["type"]), ""))
 	if mark != "":
 		heat_words = mark if heat_words == "" else "%s; %s" % [heat_words, mark]
+	var arrive := RouteHp.arrival(s)
 	return {"title": tr(PANEL_TITLE) % [node_word(node), int(node["layer"])], "tier": s.run.tier,
+		"hp": tr(PANEL_HP) % [int(arrive["hp"]), int(arrive["max_hp"])],
+		"heals": tr(PANEL_HEALS_EVENT) if RouteHp.heals_at(int(node["type"])) else tr(PANEL_HEALS_NONE),
 		"type": tr(String(RouteLegend.MEANINGS.get(CityMapOverlay.route_kind(int(node["type"]), bool(node["elite"])), node_word(node)))),
 		"rewards": rewards, "heat": heat_words, "corp_color": Palette.corp_color(s.campaign.corporation_id)}
 
@@ -6173,6 +6265,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventJoypadButton and event.is_action_pressed("ui_cancel") and not event.is_action("open_settings") and not _modal_open() \
 			and RunManager.netrun != null and RunManager.netrun.run.phase == RunState.Phase.SHOP:
 		leave_shop()
+		get_viewport().set_input_as_handled()
+		return
+	# W3-ROUTE (C7): Enter confirms the node a click selected on the map.
+	if event.is_action_pressed("ui_accept") and _route_selected != &"" and _route_confirm != null and is_instance_valid(_route_confirm) 			and _route_confirm.is_visible_in_tree() and not _route_confirm.disabled and not _modal_open():
+		confirm_route_node()
 		get_viewport().set_input_as_handled()
 		return
 	if map_view != null and is_instance_valid(map_view) and RunManager.netrun != null and RunManager.netrun.run.phase == RunState.Phase.MAP:

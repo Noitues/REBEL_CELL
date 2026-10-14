@@ -504,9 +504,9 @@ func _travel_route() -> PackedVector2Array:
 ## pointer brings no links).
 func edge_shown(e: Dictionary) -> float:
 	var a := minf(shown(_node_dict(e["a"])), shown(_node_dict(e["b"])))
-	if route_uses(e):
-		return a
-	return minf(a, all_t) if show_all else 0.0
+	# W3-ROUTE (C7): every link between two nodes that are drawn is drawn (RACK and SHOP
+	# branches included); a link to a hidden node waits for its node.
+	return a
 
 
 ## B3 (Q4): true when the route uses link `e` (the walked line, a live link to a choice).
@@ -668,6 +668,59 @@ static func draw_sticker(ci: CanvasItem, kind: String, p: Vector2, r: float, sta
 	if KIND_SHAPES.has(kind):
 		ci.set_meta(&"icon_id", icon_id(kind))
 	draw_state_ring(ci, p, ring_r, state, k, a)
+	draw_shape_badge(ci, kind, p, r, k, a)
+
+
+## W3-ROUTE (C7): the badge's centre (share of the sticker's reach, right and down), its reach
+## (share of the sticker's reach) and the share of it the kind's colour fills.
+const BADGE_AT := Vector2(0.72, 0.72)
+const BADGE_SHARE := 0.4
+const BADGE_FILL := 0.62
+## The star badge's points and its inner radius share.
+const BADGE_STAR_POINTS := 8
+const BADGE_STAR_INNER := 0.62
+const BADGE_ROUND_SEGMENTS := 16
+
+
+## W3-ROUTE (C7): the outline of kind `kind`'s shape badge centred at `c`, reach `rr`
+## (CityMapOverlay.KIND_SHAPES: fight circle, elite star, shop tag, event square, rack tower).
+## Every kind has its own silhouette, so node types differ by shape and not by colour only.
+static func shape_polygon(kind: String, c: Vector2, rr: float) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	match String(CityMapOverlay.KIND_SHAPES.get(kind, "circle")):
+		"star8":
+			for i in BADGE_STAR_POINTS * 2:
+				var ang := TAU * i / (BADGE_STAR_POINTS * 2) - PI * 0.5
+				pts.append(c + Vector2.from_angle(ang) * rr * (1.0 if i % 2 == 0 else BADGE_STAR_INNER))
+		"tag":
+			var h := rr * 0.8
+			pts = PackedVector2Array([c + Vector2(-rr, -h), c + Vector2(rr * 0.35, -h), c + Vector2(rr, 0.0),
+				c + Vector2(rr * 0.35, h), c + Vector2(-rr, h)])
+		"square":
+			var q := rr * 0.85
+			pts = PackedVector2Array([c + Vector2(-q, -q), c + Vector2(q, -q), c + Vector2(q, q), c + Vector2(-q, q)])
+		"tower":
+			var w := rr * 0.6
+			pts = PackedVector2Array([c + Vector2(-w, rr), c + Vector2(-w, -rr * 0.35), c + Vector2(-w * 0.45, -rr * 0.35),
+				c + Vector2(-w * 0.45, -rr), c + Vector2(w * 0.45, -rr), c + Vector2(w * 0.45, -rr * 0.35),
+				c + Vector2(w, -rr * 0.35), c + Vector2(w, rr)])
+		_:
+			for i in BADGE_ROUND_SEGMENTS:
+				pts.append(c + Vector2.from_angle(TAU * i / BADGE_ROUND_SEGMENTS) * rr)
+	return pts
+
+
+## W3-ROUTE (C7): the shape badge of `kind` at the sticker's lower right: ink keyline, paper
+## rim, the kind's colour inside.
+static func draw_shape_badge(ci: CanvasItem, kind: String, p: Vector2, r: float, k: float, a: float = 1.0) -> void:
+	if not CityMapOverlay.KIND_SHAPES.has(kind):
+		return
+	var c := p + BADGE_AT * r
+	var rr := r * BADGE_SHARE
+	var outer := shape_polygon(kind, c, rr + k * 1.5)
+	ci.draw_colored_polygon(outer, Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA * a))
+	ci.draw_colored_polygon(shape_polygon(kind, c, rr), Color(RouteInk.DIE_CUT, a))
+	ci.draw_colored_polygon(shape_polygon(kind, c, rr * BADGE_FILL), Color(RouteInk.sticker_of(kind), a))
 
 
 ## B3 (Q15): the ids of nodes not drawn now (fully hidden: no disc), in graph order.

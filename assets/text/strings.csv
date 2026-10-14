@@ -20,6 +20,7 @@ keys,en
 %d / %d,%d / %d
 %d / %d INTACT,%d / %d INTACT
 %d / %d extracted,%d / %d extracted
+%d / %d on arrival,%d / %d on arrival
 %d > %d,%d > %d
 %d > %d NO CHANGE,%d > %d NO CHANGE
 %d BLOCKED,%d BLOCKED
@@ -342,6 +343,8 @@ COMMON · one pip,COMMON · one pip
 COMPLETED,COMPLETED
 COMPLIANCE DIVISION,COMPLIANCE DIVISION
 CONFIRM,CONFIRM
+CONFIRM (pick a node first),CONFIRM (pick a node first)
+CONFIRM: %s (Enter),CONFIRM: %s (Enter)
 CONNECTING,CONNECTING
 CONNECTING TO,CONNECTING TO
 CONTAINMENT OFFICE,CONTAINMENT OFFICE
@@ -564,6 +567,7 @@ Clearing it wins the campaign.,Clearing it wins the campaign.
 Clearing this Site changes Heat by %d.,Clearing this Site changes Heat by %d.
 Click,Click
 "Click a key, then press the new one. Cards stay on 1-9.","Click a key, then press the new one. Cards stay on 1-9."
+"Click a numbered node to see its file, then confirm with the button or Enter. Keys 1-3 go straight there. The shape in each sticker's corner is its type: circle fight, star elite, square event, tag shop, tower rack. The red TARGET circle is the Site this run ends at; walked links are lime, the next choices orange.","Click a numbered node to see its file, then confirm with the button or Enter. Keys 1-3 go straight there. The shape in each sticker's corner is its type: circle fight, star elite, square event, tag shop, tower rack. The red TARGET circle is the Site this run ends at; walked links are lime, the next choices orange."
 Click to play.,Click to play.
 Close,Close
 Cobalt (deep blue terminal),Cobalt (deep blue terminal)
@@ -989,6 +993,7 @@ Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP):
 HACK,HACK
 HACK: it harms the target or plants a status on it.,HACK: it harms the target or plants a status on it.
 HALCYON RAISES FARES AGAIN,HALCYON RAISES FARES AGAIN
+HEALS,HEALS
 HEAT,HEAT
 "HEAT  %s   (operative death, tier %d)","HEAT  %s   (operative death, tier %d)"
 HEAT %d CROSSED,HEAT %d CROSSED
@@ -1814,6 +1819,7 @@ PERFECT: RAM+,PERFECT: RAM+
 PERSON OF INTEREST // FILE,PERSON OF INTEREST // FILE
 PERSONNEL  //  IDENTIFIED OPERATIVES,PERSONNEL  //  IDENTIFIED OPERATIVES
 PHASE %d,PHASE %d
+"PICK A NODE: click one of the numbered stickers, then confirm.","PICK A NODE: click one of the numbered stickers, then confirm."
 PICK THE NODE TO BUILD,PICK THE NODE TO BUILD
 PIERCE,PIERCE
 PIRATE RADIO 88.1,PIRATE RADIO 88.1
@@ -3344,6 +3350,7 @@ down,down
 elite,elite
 empty,empty
 erase slot %s [A],erase slot %s [A]
+events can heal; the run's end heals fully,events can heal; the run's end heals fully
 every tab back to its defaults,every tab back to its defaults
 everything unlocked,everything unlocked
 exploit,exploit
@@ -3398,6 +3405,7 @@ none,none
 none (%d needed for the breach),none (%d needed for the breach)
 none left at large.,none left at large.
 none yet (buy them at HQ with campaign Schematics),none yet (buy them at HQ with campaign Schematics)
+not here; the run's end heals fully,not here; the run's end heals fully
 not yet,not yet
 nothing yet,nothing yet
 noticed,noticed

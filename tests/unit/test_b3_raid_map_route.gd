@@ -274,7 +274,8 @@ func test_the_route_window_keeps_grid_view_and_save_and_quit_only() -> void:
 		if btn.is_visible_in_tree() and not btn.top_level:
 			shown.append(btn.name)
 	shown.sort()
-	assert_eq(shown, ["GridZoom", "SaveQuit"] as Array[String], "GRID VIEW and Save & quit only")
+	# W3-ROUTE (C7): plus the confirm button of the pick-then-confirm prompt.
+	assert_eq(shown, ["GridZoom", "RouteConfirm", "SaveQuit"] as Array[String], "GRID VIEW, CONFIRM and Save & quit only")
 	# Round 44's top strip: Heat (the gauge), HP and Cycles.
 	assert_true(scene.route_strip_only(RunManager.netrun))
 	var marks: Array[String] = []
