@@ -82,6 +82,7 @@ func _init() -> void:
 	_backdrop.name = "Backdrop"
 	_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 	_backdrop.focus_mode = Control.FOCUS_NONE
+	_backdrop.gui_input.connect(_on_backdrop_input)
 	add_child(_backdrop)
 	# H24 S4: the menu shows its words as given, translated where set.
 	TextDb.shown_as_given(self)
@@ -116,15 +117,11 @@ func _init() -> void:
 	# B5 (round 44 B_menus `pause.png`): RESUME is the yellow safe verb, the default focus and the page's one sweep
 	# (named: the pink ABANDON would otherwise take it); ABANDON pink (destructive); the rest neutral white vinyl.
 	resume_cell.sticker.sweep_primary = true
-	resume_hint = Label.new()
-	resume_hint.name = "ResumeHint"
-	resume_hint.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	resume_hint.add_theme_font_override(&"font", Palette.mono())
-	resume_hint.add_theme_font_size_override(&"font_size", UiTheme.font_px(UiTheme.LABEL))
-	resume_hint.add_theme_color_override(&"font_color", Palette.STICKER_FILL_YELLOW[0])
-	resume_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var resume_chip := InputPrompt.make_chip(&"open_settings")  # W4-PROMPTS D-UX2: the one prompt look
+	resume_chip.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	resume_hint = InputPrompt.chip_label(resume_chip)
 	var resume_box := resume_cell.get_parent().get_parent()  # the cell: [sticker + note beside], hint, note below
-	resume_box.add_child(resume_hint)
+	resume_box.add_child(resume_chip)
 	_resume_beside = _notes[0]
 	_resume_below = PencilWords.new(_resume_beside.words, RESUME_NOTE_TILT)
 	_resume_below.color = _resume_beside.color
@@ -467,10 +464,26 @@ func _open_exit(d: ConfirmDialog, on_yes: Callable) -> void:
 	d.confirmed.connect(on_yes)
 
 
+## W4-PROMPTS D-UX4: a click on the backdrop (outside the menu) closes the menu like Resume. Menus only: a
+## confirm or an open page (Options, Codex) keeps it; a click inside the menu never reaches the backdrop.
+func _on_backdrop_input(event: InputEvent) -> void:
+	if outside_click_closes(event, exit_dialog != null and is_instance_valid(exit_dialog), settings_panel != null or codex_note != null):
+		resumed.emit()
+		accept_event()
+
+
+## Whether `event` is a left click outside the menu that should close it: not while a confirm or a page is open.
+static func outside_click_closes(event: InputEvent, dialog_open: bool, page_open: bool) -> bool:
+	if dialog_open or page_open or not event is InputEventMouseButton:
+		return false
+	var mb := event as InputEventMouseButton
+	return mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT
+
+
 ## "Resume [Esc]" / "Resume [Start]": the hint follows the device and the binds (H20).
 func _relabel() -> void:
 	if resume_hint != null:
-		resume_hint.text = Settings.hint(&"open_settings")
+		resume_hint.text = InputPrompt.chip_text(&"open_settings")
 
 
 ## Parity OPT-01 / CODEX-01 (designer group ruling 2026-10-05): Options and the Codex open as

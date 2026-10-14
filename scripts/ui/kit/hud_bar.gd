@@ -10,6 +10,8 @@ signal loadout_pressed
 signal daemons_pressed
 ## HQ-B (Q1 / Q2): the HEAT gauge was pressed (the screen opens the Heat terminal).
 signal heat_pressed
+## W4-PROMPTS D-UX3: the Menu button (top left, left of the Heat gauge) was pressed: the screen opens the pause menu.
+signal menu_pressed
 
 const BAND_HEIGHT := 56.0
 ## The screen title slot's padding and least width (px).
@@ -30,6 +32,8 @@ const TITLE_FIT_MARGIN := 0.97
 var label: Label
 ## HQ-B (Q1): the one Heat indicator, the bar's first slot on every screen that shows Heat.
 var heat_gauge: HeatGauge
+## D-UX3: opens the same pause menu as Esc.
+var menu_button: Button
 var title_box: Control
 ## The yellow sticker that names the screen (null while the screen has no title).
 var title_sticker: VerbSticker
@@ -59,6 +63,14 @@ func _init() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	add_child(row)
+	menu_button = Button.new()
+	menu_button.name = "MenuButton"
+	menu_button.text = tr("MENU")
+	menu_button.tooltip_text = UiTip.fold(tr("Pause: options, codex, save and quit."))
+	menu_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	menu_button.pressed.connect(func() -> void: menu_pressed.emit())
+	row.add_child(menu_button)
+	row.add_child(InputPrompt.make_chip(&"open_settings"))
 	# HQ-B (Q1): the HEAT gauge takes the bar's first slot (hidden until a screen shows Heat).
 	heat_gauge = HeatGauge.new()
 	heat_gauge.size_flags_vertical = Control.SIZE_SHRINK_CENTER

@@ -6491,6 +6491,7 @@ func _build_ui() -> void:
 	hud.loadout_pressed.connect(open_loadout)
 	hud.daemons_pressed.connect(open_daemons)
 	hud.heat_pressed.connect(toggle_heat_terminal)
+	hud.menu_pressed.connect(open_settings)
 	root.add_child(hud)
 	UiScrimPools.mark_band(hud, SIDE_TOP)
 	UiScrimPools.mark_panel(hud, false)
