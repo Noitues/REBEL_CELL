@@ -34,6 +34,23 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-13 — Overnight run (designer away): wave 3 alongside gate PT-002, then waves 4+, then the animation pass
+Designer, 2026-10-13 evening: start wave 3 in parallel overnight, decide and log, continue to wave 4 and on; if work
+runs out, start the animation work; use Haiku and the Batch API as needed. Orchestrator calls:
+- **Wave 3 runs before the PT-002 feedback** (normally CP-002 #1 waits). Base main @ 24e53ff2 (leak fix 22bb8229
+  merged; fast 1534 / 0 failing, smoke 0, validate 0). Briefs `docs/handoff/plan1/W3.md`: four city slices GRID
+  (C4, C3, R6/C10), ROUTE (C7 + 7A, R5 static), RAID (C9, F17, R8, D-UX6, F18 check), HQ (C6, R7, F1/F2).
+  Model lane: fix-visual Sonnet (each slice needs Godot runs and captures); Haiku / Batch API for patch-shaped
+  follow-ups (test expectations, lint, literal moves, DECISIONS bookkeeping).
+- **Order after wave 3:** the triage ruling put the input-prompt pass before wave 3, but the designer asked for wave 3
+  first tonight. Wave 4 = the input-prompt pass (mouse / keyboard scope only: Menu button top left, menus close on an
+  outside click, one button look) + the one rewards screen (D-UX1). Wave 5 = the D14 rule-5 sweep (mechanical, batch
+  lane). The content design pass (D1) needs designer rulings: concepts only, nothing built.
+- **Art-pass review:** the overnight visual merges land on main with agent self-review plus an orchestrator check of
+  the comparison sheets; one sheet per group is queued for the art-pass session's APPROVED in the morning. A rejected
+  item becomes a follow-up slice, not a revert.
+- **Gate PT-002** is still completed (report, tag) on its own build (52ba1e94 routes); wave 3 goes to gate PT-003.
+
 ### 2026-10-13 — Round 45 inner ring built (designer-approved concept, art-pass 2216c126; replaces W2-A6's standing plates)
 - **Ghost wedge:** `WheelWedge` (one quad per wheel over the disc, under the view's drawing and the firmware sockets) runs
   `shaders/wheel/wheel_wedge.gdshader` over the slice under the first needle with the modifier of the ring segment there
