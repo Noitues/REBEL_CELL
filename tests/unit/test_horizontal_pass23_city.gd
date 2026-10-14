@@ -166,6 +166,7 @@ func test_a_hidden_node_has_no_floating_label_and_the_fit_is_measured() -> void:
 	if not CityMapOverlay._visible_at(overlay.icon_pos(n), overlay.label_area(), overlay.label_blocks()):
 		n = overlay._node_dict(hq.selected_site)
 	overlay.selected_id = n["id"]
+	overlay.hover_id = n["id"]  # ruling 1a (2026-10-14): a tag shows while its node is lit, never at rest
 	assert_true(overlay.label_rects().has(String(n["id"])), "labelled while it shows")
 	# A panel over the node (Renewal Engine floated over PREV SITE): no label anywhere.
 	var at := _screen_at(overlay, n)

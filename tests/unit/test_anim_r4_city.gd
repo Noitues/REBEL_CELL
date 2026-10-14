@@ -625,6 +625,7 @@ func test_the_claimed_stamp_keeps_off_the_sites_name_and_the_side_panel_never_cl
 		before.grid.site(site)["status"] = GridState.SiteStatus.CORPORATE
 		city.mark_changes(CityInfluence.of(before, RunManager.corporation), CityInfluence.of(c, RunManager.corporation))
 		var overlay: CityMapOverlay = hq.city_overlay
+		overlay.tags_all = true  # ruling 1a: names show on map-key hover; check the stamp against them
 		city.stamp_avoid = overlay.stamp_avoid_rects()
 		var labels := overlay.label_rects()
 		var checked := 0

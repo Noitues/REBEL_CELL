@@ -47,6 +47,10 @@ static func lifts(ready_frames: int, waited: float) -> bool:
 	return ready_frames >= READY_FRAMES or waited >= MAX_WAIT
 
 
+func _ready() -> void:
+	MotionSkip.register_passive(self)  # its fade out is a short motion (test_anim_r6_rules)
+
+
 func _process(delta: float) -> void:
 	if _leaving:
 		return
