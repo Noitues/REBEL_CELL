@@ -115,6 +115,9 @@ func test_skip_skips_only_the_current_reward_and_the_others_stay() -> void:
 	scene._show_current()
 	await _frames(4)
 	var deck := run.operative.deck.size()
+	assert_true(scene.rewards_list_on(), "W4: two picks list as rows; the card row opens its page")
+	scene.open_reward(0)
+	await _frames(4)
 	var skip := scene.find_child("Skip", true, false) as BaseButton
 	assert_not_null(skip, "the card page's SKIP")
 	skip.pressed.emit()
@@ -123,6 +126,8 @@ func test_skip_skips_only_the_current_reward_and_the_others_stay() -> void:
 	assert_eq(run.pending_rewards.size(), 1, "one reward skipped, one left")
 	assert_eq(String(RunManager.netrun.current_reward()["kind"]), "firmware", "the Firmware offer stays")
 	assert_eq(run.operative.deck.size(), deck, "no card taken")
+	scene.open_reward(0)
+	await _frames(4)
 	skip = scene.find_child("Skip", true, false) as BaseButton
 	assert_not_null(skip, "the Firmware page shows, with its own SKIP")
 	skip.pressed.emit()
