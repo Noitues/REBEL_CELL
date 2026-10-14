@@ -224,7 +224,7 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 			if action.ring == RC.RingScope.INNER and not t.wheel.has_inner_ring():
 				return "That wheel has no inner ring."
 			if state.free_nudges <= 0 and state.ram < config.extra_nudge_ram_cost:
-				return "Not enough RAM for an extra nudge."
+				return "No free nudge left, and an extra nudge costs %d RAM." % config.extra_nudge_ram_cost
 		CombatAction.Type.PLAY_CARD:
 			if action.hand_index < 0 or action.hand_index >= state.hand.size():
 				return "No such card in hand."

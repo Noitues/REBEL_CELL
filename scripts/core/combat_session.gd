@@ -20,6 +20,9 @@ var history: Array[CombatAction] = []
 var setup: Dictionary = {}
 ## Events of the last successful apply()/rewind(), for the log.
 var last_events: Array[Dictionary] = []
+## W3B B2: what made the current checkpoint, so UNDO can name it when it stops there:
+## {"kind": "turn" | "respin" | "card" | "end_turn", "card": card content id (kind card)}.
+var checkpoint_cause: Dictionary = {"kind": "turn"}
 
 
 ## Starts a combat: builds the state from content ids, seeds the RNG, runs turn 1.
@@ -70,6 +73,7 @@ static func replay(p_resolver: CombatResolver, p_setup: Dictionary, p_seed: int,
 ## a refused action leaves everything untouched and reports why.
 func apply(action: CombatAction) -> CombatResult:
 	var rng_before := rng.state
+	var cause := _cause_of(action)
 	var result := resolver.apply(state, action, rng)
 	if not result.ok():
 		return result
@@ -78,6 +82,7 @@ func apply(action: CombatAction) -> CombatResult:
 	last_events = result.events
 	if rng.state != rng_before:
 		_set_checkpoint()
+		checkpoint_cause = cause
 	else:
 		actions_since_checkpoint.append(action)
 	return result
@@ -109,6 +114,20 @@ func rewind() -> CombatResult:
 	result.events.append({"type": "rewind", "text": "Rewound one action (%d left before the checkpoint)." % actions_since_checkpoint.size()})
 	last_events = result.events
 	return result
+
+
+## What a checkpoint made by `action` is called (see checkpoint_cause).
+func _cause_of(action: CombatAction) -> Dictionary:
+	match action.type:
+		CombatAction.Type.RESPIN:
+			return {"kind": "respin"}
+		CombatAction.Type.PLAY_CARD:
+			if action.hand_index >= 0 and action.hand_index < state.hand.size():
+				return {"kind": "card", "card": String(state.hand[action.hand_index])}
+			return {"kind": "card", "card": ""}
+		CombatAction.Type.END_TURN:
+			return {"kind": "end_turn"}
+	return {"kind": "turn"}
 
 
 ## Preview of `action` without touching the session (TECH_SPEC 5.4).
@@ -143,6 +162,7 @@ func to_dict() -> Dictionary:
 		"checkpoint_rng_state": str(checkpoint_rng_state),
 		"actions_since_checkpoint": since,
 		"history": hist,
+		"checkpoint_cause": checkpoint_cause.duplicate(),
 	}
 
 
@@ -160,6 +180,7 @@ static func from_dict(p_resolver: CombatResolver, d: Dictionary) -> CombatSessio
 		session.actions_since_checkpoint.append(CombatAction.from_dict(ad))
 	for ad in d.get("history", []):
 		session.history.append(CombatAction.from_dict(ad))
+	session.checkpoint_cause = (d.get("checkpoint_cause", {"kind": "turn"}) as Dictionary).duplicate()
 	return session
 
 

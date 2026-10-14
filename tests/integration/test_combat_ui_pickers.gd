@@ -127,10 +127,10 @@ func test_respin_reads_respin_and_the_undo_block_shows_on_undo() -> void:
 	assert_false(_scene.engine.can_rewind(), "nothing to undo after a random event")
 	await get_tree().process_frame
 	assert_true(undo.disabled, "UNDO is off")
-	assert_eq(undo.tooltip_text, tr(_scene.UNDO_BLOCKED), "and says why on itself")
+	assert_eq(undo.tooltip_text, _scene.undo_block_text(), "and says why on itself")
 	var turn: int = _state().turn
 	_scene.rewind()
-	assert_eq(_scene.toast.label.text, tr(_scene.UNDO_BLOCKED), "a press shows the block")
+	assert_eq(_scene.toast.label.text, tr(_scene.UNDO_BLOCKED_RESPIN), "a press shows the block, naming the respin")
 	var at: Rect2 = undo.get_global_rect()
 	var t: Rect2 = _scene.toast.get_global_rect()
 	assert_lt(absf(t.get_center().x - at.get_center().x), maxf(t.size.x, at.size.x), "over the UNDO sticker")
