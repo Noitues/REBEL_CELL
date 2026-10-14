@@ -1305,7 +1305,9 @@ func _play_context(scene: String, what: String) -> void:
 			# `combat_end_hold`. The scene waits for its fight itself (the jack may still run).
 			hq._demo_combat_end("win")
 		"route":
-			hq.enter_node(RunManager.netrun.available_nodes()[0])
+			# Plan 1 M5 made a fight open as the pulse lands, so a fight can leave the route before the
+			# landing's own motions (node_pop, visited_dim) start: show the move on a node that stays.
+			hq.enter_node(_staying_node(RunManager.netrun))
 		"raid_interlude":
 			# B3: a raid queued mid-run: the route page goes into the raid (RaidIncoming).
 			DemoSetup.queue_raid_interlude(RunManager.netrun, RunManager.config())
@@ -1395,6 +1397,16 @@ func _play_context(scene: String, what: String) -> void:
 
 
 ## Clears and claims the first launchable Site of `c` not yet claimed.
+## An open node whose page stays on the route (an event or a shop), else the first open node.
+func _staying_node(s: NetrunSession) -> StringName:
+	var open := s.available_nodes()
+	for id: StringName in open:
+		var t := int(s.run.map.get_node(id)["type"])
+		if t == RC.InfilNodeType.TERMINAL or t == RC.InfilNodeType.MAINFRAME:
+			return id
+	return open[0]
+
+
 func _claim_next(c: CampaignState) -> void:
 	var corp := RunManager.corporation
 	for sd in RunManager.launchable_sites():
