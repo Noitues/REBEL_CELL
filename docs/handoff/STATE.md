@@ -1,4 +1,4 @@
-# STATE — ORCHESTRATOR — 2026-10-13 night
+# STATE — ORCHESTRATOR — 2026-10-14 morning
 
 | | |
 |---|---|
@@ -7,11 +7,16 @@
 | Reason | designer: "Resume M14 per docs/process/00_README.md and docs/handoff/STATE.md" (M14 pause lifted for M14 close-out only) |
 
 ## Current goal
-**Overnight run 2026-10-13 → 06:00 10-14 (designer away; DECISIONS "Overnight run").** Gate PT-002 done: report
-`docs/handoff/gates/PT-002.md`, tag gate/PT-002, pushed main @ 90088e64. Running: wave 3 (`plan1/W3.md`: GRID,
-ROUTE, RAID, HQ + B4) and wave 4 REWARDS (`plan1/W4.md`); queued: wave 3b bugs (`plan1/W3B.md`), W4-PROMPTS (after
-wave 3 merges: top bar), wave 5 D14 sweep (batch lane), then the animation pass. Next gate PT-003. In the morning:
-art-pass review sheets for waves 3 / 4, designer triage of PT-002 + PT-003.
+**Overnight run done (2026-10-13 21:30 → 10-14 06:00; DECISIONS "Overnight run").**
+- **PT-002:** gate done, pushed (origin main @ 90088e64).
+- **Waves 3, 3b, 4 and 5 and animation round P1:** all merged on local main. Report: `docs/handoff/gates/PT-003.md`.
+  Playtest list: `docs/playtest/PT-003_*.md`.
+- **Main is NOT pushed:** one flaky test (`test_motion_lab_demos` visited_dim under load; DECISIONS) must be fixed
+  first. Then fast / smoke / validate, then push through the push gate.
+- **Waiting on the designer:**
+  - triage of PT-002 + PT-003 (CP-002 rule 1 resumes);
+  - the art-pass review of `docs/art_review/PLAN1/*`;
+  - the open questions listed in PT-003 §3.
 
 (Earlier history of this section: git log -p docs/handoff/STATE.md.)
 

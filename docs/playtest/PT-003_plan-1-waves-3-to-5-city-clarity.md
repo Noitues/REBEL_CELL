@@ -1,6 +1,6 @@
 # PT-003 — Plan 1 waves 3–5 (overnight): city clarity, PT-002 bug fixes, rewards screen, input prompts, combat motion
 
-since gate/PT-002 · main @ (set at the gate) · 2026-10-14 · build: run from the editor (F5) or `godot --path .`
+since gate/PT-002 · main @ 1eda2a92 (batch build 3eac0f08) · 2026-10-14 · build: run from the editor (F5) or `godot --path .`
 **Scope: text size 1.0, mouse and keyboard only.** Leave Options at 1.0, reduce effects OFF.
 Built unattended overnight (DECISIONS "Overnight run"); every call made without you is logged there, with open
 questions under "Open questions for the designer". Review sheets: `docs/art_review/PLAN1/W3_*.jpg`, `W3B.jpg`,

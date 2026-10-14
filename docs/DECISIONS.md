@@ -176,6 +176,13 @@ runs out, start the animation work; use Haiku and the Batch API as needed. Orche
   **not** judge waves 3–5. Re-run as **PT-003b** on 3eac0f08 (ANIM-FLOW included). Tooling fixed: `roll_testers`
   removes untracked `.uid` files the target commit tracks before the checkout; `gate.py` aborts when the build
   copy's HEAD is not the requested build.
+- **PT-003 full-suite rerun (1eda2a92): 2369 tests, 1 failing** — `test_motion_lab_demos` "demo misses its entry:
+  visited_dim (netrun route)". It passes alone on a quiet machine and failed (alone too) under the gate's load: a
+  timing flake that ANIM-FLOW's M5 introduced (the fight opens as the pulse lands, so under load the route page can
+  leave before the landing's `visited_dim` starts in the lab's `route` demo, which enters the first open node — often
+  a fight). Not fixed tonight (the safe fix — the demo enters a non-fight node, or the overlay starts the dim before
+  the page timer — needs a look at which `InfilNodeType`s open a fight). **Main is not pushed** (push gate: no red);
+  origin stays at gate/PT-002. Tag `gate/PT-003` is local.
 ### 2026-10-13 — W3-POLISH: the wave 3 / 3b review findings F1-F9 (designer away; decided, logged)
 - **F1** a locked Site's hover file (`CityMapOverlay` exploit file) loses its DECRYPTED stamp, as the selected card does: the HQ idle graph flags such a node `locked`.
 - **F2** the prerequisite's double ring is two full-weight rings with a wide gap, outer one PAPER white (a reachable Site's single ring is orange), and the words CLEAR FIRST on a plate over it (under it when the map has no room above) (weight, gap and a label; no pulse, no motion).
