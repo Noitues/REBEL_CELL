@@ -102,8 +102,11 @@ func test_the_hq_idle_pins_only_the_bible_4_5_sites_and_shows_one_tag() -> void:
 			assert_true(pinned, "%s: the Cell's nodes always show" % n["id"])
 	assert_gt(unpinned, 0, "the selectable plain Sites hide until hovered")
 	assert_eq(ov.tag_rule, CityMapOverlay.TagRule.FOCUS, "B3's clutter rule on the HQ idle")
+	# W3-GRID (C4, 2026-10-13): reachable Sites keep their name tag beside the selection's.
 	for id in ov.tagged_ids():
-		assert_eq(id, hq.selected_site, "one name tag, the selection's (%s)" % id)
+		var tn := ov._node_dict(id)
+		assert_true(id == hq.selected_site or bool(tn.get("tag_cue", false)),
+			"name tags: the selection's or a reachable Site's (%s)" % id)
 	# A hovered hidden Site shows with its tag; the pointer leaving takes it off.
 	var hidden_id: StringName = &""
 	for n in ov.nodes:

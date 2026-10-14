@@ -4165,7 +4165,7 @@ func _node_rows(card: TerminalWindow, site: SiteData, facts: HFlowContainer) -> 
 		var why_label := Label.new()
 		why_label.name = "CoreHeatScrubWhy"
 		why_label.text = tr(SCRUB_WHY) % tr(scrub_why)
-		why_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		why_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 		why_label.add_theme_font_override("font", Palette.mono())
 		why_label.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
 		why_label.add_theme_color_override("font_color", Palette.HARM)

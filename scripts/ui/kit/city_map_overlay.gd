@@ -1487,7 +1487,7 @@ func _draw_hi() -> void:
 		var pk := _k()
 		var pn := _node_dict(pid)
 		var pr := (icon_radius(pn) if not pn.is_empty() else ICON_RADIUS * pk) + (SELECT_RING + PREREQ_GAP) * pk
-		_hi.draw_arc(icons[pid], pr, 0, TAU, 32, Color(0, 0, 0, 0.85), 6.0 * pk)
+		_hi.draw_arc(icons[pid], pr, 0, TAU, 32, Color(Palette.INK, 0.85), 6.0 * pk)
 		_hi.draw_arc(icons[pid], pr, 0, TAU, 32, Palette.RING_AVAILABLE, 3.0 * pk)
 		_hi.draw_arc(icons[pid], pr + PREREQ_GAP * pk, 0, TAU, 32, Color(Palette.RING_AVAILABLE, 0.55), 2.0 * pk)
 	var hc := hover_centre()

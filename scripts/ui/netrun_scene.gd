@@ -1533,7 +1533,7 @@ func _fill_route_choices(row: VBoxContainer) -> void:
 		_route_buttons.clear()
 		var path := Label.new()
 		path.name = "RunPath"
-		path.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		path.autowrap_mode = TextServer.AUTOWRAP_WORD
 		path.custom_minimum_size.x = 260
 		path.text = grid_path_words(s)
 		path.add_theme_font_override("font", Palette.mono())
@@ -1651,7 +1651,7 @@ func _build_route_confirm(body: Control) -> void:
 	_route_prompt = Label.new()
 	_route_prompt.name = "RoutePrompt"
 	_route_prompt.text = tr(ROUTE_PROMPT)
-	_route_prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_route_prompt.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_route_prompt.custom_minimum_size.x = 260.0
 	_route_prompt.mouse_filter = Control.MOUSE_FILTER_PASS
 	_route_prompt.tooltip_text = UiTip.fold(tr(ROUTE_PROMPT_TIP))
