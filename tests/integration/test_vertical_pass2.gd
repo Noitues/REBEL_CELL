@@ -72,6 +72,7 @@ func test_netrun_panels_are_zine_styled() -> void:
 	s.run.pending_rewards.append({"kind": "card", "options": ["twist", "jam", "cache"]})
 	s.run.phase = RunState.Phase.REWARD
 	scene._show_current()
+	scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first
 	var stickers: Node = scene._panel.find_child("Stickers", true, false)
 	assert_not_null(stickers)
 	assert_eq(stickers.get_child_count(), 3)

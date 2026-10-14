@@ -112,7 +112,7 @@ func test_the_loot_deal_is_a_motion_and_an_invisible_sticker_takes_no_click() ->
 	var scene := await _netrun()
 	_live()
 	DemoSetup.offer_loot(RunManager.netrun, ["twist", "jam", "cache"])
-	scene._show_current()
+	scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first
 	# Hold the clock: the deal starts (deferred) and the last sticker sits in its delay.
 	await BoundedWait.frozen_frames(get_tree(), 3)
 	var row := scene.fanning_row() as Control
@@ -141,7 +141,7 @@ func test_a_sticker_takes_clicks_once_it_shows_unpressed() -> void:
 	var scene := await _netrun()
 	_live()
 	DemoSetup.offer_loot(RunManager.netrun, ["twist", "jam", "cache"])
-	scene._show_current()
+	scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first
 	assert_true(await BoundedWait.until(get_tree(), func() -> bool: return scene.fanning_row() == null,
 		BoundedWait.motion_limit([&"loot_fan", &"loot_fan", &"loot_fan", &"panel_in"])), "the deal ends by itself")
 	var row := scene._panel.find_child("Stickers", true, false) as Control
@@ -351,7 +351,7 @@ func test_the_loot_names_what_paid_out_and_its_socket_list_as_the_mainframe_does
 	var scene := await _netrun()
 	var s := RunManager.netrun
 	DemoSetup.offer_loot(s, [CHIP], "firmware")
-	scene._show_current()
+	scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first
 	await _frames(2)
 	var word := scene._panel.find_child("SocketWord", true, false) as Label
 	assert_not_null(word, "the chip's slot list has its words")

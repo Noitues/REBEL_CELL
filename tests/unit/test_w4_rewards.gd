@@ -151,3 +151,38 @@ func test_screen_lists_rows_marks_taken_and_proceed_asks() -> void:
 	assert_eq(s.run.phase, RunState.Phase.REWARD)
 	scene.proceed_rewards(true)
 	assert_eq(s.run.phase, RunState.Phase.MAP)
+
+
+## Designer ruling 3 (2026-10-14): even a single pick shows the list; its row opens the page, SKIP returns to the list.
+func test_a_single_pick_still_shows_the_list() -> void:
+	RunManager.new_campaign(9)
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = SCREEN
+	var scene: Control = load(NETRUN).instantiate()
+	holder.add_child(scene)
+	scene.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scene.start_run(1)
+	await get_tree().process_frame
+	var s := RunManager.netrun
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 9
+	s._offer(&"card", s._card_pool(), 3, rng)
+	s.run.phase = RunState.Phase.REWARD
+	scene._show_current()
+	PageTransition.settle(scene)
+	for i in 4:
+		await get_tree().process_frame
+	assert_eq(s.run.pending_rewards.size(), 1)
+	assert_true(scene.rewards_list_on(), "one pick: the list shows")
+	assert_not_null(scene._panel.find_child("Reward1", true, false), "its row")
+	assert_not_null(scene._panel.find_child("Proceed", true, false), "PROCEED")
+	scene.open_reward(0)
+	PageTransition.settle(scene)
+	for i in 4:
+		await get_tree().process_frame
+	assert_false(scene.rewards_list_on(), "the row opened: its pick page")
+	scene.skip_reward()
+	PageTransition.settle(scene)
+	for i in 4:
+		await get_tree().process_frame
+	assert_ne(s.run.phase, RunState.Phase.REWARD, "the only pick settled: the run goes on")

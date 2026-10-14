@@ -950,10 +950,21 @@ static func raid_data(pending: Dictionary, lookup: ContentLookup) -> RaidData:
 	return lookup.get_content(raid_id) as RaidData
 
 
-## C9 (W3-RAID): true when the Cell has no living crew (operatives) at all when a raid is set to
-## start: the raid setup warns and START DEFENSE asks first (it stays allowed).
+## Ruling 4 (2026-10-14): how many LIVING operatives are stationed on a node (a raid is defended by them).
+static func stationed_count(campaign: CampaignState) -> int:
+	if campaign == null:
+		return 0
+	var n := 0
+	for o in campaign.living_operatives():
+		if stationed_site(campaign, o.id) != &"":
+			n += 1
+	return n
+
+
+## C9 (W3-RAID), ruling 4: true when no living operative is STATIONED when a raid is set to start (a raid is
+## defended by the stationed crew): the raid setup warns and START DEFENSE asks first (it stays allowed).
 static func raid_crew_warning(campaign: CampaignState) -> bool:
-	return campaign != null and campaign.living_operatives().is_empty()
+	return campaign != null and stationed_count(campaign) == 0
 
 
 static func raid_entries(campaign: CampaignState, corp: CorporationData, pending: Dictionary) -> Array[StringName]:

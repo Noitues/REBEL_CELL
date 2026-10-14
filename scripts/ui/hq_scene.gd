@@ -585,9 +585,10 @@ func move_asset(from_site: StringName, index: int, to_site: StringName) -> void:
 
 
 ## C9 (W3-RAID): the NO CREW line over START DEFENSE, and the confirm's words.
-const NO_CREW_WARNING := "NO CREW: nobody is left to help your nodes." # TR
-const NO_CREW_ASK := "You have no crew. Start the defense anyway?" # TR
-const NO_CREW_BODY := "Recruit or revive an operative at HQ first, or the raid hits an unaided network." # TR
+const NO_CREW_WARNING := "NO CREW STATIONED: %d alive, %d stationed. Nobody will help your nodes." # TR
+const CREW_COUNT := "Crew: %d (Stationed: %d)" # TR
+const NO_CREW_ASK := "No crew is stationed. Start the defense anyway?" # TR
+const NO_CREW_BODY := "Station an operative on a node at HQ first, or the raid hits an unaided network." # TR
 ## The open START DEFENSE confirm (null when none).
 var _defense_confirm: ConfirmDialog = null
 
@@ -4893,11 +4894,22 @@ func _defence_verb(slot: VBoxContainer) -> void:
 	verbs.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	safe.add_child(verbs)
 	slot.add_child(safe)
+	var crew_alive := RunManager.campaign.living_operatives().size()
+	var crew_stationed := CampaignRules.stationed_count(RunManager.campaign)
+	var crew_line := Label.new()
+	crew_line.name = "CrewCount"
+	crew_line.text = tr(CREW_COUNT) % [crew_alive, crew_stationed]
+	crew_line.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	crew_line.add_theme_font_override("font", Palette.display())
+	crew_line.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+	crew_line.add_theme_color_override("font_color", Palette.TEXT_MID)
+	crew_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	verbs.add_child(crew_line)
 	if CampaignRules.raid_crew_warning(RunManager.campaign):
-		# C9: no crew at all: the warning stands over the sticker (the press then asks first).
+		# C9, ruling 4: nobody stationed: the warning stands over the sticker (the press then asks first).
 		var warn := Label.new()
 		warn.name = "NoCrewWarning"
-		warn.text = tr(NO_CREW_WARNING)
+		warn.text = tr(NO_CREW_WARNING) % [crew_alive, crew_stationed]
 		warn.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		warn.add_theme_font_override("font", Palette.display())
 		warn.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))

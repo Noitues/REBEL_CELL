@@ -66,6 +66,13 @@ func _show(scene: Control) -> void:
 	await _frames(4)
 
 
+## Ruling 3 (2026-10-14): a single pick shows the list first; open its row (the pick page).
+func _open_row(scene: Control) -> void:
+	scene.open_reward(0)
+	PageTransition.settle(scene)
+	await _frames(4)
+
+
 # --- RAID-13 / RAID-14 ----------------------------------------------------------------------------
 
 func test_the_raid_interlude_is_the_raid_view_on_the_3d_city_with_a_start_sticker() -> void:
@@ -178,6 +185,7 @@ func test_the_socket_choice_is_the_spinner_and_greys_the_slots_a_chip_cannot_tak
 	var op := s.run.operative
 	DemoSetup.offer_loot(s, ["barbed_wire"], "firmware")
 	await _show(scene)
+	await _open_row(scene)
 	var mini := scene._panel.find_child("SpinnerMini", true, false) as SpinnerMini
 	assert_true(mini.pickable, "the spinner is the socket choice")
 	assert_null(scene._panel.find_child("SlotPick", true, false), "no dropdown")
@@ -293,6 +301,7 @@ func test_the_loot_page_says_where_it_came_from_and_what_it_paid() -> void:
 		s.run.cycles += 18
 		DemoSetup.offer_loot(s, ["twist", "jam", "cache"])
 		await _show(scene)
+		await _open_row(scene)
 		var win := scene._panel.find_child("LootWindow", true, false) as CrtWindow
 		assert_eq(win.title, scene.loot_strip(s, scale >= NetrunScript.LOOT_SIDE_FROM, tr(NetrunScript.loot_source(s))), "x%.1f: LOOT-02 strip" % scale)
 		assert_string_contains(win.title, "%d OF %d" % [int(node["layer"]), s.run.map.layer_count()])

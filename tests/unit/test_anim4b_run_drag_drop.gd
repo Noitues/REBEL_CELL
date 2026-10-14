@@ -85,6 +85,8 @@ func _loot(scene: Control, kind: String, options: Array) -> void:
 	run.phase = RunState.Phase.REWARD
 	scene._show_current()
 	await _frames(4)
+	scene.open_reward(0)  # ruling 3 (2026-10-14): even a single pick shows the list; open its page
+	await _frames(4)
 
 
 ## The run and the campaign, as one comparable value.

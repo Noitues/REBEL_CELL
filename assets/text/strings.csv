@@ -602,6 +602,7 @@ Costs: %s.,Costs: %s.
 Covers %d%% of this slice: it acts on the whole slice.,Covers %d%% of this slice: it acts on the whole slice.
 Crew,Crew
 Crew:,Crew:
+Crew: %d (Stationed: %d),Crew: %d (Stationed: %d)
 Cycle Price,Cycle Price
 Cycle target,Cycle target
 Cycles,Cycles
@@ -1668,7 +1669,7 @@ NEXT RUN'S BOOSTS,NEXT RUN'S BOOSTS
 NEXT TURN %d,NEXT TURN %d
 NO CHANGE,NO CHANGE
 NO CREW,NO CREW
-NO CREW: nobody is left to help your nodes.,NO CREW: nobody is left to help your nodes.
+"NO CREW STATIONED: %d alive, %d stationed. Nobody will help your nodes.","NO CREW STATIONED: %d alive, %d stationed. Nobody will help your nodes."
 NO DAMAGE,NO DAMAGE
 NO EFFECT,NO EFFECT
 NO GAIN,NO GAIN
@@ -1741,6 +1742,7 @@ No campaign filed here yet.,No campaign filed here yet.
 No campaign is saved yet: OVERTHROW starts one.,No campaign is saved yet: OVERTHROW starts one.
 No campaign.,No campaign.
 No change to your numbers.,No change to your numbers.
+No crew is stationed. Start the defense anyway?,No crew is stationed. Start the defense anyway?
 No living operative or open Site: go to HQ.,No living operative or open Site: go to HQ.
 "No operative is alive. Open the CREW tab and hire a rookie (free when nobody is left), then JACK IN.","No operative is alive. Open the CREW tab and hire a rookie (free when nobody is left), then JACK IN."
 No threats can reach your network.,No threats can reach your network.
@@ -2095,7 +2097,6 @@ Rank,Rank
 Rank: runs survived. It brings wheel upgrades and higher netrun tiers.,Rank: runs survived. It brings wheel upgrades and higher netrun tiers.
 Reads %s now.,Reads %s now.
 Recall %s,Recall %s
-"Recruit or revive an operative at HQ first, or the raid hits an unaided network.","Recruit or revive an operative at HQ first, or the raid hits an unaided network."
 "Reduce effects (no scanlines, flicker, chromatic or distortion)","Reduce effects (no scanlines, flicker, chromatic or distortion)"
 Reduce motion (no camera moves or parallax; pages cross-fade),Reduce motion (no camera moves or parallax; pages cross-fade)
 Remove a card from your deck: %d Cycles (you have %d).,Remove a card from your deck: %d Cycles (you have %d).
@@ -2432,6 +2433,7 @@ Start from code,Start from code
 Start the defense: the raid plays out on the map; the result matches the forecast.,Start the defense: the raid plays out on the map; the result matches the forecast.
 Starting Bug Card,Starting Bug Card
 Station %s,Station %s
+"Station an operative on a node at HQ first, or the raid hits an unaided network.","Station an operative on a node at HQ first, or the raid hits an unaided network."
 Stationed on %s.,Stationed on %s.
 Stats & achievements,Stats & achievements
 Statuses & precision,Statuses & precision
@@ -3304,7 +3306,6 @@ YOUR WHEEL,YOUR WHEEL
 YOURS,YOURS
 You are here.,You are here.
 You can move here now.,You can move here now.
-You have no crew. Start the defense anyway?,You have no crew. Start the defense anyway?
 "Your %s, if you play it:","Your %s, if you play it:"
 Your campaign is autosaved.,Your campaign is autosaved.
 Your campaign is saved: BREACH on the title picks it up.,Your campaign is saved: BREACH on the title picks it up.

@@ -118,7 +118,7 @@ func _to_loot(scene: Control) -> void:
 	var run := RunManager.netrun.run
 	run.pending_rewards.append({"kind": "card", "options": ["twist", "jam", "cache"]})
 	run.phase = RunState.Phase.REWARD
-	scene._show_current()
+	scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first; open its page
 
 
 func _to_event(scene: Control) -> void:

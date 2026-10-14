@@ -3221,13 +3221,13 @@ static func _offer_index() -> int:
 	return clampi(_open_offer, 0, maxi(0, n - 1))
 
 
-## True when the rewards screen shows its list of rows: more than one pick pending or one already settled, and no
-## row opened. A payout with a single pick shows that pick's page straight away (it is the only row).
+## True when the rewards screen shows its list of rows: any pick pending or one already settled, and no
+## row opened. Even a single pick shows the list first (designer ruling 3, 2026-10-14).
 func rewards_list_on() -> bool:
 	var s := RunManager.netrun
 	if s == null or s.run.phase != RunState.Phase.REWARD:
 		return false
-	return _open_offer < 0 and (s.run.pending_rewards.size() >= 2 or not _reward_done.is_empty())
+	return _open_offer < 0 and (not s.run.pending_rewards.is_empty() or not _reward_done.is_empty())
 
 
 ## Opens row `index` of the list (its pick page); SKIP or a take there comes back to the list.
