@@ -59,8 +59,8 @@ func test_combat_key_hints_follow_a_rebind() -> void:
 	var g := OS.get_keycode_string(KEY_G)
 	# H20: the nudge keys' hints sit by the curved arrows of the wheel they drive.
 	assert_eq(String(scene._player_view.arrow_hints.get(-1, "")), "[%s]" % g)
-	assert_string_contains(scene._rewind_button.text, "[%s]" % OS.get_keycode_string(KEY_B))
-	assert_string_contains(scene._settings_button.tooltip_text, "[%s]" % Settings.key_text(&"open_settings"))  # B2: an icon chip, its key in its tooltip
+	assert_eq(InputPrompt.chip_label(InputPrompt.chip_of(scene._rewind_button)).text, "[%s]" % OS.get_keycode_string(KEY_B))
+	assert_eq(InputPrompt.chip_label(InputPrompt.chip_of(scene._settings_button)).text, InputPrompt.chip_text(&"open_settings"))  # W4-PROMPTS-2: a chip beside the icon
 	RunManager.delete_save()
 	DirAccess.remove_absolute(RunManager.profile_path())
 	RunManager.save_slot = RunManager.DEFAULT_SLOT

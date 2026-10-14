@@ -65,7 +65,7 @@ func _check_gauge(scene: Control, what: String) -> void:
 	var bar: HudBar = scene.hud
 	var g := bar.heat_gauge
 	assert_true(g.is_visible_in_tree(), "%s: the gauge shows" % what)
-	assert_eq(g.get_index(), 0, "%s: first in the bar's row" % what)
+	assert_eq(g.get_index(), bar.menu_button.get_index() + 2, "%s: first after the Menu button and its chip (D-UX3)" % what)
 	assert_eq(g.heat, RunManager.campaign.heat, "%s: the campaign's Heat" % what)
 	assert_eq(g.marks, HeatRules.band_levels(RunManager.campaign, RunManager.config()), "%s: the band levels" % what)
 	assert_lt(g.get_global_rect().position.x, bar.stats.get_global_rect().position.x, "%s: left of the stat tags" % what)
@@ -190,7 +190,7 @@ func test_the_hq_pages_keep_the_gauge_first_and_a_sticker_title() -> void:
 	hq.show_grid()
 	await _frames()
 	var bar: HudBar = hq.hud
-	assert_eq(bar.heat_gauge.get_index(), 0)
+	assert_eq(bar.heat_gauge.get_index(), bar.menu_button.get_index() + 2, "first after the Menu button and its chip (D-UX3)")
 	assert_true(bar.heat_gauge.is_visible_in_tree())
 	assert_eq(bar.heat_gauge.heat, HEAT)
 	# HQ-B (Q6): the HQ (the Grid folded in) shows no title; a titled page's is a yellow sticker.

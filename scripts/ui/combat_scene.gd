@@ -1981,11 +1981,13 @@ func _build_ui() -> void:
 	_legend_button.pressed.connect(open_legend)
 	_legend_button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	top.add_child(_legend_button)
+	InputPrompt.after(_legend_button, CombatLegend.ACTION)
 	_settings_button = SettingsIconChip.new()
 	_settings_button.pressed.connect(open_settings)
 	_settings_button.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # ANIM-R6 A12: its words come translated
 	_settings_button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	top.add_child(_settings_button)
+	InputPrompt.after(_settings_button, &"open_settings")
 
 	var middle := HBoxContainer.new()
 	middle.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -2082,8 +2084,10 @@ func _build_ui() -> void:
 	controls.add_child(_nudge_ring_option)
 	_nudge_minus_button = _button("-1", func() -> void: nudge(-1))
 	controls.add_child(_nudge_minus_button)
+	InputPrompt.after(_nudge_minus_button, &"nudge_left")
 	_nudge_plus_button = _button("+1", func() -> void: nudge(1))
 	controls.add_child(_nudge_plus_button)
+	InputPrompt.after(_nudge_plus_button, &"nudge_right")
 	_card_target_option = OptionButton.new()
 	_card_target_option.add_item("Card>tgt")
 	_card_target_option.add_item("Card>own")
@@ -2131,16 +2135,17 @@ func _build_ui() -> void:
 	bottom.add_child(_sticker_box)
 	_build_stickers()
 	# ART-2 2D (§1.3): SEND IT is a pink vinyl sticker over the washed-out EXECUTE.
-	_end_turn_button = SendItSticker.new("SEND IT", "[%s]" % Settings.key_text(&"end_turn"), HudSkin.VINYL_PINK, SEND_IT_FONT)
+	_end_turn_button = SendItSticker.new("SEND IT", "", HudSkin.VINYL_PINK, SEND_IT_FONT)
 	_end_turn_button.name = "SendIt"
 	(_end_turn_button as DripButton).glyph = true  # ANIM-R1 C7: the drawn ▶▶ end-turn mark
 	shown_tip(_end_turn_button, tr("End the turn: every needle resolves at once (defensive, then offensive, then statuses). The tags show the outcome."))
 	_end_turn_button.pressed.connect(end_turn)
 	bottom.add_child(_end_turn_button)
 	_zine_elements.append(_end_turn_button)
+	InputPrompt.after(_end_turn_button, &"end_turn")  # W4-PROMPTS-2: the key is the shared chip, not drawn text
 	# ANIM-R3 A6h: once the fight is over, SEND IT, RESPIN and UNDO go and the next step's
 	# action takes their place at once (the netrun names it: LOOT, CONTINUE).
-	_continue_button = SendItSticker.new("CONTINUE", "[%s]" % Settings.key_text(&"end_turn"), HudSkin.VINYL_PINK, CONTINUE_FONT)
+	_continue_button = SendItSticker.new("CONTINUE", "", HudSkin.VINYL_PINK, CONTINUE_FONT)
 	(_continue_button as SendItSticker).fold_room = true  # W1-R1: the fold keeps off the last letter
 	(_continue_button as SendItSticker).system_word = "PROCEED"
 	(_continue_button as SendItSticker).system_line = "> next_step.exe"
@@ -2150,6 +2155,7 @@ func _build_ui() -> void:
 	TextDb.shown_as_given(_continue_button)  # ANIM-R4 C1: its tooltip arrives translated (show_continue)
 	bottom.add_child(_continue_button)
 	_zine_elements.append(_continue_button)
+	InputPrompt.after(_continue_button, &"end_turn")
 
 	# ART-2 2D: the HUD over the wheels (nudge buttons, result chips), under the motion overlay.
 	hud_layer = HudWheelLayer.new()
@@ -2344,13 +2350,10 @@ func _refresh_key_hints() -> void:
 	var owner := UiFocus.owner_of(self) if is_inside_tree() else null
 	if owner != null and owner.get_parent() == _hand_box:
 		focused = owner.get_index()
-	_nudge_minus_button.text = "-1 %s" % Settings.hint(&"nudge_left")
-	_nudge_plus_button.text = "+1 %s" % Settings.hint(&"nudge_right")
 	# ANIM-R6 A12: its word translated once here (the button shows it as given).
-	shown_tip(_legend_button, "%s\n%s" % [("%s %s" % [tr("Legend"), Settings.hint(CombatLegend.ACTION)]).strip_edges(), tr("What every symbol, chip and status in a fight means.")])
-	shown_tip(_settings_button, "%s\n%s" % [("%s %s" % [tr("Settings"), Settings.hint(&"open_settings")]).strip_edges(), tr("Pause: options, codex, save and quit.")])
-	(_end_turn_button as DripButton).set_key_hint(Settings.hint(&"end_turn"))
-	(_continue_button as DripButton).set_key_hint(Settings.hint(&"end_turn"))
+	# W4-PROMPTS-2: the keys are the shared chips beside the buttons, not tooltip text.
+	shown_tip(_legend_button, "%s\n%s" % [tr("Legend"), tr("What every symbol, chip and status in a fight means.")])
+	shown_tip(_settings_button, "%s\n%s" % [tr("Settings"), tr("Pause: options, codex, save and quit.")])
 	_sync_stickers()
 	_sync_arrow_hints()
 	if engine != null and engine.has_fight() and is_inside_tree():
@@ -3912,6 +3915,7 @@ func _build_stickers() -> void:
 		b.pressed.connect(sp[2])
 		_sticker_box.add_child(b)
 		_stickers[sp[0]] = b
+		InputPrompt.after(b, STICKER_ACTIONS[String(sp[0])])
 	_respin_button = _stickers["respin"]
 	_rewind_button = _stickers["undo"]
 	# W3B B2: a click on a blocked (disabled) UNDO says why, like the key does.
@@ -3931,9 +3935,8 @@ func _build_stickers() -> void:
 const STICKER_ACTIONS := {"respin": &"respin", "undo": &"rewind"}
 
 
-func _sticker_text(key: String, label: String) -> String:
-	var h := Settings.hint(STICKER_ACTIONS[key])
-	return label if h == "" else "%s %s" % [label, h]
+func _sticker_text(_key: String, label: String) -> String:
+	return label  # W4-PROMPTS-2: the key is the chip beside the sticker (_build_stickers), not its text
 
 
 ## The stickers sit in their box beside SEND IT (the box lays them out).

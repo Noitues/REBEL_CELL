@@ -111,8 +111,6 @@ var _last_warned_raid: String = ""
 var selected_site: StringName = &""
 ## Operative picked on a dossier: VIEW LOADOUT and the Daemon tray show them.
 var selected_operative: StringName = &""
-## Buttons carrying a key hint (relabelled on Settings.hints_changed).
-var _hint_buttons: Array[Button] = []
 ## Pad button prompts at the foot of the screen (H23 S11).
 var pad_prompts: PadPrompts
 ## ANIM-4: the page's prompts (restored when a carry ends).
@@ -134,7 +132,6 @@ func _ready() -> void:
 	MotionDemo.apply_args()
 	# Subtitles sit in the top band, clear of every control on these screens (H20).
 	Dialogue.dock_default()
-	Settings.hints_changed.connect(_relabel_hints)
 	_build_ui()
 	var args := OS.get_cmdline_user_args()
 	for a in args:
@@ -1584,7 +1581,8 @@ func show_start() -> void:
 		var ud := lookup.get_content(uid) as ProfileUnlockData
 		unlock_names.append(TextDb.t(ud, "display_name") if ud != null else String(uid))
 	records.body.add_child(_para(tr("Unlocks: %s") % (", ".join(unlock_names) if not unlock_names.is_empty() else tr("none yet (buy them at HQ with campaign Schematics)"))))
-	var options_btn := _hint_button(tr("Options"), &"open_settings", open_settings)
+	var options_btn := _button(tr("Options"), open_settings)
+	InputPrompt.inside(options_btn, &"open_settings")  # W4-PROMPTS-2: the shared chip, not text in the button
 	options_btn.name = "OptionsButton"
 	menu.body.add_child(_icon(options_btn, StatIcon.SETTINGS))
 	# HQ-B (Q9): the Codex is the pause menu's (one Codex); this button opens it there.
@@ -1776,8 +1774,9 @@ func _build_hq_page(page_name: String) -> void:
 			paper.add_child(order_fit)
 		else:
 			paper.add_child(_raid_card(raid, pending, projection, true))
-		var setup := MenuChip.new(tr("RAID SETUP"), "[%s]" % Settings.hint(&"toggle_ring").strip_edges().trim_prefix("[").trim_suffix("]"), Palette.CELL_PINK)
+		var setup := MenuChip.new(tr("RAID SETUP"), "", Palette.CELL_PINK)
 		setup.name = "RaidSetup"
+		InputPrompt.inside(setup, &"toggle_ring")
 		setup.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		setup.pressed.connect(show_raid)
 		setup.tooltip_text = UiTip.fold(tr("RAID SETUP: a raid is coming along the red pencil routes: set up the defense."))
@@ -4182,9 +4181,10 @@ func _node_rows(card: TerminalWindow, site: SiteData, facts: HFlowContainer) -> 
 	card.body.add_child(head)
 	var amount := HeatRules.scaled_delta(c, -cfg.heat_purchase_amount, cfg)
 	var price := CampaignRules.heat_purchase_price(c, cfg)
-	var scrub := MenuChip.new(tr("HEAT SCRUB  %s HEAT") % TextDb.signed(amount), tr("%d SCHEMATICS  %s") % [price, Settings.hint(HeatGauge.OPEN_ACTION)])
+	var scrub := MenuChip.new(tr("HEAT SCRUB  %s HEAT") % TextDb.signed(amount), tr("%d SCHEMATICS") % price)
 	scrub.pre_translated = true
 	scrub.name = "CoreHeatScrub"
+	InputPrompt.inside(scrub, HeatGauge.OPEN_ACTION)
 	scrub.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scrub.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var scrub_why := CampaignRules.scrub_error(c, cfg)
@@ -6955,30 +6955,6 @@ func _report(events: Array[Dictionary]) -> void:
 				notify(String(e["text"]), true)
 			elif String(e.get("type", "")) in TOAST_NEWS_EVENTS:
 				notify(String(e["text"]))
-
-
-## A button whose label ends in the key hint for `action`; relabelled when the device or
-## the binds change (H20).
-func _hint_button(text: String, action: StringName, on_pressed: Callable) -> Button:
-	var b := _button(text, on_pressed)
-	b.set_meta(&"hint_base", text)
-	b.set_meta(&"hint_action", action)
-	_hint_label(b)
-	_hint_buttons.append(b)
-	return b
-
-
-func _hint_label(b: Button) -> void:
-	b.text = ("%s %s" % [String(b.get_meta(&"hint_base")), Settings.hint(StringName(b.get_meta(&"hint_action")))]).strip_edges()
-
-
-func _relabel_hints() -> void:
-	var alive: Array[Button] = []
-	for b in _hint_buttons:
-		if is_instance_valid(b) and not b.is_queued_for_deletion():
-			_hint_label(b)
-			alive.append(b)
-	_hint_buttons = alive
 
 
 func _build_ui() -> void:

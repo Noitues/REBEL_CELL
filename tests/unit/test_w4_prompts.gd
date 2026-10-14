@@ -75,3 +75,14 @@ func test_backdrop_click_resumes_the_real_menu() -> void:
 	click.pressed = true
 	menu._backdrop.gui_input.emit(click)
 	assert_true(got[0], "the backdrop closes the menu")
+
+
+## W4-PROMPTS-2 (D-UX2): the combat and HQ scenes put their key hints in the shared chip too. The only
+## prompt text left is the nudge arrows' glyphs drawn by the wheel view itself (arrow_hints).
+func test_combat_and_hq_scenes_put_key_hints_in_the_chip() -> void:
+	for path in ["res://scripts/ui/combat_scene.gd", "res://scripts/ui/hq_scene.gd"]:
+		for line in FileAccess.get_file_as_string(path).split("\n"):
+			if line.contains("Settings.hint(") and not line.contains("arrow_hints"):
+				fail_test("%s builds prompt text: %s" % [path, line.strip_edges()])
+			assert_false(line.contains("set_key_hint(") or line.contains("_hint_button("), "%s: %s" % [path, line.strip_edges()])
+	pass_test("scanned")

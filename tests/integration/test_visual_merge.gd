@@ -70,13 +70,13 @@ func test_stickers_and_send_it_show_the_bound_keys() -> void:
 	var scene := await _combat(1.0)
 	for key in scene.STICKER_ACTIONS:
 		var action: StringName = scene.STICKER_ACTIONS[key]
-		assert_string_contains(scene._stickers[key].text, "[%s]" % Settings.key_text(action), "%s sticker names its key" % key)
-	assert_eq(scene._end_turn_button.key_hint, "[%s]" % Settings.key_text(&"end_turn"))
+		assert_eq(InputPrompt.chip_label(InputPrompt.chip_of(scene._stickers[key])).text, InputPrompt.chip_text(action), "%s sticker has its key chip" % key)
+	assert_eq(InputPrompt.chip_label(InputPrompt.chip_of(scene._end_turn_button)).text, InputPrompt.chip_text(&"end_turn"))
 	Settings.rebind(&"respin", KEY_G)
 	Settings.rebind(&"end_turn", KEY_B)
 	await _frames()
-	assert_string_contains(scene._stickers["respin"].text, "[%s]" % OS.get_keycode_string(KEY_G), "a rebind shows on the sticker at once")
-	assert_eq(scene._end_turn_button.key_hint, "[%s]" % OS.get_keycode_string(KEY_B), "and under SEND IT")
+	assert_eq(InputPrompt.chip_label(InputPrompt.chip_of(scene._stickers["respin"])).text, "[%s]" % OS.get_keycode_string(KEY_G), "a rebind shows on the sticker chip at once")
+	assert_eq(InputPrompt.chip_label(InputPrompt.chip_of(scene._end_turn_button)).text, "[%s]" % OS.get_keycode_string(KEY_B), "and by SEND IT")
 
 
 func test_stickers_and_intent_tags_stay_off_the_wheels_at_every_text_scale() -> void:

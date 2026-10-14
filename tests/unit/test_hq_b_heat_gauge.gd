@@ -52,7 +52,7 @@ func test_the_gauge_takes_the_top_bars_first_slot_at_the_hq() -> void:
 	var bar: HudBar = hq.hud
 	var gauge := bar.heat_gauge
 	assert_true(gauge.is_visible_in_tree(), "the gauge shows at the HQ")
-	assert_eq(gauge.get_index(), 0, "first in the bar's row")
+	assert_eq(gauge.get_index(), bar.menu_button.get_index() + 2, "first after the Menu button and its chip (D-UX3)")
 	assert_false(bar.title_box.visible, "no title at the HQ (Q6): the slot is the gauge's")
 	assert_true(gauge.interactive, "at the HQ it is a button (caret)")
 	assert_eq(gauge.heat, 58)

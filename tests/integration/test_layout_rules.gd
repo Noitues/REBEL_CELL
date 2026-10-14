@@ -92,7 +92,7 @@ func test_hq_is_a_cyberdeck_and_the_grid_is_wireframe() -> void:
 		found_sticker = found_sticker or (n is VerbSticker and n.name == "Launch")
 	# HQ-B (Q1): no WANTED poster: Heat is the top bar's gauge, its first slot.
 	assert_false(found_poster, "no wanted poster on the page")
-	assert_true(hq.hud.heat_gauge.is_visible_in_tree() and hq.hud.heat_gauge.get_index() == 0, "the HEAT gauge in the bar's first slot")
+	assert_true(hq.hud.heat_gauge.is_visible_in_tree() and hq.hud.heat_gauge.get_index() == hq.hud.menu_button.get_index() + 2, "the HEAT gauge first after the Menu button and its chip (D-UX3)")
 	assert_true(found_card, "the crew as hand cards")
 	assert_true(found_sticker, "JACK IN sticker")
 	hq.show_grid()
