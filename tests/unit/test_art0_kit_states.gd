@@ -412,7 +412,8 @@ func test_a_confirm_sits_on_a_scrim_that_takes_the_page_clicks_and_traps_the_pad
 	var stray := InputEventMouseButton.new()
 	stray.button_index = MOUSE_BUTTON_LEFT
 	stray.pressed = true
-	stray.global_position = Vector2(2, 2)
+	# outside the panel (a bare holder leaves the dialog at the corner, so (2, 2) is over the panel)
+	stray.global_position = d.panel.get_global_rect().end + Vector2(20, 20)
 	stray.position = stray.global_position
 	d._input(stray)
 	assert_true(get_viewport().is_input_handled(), "the dialog takes the clicks meant for the page")

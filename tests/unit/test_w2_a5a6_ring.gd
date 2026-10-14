@@ -13,10 +13,15 @@ const SEGMENT_DIR := "res://content/rings/segments"
 func before_each() -> void:
 	AudioDirector.muted = true
 	RunManager.scene_switching_enabled = false
+	# its own save slot: new_campaign autosaves, and a save in the default slot leaked into the title's tests
+	RunManager.save_slot = "gut_w2_a5a6_ring"
+	RunManager.delete_save()
 
 
 func after_each() -> void:
 	AudioDirector.muted = false
+	RunManager.delete_save()
+	RunManager.save_slot = RunManager.DEFAULT_SLOT
 	RunManager.reset()
 	RunManager.scene_switching_enabled = true
 

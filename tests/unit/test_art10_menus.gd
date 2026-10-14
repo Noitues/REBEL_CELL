@@ -25,7 +25,8 @@ func before_each() -> void:
 	Settings.set_text_scale(1.0)
 	AudioDirector.muted = true
 	RunManager.scene_switching_enabled = false
-	for slot in ["1", "2", "3", "gut_art10"]:
+	# hermetic: the title's BREACH/latest_slot reads every saved slot, so none may survive from another script
+	for slot in SaveService.list_campaign_slots():
 		RunManager.delete_slot(slot)
 	RunManager.save_slot = "gut_art10"
 	RunManager.reset()
