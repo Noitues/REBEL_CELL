@@ -65,7 +65,7 @@ func show_mod(p_seg: StringName, mid: float, half: float, clock: float) -> void:
 	mat.set_shader_parameter(&"mark_size", float(m["size"]))
 	mat.set_shader_parameter(&"mark_row", float(m["row"]))
 	mat.set_shader_parameter(&"mark_arc", float(m["arc"]))
-	mat.set_shader_parameter(&"keyline", float(m["keyline"]))
+	mat.set_shader_parameter(&"keyline", RingMods.keyline_of(p_seg))
 	mat.set_shader_parameter(&"time", clock)
 	if int(m["kind"]) == RingMods.Kind.GLYPH:
 		_set_cell(StringName(m["glyph"]))
