@@ -34,6 +34,14 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-13 — W3-ROUTE: the route map picks then confirms, node types have shapes, HP carry-over is shown (PB-010 C7, PB-011 C4)
+- **Pick then confirm.** On the run's own route a mouse click on a numbered sticker only selects it (its file shows, the sticker lights, the ROUTE window's CONFIRM button names it and "(Enter)"). A second click on it, the button, or Enter travels. A pick prompt sits above the button; its tooltip is the map key for the numbers, the TARGET circle and the badge shapes. The number keys 1-3 and Enter on a focused stop stay direct (keyboard shortcuts; the existing tests and the pad rely on them). Open question (Q): should the number keys also select only?
+- **Shapes.** Every sticker wears a badge in its lower right: the kind's existing silhouette from `CityMapOverlay.KIND_SHAPES` (fight circle, elite star, event square, shop tag, rack tower), drawn by `RouteOverlay.draw_shape_badge`; the key strip's swatches show the same badge.
+- **Links.** Every link between two drawn nodes is drawn (was: only links the route uses). Nodes beyond the next choices stay hidden (fog, ART-7 D13), so RACK / SHOP branches appear as their nodes do; the key's "hover: show all links" hairline still covers links to hidden nodes. Open question (Q): should nodes beyond the next layer show, so the whole branch to a RACK or SHOP is visible?
+- **7A.** `RouteHp.arrival(session)` is the run state's HP (moving never changes it; fights, event choices and Daemons do; the run's end heals fully). The node file shows "HP: n / max on arrival" and "HEALS: events can heal; the run's end heals fully" (Terminals only). Test: the shown HP = the run state's HP after each node, and the next fight starts with it.
+- **AT LARGE stamp** has its own line at the foot of the operative file (both sizes), clear of HP and RAM.
+- R5's hover "animate out to its building" stays queued for the animation pass (ruling 7).
+
 ### 2026-10-13 — Round 45 inner ring built (designer-approved concept, art-pass 2216c126; replaces W2-A6's standing plates)
 - **Ghost wedge:** `WheelWedge` (one quad per wheel over the disc, under the view's drawing and the firmware sockets) runs
   `shaders/wheel/wheel_wedge.gdshader` over the slice under the first needle with the modifier of the ring segment there
