@@ -42,7 +42,7 @@ func test_shadow_is_six_px() -> void:
 
 
 func test_raid_paper_is_tilted_with_clip_room_at_every_scale() -> void:
-	for k in SCALES:
+	for k in TestScope.scales(SCALES):
 		Settings.set_text_scale(k)
 		var p := RaidPaper.new(&"meridian", "MANIFEST AUDIT", RaidPaper.STAMP_INTERCEPTED, "WO 52-MF-114")
 		p.add_row("Loss", "12")
@@ -62,7 +62,7 @@ func test_raid_paper_is_tilted_with_clip_room_at_every_scale() -> void:
 
 
 func test_dossier_is_tilted_at_every_scale_and_keeps_its_fit() -> void:
-	for k in SCALES:
+	for k in TestScope.scales(SCALES):
 		Settings.set_text_scale(k)
 		var d := OperativeDossier.new()
 		add_child_autofree(d)
@@ -86,7 +86,7 @@ const CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital"
 
 func test_the_clip_bites_into_padding_and_the_letterhead_starts_below_it() -> void:
 	assert_eq(PaperStaging.CLIP_BITE, 14.0, "the clip's bite is 14 px at 1.0")
-	for k in SCALES:
+	for k in TestScope.scales(SCALES):
 		Settings.set_text_scale(k)
 		var p := RaidPaper.new(&"solace", "T", RaidPaper.STAMP_CLASSIFIED, "WO 1")
 		add_child_autofree(p)
@@ -99,7 +99,7 @@ func test_the_clip_bites_into_padding_and_the_letterhead_starts_below_it() -> vo
 
 
 func test_every_letterhead_label_fits_the_sheet_width() -> void:
-	for k in SCALES:
+	for k in TestScope.scales(SCALES):
 		Settings.set_text_scale(k)
 		for corp in CORPS:
 			var p := RaidPaper.new(corp, "T", RaidPaper.STAMP_CLASSIFIED, "WO 1")

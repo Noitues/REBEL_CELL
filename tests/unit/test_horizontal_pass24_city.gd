@@ -142,6 +142,9 @@ func _close(hq: Control) -> void:
 
 
 func test_the_folded_key_opens_on_hover_press_and_pad_and_does_not_refit() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_map_legend(true)
 	var hq: Control = await _hq_grid(&"solace", Settings.TEXT_SCALE_MAX)
 	var legend: MapLegend = hq.grid_legend
@@ -321,7 +324,7 @@ func test_mini_map_labels_keep_off_every_site_block() -> void:
 		RunManager.reset()
 		_open_all()
 		RunManager.new_campaign(1, corp)
-		for scale in SCALES:
+		for scale in TestScope.scales(SCALES):
 			Settings.set_text_scale(scale)
 			var mini: GridMapView = add_child_autofree(GridMapView.new())
 			mini.size = MINI_SIZE

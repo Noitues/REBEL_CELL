@@ -106,7 +106,7 @@ func test_the_mainframe_stands_on_its_facade_with_the_sign_and_its_stock_wheel()
 ## screen; the sign's spill reads a fresh copy of the street (the scrim's was stale: a blurred third).
 func test_the_street_starts_under_the_subtitle_band_and_the_board_ends_on_screen() -> void:
 	var NetrunScript := load("res://scripts/ui/netrun_scene.gd")
-	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.6, Settings.TEXT_SCALE_MAX]):
 		var scene := await _netrun(scale)
 		await _shop(scene)
 		var band: Rect2 = scene.subtitle_strip.get_global_rect()
@@ -129,7 +129,7 @@ func test_the_street_starts_under_the_subtitle_band_and_the_board_ends_on_screen
 
 
 func test_card_tags_hang_under_the_cards_and_the_notes_cover_no_tag() -> void:
-	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.6, Settings.TEXT_SCALE_MAX]):
 		var scene := await _netrun(scale)
 		await _shop(scene)
 		var tags: Array[Rect2] = []

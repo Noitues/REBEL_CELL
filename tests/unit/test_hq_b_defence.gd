@@ -187,7 +187,7 @@ func _shown_rect(n: Control) -> Rect2:
 
 
 func test_the_setup_fits_at_every_text_scale() -> void:
-	for s in SCALES:
+	for s in TestScope.scales(SCALES):
 		Settings.set_text_scale(s)
 		var hq := await _hq()
 		hq.show_raid()

@@ -183,7 +183,7 @@ func test_every_wheel_carries_its_attachments_and_leaves_their_drawing_to_them()
 
 
 func test_drones_collapse_dock_on_their_slice_and_are_aimed_at_their_spot() -> void:
-	for scale in [1.0, 1.6, 2.0]:
+	for scale in TestScope.scales([1.0, 1.6, 2.0]):
 		var scene := await _combat(&"collections_agent", scale)
 		var st: CombatState = scene.engine.state()
 		var lookup: ContentLookup = scene.engine.resolver.lookup
@@ -205,7 +205,7 @@ func test_drones_collapse_dock_on_their_slice_and_are_aimed_at_their_spot() -> v
 
 
 func test_aiming_at_a_drone_blooms_its_band_into_a_mini_wheel_inside_the_screen() -> void:
-	for scale in [1.0, 1.6, 2.0]:
+	for scale in TestScope.scales([1.0, 1.6, 2.0]):
 		var scene := await _combat(&"collections_agent", scale)
 		var st: CombatState = scene.engine.state()
 		var lookup: ContentLookup = scene.engine.resolver.lookup

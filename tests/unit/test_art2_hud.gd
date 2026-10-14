@@ -343,7 +343,7 @@ func test_nudges_sit_on_one_line_above_each_wheel() -> void:
 
 
 func test_the_hud_fits_at_every_text_size() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale, &"compliance_officer", 5)
 		scene._show_end_turn_preview()
 		await _frames(4)
@@ -379,7 +379,7 @@ func test_pink_is_for_actions_and_one_red_is_harm() -> void:
 
 func test_hand_cards_never_draw_their_body_under_the_hand_floor() -> void:
 	# S-CARDFACE b (designer 2026-10-05): the floor at rest is ZineCard.HAND_REST_FLOOR (10 px; was 12)
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		for c in scene._hand_box.get_children():
 			if c is ZineCard:

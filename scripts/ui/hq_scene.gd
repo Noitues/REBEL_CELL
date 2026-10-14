@@ -5354,6 +5354,10 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	var fx := playout.attach_fx(r, c.grid.home_site_id, c.grid.home_max_integrity, Palette.corp_color(c.corporation_id))
 	if fx != null and raid_routes != null and is_instance_valid(raid_routes):
 		fx.entry_letters = raid_routes.letters.duplicate()  # ART-6 3A: marks stack above the letters
+	if fx != null:
+		# W2R1: a pencil word stays whole in the playout map's free part (never under the top bar,
+		# the feed column or the key).
+		fx.free_rect = func() -> Rect2: return fight_area(_fight_area)
 	# ANIM-R1 M4: each step's fight is framed (the camera eases to it) before it plays, and
 	# every hit on home flies its number into the top bar's HOME, which rolls down.
 	playout.framer = _frame_fight.bind(overlay)

@@ -477,6 +477,9 @@ func test_the_first_press_on_the_city_grid_works_while_the_radio_types() -> void
 # --- A4: a consumed pad press switches the prompts ---------------------------------------------------------
 
 func test_a_pad_press_that_ends_a_motion_switches_the_prompts() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	_live()
 	Settings.set_subtitle_typing(true)
 	Settings.set_pad_active(false)
@@ -759,7 +762,7 @@ func test_the_icon_row_under_the_hp_says_the_last_turn() -> void:
 	var icons: Dictionary = load("res://scripts/ui/combat_scene.gd").last_turn_icons(before, events)
 	assert_eq(icons[&"player"], {"hit": 6, "soaked": 5, "evaded": 0, "hp": -1, "dealt": 1}, "sword 6 − shield 5 = 1 (the turn start's heal is not the resolve's)")
 	assert_eq(icons[&"enemy_0"], {"hit": 4, "soaked": 4, "evaded": 0, "hp": 0, "dealt": 0}, "a hit soaked whole: = 0 with a shield")
-	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 		var scene := await _combat(&"collections_agent", scale)
 		_live()
 		for turn in 3:
@@ -913,7 +916,7 @@ func test_a_status_marks_its_slice_as_it_lands() -> void:
 
 
 func test_the_tape_never_clips_the_tag() -> void:
-	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 		var scene := await _combat(&"collections_agent", scale)
 		for v in scene._views():
 			var wv := v as WheelView
@@ -1040,7 +1043,7 @@ func test_the_loadout_swap_chips_carry_a_ring_pictogram() -> void:
 
 
 func test_discarded_cards_keep_off_respin_and_undo() -> void:
-	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 		var scene := await _combat(&"collections_agent", scale)
 		var spot: Vector2 = scene._discard_spot()
 		var card: Vector2 = ZineCard.STICKER_SIZE * scene._hand_scale * CombatFxLayer.DISCARD_SCALE

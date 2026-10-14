@@ -290,7 +290,7 @@ func test_the_hovered_card_draws_over_the_result_chips() -> void:
 # --- TURN strip, name sticker, tutorial, end states ------------------------------------------------
 
 func test_the_turn_strip_says_where_the_fight_is_and_fits() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		var line: String = scene.address_line()
 		assert_string_contains(line, tr("TRAINING SIM").to_upper(), "a fight with no run")
@@ -320,7 +320,7 @@ func test_the_name_sticker_reads_as_a_cell_designation() -> void:
 
 
 func test_the_tutorial_sits_between_the_wheels_clear_of_both() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		scene.start_tutorial()
 		await _frames(3)
@@ -349,7 +349,7 @@ func test_the_beaten_enemy_wears_deleted_and_flatlined_sits_on_the_hub() -> void
 # --- Fit at 1.0 / 1.6 / 2.0 -------------------------------------------------------------------------
 
 func test_the_result_underline_sits_under_the_chips_on_screen_at_every_text_scale() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		var picked := -1
 		for i in scene.engine.state().hand.size():
@@ -381,7 +381,7 @@ func test_the_result_underline_sits_under_the_chips_on_screen_at_every_text_scal
 
 
 func test_preview_labels_keep_off_the_send_it_block_and_the_aim_hint() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		var ev: WheelView = scene._enemy_views.values()[0]
 		var overlay := ev.find_child("CardPreview", true, false) as CardPreviewOverlay

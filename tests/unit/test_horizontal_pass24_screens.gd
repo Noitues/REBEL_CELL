@@ -558,6 +558,9 @@ func test_translate_once_with_a_translation() -> void:
 
 
 func test_pad_prompts_translate_their_verbs_once() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	_translate({"Buy": "XX_BUY", "XX_BUY": "TWICE", "Leave": "XX_LEAVE", "Settings": "XX_SETTINGS"})
 	var row: PadPrompts = add_child_autofree(PadPrompts.new())
 	Settings.set_pad_active(true)
@@ -576,7 +579,7 @@ func test_pad_prompts_translate_their_verbs_once() -> void:
 func test_late_campaign_raid_map_fits_with_its_key_clear() -> void:
 	_unlock_all()
 	for corp in CORPS:
-		for scale in SCALES:
+		for scale in TestScope.scales(SCALES):
 			Settings.set_text_scale(scale)
 			RunManager.new_campaign(1, corp)
 			_late_campaign()
@@ -678,7 +681,7 @@ func _assert_saved_clear(root: Node, what: String) -> void:
 
 func test_the_saved_stamp_is_placed_on_the_page_it_lands_on() -> void:
 	for pad in [false, true]:
-		for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+		for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 			Settings.set_text_scale(scale)
 			Settings.set_pad_active(pad)
 			var hq := _open(HQ)
@@ -709,7 +712,7 @@ func test_the_saved_stamp_is_placed_on_the_page_it_lands_on() -> void:
 func test_the_first_page_always_carries_words() -> void:
 	var hq := _open(HQ)
 	await _frames()
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		await _frames(2)
 		var width := Dialogue.default_rect.size.x
@@ -736,7 +739,7 @@ func test_the_first_page_always_carries_words() -> void:
 # --- S9 the event's choices ----------------------------------------------------------------------------
 
 func test_event_choices_stay_on_screen_and_no_change_shows_a_mark() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()
@@ -806,7 +809,7 @@ func _parts_apart(card: ZineCard, what: String) -> void:
 
 
 func test_mainframe_text_icons_and_stickers_never_overlap() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()
@@ -837,7 +840,7 @@ func test_every_crew_dossier_is_reachable_at_big_text() -> void:
 	var c := RunManager.campaign
 	while c.roster.size() < 3:
 		c.recruit(RunManager.lookup().get_content(RunManager.DEFAULT_CLASS) as ClassData)
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		var hq := _open(HQ)
 		hq.show_hq()
@@ -875,7 +878,7 @@ func test_every_crew_dossier_is_reachable_at_big_text() -> void:
 # --- S12 the route ----------------------------------------------------------------------------------
 
 func test_route_nodes_clear_of_the_route_column_and_choices_told_apart() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()
@@ -913,7 +916,7 @@ func test_route_nodes_clear_of_the_route_column_and_choices_told_apart() -> void
 func test_the_continue_line_reads_as_a_line_of_icons() -> void:
 	RunManager.campaign.heat = 14
 	RunManager.autosave()
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		var title := _open(TITLE)
 		title.continue_slot = SLOT
@@ -936,7 +939,7 @@ func test_the_continue_line_reads_as_a_line_of_icons() -> void:
 # --- S14 the raid setup ---------------------------------------------------------------------------------
 
 func test_defence_cards_say_what_they_do_and_the_button_says_defend() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var hq: Control = await _raid(scale)
 		var run := hq._panel.find_child("RunRaid", true, false) as Button
 		assert_eq(run.text, "START DEFENSE")
@@ -1044,6 +1047,9 @@ func test_the_top_bar_says_whose_numbers_it_shows() -> void:
 # --- S17 the whole text on hover and focus -------------------------------------------------------------------
 
 func test_loot_and_mainframe_cards_show_their_whole_text_on_focus() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var scene := _netrun()
 	await _frames()
 	Settings.set_pad_active(true)

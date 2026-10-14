@@ -126,7 +126,7 @@ func _every_hand_page(hq: Control, items: Array[Control], s: float) -> Dictionar
 
 
 func test_every_market_offer_is_reachable_whole_at_every_scale() -> void:
-	for s in SCALES:
+	for s in TestScope.scales(SCALES):
 		Settings.set_text_scale(s)
 		RunManager.new_campaign(1)
 		DemoSetup.set_schematics(RunManager.campaign, 500)
@@ -144,7 +144,7 @@ func test_every_market_offer_is_reachable_whole_at_every_scale() -> void:
 
 
 func test_every_operative_is_reachable_whole_and_clear_of_the_card() -> void:
-	for s in SCALES:
+	for s in TestScope.scales(SCALES):
 		Settings.set_text_scale(s)
 		_b4()
 		var hq := await _hq()
@@ -245,7 +245,7 @@ func _check_card(hq: Control, s: float, what: String) -> void:
 
 
 func test_the_claim_terminal_pages_its_build_choices_whole() -> void:
-	for s in SCALES:
+	for s in TestScope.scales(SCALES):
 		Settings.set_text_scale(s)
 		_b4()
 		var c := RunManager.campaign
@@ -264,7 +264,7 @@ func test_the_claim_terminal_pages_its_build_choices_whole() -> void:
 
 
 func test_core_and_node_terminals_page_every_row_and_action() -> void:
-	for s in SCALES:
+	for s in TestScope.scales(SCALES):
 		Settings.set_text_scale(s)
 		_b4()
 		var c := RunManager.campaign
@@ -287,7 +287,7 @@ func test_core_and_node_terminals_page_every_row_and_action() -> void:
 
 func test_the_site_file_keeps_its_rows_for_every_corporation() -> void:
 	for corp in CORPS:
-		for s in SCALES:
+		for s in TestScope.scales(SCALES):
 			Settings.set_text_scale(s)
 			_b4(corp)
 			var hq := await _hq()
@@ -296,7 +296,7 @@ func test_the_site_file_keeps_its_rows_for_every_corporation() -> void:
 
 
 func test_the_exploit_explanation_is_whole() -> void:
-	for s in SCALES:
+	for s in TestScope.scales(SCALES):
 		Settings.set_text_scale(s)
 		RunManager.new_campaign(1)
 		var hq := await _hq()
@@ -311,7 +311,7 @@ func test_the_exploit_explanation_is_whole() -> void:
 
 
 func test_the_heat_terminal_pages_above_the_hand_and_its_tabs() -> void:
-	for s in SCALES:
+	for s in TestScope.scales(SCALES):
 		Settings.set_text_scale(s)
 		_b4()
 		var hq := await _hq()
@@ -358,7 +358,7 @@ func test_the_raid_pencil_lies_under_the_hq_panels() -> void:
 
 
 func test_the_corp_news_toast_stands_clear_of_the_crew() -> void:
-	for s in SCALES:
+	for s in TestScope.scales(SCALES):
 		Settings.set_text_scale(s)
 		_b4()
 		var hq := await _hq()
@@ -392,7 +392,7 @@ func test_card_split_keeps_captions_with_their_row_and_empty_rows_free() -> void
 ## G2R2-2: the raid setup's INTERCEPTED toast takes the ON AIR line's place in the foot band for its
 ## hold (never over the map, the pencil or the paper), then the line returns; it never stands.
 func test_the_raid_setup_toast_takes_the_on_air_lines_place_and_gives_it_back() -> void:
-	for s in SCALES:
+	for s in TestScope.scales(SCALES):
 		Settings.set_text_scale(s)
 		_b4()
 		var hq := await _hq()
@@ -419,7 +419,7 @@ func test_the_raid_setup_toast_takes_the_on_air_lines_place_and_gives_it_back() 
 ## goes straight on to the summary) keeps the focus fold's room after its last letter.
 func test_the_raid_result_continue_keeps_room_for_its_focus_fold() -> void:
 	var hq_script := load("res://scripts/ui/hq_scene.gd")
-	for s in SCALES:
+	for s in TestScope.scales(SCALES):
 		Settings.set_text_scale(s)
 		var cont := HoloSticker.word(tr("CONTINUE"), VinylSticker.Fill.PINK, minf(Settings.text_scale, ShopItem.OBJECT_MAX_SCALE), hq_script.RAID_CONTINUE_PX)
 		cont.add_fold_room()

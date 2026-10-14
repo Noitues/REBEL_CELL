@@ -91,7 +91,7 @@ func test_faces_hold_the_whole_text_at_every_text_size() -> void:
 	# the loot card, with the condition on it, at 1.0 / 1.6 / 2.0 (the A4 words must not overflow)
 	var loot: Vector2 = load("res://scripts/ui/netrun_scene.gd").LOOT_CARD
 	var lookup := RunManager.lookup()
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		for c: CardData in _content(&"CardData"):
 			var z := ZineCard.new(TextDb.t(c, "display_name"), c.ram_cost, FaceText.card_text(c), 0).with_card(c)
 			z.size = loot * scale
@@ -114,7 +114,7 @@ func _daemon_event() -> TerminalEventData:
 
 
 func test_an_event_daemon_reward_shows_its_icon_and_tooltip() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		RunManager.reset()
 		var holder: Control = add_child_autofree(Control.new())

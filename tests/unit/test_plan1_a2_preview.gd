@@ -285,7 +285,7 @@ func test_the_queue_lists_the_plays_the_running_ram_and_the_net_of_the_plan() ->
 
 
 func test_the_queue_panel_holds_the_layout_at_every_text_size() -> void:
-	for ts in [1.0, 1.6, 2.0]:
+	for ts in TestScope.scales([1.0, 1.6, 2.0]):
 		var scene: Control = await _combat(7, &"collections_agent", ts)
 		_play_cards(scene, 2)
 		scene._show_end_turn_preview()

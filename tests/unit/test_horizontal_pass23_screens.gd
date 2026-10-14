@@ -210,7 +210,7 @@ func test_a_line_that_names_its_speaker_is_not_named_twice() -> void:
 
 
 func test_a_long_subtitle_pages_and_says_it_goes_on() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		var hq: Control = await _raid(scale)
 		var band := (hq.subtitle_strip as Control).get_global_rect()
 		Dialogue.clear()
@@ -243,7 +243,7 @@ func test_a_long_subtitle_pages_and_says_it_goes_on() -> void:
 # --- S4 / S14 the raid map ----------------------------------------------------------------------
 
 func test_one_raid_legend_listing_what_the_map_shows_clear_of_the_tags() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		var hq: Control = await _raid(scale)
 		var legends := 0
 		for n in _all(hq):
@@ -274,7 +274,7 @@ func test_raid_nodes_sit_inside_the_map_for_every_corporation() -> void:
 	for id in ["solace", "meridian", "halcyon", "orbital"]:
 		RunManager.profile.best_ice_by_corp[id] = 10
 	for corp in CORPS:
-		for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+		for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 			Settings.set_text_scale(scale)
 			RunManager.new_campaign(1, corp)
 			assert_eq(RunManager.campaign.corporation_id, corp, "%s opens" % corp)
@@ -313,7 +313,7 @@ func _assert_setup_map(hq: Control, what: String, scale: float) -> void:
 # --- S5 raid words ---------------------------------------------------------------------------------
 
 func test_every_raid_number_says_what_it_is() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		var hq: Control = await _raid(scale)
 		# B3 b (art director): the plain sentence is the work order's tooltip (no panel over it).
 		var paper := hq._panel.find_child("RaidCard", true, false) as Control
@@ -345,7 +345,7 @@ func test_every_raid_number_says_what_it_is() -> void:
 # --- S6 / S13 HQ ------------------------------------------------------------------------------------
 
 func test_the_poster_word_shows_and_the_radio_note_is_whole() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		var hq := _open(HQ)
 		await _frames(6)
@@ -381,7 +381,7 @@ func test_scrub_heat_says_its_price_is_schematics() -> void:
 # --- S7 the route key -------------------------------------------------------------------------------
 
 func test_the_route_key_lists_the_routes_node_kinds_clear_of_the_nodes() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()
@@ -413,7 +413,7 @@ func test_the_route_key_lists_the_routes_node_kinds_clear_of_the_nodes() -> void
 # --- S8 the Mainframe -------------------------------------------------------------------------------------
 
 func test_every_shop_item_has_a_price_words_and_a_buy_button() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()
@@ -450,6 +450,9 @@ func test_every_shop_item_has_a_price_words_and_a_buy_button() -> void:
 
 
 func test_the_buy_button_presses_its_item_and_shows_the_pad_button() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var scene := _netrun()
 	RunManager.netrun.run.cycles = 999
 	RunManager.netrun._open_shop()
@@ -512,7 +515,7 @@ func test_a_change_that_is_none_shows_no_number() -> void:
 # --- S10 the event title and the subtitle band --------------------------------------------------------------
 
 func test_the_event_title_is_clear_of_the_subtitle_band_and_an_empty_band_hides() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()
@@ -550,6 +553,9 @@ func _prompts(scene: Control) -> String:
 
 
 func test_pad_prompts_on_hq_raid_route_shop_and_loot() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var a := ""
 	var b := ""
 	Settings.set_pad_active(true)
@@ -674,7 +680,7 @@ func test_event_subtitles_are_translated_once() -> void:
 # --- S18 the forecast stamp ----------------------------------------------------------------------------------------
 
 func test_the_forecast_stamps_parts_never_overlap() -> void:
-	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		var stamp: ForecastStamp = add_child_autofree(ForecastStamp.new("IF THE RAID\nRUNS NOW:", "HOME HIT", Palette.CELL_PINK, StatIcon.HOME))
 		stamp.size = Vector2(124, 124) * (1.0 + (scale - 1.0) * 0.3)

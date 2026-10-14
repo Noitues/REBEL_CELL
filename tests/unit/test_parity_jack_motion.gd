@@ -38,7 +38,7 @@ func _live() -> void:
 # --- JACK-01 ---------------------------------------------------------------------------------------
 
 func test_the_connecting_line_lays_out_at_every_text_size() -> void:
-	for s in SCALES:
+	for s in TestScope.scales(SCALES):
 		Settings.set_text_scale(s)
 		Fx._destination = "Solace Biosystems"
 		Fx._destination_tier = 3
@@ -66,7 +66,7 @@ func test_the_daemon_card_says_the_name_once_at_every_text_size() -> void:
 	var ids: Array[StringName] = [&"cascade"]
 	var d := lookup.get_content(&"cascade") as DaemonData
 	assert_not_null(d)
-	for s in SCALES:
+	for s in TestScope.scales(SCALES):
 		Settings.set_text_scale(s)
 		var tray := DaemonTray.new(ids, lookup, 1270.0, "Spark")
 		add_child_autofree(tray)

@@ -116,7 +116,7 @@ func test_mini_map_labels_never_overlap_and_keep_their_tooltips() -> void:
 		_open_all()
 		RunManager.new_campaign(1, corp)
 		var c := RunManager.campaign
-		for scale in SCALES:
+		for scale in TestScope.scales(SCALES):
 			Settings.set_text_scale(scale)
 			var mini: GridMapView = add_child_autofree(GridMapView.new())
 			mini.custom_minimum_size = MINI_SIZE

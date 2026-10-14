@@ -75,7 +75,7 @@ func test_every_corp_has_a_short_letterhead_name_through_textdb() -> void:
 
 
 func test_the_raid_papers_letter_the_letterhead_name_whole_left_of_the_seal() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		for id: StringName in RaidSkin.CORPS:
 			for stamp in [RaidPaper.STAMP_INTERCEPTED, RaidPaper.STAMP_CLASSIFIED]:
@@ -91,7 +91,7 @@ func test_the_raid_papers_letter_the_letterhead_name_whole_left_of_the_seal() ->
 
 
 func test_the_memo_and_the_operative_dossier_letter_it_whole() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		for id: StringName in RaidSkin.CORPS:
 			var corp := _corp(id)

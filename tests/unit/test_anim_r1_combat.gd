@@ -694,7 +694,7 @@ func test_a_number_travels_into_the_hp_counter_which_rolls_down() -> void:
 
 
 func test_numbers_stay_inside_the_hub_off_the_name_and_never_rest_on_each_other() -> void:
-	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 		for enemy in ENEMIES:
 			var scene := await _combat(enemy, scale)
 			var before: CombatState = scene.engine.state().duplicate_state()
@@ -818,6 +818,9 @@ func test_send_it_carries_its_mark_and_pulses_when_ram_is_spent() -> void:
 
 
 func test_chips_come_in_order_of_importance_and_the_fold_keeps_damage() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var chips := [
 		{"text": "+3 BLOCK", "color": Color.CYAN},
 		{"text": "HITS YOU 14", "color": Color.RED, "rank": 0},

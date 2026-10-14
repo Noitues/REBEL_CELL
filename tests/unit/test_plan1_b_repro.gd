@@ -612,10 +612,13 @@ func test_b8_raid_title_stays_in_progress_after_raid_over() -> void:
 ## page's ScrollContainer; at 2.0 the page is far taller than the screen. Checked: where START sits (page top, scroll 0 and
 ## at the scroll's end) against the screen, and the scroll's step per wheel notch (`ScrollContainer` default 1/8 page).
 func test_b9_start_position_on_new_campaign_setup_at_2_0() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var notes: Array[String] = []
 	var visible_at_top := {}
 	var pinned_at := {}
-	for scale in [1.0, 1.6, 2.0]:
+	for scale in TestScope.scales([1.0, 1.6, 2.0]):
 		Settings.set_text_scale(scale)
 		RunManager.reset()
 		var holder := _holder()
@@ -645,7 +648,7 @@ func test_b9_start_position_on_new_campaign_setup_at_2_0() -> void:
 		holder.queue_free()
 		await _frames(2)
 	print("B9:\n  " + "\n  ".join(notes))
-	for sc in [1.0, 1.6, 2.0]:
+	for sc in TestScope.scales([1.0, 1.6, 2.0]):
 		assert_true(bool(visible_at_top.get(sc, false)), "START on screen at text %.1f: %s" % [sc, " || ".join(notes)])
 	assert_eq(String(pinned_at.get(2.0, "")), "StartBar", "at 2.0 START is pinned in the bar under the page")
 	assert_eq(String(pinned_at.get(1.0, "")), "PageHead", "at 1.0 START stays in the head")

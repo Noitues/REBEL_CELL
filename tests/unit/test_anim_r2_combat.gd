@@ -161,6 +161,9 @@ func _tap(e_down: InputEvent, e_up: InputEvent) -> void:
 # --- E1 / E2: the event -------------------------------------------------------------------------
 
 func test_an_event_can_be_finished_with_the_pad_alone() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var scene := await _netrun()
 	_live()
 	Settings.set_subtitle_typing(true)
@@ -245,6 +248,9 @@ func test_one_press_shows_the_story_and_its_subtitle() -> void:
 
 
 func test_the_event_top_bar_keeps_one_row_and_the_choices_show_at_big_text() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	var scene := await _netrun()
 	_event(scene)
@@ -557,11 +563,14 @@ func test_the_result_reads_before_the_break_which_flashes_its_own_wheel() -> voi
 # --- E6: the Mainframe at big text ----------------------------------------------------------------------
 
 func test_mainframe_tiles_show_their_whole_text_over_seeds_languages_and_sizes() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var failures: Array[String] = []
 	var tiles := 0
 	for pseudo in [false, true]:
 		_pseudo(pseudo)
-		for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+		for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 			Settings.set_text_scale(scale)
 			for seed in range(1, 7):
 				var scene := await _netrun(seed)
@@ -595,6 +604,9 @@ func test_mainframe_tiles_show_their_whole_text_over_seeds_languages_and_sizes()
 # --- E7: big text combat -----------------------------------------------------------------------------
 
 func test_the_entering_plate_never_hides_the_forecast() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var scene := await _combat(&"collections_agent", Settings.TEXT_SCALE_MAX)
 	_live()
 	var ev: WheelView = scene._enemy_views.values()[0]
@@ -609,6 +621,9 @@ func test_the_entering_plate_never_hides_the_forecast() -> void:
 
 
 func test_chips_shrink_before_they_fold_at_big_text() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var scene := await _combat(&"collections_agent", Settings.TEXT_SCALE_MAX)
 	var v: WheelView = scene._player_view
 	v.intent = {"text": "DEFRAG", "type": RC.SliceType.DEFRAG, "chips": [
@@ -630,7 +645,7 @@ func test_chips_shrink_before_they_fold_at_big_text() -> void:
 
 
 func test_satellites_keep_off_the_slice_values_and_the_tag() -> void:
-	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, 1.3, Settings.TEXT_SCALE_MAX]):
 		for enemy in [&"collections_agent", &"geostationary_guard"]:
 			var scene := await _combat(enemy, scale)
 			for turn in 3:
@@ -676,7 +691,7 @@ func _loot(scene: Control) -> void:
 
 
 func test_loot_cards_keep_apart_and_the_first_focus_shows_no_tip() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		Settings.set_text_scale(scale)
 		var scene := await _netrun()
 		_loot(scene)
@@ -695,6 +710,9 @@ func test_loot_cards_keep_apart_and_the_first_focus_shows_no_tip() -> void:
 
 
 func test_a_focus_tip_folds_narrower_to_keep_off_skip_at_big_text() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	Settings.set_pad_active(true)
 	var scene := await _netrun()

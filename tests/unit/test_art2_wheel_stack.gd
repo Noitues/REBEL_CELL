@@ -251,7 +251,7 @@ func test_the_defeat_drains_the_core_then_stamps_flatlined() -> void:
 # --- layouts --------------------------------------------------------------------------------------
 
 func test_the_stack_fits_its_view_at_every_text_scale() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale)
 		for v: WheelView in scene._views():
 			if v.combatant == null:
@@ -272,7 +272,7 @@ func test_the_stack_fits_its_view_at_every_text_scale() -> void:
 ## FIX-REDS (M14): a needle anywhere round the wheel never stands on the HP number (12b's phase-2
 ## capture: the boss's second blade at the bottom covered "895/1475"), and the row stays on screen.
 func test_no_needle_covers_the_hp_number_at_every_text_scale() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		var scene := await _combat(scale, &"renewal_engine")
 		var bad: Array[String] = []
 		for v: WheelView in scene._views():

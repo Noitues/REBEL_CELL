@@ -84,6 +84,9 @@ func test_five_heat_bands_have_their_tokens_and_purge_its_own() -> void:
 
 
 func test_meaningful_colours_note_their_greyscale_pair() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	# §5.1: every token that carries meaning names its non-colour cue.
 	for name: StringName in [&"HARM", &"GAIN", &"HARM_INK", &"GAIN_INK", &"PROTECT", &"WARN", &"FOCUS",
 			&"DISABLED", &"SELECTED", &"PENCIL_PLAN", &"PENCIL_THREAT", &"RING_AVAILABLE", &"RING_UNAVAILABLE",
@@ -132,7 +135,7 @@ func test_theme_text_reads_on_its_own_boxes() -> void:
 
 
 func test_theme_has_the_v2_type_variations() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in TestScope.scales([1.0, Settings.TEXT_SCALE_MAX]):
 		var t := UiTheme.build(scale)
 		for v: StringName in [&"TerminalPanel", UiTheme.TERMINAL_BUTTON, UiTheme.HOLO_PANEL, UiTheme.PAPER_PANEL]:
 			assert_true(t.get_type_variation_base(v) != &"", "%s exists at %.1f" % [v, scale])
@@ -166,6 +169,9 @@ func test_live_numbers_are_bare_anton_with_a_dark_rim_and_own_glow() -> void:
 
 
 func test_high_contrast_is_still_applied_last() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var saved := Settings.high_contrast
 	Settings.high_contrast = true
 	var t := UiTheme.build(1.0)

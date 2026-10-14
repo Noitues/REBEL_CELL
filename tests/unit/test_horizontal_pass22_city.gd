@@ -190,6 +190,9 @@ func _legend_font(legend: MapLegend) -> int:
 
 
 func test_the_legend_follows_the_text_size_live() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(1.0)
 	var legend: MapLegend = add_child_autofree(MapLegend.new(&"solace", true))
 	await _frames(1)
@@ -206,7 +209,7 @@ func test_the_legend_follows_the_text_size_live() -> void:
 
 
 func test_a_pinned_legend_stays_inside_its_area_at_big_text() -> void:
-	for scale in SCALES:
+	for scale in TestScope.scales(SCALES):
 		Settings.set_text_scale(scale)
 		var area: Control = add_child_autofree(Control.new())
 		area.size = Vector2(900, 620)
@@ -228,6 +231,9 @@ func test_a_pinned_legend_stays_inside_its_area_at_big_text() -> void:
 
 
 func test_the_mini_map_labels_follow_the_text_size() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	RunManager.new_campaign(1)
 	Settings.set_text_scale(1.0)
 	var mini: GridMapView = add_child_autofree(GridMapView.new())

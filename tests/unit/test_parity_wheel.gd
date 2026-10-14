@@ -177,6 +177,9 @@ func test_the_read_block_keeps_its_contrast_on_every_skin() -> void:
 
 
 func test_every_kind_keeps_its_own_glyph_for_greyscale() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	var seen := {}
 	for t in RC.SliceType.values():
 		var g := WheelGlyphs.table().glyph_for(GlyphTableData.key_for_slice_type(t))
@@ -312,7 +315,7 @@ func test_the_preview_label_stands_clear_of_the_reticle() -> void:
 		return
 	var ov: CardPreviewOverlay = foe.attachments.preview
 	var bad: Array[String] = []
-	for s in [1.0, 1.6, 2.0]:
+	for s in TestScope.scales([1.0, 1.6, 2.0]):
 		Settings.set_text_scale(s)
 		await _frames(2)
 		var center := foe.attachments.center()

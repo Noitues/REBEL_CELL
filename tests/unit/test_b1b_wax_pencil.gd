@@ -166,7 +166,7 @@ func test_the_width_is_one_screen_width_whatever_the_marks_zoom_and_grows_with_t
 	assert_almost_eq(m.shadow_lines()[0].position * 2.5, GreasePencilMark.SHADOW_OFFSET, Vector2(0.01, 0.01), "and on the shadow")
 	Settings.text_scale = 2.0
 	assert_almost_eq(GreasePencilMark.stroke_width(), GreasePencilMark.WIDTH * VerbSticker.SCALE_MAX, 0.001, "scaled with the text as the stickers are")
-	for s in [1.0, 1.3, 1.6, 2.0]:
+	for s in TestScope.scales([1.0, 1.3, 1.6, 2.0]):
 		Settings.text_scale = s
 		var w := GreasePencilMark.stroke_width() / GreasePencilMark.ui_scale() / GreasePencilMark.BOARD_TO_CANVAS
 		assert_between(w, 8.0, 10.0, "8-10 px at 1080p before the text scale (%s)" % s)

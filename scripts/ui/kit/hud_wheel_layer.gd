@@ -18,8 +18,7 @@ const GLYPH_SHARE := 0.75
 ## The inner ring's mark: a dot in the glyph (share of the radius).
 const INNER_DOT := 0.16
 const KEY_FONT := 13
-## plan1 W2-A5: the ring word under a key letter (INNER / OUTER).
-const RING_WORD_FONT := 10
+# plan1 W2-A5: the ring word under a key letter is set at the wheels' hub-caption size (WheelView.HUB_FONT_SIZE).
 ## B2: the key letters' keyline outside the glyph, in 1080p (board) px (B1a Q2: at least 3).
 const KEYLINE_1080 := 3.0
 ## The chips' gap from the HP number and from the screen's edge (px at text scale 1.0).
@@ -329,7 +328,7 @@ func _draw() -> void:
 			# plan1 W2-A5: on a wheel with an inner ring, the word under the key says which ring it nudges.
 			if wv.combatant != null and wv.combatant.wheel != null and wv.combatant.wheel.has_inner_ring():
 				var word := tr("INNER") if int(b["ring"]) == RC.RingScope.INNER else tr("OUTER")
-				var wf := roundi(RING_WORD_FONT * s)
+				var wf := roundi(WheelView.HUB_FONT_SIZE * s)
 				var ww := mono.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, wf).x
 				var wat := Vector2(at.x + kw * 0.5 - ww * 0.5, at.y + mono.get_height(kf) - 1.0) + Vector2(0.0, mono.get_ascent(wf))
 				draw_string_outline(mono, wat, word, HORIZONTAL_ALIGNMENT_LEFT, -1, wf, keyline_px(), Palette.INK)

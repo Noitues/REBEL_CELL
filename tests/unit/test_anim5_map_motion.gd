@@ -450,6 +450,9 @@ func test_an_asset_drops_onto_its_node_with_a_stamp() -> void:
 
 
 func test_the_folding_key_slides_and_frames_for_its_folded_line() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	var holder: Control = add_child_autofree(Control.new())
 	holder.size = SCREEN.size

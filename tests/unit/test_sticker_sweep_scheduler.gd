@@ -156,6 +156,9 @@ func test_the_sweep_is_one_narrow_45_degree_band_from_config() -> void:
 
 
 func test_the_peel_back_fold_is_fixed_in_px_and_scales_with_the_text_size() -> void:
+	if TestScope.deferred():
+		pending(TestScope.REASON)
+		return
 	Settings.set_text_scale(1.0)
 	var screen_h := 1080.0
 	assert_almost_eq(VinylSticker.peel_leg(600.0, screen_h), 34.0, 0.01, "34 px at 1080p")

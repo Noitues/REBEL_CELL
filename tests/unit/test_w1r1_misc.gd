@@ -56,7 +56,7 @@ func _starts(root: Node) -> Array[Control]:
 
 
 func test_new_campaign_shows_one_start_and_the_pinned_one_keeps_the_safe_margin() -> void:
-	for scale in [1.0, 1.6, 2.0]:
+	for scale in TestScope.scales([1.0, 1.6, 2.0]):
 		Settings.set_text_scale(scale)
 		RunManager.reset()
 		var holder := _holder()
@@ -80,7 +80,7 @@ func test_new_campaign_shows_one_start_and_the_pinned_one_keeps_the_safe_margin(
 
 
 func test_refused_firmware_note_is_one_named_message_clear_of_the_sheet_skip_and_continue() -> void:
-	for scale in [1.0, 1.6, 2.0]:
+	for scale in TestScope.scales([1.0, 1.6, 2.0]):
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(7)
 		var holder := _holder()

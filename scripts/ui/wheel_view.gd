@@ -2610,7 +2610,6 @@ const HUB_NAME_MIN_R_1080 := 90.0
 const RING_PLATE := 20.0
 const RING_PLATE_R := 128.0
 ## plan1 W2-A6: the plates' word and glyph sizes (px at text scale 1.0), the padding and the active caret.
-const RING_LABEL_FONT := 10
 const RING_GLYPH_PX := 13.0
 const RING_PLATE_PAD := 2.0
 const RING_CARET := 4.0
@@ -2836,7 +2835,7 @@ func _draw_ring_plates(center: Vector2, k: float) -> void:
 		active = int(readouts[0].get("segment_index", -1))
 	var ts := _ts()
 	var font := Palette.mono()
-	var fs := roundi(RING_LABEL_FONT * ts)
+	var fs := roundi(HUB_FONT_SIZE * ts)
 	var gpx := RING_GLYPH_PX * ts
 	var pad := RING_PLATE_PAD * ts
 	for seg in RC.RING_SEGMENTS:
@@ -2871,7 +2870,7 @@ func ring_word(seg_id: StringName) -> String:
 func ring_plate_rect(center: Vector2, k: float, seg: int) -> Rect2:
 	var ts := _ts()
 	var font := Palette.mono()
-	var fs := roundi(RING_LABEL_FONT * ts)
+	var fs := roundi(HUB_FONT_SIZE * ts)
 	var seg_id: StringName = combatant.wheel.ring_segment_ids[seg] if seg < combatant.wheel.ring_segment_ids.size() else &""
 	var at := WheelFace.at(center, k, RING_PLATE_R, fposmod((shown_inner_rotation() - seg * 10) * DEG_PER_TICK, 360.0))
 	var gpx := RING_GLYPH_PX * ts

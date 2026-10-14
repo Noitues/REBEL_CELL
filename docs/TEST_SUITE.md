@@ -145,6 +145,18 @@ tier:
 - `full`: the rest (the big screen, city and animation sweeps). They run only in the
   full suite.
 
+- `deferred`: scripts whose only purpose is text scale above 1.0, high contrast, gamepad
+  (pad focus, pad glyphs) or colour-blind / greyscale checks (designer ruling 2026-10-13:
+  gameplay is finalized at text 1.0, mouse and keyboard; the rest waits until gameplay is
+  final). No default run touches them: `--tier all`, `--tier fast`, `--select` and the
+  precommit diff selection all skip them; `python tools/run_tests.py --tier deferred` runs
+  only them. A mixed script (gameplay with some 2.0 / pad / high-contrast cases) keeps its
+  tier and gates the cases with `tests/helpers/test_scope.gd`: `if TestScope.deferred():
+  pending(TestScope.REASON); return` at the top of a case, and `for scale in
+  TestScope.scales(SCALES):` in a sweep (keeps the 1.0 pass, drops the larger scales).
+  Nothing is deleted: set `TestScope.DEFERRED` to `false` and move the scripts back to
+  `fast` / `full` to bring them all back.
+
 When you add a test script, add it to the manifest with a tier (`seconds` can be a guess;
 `python tools/run_tests.py --update-times` measures it). `test_suite_integrity.gd` fails
 on a script missing from the manifest, a listed script that does not exist, a script
