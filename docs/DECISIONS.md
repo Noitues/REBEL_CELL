@@ -7771,3 +7771,19 @@ after; `D24_route.jpg` the route dossier before | after; `D24_crop.jpg` a paper 
   covers under 100 % of the slice (`seg_partial` mask, `WheelView.partial_segments`).
 - Sheet: `docs/art_review/PLAN1/W2R2_POLISH.jpg` (tool: `tools/design_lab/w2r2_polish_capture.tscn`).
 
+
+## 2026-10-13 - plan1 W3B-FLOW (B3 / B5 / B9)
+- **B3 (Implementation decisions):** cause found by reading, not reproduced in real play (headless playback is always
+  instant, which is exactly the guard that hides it): `CombatScene._ready` opened the first-launch tutorial whenever
+  `tutorial_done` was false and no run was completed, including the netrun's own fight scene and a resumed run. Now
+  `opens_tutorial_unprompted()` requires `auto_start` (the stand-alone scene; the netrun sets it off), and
+  `attach_netrun` clears any overlay and `pending_tutorial`. Tutorial state is not in the save (nothing to strip).
+  Tests: `test_w3b_flow.gd` (seam test, netrun fight, SIMULATE still works).
+- **B5 (Implementation decisions + open question):** GDD is silent on both sides reaching 0. Kept the resolver outcome
+  (operative checked first = DEFEAT); the combat_end event now says "both sides reached zero ... counts as a loss"
+  (`mutual_zero: true`). Open question for the designer: should a mutual zero be a loss (current), a win, or a draw
+  that gives the operative 1 HP?
+- **B9 (Implementation decisions):** no auto-start rule exists (GDD 7.1 setup phase; `fight_raid` /
+  `raid_fight` run only from the START DEFENSE sticker, plus demo flags). Did not reproduce: frames and Enter / Space
+  on the HQ raid setup never resolve the raid (a stray Enter leaves the page for the HQ without playing it). Test:
+  `test_b9_raid_waits_for_start_defense`. Left as is; likely a tester click on the sticker.

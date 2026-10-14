@@ -945,7 +945,13 @@ func _check_outcome(s: CombatState, events: Array[Dictionary]) -> void:
 	if s.player.hp <= 0:
 		s.outcome = CombatState.Outcome.DEFEAT
 		s.phase = CombatState.Phase.END_COMBAT
-		events.append({"type": "combat_end", "outcome": s.outcome, "text": "DEFEAT: the operative is flatlined."})
+		# W3B B5: both sides at 0 is a DEFEAT (the operative is checked first; the GDD is silent, DECISIONS W3B-FLOW);
+		# the event says so, so a DELETED enemy beside a flatline reads as the rule, not a miscount.
+		if s.living_enemies(false).is_empty():
+			events.append({"type": "combat_end", "outcome": s.outcome, "mutual_zero": true,
+				"text": "DEFEAT: both sides reached zero; the operative is flatlined, so it counts as a loss."})
+		else:
+			events.append({"type": "combat_end", "outcome": s.outcome, "text": "DEFEAT: the operative is flatlined."})
 	elif s.living_enemies(false).is_empty():
 		s.outcome = CombatState.Outcome.VICTORY
 		s.phase = CombatState.Phase.END_COMBAT
