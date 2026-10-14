@@ -7,46 +7,12 @@
 | Reason | designer: "Resume M14 per docs/process/00_README.md and docs/handoff/STATE.md" (M14 pause lifted for M14 close-out only) |
 
 ## Current goal
-**M14 COMPLETE (2026-10-12)** — gate PT-001 passed its checks on main @ 4780b5c0 (suite 2207 / 0 failing, smoke 0,
-validate 0, quiet perf inside 8 ms), pushed, tagged gate/PT-001. Report: docs/handoff/gates/PT-001.md.
-**CP-002 answered 2026-10-12** (DECISIONS "Designer rulings CP-002"; memory playtest-feedback-triage-first): GATHER
-playtest feedback, act on NONE of it until the designer says; then analyze → decide (change / ignore) → plan. R7 retired
-(informs only). Item 7 = B (hostile ticks off by default, colour-blind setting only; long term removed). CP-002 fully answered.
-m14-cleanup merged 2026-10-12. Repo cleaned for playtest feedback (see "Clean state" below).
-**CP-003 answered** (1A–9A) → docs/handoff/gates/CHANGE_PLAN_1.md. Designer order: push, then the two playtest-cost
-tooling slices (docs/handoff/tooling1/SLICES.md, review docs/process/PLAYTEST_COST_REVIEW.md) BEFORE wave 0.
-Motion tooling HELD until the animation slices. In flight: T1 (fix-mechanical, tag tooling1-t1: gate profiles, no
-combat escalation, audit on changed screens, cost double-count fix, parity pairing, doc 05) and T2 (fix-rules, tag
-tooling1-t2: HeuristicStrategist + $12-capped calibration + 2-turn lookahead boss numbers). Then wave 0.
-2026-10-13: tooling T1 + T2 merged and pushed; wave 0 (V1 preview gaps, V2 B repro, V5 M0–M4 ticks) merged and pushed
-@ 5e0c5f04. Rulings after wave 0 logged (DECISIONS 2026-10-13). **Wave 1 in flight** (docs/handoff/plan1/W1.md): 5 agents,
-temp tags plan1-w1-tut / -loot / -hq / -tag / -mech, base 1cdb987b. Next: merge each (import after class_names),
-one group sheet → art-pass session review, then gate PT-002a = human list + `gate.py --profile flow --skip-screen` (routes + heuristic sweep, $0; designer: no screen testers until PT-002).
-V4 (designer's Genome Core attempt) still open.
-2026-10-13: wave 1 APPROVED by the art-pass session (R1 + polish) and merged; **gate PT-002a passed its checks** on
-627f32a6 (suite 2250 / 0 failing, smoke 0, validate 0, heuristic sweep SA-003 15/20 = baseline), tagged gate/PT-002a,
-pushed @ c8e3c43e. Waiting for the designer's PT-002a playtest (docs/playtest/PT-002a_plan-1-wave-1-flow-fixes.md).
-Routes were not re-recorded (they belong to the PT-001 build; playtest-build worktree left untouched). Next: wave 2
-(A combat legibility) on the designer's go.
-PT-002a feedback triaged (docs/playtest/PT-002a_TRIAGE.md) and ruled (DECISIONS "Designer rulings on the PT-002a triage").
-**Wave 1b in flight** (docs/handoff/plan1/W1B.md; 5 agents, tags plan1-1b-playout / -sticker / -menu / -combat / -map,
-base 423b25f6); no separate gate (rides PT-002). Order after it: US-English mechanical pass → wave 2 (A + R1–R4, F11,
-naming the tag) → input-prompt pass + rewards screen → wave 3 (C + R5–R8, smear notches). Pending ruling: "Step N:"
-in the raid feed (options A divider / B drop / C rename to Round). V4 boss saves ready in .playtest_saves/boss/
-(designer playing seed 1017).
-2026-10-13 later: wave 1b, raid STEP divider, US English pass, wave 2 (A1–A6) all merged (batch merges, --no-verify;
-ONE combined precommit before push, designer process change). Scope ruling: text 1.0 + mouse/keyboard only (deferred
-tier being added). Art review of W1b+W2: APPROVED except (1) inner ring plates — ON HOLD for the art-pass concept
-"round 45" (ghost wedge + tiled modifier mark on the active outer slice, inner segment highlight, word plate on
-hover/aim); WIP geometry kept at tag plan1-w2r1-ring-wip (ffd622be), not merged; (2) INCOMING clipped — fix in flight.
-In flight: main's 3 reds from A2 chips (fix slice), deferred tier, INCOMING. PT-002 gate waits for the ring spec unless
-the designer says otherwise. Pending designer Qs: Twin Pointer lit segments; resting hand card truncation; boss length (D1).
-**Claude playtesters (2026-10-12, merged @ 5fc4903f, fast 1473 / 0):** black-box screen testers, batch judging, routes and
-saves, a headless state tester, replay audit, Perfect quiz, decision parity, gate routine (docs/process/05). Feedback gathered
-(PB-010, PB-012, probes, parity, state sweep SA-001; $57 API in all) and analysed in
-docs/playtest/claude/ANALYSIS_2026-10-12.md. **CP-003 pending** (docs/handoff/gates/CP-003.md): per CP-002 ruling 1 nothing is
-planned until it is answered. Headline: combat is unreadable, not too hard (Perfect reachable 93–100 % of turns, testers land
-~20 % = no action); the campaign is survivable; The Genome Core walls skilled play (11/12 breaches died).
+**Change plan 1 — gate PT-002 in progress (2026-10-13 21:03).** Full handoff: `.claude/HANDOFF.md` (session
+be016cca). Part 1 done (full suite 2286/0 on 52ba1e94, smoke/validate 0, heuristic sweep SA-004 15/20 = baseline);
+part 2 running (combat screen batch PT-002, Perfect probe PB-016); then gate report docs/handoff/gates/PT-002.md,
+tag gate/PT-002, push, hand the designer docs/playtest/PT-002_*.md, STOP for feedback (CP-002 rule 1).
+
+(Earlier history of this section: git log -p docs/handoff/STATE.md.)
 
 ## Clean state (2026-10-12, main @ ae9ad538, pushed; fast 1473 / 0, smoke 0, validate 0)
 - Worktrees: only `art-pass` (kept by design) and `playtest-build` (the designer's PT-001 build, detached @ 19ad76a3).
