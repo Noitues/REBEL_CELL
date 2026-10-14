@@ -3242,7 +3242,12 @@ UNCOMMON,UNCOMMON
 UNCOMMON · two pips,UNCOMMON · two pips
 UNDO,UNDO
 UNDO %s,UNDO %s
+UNDO is blocked: %s rolled a random result.,UNDO is blocked: %s rolled a random result.
 "UNDO is blocked: a random event came since (a respin, a random pick).","UNDO is blocked: a random event came since (a respin, a random pick)."
+UNDO is blocked: nothing to undo yet; this turn began with a random spin.,UNDO is blocked: nothing to undo yet; this turn began with a random spin.
+UNDO is blocked: the fight is over.,UNDO is blocked: the fight is over.
+UNDO is blocked: the new turn began with a random spin.,UNDO is blocked: the new turn began with a random spin.
+UNDO is blocked: your RESPIN rolled a random spin.,UNDO is blocked: your RESPIN rolled a random spin.
 UNDOCK,UNDOCK
 UNFINISHED,UNFINISHED
 UNITS,UNITS

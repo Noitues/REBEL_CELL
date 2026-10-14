@@ -76,6 +76,25 @@ runs out, start the animation work; use Haiku and the Batch API as needed. Orche
   decide): B4 (empty roster + 0 Schematics dead end) joins W3-HQ's C6; B1 stuck aim, B2 UNDO reason, B3 tutorial
   overlay in netrun fights and the P2s B5–B8 become **wave 3b** (`docs/handoff/plan1/W3B.md`). Only bugs with a
   repro; the clarity items (Heat, keyboard aim, clipped text, cancel key) wait for the designer's triage.
+### 2026-10-13 — W3B-AIM: aim ends whole, UNDO names its event, B6 / B7 / B8 (PT-002 B1, B2, B6, B7, B8)
+- **B1 reproduced** (`tests/unit/test_w3b_aim.gd`): the PB-010 repro only tried Esc / Z / UNDO, which go through `cancel_selection`.
+  A state change that ends an aim by another road (the Q/E nudge key, a target switch: both end in `_refresh`) reset `selecting`
+  but left the RAM blink, the aim reticle and the dim running, so the arrow and the RAM debt blink stayed. `_refresh` now also stops
+  the aim motion and un-dims the hand. A combat save carries no aim (`CombatSession.to_dict` has no view state); a test pins it.
+  Not reproduced: an aim that survives Esc / right-click / Z / UNDO headless (all clear it). A mouse-drag aim whose DRAG_END is
+  lost cannot be driven headless; no speculative change made.
+- **B2:** UNDO's stop is the rule (a checkpoint after every RNG use). Jolt is NOT random (no RNG): UNDO after Jolt stays live;
+  the testers saw it blocked at the turn's own start spin or after a respin / random pick. `CombatSession.checkpoint_cause`
+  (kind turn / respin / card + card id / end_turn; saved) feeds `CombatScene.undo_block_text()`, which names it ("UNDO is blocked:
+  Malware Drop rolled a random result."). The same words are the tooltip, the key toast and (new) the toast for a click on the
+  greyed UNDO, which was silent. Strings: five new `UNDO_BLOCKED_*`.
+- **B6:** the nudge refusal now says "No free nudge left, and an extra nudge costs N RAM." (was "Not enough RAM for an extra nudge.");
+  the toast already showed. The state cause (no free nudge, 0 RAM) is pinned by a test. Not reproduced as an input bug.
+- **B7:** respin always turns the wheel (RNG adds 2 rotations + random ticks) and names the landing (`RESPIN -N RAM: ...`); a test
+  over four seeds. Single tester, not reproduced; the likely read is the landing equal to the old slice (the note adds AGAIN).
+- **B8:** "escalation" is the playtest harness's own term (_FINDINGS: unanswered escalations go to tooling). Tried: Recall Unit
+  elite, SEND IT turn 1, turn 2 input, respin, SEND IT: all respond headless. Not reproduced; left.
+
 ### 2026-10-13 — W3-HQ: crew recovery is a recruit card on the crew hand; no redundant tab counts; stamps and the heat note keep clear
 - **C6 / PT-002 B4:** the GDD has no "rest": flatlined operatives stay dead; recovery is the recruit, and `rookie_price` is already `emergency_rookie_cost` (0 in `campaign_config.tres`) while nobody lives, so 0 Schematics never dead-ends. The gap was visibility. New rules helpers `CampaignRules.needs_crew` and `can_deploy` (any living operative passes `launch_error`). With every operative flatlined the CREW hand leads with one FREE HIRE card per class (`Recover_<class>`; the Market recruit stays); JACK IN is disabled exactly when `can_deploy` is false, and its tooltip says to hire; `WHY_CREW` no longer says "rest". B2 (CREW tab dead) could not be reproduced: the tab rebuilds the CREW hand like any other; the recover card now fills it.
 - **R7:** CREW and MARKET tabs no longer carry a count line (the top bar has both); DEFENSE keeps RAID n / Armory.

@@ -500,12 +500,40 @@ const UNDO_TIP := "Undo back to the last random event (free, unlimited this turn
 const UNDO_BLOCKED := "UNDO is blocked: a random event came since (a respin, a random pick)." # TR
 
 
+const UNDO_BLOCKED_OVER := "UNDO is blocked: the fight is over." # TR
+const UNDO_BLOCKED_RESPIN := "UNDO is blocked: your RESPIN rolled a random spin." # TR
+const UNDO_BLOCKED_CARD := "UNDO is blocked: %s rolled a random result." # TR
+const UNDO_BLOCKED_END_TURN := "UNDO is blocked: the new turn began with a random spin." # TR
+const UNDO_BLOCKED_TURN := "UNDO is blocked: nothing to undo yet; this turn began with a random spin." # TR
+
+
+## W3B B2: why UNDO stops now, naming the random event the checkpoint stands on (the session's
+## checkpoint_cause), so the reason is the same every time it is asked.
+func undo_block_text() -> String:
+	if engine == null or not engine.has_fight():
+		return tr(UNDO_BLOCKED)
+	if engine.state().is_over():
+		return tr(UNDO_BLOCKED_OVER)
+	var cause: Dictionary = engine.session.checkpoint_cause
+	match String(cause.get("kind", "turn")):
+		"respin":
+			return tr(UNDO_BLOCKED_RESPIN)
+		"card":
+			var card := engine.content(StringName(String(cause.get("card", "")))) as CardData
+			if card != null:
+				return tr(UNDO_BLOCKED_CARD) % TextDb.t(card, "display_name")
+			return tr(UNDO_BLOCKED)
+		"end_turn":
+			return tr(UNDO_BLOCKED_END_TURN)
+	return tr(UNDO_BLOCKED_TURN)
+
+
 ## UNDO's tooltip: what it does, or why it is blocked now.
 func _sync_undo_tip() -> void:
 	if _rewind_button == null:
 		return
 	var blocked := engine == null or not engine.has_fight() or not engine.can_rewind()
-	shown_tip(_rewind_button, tr(UNDO_BLOCKED) if blocked else tr(UNDO_TIP))
+	shown_tip(_rewind_button, undo_block_text() if blocked else tr(UNDO_TIP))
 
 
 ## ART-0 D12: an undo with nothing to undo shows its block on the UNDO sticker itself (its
@@ -514,7 +542,7 @@ func show_undo_block() -> void:
 	if _rewind_button == null:
 		return
 	var r := _rewind_button.get_global_rect()
-	toast.show_text(tr(UNDO_BLOCKED), Vector2(r.get_center().x, r.position.y - TOAST_GAP), _toast_spot().size.x)
+	toast.show_text(undo_block_text(), Vector2(r.get_center().x, r.position.y - TOAST_GAP), _toast_spot().size.x)
 	AudioDirector.play_sfx("click")
 
 
@@ -2436,9 +2464,13 @@ func _refresh(state: CombatState) -> void:
 	_respin_button.disabled = state.is_over() or state.ram < engine.resolver.config.respin_ram_cost
 	_sync_stickers()
 	_sync_arrow_hints()
+	# W3B B1: a state change that ends an aim (a nudge key, a target switch) ends it whole: the RAM
+	# blink, the reticle and the hint go with it, never just the selection.
 	selecting = -1
 	_options.clear()
 	_option_index = -1
+	_stop_aim_motion()
+	_dim_hand()
 	_sync_arrows(state)
 	for v in _views():
 		v.valid_zones.clear()
@@ -3873,6 +3905,11 @@ func _build_stickers() -> void:
 		_stickers[sp[0]] = b
 	_respin_button = _stickers["respin"]
 	_rewind_button = _stickers["undo"]
+	# W3B B2: a click on a blocked (disabled) UNDO says why, like the key does.
+	_rewind_button.gui_input.connect(func(ev: InputEvent) -> void:
+		if _rewind_button.disabled and ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed \
+				and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+			show_undo_block())
 	_respin_button.mouse_entered.connect(_show_respin_odds)
 	_respin_button.focus_entered.connect(func() -> void:
 		if _nav_focus:
