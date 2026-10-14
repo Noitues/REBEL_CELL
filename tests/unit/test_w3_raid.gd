@@ -188,7 +188,7 @@ func test_the_intercept_message_is_not_truncated() -> void:
 
 # --- R8: the report pencil -----------------------------------------------------------------------
 
-func test_the_report_pencil_is_cell_holds_only_and_no_sticker() -> void:
+func test_the_report_verdict_is_a_sticker_and_no_pencil_layer() -> void:
 	_raid_campaign()
 	var hq := await _hq()
 	hq.show_raid()
@@ -198,21 +198,13 @@ func test_the_report_pencil_is_cell_holds_only_and_no_sticker() -> void:
 	await _frames(4)
 	var r: Dictionary = RunManager.campaign.last_raid
 	var holds: Node = hq._panel.find_child("CellHolds", true, false)
-	var pencil := hq._panel.find_child("ReportPencil", true, false) as RaidReportPencil
-	assert_not_null(pencil)
+	assert_null(hq._panel.find_child("ReportPencil", true, false), "ART-R1 3a: no pencil verdict layer")
 	if bool(r.get("campaign_lost", false)):
 		assert_null(holds)
-		assert_eq(pencil.words().size(), 0)
 		return
-	assert_not_null(holds)
-	assert_false(holds is RaidSticker, "CELL HOLDS is no sticker")
-	assert_false(holds is BaseButton, "CELL HOLDS is not clickable")
-	var words := pencil.words()
-	assert_eq(words.size(), 1, "one pencil word")
-	assert_eq(words[0], tr(RaidVerdict.CELL_HOLDS))
-	var src := FileAccess.get_file_as_string("res://scripts/ui/kit/raid_report_pencil.gd")
-	for gone in ["THEY LOST", "OURS!", "RIP", "hand_circle", "tick"]:
-		assert_false(src.contains("\"%s" % gone) or src.contains(gone + "("), "the pencil no longer draws %s" % gone)
+	assert_true(holds is RaidSticker, "ART-R1 3a: CELL HOLDS is a sticker on the paper (Q7)")
+	assert_eq((holds as RaidSticker).mouse_filter, Control.MOUSE_FILTER_IGNORE, "CELL HOLDS takes no input")
+	assert_eq((holds as RaidSticker).text, tr(RaidVerdict.CELL_HOLDS))
 
 
 # --- D-UX6: the notches are a smear --------------------------------------------------------------

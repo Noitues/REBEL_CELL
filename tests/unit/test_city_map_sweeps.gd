@@ -226,6 +226,10 @@ func _check_labels_k1(hq: Control, what: String, reaches: Array[float]) -> void:
 	var overlay: CityMapOverlay = hq.city_overlay
 	var hud_bottom: float = (hq.hud as Control).get_global_rect().end.y
 	var area := _map_area(hq)
+	if overlay.tag_rule == CityMapOverlay.TagRule.FOCUS:
+		# ART-R1 1a: no tag at rest; the checks below run with the map legend's hover (every tag).
+		assert_true(overlay.label_rects().is_empty(), "%s: no tag at rest" % what)
+		overlay.tags_all = true
 	var rects := overlay.label_rects()
 	# G2R2-1: a label that cannot clear the TARGET pencil (the edge arrow stands) hides until hover.
 	if hq.grid_target == null or not hq.grid_target.showing():
@@ -242,12 +246,16 @@ func _check_labels_k1(hq: Control, what: String, reaches: Array[float]) -> void:
 		assert_true(d <= reach + 0.01, "%s: %s within reach" % [what, key])
 		reaches.append(d / overlay._k())
 	var missing := overlay.unplaced_with_room()
-	assert_eq(missing.size(), 0, "%s: every Site with room has its label: %s" % [what, missing])
+	if overlay.tag_rule != CityMapOverlay.TagRule.FOCUS:
+		# ART-R1 1a: the legend's hover shows every tag, so a crowded Grid may leave one unplaced
+		# (the tag rule is hover-only: a hovered node's tag always has its spot, checked per selection).
+		assert_eq(missing.size(), 0, "%s: every Site with room has its label: %s" % [what, missing])
 	var named := 0
 	for n in overlay.nodes:
 		if not overlay.label_lines(n["id"]).is_empty():
 			named += 1
 	gut.p("%s: %d of %d named Sites labelled" % [what, rects.size(), named])
+	overlay.tags_all = false
 
 
 ## H23 #3: the key is on screen, over the map, clear of the column and of every node, and
@@ -363,6 +371,8 @@ func _check_every_selection(hq: Control, what: String, ring: bool) -> void:
 		var g := CityLayout.grid_graph(c, RunManager.corporation, paths, id)
 		overlay.set_graph(g["nodes"], g["edges"])
 		overlay.selected_id = id
+		# ART-R1 1a: a tag shows while its node is lit (hover), not for the selection at rest.
+		overlay.hover_id = id
 		var sel := "%s selected %s" % [what, id]
 		var rects := overlay.label_rects()
 		# HQ-B (Q5): a Site off the HQ's map (outside its fit) shows no label.
@@ -384,6 +394,7 @@ func _check_every_selection(hq: Control, what: String, ring: bool) -> void:
 				continue
 			assert_false(CityMapOverlay._rect_hits_disc(rects[String(id)], at, overlay.icon_radius(other) - 0.01),
 				"%s: its label keeps off %s's icon" % [sel, other["id"]])
+	overlay.hover_id = &""
 	var g0 := CityLayout.grid_graph(c, RunManager.corporation, paths, c.grid.home_site_id)
 	overlay.set_graph(g0["nodes"], g0["edges"])
 	overlay.selected_id = c.grid.home_site_id

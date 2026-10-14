@@ -134,7 +134,12 @@ func test_screen_lists_rows_marks_taken_and_proceed_asks() -> void:
 	for i in 4:
 		await get_tree().process_frame
 	assert_false(scene.rewards_list_on())
-	assert_not_null(scene._panel.find_child("RewardsBack", true, false))
+	var back: Node = scene._panel.find_child("RewardsBack", true, false)
+	assert_not_null(back)
+	assert_true(back is TerminalChip, "ART-R1 7: BACK is a terminal chip, not a sticker")
+	var loot_sheet := scene._panel.find_child("LootSheet", true, false) as LootSheet
+	assert_true(loot_sheet.is_ancestor_of(back), "on the sheet (its top right)")
+	assert_true(scene._panel.find_child("Skip", true, false) is HoloSticker, "SKIP stays a sticker")
 	assert_not_null(scene._panel.find_child("Stickers", true, false), "the pick page")
 	# SKIP on the opened pick skips that pick only and returns to the list, the row marked
 	scene.skip_reward()

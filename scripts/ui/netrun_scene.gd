@@ -1031,12 +1031,15 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 		RunManager.campaign.corporation_id if RunManager.campaign != null else &"")
 	_show_site_backdrop(screen, s)
 	entering = screen != _shown_screen
+	var left_screen := _shown_screen
 	# Plan 1 M6: the rewards list (or the next offer) rebuilt on the reward screen fades in over the
 	# page that left, not a hard cut.
 	if not entering and screen == "loot" and Motion.live(&"reward_page_in"):
 		p.modulate.a = 0.0
 		Motion.fade(p, 1.0, &"reward_page_in")
 	_shown_screen = screen
+	if entering and screen == "route" and left_screen != "":
+		_cover_route_until_city_drawn()
 	# ART-9 4A: the Mainframe's facade stays only behind the Mainframe.
 	if screen != "shop":
 		_drop_shop_backdrop()
@@ -2645,6 +2648,25 @@ var route_controls: CityGridControls = null
 ## ART-7 7w: puts the backdrop on the unified 3D city for the route page (`on`: the NETRUN
 ## band; GRID VIEW holds the Grid's band) or back on the 2D city, with 5c's city motion on
 ## the 3D city (CityViewMotion: cars by zoom, sky lanes, billboards, the light spill).
+## ART-R1 9a (ANIM-FLOW M6): the route page arrives over the page that left; until its city has
+## drawn, that page's last frame stays up (`RouteCover`), so the map is never shown without its city
+## (a flat purple plane with the links and pips). Headless has no frame to hold and never waits.
+func _cover_route_until_city_drawn() -> void:
+	if DisplayServer.get_name() == "headless" or background == null:
+		return
+	var old := get_node_or_null("RouteCover")
+	if old != null:
+		return
+	var check := func() -> bool:
+		return background == null or not is_instance_valid(background) or (background.city.showing_current_look() and background.city.camera_settled())
+	var img := get_viewport().get_texture().get_image()
+	if img == null or img.is_empty():
+		return
+	var cover := RouteCover.make(ImageTexture.create_from_image(img), check)
+	add_child(cover)
+	cover.move_to_front()
+
+
 func use_route_city(on: bool, band: int = -1) -> void:
 	if background == null:
 		return
@@ -3571,11 +3593,14 @@ func _show_reward_page(offer_i: int) -> void:
 		go.size_flags_horizontal = Control.SIZE_SHRINK_END
 		foot.add_child(go)
 	if _reward_done.size() > 0 or s.run.pending_rewards.size() >= 2:
-		var back := HoloSticker.verb_word(tr("BACK"), VinylSticker.Fill.WHITE, os, LOOT_SKIP_PX)
+		# ART-R1 7 (art-pass review): BACK is a terminal chip at the sheet's top right; SKIP and CONTINUE
+		# stay stickers.
+		var back := TerminalChip.new(tr("BACK"))
+		back.pre_translated = true
 		back.name = "RewardsBack"
 		back.tooltip_text = tr("Back to the rewards.")
 		back.pressed.connect(close_reward_row)
-		side.add_child(back)
+		sheet.add_head_chip(back)
 	if side.get_child_count() == 0:
 		side.visible = false
 	_set_panel(page, false)

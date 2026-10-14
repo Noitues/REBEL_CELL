@@ -106,9 +106,49 @@ func _reanchor() -> void:
 	reset_size()
 	var sz := get_combined_minimum_size()
 	global_position = (_anchor - Vector2(sz.x * 0.5, sz.y)).floor()
+	if clear_root != null and is_instance_valid(clear_root):
+		_lift_off_controls(sz)
 
 
 var _anchor := Vector2.ZERO
+## ART-R1 F7: the node whose visible buttons a toast must never cover (the combat scene); it
+## stands higher, step by step, until it is clear of every one of them.
+var clear_root: Node = null
+const CLEAR_STEP := 8.0
+const CLEAR_TRIES := 40
+
+
+## ART-R1 F7: every visible button under `root` (global rects).
+static func button_rects(root: Node) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	var stack: Array[Node] = [root]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		if n is BaseButton and (n as Control).is_visible_in_tree() and (n as Control).size.x > 1.0:
+			out.append((n as Control).get_global_rect())
+		for c in n.get_children():
+			stack.append(c)
+	return out
+
+
+## ART-R1 F7: moves the toast up until its rect meets no visible button (as it stands when
+## none can be cleared within the tries).
+func _lift_off_controls(sz: Vector2) -> void:
+	var rects := button_rects(clear_root)
+	var r := Rect2(global_position, sz)
+	var tries := 0
+	while tries < CLEAR_TRIES and _hits_any(r, rects):
+		r.position.y -= CLEAR_STEP
+		tries += 1
+	if tries < CLEAR_TRIES:
+		global_position = r.position
+
+
+func _hits_any(r: Rect2, rects: Array[Rect2]) -> bool:
+	for b in rects:
+		if r.intersects(b):
+			return true
+	return false
 
 
 func text() -> String:

@@ -113,11 +113,21 @@ func test_the_clutter_rule_tags_only_the_selected_lit_or_plan_node() -> void:
 	assert_eq(ov.label_lines(&"n0").size(), 2)
 	# FOCUS (the HQ Grid): the selected node, the lit one and a plan node; never the result line.
 	ov.tag_rule = CityMapOverlay.TagRule.FOCUS
-	assert_true(ov.label_lines(&"n0").is_empty(), "an unselected, unlit node has no tag")
-	assert_eq(Array(ov.label_lines(&"n1")), ["Node 1"], "the selected node's name, no HOLDS tag")
-	assert_eq(Array(ov.label_lines(&"n3")), ["Node 3"], "a plan-relevant node")
+	# ART-R1 1a (designer 2026-10-14): none at rest, not even the selection or a plan node.
+	assert_true(ov.tagged_ids().is_empty(), "no tag at rest")
+	assert_true(ov.label_lines(&"n1").is_empty(), "the selection has none either")
 	ov.hover_id = &"n2"
 	assert_eq(Array(ov.label_lines(&"n2")), ["Node 2"], "the lit node (a list row, the pad)")
+	assert_true(ov.label_lines(&"n0").is_empty(), "only the lit node")
+	ov.hover_id = &""
+	ov._point_at(&"n0")
+	assert_eq(Array(ov.label_lines(&"n0")), ["Node 0"], "the pointer's node")
+	assert_true(ov.label_lines(&"n1").is_empty(), "and no other")
+	ov._point_at(&"")
+	ov.tags_all = true
+	for i in 4:
+		assert_false(ov.label_lines(StringName("n%d" % i)).is_empty(), "the legend's hover shows every tag (n%d)" % i)
+	ov.tags_all = false
 	# LIT (the raid maps): not even the selected node.
 	ov.hover_id = &""
 	ov.tag_rule = CityMapOverlay.TagRule.LIT
@@ -311,7 +321,7 @@ func test_cell_holds_is_a_pencil_word_on_the_after_action_paper() -> void:
 		return
 	var paper := hq._panel.find_child("RaidReport", true, false) as Control
 	assert_true(paper.get_global_rect().has_point(holds.get_global_rect().get_center()), "on the paper")
-	assert_false(holds is RaidSticker, "R8: pencil, not a sticker")
+	assert_true(holds is RaidSticker, "ART-R1 3a: a sticker again")
 	# The report's map: no node tags; the key is the strip.
 	assert_eq(hq.city_overlay.tag_rule, CityMapOverlay.TagRule.LIT)
 	var legend := hq._panel.find_child("MapLegend", true, false) as MapLegend

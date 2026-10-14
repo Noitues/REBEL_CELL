@@ -952,6 +952,9 @@ func _set_panel(p: Control, name: String) -> void:
 	# other net pages keep the 2D city until their views move onto it.
 	if wireframe != null:
 		wireframe.use_city3d(name == "hq" or name in RAID_CITY_PAGES, CityLod.Band.RAID)
+		# ART-R1 4a (D5): no lime glow pools under the Cell's nodes on the HQ's pages, socket halos only.
+		if wireframe.city != null:
+			wireframe.city.ring_halos = true
 	_clear_city_map()
 	# City map screens: clicks fall through the empty panel area to the map.
 	var on_city := name in ["hq", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
@@ -2561,11 +2564,9 @@ func hq_idle_graph(g: Dictionary) -> Dictionary:
 			m["marker"] = spec
 			m["pinned"] = spec["pinned"]
 		var id: StringName = m["id"]
-		# W3-GRID (C4): a reachable Site keeps its name tag (the orange ring is its cue); a locked
-		# one says why on hover and click.
-		if m.has("marker") and String((m["marker"] as Dictionary).get("avail", "")) == SiteMarker.AV_NEXT:
-			m["tag_cue"] = true
-		else:
+		# ART-R1 1a: no name tag at rest (the orange ring is the reachable cue; the tag shows on
+		# hover only); a locked Site says why on hover and click.
+		if not (m.has("marker") and String((m["marker"] as Dictionary).get("avail", "")) == SiteMarker.AV_NEXT):
 			var lock := lock_line(CampaignRules.site_data(RunManager.corporation, id))
 			if lock != "":
 				m["tip"] = "%s\n%s" % [m.get("tip", ""), lock]
@@ -2715,7 +2716,8 @@ func _mount_hq_map_tools(page: Control, graph: Dictionary = {}) -> void:
 	TextDb.translates_itself(hq_legend)
 	hq_legend.show_all_changed.connect(func(on: bool) -> void:
 		if city_overlay != null and is_instance_valid(city_overlay):
-			city_overlay.show_all = on)
+			city_overlay.show_all = on
+			city_overlay.tags_all = on)
 	hq_legend.fold_changed.connect(_place_hq)
 	grid_legend = hq_legend
 	raid_legend = hq_legend if panel_name == "raid" else null
@@ -6060,20 +6062,12 @@ func show_raid_summary() -> void:
 	city_overlay.tag_rule = CityMapOverlay.TagRule.LIT  # B3 (D5): the outcome is on the node and the paper
 	city_overlay.avoid_controls([side])
 	city_overlay.packets = false  # ANIM-R5 P7: a report, not a live network (no packets loop)
-	# The Cell's pencil on the corp's report, and CELL HOLDS slapped on top.
-	var pencil := RaidReportPencil.new(report, r, held, _raid_reward)
-	pencil.name = "ReportPencil"
-	report.add_child(pencil)
 	if held:
 		# B3 (review Q7, bible 4.8): the result is CELL HOLDS slapped on the after-action paper
 		# (a fixed fact: a sticker), not a banner over the map; it plays the result banner's
-		# motion (`raid_result_banner`).
-		# R8 (W3-RAID): CELL HOLDS is the Cell's pencil word, not a sticker: this plain spot (sized to
-		# the word) keeps its place on the paper; RaidReportPencil writes the word there.
-		var holds := Control.new()
-		holds.custom_minimum_size = RaidPencilPool.word_size(tr(RaidVerdict.CELL_HOLDS), RaidReportPencil.WORD_STEP)
+		# motion (`raid_result_banner`). ART-R1 3a: a sticker again (R8's pencil word is gone).
+		var holds := RaidSticker.new(tr(RaidVerdict.CELL_HOLDS), HOLDS_STICKER_STEP, RaidSticker.YELLOW, -6.0).stamp_only()
 		holds.name = "CellHolds"
-		holds.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		# On a pin over the paper (the paper's own child: it follows the paper as the page lays out).
 		var pin := Control.new()
 		pin.name = "HoldsPin"
@@ -6091,7 +6085,7 @@ func show_raid_summary() -> void:
 			box.add_child(room)
 			box.move_child(room, facts.get_index())
 			room.item_rect_changed.connect(_place_holds.bind(holds, pin))
-		_place_holds.call_deferred(holds, pin)
+		_slap_holds.call_deferred(holds, pin)
 
 
 ## M14 12Q-RAID: BACK TO THE GRID stays on screen: when the report's page is taller than its
@@ -6112,6 +6106,15 @@ func _report_exit_on_screen(side: Control, back: Control, table: Control) -> voi
 	# The page's least height (not its size: the host may not have grown yet when the page sorts).
 	if back.get_index() != 0 and _panel_host.get_combined_minimum_size().y > scroll.size.y + 0.5:
 		side.move_child(back, 0)
+
+
+## ART-6 3A / B3 (Q7): CELL HOLDS slaps onto the after-action paper, over its lower left (the
+## result banner's motion, RaidSticker.slap_result; at rest at once when motion doesn't play).
+func _slap_holds(holds: RaidSticker, pin: Control) -> void:
+	if not is_instance_valid(holds) or not is_instance_valid(pin):
+		return
+	_place_holds(holds, pin)
+	holds.slap_result()
 
 
 ## B3 (Q7): CELL HOLDS at its spot on the paper's pin (local to the paper).
@@ -6141,6 +6144,8 @@ static func holds_spot(paper: Rect2, size: Vector2) -> Vector2:
 ## Where CELL HOLDS sits on the report (share of the paper: over its lower left, under the rows and
 ## beside the CLASSIFIED stamp).
 const HOLDS_AT := Vector2(0.27, 0.86)
+## The CELL HOLDS sticker's lettering (px at 1.0).
+const HOLDS_STICKER_STEP := UiTheme.DISPLAY
 ## G2R-5: from this text scale the report folds, and CELL HOLDS gets a room of this share of its height
 ## under the order line (the table rows fold below it).
 const HOLDS_FOLD_SCALE := 1.8

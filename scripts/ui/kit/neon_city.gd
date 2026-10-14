@@ -253,6 +253,8 @@ var fist_roads: bool = true
 var view3d: CityView3D = null
 ## The view band the 3D city holds (CityView3D.band_lock; -1: by zoom).
 var band_lock: int = -1
+## ART-R1 4a: the 3D city's decal draws ring halos, not glow pools (CityView3D.ring_halos).
+var ring_halos: bool = false
 ## ART-5 5e: the 3D city's motion layers (5c's CityViewMotion on view3d; null headless).
 var city_motion: CityViewMotion = null
 ## ART-5 5e: what the live Grid's city shows of the campaign (GridCityLife.of; {} none).
@@ -1472,6 +1474,7 @@ func _draw_view_3d() -> void:
 	if view3d != null:
 		var stretch := get_viewport().get_final_transform().get_scale().x if is_inside_tree() else 1.0
 		view3d.band_lock = band_lock
+		view3d.ring_halos = ring_halos
 		var cover := cover_rect()
 		view3d.set_view_size(Vector2i((cover.size * scale.x * stretch).round()))
 		view3d.set_iso(iso_camera(cover))

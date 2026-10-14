@@ -3005,6 +3005,12 @@ func label_rects() -> Dictionary:
 ## terminal tooltip (`tip_of`), not a tag (the HQ Grid: at most one tag). LIT: only the lit and
 ## plan-relevant nodes (the raid maps: no node tags; status lives on the node, round 19).
 enum TagRule { ALL, FOCUS, LIT }
+## ART-R1 1a: the map legend's hover (or its open key) shows every tag under TagRule.FOCUS.
+var tags_all: bool = false:
+	set(v):
+		if v != tags_all:
+			tags_all = v
+			_queue_top()
 var tag_rule: int = TagRule.ALL:
 	set(v):
 		if v != tag_rule:
@@ -3016,9 +3022,11 @@ var tag_rule: int = TagRule.ALL:
 func tag_allowed(n: Dictionary) -> bool:
 	if tag_rule == TagRule.ALL or n.is_empty():
 		return true
-	if n["id"] == hover_id or bool(n.get("plan", false)) or bool(n.get("tag_cue", false)) or prereq_ids.has(n["id"]):
-		return true
-	return tag_rule == TagRule.FOCUS and n["id"] == selected_id
+	if tag_rule == TagRule.FOCUS:
+		# ART-R1 1a (designer 2026-10-14): no tag at rest on any node; a node's tag shows only while
+		# it is lit (pointer, or a list row / the pad) and the map legend's hover shows them all.
+		return tags_all or n["id"] == lit_id()
+	return n["id"] == hover_id or bool(n.get("plan", false)) or bool(n.get("tag_cue", false)) or prereq_ids.has(n["id"])
 
 
 ## B3: the ids carrying a label now (tests: the clutter rule), in placement order.
@@ -3041,7 +3049,7 @@ func label_lines(id: StringName) -> PackedStringArray:
 		# ANIM-R5 P12: translated once here (the lines are drawn as given).
 		text = tr_word(HERE_LABEL)
 	# H24 K4: a node lit from its list row shows its name even where the map shows none.
-	if text == "" and id == hover_id:
+	if text == "" and (id == hover_id or (tag_rule == TagRule.FOCUS and (tags_all or id == _pointer_id))):
 		text = String(n.get("name", ""))
 	if text != "":
 		lines.append(text)
