@@ -51,6 +51,32 @@ func _init(p_head: String = "", p_tag: String = "", p_foot: String = "", ts: flo
 	MotionSkip.register_passive(self)  # the peel ends with any press that ends a motion
 
 
+## ART-R1 7: a terminal chip at the sheet's top right, over the dark header (the rewards' BACK).
+## It lives on a holder that fills the content box (so the container never stretches it).
+func add_head_chip(chip: Control) -> void:
+	var holder := Control.new()
+	holder.name = "HeadChipHolder"
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(holder)
+	holder.add_child(chip)
+	holder.resized.connect(_place_head_chip.bind(holder, chip))
+	chip.resized.connect(_place_head_chip.bind(holder, chip))
+	_place_head_chip.call_deferred(holder, chip)
+
+
+## The chip's spot: the header's right end, centred on the header band (local to the holder).
+func _place_head_chip(holder: Control, chip: Control) -> void:
+	if not is_instance_valid(holder) or not is_instance_valid(chip):
+		return
+	var s := text_scale
+	var head_top := -(HEAD_H + PAD * 0.6) * s
+	chip.position = Vector2(holder.size.x + PAD * s - chip.size.x - HEAD_CHIP_INSET * s, head_top + (HEAD_H * s - chip.size.y) * 0.5)
+
+
+## The chip's gap from the sheet's right edge (px at scale 1).
+const HEAD_CHIP_INSET := 10.0
+
+
 func _margins(ts: float) -> StyleBoxEmpty:
 	var sb := StyleBoxEmpty.new()
 	sb.content_margin_left = PAD * ts

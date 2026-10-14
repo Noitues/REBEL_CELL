@@ -155,6 +155,32 @@ func test_combat_toast_stands_over_the_tutorial() -> void:
 	assert_gt(scene.toast.z_index, scene.OVER_HAND_Z, "a toast is above the tutorial box's layer")
 
 
+func test_art_r1_f7_a_toast_never_covers_a_visible_button() -> void:
+	RunManager.new_campaign(1)
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = SCREEN
+	var scene: Control = load(COMBAT).instantiate()
+	holder.add_child(scene)
+	scene.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scene.auto_start = false
+	scene.start_fight(&"collections_agent", 5)
+	scene.skip_motion()
+	scene.start_tutorial()
+	await _frames(10)
+	var st: CombatState = scene.engine.state()
+	st.free_nudges = 0
+	st.ram = 0
+	scene._refresh(st)
+	await _frames(3)
+	scene.nudge(1)
+	await _frames(6)
+	assert_true(scene.toast.visible, "the refusal toast is up")
+	assert_not_null(scene.tutorial, "with the tutorial box open")
+	var tr_rect: Rect2 = scene.toast.get_global_rect()
+	for b in Toast.button_rects(scene):
+		assert_false(tr_rect.intersects(b), "the toast %s covers no button (%s)" % [tr_rect, b])
+
+
 func test_raid_note_covers_neither_the_ticker_nor_the_work_order() -> void:
 	var hq := await _hq(7)
 	var c := RunManager.campaign

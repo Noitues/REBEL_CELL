@@ -34,6 +34,16 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-14 — ART-R1: the art-pass review's changes (1a, 3a, 4a, F7, 7, 9a, 9b)
+Sheet `docs/art_review/PLAN1/ART_R1.jpg` (before = main fb6ae75d | after; captured with `tools/design_lab/art_r1_capture.gd`, `art_r1_m9_capture.gd`, motion lab demos).
+- **1a (designer ruling):** `TagRule.FOCUS` (the HQ City Grid) tags a node only while it is lit (the pointer, a list row or the pad) and every node while the map legend is hovered or open (`CityMapOverlay.tags_all`, set from `show_all_changed`). The selection, `plan` nodes, the prerequisite ring's nodes and W3-GRID's `tag_cue` no longer tag under FOCUS; the ring and CLEAR FIRST plate stay (not name tags). ALL and LIT maps are unchanged; the RouteOverlay already has no tags. Tests: `test_b3_raid_map_route`, `test_b4_hq_round44`, `test_city_map_sweeps` (hover per selection; legend hover for the placement checks).
+- **3a:** CELL HOLDS is the `RaidSticker` slap on the paper again (HOLDS_STICKER_STEP, `_slap_holds`, `raid_result_banner` motion); the pencil verdict layer (`RaidReportPencil`) is deleted. R8's other points stay. `HOLDS_AT` y 0.9 so the sticker clears the last row. The `raid_mark_write` motion entry stays (the playout's marks read it).
+- **4a:** the lime glow pools were the network decal's node discs and full link halo, which only map mode (raid / netrun bands) removed. The HQ idle holds the GRID band, so `CityView3D.ring_halos` (via `NeonCity.ring_halos`, set by the HQ for its pages) applies the map's thin ring (2 px, 35 %) and 0.35 link halo without the grade or veil.
+- **F7:** `Toast.clear_root`: the combat toast lifts in 8 px steps until its rect meets no visible `BaseButton` (the tutorial's NEXT / SKIP). Test: `test_art_r1_f7_a_toast_never_covers_a_visible_button`.
+- **7:** the row pick page's BACK is a `TerminalChip` on the loot sheet's header, top right (`LootSheet.add_head_chip`); SKIP and CONTINUE stay stickers. Only the BACK block of `netrun_scene` changed (the RewardList was left alone).
+- **9a:** `RouteCover` (kit): entering the route page from another screen holds the last frame of the page that left over the screen until the city reports its look current and its camera settled for 3 frames (max 2.5 s), then fades out (`reward_page_in`). Headless never waits. Rule test: `test_art_r1`. The capture could not make the empty plane appear in the AFTER run; the BEFORE strip shows it at f20.
+- **9b:** strips for M8, M9, M10 and the route hover-out are on the sheet (Movie Maker, 30 fps). The M8 / M10 / hover-out strips are the motion lab demos (the lab chrome shows around them), M9 is the jack out to the HQ.
+
 ### 2026-10-14 — Designer rulings on the overnight open questions (PT-003)
 1. **Route number keys travel at once** (no CONFIRM). Kept as built; only a mouse click selects first.
 2. **No "what only this choice reaches" text anywhere.** The maps must show the node graph itself (nodes as icons,

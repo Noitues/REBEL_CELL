@@ -109,6 +109,13 @@ func test_map_mode_is_on_for_the_raid_and_netrun_bands_only() -> void:
 	assert_true(view.map_look()["node_discs"], "the Grid's city decal keeps its node discs")
 	assert_false(view.map_look()["map_on"], "back off on the Grid")
 	assert_false(view.map_look()["veil"], "back off on the Grid")
+	# ART-R1 4a (D5): the HQ's City Grid look takes the ring halos (no glow pools) without map mode.
+	view.ring_halos = true
+	assert_false(view.map_look()["node_discs"], "ring halos: no lime glow pool under a claimed node")
+	assert_eq(view.map_look()["halo"], cfg.net_halo * cfg.map_net_halo, "and the map's link halo")
+	assert_false(view.map_look()["map_on"], "the grade and veil stay off")
+	view.ring_halos = false
+	assert_true(view.map_look()["node_discs"])
 
 
 ## B3 (review D14, bible 4.6 round 44 lock): the netrun route keeps the city's hue: saturation

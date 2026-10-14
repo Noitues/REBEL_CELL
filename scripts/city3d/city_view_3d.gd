@@ -85,6 +85,13 @@ var band_lock: int = -1:
 ## lowered under the network and the map's marks; on while the host holds the raid or the
 ## netrun band (`map_band`), off everywhere else (the Grid, the title, the backdrops, combat).
 var map_mode: bool = false
+## ART-R1 4a (D5): the network decal draws the map's thin node ring and the map's link halo (no
+## lime glow pools under claimed nodes) without the rest of map mode (the HQ's City Grid look).
+var ring_halos: bool = false:
+	set(v):
+		if v != ring_halos:
+			ring_halos = v
+			_sync_map_mode()
 var _veil_mi: MeshInstance3D = null
 
 var _layers: Dictionary = {}
@@ -575,9 +582,9 @@ func _sync_map_mode() -> void:
 	_post.set_shader_parameter(&"map_contrast", g["contrast"])
 	_veil_mi.visible = map_mode and bool(g["veil"])
 	for m in [_net_mat, _net_xray_mat]:
-		(m as ShaderMaterial).set_shader_parameter(&"halo", cfg.net_halo * (cfg.map_net_halo if map_mode else 1.0))
+		(m as ShaderMaterial).set_shader_parameter(&"halo", cfg.net_halo * (cfg.map_net_halo if map_mode or ring_halos else 1.0))
 		# B3 (D5): no glow discs under the map's nodes, a thin halo ring round each instead.
-		(m as ShaderMaterial).set_shader_parameter(&"node_discs", not map_mode)
+		(m as ShaderMaterial).set_shader_parameter(&"node_discs", not (map_mode or ring_halos))
 		(m as ShaderMaterial).set_shader_parameter(&"node_halo_px", cfg.map_node_halo_px)
 		(m as ShaderMaterial).set_shader_parameter(&"node_halo_alpha", cfg.map_node_halo_alpha)
 
