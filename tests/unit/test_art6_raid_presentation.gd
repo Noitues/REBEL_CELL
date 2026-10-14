@@ -266,6 +266,12 @@ func test_the_incoming_word_stays_whole_in_the_maps_free_part() -> void:
 		var c: Vector2 = at[0]
 		var box := Rect2(c - size * 0.5, size)
 		assert_true(room.encloses(box), "INCOMING's whole word %s is inside the free part %s" % [box, room])
+		if room == rooms[0]:
+			# W2R2 polish: the tilted word's bottom clears the entry letter by 4 px or more.
+			var letter := site + RaidRouteLayer.LETTER_OFF
+			var letter_top := letter.y - RaidPencilPool.word_size(String(routes.letters[entry]), RaidRouteLayer.LETTER_STEP).y * 0.5
+			var tilted_bottom := c.y + size.y * 0.5 + size.x * 0.5 * RaidFxLayer.MARK_TILT_SIN
+			assert_true(letter_top - tilted_bottom >= 4.0, "INCOMING's tilted bottom %.1f clears the entry letter's top %.1f by >= 4 px" % [tilted_bottom, letter_top])
 	fx.free_rect = Callable()
 
 

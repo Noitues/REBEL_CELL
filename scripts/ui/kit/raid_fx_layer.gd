@@ -1249,7 +1249,10 @@ func mark_centres() -> Dictionary:
 		if c.x == INF:
 			continue
 		if not heavy:
-			var h := RaidPencilPool.word_size(String(m["word"]), UiTheme.TITLE).y
+			var wsz := RaidPencilPool.word_size(String(m["word"]), UiTheme.TITLE)
+			# Plan 1 W2R2 polish: the word is written tilted, so clear the letter by its tilted half-height
+			# (ink padding + the tilt's lift over half its width), then the stack gap.
+			var h := (wsz.y * 0.5 + MARK_PAD_PX + wsz.x * 0.5 * MARK_TILT_SIN) * 2.0
 			if bool(m.get("above", false)) and entry_letters.has(site):
 				# A mark written above an entry (INCOMING, TAKEN) clears its pencil letter; DOWN
 				# stays written over the node.
