@@ -150,4 +150,8 @@ func test_b9_raid_waits_for_start_defense() -> void:
 	assert_not_null(start, "START DEFENSE is on the page")
 	start.pressed.emit()
 	await _frames(3)
+	# Ruling 4 (2026-10-14): with 0 stationed, START DEFENSE asks first; its YES is still the sticker's path.
+	if hq._defense_confirm != null and is_instance_valid(hq._defense_confirm):
+		hq._defense_confirm.yes_button.pressed.emit()
+		await _frames(3)
 	assert_eq(RunManager.campaign.pending_raids.size(), before - 1, "only the sticker plays the raid")

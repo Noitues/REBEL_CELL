@@ -144,8 +144,10 @@ func test_a_focus_label_moves_inward_when_its_node_is_at_the_edge() -> void:
 	var g := CityLayout.grid_graph(RunManager.campaign, RunManager.corporation, [], id)
 	overlay.set_graph(g["nodes"], g["edges"])
 	overlay.selected_id = id
+	# Ruling 1a (2026-10-14): no tag at rest, even on the selection; a node's tag shows while it is lit.
+	overlay.hover_id = id
 	var rects := overlay.label_rects()
-	assert_true(rects.has(String(id)), "the selected label shows")
+	assert_true(rects.has(String(id)), "the lit node's label shows")
 	_assert_on_screen(overlay, "left strip")
 
 
