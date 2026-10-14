@@ -170,6 +170,12 @@ runs out, start the animation work; use Haiku and the Batch API as needed. Orche
   shared prompt chip now (test reads the chip); GRID VIEW lists no choices (R6 ruling), so its "Ahead" rows are gone
   (test asserts that). **Open question:** "what only this choice reaches" (the Ahead icons) now shows nowhere — the
   route view has had no `then:` rows since round 44. Bring it back on the route's node files?
+- **PT-003's first screen batch played the wrong build** (52ba1e94, PT-002's): an untracked generated `.uid` in
+  `.claude/worktrees/playtest-build` blocked `roll_testers --build`'s checkout, and `gate.py` ignored the failed
+  step. Its report (`docs/playtest/claude/gates/PT-003.md`, batch PB-PT-003, ~$3–7) is kept as evidence but does
+  **not** judge waves 3–5. Re-run as **PT-003b** on 3eac0f08 (ANIM-FLOW included). Tooling fixed: `roll_testers`
+  removes untracked `.uid` files the target commit tracks before the checkout; `gate.py` aborts when the build
+  copy's HEAD is not the requested build.
 ### 2026-10-13 — W3-POLISH: the wave 3 / 3b review findings F1-F9 (designer away; decided, logged)
 - **F1** a locked Site's hover file (`CityMapOverlay` exploit file) loses its DECRYPTED stamp, as the selected card does: the HQ idle graph flags such a node `locked`.
 - **F2** the prerequisite's double ring is two full-weight rings with a wide gap, outer one PAPER white (a reachable Site's single ring is orange), and the words CLEAR FIRST on a plate over it (under it when the map has no room above) (weight, gap and a label; no pulse, no motion).

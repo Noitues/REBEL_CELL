@@ -54,6 +54,13 @@ def prepare_build(ref: str, godot: str) -> None:
     else:
         if (BUILD / ".quiet_runs").exists() and any((BUILD / ".quiet_runs").glob("*.pid")):
             sys.exit("roll_testers: playtesters are still running on the build copy; finish or stop them first")
+        # Godot's import leaves untracked *.uid files that the target commit may track; they block the
+        # checkout (PT-003 played the old build). They are generated, so the target's copy replaces them.
+        loose = subprocess.run(["git", "ls-files", "--others", "--exclude-standard", "--", "*.uid"], cwd=BUILD,
+                               capture_output=True, text=True).stdout.split()
+        for rel in loose:
+            if subprocess.run(["git", "cat-file", "-e", "%s:%s" % (sha, rel)], cwd=ROOT).returncode == 0:
+                (BUILD / rel).unlink(missing_ok=True)
         r = subprocess.run(["git", "checkout", "--detach", sha], cwd=BUILD, capture_output=True, text=True)
         if r.returncode:
             sys.exit("roll_testers: checkout in the build copy failed: %s" % r.stderr.strip())

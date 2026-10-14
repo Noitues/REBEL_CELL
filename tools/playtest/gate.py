@@ -242,6 +242,12 @@ def main() -> int:
     routes = sorted({p.stem for p in (TOOLS / "routes").glob("*/*.json")})
     sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT / ".claude" / "worktrees" / "playtest-build",
                          capture_output=True, text=True).stdout.strip()
+    want = subprocess.run(["git", "rev-parse", a.build], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+    if want and sha != want:
+        # PT-003 (2026-10-14): an untracked .uid in the build copy blocked the checkout and the batch
+        # silently played the previous build. Never spend a screen batch on the wrong build.
+        print("GATE ABORTED: playtest-build is at %s, not %s (%s); see %s" % (sha[:8], want[:8], a.build, work / "build.log"))
+        return 2
     out += ["## 1. Build %s and routes" % sha[:8], ""]
     for r in routes:
         if not (TOOLS / "routes" / sha[:8] / ("%s.json" % r)).exists():
