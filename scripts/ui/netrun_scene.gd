@@ -1398,7 +1398,7 @@ func _show_map() -> void:
 	# (H20: each button carries its own key hint, refreshed when the device changes).
 	# B3 (bible 4.6, round 44): on the run's own route the window is "> ROUTE" with GRID VIEW and
 	# Save & quit only (the choices are the map's stickers).
-	var win := TerminalWindow.new(tr("ROUTE") if route_on_map(s) else tr("ROUTE // pick the next node"), Palette.CELL_ACID)
+	var win := TerminalWindow.new(tr("ROUTE") if route_on_map(s) else (tr("GRID // active run") if _grid_zoomed else tr("ROUTE // pick the next node")), Palette.CELL_ACID)
 	win.name = "RouteWindow"
 	win.custom_minimum_size.x = 300
 	win.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -1439,6 +1439,7 @@ func _show_map() -> void:
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if _grid_zoomed:
 		var g := CityLayout.grid_graph(RunManager.campaign, RunManager.corporation, CityLayout.threat_paths(RunManager.campaign, RunManager.corporation), s.run.site_id)
+		g = CityLayout.with_run_path(g, RouteLinkLayout.from_site(RunManager.corporation, RunManager.campaign, s.run.site_id), s.run.site_id)
 		_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, 0.85, Vector2(0.4, 0.56), Vector2.INF)
 		city_overlay.avoid_controls([win])  # map labels stay clear of the ROUTE window
 	elif s.run.kind == "boss":
@@ -1493,6 +1494,17 @@ func _show_map() -> void:
 	_prebake_backdrops.call_deferred()
 
 
+## W3-GRID (R6 / C10): GRID VIEW's line for the active run: "RUN PATH: ORCHARD > DEPOT 9 (TARGET)".
+func grid_path_words(s: NetrunSession) -> String:
+	var target := CampaignRules.site_data(RunManager.corporation, s.run.site_id)
+	var from_id := RouteLinkLayout.from_site(RunManager.corporation, RunManager.campaign, s.run.site_id)
+	var to_name := TextDb.t(target, "display_name") if target != null else String(s.run.site_id)
+	if from_id == &"":
+		return tr("RUN TARGET: %s. Back to ROUTE VIEW to pick the next node.") % to_name
+	var from_site := CampaignRules.site_data(RunManager.corporation, from_id)
+	return tr("RUN PATH: %s > %s (TARGET). Back to ROUTE VIEW to pick the next node.") % [TextDb.t(from_site, "display_name") if from_site != null else String(from_id), to_name]
+
+
 ## The ROUTE window's choice buttons for the choices the view shows (view_choices: ANIM-R4
 ## H11c, the new ones as soon as a move starts), into `row` (emptied first).
 func _fill_route_choices(row: VBoxContainer) -> void:
@@ -1502,6 +1514,19 @@ func _fill_route_choices(row: VBoxContainer) -> void:
 		if old is CanvasItem:
 			(old as CanvasItem).visible = false
 		old.queue_free()
+	if _grid_zoomed:
+		# W3-GRID (R6 / C10): GRID VIEW is not the route: no next-node choices, the run's path and target.
+		_route_buttons.clear()
+		var path := Label.new()
+		path.name = "RunPath"
+		path.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		path.custom_minimum_size.x = 260
+		path.text = grid_path_words(s)
+		path.add_theme_font_override("font", Palette.mono())
+		path.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+		path.add_theme_color_override("font_color", Palette.CELL_ACID)
+		row.add_child(path)
+		return
 	var available := view_choices(s)
 	_route_buttons.clear()
 	var twins := choice_twins(s)
@@ -2571,6 +2596,8 @@ func server_label() -> String:
 ## gate first (bible 4.9); BREACH there enters the node. Every other node is entered at once.
 ## (enter_node itself is unchanged: tests and tools still reach the fight directly.)
 func _request_node(id: StringName) -> void:
+	if _grid_zoomed:
+		return  # W3-GRID (R6 / C10): GRID VIEW is the Grid, not the route: no node is entered from it
 	var s := RunManager.netrun
 	if s != null and s.run.kind == "boss" and gate == null and s.available_nodes().has(id):
 		open_gate(id)

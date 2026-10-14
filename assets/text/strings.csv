@@ -1,6 +1,7 @@
 keys,en
     none today,    none today
 "  %s (%s) Rank %d, HP %d/%d, deck %d, daemons %d","  %s (%s) Rank %d, HP %d/%d, deck %d, daemons %d"
+  //  RAID AT HEAT %d,  //  RAID AT HEAT %d
  %s Heat, %s Heat
  (INNER RING), (INNER RING)
  (local: REBEL_CELL is built from your profile), (local: REBEL_CELL is built from your profile)
@@ -558,6 +559,7 @@ Clearing it gives %s Schematics.,Clearing it gives %s Schematics.
 Clearing it gives the %s Exploit for the Central Server breach.,Clearing it gives the %s Exploit for the Central Server breach.
 Clearing it now brings a raid on your network.,Clearing it now brings a raid on your network.
 Clearing it opens %d more Sites to runs: %s.,Clearing it opens %d more Sites to runs: %s.
+Clearing it takes Heat past %d: that brings a raid on your network.,Clearing it takes Heat past %d: that brings a raid on your network.
 Clearing it wins the campaign.,Clearing it wins the campaign.
 Clearing this Site changes Heat by %d.,Clearing this Site changes Heat by %d.
 Click,Click
@@ -904,6 +906,7 @@ FILED,FILED
 FIRMWARE,FIRMWARE
 FIRMWARE  //  HUB,FIRMWARE  //  HUB
 FIRMWARE DROP,FIRMWARE DROP
+FLATLINE,FLATLINE
 FLATLINED,FLATLINED
 "FLIP: mirrors the wheel, so each slice swaps with the one opposite.","FLIP: mirrors the wheel, so each slice swaps with the one opposite."
 FREE,FREE
@@ -967,6 +970,7 @@ Further on: %s (only this way).,Further on: %s (only this way).
 GETS %s,GETS %s
 GOOD,GOOD
 GOT %s,GOT %s
+GRID // active run,GRID // active run
 GRID VIEW,GRID VIEW
 GROUND SEGMENT  //  DEBRIS CONTROL  //  LICENSING,GROUND SEGMENT  //  DEBRIS CONTROL  //  LICENSING
 GROWTH,GROWTH
@@ -990,6 +994,7 @@ HEAT %d CROSSED,HEAT %d CROSSED
 HEAT %d · %s,HEAT %d · %s
 HEAT %d · %s (%d+),HEAT %d · %s (%d+)
 HEAT %s,HEAT %s
+HEAT %s -> %d,HEAT %s -> %d
 HEAT & BANKING,HEAT & BANKING
 "HEAT (subject's exposure), at closure %d:","HEAT (subject's exposure), at closure %d:"
 HEAT // SUSPECT FILE,HEAT // SUSPECT FILE
@@ -1215,6 +1220,9 @@ LOADOUT // %s // SPINNER // %d SLICES,LOADOUT // %s // SPINNER // %d SLICES
 LOADOUT SHEET  //  %d STICKERS,LOADOUT SHEET  //  %d STICKERS
 LOCKDOWN,LOCKDOWN
 LOCKED,LOCKED
+LOCKED: clear %s first (ringed on the map).,LOCKED: clear %s first (ringed on the map).
+LOCKED: clear the Sites between it and your network first.,LOCKED: clear the Sites between it and your network first.
+LOCKED: the breach needs %d Exploits (you hold %d).,LOCKED: the breach needs %d Exploits (you hold %d).
 LOG,LOG
 LOOT,LOOT
 LOOT // NETRUN: %s,LOOT // NETRUN: %s
@@ -1727,7 +1735,7 @@ No threats can reach your network.,No threats can reach your network.
 Node upgrade level %d.,Node upgrade level %d.
 Nodes,Nodes
 Not earned yet.,Not earned yet.
-Not reachable yet. Clear a Site linked to it first: %s. Then it opens (orange ring) and JACK IN shows here.,Not reachable yet. Clear a Site linked to it first: %s. Then it opens (orange ring) and JACK IN shows here.
+Not reachable yet. Clear a Site linked to it first: %s (ringed on the map). Then it opens with an orange ring and JACK IN shows here.,Not reachable yet. Clear a Site linked to it first: %s (ringed on the map). Then it opens with an orange ring and JACK IN shows here.
 Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours.,Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours.
 Nothing to resume.,Nothing to resume.
 Nudge %s one tick clockwise.,Nudge %s one tick clockwise.
@@ -1969,6 +1977,8 @@ ROUTE VIEW,ROUTE VIEW
 RUN,RUN
 RUN ASSETS:,RUN ASSETS:
 RUN HISTORY  //  last %d,RUN HISTORY  //  last %d
+RUN PATH: %s > %s (TARGET). Back to ROUTE VIEW to pick the next node.,RUN PATH: %s > %s (TARGET). Back to ROUTE VIEW to pick the next node.
+RUN TARGET: %s. Back to ROUTE VIEW to pick the next node.,RUN TARGET: %s. Back to ROUTE VIEW to pick the next node.
 RUNNER,RUNNER
 RUNNER: %s R%d,RUNNER: %s R%d
 RUNS,RUNS
@@ -2119,6 +2129,7 @@ SCHEMATICS,SCHEMATICS
 SCHEMATICS %s,SCHEMATICS %s
 SCRUB HEAT %s,SCRUB HEAT %s
 "SCRUB HEAT: pay %d Schematics, Heat %s (the Heat terminal's purchase).","SCRUB HEAT: pay %d Schematics, Heat %s (the Heat terminal's purchase)."
+SCRUB UNAVAILABLE: %s,SCRUB UNAVAILABLE: %s
 SELECTED,SELECTED
 SEND IT,SEND IT
 "SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The chips beside each HP already show the outcome.","SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The chips beside each HP already show the outcome."

@@ -32,7 +32,8 @@ const NEXT_RULES := "harder rules" # TR
 const SINK_WORDS := "Heat objective Sites (the cooling mark on the map)" # TR
 const SCRUB := "SCRUB HEAT %s" # TR
 const SCRUB_LINE := "pay %d Schematics (next %d)" # TR
-const READ_ONLY_LINE := "Scrub Heat at the HQ." # TR
+const SCRUB_WHY := "SCRUB UNAVAILABLE: %s" # TR
+const READ_ONLY_LINE :="Scrub Heat at the HQ." # TR
 
 var read_only: bool = false
 var scrub: MenuChip = null
@@ -81,6 +82,12 @@ func _init(c: CampaignState = null, cfg: CampaignConfigData = null, p_read_only:
 	scrub.name = "ScrubHeat"
 	scrub.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scrub.tooltip_text = UiTip.fold(TranslationServer.translate("Costs %d Schematics (you have %d): Heat changes by %d.") % [price, c.schematics, amount])
+	# W3-GRID (C3): a Scrub that cannot be bought says why (the rule's own reason), on the page and in the tip.
+	var why := CampaignRules.scrub_error(c, cfg)
+	if why != "":
+		scrub.disabled = true
+		_row(rows, "ScrubWhy", "", TranslationServer.translate(SCRUB_WHY) % TranslationServer.translate(why), Palette.HARM)
+		scrub.tooltip_text = UiTip.fold(TranslationServer.translate(SCRUB_WHY) % TranslationServer.translate(why))
 	scrub.pressed.connect(func() -> void: scrub_pressed.emit())
 	body.add_child(scrub)
 

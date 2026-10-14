@@ -183,6 +183,8 @@ const MARKER_STEP := 16.0
 ## H24 K4: the lit node's ring, beyond the selection ring (screen px), and its ticks.
 const HOVER_RING := 4.0
 const HOVER_TICK := 6.0
+## W3-GRID: the gap between a prerequisite's two rings (px at the reference scale).
+const PREREQ_GAP := 4.0
 ## Smallest city zoom the screen-size maths accepts.
 const MIN_ZOOM := 0.1
 ## H22: labels keep this far inside the visible map area (screen px).
@@ -285,6 +287,17 @@ var hover_id: StringName = &"":
 			_queue_tags()
 			_hi.queue_redraw()
 			_queue_top()  # ART-5 5d: a hidden Site lit from its row shows
+## W3-GRID (C4): the nodes to clear first, marked with the availability colour while a locked
+## node is selected or pointed at (a double ring; a hidden node among them shows).
+var prereq_ids: Array[StringName] = []:
+	set(v):
+		if v == prereq_ids:
+			return
+		prereq_ids = v
+		if _top != null:
+			_queue_tags()
+			_hi.queue_redraw()
+			_queue_top()
 ## The node under the pointer (for `node_hovered`).
 var _pointer_id: StringName = &""
 ## Spotlight target (node id) for the SPOTLIGHT look.
@@ -789,7 +802,7 @@ func network_data() -> CityNetworkData:
 	if decal_shown_only:
 		shown = []
 		for n in nodes:
-			if n["id"] == selected_id or not n.has("marker") or bool(n["marker"].get("pinned", true)):
+			if n["id"] == selected_id or prereq_ids.has(n["id"]) or not n.has("marker") or bool(n["marker"].get("pinned", true)):
 				shown.append(n)
 	return CityNetworkData.from_graph(CityView3D.CONFIG, shown, edges, func(id: StringName) -> Vector2i: return lot_of(id),
 		func(k: int) -> PackedVector2Array: return _routes[k] if k < _routes.size() else PackedVector2Array())
@@ -1467,6 +1480,16 @@ func _draw_hi() -> void:
 			_c = _hi
 			_stroke_on(closed, select_reveal, Palette.CELL_ACID, 1.5)
 			_c = c0
+	var icons := _icon_positions() if not prereq_ids.is_empty() else {}
+	for pid in prereq_ids:
+		if not icons.has(pid):
+			continue
+		var pk := _k()
+		var pn := _node_dict(pid)
+		var pr := (icon_radius(pn) if not pn.is_empty() else ICON_RADIUS * pk) + (SELECT_RING + PREREQ_GAP) * pk
+		_hi.draw_arc(icons[pid], pr, 0, TAU, 32, Color(0, 0, 0, 0.85), 6.0 * pk)
+		_hi.draw_arc(icons[pid], pr, 0, TAU, 32, Palette.RING_AVAILABLE, 3.0 * pk)
+		_hi.draw_arc(icons[pid], pr + PREREQ_GAP * pk, 0, TAU, 32, Color(Palette.RING_AVAILABLE, 0.55), 2.0 * pk)
 	var hc := hover_centre()
 	if hc.x != INF:
 		var k := _k()
@@ -1876,7 +1899,7 @@ const LOCK_DISC := 11.0
 func marker_shown(n: Dictionary) -> bool:
 	if not n.has("marker") or show_all or bool(n["marker"].get("pinned", true)):
 		return true
-	return n["id"] == selected_id or n["id"] == hover_id
+	return n["id"] == selected_id or n["id"] == hover_id or prereq_ids.has(n["id"])
 
 
 ## A v4 Site on the node layer: its roof (the building), the fight-won lights, the pad on the
@@ -2928,7 +2951,7 @@ var tag_rule: int = TagRule.ALL:
 func tag_allowed(n: Dictionary) -> bool:
 	if tag_rule == TagRule.ALL or n.is_empty():
 		return true
-	if n["id"] == hover_id or bool(n.get("plan", false)):
+	if n["id"] == hover_id or bool(n.get("plan", false)) or bool(n.get("tag_cue", false)) or prereq_ids.has(n["id"]):
 		return true
 	return tag_rule == TagRule.FOCUS and n["id"] == selected_id
 

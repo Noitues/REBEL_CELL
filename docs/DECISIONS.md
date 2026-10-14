@@ -34,6 +34,13 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-13 — W3-GRID: reachable Sites say why, Heat is forecast before acting, GRID VIEW is the Grid (C4, C3, R6 / C10)
+- **Rules in core, views read them.** `GridAccess.site_access` (new, `scripts/core/grid_access.gd`) is the launch rule's reachability (`launchable_sites` or patrol) plus the reason (open / home / breach / from / far) and the linked Sites to clear first; `why_not_runnable`, the node tips and the ring all read it. `HeatRules.forecast` applies the real `add_heat` to a copy (preview = result) and lists the thresholds and the raid it would fire; `HeatRules.death_heat` is the one place a flatline's Heat is worked out (the netrun death uses it too); `CampaignRules.scrub_error` is the one reason Heat Scrub is unavailable, `clear_preview` gains `crosses`.
+- **C4 on the map:** a reachable Site keeps its name tag (`tag_cue`; its orange ring is the existing `avail` ring); a locked Site's tooltip ends "LOCKED: clear X first (ringed on the map)", and while it is pointed at or selected the Sites to clear first get a double orange ring (`CityMapOverlay.prereq_ids`; a hidden one shows) and the selection pans to hold them in view. Gate links were already drawn (padlock) and stay so. A locked Site's file loses its DECRYPTED stamp. The card's note no longer promises an orange ring on the locked Site itself.
+- **C3:** the RAID badge on a Site's gains row names the Heat line the clear crosses; a FLATLINE row on a runnable Site's file shows "HEAT +N -> total" and the raid line it would cross; Heat Scrub (CORE card and Heat terminal) is disabled with the rule's reason shown on the page and in the tip.
+- **R6 / C10:** GRID VIEW draws the run's path (the link from the owned end to the target, bold) and flags the target; the ROUTE window there is "GRID // active run" with one RUN PATH line and no node choices; `_request_node` ignores clicks and number keys in GRID VIEW.
+- **Simplest reading:** "Racks" (C3) are not separate Grid Sites; a Rack's in-run Heat already shows on the route node, so the pre-action forecast covers Sites and flatlines. "Next reachable" cue = the existing orange ring plus the always-on tag. Tests: `tests/unit/test_w3_grid.gd`.
+
 ### 2026-10-13 — Round 45 inner ring built (designer-approved concept, art-pass 2216c126; replaces W2-A6's standing plates)
 - **Ghost wedge:** `WheelWedge` (one quad per wheel over the disc, under the view's drawing and the firmware sockets) runs
   `shaders/wheel/wheel_wedge.gdshader` over the slice under the first needle with the modifier of the ring segment there

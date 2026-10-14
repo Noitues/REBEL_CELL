@@ -1026,8 +1026,7 @@ func _die() -> void:
 	var lost := run.unbanked_assets.size()
 	run.unbanked_assets.clear()
 	last_events.append({"type": "run_died", "text": "%s is flatlined. Unbanked loot lost (%d Cycles, %d asset(s)); %d banked Schematics kept." % [run.operative.name, run.cycles, lost, run.banked_schematics]})
-	var extra := int(campaign.rule_modifier(config, RC.RuleModifierType.DEATH_HEAT))
-	_add_heat(config.death_heat_base + run.tier + extra, "operative death")
+	_add_heat(HeatRules.death_heat(campaign, config, run.tier), "operative death")
 
 
 ## Abandon run (designer ruling 2026-10-05, GDD 4.5): the operative is killed on the run, so
