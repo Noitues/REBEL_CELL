@@ -492,15 +492,23 @@ func _offer(kind: StringName, pool: Array, count: int, rng: RandomNumberGenerato
 # --- Rewards -----------------------------------------------------------------------
 
 func current_reward() -> Dictionary:
-	return run.pending_rewards[0] if not run.pending_rewards.is_empty() else {}
+	return reward_at(0)
 
 
-## Takes option `index` of the current offer. Firmware needs the wheel `slot` to socket.
-func choose_reward(index: int, slot: int = -1) -> Array[Dictionary]:
+## W4-REWARDS: offer `index` of the payout (the rewards screen lists them all); empty when none.
+func reward_at(index: int) -> Dictionary:
+	return run.pending_rewards[index] if index >= 0 and index < run.pending_rewards.size() else {}
+
+
+## Takes option `index` of the current offer (or of offer `offer_index` of the payout: the
+## rewards screen picks from any row). Firmware needs the wheel `slot` to socket.
+func choose_reward(index: int, slot: int = -1, offer_index: int = 0) -> Array[Dictionary]:
 	last_events = []
 	if run.phase != RunState.Phase.REWARD or run.pending_rewards.is_empty():
 		return _refuse("No reward to choose.")
-	var offer := run.pending_rewards[0]
+	if offer_index < 0 or offer_index >= run.pending_rewards.size():
+		return _refuse("No such reward.")
+	var offer := run.pending_rewards[offer_index]
 	var options: Array = offer["options"]
 	if index < 0 or index >= options.size():
 		return _refuse("No such option.")
@@ -508,18 +516,35 @@ func choose_reward(index: int, slot: int = -1) -> Array[Dictionary]:
 	var err := _grant(String(offer["kind"]), id, slot)
 	if err != "":
 		return _refuse(err)
-	run.pending_rewards.pop_front()
+	run.pending_rewards.remove_at(offer_index)
 	_after_reward()
 	_sync()
 	return last_events
 
 
-func skip_reward() -> Array[Dictionary]:
+## Skips offer `offer_index` only (F12: a SKIP on one pick leaves the others).
+func skip_reward(offer_index: int = 0) -> Array[Dictionary]:
 	last_events = []
 	if run.phase != RunState.Phase.REWARD or run.pending_rewards.is_empty():
 		return _refuse("No reward to skip.")
-	run.pending_rewards.pop_front()
+	if offer_index < 0 or offer_index >= run.pending_rewards.size():
+		return _refuse("No such reward.")
+	run.pending_rewards.remove_at(offer_index)
 	last_events.append({"type": "reward_skipped", "text": "Reward skipped."})
+	_after_reward()
+	_sync()
+	return last_events
+
+
+## W4-REWARDS: PROCEED. Leaves the rewards screen, skipping every offer still untaken (the
+## same state as skipping each in turn).
+func proceed_rewards() -> Array[Dictionary]:
+	last_events = []
+	if run.phase != RunState.Phase.REWARD:
+		return _refuse("No reward to proceed from.")
+	while not run.pending_rewards.is_empty():
+		run.pending_rewards.pop_front()
+		last_events.append({"type": "reward_skipped", "text": "Reward skipped."})
 	_after_reward()
 	_sync()
 	return last_events

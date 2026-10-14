@@ -68,6 +68,9 @@ Press to deploy it to %s (the target: pick another node on the map or in YOUR NE
 "%s
 ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds.","%s
 ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds."
+%s   PICK 1 OF %d   >,%s   PICK 1 OF %d   >
+%s   SKIPPED,%s   SKIPPED
+%s   TAKEN: %s,%s   TAKEN: %s
 %s  (home server BREACHED),%s  (home server BREACHED)
 %s  //  AUDIT %d,%s  //  AUDIT %d
 %s  //  INTERNAL  //  DO NOT FORWARD,%s  //  INTERNAL  //  DO NOT FORWARD
@@ -278,6 +281,7 @@ Back to the Armory.,Back to the Armory.
 Back to the HQ.,Back to the HQ.
 Back to the compound,Back to the compound
 Back to the main menu.,Back to the main menu.
+Back to the rewards.,Back to the rewards.
 Back to the title screen.,Back to the title screen.
 Back to this run's route.,Back to this run's route.
 Back to title,Back to title
@@ -1239,8 +1243,10 @@ Language,Language
 Language (translations from assets/text/strings.csv),Language (translations from assets/text/strings.csv)
 Last played,Last played
 Leave,Leave
+Leave %d reward(s) behind?,Leave %d reward(s) behind?
 Leave REBEL_CELL (asks first).,Leave REBEL_CELL (asks first).
 Leave the Mainframe and go back to the route.,Leave the Mainframe and go back to the route.
+Leave the rewards. What you have not taken is lost.,Leave the rewards. What you have not taken is lost.
 Left click,Left click
 Legend,Legend
 Lexicon,Lexicon
@@ -1781,6 +1787,7 @@ OVFL,OVFL
 Off (no correction),Off (no correction)
 "Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for.","Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for."
 Open the key to show every Site; unselectable regular Sites are hidden to keep the map clear.,Open the key to show every Site; unselectable regular Sites are hidden to keep the map clear.
+Open this reward and pick from it.,Open this reward and pick from it.
 Operative,Operative
 Operatives,Operatives
 Operatives lost,Operatives lost
@@ -1827,6 +1834,7 @@ SAFE??","PLAY IT
 SAFE??"
 PLAYOUT,PLAYOUT
 PRECISION TAG: how well this needle lands on its slice.,PRECISION TAG: how well this needle lands on its slice.
+PROCEED,PROCEED
 PROCESSED,PROCESSED
 PROFILE // RECORDS,PROFILE // RECORDS
 PROFILE // THE CELL,PROFILE // THE CELL
@@ -3268,6 +3276,7 @@ Walk the compound layer by layer to the Central Server (%d layers). Its gate tak
 What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.,What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.
 What the threats go for (their routing rule).,What the threats go for (their routing rule).
 What this wheel's needles land on. Nothing else changes this turn.,What this wheel's needles land on. Nothing else changes this turn.
+What you do not take is lost.,What you do not take is lost.
 When you SEND IT: %s.,When you SEND IT: %s.
 "White bolt: DOWN, your node hit 0 integrity. No bonus and no power to its links until you repair it.","White bolt: DOWN, your node hit 0 integrity. No bonus and no power to its links until you repair it."
 White ring: not reachable yet. Clear a linked Site first.,White ring: not reachable yet. Clear a linked Site first.

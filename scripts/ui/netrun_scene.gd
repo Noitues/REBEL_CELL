@@ -566,11 +566,17 @@ func choose_reward(index: int, slot: int = -1) -> void:
 ## lands the item on its target, so the click's flight (ANIM-6) does not play too.
 func _choose_reward(index: int, slot: int, fly: bool) -> void:
 	var s := RunManager.netrun
-	var offer := s.current_reward() if s.run.phase == RunState.Phase.REWARD else {}
+	var oi := _offer_index()
+	var offer := s.reward_at(oi) if s.run.phase == RunState.Phase.REWARD else {}
 	var left := s.run.pending_rewards.size()
+	var picked_name := ""
+	if not offer.is_empty() and index >= 0 and index < (offer["options"] as Array).size():
+		picked_name = TextDb.t(s.lookup.get_content(StringName(String(offer["options"][index]))), "display_name")
 	# B5 (section f): the loot page's bar (CARDS) stays while the page does, so the pick flies to the tag it shows.
 	_held_bar = bar_keys(s)
-	_report(s.choose_reward(index, slot))
+	_report(s.choose_reward(index, slot, oi))
+	if s.run.pending_rewards.size() < left and not offer.is_empty():
+		_note_reward_done(String(offer["kind"]), true, picked_name)
 	if s.run.pending_rewards.size() >= left and s.run.phase == RunState.Phase.REWARD and String(offer.get("kind", "")) == "firmware" and slot >= 0:
 		# the page stays as it is (the spinner keeps the player's slot) and says why
 		# one message: the terminal note, worded here with the chip and slot names (the rules speak in ids); the
@@ -678,7 +684,12 @@ static func loot_window_rect(sticker: Control) -> Rect2:
 
 
 func skip_reward() -> void:
-	_report(RunManager.netrun.skip_reward())
+	var s := RunManager.netrun
+	var oi := _offer_index()
+	var offer := s.reward_at(oi) if s.run.phase == RunState.Phase.REWARD else {}
+	_report(s.skip_reward(oi))
+	if not offer.is_empty():
+		_note_reward_done(String(offer["kind"]), false, "")
 	RunManager.after_step()
 	_show_current()
 
@@ -939,6 +950,8 @@ func _show_current() -> void:
 		PageTransition.after_modals(self, _show_current)
 		return
 	_refresh_status()
+	if s.run.phase != RunState.Phase.REWARD:
+		_reset_rewards_view()
 	match s.run.phase:
 		RunState.Phase.MAP:
 			_show_map()
@@ -3140,13 +3153,153 @@ var _leave_generation: int = 0
 ## FIRMWARE DROP terminal; a card offer shows the DECK counter with a pencil "+1 = N" to it. A
 ## pick peels off the sheet and flies to the deck (ANIM-6 `loot_pick`), Skip is a sticker.
 func _show_reward() -> void:
+	_show_reward_page(-1 if rewards_list_on() else _offer_index())
+
+
+## W4-REWARDS (D-UX1, F12): the view state of the one rewards screen. `_open_offer` is the row opened (-1: the
+## list shows); `_reward_done` the rows taken or skipped so far (kept on the list, marked); `_reward_auto` what the
+## payout paid without a pick (Cycles, banked Schematics), read once from the step's own events.
+static var _open_offer: int = -1
+var _reward_done: Array[Dictionary] = []
+var _reward_auto: Array[Dictionary] = []
+var _reward_auto_read: bool = false
+
+
+## The offer the page's picks act on: the opened row, the first when the list shows (the API's old meaning).
+static func _offer_index() -> int:
 	var s := RunManager.netrun
-	var offer := s.current_reward()
+	var n := s.run.pending_rewards.size() if s != null else 0
+	return clampi(_open_offer, 0, maxi(0, n - 1))
+
+
+## True when the rewards screen shows its list of rows: more than one pick pending or one already settled, and no
+## row opened. A payout with a single pick shows that pick's page straight away (it is the only row).
+func rewards_list_on() -> bool:
+	var s := RunManager.netrun
+	if s == null or s.run.phase != RunState.Phase.REWARD:
+		return false
+	return _open_offer < 0 and (s.run.pending_rewards.size() >= 2 or not _reward_done.is_empty())
+
+
+## Opens row `index` of the list (its pick page); SKIP or a take there comes back to the list.
+func open_reward(index: int) -> void:
+	var s := RunManager.netrun
+	if s == null or index < 0 or index >= s.run.pending_rewards.size():
+		return
+	_open_offer = index
+	_show_current()
+
+
+## Back from a row's page to the list.
+func close_reward_row() -> void:
+	_open_offer = -1
+	_show_current()
+
+
+func _reset_rewards_view() -> void:
+	_open_offer = -1
+	_reward_done.clear()
+	_reward_auto.clear()
+	_reward_auto_read = false
+
+
+func _note_reward_done(kind: String, taken: bool, taken_name: String) -> void:
+	_reward_done.append({"kind": kind, "taken": taken, "name": taken_name})
+	_open_offer = -1
+
+
+## The rows the payout paid without a pick, from the step's events (once per payout).
+func _read_reward_auto(s: NetrunSession) -> void:
+	if _reward_auto_read:
+		return
+	_reward_auto_read = true
+	var pay := payout_of(s)
+	if bool(pay["paid"]):
+		_reward_auto.append({"word": "CYCLES", "value": TextDb.signed(int(pay["cycles"]))})
+	for e in s.last_events:
+		if String(e.get("type", "")) == "rack_captured":
+			_reward_auto.append({"word": "SCHEMATICS", "value": TextDb.signed(int(e.get("schematics", 0)))})
+
+
+## PROCEED: leaves the screen; the picks still untaken are given up, so it asks first.
+func proceed_rewards(confirmed: bool = false) -> void:
+	var s := RunManager.netrun
+	if s == null or s.run.phase != RunState.Phase.REWARD:
+		return
+	if not confirmed and not s.run.pending_rewards.is_empty():
+		var n := s.run.pending_rewards.size()
+		var d := ConfirmDialog.new(tr("Leave %d reward(s) behind?") % n, "PROCEED", "BACK", "REWARDS", # TR
+			tr("What you do not take is lost."), false, "", "")
+		d.name = "ProceedConfirm"
+		d.resized.connect(func() -> void: d.position = ((size - d.size) * 0.5).floor())
+		d.position = ((size - d.custom_minimum_size) * 0.5).floor()
+		d.confirmed.connect(func() -> void: proceed_rewards(true))
+		add_child(d)
+		return
+	_report(s.proceed_rewards())
+	RunManager.after_step()
+	_show_current()
+
+
+## The rewards screen's list: one button row per pick, the ones settled marked. `offer_i` -1 draws it.
+func _build_reward_list(s: NetrunSession, ts: float, os: float) -> Control:
+	_read_reward_auto(s)
+	var list := VBoxContainer.new()
+	list.name = "RewardList"
+	list.add_theme_constant_override("separation", roundi(UiTheme.SP_S * os))
+	list.custom_minimum_size.x = REWARD_ROW_W * os
+	for a in _reward_auto:
+		var auto := Button.new()
+		auto.name = "RewardAuto"
+		auto.text = "%s   %s   %s" % [tr(String(a["word"])), String(a["value"]), tr("TAKEN")]
+		auto.disabled = true
+		auto.focus_mode = Control.FOCUS_NONE
+		auto.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		auto.add_theme_font_size_override(&"font_size", roundi(REWARD_ROW_PX * ts))
+		list.add_child(auto)
+	for d in _reward_done:
+		var done := Button.new()
+		done.name = "RewardDone"
+		var kind_word := tr(String(LOOT_WORDS.get(String(d["kind"]), String(d["kind"])))).to_upper()
+		done.text = (tr("%s   TAKEN: %s") % [kind_word, String(d["name"])]) if bool(d["taken"]) else (tr("%s   SKIPPED") % kind_word)
+		done.disabled = true
+		done.focus_mode = Control.FOCUS_NONE
+		done.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		done.add_theme_font_size_override(&"font_size", roundi(REWARD_ROW_PX * ts))
+		list.add_child(done)
+	var first: Button = null
+	for i in s.run.pending_rewards.size():
+		var offer := s.run.pending_rewards[i]
+		var row := Button.new()
+		row.name = "Reward%d" % (i + 1)
+		var kind_word := tr(String(LOOT_WORDS.get(String(offer["kind"]), String(offer["kind"])))).to_upper()
+		row.text = tr("%s   PICK 1 OF %d   >") % [kind_word, (offer["options"] as Array).size()]
+		row.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		row.tooltip_text = tr("Open this reward and pick from it.")
+		row.add_theme_font_size_override(&"font_size", roundi(REWARD_ROW_PX * ts))
+		var index: int = i
+		row.pressed.connect(func() -> void: open_reward(index))
+		list.add_child(row)
+		if first == null:
+			first = row
+	if first != null:
+		first.grab_focus.call_deferred()
+	return list
+
+
+const REWARD_ROW_W := 640.0
+const REWARD_ROW_PX := 26
+
+
+func _show_reward_page(offer_i: int) -> void:
+	var s := RunManager.netrun
+	var list_mode := offer_i < 0
+	var offer: Dictionary = {} if list_mode else s.reward_at(offer_i)
 	var ts := Settings.text_scale
 	var os := minf(ts, ShopItem.OBJECT_MAX_SCALE)
-	var kind_word := tr(String(LOOT_WORDS.get(String(offer["kind"]), String(offer["kind"]))))
+	var kind_word := "" if list_mode else tr(String(LOOT_WORDS.get(String(offer["kind"]), String(offer["kind"]))))
 	var source := tr(loot_source(s))
-	var n: int = offer["options"].size()
+	var n: int = 0 if list_mode else offer["options"].size()
 	var page := VBoxContainer.new()
 	page.name = "LootPage"
 	page.add_theme_constant_override("separation", roundi(10 * minf(ts, ShopItem.OBJECT_MAX_SCALE)))
@@ -3205,6 +3358,23 @@ func _show_reward() -> void:
 	heat_row.name = "PayoutHeat"
 	pay_rows.add_child(heat_row)
 	heat_row.visible = ts < LOOT_SIDE_FROM or int(pay["heat"]) != 0
+	if list_mode:
+		# W4-REWARDS: the one rewards screen: the same head and PAYOUT, the rows in the middle, PROCEED at the foot.
+		top.add_child(payout)
+		var mid_list := CenterContainer.new()
+		mid_list.name = "LootMiddle"
+		mid_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		mid_list.add_child(_build_reward_list(s, ts, os))
+		page.add_child(mid_list)
+		var go_list := HoloSticker.verb_word(tr("PROCEED"), VinylSticker.Fill.PINK, os, LOOT_CONTINUE_PX)
+		go_list.name = "Proceed"
+		go_list.sticker.sweep_primary = true
+		go_list.tooltip_text = UiTip.fold(tr("Leave the rewards. What you have not taken is lost."))
+		go_list.pressed.connect(func() -> void: proceed_rewards())
+		go_list.size_flags_horizontal = Control.SIZE_SHRINK_END
+		page.add_child(go_list)
+		_set_panel(page, false)
+		return
 	# The loot sheet; beside it PAYOUT, a Firmware drop's terminal, the deck and Skip.
 	var sheet := LootSheet.new(tr("LOOT SHEET // %s // PICK 1 OF %d") % [source, n], "", tr(LOOT_FOOT) % [kind_word.to_upper()], os)
 	var stickers := sheet.row
@@ -3348,6 +3518,12 @@ func _show_reward() -> void:
 		foot.add_child(foot_right)
 		go.size_flags_horizontal = Control.SIZE_SHRINK_END
 		foot.add_child(go)
+	if _reward_done.size() > 0 or s.run.pending_rewards.size() >= 2:
+		var back := HoloSticker.verb_word(tr("BACK"), VinylSticker.Fill.WHITE, os, LOOT_SKIP_PX)
+		back.name = "RewardsBack"
+		back.tooltip_text = tr("Back to the rewards.")
+		back.pressed.connect(close_reward_row)
+		side.add_child(back)
 	if side.get_child_count() == 0:
 		side.visible = false
 	_set_panel(page, false)
@@ -5806,7 +5982,7 @@ func _register_shop_drops(mini: SpinnerMini, fw_slot: SpinnerMini) -> void:
 ## Loot: the offer drags onto where it goes (a card to the deck, a Firmware chip onto a slot,
 ## a Daemon onto the DAEMONS icon).
 func _register_loot_drops(row: Control, mini: SpinnerMini, slot_option: SpinnerMini) -> void:
-	var offer := RunManager.netrun.current_reward()
+	var offer := RunManager.netrun.reward_at(_offer_index())
 	var kind := {"card": "card", "firmware": "chip", "daemon": "daemon"}.get(String(offer.get("kind", "")), "") as String
 	if kind == "" or row == null:
 		return
@@ -6108,7 +6284,7 @@ static func bar_keys(s: NetrunSession) -> Array:
 		RunState.Phase.SHOP:
 			return ["CYCLES"]
 		RunState.Phase.REWARD:
-			return ["CARDS"] if String(s.current_reward().get("kind", "")) == "card" else []
+			return ["CARDS"] if String(s.reward_at(_offer_index()).get("kind", "")) == "card" else []
 		RunState.Phase.EVENT:
 			return event_bar_keys(s)
 	return [BAR_ALL]

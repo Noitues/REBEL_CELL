@@ -34,6 +34,28 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-13 — W4-REWARDS (D-UX1, F12): one rewards screen
+
+- **What changed.** A payout with more than one pick (card + Firmware chip, Rack Daemon, ...) now opens one list of rows
+  (`RewardList`: one button per pending offer, "CARD   PICK 1 OF 3   >"), under the same LOOT title sticker, strip and
+  PAYOUT terminal (LOOT-02 kept). A row opens that offer's existing pick page (stickers, FIRMWARE DROP, drag, CONTINUE
+  unchanged); a pick or SKIP there returns to the list with the row marked TAKEN: name / SKIPPED (view state, kept while
+  the phase is REWARD). Auto-paid Cycles and banked Schematics show as TAKEN rows (read once from the step's events).
+  PROCEED (pink verb, bottom right) leaves; it asks first (`ProceedConfirm`, "Leave N reward(s) behind?"). BACK on a pick
+  page returns to the list. Keyboard: the rows are focus buttons, arrows move, Enter opens.
+- **Rules.** `NetrunSession`: `reward_at(i)`, `choose_reward(index, slot, offer_index = 0)`, `skip_reward(offer_index = 0)`
+  and `proceed_rewards()` (= skipping every pick left). What is granted is unchanged (the resolver's payout, same
+  `_grant`); the defaults keep every old caller (bot, tests) the same. SKIP on a pick skips only that pick (F12 by design).
+  Test: `test_w4_rewards` (rows = the payout's offers for seeded sessions; take / skip each row = the old flow's end state;
+  out-of-order take; PROCEED = skip each; bad indices refused; the screen flow).
+- **Implementation choice (simplest GDD-consistent).** A payout with a single pick, and nothing settled yet, shows that
+  pick's page straight away (it is the only row; no extra click). The list shows from two picks, or once one is settled.
+  When the last pick is settled the session leaves REWARD as before (no PROCEED to press on an empty list).
+- **Open question for the designer.** Should a single-pick payout also show the list (Slay the Spire style), and should
+  the screen stay until PROCEED even when everything is taken? Each is a one-line change (`rewards_list_on`) plus a
+  session phase hold for the second.
+- US English; new text through `tools/export_text.gd`. No motion added.
+
 ### 2026-10-13 — Overnight run (designer away): wave 3 alongside gate PT-002, then waves 4+, then the animation pass
 Designer, 2026-10-13 evening: start wave 3 in parallel overnight, decide and log, continue to wave 4 and on; if work
 runs out, start the animation work; use Haiku and the Batch API as needed. Orchestrator calls:
@@ -6967,6 +6989,7 @@ Before covers 43 screens; after covers 53. The remaining findings are low-confid
 - Colour-blind support stays a daltonize correction (ART_BIBLE §12 says "remap").
 
 ## Open questions for the designer
+- **2026-10-13 W4-REWARDS, single-pick payouts**: the rewards list shows from two picks (or once one is settled); a payout with one pick shows that pick's page straight away, and the screen leaves when the last pick is settled (no PROCEED on an empty list). Slay the Spire keeps the list for one pick and waits for PROCEED: say if you want that (`rewards_list_on` plus a session phase hold).
 - **2026-10-11 12Q-RAID, hostile shape cue**: the raid's hazard ticks and reticles show only with the colour-blind setting on (default look unchanged). ART_BIBLE §5.1 says never colour alone: show them always (a deutan player who never opens Options sees red and lime both as yellow), or keep them behind the setting?
 - **2026-10-11 12Q-HQ, the HQ at text 2.0**: the selected Site's file pages one row a page (its header and foot take about 150 of the column's 215 px) and the crew hand shows two polaroids a page. Keep paging, or move JACK IN's system word beside the sticker at big text (bible 1.3 says under it) or the MAP KEY off the column to give the card its room?
 - **2026-10-11 BIG-TEXT b, letterhead at 1.0**: MERIDIAN FREIGHT SYSTEMS no longer runs under the work order's seal; at 1.0 it ends in an ellipsis ("MERIDIAN FREIGHT SYS…"), since the 1.0 size is the floor and a second line would grow the letterhead and fold the whole order at 1.0. Keep the ellipsis, or grow the letterhead (and fold), or a shorter letterhead name per corp (content)?
