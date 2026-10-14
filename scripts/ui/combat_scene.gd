@@ -237,7 +237,9 @@ func _ready() -> void:
 	_relayout.call_deferred()
 	if auto_start:
 		start_fight(ENEMY_CHOICES[0], int(_seed_spin.value))
-	if RunManager.pending_tutorial or (not Settings.tutorial_done and RunManager.profile.runs_completed == 0 and not _instant_playback()):
+	# W3B B3: the unprompted first-launch tutorial is for the stand-alone scene only; a netrun's fight (auto_start off,
+	# `attach_netrun` follows) never opens it, finished tutorial or not.
+	if RunManager.pending_tutorial or opens_tutorial_unprompted(_instant_playback()):
 		if RunManager.pending_tutorial:
 			for child in _picker_controls:
 				child.visible = false  # the fight picker is a dev tool, not the tutorial
@@ -247,8 +249,18 @@ func _ready() -> void:
 
 # --- Public (also used by the integration tests) ----------------------------------
 
+## Whether the first-launch tutorial opens without being asked: only in the stand-alone scene (`auto_start`), never a
+## netrun's fight (W3B B3), before any tutorial or run is finished, and not in an instant (headless / no-effects) playback.
+func opens_tutorial_unprompted(instant: bool) -> bool:
+	return auto_start and not Settings.tutorial_done and RunManager.profile.runs_completed == 0 and not instant
+
+
 func attach_netrun(netrun: NetrunSession) -> void:
 	_tutorial_run = false
+	RunManager.pending_tutorial = false
+	if tutorial != null and is_instance_valid(tutorial):  # W3B B3: never over a real fight
+		tutorial.queue_free()
+		tutorial = null
 	log_note.clear()
 	for child in _picker_controls:
 		child.visible = false
