@@ -304,9 +304,9 @@ func test_the_raids_heat_line_agrees_with_its_verdict_across_the_sweep() -> void
 						assert_false(line.to_lower().contains("lost"), "%s: the Heat line never says the raid was lost (%s / %s)" % [tag, line, verdict.replace("\n", " ")])
 						var reached := int(r.get("home_after", 0)) < int(r.get("home_before", 0))
 						if reached:
-							assert_string_contains(line, tr("CORE"), "%s: home was hit: the line names what reached CORE" % tag)
+							assert_string_contains(line, tr("HOME SERVER"), "%s: home was hit: the line names what reached the HOME SERVER" % tag)
 						else:
-							assert_false(line.contains(tr("CORE")), "%s: nothing reached CORE (%s)" % [tag, verdict.replace("\n", " ")])
+							assert_false(line.contains(tr("HOME SERVER")), "%s: nothing reached the HOME SERVER (%s)" % [tag, verdict.replace("\n", " ")])
 						assert_string_contains(line, "%d → %d" % [int(e["before"]), int(e["after"])], "%s: from and to" % tag)
 	assert_gt(told, 5, "raids that raised Heat were told")
 	assert_false(FileAccess.get_file_as_string("res://assets/text/strings.csv").contains("for the lost raid"), "the old line is gone from the catalogue")

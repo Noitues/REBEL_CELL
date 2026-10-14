@@ -85,6 +85,7 @@ static func socket_spec(site_id: StringName, res: Dictionary, forecast: bool, c:
 	var most := c.grid.home_max_integrity if home else maxi(1, int(s.get("max_integrity", 1)))
 	var state := RaidSocket.STATE_DOWN if not c.grid.is_active_node(site_id) else RaidSocket.STATE_HOLDS
 	var spec := {"glyph": glyph, "state": state, "health": float(integ) / float(maxi(1, most)), "max": most}
+	spec["defence"] = c.grid.assets_on(site_id).size()  # F17: placed defences show on the node itself
 	# The R3 class beacon of the operative stationed there (RaidBeaconLayer).
 	var op_id := c.grid.stationed_on(site_id)
 	if op_id != &"":

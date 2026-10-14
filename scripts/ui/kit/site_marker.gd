@@ -113,7 +113,7 @@ const MEANINGS := {
 	"taken": "Seizure notice: TAKEN, the corporation took the Site back. Run a Reclaim (one fight) to retake it; it is a raid entry point.", # TR
 	"exploit": "Gold key: an Exploit Site (always T2). It holds one Exploit; you need 3 to breach the Central Server. Point at it for the Exploit.", # TR
 	"heat": "Flame: a Heat objective Site. Clearing it lowers Heat.", # TR
-	"core": "Heart: CORE, your home server. If its integrity reaches 0 you lose the campaign.", # TR
+	"core": "Heart: your HOME SERVER. If its integrity reaches 0 you lose the campaign.", # TR
 	"pips": "Pips: the Site's tier, 1 to 3 (harder runs, better rewards). Gold pips: an Exploit Site.", # TR
 	"target": "TARGET: the Central Server, the boss fight. The chip counts your Exploits.", # TR
 	"locked": "Padlock: a locked link. An Intel Exploit or an objective opens it.", # TR

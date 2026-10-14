@@ -16,8 +16,9 @@ const SECONDS_PER_CHAR := 0.045
 ## Room round the words (px at text scale 1.0).
 const PAD := Vector2(14, 7)
 const NODE_NAME := "CorpNews"
-## The most lines the words take.
-const LINES := 2
+## C9 (W3-RAID): no line cap and no ellipsis (-1): the intercept message shows whole; the
+## strip grows up from the foot.
+const LINES := -1
 
 var holo: DecryptedHoloPanel
 var label: Label
@@ -52,7 +53,7 @@ func _init(corporation: StringName = &"halcyon") -> void:
 	# mid-word; the whole of it is in the tooltip).
 	UiWrap.whole_words(label)
 	label.max_lines_visible = LINES
-	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_WORD_ELLIPSIS
+	label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(label)
 

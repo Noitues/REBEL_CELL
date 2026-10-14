@@ -224,7 +224,7 @@ static func voice(set: LineSetData, index: int) -> String:
 ## Screen sentences that are not content (H23 S5: the raid setup's opening line), by key;
 ## exported with the content strings so translators see them.
 const UI_TEXT := {
-	"ui.raid_intro": "The corp is raiding your CORE. Place defenses to cut the damage, then START DEFENSE.",
+	"ui.raid_intro": "The corp is raiding your HOME SERVER. Place defenses to cut the damage, then START DEFENSE.",
 }
 
 

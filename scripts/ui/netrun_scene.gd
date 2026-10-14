@@ -25,7 +25,7 @@ const PAUSE_TOP := 100.0
 ## ART-7 3B (ART_BIBLE v2 4.6 option A): the selectable ring's orange.
 const ROUTE_NEXT_COLOR := RouteInk.RING_AVAILABLE
 ## The home server's name (as the HQ shows it; never its id).
-const HOME_LABEL := "CORE" # TR
+const HOME_LABEL := "HOME SERVER" # TR
 ## The Mainframe's quadrant (px) and the room its window frame and title take (px): shop cards
 ## grow with the text size only as far as a quadrant holds them (H21 #15).
 const MAINFRAME_QUAD := Vector2(490, 250)
@@ -5106,7 +5106,7 @@ func _raid_forecast(projection: RaidResolver.RaidResult) -> Control:
 	var c := RunManager.netrun.campaign
 	var home_col := Palette.CELL_ACID if projection.home_after >= projection.home_before else Palette.CELL_PINK
 	var home := Badge.new(tr("HOME %d → %d") % [projection.home_before, projection.home_after], home_col, "",
-		tr("Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.") % [projection.home_before, projection.home_after]).with_meter(projection.home_after, c.grid.home_max_integrity).with_icon(StatIcon.HOME)
+		tr("Your home server now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.") % [projection.home_before, projection.home_after]).with_meter(projection.home_after, c.grid.home_max_integrity).with_icon(StatIcon.HOME)
 	home.name = "HomeForecast"
 	facts.add_child(home)
 	var total := projection.threats_destroyed + projection.threats_reached_home

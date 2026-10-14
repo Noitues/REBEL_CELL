@@ -47,6 +47,11 @@ const HALF := Vector2(1.5, 1.5)
 const HP_STEPS: Array[int] = [100, 75, 50, 25]
 ## DOWN: the bolt's size (x radius) and keyline width (x its size).
 const BOLT := 1.25
+## F17: the defence ring (x the icon radius), the pips' size, step and lift over the ring.
+const PIP_RING := 1.32
+const PIP_R := 0.16
+const PIP_STEP := 0.5
+const PIP_LIFT := 0.22
 const BOLT_W := 0.16
 
 static var _cache: Dictionary = {}
@@ -120,6 +125,21 @@ static func draw(ci: CanvasItem, c: Vector2, r: float, spec: Dictionary) -> void
 		ci.draw_texture_rect(tex, rect(c, r), false, Color(Palette.NO_TINT, alpha))
 	if String(spec.get("state", STATE_HOLDS)) == STATE_DOWN:
 		bolt(ci, c, r * BOLT, alpha)
+	var defence := int(spec.get("defence", 0))
+	if defence > 0:
+		defence_pips(ci, c, r, defence, alpha)
+
+
+## F17 (W3-RAID): a defence on this node shows on the node itself: a pink ring round the
+## socket and one pink pip a defence on its crown.
+static func defence_pips(ci: CanvasItem, c: Vector2, r: float, count: int, alpha: float = 1.0) -> void:
+	ci.draw_arc(c, r * PIP_RING, 0.0, TAU, 32, Color(Palette.CELL_PINK, 0.9 * alpha), maxf(2.0, r * 0.12), true)
+	var step := r * PIP_STEP
+	var top := c + Vector2(-(count - 1) * 0.5 * step, -r * PIP_RING - r * PIP_LIFT)
+	for i in count:
+		var at := top + Vector2(i * step, 0.0)
+		ci.draw_circle(at, r * PIP_R * 1.5, Color(Palette.NIGHT_SKY, 0.9 * alpha))
+		ci.draw_circle(at, r * PIP_R, Color(Palette.CELL_PINK, alpha))
 
 
 ## The Site markers' DOWN mark (§4.5, ruling 11): a white lightning bolt across the marker on

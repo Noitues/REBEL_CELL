@@ -201,7 +201,7 @@ A needle lands on NULL: no slice fires. Cold Exit and Fault Tolerance look for t
 A needle of %s lands on NULL: no slice fires.,A needle of %s lands on NULL: no slice fires.
 "A patrol: loot, Heat and Rank from the run, no objective.","A patrol: loot, Heat and Rank from the run, no objective."
 A raid is pending: JACK IN now and it hits your network as an interlude in the run (or defend first: RAID SETUP).,A raid is pending: JACK IN now and it hits your network as an interlude in the run (or defend first: RAID SETUP).
-A raid's route toward your CORE.,A raid's route toward your CORE.
+A raid's route toward your HOME SERVER.,A raid's route toward your HOME SERVER.
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
 A random roll: the odds are in the breakdown,A random roll: the odds are in the breakdown
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
@@ -345,9 +345,6 @@ CONNECTING,CONNECTING
 CONNECTING TO,CONNECTING TO
 CONTAINMENT OFFICE,CONTAINMENT OFFICE
 CONTINUE,CONTINUE
-CORE,CORE
-CORE (home),CORE (home)
-CORE (house): your home server; if its integrity reaches 0 the campaign is lost.,CORE (house): your home server; if its integrity reaches 0 the campaign is lost.
 CORP DOWN,CORP DOWN
 CORP NEWS // %s. The story so far is in the Codex (pause menu).,CORP NEWS // %s. The story so far is in the Codex (pause menu).
 CORPORATE,CORPORATE
@@ -897,7 +894,6 @@ Exploit Site,Exploit Site
 Exploit Site (diamond): clearing it gives an Exploit for the Central Server breach.,Exploit Site (diamond): clearing it gives an Exploit for the Central Server breach.
 Exploits,Exploits
 Exploits found: %s. The breach on the corporation's core needs %d.,Exploits found: %s. The breach on the corporation's core needs %d.
-FAILED,FAILED
 FIGHT,FIGHT
 FIGHT WON,FIGHT WON
 FILED,FILED
@@ -1008,14 +1004,16 @@ HOLDS,HOLDS
 HOLDS %d STEPS,HOLDS %d STEPS
 HOLDS: the node survives and keeps fighting.,HOLDS: the node survives and keeps fighting.
 HOME,HOME
-HOME %d > %d,HOME %d > %d
 HOME %d → %d,HOME %d → %d
 HOME %s,HOME %s
 HOME %s · HOLDS,HOME %s · HOLDS
 HOME FELL,HOME FELL
 HOME HOLDS,HOME HOLDS
+HOME SERVER,HOME SERVER
 HOME SERVER  %02d/%d   //   NODES ENCRYPTED  %d/%d,HOME SERVER  %02d/%d   //   NODES ENCRYPTED  %d/%d
+HOME SERVER %d > %d,HOME SERVER %d > %d
 HOME SERVER - %d/%d,HOME SERVER - %d/%d
+HOME SERVER: your network's heart; if its integrity reaches 0 the campaign is lost.,HOME SERVER: your network's heart; if its integrity reaches 0 the campaign is lost.
 HOSTILE HOME SERVER,HOSTILE HOME SERVER
 HOSTILE NODES DOWN,HOSTILE NODES DOWN
 HOTFIX,HOTFIX
@@ -1037,7 +1035,7 @@ HQ: %s,HQ: %s
 HUB,HUB
 HUB BREACH,HUB BREACH
 HUB CORE,HUB CORE
-"Heart: CORE, your home server. If its integrity reaches 0 you lose the campaign.","Heart: CORE, your home server. If its integrity reaches 0 you lose the campaign."
+Heart: your HOME SERVER. If its integrity reaches 0 you lose the campaign.,Heart: your HOME SERVER. If its integrity reaches 0 you lose the campaign.
 Heat,Heat
 Heat %d,Heat %d
 Heat %d crossed: %s,Heat %d crossed: %s
@@ -1077,8 +1075,8 @@ HeatThresholdData.heat_75.event_text,"A raid is queued. While Heat stays at 75 o
 HeatThresholdData.heat_80.event_text,The next netrun's Mainframe carries one item fewer.
 HeatThresholdData.heat_90.event_text,An extra elite patrols the next netrun.
 "High contrast (opaque panels, 7:1 text and thick edges)","High contrast (opaque panels, 7:1 text and thick edges)"
-Home integrity before and after the raid.,Home integrity before and after the raid.
 Home server,Home server
+Home server integrity before and after the raid.,Home server integrity before and after the raid.
 Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.,Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.
 Home server:,Home server:
 Home servers,Home servers
@@ -1649,6 +1647,8 @@ NEXT OPERATIVE >,NEXT OPERATIVE >
 NEXT RUN'S BOOSTS,NEXT RUN'S BOOSTS
 NEXT TURN %d,NEXT TURN %d
 NO CHANGE,NO CHANGE
+NO CREW,NO CREW
+NO CREW: nobody is left to help your nodes.,NO CREW: nobody is left to help your nodes.
 NO DAMAGE,NO DAMAGE
 NO EFFECT,NO EFFECT
 NO GAIN,NO GAIN
@@ -1757,7 +1757,6 @@ OPTIONS,OPTIONS
 OPTIONS > DISPLAY: SHOW ALL NODES,OPTIONS > DISPLAY: SHOW ALL NODES
 ORDERS,ORDERS
 OURS NOW,OURS NOW
-OURS! +%d,OURS! +%d
 OUTCOME,OUTCOME
 OUTER,OUTER
 OVERCLOCKED,OVERCLOCKED
@@ -1793,7 +1792,7 @@ PARASITE,PARASITE
 PARKED,PARKED
 PASSED,PASSED
 PATCH,PATCH
-PATCH CORE: +%d integrity (%d Schematics).,PATCH CORE: +%d integrity (%d Schematics).
+PATCH HOME SERVER: +%d integrity (%d Schematics).,PATCH HOME SERVER: +%d integrity (%d Schematics).
 PATIENT RECOVERY  //  COLLECTIONS  //  COMPLIANCE,PATIENT RECOVERY  //  COLLECTIONS  //  COMPLIANCE
 PATROL IT INSTEAD,PATROL IT INSTEAD
 "PATROL: loot, Heat and Rank, no objective.","PATROL: loot, Heat and Rank, no objective."
@@ -1849,8 +1848,8 @@ Press it to play.,Press it to play.
 "Press it, then pick a glowing target.","Press it, then pick a glowing target."
 "Press to hire (it joins the crew), or drag it onto the CREW tab.","Press to hire (it joins the crew), or drag it onto the CREW tab."
 "Press to hire (it joins the crew), or pick it up and move it onto the CREW tab.","Press to hire (it joins the crew), or pick it up and move it onto the CREW tab."
-"Press to pick them as the runner. Drag the card onto one of your nodes to station them there, or onto CORE to bring them back.","Press to pick them as the runner. Drag the card onto one of your nodes to station them there, or onto CORE to bring them back."
-"Press to pick them as the runner. Pick the card up and move it onto one of your nodes to station them there, or onto CORE to bring them back.","Press to pick them as the runner. Pick the card up and move it onto one of your nodes to station them there, or onto CORE to bring them back."
+"Press to pick them as the runner. Drag the card onto one of your nodes to station them there, or onto your HOME SERVER to bring them back.","Press to pick them as the runner. Drag the card onto one of your nodes to station them there, or onto your HOME SERVER to bring them back."
+"Press to pick them as the runner. Pick the card up and move it onto one of your nodes to station them there, or onto your HOME SERVER to bring them back.","Press to pick them as the runner. Pick the card up and move it onto one of your nodes to station them there, or onto your HOME SERVER to bring them back."
 "Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s.","Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s."
 ProfileUnlockData.unlock_botnet.description,Recruit Botnet operatives in every campaign.
 ProfileUnlockData.unlock_botnet.display_name,Class: Botnet
@@ -1962,7 +1961,6 @@ RETALIATION,RETALIATION
 REWARDS,REWARDS
 RIGHT STICK,RIGHT STICK
 RING LOCK,RING LOCK
-RIP,RIP
 ROUTE,ROUTE
 ROUTE // pick the next node,ROUTE // pick the next node
 ROUTE VIEW,ROUTE VIEW
@@ -2071,6 +2069,7 @@ Rank,Rank
 Rank: runs survived. It brings wheel upgrades and higher netrun tiers.,Rank: runs survived. It brings wheel upgrades and higher netrun tiers.
 Reads %s now.,Reads %s now.
 Recall %s,Recall %s
+"Recruit or revive an operative at HQ first, or the raid hits an unaided network.","Recruit or revive an operative at HQ first, or the raid hits an unaided network."
 "Reduce effects (no scanlines, flicker, chromatic or distortion)","Reduce effects (no scanlines, flicker, chromatic or distortion)"
 Reduce motion (no camera moves or parallax; pages cross-fade),Reduce motion (no camera moves or parallax; pages cross-fade)
 Remove a card from your deck: %d Cycles (you have %d).,Remove a card from your deck: %d Cycles (you have %d).
@@ -2157,13 +2156,11 @@ STATUSES (on a slice),STATUSES (on a slice)
 STEP %d/%d,STEP %d/%d
 STEP -- / %d,STEP -- / %d
 STOOD DOWN  (operations abandoned),STOOD DOWN  (operations abandoned)
-STOPPED,STOPPED
 STOPPED %d/%d,STOPPED %d/%d
 STRENGTH,STRENGTH
 STRENGTH %s%%,STRENGTH %s%%
 SUBJECT,SUBJECT
 SUBJECT: REBEL_CELL,SUBJECT: REBEL_CELL
-SUCCESS,SUCCESS
 SUSPECT FILE (HEAT),SUSPECT FILE (HEAT)
 SYSTEM,SYSTEM
 "SYSTEM: guards, RAM, draws and the rest.","SYSTEM: guards, RAM, draws and the rest."
@@ -2854,10 +2851,10 @@ THE MAINFRAME,THE MAINFRAME
 THE SPRAWL,THE SPRAWL
 THE TARGET,THE TARGET
 THE WHEEL,THE WHEEL
-THEY LOST %d,THEY LOST %d
 THIS RUN,THIS RUN
 THIS TURN,THIS TURN
 THREAT INTEL // SCAN,THREAT INTEL // SCAN
+THREATS STOPPED,THREATS STOPPED
 TIER,TIER
 TITLE,TITLE
 TLE OC-55 / DECAY,TLE OC-55 / DECAY
@@ -3171,7 +3168,7 @@ Then you can go to: %s.,Then you can go to: %s.
 "There is more further down this page: scroll, or press this.","There is more further down this page: scroll, or press this."
 "There is more further up this page: scroll, or press this.","There is more further up this page: scroll, or press this."
 This Site's Heat objective is switched off at this ICE level.,This Site's Heat objective is switched off at this ICE level.
-"This is your CORE, your home server: you defend it in raids; you never run it.","This is your CORE, your home server: you defend it in raids; you never run it."
+This is your HOME SERVER: you defend it in raids; you never run it.,This is your HOME SERVER: you defend it in raids; you never run it.
 "This run's numbers: the operative's HP, the Cycles to spend, the deck, rank and what the run has banked.","This run's numbers: the operative's HP, the Cycles to spend, the deck, rank and what the run has banked."
 This tag shows where the needle lands after this play.,This tag shows where the needle lands after this play.
 ThreatData.auditor.display_name,Auditor
@@ -3269,16 +3266,17 @@ YOUR %s,YOUR %s
 YOUR CELL HAS BEEN PROCESSED,YOUR CELL HAS BEEN PROCESSED
 YOUR CELL HAS BEEN TREATED,YOUR CELL HAS BEEN TREATED
 YOUR NETWORK,YOUR NETWORK
-"YOUR NETWORK, folded to its CORE: point at it or focus it for every node.","YOUR NETWORK, folded to its CORE: point at it or focus it for every node."
+"YOUR NETWORK, folded to your HOME SERVER: point at it or focus it for every node.","YOUR NETWORK, folded to your HOME SERVER: point at it or focus it for every node."
 YOUR WHEEL,YOUR WHEEL
 YOURS,YOURS
 You are here.,You are here.
 You can move here now.,You can move here now.
+You have no crew. Start the defense anyway?,You have no crew. Start the defense anyway?
 "Your %s, if you play it:","Your %s, if you play it:"
 Your campaign is autosaved.,Your campaign is autosaved.
 Your campaign is saved: BREACH on the title picks it up.,Your campaign is saved: BREACH on the title picks it up.
-Your home Site (CORE),Your home Site (CORE)
-Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.,Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.
+Your home server Site,Your home server Site
+Your home server now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.,Your home server now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.
 Your play turns %s's wheel: its needle goes from %s to %s.,Your play turns %s's wheel: its needle goes from %s to %s.
 Your play turns this %s by %d ticks: its needle lands somewhere new.,Your play turns this %s by %d ticks: its needle lands somewhere new.
 Your play turns your wheel: its needle goes from %s to %s.,Your play turns your wheel: its needle goes from %s to %s.
@@ -3441,7 +3439,7 @@ threat,threat
 threat route,threat route
 threats route to it,threats route to it
 toggle,toggle
-ui.raid_intro,"The corp is raiding your CORE. Place defenses to cut the damage, then START DEFENSE."
+ui.raid_intro,"The corp is raiding your HOME SERVER. Place defenses to cut the damage, then START DEFENSE."
 undock_handler,undock_handler
 unlock %d,unlock %d
 voice only // transcript,voice only // transcript

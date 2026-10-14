@@ -916,6 +916,12 @@ static func raid_data(pending: Dictionary, lookup: ContentLookup) -> RaidData:
 	return lookup.get_content(raid_id) as RaidData
 
 
+## C9 (W3-RAID): true when the Cell has no living crew (operatives) at all when a raid is set to
+## start: the raid setup warns and START DEFENSE asks first (it stays allowed).
+static func raid_crew_warning(campaign: CampaignState) -> bool:
+	return campaign != null and campaign.living_operatives().is_empty()
+
+
 static func raid_entries(campaign: CampaignState, corp: CorporationData, pending: Dictionary) -> Array[StringName]:
 	var site := String(pending.get("site_id", ""))
 	if site != "":

@@ -1,28 +1,23 @@
 class_name RaidReportPencil
 extends Control
-## ART-6 3A: the Cell's grease pencil on the intercepted after-action report (ART_BIBLE v2
-## §4.8 "Raid report", round 21 `raid_report`): what we gained and they lost circled in our
-## yellow ("THEY LOST 6", "OURS! +12"), RIP in red by the Sites they reclaimed, a tick by our
-## home server when it held. Each mark writes on after the last (`raid_mark_write`, real time;
-## one press ends them; all at once when motion doesn't play). A full-screen layer over the
-## page (no UI ever covers grease pencil); it reads where the report's rows are and takes no
-## input. View only.
+## ART-6 3A / R8 (W3-RAID): the Cell's grease pencil on the intercepted after-action report
+## (ART_BIBLE v2 §4.8 "Raid report"). R8: only one pencil word is left, CELL HOLDS, written at
+## the spot the report keeps for it ("CellHolds", a plain Control sized to the word) in our
+## yellow: no circles, no checks, no THEY LOST / OURS / RIP. It writes on (`raid_mark_write`,
+## real time; one press ends it; at once when motion doesn't play). A full-screen layer over the
+## page (no UI ever covers grease pencil); it takes no input. View only.
 
-const THEY_LOST := "THEY LOST %d" # TR
-const OURS := "OURS! +%d" # TR
-const RIP := "RIP" # TR
 const WRITE := &"raid_mark_write"
-## Pencil: the words' type step, the gap to the paper (px); the gap between
-## marks (x a write).
+## Pencil: the word's type step (a title step) and its slant (rad).
 const WORD_STEP := UiTheme.TITLE
-const NOTE_GAP := 18.0
-const GAP_SHARE := 0.6
+const WORD_TILT := -0.1
 
 var report: Control
 var result: Dictionary = {}
 var held: bool = true
 var reward: int = -1
 var _t: float = 0.0
+var _pool: RaidPencilPool = null
 
 
 func _init(p_report: Control = null, p_result: Dictionary = {}, p_held: bool = true, p_reward: int = -1) -> void:
@@ -52,79 +47,44 @@ func _exit_tree() -> void:
 
 
 func _total() -> float:
-	return (Motion.entry(WRITE).duration if Motion.entry(WRITE) != null else 0.4) * (1.0 + GAP_SHARE) * 5.0
+	return Motion.entry(WRITE).duration if Motion.entry(WRITE) != null else 0.4
 
 
-## MotionSkip: marks still writing.
+## MotionSkip: the mark still writing.
 func motion_running() -> bool:
 	return _t < _total()
 
 
-## MotionSkip: every mark written.
+## MotionSkip: the mark written.
 func complete_motion() -> void:
 	_t = INF
 
 
-## The report row value named `value_name` (global rect; empty when missing).
-func _value_rect(value_name: String) -> Rect2:
+## The pencil words on show now (their texts): CELL HOLDS when the Cell held, else none.
+func words() -> PackedStringArray:
+	var out := PackedStringArray()
+	if held and _spot().has_area():
+		out.append(tr(RaidVerdict.CELL_HOLDS))
+	return out
+
+
+## The spot the report keeps for CELL HOLDS (global rect; empty when missing).
+func _spot() -> Rect2:
 	if report == null or not is_instance_valid(report):
 		return Rect2()
-	var l := report.find_child(value_name, true, false) as Control
+	var l := report.find_child("CellHolds", true, false) as Control
 	if l == null or not l.is_visible_in_tree():
 		return Rect2()
 	return l.get_global_rect()
 
 
-func _u(i: int) -> float:
-	var w := Motion.entry(WRITE).duration if Motion.entry(WRITE) != null else 0.4
-	return clampf((_t - i * w * (1.0 + GAP_SHARE)) / maxf(w, 0.001), 0.0, 1.0)
-
-
-## Lays the Cell's marks on 1B's grease pencil (RaidPencilPool, above the paper and every panel).
+## Lays CELL HOLDS on 1B's grease pencil (RaidPencilPool, above the paper and every panel).
 func _lay() -> void:
 	if _pool == null:
 		_pool = RaidPencilPool.make(self)
 	_pool.begin()
-	var plan := GreasePencilMark.Ink.PLAN
-	var threat := GreasePencilMark.Ink.THREAT
-	var i := 0
-	var destroyed := int(result.get("threats_destroyed", 0))
-	var units := _value_rect("ReportUnits")
-	if units.has_area() and destroyed > 0:
-		var u := _u(i)
-		_pool.stroke("units", [PencilShapes.hand_circle(units.get_center(), Vector2(units.size.x * 0.62 + 6.0, units.size.y * 0.8), 11)], plan, u, 0.0, false, 11)
-		_side_word("lost", tr(THEY_LOST) % destroyed, units, plan, u)
-		i += 1
-	var reward_r := _value_rect("ReportReward")
-	if reward_r.has_area() and reward > 0:
-		var u := _u(i)
-		_pool.stroke("reward", [PencilShapes.hand_circle(reward_r.get_center(), Vector2(reward_r.size.x * 0.6 + 6.0, reward_r.size.y * 0.8), 23)], plan, u, 0.0, false, 23)
-		_side_word("ours", tr(OURS) % reward, reward_r, plan, u)
-		i += 1
-	var rec := _value_rect("ReportReclaimed")
-	if rec.has_area():
-		var w := RaidPencilPool.word_size(tr(RIP), WORD_STEP)
-		_pool.word("rip", tr(RIP), rec.position + Vector2(-w.x * 0.7, rec.size.y * 0.5), WORD_STEP, threat, 1.0, _u(i), 0.0, -0.1)
-		i += 1
-	var home := _value_rect("ReportHome")
-	if home.has_area() and int(result.get("home_after", 0)) >= int(result.get("home_before", 0)) and held:
-		var s := home.size.y * 0.9
-		var tc := home.position + Vector2(-s, home.size.y * 0.5)
-		_pool.stroke("tick", [PackedVector2Array([tc + Vector2(-s * 0.5, 0), tc + Vector2(-s * 0.1, s * 0.4), tc + Vector2(s * 0.6, -s * 0.55)])], plan, _u(i), 0.0, false, 41)
+	var spot := _spot()
+	if held and spot.has_area():
+		var u := clampf(_t / maxf(_total(), 0.001), 0.0, 1.0)
+		_pool.word("holds", tr(RaidVerdict.CELL_HOLDS), spot.get_center(), WORD_STEP, GreasePencilMark.Ink.PLAN, 1.0, u, 0.0, WORD_TILT)
 	_pool.end()
-
-
-## A pencil note left of the report with an arrow to the circled value ("THEY LOST 6 ->").
-func _side_word(key: String, text: String, at: Rect2, ink: GreasePencilMark.Ink, u: float) -> void:
-	var size := RaidPencilPool.word_size(text, WORD_STEP)
-	var paper := report.get_global_rect()
-	var c := Vector2(paper.position.x - size.x * 0.55 - NOTE_GAP, at.get_center().y)
-	_pool.word(key, text, c, WORD_STEP, ink, 1.0, u, 0.0, -0.05)
-	var from := c + Vector2(size.x * 0.5 + NOTE_GAP * 0.2, 0)
-	var to := Vector2(at.position.x - NOTE_GAP * 0.5, at.get_center().y)
-	if to.x > from.x:
-		var shaft := PencilShapes.bezier(from, (from + to) * 0.5 + Vector2(0, -NOTE_GAP * 0.4), to, 16)
-		_pool.stroke(key + "_arrow", PencilShapes.arrow(shaft, GreasePencilMark.stroke_width() * 2.5, 5), ink, u, 0.0, false, 5)
-
-
-var _pool: RaidPencilPool = null
