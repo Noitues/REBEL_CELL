@@ -473,6 +473,11 @@ func note_rect() -> Rect2:
 	var best_w := 0.0
 	for share in NOTE_SHARES:
 		var w := note_width() * share
+		# W3-HQ F2: the foot band first (centered, at the screen's bottom), where the toasts stand.
+		var foot := _foot_spot(note_size(w))
+		if foot.has_area() and _cover_of(foot, avoid) <= 0.0 and not foot.intersects(get_global_rect().grow(-1.0)):
+			_note_w = w
+			return foot
 		var found := _note_spot(note_size(w), avoid)
 		if float(found[1]) <= 0.0:
 			_note_w = w
@@ -483,6 +488,24 @@ func note_rect() -> Rect2:
 			best_w = w
 	_note_w = best_w
 	return best
+
+
+## W3-HQ F2: the foot band's spot for a note of size `s` (centered, ToastNote.BOTTOM_GAP above the
+## screen's bottom); an empty rect when the poster is not in the tree.
+func _foot_spot(s: Vector2) -> Rect2:
+	if not is_inside_tree():
+		return Rect2()
+	var screen := get_viewport_rect()
+	return Rect2(Vector2(screen.position.x + (screen.size.x - s.x) * 0.5, screen.end.y - ToastNote.BOTTOM_GAP - s.y), s)
+
+
+## The area of `avoid` that `r` covers (px²).
+static func _cover_of(r: Rect2, avoid: Array[Rect2]) -> float:
+	var cover := 0.0
+	for o in avoid:
+		if o.intersects(r):
+			cover += o.intersection(r).get_area()
+	return cover
 
 
 ## The spot for a note of size `s` covering the least of `avoid`: [rect, covered area].

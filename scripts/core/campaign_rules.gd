@@ -194,6 +194,25 @@ static func launch_error(campaign: CampaignState, corp: CorporationData, config:
 	return ""
 
 
+## W3-HQ C6: true when at least one living operative may launch at `site` (JACK IN is enabled
+## exactly then; the same `launch_error` the launch itself uses).
+static func can_deploy(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, lookup: ContentLookup, site: SiteData) -> bool:
+	if site == null:
+		return false
+	for op in campaign.living_operatives():
+		var cls := lookup.get_content(op.class_id) as ClassData
+		if launch_error(campaign, corp, config, op, cls, site) == "":
+			return true
+	return false
+
+
+## W3-HQ C6: true when every operative is flatlined (or none exists): the crew has to be
+## rebuilt by a recruit (`rookie_price` is then the emergency price, which is 0 in the shipped
+## config: the campaign never dead-ends with 0 Schematics).
+static func needs_crew(campaign: CampaignState) -> bool:
+	return campaign.living_operatives().is_empty()
+
+
 ## "netrun", "patrol", "boss" or "reclaim" for a launch at `site`. A patrol plays as a
 ## full netrun (NetrunSession kind "netrun"); only its completion differs.
 static func run_kind_for(campaign: CampaignState, site: SiteData) -> String:

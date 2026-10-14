@@ -890,6 +890,7 @@ Entering it changes Heat by %s.,Entering it changes Heat by %s.
 Event,Event
 "Event: a choice, and its price","Event: a choice, and its price"
 "Every Rack you capture banks Schematics for the Cell and adds Heat. Heat thresholds bring raids on your home server. Bank early, cool off at Heat objectives, and never leave loot unbanked when you jack out.","Every Rack you capture banks Schematics for the Cell and adds Heat. Heat thresholds bring raids on your home server. Bank early, cool off at Heat objectives, and never leave loot unbanked when you jack out."
+Every operative is flatlined. Press to hire a %s rookie (%s); then JACK IN.,Every operative is flatlined. Press to hire a %s rookie (%s); then JACK IN.
 "Everything the Cell knows: slices, cards, Firmware, Daemons, rules.","Everything the Cell knows: slices, cards, Firmware, Daemons, rules."
 Exploit,Exploit
 Exploit Heat,Exploit Heat
@@ -1722,7 +1723,7 @@ No campaign is saved yet: OVERTHROW starts one.,No campaign is saved yet: OVERTH
 No campaign.,No campaign.
 No change to your numbers.,No change to your numbers.
 No living operative or open Site: go to HQ.,No living operative or open Site: go to HQ.
-"No operative can run it now. Recruit or rest your crew at the HQ, then come back.","No operative can run it now. Recruit or rest your crew at the HQ, then come back."
+"No operative is alive. Open the CREW tab and hire a rookie (free when nobody is left), then JACK IN.","No operative is alive. Open the CREW tab and hire a rookie (free when nobody is left), then JACK IN."
 No threats can reach your network.,No threats can reach your network.
 Node upgrade level %d.,Node upgrade level %d.
 Nodes,Nodes

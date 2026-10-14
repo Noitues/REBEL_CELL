@@ -293,6 +293,10 @@
 			"seconds": 21.3,
 			"tier": "full"
 		},
+		"res://tests/unit/test_w3_hq_crew.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_horizontal_pass11.gd": {
 			"seconds": 0.3,
 			"tier": "fast"
