@@ -35,6 +35,11 @@ func before_each() -> void:
 	RunManager.delete_save()
 	RunManager.reset()
 	Motion.force_live = false
+	# Hermetic against an earlier script in the shard: the sticker delay is read from the motion table
+	# at speed 1 with no swapped config and a running clock (the loot-deal test needs a delay to hold).
+	Motion.set_speed(1.0)
+	Motion.use_config(null)
+	Engine.time_scale = 1.0
 
 
 func after_each() -> void:

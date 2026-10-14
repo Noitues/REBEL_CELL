@@ -687,6 +687,9 @@ func test_next_pulses_when_it_moves_the_tutorial_on() -> void:
 	t.step = 1  # NUDGE: a nudge ends it
 	t.page = 0
 	t.fit(Vector2(300, 400))
+	# plan1 W2-A5 made the NUDGE step longer: on an earlier page Next pulses (a page to turn), so look at its last page.
+	t.page = t.pages().size() - 1
+	t.fit(Vector2(300, 400))
 	assert_false(t.next_pulsing(), "a step a play ends: Next stays still")
 	t.step = 2  # RESISTANCE: only Next (or the turn) ends it
 	t.fit(Vector2(300, 400))

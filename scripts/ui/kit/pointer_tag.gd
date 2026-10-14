@@ -9,7 +9,7 @@ const NULL_WORD := "NULL" # TR
 const TIP_HEAD := "PRECISION TAG: how well this needle lands on its slice." # TR
 const TIP_NULL := "NULL: the needle sits on a NULL slice, so nothing happens." # TR
 const TIP_AFTER_ENEMY := "It shows where the needle lands after this play." # TR
-const TIP_AFTER_YOU := "It follows the plays you queue or hover: this is the tier SEND IT resolves." # TR
+const TIP_AFTER_YOU := "It follows the plays you queue or aim: this is the tier SEND IT resolves." # TR
 const TIP_NOW := "Reads %s now." # TR
 
 
