@@ -1220,10 +1220,14 @@ func _process(_delta: float) -> void:
 		var ctl := c as Control
 		if not ctl.is_visible_in_tree():
 			continue
-		if (ctl.has_meta(UiScrimPools.META_POOL) or ctl is BaseButton) and word_covered_by(word, ctl.get_global_rect()):
+		if word_blocked_by(word, ctl, get_viewport_rect()):
 			ink.visible = false
 			_ours_watch = false
 			return
+	# ART-R2 7: the pencil stays inside the safe margin too (never off an edge).
+	if not word_in_safe_margin(word, get_viewport_rect()):
+		ink.visible = false
+		_ours_watch = false
 
 
 ## True when screen rect `r` covers any of pencil word `word` (its tilted letters' box with their shadow: the two
@@ -1235,6 +1239,30 @@ static func word_covered_by(word: GreasePencilWord, r: Rect2) -> bool:
 	local.end += GreasePencilMark.SHADOW_OFFSET
 	var xf := word.get_global_transform()
 	return (xf * local).intersects(r) and local.intersects(xf.affine_inverse() * r)
+
+
+## ART-R2 7: true when control `ctl` (visible) is UI the pencil may not touch: a panel's scrim pool, a button, or
+## any control that takes the mouse (a chip, a sheet) that is not the page's full-screen host, and the word meets it.
+static func word_blocked_by(word: GreasePencilWord, ctl: Control, screen: Rect2) -> bool:
+	var ui := ctl.has_meta(UiScrimPools.META_POOL) or ctl is BaseButton
+	if not ui and ctl.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+		ui = ctl.get_global_rect().get_area() < screen.get_area() * LOOT_HOST_SHARE
+	return ui and word_covered_by(word, ctl.get_global_rect())
+
+
+## ART-R2 7: true when the word's tilted letters (with their shadow) lie inside `screen` shrunk by the sticker safe
+## margin (UiTheme.SAFE_MARGIN x text scale).
+static func word_in_safe_margin(word: GreasePencilWord, screen: Rect2) -> bool:
+	var font := Palette.pencil()
+	var px := word.font_px()
+	var local := Rect2(Vector2(0, -font.get_ascent(px)), font.get_string_size(word.text, HORIZONTAL_ALIGNMENT_LEFT, -1, px))
+	local.end += GreasePencilMark.SHADOW_OFFSET
+	var box := word.get_global_transform() * local
+	return screen.grow(-UiTheme.SAFE_MARGIN * Settings.text_scale).encloses(box)
+
+
+## A mouse-taking control bigger than this share of the screen is the page's host, not UI the word stands clear of.
+const LOOT_HOST_SHARE := 0.6
 
 
 ## True while the loot page watches OURS NOW against its panels.
@@ -2650,7 +2678,8 @@ var route_controls: CityGridControls = null
 ## the 3D city (CityViewMotion: cars by zoom, sky lanes, billboards, the light spill).
 ## ART-R1 9a (ANIM-FLOW M6): the route page arrives over the page that left; until its city has
 ## drawn, that page's last frame stays up (`RouteCover`), so the map is never shown without its city
-## (a flat purple plane with the links and pips). Headless has no frame to hold and never waits.
+## (a flat purple plane with the links and pips). ART-R2 9a: it holds the dark page, not the last frame
+## (the loot sheet's cards were half dissolved in it). Headless never waits.
 func _cover_route_until_city_drawn() -> void:
 	if DisplayServer.get_name() == "headless" or background == null:
 		return
@@ -2659,10 +2688,7 @@ func _cover_route_until_city_drawn() -> void:
 		return
 	var check := func() -> bool:
 		return background == null or not is_instance_valid(background) or (background.city.showing_current_look() and background.city.camera_settled())
-	var img := get_viewport().get_texture().get_image()
-	if img == null or img.is_empty():
-		return
-	var cover := RouteCover.make(ImageTexture.create_from_image(img), check)
+	var cover := RouteCover.make(null, check)
 	add_child(cover)
 	cover.move_to_front()
 
