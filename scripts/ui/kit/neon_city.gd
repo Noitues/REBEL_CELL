@@ -856,6 +856,8 @@ func draw_marks_on(ci: CanvasItem, rings: bool = true, stamps: bool = true) -> v
 	if stamps and landed < 1.0 and stamp_left >= 1.0:
 		for m: Dictionary in fading_marks:
 			_draw_mark_stamp(ci, m, 1.0, 1.0 - landed, k, fs, font)
+	# W3-HQ F1: each stamp keeps clear of the stamps placed before it (they never stack).
+	var placed: Array[Rect2] = []
 	for m: Dictionary in marks:
 		var at: Vector2 = m["at"]
 		var c := grid_to_local(at.x + 0.5, at.y + 0.5)
@@ -873,7 +875,9 @@ func draw_marks_on(ci: CanvasItem, rings: bool = true, stamps: bool = true) -> v
 			continue
 		# The stamp, tied to its Site by a leader, stamping on from its amplitude's scale.
 		var grow := lerpf(Motion.amplitude(&"influence_mark"), 1.0, mark_t) if mark_t < 1.0 else 1.0
-		_draw_mark_stamp(ci, m, grow, landed, k, fs, font)
+		var spot := stamp_rect(m, placed)
+		placed.append(_tilted_bounds(spot, MARK_TILT))
+		_draw_mark_stamp(ci, m, grow, landed, k, fs, font, spot)
 
 
 ## ANIM-R6 C4: a new stamp's alpha: it fades in over `stamp_fade_in`'s share of its stamp-on
@@ -884,12 +888,12 @@ func _mark_alpha() -> float:
 
 ## Mark `m`'s stamp on `ci` at scale `grow` and `alpha`, tied to its Site by a leader.
 ## ANIM-R4 H11d: at a spot clear of the map's labels (stamp_rect).
-func _draw_mark_stamp(ci: CanvasItem, m: Dictionary, grow: float, alpha: float, k: float, fs: int, font: Font) -> void:
+func _draw_mark_stamp(ci: CanvasItem, m: Dictionary, grow: float, alpha: float, k: float, fs: int, font: Font, at_spot: Rect2 = Rect2()) -> void:
 	var at: Vector2 = m["at"]
 	var c := grid_to_local(at.x + 0.5, at.y + 0.5)
 	var col: Color = m["color"]
 	var word := CityMapOverlay.tr_word(String(m["word"]))
-	var spot := stamp_rect(m)
+	var spot := at_spot if at_spot.has_area() else stamp_rect(m)
 	var anchor := spot.get_center()
 	var edge := c + (anchor - c).normalized() * Vector2(TILE_A, TILE_B).length() * MARK_RADIUS * 0.5 if anchor != c else c
 	ci.draw_line(edge, anchor, Color(col, 0.9 * alpha), 2.0 * k)
@@ -903,8 +907,9 @@ func _draw_mark_stamp(ci: CanvasItem, m: Dictionary, grow: float, alpha: float, 
 
 ## ANIM-R4 H11d: where mark `m`'s stamp sits (this city's local px, unrotated): the first of
 ## above, below, right and left of its Site whose box (tilted, grown by MARK_GAP) covers none
-## of `stamp_avoid`; the least covered one when every spot covers something.
-func stamp_rect(m: Dictionary) -> Rect2:
+## of `stamp_avoid` and of the `placed` stamps (W3-HQ F1: stamps never stack); the least
+## covered one when every spot covers something.
+func stamp_rect(m: Dictionary, placed: Array[Rect2] = []) -> Rect2:
 	var k := 1.0 / maxf(0.001, scale.x)
 	var fs := maxi(1, roundi(MARK_FONT * Settings.text_scale * k))
 	var font := Palette.display()
@@ -930,6 +935,9 @@ func stamp_rect(m: Dictionary) -> Rect2:
 		for r in stamp_avoid:
 			if tilted.intersects(r):
 				covered += tilted.intersection(r).get_area()
+		for r in placed:  # W3-HQ F1: another stamp is never covered
+			if tilted.intersects(r):
+				covered += tilted.intersection(r).get_area() + 1.0
 		if covered <= 0.0:
 			return spot
 		if covered < least:

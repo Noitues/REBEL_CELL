@@ -54,6 +54,12 @@ runs out, start the animation work; use Haiku and the Batch API as needed. Orche
   decide): B4 (empty roster + 0 Schematics dead end) joins W3-HQ's C6; B1 stuck aim, B2 UNDO reason, B3 tutorial
   overlay in netrun fights and the P2s B5–B8 become **wave 3b** (`docs/handoff/plan1/W3B.md`). Only bugs with a
   repro; the clarity items (Heat, keyboard aim, clipped text, cancel key) wait for the designer's triage.
+### 2026-10-13 — W3-HQ: crew recovery is a recruit card on the crew hand; no redundant tab counts; stamps and the heat note keep clear
+- **C6 / PT-002 B4:** the GDD has no "rest": flatlined operatives stay dead; recovery is the recruit, and `rookie_price` is already `emergency_rookie_cost` (0 in `campaign_config.tres`) while nobody lives, so 0 Schematics never dead-ends. The gap was visibility. New rules helpers `CampaignRules.needs_crew` and `can_deploy` (any living operative passes `launch_error`). With every operative flatlined the CREW hand leads with one FREE HIRE card per class (`Recover_<class>`; the Market recruit stays); JACK IN is disabled exactly when `can_deploy` is false, and its tooltip says to hire; `WHY_CREW` no longer says "rest". B2 (CREW tab dead) could not be reproduced: the tab rebuilds the CREW hand like any other; the recover card now fills it.
+- **R7:** CREW and MARKET tabs no longer carry a count line (the top bar has both); DEFENSE keeps RAID n / Armory.
+- **F1:** a map stamp (`NeonCity.stamp_rect`) now also avoids the stamps placed before it, so CLAIMED / TAKEN stamps never stack.
+- **F2:** the Heat poster's "a raid is queued" note tries the foot band first (centered, where toasts stand) and falls back to the old free-spot search when that spot covers words or buttons.
+- Test: `tests/unit/test_w3_hq_crew.gd`.
 
 ### 2026-10-13 — Round 45 inner ring built (designer-approved concept, art-pass 2216c126; replaces W2-A6's standing plates)
 - **Ghost wedge:** `WheelWedge` (one quad per wheel over the disc, under the view's drawing and the firmware sockets) runs

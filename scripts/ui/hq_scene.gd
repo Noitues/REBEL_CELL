@@ -1998,7 +1998,8 @@ func _hand_tabs() -> VBoxContainer:
 	tabs.name = "HandTabs"
 	tabs.add_theme_constant_override("separation", 6)
 	tabs.alignment = BoxContainer.ALIGNMENT_END
-	var lines := ["%d / %d" % [c.living_operatives().size(), c.roster.size()], str(c.schematics),
+	# W3-HQ R7: CREW's count and MARKET's Schematics are the top bar's; only DEFENSE keeps its line.
+	var lines := ["", "",
 		(tr("RAID %d") % c.pending_raids.size()) if not c.pending_raids.is_empty() else armory_words()]
 	var tips := [UiTip.for_input(tr("CREW: your operatives as cards. Pick the runner, drag a card onto one of your nodes to station them."),
 			tr("CREW: your operatives as cards. Pick the runner; pick a card up and move it onto one of your nodes to station them.")),
@@ -2017,7 +2018,7 @@ func _hand_tabs() -> VBoxContainer:
 		tab.selected = i == hand_tab
 		tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		tab.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		tab.tooltip_text = UiTip.fold(tips[i] if small else "%s (%s)" % [tips[i], lines[i]])
+		tab.tooltip_text = UiTip.fold(tips[i] if small or lines[i] == "" else "%s (%s)" % [tips[i], lines[i]])
 		tab.pressed.connect(open_hand.bind(i))
 		tabs.add_child(tab)
 	return tabs
@@ -2057,6 +2058,8 @@ func _fill_crew_hand(cards: HBoxContainer, launchable: Array[SiteData]) -> void:
 	for s in launchable:
 		if s.id == selected_site:
 			runnable = true
+	if CampaignRules.needs_crew(c):
+		_fill_recover_cards(cards)
 	for op in order:
 		var where := CampaignRules.stationed_site(c, op.id)
 		var card := CrewHandCard.new(op.class_id, op.id, op.name, op.rank)
@@ -2099,6 +2102,28 @@ func _fill_crew_hand(cards: HBoxContainer, launchable: Array[SiteData]) -> void:
 			recall_chip.tooltip_text = UiTip.fold(tr("Bring %s back from %s.") % [op.name, site_name(where)])
 			recall_chip.pressed.connect(recall.bind(oid))
 			cards.add_child(recall_chip)
+
+
+## W3-HQ C6: every operative is flatlined: the recruit offer stands where the crew cards are (the
+## Market's stays too). One HIRE card per class; the price is the rules' (`rookie_price`: the
+## emergency price while nobody is alive, free in the shipped config).
+func _fill_recover_cards(cards: HBoxContainer) -> void:
+	var c := RunManager.campaign
+	var price := CampaignRules.rookie_price(c, RunManager.config())
+	for cls in RunManager.available_classes():
+		var cid := cls.id
+		var card := CrewHandCard.new(cid, &"", TextDb.t(cls, "display_name"), 0)
+		card.hire = true
+		card.name = "Recover_%s" % cid
+		card.status = tr(RECOVER_FREE) if price <= 0 else tr("%d SCHEMATICS") % price
+		card.status_color = Palette.RESIST_GOLD
+		card.tooltip_text = UiTip.fold(tr(RECOVER_TIP) % [TextDb.t(cls, "display_name"), card.status])
+		card.pressed.connect(recruit.bind(cid))
+		cards.add_child(card)
+
+
+const RECOVER_FREE := "FREE" # TR
+const RECOVER_TIP := "Every operative is flatlined. Press to hire a %s rookie (%s); then JACK IN." # TR
 
 
 ## A crew card's tooltip: name, rank, class, HP, deck and Daemons (a translation key).
@@ -2311,7 +2336,10 @@ func _verb_slot(site: SiteData, launchable: Array[SiteData], raid_mode: bool = f
 		else:
 			sticker.tooltip_text = UiTip.fold(tr("JACK IN to %s: start a %s here with %s.") % [site_name(sid), tr(CampaignRules.run_kind_for(c, site)), selected_op().name if selected_op() != null else "-"])
 			sticker.pressed.connect(press_verb.bind(v, sid))
-			sticker.disabled = selected_op() == null
+			# W3-HQ C6: enabled exactly when the rules let a living operative launch there.
+			sticker.disabled = not CampaignRules.can_deploy(c, RunManager.corporation, RunManager.config(), RunManager.lookup(), site)
+			if CampaignRules.needs_crew(c):
+				sticker.tooltip_text = UiTip.fold(tr(WHY_CREW))
 	else:
 		sticker.tooltip_text = UiTip.fold(verb_tip(v, site))
 		sticker.pressed.connect(press_verb.bind(v, sid))
@@ -4189,7 +4217,7 @@ const WHY_CORE := "This is your CORE, your home server: you defend it in raids; 
 const WHY_BREACH := "The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first." # TR
 const WHY_FROM := "Not reachable yet. Clear a Site linked to it first: %s. Then it opens (orange ring) and JACK IN shows here." # TR
 const WHY_FAR := "Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours." # TR
-const WHY_CREW := "No operative can run it now. Recruit or rest your crew at the HQ, then come back." # TR
+const WHY_CREW := "No operative is alive. Open the CREW tab and hire a rookie (free when nobody is left), then JACK IN." # TR
 
 
 ## ART-5 5d (Group 1 naive audit P2): why Site `site` shows no JACK IN, in plain words, with
