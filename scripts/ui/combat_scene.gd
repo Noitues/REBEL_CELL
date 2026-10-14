@@ -5164,6 +5164,7 @@ func _hp_arrives(v: WheelView, hp: int) -> void:
 		return
 	var lost := float(hp) < v.shown_hp()
 	v.play_hp(float(hp))
+	v.play_hp_pulse()  # Plan 1 M2: the number landed on the chip
 	if lost:
 		v.play_hit()
 	if v == _player_view and _replay_hp >= 0 and engine.has_fight():

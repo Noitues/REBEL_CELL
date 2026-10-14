@@ -82,6 +82,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"defeat_stamp",
 	# Plan 1 M1: a played card's wheel effect starts partway through its flight (a share).
 	&"card_effect_lead",
+	# Plan 1 M2: the HP counter pulses when a number lands on it.
+	&"hp_chip_pulse",
 	# ANIM-R5 netrun screens: a flight's landing pulses its top bar tag.
 	&"flight_land_pulse",
 	# ANIM-R6 rules: a flight's lift and fade shares and a stamp's down and hold shares

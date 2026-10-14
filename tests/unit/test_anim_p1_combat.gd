@@ -59,6 +59,11 @@ func _combat(combat_seed: int) -> Control:
 	return scene
 
 
+func _close(scene: Control) -> void:
+	scene.get_parent().queue_free()
+	await _frames(1)
+
+
 ## The turn number the header shows now (-1 when it cannot be read).
 func _header_turn(scene: Control) -> int:
 	var rx := RegEx.new()
@@ -117,3 +122,92 @@ func test_a_perfect_tag_resolves_toward_the_enemy_wheel() -> void:
 	assert_ne(to, Vector2.INF, "a living enemy gives the payoff point")
 	var enemy_view: WheelView = scene._enemy_views.values()[0]
 	assert_eq(to, enemy_view.global_center())
+
+
+func _hand_index(scene: Control, card_id: StringName) -> int:
+	var hand: Array = scene.engine.state().hand
+	for i in hand.size():
+		if StringName(String(hand[i])) == card_id:
+			return i
+	return -1
+
+
+func test_the_wheel_moves_before_the_card_flight_ends() -> void:
+	# M1: sampled mid-flight with live motion, the wheel's shown rotation has left its old tick.
+	var scene: Control = null
+	var idx := -1
+	for combat_seed in range(1, 60):
+		scene = await _combat(combat_seed)
+		idx = _hand_index(scene, &"fine_tune")
+		if idx >= 0:
+			break
+		scene.get_parent().queue_free()
+		await _frames(1)
+	assert_gte(idx, 0, "a seed deals Fine Tune")
+	if idx < 0:
+		return
+	_live()
+	var olds := {}
+	for v in scene._views():
+		olds[v] = v.shown_rotation()
+	var flight := Motion.seconds(&"card_play")
+	scene.play_card(idx)
+	var elapsed := 0.0
+	var moved_at := -1.0
+	while elapsed < flight * 3.0 and moved_at < 0.0:
+		await get_tree().process_frame
+		elapsed += get_tree().root.get_process_delta_time()
+		for v in olds:
+			if not is_equal_approx(v.shown_rotation(), float(olds[v])):
+				moved_at = elapsed
+	assert_gt(moved_at, 0.0, "the wheel turned")
+	# The card's whole journey (flight, stamp, dissolve) is what the wheel used to wait for.
+	var journey := flight + Motion.seconds(&"card_stamp") + Motion.seconds(&"effect_burst")
+	assert_lt(moved_at, journey * 0.95, "it turned before the card's journey ended")
+
+
+func test_beams_never_overlap_and_each_number_lands_before_the_next_beam() -> void:
+	# M2: from the runner's own schedule: consecutive beams launch hit_line apart and after the
+	# previous hit's number has entered its HP counter; every HP-changing hit targets a wheel's HP chip.
+	var checked := 0
+	var chips := 0
+	for combat_seed in SEEDS:
+		var scene := await _combat(combat_seed)
+		_live()
+		for turn in 3:
+			if scene.engine.state().is_over():
+				break
+			var before: CombatState = scene.engine.state().duplicate_state()
+			scene.end_turn()
+			var beats := ResolveBeats.build(before, scene._last_events, scene.engine.resolver.lookup)
+			var timing: Dictionary = scene.beat_timing()
+			var times: PackedFloat32Array = scene.sequence_schedule(beats)["times"]
+			var prev := -1
+			for k in beats.size():
+				var b := beats[k]
+				if b["phase"] == "turn_start" or not ResolveBeats.flies(b):
+					continue
+				if prev >= 0:
+					assert_gte(times[k], times[prev] + float(timing["hit_gap"]) - 0.0001, "seed %d: a beam waits hit_line after the last launch" % combat_seed)
+					assert_gte(times[k], times[prev] + ResolveBeats.arrive_after(beats[prev], timing) - 0.0001, "seed %d: the last number landed first" % combat_seed)
+					checked += 1
+				if ResolveBeats.is_hit(b) and ResolveBeats.changes_hp(b):
+					var tid := StringName(String(b["target"]))
+					if before.get_combatant(tid) != null:
+						assert_ne(scene._host_view(tid, before), null, "the number has a wheel's HP chip to land on")
+						chips += 1
+				prev = k
+			scene.skip_motion()
+		await _close(scene)
+	assert_gt(checked, 0, "the sweep saw consecutive beams")
+	assert_gt(chips, 0, "the sweep saw hits that land on an HP chip")
+
+
+func test_a_number_landing_pulses_the_hp_chip() -> void:
+	var scene := await _combat(5)
+	_live()
+	var view: WheelView = scene._player_view
+	var n: int = view.hp_pulses
+	scene._hp_arrives(view, maxi(1, scene.engine.state().player.hp - 1))
+	assert_eq(view.hp_pulses, n + 1, "the chip pulsed")
+	assert_gt(view.hp_pulse, 0.0, "its outline is up")

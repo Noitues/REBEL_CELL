@@ -34,6 +34,25 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-14 — ANIM-COMBAT: M1, M2, M3, M4, M7 (plan 1 animation round P1)
+
+Designer away; simplest option consistent with ANIMATION_HANDOFF.
+- **M4 (header 1 -> 2 -> 1).** The only writer of the banner title is `CombatScene._refresh_status` (called from `_refresh` on every
+  state change, `_release_forecast`, `_land_outcome`, the theme/relayout rebuild and `_ready`). During a SEND IT replay it shows
+  `_shown_turn` (the turn played), and `_release_forecast` clears it so the state's turn shows. Seeded live replays over three seeds
+  only count up (`test_the_turn_header_never_flips_back`). The one path that can write a lower turn is undo: SEND IT (header 1, held),
+  the replay is skipped or ends (2), then a rewind brings the state back to turn 1. So it is only undo, a legitimate rewind that
+  reads as a flip; no stale write was found. The guard `_banner_turn_hi` is kept (the header never counts back during a replay or a
+  late second write) and resets on a rewind or a new fight, so a real undo still shows the lower turn.
+- **M1.** New entry `card_effect_lead` (amplitude 0.55 = share of the card's flight; off = 1.0, the old behaviour): a played card's
+  wheel effect (spin, nudge, flip) starts inside the flight, so Fine Tune turns the wheel as the card lands. The card flight and
+  RAM chip ticks already existed (ANIM-3). Test samples the wheel's shown rotation mid-flight with live motion.
+- **M2.** Beam order was already scheduled one at a time (`ResolveBeats.schedule`: `hit_line` apart, after the last number entered
+  its HP counter); the test now asserts that from the runner's schedule over real turns. Numbers fly into the victim's HP counter
+  (`number_to_hp`); new entry `hp_chip_pulse` (0.3 s, outline grows 9 px) pulses the counter when one lands. Floating numbers 24 -> 30 px.
+- **M3.** The PERFECT tag's dissolve bits fly to the first living enemy wheel (`WheelView.payoff_to`), so the tag resolves into the hit.
+- **M7.** `resolve_side_gap` 0.2 -> 0.06 s so the enemy's return strike follows the player's last impact with no lull.
+
 ### 2026-10-13 — W4-REWARDS (D-UX1, F12): one rewards screen
 
 - **What changed.** A payout with more than one pick (card + Firmware chip, Rack Daemon, ...) now opens one list of rows
@@ -7851,17 +7870,3 @@ after; `D24_route.jpg` the route dossier before | after; `D24_crop.jpg` a paper 
   `raid_fight` run only from the START DEFENSE sticker, plus demo flags). Did not reproduce: frames and Enter / Space
   on the HQ raid setup never resolve the raid (a stray Enter leaves the page for the HQ without playing it). Test:
   `test_b9_raid_waits_for_start_defense`. Left as is; likely a tester click on the sticker.
-
-## 2026-10-13 - plan1 ANIM-COMBAT (M1, M2, M3, M4, M7)
-Implementation decisions (designer away; simplest option consistent with ANIMATION_HANDOFF):
-- **M4 (header 1 -> 2 -> 1):** the replay guard (`_shown_turn`) already held the turn; seeded headless replays never flipped back
-  (`test_the_turn_header_never_flips_back`). The remaining double write could not be reproduced, so the banner now keeps the highest
-  turn it has shown (`_banner_turn_hi`); a rewind or a new fight resets it. A legitimate undo still shows the lower turn.
-- **M1:** new motion entry `card_effect_lead` (amplitude = share of the card's flight, 0.55; OFF_PARTS 1.0 = old behaviour): a
-  played card's wheel effect (spin, nudge, flip) starts inside the flight, so Fine Tune turns the wheel as the card lands. RAM chip
-  ticks and the flight itself were already built (ANIM-3).
-- **M2:** floating numbers 24 -> 30 px (`CombatFxLayer.NUMBER_FONT`). Ordering (one wheel at a time, hit_line spacing, enemy_turn_spin
-  transitions) was already built in R2-R4 and is unchanged.
-- **M3:** the PERFECT tag's dissolve bits now fly to the first living enemy wheel (`WheelView.payoff_to`), so the tag resolves into the hit.
-- **M7:** `resolve_side_gap` 0.2 -> 0.06 s: the enemy's return strike follows the player's last impact with no dead lull.
-Open questions for the designer: no windowed before/after strips were captured in this run; judge M1/M3/M7 by eye.
