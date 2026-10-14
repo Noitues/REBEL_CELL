@@ -4194,7 +4194,7 @@ func _node_rows(card: TerminalWindow, site: SiteData, facts: HFlowContainer) -> 
 	card.body.add_child(scrub)
 	if scrub_why != "":
 		# W3-GRID (C3): a Scrub that cannot be bought says why, on the card and in the tip.
-		scrub.tooltip_text = UiTip.fold(tr(SCRUB_WHY) % tr(scrub_why))
+		scrub.tooltip_text = UiTip.fold("%s\n%s" % [tr(SCRUB_WHY) % tr(scrub_why), scrub.tooltip_text])
 		var why_label := Label.new()
 		why_label.name = "CoreHeatScrubWhy"
 		why_label.text = tr(SCRUB_WHY) % tr(scrub_why)

@@ -435,7 +435,10 @@ func test_key_letters_sit_on_the_controls_with_a_keyline_and_hints_are_tooltips(
 	assert_not_null(chip, "Settings is the icon chip")
 	assert_eq(chip.text, "", "no words on it")
 	assert_almost_eq(chip.size.x, 32.0 * GreasePencilMark.BOARD_TO_CANVAS, 1.0, "32 px at 1080p")
-	assert_string_contains(chip.tooltip_text, Settings.key_text(&"open_settings"), "its key in its tooltip")
+	# W4-PROMPTS-2 (D-UX2): the key moved from the tooltip to the shared prompt chip beside it.
+	var key_chip := InputPrompt.chip_of(chip)
+	assert_not_null(key_chip, "its key on the shared prompt chip")
+	assert_eq(InputPrompt.chip_label(key_chip).text, InputPrompt.chip_text(&"open_settings"), "the chip shows its key")
 	assert_false(scene._status.visible, "no key-hint caption under the TURN strip")
 	assert_false(scene._aim_hint.visible, "no aim caption over the hand")
 	await _close(scene)

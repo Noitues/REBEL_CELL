@@ -134,6 +134,11 @@ runs out, start the animation work; use Haiku and the Batch API as needed. Orche
 - **Gate PT-003** (waves 3, 3b, 4, 5 + whatever motion has merged): city profile with every tester starting at the
   title (`--at title`; W3-ROUTE's click-to-select changes the recorded route replays, which the gate lists as to
   re-record), the full suite once, smoke, validate.
+- **PT-003 full suite (5ac94740): 3 reds from tonight's merges, fixed** (no rule change): the Heat Scrub tooltip
+  keeps its price under the "SCRUB UNAVAILABLE" reason (heat terminal + CORE card); combat Settings' key is on the
+  shared prompt chip now (test reads the chip); GRID VIEW lists no choices (R6 ruling), so its "Ahead" rows are gone
+  (test asserts that). **Open question:** "what only this choice reaches" (the Ahead icons) now shows nowhere — the
+  route view has had no `then:` rows since round 44. Bring it back on the route's node files?
 ### 2026-10-13 — W3-POLISH: the wave 3 / 3b review findings F1-F9 (designer away; decided, logged)
 - **F1** a locked Site's hover file (`CityMapOverlay` exploit file) loses its DECRYPTED stamp, as the selected card does: the HQ idle graph flags such a node `locked`.
 - **F2** the prerequisite's double ring is two full-weight rings with a wide gap, outer one PAPER white (a reachable Site's single ring is orange), and the words CLEAR FIRST on a plate over it (under it when the map has no room above) (weight, gap and a label; no pulse, no motion).

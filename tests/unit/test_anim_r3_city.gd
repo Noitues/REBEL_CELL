@@ -143,19 +143,12 @@ func test_a_choice_that_differs_further_on_shows_what_only_it_reaches() -> void:
 	var twins: Dictionary = NetrunScript.choice_twins(s)
 	var differs: Dictionary = NetrunScript.choice_differences(s)
 	var open := s.available_nodes()
+	# W3-GRID (R6 / C10, designer ruling): GRID VIEW shows the run path and no next-node choices,
+	# so no "Ahead" rows there either; choice_differences stays the data the route's files read.
 	for i in open.size():
-		var id: StringName = open[i]
-		var row: Node = nr._panel.find_child("Ahead%d" % (i + 1), true, false)
-		var kinds: Array = differs.get(id, [])
-		if twins.has(id):
-			assert_null(row, "a twin shows no difference")
-			continue
-		if kinds.is_empty() and s.node_heat(id) == 0:
-			assert_null(row, "nothing differs: no row")
-		else:
-			assert_not_null(row, "choice %d shows what only it reaches" % (i + 1))
-			for k: StringName in kinds:
-				assert_not_null(row.find_child("Ahead_%s" % k, true, false), "the %s icon" % k)
+		assert_null(nr._panel.find_child("Ahead%d" % (i + 1), true, false), "GRID VIEW lists no choices")
+	for id in twins:
+		assert_false(differs.has(id) and not (differs[id] as Array).is_empty(), "a twin shows no difference")
 	# What differs is never what every choice reaches.
 	for id in differs:
 		for k in differs[id]:

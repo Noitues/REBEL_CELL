@@ -87,7 +87,7 @@ func _init(c: CampaignState = null, cfg: CampaignConfigData = null, p_read_only:
 	if why != "":
 		scrub.disabled = true
 		_row(rows, "ScrubWhy", "", TranslationServer.translate(SCRUB_WHY) % TranslationServer.translate(why), Palette.HARM)
-		scrub.tooltip_text = UiTip.fold(TranslationServer.translate(SCRUB_WHY) % TranslationServer.translate(why))
+		scrub.tooltip_text = UiTip.fold("%s\n%s" % [TranslationServer.translate(SCRUB_WHY) % TranslationServer.translate(why), scrub.tooltip_text])
 	scrub.pressed.connect(func() -> void: scrub_pressed.emit())
 	body.add_child(scrub)
 
