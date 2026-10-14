@@ -28,6 +28,39 @@ const TITLE_STICKER_TILT := -2.0
 const TITLE_FIT_PASSES := 6
 const TITLE_MIN_PX := 8.0
 const TITLE_FIT_MARGIN := 0.97
+## The band's rule thickness (px).
+const BAND_BORDER_PX: int = 2
+## The band's left and right content margin (px).
+const BAND_MARGIN_PX: int = 10
+## The gap between the bar's row slots (px).
+const ROW_SEPARATION_PX: int = 12
+## The DAEMONS icon button's least size (px).
+const DAEMON_BUTTON_SIZE: Vector2 = Vector2(52, 44)
+## The DAEMONS icon centre's x shift to the left (px).
+const DAEMON_ICON_SHIFT_X: float = -4.0
+## The second sigil's offset from the icon centre (px).
+const DAEMON_SIGIL2_OFFSET: Vector2 = Vector2(6, -3)
+## The sigil radius for the second and the main Daemon sigil (px).
+const DAEMON_SIGIL2_SIZE: int = 14
+const DAEMON_SIGIL_SIZE: int = 16
+## The empty-state ring radius (px).
+const DAEMON_RING_RADIUS: float = 15.0
+## The empty-state ring's segment count.
+const DAEMON_RING_POINTS: int = 24
+## The empty-state ring's alpha.
+const DAEMON_RING_ALPHA: float = 0.6
+## The empty-state ring's line width (px).
+const DAEMON_RING_WIDTH: float = 1.5
+## The empty-state "D" glyph's offset (px), box width and alpha.
+const DAEMON_D_OFFSET: Vector2 = Vector2(-12, 5)
+const DAEMON_D_WIDTH: int = 24
+const DAEMON_D_ALPHA: float = 0.8
+## The count badge's offset from the icon centre (px) and radius.
+const BADGE_OFFSET: Vector2 = Vector2(17, 12)
+const BADGE_RADIUS: float = 9.0
+## The count badge's number offset (px) and box width.
+const BADGE_TEXT_OFFSET: Vector2 = Vector2(-9, 5)
+const BADGE_TEXT_WIDTH: int = 18
 
 var label: Label
 ## HQ-B (Q1): the one Heat indicator, the bar's first slot on every screen that shows Heat.
@@ -52,16 +85,16 @@ func _init() -> void:
 	band.bg_color = Color(0.02, 0.04, 0.1, 0.0)  # B5: the kit glass behind it is the band's fill
 	band.border_color = Palette.NET_CYAN
 	PaletteSkins.track_box(band)  # ART-12 12s-b: the band's rule follows the skin
-	band.border_width_bottom = 2
-	band.content_margin_left = 10
-	band.content_margin_right = 10
+	band.border_width_bottom = BAND_BORDER_PX
+	band.content_margin_left = BAND_MARGIN_PX
+	band.content_margin_right = BAND_MARGIN_PX
 	add_theme_stylebox_override("panel", band)
 	# B5 (B1c follow-up 2): the kit's CRT glass (scanlines, the hex dump that fades under the counters' words), not
 	# the shared crt_panel material.
 	CrtTerminalPanel.behind(self)
 	custom_minimum_size.y = BAND_HEIGHT
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
+	row.add_theme_constant_override("separation", ROW_SEPARATION_PX)
 	add_child(row)
 	menu_button = Button.new()
 	menu_button.name = "MenuButton"
@@ -98,7 +131,7 @@ func _init() -> void:
 	daemon_button.name = "Daemons"
 	daemon_button.flat = true
 	daemon_button.tooltip_text = UiTip.fold(tr("The installed Daemons. Opens the tray: each sigil shows what its Daemon does."))
-	daemon_button.custom_minimum_size = Vector2(52, 44)
+	daemon_button.custom_minimum_size = DAEMON_BUTTON_SIZE
 	daemon_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	daemon_button.draw.connect(_draw_daemon_icon)
 	daemon_button.pressed.connect(func() -> void: daemons_pressed.emit())
@@ -234,15 +267,15 @@ func set_daemons(ids: Array[StringName]) -> void:
 
 
 func _draw_daemon_icon() -> void:
-	var c := daemon_button.size * 0.5 + Vector2(-4, 0)
+	var c := daemon_button.size * 0.5 + Vector2(DAEMON_ICON_SHIFT_X, 0)
 	var hot := daemon_button.is_hovered() or daemon_button.has_focus()
 	if daemon_ids.size() > 1:
-		DaemonSigil.draw_sigil(daemon_button, c + Vector2(6, -3), 14, daemon_ids[1])
+		DaemonSigil.draw_sigil(daemon_button, c + DAEMON_SIGIL2_OFFSET, DAEMON_SIGIL2_SIZE, daemon_ids[1])
 	if daemon_ids.is_empty():
-		daemon_button.draw_arc(c, 15, 0, TAU, 24, Color(Palette.NEON_VIOLET, 0.6), 1.5)
-		HighContrast.draw_text(daemon_button, Palette.mono(), c + Vector2(-12, 5), "D", HORIZONTAL_ALIGNMENT_CENTER, 24, 14, Color(Palette.NEON_VIOLET, 0.8))
+		daemon_button.draw_arc(c, DAEMON_RING_RADIUS, 0, TAU, DAEMON_RING_POINTS, Color(Palette.NEON_VIOLET, DAEMON_RING_ALPHA), DAEMON_RING_WIDTH)
+		HighContrast.draw_text(daemon_button, Palette.mono(), c + DAEMON_D_OFFSET, "D", HORIZONTAL_ALIGNMENT_CENTER, DAEMON_D_WIDTH, 14, Color(Palette.NEON_VIOLET, DAEMON_D_ALPHA))
 	else:
-		DaemonSigil.draw_sigil(daemon_button, c, 16, daemon_ids[0])
-	var badge := c + Vector2(17, 12)
-	daemon_button.draw_circle(badge, 9, Palette.CELL_ACID if hot else Palette.NEON_VIOLET)
-	HighContrast.draw_text(daemon_button, Palette.display(), badge + Vector2(-9, 5), str(daemon_ids.size()), HORIZONTAL_ALIGNMENT_CENTER, 18, 13, Palette.INK)
+		DaemonSigil.draw_sigil(daemon_button, c, DAEMON_SIGIL_SIZE, daemon_ids[0])
+	var badge := c + BADGE_OFFSET
+	daemon_button.draw_circle(badge, BADGE_RADIUS, Palette.CELL_ACID if hot else Palette.NEON_VIOLET)
+	HighContrast.draw_text(daemon_button, Palette.display(), badge + BADGE_TEXT_OFFSET, str(daemon_ids.size()), HORIZONTAL_ALIGNMENT_CENTER, BADGE_TEXT_WIDTH, 13, Palette.INK)

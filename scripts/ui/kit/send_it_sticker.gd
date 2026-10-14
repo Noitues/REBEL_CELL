@@ -62,6 +62,42 @@ const CAP_PROBE_PX := 100
 ## B2 (D16): where the sticker's body's top-left corner sits on EXECUTE's box (shares of it):
 ## covering about (1 - x) x (1 - y) = half of the word.
 const COVER_AT := Vector2(0.25, 0.35)
+## Pivot rise above the baseline for the drawn lettering (share of font size).
+const PIVOT_RISE_SHARE: float = 0.35
+## The system word's baseline nudge (px).
+const SYSTEM_BASELINE_PAD: float = 2.0
+## Extra width of the terminal line's backing (px).
+const LINE_PAD_W: float = 12.0
+## Extra height of the hint row (px).
+const HINT_ROW_PAD: float = 8.0
+## Terminal line's inset from the left edge (px).
+const LINE_INSET_X: float = 6.0
+## Terminal line's baseline inset from the bottom (px).
+const LINE_INSET_BOTTOM: float = 5.0
+## Backing box margin on the left of the terminal line (px).
+const LINE_BACK_LEFT: float = 6.0
+## Backing box extra height under the terminal line (px).
+const LINE_BACK_PAD_H: float = 5.0
+## Backing box extra width round the terminal line (px).
+const LINE_BACK_PAD_W: float = 12.0
+## Backing box alpha behind the terminal line.
+const LINE_BACK_ALPHA: float = 0.85
+## Gap between the terminal words and the key glyph (px).
+const GLYPH_PRE_GAP: float = 6.0
+## Vertical nudge of the key glyph (px).
+const GLYPH_NUDGE_Y: float = 2.0
+## Share of the extrude used by the gradient's lower face offset (share of font size).
+const FACE_DROP_SHARE: float = 0.08
+## Gloss lift (share of font size).
+const GLOSS_LIFT_SHARE: float = 0.02
+## Gloss x offset (px).
+const GLOSS_SHIFT_X: float = 1.0
+## Share of the gloss alpha applied to the drawn gloss.
+const GLOSS_ALPHA_SHARE: float = 0.5
+## Share of the shadow that snaps away as the drips run.
+const SHADOW_SNAP_SHARE: float = 0.6
+## Floor for the squash divisor.
+const SQUASH_MIN: float = 0.01
 
 ## W1-R1: keep the focus fold's room past the last letter (a verb that is not SEND IT: CONTINUE).
 var fold_room: bool = false:
@@ -256,7 +292,7 @@ func _system_y() -> float:
 	if system_word == "":
 		# No system word: the sticker's top sits under its die-cut.
 		return HudSkin.VINYL_DIE_CUT_PX + face().get_ascent(font_size) - font_size * STICKER_DOWN
-	return HudSkin.mono().get_ascent(_system_px()) + 2.0
+	return HudSkin.mono().get_ascent(_system_px()) + SYSTEM_BASELINE_PAD
 
 
 ## The terminal line under the sticker ("> turn_resolve.exe [Space]") as drawn.
@@ -269,7 +305,7 @@ func _line_words() -> String:
 
 
 func _line_w() -> float:
-	return HudSkin.mono().get_string_size(_line_words(), HORIZONTAL_ALIGNMENT_LEFT, -1, _hint_px()).x + 12.0 + (_hint_px() * 2.0 + GLYPH_GAP if glyph else 0.0)
+	return HudSkin.mono().get_string_size(_line_words(), HORIZONTAL_ALIGNMENT_LEFT, -1, _hint_px()).x + LINE_PAD_W + (_hint_px() * 2.0 + GLYPH_GAP if glyph else 0.0)
 
 
 func _hint_px() -> int:
@@ -286,7 +322,7 @@ func _fit_size() -> void:
 		h = maxf(h, word.position.y + word.size.y * COVER_AT.y + art.body_rect.size.y)
 		w = maxf(w, word.size.x * COVER_AT.x + art.body_rect.size.x)
 	if key_hint != "" or system_line != "":
-		h += _hint_px() + 8.0
+		h += _hint_px() + HINT_ROW_PAD
 	custom_minimum_size = Vector2(w + cut, h)
 
 
@@ -318,10 +354,10 @@ func _draw() -> void:
 	# The sticker: hover lifts and grows it, a press squashes it, the first show slaps it on.
 	var hot := (st == KitState.HOVER or st == KitState.FOCUS or _hot) and not off
 	var k := (HOVER_SCALE if hot else 1.0) * lerpf(SLAP_FROM, 1.0, clampf(grow, 0.0, 1.0))
-	var pivot := base + Vector2(tw * 0.5, -fs * 0.35)
+	var pivot := base + Vector2(tw * 0.5, -fs * PIVOT_RISE_SHARE)
 	var lift := Vector2(0.0, -HOVER_LIFT * s if hot else KitState.lift(st))
 	var sq := squash
-	draw_set_transform(pivot + lift, deg_to_rad(tilt), Vector2(k / maxf(0.01, sq), k * sq))
+	draw_set_transform(pivot + lift, deg_to_rad(tilt), Vector2(k / maxf(SQUASH_MIN, sq), k * sq))
 	var at := base - pivot
 	var paint_col := paint if not off else HudSkin.VINYL_DISABLED
 	var light := paint_col.lightened(HudSkin.VINYL_LIGHT)
@@ -330,7 +366,7 @@ func _draw() -> void:
 	var key := HudSkin.VINYL_KEYLINE_PX
 	var ext := HudSkin.VINYL_EXTRUDE_PX
 	# Shadow (snaps in on a press: `send_it_drips` runs it in).
-	var shadow := SHADOW_OFFSET * s * (1.0 - clampf(drip_run / maxf(1.0, Motion.amplitude(&"send_it_drips")), 0.0, 1.0) * 0.6)
+	var shadow := SHADOW_OFFSET * s * (1.0 - clampf(drip_run / maxf(1.0, Motion.amplitude(&"send_it_drips")), 0.0, 1.0) * SHADOW_SNAP_SHARE)
 	_stamp(f, at + shadow, shown, fs, cut, Color(Palette.NIGHT_SKY, SHADOW_ALPHA))
 	# The die-cut: white (focus is the kit sticker's sheen and curl, never lime).
 	var die := HudSkin.VINYL_DIE_CUT
@@ -344,22 +380,22 @@ func _draw() -> void:
 		draw_string(f, at + Vector2(0.0, ext * float(steps - i) / steps), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, dark)
 	# The face: a light top, the colour below (the gradient), the gloss over it.
 	draw_string(f, at, shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, light)
-	draw_string(f, at + Vector2(0.0, fs * 0.08), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, paint_col)
+	draw_string(f, at + Vector2(0.0, fs * FACE_DROP_SHARE), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, paint_col)
 	var swell := sin(PI * clampf(halo_pulse, 0.0, 1.0))
 	var gloss := lerpf(HudSkin.VINYL_GLOSS_REST, HudSkin.VINYL_GLOSS_HOT, swell if hot else 0.0)
-	draw_string(f, at + Vector2(-1.0, -fs * 0.02), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(HudSkin.VINYL_DIE_CUT, gloss * 0.5))
+	draw_string(f, at + Vector2(-GLOSS_SHIFT_X, -fs * GLOSS_LIFT_SHARE), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(HudSkin.VINYL_DIE_CUT, gloss * GLOSS_ALPHA_SHARE))
 	draw_set_transform(Vector2.ZERO)
 	# The terminal line and its key: "> turn_resolve.exe [Space]"; RESOLVING while disabled.
 	var hs := _hint_px()
 	var words := _line_words()
 	if words != "":
 		var hw := HudSkin.mono().get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
-		var hp := Vector2(6.0, size.y - 5.0)
+		var hp := Vector2(LINE_INSET_X, size.y - LINE_INSET_BOTTOM)
 		if sys == "":
-			draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 5)), Color(PaletteSkins.chrome(HudSkin.TERMINAL_BG), 0.85))
+			draw_rect(Rect2(hp + Vector2(-LINE_BACK_LEFT, -hs), Vector2(hw + LINE_BACK_PAD_W, hs + LINE_BACK_PAD_H)), Color(PaletteSkins.chrome(HudSkin.TERMINAL_BG), LINE_BACK_ALPHA))
 		HighContrast.draw_text(self, HudSkin.mono(), hp, words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, HudSkin.TERMINAL_TEXT if not off else HudSkin.TERMINAL_DIM)
 		if glyph:
-			_draw_glyph(Vector2(hp.x + hw + 6.0 + GLYPH_GAP + hs * 2.0, hp.y - hs * 0.5 + 2.0), hs, paint_col)
+			_draw_glyph(Vector2(hp.x + hw + GLYPH_PRE_GAP + GLYPH_GAP + hs * 2.0, hp.y - hs * 0.5 + GLYPH_NUDGE_Y), hs, paint_col)
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), st, false)
 
 
@@ -405,10 +441,10 @@ func _draw_with_art() -> void:
 	var words := _line_words()
 	if words != "":
 		var hw := HudSkin.mono().get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
-		var hp := Vector2(6.0, size.y - 5.0)
+		var hp := Vector2(LINE_INSET_X, size.y - LINE_INSET_BOTTOM)
 		if sys == "":
-			draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 5)), Color(PaletteSkins.chrome(HudSkin.TERMINAL_BG), 0.85))
+			draw_rect(Rect2(hp + Vector2(-LINE_BACK_LEFT, -hs), Vector2(hw + LINE_BACK_PAD_W, hs + LINE_BACK_PAD_H)), Color(PaletteSkins.chrome(HudSkin.TERMINAL_BG), LINE_BACK_ALPHA))
 		HighContrast.draw_text(self, HudSkin.mono(), hp, words, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, HudSkin.TERMINAL_TEXT if not disabled else HudSkin.TERMINAL_DIM)
 		if glyph:
-			_draw_glyph(Vector2(hp.x + hw + 6.0 + GLYPH_GAP + hs * 2.0, hp.y - hs * 0.5 + 2.0), hs, paint if not disabled else HudSkin.VINYL_DISABLED)
+			_draw_glyph(Vector2(hp.x + hw + GLYPH_PRE_GAP + GLYPH_GAP + hs * 2.0, hp.y - hs * 0.5 + GLYPH_NUDGE_Y), hs, paint if not disabled else HudSkin.VINYL_DISABLED)
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)

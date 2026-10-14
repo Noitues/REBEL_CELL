@@ -64,6 +64,18 @@ const D4_GLYPH := 22.0
 ## The pads over the D4 wheel's slices and its inner ring plates (px).
 const D4_PAD := 56.0
 const D4_RING_PAD := 30.0
+## The drawn wheel's pad size (px).
+const SLOT_PAD_PX: int = 70
+## Half the drawn wheel's pad size (px).
+const SLOT_PAD_HALF_PX: float = 35.0
+## The drawn wheel's pad ring radius (px).
+const SLOT_PAD_RADIUS: float = 140.0
+## The drawn wheel's box size (px).
+const WHEEL_BOX := Vector2(670, 440)
+## The drawn wheel's centre in its box (px).
+const WHEEL_CENTRE := Vector2(335, 220)
+## Hub and ring pad size (px).
+const CORE_PAD_PX: int = 44
 
 ## B5: the combat's own wheel in the loadout's SPINNER tab (null: the drawn wheel of the Mainframe's pickers).
 var d4: WheelView = null
@@ -103,15 +115,15 @@ func _init(p_slices: Array[StringName], p_firmware: Array[StringName], p_lookup:
 	hint.add_theme_color_override("font_color", Palette.CELL_ACID)
 	window.body.add_child(hint)
 	_wheel = Control.new()
-	_wheel.custom_minimum_size = Vector2(670, 440)
+	_wheel.custom_minimum_size = WHEEL_BOX
 	_wheel.draw.connect(_draw_wheel)
 	window.body.add_child(_wheel)
 	for i in slices.size():
 		var pad := Button.new()
 		pad.name = "SlotPad%d" % i
 		pad.flat = true
-		pad.custom_minimum_size = Vector2(70, 70)
-		pad.size = Vector2(70, 70)
+		pad.custom_minimum_size = Vector2(SLOT_PAD_PX, SLOT_PAD_PX)
+		pad.size = Vector2(SLOT_PAD_PX, SLOT_PAD_PX)
 		pad.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		pad.tooltip_text = _slice_text(i)
 		var index := i
@@ -381,8 +393,8 @@ func set_core(p_hub: HubCoreData, p_ring: Array[RingSegmentData]) -> void:
 		var pad := Button.new()
 		pad.flat = true
 		pad.name = "HubPad" if part is HubCoreData else "RingPad%d" % (k - (1 if hub != null else 0))
-		pad.custom_minimum_size = Vector2(44, 44)
-		pad.size = Vector2(44, 44)
+		pad.custom_minimum_size = Vector2(CORE_PAD_PX, CORE_PAD_PX)
+		pad.size = Vector2(CORE_PAD_PX, CORE_PAD_PX)
 		if d4 == null:
 			pad.add_theme_stylebox_override("focus", StyleBoxEmpty.new())  # the drawn wheel lights its own focus
 		pad.tooltip_text = UiTip.fold(Codex.describe(part))
@@ -541,7 +553,7 @@ func confirm() -> void:
 
 
 func _centre() -> Vector2:
-	return Vector2(335, 220)
+	return WHEEL_CENTRE
 
 
 func _angle(i: int) -> float:
@@ -553,7 +565,7 @@ func _place_pads() -> void:
 		_place_d4_pads()
 		return
 	for i in _pads.size():
-		_pads[i].position = _centre() + Vector2(cos(_angle(i)), sin(_angle(i))) * 140.0 - Vector2(35, 35)
+		_pads[i].position = _centre() + Vector2(cos(_angle(i)), sin(_angle(i))) * SLOT_PAD_RADIUS - Vector2(SLOT_PAD_HALF_PX, SLOT_PAD_HALF_PX)
 	var k0 := 0
 	if hub != null and not _core_pads.is_empty():
 		_core_pads[0].position = _centre() - _core_pads[0].size * 0.5

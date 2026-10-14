@@ -117,6 +117,12 @@ var grown_floor: int = 0
 ## A sticker's largest rest tilt either way (degrees; a row keeps room for it, ANIM-R2 E8).
 const REST_TILT_MAX := 4
 const CHIP_ICON_FIT_SHRINK := 0.3
+## Share of the hover growth a neighbour slides aside by.
+const SPREAD_HALF: float = 0.5
+## Minimum size of a shop tile (px).
+const TILE_SIZE := Vector2(118, 150)
+## Centre of a tile's icon when drawn in the unscaled tile (px from the top).
+const TILE_ICON_Y: float = 50.0
 
 
 func _init(p_title: String = "", p_cost: int = 0, p_description: String = "", index: int = 0) -> void:
@@ -150,7 +156,7 @@ func _ready() -> void:
 func as_tile(p_look: int, p_accent: Color) -> ZineCard:
 	look = p_look
 	accent = p_accent
-	custom_minimum_size = Vector2(118, 150)
+	custom_minimum_size = TILE_SIZE
 	return self
 
 
@@ -400,7 +406,7 @@ func _clear_shift(foot: Vector2, k: float, view: Rect2) -> float:
 ## ART-2 2D: how far a neighbour slides aside when the card `away` slots off is hovered
 ## (-1 left, 1 right, 0 back), on `card_hover`'s timing.
 func slide_aside(away: int) -> void:
-	var px := size.x * (hover_to - 1.0) * 0.5 * float(away)
+	var px := size.x * (hover_to - 1.0) * SPREAD_HALF * float(away)
 	Motion.run(&"card_hover", self, ^"spread", px)
 
 
@@ -601,7 +607,7 @@ func _draw_tile() -> void:
 	if hot:
 		draw_rect(rect.grow(3), Color(Palette.CELL_PINK, 0.3), false, 6.0)
 	draw_rect(rect, Palette.CELL_PINK if hot else Color(accent, 0.7), false, 1.5)
-	var icon_c := Vector2(size.x / 2.0, 50)
+	var icon_c := Vector2(size.x / 2.0, TILE_ICON_Y)
 	# Glow under the icon.
 	draw_circle(icon_c, 34, Color(accent, 0.08))
 	draw_circle(icon_c, 24, Color(accent, 0.1))

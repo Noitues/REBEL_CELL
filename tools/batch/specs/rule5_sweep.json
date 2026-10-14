@@ -1,0 +1,30 @@
+{
+	"name": "rule5_sweep",
+	"kind": "const_edits",
+	"thinking": {"type": "between_tools"},
+	"model": "claude-sonnet-5-5",
+	"effort": "low",
+	"max_tokens": 32000,
+	"files": [
+		"scripts/ui/kit/portrait_feed.gd",
+		"scripts/ui/kit/grid_map_view.gd",
+		"scripts/ui/kit/asset_icon.gd",
+		"scripts/ui/kit/hud_stats.gd",
+		"scripts/ui/kit/hud_skin.gd",
+		"scripts/ui/kit/raid_fx_layer.gd",
+		"scripts/ui/kit/send_it_sticker.gd",
+		"scripts/ui/kit/cyber_type.gd",
+		"scripts/ui/kit/sticker_button.gd",
+		"scripts/ui/kit/daemon_sigil.gd",
+		"scripts/ui/kit/deck_view.gd",
+		"scripts/ui/kit/hud_bar.gd",
+		"scripts/ui/kit/badge.gd",
+		"scripts/ui/kit/crew_card.gd",
+		"scripts/ui/kit/raid_report_pencil.gd",
+		"scripts/ui/kit/spinner_view.gd",
+		"scripts/ui/kit/hud_result_chips.gd",
+		"scripts/ui/kit/zine_card.gd",
+		"scripts/ui/kit/daemon_tray.gd"
+	],
+	"instructions": "Rule-5 sweep, behaviour identical. Find the absolute pixel / size / offset / timing / ratio literals used inside function bodies (not already in a const line, not 0, 1, -1, 2 in arithmetic, not indices, not Color channels, not font sizes, not values already passed through UiTheme or Palette). Name each one as a typed `const` near the top of the file (SCREAMING_SNAKE, e.g. `const PAD_PX: float = 6.0`, with a `##` one-line comment) and use the const at the use site. Reuse an existing const in the file when it holds the same number with the same meaning; if the same number appears in several places with the same meaning, one const. Keep int vs float exactly as written (a literal 4 stays an int const, 4.0 a float const; do not change the expression's type or value). Do NOT change any value, any logic, any signature, any existing const name, or any string. Do not touch draw_string size arguments or font sizes (a separate lint covers them). Put the new consts together after the existing const block. If the file has nothing to name, status: skip."
+}

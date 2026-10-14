@@ -17,6 +17,28 @@ const SIGIL_R := 24.0
 const CLEAR_GAP := 8.0
 ## The screen's edge margin the tray keeps (px).
 const EDGE := 10.0
+## The strip's minimum width (px).
+const STRIP_MIN_W: float = 200.0
+## The width each sigil button adds to the strip (px).
+const STRIP_PER_ICON_W: float = 48.0
+## The strip's horizontal padding added to its width (px).
+const STRIP_PAD_W: float = 30.0
+## The design-space screen width the tray is laid out against (px).
+const SCREEN_W: float = 1270.0
+## The strip's top offset below the subtitles (px).
+const STRIP_TOP: float = 60.0
+## The gap between sigil buttons (px).
+const ROW_SEP: int = 8
+## The sigil button's side (px).
+const SIGIL_BTN: float = 40.0
+## The radius the sigil is drawn at in its button (px).
+const BTN_SIGIL_R: float = 17.0
+## The radius of the focus/hover ring around a sigil button (px).
+const RING_R: float = 20.0
+## The focus/hover ring's line width (px).
+const RING_W: float = 1.5
+## The ring's arc point count.
+const RING_POINTS: int = 24
 
 var ids: Array[StringName] = []
 var lookup: ContentLookup
@@ -41,13 +63,13 @@ func _init(p_ids: Array[StringName], p_lookup: ContentLookup, anchor_x: float, o
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_strip = PanelContainer.new()
 	_strip.theme_type_variation = &"TerminalPanel"
-	var w := maxf(200.0, ids.size() * 48.0 + 30.0)
-	if anchor_x < 200.0:
-		anchor_x = 1270.0  # the icon sits at the bar's right end
-	_strip.position = Vector2(clampf(anchor_x - w, 10.0, 1270.0 - w), SubtitleStrip.top_below(60.0))  # under the subtitles (H21)
+	var w := maxf(STRIP_MIN_W, ids.size() * STRIP_PER_ICON_W + STRIP_PAD_W)
+	if anchor_x < STRIP_MIN_W:
+		anchor_x = SCREEN_W  # the icon sits at the bar's right end
+	_strip.position = Vector2(clampf(anchor_x - w, EDGE, SCREEN_W - w), SubtitleStrip.top_below(STRIP_TOP))  # under the subtitles (H21)
 	add_child(_strip)
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
+	row.add_theme_constant_override("separation", ROW_SEP)
 	_strip.add_child(row)
 	if owner_name != "":
 		var who := Label.new()
@@ -63,14 +85,14 @@ func _init(p_ids: Array[StringName], p_lookup: ContentLookup, anchor_x: float, o
 		var b := Button.new()
 		b.flat = true
 		b.name = "Daemon_" + String(id)
-		b.custom_minimum_size = Vector2(40, 40)
+		b.custom_minimum_size = Vector2(SIGIL_BTN, SIGIL_BTN)
 		b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		var did := id
 		b.draw.connect(func() -> void:
 			var d := lookup.get_content(did) as DaemonData
-			DaemonSigil.draw_sigil(b, b.size * 0.5, 17, did, d.rarity if d != null else RC.Rarity.UNCOMMON)
+			DaemonSigil.draw_sigil(b, b.size * 0.5, BTN_SIGIL_R, did, d.rarity if d != null else RC.Rarity.UNCOMMON)
 			if b.has_focus() or b.is_hovered():
-				b.draw_arc(b.size * 0.5, 20, 0, TAU, 24, Palette.CELL_ACID, 1.5))
+				b.draw_arc(b.size * 0.5, RING_R, 0, TAU, RING_POINTS, Palette.CELL_ACID, RING_W))
 		var dd := lookup.get_content(did) as DaemonData
 		b.tooltip_text = TextDb.t(dd, "display_name") if dd != null else String(did)
 		b.mouse_entered.connect(func() -> void: show_card(did, false))
@@ -142,7 +164,7 @@ func _clear_strip() -> void:
 
 func _clear_card(card: Control) -> void:
 	if is_instance_valid(card) and is_instance_valid(_strip):
-		var r := Rect2(Vector2(minf(_strip.position.x, 1270.0 - card.size.x), card.position.y), card.size)
+		var r := Rect2(Vector2(minf(_strip.position.x, SCREEN_W - card.size.x), card.position.y), card.size)
 		card.position = beside_clear(r).position
 
 

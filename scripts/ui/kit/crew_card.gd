@@ -38,6 +38,40 @@ const BIG_GROW := 0.7
 ## under MORE BELOW).
 const COMPACT_POLAROID := 0.5
 const POLAROID_SIZE := Vector2(120, 144)
+## Vertical separation between the dossier's rows.
+const BOX_SEPARATION: int = 4
+## Horizontal separation in the compact top row.
+const TOP_SEPARATION: int = 6
+## Paper style border radius-like corner and padding args (UiTheme.box).
+const PAPER_PAD_A: int = 10
+const PAPER_PAD_B: int = 12
+## Drop shadow size of the dossier.
+const SHADOW_SIZE_PX: int = 7
+## Drop shadow offset of the dossier.
+const SHADOW_OFFSET := Vector2(4, 5)
+## Base Polaroid tilt in degrees.
+const POLAROID_BASE_TILT: float = -2.0
+## Height of the HP strip control.
+const HP_STRIP_HEIGHT: float = 16.0
+## Top offset of the HP bar inside the strip.
+const HP_BAR_TOP: float = 4.0
+## Height of the HP bar.
+const HP_BAR_HEIGHT: float = 8.0
+## The first-screen horizontal paddings subtracted from the info width, per text scale.
+const INFO_PAD_PX: float = 20.0
+## Tape strip: half width offset, top, width and height.
+const TAPE_HALF_W: float = 24.0
+const TAPE_TOP: float = -7.0
+const TAPE_W: float = 48.0
+const TAPE_H: float = 14.0
+## Stamp vertical anchor share of the Polaroid height.
+const STAMP_Y_SHARE: float = 0.55
+## Stamp rotation in radians.
+const STAMP_ROTATION: float = -0.3
+## Stamp border rect: x, y, width, height.
+const STAMP_RECT := Rect2(-80, -20, 160, 40)
+## Stamp border line width.
+const STAMP_LINE_PX: float = 3.0
 
 
 func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, detail: String, p_tilt: float = 0.0) -> void:
@@ -48,17 +82,17 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	var s := Settings.text_scale
 	var compact := is_compact()
 	custom_minimum_size = Vector2(CARD_WIDTH * (minf(s, CARD_MAX_SCALE) + maxf(0.0, s - BIG_FROM) * BIG_GROW if compact else s), 0)
-	var style := UiTheme.box(Palette.NOTE_PAPER, edge_color(), roundi(edge_width()), 10, 12)
+	var style := UiTheme.box(Palette.NOTE_PAPER, edge_color(), roundi(edge_width()), PAPER_PAD_A, PAPER_PAD_B)
 	style.shadow_color = Palette.SHADOW
-	style.shadow_size = 7
-	style.shadow_offset = Vector2(4, 5)
+	style.shadow_size = SHADOW_SIZE_PX
+	style.shadow_offset = SHADOW_OFFSET
 	add_theme_stylebox_override("panel", style)
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 4)
+	box.add_theme_constant_override("separation", BOX_SEPARATION)
 	add_child(box)
 	# H24 S3: the rank tag and the class tags in the player's language ("R0" and "RANK" were
 	# English); the words come translated, the card shows them as given.
-	polaroid = Polaroid.new(tr("%s R%d") % [p_name, rank], "[%s PORTRAIT]" % p_class.to_upper(), -2.0 + tilt)
+	polaroid = Polaroid.new(tr("%s R%d") % [p_name, rank], "[%s PORTRAIT]" % p_class.to_upper(), POLAROID_BASE_TILT + tilt)
 	polaroid.custom_minimum_size = POLAROID_SIZE * (COMPACT_POLAROID if compact else 1.0)
 	polaroid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	box.add_child(polaroid)
@@ -78,9 +112,9 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	UiWrap.whole_words(tags)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
 	box.add_child(tags)
 	var hp_strip := Control.new()
-	hp_strip.custom_minimum_size = Vector2(0, 16)
+	hp_strip.custom_minimum_size = Vector2(0, HP_STRIP_HEIGHT)
 	hp_strip.draw.connect(func() -> void:
-		var r := Rect2(Vector2(0, 4), Vector2(hp_strip.size.x, 8))
+		var r := Rect2(Vector2(0, HP_BAR_TOP), Vector2(hp_strip.size.x, HP_BAR_HEIGHT))
 		hp_strip.draw_rect(r, PaperInk.opaque(Color(Palette.INK, HP_BACK_ALPHA), Palette.NOTE_PAPER))
 		hp_strip.draw_rect(Rect2(r.position, Vector2(r.size.x * hp_frac, r.size.y)), Palette.CELL_PINK if hp_frac < 0.35 else Color("#2a8f3c"))
 		hp_strip.draw_rect(r, PaperInk.edge(Color(Palette.INK, HP_EDGE_ALPHA)), false, PaperInk.edge_width(1.0)))
@@ -88,7 +122,7 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	var info := Label.new()
 	info.text = detail
 	UiWrap.whole_words(info)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
-	info.custom_minimum_size.x = custom_minimum_size.x - 20.0 * s
+	info.custom_minimum_size.x = custom_minimum_size.x - INFO_PAD_PX * s
 	info.add_theme_color_override("font_color", text_ink())
 	info.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	info.add_theme_font_size_override("font_size", roundi(DETAIL_SIZE * s))
@@ -102,7 +136,7 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 		# ANIM-R2 R13: the class tags beside the Polaroid, so the orders (Loadout) come on the
 		# first screen too.
 		var top := HBoxContainer.new()
-		top.add_theme_constant_override("separation", 6)
+		top.add_theme_constant_override("separation", TOP_SEPARATION)
 		box.add_child(top)
 		box.move_child(top, 0)
 		polaroid.reparent(top)
@@ -110,7 +144,7 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 		tags.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		tags.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	orders = VBoxContainer.new()
-	orders.add_theme_constant_override("separation", 4)
+	orders.add_theme_constant_override("separation", BOX_SEPARATION)
 	box.add_child(orders)
 	# Animation pass ANIM-6 (4.13): the Polaroid tilts a little while the dossier is hovered.
 	mouse_entered.connect(tilt_polaroid.bind(true))
@@ -153,11 +187,11 @@ func _ready() -> void:
 
 
 func _draw() -> void:
-	draw_rect(Rect2(size.x * 0.5 - 24, -7, 48, 14), PaperInk.opaque(Palette.NOTE_TAPE, Palette.NOTE_PAPER))
+	draw_rect(Rect2(size.x * 0.5 - TAPE_HALF_W, TAPE_TOP, TAPE_W, TAPE_H), PaperInk.opaque(Palette.NOTE_TAPE, Palette.NOTE_PAPER))
 	if dead or stamp_text != "":
 		var t := stamp_text if stamp_text != "" else tr("FLATLINED")
-		draw_set_transform(Vector2(size.x * 0.5, polaroid.position.y + polaroid.size.y * 0.55), -0.3, Vector2.ONE)
-		draw_rect(Rect2(-80, -20, 160, 40), Color(Palette.CELL_PINK, 0.85), false, 3.0)
+		draw_set_transform(Vector2(size.x * 0.5, polaroid.position.y + polaroid.size.y * STAMP_Y_SHARE), STAMP_ROTATION, Vector2.ONE)
+		draw_rect(STAMP_RECT, Color(Palette.CELL_PINK, 0.85), false, STAMP_LINE_PX)
 		# Long Site names shrink to fit the stamp.
 		var fs := STAMP_FONT_SIZE
 		var w := Palette.display().get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
