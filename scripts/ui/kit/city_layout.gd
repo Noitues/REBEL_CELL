@@ -259,3 +259,26 @@ static func threat_paths(c: CampaignState, corp: CorporationData) -> Array[Array
 				path.append(cur)
 			paths.append(path)
 	return paths
+
+
+## W3-GRID (R6 / C10): the Grid graph `g` with the active netrun's path drawn on it: the link
+## from the Site the run jacks in from (`from_id`) to its target, as a bold flowing line, and the
+## target's node flagged `run_target` (it keeps its tag). Pure on its input; a graph without the
+## target Site comes back unchanged.
+static func with_run_path(g: Dictionary, from_id: StringName, target_id: StringName) -> Dictionary:
+	var found := false
+	for n: Dictionary in g["nodes"]:
+		if n["id"] == target_id:
+			n["run_target"] = true
+			n["tag_cue"] = true
+			found = true
+	if not found:
+		return g
+	if from_id != &"" and from_id != target_id:
+		(g["edges"] as Array[Dictionary]).append({"a": from_id, "b": target_id, "color": Palette.CELL_ACID, "width": RUN_PATH_WIDTH,
+			"flow": true, "run_path": true})
+	return g
+
+
+## The active run's path on the Grid (screen px at the reference scale).
+const RUN_PATH_WIDTH := 6.0

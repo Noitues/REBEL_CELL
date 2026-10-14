@@ -93,3 +93,27 @@ static func active_modifiers(campaign: CampaignState, config: CampaignConfigData
 			if m != null:
 				out.append(m)
 	return out
+
+
+## The Heat an operative's death adds on a run of `tier` (death_heat_base + tier + the
+## DEATH_HEAT modifier, before the gain scaling `add_heat` applies). The netrun's death and
+## the HQ's flatline warning both read this.
+static func death_heat(campaign: CampaignState, config: CampaignConfigData, tier: int) -> int:
+	return config.death_heat_base + tier + int(campaign.rule_modifier(config, RC.RuleModifierType.DEATH_HEAT))
+
+
+## W3-GRID (C3): what adding `delta` Heat would do now, worked out by applying `add_heat` to
+## a copy (the forecast is the real result; the campaign is not changed): {before, after,
+## delta (applied: scaled and clamped), crosses: Array[int] (the threshold Heats that would
+## fire), raid: bool (one of them queues a raid)}.
+static func forecast(campaign: CampaignState, delta: int, config: CampaignConfigData) -> Dictionary:
+	var copy := campaign.duplicate_state()
+	var events := add_heat(copy, delta, config, "forecast")
+	var crosses: Array[int] = []
+	var raid := false
+	for e in events:
+		if String(e.get("type", "")) == "heat_threshold":
+			crosses.append(int(e["heat"]))
+		elif String(e.get("type", "")) == "raid_pending":
+			raid = true
+	return {"before": campaign.heat, "after": copy.heat, "delta": copy.heat - campaign.heat, "crosses": crosses, "raid": raid}

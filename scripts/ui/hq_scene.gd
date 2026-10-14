@@ -1881,6 +1881,7 @@ func _build_hq_page(page_name: String) -> void:
 		city_overlay.decal_shown_only = true
 		# B3's clutter rule (D7): at most one tag, the selection's; the lit (hovered) Site's too.
 		city_overlay.tag_rule = CityMapOverlay.TagRule.FOCUS
+		city_overlay.prereq_ids = prereqs_of(selected_site)  # W3-GRID (C4)
 		# The selection is marked by its vignette and its tag; the lime ring only while the pad /
 		# keyboard is on the map (the MapCursor has the focus).
 		var cursor_node := page.get_node("MapCursor") as Control
@@ -2513,7 +2514,15 @@ func hq_idle_graph(g: Dictionary) -> Dictionary:
 			m["marker"] = spec
 			m["pinned"] = spec["pinned"]
 		var id: StringName = m["id"]
-		if id == selected_site or bool(m.get("pinned", true)):
+		# W3-GRID (C4): a reachable Site keeps its name tag (the orange ring is its cue); a locked
+		# one says why on hover and click.
+		if m.has("marker") and String((m["marker"] as Dictionary).get("avail", "")) == SiteMarker.AV_NEXT:
+			m["tag_cue"] = true
+		else:
+			var lock := lock_line(CampaignRules.site_data(RunManager.corporation, id))
+			if lock != "":
+				m["tip"] = "%s\n%s" % [m.get("tip", ""), lock]
+		if id == selected_site or bool(m.get("pinned", true)) or prereqs_of(selected_site).has(id):
 			shown[id] = true
 		# Every Site keeps its name; B3's clutter rule (TagRule.FOCUS) shows the one tag.
 		m["label"] = String(m.get("name", m.get("label", "")))
@@ -2590,6 +2599,8 @@ func _hq_hover_tag(id: StringName) -> void:
 	# The hovered Site lights (a hidden one shows while pointed at, bible 4.5) and takes its
 	# tag (B3's TagRule.FOCUS: the selection and the lit node).
 	city_overlay.hover_id = id
+	# W3-GRID (C4): pointing at a locked Site rings the Sites to clear first (the selection's, when off all).
+	city_overlay.prereq_ids = prereqs_of(id if id != &"" else selected_site)
 
 
 ## HQ-B: the pending raid's routes on the HQ map in red pencil, their entries lettered: dashed
@@ -3373,6 +3384,11 @@ func _hold_selected_in(free: Rect2) -> void:
 	if selected_site == &"":
 		return
 	var r: Rect2 = wireframe.unrigged(func() -> Rect2: return _map_node_rect(selected_site))
+	# W3-GRID (C4): a locked Site brings the Sites to clear first into the free part with it.
+	for pid in prereqs_of(selected_site):
+		var pr: Rect2 = wireframe.unrigged(func() -> Rect2: return _map_node_rect(pid))
+		if pr.has_area() and r.has_area():
+			r = r.merge(pr)
 	var room := free.grow(-HqLayout.MARGIN)
 	if not r.has_area() or not room.has_area() or room.encloses(r):
 		return
@@ -3640,7 +3656,12 @@ func run_gains(_site: SiteData, preview: Dictionary) -> Array[Badge]:
 		out.append(Badge.new(CityMapOverlay.tr_word("HEAT %s") % TextDb.signed(heat), Palette.NET_CYAN if heat < 0 else StatIcon.color_of(StatIcon.HEAT), "",
 			CityMapOverlay.tr_word("Clearing it changes Heat by %s.") % TextDb.signed(heat)).with_icon(StatIcon.COOLING if heat < 0 else StatIcon.HEAT))
 	if bool(preview.get("raid", false)):
-		out.append(Badge.new(CityMapOverlay.tr_word("RAID"), Palette.CELL_PINK, "", CityMapOverlay.tr_word("Clearing it now brings a raid on your network.")).with_icon(StatIcon.RAIDS))
+		# W3-GRID (C3): the warning names the Heat line it crosses (the rule's own list).
+		var crossed: Array = preview.get("crosses", [])
+		var line := CityMapOverlay.tr_word("Clearing it now brings a raid on your network.")
+		if not crossed.is_empty():
+			line = CityMapOverlay.tr_word("Clearing it takes Heat past %d: that brings a raid on your network.") % int(crossed.back())
+		out.append(Badge.new(CityMapOverlay.tr_word("RAID"), Palette.CELL_PINK, "", line).with_icon(StatIcon.RAIDS))
 	var sch := int(preview.get("schematics", 0))
 	if sch != 0:
 		out.append(Badge.new(TextDb.signed(sch), Palette.NET_CYAN, "", CityMapOverlay.tr_word("Clearing it gives %s Schematics.") % TextDb.signed(sch)).with_icon(StatIcon.SCHEMATICS))
@@ -4043,6 +4064,10 @@ func _site_holo(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		var from_id := RouteLinkLayout.from_site(RunManager.corporation, c, site.id)
 		if from_id != &"":
 			card.add_row("LinkRow", tr(ROW_LINK), tr("from %s") % site_name(from_id).to_upper())
+	if not launchable_here and c.grid.status_of(site.id) == GridState.SiteStatus.CORPORATE and card.holo != null and card.holo.stamp_slot != null:
+		card.holo.stamp_slot.visible = false  # W3-GRID (C4): no DECRYPTED on a Site that is not reachable yet
+	if launchable_here and site.id != c.grid.home_site_id:
+		card.add_row("FlatlineRow", tr(ROW_FLATLINE), flatline_words(site))
 	if why != "":
 		var note := card.add_line(why, Palette.TEXT_HI, UiTheme.BODY)
 		note.name = "WhyNot"
@@ -4129,10 +4154,22 @@ func _node_rows(card: TerminalWindow, site: SiteData, facts: HFlowContainer) -> 
 	scrub.name = "CoreHeatScrub"
 	scrub.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scrub.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	scrub.disabled = c.schematics < price or c.heat <= 0
+	var scrub_why := CampaignRules.scrub_error(c, cfg)
+	scrub.disabled = scrub_why != ""
 	scrub.tooltip_text = UiTip.fold(tr("SCRUB HEAT: pay %d Schematics, Heat %s (the Heat terminal's purchase).") % [price, TextDb.signed(amount)])
 	scrub.pressed.connect(buy_heat_reduction)
 	card.body.add_child(scrub)
+	if scrub_why != "":
+		# W3-GRID (C3): a Scrub that cannot be bought says why, on the card and in the tip.
+		scrub.tooltip_text = UiTip.fold(tr(SCRUB_WHY) % tr(scrub_why))
+		var why_label := Label.new()
+		why_label.name = "CoreHeatScrubWhy"
+		why_label.text = tr(SCRUB_WHY) % tr(scrub_why)
+		why_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		why_label.add_theme_font_override("font", Palette.mono())
+		why_label.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+		why_label.add_theme_color_override("font_color", Palette.HARM)
+		card.body.add_child(why_label)
 
 
 ## B4: a terminal card's row: `caption` (mono caps) and `value` beside it.
@@ -4215,7 +4252,7 @@ func _unlock_cost_of(node: NetworkNodeData) -> int:
 const MIN_NOTE_WIDTH := 120.0
 const WHY_CORE := "This is your CORE, your home server: you defend it in raids; you never run it." # TR
 const WHY_BREACH := "The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first." # TR
-const WHY_FROM := "Not reachable yet. Clear a Site linked to it first: %s. Then it opens (orange ring) and JACK IN shows here." # TR
+const WHY_FROM := "Not reachable yet. Clear a Site linked to it first: %s (ringed on the map). Then it opens with an orange ring and JACK IN shows here." # TR
 const WHY_FAR := "Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours." # TR
 const WHY_CREW := "No operative is alive. Open the CREW tab and hire a rookie (free when nobody is left), then JACK IN." # TR
 
@@ -4232,11 +4269,64 @@ func why_not_runnable(site: SiteData, launchable_here: bool, living: Array[Opera
 	if CampaignRules.site_objective(c, site) == RC.SiteObjective.CENTRAL_SERVER and c.exploits.size() < RunManager.config().min_exploits_for_breach:
 		return tr(WHY_BREACH) % [RunManager.config().min_exploits_for_breach, c.exploits.size()]
 	var from := PackedStringArray()
-	for s in corp.city_grid.sites:
-		if s != null and (s.links.has(site.id) or (s.locked_links.has(site.id) and c.grid.is_link_open(s.id, site.id))):
-			from.append(site_name(s.id))
+	for id in GridAccess.site_access(c, corp, RunManager.config(), site)["prereqs"]:
+		from.append(site_name(id))
 	from.sort()
 	return tr(WHY_FROM) % ", ".join(from) if not from.is_empty() else tr(WHY_FAR)
+
+
+## W3-GRID (C4): the one-line lock reason a not-reachable Site carries on its node (hover and
+## click): which Site(s) to clear first, or the breach's Exploits. "" for a reachable Site,
+## your CORE and your own Sites.
+func lock_line(site: SiteData) -> String:
+	var c := RunManager.campaign
+	if site.id == c.grid.home_site_id or c.grid.is_claimed(site.id) or c.grid.is_cleared(site.id):
+		return ""
+	var access := GridAccess.site_access(c, RunManager.corporation, RunManager.config(), site)
+	if bool(access["reachable"]):
+		return ""
+	match String(access["why"]):
+		GridAccess.WHY_BREACH:
+			return tr(LOCK_BREACH) % [int(access["exploits_needed"]), int(access["exploits_held"])]
+		GridAccess.WHY_FROM:
+			var names := PackedStringArray()
+			for id in access["prereqs"]:
+				names.append(site_name(id))
+			return tr(LOCK_FROM) % ", ".join(names)
+	return tr(LOCK_FAR)
+
+
+const ROW_FLATLINE := "FLATLINE" # TR
+const FLATLINE_WORDS := "HEAT %s -> %d" # TR
+const FLATLINE_RAID := "  //  RAID AT HEAT %d" # TR
+const SCRUB_WHY := "SCRUB UNAVAILABLE: %s" # TR
+
+
+## W3-GRID (C3): what an operative's death on a run at `site` would do to Heat, worked out by
+## HeatRules.forecast (the rule the death applies): "HEAT +11 -> 36", with the raid threshold it crosses.
+func flatline_words(site: SiteData) -> String:
+	var c := RunManager.campaign
+	var f := HeatRules.forecast(c, HeatRules.death_heat(c, RunManager.config(), site.tier), RunManager.config())
+	var text := tr(FLATLINE_WORDS) % [TextDb.signed(int(f["delta"])), int(f["after"])]
+	if bool(f["raid"]):
+		text += tr(FLATLINE_RAID) % int((f["crosses"] as Array).back())
+	return text
+
+
+const LOCK_BREACH := "LOCKED: the breach needs %d Exploits (you hold %d)." # TR
+const LOCK_FROM := "LOCKED: clear %s first (ringed on the map)." # TR
+const LOCK_FAR := "LOCKED: clear the Sites between it and your network first." # TR
+
+
+## W3-GRID (C4): the Sites to clear before Site `id` opens (ringed on the map); empty when it
+## is open, yours, or has no single Site to name.
+func prereqs_of(id: StringName) -> Array[StringName]:
+	var out: Array[StringName] = []
+	var site := CampaignRules.site_data(RunManager.corporation, id)
+	if site == null or RunManager.campaign == null or lock_line(site) == "":
+		return out
+	out.assign(GridAccess.site_access(RunManager.campaign, RunManager.corporation, RunManager.config(), site)["prereqs"])
+	return out
 
 
 ## HQ-B (c) (direction_B_defence.jpg): the raid setup is the HQ's DEFENCE hand, in place: the

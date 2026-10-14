@@ -325,7 +325,12 @@ static func clear_preview(campaign: CampaignState, corp: CorporationData, config
 	var exploit := -1
 	if copy.exploits.size() > campaign.exploits.size():
 		exploit = copy.exploits[copy.exploits.size() - 1]
-	return {"kind": run_kind_for(campaign, site), "heat": copy.heat - campaign.heat, "exploit": exploit,
+	var crosses: Array[int] = []
+	for t in copy.thresholds_fired:
+		if not campaign.thresholds_fired.has(t):
+			crosses.append(int(t))
+	crosses.sort()
+	return {"kind": run_kind_for(campaign, site), "heat": copy.heat - campaign.heat, "crosses": crosses, "exploit": exploit,
 		"raid": copy.pending_raids.size() > campaign.pending_raids.size(), "schematics": copy.schematics - campaign.schematics,
 		"won": copy.outcome == CampaignState.Outcome.WON and campaign.outcome != CampaignState.Outcome.WON,
 		"claimable": site.claimable and copy.grid.is_cleared(site.id) and not campaign.grid.is_cleared(site.id), "opens": opens}
@@ -814,6 +819,16 @@ static func stationed_site(campaign: CampaignState, op_id: StringName) -> String
 
 static func heat_purchase_price(campaign: CampaignState, config: CampaignConfigData) -> int:
 	return config.heat_purchase_cost + config.heat_purchase_increment * campaign.heat_purchases
+
+
+## W3-GRID (C3): why Heat Scrub is unavailable now ("" when it can be bought).
+static func scrub_error(campaign: CampaignState, config: CampaignConfigData) -> String:
+	var price := heat_purchase_price(campaign, config)
+	if campaign.heat <= 0:
+		return "Heat is already 0: there is nothing to scrub."
+	if campaign.schematics < price:
+		return "Not enough Schematics (%d needed, %d held)." % [price, campaign.schematics]
+	return ""
 
 
 ## Buys -heat_purchase_amount Heat (GDD 11.4: 25 Schematics, +10 per purchase).
