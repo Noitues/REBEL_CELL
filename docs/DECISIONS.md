@@ -48,6 +48,8 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
   name keys. HQ: the Options line, RAID SETUP and HEAT SCRUB chips carry an inside chip; `_hint_button` and its relabel
   plumbing are gone. Left as is: the wheel view's drawn nudge-arrow glyphs (`arrow_hints`) and sentence-style key names in
   the status / aim lines (`Settings.key_text` in prose). `test_w4_prompts` scans both scenes for `Settings.hint(`.
+- SEND IT / CONTINUE take `InputPrompt.corner` (chip on the sticker's top-right corner): a chip beside it pushed the sticker off the
+  1280 px screen (captured, W4_PROMPTS_2.jpg is the after only; no before sheet).
 - Existing tests that asserted key text on those buttons now read the chip (`InputPrompt.chip_of`).
 
 ### 2026-10-13 — W4-PROMPTS (D-UX2, D-UX3, D-UX4): one prompt chip, a Menu button, outside click closes menus

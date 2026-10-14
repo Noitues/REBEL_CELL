@@ -2142,7 +2142,7 @@ func _build_ui() -> void:
 	_end_turn_button.pressed.connect(end_turn)
 	bottom.add_child(_end_turn_button)
 	_zine_elements.append(_end_turn_button)
-	InputPrompt.after(_end_turn_button, &"end_turn")  # W4-PROMPTS-2: the key is the shared chip, not drawn text
+	InputPrompt.corner(_end_turn_button, &"end_turn")  # W4-PROMPTS-2: the key is the shared chip, not drawn text
 	# ANIM-R3 A6h: once the fight is over, SEND IT, RESPIN and UNDO go and the next step's
 	# action takes their place at once (the netrun names it: LOOT, CONTINUE).
 	_continue_button = SendItSticker.new("CONTINUE", "", HudSkin.VINYL_PINK, CONTINUE_FONT)
@@ -2155,7 +2155,7 @@ func _build_ui() -> void:
 	TextDb.shown_as_given(_continue_button)  # ANIM-R4 C1: its tooltip arrives translated (show_continue)
 	bottom.add_child(_continue_button)
 	_zine_elements.append(_continue_button)
-	InputPrompt.after(_continue_button, &"end_turn")
+	InputPrompt.corner(_continue_button, &"end_turn")
 
 	# ART-2 2D: the HUD over the wheels (nudge buttons, result chips), under the motion overlay.
 	hud_layer = HudWheelLayer.new()

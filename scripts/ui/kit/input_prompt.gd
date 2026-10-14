@@ -97,6 +97,18 @@ static func after(button: Control, action: StringName) -> PanelContainer:
 	return chip
 
 
+## Puts a chip for `action` on `button`'s top-right corner (a button that has no room beside it,
+## like SEND IT at the screen's edge). It hides with the button. Returns the chip.
+static func corner(button: Control, action: StringName, margin: float = 8.0) -> PanelContainer:
+	var chip := make_chip(action)
+	button.add_child(chip)
+	chip.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	chip.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	chip.offset_right = -margin
+	chip.offset_top = margin
+	return chip
+
+
 ## The chip `after` / `inside` put by `button` (null when none): tests and relayouts.
 static func chip_of(button: Control) -> Control:
 	var p := button.get_parent()
