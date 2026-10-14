@@ -6143,7 +6143,7 @@ static func holds_spot(paper: Rect2, size: Vector2) -> Vector2:
 
 ## Where CELL HOLDS sits on the report (share of the paper: over its lower left, under the rows and
 ## beside the CLASSIFIED stamp).
-const HOLDS_AT := Vector2(0.27, 0.86)
+const HOLDS_AT := Vector2(0.27, 0.9)
 ## The CELL HOLDS sticker's lettering (px at 1.0).
 const HOLDS_STICKER_STEP := UiTheme.DISPLAY
 ## G2R-5: from this text scale the report folds, and CELL HOLDS gets a room of this share of its height

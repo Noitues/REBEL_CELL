@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tools/design_lab/art_r1_capture.gd" id="1"]
+
+[node name="ArtR1Capture" type="Node"]
+script = ExtResource("1")
