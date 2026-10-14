@@ -755,6 +755,7 @@ func test_loot_not_taken_falls_before_the_page_leaves() -> void:
 	run.pending_rewards.append({"kind": "card", "options": ["twist", "jam", "cache"]})
 	run.phase = RunState.Phase.REWARD
 	scene._show_current()
+	scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first
 	PageTransition.settle(scene)
 	await _frames(3)
 	_live()
@@ -776,6 +777,7 @@ func test_the_loot_tag_fits_its_window_under_pseudolocalisation() -> void:
 	run.pending_rewards.append({"kind": "card", "options": ["twist", "jam", "cache"]})
 	run.phase = RunState.Phase.REWARD
 	scene._show_current()
+	scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first
 	PageTransition.settle(scene)
 	await _frames(3)
 	# ART-9 4A: the loot's title is a sticker over its CRT strip (bible v2 §4.11): both on screen.

@@ -144,6 +144,7 @@ func _loot(scene: Control, kind: String = "card", options: Array = ["twist", "ja
 	run.pending_rewards.append({"kind": kind, "options": options})
 	run.phase = RunState.Phase.REWARD
 	scene._show_current()
+	scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first
 
 
 func _raw_ids(op: OperativeState) -> PackedStringArray:

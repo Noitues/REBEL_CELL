@@ -51,6 +51,7 @@ func _loot(kind: String, scale: float) -> Control:
 	run.pending_rewards.append({"kind": kind, "options": ["twist", "jam", "cache"] if kind == "card" else ["barbed_wire", "bulkhead", "burner"]})
 	run.phase = RunState.Phase.REWARD
 	scene._show_current()
+	scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first
 	PageTransition.settle(scene)
 	await _frames(8)
 	return scene

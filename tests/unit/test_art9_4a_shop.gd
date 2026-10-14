@@ -273,7 +273,7 @@ func test_the_bin_opens_the_deck_viewer_and_removes_one_card_at_the_current_pric
 func test_loot_is_a_sheet_and_the_pick_peels_into_the_deck() -> void:
 	var scene := await _netrun()
 	DemoSetup.offer_loot(RunManager.netrun, ["twist", "jam", "cache"])
-	scene._show_current()
+	scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first
 	await _frames(3)
 	var sheet := scene._panel.find_child("LootSheet", true, false) as LootSheet
 	assert_not_null(sheet, "the offers are on a loot sheet")

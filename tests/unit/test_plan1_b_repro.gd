@@ -172,6 +172,7 @@ func test_b2_loot_continue_refused_for_a_chip_that_does_not_fit_slot_0() -> void
 	s.run.pending_rewards.append({"kind": "firmware", "options": options})
 	s.run.phase = RunState.Phase.REWARD
 	scene._show_current()
+	scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first
 	PageTransition.settle(scene)
 	await _frames(6)
 	var go := scene._panel.find_child("Continue", true, false) as Control

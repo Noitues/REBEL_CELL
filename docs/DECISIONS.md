@@ -557,6 +557,18 @@ Triage: `docs/playtest/PT-002a_TRIAGE.md` (feedback verbatim in `PT-002a_FEEDBAC
 7. **Netrun node animation along the route:** the static part goes to wave 3 (C7); the animation goes to the
    animation pass.
 
+### 2026-10-14 — Rulings 3 and 4 built
+- **3 (rewards list):** `NetrunScene.rewards_list_on()` is now true for any payout with a pick pending (or one already
+  settled), so a SINGLE pick shows the list first; its row opens the pick page, SKIP / a take returns to the list.
+  Test: `test_a_single_pick_still_shows_the_list` (`test_w4_rewards`).
+- **4 (crew label and warning):** `CampaignRules.stationed_count` (living operatives on a node) is the new rule;
+  `raid_crew_warning` is true exactly at 0 stationed (a raid is defended by the stationed crew). The raid setup always
+  shows `Crew: X (Stationed: Y)` (`CrewCount`, X living, Y stationed) over START DEFENSE; at 0 stationed the
+  `NoCrewWarning` names both numbers and the START DEFENSE confirm reads "No crew is stationed". Raid setup has no
+  other crew count (its HUD bar carries no stats). Tests in `test_w3_raid` (rule over seeded states, label text).
+- **1 (route number keys):** already direct; pinned by `test_w3_route.test_the_keyboard_press_still_travels_directly`.
+- Capture: `docs/art_review/PLAN1/RULINGS_0214.jpg` (`tools/design_lab/rulings_0214_capture.tscn`).
+
 ### 2026-10-13 — Designer rulings after wave 0 (change plan 1)
 Evidence: `docs/handoff/plan1/B_REPRO.md`, `V1_PREVIEW_GAPS.md`, `docs/playtest/claude/state/SA-002_heuristic_calibration.md`.
 1. **B6:** the rule stays (rewind never crosses a respin or a random-slice card: deterministic replays); the tutorial

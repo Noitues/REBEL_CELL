@@ -129,6 +129,7 @@ func test_loot_continue() -> void:
 			run.pending_rewards.append({"kind": kind, "options": ["twist", "jam", "cache"] if kind == "card" else ["barbed_wire", "bulkhead", "burner"]})
 			run.phase = RunState.Phase.REWARD
 			scene._show_current()
+			scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first
 			PageTransition.settle(scene)
 			await _frames(4)
 			_check(scene._panel.find_child("Continue", true, false), "loot (%s) CONTINUE" % kind, scale)
@@ -149,6 +150,7 @@ func test_loot_skip() -> void:
 		run.pending_rewards.append({"kind": "card", "options": ["twist", "jam", "cache"]})
 		run.phase = RunState.Phase.REWARD
 		scene._show_current()
+		scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first
 		PageTransition.settle(scene)
 		await _frames(4)
 		var skip: Node = scene._panel.find_child("Skip", true, false)

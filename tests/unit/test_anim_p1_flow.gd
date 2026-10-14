@@ -151,6 +151,7 @@ func test_the_loot_sheet_dims_while_the_offers_leave() -> void:
 	var scene := _netrun()
 	await _frames(3)
 	_rewards(scene, 1)
+	scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first
 	PageTransition.settle(scene)
 	await _frames(3)
 	_live()

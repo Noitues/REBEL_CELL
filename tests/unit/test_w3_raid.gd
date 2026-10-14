@@ -70,44 +70,62 @@ func _kill_crew() -> void:
 		o.alive = false
 
 
-# --- C9: the 0-crew warning ----------------------------------------------------------------------
+# --- C9 + ruling 4 (2026-10-14): the warning fires on 0 STATIONED -----------------------------------
 
-func test_the_crew_warning_rule_is_true_exactly_at_zero_living_crew() -> void:
-	_raid_campaign()
+## Stations the living operative at `index` on the first free site (the count rule does not need a slot).
+func _station(index: int = 0) -> void:
 	var c := RunManager.campaign
-	assert_gt(c.living_operatives().size(), 0, "a new campaign has crew")
-	assert_false(CampaignRules.raid_crew_warning(c), "crew: no warning")
-	var living := c.living_operatives()
-	for i in living.size() - 1:
-		living[i].alive = false
-	assert_eq(c.living_operatives().size(), 1)
-	assert_false(CampaignRules.raid_crew_warning(c), "one left: no warning")
-	living[living.size() - 1].alive = false
-	assert_true(CampaignRules.raid_crew_warning(c), "0 crew: the warning")
+	var ids: Array = c.grid.sites.keys()
+	ids.sort()
+	for id in ids:
+		if c.grid.stationed_on(id) == &"":
+			c.grid.site(id)["stationed"] = String(c.living_operatives()[index].id)
+			return
+
+
+func test_the_crew_warning_rule_is_true_exactly_at_zero_stationed_for_seeded_states() -> void:
+	for seed_value in [1, 2, 3]:
+		_raid_campaign(seed_value)
+		var c := RunManager.campaign
+		assert_gt(c.living_operatives().size(), 0, "a new campaign has crew")
+		assert_eq(CampaignRules.stationed_count(c), 0)
+		assert_true(CampaignRules.raid_crew_warning(c), "seed %d: crew alive but none stationed: the warning" % seed_value)
+		_station()
+		assert_eq(CampaignRules.stationed_count(c), 1)
+		assert_false(CampaignRules.raid_crew_warning(c), "seed %d: one stationed: no warning" % seed_value)
+		for o in c.living_operatives():
+			o.alive = false
+		assert_eq(CampaignRules.stationed_count(c), 0, "a dead operative does not count as stationed")
+		assert_true(CampaignRules.raid_crew_warning(c))
 	assert_false(CampaignRules.raid_crew_warning(null))
 
 
-func test_the_raid_setup_shows_the_warning_only_at_zero_crew() -> void:
+func test_the_raid_setup_reads_crew_stationed_and_warns_only_at_zero_stationed() -> void:
 	_raid_campaign()
+	_station()
 	var hq := await _hq()
 	hq.show_raid()
 	await _frames(2)
-	assert_null(hq._panel.find_child("NoCrewWarning", true, false), "crew: no warning on the setup")
+	var line := hq._panel.find_child("CrewCount", true, false) as Label
+	assert_not_null(line)
+	var alive := RunManager.campaign.living_operatives().size()
+	assert_eq(line.text, "Crew: %d (Stationed: 1)" % alive)
+	assert_null(hq._panel.find_child("NoCrewWarning", true, false), "stationed: no warning on the setup")
 	hq.get_parent().queue_free()
 	await _frames(1)
 	_raid_campaign()
-	_kill_crew()
 	hq = await _hq()
 	hq.show_raid()
 	await _frames(2)
 	var warn := hq._panel.find_child("NoCrewWarning", true, false) as Label
-	assert_not_null(warn, "0 crew: the warning stands over START DEFENSE")
+	assert_not_null(warn, "0 stationed: the warning stands over START DEFENSE")
+	assert_true(warn.text.contains("%d alive" % alive) and warn.text.contains("0 stationed"), "it names both numbers")
+	assert_eq((hq._panel.find_child("CrewCount", true, false) as Label).text, "Crew: %d (Stationed: 0)" % alive)
 	assert_not_null(hq._panel.find_child("RunRaid", true, false), "START DEFENSE stays")
 
 
-func test_start_defense_at_zero_crew_asks_first_and_yes_runs_the_raid() -> void:
+func test_start_defense_with_nobody_stationed_asks_first_and_yes_runs_the_raid() -> void:
 	_raid_campaign()
-	_kill_crew()
 	var hq := await _hq()
 	hq.show_raid()
 	await _frames(2)
@@ -122,15 +140,16 @@ func test_start_defense_at_zero_crew_asks_first_and_yes_runs_the_raid() -> void:
 	assert_lt(RunManager.campaign.pending_raids.size(), pending_before, "YES runs the raid")
 
 
-func test_start_defense_with_crew_starts_at_once() -> void:
+func test_start_defense_with_a_stationed_operative_starts_at_once() -> void:
 	_raid_campaign()
+	_station()
 	var hq := await _hq()
 	hq.show_raid()
 	await _frames(2)
 	var pending_before := RunManager.campaign.pending_raids.size()
 	hq.request_start_defense()
 	await _frames(2)
-	assert_null(hq._defense_confirm, "no confirm with crew")
+	assert_null(hq._defense_confirm, "no confirm with crew stationed")
 	assert_lt(RunManager.campaign.pending_raids.size(), pending_before, "the raid ran")
 
 

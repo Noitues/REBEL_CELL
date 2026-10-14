@@ -94,6 +94,7 @@ func test_refused_firmware_note_is_one_named_message_clear_of_the_sheet_skip_and
 		s.run.pending_rewards.append({"kind": "firmware", "options": options})
 		s.run.phase = RunState.Phase.REWARD
 		scene._show_current()
+		scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first
 		PageTransition.settle(scene)
 		await _frames(6)
 		var refused := false

@@ -988,6 +988,7 @@ func test_a_flying_card_is_a_fresh_copy_and_loot_falls_within_its_window() -> vo
 	run.pending_rewards.append({"kind": "card", "options": ["twist", "jam", "cache"]})
 	run.phase = RunState.Phase.REWARD
 	scene._show_current()
+	scene.open_reward(0)  # ruling 3 (2026-10-14): a single pick shows the list first
 	PageTransition.settle(scene)
 	await _frames(3)
 	var sticker := scene._panel.find_child("Stickers", true, false).get_child(1) as Control
