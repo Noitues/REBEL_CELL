@@ -80,6 +80,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s (%s): make it the target for the Armory's assets.,%s (%s): make it the target for the Armory's assets.
 %s - OFFLINE,%s - OFFLINE
 %s - press another key.,%s - press another key.
+%s / %s on the INNER ring turn it.,%s / %s on the INNER ring turn it.
 %s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel,%s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel
 %s // %d CARDS,%s // %d CARDS
 %s // %s %d OF %d,%s // %s %d OF %d
@@ -592,6 +593,7 @@ CorporationData.solace.letterhead_name,SOLACE BIO
 Corporations,Corporations
 Costs %d Schematics (you have %d): Heat changes by %d.,Costs %d Schematics (you have %d): Heat changes by %d.
 Costs: %s.,Costs: %s.
+Covers %d%% of this slice: it acts on the whole slice.,Covers %d%% of this slice: it acts on the whole slice.
 Crew,Crew
 Crew:,Crew:
 Cycle Price,Cycle Price
@@ -1158,6 +1160,7 @@ INFC,INFC
 INFECT,INFECT
 INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
+INNER RING: %s,INNER RING: %s
 INT,INT
 "INT %d: integrity, the hits it takes before it breaks. x%d: how many are in the Armory to deploy.","INT %d: integrity, the hits it takes before it breaks. x%d: how many are in the Armory to deploy."
 INTEGRITY,INTEGRITY
@@ -1706,6 +1709,7 @@ New campaign,New campaign
 Next,Next
 Next seed,Next seed
 Next threshold at %d.,Next threshold at %d.
+Next with a clockwise turn: %s,Next with a clockwise turn: %s
 No Daemons installed (D 0: the badge counts them). Opens the tray.,No Daemons installed (D 0: the badge counts them). Opens the tray.
 No Daemons installed.,No Daemons installed.
 No Firmware installed in this slot.,No Firmware installed in this slot.

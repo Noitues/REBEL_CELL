@@ -236,6 +236,12 @@ const TARGET_COLOR := Palette.CELL_ACID
 ## ART-2 2A: the disc layer (slice screens, bezel, hub, inner ring; WheelDisc) and the telemetry
 ## ring (WheelTelemetry), both under this view's own drawing; the kit the wheel wears.
 var disc: WheelDisc = null
+## Round 45: the inner ring's ghost wedges, one per needle over the slice under it (over the disc, under this view's
+## own drawing); `wedge` is the first needle's. The needle whose wedge the mouse is on (-1: none; its plate shows).
+const WEDGE_MAX := 4
+var wedges: Array[WheelWedge] = []
+var wedge: WheelWedge = null
+var _wedge_hot: int = -1
 var telemetry: WheelTelemetry = null
 var kit: WheelKit = WheelKit.new()
 ## The operative's class (its accent on the player wheel's frame and hub, 2.5).
@@ -246,6 +252,13 @@ func _init() -> void:
 	disc = WheelDisc.new()
 	disc.name = "Disc"
 	add_child(disc, false, Node.INTERNAL_MODE_FRONT)
+	for i in WEDGE_MAX:
+		var wg := WheelWedge.new()
+		wg.name = "Wedge%d" % i
+		wg.clock_source = disc
+		add_child(wg, false, Node.INTERNAL_MODE_FRONT)
+		wedges.append(wg)
+	wedge = wedges[0]
 	telemetry = WheelTelemetry.new()
 	telemetry.name = "Telemetry"
 	add_child(telemetry, false, Node.INTERNAL_MODE_FRONT)
@@ -365,6 +378,10 @@ func _slice_label(i: int) -> String:
 	var wheel := combatant.wheel
 	var slice := lookup.get_content(wheel.slot_slice_ids[i]) as SliceData
 	var parts := PackedStringArray([Codex.describe(slice) if slice != null else "?"])
+	# round 45: a slice under a needle names the inner ring's modifier on it
+	var ring := ring_tip(i)
+	if ring != "":
+		parts.append(ring)
 	var status: int = wheel.slice_statuses[i]
 	if status != RC.Status.NONE:
 		# ANIM-R4 C6f: whose win it is, as its colour says.
@@ -1742,6 +1759,11 @@ func _gui_input(event: InputEvent) -> void:
 		var hot := String(z.get("kind", "")) == "arrow"
 		mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if hot else Control.CURSOR_ARROW
 		var mz: Dictionary = z if hot else {}
+		# round 45: the mouse on the ghost wedge shows its word plate
+		var on_wedge := wedge_pointer_at(int(z["slot"])) if String(z.get("kind", "")) == "slot" else -1
+		if on_wedge != _wedge_hot:
+			_wedge_hot = on_wedge
+			queue_redraw()
 		if mz != _mouse_zone:
 			_mouse_zone = mz
 			arrow_hovered.emit(mz)
@@ -1764,6 +1786,9 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_MOUSE_EXIT:
+		if _wedge_hot >= 0:
+			_wedge_hot = -1
+			queue_redraw()
 		if not _mouse_zone.is_empty():
 			_mouse_zone = {}
 			arrow_hovered.emit({})
@@ -1972,6 +1997,8 @@ func _draw_view() -> void:
 		# ANIM-R1: a beaten enemy leaves its empty spot with a DEFEATED stamp (a new enemy
 		# can never read as this one coming back).
 		disc.visible = false
+		for wg in wedges:
+			wg.hide_mod()
 		telemetry.visible = false
 		_draw_defeated(center, radius, inner)
 		_draw_hp(center, radius)
@@ -2030,7 +2057,7 @@ func _draw_view() -> void:
 			draw_rect(Rect2(fp - Vector2(3, 3), Vector2(6, 6)), _col(Palette.NET_CYAN))
 	_draw_landed(center, radius, inner, tps, rot)
 	if wheel.has_inner_ring():
-		_draw_ring_plates(center, k)
+		_draw_notch_tick(center, k)
 	if ring_pulse > 0.0:
 		# Good landing: a clean ring grows off the rim and fades.
 		draw_arc(center, radius + Motion.amplitude(&"precision_good_ring") * ring_pulse, 0, TAU, 64, _col(Color(Palette.PAPER, 1.0 - ring_pulse)), 3.0, true)
@@ -2069,6 +2096,7 @@ func _draw_view() -> void:
 				draw_circle(center + Vector2(cos(oa), sin(oa)) * (radius + band * 0.55), 3, Color(Palette.PAPER, 0.5 - o * 0.12))
 	_draw_landing(center, k)
 	_draw_guards(center, k)
+	_draw_word_plates(center, k)
 	if kit.is_boss and radius > WheelFace.LOD_RADIUS:
 		WheelFace.banner(self, center.x, _banner_bottom(), k, shown_name().to_upper(), _banner_sub(), kit.accent)
 	# Telegraphed migration (GDD 2.11, 9.2): next turn's needles, dashed and flickering.
@@ -2606,13 +2634,9 @@ const HUB_GLOW_ALPHA := 0.32
 const HUB_GLOW_SEGMENTS := 24
 const HUB_NAME_Y := 0.58
 const HUB_NAME_MIN_R_1080 := 90.0
-## Segment plates on the inner ring (3.10): glyph box and radius (master units).
-const RING_PLATE := 20.0
+## The radius (master units) a segment's pick pad sits on over the ring (SpinnerView's D4 pads; the standing plates
+## that used it are gone with round 45).
 const RING_PLATE_R := 128.0
-## plan1 W2-A6: the plates' word and glyph sizes (px at text scale 1.0), the padding and the active caret.
-const RING_GLYPH_PX := 13.0
-const RING_PLATE_PAD := 2.0
-const RING_CARET := 4.0
 ## The word on each segment's plate (the segment's name, short enough for the plate).
 const RING_WORDS := {
 	&"seg_x2": "DOUBLE", # TR
@@ -2795,17 +2819,9 @@ func _sync_disc(center: Vector2, radius: float, rot: float) -> int:
 	disc.put(&"hub_r", HUB_PLAYER if ring else HUB_ENEMY)
 	disc.put(&"hub_tint", kit.accent)
 	if ring:
-		var segs := PackedInt32Array()
-		for j in 3:
-			# the disc numbers segments clockwise; the ring's segment k sits at -k x 120 degrees
-			var seg_id := wheel.ring_segment_ids[posmod(-j, 3)] if wheel.ring_segment_ids.size() == 3 else &""
-			segs.append(int(SEG_KINDS.get(seg_id, 0)))
-		disc.put(&"seg_kind", segs)
-		disc.put(&"ring_rot", fposmod(shown_inner_rotation() * DEG_PER_TICK, 360.0))
-		var seg_now := -1
-		if not readouts.is_empty():
-			seg_now = int(readouts[0].get("segment_index", -1))
-		disc.put(&"seg_active", posmod(-seg_now, 3) if seg_now >= 0 else -1)
+		# round 45: any number of segments of any span (the ring's own frame), each one a needle reads raised
+		disc.set_ring(ring_segments(), shown_segments(), shown_inner_rotation() * DEG_PER_TICK, SEG_KINDS)
+	_sync_wedge(center, radius)
 	disc.put(&"lockdown", lockdown_level)
 	disc.put(&"rgb_split", rgb_split)
 	disc.put(&"pixelate", pixelate)
@@ -2823,41 +2839,120 @@ func _sync_disc(center: Vector2, radius: float, rot: float) -> int:
 	return active
 
 
-## The inner ring's segment plates (3.10; plan1 W2-A6): each segment's glyph and its name on a dark plate big
-## enough to read at 1.0, over the ring, the hub's rim and the slices' inner edge. The segment the first
-## pointer reads (the one that modifies the slice that resolves) is lit: a bright rim, the accent fill, the
-## full-strength word and a caret pointing out at its slice; the others are dimmed.
-func _draw_ring_plates(center: Vector2, k: float) -> void:
-	var wheel := combatant.wheel
-	var irot := shown_inner_rotation()
-	var active := -1
-	if not readouts.is_empty():
-		active = int(readouts[0].get("segment_index", -1))
-	var ts := _ts()
-	var font := Palette.mono()
-	var fs := roundi(HUB_FONT_SIZE * ts)
-	var gpx := RING_GLYPH_PX * ts
-	var pad := RING_PLATE_PAD * ts
-	for seg in RC.RING_SEGMENTS:
-		var at := WheelFace.at(center, k, RING_PLATE_R, fposmod((irot - seg * 10) * DEG_PER_TICK, 360.0))
-		var seg_id: StringName = wheel.ring_segment_ids[seg] if seg < wheel.ring_segment_ids.size() else &""
-		var word := ring_word(seg_id)
-		var lit := seg == active
-		var tw := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		var rect := ring_plate_rect(center, k, seg)
-		var box := rect.size
-		var rim := _col(Palette.PAPER if lit else Color(kit.accent, 0.75))
-		_draw_plate(rect, _col(Color(kit.accent.darkened(0.45), 0.96) if lit else Color(Palette.NIGHT_SKY, 0.92)), rim, (2.5 if lit else 1.0) * ts)
-		var ink := _col(Palette.TEXT_HI if lit else Color(Palette.TEXT_HI, 0.82))
-		WheelGlyphs.draw(self, WheelGlyphs.segment_id(seg_id), rect.position + Vector2(box.x * 0.5, pad + gpx * 0.5), gpx, ink)
-		draw_string(font, rect.position + Vector2((box.x - tw) * 0.5, pad + gpx + font.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
-		if lit:
-			# A caret on the plate's outer edge: this segment is the one acting on the slice out there.
-			var dir := (at - center).normalized()
-			var size := RING_CARET * ts
-			var tip := at + dir * (box.y * 0.5 + size)
-			var side := dir.orthogonal() * size
-			draw_colored_polygon(PackedVector2Array([tip, tip - dir * size * 1.4 + side, tip - dir * size * 1.4 - side]), _col(Palette.PAPER))
+## Round 45: the inner ring's segments as the disc draws them, each {id, a0, a1}: clockwise degrees in the ring's
+## own frame (turned by the shown inner rotation), segment k centred on -k segment spans (the plate of segment k
+## sat at (inner rotation - k x 10 ticks)). Empty without a ring.
+func ring_segments() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var c := _shown()
+	if c == null or not c.wheel.has_inner_ring():
+		return out
+	var span := RC.TICKS_PER_RING_SEGMENT * DEG_PER_TICK
+	for k in c.wheel.ring_segment_ids.size():
+		var a0 := fposmod(-k * span - span * 0.5, 360.0)
+		out.append({"id": c.wheel.ring_segment_ids[k], "a0": a0, "a1": a0 + span})
+	return out
+
+
+## Round 45: the ring segment needle `pointer` reads as shown (-1 without a ring or that needle): WheelMath.ring_segment
+## of the shown inner tick there, so it follows the ring mid-turn and matches the rules at rest. Every needle reads its
+## own (designer 2026-10-13: Twin Pointer acts like any pointer).
+func shown_segment(pointer: int = 0) -> int:
+	var c := _shown()
+	var ps := shown_pointers()
+	if c == null or pointer < 0 or pointer >= ps.size() or not c.wheel.has_inner_ring():
+		return -1
+	var t := shown_inner_rotation() + ps[pointer]
+	var per := float(RC.TICKS_PER_RING_SEGMENT)
+	return posmod(int(floor(fposmod(t + per * 0.5, RC.TICKS) / per)), c.wheel.ring_segment_ids.size())
+
+
+## The segments the needles read as shown (one per needle, repeats kept): the disc raises and lights each.
+func shown_segments() -> Array[int]:
+	var out: Array[int] = []
+	for i in shown_pointers().size():
+		var s := shown_segment(i)
+		if s >= 0:
+			out.append(s)
+	return out
+
+
+## The slice needle `pointer` stands on, as shown (-1 without it).
+func pointer_slot(pointer: int) -> int:
+	var c := _shown()
+	var ps := shown_pointers()
+	if c == null or pointer < 0 or pointer >= ps.size():
+		return -1
+	return WheelMath.slice_at(roundi(ps[pointer] + shown_rotation()), c.wheel.slice_count)
+
+
+## Round 45: what needle `pointer`'s ghost wedge shows: {pointer, slot, seg, seg_id, mod, a_mid, half, cover} for the
+## slice under it and the segment it reads, or {} when it shows nothing (no ring, a blank segment, or an earlier
+## needle already on that slice: one modifier per slice, the first needle's). `cover` is the share of the slice's arc
+## the segment spans (the modifier still acts on the whole slice).
+func wedge_state(pointer: int = 0) -> Dictionary:
+	var c := _shown()
+	var seg := shown_segment(pointer)
+	var slot := pointer_slot(pointer)
+	if seg < 0 or slot < 0:
+		return {}
+	for j in pointer:
+		if pointer_slot(j) == slot:
+			return {}
+	var seg_id: StringName = c.wheel.ring_segment_ids[seg]
+	if RingMods.mod_id(seg_id) == RingMods.NONE:
+		return {}
+	var half := c.wheel.ticks_per_slice() * DEG_PER_TICK * 0.5
+	var mid := slice_deg(slot, shown_rotation())
+	var s: Dictionary = ring_segments()[seg]
+	var seg_half := (float(s["a1"]) - float(s["a0"])) * 0.5
+	var seg_mid := shown_inner_rotation() * DEG_PER_TICK + float(s["a0"]) + seg_half
+	var dc := wrapf(seg_mid - mid, -180.0, 180.0)
+	var cover := clampf((minf(half, dc + seg_half) - maxf(-half, dc - seg_half)) / (half * 2.0), 0.0, 1.0)
+	return {"pointer": pointer, "slot": slot, "seg": seg, "seg_id": seg_id, "mod": RingMods.mod_id(seg_id), "a_mid": mid,
+		"half": half, "cover": cover}
+
+
+## The needle whose wedge covers slot `slot` (-1 when none does).
+func wedge_pointer_at(slot: int) -> int:
+	for i in mini(shown_pointers().size(), WEDGE_MAX):
+		var st := wedge_state(i)
+		if not st.is_empty() and int(st["slot"]) == slot:
+			return i
+	return -1
+
+
+## Puts each needle's ghost wedge on its slice (or hides it).
+func _sync_wedge(center: Vector2, radius: float) -> void:
+	for i in WEDGE_MAX:
+		var wg := wedges[i]
+		wg.place(center, radius)
+		wg.scale = disc.scale
+		var st := wedge_state(i) if i < shown_pointers().size() else {}
+		if st.is_empty() or not combatant.is_alive():
+			wg.hide_mod()
+			continue
+		wg.show_mod(StringName(st["seg_id"]), float(st["a_mid"]), float(st["half"]), disc.clock())
+
+
+## Round 45: a notch tick on each needle's line (cream, ink outline, a dot in the tint of the segment it reads), rooted
+## on the raised plate and its tip into the slice's hub edge, under the firmware socket (the attachments).
+func _draw_notch_tick(center: Vector2, k: float) -> void:
+	var ps := shown_pointers()
+	for i in ps.size():
+		var seg := shown_segment(i)
+		if seg < 0:
+			continue
+		var deg := fposmod(-ps[i] * DEG_PER_TICK, 360.0)
+		var half_deg := rad_to_deg(RingMods.TICK_W * 0.5 / RingMods.TICK_BASE_R)
+		var pts := PackedVector2Array([WheelFace.at(center, k, RingMods.TICK_BASE_R, deg - half_deg),
+			WheelFace.at(center, k, RingMods.TICK_TIP_R, deg), WheelFace.at(center, k, RingMods.TICK_BASE_R, deg + half_deg)])
+		draw_colored_polygon(pts, _col(RingMods.TICK_CREAM))
+		var closed := pts.duplicate()
+		closed.append(pts[0])
+		draw_polyline(closed, _col(Palette.INK), RingMods.TICK_INK, true)
+		var tint := RingMods.tint(_shown().wheel.ring_segment_ids[seg])
+		draw_circle(WheelFace.at(center, k, RingMods.TICK_DOT_R, deg), RingMods.TICK_DOT * k, _col(Color(tint, 1.0)))
 
 
 ## plan1 W2-A6: the word on segment `seg_id`'s plate, translated.
@@ -2865,33 +2960,115 @@ func ring_word(seg_id: StringName) -> String:
 	return tr(String(RING_WORDS.get(seg_id, RING_WORD_FALLBACK)))
 
 
-## plan1 W2-A6: where ring segment `seg`'s plate is (local to the view) for a wheel centred on `center` at art
-## scale `k`: its glyph over its word, on the segment's centre at the shown inner rotation.
-func ring_plate_rect(center: Vector2, k: float, seg: int) -> Rect2:
+## Round 45: the words on the wedge's plate: the mark ("×2"; empty when a glyph stands for it) and the word.
+func plate_words(seg_id: StringName) -> String:
+	var mark := String(RingMods.of(seg_id).get("mark", ""))
+	return (mark + " " if mark != "" else "") + ring_word(seg_id)
+
+
+## Round 45, words on demand: the needles whose wedge plate shows: the hovered wedge's, or every wedge's while the
+## player aims at this wheel; none otherwise.
+func word_plate_pointers() -> Array[int]:
+	var out: Array[int] = []
+	var aimed := not hover_zone.is_empty()
+	for i in mini(shown_pointers().size(), WEDGE_MAX):
+		if wedges[i].visible and not wedge_state(i).is_empty() and (aimed or i == _wedge_hot):
+			out.append(i)
+	return out
+
+
+## Whether any word plate shows on this wheel.
+func word_plate_shown() -> bool:
+	return not word_plate_pointers().is_empty()
+
+
+## Round 45: where needle `pointer`'s word plate sits (local), at its wedge's outer edge 9 degrees clockwise of the
+## needle, mirrored counter-clockwise when it would leave the screen. An empty rect while it is hidden.
+func word_plate_rect(pointer: int = -1) -> Rect2:
+	var shown := word_plate_pointers()
+	if shown.is_empty() or (pointer >= 0 and not shown.has(pointer)):
+		return Rect2()
+	return _word_plate_geometry(_center(), art_scale(), shown[0] if pointer < 0 else pointer)["rect"]
+
+
+func _word_plate_geometry(center: Vector2, k: float, pointer: int) -> Dictionary:
+	var st := wedge_state(pointer)
+	var seg_id: StringName = st["seg_id"]
 	var ts := _ts()
-	var font := Palette.mono()
-	var fs := roundi(HUB_FONT_SIZE * ts)
-	var seg_id: StringName = combatant.wheel.ring_segment_ids[seg] if seg < combatant.wheel.ring_segment_ids.size() else &""
-	var at := WheelFace.at(center, k, RING_PLATE_R, fposmod((shown_inner_rotation() - seg * 10) * DEG_PER_TICK, 360.0))
-	var gpx := RING_GLYPH_PX * ts
-	var pad := RING_PLATE_PAD * ts
-	var tw := font.get_string_size(ring_word(seg_id), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var box := Vector2(maxf(tw, gpx) + pad * 2.0, gpx + font.get_height(fs) + pad * 2.0)
-	return Rect2(at - box * 0.5, box)
+	var fs := roundi(RingMods.PLATE_FONT * ts)
+	var font := Palette.display()
+	var h := RingMods.PLATE_H * ts
+	var glyph := String(RingMods.of(seg_id).get("mark", "")) == ""
+	var gw := h * 0.7 + RingMods.PLATE_GAP * ts if glyph else 0.0
+	var w := font.get_string_size(plate_words(seg_id), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + gw + RingMods.PLATE_PAD * ts * 2.0
+	var needle := fposmod(-shown_pointers()[pointer] * DEG_PER_TICK, 360.0)
+	var side := 1.0
+	var at := WheelFace.at(center, k, RingMods.PLATE_R, needle + RingMods.PLATE_DEG)
+	var rect := Rect2(at - Vector2(0.0, h * 0.5), Vector2(w, h))
+	var right_edge := get_viewport_rect().size.x - global_position.x - RingMods.PLATE_MARGIN
+	if rect.end.x > right_edge:
+		side = -1.0
+		at = WheelFace.at(center, k, RingMods.PLATE_R, needle - RingMods.PLATE_DEG)
+		rect = Rect2(at - Vector2(w, h * 0.5), Vector2(w, h))
+	return {"rect": rect, "at": at, "side": side, "needle": needle, "fs": fs, "glyph": glyph, "seg_id": seg_id}
 
 
-## A plate: the fill with a rim `width` px wide (corners clipped by 2 px).
-func _draw_plate(rect: Rect2, fill: Color, rim: Color, width: float) -> void:
-	var c := 2.0
-	var r := rect
-	var pts := PackedVector2Array([
-		r.position + Vector2(c, 0.0), Vector2(r.end.x - c, r.position.y), Vector2(r.end.x, r.position.y + c),
-		Vector2(r.end.x, r.end.y - c), Vector2(r.end.x - c, r.end.y), Vector2(r.position.x + c, r.end.y),
-		Vector2(r.position.x, r.end.y - c), Vector2(r.position.x, r.position.y + c)])
-	draw_colored_polygon(pts, fill)
-	var closed := pts.duplicate()
-	closed.append(pts[0])
-	draw_polyline(closed, rim, width, true)
+func _draw_word_plates(center: Vector2, k: float) -> void:
+	for i in word_plate_pointers():
+		_draw_word_plate(center, k, i)
+
+
+func _draw_word_plate(center: Vector2, k: float, pointer: int) -> void:
+	var g := _word_plate_geometry(center, k, pointer)
+	var rect: Rect2 = g["rect"]
+	var seg_id: StringName = g["seg_id"]
+	var tint := RingMods.tint(seg_id)
+	var ts := _ts()
+	var lead_deg := float(g["needle"]) + RingMods.PLATE_DEG * float(g["side"])
+	draw_line(g["at"], WheelFace.at(center, k, RingMods.PLATE_LEADER_R, lead_deg), _col(tint), RingMods.PLATE_BORDER * ts, true)
+	var box := StyleBoxFlat.new()
+	box.bg_color = _col(RingMods.PLATE_FILL)
+	box.border_color = _col(tint)
+	box.set_border_width_all(roundi(RingMods.PLATE_BORDER * ts))
+	box.set_corner_radius_all(roundi(RingMods.PLATE_RADIUS * ts))
+	box.anti_aliasing = true
+	draw_style_box(box, rect)
+	var font := Palette.display()
+	var fs: int = g["fs"]
+	var x := rect.position.x + RingMods.PLATE_PAD * ts
+	if bool(g["glyph"]):
+		var gs := rect.size.y * 0.7
+		WheelGlyphs.draw(self, WheelGlyphs.segment_id(seg_id), Vector2(x + gs * 0.5, rect.get_center().y), gs, _col(tint))
+		x += gs + RingMods.PLATE_GAP * ts
+	var base := Vector2(x, rect.get_center().y + WheelFace.cap_height(font, fs) * 0.5)
+	draw_string(font, base, plate_words(seg_id), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _col(tint))
+
+
+## Round 45: the tooltip's inner-ring lines for a slice a needle's wedge covers (empty for another slice or a blank
+## segment): the modifier and what it does, a partial cover, the next segment and the keys that turn it.
+func ring_tip(slot: int) -> String:
+	var pk := wedge_pointer_at(slot)
+	if pk < 0:
+		return ""
+	var st := wedge_state(pk)
+	var c := _shown()
+	var seg_id: StringName = st["seg_id"]
+	var lines := PackedStringArray([tr("INNER RING: %s") % plate_words(seg_id)])
+	var seg := lookup.get_content(seg_id) as RingSegmentData if lookup != null else null
+	if seg != null and seg.description != "":
+		lines.append(seg.description)
+	var cover := float(st["cover"])
+	if cover < 1.0 - COVER_EPS:
+		lines.append(tr("Covers %d%% of this slice: it acts on the whole slice.") % roundi(cover * 100.0))
+	var ids := c.wheel.ring_segment_ids
+	var next_id: StringName = ids[(int(st["seg"]) + 1) % ids.size()]
+	lines.append(tr("Next with a clockwise turn: %s") % plate_words(next_id))
+	lines.append(tr("%s / %s on the INNER ring turn it.") % [Settings.key_text(&"nudge_left"), Settings.key_text(&"nudge_right")])
+	return "\n".join(lines)
+
+
+## A cover this close to whole reads as whole (float noise mid-turn).
+const COVER_EPS := 0.005
 
 
 ## The hub's emblem (3.3; B2, review D2: round 40 hub_cores_v3 / combat_typical_v4): its core

@@ -646,3 +646,16 @@ const CLIP_METAL := Color("#96A0B0")
 const CLIP_RIM := Color("#282C36")
 ## B5: the Codex glyph tile's fill (deep navy).
 const GLYPH_TILE_FILL := Color("#081222")
+
+## Round 45 inner ring (docs/concepts/round45_inner_ring/NOTES.md, designer rulings): modifier tints, CORRUPT's
+## second colour, the cream tick / blank plate and the word plate's fill. Read by RingMods.
+const RING_DOUBLE := Color("#FFD24D")
+const RING_PIERCE := Color("#F2F6FF")
+const RING_CORRUPT := Color("#3CFF8C")
+const RING_ANCHOR := Color("#BEC8D7")
+const RING_ACCEL := Color("#FF7A1A")
+const RING_ECHO := Color("#5CE1FF")
+const RING_GLITCH_PINK := Color("#FF3DA8")
+const RING_CREAM := Color("#F2EEE4")
+const RING_BLANK := Color("#F2EEE4", 0.8)
+const RING_PLATE_FILL := Color("#0C0A12", 0.95)

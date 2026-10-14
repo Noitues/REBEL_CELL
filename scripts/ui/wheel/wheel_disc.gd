@@ -12,6 +12,8 @@ const EXT := 470.0
 ## Master units of the slice rim (the recipes' R_OUT): the view's radius maps to it.
 const R_OUT := 360.0
 const MAX_SLICES := 8
+## Round 45: the inner ring takes up to this many segments of any span.
+const MAX_SEGMENTS := 8
 
 var mat: ShaderMaterial = null
 
@@ -23,6 +25,75 @@ func _init() -> void:
 	mat = ShaderMaterial.new()
 	mat.shader = SHADER
 	material = mat
+	mat.set_shader_parameter(&"seg_dim_tex", RingMods.DIM_TEX)
+	mat.set_shader_parameter(&"seg_notch_w", RingMods.NOTCH_W)
+	mat.set_shader_parameter(&"seg_notch_a", RingMods.NOTCH_A)
+	mat.set_shader_parameter(&"seg_notch_end", RingMods.NOTCH_END)
+	mat.set_shader_parameter(&"seg_raise_in", RingMods.RAISE_IN)
+	mat.set_shader_parameter(&"seg_raise_out", RingMods.RAISE_OUT)
+	mat.set_shader_parameter(&"seg_plate_light", RingMods.PLATE_LIGHT)
+	mat.set_shader_parameter(&"seg_lip_w", RingMods.LIP_W)
+	mat.set_shader_parameter(&"seg_cap_w", RingMods.CAP_W)
+	mat.set_shader_parameter(&"seg_cap_over", RingMods.CAP_OVER)
+	mat.set_shader_parameter(&"seg_glow_px", RingMods.GLOW_PX)
+	mat.set_shader_parameter(&"seg_glow_a", RingMods.GLOW_A)
+	mat.set_shader_parameter(&"seg_blank", RingMods.BLANK_TINT)
+
+
+## Round 45: the ring's segments, each {id, a0, a1} (clockwise degrees in the ring's frame, a1 > a0, a span of
+## at most 360; at most MAX_SEGMENTS), its rotation `rot` (degrees) and the segments a needle reads (`lit`, the
+## indices; every pointer lights its own). A segment's texture kind comes from `kinds` (id -> SEG_COL row) and its
+## tint from RingMods.
+func set_ring(segs: Array[Dictionary], lit: Array[int], rot: float, kinds: Dictionary) -> void:
+	var p := ring_params(segs, kinds)
+	for key in p:
+		mat.set_shader_parameter(key, p[key])
+	mat.set_shader_parameter(&"seg_lit", lit_mask(lit, int(p[&"seg_n"])))
+	mat.set_shader_parameter(&"ring_rot", fposmod(rot, 360.0))
+
+
+## The shader's `seg_lit` bits for segment indices `lit` (those past `n` dropped).
+static func lit_mask(lit: Array[int], n: int) -> int:
+	var m := 0
+	for i in lit:
+		if i >= 0 and i < n:
+			m |= 1 << i
+	return m
+
+
+## The ring's uniform arrays for `segs` (see `set_ring`), padded to MAX_SEGMENTS: what the shader reads.
+static func ring_params(segs: Array[Dictionary], kinds: Dictionary) -> Dictionary:
+	var n := mini(segs.size(), MAX_SEGMENTS)
+	var a0 := PackedFloat32Array()
+	var a1 := PackedFloat32Array()
+	var ks := PackedInt32Array()
+	var tints := PackedColorArray()
+	for i in MAX_SEGMENTS:
+		if i < n:
+			var s: Dictionary = segs[i]
+			var id: StringName = s.get("id", &"")
+			a0.append(float(s["a0"]))
+			a1.append(float(s["a1"]))
+			ks.append(int(kinds.get(id, 0)))
+			var m := RingMods.of(id)
+			tints.append(m["tint"] if not m.is_empty() else Palette.CLEAR)
+		else:
+			a0.append(0.0)
+			a1.append(0.0)
+			ks.append(0)
+			tints.append(Palette.CLEAR)
+	return {&"seg_n": n, &"seg_a0": a0, &"seg_a1": a1, &"seg_kind": ks, &"seg_tint": tints}
+
+
+## The shader's segment lookup (`ring_seg_at`), mirrored for the tests: the index of the segment covering
+## ring-frame angle `a` (degrees), -1 where none does.
+static func segment_at(a: float, params: Dictionary) -> int:
+	var a0: PackedFloat32Array = params[&"seg_a0"]
+	var a1: PackedFloat32Array = params[&"seg_a1"]
+	for i in int(params[&"seg_n"]):
+		if fposmod(a - a0[i], 360.0) < a1[i] - a0[i]:
+			return i
+	return -1
 
 
 ## Places the quad on `center` (local to the parent) for a slice rim of `radius` px.

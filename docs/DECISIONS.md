@@ -34,6 +34,35 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-13 — Round 45 inner ring built (designer-approved concept, art-pass 2216c126; replaces W2-A6's standing plates)
+- **Ghost wedge:** `WheelWedge` (one quad per wheel over the disc, under the view's drawing and the firmware sockets) runs
+  `shaders/wheel/wheel_wedge.gdshader` over the slice under the first needle with the modifier of the ring segment there
+  (`WheelView.shown_segment` = `WheelMath.ring_segment` of the shown inner tick, so it follows the ring mid-turn). Uniforms
+  `mod` (RingMods id, -1 none) and `tint`, plus layout. Shade 25 %, wash 10 %, halo 40 %, marks 38 % (designer ruling),
+  halved in the read window; a static edge line + glow. One modifier per slice (no split wedge). A blank segment: no wedge.
+- **Marks:** DOUBLE samples the glyph SDF atlas's `seg_x2` ("×2" lettering, box 100 = about 53 units tall, NOTES' 75-pt
+  mark); PIERCE an analytic outward chevron (50 = 36 x 1.4, 2-unit ink keyline); CORRUPT polar dead blocks (29) + three
+  tears, re-rolling 12/s. ANCHOR / ACCEL / ECHO are not in round 45 (it drew statuses): they tile their own atlas glyph at
+  the status marks' size and spacing (57, rows 64, arc 78), ACCEL in Heat orange #FF7A1A with a keyline, ECHO #5CE1FF, ANCHOR
+  steel #BEC8D7. PIERCE / CORRUPT run on the screens' loop clock (0 under reduce effects: static). The 0.12 s wedge
+  cross-fade and 0.10 s plate grow are not built (no motion entry in the footer); the switch is instant.
+- **Z-order deviation:** the state overlay is inside the disc shader, so the wedge sits over it (NOTES puts it under); the
+  wedge is translucent, the overlay reads through.
+- **Ring:** `wheel_disc.gdshader` takes up to 8 segments of any span (`seg_n`, `seg_a0/a1[8]`, `seg_kind[8]`,
+  `seg_tint[8]`; `WheelDisc.set_ring` / `ring_params` / `segment_at` mirrors the lookup). Inactive: texture 42 %, a tint
+  notch on the outer lip (none on blank). Active: a raised lit plate r 97..131 with full texture, tint lips, 5-unit end caps
+  (they show a partial cover) and a tint glow; cream at 80 % on a blank. The old texture extension into the slice is gone.
+- **Notch tick** (cream, ink outline, tint dot) on the needle line, drawn by the view under the firmware socket.
+- **Words on demand:** one plate (r 346, 9° clockwise of the needle, mirrored at the screen's right edge, 32 px, 22 px
+  display face, 2 px tint border, leader) only while the mouse is on the wedge or a zone of that wheel is aimed. The slice
+  tooltip of the slice under the needle adds the modifier, its text, "Covers N% ... whole slice" when partial, the segment a
+  clockwise turn brings next and the nudge keys. W2-A6's standing plates (`ring_plate_rect`, `_draw_ring_plates`) removed.
+- **Every needle (designer ruling 2026-10-13):** Twin Pointer acts like any pointer: each needle raises the segment it
+  reads (`seg_lit` bit mask), gets its own wedge (`WheelView.wedges`, up to 4) and tick; aiming shows every wedge's plate,
+  hovering one wedge shows its own. Two needles on one slice: the first needle's wedge only (one modifier per slice).
+- `WheelView.RING_PLATE_R` stays (SpinnerView's D4 segment pads read it). Numbers in `RingMods` consts. Tests:
+  `test_w2_a5a6_ring.gd`. Sheet: `docs/art_review/PLAN1/R45_RING.jpg`.
+
 ### 2026-10-13 — W2-A3: labels in place, combat legend, status definitions, loot slot hover
 Chips beside a wheel's HP carry a word ("HP -11", "BLOCKED (3", "GUARD +3", "RAM -1", "HEAT +2"; `HudResultChips.tag_of`;
 `ResultChipModel.label` unchanged). The RAM header reads "(-1 THIS PLAY)". The "D 0" badge's tooltip says what it counts.

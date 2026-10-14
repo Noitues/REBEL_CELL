@@ -88,9 +88,31 @@ uniform vec4 accent : source_color = vec4(1.0, 0.24, 0.66, 1.0);
 uniform vec4 hub_tint : source_color = vec4(1.0, 0.24, 0.66, 1.0);
 uniform float hub_r = 96.0;
 uniform bool ring_on = false;
-uniform int seg_kind[3];
+// Round 45: up to 8 segments of any span, [seg_a0, seg_a1) clockwise degrees in the ring's frame (seg_a1 >
+// seg_a0, the span at most 360); their texture kind (SEG_COL order) and tint (alpha 0 = blank: no notch).
+uniform int seg_n = 0;
+uniform float seg_a0[8];
+uniform float seg_a1[8];
+uniform int seg_kind[8];
+uniform vec4 seg_tint[8];
 uniform float ring_rot = 0.0;
-uniform int seg_active = -1;
+// The segments a needle reads (bit i = segment i): each is raised and lit (designer 2026-10-13: every pointer,
+// Twin Pointer too, lights the segment it reads).
+uniform int seg_lit = 0;
+// The ring's look (RingMods): inactive texture share, the tint notch, the active raised plate.
+uniform float seg_dim_tex = 0.42;
+uniform float seg_notch_w = 3.0;
+uniform float seg_notch_a = 0.9;
+uniform float seg_notch_end = 3.0;
+uniform float seg_raise_in = 3.0;
+uniform float seg_raise_out = 4.0;
+uniform float seg_plate_light = 1.15;
+uniform float seg_lip_w = 1.1;
+uniform float seg_cap_w = 5.0;
+uniform float seg_cap_over = 2.0;
+uniform float seg_glow_px = 7.0;
+uniform float seg_glow_a = 0.85;
+uniform vec4 seg_blank : source_color = vec4(0.949, 0.933, 0.894, 0.8);
 uniform float lockdown = 0.0;
 uniform bool boss = false;
 uniform bool elite = false;
@@ -218,6 +240,26 @@ float seg_tex(int sk, float u, float rho, float mid_r) {
 		return (0.5 + 0.5 * sin(rho * 0.9 - tclock() * 4.0 + abs(u) * 0.2)) * 0.45;
 	}
 	return (hash(vec2(floor(u * 2.0), 3.0)) - 0.5) * 0.12 + 0.06;
+}
+
+// Round 45: the ring segment at ring-frame angle `a` (degrees), -1 where none lies (WheelDisc.segment_at
+// mirrors it for the tests): segment i covers [seg_a0[i], seg_a1[i]) clockwise.
+int ring_seg_at(float a) {
+	for (int i = 0; i < 8; i++) {
+		if (i < seg_n && mod(a - seg_a0[i], 360.0) < seg_a1[i] - seg_a0[i]) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+bool seg_is_lit(int i) {
+	return ((seg_lit >> i) & 1) == 1;
+}
+
+// A segment's colour: its modifier's tint, or cream for a blank (alpha 0).
+vec3 seg_col(int i) {
+	return seg_tint[i].a > 0.0 ? seg_tint[i].rgb : seg_blank.rgb * seg_blank.a;
 }
 
 // The screens' tone step (CMB-02): WheelKit.tone mirrors it for the tests.
@@ -361,13 +403,8 @@ vec4 slice_tile(vec2 p, int i, float sc) {
 			}
 		}
 	}
-	// the inner ring's active segment extends its texture into the slice it modifies (3.10)
-	if (ring_on && i == active && seg_active >= 0) {
-		int sk2 = seg_kind[seg_active];
-		float ext_a = (1.0 - sm(132.0, 182.0, rho)) * sm(R_IN, 136.0, rho) * (1.0 - 0.65 * in_plate);
-		float tx2 = seg_tex(sk2, rho * radians(d), rho, 157.0);
-		scr = mix(scr, SEG_COL[sk2] * 1.2, clamp(tx2, 0.0, 1.0) * ext_a * (tier >= 3 ? 0.47 : 0.8));
-	}
+	// (round 45: the inner ring's texture no longer extends into the slice; the ghost wedge, WheelWedge, says
+	// what the active segment does to it)
 	// landing flash: the slice lights in its tint and fades; a WEAK landing dims its slice 20 %
 	scr = mix(scr, flash_col(i), clamp(flash[i], 0.0, 1.0) * 0.55);
 	if (i == land_slot) {
@@ -681,26 +718,32 @@ vec4 disc_at(vec2 p) {
 		o = vec4(c * al, al) + o * (1.0 - al);
 	}
 	// 6. inner ring (3.10) and the hub CRT disc (3.3)
-	if (ring_on && rho > RING0 - 1.0 && rho < RING1 + 1.0) {
+	if (ring_on && seg_n > 0 && rho > RING0 - 1.0 && rho < RING1 + 1.0) {
 		float al = clamp((rho - RING0) / px + 0.5, 0.0, 1.0) * clamp((RING1 - rho) / px + 0.5, 0.0, 1.0);
 		float a = mod(th - ring_rot, 360.0);
-		int seg = int(floor(mod(a + 60.0, 360.0) / 120.0)) % 3;
-		float local = mod(a + 60.0, 120.0) - 60.0;
-		vec3 sc = SEG_COL[seg_kind[seg]];
+		int seg = ring_seg_at(a);
 		vec3 c = vec3(0.13, 0.14, 0.16) * (0.85 + 0.3 * cos(radians(th - 315.0)));
-		float u = local * PI / 180.0 * (RING0 + RING1) * 0.5;
-		// per-segment texture across the band (ringlock.texture, simplified)
-		int sk = seg_kind[seg];
-		float tex = seg_tex(sk, u, rho, (RING0 + RING1) * 0.5);
-		c = mix(c, sc, clamp(tex, 0.0, 1.0) * 0.55);
-		// grooves between the segments, the lips with accent hairlines, a glass sheen
-		float groove = 1.0 - sm(0.0, 2.2, abs(abs(local) - 60.0) * PI / 180.0 * rho);
-		c *= 1.0 - 0.7 * groove;
-		c += exp(-pow((rho - RING1 + 1.0) / 0.9, 2.0)) * accent.rgb * 0.9;
-		c += exp(-pow((rho - RING0 - 1.0) / 0.9, 2.0)) * accent.rgb * 0.6;
-		c *= seg == seg_active ? 1.0 : 0.72;
-		if (seg == seg_active) {
-			c += exp(-pow((rho - RING1 + 2.0) / 2.5, 2.0)) * sc * 0.8;
+		if (seg >= 0) {
+			float hs = (seg_a1[seg] - seg_a0[seg]) * 0.5;
+			float local = wrapd(a - (seg_a0[seg] + hs));
+			int sk = seg_kind[seg];
+			vec3 sc = seg_col(seg);
+			float u = local * PI / 180.0 * (RING0 + RING1) * 0.5;
+			// per-segment texture across the band (ringlock.texture, simplified), dimmed off the needle
+			float tex = seg_tex(sk, u, rho, (RING0 + RING1) * 0.5);
+			c = mix(c, sc, clamp(tex, 0.0, 1.0) * 0.55 * (seg_is_lit(seg) ? 1.0 : seg_dim_tex));
+			// grooves at the segment's ends, the lips with accent hairlines
+			float ge = (hs - abs(local)) * PI / 180.0 * rho;
+			float groove = 1.0 - sm(0.0, 2.2, ge);
+			c *= 1.0 - 0.7 * groove;
+			c += exp(-pow((rho - RING1 + 1.0) / 0.9, 2.0)) * accent.rgb * 0.9;
+			c += exp(-pow((rho - RING0 - 1.0) / 0.9, 2.0)) * accent.rgb * 0.6;
+			c *= seg_is_lit(seg) ? 1.0 : 0.72;
+			// the handle: a tint notch along the outer lip, short of each groove (none on a blank)
+			if (seg_tint[seg].a > 0.0) {
+				float nt = cover(rho - (RING1 - seg_notch_w)) * cover(ge - 2.2 - seg_notch_end);
+				c = mix(c, sc, nt * seg_notch_a);
+			}
 		}
 		o = vec4(c * al, al) + o * (1.0 - al);
 	}
@@ -756,6 +799,36 @@ vec4 disc_at(vec2 p) {
 		o.rgb += cols[active].rgb * glow * (1.0 - ink);
 		o = mix(o, vec4(0.04, 0.03, 0.06, 1.0), ink * step(-8.0, e));
 		o = mix(o, vec4(0.98, 0.94, 0.84, 1.0), cream);
+	}
+	// 7b. round 45: each segment a needle reads, a raised lit plate (the band widened in and out) with its full
+	// texture, tint lips, end caps (they show a partial cover) and a tint glow, over the hub's rim and the
+	// slices' inner edge (the notch tick and the firmware socket are the view's, on top)
+	for (int sa = 0; sa < 8; sa++) {
+		if (!ring_on || sa >= seg_n || !seg_is_lit(sa) || rho >= RING1 + seg_raise_out + 4.0 * seg_glow_px) {
+			continue;
+		}
+		float ra = RING0 - seg_raise_in;
+		float rb = RING1 + seg_raise_out;
+		float a = mod(th - ring_rot, 360.0);
+		float hs = (seg_a1[sa] - seg_a0[sa]) * 0.5;
+		float local = wrapd(a - (seg_a0[sa] + hs));
+		float arc_out = (abs(local) - hs) * PI / 180.0 * rho;
+		float sdp = max(arc_out, max(ra - rho, rho - rb));
+		vec3 tf = seg_col(sa);
+		float light = 0.78 + 0.32 * cos(radians(th - 315.0));
+		o = over_p(o, tf, seg_glow_a * exp(-pow(max(sdp - 2.0, 0.0) / seg_glow_px, 2.0)) * (1.0 - cover(-sdp)));
+		float pc = cover(-sdp);
+		if (pc > 0.0) {
+			float vv = clamp((rho - ra) / (rb - ra), 0.0, 1.0);
+			vec3 c = (vec3(0.13, 0.125, 0.16) + 0.05 * sin(vv * PI)) * light * seg_plate_light;
+			float tex = seg_tex(seg_kind[sa], local * PI / 180.0 * rho, rho, (ra + rb) * 0.5);
+			c = mix(c, tf, clamp(tex, 0.0, 1.0));
+			float lip = exp(-pow((rho - rb + 1.0) / seg_lip_w, 2.0)) + exp(-pow((rho - ra - 1.0) / seg_lip_w, 2.0));
+			c = mix(c, tf, clamp(lip, 0.0, 1.0) * 0.95);
+			o = over_p(o, c, pc);
+		}
+		float cap = cover(seg_cap_w * 0.5 - abs(arc_out)) * cover(min(rho - ra + seg_cap_over, rb + seg_cap_over - rho));
+		o = over_p(o, tf, cap);
 	}
 	// 8. the glass crescent over the disc (d3-lite)
 	float cres = exp(-pow((rho / R_LIP - 0.88) / 0.06, 2.0)) * pow(clamp(cos(radians(th - 315.0)), 0.0, 1.0), 2.0) * 0.10;
