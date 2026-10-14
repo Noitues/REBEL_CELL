@@ -1,7 +1,6 @@
 keys,en
     none today,    none today
 "  %s (%s) Rank %d, HP %d/%d, deck %d, daemons %d","  %s (%s) Rank %d, HP %d/%d, deck %d, daemons %d"
-  //  RAID AT HEAT %d,  //  RAID AT HEAT %d
  %s Heat, %s Heat
  (INNER RING), (INNER RING)
  (local: REBEL_CELL is built from your profile), (local: REBEL_CELL is built from your profile)
@@ -334,6 +333,7 @@ CLAIMED,CLAIMED
 CLASS,CLASS
 CLASSIFIED,CLASSIFIED
 CLEANSE,CLEANSE
+CLEAR FIRST,CLEAR FIRST
 CLEARED,CLEARED
 CLEARS %s,CLEARS %s
 CLOSE,CLOSE
@@ -1926,6 +1926,7 @@ RESULT:","RAID
 RESULT:"
 RAID %d,RAID %d
 RAID // %s,RAID // %s
+RAID AT HEAT %d,RAID AT HEAT %d
 RAID FEED // LIVE,RAID FEED // LIVE
 RAID FORECAST,RAID FORECAST
 RAID IN PROGRESS,RAID IN PROGRESS

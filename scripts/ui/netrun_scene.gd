@@ -1465,7 +1465,7 @@ func _show_map() -> void:
 	if _grid_zoomed:
 		var g := CityLayout.grid_graph(RunManager.campaign, RunManager.corporation, CityLayout.threat_paths(RunManager.campaign, RunManager.corporation), s.run.site_id)
 		g = CityLayout.with_run_path(g, RouteLinkLayout.from_site(RunManager.corporation, RunManager.campaign, s.run.site_id), s.run.site_id)
-		_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, 0.85, Vector2(0.4, 0.56), Vector2.INF)
+		_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, 0.85, Vector2(0.4, 0.56), grid_view_focus(g, RouteLinkLayout.from_site(RunManager.corporation, RunManager.campaign, s.run.site_id), s.run.site_id))
 		city_overlay.avoid_controls([win])  # map labels stay clear of the ROUTE window
 	elif s.run.kind == "boss":
 		_mount_hq_run()
@@ -1519,6 +1519,22 @@ func _show_map() -> void:
 	# ANIM-R2 R1 / R2: the next screen is a fight's arena, the Mainframe, an event or loot, all on
 	# the default frame of this city's look: baked now, behind the route (after its own view).
 	_prebake_backdrops.call_deferred()
+
+
+## W3-POLISH F5: the Grid point GRID VIEW's camera centers on: the middle of the run's path (its
+## start Site and the TARGET), so both are on screen; Vector2.INF (the graph's center) when the
+## graph holds neither.
+static func grid_view_focus(g: Dictionary, from_id: StringName, target_id: StringName) -> Vector2:
+	var ends: Array[Vector2] = []
+	for n: Dictionary in g["nodes"]:
+		if n["id"] == target_id or n["id"] == from_id:
+			ends.append(n["at"])
+	if ends.is_empty():
+		return Vector2.INF
+	var sum := Vector2.ZERO
+	for p in ends:
+		sum += p
+	return sum / ends.size()
 
 
 ## W3-GRID (R6 / C10): GRID VIEW's line for the active run: "RUN PATH: ORCHARD > DEPOT 9 (TARGET)".

@@ -82,6 +82,18 @@ runs out, start the animation work; use Haiku and the Batch API as needed. Orche
 - **Gate PT-003** (waves 3, 3b, 4, 5 + whatever motion has merged): city profile with every tester starting at the
   title (`--at title`; W3-ROUTE's click-to-select changes the recorded route replays, which the gate lists as to
   re-record), the full suite once, smoke, validate.
+### 2026-10-13 — W3-POLISH: the wave 3 / 3b review findings F1-F9 (designer away; decided, logged)
+- **F1** a locked Site's hover file (`CityMapOverlay` exploit file) loses its DECRYPTED stamp, as the selected card does: the HQ idle graph flags such a node `locked`.
+- **F2** the prerequisite's double ring is two full-weight rings with a wide gap, outer one PAPER white (a reachable Site's single ring is orange), and the words CLEAR FIRST on a plate over it (under it when the map has no room above) (weight, gap and a label; no pulse, no motion).
+- **F3** the FLATLINE value keeps "HEAT +N -> T" in one piece (no-break spaces) and the raid line ("RAID AT HEAT n", the old "  //  " prefix dropped) on its own line.
+- **F4** CORE's card title says HOME SERVER once when the node's name is its type; with no verb slot the card column now ends above the ON AIR line when that stands in the foot gap (it ran under the card's left foot and cut the last line); the card pages instead (CardPager) if it no longer fits.
+- **F5** (real bug) GRID VIEW's camera focused the centre of the whole graph, so the run path was off screen; it now focuses the middle of the path (start Site and TARGET): `NetrunScene.grid_view_focus`.
+- **F6** the route node file's foot gains a gap of 0.75 margins above the DECRYPTED chip (the last field row, HEALS, touched it).
+- **F7** (combat_scene, one line) the toast's z_index is OVER_HAND_Z + 1, over the tutorial box (same layer, later sibling won).
+- **F8** the raid note keeps off the ON AIR line and paper panels (the work order), and tries raised foot spots (steps of 16 px, up to 5) above the foot band before the search wanders to the poster's lower left over a header. CLAIMED stamps: NOT changed. They are a designed one-shot (hold, then wipe; B4 / D5 / D7 "a stamp plays once, wipes after 1.5 s") and the red pencil lies over every UI by the grease-pencil rule, so the sheet caught them mid-wipe under the pencil; the capture now also shows frame 20.
+- **F9** same fix as F8 (the ON AIR ticker was not on the note's avoid list; it draws its own words).
+- Tests: `tests/unit/test_w3_polish.gd` (fast). After captures: `docs/art_review/PLAN1/W3_POLISH.jpg`.
+- F7 side effect: while a refusal toast shows it covers the tutorial's NEXT / Skip buttons for its few seconds (it was hidden behind the box before); moving the toast is ANIM-COMBAT's file, left.
 ### 2026-10-13 — W3B-AIM: aim ends whole, UNDO names its event, B6 / B7 / B8 (PT-002 B1, B2, B6, B7, B8)
 - **B1 reproduced** (`tests/unit/test_w3b_aim.gd`): the PB-010 repro only tried Esc / Z / UNDO, which go through `cancel_selection`.
   A state change that ends an aim by another road (the Q/E nudge key, a target switch: both end in `_refresh`) reset `selecting`
