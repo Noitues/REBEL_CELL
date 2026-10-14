@@ -76,6 +76,12 @@ runs out, start the animation work; use Haiku and the Batch API as needed. Orche
   decide): B4 (empty roster + 0 Schematics dead end) joins W3-HQ's C6; B1 stuck aim, B2 UNDO reason, B3 tutorial
   overlay in netrun fights and the P2s B5–B8 become **wave 3b** (`docs/handoff/plan1/W3B.md`). Only bugs with a
   repro; the clarity items (Heat, keyboard aim, clipped text, cancel key) wait for the designer's triage.
+- **Animation pass round P1** (`docs/handoff/plan1/ANIM.md`, from PB-010 M1–M10 + the queued route motion) starts
+  in parallel at 23:30 rather than strictly after wave 5: worktree slots were free, and the waves and the pass touch
+  mostly different code. ANIM-COMBAT first; ANIM-FLOW after W4-PROMPTS merges (both touch the menus).
+- **Gate PT-003** (waves 3, 3b, 4, 5 + whatever motion has merged): city profile with every tester starting at the
+  title (`--at title`; W3-ROUTE's click-to-select changes the recorded route replays, which the gate lists as to
+  re-record), the full suite once, smoke, validate.
 ### 2026-10-13 — W3B-AIM: aim ends whole, UNDO names its event, B6 / B7 / B8 (PT-002 B1, B2, B6, B7, B8)
 - **B1 reproduced** (`tests/unit/test_w3b_aim.gd`): the PB-010 repro only tried Esc / Z / UNDO, which go through `cancel_selection`.
   A state change that ends an aim by another road (the Q/E nudge key, a target switch: both end in `_refresh`) reset `selecting`
