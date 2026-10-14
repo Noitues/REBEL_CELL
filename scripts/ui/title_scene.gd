@@ -382,6 +382,7 @@ func show_main() -> void:
 	# Big text: the right column is MORE; the profile is on the Stats page (it has the same tags).
 	profile.visible = not big_text()
 	page.add_child(foot)
+	PressDip.attach(page)  # Plan 1 M10: a press on a menu line is acknowledged at once
 	_place_bottom(profile, true)
 	profile.offset_bottom = -foot.get_combined_minimum_size().y - FOOT_GAP  # above the pad prompts (round 33)
 	_place_bottom(foot, false, true)

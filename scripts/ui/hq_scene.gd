@@ -301,6 +301,21 @@ func arrival_ready() -> bool:
 	return true
 
 
+## Plan 1 M9: the page that entered under the jack's opaque cover and whether it came back to the HQ.
+var _arriving_page: Control = null
+var _arriving_back: bool = false
+
+
+## Plan 1 M9: plays the arriving page's entrance once the jack's cover lifts (see `_set_panel`); a
+## page replaced meanwhile (or freed) plays nothing.
+func _enter_page_now() -> void:
+	var p := _arriving_page
+	_arriving_page = null
+	if p == null or not is_instance_valid(p) or p != _panel or not p.is_inside_tree():
+		return
+	PageTransition.enter(p, PageTransition.look_of(p), UiFocus.focus_first.bind(p), -1 if _arriving_back else 1)
+
+
 func launch(site_id: StringName, operative_id: StringName) -> bool:
 	# ANIM-R1 M1: a press during the jack (a second JACK IN) does nothing.
 	if RunManager.scene_change_pending():
@@ -994,7 +1009,16 @@ func _set_panel(p: Control, name: String) -> void:
 	if entering and not name in ["raid_playout", "end_lock", "end"]:
 		if _panel_host.theme_type_variation == &"" and name != "start":
 			PageTransition.glass_is_windows(p)  # ANIM-R1 M11: the roll band crosses the windows only
-		PageTransition.enter(p, PageTransition.look_of(p), UiFocus.focus_first.bind(p), -1 if back else 1)
+		if Fx.cover_opaque():
+			# Plan 1 M9: the jack's cover is still opaque (a jack out arriving): the layout settles in
+			# as the cover lifts, where it shows, not behind it (the arrival then read as a snap).
+			_arriving_page = p
+			_arriving_back = back
+			if not Fx.cover_lifting.is_connected(_enter_page_now):
+				Fx.cover_lifting.connect(_enter_page_now, CONNECT_ONE_SHOT)
+			UiFocus.focus_first(p)
+		else:
+			PageTransition.enter(p, PageTransition.look_of(p), UiFocus.focus_first.bind(p), -1 if back else 1)
 	else:
 		UiFocus.focus_first(p)
 	_scroll_to_top.call_deferred()
@@ -5539,7 +5563,13 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 		fx.home_hit_shown.connect(_fly_home_number)
 	playout.finished.connect(func() -> void:
 		cont.disabled = false
-		cont.modulate.a = 1.0
+		# Plan 1 M8: CONTINUE comes in with the verdict (a fade and a pop), not a pop-in.
+		if Motion.live(&"raid_continue_in") and is_instance_valid(cont):
+			cont.pivot_offset = cont.size * 0.5
+			Motion.fade(cont, 1.0, &"raid_continue_in")
+			Motion.pop(cont, &"raid_continue_in")
+		else:
+			cont.modulate.a = 1.0
 		# ANIM-R6 C10: the speed buttons are off now: the focus goes on to Continue.
 		if cont.is_inside_tree():
 			cont.grab_focus()
@@ -5553,6 +5583,7 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 		if dealt:
 			hud.stats.land_pulse(StatIcon.RAIDS)
 		forecast.resolve(RESULT_CAPTION, verdict)
+		Fx.freeze_frames()  # Plan 1 M8: the verdict lands with weight (a hit-stop, none under reduce effects)
 		# B8: the page and the top bar read the result from "Raid over" on, not RAID IN PROGRESS.
 		hud.set_screen(String(SCREEN_NUMBERS.get("raid_playout", "")), raid_result_title(verdict))
 		# ART-6 3A: the plan is done: its pencil routes cloth-wipe off.

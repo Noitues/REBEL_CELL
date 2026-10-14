@@ -184,6 +184,7 @@ func _init(p_city: NeonCity = null) -> void:
 	super(p_city)
 	name = "RouteOverlay"
 	landmarks = false  # B3: round 44's route page has no district plates (the clutter rule)
+	hover_out = true  # R5: the lit node reaches out to its building
 	# B1b: the TARGET's circle and word are the kit's wax (a PencilSet over every layer).
 	_target_pencil = PencilSet.under(_pencil_root)
 	# Parity ROUTE-04 b: a choice's focus ring (the pad's stop on the map, `hover_id`) draws
@@ -917,6 +918,41 @@ func _draw_top() -> void:
 		_landmarks()
 	super()
 	_queue_target_pencil()
+
+
+## W3-ROUTE R5 (plan 1 ANIM-FLOW): the lit node's sticker reaches out to its building: a stem
+## grows from the sticker down to the roof (`route_hover_out`), a ring lands on the roof.
+func _draw_hi() -> void:
+	super()
+	var id := lit_id()
+	if id == &"" or city == null:
+		return
+	var n := _node_dict(id)
+	var rec := _roof(id)
+	var at := icon_pos(n) if not n.is_empty() else Vector2(INF, INF)
+	if at.x == INF or rec.is_empty():
+		return
+	var k := _k()
+	var roof := _centroid(rec["roof"])
+	var u := clampf(_mv.value(&"hover_out_t"), 0.0, 1.0)
+	var from := at + (roof - at).normalized() * icon_radius(n)
+	if from.distance_to(roof) < HOVER_OUT_MIN * k:
+		return
+	var tip := from.lerp(roof, u)
+	_hi.draw_line(from, tip, Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA), (HOVER_OUT_WIDTH + 2.0) * k)
+	_hi.draw_line(from, tip, Palette.PAPER, HOVER_OUT_WIDTH * k)
+	if u >= 1.0:
+		_hi.draw_arc(roof, HOVER_OUT_RING * k, 0, TAU, 24, Color(RouteInk.KEYLINE, RouteInk.KEYLINE_ALPHA), (HOVER_OUT_WIDTH + 2.0) * k)
+		_hi.draw_arc(roof, HOVER_OUT_RING * k, 0, TAU, 24, Palette.PAPER, HOVER_OUT_WIDTH * k)
+	else:
+		_hi.draw_circle(tip, HOVER_OUT_WIDTH * 1.4 * k, Palette.PAPER)
+
+
+## The reach out to a building: the stem's width and the roof ring's radius (screen px), and the
+## shortest stem worth drawing.
+const HOVER_OUT_WIDTH := 2.0
+const HOVER_OUT_RING := 11.0
+const HOVER_OUT_MIN := 14.0
 
 
 func _draw_tags() -> void:

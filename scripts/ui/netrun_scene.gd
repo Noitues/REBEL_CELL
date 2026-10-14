@@ -313,7 +313,7 @@ func enter_node(node_id: StringName) -> void:
 		var r := route_graph()
 		city_overlay.set_graph(r["nodes"], r["edges"])
 		_refresh_route_choices()
-		secs = city_overlay.travel(from, node_id)
+		secs = city_overlay.travel(from, node_id, Callable(), RunManager.netrun.run.phase != RunState.Phase.COMBAT)
 	if secs <= 0.0:
 		_show_current()
 		return
@@ -630,14 +630,18 @@ func _hold_loot_page() -> void:
 	# goes too, so its landing pulse shows with the loot page still up.
 	# (its lift takes FlightFx.lift_share() of its time on top of the travel).
 	_hold_page(maxf(Motion.seconds(&"loot_reject") + Motion.delay_of(&"loot_reject"),
-		Motion.seconds(&"loot_pick") * (1.0 + FlightFx.lift_share()) + Motion.delay_of(&"loot_pick")))
+		Motion.seconds(&"loot_pick") * (1.0 + FlightFx.lift_share()) + Motion.delay_of(&"loot_pick")), true)
 
 
 ## ANIM-R4 C7 / ANIM-R6 B12: the page on show stays, inert (no input, no focus), while its
 ## flights and stamps play (the loot not taken falling, the event's outcome stamp), at most
 ## `hold` s (and one `loot_reject` more as grace), then the next page shows.
-func _hold_page(hold: float) -> void:
+func _hold_page(hold: float, dim: bool = false) -> void:
 	if _panel != null and is_instance_valid(_panel):
+		if dim:
+			# Plan 1 M6: the emptied slots recede while the offers fall and the pick flies (the
+			# flights are on this scene, not the page, so they stay at full strength).
+			Motion.run(&"loot_page_dim", _panel, ^"modulate:a", Motion.amplitude(&"loot_page_dim"))
 		var block := Control.new()
 		block.name = "LootLeaving"
 		block.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -1027,6 +1031,11 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 		RunManager.campaign.corporation_id if RunManager.campaign != null else &"")
 	_show_site_backdrop(screen, s)
 	entering = screen != _shown_screen
+	# Plan 1 M6: the rewards list (or the next offer) rebuilt on the reward screen fades in over the
+	# page that left, not a hard cut.
+	if not entering and screen == "loot" and Motion.live(&"reward_page_in"):
+		p.modulate.a = 0.0
+		Motion.fade(p, 1.0, &"reward_page_in")
 	_shown_screen = screen
 	# ART-9 4A: the Mainframe's facade stays only behind the Mainframe.
 	if screen != "shop":
@@ -2936,7 +2945,16 @@ func _show_combat() -> void:
 	scene.auto_start = false
 	scene.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_set_panel(scene)
-	background.visible = false  # the arena draws its own wireframe world
+	# Plan 1 M5: the fight dissolves in over the city the route left (no dark frame, no pop of the
+	# backdrop); the city goes once the fight is whole. Reduce effects / headless: the end state now.
+	_combat_dissolve = null
+	if Motion.live(&"combat_enter"):
+		scene.modulate.a = 0.0
+		_combat_dissolve = Motion.fade(scene, 1.0, &"combat_enter")
+	if _combat_dissolve != null:
+		_combat_dissolve.finished.connect(_end_combat_dissolve.bind(scene), CONNECT_ONE_SHOT)
+	else:
+		background.visible = false  # the arena draws its own wireframe world
 	# ANIM-R6 B4: the city's default frame bakes behind the fight (a fight can be the first page
 	# of a session: a resumed run, a capture), so the page after it, the run's end after a
 	# flatline included, never waits for the session's first bake; a flatline's own look is
@@ -2949,6 +2967,21 @@ func _show_combat() -> void:
 		scene.connect(&"continue_requested", _leave_fight)
 	if scene.has_signal(&"shown_hp_changed"):
 		scene.connect(&"shown_hp_changed", _on_combat_hp_shown)
+
+
+## Plan 1 M5: the dissolve of the fight over the route's city (null when none runs).
+var _combat_dissolve: Tween = null
+
+
+## Plan 1 M5: true while the fight dissolves in over the city.
+func combat_entering() -> bool:
+	return _combat_dissolve != null and _combat_dissolve.is_valid() and _combat_dissolve.is_running()
+
+
+func _end_combat_dissolve(scene: Control) -> void:
+	_combat_dissolve = null
+	if combat_scene == scene and is_instance_valid(scene):
+		background.visible = false  # the arena draws its own wireframe world
 
 
 ## HEAT-ALL (Q2): the Heat terminal the gauge dropped, read-only in a run (null when closed).
@@ -3284,6 +3317,7 @@ func _build_reward_list(s: NetrunSession, ts: float, os: float) -> Control:
 		done.add_theme_font_size_override(&"font_size", roundi(REWARD_ROW_PX * ts))
 		list.add_child(done)
 	var first: Button = null
+	var rise_rows: Array = []
 	for i in s.run.pending_rewards.size():
 		var offer := s.run.pending_rewards[i]
 		var row := Button.new()
@@ -3296,10 +3330,12 @@ func _build_reward_list(s: NetrunSession, ts: float, os: float) -> Control:
 		var index: int = i
 		row.pressed.connect(func() -> void: open_reward(index))
 		list.add_child(row)
+		rise_rows.append(row)
 		if first == null:
 			first = row
 	if first != null:
 		first.grab_focus.call_deferred()
+	PressDip.rise(rise_rows)  # Plan 1 M6: the offers come in one after another, not all at once
 	return list
 
 

@@ -513,6 +513,11 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   words (ANIM-R2: readable and focusable on their paper with a typing mark; a press shows
   the words, the first choice then has focus); shop and loot cards show their whole text; a bought Mainframe item stays as a SOLD
   stub in its place; loot not taken falls away; tips keep off buttons and titles.
+- **Plan 1 flow (ANIM-FLOW)**: a press on a plain button dips it x0.94 and it springs back on release (`press_dip`,
+  `PressDip.attach`, wired by `PageTransition.enter`, modals and the title; stickers and drips keep their own press);
+  rows of a list come in one after another (`menu_page_in`); a fight dissolves in over the route's city (`combat_enter`)
+  and its close-up crossfades over the night sky (`backdrop_reveal`); the loot sheet dims while its offers leave
+  (`loot_page_dim`) and the rewards page returns by fading (`reward_page_in`); the HQ page enters as the jack cover lifts.
 - **ANIM-R3 screens**: the Mainframe's first focus is an item; its sign is whole within 0.3 s; a
   flying card is a fresh copy of itself; loot not taken falls within its window; swap chips
   wear a ring pictogram; every event choice shows icons; discards keep off RESPIN / UNDO.

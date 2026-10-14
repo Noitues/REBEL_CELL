@@ -31,6 +31,7 @@ const WINDOWED_ONLY := {
 	&"influence_tint": "spreads once the new look's bake shows (GPU)",
 	&"influence_mark": "marks once the new look's bake shows (GPU)",
 	&"city_bake_fade": "fades the city's bake in (GPU)",
+	&"backdrop_reveal": "crossfades the fight's close-up in once its bake lands (GPU)",
 }
 ## ANIM-R6 D3: entries whose time is a hold, a wait or a reading time (how long an end
 ## state or a word shows), not a motion: switched off, they keep their time (UiMotionData:

@@ -57,6 +57,7 @@ static func enter(p_page: Control, p_look: int = Look.GLASS, on_done: Callable =
 	var old := of(p_page)
 	if old != null:
 		old.finish()
+	PressDip.attach(p_page)  # Plan 1 M10: its plain buttons dip when pressed
 	var id := id_for(p_look)
 	if not Motion.live(id) or not p_page.is_inside_tree():
 		if on_done.is_valid():
@@ -374,6 +375,7 @@ static func open_modal(m: Control) -> void:
 		return  # open already (a view that opens itself, opened again by its screen)
 	m.add_to_group(MODAL_GROUP)
 	m.set_meta(META_MODAL_CLOSING, false)
+	PressDip.attach(m)  # Plan 1 M10: a dialog's plain buttons dip when pressed
 	if not Motion.live(&"modal_in") or not m.is_inside_tree():
 		return
 	m.pivot_offset = m.size * 0.5

@@ -84,6 +84,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"card_effect_lead",
 	# Plan 1 M2: the HP counter pulses when a number lands on it.
 	&"hp_chip_pulse",
+	# Plan 1 ANIM-FLOW: M5 map to fight dissolve and the close-up's reveal, M6 loot sheet dim and the
+	# rewards page's rise, M10 press dip and menu rows rising in.
+	&"combat_enter", &"backdrop_reveal", &"loot_page_dim", &"reward_page_in", &"press_dip", &"menu_page_in", &"raid_continue_in", &"route_hover_out",
 	# ANIM-R5 netrun screens: a flight's landing pulses its top bar tag.
 	&"flight_land_pulse",
 	# ANIM-R6 rules: a flight's lift and fade shares and a stamp's down and hold shares
