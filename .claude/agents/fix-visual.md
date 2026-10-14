@@ -10,6 +10,6 @@ Read, in this order and nothing more to start: `docs/process/agent_rules/common.
 `docs/process/agent_rules/<area>.md`, then the footer's items. Slice source with
 `python tools/batch/context_slice.py --deps <file>`; read a file whole only when you edit it.
 Never read DECISIONS.md or a log whole (a hook blocks it): grep first.
-Hand back after `bash tools/precommit.sh --base main` is green, never the full suite, with the
+Hand back after `QUICK=1 bash tools/precommit.sh --base main` is green (parse + your changed tests; commit with `QUICK=1 git commit`), never the full suite, with the
 RESULT block from common.md. Stop at 60 % context: write `docs/handoff/STATE_<area>.md`, commit,
 report `status: HANDOFF`.

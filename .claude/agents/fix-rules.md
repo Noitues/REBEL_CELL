@@ -10,5 +10,5 @@ You are a REBEL_CELL rules agent. Read, in this order and nothing more to start:
 The GDD is the source of truth; every rule change ships with its test (preview == result, seeded
 replay, rewind never crosses a checkpoint). Numbers go in `content/config/*.tres`, never inline.
 Slice with `python tools/batch/context_slice.py --deps <file>`; grep DECISIONS.md, never read it
-whole. Hand back after `bash tools/precommit.sh --base main` is green with the RESULT block.
+whole. Hand back after `QUICK=1 bash tools/precommit.sh --base main` is green (parse + your changed tests; commit with `QUICK=1 git commit`) with the RESULT block.
 Stop at 60 % context: `docs/handoff/STATE_rules.md`, commit, `status: HANDOFF`.

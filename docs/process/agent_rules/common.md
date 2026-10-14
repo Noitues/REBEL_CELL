@@ -27,8 +27,8 @@ reduce effects = end state; headless never waits.
 - New test script → `tests/test_manifest.json` with a tier (`fast` for rules, `full` for sweeps).
 - Bounded waits only (`tests/helpers/bounded_wait.gd`); no frame-signal lambdas; restore every
   Settings value you change; MotionSkip registration for anything that animates.
-- Iterate with `bash tools/precommit.sh` (staged) — seconds to a minute. Hand back after
-  `bash tools/precommit.sh --base main` is green. **Do not run the full suite**; the orchestrator
+- Iterate and commit with `QUICK=1` (`QUICK=1 git commit ...`, `QUICK=1 bash tools/precommit.sh --base main`): parse + your own changed test scripts only, minutes. Hand back when
+  that QUICK check is green; the orchestrator runs ONE full diff-selected check per wave batch (designer 2026-10-13). **Do not run the full suite or the full precommit**; the orchestrator
   runs it once at the gate.
 
 ## Machine rules (non-negotiable)

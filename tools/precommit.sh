@@ -44,7 +44,19 @@ if echo "$FILES" | grep -qE '^content/'; then
   echo "validate=$r"; [ $r -ne 0 ] && { tail -n 5 "$SP/validate.log"; exit 1; }
 fi
 
-# 4. Diff-selected tests (falls back to the fast tier when nothing maps).
+# 4. Tests. QUICK=1 (agent commits and hand-backs, designer 2026-10-13): only the changed test scripts themselves,
+# minutes not tens of minutes; the orchestrator runs ONE full diff-selected check per wave batch.
+if [ "${QUICK:-0}" = "1" ]; then
+  SEL=""
+  for f in $(echo "$FILES" | grep -E '^tests/.*\.gd$' | grep -v '\.uid$'); do
+    [ -f "$f" ] && SEL="$SEL --select $(basename "$f" .gd)"
+  done
+  if [ -z "$SEL" ]; then echo "tests=0"; echo "quick: no test scripts changed (the batch check covers the rest)"; exit 0; fi
+  python tools/run_tests.py -j "${JOBS:-4}" --out "$SP/tests" $SEL > "$SP/tests.log" 2>&1 < /dev/null; r=$?
+  echo "tests=$r"; tail -n 3 "$SP/tests.log"
+  exit $r
+fi
+# Diff-selected tests (falls back to the fast tier when nothing maps).
 python tools/select_tests.py $MODE $BASE -j "${JOBS:-4}" --out "$SP/tests" > "$SP/tests.log" 2>&1 < /dev/null; r=$?
 echo "tests=$r"; tail -n 3 "$SP/tests.log"
 exit $r
