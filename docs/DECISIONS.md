@@ -50,6 +50,10 @@ runs out, start the animation work; use Haiku and the Batch API as needed. Orche
   the comparison sheets; one sheet per group is queued for the art-pass session's APPROVED in the morning. A rejected
   item becomes a follow-up slice, not a revert.
 - **Gate PT-002** is still completed (report, tag) on its own build (52ba1e94 routes); wave 3 goes to gate PT-003.
+- **PT-002's P1 bugs are fixed overnight, not held for triage** (CP-002 #1 normally holds them; the designer said to
+  decide): B4 (empty roster + 0 Schematics dead end) joins W3-HQ's C6; B1 stuck aim, B2 UNDO reason, B3 tutorial
+  overlay in netrun fights and the P2s B5–B8 become **wave 3b** (`docs/handoff/plan1/W3B.md`). Only bugs with a
+  repro; the clarity items (Heat, keyboard aim, clipped text, cancel key) wait for the designer's triage.
 
 ### 2026-10-13 — Round 45 inner ring built (designer-approved concept, art-pass 2216c126; replaces W2-A6's standing plates)
 - **Ghost wedge:** `WheelWedge` (one quad per wheel over the disc, under the view's drawing and the firmware sockets) runs

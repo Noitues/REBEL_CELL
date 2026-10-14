@@ -1,6 +1,6 @@
 # PT-002 — Plan 1 waves 1b and 2: combat legibility
 
-since gate/PT-002a · main @ (set at the gate) · 2026-10-13 · build: run from the editor (F5) or `godot --path .`
+since gate/PT-002a · main @ 52ba1e94 (gate build; main @ 16e49278 adds routes + test fixes only) · 2026-10-13 · build: run from the editor (F5) or `godot --path .`
 **Scope: text size 1.0, mouse and keyboard only** (designer ruling 2026-10-13). Leave Options at 1.0, reduce effects OFF.
 
 ## 1. Scope and changes (what is new for you)
