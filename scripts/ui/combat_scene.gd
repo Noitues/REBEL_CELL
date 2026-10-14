@@ -2174,6 +2174,7 @@ func _build_ui() -> void:
 	fx_layer.reticle_drawn = false  # CMB-10: the pencil's snap loop marks the target (no acid reticle)
 	for over in [fx_layer, toast, inspect_popup]:
 		(over as CanvasItem).z_index = OVER_HAND_Z  # over the hovered hand card (HOVERED_CARD_Z)
+	toast.z_index = OVER_HAND_Z + 1  # W3-POLISH F7: a refusal's toast stays over the tutorial box
 	# S-COMBAT-HUD (CMB-10, designer ruling 2026-10-05): the aim is grease pencil, on the kit's
 	# pencil layer above every UI (ART_BIBLE v2 §1.2, §6.4: no UI ever covers grease pencil;
 	# H24's "under the wheels" rule for the old dashed line is superseded).

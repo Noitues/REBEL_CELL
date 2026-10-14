@@ -474,10 +474,13 @@ func note_rect() -> Rect2:
 	for share in NOTE_SHARES:
 		var w := note_width() * share
 		# W3-HQ F2: the foot band first (centered, at the screen's bottom), where the toasts stand.
-		var foot := _foot_spot(note_size(w))
-		if foot.has_area() and _cover_of(foot, avoid) <= 0.0 and not foot.intersects(get_global_rect().grow(-1.0)):
-			_note_w = w
-			return foot
+		# W3-POLISH F8 / F9: the foot band, then raised in steps clear of what holds the foot (the
+		# ON AIR line, a corp news toast) before the search wanders over the page's headers.
+		for lift in NOTE_FOOT_LIFTS:
+			var foot := _foot_spot(note_size(w), lift * NOTE_FOOT_STEP * Settings.text_scale)
+			if foot.has_area() and _cover_of(foot, avoid) <= 0.0 and not foot.intersects(get_global_rect().grow(-1.0)):
+				_note_w = w
+				return foot
 		var found := _note_spot(note_size(w), avoid)
 		if float(found[1]) <= 0.0:
 			_note_w = w
@@ -492,11 +495,16 @@ func note_rect() -> Rect2:
 
 ## W3-HQ F2: the foot band's spot for a note of size `s` (centered, ToastNote.BOTTOM_GAP above the
 ## screen's bottom); an empty rect when the poster is not in the tree.
-func _foot_spot(s: Vector2) -> Rect2:
+func _foot_spot(s: Vector2, lift: float = 0.0) -> Rect2:
 	if not is_inside_tree():
 		return Rect2()
 	var screen := get_viewport_rect()
-	return Rect2(Vector2(screen.position.x + (screen.size.x - s.x) * 0.5, screen.end.y - ToastNote.BOTTOM_GAP - s.y), s)
+	return Rect2(Vector2(screen.position.x + (screen.size.x - s.x) * 0.5, screen.end.y - ToastNote.BOTTOM_GAP - s.y - lift), s)
+
+
+## W3-POLISH F8 / F9: the raised foot spots the note tries (steps of NOTE_FOOT_STEP px, 0 = the foot band).
+const NOTE_FOOT_LIFTS: Array[int] = [0, 1, 2, 3, 4, 5]
+const NOTE_FOOT_STEP := 16.0
 
 
 ## The area of `avoid` that `r` covers (px²).
@@ -559,7 +567,8 @@ func note_avoid() -> Array[Rect2]:
 			if not (c as BaseButton).disabled:
 				out.append(c.get_global_rect())
 		elif (c is Label and (c as Label).text != "") or (c is RichTextLabel and (c as RichTextLabel).get_parsed_text() != "") \
-				or c is HudStats or c is PadPrompts or c is SubtitleStrip or c is TerminalWindow:
+				or c is HudStats or c is PadPrompts or c is SubtitleStrip or c is TerminalWindow \
+				or c is OnAirTicker or c is CorpPaperPanel or c is RaidPaper:
 			# Drawn words too: the top bar's tags, the pad prompts, the subtitles (at 1.6 the note
 			# went up over the CREW tag). M14 12Q-RAID: and terminal windows whole (the raid
 			# interlude draws its HOME row and forecast disc itself: the note clear of the panel).

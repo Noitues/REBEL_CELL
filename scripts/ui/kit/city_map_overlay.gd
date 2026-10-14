@@ -185,6 +185,8 @@ const HOVER_RING := 4.0
 const HOVER_TICK := 6.0
 ## W3-GRID: the gap between a prerequisite's two rings (px at the reference scale).
 const PREREQ_GAP := 4.0
+## W3-POLISH F2: the words under a prerequisite's double ring.
+const PREREQ_WORDS := "CLEAR FIRST" # TR
 ## Smallest city zoom the screen-size maths accepts.
 const MIN_ZOOM := 0.1
 ## H22: labels keep this far inside the visible map area (screen px).
@@ -1487,9 +1489,14 @@ func _draw_hi() -> void:
 		var pk := _k()
 		var pn := _node_dict(pid)
 		var pr := (icon_radius(pn) if not pn.is_empty() else ICON_RADIUS * pk) + (SELECT_RING + PREREQ_GAP) * pk
-		_hi.draw_arc(icons[pid], pr, 0, TAU, 32, Color(Palette.INK, 0.85), 6.0 * pk)
-		_hi.draw_arc(icons[pid], pr, 0, TAU, 32, Palette.RING_AVAILABLE, 3.0 * pk)
-		_hi.draw_arc(icons[pid], pr + PREREQ_GAP * pk, 0, TAU, 32, Color(Palette.RING_AVAILABLE, 0.55), 2.0 * pk)
+		# W3-POLISH F2: two full-weight rings with a clear gap between them (a single orange ring is
+		# the reachable Site's), and the words CLEAR FIRST under them.
+		var outer := pr + PREREQ_GAP * pk
+		_hi.draw_arc(icons[pid], outer, 0, TAU, 40, Color(Palette.INK, 0.85), 6.0 * pk)
+		_hi.draw_arc(icons[pid], pr, 0, TAU, 40, Color(Palette.INK, 0.85), 6.0 * pk)
+		_hi.draw_arc(icons[pid], outer, 0, TAU, 40, Palette.PAPER, 3.0 * pk)
+		_hi.draw_arc(icons[pid], pr, 0, TAU, 40, Palette.RING_AVAILABLE, 3.0 * pk)
+		_draw_prereq_words(icons[pid], outer + 2.0 * pk)
 	var hc := hover_centre()
 	if hc.x != INF:
 		var k := _k()
@@ -1505,6 +1512,32 @@ func _draw_hi() -> void:
 		return
 	var grow := lerpf(Motion.amplitude(&"select_ring_ease"), 1.0, ring_ease)
 	_hi.draw_arc(at, ring_radius() * grow + (sin(anim_t * TAU / maxf(Motion.entry(PULSE_MOTION).duration, 0.001)) - 1.0) * pulse_amplitude() * _k(), 0, TAU, 32, Color(Palette.CELL_ACID, ring_ease), 2.0 * _k())
+
+
+## W3-POLISH F2: where the CLEAR FIRST words stand for a prerequisite ringed at `at` with outer
+## radius `outer` (local px): centered over (or, with no room above, under) the ring, on a plate.
+func prereq_words_rect(at: Vector2, outer: float) -> Rect2:
+	var fs := label_font_size()
+	var f := Palette.mono()
+	var w := f.get_string_size(tr_word(PREREQ_WORDS), HORIZONTAL_ALIGNMENT_LEFT, -1, fs)
+	var pad := 3.0 * _k()
+	var box := Vector2(w.x + pad * 2.0, f.get_height(fs) + pad * 2.0)
+	# Over the ring when the map has the room (a name tag usually stands beside or under a node),
+	# else under it.
+	var above := Rect2(at + Vector2(-box.x * 0.5, -outer - box.y), box)
+	if above.position.y >= label_area().position.y - box.y:  # (the map's edge strip under the top bar may take the plate)
+		return above
+	return Rect2(at + Vector2(-box.x * 0.5, outer), box)
+
+
+func _draw_prereq_words(at: Vector2, outer: float) -> void:
+	var fs := label_font_size()
+	var f := Palette.mono()
+	var r := prereq_words_rect(at, outer)
+	_hi.draw_rect(r, HighContrast.plate(Color(Palette.NIGHT_SKY, 0.92)))
+	_hi.draw_rect(r, Palette.RING_AVAILABLE, false, 1.0 * _k())
+	var pad := 3.0 * _k()
+	HighContrast.draw_text(_hi, f, r.position + Vector2(pad, pad + f.get_ascent(fs)), tr_word(PREREQ_WORDS), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, HighContrast.ink(Palette.PAPER))
 
 
 ## ANIM-R3 B5: the forecast numbers a drop changed rise off their nodes ("25 > 30": green
@@ -2330,6 +2363,8 @@ func _make_exploit_file(id: StringName, tag: Dictionary) -> DecryptedHoloPanel:
 	p.set_meta(&"site", id)
 	p.corp_color = Palette.corp_color(StringName(_node_dict(id)["marker"].get("corp", &"")))
 	p.corporation = StringName(_node_dict(id)["marker"].get("corp", &""))  # B1c: the cracked emblem
+	if bool(_node_dict(id).get("locked", false)) and p.stamp_slot != null:
+		p.stamp_slot.visible = false  # W3-POLISH F1: no DECRYPTED on a Site that is not reachable yet
 	var box := MarginContainer.new()
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Clear of the DECRYPTED stamp over the cracked seal (top right; B1c: the seal sits under it).

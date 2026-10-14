@@ -32,6 +32,8 @@ func _ready() -> void:
 			await _hq()
 		"w3b":
 			await _w3b()
+		"w3b_tut":
+			await _w3b_tut()
 	RunManager.delete_save()
 	get_tree().quit()
 
@@ -239,7 +241,9 @@ func _hq() -> void:
 	c.heat = 30
 	CampaignRules.queue_raid(c, corp, RC.RaidTriggerSource.STORY, &"", "capture")
 	hq = _mount(HQ)
-	await _frames(90)
+	await _frames(20)
+	await _shot("hq_3_early")  # W3-POLISH F8: the stamps while they hold, before their wipe
+	await _frames(70)
 	await _shot("hq_3")
 	await _frames(420)
 	await _shot("hq_3_later")
@@ -285,3 +289,21 @@ func _w3b() -> void:
 	scene.nudge(1)
 	await _frames(25)
 	await _shot("w3b_2")
+
+
+## W3-POLISH F7: the nudge refusal with the tutorial box left open (the toast must stand over it).
+func _w3b_tut() -> void:
+	await _fresh(1)
+	var scene := _mount(COMBAT)
+	scene.auto_start = false
+	scene.start_fight(&"collections_agent", 5)
+	scene.skip_motion()
+	await _frames(30)
+	var st: CombatState = scene.engine.state()
+	st.free_nudges = 0
+	st.ram = 0
+	scene._refresh(st)
+	await _frames(10)
+	scene.nudge(1)
+	await _frames(25)
+	await _shot("w3b_3")

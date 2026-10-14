@@ -34,6 +34,8 @@ const STAMP_WORD := "DECRYPTED" # TR
 const CHIP_STEP := UiTheme.CAPTION
 const CHIP_PAD := Vector2(6, 2)
 const CHIP_LINE := 1.5
+## W3-POLISH F6: the gap between the last field row and the chip, as a share of MARGIN.
+const FOOT_GAP_SHARE := 0.75
 
 ## What the panel shows: title, tier (int), type (words), rewards (Array[String]), heat
 ## (words, "" = none), corp_color.
@@ -124,7 +126,8 @@ func value_room(w: float) -> float:
 
 ## Parity ROUTE-03: the foot's height (the DECRYPTED chip, px).
 func foot_height() -> float:
-	return chip_size().y
+	# W3-POLISH F6: a gap above the chip, so the last field row (HEALS) never touches it.
+	return chip_size().y + MARGIN * _s() * FOOT_GAP_SHARE
 
 
 ## Parity ROUTE-03: the DECRYPTED chip's size (px).

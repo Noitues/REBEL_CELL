@@ -2546,6 +2546,7 @@ func hq_idle_graph(g: Dictionary) -> Dictionary:
 			var lock := lock_line(CampaignRules.site_data(RunManager.corporation, id))
 			if lock != "":
 				m["tip"] = "%s\n%s" % [m.get("tip", ""), lock]
+				m["locked"] = true  # W3-POLISH F1: its hover file carries no DECRYPTED stamp
 		if id == selected_site or bool(m.get("pinned", true)) or prereqs_of(selected_site).has(id):
 			shown[id] = true
 		# Every Site keeps its name; B3's clutter rule (TagRule.FOCUS) shows the one tag.
@@ -3107,7 +3108,13 @@ func _turned(tab_name: String) -> void:
 ## corner over its box, the breathing ring swells it), a gap above that.
 func _column_foot(verb: Control) -> float:
 	if verb.get_child_count() == 0:
-		return verb.position.y + verb.size.y  # no verb (a Site not reachable yet): the card takes its room too
+		var end := verb.position.y + verb.size.y  # no verb (a Site not reachable yet): the card takes its room too
+		# W3-POLISH F4: but never down over the ON AIR line when that stands in the foot gap (it ran
+		# on under the card's left foot and cut CORE's last line).
+		var air := verb.get_parent().get_node_or_null("OnAir") as Control if verb.get_parent() != null else null
+		if air != null and air.visible and air.position.y > 0.0 and air.size.x < verb.get_parent().size.x - 1.0:
+			end = minf(end, air.position.y - HqLayout.GAP)
+		return end
 	var foot := verb.position.y
 	for k in verb.get_children():
 		if k is VerbSticker:
@@ -3891,6 +3898,8 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	if status == GridState.SiteStatus.CLAIMED:
 		# B4 (round 44): "CORE  //  HOME SERVER": the node and its type.
 		card_title = "%s  //  %s" % [site_name(site.id).to_upper(), _display(c.grid.node_type_of(site.id)).to_upper()]
+		if site_name(site.id).to_upper() == _display(c.grid.node_type_of(site.id)).to_upper():
+			card_title = site_name(site.id).to_upper()  # W3-POLISH F4: CORE is "HOME SERVER", once
 	var card := CrtWindow.new(card_title, accent)
 	card.name = "SelectedSite"
 	card.set_meta(&"shows", [site.id, int(status)])  # ANIM-R3 B6: what refresh_site_card compares
@@ -4322,7 +4331,9 @@ func lock_line(site: SiteData) -> String:
 
 const ROW_FLATLINE := "FLATLINE" # TR
 const FLATLINE_WORDS := "HEAT %s -> %d" # TR
-const FLATLINE_RAID := "  //  RAID AT HEAT %d" # TR
+const FLATLINE_RAID := "RAID AT HEAT %d" # TR
+## W3-POLISH F3: the no-break space that keeps "HEAT +11 -> 33" in one piece.
+const NBSP := "\u00a0"
 const SCRUB_WHY := "SCRUB UNAVAILABLE: %s" # TR
 
 
@@ -4331,9 +4342,10 @@ const SCRUB_WHY := "SCRUB UNAVAILABLE: %s" # TR
 func flatline_words(site: SiteData) -> String:
 	var c := RunManager.campaign
 	var f := HeatRules.forecast(c, HeatRules.death_heat(c, RunManager.config(), site.tier), RunManager.config())
-	var text := tr(FLATLINE_WORDS) % [TextDb.signed(int(f["delta"])), int(f["after"])]
+	# W3-POLISH F3: "HEAT +N -> T" stays whole on one line; the raid line stands on its own line.
+	var text := (tr(FLATLINE_WORDS) % [TextDb.signed(int(f["delta"])), int(f["after"])]).replace(" ", NBSP)
 	if bool(f["raid"]):
-		text += tr(FLATLINE_RAID) % int((f["crosses"] as Array).back())
+		text += "\n" + tr(FLATLINE_RAID) % int((f["crosses"] as Array).back())
 	return text
 
 
