@@ -116,6 +116,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	close_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	close_btn.pressed.connect(close)
 	bottom.add_child(close_btn)
+	InputPrompt.after(close_btn, &"ui_cancel")
 	if action != "":
 		_action_button = DripButton.new(tr(action), "", DripButton.DRIP_PINK, 34, [[0, 26, 0.3]])
 		_action_button.name = "ActionButton"
@@ -248,7 +249,7 @@ func _ready() -> void:
 
 ## Key hints follow the device in use and the binds (H20).
 func _relabel() -> void:
-	close_button.text = ("%s %s" % [tr("Close"), Settings.hint(&"ui_cancel")]).strip_edges()
+	close_button.text = tr("Close")
 	var pick := Settings.key_text(&"ui_accept") if Settings.pad_active else tr("Left click")
 	var more := Settings.key_text(&"inspect") if Settings.pad_active else tr("Right click")
 	hint_label.text = (tr("%s: select a card to %s. %s: details.") % [pick, tr(action).to_lower(), more]) if action != "" else tr("%s a card for details.") % (tr("Press") if Settings.pad_active else tr("Click"))

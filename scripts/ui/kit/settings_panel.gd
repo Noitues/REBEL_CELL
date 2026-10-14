@@ -299,6 +299,7 @@ func _init() -> void:
 	close_button = close
 	close.pressed.connect(func() -> void: closed.emit())
 	foot.add_child(close)
+	InputPrompt.after(close, &"ui_cancel")
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -801,7 +802,7 @@ func _ready() -> void:
 
 ## "Close [Esc]" / "Close [B]": the hint follows the device and the binds (H20).
 func _relabel_close() -> void:
-	close_button.text = ("%s %s" % [tr("Close"), Settings.hint(&"ui_cancel")]).strip_edges()
+	close_button.text = tr("Close")
 
 
 ## At least the content's size, so a host that scrolls can reach every control.

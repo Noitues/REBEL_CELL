@@ -34,6 +34,22 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-13 — W4-PROMPTS (D-UX2, D-UX3, D-UX4): one prompt chip, a Menu button, outside click closes menus
+
+- **D-UX2.** `InputPrompt` (`scripts/ui/kit/input_prompt.gd`) makes the one prompt chip ("[ESC]": ink plate, cyan keyline,
+  mono caption) and a verb+chip pair. The glyph is `Settings.hint(action)` (InputMap, current device), upper-cased, and
+  refreshes on `hints_changed`, so a pad glyph set plugs in by changing `chip_text`. Converted: pause Resume hint, Options
+  / Deck / Legend close buttons (the button keeps its verb; the chip sits beside it), the Menu button. The existing
+  pad-only `PadPrompts` rows (title pages, Options foot) are pad glyph drawings and stay (gamepad deferred). Scan test:
+  the five covered kit files never call `Settings.hint(` themselves. Not converted (other areas, text-in-button hints):
+  combat scene tooltips / End Turn key hint, the HQ `_hint_button` and MenuChip hints.
+- **D-UX3.** `HudBar` gets a Menu button + chip as its first slot, left of the Heat gauge; it emits `menu_pressed`,
+  which the HQ and the netrun route screens connect to their `open_settings` (same as Esc). The combat screen has no
+  HudBar (its own Settings button stays; combat area).
+- **D-UX4.** A left click on the pause menu's backdrop resumes. Not while a confirm or a page (Options / Codex) is open,
+  and never for dialogs, events or gameplay (rule: `PauseMenu.outside_click_closes`).
+- Capture: `docs/art_review/PLAN1/W4_PROMPTS.jpg` (before above, after below: top bar, pause menu).
+
 ### 2026-10-13 — W4-REWARDS (D-UX1, F12): one rewards screen
 
 - **What changed.** A payout with more than one pick (card + Firmware chip, Rack Daemon, ...) now opens one list of rows

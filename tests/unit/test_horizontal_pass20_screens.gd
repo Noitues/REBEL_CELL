@@ -491,14 +491,14 @@ func test_key_hints_follow_the_device_outside_combat() -> void:
 	var menu := PauseMenu.new()
 	add_child_autofree(menu)
 	await _frames()
-	assert_eq(menu.resume_hint.text, Settings.hint(&"open_settings"))
+	assert_eq(menu.resume_hint.text, InputPrompt.chip_text(&"open_settings"))
 	menu.show_options()
 	await _frames()
-	assert_eq(menu.settings_panel.close_button.text, ("Close %s" % Settings.hint(&"ui_cancel")).strip_edges())
+	assert_eq(menu.settings_panel.close_button.text, "Close")
 	Settings.set_pad_active(false)
 	await _frames()
-	assert_eq(menu.resume_hint.text, Settings.hint(&"open_settings"), "back to the keyboard")
-	assert_eq(menu.settings_panel.close_button.text, ("Close %s" % Settings.hint(&"ui_cancel")).strip_edges())
+	assert_eq(menu.resume_hint.text, InputPrompt.chip_text(&"open_settings"), "back to the keyboard")
+	assert_eq(menu.settings_panel.close_button.text, "Close")
 	hq.show_start()
 	await _frames()
 	var options := hq._panel.find_child("OptionsButton", true, false) as Button
@@ -521,11 +521,13 @@ func test_viewer_close_and_route_hints_follow_the_device() -> void:
 	scene.open_loadout()
 	await _frames()
 	var deck := (scene.get_node("LoadoutView") as LoadoutView)._view as DeckView
-	assert_eq(deck.close_button.text, ("Close %s" % Settings.hint(&"ui_cancel")).strip_edges())
+	var chip := deck.close_button.get_parent().find_child(InputPrompt.CHIP_NAME, false, false) as Control
+	assert_eq(deck.close_button.text, "Close")
+	assert_eq(InputPrompt.chip_label(chip).text, InputPrompt.chip_text(&"ui_cancel"))
 	Settings.set_pad_active(false)
 	await _frames()
-	assert_eq(deck.close_button.text, ("Close %s" % Settings.hint(&"ui_cancel")).strip_edges())
-	assert_string_contains(deck.close_button.text, "Esc")
+	assert_eq(deck.close_button.text, "Close")
+	assert_string_contains(InputPrompt.chip_label(chip).text, "ESC")
 
 
 # --- #21 names, not ids -----------------------------------------------------------------------

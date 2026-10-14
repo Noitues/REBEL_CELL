@@ -103,10 +103,11 @@ func _ready() -> void:
 	head.add_child(title)
 	close_button = Button.new()
 	close_button.name = "LegendClose"
-	close_button.text = ("%s %s" % [tr("CLOSE"), Settings.hint(ACTION)]).strip_edges()
+	close_button.text = tr("CLOSE")
 	close_button.focus_mode = Control.FOCUS_ALL
 	close_button.pressed.connect(close)
 	head.add_child(close_button)
+	InputPrompt.after(close_button, ACTION)
 	scroll = ScrollContainer.new()
 	scroll.name = "LegendScroll"
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL

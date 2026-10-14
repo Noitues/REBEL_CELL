@@ -104,7 +104,7 @@ func test_two_columns_of_stickers_each_in_its_role_colour() -> void:
 	assert_eq(resume.name, "Resume")
 	assert_eq(UiFocus.first_focusable(menu._menu), resume, "first in the menu (top left)")
 	assert_eq(get_viewport().gui_get_focus_owner(), resume, "focused on open")
-	assert_eq(menu.resume_hint.text, Settings.hint(&"open_settings"), "its key hint sits with it")
+	assert_eq(menu.resume_hint.text, InputPrompt.chip_text(&"open_settings"), "its key hint sits with it")
 	var left: Array[String] = []
 	for c in menu._left.get_children():
 		left.append(String(_sticker_in(c).name))
