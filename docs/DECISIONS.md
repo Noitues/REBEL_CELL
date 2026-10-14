@@ -259,6 +259,17 @@ MISS on wins (heuristic 15/20 vs LLM 0/5 on this build; one tune, boosts out of 
 on deaths and mean Heat peak. `gate.py --state-mode` now defaults to `heuristic`; the balance profile sweeps with
 `--lookahead 2` (Genome Core: 16 wins in 22 attempts vs 15 in 25 without).
 
+### 2026-10-13 — Designer rulings: twin pointer, resting hand cards, a content design pass
+1. **Twin Pointer** acts like every other pointer: each pointer lights the inner segment it reads (round 45 wedge
+   per pointer).
+2. **Resting hand cards** do not grow; the hovered / grown card is the full face. A later pass will make a resting
+   card readable another way (e.g. icon only).
+3. **D1 (boss length) becomes a content design pass.** From the V4 attempt the designer found the Genome Core
+   *boring*, not just long. A full design pass is needed on **what enemies, bosses, events and raids do**: their
+   mechanics, unique elements and what makes them fun (not their look or feel). Not started: it is planned after
+   change plan 1 as its own design workstream (concepts and rulings before any build), and supersedes "tune the boss
+   length".
+
 ### 2026-10-13 — Designer ruling: finalize gameplay at text 1.0, mouse / keyboard; defer scale, contrast, pad, accessibility
 "We spend a lot of cycles on text scales, high contrast, gamepad and accessibility. We haven't finalized the gameplay,
 so stop all of those efforts till much later; we finalize the game at 1.0, mouse / keyboard."
