@@ -156,6 +156,9 @@ var caption_shown: float = 0.0
 var enter_slide: float = 0.0
 ## A hit landing in the HP counter: the disc flashes (0..1).
 var hit_flash: float = 0.0
+## Plan 1 M2: 1 -> 0 while the HP counter's outline pulses after a number landed on it; `hp_pulses` counts them.
+var hp_pulse: float = 0.0
+var hp_pulses: int = 0
 ## Running motion tweens by key, the queued nudge steps ({ring, to}) and the shown value
 ## the last queued step ends on per ring.
 var _tweens: Dictionary = {}
@@ -1175,6 +1178,18 @@ func play_enter() -> void:
 
 ## A hit arrives in the HP counter: the disc flashes (`hit_flash`) and shakes (`hit_shake`;
 ## no shake under reduce effects: Motion shows the rest state then).
+func play_hp_pulse() -> void:
+	hp_pulses += 1
+	if not Motion.live(&"hp_chip_pulse"):
+		return
+	var e := Motion.entry(&"hp_chip_pulse")
+	hp_pulse = 1.0
+	queue_redraw()
+	var tw := _tw(&"hp_pulse")
+	tw.tween_method(func(v: float) -> void: hp_pulse = v; queue_redraw(), 1.0, 0.0, Motion.seconds(&"hp_chip_pulse")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: hp_pulse = 0.0; _end(&"hp_pulse"); queue_redraw())
+
+
 func play_hit() -> void:
 	if not Motion.live(&"hit_flash"):
 		return
@@ -2270,6 +2285,9 @@ var landing_slot_shown: int = -1
 var land_fx: float = 0.0
 ## 0 -> 1 through the landing word's life: it holds, then leaves as bits.
 var land_word: float = 0.0
+## Plan 1 M3: where a PERFECT tag's bits fly when it dissolves (a global point: the wheel the
+## hit is for); INF = into this wheel's hub.
+var payoff_to: Vector2 = Vector2.INF
 ## PERFECT: the jaws clamping the needle tip (0 open .. 1 shut).
 var latch: float = 0.0
 ## WEAK: the stutter's offset (degrees) on the shown rotation.
@@ -2372,7 +2390,8 @@ func _dissolve_land_sticker() -> void:
 		bits = BinaryBits.new()
 		bits.name = "Bits"
 		add_child(bits)
-	_land_sticker.dissolve(bits, global_center())
+	var to := payoff_to if landing_tier == RC.PrecisionTier.PERFECT and payoff_to != Vector2.INF else global_center()
+	_land_sticker.dissolve(bits, to)
 
 
 func _drop_land_sticker() -> void:
@@ -3718,6 +3737,8 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 	var hs := _fs(HP_FONT_SIZE)
 	var hp_rect: Rect2 = lay["hp"]
 	HighContrast.draw_text(self, Palette.display(), Vector2(hp_rect.position.x, hp_rect.end.y), String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hp_col)
+	if hp_pulse > 0.0:
+		draw_rect(hp_rect.grow(4.0 + (1.0 - hp_pulse) * Motion.amplitude(&"hp_chip_pulse")), Color(hp_col, hp_pulse), false, 2.0)
 	if not hud_results and not replaying and is_nan(anim_hp) and (after != combatant.hp or bool(lay.get("lethal", false))):
 		var fs := int(lay.get("next_fs", _fs(HUB_FONT_SIZE + 3)))
 		var ftext := String(lay["next_text"])

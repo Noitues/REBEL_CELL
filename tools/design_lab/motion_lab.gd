@@ -54,7 +54,7 @@ const DEMOS := {
 	&"wheel_spin": ["view", "turn"], &"wheel_spin_blur": ["view", "turn"], &"wheel_nudge": ["view", "nudge"],
 	&"precision_perfect": ["scene", "perfect"], &"precision_good_ring": ["view", "good"],
 	&"precision_weak": ["shake", "wheel"], &"precision_blink": ["blink", "wheel"], &"precision_null_static": ["view", "null"],
-	&"card_hover": ["view", "hover"], &"card_play": ["scene", "play"], &"card_draw": ["scene", "deal"], &"card_exhaust": ["scene", "exhaust"],
+	&"card_hover": ["view", "hover"], &"card_play": ["scene", "play"], &"card_effect_lead": ["scene", "play"], &"hp_chip_pulse": ["scene", "send_hit"], &"card_draw": ["scene", "deal"], &"card_exhaust": ["scene", "exhaust"],
 	&"send_it_press": ["view", "press"], &"send_it_drips": ["view", "press"], &"resolve_pass": ["scene", "send_hit"], &"resolve_pulse": ["view", "pulse"],
 	&"number_float": ["scene", "numbers"], &"number_crit": ["scene", "numbers"], &"hp_lag": ["view", "hp"],
 	&"intent_flip": ["view", "tag"], &"rewind_scrub": ["scene", "rewind"],
