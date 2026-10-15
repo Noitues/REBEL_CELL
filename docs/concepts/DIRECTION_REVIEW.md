@@ -1354,3 +1354,12 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
 - **Heat number:** lives in the terminal top strip, not on the dossier stamp (bible 4.3 updated).
 - **Per-fight backdrops (2026-10-06):** unique buildings for non-HQ Site fights stay deferred. Gameplay polish passes come first, then another content and visual pass. Site fight subjects (Solace, Orbital) are interim through M14.
 - **Inner ring (round 45, 2026-10-13):** ghost wedge over the affected outer slice, the modifier's mark tiled inside it (stronger: 38 %, 1.3x), the active inner segment raised and lit with a tick on the needle line, the word plate and tooltip on hover or aim only. One modifier per slice. Supersedes the bible 3.10 standing ring plates.
+
+## Decisions from the route map rounds (2026-10-14)
+- **Route map direction:** the V3 side view (dollhouse) with the dynamic camera: parallax along the run, a DECISION zoom by default, OVERVIEW on Z. It is also the base for the HQ netruns.
+- **Look:** AAA-2 "Realistic night" is the designer's favourite (revision r2 in progress). This deliberately extends the locked cel world for this view: a designer call.
+- **Kept media:** grease pencil is the route connection medium; node icons are vinyl stickers; the hover power cut stays.
+- **Traffic:** no car geometry; light streaks only (head and tail, long exposure).
+- **Buildings:** add circular, fat, stepped and adjoining shapes.
+- **Rejected:** X1/X2/X3 cyberspace (no wireframe city). X2's scrolling binary facades are parked for reuse.
+- **Next:** after r2 is approved, a full netrun storyboard (HQ view, select the netrun, AAA-2 overview, zoom to start, first option) as video or GIF; then the Blender and Python pipeline tools for building every netrun; then a Halcyon HQ render in this style.
