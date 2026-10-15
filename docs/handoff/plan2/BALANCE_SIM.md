@@ -88,6 +88,9 @@ after):
 - Core optimisations touch `scripts/core` and are rule-bearing: keep them minimal, with the determinism test plus the
   existing replay tests.
 
+**Designer 2026-10-15:** ~500 campaigns/hour (quiet machine) is adequate for balance data now; speed improvements
+(resolver hot-path rewrite / C#, pruned bot search) wait until after a few balance iterations.
+
 ## S5: balance work (restarted on the sim)
 The issues, each with variant sweeps leading to `docs/handoff/plan2/BALANCE_OPTIONS.md` (2–3 options with numbers,
 for the designer's rulings; no content change until then):
