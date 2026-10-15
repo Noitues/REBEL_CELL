@@ -20,6 +20,9 @@ var ram: int = 0
 var max_ram: int = 0
 ## Predicted change (the preview), 0 = none.
 var pending: int = 0
+## Plan 2 A-RULES (PT-003b B1): true when `pending` is a hovered or aimed play's; false when it is
+## only what SEND IT itself does (a CORRUPTED bite with nothing played), which "THIS PLAY" misnamed.
+var pending_from_play: bool = true
 ## Motion (Animation pass ANIM-3): the chips shown lit (they drain or refill one chip per
 ## `ram_tick`, the chip changing now pops), and the pending cost's blink while a card is
 ## aimed (`ram_pending_blink`). `ram` is always the real value.
@@ -225,10 +228,17 @@ func set_aiming(on: bool) -> void:
 	queue_redraw()
 
 
-func set_pending(delta: int) -> void:
-	if delta != pending:
+## `from_play` false: the change is SEND IT's own (nothing hovered or aimed), see pending_from_play.
+func set_pending(delta: int, from_play: bool = true) -> void:
+	if delta != pending or from_play != pending_from_play:
 		pending = delta
+		pending_from_play = from_play
 		queue_redraw()
+
+
+## The words after the RAM header for the pending change ("(-1 THIS PLAY)", "(-1 AT SEND IT)").
+func pending_words() -> String:
+	return (tr("(%+d THIS PLAY)") if pending_from_play else tr("(%+d AT SEND IT)")) % pending
 
 
 ## W2-A2 (RAM after SEND IT): the RAM the next turn starts with if the turn ended as planned
@@ -305,7 +315,7 @@ var _glass: CrtTerminalPanel = null
 func _label() -> String:
 	var label := tr("RAM %d/%d") % [ram, max_ram]
 	if pending != 0:
-		label += " " + tr("(%+d THIS PLAY)") % pending
+		label += " " + pending_words()
 	if next_turn >= 0:
 		label += " " + next_turn_words()
 	return label
@@ -355,7 +365,7 @@ func _draw() -> void:
 	if owner_words != "":
 		head = owner_words  # ART-2 2D: the name sticker's words at big text (the count says RAM)
 	if pending != 0:
-		head += "  " + tr("(%+d THIS PLAY)") % pending  # W2-A3: the bare "(-1)" said nothing
+		head += "  " + pending_words()  # W2-A3: the bare "(-1)" said nothing
 	HighContrast.draw_text(self, mono, Vector2(pad, pad + mono.get_ascent(hf)), head, HORIZONTAL_ALIGNMENT_LEFT, -1, hf, HudSkin.TERMINAL_TEXT)
 	var after_words := next_turn_words()
 	var refusal := refusal_text()

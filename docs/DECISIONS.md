@@ -34,6 +34,28 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-15 — Plan 2 A-RULES: UNDO after the spin, preview drift, CONTINUE round trip (PB-PT-003b B1 / B5 / B6, D7)
+- **Reproduced first** from the testers' own data: every combat replay (`saves/replays`, all 4 testers, 19 fights) replayed to
+  its recorded hash, and no card play in any of them consumed combat RNG (only one RESPIN did). The screenshots show UNDO
+  working: tinroof 0129-0132 (Fine Tune and Jolt played, two UNDOs, RAM 6 -> 8, all five cards back), ferrite 0189-0190
+  (Mirror Flip undone, RAM 3 -> 6). The refusal (0138, 0191) came only once nothing was left since the turn's spin.
+- **B1 / D7:** option (A), UNDO back to the post-spin state, is already the rule and the code (CombatSession: only an RNG
+  use makes a checkpoint; staged cards and nudges undo back to it, never past). No core change. What misled: (1) the
+  refusal read "UNDO is blocked: the new turn began with a random spin", a lock on the turn; it now leads with
+  "Nothing to undo: no card or nudge played yet this turn." (all six `UNDO_BLOCKED_*` say "Nothing to undo ..."; same
+  causes, same `checkpoint_cause`). (2) The RAM bar said "(-1 THIS PLAY)" with nothing played (nullpoint 0245-0251: a
+  CORRUPTED bite at SEND IT), read as a staged card holding RAM. `RamBar.set_pending(delta, from_play)`: the plain
+  forecast's change reads "(-1 AT SEND IT)"; a hovered / aimed play keeps "THIS PLAY". Legend row added.
+- **B5:** not a preview != result bug. ferrite 0259-0267: the Dispenser's 14->8 / 14->2 / 14->11 track the tester's own
+  nudges, Brute Spin and UNDOs (the queue panel lists them; the player's landing goes GOOD / PERFECT / WEAK). A sweep now
+  pins it: previews read twice (with forecast reads and a save between) are identical, equal the applied result, the SEND IT
+  forecast equals its resolve, and an undo leaves no residue in either; the screen's readouts hold across hover cycles.
+- **B6:** not reproduced: ferrite 0300 (before Quit) and 0303 (after CONTINUE) show the same fight. Pinned: a mid-turn
+  save with staged cards resumes byte-identical (state, checkpoint, staged actions, RNG, UNDO reason), UNDO as live, the
+  same forecast, and plays on to the same hashes. Save format unchanged.
+- Test `tests/unit/test_plan2_a_rules.gd` (fast). Files outside rules: `combat_scene.gd` (the six UNDO words and one
+  `set_pending` line), `kit/ram_bar.gd`, `kit/combat_legend.gd`, strings re-exported.
+
 ### 2026-10-15 — PT-003 scripted steps run
 - Built `tools/playtest/steps/pt003_steps.gd` (+ .tscn): one windowed capture run (via `run_windowed.py`) drives 18 of the 19
   PT-003 steps from a seeded new campaign and writes screenshots plus `steps.json` (adjusted PASS sentence, action, machine facts).
