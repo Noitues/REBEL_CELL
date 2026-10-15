@@ -312,6 +312,31 @@ func _get_drag_data(_at_position: Vector2) -> Variant:
 	return {"hand_index": drag_index}
 
 
+## How wide a grown card's face is, as a share of its slot times the growth (the die-cut's margin both sides).
+const GROWN_REACH := 1.2
+
+
+## Plan 2 A-HAND (PB-PT-003b B4: the selection jumped to a neighbour): the part of the card (local) that takes the
+## pointer. A fanned hand card lies under the next card's edge (`tucked`): its hit area stops where the next one
+## begins, so no two resting cards share a point.
+func hit_rect() -> Rect2:
+	if not _fanned or look != Look.STICKER:
+		return Rect2(Vector2.ZERO, size)
+	return Rect2(Vector2.ZERO, Vector2(size.x * (1.0 - tucked), size.y))
+
+
+## True when local `point` is on the card: its (untucked) slot at rest, its drawn face while it grows, so the
+## card the player sees under the pointer is the card a click picks.
+func hit_has_point(point: Vector2) -> bool:
+	if _fanned and look == Look.STICKER and hover_scale > 1.0:
+		return Rect2(Vector2.ZERO, size).has_point(face_xform().affine_inverse() * point)
+	return hit_rect().has_point(point)
+
+
+func _has_point(point: Vector2) -> bool:
+	return hit_has_point(point)
+
+
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		inspected.emit()

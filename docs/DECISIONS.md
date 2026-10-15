@@ -8097,3 +8097,15 @@ Implementation decisions (designer away; decided and logged):
   Array (`ACTION_DRIP`, a const array is read-only where the callee may expect a mutable one).
 - **Baseline:** the visual lint (colour and font-size literals) is not touched by this sweep, so
   `tools/visual_qa/lint_baseline.json` stays as it is (unchanged, never up).
+
+### 2026-10-15 — Plan 2 A-HAND: card faces fit, hit areas never overlap, the raised card clears the piles
+Evidence: PB-PT-003b C2 / B4, PB-PT-002 C6. Resting hand cards stay small (earlier ruling).
+- **Faces fit at text 1.0.** 45 of 71 cards ellipsised their rules text on the resting face. The hand card's
+  pictogram row now gives its room to the text when the text needs it (`pictos_give_way`; the art glyph still
+  says what the card does), and 5 long descriptions are shortened with the same rules meaning (Hot Patch,
+  Overdrive, Inner Snap, Leech Worm, Parasite Pulse). Floor stays 10 px at rest. Test: every card in content,
+  `text_whole()` at 1.0.
+- **Hit areas.** A fanned card's hit area stops where the next card starts (`ZineCard.hit_rect`), and a grown card
+  takes the pointer wherever it is drawn, so the card you see is the card a click picks (B4).
+- **Raised card vs piles.** A grown card whose growth reaches the DECK / DISCARD piles stands beside them
+  (`grown_clear_of`, as it already did for the player's HP readout).
