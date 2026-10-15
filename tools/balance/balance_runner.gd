@@ -46,6 +46,7 @@ func _init(registry: Object, p_opts: Dictionary = {}, specs: Array = []) -> void
 	content = BalanceContent.new(registry)
 	errors = content.apply_all(specs)
 	resolver = CombatResolver.new(content.config, content.lookup)
+	resolver.quiet = bool(opts["quiet"])
 	_skill = BalanceSkill.new(float(opts["skill"]), int(opts["novice_max_actions"]))
 
 
@@ -89,6 +90,7 @@ func run_campaign(campaign_seed: int) -> Dictionary:
 	var sc: Dictionary = rec["scalars"]
 	sc["won"] = 1 if rep["outcome"] == "WON" else 0
 	sc["lost"] = 1 if rep["outcome"] == "LOST" else 0
+	sc["end_hash"] = rep["hash"]
 	for k in ["runs", "completed", "deaths", "raids", "raids_won", "raids_lost", "heat_peak", "heat_end", "exploits", "fights", "turns", "stuck"]:
 		sc[k] = rep[k]
 	if int(rep["heat_at_breach"]) >= 0:
@@ -342,6 +344,8 @@ func _add_run_metrics(rec: Dictionary, probe: BalanceProbe, _prefix: String) -> 
 
 ## Fight pools of a campaign / netrun: turns and HP lost by enemy category and tier.
 func _add_fight_pools(rec: Dictionary, probe: BalanceProbe) -> void:
+	if bool(opts["fast"]):
+		return  # --fast: metrics only, no per-fight pools
 	var pools: Dictionary = rec["pools"]
 	for f in probe.fights:
 		var key := "%s.t%d" % [f["category"], int(f["tier"])]

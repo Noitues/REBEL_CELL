@@ -116,7 +116,27 @@ def merge(shards, mode, extra_meta):
             "meta": extra_meta, "records": records}
 
 
+def run_chunk(task):
+    """One Godot process over a chunk of seeds; returns (index, output path, exit code)."""
+    idx, chunk, mode, passthrough, godot, work = task
+    out = work / ("chunk%03d.json" % idx)
+    cmd = [godot, "--headless", "--path", str(ROOT), "-s", SIM, "--", mode, "--seeds", ",".join(map(str, chunk)),
+           "--out", str(out)] + passthrough
+    with open(work / ("chunk%03d.log" % idx), "w") as log:
+        rc = subprocess.run(cmd, stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, cwd=str(ROOT)).returncode
+    return idx, out, rc
+
+
+def chunk_size(mode, n_seeds, jobs):
+    """Seeds per Godot process. Small chunks let idle workers steal work (campaigns vary 17-96 s); big ones
+    amortise the ~4 s engine start-up for the quick modes."""
+    if mode in ("campaign", "boss"):
+        return 1
+    return max(1, math.ceil(n_seeds / (jobs * 2)))
+
+
 def cmd_run(args, passthrough):
+    from concurrent.futures import ThreadPoolExecutor
     mode = args.mode
     seeds = parse_seeds(args.seeds)
     jobs = max(1, min(args.j, len(seeds)))
@@ -124,35 +144,31 @@ def cmd_run(args, passthrough):
     out_dir.mkdir(parents=True, exist_ok=True)
     work = out_dir / ("_" + args.name)
     work.mkdir(parents=True, exist_ok=True)
-    procs = []
+    size = args.chunk or chunk_size(mode, len(seeds), jobs)
+    tasks = [(i, seeds[k:k + size], mode, passthrough, args.godot, work) for i, k in enumerate(range(0, len(seeds), size))]
     t0 = time.time()
-    for j in range(jobs):
-        chunk = seeds[j::jobs]
-        out = work / ("shard%d.json" % j)
-        cmd = [args.godot, "--headless", "--path", str(ROOT), "-s", SIM, "--", mode, "--seeds", ",".join(map(str, chunk)),
-               "--out", str(out)] + passthrough
-        log = open(work / ("shard%d.log" % j), "w")
-        procs.append((subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, cwd=str(ROOT)), out, log))
-    shards = []
-    failed = False
-    for p, out, log in procs:
-        p.wait()
-        log.close()
-        if p.returncode != 0 or not out.exists():
-            print("shard failed: %s (exit %s); see %s" % (out.name, p.returncode, str(out.with_suffix(".log"))), file=sys.stderr)
+    # dynamic scheduling: `jobs` workers pull the next chunk as soon as they are free (work stealing)
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        results = list(pool.map(run_chunk, tasks))
+    shards, failed = [], False
+    for idx, out, rc in results:
+        if rc != 0 or not out.exists():
+            print("chunk failed: %s (exit %s); see %s" % (out.name, rc, out.with_suffix(".log")), file=sys.stderr)
             failed = True
         else:
             shards.append(json.loads(out.read_text(encoding="utf-8")))
     if failed or not shards:
         return 1
     wall = time.time() - t0
-    meta = {"name": args.name, "seeds": seeds, "jobs": jobs, "wall_s": round(wall, 1), "args": passthrough}
+    meta = {"name": args.name, "seeds": seeds, "jobs": jobs, "chunk": size, "wall_s": round(wall, 1), "args": passthrough}
     merged = merge(shards, mode, meta)
     (out_dir / (args.name + ".json")).write_text(json.dumps(merged, sort_keys=True), encoding="utf-8")
     (out_dir / (args.name + ".md")).write_text(render_report(merged), encoding="utf-8")
-    for p, out, log in procs:
+    for idx, out, rc in results:
         out.unlink(missing_ok=True)
-    print("balance: %d records, %.1f s wall (-j %d) -> %s" % (len(merged["records"]), wall, jobs, out_dir / (args.name + ".md")))
+    per_hour = len(seeds) * 3600.0 / wall if mode == "campaign" else 0
+    print("balance: %d records, %.1f s wall (-j %d, chunk %d)%s -> %s" % (
+        len(merged["records"]), wall, jobs, size, (", %.0f campaigns/hour" % per_hour) if per_hour else "", out_dir / (args.name + ".md")))
     return 0
 
 
@@ -409,6 +425,7 @@ def main():
     r.add_argument("-j", type=int, default=2)
     r.add_argument("--out-dir", default=str(ROOT / "docs" / "balance" / "runs"))
     r.add_argument("--godot", default="godot")
+    r.add_argument("--chunk", type=int, default=0, help="seeds per Godot process (default: 1 for campaign/boss)")
     rp = sub.add_parser("report")
     rp.add_argument("file")
     rp.add_argument("--md")

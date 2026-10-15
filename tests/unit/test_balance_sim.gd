@@ -81,6 +81,16 @@ func test_fight_mode_equals_a_resolver_replay() -> void:
 	assert_eq(replay.state.player.hp, int(rec["scalars"]["hp_end"]))
 
 
+func test_quiet_events_change_nothing_but_the_text() -> void:
+	# S4b: the simulation switch skips event texts only: states, hashes and every metric stay identical.
+	var opts := {"enemy": [String(ENEMY), "port_authority"], "tiers": [1, 3], "skill": 0.8}
+	var loud := _report([], "fight", opts.merged({"quiet": false}), [1000, 1001])
+	var quiet := _report([], "fight", opts.merged({"quiet": true}), [1000, 1001])
+	var a: Dictionary = JSON.parse_string(loud)
+	var b: Dictionary = JSON.parse_string(quiet)
+	assert_eq(a["records"], b["records"], "quiet and loud runs give the same records")
+
+
 func _guard(branch: String, paths: Array) -> int:
 	var script := ProjectSettings.globalize_path("res://tools/balance/path_guard.py")
 	var args := PackedStringArray([script, "--branch", branch])

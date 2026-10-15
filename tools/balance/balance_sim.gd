@@ -9,6 +9,8 @@ extends SceneTree
 ##   --ice N   --corp ID   --class ID   --max-runs N                              [0 solace breaker 60]
 ##   --set <id>.<prop>=<json>           data override on a COPY (repeatable); also  *=  and  +=
 ##   --variant file.json                {"name": "...", "set": ["a=b", ...]}      (repeatable)
+##   --fast                             metrics only: no per-fight pools (smaller reports, less work)
+##   --no-quiet                         keep event texts (default: skipped, results identical)
 ##   fight:  --enemy ID[,ID]|all  --tiers 1,2,3,4  --categories enemy,elite,mini_boss
 ##   netrun: --tier N              boss: --source campaign|fresh
 ## The driver tools/balance/balance.py shards seeds, merges and writes the markdown report.
@@ -34,6 +36,10 @@ func _run() -> void:
 	var i := 1
 	while i < args.size():
 		var key := String(args[i])
+		if key == "--fast" or key == "--no-quiet":
+			opts["fast" if key == "--fast" else "quiet"] = key == "--fast"
+			i += 1
+			continue
 		var val := String(args[i + 1]) if i + 1 < args.size() else ""
 		i += 2
 		match key:

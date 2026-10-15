@@ -11,5 +11,7 @@
   "tiers": [1, 2, 3, 4],
   "enemy": ["all"],
   "categories": ["enemy", "elite", "mini_boss"],
-  "source": "campaign"
+  "source": "campaign",
+  "quiet": true,
+  "fast": false
 }

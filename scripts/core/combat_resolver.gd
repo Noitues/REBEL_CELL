@@ -7,6 +7,12 @@ extends RefCounted
 var config: CampaignConfigData
 var lookup: ContentLookup
 var fx: EffectInterpreter
+## Simulation switch (tools/balance): events carry no `text`. Rules, states and hashes are unchanged; only the
+## string building of the hottest events is skipped (it was ~1/4 of an End Turn simulation).
+var quiet: bool = false:
+	set(v):
+		quiet = v
+		fx.quiet = v
 
 const DEFENSIVE_TYPES := [RC.SliceType.DEFRAG, RC.SliceType.SANDBOX, RC.SliceType.DETOUR, RC.SliceType.HOTFIX]
 const OFFENSIVE_TYPES := [RC.SliceType.SHIM, RC.SliceType.OVERFLOW, RC.SliceType.TROJAN]
@@ -423,7 +429,7 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 	for r in resolutions:
 		events.append({"type": "pointer", "owner": r["owner"].id, "pointer_index": r["pointer_index"], "tick": r["tick"],
 			"slice_index": r["slice_index"], "offset": r["offset"], "tier": r["tier"], "segment_index": r["segment_index"],
-			"text": "%s pointer %d: tick %d -> %s (offset %+d, %s%s)." % [r["owner"].display_name, r["pointer_index"], r["tick"],
+			"text": "" if quiet else "%s pointer %d: tick %d -> %s (offset %+d, %s%s)." % [r["owner"].display_name, r["pointer_index"], r["tick"],
 				r["slice"].display_name if r["slice"].display_name != "" else String(r["slice"].id), r["offset"],
 				RC.PrecisionTier.keys()[r["tier"]] if r["owner"].wheel.slice_count == RC.SLICES else "full output",
 				(", ring " + r["segment"].display_name) if r["segment"] != null else ""]})
@@ -707,9 +713,15 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 			"text": "%s's %s resolves %d times." % [owner.display_name, _slice_name(slice), instances.size()]})
 	# The slice, its Firmware, segment and Hub repeat with every resolution (M1/M6 rulings);
 	# Daemons fire once per landing, so their text ("each Perfect: +1 damage") holds.
-	var per_instance := listeners.filter(func(l: Dictionary) -> bool: return not l.get("once", false))
+	var per_instance: Array = []
+	var once_all: Array = []
+	for l in listeners:
+		if l.get("once", false):
+			once_all.append(l)
+		else:
+			per_instance.append(l)
 	# Daemons fire once per landing: never on a Mirror copy of a neighbour (H16).
-	var once := listeners.filter(func(l: Dictionary) -> bool: return l.get("once", false)) if is_landing(r) else []
+	var once: Array = once_all if is_landing(r) else []
 	for m in instances:
 		var output := roundi(slice.base_output * m)
 		if owner == s.player and slice.slice_type in [RC.SliceType.SHIM, RC.SliceType.OVERFLOW] and s.damage_bonus > 0:
@@ -748,7 +760,7 @@ func _slice_action(s: CombatState, owner: CombatantState, slice: SliceData, outp
 			if target == null or not target.is_alive():
 				return
 			events.append({"type": "attack", "attacker": owner.id, "target": target.id, "amount": output, "pierce": pierce,
-				"text": "%s %s for %d at %s." % [owner.display_name, _slice_name(slice), output, target.display_name]})
+				"text": "" if quiet else "%s %s for %d at %s." % [owner.display_name, _slice_name(slice), output, target.display_name]})
 			for q in target.wheel.pointer_ticks.size():
 				# Bodyguard applies even to Pierce (designer ruling: Pierce ignores block
 				# and shield only). The operative's drones guard the operative the same way.
@@ -757,7 +769,7 @@ func _slice_action(s: CombatState, owner: CombatantState, slice: SliceData, outp
 				if guard != null:
 					victim = guard
 					events.append({"type": "bodyguard", "target": target.id, "guard": guard.id, "pointer_index": q,
-						"text": "%s takes the hit for %s (pointer %d)." % [guard.display_name, target.display_name, q]})
+						"text": "" if quiet else "%s takes the hit for %s (pointer %d)." % [guard.display_name, target.display_name, q]})
 				fx.deal_hit(s, owner, victim, output, pierce, true, events, slice.id)
 		RC.SliceType.DEFRAG:
 			fx.gain_block(owner, output, events)
