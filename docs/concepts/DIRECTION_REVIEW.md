@@ -1363,3 +1363,4 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
 - **Buildings:** add circular, fat, stepped and adjoining shapes.
 - **Rejected:** X1/X2/X3 cyberspace (no wireframe city). X2's scrolling binary facades are parked for reuse.
 - **Next:** after r2 is approved, a full netrun storyboard (HQ view, select the netrun, AAA-2 overview, zoom to start, first option) as video or GIF; then the Blender and Python pipeline tools for building every netrun; then a Halcyon HQ render in this style.
+- **Standing rule (2026-10-14): the look must be procedural.** Every look element of the netrun views (fog, beams, plumes, sky and street streaks, flicker, billboards, silhouettes) is a seeded rule driven by the layout data and one shared look preset. It must rebuild on any city formation or location with no hand edits. Concepts must prove it with a second layout.
