@@ -34,6 +34,12 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-15 — Plan 2 A-INPUT: cancel / unstage, wheel click, selection (PT-003b B2-B4, B7; PT-002 C4, B8)
+- Reproduced first in `tests/unit/test_plan2_a_input.gd` (real viewport pointer and key events; the headless window is 64 x 64, so the test sizes it to 1280 x 720 and hides GUT's own panel). Aim cancel by Esc, right-click (empty, wheel, hand) and Z already worked: the "stuck" report was a staged (already played) card, which Esc could not take back.
+- Fixed: (1) Esc / pad B with plays staged this turn and no aim takes back the last play (UNDO's own rule, never across a checkpoint) before the pause menu; with nothing to take back it pauses as before. (2) While a card is aimed the UNDO sticker reads CANCEL and is live; a click or Z cancels the aim only and never also takes back the play before it (`rewind()` ends an aim and returns). (3) A click on a wheel off every glowing zone toasts how to play or cancel instead of staying silent.
+- Not reproduced, kept as regressions: B3 (first click on the enemy wheel plays, any card, pointer moved or jumped, live and reduced motion), B4 (click on each card's centre selects that card; edge overlap is A-HAND, C2), B7 / PT-002 B8 (real SEND IT clicks through 8 turns of a Recall Unit fight, live motion: one click per turn, screen answers after). B7 and B8 need the tester's exact escalation state; if it recurs, capture the run. B3 may also be the first click being consumed ending a replay (MotionSkip, by design).
+- Capture: `docs/art_review/PLAN2/A_INPUT.jpg` (before | after, `tools/design_lab/plan2_a_input_capture.gd`).
+
 ### 2026-10-15 — PT-003 scripted steps run
 - Built `tools/playtest/steps/pt003_steps.gd` (+ .tscn): one windowed capture run (via `run_windowed.py`) drives 18 of the 19
   PT-003 steps from a seeded new campaign and writes screenshots plus `steps.json` (adjusted PASS sentence, action, machine facts).
