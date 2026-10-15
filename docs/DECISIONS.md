@@ -8097,3 +8097,14 @@ Implementation decisions (designer away; decided and logged):
   Array (`ACTION_DRIP`, a const array is read-only where the callee may expect a mutable one).
 - **Baseline:** the visual lint (colour and font-size literals) is not touched by this sweep, so
   `tools/visual_qa/lint_baseline.json` stays as it is (unchanged, never up).
+
+## 2026-10-15 BalanceSim (plan 2 S1-S4b)
+- **Tool:** `tools/balance/` (`balance_sim.gd` CLI, `balance.py` driver, `path_guard.py`), usage in `docs/balance/README.md`.
+  Data overrides apply to a sim-local copy of the whole content graph (`balance_content.gd`); the loaded Resources are
+  never written (rule 3). Tooling hooks added to reused code, all inert by default: `NetrunSession.combat_observer`,
+  `CampaignSimulator.probe` / `turn_override` (also called by `AgentSimulator`).
+- **Speed (S4b), result-identical:** `CombatBot` scores one of each identical card (a later copy cannot beat the first by
+  more than 0.01), reuses the known score of the new state after an RNG-free action, and scores throwaway previews without
+  a state copy; `CombatResolver.quiet` skips the text of the hottest events (states, hashes, metrics unchanged). Proven by
+  byte-equal fight (288 records) and campaign (4, end-state hash) reports before and after.
+- **Balance branch:** commits on `balance` may touch only `content/`, `docs/balance/`, `tools/balance/` (`tools/precommit.sh`).
