@@ -1364,3 +1364,9 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
 - **Rejected:** X1/X2/X3 cyberspace (no wireframe city). X2's scrolling binary facades are parked for reuse.
 - **Next:** after r2 is approved, a full netrun storyboard (HQ view, select the netrun, AAA-2 overview, zoom to start, first option) as video or GIF; then the Blender and Python pipeline tools for building every netrun; then a Halcyon HQ render in this style.
 - **Standing rule (2026-10-14): the look must be procedural.** Every look element of the netrun views (fog, beams, plumes, sky and street streaks, flicker, billboards, silhouettes) is a seeded rule driven by the layout data and one shared look preset. It must rebuild on any city formation or location with no hand edits. Concepts must prove it with a second layout.
+- **Netrun entry flow (2026-10-15):**
+  - one press skips the whole entry;
+  - no wheel lens: the jack-in terminal goes straight into the dive;
+  - the plan pencil is orange;
+  - route rooms are hidden until street level, then the walls dissolve to bits from left to right while the links write on, then the markers draw, then the zoom to the start room.
+- **Standing rule: the city is always alive.** Traffic streaks, beams, flicker, holos, fog drift and rain run in every beat and screen. Only the level of detail changes with zoom.
