@@ -672,7 +672,7 @@ func test_the_tutorial_box_fits_its_text_and_moves_on() -> void:
 		# A new turn moves the wheel's step on.
 		var events: Array[Dictionary] = [{"type": "turn_start"}]
 		t.on_events(events)
-		assert_eq(t.current_title(), "NUDGE", "x%.1f: the turn moves THE WHEEL on" % scale)
+		assert_eq(t.current_title(), "THE TAGS", "x%.1f: the turn moves THE WHEEL on" % scale)
 		await _frames(2)
 		assert_eq(scene.layout_violations(), [] as Array[String], "x%.1f: the box breaks no layout rule" % scale)
 		t.skip()
@@ -684,14 +684,14 @@ func test_next_pulses_when_it_moves_the_tutorial_on() -> void:
 	_live()
 	var t := TutorialOverlay.new(Vector2(300, 400))
 	add_child_autofree(t)
-	t.step = 1  # NUDGE: a nudge ends it
+	t.step = 2  # AIM: a PERFECT tag ends it
 	t.page = 0
 	t.fit(Vector2(300, 400))
 	# plan1 W2-A5 made the NUDGE step longer: on an earlier page Next pulses (a page to turn), so look at its last page.
 	t.page = t.pages().size() - 1
 	t.fit(Vector2(300, 400))
 	assert_false(t.next_pulsing(), "a step a play ends: Next stays still")
-	t.step = 2  # RESISTANCE: only Next (or the turn) ends it
+	t.step = 5  # RESISTANCE: only Next (or the turn) ends it
 	t.fit(Vector2(300, 400))
 	assert_true(t.next_pulsing(), "Next pulses")
 	assert_true(Motion.has(&"tutorial_next_pulse") and UiMotionData.REQUIRED_IDS.has(&"tutorial_next_pulse"), "its timing is in the table")

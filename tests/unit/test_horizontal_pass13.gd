@@ -138,7 +138,7 @@ func test_the_tutorial_stays_off_the_wheels_and_names_the_bound_keys() -> void:
 	assert_eq(scene.layout_violations(), [], "the tutorial covers no wheel")
 	for i in TutorialOverlay.STEPS.size():
 		assert_false(TutorialOverlay.step_text(i).contains("{"), "step %d has its keys filled in" % i)
-	assert_string_contains(TutorialOverlay.step_text(1), Settings.key_text(&"nudge_left"))
+	assert_string_contains(TutorialOverlay.step_text(2), Settings.key_text(&"nudge_left"))
 	RunManager.delete_save()
 	DirAccess.remove_absolute(RunManager.profile_path())
 	RunManager.save_slot = RunManager.DEFAULT_SLOT

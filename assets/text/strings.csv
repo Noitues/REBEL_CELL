@@ -104,7 +104,6 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s Site,%s Site
 %s a card for details.,%s a card for details.
 %s a slice for details.,%s a slice for details.
-"%s and %s nudge the wheel whose buttons show the key letters (they wear a lit rim, and a word under them says OUTER or INNER ring); %s switches between yours and the target, %s between the outer and inner ring.","%s and %s nudge the wheel whose buttons show the key letters (they wear a lit rim, and a word under them says OUTER or INNER ring); %s switches between yours and the target, %s between the outer and inner ring."
 %s cuts a new route: %s - %s.,%s cuts a new route: %s - %s.
 %s doesn't fit %s. It fits Slot %s: pick it on the spinner.,%s doesn't fit %s. It fits Slot %s: pick it on the spinner.
 %s enters at %s.,%s enters at %s.
@@ -130,7 +129,9 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 "%s reaches %s: %d damage, HP %d → %d.","%s reaches %s: %d damage, HP %d → %d."
 %s returns to the reserves.,%s returns to the reserves.
 %s rolls,%s rolls
+%s switches between your wheel and the target. %s switches between the outer and inner ring. The lit rim and the word OUTER or INNER show what a nudge turns.,%s switches between your wheel and the target. %s switches between the outer and inner ring. The lit rim and the word OUTER or INNER show what a nudge turns.
 %s takes %d damage: HP %d → %d.,%s takes %d damage: HP %d → %d.
+"%s turns it back, %s forward.","%s turns it back, %s forward."
 %s · %d CYCLES,%s · %d CYCLES
 %s%s lands on one random slice: %s.,%s%s lands on one random slice: %s.
 %s's HP. At 0 the operative flatlines.,%s's HP. At 0 the operative flatlines.
@@ -200,6 +201,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 > point at an item: what it does shows here. Drag Firmware or a slice onto a slot of your spinner.,> point at an item: what it does shows here. Drag Firmware or a slice onto a slot of your spinner.
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.
+A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.,A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.
 A guided first fight in a simulated net.,A guided first fight in a simulated net.
 A needle lands on NULL: no slice fires. Cold Exit and Fault Tolerance look for this.,A needle lands on NULL: no slice fires. Cold Exit and Fault Tolerance look for this.
 A needle of %s lands on NULL: no slice fires.,A needle of %s lands on NULL: no slice fires.
@@ -219,6 +221,7 @@ ACTIVE,ACTIVE
 ACTIVITY,ACTIVITY
 AFTER-ACTION REPORT,AFTER-ACTION REPORT
 AGAIN,AGAIN
+AIM,AIM
 AIM (the tag on a pointer),AIM (the tag on a pointer)
 AIRMAIL,AIRMAIL
 ALL BLOCKED,ALL BLOCKED
@@ -243,6 +246,8 @@ Abandon the run?,Abandon the run?
 Accessibility,Accessibility
 Achievements,Achievements
 Achievements earned (Stats & achievements lists them).,Achievements earned (Stats & achievements lists them).
+"Aim for PERFECT, then SEND IT {end_turn}. Every needle resolves at once: defense, then offense, then statuses.","Aim for PERFECT, then SEND IT {end_turn}. Every needle resolves at once: defense, then offense, then statuses."
+Aim for PERFECT. The round buttons above a wheel turn it one tick. {nudge_keys} Nudge until the tag says PERFECT.,Aim for PERFECT. The round buttons above a wheel turn it one tick. {nudge_keys} Nudge until the tag says PERFECT.
 Always show all nodes on the netrun map,Always show all nodes on the netrun map
 An operative is stationed here: their class's station bonus helps the node in raids.,An operative is stationed here: their class's station bonus helps the node in raids.
 Armory,Armory
@@ -526,7 +531,7 @@ CardData.whirl.display_name,Whirl
 Cards,Cards
 Cards added,Cards added
 Cards in %s's deck (VIEW LOADOUT shows them).,Cards in %s's deck (VIEW LOADOUT shows them).
-"Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on a nudge button (that sets the way they turn), slice cards on a slice. While you aim, the result chips and the dashed acid arc show the result before you commit.","Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on a nudge button (that sets the way they turn), slice cards on a slice. While you aim, the result chips and the dashed acid arc show the result before you commit."
+"Cards spin, nudge and flip wheels, and cost RAM. {card_how} The dashed arc shows where a card lands before you commit.","Cards spin, nudge and flip wheels, and cost RAM. {card_how} The dashed arc shows where a card lands before you commit."
 Cascade: %s takes %d damage: HP %d → %d.,Cascade: %s takes %d damage: HP %d → %d.
 "Cell cyan (palette v2, the default)","Cell cyan (palette v2, the default)"
 Central Server,Central Server
@@ -764,7 +769,6 @@ EVENT LOOT,EVENT LOOT
 EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
 EXTRA  (each one weakens the boss further),EXTRA  (each one weakens the boss further)
-"Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The gray LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it.","Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The gray LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it."
 Elite Frequency,Elite Frequency
 Elite Router,Elite Router
 Elite Router: a harder fight,Elite Router: a harder fight
@@ -778,7 +782,7 @@ Elites,Elites
 End turn,End turn
 Enemies,Enemies
 Enemy Resistance,Enemy Resistance
-"Enemy wheels resist: each point absorbs one tick of your manipulation before it moves. Flip and Respin are blocked while resistance is up. Strip it, breach the Hub, or spin past it.","Enemy wheels resist: each point absorbs one tick of your manipulation before it moves. Flip and Respin are blocked while resistance is up. Strip it, breach the Hub, or spin past it."
+"Enemy wheels resist: each point absorbs one tick of your nudges. Flip and Respin are blocked while it is up. Strip it, breach the Hub, or spin past it.","Enemy wheels resist: each point absorbs one tick of your nudges. Flip and Respin are blocked while it is up. Strip it, breach the Hub, or spin past it."
 EnemyData.account_manager.description,The senior process guarding the Server Rack. Escalates at half health.
 EnemyData.account_manager.display_name,Account Manager
 EnemyData.billing_daemon.description,Every hit comes with an invoice: attacks drain your RAM.
@@ -899,7 +903,7 @@ Enter a share code,Enter a share code
 Entering it changes Heat by %s.,Entering it changes Heat by %s.
 Event,Event
 "Event: a choice, and its price","Event: a choice, and its price"
-"Every Rack you capture banks Schematics for the Cell and adds Heat. Heat thresholds bring raids on your home server. Bank early, cool off at Heat objectives, and never leave loot unbanked when you jack out.","Every Rack you capture banks Schematics for the Cell and adds Heat. Heat thresholds bring raids on your home server. Bank early, cool off at Heat objectives, and never leave loot unbanked when you jack out."
+"Every Rack you capture banks Schematics for the Cell and adds Heat. Heat brings raids on your home server. Bank early, and never leave loot unbanked when you jack out.","Every Rack you capture banks Schematics for the Cell and adds Heat. Heat brings raids on your home server. Bank early, and never leave loot unbanked when you jack out."
 Every operative is flatlined. Press to hire a %s rookie (%s); then JACK IN.,Every operative is flatlined. Press to hire a %s rookie (%s); then JACK IN.
 "Everything the Cell knows: slices, cards, Firmware, Daemons, rules.","Everything the Cell knows: slices, cards, Firmware, Daemons, rules."
 Exploit,Exploit
@@ -918,7 +922,9 @@ FLATLINE,FLATLINE
 FLATLINED,FLATLINED
 "FLIP: mirrors the wheel, so each slice swaps with the one opposite.","FLIP: mirrors the wheel, so each slice swaps with the one opposite."
 FREE,FREE
+FREE NUDGE,FREE NUDGE
 FREE NUDGE %s NEXT,FREE NUDGE %s NEXT
+"FREE NUDGE in the title bar counts the nudges you still get free this turn. After that each nudge costs RAM, and the (-N) next to RAM shows what it will spend. Nudge once more to see it.","FREE NUDGE in the title bar counts the nudges you still get free this turn. After that each nudge costs RAM, and the (-N) next to RAM shows what it will spend. Nudge once more to see it."
 FREE NUDGE x%d,FREE NUDGE x%d
 FREEZE,FREEZE
 FREEZE: the wheel skips its next respin.,FREEZE: the wheel skips its next respin.
@@ -1241,7 +1247,6 @@ LOOT // NETRUN: %s // %s %d OF %d,LOOT // NETRUN: %s // %s %d OF %d
 LOOT SHEET // %s // PICK 1 OF %d,LOOT SHEET // %s // PICK 1 OF %d
 LOST,LOST
 "LURES, PULL %d","LURES, PULL %d"
-"Land dead center for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. FREE NUDGE in the title bar counts the nudges you still get free this turn; each extra nudge costs RAM. {nudge_how}","Land dead center for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. FREE NUDGE in the title bar counts the nudges you still get free this turn; each extra nudge costs RAM. {nudge_how}"
 Language,Language
 Language (translations from assets/text/strings.csv),Language (translations from assets/text/strings.csv)
 Last played,Last played
@@ -1956,6 +1961,7 @@ RAM %d/%d,RAM %d/%d
 RAM %s,RAM %s
 RAM -%d,RAM -%d
 RAM 0,RAM 0
+RAM FORECAST,RAM FORECAST
 RAM%s,RAM%s
 RAM: what cards cost to play; it refills each turn.,RAM: what cards cost to play; it refills each turn.
 RANDOM: ODDS,RANDOM: ODDS
@@ -2156,7 +2162,6 @@ SCRUB HEAT %s,SCRUB HEAT %s
 SCRUB UNAVAILABLE: %s,SCRUB UNAVAILABLE: %s
 SELECTED,SELECTED
 SEND IT,SEND IT
-"SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The chips beside each HP already show the outcome.","SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The chips beside each HP already show the outcome."
 SFX volume,SFX volume
 SHARE CODES,SHARE CODES
 SHIELD,SHIELD
@@ -2182,6 +2187,7 @@ SPIN,SPIN
 SPIN %d+,SPIN %d+
 SPIN: turns the wheel clockwise by the ticks shown (counter-clockwise when negative).,SPIN: turns the wheel clockwise by the ticks shown (counter-clockwise when negative).
 SPINNER,SPINNER
+STAGED,STAGED
 START,START
 START DEFENSE,START DEFENSE
 STATIONED,STATIONED
@@ -2198,6 +2204,7 @@ STRENGTH %s%%,STRENGTH %s%%
 SUBJECT,SUBJECT
 SUBJECT: REBEL_CELL,SUBJECT: REBEL_CELL
 SUSPECT FILE (HEAT),SUSPECT FILE (HEAT)
+SWITCHES,SWITCHES
 SYSTEM,SYSTEM
 "SYSTEM: guards, RAM, draws and the rest.","SYSTEM: guards, RAM, draws and the rest."
 "Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick.","Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick."
@@ -2886,6 +2893,7 @@ TERMINAL EVENT,TERMINAL EVENT
 TEXT SCALE,TEXT SCALE
 THE MAINFRAME,THE MAINFRAME
 THE SPRAWL,THE SPRAWL
+THE TAGS,THE TAGS
 THE TARGET,THE TARGET
 THE WHEEL,THE WHEEL
 THIS RUN,THIS RUN
@@ -3171,6 +3179,7 @@ TerminalEventData.ev_wellness_kiosk.text,A Solace kiosk offers a free wellness s
 TerminalEventData.ev_wellness_kiosk.title,Wellness Kiosk
 "Text size, sound, controls, subtitles.","Text size, sound, controls, subtitles."
 That is not a campaign code.,That is not a campaign code.
+"The (-N) next to RAM is what will be spent. THIS PLAY is what the card under your pointer costs. AT SEND IT is what SEND IT itself changes, with nothing played.","The (-N) next to RAM is what will be spent. THIS PLAY is what the card under your pointer costs. AT SEND IT is what SEND IT itself changes, with nothing played."
 The Armory is empty: runs bank defense assets from their drops.,The Armory is empty: runs bank defense assets from their drops.
 "The Armory: defense assets banked from runs, deployed on your nodes in raid setup.","The Armory: defense assets banked from runs, deployed on your nodes in raid setup."
 The Cell never sleeps. Every word grows with this.,The Cell never sleeps. Every word grows with this.
@@ -3199,8 +3208,11 @@ The operative's deck and spinner (hub core and inner ring included).,The operati
 "The other page of THREAT INTEL: the threats, or their routes and the scanned strip.","The other page of THREAT INTEL: the threats, or their routes and the scanned strip."
 "The rest of the work order: the forecast, what it would cost.","The rest of the work order: the forecast, what it would cost."
 The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city.,The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city.
+The tag by the needle rates your aim. PERFECT: full power plus your class hook. GOOD: full power. WEAK: half power. NULL: the NULL slice does nothing.,The tag by the needle rates your aim. PERFECT: full power plus your class hook. GOOD: full power. WEAK: half power. NULL: the NULL slice does nothing.
 "The three campaign slots: start, load or delete.","The three campaign slots: start, load or delete."
 "The turn, and the free nudges left this turn (each extra nudge costs RAM).","The turn, and the free nudges left this turn (each extra nudge costs RAM)."
+The wheel with the lit rim is the one a nudge turns.,The wheel with the lit rim is the one a nudge turns.
+The white needle points at a slice. That slice is what the wheel does when you SEND IT. The chips beside each HP show this turn's result if you SEND IT now. {inspect_how} anything to read it.,The white needle points at a slice. That slice is what the wheel does when you SEND IT. The chips beside each HP show this turn's result if you SEND IT now. {inspect_how} anything to read it.
 Then you can go to: %s.,Then you can go to: %s.
 "There is more further down this page: scroll, or press this.","There is more further down this page: scroll, or press this."
 "There is more further up this page: scroll, or press this.","There is more further up this page: scroll, or press this."
@@ -3497,5 +3509,6 @@ you were always a copy. the original sends its regards.,you were always a copy. 
 your network holds every threat,your network holds every threat
 your wheel,your wheel
 yours,yours
-"{undo_how} rewinds your nudges and card plays this turn. It stops at the last random event: a Respin or a random-slice card. Nudge a wheel, then undo it.","{undo_how} rewinds your nudges and card plays this turn. It stops at the last random event: a Respin or a random-slice card. Nudge a wheel, then undo it."
+{nudge_switch},{nudge_switch}
+"{undo_how} or Esc takes back your last staged play or nudge. It stops at the last random event, like a Respin. Nudge your wheel, then undo it.","{undo_how} or Esc takes back your last staged play or nudge. It stops at the last random event, like a Respin. Nudge your wheel, then undo it."
 — STEP %d —,— STEP %d —
