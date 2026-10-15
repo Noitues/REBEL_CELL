@@ -22,6 +22,13 @@ else
 fi
 [ -z "$FILES" ] && { echo "precommit: nothing changed"; exit 0; }
 
+# 0. Balance branch path guard (BALANCE_SIM S4): commits on `balance` touch only data and balance tooling.
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$BRANCH" = "balance" ]; then
+  echo "$FILES" | python tools/balance/path_guard.py --branch "$BRANCH" || { echo "guard=1"; exit 1; }
+  echo "guard=0"
+fi
+
 # 1. Parse check of changed scripts: ONE Godot process for all of them (D15; ~6 s start-up per file before).
 # tools/parse_check.gd, not --check-only: that stops before the autoloads' names exist (Dialogue, Settings).
 rc=0

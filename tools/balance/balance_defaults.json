@@ -1,0 +1,15 @@
+{
+  "corp": "solace",
+  "class": "breaker",
+  "policy": "builtin",
+  "lookahead": 1,
+  "skill": 1.0,
+  "novice_max_actions": 2,
+  "ice": 0,
+  "max_runs": 60,
+  "tier": 1,
+  "tiers": [1, 2, 3, 4],
+  "enemy": ["all"],
+  "categories": ["enemy", "elite", "mini_boss"],
+  "source": "campaign"
+}

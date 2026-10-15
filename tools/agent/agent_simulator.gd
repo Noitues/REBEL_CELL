@@ -143,6 +143,8 @@ func _fight_raids(c: CampaignState, stats: Dictionary) -> void:
 		_place_for_raid(c)
 		var raid_id := String(c.pending_raids[0].get("raid_id", ""))
 		CampaignRules.fight_raid(c, corp, config, lookup, c.pending_raids[0])
+		if probe != null:
+			probe.on_raid(c)
 		stats["raids"] = int(stats["raids"]) + 1
 		stats["log"].append("  raid %s: %s, home %d/%d" % [raid_id, "won" if bool(c.last_raid.get("won", false)) else "lost", c.grid.home_integrity, c.grid.home_max_integrity])
 		stats["heat_peak"] = maxi(int(stats["heat_peak"]), c.heat)
@@ -208,9 +210,15 @@ func _play_run(s: NetrunSession, stats: Dictionary) -> void:
 				var next := _pick_node(s)
 				if next == &"":
 					break
+				if probe != null:
+					probe.on_node(s)
 				s.enter_node(next)
 			RunState.Phase.COMBAT:
+				if probe != null:
+					probe.on_fight_begin(s)
 				_play_fight(s, stats)
+				if probe != null:
+					probe.on_fight_end(s, 0)
 				if s.in_combat():
 					break
 			RunState.Phase.REWARD:
@@ -223,6 +231,8 @@ func _play_run(s: NetrunSession, stats: Dictionary) -> void:
 				for i in range(s.run_assets().size() - 1, -1, -1):
 					s.raid_deploy_run_asset(i, s.campaign.grid.home_site_id)
 				s.raid_fight()
+				if probe != null:
+					probe.on_raid(s.campaign)
 				stats["raids"] = int(stats["raids"]) + 1
 			_:
 				break
@@ -237,6 +247,8 @@ func _play_fight(s: NetrunSession, stats: Dictionary) -> void:
 		foes.append(String(e.source_id))
 	while s.in_combat() and turns < MAX_TURNS_PER_FIGHT:
 		turns += 1
+		if turn_override.is_valid() and turn_override.call(s):
+			continue
 		CombatBot._retarget(s.combat, s.combat_action)
 		var plans := TurnPlanner.plans(s.combat)
 		var options: Array[String] = []

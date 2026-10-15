@@ -24,6 +24,9 @@ var run: RunState
 var streams: RngStreams
 var combat: CombatSession = null
 var last_events: Array[Dictionary] = []
+## Tooling hook (tools/balance): called with (action, result, combat state) after every accepted combat
+## action, before a finished fight is settled. Empty in the game; it observes and never changes state.
+var combat_observer: Callable = Callable()
 var _pools: Dictionary = {}
 
 
@@ -267,6 +270,8 @@ func combat_action(action: CombatAction) -> CombatResult:
 		return r
 	var result := combat.apply(action)
 	if result.ok():
+		if combat_observer.is_valid():
+			combat_observer.call(action, result, combat.state)
 		_apply_campaign_effects(result.events)
 		if combat.state.is_over():
 			last_events = []
