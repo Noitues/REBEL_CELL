@@ -160,7 +160,7 @@ def make(name, kv):
         job["shots"] = [dict(name="O_overview", pose=SB.OVERVIEW.to_json(), t=2.0, protect=[])]
         job["renders"] = ["data"]
         job["fill"] = False
-        job["fg_hide"] = ["fence", "near_l"]     # the storyboard's sequence-wide occlusion set (sb_r), so no pop at the zoom
+        job["fg_hide"] = ["fence"]     # the storyboard's sequence-wide occlusion set (sb_r), so no pop at the zoom
         return job
     elif name == "street_media":
         # v2: the loop's static media at the run start, every medium together (as r3 loop_media.py): no beams /

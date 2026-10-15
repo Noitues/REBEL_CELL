@@ -24,7 +24,7 @@ import ui31 as K  # noqa: E402
 import sb_mainline as ML  # noqa: E402
 
 ROOT = os.path.dirname(HERE)
-P40.SRC = "D:/rc_scratch/storyboard/m_bl"     # heavy scratch on D: (C: was low on disk)
+P40.SRC = "D:/rc_scratch/storyboard/oc_m"     # v3: the one-city scene's mainline passes (heavy scratch on D:)
 NET, NODES = P40.NET, P40.NODES
 SELECTED, RELAY = ML.SITE, ML.RELAY
 EXPLOITS = {"m2_intel": "INTEL", "m2_breach": "BREACH"}

@@ -208,10 +208,10 @@ for gx in (198.0, 214.0):
     beam((gx, -82.0, 0.0), (gx, -82.0, 34.0), 1.2, _nb, acc=_nr)
 beam((196.0, -82.0, 33.0), (216.0, -82.0, 33.0), 1.4, _nb, acc=_nr)
 box(200.0, -83.0, 26.0, 212.0, -81.5, 32.5, _nb, facet=False, acc=_nr)
-for _nm_, _a_ in (("near_l", _nl), ("near_r", _nr)):
-    _o_ = _a_.obj(TOON, "FG_%s_s" % _nm_)
-    SOLID_OBJS.append(_o_)
-    FG_OBJS[_nm_] = [_o_]
+# designer (v3): the near-layer silhouettes are DROPPED from the dressing (they cost render time for nothing). Their faces
+# are still drawn into throw-away accumulators above, so the shared build stream (4207) is unchanged; no object is made.
+for _a_ in (_nl, _nr):
+    _a_.bm.free()
 
 # ------------------------------------------------------------------ sky traffic: two lanes only (designer: the far lane
 # read as glitch lines); far roof trims are dimmed in mats_aaa (CLASS_EMIT far)

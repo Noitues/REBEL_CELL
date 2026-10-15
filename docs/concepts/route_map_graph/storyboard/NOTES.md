@@ -296,6 +296,7 @@ a contact sheet every 12 frames.
 
 ## Open questions for the designer
 
+0. **Answered (designer):** the Central Server off frame keeps its edge marker; the zoom timing is fine; the near-layer silhouettes are dropped from the dressing (done: `dress2_aaa.py` draws them into throw-away accumulators so the shared build stream is unchanged; no object, no render cost); the dive must be one continuous city (see "One continuous city").
 1. **In-game durations.** The animatic takes 6.1 s from the press to the street: terminal 1.4, rain 1.25, collapse 0.45, dive 3.0. The locked transition is about 4.4 s. Proposed for the build: 0.9 + 0.7 + 0.3 + 2.4 = 4.3 s. The REVEAL + MARK (4.6 s here) could compress to about 3 s after the first runs, behind the "short jack-in" setting.
 2. **The mainline Central Server is off-screen** at this framing (red edge marker). Should the HQ framing include it, or is the edge marker right?
 3. **The look band** (zoom 0.20–0.55, about 0.6 s of the dive). Longer for a slower look change?
@@ -320,6 +321,154 @@ a contact sheet every 12 frames.
   strobes are part of the loop layers); there is no separate stall-light group.
 - **Godot was never launched** (no exact mainline frames were recorded; `run_windowed.py` was not needed).
 
+## One continuous city (v3 proof: the dive only)
+
+**Designer note:** the v2 dive cross-dissolved from the city map to a separate street set behind a veil. This proof
+replaces that with ONE world.
+- One scene, one city, one camera path, no veil and no swap.
+- The netrun street IS the map's buildings along the selected Site's border link.
+
+| File | What it is |
+|---|---|
+| `storyboard_v3_dive.mp4` | 9.5 s (229 frames), 1280 × 720, 24 fps, 12.3 MB. It runs: the Site hovered (beat 2), select, jack in, the dive, then the REVEAL start held 0.5 s. |
+| `boards_v3/01_HQ_select.png` | The HQ beat. |
+| `boards_v3/02_DIVE_mid_one_city.png` | Mid-dive (look blend about 0.5). |
+| `boards_v3/03_STREET_reveal_start.png` | The street at the REVEAL start (walls closed). |
+| `boards_v3/04_STREET_rooms_derived_preview.png` | The same frame with the walls opened, to show the 19 derived rooms inside the real buildings. |
+| `scripts/sb_onecity.py` | The derivation rules (pure python). |
+| `scripts/m44/onecity_scene.py`, `onecity_build.py`, `onecity_cycles.py` | The one scene: the mainline kit's builder plus the route buildings, rooms, walls, section and the AAA-2 shading. |
+| `scripts/sb_ocjobs.py` | The camera path and the jobs. |
+| `scripts/sb_ocframes.py` | Assembly. |
+
+### Derivation rules (the core of the tools spec)
+
+All rules are in `sb_onecity.py` (`RULES`) and the look preset (`lod_bands`). Nothing is hand-placed.
+
+1. **The link.** The netrun follows the selected Site's border link: the polyline the beat-2 plan pencil draws (street
+   centre points, in lots). Here it is Returns Processing → Priority Lane Exchange.
+2. **Buildings as the game reads them.** A street-level base plus the stacked parts above it (z0 > 0, footprint inside
+   the base) is ONE building. Its height is the top of its highest part.
+3. **Frontage.** For each straight leg of the link and each side, the frontage is the buildings:
+   - standing on the street (z0 = 0);
+   - at least `min_width` 2.5 BU wide;
+   - whose near edge lies within `front_band` 0.8–6.5 BU of the leg's centre line;
+   - and that overlap the leg.
+
+   A leg may be extended along its own street line by `extend` (12 BU before its start, 60 BU past its end) when the leg
+   alone is too short. It is still the street the link runs on.
+4. **Choosing the street.** The chosen leg and side maximise, in order:
+   - the number of run layers that get a building (in link order from the relay, skipping a building without the floors
+     for its layer);
+   - then the total usable floors;
+   - then the start-on-the-left orientation.
+
+   Here: leg 3 (x 135 → 9 at y 9), north side. Its 13 frontage buildings are 3.3–20 BU tall. 8 are route columns; 5 were
+   skipped as too short.
+5. **Floors.** Usable floors = the real height / `floor_bu`. `floor_bu` is 1.9 BU, the mainline window pitch. On a
+   tapered building, only the floors whose facade setback at the room top stays within `max_setback` (0.6 BU) count.
+6. **Rooms.** A layer's rooms take consecutive real floors from `base_floor` (0), bottom up in slot order.
+   - Each room sits on the building's street face, inset `room_inset` 0.45 BU from the corners and `room_depth` 2.6 BU
+     deep.
+   - **`room_floor_span` (1–2):** a room spans two consecutive floors (a double-height cutaway) when one floor would
+     project under `room_px_target` (46 px at 1080p) at the street OVERVIEW. Here one floor projected 25 px, so span 2.
+     A building that lacks the floors for two-floor rooms keeps single-floor rooms. The building is never rescaled.
+   - Here: layers 0–3 and the TARGET are double-height; layers 4–6 (buildings 8.4, 10.7 and 4.1 BU tall) are single.
+7. **Walls.** The facade cells and windows of a route building that fall inside a room opening are cut. Each opening
+   gets its own wall object, built by the kit's own facade rule (`fgrid` facets plus windows in the building's colour):
+   closed in the dive, dissolved in the REVEAL. The rest of the facade is the building's own.
+8. **The section** (new; a continuous city needs it). In a real city the blocks across the street stand between any
+   side-view camera and the netrun street.
+   - Inside the corridor in front of the street (the camera side of the street centre line, along the street ±30 BU),
+     everything above `z_cut` is not drawn.
+   - `z_cut` follows the zoom (`section_by_zoom`): from above every roof at the HQ (60 BU) down to a 1.2 BU plinth at the
+     street, eased over zoom 0.25–0.85. The foreground blocks visibly lower as the camera descends, like a section model.
+   - It is a clip in the materials on the same geometry, the same mechanism as the wall dissolve. In Godot: a
+     section-plane uniform in the city shaders.
+9. **The camera.**
+   - **Path:** one path in the city's own frame. It starts at the mainline HQ pose (orthographic, yaw 135, pitch 40,
+     460 BU; emulated by a 300 mm lens) and ends at the street OVERVIEW solved by the v3_dynamic rig on the derived rooms
+     (yaw 97.2, pitch 6, 40 mm, distance 140).
+   - **Interpolation:** target, yaw and shift on smootherstep; frame width and lens in log space; pitch lagged (u^1.6).
+   - **Orientation:** the camera looks into the street face (along its normal). Here the start (the relay end) lands on
+     the screen's RIGHT: the link runs east → west, and the frontage on the north side is seen from the south. So the
+     rig mirrors (camera right looking left, toward the unexplored side) instead of v3_dynamic's start-left.
+10. **Two looks, one geometry.**
+    - The mainline look is the kit's Eevee toon + ink passes and its post.
+    - The AAA-2 look is Cycles on the SAME objects. Only the materials change: the kit's per-face colour through a
+      Principled BSDF, a wet ground, and the emitters from the same colour attribute. Lights and media are added:
+      - lamps along both kerbs every 6 BU;
+      - each route column washed in the district pair from across the street;
+      - city glow light-linked to the fog;
+      - beams on the tallest roofs by the r3 rule;
+      - the r3 fog field scaled to the mainline units (×3, the city being about 3× smaller).
+    - The frame mixes the two by `look_blend_by_zoom` (0.20–0.55). This is a shading blend of identical geometry from an
+      identical camera (the Godot equivalent: lerping material, lighting and fog uniforms on the same meshes), not a
+      cross-dissolve between worlds.
+
+### The proof's continuity check
+
+| Measure | Result |
+|---|---|
+| Frame-to-frame mean difference (`scratch` check, 320 × 180) | Rises smoothly from 0.004 to 0.146 at the fastest descent and back to 0.002. No isolated spike, no black frame. |
+| The look band (frames 170–186) | No jump. |
+| The section lowering (zoom 0.25–0.85) | Continuous. |
+| Room derivation (board 04) | All 19 rooms sit in real map buildings on real floors, behind their own walls. |
+
+### Does the street end frame read as AAA-2? Partly. Flagged as a mainline layout question.
+
+**What reads:**
+- a dark, wet neon night city: median luma 0.22, 3 % of pixels under 0.10 (brighter shadows than the r3 targets of 25–40 %);
+- lit fog and kerb lamps;
+- the route columns washed in the district colours;
+- the street seen side-on with the rooms inside its real buildings.
+
+**What does not read:**
+1. **The street front is low.** The real frontage buildings are 3.3–20 BU tall along a 126 BU street. That is a
+   length-to-height ratio of about 9:1, against about 3.4:1 for the old street set (8 BU floors, 56 BU columns).
+   - At OVERVIEW the route is a thin band across the middle of the frame. The rooms are about 50 px tall even
+     double-height (they were about 150 px).
+   - The cut foreground blocks fill the lower half.
+2. **The AAA-2 signatures thin out.**
+   - The beams have less fog and less height to cut through.
+   - The rooms are small, and three layers are single-floor.
+   - Without the old street set's dressing (ads, signs, holo ads), the frontage has no hero signage yet.
+
+**Proposed on the map side** (a mainline layout question, not a fake):
+- **(a) A street-front band in the city layout rules.** Buildings fronting any street that can host a netrun (the
+  border links' streets) rise to at least 6 floors (about 11.5 BU). The aim: every layer's 3 rooms fit double-height
+  and the frontage reaches a 4:1 length-to-height ratio. Only the street-front row changes; the skyline behind it
+  stays.
+- **(b) Optionally, a slightly wider street** (the street tile 6 → 8 BU) on border links, so the street reads at the
+  side view.
+- **(c) Hero signage by rule on route columns** (one blade or wall sign per column in the district pair), the item the
+  r3 NOTES already lists for the tools step.
+
+With (a), the OVERVIEW would frame the route at about the old proportions with no change to the HQ look.
+
+### Godot mapping
+
+| Element | Godot |
+|---|---|
+| Geometry | One city scene (the game's CityView3D) for the HQ, raid and netrun views. The netrun street is a query on the city layout: the link, its frontage and the room slots. No separate netrun scene is loaded. |
+| Rooms | MeshInstance3D interiors inserted into the chosen buildings, plus wall meshes cut from the facade with the dissolve shader. The facade cut is a per-building mesh variant (the route columns are rebuilt with openings when the run starts). |
+| Section | A world-space clip box uniform (`corridor`, `z_cut`) in the city building and neon shaders; `z_cut` comes from the camera rig's zoom. |
+| Look | `look_blend` (from zoom) drives the WorldEnvironment lerp (fog, glow, tonemap), the city shaders' toon ↔ PBR mix and ink fade, the wet street's roughness, and FogVolume density. |
+| Lights | Kerb lamps, facade washes and beams as Omni / Spot lights spawned by the same rules, with `visibility_range` fades by zoom. |
+
+### Limits
+
+- **The end hold (0.5 s)** reuses the last render: only the post's rain moves. The full sequence's street level is the
+  r3 idle loop, which this proof does not re-run on the one-city street.
+- **The mid-dive board (02)** mixes a 1280 mainline render with the 1920 AAA render, so it is a little softer.
+- **The v2 animatic** (`storyboard.mp4`) still uses the separate street set. A full v3 sequence (reveal, marks, zoom,
+  choose on the one-city street) would follow once the layout question above is answered.
+- **GPU:** about 33 min in all.
+  - Calibration tests about 6 min.
+  - Mainline HQ 39 s, mainline dive (38 frames) 74 s.
+  - Cycles dive (49 frames, 1280, 32 spp) 21 min.
+  - Boards 4 min.
+  - Lock waits on the shared GPU added about 40 min of wall time.
+
 ## Rebuild
 
 Run from `scripts/`. Nothing launches Godot. `scratch/` was deleted after delivery; step 1 regenerates it.
@@ -333,3 +482,14 @@ Run from `scripts/`. Nothing launches Godot. `scratch/` was deleted after delive
    - mainline: `python sb_mjobs.py hq`, `python sb_mjobs.py dive`.
 3. `python sb_frames3.py frames -j 4` (after the GPU work), then `python sb_frames3.py boards`.
 4. `python sb_encode.py mp4`, `gif`, `sheet`.
+
+**v3 one-city proof rebuild** (from `scripts/`):
+1. In `m44/`, run `python layout36.py` and `NET36=net_scope.json python scope39.py`. Then, from `scripts/`, run `python emblems20.py`.
+2. GPU, one job per lock:
+   - `python sb_ocjobs.py m_hq`;
+   - `python sb_ocjobs.py m_dive`;
+   - `python sb_ocjobs.py c_dive`;
+   - `python sb_ocjobs.py c_boards`.
+
+   The renders go to `D:/rc_scratch/storyboard/oc_m` and `oc_c`.
+3. `python sb_ocframes.py frames`, then `mp4`, then `boards`.
