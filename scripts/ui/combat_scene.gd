@@ -484,7 +484,11 @@ static func last_turn_tips(lines: Dictionary, events: Array[Dictionary]) -> Dict
 
 
 func rewind() -> void:
-	cancel_selection()
+	# PLAN-2 A-INPUT (B2): while a card is aimed, UNDO / Z cancels that aim and nothing more (it never also
+	# takes back the play before it).
+	if selecting >= 0:
+		cancel_selection()
+		return
 	skip_motion()
 	if engine.has_fight() and not engine.can_rewind():
 		show_undo_block()
@@ -495,6 +499,38 @@ func rewind() -> void:
 	if ok and tutorial != null and is_instance_valid(tutorial):
 		var ev: Array[Dictionary] = [{"type": "rewind"}]
 		tutorial.on_events(ev)
+
+
+## True when Esc has a staged play to take back: a fight in progress, no aim, plays made this turn, and UNDO
+## would work (it never crosses a checkpoint).
+func can_unstage() -> bool:
+	return _settings_panel == null and selecting < 0 and engine != null and engine.has_fight() \
+		and not engine.state().is_over() and not _turn_queue.steps().is_empty() and engine.can_rewind()
+
+
+## PLAN-2 A-INPUT (B2 / PT-002 C4): the UNDO sticker reads CANCEL (with its own key chip's action) while a card is
+## aimed: the visible control for backing out of an aim, and it is never greyed then.
+const CANCEL_LABEL := "CANCEL" # TR
+
+
+## True while a card is aimed by click / key (a drag in flight has its own cancel: drop it anywhere else).
+func cancel_shown() -> bool:
+	return selecting >= 0 and not _dragging
+
+
+func _sync_cancel_sticker() -> void:
+	if _rewind_button == null or engine == null:
+		return
+	if cancel_shown():
+		(_stickers["undo"] as StickerButton).set_label(tr(CANCEL_LABEL))
+		_rewind_button.disabled = false
+		shown_tip(_rewind_button, tr("Cancel this card's aim (Esc or right-click)."))
+	else:
+		(_stickers["undo"] as StickerButton).set_label(tr("UNDO"))
+		_rewind_button.disabled = not engine.has_fight() or not engine.can_rewind()
+		_sync_undo_tip()
+	(_stickers["undo"] as StickerButton).refit()
+	_place_stickers()
 
 
 ## ART-0 D12 (DECISIONS "Designer rulings: names for M14"): UNDO's words, and the block when there
@@ -670,6 +706,7 @@ func cancel_selection() -> void:
 	_dim_hand()
 	_clear_ghost()
 	_show_end_turn_preview()
+	_sync_cancel_sticker()
 
 
 func cycle_target() -> void:
@@ -1077,6 +1114,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		open_legend()
 		get_viewport().set_input_as_handled()
 		return
+	# PLAN-2 A-INPUT (B2): Esc / B takes back the last staged play (UNDO's rule: never past a random event)
+	# before it opens the pause menu; with nothing to take back it pauses as before.
+	if event.is_action_pressed("ui_cancel") and not event.is_echo() and can_unstage():
+		rewind()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("open_settings"):
 		open_settings()
 		get_viewport().set_input_as_handled()
@@ -1213,6 +1256,7 @@ func _begin_targeting(hand_index: int, options: Array[CombatAction]) -> void:
 		for v in _views():
 			v.queue_redraw()
 		return
+	_sync_cancel_sticker()
 	_show_selection()
 
 
@@ -1261,6 +1305,10 @@ func _on_view_zone(view_id: StringName, zone: Dictionary) -> void:
 		if i >= 0:
 			_option_index = i
 			confirm_selection()
+		elif view_id != engine.state().player.id or not zone.is_empty():
+			# PLAN-2 A-INPUT (B3): a click on a wheel but off every glowing zone answers, never silence.
+			var at := _toast_spot()
+			toast.show_text(tr("Click a glowing target to play it, or CANCEL (Esc / right-click)."), at.position, at.size.x)
 		return
 	# Not aiming: clicking an enemy wheel (or one of its satellites) targets it.
 	if not engine.has_fight() or view_id == engine.state().player.id or zone.is_empty():
@@ -2481,6 +2529,7 @@ func _refresh(state: CombatState) -> void:
 	_option_index = -1
 	_stop_aim_motion()
 	_dim_hand()
+	_sync_cancel_sticker()
 	_sync_arrows(state)
 	for v in _views():
 		v.valid_zones.clear()

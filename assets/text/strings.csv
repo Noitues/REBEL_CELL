@@ -378,6 +378,7 @@ Campaigns won,Campaigns won
 Campaigns won.,Campaigns won.
 Can't Undo,Can't Undo
 Cancel,Cancel
+Cancel this card's aim (Esc or right-click).,Cancel this card's aim (Esc or right-click).
 Card,Card
 CardData.arc_flash.description,Deal 3 damage to every enemy.
 CardData.arc_flash.display_name,Arc Flash
@@ -566,6 +567,7 @@ Clearing it takes Heat past %d: that brings a raid on your network.,Clearing it 
 Clearing it wins the campaign.,Clearing it wins the campaign.
 Clearing this Site changes Heat by %d.,Clearing this Site changes Heat by %d.
 Click,Click
+"Click a glowing target to play it, or CANCEL (Esc / right-click).","Click a glowing target to play it, or CANCEL (Esc / right-click)."
 "Click a key, then press the new one. Cards stay on 1-9.","Click a key, then press the new one. Cards stay on 1-9."
 "Click a numbered node to see its file, then confirm with the button or Enter. Keys 1-3 go straight there. The shape in each sticker's corner is its type: circle fight, star elite, square event, tag shop, tower rack. The red TARGET circle is the Site this run ends at; walked links are lime, the next choices orange.","Click a numbered node to see its file, then confirm with the button or Enter. Keys 1-3 go straight there. The shape in each sticker's corner is its type: circle fight, star elite, square event, tag shop, tower rack. The red TARGET circle is the Site this run ends at; walked links are lime, the next choices orange."
 Click to play.,Click to play.
