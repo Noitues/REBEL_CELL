@@ -1,5 +1,5 @@
 extends SceneTree
-## Parse check for tools/precommit.sh: compiles each script given after "--" and exits 1 if one fails.
+## Parse check for tools/precommit.sh: compiles every script given after "--" (any number: one process checks a whole change, D15) and exits 1 if one fails.
 ## `godot --check-only -s <file>` stops before the autoloads are registered as global names, so
 ## every script that names one (Dialogue, Settings, ...) failed there; loaded from here, they exist.
 ##

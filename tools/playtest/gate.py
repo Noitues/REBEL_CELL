@@ -288,9 +288,16 @@ def main() -> int:
         if plan["parity"]:
             sessions = sorted(p for p in (ROOT / ".playtest_sessions" / batch).glob("*/combat_steps.jsonl"))
             if sessions:
-                code = run([sys.executable, str(TOOLS / "parity.py"), "--session", str(sessions[0].parent)], work / "parity.log")
-                out += ["", "## 2b. Decision parity", "", "%s: exit %d (2 = 0 turns paired, nothing spent); log `%s`" % (
-                    sessions[0].parent.name, code, (work / "parity.log").name)]
+                # D16: parity.py exits 2 (spends nothing) when a session pairs 0 turns; try the next session
+                # until one pairs, so a session without paired turns never wastes the parity slot.
+                tried = []
+                for s in sessions:
+                    code = run([sys.executable, str(TOOLS / "parity.py"), "--session", str(s.parent)], work / ("parity_%s.log" % s.parent.name))
+                    tried.append("%s: exit %d" % (s.parent.name, code))
+                    if code != 2:
+                        break
+                out += ["", "## 2b. Decision parity", "", "%s (2 = 0 turns paired, nothing spent; next session tried); logs `%s`" % (
+                    "; ".join(tried), "parity_<session>.log")]
             else:
                 out += ["", "## 2b. Decision parity", "", "no session wrote combat_steps.jsonl; skipped"]
     for m, name in ran_state:
