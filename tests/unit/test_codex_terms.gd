@@ -31,3 +31,33 @@ func test_search_finds_nudge() -> void:
 	assert_true(titles.has("Nudge"))
 	assert_true(titles.has("Free nudge"))
 	assert_eq(Codex.search(Codex.entries(RunManager.lookup()), "  ").size(), 0, "empty query finds nothing")
+
+
+func test_search_field_flow_type_click_clear() -> void:
+	var book: CodexBook = add_child_autofree(CodexBook.new(Codex.entries(RunManager.lookup()), 0.0, 1200.0))
+	await get_tree().process_frame
+	book.search.text = "nud"
+	book.search.text_changed.emit("nud")
+	assert_true(book.searching())
+	var titles: Array = []
+	var row: Control = null
+	for r in book.columns.get_child(0).get_children():
+		titles.append(String(r.get_meta(&"title")))
+		if String(r.get_meta(&"title")) == "Nudge":
+			row = r
+	assert_true(titles.has("Nudge"), "results list Nudge")
+	assert_true(titles.has("Free nudge"), "results list Free nudge")
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	row.gui_input.emit(click)
+	assert_eq(book.section, "Lexicon", "the click opens the entry's section")
+	assert_eq(book.opened_title, "Nudge")
+	assert_eq(book.search.text, "", "the field clears")
+	book.search.text = "nud"
+	book.search.text_changed.emit("nud")
+	book.search.text = ""
+	book.search.text_changed.emit("")
+	assert_false(book.searching())
+	assert_eq(book.section, "Lexicon", "clearing restores the tab view")
+	assert_not_null(book.current_tab())
