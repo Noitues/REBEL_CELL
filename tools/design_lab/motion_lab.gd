@@ -1305,9 +1305,11 @@ func _play_context(scene: String, what: String) -> void:
 			# `combat_end_hold`. The scene waits for its fight itself (the jack may still run).
 			hq._demo_combat_end("win")
 		"route":
-			# Plan 1 M5 made a fight open as the pulse lands, so a fight can leave the route before the
-			# landing's own motions (node_pop, visited_dim) start: show the move on a node that stays.
-			hq.enter_node(_staying_node(RunManager.netrun))
+			# Plan 1 M5 made a fight open as the pulse lands, so entering a fight can leave the route before
+			# the landing's own motions (node_pop, visited_dim) start. The demo plays the move on the route
+			# itself (a settled travel: a view, no game state changes), whatever the open node's type.
+			var s := RunManager.netrun
+			(hq.city_overlay as CityMapOverlay).travel(s.run.current_node_id, _staying_node(s))
 		"raid_interlude":
 			# B3: a raid queued mid-run: the route page goes into the raid (RaidIncoming).
 			DemoSetup.queue_raid_interlude(RunManager.netrun, RunManager.config())

@@ -95,8 +95,11 @@ func _key(keycode: int) -> void:
 		await _frames(2)
 
 
+## The middle of the card's visible part: A-HAND made a fanned card's hit area stop where the next card starts
+## (the card drawn on top owns the overlap), so a click at the full rect's middle may land on the neighbour.
 func _card_center(scene: Control, i: int) -> Vector2:
-	return scene._card_node(i).get_global_rect().get_center()
+	var card := scene._card_node(i) as ZineCard
+	return card.get_global_transform() * card.hit_rect().get_center()
 
 
 func _enemy_view(scene: Control) -> WheelView:
