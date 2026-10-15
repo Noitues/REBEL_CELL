@@ -126,6 +126,39 @@ const LIVE_GLOW_ALPHA := 0.5
 const BODY_TEXT := &"BodyText"
 ## The header label's type step (a screen title).
 const HEADER_STEP := TITLE
+## Left accent rule width on hovered menu items and log strips (px).
+const ACCENT_RULE_PX: int = 3
+## Gap between a menu item's icon and text (px).
+const MENU_ICON_GAP_PX: int = 8
+## Extra font size of menu items over the body size (px).
+const MENU_FONT_BONUS_PX: int = 2
+## Note button padding (px, horizontal / vertical).
+const NOTE_PAD_H: float = 16.0
+const NOTE_PAD_V: float = 12.0
+## Drop shadow size of paper notes and panels (px).
+const PAPER_SHADOW_PX: int = 6
+## Drop shadow offset of paper notes and panels (px).
+const PAPER_SHADOW_OFFSET := Vector2(3, 4)
+## Flat toggle padding (px, horizontal / vertical).
+const FLAT_PAD_H: float = 4.0
+const FLAT_PAD_V: float = 2.0
+## Popup / tooltip padding (px).
+const POPUP_PAD_PX: float = 6.0
+const TOOLTIP_PAD_H: float = 8.0
+const TOOLTIP_PAD_V: float = 5.0
+## Glass panel padding (px).
+const GLASS_PAD_H: float = 12.0
+const GLASS_PAD_V: float = 8.0
+## Terminal panel default padding (px).
+const TERMINAL_PAD_H: float = 14.0
+const TERMINAL_PAD_V: float = 10.0
+## Tab padding (px).
+const TAB_PAD_H: float = 10.0
+const TAB_PAD_V: float = 4.0
+## Scroll bar box padding (px).
+const SCROLL_PAD_PX: float = 3.0
+## Focus ring width on tabs (px).
+const TAB_FOCUS_PX: int = 2
 
 
 ## The pixel size of type step `step` (e.g. UiTheme.TITLE) at the player's text scale.
@@ -373,7 +406,7 @@ static func _buttons(t: Theme, text_scale: float) -> void:
 	note_h.shadow_color = Color(Palette.NET_CYAN, GLOW_ALPHA * GLOW_HOVER)
 	note_h.shadow_size = GLOW_PX
 	var note_p := shifted(note_h.duplicate() as StyleBoxFlat, HOVER_LIFT + PRESS_DROP)
-	var note_d := box(Color(Palette.NOTE_PAPER, 0.45), Color(Palette.INK, 0.3), 1, 16, 12)
+	var note_d := box(Color(Palette.NOTE_PAPER, 0.45), Color(Palette.INK, 0.3), 1, NOTE_PAD_H, NOTE_PAD_V)
 	t.set_stylebox("normal", nv, note_n)
 	t.set_stylebox("hover", nv, note_h)
 	t.set_stylebox("pressed", nv, note_p)
@@ -383,7 +416,7 @@ static func _buttons(t: Theme, text_scale: float) -> void:
 		t.set_color(key, nv, Palette.INK)
 	t.set_color("font_disabled_color", nv, Color(Palette.INK, 0.45))
 	# Toggles sit flat in lists (no box of their own); hover is a faint cyan wash.
-	var flat := box(Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0, 4, 2)
+	var flat := box(Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0, FLAT_PAD_H, FLAT_PAD_V)
 	for kind in ["CheckButton", "CheckBox"]:
 		t.set_stylebox("normal", kind, flat)
 		t.set_stylebox("pressed", kind, flat)
@@ -446,7 +479,7 @@ static func sticker_box(fill: Color) -> StyleBoxFlat:
 
 ## A CRT terminal panel box (§1.2 / §6.4 TerminalPanel): navy glass, cyan edge, the top-right
 ## corner cut (the chamfer), a soft cyan edge glow. `edge` tints it (a corp terminal).
-static func terminal_box(edge: Color = Palette.TERMINAL_EDGE, pad_h: float = 14, pad_v: float = 10) -> StyleBoxFlat:
+static func terminal_box(edge: Color = Palette.TERMINAL_EDGE, pad_h: float = TERMINAL_PAD_H, pad_v: float = TERMINAL_PAD_V) -> StyleBoxFlat:
 	var p := box(Palette.TERMINAL_BG, edge, 1, pad_h, pad_v)
 	p.corner_radius_top_right = TERMINAL_CHAMFER_PX
 	p.corner_radius_bottom_left = TERMINAL_CHAMFER_PX / 2
@@ -474,9 +507,9 @@ static func _menu_item(t: Theme, size: int) -> void:
 	t.set_stylebox("hover_pressed", v, pressed)
 	t.set_stylebox("disabled", v, clear)
 	t.set_stylebox("focus", v, focus_box())
-	t.set_constant("h_separation", v, 8)
+	t.set_constant("h_separation", v, MENU_ICON_GAP_PX)
 	t.set_icon("icon", v, chevron())
-	t.set_font_size("font_size", v, size + 2)
+	t.set_font_size("font_size", v, size + MENU_FONT_BONUS_PX)
 	t.set_color("font_color", v, Palette.TERMINAL_TEXT)
 	t.set_color("font_hover_color", v, Palette.TEXT_HI)
 	t.set_color("font_focus_color", v, Palette.FOCUS)
@@ -497,14 +530,14 @@ static func _fields(t: Theme, text_scale: float) -> void:
 	t.set_color("font_placeholder_color", "LineEdit", Palette.TEXT_LO)
 	t.set_color("caret_color", "LineEdit", Palette.FOCUS)
 	t.set_color("selection_color", "LineEdit", Color(Palette.NET_CYAN, 0.4))
-	var popup := terminal_box(Palette.TERMINAL_EDGE, 6, 6)
+	var popup := terminal_box(Palette.TERMINAL_EDGE, POPUP_PAD_PX, POPUP_PAD_PX)
 	popup.bg_color = Color(Palette.TERMINAL_BG, 0.98)
 	t.set_stylebox("panel", "PopupMenu", popup)
 	t.set_stylebox("hover", "PopupMenu", box(Color(Palette.NET_CYAN, 0.3), Color(0, 0, 0, 0), 0))
 	t.set_color("font_color", "PopupMenu", Palette.TERMINAL_TEXT)
 	t.set_color("font_hover_color", "PopupMenu", Palette.TEXT_HI)
 	# Tooltips (ui_kit.jpg TOOLTIP): a terminal panel, cyan edge, Plex body lettering (§2.9).
-	t.set_stylebox("panel", "TooltipPanel", terminal_box(Palette.NET_CYAN, 8, 5))
+	t.set_stylebox("panel", "TooltipPanel", terminal_box(Palette.NET_CYAN, TOOLTIP_PAD_H, TOOLTIP_PAD_V))
 	t.set_color("font_color", "TooltipLabel", Palette.TEXT_HI)
 	t.set_font("font", "TooltipLabel", Palette.body())
 	t.set_font_size("font_size", "TooltipLabel", font_px_at(BODY, text_scale))
@@ -521,13 +554,13 @@ static func _panels(t: Theme) -> void:
 	# "GlassPanel": a screen's content area, lighter glass so the city shows through.
 	var g := "GlassPanel"
 	t.set_type_variation(g, "PanelContainer")
-	var glass := terminal_box(Color(Palette.TERMINAL_EDGE, 0.45), 12, 8)
+	var glass := terminal_box(Color(Palette.TERMINAL_EDGE, 0.45), GLASS_PAD_H, GLASS_PAD_V)
 	glass.bg_color = Color(Palette.TERMINAL_BG, 0.9)
 	t.set_stylebox("panel", g, glass)
 	# B5 (B1c follow-up 2): "CrtGlassPanel": GlassPanel's margins over the kit's CRT glass (CrtTerminalPanel.behind),
 	# which is its fill and its edge.
 	t.set_type_variation(CRT_GLASS_PANEL, "PanelContainer")
-	var crt_glass := terminal_box(Color(Palette.TERMINAL_EDGE, 0.0), 12, 8)
+	var crt_glass := terminal_box(Color(Palette.TERMINAL_EDGE, 0.0), GLASS_PAD_H, GLASS_PAD_V)
 	crt_glass.bg_color = Color(Palette.TERMINAL_BG, 0.0)
 	crt_glass.set_border_width_all(0)
 	crt_glass.shadow_size = 0  # the edge glow would show through the clear centre as a wash over the glass
@@ -541,10 +574,10 @@ static func _panels(t: Theme) -> void:
 	# "PaperPanel" (§1.2): an intercepted corp document: paper stock, ink keyline, a drop
 	# shadow; Courier Prime lettering in INK.
 	t.set_type_variation(PAPER_PANEL, "PanelContainer")
-	var paper := box(Palette.PAPER, Color(Palette.INK, 0.35), 1, 16, 12)
+	var paper := box(Palette.PAPER, Color(Palette.INK, 0.35), 1, NOTE_PAD_H, NOTE_PAD_V)
 	paper.shadow_color = Palette.SHADOW
-	paper.shadow_size = 6
-	paper.shadow_offset = Vector2(3, 4)
+	paper.shadow_size = PAPER_SHADOW_PX
+	paper.shadow_offset = PAPER_SHADOW_OFFSET
 	t.set_stylebox("panel", PAPER_PANEL, paper)
 	var hud := "HudLabel"
 	t.set_type_variation(hud, "Label")
@@ -554,8 +587,8 @@ static func _panels(t: Theme) -> void:
 	t.set_color("font_color", hud, Palette.TEXT_HI)
 	var lg := "LogText"
 	t.set_type_variation(lg, "RichTextLabel")
-	var log_box := box(Color(Palette.TERMINAL_BG, 0.9), Color(Palette.TERMINAL_EDGE, 0.4), 1, 12, 6)
-	log_box.border_width_left = 3
+	var log_box := box(Color(Palette.TERMINAL_BG, 0.9), Color(Palette.TERMINAL_EDGE, 0.4), 1, GLASS_PAD_H, POPUP_PAD_PX)
+	log_box.border_width_left = ACCENT_RULE_PX
 	log_box.border_color = Color(Palette.NET_CYAN, 0.6)
 	t.set_stylebox("normal", lg, log_box)
 	t.set_stylebox("focus", lg, focus_box())
@@ -572,12 +605,12 @@ static func _panels(t: Theme) -> void:
 	t.set_color("default_color", CRT_LOG_TEXT, Color(Palette.TERMINAL_TEXT, 0.9))
 	t.set_color("default_color", lg, Color(Palette.TERMINAL_TEXT, 0.9))
 	# Tabs (ui_kit.jpg TABS: active = filled cyan, hover = lit edge, the rest navy glass).
-	var tab := box(Palette.TERMINAL_BG, Color(Palette.TERMINAL_EDGE, 0.5), 1, 10, 4)
-	var tab_on := box(Palette.SELECTED, Palette.SELECTED, 1, 10, 4)
+	var tab := box(Palette.TERMINAL_BG, Color(Palette.TERMINAL_EDGE, 0.5), 1, TAB_PAD_H, TAB_PAD_V)
+	var tab_on := box(Palette.SELECTED, Palette.SELECTED, 1, TAB_PAD_H, TAB_PAD_V)
 	t.set_stylebox("tab_unselected", "TabBar", tab)
-	t.set_stylebox("tab_hovered", "TabBar", box(Palette.TERMINAL_BG_HOT, Palette.NET_CYAN, 1, 10, 4))
+	t.set_stylebox("tab_hovered", "TabBar", box(Palette.TERMINAL_BG_HOT, Palette.NET_CYAN, 1, TAB_PAD_H, TAB_PAD_V))
 	t.set_stylebox("tab_selected", "TabBar", tab_on)
-	t.set_stylebox("tab_focus", "TabBar", box(Color(0, 0, 0, 0), Palette.FOCUS, 2, 10, 4))
+	t.set_stylebox("tab_focus", "TabBar", box(Color(0, 0, 0, 0), Palette.FOCUS, TAB_FOCUS_PX, TAB_PAD_H, TAB_PAD_V))
 	t.set_color("font_selected_color", "TabBar", Palette.ON_SELECTED)
 	t.set_color("font_unselected_color", "TabBar", Palette.TERMINAL_TEXT)
 	t.set_color("font_hovered_color", "TabBar", Palette.TEXT_HI)
@@ -594,15 +627,15 @@ static func holo_box(corp: Color) -> StyleBoxFlat:
 
 static func _bars(t: Theme) -> void:
 	for kind in ["VScrollBar", "HScrollBar"]:
-		var track := box(Color(0, 0, 0, 0.35), Color(0, 0, 0, 0), 0, 3, 3)
-		var grab := box(Color(Palette.NET_CYAN, 0.45), Color(0, 0, 0, 0), 0, 3, 3)
-		var grab_hot := box(Color(Palette.NET_CYAN, 0.9), Color(0, 0, 0, 0), 0, 3, 3)
+		var track := box(Color(0, 0, 0, 0.35), Color(0, 0, 0, 0), 0, SCROLL_PAD_PX, SCROLL_PAD_PX)
+		var grab := box(Color(Palette.NET_CYAN, 0.45), Color(0, 0, 0, 0), 0, SCROLL_PAD_PX, SCROLL_PAD_PX)
+		var grab_hot := box(Color(Palette.NET_CYAN, 0.9), Color(0, 0, 0, 0), 0, SCROLL_PAD_PX, SCROLL_PAD_PX)
 		t.set_stylebox("scroll", kind, track)
 		t.set_stylebox("grabber", kind, grab)
 		t.set_stylebox("grabber_highlight", kind, grab_hot)
 		t.set_stylebox("grabber_pressed", kind, grab_hot)
-	var slider := box(Color(Palette.NET_CYAN, 0.18), Color(0, 0, 0, 0), 0, 0, 3)
-	var fill := box(Color(Palette.NET_CYAN, 0.85), Color(0, 0, 0, 0), 0, 0, 3)
+	var slider := box(Color(Palette.NET_CYAN, 0.18), Color(0, 0, 0, 0), 0, 0, SCROLL_PAD_PX)
+	var fill := box(Color(Palette.NET_CYAN, 0.85), Color(0, 0, 0, 0), 0, 0, SCROLL_PAD_PX)
 	t.set_stylebox("slider", "HSlider", slider)
 	t.set_stylebox("grabber_area", "HSlider", fill)
 	t.set_stylebox("grabber_area_highlight", "HSlider", fill)

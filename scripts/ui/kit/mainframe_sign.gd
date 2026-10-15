@@ -60,6 +60,27 @@ const WARM_STEPS := 14
 const FLICKER_ON := 0.6
 ## Tube ids for the warm-up hash: the frame, then each letter (1..9).
 const TUBE_BORDER := 0
+## Stutter: the chance a frame is drawn in red rather than blue.
+const STUTTER_RED_CHANCE: float = 0.5
+## Stutter: the chance the frame tube is lit on a frame.
+const STUTTER_FRAME_CHANCE: float = 0.5
+## Hash keys for the takeover's deterministic draws.
+const HASH_PALETTE: int = 99
+const HASH_FRAME: int = 77
+const HASH_HUM_PICK: int = 56
+const HASH_BETWEEN: int = 57
+## The frame dims to its half level on the first frames of the drop.
+const DROP_HALF_FRAMES: int = 2
+## Between words: the lit level is a hash share of this span above this floor.
+const BETWEEN_LEVEL_SPAN: float = 0.6
+const BETWEEN_LEVEL_MIN: float = 0.3
+## Between words: the chance a next-word tube leaks in early.
+const BETWEEN_LEAK: float = 0.35
+## The old sign flashes back at these levels.
+const FLASH_LEVELS: Array[float] = [1.0, 0.0, 0.8]
+## Hash loop strides per loop and word.
+const LOOP_STRIDE: int = 100
+const WORD_STRIDE: int = 10
 
 ## Warm-up progress (1 = lit, the rest state) and the traces' (ANIM-6).
 var warm: float = 1.0
@@ -249,13 +270,13 @@ static func takeover_frames(seq: StringName) -> Array[Dictionary]:
 	var dead := dead_letters(seq)
 	for i in F_STUTTER:  # the takeover hits the controller: blue and red stutter
 		var s := _empty()
-		var red := _h(seq, i, 99) < 0.5
+		var red := _h(seq, i, HASH_PALETTE) < STUTTER_RED_CHANCE
 		s["red"] = 1.0 if red else 0.0
 		var pal := "red" if red else "blue"
 		for k in LETTERS:
 			var r := _h(seq, i, k)
 			s["%s_%d" % [pal, k]] = 1.0 if r < STUTTER_ON else (0.0 if r < STUTTER_HALF else 0.5)
-		s["%s_frame" % pal] = 1.0 if _h(seq, i, 77) < 0.5 else 0.0
+		s["%s_frame" % pal] = 1.0 if _h(seq, i, HASH_FRAME) < STUTTER_FRAME_CHANCE else 0.0
 		fr.append(s)
 	for i in F_RED:  # the Cell's red, fully lit
 		fr.append(red_state(1.0))
@@ -266,7 +287,7 @@ static func takeover_frames(seq: StringName) -> Array[Dictionary]:
 			s["red_%d" % dead[j]] = 0.0
 			s["brk_%d" % dead[j]] = 1.0
 		s["soot"] = 1.0
-		s["red_frame"] = 0.5 if i < 2 else 0.0
+		s["red_frame"] = 0.5 if i < DROP_HALF_FRAMES else 0.0
 		fr.append(s)
 	for i in F_DARK:
 		var s := _empty()
@@ -279,17 +300,17 @@ static func takeover_frames(seq: StringName) -> Array[Dictionary]:
 				var s := word_state(seq, wi)
 				if HUM_FRAMES.has(j) and _h(seq, lp * 100 + wi * 10 + j, 55) < HUM_CHANCE:
 					var word: Array = words[wi][1]
-					var hum: Variant = word[int(_h(seq, lp * 100 + wi * 10 + j, 56) * word.size()) % word.size()]
+					var hum: Variant = word[int(_h(seq, lp * LOOP_STRIDE + wi * WORD_STRIDE + j, HASH_HUM_PICK) * word.size()) % word.size()]
 					s["red_%do" % int(hum[0]) if hum is Array else "red_%d" % int(hum)] = 0.0
 				fr.append(s)
 			for j in F_BETWEEN:  # stutter between words
-				var s := word_state(seq, wi, _h(seq, lp * 100 + wi * 10 + j, 57) * 0.6 + 0.3)
+				var s := word_state(seq, wi, _h(seq, lp * LOOP_STRIDE + wi * WORD_STRIDE + j, HASH_BETWEEN) * BETWEEN_LEVEL_SPAN + BETWEEN_LEVEL_MIN)
 				var nxt := word_state(seq, (wi + 1) % words.size())
 				for k: String in nxt:
-					if k.begins_with("red_") and _h(seq, lp * 100 + wi * 10 + j, k.hash()) < 0.35:
+					if k.begins_with("red_") and _h(seq, lp * LOOP_STRIDE + wi * WORD_STRIDE + j, k.hash()) < BETWEEN_LEAK:
 						s[k] = nxt[k]
 				fr.append(s)
-	for lvl in [1.0, 0.0, 0.8]:  # the old sign flickers back for a moment
+	for lvl in FLASH_LEVELS:  # the old sign flickers back for a moment
 		fr.append(red_state(lvl))
 	return fr
 

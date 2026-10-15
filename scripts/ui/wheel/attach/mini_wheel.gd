@@ -33,6 +33,22 @@ const PIP_SHARE := 0.62
 ## Slice fill and outline alpha.
 const FILL_ALPHA := 0.34
 const OUTLINE_ALPHA := 0.9
+## Alpha of the disc behind the slices.
+const DISC_ALPHA: float = 0.94
+## Angular inset of each wedge edge, in radians.
+const WEDGE_INSET: float = 0.04
+## Arc segments of a wedge.
+const WEDGE_SEGMENTS: int = 8
+## Text outline size.
+const TEXT_OUTLINE: int = 2
+## Arc segments of the collar and inner hairline.
+const COLLAR_SEGMENTS: int = 40
+## Alpha of the blade outline.
+const BLADE_OUTLINE_ALPHA: float = 0.7
+## Blade outline width in px.
+const BLADE_OUTLINE_PX: float = 1.0
+## Lightening of the slice outline colour.
+const OUTLINE_LIGHTEN: float = 0.3
 
 
 ## Draws `sat`'s mini-wheel centred on `c`, radius `rm`; `up` is the screen angle that reads as its
@@ -45,18 +61,18 @@ static func draw(ci: CanvasItem, glyphs: GlyphBatch, c: Vector2, rm: float, up: 
 	var n := maxi(1, w.slice_count)
 	var tps := w.ticks_per_slice()
 	var turn := up + PI * 0.5  # WheelView._ang(0) is straight up: turn it to `up`
-	ci.draw_circle(c, rm, AttachStyle.glass(0.94 * alpha))
+	ci.draw_circle(c, rm, AttachStyle.glass(DISC_ALPHA * alpha))
 	var vs := maxi(MIN_TEXT, roundi(rm * VALUE_SIZE))
 	for j in n:
 		var slice := lookup.get_content(w.slot_slice_ids[j]) as SliceData if lookup != null else null
 		var sc := AttachStyle.slice_color(slice.slice_type) if slice != null else Palette.DISABLED
 		var a0 := WheelView._ang(j * tps - tps * 0.5 - w.rotation) + turn
 		var a1 := WheelView._ang(j * tps + tps * 0.5 - w.rotation) + turn
-		var wedge := AttachStyle.sector(c, rm * SLICE_IN, rm * SLICE_OUT, minf(a0, a1) + 0.04, maxf(a0, a1) - 0.04, 8)
+		var wedge := AttachStyle.sector(c, rm * SLICE_IN, rm * SLICE_OUT, minf(a0, a1) + WEDGE_INSET, maxf(a0, a1) - WEDGE_INSET, WEDGE_SEGMENTS)
 		ci.draw_colored_polygon(wedge, Color(sc, FILL_ALPHA * alpha))
 		var closed := wedge.duplicate()
 		closed.append(wedge[0])
-		ci.draw_polyline(closed, Color(sc.lightened(0.3), OUTLINE_ALPHA * alpha), MIN_LINE, true)
+		ci.draw_polyline(closed, Color(sc.lightened(OUTLINE_LIGHTEN), OUTLINE_ALPHA * alpha), MIN_LINE, true)
 		if slice == null:
 			continue
 		var mid := WheelView._ang(j * tps - w.rotation) + turn
@@ -67,7 +83,7 @@ static func draw(ci: CanvasItem, glyphs: GlyphBatch, c: Vector2, rm: float, up: 
 		if text != "":
 			AttachStyle.draw_centred(ci, AttachStyle.value_font(), at + Vector2(rm * GLYPH_GAP * 1.1, 0), text, vs, Color(Palette.TEXT_HI, alpha), 2)
 	# Collar in the owner's colour, with a hairline at the slices' edge.
-	ci.draw_arc(c, rm, 0, TAU, 40, Color(col, alpha), maxf(MIN_LINE, rm * COLLAR), true)
+	ci.draw_arc(c, rm, 0, TAU, COLLAR_SEGMENTS, Color(col, alpha), maxf(MIN_LINE, rm * COLLAR), true)
 	ci.draw_arc(c, rm * SLICE_OUT, 0, TAU, 40, Color(col, 0.5 * alpha), MIN_LINE, true)
 	# Hub: HP number and pips.
 	ci.draw_circle(c, rm * HUB, AttachStyle.glass(alpha))
@@ -77,7 +93,7 @@ static func draw(ci: CanvasItem, glyphs: GlyphBatch, c: Vector2, rm: float, up: 
 		var p0 := -PI * 0.5 + TAU * k / pips
 		var p1 := p0 + TAU / pips * PIP_SHARE
 		ci.draw_arc(c, rm * HUB * 0.86, p0, p1, 4, Color(Palette.GAIN if k < lit else Palette.DISABLED, alpha), maxf(MIN_LINE, rm * 0.06), true)
-	AttachStyle.draw_centred(ci, AttachStyle.value_font(), c, str(roundi(hp)), maxi(MIN_TEXT, roundi(rm * HP_SIZE)), Color(Palette.GAIN, alpha), 2)
+	AttachStyle.draw_centred(ci, AttachStyle.value_font(), c, str(roundi(hp)), maxi(MIN_TEXT, roundi(rm * HP_SIZE)), Color(Palette.GAIN, alpha), TEXT_OUTLINE)
 	# Its own blade, pointing away from the host, with the value it reads.
 	if not w.pointer_ticks.is_empty():
 		var pa := WheelView._ang(w.pointer_ticks[0]) + turn
@@ -86,7 +102,7 @@ static func draw(ci: CanvasItem, glyphs: GlyphBatch, c: Vector2, rm: float, up: 
 		var root := c + dir * rm * BLADE_ROOT
 		var tip := c + dir * rm * BLADE_TIP
 		ci.draw_colored_polygon(PackedVector2Array([tip, root + side, root - side]), Color(AttachStyle.cream(), alpha))
-		ci.draw_polyline(PackedVector2Array([tip, root + side, root - side, tip]), Color(Palette.INK, 0.7 * alpha), 1.0, true)
+		ci.draw_polyline(PackedVector2Array([tip, root + side, root - side, tip]), Color(Palette.INK, BLADE_OUTLINE_ALPHA * alpha), BLADE_OUTLINE_PX, true)
 		var land := landing(sat, lookup)
 		if land != null and land.base_output > 0:
 			var tab := c + dir * rm * TAB_AT

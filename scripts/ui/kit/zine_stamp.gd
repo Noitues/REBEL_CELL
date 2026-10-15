@@ -27,13 +27,39 @@ const WORD_SIZE := 20
 const ICON_SHARE := 0.2
 const ICON_LIFT := 0.36
 const WORD_DROP := 0.12
+## Minimum size of the stamp control (px).
+const MIN_SIZE: Vector2 = Vector2(112, 112)
+## Margin between the stamp edge and the outer ring (px).
+const RING_MARGIN: float = 4.0
+## Alpha of the dark fill behind the stamp.
+const FILL_ALPHA: float = 0.85
+## Alpha of the disabled stamp colour.
+const DISABLED_ALPHA: float = 0.35
+## Extra radius of the hover glow (px).
+const GLOW_EXTRA: float = 4.0
+## Alpha of the hover glow.
+const GLOW_ALPHA: float = 0.45
+## Segment count of the ring arcs.
+const ARC_POINTS: int = 48
+## Width of the outer ring (px).
+const OUTER_RING_WIDTH: float = 4.0
+## Inset of the inner ring from the outer one (px).
+const INNER_RING_INSET: float = 9.0
+## Width of the inner ring (px).
+const INNER_RING_WIDTH: float = 1.5
+## Horizontal inset of the word from the ring (px).
+const WORD_INSET: float = 12.0
+## Horizontal inset of the word's box width (px, both sides).
+const WORD_BOX_INSET: float = 24.0
+## Baseline offset of the hint below the centre (px).
+const HINT_BASELINE: float = 26.0
 
 
 func _init(p_text: String = "SEND IT", p_color: Color = Palette.CELL_PINK, p_hint: String = "") -> void:
 	stamp_text = p_text
 	stamp_color = p_color
 	hint = p_hint
-	custom_minimum_size = Vector2(112, 112)
+	custom_minimum_size = MIN_SIZE
 	flat = true
 	focus_mode = Control.FOCUS_ALL
 	# Draws its own hover/focus glow; no theme box around the sticker.
@@ -85,21 +111,21 @@ func _draw() -> void:
 	var st := state()
 	# ART-0 F (§6): hover lifts the stamp, a press drops it.
 	var c := size / 2.0 + Vector2(0, KitState.lift(st))
-	var r := minf(size.x, size.y) / 2.0 - 4
-	var col := stamp_color if not disabled else Color(stamp_color, 0.35)
-	draw_circle(c, r, Color(Palette.NIGHT_SKY, 0.85))
+	var r := minf(size.x, size.y) / 2.0 - RING_MARGIN
+	var col := stamp_color if not disabled else Color(stamp_color, DISABLED_ALPHA)
+	draw_circle(c, r, Color(Palette.NIGHT_SKY, FILL_ALPHA))
 	if _hot and not disabled:
-		draw_circle(c, r + 4, Color(Palette.CELL_ACID, 0.45))
-		draw_circle(c, r, Color(Palette.NIGHT_SKY, 0.85))
-	draw_arc(c, r * ring_scale, 0, TAU, 48, col, 4.0)
-	draw_arc(c, (r - 9) * ring_scale, 0, TAU, 48, col, 1.5)
+		draw_circle(c, r + GLOW_EXTRA, Color(Palette.CELL_ACID, GLOW_ALPHA))
+		draw_circle(c, r, Color(Palette.NIGHT_SKY, FILL_ALPHA))
+	draw_arc(c, r * ring_scale, 0, TAU, ARC_POINTS, col, OUTER_RING_WIDTH)
+	draw_arc(c, (r - INNER_RING_INSET) * ring_scale, 0, TAU, ARC_POINTS, col, INNER_RING_WIDTH)
 	var drop := 0.0
 	if icon_kind != &"":
 		StatIcon.draw(self, c + Vector2(0, -r * ICON_LIFT), r * ICON_SHARE, icon_kind, col)
 		drop = r * WORD_DROP
 	HighContrast.draw_text(self, Palette.display(), c + Vector2(-r + 12, 8 + drop), stamp_text, HORIZONTAL_ALIGNMENT_CENTER, r * 2 - 24, WORD_SIZE, col)
 	if hint != "":
-		HighContrast.draw_text(self, Palette.mono(), c + Vector2(-r + 12, 26), hint, HORIZONTAL_ALIGNMENT_CENTER, r * 2 - 24, roundi(HINT_SIZE * Settings.text_scale), col)
+		HighContrast.draw_text(self, Palette.mono(), c + Vector2(-r + WORD_INSET, HINT_BASELINE), hint, HORIZONTAL_ALIGNMENT_CENTER, r * 2 - WORD_BOX_INSET, roundi(HINT_SIZE * Settings.text_scale), col)
 	# ART-0 F (§6): the disabled lock and the refused mark; focus is the stamp's own lime
 	# halo (a sticker's focus, v2 §2.10), never brackets.
 	KitState.draw_frame(self, Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0), st, false)

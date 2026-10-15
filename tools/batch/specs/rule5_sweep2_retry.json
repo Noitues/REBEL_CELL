@@ -1,0 +1,13 @@
+{
+	"name": "rule5_sweep2_retry",
+	"kind": "const_edits",
+	"thinking": {"type": "between_tools"},
+	"model": "claude-sonnet-5-5",
+	"effort": "low",
+	"max_tokens": 32000,
+	"files": [
+		"scripts/ui/kit/heat_poster.gd",
+		"scripts/ui/kit/materials/kit_demo.gd"
+	],
+	"instructions": "Rule-5 sweep, behaviour identical. Find the absolute pixel / size / offset / timing / ratio literals used inside function bodies (not already in a const line, not 0, 1, -1, 2 in arithmetic, not indices, not Color channels, not font sizes, not values already passed through UiTheme or Palette). Name each one as a typed `const` near the top of the file (SCREAMING_SNAKE, with a `##` one-line comment) and use the const at the use site. Reuse an existing const when it holds the same number with the same meaning. Keep int vs float exactly as written. Do NOT change any value, logic, signature, existing const name, or string. Each REPLACE must equal the original once the const names are put back as their values; do NOT replace an existing const with its value or vice versa, and never write a const name in a REPLACE's original text. The INSERT_AFTER TEXT holds only const lines and `##` comments, nothing else (no `===` lines). Put new consts together after the existing const block. If the file has nothing to name, status: skip."
+}

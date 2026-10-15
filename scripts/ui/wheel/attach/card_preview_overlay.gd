@@ -58,6 +58,38 @@ const HELD_ALPHA := 0.5
 ## Label text size (px at text scale 1.0) and its distance outside the ghost (px).
 const LABEL_PX := 13
 const LABEL_OUT := 18.0
+## Share of the chevron's size it advances toward its tip and recedes toward its back.
+const CHEVRON_HALF_LEN: float = 0.35
+## Share of the chevron's size for each arm's reach across the track.
+const CHEVRON_ARM: float = 0.42
+## Share of the chevron's size for its stroke thickness.
+const CHEVRON_THICK: float = 0.24
+## Alpha of the value window's glass backing.
+const WINDOW_GLASS_ALPHA: float = 0.8
+## Window half-height as a share of its half-width.
+const WINDOW_HEIGHT_SHARE: float = 0.7
+## Window half-height multiplier giving its full height.
+const WINDOW_HEIGHT_FULL: float = 1.4
+## Value font size as a share of the window size.
+const WINDOW_FONT_SHARE: float = 1.1
+## Slice glyph size as a share of the window size.
+const WINDOW_GLYPH_SHARE: float = 1.3
+## Needle index tab offset as a share of the window size.
+const INDEX_TAB_SHARE: float = 1.6
+## Horizontal padding added to a label's text width (px).
+const LABEL_PAD_X: float = 8.0
+## Label box height as a share of its font size.
+const LABEL_HEIGHT_SHARE: float = 1.4
+## Ghost drone radius as a share of its dock depth.
+const DRONE_GHOST_SHARE: float = 0.6
+## Bloom level above which a drone shows in its mini form.
+const BLOOM_MINI_AT: float = 0.5
+## Number of segments in a landing slice wedge.
+const WEDGE_SEGMENTS: int = 14
+## Number of segments in a ghost drone circle.
+const DRONE_SEGMENTS: int = 28
+## Brightening of the landing outline colour.
+const LANDING_LIGHTEN: float = 0.25
 
 var host: WheelAttachments = null
 ## The atlas glyphs this layer queues while it draws (1C).
@@ -166,11 +198,11 @@ func _draw() -> void:
 		var sc := AttachStyle.slice_color(slice.slice_type) if slice != null else Palette.TEXT_HI
 		var a0 := WheelView._ang(slot * tps - tps * 0.5 - ride)
 		var a1 := WheelView._ang(slot * tps + tps * 0.5 - ride)
-		var wedge := AttachStyle.sector(center, rim - host.band(), rim, minf(a0, a1), maxf(a0, a1), 14)
+		var wedge := AttachStyle.sector(center, rim - host.band(), rim, minf(a0, a1), maxf(a0, a1), WEDGE_SEGMENTS)
 		draw_colored_polygon(wedge, Color(sc, LANDING_FILL * alpha))
 		wedge.append(wedge[0])
 		draw_polyline(wedge, Color(sc, LANDING_GLOW_ALPHA * alpha), LANDING_GLOW, true)
-		AttachStyle.draw_dashed(self, wedge, Color(sc.lightened(0.25), alpha), LANDING_LINE, DASH, GAP)
+		AttachStyle.draw_dashed(self, wedge, Color(sc.lightened(LANDING_LIGHTEN), alpha), LANDING_LINE, DASH, GAP)
 	# Chevrons from the top needle to its landing (not after the commit: the wheel shows the way).
 	if not committed and not w.pointer_ticks.is_empty():
 		var p0 := float(w.pointer_ticks[0])
@@ -198,11 +230,11 @@ func _draw() -> void:
 		if committed:
 			break
 		var at: Vector2 = e["tile"]
-		var r := float(e["depth"]) * 0.6
-		if float(host.dock.bloom.get(int(e["slot"]), 0.0)) > 0.5:
+		var r := float(e["depth"]) * DRONE_GHOST_SHARE
+		if float(host.dock.bloom.get(int(e["slot"]), 0.0)) > BLOOM_MINI_AT:
 			at = e["mini"]
 			r = float(e["mini_r"])
-		AttachStyle.draw_dashed(self, AttachStyle.arc_points(at, r, 0.0, TAU, 28), Color(AttachStyle.cream(), alpha), LINE, DASH, GAP)
+		AttachStyle.draw_dashed(self, AttachStyle.arc_points(at, r, 0.0, TAU, DRONE_SEGMENTS), Color(AttachStyle.cream(), alpha), LINE, DASH, GAP)
 		if not aimed and not labelled:
 			labelled = true  # one label: the first drone (slot order) names the ghost for all
 			var out := (at - center).normalized()
@@ -232,10 +264,10 @@ func _chevron_light(k: int) -> float:
 func _draw_chevron(at: Vector2, a: float, way: float, s: float, col: Color) -> void:
 	var tangent := Vector2(-sin(a), cos(a)) * way
 	var normal := Vector2(cos(a), sin(a))
-	var tip := at + tangent * s * 0.35
-	var back := at - tangent * s * 0.35
-	var arm := s * 0.42
-	var thick := s * 0.24
+	var tip := at + tangent * s * CHEVRON_HALF_LEN
+	var back := at - tangent * s * CHEVRON_HALF_LEN
+	var arm := s * CHEVRON_ARM
+	var thick := s * CHEVRON_THICK
 	var pts := PackedVector2Array([back + normal * arm, tip, back - normal * arm, back - normal * arm + tangent * thick, tip + tangent * thick, back + normal * arm + tangent * thick])
 	draw_colored_polygon(pts, col)
 
@@ -251,23 +283,23 @@ func _draw_ghost_blade(center: Vector2, rim: float, a: float, index: int, count:
 	# Value window: the landing slice's value, and the needle's index tab on multi-needle wheels.
 	var win := center + dir * rim * WINDOW_AT
 	var ws := rim * WINDOW_SIZE
-	var box := Rect2(win - Vector2(ws, ws * 0.7), Vector2(ws * 2.0, ws * 1.4))
-	draw_rect(box, AttachStyle.glass(0.8 * alpha))
+	var box := Rect2(win - Vector2(ws, ws * WINDOW_HEIGHT_SHARE), Vector2(ws * 2.0, ws * WINDOW_HEIGHT_FULL))
+	draw_rect(box, AttachStyle.glass(WINDOW_GLASS_ALPHA * alpha))
 	AttachStyle.draw_dashed(self, PackedVector2Array([box.position, Vector2(box.end.x, box.position.y), box.end, Vector2(box.position.x, box.end.y), box.position]), col, 1.0, DASH * 0.5, GAP * 0.5)
-	var fs := maxi(LABEL_PX, roundi(ws * 1.1))
+	var fs := maxi(LABEL_PX, roundi(ws * WINDOW_FONT_SHARE))
 	if slice != null and slice.base_output > 0:
 		AttachStyle.draw_centred(self, AttachStyle.value_font(), win, str(slice.base_output), fs, col, 2)
 	elif slice != null:
-		AttachStyle.draw_slice_glyph(glyphs, win, ws * 1.3, slice, alpha)
+		AttachStyle.draw_slice_glyph(glyphs, win, ws * WINDOW_GLYPH_SHARE, slice, alpha)
 	if count > 1:
-		AttachStyle.draw_centred(self, AttachStyle.label_font(), win + dir.orthogonal() * ws * 1.6, str(index + 1), LABEL_PX, col, 2)
+		AttachStyle.draw_centred(self, AttachStyle.label_font(), win + dir.orthogonal() * ws * INDEX_TAB_SHARE, str(index + 1), LABEL_PX, col, 2)
 
 
 ## A label's box size (px) at the text scale.
 func _label_size(text: String) -> Vector2:
 	var fs := roundi(LABEL_PX * Settings.text_scale)
 	var w := AttachStyle.label_font().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	return Vector2(w + 8.0, fs * 1.4)
+	return Vector2(w + LABEL_PAD_X, fs * LABEL_HEIGHT_SHARE)
 
 
 ## How far a label's box reaches along `dir` from its centre.

@@ -27,6 +27,8 @@ const TRAVEL_SHARE := 0.32
 const TRAVEL_SPREAD_SHARE := 0.05
 ## The white-hot core of a fresh glyph (§3.18: 80 ms).
 const HOT_SECONDS := 0.08
+## Smallest text scale a dissolve accepts.
+const CELL_SCALE_MIN: float = 0.5
 
 
 ## Where a beat's effect starts (D16): a card-caused beat (the "act" phase of a played
@@ -57,6 +59,6 @@ static func slap_scale(p: float) -> Vector2:
 ## Dissolve A's bits for a card at `rect` (global) dissolving over `seconds` into `hub`:
 ## scale 1.0 cells at `cell_scale` (the text scale) so a bigger card keeps 17 px glyph cells.
 static func dissolve_path(rect: Rect2, seconds: float, hub: Vector2, cell_scale: float = 1.0) -> BitPath:
-	var s := maxf(0.5, cell_scale)
+	var s := maxf(CELL_SCALE_MIN, cell_scale)
 	return BitPath.dissolve(hash(rect.position.snapped(Vector2.ONE)), rect, CELL_PX * s, seconds * SCAN_SHARE, seconds * HOLD_SHARE,
 		seconds * JITTER_SHARE, seconds * TRAVEL_SHARE, seconds * TRAVEL_SPREAD_SHARE, hub, GLYPH_MIN * s, GLYPH_MAX * s, GLYPH_END / GLYPH_MAX)

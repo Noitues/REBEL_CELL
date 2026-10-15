@@ -58,6 +58,8 @@ const STAMP_ALPHA := 0.9
 ## (Solace's green above all): its offset (px) and alpha.
 const STAMP_SHADOW_OFFSET := Vector2(2, 2)
 const STAMP_SHADOW_ALPHA := 0.7
+## The seal letter's baseline drop as a share of its height.
+const SEAL_LETTER_DROP: float = 0.32
 
 @export var corp_color: Color = Palette.CORP_SOLACE:
 	set(v):
@@ -224,7 +226,7 @@ func _draw_seal() -> void:
 		var font := Palette.display()
 		var px := UiTheme.font_px_at(UiTheme.TITLE, text_k if text_k > 0.0 else Settings.text_scale)
 		var w := font.get_string_size(seal_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
-		HighContrast.draw_text(stamp_slot, font, c + Vector2(-w.x * 0.5, w.y * 0.32), seal_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ring)
+		HighContrast.draw_text(stamp_slot, font, c + Vector2(-w.x * 0.5, w.y * SEAL_LETTER_DROP), seal_letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ring)
 	# the red fracture down the middle, across the ring
 	var pts := PackedVector2Array()
 	for f: Vector2 in FRACTURE:

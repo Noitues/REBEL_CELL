@@ -9,6 +9,16 @@ extends RefCounted
 const MASTER_RIM := 360.0
 ## The frame's outer edge (master 414) and the needle band's tip (master 510).
 const MASTER_FRAME := 414.0
+## Default alpha of the dark glass fill.
+const GLASS_ALPHA: float = 0.92
+## Vertical centring factor for centred text (fraction of the font size).
+const TEXT_BASELINE_FACTOR: float = 0.36
+## Epsilon used when walking dashed segments.
+const DASH_EPSILON: float = 0.001
+## Minimum stroke width of a drawn firmware glyph.
+const GLYPH_MIN_WIDTH: float = 1.2
+## Stroke width of a drawn firmware glyph as a fraction of its radius.
+const GLYPH_WIDTH_FACTOR: float = 0.18
 
 
 ## Rarity colour (§2.7, 1A tokens): common cool white, uncommon cyan, rare gold; a boss part in
@@ -59,7 +69,7 @@ static func owner_color(c: CombatantState, lookup: ContentLookup) -> Color:
 
 
 ## The dark glass every plate and disc sits on.
-static func glass(alpha: float = 0.92) -> Color:
+static func glass(alpha: float = GLASS_ALPHA) -> Color:
 	return Color(Palette.NIGHT_SKY, alpha)
 
 
@@ -109,7 +119,7 @@ static func label_font() -> Font:
 ## A centred string: `size` px, its middle on `at`.
 static func draw_centred(ci: CanvasItem, font: Font, at: Vector2, text: String, size: int, col: Color, outline: int = 0) -> void:
 	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	var base := at + Vector2(-w * 0.5, size * 0.36)
+	var base := at + Vector2(-w * 0.5, size * TEXT_BASELINE_FACTOR)
 	if outline > 0:
 		ci.draw_string_outline(font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, outline, Color(Palette.INK, col.a))
 	HighContrast.draw_text(ci, font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
@@ -124,13 +134,13 @@ static func draw_dashed(ci: CanvasItem, pts: PackedVector2Array, col: Color, wid
 		var b := pts[i + 1]
 		var seg := a.distance_to(b)
 		var t := 0.0
-		while t < seg - 0.001:
+		while t < seg - DASH_EPSILON:
 			var step := minf(left, seg - t)
 			if on:
 				ci.draw_line(a.lerp(b, t / seg), a.lerp(b, (t + step) / seg), col, width, true)
 			t += step
 			left -= step
-			if left <= 0.001:
+			if left <= DASH_EPSILON:
 				on = not on
 				left = dash if on else gap
 
@@ -154,7 +164,7 @@ static func sector(c: Vector2, r0: float, r1: float, a0: float, a1: float, steps
 
 ## Drawn stand-in for firmware `id`'s effect glyph, used only when the atlas (1C) has no `fw_<id>`.
 static func draw_firmware_glyph(ci: CanvasItem, id: StringName, at: Vector2, r: float, col: Color) -> void:
-	var w := maxf(1.2, r * 0.18)
+	var w := maxf(GLYPH_MIN_WIDTH, r * GLYPH_WIDTH_FACTOR)
 	match id:
 		&"patch_plus":  # double plus
 			for dx in [-0.42, 0.42]:

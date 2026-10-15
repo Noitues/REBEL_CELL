@@ -36,6 +36,14 @@ const POLICE_HZ := 2.5
 const SPILL_R := 24.0
 const SPILL_ALPHA := 0.24
 const SEGMENTS := 18
+## Target beacon turn phase offset per index (rad).
+const TARGET_BEACON_TURN_STEP: float = 2.3
+## Target beacon horizontal spacing (px at text scale 1.0).
+const TARGET_BEACON_GAP: float = 60.0
+## Fallback target x share when no target is set.
+const FALLBACK_TARGET_X: float = 0.62
+## Fallback target y share when no target is set.
+const FALLBACK_TARGET_Y: float = 0.3
 
 var band: int = 0
 ## The target building's point (global): beacons and searchlights on the target aim here.
@@ -96,7 +104,7 @@ func _draw() -> void:
 	var beacon_period := maxf(VfxTier.T0_MIN_PERIOD, Motion.seconds(&"heat_city_beacon"))
 	var sweep_period := maxf(VfxTier.T0_MIN_PERIOD, Motion.seconds(&"heat_city_sweep"))
 	var turn := TAU * _t / beacon_period if moving and Motion.live(&"heat_city_beacon") else 0.0
-	var tgt := target - global_position if target != Vector2.INF else Vector2(sz.x * 0.62, sz.y * 0.3)
+	var tgt := target - global_position if target != Vector2.INF else Vector2(sz.x * FALLBACK_TARGET_X, sz.y * FALLBACK_TARGET_Y)
 	var roof := tgt - Vector2(0, sz.y * TARGET_ROOF)
 	var glow := Motion.amplitude(&"heat_city_beacon")
 	# NOTICED: alarm beacons on the side buildings (left, right, left ...).
@@ -113,7 +121,7 @@ func _draw() -> void:
 		var away := -PI * 0.5 + (-0.45 if left else 0.45)
 		_cone(foot, away + sweep * (1.0 if left else -1.0), sz.y * CONE_LEN)
 	for k in int(n["target_beacons"]):
-		_beacon(roof + Vector2((k - 0.5) * 60.0 * s, 0), turn + k * 2.3, Palette.HARM, glow, s)
+		_beacon(roof + Vector2((k - 0.5) * TARGET_BEACON_GAP * s, 0), turn + k * TARGET_BEACON_TURN_STEP, Palette.HARM, glow, s)
 	# HUNTED: police light clusters along the street, two searchlights on the target.
 	for k in int(n["police"]):
 		var x := sz.x * (0.5 - STREET_SPAN * 0.5 + STREET_SPAN * (k + 0.5) / maxf(1.0, float(n["police"])))

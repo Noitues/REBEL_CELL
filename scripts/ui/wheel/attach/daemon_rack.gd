@@ -34,6 +34,10 @@ const LED_DIM := 0.35
 const TILE_DIR := "res://assets/wheel/daemons/"
 const TILE_FRAMES := 12
 const TILE_PX := 128.0
+## Outline width of a tile's rarity bezel (px).
+const BEZEL_W: float = 1.5
+## Heartbeat pulse window (share of the scan phase during which the LED is lit).
+const BEAT_WINDOW: float = 0.12
 
 static var _sheets: Dictionary = {}
 
@@ -171,7 +175,7 @@ func _draw_tiles() -> void:
 		if k == shown - 1 and list.size() > MAX_TILES:
 			_tiles.draw_rect(r, AttachStyle.glass(0.95))
 			AttachStyle.draw_centred(_tiles, AttachStyle.value_font(), r.get_center(), "+%d" % (list.size() - MAX_TILES + 1), roundi(TILE * ts * 0.4), Palette.TERMINAL_TEXT, 2)
-			_tiles.draw_rect(r, AttachStyle.rarity_color(rarity), false, 1.5)
+			_tiles.draw_rect(r, AttachStyle.rarity_color(rarity), false, BEZEL_W)
 		elif sheet != null:
 			# The art pass's tile (round 34 `daemon_tile`): idle frame by the scan's phase (frame 0 when
 			# the scan is off: reduce effects), the fire frame cross-faded in by the fire cue.
@@ -192,9 +196,9 @@ func _draw_tiles() -> void:
 			if Motion.live(SCAN_MOTION):
 				var bar := Rect2(Vector2(r.position.x, r.position.y + phase * r.size.y * (1.0 - SCAN_H)), Vector2(r.size.x, r.size.y * SCAN_H))
 				_tiles.draw_rect(bar, Color(phos, SCAN_ALPHA))
-			var beat := 1.0 if phase < 0.12 or not Motion.live(SCAN_MOTION) else LED_DIM
+			var beat := 1.0 if phase < BEAT_WINDOW or not Motion.live(SCAN_MOTION) else LED_DIM
 			_tiles.draw_circle(r.position + Vector2(r.size.x - r.size.x * LED * 2.0, r.size.y * LED * 2.0), r.size.x * LED, Color(phos, beat))
-			_tiles.draw_rect(r, AttachStyle.rarity_color(rarity), false, 1.5)
+			_tiles.draw_rect(r, AttachStyle.rarity_color(rarity), false, BEZEL_W)
 
 
 ## The glyph batch that draws sigils in phosphor `col` (made on first use).

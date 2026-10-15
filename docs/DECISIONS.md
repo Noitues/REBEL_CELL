@@ -8062,3 +8062,12 @@ Implementation decisions (designer away; decided and logged):
   Array (`ACTION_DRIP`, a const array is read-only where the callee may expect a mutable one).
 - **Baseline:** the visual lint (colour and font-size literals) is not touched by this sweep, so
   `tools/visual_qa/lint_baseline.json` stays as it is (unchanged, never up).
+
+### 2026-10-15 — Plan 2 F-RULE5
+D14 rule-5 remainder, batch lane (Sonnet 5.5, `const_edits`, specs `tools/batch/specs/rule5_sweep2.json` and `rule5_sweep2_retry.json`).
+- **Scope:** files from the 2026-10-11 lint digest with 12+ R5 lines outside the W5 19 and outside the running-agent lists. Applied (19): `ui_theme`, `wheel_face`, `attach_style`, `drone_dock`, `card_preview_overlay`, `mini_wheel`, `daemon_rack`, `decrypted_holo_panel`, `audit_dossier`, `ransom_lock`, `card_fx`, `zine_stamp`, `spinner_mini`, `shop_item`, `map_legend`, `mainframe_sign`, `loot_sheet`, `heat_city`, `fx_draw`.
+- **Skipped on purpose (running agents):** `combat_scene` (26), `city_map_overlay` (12), `neon_city` (1), `title_scene` (12, B-MENU), `raid_paper` (12, raid views), hq/raid views.
+- **Still owed:** those skipped files, plus `heat_poster` (29; model output failed the applier twice, no edits survived), `combat_fx_layer` (15) and `wheel_view` (8) (model declined: cannot guarantee unique matches), `kit_demo` (12, lab; the shared `AT` Vector2 const tripped the value check twice). They want a manual pass or a per-region batch.
+- **Review:** every applied hunk read. Reverted the model's meaningless `HALF = 0.5` (ransom_lock) and `HALF_LEVEL = 0.5` (mainframe_sign); the value-checked applier dropped about 110 blocks that were not literal-for-const swaps. Const arrays (`STICKER_TILTS`, `CARD_TILTS`, `FLASH_LEVELS`) are only indexed or iterated.
+- **Cost:** run 1: 23 requests, 368,738 in / 47,458 out tokens (batch rate); retry: 2 requests, 26,233 in / 1,396 out. Well under the $3 cap.
+- **Baseline:** `lint_baseline.json` counts colour and font-size literals, which this sweep does not touch: unchanged.

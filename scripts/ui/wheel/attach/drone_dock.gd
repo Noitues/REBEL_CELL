@@ -51,6 +51,30 @@ const LINE := 1.5
 ## The aim ring round a drone (px past it) and its width.
 const AIM_RING := 4.0
 const AIM_WIDTH := 3.0
+## The band's stem is this share of the band's angle either side of the midline.
+const STEM_HALF_SHARE: float = 0.12
+## The stem narrows to this share of its half-width at the band.
+const STEM_TAPER: float = 0.6
+## The collapsed band's stem opacity.
+const STEM_ALPHA: float = 0.55
+## The collapsed band's plate opacity.
+const PLATE_ALPHA: float = 0.9
+## Segments of the band plate's arcs.
+const PLATE_SEGMENTS: int = 14
+## Divider line opacity between tiles in a band.
+const DIVIDER_ALPHA: float = 0.6
+## The lobe's smallest neck width (px).
+const LOBE_NECK_MIN: float = 4.0
+## The neck's width as a share of the mini-wheel radius.
+const LOBE_NECK_SHARE: float = 0.34
+## The outline of the lobe is this much wider than its neck (px).
+const LOBE_OUTLINE: float = 3.0
+## The lobe ends this share of the radius inside the mini-wheel.
+const LOBE_END_SHARE: float = 0.9
+## The lobe's root dot is this share of the neck.
+const LOBE_DOT_SHARE: float = 0.7
+## The lobe's root dot inner inset (px).
+const LOBE_DOT_INSET: float = 1.5
 
 var host: WheelAttachments = null
 ## The atlas glyphs this layer queues while it draws (1C).
@@ -370,12 +394,12 @@ func _draw_band(list: Array[Dictionary], slot: int, col: Color, alpha: float) ->
 	var a1 := float(last["a1"])
 	var mid := float(first["mid"])
 	# Short stem from the rim to the band.
-	var stem_half := (a1 - a0) * 0.12
-	var stem := PackedVector2Array([c + Vector2(cos(mid - stem_half), sin(mid - stem_half)) * host.rim(), c + Vector2(cos(mid - stem_half * 0.6), sin(mid - stem_half * 0.6)) * r0,
-		c + Vector2(cos(mid + stem_half * 0.6), sin(mid + stem_half * 0.6)) * r0, c + Vector2(cos(mid + stem_half), sin(mid + stem_half)) * host.rim()])
-	draw_colored_polygon(stem, Color(col, 0.55 * alpha))
-	var plate := AttachStyle.sector(c, r0, r1, a0, a1, 14)
-	draw_colored_polygon(plate, AttachStyle.glass(0.9 * alpha))
+	var stem_half := (a1 - a0) * STEM_HALF_SHARE
+	var stem := PackedVector2Array([c + Vector2(cos(mid - stem_half), sin(mid - stem_half)) * host.rim(), c + Vector2(cos(mid - stem_half * STEM_TAPER), sin(mid - stem_half * STEM_TAPER)) * r0,
+		c + Vector2(cos(mid + stem_half * STEM_TAPER), sin(mid + stem_half * STEM_TAPER)) * r0, c + Vector2(cos(mid + stem_half), sin(mid + stem_half)) * host.rim()])
+	draw_colored_polygon(stem, Color(col, STEM_ALPHA * alpha))
+	var plate := AttachStyle.sector(c, r0, r1, a0, a1, PLATE_SEGMENTS)
+	draw_colored_polygon(plate, AttachStyle.glass(PLATE_ALPHA * alpha))
 	var closed := plate.duplicate()
 	closed.append(plate[0])
 	draw_polyline(closed, Color(col, alpha), LINE, true)
@@ -383,7 +407,7 @@ func _draw_band(list: Array[Dictionary], slot: int, col: Color, alpha: float) ->
 		var sat: CombatantState = e["sat"]
 		if int(e["index"]) > 0:
 			var sa := float(e["a0"])
-			draw_line(c + Vector2(cos(sa), sin(sa)) * r0, c + Vector2(cos(sa), sin(sa)) * r1, Color(col, 0.6 * alpha), 1.0, true)
+			draw_line(c + Vector2(cos(sa), sin(sa)) * r0, c + Vector2(cos(sa), sin(sa)) * r1, Color(col, DIVIDER_ALPHA * alpha), 1.0, true)
 		var depth := float(e["depth"])
 		var at: Vector2 = e["tile"]
 		var land := MiniWheel.landing(sat, v.lookup)
@@ -409,18 +433,18 @@ func _draw_lobe(e: Dictionary, col: Color, b: float) -> void:
 	var mini: Vector2 = (e["tile"] as Vector2).lerp(e["mini"], b)
 	var rm := float(e["mini_r"]) * lerpf(BLOOM_FROM, 1.0, b)
 	var toward := (start - mini).normalized()
-	var end := mini + toward * rm * 0.9
+	var end := mini + toward * rm * LOBE_END_SHARE
 	var ctrl := c + Vector2(cos(mid), sin(mid)) * (float(e["r0"]) + float(e["depth"]))
 	var pts := PackedVector2Array()
 	var steps := 10
 	for k in steps + 1:
 		var t := float(k) / steps
 		pts.append(start.lerp(ctrl, t).lerp(ctrl.lerp(end, t), t))
-	var neck := maxf(4.0, rm * 0.34)
-	draw_polyline(pts, Color(col, b), neck + 3.0, true)
+	var neck := maxf(LOBE_NECK_MIN, rm * LOBE_NECK_SHARE)
+	draw_polyline(pts, Color(col, b), neck + LOBE_OUTLINE, true)
 	draw_polyline(pts, AttachStyle.glass(b), neck, true)
-	draw_circle(start, neck * 0.7, Color(col, b))
-	draw_circle(start, neck * 0.7 - 1.5, AttachStyle.glass(b))
+	draw_circle(start, neck * LOBE_DOT_SHARE, Color(col, b))
+	draw_circle(start, neck * LOBE_DOT_SHARE - LOBE_DOT_INSET, AttachStyle.glass(b))
 
 
 ## The aim marks: a valid drone target rings acid (bright when hovered), the targeted one gets a
