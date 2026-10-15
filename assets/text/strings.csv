@@ -194,6 +194,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 > HQ ACTIONS,> HQ ACTIONS
 > ICE      0,> ICE      0
 > MODIFIERS,> MODIFIERS
+> SEARCH THE CODEX,> SEARCH THE CODEX
 > SEED     %d,> SEED     %d
 > TARGET   %s,> TARGET   %s
 > focus an item: what it does shows here.,> focus an item: what it does shows here.
@@ -2176,6 +2177,7 @@ SCHEMATICS %s,SCHEMATICS %s
 SCRUB HEAT %s,SCRUB HEAT %s
 "SCRUB HEAT: pay %d Schematics, Heat %s (the Heat terminal's purchase).","SCRUB HEAT: pay %d Schematics, Heat %s (the Heat terminal's purchase)."
 SCRUB UNAVAILABLE: %s,SCRUB UNAVAILABLE: %s
+SEARCH: %d FOUND,SEARCH: %d FOUND
 SELECTED,SELECTED
 SEND IT,SEND IT
 SFX volume,SFX volume

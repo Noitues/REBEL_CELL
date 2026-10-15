@@ -105,6 +105,10 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 - `Codex.search(all, query)` (case-insensitive over title and text, title matches first) added and tested; not wired to a field in the CodexBook (a view change, left for a visual slice).
 - Test: `tests/unit/test_codex_terms.gd` (fast).
 
+### 2026-10-15 — Plan 2 Codex search
+- `CodexBook` gains a terminal input (`Search`, mono LineEdit, placeholder "> SEARCH THE CODEX") above the tabs, wired to `Codex.search`. Typing shows a flat results page (heading "SEARCH: n FOUND", title matches first, no tab selected). Clicking a result (or Enter for the first) opens its entry: the field clears, the section's tab shows and the entry scrolls into view (`opened_title`). Esc with text, or clearing the field, returns to the tab last shown. Mouse + keyboard only. Strings re-exported (US English).
+- Test: `test_codex_terms.gd` (`test_search_field_flow_type_click_clear`). Capture `docs/art_review/PLAN2/CODEX_SEARCH.jpg` not taken (see report).
+
 ### 2026-10-14 — ART-R2: raid report flood, OURS NOW, the route hold (3a, 7, 9a, M8)
 Sheet `docs/art_review/PLAN1/ART_R2.jpg` (before = main 1ccbf587 | after; `tools/design_lab/art_r1_capture.gd` groups report / loot / cover on both trees).
 - **3a:** the ring halos were already on the raid pages (`hq_scene` sets `NeonCity.ring_halos` for every page); the lime flood was the territory change's own area fill: the lasting tint (`influence_tint`, the front layer) over the changed district and each mark's wash + hatch + 3 px ring (the "big ellipses"). `NeonCity.ring_halos` now also means no area fill: `_show_tint` shows no wash, a mark draws only the map's socket ring (`map_node_halo_px` 2 px at `map_node_halo_alpha` 35 %). The CLAIMED / TAKEN stamps are unchanged. Test: `test_s_mapview` (`test_art_r2_3a_*`).

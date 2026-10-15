@@ -43,6 +43,9 @@ const SCROLL_STEP := 0.25
 const ONE_ROW_FROM := 1.6
 ## The page's caption (a key): the terminal window's header.
 const CAPTION := "CODEX // WHAT THE CELL KNOWS" # TR
+## Plan 2 Codex search: the field's placeholder (a key) and the results' heading (a key, with the count).
+const SEARCH_HINT := "> SEARCH THE CODEX" # TR
+const RESULTS_HEAD := "SEARCH: %d FOUND" # TR
 ## B5: the window's tag (a key) and the section whose entries open the holo card.
 const ENTRIES_TAG := "%d ENTRIES" # TR
 const CORP_SECTION := "Corporations"
@@ -105,6 +108,9 @@ var _corp_rows: Array[Control] = []
 var _corp_items: Array = []
 var selected_corp: int = 0
 var holo_card: CodexHoloCard = null
+## Plan 2 Codex search: the terminal input above the tabs, and the entry a result click opened (title).
+var search: LineEdit
+var opened_title: String = ""
 
 
 ## `p_entries` from Codex.entries; the book stays under `p_max_height` px (its page scrolls)
@@ -124,6 +130,14 @@ func _init(p_entries: Dictionary, p_max_height: float = 0.0, p_max_width: float 
 	frame.tag_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	frame.body.add_theme_constant_override("separation", UiTheme.SP_XS if one_row() else UiTheme.SP_S)  # big text: the entries keep the room
 	add_child(frame)
+	search = LineEdit.new()
+	search.name = "Search"
+	search.placeholder_text = tr(SEARCH_HINT)
+	search.clear_button_enabled = true
+	search.add_theme_font_override(&"font", Palette.mono())
+	search.text_changed.connect(_on_search_changed)
+	search.gui_input.connect(_on_search_input)
+	frame.body.add_child(search)
 	if one_row():
 		# Big text: the tabs in one row that scrolls sideways (focus follows), so the page keeps
 		# its room (rows of big tabs took most of the screen at 2.0).
@@ -302,6 +316,8 @@ static func columns_for(width: float) -> int:
 func show_section(name_key: String) -> void:
 	if not entries.has(name_key):
 		return
+	if search != null and search.text != "":
+		search.text = ""
 	section = name_key
 	for k in _tab_buttons:
 		(_tab_buttons[k] as MenuChip).selected = k == name_key
@@ -810,3 +826,84 @@ func all_text() -> String:
 ## The number of body columns shown now.
 func column_count() -> int:
 	return columns.get_child_count()
+
+
+## Plan 2 Codex search: the query typed. An empty query returns to the tabs; else a flat results page.
+func _on_search_changed(query: String) -> void:
+	if query.strip_edges() == "":
+		if not entries.is_empty():
+			show_section(section if entries.has(section) else String(entries.keys()[0]))
+		return
+	show_results(query)
+
+
+## Esc with text in the field clears it (the tabs return); Enter opens the first result.
+func _on_search_input(event: InputEvent) -> void:
+	if not (event is InputEventKey) or not (event as InputEventKey).pressed:
+		return
+	if event.is_action_pressed(&"ui_cancel") and search.text != "":
+		search.text = ""
+		_on_search_changed("")
+		search.accept_event()
+	elif event.is_action_pressed(&"ui_accept") and search.text != "":
+		var rows := Codex.search(entries, search.text)
+		if not rows.is_empty():
+			open_entry(String(rows[0]["section"]), String(rows[0]["title"]))
+		search.accept_event()
+
+
+## True while the results page (not a tab) is shown.
+func searching() -> bool:
+	return search != null and search.text.strip_edges() != ""
+
+
+## The flat results page for `query` (Codex.search: title matches first), one row per entry;
+## no tab is selected while it shows.
+func show_results(query: String) -> void:
+	for k in _tab_buttons:
+		(_tab_buttons[k] as MenuChip).selected = false
+	for c in columns.get_children():
+		columns.remove_child(c)
+		c.queue_free()
+	_corp_rows.clear()
+	_corp_items.clear()
+	holo_card = null
+	var rows := Codex.search(entries, query)
+	heading.text = tr(RESULTS_HEAD) % rows.size()
+	var col := VBoxContainer.new()
+	col.name = "Results"
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_theme_constant_override("separation", ENTRY_GAP)
+	columns.add_child(col)
+	for r in rows:
+		var row := _entry(String(r["section"]), r)
+		row.name = "Result"
+		row.mouse_filter = Control.MOUSE_FILTER_STOP
+		row.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		row.set_meta(&"section", String(r["section"]))
+		row.set_meta(&"title", String(r["title"]))
+		row.gui_input.connect(_on_result_input.bind(row))
+		col.add_child(row)
+	if fit.scroll != null:
+		fit.scroll.scroll_vertical = 0
+	_queue_fit()
+
+
+func _on_result_input(event: InputEvent, row: Control) -> void:
+	if event is InputEventMouseButton and (event as InputEventMouseButton).pressed \
+			and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		open_entry(String(row.get_meta(&"section")), String(row.get_meta(&"title")))
+
+
+## Opens entry `title` in its section: the field clears, the section's tab shows and the entry
+## scrolls into view (`opened_title` names it).
+func open_entry(section_key: String, title: String) -> void:
+	opened_title = title
+	show_section(section_key)
+	var items: Array = entries.get(section_key, [])
+	for i in items.size():
+		if String((items[i] as Dictionary).get("title", "")) == title:
+			var rows := columns.find_children("Entry", "HBoxContainer", true, false)
+			if i < rows.size() and fit != null and fit.scroll != null and fit.scroll.is_inside_tree():
+				fit.scroll.ensure_control_visible.call_deferred(rows[i])
+			break
