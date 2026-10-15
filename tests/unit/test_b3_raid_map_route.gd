@@ -132,7 +132,14 @@ func test_the_clutter_rule_tags_only_the_selected_lit_or_plan_node() -> void:
 	ov.hover_id = &""
 	ov.tag_rule = CityMapOverlay.TagRule.LIT
 	assert_true(ov.label_lines(&"n1").is_empty(), "the raid map tags no node (status on the node)")
-	assert_false(ov.label_lines(&"n3").is_empty(), "a plan node still")
+	# PT-003 fix 1 (ruling 1a covers the raid maps): not even a plan node at rest; a lit node and the legend's hover only.
+	assert_true(ov.label_lines(&"n3").is_empty(), "a plan node has no tag at rest either")
+	ov.hover_id = &"n3"
+	assert_false(ov.label_lines(&"n3").is_empty(), "a lit node")
+	ov.hover_id = &""
+	ov.tags_all = true
+	assert_false(ov.label_lines(&"n0").is_empty(), "the map key's hover shows every tag")
+	ov.tags_all = false
 	assert_string_contains(ov.tip_of(&"n0"), "Node 0", "the name is the hover tooltip")
 
 
@@ -144,7 +151,7 @@ func test_the_raid_setup_map_has_no_node_tags_and_no_resource_bar() -> void:
 	var ov: CityMapOverlay = hq.city_overlay
 	assert_eq(ov.tag_rule, CityMapOverlay.TagRule.LIT)
 	for id in ov.tagged_ids():
-		assert_true(id == ov.hover_id or bool(ov._node_dict(id).get("plan", false)), "%s: no tag on an unlit node" % id)
+		assert_true(id == ov.lit_id(), "%s: no tag on an unlit node" % id)
 	for n in ov.nodes:
 		assert_false(ov.label_lines(n["id"]).has(String(n.get("result", "#"))), "%s: no HOLDS tag" % n["id"])
 	# Threat tags only on the lit node.

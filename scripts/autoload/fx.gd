@@ -495,6 +495,11 @@ func _collect_avoid(node: Node, out: Array[Rect2]) -> void:
 			var c := child as Control
 			var usable := (c is BaseButton and c.mouse_filter != Control.MOUSE_FILTER_IGNORE) or c is LineEdit or (c is Range and not (c is ScrollBar))
 			if c is HudBar:
+				# PT-003 fix 6: the whole bar (its Heat gauge and every header line), not just its title and tags:
+				# the stamp sat on the Heat gauge.
+				var bar := _shown_rect(c)
+				if bar.has_area():
+					out.append(bar)
 				# ANIM-R3 B13: the screen's title (at 1.6 SAVED landed on "CITY GRID").
 				var tb: Control = (c as HudBar).title_box
 				if tb != null and tb.is_visible_in_tree():

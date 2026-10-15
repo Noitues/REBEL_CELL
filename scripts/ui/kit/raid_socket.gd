@@ -49,9 +49,16 @@ const HP_STEPS: Array[int] = [100, 75, 50, 25]
 const BOLT := 1.25
 ## F17: the defence ring (x the icon radius), the pips' size, step and lift over the ring.
 const PIP_RING := 1.32
-const PIP_R := 0.16
-const PIP_STEP := 0.5
-const PIP_LIFT := 0.22
+const PIP_R := 0.26
+const PIP_STEP := 0.7
+const PIP_LIFT := 0.3
+## PT-003 fix 4: the ring's stroke (x the icon radius, never under RING_MIN_PX), its dark backing over the stroke, and the
+## pip's pale rim over its disc, so a defence reads at 1.0 on the raid setup map.
+const RING_W := 0.2
+const RING_MIN_PX := 4.0
+const RING_BACK := 1.8
+const PIP_BACK := 1.6
+const PIP_RIM := 1.25
 const BOLT_W := 0.16
 
 static var _cache: Dictionary = {}
@@ -133,13 +140,26 @@ static func draw(ci: CanvasItem, c: Vector2, r: float, spec: Dictionary) -> void
 ## F17 (W3-RAID): a defence on this node shows on the node itself: a pink ring round the
 ## socket and one pink pip a defence on its crown.
 static func defence_pips(ci: CanvasItem, c: Vector2, r: float, count: int, alpha: float = 1.0) -> void:
-	ci.draw_arc(c, r * PIP_RING, 0.0, TAU, 32, Color(Palette.CELL_PINK, 0.9 * alpha), maxf(2.0, r * 0.12), true)
+	var w := defence_ring_width(r)
+	ci.draw_arc(c, r * PIP_RING, 0.0, TAU, 40, Color(Palette.NIGHT_SKY, 0.9 * alpha), w * RING_BACK, true)
+	ci.draw_arc(c, r * PIP_RING, 0.0, TAU, 40, Color(Palette.CELL_PINK, alpha), w, true)
 	var step := r * PIP_STEP
-	var top := c + Vector2(-(count - 1) * 0.5 * step, -r * PIP_RING - r * PIP_LIFT)
+	var top := c + Vector2(-(count - 1) * 0.5 * step, -r * PIP_RING - r * PIP_LIFT - w)
 	for i in count:
 		var at := top + Vector2(i * step, 0.0)
-		ci.draw_circle(at, r * PIP_R * 1.5, Color(Palette.NIGHT_SKY, 0.9 * alpha))
+		ci.draw_circle(at, r * PIP_R * PIP_BACK, Color(Palette.NIGHT_SKY, 0.95 * alpha))
+		ci.draw_circle(at, r * PIP_R * PIP_RIM, Color(Palette.TEXT_HI, alpha))
 		ci.draw_circle(at, r * PIP_R, Color(Palette.CELL_PINK, alpha))
+
+
+## PT-003 fix 4: the defence ring's stroke at icon radius `r` (px).
+static func defence_ring_width(r: float) -> float:
+	return maxf(RING_MIN_PX, r * RING_W)
+
+
+## PT-003 fix 4: a defence pip's disc radius at icon radius `r` (px).
+static func defence_pip_radius(r: float) -> float:
+	return r * PIP_R
 
 
 ## The Site markers' DOWN mark (§4.5, ruling 11): a white lightning bolt across the marker on

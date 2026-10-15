@@ -679,6 +679,24 @@ func test_the_hq_at_big_text_shows_hp_and_keeps_saved_off_the_tags() -> void:
 	await _close(hq)
 
 
+## PT-003 fix 6: the SAVED stamp never lands on the top bar (its Heat gauge or any header line), at 1.0.
+func test_saved_keeps_off_the_heat_gauge_and_the_whole_top_bar() -> void:
+	var hq := _scene(HQ)
+	hq.new_campaign(1)
+	await _frames(4)
+	var gauge: Rect2 = hq.hud.heat_gauge.get_global_rect()
+	assert_true(gauge.has_area(), "the Heat gauge is on screen")
+	var avoid := Fx.avoid_rects(hq)
+	var covered := false
+	for a in avoid:
+		if a.encloses(gauge):
+			covered = true
+	assert_true(covered, "the stamp's keep-out holds the whole Heat gauge")
+	var spot := Fx.saved_spot(Vector2(70, 30), SCREEN, avoid)
+	assert_false(Rect2(spot, Vector2(70, 30)).intersects(gauge), "and it is placed clear of the gauge")
+	await _close(hq)
+
+
 # --- M15: loops on measured geometry end ---------------------------------------------------------------------
 
 func test_placement_loops_end_on_geometry_that_is_not_finite() -> void:

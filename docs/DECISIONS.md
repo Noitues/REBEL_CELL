@@ -34,6 +34,26 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-15 — PT-003 steps fixes
+- **1 (ruling 1a on the netrun maps):** GRID VIEW now uses `TagRule.FOCUS` (no tag at rest, a tag while its node is lit) and its map key
+  (`MapLegend.use_site_markers`, so it has the SHOW ALL cell) sets `tags_all`, as on the HQ. `TagRule.LIT` (every raid map: setup, report,
+  the netrun's raid view) now tags only the lit node, or all on the key's hover: a `plan` / `tag_cue` / prerequisite node no longer tags at
+  rest (their status stays on the node). Tests: `test_w3_polish` (GRID VIEW), `test_b3_raid_map_route`, `test_city_map_sweeps`.
+- **2:** the next-step ring (`AV_NEXT`) reads at rest by weight and contrast only: stroke 6 px (was 4), a dark backing 4 px wider, glow 0.5
+  (was 0.35); no ticks, no motion. The 2 px / 35 % halo stays for claimed territory. Test: `test_art5_grid_markers`.
+- **3:** a state change that ends an aim (Q, E, a target switch) now also clears the card-preview ghost (the "LANDS HERE" / "DRONE ENDS HERE"
+  labels); `test_w3b_aim` counts the ghost and the aim hint as residue and drives the Q and E keys.
+- **4:** the placed-defence ring is 0.2 x the icon radius (min 4 px) over a dark backing; each pip is 0.26 x with a pale rim.
+  **Answer on the drop:** a plain claimed node has no asset slot by the GDD (3.2: only Firewall Relay, Compiler Rack and the home-server
+  variants have slots; `CampaignRules.asset_slots` adds node upgrades), so the drop to HOME SERVER was the rule, not a gap.
+- **5:** W3-GRID C3 asked for the Heat delta "before acting" and "a warning when the delta would cross a raid threshold"; it names no map
+  marker. The warning is the Site file's `HEAT +N -> T` row with the `RAID AT HEAT n` line, and the RAID badge on the gains row. No map-side
+  marker was added (it would be another mark on a map the rulings are clearing).
+- **6:** the SAVED stamp (not a `Toast`) sat on the Heat gauge: `Fx.avoid_rects` now holds the whole top bar. (`Toast.clear_root` is for
+  combat's note toast and keeps its buttons rule.)
+- **7:** CELL HOLDS moves the least vertical way that clears every text row on the paper and its footer band
+  (`hq_scene.holds_spot_clear`); test: a measured clearance and the pure function.
+
 ### 2026-10-15 — PT-003 scripted steps run
 - Built `tools/playtest/steps/pt003_steps.gd` (+ .tscn): one windowed capture run (via `run_windowed.py`) drives 18 of the 19
   PT-003 steps from a seeded new campaign and writes screenshots plus `steps.json` (adjusted PASS sentence, action, machine facts).

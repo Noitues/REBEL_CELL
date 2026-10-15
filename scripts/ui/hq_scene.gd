@@ -6138,7 +6138,7 @@ func _place_holds(holds: Control, pin: Control) -> void:
 	# The whole paper (the pin is its content box, inside the paper's margins).
 	var paper := pin.get_parent() as Control
 	var whole := Rect2(-pin.position, paper.size) if paper != null else Rect2(Vector2.ZERO, pin.size)
-	holds.position = holds_spot(whole, holds.size)
+	holds.position = holds_spot_clear(whole, holds.size, _text_rows(paper, pin, holds))
 	var room := paper.find_child("HoldsRoom", true, false) as Control if paper != null else null
 	if room != null and room.is_inside_tree() and room.size.y > 0.0:
 		# The folded page: the verdict stands in its room (the paper's right, vertically centred on it).
@@ -6152,6 +6152,55 @@ static func holds_spot(paper: Rect2, size: Vector2) -> Vector2:
 	var at := paper.position + paper.size * HOLDS_AT - size * 0.5
 	return at.clamp(paper.position, (paper.end - size).max(paper.position))
 
+
+## PT-003 fix 7: the pin-local rects of every shown text row on the paper `paper` (a label with words, outside the sticker `holds`).
+func _text_rows(paper: Control, pin: Control, holds: Control) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if paper == null:
+		return out
+	var to_pin := pin.get_global_transform().affine_inverse()
+	for n in paper.find_children("*", "Label", true, false):
+		var l := n as Label
+		if l.text.strip_edges() == "" or not l.is_visible_in_tree() or holds.is_ancestor_of(l):
+			continue
+		var g := l.get_global_rect()
+		out.append(Rect2(to_pin * g.position, g.size))
+	if paper is RaidPaper:
+		# The footer meta line and its redactions are drawn by the paper, not Labels: its band is a row too.
+		var band := RaidPaper.FOOTER_H * Settings.text_scale
+		var g := paper.get_global_rect()
+		out.append(Rect2(to_pin * Vector2(g.position.x, g.end.y - band), Vector2(g.size.x, band)))
+	return out
+
+
+## PT-003 fix 7: `holds_spot`, moved the least vertical way that clears every text row in `rows` (same space as the paper;
+## the sticker's tilt is allowed for). Where no spot on the paper clears them all, the plain `holds_spot`.
+static func holds_spot_clear(paper: Rect2, size: Vector2, rows: Array[Rect2]) -> Vector2:
+	var want := holds_spot(paper, size)
+	var pad := HOLDS_CLEAR_PX
+	var lo := paper.position.y
+	var hi := maxf(lo, paper.end.y - size.y)
+	var step := 2.0
+	var k := 0.0
+	while want.y - k >= lo or want.y + k <= hi:
+		for dir in [-1.0, 1.0]:
+			var y: float = want.y + dir * k
+			if y < lo or y > hi:
+				continue
+			var box := Rect2(Vector2(want.x, y), size).grow(pad)
+			var hit := false
+			for r in rows:
+				if r.intersects(box):
+					hit = true
+					break
+			if not hit:
+				return Vector2(want.x, y)
+		k += step
+	return want
+
+
+## PT-003 fix 7: the room CELL HOLDS keeps from every text row (px; the tilt and the die-cut border).
+const HOLDS_CLEAR_PX := 6.0
 
 ## Where CELL HOLDS sits on the report (share of the paper: over its lower left, under the rows and
 ## beside the CLASSIFIED stamp).
