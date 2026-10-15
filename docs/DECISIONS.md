@@ -126,6 +126,25 @@ Sheet `docs/art_review/PLAN1/ART_R1.jpg` (before = main fb6ae75d | after; captur
 - **9a:** `RouteCover` (kit): entering the route page from another screen holds the last frame of the page that left over the screen until the city reports its look current and its camera settled for 3 frames (max 2.5 s), then fades out (`reward_page_in`). Headless never waits. Rule test: `test_art_r1`. The capture could not make the empty plane appear in the AFTER run; the BEFORE strip shows it at f20.
 - **9b:** strips for M8, M9, M10 and the route hover-out are on the sheet (Movie Maker, 30 fps). The M8 / M10 / hover-out strips are the motion lab demos (the lab chrome shows around them), M9 is the jack out to the HQ.
 
+### 2026-10-15 — Open red: HQ camera refits on selection (main 580f3d9a, not pushed)
+`test_hq_b_city::test_selecting_a_site_keeps_the_camera_and_shows_its_card_and_verb` fails deterministically
+(scale 0.3205 → 0.3484 on selecting an open Site).
+- **Bisected to the PT-003 steps-fixes merge 20a49357:** fix 2's bigger next-step ring (`SiteMarker.ring_width`, plus
+  `RING_BACK_W` in `SiteMarker.box`) together with the `city_map_overlay.gd` change. Restoring both files fixes it;
+  either alone does not.
+- **A bigger `box()` changes the HQ camera fit between the idle page and the selected page.** Shrinking `box()`
+  breaks `test_art5_grid_markers` ("the box holds the ring"), so the fix belongs in the camera / fit path, not the
+  box.
+- **Main is not pushed** (push gate; origin stays at a1dbc142). Everything else on main passed its hook checks; the
+  last full suite (9f79ff03) had this red plus a stale ring test, now fixed.
+- **Paused** by the designer to free the machine. Queued when it resumes:
+  1. this camera fix;
+  2. B-TEACH follow-ups (`docs/art_review/PLAN2/B_TEACH.md`: THIS TURN under the tutorial box, a clipped ghost
+     callout, NEXT greyed on THE TAGS);
+  3. the B-MENU + C-SCREENS capture sheet (D20);
+  4. the S5 balance sweeps on the new sim (`docs/balance/README.md`; branch `balance`);
+  5. the rule-5 remainder listed in "Plan 2 F-RULE5".
+
 ### 2026-10-15 — Designer go: change plan 2 (PT-003 assumed complete)
 The designer said: assume PT-003 complete, start all the changes listed, use the Batch API and lower models where it
 makes sense, re-evaluate G1–G16 and start those that still apply, keep the deferred tier deferred.
