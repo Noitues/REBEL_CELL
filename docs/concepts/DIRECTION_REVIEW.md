@@ -1370,3 +1370,8 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
   - the plan pencil is orange;
   - route rooms are hidden until street level, then the walls dissolve to bits from left to right while the links write on, then the markers draw, then the zoom to the start room.
 - **Standing rule: the city is always alive.** Traffic streaks, beams, flicker, holos, fog drift and rain run in every beat and screen. Only the level of detail changes with zoom.
+- **Orbital HQ (2026-10-15):**
+  - The route is several circuits round the launch complex, and the camera orbits to keep the active room front and centre.
+  - The antenna tower is a real structure with elite rooms on every circuit.
+  - Each circuit sabotages the rocket, which then strikes Orbital facilities in the city or in space. The last circuit is a shortcut that fires the rocket early into the closed bay doors and destroys the HQ.
+  - Future cutscenes: (1) after each circuit, a city-wide zoom out to launch, strike and explode, then back in; (2) the HQ explosion. Both are planned as future tasks.
