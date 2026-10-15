@@ -130,8 +130,6 @@ const HEADER_STEP := TITLE
 const ACCENT_RULE_PX: int = 3
 ## Gap between a menu item's icon and text (px).
 const MENU_ICON_GAP_PX: int = 8
-## Extra font size of menu items over the body size (px).
-const MENU_FONT_BONUS_PX: int = 2
 ## Note button padding (px, horizontal / vertical).
 const NOTE_PAD_H: float = 16.0
 const NOTE_PAD_V: float = 12.0
@@ -509,7 +507,7 @@ static func _menu_item(t: Theme, size: int) -> void:
 	t.set_stylebox("focus", v, focus_box())
 	t.set_constant("h_separation", v, MENU_ICON_GAP_PX)
 	t.set_icon("icon", v, chevron())
-	t.set_font_size("font_size", v, size + MENU_FONT_BONUS_PX)
+	t.set_font_size("font_size", v, size + 2)
 	t.set_color("font_color", v, Palette.TERMINAL_TEXT)
 	t.set_color("font_hover_color", v, Palette.TEXT_HI)
 	t.set_color("font_focus_color", v, Palette.FOCUS)
