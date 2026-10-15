@@ -22,13 +22,16 @@ else
 fi
 [ -z "$FILES" ] && { echo "precommit: nothing changed"; exit 0; }
 
-# 1. Parse check of changed scripts (seconds per file; catches typos before any test runs).
+# 1. Parse check of changed scripts: ONE Godot process for all of them (D15; ~6 s start-up per file before).
+# tools/parse_check.gd, not --check-only: that stops before the autoloads' names exist (Dialogue, Settings).
 rc=0
+GD=""
 for f in $(echo "$FILES" | grep -E '\.gd$' | grep -v '\.uid$'); do
-  [ -f "$f" ] || continue
-  # tools/parse_check.gd, not --check-only: that stops before the autoloads' names exist (Dialogue, Settings).
-  timeout 120 godot --headless --path . -s tools/parse_check.gd -- "$f" >"$SP/check_$(basename "$f").log" 2>&1 || { echo "PARSE FAIL: $f"; tail -n 5 "$SP/check_$(basename "$f").log"; rc=1; }
+  [ -f "$f" ] && GD="$GD $f"
 done
+if [ -n "$GD" ]; then
+  timeout 600 godot --headless --path . -s tools/parse_check.gd -- $GD >"$SP/check.log" 2>&1 || { rc=1; grep "PARSE CHECK FAIL" "$SP/check.log" | sed 's/^/PARSE FAIL: /'; tail -n 5 "$SP/check.log"; }
+fi
 echo "parse=$rc"; [ $rc -ne 0 ] && exit 1
 
 # 2. Schema smoke test only when the schemas changed (CLAUDE.md rule 8).
@@ -44,18 +47,21 @@ if echo "$FILES" | grep -qE '^content/'; then
   echo "validate=$r"; [ $r -ne 0 ] && { tail -n 5 "$SP/validate.log"; exit 1; }
 fi
 
-# 4. Tests. QUICK=1 (agent commits and hand-backs, designer 2026-10-13): only the changed test scripts themselves,
+# 4. Suite-rule tests (D18): always run, in QUICK mode too (cheap; they caught 7 of the PT-003 merge-only reds).
+RULES="--select test_suite_integrity --select test_visual_lint_static --select test_vfx_tiers --select test_art0_kit_words --select test_art12b_skin_chrome --select test_anim_r6_rules"
+# 5. Tests. QUICK=1 (agent commits and hand-backs, designer 2026-10-13): only the changed test scripts themselves,
 # minutes not tens of minutes; the orchestrator runs ONE full diff-selected check per wave batch.
 if [ "${QUICK:-0}" = "1" ]; then
-  SEL=""
+  SEL="$RULES"
   for f in $(echo "$FILES" | grep -E '^tests/.*\.gd$' | grep -v '\.uid$'); do
     [ -f "$f" ] && SEL="$SEL --select $(basename "$f" .gd)"
   done
-  if [ -z "$SEL" ]; then echo "tests=0"; echo "quick: no test scripts changed (the batch check covers the rest)"; exit 0; fi
   python tools/run_tests.py -j "${JOBS:-4}" --out "$SP/tests" $SEL > "$SP/tests.log" 2>&1 < /dev/null; r=$?
   echo "tests=$r"; tail -n 3 "$SP/tests.log"
   exit $r
 fi
+python tools/run_tests.py -j "${JOBS:-4}" --out "$SP/rules" $RULES > "$SP/rules.log" 2>&1 < /dev/null; r=$?
+echo "rules=$r"; [ $r -ne 0 ] && { tail -n 5 "$SP/rules.log"; exit 1; }
 # Diff-selected tests (falls back to the fast tier when nothing maps).
 python tools/select_tests.py $MODE $BASE -j "${JOBS:-4}" --out "$SP/tests" > "$SP/tests.log" 2>&1 < /dev/null; r=$?
 echo "tests=$r"; tail -n 3 "$SP/tests.log"

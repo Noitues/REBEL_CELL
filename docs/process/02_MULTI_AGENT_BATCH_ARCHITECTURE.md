@@ -43,6 +43,7 @@ batch.** If it needs the tree, a run, or a person, it is real-time. Batch result
 | Rule-compliance report over an area (the "horizontal" audit) | batch | Haiku 5.5 / low | `lint_report` | no patch; the auditor reads the digest |
 | Player-facing text audit (literals, rules-English) | batch | Haiku 5.5 / low | `text_audit` | |
 | Unit tests for new core classes | batch | Sonnet 5.5 / medium | `unit_tests` | the orchestrator adds manifest tiers and runs them |
+| Test-expectation, lint and literal follow-ups from a red precommit / merge (D17) | batch **by default** | Haiku 5.5 / low | `const_edits` (literals, expectations), `cleanup` | name this lane in the brief; edits are exact-text blocks applied by `tools/batch/apply_edits.py`, never unified diffs (D19) |
 | Mechanical refactor / rename across N files | batch | Haiku 5.5 (rename) or Sonnet 5.5 (refactor) | `rename`, `refactor` | the declaration is changed first, interactively |
 | DECISIONS.md digest per milestone (for agent briefs) | batch | Sonnet 5.5 / medium | `decisions_digest` | |
 | Port a screen to the art direction; fix presentation; anything with Godot | real-time | **Sonnet 5.5 medium** (`fix-visual`, `fix-mechanical`); Opus only with an `OPUS-BECAUSE:` line | — | worktree agent; the Agent hook enforces it |
@@ -63,6 +64,9 @@ and refactors); thinking tokens count against `max_tokens`, hence the per-kind d
    `city`, `screens`, `rules`, `audit`.)
 2. Footer, ≤ 12 lines: base sha, round tag (`ART-3 B6`), temp folder tag, the items verbatim
    (or the path to the batch brief), the files it owns, the hand-back command.
+   Every brief and report names its lane (batch / cleanup / Sonnet / Opus). Test-expectation, lint and literal
+   follow-ups default to the batch lane (D17); batch edits use the `const_edits` kind
+   (`tools/batch/prompts/const_edits.md`, applied with `tools/batch/apply_edits.py`) and never unified diffs (D19).
 3. Slices on demand: the agent runs `python tools/batch/context_slice.py --deps <its files>`.
 
 **Report** (the agent's final message; the orchestrator reads only this):

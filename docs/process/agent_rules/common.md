@@ -31,6 +31,10 @@ reduce effects = end state; headless never waits.
   that QUICK check is green; the orchestrator runs ONE full diff-selected check per wave batch (designer 2026-10-13). **Do not run the full suite or the full precommit**; the orchestrator
   runs it once at the gate.
 
+- **A visual slice is not DONE without its capture sheet** (D20). If the machine is loaded and you cannot capture,
+  say so in the report (`status: DONE-NO-CAPTURE`, one line why); the orchestrator queues a capture agent for it.
+  Never silently skip the capture or report DONE without it.
+
 ## Machine rules (non-negotiable)
 - Never `python -` (hangs on stdin). Write a `.py` file and run it.
 - Never pipe Godot output: redirect to a file under `%TEMP%\<tag>\` and wrap in `timeout`.
