@@ -37,7 +37,7 @@ hand-back (D18).
 ## Wave D: balance evidence (designer rulings before any tuning; CP-002 ruling 6)
 | Slice | Items | Lane |
 |---|---|---|
-| D-SIM (rules, analysis only) | Free heuristic sweeps (`state_agent.py --strategist heuristic`) plus parameter variants in config copies. Measure: HP attrition with no heal (D2), fight length 9–16 turns and enemy HP (D3), the Schematics economy (D6), flatline Heat driving raids (D5). Output: `docs/handoff/plan2/BALANCE_OPTIONS.md`, 2–3 options per issue with sim numbers, for rulings. No content change. | fix-mechanical Sonnet (runs the sims) |
+| D-SIM | **Replaced 2026-10-15 by the balance sim plan** (`docs/handoff/plan2/BALANCE_SIM.md`, designer: logic-only combat + campaign sim, data-only balance on branch `balance`). Balance sweeps restart on it (S5). | fix-mechanical Sonnet |
 
 ## Wave E: content design pass (D1; concepts and rulings before any build)
 | Slice | Items | Lane |
