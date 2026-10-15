@@ -44,7 +44,7 @@ const STEPS: Array[Dictionary] = [
 		"title":
 			"FREE NUDGE",  # TR
 		"text":
-			"FREE NUDGE in the title bar counts the nudges you still get free this turn. After that each nudge costs RAM, and a red RAM chip shows the debt. Nudge once more to see it.",  # TR
+			"FREE NUDGE in the title bar counts the nudges you still get free this turn. After that each nudge costs RAM, and the (-N) next to RAM shows what it will spend. Nudge once more to see it.",  # TR
 		"until": "nudge",
 	},
 	{
@@ -79,7 +79,7 @@ const STEPS: Array[Dictionary] = [
 		"title":
 			"RAM FORECAST",  # TR
 		"text":
-			"The RAM bar shows a forecast. THIS PLAY is what the card under your pointer costs. AT SEND IT is what SEND IT itself changes, with nothing played.",  # TR
+			"The (-N) next to RAM is what will be spent. THIS PLAY is what the card under your pointer costs. AT SEND IT is what SEND IT itself changes, with nothing played.",  # TR
 		"until": "",
 	},
 	{

@@ -924,7 +924,7 @@ FLATLINED,FLATLINED
 FREE,FREE
 FREE NUDGE,FREE NUDGE
 FREE NUDGE %s NEXT,FREE NUDGE %s NEXT
-"FREE NUDGE in the title bar counts the nudges you still get free this turn. After that each nudge costs RAM, and a red RAM chip shows the debt. Nudge once more to see it.","FREE NUDGE in the title bar counts the nudges you still get free this turn. After that each nudge costs RAM, and a red RAM chip shows the debt. Nudge once more to see it."
+"FREE NUDGE in the title bar counts the nudges you still get free this turn. After that each nudge costs RAM, and the (-N) next to RAM shows what it will spend. Nudge once more to see it.","FREE NUDGE in the title bar counts the nudges you still get free this turn. After that each nudge costs RAM, and the (-N) next to RAM shows what it will spend. Nudge once more to see it."
 FREE NUDGE x%d,FREE NUDGE x%d
 FREEZE,FREEZE
 FREEZE: the wheel skips its next respin.,FREEZE: the wheel skips its next respin.
@@ -3179,12 +3179,12 @@ TerminalEventData.ev_wellness_kiosk.text,A Solace kiosk offers a free wellness s
 TerminalEventData.ev_wellness_kiosk.title,Wellness Kiosk
 "Text size, sound, controls, subtitles.","Text size, sound, controls, subtitles."
 That is not a campaign code.,That is not a campaign code.
+"The (-N) next to RAM is what will be spent. THIS PLAY is what the card under your pointer costs. AT SEND IT is what SEND IT itself changes, with nothing played.","The (-N) next to RAM is what will be spent. THIS PLAY is what the card under your pointer costs. AT SEND IT is what SEND IT itself changes, with nothing played."
 The Armory is empty: runs bank defense assets from their drops.,The Armory is empty: runs bank defense assets from their drops.
 "The Armory: defense assets banked from runs, deployed on your nodes in raid setup.","The Armory: defense assets banked from runs, deployed on your nodes in raid setup."
 The Cell never sleeps. Every word grows with this.,The Cell never sleeps. Every word grows with this.
 The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.,The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first.
 The Heat terminal's next page: the rest of its rows.,The Heat terminal's next page: the rest of its rows.
-"The RAM bar shows a forecast. THIS PLAY is what the card under your pointer costs. AT SEND IT is what SEND IT itself changes, with nothing played.","The RAM bar shows a forecast. THIS PLAY is what the card under your pointer costs. AT SEND IT is what SEND IT itself changes, with nothing played."
 The boosts bought for the next run. Drag a boost here to buy it.,The boosts bought for the next run. Drag a boost here to buy it.
 The boosts bought for the next run. Pick a boost up and move it here to buy it.,The boosts bought for the next run. Pick a boost up and move it here to buy it.
 "The campaign against %s ends here, with everything in it:","The campaign against %s ends here, with everything in it:"

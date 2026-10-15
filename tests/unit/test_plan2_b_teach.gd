@@ -69,6 +69,7 @@ func test_the_aim_and_free_nudge_beats_need_the_player_to_act() -> void:
 		all += TutorialOverlay.step_text(i) + " "
 	for word in ["NULL", "WEAK", "GOOD", "PERFECT", "FREE NUDGE", "RAM", "staged", "THIS PLAY", "AT SEND IT"]:
 		assert_string_contains(all, word, "the tutorial names %s" % word)
+	assert_false(all.to_lower().contains("debt"), "there is no RAM debt")
 
 
 func test_aim_step_advances_only_on_a_perfect_tag() -> void:
