@@ -6086,7 +6086,11 @@ func show_raid_summary() -> void:
 		pin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		report.add_child(pin)
 		pin.add_child(holds)
+		if Settings.text_scale < HOLDS_FOLD_SCALE:
+			# PT-003 fix 7: the rows end far enough above the footer line for the sticker to stand clear of both.
+			report.reserve_foot(holds.custom_minimum_size.y + 2.0 * HOLDS_CLEAR_PX + HOLDS_FOOT_PX * Settings.text_scale)
 		pin.resized.connect(_place_holds.bind(holds, pin))
+		report.sort_children.connect(_place_holds.bind(holds, pin))  # PT-003 fix 7: the rows settle after the sticker is first placed
 		# G2R-5: at big text the page folds (its table rows run below the fold); the verdict then gets its
 		# own room under the order line, at the paper's right, and the table rows fold below it.
 		if Settings.text_scale >= HOLDS_FOLD_SCALE:
@@ -6138,7 +6142,7 @@ func _place_holds(holds: Control, pin: Control) -> void:
 	# The whole paper (the pin is its content box, inside the paper's margins).
 	var paper := pin.get_parent() as Control
 	var whole := Rect2(-pin.position, paper.size) if paper != null else Rect2(Vector2.ZERO, pin.size)
-	holds.position = holds_spot_clear(whole, holds.size, _text_rows(paper, pin, holds))
+	holds.position = holds_spot_clear(whole, holds.size, _text_rows(paper, pin, holds), _footer_top(paper, pin))
 	var room := paper.find_child("HoldsRoom", true, false) as Control if paper != null else null
 	if room != null and room.is_inside_tree() and room.size.y > 0.0:
 		# The folded page: the verdict stands in its room (the paper's right, vertically centred on it).
@@ -6165,42 +6169,36 @@ func _text_rows(paper: Control, pin: Control, holds: Control) -> Array[Rect2]:
 			continue
 		var g := l.get_global_rect()
 		out.append(Rect2(to_pin * g.position, g.size))
-	if paper is RaidPaper:
-		# The footer meta line and its redactions are drawn by the paper, not Labels: its band is a row too.
-		var band := RaidPaper.FOOTER_H * Settings.text_scale
-		var g := paper.get_global_rect()
-		out.append(Rect2(to_pin * Vector2(g.position.x, g.end.y - band), Vector2(g.size.x, band)))
 	return out
 
 
-## PT-003 fix 7: `holds_spot`, moved the least vertical way that clears every text row in `rows` (same space as the paper;
-## the sticker's tilt is allowed for). Where no spot on the paper clears them all, the plain `holds_spot`.
-static func holds_spot_clear(paper: Rect2, size: Vector2, rows: Array[Rect2]) -> Vector2:
+## PT-003 fix 7: the pin-local top of the paper's footer meta line (drawn by the paper, not a Label); INF when none.
+func _footer_top(paper: Control, pin: Control) -> float:
+	if not paper is RaidPaper:
+		return INF
+	var g := paper.get_global_rect()
+	return (pin.get_global_transform().affine_inverse() * Vector2(g.position.x, g.end.y - HOLDS_FOOT_PX * Settings.text_scale)).y
+
+
+## PT-003 fix 7: `holds_spot`, moved down the least way that puts the sticker under every text row in `rows` and above the footer
+## line at `foot_top` (same space as the paper; HOLDS_CLEAR_PX allows for the tilt). Where the gap is too small, the plain
+## `holds_spot`.
+static func holds_spot_clear(paper: Rect2, size: Vector2, rows: Array[Rect2], foot_top: float = INF) -> Vector2:
 	var want := holds_spot(paper, size)
-	var pad := HOLDS_CLEAR_PX
-	var lo := paper.position.y
-	var hi := maxf(lo, paper.end.y - size.y)
-	var step := 2.0
-	var k := 0.0
-	while want.y - k >= lo or want.y + k <= hi:
-		for dir in [-1.0, 1.0]:
-			var y: float = want.y + dir * k
-			if y < lo or y > hi:
-				continue
-			var box := Rect2(Vector2(want.x, y), size).grow(pad)
-			var hit := false
-			for r in rows:
-				if r.intersects(box):
-					hit = true
-					break
-			if not hit:
-				return Vector2(want.x, y)
-		k += step
-	return want
+	var floor_y := paper.position.y
+	for r in rows:
+		floor_y = maxf(floor_y, r.end.y)
+	var y_min := floor_y + HOLDS_CLEAR_PX
+	var y_max := minf(paper.end.y - size.y, foot_top - size.y - HOLDS_CLEAR_PX)
+	if y_min > y_max:
+		return want
+	return Vector2(want.x, clampf(want.y, y_min, y_max))
 
 
-## PT-003 fix 7: the room CELL HOLDS keeps from every text row (px; the tilt and the die-cut border).
-const HOLDS_CLEAR_PX := 6.0
+## PT-003 fix 7: the room CELL HOLDS keeps from every text row and the footer line (px; the tilt and the die-cut border).
+const HOLDS_CLEAR_PX := 4.0
+## The footer meta line's band at the paper's foot (px at 1.0; its redaction dashes above it are not text).
+const HOLDS_FOOT_PX := 22.0
 
 ## Where CELL HOLDS sits on the report (share of the paper: over its lower left, under the rows and
 ## beside the CLASSIFIED stamp).

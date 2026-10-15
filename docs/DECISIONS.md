@@ -46,13 +46,15 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 - **4:** the placed-defence ring is 0.2 x the icon radius (min 4 px) over a dark backing; each pip is 0.26 x with a pale rim.
   **Answer on the drop:** a plain claimed node has no asset slot by the GDD (3.2: only Firewall Relay, Compiler Rack and the home-server
   variants have slots; `CampaignRules.asset_slots` adds node upgrades), so the drop to HOME SERVER was the rule, not a gap.
+  The HOME SERVER (a v4 marker, drawn by `_marker_node`, which drew no defences at all) now gets the same ring and pips.
 - **5:** W3-GRID C3 asked for the Heat delta "before acting" and "a warning when the delta would cross a raid threshold"; it names no map
   marker. The warning is the Site file's `HEAT +N -> T` row with the `RAID AT HEAT n` line, and the RAID badge on the gains row. No map-side
   marker was added (it would be another mark on a map the rulings are clearing).
 - **6:** the SAVED stamp (not a `Toast`) sat on the Heat gauge: `Fx.avoid_rects` now holds the whole top bar. (`Toast.clear_root` is for
   combat's note toast and keeps its buttons rule.)
-- **7:** CELL HOLDS moves the least vertical way that clears every text row on the paper and its footer band
-  (`hq_scene.holds_spot_clear`); test: a measured clearance and the pure function.
+- **7:** CELL HOLDS stands under the last text row and above the footer line (`hq_scene.holds_spot_clear`); the paper reserves the room
+  (`RaidPaper.reserve_foot`) and re-places it as the rows settle. Tests: measured clearance and the pure function (`test_w3_raid`).
+- **Re-run:** `PT-003_steps.md` "Re-run after fixes"; sheet `docs/art_review/PLAN1/PT003_FIXES.jpg`.
 
 ### 2026-10-15 — PT-003 scripted steps run
 - Built `tools/playtest/steps/pt003_steps.gd` (+ .tscn): one windowed capture run (via `run_windowed.py`) drives 18 of the 19

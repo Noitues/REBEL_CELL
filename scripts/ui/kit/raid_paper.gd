@@ -136,6 +136,14 @@ func drop_stamp() -> void:
 		queue_sort()
 
 
+## PT-003 fix 7: keeps at least `px` free under the rows (a verdict sticker needs its own room above the footer line).
+func reserve_foot(px: float) -> void:
+	var box := get_theme_stylebox(&"panel") as StyleBoxEmpty
+	if box != null and box.content_margin_bottom < px:
+		box.content_margin_bottom = px
+		queue_sort()
+
+
 ## The rubber stamp's rect as drawn, global (parity fix, RAID-02 / RAID-11: no row under it).
 func stamp_rect() -> Rect2:
 	if paper == null:

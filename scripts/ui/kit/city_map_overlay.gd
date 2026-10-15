@@ -1987,6 +1987,11 @@ func _marker_node(n: Dictionary, rec: Dictionary) -> void:
 	_c.draw_line(top, at + Vector2(0, SiteMarker.ring_radius(spec, k)), Color(rc, 0.6), maxf(1.0, 1.5 * k))
 	if SiteMarker.pip_count(spec) > 0:
 		drawn_tiers[n["id"]] = int(spec.get("tier", 0))
+	# PT-003 fix 4: a v4 marker (the HOME SERVER) shows its placed defences on itself too: a pink ring just outside its own
+	# ring and one pip per defence (the socket nodes do the same in RaidSocket).
+	var placed := (n.get("assets", []) as Array).size()
+	if placed > 0:
+		RaidSocket.defence_pips(_c, at, (SiteMarker.ring_radius(spec, k) + SiteMarker.RING_W_NEXT * k * 2.0) / RaidSocket.PIP_RING, placed)
 
 
 ## D17 (fight won: the building's lights turn Cell colours): rows of lit windows in Cell

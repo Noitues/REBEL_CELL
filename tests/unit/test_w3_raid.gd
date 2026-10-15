@@ -266,7 +266,7 @@ func test_cell_holds_sticker_clears_every_text_row() -> void:
 		var holds := hq._panel.find_child("CellHolds", true, false) as Control
 		if holds != null:
 			checked += 1
-			var box := holds.get_global_rect().grow(5.0)  # the tilt and die-cut border
+			var box := holds.get_global_rect().grow(HQ_SCRIPT.HOLDS_CLEAR_PX - 0.5)  # the rule's own clearance (the tilt and die-cut border)
 			for n in hq._panel.find_children("*", "Label", true, false):
 				var l := n as Label
 				if l.text.strip_edges() == "" or not l.is_visible_in_tree() or holds.is_ancestor_of(l):
@@ -274,23 +274,26 @@ func test_cell_holds_sticker_clears_every_text_row() -> void:
 				assert_false(box.intersects(l.get_global_rect()), "seed %d: CELL HOLDS covers '%s'" % [seed_value, l.text])
 			var paper := hq._panel.find_child("RaidReport", true, false) as RaidPaper
 			var foot := paper.get_global_rect()
-			foot = Rect2(foot.position.x, foot.end.y - RaidPaper.FOOTER_H, foot.size.x, RaidPaper.FOOTER_H)
-			assert_false(box.intersects(foot), "seed %d: CELL HOLDS clear of the footer meta line" % seed_value)
+			foot = Rect2(foot.position.x, foot.end.y - HQ_SCRIPT.HOLDS_FOOT_PX, foot.size.x, HQ_SCRIPT.HOLDS_FOOT_PX)
+			assert_false(box.intersects(foot), "seed %d: CELL HOLDS %s clear of the footer meta line %s (paper %s)" % [seed_value, box, foot, paper.get_global_rect()])
 		hq.get_parent().queue_free()
 		await _frames(1)
 	assert_gt(checked, 0, "at least one seed holds")
 
 
-func test_holds_spot_clear_moves_off_rows_and_keeps_to_the_paper() -> void:
+func test_holds_spot_clear_sits_under_the_rows_and_above_the_footer() -> void:
 	var paper := Rect2(0, 0, 400, 600)
 	var size := Vector2(120, 60)
 	var want: Vector2 = HQ_SCRIPT.holds_spot(paper, size)
 	var none: Array[Rect2] = []
 	assert_eq(HQ_SCRIPT.holds_spot_clear(paper, size, none), want, "no rows: the plain spot")
-	var rows: Array[Rect2] = [Rect2(0, want.y - 10, 400, 40)]
-	var at: Vector2 = HQ_SCRIPT.holds_spot_clear(paper, size, rows)
-	assert_false(Rect2(at, size).intersects(rows[0]), "moved off the row")
+	var rows: Array[Rect2] = [Rect2(0, 475, 400, 40)]
+	var at: Vector2 = HQ_SCRIPT.holds_spot_clear(paper, size, rows, 600.0)
+	assert_gte(at.y, rows[0].end.y, "under the row")
+	assert_lte(at.y + size.y, 600.0, "above the footer line")
 	assert_true(paper.encloses(Rect2(at, size)), "and still on the paper")
+	var tight: Array[Rect2] = [Rect2(0, 0, 400, 570)]
+	assert_eq(HQ_SCRIPT.holds_spot_clear(paper, size, tight, 590.0), want, "no room: the plain spot")
 
 
 ## PT-003 fix 4: the ring and the pip are readable at 1.0 (a stroke of at least 4 px and a pip disc of at least 5 px at a
