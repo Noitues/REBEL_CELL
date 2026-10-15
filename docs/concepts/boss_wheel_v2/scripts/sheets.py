@@ -122,7 +122,7 @@ def _r41():
 
 
 def backdrop(corp):
-    plate = os.path.join(r"D:\rc_scratch\new_corps", "roman_hq_plate.png" if corp == "roman" else "atlantis_hq_plate.png")
+    plate = os.path.join(r"D:\rc_scratch\new_corps", "roman_hq_plate.png" if corp.startswith("roman") else "atlantis_hq_plate.png")
     bd = Image.open(plate).convert("RGB").resize((SW, SH), Image.LANCZOS).filter(ImageFilter.GaussianBlur(2.5))
     a = np.asarray(bd, np.float32)
     yy, xx = np.mgrid[0:SH, 0:SW].astype(np.float32)

@@ -31,3 +31,8 @@ def get(corp, key):
     D = c["dirs"][key]()
     D._slots = c["slots"]
     return D, c["slots"]
+try:
+    import roman_v3
+    CORPS["roman_v3"] = dict(module=roman_v3, slots=roman_v3.SLOTS, name="THE PANTHEON", dirs={"V3": roman_v3.PantheonV3})
+except ImportError as e:      # noqa
+    print("roman_v3 import failed:", e)

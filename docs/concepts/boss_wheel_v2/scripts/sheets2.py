@@ -105,8 +105,8 @@ def octopus_emblem(px, ring=(47, 107, 255), bg=(6, 17, 42), border=True, phase=1
     body = K.L((W_, W_))
     bd = ImageDraw.Draw(body)
     curls = []
-    for j in range(6):
-        a0 = j * 60 + 30
+    for j in range(8):
+        a0 = j * 45 + 22.5
         pts = []
         sg = 1 if j % 2 else -1
         for q in range(16):
@@ -157,7 +157,7 @@ def emblem(corp):
     else:
         mk = lambda px, **kw: octopus_emblem(px, **kw)  # noqa: E731
         note = ["THE BLACK SMOKER: the octopus that IS the wheel, flattened to a sticker: the head with glaring gold eyes,",
-                "the beak pointing down (the needle), six arms radiating and curling (the slice borders), two blue rings",
+                "the beak pointing down (the needle), eight arms radiating and curling (six are the slice borders), two blue rings",
                 "(they glow in phase 2). Approved octopus direction, pushed to the v2 final's drawing."]
     hero = mk(512)
     im.alpha_composite(hero, (60, 130))

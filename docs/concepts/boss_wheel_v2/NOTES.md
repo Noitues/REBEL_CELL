@@ -325,3 +325,150 @@ blender -b --factory-startup -P scripts/encode_mp4.py -- D:/rc_scratch/boss_whee
 | `emoji_hand` | the VERDICT hand |
 | `directions` | registry |
 | `anim`, `encode_mp4` | reel |
+
+
+---
+
+# ROUND 3 (v3): every boss has its own MECHANIC
+
+The v2 finals (`*_wheel_final.png`, `*_anim.*`) are kept as history.
+
+## v3 files
+
+| File | What it is |
+|---|---|
+| `roman_v3_final.png` | THE PANTHEON. Top: the full combat frame. Bottom: combat size, a 2x close-up, and the needle at rest, on a hit and on a whiff. |
+| `roman_v3_mechanic.png` | The four god states (normal, ascendant, wrathful, ascendant + wrathful), a mid-fight wheel, the god table and the rules. Option C and Neptune are noted. |
+| `roman_v3_anim.mp4` / `.gif` | The gilding moves onto a wrathful god, the spin, the landing (SHIM 24), a hit cracks Vulcan into wrath, then phase 2. |
+| `roman_v3_boss_emblem.png` | The VERDICT hand in front of the apotheosis sunburst. |
+| `atlantis_v3_final.png` | THE TANK. Top: the full combat frame. Bottom: combat size, a 2x close-up, and the tank at rest, migrating and landed. |
+| `atlantis_v3_arms.png` | The arms go 2, 4, 6, 8 while the creature rises with them. Includes the reveal close-up, the curve and the sprint ruling. |
+| `atlantis_v3_anim.mp4` / `.gif` | Idle, the fish migrate (the "spin"), six arms land, the reveal (arms 7 and 8 burst out, the cyber kraken climbs out), one more migration, then all eight arms land. |
+| `atlantis_v3_boss_emblem.png` | The kraken climbing out of its tank: 8 arms, LED brow, plate. The v2 `atlantis_boss_emblem.png` was regenerated with 8 arms as well. |
+
+## Roman v3: THE PANTHEON (fresco gods, approved)
+
+**Look.**
+- **Slices:** every slice is a tiled fresco bust: plaster, a halo in the slice type colour, a robe in the type colour, the god's attribute, and tesserae with grout.
+- **Frame and bezel:** gilded borders, a gilt laurel bezel, the aureus-gold bezel.
+- **Hub:** the emperor's apotheosis, a marble bust with a gilt laurel on a gold-rayed mosaic sky. The sky turns red in phase 2.
+- **Needle:** kept as the royal box with the VERDICT emoji hand. The emperor still judges the gods.
+
+**God to action, in real GDD vocabulary:**
+
+| God | Normal | Wrathful (3 cracks) |
+|---|---|---|
+| Mars | SHIM 14 | SHIM 14 PIERCE (ignores block + shield, GDD 2.7 ruling) |
+| Jupiter | OVERFLOW 24 | OVERFLOW 24 + CORRUPTED on your landed slice (GDD 2.9) |
+| Minerva | DEFRAG 12 | counterattack: SHIM 12 |
+| Mercury | **RESIST 2**: the boss gains spin resistance 2 until its next turn (GDD 2.5 resistance as a slice effect; glyph = the locked WEIGHT/RESIST alias). This replaces "extra nudge". | theft: -1 RAM per landing (Meridian drain precedent) |
+| Vulcan | INFECT 3 (burn = CORRUPTED) | spreads: CORRUPTED on 2 of your slices |
+| Pluto | NULL | the void bites: SHIM 6 |
+| Neptune | SHIM 10 SWEEP. Seven gods but six slices, so Neptune replaces Mercury in phase 3; Mercury's cracks carry over. | n/a |
+
+**The combined mechanic, ASCENDANT + OMENS.**
+- **Ascendant:** one god is gilded and its slice resolves x2. The plaque shows the doubled value with a gold x2 tag, so preview = result.
+- **Gilding movement:**
+  - It moves one god clockwise at the start of every boss turn, in a fixed order. **No RNG**, so the telegraph (a dashed gold outline plus a NEXT tab) is always true.
+  - It skips Pluto, and starts on the god opposite the needle.
+  - Respin and Flip move the wheel, not the gilding: the gilding belongs to the god.
+  - Phase 3: two gods ascend at once.
+- **Omens:**
+  - Each player hit that deals damage adds 1 crack to the god under the boss's needle that turn, at most 1 per god per turn.
+  - Three omen pips sit on the rim band of each slice.
+  - At 3 cracks the god turns WRATHFUL for the rest of the fight: a red tag on the plaque, red-glowing cracks, the flipped effect.
+- **Ascendant + wrathful:** the wrathful effect is doubled. It is telegraphed hard:
+  - gold leaf over the cracks;
+  - the fresco bleeds light;
+  - the emperor's thumb trembles (+-6 deg at 9 Hz).
+  - Reduce effects: no bleed or glints; the thumb holds half-turned.
+- **The risk choice:** you crack the god the boss lands on. Breaking a strong god while the gilding is far away is safe; breaking it as the gilding arrives makes the fight's worst slice.
+- **Not chosen:** C, THE SENATE VOTE. It adds a second HUD layer; it would suit an elite better.
+
+**GDD flags (Roman):**
+- Resistance as a slice effect is new; today it is only a passive or hub trait (GDD 2.5).
+- A slice changing type mid-fight: the preview must recompute, and rewind must not cross the crack (a crack is a state change set by resolution).
+- Pluto turning hostile changes the only "miss" (Cold Exit, Fault Tolerance, Zero Day, Stolen Intent all reference NULL). Proposed: those effects keep treating Pluto as NULL until it is wrathful.
+
+## Atlantis v3: THE TANK (designer rulings applied)
+
+**The model.**
+- The wheel is a fixed ring aquarium round a central tank. **Nothing turns.**
+- **8 slots of 45 deg.** For this boss: 40 ticks of 9 deg, 5 per slot, so precision tiers keep their +-1 / +-2 meaning. This is a per-boss tick count; flag it against GDD 2.1, which locks 30 ticks / 6 slices.
+- **The predators ARE the slices:**
+  - SHARK SHIM 8
+  - SWORDFISH OVERFLOW 14
+  - JELLYFISH SWARM INFECT 2
+  - THE WRECK SANDBOX 6 (the octopus hides)
+  - MORAY SHIM 6
+  - NAVAL MINE OVERFLOW 12
+  - ELECTRIC EEL SHIM 5
+  - SUBMARINE NULL (it passes; nothing)
+- Barracuda, anglerfish and divers are ambient (the barracuda school sweeps during migration).
+- **Spin = the fish move** (designer ruling).
+  - The seeded spin result is the predator ring's new offset: same RngService stream, same determinism.
+  - A spin of N ticks moves the fish N ticks round the tank.
+  - The ring keeps its order and spacing, so the slice under a pointer is still (rotation + pointer_tick) mod ticks. Only the art moves.
+  - Each fish swims with its own easing (sharks surge, mines drift late), but all of them land exactly on the result.
+- **Nudge moves the fish** (designer ruling): one nudge shifts the ring one tick, exactly like nudging a wheel. Resistance still absorbs nudges.
+  - Flip mirrors the fish order.
+  - Arms cannot be nudged: they are pointers.
+- **Plaques follow the predator**, because the value belongs to the predator. They ride the ring's slot positions at r = 290, so spacing never collapses mid-swim.
+  - The 8 tank zones (open blue, kelp, reef, wreck site, sand flats, the vent, trench, coral) are fixed scenery and carry no rules.
+
+**Pointers = arms.**
+- Every arm that climbs out of the tank is a pointer, radiating outward. Its tip is lit in the type colour of the predator it grips; PERFECT adds a gold latch ring at the tip.
+- Emergence order is fixed (top, bottom, right, left, then the diagonals). Empty sockets 1-8 on the tank wall show the arms still to come.
+- Twin-pointer precedent (GDD 2.1, "several pointers, evenly spaced"; 2.11 Multiply) is extended to N = 2, 4, 6, 8.
+- The HUD result chip sums all arms. The breakdown tooltip lists each arm's predator and tier.
+
+**Curve:**
+
+| HP | Arms |
+|---|---|
+| 100-75 % | 2 |
+| 75-50 % | 4 |
+| 50-25 % | 6 |
+| < 25 % | 8 |
+
+Phase pips sit on the HP arc at 75 / 50 / 25.
+
+**8 arms = a deliberate SPRINT** (designer ruling). With all eight out, every slice resolves every turn. There is no damage scaling: the last quarter is a race to see who kills whom first. The 0.5x "tired arms" proposal is withdrawn; arms 5-8 only look paler.
+
+**The escalating reveal:**
+
+| Phase | What shows |
+|---|---|
+| P1 | The body is unseen: a shadow under the water, bubbles, a faint eye glint. |
+| P2 | The eyes break the surface. |
+| P3 | The mantle is out and the blue rings glow. |
+| FINAL | The cybernetic kraken, the corporation's brain (details below). |
+
+FINAL details:
+- Bolted cranial plates, a TETHYS plate, an antenna beacon.
+- An LED eye array across the brow.
+- Cable tendons and steel bands down every arm.
+- It climbs OUT of the tank: drawn 32 % bigger, over the rim.
+
+The reveal beat:
+1. Hit-stop, 3 frames.
+2. The water boils white.
+3. Arms 7 and 8 burst out (0.6 s).
+4. The hardware lights up (0.8 s).
+
+Reduce effects: the final art appears at once.
+
+**Octopus or kraken?** An octopus silhouette (8 arms, bar pupils) reads best at r = 60. The fiction calls it the Kraken.
+
+## v3 scripts
+
+| Script | Builds |
+|---|---|
+| `fig_gods.py` | the god busts |
+| `fresco.py` | fresco paint + tesserae |
+| `roman_v3.py` | the Pantheon direction on the wheel_v2 template |
+| `sheets3.py` | Roman final, mechanic, anim, emblem |
+| `atlantis_v3.py` | the tank renderer: own compose, 8 slots, N pointers |
+| `sheets_tank.py` | Atlantis final, arms, anim, emblem |
+
+The Pantheon runs on the shared template. The tank needs its own compositor (8 slots, fixed frame, N pointers), but it reuses the plaque, kit and render modes. The section 1 template should grow `slot_count`, `tick_count` and `pointers[]` to cover it.
