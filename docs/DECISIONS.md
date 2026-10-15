@@ -51,6 +51,19 @@ Sheet `docs/art_review/PLAN1/ART_R1.jpg` (before = main fb6ae75d | after; captur
 - **9a:** `RouteCover` (kit): entering the route page from another screen holds the last frame of the page that left over the screen until the city reports its look current and its camera settled for 3 frames (max 2.5 s), then fades out (`reward_page_in`). Headless never waits. Rule test: `test_art_r1`. The capture could not make the empty plane appear in the AFTER run; the BEFORE strip shows it at f20.
 - **9b:** strips for M8, M9, M10 and the route hover-out are on the sheet (Movie Maker, 30 fps). The M8 / M10 / hover-out strips are the motion lab demos (the lab chrome shows around them), M9 is the jack out to the HQ.
 
+### 2026-10-15 — Gap: batch-API playtesters for the PT-003 steps
+The designer asked for Claude playtesters that systematically perform each PT-003 step on Batch API calls (the machine
+is loaded), or, if that's not possible, a gap logged. **Not possible as built:** a black-box tester's play loop
+(`harness.py`) picks each click from the last screenshot and needs answers in seconds; the Batch API returns in minutes
+to hours. Only judging is batched today (`judge_batch.py`, after `harness.py --defer`). **Gap to fill later**, likely
+as a scripted-steps runner:
+- a deterministic capture script drives the game to each PT-003 step and performs its action (one windowed
+  `run_windowed.py` pass, like `w3_sheets_capture.gd`);
+- one Batch request per step judges the screenshots against that step's "PASS when" sentence;
+- the result is a PASS / FAIL / PARTIAL table in the PT feedback format.
+
+It needs no live API and costs cents per gate, but still needs one local windowed run.
+
 ### 2026-10-14 — Designer rulings on the overnight open questions (PT-003)
 1. **Route number keys travel at once** (no CONFIRM). Kept as built; only a mouse click selects first.
 2. **No "what only this choice reaches" text anywhere.** The maps must show the node graph itself (nodes as icons,
