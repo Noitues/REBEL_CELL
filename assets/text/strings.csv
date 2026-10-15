@@ -1213,6 +1213,7 @@ JACK IN to %s: start a %s here with %s.,JACK IN to %s: start a %s here with %s.
 JACK IN: back into the run you left.,JACK IN: back into the run you left.
 JACK OUT,JACK OUT
 JACKED OUT,JACKED OUT
+KEEP,KEEP
 KEEP GOING,KEEP GOING
 Key,Key
 LAST TURN: ,LAST TURN: 
@@ -1738,6 +1739,7 @@ New campaign,New campaign
 Next,Next
 Next seed,Next seed
 Next threshold at %d.,Next threshold at %d.
+Next threshold at %d: %s,Next threshold at %d: %s
 Next with a clockwise turn: %s,Next with a clockwise turn: %s
 No Daemons installed (D 0: the badge counts them). Opens the tray.,No Daemons installed (D 0: the badge counts them). Opens the tray.
 No Daemons installed.,No Daemons installed.
@@ -2182,6 +2184,7 @@ SLOT %s,SLOT %s
 SLOT %s // CELL-%02d,SLOT %s // CELL-%02d
 SNAP,SNAP
 "SNAP: the ring moves to the nearest slice center, a PERFECT aim.","SNAP: the ring moves to the nearest slice center, a PERFECT aim."
+SOCKET IT,SOCKET IT
 SOLD,SOLD
 SPIN,SPIN
 SPIN %d+,SPIN %d+
@@ -2213,6 +2216,7 @@ Save the run and leave it; Continue picks it up here.,Save the run and leave it;
 Saved.,Saved.
 Schematics,Schematics
 Schematics already banked at a Server Rack stay banked.,Schematics already banked at a Server Rack stay banked.
+"Schematics are the campaign's currency. Earn them from Server Racks, raid wins and spare Cycles; spend them on unlocks at the HQ Black Market.","Schematics are the campaign's currency. Earn them from Server Racks, raid wins and spare Cycles; spend them on unlocks at the HQ Black Market."
 Schematics the run banked for the campaign.,Schematics the run banked for the campaign.
 Schematics this run has banked for the campaign.,Schematics this run has banked for the campaign.
 "Schematics: the campaign's currency, spent at HQ.","Schematics: the campaign's currency, spent at HQ."
@@ -2438,6 +2442,7 @@ Slices,Slices
 Slot %d (%s),Slot %d (%s)
 Slot %d: %s%s,Slot %d: %s%s
 "Slot %s: %s. Heat %d, ICE %d, %d runs completed. Campaign %s%s.","Slot %s: %s. Heat %d, ICE %d, %d runs completed. Campaign %s%s."
+"Socket %s into slot %d? It destroys %s, already there.","Socket %s into slot %d? It destroys %s, already there."
 Something opens at ICE %d everywhere (%d/%d).,Something opens at ICE %d everywhere (%d/%d).
 Start a netrun at the first open Site,Start a netrun at the first open Site
 Start a new campaign in slot %s.,Start a new campaign in slot %s.
@@ -2923,6 +2928,10 @@ Take,Take
 Take nothing from this payout.,Take nothing from this payout.
 Take the lit sticker and go on.,Take the lit sticker and go on.
 Taken Raid Strength,Taken Raid Strength
+"Taken: %s, added to your deck.","Taken: %s, added to your deck."
+"Taken: %s, installed.","Taken: %s, installed."
+"Taken: %s, socketed in slot %d.","Taken: %s, socketed in slot %d."
+Taken: %s.,Taken: %s.
 Target,Target
 Target:,Target:
 Target: the lime brackets mark the wheel your attacks and aimed cards hit.,Target: the lime brackets mark the wheel your attacks and aimed cards hit.
@@ -3202,6 +3211,7 @@ The home server fell: the campaign is lost.,The home server fell: the campaign i
 The home server is BREACHED. Campaign lost.,The home server is BREACHED. Campaign lost.
 The installed Daemons. Opens the tray: each sigil shows what its Daemon does.,The installed Daemons. Opens the tray: each sigil shows what its Daemon does.
 "The map key: what the icons, colors and lines mean. Point at it or press it to open it; the pad's key button too.","The map key: what the icons, colors and lines mean. Point at it or press it to open it; the pad's key button too."
+The old chip is destroyed. It cannot be undone.,The old chip is destroyed. It cannot be undone.
 The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for %d step(s).
 The operative on %s patches it: %s.,The operative on %s patches it: %s.
 The operative's deck and spinner (hub core and inner ring included).,The operative's deck and spinner (hub core and inner ring included).
@@ -3269,12 +3279,13 @@ UNDOCK,UNDOCK
 UNFINISHED,UNFINISHED
 UNITS,UNITS
 UNITS DEPLOYED / DESTROYED,UNITS DEPLOYED / DESTROYED
-UNLOCKS · %d,UNLOCKS · %d
+UNLOCKS · %d SCHEMATICS,UNLOCKS · %d SCHEMATICS
 UPGRADE,UPGRADE
 UPGRADE %s: one level up from level %d (%d Schematics).,UPGRADE %s: one level up from level %d (%d Schematics).
 UPGRADE A SLICE // INSTALL %s,UPGRADE A SLICE // INSTALL %s
 UPGRADES: %s,UPGRADES: %s
 "Undo back to the last random event (free, unlimited this turn).","Undo back to the last random event (free, unlimited this turn)."
+"Unlocks cost Schematics (you hold %d), earned in a campaign.","Unlocks cost Schematics (you hold %d), earned in a campaign."
 Unlocks: %s,Unlocks: %s
 V-sync,V-sync
 VICTORY,VICTORY
@@ -3374,6 +3385,7 @@ decryption is not offered.  your station is no longer yours.,decryption is not o
 delete,delete
 depowered,depowered
 difficulty %d of %d,difficulty %d of %d
+display_name,display_name
 down,down
 elite,elite
 empty,empty

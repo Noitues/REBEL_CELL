@@ -574,11 +574,17 @@ func _choose_reward(index: int, slot: int, fly: bool) -> void:
 	var picked_name := ""
 	if not offer.is_empty() and index >= 0 and index < (offer["options"] as Array).size():
 		picked_name = TextDb.t(s.lookup.get_content(StringName(String(offer["options"][index]))), "display_name")
+		# G14: a Firmware chip into an occupied socket destroys the old one: ask first, naming it.
+		if String(offer["kind"]) == "firmware" and _ask_socket_overwrite(StringName(String(offer["options"][index])), slot,
+				func() -> void: _choose_reward(index, slot, fly)):
+			return
 	# B5 (section f): the loot page's bar (CARDS) stays while the page does, so the pick flies to the tag it shows.
 	_held_bar = bar_keys(s)
 	_report(s.choose_reward(index, slot, oi))
 	if s.run.pending_rewards.size() < left and not offer.is_empty():
 		_note_reward_done(String(offer["kind"]), true, picked_name)
+		# C8 (PB-PT-003b): say on screen what was taken (and where it went).
+		ToastNote.show_on(self, taken_line(String(offer["kind"]), picked_name, slot + 1))
 	if s.run.pending_rewards.size() >= left and s.run.phase == RunState.Phase.REWARD and String(offer.get("kind", "")) == "firmware" and slot >= 0:
 		# the page stays as it is (the spinner keeps the player's slot) and says why
 		# one message: the terminal note, worded here with the chip and slot names (the rules speak in ids); the
@@ -729,12 +735,55 @@ func _buy(kind: String, index: int, slot: int, fly: bool) -> void:
 	var s := RunManager.netrun
 	var cycles := s.run.cycles
 	var item := _page_item({"cards": "Stickers", "firmware": "Chips", "daemons": "Daemons"}.get(kind, ""), index)
+	if kind == "firmware" and index >= 0 and index < (s.run.shop.get("firmware", []) as Array).size() \
+			and s.run.cycles >= int(s.run.shop["firmware_prices"][index]) \
+			and _ask_socket_overwrite(StringName(String(s.run.shop["firmware"][index])), slot, func() -> void: _buy(kind, index, slot, fly)):
+		return
 	_report(s.buy(kind, index, slot))
 	# Bought (ANIM-6): SOLD stamps on its price and the item flies to its top bar icon.
 	if fly and s.run.cycles < cycles:
 		_fly_item(item, kind.trim_suffix("s"), &"buy_fly", tr("SOLD"))
 	RunManager.after_step()
 	_show_current()
+
+
+## G14 (CHANGE_PLAN_2): when Firmware `id` going into wheel slot `slot` would destroy a chip already socketed
+## there (`NetrunSession.firmware_replaced_at`), opens a confirm that names both chips and returns true; `go`
+## runs on the answer YES. False (nothing opened) when the slot is empty, bad, or the chip does not fit it
+## (the rules refuse that on their own). One confirm at a time (`SocketOverwriteConfirm`).
+func _ask_socket_overwrite(id: StringName, slot: int, go: Callable) -> bool:
+	var s := RunManager.netrun
+	if s == null or s.firmware_slot_error(id, slot) != "" or get_node_or_null(^"SocketOverwriteConfirm") != null:
+		return false
+	var old := s.firmware_replaced_at(slot)
+	if old == &"":
+		return false
+	var d := ConfirmDialog.new(socket_overwrite_question(TextDb.t(s.lookup.get_content(id), "display_name"),
+			TextDb.t(s.lookup.get_content(old), "display_name"), slot + 1), "SOCKET IT", "KEEP", "FIRMWARE", # TR
+			tr("The old chip is destroyed. It cannot be undone."), true, "", "")
+	d.name = "SocketOverwriteConfirm"
+	d.resized.connect(func() -> void: d.position = ((size - d.size) * 0.5).floor())
+	d.position = ((size - d.custom_minimum_size) * 0.5).floor()
+	d.confirmed.connect(go)
+	add_child(d)
+	return true
+
+
+## C8: the line that confirms a loot pick: what was taken and where it went (`slot_number` is 1-based, for Firmware).
+static func taken_line(kind: String, item_name: String, slot_number: int) -> String:
+	match kind:
+		"card":
+			return TranslationServer.translate("Taken: %s, added to your deck.") % item_name
+		"firmware":
+			return TranslationServer.translate("Taken: %s, socketed in slot %d.") % [item_name, slot_number]
+		"daemon":
+			return TranslationServer.translate("Taken: %s, installed.") % item_name
+	return TranslationServer.translate("Taken: %s.") % item_name
+
+
+## G14: the confirm's question: the new chip, the slot and the chip it destroys.
+static func socket_overwrite_question(new_name: String, old_name: String, slot_number: int) -> String:
+	return TranslationServer.translate("Socket %s into slot %d? It destroys %s, already there.") % [new_name, slot_number, old_name]
 
 
 ## Item `index` of the row named `row` on the page on screen (a loot or shop sticker;

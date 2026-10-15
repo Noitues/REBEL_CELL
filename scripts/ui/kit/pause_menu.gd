@@ -142,6 +142,7 @@ func _init() -> void:
 	elif RunManager.has_campaign():
 		abandon_campaign_button = _cell(_right, "AbandonCampaign", tr("Abandon campaign"), VinylSticker.Fill.PINK, ROW_PX, confirm_abandon_campaign,
 			tr("No Going Back"), Palette.PENCIL_THREAT, ABANDON_NOTE_TILT)
+	_gap_under_abandon()
 	_cell(_right, "QuitMain", tr("Quit to Main Menu"), VinylSticker.Fill.WHITE, ROW_PX, func() -> void:
 		if RunManager.campaign != null:
 			RunManager.autosave()
@@ -403,6 +404,17 @@ func _cell(col: VBoxContainer, p_name: String, word: String, fill: int, px: int,
 		row.add_child(n)
 		_notes.append(n)
 	return b
+
+
+## C6 (PB-PT-003b): the destructive row stands apart from the quit rows: a blank gap under its cell.
+func _gap_under_abandon() -> void:
+	if _right.get_child_count() == 0 or (abandon_run_button == null and abandon_campaign_button == null):
+		return
+	var gap := Control.new()
+	gap.name = "AbandonGap"
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gap.custom_minimum_size.y = UiTheme.SP_XL
+	_right.get_child(_right.get_child_count() - 1).add_child(gap)
 
 
 ## Left / Right cross the columns on the same row; Up / Down walk a column (focus order: the left

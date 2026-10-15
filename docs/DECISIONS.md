@@ -8166,3 +8166,20 @@ Evidence: PB-PT-003b C2 / B4, PB-PT-002 C6. Resting hand cards stay small (earli
   takes the pointer wherever it is drawn, so the card you see is the card a click picks (B4).
 - **Raised card vs piles.** A grown card whose growth reaches the DECK / DISCARD piles stands beside them
   (`grown_clear_of`, as it already did for the player's HP readout).
+
+### 2026-10-15 — Plan 2 B-MENU + C-SCREENS: abandon apart, unlock currency named, picks said, socket confirm
+Evidence: PB-PT-003b C4 / C6 / C7 / C8, PB-PT-002 C5 / C8. G14's startable item (the socket confirm).
+- **C6.** Abandon Run / Campaign already asked (hold to confirm, ExitDialogs); it now also stands apart: a gap under
+  its cell separates it from the two Quit rows. Resume stays alone in the left column.
+- **C7.** Locked tiles read "UNLOCKS · 60 SCHEMATICS"; the New Campaign page carries a line naming the currency, the
+  balance held (the live campaign's Schematics; 0 with none, since unlocks are bought from a running campaign at the
+  HQ Black Market, GDD 11.1) and how it is earned (Server Racks, raid wins, spare Cycles).
+- **C8.** A loot pick shows a toast naming what was taken and where it went (the rewards list already marks TAKEN).
+  Whether an option can hide behind the loot sheet is a layout fact needing a human look; not changed.
+- **G14 confirm.** Firmware into an occupied socket (loot or Mainframe) opens a confirm naming both chips; the rule
+  `NetrunSession.firmware_replaced_at` is the one source, the rule itself (the old chip is destroyed) is unchanged.
+  An empty socket never asks.
+- **C4.** The Heat tooltip states what the next threshold does, not only where it is. The "+11 on arrival" forecast
+  is not added: no arrival Heat rule was found in this build (Site Heat objectives already show as a badge).
+- **B-MENU keyboard.** On the raid setup Enter (nothing focused) is START DEFENSE and Backspace is BACK. The other
+  gaps (JACK IN, Market recruit, route view) are not done; the route view belongs to the route redesign pass.

@@ -1198,6 +1198,21 @@ func _unhandled_input(event: InputEvent) -> void:
 		raid_legend.set_opened(not raid_legend.opened)
 		get_viewport().set_input_as_handled()
 		return
+	# B-MENU (PT-002 C8): a keyboard has the raid setup's two verbs without the mouse: Enter, with nothing
+	# focused, is START DEFENSE; Backspace is BACK TO THE HQ.
+	if panel_name == "raid" and _settings_panel == null and event is InputEventKey and (event as InputEventKey).pressed \
+			and not (event as InputEventKey).echo and not has_node("LoadoutView") and not has_node("DaemonTray") \
+			and (_defense_confirm == null or not is_instance_valid(_defense_confirm)):
+		var key := (event as InputEventKey).keycode
+		var focused := get_viewport().gui_get_focus_owner()
+		if key == KEY_BACKSPACE:
+			PageTransition.after_modals(self, show_hq)
+			get_viewport().set_input_as_handled()
+			return
+		if (key == KEY_ENTER or key == KEY_KP_ENTER) and focused == null:
+			request_start_defense()
+			get_viewport().set_input_as_handled()
+			return
 	# B goes back to the HQ from the Grid and the raid setup (H23 S11). H24 S6: only a pad's
 	# B: a keyboard's Esc is ui_cancel too and must not leave when open_settings is bound
 	# elsewhere.
@@ -1269,6 +1284,17 @@ static func prompts_for(p_name: String) -> Array:
 		out.append([&"cycle_target", KEY_PROMPT])
 	out.append([&"open_settings", "Settings"]) # TR
 	return out
+
+
+## C7 (PB-PT-003b): a locked choice's price tag, with the currency named ("UNLOCKS · 60 SCHEMATICS").
+static func unlock_price_words(cost: int) -> String:
+	return TranslationServer.translate("UNLOCKS · %d SCHEMATICS") % cost
+
+
+## C7: the New Campaign page's line on the unlock currency: its name, the balance held (the live
+## campaign's Schematics; unlocks are bought from them at the HQ Black Market) and how it is earned.
+static func unlock_balance_line(held: int) -> String:
+	return TranslationServer.translate("Unlocks cost Schematics (you hold %d), earned in a campaign.") % held
 
 
 ## Parity NEWC-01..04 (designer 2026-10-05): the new campaign page is the art pass build's
@@ -1359,7 +1385,7 @@ func show_start() -> void:
 	# corporation must be cleared at (REBEL_CELL's free unlock); the tooltip says where to buy.
 	var unlock_words := func(u: ProfileUnlockData) -> String:
 		if u != null and u.schematic_cost > 0:
-			return tr("UNLOCKS · %d") % u.schematic_cost
+			return unlock_price_words(u.schematic_cost)
 		if u != null and u.requires_all_corporations_at_ice >= 0:
 			return tr("OPENS AT ICE %d EVERYWHERE") % u.requires_all_corporations_at_ice
 		return tr("LOCKED")
@@ -1413,7 +1439,18 @@ func show_start() -> void:
 		var secret := corp.generated_from_profile
 		corp_tiles.append({"name": tr("CLASSIFIED") if secret else TextDb.t(corp, "display_name"), "corp": corp.id, "redacted": secret,
 			"locked": true, "unlock": unlock_words.call(u), "tip": unlock_tip.call(u)})
-	setup.body.add_child(plan_head.call(tr("Target:"), StatIcon.MAP))
+	# C7 (PB-PT-003b): name the currency, show the balance, say how it is earned.
+	var currency_note := Chrome.body_label(unlock_balance_line(RunManager.campaign.schematics if RunManager.campaign != null else 0), UiTheme.CAPTION)
+	currency_note.name = "UnlockCurrencyNote"
+	UiWrap.whole_words(currency_note)
+	currency_note.mouse_filter = Control.MOUSE_FILTER_PASS
+	currency_note.tooltip_text = UiTip.fold(tr("Schematics are the campaign's currency. Earn them from Server Racks, raid wins and spare Cycles; spend them on unlocks at the HQ Black Market."))
+	# (on the Target head's row, at its right end: a row of its own pushed the crew past the screen's foot)
+	currency_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	currency_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	var target_head: HBoxContainer = plan_head.call(tr("Target:"), StatIcon.MAP)
+	target_head.add_child(currency_note)
+	setup.body.add_child(target_head)
 	var corp_pick := PlanningPicker.new(corp_tiles, 0, CORP_TILE if Settings.text_scale < COMPACT_UP_TO else CORP_TILE_BIG, CORP_SWATCH if Settings.text_scale < COMPACT_UP_TO else PlanningPicker.SWATCH_W)
 	corp_pick.name = "CorporationPicker"
 	corp_pick.value = pick_default.call(corps, RunManager.DEFAULT_CORPORATION)
@@ -6924,13 +6961,16 @@ func heat_tip() -> String:
 	var c := RunManager.campaign
 	var cfg := RunManager.config()
 	var next := -1
+	var next_text := ""
 	for t in cfg.heat_thresholds:
 		if t != null and t.heat > c.heat and (next < 0 or t.heat < next):
 			next = t.heat
+			next_text = TextDb.t(t, "event_text")
 	var lines := PackedStringArray()
 	lines.append(tr("Heat %d of %d: how hard the corporation hunts the Cell.") % [c.heat, cfg.heat_max])
 	if next >= 0:
-		lines.append(tr("Next threshold at %d.") % next)
+		# C4 (PB-PT-003b): say what the threshold does, not only where it is.
+		lines.append((tr("Next threshold at %d: %s") % [next, next_text]) if next_text != "" else (tr("Next threshold at %d.") % next))
 	var mods := PackedStringArray()
 	for m in HeatRules.active_modifiers(c, cfg):
 		mods.append(_modifier_text(m))
