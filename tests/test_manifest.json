@@ -817,6 +817,10 @@
 			"seconds": 4.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_plan2_b_menu_c_screens.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_b5_netrun_pages.gd": {
 			"seconds": 20.0,
 			"tier": "full"

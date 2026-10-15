@@ -677,6 +677,14 @@ func firmware_slot_error(id: StringName, slot: int) -> String:
 	return ""
 
 
+## G14: the Firmware chip a new chip socketed into wheel slot `slot` would destroy (the socket holds
+## one; `_grant` overwrites it), or &"" when the slot is empty or does not exist. The confirm names it.
+func firmware_replaced_at(slot: int) -> StringName:
+	if run == null or slot < 0 or slot >= run.operative.slot_firmware_ids.size():
+		return &""
+	return run.operative.slot_firmware_ids[slot]
+
+
 ## Whether `fw` can be socketed into at least one slot of the operative's wheel.
 func _firmware_fits(fw: FirmwareData) -> bool:
 	if fw.allowed_slice_types.is_empty():
