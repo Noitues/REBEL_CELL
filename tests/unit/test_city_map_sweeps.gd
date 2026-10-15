@@ -226,8 +226,8 @@ func _check_labels_k1(hq: Control, what: String, reaches: Array[float]) -> void:
 	var overlay: CityMapOverlay = hq.city_overlay
 	var hud_bottom: float = (hq.hud as Control).get_global_rect().end.y
 	var area := _map_area(hq)
-	if overlay.tag_rule == CityMapOverlay.TagRule.FOCUS:
-		# ART-R1 1a: no tag at rest; the checks below run with the map legend's hover (every tag).
+	if overlay.tag_rule != CityMapOverlay.TagRule.ALL:
+		# ART-R1 1a (and the raid maps, PT-003 fix 1): no tag at rest; the checks below run with the map legend's hover (every tag).
 		assert_true(overlay.label_rects().is_empty(), "%s: no tag at rest" % what)
 		overlay.tags_all = true
 	var rects := overlay.label_rects()
@@ -246,7 +246,7 @@ func _check_labels_k1(hq: Control, what: String, reaches: Array[float]) -> void:
 		assert_true(d <= reach + 0.01, "%s: %s within reach" % [what, key])
 		reaches.append(d / overlay._k())
 	var missing := overlay.unplaced_with_room()
-	if overlay.tag_rule != CityMapOverlay.TagRule.FOCUS:
+	if overlay.tag_rule == CityMapOverlay.TagRule.ALL:
 		# ART-R1 1a: the legend's hover shows every tag, so a crowded Grid may leave one unplaced
 		# (the tag rule is hover-only: a hovered node's tag always has its spot, checked per selection).
 		assert_eq(missing.size(), 0, "%s: every Site with room has its label: %s" % [what, missing])

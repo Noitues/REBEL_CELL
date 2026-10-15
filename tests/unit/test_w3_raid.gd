@@ -7,6 +7,7 @@ extends GutTest
 
 const HQ := "res://scenes/hq/hq_scene.tscn"
 const SCREEN := Rect2(0, 0, 1280, 720)
+const HQ_SCRIPT := preload("res://scripts/ui/hq_scene.gd")
 
 var _scale: float
 
@@ -249,6 +250,59 @@ func test_dropping_a_defence_on_a_node_changes_the_node_itself() -> void:
 	await _frames(3)
 	var after := int(RaidMapNodes.socket_spec(target, {}, true, c)["defence"])
 	assert_eq(after, before + 1, "the node's socket counts the placed defence")
+
+
+## PT-003 fix 7: CELL HOLDS clears every text row of the report (measured at 1.0): no label with words, and not the footer band.
+func test_cell_holds_sticker_clears_every_text_row() -> void:
+	var checked := 0
+	for seed_value in [1, 2, 3, 4]:
+		_raid_campaign(seed_value)
+		var hq := await _hq()
+		hq.show_raid()
+		await _frames(2)
+		RunManager.fight_raid()
+		hq.show_raid_summary()
+		await _frames(8)
+		var holds := hq._panel.find_child("CellHolds", true, false) as Control
+		if holds != null:
+			checked += 1
+			var box := holds.get_global_rect().grow(HQ_SCRIPT.HOLDS_CLEAR_PX - 0.5)  # the rule's own clearance (the tilt and die-cut border)
+			for n in hq._panel.find_children("*", "Label", true, false):
+				var l := n as Label
+				if l.text.strip_edges() == "" or not l.is_visible_in_tree() or holds.is_ancestor_of(l):
+					continue
+				assert_false(box.intersects(l.get_global_rect()), "seed %d: CELL HOLDS covers '%s'" % [seed_value, l.text])
+			var paper := hq._panel.find_child("RaidReport", true, false) as RaidPaper
+			var foot := paper.get_global_rect()
+			foot = Rect2(foot.position.x, foot.end.y - HQ_SCRIPT.HOLDS_FOOT_PX, foot.size.x, HQ_SCRIPT.HOLDS_FOOT_PX)
+			assert_false(box.intersects(foot), "seed %d: CELL HOLDS %s clear of the footer meta line %s (paper %s)" % [seed_value, box, foot, paper.get_global_rect()])
+		hq.get_parent().queue_free()
+		await _frames(1)
+	assert_gt(checked, 0, "at least one seed holds")
+
+
+func test_holds_spot_clear_sits_under_the_rows_and_above_the_footer() -> void:
+	var paper := Rect2(0, 0, 400, 600)
+	var size := Vector2(120, 60)
+	var want: Vector2 = HQ_SCRIPT.holds_spot(paper, size)
+	var none: Array[Rect2] = []
+	assert_eq(HQ_SCRIPT.holds_spot_clear(paper, size, none), want, "no rows: the plain spot")
+	var rows: Array[Rect2] = [Rect2(0, 475, 400, 40)]
+	var at: Vector2 = HQ_SCRIPT.holds_spot_clear(paper, size, rows, 600.0)
+	assert_gte(at.y, rows[0].end.y, "under the row")
+	assert_lte(at.y + size.y, 600.0, "above the footer line")
+	assert_true(paper.encloses(Rect2(at, size)), "and still on the paper")
+	var tight: Array[Rect2] = [Rect2(0, 0, 400, 570)]
+	assert_eq(HQ_SCRIPT.holds_spot_clear(paper, size, tight, 590.0), want, "no room: the plain spot")
+
+
+## PT-003 fix 4: the ring and the pip are readable at 1.0 (a stroke of at least 4 px and a pip disc of at least 5 px at a
+## typical map icon radius), and a plain claimed node has no asset slot (GDD 3.2): the drop goes to a slotted node.
+func test_the_defence_ring_and_pip_read_at_text_one() -> void:
+	for r in [18.0, 24.0, 32.0]:
+		assert_gte(RaidSocket.defence_ring_width(r), 4.0, "ring stroke at r=%s" % r)
+		assert_gte(RaidSocket.defence_pip_radius(r), 4.5, "pip disc at r=%s" % r)
+		assert_gte(RaidSocket.defence_ring_width(r), r * 0.2 - 0.001, "ring stroke scales with the node")
 
 
 ## ART-R2 M8: the raid result page has no SEND IT control (the one in the motion lab's M8 strip is the lab's chrome).

@@ -1987,6 +1987,11 @@ func _marker_node(n: Dictionary, rec: Dictionary) -> void:
 	_c.draw_line(top, at + Vector2(0, SiteMarker.ring_radius(spec, k)), Color(rc, 0.6), maxf(1.0, 1.5 * k))
 	if SiteMarker.pip_count(spec) > 0:
 		drawn_tiers[n["id"]] = int(spec.get("tier", 0))
+	# PT-003 fix 4: a v4 marker (the HOME SERVER) shows its placed defences on itself too: a pink ring just outside its own
+	# ring and one pip per defence (the socket nodes do the same in RaidSocket).
+	var placed := (n.get("assets", []) as Array).size()
+	if placed > 0:
+		RaidSocket.defence_pips(_c, at, (SiteMarker.ring_radius(spec, k) + SiteMarker.RING_W_NEXT * k * 2.0) / RaidSocket.PIP_RING, placed)
 
 
 ## D17 (fight won: the building's lights turn Cell colours): rows of lit windows in Cell
@@ -3026,7 +3031,9 @@ func tag_allowed(n: Dictionary) -> bool:
 		# ART-R1 1a (designer 2026-10-14): no tag at rest on any node; a node's tag shows only while
 		# it is lit (pointer, or a list row / the pad) and the map legend's hover shows them all.
 		return tags_all or n["id"] == lit_id()
-	return n["id"] == hover_id or bool(n.get("plan", false)) or bool(n.get("tag_cue", false)) or prereq_ids.has(n["id"])
+	# PT-003 fix 1 (ruling 1a covers the raid maps): LIT tags a node only while it is lit, or all on the
+	# legend's hover; a plan or cue node has no tag at rest (its status stays on the node).
+	return tags_all or n["id"] == lit_id()
 
 
 ## B3: the ids carrying a label now (tests: the clutter rule), in placement order.

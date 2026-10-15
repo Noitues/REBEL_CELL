@@ -49,9 +49,13 @@ const NOT_YET_SCALE := 0.85
 const RING_GAP := 5.0
 const RING_W := 4.0
 const RING_W_NOT_YET := 3.0
+## PT-003 fix 2: the next-step ring reads at rest through weight and contrast only (a wider stroke over a dark
+## backing); no ticks, no motion.
+const RING_W_NEXT := 6.0
+const RING_BACK_W := 4.0
 ## The ring's soft glow: its width over the ring's, and its alpha by availability.
 const RING_GLOW_W := 3.0
-const RING_GLOW_NEXT := 0.35
+const RING_GLOW_NEXT := 0.5
 const RING_GLOW_YOURS := 0.22
 ## The pad (a diamond at the Site's street point) and how far under the disc it sits when
 ## a marker is drawn on its own (the key); on the map it sits on the Site's roof.
@@ -227,6 +231,16 @@ static func disc_px(spec: Dictionary) -> float:
 	return d * (NOT_YET_SCALE if spec.get("avail") == AV_NOT_YET else 1.0)
 
 
+## The ring's stroke width (px at k = 1) by availability.
+static func ring_width(spec: Dictionary) -> float:
+	match String(spec.get("avail", AV_NOT_YET)):
+		AV_NOT_YET:
+			return RING_W_NOT_YET
+		AV_NEXT:
+			return RING_W_NEXT
+	return RING_W
+
+
 ## The ring's radius round the disc (px x k).
 static func ring_radius(spec: Dictionary, k: float = 1.0) -> float:
 	return (disc_px(spec) * 0.5 + RING_GAP) * k
@@ -236,13 +250,13 @@ static func ring_radius(spec: Dictionary, k: float = 1.0) -> float:
 static func hit_radius(spec: Dictionary, k: float = 1.0) -> float:
 	if spec.get("status") == ST_TAKEN:
 		return disc_px(spec) * SLIP_SCALE * SLIP_H * 0.5 * k
-	return ring_radius(spec, k) + RING_W * 0.5 * k
+	return ring_radius(spec, k) + ring_width(spec) * 0.5 * k
 
 
 ## The rect the marker covers round disc centre `c` (ring, badge, pips or slip), px x k.
 static func box(spec: Dictionary, c: Vector2, k: float = 1.0) -> Rect2:
 	var d := disc_px(spec) * k
-	var r := ring_radius(spec, k) + RING_W * k
+	var r := ring_radius(spec, k) + (ring_width(spec) + (RING_BACK_W if spec.get("avail") == AV_NEXT else 0.0)) * k
 	var out := Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0)
 	if spec.get("status") == ST_TAKEN:
 		var slip := slip_size(spec) * k
@@ -415,10 +429,12 @@ static func draw_under(ci: CanvasItem, spec: Dictionary, c: Vector2, k: float = 
 		if down:
 			rc = greyed(rc)
 		var rr := ring_radius(spec, k)
-		var w := (RING_W_NOT_YET if spec.get("avail") == AV_NOT_YET else RING_W) * k
+		var w := ring_width(spec) * k
 		var glow := RING_GLOW_NEXT if spec.get("avail") == AV_NEXT else (RING_GLOW_YOURS if spec.get("avail") == AV_YOURS else 0.0)
 		if glow > 0.0 and not down:
 			ci.draw_arc(c, rr, 0.0, TAU, 40, Color(rc, glow), w * RING_GLOW_W, true)
+		if spec.get("avail") == AV_NEXT and not down:
+			ci.draw_arc(c, rr, 0.0, TAU, 40, Color(Palette.GLYPH_INK, 0.95), w + RING_BACK_W * k, true)
 		ci.draw_arc(c + Vector2(1, 2) * k, rr, 0.0, TAU, 40, Color(Palette.GLYPH_INK, 0.9), w, true)
 		ci.draw_arc(c, rr, 0.0, TAU, 40, rc, w, true)
 	var n := pip_count(spec)

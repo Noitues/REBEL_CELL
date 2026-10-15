@@ -54,7 +54,11 @@ func _residue(scene: Control) -> Array[String]:
 		out.append("ram_note.aiming")
 	if scene.fx_layer.reticle_visible:
 		out.append("reticle")
+	if scene._aim_hint.visible:
+		out.append("aim_hint")
 	for v in scene._views():
+		if v.ghost_rotation != null:
+			out.append("ghost@%s" % v.name)  # PT-003 fix 3: the "LANDS HERE" / "DRONE ENDS HERE" labels
 		if not v.valid_zones.is_empty():
 			out.append("valid_zones@%s" % v.name)
 		if not v.hover_zone.is_empty():
@@ -65,7 +69,7 @@ func _residue(scene: Control) -> Array[String]:
 func test_w3b_b1_every_interruption_of_an_aim_leaves_no_residue() -> void:
 	var failures: Array[String] = []
 	for card_id in [&"fine_tune", &"brute_spin", &"jolt"]:
-		for way in ["nudge", "target", "end_turn", "respin", "other_card", "undo", "rewind_key", "esc", "right_click", "confirm"]:
+		for way in ["nudge", "key_q", "key_e", "target", "end_turn", "respin", "other_card", "undo", "rewind_key", "esc", "right_click", "confirm"]:
 			var scene := await _combat(card_id)
 			var base: int = scene.ram_note.pending
 			scene.select_card(0)
@@ -76,6 +80,11 @@ func test_w3b_b1_every_interruption_of_an_aim_leaves_no_residue() -> void:
 			match way:
 				"nudge":
 					scene.nudge(1)
+				"key_q", "key_e":
+					var k := InputEventAction.new()
+					k.action = &"nudge_left" if way == "key_q" else &"nudge_right"
+					k.pressed = true
+					scene._unhandled_input(k)
 				"target":
 					scene._submit(CombatAction.target(scene.engine.state().enemies[0].id))
 				"end_turn":

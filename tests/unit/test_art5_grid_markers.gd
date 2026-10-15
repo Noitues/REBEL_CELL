@@ -81,6 +81,25 @@ func _first(corp: CorporationData, pred: Callable) -> SiteData:
 
 # --- The marker is the state ------------------------------------------------------------
 
+func test_every_next_step_site_ring_reads_at_rest_through_weight_and_contrast() -> void:
+	# PT-003 fix 2: with no tags at rest the orange ring is the where-to-go cue on EVERY next-step Site.
+	_open_all()
+	var c := RunManager.new_campaign(1, &"meridian")
+	var corp := RunManager.corporation
+	var specs := _specs(c, corp)
+	var open := RunManager.launchable_sites()
+	assert_false(open.is_empty())
+	for sd: SiteData in open:
+		var spec: Dictionary = specs[sd.id]
+		assert_eq(spec["avail"], SiteMarker.AV_NEXT, "%s is a next-step Site" % sd.id)
+		assert_gt(SiteMarker.ring_width(spec), SiteMarker.ring_width({"avail": SiteMarker.AV_YOURS}), "%s: heavier than a claimed ring" % sd.id)
+		assert_gt(SiteMarker.ring_width(spec), SiteMarker.ring_width({"avail": SiteMarker.AV_NOT_YET}), "%s: heavier than a locked one" % sd.id)
+		# The ring's box and pick radius include the heavier stroke and its dark backing.
+		assert_true(SiteMarker.box(spec, Vector2.ZERO).size.x >= (SiteMarker.ring_radius(spec) + SiteMarker.ring_width(spec)) * 2.0, "%s: the box holds the ring" % sd.id)
+	assert_eq(SiteMarker.ring_color({"avail": SiteMarker.AV_NEXT}), Palette.RING_AVAILABLE)
+	assert_gte(SiteMarker.RING_GLOW_NEXT, 0.5, "and a strong glow, no ticks, no motion")
+
+
 func test_each_layer_answers_its_question_from_the_state() -> void:
 	_open_all()
 	var c := RunManager.new_campaign(1, &"meridian")

@@ -132,6 +132,40 @@ func test_grid_view_frames_the_run_path() -> void:
 			assert_false(window.get_global_rect().has_point(p), "%s is not under the ROUTE window" % id)
 
 
+## PT-003 fix 1 (ruling 1a on the netrun maps): GRID VIEW has no name tag at rest, a tag while its node is lit, and every
+## tag on the map key's hover.
+func test_grid_view_has_no_tags_at_rest_and_the_map_key_lights_them_all() -> void:
+	RunManager.new_campaign(1)
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = SCREEN
+	var scene: Control = load(NETRUN).instantiate()
+	holder.add_child(scene)
+	scene.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scene.start_run(1)
+	await _frames(4)
+	scene._grid_zoomed = true
+	scene._show_map()
+	await _frames(8)
+	var overlay: CityMapOverlay = scene.city_overlay
+	assert_eq(overlay.tag_rule, CityMapOverlay.TagRule.FOCUS, "GRID VIEW follows the HQ Grid's rule")
+	assert_true(overlay.tagged_ids().is_empty(), "no tag at rest")
+	var legend: MapLegend = scene._grid_legend
+	assert_not_null(legend, "GRID VIEW has its map key")
+	legend.show_all_changed.emit(true)
+	assert_false(overlay.tagged_ids().is_empty(), "the map key's hover shows tags")
+	legend.show_all_changed.emit(false)
+	assert_true(overlay.tagged_ids().is_empty(), "and they go with the hover")
+	var named: StringName = &""
+	for n: Dictionary in overlay.nodes:
+		if String(n.get("label", n.get("name", ""))) != "":
+			named = n["id"]
+			break
+	if named != &"":
+		overlay.hover_id = named
+		assert_true(overlay.tagged_ids().has(named), "a lit node carries its tag")
+		overlay.hover_id = &""
+
+
 func test_route_node_chip_clears_the_last_row() -> void:
 	var panel: RouteNodePanel = add_child_autofree(RouteNodePanel.new())
 	panel.show_node(&"n1", {"title": "Fight // L1", "tier": 1, "type": "Fight: win it for Cycles and loot", "rewards": ["15-25 Cycles, a card", "maybe a Firmware chip"],

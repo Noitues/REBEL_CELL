@@ -38,3 +38,18 @@ STATUS: PARTIAL
 STEPS: 1 SKIP, 2 PARTIAL, 4 PARTIAL, 7 PARTIAL, 8 PARTIAL, 9 PARTIAL, 11 PARTIAL, 12 PARTIAL, 17 PARTIAL
 NOTES: 2: Reachable-site orange ringing is clear only on one site at rest, so the 'where to go first' cue is weak in that view. Other criteria hold.; 4: The file text matches the PASS wording, but the machine fact raid_line_found is false, so the map-side raid line is unverified.; 7: Node file HP and healing lines hold. Per-type sticker shapes can't be confirmed since all visible nodes look the same and no other types appear on the map.; 8: Run path, target, and no choices are present. Name tags appear at rest, which the designer ruling says should only show on hover; the nit is shippable but needs checking.; 9: Esc and right-click end cleanly with no extra RAM cost, but the step-level RAM delta is -1 from the committed E nudge, and aim hints linger after Q and E.; 11: Damage and beam order look right, but the wheel turn and the HP-counter landing are too small to verify at this scale.; 12: The tag is already in place from frame 1, so the strip cannot confirm it flies into the hit. The burst suggests a landing effect, but the motion is not shown.; 17: Machine facts show 1 asset on the home node, but the map pip and ring are too subtle to confirm the node itself shows the defense.
 ```
+
+## Re-run after fixes (2026-10-15, PT-003 steps fixes)
+
+Steps 2, 4, 8, 9, 15, 17 and 18 re-captured in one windowed run (step 17 once more after the HOME SERVER ring fix, step 18 once more after the
+CELL HOLDS room fix) and judged by `steps_judge.py` (Batch API, haiku, $0.0025). Before | after sheet: `docs/art_review/PLAN1/PT003_FIXES.jpg`.
+
+| step | before | after | note |
+|---|---|---|---|
+| 2 | PARTIAL | PASS | the next-step ring is 6 px on a dark backing with a stronger glow; no tags at rest |
+| 4 | PARTIAL | PARTIAL | the file text matches; the script's "raid_line_found" fact is a map-side search. W3-GRID C3 names no map marker (DECISIONS 2026-10-15), so none was added |
+| 8 | PARTIAL | PASS | GRID VIEW has no tags at rest |
+| 9 | PARTIAL | FAIL (judge) | the aim hints are gone after Q; the judge counts the E key's own committed nudge (-1 RAM) as a leak. Not a defect: E is a real nudge |
+| 15 | PASS | PASS | the SAVED stamp no longer lands on the Heat gauge |
+| 17 | PARTIAL | PASS | the HOME SERVER shows a pink ring and a pip |
+| 18 | PASS (nit) | PASS | CELL HOLDS clears every text row and the footer line |

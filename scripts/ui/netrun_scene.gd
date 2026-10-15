@@ -93,6 +93,8 @@ var subtitle_strip: SubtitleStrip
 ## The route drawn on the city (map phase) and whether it is zoomed out to the Grid.
 var city_overlay: CityMapOverlay = null
 var _grid_zoomed: bool = false
+## PT-003 fix 1: GRID VIEW's map key, whose hover lights every name tag.
+var _grid_legend: MapLegend = null
 var _panel_host: PanelContainer
 ## B5: the kit's CRT glass behind the page host (shown on glass pages).
 var _panel_glass: CrtTerminalPanel = null
@@ -1492,7 +1494,9 @@ func _show_map() -> void:
 	IconMark.attach(quit_btn, StatIcon.SAVE)
 	win.body.add_child(quit_btn)
 	if _grid_zoomed:
-		win.body.add_child(MapLegend.new(RunManager.campaign.corporation_id))
+		_grid_legend = MapLegend.new(RunManager.campaign.corporation_id)
+		_grid_legend.use_site_markers()  # the Site-marker rows and the SHOW ALL cell whose hover tags every node
+		win.body.add_child(_grid_legend)
 	elif s.run.kind == "boss":
 		pass  # ART-8 8w: the HQ run shows its compound (_mount_hq_run), not the transit
 	else:
@@ -2652,6 +2656,15 @@ func _mount_route(nodes: Array[Dictionary], edges: Array[Dictionary], look: int,
 		# B3 (review D5, the clutter rule): no node tags on a raid map (status on the node, the
 		# name in its tooltip).
 		city_overlay.tag_rule = CityMapOverlay.TagRule.LIT
+	elif _grid_zoomed:
+		# PT-003 fix 1 (ruling 1a): GRID VIEW follows the HQ Grid: a tag only while its node is lit, and the
+		# map key's hover shows them all.
+		city_overlay.tag_rule = CityMapOverlay.TagRule.FOCUS
+		if _grid_legend != null and is_instance_valid(_grid_legend):
+			var ov := city_overlay
+			_grid_legend.show_all_changed.connect(func(on: bool) -> void:
+				if is_instance_valid(ov):
+					ov.tags_all = on)
 	# H24 S4: the node tips come translated (the screens build them), shown as given.
 	city_overlay.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	city.add_child(city_overlay)

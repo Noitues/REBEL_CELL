@@ -2536,6 +2536,8 @@ func _refresh(state: CombatState) -> void:
 	_stop_aim_motion()
 	_dim_hand()
 	_sync_cancel_sticker()
+	# PT-003 fix 3: the ghost (its "1 LANDS HERE" / "DRONE ENDS HERE" labels) is an aim hint too.
+	_clear_ghost()
 	_sync_arrows(state)
 	for v in _views():
 		v.valid_zones.clear()
