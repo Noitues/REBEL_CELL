@@ -289,3 +289,14 @@ the judge's is added once at the end); the budget check no longer includes it a 
 
 First audit (PB-010, 574 turns): a Perfect was reachable on 93–100 % of turns; testers landed one on
 ~20 %, the same as taking no action; the best plan takes ~0.8 damage per turn vs the testers' ~3.5.
+
+## 13. Scripted steps (batch-judged)
+
+For a playtest plan's step table (PT-003 first) a script, not a tester, drives the game, and the Batch API judges the pictures:
+1. `python tools/run_windowed.py --log <file> -- res://tools/playtest/steps/pt003_steps.tscn -- --out=<abs>/.playtest_sessions/PT003-steps`
+   (one windowed run; `--only=2,3` re-runs steps and merges them into `steps.json`). Per step: screenshots or frame strips,
+   the action, the adjusted PASS sentence and machine facts read from the game. Steps it cannot drive are marked SKIP, never faked.
+2. `python tools/playtest/steps_judge.py run` (`estimate` prints the cost first; hard cap `--max-usd 2`). One batch request per step
+   (haiku vision), JSON verdict PASS / FAIL / PARTIAL, then `docs/playtest/claude/steps/PT-003_steps.md` with the PT feedback block.
+   `report` re-ingests the stored results without an API call.
+The judge's verdict is evidence; motion steps need the designer's eyes. No unit tests (tools, rule 6).

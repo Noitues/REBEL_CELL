@@ -34,6 +34,20 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-15 — PT-003 scripted steps run
+- Built `tools/playtest/steps/pt003_steps.gd` (+ .tscn): one windowed capture run (via `run_windowed.py`) drives 18 of the 19
+  PT-003 steps from a seeded new campaign and writes screenshots plus `steps.json` (adjusted PASS sentence, action, machine facts).
+  Step 1 (Options setup) is SKIP. `tools/playtest/steps_judge.py` judges each step with `claude-haiku-5-5` vision through the Message
+  Batches API (estimate first, $2 hard cap; the run cost under $0.02 across three submissions after fixing the reply parsing).
+  Result: `docs/playtest/claude/steps/PT-003_steps.md` (10 PASS, 8 PARTIAL, 0 FAIL, 1 SKIP). A model reading a screenshot is
+  evidence, not a verdict.
+- Where a gesture has a public method it calls, the script uses the method (select_card, open_reward, `_on_dropped`, `confirm_route_node`,
+  `request_start_defense`); the step's action says so. Not driven: the free-nudge aim and a target switch (step 9: card aim only).
+  Step 17 drops onto the HOME SERVER (a plain claimed node has no asset slot). Step 12 forces a PERFECT tag (`play_precision`).
+- Frame strips are contact sheets at 1 frame per 5-10 game frames; the judge could not confirm motion steps (11, 12) from them: the
+  designer's eyes (or a Movie Maker capture) stay the check for motion. Step 4's map-side raid line was not found by the script's search;
+  the Site file's "RAID AT HEAT 30" line was.
+
 ### 2026-10-14 — ART-R2: raid report flood, OURS NOW, the route hold (3a, 7, 9a, M8)
 Sheet `docs/art_review/PLAN1/ART_R2.jpg` (before = main 1ccbf587 | after; `tools/design_lab/art_r1_capture.gd` groups report / loot / cover on both trees).
 - **3a:** the ring halos were already on the raid pages (`hq_scene` sets `NeonCity.ring_halos` for every page); the lime flood was the territory change's own area fill: the lasting tint (`influence_tint`, the front layer) over the changed district and each mark's wash + hatch + 3 px ring (the "big ellipses"). `NeonCity.ring_halos` now also means no area fill: `_show_tint` shows no wash, a mark draws only the map's socket ring (`map_node_halo_px` 2 px at `map_node_halo_alpha` 35 %). The CLAIMED / TAKEN stamps are unchanged. Test: `test_s_mapview` (`test_art_r2_3a_*`).
