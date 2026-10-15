@@ -36,6 +36,20 @@ const CAPTION_MAX := 16
 const CAPTION_GAP := 2.0
 ## The word under the wheel (a key, translated where drawn).
 const CAPTION := "SPINNER" # TR
+## Slot wedge fill alpha when it holds a slice / when empty.
+const WEDGE_ALPHA: float = 0.55
+const WEDGE_ALPHA_EMPTY: float = 0.22
+## Wedge outline lightening and width (px).
+const WEDGE_EDGE_LIGHTEN: float = 0.3
+const WEDGE_EDGE_WIDTH: float = 1.2
+## Arc segments per wedge edge and the same minus one as a float divisor.
+const ARC_STEPS: int = 9
+const ARC_LAST: float = 8.0
+## Hover / focus outline width on a slot (px).
+const MARK_LINE: float = 1.5
+## Segments used for a bracket's rim arm.
+const BRACKET_SEGS: int = 5
+const BRACKET_SEGS_LAST: float = 4.0
 
 var slices: Array[StringName] = []
 var firmware: Array[StringName] = []
@@ -214,15 +228,15 @@ func _draw() -> void:
 		var a0 := angle(k) - PI / n + GAP
 		var a1 := angle(k) + PI / n - GAP
 		var pts := PackedVector2Array()
-		for q in 9:
-			var a := lerpf(a0, a1, q / 8.0)
+		for q in ARC_STEPS:
+			var a := lerpf(a0, a1, q / ARC_LAST)
 			pts.append(c + Vector2(cos(a), sin(a)) * RADIUS)
-		for q in 9:
-			var a := lerpf(a1, a0, q / 8.0)
+		for q in ARC_STEPS:
+			var a := lerpf(a1, a0, q / ARC_LAST)
 			pts.append(c + Vector2(cos(a), sin(a)) * INNER)
-		draw_colored_polygon(pts, Color(col, 0.55) if type != RC.SliceType.NULL else Color(col, 0.22))
+		draw_colored_polygon(pts, Color(col, WEDGE_ALPHA) if type != RC.SliceType.NULL else Color(col, WEDGE_ALPHA_EMPTY))
 		pts.append(pts[0])
-		draw_polyline(pts, col.lightened(0.3), 1.2, true)
+		draw_polyline(pts, col.lightened(WEDGE_EDGE_LIGHTEN), WEDGE_EDGE_WIDTH, true)
 		var am := angle(k)
 		SliceIcon.draw_on_slice(self, c + Vector2(cos(am), sin(am)) * (RADIUS + INNER) * 0.5, ICON, type, col)
 		if k < firmware.size() and firmware[k] != &"":
@@ -246,7 +260,7 @@ func _draw_pick_marks(k: int, outline: PackedVector2Array) -> void:
 		draw_colored_polygon(shade, Color(Palette.NIGHT_SKY, UNFIT_SHADE))
 	var st := KitState.FOCUS if has_focus() and k == cursor else (KitState.HOVER if k == _hover else KitState.IDLE)
 	if st != KitState.IDLE:
-		draw_polyline(outline, KitState.edge_color(st), 1.5, true)
+		draw_polyline(outline, KitState.edge_color(st), MARK_LINE, true)
 
 
 ## Parity SHOP-06 (round 34 `firmware_socket`): lime brackets round the chosen slot: its outer
@@ -263,8 +277,8 @@ func _draw_brackets(k: int) -> void:
 		var a: float = side[0]
 		var dir: float = side[1]
 		var rim := PackedVector2Array()
-		for q in 5:
-			var t := a + dir * sweep * q / 4.0
+		for q in BRACKET_SEGS:
+			var t := a + dir * sweep * q / BRACKET_SEGS_LAST
 			rim.append(c + Vector2(cos(t), sin(t)) * (RADIUS + CHOSEN_LINE))
 		draw_polyline(rim, col, CHOSEN_LINE, true)
 		var out := Vector2(cos(a), sin(a))

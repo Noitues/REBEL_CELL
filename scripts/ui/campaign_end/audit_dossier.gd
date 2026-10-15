@@ -68,6 +68,16 @@ const STORY_MIN_LINES := 2
 const POSTER_TILT := -2.0
 ## Frames the overlays are placed for after a layout change (the containers sort a frame late).
 const PLACE_FRAMES := 3
+## The cover's label box: left/top/width shares of the cover and its height in font-size lines.
+const COVER_LABEL_LEFT: float = 0.15
+const COVER_LABEL_TOP: float = 0.18
+const COVER_LABEL_WIDTH: float = 0.7
+const COVER_LABEL_LINES: float = 4.5
+## The cover's seal: vertical centre share, radius share of the smaller side.
+const COVER_SEAL_Y: float = 0.72
+const COVER_SEAL_RADIUS: float = 0.14
+## The letterhead ink's darkening of the house hue.
+const LETTERHEAD_DARKEN: float = 0.45
 
 var facts: DossierFacts = null
 var style: CorpHouseStyle = null
@@ -550,7 +560,7 @@ func _build_report() -> void:
 
 ## The letterhead's ink: the house hue, darkened to read on paper.
 func letterhead_ink() -> Color:
-	return style.color().darkened(0.45)
+	return style.color().darkened(LETTERHEAD_DARKEN)
 
 
 # --- Layout and motion -----------------------------------------------------------------------
@@ -868,10 +878,10 @@ func _draw_cover() -> void:
 	# The cover's label and the house's verb stamped on it, squashed as it turns.
 	var f := EndFaces.typed_bold()
 	var fs := UiTheme.font_px(UiTheme.LABEL)
-	var label := Rect2(r.size.x * 0.15, r.size.y * 0.18, r.size.x * 0.7, fs * 4.5)
+	var label := Rect2(r.size.x * COVER_LABEL_LEFT, r.size.y * COVER_LABEL_TOP, r.size.x * COVER_LABEL_WIDTH, fs * COVER_LABEL_LINES)
 	cover.draw_rect(label, PaperInk.opaque(Palette.PAPER))
 	var y := label.position.y + fs * 1.3
 	for t in [tr("%s  //  AUDIT %d") % [house().to_upper(), audit_number()], tr("SUBJECT: REBEL_CELL"), tr("CELL %02d  //  %d RUNS") % [audit_number(), facts.runs_started]]:
 		HighContrast.draw_text(cover, f, Vector2(label.position.x + UiTheme.SP_S * s, y), t, HORIZONTAL_ALIGNMENT_LEFT, label.size.x - UiTheme.SP_M * s, fs, PaperInk.text(Palette.END_TYPE_INK))
 		y += fs * 1.25
-	CorpSeal.draw_seal(cover, Vector2(r.size.x * 0.5, r.size.y * 0.72), minf(r.size.x, r.size.y) * 0.14, style.corp_id, letterhead_ink(), house())
+	CorpSeal.draw_seal(cover, Vector2(r.size.x * 0.5, r.size.y * COVER_SEAL_Y), minf(r.size.x, r.size.y) * COVER_SEAL_RADIUS, style.corp_id, letterhead_ink(), house())

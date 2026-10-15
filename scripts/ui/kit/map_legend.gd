@@ -82,6 +82,23 @@ const STRIP_V_GAP := 2
 ## H24 K1: the strip folds to its MAP KEY line from this text scale up (at 1.3 the open
 ## strip took about a third of the map's height, at 1.6 over 40 %).
 const FOLD_SCALE := 1.3
+## Swatch half-extent share used for the TARGET swatch radius.
+const TARGET_SWATCH_RADIUS_SHARE: float = 0.42
+## Share of the swatch width where a line swatch starts / ends.
+const LINE_SWATCH_START_X: float = 0.05
+const LINE_SWATCH_END_X: float = 0.95
+## Share of the swatch height at the line swatch's low / high end.
+const LINE_SWATCH_LOW_Y: float = 0.7
+const LINE_SWATCH_HIGH_Y: float = 0.3
+## Stroke widths (px at scale 1.0) and minimums of the line swatches.
+const LOCKED_LINE_WIDTH: float = 2.0
+const LOCKED_LINE_MIN: float = 1.0
+const LINK_LINE_WIDTH: float = 3.0
+const LINK_LINE_MIN: float = 1.5
+## Dash length multiplier of the link line swatch.
+const LINK_DASH_MULT: float = 1.5
+## Radius share of the lock disc on the locked line swatch.
+const LOCK_DISC_SHARE: float = 0.24
 
 ## H23 S4: each ROWS row's key (the ICON_ROWS rows are keyed by their kind).
 const ROW_KEYS: Array[String] = ["claimed", "cleared", "corporate", "taken", "link", "threat"]
@@ -536,15 +553,15 @@ func _marker_row(row_name: String, key: String, swatch: Control, words: String, 
 
 func _draw_target_swatch(swatch: Control) -> void:
 	var c := swatch.size * 0.5
-	var r := swatch.size.x * 0.42
+	var r := swatch.size.x * TARGET_SWATCH_RADIUS_SHARE
 	# B1b: the key shows the TARGET in the kit's one wax material (the map's own mark).
 	var pts := PencilShapes.hand_circle(c, Vector2(r, r * CityMapOverlay.TARGET_FLAT), CityMapOverlay.TARGET_SEED)
 	PencilSet.show_on(swatch, [pts] as Array[PackedVector2Array], GreasePencilMark.Ink.THREAT, CityMapOverlay.TARGET_SEED)
 
 
 func _draw_line_swatch(swatch: Control, key: String) -> void:
-	var a := Vector2(swatch.size.x * 0.05, swatch.size.y * 0.7)
-	var b := Vector2(swatch.size.x * 0.95, swatch.size.y * 0.3)
+	var a := Vector2(swatch.size.x * LINE_SWATCH_START_X, swatch.size.y * LINE_SWATCH_LOW_Y)
+	var b := Vector2(swatch.size.x * LINE_SWATCH_END_X, swatch.size.y * LINE_SWATCH_HIGH_Y)
 	var k := Settings.text_scale * MARKER_SWATCH_SCALE
 	match key:
 		"locked":
@@ -552,9 +569,9 @@ func _draw_line_swatch(swatch: Control, key: String) -> void:
 			var pts := PackedVector2Array([a, b])
 			var total := a.distance_to(b)
 			while d < total:
-				swatch.draw_polyline(PencilShapes.trim(pts, d, minf(total, d + CityMapOverlay.DASH_ON * k)), Palette.TEXT_LO, maxf(1.0, 2.0 * k))
+				swatch.draw_polyline(PencilShapes.trim(pts, d, minf(total, d + CityMapOverlay.DASH_ON * k)), Palette.TEXT_LO, maxf(LOCKED_LINE_MIN, LOCKED_LINE_WIDTH * k))
 				d += CityMapOverlay.DASH_PERIOD * k
-			SiteMarker.draw_lock_disc(swatch, swatch.size * 0.5, swatch.size.x * 0.24)
+			SiteMarker.draw_lock_disc(swatch, swatch.size * 0.5, swatch.size.x * LOCK_DISC_SHARE)
 		"depowered":
 			SiteMarker.draw_depowered(swatch, PackedVector2Array([a, b]), k)
 		_:
@@ -563,8 +580,8 @@ func _draw_line_swatch(swatch: Control, key: String) -> void:
 			var total := a.distance_to(b)
 			var dir := (b - a) / maxf(total, 0.001)
 			while d < total:
-				swatch.draw_line(a + dir * d, a + dir * minf(total, d + CityMapOverlay.DASH_ON * k * 1.5), col, maxf(1.5, 3.0 * k))
-				d += CityMapOverlay.DASH_PERIOD * k * 1.5
+				swatch.draw_line(a + dir * d, a + dir * minf(total, d + CityMapOverlay.DASH_ON * k * LINK_DASH_MULT), col, maxf(LINK_LINE_MIN, LINK_LINE_WIDTH * k))
+				d += CityMapOverlay.DASH_PERIOD * k * LINK_DASH_MULT
 
 
 ## A compact legend pinned to `area`'s bottom-left corner (the raid maps: the map is the

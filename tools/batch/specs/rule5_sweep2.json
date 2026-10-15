@@ -1,0 +1,36 @@
+{
+	"name": "rule5_sweep2",
+	"kind": "const_edits",
+	"thinking": {
+		"type": "between_tools"
+	},
+	"model": "claude-sonnet-5-5",
+	"effort": "low",
+	"max_tokens": 32000,
+	"files": [
+		"scripts/ui/kit/ui_theme.gd",
+		"scripts/ui/wheel/wheel_face.gd",
+		"scripts/ui/kit/heat_poster.gd",
+		"scripts/ui/wheel/attach/attach_style.gd",
+		"scripts/ui/wheel/attach/drone_dock.gd",
+		"scripts/ui/wheel/attach/card_preview_overlay.gd",
+		"scripts/ui/kit/materials/decrypted_holo_panel.gd",
+		"scripts/ui/campaign_end/audit_dossier.gd",
+		"scripts/ui/wheel/attach/mini_wheel.gd",
+		"scripts/ui/kit/combat_fx_layer.gd",
+		"scripts/ui/fx/card_fx.gd",
+		"scripts/ui/campaign_end/ransom_lock.gd",
+		"scripts/ui/kit/zine_stamp.gd",
+		"scripts/ui/kit/spinner_mini.gd",
+		"scripts/ui/kit/shop_item.gd",
+		"scripts/ui/kit/materials/kit_demo.gd",
+		"scripts/ui/kit/map_legend.gd",
+		"scripts/ui/kit/mainframe_sign.gd",
+		"scripts/ui/kit/loot_sheet.gd",
+		"scripts/ui/fx/heat_city.gd",
+		"scripts/ui/fx/fx_draw.gd",
+		"scripts/ui/wheel_view.gd",
+		"scripts/ui/wheel/attach/daemon_rack.gd"
+	],
+	"instructions": "Rule-5 sweep, behaviour identical. Find the absolute pixel / size / offset / timing / ratio literals used inside function bodies (not already in a const line, not 0, 1, -1, 2 in arithmetic, not indices, not Color channels, not font sizes, not values already passed through UiTheme or Palette). Name each one as a typed `const` near the top of the file (SCREAMING_SNAKE, e.g. `const PAD_PX: float = 6.0`, with a `##` one-line comment) and use the const at the use site. Reuse an existing const in the file when it holds the same number with the same meaning; if the same number appears in several places with the same meaning, one const. Keep int vs float exactly as written (a literal 4 stays an int const, 4.0 a float const; do not change the expression's type or value). Do NOT change any value, any logic, any signature, any existing const name, or any string. Do not touch draw_string size arguments or font sizes (a separate lint covers them). Put the new consts together after the existing const block. If the file has nothing to name, status: skip."
+}

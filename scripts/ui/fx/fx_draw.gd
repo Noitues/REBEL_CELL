@@ -59,6 +59,50 @@ const DRONE_PIECES := [
 ## The clamp that springs open when a drone goes (rad it swings).
 const CLAMP_SWING := 1.1
 const SEGMENTS := 40
+## Slap ring: stroke width (px) at start and end of its life.
+const SLAP_W_START: float = 6.0
+const SLAP_W_END: float = 1.5
+## Slap ring impact ticks: gap past the ring (px) and tick length (px).
+const SLAP_TICK_GAP: float = 4.0
+const SLAP_TICK_LEN: float = 10.0
+## A brick's pop-in window (share of p) and the span over which the wall settles (share of p).
+const BRICK_POP_W: float = 0.12
+const BRICK_APPEAR_SPAN: float = 0.5
+const SETTLE_START: float = 0.5
+const SETTLE_SPAN: float = 0.25
+## Where the fade-out starts (share of p) and its length.
+const FADE_START: float = 0.75
+const FADE_SPAN: float = 0.25
+## Brick fill alpha and how far the outline leans to paper.
+const BRICK_FILL_A: float = 0.55
+const BRICK_EDGE_MIX: float = 0.4
+## Hex plates: appear span, pop start factor, course spacing, ripple timing, fill and outline mixes.
+const HEX_APPEAR_SPAN: float = 0.45
+const HEX_COURSE_GAP: float = 1.55
+const HEX_STEP_GAP: float = 1.8
+const HEX_RIPPLE_START: float = 0.55
+const HEX_RIPPLE_RATE: float = 4.0
+const HEX_RIPPLE_MIX: float = 0.7
+const HEX_FILL_BASE_A: float = 0.4
+const HEX_FILL_RIPPLE_A: float = 0.4
+const HEX_EDGE_MIX: float = 0.5
+const HEX_PLATE_SHRINK: float = 0.92
+## Drone hex: outline point count at full fill and the sticker's extra stroke width.
+const DRONE_HEX_POINTS: float = 7.0
+## Drone burst: clamp arm length (share of r), arm share drawn, and the crack's life and shape.
+const CLAMP_ARM_LEN: float = 1.4
+const CLAMP_ARM_SHARE: float = 0.6
+## Cracks: growth rate, fade window and extra stroke width.
+const CRACK_GROW_RATE: float = 4.0
+const CRACK_FADE_START: float = 0.3
+const CRACK_FADE_SPAN: float = 0.4
+const STREAK_MIX: float = 0.3
+## Pixel tear: strips per hit, strip height, horizontal spread, seed offset and alpha.
+const PIXEL_STRIPS: int = 3
+const PIXEL_STRIP_H: float = 3.0
+const PIXEL_SPREAD_X: float = 0.6
+const PIXEL_SEED_OFF: int = 5
+const PIXEL_A: float = 0.8
 
 
 ## Hash noise 0..1.
@@ -71,11 +115,11 @@ static func _h(a: int, b: int, c: int = 0) -> float:
 static func slap_ring(ci: CanvasItem, c: Vector2, r0: float, grow: float, p: float, alpha: float) -> void:
 	var r := r0 + grow * p
 	var a := alpha * (1.0 - p)
-	ci.draw_arc(c, r, 0.0, TAU, SEGMENTS, Color(Palette.PAPER, a), lerpf(6.0, 1.5, p), true)
+	ci.draw_arc(c, r, 0.0, TAU, SEGMENTS, Color(Palette.PAPER, a), lerpf(SLAP_W_START, SLAP_W_END, p), true)
 	for k in 4:
 		var ang := PI * 0.25 + k * PI * 0.5
 		var d := Vector2(cos(ang), sin(ang))
-		ci.draw_line(c + d * (r + 4.0), c + d * (r + 4.0 + 10.0 * (1.0 - p)), Color(Palette.PAPER, a), 2.0, true)
+		ci.draw_line(c + d * (r + SLAP_TICK_GAP), c + d * (r + SLAP_TICK_GAP + SLAP_TICK_LEN * (1.0 - p)), Color(Palette.PAPER, a), 2.0, true)
 
 
 ## The faint liner left in the hand slot when a sticker peels off (§3.18 step 3).
@@ -95,12 +139,12 @@ static func liner(ci: CanvasItem, rect: Rect2, rot: float, alpha: float) -> void
 static func bricks(ci: CanvasItem, c: Vector2, r: float, face: float, n: int, col: Color, p: float, alpha: float) -> void:
 	var per := maxi(1, ceili(float(n) / BRICK_COURSES))
 	var depth := r * BRICK_DEPTH
-	var fade := 1.0 - clampf((p - 0.75) / 0.25, 0.0, 1.0)
+	var fade := 1.0 - clampf((p - FADE_START) / FADE_SPAN, 0.0, 1.0)
 	for k in n:
 		var course := k / per
 		var i := k % per
-		var appear := float(k) / maxf(1.0, float(n)) * 0.5
-		var q := clampf((p - appear) / 0.12, 0.0, 1.0)
+		var appear := float(k) / maxf(1.0, float(n)) * BRICK_APPEAR_SPAN
+		var q := clampf((p - appear) / BRICK_POP_W, 0.0, 1.0)
 		if q <= 0.0:
 			continue
 		var pop := lerpf(POP_FROM, 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, POP_TRANS, POP_EASE))
@@ -114,37 +158,37 @@ static func bricks(ci: CanvasItem, c: Vector2, r: float, face: float, n: int, co
 		var poly := PackedVector2Array()
 		for v in [[mid - hw, r0], [mid + hw, r0], [mid + hw, r0 + depth * pop], [mid - hw, r0 + depth * pop]]:
 			poly.append(c + Vector2(cos(v[0]), sin(v[0])) * float(v[1]))
-		var settle := lerpf(1.0, SETTLED_ALPHA, clampf((p - 0.5) / 0.25, 0.0, 1.0))
+		var settle := lerpf(1.0, SETTLED_ALPHA, clampf((p - SETTLE_START) / SETTLE_SPAN, 0.0, 1.0))
 		var a := alpha * fade * settle
-		ci.draw_colored_polygon(poly, Color(col, 0.55 * a))
+		ci.draw_colored_polygon(poly, Color(col, BRICK_FILL_A * a))
 		poly.append(poly[0])
-		ci.draw_polyline(poly, Color(col.lerp(Palette.PAPER, 0.4), a), LINE_W, true)
+		ci.draw_polyline(poly, Color(col.lerp(Palette.PAPER, BRICK_EDGE_MIX), a), LINE_W, true)
 
 
 ## SANDBOX hex plates (§3.20 shield gain): `n` plates tiling out over the facing side from
 ## the middle, a white ripple running across them after they land, fading at the end.
 static func hexes(ci: CanvasItem, c: Vector2, r: float, face: float, n: int, col: Color, p: float, alpha: float) -> void:
 	var hr := r * HEX_SHARE
-	var fade := 1.0 - clampf((p - 0.75) / 0.25, 0.0, 1.0)
+	var fade := 1.0 - clampf((p - FADE_START) / FADE_SPAN, 0.0, 1.0)
 	var ring := r * (1.0 + WALL_OUT) + hr
-	var step := hr * 1.8 / ring
+	var step := hr * HEX_STEP_GAP / ring
 	for k in n:
 		# Out from the middle: 0, +1, -1, +2, -2 ...
 		var off := ((k + 1) / 2) * (1 if k % 2 == 1 else -1)
 		var course := 0 if absi(off) % 2 == 0 else 1
 		var ang := face + off * step * 0.5
-		var appear := float(k) / maxf(1.0, float(n)) * 0.45
+		var appear := float(k) / maxf(1.0, float(n)) * HEX_APPEAR_SPAN
 		var q := clampf((p - appear) / 0.12, 0.0, 1.0)
 		if q <= 0.0:
 			continue
 		var pop := lerpf(POP_FROM * 0.6, 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, POP_TRANS, POP_EASE))
-		var at := c + Vector2(cos(ang), sin(ang)) * (ring + course * hr * 1.55)
-		var ripple := 1.0 - clampf(absf((p - 0.55) * 4.0 - float(k) / maxf(1.0, float(n))) / RIPPLE_W, 0.0, 1.0)
-		var fill := Color(col.lerp(Palette.PAPER, ripple * 0.7), (0.4 + 0.4 * ripple) * alpha * fade)
-		var hex := _hex(at, hr * pop * 0.92)
+		var at := c + Vector2(cos(ang), sin(ang)) * (ring + course * hr * HEX_COURSE_GAP)
+		var ripple := 1.0 - clampf(absf((p - HEX_RIPPLE_START) * HEX_RIPPLE_RATE - float(k) / maxf(1.0, float(n))) / RIPPLE_W, 0.0, 1.0)
+		var fill := Color(col.lerp(Palette.PAPER, ripple * HEX_RIPPLE_MIX), (HEX_FILL_BASE_A + HEX_FILL_RIPPLE_A * ripple) * alpha * fade)
+		var hex := _hex(at, hr * pop * HEX_PLATE_SHRINK)
 		ci.draw_colored_polygon(hex, fill)
 		hex.append(hex[0])
-		ci.draw_polyline(hex, Color(col.lerp(Palette.PAPER, 0.5), alpha * fade), LINE_W, true)
+		ci.draw_polyline(hex, Color(col.lerp(Palette.PAPER, HEX_EDGE_MIX), alpha * fade), LINE_W, true)
 
 
 static func _hex(at: Vector2, r: float) -> PackedVector2Array:
@@ -180,7 +224,7 @@ static func tears(ci: CanvasItem, rect: Rect2, wipe: float, col: Color, col2: Co
 static func drone_hex(ci: CanvasItem, at: Vector2, col: Color, fill: float, slap: float, alpha: float) -> void:
 	var r := DRONE_HEX * Settings.text_scale
 	var hex := _hex(at, r)
-	var n := maxi(2, roundi(7.0 * clampf(fill, 0.0, 1.0)))
+	var n := maxi(2, roundi(DRONE_HEX_POINTS * clampf(fill, 0.0, 1.0)))
 	var outline := hex.duplicate()
 	outline.append(hex[0])
 	ci.draw_polyline(outline.slice(0, n), Color(col, alpha), LINE_W + 1.0, true)
@@ -205,8 +249,8 @@ static func drone_burst(ci: CanvasItem, at: Vector2, _col: Color, p: float, fly:
 		ci.draw_texture_rect(piece, Rect2(centre - size * 0.5, size), false, Color(Palette.NO_TINT, a))
 	# The clamp: two arms off the bezel side swing open.
 	for s in [-1.0, 1.0]:
-		var arm := Vector2(0, -r * 1.4).rotated(s * CLAMP_SWING * p)
-		ci.draw_line(at + Vector2(0, -r), at + Vector2(0, -r) + arm * 0.6, Color(Palette.PAPER, a), LINE_W, true)
+		var arm := Vector2(0, -r * CLAMP_ARM_LEN).rotated(s * CLAMP_SWING * p)
+		ci.draw_line(at + Vector2(0, -r), at + Vector2(0, -r) + arm * CLAMP_ARM_SHARE, Color(Palette.PAPER, a), LINE_W, true)
 	# The crack: a white zigzag across the hex, at its start.
 	if p < 0.4:
 		ci.draw_polyline(PackedVector2Array([at + Vector2(-r, -r * 0.2), at + Vector2(-r * 0.2, r * 0.15), at + Vector2(r * 0.3, -r * 0.25), at + Vector2(r, r * 0.2)]),
@@ -216,8 +260,8 @@ static func drone_burst(ci: CanvasItem, at: Vector2, _col: Color, p: float, fly:
 ## Crack lines (§3.20 crit / enemy defeated): `n` jagged lines from `at` out to `reach` px,
 ## drawn on over the first half of `p` and fading over the rest.
 static func cracks(ci: CanvasItem, at: Vector2, n: int, reach: float, p: float, seed: int, col: Color = Palette.PAPER) -> void:
-	var grow := clampf(p * 4.0, 0.0, 1.0)
-	var a := 1.0 - clampf((p - 0.3) / 0.4, 0.0, 1.0)
+	var grow := clampf(p * CRACK_GROW_RATE, 0.0, 1.0)
+	var a := 1.0 - clampf((p - CRACK_FADE_START) / CRACK_FADE_SPAN, 0.0, 1.0)
 	for k in n:
 		var ang := TAU * (k + _h(seed, k)) / maxf(1.0, float(n))
 		var pts := PackedVector2Array([at])
@@ -241,7 +285,7 @@ static func streaks(ci: CanvasItem, at: Vector2, n: int, reach: float, p: float,
 		var pos := at + d * reach * q
 		ci.draw_set_transform(pos, ang, Vector2.ONE)
 		ci.draw_string_outline(Palette.mono(), Vector2.ZERO, STREAK_TEXT, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(Palette.NIGHT_SKY, 0.9))
-		ci.draw_string(Palette.mono(), Vector2.ZERO, STREAK_TEXT, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col.lerp(Palette.PAPER, 0.3))
+		ci.draw_string(Palette.mono(), Vector2.ZERO, STREAK_TEXT, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col.lerp(Palette.PAPER, STREAK_MIX))
 	ci.draw_set_transform(Vector2.ZERO)
 
 
@@ -254,7 +298,7 @@ static func shockwave(ci: CanvasItem, c: Vector2, r0: float, r1: float, p: float
 
 ## A 3-frame pixel tear at a hit (§3.20): `bands` offset strips round `at`.
 static func pixel_tear(ci: CanvasItem, at: Vector2, size: float, col: Color, frame: int, seed: int) -> void:
-	for k in 3:
+	for k in PIXEL_STRIPS:
 		var y := at.y + (_h(seed, k, frame) - 0.5) * size
-		var x := (_h(seed, k + 5, frame) - 0.5) * size * 0.6
-		ci.draw_rect(Rect2(Vector2(at.x - size * 0.5 + x, y), Vector2(size, 3.0)), Color(col, 0.8))
+		var x := (_h(seed, k + PIXEL_SEED_OFF, frame) - 0.5) * size * PIXEL_SPREAD_X
+		ci.draw_rect(Rect2(Vector2(at.x - size * 0.5 + x, y), Vector2(size, PIXEL_STRIP_H)), Color(col, PIXEL_A))

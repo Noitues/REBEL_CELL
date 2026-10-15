@@ -33,6 +33,46 @@ const CHIP_PIN_LINE := 0.13
 const CHIP_W := 68.0
 ## The label-maker tape's padding round its word (px at text scale 1).
 const TAPE_PAD := Vector2(8, 2)
+## The chip hover glow's outer ring growth (px).
+const HOT_GLOW_GROW: float = 4.0
+## The chip hover glow's outer ring width (px).
+const HOT_GLOW_WIDTH: float = 6.0
+## The chip hover edge's growth (px).
+const HOT_EDGE_GROW: float = 2.0
+## The chip foam lip's width as a share of the chip's width.
+const FOAM_LIP_WIDTH_SHARE: float = 0.86
+## The disabled/sold object's darkening amount.
+const SHADE_DARKEN: float = 0.45
+## The drawn glyph's alpha when disabled or sold.
+const GLYPH_DIM_ALPHA: float = 0.45
+## The name text's drop shadow offset (px).
+const NAME_SHADOW_OFFSET: Vector2 = Vector2(1, 1)
+## The shelf wheel wedge's outline sample count.
+const WEDGE_STEPS: int = 10
+## The slice glyph's box at text scale 1 (px).
+const SLICE_GLYPH_BOX: float = 34.0
+## The slice glyph's radial position as a share of the wedge band.
+const SLICE_GLYPH_BAND_SHARE: float = 0.62
+## The bin's default art size (px).
+const BIN_ART_DEFAULT: Vector2 = Vector2(336, 338)
+## The bin's minimum room height (px).
+const BIN_MIN_ROOM: float = 10.0
+## The bin item's base minimum size (px).
+const BIN_BASE_SIZE: Vector2 = Vector2(150, 190)
+## The tape's thin highlight height (px).
+const TAPE_HILITE_H: float = 1.5
+## The tape's highlight alpha.
+const TAPE_HILITE_ALPHA: float = 0.12
+## The bin hover outline alpha.
+const BIN_HOT_ALPHA: float = 0.6
+## The wedge focus edge width (px).
+const WEDGE_FOCUS_W: float = 3.0
+## The wedge focus edge growth (px).
+const WEDGE_FOCUS_GROW: float = 4.0
+## The default wedge radius in the concept art (px).
+const WEDGE_RADIUS_DEFAULT: int = 470
+## The chip glyph icon radius share.
+const ICON_RADIUS_K: float = 0.3
 
 var shelf: int = Shelf.CARD
 var rarity: int = RC.Rarity.COMMON
@@ -87,9 +127,9 @@ func with_glyph(name: StringName) -> ShopItem:
 func glyph_spot() -> Rect2:
 	var r := object_rect()
 	if shelf == Shelf.SLICE:
-		var box := 34.0 * minf(text_scale, TILE_VALUE_MAX_SCALE)
+		var box := SLICE_GLYPH_BOX * minf(text_scale, TILE_VALUE_MAX_SCALE)
 		var tag := buy_button.size.y if buy_button != null else 0.0
-		var rg := minf(radius_in + (radius_out - radius_in) * 0.62, radius_out - tag - GLYPH_GAP - box * 0.5)
+		var rg := minf(radius_in + (radius_out - radius_in) * SLICE_GLYPH_BAND_SHARE, radius_out - tag - GLYPH_GAP - box * 0.5)
 		var at := hub + Vector2(0, -rg).rotated(wedge_angle)
 		# kept inside the wedge's shown box (at big text the band above the screen's foot is shallow)
 		at = at.clamp(Vector2.ONE * box * 0.5, size - Vector2.ONE * box * 0.5) if size.x > box and size.y > box else at
@@ -104,7 +144,7 @@ func _place_glyph() -> void:
 	glyph.box_px = spot.size.x
 	glyph.size = glyph.custom_minimum_size
 	glyph.position = spot.position - glyph.size * 0.5
-	glyph.modulate = Color(Palette.NO_TINT, 0.45 if (disabled or sold_stub) else 1.0)
+	glyph.modulate = Color(Palette.NO_TINT, GLYPH_DIM_ALPHA if (disabled or sold_stub) else 1.0)
 
 
 ## The atlas glyph for a shop object: a Firmware's or a Daemon's own, a slice type's.
@@ -138,9 +178,9 @@ func object_rect() -> Rect2:
 		Shelf.BIN:
 			var tape := _tape_rect()
 			var foot := (buy_button.size.y + BuyButton.EDGE * text_scale + GLYPH_GAP * text_scale) if buy_button != null else 0.0
-			var room := Rect2(Vector2(0, tape.end.y + GLYPH_GAP), Vector2(size.x, maxf(10.0, size.y - tape.end.y - GLYPH_GAP - foot)))
+			var room := Rect2(Vector2(0, tape.end.y + GLYPH_GAP), Vector2(size.x, maxf(BIN_MIN_ROOM, size.y - tape.end.y - GLYPH_GAP - foot)))
 			var t := MainframeArt.tex("bin_shut")
-			var art := t.get_size() if t != null else Vector2(336, 338)
+			var art := t.get_size() if t != null else BIN_ART_DEFAULT
 			var k := minf(room.size.x / art.x, room.size.y / art.y)
 			return Rect2(room.position + (room.size - art * k) * Vector2(0.5, 1.0), art * k)
 	return Rect2(Vector2.ZERO, size)
@@ -179,7 +219,7 @@ func on_shelf(p_shelf: int, ts: float, p_art: StringName = &"") -> ShopItem:
 			look = Look.SLICE_TILE
 		Shelf.BIN:
 			look = Look.CARD_TILE
-			custom_minimum_size = Vector2(150, 190) * obj_scale() + Vector2(0, BuyButton.BUY_HEIGHT * (ts - obj_scale()) + NAME_PX * 1.4 * ts)
+			custom_minimum_size = BIN_BASE_SIZE * obj_scale() + Vector2(0, BuyButton.BUY_HEIGHT * (ts - obj_scale()) + NAME_PX * 1.4 * ts)
 	return self
 
 
@@ -235,15 +275,15 @@ func _ink() -> Color:
 
 ## A dimmed object out of reach or sold (the art at reduced value; the tag says why).
 func _shade() -> Color:
-	return Color(Palette.TEXT_HI, 1.0).darkened(0.45) if (disabled or sold_stub) else Palette.NO_TINT
+	return Color(Palette.TEXT_HI, 1.0).darkened(SHADE_DARKEN) if (disabled or sold_stub) else Palette.NO_TINT
 
 
 func _draw_object() -> void:
 	var r := object_rect()
 	var name := art_name()
 	if _hot():
-		draw_rect(r.grow(4), Color(Palette.CELL_ACID, 0.25), false, 6.0)
-		draw_rect(r.grow(2), Palette.CELL_ACID, false, 2.0)
+		draw_rect(r.grow(HOT_GLOW_GROW), Color(Palette.CELL_ACID, 0.25), false, HOT_GLOW_WIDTH)
+		draw_rect(r.grow(HOT_EDGE_GROW), Palette.CELL_ACID, false, 2.0)
 	var t := MainframeArt.tex(name)
 	if t != null:
 		draw_texture_rect(t, r, false, _shade())
@@ -251,11 +291,11 @@ func _draw_object() -> void:
 			# the foam lip over the pins (shop_v5: the chip is pushed into the foam)
 			var lip := MainframeArt.tex("foam_lip")
 			if lip != null:
-				var lw := r.size.x * 0.86
+				var lw := r.size.x * FOAM_LIP_WIDTH_SHARE
 				var lh := lip.get_size().y * MainframeArt.SCALE * obj_scale()
 				draw_texture_rect(lip, Rect2(Vector2(r.get_center().x - lw * 0.5, r.position.y + r.size.y * CHIP_PIN_LINE - lh * 0.5), Vector2(lw, lh)), false)
 	elif glyph == null:
-		StatIcon.draw(self, r.get_center(), r.size.x * 0.3, StatIcon.FIRMWARE if shelf == Shelf.FIRMWARE else StatIcon.DAEMON, _ink())
+		StatIcon.draw(self, r.get_center(), r.size.x * ICON_RADIUS_K, StatIcon.FIRMWARE if shelf == Shelf.FIRMWARE else StatIcon.DAEMON, _ink())
 	_caption(_caption_top())
 
 
@@ -264,11 +304,11 @@ func _caption(y: float) -> float:
 	var c := _caption_layout(y)
 	var tape: Rect2 = c["tape"]
 	draw_rect(tape, Palette.LABEL_TAPE)
-	draw_rect(Rect2(tape.position + Vector2(0, 2), Vector2(tape.size.x, 1.5)), Color(Palette.TEXT_HI, 0.12))
+	draw_rect(Rect2(tape.position + Vector2(0, 2), Vector2(tape.size.x, TAPE_HILITE_H)), Color(Palette.TEXT_HI, TAPE_HILITE_ALPHA))
 	var f := Palette.display()
 	var tr0: Rect2 = c["title"]
 	var fs := int(c["fs"])
-	HighContrast.draw_text(self, f, Vector2(0, tr0.position.y + f.get_ascent(fs)) + Vector2(1, 1), card_title.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, size.x, fs, Palette.INK)
+	HighContrast.draw_text(self, f, Vector2(0, tr0.position.y + f.get_ascent(fs)) + NAME_SHADOW_OFFSET, card_title.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, size.x, fs, Palette.INK)
 	HighContrast.draw_text(self, f, Vector2(0, tr0.position.y + f.get_ascent(fs)), card_title.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, size.x, fs, _ink())
 	if kind_line != "":
 		var kr: Rect2 = c["kind"]
@@ -377,13 +417,13 @@ func _draw_bin() -> void:
 		var at := r.position + MainframeArt.anchor("bin_shut") * k
 		draw_texture_rect(t, Rect2(at - MainframeArt.anchor(name) * k, t.get_size() * k), false, _shade())
 	if _hot():
-		draw_rect(r.grow(2), Color(Palette.CELL_ACID, 0.6), false, 2.0)
+		draw_rect(r.grow(HOT_EDGE_GROW), Color(Palette.CELL_ACID, BIN_HOT_ALPHA), false, 2.0)
 
 
 ## The wedge's outline (annular sector about `hub`, `grow` px out).
 func wedge_points(grow: float = 0.0) -> PackedVector2Array:
 	var pts := PackedVector2Array()
-	var steps := 10
+	var steps := WEDGE_STEPS
 	for i in steps + 1:
 		var a := wedge_angle - WEDGE_HALF + 2.0 * WEDGE_HALF * i / steps
 		pts.append(hub + Vector2(sin(a), -cos(a)) * (radius_out + grow))
@@ -399,7 +439,7 @@ static func draw_wedge_art(ci: CanvasItem, name: String, c: Vector2, a: float, r
 	var t := MainframeArt.tex(name)
 	if t == null:
 		return false
-	var k := r_out / float(MainframeArt.meta().get("wedge_radius", 470))
+	var k := r_out / float(MainframeArt.meta().get("wedge_radius", WEDGE_RADIUS_DEFAULT))
 	ci.draw_set_transform(c, a, Vector2(k, k))
 	ci.draw_texture_rect(t, Rect2(-MainframeArt.anchor(name), t.get_size()), false, modulate)
 	ci.draw_set_transform(Vector2.ZERO)
@@ -417,9 +457,9 @@ func _draw_wedge() -> void:
 		rim.append(hub + Vector2(sin(a), -cos(a)) * (radius_out + 4.0))
 	draw_polyline(rim, Palette.STICKER_SAFE if live else Palette.CARTRIDGE_EDGE, 5.0 if live else 2.0, true)
 	if _hot():
-		var edge := wedge_points(4.0)
+		var edge := wedge_points(WEDGE_FOCUS_GROW)
 		edge.append(edge[0])
-		draw_polyline(edge, Palette.CELL_ACID, 3.0, true)
+		draw_polyline(edge, Palette.CELL_ACID, WEDGE_FOCUS_W, true)
 
 
 func _draw_sold() -> void:

@@ -64,6 +64,48 @@ const BANNER_SUB := 15.0
 const BANNER_PAD := 70.0
 ## Crest lugs on the threat ring (frames.armour_lugs): hexagons at 90 and 270 degrees.
 const LUG_R := 40.0
+## Arc step (degrees) per band segment.
+const ARC_STEP_DEG: float = 3.0
+## Rail text padding in degrees at each end of a span.
+const RAIL_TEXT_PAD_DEG: float = 1.0
+## Dash length (degrees) of the dotted data strip.
+const DASH_LEN_DEG: float = 2.0
+## Dash pitch (degrees) of the dotted data strip.
+const DASH_PITCH_DEG: float = 3.0
+## Dash line width (master units).
+const DASH_W: float = 4.0
+## Glow grow distance on blades and banner (master units).
+const GLOW_GROW: float = 6.0
+## Glow grow distance on the banner and crest lugs (master units).
+const GLOW_GROW_SMALL: float = 4.0
+## Glow alpha behind a blade, banner and crest lug.
+const GLOW_ALPHA: float = 0.28
+## Banner / lug glow alpha.
+const GLOW_ALPHA_SOFT: float = 0.3
+## Hexagon corner count of a crest lug.
+const HEX_SIDES: int = 6
+## Degrees between hexagon corners.
+const HEX_STEP_DEG: float = 60.0
+## Bounds padding around a blade (master units).
+const BOUNDS_PAD: float = 6.0
+## Phase pip diamond radius (master units).
+const PIP_R: float = 9.0
+## Phase pip diamond offset beyond the arc (master units).
+const PIP_OFFSET: float = 13.0
+## Phase tick overhang (master units).
+const PIP_TICK_EXT: float = 4.0
+## Phase tick width (master units).
+const PIP_TICK_W: float = 3.0
+## Badge outline width (master units).
+const BADGE_EDGE_W: float = 2.5
+## Badge diamond stretch.
+const BADGE_DIA: float = 1.15
+## Badge glyph scale against its radius.
+const BADGE_GLYPH: float = 1.25
+## Banner mount notch half width (master units).
+const BANNER_NOTCH: float = 46.0
+## Banner side overhang (master units).
+const BANNER_FLARE: float = 20.0
 
 
 ## A point at radius `r` (master) and angle `deg` round `center`.
@@ -139,7 +181,7 @@ static func blade_bounds(center: Vector2, k: float, deg: float, rt: float, crown
 	for p in rv:
 		for side: float in [1.0, -1.0]:
 			box = box.expand(axis(center, k, p.x, p.y * side, deg))
-	return box.grow(6.0 * k)
+	return box.grow(BOUNDS_PAD * k)
 
 
 static func blade(ci: CanvasItem, center: Vector2, k: float, deg: float, rt: float, accent: Color, body: Color,
@@ -161,7 +203,7 @@ static func blade(ci: CanvasItem, center: Vector2, k: float, deg: float, rt: flo
 			ci.draw_colored_polygon(horn, Color(body.lightened(0.2), alpha))
 			_outline(ci, horn, ink, maxf(1.0, 3.0 * k))
 	# soft glow in the accent, then the body with its ink outline
-	ci.draw_colored_polygon(_grow(pts, center, 6.0 * k), Color(accent, 0.28 * alpha))
+	ci.draw_colored_polygon(_grow(pts, center, GLOW_GROW * k), Color(accent, GLOW_ALPHA * alpha))
 	ci.draw_colored_polygon(pts, Color(body, alpha))
 	# bevel: the left half catches the key light, the right falls into shade
 	var hl := PackedVector2Array([q.call(tip + 10.0 * s, 0.0), q.call(sh, -wsh + 6.0), q.call(top - 14.0 * s, -wtop + 7.0), q.call(top - 6.0 * s, -wtop + 14.0), q.call(top - 6.0 * s, -2.0)])
@@ -225,7 +267,7 @@ static func rail(ci: CanvasItem, center: Vector2, k: float, deg: float, needles:
 			_dashes(ci, center, k, r_text, sp.x, sp.y, Color(word_tint, alpha))
 		return
 	for sp in spans:
-		_text_arc(ci, center, k, r_text, sp.x + 1.0, sp.y - 1.0, text, Palette.mono(), fs, Color(word_tint, alpha))
+		_text_arc(ci, center, k, r_text, sp.x + RAIL_TEXT_PAD_DEG, sp.y - RAIL_TEXT_PAD_DEG, text, Palette.mono(), fs, Color(word_tint, alpha))
 
 
 ## Below this font size (px) ring text becomes a dotted data strip (frames.telemetry lod).
@@ -283,15 +325,15 @@ static func _text_arc(ci: CanvasItem, center: Vector2, k: float, r: float, a0: f
 
 static func _dashes(ci: CanvasItem, center: Vector2, k: float, r: float, a0: float, a1: float, col: Color) -> void:
 	var a := a0
-	while a + 2.0 < a1:
-		ci.draw_line(at(center, k, r, a), at(center, k, r, a + 2.0), col, maxf(1.0, 4.0 * k))
-		a += 3.0
+	while a + DASH_LEN_DEG < a1:
+		ci.draw_line(at(center, k, r, a), at(center, k, r, a + DASH_LEN_DEG), col, maxf(1.0, DASH_W * k))
+		a += DASH_PITCH_DEG
 
 
 ## A ring band between radii r0..r1 (master) and angles a0..a1 (degrees clockwise from the top).
 static func arc_band(center: Vector2, k: float, r0: float, r1: float, a0: float, a1: float) -> PackedVector2Array:
 	var pts := PackedVector2Array()
-	var steps := maxi(3, ceili(absf(a1 - a0) / 3.0))
+	var steps := maxi(3, ceili(absf(a1 - a0) / ARC_STEP_DEG))
 	for s in steps + 1:
 		pts.append(at(center, k, r1, lerpf(a0, a1, float(s) / steps)))
 	for s in steps + 1:
@@ -324,9 +366,9 @@ static func hp_arc(ci: CanvasItem, center: Vector2, k: float, rt: float, frac: f
 	for p in phases.size():
 		var a := HP_A1 - (HP_A1 - HP_A0) * phases[p]
 		var lit := p + 2 <= phase_now
-		ci.draw_line(at(center, k, r0 - 4.0, a), at(center, k, r1 + 4.0, a), Color(Palette.RESIST_GOLD, alpha), maxf(1.0, 3.0 * k))
-		var c := at(center, k, r1 + 13.0, a)
-		var r := 9.0 * k
+		ci.draw_line(at(center, k, r0 - PIP_TICK_EXT, a), at(center, k, r1 + PIP_TICK_EXT, a), Color(Palette.RESIST_GOLD, alpha), maxf(1.0, PIP_TICK_W * k))
+		var c := at(center, k, r1 + PIP_OFFSET, a)
+		var r := PIP_R * k
 		var dia := PackedVector2Array([c + Vector2(0, -r), c + Vector2(r, 0), c + Vector2(0, r), c + Vector2(-r, 0)])
 		ci.draw_colored_polygon(dia, Color(Palette.RESIST_GOLD if lit else Palette.RESIST_GOLD.darkened(0.5), alpha))
 		_outline(ci, dia, Color(Palette.INK, alpha), maxf(1.0, k * 2.0))
@@ -350,12 +392,12 @@ static func badge(ci: CanvasItem, center: Vector2, k: float, deg: float, span: f
 	var edge := Color(Palette.GAIN if helps else Palette.HARM, alpha)
 	if helps:
 		ci.draw_circle(c, r, fill)
-		ci.draw_arc(c, r, 0.0, TAU, 24, edge, maxf(1.0, 2.5 * k), true)
+		ci.draw_arc(c, r, 0.0, TAU, 24, edge, maxf(1.0, BADGE_EDGE_W * k), true)
 	else:
-		var dia := PackedVector2Array([c + Vector2(0, -r * 1.15), c + Vector2(r * 1.15, 0), c + Vector2(0, r * 1.15), c + Vector2(-r * 1.15, 0)])
+		var dia := PackedVector2Array([c + Vector2(0, -r * BADGE_DIA), c + Vector2(r * BADGE_DIA, 0), c + Vector2(0, r * BADGE_DIA), c + Vector2(-r * BADGE_DIA, 0)])
 		ci.draw_colored_polygon(dia, fill)
-		_outline(ci, dia, edge, maxf(1.0, 2.5 * k))
-	WheelGlyphs.draw(ci, WheelGlyphs.status_id(status), c, r * 1.25, Color(Palette.TEXT_HI, alpha), Color(Palette.INK, alpha))
+		_outline(ci, dia, edge, maxf(1.0, BADGE_EDGE_W * k))
+	WheelGlyphs.draw(ci, WheelGlyphs.status_id(status), c, r * BADGE_GLYPH, Color(Palette.TEXT_HI, alpha), Color(Palette.INK, alpha))
 	if tag != "":
 		var fs := maxi(MIN_TEXT_PX, roundi(r * 0.95))
 		var font := Palette.display()
@@ -379,10 +421,10 @@ static func banner(ci: CanvasItem, center_x: float, bottom: float, k: float, tit
 	var y0 := y1 - BANNER_H * k
 	var x0 := center_x - tw * 0.5
 	var x1 := center_x + tw * 0.5
-	var notch := 46.0 * k
-	var poly := PackedVector2Array([Vector2(x0 - 20.0 * k, y0), Vector2(x1 + 20.0 * k, y0), Vector2(x1, y1), Vector2(center_x + 60.0 * k, y1),
+	var notch := BANNER_NOTCH * k
+	var poly := PackedVector2Array([Vector2(x0 - BANNER_FLARE * k, y0), Vector2(x1 + BANNER_FLARE * k, y0), Vector2(x1, y1), Vector2(center_x + 60.0 * k, y1),
 		Vector2(center_x + notch, y1 + 16.0 * k), Vector2(center_x - notch, y1 + 16.0 * k), Vector2(center_x - 60.0 * k, y1), Vector2(x0, y1)])
-	ci.draw_colored_polygon(_grow(poly, Vector2(center_x, (y0 + y1) * 0.5), 5.0 * k), Color(accent, 0.3 * alpha))
+	ci.draw_colored_polygon(_grow(poly, Vector2(center_x, (y0 + y1) * 0.5), 5.0 * k), Color(accent, GLOW_ALPHA_SOFT * alpha))
 	ci.draw_colored_polygon(poly, Color(Palette.NIGHT_SKY, 0.96 * alpha))
 	_outline(ci, poly, Color(accent, alpha), maxf(1.0, 3.0 * k))
 	for side: float in [-1.0, 1.0]:
@@ -417,9 +459,9 @@ static func crest_lugs(ci: CanvasItem, center: Vector2, k: float, rt: float, acc
 		var c := at(center, k, rt + 8.0, a)
 		var r := LUG_R * k
 		var hexp := PackedVector2Array()
-		for j in 6:
-			hexp.append(c + Vector2(cos(deg_to_rad(60.0 * j)), sin(deg_to_rad(60.0 * j))) * r)
-		ci.draw_colored_polygon(_grow(hexp, c, 4.0 * k), Color(accent, 0.3 * alpha))
+		for j in HEX_SIDES:
+			hexp.append(c + Vector2(cos(deg_to_rad(HEX_STEP_DEG * j)), sin(deg_to_rad(HEX_STEP_DEG * j))) * r)
+		ci.draw_colored_polygon(_grow(hexp, c, GLOW_GROW_SMALL * k), Color(accent, GLOW_ALPHA_SOFT * alpha))
 		ci.draw_colored_polygon(hexp, Color(Palette.NIGHT_SKY, alpha))
 		_outline(ci, hexp, Color(accent, alpha), maxf(1.0, 3.0 * k))
 		WheelGlyphs.draw(ci, crest, c, r * 1.1, Color(accent, alpha), Color(Palette.INK, alpha))

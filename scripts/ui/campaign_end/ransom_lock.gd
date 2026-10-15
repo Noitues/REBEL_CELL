@@ -85,6 +85,37 @@ var _waited: int = 0
 ## the most the countdown's live number grows with the text size (it fills the notice at 2.0).
 const START_FRAMES := 3
 const COUNTDOWN_SCALE_CAP := 1.4
+## Notice fill alpha.
+const NOTICE_BG_ALPHA: float = 0.94
+## Minimum border width of the notice (px).
+const NOTICE_BORDER_MIN: int = 2
+## Notice border width at text scale 1.0 (px).
+const NOTICE_BORDER_PX: float = 2.0
+## Sticker corner margin multiplier for the left/right edges.
+const STICKER_EDGE_MARGIN_MULT: float = 2.0
+## Sticker bottom margin multiplier for the Cell-name sticker.
+const STICKER_NAME_BOTTOM_MULT: float = 1.5
+## Gap between cards as a share of the margin.
+const CARD_GAP_SHARE: float = 0.6
+## Card row bottom margin multiplier.
+const CARD_BOTTOM_MULT: float = 1.2
+## Resting tilts of the non-card stickers (degrees).
+const STICKER_TILTS: Array[float] = [-1.5, -3.0, 2.0]
+## Resting tilts of the card stickers (degrees).
+const CARD_TILTS: Array[float] = [-2.0, 1.5, -1.0, 2.0, -1.5]
+## Sticker alpha lost as it drops.
+const DROP_FADE: float = 0.3
+## Wipe edge: overshoot span and lead-in as shares of the screen height.
+const WIPE_SPAN: float = 1.12
+const WIPE_LEAD: float = 0.06
+## Padlock shadow pool offset and radius shares.
+const LOCK_SHADOW_DROP: float = 0.2
+const LOCK_SHADOW_R: float = 1.15
+## Progress bar outline width, inner inset (px).
+const BAR_OUTLINE_PX: float = 2.0
+const BAR_INSET_PX: float = 4.0
+## Verb stamp ease curve.
+const VERB_EASE: float = 0.4
 
 ## Seconds since the lock began (game time at Motion's speed).
 var elapsed: float = 0.0
@@ -178,9 +209,9 @@ func _build_notice() -> void:
 	notice.name = "Notice"
 	notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var box := StyleBoxFlat.new()
-	box.bg_color = Color(style.back(), 0.94)
+	box.bg_color = Color(style.back(), NOTICE_BG_ALPHA)
 	box.border_color = style.color()
-	box.set_border_width_all(maxi(2, roundi(2.0 * s)))
+	box.set_border_width_all(maxi(NOTICE_BORDER_MIN, roundi(NOTICE_BORDER_PX * s)))
 	notice.add_theme_stylebox_override(&"panel", box)
 	add_child(notice)
 	var col := VBoxContainer.new()
@@ -454,7 +485,7 @@ func _apply() -> void:
 	verb_stamp.visible = v > 0.0 and n > 0.0
 	verb_stamp.position = notice.position + notice.size * STAMP_AT - verb_stamp.size * 0.5
 	var amp := Motion.amplitude(VERB)
-	verb_stamp.scale = Vector2.ONE * lerpf(amp, 1.0, ease(v, 0.4)) if amp > 0.0 else Vector2.ONE
+	verb_stamp.scale = Vector2.ONE * lerpf(amp, 1.0, ease(v, VERB_EASE)) if amp > 0.0 else Vector2.ONE
 	# The fields and the countdown.
 	countdown_label.text = COUNTDOWN_FORMAT % (Motion.amplitude(COUNTDOWN) * (1.0 - phase(COUNTDOWN)))
 	fields_label.text = tr("HOME SERVER  %02d/%d   //   NODES ENCRYPTED  %d/%d") % [home_now, home_max, _locks_landed, _lock_count]
@@ -477,19 +508,19 @@ func _layout_stickers() -> void:
 			cards.append(v)
 			continue
 		if i == 0:
-			at = Vector2(margin * 2.0, margin)
+			at = Vector2(margin * STICKER_EDGE_MARGIN_MULT, margin)
 		else:
-			at = Vector2(size.x - body.x - margin * 2.0, size.y - body.y - margin * 1.5)
-		_sticker_rest.append({"v": v, "at": at - v.body_rect.position, "tilt": [-1.5, -3.0, 2.0][i % 3]})
-	var gap := margin * 0.6
+			at = Vector2(size.x - body.x - margin * STICKER_EDGE_MARGIN_MULT, size.y - body.y - margin * STICKER_NAME_BOTTOM_MULT)
+		_sticker_rest.append({"v": v, "at": at - v.body_rect.position, "tilt": STICKER_TILTS[i % 3]})
+	var gap := margin * CARD_GAP_SHARE
 	var row_w := 0.0
 	for c in cards:
 		row_w += c.body_rect.size.x + gap
 	var x := (size.x - row_w) * 0.5
 	for i in cards.size():
 		var c := cards[i]
-		var at := Vector2(x, size.y - c.body_rect.size.y - margin * 1.2)
-		_sticker_rest.append({"v": c, "at": at - c.body_rect.position, "tilt": [-2.0, 1.5, -1.0, 2.0, -1.5][i % 5]})
+		var at := Vector2(x, size.y - c.body_rect.size.y - margin * CARD_BOTTOM_MULT)
+		_sticker_rest.append({"v": c, "at": at - c.body_rect.position, "tilt": CARD_TILTS[i % 5]})
 		x += c.body_rect.size.x + gap
 	_apply_stickers()
 
@@ -509,7 +540,7 @@ func _apply_stickers() -> void:
 		var side := -1.0 if i % 2 == 0 else 1.0
 		v.position = (r["at"] as Vector2) + Vector2(side * DROP_DRIFT * Settings.text_scale * d, fall * d * d)
 		v.rotation_degrees = float(r["tilt"]) + side * DROP_TURN * d
-		v.modulate.a = 1.0 - d * 0.3
+		v.modulate.a = 1.0 - d * DROP_FADE
 		v.visible = d < 1.0
 
 
@@ -521,7 +552,7 @@ func _update_padlocks() -> void:
 	_lock_count = pts.size()
 	var s := Settings.text_scale
 	var w := phase(WIPE)
-	var edge_y := (w * 1.12 - 0.06) * size.y
+	var edge_y := (w * WIPE_SPAN - WIPE_LEAD) * size.y
 	var inv := padlocks.get_global_transform().affine_inverse() if padlocks.is_inside_tree() else Transform2D.IDENTITY
 	var pop := Motion.amplitude(PADLOCK)
 	var pop_live := Motion.live(PADLOCK) and Motion.seconds(PADLOCK) > 0.0
@@ -531,7 +562,7 @@ func _update_padlocks() -> void:
 			continue
 		var t := 1.0
 		if pop_live:
-			var passed := Motion.delay_of(WIPE) + Motion.seconds(WIPE) * clampf((at.y / maxf(1.0, size.y) + 0.06) / 1.12, 0.0, 1.0)
+			var passed := Motion.delay_of(WIPE) + Motion.seconds(WIPE) * clampf((at.y / maxf(1.0, size.y) + WIPE_LEAD) / WIPE_SPAN, 0.0, 1.0)
 			t = clampf((elapsed - passed) / Motion.seconds(PADLOCK), 0.0, 1.0)
 		var r := LOCK_R * s * (HOME_LOCK_SCALE if p.get("home", false) else 1.0) * lerpf(pop, 1.0, t)
 		_marks.append({"at": at, "r": r})
@@ -547,7 +578,7 @@ func _draw_padlocks() -> void:
 ## parity, `assets/campaign_end/padlock.png`), tinted `col` (its keyhole keeps its ink) over
 ## the shadow pool that lifts it off the city.
 static func draw_padlock(ci: CanvasItem, c: Vector2, r: float, col: Color) -> void:
-	ci.draw_circle(c + Vector2(0, r * 0.2), r * 1.15, Palette.SHADOW)
+	ci.draw_circle(c + Vector2(0, r * LOCK_SHADOW_DROP), r * LOCK_SHADOW_R, Palette.SHADOW)
 	var side := r * PADLOCK_SIDE
 	var at := c + Vector2(0, r * PADLOCK_DROP)
 	ci.draw_texture_rect(_padlock(), Rect2(at - Vector2(side, side) * 0.5, Vector2(side, side)), false, col)
@@ -574,8 +605,8 @@ static var _padlock_tex: Texture2D = null
 
 func _draw_progress() -> void:
 	var r := Rect2(Vector2.ZERO, progress.size)
-	progress.draw_rect(r, style.color(), false, 2.0)
+	progress.draw_rect(r, style.color(), false, BAR_OUTLINE_PX)
 	var share := float(_locks_landed) / maxf(1.0, _lock_count) if _lock_count > 0 else phase(WIPE)
-	var inner := r.grow(-4.0)
+	var inner := r.grow(-BAR_INSET_PX)
 	inner.size.x *= share
 	progress.draw_rect(inner, style.accent())

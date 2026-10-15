@@ -18,6 +18,17 @@ const PRINT_PX := 12
 const HEAD_PX := 16
 ## The barcode's bars (px).
 const BARCODE := Vector2(150, 18)
+## The sheet's drop shadow offset (px at scale 1).
+const SHADOW_OFFSET := Vector2(6, 9)
+## How far a kiss-cut slot outline grows past its sticker (px at scale 1).
+const SLOT_GROW: float = 5.0
+## The fallback slot outline's alpha and line width.
+const SLOT_OUTLINE_ALPHA: float = 0.55
+const SLOT_OUTLINE_WIDTH: float = 1.5
+## The peel flap's overshoot factor and outline alpha / width.
+const FLAP_OVERSHOOT: float = 1.05
+const FLAP_ALPHA: float = 0.8
+const FLAP_LINE_W: float = 1.5
 
 var head_text: String = ""
 var head_tag: String = ""
@@ -128,7 +139,7 @@ func peel(slot: Rect2, col: Color) -> void:
 func _draw() -> void:
 	var s := text_scale
 	var r := Rect2(Vector2.ZERO, size)
-	draw_rect(Rect2(r.position + Vector2(6, 9), r.size), Palette.SHADOW)
+	draw_rect(Rect2(r.position + SHADOW_OFFSET, r.size), Palette.SHADOW)
 	var liner := Rect2(r.position + Vector2(0, HEAD_H * s), Vector2(r.size.x, r.size.y - HEAD_H * s))
 	# the concept's liner (reward.liner: silicone paper, its faint repeat print), cut to the sheet
 	var lt := MainframeArt.tex("liner")
@@ -140,11 +151,11 @@ func _draw() -> void:
 	# the kiss-cut slots (reward.kiss_cut; a shiny empty outline where a sticker was taken)
 	var slot := MainframeArt.tex("slot_empty")
 	for sl in _slots:
-		var g := sl.grow(5.0 * s)
+		var g := sl.grow(SLOT_GROW * s)
 		if slot != null:
 			draw_texture_rect(slot, g, false)
 		else:
-			draw_rect(g, Color(Palette.TEXT_LO, 0.55), false, 1.5)
+			draw_rect(g, Color(Palette.TEXT_LO, SLOT_OUTLINE_ALPHA), false, SLOT_OUTLINE_WIDTH)
 	# the head bar and the foot (their words are the game's: drawn live)
 	var mono := Palette.mono()
 	var ps := roundi(PRINT_PX * s)
@@ -164,6 +175,6 @@ func _draw() -> void:
 		var curl := minf(_peel_rect.size.x, _peel_rect.size.y) * Motion.amplitude(&"loot_peel") * peel_t
 		var back := PackedVector2Array([c - Vector2(curl, 0), c, c - Vector2(0, curl)])
 		draw_colored_polygon(back, Palette.LINER)
-		var flap := PackedVector2Array([c - Vector2(curl, 0), c - Vector2(curl, curl) * 1.05, c - Vector2(0, curl)])
+		var flap := PackedVector2Array([c - Vector2(curl, 0), c - Vector2(curl, curl) * FLAP_OVERSHOOT, c - Vector2(0, curl)])
 		draw_colored_polygon(flap, Palette.TEXT_HI)
-		draw_polyline(flap + PackedVector2Array([flap[0]]), Color(_peel_col, 0.8), 1.5, true)
+		draw_polyline(flap + PackedVector2Array([flap[0]]), Color(_peel_col, FLAP_ALPHA), FLAP_LINE_W, true)
