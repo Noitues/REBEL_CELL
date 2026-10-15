@@ -65,6 +65,14 @@ Sheet `docs/art_review/PLAN1/ART_R1.jpg` (before = main fb6ae75d | after; captur
 - **9a:** `RouteCover` (kit): entering the route page from another screen holds the last frame of the page that left over the screen until the city reports its look current and its camera settled for 3 frames (max 2.5 s), then fades out (`reward_page_in`). Headless never waits. Rule test: `test_art_r1`. The capture could not make the empty plane appear in the AFTER run; the BEFORE strip shows it at f20.
 - **9b:** strips for M8, M9, M10 and the route hover-out are on the sheet (Movie Maker, 30 fps). The M8 / M10 / hover-out strips are the motion lab demos (the lab chrome shows around them), M9 is the jack out to the HQ.
 
+### 2026-10-15 — Designer go: change plan 2 (PT-003 assumed complete)
+The designer said: assume PT-003 complete, start all the changes listed, use the Batch API and lower models where it
+makes sense, re-evaluate G1–G16 and start those that still apply, keep the deferred tier deferred.
+- **The route map redesign** (V3 dynamic side view, also the HQ) is its own development pass. The art-pass session
+  hands over the full package in one go; no slices before that.
+- **Plan:** `docs/handoff/gates/CHANGE_PLAN_2.md`, waves A–F. Plan 2 leaves the route / HQ map views alone.
+- **Next gate:** PT-004.
+
 ### 2026-10-15 — Gap: batch-API playtesters for the PT-003 steps
 The designer asked for Claude playtesters that systematically perform each PT-003 step on Batch API calls (the machine
 is loaded), or, if that's not possible, a gap logged. **Not possible as built:** a black-box tester's play loop
