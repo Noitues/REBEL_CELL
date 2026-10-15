@@ -1382,3 +1382,7 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
     3. wrath can change a slice's type mid-fight (the preview recomputes, and rewind never crosses a crack);
     4. Pluto stays NULL for card effects until it turns wrathful.
   - Visual polish is still far from target. Each wheel gets a dedicated polish session; the prompt is in `boss_wheel_v2/POLISH_SESSION_PROMPT.md`.
+- **One continuous city (2026-10-15):** the netrun street is derived from the real map lots along the selected Site's border link. One camera path, a look blend on shared geometry, and a section cut by zoom. The designer approved three map-side layout rules for mainline:
+  - (a) buildings fronting border-link streets are at least 6 floors (about 11.5 BU);
+  - (b) border-link street tiles are 8 BU wide instead of 6;
+  - (c) hero signage on route columns, placed by rule.
