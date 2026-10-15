@@ -1375,3 +1375,10 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
   - The antenna tower is a real structure with elite rooms on every circuit.
   - Each circuit sabotages the rocket, which then strikes Orbital facilities in the city or in space. The last circuit is a shortcut that fires the rocket early into the closed bay doors and destroys the HQ.
   - Future cutscenes: (1) after each circuit, a city-wide zoom out to launch, strike and explode, then back in; (2) the HQ explosion. Both are planned as future tasks.
+- **Boss wheels v3 (2026-10-15):** the identities are approved: Roman "The Pantheon" (fresco gods, Ascendant plus Omens) and Atlantis "The Tank" (migrating predators, 2 to 8 arm pointers, kraken reveal).
+  - Approved rule exceptions:
+    1. the Tank uses 8 slots and 40 ticks;
+    2. RESIST is allowed as a boss slice effect;
+    3. wrath can change a slice's type mid-fight (the preview recomputes, and rewind never crosses a crack);
+    4. Pluto stays NULL for card effects until it turns wrathful.
+  - Visual polish is still far from target. Each wheel gets a dedicated polish session; the prompt is in `boss_wheel_v2/POLISH_SESSION_PROMPT.md`.
