@@ -41,6 +41,16 @@ const LEXICON := {
 	"Solar Flare": "Orbital's gift: your slice runs hot once (1.5x), then corrupts.",
 	"Weight": "Heavy freight resists nudges; some Meridian slices add resistance as they hit.",
 	"Mirror": "A copy of one of your own operatives. You will know it when you meet it.",
+	# Plan 2 B-CODEX: the combat words the Codex never defined (PB-PT-003b C3). Drafted from GDD 2.1-2.7, 4.3, 11.1.
+	"Nudge": "Moves one ring one tick (Q/E). The first nudge each turn is free, then each costs 1 RAM. Each tick is absorbed by 1 resistance.", # TR
+	"Free nudge": "One nudge per turn costs no RAM. It refreshes at the start of every turn. Extra nudges cost 1 RAM each.", # TR
+	"Tick": "The smallest division of a wheel: 30 per wheel, 5 per slice. The tick under the pointer decides which slice resolves and how precisely.", # TR
+	"RAM": "Combat energy. Gain +4 each turn, max 12. Spent on cards, extra nudges (1 each) and respins (4). Drains stop at 0; there is no RAM debt.", # TR
+	"Null": "The empty slice. Landing on it is the only miss, since there is no miss tier. Fault Tolerance, Cold Exit and CORRUPTED react to it.", # TR
+	"Resistance": "Enemy ability: absorbs the first R ticks of your nudges and spins. While resistance is above 0, Flip and Respin are blocked entirely.", # TR
+	"Blocked": "An action refused or a hit stopped. Flip and Respin are blocked while resistance is above 0. A satellite docked at a pointer takes the attack instead (bodyguard).", # TR
+	"Guard": "Block and shield together. Block expires at the start of your next turn; shield persists (cap 15). A docked satellite takes Pointer hits aimed at its host slice.", # TR
+	"Heat thresholds": "MINOR every 10, MAJOR at 25/50/75, PURGE at 100. Bands: COOL, NOTICED, FLAGGED, HUNTED, PURGE. Events fire once, on first crossing. Modifiers apply while Heat is at or above the threshold.", # TR
 }
 
 
@@ -214,6 +224,27 @@ static func entries(lookup: ContentLookup, profile: ProfileState = null) -> Dict
 	var with_story := {STORY: beats}
 	with_story.merge(out)
 	return with_story
+
+
+## Plan 2 B-CODEX: the entries of `all` (Codex.entries) whose title or text contains `query`
+## (case-insensitive), as {section, title, text, ...} rows in section then entry order; titles
+## matching rank before text-only matches. Empty query returns [].
+static func search(all: Dictionary, query: String) -> Array:
+	var q := query.strip_edges().to_lower()
+	var by_title: Array = []
+	var by_text: Array = []
+	if q == "":
+		return by_title
+	for section in all:
+		for e in all[section]:
+			var row: Dictionary = (e as Dictionary).duplicate()
+			row["section"] = section
+			if String(row.get("title", "")).to_lower().contains(q):
+				by_title.append(row)
+			elif String(row.get("text", "")).to_lower().contains(q):
+				by_text.append(row)
+	by_title.append_array(by_text)
+	return by_title
 
 
 ## HQ-B (Q8): the Codex's STORY section's key (a translation key).

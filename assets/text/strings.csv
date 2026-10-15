@@ -249,6 +249,7 @@ Achievements earned (Stats & achievements lists them).,Achievements earned (Stat
 "Aim for PERFECT, then SEND IT {end_turn}. Every needle resolves at once: defense, then offense, then statuses.","Aim for PERFECT, then SEND IT {end_turn}. Every needle resolves at once: defense, then offense, then statuses."
 Aim for PERFECT. The round buttons above a wheel turn it one tick. {nudge_keys} Nudge until the tag says PERFECT.,Aim for PERFECT. The round buttons above a wheel turn it one tick. {nudge_keys} Nudge until the tag says PERFECT.
 Always show all nodes on the netrun map,Always show all nodes on the netrun map
+An action refused or a hit stopped. Flip and Respin are blocked while resistance is above 0. A satellite docked at a pointer takes the attack instead (bodyguard).,An action refused or a hit stopped. Flip and Respin are blocked while resistance is above 0. A satellite docked at a pointer takes the attack instead (bodyguard).
 An operative is stationed here: their class's station bonus helps the node in raids.,An operative is stationed here: their class's station bonus helps the node in raids.
 Armory,Armory
 Armory empty: runs bank assets from their drops.,Armory empty: runs bank assets from their drops.
@@ -298,6 +299,8 @@ Best ICE by corporation: %s.,Best ICE by corporation: %s.
 Best ICE: %s,Best ICE: %s
 Best ICE: %s. %s,Best ICE: %s. %s
 Block %d: soaks damage this turn.,Block %d: soaks damage this turn.
+Block and shield together. Block expires at the start of your next turn; shield persists (cap 15). A docked satellite takes Pointer hits aimed at its host slice.,Block and shield together. Block expires at the start of your next turn; shield persists (cap 15). A docked satellite takes Pointer hits aimed at its host slice.
+Blocked,Blocked
 Borderless,Borderless
 Boss Extra Pointer,Boss Extra Pointer
 Boss Phase Early,Boss Phase Early
@@ -582,6 +585,7 @@ Cobalt (deep blue terminal),Cobalt (deep blue terminal)
 Codex,Codex
 Cold Exit and Fault Tolerance look for this.,Cold Exit and Fault Tolerance look for this.
 Color-blind correction (patterns and glyphs stay the main cue),Color-blind correction (patterns and glyphs stay the main cue)
+"Combat energy. Gain +4 each turn, max 12. Spent on cards, extra nudges (1 each) and respins (4). Drains stop at 0; there is no RAM debt.","Combat energy. Gain +4 each turn, max 12. Spent on cards, extra nudges (1 each) and respins (4). Drains stop at 0; there is no RAM debt."
 Come Back Soon,Come Back Soon
 Continue,Continue
 Continue the current run,Continue the current run
@@ -783,6 +787,8 @@ End turn,End turn
 Enemies,Enemies
 Enemy Resistance,Enemy Resistance
 "Enemy wheels resist: each point absorbs one tick of your nudges. Flip and Respin are blocked while it is up. Strip it, breach the Hub, or spin past it.","Enemy wheels resist: each point absorbs one tick of your nudges. Flip and Respin are blocked while it is up. Strip it, breach the Hub, or spin past it."
+"Enemy ability: absorbs the first R ticks of your nudges and spins. While resistance is above 0, Flip and Respin are blocked entirely.","Enemy ability: absorbs the first R ticks of your nudges and spins. While resistance is above 0, Flip and Respin are blocked entirely."
+"Enemy wheels resist: each point absorbs one tick of your manipulation before it moves. Flip and Respin are blocked while resistance is up. Strip it, breach the Hub, or spin past it.","Enemy wheels resist: each point absorbs one tick of your manipulation before it moves. Flip and Respin are blocked while resistance is up. Strip it, breach the Hub, or spin past it."
 EnemyData.account_manager.description,The senior process guarding the Server Rack. Escalates at half health.
 EnemyData.account_manager.display_name,Account Manager
 EnemyData.billing_daemon.description,Every hit comes with an invoice: attacks drain your RAM.
@@ -979,6 +985,7 @@ Fits %s slices only.,Fits %s slices only.
 Flame: a Heat objective Site. Clearing it lowers Heat.,Flame: a Heat objective Site. Clearing it lowers Heat.
 Flash limiter (at most 3 flashes a second. On by default.),Flash limiter (at most 3 flashes a second. On by default.)
 "Forecast, not a result: if you start the defense now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it.","Forecast, not a result: if you start the defense now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it."
+Free nudge,Free nudge
 Fullscreen,Fullscreen
 Further on: %s (only this way).,Further on: %s (only this way).
 GETS %s,GETS %s
@@ -998,6 +1005,7 @@ Good for you: %s,Good for you: %s
 Graphite (neutral gray terminal),Graphite (neutral gray terminal)
 "Gray + check: cleared, used up and not claimed. You can still patrol it for loot, Heat and Rank.","Gray + check: cleared, used up and not claimed. You can still patrol it for loot, Heat and Rank."
 Gray broken link: no power flows to a TAKEN or DOWN node.,Gray broken link: no power flows to a TAKEN or DOWN node.
+Guard,Guard
 Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP): it takes hits aimed at this slice.
 HACK,HACK
 HACK: it harms the target or plants a status on it.,HACK: it harms the target or plants a status on it.
@@ -1085,6 +1093,7 @@ Heat reduction Site,Heat reduction Site
 Heat settles here: what the raid changed.,Heat settles here: what the raid changed.
 Heat stops at its limit,Heat stops at its limit
 Heat the run added (campaign Heat is now %d).,Heat the run added (campaign Heat is now %d).
+Heat thresholds,Heat thresholds
 Heat: the corporation's attention. Thresholds bring raids and harder rules.,Heat: the corporation's attention. Thresholds bring raids and harder rules.
 HeatThresholdData.heat_10.event_text,The next netrun's Mainframe carries one item fewer.
 HeatThresholdData.heat_100.event_text,PURGE: the corporation sends the largest raid of the campaign.
@@ -1638,6 +1647,7 @@ MARKET,MARKET
 MENU,MENU
 MINI BOSS,MINI BOSS
 MINIMAP,MINIMAP
+"MINOR every 10, MAJOR at 25/50/75, PURGE at 100. Bands: COOL, NOTICED, FLAGGED, HUNTED, PURGE. Events fire once, on first crossing. Modifiers apply while Heat is at or above the threshold.","MINOR every 10, MAJOR at 25/50/75, PURGE at 100. Bands: COOL, NOTICED, FLAGGED, HUNTED, PURGE. Events fire once, on first crossing. Modifiers apply while Heat is at or above the threshold."
 MORE,MORE
 MORE ABOVE,MORE ABOVE
 MORE BELOW,MORE BELOW
@@ -1652,6 +1662,7 @@ Master volume,Master volume
 More on the next page: press NEXT.,More on the next page: press NEXT.
 More sections this way: the tabs scroll to them.,More sections this way: the tabs scroll to them.
 Move it to %s.,Move it to %s.
+"Moves one ring one tick (Q/E). The first nudge each turn is free, then each costs 1 RAM. Each tick is absorbed by 1 resistance.","Moves one ring one tick (Q/E). The first nudge each turn is free, then each costs 1 RAM. Each tick is absorbed by 1 resistance."
 Music volume,Music volume
 NEED %d,NEED %d
 NEED %d · HAVE %d,NEED %d · HAVE %d
@@ -1765,6 +1776,7 @@ Nothing to undo since %s rolled a random result: a roll can't be undone.,Nothing
 Nothing to undo since your RESPIN: a random spin can't be undone.,Nothing to undo since your RESPIN: a random spin can't be undone.
 Nothing to undo: no card or nudge played yet this turn.,Nothing to undo: no card or nudge played yet this turn.
 Nothing to undo: the fight is over.,Nothing to undo: the fight is over.
+Nudge,Nudge
 Nudge %s one tick clockwise.,Nudge %s one tick clockwise.
 Nudge %s one tick counterclockwise.,Nudge %s one tick counterclockwise.
 Nudge %s's inner ring one tick clockwise.,Nudge %s's inner ring one tick clockwise.
@@ -1773,6 +1785,7 @@ Nudge clockwise,Nudge clockwise
 Nudge counterclockwise,Nudge counterclockwise
 Nudge ring (outer / inner),Nudge ring (outer / inner)
 Nudge wheel (mine / target),Nudge wheel (mine / target)
+Null,Null
 OBSERVER,OBSERVER
 OFF,OFF
 OFF // static edge tint,OFF // static edge tint
@@ -1801,6 +1814,7 @@ OVERWRITTEN,OVERWRITTEN
 OVFL,OVFL
 Off (no correction),Off (no correction)
 "Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for.","Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for."
+One nudge per turn costs no RAM. It refreshes at the start of every turn. Extra nudges cost 1 RAM each.,One nudge per turn costs no RAM. It refreshes at the start of every turn. Extra nudges cost 1 RAM each.
 Open the key to show every Site; unselectable regular Sites are hidden to keep the map clear.,Open the key to show every Site; unselectable regular Sites are hidden to keep the map clear.
 Open this reward and pick from it.,Open this reward and pick from it.
 Operative,Operative
@@ -2117,6 +2131,7 @@ Remove a card from your deck: %d Cycles (you have %d).,Remove a card from your d
 Repair Cost,Repair Cost
 Reset all tabs,Reset all tabs
 Reset to defaults,Reset to defaults
+Resistance,Resistance
 Resistance %d: absorbs nudges and spins tick for tick; Flip and Respin are blocked.,Resistance %d: absorbs nudges and spins tick for tick; Flip and Respin are blocked.
 Resolution (windowed),Resolution (windowed)
 Resolve speed after SEND IT (hold Fast-forward to speed it up),Resolve speed after SEND IT (hold Fast-forward to speed it up)
@@ -3196,6 +3211,7 @@ The city: left and right step through the Sites; down to the hand.,The city: lef
 The corporation's core. The breach needs %d Exploits.,The corporation's core. The breach needs %d Exploits.
 The crew still standing.,The crew still standing.
 "The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead center).","The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead center)."
+"The empty slice. Landing on it is the only miss, since there is no miss tier. Fault Tolerance, Cold Exit and CORRUPTED react to it.","The empty slice. Landing on it is the only miss, since there is no miss tier. Fault Tolerance, Cold Exit and CORRUPTED react to it."
 The hand's next page: the rest of the cards and offers.,The hand's next page: the rest of the cards and offers.
 The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.,The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.
 The home server fell: the campaign is lost.,The home server fell: the campaign is lost.
@@ -3209,6 +3225,7 @@ The operative's deck and spinner (hub core and inner ring included).,The operati
 "The rest of the work order: the forecast, what it would cost.","The rest of the work order: the forecast, what it would cost."
 The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city.,The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city.
 The tag by the needle rates your aim. PERFECT: full power plus your class hook. GOOD: full power. WEAK: half power. NULL: the NULL slice does nothing.,The tag by the needle rates your aim. PERFECT: full power plus your class hook. GOOD: full power. WEAK: half power. NULL: the NULL slice does nothing.
+"The smallest division of a wheel: 30 per wheel, 5 per slice. The tick under the pointer decides which slice resolves and how precisely.","The smallest division of a wheel: 30 per wheel, 5 per slice. The tick under the pointer decides which slice resolves and how precisely."
 "The three campaign slots: start, load or delete.","The three campaign slots: start, load or delete."
 "The turn, and the free nudges left this turn (each extra nudge costs RAM).","The turn, and the free nudges left this turn (each extra nudge costs RAM)."
 The wheel with the lit rim is the one a nudge turns.,The wheel with the lit rim is the one a nudge turns.
@@ -3257,6 +3274,7 @@ Threats destroyed: %d. Reached home: %d. DOWN: %d. TAKEN: %d.,Threats destroyed:
 Threats here: %s.,Threats here: %s.
 Threats your network destroyed.,Threats your network destroyed.
 Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.,Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.
+Tick,Tick
 "Today's HQ run is the breach: one node, the Central Server. Its gate takes %d Exploits; each extra one weakens the boss further.","Today's HQ run is the breach: one node, the Central Server. Its gate takes %d Exploits; each extra one weakens the boss further."
 Tritan (blue-weak),Tritan (blue-weak)
 Try the next city: the seed goes up by one.,Try the next city: the seed goes up by one.
