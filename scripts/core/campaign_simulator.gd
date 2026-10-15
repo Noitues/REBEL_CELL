@@ -32,6 +32,11 @@ var config: CampaignConfigData
 var corp: CorporationData
 var class_data: ClassData
 var home: HomeServerVariantData
+## Tooling hooks (tools/balance), null / empty in the game and the tests. `probe` is duck-typed: on_maintain(c, schematics_before),
+## on_run_start(c, op, site, s), on_node(s), on_fight_begin(s), on_fight_end(s, turns), on_run_end(c, s, op, site), on_raid(c).
+## `turn_override` is a Callable(NetrunSession) -> bool: true when it played and ended the combat turn itself (skill knob).
+var probe: RefCounted = null
+var turn_override: Callable = Callable()
 
 
 func _init(p_resolver: CombatResolver, corporation_id: StringName = &"solace", class_id: StringName = &"breaker", home_id: StringName = &"home_standard") -> void:
@@ -62,7 +67,10 @@ func run_campaign(campaign_seed: int, ice: int = 0, max_runs: int = 60) -> Dicti
 		_fight_raids(c, stats)
 		if c.is_over():
 			break
+		var schematics_before := c.schematics
 		_maintain(c)
+		if probe != null:
+			probe.on_maintain(c, schematics_before)
 		var pick := _pick_launch(c)
 		if pick.is_empty():
 			stats["log"].append("no launchable Site")
@@ -70,10 +78,14 @@ func run_campaign(campaign_seed: int, ice: int = 0, max_runs: int = 60) -> Dicti
 		var op: OperativeState = pick["op"]
 		var site: SiteData = pick["site"]
 		var s := _start(c, op, site, seeds.randi())
+		if probe != null:
+			probe.on_run_start(c, op, site, s)
 		if site.objective == RC.SiteObjective.CENTRAL_SERVER:
 			stats["heat_at_breach"] = c.heat
 			stats["log"].append("  boss loadout: R%d HP %d deck %s | daemons %s | firmware %s" % [op.rank, op.max_hp, ",".join(op.deck), ",".join(op.daemon_ids), ",".join(op.slot_firmware_ids)])
 		_play_run(s, stats)
+		if probe != null:
+			probe.on_run_end(c, s, op, site)
 		stats["runs"] = int(stats["runs"]) + 1
 		if s.run.outcome == RunState.Outcome.COMPLETED:
 			stats["completed"] = int(stats["completed"]) + 1
@@ -106,6 +118,8 @@ func _fight_raids(c: CampaignState, stats: Dictionary) -> void:
 		_deploy_armory(c)
 		var raid_id := String(c.pending_raids[0].get("raid_id", ""))
 		CampaignRules.fight_raid(c, corp, config, lookup, c.pending_raids[0])
+		if probe != null:
+			probe.on_raid(c)
 		stats["raids"] = int(stats["raids"]) + 1
 		stats["log"].append("  raid %s: %s, home %d/%d" % [raid_id, "won" if bool(c.last_raid.get("won", false)) else "lost", c.grid.home_integrity, c.grid.home_max_integrity])
 		stats["heat_peak"] = maxi(int(stats["heat_peak"]), c.heat)
@@ -200,9 +214,13 @@ func _play_run(s: NetrunSession, stats: Dictionary) -> void:
 				var next := _pick_node(s)
 				if next == &"":
 					break
+				if probe != null:
+					probe.on_node(s)
 				s.enter_node(next)
 			RunState.Phase.COMBAT:
 				stats["fights"] = int(stats["fights"]) + 1
+				if probe != null:
+					probe.on_fight_begin(s)
 				var turns := 0
 				var foes_seen := ""
 				var hp_in := s.combat.state.player.hp
@@ -212,7 +230,10 @@ func _play_run(s: NetrunSession, stats: Dictionary) -> void:
 					for e in s.combat.state.living_enemies(false):
 						names.append(String(e.source_id))
 					foes_seen = ", ".join(names)
-					CombatBot.play_turn(s.combat, s.combat_action)
+					if not (turn_override.is_valid() and turn_override.call(s)):
+						CombatBot.play_turn(s.combat, s.combat_action)
+				if probe != null:
+					probe.on_fight_end(s, turns)
 				stats["turns"] = int(stats["turns"]) + turns
 				if s.run.outcome == RunState.Outcome.DIED:
 					stats["log"].append("  died vs %s on turn %d (T%d, entered at %d HP)" % [foes_seen, turns, s.run.tier, hp_in])
@@ -236,6 +257,8 @@ func _play_run(s: NetrunSession, stats: Dictionary) -> void:
 				for i in range(s.run_assets().size() - 1, -1, -1):
 					s.raid_deploy_run_asset(i, s.campaign.grid.home_site_id)
 				s.raid_fight()
+				if probe != null:
+					probe.on_raid(s.campaign)
 				stats["raids"] = int(stats["raids"]) + 1
 			_:
 				break

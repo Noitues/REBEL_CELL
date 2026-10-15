@@ -19,22 +19,33 @@ const KILL_BONUS := 25.0
 static func play_turn(session: CombatSession, act: Callable) -> int:
 	var taken := 0
 	_retarget(session, act)
+	var known_base := NAN  # the score of the current state, when the last action left the RNG alone (it equals its preview)
 	while taken < MAX_ACTIONS_PER_TURN and not session.state.is_over():
 		var best: CombatAction = null
-		var best_score := _score(session, session.state, CombatResolver.clone_rng(session.rng))
+		var best_score := known_base if not is_nan(known_base) else _score(session, session.state, CombatResolver.clone_rng(session.rng))
+		var tried := {}
 		for a in _candidates(session):
+			# Identical cards give identical outcomes (only the hand order differs): score the first of each kind.
+			# The later ones could never win (a candidate must beat the best by more than 0.01).
+			if a.type == CombatAction.Type.PLAY_CARD:
+				var key := [session.state.hand[a.hand_index], a.wheel_id, a.ring, a.direction, a.slot_index]
+				if tried.has(key):
+					continue
+				tried[key] = true
 			var r := session.resolver.apply(session.state, a, CombatResolver.clone_rng(session.rng))
 			if not r.ok():
 				continue
-			var sc := _score(session, r.state, CombatResolver.clone_rng(session.rng))
+			var sc := _score(session, r.state, CombatResolver.clone_rng(session.rng), false)
 			if sc > best_score + 0.01:
 				best_score = sc
 				best = a
 		if best == null:
 			break
+		var rng_before := session.rng.state
 		var result: CombatResult = act.call(best)
 		if result == null or not result.ok():
 			break
+		known_base = best_score if session.rng.state == rng_before else NAN
 		taken += 1
 	if not session.state.is_over():
 		act.call(CombatAction.end_turn())
@@ -51,7 +62,9 @@ static func _retarget(session: CombatSession, act: Callable) -> void:
 		act.call(CombatAction.target(best.id))
 
 
-static func _score(session: CombatSession, state: CombatState, rng: RandomNumberGenerator) -> float:
+## `keep_state` false: `state` is a throwaway preview (a resolver.apply result nobody else holds), so the
+## End Turn simulation runs on it directly instead of on a copy.
+static func _score(session: CombatSession, state: CombatState, rng: RandomNumberGenerator, keep_state: bool = true) -> float:
 	var before_enemy := 0
 	var alive_before := 0
 	for e in state.enemies:
@@ -59,7 +72,7 @@ static func _score(session: CombatSession, state: CombatState, rng: RandomNumber
 			before_enemy += e.hp
 			alive_before += 1
 	var before_player := state.player.hp
-	var s := state.duplicate_state()
+	var s := state.duplicate_state() if keep_state else state
 	session.resolver.resolve_turn(s, rng, [] as Array[Dictionary])
 	var after_enemy := 0
 	var alive_after := 0

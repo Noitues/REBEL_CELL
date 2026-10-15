@@ -8195,3 +8195,13 @@ D14 rule-5 remainder, batch lane (Sonnet 5.5, `const_edits`, specs `tools/batch/
 - **Review:** every applied hunk read. Reverted the model's meaningless `HALF = 0.5` (ransom_lock) and `HALF_LEVEL = 0.5` (mainframe_sign); the value-checked applier dropped about 110 blocks that were not literal-for-const swaps. Const arrays (`STICKER_TILTS`, `CARD_TILTS`, `FLASH_LEVELS`) are only indexed or iterated.
 - **Cost:** run 1: 23 requests, 368,738 in / 47,458 out tokens (batch rate); retry: 2 requests, 26,233 in / 1,396 out. Well under the $3 cap.
 - **Baseline:** `lint_baseline.json` counts colour and font-size literals, which this sweep does not touch: unchanged.
+## 2026-10-15 BalanceSim (plan 2 S1-S4b)
+- **Tool:** `tools/balance/` (`balance_sim.gd` CLI, `balance.py` driver, `path_guard.py`), usage in `docs/balance/README.md`.
+  Data overrides apply to a sim-local copy of the whole content graph (`balance_content.gd`); the loaded Resources are
+  never written (rule 3). Tooling hooks added to reused code, all inert by default: `NetrunSession.combat_observer`,
+  `CampaignSimulator.probe` / `turn_override` (also called by `AgentSimulator`).
+- **Speed (S4b), result-identical:** `CombatBot` scores one of each identical card (a later copy cannot beat the first by
+  more than 0.01), reuses the known score of the new state after an RNG-free action, and scores throwaway previews without
+  a state copy; `CombatResolver.quiet` skips the text of the hottest events (states, hashes, metrics unchanged). Proven by
+  byte-equal fight (288 records) and campaign (4, end-state hash) reports before and after.
+- **Balance branch:** commits on `balance` may touch only `content/`, `docs/balance/`, `tools/balance/` (`tools/precommit.sh`).

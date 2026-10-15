@@ -976,6 +976,10 @@
 		"res://tests/unit/test_w3b_aim.gd": {
 			"seconds": 30.0,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_balance_sim.gd": {
+			"seconds": 20.0,
+			"tier": "fast"
 		}
 	}
 }

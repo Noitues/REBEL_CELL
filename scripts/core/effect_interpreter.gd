@@ -18,6 +18,8 @@ extends RefCounted
 
 var config: CampaignConfigData
 var lookup: ContentLookup
+## See CombatResolver.quiet.
+var quiet: bool = false
 
 
 func _init(p_config: CampaignConfigData, p_lookup: ContentLookup) -> void:
@@ -238,7 +240,7 @@ func run_triggers(state: CombatState, trigger: int, ctx: Dictionary, listeners: 
 			var sub := ctx.duplicate()
 			sub["source_id"] = listener["source_id"]
 			events.append({"type": "trigger", "source_id": listener["source_id"], "trigger": trigger,
-				"text": "%s triggers (%s)." % [listener["source_id"], RC.Trigger.keys()[trigger]]})
+				"text": "" if quiet else "%s triggers (%s)." % [listener["source_id"], RC.Trigger.keys()[trigger]]})
 			for e in te.effects:
 				if e != null and e.type != RC.EffectType.RETRIGGER:
 					apply_effect(state, e, sub, rng, events)
@@ -290,7 +292,7 @@ func deal_hit(state: CombatState, attacker: CombatantState, victim: CombatantSta
 	if is_attack and victim.evade_charges > 0:
 		victim.evade_charges -= 1
 		events.append({"type": "evaded", "attacker": attacker.id, "target": victim.id, "amount": amount,
-			"text": "%s EVADES %d from %s." % [victim.display_name, amount, attacker.display_name]})
+			"text": "" if quiet else "%s EVADES %d from %s." % [victim.display_name, amount, attacker.display_name]})
 		return 0
 	var remaining := amount
 	var blocked := 0
@@ -306,14 +308,14 @@ func deal_hit(state: CombatState, attacker: CombatantState, victim: CombatantSta
 	victim.hp -= hp_damage
 	events.append({"type": "damage", "attacker": attacker.id, "target": victim.id, "amount": amount,
 		"blocked": blocked, "shielded": shielded, "hp_damage": hp_damage, "pierce": pierce, "source_id": source_id,
-		"text": "%s hits %s for %d%s%s -> %d HP damage (%d HP left)." % [attacker.display_name, victim.display_name, amount,
+		"text": "" if quiet else "%s hits %s for %d%s%s -> %d HP damage (%d HP left)." % [attacker.display_name, victim.display_name, amount,
 			" (pierce)" if pierce else "", _absorb_text(blocked, shielded), hp_damage, victim.hp]})
 	return hp_damage
 
 
 func gain_block(c: CombatantState, amount: int, events: Array[Dictionary]) -> void:
 	c.block += amount
-	events.append({"type": "block", "target": c.id, "amount": amount, "text": "%s gains %d block (%d)." % [c.display_name, amount, c.block]})
+	events.append({"type": "block", "target": c.id, "amount": amount, "text": "" if quiet else "%s gains %d block (%d)." % [c.display_name, amount, c.block]})
 
 
 func gain_shield(c: CombatantState, amount: int, events: Array[Dictionary]) -> void:
@@ -321,18 +323,18 @@ func gain_shield(c: CombatantState, amount: int, events: Array[Dictionary]) -> v
 	c.shield = mini(c.shield + amount, config.shield_cap)
 	# The shield actually gained (H24: at the cap LAST TURN read "+5 SHIELD" with no gain).
 	var gained := c.shield - before
-	events.append({"type": "shield", "target": c.id, "amount": gained, "requested": amount, "text": "%s gains %d shield (%d/%d)." % [c.display_name, gained, c.shield, config.shield_cap]})
+	events.append({"type": "shield", "target": c.id, "amount": gained, "requested": amount, "text": "" if quiet else "%s gains %d shield (%d/%d)." % [c.display_name, gained, c.shield, config.shield_cap]})
 
 
 func gain_evade(c: CombatantState, charges: int, events: Array[Dictionary]) -> void:
 	c.evade_charges += charges
-	events.append({"type": "evade", "target": c.id, "amount": charges, "text": "%s will EVADE the next %d attack(s)." % [c.display_name, c.evade_charges]})
+	events.append({"type": "evade", "target": c.id, "amount": charges, "text": "" if quiet else "%s will EVADE the next %d attack(s)." % [c.display_name, c.evade_charges]})
 
 
 func heal(c: CombatantState, amount: int, events: Array[Dictionary]) -> void:
 	var healed := mini(amount, c.max_hp - c.hp)
 	c.hp += healed
-	events.append({"type": "heal", "target": c.id, "amount": healed, "text": "%s heals %d (%d/%d)." % [c.display_name, healed, c.hp, c.max_hp]})
+	events.append({"type": "heal", "target": c.id, "amount": healed, "text": "" if quiet else "%s heals %d (%d/%d)." % [c.display_name, healed, c.hp, c.max_hp]})
 
 
 ## Applies `status` to slot `slot`. ENCRYPTED (temporary or Hardened) absorbs it.
