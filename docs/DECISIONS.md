@@ -34,6 +34,10 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-15 — Plan 2 B-TEACH: the tutorial teaches aiming for a PERFECT (PB-PT-002 C2 / C3 / C9; PB-PT-003b C1 / C3 / B8 / D1)
+- The steps are rewritten short (one idea each, at most 45 words) and reordered: THE WHEEL, THE TAGS (NULL / WEAK / GOOD / PERFECT), AIM (ends only when your wheel reads PERFECT after your play), FREE NUDGE (ends on a nudge; extra nudges cost RAM, the red RAM chip), SWITCHES (Q/E-W keys, outer/inner), RESISTANCE, CARDS, STAGED (a played card waits in THIS TURN until SEND IT; hover only previews), RAM FORECAST (THIS PLAY vs AT SEND IT), UNDO (or Esc), SEND IT ("aim for PERFECT, then SEND IT"), HEAT & BANKING.
+- The AIM beat uses a view-side event `aim_perfect` that `combat_scene` sends the tutorial after a play when `player_aim_is_perfect` (every needle reads PERFECT), never on a turn or fight start. No rule changes. NEXT wears the lit terminal color (it read as greyed out) and still pulses when it is what moves a step on. Codex links are plain text until B-CODEX lands its term ids.
+
 ### 2026-10-15 — Plan 2 A-INPUT: cancel / unstage, wheel click, selection (PT-003b B2-B4, B7; PT-002 C4, B8)
 - Reproduced first in `tests/unit/test_plan2_a_input.gd` (real viewport pointer and key events; the headless window is 64 x 64, so the test sizes it to 1280 x 720 and hides GUT's own panel). Aim cancel by Esc, right-click (empty, wheel, hand) and Z already worked: the "stuck" report was a staged (already played) card, which Esc could not take back.
 - Fixed: (1) Esc / pad B with plays staged this turn and no aim takes back the last play (UNDO's own rule, never across a checkpoint) before the pause menu; with nothing to take back it pauses as before. (2) While a card is aimed the UNDO sticker reads CANCEL and is live; a click or Z cancels the aim only and never also takes back the play before it (`rewind()` ends an aim and returns). (3) A click on a wheel off every glowing zone toasts how to play or cancel instead of staying silent.

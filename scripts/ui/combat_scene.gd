@@ -1650,6 +1650,9 @@ func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 		_free_captures(play, discard)
 	if tutorial != null and is_instance_valid(tutorial):
 		tutorial.on_events(events)
+		if tutorial != null and is_instance_valid(tutorial) and not _has_event(events, "turn_start") and not _has_event(events, "combat_start") and player_aim_is_perfect(state):
+			var aimed: Array[Dictionary] = [{"type": TutorialOverlay.AIM_PERFECT}]  # B-TEACH: the aim beat ends on a PERFECT tag
+			tutorial.on_events(aimed)
 	if engine.can_rewind() == false and _rewound:
 		_rewound = false
 	for e in events:
@@ -3092,6 +3095,17 @@ func _preview_action(action: CombatAction) -> void:
 		_show_play_results(action, base)
 	else:
 		_clear_play_results()
+
+
+## B-TEACH: true when every needle of your wheel reads PERFECT now (the tag says PERFECT): the tutorial's aim beat.
+func player_aim_is_perfect(state: CombatState) -> bool:
+	var rs := engine.resolver.pointer_readouts(state, state.player)
+	if rs.is_empty():
+		return false
+	for r in rs:
+		if int(r["tier"]) != RC.PrecisionTier.PERFECT:
+			return false
+	return true
 
 
 ## ANIM-R5 combat 7: the tags as the End Turn forecast shows them now (view -> its tag), so a

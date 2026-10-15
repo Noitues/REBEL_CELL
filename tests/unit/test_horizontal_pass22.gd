@@ -100,11 +100,10 @@ func test_the_wheel_keeps_most_of_its_size_at_big_text() -> void:
 
 
 func test_the_tutorial_teaches_the_nudge_switches_and_the_turn_lines() -> void:
-	var nudge := TutorialOverlay.step_text(1)
+	var nudge := TutorialOverlay.step_text(4)  # B-TEACH: the SWITCHES step
 	assert_string_contains(nudge, Settings.key_text(&"toggle_nudge_wheel"))
 	assert_string_contains(nudge, Settings.key_text(&"toggle_ring"))
 	var wheel := TutorialOverlay.step_text(0)
-	assert_string_contains(wheel, "LAST TURN")
 	assert_string_contains(wheel, "chips beside each HP")  # ART-2 2D (D15): the chips replace the NEXT plate
 	assert_false(wheel.contains("BLK"))
 

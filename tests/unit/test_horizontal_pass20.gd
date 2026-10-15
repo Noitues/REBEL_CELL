@@ -260,7 +260,7 @@ func test_pad_players_see_pad_buttons() -> void:
 	await _frames()
 	assert_eq(InputPrompt.chip_label(InputPrompt.chip_of(scene._end_turn_button)).text, "[X]", "SEND IT names the pad button")
 	assert_eq(InputPrompt.chip_label(InputPrompt.chip_of(scene._stickers["respin"])).text, "[R3]")
-	assert_string_contains(TutorialOverlay.step_text(3), "D-pad", "the tutorial speaks pad")
+	assert_string_contains(TutorialOverlay.step_text(6), "D-pad", "the tutorial speaks pad")
 	Settings.set_pad_active(false)
 	await _frames()
 	assert_eq(InputPrompt.chip_label(InputPrompt.chip_of(scene._end_turn_button)).text, InputPrompt.chip_text(&"end_turn"))

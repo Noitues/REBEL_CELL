@@ -13,6 +13,9 @@ signal step_changed
 ## Height kept for the Next / Skip row under the note.
 const BUTTON_ROW_HEIGHT := 40.0
 
+## B-TEACH: the event the scene sends when your wheel reads PERFECT after your play (the AIM beat ends on it).
+const AIM_PERFECT := "aim_perfect"
+
 ## ANIM-R5 combat 9: the steps' titles and texts are translation keys (`# TR`: exported,
 ## translated where they are shown; the tutorial stayed English under pseudolocalisation).
 const STEPS: Array[Dictionary] = [
@@ -20,49 +23,84 @@ const STEPS: Array[Dictionary] = [
 		"title":
 			"THE WHEEL",  # TR
 		"text":
-			"Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The chips beside each HP are this turn's result if you SEND IT now: the red box is the damage taken, blue what shields absorb, green what is gained, then RAM and statuses. The gray LAST TURN line is what the last SEND IT did. {inspect_how} anything (the chips too) to read it.",  # TR
+			"The white needle points at a slice. That slice is what the wheel does when you SEND IT. The chips beside each HP show this turn's result if you SEND IT now. {inspect_how} anything to read it.",  # TR
 		"until": "",
 	},
 	{
 		"title":
-			"NUDGE",  # TR
+			"THE TAGS",  # TR
 		"text":
-			"Land dead center for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The round buttons above a wheel turn it one tick: the right one clockwise, the left one back. FREE NUDGE in the title bar counts the nudges you still get free this turn; each extra nudge costs RAM. {nudge_how}",  # TR
+			"The tag by the needle rates your aim. PERFECT: full power plus your class hook. GOOD: full power. WEAK: half power. NULL: the NULL slice does nothing.",  # TR
+		"until": "",
+	},
+	{
+		"title":
+			"AIM",  # TR
+		"text":
+			"Aim for PERFECT. The round buttons above a wheel turn it one tick. {nudge_keys} Nudge until the tag says PERFECT.",  # TR
+		"until": AIM_PERFECT,
+	},
+	{
+		"title":
+			"FREE NUDGE",  # TR
+		"text":
+			"FREE NUDGE in the title bar counts the nudges you still get free this turn. After that each nudge costs RAM, and a red RAM chip shows the debt. Nudge once more to see it.",  # TR
 		"until": "nudge",
+	},
+	{
+		"title":
+			"SWITCHES",  # TR
+		"text":
+			"{nudge_switch}",  # TR
+		"until": "",
 	},
 	{
 		"title":
 			"RESISTANCE",  # TR
 		"text":
-			"Enemy wheels resist: each point absorbs one tick of your manipulation before it moves. Flip and Respin are blocked while resistance is up. Strip it, breach the Hub, or spin past it.",  # TR
+			"Enemy wheels resist: each point absorbs one tick of your nudges. Flip and Respin are blocked while it is up. Strip it, breach the Hub, or spin past it.",  # TR
 		"until": "",
 	},
 	{
 		"title":
 			"CARDS",  # TR
 		"text":
-			"Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on a nudge button (that sets the way they turn), slice cards on a slice. While you aim, the result chips and the dashed acid arc show the result before you commit.",  # TR
+			"Cards spin, nudge and flip wheels, and cost RAM. {card_how} The dashed arc shows where a card lands before you commit.",  # TR
 		"until": "card",
+	},
+	{
+		"title":
+			"STAGED",  # TR
+		"text":
+			"A card you play is staged: it waits in THIS TURN until you SEND IT. Hovering or raising a card only previews it.",  # TR
+		"until": "",
+	},
+	{
+		"title":
+			"RAM FORECAST",  # TR
+		"text":
+			"The RAM bar shows a forecast. THIS PLAY is what the card under your pointer costs. AT SEND IT is what SEND IT itself changes, with nothing played.",  # TR
+		"until": "",
 	},
 	{
 		"title":
 			"UNDO",  # TR
 		"text":
-			"{undo_how} rewinds your nudges and card plays this turn. It stops at the last random event: a Respin or a random-slice card. Nudge a wheel, then undo it.",  # TR
+			"{undo_how} or Esc takes back your last staged play or nudge. It stops at the last random event, like a Respin. Nudge your wheel, then undo it.",  # TR
 		"until": "rewind",
 	},
 	{
 		"title":
 			"SEND IT",  # TR
 		"text":
-			"SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The chips beside each HP already show the outcome.",  # TR
+			"Aim for PERFECT, then SEND IT {end_turn}. Every needle resolves at once: defense, then offense, then statuses.",  # TR
 		"until": "turn_start",
 	},
 	{
 		"title":
 			"HEAT & BANKING",  # TR
 		"text":
-			"Every Rack you capture banks Schematics for the Cell and adds Heat. Heat thresholds bring raids on your home server. Bank early, cool off at Heat objectives, and never leave loot unbanked when you jack out.",  # TR
+			"Every Rack you capture banks Schematics for the Cell and adds Heat. Heat brings raids on your home server. Bank early, and never leave loot unbanked when you jack out.",  # TR
 		"until": "",
 	},
 ]
@@ -87,6 +125,9 @@ func _init(p_size: Vector2 = Vector2(380, 190)) -> void:
 	next_button.text = tr("Next")
 	next_button.theme_type_variation = UiTheme.TERMINAL_BUTTON
 	next_button.pressed.connect(advance)
+	# B-TEACH (PT-002 C9: NEXT looked greyed out): it wears the lit terminal color; Skip stays quiet.
+	for state_color in [&"font_color", &"font_hover_color", &"font_pressed_color", &"font_focus_color"]:
+		next_button.add_theme_color_override(state_color, HudSkin.TERMINAL_HI)
 	row.add_child(next_button)
 	skip_button = Button.new()
 	skip_button.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
@@ -272,12 +313,14 @@ static func step_text(i: int) -> String:
 	var pad := Settings.pad_active
 	var t := func(k: String) -> String: return message(k)
 	keys.inspect_how = t.call("Press %s on") % Settings.key_text(&"inspect") if pad else t.call("Hover or right-click")  # TR
-	keys.nudge_how = (t.call("%s and %s nudge the wheel whose buttons show the key letters (they wear a lit rim, and a word under them says OUTER or INNER ring); %s switches between yours and the target, %s between the outer and inner ring.") % [Settings.key_text(&"nudge_left"), Settings.key_text(&"nudge_right"), Settings.key_text(&"toggle_nudge_wheel"), Settings.key_text(&"toggle_ring")]) if Settings.key_text(&"nudge_left") != "" else ""  # TR
+	var has_keys := Settings.key_text(&"nudge_left") != ""
+	keys.nudge_keys = (t.call("%s turns it back, %s forward.") % [Settings.key_text(&"nudge_left"), Settings.key_text(&"nudge_right")]) if has_keys else ""  # TR
+	keys.nudge_switch = (t.call("%s switches between your wheel and the target. %s switches between the outer and inner ring. The lit rim and the word OUTER or INNER show what a nudge turns.") % [Settings.key_text(&"toggle_nudge_wheel"), Settings.key_text(&"toggle_ring")]) if has_keys else t.call("The wheel with the lit rim is the one a nudge turns.")  # TR
 	keys.card_how = (t.call("Pick a card with %s, choose a glowing target with the D-pad, press %s again (%s cancels).") % [Settings.key_text(&"ui_accept"), Settings.key_text(&"ui_accept"), Settings.key_text(&"ui_cancel")]) if pad else t.call("Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards.")  # TR
 	keys.undo_how = t.call("UNDO %s") % Settings.hint(&"rewind")  # TR
 	# ANIM-R5 combat 9: the step translated, its keys filled in, then pseudolocalised once (so the
 	# {placeholders} survive a scrambled build).
-	var text := message(String(STEPS[i]["text"])).format(keys)
+	var text := message(String(STEPS[i]["text"])).format(keys).replace("  ", " ")  # an empty {nudge_keys} leaves no gap
 	return String(TranslationServer.pseudolocalize(text)) if TranslationServer.pseudolocalization_enabled else text
 
 

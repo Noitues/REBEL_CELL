@@ -408,7 +408,7 @@ func test_b5_pause_quit_confirm_takes_a_real_click_and_enter_cancels_by_default_
 
 ## PB-010 B6 / PB-012 B2. `CombatSession.can_rewind` is `not actions_since_checkpoint.is_empty()`; every action that
 ## consumes combat RNG (a random pick: Brute Spin, a Respin) is a checkpoint, and the turn's start respin is one too.
-## The tutorial's UNDO step (`tutorial_overlay.gd` STEPS[4], until "rewind") says "free and unlimited within a turn".
+## The tutorial's UNDO step (`tutorial_overlay.gd` STEPS[9], until "rewind") says "free and unlimited within a turn".
 func test_b6_undo_is_blocked_at_turn_start_and_after_a_random_pick_while_the_tutorial_teaches_it_as_free() -> void:
 	var scene := await _combat()
 	scene.start_fight(&"collections_agent", 5)

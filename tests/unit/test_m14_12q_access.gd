@@ -444,7 +444,7 @@ func test_under_high_contrast_next_stays_whole_at_seven_to_one() -> void:
 	host.theme = UiTheme.build(Settings.text_scale)
 	var t := TutorialOverlay.new(Vector2(300, 400))
 	host.add_child(t)
-	t.step = 2  # RESISTANCE: only Next moves it on (it pulses out of high contrast)
+	t.step = 5  # RESISTANCE: only Next moves it on (it pulses out of high contrast)
 	t.page = 0
 	t.fit(Vector2(300, 400))
 	await _frames(2)
