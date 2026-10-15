@@ -286,7 +286,12 @@ func test_every_needle_lights_its_segment_and_gets_its_own_wedge() -> void:
 
 
 func test_the_tutorial_teaches_the_free_nudge_and_what_the_nudge_keys_drive() -> void:
-	var nudge := TutorialOverlay.step_text(1)
+	# Plan 2 B-TEACH: one idea per step, so the free nudge and the nudge keys / switches are read together.
+	var nudge := ""
+	for i in TutorialOverlay.STEPS.size():
+		var title := String(TutorialOverlay.STEPS[i]["title"])
+		if title in ["AIM", "FREE NUDGE", "SWITCHES"]:
+			nudge += TutorialOverlay.step_text(i) + "\n"
 	assert_string_contains(nudge, "FREE NUDGE")
 	assert_string_contains(nudge, "costs RAM")
 	assert_string_contains(nudge, "OUTER or INNER")
