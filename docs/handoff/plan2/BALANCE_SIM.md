@@ -61,6 +61,33 @@ changes that are within noise. Output `docs/balance/CMP_<name>.md`.
 - **Baseline:** `docs/balance/BASELINE_<sha>.md` from the current content (campaign 20 seeds × ICE 0 / 5; fight sweep
   over every enemy; boss; netrun attrition), committed as the reference.
 
+## S4b: speed for Monte Carlo (designer 2026-10-15: "1000 campaigns within an hour")
+**Measured 2026-10-15** (`simulate_campaign.gd`, built-in bots, machine loaded): 17–96 s per campaign, mean ≈ 62 s,
+≈ 0.28 s per fight. Losing bot campaigns run the 60-run cap (≈ 310 fights); a won one ≈ 62 fights.
+
+**Target: ≥ 1000 campaigns per hour on this PC** (6 cores, 64 GB):
+- 6 parallel processes ⇒ ≤ ~21 s per campaign per process;
+- that is ≈ 3× faster than today, measured on a quiet machine.
+
+**Levers**, each proven result-identical (the determinism test: same seeds ⇒ byte-identical report before and
+after):
+1. Profile one campaign first (Godot profiler or timers per phase: bot search, resolver, state duplicate, content
+   lookup).
+2. Fix the hot spots:
+   - fewer deep state duplicates in the bot's search;
+   - cache content lookups and the per-fight static data;
+   - no string building or logging in the inner loops unless reporting asks for it;
+   - preallocate.
+3. Run several campaigns per process (no engine start-up per seed); `balance.py -j 6` with work stealing.
+4. A `--fast` report mode: metrics only, no per-decision log.
+
+**Scope:**
+- The **built-in bot policy** is the Monte Carlo policy.
+- The heuristic strategist (+ lookahead) is a slower, smarter policy used for fewer seeds; report its speed but
+  don't hold it to the target.
+- Core optimisations touch `scripts/core` and are rule-bearing: keep them minimal, with the determinism test plus the
+  existing replay tests.
+
 ## S5: balance work (restarted on the sim)
 The issues, each with variant sweeps leading to `docs/handoff/plan2/BALANCE_OPTIONS.md` (2–3 options with numbers,
 for the designer's rulings; no content change until then):
