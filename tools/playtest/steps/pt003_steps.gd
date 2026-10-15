@@ -526,7 +526,7 @@ func _s9() -> void:
 
 func _s10() -> void:
 	_begin("10", "A fight after a respin or random card", "Play Malware Drop (a random result), press UNDO (rewind, what Z calls)",
-		"The message names what blocked it ('UNDO is blocked: <card> rolled a random result').")
+		"The message names the random event it stops at ('Nothing to undo since <card> rolled a random result').")
 	await _fresh(1)
 	var scene := _mount(COMBAT)
 	scene.auto_start = false

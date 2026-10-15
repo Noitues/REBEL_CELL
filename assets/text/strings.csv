@@ -150,6 +150,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s: select a card to %s. %s: details.,%s: select a card to %s. %s: details.
 %s: select the slot to %s. %s: details.,%s: select the slot to %s. %s: details.
 %s: the node falls; threats go on past it.,%s: the node falls; threats go on past it.
+(%+d AT SEND IT),(%+d AT SEND IT)
 (%+d THIS PLAY),(%+d THIS PLAY)
 (same road as choice %d),(same road as choice %d)
 "(seed %d): %d Schematics, %d rookies.","(seed %d): %d Schematics, %d rookies."
@@ -1754,6 +1755,11 @@ Not earned yet.,Not earned yet.
 Not reachable yet. Clear a Site linked to it first: %s (ringed on the map). Then it opens with an orange ring and JACK IN shows here.,Not reachable yet. Clear a Site linked to it first: %s (ringed on the map). Then it opens with an orange ring and JACK IN shows here.
 Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours.,Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours.
 Nothing to resume.,Nothing to resume.
+Nothing to undo since %s rolled a random result: a roll can't be undone.,Nothing to undo since %s rolled a random result: a roll can't be undone.
+"Nothing to undo since the last random event (a respin, a random pick).","Nothing to undo since the last random event (a respin, a random pick)."
+Nothing to undo since your RESPIN: a random spin can't be undone.,Nothing to undo since your RESPIN: a random spin can't be undone.
+Nothing to undo: no card or nudge played yet this turn.,Nothing to undo: no card or nudge played yet this turn.
+Nothing to undo: the fight is over.,Nothing to undo: the fight is over.
 Nudge %s one tick clockwise.,Nudge %s one tick clockwise.
 Nudge %s one tick counterclockwise.,Nudge %s one tick counterclockwise.
 Nudge %s's inner ring one tick clockwise.,Nudge %s's inner ring one tick clockwise.
@@ -3247,12 +3253,6 @@ UNCOMMON,UNCOMMON
 UNCOMMON · two pips,UNCOMMON · two pips
 UNDO,UNDO
 UNDO %s,UNDO %s
-UNDO is blocked: %s rolled a random result.,UNDO is blocked: %s rolled a random result.
-"UNDO is blocked: a random event came since (a respin, a random pick).","UNDO is blocked: a random event came since (a respin, a random pick)."
-UNDO is blocked: nothing to undo yet; this turn began with a random spin.,UNDO is blocked: nothing to undo yet; this turn began with a random spin.
-UNDO is blocked: the fight is over.,UNDO is blocked: the fight is over.
-UNDO is blocked: the new turn began with a random spin.,UNDO is blocked: the new turn began with a random spin.
-UNDO is blocked: your RESPIN rolled a random spin.,UNDO is blocked: your RESPIN rolled a random spin.
 UNDOCK,UNDOCK
 UNFINISHED,UNFINISHED
 UNITS,UNITS

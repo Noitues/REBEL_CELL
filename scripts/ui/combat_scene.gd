@@ -536,14 +536,17 @@ func _sync_cancel_sticker() -> void:
 ## ART-0 D12 (DECISIONS "Designer rulings: names for M14"): UNDO's words, and the block when there
 ## is nothing to undo since the last random event.
 const UNDO_TIP := "Undo back to the last random event (free, unlimited this turn)." # TR
-const UNDO_BLOCKED := "UNDO is blocked: a random event came since (a respin, a random pick)." # TR
+const UNDO_BLOCKED := "Nothing to undo since the last random event (a respin, a random pick)." # TR
 
 
-const UNDO_BLOCKED_OVER := "UNDO is blocked: the fight is over." # TR
-const UNDO_BLOCKED_RESPIN := "UNDO is blocked: your RESPIN rolled a random spin." # TR
-const UNDO_BLOCKED_CARD := "UNDO is blocked: %s rolled a random result." # TR
-const UNDO_BLOCKED_END_TURN := "UNDO is blocked: the new turn began with a random spin." # TR
-const UNDO_BLOCKED_TURN := "UNDO is blocked: nothing to undo yet; this turn began with a random spin." # TR
+## Plan 2 A-RULES (PT-003b B1 / D7): UNDO only stops when nothing is left since the random event, so
+## the words lead with "Nothing to undo" (testers read "UNDO is blocked: the new turn began with a
+## random spin" as a lock on the cards they had played, which UNDO had already taken back).
+const UNDO_BLOCKED_OVER := "Nothing to undo: the fight is over." # TR
+const UNDO_BLOCKED_RESPIN := "Nothing to undo since your RESPIN: a random spin can't be undone." # TR
+const UNDO_BLOCKED_CARD := "Nothing to undo since %s rolled a random result: a roll can't be undone." # TR
+const UNDO_BLOCKED_END_TURN := "Nothing to undo: no card or nudge played yet this turn." # TR
+const UNDO_BLOCKED_TURN := "Nothing to undo: no card or nudge played yet this turn." # TR
 
 
 ## W3B B2: why UNDO stops now, naming the random event the checkpoint stands on (the session's
@@ -3359,7 +3362,8 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 			host_row.tip_body += "
 %s: %s" % [_who(sat), ", ".join(words)]
 			host_row.tooltip_text = host_row.tip_body
-	ram_note.set_pending(o.ram_delta)
+	# Plan 2 A-RULES (PT-003b B1): with nothing hovered or aimed the change is SEND IT's own.
+	ram_note.set_pending(o.ram_delta, not _queue_pending.is_empty())
 	# W2-A2 (V1 gap 5): the RAM the next turn starts with if the turn ends as this plan says.
 	ram_note.set_next_turn(-1 if resolved.is_over() else engine.resolver.ram_next_turn(resolved))
 	_queue_resolved = resolved

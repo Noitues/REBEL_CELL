@@ -59,6 +59,7 @@ static func readouts() -> Array[Dictionary]:
 		{"code": t.translate("GUARD +3"), "title": t.translate("Guard gained"), "text": t.translate("Block or shield this play adds. Block expires at the start of your next turn; shield stays.")},
 		{"code": t.translate("RAM 6/12"), "title": t.translate("RAM"), "text": t.translate("What cards, respins and extra nudges cost. It refills each turn.")},
 		{"code": t.translate("RAM (-1 THIS PLAY)"), "title": t.translate("RAM after this play"), "text": t.translate("The card or action under your pointer costs this much RAM. Negative means it spends RAM; positive means it gives some back.")},
+		{"code": t.translate("RAM (-1 AT SEND IT)"), "title": t.translate("RAM at SEND IT"), "text": t.translate("Nothing is played or aimed: SEND IT itself changes your RAM by this much (a CORRUPTED slice bites RAM).")},
 		{"code": "☠?", "title": t.translate("Random status"), "text": t.translate("A status lands on a random slice. The chip's tooltip has the odds.")},
 		{"code": "D 0", "title": t.translate("Daemons"), "text": t.translate("The number is how many Daemons you have installed (D 0: none). Press it to open the tray.")},
 	]
