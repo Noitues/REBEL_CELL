@@ -437,7 +437,7 @@ CardData.ghost_step.description,"Two ±1 nudges on an enemy wheel, ignoring resi
 CardData.ghost_step.display_name,Ghost Step
 CardData.heavy_spin.description,Spin a wheel 9 ticks clockwise.
 CardData.heavy_spin.display_name,Heavy Spin
-CardData.hot_patch.description,"OVERCLOCK a chosen slice of your wheel: 1.5x on its next trigger, then it becomes CORRUPTED."
+CardData.hot_patch.description,"OVERCLOCK a chosen slice: 1.5x next trigger, then CORRUPTED."
 CardData.hot_patch.display_name,Hot Patch
 CardData.hot_swap.description,Snap your outer ring to the slice center and gain 1 RAM.
 CardData.hot_swap.display_name,Hot Swap
@@ -445,13 +445,13 @@ CardData.hub_breach.description,Disable the target Hub for 1 turn.
 CardData.hub_breach.display_name,Hub Breach
 CardData.inner_drift.description,Move your inner ring 3 ticks clockwise.
 CardData.inner_drift.display_name,Inner Drift
-CardData.inner_snap.description,Move your inner ring to the nearest segment center.
+CardData.inner_snap.description,Snap your inner ring to the nearest center.
 CardData.inner_snap.display_name,Inner Snap
 CardData.jam.description,"Nudge an enemy wheel ±1, ignoring resistance."
 CardData.jam.display_name,Jam
 CardData.jolt.description,Spin a wheel 3 ticks clockwise.
 CardData.jolt.display_name,Jolt
-CardData.leech_worm.description,The enemy slice under your pointer gets a PARASITE (half output). Exhaust.
+CardData.leech_worm.description,Pointed enemy slice gets a PARASITE (half output). Exhaust.
 CardData.leech_worm.display_name,Leech Worm
 CardData.lock_on.description,Move your outer ring to the nearest slice center (Perfect). Exhaust.
 CardData.lock_on.display_name,Lock On
@@ -465,11 +465,11 @@ CardData.momentum.description,Spin 2 ticks clockwise; spin 5 instead if you alre
 CardData.momentum.display_name,Momentum
 CardData.overclock_nudges.description,Nudge cards trigger twice next turn.
 CardData.overclock_nudges.display_name,Nudge Driver
-CardData.overdrive.description,"OVERCLOCK your slice under the pointer: 1.5x on its next trigger, then it becomes CORRUPTED."
+CardData.overdrive.description,"OVERCLOCK the pointed slice: 1.5x once, then CORRUPTED."
 CardData.overdrive.display_name,Overdrive
 CardData.overload.description,Deal 10 damage to the target and take 4. Exhaust.
 CardData.overload.display_name,Overload
-CardData.parasite_pulse.description,The target's slice under the pointer gets a PARASITE (half output). Exhaust.
+CardData.parasite_pulse.description,Pointed target slice gets a PARASITE (half output). Exhaust.
 CardData.parasite_pulse.display_name,Parasite Pulse
 CardData.patch_up.description,Heal 6. Exhaust.
 CardData.patch_up.display_name,Patch Up

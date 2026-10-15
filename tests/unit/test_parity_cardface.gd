@@ -92,7 +92,7 @@ func test_the_hand_loot_shop_and_deck_views_show_sticker_cards() -> void:
 	for c in scene._hand_box.get_children():
 		if c is ZineCard:
 			assert_eq((c as ZineCard).look, ZineCard.Look.STICKER, "a hand card wears the face")
-			assert_false((c as ZineCard).pictos_give_way, "the hand keeps its pictograms at rest")
+			assert_true((c as ZineCard).pictos_give_way, "Plan 2 A-HAND: the hand's pictogram row gives its room to the rules text so every word fits at rest")
 	scene.skip_motion()
 	holder.queue_free()
 	await _frames(2)

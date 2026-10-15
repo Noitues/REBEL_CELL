@@ -2885,9 +2885,23 @@ func _make_card(card: CardData, i: int, s: float) -> ZineCard:
 	c.body_floor = ZineCard.HAND_REST_FLOOR
 	c.grown_floor = ZineCard.BODY_FLOOR
 	c.hover_to = ZineCard.HOVER_SCALE * maxf(1.0, 1.0 / maxf(s, 0.01))
-	c.pictos_give_way = false  # S-CARDFACE: glyph and value at rest; the grown card shows every word
-	c.grown_clear_of = player_hp_rect  # M14 12Q-MAIN (audit L50): the zoom stands beside the HP readout
+	# Plan 2 A-HAND (PB-PT-003b C2): the pictogram row gives its room to the rules text when the text needs it at
+	# rest, so every card's words fit its resting face (the art glyph still says what it does)
+	c.pictos_give_way = true
+	c.grown_clear_of = _grown_clear_rect.bind(c)  # M14 12Q-MAIN (audit L50): the zoom stands beside the HP readout
 	return c
+
+
+## Plan 2 A-HAND (PB-PT-003b C2: the raised card covered the DECK / DISCARD counters): the rect a grown hand
+## card stands beside: the piles for a card whose growth reaches them, else the player's HP readout.
+func _grown_clear_rect(card: ZineCard) -> Rect2:
+	if _piles != null and is_instance_valid(_piles) and _piles.is_inside_tree() and card != null and card.is_inside_tree():
+		var piles := _piles.get_global_rect()
+		var mid := card.get_global_rect().get_center().x
+		var reach := card.size.x * card.hover_to * ZineCard.GROWN_REACH * 0.5
+		if mid - reach < piles.end.x and mid + reach > piles.position.x:
+			return piles
+	return player_hp_rect()
 
 
 ## M14 12Q-MAIN (audit L50: the hovered card's zoom covered the player's HP at 1.6 / 2.0): the player's
