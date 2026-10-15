@@ -74,6 +74,11 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 - Frame strips are contact sheets at 1 frame per 5-10 game frames; the judge could not confirm motion steps (11, 12) from them: the
   designer's eyes (or a Movie Maker capture) stay the check for motion. Step 4's map-side raid line was not found by the script's search;
   the Site file's "RAID AT HEAT 30" line was.
+### 2026-10-15 — Plan 2 B-CODEX
+- Codex Lexicon gains Nudge, Free nudge, Tick, RAM, Null, Resistance, Blocked, Guard, Heat thresholds (PB-PT-003b C3). Cycles, CORRUPTED, PERFECT / GOOD / WEAK already had entries. Texts drafted by Haiku (Message Batches, `claude-haiku-5-5`, 10 requests, two runs because the first 300-token cap was spent on thinking: 14,324 in / 6,327 out tokens in all, well under $0.10), each checked against GDD 2.1-2.7, 4.3, 11.1; exported through `tools/export_text.gd` (lines carry `# TR`).
+- No "RAM debt" rule exists: RAM never goes below 0 (`drain_ram` clamps; spends need the RAM). The RAM entry says so. The "RAM debt blink" in DECISIONS 2026-10-13 W3B-AIM is the not-enough-RAM blink, a name only.
+- `Codex.search(all, query)` (case-insensitive over title and text, title matches first) added and tested; not wired to a field in the CodexBook (a view change, left for a visual slice).
+- Test: `tests/unit/test_codex_terms.gd` (fast).
 
 ### 2026-10-14 — ART-R2: raid report flood, OURS NOW, the route hold (3a, 7, 9a, M8)
 Sheet `docs/art_review/PLAN1/ART_R2.jpg` (before = main 1ccbf587 | after; `tools/design_lab/art_r1_capture.gd` groups report / loot / cover on both trees).
