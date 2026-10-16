@@ -201,3 +201,59 @@ light seam moved to the BACK band. The bridge link runs along the bridge's front
    and design sessions: an outward window could hold an optional side node, e.g. a shop or event reached from the
    inward room on the same floor.
 2. The read-ahead rule (2 route floors) now spans 6 building floors (80 deg of twist): fine, or read by building floor?
+
+
+<!-- hq_rev v4 -->
+## v4 (designer review: real cutaways, office floors, walkway junctions; tests t5 / t6, 2026-10-16)
+
+Scripts: `hq_build.py` (windows, floors, bridges), `hq_office.py` (the office kit), `hq_atlas.py` + `hq_imap.py`
+(option B), `hq_graph.py` (`bridge_frame`, skin-edge oval). Tests: `D:\rc_scratch\hq_rev\tests\solace_*_t5/t6/t6b.png`,
+`solace_interiors_AB_t6.jpg`. Passes: `D:\rc_scratch\hq_rev\solace\v4\`.
+
+- **Window = a real cutaway.** The skin's vertices are snapped onto the oval and the faces inside are removed; a 0.6 BU
+  jamb, a metal frame ring on the skin, then a clear glass patch (transparent + 15 % fresnel) 0.2 BU inside the skin. The
+  skin's back side is the office wall (backface shader). The route floors' inward windows are open (the node).
+- **Office floor (option A, `HQ_INTERIOR=built`, default).** Each tower level holds TWO storeys of 4 BU clear height
+  (person 2.4 BU): the lower on the deck level, a mezzanine slab, an upper storey, dropped warm ceilings (3500 K panel
+  grid is the main light). Per storey: core, 1-2 glass conference rooms (wood table, coloured chairs), cubicle rows
+  (charcoal desks, few lit monitors), plants, tiny people; seeded per floor (6400 + 100 f + strand). All footprints are
+  tested against the sheared tube wall. `compound.office.person_h` = 2.4 (real scale 5.8 would fit ~3 across).
+- **Walkways.** `G.bridge_frame(f)`: the bridge runs from the mouth of A's inward cutaway to B's, offset ~5.4 BU to the
+  front, entering inside the oval; the deck is one object with the office floor level and material (`FLOOR_COL/K`);
+  glass walls, handrails and posts, warm roof strip, 5 walkers (bright shirts).
+- **UP stair.** The 3D ribbon now stays on the solid front band (its tips into the windows are dropped; the 2D link
+  line still reaches the node), so nothing crosses an opening.
+- **Option B: interior mapping (`HQ_INTERIOR=map`).** Atlas: `hq_atlas.py` builds 6 seeded variants of the kit in a
+  flat box and renders five orthographic slices at 40 px / BU, true aspect (back 800x336 = last 6 BU of depth, left and
+  right 420x336, floor 800x420 = carpet slice, ceiling 800x420 = dropped grid), one 420 px row per variant, tiles at
+  x = 0 / 800 / 1220 / 1640 / 2440 (atlas 3240 x 420 N). The window is one flat patch (oval grid, may follow the skin).
+  **Godot port (spatial shader on one quad / MultiMesh per window):** per instance: `win_xf` (the window frame: centre,
+  level axis tw, normal nw), `variant` (row), `lit` (0/1), `blind` (0..1), `tint`. Constants HU 10, D 10.5, floor
+  ZB -3.15, height 8.4, plane depth DP 1.45 (window frame, BU). Fragment:
+  1. `V = normalize(world_pos - camera)`; `Vu = dot(V, tw)`, `a = max(-dot(V, nw), 0.03)`, `Vz = V.z`.
+  2. carry the ray to the plane: `t0 = (d_P - DP) / a`, `u1 = u + Vu*t0`, `z1 = dz + Vz*t0` (u, dz, d_P = the fragment in the
+     window frame; for a flat quad d_P = DP).
+  3. box hit: `tb = D/a`; `tu = (sign(Vu)*HU - u1)/Vu`; `tz = ((Vz>=0 ? ZB+H : ZB) - z1)/Vz`; `t = min(tb, tu, tz)`;
+     hit `(u1+Vu t, z1+Vz t, a t)`.
+  4. face tile and uv (s across, ty up): back `s=(HU-u)/2HU, ty=(z-ZB)/H`; left `s=(D-d)/D`; right `s=d/D`; floor
+     `s=(u+HU)/2HU, ty=1-d/D`; ceiling `ty=d/D`; atlas uv = `((x0 + s*w)/3240, 1 - (row*420 + h - ty*h)/(420 N))`.
+  5. frost: mix 10 % pale; blinds: above `4.2 - 7*blind` slats `smoothstep(fract(z1*2.5), .30, .62)`; multiply by tint;
+     emission = colour x (0.10 + 0.90 lit) x `imap_k` 0.55; coat 0.4. 6 variants x 3 samples per pixel: one quad per
+     window, no per-floor geometry.
+- **A vs B (t6).** B costs one quad + shader per window and is unstretched, but alone it reads grey and sparse at
+  decision zoom; A shows colour and two storeys but costs real geometry per floor.
+- **FINAL: the HYBRID (`HQ_INTERIOR=hybrid`, the default; `compound.office.mode` / `a_floors`).** Built scenes (A) on
+  the 8 route-node floors (3, 6 .. 24; the node windows are open and the bridge deck runs on into the floor) AND on
+  floors 5..13 (the floors framed in the decision shot: the walked floor 9 +-4); interior mapping (B) on every other
+  window (no slab, no interior geometry: one flat patch per window). **NO PEOPLE anywhere** (designer): office occupants
+  and bridge walkers are off (`hq_office.PEOPLE = False`; the figure code is kept but inert), the atlas is re-rendered
+  without them. The A walls / floor / skin back were toned from lavender to a warm neutral grey (wall 0.19 / 0.18 /
+  0.165, floor 0.22 / 0.21 / 0.195, skin back 0.52 / 0.50 / 0.47) so A and B match. In the Godot port the rule is a
+  per-floor flag: `built = floor in route_floors or a_lo <= floor <= a_hi`, derived from the current decision's floor +-4.
+- **Godot mapping, both paths.** B: the spatial shader above on one quad per window (MultiMesh, per-instance frame /
+  variant / lit / blind / tint). A: per floor a prefab (sheared floor slab, mezzanine slab, two storeys of core,
+  conference rooms, cubicle rows, plants, ceiling panel grid: ~400 boxes, instanced from the kit with the floor seed
+  `6400 + 100 f + strand`) swapped in for the floors the rule marks as built, behind a transparent glass patch on the
+  skin; both paths share the cutaway skin (hole, jamb, frame ring).
+- Values (1280x720, 32 spp): A overview median 0.146 / 32.3 % under 0.10 / landmark 2.45x; A decision 0.130 / 33.6 % /
+  2.33x; B overview 0.146 / 32.4 % / 2.28x; B decision 0.129 / 34.6 % / 2.33x.

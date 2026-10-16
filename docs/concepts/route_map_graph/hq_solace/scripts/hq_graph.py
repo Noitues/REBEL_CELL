@@ -155,12 +155,13 @@ def win_plane_outline(fr, n=72, lift=0.0):
     return [win_pt(fr, *win_uv(k, n), fr["dp"] + lift) for k in range(n)]
 
 
-def win_skin_outline(fr, n=72):
-    """Where the oval prism leaves the skin (the hole's edge; head on it is the same oval)."""
+def win_skin_outline(fr, n=72, lift=0.0):
+    """Where the oval prism leaves the skin (the hole's edge; head on it is the same oval). v4: this IS the window
+    (a real cutaway in the wall), so the frame, the 2D node outline and the glass patch all follow it."""
     out = []
     for k in range(n):
         u, dz = win_uv(k, n)
-        out.append(win_pt(fr, u, dz, skin_depth(fr, u, dz)))
+        out.append(win_pt(fr, u, dz, skin_depth(fr, u, dz) + lift))
     return out
 
 
@@ -177,7 +178,7 @@ NODES.append("srv")
 def _node_rec(i):
     """The node's room record = its inward window's flat plane (kit: o = sill centre, n = the plane's normal)."""
     fr = win_frame(TOWER[i], FLOOR[i], "in")
-    o = win_pt(fr, 0.0, -WB, fr["dp"])
+    o = win_pt(fr, 0.0, -WB, skin_depth(fr, 0.0, -WB))      # v4: the sill centre on the skin (the cutaway is in the wall)
     return dict(o=o, n=fr["nw"], w=2 * WAX, h=2 * WB, d=2.0)
 
 
@@ -256,6 +257,31 @@ def deck_z(f):
     return win_z(f) - 0.75 * WB
 
 
+_BF = {}
+
+
+def bridge_frame(f):
+    """v4: the skybridge of route floor f runs straight from the mouth of A's inward cutaway to the mouth of B's (the
+    two windows face the front by `face_front` deg, so the walkway is offset toward the front by ~5.4 BU and meets
+    each opening 35 deg off its normal, inside the oval). Returns (O, e, q, half): O the deck centre (x, y), e the
+    unit run A -> B, q the unit lateral (toward the front), half the half run mouth to mouth."""
+    if f in _BF:
+        return _BF[f]
+    fa, fb = win_frame("A", f, "in"), win_frame("B", f, "in")
+    dz = deck_z(f) - fa["zc"]
+    ma = win_pt(fa, 0.0, dz, skin_depth(fa, 0.0, dz) - 0.3)
+    mb = win_pt(fb, 0.0, dz, skin_depth(fb, 0.0, dz) - 0.3)
+    d = (mb[0] - ma[0], mb[1] - ma[1])
+    L = math.hypot(*d)
+    e = (d[0] / L, d[1] / L)
+    q = (-e[1], e[0])
+    n = tower_frame("A", (deck_z(f) - PODIUM_H) / FH)[2]
+    if q[0] * n[0] + q[1] * n[1] < 0:
+        q = (-q[0], -q[1])
+    _BF[f] = (((ma[0] + mb[0]) / 2, (ma[1] + mb[1]) / 2), e, q, L / 2.0)
+    return _BF[f]
+
+
 def _in_recess(i, z):
     """A point inside node i's recess at height z, on the radial line to the other strand (the bridge's end)."""
     t = TOWER[i]
@@ -273,12 +299,13 @@ def edge_path(a, b, mt=None):
     if t == "bridge":
         f = FLOOR[a]
         zf = deck_z(f) + DOOR_Z
-        da, db = _in_recess(a, zf), _in_recess(b, zf)
-        n = tower_frame("A", (zf - PODIUM_H) / FH)[2]
+        O, e, q, half = bridge_frame(f)
+        sg = -1.0 if TOWER[a] == "A" else 1.0               # A sits at s = -half, B at +half
         off = CP["bridge_w"][1] / 2 + 0.8                 # along the bridge's front edge (the waist)
-        mid = (n[0] * off, n[1] * off, zf)
-        return [da, ((da[0] + mid[0]) / 2 + n[0] * 2.0, (da[1] + mid[1]) / 2 + n[1] * 2.0, zf), mid,
-                ((db[0] + mid[0]) / 2 + n[0] * 2.0, (db[1] + mid[1]) / 2 + n[1] * 2.0, zf), db]
+        pt = lambda s_, l_: (O[0] + e[0] * s_ + q[0] * l_, O[1] + e[1] * s_ + q[1] * l_, zf)
+        da, db = pt(sg * (half - 1.2), 0.0), pt(-sg * (half - 1.2), 0.0)
+        mid = pt(0.0, off)
+        return [da, pt(sg * half * 0.5, off + 0.4), mid, pt(-sg * half * 0.5, off + 0.4), db]
     if t == "stair":
         return [_tip(a)] + _band(TOWER[a], win_z(FLOOR[a]), win_z(FLOOR[b])) + [_tip(b)]
     s = ROOM["srv"]["o"]
@@ -306,7 +333,7 @@ def visible_outline(i, cam, n=72):
     """Node i's flat oval (in its window plane) when the camera sees its face, else None (it faces away, or the other
     strand stands in the way)."""
     fr = win_frame(TOWER[i], FLOOR[i], "in")
-    m = win_pt(fr, 0.0, 0.0, fr["dp"])
+    m = win_pt(fr, 0.0, 0.0, skin_depth(fr, 0.0, 0.0))
     v = (cam[0] - m[0], cam[1] - m[1], cam[2] - m[2])
     L = math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2)
     if (v[0] * fr["nw"][0] + v[1] * fr["nw"][1]) / max(L, 1e-6) < FACING_MIN:
@@ -320,7 +347,7 @@ def visible_outline(i, cam, n=72):
         co = tower_frame(o, (q[2] - PODIUM_H) / FH)[0]
         if math.hypot(q[0] - co[0], q[1] - co[1]) < RT * 0.92:
             return None
-    return win_plane_outline(fr, n, 0.05)
+    return win_skin_outline(fr, n, 0.08)
 
 
 def mech(walked, mt=None):
@@ -398,11 +425,14 @@ def SHEET_SHOTS(CR):
 def DEBUG_SHOTS(CR):
     """Close looks for checking the windows / rooms (not deliverables)."""
     w = WALK_DEC
-    c = tube_pt("B", win_z(10), 0.0, 0.0)
-    n = tower_frame("B", 10.4)[2]
-    return {"D_win": (CR.Pose((c[0], c[1], win_z(10)), CR.yaw_of((-n[0], -n[1])) - 30.0, 8.0, 45.0, 35.0), dict(walked=w)),
-            "D_node": (CR.Pose(room_center("B3"), CR.yaw_of((-ROOM["B3"]["n"][0], -ROOM["B3"]["n"][1])) + 25.0, 10.0,
-                               45.0, 35.0), dict(walked=w))}
+    fr = win_frame("A", 10, "in")
+    c = win_pt(fr, 0.0, 0.0, skin_depth(fr, 0.0, 0.0) - 2.0)
+    out = {"D_window": (CR.Pose(c, CR.yaw_of((-fr["nw"][0], -fr["nw"][1])) + 18.0, 10.0, 26.0, 40.0), dict(walked=w))}
+    O, e, q, half = bridge_frame(12)
+    zj = deck_z(12) + 1.6
+    j = (O[0] - e[0] * (half - 2.0), O[1] - e[1] * (half - 2.0), zj)
+    out["D_junction"] = (CR.Pose(j, CR.yaw_of((-q[0], -q[1])) - 28.0, 14.0, 34.0, 40.0), dict(walked=w))
+    return out
 
 
 REVEAL_T = 6.5

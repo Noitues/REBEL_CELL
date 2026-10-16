@@ -14,10 +14,9 @@ PALETTES = dict(_LP.PALETTES)
 PRESET["hq"] = {
     "corp": "solace", "corp_name": "SOLACE BIOSYSTEMS",
     "dossier": ("SOLACE", "WARD SECURITY", (150, 255, 70)),
-    "glass_atlas": r"D:\rc_scratch\hq_rev\solace\v3\glass_atlas.png",   # v3 final: hq_glass_atlas.py (seed 6360)
     "target_name": "THE GENOME CORE", "target_place": "the helix cap",
-    "out_big": r"D:\rc_scratch\hq_rev\solace\v3",        # v3 (designer review of round 1); v2 passes in ..\solace
-    "suffix": "_v3",
+    "out_big": r"D:\rc_scratch\hq_rev\solace\v4",        # v4 (designer review, cutaway windows + office floors); v3 passes in ..\solace\v3
+    "suffix": "_v4",
     "palette": {
         "porcelain": (0.13, 0.15, 0.15),       # the strands: wet dark porcelain (v2 r2: was pale grey 0.36)
         "leaf": (0.30, 1.00, 0.06),            # #96FF46 linear: strand LEDs, pod glass glow
@@ -47,6 +46,9 @@ PRESET["hq"] = {
         # its normal turns `face_front` deg from radial toward the floor front (the two inward windows face each other
         # across the walkway AND the camera); `stair_phi` = the solid band between the windows on the front side
         "win": {"span": 140.0, "half_h": 4.2, "zc": 5.4, "frame_r": 0.25, "face_front": 35.0, "stair_phi": 35.0},
+        # v4 (designer): every floor behind its windows is a full office (hq_office); person_h = a standing adult in BU
+        # (the tube is 20 BU across: real scale 5.8 BU would fit ~3 people across, so the crowd is tiny at 2.4)
+        "office": {"person_h": 2.4, "mode": "hybrid", "a_floors": (5, 13)},   # hybrid: built on the route floors + 5..13 (the decision frame), mapped elsewhere; no people (hq_office.PEOPLE)
         "podium": (64.0, 50.0, 5.0),             # the plaza podium: half x, half y, height
         "crown_h": 14.0, "target_w": 22.0, "target_h": 10.0,
         "seed": 6301,                            # the semi-random tower sets (round 43 decision)

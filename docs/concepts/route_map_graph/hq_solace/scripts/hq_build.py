@@ -58,6 +58,19 @@ def build(K):
     for l_ in list(_bp.inputs["Emission Strength"].links):
         m2p.node_tree.links.remove(l_)
     _bp.inputs["Emission Strength"].default_value = 0.0
+    # v4: the skin's BACK side is the office wall (lit warm grey), the front the wet porcelain
+    inn = nt2.nodes.new("ShaderNodeBsdfPrincipled")
+    inn.inputs["Base Color"].default_value = (0.52, 0.50, 0.47, 1.0)
+    inn.inputs["Emission Color"].default_value = (0.85, 0.82, 0.76, 1.0)
+    inn.inputs["Emission Strength"].default_value = 0.22
+    inn.inputs["Roughness"].default_value = 0.7
+    geo2 = nt2.nodes.new("ShaderNodeNewGeometry")
+    mix2 = nt2.nodes.new("ShaderNodeMixShader")
+    nt2.links.remove(o2.inputs[0].links[0])
+    nt2.links.new(geo2.outputs["Backfacing"], mix2.inputs[0])
+    nt2.links.new(b2.outputs[0], mix2.inputs[1])
+    nt2.links.new(inn.outputs[0], mix2.inputs[2])
+    nt2.links.new(mix2.outputs[0], o2.inputs[0])
     PORC = Acc("porc", m2p, 1, K.COLL["compound"])
     hooks["accs"]["porc"] = PORC
     DECK = Acc("plinth_deck", K.M["ground"], 1, K.COLL["compound"])   # v3: the plinth deck is NOT the LOD-blurred
@@ -74,16 +87,84 @@ def build(K):
     tube_pt = G.tube_pt
     NODE_AT = {(G.TOWER[i], G.FLOOR[i]): i for i in G.NODES if i in G.TOWER}
 
-    # ------------------------------------------------------------ v3 final: FLAT level / plumb oval windows
-    # (designer after t3: no bending along the helix). Each window: the oval prism along its normal cuts the skin (head
-    # on a true oval), a jamb (the prism's wall) runs back to the window plane, and in that plane sit the flat frame and
-    # either frosted glass (non-node: the interiors atlas, translucent look) or, for a node, the open recess room.
+    # ------------------------------------------------------------ v4: REAL CUTAWAY windows + an office floor behind each
+    # (designer v4): no surface textures. Each window is a modelled opening in the tube wall (the skin's vertices snapped
+    # onto the oval, a thick jamb back from the skin edge, a metal frame ring); behind it is a thin clear glass patch that
+    # follows the skin, and behind that the floor's own office (hq_office: slab, core, conference rooms, cubicle rows,
+    # plants, ceiling panels, tiny people). The skin's back side is the office wall (backface shader). The 8 route
+    # floors' inward windows are open (no glass): the node, with the skybridge running in through the cutaway.
+    import hq_office as OFC
+    OC = CP.get("office", {})
+    PERSON_H = OC.get("person_h", 2.4)
+    import os
+    MODE = os.environ.get("HQ_INTERIOR", OC.get("mode", "hybrid"))        # hybrid (default) | built | map
+    MV, MF, M_LOC, M_FRM, M_VST, M_TNT = [], [], [], [], [], []
+    IM_NV = OC.get("imap_variants", 6)
+    A_LO, A_HI = OC.get("a_floors", (5, 13))              # hybrid: built scenes on the route floors + these (the decision's frame)
+
+    def built_floor(f_):
+        return MODE == "built" or (MODE == "hybrid" and (f_ in RFS or A_LO <= f_ <= A_HI))
     WINS = [(t, f, side) for t in ("A", "B") for f in range(TOPF) for side in ("in", "out")]
     FR = {k: G.win_frame(*k) for k in WINS}
     WAX, NO = G.WAX, 96
-    GV, GF, GUV, GK, GC = [], [], [], [], []           # the frosted glass: one UV-mapped mesh (the atlas)
-    import os
-    atlas_path = K.HZ.get("glass_atlas", r"D:\rc_scratch\hq_rev\solace\v3\glass_atlas.png")
+    JAMB = 0.6
+
+    mo, nto = K.new_mat("office")
+    oo = nto.nodes.new("ShaderNodeOutputMaterial")
+    bo = nto.nodes.new("ShaderNodeBsdfPrincipled")
+    co_ = K.attr(nto, "col")
+    nto.links.new(co_.outputs["Color"], bo.inputs["Base Color"])
+    nto.links.new(co_.outputs["Color"], bo.inputs["Emission Color"])
+    bo.inputs["Roughness"].default_value = 0.6
+    ko_ = K.attr(nto, "k")
+    po_ = K.attr(nto, "pwo", "OBJECT")
+    nto.links.new(K.mth(nto, "MULTIPLY", ko_.outputs["Fac"], po_.outputs["Fac"]), bo.inputs["Emission Strength"])
+    nto.links.new(bo.outputs[0], oo.inputs[0])
+    mg, ntg = K.new_mat("win_glass")                    # clear glass: transparent, a faint fresnel reflection
+    og = ntg.nodes.new("ShaderNodeOutputMaterial")
+    trn = ntg.nodes.new("ShaderNodeBsdfTransparent")
+    gls = ntg.nodes.new("ShaderNodeBsdfGlossy")
+    gls.inputs["Roughness"].default_value = 0.12
+    gls.inputs["Color"].default_value = (0.8, 0.92, 0.86, 1.0)
+    fre = ntg.nodes.new("ShaderNodeFresnel")
+    fre.inputs["IOR"].default_value = 1.45
+    mxg = ntg.nodes.new("ShaderNodeMixShader")
+    ntg.links.new(K.mth(ntg, "MULTIPLY", fre.outputs[0], 0.15), mxg.inputs[0])
+    ntg.links.new(trn.outputs[0], mxg.inputs[1])
+    ntg.links.new(gls.outputs[0], mxg.inputs[2])
+    ntg.links.new(mxg.outputs[0], og.inputs[0])
+    OFF = Acc("office", mo, 1, K.COLL["compound"])
+    OG = Acc("win_glass", mg, 1, K.COLL["compound"])
+    LAMP = Acc("office_lamp", K.M["emit"], 1, K.COLL["compound"])
+    hooks["accs"].update({"office": OFF, "win_glass": OG, "office_lamp": LAMP})
+    FLOOR_COL, FLOOR_K = (0.22, 0.21, 0.195), 0.20      # the office floor AND the skybridge deck top: one material
+    OACC = {"off": OFF, "glass": OG, "lamp": LAMP}
+    ostats = dict(boxes=0, people=0, cubicles=0, conf=0, plants=0)
+
+    def kind_panels(i):
+        em_ = K.ROOM_EMIT.setdefault(i, Acc("room_" + i, K.M["emit"], 5, K.COLL["rooms"]))
+        tc_ = K.TYPE_COL.get(G.KIND[i], (1, 1, 1))
+        kind_ = G.KIND[i]
+
+        def f_(o, ex, ey, zf):
+            def panel(u0, u1, z0, z1, kk):
+                em_.face([(o[0] + ex[0] * u + ey[0] * 0.05, o[1] + ex[1] * u + ey[1] * 0.05, z) for (u, z) in
+                          ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], tc_, kk)
+            h0 = zf + 0.6
+            if kind_ == "router":
+                for m_ in range(4):
+                    a_ = -2.0 + m_ * 1.0
+                    panel(a_ + 0.12, a_ + 0.88, h0, h0 + 2.0, 3.0)
+            elif kind_ == "elite":
+                for m_ in range(3):
+                    a_ = -1.5 + m_ * 1.5
+                    panel(a_ - 0.25, a_ + 0.25, h0, h0 + 2.6, 3.6)
+            elif kind_ == "terminal":
+                panel(-1.8, 1.8, h0 + 0.2, h0 + 2.2, 2.6)
+            else:
+                for sh in range(3):
+                    panel(-2.0, 2.0, h0 + 0.2 + sh * 0.8, h0 + 0.45 + sh * 0.8, 3.0)
+        return f_
 
     for t in ("A", "B"):
         near = [k for k in WINS if k[0] == t]
@@ -123,6 +204,13 @@ def build(K):
                     if hole:
                         continue
                 faces.append(q)
+        # outward normals (the skin's back side is the office wall): flip the winding if the first quad faces the axis
+        q0 = faces[0]
+        v0, v1, v3 = Vector(verts[q0[0]]), Vector(verts[q0[1]]), Vector(verts[q0[3]])
+        nrm = (v1 - v0).cross(v3 - v0)
+        cax = tube_pt(t, verts[q0[0]][2], 0.0, 0.0)
+        if nrm.x * (v0.x - cax[0]) + nrm.y * (v0.y - cax[1]) < 0:
+            faces = [tuple(reversed(f_)) for f_ in faces]
         me = bpy.data.meshes.new("strand_" + t)
         me.from_pydata(verts, [], faces)
         me.validate()
@@ -137,40 +225,74 @@ def build(K):
         ob["pwo"] = 1.0
 
         for f in range(TOPF):
+            # ---- the office floor behind this floor's two windows
+            node_i = NODE_AT.get((t, f))
+            if not built_floor(f):
+                pass
+            else:
+                OFC.slab(G, t, f, OACC, FLOOR_COL, (0.12, 0.14, 0.14), FLOOR_K)
+            orng = random.Random(6400 + 100 * f + (0 if t == "A" else 1))
+            CH = OC.get("ceil_h", 4.0)
+            zl = G.deck_z(f)
+            zu = zl + CH + 0.4                                # the mezzanine storey: its own desks, core, people
+            if built_floor(f):
+                OFC.slab(G, t, f, OACC, FLOOR_COL, (0.12, 0.14, 0.14), FLOOR_K, z0=zl + CH, z1=zu)   # the mezzanine floor
+                OFC.ceiling_disc(G, t, zu + CH, OACC)
+                for (zs, npan) in ((zl, None), (zu, kind_panels(node_i) if node_i else None)):
+                    st_ = OFC.floor_interior(G, t, f, OACC, orng, PERSON_H, npan, zf=zs, ceil_h=CH)
+                    for k_, v_ in st_.items():
+                        ostats[k_] += v_
             for side in ("in", "out"):
                 fr = FR[(t, f, side)]
-                node = NODE_AT.get((t, f)) if side == "in" else None
+                node = node_i if side == "in" else None
                 sk = G.win_skin_outline(fr, NO)
-                pl = [G.win_pt(fr, *G.win_uv(k_, NO), fr["dp"]) for k_ in range(NO)]
-                for k_ in range(NO):                     # the jamb: the prism's wall from the skin back to the plane
+                for k_ in range(NO):                     # the jamb: the wall's thickness round the opening
                     k1 = (k_ + 1) % NO
-                    PORC.face([sk[k_], sk[k1], pl[k1], pl[k_]], (0.30, 0.32, 0.32))
-                fl_ = G.win_plane_outline(fr, 64, 0.12)  # the flat frame ring
+                    ins = []
+                    for kk_ in (k_, k1):
+                        c_ = tube_pt(t, sk[kk_][2], 0.0, 0.0)
+                        dx, dy = c_[0] - sk[kk_][0], c_[1] - sk[kk_][1]
+                        L_ = math.hypot(dx, dy)
+                        ins.append((sk[kk_][0] + dx / L_ * JAMB, sk[kk_][1] + dy / L_ * JAMB, sk[kk_][2]))
+                    PORC.face([sk[k_], sk[k1], ins[1], ins[0]], (0.30, 0.32, 0.32))
+                fl_ = G.win_skin_outline(fr, 64, 0.06)   # the frame ring on the skin
                 for k_ in range(64):
                     tube(A["metal"], fl_[k_], fl_[(k_ + 1) % 64], WIN["frame_r"], (0.55, 0.58, 0.6), n=5)
+                if not built_floor(f):
+                    wr = orng
+                    if node:
+                        lit_, blind_, tnt_ = 1.0, 0.0, tuple(0.65 + 0.35 * c_ for c_ in K.TYPE_COL.get(G.KIND[node], (1, 1, 1)))
+                    else:
+                        lit_ = 1.0 if wr.random() < 0.84 else 0.0
+                        blind_ = wr.uniform(0.3, 0.95) if wr.random() < 0.22 else 0.0
+                        tnt_ = (wr.uniform(0.85, 1.0), wr.uniform(0.85, 1.0), wr.uniform(0.8, 1.0))
+                    var_ = float(wr.randrange(IM_NV))
+                    for a in range(48):
+                        a0, a1 = 2 * math.pi * a / 48, 2 * math.pi * (a + 1) / 48
+                        for g in range(4):
+                            r0, r1 = g / 4, (g + 1) / 4
+                            b0 = len(MV)
+                            for (rho_, an) in ((r0, a0), (r1, a0), (r1, a1), (r0, a1)):
+                                u_, dz_ = rho_ * WAX * math.cos(an), rho_ * WB * math.sin(an)
+                                dd_ = G.skin_depth(fr, u_, dz_) - 0.2
+                                MV.append(G.win_pt(fr, u_, dz_, dd_))
+                                M_LOC.append((u_ + 32.0, dz_ + 32.0, dd_ + 64.0, 1.0))
+                                M_FRM.append((fr["tw"][0] + 2.0, fr["tw"][1] + 2.0, fr["nw"][0] + 2.0, fr["nw"][1] + 2.0))
+                                M_VST.append((var_, lit_, blind_, 1.0))
+                                M_TNT.append(tuple(tnt_) + (1.0,))
+                            MF.append((b0, b0 + 1, b0 + 2, b0 + 3))
+                    continue
                 if node:
                     continue
-                # frosted glass: a flat polar grid in the plane, UV-mapped to one atlas tile, tinted per window
-                tile = rr.randrange(16)
-                tu, tv = tile % 4, 3 - tile // 4
-                lit = rr.random() < 0.9
-                tint = (rr.uniform(0.85, 1.0), 1.0, rr.uniform(0.85, 1.0))
-                kg = LH["porthole_k"] * LH.get("glass_k", 1.0)
-                kk = kg * rr.uniform(0.8, 1.15) if lit else kg * 0.15
-                NA, NRg = 48, 4
-                for a in range(NA):
-                    a0, a1 = 2 * math.pi * a / NA, 2 * math.pi * (a + 1) / NA
-                    for g in range(NRg):
-                        r0, r1 = g / NRg, (g + 1) / NRg
-                        quad = [(rho_ * math.cos(an), rho_ * math.sin(an)) for (rho_, an) in
-                                ((r0, a0), (r1, a0), (r1, a1), (r0, a1))]
-                        b_ = len(GV)
-                        for (cu, cv) in quad:
-                            GV.append(G.win_pt(fr, cu * WAX, cv * WB, fr["dp"] + 0.03))
-                            GUV.append(((tu + 0.03 + 0.94 * (cu + 1) / 2) / 4, (tv + 0.03 + 0.94 * (cv + 1) / 2) / 4))
-                        GF.append((b_, b_ + 1, b_ + 2, b_ + 3))
-                        GK.append(kk)
-                        GC.append(tint)
+                for a in range(48):                      # the clear glass patch, 0.2 inside the skin
+                    a0, a1 = 2 * math.pi * a / 48, 2 * math.pi * (a + 1) / 48
+                    for g in range(4):
+                        r0, r1 = g / 4, (g + 1) / 4
+                        quad = []
+                        for (rho_, an) in ((r0, a0), (r1, a0), (r1, a1), (r0, a1)):
+                            u_, dz_ = rho_ * WAX * math.cos(an), rho_ * WB * math.sin(an)
+                            quad.append(G.win_pt(fr, u_, dz_, G.skin_depth(fr, u_, dz_) - 0.2))
+                        OG.face(quad, (0.8, 0.9, 0.85))
         # the light rising inside: a continuous mint seam up the back band (between the windows, away from the stair)
         prev = None
         z = G.PODIUM_H
@@ -193,140 +315,117 @@ def build(K):
                     p = (c[0] + nn_[0] * (rt + 1.5), c[1] + nn_[1] * (rt + 1.5), G.floor_z(f) - 0.2)
                     K.add_light("down_%s_%d_%.1f" % (t, f, nn_[0]), "SPOT", p, LH["down_w"], (1.0, 0.95, 0.85),
                                 aim=(p[0], p[1], p[2] - 30.0), size=0.6, spot=80, blend=0.9, group="corp", shadow=False)
+    MAPOB = None
+    if MV:
+        import hq_imap as IM
+        atlas_p = OC.get("imap_atlas", "D:/rc_scratch/hq_rev/solace/v4/atlas/imap_atlas.png")
+        mim = IM.material(K, atlas_p, IM_NV, LH.get("imap_k", 0.55))
+        me_ = bpy.data.meshes.new("imap_glass")
+        me_.from_pydata(MV, [], MF)
+        me_.validate()
+        for nm_, arr_ in (("loc", M_LOC), ("frm", M_FRM), ("vst", M_VST), ("tnt", M_TNT)):
+            ca_ = me_.color_attributes.new(nm_, "FLOAT_COLOR", "CORNER")
+            vals_ = []
+            for poly in me_.polygons:
+                for li_, vi_ in zip(poly.loop_indices, poly.vertices):
+                    vals_.extend(arr_[vi_])
+            ca_.data.foreach_set("color", vals_)
+        MAPOB = bpy.data.objects.new("imap_glass", me_)
+        K.COLL["compound"].objects.link(MAPOB)
+        MAPOB.data.materials.append(mim)
+        MAPOB.pass_index = 1
+        MAPOB["pwo"] = 1.0
+    log("strands + cutaway windows + office floors", MODE, ostats, "map faces", len(MF))
 
-    # the frosted glass object (emission = the atlas x the window's tint x k; a glossy coat over it)
-    mg, ntg = K.new_mat("frost_glass")
-    og = ntg.nodes.new("ShaderNodeOutputMaterial")
-    bg_ = ntg.nodes.new("ShaderNodeBsdfPrincipled")
-    bg_.inputs["Base Color"].default_value = (0.02, 0.03, 0.03, 1.0)
-    bg_.inputs["Roughness"].default_value = 0.35
-    bg_.inputs["Coat Weight"].default_value = 0.5
-    bg_.inputs["Coat Roughness"].default_value = 0.08
-    img = bpy.data.images.load(atlas_path) if os.path.exists(atlas_path) else None
-    tex = ntg.nodes.new("ShaderNodeTexImage")
-    if img is not None:
-        tex.image = img
-    tex.interpolation = "Cubic"
-    gc_ = K.attr(ntg, "col")
-    mul = ntg.nodes.new("ShaderNodeMix")
-    mul.data_type = "RGBA"
-    mul.blend_type = "MULTIPLY"
-    mul.inputs["Factor"].default_value = 1.0
-    ntg.links.new(tex.outputs["Color"], mul.inputs[6])
-    ntg.links.new(gc_.outputs["Color"], mul.inputs[7])
-    ntg.links.new(mul.outputs[2], bg_.inputs["Emission Color"])
-    gk_ = K.attr(ntg, "k")
-    gp_ = K.attr(ntg, "pwo", "OBJECT")
-    ntg.links.new(K.mth(ntg, "MULTIPLY", gk_.outputs["Fac"], gp_.outputs["Fac"]), bg_.inputs["Emission Strength"])
-    ntg.links.new(bg_.outputs[0], og.inputs[0])
-    gme = bpy.data.meshes.new("frost_glass")
-    gme.from_pydata(GV, [], GF)
-    gme.validate()
-    uvl = gme.uv_layers.new(name="UVMap")
-    for poly in gme.polygons:
-        for li, vi in zip(poly.loop_indices, poly.vertices):
-            uvl.data[li].uv = GUV[vi]
-    gka = gme.attributes.new("k", "FLOAT", "FACE")
-    gka.data.foreach_set("value", GK[:len(gme.polygons)])
-    gca = gme.color_attributes.new("col", "FLOAT_COLOR", "CORNER")
-    gca.data.foreach_set("color", [c for poly in gme.polygons for _ in poly.loop_indices
-                                   for c in tuple(GC[poly.index]) + (1.0,)])
-    GLASS_OB = bpy.data.objects.new("frost_glass", gme)
-    K.COLL["compound"].objects.link(GLASS_OB)
-    GLASS_OB.data.materials.append(mg)
-    GLASS_OB.pass_index = 1
-    GLASS_OB["pwo"] = 1.0
-    log("strands + flat windows", len(GF), "glass faces", "atlas" if img else "NO ATLAS")
-
-    # ------------------------------------------------------------ the node rooms: the open recess behind the oval
+    # ------------------------------------------------------------ the node lights + the frosted unread cover
     LOCKS = {}
     no_light = []
     for i in G.NODES:
         if i not in G.TOWER:
             continue
         fr = FR[(G.TOWER[i], G.FLOOR[i], "in")]
-        dp = fr["dp"]
-        em = K.ROOM_EMIT.setdefault(i, Acc("room_" + i, K.M["emit"], 5, K.COLL["rooms"]))
-        dzf = G.deck_z(G.FLOOR[i]) - fr["zc"] - 0.02
-        um = WAX * math.sqrt(max(0.0, 1.0 - (dzf / WB) ** 2))
-        for s_ in range(24):                             # the recess floor (level with the bridge deck)
-            u0, u1 = -um + 2 * um * s_ / 24, -um + 2 * um * (s_ + 1) / 24
-            A["int"].face([G.win_pt(fr, u0, dzf, dp), G.win_pt(fr, u1, dzf, dp),
-                           G.win_pt(fr, u1, dzf, G.skin_depth(fr, u1, dzf) - 0.05),
-                           G.win_pt(fr, u0, dzf, G.skin_depth(fr, u0, dzf) - 0.05)], (0.32, 0.33, 0.35))
-        for a in range(48):                              # the back wall (the window plane)
-            a0, a1 = 2 * math.pi * a / 48, 2 * math.pi * (a + 1) / 48
-            A["int"].face([G.win_pt(fr, 0.0, 0.0, dp), G.win_pt(fr, WAX * math.cos(a1), WB * math.sin(a1), dp),
-                           G.win_pt(fr, WAX * math.cos(a0), WB * math.sin(a0), dp)], (0.62, 0.65, 0.68))
-        tc = K.TYPE_COL.get(G.KIND[i], (1, 1, 1))
-        kind = G.KIND[i]
-
-        def panel(u0, u1, z0, z1, kk, col=tc):
-            em.face([G.win_pt(fr, u0, z0, dp + 0.05), G.win_pt(fr, u1, z0, dp + 0.05), G.win_pt(fr, u1, z1, dp + 0.05),
-                     G.win_pt(fr, u0, z1, dp + 0.05)], col, kk)
-        h0 = dzf + 0.6
-        if kind == "router":
-            for m_ in range(4):
-                a_ = -0.62 * WAX + m_ * 0.31 * WAX
-                panel(a_ + 0.15, a_ + 0.31 * WAX - 0.15, h0 + 1.2, h0 + 3.4, 3.2)
-        elif kind == "elite":
-            for m_ in range(3):
-                a_ = -0.45 * WAX + m_ * 0.45 * WAX
-                panel(a_ - 0.18, a_ + 0.18, h0, h0 + 4.6, 4.0)
-        elif kind == "terminal":
-            panel(-0.5 * WAX, 0.5 * WAX, h0 + 0.8, h0 + 4.0, 2.6)
-        else:
-            for sh in range(3):
-                panel(-0.6 * WAX, 0.6 * WAX, h0 + 0.4 + sh * 1.5, h0 + 0.7 + sh * 1.5, 3.0)
-        panel(-0.45 * WAX, 0.45 * WAX, 0.72 * WB, 0.80 * WB, 4.0, (0.85, 0.95, 1.0))      # the ceiling light bar
-        lp = G.win_pt(fr, 0.0, 1.2, (dp + G.skin_depth(fr, 0.0, 0.0)) * 0.5)
+        lp = G.win_pt(fr, 0.0, 1.0, G.skin_depth(fr, 0.0, 0.0) - 5.5)
         K.add_light("room_%s" % i, "POINT", lp, LH["room_w"] * LH.get("node_room_k", 0.6), (1, 1, 1), size=1.5,
                     group="room:" + i)
         no_light.append(i)
-        # unread: a frosted flat oval over the opening + a frost ring
+        # unread: a frosted patch over the opening (on the skin) + a frost ring
         fa = Acc("frost_%s" % i, K.M["lock"], 5, K.COLL["rooms"])
         fb = Acc("frostf_%s" % i, K.M["emit"], 5, K.COLL["rooms"])
-        for a in range(64):
-            a0, a1 = 2 * math.pi * a / 64, 2 * math.pi * (a + 1) / 64
-            fa.face([G.win_pt(fr, 0.0, 0.0, dp + 0.3), G.win_pt(fr, WAX * math.cos(a1), WB * math.sin(a1), dp + 0.3),
-                     G.win_pt(fr, WAX * math.cos(a0), WB * math.sin(a0), dp + 0.3)], pal("frost"))
-        ring = G.win_plane_outline(fr, 48, 0.35)
+        for a in range(48):
+            a0, a1 = 2 * math.pi * a / 48, 2 * math.pi * (a + 1) / 48
+            for g in range(4):
+                r0, r1 = g / 4, (g + 1) / 4
+                quad = []
+                for (rho_, an) in ((r0, a0), (r1, a0), (r1, a1), (r0, a1)):
+                    u_, dz_ = rho_ * WAX * math.cos(an), rho_ * WB * math.sin(an)
+                    quad.append(G.win_pt(fr, u_, dz_, G.skin_depth(fr, u_, dz_) + 0.12))
+                fa.face(quad, pal("frost"))
+        ring = G.win_skin_outline(fr, 48, 0.2)
         for q in range(48):
             tube(fb, ring[q], ring[(q + 1) % 48], 0.16, pal("frost"), 6.0, n=4)
         LOCKS[i] = (fa, fb)
     hooks["no_room_light"] = tuple(no_light)
-    log("rooms")
+    log("node lights")
 
-    # ------------------------------------------------------------ the bow-tie skybridges (route floors: inward to inward)
+    # ------------------------------------------------------------ the skybridges (route floors): A mouth to B mouth,
+    # flush into the cutaways: the deck runs on into each office at the SAME level and material as the floor
     wide, waist = CP["bridge_w"]
-    s_end = R - rt * 0.97                         # v3 final: the deck ends at the skin, in the node's recess
-
-    def hw(s):
-        return waist / 2 + (wide - waist) / 2 * (abs(s) / s_end) ** 1.6
+    brng = random.Random(6420)
+    bstat = dict(people=0)
 
     for f in sorted(RFS):
         zb = G.deck_z(f)
-        c, rv, n = G.tower_frame("A", (zb - G.PODIUM_H) / FH)
-        NS = 14
+        O_, e_, q_, half = G.bridge_frame(f)
+        s_wall = half + (0.15 if MODE == "map" else 0.6)     # walls / roof end just inside the skin
+        s_deck = half + (0.25 if MODE == "map" else 1.6)     # the deck runs on into the floor (map: to the patch)
+        e3 = (e_[0], e_[1])
+
+        def hw(s):
+            return waist / 2 + (wide - waist) / 2 * (min(abs(s), half) / half) ** 1.6
 
         def P(s, side, z):
-            return (rv[0] * s + n[0] * side * hw(s), rv[1] * s + n[1] * side * hw(s), z)
+            return (O_[0] + e_[0] * s + q_[0] * side * hw(s), O_[1] + e_[1] * s + q_[1] * side * hw(s), z)
+        NS = 16
         for k in range(NS):
-            s0 = -s_end + 2 * s_end * k / NS
-            s1 = -s_end + 2 * s_end * (k + 1) / NS
-            PORC.face([P(s0, -1, zb), P(s1, -1, zb), P(s1, 1, zb), P(s0, 1, zb)], POR)
+            s0 = -s_deck + 2 * s_deck * k / NS
+            s1 = -s_deck + 2 * s_deck * (k + 1) / NS
+            OFF.face([P(s0, -1, zb - 0.01), P(s1, -1, zb - 0.01), P(s1, 1, zb - 0.01), P(s0, 1, zb - 0.01)][::-1], FLOOR_COL,
+                     FLOOR_K)                                                                     # the deck top = the floor
             PORC.face([P(s0, 1, zb - 0.8), P(s1, 1, zb - 0.8), P(s1, -1, zb - 0.8), P(s0, -1, zb - 0.8)], POR)
             for side in (-1, 1):
-                A["trim"].face([P(s0, side, zb + 0.4), P(s1, side, zb + 0.4), P(s1, side, zb + 3.6), P(s0, side, zb + 3.6)],
-                               (0.75, 1.0, 0.85), LH["bridge_wall_k"] * 1.6)
-                PORC.face([P(s0, side, zb - 0.8), P(s1, side, zb - 0.8), P(s1, side, zb), P(s0, side, zb)], POR)
-            PORC.face([P(s0, -1, zb + 3.8), P(s1, -1, zb + 3.8), P(s1, 1, zb + 4.0), P(s0, 1, zb + 4.0)], POR)
+                PORC.face([P(s0, side, zb - 0.8), P(s1, side, zb - 0.8), P(s1, side, zb - 0.01), P(s0, side, zb - 0.01)], POR)
             kb = LH["bridge_route_k"]
-            A["trim"].face([P(s0, -0.35, zb + 0.03), P(s1, -0.35, zb + 0.03), P(s1, 0.35, zb + 0.03), P(s0, 0.35, zb + 0.03)],
-                           CLIN, kb)
-            A["trim"].face([P(s0, 0.5, zb + 3.75), P(s1, 0.5, zb + 3.75), P(s1, -0.5, zb + 3.75), P(s0, -0.5, zb + 3.75)],
-                           (0.7, 1.0, 0.75), kb * 0.5)
-    log("bridges")
+            A["trim"].face([P(s0, -0.25, zb + 0.02), P(s1, -0.25, zb + 0.02), P(s1, 0.25, zb + 0.02),
+                            P(s0, 0.25, zb + 0.02)], CLIN, kb * 0.45)
+        NW = 14
+        for k in range(NW):
+            s0 = -s_wall + 2 * s_wall * k / NW
+            s1 = -s_wall + 2 * s_wall * (k + 1) / NW
+            for side in (-1, 1):
+                OG.face([P(s0, side, zb + 0.3), P(s1, side, zb + 0.3), P(s1, side, zb + 3.5), P(s0, side, zb + 3.5)], (0.8, 0.95, 0.9))
+                A["trim"].face([P(s0, side, zb + 0.3), P(s1, side, zb + 0.3), P(s1, side, zb + 0.55), P(s0, side, zb + 0.55)],
+                               (0.75, 1.0, 0.85), LH["bridge_wall_k"] * 8.0)          # the glowing kick strip
+            PORC.face([P(s0, -1, zb + 3.5), P(s1, -1, zb + 3.5), P(s1, 1, zb + 3.7), P(s0, 1, zb + 3.7)], POR)
+            LAMP.face([P(s0, 0.45, zb + 3.47), P(s1, 0.45, zb + 3.47), P(s1, -0.45, zb + 3.47), P(s0, -0.45, zb + 3.47)],
+                      (1.0, 0.8, 0.58), 1.1)                                              # the ceiling light strip (warm)
+        for k in range(0, NW + 1):                   # posts and the handrails (inside the glass), seen at decision zoom
+            s_ = -s_wall + 2 * s_wall * k / NW
+            for side in (-1, 1):
+                tube(A["metal"], P(s_, side * 0.93, zb), P(s_, side * 0.93, zb + 1.15), 0.07, (0.55, 0.58, 0.6), n=5)
+        for side in (-1, 1):
+            for k in range(NW):
+                s0 = -s_wall + 2 * s_wall * k / NW
+                s1 = -s_wall + 2 * s_wall * (k + 1) / NW
+                tube(A["metal"], P(s0, side * 0.93, zb + 1.15), P(s1, side * 0.93, zb + 1.15), 0.09, (0.62, 0.65, 0.67), n=5)
+        for _ in range(5):                           # tiny people walking the bridge
+            s_ = brng.uniform(-half + 4.0, half - 4.0)
+            lat = brng.uniform(-0.55, 0.55) * hw(s_)
+            d = (e_[0], e_[1]) if brng.random() < 0.5 else (-e_[0], -e_[1])
+            px, py, _z = P(s_, 0.0, zb)
+            px, py = px + q_[0] * lat, py + q_[1] * lat
+            OFC.person(OFF, px, py, zb, (d[1], -d[0]), d, PERSON_H, brng, "walk" if brng.random() < 0.7 else "stand", 0.9, bright=True)
+            bstat["people"] += 1
+    log("bridges", bstat)
 
     # ------------------------------------------------------------ the UP stairs: a ribbon up each strand's front band
     for (a, b_) in G.PATH:
@@ -334,6 +433,12 @@ def build(K):
         if et == "bridge":
             continue
         pth = [p for p in G.edge_path(a, b_) if p[2] > G.PODIUM_H + 0.2]
+        if et == "stair":                          # v4: the ribbon stays on the solid band: no tips into the windows
+            pth = pth[1:-1]
+        elif et == "ramp":
+            pth = pth[:-1]
+        else:
+            pth = pth[1:]
         for p, q in zip(pth, pth[1:]):
             K.seg_box(A["metal"], Vector(p) + Vector((0, 0, -1.55)), Vector(q) + Vector((0, 0, -1.55)), 1.8, 0.25,
                       (0.42, 0.45, 0.45))
@@ -484,7 +589,9 @@ def build(K):
     hooks["post_build"] = post_build
 
     def apply(fr, ctx):
-        ctx["set_pwo"](GLASS_OB, ctx.get("cut", 1.0))
+        for k_ in ("office", "office_lamp"):
+            ctx["set_pwo"](ctx["OBJ"].get(k_), ctx.get("cut", 1.0))
+        ctx["set_pwo"](MAPOB, ctx.get("cut", 1.0))
         un = set(fr.get("affected") or [])
         for i, (a, b_) in LOCKS.items():
             for o in (a, b_):
