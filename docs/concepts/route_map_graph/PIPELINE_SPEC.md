@@ -167,7 +167,7 @@ The contract between the tools and Godot. Fields as written today by `SB/sb_ocjo
 | `overview`, `decision` | pose dicts | Solved poses (section 6) |
 | `frontage` | `[[key, h, floors, taper]]` | The street's frontage, for checks |
 | `seed_key` | int | New: the art seed key (section 3.5) |
-| `art_seeds` | `{stream name: int}` | New: one seed per art stream, derived on the game side from an `RngService`-derived seed and exported here, so Blender never invents a seed (proposal, Q9) |
+| `art_seeds` | `{stream name: int}` | New: one seed per art stream, derived on the game side from an `RngService`-derived seed and exported here, so Blender never invents a seed (adopted: Designer 2026-10-16, Q9) |
 | `version` | string | New: the rules version (bump on any rule change) |
 
 ---
@@ -325,7 +325,7 @@ Today every tool seeds `random.Random(<literal>)`. The pipeline replaces literal
    or advance the game's `RngService` streams (`map`, `combat`, `rewards`, `events`, `raids`; `docs/TECH_SPEC.md:57-62`),
    so dressing can never change a game outcome. Adding an `art` stream family to `RngService` is a TECH_SPEC change:
    log it in `docs/DECISIONS.md` (open question Q9).
-   **Proposal (AD ruling 2026-10-15, C23; still Q9):** the game derives the art seeds from an `RngService`-derived seed
+   **Adopted (Designer 2026-10-16, Q9; proposed by AD ruling 2026-10-15, C23):** the game derives the art seeds from an `RngService`-derived seed
    and exports them into `derive_<run>.json` (`art_seeds`, section 2.3). The tools and Blender read seeds only from
    there; they never invent one. The legacy literals below are for golden-image parity in look-dev only.
 3. Per-object streams are keyed by content ids, never by draw order: a building's stream is `(stream, key)`, a room's
@@ -357,6 +357,51 @@ Stream table (current literal in brackets; keep the literal as the stream's `leg
 | `ring` | HQ ring city fallback | per corp (Meridian 5311, `HM/hq_preset.py:107`) |
 | `landmark.<corp>` | landmark detail | Meridian 5320-5330 (`HQ_meridian/scripts/hq_build.py:20`) |
 | `cycles` | Cycles sampling seed | 0 (one-city), 7 (HQ) (`M44/onecity_cycles.py:573`, `HM/hq_scene.py:1118`) |
+
+### 3.5b Art variance by HQ proximity (Designer 2026-10-16, Q9 resolved)
+
+Art variance is how much the dressing varies, drawn from the art streams (3.5) and never from the game's. The designer
+likes all three levels for different purposes, so **the level varies with proximity to each HQ, and each corp has its
+own preferred level**.
+
+**Settings per level** (`route_map_graph/decisions/DECISIONS.md` "Q9", sheet `Q9_art_randomness.png`):
+
+| Setting | LOW | MEDIUM (today's rules) | HIGH |
+|---|---|---|---|
+| `height_var` | 0.08 | 0.30 | 0.65 |
+| `type_mix` | 0.15 | 0.60 | 1.0 |
+| `sign_density` (x 16 % blade, 55 % shop band, 16 % roof holo) | 0.45 | 1.0 | 2.2 |
+| `colour_mix` | 0.05 | 0.25 | 0.65 |
+| `window_var` (around 30 % lit) | 0.03 | 0.12 | 0.30 |
+| `clutter` | 0.4 | 1.0 | 2.2 |
+
+**Per-corp preference** (`variance_pref`, in each corp preset; defaults **provisional**):
+
+| Corp | `variance_pref` |
+|---|---|
+| Halcyon, Orbital, Aurelian | LOW |
+| Solace, Meridian, Tethys | MEDIUM |
+| Rebel Cell (the city centre) | HIGH |
+| The Sprawl (no corp) | HIGH |
+
+**Blend.** For each lot, the setting values are the weighted mean of the level presets, using the same HQ-proximity
+falloff the city uses for district colour (`CAC/city_rules.py:79-86` `district_weights`; numbers
+`CAC/city_preset.py:185` `INFLUENCE`):
+1. `w_k = exp(-d_k / (lam * lam_k[k])) * u` for each corp k, with `d_k` the lot's distance to corp k's HQ in lots,
+   `lam` 10, `lam_k` (Rebel Cell 0.75, Tethys 1.15, others 1.0), and `u` the urban factor.
+2. The Sprawl weight `w0 = exp(-d0 / lam)`, `d0` 23.
+3. `setting(lot) = (sum_k w_k * P[pref_k][setting] + w0 * P[HIGH][setting]) / (sum_k w_k + w0)`.
+4. So a corp's preference dominates near its HQ and fades with distance into the Sprawl's HIGH. The values are
+   continuous: there are no seams between territories.
+
+Rules:
+1. Variance only reshapes the numbers each lot draws from its own stream (`art/building:(i, j)`, FNV-1a 64 expanded
+   with splitmix64), so LOW, MEDIUM and HIGH show the same city, calmer or wilder.
+2. A building that carries route rooms keeps the height the derivation needs: `height_var` applies to non-route lots
+   only, and the derivation (3.3) runs before the art pass.
+3. Route columns, HQ landmarks and key-location landmarks (8.8) ignore `type_mix` and `colour_mix`.
+4. Checks: the same seed and settings give byte-identical placements (12.3); the composition tests (12.7) run on the
+   blended result, not per level.
 
 ### 3.6 Determinism rules
 
@@ -1002,14 +1047,29 @@ Godot: `Line2D` with a reveal Tween (`SB/NOTES.md:162`).
 4. Numbers only on the current options (keys 1-n).
 5. Gloss: a rainbow diagonal sweep, one sticker at a time on a scheduler (DR 1349); `foil.gdshader` `gloss_pos`.
 
-### 9.4 Hover power cut
+### 9.4 Hover power cut (Designer 2026-10-16, Q6 resolved)
 
 1. Everything outside the hovered branch (and the current room) dims; the branch lights; the whole branch to the
    TARGET lights (ROUTE_REQUIREMENTS 2).
-2. Street (v3 dynamic): outside to **32 %**, 40 % desaturated; branch rooms x (1 + 0.45 hover_k) with type-colour
-   spill (`V3D/../NOTES.md:84-86`).
-3. HQ: outside to **22 %** in 3D, branch x 1.45; 2D x 0.62 (`HM/hq_jobs.py:39`; `HQ_halcyon/NOTES.md:114`).
-4. It runs on the hover ease curve (0.30 s in, 0.35 s out). The level is a designer question (Q6; AD ruling 2026-10-15, C10), pending the decision sheet in `route_map_graph/decisions/` that renders one alternative level (Designer 2026-10-16).
+2. **ONE value for the street and the HQ, applied as a single 2D grade** (the ALTERNATIVE level of
+   `route_map_graph/decisions/Q6_power_cut.png`, `DECISIONS.md` "Q6"):
+
+   | Preset | Default | Meaning |
+   |---|---|---|
+   | `hover.cut_level` | x 0.20 | value of everything outside the branch and the current room |
+   | `hover.cut_desat` | 0.70 | desaturation outside the branch |
+   | `hover.branch_boost` | x 1.35 | branch rooms brightened |
+   | `hover.type_glow` | 1.0 | type-colour glow on the branch rooms |
+
+   Tunable toward x 0.35 in playtest if it feels harsh. The branch then reads about 6x brighter than the rest.
+3. **Dropped:** the HQ's separate 3D cut (22 %, `POWER_K` 0.22 / `POWER_BOOST` 1.45, `HM/hq_jobs.py:39`). The HQ uses
+   the same 2D grade as the street.
+4. **Previous values** (the approved storyboard's real grade, `SB/sb_ui.py:674-690` `route_grade`): outside x 0.62 with
+   25 % desaturation, branch unchanged, type glow 0.5. (The 32 % / 40 % quoted earlier from the v3 dynamic NOTES and
+   the HQ's 22 % were not what the storyboard renders.)
+5. It runs on the hover ease curve (0.30 s in, 0.35 s out). Hover frames stay exempt from the value band (12.1).
+6. Godot: one full-screen grade pass with a branch mask (the room polygons, grown 8 px, blurred 8 px), the four
+   presets as uniforms, times `hover_k`.
 
 ### 9.5 The plan pencil (HQ page)
 
@@ -1159,9 +1219,9 @@ Every check writes pass / warn / fail with numbers to `checks_<run>.json`. A fai
 | Item | Default |
 |---|---|
 | Measure | Rec.709 luma of the final 8-bit sRGB plate without UI |
-| Median | 0.14, pass 0.12-0.17 (R-VAL-1; provisional, derived from hand-built passes; AD 2026-10-15). Tolerance still Q4: pending the decision sheet in `route_map_graph/decisions/` (Designer 2026-10-16). |
-| Under 0.10 | 25-40 % (R-VAL-2) |
-| Over 0.85 | <= 2.5 % (R-VAL-3); the solve runs after the vignette (rule `values.solve`, 13.1) |
+| Median (R-VAL-1) | **Designer 2026-10-16 (Q4 resolved; `route_map_graph/decisions/DECISIONS.md` "Q4"):** pass 0.14 +- 0.03 (0.11-0.17); **warn** 0.09-0.11 and 0.17-0.19 (reported, never blocks); **fail** below 0.09 or above 0.19 |
+| Under 0.10 (R-VAL-2) | 25-40 %; a separate check (it moves fastest, so it is the real guard against crushed or washed-out frames) |
+| Over 0.85 (R-VAL-3) | <= 2.5 %; a separate check; the solve runs after the vignette (rule `values.solve`, 13.1) |
 | Exempt (reported, not failed) | hover power-cut frames; mainline-look frames (held instead to the capture: median 0.214 +- 0.03, `SB/NOTES.md:120`); Rebel Cell red-sequence frames; beam-pass flash frames of an entrance beat; look-blend frames (0 < look_blend < 1) are reported only |
 
 ### 12.2 Landmark ratio
@@ -1236,7 +1296,7 @@ config `checks.composition` and are **provisional; derived from hand-built passe
 | R-FOCUS-1 | any frame with a landmark | landmark / ring mean luma >= 1.5 | fail (rule `landmark.lead`); complements 12.2, which uses medians and pass indices |
 | R-HOR-1 | city views | built-top std >= 0.015 in every 1/4 window | fail (rule `horizon.break`) |
 | R-REP-1 | all | autocorrelation p90 <= 0.60 | fail (rule `repetition.guard`) |
-| R-VAL-1/2/3 | AAA-2 | 12.1 | fail (rule `values.solve`) |
+| R-VAL-1 / R-VAL-2 / R-VAL-3 | AAA-2 | 12.1 (median warn band 0.09-0.11 / 0.17-0.19 reports only; Designer 2026-10-16) | fail outside the fail band (rule `values.solve`) |
 
 Exempt as in 12.1 (hover power cut, mainline frames, red sequence, flash frames). The landmark and crop boxes come
 from the scene's object-index pass, not hand-placed boxes. The rules without a test yet (`streets.light`,
@@ -1302,7 +1362,7 @@ occlusion rule (7).
 | R-FOCUS-1 | every landmark in frame | landmark-box mean luma / ring mean luma | >= 1.5 |
 | R-HOR-1 | city views | built-top std in every 1/4 window | >= 0.015 |
 | R-REP-1 | all | high-passed 128 px tile autocorrelation, p90 | <= 0.60 |
-| R-VAL-1/2/3 | AAA-2 | median / under 0.10 / over 0.85 | 0.12-0.17 / 25-40 % / <= 2.5 % (12.1) |
+| R-VAL-1 / R-VAL-2 / R-VAL-3 | AAA-2 | median / under 0.10 / over 0.85 | median pass 0.11-0.17, warn 0.09-0.11 and 0.17-0.19, fail outside 0.09-0.19 / 25-40 % / <= 2.5 % (12.1; Designer 2026-10-16) |
 
 ### 13.2 What procedural already does better (AD 2026-10-15)
 
@@ -1336,20 +1396,20 @@ Items known to be hand-placed or hand-tuned (each needs a rule above or a new on
 
 ### 14.1 Designer answers and open questions (Designer 2026-10-16)
 
-Answers from DR "Designer review of round 1" (2026-10-16). Pending questions get a decision sheet in
-`route_map_graph/decisions/` (being rendered); the spec keeps them open until the sheet is answered.
+Answers from DR "Designer review of round 1" (2026-10-16). The last three (Q4, Q6, Q9) were answered from the decision sheets in
+`route_map_graph/decisions/` (`DECISIONS.md`); none is pending.
 
 | Q | Question | Status | Where applied |
 |---|---|---|---|
 | Q1 | HQ compound footprint vs its map lot | **Resolved: an HQ fills its map lot** (`k_fit` per lot) | 8.6 |
 | Q2 | Fixed route vs slot counts | **Resolved: the city AND the route are generated per game seed** and differ every game. The generation order per territory is HQ, non-HQ landmarks (key locations), unique building types, route map, flavour. Landmark / key and route mechanics are game design (14.3); art provides the building types | 2.0, 3 (intro), 8.4, 8.8 |
 | Q3 | LOD by distance | **Resolved: detail appears with camera distance**; details always exist and are revealed in per-asset tiers (e.g. a street sign: hidden at city zoom, then a neon shape, then the full sign at street view) | 5.1, 5.2b |
-| Q4 | Value-band tolerance (median 0.14; pass 0.12-0.17 today) | **Pending:** a decision sheet of render tolerance options, `route_map_graph/decisions/` | 12.1 (unchanged until answered) |
+| Q4 | Value-band tolerance | **Resolved:** pass 0.14 +- 0.03 (0.11-0.17), warn 0.09-0.11 and 0.17-0.19, fail outside 0.09-0.19; R-VAL-2 and R-VAL-3 stay separate (`decisions/DECISIONS.md`) | 12.1, 12.7, 13.1 |
 | Q5 | Landmark ratio above 2.0 | **Resolved: keep the 2x rule; above 2x warns, never fails** (Solace 2.8x accepted); the MAINFRAME 10x exception is withdrawn (MAINFRAME moves to the target) | 8.3, 8.5, 12.2 |
-| Q6 | Power-cut level (32 % + 40 % desaturation street vs 22 % HQ) | **Pending:** a decision sheet rendering one alternative level, `route_map_graph/decisions/` | 9.4 (both values kept until answered) |
+| Q6 | Power-cut level | **Resolved:** the ALTERNATIVE as one 2D grade for street and HQ: outside x 0.20, 70 % desaturation, branch x 1.35, type glow 1.0 (presets `hover.cut_level`, `hover.cut_desat`, `hover.branch_boost`, tunable toward x 0.35); the HQ's 3D cut dropped | 9.4 |
 | Q7 | Entry durations | **Resolved: approved as in the storyboard video**; the animatic times are the game times | 6.3, 10 |
 | Q8 | TARGET off screen on the HQ page | **Resolved: edge arrow when off screen; above 50 % visible, no arrow, only the partial grease circle** | 9.5b |
-| Q9 | Art RNG streams | **Pending:** a decision sheet with examples of the art-randomness settings, `route_map_graph/decisions/`. The proposal stands: the game derives the art seeds from an `RngService`-derived seed and exports them into `derive_<run>.json` (`art_seeds`); Blender never invents a seed; needs a TECH_SPEC / DECISIONS entry | 2.3, 3.5 |
+| Q9 | Art RNG streams | **Resolved:** the art-seed export is adopted (the game derives `art_seeds` from an `RngService`-derived seed and exports them in `derive_<run>.json`; Blender never invents a seed; the build session adds the TECH_SPEC / DECISIONS entry). Variance varies with proximity to each HQ: per-corp `variance_pref` blended by the city's HQ-proximity falloff | 2.3, 3.5, 3.5b |
 | Q10 | Z-toggle zoom time | **Resolved: 1.0 s**, as the video | 6.2 |
 
 **For the build session / designer, not art tooling** (AD ruling 2026-10-15, C16):
@@ -1405,7 +1465,7 @@ The art tools read these; they never decide them (2.0 steps 1, 2 and 4).
 | C7 | HQ kits build their own synthetic downtown + ring city vs one continuous city from the map lots (DR 1385-1388, 1399); compound size vs `LANDMARK_FP` (Meridian keep half 136 BU vs map square 32 BU) | **AD ruling 2026-10-15:** one unit system, HQ kits rescaled to it (8.6); map lots by default, kit city as fallback (8.2); compound footprint vs map lot stays open (Q1); **Designer 2026-10-16:** an HQ fills its map lot (`k_fit`, 8.6); the full-city landmark is canonical (8.6b) |
 | C8 | The Meridian freight line: HQ kit = a straight viaduct north at x 66 to y 1180, deck z 22 (`HM/hq_preset.py:51-52`) vs city = a BFS over street tiles to the nearest coast cell, deck z 9.0 (`CAC/zoning.py:353-390`, `CAC/city_preset.py:149`). DR 1410 wants the same line in both | **AD ruling 2026-10-15:** ONE line; the city derivation's rail search (3.4 L4) is the source; the HQ scene imports the same polyline and `deck_z` 17.5 BU (clears the tallest frontage 15.3 BU, i.e. a 6-floor front + key floors, plus 2.2 BU); the straight x 66 viaduct is a placeholder to replace; checked by 12.4 |
 | C9 | Occlusion Godot text uses `world_vertex.z` (`HQ_meridian/NOTES.md`, `HQ_halcyon/NOTES.md:346`); Godot is Y-up | World Y |
-| C10 | Power cut 32 % + 40 % desat (`V3D/../NOTES.md:85`) vs 22 % / x 1.45 (`HM/hq_jobs.py:39`, `HQ_halcyon/NOTES.md:114`) | **AD ruling 2026-10-15:** kept as designer question Q6; **Designer 2026-10-16:** pending a decision sheet (`route_map_graph/decisions/`) |
+| C10 | Power cut: the spec quoted 32 % + 40 % desat (`V3D/../NOTES.md:85`) and the HQ's 3D 22 % / x 1.45 (`HM/hq_jobs.py:39`, `HQ_halcyon/NOTES.md:114`); the approved storyboard actually renders x 0.62, 25 % desaturation, glow 0.5 (`SB/sb_ui.py:674-690`) | **Designer 2026-10-16:** ONE 2D grade for street and HQ: x 0.20, 70 % desat, branch x 1.35, glow 1.0 (presets, tunable toward x 0.35); the HQ 3D cut is dropped; the storyboard values are recorded as "previous" (9.4) |
 | C11 | Zoom time 0.70 s (`V3D/cam_rig.py:37`) vs "the zoom takes 1.0 s" (`SB/NOTES.md:83`, `SB/sb_cams.py:106`) | **AD ruling 2026-10-15:** designer question Q10; proposed 1.0 s for both; **Designer 2026-10-16:** resolved, 1.0 s (Q10) |
 | C12 | Meridian camera: NOTES section 4 (pitch 14-24, fill 56 / 62 %, overview yaw 150, pitch 30, lens 40) vs `HM/hq_preset.py:125-126` (21-27, 0.50 / 0.54, 140, 40, 36) | The preset (later, v2) |
 | C13 | Landmark rule "1.5-2x" vs measured ratios 0.92-13 (Meridian 1.33 / 0.92, Halcyon 2.9-3.3, Orbital 2.5-3.8, Solace 3.2-13, Rebel 1.46-3.8; `hq_rev_STATUS.md:73`, corp NOTES) | 12.2: < 1.5 fails, > 2.0 warns; Q5; **Designer 2026-10-16:** 2x rule kept, above 2x warns only (Solace 2.8 accepted), MAINFRAME 10x exception withdrawn |
@@ -1418,5 +1478,5 @@ The art tools read these; they never decide them (2.0 steps 1, 2 and 4).
 | C20 | Frontage height: "about 11.5 BU" (DR 1386) vs "6 x 1.9 = 11.4 BU" (`SB/NOTES.md:458`) vs the code `(6 + key % 3) * 1.9 + 0.1` (`SB/sb_onecity.py:135`) | The code |
 | C21 | The HQ kit exists as five identical copies (`hq_<corp>/scripts/hq_kit/`), and the generalised scene / jobs / compose as per-corp copies | **AD ruling 2026-10-15:** ONE package, `tools/netrun_art/`, with per-corp landmark plugins; copies forbidden (2.2) |
 | C22 | "Same seed gives the same image hash" vs GPU Cycles + OIDN not being bit-exact | **AD ruling 2026-10-15:** agreed: exact hash on data, geometry and a deterministic preview render; tolerance on GPU finals (12.3) |
-| C23 | CLAUDE.md rule 2 (randomness only via `RngService` streams) vs every art script seeding `random.Random(<literal>)` | **AD ruling 2026-10-15:** kept as Q9, with the proposal that art seeds come from `RngService`-derived seeds exported into `derive_<run>.json` (`art_seeds`), so Blender never invents seeds (2.3, 3.5) |
+| C23 | CLAUDE.md rule 2 (randomness only via `RngService` streams) vs every art script seeding `random.Random(<literal>)` | **AD ruling 2026-10-15:** kept as Q9, with the proposal that art seeds come from `RngService`-derived seeds exported into `derive_<run>.json` (`art_seeds`), so Blender never invents seeds (2.3, 3.5); **Designer 2026-10-16:** adopted; variance by HQ proximity with per-corp `variance_pref` (3.5b) |
 | C24 | Meridian NOTES section 1 says the moat is on W, S and E with the north side the rail yard; v2 says the moat runs round all four sides (`HM/hq_preset.py:44-46`) | **AD ruling 2026-10-15:** moat on W / S / E only; the north side is the rail yard and the gate the freight line leaves by (matches the designer's rail note; 8.5) |
