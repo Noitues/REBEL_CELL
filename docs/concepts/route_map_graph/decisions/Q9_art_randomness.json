@@ -1,0 +1,117 @@
+{
+ "variance": {
+  "LOW": {
+   "height_var": 0.08,
+   "type_mix": 0.15,
+   "sign_density": 0.45,
+   "colour_mix": 0.05,
+   "window_var": 0.03,
+   "clutter": 0.4
+  },
+  "MEDIUM": {
+   "height_var": 0.3,
+   "type_mix": 0.6,
+   "sign_density": 1.0,
+   "colour_mix": 0.25,
+   "window_var": 0.12,
+   "clutter": 1.0
+  },
+  "HIGH": {
+   "height_var": 0.65,
+   "type_mix": 1.0,
+   "sign_density": 2.2,
+   "colour_mix": 0.65,
+   "window_var": 0.3,
+   "clutter": 2.2
+  }
+ },
+ "base": {
+  "lit": 0.3,
+  "shop": 0.55,
+  "blade": 0.16,
+  "trim": 0.42,
+  "tank": 0.18,
+  "holo": 0.16
+ },
+ "seeds": [
+  40417,
+  77231,
+  91002
+ ],
+ "blocks": {
+  "40417|MEDIUM": {
+   "h_min": 4.800000000000001,
+   "h_max": 46.400000000000006,
+   "h_cv": 0.5121624168083614,
+   "types": {
+    "lowrise": 7,
+    "podium": 4,
+    "slab": 16,
+    "stepped": 4,
+    "tower": 1
+   },
+   "signs": 30,
+   "foreign_ink": 9,
+   "n": 32
+  },
+  "77231|MEDIUM": {
+   "h_min": 3.2,
+   "h_max": 52.800000000000004,
+   "h_cv": 0.5010267073361497,
+   "types": {
+    "lowrise": 5,
+    "podium": 3,
+    "slab": 16,
+    "stepped": 5,
+    "tower": 3
+   },
+   "signs": 25,
+   "foreign_ink": 6,
+   "n": 32
+  },
+  "91002|MEDIUM": {
+   "h_min": 3.2,
+   "h_max": 51.2,
+   "h_cv": 0.4513842723608298,
+   "types": {
+    "lowrise": 4,
+    "podium": 5,
+    "slab": 10,
+    "stepped": 6,
+    "tower": 7
+   },
+   "signs": 27,
+   "foreign_ink": 6,
+   "n": 32
+  },
+  "40417|LOW": {
+   "h_min": 8.0,
+   "h_max": 38.400000000000006,
+   "h_cv": 0.2924959371984803,
+   "types": {
+    "lowrise": 2,
+    "slab": 29,
+    "stepped": 1
+   },
+   "signs": 16,
+   "foreign_ink": 2,
+   "n": 32
+  },
+  "40417|HIGH": {
+   "h_min": 3.2,
+   "h_max": 62.400000000000006,
+   "h_cv": 0.7738553100007304,
+   "types": {
+    "lowrise": 10,
+    "podium": 5,
+    "slab": 8,
+    "stepped": 6,
+    "tower": 3
+   },
+   "signs": 61,
+   "foreign_ink": 21,
+   "n": 32
+  },
+  "rebuild_identical": true
+ }
+}

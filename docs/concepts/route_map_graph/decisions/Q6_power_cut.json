@@ -1,0 +1,50 @@
+{
+ "HOVER OPTION 1 (Fight, L1)|none": {
+  "median": 0.18377569317817688,
+  "under": 0.21563464506172839,
+  "over": 0.047545331790123456,
+  "branch_mean": 0.536567747592926,
+  "outside_mean": 0.26246482133865356,
+  "outside_chroma": 0.055037397891283035
+ },
+ "HOVER OPTION 1 (Fight, L1)|current": {
+  "median": 0.1227121651172638,
+  "under": 0.40271604938271605,
+  "over": 0.050590277777777776,
+  "branch_mean": 0.5979114174842834,
+  "outside_mean": 0.1910271793603897,
+  "outside_chroma": 0.035175491124391556
+ },
+ "HOVER OPTION 1 (Fight, L1)|alt": {
+  "median": 0.0504298061132431,
+  "under": 0.702989486882716,
+  "over": 0.06629292052469135,
+  "branch_mean": 0.6750913262367249,
+  "outside_mean": 0.11149194836616516,
+  "outside_chroma": 0.021011026576161385
+ },
+ "HOVER OPTION 2 (held hover moved)|none": {
+  "median": 0.18552707135677338,
+  "under": 0.2069212962962963,
+  "over": 0.04614583333333333,
+  "branch_mean": 0.45925334095954895,
+  "outside_mean": 0.2657789885997772,
+  "outside_chroma": 0.055446378886699677
+ },
+ "HOVER OPTION 2 (held hover moved)|current": {
+  "median": 0.12469882518053055,
+  "under": 0.38971016589506174,
+  "over": 0.04306182484567901,
+  "branch_mean": 0.5466426610946655,
+  "outside_mean": 0.19128663837909698,
+  "outside_chroma": 0.034981898963451385
+ },
+ "HOVER OPTION 2 (held hover moved)|alt": {
+  "median": 0.05154666677117348,
+  "under": 0.6890528549382716,
+  "over": 0.06868296682098765,
+  "branch_mean": 0.6505222916603088,
+  "outside_mean": 0.10824720561504364,
+  "outside_chroma": 0.02016557566821575
+ }
+}
