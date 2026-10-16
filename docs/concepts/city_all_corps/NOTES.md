@@ -385,3 +385,23 @@ with the view (same angle to the camera as before).
 0.85 (exposure 5.1, toe 1.85); day median 0.149, 41 % under 0.10 (p10 0: the contrast solve to the 0.39 spread crushes the
 shadows), 0.05 % over 0.85. Render 75 s night, 46 s day (build 14 s). Known: the day sea is very dark; the Meridian /
 Tethys modules were not re-tuned beyond a look; the north horizon is flat ground in fog.
+
+### Layout A2, designer pass 2 (terrain, bay character, density, roads, day), tests in `a2test2\`
+
+- **Terrain** (`terrain_a2.py`, `CP.TERRAIN`): a height field H (BU, one value per lot cell, plan grid + 170 cells of margin) from the JSON
+  hills (x1.5), seeded foothills (from the outer ring) and ridged mountains (to about 300 BU at the far edge, a horizon ridge),
+  beaches (a slope into the water), cliffs on seeded stretches outside the city, flat rigid zones (HQ discs at the hill's own height, port,
+  airport, spaceport). The street level sits 1.2 BU above the sea (sea = 0). Every vertex of the city is lifted by H(x, y)
+  (`city_build.Acc.obj`, `TERRAIN_FN`): buildings, decks, piers and lamps follow the ground; landmark labels, crowns and key spots
+  are lifted too (the night beams keep their shape). No building above slope 0.30 or H 42. Ground tiles follow H (1 / 2 / 4 cell LOD).
+  Roads and rails therefore ride the terrain at constant clearance (viaduct-like piers, smooth grades); cuttings and tunnels were NOT built.
+- **Bay character** (`city_bay_a2.py`): a sand strip + surf line on the plan's coastline (hides the cell staircase), a lit promenade lamps on the
+  city coast, 7 marinas (pier + moored boats + end beacon), 10 cargo ships at anchor (anchor lights), 6 ferries on the 3 plan routes with
+  wakes, 28 channel buoys, a lighthouse on the most exposed headland (key spots, not a landmark beam), gate towers + signal lights + swing
+  gates at the Bay Barrier lock, lamp posts along the causeway, a fort island and a park island (a shoal rises under each).
+- **Density**: suburbs now fill out to the foothills (`outer` field, fading to 34 cells past R2), half the suburb cells are 2x2 sub-lots,
+  fewer merged blocks, brighter windows; the districts use a street period of 5 cells.
+- **Roads**: deck edge light x0.38, lane lights x0.72 and thinner (decks, not ropes); rail glow x0.5.
+- **Day**: median target 0.25, contrast cap 2.0, shadow lift 0.10 (p10 0.11); a BLUE sea (body colour + sky reflection; clear only over
+  the drowned quarter).
+- Values (1920 x 1080, 80 spp): night median 0.155, 27.3 % under 0.10, 0.57 % over 0.85; day median 0.250, 8.6 % under 0.10, 0.02 % over 0.85.

@@ -10,6 +10,8 @@ PORT (Port of Meridian): terminal platform, container stacks, five piers with ga
 tracks, light masts.  AIRPORT: runways with edge lights, a terminal.
 """
 HWY = CP.HIGHWAY
+ROAD_EDGE_K = 0.38        # round 5: the decks read as decks (edge + lane lights), not glowing ropes
+ROAD_LANE_K = 0.72
 HW_CONC = (0.34, 0.33, 0.32)
 RH = random.Random(CP.SEEDS["streaks"] + 21)
 HW_LANES = ((HWY["lane_off"][0], (1.0, 0.93, 0.82)), (HWY["lane_off"][1], (1.0, 0.86, 0.62)),
@@ -166,7 +168,7 @@ for r_ in A2D["roads"]:
             continue
         zf = road_run_z(hp_, zt, ends=not closed)
         lst.append((hp_, zf))
-        deck(hp_, zf, width, HW_CONC, HWY["edge_col"], HWY["edge_k"])
+        deck(hp_, zf, width, HW_CONC, HWY["edge_col"], HWY["edge_k"] * ROAD_EDGE_K)
         piers(hp_, zf, HWY["pier_step"], 0.8, HW_CONC)
         s = HWY["lamp_step"] / 2
         while s < hp_.L:
@@ -178,7 +180,7 @@ for r_ in A2D["roads"]:
                     q_ = hp_.off(s, sd * 0.7)
                     box(NEON, q_[0] - 0.18, q_[1] - 0.18, z_ + 2.4, q_[0] + 0.18, q_[1] + 0.18, z_ + 2.6, HWY["lamp_col"])
             s += HWY["lamp_step"]
-        n_tr += lanes_traffic(hp_, zf, HW_LANES, RH, HWY["streak_len"], HWY["gap"], k0=0.9)
+        n_tr += lanes_traffic(hp_, zf, HW_LANES, RH, HWY["streak_len"], HWY["gap"], k0=ROAD_LANE_K, w=0.15)
     ROAD_Z[r_["id"]] = lst
 print("ROADS", len(ROAD_Z), "traffic draws", n_tr, "%.1fs" % (time.time() - T0), flush=True)
 
@@ -220,7 +222,7 @@ for ix in A2D["interchanges"]:
         def rzf(s, z0=z0, z1=z1, L_=rp.L):
             t = min(1.0, max(0.0, s / L_))
             return z0 + (z1 - z0) * t * t * (3 - 2 * t)
-        deck(rp, rzf, RMP["w"], HW_CONC, HWY["edge_col"], HWY["edge_k"] * 0.8, step=3.0, thick=RMP["thick"], parapet=0.35)
+        deck(rp, rzf, RMP["w"], HW_CONC, HWY["edge_col"], HWY["edge_k"] * ROAD_EDGE_K * 0.8, step=3.0, thick=RMP["thick"], parapet=0.35)
         piers(rp, rzf, 8.0, 0.45, HW_CONC, thick=RMP["thick"])
         s = RMP["lamp_step"] / 2
         k_ = 0
@@ -232,7 +234,7 @@ for ix in A2D["interchanges"]:
                 box(NEON, q_[0] - 0.16, q_[1] - 0.16, z_ + 1.9, q_[0] + 0.16, q_[1] + 0.16, z_ + 2.1, HWY["lamp_col"])
             k_ += 1
             s += RMP["lamp_step"]
-        n_tr += lanes_traffic(rp, rzf, ((0.6, (1.0, 0.9, 0.7)), (-0.6, (1.0, 0.55, 0.3))), RR3, (4.0, 12.0), (3.0, 16.0), w=0.18)
+        n_tr += lanes_traffic(rp, rzf, ((0.6, (1.0, 0.9, 0.7)), (-0.6, (1.0, 0.55, 0.3))), RR3, (4.0, 12.0), (3.0, 16.0), w=0.14, k0=ROAD_LANE_K)
         for ei, (zz, rd, rzfn, s_e) in enumerate(ends):                       # slip lanes at the ends on elevated roads
             if rd is None or zz < 3.0:
                 continue
@@ -255,16 +257,16 @@ for ix in A2D["interchanges"]:
                 SURF.face([(a0[0], a0[1], za), (b0[0], b0[1], zb), (b1[0], b1[1], zb), (a1[0], a1[1], za)], HW_CONC)
                 SURF.face([(a0[0], a0[1], za - 0.9), (a1[0], a1[1], za - 0.9), (b1[0], b1[1], zb - 0.9), (b0[0], b0[1], zb - 0.9)], sc(HW_CONC, 0.6))
                 f0, f1 = rd.off(ss, side * (off0 + RMP["lane_w"] / 2 - 0.08)), rd.off(se, side * (off0 + RMP["lane_w"] / 2 - 0.08))
-                bar(NEON, (f0[0], f0[1], za + 0.2), (f1[0], f1[1], zb + 0.2), 0.12, sc(HWY["edge_col"], HWY["edge_k"]))
+                bar(NEON, (f0[0], f0[1], za + 0.2), (f1[0], f1[1], zb + 0.2), 0.1, sc(HWY["edge_col"], HWY["edge_k"] * ROAD_EDGE_K))
                 ss = se
         n_ramp += 1
 print("RAMPS", n_ramp, "%.1fs" % (time.time() - T0), flush=True)
 
 # ------------------------------------------------------------------ rails: freight, commuter, metro viaducts + trains + stations
 RAILZ = {}
-RAIL_SPEC = dict(freight=dict(w=2.8, thick=1.1, col=(0.30, 0.27, 0.25), edge=(1.0, 0.5, 0.12), ek=0.9, z=17.5, step=7.0),
-                 commuter=dict(w=2.4, thick=0.9, col=(0.34, 0.32, 0.34), edge=(1.0, 0.45, 0.85), ek=0.7, z=CP.A2["z"]["commuter"], step=8.0),
-                 metro=dict(w=2.0, thick=0.9, col=(0.40, 0.40, 0.42), edge=(0.55, 0.95, 1.0), ek=1.0, z=CP.A2["z"]["metro"], step=9.0))
+RAIL_SPEC = dict(freight=dict(w=2.8, thick=1.1, col=(0.30, 0.27, 0.25), edge=(1.0, 0.5, 0.12), ek=0.55, z=17.5, step=7.0),
+                 commuter=dict(w=2.4, thick=0.9, col=(0.34, 0.32, 0.34), edge=(1.0, 0.45, 0.85), ek=0.4, z=CP.A2["z"]["commuter"], step=8.0),
+                 metro=dict(w=2.0, thick=0.9, col=(0.40, 0.40, 0.42), edge=(0.55, 0.95, 1.0), ek=0.55, z=CP.A2["z"]["metro"], step=9.0))
 HQM = W(O["hq"]["meridian"])
 TR_RNG = random.Random(CP.SEEDS["streaks"] + 61)
 CCW = [(0.62, 0.24, 0.08), (0.12, 0.34, 0.36), (0.55, 0.12, 0.08), (0.75, 0.42, 0.10)]

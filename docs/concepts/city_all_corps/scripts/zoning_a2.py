@@ -34,6 +34,7 @@ sys.path.insert(0, HERE)
 sys.dont_write_bytecode = True
 import city_preset as CP  # noqa: E402
 import city_rules as RU  # noqa: E402
+import terrain_a2 as TA  # noqa: E402
 
 A = CP.A2
 S = A["m_per_lot"]
@@ -279,7 +280,39 @@ def main():
     u_sub = A["sub_u"] * smooth(sd_n, A["sub_edge"][0], A["sub_edge"][1])
     u = np.maximum(u_core, u_sub)
     u[wet_all] = np.maximum(u[wet_all], 0.0)
-    np.savez_compressed(CP.A2_FIELDS, u=u.astype(np.float32), dist=dist_id, cls=cls, i0=I0, j0=J0, n=N, names=np.array(names))
+    # ------------------------------------------------------------------ the terrain heightfield (terrain_a2.py)
+    TP = CP.TERRAIN
+    MG = TP["margin"]
+    n2 = N + 2 * MG
+    hi0, hj0 = I0 - MG, J0 - MG
+    ocean_lake = ocean | lake
+    water_p = np.pad(ocean_lake, MG, mode="edge")
+    jj_, ii_ = np.mgrid[0:n2, 0:n2]
+    Xm, Ym = ((ii_ + hi0 + 0.5) - CX) * S, (CY - (jj_ + hj0 + 0.5)) * S
+    water_p |= ((Xm < -12000) & (Ym < -5200)) | ((Xm > 12000) & (Ym < 7600)) | (Ym < -12000)      # the sea goes on beyond the polygon
+    water_p &= ~(((Xm < -12000) & (Ym >= -5200)) | ((Xm > 12000) & (Ym >= 7600)))
+    r2_p = np.pad(r2_in, MG, mode="constant", constant_values=False)
+    piers_m = raster(lines=[[lot(p["base"]), lot([p["base"][0] + p["length_m"] * math.sin(math.radians(p["bearing_deg"])),
+                                                     p["base"][1] + p["length_m"] * math.cos(math.radians(p["bearing_deg"]))])] for p in port["piers"]],
+                     width_cells=port["piers"][0]["width_m"] / S + 1.0)
+    flats = [(np.pad(port_t | piers_m, MG, mode="constant", constant_values=False), 0.0, 4.0),
+             (np.pad(airport, MG, mode="constant", constant_values=False), 0.0, 3.0),
+             (np.pad(spaceport, MG, mode="constant", constant_values=False), 0.0, 3.0)]
+    hq_flat = []
+    for k in LMK:
+        fp = CP.LANDMARK_FP[k]
+        rr_ = max(fp[1:]) / CP.U
+        hq_flat.append((hq[k][0], hq[k][1], rr_ + TP["flat_hq"][0], rr_ + TP["flat_hq"][0] + TP["flat_hq"][1]))
+    hills = []
+    for h in J["terrain"]["hills"]:
+        cxl, cyl = lot(h["centre"])
+        hills.append((cxl, cyl, h["sigma_x_m"] / S, h["sigma_y_m"] / S, h["height_m"] / 16.67 * TP["hill_exag"], h.get("rotation_rad", 0.0)))
+    Hf, slope_f, outer_f, dw_f = TA.build(n2, hi0, hj0, water_p, None, r2_p, hq_flat, flats, hills, CX, CY, TP)
+    np.savez_compressed(CP.A2_FIELDS, u=u.astype(np.float32), dist=dist_id, cls=cls, i0=I0, j0=J0, n=N, names=np.array(names),
+                        H=Hf, slope=slope_f, outer=outer_f, dwat=dw_f, hi0=hi0, hj0=hj0, hn=n2)
+    print("TERRAIN H min %.1f max %.1f, slope max %.2f, outer cells %d" % (Hf.min(), Hf.max(), slope_f.max(), int((outer_f > 0.05).sum())))
+    slope_c = slope_f[MG:MG + N, MG:MG + N]
+    H_c = Hf[MG:MG + N, MG:MG + N]
     RU._FLD.clear()
     # ------------------------------------------------------------------ the sea bed (distance from the land)
     land = ~wet_all
@@ -318,6 +351,8 @@ def main():
             cx, cy = ci + 0.5, cj + 0.5
             if any(in_fp(k, cx, cy, CP.ZONING["fp_margin"]) for k in LMK):
                 continue
+            if slope_c[j, i] > TP["max_build_slope"] or H_c[j, i] > TP["max_build_h"]:
+                continue                                           # no city on steep slopes
             corp = dn[int(dist_id[j, i])] if dist_id[j, i] > 0 else "tethys"
             if cls[j, i] == 1:
                 corp = "tethys"
@@ -379,6 +414,7 @@ def main():
                 glyphs=glyphs, dams=dams, sea_walls=swalls, ocean=[list(p) for p in ocean_l], drowned=[list(p) for p in drowned_l],
                 pier_city=dict(pos=list(lot(dq["pier_city"]["position"])), radius=dq["pier_city"]["radius_m"] / S),
                 spaceport=dict(centre=[spx, spy], ring=sp["ring_radius_m"] / S, excl=sp["exclusion_radius_m"] / S, azimuth=sp["launch_azimuth_deg"]),
+                coast=[list(p) for p in lots(J["terrain"]["coastline"])], ferries=[[list(p) for p in lots(f)] for f in J["ferries"]],
                 markets=[dict(name=m["name"], pos=list(lot(m["position"]))) for m in J["markets"]],
                 centres={k: list(v) for k, v in centre_of.items()}, d_land_max=float(d_land.max())),
     )

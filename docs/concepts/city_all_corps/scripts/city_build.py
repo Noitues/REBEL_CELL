@@ -123,7 +123,11 @@ class Acc:
 
     def obj(self, mat):
         me = bpy.data.meshes.new(self.name)
-        me.from_pydata(self.V, [], self.F)
+        V_ = self.V
+        _fn = globals().get("TERRAIN_FN")
+        if _fn is not None and self.name not in ("water", "seabed"):
+            V_ = _fn(V_)                                   # round 5: every vertex rides the terrain height
+        me.from_pydata(V_, [], self.F)
         nf = len(self.F)
         for nm, data in (("col", self.col), ("wc", self.wc)):
             a = me.attributes.new(nm, "FLOAT_COLOR", "FACE")
@@ -735,5 +739,5 @@ for art in O["arterials"]:
             s += ln + gap
 
 
-for _f in (("city_world_a2.py", "city_transit_a2.py", "landmarks.py", "city_render.py") if A2M else ("city_world.py", "city_transit.py", "landmarks.py", "city_render.py")):
+for _f in (("city_world_a2.py", "city_transit_a2.py", "city_bay_a2.py", "landmarks.py", "city_render.py") if A2M else ("city_world.py", "city_transit.py", "landmarks.py", "city_render.py")):
     exec(open(os.path.join(HERE, _f), encoding="utf-8").read())

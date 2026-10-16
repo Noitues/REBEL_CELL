@@ -81,6 +81,8 @@ def a2_fields():
         z = _np.load(CP.A2_FIELDS)
         _FLD.update(u=z["u"].astype(float), dist=z["dist"], cls=z["cls"], i0=int(z["i0"]), j0=int(z["j0"]), n=int(z["n"]),
                     names=[str(v) for v in z["names"]])
+        if "H" in z.files:
+            _FLD.update(H=z["H"].astype(float), slope=z["slope"].astype(float), outer=z["outer"].astype(float), dwat=z["dwat"].astype(float), hi0=int(z["hi0"]), hj0=int(z["hj0"]), hn=int(z["hn"]))
     return _FLD
 
 

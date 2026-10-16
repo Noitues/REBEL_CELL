@@ -292,7 +292,7 @@ A2 = dict(
 if LAYOUT_MODE == "a2":
     ZONED = os.path.join(SCR, "zoned_a2.json")
     WATER["sea_bed"] = (70.0, 170.0)      # A2: a deeper open sea (the shallows would glow with caustics)
-    WATER["z"] = -1.2                    # A2: the sea is BELOW the street (the coast is a quay); the drowned quarter sits behind dams
+    WATER["z"] = 0.0                     # A2: the sea is at 0 and the land stands TERRAIN base above it (a beach into the water); the drowned quarter sits behind dams
     WATER["under_sky"] = dict(WATER["under_sky"], z=-3.0)
     HQ_LAYOUT = {}
     LANDMARK_MODULES = dict(
@@ -302,7 +302,7 @@ if LAYOUT_MODE == "a2":
     # A2 cameras: from the south over the bay looking north (yaw 90): the Old City in the middle, Halcyon / Solace / Orbital /
     # Aurelian round it, Tethys and Meridian on the two shores of the bay; (a, b) = (east, north) in lots
     CAMS = {
-        "hero": dict(res=(3840, 2160), lens=28.0, pitch=38.0, yaw=90.0, dist=1090.0, target_ab=(2.0, -3.0), sy=0.0),
+        "hero": dict(res=(3840, 2160), lens=28.0, pitch=33.0, yaw=90.0, dist=1130.0, target_ab=(2.0, -2.0), sy=0.0),
         "dbg_top": dict(res=(1280, 720), lens=35.0, pitch=70.0, yaw=90.0, dist=900.0, target_ab=(0.0, 0.0), sy=0.0),
         "dbg_old": dict(res=(1280, 720), lens=35.0, pitch=38.0, yaw=90.0, dist=300.0, target_ab=(7.0, 0.0), sy=0.0),
         "dbg_mer": dict(res=(1280, 720), lens=35.0, pitch=36.0, yaw=90.0, dist=330.0, target_ab=(60.0, -44.0), sy=0.0),
@@ -312,5 +312,11 @@ if LAYOUT_MODE == "a2":
         "dbg_hal": dict(res=(1280, 720), lens=35.0, pitch=36.0, yaw=90.0, dist=260.0, target_ab=(10.0, 56.0), sy=0.0),
         "dbg_sol": dict(res=(1280, 720), lens=35.0, pitch=36.0, yaw=90.0, dist=260.0, target_ab=(-42.0, 48.0), sy=0.0),
         "dbg_aur": dict(res=(1280, 720), lens=35.0, pitch=36.0, yaw=90.0, dist=260.0, target_ab=(-52.0, -14.0), sy=0.0),
+        "dbg_isl": dict(res=(1280, 720), lens=35.0, pitch=25.0, yaw=90.0, dist=110.0, target_ab=(-7.0, -59.0), sy=0.0),
     }
-    DAY = dict(DAY, sun=dict(DAY["sun"], azim=DAY["sun"]["azim"] - 45.0))      # the sun keeps its angle to the (new) view direction
+    DAY = dict(DAY, sun=dict(DAY["sun"], azim=DAY["sun"]["azim"] - 45.0),      # the sun keeps its angle to the (new) view direction
+               target_median=0.25, target_spread=0.36, contrast_max=2.0, lift=0.10)      # round 5: a brighter day, shadows not crushed
+if LAYOUT_MODE == "a2":
+    # round 5: the terrain (terrain_a2.py): margin cells of ground round the plan grid, hill exaggeration, foothills / mountains
+    TERRAIN = dict(base=1.2, margin=170, seed=5101, hill_exag=1.5, foot=(3.0, 30.0), mtn=(24.0, 78.0), foot_h=20.0, mtn_h=125.0, edge_k=0.45, edge=(95.0, 150.0),
+                   cliff_h=16.0, outer=(5.0, 34.0), flat_hq=(1.6, 3.2), max_build_slope=0.30, max_build_h=42.0)

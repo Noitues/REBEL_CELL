@@ -242,8 +242,8 @@ def mat_ground_aaa(name, caustic):
     mr = g.n("ShaderNodeMapRange")
     mr.inputs["From Min"].default_value = 0.45
     mr.inputs["From Max"].default_value = 0.6
-    mr.inputs["To Min"].default_value = 0.32
-    mr.inputs["To Max"].default_value = 0.04
+    mr.inputs["To Min"].default_value = 0.55 if A2M else 0.32
+    mr.inputs["To Max"].default_value = 0.30 if A2M else 0.04
     g.link(nz.outputs["Fac"], mr.inputs["Value"])
     b2, e2 = water_fade(g, col, (0.0, 0.0, 0.0) and g.comb(0, 0, 0), caustic=caustic)
     bs = principled(g, b2, e2, mr.outputs[0])
@@ -304,7 +304,27 @@ def mat_water_aaa(day=False):
     g.link(bump.outputs[0], gl.inputs["Normal"])
     mx = g.n("ShaderNodeMixShader")
     g.link(fr.outputs[0], mx.inputs[0])
-    g.link(tr.outputs[0], mx.inputs[1])
+    body = tr.outputs[0]
+    if day and A2M:
+        dif = g.n("ShaderNodeBsdfDiffuse")
+        cmix = g.n("ShaderNodeMix")
+        cmix.data_type = "RGBA"
+        cmix.inputs[6].default_value = (0.025, 0.17, 0.33, 1)
+        cmix.inputs[7].default_value = (0.05, 0.27, 0.45, 1)
+        g.link(nz.outputs["Fac"], cmix.inputs["Factor"])
+        g.link(cmix.outputs[2], dif.inputs["Color"])
+        em_ = g.n("ShaderNodeEmission")
+        em_.inputs["Color"].default_value = (0.012, 0.075, 0.15, 1)
+        em_.inputs["Strength"].default_value = 1.0
+        add_ = g.n("ShaderNodeAddShader")
+        g.link(dif.outputs[0], add_.inputs[0])
+        g.link(em_.outputs[0], add_.inputs[1])
+        mk = g.n("ShaderNodeMixShader")
+        g.link(wmask_nodes(g, geo.outputs["Position"])[3], mk.inputs[0])          # 1 over the drowned quarter: clear water there
+        g.link(add_.outputs[0], mk.inputs[1])
+        g.link(tr.outputs[0], mk.inputs[2])
+        body = mk.outputs[0]
+    g.link(body, mx.inputs[1])
     g.link(gl.outputs[0], mx.inputs[2])
     g.link(mx.outputs[0], g.out.inputs[0])
     return m
@@ -336,10 +356,19 @@ def wmask_image():
     shore = blur(water, 5) * (1.0 - water)
     img = bpy.data.images.new("wmask", n, n, float_buffer=True)
     arr = _np.zeros((n, n, 4), _np.float32)
-    arr[..., 0], arr[..., 1], arr[..., 2], arr[..., 3] = near, _np.clip(shore * 1.6, 0, 1), blur(water, 2), 1.0
+    lagoon = blur((cls_ == 1).astype(_np.float64), 3)
+    arr[..., 0], arr[..., 1], arr[..., 2], arr[..., 3] = near, _np.clip(shore * 1.6, 0, 1), blur(water, 2), _np.clip(lagoon * 1.5, 0, 1)
     img.pixels.foreach_set(arr[::-1].reshape(-1))
     img.colorspace_settings.name = "Non-Color"
+    img.alpha_mode = "CHANNEL_PACKED"
     _WM_IMG["i"] = img
+    im2 = bpy.data.images.new("lagmask", n, n, float_buffer=True)          # the drowned quarter (the water stays clear there), in R
+    a2_ = _np.zeros((n, n, 4), _np.float32)
+    a2_[..., 0] = _np.clip(lagoon * 1.5, 0, 1)
+    a2_[..., 3] = 1.0
+    im2.pixels.foreach_set(a2_[::-1].reshape(-1))
+    im2.colorspace_settings.name = "Non-Color"
+    _WM_IMG["lag"] = im2
     return img
 
 
@@ -356,8 +385,14 @@ def wmask_nodes(g, pos_out):
     tx.image = wmask_image()
     tx.interpolation = "Linear"
     tx.extension = "EXTEND"
-    g.link(g.comb(u_, v_, 0.0), tx.inputs["Vector"])
-    return g.sep(tx.outputs["Color"])
+    uv_ = g.comb(u_, v_, 0.0)
+    g.link(uv_, tx.inputs["Vector"])
+    t2 = g.n("ShaderNodeTexImage")
+    t2.image = _WM_IMG["lag"]
+    t2.interpolation = "Linear"
+    t2.extension = "EXTEND"
+    g.link(uv_, t2.inputs["Vector"])
+    return tuple(g.sep(tx.outputs["Color"])) + (g.sep(t2.outputs["Color"])[0],)
 
 
 def mat_fog():
@@ -396,7 +431,7 @@ def mat_fog():
     # so the water reads; the sea mist returns farther out. b (lots, away from the map camera) = (y - x) / (U sqrt 2)
     px_, py_, _ = g.sep(geo.outputs["Position"])
     if A2M:
-        wr_, wg_, wb_ = wmask_nodes(g, geo.outputs["Position"])
+        wr_, wg_, wb_, _wa = wmask_nodes(g, geo.outputs["Position"])
         lag = wr_
         dens = g.math("MULTIPLY", dens, g.math("SUBTRACT", 1.0, g.math("MULTIPLY", lag, A["bay_clear"])))
         SB = A["shore_bank"]
@@ -866,13 +901,30 @@ if CYC:
                 c = mixc(c, (0.78, 0.76, 0.82), 0.4)
                 c2 = mixc(c2, (0.78, 0.76, 0.82), 0.4)
             pw = A["glow_area"] * gk_
-            o = light("glow_%d_%d" % (gx, gy), "AREA", (x, y, 1.0), pw, c, rot=(math.pi, 0, 0), size=(110, 110), shadow=False)
+            zg_ = 1.0
+            if A2M:
+                th_ = terr_h(x, y)
+                zg_ = 1.0 + th_
+                pw *= max(0.0, 1.0 - th_ / 45.0)
+            o = light("glow_%d_%d" % (gx, gy), "AREA", (x, y, zg_), pw, c, rot=(math.pi, 0, 0), size=(110, 110), shadow=False)
             o.light_linking.receiver_collection = rx_fog
             GL.append(o)
             # the sky-glow wash on the roofs (the city glow bounced off the cloud base): district-tinted, soft
             c2 = mixc(c2, (0.7, 0.68, 0.9), 0.55)
+            if A2M and terr_h(x, y) > 100.0:
+                continue
             light("roofwash_%d_%d" % (gx, gy), "AREA", (x, y, 160.0), A["glow_area"] * A.get("roofwash", 0.35) * gk_, c2,
                   rot=(0, 0, 0), size=(130, 130), shadow=True)
+    if A2M:
+        for _k, (_lab, _crown, _hue) in list(LM.items()):
+            _lab = (_lab[0], _lab[1], _lab[2] + terr_h(_lab[0], _lab[1]))
+            _crown = (_crown[0], _crown[1], _crown[2] + terr_h(_crown[0], _crown[1])) if _crown else None
+            LM[_k] = (_lab, _crown, _hue)
+        for _d in LIGHT_SPOTS:
+            if not _d.get("terr_done"):
+                _d["loc"] = (_d["loc"][0], _d["loc"][1], _d["loc"][2] + terr_h(_d["loc"][0], _d["loc"][1]))
+                _d["tgt"] = (_d["tgt"][0], _d["tgt"][1], _d["tgt"][2] + terr_h(_d["tgt"][0], _d["tgt"][1]))
+                _d["terr_done"] = True
     # beams (art director, revision 2): ONE beam per landmark, rising from its crown (max 7; REBEL_CELL has no crown,
     # so 6). The storyboard round-3 implementation (m44/onecity_cycles.py): the visible shaft is an emissive cone seen
     # by the camera only (a hot gaussian core over a wide soft skirt, brightest at the source, gone by beam_fade of its

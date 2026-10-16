@@ -10,8 +10,11 @@ import numpy as _np
 FLD = RU.a2_fields()
 CLS, DISTN = FLD["cls"], FLD["dist"]
 GI0, GJ0, GN = FLD["i0"], FLD["j0"], FLD["n"]
+HFLD, HI0, HJ0, HN = FLD["H"], FLD["hi0"], FLD["hj0"], FLD["hn"]
+SLOPE, OUTER = FLD["slope"], FLD["outer"]
 DLAND = _np.load(os.path.join(CP.SCR, "a2_dland.npy"))
 A2P = CP.A2
+TP_ = CP.TERRAIN
 A2D = O["a2"]
 CORE_PER, SUB_PER = A2P["core_period"], A2P["sub_period"]
 L1_EDGE = 0.0
@@ -19,8 +22,57 @@ RR = random.Random(CP.SEEDS["ring"])
 PORT_ = None
 
 
+def _terrain_arr(xs, ys):
+    """the terrain height H (BU) at world points (numpy arrays), bilinear over the lot-cell centres."""
+    fx = _np.clip(xs / U + CX - HI0 - 0.5, 0.0, HN - 1.001)
+    fy = _np.clip((CY - ys / U) - HJ0 - 0.5, 0.0, HN - 1.001)
+    i0, j0 = fx.astype(int), fy.astype(int)
+    tx, ty = fx - i0, fy - j0
+    return (HFLD[j0, i0] * (1 - tx) + HFLD[j0, i0 + 1] * tx) * (1 - ty) + (HFLD[j0 + 1, i0] * (1 - tx) + HFLD[j0 + 1, i0 + 1] * tx) * ty
+
+
+def TERRAIN_FN(V):
+    """city_build.Acc.obj hook: lift every vertex by the ground height under it."""
+    a = _np.asarray(V, dtype=float)
+    if len(a) == 0:
+        return V
+    a[:, 2] += _terrain_arr(a[:, 0], a[:, 1])
+    return a.tolist()
+
+
+def terr_h(x, y):
+    return float(_terrain_arr(_np.array([x]), _np.array([y]))[0])
+
+
 def cls_at(ci, cj):
     return int(CLS[min(max(cj - GJ0, 0), GN - 1), min(max(ci - GI0, 0), GN - 1)])
+
+
+def in_grid(ci, cj):
+    return GI0 <= ci < GI0 + GN and GJ0 <= cj < GJ0 + GN
+
+
+def h_cell(ci, cj):
+    return float(HFLD[min(max(cj - HJ0, 0), HN - 1), min(max(ci - HI0, 0), HN - 1)])
+
+
+def slope_cell(ci, cj):
+    return float(SLOPE[min(max(cj - HJ0, 0), HN - 1), min(max(ci - HI0, 0), HN - 1)])
+
+
+def outer_cell(ci, cj):
+    return float(OUTER[min(max(cj - HJ0, 0), HN - 1), min(max(ci - HI0, 0), HN - 1)])
+
+
+def is_water_cell(ci, cj):
+    """open water: inside the plan grid by its class (water / drowned), outside it by the terrain (H is 0 on the sea)."""
+    if in_grid(ci, cj):
+        return cls_at(ci, cj) in (0, 1)
+    return h_cell(ci, cj) < 0.05
+
+
+def buildable(ci, cj):
+    return slope_cell(ci, cj) < TP_["max_build_slope"] and h_cell(ci, cj) < TP_["max_build_h"]
 
 
 def dland_at(ci, cj):
@@ -28,51 +80,88 @@ def dland_at(ci, cj):
 
 
 def ground_at(x, y):
-    """sea / lagoon floor z at a world point (the street is 0)."""
+    """sea / lagoon floor z at a world point, relative to the street (the street stays 0 in the build frame)."""
     c = (int(math.floor(x / U + CX)), int(math.floor(-y / U + CY)))
     if c in WET_CELLS:
         return -WET_CELLS[c]
-    if cls_at(*c) == 0:
+    if is_water_cell(*c):
         s0_, s1_ = WAT["sea_bed"]
-        return -(s0_ + (s1_ - s0_) * min(1.0, dland_at(*c) / 25.0))
+        return -(s0_ + (s1_ - s0_) * min(1.0, dland_at(*c) / 25.0)) - 1.2
     return 0.0
 
 
 def cell_w(ci, cj):
-    """the lot cell's world rectangle."""
     (x0, y0), (x1, y1) = W((ci, cj)), W((ci + 1, cj + 1))
     return min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
 
 
-# ------------------------------------------------------------------ the ground (land cells in runs; class colours on top)
-GM = 170
+# ------------------------------------------------------------------ the ground: tiles that follow the terrain (LOD with distance), class colours on top
 GCOL = (0.075, 0.075, 0.08) if DAYM else (0.12, 0.12, 0.15)
 CLS_COL = {3: PK["lawn"], 4: PK["paved"], 5: sc(PK["lawn"], 0.55), 6: (0.075, 0.075, 0.085), 7: (0.07, 0.065, 0.06), 8: (0.10, 0.10, 0.11),
            9: (0.12, 0.115, 0.11), 10: (0.14, 0.135, 0.13)}
 if not DAYM:
     CLS_COL = {3: sc(PK["lawn"], 0.8), 4: (0.13, 0.125, 0.15), 5: sc(PK["lawn"], 0.5), 6: (0.09, 0.09, 0.11), 7: (0.09, 0.08, 0.08),
                8: (0.12, 0.12, 0.14), 9: (0.13, 0.125, 0.12), 10: (0.15, 0.145, 0.14)}
-for cj in range(GJ0 - GM, GJ0 + GN + GM):
-    run, runc = None, None
-    for ci in range(GI0 - GM, GI0 + GN + GM + 1):
-        c_ = cls_at(ci, cj) if ci < GI0 + GN + GM else 0
-        landc = c_ not in (0, 1)
-        if landc and run is None:
-            run = ci
-        elif not landc and run is not None:
-            x0_, y0_, x1_, y1_ = cell_w(run, cj)[0], cell_w(run, cj)[1], cell_w(ci - 1, cj)[2], cell_w(ci - 1, cj)[3]
-            GROUND.face([(x0_, y0_, -0.03), (x1_, y0_, -0.03), (x1_, y1_, -0.03), (x0_, y1_, -0.03)], GCOL)
-            run = None
-    run, runc = None, None
-    for ci in range(GI0, GI0 + GN + 1):                      # class colours (runs of one class)
-        c_ = cls_at(ci, cj) if ci < GI0 + GN else -1
-        if c_ != runc:
-            if run is not None and runc in CLS_COL:
-                xa, ya, _, _ = cell_w(run, cj)
-                _, _, xb, yb = cell_w(ci - 1, cj)
-                GROUND.face([(xa, ya, 0.01), (xb, ya, 0.01), (xb, yb, 0.01), (xa, yb, 0.01)], CLS_COL[runc])
-            run, runc = ci, c_
-print("GROUND %.1fs" % (time.time() - T0), flush=True)
+# terrain colours (outside the built area): forest and meadow low, bare rock steep and high, snow on the peaks
+TCOL = dict(forest=(0.10, 0.17, 0.07) if DAYM else (0.07, 0.12, 0.09), meadow=(0.20, 0.26, 0.11) if DAYM else (0.10, 0.14, 0.09),
+            rock=(0.30, 0.28, 0.26) if DAYM else (0.17, 0.17, 0.20), snow=(0.72, 0.74, 0.78) if DAYM else (0.42, 0.45, 0.52),
+            beach=(0.55, 0.50, 0.40) if DAYM else (0.14, 0.13, 0.12))
+
+
+def terrain_col(ci, cj):
+    h = h_cell(ci, cj)
+    sl = slope_cell(ci, cj)
+    n_ = RU._hash01(7750, ci // 2, cj // 2) * 0.5 + RU._hash01(7751, ci, cj) * 0.5
+    dw = float(FLD["dwat"][min(max(cj - HJ0, 0), HN - 1), min(max(ci - HI0, 0), HN - 1)]) if "dwat" in FLD else 99.0
+    base = mixc(TCOL["meadow"], TCOL["forest"], min(1.0, 0.35 + h / 90.0 + (n_ - 0.5) * 0.7))
+    rock = min(1.0, max(0.0, (sl - 0.18) / 0.35) + max(0.0, (h - 150.0) / 120.0))
+    c = mixc(base, TCOL["rock"], rock)
+    if h > 215.0:
+        c = mixc(c, TCOL["snow"], min(1.0, (h - 215.0) / 40.0 + (n_ - 0.5) * 0.5))
+    if dw < 2.2 and h < 3.0:
+        c = mixc(c, TCOL["beach"], 0.8)
+    return sc(c, 0.85 + 0.3 * n_)
+
+
+def tile(ci, cj, t, col, zz=-0.03):
+    xa, ya = W((ci, cj))
+    xb, yb = W((ci + t, cj + t))
+    GROUND.face([(xa, ya, zz), (xb, ya, zz), (xb, yb, zz), (xa, yb, zz)], col)
+
+
+GM = TP_["margin"]
+n_gt = 0
+for cj in range(HJ0, HJ0 + HN):
+    for ci in range(HI0, HI0 + HN):
+        d_edge = max(GI0 - ci, ci - (GI0 + GN - 1), GJ0 - cj, cj - (GJ0 + GN - 1), 0)
+        t = 1 if d_edge < 24 else (2 if d_edge < 100 else 4)
+        if (ci - HI0) % t or (cj - HJ0) % t:
+            continue
+        if t > 1 and (ci + t > HI0 + HN or cj + t > HJ0 + HN):
+            continue
+        if t == 1 and in_grid(ci, cj):
+            c_ = cls_at(ci, cj)
+            if c_ in (0, 1):
+                continue
+            if c_ in (11, 12, 2):
+                col = GCOL
+                if c_ == 12 and h_cell(ci, cj) > 12.0:
+                    col = terrain_col(ci, cj)
+                tile(ci, cj, 1, col)
+            elif c_ == 13:
+                tile(ci, cj, 1, terrain_col(ci, cj) if h_cell(ci, cj) > 2.0 else GCOL)
+            else:
+                tile(ci, cj, 1, GCOL)
+                tile(ci, cj, 1, CLS_COL.get(c_, GCOL), 0.01)
+            n_gt += 1
+        else:
+            if any(is_water_cell(ci + di, cj + dj) for di in (0, t - 1) for dj in (0, t - 1)) and t == 1:
+                continue
+            if t > 1 and is_water_cell(ci + t // 2, cj + t // 2):
+                continue
+            tile(ci, cj, t, terrain_col(ci, cj))
+            n_gt += 1
+print("GROUND tiles", n_gt, "%.1fs" % (time.time() - T0), flush=True)
 
 
 # ------------------------------------------------------------------ parks: tree clumps on the park cells
@@ -99,70 +188,92 @@ for cj in range(GJ0, GJ0 + GN):
             park_trees(x0_, y0_, x1_, y1_, random.Random(7743 * 100003 + ci * 1009 + cj), 1, (2, 3))
 print("PARKS cells", n_tree, "%.1fs" % (time.time() - T0), flush=True)
 
-# ------------------------------------------------------------------ the suburbs (ring style, 3-cell blocks), industry, informal housing
+# ------------------------------------------------------------------ the suburbs (ring style, 3-cell blocks, 2x2 sub-lots in half the cells), industry, informal housing
 RING_COLS = [(1.0, 0.68, 0.28), (1.0, 0.8, 0.5), (0.45, 0.9, 1.0), (1.0, 0.42, 0.72), (0.9, 0.9, 1.0)]
 RING_NEON = [(1.0, 0.3, 0.7), (0.3, 0.85, 1.0), (0.7, 0.45, 1.0), (1.0, 0.6, 0.2)]
 RING_MAT = [(0.22, 0.21, 0.26), (0.27, 0.22, 0.24), (0.30, 0.28, 0.25), (0.20, 0.22, 0.25), (0.33, 0.31, 0.30), (0.26, 0.20, 0.18)]
 HQ_AB = {k: RU.ab(*v) for k, v in O["hq"].items()}
 SUBU = A2P["sub_u"]
 CONV = 1.5
+MERGE = 0.2
 n_ring = n_ring_city = n_ind = n_inf = 0
 
 
 def sub_cell_ok(lx, ly):
-    c_ = cls_at(int(math.floor(lx)), int(math.floor(ly)))
+    ci, cj = int(math.floor(lx)), int(math.floor(ly))
+    if is_water_cell(ci, cj):
+        return False
+    c_ = cls_at(ci, cj) if in_grid(ci, cj) else 13
     if c_ == 12:
-        return True
-    return c_ == 13 and RU._hash01(7744, int(math.floor(lx)), int(math.floor(ly))) < 0.07
+        return buildable(ci, cj)
+    if c_ == 13:
+        return buildable(ci, cj) and RU._hash01(7744, ci, cj) < outer_cell(ci, cj)
+    return False
 
 
-for gx in range(-99, GI0 + GN, SUB_PER):
-    for gy in range(-99, GJ0 + GN, SUB_PER):
+def ring_bldg(lx, ly, hw_, hd_, rkey, gx, gy, ox, oy, scale_h=1.0):
+    """one suburb building at lot (lx, ly), half sizes in BU (ring style, or a district-coloured city building near the districts)."""
+    global n_ring, n_ring_city
+    a_, b_ = RU.ab(lx, ly)
+    uu_ = RU.urban_u(a_, b_)
+    far = 40.0 * max(0.0, 1.0 - uu_ / SUBU)
+    cx_, cy_ = W((lx, ly))
+    h = CP.URBAN["ring_h_k"] * min(60.0, RR.lognormvariate(math.log(6.0 + 0.03 * far), 0.6)) * scale_h
+    if uu_ > 0.01 and RU._hash01(7714, gx, gy, ox, oy) < uu_ * CONV:
+        hc = RR.lognormvariate(math.log(CP.URBAN["ring_city_h"][0]), CP.URBAN["ring_city_h"][1])
+        hh = min(60.0, h + (hc - h) * min(1.0, uu_ * 1.5))
+        w8, w08 = RU.district_weights(a_, b_, HQ_AB, uu_)
+        lq = [[lx - hw_ / U, ly - hd_ / U], [lx + hw_ / U, ly - hd_ / U], [lx + hw_ / U, ly + hd_ / U], [lx - hw_ / U, ly + hd_ / U]]
+        building(dict(q=lq, z0=0.0, h=hh / KH, ts=1.0, key=rkey, terr=RU.draw_district(rkey, w8, w08, salt=1), u=uu_,
+                      c=[lx, ly], wet=0, sub=0.0, art=0, border=0))
+        n_ring_city += 1
+        return
+    pts = [(cx_ - hw_, cy_ - hd_), (cx_ + hw_, cy_ - hd_), (cx_ + hw_, cy_ + hd_), (cx_ - hw_, cy_ + hd_)]
+    col = sc(RING_MAT[int(RR.random() * len(RING_MAT))], RR.uniform(0.85, 1.15))
+    rtop = None
+    if DAYM:
+        col = sc(RU.pick(CP.DAY_MATS["sprawl"], RU._hash01(7717, gx, gy, ox, oy)), RR.uniform(0.85, 1.15))
+        rtop = RU.pick(CP.DAY_ROOFS, RU._hash01(7718, gx, gy, ox, oy))
+    prism(SURF, pts, 0, h, col, wc=RR.choice(RING_COLS), wl=CP.OUTLINE["ring_wl"] / (1.0 + far / 80.0) * (1.0 + 2.0 * uu_) * 1.8, wm=0,
+          bid=RR.random(), top_col=rtop)
+    if RR.random() < CP.OUTLINE["ring_lamp_p"]:
+        box(NEON, cx_ - 0.25, cy_ - 0.25, h + 0.05, cx_ + 0.25, cy_ + 0.25, h + 0.45, (1.0, 0.68, 0.32))
+    if RR.random() < CP.OUTLINE["ring_trim_p"]:
+        c2 = sc(RR.choice(RING_NEON), CP.OUTLINE["out_k"])
+        for i in range(4):
+            bar(NEON, (pts[i][0], pts[i][1], h + 0.08), (pts[(i + 1) % 4][0], pts[(i + 1) % 4][1], h + 0.08), 0.2, c2)
+    ROOFS.append((cx_, cy_, h, rkey, "ring", 0))
+    n_ring += 1
+
+
+for gx in range(HI0 - (HI0 % SUB_PER), HI0 + HN, SUB_PER):
+    for gy in range(HJ0 - (HJ0 % SUB_PER), HJ0 + HN, SUB_PER):
         cells_ = [(gx + ox + 0.5, gy + oy + 0.5, ox, oy, 1.0) for (ox, oy) in ((0, 0), (1, 0), (0, 1), (1, 1))]
         blk_ok = all(sub_cell_ok(c_[0], c_[1]) for c_ in cells_)
-        if blk_ok and RU._hash01(7715, gx, gy) < CP.RING_PARK["p"]:
+        if not blk_ok and not any(sub_cell_ok(c_[0], c_[1]) for c_ in cells_):
+            continue
+        if blk_ok and in_grid(gx, gy) and RU._hash01(7715, gx, gy) < CP.RING_PARK["p"]:
             park(W((gx, gy)), W((gx + 2, gy + 2)), random.Random(7716 * 100003 + gx * 1009 + gy))
             continue
-        if RU._hash01(7713, gx, gy) < CP.URBAN["ring_merge"] and blk_ok:
+        if RU._hash01(7713, gx, gy) < MERGE and blk_ok:
             cells_ = [(gx + 1.0, gy + 1.0, 0, 0, 2.0)]
         for (lx, ly, ox, oy, msz) in cells_:
             if msz < 1.5 and not sub_cell_ok(lx, ly):
                 continue
-            a_, b_ = RU.ab(lx, ly)
-            uu_ = RU.urban_u(a_, b_)
-            far = 40.0 * max(0.0, 1.0 - uu_ / SUBU)
-            if RR.random() < 0.05:
+            if RR.random() < 0.04:
                 continue
-            cx_, cy_ = W((lx, ly))
-            h = CP.URBAN["ring_h_k"] * min(60.0, RR.lognormvariate(math.log(6.0 + 0.03 * far), 0.6) * (0.85 if msz > 1.5 else 1.0))
-            w_ = RR.uniform(0.62, 0.9) * U / 2 * (msz * 0.92 if msz > 1.5 else 1.0)
-            d_ = RR.uniform(0.62, 0.9) * U / 2 * (msz * 0.92 if msz > 1.5 else 1.0)
-            rkey = 800000 + (gx + 200) * 1000 + (gy + 200) + (ox + 2 * oy) * 7919
-            if uu_ > 0.01 and RU._hash01(7714, gx, gy, ox, oy) < uu_ * CONV:
-                hc = RR.lognormvariate(math.log(CP.URBAN["ring_city_h"][0]), CP.URBAN["ring_city_h"][1])
-                hh = min(60.0, h + (hc - h) * min(1.0, uu_ * 1.5))
-                w8, w08 = RU.district_weights(a_, b_, HQ_AB, uu_)
-                lq = [[lx - w_ / U, ly - d_ / U], [lx + w_ / U, ly - d_ / U], [lx + w_ / U, ly + d_ / U], [lx - w_ / U, ly + d_ / U]]
-                building(dict(q=lq, z0=0.0, h=hh / KH, ts=1.0, key=rkey, terr=RU.draw_district(rkey, w8, w08, salt=1), u=uu_,
-                              c=[lx, ly], wet=0, sub=0.0, art=0, border=0))
-                n_ring_city += 1
-                continue
-            pts = [(cx_ - w_, cy_ - d_), (cx_ + w_, cy_ - d_), (cx_ + w_, cy_ + d_), (cx_ - w_, cy_ + d_)]
-            col = sc(RING_MAT[int(RR.random() * len(RING_MAT))], RR.uniform(0.85, 1.15))
-            rtop = None
-            if DAYM:
-                col = sc(RU.pick(CP.DAY_MATS["sprawl"], RU._hash01(7717, gx, gy, ox, oy)), RR.uniform(0.85, 1.15))
-                rtop = RU.pick(CP.DAY_ROOFS, RU._hash01(7718, gx, gy, ox, oy))
-            prism(SURF, pts, 0, h, col, wc=RR.choice(RING_COLS), wl=CP.OUTLINE["ring_wl"] / (1.0 + far / 80.0) * (1.0 + 2.0 * uu_), wm=0,
-                  bid=RR.random(), top_col=rtop)
-            if RR.random() < CP.OUTLINE["ring_lamp_p"]:
-                box(NEON, cx_ - 0.25, cy_ - 0.25, h + 0.05, cx_ + 0.25, cy_ + 0.25, h + 0.45, (1.0, 0.68, 0.32))
-            if RR.random() < CP.OUTLINE["ring_trim_p"]:
-                c2 = sc(RR.choice(RING_NEON), CP.OUTLINE["out_k"])
-                for i in range(4):
-                    bar(NEON, (pts[i][0], pts[i][1], h + 0.08), (pts[(i + 1) % 4][0], pts[(i + 1) % 4][1], h + 0.08), 0.2, c2)
-            ROOFS.append((cx_, cy_, h, rkey, "ring", 0))
-            n_ring += 1
+            rkey = 800000 + (gx + 400) * 1000 + (gy + 400) + (ox + 2 * oy) * 7919
+            if msz > 1.5:
+                ring_bldg(lx, ly, RR.uniform(0.62, 0.9) * U / 2 * 1.84, RR.uniform(0.62, 0.9) * U / 2 * 1.84, rkey, gx, gy, ox, oy, 0.85)
+            elif RU._hash01(7746, gx + ox, gy + oy) < 0.5:           # four sub-lots: denser, finer grain
+                for sx_, sy_ in ((-0.25, -0.25), (0.25, -0.25), (-0.25, 0.25), (0.25, 0.25)):
+                    if RR.random() < 0.12:
+                        continue
+                    ring_bldg(lx + sx_, ly + sy_, RR.uniform(0.7, 0.9) * U * 0.22, RR.uniform(0.7, 0.9) * U * 0.22, int(rkey + sx_ * 10 + sy_ * 100 + 5000), gx, gy,
+                              ox + int(sx_ * 4), oy + int(sy_ * 4), 0.8)
+            else:
+                ring_bldg(lx, ly, RR.uniform(0.62, 0.9) * U / 2, RR.uniform(0.62, 0.9) * U / 2, rkey, gx, gy, ox, oy)
+
 # industry (class 6): low wide sheds, tanks, a chimney with a red light now and then; informal housing (class 7): dense small stacked boxes
 INDM = [(0.20, 0.22, 0.25), (0.26, 0.24, 0.22), (0.18, 0.2, 0.2)]
 INFM = [(0.34, 0.20, 0.12), (0.30, 0.30, 0.32), (0.40, 0.26, 0.14), (0.26, 0.22, 0.22)]
@@ -197,21 +308,32 @@ for cj in range(GJ0, GJ0 + GN):
                 n_inf += 1
 print("SUBURBS ring %d city-ring %d industry %d informal %d %.1fs" % (n_ring, n_ring_city, n_ind, n_inf, time.time() - T0), flush=True)
 
-# ------------------------------------------------------------------ the street glow (dim lane lights along every street line)
+# ------------------------------------------------------------------ the street glow (dim lane lights along every street line, in chunks that follow the terrain)
 RL = random.Random(CP.SEEDS["ring"] + 1)
 n_glow = 0
-for per, cset in ((CORE_PER, (11,)), (SUB_PER, (12, 13))):
+
+
+def street_ok(ci, cj, core):
+    if is_water_cell(ci, cj) or not buildable(ci, cj):
+        return False
+    c_ = cls_at(ci, cj) if in_grid(ci, cj) else 13
+    if core:
+        return c_ == 11
+    return c_ == 12 or (c_ == 13 and RU._hash01(7745, ci, cj) < outer_cell(ci, cj))
+
+
+for per, core in ((CORE_PER, True), (SUB_PER, False)):
     for axis in (0, 1):
-        for line in range(-100, GI0 + GN):
+        for line in range((HI0 if axis else HJ0) - 3, (HI0 if axis else HJ0) + HN):
             if line % per != per - 1:
                 continue
             run = None
-            for s_ in range(GI0 - 1, GI0 + GN + 1):
+            for s_ in range((HJ0 if axis else HI0) - 1, (HJ0 if axis else HI0) + HN + 1):
                 ci, cj = (s_, line) if axis == 0 else (line, s_)
-                ok_ = cls_at(ci, cj) in cset and (cset != (13,) or RU._hash01(7745, ci, cj) < 0.07)
+                ok_ = street_ok(ci, cj, core)
                 if ok_ and run is None:
                     run = s_
-                if run is not None and (not ok_ or s_ == GI0 + GN):
+                if run is not None and (not ok_ or s_ == (HJ0 if axis else HI0) + HN):
                     e_ = s_
                     if e_ - run >= 2:
                         a_, b_ = RU.ab(*((run + e_) / 2.0, line + 0.5) if axis == 0 else (line + 0.5, (run + e_) / 2.0))
@@ -219,11 +341,15 @@ for per, cset in ((CORE_PER, (11,)), (SUB_PER, (12, 13))):
                         major = (line % (per * 2) == per - 1)
                         c = RL.choice([(1.0, 0.62, 0.3), (1.0, 0.7, 0.4), (0.5, 0.75, 1.0), (1.0, 0.4, 0.7)])
                         k_ = RL.uniform(0.12, 0.26) * (CP.OUTLINE["ring_major_k"] if major else CP.OUTLINE["ring_minor_k"]) * (1.0 + 4.0 * uu_) * 1.6
-                        if per == CORE_PER:
-                            k_ *= 3.0                       # the districts' own streets: a touch brighter than the suburbs'
-                        p0 = W((run, line + 0.5)) if axis == 0 else W((line + 0.5, run))
-                        p1 = W((e_, line + 0.5)) if axis == 0 else W((line + 0.5, e_))
-                        strip(NEON, p0, p1, 0.5, 0.05, sc(c, k_))
+                        if core:
+                            k_ *= 3.0
+                        s0_ = run
+                        while s0_ < e_:
+                            s1_ = min(e_, s0_ + 3)
+                            p0 = W((s0_, line + 0.5)) if axis == 0 else W((line + 0.5, s0_))
+                            p1 = W((s1_, line + 0.5)) if axis == 0 else W((line + 0.5, s1_))
+                            strip(NEON, p0, p1, 0.5, 0.05, sc(c, k_))
+                            s0_ = s1_
                         n_glow += 1
                     run = None
 print("STREET GLOW", n_glow, "%.1fs" % (time.time() - T0), flush=True)
@@ -288,7 +414,20 @@ WALL_Z0 = -max(WET_CELLS.values()) - 12.0 if WET_CELLS else -40.0
 s0, s1 = WAT["sea_bed"]
 SEAX = 3600.0
 WATER.face([(-SEAX, -SEAX, ZW), (SEAX, -SEAX, ZW), (SEAX, SEAX, ZW), (-SEAX, SEAX, ZW)], (0, 0, 0))
-TS = 4
+ISLANDS = [(-700.0 * 0.06, -5900.0 * 0.06, 22.0), (1300.0 * 0.06, -6400.0 * 0.06, 17.0)]       # the fort and the park island (city_bay_a2)
+
+
+def isl_bed(x, y, bed):
+    """the sea bed rises to a shoal round each island (so the island stands on a bank, not on a pillar)."""
+    for (ix, iy, r) in ISLANDS:
+        d = math.hypot(x - ix, y - iy)
+        sh = -7.0 - max(0.0, d - r * 1.3) * 0.55
+        if sh > bed:
+            bed = sh
+    return bed
+
+
+TS = 2
 for cj in range(GJ0 - 40, GJ0 + GN + 40, TS):
     for ci in range(GI0 - 40, GI0 + GN + 40, TS):
         if all(cls_at(ci + di, cj + dj) not in (0, 1) for di in range(TS) for dj in range(TS)):
@@ -297,7 +436,8 @@ for cj in range(GJ0 - 40, GJ0 + GN + 40, TS):
             return -(s0 + (s1 - s0) * min(1.0, dland_at(cc, jj) / 25.0))
         xa, ya = W((ci, cj))
         xb, yb = W((ci + TS, cj + TS))
-        pts_ = [(xa, ya, sbz(ci, cj)), (xb, ya, sbz(ci + TS, cj)), (xb, yb, sbz(ci + TS, cj + TS)), (xa, yb, sbz(ci, cj + TS))]
+        pts_ = [(xa, ya, isl_bed(xa, ya, sbz(ci, cj))), (xb, ya, isl_bed(xb, ya, sbz(ci + TS, cj))), (xb, yb, isl_bed(xb, yb, sbz(ci + TS, cj + TS))),
+                (xa, yb, isl_bed(xa, yb, sbz(ci, cj + TS)))]
         SEABED.face(pts_, (0.17, 0.19, 0.20), None, wet=1)
 # a catch-all floor under everything (no holes between the tiles) and a deep floor out to the horizon
 SEABED.face([(-SEAX, -SEAX, -s1), (SEAX, -SEAX, -s1), (SEAX, SEAX, -s1), (-SEAX, SEAX, -s1)], (0.17, 0.19, 0.20), None, wet=1)
