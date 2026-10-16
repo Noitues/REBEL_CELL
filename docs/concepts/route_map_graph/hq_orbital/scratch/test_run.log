@@ -1,4 +1,0 @@
-stills_test chunk 0 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\scratch\bl_stills_test_0.log wall 63 s
-render 64 s
-H_decision {'median': 0.2543984353542328, 'under_010': 0.011591796875, 'over_085': 0.022418619791666667, 'landmark': 0.4389340877532959, 'local_bg': 0.22011293470859528, 'landmark_share': 0.18160264756944444, 'ratio': 1.9941312778115252}
-H_rocket {'median': 0.23244862258434296, 'under_010': 0.023850911458333332, 'over_085': 0.02990776909722222, 'landmark': 0.48535841703414917, 'local_bg': 0.20194274187088013, 'landmark_share': 0.17244249131944445, 'ratio': 2.403445712074573}

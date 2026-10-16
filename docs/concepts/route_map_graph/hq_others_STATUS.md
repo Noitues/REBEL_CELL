@@ -40,3 +40,4 @@
   Starting the final batches in task order (Meridian first) unless told otherwise.
 - 17:30  MERIDIAN DONE: hq_meridian/ H_overview, H_decision, H_hover, H_mechanic_states, H_reveal.mp4/.gif, plates/, NOTES.md (first reveal frames being re-rendered in the next batch). Next batch queued: Solace finals + Orbital stills/sheet/launch board.
 - 18:15  SOLACE DONE (v3 tubes): hq_solace/ H_overview, H_decision, H_hover, H_mechanic_states, H_reveal.mp4/.gif, plates, NOTES. ORBITAL stills done (H_overview, H_decision, H_hover, H_rocket, H_mechanic_states, H_launch_board, H_launch_strike); its reveal + all Rebel Cell finals in the running batch.
+- 19:03  ALL FOUR DONE. ORBITAL + REBEL CELL finals (incl. reveals) delivered; hq_compare.jpg (5 HQs incl. Halcyon); hq_others_GPU_DONE created. Known value misses (flagged in NOTES): Solace frame median 0.07 (dark city per review), Rebel Cell red-sequence frames median ~0.01, Meridian landmark ratio 1.33 overview / 0.92 decision.

@@ -1,7 +1,0 @@
-GPU lock acquired after 2849 s (test frames meridian:H_overview,H_decision solace:H_overview,H_decision orbital:H_decision,H_rocket rebel_cell:H_overview)
-meridian H_overview,H_decision 540 s
-solace H_overview,H_decision 136 s
-orbital H_decision,H_rocket 112 s
-rebel_cell H_overview 116 s
-GPU lock released
-done
