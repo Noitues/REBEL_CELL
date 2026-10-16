@@ -1,0 +1,142 @@
+{
+  "_doc": "Paths: '{C}/' = docs/concepts. Boxes are normalised [x0, y0, x1, y1]. role = custom | procedural | anchor. 'main' images go on the sheet; the rest are metrics-only. 'optional' entries and 'globs' are skipped when missing, so the file can be re-run as new renders land.",
+  "pairs": [
+    {
+      "id": "p1_street",
+      "title": "Pair 1: netrun STREET (side view)",
+      "rows": [["c_aaa2r3", "p_sb_closed"]],
+      "crops": [
+        {"name": "skyline", "boxes": {"c_aaa2r3": [0.25, 0.0, 0.75, 0.30], "p_sb_closed": [0.15, 0.17, 0.65, 0.47]}},
+        {"name": "street level", "boxes": {"c_aaa2r3": [0.12, 0.70, 0.62, 1.0], "p_sb_closed": [0.30, 0.66, 0.80, 0.96]}},
+        {"name": "landmark", "boxes": {"c_aaa2r3": [0.60, 0.07, 0.85, 0.40], "p_sb_closed": [0.28, 0.33, 0.53, 0.66]}}
+      ],
+      "images": {
+        "c_aaa2r3": {"role": "custom", "main": true, "label": "CUSTOM  AAA-2 r3 plate (hand-dressed street set)",
+          "path": "{C}/route_map_graph/side_view/v3_aaa/r3/plates/AAA2r3_plate.png",
+          "landmark": [0.64, 0.10, 0.78, 0.37], "landmark_name": "globe + VOLTA board",
+          "skyline": [0.0, 0.85], "facade": [0.0, 0.10, 1.0, 0.80],
+          "bands": {"upper": [0, 0.0, 1, 0.40], "lower": [0, 0.78, 1, 1.0]}},
+        "c_proof": {"role": "custom", "label": "custom r3 proof plate (rules, seed 5310, r2 dressing kept)",
+          "path": "{C}/route_map_graph/side_view/v3_aaa/r3/proof_alt_layout.png",
+          "landmark": [0.64, 0.10, 0.78, 0.37], "skyline": [0.0, 0.85], "facade": [0.0, 0.10, 1.0, 0.80],
+          "bands": {"upper": [0, 0.0, 1, 0.40], "lower": [0, 0.78, 1, 1.0]}},
+        "c_dyn_ov": {"role": "custom", "label": "custom v3_dynamic O_overview (route UI masked, overlay remains)",
+          "path": "{C}/route_map_graph/side_view/v3_dynamic/O_overview.png",
+          "mask": [[0, 0, 0.86, 0.12], [0, 0.12, 0.155, 0.67], [0.27, 0.95, 0.78, 1], [0.83, 0.95, 1, 1]],
+          "skyline": [0.0, 0.85], "facade": [0.16, 0.12, 1.0, 0.80],
+          "bands": {"upper": [0.16, 0.12, 1, 0.40], "lower": [0, 0.80, 1, 0.94]}},
+        "p_sb_closed": {"role": "procedural", "main": true, "label": "PROCEDURAL  one-city street, walls closed (v3r2)",
+          "path": "{C}/route_map_graph/storyboard/test_frames/v3r2_street_closed.png",
+          "landmark": [0.35, 0.40, 0.43, 0.58], "landmark_name": "Meridian crane 'A'",
+          "skyline": [0.05, 0.85], "facade": [0.0, 0.40, 1.0, 0.80],
+          "bands": {"upper": [0, 0.25, 1, 0.60], "lower": [0, 0.78, 1, 1.0]}},
+        "p_sb_reveal": {"role": "procedural", "label": "procedural v3 street REVEAL start",
+          "path": "{C}/route_map_graph/storyboard/test_frames/v3_end_street_reveal_start.png",
+          "skyline": [0.0, 0.70], "facade": [0.0, 0.10, 1.0, 0.65],
+          "bands": {"upper": [0, 0.0, 1, 0.35], "lower": [0, 0.65, 1, 1.0]}},
+        "p_f0340": {"role": "procedural", "label": "procedural storyboard f_0340 (REVEAL, live)",
+          "path": "D:/rc_scratch/storyboard/full_frames/f_0340.png", "optional": true,
+          "mask": [[0.88, 0, 1, 0.03]],
+          "landmark": [0.35, 0.40, 0.43, 0.58],
+          "skyline": [0.05, 0.85], "facade": [0.0, 0.40, 1.0, 0.80],
+          "bands": {"upper": [0, 0.25, 1, 0.60], "lower": [0, 0.78, 1, 1.0]}}
+      }
+    },
+    {
+      "id": "p2_hq",
+      "title": "Pair 2: HQ netruns (v1 hand-built vs v2 kit), same cameras",
+      "rows": [["c_hal_ov", "p_hal_ov"], ["c_orb_ov", "p_orb_ov"]],
+      "crops": [
+        {"name": "city fabric (Halcyon)", "boxes": {"c_hal_ov": [0.0, 0.0, 0.30, 0.30], "p_hal_ov": [0.0, 0.0, 0.30, 0.30]}},
+        {"name": "compound edge (Halcyon)", "boxes": {"c_hal_ov": [0.30, 0.62, 0.60, 0.92], "p_hal_ov": [0.30, 0.62, 0.60, 0.92]}},
+        {"name": "landmark (Orbital pad)", "boxes": {"c_orb_ov": [0.42, 0.18, 0.72, 0.48], "p_orb_ov": [0.42, 0.18, 0.72, 0.48]}}
+      ],
+      "images": {
+        "c_hal_ov": {"role": "custom", "main": true, "label": "CUSTOM  Halcyon v1 overview",
+          "path": "{C}/route_map_graph/hq_halcyon/plates/H_overview_plate.png",
+          "landmark": [0.42, 0.28, 0.78, 0.88], "landmark_name": "Panopticon pyramid", "facade": [0, 0, 1, 1]},
+        "p_hal_ov": {"role": "procedural", "main": true, "label": "PROCEDURAL  Halcyon v2 kit overview",
+          "path": "{C}/route_map_graph/hq_halcyon/plates/H_overview_v2_plate.png",
+          "landmark": [0.42, 0.28, 0.78, 0.88], "landmark_name": "Panopticon pyramid", "facade": [0, 0, 1, 1]},
+        "c_orb_ov": {"role": "custom", "main": true, "label": "CUSTOM  Orbital v1 overview",
+          "path": "{C}/route_map_graph/hq_orbital/plates/H_overview_plate.png",
+          "landmark": [0.51, 0.24, 0.64, 0.58], "landmark_name": "launch pad core", "facade": [0, 0, 1, 1]},
+        "p_orb_ov": {"role": "procedural", "main": true, "label": "PROCEDURAL  Orbital v2 kit overview",
+          "path": "{C}/route_map_graph/hq_orbital/plates/H_overview_v2_plate.png",
+          "landmark": [0.51, 0.24, 0.64, 0.58], "landmark_name": "launch pad core", "facade": [0, 0, 1, 1]},
+        "c_hal_dec": {"role": "custom", "label": "custom Halcyon v1 decision E",
+          "path": "{C}/route_map_graph/hq_halcyon/plates/H_decision_E_plate.png", "facade": [0, 0, 1, 1]},
+        "p_hal_dec": {"role": "procedural", "label": "procedural Halcyon v2 decision E",
+          "path": "{C}/route_map_graph/hq_halcyon/plates/H_decision_E_v2_plate.png", "facade": [0, 0, 1, 1]},
+        "c_orb_dec": {"role": "custom", "label": "custom Orbital v1 decision",
+          "path": "{C}/route_map_graph/hq_orbital/plates/H_decision_plate.png", "facade": [0, 0, 1, 1]},
+        "p_orb_dec": {"role": "procedural", "label": "procedural Orbital v2 decision",
+          "path": "{C}/route_map_graph/hq_orbital/plates/H_decision_v2_plate.png", "facade": [0, 0, 1, 1]},
+        "c_orb_rocket": {"role": "custom", "label": "custom Orbital v1 rocket",
+          "path": "{C}/route_map_graph/hq_orbital/plates/H_rocket_plate.png", "facade": [0, 0, 1, 1]},
+        "p_orb_rocket": {"role": "procedural", "label": "procedural Orbital v2 rocket",
+          "path": "{C}/route_map_graph/hq_orbital/plates/H_rocket_v2_plate.png", "facade": [0, 0, 1, 1]},
+        "c_mer_ov": {"role": "custom", "label": "custom Meridian v1 overview",
+          "path": "{C}/route_map_graph/hq_meridian/plates/H_overview_plate.png",
+          "landmark": [0.45, 0.17, 0.60, 0.55], "facade": [0, 0, 1, 1]},
+        "p_mer_ov_test": {"role": "procedural", "label": "procedural Meridian v2 test overview (1280, other camera)",
+          "path": "D:/rc_scratch/hq_rev/tests/meridian_H_overview_test_plate.png", "optional": true,
+          "landmark": [0.58, 0.27, 0.70, 0.58], "facade": [0, 0, 1, 1]},
+        "p_sol_ov_test": {"role": "procedural", "label": "procedural Solace v2 test overview (1280)",
+          "path": "D:/rc_scratch/hq_rev/tests/solace_H_overview_test_plate.png", "optional": true, "facade": [0, 0, 1, 1]},
+        "p_reb_ov_test": {"role": "procedural", "label": "procedural Rebel Cell v2 test overview (1280)",
+          "path": "D:/rc_scratch/hq_rev/tests/rebel_cell_H_overview_test_plate.png", "optional": true, "facade": [0, 0, 1, 1]}
+      },
+      "globs": [
+        {"pattern": "D:/rc_scratch/hq_rev/tests/*_t2*_plate.png", "role": "procedural", "label_prefix": "procedural t2 ", "facade": [0, 0, 1, 1]}
+      ]
+    },
+    {
+      "id": "p3_city",
+      "title": "Pair 3: whole CITY key art",
+      "rows": [["c_v6", "p_city_night"]],
+      "crops": [
+        {"name": "far district / horizon", "boxes": {"c_v6": [0.55, 0.08, 0.95, 0.36], "p_city_night": [0.30, 0.10, 0.70, 0.38]}},
+        {"name": "street-level fabric", "boxes": {"c_v6": [0.04, 0.62, 0.32, 0.92], "p_city_night": [0.08, 0.72, 0.36, 1.0]}},
+        {"name": "landmark (Halcyon pyramid)", "boxes": {"c_v6": [0.60, 0.52, 0.78, 0.82], "p_city_night": [0.55, 0.66, 0.70, 0.91]}}
+      ],
+      "images": {
+        "c_v6": {"role": "custom", "main": true, "label": "CUSTOM  round 30 city_night_hq_v6 (labels masked in metrics)",
+          "path": "{C}/round30_meridian_castle/city_night_hq_v6.jpg",
+          "mask": [[0.30, 0.28, 0.37, 0.32], [0.48, 0.10, 0.56, 0.13], [0.46, 0.47, 0.54, 0.51], [0.90, 0.48, 0.98, 0.52],
+                   [0.69, 0.31, 0.76, 0.35], [0.25, 0.61, 0.31, 0.65], [0.45, 0.78, 0.53, 0.82], [0.66, 0.66, 0.72, 0.70]],
+          "landmark": [0.63, 0.58, 0.74, 0.78], "landmark_name": "Halcyon pyramid",
+          "bands": {"upper": [0, 0, 1, 0.33], "lower": [0, 0.67, 1, 1]}},
+        "p_city_night": {"role": "procedural", "main": true, "label": "PROCEDURAL  city_all_corps_night (AAA-2)",
+          "path": "{C}/city_all_corps/city_all_corps_night.png",
+          "landmark": [0.58, 0.71, 0.67, 0.84], "landmark_name": "Halcyon pyramid",
+          "skyline": [0.05, 0.40],
+          "bands": {"upper": [0, 0.20, 1, 0.45], "lower": [0, 0.67, 1, 1]}},
+        "p_city_main": {"role": "procedural", "label": "procedural city_all_corps_mainline (same camera, mainline look)",
+          "path": "{C}/city_all_corps/city_all_corps_mainline.png",
+          "landmark": [0.58, 0.71, 0.67, 0.84], "skyline": [0.05, 0.40],
+          "bands": {"upper": [0, 0.20, 1, 0.45], "lower": [0, 0.67, 1, 1]}},
+        "p_tethys": {"role": "procedural", "label": "procedural tethys_flooded_closeup",
+          "path": "{C}/city_all_corps/tethys_flooded_closeup.png"},
+        "p_city_v1": {"role": "procedural", "label": "procedural city v1 first pass (scratch)",
+          "path": "D:/rc_scratch/city_all_corps/v1/city_all_corps_night.png", "optional": true,
+          "landmark": [0.58, 0.71, 0.67, 0.84], "skyline": [0.05, 0.40],
+          "bands": {"upper": [0, 0.20, 1, 0.45], "lower": [0, 0.67, 1, 1]}}
+      }
+    },
+    {
+      "id": "p4_anchor",
+      "title": "Anchor: MAINLINE City Grid (every view must match)",
+      "rows": [["a_mainline_w3", "a_sb_hq"]],
+      "crops": [],
+      "images": {
+        "a_mainline_w3": {"role": "anchor", "main": true, "label": "ANCHOR  main W3_HQ capture (mainline_match, top-left panel)",
+          "path": "{C}/route_map_graph/storyboard/mainline_match.jpg", "crop": [0.005, 0.045, 0.495, 0.48],
+          "mask": [[0, 0, 1, 0.07], [0, 0.93, 1, 1], [0, 0.6, 0.45, 1], [0.7, 0.27, 1, 0.75], [0.75, 0.75, 1, 1], [0, 0, 0.35, 0.45]]},
+        "a_sb_hq": {"role": "anchor", "main": true, "label": "ANCHOR  storyboard HQ, mainline kit (mainline_match, top-right panel)",
+          "path": "{C}/route_map_graph/storyboard/mainline_match.jpg", "crop": [0.505, 0.045, 0.995, 0.48],
+          "mask": [[0, 0, 1, 0.07], [0, 0.93, 1, 1], [0, 0.6, 0.45, 1], [0.75, 0.35, 1, 0.75], [0.75, 0.75, 1, 1], [0.85, 0, 1, 0.2]]}
+      }
+    }
+  ]
+}

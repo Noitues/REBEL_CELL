@@ -1,0 +1,2474 @@
+{
+ "c_aaa2r3": {
+  "w_src": 2560,
+  "median": 0.14062745869159698,
+  "p95": 0.6802800893783569,
+  "under_010": 0.313017578125,
+  "over_085": 0.0059092881944444444,
+  "sobel_mean": 0.032290019094944,
+  "hf_upper": 0.1555180628008461,
+  "sobel_upper": 0.02202666737139225,
+  "hf_lower": 0.1177405858067085,
+  "sobel_lower": 0.044026270508766174,
+  "detail_cv": 0.6089918710588745,
+  "calm_share": 0.19545454545454546,
+  "hue_entropy_bits": 4.466006278991699,
+  "chroma_share": 0.637880859375,
+  "hue_top_share": 0.269,
+  "clusters": [
+   {
+    "hue_deg": 262.5,
+    "share": 0.269,
+    "rgb": [
+     46,
+     37,
+     62
+    ]
+   },
+   {
+    "hue_deg": 222.5,
+    "share": 0.194,
+    "rgb": [
+     44,
+     52,
+     74
+    ]
+   },
+   {
+    "hue_deg": 282.5,
+    "share": 0.095,
+    "rgb": [
+     63,
+     43,
+     72
+    ]
+   },
+   {
+    "hue_deg": 242.5,
+    "share": 0.031,
+    "rgb": [
+     39,
+     38,
+     59
+    ]
+   },
+   {
+    "hue_deg": 202.5,
+    "share": 0.09,
+    "rgb": [
+     72,
+     101,
+     121
+    ]
+   },
+   {
+    "hue_deg": 312.5,
+    "share": 0.118,
+    "rgb": [
+     114,
+     65,
+     105
+    ]
+   }
+  ],
+  "rep_median": 0.33430972695350647,
+  "rep_p90": 0.45501441657543185,
+  "rep_tiled_share": 0.13157894736842105,
+  "rep_tiles": 114,
+  "lm_ratio": 1.5757149457931519,
+  "lm_p95_ratio": 1.1273176670074463,
+  "lm_centre_thirds_dist": 0.1248792712593272,
+  "sky_std": 0.047169246990414415,
+  "sky_min_q_std": 0.025137665907943446,
+  "sky_mean_h": 0.8109168836805555,
+  "lit_std": 0.2292588817878295,
+  "lit_min_q_std": 0.13980521772137372,
+  "range": [
+   0.0,
+   0.85
+  ],
+  "blobs_per_mp": 550.1302083333334,
+  "focal_conc": 0.2182074652777778,
+  "focal_thirds_dist": 0.2407924850989441,
+  "focal_centroid": [
+   0.531,
+   0.663
+  ],
+  "label": "CUSTOM  AAA-2 r3 plate (hand-dressed street set)",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\side_view\\v3_aaa\\r3\\plates\\AAA2r3_plate.png",
+  "pair": "p1_street"
+ },
+ "c_proof": {
+  "w_src": 2560,
+  "median": 0.1523764729499817,
+  "p95": 0.6999821662902832,
+  "under_010": 0.317783203125,
+  "over_085": 0.005779079861111111,
+  "sobel_mean": 0.033246830105781555,
+  "hf_upper": 0.04686667472532136,
+  "sobel_upper": 0.02375977300107479,
+  "hf_lower": 0.1186649874363588,
+  "sobel_lower": 0.043842069804668427,
+  "detail_cv": 0.5764299221979976,
+  "calm_share": 0.11818181818181818,
+  "hue_entropy_bits": 4.575631141662598,
+  "chroma_share": 0.4501540798611111,
+  "hue_top_share": 0.213,
+  "clusters": [
+   {
+    "hue_deg": 182.5,
+    "share": 0.213,
+    "rgb": [
+     76,
+     118,
+     122
+    ]
+   },
+   {
+    "hue_deg": 317.5,
+    "share": 0.163,
+    "rgb": [
+     126,
+     71,
+     111
+    ]
+   },
+   {
+    "hue_deg": 262.5,
+    "share": 0.17,
+    "rgb": [
+     46,
+     37,
+     62
+    ]
+   },
+   {
+    "hue_deg": 202.5,
+    "share": 0.118,
+    "rgb": [
+     55,
+     78,
+     90
+    ]
+   },
+   {
+    "hue_deg": 222.5,
+    "share": 0.05,
+    "rgb": [
+     42,
+     52,
+     69
+    ]
+   },
+   {
+    "hue_deg": 37.5,
+    "share": 0.085,
+    "rgb": [
+     162,
+     138,
+     99
+    ]
+   }
+  ],
+  "rep_median": 0.3416634649038315,
+  "rep_p90": 0.457801628112793,
+  "rep_tiled_share": 0.10526315789473684,
+  "rep_tiles": 114,
+  "lm_ratio": 1.6198298931121826,
+  "lm_p95_ratio": 1.19075608253479,
+  "lm_centre_thirds_dist": 0.1248792712593272,
+  "sky_std": 0.03546564972536824,
+  "sky_min_q_std": 0.016468951684875544,
+  "sky_mean_h": 0.8171343315972223,
+  "lit_std": 0.11450788214466014,
+  "lit_min_q_std": 0.006945914557932839,
+  "range": [
+   0.0,
+   0.85
+  ],
+  "blobs_per_mp": 549.0451388888889,
+  "focal_conc": 0.21406097428664425,
+  "focal_thirds_dist": 0.2349773923285659,
+  "focal_centroid": [
+   0.534,
+   0.667
+  ],
+  "label": "custom r3 proof plate (rules, seed 5310, r2 dressing kept)",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\side_view\\v3_aaa\\r3\\proof_alt_layout.png",
+  "pair": "p1_street"
+ },
+ "c_dyn_ov": {
+  "w_src": 1920,
+  "median": 0.17064234614372253,
+  "p95": 0.5532910227775574,
+  "under_010": 0.13486320145680478,
+  "over_085": 0.018258861717880718,
+  "sobel_mean": 0.025607354938983917,
+  "hf_upper": 0.06142943228247924,
+  "sobel_upper": 0.014197093434631824,
+  "hf_lower": 0.21256436952952715,
+  "sobel_lower": 0.021587271243333817,
+  "detail_cv": 0.7163442589334914,
+  "calm_share": 0.23684210526315788,
+  "hue_entropy_bits": 3.4495420455932617,
+  "chroma_share": 0.6105961354516123,
+  "hue_top_share": 0.625,
+  "clusters": [
+   {
+    "hue_deg": 252.5,
+    "share": 0.625,
+    "rgb": [
+     50,
+     45,
+     73
+    ]
+   },
+   {
+    "hue_deg": 232.5,
+    "share": 0.047,
+    "rgb": [
+     51,
+     51,
+     77
+    ]
+   },
+   {
+    "hue_deg": 32.5,
+    "share": 0.075,
+    "rgb": [
+     164,
+     117,
+     62
+    ]
+   },
+   {
+    "hue_deg": 67.5,
+    "share": 0.061,
+    "rgb": [
+     170,
+     184,
+     43
+    ]
+   },
+   {
+    "hue_deg": 272.5,
+    "share": 0.038,
+    "rgb": [
+     56,
+     47,
+     73
+    ]
+   },
+   {
+    "hue_deg": 357.5,
+    "share": 0.044,
+    "rgb": [
+     177,
+     47,
+     55
+    ]
+   }
+  ],
+  "rep_median": 0.2960796058177948,
+  "rep_p90": 0.495935693383217,
+  "rep_tiled_share": 0.23333333333333334,
+  "rep_tiles": 90,
+  "sky_std": 0.05709866344963387,
+  "sky_min_q_std": 0.0032864559258883523,
+  "sky_mean_h": 0.8058702256944443,
+  "lit_std": 0.2363737826806973,
+  "lit_min_q_std": 0.14223447475372192,
+  "range": [
+   0.0,
+   0.85
+  ],
+  "blobs_per_mp": 541.0681913261749,
+  "focal_conc": 0.33463469046291133,
+  "focal_thirds_dist": 0.03272080719879702,
+  "focal_centroid": [
+   0.651,
+   0.648
+  ],
+  "label": "custom v3_dynamic O_overview (route UI masked, overlay remains)",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\side_view\\v3_dynamic\\O_overview.png",
+  "pair": "p1_street"
+ },
+ "p_sb_closed": {
+  "w_src": 1920,
+  "median": 0.114617258310318,
+  "p95": 0.5561036467552185,
+  "under_010": 0.38884548611111114,
+  "over_085": 0.004717881944444445,
+  "sobel_mean": 0.021112650632858276,
+  "hf_upper": 0.11943820000580885,
+  "sobel_upper": 0.018675226718187332,
+  "hf_lower": 0.09497019665115931,
+  "sobel_lower": 0.030538126826286316,
+  "detail_cv": 0.699979029950306,
+  "calm_share": 0.39545454545454545,
+  "hue_entropy_bits": 3.532841920852661,
+  "chroma_share": 0.5469227430555555,
+  "hue_top_share": 0.545,
+  "clusters": [
+   {
+    "hue_deg": 242.5,
+    "share": 0.545,
+    "rgb": [
+     33,
+     32,
+     49
+    ]
+   },
+   {
+    "hue_deg": 312.5,
+    "share": 0.129,
+    "rgb": [
+     188,
+     110,
+     176
+    ]
+   },
+   {
+    "hue_deg": 222.5,
+    "share": 0.074,
+    "rgb": [
+     34,
+     37,
+     53
+    ]
+   },
+   {
+    "hue_deg": 262.5,
+    "share": 0.057,
+    "rgb": [
+     41,
+     36,
+     55
+    ]
+   },
+   {
+    "hue_deg": 182.5,
+    "share": 0.081,
+    "rgb": [
+     109,
+     175,
+     183
+    ]
+   },
+   {
+    "hue_deg": 32.5,
+    "share": 0.059,
+    "rgb": [
+     180,
+     147,
+     103
+    ]
+   }
+  ],
+  "rep_median": 0.3169964551925659,
+  "rep_p90": 0.49674137234687804,
+  "rep_tiled_share": 0.17543859649122806,
+  "rep_tiles": 57,
+  "lm_ratio": 1.7430500984191895,
+  "lm_p95_ratio": 1.0251202583312988,
+  "lm_centre_thirds_dist": 0.1863447492398779,
+  "sky_std": 0.12964973240900057,
+  "sky_min_q_std": 0.03571236654840458,
+  "sky_mean_h": 0.41537434895833336,
+  "lit_std": 0.11478699504056526,
+  "lit_min_q_std": 0.030594089447148375,
+  "range": [
+   0.05,
+   0.85
+  ],
+  "blobs_per_mp": 327.69097222222223,
+  "focal_conc": 0.2598741319444444,
+  "focal_thirds_dist": 0.24144903354429242,
+  "focal_centroid": [
+   0.532,
+   0.695
+  ],
+  "label": "PROCEDURAL  one-city street, walls closed (v3r2)",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\storyboard\\test_frames\\v3r2_street_closed.png",
+  "pair": "p1_street"
+ },
+ "p_sb_reveal": {
+  "w_src": 1920,
+  "median": 0.11009334027767181,
+  "p95": 0.6249004006385803,
+  "under_010": 0.4152690972222222,
+  "over_085": 0.003923611111111111,
+  "sobel_mean": 0.024126717820763588,
+  "hf_upper": 0.0923258039084723,
+  "sobel_upper": 0.015834618359804153,
+  "hf_lower": 0.07066075433093269,
+  "sobel_lower": 0.023679133504629135,
+  "detail_cv": 0.6247272364398112,
+  "calm_share": 0.29545454545454547,
+  "hue_entropy_bits": 4.1110148429870605,
+  "chroma_share": 0.3273101128472222,
+  "hue_top_share": 0.321,
+  "clusters": [
+   {
+    "hue_deg": 317.5,
+    "share": 0.254,
+    "rgb": [
+     176,
+     102,
+     156
+    ]
+   },
+   {
+    "hue_deg": 252.5,
+    "share": 0.321,
+    "rgb": [
+     40,
+     36,
+     53
+    ]
+   },
+   {
+    "hue_deg": 272.5,
+    "share": 0.088,
+    "rgb": [
+     44,
+     36,
+     54
+    ]
+   },
+   {
+    "hue_deg": 182.5,
+    "share": 0.109,
+    "rgb": [
+     109,
+     166,
+     173
+    ]
+   },
+   {
+    "hue_deg": 32.5,
+    "share": 0.109,
+    "rgb": [
+     170,
+     139,
+     94
+    ]
+   },
+   {
+    "hue_deg": 297.5,
+    "share": 0.015,
+    "rgb": [
+     116,
+     77,
+     116
+    ]
+   }
+  ],
+  "rep_median": 0.30018556118011475,
+  "rep_p90": 0.4606681823730469,
+  "rep_tiled_share": 0.12631578947368421,
+  "rep_tiles": 95,
+  "sky_std": 0.10920079285378623,
+  "sky_min_q_std": 0.05070938331512788,
+  "sky_mean_h": 0.48580946180555545,
+  "lit_std": 0.1114578861585436,
+  "lit_min_q_std": 0.04026831762069897,
+  "range": [
+   0.0,
+   0.7
+  ],
+  "blobs_per_mp": 759.5486111111111,
+  "focal_conc": 0.26282677079943595,
+  "focal_thirds_dist": 0.2835334244327621,
+  "focal_centroid": [
+   0.486,
+   0.586
+  ],
+  "label": "procedural v3 street REVEAL start",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\storyboard\\test_frames\\v3_end_street_reveal_start.png",
+  "pair": "p1_street"
+ },
+ "p_f0340": {
+  "w_src": 1280,
+  "median": 0.12357725948095322,
+  "p95": 0.6138637661933899,
+  "under_010": 0.3581395146218956,
+  "over_085": 0.0063885028729748685,
+  "sobel_mean": 0.026438476517796516,
+  "hf_upper": 0.13273874977799918,
+  "sobel_upper": 0.024867085739970207,
+  "hf_lower": 0.06664175644373425,
+  "sobel_lower": 0.029951363801956177,
+  "detail_cv": 0.528095916204097,
+  "calm_share": 0.0,
+  "hue_entropy_bits": 3.770848512649536,
+  "chroma_share": 0.5764845155584984,
+  "hue_top_share": 0.502,
+  "clusters": [
+   {
+    "hue_deg": 242.5,
+    "share": 0.502,
+    "rgb": [
+     36,
+     34,
+     52
+    ]
+   },
+   {
+    "hue_deg": 262.5,
+    "share": 0.059,
+    "rgb": [
+     43,
+     38,
+     58
+    ]
+   },
+   {
+    "hue_deg": 312.5,
+    "share": 0.114,
+    "rgb": [
+     183,
+     107,
+     171
+    ]
+   },
+   {
+    "hue_deg": 32.5,
+    "share": 0.086,
+    "rgb": [
+     187,
+     145,
+     95
+    ]
+   },
+   {
+    "hue_deg": 182.5,
+    "share": 0.082,
+    "rgb": [
+     111,
+     181,
+     189
+    ]
+   },
+   {
+    "hue_deg": 222.5,
+    "share": 0.059,
+    "rgb": [
+     37,
+     40,
+     57
+    ]
+   }
+  ],
+  "rep_median": 0.3064081370830536,
+  "rep_p90": 0.4616520583629608,
+  "rep_tiled_share": 0.14035087719298245,
+  "rep_tiles": 57,
+  "lm_ratio": 1.6650060415267944,
+  "lm_p95_ratio": 0.9894511103630066,
+  "lm_centre_thirds_dist": 0.1863447492398779,
+  "sky_std": 0.0025573130199044274,
+  "sky_min_q_std": 1.1102230246251565e-16,
+  "sky_mean_h": 0.7994042968749999,
+  "lit_std": 0.13038547685028337,
+  "lit_min_q_std": 0.030365049866182856,
+  "range": [
+   0.05,
+   0.85
+  ],
+  "blobs_per_mp": 407.31334375939326,
+  "focal_conc": 0.4498529892192094,
+  "focal_thirds_dist": 0.11686268799791819,
+  "focal_centroid": [
+   0.608,
+   0.72
+  ],
+  "label": "procedural storyboard f_0340 (REVEAL, live)",
+  "path": "D:\\rc_scratch\\storyboard\\full_frames\\f_0340.png",
+  "pair": "p1_street"
+ },
+ "c_hal_ov": {
+  "w_src": 2560,
+  "median": 0.12693725526332855,
+  "p95": 0.7697334289550781,
+  "under_010": 0.3884548611111111,
+  "over_085": 0.005244140625,
+  "sobel_mean": 0.03736811876296997,
+  "hf_upper": 0.3102859360419783,
+  "sobel_upper": 0.0534004345536232,
+  "hf_lower": 0.07982401764922112,
+  "sobel_lower": 0.02248280495405197,
+  "detail_cv": 0.5893804247354019,
+  "calm_share": 0.25,
+  "hue_entropy_bits": 4.426009178161621,
+  "chroma_share": 0.31615342881944447,
+  "hue_top_share": 0.281,
+  "clusters": [
+   {
+    "hue_deg": 212.5,
+    "share": 0.281,
+    "rgb": [
+     44,
+     54,
+     67
+    ]
+   },
+   {
+    "hue_deg": 2.5,
+    "share": 0.192,
+    "rgb": [
+     149,
+     63,
+     62
+    ]
+   },
+   {
+    "hue_deg": 192.5,
+    "share": 0.125,
+    "rgb": [
+     65,
+     90,
+     98
+    ]
+   },
+   {
+    "hue_deg": 232.5,
+    "share": 0.086,
+    "rgb": [
+     34,
+     37,
+     51
+    ]
+   },
+   {
+    "hue_deg": 32.5,
+    "share": 0.14,
+    "rgb": [
+     170,
+     136,
+     96
+    ]
+   },
+   {
+    "hue_deg": 172.5,
+    "share": 0.023,
+    "rgb": [
+     100,
+     147,
+     147
+    ]
+   }
+  ],
+  "rep_median": 0.2890434265136719,
+  "rep_p90": 0.5819742560386657,
+  "rep_tiled_share": 0.19473684210526315,
+  "rep_tiles": 190,
+  "lm_ratio": 2.3547677993774414,
+  "lm_p95_ratio": 1.5132639408111572,
+  "lm_centre_thirds_dist": 0.14649833681176902,
+  "blobs_per_mp": 1501.736111111111,
+  "focal_conc": 0.4045640971711011,
+  "focal_thirds_dist": 0.17473705547450338,
+  "focal_centroid": [
+   0.624,
+   0.509
+  ],
+  "label": "CUSTOM  Halcyon v1 overview",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\hq_halcyon\\plates\\H_overview_plate.png",
+  "pair": "p2_hq"
+ },
+ "p_hal_ov": {
+  "w_src": 2560,
+  "median": 0.1095474511384964,
+  "p95": 0.7766445279121399,
+  "under_010": 0.46209635416666667,
+  "over_085": 0.009006076388888888,
+  "sobel_mean": 0.051403701305389404,
+  "hf_upper": 0.27915938625454556,
+  "sobel_upper": 0.05617855116724968,
+  "hf_lower": 0.35105630901647333,
+  "sobel_lower": 0.04606882482767105,
+  "detail_cv": 0.2883937991511795,
+  "calm_share": 0.03636363636363636,
+  "hue_entropy_bits": 4.474008083343506,
+  "chroma_share": 0.18602756076388888,
+  "hue_top_share": 0.315,
+  "clusters": [
+   {
+    "hue_deg": 32.5,
+    "share": 0.315,
+    "rgb": [
+     159,
+     128,
+     92
+    ]
+   },
+   {
+    "hue_deg": 202.5,
+    "share": 0.193,
+    "rgb": [
+     50,
+     70,
+     81
+    ]
+   },
+   {
+    "hue_deg": 12.5,
+    "share": 0.107,
+    "rgb": [
+     127,
+     80,
+     64
+    ]
+   },
+   {
+    "hue_deg": 182.5,
+    "share": 0.076,
+    "rgb": [
+     81,
+     117,
+     121
+    ]
+   },
+   {
+    "hue_deg": 52.5,
+    "share": 0.04,
+    "rgb": [
+     188,
+     168,
+     112
+    ]
+   },
+   {
+    "hue_deg": 352.5,
+    "share": 0.072,
+    "rgb": [
+     94,
+     46,
+     50
+    ]
+   }
+  ],
+  "rep_median": 0.178063303232193,
+  "rep_p90": 0.3707846641540527,
+  "rep_tiled_share": 0.05789473684210526,
+  "rep_tiles": 190,
+  "lm_ratio": 2.3125433921813965,
+  "lm_p95_ratio": 1.4551955461502075,
+  "lm_centre_thirds_dist": 0.14649833681176902,
+  "blobs_per_mp": 3632.8125,
+  "focal_conc": 0.25143724915934484,
+  "focal_thirds_dist": 0.25821961928408693,
+  "focal_centroid": [
+   0.555,
+   0.503
+  ],
+  "label": "PROCEDURAL  Halcyon v2 kit overview",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\hq_halcyon\\plates\\H_overview_v2_plate.png",
+  "pair": "p2_hq"
+ },
+ "c_orb_ov": {
+  "w_src": 2560,
+  "median": 0.19885803759098053,
+  "p95": 0.6625561118125916,
+  "under_010": 0.1813791232638889,
+  "over_085": 0.012855902777777779,
+  "sobel_mean": 0.016729019582271576,
+  "hf_upper": 0.017522769503438958,
+  "sobel_upper": 0.016404205933213234,
+  "hf_lower": 0.034863689714653034,
+  "sobel_lower": 0.015312614850699902,
+  "detail_cv": 0.7443679544667708,
+  "calm_share": 0.32272727272727275,
+  "hue_entropy_bits": 3.419635057449341,
+  "chroma_share": 0.1890939670138889,
+  "hue_top_share": 0.444,
+  "clusters": [
+   {
+    "hue_deg": 32.5,
+    "share": 0.444,
+    "rgb": [
+     146,
+     109,
+     75
+    ]
+   },
+   {
+    "hue_deg": 2.5,
+    "share": 0.326,
+    "rgb": [
+     102,
+     59,
+     55
+    ]
+   },
+   {
+    "hue_deg": 57.5,
+    "share": 0.09,
+    "rgb": [
+     187,
+     179,
+     86
+    ]
+   },
+   {
+    "hue_deg": 312.5,
+    "share": 0.049,
+    "rgb": [
+     151,
+     96,
+     142
+    ]
+   },
+   {
+    "hue_deg": 342.5,
+    "share": 0.016,
+    "rgb": [
+     89,
+     51,
+     55
+    ]
+   },
+   {
+    "hue_deg": 212.5,
+    "share": 0.039,
+    "rgb": [
+     95,
+     115,
+     137
+    ]
+   }
+  ],
+  "rep_median": 0.2739269435405731,
+  "rep_p90": 0.7707074820995331,
+  "rep_tiled_share": 0.25,
+  "rep_tiles": 172,
+  "lm_ratio": 1.4776408672332764,
+  "lm_p95_ratio": 1.121583104133606,
+  "lm_centre_thirds_dist": 0.18027414561008415,
+  "blobs_per_mp": 401.47569444444446,
+  "focal_conc": 0.26746203904555316,
+  "focal_thirds_dist": 0.27003445052974046,
+  "focal_centroid": [
+   0.522,
+   0.586
+  ],
+  "label": "CUSTOM  Orbital v1 overview",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\hq_orbital\\plates\\H_overview_plate.png",
+  "pair": "p2_hq"
+ },
+ "p_orb_ov": {
+  "w_src": 2560,
+  "median": 0.1178894117474556,
+  "p95": 0.5874440670013428,
+  "under_010": 0.4100900607638889,
+  "over_085": 0.011120876736111111,
+  "sobel_mean": 0.03490962088108063,
+  "hf_upper": 0.21382819427880664,
+  "sobel_upper": 0.04038333520293236,
+  "hf_lower": 0.13307647639509818,
+  "sobel_lower": 0.03060704469680786,
+  "detail_cv": 0.3637239198677045,
+  "calm_share": 0.09090909090909091,
+  "hue_entropy_bits": 4.047694683074951,
+  "chroma_share": 0.1552484809027778,
+  "hue_top_share": 0.416,
+  "clusters": [
+   {
+    "hue_deg": 27.5,
+    "share": 0.416,
+    "rgb": [
+     135,
+     104,
+     79
+    ]
+   },
+   {
+    "hue_deg": 2.5,
+    "share": 0.248,
+    "rgb": [
+     97,
+     55,
+     52
+    ]
+   },
+   {
+    "hue_deg": 342.5,
+    "share": 0.051,
+    "rgb": [
+     78,
+     41,
+     48
+    ]
+   },
+   {
+    "hue_deg": 47.5,
+    "share": 0.031,
+    "rgb": [
+     181,
+     154,
+     107
+    ]
+   },
+   {
+    "hue_deg": 207.5,
+    "share": 0.091,
+    "rgb": [
+     68,
+     93,
+     115
+    ]
+   },
+   {
+    "hue_deg": 307.5,
+    "share": 0.064,
+    "rgb": [
+     105,
+     69,
+     100
+    ]
+   }
+  ],
+  "rep_median": 0.17999513447284698,
+  "rep_p90": 0.31392310857772826,
+  "rep_tiled_share": 0.015789473684210527,
+  "rep_tiles": 190,
+  "lm_ratio": 1.5220904350280762,
+  "lm_p95_ratio": 1.2282776832580566,
+  "lm_centre_thirds_dist": 0.18027414561008415,
+  "blobs_per_mp": 1859.8090277777778,
+  "focal_conc": 0.2528211805555556,
+  "focal_thirds_dist": 0.24285217746605484,
+  "focal_centroid": [
+   0.555,
+   0.526
+  ],
+  "label": "PROCEDURAL  Orbital v2 kit overview",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\hq_orbital\\plates\\H_overview_v2_plate.png",
+  "pair": "p2_hq"
+ },
+ "c_hal_dec": {
+  "w_src": 2560,
+  "median": 0.12277960777282715,
+  "p95": 0.8303843140602112,
+  "under_010": 0.41139214409722225,
+  "over_085": 0.006869574652777778,
+  "sobel_mean": 0.04339645802974701,
+  "hf_upper": 0.28019704284488617,
+  "sobel_upper": 0.043135110288858414,
+  "hf_lower": 0.09140384882704727,
+  "sobel_lower": 0.04270487651228905,
+  "detail_cv": 0.41484202453758856,
+  "calm_share": 0.10909090909090909,
+  "hue_entropy_bits": 3.9536242485046387,
+  "chroma_share": 0.36468532986111113,
+  "hue_top_share": 0.486,
+  "clusters": [
+   {
+    "hue_deg": 187.5,
+    "share": 0.486,
+    "rgb": [
+     67,
+     100,
+     105
+    ]
+   },
+   {
+    "hue_deg": 207.5,
+    "share": 0.164,
+    "rgb": [
+     40,
+     55,
+     65
+    ]
+   },
+   {
+    "hue_deg": 22.5,
+    "share": 0.114,
+    "rgb": [
+     137,
+     100,
+     75
+    ]
+   },
+   {
+    "hue_deg": 227.5,
+    "share": 0.032,
+    "rgb": [
+     33,
+     39,
+     52
+    ]
+   },
+   {
+    "hue_deg": 2.5,
+    "share": 0.064,
+    "rgb": [
+     119,
+     63,
+     61
+    ]
+   },
+   {
+    "hue_deg": 167.5,
+    "share": 0.018,
+    "rgb": [
+     103,
+     157,
+     156
+    ]
+   }
+  ],
+  "rep_median": 0.3698487728834152,
+  "rep_p90": 0.7543698608875274,
+  "rep_tiled_share": 0.43157894736842106,
+  "rep_tiles": 190,
+  "blobs_per_mp": 1176.2152777777778,
+  "focal_conc": 0.3445361826129189,
+  "focal_thirds_dist": 0.14385179019335978,
+  "focal_centroid": [
+   0.587,
+   0.694
+  ],
+  "label": "custom Halcyon v1 decision E",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\hq_halcyon\\plates\\H_decision_E_plate.png",
+  "pair": "p2_hq"
+ },
+ "p_hal_dec": {
+  "w_src": 2560,
+  "median": 0.16727451980113983,
+  "p95": 0.8345529437065125,
+  "under_010": 0.3164778645833333,
+  "over_085": 0.008103298611111111,
+  "sobel_mean": 0.043850816786289215,
+  "hf_upper": 0.2309254546347698,
+  "sobel_upper": 0.043462786823511124,
+  "hf_lower": 0.09031497707463852,
+  "sobel_lower": 0.04282988980412483,
+  "detail_cv": 0.3475063331498509,
+  "calm_share": 0.09090909090909091,
+  "hue_entropy_bits": 3.9969513416290283,
+  "chroma_share": 0.269619140625,
+  "hue_top_share": 0.444,
+  "clusters": [
+   {
+    "hue_deg": 187.5,
+    "share": 0.444,
+    "rgb": [
+     82,
+     118,
+     122
+    ]
+   },
+   {
+    "hue_deg": 32.5,
+    "share": 0.201,
+    "rgb": [
+     147,
+     119,
+     88
+    ]
+   },
+   {
+    "hue_deg": 352.5,
+    "share": 0.126,
+    "rgb": [
+     109,
+     61,
+     66
+    ]
+   },
+   {
+    "hue_deg": 207.5,
+    "share": 0.064,
+    "rgb": [
+     46,
+     63,
+     72
+    ]
+   },
+   {
+    "hue_deg": 12.5,
+    "share": 0.015,
+    "rgb": [
+     120,
+     81,
+     67
+    ]
+   },
+   {
+    "hue_deg": 52.5,
+    "share": 0.048,
+    "rgb": [
+     184,
+     169,
+     114
+    ]
+   }
+  ],
+  "rep_median": 0.30116038024425507,
+  "rep_p90": 0.7429661035537719,
+  "rep_tiled_share": 0.34210526315789475,
+  "rep_tiles": 190,
+  "blobs_per_mp": 1597.2222222222222,
+  "focal_conc": 0.2905178938263596,
+  "focal_thirds_dist": 0.20186534106466056,
+  "focal_centroid": [
+   0.554,
+   0.647
+  ],
+  "label": "procedural Halcyon v2 decision E",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\hq_halcyon\\plates\\H_decision_E_v2_plate.png",
+  "pair": "p2_hq"
+ },
+ "c_orb_dec": {
+  "w_src": 2560,
+  "median": 0.16414117813110352,
+  "p95": 0.736767053604126,
+  "under_010": 0.13936957465277777,
+  "over_085": 0.017127821180555555,
+  "sobel_mean": 0.029018927365541458,
+  "hf_upper": 0.13842595688940443,
+  "sobel_upper": 0.03625253587961197,
+  "hf_lower": 0.05303402299988604,
+  "sobel_lower": 0.02138930931687355,
+  "detail_cv": 0.5047858783232293,
+  "calm_share": 0.22727272727272727,
+  "hue_entropy_bits": 4.413271427154541,
+  "chroma_share": 0.30373589409722224,
+  "hue_top_share": 0.227,
+  "clusters": [
+   {
+    "hue_deg": 27.5,
+    "share": 0.209,
+    "rgb": [
+     108,
+     80,
+     59
+    ]
+   },
+   {
+    "hue_deg": 2.5,
+    "share": 0.137,
+    "rgb": [
+     83,
+     50,
+     47
+    ]
+   },
+   {
+    "hue_deg": 207.5,
+    "share": 0.227,
+    "rgb": [
+     60,
+     77,
+     93
+    ]
+   },
+   {
+    "hue_deg": 307.5,
+    "share": 0.136,
+    "rgb": [
+     114,
+     69,
+     108
+    ]
+   },
+   {
+    "hue_deg": 182.5,
+    "share": 0.08,
+    "rgb": [
+     104,
+     178,
+     190
+    ]
+   },
+   {
+    "hue_deg": 227.5,
+    "share": 0.046,
+    "rgb": [
+     45,
+     52,
+     66
+    ]
+   }
+  ],
+  "rep_median": 0.3002668172121048,
+  "rep_p90": 0.5372599005699157,
+  "rep_tiled_share": 0.1736842105263158,
+  "rep_tiles": 190,
+  "blobs_per_mp": 923.3940972222223,
+  "focal_conc": 0.2536341939683229,
+  "focal_thirds_dist": 0.23301876216671402,
+  "focal_centroid": [
+   0.56,
+   0.532
+  ],
+  "label": "custom Orbital v1 decision",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\hq_orbital\\plates\\H_decision_plate.png",
+  "pair": "p2_hq"
+ },
+ "p_orb_dec": {
+  "w_src": 2560,
+  "median": 0.12234117835760117,
+  "p95": 0.7498967051506042,
+  "under_010": 0.4123947482638889,
+  "over_085": 0.02388454861111111,
+  "sobel_mean": 0.03294757753610611,
+  "hf_upper": 0.15315126985579425,
+  "sobel_upper": 0.03959854692220688,
+  "hf_lower": 0.072079269949305,
+  "sobel_lower": 0.02136867493391037,
+  "detail_cv": 0.46260290185912967,
+  "calm_share": 0.16818181818181818,
+  "hue_entropy_bits": 4.450472831726074,
+  "chroma_share": 0.218408203125,
+  "hue_top_share": 0.268,
+  "clusters": [
+   {
+    "hue_deg": 27.5,
+    "share": 0.268,
+    "rgb": [
+     139,
+     109,
+     82
+    ]
+   },
+   {
+    "hue_deg": 202.5,
+    "share": 0.195,
+    "rgb": [
+     69,
+     91,
+     107
+    ]
+   },
+   {
+    "hue_deg": 357.5,
+    "share": 0.16,
+    "rgb": [
+     116,
+     62,
+     64
+    ]
+   },
+   {
+    "hue_deg": 62.5,
+    "share": 0.124,
+    "rgb": [
+     181,
+     178,
+     95
+    ]
+   },
+   {
+    "hue_deg": 222.5,
+    "share": 0.049,
+    "rgb": [
+     51,
+     61,
+     77
+    ]
+   },
+   {
+    "hue_deg": 317.5,
+    "share": 0.094,
+    "rgb": [
+     115,
+     66,
+     101
+    ]
+   }
+  ],
+  "rep_median": 0.20893826335668564,
+  "rep_p90": 0.35306895077228545,
+  "rep_tiled_share": 0.031578947368421054,
+  "rep_tiles": 190,
+  "blobs_per_mp": 1177.3003472222222,
+  "focal_conc": 0.2556683221766357,
+  "focal_thirds_dist": 0.26818476313622175,
+  "focal_centroid": [
+   0.54,
+   0.478
+  ],
+  "label": "procedural Orbital v2 decision",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\hq_orbital\\plates\\H_decision_v2_plate.png",
+  "pair": "p2_hq"
+ },
+ "c_orb_rocket": {
+  "w_src": 2560,
+  "median": 0.175591379404068,
+  "p95": 0.7668675184249878,
+  "under_010": 0.12849717881944445,
+  "over_085": 0.023319227430555554,
+  "sobel_mean": 0.02695002220571041,
+  "hf_upper": 0.19266743338732828,
+  "sobel_upper": 0.02175622247159481,
+  "hf_lower": 0.024566198661389926,
+  "sobel_lower": 0.02281157672405243,
+  "detail_cv": 0.5940785404755985,
+  "calm_share": 0.2545454545454545,
+  "hue_entropy_bits": 4.123696327209473,
+  "chroma_share": 0.4897504340277778,
+  "hue_top_share": 0.284,
+  "clusters": [
+   {
+    "hue_deg": 267.5,
+    "share": 0.256,
+    "rgb": [
+     48,
+     34,
+     62
+    ]
+   },
+   {
+    "hue_deg": 352.5,
+    "share": 0.284,
+    "rgb": [
+     106,
+     53,
+     58
+    ]
+   },
+   {
+    "hue_deg": 12.5,
+    "share": 0.122,
+    "rgb": [
+     124,
+     79,
+     68
+    ]
+   },
+   {
+    "hue_deg": 197.5,
+    "share": 0.109,
+    "rgb": [
+     104,
+     160,
+     180
+    ]
+   },
+   {
+    "hue_deg": 32.5,
+    "share": 0.041,
+    "rgb": [
+     152,
+     116,
+     86
+    ]
+   },
+   {
+    "hue_deg": 322.5,
+    "share": 0.094,
+    "rgb": [
+     74,
+     47,
+     63
+    ]
+   }
+  ],
+  "rep_median": 0.22510996460914612,
+  "rep_p90": 0.4463431656360628,
+  "rep_tiled_share": 0.09782608695652174,
+  "rep_tiles": 184,
+  "blobs_per_mp": 437.28298611111114,
+  "focal_conc": 0.4176858967420716,
+  "focal_thirds_dist": 0.27948824305726516,
+  "focal_centroid": [
+   0.482,
+   0.757
+  ],
+  "label": "custom Orbital v1 rocket",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\hq_orbital\\plates\\H_rocket_plate.png",
+  "pair": "p2_hq"
+ },
+ "p_orb_rocket": {
+  "w_src": 2560,
+  "median": 0.13920079171657562,
+  "p95": 0.7898309230804443,
+  "under_010": 0.3158365885416667,
+  "over_085": 0.033185763888888886,
+  "sobel_mean": 0.032979898154735565,
+  "hf_upper": 0.33216430064388974,
+  "sobel_upper": 0.027648670598864555,
+  "hf_lower": 0.04423943314768192,
+  "sobel_lower": 0.030874887481331825,
+  "detail_cv": 0.5179891339788164,
+  "calm_share": 0.19545454545454546,
+  "hue_entropy_bits": 4.149266719818115,
+  "chroma_share": 0.3442621527777778,
+  "hue_top_share": 0.344,
+  "clusters": [
+   {
+    "hue_deg": 262.5,
+    "share": 0.344,
+    "rgb": [
+     44,
+     33,
+     62
+    ]
+   },
+   {
+    "hue_deg": 352.5,
+    "share": 0.219,
+    "rgb": [
+     111,
+     51,
+     57
+    ]
+   },
+   {
+    "hue_deg": 32.5,
+    "share": 0.153,
+    "rgb": [
+     149,
+     124,
+     94
+    ]
+   },
+   {
+    "hue_deg": 197.5,
+    "share": 0.105,
+    "rgb": [
+     83,
+     119,
+     137
+    ]
+   },
+   {
+    "hue_deg": 12.5,
+    "share": 0.01,
+    "rgb": [
+     138,
+     88,
+     77
+    ]
+   },
+   {
+    "hue_deg": 52.5,
+    "share": 0.051,
+    "rgb": [
+     174,
+     162,
+     105
+    ]
+   }
+  ],
+  "rep_median": 0.259786918759346,
+  "rep_p90": 0.4186929613351822,
+  "rep_tiled_share": 0.06315789473684211,
+  "rep_tiles": 190,
+  "blobs_per_mp": 933.1597222222223,
+  "focal_conc": 0.2710412147505423,
+  "focal_thirds_dist": 0.2699404832082017,
+  "focal_centroid": [
+   0.484,
+   0.632
+  ],
+  "label": "procedural Orbital v2 rocket",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\hq_orbital\\plates\\H_rocket_v2_plate.png",
+  "pair": "p2_hq"
+ },
+ "c_mer_ov": {
+  "w_src": 2560,
+  "median": 0.18927529454231262,
+  "p95": 0.6471669673919678,
+  "under_010": 0.25434678819444445,
+  "over_085": 0.012439236111111111,
+  "sobel_mean": 0.02491004765033722,
+  "hf_upper": 0.03912385576762976,
+  "sobel_upper": 0.02177966944873333,
+  "hf_lower": 0.04286134685297496,
+  "sobel_lower": 0.023291928693652153,
+  "detail_cv": 0.6536564834195739,
+  "calm_share": 0.2636363636363636,
+  "hue_entropy_bits": 2.893413543701172,
+  "chroma_share": 0.4437163628472222,
+  "hue_top_share": 0.731,
+  "clusters": [
+   {
+    "hue_deg": 17.5,
+    "share": 0.731,
+    "rgb": [
+     123,
+     78,
+     61
+    ]
+   },
+   {
+    "hue_deg": 357.5,
+    "share": 0.126,
+    "rgb": [
+     89,
+     51,
+     49
+    ]
+   },
+   {
+    "hue_deg": 37.5,
+    "share": 0.098,
+    "rgb": [
+     174,
+     127,
+     80
+    ]
+   },
+   {
+    "hue_deg": 337.5,
+    "share": 0.025,
+    "rgb": [
+     59,
+     37,
+     43
+    ]
+   },
+   {
+    "hue_deg": 57.5,
+    "share": 0.004,
+    "rgb": [
+     212,
+     184,
+     93
+    ]
+   },
+   {
+    "hue_deg": 317.5,
+    "share": 0.003,
+    "rgb": [
+     53,
+     36,
+     45
+    ]
+   }
+  ],
+  "rep_median": 0.3415505141019821,
+  "rep_p90": 0.7862748622894288,
+  "rep_tiled_share": 0.3617021276595745,
+  "rep_tiles": 188,
+  "lm_ratio": 1.0863451957702637,
+  "lm_p95_ratio": 1.0077779293060303,
+  "lm_centre_thirds_dist": 0.2532305841283734,
+  "blobs_per_mp": 1299.9131944444446,
+  "focal_conc": 0.4088098079635456,
+  "focal_thirds_dist": 0.24471707129905967,
+  "focal_centroid": [
+   0.533,
+   0.609
+  ],
+  "label": "custom Meridian v1 overview",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\hq_meridian\\plates\\H_overview_plate.png",
+  "pair": "p2_hq"
+ },
+ "p_mer_ov_test": {
+  "w_src": 1280,
+  "median": 0.06889098137617111,
+  "p95": 0.5603882670402527,
+  "under_010": 0.610166015625,
+  "over_085": 0.0074251302083333335,
+  "sobel_mean": 0.04484398290514946,
+  "hf_upper": 0.25937512029149995,
+  "sobel_upper": 0.05163654312491417,
+  "hf_lower": 0.1846554372648334,
+  "sobel_lower": 0.03925413265824318,
+  "detail_cv": 0.29210175066909505,
+  "calm_share": 0.02727272727272727,
+  "hue_entropy_bits": 3.0909781455993652,
+  "chroma_share": 0.29893988715277775,
+  "hue_top_share": 0.685,
+  "clusters": [
+   {
+    "hue_deg": 22.5,
+    "share": 0.685,
+    "rgb": [
+     119,
+     81,
+     59
+    ]
+   },
+   {
+    "hue_deg": 2.5,
+    "share": 0.151,
+    "rgb": [
+     77,
+     46,
+     42
+    ]
+   },
+   {
+    "hue_deg": 42.5,
+    "share": 0.077,
+    "rgb": [
+     179,
+     139,
+     84
+    ]
+   },
+   {
+    "hue_deg": 342.5,
+    "share": 0.033,
+    "rgb": [
+     57,
+     32,
+     36
+    ]
+   },
+   {
+    "hue_deg": 322.5,
+    "share": 0.015,
+    "rgb": [
+     58,
+     32,
+     46
+    ]
+   },
+   {
+    "hue_deg": 62.5,
+    "share": 0.006,
+    "rgb": [
+     199,
+     182,
+     91
+    ]
+   }
+  ],
+  "rep_median": 0.1715969815850258,
+  "rep_p90": 0.36423528492450713,
+  "rep_tiled_share": 0.05263157894736842,
+  "rep_tiles": 190,
+  "lm_ratio": 1.2454733848571777,
+  "lm_p95_ratio": 1.0305731296539307,
+  "lm_centre_thirds_dist": 0.10332789876854735,
+  "blobs_per_mp": 1954.2100694444446,
+  "focal_conc": 0.3606770833333333,
+  "focal_thirds_dist": 0.3241376948373655,
+  "focal_centroid": [
+   0.501,
+   0.467
+  ],
+  "label": "procedural Meridian v2 test overview (1280, other camera)",
+  "path": "D:\\rc_scratch\\hq_rev\\tests\\meridian_H_overview_test_plate.png",
+  "pair": "p2_hq"
+ },
+ "p_sol_ov_test": {
+  "w_src": 1280,
+  "median": 0.08906980603933334,
+  "p95": 0.6209995746612549,
+  "under_010": 0.5383333333333333,
+  "over_085": 0.010130208333333333,
+  "sobel_mean": 0.059399716556072235,
+  "hf_upper": 0.3120658865382842,
+  "sobel_upper": 0.05088828504085541,
+  "hf_lower": 0.07208309176369329,
+  "sobel_lower": 0.05844627320766449,
+  "detail_cv": 0.34335018367299847,
+  "calm_share": 0.09545454545454546,
+  "hue_entropy_bits": 2.6769914627075195,
+  "chroma_share": 0.253857421875,
+  "hue_top_share": 0.655,
+  "clusters": [
+   {
+    "hue_deg": 287.5,
+    "share": 0.655,
+    "rgb": [
+     135,
+     77,
+     149
+    ]
+   },
+   {
+    "hue_deg": 22.5,
+    "share": 0.175,
+    "rgb": [
+     141,
+     112,
+     94
+    ]
+   },
+   {
+    "hue_deg": 2.5,
+    "share": 0.052,
+    "rgb": [
+     111,
+     74,
+     69
+    ]
+   },
+   {
+    "hue_deg": 327.5,
+    "share": 0.062,
+    "rgb": [
+     79,
+     41,
+     61
+    ]
+   },
+   {
+    "hue_deg": 42.5,
+    "share": 0.013,
+    "rgb": [
+     179,
+     153,
+     118
+    ]
+   },
+   {
+    "hue_deg": 307.5,
+    "share": 0.006,
+    "rgb": [
+     116,
+     65,
+     118
+    ]
+   }
+  ],
+  "rep_median": 0.12216194346547127,
+  "rep_p90": 0.2251032307744026,
+  "rep_tiled_share": 0.005263157894736842,
+  "rep_tiles": 190,
+  "blobs_per_mp": 1480.0347222222222,
+  "focal_conc": 0.4447217098839102,
+  "focal_thirds_dist": 0.22324540625749048,
+  "focal_centroid": [
+   0.541,
+   0.669
+  ],
+  "label": "procedural Solace v2 test overview (1280)",
+  "path": "D:\\rc_scratch\\hq_rev\\tests\\solace_H_overview_test_plate.png",
+  "pair": "p2_hq"
+ },
+ "p_reb_ov_test": {
+  "w_src": 1280,
+  "median": 0.31132668256759644,
+  "p95": 0.7951419949531555,
+  "under_010": 0.21429796006944443,
+  "over_085": 0.027387152777777778,
+  "sobel_mean": 0.038695335388183594,
+  "hf_upper": 0.6208379456449725,
+  "sobel_upper": 0.04626604914665222,
+  "hf_lower": 0.032426299232883246,
+  "sobel_lower": 0.013975984416902065,
+  "detail_cv": 0.5425526412192584,
+  "calm_share": 0.2863636363636364,
+  "hue_entropy_bits": 3.1040096282958984,
+  "chroma_share": 0.71748046875,
+  "hue_top_share": 0.607,
+  "clusters": [
+   {
+    "hue_deg": 17.5,
+    "share": 0.607,
+    "rgb": [
+     181,
+     125,
+     97
+    ]
+   },
+   {
+    "hue_deg": 352.5,
+    "share": 0.208,
+    "rgb": [
+     149,
+     62,
+     74
+    ]
+   },
+   {
+    "hue_deg": 37.5,
+    "share": 0.032,
+    "rgb": [
+     206,
+     154,
+     115
+    ]
+   },
+   {
+    "hue_deg": 332.5,
+    "share": 0.052,
+    "rgb": [
+     96,
+     48,
+     66
+    ]
+   },
+   {
+    "hue_deg": 267.5,
+    "share": 0.048,
+    "rgb": [
+     64,
+     43,
+     86
+    ]
+   },
+   {
+    "hue_deg": 312.5,
+    "share": 0.027,
+    "rgb": [
+     67,
+     40,
+     59
+    ]
+   }
+  ],
+  "rep_median": 0.20946161448955536,
+  "rep_p90": 0.37633512318134305,
+  "rep_tiled_share": 0.02631578947368421,
+  "rep_tiles": 190,
+  "blobs_per_mp": 1162.109375,
+  "focal_conc": 0.2673611111111111,
+  "focal_thirds_dist": 0.28681901264979215,
+  "focal_centroid": [
+   0.51,
+   0.599
+  ],
+  "label": "procedural Rebel Cell v2 test overview (1280)",
+  "path": "D:\\rc_scratch\\hq_rev\\tests\\rebel_cell_H_overview_test_plate.png",
+  "pair": "p2_hq"
+ },
+ "c_v6": {
+  "w_src": 2560,
+  "median": 0.23652157187461853,
+  "p95": 0.52995365858078,
+  "under_010": 0.09246028046717895,
+  "over_085": 0.0015381746993567633,
+  "sobel_mean": 0.06735862791538239,
+  "hf_upper": 0.4137676718456833,
+  "sobel_upper": 0.07109124958515167,
+  "hf_lower": 0.40931785309087665,
+  "sobel_lower": 0.06269031018018723,
+  "detail_cv": 0.0985451169157032,
+  "calm_share": 0.0,
+  "hue_entropy_bits": 4.568713665008545,
+  "chroma_share": 0.6286662049922981,
+  "hue_top_share": 0.215,
+  "clusters": [
+   {
+    "hue_deg": 27.5,
+    "share": 0.212,
+    "rgb": [
+     100,
+     73,
+     50
+    ]
+   },
+   {
+    "hue_deg": 227.5,
+    "share": 0.215,
+    "rgb": [
+     58,
+     65,
+     93
+    ]
+   },
+   {
+    "hue_deg": 247.5,
+    "share": 0.113,
+    "rgb": [
+     62,
+     59,
+     92
+    ]
+   },
+   {
+    "hue_deg": 352.5,
+    "share": 0.147,
+    "rgb": [
+     88,
+     44,
+     50
+    ]
+   },
+   {
+    "hue_deg": 267.5,
+    "share": 0.066,
+    "rgb": [
+     69,
+     54,
+     89
+    ]
+   },
+   {
+    "hue_deg": 207.5,
+    "share": 0.05,
+    "rgb": [
+     56,
+     72,
+     91
+    ]
+   }
+  ],
+  "rep_median": 0.08307988941669464,
+  "rep_p90": 0.12872356176376343,
+  "rep_tiled_share": 0.0,
+  "rep_tiles": 153,
+  "lm_ratio": 1.3035284280776978,
+  "lm_p95_ratio": 1.4208663702011108,
+  "lm_centre_thirds_dist": 0.03504556239752166,
+  "blobs_per_mp": 1573.535290720917,
+  "focal_conc": 0.17833758739318611,
+  "focal_thirds_dist": 0.19941069183298646,
+  "focal_centroid": [
+   0.415,
+   0.469
+  ],
+  "label": "CUSTOM  round 30 city_night_hq_v6 (labels masked in metrics)",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\round30_meridian_castle\\city_night_hq_v6.jpg",
+  "pair": "p3_city"
+ },
+ "p_city_night": {
+  "w_src": 3840,
+  "median": 0.12901178002357483,
+  "p95": 0.3454141318798065,
+  "under_010": 0.27407660590277777,
+  "over_085": 3.0381944444444444e-05,
+  "sobel_mean": 0.027693036943674088,
+  "hf_upper": 0.44873529277190194,
+  "sobel_upper": 0.03007214143872261,
+  "hf_lower": 0.42181535500142725,
+  "sobel_lower": 0.036648232489824295,
+  "detail_cv": 0.6413788444559286,
+  "calm_share": 0.18636363636363637,
+  "hue_entropy_bits": 2.617037296295166,
+  "chroma_share": 0.38545464409722224,
+  "hue_top_share": 0.677,
+  "clusters": [
+   {
+    "hue_deg": 212.5,
+    "share": 0.677,
+    "rgb": [
+     22,
+     40,
+     59
+    ]
+   },
+   {
+    "hue_deg": 32.5,
+    "share": 0.115,
+    "rgb": [
+     82,
+     66,
+     49
+    ]
+   },
+   {
+    "hue_deg": 152.5,
+    "share": 0.054,
+    "rgb": [
+     48,
+     76,
+     64
+    ]
+   },
+   {
+    "hue_deg": 12.5,
+    "share": 0.033,
+    "rgb": [
+     73,
+     52,
+     44
+    ]
+   },
+   {
+    "hue_deg": 352.5,
+    "share": 0.03,
+    "rgb": [
+     72,
+     43,
+     46
+    ]
+   },
+   {
+    "hue_deg": 317.5,
+    "share": 0.034,
+    "rgb": [
+     67,
+     43,
+     59
+    ]
+   }
+  ],
+  "rep_median": 0.10562031716108322,
+  "rep_p90": 0.20591793656349186,
+  "rep_tiled_share": 0.011560693641618497,
+  "rep_tiles": 173,
+  "lm_ratio": 1.406681776046753,
+  "lm_p95_ratio": 1.2234129905700684,
+  "lm_centre_thirds_dist": 0.1312367309903844,
+  "sky_std": 0.019500621933059237,
+  "sky_min_q_std": 0.007969930723392585,
+  "sky_mean_h": 0.2182259114583333,
+  "lit_std": 0.09347178519053742,
+  "lit_min_q_std": 0.009413657278623172,
+  "range": [
+   0.05,
+   0.4
+  ],
+  "blobs_per_mp": 47.74305555555556,
+  "focal_conc": 0.4930555555555556,
+  "focal_thirds_dist": 0.28459324920340373,
+  "focal_centroid": [
+   0.493,
+   0.644
+  ],
+  "label": "PROCEDURAL  city_all_corps_night (AAA-2)",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\city_all_corps\\city_all_corps_night.png",
+  "pair": "p3_city"
+ },
+ "p_city_main": {
+  "w_src": 3840,
+  "median": 0.2249215841293335,
+  "p95": 0.4778313636779785,
+  "under_010": 0.0006814236111111112,
+  "over_085": 0.0002615017361111111,
+  "sobel_mean": 0.037410344928503036,
+  "hf_upper": 0.3574496533688941,
+  "sobel_upper": 0.04032199829816818,
+  "hf_lower": 0.3347113626973852,
+  "sobel_lower": 0.047299474477767944,
+  "detail_cv": 0.5674882862112697,
+  "calm_share": 0.19545454545454546,
+  "hue_entropy_bits": 1.8685747385025024,
+  "chroma_share": 0.9780251736111111,
+  "hue_top_share": 0.755,
+  "clusters": [
+   {
+    "hue_deg": 247.5,
+    "share": 0.755,
+    "rgb": [
+     69,
+     64,
+     109
+    ]
+   },
+   {
+    "hue_deg": 227.5,
+    "share": 0.212,
+    "rgb": [
+     56,
+     61,
+     102
+    ]
+   },
+   {
+    "hue_deg": 267.5,
+    "share": 0.024,
+    "rgb": [
+     80,
+     68,
+     107
+    ]
+   },
+   {
+    "hue_deg": 287.5,
+    "share": 0.004,
+    "rgb": [
+     73,
+     56,
+     82
+    ]
+   },
+   {
+    "hue_deg": 307.5,
+    "share": 0.002,
+    "rgb": [
+     85,
+     58,
+     83
+    ]
+   },
+   {
+    "hue_deg": 327.5,
+    "share": 0.001,
+    "rgb": [
+     92,
+     60,
+     79
+    ]
+   }
+  ],
+  "rep_median": 0.10642600059509277,
+  "rep_p90": 0.23282694816589355,
+  "rep_tiled_share": 0.0,
+  "rep_tiles": 171,
+  "lm_ratio": 1.2964768409729004,
+  "lm_p95_ratio": 1.2857935428619385,
+  "lm_centre_thirds_dist": 0.1312367309903844,
+  "sky_std": 0.0076379917272981455,
+  "sky_min_q_std": 0.007391002432418655,
+  "sky_mean_h": 0.21334526909722218,
+  "lit_std": 0.07191714409111902,
+  "lit_min_q_std": 0.0,
+  "range": [
+   0.05,
+   0.4
+  ],
+  "blobs_per_mp": 313.58506944444446,
+  "focal_conc": 0.7718346533579256,
+  "focal_thirds_dist": 0.28739017450495347,
+  "focal_centroid": [
+   0.509,
+   0.602
+  ],
+  "label": "procedural city_all_corps_mainline (same camera, mainline look)",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\city_all_corps\\city_all_corps_mainline.png",
+  "pair": "p3_city"
+ },
+ "p_tethys": {
+  "w_src": 2560,
+  "median": 0.13564392924308777,
+  "p95": 0.3280360698699951,
+  "under_010": 0.18352756076388888,
+  "over_085": 0.0,
+  "sobel_mean": 0.01392090693116188,
+  "hf_upper": 0.24217288183871835,
+  "sobel_upper": 0.007405111566185951,
+  "hf_lower": 0.14463628795443306,
+  "sobel_lower": 0.019537201151251793,
+  "detail_cv": 0.7142605379709525,
+  "calm_share": 0.3,
+  "hue_entropy_bits": 1.3053776025772095,
+  "chroma_share": 0.7628830295138889,
+  "hue_top_share": 0.965,
+  "clusters": [
+   {
+    "hue_deg": 212.5,
+    "share": 0.965,
+    "rgb": [
+     26,
+     45,
+     64
+    ]
+   },
+   {
+    "hue_deg": 192.5,
+    "share": 0.009,
+    "rgb": [
+     37,
+     60,
+     77
+    ]
+   },
+   {
+    "hue_deg": 152.5,
+    "share": 0.017,
+    "rgb": [
+     46,
+     77,
+     62
+    ]
+   },
+   {
+    "hue_deg": 232.5,
+    "share": 0.0,
+    "rgb": [
+     32,
+     45,
+     68
+    ]
+   },
+   {
+    "hue_deg": 172.5,
+    "share": 0.001,
+    "rgb": [
+     39,
+     61,
+     58
+    ]
+   },
+   {
+    "hue_deg": 7.5,
+    "share": 0.004,
+    "rgb": [
+     140,
+     81,
+     70
+    ]
+   }
+  ],
+  "rep_median": 0.18127737194299698,
+  "rep_p90": 0.7276918470859529,
+  "rep_tiled_share": 0.20689655172413793,
+  "rep_tiles": 174,
+  "blobs_per_mp": 98.74131944444444,
+  "focal_conc": 0.3776041666666667,
+  "focal_thirds_dist": 0.2145694540416498,
+  "focal_centroid": [
+   0.454,
+   0.682
+  ],
+  "label": "procedural tethys_flooded_closeup",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\city_all_corps\\tethys_flooded_closeup.png",
+  "pair": "p3_city"
+ },
+ "p_city_v1": {
+  "w_src": 3840,
+  "median": 0.12901178002357483,
+  "p95": 0.3454141318798065,
+  "under_010": 0.27407660590277777,
+  "over_085": 3.0381944444444444e-05,
+  "sobel_mean": 0.027693036943674088,
+  "hf_upper": 0.44873529277190194,
+  "sobel_upper": 0.03007214143872261,
+  "hf_lower": 0.42181535500142725,
+  "sobel_lower": 0.036648232489824295,
+  "detail_cv": 0.6413788444559286,
+  "calm_share": 0.18636363636363637,
+  "hue_entropy_bits": 2.617037296295166,
+  "chroma_share": 0.38545464409722224,
+  "hue_top_share": 0.677,
+  "clusters": [
+   {
+    "hue_deg": 212.5,
+    "share": 0.677,
+    "rgb": [
+     22,
+     40,
+     59
+    ]
+   },
+   {
+    "hue_deg": 32.5,
+    "share": 0.115,
+    "rgb": [
+     82,
+     66,
+     49
+    ]
+   },
+   {
+    "hue_deg": 152.5,
+    "share": 0.054,
+    "rgb": [
+     48,
+     76,
+     64
+    ]
+   },
+   {
+    "hue_deg": 12.5,
+    "share": 0.033,
+    "rgb": [
+     73,
+     52,
+     44
+    ]
+   },
+   {
+    "hue_deg": 352.5,
+    "share": 0.03,
+    "rgb": [
+     72,
+     43,
+     46
+    ]
+   },
+   {
+    "hue_deg": 317.5,
+    "share": 0.034,
+    "rgb": [
+     67,
+     43,
+     59
+    ]
+   }
+  ],
+  "rep_median": 0.10562031716108322,
+  "rep_p90": 0.20591793656349186,
+  "rep_tiled_share": 0.011560693641618497,
+  "rep_tiles": 173,
+  "lm_ratio": 1.406681776046753,
+  "lm_p95_ratio": 1.2234129905700684,
+  "lm_centre_thirds_dist": 0.1312367309903844,
+  "sky_std": 0.019500621933059237,
+  "sky_min_q_std": 0.007969930723392585,
+  "sky_mean_h": 0.2182259114583333,
+  "lit_std": 0.09347178519053742,
+  "lit_min_q_std": 0.009413657278623172,
+  "range": [
+   0.05,
+   0.4
+  ],
+  "blobs_per_mp": 47.74305555555556,
+  "focal_conc": 0.4930555555555556,
+  "focal_thirds_dist": 0.28459324920340373,
+  "focal_centroid": [
+   0.493,
+   0.644
+  ],
+  "label": "procedural city v1 first pass (scratch)",
+  "path": "D:\\rc_scratch\\city_all_corps\\v1\\city_all_corps_night.png",
+  "pair": "p3_city"
+ },
+ "a_mainline_w3": {
+  "w_src": 956,
+  "median": 0.18520548939704895,
+  "p95": 0.5487461090087891,
+  "under_010": 0.109375,
+  "over_085": 0.0042507349011223945,
+  "sobel_mean": 0.05305527523159981,
+  "hf_upper": 0.26280942645416,
+  "sobel_upper": 0.06065277382731438,
+  "hf_lower": 0.10599124381794314,
+  "sobel_lower": 0.04825735092163086,
+  "detail_cv": 0.3649582190541559,
+  "calm_share": 0.0,
+  "hue_entropy_bits": 3.7040202617645264,
+  "chroma_share": 0.4901539951897381,
+  "hue_top_share": 0.487,
+  "clusters": [
+   {
+    "hue_deg": 247.5,
+    "share": 0.487,
+    "rgb": [
+     43,
+     41,
+     62
+    ]
+   },
+   {
+    "hue_deg": 192.5,
+    "share": 0.183,
+    "rgb": [
+     52,
+     95,
+     110
+    ]
+   },
+   {
+    "hue_deg": 227.5,
+    "share": 0.063,
+    "rgb": [
+     40,
+     42,
+     60
+    ]
+   },
+   {
+    "hue_deg": 352.5,
+    "share": 0.102,
+    "rgb": [
+     151,
+     41,
+     52
+    ]
+   },
+   {
+    "hue_deg": 267.5,
+    "share": 0.031,
+    "rgb": [
+     48,
+     41,
+     62
+    ]
+   },
+   {
+    "hue_deg": 47.5,
+    "share": 0.051,
+    "rgb": [
+     90,
+     80,
+     45
+    ]
+   }
+  ],
+  "rep_median": 0.09853629767894745,
+  "rep_p90": 0.17465560883283615,
+  "rep_tiled_share": 0.0,
+  "rep_tiles": 46,
+  "blobs_per_mp": 2307.856245513281,
+  "focal_conc": 0.442805455051489,
+  "focal_thirds_dist": 0.16841665531621283,
+  "focal_centroid": [
+   0.428,
+   0.317
+  ],
+  "label": "ANCHOR  main W3_HQ capture (mainline_match, top-left panel)",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\storyboard\\mainline_match.jpg",
+  "pair": "p4_anchor"
+ },
+ "a_sb_hq": {
+  "w_src": 956,
+  "median": 0.1723254919052124,
+  "p95": 0.4894113540649414,
+  "under_010": 0.09833312206870326,
+  "over_085": 0.0017865065280770693,
+  "sobel_mean": 0.049259476363658905,
+  "hf_upper": 0.3748496056863595,
+  "sobel_upper": 0.0483890026807785,
+  "hf_lower": 0.15770362558426337,
+  "sobel_lower": 0.052794624119997025,
+  "detail_cv": 0.29294110043551086,
+  "calm_share": 0.009259259259259259,
+  "hue_entropy_bits": 3.199209690093994,
+  "chroma_share": 0.7084528298897199,
+  "hue_top_share": 0.68,
+  "clusters": [
+   {
+    "hue_deg": 247.5,
+    "share": 0.68,
+    "rgb": [
+     47,
+     43,
+     67
+    ]
+   },
+   {
+    "hue_deg": 267.5,
+    "share": 0.056,
+    "rgb": [
+     53,
+     45,
+     70
+    ]
+   },
+   {
+    "hue_deg": 27.5,
+    "share": 0.097,
+    "rgb": [
+     140,
+     91,
+     43
+    ]
+   },
+   {
+    "hue_deg": 227.5,
+    "share": 0.03,
+    "rgb": [
+     42,
+     43,
+     63
+    ]
+   },
+   {
+    "hue_deg": 67.5,
+    "share": 0.054,
+    "rgb": [
+     107,
+     119,
+     39
+    ]
+   },
+   {
+    "hue_deg": 352.5,
+    "share": 0.046,
+    "rgb": [
+     150,
+     39,
+     51
+    ]
+   }
+  ],
+  "rep_median": 0.11536010727286339,
+  "rep_p90": 0.24071919918060306,
+  "rep_tiled_share": 0.025,
+  "rep_tiles": 80,
+  "blobs_per_mp": 1223.8124044829344,
+  "focal_conc": 0.3776985541691424,
+  "focal_thirds_dist": 0.15628796780516568,
+  "focal_centroid": [
+   0.419,
+   0.372
+  ],
+  "label": "ANCHOR  storyboard HQ, mainline kit (mainline_match, top-right panel)",
+  "path": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\storyboard\\mainline_match.jpg",
+  "pair": "p4_anchor"
+ }
+}
