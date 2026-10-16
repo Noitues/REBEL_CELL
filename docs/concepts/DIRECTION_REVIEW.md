@@ -1386,3 +1386,18 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
   - (a) buildings fronting border-link streets are at least 6 floors (about 11.5 BU);
   - (b) border-link street tiles are 8 BU wide instead of 6;
   - (c) hero signage on route columns, placed by rule.
+- **Halcyon (2026-10-15):**
+  - The concept is accepted as is, with no re-render.
+  - Eye: white-teal with an amber rim; the overview camera stays fixed.
+  - The status word is SPOTTED; its game effect is defined elsewhere.
+  - THE PANOPTICON is suggested to the GDD as the Central Server name.
+  - Shortcut strength is not decided here.
+  - Perimeter belt: prefer flattening foreground buildings with zoom (the section approach). Use an empty belt only where it makes sense.
+- **New corps (2026-10-15):** the identities, crests and icons are accepted.
+  - The district "street" renders were unnecessary (no game view uses them).
+  - The Aurelian Concord and Tethys Deep HQs each need a separate concept and design pass, then a visual pass. For Tethys, explore dams or water locks.
+  - Side-street views rely on the global one-city approach plus each corp's building types.
+  - Tethys underwater look: clearer water with a deeper distance fade.
+  - New UI/HUD items are allowed. The colours are fine.
+- **Process rule:** no game design in art-pass. Rules questions go to other sessions.
+- **Next:** a full city render showing every corp district, including Tethys as a flooded district.
