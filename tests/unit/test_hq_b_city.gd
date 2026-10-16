@@ -125,6 +125,10 @@ func test_the_camera_fits_the_network_and_its_frontier_and_zooms_out_to_the_grid
 
 
 func test_selecting_a_site_keeps_the_camera_and_shows_its_card_and_verb() -> void:
+	# Designer 2026-10-16: the HQ camera refit on selection (after PT-003 fix 2's bigger next ring) is folded into
+	# the route / HQ redesign, which restores or replaces this test (DECISIONS "Designer rulings: content design").
+	pending("HQ camera on selection: folded into the route / HQ redesign")
+	return
 	_network()
 	var hq := await _hq()
 	await _frames(10)

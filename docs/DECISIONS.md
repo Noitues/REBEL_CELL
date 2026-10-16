@@ -126,6 +126,111 @@ Sheet `docs/art_review/PLAN1/ART_R1.jpg` (before = main fb6ae75d | after; captur
 - **9a:** `RouteCover` (kit): entering the route page from another screen holds the last frame of the page that left over the screen until the city reports its look current and its camera settled for 3 frames (max 2.5 s), then fades out (`reward_page_in`). Headless never waits. Rule test: `test_art_r1`. The capture could not make the empty plane appear in the AFTER run; the BEFORE strip shows it at f20.
 - **9b:** strips for M8, M9, M10 and the route hover-out are on the sheet (Movie Maker, 30 fps). The M8 / M10 / hover-out strips are the motion lab demos (the lab chrome shows around them), M9 is the jack out to the HQ.
 
+### 2026-10-16 — Designer rulings: content design (CONTENT_CONCEPTS §6.2) and G1–G16
+These supersede the matching options in `docs/handoff/plan2/CONTENT_CONCEPTS.md` and `G_REEVAL.md`.
+
+**Design approach**
+- **Phases replace fight length.** Phases per enemy: normal 1, elite 2, mini-boss 2–3, HQ boss 4–5. **Each phase
+  lasts 3–4 turns** and is designed to be interesting, not a fight of attrition.
+- **Direct design, never procedural.** Every boss, every mini-boss (concepts per corporation) and every enemy gets a
+  direct design pass. Nothing is assembled from a pile of slices and rules; the shared boss template goes away.
+- **Triage Unit** (Q10): no separate ruling; it goes through the every-enemy design pass.
+
+**Genome Core: a doctor fighting a progressing disease, a ramping fight**
+1. Small heal per turn; mostly block slices; several immunization slices that deal small damage and apply
+   corruption.
+2. Heal per turn goes up; fewer but bigger blocks. Immunizations become IVs (many small hits × the number of your
+   corrupted slices) and Medicine (one huge hit, ×4 on a Perfect).
+3. Heal as in phase 2, plus a **second needle**; less defense, more IV and Medicine.
+4. Heal unchanged, still 2 needles. **Every hit against you corrupts.** All defense slices are gone; Medicine becomes
+   Adrenaline shots (add pierce to damage).
+
+A candidate for a cleanse-on-phase-change mechanic.
+
+**Boss HP, phases, tiers and buffs**
+- **Boss HP by tier band, not a flat multiplier:** "if the multiplier is in this zone, HP is X" (1,400+ was
+  bonkers).
+- **Damage can't cross a phase threshold:** a hit that would pass it parks HP at the threshold, and the excess is
+  lost.
+- **Tier sets base values only** (starting HP, starting damage). All mechanics scale from those base values.
+  Buffs and debuffs are tier-independent for now.
+- **Heal, shield, corruption and similar effects** come in flat and percent variants. These are **variants of the
+  existing effects (an amount mode), not new statuses**.
+- **Statuses survive a phase change.** A boss may have a mechanic that cleanses on phase change.
+- **Bosses have many strong buffs, each with a counter Exploit.** A route draws only a subset of the Exploits, so not
+  every buff is counterable each run. Exploits are just the name that turns a buff off (G6: yes, no heavy design).
+- **Enrage, not a turn-count phase trigger.** Health triggers phases. A turn-based enrage keeps fights from stalling,
+  e.g. +25 % boss damage on turn 10, then +25 % every 5th turn after. Open to a boss mechanic like "a slice repeats
+  before all slices have fired".
+
+**The wheel**
+- **Pointers may sit on any tick.** No multiple-of-5 rule.
+- **Slice sizes may vary, even ones included.** Each sub-tick's quality is shown (on the loadout screen at least),
+  e.g. a 4-tick slice reads WEAK, GOOD, GOOD, WEAK, with no Perfect.
+- **New Firmware possibility:** a chip that upgrades a slice's tick values (4-tick → GOOD, PERFECT, PERFECT, GOOD).
+- **Corruption becomes a debuff:** cards and nudges cost double RAM on a corrupted slice. Damage moves to the
+  Parasite ring.
+- **Parasite ring:** build it (G3). It isn't in the code; today PARASITE is only a status that halves a slice.
+  - **Parasites are anti-slices:** anything a slice can do, a parasite can do against you (damage the player, reduce
+    damage to the boss, apply or remove statuses).
+  - **Statuses are anti-Firmware:** percent output reduction, tick-strength reduction (Perfect → Good), and so on.
+  - New status types are allowed once these rules are settled.
+
+**New systems approved**
+- Enemy listeners on player actions (e.g. "counter-attack on any player Perfect").
+- A block-nudge and/or block-respin mechanic.
+- Events that alter future fights or the paths available, and impromptu fights.
+- An event wheel for some events (not all). Events may also come to the HQ or raid view, or a raid-win reward
+  screen.
+- The Parasite ring.
+- Sync Strike: pending; restated to the designer.
+
+**Content and names**
+- Events: add more events first; consolidating and pruning come later.
+- Names: settle after a few enemy design passes; don't spend tokens on names now. The Halcyon boss is THE PANOPTICON,
+  low effort.
+- **Remove Site names altogether.** A Site is its type: Event, Normal Fight, Elite Fight, Mini-Boss Fight, Boss
+  Fight… Only the corporation, the HQ building (the HQ netrun) and the boss have names.
+
+**G items**
+- **G11:** DOWN is a source for no one. TAKEN is corporation territory. Neither can launch netruns. **Nodes cut off
+  behind a TAKEN / DOWN chokepoint stay powered** (they are not closed down).
+- **The HQ camera red is folded into the route / HQ redesign** (designer 2026-10-16): the redesign may change that
+  camera anyway, so it isn't fixed separately.
+  - On resume, `test_selecting_a_site_keeps_the_camera_and_shows_its_card_and_verb` is marked pending with a pointer
+    to the redesign, not deleted, so the push gate can pass. The redesign either restores it or replaces it.
+- **G1:** slice rearranging is not a priority, maybe never. The **inner ring redesign is needed**: it doesn't read
+  from afar, and it's unclear what it does or how to manipulate it.
+- **G2:**
+  - Satellites are fixed to a slice; a satellite's wheel can't be nudged or changed. One operative class (and maybe
+    Firmware / Daemons) may shift satellites and respin / nudge them.
+  - A satellite can replace a satellite.
+  - ×N status stacks: yes.
+- **Player slices:** a design pass. Keep three tiers of defense: a temporary block (BLOCK), a lingering block (SHIELD),
+  and one that negates a whole attack (SANDBOX).
+- **G5 / G15:**
+  - Slice upgrades and card upgrades are separate passes.
+  - Tiers are called Level I, II, III, IV…
+  - The rewards list is data-driven, so what can come up, where and when is tunable. "Flash" is restated to the
+    designer.
+- **G8:** every class gets a unique station bonus, and alternate versions of a class feel similar.
+- **G14:** the shop wheel's three slices cost 100 / 80 / 100. A Daemon gives a shop-wheel nudge, or a nudge can be
+  bought, with the Daemon making the first one free.
+- **G7:** keep rim gates, and move them earlier in the roadmap.
+- **Sync Strike (DISPATCH):** yes as current thinking, with its own design pass. A small fight for each operative,
+  then the final fight. Open design questions for that pass:
+  - Do the three mini fights dictate effects in the final fight?
+  - Is the final fight a rotating focus, all three operatives against the HQ, swapping between the player wheels and
+    managing all of them before End Turn?
+- **Raid modifiers R1–R4:** all four, as stated, in one raid design pass. R4's ultimatum is the Schematics sink.
+- **G15 flash:** good. Goal: Server Rack rewards have stronger potential (a reward type in the data-driven rewards
+  list).
+- **G16:** closed as is. No design needs card type now; don't revisit.
+- **G12:** wait for the route / HQ redesign art, then build against it. **Every HQ netrun is a unique netrun with
+  unique mechanics.**
+
+**PT-003:** no designer feedback.
+
 ### 2026-10-15 — Open red: HQ camera refits on selection (main 580f3d9a, not pushed)
 `test_hq_b_city::test_selecting_a_site_keeps_the_camera_and_shows_its_card_and_verb` fails deterministically
 (scale 0.3205 → 0.3484 on selecting an open Site).
@@ -144,6 +249,10 @@ Sheet `docs/art_review/PLAN1/ART_R1.jpg` (before = main fb6ae75d | after; captur
   3. the B-MENU + C-SCREENS capture sheet (D20);
   4. the S5 balance sweeps on the new sim (`docs/balance/README.md`; branch `balance`);
   5. the rule-5 remainder listed in "Plan 2 F-RULE5".
+  6. Rename Halcyon's Central Server from "The Civic Core" (GDD 8.4c, `civic_core.tres`, strings) to **THE
+     PANOPTICON**. The art concepts use that name, and per the art-pass session (2026-10-15) the designer prefers it.
+     **Designer confirmed 2026-10-15.** Change the display name only: the id `civic_core` stays, so saves and
+     tests keep their keys. Do it at resume.
 
 ### 2026-10-15 — Designer go: change plan 2 (PT-003 assumed complete)
 The designer said: assume PT-003 complete, start all the changes listed, use the Batch API and lower models where it
