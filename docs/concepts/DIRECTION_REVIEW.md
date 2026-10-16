@@ -1456,3 +1456,25 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
   - Q8: an edge arrow when the target is off screen. When the target is more than 50 % visible, drop the arrow and show only a partial grease circle.
   - Q9: show examples of the art-randomness settings.
   - Q10: same as the video's zoom timing (1.0 s).
+- **Designer, 2026-10-16 (second round of notes):**
+  - **Q4:** median 0.14 ±0.03 passes, the warn band is out to ±0.05, and R-VAL-2/3 stay separate.
+  - **Q6:** the blackout alternative (outside ×0.20, 70 % desaturation, branch ×1.35, glow 1.0) is one value for street and HQ, as tunable presets.
+  - **Q9:** all three variance levels have uses. The variance level varies with proximity to each HQ, and each corp has its own preferred level.
+  - **Meridian:**
+    - The Gatehouse Gantry is approved.
+    - The target is the small tower building (the keep) at the top of the gantry.
+    - The train must read more clearly.
+    - Wider truck roads ring the building and lead to the highways.
+  - **Solace:**
+    - Much better.
+    - The window outline must be truly horizontal and vertical, not warped along the helix.
+    - Non-node windows get translucency, so interior character shows even at full zoom-out.
+  - **Rebel Cell:** tone down the MAINFRAME brightness; it is hard to read.
+  - **City:**
+    - Highways and railways curve smoothly, with no 90° turns.
+    - The railway ends at a large port at the water, outside Tethys territory.
+    - The highways hub near Meridian.
+    - Day is far too bright; match the old art-pass and mainline references.
+    - Night is a little too dark.
+    - Sprawl suburbs favour a lower profile at the same density.
+    - The rocket and the Solace landmark are a little brighter.
