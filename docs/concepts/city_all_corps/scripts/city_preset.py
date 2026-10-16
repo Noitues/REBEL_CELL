@@ -182,7 +182,7 @@ HQ_LAYOUT = dict(
 # The urban core factor u (H3) scales every corp weight (outside the core the city is sprawl). Drowned buildings stay
 # Tethys (the lapsed ward is Tethys' own). rebel_cell draws its LANGUAGE (the canyon) but its palette is the sprawl's
 # in this key art (note 8: the red appears only later in the game; no red glow, no fist windows, no beam).
-INFLUENCE = dict(lam=10.0, d0=23.0, lam_k=dict(rebel_cell=0.75, tethys=1.15), seed=7711)
+INFLUENCE = dict(lam=10.0, d0=23.0, own_k=8.0, lam_k=dict(rebel_cell=0.75, tethys=1.15), seed=7711)
 REBEL_KEYART_PALETTE = ""      # the district whose mat / win / hue / glow REBEL_CELL wears here ("" = the sprawl)
 # H3 (note 6) the organic city edge: the urban core is a superellipse (power p) round the centre, radius r0 lots,
 # broken by seeded harmonics (amp, harmonics k=2..kmax) and a 2D value-noise term (amp_n, cell lots); u = 1 inside,
@@ -267,3 +267,50 @@ DAY = dict(
     tint=0.28, tint_near=0.32, tint_r=14.0, water=dict(rough=0.09, wave=0.06, scale=0.08), sea_mist_k=0.0, depth_haze=dict(start=1300.0, efold=2400.0, max=0.9), ground_k=1.7, target_median=0.15, target_spread=0.39, white=6.0, contrast=1.12, contrast_max=3.5, sat=1.0, black_point=0.8, lift=0.05,   # designer r3b: refs (combat_day_boss, mainline_match) median 0.14-0.15, spread 0.39
     car_cols=[(0.75, 0.74, 0.72), (0.12, 0.12, 0.13), (0.55, 0.08, 0.06), (0.85, 0.85, 0.86), (0.2, 0.3, 0.45), (0.9, 0.62, 0.1)],
 )
+
+
+# ================================================================ round 4: LAYOUT A2 "Horseshoe Bay" (designer-approved city plan)
+# The 3D city is rebuilt from docs/concepts/city_planner/city_A2.json (metres, origin at the centre, +X east, +Y north,
+# +-10 km). SCALE: 1 lot (100 m) = U = 6 BU, so 1 BU = 16.67 m; the plan's 20 km square is 200 lots (1200 BU): the same
+# lot count as today's map plus ring (about one building per lot), so building density and the hero camera distance stay
+# comparable. Lot coords: x = X / 100 + CX, y = CY - Y / 100 (the lot y axis points south, as before): world BU =
+# (X, Y) x 0.06. The screen-aligned (a, b) plane of the legacy layout becomes (a, b) = (X, Y) / 100 (b = north).
+LAYOUT_MODE = os.environ.get("CITY_LAYOUT", "a2")          # "a2" (this layout) or "legacy" (the diamond map, rounds 1-3)
+A2_JSON = os.path.join(CONCEPTS, "city_planner", "city_A2.json")
+A2_FIELDS = os.path.join(SCR, "a2_fields.npz")
+A2 = dict(
+    m_per_lot=100.0, grid=(-98, -98, 206),                  # raster cell (i, j) = lot cell; grid origin i0, j0 and size n
+    core_period=5, sub_period=3,                             # street period (cells) in the districts / the suburbs
+    sub_u=0.32, sub_edge=(-4.0, 6.0), edge_noise=5.0,        # suburb urban factor; organic edge: soft width, noise amplitude (cells)
+    bld_med={"rebel_cell": 37.5, "aurelian": 34.0, "halcyon": 33.0, "solace": 32.0, "meridian": 19.6, "orbital": 58.0, "tethys": 28.6},
+    bld_sigma=0.62, bld_max=430.0, centre_gain=1.4, centre_r=14.0,
+    clear=dict(ring=1.0, motorway=1.0, truck=0.9, arterial=0.7, rail=0.8, rail_light=0.3, ramp=0.7),    # corridor half widths (lots)
+    z=dict(ring=12.0, ring2=10.0, motorway=(22.0, 26.0), truck=16.0, freight=5.0, commuter=9.0, metro=14.0),
+    width=dict(ring=6.4, ring2=5.6, motorway=5.4, truck=4.6),   # deck widths in BU (the real 28-40 m would be 2-2.4 BU: exaggerated to read)
+    hold_wall=2.0,
+)
+if LAYOUT_MODE == "a2":
+    ZONED = os.path.join(SCR, "zoned_a2.json")
+    WATER["sea_bed"] = (70.0, 170.0)      # A2: a deeper open sea (the shallows would glow with caustics)
+    WATER["z"] = -1.2                    # A2: the sea is BELOW the street (the coast is a quay); the drowned quarter sits behind dams
+    WATER["under_sky"] = dict(WATER["under_sky"], z=-3.0)
+    HQ_LAYOUT = {}
+    LANDMARK_MODULES = dict(
+        meridian=os.path.join(CONCEPTS, "route_map_graph", "hq_meridian_v3", "scripts", "meridian_landmark.py"),
+        tethys=os.path.join(CONCEPTS, "route_map_graph", "hq_tethys", "scripts", "tethys_landmark.py"))
+if LAYOUT_MODE == "a2":
+    # A2 cameras: from the south over the bay looking north (yaw 90): the Old City in the middle, Halcyon / Solace / Orbital /
+    # Aurelian round it, Tethys and Meridian on the two shores of the bay; (a, b) = (east, north) in lots
+    CAMS = {
+        "hero": dict(res=(3840, 2160), lens=28.0, pitch=38.0, yaw=90.0, dist=1090.0, target_ab=(2.0, -3.0), sy=0.0),
+        "dbg_top": dict(res=(1280, 720), lens=35.0, pitch=70.0, yaw=90.0, dist=900.0, target_ab=(0.0, 0.0), sy=0.0),
+        "dbg_old": dict(res=(1280, 720), lens=35.0, pitch=38.0, yaw=90.0, dist=300.0, target_ab=(7.0, 0.0), sy=0.0),
+        "dbg_mer": dict(res=(1280, 720), lens=35.0, pitch=36.0, yaw=90.0, dist=330.0, target_ab=(60.0, -44.0), sy=0.0),
+        "dbg_teth": dict(res=(1280, 720), lens=35.0, pitch=36.0, yaw=90.0, dist=300.0, target_ab=(-32.0, -56.0), sy=0.0),
+        "dbg_orb": dict(res=(1280, 720), lens=35.0, pitch=36.0, yaw=90.0, dist=260.0, target_ab=(86.0, 4.0), sy=0.0),
+        "dbg_port": dict(res=(1280, 720), lens=35.0, pitch=40.0, yaw=90.0, dist=260.0, target_ab=(44.0, -44.0), sy=0.0),
+        "dbg_hal": dict(res=(1280, 720), lens=35.0, pitch=36.0, yaw=90.0, dist=260.0, target_ab=(10.0, 56.0), sy=0.0),
+        "dbg_sol": dict(res=(1280, 720), lens=35.0, pitch=36.0, yaw=90.0, dist=260.0, target_ab=(-42.0, 48.0), sy=0.0),
+        "dbg_aur": dict(res=(1280, 720), lens=35.0, pitch=36.0, yaw=90.0, dist=260.0, target_ab=(-52.0, -14.0), sy=0.0),
+    }
+    DAY = dict(DAY, sun=dict(DAY["sun"], azim=DAY["sun"]["azim"] - 45.0))      # the sun keeps its angle to the (new) view direction

@@ -310,6 +310,56 @@ def mat_water_aaa(day=False):
     return m
 
 
+_WM_IMG = {}
+
+
+def wmask_image():
+    """A2: a float image of the cell fields over the plan grid: R = water within 28 cells of the land (clear-air bay), G = land
+    near the water (the shore bank), B = open water. Sampled by world position (see wmask_nodes)."""
+    if "i" in _WM_IMG:
+        return _WM_IMG["i"]
+    F = RU.a2_fields()
+    n = F["n"]
+    cls_ = F["cls"]
+    dl = _np.load(os.path.join(CP.SCR, "a2_dland.npy"))
+    water = ((cls_ == 0) | (cls_ == 1)).astype(_np.float64)
+
+    def blur(a, r):
+        for _ in range(2):
+            for ax in (0, 1):
+                c = _np.cumsum(_np.pad(a, [(r + 1, r) if k == ax else (0, 0) for k in range(2)], mode="edge"), axis=ax)
+                hi = _np.take(c, _np.arange(2 * r + 1, 2 * r + 1 + n), axis=ax)
+                lo = _np.take(c, _np.arange(0, n), axis=ax)
+                a = (hi - lo) / (2 * r + 1)
+        return a
+    near = blur(water * (dl < 28), 2)
+    shore = blur(water, 5) * (1.0 - water)
+    img = bpy.data.images.new("wmask", n, n, float_buffer=True)
+    arr = _np.zeros((n, n, 4), _np.float32)
+    arr[..., 0], arr[..., 1], arr[..., 2], arr[..., 3] = near, _np.clip(shore * 1.6, 0, 1), blur(water, 2), 1.0
+    img.pixels.foreach_set(arr[::-1].reshape(-1))
+    img.colorspace_settings.name = "Non-Color"
+    _WM_IMG["i"] = img
+    return img
+
+
+def wmask_nodes(g, pos_out):
+    """-> (R, G, B) node outputs of the water mask at the shader position (A2)."""
+    F = RU.a2_fields()
+    n = F["n"]
+    X0, X1 = (F["i0"] - CX) * U, (F["i0"] + n - CX) * U
+    Y1, Y0 = (CY - F["j0"]) * U, (CY - F["j0"] - n) * U
+    px_, py_, _ = g.sep(pos_out)
+    u_ = g.math("DIVIDE", g.math("SUBTRACT", px_, X0), X1 - X0)
+    v_ = g.math("DIVIDE", g.math("SUBTRACT", py_, Y0), Y1 - Y0)
+    tx = g.n("ShaderNodeTexImage")
+    tx.image = wmask_image()
+    tx.interpolation = "Linear"
+    tx.extension = "EXTEND"
+    g.link(g.comb(u_, v_, 0.0), tx.inputs["Vector"])
+    return g.sep(tx.outputs["Color"])
+
+
 def mat_fog():
     A = CP.AAA
     m = bpy.data.materials.new("fog")
@@ -345,15 +395,22 @@ def mat_fog():
     # clear air over the water (rule): from the drowned quarter's edge to 20 lots out to sea the low fog thins to 15 %,
     # so the water reads; the sea mist returns farther out. b (lots, away from the map camera) = (y - x) / (U sqrt 2)
     px_, py_, _ = g.sep(geo.outputs["Position"])
-    bpos = g.math("DIVIDE", g.math("SUBTRACT", py_, px_), U * R2)
-    lag = g.math("MULTIPLY", smooth(bpos, O["b_split"] + 0.5, O["b_split"] + 5.0),
-                 g.math("SUBTRACT", 1.0, smooth(bpos, B_COAST + 20.0, B_COAST + 40.0)))
-    dens = g.math("MULTIPLY", dens, g.math("SUBTRACT", 1.0, g.math("MULTIPLY", lag, A["bay_clear"])))
-    # the shore bank (art review 6): a low dense bank along the dry side of the levee (the city edge over the drowned
-    # quarter), torn by the clump noise, so the shore city sits in fog and the water past it stays clear
-    SB = A["shore_bank"]
-    shore = g.math("MULTIPLY", smooth(bpos, O["b_split"] - SB["width"], O["b_split"] - SB["width"] * 0.4),
-                   g.math("SUBTRACT", 1.0, smooth(bpos, O["b_split"] - 1.0, O["b_split"] + 1.5)))
+    if A2M:
+        wr_, wg_, wb_ = wmask_nodes(g, geo.outputs["Position"])
+        lag = wr_
+        dens = g.math("MULTIPLY", dens, g.math("SUBTRACT", 1.0, g.math("MULTIPLY", lag, A["bay_clear"])))
+        SB = A["shore_bank"]
+        shore = wg_
+    else:
+        bpos = g.math("DIVIDE", g.math("SUBTRACT", py_, px_), U * R2)
+        lag = g.math("MULTIPLY", smooth(bpos, O["b_split"] + 0.5, O["b_split"] + 5.0),
+                     g.math("SUBTRACT", 1.0, smooth(bpos, B_COAST + 20.0, B_COAST + 40.0)))
+        dens = g.math("MULTIPLY", dens, g.math("SUBTRACT", 1.0, g.math("MULTIPLY", lag, A["bay_clear"])))
+        # the shore bank (art review 6): a low dense bank along the dry side of the levee (the city edge over the drowned
+        # quarter), torn by the clump noise, so the shore city sits in fog and the water past it stays clear
+        SB = A["shore_bank"]
+        shore = g.math("MULTIPLY", smooth(bpos, O["b_split"] - SB["width"], O["b_split"] - SB["width"] * 0.4),
+                       g.math("SUBTRACT", 1.0, smooth(bpos, O["b_split"] - 1.0, O["b_split"] + 1.5)))
     shf = g.math("EXPONENT", g.math("MULTIPLY", g.math("MAXIMUM", z, 0.0), -1.0 / SB["h"]))
     dens = g.math("ADD", dens, g.math("MULTIPLY", g.math("MULTIPLY", g.math("MULTIPLY", shore, shf),
                                                        g.math("ADD", 0.35, g.math("MULTIPLY", clumps, 0.65))), SB["peak"]))
@@ -460,13 +517,17 @@ def mat_haze_day():
     g.link(nz.outputs["Fac"], mr.inputs["Value"])
     bank = g.math("MULTIPLY", g.math("MULTIPLY", mr.outputs[0], g.math("EXPONENT", g.math("MULTIPLY", g.math("MAXIMUM", z, 0.0), -1.0 / HZ["bank_h"]))), HZ["bank"])
     dens = g.math("ADD", g.math("MULTIPLY", hf, HZ["density"]), bank)
-    bpos = g.math("DIVIDE", g.math("SUBTRACT", py_, px_), U * R2)
-    bayk = g.n("ShaderNodeMapRange")
-    bayk.interpolation_type = "SMOOTHSTEP"
-    bayk.inputs["From Min"].default_value = O["b_split"]
-    bayk.inputs["From Max"].default_value = O["b_split"] + 8.0
-    g.link(bpos, bayk.inputs["Value"])
-    dens = g.math("MULTIPLY", dens, g.math("SUBTRACT", 1.0, g.math("MULTIPLY", bayk.outputs[0], 1.0 - HZ["sea_k"])))
+    if A2M:
+        bayk_out = wmask_nodes(g, geo.outputs["Position"])[2]
+    else:
+        bpos = g.math("DIVIDE", g.math("SUBTRACT", py_, px_), U * R2)
+        bayk = g.n("ShaderNodeMapRange")
+        bayk.interpolation_type = "SMOOTHSTEP"
+        bayk.inputs["From Min"].default_value = O["b_split"]
+        bayk.inputs["From Max"].default_value = O["b_split"] + 8.0
+        g.link(bpos, bayk.inputs["Value"])
+        bayk_out = bayk.outputs[0]
+    dens = g.math("MULTIPLY", dens, g.math("SUBTRACT", 1.0, g.math("MULTIPLY", bayk_out, 1.0 - HZ["sea_k"])))
     vs = g.n("ShaderNodeVolumeScatter")
     vs.inputs["Color"].default_value = (*HZ["col"], 1)
     vs.inputs["Anisotropy"].default_value = HZ["aniso"]
@@ -573,6 +634,17 @@ OBJ = dict(surf=SURF.obj(MS["surf"]), smooth=SMOOTH.obj(MS["surf"]), neon=NEON.o
            glass=GLASS.obj(MS["glass"]), ground=GROUND.obj(MS["ground"]), seabed=SEABED.obj(MS["seabed"]), water=WATER.obj(MS["water"]),
            bill=BILL.obj(MS["bill"]))
 OBJ["water"].visible_shadow = False
+if os.environ.get("CITY_DBG_RED"):
+    for _acc in (SURF, SMOOTH, GLASS, GROUND, SEABED, NEON, WATER, STREAK, BILL):
+        for _i, _f in enumerate(_acc.F):
+            _c = _acc.col[_i]
+            _v = [_acc.V[k] for k in _f]
+            _x, _y = sum(p_[0] for p_ in _v) / len(_v), sum(p_[1] for p_ in _v) / len(_v)
+            if -230 < _x < 40 and -400 < _y < -120 and _c[0] > _c[1] * 1.4 and _c[0] > 0.08:
+                print("REDFACE", _acc.name, [round(c, 2) for c in _c[:3]], [round(v, 1) for v in _v[0]], len(_f), "wet", _acc.wet[_i])
+for _nm in [n_ for n_ in os.environ.get("CITY_HIDE", "").split(",") if n_]:      # debug: hide accumulators (surf, smooth, neon, ground, seabed, water ...)
+    if _nm in OBJ:
+        OBJ[_nm].hide_render = True
 if DAYM:
     OBJ["streak"].hide_render = True          # by day the trails are cars (city_build.traffic); the rail trains keep their wagons
 # textured sign panels (the MAINFRAME blade): an image emitter, both faces, in both looks
@@ -647,7 +719,7 @@ cam_d = bpy.data.cameras.new("cam")
 cam_d.type = "PERSP"
 cam_d.sensor_fit = "HORIZONTAL"
 cam_d.sensor_width = 36.0
-AB_ = os.environ.get("CITY_AB", "")      # round 3c realism A/B: "" current, "b" soft pass, "c" soft + a longer lens from further back
+AB_ = os.environ.get("CITY_AB", "b" if A2M else "")      # round 3c realism A/B: "" current, "b" soft pass, "c" soft + a longer lens from further back
 LENS_K = (50.0 / C["lens"]) if AB_ == "c" else 1.0
 cam_d.lens = C["lens"] * LENS_K
 cam_d.shift_y = C.get("sy", 0.0)
@@ -707,7 +779,7 @@ if CYC:
         mxs.inputs[6].default_value = (0.045, 0.028, 0.07, 1)
         mxs.inputs[7].default_value = (0.002, 0.003, 0.009, 1)
         wnt.links.new(mxs.outputs[2], bg.inputs["Color"])
-        MOON = light("moon", "SUN", (0, 0, 500), A["moon"], (0.55, 0.62, 1.0), rot=(math.radians(35), 0, math.radians(200)))
+        MOON = light("moon", "SUN", (0, 0, 500), A["moon"], (0.55, 0.62, 1.0), rot=(math.radians(35), 0, math.radians(200 + (CP.CAMS[CAMK]["yaw"] - 135.0))))
     # media: the city fog field (+ haze) and the water's shaft volume
     me = bpy.data.meshes.new("fogbox")
     bmm = bmesh.new()
@@ -745,15 +817,19 @@ if CYC:
     gm.link(vsm.outputs[0], gm.out.inputs["Volume"])
     me3.materials.append(mm)
     mist = bpy.data.objects.new("seamist", me3)
-    mist.hide_render = DAYM and CP.DAY["sea_mist_k"] <= 0.0     # by day the far haze is the post's depth haze (clean)
+    mist.hide_render = A2M or (DAYM and CP.DAY["sea_mist_k"] <= 0.0)     # by day the far haze is the post's depth haze (clean)
     scene.collection.objects.link(mist)
     rx_fog.objects.link(mist)
     # water volume: the lagoon + the near sea (box), under the surface
     xs_ = [W((c[0], c[1]))[0] for c in O["lagoon_cells"]]
     ys_ = [W((c[0], c[1]))[1] for c in O["lagoon_cells"]]
-    sea_far = [w_ab(a, bwall(a) + 40) for a in (-120, 0, 120)]
-    xs_ += [p[0] for p in sea_far]
-    ys_ += [p[1] for p in sea_far]
+    if A2M:
+        xs_ = [-700.0, 700.0]
+        ys_ = [-700.0, 700.0]
+    else:
+        sea_far = [w_ab(a, bwall(a) + 40) for a in (-120, 0, 120)]
+        xs_ += [p[0] for p in sea_far]
+        ys_ += [p[1] for p in sea_far]
     me2 = bpy.data.meshes.new("waterbox")
     bmm = bmesh.new()
     bmesh.ops.create_cube(bmm, size=1.0)
@@ -778,7 +854,7 @@ if CYC:
                 continue
             x, y = gx * 130.0, gy * 130.0
             a_, b_ = ab_w(x, y)
-            if b_ > bwall(a_) + 8:          # over the sea: Tethys' blue sea mist (half power)
+            if (A2M and (RU.a2_cell(a_, b_) is None or int(RU.a2_fields()["cls"][RU.a2_cell(a_, b_)]) in (0, 1))) or (not A2M and b_ > bwall(a_) + 8):          # over the sea: Tethys' blue sea mist (half power)
                 o = light("seaglow_%d_%d" % (gx, gy), "AREA", (x, y, ZW + 1.0), A["glow_area"] * 0.5, mixc(DIST["tethys"]["hue"], (0.6, 0.8, 1.0), 0.5),
                           rot=(math.pi, 0, 0), size=(110, 110), shadow=False)
                 o.light_linking.receiver_collection = rx_fog
@@ -907,7 +983,7 @@ if CYC:
         x = hx_ + RS2.uniform(-140, 140)
         y = hy_ + RS2.uniform(-140, 140)
         a_, b_ = ab_w(x, y)
-        if not ((math.floor(x / U + CX), math.floor(-y / U + CY)) in WET_CELLS or b_ > bwall(a_) + 2):
+        if not ((math.floor(x / U + CX), math.floor(-y / U + CY)) in WET_CELLS or (ground_at(x, y) < -1.0 if A2M else b_ > bwall(a_) + 2)):
             x, y = hx_ + RS2.uniform(-40, 40), hy_ + RS2.uniform(-40, 40)
         tl = RS2.uniform(*SH["tilt"])
         o = light("shaft_%d" % k_, "SPOT", (x, y, ZW + 40.0), SH["power"], (0.75, 0.92, 1.0),
@@ -933,7 +1009,13 @@ if CYC:
         x, y = W((i + 0.5, j + 0.5))
         tiles_.setdefault((int(math.floor(x / UW["tile"])), int(math.floor(y / UW["tile"]))), 0)
         tiles_[(int(math.floor(x / UW["tile"])), int(math.floor(y / UW["tile"])))] += 1
-    for a_ in range(-12, 13):                 # the near sea along the wall too
+    if A2M:                                   # the sea round the Tethys pier city
+        for dx_ in range(-3, 4):
+            for dy_ in range(-3, 4):
+                x, y = hx_ + dx_ * UW["tile"], hy_ + dy_ * UW["tile"]
+                tiles_.setdefault((int(math.floor(x / UW["tile"])), int(math.floor(y / UW["tile"]))), 1)
+    else:
+      for a_ in range(-12, 13):                 # the near sea along the wall too
         for b_off in (4.0, 14.0):
             x, y = w_ab(a_ * 9.0, bwall(a_ * 9.0) + 1.2 + b_off)
             tiles_.setdefault((int(math.floor(x / UW["tile"])), int(math.floor(y / UW["tile"]))), 1)

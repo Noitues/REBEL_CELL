@@ -16,12 +16,21 @@ R2 = math.sqrt(2.0)
 CX, CY = 6.0, 6.0
 
 
+A2_MODE = CP.LAYOUT_MODE == "a2"
+
+
 def ab(x, y):
+    """lots -> the screen-aligned plane (a right, b away from the camera). Legacy: the diamond map rotated 45 degrees; A2:
+    a = east, b = north in lots (the plan's X, Y over 100 m)."""
     dx, dy = x - CX, y - CY
+    if A2_MODE:
+        return dx, -dy
     return (dx - dy) / R2, -(dx + dy) / R2
 
 
 def from_ab(a, b):
+    if A2_MODE:
+        return CX + a, CY - b
     return CX + (a - b) / R2, CY + (-a - b) / R2
 
 
@@ -62,7 +71,48 @@ def urban_edge(theta):
     return _U["r0"] * (1.0 + _U["amp"] * sum(c * math.sin(k * theta + ph) for k, ph, c in _HARM) / _HSUM)
 
 
+_FLD = {}
+
+
+def a2_fields():
+    """the A2 raster fields (zoning_a2.py): u (urban factor), dist (district id per cell), cls (cell class)."""
+    if not _FLD:
+        import numpy as _np
+        z = _np.load(CP.A2_FIELDS)
+        _FLD.update(u=z["u"].astype(float), dist=z["dist"], cls=z["cls"], i0=int(z["i0"]), j0=int(z["j0"]), n=int(z["n"]),
+                    names=[str(v) for v in z["names"]])
+    return _FLD
+
+
+def a2_cell(a, b):
+    """-> (row, col) of the raster cell holding the screen-plane point (a, b), or None outside the grid."""
+    F = a2_fields()
+    i, j = int(math.floor(a + CX)) - F["i0"], int(math.floor(CY - b)) - F["j0"]
+    if 0 <= i < F["n"] and 0 <= j < F["n"]:
+        return j, i
+    return None
+
+
+def a2_district(a, b):
+    """the corp whose polygon holds the point ('' none; 'rebel_cell' for the Old City)."""
+    c = a2_cell(a, b)
+    if c is None:
+        return ""
+    k = int(a2_fields()["dist"][c])
+    return a2_fields()["names"][k] if k > 0 else ""
+
+
 def urban_u(a, b):
+    if A2_MODE:
+        F = a2_fields()
+        fx, fy = a + CX - F["i0"] - 0.5, CY - b - F["j0"] - 0.5
+        i0, j0 = int(math.floor(fx)), int(math.floor(fy))
+        n = F["n"]
+        if i0 < 0 or j0 < 0 or i0 >= n - 1 or j0 >= n - 1:
+            return 0.0
+        tx, ty = fx - i0, fy - j0
+        u = F["u"]
+        return float((u[j0, i0] * (1 - tx) + u[j0, i0 + 1] * tx) * (1 - ty) + (u[j0 + 1, i0] * (1 - tx) + u[j0 + 1, i0 + 1] * tx) * ty)
     bb = b * B_COAST_K if b > 0 else b
     p = _U["p"]
     r = (abs(a) ** p + abs(bb) ** p) ** (1.0 / p)
@@ -83,6 +133,10 @@ def district_weights(a, b, hq_ab, u):
     for k in sorted(hq_ab):
         d = math.hypot(a - hq_ab[k][0], b - hq_ab[k][1])
         w[k] = math.exp(-d / (lam * _I["lam_k"].get(k, 1.0))) * u
+    if A2_MODE:                                   # A2: a corp's own polygon holds its colour (the districts are the plan's shapes)
+        own = a2_district(a, b)
+        if own in w:
+            w[own] *= _I.get("own_k", 8.0)
     return w, math.exp(-_I["d0"] / lam)
 
 

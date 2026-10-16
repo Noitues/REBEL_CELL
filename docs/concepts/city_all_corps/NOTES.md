@@ -343,3 +343,45 @@ Daylight, the port and the rest of r3b are approved. Code: `city_rules.py` (`Lot
 | (c) | (b) + 50 mm lens from 1.79x further back (`CITY_AB=c`) | 0.155 | 28.0 % | 0.39 % | 0.347 | 491 s |
 
 There is no grain in the night post (the day and the mainline have none either), so "grain off" changes nothing. Judge the look in the sheet.
+
+## Layout A2 (round 4: the designer-approved city plan "Horseshoe Bay A2", 2026-10-16)
+
+The 3D city is rebuilt from `docs/concepts/city_planner/city_A2.json`. The legacy diamond-map pipeline is kept
+(`CITY_LAYOUT=legacy` selects it); `city_preset.LAYOUT_MODE` defaults to `a2`.
+
+**Scale.** 1 lot (100 m) = U = 6 BU, so 1 BU = 16.67 m and the plan's 20 km square is 200 lots / 1200 BU, the lot count of
+the old map plus ring (about one building per lot). The hero camera distance stays about 1100 BU. Lot x = X / 100 + CX,
+lot y = CY - Y / 100 (lot y still points south); world BU = (X, Y) x 0.06. `city_rules.ab` becomes (a, b) = (east, north) in lots.
+The sea is now BELOW the street (`WATER["z"] = -1.2`; the coast is a quay); the drowned quarter sits behind its dams.
+
+**Files.** `zoning_a2.py` (JSON to `zoned_a2.json` + `a2_fields.npz` + `zoning_map_a2.png`: the raster of cell classes, districts,
+urban factor `u`, the Old City / corp buildings, the lagoon cells), `city_world_a2.py` (ground, parks, suburbs, industry,
+informal housing, street glow, arterial traffic, sea, bed, drowned quarter, dams / barrier / walls / glyphs),
+`city_transit_a2.py` (roads, interchange ramps, rails, stations, port, airport). `city_build.py`, `city_render.py`,
+`city_rules.py`, `city_preset.py` carry the A2 switches (water-mask image for the fog, sea glow by water cell, camera).
+
+**Taken from the JSON.** Ocean, lakes, rivers and canals (water cells); the drowned quarter, its two dams, the Bay Barrier
+leaves and the sea walls; the 7 district polygons (Old City = REBEL_CELL in the sprawl palette) and the 6 HQ positions
+(the colour-influence centres; the own polygon is boosted x8); R1 / R2, the 6 motorways, 3 truck roads, the arterials
+(ground traffic, corridors cleared), all 21 interchanges with their plan ramps (cloverleaf / stack / diamond), the
+freight main (viaduct at the Meridian HQ's north flank, down to the port terminus), the 5 commuter lines, 3 metros and 45
+stations (tunnel runs cut), the Port of Meridian (terminal, 5 piers with gantry cranes, ships between them, yard tracks),
+parks, plazas, cemeteries, industry, informal housing, the airport (runways, terminal), the spaceport (Orbital pad), corp
+walls and gates, markets and the arcology / megastructure / stadium / power / datacentre / hospital glyphs.
+**Not mapped:** terrain hills (the city is flat), the undercity, drone corridors, ferries, checkpoints, neighbourhood
+names, the offshore wind farm, universities / schools / churches / water / sewage / recycling glyphs, the Westmere
+reservoir's shoreline detail, commuter / metro tunnels (cut, no portals drawn). Road widths are exaggerated (28-40 m would
+be 2 BU).
+
+**Rules kept.** Colour by HQ proximity, the Rebel Cell as the sprawl-coloured centre, the organic suburb edge (value noise
+on the R2 outline), lower suburbs (ring blocks, `sub_u` 0.32), facade / material variety (`building()` unchanged).
+**Landmarks.** `LANDMARK_MODULES`: meridian and tethys are on (`meridian_landmark.py`, `tethys_landmark.py`; both ran
+unchanged with the real context); Halcyon, Solace (x1.8), Orbital (needle spots) and Aurelian use the built-ins.
+**Render.** Version (b): 80 spp, albedo + normal OIDN, bloom x0.5, no vignette, district glow tint -40 % (default in A2).
+Hero camera: from the south over the bay, yaw 90, pitch 38, lens 28, dist 1090. The day sun azimuth is rotated -45 degrees
+with the view (same angle to the camera as before).
+
+**Tests (1920 x 1080, 80 spp, `D:\rc_scratch\city_all_corps\a2test\`).** Night median 0.155, 27.1 % under 0.10, 1.9 % over
+0.85 (exposure 5.1, toe 1.85); day median 0.149, 41 % under 0.10 (p10 0: the contrast solve to the 0.39 spread crushes the
+shadows), 0.05 % over 0.85. Render 75 s night, 46 s day (build 14 s). Known: the day sea is very dark; the Meridian /
+Tethys modules were not re-tuned beyond a look; the north horizon is flat ground in fog.

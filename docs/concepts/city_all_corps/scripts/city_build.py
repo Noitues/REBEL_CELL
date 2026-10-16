@@ -53,14 +53,21 @@ def W(p):
     return ((p[0] - CX) * U, -(p[1] - CY) * U)
 
 
+A2M = O.get("layout") == "a2"          # round 4: the A2 layout (city_planner/city_A2.json): a = east, b = north (lots)
+
+
 def ab_w(x, y):
     """world -> (a, b) in lots."""
     lx, ly = x / U + CX, -y / U + CY
     dx, dy = lx - CX, ly - CY
+    if A2M:
+        return dx, -dy
     return (dx - dy) / R2, -(dx + dy) / R2
 
 
 def w_ab(a, b):
+    if A2M:
+        return W((CX + a, CY - b))
     lx, ly = CX + (a - b) / R2, CY + (-a - b) / R2
     return W((lx, ly))
 
@@ -266,7 +273,8 @@ def sc(c, k):
     return tuple(v * k for v in c)
 
 
-CAMDIR = Vector((0.7071, -0.7071, 0.0))      # from the scene toward the camera (yaw 135)
+_yaw = math.radians(CP.CAMS[CAMK]["yaw"])
+CAMDIR = Vector((-math.cos(_yaw), -math.sin(_yaw), 0.0))      # from the scene toward the camera (yaw 135: (0.707, -0.707))
 
 
 # ------------------------------------------------------------------ the city buildings by district language
@@ -608,7 +616,7 @@ print("BUILDINGS", len(O["buildings"]), "%.1fs" % (time.time() - T0), flush=True
 # ------------------------------------------------------------------ ground: asphalt, streets, lanes, plazas
 WET_CELLS = {(c[0], c[1]): c[2] for c in O["lagoon_cells"]}
 # the base ground: lot-cell runs on the land side of the coast, with the drowned quarter cut out (its seabed is below)
-for _ly in range(-300, 312):
+for _ly in (range(-300, 312) if not A2M else ()):
     _run = None
     for _lx in range(-300, 313):
         _ok = _lx < 312 and (_lx, _ly) not in WET_CELLS and \
@@ -727,5 +735,5 @@ for art in O["arterials"]:
             s += ln + gap
 
 
-for _f in ("city_world.py", "city_transit.py", "landmarks.py", "city_render.py"):
+for _f in (("city_world_a2.py", "city_transit_a2.py", "landmarks.py", "city_render.py") if A2M else ("city_world.py", "city_transit.py", "landmarks.py", "city_render.py")):
     exec(open(os.path.join(HERE, _f), encoding="utf-8").read())
