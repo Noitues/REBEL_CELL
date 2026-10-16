@@ -54,8 +54,18 @@ def anchors(pose, walked, mt=None):
     A = {"rooms": {}, "edges": [], "mt": mt}
     for i in G.NODES:
         r = G.room_rec(i, mt)
+        ovl = None
         if r["n"] is None:
             pts, vis = _front_srv(i, pose, mt), True
+        elif hasattr(G, "visible_outline") and i in getattr(G, "TOWER", {}):
+            # v3 Solace: the node IS the oval window; its outline = the part of the oval the camera sees
+            pts = G.room_front(i, mt)
+            o3 = G.visible_outline(i, pose.loc())
+            vis = o3 is not None
+            if vis:
+                ovl = [pose.proj(p) for p in o3]
+                if any(v is None for v in ovl):
+                    ovl, vis = None, False
         else:
             pts, vis = G.room_front(i, mt), CR.visible_room(i, pose, mt, -0.2 if i == "start" else 0.12)
         q = [pose.proj(p) for p in pts]
@@ -65,7 +75,10 @@ def anchors(pose, walked, mt=None):
         b0, b1, t1, t0 = q
         if b1[0] < b0[0]:
             b0, b1, t1, t0 = b1, b0, t0, t1
-        A["rooms"][i] = dict(front=[b0, b1, t1, t0], vis=vis)
+        if ovl:
+            xs, ys = [p[0] for p in ovl], [p[1] for p in ovl]
+            b0, b1, t1, t0 = (min(xs), max(ys)), (max(xs), max(ys)), (max(xs), min(ys)), (min(xs), min(ys))
+        A["rooms"][i] = dict(front=[b0, b1, t1, t0], vis=vis, oval=ovl)
     for a, b in G.edges(walked, int(mt)):
         path = G.edge_path(a, b, mt)
         pts = [pose.proj(p) for p in path]
@@ -83,6 +96,14 @@ def room_poly(A, i):
     if not r or not r["front"] or not r["vis"]:
         return None
     return r["front"]
+
+
+def room_shape(A, i):
+    """The node's outline polygon: the visible oval for a window node (v3 Solace), else the opening quad."""
+    r = A["rooms"].get(i)
+    if r and r.get("oval") and r["vis"]:
+        return r["oval"]
+    return room_poly(A, i)
 
 
 def room_scale(A, i):
@@ -138,13 +159,13 @@ def grade(plate, A, st, cur, hover, walked, focus=1.0):
         br = G.branch(hover, walked, int(mt))[0]
         keep = np.zeros((H2, W2), np.float32)
         for i in sorted(br | {cur}, key=lambda n: G.ORDER[n]):
-            p = room_poly(A, i)
+            p = room_shape(A, i)
             if p:
                 keep = np.maximum(keep, poly_mask(p, 8, 8, (W2, H2), s))
         l3 = lum(out)[..., None]
         out = out * keep[..., None] + (out * 0.75 + l3 * 0.25) * 0.62 * (1 - keep[..., None])
     for i in G.NODES:
-        p = room_poly(A, i)
+        p = room_shape(A, i)
         if not p:
             continue
         m = poly_mask(p, 1, 0, (W2, H2), s)[..., None]
@@ -159,7 +180,7 @@ def grade(plate, A, st, cur, hover, walked, focus=1.0):
     img = Image.fromarray((np.clip(out, 0, 1) * 255 + 0.5).astype(np.uint8)).convert("RGBA")
     if hover:
         for i in sorted(G.branch(hover, walked, int(mt))[0], key=lambda n: G.ORDER[n]):
-            p = room_poly(A, i)
+            p = room_shape(A, i)
             if p:
                 m = Image.fromarray((poly_mask(p, 0, 0, (W2, H2), s) * 255).astype(np.uint8))
                 img = K.add_glow(img, m, S.TYPE_COL[G.KIND[i]], int(30 * s), 0.5)
@@ -206,9 +227,9 @@ def draw_nodes(img, A, st, opts, mech, hover=None, hover_k=0.0, ghosts=False, ph
             al = {"grey": 0.35, "reach": 0.8}.get(s, 1.0)
             if hovering and s in ("reach", "option") and i not in br:
                 al *= S.MIX_A
-            img = S.frame_poly(img, poly, col, w, al, glow=s in ("option", "current") or bool(mk.get("ring")))
+            img = S.frame_poly(img, room_shape(A, i) or poly, col, w, al, glow=s in ("option", "current") or bool(mk.get("ring")))
             if mk.get("scan"):
-                img = ST.scan_lines(img, poly, 0.8 if s == "option" else 0.55, phase, (W, H))
+                img = ST.scan_lines(img, room_shape(A, i) or poly, 0.8 if s == "option" else 0.55, phase, (W, H))
         px = int(STK_PX["target" if kind == "target" else ("start" if kind == "start" else s)] * ks)
         x, y = sticker_xy(A, i, ks)
         if kind == "target":

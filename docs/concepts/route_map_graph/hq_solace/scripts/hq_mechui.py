@@ -18,7 +18,7 @@ import ui31 as K
 FROST = (170, 210, 190)
 DISPATCH = {
     "start": "Solace Biosystems. Two towers, one bridge a floor. Climb or cross. You only read two floors ahead.",
-    "B3": "Tower B, floor 6. Up reads an event; across is a fight on A. Above floor 10, nothing's read yet.",
+    "B3": "Tower B, floor 9. Up reads an event; across is a fight on A. Above floor 15, nothing's read yet.",
     "A1": "Ground floor. Up, or over the bridge to tower B.",
 }
 

@@ -247,6 +247,8 @@ def visible_n(n, o, pose, margin=0.12):
 
 
 def visible_room(i, pose, mt=None, margin=0.12):
+    if hasattr(G, "visible_outline") and i in getattr(G, "TOWER", {}):     # v3 Solace: the oval window nodes
+        return G.visible_outline(i, pose.loc()) is not None
     r = G.room_rec(i, mt)
     return visible_n(r["n"], r["o"], pose, margin)
 

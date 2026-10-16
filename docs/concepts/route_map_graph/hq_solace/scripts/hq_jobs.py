@@ -19,6 +19,7 @@ sys.dont_write_bytecode = True
 import hq_cam as CR  # noqa: E402
 import hq_graph as G  # noqa: E402
 import hq_preset as HP  # noqa: E402
+import gpu_lock  # noqa: E402
 
 ROOT = os.path.dirname(HERE)
 SCR = os.path.join(ROOT, "scratch")
@@ -95,7 +96,7 @@ def reveal():
 def have_lock():
     if not os.path.exists(LOCK):
         return False
-    return "hq_rev" in open(LOCK, errors="replace").read()
+    return open(LOCK, errors="replace").read().startswith(gpu_lock.ME)          # v3: only OUR lock (solace_v3)
 
 
 def run(kind, frames, quality, out_dir, chunk=None, extra=None):

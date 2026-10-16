@@ -151,3 +151,53 @@ Godot 4.7 mapping (camera rig, not content):
 - Lifted with mid-distance city haze and glow, not the helix: `cityglow_k` 0.12 -> 0.22, haze 0.0005 -> 0.0006.
   The overview reads 0.118 / 39.7 % under 0.10, landmark ratio 2.76 (3.2 accepted). Only H_overview was re-rendered;
   H_decision / H_hover / the sheet are from the previous final pass.
+
+
+<!-- hq_rev v3 -->
+## v3 (designer review of round 1, 2026-10-16; art director approved t3)
+
+Files: `H_overview_v3.png`, `H_decision_v3.png`, `H_hover_v3.png` (+ `plates/H_*_v3_plate.png`). The v2 files are
+kept. Heavy passes: `D:\rc_scratch\hq_rev\solace\v3\`; the v2 scripts are backed up in
+`D:\rc_scratch\hq_rev\solace\v2_scripts_backup\`.
+
+### What changed (designer notes, in order)
+| Note | v3 rule | Numbers (`hq_preset "compound"` / `"light"`) |
+|---|---|---|
+| 1. Keep the double helix | Same two swept porcelain tubes, the leaf-green fresnel rim, towers apart (radius 40). The tube is a touch fatter so the big windows read. | `tube_r` 9 -> 10 |
+| 2. Two windows per floor | Every floor of each strand has exactly two windows: one INWARD (facing the other strand, the walkway) and one OUTWARD. Each is a landscape oval spanning 140 deg of its tube half (70 deg of arc each way) and 8.4 BU tall. Non-node windows are lit glass (lit from the middle, dim at the rim) with 5 mullions and a transom; every window has a frame ring. | `win`: span 140, half_h 4.2, zc 5.4, frame_r 0.32, mullions 6 |
+| 2. The windows are the nodes | On the 8 route floors the INWARD window IS the route node: a real opening (the tube's vertices snapped onto the oval) into a curved room with a lit ceiling, kind-coloured back-wall panels and its own state-driven light. The bow-tie bridge (route floors only: the A <-> B cross-links) enters it at the room's floor. An unread room gets a frosted oval over the opening. | `bridge_w` (9, 4) |
+| 2. Oval node outline | The 2D outline is the part of the 3D window oval the camera actually sees (outline points past the tube's limb are clamped onto it; a window the other strand hides counts as hidden). Stickers / chips sit on the visible oval's box. Code: `hq_graph.visible_outline`, `hq_overlay.room_shape`; `hq_cam.visible_room` uses the same test. | - |
+| 3. Crisp plinth | The plinth deck and the street ring round it (out to the first block face) are their own passes (index 1 / 3), so the post's zoom-LOD ground blur (index 4) never touches them. Thin haze only: the fog's calm zone covers the plinth (k 0.10) and the ground bank starts past it. The plinth beams are off; the plaza wash lights surfaces only (light linking, never the haze); the entry area light is off (its pool at the stair foot read as haze; the lobby glows by its own trim). | fog `calm` 70/45/0.30 -> 100/40/0.10, `bank.r` 80-170 -> 150-210, peak 0.012 -> 0.008; `entry_w` 1.4e4 -> 0 |
+| 4. Lighting kept (~2x, up to ~2.8x) | The glass area is ~4x v2's portholes and half the decision landmark is window, so: the glass glow down, the rim down a touch, the city windows up, the decision exposure a touch up. | `porthole_k` 1.6 -> 0.45 (with a centre-to-rim falloff), `rim_k` 0.5 -> 0.32, city `win_k` 0.42 -> 0.52, post `exposure_zoom_k` 0.40 -> 0.32 |
+| 5. A full 360 deg per helix | 27 floors x 13.33 deg = one full turn per strand (v2: 19 x 11 deg = 209 deg). Twist rate matches the full-city landmark (helix angle atan(2 pi R / pitch): city 2 pi 7.5 / 62 = 37.2 deg; here 2 pi 40 / 337.5 = 36.7 deg). Route floors every third floor (3, 6 .. 24: still 8 levels). | `floors` 19 -> 27, `twist` 11 -> 13.33, `route_floors` |
+
+The UP link and its stair run up each strand's FRONT band (phi 0, the solid band between the two windows); the mint
+light seam moved to the BACK band. The bridge link runs along the bridge's front edge (as v2).
+
+### Cameras (re-framed for the taller strands)
+| Beat | Rule |
+|---|---|
+| OVERVIEW | Yaw 110 (scanned: it shows 15 of the 16 nodes, every walked node and both options), pitch 27, lens 34; the strands fill ~75 % of the frame height (`fill_o` (0.95, 1.0)), the TARGET at the top. |
+| DECISION | Faces the front band of the decision's floors (the azimuth follows the twist), turned `CAM_BIAS` 22 deg toward the current window so its oval opens to the camera; the frame centres `CAM_CENTRE_K` 40 % of the way toward the active room (100 % pushed the UP option off the top). |
+
+### Values (2560 x 1440, Cycles HIP, 64 spp)
+| Image | median | under 0.10 | over 0.85 | landmark | local bg | ratio |
+|---|---|---|---|---|---|---|
+| H_overview | 0.127 | 37 % | 0.7 % | 0.347 | 0.146 | 2.37x |
+| H_decision | 0.122 | 34 % | 1.8 % | 0.260 | 0.119 | 2.18x |
+| H_hover | 0.006 | 84 % | 0.8 % | 0.068 | 0.006 | 12.2x (dark hover beat) |
+
+### Godot 4.7 mapping (changes from v2)
+- Strands: the tube sweep now cuts the node openings (the oval as a trim curve on the sweep); the windows are one
+  instanced oval-patch mesh (MultiMesh, ~92 glass + 16 frames per strand pair) with a per-instance tint / lit value.
+- Node rooms: one curved-room scene per route floor (16), placed on the inward normal; its light is the state light.
+- Node outline: the overlay projects the window's outline and clamps it at the tube's limb (the same math as
+  `visible_outline`; pure, per frame, 16 nodes x 72 points).
+- Plinth: its own material instance outside the ground LOD blur; plaza lights in a light-cull mask that excludes fog
+  volumes.
+
+### Open questions for the designer
+1. Outward windows stay non-node (art director, 2026-10-16: game design is not ours). A possible hook for the build
+   and design sessions: an outward window could hold an optional side node, e.g. a shop or event reached from the
+   inward room on the same floor.
+2. The read-ahead rule (2 route floors) now spans 6 building floors (80 deg of twist): fine, or read by building floor?
