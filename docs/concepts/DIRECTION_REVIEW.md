@@ -1409,3 +1409,50 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
   - Meridian: the netrun runs 360° round the fortress, with containers moved wall-to-train every other turn enabling and disabling links.
   - Meridian (designer, 2026-10-15 evening): the train needs a track leading away, so the wall-to-train shuttles are physically possible. Direction: a freight line through a gate in the fort wall, across the yard, out as an elevated viaduct through the city to the coast. It is set dressing only, with the route unchanged, and the same line appears in the all-corps city render.
   - Occlusion (designer, 2026-10-15 evening): foreground buildings that block the camera's view of an HQ get flattened or made transparent. The rule: any building inside the camera-to-HQ (and route) sight cone is section-cut to a 1–2 floor lit stub. If it still blocks, it ghosts to about 15–20 % opacity with its edges kept. It eases in and out with the orbit camera and is never fully hidden. It is a camera-rig rule for every HQ, and goes into the pipeline spec and Godot mapping as a per-instance height clip plus a dithered alpha fade.
+
+## Designer review of round 1 (2026-10-16 morning)
+- **Canonical landmarks:** the full-city landmark designs are preferred. HQ netrun views must match the full-map landmark of the same corp, so the city version is the source of truth for silhouette and identity.
+- **Rebel Cell HQ:**
+  - It is still the weakest design.
+  - Tone down the jarring red background.
+  - Move MAINFRAME to the target location.
+  - The underground gets character: sewers with a slight green light, running water, and pipe tunnels leading to and away from the route.
+  - Buildings all touch with no gaps, so the top lane becomes a rooftop approach.
+  - NYC-style rooftops: water towers, satellite dishes, roof access doors.
+  - Rooftop paths run along the roofs and snake down a level or two.
+  - Keep the Tokyo canyon signage but vary the sign styles. Add holograms and billboards at both rooftop and street level.
+- **Meridian HQ:**
+  - The layout still doesn't make sense, and the structure is hard to read.
+  - A fresh architect/designer agent designs a shipping company: a giant crane that resembles a medieval castle, trucks picking up and dropping containers on three sides, and a high-speed train along the fourth side. The crane moves containers between train, wall and trucks.
+- **Solace HQ:**
+  - The double-helix silhouette is great.
+  - Use 2 windows per floor: one facing inward to the walkway, one facing outward. Each is a sideways oval, larger, spanning about 140° of its half. The windows are the nodes, so the grease-pencil outline is oval too.
+  - The bottom platform is too blurry and hazy.
+  - Make it taller, so each helix makes a full 360° (like the full-city version).
+- **Tethys / Atlantis:**
+  - On a good track.
+  - More city clutter under the water.
+  - Clearer distinction between the waterline dams and the city.
+  - The HQ becomes a floating pier city (Kamino-inspired), with piers and small copies of itself branching off and the main HQ obvious.
+  - Clearer water, with the light rippling through it standing out.
+- **Full city:**
+  - Show a daytime version; the night version feels too dark.
+  - Orbital: the rocket pad is too bright. Use direct spotlights from the platform edge onto the rocket.
+  - Aurelian: columns as the external wall; stair-stepped internal tiers.
+  - Add highways and train lines.
+  - Building colours intermix, with each territory's colour denser closer to its HQ (colour by proximity to the nearest HQ).
+  - Push the HQs further apart.
+  - The city/sprawl edge must be organic, with traffic trails continuing and light fading slowly.
+  - Rebel Cell is the city centre and mostly sprawl-coloured; red appears only later in the game.
+- **Procedural street:** the concept is captured, but it's still far from the hand-built polish. Show stills of procedural street round 2; no new video.
+- **Spec answers:**
+  - Q1: an HQ fills its map lot.
+  - Q2: the city and the route are procedurally generated per game seed and differ every game. Each corp territory has the HQ, non-HQ landmarks (the central-server access-key locations), unique building types, then the generated route map, then the flavour details. The landmark and route mechanics are game design for the build and design sessions; art provides the landmark building types.
+  - Q3: detail appears with camera distance. Details always exist, are hidden when zoomed out and revealed when zooming in (neon shape first, then the full sign at street view).
+  - Q4: render tolerance options to choose from.
+  - Q5: keep the 2× landmark rule; HQs are bright and distinct.
+  - Q6: render one alternative power-cut level.
+  - Q7: the entry sequence timing is approved as in the video.
+  - Q8: an edge arrow when the target is off screen. When the target is more than 50 % visible, drop the arrow and show only a partial grease circle.
+  - Q9: show examples of the art-randomness settings.
+  - Q10: same as the video's zoom timing (1.0 s).
