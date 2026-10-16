@@ -1407,3 +1407,4 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
   - Rebel Cell: identity from the mainline Tokyo-alley HQ, with the red MAINFRAME sign.
   - Orbital: clean up the platform centre (the rocket and silo must read).
   - Meridian: the netrun runs 360° round the fortress, with containers moved wall-to-train every other turn enabling and disabling links.
+  - Meridian (designer, 2026-10-15 evening): the train needs a track leading away, so the wall-to-train shuttles are physically possible. Direction: a freight line through a gate in the fort wall, across the yard, out as an elevated viaduct through the city to the coast. It is set dressing only, with the route unchanged, and the same line appears in the all-corps city render.
