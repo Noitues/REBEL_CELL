@@ -1,0 +1,655 @@
+{
+ "res": [
+  960,
+  540
+ ],
+ "samples": 32,
+ "threshold": 0.04,
+ "step_rate": 2.0,
+ "out": "D:\\rc_scratch\\hq_orbital\\bl_launch_board",
+ "frames": [
+  {
+   "name": "L1_sabotage",
+   "pose": {
+    "loc": [
+     -79.29426113087727,
+     -126.89734404254057,
+     50.4634710616188
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     40.0
+    ],
+    "lens": 26.0,
+    "shift_x": -0.02,
+    "shift_y": 0.02,
+    "yaw": 32.0,
+    "pitch": 4.0,
+    "dist": 150.0
+   },
+   "zoom": 0.35,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "se": "walked",
+    "ne": "walked",
+    "ant1": "walked",
+    "ant2": "walked",
+    "nw": "walked",
+    "sw": "current",
+    "rocket": "option",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 2,
+    "retarget": 1,
+    "retargets": 3,
+    "doors": "open",
+    "bands": 2,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start",
+     "se",
+     "ne",
+     "ant1",
+     "ant2",
+     "nw",
+     "sw"
+    ],
+    "launch": 1,
+    "trail": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "L2_pullout",
+   "pose": {
+    "loc": [
+     -519.7279687360096,
+     867.5635126086235,
+     733.071838991359
+    ],
+    "tgt": [
+     215.0,
+     260.0,
+     90.0
+    ],
+    "lens": 24.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 129.58813084768298,
+    "pitch": 34.0,
+    "dist": 1150.0
+   },
+   "zoom": 0.35,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "se": "walked",
+    "ne": "walked",
+    "ant1": "walked",
+    "ant2": "walked",
+    "nw": "walked",
+    "sw": "current",
+    "rocket": "option",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 2,
+    "retarget": 1,
+    "retargets": 3,
+    "doors": "open",
+    "bands": 2,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start",
+     "se",
+     "ne",
+     "ant1",
+     "ant2",
+     "nw",
+     "sw"
+    ],
+    "launch": 1,
+    "trail": 0.0,
+    "door_k": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "L3_launch",
+   "pose": {
+    "loc": [
+     -519.7279687360096,
+     867.5635126086235,
+     733.071838991359
+    ],
+    "tgt": [
+     215.0,
+     260.0,
+     90.0
+    ],
+    "lens": 24.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 129.58813084768298,
+    "pitch": 34.0,
+    "dist": 1150.0
+   },
+   "zoom": 0.35,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "se": "walked",
+    "ne": "walked",
+    "ant1": "walked",
+    "ant2": "walked",
+    "nw": "walked",
+    "sw": "current",
+    "rocket": "option",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -62.0
+    ],
+    "flight": [
+     25.8,
+     31.2,
+     144.736
+    ],
+    "boom": [
+     430.0,
+     520.0,
+     56.0
+    ]
+   },
+   "mech": {
+    "circuit": 2,
+    "retarget": 1,
+    "retargets": 3,
+    "doors": "open",
+    "bands": 2,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start",
+     "se",
+     "ne",
+     "ant1",
+     "ant2",
+     "nw",
+     "sw"
+    ],
+    "launch": 1,
+    "trail": 0.06,
+    "in_flight": 1,
+    "heading": [
+     2.1499999999999986,
+     2.600000000000005,
+     4.390000000000015
+    ],
+    "movers": {
+     "flight": [
+      25.8,
+      31.2,
+      144.736
+     ],
+     "boom": [
+      430.0,
+      520.0,
+      56.0
+     ]
+    },
+    "rocket_k": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "L4_arc",
+   "pose": {
+    "loc": [
+     -359.18018900277696,
+     778.5816947522962,
+     526.9991862386066
+    ],
+    "tgt": [
+     236.50000000000003,
+     286.0,
+     150.0
+    ],
+    "lens": 24.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 129.58813084768298,
+    "pitch": 26.0,
+    "dist": 860.0
+   },
+   "zoom": 0.35,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "se": "walked",
+    "ne": "walked",
+    "ant1": "walked",
+    "ant2": "walked",
+    "nw": "walked",
+    "sw": "current",
+    "rocket": "option",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -62.0
+    ],
+    "flight": [
+     215.0,
+     260.0,
+     332.0
+    ],
+    "boom": [
+     430.0,
+     520.0,
+     56.0
+    ]
+   },
+   "mech": {
+    "circuit": 2,
+    "retarget": 1,
+    "retargets": 3,
+    "doors": "open",
+    "bands": 2,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start",
+     "se",
+     "ne",
+     "ant1",
+     "ant2",
+     "nw",
+     "sw"
+    ],
+    "launch": 1,
+    "trail": 0.5,
+    "in_flight": 1,
+    "heading": [
+     2.1500000000000057,
+     2.6000000000000227,
+     -0.18599999999992178
+    ],
+    "movers": {
+     "flight": [
+      215.0,
+      260.0,
+      332.0
+     ],
+     "boom": [
+      430.0,
+      520.0,
+      56.0
+     ]
+    },
+    "rocket_k": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "L5_descent",
+   "pose": {
+    "loc": [
+     343.71622232400796,
+     282.937269169969,
+     112.8996928559136
+    ],
+    "tgt": [
+     430.0,
+     520.0,
+     50.0
+    ],
+    "lens": 30.0,
+    "shift_x": 0.0,
+    "shift_y": 0.02,
+    "yaw": 20.0,
+    "pitch": 14.0,
+    "dist": 260.0
+   },
+   "zoom": 0.35,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "se": "walked",
+    "ne": "walked",
+    "ant1": "walked",
+    "ant2": "walked",
+    "nw": "walked",
+    "sw": "current",
+    "rocket": "option",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -62.0
+    ],
+    "flight": [
+     399.90000000000003,
+     483.6,
+     125.94399999999995
+    ],
+    "boom": [
+     430.0,
+     520.0,
+     56.0
+    ]
+   },
+   "mech": {
+    "circuit": 2,
+    "retarget": 1,
+    "retargets": 3,
+    "doors": "open",
+    "bands": 2,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start",
+     "se",
+     "ne",
+     "ant1",
+     "ant2",
+     "nw",
+     "sw"
+    ],
+    "launch": 1,
+    "trail": 0.93,
+    "in_flight": 1,
+    "heading": [
+     2.1499999999999773,
+     2.6000000000000227,
+     -4.658000000000001
+    ],
+    "movers": {
+     "flight": [
+      399.90000000000003,
+      483.6,
+      125.94399999999995
+     ],
+     "boom": [
+      430.0,
+      520.0,
+      56.0
+     ]
+    },
+    "rocket_k": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "L6_strike",
+   "pose": {
+    "loc": [
+     -359.18018900277696,
+     778.5816947522962,
+     526.9991862386066
+    ],
+    "tgt": [
+     236.50000000000003,
+     286.0,
+     150.0
+    ],
+    "lens": 24.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 129.58813084768298,
+    "pitch": 26.0,
+    "dist": 860.0
+   },
+   "zoom": 0.35,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "se": "walked",
+    "ne": "walked",
+    "ant1": "walked",
+    "ant2": "walked",
+    "nw": "walked",
+    "sw": "current",
+    "rocket": "option",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -62.0
+    ],
+    "flight": [
+     427.85,
+     517.4,
+     61.334
+    ],
+    "boom": [
+     430.0,
+     520.0,
+     56.0
+    ]
+   },
+   "mech": {
+    "circuit": 2,
+    "retarget": 1,
+    "retargets": 3,
+    "doors": "open",
+    "bands": 2,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start",
+     "se",
+     "ne",
+     "ant1",
+     "ant2",
+     "nw",
+     "sw"
+    ],
+    "launch": 1,
+    "trail": 1.0,
+    "boom": 1.0,
+    "movers": {
+     "flight": [
+      427.85,
+      517.4,
+      61.334
+     ],
+     "boom": [
+      430.0,
+      520.0,
+      56.0
+     ]
+    },
+    "rocket_k": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "L7_zoom_back",
+   "pose": {
+    "loc": [
+     -154.19627184720997,
+     267.0757771770702,
+     339.3498275425547
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     20.0
+    ],
+    "lens": 36.0,
+    "shift_x": -0.07291666666666673,
+    "shift_y": -0.02985959109939209,
+    "yaw": 150.0,
+    "pitch": 46.0,
+    "dist": 443.94850304711485
+   },
+   "zoom": 0.35,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     5.3999999999999995,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -5.3999999999999995,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -62.0
+    ],
+    "flight": [
+     427.85,
+     517.4,
+     61.334
+    ],
+    "boom": [
+     430.0,
+     520.0,
+     56.0
+    ]
+   },
+   "mech": {
+    "circuit": 2,
+    "retarget": 1,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 2,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "launch": 1,
+    "trail": 1.0,
+    "boom": 0.5,
+    "movers": {
+     "flight": [
+      427.85,
+      517.4,
+      61.334
+     ],
+     "boom": [
+      430.0,
+      520.0,
+      56.0
+     ]
+    },
+    "rocket_k": 0.0,
+    "door_k": 0.3
+   },
+   "power": null
+  }
+ ],
+ "force": true
+}

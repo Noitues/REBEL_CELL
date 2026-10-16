@@ -1,0 +1,4 @@
+stills_test chunk 0 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scratch\bl_stills_test_0.log wall 80 s
+render 81 s
+H_overview {'median': 0.17431843280792236, 'under_010': 0.29794487847222223, 'over_085': 0.038629557291666665, 'landmark': 0.7937239408493042, 'local_bg': 0.12908785045146942, 'landmark_share': 0.068203125, 'ratio': 6.148711424610054}
+H_decision {'median': 0.1644745171070099, 'under_010': 0.3141460503472222, 'over_085': 0.1416286892361111, 'landmark': 0.7981318235397339, 'local_bg': 0.11766275018453598, 'landmark_share': 0.28821180555555553, 'ratio': 6.7832157780434885}

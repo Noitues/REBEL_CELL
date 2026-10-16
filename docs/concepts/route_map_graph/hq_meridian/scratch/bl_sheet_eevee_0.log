@@ -1,0 +1,26 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian\scripts\hq_scene.py:217: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 0.3s] city built, roofs 1228
+[hq 0.3s] walls
+[hq 0.3s] towers
+[hq 0.3s] moat, gate
+[hq 0.3s] rail yard
+[hq 0.3s] control tower
+[hq 0.3s] links
+[hq 0.3s] crane, train
+[hq 0.3s] landmark built
+[hq 0.6s] objects 51
+[hq 0.7s] lights 94 beams 13 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian\scripts\hq_scene.py:915: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:03.172  cycles           | WARNING CUEW initialization failed: Error opening the library
+00:05.688  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_sheet_eevee\S_on_the_train.exr'
+[hq 3.9s] frame S_on_the_train 3.2 s passes ['Combined', 'Depth', 'Emission']
+00:07.094  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_sheet_eevee\S_hook_at_wall.exr'
+[hq 4.8s] frame S_hook_at_wall 0.8 s passes 
+00:08.203  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_sheet_eevee\S_hook_in_yard.exr'
+[hq 5.9s] frame S_hook_in_yard 1.1 s passes 
+[hq 5.9s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

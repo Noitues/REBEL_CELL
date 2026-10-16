@@ -1,0 +1,44 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scripts\hq_scene.py:217: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 0.2s] city built, roofs 1229
+[hq 0.5s] towers
+[hq 0.5s] bridges
+[hq 0.5s] rooms
+[hq 0.5s] crown
+[hq 0.5s] podium
+[hq 0.5s] rig
+[hq 0.5s] landmark built
+[hq 0.8s] objects 34
+[hq 0.8s] lights 115 beams 10 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scripts\hq_scene.py:917: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:03.125  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 0.9s] HIP devices 1
+00:08.813  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r144.exr'
+[hq 7.1s] frame r144 6.2 s passes ['Combined', 'Depth', 'Object Index', 'Volume Direct', 'Emission', 'Noisy Image']
+00:13.828  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r145.exr'
+[hq 11.7s] frame r145 4.6 s passes 
+00:18.656  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r146.exr'
+[hq 16.6s] frame r146 4.9 s passes 
+00:23.641  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r147.exr'
+[hq 21.5s] frame r147 5.0 s passes 
+00:28.734  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r148.exr'
+[hq 26.6s] frame r148 5.1 s passes 
+00:33.984  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r149.exr'
+[hq 31.9s] frame r149 5.2 s passes 
+00:39.078  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r150.exr'
+[hq 37.0s] frame r150 5.1 s passes 
+00:44.422  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r151.exr'
+[hq 42.4s] frame r151 5.4 s passes 
+00:49.266  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r152.exr'
+[hq 47.2s] frame r152 4.8 s passes 
+00:54.344  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r153.exr'
+[hq 52.2s] frame r153 5.1 s passes 
+00:59.484  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r154.exr'
+[hq 57.4s] frame r154 5.1 s passes 
+01:11.469  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r155.exr'
+[hq 69.4s] frame r155 12.0 s passes 
+[hq 69.4s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

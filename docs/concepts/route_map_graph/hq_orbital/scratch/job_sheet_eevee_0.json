@@ -1,0 +1,217 @@
+{
+ "res": [
+  960,
+  540
+ ],
+ "samples": 24,
+ "engine": "EEVEE",
+ "out": "D:\\rc_scratch\\hq_orbital\\bl_sheet_eevee",
+ "frames": [
+  {
+   "name": "S_ring",
+   "pose": {
+    "loc": [
+     201.19884313609094,
+     -116.16220624526329,
+     45.62650576318233
+    ],
+    "tgt": [
+     87.46856578222832,
+     -50.49999999999998,
+     4.4
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07291666666666673,
+    "shift_y": 0.018229166666666668,
+    "yaw": -60.00000000000002,
+    "pitch": 17.428571428571427,
+    "dist": 137.6434745762534
+   },
+   "zoom": 1.0,
+   "mt": 1,
+   "room_state": {
+    "start": "walked",
+    "se": "current",
+    "ne": "option",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -0.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -62.0
+    ]
+   },
+   "mech": {
+    "circuit": 2,
+    "retarget": 1,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start",
+     "se"
+    ]
+   },
+   "power": null
+  },
+  {
+   "name": "S_antenna",
+   "pose": {
+    "loc": [
+     1.2635574390309287e-14,
+     211.1772948666233,
+     68.73719738006278
+    ],
+    "tgt": [
+     0.0,
+     108.0,
+     30.6
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07291666666666667,
+    "shift_y": 0.01822916666666655,
+    "yaw": -180.0,
+    "pitch": 20.285714285714285,
+    "dist": 110.0
+   },
+   "zoom": 1.0,
+   "mt": 3,
+   "room_state": {
+    "start": "walked",
+    "se": "walked",
+    "ne": "walked",
+    "ant1": "current",
+    "ant2": "option",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -0.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -62.0
+    ]
+   },
+   "mech": {
+    "circuit": 2,
+    "retarget": 1,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start",
+     "se",
+     "ne",
+     "ant1"
+    ]
+   },
+   "power": null
+  },
+  {
+   "name": "S_sabotage",
+   "pose": {
+    "loc": [
+     -177.43017767046328,
+     -102.43936084040521,
+     51.89674745780791
+    ],
+    "tgt": [
+     -87.4685657822283,
+     -50.50000000000004,
+     4.4
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07291666666666667,
+    "shift_y": 0.018229166666666727,
+    "yaw": 59.99999999999997,
+    "pitch": 24.57142857142857,
+    "dist": 114.22228257704369
+   },
+   "zoom": 1.0,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "se": "walked",
+    "ne": "walked",
+    "ant1": "walked",
+    "ant2": "walked",
+    "nw": "walked",
+    "sw": "current",
+    "rocket": "option",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 2,
+    "retarget": 1,
+    "retargets": 3,
+    "doors": "open",
+    "bands": 2,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start",
+     "se",
+     "ne",
+     "ant1",
+     "ant2",
+     "nw",
+     "sw"
+    ]
+   },
+   "power": null
+  }
+ ],
+ "force": true
+}

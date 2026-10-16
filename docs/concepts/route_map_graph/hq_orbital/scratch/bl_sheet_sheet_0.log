@@ -1,0 +1,28 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\scripts\hq_scene.py:217: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 0.4s] city built, roofs 1211
+[hq 0.5s] podium
+[hq 0.5s] doors, rocket
+[hq 0.5s] gantry
+[hq 0.5s] stations
+[hq 0.5s] antenna
+[hq 0.5s] causeway
+[hq 0.5s] rig
+[hq 0.5s] launch props
+[hq 0.5s] landmark built
+[hq 0.9s] objects 44
+[hq 1.0s] lights 84 beams 11 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\scripts\hq_scene.py:917: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:06.375  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 1.0s] HIP devices 1
+00:28.500  render           | Saved: 'D:\rc_scratch\hq_orbital\bl_sheet\S_ring.exr'
+[hq 23.9s] frame S_ring 22.9 s passes ['Combined', 'Depth', 'Object Index', 'Volume Direct', 'Emission', 'Noisy Image']
+00:46.390  render           | Saved: 'D:\rc_scratch\hq_orbital\bl_sheet\S_antenna.exr'
+[hq 41.4s] frame S_antenna 17.5 s passes 
+01:34.890  render           | Saved: 'D:\rc_scratch\hq_orbital\bl_sheet\S_sabotage.exr'
+[hq 90.1s] frame S_sabotage 48.7 s passes 
+[hq 90.1s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

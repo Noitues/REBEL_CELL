@@ -1,0 +1,254 @@
+{
+ "res": [
+  960,
+  540
+ ],
+ "samples": 24,
+ "engine": "EEVEE",
+ "out": "D:\\rc_scratch\\hq_meridian\\bl_stills_eevee",
+ "frames": [
+  {
+   "name": "H_overview",
+   "pose": {
+    "loc": [
+     -178.0387189695002,
+     316.37210696965127,
+     231.58140464643412
+    ],
+    "tgt": [
+     0.0,
+     8.0,
+     26.0
+    ],
+    "lens": 40.0,
+    "shift_x": -0.0789386062290704,
+    "shift_y": -0.025852514969853264,
+    "yaw": 150.0,
+    "pitch": 30.0,
+    "dist": 411.1628092928683
+   },
+   "zoom": 0.0,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "w1": "walked",
+    "w2": "walked",
+    "w3": "walked",
+    "w4": "walked",
+    "t1": "walked",
+    "n1": "current",
+    "n2": "option",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "option",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0
+   },
+   "power": null
+  },
+  {
+   "name": "H_decision",
+   "pose": {
+    "loc": [
+     -54.000000000000014,
+     182.9371687363863,
+     66.09386099802873
+    ],
+    "tgt": [
+     -54.0,
+     55.0,
+     23.0
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07291666666666667,
+    "shift_y": 0.01822916666666661,
+    "yaw": 180.0,
+    "pitch": 18.615384615384617,
+    "dist": 135.0
+   },
+   "zoom": 1.0,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "w1": "walked",
+    "w2": "walked",
+    "w3": "walked",
+    "w4": "walked",
+    "t1": "walked",
+    "n1": "current",
+    "n2": "option",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "option",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0
+   },
+   "power": null
+  },
+  {
+   "name": "H_hover",
+   "pose": {
+    "loc": [
+     -60.42788550224029,
+     182.7113618813134,
+     60.76210655810755
+    ],
+    "tgt": [
+     -54.0,
+     60.06,
+     19.392
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07291666666666667,
+    "shift_y": 0.01822916666666661,
+    "yaw": 177.0,
+    "pitch": 18.615384615384617,
+    "dist": 129.59999999999994
+   },
+   "zoom": 1.0,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "w1": "walked",
+    "w2": "walked",
+    "w3": "walked",
+    "w4": "walked",
+    "t1": "walked",
+    "n1": "current",
+    "n2": "option",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "option",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0
+   },
+   "power": {
+    "keep": [
+     "car",
+     "m1",
+     "m2",
+     "n1",
+     "srv",
+     "t2"
+    ],
+    "k": 0.22,
+    "boost": 1.45
+   }
+  }
+ ],
+ "force": true
+}

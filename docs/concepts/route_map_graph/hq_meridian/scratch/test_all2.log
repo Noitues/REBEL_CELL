@@ -1,0 +1,14 @@
+GPU lock acquired after 1050 s (test frames meridian:H_overview,H_decision solace:H_overview,H_decision rebel_cell:@OPTION_SHOTS rebel_cell:@RED_SHOTS!)
+meridian H_overview,H_decision 65 s
+solace H_overview,H_decision 69 s
+rebel_cell @OPTION_SHOTS 36 s
+rebel_cell @RED_SHOTS 43 s
+saved OA_1_midrun
+saved OA_2_switch
+saved OA_3_showdown
+saved RS_1_before
+saved RS_2_blackout
+saved RS_3_spreading
+saved RS_4_full
+GPU lock released
+done

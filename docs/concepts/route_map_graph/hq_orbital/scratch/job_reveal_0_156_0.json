@@ -1,0 +1,4092 @@
+{
+ "res": [
+  960,
+  540
+ ],
+ "samples": 12,
+ "threshold": 0.06,
+ "step_rate": 3.0,
+ "out": "D:\\rc_scratch\\hq_orbital\\bl_reveal",
+ "frames": [
+  {
+   "name": "r000",
+   "pose": {
+    "loc": [
+     2.946738767841145,
+     -1.072525199652443,
+     20.164343138951796
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     50.0
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 290.0,
+    "pitch": -84.0,
+    "dist": 30.000000000000004
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r001",
+   "pose": {
+    "loc": [
+     2.988162321134498,
+     -1.0850926369559075,
+     20.179302721475356
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     50.05312573914072
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 289.9574994086874,
+    "pitch": -83.92562396520299,
+    "dist": 30.042500591312578
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r002",
+   "pose": {
+    "loc": [
+     3.1110030205594597,
+     -1.1220036497946708,
+     20.22377812878611
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     50.20978552745082
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 289.8321715780393,
+    "pitch": -83.70630026156886,
+    "dist": 30.16782842196066
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r003",
+   "pose": {
+    "loc": [
+     3.3140430718524487,
+     -1.1818557623384753,
+     20.297664754044188
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     50.46590322126221
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 289.62727742299023,
+    "pitch": -83.3477354902329,
+    "dist": 30.37272257700977
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r004",
+   "pose": {
+    "loc": [
+     3.5971530280059394,
+     -1.2629536296286266,
+     20.40147952995597
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     50.81740267690681
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 289.34607785847453,
+    "pitch": -82.85563625233047,
+    "dist": 30.653922141525452
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r005",
+   "pose": {
+    "loc": [
+     3.9611072603629958,
+     -1.363287139164492,
+     20.53631723257967
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     51.26020775071653
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 288.9918337994268,
+    "pitch": -82.23570914899686,
+    "dist": 31.00816620057323
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r006",
+   "pose": {
+    "loc": [
+     4.4073998102677345,
+     -1.4804974850987214,
+     20.703818193711946
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     51.79024229902329
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 288.56780616078134,
+    "pitch": -81.4936607813674,
+    "dist": 31.432193839218634
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r007",
+   "pose": {
+    "loc": [
+     4.938060523164645,
+     -1.6118376226262048,
+     20.906142495929842
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     52.403430178159
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 288.0772558574728,
+    "pitch": -80.6351977505774,
+    "dist": 31.922744142527204
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r008",
+   "pose": {
+    "loc": [
+     5.555471453304364,
+     -1.7541328649971362,
+     21.14594630730252
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     53.09569524445558
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 287.52344380443554,
+    "pitch": -79.6660266577622,
+    "dist": 32.47655619556445
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r009",
+   "pose": {
+    "loc": [
+     6.262183834764359,
+     -1.903746761821272,
+     21.426356600327843
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     53.86296135424493
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 286.90963091660404,
+    "pitch": -78.5918541040571,
+    "dist": 33.09036908339594
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r010",
+   "pose": {
+    "loc": [
+     7.06073637562224,
+     -2.0565567722804032,
+     21.750941089688936
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     54.701152363858974
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 286.2390781089128,
+    "pitch": -77.41838669059743,
+    "dist": 33.76092189108718
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r011",
+   "pose": {
+    "loc": [
+     7.953476185039456,
+     -2.2079435975138875,
+     22.123670814907882
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     55.606192129629626
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 285.5150462962963,
+    "pitch": -76.15133101851852,
+    "dist": 34.48495370370371
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r012",
+   "pose": {
+    "loc": [
+     8.942384230857453,
+     -2.3527973430988607,
+     22.54887338571212
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     56.5740045078888
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 284.740796393689,
+    "pitch": -74.79639368895567,
+    "dist": 35.25920360631104
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r013",
+   "pose": {
+    "loc": [
+     10.028907795653215,
+     -2.485542931585362,
+     23.03117549776018
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     57.60051335496841
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 283.9195893160253,
+    "pitch": -73.35928130304421,
+    "dist": 36.08041068397473
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r014",
+   "pose": {
+    "loc": [
+     11.213802904164345,
+     -2.6001863708029727,
+     23.575433910630508
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     58.68164252720038
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 283.0546859782397,
+    "pitch": -71.84570046191948,
+    "dist": 36.94531402176031
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r015",
+   "pose": {
+    "loc": [
+     12.496990091844454,
+     -2.6903826095249026,
+     24.186654653220295
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     59.813315880916605
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 282.1493472952667,
+    "pitch": -70.26135776671676,
+    "dist": 37.85065270473327
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r016",
+   "pose": {
+    "loc": [
+     13.877427136492473,
+     -2.7495247908469396,
+     24.869900776700675
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     60.991457272449004
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 281.2068341820408,
+    "pitch": -68.61195981857139,
+    "dist": 38.7931658179592
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r017",
+   "pose": {
+    "loc": [
+     15.35300245332406,
+     -2.7708537670830897,
+     25.630189503087628
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     62.2119905581295
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 280.2304075534964,
+    "pitch": -66.9032132186187,
+    "dist": 39.769592446503594
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r018",
+   "pose": {
+    "loc": [
+     16.92045273825373,
+     -2.7475857977416425,
+     26.4723801082175
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     63.470839594290005
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 279.223328324568,
+    "pitch": -65.14082456799399,
+    "dist": 40.776671675432
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r019",
+   "pose": {
+    "loc": [
+     18.57530812435151,
+     -2.673055449994864,
+     27.401054320604572
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     64.76392823726243
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 278.18885741019005,
+    "pitch": -63.3305004678326,
+    "dist": 41.81114258980994
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r020",
+   "pose": {
+    "loc": [
+     20.311867593281985,
+     -2.5408698986082388,
+     28.420391401264787
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     66.08718034337869
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 277.13025572529705,
+    "pitch": -61.47794751926983,
+    "dist": 42.86974427470295
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r021",
+   "pose": {
+    "loc": [
+     22.12320666940742,
+     -2.345070120333685,
+     29.534040383548295
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     67.4365197689707
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 276.05078418482344,
+    "pitch": -59.588872323441024,
+    "dist": 43.94921581517655
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r022",
+   "pose": {
+    "loc": [
+     24.001218542941473,
+     -2.080293935332019,
+     30.744992186892155
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     68.80787037037037
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 274.9537037037037,
+    "pitch": -57.66898148148148,
+    "dist": 45.046296296296305
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r023",
+   "pose": {
+    "loc": [
+     25.936688754504683,
+     -1.7419354996227332,
+     32.05545446650604
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     70.19715600390963
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 273.8422751968723,
+    "pitch": -55.72398159452653,
+    "dist": 46.15772480312771
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r024",
+   "pose": {
+    "loc": [
+     27.919402470236054,
+     -1.326295724761276,
+     33.466732116996425
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     71.60030052592036
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 272.7197595792637,
+    "pitch": -53.7595792637115,
+    "dist": 47.28024042073628
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r025",
+   "pose": {
+    "loc": [
+     29.93828223481779,
+     -0.8307182109751557,
+     34.97911630928603
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     73.01322779273451
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 271.5894177658124,
+    "pitch": -51.781481090171695,
+    "dist": 48.4105822341876
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -0.04725838791112835
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -0.04725838791112835
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r026",
+   "pose": {
+    "loc": [
+     31.981552964214536,
+     -0.25370563326993983,
+     36.59178480751188
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     74.43186166068396
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 270.45451067145285,
+    "pitch": -49.79539367504245,
+    "dist": 49.54548932854718
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -0.18699215259866264
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -0.18699215259866264
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r027",
+   "pose": {
+    "loc": [
+     34.03692988660619,
+     0.40498789074449426,
+     38.3027160898557
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     75.85212598610067
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 269.31829921111944,
+    "pitch": -47.80702361945905,
+    "dist": 50.68170078888055
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -0.41613919549385514
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -0.41613919549385514
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r028",
+   "pose": {
+    "loc": [
+     36.09182421272237,
+     1.144292117613518,
+     40.108619491810884
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     77.26994462531653
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 268.1840442997468,
+    "pitch": -45.82207752455687,
+    "dist": 51.81595570025321
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -0.731637418027951
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -0.731637418027951
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r029",
+   "pose": {
+    "loc": [
+     38.1335605639146,
+     1.9617863575949206,
+     42.00488321279703
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     78.68124143466343
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 267.05500685226923,
+    "pitch": -43.84626199147119,
+    "dist": 52.94499314773075
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -1.1304247216321883
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -1.1304247216321883
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r030",
+   "pose": {
+    "loc": [
+     40.14959964765649,
+     2.853697067364802,
+     43.98554159079085
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     80.08194027047332
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 265.93444778362135,
+    "pitch": -41.88528362133735,
+    "dist": 54.065552216378656
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -1.6094390077378264
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -1.6094390077378264
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r031",
+   "pose": {
+    "loc": [
+     42.1277593745146,
+     3.814927690543761,
+     46.04326257072133
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     81.4679649890781
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 264.8256280087375,
+    "pitch": -39.94484901529065,
+    "dist": 55.174371991262504
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -2.1656181777760963
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -2.1656181777760963
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r032",
+   "pose": {
+    "loc": [
+     44.056427573814794,
+     4.83911983485633,
+     48.16935578862573
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     82.83523944680968
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 263.7318084425523,
+    "pitch": -38.03066477446644,
+    "dist": 56.26819155744774
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -2.795900133178243
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -2.795900133178243
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r033",
+   "pose": {
+    "loc": [
+     45.92475968911585,
+     5.918743658791259,
+     50.35380118402922
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     84.1796875
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 262.65625,
+    "pitch": -36.1484375,
+    "dist": 57.34375000000001
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -3.497222775375512
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -3.497222775375512
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r034",
+   "pose": {
+    "loc": [
+     47.722855306968775,
+     7.045214213677987,
+     52.58529755719938
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     85.49723300498094
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 261.60221359601525,
+    "pitch": -34.30387379302669,
+    "dist": 58.397786403984774
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -4.266524005799155
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -4.266524005799155
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r035",
+   "pose": {
+    "loc": [
+     49.441908067786876,
+     8.209029503899508,
+     54.85133002501814
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     86.78379981808442
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 260.5729601455325,
+    "pitch": -32.502680254681806,
+    "dist": 59.42703985446752
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -5.100741725880404
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -5.100741725880404
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r036",
+   "pose": {
+    "loc": [
+     51.07432438886278,
+     9.399925235910086,
+     57.1382549173237
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     88.03531179564237
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 259.5717505634861,
+    "pitch": -30.750563486100674,
+    "dist": 60.428249436513894
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -5.996813837050517
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -5.996813837050517
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r037",
+   "pose": {
+    "loc": [
+     52.61380745036514,
+     10.607040663406854,
+     59.43140031103644
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     89.24769279398669
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 258.60184576481066,
+    "pitch": -29.05323008841863,
+    "dist": 61.39815423518935
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -6.9516782407407405
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -6.9516782407407405
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r038",
+   "pose": {
+    "loc": [
+     54.05540400308703,
+     11.819089627406806,
+     61.715180136135636
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     90.4168666694493
+    ],
+    "lens": 22.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 257.66650666444053,
+    "pitch": -27.416386662770968,
+    "dist": 62.33349333555943
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     18.0,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -18.0,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -7.9622728383823045
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      18.0,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -18.0,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -7.9622728383823045
+     ]
+    },
+    "shaft": 1.0
+   },
+   "power": null
+  },
+  {
+   "name": "r039",
+   "pose": {
+    "loc": [
+     55.4106814641722,
+     13.042184808378108,
+     63.96625274938154
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     91.52950888101115
+    ],
+    "lens": 22.001809893934976,
+    "shift_x": -9.426530911332984e-06,
+    "shift_y": -3.860192345117932e-06,
+    "yaw": 256.75519128052423,
+    "pitch": -25.836451726811838,
+    "dist": 63.2469390048061
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     17.994181315104168,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -17.994181315104168,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -9.025535531406462
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      17.994181315104168,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -17.994181315104168,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -9.025535531406462
+     ]
+    },
+    "shaft": 0.9996767397280093
+   },
+   "power": null
+  },
+  {
+   "name": "r040",
+   "pose": {
+    "loc": [
+     56.73658541388252,
+     14.33979303180154,
+     66.14107473556864
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     92.5430280365835
+    ],
+    "lens": 22.01277586085867,
+    "shift_x": -6.654094197224879e-05,
+    "shift_y": -2.724871294161907e-05,
+    "yaw": 255.81591748638877,
+    "pitch": -24.282800172519426,
+    "dist": 64.20072372435268
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     17.959104938271604,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -17.959104938271604,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -10.138404221244464
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      17.959104938271604,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -17.959104938271604,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -10.138404221244464
+     ]
+    },
+    "shaft": 0.9977280521262003
+   },
+   "power": null
+  },
+  {
+   "name": "r041",
+   "pose": {
+    "loc": [
+     58.03168187432064,
+     15.713467760996767,
+     68.22369294727501
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     93.44828127883885
+    ],
+    "lens": 22.033486729047535,
+    "shift_x": -0.00017441004712257354,
+    "shift_y": -7.142143118682169e-05,
+    "yaw": 254.84910186522924,
+    "pitch": -22.76099782418447,
+    "dist": 65.19868884214702
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     17.893284927179785,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -17.893284927179785,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -11.297816809327529
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      17.893284927179785,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -17.893284927179785,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -11.297816809327529
+     ]
+    },
+    "shaft": 0.9940713848433214
+   },
+   "power": null
+  },
+  {
+   "name": "r042",
+   "pose": {
+    "loc": [
+     59.28887777868076,
+     17.156425679567878,
+     70.20070171513194
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     94.24051721941139
+    ],
+    "lens": 22.06372102347281,
+    "shift_x": -0.0003318803305875491,
+    "shift_y": -0.00013590597895234664,
+    "yaw": 253.8611399495037,
+    "pitch": -21.280417604443805,
+    "dist": 66.23765318784834
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     17.7978515625,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -17.7978515625,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -12.500711197086936
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      17.7978515625,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -17.7978515625,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -12.500711197086936
+     ]
+    },
+    "shaft": 0.98876953125
+   },
+   "power": null
+  },
+  {
+   "name": "r043",
+   "pose": {
+    "loc": [
+     60.502409951548714,
+     18.661346266420153,
+     72.05813293719972
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     94.91531925266996
+    ],
+    "lens": 22.103257269105743,
+    "shift_x": -0.0005377982765924157,
+    "shift_y": -0.0002202299881098142,
+    "yaw": 252.85815944548247,
+    "pitch": -19.849963740105775,
+    "dist": 67.31447408010119
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     17.67393512490355,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -17.67393512490355,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -13.74402528595391
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      17.67393512490355,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -17.67393512490355,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -13.74402528595391
+     ]
+    },
+    "shaft": 0.9818852847168639
+   },
+   "power": null
+  },
+  {
+   "name": "r044",
+   "pose": {
+    "loc": [
+     61.667860359970604,
+     20.22050594517486,
+     73.78159035145072
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     95.46862322409994
+    ],
+    "lens": 22.151873990917583,
+    "shift_x": -0.0007910103693624126,
+    "shift_y": -0.00032392109053084423,
+    "yaw": 251.84600609854263,
+    "pitch": -18.478047026415492,
+    "dist": 68.42602762746829
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     17.522665895061728,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -17.522665895061728,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -15.024696977359696
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      17.522665895061728,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -17.522665895061728,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -15.024696977359696
+     ]
+    },
+    "shaft": 0.9734814386145405
+   },
+   "power": null
+  },
+  {
+   "name": "r045",
+   "pose": {
+    "loc": [
+     62.78213208783049,
+     21.825915970211106,
+     75.35639203593743
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     95.89673380902222
+    ],
+    "lens": 22.209349713879575,
+    "shift_x": -0.001090363093122783,
+    "shift_y": -0.0004465069180870581,
+    "yaw": 250.83023059019294,
+    "pitch": -17.172561896848404,
+    "dist": 69.56919115231715
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     17.345174153645836,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -17.345174153645836,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -16.339664172735546
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      17.345174153645836,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -17.345174153645836,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -16.339664172735546
+     ]
+    },
+    "shaft": 0.9636207863136574
+   },
+   "power": null
+  },
+  {
+   "name": "r046",
+   "pose": {
+    "loc": [
+     63.843386263614825,
+     23.46945588704973,
+     76.76771831361717
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     96.1963396016492
+    ],
+    "lens": 22.275462962962962,
+    "shift_x": -0.0014347029320987666,
+    "shift_y": -0.0005875151026500759,
+    "yaw": 249.81607646682878,
+    "pitch": -15.94086529843185,
+    "dist": 70.7408273516296
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     17.142590181327158,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -17.142590181327158,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -17.685864773512705
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      17.142590181327158,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -17.142590181327158,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -17.685864773512705
+     ]
+    },
+    "shaft": 0.9523661211848422
+   },
+   "power": null
+  },
+  {
+   "name": "r047",
+   "pose": {
+    "loc": [
+     64.85094198023411,
+     25.14299526632511,
+     78.00076255409465
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     96.36452691447793
+    ],
+    "lens": 22.349992263138994,
+    "shift_x": -0.0018228763705156019,
+    "shift_y": -0.0007464732760915169,
+    "yaw": 248.80846910021802,
+    "pitch": -14.789757372594666,
+    "dist": 71.93776983038757
+   },
+   "zoom": 1.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "se": "option",
+    "ne": "reach",
+    "ant1": "reach",
+    "ant2": "reach",
+    "nw": "reach",
+    "sw": "reach",
+    "rocket": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "door_e": [
+     16.916044258777006,
+     0.0,
+     0.0
+    ],
+    "door_w": [
+     -16.916044258777006,
+     0.0,
+     0.0
+    ],
+    "rocket": [
+     0.0,
+     0.0,
+     -19.060236681122404
+    ]
+   },
+   "mech": {
+    "circuit": 1,
+    "retarget": 0,
+    "retargets": 3,
+    "doors": "shut",
+    "bands": 1,
+    "override": false,
+    "affected": [],
+    "walked": [
+     "start"
+    ],
+    "ui": 0.0,
+    "route": 0.0,
+    "movers": {
+     "door_e": [
+      16.916044258777006,
+      0.0,
+      0.0
+     ],
+     "door_w": [
+      -16.916044258777006,
+      0.0,
+      0.0
+     ],
+     "rocket": [
+      0.0,
+      0.0,
+      -19.060236681122404
+     ]
+    },
+    "shaft": 0.9397802365987226
+   },
+   "power": null
+  }
+ ]
+}

@@ -1,0 +1,26 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scripts\hq_scene.py:217: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 0.2s] city built, roofs 1229
+[hq 0.4s] towers
+[hq 0.5s] bridges
+[hq 0.5s] rooms
+[hq 0.5s] crown
+[hq 0.5s] podium
+[hq 0.5s] rig
+[hq 0.5s] landmark built
+[hq 0.8s] objects 34
+[hq 0.8s] lights 115 beams 10 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scripts\hq_scene.py:917: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:02.985  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 0.9s] HIP devices 1
+00:28.078  render           | Saved: 'D:\rc_scratch\hq_solace\bl_sheet\S_ground_floor.exr'
+[hq 26.7s] frame S_ground_floor 25.8 s passes ['Combined', 'Depth', 'Object Index', 'Volume Direct', 'Emission', 'Noisy Image']
+00:50.469  render           | Saved: 'D:\rc_scratch\hq_solace\bl_sheet\S_mid_climb.exr'
+[hq 48.6s] frame S_mid_climb 22.0 s passes 
+01:10.625  render           | Saved: 'D:\rc_scratch\hq_solace\bl_sheet\S_top.exr'
+[hq 68.8s] frame S_top 20.2 s passes 
+[hq 68.8s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

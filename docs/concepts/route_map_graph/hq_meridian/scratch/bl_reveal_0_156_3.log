@@ -1,0 +1,45 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian\scripts\hq_scene.py:217: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 0.2s] city built, roofs 1228
+[hq 0.2s] walls
+[hq 0.3s] towers
+[hq 0.3s] moat, gate
+[hq 0.3s] rail yard
+[hq 0.3s] control tower
+[hq 0.3s] links
+[hq 0.3s] crane, train
+[hq 0.3s] landmark built
+[hq 0.5s] objects 52
+[hq 0.5s] lights 138 beams 13 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian\scripts\hq_scene.py:917: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:02.875  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 0.6s] HIP devices 1
+00:07.532  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_reveal\r144.exr'
+[hq 5.7s] frame r144 5.2 s passes ['Combined', 'Depth', 'Object Index', 'Volume Direct', 'Emission', 'Noisy Image']
+00:11.704  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_reveal\r145.exr'
+[hq 9.6s] frame r145 3.8 s passes 
+00:15.516  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_reveal\r146.exr'
+[hq 13.4s] frame r146 3.8 s passes 
+00:19.329  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_reveal\r147.exr'
+[hq 17.2s] frame r147 3.8 s passes 
+00:23.110  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_reveal\r148.exr'
+[hq 21.0s] frame r148 3.8 s passes 
+00:26.860  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_reveal\r149.exr'
+[hq 24.7s] frame r149 3.7 s passes 
+00:30.672  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_reveal\r150.exr'
+[hq 28.5s] frame r150 3.8 s passes 
+00:34.485  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_reveal\r151.exr'
+[hq 32.3s] frame r151 3.8 s passes 
+00:38.250  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_reveal\r152.exr'
+[hq 36.1s] frame r152 3.8 s passes 
+00:42.032  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_reveal\r153.exr'
+[hq 39.9s] frame r153 3.8 s passes 
+00:45.797  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_reveal\r154.exr'
+[hq 43.6s] frame r154 3.8 s passes 
+00:49.563  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_reveal\r155.exr'
+[hq 47.4s] frame r155 3.8 s passes 
+[hq 47.4s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

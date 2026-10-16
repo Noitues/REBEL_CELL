@@ -1,0 +1,273 @@
+{
+ "res": [
+  960,
+  540
+ ],
+ "samples": 24,
+ "engine": "EEVEE",
+ "out": "D:\\rc_scratch\\hq_solace\\bl_stills_eevee",
+ "frames": [
+  {
+   "name": "H_overview",
+   "pose": {
+    "loc": [
+     -589.3137142706062,
+     93.33812281032361,
+     312.1663285101801
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     95.0
+    ],
+    "lens": 34.0,
+    "shift_x": -0.04467644438314397,
+    "shift_y": 0.0717058846905875,
+    "yaw": 99.0,
+    "pitch": 20.0,
+    "dist": 634.9518668653271
+   },
+   "zoom": 0.0,
+   "mt": 4,
+   "room_state": {
+    "start": "walked",
+    "A1": "walked",
+    "B1": "grey",
+    "A2": "walked",
+    "B2": "walked",
+    "A3": "option",
+    "B3": "current",
+    "A4": "reach",
+    "B4": "option",
+    "A5": "reach",
+    "B5": "reach",
+    "A6": "reach",
+    "B6": "reach",
+    "A7": "reach",
+    "B7": "reach",
+    "A8": "reach",
+    "B8": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "A6",
+    "B6",
+    "A7",
+    "B7",
+    "A8",
+    "B8"
+   ],
+   "movers": {},
+   "mech": {
+    "horizon": 5,
+    "unread": [
+     "A6",
+     "B6",
+     "A7",
+     "B7",
+     "A8",
+     "B8"
+    ],
+    "affected": [
+     "A6",
+     "B6",
+     "A7",
+     "B7",
+     "A8",
+     "B8"
+    ],
+    "level": 3,
+    "walked": [
+     "start",
+     "A1",
+     "A2",
+     "B2",
+     "B3"
+    ],
+    "height": 0.32989690721649484
+   },
+   "power": null
+  },
+  {
+   "name": "H_decision",
+   "pose": {
+    "loc": [
+     -137.40797160015168,
+     -2.2220193927713545,
+     121.84329601779936
+    ],
+    "tgt": [
+     -15.856281122844416,
+     25.779417156974823,
+     84.5
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07291666666666667,
+    "shift_y": 0.01822916666666661,
+    "yaw": 77.02729363895163,
+    "pitch": 16.666666666666664,
+    "dist": 130.2052827815122
+   },
+   "zoom": 1.0,
+   "mt": 4,
+   "room_state": {
+    "start": "walked",
+    "A1": "walked",
+    "B1": "grey",
+    "A2": "walked",
+    "B2": "walked",
+    "A3": "option",
+    "B3": "current",
+    "A4": "reach",
+    "B4": "option",
+    "A5": "reach",
+    "B5": "reach",
+    "A6": "reach",
+    "B6": "reach",
+    "A7": "reach",
+    "B7": "reach",
+    "A8": "reach",
+    "B8": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "A6",
+    "B6",
+    "A7",
+    "B7",
+    "A8",
+    "B8"
+   ],
+   "movers": {},
+   "mech": {
+    "horizon": 5,
+    "unread": [
+     "A6",
+     "B6",
+     "A7",
+     "B7",
+     "A8",
+     "B8"
+    ],
+    "affected": [
+     "A6",
+     "B6",
+     "A7",
+     "B7",
+     "A8",
+     "B8"
+    ],
+    "level": 3,
+    "walked": [
+     "start",
+     "A1",
+     "A2",
+     "B2",
+     "B3"
+    ],
+    "height": 0.32989690721649484
+   },
+   "power": null
+  },
+  {
+   "name": "H_hover",
+   "pose": {
+    "loc": [
+     -128.42392389951652,
+     -7.0168589799617695,
+     120.34956417708737
+    ],
+    "tgt": [
+     -10.487357434243851,
+     13.720617116092493,
+     84.5
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07291666666666667,
+    "shift_y": 0.01822916666666661,
+    "yaw": 80.02729363895163,
+    "pitch": 16.666666666666664,
+    "dist": 124.9970714702517
+   },
+   "zoom": 1.0,
+   "mt": 4,
+   "room_state": {
+    "start": "walked",
+    "A1": "walked",
+    "B1": "grey",
+    "A2": "walked",
+    "B2": "walked",
+    "A3": "option",
+    "B3": "current",
+    "A4": "reach",
+    "B4": "option",
+    "A5": "reach",
+    "B5": "reach",
+    "A6": "reach",
+    "B6": "reach",
+    "A7": "reach",
+    "B7": "reach",
+    "A8": "reach",
+    "B8": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "A6",
+    "B6",
+    "A7",
+    "B7",
+    "A8",
+    "B8"
+   ],
+   "movers": {},
+   "mech": {
+    "horizon": 5,
+    "unread": [
+     "A6",
+     "B6",
+     "A7",
+     "B7",
+     "A8",
+     "B8"
+    ],
+    "affected": [
+     "A6",
+     "B6",
+     "A7",
+     "B7",
+     "A8",
+     "B8"
+    ],
+    "level": 3,
+    "walked": [
+     "start",
+     "A1",
+     "A2",
+     "B2",
+     "B3"
+    ],
+    "height": 0.32989690721649484
+   },
+   "power": {
+    "keep": [
+     "A3",
+     "A4",
+     "A5",
+     "A6",
+     "A7",
+     "A8",
+     "B3",
+     "B4",
+     "B5",
+     "B6",
+     "B7",
+     "B8",
+     "srv"
+    ],
+    "k": 0.22,
+    "boost": 1.45
+   }
+  }
+ ],
+ "force": true
+}

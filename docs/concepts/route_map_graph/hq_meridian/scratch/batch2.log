@@ -1,0 +1,227 @@
+reveal_0_14 chunk 0 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian\scratch\bl_reveal_0_14_0.log wall 3 s
+GPU lock acquired after 0 s (batch meridian / solace / solace / solace / orbital / orbital / orbital / orbital)
+17:29:59 gpu meridian hq_jobs.py reveal video 0 14  exit 0 5 s
+stills_final chunk 0 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scratch\bl_stills_final_0.log wall 294 s
+17:34:54 gpu solace hq_jobs.py stills final all  exit 0 294 s
+sheet_sheet chunk 0 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scratch\bl_sheet_sheet_0.log wall 71 s
+17:36:05 gpu solace hq_jobs.py sheet sheet all  exit 0 72 s
+reveal_0_156 chunk 0 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scratch\bl_reveal_0_156_0.log wall 288 s
+reveal_0_156 chunk 1 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scratch\bl_reveal_0_156_1.log wall 293 s
+reveal_0_156 chunk 2 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scratch\bl_reveal_0_156_2.log wall 291 s
+reveal_0_156 chunk 3 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scratch\bl_reveal_0_156_3.log wall 74 s
+17:51:55 gpu solace hq_jobs.py reveal video 0 156  exit 0 949 s
+stills_final chunk 0 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\scratch\bl_stills_final_0.log wall 507 s
+18:00:22 gpu orbital hq_jobs.py stills final all  exit 0 507 s
+sheet_sheet chunk 0 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\scratch\bl_sheet_sheet_0.log wall 99 s
+18:02:03 gpu orbital hq_jobs.py sheet sheet all  exit 0 101 s
+launch_board chunk 0 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\scratch\bl_launch_board_0.log wall 51 s
+18:02:54 gpu orbital hq_jobs.py launch board  exit 0 51 s
+launch_strike chunk 0 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\scratch\bl_launch_strike_0.log wall 77 s
+18:04:12 gpu orbital hq_jobs.py launch strike  exit 0 78 s
+frame 0 ok
+frame 1 ok
+frame 2 ok
+frame 3 ok
+frame 5 ok
+frame 6 ok
+frame 9 ok
+frame 7 ok
+frame 11 ok
+frame 10 ok
+frame 4 ok
+frame 12 ok
+frame 13 ok
+frame 8 ok
+GPU lock released
+18:04:18 cpu meridian hq_compose.py frames reveal 0 14  exit 0 7 s
+mp4 reveal 156 frames, exit 0 10655419
+gif reveal 26.9 MB
+18:04:40 cpu meridian hq_encode.py reveal  exit 0 22 s
+saved H_overview
+saved H_decision
+saved H_hover
+18:06:42 cpu solace hq_compose.py stills all  exit 0 122 s
+saved S_ground_floor
+saved S_mid_climb
+saved S_top
+18:07:41 cpu solace hq_compose.py sheet all  exit 0 59 s
+saved C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\H_mechanic_states.png
+18:07:52 cpu solace hq_sheet.py  exit 0 10 s
+frame 1 ok
+frame 0 ok
+frame 2 ok
+frame 6 ok
+frame 3 ok
+frame 5 ok
+frame 4 ok
+frame 7 ok
+frame 10 ok
+frame 9 ok
+frame 8 ok
+frame 11 ok
+frame 13 ok
+frame 12 ok
+frame 14 ok
+frame 15 ok
+frame 16 ok
+frame 21 ok
+frame 20 ok
+frame 18 ok
+frame 17 ok
+frame 19 ok
+frame 23 ok
+frame 25 ok
+frame 22 ok
+frame 24 ok
+frame 26 ok
+frame 28 ok
+frame 27 ok
+frame 29 ok
+frame 35 ok
+frame 32 ok
+frame 33 ok
+frame 30 ok
+frame 31 ok
+frame 34 ok
+frame 36 ok
+frame 37 ok
+frame 38 ok
+frame 39 ok
+frame 40 ok
+frame 41 ok
+frame 42 ok
+frame 43 ok
+frame 44 ok
+frame 47 ok
+frame 48 ok
+frame 45 ok
+frame 46 ok
+frame 49 ok
+frame 54 ok
+frame 53 ok
+frame 51 ok
+frame 50 ok
+frame 52 ok
+frame 55 ok
+frame 57 ok
+frame 58 ok
+frame 56 ok
+frame 62 ok
+frame 63 ok
+frame 59 ok
+frame 60 ok
+frame 61 ok
+frame 65 ok
+frame 64 ok
+frame 66 ok
+frame 67 ok
+frame 68 ok
+frame 69 ok
+frame 70 ok
+frame 73 ok
+frame 71 ok
+frame 72 ok
+frame 75 ok
+frame 76 ok
+frame 74 ok
+frame 77 ok
+frame 80 ok
+frame 78 ok
+frame 79 ok
+frame 81 ok
+frame 82 ok
+frame 83 ok
+frame 87 ok
+frame 88 ok
+frame 84 ok
+frame 85 ok
+frame 86 ok
+frame 89 ok
+frame 90 ok
+frame 94 ok
+frame 95 ok
+frame 91 ok
+frame 92 ok
+frame 93 ok
+frame 97 ok
+frame 96 ok
+frame 98 ok
+frame 99 ok
+frame 100 ok
+frame 102 ok
+frame 101 ok
+frame 103 ok
+frame 104 ok
+frame 105 ok
+frame 109 ok
+frame 106 ok
+frame 108 ok
+frame 107 ok
+frame 112 ok
+frame 110 ok
+frame 114 ok
+frame 111 ok
+frame 115 ok
+frame 113 ok
+frame 118 ok
+frame 116 ok
+frame 117 ok
+frame 120 ok
+frame 119 ok
+frame 121 ok
+frame 122 ok
+frame 123 ok
+frame 125 ok
+frame 124 ok
+frame 127 ok
+frame 126 ok
+frame 128 ok
+frame 129 ok
+frame 130 ok
+frame 131 ok
+frame 132 ok
+frame 133 ok
+frame 134 ok
+frame 135 ok
+frame 137 ok
+frame 138 ok
+frame 136 ok
+frame 139 ok
+frame 140 ok
+frame 141 ok
+frame 142 ok
+frame 144 ok
+frame 143 ok
+frame 146 ok
+frame 145 ok
+frame 148 ok
+frame 147 ok
+frame 149 ok
+frame 150 ok
+frame 153 ok
+frame 151 ok
+frame 152 ok
+frame 154 ok
+frame 155 ok
+18:11:46 cpu solace hq_compose.py frames reveal  exit 0 234 s
+mp4 reveal 156 frames, exit 0 9969344
+gif reveal 26.2 MB
+18:12:05 cpu solace hq_encode.py reveal  exit 0 19 s
+saved H_overview
+saved H_decision
+saved H_hover
+saved H_rocket
+18:13:40 cpu orbital hq_compose.py stills all  exit 0 95 s
+saved S_ring
+saved S_antenna
+saved S_sabotage
+18:14:20 cpu orbital hq_compose.py sheet all  exit 0 40 s
+tile room not visible nw
+tile room not visible sw
+tile room not visible start
+saved C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\H_mechanic_states.png
+18:14:28 cpu orbital hq_sheet.py  exit 0 8 s
+saved H_launch_board.png
+saved H_launch_strike.png
+18:14:43 cpu orbital hq_launch_board.py  exit 0 15 s
+BATCH DONE

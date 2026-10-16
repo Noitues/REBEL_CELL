@@ -1,0 +1,3804 @@
+{
+ "res": [
+  960,
+  540
+ ],
+ "samples": 12,
+ "threshold": 0.06,
+ "step_rate": 3.0,
+ "out": "D:\\rc_scratch\\hq_meridian\\bl_reveal",
+ "frames": [
+  {
+   "name": "r048",
+   "pose": {
+    "loc": [
+     -81.57637428075454,
+     109.96190667545827,
+     13.480764722594515
+    ],
+    "tgt": [
+     -32.98734948940714,
+     72.0,
+     7.0
+    ],
+    "lens": 24.0,
+    "shift_x": 0.0,
+    "shift_y": 0.02,
+    "yaw": 128.0,
+    "pitch": 6.0,
+    "dist": 62.00000000000001
+   },
+   "zoom": 1.0,
+   "mt": 5.975925925925925,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.98734948940714,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r049",
+   "pose": {
+    "loc": [
+     -81.34311872969351,
+     109.93638496890946,
+     13.48834147922619
+    ],
+    "tgt": [
+     -32.75409393834612,
+     71.9744782934512,
+     7.007576756631675
+    ],
+    "lens": 24.0,
+    "shift_x": 0.0,
+    "shift_y": 0.02,
+    "yaw": 128.0,
+    "pitch": 6.0,
+    "dist": 62.00000000000001
+   },
+   "zoom": 1.0,
+   "mt": 5.9788115408521945,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.76716071741279,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r050",
+   "pose": {
+    "loc": [
+     -81.12663965470085,
+     109.8606136815041,
+     13.510836080174661
+    ],
+    "tgt": [
+     -32.537614863353454,
+     71.89870700604583,
+     7.0300713575801455
+    ],
+    "lens": 24.0,
+    "shift_x": 0.0,
+    "shift_y": 0.02,
+    "yaw": 128.0,
+    "pitch": 6.0,
+    "dist": 62.00000000000001
+   },
+   "zoom": 1.0,
+   "mt": 5.981456832990397,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.589193879268834,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r051",
+   "pose": {
+    "loc": [
+     -80.92120524142815,
+     109.73578356160368,
+     13.547895022020098
+    ],
+    "tgt": [
+     -32.332180450080756,
+     71.7738768861454,
+     7.067130299425583
+    ],
+    "lens": 24.0,
+    "shift_x": 0.0,
+    "shift_y": 0.02,
+    "yaw": 128.0,
+    "pitch": 6.0,
+    "dist": 62.00000000000001
+   },
+   "zoom": 1.0,
+   "mt": 5.983872251157407,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.44682070214091,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r052",
+   "pose": {
+    "loc": [
+     -80.72171970214397,
+     109.56308535756975,
+     13.599164801342674
+    ],
+    "tgt": [
+     -32.13269491079657,
+     71.60117868211147,
+     7.1184000787481585
+    ],
+    "lens": 24.0,
+    "shift_x": 0.0,
+    "shift_y": 0.02,
+    "yaw": 128.0,
+    "pitch": 6.0,
+    "dist": 62.00000000000001
+   },
+   "zoom": 1.0,
+   "mt": 5.986068244170095,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.334188090595745,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r053",
+   "pose": {
+    "loc": [
+     -80.52492253499294,
+     109.34513517148699,
+     13.66490326820101
+    ],
+    "tgt": [
+     -31.934690622547983,
+     71.38180314230554,
+     7.183527192128042
+    ],
+    "lens": 24.00025680472997,
+    "shift_x": -1.26698796605415e-06,
+    "shift_y": 0.01999926405357967,
+    "yaw": 128.0003531065037,
+    "pitch": 6.000385207094955,
+    "dist": 62.00188264804987
+   },
+   "zoom": 1.0,
+   "mt": 5.988055260845336,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.246166857295975,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r054",
+   "pose": {
+    "loc": [
+     -80.3664700263176,
+     109.12979364560077,
+     13.764780647792989
+    ],
+    "tgt": [
+     -31.734309325084137,
+     71.11694101508917,
+     7.262158136145405
+    ],
+    "lens": 24.00917352537723,
+    "shift_x": -4.525908171784161e-05,
+    "shift_y": 0.019973710674394643,
+    "yaw": 128.01261359739368,
+    "pitch": 6.013760288065844,
+    "dist": 62.06728702874466
+   },
+   "zoom": 1.0,
+   "mt": 5.9898437499999995,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.17829895019534,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r055",
+   "pose": {
+    "loc": [
+     -80.26127787739856,
+     108.93982986375867,
+     13.907752056796358
+    ],
+    "tgt": [
+     -31.52827438835056,
+     70.80778304882386,
+     7.353939407380417
+    ],
+    "lens": 24.030593103820557,
+    "shift_x": -0.0001509360609884942,
+    "shift_y": 0.019912326828068358,
+    "yaw": 128.04206551775326,
+    "pitch": 6.045889655730833,
+    "dist": 62.224682270009126
+   },
+   "zoom": 1.0,
+   "mt": 5.99144416045096,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.12674389869619,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r056",
+   "pose": {
+    "loc": [
+     -80.2055124895994,
+     108.77535545674073,
+     14.093124586617389
+    ],
+    "tgt": [
+     -31.31385603547668,
+     70.45551999187116,
+     7.45851750241325
+    ],
+    "lens": 24.064217852969566,
+    "shift_x": -0.0003168292380275648,
+    "shift_y": 0.01981596562096132,
+    "yaw": 128.08829954783315,
+    "pitch": 6.096326779454351,
+    "dist": 62.47256895665815
+   },
+   "zoom": 1.0,
+   "mt": 5.992866941015089,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.088225132563906,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r057",
+   "pose": {
+    "loc": [
+     -80.19600416897737,
+     108.63678954866386,
+     14.320404626711404
+    ],
+    "tgt": [
+     -31.088831271041794,
+     70.0613425925926,
+     7.575538917824074
+    ],
+    "lens": 24.109750085733882,
+    "shift_x": -0.0005414699250846008,
+    "shift_y": 0.019685480159434034,
+    "yaw": 128.1509063678841,
+    "pitch": 6.1646251286008225,
+    "dist": 62.80981413218263
+   },
+   "zoom": 1.0,
+   "mt": 5.994122540509259,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.05997676215526,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r058",
+   "pose": {
+    "loc": [
+     -80.2301911626902,
+     108.52483846875144,
+     14.589286275830265
+    ],
+    "tgt": [
+     -30.85144011936697,
+     69.62644159934969,
+     7.70465015019306
+    ],
+    "lens": 24.166892115023117,
+    "shift_x": -0.0008233894344091543,
+    "shift_y": 0.019521723549847006,
+    "yaw": 128.22947665815678,
+    "pitch": 6.250338172534674,
+    "dist": 63.23562720642856
+   },
+   "zoom": 1.0,
+   "mt": 5.995221407750343,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.03969134671442,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r059",
+   "pose": {
+    "loc": [
+     -80.30606211228891,
+     108.44047765454486,
+     14.899641580366863
+    ],
+    "tgt": [
+     -30.60033962666223,
+     69.15200776050399,
+     7.845497696100379
+    ],
+    "lens": 24.235346253746886,
+    "shift_x": -0.0011611190782507802,
+    "shift_y": 0.019325548898560745,
+    "yaw": 128.32360109890197,
+    "pitch": 6.353019380620332,
+    "dist": 63.74953851105923
+   },
+   "zoom": 1.0,
+   "mt": 5.996173991555212,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.025469119122874,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r060",
+   "pose": {
+    "loc": [
+     -80.42209814096954,
+     108.3849354536913,
+     15.251512360381776
+    ],
+    "tgt": [
+     -30.33455692675907,
+     68.63923182441701,
+     7.997728052126201
+    ],
+    "lens": 24.314814814814813,
+    "shift_x": -0.0015531901688590223,
+    "shift_y": 0.01909780931193576,
+    "yaw": 128.43287037037038,
+    "pitch": 6.472222222222221,
+    "dist": 64.35138016128353
+   },
+   "zoom": 1.0,
+   "mt": 5.99699074074074,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.01576908055176,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r061",
+   "pose": {
+    "loc": [
+     -80.57721564175489,
+     108.35967855963204,
+     15.645103411297303
+    ],
+    "tgt": [
+     -30.05344251528967,
+     68.0893045394503,
+     8.160987714850695
+    ],
+    "lens": 24.405000111136513,
+    "shift_x": -0.0019981340184834343,
+    "shift_y": 0.01883935789633255,
+    "yaw": 128.5568751528127,
+    "pitch": 6.607500166704769,
+    "dist": 65.04126891764687
+   },
+   "zoom": 1.0,
+   "mt": 5.9976821041237995,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.00936232696387,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r062",
+   "pose": {
+    "loc": [
+     -80.77071068480447,
+     108.36639884070168,
+     16.080776892089734
+    ],
+    "tgt": [
+     -29.756624723653434,
+     67.50341665396535,
+     8.334923180854037
+    ],
+    "lens": 24.5056044556216,
+    "shift_x": -0.002494481939373573,
+    "shift_y": 0.018551047758111623,
+    "yaw": 128.6952061264797,
+    "pitch": 6.758406683432404,
+    "dist": 65.81959077175352
+   },
+   "zoom": 1.0,
+   "mt": 5.9982585305212615,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.00528792134338,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r063",
+   "pose": {
+    "loc": [
+     -81.00220581644588,
+     108.40700134285326,
+     16.55904772972636
+    ],
+    "tgt": [
+     -29.443966233788352,
+     66.88275891632374,
+     8.519180946716393
+    ],
+    "lens": 24.616330161179697,
+    "shift_x": -0.003040765243778977,
+    "shift_y": 0.018233732003633492,
+    "yaw": 128.8474539716221,
+    "pitch": 6.924495241769546,
+    "dist": 66.68698700532552
+   },
+   "zoom": 1.0,
+   "mt": 5.99873046875,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.00281158089638,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r064",
+   "pose": {
+    "loc": [
+     -81.27159988165741,
+     108.48359326389277,
+     17.080579885105173
+    ],
+    "tgt": [
+     -29.11552332923099,
+     66.22852207488697,
+     8.713407509017934
+    ],
+    "lens": 24.736879540720416,
+    "shift_x": -0.0036355152439492056,
+    "shift_y": 0.017888263739258652,
+    "yaw": 129.01320936849058,
+    "pitch": 7.105319311080626,
+    "dist": 67.64434149359184
+   },
+   "zoom": 1.0,
+   "mt": 5.999108367626886,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.001387407262314,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r065",
+   "pose": {
+    "loc": [
+     -81.57902136697462,
+     108.59847371214545,
+     17.646183338310124
+    ],
+    "tgt": [
+     -28.771508438555657,
+     65.54189687801656,
+     8.917249364338833
+    ],
+    "lens": 24.86695490715338,
+    "shift_x": -0.004277263252133814,
+    "shift_y": 0.017515496071347617,
+    "yaw": 129.1920629973359,
+    "pitch": 7.300432360730071,
+    "dist": 68.69276904216578
+   },
+   "zoom": 1.0,
+   "mt": 5.999402675968793,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.00062285000976,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r066",
+   "pose": {
+    "loc": [
+     -81.92478563326748,
+     108.75412407523714,
+     18.256811660973817
+    ],
+    "tgt": [
+     -28.41225639514684,
+     64.82407407407408,
+     9.13035300925926
+    ],
+    "lens": 25.0062585733882,
+    "shift_x": -0.004964540580582341,
+    "shift_y": 0.017116282106260892,
+    "yaw": 129.38360553840877,
+    "pitch": 7.509387860082304,
+    "dist": 69.83360456174991
+   },
+   "zoom": 1.0,
+   "mt": 5.999623842592593,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.00024705935391,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r067",
+   "pose": {
+    "loc": [
+     -82.30935628846629,
+     108.95319883547731,
+     18.913560051268977
+    ],
+    "tgt": [
+     -28.038194713285694,
+     64.07624441142103,
+     9.352364940359383
+    ],
+    "lens": 25.1544928523345,
+    "shift_x": -0.005695878541544341,
+    "shift_y": 0.016691474950358984,
+    "yaw": 129.58742767195994,
+    "pitch": 7.731739278501751,
+    "dist": 71.06839289759594
+   },
+   "zoom": 1.0,
+   "mt": 5.999782316315157,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.00008275313121,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r068",
+   "pose": {
+    "loc": [
+     -82.73331083983373,
+     109.1985166774605,
+     19.61766371281058
+    ],
+    "tgt": [
+     -27.64981806542857,
+     63.29959863841894,
+     9.582931654219378
+    ],
+    "lens": 25.311360056901894,
+    "shift_x": -0.0064698084472693766,
+    "shift_y": 0.01624192771000239,
+    "yaw": 129.8031200782401,
+    "pitch": 7.967040085352842,
+    "dist": 72.39887914098061
+   },
+   "zoom": 1.0,
+   "mt": 5.99988854595336,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.00002169560091,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r069",
+   "pose": {
+    "loc": [
+     -83.19731066431795,
+     109.49305174122014,
+     20.370496462788438
+    ],
+    "tgt": [
+     -27.24766703983165,
+     62.49532750342936,
+     9.82169964741941
+    ],
+    "lens": 25.4765625,
+    "shift_x": -0.007284861610006981,
+    "shift_y": 0.01576849349155163,
+    "yaw": 130.0302734375,
+    "pitch": 8.214843749999998,
+    "dist": 73.82699925833629
+   },
+   "zoom": 1.0,
+   "mt": 5.999952980324074,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.00000386160605,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r070",
+   "pose": {
+    "loc": [
+     -83.70207524426611,
+     109.83992488081385,
+     21.173569457181685
+    ],
+    "tgt": [
+     -26.832311161684903,
+     61.6646217548138,
+     10.068315416539653
+    ],
+    "lens": 25.649802494538434,
+    "shift_x": -0.008139569342006714,
+    "shift_y": 0.015272025401367203,
+    "yaw": 130.26847842999035,
+    "pitch": 8.47470374180765,
+    "dist": 75.35487088037262
+   },
+   "zoom": 1.0,
+   "mt": 5.99998606824417,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.00000033902768,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r071",
+   "pose": {
+    "loc": [
+     -84.24836053451659,
+     110.24239479380535,
+     22.02852992212411
+    ],
+    "tgt": [
+     -26.404336074837932,
+     60.8086721409338,
+     10.322425458160279
+    ],
+    "lens": 25.830782353426816,
+    "shift_x": -0.009032462955518133,
+    "shift_y": 0.014753376545809611,
+    "yaw": 130.51732573596186,
+    "pitch": 8.746173530140222,
+    "dist": 76.98478409876957
+   },
+   "zoom": 1.0,
+   "mt": 5.999998258530521,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.00000000529735,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 0,
+    "idx_next": 1,
+    "train": "arrive",
+    "train_next": "west",
+    "crane": "yard",
+    "crane_next": "swing",
+    "leave_in": 4,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r072",
+   "pose": {
+    "loc": [
+     -84.83694125570723,
+     110.70384889195171,
+     22.937159780572173
+    ],
+    "tgt": [
+     -25.964334705075444,
+     59.92866941015089,
+     10.583676268861455
+    ],
+    "lens": 26.01920438957476,
+    "shift_x": -0.009962073762790772,
+    "shift_y": 0.014213400031239373,
+    "yaw": 130.7764060356653,
+    "pitch": 9.028806584362139,
+    "dist": 78.71919212205297
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r073",
+   "pose": {
+    "loc": [
+     -85.46859684322759,
+     111.22779378768635,
+     23.90137406253768
+    ],
+    "tgt": [
+     -25.512902155413304,
+     59.02580431082661,
+     10.851714345223352
+    ],
+    "lens": 26.214770915891883,
+    "shift_x": -0.010926933076074192,
+    "shift_y": 0.013652948964016984,
+    "yaw": 131.04531000935134,
+    "pitch": 9.322156373837828,
+    "dist": 80.5607016452704
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r074",
+   "pose": {
+    "loc": [
+     -86.14410049824974,
+     111.81784527490694,
+     24.923218985442343
+    ],
+    "tgt": [
+     -25.050633795661227,
+     58.101267591322454,
+     11.126186183826146
+    ],
+    "lens": 26.41718424528781,
+    "shift_x": -0.011925572207617955,
+    "shift_y": 0.013072876450502948,
+    "yaw": 131.32362833727075,
+    "pitch": 9.625776367931717,
+    "dist": 82.51206279027166
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r075",
+   "pose": {
+    "loc": [
+     -86.86420978417632,
+     112.47771768629481,
+     26.004869588783908
+    ],
+    "tgt": [
+     -24.578125,
+     57.15625,
+     11.40673828125
+    ],
+    "lens": 26.62614669067215,
+    "shift_x": -0.012956522469671583,
+    "shift_y": 0.012474035597057785,
+    "yaw": 131.61095169967422,
+    "pitch": 9.939220036008228,
+    "dist": 84.57615847494709
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r076",
+   "pose": {
+    "loc": [
+     -87.6296573737064,
+     113.21121251309563,
+     27.148626804424566
+    ],
+    "tgt": [
+     -24.095971142610377,
+     56.191942285220755,
+     11.693017134075088
+    ],
+    "lens": 26.841360564954527,
+    "shift_x": -0.014018315174484654,
+    "shift_y": 0.011857279510041986,
+    "yaw": 131.90687077681247,
+    "pitch": 10.262040847431791,
+    "dist": 86.75599307087077
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r077",
+   "pose": {
+    "loc": [
+     -88.44114169375034,
+     114.02220617712905,
+     28.35691384057415
+    ],
+    "tgt": [
+     -23.604767597673117,
+     55.209535195346234,
+     11.984669238881587
+    ],
+    "lens": 27.062528181044556,
+    "shift_x": -0.015109481634306712,
+    "shift_y": 0.011223461295816065,
+    "yaw": 132.21097624893628,
+    "pitch": 10.593792271566834,
+    "dist": 89.0546802096081
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r078",
+   "pose": {
+    "loc": [
+     -89.29931747065439,
+     114.91463684894507,
+     29.63227175410426
+    ],
+    "tgt": [
+     -23.105109739369,
+     54.210219478738,
+     12.281341092249656
+    ],
+    "lens": 27.28935185185185,
+    "shift_x": -0.0162285531613873,
+    "shift_y": 0.010573434060740529,
+    "yaw": 132.5228587962963,
+    "pitch": 10.934027777777777,
+    "dist": 91.47542959867062
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r079",
+   "pose": {
+    "loc": [
+     -90.20478618863325,
+     115.89249021065214,
+     30.97735408235642
+    ],
+    "tgt": [
+     -22.59759294187878,
+     53.19518588375756,
+     12.582679190759475
+    ],
+    "lens": 27.521533890286033,
+    "shift_x": -0.017374061067975965,
+    "shift_y": 0.009908050911175883,
+    "yaw": 132.8421090991433,
+    "pitch": 11.282300835429048,
+    "dist": 94.02153270890017
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r080",
+   "pose": {
+    "loc": [
+     -91.15808648051328,
+     116.95978406716492,
+     32.39492040227364
+    ],
+    "tgt": [
+     -22.082812579383223,
+     52.165625158766446,
+     12.888330030991211
+    ],
+    "lens": 27.75877660925672,
+    "shift_x": -0.018544536666322286,
+    "shift_y": 0.009228164953482625,
+    "yaw": 133.16831783772798,
+    "pitch": 11.63816491388508,
+    "dist": 96.69634719613737
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r081",
+   "pose": {
+    "loc": [
+     -92.15968447618584,
+     118.12055171560871,
+     33.88782868167515
+    ],
+    "tgt": [
+     -21.561364026063103,
+     51.122728052126206,
+     13.197940109525033
+    ],
+    "lens": 28.000782321673526,
+    "shift_x": -0.019738511268675773,
+    "shift_y": 0.008534629294021278,
+    "yaw": 133.5010756923011,
+    "pitch": 12.001173482510286,
+    "dist": 99.50327992156492
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r082",
+   "pose": {
+    "loc": [
+     -93.20996414052459,
+     119.37882398950765,
+     35.45902628500208
+    ],
+    "tgt": [
+     -21.033842656099175,
+     50.06768531219835,
+     13.511155922941114
+    ],
+    "lens": 28.24725334044607,
+    "shift_x": -0.020954516187286006,
+    "shift_y": 0.007828297039152336,
+    "yaw": 133.83997334311334,
+    "pitch": 12.370880010669103,
+    "dist": 102.4457684373033
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r083",
+   "pose": {
+    "loc": [
+     -94.30921763887875,
+     120.73860990232353,
+     37.111539494099226
+    ],
+    "tgt": [
+     -20.500843843672204,
+     49.00168768734441,
+     13.82762396781963
+    ],
+    "lens": 28.49789197848397,
+    "shift_x": -0.022191082734402536,
+    "shift_y": 0.0071100212952363,
+    "yaw": 134.18460147041546,
+    "pitch": 12.746837967725957,
+    "dist": 105.52726080689209
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r084",
+   "pose": {
+    "loc": [
+     -95.45763577455152,
+     122.20387582401395,
+     38.84846140378289
+    ],
+    "tgt": [
+     -19.962962962962962,
+     47.925925925925924,
+     14.14699074074074
+    ],
+    "lens": 28.752400548696844,
+    "shift_x": -0.02344674222227489,
+    "shift_y": 0.006380655168633696,
+    "yaw": 134.53455075445817,
+    "pitch": 13.128600823045264,
+    "dist": 108.75119363440943
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r085",
+   "pose": {
+    "loc": [
+     -96.65529854883755,
+     123.77852313467754,
+     40.672938052314336
+    ],
+    "tgt": [
+     -19.420795388152214,
+     46.84159077630443,
+     14.468902738284623
+    ],
+    "lens": 29.01048136399431,
+    "shift_x": -0.024720025963152634,
+    "shift_y": 0.005641051765705014,
+    "yaw": 134.88941187549216,
+    "pitch": 13.51572204599146,
+    "dist": 112.12096818139642
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r086",
+   "pose": {
+    "loc": [
+     -97.90216590014356,
+     125.466364311142,
+     42.588152648695726
+    ],
+    "tgt": [
+     -18.87493649342072,
+     45.74987298684144,
+     14.793006457031447
+    ],
+    "lens": 29.271836737285984,
+    "shift_x": -0.02600946526928534,
+    "shift_y": 0.004892064192810755,
+    "yaw": 135.24877551376824,
+    "pitch": 13.907755105928974,
+    "dist": 115.63992445767194
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r087",
+   "pose": {
+    "loc": [
+     -99.198068684356,
+     127.27109741563162,
+     44.597307762191576
+    ],
+    "tgt": [
+     -18.325981652949245,
+     44.65196330589849,
+     15.118948393561386
+    ],
+    "lens": 29.53616898148148,
+    "shift_x": -0.027313591452922514,
+    "shift_y": 0.004134545556311448,
+    "yaw": 135.61223234953704,
+    "pitch": 14.304253472222218,
+    "dist": 119.31131318078603
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r088",
+   "pose": {
+    "loc": [
+     -100.54269996384835,
+     129.1962789704902,
+     46.70360534491694
+    ],
+    "tgt": [
+     -17.77452624091856,
+     43.54905248183712,
+     15.446375044454605
+    ],
+    "lens": 29.80318040949042,
+    "shift_x": -0.028630935826313736,
+    "shift_y": 0.0033693489625675824,
+    "yaw": 135.97937306304934,
+    "pitch": 14.704770614235631,
+    "dist": 123.13826550948272
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r089",
+   "pose": {
+    "loc": [
+     -101.93560667722757,
+     131.2452952193967,
+     48.91022446599824
+    ],
+    "tgt": [
+     -17.22116563150942,
+     42.44233126301884,
+     15.77493290629128
+    ],
+    "lens": 30.072573334222426,
+    "shift_x": -0.02996002970170857,
+    "shift_y": 0.0025973275179396564,
+    "yaw": 136.34978833455583,
+    "pitch": 15.108860001333637,
+    "dist": 127.12376046936697
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r090",
+   "pose": {
+    "loc": [
+     -103.37618176599058,
+     133.42133179362668,
+     51.22029664598324
+    ],
+    "tgt": [
+     -16.66649519890261,
+     41.33299039780522,
+     16.104268475651576
+    ],
+    "lens": 30.344050068587105,
+    "shift_x": -0.031299404391356526,
+    "shift_y": 0.0018193343287882004,
+    "yaw": 136.72306884430728,
+    "pitch": 15.516075102880656,
+    "dist": 131.27059000421812
+   },
+   "zoom": 1.0,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r091",
+   "pose": {
+    "loc": [
+     -104.86365683756796,
+     135.7273418216864,
+     53.63687869312423
+    ],
+    "tgt": [
+     -16.11111031727887,
+     40.22222063455774,
+     16.43402824911567
+    ],
+    "lens": 30.61731292549408,
+    "shift_x": -0.03264759120750718,
+    "shift_y": 0.0010362225014737027,
+    "yaw": 137.09880527255436,
+    "pitch": 15.925969388241118,
+    "dist": 135.58132160428102
+   },
+   "zoom": 0.9961418825489693,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r092",
+   "pose": {
+    "loc": [
+     -106.39709544665374,
+     138.1660125420682,
+     56.16292295915848
+    ],
+    "tgt": [
+     -15.555606360818977,
+     39.111212721637955,
+     16.76385872326373
+    ],
+    "lens": 30.89206421785297,
+    "shift_x": -0.0340031214624101,
+    "shift_y": 0.00024884514235666913,
+    "yaw": 137.47658829954784,
+    "pitch": 16.338096326779453,
+    "dist": 140.05825848360925
+   },
+   "zoom": 0.9669720650510796,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r093",
+   "pose": {
+    "loc": [
+     -107.9753870781341,
+     140.73973050188815,
+     58.80124495152195
+    ],
+    "tgt": [
+     -15.000578703703702,
+     38.001157407407405,
+     17.093406394675927
+    ],
+    "lens": 31.16800625857339,
+    "shift_x": -0.0353645264683148,
+    "shift_y": -0.0005419446422023841,
+    "yaw": 137.85600860553842,
+    "pitch": 16.75200938786008,
+    "dist": 144.70339730232993
+   },
+   "zoom": 0.9376758280845378,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r094",
+   "pose": {
+    "loc": [
+     -109.5972419151975,
+     143.45054544869407,
+     61.55448826179554
+    ],
+    "tgt": [
+     -14.446622720113805,
+     36.89324544022761,
+     17.422317759932426
+    ],
+    "lens": 31.444841360564954,
+    "shift_x": -0.03673033753747085,
+    "shift_y": -0.0013352937458429547,
+    "yaw": 138.2366568707768,
+    "pitch": 17.16726204084743,
+    "dist": 149.51838345670967
+   },
+   "zoom": 0.9082847765165049,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  },
+  {
+   "name": "r095",
+   "pose": {
+    "loc": [
+     -111.26118647522867,
+     146.30013304864735,
+     64.4250867968181
+    ],
+    "tgt": [
+     -13.894333784230046,
+     35.78866756846009,
+     17.75023931561341
+    ],
+    "lens": 31.722271836737285,
+    "shift_x": -0.0380990859821278,
+    "shift_y": -0.0021303490622045403,
+    "yaw": 138.61812377551377,
+    "pitch": 17.58340775510593,
+    "dist": 154.50446399027754
+   },
+   "zoom": 0.8788305152141459,
+   "mt": 6.0,
+   "room_state": {
+    "start": "current",
+    "w1": "option",
+    "w2": "reach",
+    "w3": "reach",
+    "w4": "reach",
+    "t1": "reach",
+    "n1": "reach",
+    "n2": "reach",
+    "n3": "reach",
+    "n4": "reach",
+    "t2": "reach",
+    "m1": "reach",
+    "m2": "reach",
+    "car": "reach",
+    "hook": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "car",
+    "hook"
+   ],
+   "movers": {
+    "train": [
+     -54.0,
+     83.0,
+     2.6
+    ],
+    "hook": [
+     4.0,
+     50.5,
+     52.0
+    ],
+    "trolley": [
+     4.0,
+     45.5,
+     62.0
+    ]
+   },
+   "mech": {
+    "idx": 1,
+    "idx_next": 2,
+    "train": "west",
+    "train_next": "east",
+    "crane": "swing",
+    "crane_next": "wall",
+    "leave_in": 3,
+    "affected": [
+     "car",
+     "hook"
+    ],
+    "rides": 0,
+    "ui": 0.0,
+    "route": 0.0
+   },
+   "power": null
+  }
+ ]
+}

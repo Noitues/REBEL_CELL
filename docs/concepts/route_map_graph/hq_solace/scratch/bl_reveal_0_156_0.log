@@ -1,0 +1,116 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scripts\hq_scene.py:217: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 0.2s] city built, roofs 1229
+[hq 0.5s] towers
+[hq 0.5s] bridges
+[hq 0.5s] rooms
+[hq 0.5s] crown
+[hq 0.5s] podium
+[hq 0.5s] rig
+[hq 0.5s] landmark built
+[hq 0.8s] objects 34
+[hq 0.9s] lights 115 beams 10 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scripts\hq_scene.py:917: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:02.984  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 0.9s] HIP devices 1
+00:09.641  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r000.exr'
+[hq 8.1s] frame r000 7.2 s passes ['Combined', 'Depth', 'Object Index', 'Volume Direct', 'Emission', 'Noisy Image']
+00:15.703  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r001.exr'
+[hq 13.8s] frame r001 5.7 s passes 
+00:21.453  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r002.exr'
+[hq 19.5s] frame r002 5.7 s passes 
+00:27.172  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r003.exr'
+[hq 25.3s] frame r003 5.7 s passes 
+00:32.906  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r004.exr'
+[hq 31.0s] frame r004 5.7 s passes 
+00:38.703  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r005.exr'
+[hq 36.8s] frame r005 5.8 s passes 
+00:44.422  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r006.exr'
+[hq 42.5s] frame r006 5.7 s passes 
+00:50.297  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r007.exr'
+[hq 48.4s] frame r007 5.9 s passes 
+00:56.250  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r008.exr'
+[hq 54.3s] frame r008 6.0 s passes 
+01:02.141  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r009.exr'
+[hq 60.2s] frame r009 5.9 s passes 
+01:07.984  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r010.exr'
+[hq 66.1s] frame r010 5.8 s passes 
+01:13.859  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r011.exr'
+[hq 71.9s] frame r011 5.9 s passes 
+01:19.734  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r012.exr'
+[hq 77.8s] frame r012 5.9 s passes 
+01:25.750  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r013.exr'
+[hq 83.8s] frame r013 6.0 s passes 
+01:31.625  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r014.exr'
+[hq 89.7s] frame r014 5.9 s passes 
+01:37.453  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r015.exr'
+[hq 95.5s] frame r015 5.8 s passes 
+01:43.234  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r016.exr'
+[hq 101.3s] frame r016 5.8 s passes 
+01:48.953  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r017.exr'
+[hq 107.0s] frame r017 5.7 s passes 
+01:54.625  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r018.exr'
+[hq 112.7s] frame r018 5.7 s passes 
+02:00.422  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r019.exr'
+[hq 118.5s] frame r019 5.8 s passes 
+02:06.313  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r020.exr'
+[hq 124.4s] frame r020 5.9 s passes 
+02:12.141  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r021.exr'
+[hq 130.2s] frame r021 5.8 s passes 
+02:18.000  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r022.exr'
+[hq 136.1s] frame r022 5.9 s passes 
+02:23.813  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r023.exr'
+[hq 141.9s] frame r023 5.8 s passes 
+02:29.547  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r024.exr'
+[hq 147.6s] frame r024 5.7 s passes 
+02:35.266  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r025.exr'
+[hq 153.4s] frame r025 5.7 s passes 
+02:40.984  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r026.exr'
+[hq 159.1s] frame r026 5.7 s passes 
+02:46.828  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r027.exr'
+[hq 164.9s] frame r027 5.8 s passes 
+02:52.719  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r028.exr'
+[hq 170.8s] frame r028 5.9 s passes 
+02:58.563  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r029.exr'
+[hq 176.6s] frame r029 5.8 s passes 
+03:04.328  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r030.exr'
+[hq 182.4s] frame r030 5.8 s passes 
+03:10.047  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r031.exr'
+[hq 188.1s] frame r031 5.7 s passes 
+03:15.734  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r032.exr'
+[hq 193.8s] frame r032 5.7 s passes 
+03:21.734  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r033.exr'
+[hq 199.8s] frame r033 6.0 s passes 
+03:27.563  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r034.exr'
+[hq 205.7s] frame r034 5.8 s passes 
+03:33.656  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r035.exr'
+[hq 211.7s] frame r035 6.1 s passes 
+03:39.859  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r036.exr'
+[hq 217.9s] frame r036 6.2 s passes 
+03:46.266  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r037.exr'
+[hq 224.4s] frame r037 6.4 s passes 
+03:52.422  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r038.exr'
+[hq 230.5s] frame r038 6.1 s passes 
+03:58.656  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r039.exr'
+[hq 236.7s] frame r039 6.2 s passes 
+04:04.813  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r040.exr'
+[hq 242.9s] frame r040 6.1 s passes 
+04:10.672  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r041.exr'
+[hq 248.8s] frame r041 5.9 s passes 
+04:16.906  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r042.exr'
+[hq 255.0s] frame r042 6.2 s passes 
+04:22.922  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r043.exr'
+[hq 261.0s] frame r043 6.0 s passes 
+04:29.016  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r044.exr'
+[hq 267.1s] frame r044 6.1 s passes 
+04:35.156  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r045.exr'
+[hq 273.2s] frame r045 6.1 s passes 
+04:41.313  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r046.exr'
+[hq 279.4s] frame r046 6.1 s passes 
+04:47.469  render           | Saved: 'D:\rc_scratch\hq_solace\bl_reveal\r047.exr'
+[hq 285.6s] frame r047 6.2 s passes 
+[hq 285.6s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

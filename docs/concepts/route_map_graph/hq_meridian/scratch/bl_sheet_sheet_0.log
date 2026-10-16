@@ -1,0 +1,27 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian\scripts\hq_scene.py:217: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 0.2s] city built, roofs 1228
+[hq 0.2s] walls
+[hq 0.2s] towers
+[hq 0.2s] moat, gate
+[hq 0.3s] rail yard
+[hq 0.3s] control tower
+[hq 0.3s] links
+[hq 0.3s] crane, train
+[hq 0.3s] landmark built
+[hq 0.5s] objects 52
+[hq 0.5s] lights 138 beams 13 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian\scripts\hq_scene.py:917: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:02.610  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 0.5s] HIP devices 1
+00:19.438  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_sheet\S_on_the_train.exr'
+[hq 18.1s] frame S_on_the_train 17.6 s passes ['Combined', 'Depth', 'Object Index', 'Volume Direct', 'Emission', 'Noisy Image']
+00:36.344  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_sheet\S_hook_at_wall.exr'
+[hq 34.6s] frame S_hook_at_wall 16.4 s passes 
+00:51.797  render           | Saved: 'D:\rc_scratch\hq_meridian\bl_sheet\S_hook_in_yard.exr'
+[hq 50.0s] frame S_hook_in_yard 15.5 s passes 
+[hq 50.0s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

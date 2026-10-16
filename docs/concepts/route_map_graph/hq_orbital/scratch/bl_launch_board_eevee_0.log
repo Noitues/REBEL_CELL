@@ -1,0 +1,35 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\scripts\hq_scene.py:217: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 0.7s] city built, roofs 1211
+[hq 0.8s] podium
+[hq 0.8s] doors, rocket
+[hq 0.8s] gantry
+[hq 0.8s] stations
+[hq 0.8s] antenna
+[hq 0.8s] causeway
+[hq 0.8s] rig
+[hq 0.9s] launch props
+[hq 0.9s] landmark built
+[hq 1.4s] objects 44
+[hq 1.6s] lights 84 beams 11 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\scripts\hq_scene.py:917: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:10.187  cycles           | WARNING CUEW initialization failed: Error opening the library
+00:27.828  render           | Saved: 'D:\rc_scratch\hq_orbital\bl_launch_board_eevee\L1_sabotage.exr'
+[hq 20.8s] frame L1_sabotage 19.2 s passes ['Combined', 'Depth', 'Emission']
+00:32.312  render           | Saved: 'D:\rc_scratch\hq_orbital\bl_launch_board_eevee\L2_pullout.exr'
+[hq 24.2s] frame L2_pullout 3.4 s passes 
+00:35.109  render           | Saved: 'D:\rc_scratch\hq_orbital\bl_launch_board_eevee\L3_launch.exr'
+[hq 27.1s] frame L3_launch 2.9 s passes 
+00:36.890  render           | Saved: 'D:\rc_scratch\hq_orbital\bl_launch_board_eevee\L4_arc.exr'
+[hq 28.8s] frame L4_arc 1.7 s passes 
+00:38.562  render           | Saved: 'D:\rc_scratch\hq_orbital\bl_launch_board_eevee\L5_descent.exr'
+[hq 30.3s] frame L5_descent 1.4 s passes 
+00:40.156  render           | Saved: 'D:\rc_scratch\hq_orbital\bl_launch_board_eevee\L6_strike.exr'
+[hq 32.1s] frame L6_strike 1.8 s passes 
+00:41.859  render           | Saved: 'D:\rc_scratch\hq_orbital\bl_launch_board_eevee\L7_zoom_back.exr'
+[hq 33.8s] frame L7_zoom_back 1.6 s passes 
+[hq 33.8s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit
