@@ -1401,3 +1401,9 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
   - New UI/HUD items are allowed. The colours are fine.
 - **Process rule:** no game design in art-pass. Rules questions go to other sessions.
 - **Next:** a full city render showing every corp district, including Tethys as a flooded district.
+- **HQ review (2026-10-15):**
+  - Fix the lighting misses on Solace, Rebel Cell and Meridian.
+  - Bring dense city close to every HQ: no open perimeter. Use the section cut to keep rooms visible.
+  - Rebel Cell: identity from the mainline Tokyo-alley HQ, with the red MAINFRAME sign.
+  - Orbital: clean up the platform centre (the rocket and silo must read).
+  - Meridian: the netrun runs 360° round the fortress, with containers moved wall-to-train every other turn enabling and disabling links.
