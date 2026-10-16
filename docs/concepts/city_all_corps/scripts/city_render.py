@@ -278,14 +278,16 @@ def mat_glass_aaa():
     return m
 
 
-def mat_water_aaa():
-    S = WAT["surface"]
+def mat_water_aaa(day=False):
+    S = dict(WAT["surface"])
+    if day:                           # AD r3: clean day water (broad soft swell, soft glints)
+        S.update(rough=CP.DAY["water"]["rough"], wave=CP.DAY["water"]["wave"])
     m = bpy.data.materials.new("water_aaa")
     g = NB(m)
     geo = g.n("ShaderNodeNewGeometry")
     nz = g.n("ShaderNodeTexNoise")
-    nz.inputs["Scale"].default_value = 0.35
-    nz.inputs["Detail"].default_value = 6.0
+    nz.inputs["Scale"].default_value = CP.DAY["water"]["scale"] if day else 0.35
+    nz.inputs["Detail"].default_value = 3.0 if day else 6.0
     mp = g.n("ShaderNodeMapping")
     mp.inputs["Scale"].default_value = (1.0, 2.4, 1.0)
     g.link(geo.outputs["Position"], mp.inputs[0])
@@ -383,6 +385,96 @@ def mat_water_vol():
     return m
 
 
+# ------------------------------------------------------------------ DAY (round 3, designer note 1): readable materials
+def mat_surf_day(name, caustic=False):
+    """facades by day: the albedo with a soft weathering noise, glass windows (dark, glossy: they mirror the sky),
+    a faint share of lit windows, the water fade below the sea level."""
+    DY = CP.DAY
+    m = bpy.data.materials.new(name)
+    g = NB(m)
+    col = g.attr("col").outputs["Color"]
+    geo = g.n("ShaderNodeNewGeometry")
+    wn_ = g.n("ShaderNodeTexNoise")
+    wn_.inputs["Scale"].default_value = 0.35
+    wn_.inputs["Detail"].default_value = 4.0
+    g.link(geo.outputs["Position"], wn_.inputs["Vector"])
+    weather = g.math("ADD", 0.82, g.math("MULTIPLY", wn_.outputs["Fac"], 0.36))
+    col = g.vmath("SCALE", col, scale=weather)
+    mask, em = window_graph(g, CP.AAA["win"] * DY["win_k"])
+    base = g.n("ShaderNodeMix")
+    base.data_type = "RGBA"
+    g.link(g.math("MULTIPLY", mask, 0.92), base.inputs["Factor"])
+    g.link(col, base.inputs[6])
+    base.inputs[7].default_value = (*DY["glass"], 1)
+    em = g.vmath("SCALE", em, scale=g.math("ADD", 1.0, g.math("MULTIPLY", g.attr("wet").outputs["Fac"], WAT["win_boost"])))
+    b2, e2 = water_fade(g, base.outputs[2], em, caustic=caustic)
+    rough = g.math("ADD", DY["facade_rough"], g.math("MULTIPLY", mask, DY["glass_rough"] - DY["facade_rough"]))
+    bs = principled(g, b2, e2, rough)
+    g.link(bs.outputs[0], g.out.inputs[0])
+    try:
+        m.emission_sampling = "NONE"
+    except Exception:
+        pass
+    return m
+
+
+def mat_ground_day(name, caustic):
+    m = bpy.data.materials.new(name)
+    g = NB(m)
+    col = g.vmath("SCALE", g.attr("col").outputs["Color"], scale=0.6 * CP.DAY["ground_k"])
+    geo = g.n("ShaderNodeNewGeometry")
+    nz = g.n("ShaderNodeTexNoise")
+    nz.inputs["Scale"].default_value = 0.16
+    nz.inputs["Detail"].default_value = 5.0
+    g.link(geo.outputs["Position"], nz.inputs["Vector"])
+    mr = g.n("ShaderNodeMapRange")
+    mr.inputs["From Min"].default_value = 0.4
+    mr.inputs["From Max"].default_value = 0.65
+    mr.inputs["To Min"].default_value = 0.85
+    mr.inputs["To Max"].default_value = 0.55
+    g.link(nz.outputs["Fac"], mr.inputs["Value"])
+    b2, e2 = water_fade(g, col, g.comb(0, 0, 0), caustic=caustic)
+    bs = principled(g, b2, e2, mr.outputs[0])
+    g.link(bs.outputs[0], g.out.inputs[0])
+    return m
+
+
+def mat_haze_day():
+    """aerial perspective by day: a height-falloff haze, low torn banks, thinner over the bay; lit by the sun + sky."""
+    HZ = CP.DAY["haze"]
+    A = CP.AAA
+    m = bpy.data.materials.new("haze_day")
+    g = NB(m)
+    geo = g.n("ShaderNodeNewGeometry")
+    px_, py_, z = g.sep(geo.outputs["Position"])
+    hf = g.math("EXPONENT", g.math("MULTIPLY", g.math("MAXIMUM", z, 0.0), -1.0 / HZ["h"]))
+    sc_ = g.vmath("MULTIPLY", geo.outputs["Position"], tuple(A["bank_scale"]))
+    nz = g.n("ShaderNodeTexNoise")
+    nz.inputs["Scale"].default_value = 1.0
+    nz.inputs["Detail"].default_value = 3.0
+    g.link(sc_, nz.inputs["Vector"])
+    mr = g.n("ShaderNodeMapRange")
+    mr.interpolation_type = "SMOOTHSTEP"
+    mr.inputs["From Min"].default_value = 0.45
+    mr.inputs["From Max"].default_value = 0.68
+    g.link(nz.outputs["Fac"], mr.inputs["Value"])
+    bank = g.math("MULTIPLY", g.math("MULTIPLY", mr.outputs[0], g.math("EXPONENT", g.math("MULTIPLY", g.math("MAXIMUM", z, 0.0), -1.0 / HZ["bank_h"]))), HZ["bank"])
+    dens = g.math("ADD", g.math("MULTIPLY", hf, HZ["density"]), bank)
+    bpos = g.math("DIVIDE", g.math("SUBTRACT", py_, px_), U * R2)
+    bayk = g.n("ShaderNodeMapRange")
+    bayk.interpolation_type = "SMOOTHSTEP"
+    bayk.inputs["From Min"].default_value = O["b_split"]
+    bayk.inputs["From Max"].default_value = O["b_split"] + 8.0
+    g.link(bpos, bayk.inputs["Value"])
+    dens = g.math("MULTIPLY", dens, g.math("SUBTRACT", 1.0, g.math("MULTIPLY", bayk.outputs[0], 1.0 - HZ["sea_k"])))
+    vs = g.n("ShaderNodeVolumeScatter")
+    vs.inputs["Color"].default_value = (*HZ["col"], 1)
+    vs.inputs["Anisotropy"].default_value = HZ["aniso"]
+    g.link(dens, vs.inputs["Density"])
+    g.link(vs.outputs[0], g.out.inputs["Volume"])
+    return m
+
+
 # ------------------------------------------------------------------ MAINLINE (Eevee): toon ramp + window emission
 def mat_toon_main(name, windows=True, ground=False):
     M = CP.MAINLINE
@@ -462,17 +554,27 @@ scene = bpy.context.scene
 for o in list(scene.objects):
     bpy.data.objects.remove(o)
 
-if MODE == "aaa":
+if DAYM:
+    MS = dict(surf=mat_surf_day("surf_day", caustic=True), neon=mat_emit_aaa("neon_day", CP.AAA["neon"] * CP.DAY["neon_k"]),
+              streak=mat_emit_aaa("streak_day", CP.AAA["streak"]), glass=mat_glass_aaa(),
+              ground=mat_ground_day("ground_day", False), seabed=mat_ground_day("seabed_day", True), water=mat_water_aaa(day=True),
+              bill=mat_emit_aaa("bill_day", CP.AAA["neon"] * CP.BILLBOARD["day_k"]))
+elif MODE == "aaa":
     MS = dict(surf=mat_surf_aaa("surf_aaa", caustic=True), neon=mat_emit_aaa("neon_aaa", CP.AAA["neon"]),
               streak=mat_emit_aaa("streak_aaa", CP.AAA["streak"]), glass=mat_glass_aaa(),
-              ground=mat_ground_aaa("ground_aaa", False), seabed=mat_ground_aaa("seabed_aaa", True), water=mat_water_aaa())
+              ground=mat_ground_aaa("ground_aaa", False), seabed=mat_ground_aaa("seabed_aaa", True), water=mat_water_aaa(),
+              bill=mat_emit_aaa("bill_aaa", CP.AAA["neon"]))
 else:
     MS = dict(surf=mat_toon_main("surf_main"), neon=mat_emit_main("neon_main", 1.0), streak=mat_emit_main("streak_main", 1.4),
               glass=mat_transp_main("glass_main", (0.45, 0.7, 0.95), 0.35), ground=mat_toon_main("ground_main", False, True),
               seabed=mat_toon_main("seabed_main", False, True), water=mat_transp_main("water_main", (0.05, 0.16, 0.36), 0.42))
+    MS["bill"] = MS["neon"]
 OBJ = dict(surf=SURF.obj(MS["surf"]), smooth=SMOOTH.obj(MS["surf"]), neon=NEON.obj(MS["neon"]), streak=STREAK.obj(MS["streak"]),
-           glass=GLASS.obj(MS["glass"]), ground=GROUND.obj(MS["ground"]), seabed=SEABED.obj(MS["seabed"]), water=WATER.obj(MS["water"]))
+           glass=GLASS.obj(MS["glass"]), ground=GROUND.obj(MS["ground"]), seabed=SEABED.obj(MS["seabed"]), water=WATER.obj(MS["water"]),
+           bill=BILL.obj(MS["bill"]))
 OBJ["water"].visible_shadow = False
+if DAYM:
+    OBJ["streak"].hide_render = True          # by day the trails are cars (city_build.traffic); the rail trains keep their wagons
 # textured sign panels (the MAINFRAME blade): an image emitter, both faces, in both looks
 for si, (corners, img_path) in enumerate(SIGNS):
     me_s = bpy.data.meshes.new("sign_%d" % si)
@@ -486,7 +588,7 @@ for si, (corners, img_path) in enumerate(SIGNS):
     tex.interpolation = "Smart"
     em_s = gs.n("ShaderNodeEmission")
     gs.link(tex.outputs["Color"], em_s.inputs["Color"])
-    em_s.inputs["Strength"].default_value = 3.0 if MODE == "aaa" else 1.0
+    em_s.inputs["Strength"].default_value = (3.0 * (CP.DAY["neon_k"] * 2 if DAYM else 1.0)) if CYC else 1.0
     gs.link(em_s.outputs[0], gs.out.inputs[0])
     me_s.materials.append(ms)
     ob_s = bpy.data.objects.new("sign_%d" % si, me_s)
@@ -524,14 +626,16 @@ def aim(frm, to):
     return (Vector(to) - Vector(frm)).normalized().to_track_quat("-Z", "Y").to_euler()
 
 
-def district_of(x, y):
-    best = None
-    for k, v in O["hq"].items():
-        hx_, hy_ = W(v)
-        d = math.hypot(x - hx_, y - hy_)
-        if best is None or d < best[0]:
-            best = (d, k)
-    return best[1]
+HQ_AB_R = {k: RU.ab(*v) for k, v in O["hq"].items()}
+
+
+def glow_at(x, y):
+    """round 3 (notes 5, 6, 8): the fog glow colour is the influence mix at the point (REBEL_CELL / sprawl: the sprawl
+    glow, no red), and its power follows the urban core with a floor (the light dies slowly into the sprawl)."""
+    a_, b_ = ab_w(x, y)
+    u_ = RU.urban_u(a_, b_)
+    w_, w0_ = RU.district_weights(a_, b_, HQ_AB_R, u_)
+    return RU.glow_mix(w_, w0_), CP.URBAN["glow_floor"] + (1.0 - CP.URBAN["glow_floor"]) * u_
 
 
 # ------------------------------------------------------------------ camera
@@ -543,13 +647,15 @@ cam_d = bpy.data.cameras.new("cam")
 cam_d.type = "PERSP"
 cam_d.sensor_fit = "HORIZONTAL"
 cam_d.sensor_width = 36.0
-cam_d.lens = C["lens"]
+AB_ = os.environ.get("CITY_AB", "")      # round 3c realism A/B: "" current, "b" soft pass, "c" soft + a longer lens from further back
+LENS_K = (50.0 / C["lens"]) if AB_ == "c" else 1.0
+cam_d.lens = C["lens"] * LENS_K
 cam_d.shift_y = C.get("sy", 0.0)
 cam_d.clip_start = 1.0
 cam_d.clip_end = 80000.0
 cam = bpy.data.objects.new("cam", cam_d)
 scene.collection.objects.link(cam)
-cam.location = tgt - fwd * C["dist"]
+cam.location = tgt - fwd * C["dist"] * LENS_K
 cam.rotation_euler = fwd.to_track_quat("-Z", "Y").to_euler()
 scene.camera = cam
 RX, RY = int(C["res"][0] * RES_K), int(C["res"][1] * RES_K)
@@ -562,9 +668,11 @@ scene.world = wd
 wd.use_nodes = True
 bg = next(n for n in wd.node_tree.nodes if n.type == "BACKGROUND")
 
-if MODE == "aaa":
+if CYC:
     A = CP.AAA
+    DY = CP.DAY
     # night sky: a city-glow horizon (violet-magenta) over a deep navy zenith; the sea reflects it
+    # day sky (round 3): a warm hazy horizon under a clear blue zenith, a warm ground bounce below the horizon
     wnt = wd.node_tree
     tco = wnt.nodes.new("ShaderNodeTexCoord")
     sxyz = wnt.nodes.new("ShaderNodeSeparateXYZ")
@@ -572,15 +680,34 @@ if MODE == "aaa":
     mrz = wnt.nodes.new("ShaderNodeMapRange")
     mrz.interpolation_type = "SMOOTHSTEP"
     mrz.inputs["From Min"].default_value = -0.02
-    mrz.inputs["From Max"].default_value = 0.4
+    mrz.inputs["From Max"].default_value = 0.4 if not DAYM else 0.55
     wnt.links.new(sxyz.outputs["Z"], mrz.inputs["Value"])
     mxs = wnt.nodes.new("ShaderNodeMix")
     mxs.data_type = "RGBA"
     wnt.links.new(mrz.outputs[0], mxs.inputs["Factor"])
-    mxs.inputs[6].default_value = (0.045, 0.028, 0.07, 1)
-    mxs.inputs[7].default_value = (0.002, 0.003, 0.009, 1)
-    wnt.links.new(mxs.outputs[2], bg.inputs["Color"])
-    MOON = light("moon", "SUN", (0, 0, 500), A["moon"], (0.55, 0.62, 1.0), rot=(math.radians(35), 0, math.radians(200)))
+    if DAYM:
+        mxs.inputs[6].default_value = (*DY["sky"]["horizon"], 1)
+        mxs.inputs[7].default_value = (*DY["sky"]["zenith"], 1)
+        mrg = wnt.nodes.new("ShaderNodeMapRange")
+        mrg.inputs["From Min"].default_value = -0.08
+        mrg.inputs["From Max"].default_value = 0.0
+        wnt.links.new(sxyz.outputs["Z"], mrg.inputs["Value"])
+        mxg = wnt.nodes.new("ShaderNodeMix")
+        mxg.data_type = "RGBA"
+        wnt.links.new(mrg.outputs[0], mxg.inputs["Factor"])
+        mxg.inputs[6].default_value = (*DY["sky"]["ground"], 1)
+        wnt.links.new(mxs.outputs[2], mxg.inputs[7])
+        wnt.links.new(mxg.outputs[2], bg.inputs["Color"])
+        bg.inputs["Strength"].default_value = DY["sky"]["strength"]
+        el_, az_ = math.radians(DY["sun"]["elev"]), math.radians(DY["sun"]["azim"])
+        sdir = Vector((math.cos(el_) * math.cos(az_), math.cos(el_) * math.sin(az_), math.sin(el_)))
+        MOON = light("sun", "SUN", (0, 0, 500), DY["sun"]["strength"], DY["sun"]["col"], rot=aim((0, 0, 0), tuple(-sdir)))
+        MOON.data.angle = math.radians(DY["sun"]["angle"])
+    else:
+        mxs.inputs[6].default_value = (0.045, 0.028, 0.07, 1)
+        mxs.inputs[7].default_value = (0.002, 0.003, 0.009, 1)
+        wnt.links.new(mxs.outputs[2], bg.inputs["Color"])
+        MOON = light("moon", "SUN", (0, 0, 500), A["moon"], (0.55, 0.62, 1.0), rot=(math.radians(35), 0, math.radians(200)))
     # media: the city fog field (+ haze) and the water's shaft volume
     me = bpy.data.meshes.new("fogbox")
     bmm = bmesh.new()
@@ -591,7 +718,7 @@ if MODE == "aaa":
     FZ = 320.0
     fog.location = (0.0, 0.0, FZ / 2 - 0.5)
     fog.scale = (3600.0, 3600.0, FZ + 1.0)
-    me.materials.append(mat_fog())
+    me.materials.append(mat_haze_day() if DAYM else mat_fog())
     scene.collection.objects.link(fog)
     rx_fog = bpy.data.collections.new("rx_fog")
     scene.collection.children.link(rx_fog)
@@ -612,12 +739,13 @@ if MODE == "aaa":
     mm = bpy.data.materials.new("seamist")
     gm = NB(mm)
     vsm = gm.n("ShaderNodeVolumeScatter")
-    vsm.inputs["Color"].default_value = (0.55, 0.65, 0.9, 1)
-    vsm.inputs["Density"].default_value = SM["density"]
+    vsm.inputs["Color"].default_value = (0.55, 0.65, 0.9, 1) if not DAYM else (*CP.DAY["haze"]["col"], 1)
+    vsm.inputs["Density"].default_value = SM["density"] * (CP.DAY["sea_mist_k"] if DAYM else 1.0)   # by day the far sea dissolves in a pale haze
     vsm.inputs["Anisotropy"].default_value = 0.3
     gm.link(vsm.outputs[0], gm.out.inputs["Volume"])
     me3.materials.append(mm)
     mist = bpy.data.objects.new("seamist", me3)
+    mist.hide_render = DAYM and CP.DAY["sea_mist_k"] <= 0.0     # by day the far haze is the post's depth haze (clean)
     scene.collection.objects.link(mist)
     rx_fog.objects.link(mist)
     # water volume: the lagoon + the near sea (box), under the surface
@@ -646,6 +774,8 @@ if MODE == "aaa":
     GL = []
     for gx in range(-6, 7):
         for gy in range(-6, 7):
+            if DAYM:                          # by day the sun and the sky light the haze; no city glow
+                continue
             x, y = gx * 130.0, gy * 130.0
             a_, b_ = ab_w(x, y)
             if b_ > bwall(a_) + 8:          # over the sea: Tethys' blue sea mist (half power)
@@ -653,16 +783,19 @@ if MODE == "aaa":
                           rot=(math.pi, 0, 0), size=(110, 110), shadow=False)
                 o.light_linking.receiver_collection = rx_fog
                 continue
-            k_ = district_of(x, y)
-            c = DIST[k_]["sec" if k_ == "aurelian" else "hue"]          # Aurelian: travertine / gilt fog
+            c, gk_ = glow_at(x, y)            # round 3: the influence mix (no red), power by the urban core
+            c2 = c
             c = mixc(c, (0.85, 0.75, 0.95), A["glow_mix"])
-            pw = A["glow_area"] * (A["rebel_glow_k"] if k_ == "rebel_cell" else 1.0)   # REBEL_CELL: the strongest red glow
+            if AB_ in ("b", "c"):             # district fog tint -40 %: toward a neutral warm-grey glow
+                c = mixc(c, (0.78, 0.76, 0.82), 0.4)
+                c2 = mixc(c2, (0.78, 0.76, 0.82), 0.4)
+            pw = A["glow_area"] * gk_
             o = light("glow_%d_%d" % (gx, gy), "AREA", (x, y, 1.0), pw, c, rot=(math.pi, 0, 0), size=(110, 110), shadow=False)
             o.light_linking.receiver_collection = rx_fog
             GL.append(o)
             # the sky-glow wash on the roofs (the city glow bounced off the cloud base): district-tinted, soft
-            c2 = mixc(DIST[k_]["hue"], (0.7, 0.68, 0.9), 0.55)
-            light("roofwash_%d_%d" % (gx, gy), "AREA", (x, y, 160.0), A["glow_area"] * A.get("roofwash", 0.35), c2,
+            c2 = mixc(c2, (0.7, 0.68, 0.9), 0.55)
+            light("roofwash_%d_%d" % (gx, gy), "AREA", (x, y, 160.0), A["glow_area"] * A.get("roofwash", 0.35) * gk_, c2,
                   rot=(0, 0, 0), size=(130, 130), shadow=True)
     # beams (art director, revision 2): ONE beam per landmark, rising from its crown (max 7; REBEL_CELL has no crown,
     # so 6). The storyboard round-3 implementation (m44/onecity_cycles.py): the visible shaft is an emissive cone seen
@@ -745,7 +878,7 @@ if MODE == "aaa":
         return ob_
     BEAMS, BEAM_AX = [], []
     for k_, v in sorted(LM.items()):
-        if v[1] is None:
+        if v[1] is None or (DAYM and not DY["beams"]):        # by day no beams (they do not read in daylight)
             continue
         hh = (sum(map(ord, k_)) % 97) / 97.0
         lean = Vector(((hh - 0.5) * BM["lean"], (0.5 - hh) * BM["lean"] * 0.6, 1.0)).normalized()
@@ -762,7 +895,10 @@ if MODE == "aaa":
     print("BEAMS landmarks", [(k_, round((Vector(b_) - Vector(a_)).length / BM["fade"])) for k_, a_, b_ in BEAM_AX], flush=True)
     # landmark key lights (the landmark lighting rig: one key + one hue fill each)
     for k_, s in enumerate(LIGHT_SPOTS):
-        o = light("lmk_%d" % k_, "SPOT", s["loc"], s["power"] * 1.5, s["col"], rot=aim(s["loc"], s["tgt"]), spot=s["cone"], blend=0.6)
+        pk_ = s.get("k", 1.5) * (DY["landmark_spot_k"] if DAYM else 1.0)
+        if pk_ <= 0.0:
+            continue
+        o = light("lmk_%d" % k_, "SPOT", s["loc"], s["power"] * pk_, s["col"], rot=aim(s["loc"], s["tgt"]), spot=s["cone"], blend=s.get("blend", 0.6))
     # water shafts: spots from above the surface, tilted along the moon, linked to the water volume + seabed
     SH = WAT["shafts"]
     RS2 = random.Random(CP.SEEDS["sea"] + 1)
@@ -782,7 +918,8 @@ if MODE == "aaa":
     # the moon and the sky skip both volumes, so the water is not a moonlit milk
     ex = bpy.data.collections.new("moon_excl")
     scene.collection.children.link(ex)
-    ex.objects.link(fog)
+    if not DAYM:                      # by day the sun lights the haze (aerial perspective); the water volume stays its own
+        ex.objects.link(fog)
     ex.objects.link(wv)
     MOON.light_linking.receiver_collection = ex
     for co in ex.collection_objects:
@@ -800,18 +937,22 @@ if MODE == "aaa":
         for b_off in (4.0, 14.0):
             x, y = w_ab(a_ * 9.0, bwall(a_ * 9.0) + 1.2 + b_off)
             tiles_.setdefault((int(math.floor(x / UW["tile"])), int(math.floor(y / UW["tile"]))), 1)
+    uwk_ = DY["underwater_k"] if DAYM else 1.0
     for (tx_, ty_), n_ in sorted(tiles_.items()):
-        o = light("uw_%d_%d" % (tx_, ty_), "AREA", ((tx_ + 0.5) * UW["tile"], (ty_ + 0.5) * UW["tile"], UW["z"]), UW["power"],
+        if uwk_ <= 0.0:
+            break
+        o = light("uw_%d_%d" % (tx_, ty_), "AREA", ((tx_ + 0.5) * UW["tile"], (ty_ + 0.5) * UW["tile"], UW["z"]), UW["power"] * uwk_,
                   UW["col"], rot=(0, 0, 0), size=(UW["tile"], UW["tile"]), shadow=True)
         o.light_linking.receiver_collection = ex
     print("UNDERWATER sky tiles", len(tiles_), flush=True)
-    try:
-        wd.visibility.scatter = False
-    except Exception:
+    if not DAYM:                      # by day the sky light scatters in the haze (the blue of distance)
         try:
-            wd.cycles_visibility.scatter = False
-        except Exception as e:
-            print("world scatter visibility not set", e)
+            wd.visibility.scatter = False
+        except Exception:
+            try:
+                wd.cycles_visibility.scatter = False
+            except Exception as e:
+                print("world scatter visibility not set", e)
     for o in BEAMS:
         pass
     # render settings
@@ -843,6 +984,23 @@ if MODE == "aaa":
     cy.volume_bounces = 0
     cy.transparent_max_bounces = 16
     cy.sample_clamp_indirect = 6.0
+    if DAYM:                          # by day: the sun glints on the glass and the sea stay soft (no fireflies)
+        cy.sample_clamp_direct = 8.0
+        cy.blur_glossy = 1.0
+    if AB_ in ("b", "c"):             # OIDN guided by the albedo + normal passes
+        for _nm, _val in (("denoising_input_passes", "RGB_ALBEDO_NORMAL"), ("denoising_prefilter", "ACCURATE")):
+            try:
+                setattr(cy, _nm, _val)
+            except Exception as e:
+                print("denoise option", _nm, e)
+        try:
+            cy.denoising_use_gpu = True
+        except Exception:
+            pass
+        try:
+            bpy.context.view_layer.cycles.denoising_store_passes = True
+        except Exception as e:
+            print("denoising_store_passes", e)
     cy.volume_step_rate = A["step_rate"]
     cy.volume_max_steps = A["max_steps"]
     cy.seed = 0
@@ -913,7 +1071,7 @@ def anchors(path):
         v = _ou.world_to_camera_view(scene, cam, Vector(p))
         return None if v.z <= 0 else [v.x * RX, (1 - v.y) * RY, v.z]
     A_ = {k: dict(label=P(v[0]), crown=P(v[1]) if v[1] else None, base=P((v[0][0], v[0][1], 0.0))) for k, v in LM.items()}
-    A_["_station"] = P((*STATION["centre"], ZW))
+    A_["_station"] = P((*STATION["centre"], ZW)) if "centre" in STATION else None
     A_["_mainframe"] = P(STATION["mainframe"]) if "mainframe" in STATION else None
     A_["_sprawl"] = [P((*W(c["centre"]), 20.0)) for c in O["clusters"] if c["to"] == "sprawl"]
     A_["_beams"] = {k_: [P(a_), P(b_)] for k_, a_, b_ in globals().get("BEAM_AX", [])}

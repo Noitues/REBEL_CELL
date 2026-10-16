@@ -83,7 +83,7 @@ def tone(x, white=5.0):
     return x * (1 + x / (white * white)) / (1 + x)
 
 
-def aaa(stem, out, target=None):
+def aaa(stem, out, target=None, soft=False):
     T = CP.AAA["targets"]
     target = target or T["median"]
     rgb = np.load(stem + "_rgb.npy").astype(np.float32)
@@ -96,9 +96,11 @@ def aaa(stem, out, target=None):
     l = luma(rgb)
     hi = np.clip(rgb - 0.9, 0, None) * (l[..., None] > 0.9)
     bloom = blur(hi, 6 * sc + 1) * 0.35 + blur(hi, 24 * sc + 1) * 0.25 + blur(hi, 80 * sc + 1) * 0.12
+    if soft:                                          # round 3c realism A/B: bloom halved, no vignette (contrast capped at toe 2.0)
+        bloom = bloom * 0.5
 
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
-    vig = (1 - 0.32 * np.clip(((xx / w - 0.5) ** 2 + (yy / h - 0.5) ** 2 * 0.8) / 0.5, 0, 1) ** 1.5)[..., None]
+    vig = (1 - (0.0 if soft else 0.32) * np.clip(((xx / w - 0.5) ** 2 + (yy / h - 0.5) ** 2 * 0.8) / 0.5, 0, 1) ** 1.5)[..., None]
 
     def finish(k, toe, st=1):
         x = (rgb[::st, ::st] + bloom[::st, ::st]) * k
@@ -119,7 +121,7 @@ def aaa(stem, out, target=None):
     # the toe (a power on the display values) is raised in steps until 25-40 % of the frame sits under 0.10 at the
     # solved median (r3 targets); deterministic, smallest toe that meets the lower bound
     lo_u = T["under_010"][0] + 0.02
-    for toe in (1.0, 1.1, 1.2, 1.3, 1.4, 1.55, 1.7, 1.85, 2.0, 2.2, 2.4):
+    for toe in ((1.0, 1.1, 1.2, 1.3, 1.4, 1.55, 1.7, 1.85, 2.0) if soft else (1.0, 1.1, 1.2, 1.3, 1.4, 1.55, 1.7, 1.85, 2.0, 2.2, 2.4)):
         k = solve(toe)
         u = float((luma(finish(k, toe, 4)) < 0.10).mean())
         if u >= lo_u:
@@ -129,7 +131,85 @@ def aaa(stem, out, target=None):
     s = stats(img)
     s["exposure"] = k
     s["toe"] = toe
+    l_ = luma(img)
+    s["p10"], s["p90"] = float(np.percentile(l_, 10)), float(np.percentile(l_, 90))
+    s["spread"] = s["p90"] - s["p10"]
     print("AAA", out, {kk: round(vv, 4) for kk, vv in s.items()})
+    return img, s
+
+
+# ------------------------------------------------------------------ DAY (round 3)
+def day(stem, out, target=None):
+    """the daytime grade: a light black point (part of the haze veil off), a soft bloom of the sun glints, exposure
+    solved to the day median (no band set yet: city_preset.DAY target_median), an extended-Reinhard shoulder, a gentle
+    contrast and saturation lift, a light vignette."""
+    DY = CP.DAY
+    target = target or DY["target_median"]
+    rgb = np.load(stem + "_rgb.npy").astype(np.float32)
+    bp = DY["black_point"] * np.percentile(rgb.reshape(-1, 3), 5, axis=0).astype(np.float32)
+    rgb = np.clip(rgb - bp, 0, None)
+    # the far aerial perspective (depth pass): toward a pale haze at the level of the lit city, so the sea and the
+    # horizon dissolve cleanly (the sea-mist volume is off by day)
+    DH = DY["depth_haze"]
+    dep = np.load(stem + "_z.npy").astype(np.float32)[..., 0]
+    dep = np.clip(dep, 0, 60000.0)
+    # the depth pass is per-sample noisy where rays pass the transparent water / glass: a median filter steadies it
+    dep = np.asarray(Image.fromarray(dep, mode="F").filter(ImageFilter.MedianFilter(5)), np.float32)
+    f = np.clip(1.0 - np.exp(-np.clip(dep - DH["start"], 0, None) / DH["efold"]), 0, DH["max"])[..., None]
+    lvl = float(np.percentile(luma(rgb), 80))
+    hz = np.array(DY["haze"]["col"], np.float32) * lvl * 1.15
+    rgb = rgb * (1 - f) + hz * f
+    h, w = rgb.shape[:2]
+    sc = w / 3840.0
+    l = luma(rgb)
+    thr = float(np.percentile(l, 99.7))
+    hi = np.clip(rgb - thr, 0, None) * (l[..., None] > thr)
+    bloom = blur(hi, 8 * sc + 1) * 0.25 + blur(hi, 40 * sc + 1) * 0.12
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    vig = (1 - 0.16 * np.clip(((xx / w - 0.5) ** 2 + (yy / h - 0.5) ** 2 * 0.8) / 0.5, 0, 1) ** 1.5)[..., None]
+
+    def finish(k, st=1, con=None):
+        con = DY["contrast"] if con is None else con
+        x = (rgb[::st, ::st] + bloom[::st, ::st]) * k
+        y = srgb(tone(x, DY["white"]))
+        y = DY.get("lift", 0.0) + (1.0 - DY.get("lift", 0.0)) * y      # a shadow floor (the references keep p10 near 0.04)
+        y = np.clip(target + (y - target) * con, 0, 1)            # contrast about the target median
+        lm = y.mean(-1, keepdims=True)
+        y = lm + (y - lm) * DY["sat"]
+        return np.clip(y * vig[::st, ::st], 0, 1)
+
+    def solve_k(con):
+        lo_k, hi_k = 0.02, 200.0
+        for _ in range(36):
+            mid = math.sqrt(lo_k * hi_k)
+            if float(np.median(luma(finish(mid, 4, con)))) < target:
+                lo_k = mid
+            else:
+                hi_k = mid
+        return math.sqrt(lo_k * hi_k)
+    con = DY["contrast"]
+    k = solve_k(con)
+    if DY.get("target_spread"):            # designer r3b: the p90 - p10 spread matched to the references
+        lo_c, hi_c = 0.6, DY.get("contrast_max", 2.4)
+        for _ in range(18):
+            con = (lo_c + hi_c) / 2
+            k = solve_k(con)
+            l4 = luma(finish(k, 4, con))
+            if float(np.percentile(l4, 90) - np.percentile(l4, 10)) < DY["target_spread"]:
+                lo_c = con
+            else:
+                hi_c = con
+        con = (lo_c + hi_c) / 2
+        k = solve_k(con)
+    img = finish(k, 1, con)
+    Image.fromarray((img * 255 + 0.5).astype(np.uint8)).save(out, optimize=True)
+    s = stats(img)
+    s["exposure"] = k
+    s["contrast"] = con
+    l_ = luma(img)
+    s["p10"], s["p90"] = float(np.percentile(l_, 10)), float(np.percentile(l_, 90))
+    s["spread"] = s["p90"] - s["p10"]
+    print("DAY", out, {kk: round(vv, 4) for kk, vv in s.items()})
     return img, s
 
 
@@ -272,7 +352,9 @@ def labels(img_path, anchors_path, out):
 if __name__ == "__main__":
     what = sys.argv[1]
     if what == "aaa":
-        aaa(sys.argv[2], sys.argv[3])
+        aaa(sys.argv[2], sys.argv[3], soft="--soft" in sys.argv)
+    elif what == "day":
+        day(sys.argv[2], sys.argv[3])
     elif what == "main":
         main_post(sys.argv[2], sys.argv[3])
     elif what == "labels":

@@ -131,3 +131,215 @@ Hero values: median 0.140, 28.7 % under 0.10, 0.25 % over 0.85 (exposure 0.882, 
 `D:\rc_scratch\city_all_corps\crops\` were refreshed (the hero crops now show revision 2; the close-up crops are unchanged).
 Still open: the Halcyon and Solace beams sit close to their landmark peaks (0.80 / 0.70 against 1.0 / 0.95). The outer
 ring is quiet now but slightly flat.
+
+## Round 3 (designer review of round 1, 2026-10-16): day + night, transit, influence colours, organic edge
+
+Status: **1920 x 1080 Cycles tests only; waiting for the designer's review before the 4K finals.** The revision-2
+scripts, images and `zoned.json` are backed up in `D:\rc_scratch\city_all_corps\v2b\`. The deliverable PNGs in this
+folder are still revision 2 until the finals; the round-3 tests are in `D:\rc_scratch\city_all_corps\r3test\`.
+
+### What changed, by designer note
+
+1. **Day version** (`mode day`, `city_preset.DAY`). Late-afternoon sun (strength 7.5, warm, elevation 24, azimuth 15,
+   angle 1.2 deg) under a gradient sky (warm hazy horizon, blue zenith, warm ground bounce). A sun- and sky-lit
+   height-falloff haze with low torn banks (aerial perspective; thinner over the bay) replaces the night fog; the
+   sea-mist volume is off (it denoised into blotches) and the far haze is a post depth haze instead (from 1300 BU,
+   e-fold 2600, max 85 %, toward a pale haze at the lit city's 80th-percentile level; the depth pass is median-filtered
+   because it is noisy through the water and glass). Day facades: the district albedo with a soft weathering noise and
+   a 28 % tint of the corp hue (sprawl and REBEL_CELL untinted), glass windows (dark, glossy, mirroring the sky), 10 %
+   of the night window emission. Neon at 22 % of night (signs still glow faintly). No beams, no district glow, no
+   landmark key spots, no underwater area lights; direct-light clamp 8 and glossy blur 1 against glints. Traffic draws
+   become cars (the same draws, `city_build.traffic`). Post `post_city.day`: black point 0.6 x p5, exposure solved to
+   median 0.36 (no band set yet), Reinhard shoulder (white 6), contrast 1.12, saturation 1.12, light vignette.
+2. **Orbital pad** (`ORBITAL_PAD`): the six flood masts, their 70-degree spots, the bright ring light and the
+   camera-side key are gone. Five short masts at the platform edge each carry a housing, a lens and an 11-degree spot
+   aimed at the rocket body (aim points alternate between z 10 and 26): the rocket is keyed, the pad stays dark. Rim
+   lamps at 45 %.
+3. **Aurelian** (`AURELIAN_LM`): three colonnade tiers of 60 round columns (base and entablature bands per tier), the
+   arched wall recessed 1.7 BU behind them (lit gilt arches in the loggia), a solid attic band on top. The cavea is four
+   seating rings of four flat terraces each with vertical risers (stair-stepped, no ramps); a gilt line on each ring's
+   lowest step.
+4. **Highways and trains** (zoning H4 / H5, `city_transit.py`). Highways: the longest arterial street lines that stay
+   1.5 lots clear of every landmark clearance (2 on the lot x axis at deck z 24, 1 on y at z 30, so they cross as
+   stacked decks), each over its whole land span, from 120 lots out in the sprawl to a ramp 6 lots short of the seawall
+   or the drowned quarter. Deck slabs, girders, parapets with a cool edge light, piers on the street centre line every
+   12 BU, sodium lamp masts on the median every 14 BU, dense traffic in two lanes each way (heads warm white, tails
+   red). 52 map buildings standing in the gaps of the arterial runs were removed (the corridor is clear); the ring
+   keeps its blocks off the lines. Metro: one elevated loop (z 12) through a waypoint per landmark corp at 60 % of the
+   way from the centre to its HQ, routed over street centre lines by a Dijkstra with a turn cost (13 corners), off the
+   highway and rail lines where it can; round piers, cyan edge lights, a station at each waypoint (two platforms, a
+   lit canopy), seven lit trains of five cars. The Meridian freight line is re-derived by the same L4 rule from the
+   moved fortress (the BFS is now blocked by every landmark footprint). Its polyline goes to
+   `D:\rc_scratch\city_all_corps\meridian_rail_r3.json`; the round-2 `meridian_rail.json` the HQ kit reads is untouched.
+5. **Colour by HQ influence** (H2, `INFLUENCE`, `city_rules.district_weights` / `draw_district`). Every building (map and
+   inner ring) draws its district: weight exp(-d / 10 lots) per HQ (lambda x 0.75 for REBEL_CELL, x 1.15 for Tethys)
+   against a constant sprawl weight exp(-23 / 10); all corp weights are scaled by the urban factor u (note 6); the draw
+   is seeded per building key. A district is near-solid at its HQ, thins outward and mixes with its neighbours and the
+   sprawl across the borders. The draw sets the building language too. Drowned buildings stay Tethys. Lane hues follow
+   the tile's district. The fog glow colour is the same weight mix (the sprawl counts half so the hues stay readable);
+   its power follows u.
+6. **Organic city edge** (H3, `URBAN`, `city_rules.urban_u`). The urban core is a superellipse (p 3.2, r0 68 lots,
+   squashed toward the coast) broken by seeded harmonics k = 2..7 (20 %) and 2D value noise (cell 11 lots, +-11); u
+   fades over 30 lots. Map buildings past it go lower (down to x 0.55) and dimmer (lit share down to x 0.22) with fewer
+   trims and dimmer lanes; ring buildings inside it become city buildings by the map's own rules (heights, language,
+   colour draw). The arterial trails run on along their own lines into the sprawl (H6, up to 110 lots past the map)
+   and thin out (density and brightness x exp(-d / 40 lots)); highway traffic thins the same way (55 lots). The ring
+   light falls off over 80 lots (was 50), its street glow over 90 (was 60) and is brighter inside the core; the fog
+   glow keeps an 18 % floor outside it.
+7. **HQs pushed apart** (H1, `HQ_LAYOUT`). REBEL_CELL is the centre lot; Meridian at bearing 32 deg / 52 lots, Solace
+   150 / 50, Orbital 208 / 52, Aurelian 268 / 53, Halcyon 326 / 52 (screen plane, 90 = toward the coast); Tethys keeps
+   its pole over the drowned quarter. The minimum HQ spacing goes from about 30 to about 50 lots. New sites are
+   cleared (landmark_r) and refilled outside their footprints; the old HQ plazas of the layout are built over (725
+   refill blocks in all). Tiles under a landmark carry no lanes, lamps or trails.
+8. **REBEL_CELL** wears the sprawl palette (`REBEL_KEYART_PALETTE`): sprawl facades, windows, trims, lane hue and fog
+   glow; no red weighting in the canyon signs, amber / warm white lanterns, no fist windows, no beam (no crown), no
+   `rebel_glow_k`. The canyon language (heights x 0.7, blade and box signs, shop fronts) and the MAINFRAME blade sign
+   (now on the building nearest the centre lot) stay; that blade is the only red.
+
+Also: the outer sprawl ring varies now (22 % of its blocks are one merged building over all four lots, 1.3x taller;
+six concrete / brick tones; height spread 0.72); the metro edge lights are at 1.2 and the train windows at 1.5.
+
+### Round 3 tests (1920 x 1080, Cycles GPU HIP BVH2 OIDN, 32 spp)
+
+| File (`D:\rc_scratch\city_all_corps\r3test\`) | Median | Under 0.10 | Over 0.85 | Exposure | Render |
+|---|---|---|---|---|---|
+| `city_all_corps_night_r3test.png` (+ `_labeled_r3test.png`) | 0.140 | 34.9 % | 0.06 % | 0.751, toe 1.0 | 58 s (build 12 s) |
+| `city_all_corps_day_r3test.png` | 0.360 | 2.0 % | 0.35 % | 1.983 | 29 s (build 11 s) |
+
+Night is inside the AAA-2 band (median 0.14, 25-40 % under 0.10). Day: no band set; reported only. Also
+`zoning_map_r3.png` (the top view: HQs, influence colours, highways, metro, rail, the urban edge contour). CPU previews
+of the pad and the circus: `D:\rc_scratch\city_all_corps\r3prev\dbg_orb_cpu.png`, `dbg_aur_cpu.png`.
+
+### Landmark modules (the swap-in hook)
+
+`city_preset.LANDMARK_MODULES` maps a corp to a Python file. When the path is set and exists, `landmarks.py` loads it
+(`importlib`) and calls its `build(ctx)` instead of the built-in function; unset or missing, the built-in landmark is
+used (a missing path is logged). Meridian (`route_map_graph/hq_meridian_v3/`) and Tethys
+(`route_map_graph/hq_tethys/scripts/tethys_landmark.py`) plug in here; both are `None` today (the current landmarks).
+
+Contract: `build(ctx) -> dict(label=(x, y, z), crown=(x, y, z) or None, hue=(r, g, b))`. `label` anchors the map tag,
+`crown` is where the landmark's one beam starts (None: no beam), `hue` colours the beam. `ctx` (a SimpleNamespace):
+
+| Field | What |
+|---|---|
+| `corp`, `hq` (world BU xy of the HQ lot centre), `hq_lot`, `footprint` (the `LANDMARK_FP` entry: stay inside it) | where to build |
+| `mode` (`aaa` night, `day`, `main` Eevee mainline), `district` (the `DISTRICTS` entry), `seed`, `zw` (sea level), `wet_cells`, `camdir` | context |
+| `SURF` (facade shader; `face(pts, col, uv, wc, wl, wm, bid, wet)`), `SMOOTH`, `NEON` (emitters, col = emission), `GLASS`, `STREAK` | geometry accumulators |
+| `prism`, `box`, `cyl`, `dome`, `bar`, `strip`, `ring_line`, `annulus`, `circle`, `sc`, `mixc` | the primitives of `city_build.py` |
+| `spot_at(target, from, col, power, cone)`, `light_spots` (append dicts with `blend` / `k` for full control) | landmark key lights (off by day) |
+| `station` | Tethys must set `station["centre"] = (x, y)` (the anchors and the close-up use it) |
+| `W`, `O` (the zoned data), `CP` | lots -> world, everything else |
+
+World BU, x east, y north, z up, the dry street at z 0. A module only adds faces and lights.
+
+### Rebuild (round 3)
+
+1. `python zoning.py` (now also places the HQs, draws the districts and the urban factor, picks the highways, routes
+   the metro).
+2. `python run_jobs.py aaa hero <res_k> <spp> <out>` and `python run_jobs.py day hero <res_k> <spp> <out>` (GPU queue;
+   `run_jobs` now lets every other waiting agent go first).
+3. `python post_city.py aaa <out>/hero_aaa <png>` and `python post_city.py day <out>/hero_day <png>`.
+
+CPU previews: `CITY_CPU=1 blender -b -t 4 --factory-startup --python city_build.py -- <aaa|day> <cam> <dir> 0.2 12`.
+New debug cameras: `dbg_orb` (the pad), `dbg_aur` (the circus), `dbg_hw` (the highway cross). The hero camera moved
+(target b 18 -> 9 lots, distance 1100 -> 1180 BU) so Aurelian (now near the camera) stays in frame.
+
+## Round 3b (art director + designer notes on the r3 tests, 2026-10-16)
+
+Status: **new 1080p tests of night and day; waiting for review. The 4K finals are held until the Meridian (Gatehouse
+Gantry, `hq_meridian_v3/`) and Tethys (`hq_tethys/`) landmark modules are approved and can be swapped in** (hook above).
+The revision-3 zoning is backed up as `D:\rc_scratch\city_all_corps\zoning_pre_r3b.py`.
+
+Transport (designer 1-3; zoning block "T", `city_transit.py`; config `CURVES`, `PORT`, `HUB`, `SPOKES`):
+- **No 90-degree turns.** Every highway, rail and metro path is a centripetal Catmull-Rom curve (`city_rules.catmull_rom`,
+  sampled every 0.5 lot). Corridors (half width + 0.35 lot) are cleared of map buildings (941 removed) and the ring keeps
+  its blocks off the exported corridor cells. A landmark-clearance check warns if a curve passes a landmark (none do).
+- **The port.** The freight rail now leaves the fortress's north gate straight, bends once (a gentle S, 5 lots off the
+  chord) and ends in a PORT on the coast stretch a = 62..104 lots (east of the drowned quarter, outside Tethys' water):
+  a raised terminal platform (z 3.6) with a quay wall 4 lots out over the sea, container blocks (3 wide, 1-4 high) in 7
+  rows, 4 yard tracks with waiting wagons, 6 ship-to-shore gantry cranes (orange / white, booms over the water, a
+  container on each spreader, warning lights), 3 container ships moored outside (hull, stern bridge, deck stacks), 9 yard
+  light masts (sodium spots at night). The seawall, its pumps and lamps stop at the port; no drowned ruins in its water.
+  The rail polyline goes to `meridian_rail_r3.json` (the HQ kit's `meridian_rail.json` is untouched).
+- **The Meridian hub.** A ground-level truck ring road (10 BU, 4 lanes of traffic, kerb lamps) runs round the Meridian
+  lot as a rounded square 10 BU outside the landmark footprint (corner radius 16 BU), so the Gatehouse Gantry keeps its
+  lot. Four highway spokes leave it tangentially, ramp up (over 80 BU) to their decks (east and west z 24, south z 30)
+  and run out into the sprawl through config waypoints; the port spur (z 14) ramps down into the port yard. The old
+  straight arterial-line highways are gone. The metro is a smooth closed loop through its six stations.
+
+Night (AD + designer 5, 7):
+- Exposure target median 0.155 (designer: lift to 0.15-0.16 inside the approved 0.14 +- 0.03 band).
+- Orbital: the five edge spots at 3.5e6 (was 3.2e5), so the rocket reads as a lit needle (`rocket_check.py` below).
+- Solace: its key and fill spots x 1.8 (`SOLACE_LIFT`).
+- The organic edge has a block-scale ragged term (`amp_f` 8 lots, cell 4) and stronger noise (`amp` 0.24, `amp_n` 15);
+  ring blocks inside the edge become city buildings by a dithered draw (probability u x 2.5), so the map's diamond
+  outline no longer shows as a line.
+
+Sprawl (designer 6): lower and wider at the same coverage: 45 % of ring blocks are one merged low building over four
+lots (x 0.85), single ring buildings x 0.62 height, 5 % empty lots (was 12 %), 6 % of blocks are parks; the map's own
+buildings past the core edge go down to x 0.45.
+
+Day (AD day notes + designer 4; designer wins where they conflict):
+- Values matched to the references. Measured (sRGB Rec.709 luma; `D:\rc_scratch\city_all_corps\ref_values.py`):
+
+  | Reference | Median | p10 | p90 | Spread | Under 0.10 | Saturation (median) |
+  |---|---|---|---|---|---|---|
+  | `round10_combat_c/combat_day_boss.png` (the in-game day map) | 0.147 | 0.044 | 0.434 | 0.390 | 25.5 % | 0.25 |
+  | `round11_combat_target/.../boss_day.png` (street backdrop) | 0.575 | 0.400 | 0.712 | 0.312 | 0 % | 0.19 |
+  | `round11_combat_target/.../boss_daycool.png` | 0.568 | 0.390 | 0.714 | 0.324 | 0 % | 0.24 |
+  | `route_map_graph/storyboard/mainline_match.jpg` (mainline) | 0.144 | 0.038 | 0.425 | 0.388 | 32.4 % | 0.36 |
+  | r3 day test (rejected: too bright) | 0.360 | 0.173 | 0.661 | 0.488 | 2.0 % | 0.18 |
+
+  The two aerial / map references (the game's day map and the mainline match) sit at median 0.14-0.15, spread 0.39.
+  The boss backdrops are bright street-level illustration (median 0.57) and do not match "much lower". The day now
+  solves exposure to median 0.20 (a step above the night's 0.155, so day still reads as day) and solves the contrast
+  (about the median, capped at 2.0) to the references' spread 0.39, with a shadow floor (lift 0.05) so p10 stays near
+  the references' 0.04.
+- Mood: a hazy smog day. The haze is denser and warm-grey (0.0012 per BU, e-fold 70 BU, banks 0.008), the low warm sun
+  stays (strength 10, elevation 14, azimuth 80, angle 0.5: long crisp shadows) under a cooler, dimmer sky fill
+  (strength 0.6), saturation 1.0.
+- Materials (AD 2): each building draws a family by key (`DAY_MATS`: concrete, a dark glass curtain, brick, rust, pale
+  stone; the sprawl draws from brick / rust / weathered concrete), a roof finish (`DAY_ROOFS`: tar, gravel, green roof,
+  solar, terracotta), the window grid on every facade (glass mask), then the corp tint: 0.28 + 0.32 x exp(-d / 14 lots)
+  from its own HQ (stronger near the HQ, AD 6).
+- Ground (AD 3): streets and the ring's streets are dark asphalt; map plazas are parks (60 %, lawn + tree clumps) or
+  paved squares; 6 % of ring blocks are parks (lawn, a cross of paths, 2-5 clumps of round trees).
+- Sea (AD 4): the sea-mist volume is off; clean water (broad soft swell, roughness 0.09, soft glints) under the post
+  depth haze.
+- Signage (AD 5): the large billboards (blade signs and rooftop holo panels) are their own emitter (`BILL`) at 35 % of
+  the night neon by day; the rest of the neon stays at 22 %; lit windows 18 %.
+
+## Round 3c (designer notes on the r3b: roads, ramps, Meridian bypass, realism diagnostic, 2026-10-16)
+
+Daylight, the port and the rest of r3b are approved. Code: `city_rules.py` (`LotPath`, `intersections`, `hermite`, `slip`,
+`cloverleaf`, `ring_profile`), `zoning.py` (block "T"), `city_transit.py`, `city_world.py` (rail height); config
+`city_preset.py` (`THROUGH`, `RING`, `RAIL_WEST`, `RAMPS`; `SPOKES` is gone).
+
+1. **Perimeter ring highway** (replaces the circular metro loop, which is no longer built; `metro` is `None` in the zoned
+   data). The urban edge (u = 0.5) is scanned every 2 degrees, dilated 14 degrees, smoothed (Gaussian 8 then 4 degrees), pushed
+   4 lots out, held off the coast, the drowned quarter and the port yard (`ring_ok`), then a closed Catmull-Rom through
+   every 4 degrees (1070 samples). Deck z 12, 6.6 BU wide, piers, sodium lamps, two-way traffic. Its corridor is cleared.
+2. **Ramps and interchanges** (`RAMPS`): every ramp is a curved one-way deck (Hermite between two roads, z eased between the
+   heights of the roads at its ends; hub / arterial ends are at ground), with edge lights, lamps, a light-trail lane and a
+   slip (speed-change) lane alongside the road at each elevated end. 36 ramps: hub exits (below), 4 slips at each crossing
+   of a through highway with the ring (diamond), a four-loop **cloverleaf** where the ring crosses the east-west highway in
+   the SW sprawl, a **stack** (two loops, the crossing is at 50 degrees) where the two through highways cross in the core,
+   and on / off ramps down to the arterials at four core crossings (spaced 28 lots).
+3. **Meridian bypassed.** `THROUGH`: the east-west highway (z 24) passes the hub's south-west side and runs on, the
+   north-south one (z 30) passes its west side and runs on to the port (ramping down into the yard, as before); neither
+   starts or ends at the hub. Three exit pairs leave the hub's outer kerb at the kit's S, W and E exits (kit 14.2: S (0, -158),
+   W (-158, -30), E (158, -30) kit units, scaled to the hub kerb, 52 BU: (0, -52), (-52, -10), (52, -10)), each with an
+   on-ramp and an off-ramp to the nearest through highway. The freight rail (`RAIL_WEST`) now comes in from the west
+   along the fort's north side at the level of the train bay, passes the north gate (z 0.7), then bends north-east to the
+   port; the deck climbs only after the gate. The hub's truck ring is untouched.
+4. **Realism diagnostic**: see below (A/B on one night hero frame, `D:\rc_scratch\city_all_corps\realism_ab.jpg`).
+
+### Realism A/B (one night hero frame, 3840 x 2160, `D:\rc_scratch\city_all_corps\realism_ab.jpg`; frames in `ab_a/ ab_b/ ab_c/`)
+
+| | Settings | Median | Under 0.10 | Over 0.85 | Spread | Render |
+|---|---|---|---|---|---|---|
+| (a) | current: 32 spp, 28 mm | 0.155 | 30.3 % | 0.23 % | 0.339 | 225 s |
+| (b) | 80 spp (not 128: 128 would be about 13 min, over the 10 min batch rule), OIDN with albedo + normal guiding (`CITY_AB=b`), bloom x0.5, no vignette, district glow tint -40 %, toe capped at 2.0 (night never needed more than 1.0; the contrast cap applies to the day) | 0.155 | 28.4 % | 0.28 % | 0.328 | 476 s |
+| (c) | (b) + 50 mm lens from 1.79x further back (`CITY_AB=c`) | 0.155 | 28.0 % | 0.39 % | 0.347 | 491 s |
+
+There is no grain in the night post (the day and the mainline have none either), so "grain off" changes nothing. Judge the look in the sheet.

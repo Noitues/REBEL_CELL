@@ -2,6 +2,7 @@
 
 python run_jobs.py main <cam> [res_k]                 Eevee mainline (no lock: a short preview-class render)
 python run_jobs.py aaa <cam>[,<cam>] <res_k> <spp>   Cycles AAA-2: waits for the lock (last in order), renders, releases
+python run_jobs.py day <cam>[,<cam>] <res_k> <spp>   Cycles DAY (round 3): same queue rules
 
 The lock: GPU_LOCK created atomically only when absent and no earlier-ordered agent has a GPU_WAITING_<name> file;
 GPU_WAITING_city_all_corps is kept while waiting and removed on acquiring; release removes our lock only.
@@ -34,7 +35,19 @@ def acquire(what, poll=120):
     wf = os.path.join(Q, "GPU_WAITING_" + ME)
     t0 = time.time()
     while True:
-        early = [n for n in EARLIER if os.path.exists(os.path.join(Q, "GPU_WAITING_" + n))]
+        # city_all_corps is last in the queue order: it lets every other waiting agent go first (round 3: new agents
+        # such as solace_v3 / hq_tethys join the queue), except the ones known to queue after it
+        # (first come, first served among the waiters: only waiters whose file is older than ours go first, so agents
+        # that re-queue after each short batch cannot starve the queue's last agent)
+        def mt(p):
+            try:
+                return os.path.getmtime(p)
+            except OSError:
+                return time.time() + 1e6
+        my_t = mt(wf) if os.path.exists(wf) else time.time()
+        early = sorted(f[len("GPU_WAITING_"):] for f in os.listdir(Q) if f.startswith("GPU_WAITING_")
+                       and f[len("GPU_WAITING_"):] != ME and not f[len("GPU_WAITING_"):].startswith("hq_rev")
+                       and mt(os.path.join(Q, f)) <= my_t)
         if not os.path.exists(LOCK) and not early:
             try:
                 fd = os.open(LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
@@ -77,11 +90,12 @@ if __name__ == "__main__":
     res_k = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
     spp = int(sys.argv[4]) if len(sys.argv) > 4 else 64
     out = os.path.join(CP.SCR, sys.argv[5] if len(sys.argv) > 5 else ("final" if res_k >= 1 else "test"))
-    if mode == "aaa":
-        acquire("aaa %s %s %s" % (",".join(cams), res_k, spp))
+    if all(m in ("aaa", "day") for m in mode.split("+")):       # e.g. aaa+day: both looks in one lock hold
+        acquire("%s %s %s %s" % (mode, ",".join(cams), res_k, spp))
         try:
-            for c in cams:
-                blender(mode, c, out, res_k, spp)
+            for m in mode.split("+"):
+                for c in cams:
+                    blender(m, c, out, res_k, spp)
         finally:
             release()
     else:

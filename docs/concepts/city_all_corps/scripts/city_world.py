@@ -12,26 +12,87 @@ for _b in O["buildings"]:
         MAP_CELLS.add((int(math.floor(_p[0])), int(math.floor(_p[1]))))
 RING_COLS = [(1.0, 0.68, 0.28), (1.0, 0.8, 0.5), (0.45, 0.9, 1.0), (1.0, 0.42, 0.72), (0.9, 0.9, 1.0)]
 RING_NEON = [(1.0, 0.3, 0.7), (0.3, 0.85, 1.0), (0.7, 0.45, 1.0), (1.0, 0.6, 0.2)]
+# round 3 (note 6): the ring keeps its blocks off the highway lines and the arterial extensions (the trails run on into
+# the sprawl), and inside the organic urban core its blocks are CITY buildings (the district language, heights, lit
+# share and the influence colour draw); past the core the ring light fades slowly with distance
+HQ_AB = {k: RU.ab(*v) for k, v in O["hq"].items()}
+CORR = []
+CORR_CELLS = {tuple(c) for c in O.get("corr_cells", [])}      # round 3b: the curved transit corridors + the port
+for _a in O["arterials"]:
+    _k = 0 if _a["axis"] == "x" else 1
+    CORR.append((_a["axis"], _a["line"], _a.get("ext", [_a["a"][_k], _a["b"][_k]])[0], _a.get("ext", [_a["a"][_k], _a["b"][_k]])[1]))
+
+
+def on_corridor(lx, ly):
+    ci, cj = int(math.floor(lx)), int(math.floor(ly))
+    if (ci, cj) in CORR_CELLS:
+        return True
+    for (ax_, ln_, s0_, s1_) in CORR:
+        if ax_ == "x" and cj == ln_ and s0_ - 1 <= lx <= s1_ + 1:
+            return True
+        if ax_ == "y" and ci == ln_ and s0_ - 1 <= ly <= s1_ + 1:
+            return True
+    return False
+
+
+RING_MAT = [(0.22, 0.21, 0.26), (0.27, 0.22, 0.24), (0.30, 0.28, 0.25), (0.20, 0.22, 0.25), (0.33, 0.31, 0.30), (0.26, 0.20, 0.18)]
+
+
+def ring_cell_ok(lx, ly):
+    far_ = abs(lx - CX) + abs(ly - CY) - L1_EDGE
+    if far_ <= 0 or (int(math.floor(lx)), int(math.floor(ly))) in WET_CELLS or any((int(math.floor(lx)) + di, int(math.floor(ly)) + dj) in MAP_CELLS for di in (-1, 0, 1) for dj in (-1, 0, 1)):
+        return False
+    a0_, b0_ = ((lx - CX) - (ly - CY)) / R2, -((lx - CX) + (ly - CY)) / R2
+    if b0_ > bwall(a0_) - 1.2 or abs(a0_) > 200 or b0_ < -200:
+        return False
+    return not on_corridor(lx, ly)
+
+
 n_ring = 0
+n_ring_city = 0
 for gx in range(-246, 258, 3):        # 3-lot blocks: 2 lots of buildings + a 1-lot street (the game's grid continues)
     for gy in range(-246, 258, 3):
-        for (ox, oy) in ((0, 0), (1, 0), (0, 1), (1, 1)):
-            lx, ly = gx + ox + 0.5, gy + oy + 0.5
+        # round 3: 22 % of the blocks are one merged building over all four lots (seeded per block), so the sprawl is
+        # not a carpet of identical boxes
+        cells_ = [(gx + ox + 0.5, gy + oy + 0.5, ox, oy, 1.0) for (ox, oy) in ((0, 0), (1, 0), (0, 1), (1, 1))]
+        blk_ok = all(ring_cell_ok(c_[0], c_[1]) for c_ in cells_)
+        if blk_ok and RU._hash01(7715, gx, gy) < CP.RING_PARK["p"]:
+            # AD r3: a park block (lawn, paths, tree clumps); dark at night, green by day
+            park(W((gx, gy)), W((gx + 2, gy + 2)), random.Random(7716 * 100003 + gx * 1009 + gy))
+            continue
+        if RU._hash01(7713, gx, gy) < CP.URBAN["ring_merge"] and blk_ok:
+            cells_ = [(gx + 1.0, gy + 1.0, 0, 0, 2.0)]
+        for (lx, ly, ox, oy, msz) in cells_:
+            if msz < 1.5 and not ring_cell_ok(lx, ly):
+                continue
             far = abs(lx - CX) + abs(ly - CY) - L1_EDGE
-            if far <= 0 or (int(math.floor(lx)), int(math.floor(ly))) in WET_CELLS or any((int(math.floor(lx)) + di, int(math.floor(ly)) + dj) in MAP_CELLS for di in (-1, 0, 1) for dj in (-1, 0, 1)):
-                continue
             a_, b_ = ((lx - CX) - (ly - CY)) / R2, -((lx - CX) + (ly - CY)) / R2
-            if b_ > bwall(a_) - 1.2 or abs(a_) > 200 or b_ < -200:
-                continue
-            if RR.random() < 0.12:
+            if RR.random() < 0.05:            # AD r3: the sprawl is denser ...
                 continue
             cx_, cy_ = W((lx, ly))
-            h = min(60.0, RR.lognormvariate(math.log(6.0 + 0.03 * far), 0.6))
-            w_ = RR.uniform(0.62, 0.9) * U / 2
-            d_ = RR.uniform(0.62, 0.9) * U / 2
+            h = CP.URBAN["ring_h_k"] * min(60.0, RR.lognormvariate(math.log(6.0 + 0.03 * far), 0.6) * (0.85 if msz > 1.5 else 1.0))   # ... lower, wide (designer r3b)
+            w_ = RR.uniform(0.62, 0.9) * U / 2 * (msz * 0.92 if msz > 1.5 else 1.0)
+            d_ = RR.uniform(0.62, 0.9) * U / 2 * (msz * 0.92 if msz > 1.5 else 1.0)
+            uu_ = RU.urban_u(a_, b_)
+            rkey = 800000 + gx * 1000 + gy + (ox + 2 * oy) * 7919
+            if uu_ > 0.01 and RU._hash01(7714, gx, gy, ox, oy) < uu_ * CP.URBAN["ring_conv"]:     # dithered (AD r3)
+                # a city building (the map's own rules): heights toward the city's, the influence colour draw
+                hc = RR.lognormvariate(math.log(CP.URBAN["ring_city_h"][0]), CP.URBAN["ring_city_h"][1])
+                hh = min(60.0, h + (hc - h) * uu_)
+                w8, w08 = RU.district_weights(a_, b_, HQ_AB, uu_)
+                lq = [[lx - w_ / U, ly - d_ / U], [lx + w_ / U, ly - d_ / U], [lx + w_ / U, ly + d_ / U], [lx - w_ / U, ly + d_ / U]]
+                building(dict(q=lq, z0=0.0, h=hh / KH, ts=1.0, key=rkey, terr=RU.draw_district(rkey, w8, w08, salt=1), u=uu_,
+                              c=[lx, ly], wet=0, sub=0.0, art=0, border=0))
+                n_ring_city += 1
+                continue
             pts = [(cx_ - w_, cy_ - d_), (cx_ + w_, cy_ - d_), (cx_ + w_, cy_ + d_), (cx_ - w_, cy_ + d_)]
-            col = (0.22, 0.21, 0.26) if RR.random() < 0.7 else (0.27, 0.22, 0.24)
-            prism(SURF, pts, 0, h, col, wc=RR.choice(RING_COLS), wl=CP.OUTLINE["ring_wl"] / (1.0 + far / 50.0), wm=0, bid=RR.random())
+            col = sc(RING_MAT[int(RR.random() * len(RING_MAT))], RR.uniform(0.85, 1.15))
+            rtop = None
+            if DAYM:                          # by day the sprawl is rustier: brick / rust / weathered concrete, varied roofs
+                col = sc(RU.pick(CP.DAY_MATS["sprawl"], RU._hash01(7717, gx, gy, ox, oy)), RR.uniform(0.85, 1.15))
+                rtop = RU.pick(CP.DAY_ROOFS, RU._hash01(7718, gx, gy, ox, oy))
+            prism(SURF, pts, 0, h, col, wc=RR.choice(RING_COLS), wl=CP.OUTLINE["ring_wl"] / (1.0 + far / 80.0), wm=0, bid=RR.random(),
+                  top_col=rtop)
             if RR.random() < CP.OUTLINE["ring_lamp_p"]:          # a warm roof lamp (revision 2: lamps carry the ring)
                 box(NEON, cx_ - 0.25, cy_ - 0.25, h + 0.05, cx_ + 0.25, cy_ + 0.25, h + 0.45, (1.0, 0.68, 0.32))
             if RR.random() < CP.OUTLINE["ring_trim_p"]:
@@ -58,8 +119,9 @@ for gx in range(-246, 258, 3):
             q0, q1 = W((p0[0] + o[0], p0[1] + o[1])), W((p1[0] + o[0], p1[1] + o[1]))
             c = RL.choice([(1.0, 0.62, 0.3), (1.0, 0.7, 0.4), (0.5, 0.75, 1.0), (1.0, 0.4, 0.7)])
             major = (p0[0] % 6 == 2) if p0[0] == p1[0] else (p0[1] % 6 == 2)     # every other street is a main road
-            strip(NEON, q0, q1, 0.5, 0.05, sc(c, RL.uniform(0.12, 0.26) * (CP.OUTLINE["ring_major_k"] if major else CP.OUTLINE["ring_minor_k"]) / (1.0 + far / 60.0)))
-print("RING", n_ring, "%.1fs" % (time.time() - T0), flush=True)
+            uu_ = RU.urban_u(a_, b_)          # round 3: brighter inside the organic core, a slow fade past it
+            strip(NEON, q0, q1, 0.5, 0.05, sc(c, RL.uniform(0.12, 0.26) * (CP.OUTLINE["ring_major_k"] if major else CP.OUTLINE["ring_minor_k"]) * (1.0 + 4.0 * uu_) / (1.0 + far / 90.0)))
+print("RING", n_ring, "city-ring", n_ring_city, "%.1fs" % (time.time() - T0), flush=True)
 
 # ------------------------------------------------------------------ Tethys: the drowned quarter's seabed + levee
 TE = DIST["tethys"]
@@ -132,8 +194,17 @@ for ia in range(N_A):
         SEABED.face([(*w_ab(a_, bb), zb) for (a_, bb, zb) in pb], (0.17, 0.19, 0.20), None, wet=1)
         WATER.face([(*w_ab(a_, bb), ZW) for (a_, bb, zb) in pb], (0, 0, 0))
 # drowned ruins in the bay (the old shoreline the sea took, inside the wall) and a few on the shelf outside
+PORT_ = O.get("port")
+
+
+def in_port_a(a_, pad=1.0):
+    return PORT_ is not None and PORT_["a0"] - pad <= a_ <= PORT_["a1"] + pad
+
+
 for k in range(260):
     a_ = RSEA.uniform(-110, 110)
+    if in_port_a(a_, 4.0):              # round 3b: the port's water stays clear (ships moor there)
+        continue
     if bwall(a_) - B_COAST < 3.0 and RSEA.random() < 0.7:
         continue
     inside = RSEA.random() < 0.8 and bwall(a_) - B_COAST > 3.0
@@ -155,6 +226,8 @@ A0, A1, DA = -190.0, 190.0, 2.5
 pts_in = [w_ab(a, bwall(a)) for a in [A0 + DA * k for k in range(int((A1 - A0) / DA) + 1)]]
 pts_out = [w_ab(a, bwall(a) + WALL_W) for a in [A0 + DA * k for k in range(int((A1 - A0) / DA) + 1)]]
 for k in range(len(pts_in) - 1):
+    if in_port_a(A0 + DA * (k + 0.5)):  # round 3b: the port's quay replaces the wall here
+        continue
     q = [pts_in[k], pts_in[k + 1], pts_out[k + 1], pts_out[k]]
     prism(SURF, q, WALL_Z0, WAT["wall_h"], (0.30, 0.31, 0.35), wc=(1.0, 0.91, 0.72), wl=0.05, wm=2, bid=0.3, wet=1,
           top_col=(0.24, 0.24, 0.28))
@@ -166,6 +239,11 @@ for k in range(len(pts_in) - 1):
     p0, p1 = pts_in[k], pts_in[k + 1]
     o0, o1 = pts_out[k], pts_out[k + 1]
     L = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+    if in_port_a(A0 + DA * (k + 0.5), 3.0):
+        arc += L
+        next_lamp = max(next_lamp, arc)
+        next_pump = max(next_pump, arc + 20.0)
+        continue
     bar(NEON, (o0[0], o0[1], ZW + 1.6), (o1[0], o1[1], ZW + 1.6), 0.3, TE["sec"])
     bar(NEON, (o0[0], o0[1], WAT["wall_h"] - 0.6), (o1[0], o1[1], WAT["wall_h"] - 0.6), 0.22, TE["hue"])
     while next_lamp < arc + L:
@@ -247,9 +325,9 @@ RA = CP.RAIL
 ME = DIST["meridian"]
 _mx, _my = W(O["hq"]["meridian"])
 _S = RA["wall_s"]                                               # the container wall line (the fortress S)
-rpts = [(_mx + RA["gate_u"], _my + _S - 2.4)] + [W(p) for p in O["rail"]]     # from inside the north gate
+rpts = [W(p) for p in O["rail"]]     # round 3c: the line comes in from the west, passes the fort's north gate and runs on to the port
 _a_end, _b_end = ab_w(*rpts[-1])
-rpts.append(w_ab(_a_end, bwall(_a_end) + 0.6))                # the jetty out over the bay water to the seawall port
+# round 3b: the line ends in the PORT yard (city_transit builds the port); no jetty
 # resample at 3.5 BU, with the arc length
 RP = [(rpts[0][0], rpts[0][1], 0.0)]
 for k in range(len(rpts) - 1):
@@ -260,14 +338,16 @@ for k in range(len(rpts) - 1):
         t = m / n_
         RP.append((x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, RP[-1][2] + L / n_))
 RAIL_LEN = RP[-1][2]
+_gx, _gy = _mx + RA["gate_u"], _my + _S + RA["gate_out"]                 # the north gate (world BU)
+GATE_S = min(RP, key=lambda q: (math.hypot(q[0] - _gx, q[1] - _gy), q[2]))[2]    # the arc length of the pass-by
 
 
 def rail_z(s):
     """up from the yard (0.7) to the deck (deck_z) over ramp BU, down to the terminal on the seawall at the end."""
-    t = min(1.0, max(0.0, (s - 4.0) / RA["ramp"]))
+    t = min(1.0, max(0.0, (s - GATE_S - 4.0) / RA["ramp"]))     # round 3c: level (the train bay) until the fort, then up
     up = 0.7 + (RA["deck_z"] - 0.7) * t * t * (3 - 2 * t)
     t2 = min(1.0, max(0.0, (RAIL_LEN - s) / RA["end_ramp"]))
-    zt = WAT["wall_h"] + 0.7
+    zt = CP.PORT["z"] + 0.7                                     # round 3b: the port platform
     return min(up, zt + (RA["deck_z"] - zt) * t2 * t2 * (3 - 2 * t2))
 
 
@@ -335,22 +415,8 @@ for (sc0, ln, wagons) in RA["trains"]:                 # revision 2: three train
             s1w, s2w = s_head - 1.0 - kk * 3.2, s_head - 1.0 - kk * 3.2 - 2.8
             pa, pb = rail_at(s1w), rail_at(s2w)
             bar(SURF, (pa[0], pa[1], pa[2] + 1.0), (pb[0], pb[1], pb[2] + 1.0), 1.4, CCW[kk % 4])
-# the port terminal on the seawall at the jetty's end: a container gantry over stacks, orange work lamps
-_ex, _ey, _ = RP[-1][0], RP[-1][1], 0
-_tz = WAT["wall_h"]
-for (ox, oy) in ((-6, -6), (6, -6), (6, 6), (-6, 6)):
-    bar(SURF, (_ex + ox, _ey + oy, _tz), (_ex + ox, _ey + oy, _tz + 16), 0.8, (0.95, 0.42, 0.08))
-bar(SURF, (_ex - 6, _ey - 6, _tz + 16), (_ex + 6, _ey - 6, _tz + 16), 1.0, (0.95, 0.42, 0.08))
-bar(SURF, (_ex - 6, _ey + 6, _tz + 16), (_ex + 6, _ey + 6, _tz + 16), 1.0, (0.95, 0.42, 0.08))
-RPT = random.Random(6108)
-for kk in range(10):
-    bx_, by_ = _ex + RPT.uniform(-5, 4), _ey + RPT.uniform(-5, 4)
-    lv = RPT.randint(0, 2)
-    box(SURF, bx_, by_, _tz + lv * 0.95, bx_ + 2.4, by_ + 0.9, _tz + (lv + 1) * 0.95, RPT.choice(((0.62, 0.24, 0.08), (0.12, 0.34, 0.36), (0.55, 0.12, 0.08))))
-for (ox, oy) in ((-6, -6), (6, 6)):
-    box(NEON, _ex + ox - 0.4, _ey + oy - 0.4, _tz + 16.5, _ex + ox + 0.4, _ey + oy + 0.4, _tz + 17.1, (1.0, 0.55, 0.15))
 # the polyline for the HQ kit (source of truth: this street-tile search): world BU, the corners with their deck z
-_rc = [rpts[0]] + [W(p) for p in O["rail"]] + [rpts[-1]]
+_rc = [rpts[0]] + [W(p) for p in O["rail"]]
 _rs, _acc = [0.0], 0.0
 for _k in range(1, len(_rc)):
     _acc += math.hypot(_rc[_k][0] - _rc[_k - 1][0], _rc[_k][1] - _rc[_k - 1][1])

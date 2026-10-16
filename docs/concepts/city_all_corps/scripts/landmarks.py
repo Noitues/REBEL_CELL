@@ -224,8 +224,8 @@ def solace():
     for ph in (0.0, math.pi):
         c = cpos(ph, z1 + rt)
         box(NEON, c.x - 0.5, c.y - 0.5, c.z, c.x + 0.5, c.y + 0.5, c.z + 1.2, (1.0, 0.25, 0.25))
-    spot_at((hx, hy, 40), (hx + 70, hy - 70, 10), (0.85, 1.0, 0.9), 1.6e6, 40)
-    spot_at((hx, hy, 50), (hx - 50, hy - 80, 5), D["hue"], 1.2e6, 36)
+    spot_at((hx, hy, 40), (hx + 70, hy - 70, 10), (0.85, 1.0, 0.9), 1.6e6 * CP.SOLACE_LIFT, 40)   # designer r3b: a little brighter
+    spot_at((hx, hy, 50), (hx - 50, hy - 80, 5), D["hue"], 1.2e6 * CP.SOLACE_LIFT, 36)
     return (hx, hy, z1 + 12), (hx, hy, z1 + 3), D["hue"]
 
 
@@ -321,21 +321,26 @@ def orbital():
         dx_, dy_ = hx + (R - 4.5) * math.cos(t), hy + (R - 4.5) * math.sin(t)
         cyl(SURF, dx_, dy_, 3.4, 5.5, 1.4, 10, steel)
         annulus(SURF, dx_, dy_, 8.0, 0.01, 3.2, (0.85, 0.88, 0.92), n=14, z1=6.0)
-    # the key: white on the rocket from the camera side, a cool rim from behind
-    # the floodlit apron (art review): six flood masts on the rim light the podium disc, a light ring round its edge
-    for k in range(6):
-        t = 2 * math.pi * k / 6 + 0.25
-        mx_, my_ = hx + (R - 1.2) * math.cos(t), hy + (R - 1.2) * math.sin(t)
-        bar(SURF, (mx_, my_, 3.4), (mx_, my_, 15.0), 0.4, (0.5, 0.52, 0.58))
-        box(NEON, mx_ - 0.7, my_ - 0.7, 15.0, mx_ + 0.7, my_ + 0.7, 15.6, (1.0, 0.97, 0.9))
-        spot_at((hx + (mx_ - hx) * -0.3, hy + (my_ - hy) * -0.3, 3.4), (mx_, my_, 15.3), (1.0, 0.96, 0.9), 2.5e5, 70)
-    ring_line(NEON, hx, hy, 3.5, R - 0.6, 0.55, (0.85, 0.93, 1.0), n=64)
-    for k in range(32):                       # rim lamps
+    # round 3 (designer note 2): no floodlit disc. Short spotlight masts at the platform edge, each aimed at the
+    # rocket body (alternating low / high aim points), tight cones, so the rocket is keyed and the pad stays dark
+    OP = CP.ORBITAL_PAD
+    for k in range(OP["n"]):
+        t = 2 * math.pi * k / OP["n"] + 0.4
+        mx_, my_ = hx + (R - 1.4) * math.cos(t), hy + (R - 1.4) * math.sin(t)
+        mz_ = 3.4 + OP["mast_h"]
+        bar(SURF, (mx_, my_, 3.4), (mx_, my_, mz_), 0.35, (0.5, 0.52, 0.58))
+        aimz = OP["aim_z"][0] + (OP["aim_z"][1] - OP["aim_z"][0]) * ((k * 3) % OP["n"]) / max(1, OP["n"] - 1)
+        tgt = Vector((hx + rr_ * 0.0, hy, aimz))
+        hd = (tgt - Vector((mx_, my_, mz_))).normalized()
+        lp = Vector((mx_, my_, mz_)) + hd * 0.7
+        box(SURF, mx_ - 0.6, my_ - 0.6, mz_ - 0.4, mx_ + 0.6, my_ + 0.6, mz_ + 0.5, (0.18, 0.19, 0.22))       # the lamp housing
+        box(NEON, lp.x - 0.35, lp.y - 0.35, lp.z - 0.3, lp.x + 0.35, lp.y + 0.35, lp.z + 0.3, (1.0, 0.97, 0.9))   # the lens
+        LIGHT_SPOTS.append(dict(loc=tuple(lp + hd * 0.4), tgt=tuple(tgt), col=(1.0, 0.97, 0.92), power=OP["power"],
+                                cone=OP["cone"], blend=OP["blend"], k=1.0))
+    for k in range(32):                       # rim lamps (dimmer: the pad is not lit)
         t = 2 * math.pi * k / 32
         box(NEON, hx + (R + 0.4) * math.cos(t) - 0.2, hy + (R + 0.4) * math.sin(t) - 0.2, 1.6,
-            hx + (R + 0.4) * math.cos(t) + 0.2, hy + (R + 0.4) * math.sin(t) + 0.2, 2.0, (0.75, 0.88, 1.0))
-    spot_at((hx, hy, 18), (hx + 55, hy - 60, 45), (1.0, 0.98, 0.95), 1.6e6, 16)
-    spot_at((hx, hy, 18), (hx - 40, hy + 40, 50), (0.7, 0.8, 1.0), 0.6e6, 16)
+            hx + (R + 0.4) * math.cos(t) + 0.2, hy + (R + 0.4) * math.sin(t) + 0.2, 2.0, sc((0.75, 0.88, 1.0), OP["rim_lamp_k"]))
     return (hx, hy, 52), (tx, ty, H + 9), D["hue"]
 
 
@@ -346,23 +351,47 @@ def aurelian():
     tr = D["mat"][0]
     A, Bk = 31.0, 0.8           # semi-major (x), minor/major ratio
     n = 64
-    tiers = 4
+    tiers = 3                   # round 3 (designer note 3): three COLONNADE tiers (round columns are the outer wall) ...
     th = 5.0
-    # outer wall: four arcade tiers (lit gilt arches), a cornice per tier
+    attic = 3.0                 # ... under a solid attic band
+    AL = CP.AURELIAN_LM
+    rec = AL["recess"]
     for k in range(tiers):
         z0, z1 = k * th, (k + 1) * th
-        pts = circle(hx, hy, A, n, ry=A * Bk)
-        prism(SURF, pts, z0, z1, sc(tr, 1.0 - 0.04 * k), top=False, wc=(1.0, 0.76, 0.42), wl=0.8 if k < 3 else 0.0, wm=4 if k < 3 else 0,
-              bid=0.1 * k, uvs=(1.6 / 3.4, 1.9 / th), vz0=0.0)
-        ring_line(SURF, hx, hy, z1, A + 0.2, 0.5, sc(tr, 1.05), n=n, ry=A * Bk + 0.2)
-    ring_line(NEON, hx, hy, tiers * th + 0.3, A + 0.25, 0.3, D["sec"], n=n, ry=A * Bk + 0.25)
-    # the cavea: four seating rings stepping down to the arena, each ring edge in verdigris
+        # the wall stands back behind the columns: lit gilt arches deep in the loggia
+        prism(SURF, circle(hx, hy, A - rec, n, ry=(A - rec) * Bk), z0, z1, sc(tr, 0.86 - 0.03 * k), top=False, wc=(1.0, 0.76, 0.42),
+              wl=0.8, wm=4, bid=0.1 * k, uvs=(1.6 / 3.4, 1.9 / th), vz0=0.0)
+        # the colonnade: round columns on the outer ellipse, a base and an entablature band per tier
+        for m in range(AL["cols"]):
+            t = 2 * math.pi * (m + 0.5 * (k % 2 == 1) * 0) / AL["cols"]
+            cx_, cy_ = hx + A * math.cos(t), hy + A * Bk * math.sin(t)
+            cyl(SMOOTH, cx_, cy_, z0 + 0.25, z1 - 0.7, AL["col_r"], 10, sc(tr, 1.04 - 0.03 * k))
+        prism(SURF, circle(hx, hy, A + AL["col_r"] + 0.25, n, ry=A * Bk + AL["col_r"] + 0.25), z0, z0 + 0.25, sc(tr, 0.95), top=False)
+        prism(SURF, circle(hx, hy, A + AL["col_r"] + 0.35, n, ry=A * Bk + AL["col_r"] + 0.35), z1 - 0.7, z1, sc(tr, 1.05), top=False)
+        annulus(SURF, hx, hy, z1, A - rec, A + AL["col_r"] + 0.35, sc(tr, 1.0), n=n, k0=Bk, k1=(A * Bk + AL["col_r"] + 0.35) / (A + AL["col_r"] + 0.35))
+        annulus(SURF, hx, hy, z1 - 0.7, A - rec, A + AL["col_r"] + 0.35, sc(tr, 0.7), n=n, k0=Bk, k1=(A * Bk + AL["col_r"] + 0.35) / (A + AL["col_r"] + 0.35))
+    zt_ = tiers * th
+    prism(SURF, circle(hx, hy, A + 0.2, n, ry=A * Bk + 0.2), zt_, zt_ + attic, sc(tr, 0.97), top=False, wc=(1.0, 0.8, 0.5), wl=0.25, wm=0,
+          bid=0.35)
+    ring_line(SURF, hx, hy, zt_ + attic, A + 0.35, 0.5, sc(tr, 1.05), n=n, ry=A * Bk + 0.35)
+    ring_line(NEON, hx, hy, zt_ + attic + 0.3, A + 0.4, 0.3, D["sec"], n=n, ry=A * Bk + 0.4)
+    # the cavea: four seating rings stair-stepped down to the arena (flat terraces + risers), each ring edge gilt
     rs = [A - 0.5, A * 0.86, A * 0.72, A * 0.6, A * 0.48]
-    zs = [tiers * th, 15.0, 10.5, 6.5, 3.0]
+    zs = [zt_ + attic, 15.0, 10.5, 6.5, 3.0]
+    st_ = AL["steps"]
+    terr_ = []                                   # (outer r, inner r, z, ring) for every terrace, top to bottom
     for k in range(4):
-        annulus(SURF, hx, hy, zs[k], rs[k + 1], rs[k], sc(tr, 0.82 - 0.05 * k), n=n, k0=Bk, k1=Bk, z1=zs[k + 1] + 1.2)
-        prism(SURF, circle(hx, hy, rs[k + 1], n, ry=rs[k + 1] * Bk), zs[k + 1], zs[k + 1] + 1.2, sc(tr, 0.7), top=False)
-        ring_line(NEON, hx, hy, zs[k + 1] + 1.25, rs[k + 1], 0.32, D["sec"], n=n, ry=rs[k + 1] * Bk)
+        z_top, z_bot = zs[k], zs[k + 1] + 1.2
+        for m in range(st_):
+            ro = rs[k] - (rs[k] - rs[k + 1]) * m / st_
+            ri = rs[k] - (rs[k] - rs[k + 1]) * (m + 1) / st_
+            terr_.append((ro, ri, z_top - (z_top - z_bot) * (m + 0.5) / st_, k, m))
+    for i_, (ro, ri, zm, k, m) in enumerate(terr_):
+        zn = terr_[i_ + 1][2] if i_ + 1 < len(terr_) else zs[4]     # the riser drops to the next terrace (the arena last)
+        annulus(SURF, hx, hy, zm, ri, ro, sc(tr, (0.84 if m % 2 == 0 else 0.76) - 0.04 * k), n=n, k0=Bk, k1=Bk)
+        prism(SURF, circle(hx, hy, ri, n, ry=ri * Bk), zn, zm, sc(tr, 0.58), top=False)
+        if m == st_ - 1:
+            ring_line(NEON, hx, hy, zm + 0.05, ri, 0.32, D["sec"], n=n, ry=ri * Bk)
     # the arena: lit sand, THE ROSTRUM (porphyry plinth, colonnade ring, the core column with lit rings), laurel holo
     prism(NEON, circle(hx, hy, rs[4], n, ry=rs[4] * Bk), 0.0, 3.0, sc((1.0, 0.72, 0.42), 0.35), top=True)
     cyl(SURF, hx, hy, 3.0, 4.2, 5.0, 20, (0.23, 0.08, 0.15))
@@ -486,8 +515,7 @@ def rebel_cell():
     'tenement') with the fist subtle in red windows, and the red MAINFRAME blade sign (round 33 v4, locked) on a shop
     front. Rule: the REBEL_CELL building nearest the Cell's CORE node with a camera-facing street face >= 4 BU and at
     least 10 BU tall carries it at that face's corner, out over the street (3 x 12 BU, the sign's own 1:4 aspect)."""
-    net = json.load(open(CP.NET36))
-    core = next(nd for nd in net["nodes"] if nd["state"] == "core")
+    core = dict(lot=O["hq"]["rebel_cell"])        # round 3: the Cell is the city centre (its lot is the rule's anchor)
     best = None
     for b in O["buildings"]:
         if b["terr"] != "rebel_cell" or b["h"] * KH < 10 or b.get("wet"):
@@ -517,17 +545,41 @@ def rebel_cell():
     spot_at((px, py, 8.0), (px + nx * 6 + ux_ * 3, py + ny * 6 + uy_ * 3, 3.0), (1.0, 0.12, 0.08), 3.0e4, 70)
     STATION["mainframe"] = (px + nx * 1.8, py + ny * 1.8, 8.4)
     print("MAINFRAME on building", b["key"], "at", (round(px), round(py)), flush=True)
-    pts = [p for seg in O["fist"] for p in seg]
-    if pts:
-        fx = sum(p[0] for p in pts) / len(pts)
-        fy = sum(p[1] for p in pts) / len(pts)
+    x, y = W(O["hq"]["rebel_cell"])
+    return (x, y, 34), None, DIST["rebel_cell"]["hue"]          # no crown: no beam (note 8)
+
+
+# ------------------------------------------------------------------ the landmark-module hook (round 3)
+def landmark_ctx(corp):
+    """What an external landmark module gets (documented in NOTES.md, 'Landmark modules'). Everything is in world BU
+    (x east, y north, z up; the dry street is z 0, the sea level ZW); the accumulators take faces with per-face colour."""
+    import types
+    return types.SimpleNamespace(
+        corp=corp, hq=hq_w(corp), hq_lot=tuple(O["hq"][corp]), footprint=CP.LANDMARK_FP.get(corp), mode=MODE,
+        district=DIST[corp], seed=CP.SEEDS["landmark"], zw=ZW, wet_cells=WET_CELLS, camdir=tuple(CAMDIR),
+        SURF=SURF, SMOOTH=SMOOTH, NEON=NEON, GLASS=GLASS, STREAK=STREAK,
+        prism=prism, box=box, cyl=cyl, dome=dome, bar=bar, strip=strip, ring_line=ring_line, annulus=annulus,
+        circle=circle, sc=sc, mixc=mixc, spot_at=spot_at, light_spots=LIGHT_SPOTS, station=STATION, W=W, O=O, CP=CP)
+
+
+def landmark_from_module(corp, path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("lm_%s" % corp, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    r_ = mod.build(landmark_ctx(corp))
+    return tuple(r_["label"]), (tuple(r_["crown"]) if r_.get("crown") else None), tuple(r_["hue"])
+
+
+BUILTIN_LM = (("halcyon", halcyon), ("meridian", meridian), ("solace", solace), ("orbital", orbital),
+              ("aurelian", aurelian), ("tethys", tethys), ("rebel_cell", rebel_cell))
+for _k, _fn in BUILTIN_LM:
+    _mp = CP.LANDMARK_MODULES.get(_k)
+    if _mp and os.path.exists(_mp):
+        LM[_k] = landmark_from_module(_k, _mp)
+        print("LANDMARK", _k, "from module", _mp, flush=True)
     else:
-        fx, fy = O["hq"]["rebel_cell"]
-    x, y = W((fx, fy))
-    return (x, y, 34), None, DIST["rebel_cell"]["hue"]
-
-
-for _k, _fn in (("halcyon", halcyon), ("meridian", meridian), ("solace", solace), ("orbital", orbital),
-                ("aurelian", aurelian), ("tethys", tethys), ("rebel_cell", rebel_cell)):
-    LM[_k] = _fn()
-    print("LANDMARK", _k, flush=True)
+        if _mp:
+            print("LANDMARK", _k, "module missing, built-in used:", _mp, flush=True)
+        LM[_k] = _fn()
+        print("LANDMARK", _k, flush=True)

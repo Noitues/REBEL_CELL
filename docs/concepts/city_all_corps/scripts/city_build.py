@@ -30,10 +30,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.dont_write_bytecode = True
 import city_preset as CP  # noqa: E402
+import city_rules as RU  # noqa: E402
 
 T0 = time.time()
 _argv = sys.argv[sys.argv.index("--") + 1:]
 MODE, CAMK, OUTDIR = _argv[0], _argv[1], _argv[2]
+CYC = MODE in ("aaa", "day")          # Cycles looks: aaa = the AAA-2 night, day = the round-3 daytime look
+DAYM = MODE == "day"
 RES_K = float(_argv[3]) if len(_argv) > 3 else 1.0
 SPP = int(_argv[4]) if len(_argv) > 4 else 64
 os.makedirs(OUTDIR, exist_ok=True)
@@ -153,6 +156,7 @@ GROUND = Acc("ground")
 SEABED = Acc("seabed")
 WATER = Acc("water")
 STREAK = Acc("streak")      # traffic light-streaks (their own emitter strength)
+BILL = Acc("bill")          # the larger billboards (blade signs, rooftop holo panels): their own day strength (AD r3)
 
 
 # ------------------------------------------------------------------ primitives
@@ -279,24 +283,67 @@ def seen(a, c, cxq, cyq):
     return nx * CAMDIR.x + ny * CAMDIR.y > 0.05, (nx, ny), L
 
 
+def lerp(a, b, t):
+    return a + (b - a) * t
+
+
+PK = CP.PARKS
+
+
+def tree_clumps(x0, y0, x1, y1, rr):
+    """AD r3: tree clumps inside a rectangle (world BU): a few clumps of round crowns on short trunks."""
+    for _ in range(rr.randint(*PK["clumps"])):
+        cx_, cy_ = rr.uniform(min(x0, x1) + 1.0, max(x0, x1) - 1.0), rr.uniform(min(y0, y1) + 1.0, max(y0, y1) - 1.0)
+        for _ in range(rr.randint(*PK["trees"])):
+            r_ = rr.uniform(*PK["r"])
+            tx, ty = cx_ + rr.uniform(-2.2, 2.2), cy_ + rr.uniform(-2.2, 2.2)
+            if not (min(x0, x1) + r_ < tx < max(x0, x1) - r_ and min(y0, y1) + r_ < ty < max(y0, y1) - r_):
+                continue
+            bar(SURF, (tx, ty, 0.0), (tx, ty, r_ * 1.1), 0.22, (0.16, 0.12, 0.09))
+            dome(SMOOTH, tx, ty, r_ * 1.6, r_, sc(rr.choice(PK["tree_cols"]), rr.uniform(0.8, 1.15)), n=7, rings=2, hemi=False)
+
+
+def park(p0, p1, rr):
+    """a park: lawn, a cross of paths, tree clumps (world BU corners p0, p1)."""
+    (x0, y0), (x1, y1) = p0, p1
+    GROUND.face([(x0, y0, 0.02), (x1, y0, 0.02), (x1, y1, 0.02), (x0, y1, 0.02)], PK["lawn"])
+    mx_, my_ = (x0 + x1) / 2, (y0 + y1) / 2
+    strip(GROUND, (x0, my_), (x1, my_), 0.9, 0.03, PK["path"])
+    strip(GROUND, (mx_, y0), (mx_, y1), 0.9, 0.03, PK["path"])
+    tree_clumps(x0, y0, x1, y1, rr)
+
+
 def building(b):
     d = b["terr"]
-    D = DIST[d]
-    lang = D["lang"]
+    D = RU.palette(d)                  # round 3: REBEL_CELL wears the sprawl palette (note 8); the language stays its own
+    lang = DIST[d]["lang"]
     r = random.Random(b["key"] * 7 + 13)
     q = [W(p) for p in b["q"]]
     n = len(q)
     sub = b.get("sub", 0.0)
     wet = b.get("wet", 0)
+    uu = 1.0 if wet else b.get("u", 1.0)          # the urban core factor (note 6): low and dim past the organic edge
     RSIDE = b.get("rail_side", 0)      # beside the Meridian viaduct: a plain roof under the side cap (art director ruling)
     z0 = b["z0"] * KH - sub
-    h = b["h"] * KH * (CP.REBEL_H if d == "rebel_cell" else 1.0)     # REBEL_CELL: the low street canyon (art review)
+    h = b["h"] * KH * (CP.REBEL_H if d == "rebel_cell" else 1.0) * lerp(CP.URBAN["h_k"][0], CP.URBAN["h_k"][1], uu)
     z1 = z0 + h
     ts = b["ts"]
     cxq, cyq = sum(p[0] for p in q) / n, sum(p[1] for p in q) / n
     col = sc(D["mat"][abs(b["key"]) % len(D["mat"])], r.uniform(0.85, 1.12))
+    roof_day = None
+    if DAYM:
+        # AD r3 (day test 2): a material family per building (concrete, glass curtain, brick, rust, stone; the sprawl
+        # rustier), a roof finish (tar, gravel, green, solar, terracotta), then the corp tint, stronger near its HQ
+        DM = CP.DAY_MATS
+        fam = RU.pick(DM["sprawl" if d in ("", "rebel_cell") else "city"], RU._hash01(7720, b["key"]))
+        col = DM["glass"] if fam == "glass" else mixc(col, fam, DM["k"])
+        roof_day = RU.pick(CP.DAY_ROOFS, RU._hash01(7721, b["key"]))
+        if d not in ("", "rebel_cell"):
+            hq_ = O["hq"][d]
+            dh = math.hypot(b["c"][0] - hq_[0], b["c"][1] - hq_[1]) if "c" in b else 99.0
+            col = mixc(col, sc(D["hue"], 0.55), min(0.75, CP.DAY["tint"] + CP.DAY["tint_near"] * math.exp(-dh / CP.DAY["tint_r"])))
     wc = D["win"][r.randrange(len(D["win"]))]
-    wl = D["lit"] * r.uniform(0.55, 1.35)
+    wl = D["lit"] * r.uniform(0.55, 1.35) * lerp(CP.URBAN["lit_k"][0], CP.URBAN["lit_k"][1], uu)
     bid = r.random()
     wm = 0
     if b.get("crest"):            # round 34: the fist in red windows (subtle: SEQ 2 "lit", not the full blaze)
@@ -363,7 +410,7 @@ def building(b):
         top = zt + rad * 1.5
     else:
         prism(SURF, q, z0, z1, col, ts=ts, wc=wc, wl=wl, wm=(2 if lang == "hull" else wm), bid=bid, wet=wet,
-              top_col=sc(col, 1.05))
+              top_col=roof_day or sc(col, 1.05))
         top = z1
         if lang == "roman" and ts > 0.99:
             # colonnade on the street faces (the ground floor arcade), cornices every 4 floors, pediment / parapet
@@ -437,7 +484,7 @@ def building(b):
             # signs (vertical neon, out over the narrow street), stacked box signs between the floors, a lit shop
             # front with an awning; tall roofs carry a holo panel. Palette: TOKYO (pink, cyan, amber, white, violet, red)
             TOKYO = [(1.0, 0.2, 0.45), (0.2, 0.9, 1.0), (1.0, 0.65, 0.2), (1.0, 0.95, 0.85), (0.85, 0.3, 1.0), (1.0, 0.12, 0.1)]
-            TOKYO_R = [(1.0, 0.12, 0.1)] * 4 + [(1.0, 0.2, 0.45)] * 2 + TOKYO      # red-weighted (art review)
+            TOKYO_R = TOKYO[:5]          # round 3 (note 8): no red weighting, no red; the canyon wears the mixed sign palette
             for i in range(n):
                 j = (i + 1) % n
                 a, c = q[i], q[j]
@@ -454,7 +501,7 @@ def building(b):
                     out = r.uniform(0.5, 1.3)
                     px, py = a[0] + ux_ * t0, a[1] + uy_ * t0
                     sc_ = r.choice(TOKYO_R)
-                    NEON.face([(px + nx * 0.1, py + ny * 0.1, zb), (px + nx * out, py + ny * out, zb), (px + nx * out, py + ny * out, zt),
+                    BILL.face([(px + nx * 0.1, py + ny * 0.1, zb), (px + nx * out, py + ny * out, zb), (px + nx * out, py + ny * out, zt),
                                (px + nx * 0.1, py + ny * 0.1, zt)], sc(sc_, 0.85))
                 if vis:
                     for kk in range(r.randint(1, 4)):                     # stacked box signs between the floors
@@ -482,12 +529,12 @@ def building(b):
                             lx_ = a[0] + (c[0] - a[0]) * t + nx * 1.4
                             ly_ = a[1] + (c[1] - a[1]) * t + ny * 1.4
                             lz = 3.4 - sag
-                            lc = (1.0, 0.18, 0.1) if (m + kk) % 3 else (1.0, 0.6, 0.2)
+                            lc = (1.0, 0.62, 0.26) if (m + kk) % 3 else (1.0, 0.86, 0.6)     # amber / warm white (no red yet)
                             box(NEON, lx_ - 0.13, ly_ - 0.13, lz - 0.18, lx_ + 0.13, ly_ + 0.13, lz + 0.12, lc)
             if h > 12 and r.random() < 0.3 and not RSIDE:                                # rooftop holo panel, facing the camera
                 hc = r.choice(TOKYO[:3] + TOKYO[4:])
                 wv = r.uniform(3.0, 6.0)
-                NEON.face([(cxq + 0.7 * wv / 2, cyq + 0.7 * wv / 2, z1 + 1), (cxq - 0.7 * wv / 2, cyq - 0.7 * wv / 2, z1 + 1),
+                BILL.face([(cxq + 0.7 * wv / 2, cyq + 0.7 * wv / 2, z1 + 1), (cxq - 0.7 * wv / 2, cyq - 0.7 * wv / 2, z1 + 1),
                            (cxq - 0.7 * wv / 2, cyq - 0.7 * wv / 2, z1 + 1 + wv * 0.6), (cxq + 0.7 * wv / 2, cyq + 0.7 * wv / 2, z1 + 1 + wv * 0.6)],
                           sc(hc, 0.6))
         if lang == "tenement" and ts > 0.99 and small > 2 and r.random() < 0.3:
@@ -511,7 +558,7 @@ def building(b):
         if lang == "sprawl" and ts > 0.99 and h > 14 and r.random() < 0.16 and not RSIDE:
             hc = r.choice([(1.0, 0.3, 0.7), (0.3, 0.9, 1.0), (0.7, 0.45, 1.0), (1.0, 0.65, 0.2)])
             wv = r.uniform(3.0, 6.0)
-            NEON.face([(cxq + 0.7 * wv / 2, cyq + 0.7 * wv / 2, z1 + 1), (cxq - 0.7 * wv / 2, cyq - 0.7 * wv / 2, z1 + 1),
+            BILL.face([(cxq + 0.7 * wv / 2, cyq + 0.7 * wv / 2, z1 + 1), (cxq - 0.7 * wv / 2, cyq - 0.7 * wv / 2, z1 + 1),
                        (cxq - 0.7 * wv / 2, cyq - 0.7 * wv / 2, z1 + 1 + wv * 0.6), (cxq + 0.7 * wv / 2, cyq + 0.7 * wv / 2, z1 + 1 + wv * 0.6)],
                       sc(hc, 0.75), None, wet=wet)
         # the district neon crown trim (the district reads by its hue from above)
@@ -519,6 +566,7 @@ def building(b):
                   "hull": 0.22, "sprawl": 0.20}[lang]
         if not (b.get("art") or b.get("border")):
             trim_p *= CP.OUTLINE["trim_off_k"]          # art review: no wireframe grid (full trims on arterials / borders)
+        trim_p *= 0.25 + 0.75 * uu                      # round 3: fewer past the organic edge
         if lang == "roman":
             hue = D["sec"]                              # Aurelian: gilt trims (verdigris only on domes)
         if r.random() >= trim_p and ts > 0.99 and small > 1.6:
@@ -569,20 +617,29 @@ for _ly in range(-300, 312):
             _run = _lx
         elif not _ok and _run is not None:
             _q = [W((_run, _ly)), W((_lx, _ly)), W((_lx, _ly + 1)), W((_run, _ly + 1))]
-            GROUND.face([(x, y, -0.03) for (x, y) in _q], (0.12, 0.12, 0.15))
+            GROUND.face([(x, y, -0.03) for (x, y) in _q], (0.075, 0.075, 0.08) if DAYM else (0.12, 0.12, 0.15))   # day: asphalt (the ring streets too)
             _run = None
 for pz in O["plazas"]:
     if pz.get("wet"):
         continue
     q = [W(p) for p in pz["q"]]
     tc = DIST[pz["terr"]]["hue"] if pz["terr"] in DIST else (0.8, 0.8, 0.8)
-    GROUND.face([(x, y, 0.005) for (x, y) in q], mixc((0.13, 0.125, 0.15), tc, 0.12))
+    rp_ = random.Random(7722 * 100003 + int(sum(p[0] * 1000 + p[1] for p in pz["q"])))
+    is_park = rp_.random() < PK["plaza_p"]            # AD r3: plazas are parks (lawn + tree clumps) or paved squares
+    if DAYM:
+        GROUND.face([(x, y, 0.005) for (x, y) in q], PK["lawn"] if is_park else PK["paved"])
+    else:
+        GROUND.face([(x, y, 0.005) for (x, y) in q], mixc((0.13, 0.125, 0.15), tc, 0.12))
+    if is_park:
+        xs_, ys_ = [p[0] for p in q], [p[1] for p in q]
+        if max(xs_) - min(xs_) > 4.0 and max(ys_) - min(ys_) > 4.0:
+            tree_clumps(min(xs_), min(ys_), max(xs_), max(ys_), rp_)
 for t in O["tiles"]:
     if t["wet"]:
         continue
     q = [W(p) for p in t["q"]]
-    GROUND.face([(x, y, 0.01) for (x, y) in q], (0.085, 0.085, 0.11))
-    if not t["ab"] or not t["col"]:
+    GROUND.face([(x, y, 0.01) for (x, y) in q], (0.05, 0.05, 0.055) if DAYM else (0.085, 0.085, 0.11))   # day: dark asphalt
+    if not t["ab"] or not t["col"] or t.get("lm"):        # round 3: nothing under a landmark
         continue
     a, b = W(t["ab"][0]), W(t["ab"][1])
     col, tr = tuple(t["col"]), t["tr"]
@@ -598,6 +655,7 @@ for t in O["tiles"]:
         lane = u * half * 0.8 + (hr.random() - 0.5) * 0.25
         al = (0.35 + 0.3 * hr.random() + tr * 0.15) * 0.5 * (1.0 if t.get("art") else CP.OUTLINE["lane_off_k"])
         al *= CP.OUTLINE["out_k"] if t.get("terr", "") == "" else 1.0     # outside the seven districts (revision 2)
+        al *= 0.3 + 0.7 * t.get("u", 1.0)                                 # round 3: dimmer past the organic edge
         strip(NEON, (a[0] + nx * lane - dx * 0.35, a[1] + ny * lane - dy * 0.35), (b[0] + nx * lane + dx * 0.35, b[1] + ny * lane + dy * 0.35),
               0.14, 0.04, sc(col, al))
     if hr.random() < 0.5:                         # a warm street lamp at the kerb (the street glow off the arterials)
@@ -607,8 +665,46 @@ for t in O["tiles"]:
 
 # ------------------------------------------------------------------ arterial light-streaks (r3 street-lane rule, city scale)
 RT = random.Random(CP.SEEDS["streaks"])
+LMK_W = {k: W(O["hq"][k]) for k in O.get("landmarks", [])}
+RC = random.Random(CP.SEEDS["streaks"] + 11)       # day: car colours / spacing (its own stream, the night draws stay put)
+
+
+def under_landmark(x, y, m=2.0):
+    return any(RU.in_footprint(k, x - v[0], y - v[1], m) for k, v in LMK_W.items())
+
+
+def traffic(p0, p1, z, col, k, w=0.16):
+    """one traffic draw: at night a light streak (long exposure), by day a row of cars along the same stretch."""
+    if not DAYM:
+        strip(STREAK, p0, p1, w, z, sc(col, k))
+        return
+    L = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+    if L < 1.0:
+        return
+    ux_, uy_ = (p1[0] - p0[0]) / L, (p1[1] - p0[1]) / L
+    s = RC.uniform(0.0, 1.2)
+    while s < L - 1.0:
+        c0 = (p0[0] + ux_ * s, p0[1] + uy_ * s)
+        c1 = (c0[0] + ux_ * 1.05, c0[1] + uy_ * 1.05)
+        nx_, ny_ = -uy_ * 0.24, ux_ * 0.24
+        q_ = [(c0[0] - nx_, c0[1] - ny_), (c1[0] - nx_, c1[1] - ny_), (c1[0] + nx_, c1[1] + ny_), (c0[0] + nx_, c0[1] + ny_)]
+        prism(SURF, q_, z - 0.1, z + 0.32, RC.choice(CP.DAY["car_cols"]), top_col=None)
+        s += RC.uniform(1.9, 4.2)
+
+
+# arterial light-streaks (r3 street-lane rule, city scale); round 3 (note 6): they run on along their own line into the
+# sprawl (zoning H6 ext) and thin out there, density and brightness x exp(-d / TRAILS.thin) lots past the map
 for art in O["arterials"]:
-    a, b = W(art["a"]), W(art["b"])
+    k_ax = 0 if art["axis"] == "x" else 1
+    s_lo, s_hi = art["a"][k_ax], art["b"][k_ax]
+    e_lo, e_hi = art.get("ext", [s_lo, s_hi])
+
+    def lp(s_lot):
+        p_ = list(art["a"])
+        p_[k_ax] = s_lot
+        return W(p_)
+    a = lp(e_lo)
+    b = lp(e_hi)
     L = math.hypot(b[0] - a[0], b[1] - a[1]) or 1
     dx, dy = (b[0] - a[0]) / L, (b[1] - a[1]) / L
     nx, ny = -dy, dx
@@ -618,12 +714,18 @@ for art in O["arterials"]:
         while s < L:
             ln = RT.uniform(4.0, 26.0)
             k = RT.uniform(0.45, 1.2) * (0.7 + 0.5 * art["tr"])
+            gap = RT.uniform(3.0, 30.0)
+            keep_r = RT.random()
             s0, s1 = max(0.0, s), min(L, s + ln)
-            if s1 > s0 + 0.5:
-                strip(STREAK, (a[0] + dx * s0 + nx * off, a[1] + dy * s0 + ny * off), (a[0] + dx * s1 + nx * off, a[1] + dy * s1 + ny * off),
-                      0.16, 0.12, sc(col, k))
-            s += ln + RT.uniform(3.0, 30.0)
+            sl = e_lo + (s0 + s1) / 2 / U * (1 if e_hi >= e_lo else -1)
+            dd = max(0.0, s_lo - sl, sl - s_hi)                 # lots past the map run
+            fall = math.exp(-dd / CP.TRAILS["thin"])
+            pa = (a[0] + dx * s0 + nx * off, a[1] + dy * s0 + ny * off)
+            pb = (a[0] + dx * s1 + nx * off, a[1] + dy * s1 + ny * off)
+            if s1 > s0 + 0.5 and keep_r < fall and not under_landmark((pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2):
+                traffic(pa, pb, 0.12, col, k * (0.45 + 0.55 * fall))
+            s += ln + gap
 
 
-for _f in ("city_world.py", "landmarks.py", "city_render.py"):
+for _f in ("city_world.py", "city_transit.py", "landmarks.py", "city_render.py"):
     exec(open(os.path.join(HERE, _f), encoding="utf-8").read())
