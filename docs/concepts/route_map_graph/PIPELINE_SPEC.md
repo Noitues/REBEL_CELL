@@ -71,11 +71,31 @@ compound is against its map lot is still open (Q1).
 
 ## 2. Data flow
 
+### 2.0 Generation order per corp territory (Designer 2026-10-16)
+
+**The city AND the route are generated per game seed, so they differ every game** (DR 1413-, "Spec answers" Q2).
+Nothing in the pipeline assumes a fixed map, a fixed HQ position or a fixed route. The art tools consume the game's
+seed, its generated city layout and its graph for each run, and dress them. For every corp territory the order is:
+
+| Step | What | Who decides it | What the art tools do |
+|---|---|---|---|
+| 1 | **Position the HQ** (its map lot) | the game (city generator) | read the HQ lot; build the corp's landmark to fill it (8.6) |
+| 2 | **Non-HQ landmarks**: the central-server access-key locations | the game (design / build sessions) | read their lots and kinds; dress them with the corp's non-HQ landmark building types (8.8) |
+| 3 | **Unique building types** of the territory | art (per-corp building language, 3.4) | fill the territory's ordinary lots with its building language |
+| 4 | **The generated route map** (the run graph, street or HQ) | the game (GDD 4.2) | derive the netrun street or the HQ slots and place the route on them (3.3, 8.4) |
+| 5 | **Flavour details** (signs, lamps, traffic, clutter, atmosphere) | art | dress by rule (sections 4, 9, 13.1) |
+
+Steps 1, 2 and 4 are **game design** and belong to the build / design sessions; the art tools only read their output
+(section 14.3 lists them as hand-off items). Steps 3 and 5 are the art rules in this spec. Each step reads only the
+steps before it, so a later step never moves an earlier one (a sign never moves a building; a building never moves a
+key location).
+
 ### 2.1 Overview
 
 ```
  GAME (MAIN, read-only)                     TOOLS (Python; Blender for the reference build)           GODOT (runtime)
  ---------------------------------          -------------------------------------------------         -------------------------
+ game seed (per game) ── seeds every input below (city, HQ lots, key locations, run graph, art_seeds)
  CityLayoutRecorder  ─┐                     netrun_art.layout   import + layout rules  ─► city.json
    (lots, extrusions, │  city_layout.json ─►  (apply_layout_rules)                         │
     streets, plazas,  │                                                                    ▼
@@ -154,6 +174,18 @@ The contract between the tools and Godot. Fields as written today by `SB/sb_ocjo
 
 ## 3. One-city derivation rules
 
+**Designer 2026-10-16: structure.** This section follows the generation order of 2.0. Every input is per game seed;
+the examples and numbers measured on the concept city (e.g. "605 frontage buildings", the Returns Processing link)
+describe one seed only.
+
+| Step (2.0) | Rules here |
+|---|---|
+| 1 HQ position | read from the game's layout (`hqs` lots; for a new corp the zoning L1 rule is a concept stand-in until the city generator places it); landmark build in 8.5-8.6 |
+| 2 Non-HQ landmarks (key locations) | read from the game; building types in 8.8; their lots are excluded from the frontage and fill rules |
+| 3 Unique building types | 3.1 buildings, 3.2 mainline layout rules, 3.4 district building types |
+| 4 Route map | 3.3 street derivation; HQ slots in 8.4 |
+| 5 Flavour | 3.5-3.6 seeds and determinism for dressing; sections 4, 9, 13.1 |
+
 ### 3.1 Buildings as the game reads them
 
 1. A street-level base (`z0 <= 0.05`) plus every stacked part whose footprint centre lies inside it (`z0 > 0.05`) is
@@ -197,7 +229,9 @@ See also (AD 2026-10-15): the frontage height rhythm and crowns in 13.1 `frontag
 
 Rules, in order:
 1. **The link.** The netrun follows the selected Site's border link polyline, ordered from the relay end
-   (`SB/sb_onecity.py:164-168`).
+   (`SB/sb_onecity.py:164-168`). The link, the Site and the run graph are the game's, generated per seed (Designer
+   2026-10-16, 2.0 step 4); the derivation must succeed on any seed's city (test: 12.6 parity plus a 1,000-seed sweep
+   that every border link yields a street, or reports why).
 2. **Frontage** per leg and side (`frontage`, lines 178-204): street-level buildings, width >= `min_width`, near edge in
    `front_band`, overlapping the extended leg; ordered by distance along the leg, then key.
 3. **Assignment** (`assign`, 211-223): layer L takes the next frontage building (in link order) with at least
@@ -244,6 +278,9 @@ Zoning (`CAC/zoning.py`, rules Z1-Z6, L1-L4, T1; numbers `CAC/city_preset.py:58-
    **drowned quarter** (ground subsides 2.5 -> 30 BU, water at z 2.5, levee 4.2, seawall 8.0; `WATER`, lines 72-92).
 4. L1-L2: HQ lots are the layout's; a new corp's HQ lot is its district's pole of inaccessibility (ties: lower lot x,
    then y). Every landmark clears `landmark_r` 5.6 lots. Rebel Cell has no landmark: its base lot is refilled.
+   **Designer 2026-10-16:** HQ positions (and the non-HQ key locations) are game output per seed (2.0 steps 1-2).
+   L1 is a concept stand-in for the art city only; the pipeline reads the game's lots. Zoning Z1-Z6, L3, L4 and T1 stay
+   art rules, re-run per seed on the game's layout.
 5. L3: the Aurelian aqueduct runs the district's best street line, +- `aqueduct_ext` 8 lots.
 6. **L4: the Meridian freight rail. AD ruling 2026-10-15 (C8): ONE line, and this derivation is its source of truth.**
    - Path: from the fortress gate (`RAIL.gate_dx` -34, `gate_dy` -16.6 BU) a BFS over free street tiles (never a
@@ -515,11 +552,20 @@ Two sources use the same band numbers on different domains (conflict C5). The pi
 | `zoom_dive` | 0 = the HQ page camera, 1 = the netrun OVERVIEW | `log(d0 / d) / log(d0 / d1)` with d the camera distance to the OVERVIEW target (`SB/sb_ocjobs.py:94-102`) | look blend, section, fog density, city glow, the dive LOD bands |
 | `zoom_detail` | 0 = the netrun OVERVIEW, 1 = DECISION | `log(d_ov / d) / log(d_ov / d_dec)` (`HK/lod.py:33-34`) | HQ exposure by zoom, the HQ detail bands |
 
-**Pipeline rule (proposed): in Godot, LOD is by absolute camera distance in BU.** Godot's `visibility_range` is
-distance-based anyway, and it makes the street and HQ consistent. The band edges below are the dive bands converted
-with the storyboard's anchors: d0 = 3833 BU (the 460 BU HQ frame emulated by a 300 mm lens: `460 * 300 / 36`), d1 =
-114.6 BU (the street OVERVIEW, `SB/NOTES.md:479`); `d(z) = d0 * (d1 / d0)^z`. They are defaults to calibrate once in
-Godot (open number N1).
+**Designer 2026-10-16 (Q3, resolved): detail appears with camera distance. LOD is by camera distance in BU**, in the
+tools and in Godot (`visibility_range`), for the street and the HQ alike. `zoom_dive` stays only as the dive's camera
+path parameter (look blend, section cut); `zoom_detail` stays only for the HQ exposure by zoom. No asset is shown or
+hidden by a zoom number.
+
+1. **Details always exist in the data.** Every sign, lamp, prop and light is placed by its rule regardless of the
+   camera; placement never reads the camera distance. The camera only selects which **reveal tier** is drawn.
+2. **Per-asset reveal tiers** (5.2b): each asset kind declares its tiers as distance intervals; the tiers of one asset
+   share the same position and footprint, so a tier change never moves anything.
+3. Tier changes cross-fade over their interval (`visibility_range` fade, or an alpha / emission ramp); there is no
+   pop.
+4. The band edges are the dive bands converted with the storyboard's anchors: d0 = 3833 BU (the 460 BU HQ frame
+   emulated by a 300 mm lens: `460 * 300 / 36`), d1 = 114.6 BU (the street OVERVIEW, `SB/NOTES.md:479`);
+   `d(z) = d0 * (d1 / d0)^z`. They are defaults to calibrate once in Godot (open number N1).
 
 ### 5.2 Bands
 
@@ -538,7 +584,30 @@ Godot (open number N1).
 | `section_by_zoom` | (60, 0.4, 0.25, 0.85) | 1594 -> 194 | the section cut (5.3) | section uniform |
 
 Sources: `SB/look_preset.py:74-91`, `HK/lod.py:16-25`, `SB/NOTES.md:176-195`. Every band is a smoothstep on its
-interval; HQ bands keep a floor (`FLOORS`: signage 0.0, small lights 0.25).
+interval; HQ bands keep a floor (`FLOORS`: signage 0.0, small lights 0.25). The "Fade-in distance" column is the
+normative value (Designer 2026-10-16); the `zoom_dive` column is kept for reference to the sources.
+
+### 5.2b Per-asset reveal tiers (Designer 2026-10-16)
+
+Distances are camera-to-asset in BU (one-city units), "far edge -> near edge" of each fade. Defaults are derived from
+the bands above (N1). Config: `lod.reveal.<asset>` = list of `(tier, d_far, d_near)`.
+
+| Asset | Tier 0 (hidden) | Tier 1 | Tier 2 | Tier 3 |
+|---|---|---|---|---|
+| Street / blade sign (the designer's example) | beyond 790 | **neon shape**: an emissive block in the sign's colour and outline, no text (790 -> 466) | **full sign**: text / art texture, panels (466 -> 216) | flicker, scan and stutter from the idle tables (216 -> 152) |
+| Billboard, holo ad | - (a lit panel from the big layer) | lit panel, flat colour (always) | content texture (466 -> 216) | glitch slices, scan band (216 -> 152) |
+| Hero sign on a route column (9.1) | - (always: it marks the route column) | lit band + blade colour block (always) | full panels (466 -> 216) | flicker (216 -> 152) |
+| Shopfront | - | lit strip (always) | awning, fascia band, AC boxes (466 -> 216) | interior hints, stall lights (276 -> 152) |
+| Roof clutter (tanks, AC, antennas) | beyond 790 | silhouette geometry (790 -> 328) | beacons blink (276 -> 152) | - |
+| Kerb lamps, beacons, stall lights | beyond 276 | glow dot (276 -> 152) | light spill (Omni / Spot; 194 -> 115) | - |
+| Traffic | - | street-light rivers (big layer) | individual streaks (663 -> 307) | head / tail split, reflections (194 -> 115) |
+| Steam plumes | beyond 663 | plume (663 -> 307) | - | - |
+| Fog detail | - | banks (big layer) | fine octave (1594 -> 466) | wisps (790 -> 328) |
+| Windows, building and route lights, beams, rooms | never hidden (big layer) | - | - | - |
+
+Checks (12.6): every asset with tiers has the same position and footprint in each tier; adjacent tiers overlap
+(cross-fade) by at least 10 % of the interval; a camera sweep from the HQ page to DECISION shows no frame-to-frame
+spike from a tier swap.
 
 ### 5.3 The section cut by zoom (street netrun)
 
@@ -555,7 +624,7 @@ interval; HQ bands keep a floor (`FLOORS`: signage 0.0, small lights 0.25).
 4. Same geometry; a clip in the materials. In Godot a world-space clip-box uniform (`corridor`, `z_cut`) in the city
    building and neon shaders (`SB/NOTES.md:488`).
 
-### 5.4 What is generated or shown per zoom state
+### 5.4 What is generated or shown per camera state (all data always generated; tiers by distance, Designer 2026-10-16)
 
 | State | Geometry | Atmosphere | Dressing | Section / occlusion |
 |---|---|---|---|---|
@@ -563,8 +632,8 @@ interval; HQ bands keep a floor (`FLOORS`: signage 0.0, small lights 0.25).
 | dive (0..1) | same | fog density and glow ramp; look blend 0.20-0.55 | bands fade in | section lowers 0.25-0.85 |
 | street OVERVIEW (1) | + route rooms, walls (closed, then dissolving) | full AAA-2 | everything; idle loop | plinths |
 | street DECISION | same | same | same | plinths; foreground occluders dither-fade (section 7.4) |
-| HQ OVERVIEW (`zoom_detail` 0) | the HQ, its city | big layer; HQ detail bands at their floor | landmark rig, movers | occlusion cone over every route node |
-| HQ DECISION (`zoom_detail` 1) | same | full | full | occlusion cone over the active room + its options |
+| HQ OVERVIEW | the HQ, its city | big layer; detail at the tiers its camera distance selects (5.2b) | landmark rig, movers | occlusion cone over every route node |
+| HQ DECISION | same | tiers by distance (5.2b) | same | occlusion cone over the active room + its options |
 
 ---
 
@@ -595,7 +664,7 @@ interval; HQ bands keep a floor (`FLOORS`: signage 0.0, small lights 0.25).
 | `HOVER_PULL`, `HOVER_YAW`, `HOVER_DOLLY` | 0.22, 3 deg, 0.96 | `:35` |
 | `OV_YAW_K`, `PITCH_O`, `LENS_O`, `FILL_OW`, `FILL_OH` | 0.3, 6 deg, 40 mm, 0.95, 0.90 | `:36` |
 | `T_STEP`, `T_HOVER_IN`, `T_HOVER_OUT` | 0.9 s, 0.30 s (ease-out cubic), 0.35 s (smoothstep) | `:37` |
-| `T_ZOOM` (Z toggle) | 0.70 s today; **proposed 1.0 s**, the same as the entry zoom (designer question Q10; AD ruling 2026-10-15, C11) | `:37` |
+| `T_ZOOM` (Z toggle) | **1.0 s**, the same as the entry zoom and the video (Designer 2026-10-16, Q10 resolved; the rig's 0.70 s is replaced) | `:37` |
 | entry zoom (OVERVIEW -> DECISION after MARK) | 1.0 s + 0.5 s settle | `SB/sb_cams.py:106`; DR answer (`SB/NOTES.md:83`) |
 | hover no-blink delay | 120 ms | `V3D/../NOTES.md:83` |
 | token lead | 1.12 x the camera's progress | `:90` |
@@ -621,7 +690,7 @@ operative advances; yaw follows `yaw(u)`; the step is a 0.9 s smoothstep between
 2. End: the street OVERVIEW pose.
 3. `s = smootherstep(u)`; target, yaw (shortest way) and shift lerp by `s`; frame width and lens interpolate in log
    space by `s`; pitch lags: `sp = smootherstep(min(1, 1.08 u)^1.6)`.
-4. Duration `DIVE_S` 3.0 s in the animatic; 2.4 s proposed in game (section 10).
+4. Duration `DIVE_S` 3.0 s, in the animatic and in game (Designer 2026-10-16, Q7; section 10).
 
 ### 6.4 HQ orbit camera (front and centre)
 
@@ -790,6 +859,9 @@ Object pass indices (the landmark check reads them; `HM/hq_scene.py:464-481`): 0
 
 1. The landmark reads **1.5-2x the local background** in median luma: landmark = pass indices 1, 5, 6; local
    background = indices 0 and 2 inside the landmark's screen box grown 35 % (`HM/hq_values.py:15-38`).
+   **Designer 2026-10-16 (Q5, resolved): keep the 2x rule; HQs are bright and distinct.** Above 2x is a warning, not a
+   failure (Solace at 2.8x was accepted). There are no per-corp exceptions: the old MAINFRAME 10x exception is
+   withdrawn, because MAINFRAME moves to the target location (8.5).
 2. It is done with **light, not exposure**: keys, rims (light-linked to the landmark), cornice coves, seam strips,
    logo panels, floods, uplights, fog lit from below round the compound (`HQ_meridian/NOTES.md` section 6).
 3. The silhouette reads at 320 px wide (the thumbnail check).
@@ -810,6 +882,8 @@ The pipeline keeps them only as test fixtures. Rule:
    (`V3D/../NOTES.md:167-192`). The type is a hint and never names the node.
 4. Mechanics (the eye, the yard cycle, retargets, the read rule, the sync strike) are driven by game state passed in
    per frame (`mt`, `room_state`, `affected`, `movers`; `HM/hq_scene.py:8-10`). The tools only visualise them.
+5. **Designer 2026-10-16 (Q2):** the route differs every game, so a landmark generates its slots on demand for
+   whatever graph the game sends (at least GDD 4.2's 7 layers of 2-4 nodes), instead of a fixed slot list.
 
 ### 8.5 Per-corp landmark modules (`corps/<corp>/landmark.py`)
 
@@ -823,7 +897,7 @@ log and the room kit; `hooks` may hold `accs`, `beams`, `mover_lights`, `no_cut`
 | Solace | Twin helix towers: two smooth swept tubes (r 9, 40 segments) at 40 BU from centre, theta(z) = 90 + 11 z / 12.5 deg, 19 floors x 12.5; rows of 12 oval portholes (half axes 2.1 x 3.3) with frame rings; leaf-green fresnel rim (`rim_k` 0.9, `rim_pow` 5); glazed bow-tie skybridges (13 BU at the tubes, 4 at the waist) only on route floors; the crown with THE GENOME CORE; a dark dressed plinth with a lit entry | The ladder: UP / ACROSS; UNREAD rooms frosted and dimmed | `HQ_solace/NOTES.md` sections 1, v2 r2 | |
 | Orbital | Round launch podium (r 64, h 10), silo (r 17) with door leaves, the rocket (r 6, h 58, rises 62 BU), dish stations on a ring (r 96), a 4-leg truss antenna tower (104 BU, decks at 26 / 52 / 78) with two elite vaults, the red service gantry with LAUNCH CONTROL | Doors open / shut, rocket height, hacked bands lit lime, the override link | `HQ_orbital/NOTES.md` section 1 | |
 | Meridian | Container fortress: walls at abs(x) 80, abs(y) 60, 3 courses of 9 BU + merlons; corner towers of 5 crossed courses; loop track and platforms; **the moat on the W, S and E sides only; the north side is the rail yard and the gate the freight line leaves by** (AD ruling 2026-10-15, C24); the slewing keep crane (z 86, jib 128); MANIFEST CONTROL; **the freight line** (AD ruling 2026-10-15, C8): a switch off the loop's north side, a portal in the platform wall, then the ONE line from `zoned.json` (the rail search, 3.4 L4) at `deck_z` 17.5 BU (city units) on piers, with signals and catenary masts; rail-side sheds stay 2 BU under the deck. The kit's straight viaduct at x 66 (deck z 22, piers 24, masts 36, corridor half-width 6.5 / 9.0) is a placeholder to be replaced | Shuttle containers wall <-> train every other turn, the crane slew, movers carrying rooms | `HM/hq_preset.py:40-89` | `HQ_meridian/NOTES.md`, v2 r2 |
-| Rebel Cell | No tower. A Tokyo-alley district on the real block grid; option A: three stacked lanes in one section cut along a real street line (roofs, alley, service tunnel under the street); THE UNDERCROFT sunken service street; the **MAINFRAME v4 red sign** as the hero landmark (`mf_w` 11 BU, about 45 BU tall); the red fist hologram secondary (`fist_s` 20) | The window sequence `SEQ` (0 before .. 3 full) and `PULSE` | `HQ_rebel_cell/NOTES.md` sections 1-2, v2 r2 | |
+| Rebel Cell | No tower. A Tokyo-alley district on the real block grid; option A: three stacked lanes in one section cut along a real street line (roofs, alley, service tunnel under the street); THE UNDERCROFT sunken service street; the **MAINFRAME v4 red sign** (`mf_w` 11 BU, about 45 BU tall) **moves to the target location** (Designer 2026-10-16), so it marks DISPATCH and is held to the normal landmark rule (no exception); the red fist hologram secondary (`fist_s` 20); the red background toned down | The window sequence `SEQ` (0 before .. 3 full) and `PULSE` | `HQ_rebel_cell/NOTES.md` sections 1-2, v2 r2 | |
 
 ### 8.6 Scale: the landmark in the one city
 
@@ -833,10 +907,30 @@ log and the room kit; `hooks` may hold `accs`, `beams`, `mover_lights`, `no_cut`
    Halcyon's tier 13 becomes 3.1 BU; the Meridian walls at 80 / 60 become 19 / 14.25 BU). With it: light positions,
    the camera's `dmin` and distances, and the HQ fog field scale by `k_units`; light powers by `k_units^2`; densities
    by `1 / k_units`. Rooms keep readability through a pixel target (as the street's `room_px_target` 46 px).
-2. **Still open (Q1):** the compound's footprint against its map lot. After the rescale, the Meridian keep (half-size
-   136 BU in kit units, `HM/hq_preset.py:120`) is about 32 BU, close to the map footprint square 32 BU
-   (`CAC/city_preset.py:134`), but other corps differ. Whether a landmark must fit `LANDMARK_FP` exactly (an extra
-   per-corp fit factor) or the HQ lots grow is the designer's call.
+2. **Designer 2026-10-16 (Q1, resolved): an HQ fills its map lot.** The landmark's footprint is the HQ lot the game
+   placed (2.0 step 1), not a fixed size:
+   - `k_fit = min(lot_w / kit_w, lot_d / kit_d)` on the landmark's outer footprint after `k_units` (walls, moat,
+     podium, platforms included), with the lot inset by `fp_margin` 0.25 lots (`CAC/city_preset.py:60`). The landmark
+     is scaled uniformly by `k_fit` and centred in the lot; the slack along the longer axis goes to the compound's own
+     ground (yard, plaza, apron), never to empty city ground.
+   - Example on the concept city: the Meridian keep (half-size 136 BU in kit units, `HM/hq_preset.py:120`) is about
+     32 BU after `k_units`, against the map square of 32 BU (`CAC/city_preset.py:134`): `k_fit` about 1.0.
+   - The same `k_fit` scales the camera distances, light positions and fog (powers by `k_fit^2`, densities by
+     `1 / k_fit`). Rooms keep the pixel target, so a small lot gives a closer camera, not smaller rooms on screen.
+   - Check: the landmark covers at least 90 % of the inset lot along its fitting axis and never crosses the lot edge.
+   - City blocks touch the lot edge (8.2): there is no belt between the landmark and the city.
+
+### 8.6b Canonical landmarks (Designer 2026-10-16)
+
+**The full-city landmark design of each corp is the source of truth for its silhouette and identity.** The HQ
+netrun view must match the full-map landmark of the same corp (DR 1413-, "Canonical landmarks").
+1. One landmark model per corp, built once in `corps/<corp>/landmark.py`, is used by both the full-city view and the
+   HQ netrun; the HQ view adds only what the netrun needs (route slots, room cut-aways, the mechanic visuals,
+   close-range detail tiers, 5.2b). It never changes the silhouette, massing, proportions or identity colours.
+2. Where an HQ concept and the full-city design disagree (e.g. Solace's full-turn helix, Meridian's castle crane), the
+   full-city design wins and the HQ concept is rebuilt to match.
+3. Check: the landmark's silhouette in the HQ OVERVIEW and in the full-city view, normalised to the same bounding box,
+   match at IoU >= 0.85 (provisional), compared at 320 px.
 
 ### 8.7 Adding a new corp (Aurelian, Tethys)
 
@@ -850,6 +944,22 @@ log and the room kit; `hooks` may hold `accs`, `beams`, `mover_lights`, `no_cut`
 5. Aurelian and Tethys HQs each need a design pass first (DR 1398); Tethys explores dams or water locks; its
    underwater look is clearer water with a deeper distance fade (`WATER.sigma` (0.090, 0.034, 0.016), `inscatter`
    (0.003, 0.018, 0.055), caustics, shafts; `CAC/city_preset.py:82-91`).
+6. Add the corp's non-HQ landmark building types (8.8).
+
+### 8.8 Per-corp non-HQ landmark building types (Designer 2026-10-16; art work to come)
+
+The game places each territory's non-HQ landmarks: the central-server access-key locations (2.0 step 2). Where they
+are and what they do is game design (14.3). **Art provides the building types** that dress them.
+
+| Item | Rule |
+|---|---|
+| Plugin | `corps/<corp>/key_landmarks.py`: `types()` lists the corp's key-landmark building types; `build(K, lot, kind, seed)` builds one on a game lot |
+| Count | at least 2 types per corp (provisional), so two key locations in one territory don't look identical |
+| Identity | in the corp's building language (3.4) and palette, clearly a landmark: taller or wider than its block, a rim or crown the fabric doesn't use, readable at 320 px (the `landmark.lead` rule, 13.1) |
+| Rank | always visibly subordinate to the HQ: landmark-to-background ratio below the HQ's in the same frame |
+| Size | fills its game lot, as the HQ does (8.6), with `k_fit` per lot |
+| Netrun use | if the game routes a netrun through one, it exposes slots like an HQ (8.4) |
+| Status | **to come**: one design pass per corp (Halcyon, Meridian, Orbital, Solace, Rebel Cell, Aurelian, Tethys), then a full-city check that the types read from the map camera |
 
 ---
 
@@ -865,7 +975,7 @@ log and the room kit; `hooks` may hold `accs`, `beams`, `mover_lights`, `no_cut`
    - colours alternate district a / b along the street (the band takes the other colour, x 0.85).
 2. City signage (all buildings): blade signs on 16 % of street faces over 5 BU, shop-front bands on 55 % of street
    faces, roof holo billboards on 16 % of roofs over 14 BU (`M44/onecity_scene.py:171-229`).
-3. Signage sits in the `signage_on_at` band.
+3. Signage is always placed; what is drawn follows its reveal tiers (neon shape, then the full sign; 5.2b, Designer 2026-10-16).
 4. The r2 street-set dressing (text signs, ad planes, holo ads, megastructures, drum column, stalls) is hand-placed
    and is NOT ported; the rules above replace it (section 13).
 5. See also (AD 2026-10-15): sign density, hero-sign placement and megastructures in 13.1 `dressing.signs`; street-level light (streak lanes, lamp chains, shopfronts) in `streets.light`; the road in the OVERVIEW foreground in `foreground.street`.
@@ -899,12 +1009,24 @@ Godot: `Line2D` with a reveal Tween (`SB/NOTES.md:162`).
 2. Street (v3 dynamic): outside to **32 %**, 40 % desaturated; branch rooms x (1 + 0.45 hover_k) with type-colour
    spill (`V3D/../NOTES.md:84-86`).
 3. HQ: outside to **22 %** in 3D, branch x 1.45; 2D x 0.62 (`HM/hq_jobs.py:39`; `HQ_halcyon/NOTES.md:114`).
-4. It runs on the hover ease curve (0.30 s in, 0.35 s out). The level is a designer question (Q6; AD ruling 2026-10-15, C10).
+4. It runs on the hover ease curve (0.30 s in, 0.35 s out). The level is a designer question (Q6; AD ruling 2026-10-15, C10), pending the decision sheet in `route_map_graph/decisions/` that renders one alternative level (Designer 2026-10-16).
 
 ### 9.5 The plan pencil (HQ page)
 
 On the click: an orange pencil circle round the Site, then the orange plan along the border link from the relay to
 the Site (0.65 s). Orange is the plan colour (DR 1370). The netrun street is derived on that same link (3.3 rule 1).
+
+### 9.5b Off-screen TARGET marker (Designer 2026-10-16, Q8 resolved)
+
+Applies on the HQ page and in every netrun view, for the red-pencil TARGET (the Central Server or the run's TARGET):
+1. **Off screen** (its visible share 0 %): a red pencil **edge arrow** on the usable-area border (6.1 rule 3), pointing
+   at it, with its chip.
+2. **Partly visible, up to 50 %**: the arrow stays, and the visible part of the grease circle draws.
+3. **More than 50 % visible**: no arrow; only the **partial grease circle**, clipped at the usable-area edge.
+4. Visible share = the share of the TARGET's screen box (its room or landmark front, plus the circle's radius) inside
+   the usable area. The switch at 50 % cross-fades over 0.15 s (provisional) with a 5 % hysteresis, so it never
+   flickers while the camera moves.
+5. The arrow and circle are pencil and never touch UI (9.2).
 
 ### 9.6 Always-alive city (DR 1372)
 
@@ -927,20 +1049,20 @@ Traffic streaks, beams, flicker, holos, fog drift and rain run in every beat and
 
 ## 10. Entry flow as a runtime sequence
 
-Timeline from the animatic (`SB/sb_cams.py:85-104`); proposed in-game durations from `SB/NOTES.md:300` (open number
-N2). **One press skips the whole entry** to the end state of beat 7 (DECISION, markers drawn, UI in).
+**Designer 2026-10-16 (Q7, resolved): the entry timing is approved as in the storyboard video; the game uses the animatic times** (`SB/sb_cams.py:85-104`, `SB/sb_reveal.py:32-34`). The earlier shortened proposal (`SB/NOTES.md:300`) is dropped.
+**One press skips the whole entry** to the end state of beat 7 (DECISION, markers drawn, UI in).
 
-| # | Beat | Animatic (s) | Proposed in game | What happens |
+| # | Beat | Animatic (s) | In game (Designer 2026-10-16) | What happens |
 |---|---|---|---|---|
 | 1 | HQ | 0.0-3.0 | idle | Mainline HQ page, city alive; tags hover-only |
 | 2 | SELECT | 3.0-7.35 | player-driven | Hover: tag + holo Site file decrypts (0.55 s). Click: orange circle, then the orange plan along the border link (0.65 s); JACK IN pops, rainbow gloss (0.8 s), press (0.25 s squash) |
-| 3a | JACK IN: terminal | 7.35-8.75 | 0.9 s | `jack --from <relay> --to <site>`, routing, handshake, CONNECTED; page dims 25 % |
-| 3b | Binary rain | 8.75-10.0 | 0.7 s | On the chosen link only |
-| 3c | CRT collapse | 10.0-10.45 | 0.3 s | Line, then dot; no wheel lens |
-| 3d | Dive | 10.45-13.45 | 2.4 s | The dive path (6.3); look blend; section lowers; walls closed; no route light. Furniture fades in the first 0.3 s, the network decal over 0.6 s |
-| 4 | REVEAL | 13.45-17.09 | (with 5: about 3 s behind "short jack-in") | Walls dissolve into bits left to right from the start room: first wall after 0.35 s; per layer L the links L-1 -> L write on (0.22 s), then layer L's walls dissolve (0.25 s, 0.06 s stagger); room light bleeds out; edge cells flash lime / cyan; bits (0.7 BU cells) lift off and fade in 0.55 s (`SB/sb_reveal.py:32`) |
-| 5 | MARK | 17.09-18.09 + 0.8 s hold | | Stickers slap (scale 1.35 -> 1, 0.18 s, 25 ms stagger); rings / room frames (0.40 s from 0.15 s; lime current, orange options, white ahead); numbers pop (0.12 s at 0.45 s); token lands; red pencil TARGET circle + word last (0.40 s at 0.60 s); route UI with the markers (0.35 s) (`SB/sb_reveal.py:33-34`) |
-| 6 | ZOOM | 18.89-19.89 + 0.5 s | 1.0 s | OVERVIEW -> DECISION (smoothstep, dist in log space); the toggle flips at the midpoint |
+| 3a | JACK IN: terminal | 7.35-8.75 | 1.40 s | `jack --from <relay> --to <site>`, routing, handshake, CONNECTED; page dims 25 % |
+| 3b | Binary rain | 8.75-10.0 | 1.25 s | On the chosen link only |
+| 3c | CRT collapse | 10.0-10.45 | 0.45 s | Line, then dot; no wheel lens |
+| 3d | Dive | 10.45-13.45 | 3.0 s | The dive path (6.3); look blend; section lowers; walls closed; no route light. Furniture fades in the first 0.3 s, the network decal over 0.6 s |
+| 4 | REVEAL | 13.45-17.09 | 3.64 s | Walls dissolve into bits left to right from the start room: first wall after 0.35 s; per layer L the links L-1 -> L write on (0.22 s), then layer L's walls dissolve (0.25 s, 0.06 s stagger); room light bleeds out; edge cells flash lime / cyan; bits (0.7 BU cells) lift off and fade in 0.55 s (`SB/sb_reveal.py:32`) |
+| 5 | MARK | 17.09-18.09 + 0.8 s hold | 1.0 s + 0.8 s hold | Stickers slap (scale 1.35 -> 1, 0.18 s, 25 ms stagger); rings / room frames (0.40 s from 0.15 s; lime current, orange options, white ahead); numbers pop (0.12 s at 0.45 s); token lands; red pencil TARGET circle + word last (0.40 s at 0.60 s); route UI with the markers (0.35 s) (`SB/sb_reveal.py:33-34`) |
+| 6 | ZOOM | 18.89-19.89 + 0.5 s | 1.0 s + 0.5 s settle | OVERVIEW -> DECISION (smoothstep, dist in log space); the toggle flips at the midpoint |
 | 7 | CHOOSE | 20.39- | player-driven | Hover ease 0.30 s, power cut, tag + node file |
 
 Rules:
@@ -1037,7 +1159,7 @@ Every check writes pass / warn / fail with numbers to `checks_<run>.json`. A fai
 | Item | Default |
 |---|---|
 | Measure | Rec.709 luma of the final 8-bit sRGB plate without UI |
-| Median | 0.14, pass 0.12-0.17 (R-VAL-1; provisional, derived from hand-built passes; AD 2026-10-15). Tolerance still Q4. |
+| Median | 0.14, pass 0.12-0.17 (R-VAL-1; provisional, derived from hand-built passes; AD 2026-10-15). Tolerance still Q4: pending the decision sheet in `route_map_graph/decisions/` (Designer 2026-10-16). |
 | Under 0.10 | 25-40 % (R-VAL-2) |
 | Over 0.85 | <= 2.5 % (R-VAL-3); the solve runs after the vignette (rule `values.solve`, 13.1) |
 | Exempt (reported, not failed) | hover power-cut frames; mainline-look frames (held instead to the capture: median 0.214 +- 0.03, `SB/NOTES.md:120`); Rebel Cell red-sequence frames; beam-pass flash frames of an entrance beat; look-blend frames (0 < look_blend < 1) are reported only |
@@ -1047,9 +1169,9 @@ Every check writes pass / warn / fail with numbers to `checks_<run>.json`. A fai
 | Item | Default |
 |---|---|
 | Measure | median luma of pass indices {1, 5, 6} over median of {0, 2} inside the landmark's screen box grown 35 % (`HM/hq_values.py:18-38`) |
-| Pass | 1.5 <= ratio <= 2.0 |
-| Warn | ratio > 2.0 (Halcyon 2.9 was accepted as is, DR 1390) |
-| Fail | ratio < 1.5 |
+| Pass | 1.5 <= ratio <= 2.0 (the 2x rule kept; Designer 2026-10-16, Q5) |
+| Warn | ratio > 2.0, never a fail (Halcyon 2.9 and Solace 2.8 were accepted; Designer 2026-10-16) |
+| Fail | ratio < 1.5; no per-corp exception (the MAINFRAME 10x exception is withdrawn; Designer 2026-10-16) |
 | Silhouette | 320 px thumbnail written for review (manual) |
 | Shots | OVERVIEW and DECISION; hover frames exempt |
 
@@ -1212,37 +1334,31 @@ Items known to be hand-placed or hand-tuned (each needs a rule above or a new on
 
 ## 14. Open questions for the designer, and the ROUTE_REQUIREMENTS gaps
 
-### 14.1 Open questions (real ones only)
+### 14.1 Designer answers and open questions (Designer 2026-10-16)
 
-1. **Q1 HQ compound footprint vs the map lot.** The unit system is settled (AD ruling 2026-10-15: kits rescaled by
-   0.2375, 8.6). Open: must each rescaled landmark fit its `LANDMARK_FP` exactly (an extra per-corp fit factor), or do
-   the HQ lots on the map grow to the compound?
-2. **Q2 Slot counts.** Topology comes from the game graph, mapped onto slots (hard rule, AD ruling 2026-10-15, 8.4).
-   Open: is each corp's slot count (rooms per face / course / floor) an art constraint the game's HQ graphs must
-   respect, or must every landmark add slots on demand?
-3. **Q3 One LOD by distance.** At the street OVERVIEW the storyboard shows full signage; at the HQ OVERVIEW the HQ kit
-   fades signage to 0. Accept distance-based bands (5.1), which keep both?
-4. **Q4 Value band tolerance.** Median 0.14 +- 0.03 as the pass rule?
-5. **Q5 Landmark ratio above 2.0.** A warning (as proposed, since Halcyon 2.9 was accepted) or a fail?
-6. **Q6 Power-cut level.** 32 % + 40 % desaturation (street) or 22 % (HQ)? One value for both?
-7. **Q7 Entry durations.** 0.9 + 0.7 + 0.3 + 2.4 = 4.3 s from press to street, and REVEAL + MARK compressed to about
-   3 s behind a "short jack-in" setting (`SB/NOTES.md:300`)?
-8. **Q8 Central Server off-screen on the HQ page** keeps its red edge marker, or the HQ framing includes it
-   (`SB/NOTES.md:301`; DR 1352 says an off-screen corp HQ gets the edge arrow)?
-9. **Q9 Art RNG streams.** Presentation randomness from named `art/*` streams, never from the game's streams (3.5).
-   Proposal (AD ruling 2026-10-15): the game derives the art seeds from an `RngService`-derived seed and exports them
-   into `derive_<run>.json` (`art_seeds`), so Blender never invents a seed. It needs a TECH_SPEC / DECISIONS entry.
-   Approve?
-10. **Q10 Z-toggle zoom time.** The entry zoom takes 1.0 s (designer answer); the DECISION / OVERVIEW toggle is 0.70 s
-    in the rig (`V3D/cam_rig.py:37`). Proposed: 1.0 s for both (AD ruling 2026-10-15, C11).
+Answers from DR "Designer review of round 1" (2026-10-16). Pending questions get a decision sheet in
+`route_map_graph/decisions/` (being rendered); the spec keeps them open until the sheet is answered.
+
+| Q | Question | Status | Where applied |
+|---|---|---|---|
+| Q1 | HQ compound footprint vs its map lot | **Resolved: an HQ fills its map lot** (`k_fit` per lot) | 8.6 |
+| Q2 | Fixed route vs slot counts | **Resolved: the city AND the route are generated per game seed** and differ every game. The generation order per territory is HQ, non-HQ landmarks (key locations), unique building types, route map, flavour. Landmark / key and route mechanics are game design (14.3); art provides the building types | 2.0, 3 (intro), 8.4, 8.8 |
+| Q3 | LOD by distance | **Resolved: detail appears with camera distance**; details always exist and are revealed in per-asset tiers (e.g. a street sign: hidden at city zoom, then a neon shape, then the full sign at street view) | 5.1, 5.2b |
+| Q4 | Value-band tolerance (median 0.14; pass 0.12-0.17 today) | **Pending:** a decision sheet of render tolerance options, `route_map_graph/decisions/` | 12.1 (unchanged until answered) |
+| Q5 | Landmark ratio above 2.0 | **Resolved: keep the 2x rule; above 2x warns, never fails** (Solace 2.8x accepted); the MAINFRAME 10x exception is withdrawn (MAINFRAME moves to the target) | 8.3, 8.5, 12.2 |
+| Q6 | Power-cut level (32 % + 40 % desaturation street vs 22 % HQ) | **Pending:** a decision sheet rendering one alternative level, `route_map_graph/decisions/` | 9.4 (both values kept until answered) |
+| Q7 | Entry durations | **Resolved: approved as in the storyboard video**; the animatic times are the game times | 6.3, 10 |
+| Q8 | TARGET off screen on the HQ page | **Resolved: edge arrow when off screen; above 50 % visible, no arrow, only the partial grease circle** | 9.5b |
+| Q9 | Art RNG streams | **Pending:** a decision sheet with examples of the art-randomness settings, `route_map_graph/decisions/`. The proposal stands: the game derives the art seeds from an `RngService`-derived seed and exports them into `derive_<run>.json` (`art_seeds`); Blender never invents a seed; needs a TECH_SPEC / DECISIONS entry | 2.3, 3.5 |
+| Q10 | Z-toggle zoom time | **Resolved: 1.0 s**, as the video | 6.2 |
 
 **For the build session / designer, not art tooling** (AD ruling 2026-10-15, C16):
 - Heal / rest points (ROUTE_REQUIREMENTS 7). GDD 4.2 has no heal or rest node type. No art tooling is built for it
   until the GDD has such a node; then it is one `ROOM_TL` entry plus a sticker keyed by the node kind.
 
 **Open numbers** (calibrated by the build session, not designer questions):
-- N1: the LOD band distances in Godot (5.2), one calibration pass on the street and one HQ.
-- N2: in-game entry durations (section 10; tied to Q7).
+- N1: the LOD reveal-tier distances in Godot (5.2, 5.2b), one calibration pass on the street and one HQ.
+- N2: closed (Designer 2026-10-16: the entry uses the animatic times, section 10).
 - N3: performance budgets (11.4).
 - N4: the beam-profile image thresholds (12.5).
 - N5: the Godot fog calibration: r3 relied on Blender light linking, which Godot lacks (`R3/NOTES.md`, "Limits").
@@ -1260,6 +1376,20 @@ The file marks four items "GAP" (7, 8, 9, 12) and two "check in the build" items
 | 3 | Elite vs fight sticker shapes at 1280 x 720 | **Check** 12.6 "1280 x 720 readability" produces the review frame. |
 | 13 | 1280 x 720 readability of DECISION | Same check. |
 
+### 14.3 Hand-off items: game design for the build / design sessions (Designer 2026-10-16)
+
+The art tools read these; they never decide them (2.0 steps 1, 2 and 4).
+1. **City generation per game seed:** the layout (lots, streets, territories) and the HQ lot per corp. The art layout
+   rules (3.2) must be ported into that generator.
+2. **Non-HQ landmarks:** the central-server access-key locations per territory: how many, where, what they unlock,
+   how a netrun reaches them. Art supplies the building types (8.8).
+3. **The route map per run:** the run graph (layers, nodes, kinds, edges) on streets and in HQs, and the HQ run
+   mechanics (the eye, the yard cycle, retargets, the read rule, the sync strike). Art maps them onto slots (8.4) and
+   visualises the state the game passes in.
+4. **The data contract:** the game exports `city.json`, `net.json`, `run_graph.json`, the key-location list and
+   `art_seeds` per run (2.2, 2.3).
+5. Heal / rest nodes (above), only if the GDD adds them.
+
 ---
 
 ## 15. Conflicts between sources (resolved here or carried)
@@ -1270,17 +1400,17 @@ The file marks four items "GAP" (7, 8, 9, 12) and two "check in the build" items
 | C2 | Section plinth: 1.2 BU in `SB/NOTES.md:383` and the `look_preset` comment (`SB/look_preset.py:89`) vs the value 0.4 (`SB/look_preset.py:90`, `SB/NOTES.md:477`) | 0.4 |
 | C3 | Look values: `SB/NOTES.md:480` (beam 5e6, cone 10, fog_peak 0.039, underlight 0.06) vs `SB/sb_ocjobs.py:36-44` (beam 6.0e5, cone 30, fog_peak 0.0507, underlight 0.07, beam_soft_w 0.5) vs the tool defaults in `M44/onecity_cycles.py` (beam 2e7, fog_peak 0.021, cityglow 2.5e3, lamp 25, wash 120, neon 3.2, win 1.6) | **AD ruling 2026-10-15:** `sb_ocjobs.LOOK` is the source of truth; refreshed from the storyboard v3 revision (beams, fog) rendering tonight; `TODO(refresh after sb v3 rev)` on the fog and beam rows (4.1, 11.1) |
 | C4 | r3's Godot beam mapping (spot 1-4 deg, hero cores 0.9 deg; `R3/NOTES.md:227`, `SB/look_preset.py:54-56`) vs the v3-r3 rule "soft cones, no core, no rods" (`M44/onecity_cycles.py:259-265`; `SB/NOTES.md:480`) | **AD ruling 2026-10-15:** soft volumetric cones only, no core spot, never rods; the hero core and spot removed from the Godot mapping (11.1); r3 beam values superseded; checked by 12.5 |
-| C5 | Zoom domain: storyboard 0 = HQ aerial .. 1 = street OVERVIEW (`SB/look_preset.py:72`) vs HQ kit 0 = OVERVIEW .. 1 = DECISION (`HK/lod.py:4`), same band numbers | Two named parameters; Godot LOD by distance (Q3) |
+| C5 | Zoom domain: storyboard 0 = HQ aerial .. 1 = street OVERVIEW (`SB/look_preset.py:72`) vs HQ kit 0 = OVERVIEW .. 1 = DECISION (`HK/lod.py:4`), same band numbers | Two named parameters; Godot LOD by distance (Q3); **Designer 2026-10-16:** LOD by camera distance with per-asset reveal tiers (5.1, 5.2b) |
 | C6 | Halcyon's cleared perimeter belt that every camera stands in (`HQ_halcyon/NOTES.md:65, 136, 276`; `perimeter` keys in every preset) vs "no open perimeter, dense city close" (DR 1395, 1406; `HK/downtown.py:1-3`) | **AD ruling 2026-10-15:** dense city to the walls wins; `perimeter` keys legacy, default 0; cameras clear the view with the occlusion rule (7), never a cleared belt (8.2) |
-| C7 | HQ kits build their own synthetic downtown + ring city vs one continuous city from the map lots (DR 1385-1388, 1399); compound size vs `LANDMARK_FP` (Meridian keep half 136 BU vs map square 32 BU) | **AD ruling 2026-10-15:** one unit system, HQ kits rescaled to it (8.6); map lots by default, kit city as fallback (8.2); compound footprint vs map lot stays open (Q1) |
+| C7 | HQ kits build their own synthetic downtown + ring city vs one continuous city from the map lots (DR 1385-1388, 1399); compound size vs `LANDMARK_FP` (Meridian keep half 136 BU vs map square 32 BU) | **AD ruling 2026-10-15:** one unit system, HQ kits rescaled to it (8.6); map lots by default, kit city as fallback (8.2); compound footprint vs map lot stays open (Q1); **Designer 2026-10-16:** an HQ fills its map lot (`k_fit`, 8.6); the full-city landmark is canonical (8.6b) |
 | C8 | The Meridian freight line: HQ kit = a straight viaduct north at x 66 to y 1180, deck z 22 (`HM/hq_preset.py:51-52`) vs city = a BFS over street tiles to the nearest coast cell, deck z 9.0 (`CAC/zoning.py:353-390`, `CAC/city_preset.py:149`). DR 1410 wants the same line in both | **AD ruling 2026-10-15:** ONE line; the city derivation's rail search (3.4 L4) is the source; the HQ scene imports the same polyline and `deck_z` 17.5 BU (clears the tallest frontage 15.3 BU, i.e. a 6-floor front + key floors, plus 2.2 BU); the straight x 66 viaduct is a placeholder to replace; checked by 12.4 |
 | C9 | Occlusion Godot text uses `world_vertex.z` (`HQ_meridian/NOTES.md`, `HQ_halcyon/NOTES.md:346`); Godot is Y-up | World Y |
-| C10 | Power cut 32 % + 40 % desat (`V3D/../NOTES.md:85`) vs 22 % / x 1.45 (`HM/hq_jobs.py:39`, `HQ_halcyon/NOTES.md:114`) | **AD ruling 2026-10-15:** kept as designer question Q6 |
-| C11 | Zoom time 0.70 s (`V3D/cam_rig.py:37`) vs "the zoom takes 1.0 s" (`SB/NOTES.md:83`, `SB/sb_cams.py:106`) | **AD ruling 2026-10-15:** designer question Q10; proposed 1.0 s for both |
+| C10 | Power cut 32 % + 40 % desat (`V3D/../NOTES.md:85`) vs 22 % / x 1.45 (`HM/hq_jobs.py:39`, `HQ_halcyon/NOTES.md:114`) | **AD ruling 2026-10-15:** kept as designer question Q6; **Designer 2026-10-16:** pending a decision sheet (`route_map_graph/decisions/`) |
+| C11 | Zoom time 0.70 s (`V3D/cam_rig.py:37`) vs "the zoom takes 1.0 s" (`SB/NOTES.md:83`, `SB/sb_cams.py:106`) | **AD ruling 2026-10-15:** designer question Q10; proposed 1.0 s for both; **Designer 2026-10-16:** resolved, 1.0 s (Q10) |
 | C12 | Meridian camera: NOTES section 4 (pitch 14-24, fill 56 / 62 %, overview yaw 150, pitch 30, lens 40) vs `HM/hq_preset.py:125-126` (21-27, 0.50 / 0.54, 140, 40, 36) | The preset (later, v2) |
-| C13 | Landmark rule "1.5-2x" vs measured ratios 0.92-13 (Meridian 1.33 / 0.92, Halcyon 2.9-3.3, Orbital 2.5-3.8, Solace 3.2-13, Rebel 1.46-3.8; `hq_rev_STATUS.md:73`, corp NOTES) | 12.2: < 1.5 fails, > 2.0 warns; Q5 |
+| C13 | Landmark rule "1.5-2x" vs measured ratios 0.92-13 (Meridian 1.33 / 0.92, Halcyon 2.9-3.3, Orbital 2.5-3.8, Solace 3.2-13, Rebel 1.46-3.8; `hq_rev_STATUS.md:73`, corp NOTES) | 12.2: < 1.5 fails, > 2.0 warns; Q5; **Designer 2026-10-16:** 2x rule kept, above 2x warns only (Solace 2.8 accepted), MAINFRAME 10x exception withdrawn |
 | C14 | Foreground occluder fade 0.15 s on the street (`V3D/../NOTES.md:159`) vs 0.3-0.5 s for the HQ occlusion rule (DR 1411) | **AD ruling 2026-10-15:** one value for street and HQ: 0.35 s ease-in-out (7.1, 7.2, 7.4) |
-| C15 | HQ kit `layout.Compound` generates run topology (`HK/layout.py:36` rows 6-5-4-3-2-1; per-corp `seq` lists) vs scope "routes and nodes come from the game"; GDD 4.2 is 7 layers of 2-4 nodes | **AD ruling 2026-10-15:** the Compound / `seq` lists are MOCK route data for concept renders; topology always comes from the game graph (GDD 4.2) mapped onto slots: a hard rule in 1 and 8.4; slot counts in Q2 |
+| C15 | HQ kit `layout.Compound` generates run topology (`HK/layout.py:36` rows 6-5-4-3-2-1; per-corp `seq` lists) vs scope "routes and nodes come from the game"; GDD 4.2 is 7 layers of 2-4 nodes | **AD ruling 2026-10-15:** the Compound / `seq` lists are MOCK route data for concept renders; topology always comes from the game graph (GDD 4.2) mapped onto slots: a hard rule in 1 and 8.4; slot counts in Q2; **Designer 2026-10-16:** the city and the route are generated per game seed; generation order in 2.0; mechanics are hand-off items (14.3) |
 | C16 | ROUTE_REQUIREMENTS 7 asks for heal / rest markers; GDD 4.2 has no heal / rest node type | **AD ruling 2026-10-15:** out of scope for art; moved to the build session / designer list (14.1); no art tooling until the GDD has such a node |
 | C17 | The brief counts 5 ROUTE_REQUIREMENTS gaps; the file marks 4 "GAP" items (7, 8, 9, 12) and 2 checks (3, 13) | All six covered in 14.2 |
 | C18 | Street rig: v3 dynamic always starts camera-left looking right (`V3D/../NOTES.md:52-55`) vs the one-city mirror when the start lands on the right (`SB/sb_onecity.py:357-378`, `SB/NOTES.md:393-394`) | The one-city rule (mirror by geometry) |
