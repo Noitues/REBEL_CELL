@@ -760,6 +760,11 @@ func _fit_page() -> void:
 	var gap := float(get_theme_constant(&"separation"))
 	var inner := float(_content.get_theme_constant(&"separation"))
 	var chrome := tabs_part.get_combined_minimum_size().y + gap + page_pad_y() * 2.0
+	# Plan 2 Codex search: the search row above the tabs takes its share too (the Back stays above the ticker).
+	if search != null and search.get_parent() is Control and search.get_parent() != _content:
+		var row := search.get_parent() as Control
+		if row.visible:
+			chrome += row.get_combined_minimum_size().y + gap
 	# B5: the terminal window's header strip and pads round its body.
 	chrome += frame.get_combined_minimum_size().y - frame.body.get_combined_minimum_size().y
 	chrome += float(frame.body.get_theme_constant(&"separation"))
