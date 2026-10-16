@@ -1478,3 +1478,4 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
     - Night is a little too dark.
     - Sprawl suburbs favour a lower profile at the same density.
     - The rocket and the Solace landmark are a little brighter.
+  - **Street round 2 (designer, 2026-10-16):** the r2 height passes are approved (frontage silhouette and horizon break change about 465 frontage heights across the one city, never below 6 floors). Unique building ids are required (the layout key has 3,175 duplicates; use (ci, key) until mainline emits unique ids). Both are recorded in PIPELINE_SPEC §3.2.

@@ -204,6 +204,8 @@ These change the city both looks are built from (the HQ map and the netrun stree
 | `border_street_width` | 8.0 BU | Border-link streets widen from the 6 BU base tile: each frontage street face steps back `(8 - 6) / 2 = 1` BU. Ground tiles are unchanged. |
 | `base_street_width` | 6.0 BU | The base street tile |
 | `hero_sign_rule` | `{blade: true, band: true, palette: (district_a, district_b)}` | Section 9.1 |
+| `street_r2_height_passes` | on | **Designer-approved 2026-10-16.** The `frontage.silhouette` and `horizon.break` passes (§13; `route_map_graph/street_r2/scripts/r2_rules.py`, `r2_config.py`) may change frontage heights across the one city, about 465 buildings at seed 1, plus 3–5 backdrop towers. No frontage building drops below `frontage_min_floors`. |
+| `unique_building_id` | required | **Designer-approved 2026-10-16.** Every building carries a unique id. The current layout `key` has 3,175 duplicates; until the mainline layout emits unique ids, the tools use `(ci, key)`. Matching route buildings by `key` alone is forbidden, because it pulled same-key buildings from elsewhere in the city into the storyboard's route geometry. |
 
 **Scope of "border-link street":** every straight leg of every link with `state == "border"` in the network,
 extended along its own street line by `max(extend)` = 60 BU each way (`SB/sb_onecity.py:102-110`). Frontage test:
