@@ -445,6 +445,80 @@ All rules are in `sb_onecity.py` (`RULES`) and the look preset (`lod_bands`). No
 
 With (a), the OVERVIEW would frame the route at about the old proportions with no change to the HQ look.
 
+### Mainline layout changes (designer-approved 2026-10-15) for the hand-off
+
+These change the CITY LAYOUT that main's HQ map is built from, not only the storyboard.
+- **Keys:** `sb_onecity.LAYOUT_RULES`.
+- **Applied by:** `sb_onecity.apply_layout_rules()`, which writes `unified_v3.json` from the base layout.
+- **Who uses it:** both looks, the HQ map and the netrun street, so the whole sequence stays one city.
+- **Mainline mapping:** the counterparts belong in `content/config/city_config.tres` and the city layout builder.
+
+| Key | Value | Rule |
+|---|---|---|
+| `frontage_min_floors` | 6 | Every street-level building fronting a **border-link street** rises to at least 6 floors (6 × 1.9 = 11.4 BU), plus 0–2 more floors by its key so the front is not a flat wall. A building's height counts its stacked parts. On this map 605 frontage buildings qualify, and 471 were raised. |
+| `border_street_width` | 8.0 BU | Border-link streets widen from the 6 BU base tile to 8 BU: the street faces of their frontage step back 1 BU each side. The ground tiles are unchanged. |
+| `hero_sign_rule` | blade + band, district pair | Every route column carries a blade sign at its street-face corner on the start side, from the 2nd floor to just under the roof, in stacked panels. It also carries a lit band under its roof. The colours alternate between the district pair along the street. Built in `onecity_build.py` from the derived columns: content follows the route, so this is not mainline layout data. |
+
+**Scope.**
+- "Border-link street" means every straight leg of every border link in the network, extended along the same street
+  line by the netrun extension (60 BU). This is the street a netrun can be derived on.
+- The rule changes the HQ map wherever the Cell can jack in. It is the same city at every zoom, so the HQ map shows the
+  taller street fronts too.
+
+**Effect on this run:**
+- All 8 route columns now take double-height rooms (all 19 rooms span 2 floors).
+- The street OVERVIEW comes 20 % closer (distance 114.5, was 140.5), because the frontage is taller relative to its
+  length.
+
+### Street look fixes after the v3 end frame (designer note, round 2)
+
+| Note | Rule now | Keys |
+|---|---|---|
+| Foreground plinths too busy | **Plinth rule.** What the section leaves of the cut blocks goes near-black: camera side, beyond the near kerb, below `z_cut`. The trims, emissive roofs and windows are gone. There is no top-edge line (round 2b: it read as UI frames), so the wet street's reflections are the only light down there. The plinths drop to 0.4 BU (was 1.2), so the low camera sees the wet street over them. | `onecity_build.section()`; `plinth` (albedo 0.012, edge_k 0; on as z_cut falls from 5 to 1.5 BU, so the HQ and upper dive are untouched) and `plinth_off` (half the border street width + 0.2); `section_by_zoom` (60, 0.4, 0.25, 0.85) |
+| Street lane lines | Dimmed to 50 %: the street glow strips get their own emitter at half the neon level, and the moving lanes drop from 5 to 2.5. | `lane_dim` 0.5, `lane_k` 2.5 |
+| Camera too high | **OVERVIEW pose.** The view axis is near level, and the frame is shifted so the frontage base sits at 81.5 % of the height. The frontage and the skyline fill the upper part; the street is a thin wet strip, with dark plinths below it. The steepest ground ray in frame drops from about 20° to about 10°. The camera height drops from 17.7 to 9.7 BU. Distance 114.6 is kept (the 20 % closer one), and the framing is re-solved on the rooms. The dive's last pose follows, because the dive ends on the OVERVIEW. | `sb_onecity.RULES` `ov_pitch` 2.0, `ov_base_frac` 0.815 |
+| Atmosphere missing | **r3 beams and fog strata at street LOD, scaled to the building heights.** The heights are measured on the derived street: H_FRONT is the median frontage roof across the street (13.4 BU); H_SKY is the 90th-percentile roof behind it (16.5 BU). **Beams:** the 6 tallest roofs that clear 1.35 × H_FRONT, are behind the street, are within 170 BU and are not route columns, at least 45 BU apart. Each rig is one soft 10° cone with a fully soft edge (blend 1.0), light-linked to the fog only. It widens with distance and fades from the source by the inverse square, so it shows where it crosses fog. Round 2b dropped the 0.9° core: it read as a stage laser. The lean comes from the preset ranges, hashed on the building key. **Strata:** the r3 recipe on a warped, tilted height coordinate with every height in H_FRONT units. Layers sit about 0.42 H apart, with the banks and wisps octaves (0.62/0.38, remap 0.47–0.64), clumps, and one wisp layer just above the frontage roofs (1.08 H). The fog thins above 0.5 H with an e-fold of H_SKY. It sits only behind the street face (r3 box_y), so the corridor and the rooms stay clear. The r3 underlight ramp gives the layers a faint glow in the palette by height. | `beams` 6, `beam` 5e6 (× 1.5), `beam_cone` 10, `beam_rise` 1.35, `fog_peak` 0.039 (round 2b: 1.3× so the layering reads), `wisp_k` 1.2, `fog_front` 7, `underlight_k` 0.06, `cityglow` 900 |
+
+### Art director review of the full v3 sequence (round 3)
+
+The 20:45 encode is kept as `storyboard_v3a.mp4` for comparison. PASS items kept: the values band, the one-city
+continuity and the HQ → dive → street flow, the street hold with markers. The three FAILs and what changed:
+
+| Note | Rule now | Keys (`sb_ocjobs.LOOK`) |
+|---|---|---|
+| **Beams are solid rods** (uniform fill, crisp edges) | **Each beam is an emissive shaft plus one haze light.** The shaft is an open cone mesh (half-angle 6°, length 3.5 × H_FRONT = 47 BU), camera-visible only, Transparent + Emission so it adds light and never occludes. Its strength is radial × axial × noise. **Radial:** s, the offset from the axis, comes from the view facing (s² = 1 − (N·V)²). A narrow hot core (gaussian σ 0.13, pushed toward white) sits over a wide soft skirt (σ 0.42, × (1 − s²), so the silhouette never has an edge). **Axial:** brightest at the source (e-fold 0.22 of the length), gone by 60 % of the length, with a 2.5 % fade-in so the open start is not a disc. A slow world noise (×0.55–1.0) breaks it up. **The haze light** is one fully soft 30° spot per beam, linked to the fog only, so the air around the shaft glows most near the source. The v3a core spot is gone. | `beam_emit` 3, `beam_half` 6, `beam_len` 3.5, `beam_fade` 0.6, `beam_efold` 0.22, `beam_core_s` 0.13, `beam_soft_s` 0.42, `beam_core_w` 1, `beam_soft_w` 0.5, `beam_hot` 0.5; `beam` 6e5, `beam_cone` 30 |
+| **Fog strata read as clear air** with a flat haze only at the horizon | **Fog 1.3× v3a plus two visible banks that pick up the neon.** `fog_peak` 0.039 → 0.0507. **Mid-ground bank:** behind the frontage, 0.05–0.8 H_FRONT, broken by the banks-octave noise. It glows in the district pair and the violet accent, chosen by a slow noise along the street, so it reads pink in one stretch and cyan in the next. **Low ground bank:** over the foreground on the camera side, from the near kerb outward, thick to 0.44 BU and gone at 2.2 BU, broken by a low-frequency noise. It glows faintly in the district pair and is lit from inside by the street-level glows. The haze above the skyline thins with altitude (e-fold 40 BU), so the beams dissolve into it. | `fog_peak` 0.0507, `mid_bank` 0.035, `mid_glow` 0.3, `ground_bank` 0.04, `gb_top` 2.2, `ground_glow` 0.05, `haze_efold` 40 |
+| **The foreground slabs read as a black checkerboard** | **The plinths sink into the ground bank and turn wet.** The plinth tops use the wet street's puddle rule (base 0.012, roughness 0.03–0.32 by the same noise, specular 0.7), so they carry the neon reflections instead of cutting black holes in the wet street. **Street-level glows:** point lights 0.9 BU over the plinths, on a 9 BU jittered grid from the near kerb out to 60 BU, kept with p 0.55 (89 here). They use the lamp warm and the district pair, at 20 W × 0.6–1.2, with a hashed seed. They pool on the wet tops as puddle highlights and light the ground bank. | `onecity_build.section()` plinth `wet` (default on); `ground_lamp` 20, `ground_glow_step` 9, `ground_glow_depth` 60, `ground_glow_p` 0.55 |
+| Values after the denser, lit fog | **A street grade by zoom.** The OVERVIEW and the dive that lands on it are graded at exposure 0.77. The near shots (decision, hovers) are graded at 0.84 (v3a: 1.1 everywhere). The ZOOM move eases between the two. | `sb_ocfull.EXP_OV` 0.77, `STREET_POST` 0.84 (`OC_EXP_OV`, `OC_EXPOSURE`) |
+
+**Values per held shot** (composed frames, 1280 × 720, mean of the hold's samples):
+
+| Shot | Frames | v3a median / under 0.10 | v3-r3 median / under 0.10 |
+|---|---|---|---|
+| OVERVIEW (reveal, marks) | 323–453 | 0.132 / 33.0 % | **0.127 / 35.3 %** |
+| ZOOM (move) | 454–477 | 0.155 / 27.3 % | 0.157 / 25.7 % |
+| DECISION | 478–498 | 0.183 / 23.7 % | 0.182 / 20.0 % |
+| Hover in (move) | 499–506 | 0.139 / 34.1 % | 0.140 / 32.6 % |
+| HOVER 1 | 507–542 | 0.125 / 38.5 % | **0.125 / 38.2 %** |
+| Hover move | 543–549 | 0.120 / 40.1 % | 0.122 / 39.6 % |
+| HOVER 2 | 550–613 | 0.129 / 36.4 % | **0.129 / 36.7 %** |
+
+The DECISION frame is filled by the lit frontage and the UI, so it sits above the band in both versions.
+
+**Continuity:** the frame-to-frame mean difference has a median of 0.0037. The largest values (≈ 0.10) fall at the
+fastest descent (f 282–287) and in the zoom move (f 465–472), in smooth runs with no isolated spike.
+
+**Re-rendered:** all the Cycles frames: the dive (48), the zoom and hover moves (39) and the street plates (7). The lane
+passes (`Y_*`) are emission-only with the fog and the beams hidden, so they were kept.
+- GPU time: about 85 min, plus about 15 min spent on a superseded dive batch.
+- Before/after crops: `scratch/r3_crops/` (`beams_f0300`, `beams_f0390`, `fg_f0390`, `fg_f0580`, `_before` / `_after`).
+
+**Limits (honest):**
+- At the dive's height (f 300), only the lowest 20 % of each shaft is in frame. There, the hot core still reads as a
+  bright line near the source. The soft skirt and the dissolve read from the street.
+- At HOVER 2's close camera, the nearest plinth edges are still legible as dark shapes. They are wet and reflective
+  now, not black holes, but the ground bank is thin that close.
+
 ### Godot mapping
 
 | Element | Godot |
@@ -453,7 +527,7 @@ With (a), the OVERVIEW would frame the route at about the old proportions with n
 | Rooms | MeshInstance3D interiors inserted into the chosen buildings, plus wall meshes cut from the facade with the dissolve shader. The facade cut is a per-building mesh variant (the route columns are rebuilt with openings when the run starts). |
 | Section | A world-space clip box uniform (`corridor`, `z_cut`) in the city building and neon shaders; `z_cut` comes from the camera rig's zoom. |
 | Look | `look_blend` (from zoom) drives the WorldEnvironment lerp (fog, glow, tonemap), the city shaders' toon ↔ PBR mix and ink fade, the wet street's roughness, and FogVolume density. |
-| Lights | Kerb lamps, facade washes and beams as Omni / Spot lights spawned by the same rules, with `visibility_range` fades by zoom. |
+| Lights | Kerb lamps, street-level glows, facade washes and the beam haze lights as Omni / Spot lights spawned by the same rules, with `visibility_range` fades by zoom. The beam shaft is an unshaded additive cone mesh whose shader does the radial (view facing) and axial falloff. |
 
 ### Limits
 
@@ -493,3 +567,13 @@ Run from `scripts/`. Nothing launches Godot. `scratch/` was deleted after delive
 
    The renders go to `D:/rc_scratch/storyboard/oc_m` and `oc_c`.
 3. `python sb_ocframes.py frames`, then `mp4`, then `boards`.
+
+**v3 full sequence rebuild (round 3)** (from `scripts/`):
+1. Run step 1 above.
+2. GPU, one lock per batch, with the runner `../scratch/runner_r3b.sh`:
+   - `python sb_ocjobs.py fc_street`;
+   - `fc_dive 275 299`;
+   - `fc_dive 299 323`;
+   - `fc_move`;
+   - `fm_dive` and `fc_dyn`, only if the mainline frames or the lane frames are missing.
+3. `python sb_ocfull.py frames -j 4`, then `mp4`, `gif`, `boards`, `sheet`.

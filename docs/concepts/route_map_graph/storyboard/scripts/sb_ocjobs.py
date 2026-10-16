@@ -33,8 +33,15 @@ T0 = 4.4                              # the proof starts on the hovered Site (be
 T_DIVE, DIVE_S = SB.T["dive"], 3.0
 T_END = T_DIVE + DIVE_S + 0.5         # the REVEAL start, held 0.5 s
 HQ_LENS = 300.0
-LOOK = dict(unit_scale=3.0, neon=1.0, win=0.9, panel=4.0, cityglow=300.0, room=60.0, beam=6.0e5, beams=4, fog_peak=0.008,
-            haze=0.0008, step_rate=4.0, lamp=80.0, wash=1500.0)   # calibrated on the one-city tests (median luma 0.22)
+LOOK = dict(unit_scale=3.0, neon=1.0, win=0.9, panel=4.0, cityglow=900.0, room=60.0, beams=6, beam_rise=1.35, lane_dim=0.5, lane_k=2.5,
+            # v3-r3 (art director): beams = an emissive shaft (radial core + soft skirt, gone by 60 % of its length) and
+            # one wide soft haze spot; fog 1.3x the v3a field plus coloured mid and ground banks; street-level glows
+            beam=6.0e5, beam_cone=30.0, beam_emit=3.0, beam_half=6.0, beam_len=3.5, beam_fade=0.6, beam_efold=0.22,
+            beam_core_s=0.13, beam_soft_s=0.42, beam_core_w=1.0, beam_soft_w=0.5, beam_hot=0.5,
+            fog_peak=0.0507, wisp_k=1.2, fog_front=7.0, underlight_k=0.07, haze=0.0008, haze_efold=40.0,
+            mid_bank=0.035, mid_glow=0.3, gb_top=2.2, ground_bank=0.04, ground_glow=0.05,
+            ground_lamp=20.0, ground_glow_step=9.0, ground_glow_depth=60.0, ground_glow_p=0.55,
+            step_rate=4.0, lamp=80.0, wash=1500.0)   # calibrated on the one-city tests (median luma 0.22)
 
 
 def derive():
@@ -43,7 +50,7 @@ def derive():
         return json.load(open(p))
     d = OC.derive()
     out = dict(street=dict(a=d["a"], c=d["c"]), nrm=d["nrm"], start_left=d["start_left"], span=d["span"],
-               columns=d["columns"], route_keys=d["route_keys"], rooms=d["rooms"], overview=d["overview"],
+               columns=d["columns"], route_keys=d["route_keys"], rooms=d["rooms"], edges=d["edges"], col_info=d["col_info"], overview=d["overview"],
                decision=d["decision"], frontage=d["frontage"])
     os.makedirs(SCR, exist_ok=True)
     json.dump(out, open(p, "w"), indent=1)
@@ -137,12 +144,14 @@ def run(out, cams, oc, tag):
 
 
 def oc_block(mode, D, **kw):
-    b = dict(mode=mode, route_keys=D["route_keys"], rooms=D["rooms"], street=D["street"], look=LOOK, nrm=D["nrm"])
+    b = dict(mode=mode, route_keys=D["route_keys"], rooms=D["rooms"], street=D["street"], look=LOOK, nrm=D["nrm"],
+             layout_path=OC.LAYPATH, edges=D["edges"], col_info=D["col_info"], hero_sign_rule=OC.LAYOUT_RULES["hero_sign_rule"],
+             plinth_off=OC.LAYOUT_RULES["border_street_width"] / 2 + 0.2)
     b.update(kw)
     return b
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and sys.argv[1] not in ("fc_dive", "fc_street", "fc_dyn", "fc_move", "fm_dive", "fc_test_end", "fc_t3"):
     w = sys.argv[1]
     D = derive()
     if w == "derive":
@@ -207,3 +216,157 @@ if __name__ == "__main__":
         fr = [dict(name="b_street", persp=dict(c["persp"]), res=[1920, 1080], zcut=zcut(1.0)),
               dict(name="b_rooms", persp=dict(c["persp"]), res=[1920, 1080], dis=allopen, zcut=zcut(1.0))]
         run(OUTC, [], oc_block("cycles", D, frames=fr, spp=64), "c_boards")
+
+
+# ================================================================ v3 FULL SEQUENCE on the one-city street (SB.T timeline)
+def mix(a, b, k):
+    """Pose mix (cam_rig convention): target, yaw, pitch, lens, shift linear; distance in log space."""
+    tg = [R.lerp(x, y, k) for x, y in zip(a["target"], b["target"])]
+    d = math.exp(R.lerp(math.log(a["dist"]), math.log(b["dist"]), k))
+    c = OC.cam(tg, R.lerp(a["yaw"], b["yaw"], k), R.lerp(a["pitch"], b["pitch"], k), d,
+               R.lerp(a["persp"]["lens"], b["persp"]["lens"], k), R.lerp(a["persp"]["sx"], b["persp"]["sx"], k),
+               R.lerp(a["persp"]["sy"], b["persp"]["sy"], k))
+    c["persp"]["tgt"] = tg
+    return c
+
+
+def hover_pose(D, room):
+    """The v3_dynamic hover ease on the one-city rig: F 22 % to the room, yaw 3 deg toward it, distance x 0.96."""
+    dec = D["decision"]
+    r = D["rooms"][room]
+    rc = [sum(p[i] for p in r["front"] + r["back"]) / 8.0 for i in range(3)]
+    F = [R.lerp(a, b, 0.22) for a, b in zip(dec["target"], rc)]
+    px = OC.proj(dec, rc)[0]
+    s = 1.0 if px > OC.W_ / 2 else -1.0
+    c = OC.cam(F, dec["yaw"] - 3.0 * s, dec["pitch"], dec["dist"] * 0.96, dec["persp"]["lens"], dec["persp"]["sx"], dec["persp"]["sy"])
+    c["persp"]["tgt"] = F
+    return c
+
+
+def full_at(f, D=None):
+    """(segment, pose, extra) for global video frame f (the SB.T timeline, 24 fps)."""
+    D = D or derive()
+    T = SB.T
+    t = f / FPS
+    ov, dec = D["overview"], D["decision"]
+    for c in (ov, dec):
+        c["persp"].setdefault("tgt", c["target"])
+    if t < T["dive"]:
+        return "hq", None, {}
+    if t < T["b4"]:
+        u = min(1.0, (t - T["dive"]) / DIVE_S)
+        return "dive", pose_at(u, D), dict(u=u)
+    if t < T["b5"]:
+        return "ov", ov, {}
+    if t < T["b5"] + SB.ZOOM_S:
+        u = R.ease((t - T["b5"]) / SB.ZOOM_S)
+        return "zoom", mix(ov, dec, u), dict(u=u)
+    h1, h2 = hover_pose(D, SB.OPT1), hover_pose(D, SB.OPT2)
+    if t < T["hover1"]:
+        return "dec", dec, {}
+    if t < T["hover1"] + SB.HOVER_IN:
+        k = R.ease_out((t - T["hover1"]) / SB.HOVER_IN)
+        return "hin", mix(dec, h1, k), dict(k=k)
+    if t < T["hover2"]:
+        return "h1", h1, {}
+    if t < T["hover2"] + SB.HOVER_MOVE:
+        k = R.ease((t - T["hover2"]) / SB.HOVER_MOVE)
+        return "hmove", mix(h1, h2, k), dict(k=k)
+    return "h2", h2, {}
+
+
+HOLDS = ("ov", "dec", "h1", "h2")
+OPEN_ALL = None
+
+
+def _fr(name, c, t, res, **kw):
+    d = dict(name=name, persp=dict(c["persp"]), t=t, res=res, zcut=zcut(1.0 if c is not None else 0.0))
+    d.update(kw)
+    return d
+
+
+def full_jobs(kind, D):
+    allopen = {i: 1.0 for i in D["rooms"]}
+    for c in (D["overview"], D["decision"]):
+        c["persp"].setdefault("tgt", c["target"])
+    fr = []
+    if kind == "fc_dive":
+        last = None
+        for f in range(SB.NF):
+            s, c, ex = full_at(f, D)
+            if s != "dive":
+                continue
+            z = zoom_of(c, D)
+            if look_w(z) <= 0.001:
+                continue
+            fr.append(dict(name="g_%04d" % f, persp=dict(c["persp"]), t=f / FPS, res=[1280, 720], zcut=zcut(z)))
+    elif kind == "fc_street":
+        ov = D["overview"]
+        t = SB.T["b4"]
+        fr += [_fr("S_ov_closed", ov, t, [1280, 720], lanes=False), _fr("S_ov_open", ov, t, [1280, 720], lanes=False, dis=allopen),
+               _fr("B_ov_closed", ov, t, [1920, 1080]), _fr("B_ov_open", ov, t, [1920, 1080], dis=allopen)]
+        for seg in ("dec", "h1", "h2"):
+            f0 = next(f for f in range(SB.NF) if full_at(f, D)[0] == seg)
+            s, c, ex = full_at(f0, D)
+            fr.append(_fr("S_%s" % seg, c, f0 / FPS, [1280, 720], lanes=False, dis=allopen))
+    elif kind == "fc_dyn":
+        # the moving lanes at 8 fps on every held shot (emission-only; blended between in the composite)
+        for seg in HOLDS:
+            fs = [f for f in range(SB.NF) if full_at(f, D)[0] == seg]
+            for k, f in enumerate(fs):
+                if k % 3 and f != fs[-1]:
+                    continue
+                s, c, ex = full_at(f, D)
+                fr.append(_fr("Y_%04d" % f, c, f / FPS, [1280, 720], dyn=True, dis=allopen if seg != "ov" else {}))
+    elif kind == "fc_move":
+        # zoom and the two hover moves: every frame, walls open
+        for f in range(SB.NF):
+            s, c, ex = full_at(f, D)
+            if s in ("zoom", "hin", "hmove"):
+                fr.append(_fr("g_%04d" % f, c, f / FPS, [1280, 720], dis=allopen))
+    return fr
+
+
+if __name__ == "__main__" and sys.argv[1] in ("fc_dive", "fc_street", "fc_dyn", "fc_move", "fm_dive", "fc_test_end", "fc_t3"):
+    D = derive()
+    w = sys.argv[1]
+    if w == "fm_dive":
+        cams = []
+        for f in range(SB.NF):
+            s, c, ex = full_at(f, D)
+            if s != "dive" or look_w(zoom_of(c, D)) >= 0.999:
+                continue
+            cams.append(dict(tag="m_g_%04d" % f, persp=dict(loc=c["persp"]["loc"], tgt=c["persp"]["tgt"], lens=c["persp"]["lens"],
+                                                            sx=c["persp"]["sx"], sy=c["persp"]["sy"]), res=[1280, 720], samples=12,
+                             zcut=zcut(zoom_of(c, D))))
+        run(OUTM, cams, oc_block("mainline", D), "fm_dive")
+    elif w == "fc_t3":
+        # v3-r3 calibration: the street OVERVIEW (walls closed) and the dive frame of the review (f 300), 960 px
+        for x in sys.argv[2:]:
+            k_, v_ = x.split("=")
+            LOOK[k_] = float(v_)
+        ov = D["overview"]
+        ov["persp"].setdefault("tgt", ov["target"])
+        s3, c3, ex3 = full_at(300, D)
+        fr = [_fr("T3_ov", ov, SB.T["b4"], [960, 540]), dict(name="T3_0300", persp=dict(c3["persp"]), t=300 / FPS, res=[960, 540],
+                                                             zcut=zcut(zoom_of(c3, D)))]
+        run(OUTC, [], oc_block("cycles", D, frames=fr, spp=24), "fc_t3")
+    elif w == "fc_test_end":
+        ov = D["overview"]
+        ov["persp"].setdefault("tgt", ov["target"])
+        fr = [_fr("E_closed", ov, SB.T["b4"], [1920, 1080]), _fr("E_open", ov, SB.T["b4"], [1920, 1080], dis={i: 1.0 for i in D["rooms"]})]
+        run(OUTC, [], oc_block("cycles", D, frames=fr, spp=48), "fc_test_end")
+    else:
+        fr = full_jobs(w, D)
+        tag = w
+        if len(sys.argv) > 3:            # v3-r3: a frame range [f0, f1) so a long job fits one GPU lock block
+            f0, f1 = int(sys.argv[2]), int(sys.argv[3])
+            fr = [x for x in fr if not x["name"][2:6].isdigit() or f0 <= int(x["name"][2:6]) < f1]
+            tag = "%s_%d" % (w, f0)
+        print(w, "frames", len(fr), flush=True)
+        mark = os.path.join(SCR, "r3_done_%s" % tag)      # v3-r3: a batch already rendered with the current LOOK is skipped
+        if os.path.exists(mark):
+            print("skip", tag, "(already rendered)", flush=True)
+            sys.exit(0)
+        run(OUTC, [], oc_block("cycles", D, frames=fr, spp=32 if w != "fc_dyn" else 24), tag)
+        open(mark, "w").write(json.dumps(LOOK))

@@ -1,0 +1,1876 @@
+{
+ "nodes": [
+  {
+   "id": "core",
+   "cell": [
+    32,
+    31
+   ],
+   "lot": [
+    32.5,
+    31.5
+   ],
+   "state": "core",
+   "kind": "core",
+   "tier": 1,
+   "corp": "meridian",
+   "name": "Home Server"
+  },
+  {
+   "id": "lose_the_tracking",
+   "cell": [
+    6,
+    15
+   ],
+   "lot": [
+    6.5,
+    15.5
+   ],
+   "state": "white",
+   "kind": "site",
+   "tier": 1,
+   "corp": "meridian",
+   "name": "Lose the Tracking"
+  },
+  {
+   "id": "m1_a",
+   "cell": [
+    6,
+    24
+   ],
+   "lot": [
+    6.5,
+    24.5
+   ],
+   "state": "grey",
+   "kind": "site",
+   "tier": 1,
+   "corp": "meridian",
+   "name": "Parcel Sorting Hall"
+  },
+  {
+   "id": "m1_b",
+   "cell": [
+    10,
+    20
+   ],
+   "lot": [
+    10.5,
+    20.5
+   ],
+   "state": "owned",
+   "kind": "firewall",
+   "tier": 1,
+   "corp": "meridian",
+   "name": "Customs Pre-Clearance"
+  },
+  {
+   "id": "m1_c",
+   "cell": [
+    17,
+    20
+   ],
+   "lot": [
+    17.5,
+    20.5
+   ],
+   "state": "owned",
+   "kind": "relay",
+   "tier": 1,
+   "corp": "meridian",
+   "name": "Tracking Beacon Array"
+  },
+  {
+   "id": "m1_d",
+   "cell": [
+    21,
+    15
+   ],
+   "lot": [
+    21.5,
+    15.5
+   ],
+   "state": "owned",
+   "kind": "firewall",
+   "tier": 1,
+   "corp": "meridian",
+   "name": "Returns Processing Centre"
+  },
+  {
+   "id": "m1_e",
+   "cell": [
+    26,
+    15
+   ],
+   "lot": [
+    26.5,
+    15.5
+   ],
+   "state": "owned",
+   "kind": "vault",
+   "tier": 1,
+   "corp": "meridian",
+   "name": "Drone Charging Yard"
+  },
+  {
+   "id": "m1_f",
+   "cell": [
+    32,
+    15
+   ],
+   "lot": [
+    32.5,
+    15.5
+   ],
+   "state": "owned",
+   "kind": "safehouse",
+   "tier": 1,
+   "corp": "meridian",
+   "name": "Warehouse Shift Planner"
+  },
+  {
+   "id": "forge_the_manifest",
+   "cell": [
+    26,
+    4
+   ],
+   "lot": [
+    26.5,
+    4.5
+   ],
+   "state": "available",
+   "kind": "site",
+   "tier": 1,
+   "corp": "meridian",
+   "name": "Forge the Manifest"
+  },
+  {
+   "id": "m1_g",
+   "cell": [
+    32,
+    10
+   ],
+   "lot": [
+    32.5,
+    10.5
+   ],
+   "state": "owned",
+   "kind": "proxy",
+   "tier": 1,
+   "corp": "meridian",
+   "name": "Address Verification Desk"
+  },
+  {
+   "id": "m1_h",
+   "cell": [
+    40,
+    15
+   ],
+   "lot": [
+    40.5,
+    15.5
+   ],
+   "state": "owned",
+   "kind": "relay",
+   "tier": 1,
+   "corp": "meridian",
+   "name": "Cold Chain Monitor"
+  },
+  {
+   "id": "m1_i",
+   "cell": [
+    46,
+    10
+   ],
+   "lot": [
+    46.5,
+    10.5
+   ],
+   "state": "available",
+   "kind": "site",
+   "tier": 1,
+   "corp": "meridian",
+   "name": "Tariff Calculation Office"
+  },
+  {
+   "id": "m1_j",
+   "cell": [
+    46,
+    4
+   ],
+   "lot": [
+    46.5,
+    4.5
+   ],
+   "state": "available",
+   "kind": "site",
+   "tier": 1,
+   "corp": "meridian",
+   "name": "Fleet Telematics Hub"
+  },
+  {
+   "id": "m2_intel",
+   "cell": [
+    6,
+    4
+   ],
+   "lot": [
+    6.5,
+    4.5
+   ],
+   "state": "white",
+   "kind": "site",
+   "tier": 2,
+   "corp": "meridian",
+   "name": "Shipping Manifest Vault"
+  },
+  {
+   "id": "m2_breach",
+   "cell": [
+    10,
+    -1
+   ],
+   "lot": [
+    10.5,
+    -0.5
+   ],
+   "state": "available",
+   "kind": "site",
+   "tier": 2,
+   "corp": "meridian",
+   "name": "Customs Key Authority"
+  },
+  {
+   "id": "m2_virus",
+   "cell": [
+    17,
+    4
+   ],
+   "lot": [
+    17.5,
+    4.5
+   ],
+   "state": "owned",
+   "kind": "vault",
+   "tier": 2,
+   "corp": "meridian",
+   "name": "Routing Table Mirror"
+  },
+  {
+   "id": "m2_d",
+   "cell": [
+    17,
+    -1
+   ],
+   "lot": [
+    17.5,
+    -0.5
+   ],
+   "state": "available",
+   "kind": "site",
+   "tier": 2,
+   "corp": "meridian",
+   "name": "Priority Lane Exchange"
+  },
+  {
+   "id": "m2_e",
+   "cell": [
+    26,
+    -1
+   ],
+   "lot": [
+    26.5,
+    -0.5
+   ],
+   "state": "owned",
+   "kind": "relay",
+   "tier": 2,
+   "corp": "meridian",
+   "name": "Worker Scoring Engine"
+  },
+  {
+   "id": "m2_f",
+   "cell": [
+    21,
+    -5
+   ],
+   "lot": [
+    21.5,
+    -4.5
+   ],
+   "state": "grey",
+   "kind": "site",
+   "tier": 2,
+   "corp": "meridian",
+   "name": "Port Congestion Model"
+  },
+  {
+   "id": "m2_g",
+   "cell": [
+    32,
+    -5
+   ],
+   "lot": [
+    32.5,
+    -4.5
+   ],
+   "state": "available",
+   "kind": "site",
+   "tier": 2,
+   "corp": "meridian",
+   "name": "Last-Mile Drone Command"
+  },
+  {
+   "id": "m2_h",
+   "cell": [
+    36,
+    -1
+   ],
+   "lot": [
+    36.5,
+    -0.5
+   ],
+   "state": "available",
+   "kind": "site",
+   "tier": 2,
+   "corp": "meridian",
+   "name": "Insurance Claims Ledger"
+  },
+  {
+   "id": "reroute_the_audit",
+   "cell": [
+    40,
+    -5
+   ],
+   "lot": [
+    40.5,
+    -4.5
+   ],
+   "state": "white",
+   "kind": "site",
+   "tier": 2,
+   "corp": "meridian",
+   "name": "Reroute the Audit"
+  },
+  {
+   "id": "m3_core",
+   "cell": [
+    2,
+    -9
+   ],
+   "lot": [
+    2.5,
+    -8.5
+   ],
+   "state": "white",
+   "kind": "key",
+   "tier": 3,
+   "corp": "meridian",
+   "name": "Global Routing Core"
+  },
+  {
+   "id": "m3_b",
+   "cell": [
+    6,
+    -16
+   ],
+   "lot": [
+    6.5,
+    -15.5
+   ],
+   "state": "white",
+   "kind": "site",
+   "tier": 3,
+   "corp": "meridian",
+   "name": "Freight Futures Desk"
+  },
+  {
+   "id": "m3_c",
+   "cell": [
+    10,
+    -9
+   ],
+   "lot": [
+    10.5,
+    -8.5
+   ],
+   "state": "available",
+   "kind": "site",
+   "tier": 3,
+   "corp": "meridian",
+   "name": "Customs Override Escrow"
+  },
+  {
+   "id": "m3_d",
+   "cell": [
+    17,
+    -16
+   ],
+   "lot": [
+    17.5,
+    -15.5
+   ],
+   "state": "white",
+   "kind": "site",
+   "tier": 3,
+   "corp": "meridian",
+   "name": "Supply Twin Simulator"
+  },
+  {
+   "id": "m3_e",
+   "cell": [
+    17,
+    -22
+   ],
+   "lot": [
+    17.5,
+    -21.5
+   ],
+   "state": "available",
+   "kind": "site",
+   "tier": 3,
+   "corp": "meridian",
+   "name": "Board Logistics Backbone"
+  },
+  {
+   "id": "sink_the_cargo_logs",
+   "cell": [
+    17,
+    -9
+   ],
+   "lot": [
+    17.5,
+    -8.5
+   ],
+   "state": "available",
+   "kind": "site",
+   "tier": 3,
+   "corp": "meridian",
+   "name": "Sink the Cargo Logs"
+  },
+  {
+   "id": "m3_f",
+   "cell": [
+    26,
+    -16
+   ],
+   "lot": [
+    26.5,
+    -15.5
+   ],
+   "state": "white",
+   "kind": "site",
+   "tier": 3,
+   "corp": "meridian",
+   "name": "Contract Pricing Authority"
+  },
+  {
+   "id": "m3_g",
+   "cell": [
+    26,
+    -22
+   ],
+   "lot": [
+    26.5,
+    -21.5
+   ],
+   "state": "white",
+   "kind": "site",
+   "tier": 3,
+   "corp": "meridian",
+   "name": "Surveillance Route Archive"
+  },
+  {
+   "id": "m3_h",
+   "cell": [
+    32,
+    -22
+   ],
+   "lot": [
+    32.5,
+    -21.5
+   ],
+   "state": "white",
+   "kind": "site",
+   "tier": 3,
+   "corp": "meridian",
+   "name": "Meridian Root Ledger"
+  },
+  {
+   "id": "the_manifest_site",
+   "cell": [
+    10,
+    -26
+   ],
+   "lot": [
+    10.5,
+    -25.5
+   ],
+   "state": "white",
+   "kind": "site",
+   "tier": 4,
+   "corp": "meridian",
+   "name": "The Manifest"
+  }
+ ],
+ "links": [
+  {
+   "a": "core",
+   "b": "m1_a",
+   "state": "grey",
+   "pts": [
+    [
+     32.5,
+     31.5
+    ],
+    [
+     26.5,
+     31.5
+    ],
+    [
+     26.5,
+     24.5
+    ],
+    [
+     17.5,
+     24.5
+    ],
+    [
+     17.5,
+     20.5
+    ],
+    [
+     6.5,
+     20.5
+    ],
+    [
+     6.5,
+     24.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "core",
+   "b": "m1_b",
+   "state": "owned",
+   "pts": [
+    [
+     32.5,
+     31.5
+    ],
+    [
+     26.5,
+     31.5
+    ],
+    [
+     26.5,
+     24.5
+    ],
+    [
+     21.5,
+     24.5
+    ],
+    [
+     21.5,
+     20.5
+    ],
+    [
+     10.5,
+     20.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "core",
+   "b": "m1_c",
+   "state": "owned",
+   "pts": [
+    [
+     32.5,
+     31.5
+    ],
+    [
+     32.5,
+     24.5
+    ],
+    [
+     26.5,
+     24.5
+    ],
+    [
+     26.5,
+     20.5
+    ],
+    [
+     17.5,
+     20.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "core",
+   "b": "m1_d",
+   "state": "owned",
+   "pts": [
+    [
+     32.5,
+     31.5
+    ],
+    [
+     26.5,
+     31.5
+    ],
+    [
+     26.5,
+     20.5
+    ],
+    [
+     21.5,
+     20.5
+    ],
+    [
+     21.5,
+     15.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "core",
+   "b": "m1_e",
+   "state": "owned",
+   "pts": [
+    [
+     32.5,
+     31.5
+    ],
+    [
+     26.5,
+     31.5
+    ],
+    [
+     26.5,
+     24.5
+    ],
+    [
+     32.5,
+     24.5
+    ],
+    [
+     32.5,
+     20.5
+    ],
+    [
+     26.5,
+     20.5
+    ],
+    [
+     26.5,
+     15.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "core",
+   "b": "m1_f",
+   "state": "owned",
+   "pts": [
+    [
+     32.5,
+     31.5
+    ],
+    [
+     36.5,
+     31.5
+    ],
+    [
+     36.5,
+     20.5
+    ],
+    [
+     32.5,
+     20.5
+    ],
+    [
+     32.5,
+     15.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "core",
+   "b": "m1_g",
+   "state": "owned",
+   "pts": [
+    [
+     32.5,
+     31.5
+    ],
+    [
+     26.5,
+     31.5
+    ],
+    [
+     26.5,
+     24.5
+    ],
+    [
+     36.5,
+     24.5
+    ],
+    [
+     36.5,
+     15.5
+    ],
+    [
+     32.5,
+     15.5
+    ],
+    [
+     32.5,
+     10.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "core",
+   "b": "m1_h",
+   "state": "owned",
+   "pts": [
+    [
+     32.5,
+     31.5
+    ],
+    [
+     40.5,
+     31.5
+    ],
+    [
+     40.5,
+     15.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "core",
+   "b": "m1_i",
+   "state": "border",
+   "pts": [
+    [
+     32.5,
+     31.5
+    ],
+    [
+     32.5,
+     20.5
+    ],
+    [
+     46.5,
+     20.5
+    ],
+    [
+     46.5,
+     10.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "core",
+   "b": "m1_j",
+   "state": "border",
+   "pts": [
+    [
+     32.5,
+     31.5
+    ],
+    [
+     32.5,
+     20.5
+    ],
+    [
+     46.5,
+     20.5
+    ],
+    [
+     46.5,
+     4.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m1_a",
+   "b": "m2_intel",
+   "state": "white",
+   "pts": [
+    [
+     6.5,
+     24.5
+    ],
+    [
+     10.5,
+     24.5
+    ],
+    [
+     10.5,
+     10.5
+    ],
+    [
+     6.5,
+     10.5
+    ],
+    [
+     6.5,
+     4.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m1_a",
+   "b": "lose_the_tracking",
+   "state": "white",
+   "pts": [
+    [
+     6.5,
+     24.5
+    ],
+    [
+     10.5,
+     24.5
+    ],
+    [
+     10.5,
+     20.5
+    ],
+    [
+     6.5,
+     20.5
+    ],
+    [
+     6.5,
+     15.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m1_a",
+   "b": "m1_b",
+   "state": "white",
+   "pts": [
+    [
+     6.5,
+     24.5
+    ],
+    [
+     6.5,
+     20.5
+    ],
+    [
+     10.5,
+     20.5
+    ]
+   ],
+   "locked": true
+  },
+  {
+   "a": "m1_b",
+   "b": "m2_breach",
+   "state": "border",
+   "pts": [
+    [
+     10.5,
+     20.5
+    ],
+    [
+     17.5,
+     20.5
+    ],
+    [
+     17.5,
+     15.5
+    ],
+    [
+     10.5,
+     15.5
+    ],
+    [
+     10.5,
+     -0.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m1_c",
+   "b": "m2_virus",
+   "state": "owned",
+   "pts": [
+    [
+     17.5,
+     20.5
+    ],
+    [
+     10.5,
+     20.5
+    ],
+    [
+     10.5,
+     15.5
+    ],
+    [
+     21.5,
+     15.5
+    ],
+    [
+     21.5,
+     10.5
+    ],
+    [
+     17.5,
+     10.5
+    ],
+    [
+     17.5,
+     4.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m1_c",
+   "b": "m1_d",
+   "state": "white",
+   "pts": [
+    [
+     17.5,
+     20.5
+    ],
+    [
+     21.5,
+     20.5
+    ],
+    [
+     21.5,
+     15.5
+    ]
+   ],
+   "locked": true
+  },
+  {
+   "a": "m1_d",
+   "b": "m2_d",
+   "state": "border",
+   "pts": [
+    [
+     21.5,
+     15.5
+    ],
+    [
+     26.5,
+     15.5
+    ],
+    [
+     26.5,
+     4.5
+    ],
+    [
+     17.5,
+     4.5
+    ],
+    [
+     17.5,
+     -0.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m1_e",
+   "b": "m2_e",
+   "state": "owned",
+   "pts": [
+    [
+     26.5,
+     15.5
+    ],
+    [
+     32.5,
+     15.5
+    ],
+    [
+     32.5,
+     4.5
+    ],
+    [
+     26.5,
+     4.5
+    ],
+    [
+     26.5,
+     -0.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m1_e",
+   "b": "m1_f",
+   "state": "white",
+   "pts": [
+    [
+     26.5,
+     15.5
+    ],
+    [
+     26.5,
+     10.5
+    ],
+    [
+     32.5,
+     10.5
+    ],
+    [
+     32.5,
+     15.5
+    ]
+   ],
+   "locked": true
+  },
+  {
+   "a": "m1_f",
+   "b": "m2_f",
+   "state": "grey",
+   "pts": [
+    [
+     32.5,
+     15.5
+    ],
+    [
+     26.5,
+     15.5
+    ],
+    [
+     26.5,
+     -0.5
+    ],
+    [
+     21.5,
+     -0.5
+    ],
+    [
+     21.5,
+     -4.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m1_f",
+   "b": "forge_the_manifest",
+   "state": "border",
+   "pts": [
+    [
+     32.5,
+     15.5
+    ],
+    [
+     32.5,
+     4.5
+    ],
+    [
+     26.5,
+     4.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m1_g",
+   "b": "m2_g",
+   "state": "border",
+   "pts": [
+    [
+     32.5,
+     10.5
+    ],
+    [
+     26.5,
+     10.5
+    ],
+    [
+     26.5,
+     4.5
+    ],
+    [
+     32.5,
+     4.5
+    ],
+    [
+     32.5,
+     -4.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m1_g",
+   "b": "m1_h",
+   "state": "white",
+   "pts": [
+    [
+     32.5,
+     10.5
+    ],
+    [
+     32.5,
+     15.5
+    ],
+    [
+     40.5,
+     15.5
+    ]
+   ],
+   "locked": true
+  },
+  {
+   "a": "m1_h",
+   "b": "m2_h",
+   "state": "border",
+   "pts": [
+    [
+     40.5,
+     15.5
+    ],
+    [
+     46.5,
+     15.5
+    ],
+    [
+     46.5,
+     -0.5
+    ],
+    [
+     36.5,
+     -0.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m1_i",
+   "b": "m2_h",
+   "state": "white",
+   "pts": [
+    [
+     46.5,
+     10.5
+    ],
+    [
+     46.5,
+     -0.5
+    ],
+    [
+     36.5,
+     -0.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m1_i",
+   "b": "m1_j",
+   "state": "white",
+   "pts": [
+    [
+     46.5,
+     10.5
+    ],
+    [
+     53.5,
+     10.5
+    ],
+    [
+     53.5,
+     4.5
+    ],
+    [
+     46.5,
+     4.5
+    ]
+   ],
+   "locked": true
+  },
+  {
+   "a": "m1_j",
+   "b": "reroute_the_audit",
+   "state": "white",
+   "pts": [
+    [
+     46.5,
+     4.5
+    ],
+    [
+     46.5,
+     -4.5
+    ],
+    [
+     40.5,
+     -4.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m2_intel",
+   "b": "m3_core",
+   "state": "white",
+   "pts": [
+    [
+     6.5,
+     4.5
+    ],
+    [
+     2.5,
+     4.5
+    ],
+    [
+     2.5,
+     -0.5
+    ],
+    [
+     10.5,
+     -0.5
+    ],
+    [
+     10.5,
+     -4.5
+    ],
+    [
+     2.5,
+     -4.5
+    ],
+    [
+     2.5,
+     -8.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m2_intel",
+   "b": "m2_breach",
+   "state": "white",
+   "pts": [
+    [
+     6.5,
+     4.5
+    ],
+    [
+     6.5,
+     -0.5
+    ],
+    [
+     10.5,
+     -0.5
+    ]
+   ],
+   "locked": true
+  },
+  {
+   "a": "m2_breach",
+   "b": "m3_b",
+   "state": "white",
+   "pts": [
+    [
+     10.5,
+     -0.5
+    ],
+    [
+     6.5,
+     -0.5
+    ],
+    [
+     6.5,
+     -4.5
+    ],
+    [
+     10.5,
+     -4.5
+    ],
+    [
+     10.5,
+     -8.5
+    ],
+    [
+     6.5,
+     -8.5
+    ],
+    [
+     6.5,
+     -15.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m2_virus",
+   "b": "m3_c",
+   "state": "border",
+   "pts": [
+    [
+     17.5,
+     4.5
+    ],
+    [
+     17.5,
+     -8.5
+    ],
+    [
+     10.5,
+     -8.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m2_virus",
+   "b": "m2_d",
+   "state": "white",
+   "pts": [
+    [
+     17.5,
+     4.5
+    ],
+    [
+     10.5,
+     4.5
+    ],
+    [
+     10.5,
+     -0.5
+    ],
+    [
+     17.5,
+     -0.5
+    ]
+   ],
+   "locked": true
+  },
+  {
+   "a": "m2_d",
+   "b": "m3_d",
+   "state": "white",
+   "pts": [
+    [
+     17.5,
+     -0.5
+    ],
+    [
+     21.5,
+     -0.5
+    ],
+    [
+     21.5,
+     -8.5
+    ],
+    [
+     17.5,
+     -8.5
+    ],
+    [
+     17.5,
+     -15.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m2_e",
+   "b": "m3_e",
+   "state": "border",
+   "pts": [
+    [
+     26.5,
+     -0.5
+    ],
+    [
+     26.5,
+     -15.5
+    ],
+    [
+     17.5,
+     -15.5
+    ],
+    [
+     17.5,
+     -21.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m2_e",
+   "b": "sink_the_cargo_logs",
+   "state": "border",
+   "pts": [
+    [
+     26.5,
+     -0.5
+    ],
+    [
+     21.5,
+     -0.5
+    ],
+    [
+     21.5,
+     -8.5
+    ],
+    [
+     17.5,
+     -8.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m2_e",
+   "b": "m2_f",
+   "state": "white",
+   "pts": [
+    [
+     26.5,
+     -0.5
+    ],
+    [
+     21.5,
+     -0.5
+    ],
+    [
+     21.5,
+     -4.5
+    ]
+   ],
+   "locked": true
+  },
+  {
+   "a": "m2_f",
+   "b": "m3_f",
+   "state": "white",
+   "pts": [
+    [
+     21.5,
+     -4.5
+    ],
+    [
+     17.5,
+     -4.5
+    ],
+    [
+     17.5,
+     -8.5
+    ],
+    [
+     26.5,
+     -8.5
+    ],
+    [
+     26.5,
+     -15.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m2_g",
+   "b": "m3_g",
+   "state": "white",
+   "pts": [
+    [
+     32.5,
+     -4.5
+    ],
+    [
+     32.5,
+     -15.5
+    ],
+    [
+     26.5,
+     -15.5
+    ],
+    [
+     26.5,
+     -21.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m2_g",
+   "b": "m2_h",
+   "state": "white",
+   "pts": [
+    [
+     32.5,
+     -4.5
+    ],
+    [
+     32.5,
+     -0.5
+    ],
+    [
+     36.5,
+     -0.5
+    ]
+   ],
+   "locked": true
+  },
+  {
+   "a": "m2_h",
+   "b": "m3_h",
+   "state": "white",
+   "pts": [
+    [
+     36.5,
+     -0.5
+    ],
+    [
+     36.5,
+     -15.5
+    ],
+    [
+     32.5,
+     -15.5
+    ],
+    [
+     32.5,
+     -21.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m3_core",
+   "b": "the_manifest_site",
+   "state": "white",
+   "pts": [
+    [
+     2.5,
+     -8.5
+    ],
+    [
+     10.5,
+     -8.5
+    ],
+    [
+     10.5,
+     -25.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m3_core",
+   "b": "m3_b",
+   "state": "white",
+   "pts": [
+    [
+     2.5,
+     -8.5
+    ],
+    [
+     2.5,
+     -15.5
+    ],
+    [
+     6.5,
+     -15.5
+    ]
+   ],
+   "locked": true
+  },
+  {
+   "a": "m3_b",
+   "b": "the_manifest_site",
+   "state": "white",
+   "pts": [
+    [
+     6.5,
+     -15.5
+    ],
+    [
+     10.5,
+     -15.5
+    ],
+    [
+     10.5,
+     -25.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m3_c",
+   "b": "the_manifest_site",
+   "state": "white",
+   "pts": [
+    [
+     10.5,
+     -8.5
+    ],
+    [
+     10.5,
+     -15.5
+    ],
+    [
+     17.5,
+     -15.5
+    ],
+    [
+     17.5,
+     -21.5
+    ],
+    [
+     10.5,
+     -21.5
+    ],
+    [
+     10.5,
+     -25.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m3_c",
+   "b": "m3_d",
+   "state": "white",
+   "pts": [
+    [
+     10.5,
+     -8.5
+    ],
+    [
+     10.5,
+     -15.5
+    ],
+    [
+     17.5,
+     -15.5
+    ]
+   ],
+   "locked": true
+  },
+  {
+   "a": "m3_d",
+   "b": "the_manifest_site",
+   "state": "white",
+   "pts": [
+    [
+     17.5,
+     -15.5
+    ],
+    [
+     17.5,
+     -25.5
+    ],
+    [
+     10.5,
+     -25.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m3_e",
+   "b": "the_manifest_site",
+   "state": "white",
+   "pts": [
+    [
+     17.5,
+     -21.5
+    ],
+    [
+     10.5,
+     -21.5
+    ],
+    [
+     10.5,
+     -25.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m3_e",
+   "b": "m3_f",
+   "state": "white",
+   "pts": [
+    [
+     17.5,
+     -21.5
+    ],
+    [
+     21.5,
+     -21.5
+    ],
+    [
+     21.5,
+     -15.5
+    ],
+    [
+     26.5,
+     -15.5
+    ]
+   ],
+   "locked": true
+  },
+  {
+   "a": "m3_f",
+   "b": "the_manifest_site",
+   "state": "white",
+   "pts": [
+    [
+     26.5,
+     -15.5
+    ],
+    [
+     17.5,
+     -15.5
+    ],
+    [
+     17.5,
+     -25.5
+    ],
+    [
+     10.5,
+     -25.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m3_g",
+   "b": "the_manifest_site",
+   "state": "white",
+   "pts": [
+    [
+     26.5,
+     -21.5
+    ],
+    [
+     17.5,
+     -21.5
+    ],
+    [
+     17.5,
+     -25.5
+    ],
+    [
+     10.5,
+     -25.5
+    ]
+   ],
+   "locked": false
+  },
+  {
+   "a": "m3_g",
+   "b": "m3_h",
+   "state": "white",
+   "pts": [
+    [
+     26.5,
+     -21.5
+    ],
+    [
+     26.5,
+     -15.5
+    ],
+    [
+     32.5,
+     -15.5
+    ],
+    [
+     32.5,
+     -21.5
+    ]
+   ],
+   "locked": true
+  },
+  {
+   "a": "m3_h",
+   "b": "the_manifest_site",
+   "state": "white",
+   "pts": [
+    [
+     32.5,
+     -21.5
+    ],
+    [
+     17.5,
+     -21.5
+    ],
+    [
+     17.5,
+     -25.5
+    ],
+    [
+     10.5,
+     -25.5
+    ]
+   ],
+   "locked": false
+  }
+ ],
+ "hq": {
+  "solace": [
+   -29.0,
+   1.0
+  ],
+  "meridian": [
+   9.0,
+   -31.0
+  ],
+  "orbital": [
+   -1.0,
+   39.0
+  ],
+  "halcyon": [
+   41.0,
+   7.0
+  ]
+ },
+ "cell_base": [
+  36.574159807914185,
+  36.77493500787117
+ ],
+ "transit": {
+  "link": [
+   "core",
+   "m1_j"
+  ],
+  "t": [
+   40.25000000000001,
+   18.75
+  ],
+  "ortho": 190.0
+ },
+ "raid": {
+  "t": [
+   25.749999999999996,
+   17.25
+  ],
+  "ortho": 311.3882877876602
+ },
+ "fist": [],
+ "corp": "meridian"
+}

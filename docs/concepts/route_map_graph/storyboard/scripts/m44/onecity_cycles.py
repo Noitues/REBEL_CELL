@@ -99,6 +99,7 @@ WET = _wet_mat()
 NEONA = _emit_mat("oc_neon", float(LKA.get("neon", 3.2)))
 WINA = _emit_mat("oc_win", float(LKA.get("win", 1.6)))
 PANA = _emit_mat("oc_panel", float(LKA.get("panel", 4.0)))
+GLANEA = _emit_mat("oc_glane", float(LKA.get("neon", 3.2)) * float(LKA.get("lane_dim", 0.5)))
 _emitters = {m.name for m in bpy.data.materials if m.name.startswith(("neon", "win", "sign", "glow", "eye", "anim"))}
 _emitters |= {NEONM.name, WINM.name}
 for o in [o for o in scene.objects if o.type in ("MESH", "FONT")]:
@@ -109,6 +110,8 @@ for o in [o for o in scene.objects if o.type in ("MESH", "FONT")]:
             o.data.materials[si] = WET
         elif o is RPAN_OBJ:
             o.data.materials[si] = PANA
+        elif o is glaneo:
+            o.data.materials[si] = GLANEA
         elif m is WINM or m.name.startswith("win"):
             o.data.materials[si] = WINA
         elif m.name in _emitters or m.name.startswith(("neon", "sign", "Neon")):
@@ -120,7 +123,8 @@ for o in [o for o in scene.objects if o.type in ("MESH", "FONT")]:
 for o in scene.objects:
     if o.type == "LIGHT":
         o.hide_render = True
-for _m in (SURF, LITA, NEONA, WINA, PANA):
+        o["oc_off"] = True
+for _m in (SURF, LITA, NEONA, WINA, PANA, GLANEA):
     section(_m)
 
 # ------------------------------------------------------------------ world, moon, city glow, room lights
@@ -177,6 +181,27 @@ for uu in _np.arange(_u0, _u1, float(LKA.get("lamp_step", 6.0))):
         c = (1.0, 0.72, 0.42) if _k % 3 else (0.55, 0.85, 1.0)
         _light("oc_lamp_%d" % _k, "POINT", pos, (0, 0, 0), float(LKA.get("lamp", 25.0)), c)
         _k += 1
+# v3-r3 (art director: the foreground slabs read as a black checkerboard): street-level glows among the plinths on the
+# camera side. Jittered on a ground_glow_step grid from the near kerb out to ground_glow_depth, palette colours (the
+# warm sodium of the lamps and the district pair), low over the wet plinth tops: they pool on the wet tops (the puddle
+# highlights) and light the ground bank from inside, so the slabs sink into coloured haze instead of a hard grid
+_gr = random.Random(7719)
+_gs = float(LKA.get("ground_glow_step", 9.0))
+_gsign = (_nrm[1] if _ax0 else _nrm[0])
+_gcols = ((1.0, 0.62, 0.3), (1.0, 0.2, 0.62), (0.2, 0.78, 1.0), (1.0, 0.62, 0.3), (0.62, 0.38, 1.0))
+_k = 0
+for uu in _np.arange(_u0 - 30.0, _u1 + 30.0, _gs):
+    for dd in _np.arange(float(OCJ.get("plinth_off", 4.2)) + 2.0, float(LKA.get("ground_glow_depth", 60.0)), _gs * 0.8):
+        if _gr.random() > float(LKA.get("ground_glow_p", 0.55)):
+            continue
+        pu = float(uu) + _gr.uniform(-0.4, 0.4) * _gs
+        pd = float(dd) + _gr.uniform(-0.3, 0.3) * _gs
+        pos = (pu, _cline - _gsign * pd, 0.9) if _ax0 else (_cline - _gsign * pd, pu, 0.9)
+        _ld = _light("oc_gglow_%d" % _k, "POINT", pos, (0, 0, 0), float(LKA.get("ground_lamp", 40.0)) * _gr.uniform(0.6, 1.2),
+                     _gcols[_gr.randrange(len(_gcols))])
+        _ld.data.shadow_soft_size = 0.6
+        _k += 1
+print("ONECITY ground glows", _k, flush=True)
 _cols = {}
 for i, r in OCJ["rooms"].items():
     _cols.setdefault(r["bld"], []).append(r)
@@ -193,29 +218,157 @@ for k, (bk, rs) in enumerate(sorted(_cols.items())):
     _light("oc_wash_%d" % k, "SPOT", pos, aim.to_track_quat("-Z", "Y").to_euler(), float(LKA.get("wash", 120.0)), c,
            spot=70, blend=0.8)
 
-# beams (the r3 rule on this city): the tallest roofs within 160 BU of the street, not a route column, spaced 45 BU
+# heights the atmosphere scales to (v3-r2: the frontage was raised by the layout rules; the r3 numbers were for the
+# old street set): H_FRONT the median roof of the frontage across the netrun street, H_SKY the 90th percentile roof
+# within beam reach behind it
+_far = lambda c: (c[1] - sy) * _nrm[1] if abs(_nrm[1]) > 0.5 else (c[0] - st["a"][0]) * _nrm[0]
+_mid = ((sx0 + sx1) / 2, sy)
+_fr = sorted(zt for (c, q, zt, terr, ts, key) in BUILT if 0 < _far(c) < 18 and sx0 - 10 < c[0] < sx1 + 10)
+_sk = sorted(zt for (c, q, zt, terr, ts, key) in BUILT if 18 < _far(c) < 160 and math.hypot(c[0] - _mid[0], c[1] - _mid[1]) < 180)
+H_FRONT = _fr[len(_fr) // 2] if _fr else 14.0
+H_SKY = _sk[int(len(_sk) * 0.9)] if _sk else 2.2 * H_FRONT
+print("ONECITY heights front %.1f sky %.1f" % (H_FRONT, H_SKY), flush=True)
+
+# beams (the r3 rule on this city): the K tallest roofs behind the netrun street that clear the frontage by
+# beam_rise x H_FRONT (so the beam is seen rising over it), within reach, not a route column, min spacing 45 BU.
+# Each rig is a soft cone and a core (r3 hero_soft / hero_core) linked to the fog only (no twin: the haze is in the
+# same fog object); lean from the preset ranges by a hash of the building key (deterministic).
+_rk = set(OCJ["route_keys"])
 _cands = []
 for (c, q, zt, terr, ts, key) in BUILT:
-    if key in set(OCJ["route_keys"]) or zt < 12:
+    if key in _rk or zt < float(LKA.get("beam_rise", 1.35)) * H_FRONT:
         continue
-    d = math.hypot(c[0] - (sx0 + sx1) / 2, c[1] - sy)
-    if 25 < d < 160 and c[1] > sy:
-        _cands.append((zt, c))
-_cands.sort(key=lambda v: (-v[0], v[1][0], v[1][1]))
+    d = math.hypot(c[0] - _mid[0], c[1] - _mid[1])
+    if 25 < d < 170 and _far(c) > 12:
+        _cands.append((zt, c, key))
+_cands.sort(key=lambda v: (-v[0], v[2]))
 _pick = []
-for zt, c in _cands:
+for zt, c, key in _cands:
     if all(math.hypot(c[0] - p[1][0], c[1] - p[1][1]) > 45 for p in _pick):
-        _pick.append((zt, c))
-    if len(_pick) >= int(LKA.get("beams", 4)):
+        _pick.append((zt, c, key))
+    if len(_pick) >= int(LKA.get("beams", 6)):
         break
+_PAL = {"district_a": (1.0, 0.16, 0.6), "district_b": (0.16, 0.8, 1.0), "accent_warm": (1.0, 0.58, 0.18),
+        "accent_cool": (0.62, 0.38, 1.0)}
+_BCOL = ["district_a", "district_b", "accent_warm", "district_b", "district_a", "accent_cool"]
 BEAMS = []
-for k, (zt, c) in enumerate(_pick):
-    col = [(1.0, 0.16, 0.6), (0.16, 0.8, 1.0), (1.0, 0.58, 0.18), (0.62, 0.38, 1.0)][k % 4]
-    lean = (0.25 if c[0] > (sx0 + sx1) / 2 else -0.25, 0.2, 1.0)
+BEAM_SHAFTS = []
+_bE = float(LKA.get("beam", 2.0e7))
+
+
+def _beam_mat(name, col, k_emit):
+    """v3-r3 (art director: no solid rods): the visible shaft is an emissive cone with a radial AND an axial falloff.
+    Radial: s = the offset from the axis in units of the local radius, from the view facing (x = |N.V|, s^2 = 1 - x^2);
+    a narrow hot core (gaussian, sigma beam_core_s) over a wide soft skirt (gaussian, sigma beam_soft_s, x (1 - s^2) so
+    the silhouette is never an edge). Axial: t = 0 at the source .. 1 at the far end; brightest at the source (e-fold
+    beam_efold), gone by beam_fade (0.6) of the length, with a short fade-in so the open start is not a disc. A slow
+    world noise breaks it where the haze thins. Transparent + emission: it adds light to the ray and never occludes."""
+    m = bpy.data.materials.new(name)
+    t_ = m.node_tree
+    t_.nodes.clear()
+    o_ = t_.nodes.new("ShaderNodeOutputMaterial")
+
+    def M(op, a, b=None):
+        n = t_.nodes.new("ShaderNodeMath")
+        n.operation = op
+        for idx, v in enumerate((a, b)):
+            if v is None:
+                continue
+            if isinstance(v, (int, float)):
+                n.inputs[idx].default_value = v
+            else:
+                t_.links.new(v, n.inputs[idx])
+        return n.outputs[0]
+
+    def SS(v, a, b):
+        mr = t_.nodes.new("ShaderNodeMapRange")
+        mr.interpolation_type = "SMOOTHSTEP"
+        mr.inputs["From Min"].default_value, mr.inputs["From Max"].default_value = a, b
+        t_.links.new(v, mr.inputs["Value"])
+        return mr.outputs[0]
+    lw = t_.nodes.new("ShaderNodeLayerWeight")
+    lw.inputs["Blend"].default_value = 0.5
+    x = M("SUBTRACT", 1.0, lw.outputs["Facing"])
+    s2 = M("MAXIMUM", M("SUBTRACT", 1.0, M("MULTIPLY", x, x)), 0.0)
+    sc, ss = float(LKA.get("beam_core_s", 0.13)), float(LKA.get("beam_soft_s", 0.42))
+    core = M("EXPONENT", M("MULTIPLY", s2, -1.0 / (2 * sc * sc)))
+    soft = M("MULTIPLY", M("EXPONENT", M("MULTIPLY", s2, -1.0 / (2 * ss * ss))), M("SUBTRACT", 1.0, s2))
+    rad = M("ADD", M("MULTIPLY", core, float(LKA.get("beam_core_w", 1.0))), M("MULTIPLY", soft, float(LKA.get("beam_soft_w", 0.3))))
+    tc = t_.nodes.new("ShaderNodeTexCoord")
+    sp = t_.nodes.new("ShaderNodeSeparateXYZ")
+    t_.links.new(tc.outputs["Object"], sp.inputs[0])
+    t = sp.outputs["Z"]                                   # the mesh is built with its length = 1 in object space
+    fade = float(LKA.get("beam_fade", 0.6))
+    ax = M("MULTIPLY", M("EXPONENT", M("MULTIPLY", t, -1.0 / float(LKA.get("beam_efold", 0.22)))),
+           M("SUBTRACT", 1.0, SS(t, fade * 0.45, fade)))
+    ax = M("MULTIPLY", ax, SS(t, 0.0, 0.025))
+    gz = t_.nodes.new("ShaderNodeNewGeometry")
+    vm = t_.nodes.new("ShaderNodeVectorMath")
+    vm.operation = "SCALE"
+    vm.inputs["Scale"].default_value = 0.09
+    t_.links.new(gz.outputs["Position"], vm.inputs[0])
+    nz = t_.nodes.new("ShaderNodeTexNoise")
+    nz.inputs["Detail"].default_value = 2.0
+    t_.links.new(vm.outputs[0], nz.inputs["Vector"])
+    brk = M("ADD", 0.55, M("MULTIPLY", SS(nz.outputs["Fac"], 0.35, 0.65), 0.45))
+    stren = M("MULTIPLY", M("MULTIPLY", M("MULTIPLY", rad, ax), brk), k_emit)
+    em = t_.nodes.new("ShaderNodeEmission")
+    em.inputs["Color"].default_value = (col[0], col[1], col[2], 1)
+    t_.links.new(stren, em.inputs["Strength"])
+    eh = t_.nodes.new("ShaderNodeEmission")                  # the core runs hotter (toward white)
+    eh.inputs["Color"].default_value = (min(1, col[0] * 0.4 + 0.6), min(1, col[1] * 0.4 + 0.6), min(1, col[2] * 0.4 + 0.6), 1)
+    t_.links.new(M("MULTIPLY", M("MULTIPLY", stren, core), float(LKA.get("beam_hot", 0.5))), eh.inputs["Strength"])
+    tr = t_.nodes.new("ShaderNodeBsdfTransparent")
+    ad = t_.nodes.new("ShaderNodeAddShader")
+    t_.links.new(tr.outputs[0], ad.inputs[0])
+    t_.links.new(em.outputs[0], ad.inputs[1])
+    ad2 = t_.nodes.new("ShaderNodeAddShader")
+    t_.links.new(ad.outputs[0], ad2.inputs[0])
+    t_.links.new(eh.outputs[0], ad2.inputs[1])
+    t_.links.new(ad2.outputs[0], o_.inputs["Surface"])
+    return m
+
+
+def _beam_shaft(name, org, dirv, length, half_deg, mat, seg=48):
+    me_ = bpy.data.meshes.new(name)
+    b_ = _bm.new()
+    r0, r1 = 0.18 / length, math.tan(math.radians(half_deg))      # object space: length 1 (scaled), a small start radius
+    lo_ = [b_.verts.new((r0 * math.cos(2 * math.pi * i / seg), r0 * math.sin(2 * math.pi * i / seg), 0.0)) for i in range(seg)]
+    hi_ = [b_.verts.new((r1 * math.cos(2 * math.pi * i / seg), r1 * math.sin(2 * math.pi * i / seg), 1.0)) for i in range(seg)]
+    for i in range(seg):
+        j = (i + 1) % seg
+        f_ = b_.faces.new((lo_[i], lo_[j], hi_[j], hi_[i]))
+        f_.smooth = True
+    b_.to_mesh(me_)
+    b_.free()
+    me_.materials.append(mat)
+    ob_ = bpy.data.objects.new(name, me_)
+    ob_.location = org
+    ob_.rotation_euler = Vector(dirv).normalized().to_track_quat("Z", "Y").to_euler()
+    ob_.scale = (length, length, length)
+    for v_ in ("visible_diffuse", "visible_glossy", "visible_transmission", "visible_volume_scatter", "visible_shadow"):
+        setattr(ob_, v_, False)                            # seen by the camera only: the spot below lights the haze
+    scene.collection.objects.link(ob_)
+    return ob_
+
+
+_bL = float(LKA.get("beam_len", 3.5)) * H_FRONT
+for k, (zt, c, key) in enumerate(_pick):
+    col = _PAL[_BCOL[k % len(_BCOL)]]
+    hh = (key * 2654435761) % 1000 / 1000.0
+    lx = 0.12 + 0.30 * hh
+    ly = 0.18 + 0.12 * ((key * 40503) % 1000 / 1000.0)
+    lean = (lx if c[0] > _mid[0] else -lx, ly * (1 if abs(_nrm[1]) > 0.5 else 0) + 0.0, 1.0)
     rot = Vector(lean).normalized().to_track_quat("-Z", "Y").to_euler()
-    BEAMS.append(_light("oc_beam_%d" % k, "SPOT", (c[0], c[1], zt + 0.5), rot, float(LKA.get("beam", 2.0e5)), col, spot=2.2, blend=0.4))
-    BEAMS[-1].data.use_shadow = False
-print("ONECITY beams", [(round(c[0]), round(c[1]), round(zt)) for zt, c in _pick], flush=True)
+    org = (c[0], c[1], zt + 0.5)
+    # the haze light: one wide, fully soft spot, linked to the fog only, so the air around the shaft glows (strongest
+    # near the source by the inverse square); the shaft itself is the emissive cone (v3-r3: no core spot, no rod)
+    ob = _light("oc_beam_%d_haze" % k, "SPOT", org, rot, _bE, col, spot=float(LKA.get("beam_cone", 30.0)), blend=1.0)
+    ob.data.use_shadow = False
+    BEAMS.append(ob)
+    BEAM_SHAFTS.append(_beam_shaft("oc_beam_%d_shaft" % k, org, lean, _bL, float(LKA.get("beam_half", 6.0)),
+                                   _beam_mat("oc_beam_%d_mat" % k, col, float(LKA.get("beam_emit", 3.0)))))
+print("ONECITY beams", [(round(c[0]), round(c[1]), round(zt)) for zt, c, key in _pick], "len %.1f" % _bL, flush=True)
 
 # ------------------------------------------------------------------ the city fog (r3 recipe, mainline units)
 fm = bpy.data.materials.new("oc_fog")
@@ -266,28 +419,114 @@ def _smooth(v, a, b):
 
 S = SCALE
 Z = sep.outputs["Z"]
-hf = _m("EXPONENT", _m("MULTIPLY", _m("MAXIMUM", _m("SUBTRACT", Z, 30.0 / S), 0.0), -S / 55.0), 0)
-banks = _smooth(_noise((0.004 * S, 0.012 * S, 0.075 * S), 3.0, 3.1), 0.45, 0.66)
+HF = H_FRONT
+# r3 recipe on the warped height coordinate, every height in units of the frontage (H_FRONT):
+#  body    dense low, thinning above 0.5 H with an e-folding of H_SKY (r3: 30 BU / 55 BU on its street set)
+#  strata  layers ~0.42 H apart on a height coordinate warped by a broad noise (+-0.22 H) and tilted along the street,
+#          so they bend, merge and split (r3 warp / wave / tilt); a broad octave (banks) and a fine one (wisps) mixed
+#          0.62 / 0.38 and remapped (0.47, 0.64): layers fade in and out, never full width (clumps)
+#  wisp    one thin layer just over the frontage roofs (1.08 H), the skyline-relative wisp of r3
+#  where   behind the street face only (far side, r3 box_y): the camera's corridor and the rooms stay clear;
+#          the low floor keeps the wet street readable (r3 floor relative to the rooms)
+warp = _m("MULTIPLY", _m("SUBTRACT", _noise((0.006 * S, 0.010 * S, 0.02 * S), 2.0, 7.7), 0.5), 0.44 * HF)
+tilt = _m("MULTIPLY", sep.outputs["X"], 0.07 * (1 if abs(_nrm[1]) > 0.5 else 0))
+zw = _m("ADD", _m("ADD", Z, warp), tilt)
+hf = _m("EXPONENT", _m("MULTIPLY", _m("MAXIMUM", _m("SUBTRACT", Z, 0.5 * HF), 0.0), -1.0 / max(H_SKY, 1.0)), 0)
+lay_s = _m("ADD", 0.5, _m("MULTIPLY", _m("SINE", _m("MULTIPLY", zw, 2 * math.pi / (0.42 * HF)), 0), 0.5))
+banks = _noise((0.004 * S, 0.012 * S, 0.075 * S), 3.0, 3.1)
+wisps = _noise((0.009 * S, 0.02 * S, 0.33 * S), 2.0, 5.3)
+lay_n = _m("ADD", _m("MULTIPLY", banks, 0.62), _m("MULTIPLY", wisps, 0.38))
+lay = _m("MULTIPLY", _smooth(lay_n, 0.47, 0.64), _smooth(lay_s, 0.35, 0.95))
 clumps = _smooth(_noise((0.0075 * S, 0.014 * S, 0.022 * S), 2.0, 14.1), 0.40, 0.62)
-floor_ = _smooth(Z, 2.0 / S, 9.0 / S)
-body = _m("ADD", _m("MULTIPLY", clumps, 0.08), _m("MULTIPLY", banks, clumps))
-dens = _m("MULTIPLY", _m("MULTIPLY", _m("MULTIPLY", body, hf), floor_), float(LKA.get("fog_peak", 0.021)) * S)
-nt.links.new(dens, vs.inputs["Density"])
+wisp = _m("SUBTRACT", 1.0, _smooth(_m("ABSOLUTE", _m("SUBTRACT", zw, 1.08 * HF), 0), 0.0, 0.12 * HF))
+wisp = _m("MULTIPLY", _m("MULTIPLY", wisp, _smooth(wisps, 0.42, 0.6)), float(LKA.get("wisp_k", 0.7)))
+if abs(_nrm[1]) > 0.5:
+    _fd = _m("MULTIPLY", _m("SUBTRACT", sep.outputs["Y"], sy), _nrm[1])
+else:
+    _fd = _m("MULTIPLY", _m("SUBTRACT", sep.outputs["X"], st["a"][0]), _nrm[0])
+where = _smooth(_fd, float(LKA.get("fog_front", 7.0)), float(LKA.get("fog_front", 7.0)) + 10.0)
+floor_ = _smooth(Z, 0.08 * HF, 0.3 * HF)
+body = _m("ADD", _m("MULTIPLY", clumps, 0.08), _m("MULTIPLY", lay, clumps))
+body = _m("MAXIMUM", body, wisp)
+dens = _m("MULTIPLY", _m("MULTIPLY", _m("MULTIPLY", _m("MULTIPLY", body, hf), floor_), where), float(LKA.get("fog_peak", 0.021)) * S)
+# v3-r2c (art director): visible banks.
+#  ground bank  a low layer (thick to gb_top x 0.2, gone at gb_top) over the cut slabs on the camera side, from the
+#               near kerb outward; broken by a low-frequency noise so it reads as banks, never a flat sheet
+#  mid banks    low banks between the building rows behind the frontage (0.05 .. 0.8 H), banks-octave noise
+_kerb = float(OCJ.get("plinth_off", 4.2))
+gb_side = _smooth(_m("MULTIPLY", _fd, -1.0), _kerb + 0.5, _kerb + 4.0)
+_gt = float(LKA.get("gb_top", 2.2))
+gb_z = _m("SUBTRACT", 1.0, _smooth(Z, 0.2 * _gt, _gt))
+gb_n = _smooth(_noise((0.018 * S, 0.03 * S, 0.25 * S), 2.0, 21.3), 0.35, 0.68)
+gb = _m("MULTIPLY", _m("MULTIPLY", _m("MULTIPLY", gb_side, gb_z), _m("ADD", 0.25, _m("MULTIPLY", gb_n, 0.75))),
+        float(LKA.get("ground_bank", 0.05)) * S)
+mb_z = _m("MULTIPLY", _smooth(Z, 0.05 * HF, 0.15 * HF), _m("SUBTRACT", 1.0, _smooth(Z, 0.5 * HF, 0.8 * HF)))
+mb = _m("MULTIPLY", _m("MULTIPLY", _m("MULTIPLY", mb_z, where), _smooth(banks, 0.42, 0.62)), float(LKA.get("mid_bank", 0.03)) * S)
+dens = _m("ADD", dens, mb)
+dens_all = _m("ADD", dens, gb)
+nt.links.new(dens_all, vs.inputs["Density"])
 haze = nt.nodes.new("ShaderNodeVolumeScatter")
 haze.inputs["Density"].default_value = float(LKA.get("haze", 0.0016)) * S
+_hz = _m("MULTIPLY", _m("EXPONENT", _m("MULTIPLY", _m("MAXIMUM", _m("SUBTRACT", Z, H_SKY), 0.0), -1.0 / float(LKA.get("haze_efold", 40.0))), 0),
+         float(LKA.get("haze", 0.0016)) * S)
+nt.links.new(_hz, haze.inputs["Density"])
 haze.inputs["Anisotropy"].default_value = 0.2
 haze.inputs["Color"].default_value = (0.82, 0.78, 1.0, 1)
 add = nt.nodes.new("ShaderNodeAddShader")
 nt.links.new(vs.outputs[0], add.inputs[0])
 nt.links.new(haze.outputs[0], add.inputs[1])
-nt.links.new(add.outputs[0], out.inputs["Volume"])
+# r3 underlight: the strata glow faintly from below in the palette by height (the city's light caught in the layers;
+# r3 underlight ramp + underlight_k), so they read against the night sky without lifting the whole frame
+ramp = nt.nodes.new("ShaderNodeValToRGB")
+_el = ramp.color_ramp.elements
+_el[0].position, _el[0].color = 0.0, (1.0, 0.16, 0.6, 1)
+_el[1].position, _el[1].color = 1.0, (0.62, 0.38, 1.0, 1)
+for _p, _c in ((0.3, (0.16, 0.8, 1.0, 1)), (0.55, (1.0, 0.16, 0.6, 1)), (0.8, (0.16, 0.8, 1.0, 1))):
+    _e = _el.new(_p)
+    _e.color = _c
+nt.links.new(_m("DIVIDE", zw, 2.2 * HF), ramp.inputs["Fac"])
+emv = nt.nodes.new("ShaderNodeEmission")
+nt.links.new(ramp.outputs["Color"], emv.inputs["Color"])
+nt.links.new(_m("MULTIPLY", dens, float(LKA.get("underlight_k", 0.06))), emv.inputs["Strength"])
+gramp = nt.nodes.new("ShaderNodeValToRGB")
+_gl = gramp.color_ramp.elements
+_gl[0].position, _gl[0].color = 0.3, (1.0, 0.16, 0.6, 1)
+_gl[1].position, _gl[1].color = 0.7, (0.16, 0.8, 1.0, 1)
+nt.links.new(_noise((0.012 * S, 0.012 * S, 0.05 * S), 1.0, 33.0), gramp.inputs["Fac"])
+gem = nt.nodes.new("ShaderNodeEmission")
+nt.links.new(gramp.outputs["Color"], gem.inputs["Color"])
+nt.links.new(_m("MULTIPLY", gb, float(LKA.get("ground_glow", 0.35))), gem.inputs["Strength"])
+add3 = nt.nodes.new("ShaderNodeAddShader")
+nt.links.new(emv.outputs[0], add3.inputs[0])
+nt.links.new(gem.outputs[0], add3.inputs[1])
+emv = add3
+# v3-r3: the mid-ground banks pick up the neon of the rows around them (the district pair and the warm accent, by a
+# slow noise along the street, so a bank reads pink in one place and cyan in the next)
+mramp = nt.nodes.new("ShaderNodeValToRGB")
+_ml = mramp.color_ramp.elements
+_ml[0].position, _ml[0].color = 0.32, (0.16, 0.8, 1.0, 1)
+_ml[1].position, _ml[1].color = 0.68, (1.0, 0.16, 0.6, 1)
+_e = _ml.new(0.5)
+_e.color = (0.62, 0.38, 1.0, 1)
+nt.links.new(_noise((0.010 * S, 0.016 * S, 0.04 * S), 1.0, 41.0), mramp.inputs["Fac"])
+mem = nt.nodes.new("ShaderNodeEmission")
+nt.links.new(mramp.outputs["Color"], mem.inputs["Color"])
+nt.links.new(_m("MULTIPLY", mb, float(LKA.get("mid_glow", 0.1))), mem.inputs["Strength"])
+add4 = nt.nodes.new("ShaderNodeAddShader")
+nt.links.new(emv.outputs[0], add4.inputs[0])
+nt.links.new(mem.outputs[0], add4.inputs[1])
+emv = add4
+add2 = nt.nodes.new("ShaderNodeAddShader")
+nt.links.new(add.outputs[0], add2.inputs[0])
+nt.links.new(emv.outputs[0], add2.inputs[1])
+nt.links.new(add2.outputs[0], out.inputs["Volume"])
 me = bpy.data.meshes.new("oc_fog")
 _b = _bm.new()
 _bm.ops.create_cube(_b, size=1.0)
 _b.to_mesh(me)
 _b.free()
 fog = bpy.data.objects.new("oc_fog", me)
-FX0, FX1, FY0, FY1, FZ1 = -700.0, 900.0, -700.0, 900.0, 240.0 / S
+FX0, FX1, FY0, FY1, FZ1 = -700.0, 900.0, -700.0, 900.0, max(240.0 / S, 2.5 * H_SKY)
 fog.location = ((FX0 + FX1) / 2, (FY0 + FY1) / 2, (FZ1 - 0.5) / 2)
 fog.scale = (FX1 - FX0, FY1 - FY0, FZ1 + 0.5)
 me.materials.append(fm)
@@ -295,6 +534,8 @@ scene.collection.objects.link(fog)
 _rx = bpy.data.collections.new("oc_fog_rx")
 scene.collection.children.link(_rx)
 _rx.objects.link(fog)
+for o in BEAMS:
+    o.light_linking.receiver_collection = _rx      # r3: the full-power beam lights the media only
 for o in cglow:
     o.data.use_shadow = False
     o.light_linking.receiver_collection = _rx      # the city glow lights the fog only (r3: it cut pillars otherwise)
@@ -368,6 +609,70 @@ def _exr_npy(path, stem):
 
 import bpy_extras.object_utils as _ou  # noqa: E402
 
+# ------------------------------------------------------------------ city alive on the netrun street: traffic streak lanes
+# (the r3 street-lane rule on the derived street: lanes at fractions of the road's half width, head lights one way and
+# tail lights the other, one lane period per 4 s loop; they move per frame)
+LANE_P = float(LKA.get("lane_period", 80.0))
+LANEM = _emit_mat("oc_lane", float(LKA.get("lane_k", 5.0)))
+section(LANEM)
+_lr = random.Random(9402)
+LANES = []
+_half = float(OCJ.get("street_width", 8.0)) / 2.0
+for li, (fr_, dirn, col) in enumerate(((0.28, 1, (1.0, 0.92, 0.8)), (0.62, 1, (1.0, 0.85, 0.6)), (-0.3, -1, (1.0, 0.12, 0.08)),
+                                       (-0.64, -1, (0.95, 0.15, 0.1)))):
+    acc = Acc("oc_lane_%d" % li)
+    off = fr_ * _half
+    x = _u0 - LANE_P * 2 - 120
+    while x < _u1 + 120 + LANE_P:
+        L_ = _lr.uniform(3.0, 16.0)
+        k_ = _lr.uniform(0.5, 1.3)
+        c_ = tuple(v * k_ for v in col)
+        w_ = 0.12
+        if _ax0:
+            acc.face([(x, _cline + off - w_, 0.12), (x + L_, _cline + off - w_, 0.12), (x + L_, _cline + off + w_, 0.12),
+                      (x, _cline + off + w_, 0.12)], c_, (0, 0, 0))
+        else:
+            acc.face([(_cline + off - w_, x, 0.12), (_cline + off + w_, x, 0.12), (_cline + off + w_, x + L_, 0.12),
+                      (_cline + off - w_, x + L_, 0.12)], c_, (0, 0, 0))
+        x += L_ + _lr.uniform(4.0, 22.0)
+    ob = acc.obj(LANEM)
+    LANES.append((ob, dirn))
+
+
+def set_lanes(t, show=True):
+    p = (t % 4.0) / 4.0
+    for ob, dirn in LANES:
+        ob.hide_render = not show
+        d = dirn * p * LANE_P
+        ob.location = (d, 0.0, 0.0) if _ax0 else (0.0, d, 0.0)
+
+
+_EMS = []
+for _m in (NEONA, WINA, PANA):
+    _e = next(n_ for n_ in _m.node_tree.nodes if n_.type == "EMISSION")
+    _EMS.append((_e, _e.inputs["Strength"].default_value))
+_LB = next(n_ for n_ in LITA.node_tree.nodes if n_.type == "BSDF_PRINCIPLED")
+_LB0 = _LB.inputs["Emission Strength"].default_value
+
+
+def dyn_mode(on):
+    """Emission-only: the lanes are the only emitters (their reflections on the wet street come with them)."""
+    for e, v in _EMS:
+        e.inputs["Strength"].default_value = 0.0 if on else v
+    _LB.inputs["Emission Strength"].default_value = 0.0 if on else _LB0
+    _bg.inputs["Strength"].default_value = 0.0 if on else 1.0
+    for o in scene.objects:
+        if o.type == "LIGHT":
+            o.hide_render = on or o.name.startswith(("key",)) or (o.get("oc_off") is True)
+    fog.hide_render = on
+    for o in BEAM_SHAFTS:
+        o.hide_render = on
+
+
+for o in scene.objects:
+    if o.type == "LIGHT" and not o.name.startswith("oc_"):
+        o["oc_off"] = True
+
 for fr in OCJ["frames"]:
     t0 = _tm.time()
     pz = fr["persp"]
@@ -381,6 +686,8 @@ for fr in OCJ["frames"]:
     cam.location = lo
     cam.rotation_euler = fv.to_track_quat("-Z", "Y").to_euler()
     set_walls(fr.get("dis", {}))
+    dyn_mode(bool(fr.get("dyn")))
+    set_lanes(float(fr.get("t", 0.0)), show=fr.get("lanes", True))
     scene["oc_zcut"] = float(fr.get("zcut", 1.0e4))
     for _o in (cityo, RB_OBJ, solid, cwino, cneono, lito):
         _o.update_tag()
@@ -395,7 +702,8 @@ for fr in OCJ["frames"]:
         v = _ou.world_to_camera_view(scene, cam, Vector(P))
         return None if v.z <= 0 else (v.x * 1920.0, (1 - v.y) * 1080.0)
     A = dict(rooms={i: dict(front=[_p(q) for q in r["front"]], back=[_p(q) for q in r["back"]]) for i, r in OCJ["rooms"].items()},
-             edges=[], hidden_fg=[], vol_boxes=[], cam_world=[list(r_) for r_ in cam.matrix_world], lens=cam_data.lens,
+             edges=[dict(a=e["a"], b=e["b"], type=e["type"], pts=[_p(q) for q in e["path"]], world=e["path"]) for e in OCJ.get("edges", [])],
+             hidden_fg=[], vol_boxes=[], cam_world=[list(r_) for r_ in cam.matrix_world], lens=cam_data.lens,
              sensor=36.0, shift=[cam_data.shift_x, cam_data.shift_y], look="real", cam=dict(dist=(tg - lo).length))
     with open(os.path.join(OUTDIR, "anchors_%s.json" % fr["name"]), "w") as f:
         json.dump(A, f)

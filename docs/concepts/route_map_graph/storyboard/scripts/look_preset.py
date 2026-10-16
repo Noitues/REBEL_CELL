@@ -87,7 +87,7 @@ PRESET = {
         "look_blend_by_zoom": (0.20, 0.55),
         # v3 one continuous city: the SECTION through the blocks in front of the netrun street lowers with the zoom,
         # from above every roof at the HQ to a 1.2 BU plinth at the street (z_far, z_near, band a, band b)
-        "section_by_zoom": (60.0, 1.2, 0.25, 0.85),
+        "section_by_zoom": (60.0, 0.4, 0.25, 0.85),   # v3-r2: plinths 0.4 BU so the low camera sees the wet street
     },
     # ---------------------------------------------------------------- post / value targets
     "post": {"exposure": 2.4, "vol_k": 1.3, "vol_soft": 0.25, "vol_glow": 0.8, "vol_glow_thr": 0.02, "rain_vol": 1.6},

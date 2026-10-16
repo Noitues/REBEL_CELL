@@ -34,7 +34,11 @@ import layout36 as L  # noqa: E402
 import sgraph3 as G  # noqa: E402
 
 RULES = dict(front_band=(0.8, 6.5), floor_bu=1.9, base_floor=0, room_inset=0.45, room_depth=2.6, room_px_target=46.0,
-             min_width=2.5, max_setback=0.6, extend=(12.0, 60.0))
+             min_width=2.5, max_setback=0.6, extend=(12.0, 60.0),
+             # OVERVIEW pose (designer note v3-r2: the frontage faces the camera, the street a thin wet strip in front):
+             # a near-level axis (ov_pitch) and the frame shifted so the frontage base sits at ov_base_frac of the height;
+             # the steepest ground ray in frame is then ~10 deg (was ~20), the camera ~10 BU over the street (was 17.7)
+             ov_pitch=2.0, ov_base_frac=0.815)
 
 
 def floors(b):
@@ -52,12 +56,88 @@ def floors(b):
         k += 1
     return k
 SITE, RELAY = "m2_d", "m1_d"
-LAYPATH = os.path.join(HERE, "scratch", "layout", "unified.json")
+LAYPATH0 = os.path.join(HERE, "scratch", "layout", "unified.json")
+LAYPATH = os.path.join(HERE, "scratch", "layout", "unified_v3.json")     # the city with the v3 layout rules applied
+
+# ---------------------------------------------------------------- v3 MAINLINE LAYOUT CHANGES (designer-approved)
+# (a) frontage_min_floors: every building fronting a border-link street rises to at least this many floors
+#     (+ 0..2 more floors by its key, so the street front is not a flat wall);
+# (b) border_street_width: border-link streets are this wide (BU); the frontage on both sides steps back to it
+#     (the base street tile is 6 BU = 1 lot);
+# (c) hero_sign_rule: every route column carries one blade sign at its street-face corner and one lit band under its
+#     roof, in the district pair alternating along the street (built in onecity_build.py).
+LAYOUT_RULES = dict(frontage_min_floors=6, border_street_width=8.0, base_street_width=6.0,
+                    hero_sign_rule=dict(blade=True, band=True, palette=("district_a", "district_b")))
 KH = L.U / 41.64 * 1.15
 
 
 def lay():
+    if not os.path.exists(LAYPATH):
+        apply_layout_rules()
     return json.load(open(LAYPATH))
+
+
+def apply_layout_rules():
+    """Write unified_v3.json: the base city with (a) the street-front band and (b) the wider border streets applied to
+    the frontage of EVERY border link (not only the netrun's), so the HQ map and the netrun street are the same city."""
+    LAY0 = json.load(open(LAYPATH0))
+    net = L.load_net()
+    fb = (0.8, 6.5)
+    step = (LAYOUT_RULES["border_street_width"] - LAYOUT_RULES["base_street_width"]) / 2.0
+    target_floors = LAYOUT_RULES["frontage_min_floors"]
+    bases = []
+    for b in LAY0["buildings"]:
+        bi = bld_info(b)
+        bi["ref"] = b
+        bases.append(bi)
+    tops = {}
+    for bi in bases:
+        if bi["z0"] > 0.05:
+            cx, cy = (bi["x0"] + bi["x1"]) / 2, (bi["y0"] + bi["y1"]) / 2
+            for bb in bases:
+                if bb["z0"] <= 0.05 and bb["x0"] <= cx <= bb["x1"] and bb["y0"] <= cy <= bb["y1"]:
+                    tops[bb["key"]] = max(tops.get(bb["key"], 0.0), bi["z0"] + bi["h"])
+                    break
+    done, raised, moved = set(), 0, 0
+    for l in net["links"]:
+        if l["state"] != "border":
+            continue
+        pts = [L.W(p) for p in l["pts"]]
+        for a, c in zip(pts, pts[1:]):
+            ax = 0 if abs(a[1] - c[1]) < 1e-6 else 1
+            lo, hi = sorted((a[ax], c[ax]))
+            # the border street includes the stretch a netrun may extend along (choose_street's `extend`)
+            lo, hi = lo - max(RULES["extend"]), hi + max(RULES["extend"])
+            for bi in bases:
+                if bi["z0"] > 0.05 or bi["key"] in done:
+                    continue
+                if ax == 0:
+                    a0, a1, d0, d1 = bi["x0"], bi["x1"], bi["y0"] - a[1], a[1] - bi["y1"]
+                else:
+                    a0, a1, d0, d1 = bi["y0"], bi["y1"], bi["x0"] - a[0], a[0] - bi["x1"]
+                near = d0 if d0 > 0 else d1
+                if not (a1 > lo and a0 < hi and fb[0] < near < fb[1]):
+                    continue
+                done.add(bi["key"])
+                b = bi["ref"]
+                # (b) step the street face back
+                sgn = 1.0 if d0 > 0 else -1.0
+                for p in b["q"]:
+                    w = L.W(p)
+                    if ax == 0 and abs(w[1] - (bi["y0"] if sgn > 0 else bi["y1"])) < 0.05:
+                        p[1] -= sgn * step / L.U          # lots: y is flipped in W()
+                        moved += 1
+                    if ax == 1 and abs(w[0] - (bi["x0"] if sgn > 0 else bi["x1"])) < 0.05:
+                        p[0] += sgn * step / L.U
+                        moved += 1
+                # (a) the street-front band
+                top = max(bi["h"], tops.get(bi["key"], 0.0))
+                want = (target_floors + abs(b["key"]) % 3) * RULES["floor_bu"] + 0.1
+                if top < want:
+                    b["h"] = want / KH
+                    raised += 1
+    json.dump(LAY0, open(LAYPATH, "w"))
+    print("layout rules: frontage buildings %d, raised %d, street faces stepped back %d vertices" % (len(done), raised, moved))
 
 
 def merged_buildings():
@@ -198,6 +278,33 @@ def room_boxes(asg, span):
     return rooms
 
 
+def link_paths(rooms):
+    """The route links on the derived street (the wax pencil's world paths): from the side of room a facing b, out to
+    the facade line (0.5 BU in front of the street faces), across at mid height between the two buildings, and into
+    room b; Manhattan, on the facade plane, so the pencil reads as running along the street front."""
+    out = []
+    for (a, b) in sorted(G.edge_states(G.WALK_START, G.states(G.WALK_START)[0]).keys()):
+        ra, rb = rooms[a], rooms[b]
+        fa, fb_ = ra["front"], rb["front"]
+        ax = 0 if abs(fa[0][1] - fa[1][1]) < 1e-6 else 1
+        nrm_s = 1.0 if (ra["back"][0][1 - ax] > fa[0][1 - ax]) else -1.0
+        face = min(fa[0][1 - ax], fb_[0][1 - ax]) if nrm_s > 0 else max(fa[0][1 - ax], fb_[0][1 - ax])
+        face = face - 0.5 * nrm_s
+        ua = [p[ax] for p in fa]
+        ub = [p[ax] for p in fb_]
+        dirn = 1.0 if sum(ub) > sum(ua) else -1.0
+        xa = max(ua) if dirn > 0 else min(ua)
+        xb = min(ub) if dirn > 0 else max(ub)
+        za = (fa[0][2] + fa[2][2]) / 2
+        zb = (fb_[0][2] + fb_[2][2]) / 2
+        xm = (xa + xb) / 2
+
+        def P(u, z):
+            return (u, face, z) if ax == 0 else (face, u, z)
+        out.append(dict(a=a, b=b, type="facade", path=[P(xa - dirn * 0.3, za), P(xm, za), P(xm, zb), P(xb + dirn * 0.3, zb)]))
+    return out
+
+
 # ---------------------------------------------------------------- cameras (unified world: yaw convention of layout36)
 W_, H_ = 1920, 1080
 USE = (300.0, 138.0, 1900.0, 1012.0)
@@ -257,7 +364,13 @@ def derive(span=None):
 
     def poses(rooms):
         pts = [p for r in rooms.values() for p in r["front"] + r["back"]]
-        ov = frame(pts, y0 - sgn * 7.2, 6.0, 40.0, 0.95, 0.90)
+        ov = frame(pts, y0 - sgn * 7.2, RULES["ov_pitch"], 40.0, 0.95, 0.90)
+        fb = [p for r in rooms.values() for p in r["front"] if p[2] < 0.5]
+        by = max(proj(ov, p)[1] for p in fb) if fb else None
+        if by is not None:
+            ps = dict(ov["persp"])
+            ov = cam(ov["target"], ov["yaw"], ov["pitch"], ov["dist"], ps["lens"], ps["sx"],
+                     ps["sy"] + (RULES["ov_base_frac"] * H_ - by) / W_)
         cur = [G.WALK_START[-1]]
         opts = G.states(G.WALK_START)[1]
         dpts = [p for i in cur + opts for p in rooms[i]["front"] + rooms[i]["back"]]
@@ -274,7 +387,9 @@ def derive(span=None):
         _FPX[0] = fpx
     rooms = room_boxes(asg, span)
     ov, dec = poses(rooms)
-    return dict(floor_px=_FPX[0], leg=li, side=side, a=a, c=c, nrm=nrm, start_left=start_left, span=span,
+    cols = [dict(layer=l, key=b["key"], top=b["h"], u0=(b["x0"] if b["axis"] == 0 else b["y0"]),
+                 u1=(b["x1"] if b["axis"] == 0 else b["y1"]), face=b["face"]) for l, b in asg]
+    return dict(col_info=cols, edges=link_paths(rooms), floor_px=_FPX[0], leg=li, side=side, a=a, c=c, nrm=nrm, start_left=start_left, span=span,
                 columns=[(l, b["key"]) for l, b in asg], route_keys=[k for _, b in asg for k in b.get("parts", [b["key"]])], street_len=math.hypot(c[0] - a[0], c[1] - a[1]),
                 rooms=rooms, overview=ov, decision=dec, frontage=[(b["key"], round(b["h"], 1), floors(b), round(b["ts"], 2)) for b in fr])
 
