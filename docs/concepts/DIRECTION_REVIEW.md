@@ -1479,3 +1479,4 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
     - Sprawl suburbs favour a lower profile at the same density.
     - The rocket and the Solace landmark are a little brighter.
   - **Street round 2 (designer, 2026-10-16):** the r2 height passes are approved (frontage silhouette and horizon break change about 465 frontage heights across the one city, never below 6 floors). Unique building ids are required (the layout key has 3,175 duplicates; use (ci, key) until mainline emits unique ids). Both are recorded in PIPELINE_SPEC §3.2.
+  - **Tethys (designer, 2026-10-16):** add schools of fish and a migrating pod of whales to the Tethys water. Fish shoals swirl around the drowned streets and pier stilts. A whale pod (3–5, a calf among them) passes through the open water beyond the breakwater, visible through the clear water and lit by the caustics. It also goes in tethys_landmark.py / tethys_quarter.py so the full city gets it.
