@@ -28,7 +28,7 @@ import random
 AL = dict(x_a=-262.0, x_b=72.0, infill_w=(6.0, 11.0), infill_h=(26.0, 74.0), depth=9.0,
           blade_w=(2.6, 3.4), blade_z=(9.5, 66.0), takeover_p=0.28, pole_h=24.0, holo_k=3.2, sign_k=2.6, mf_k=4.2,
           mf_w=11.0, mf_z0=3.5, mf_off=3.2, holo_s=(15.0, 18.0), fist_s=20.0,
-          uc_w=84.0, uc_fog_h=4.0, uc_fog_d=0.012)     # v2 r2: the undercroft (rc_undercroft): depth, low strata      # the alley width: stack.alley_w
+          uc_w=84.0, uc_fog_h=4.5, uc_fog_d=0.027)     # v2 r2: the undercroft (rc_undercroft): depth, low strata      # the alley width: stack.alley_w
 
 
 def build(K, DIST, cat, hooks, tex_dir, only=False):
@@ -590,3 +590,4 @@ def seq_lights(hooks, seq, pal):
         ob.data.energy = e0 * (0.15 + 0.85 * max(0.0, min(1.0, (seq - 1.2) / 1.6))) if seq >= 1.0 else e0 * 0.05
     return math.isfinite(seq)
 # RC_R2B
+# RC_FLOORLIGHT

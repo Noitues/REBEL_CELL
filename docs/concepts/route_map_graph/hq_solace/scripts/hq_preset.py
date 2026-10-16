@@ -44,7 +44,7 @@ PRESET["hq"] = {
         "max_shortcuts": 0,
     },
     "mech": {"read_ahead": 2},                 # route floors read ahead of the current one (proposal)
-    "light": {"room_k": 1.0, "room_w": 2600.0, "lockdown_k": 2.0, "sign_k": 0.5, "trim_k": 2.4, "cityglow_k": 0.12,
+    "light": {"room_k": 1.0, "room_w": 2600.0, "lockdown_k": 2.0, "sign_k": 0.5, "trim_k": 2.4, "cityglow_k": 0.22,
               "city_beam_k": 0.6, "bank_glow": 2500.0, "shop_w": 700.0, "flood_w": 2.2e4,
               # the twin towers' light (designer redesign): office bands, the atrium shaft, slab downlights,
               # the ground spots, the bridges; rim from the city behind; the halo fog ring
@@ -88,7 +88,7 @@ PRESET["hq_fog"] = {
     "clump_scale": (0.0075, 0.014, 0.022), "clump_remap": (0.40, 0.62),
     "calm": {"r": 70.0, "soft": 45.0, "k": 0.30},
     "bank": {"r": (80.0, 170.0), "z": (0.0, 9.0), "peak": 0.012},
-    "haze": 0.0005, "aniso": 0.45, "colour": (0.86, 0.95, 0.9),        # v2 r2: more haze (the skyline fades)
+    "haze": 0.0006, "aniso": 0.45, "colour": (0.86, 0.95, 0.9),        # final: 0.0006 + cityglow 0.22 (mid-distance city haze, median 0.096 -> ~0.12)
 }
 
 PRESET["post"].update({"exposure": 2.4})

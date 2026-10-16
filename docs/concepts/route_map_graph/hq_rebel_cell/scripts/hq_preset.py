@@ -62,7 +62,7 @@ PRESET["hq"] = {
               "wash_k": 3.0, "spread_r": 230.0, "pulse_k": 2.5, "rim_w": 8.0e4, "key_w": 3.0e4, "sod_w": 2500.0,
               # v2: the alley canyon's own lights + the district's street strips (the red-sequence fix: light)
               "mf_spill_w": 6000.0, "alley_lamp_w": 2600.0, "fist_spill_w": 9000.0, "holo_spill_w": 1200.0,
-              "stall_w": 700.0, "room_warm_w": 900.0, "fist_glow_w": 2.0e4, "uc_wash_w": 6000.0,
+              "stall_w": 700.0, "room_warm_w": 900.0, "fist_glow_w": 2.0e4, "uc_wash_w": 7500.0, "uc_sign_w": 1700.0, "uc_shop_w": 3500.0, "uc_lantern_w": 3600.0,
               "strip_w": 9.0e3, "strip_every": 1, "strip_seg": 90.0, "section_key_k": 0.8},
     "beams": {"power": 2.4e7, "cone": 1.1},
     "bank_glow_cols": ["cell_red", "sodium"],
@@ -130,3 +130,4 @@ def pal(name):
         return PRESET["hq"]["palette"][name]
     return PRESET["palette"][name]
 # RC_R2B
+# RC_FLOORLIGHT

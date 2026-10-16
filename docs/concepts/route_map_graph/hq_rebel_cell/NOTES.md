@@ -166,3 +166,16 @@ Godot 4.7 mapping (camera rig, not content):
 - MAINFRAME at 9.4x its background is accepted as a neon-on-dark exception (spec Q5).
 - Red sequence: more haze bleed. The fist glow (light-linked to the fog) is up to 4.5e4 and the district fog peak to
   0.013, haze 0.0011, so the red tints the air above the fist; the RS values stay dark.
+
+### v2 final values pass (art director: overview / decision / midrun too dark)
+- The undercroft floor is lit; there is no blur and no lit fog plane:
+  - 20 stalls (was 14) with lit fronts;
+  - a lantern string across the street from each pole to the kerb, plus an area light under each lantern row;
+  - warm spill from every lit undercroft shopfront onto the asphalt (`uc_shop_w` 3500);
+  - coloured spill from each wall blade (`uc_sign_w` 1700), mirrored in larger puddles (threshold 0.45-0.48);
+  - the arcade wash at 7500;
+  - a faint red-violet ground haze lit by the signs (4.5 BU deep, density 0.027).
+- MAINFRAME stays the hero.
+- Values (final 2560 x 1440): overview 0.134 / 43.6 %, decision 0.118 / 45.0 %, midrun 0.134 / 43.6 %. The midrun is
+  the overview's camera and state, composed from the overview passes. H_hover, H_switch and H_showdown are from the
+  previous final pass (floor without this lighting pass).

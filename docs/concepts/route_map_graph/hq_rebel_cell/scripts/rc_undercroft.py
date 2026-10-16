@@ -47,7 +47,7 @@ def build(K, AL, over_room, tex_quads, facing_quad, blades, boards, hooks=None):
     fg, fps, _ = K.pos_sep(fnt)
     fn1 = K.nn(fnt, "ShaderNodeTexNoise", Scale=0.11, Detail=4.0, Roughness=0.55)
     fnt.links.new(fg.outputs["Position"], fn1.inputs["Vector"])
-    pud = K.smooth(fnt, fn1.outputs["Fac"], 0.50, 0.53)
+    pud = K.smooth(fnt, fn1.outputs["Fac"], 0.45, 0.48)
     fn2 = K.nn(fnt, "ShaderNodeTexNoise", Scale=1.3, Detail=6.0, Roughness=0.6)
     fnt.links.new(fg.outputs["Position"], fn2.inputs["Vector"])
     alb = K.mth(fnt, "MULTIPLY", K.mth(fnt, "ADD", 0.75, K.mth(fnt, "MULTIPLY", fn2.outputs["Fac"], 0.5)),
@@ -103,6 +103,9 @@ def build(K, AL, over_room, tex_quads, facing_quad, blades, boards, hooks=None):
         if not over_room(x + bw / 2, z0, z1, pad=0.5) and blades and z1 > z0 + 3.0:
             tex_quads(blades[rd.randrange(len(blades))], [facing_quad(x, x + bw, WY - 1.0, z0, z1, rd.uniform(-22, 22))],
                       AL["sign_k"] * 0.9)
+            K.add_light("uc_sign_%d" % nb, "AREA", (x + bw / 2, WY - 2.5, (z0 + z1) / 2), LH["uc_sign_w"],
+                        [(1.0, 0.2, 0.6), (0.3, 0.8, 1.0), (1.0, 0.55, 0.2), (0.75, 0.3, 1.0)][nb % 4], aim=(x + bw / 2, WY - 14.0, ZL), size=bw + 1.0, size_y=z1 - z0,
+                        group="corp", shadow=False)
             nb += 1
         x += bw + rd.uniform(1.5, 7.0)
     # beyond the tunnel: the wall comes down to the lower street: undercroft shops (roll shutters + lit fronts + boards)
@@ -112,9 +115,10 @@ def build(K, AL, over_room, tex_quads, facing_quad, blades, boards, hooks=None):
             w_ = rd.uniform(7.0, 11.0)
             x1_ = min(x + w_, s1 - 1.0)
             if rd.random() < 0.6:
-                box(A["sign"], x + 0.4, WY - 0.08, ZL, x1_ - 0.4, WY - 0.02, ZL + 4.2,
-                    [(1.0, 0.62, 0.32), (1.0, 0.78, 0.5), (0.7, 0.85, 1.0), (1.0, 0.4, 0.62)][rd.randrange(4)],
-                    rd.uniform(1.4, 2.4))
+                fc_ = [(1.0, 0.62, 0.32), (1.0, 0.78, 0.5), (0.7, 0.85, 1.0), (1.0, 0.4, 0.62)][rd.randrange(4)]
+                box(A["sign"], x + 0.4, WY - 0.08, ZL, x1_ - 0.4, WY - 0.02, ZL + 4.2, fc_, rd.uniform(1.4, 2.4))
+                K.add_light("uc_shop_%d" % int(x), "AREA", ((x + x1_) / 2, WY - 1.2, ZL + 3.8), LH["uc_shop_w"], fc_,
+                            aim=((x + x1_) / 2, WY - 10.0, ZL), size=x1_ - x, size_y=3.0, group="corp", shadow=False)
                 box(A["metal"], x + 0.2, WY - 2.2, ZL + 4.3, x1_ - 0.2, WY, ZL + 4.55, (0.14, 0.1, 0.1))
                 if boards:
                     tex_quads(boards[rd.randrange(len(boards))],
@@ -150,7 +154,7 @@ def build(K, AL, over_room, tex_quads, facing_quad, blades, boards, hooks=None):
             K.add_light("uc_stall_%d" % nst, "POINT", (x, sy_ - d_ / 2 - 1.5, z0 + 3.2), LH["stall_w"] * 4.0,
                         (1.0, 0.45, 0.2), size=1.0, group="corp", shadow=False)
             nst += 1
-        x += rd.uniform(22.0, 34.0)
+        x += rd.uniform(13.0, 21.0)
     for _ in range(26):
         cx_ = rd.uniform(XA, XB)
         if dxa - 2 < cx_ < dxb + 2:
@@ -194,7 +198,14 @@ def build(K, AL, over_room, tex_quads, facing_quad, blades, boards, hooks=None):
     for a_, b_ in zip(poles, poles[1:]):
         for zz in (ZL + PH - 1.8, ZL + PH - 2.4):
             catenary((a_, PY, zz), (b_, PY, zz), rd.uniform(1.6, 2.8), r=0.06)
+        q_ = catenary((a_, PY, ZL + PH - 3.2), ((a_ + b_) / 2, TY - 0.6, 0.4), rd.uniform(1.5, 2.5), r=0.03, n=14)
+        for p_ in q_[1:-1]:                                   # a lantern string across the street (pole -> kerb)
+            box(A["small"], p_.x - 0.3, p_.y - 0.3, p_.z - 0.9, p_.x + 0.3, p_.y + 0.3, p_.z - 0.3,
+                [(1.0, 0.25, 0.12), (1.0, 0.7, 0.3), (1.0, 0.2, 0.5)][rd.randrange(3)], 8.0)
         pts = catenary((a_, PY + 0.2, ZL + PH - 3.0), (b_, PY + 0.2, ZL + PH - 3.0), rd.uniform(2.0, 3.0), r=0.03)
+        K.add_light("uc_lantern_%d" % int(a_), "AREA", ((a_ + b_) / 2, PY + 0.2, ZL + PH - 5.5), LH["uc_lantern_w"],
+                    (1.0, 0.45, 0.25), aim=((a_ + b_) / 2, PY + 0.2, ZL), size=b_ - a_, size_y=3.0, group="corp",
+                    shadow=False)
         for p_ in pts[1:-1]:                                   # a lantern string
             box(A["small"], p_.x - 0.3, p_.y - 0.3, p_.z - 0.9, p_.x + 0.3, p_.y + 0.3, p_.z - 0.3,
                 [(1.0, 0.25, 0.12), (1.0, 0.7, 0.3), (1.0, 0.2, 0.5)][rd.randrange(3)], 8.0)
@@ -226,8 +237,8 @@ def build(K, AL, over_room, tex_quads, facing_quad, blades, boards, hooks=None):
     fall = K.mth(nt, "SUBTRACT", 1.0, K.smooth(nt, sp.outputs["Z"], ZL + 0.3, ZL + hgt))
     dens = K.mth(nt, "MULTIPLY", K.mth(nt, "MULTIPLY", K.smooth(nt, nz.outputs["Fac"], 0.42, 0.66), fall), AL["uc_fog_d"])
     pv = nt.nodes.new("ShaderNodeVolumePrincipled")
-    pv.inputs["Color"].default_value = (0.42, 0.38, 0.46, 1.0)
-    pv.inputs["Absorption Color"].default_value = (0.6, 0.55, 0.62, 1.0)
+    pv.inputs["Color"].default_value = (0.72, 0.38, 0.66, 1.0)              # red-violet (lit by the signs)
+    pv.inputs["Absorption Color"].default_value = (0.8, 0.7, 0.8, 1.0)
     pv.inputs["Anisotropy"].default_value = 0.35
     nt.links.new(dens, pv.inputs["Density"])
     nt.links.new(pv.outputs[0], out.inputs["Volume"])
@@ -240,3 +251,4 @@ def build(K, AL, over_room, tex_quads, facing_quad, blades, boards, hooks=None):
     K.COLL["media"].objects.link(ob)
     ob.data.materials.append(m)
     K.log("undercroft: stalls", nst, "poles", len(poles), "blades", nb)
+# RC_FLOORLIGHT

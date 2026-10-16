@@ -146,3 +146,8 @@ Godot 4.7 mapping (camera rig, not content):
 - No green spill on the bridge slabs: the bridges, podium and crown use a porcelain WITHOUT the rim
   (`porcelain_flat`); only the strands keep it.
 - The overview looks down a touch more (`pitch_o` 29.5), which trims the last sky strip at the top.
+
+### v2 final values pass (art director: overview median 0.096)
+- Lifted with mid-distance city haze and glow, not the helix: `cityglow_k` 0.12 -> 0.22, haze 0.0005 -> 0.0006.
+  The overview reads 0.118 / 39.7 % under 0.10, landmark ratio 2.76 (3.2 accepted). Only H_overview was re-rendered;
+  H_decision / H_hover / the sheet are from the previous final pass.

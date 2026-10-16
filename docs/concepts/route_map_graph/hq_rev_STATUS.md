@@ -66,3 +66,12 @@
     - The bridges no longer carry the rim, and the sky strip is trimmed.
   - The hover stills are the power-cut state (medians about 0.01).
   - Halcyon / Orbital: no re-render; their NOTES say the finals predate the occlusion rule.
+- 01:12  Final values pass (art director: Meridian approved and committed; Rebel Cell + Solace values). Batches c1
+  (test calibration), f4 and f4b (finals); the lock was released after each.
+  - Rebel Cell: the undercroft floor is lit (stalls, lantern strings, shopfront + sign spill, larger puddles, a faint
+    red-violet haze).
+    - Overview 0.134 / 43.6 %, decision 0.118 / 45.0 %, midrun 0.134 / 43.6 % (the midrun is composed from the
+      overview passes: same camera and state).
+  - Solace overview: city glow + haze lifted it to 0.118 / 39.7 %, ratio 2.76.
+  Recomposed `hq_rebel_cell/H_overview_v2.png`, `H_decision_v2.png`, `H_midrun_v2.png` and `hq_solace/H_overview_v2.png`.
+  Not committed.
