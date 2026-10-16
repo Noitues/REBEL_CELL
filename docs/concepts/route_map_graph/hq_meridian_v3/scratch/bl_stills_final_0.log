@@ -1,0 +1,33 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian_v3\scripts\hq_scene.py:224: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 5.4s] downtown towers 1245 lamps 2154
+[hq 5.4s] city built, roofs 2385
+[hq 5.5s] walls
+[hq 5.5s] towers
+[hq 5.5s] ring road 36 queued trucks
+[hq 5.5s] trucks
+[hq 5.5s] yard
+[hq 5.5s] rail 20 points
+[hq 5.5s] gantry
+[hq 5.5s] keep
+[hq 5.5s] rig
+[hq 5.5s] landmark built
+[hq 6.5s] objects 37
+[hq 6.6s] lights 218 beams 9 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian_v3\scripts\hq_scene.py:971: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:08.797  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 6.6s] HIP devices 1
+[hq 6.6s] occlusion H_overview: flattened 17 ghosted 6 of 2671
+01:27.516  render           | Saved: 'D:\rc_scratch\meridian_v3\bl_stills\H_overview.exr'
+[hq 86.8s] frame H_overview 80.2 s passes ['Combined', 'Depth', 'Object Index', 'Volume Direct', 'Emission', 'Noisy Image']
+[hq 86.9s] occlusion H_decision: flattened 0 ghosted 0 of 2671
+02:46.500  render           | Saved: 'D:\rc_scratch\meridian_v3\bl_stills\H_decision.exr'
+[hq 165.6s] frame H_decision 78.7 s passes 
+[hq 165.6s] occlusion H_hover: flattened 0 ghosted 0 of 2671
+04:05.563  render           | Saved: 'D:\rc_scratch\meridian_v3\bl_stills\H_hover.exr'
+[hq 244.6s] frame H_hover 79.0 s passes 
+[hq 244.6s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

@@ -1,0 +1,6 @@
+stills_test chunk 0 exit 0 ok log C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian_v3\scratch\bl_stills_test_0.log wall 38 s
+render 38 s
+H_overview {'median': 0.14774276316165924, 'under_010': 0.3443522135416667, 'over_085': 0.022613932291666666, 'landmark': 0.24523137509822845, 'local_bg': 0.11588235944509506, 'landmark_share': 0.18473307291666666, 'ratio': 2.1162097171003738}
+H_decision {'median': 0.13406352698802948, 'under_010': 0.37725802951388887, 'over_085': 0.026172960069444445, 'landmark': 0.12845411896705627, 'local_bg': 0.12204235047101974, 'landmark_share': 0.4886924913194444, 'ratio': 1.0525372419597825}
+GPU lock acquired after 240 s (test2d)
+GPU lock released
