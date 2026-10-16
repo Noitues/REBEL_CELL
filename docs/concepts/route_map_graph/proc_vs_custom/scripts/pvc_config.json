@@ -4,11 +4,11 @@
     {
       "id": "p1_street",
       "title": "Pair 1: netrun STREET (side view)",
-      "rows": [["c_aaa2r3", "p_sb_closed"]],
+      "rows": [["c_aaa2r3", "p_sb_closed"], ["c_aaa2r3", "p_r2_ov_s1"]],
       "crops": [
-        {"name": "skyline", "boxes": {"c_aaa2r3": [0.25, 0.0, 0.75, 0.30], "p_sb_closed": [0.15, 0.17, 0.65, 0.47]}},
-        {"name": "street level", "boxes": {"c_aaa2r3": [0.12, 0.70, 0.62, 1.0], "p_sb_closed": [0.30, 0.66, 0.80, 0.96]}},
-        {"name": "landmark", "boxes": {"c_aaa2r3": [0.60, 0.07, 0.85, 0.40], "p_sb_closed": [0.28, 0.33, 0.53, 0.66]}}
+        {"name": "skyline", "boxes": {"c_aaa2r3": [0.25, 0.0, 0.75, 0.30], "p_sb_closed": [0.15, 0.17, 0.65, 0.47], "p_r2_ov_s1": [0.25, 0.02, 0.75, 0.32]}},
+        {"name": "street level", "boxes": {"c_aaa2r3": [0.12, 0.70, 0.62, 1.0], "p_sb_closed": [0.30, 0.66, 0.80, 0.96], "p_r2_ov_s1": [0.30, 0.66, 0.80, 0.96]}},
+        {"name": "landmark", "boxes": {"c_aaa2r3": [0.60, 0.07, 0.85, 0.40], "p_sb_closed": [0.28, 0.33, 0.53, 0.66], "p_r2_ov_s1": [0.34, 0.03, 0.59, 0.36]}}
       ],
       "images": {
         "c_aaa2r3": {"role": "custom", "main": true, "label": "CUSTOM  AAA-2 r3 plate (hand-dressed street set)",
@@ -39,7 +39,25 @@
           "mask": [[0.88, 0, 1, 0.03]],
           "landmark": [0.35, 0.40, 0.43, 0.58],
           "skyline": [0.05, 0.85], "facade": [0.0, 0.40, 1.0, 0.80],
-          "bands": {"upper": [0, 0.25, 1, 0.60], "lower": [0, 0.78, 1, 1.0]}}
+          "bands": {"upper": [0, 0.25, 1, 0.60], "lower": [0, 0.78, 1, 1.0]}},
+        "p_r2_ov_s1": {"role": "procedural", "main": true, "label": "PROCEDURAL r2  one-city street by rule (art seed 1), walls closed",
+          "path": "{C}/route_map_graph/street_r2/plates/01_OVERVIEW_closed_s1_plate.png", "view": "side",
+          "landmark": [0.424, 0.106, 0.507, 0.199], "landmark_name": "megastructure (arch board)",
+          "skyline": [0.0, 0.85], "facade": [0.0, 0.10, 1.0, 0.80],
+          "bands": {"upper": [0, 0.0, 1, 0.40], "lower": [0, 0.78, 1, 1.0]}},
+        "p_r2_ov_open_s1": {"role": "procedural", "label": "procedural r2 street, walls open (seed 1)",
+          "path": "{C}/route_map_graph/street_r2/plates/03_OVERVIEW_route_overlay_s1_plate.png", "view": "side",
+          "landmark": [0.424, 0.106, 0.507, 0.199],
+          "skyline": [0.0, 0.85], "facade": [0.0, 0.10, 1.0, 0.80],
+          "bands": {"upper": [0, 0.0, 1, 0.40], "lower": [0, 0.78, 1, 1.0]}},
+        "p_r2_ov_s2": {"role": "procedural", "label": "procedural r2 street, art seed 2, walls closed",
+          "path": "{C}/route_map_graph/street_r2/plates/04_OVERVIEW_closed_seed2_plate.png", "view": "side",
+          "landmark": [0.129, 0.104, 0.211, 0.215],
+          "skyline": [0.0, 0.85], "facade": [0.0, 0.10, 1.0, 0.80],
+          "bands": {"upper": [0, 0.0, 1, 0.40], "lower": [0, 0.78, 1, 1.0]}},
+        "p_r2_dec_s1": {"role": "procedural", "label": "procedural r2 street DECISION, walls closed (seed 1)",
+          "path": "{C}/route_map_graph/street_r2/plates/02_DECISION_closed_s1_plate.png", "view": "street_close",
+          "facade": [0, 0, 1, 1]}
       }
     },
     {

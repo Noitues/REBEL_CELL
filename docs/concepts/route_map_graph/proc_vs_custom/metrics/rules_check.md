@@ -27,6 +27,10 @@ Rules:
 | p_sb_closed | procedural | **FAIL** 0.115 | **FAIL** 0.031 | PASS 0.700 | **FAIL** 0.395 | **FAIL** 0.021 | **FAIL** 328 | **FAIL** 3.533 | **FAIL** 0.545 | **FAIL** 0.115 | PASS 0.389 | PASS 0.005 | PASS 1.743 | n/a | PASS 0.497 |
 | p_sb_reveal | procedural | **FAIL** 0.111 | **FAIL** 0.040 | PASS 0.625 | PASS 0.295 | **FAIL** 0.024 | PASS 760 | PASS 4.111 | PASS 0.321 | **FAIL** 0.110 | **FAIL** 0.415 | PASS 0.004 | n/a | n/a | PASS 0.461 |
 | p_f0340 | procedural | **FAIL** 0.114 | **FAIL** 0.031 | PASS 0.503 | **FAIL** 0.000 | **FAIL** 0.025 | **FAIL** 389 | PASS 3.930 | **FAIL** 0.468 | **FAIL** 0.119 | PASS 0.385 | PASS 0.003 | **FAIL** 1.493 | n/a | PASS 0.482 |
+| p_r2_ov_s1 | procedural | PASS 0.181 | PASS 0.135 | PASS 0.618 | PASS 0.218 | PASS 0.029 | PASS 556 | PASS 4.049 | PASS 0.436 | PASS 0.136 | PASS 0.270 | PASS 0.005 | PASS 2.028 | n/a | PASS 0.506 |
+| p_r2_ov_open_s1 | procedural | PASS 0.186 | PASS 0.138 | PASS 0.592 | PASS 0.223 | PASS 0.028 | PASS 451 | PASS 4.320 | PASS 0.361 | PASS 0.130 | PASS 0.311 | PASS 0.009 | PASS 2.063 | n/a | PASS 0.491 |
+| p_r2_ov_s2 | procedural | PASS 0.206 | PASS 0.106 | PASS 0.591 | PASS 0.227 | PASS 0.033 | PASS 583 | PASS 4.446 | PASS 0.247 | PASS 0.140 | PASS 0.264 | PASS 0.006 | PASS 2.243 | n/a | PASS 0.541 |
+| p_r2_dec_s1 | procedural | n/a | n/a | PASS 0.742 | PASS 0.200 | n/a | n/a | PASS 3.810 | PASS 0.393 | PASS 0.141 | PASS 0.320 | PASS 0.010 | n/a | n/a | **FAIL** 0.794 |
 | c_hal_ov | custom | n/a | n/a | PASS 0.589 | PASS 0.250 | n/a | n/a | n/a | n/a | PASS 0.127 | PASS 0.388 | PASS 0.005 | PASS 2.355 | n/a | PASS 0.582 |
 | p_hal_ov | procedural | n/a | n/a | **FAIL** 0.288 | **FAIL** 0.036 | n/a | n/a | n/a | n/a | **FAIL** 0.110 | **FAIL** 0.462 | PASS 0.009 | PASS 2.313 | n/a | PASS 0.371 |
 | c_orb_ov | custom | n/a | n/a | PASS 0.744 | **FAIL** 0.323 | n/a | n/a | n/a | n/a | **FAIL** 0.199 | **FAIL** 0.181 | PASS 0.013 | **FAIL** 1.478 | n/a | **FAIL** 0.771 |

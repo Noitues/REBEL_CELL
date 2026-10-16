@@ -150,10 +150,12 @@ def rule_applies(scope, k, spec, r):
         return k not in NOT_AAA2
     if scope == "landmark":
         return "lm_ratio" in r
+    # street_r2 (2026-10-16): a config entry may declare its view ("side" = a street OVERVIEW, "street_close" =
+    # a street DECISION), so new renders get the street rules without editing this list
     if scope == "side":
-        return k in SIDE_IDS
+        return k in SIDE_IDS or spec.get("view") == "side"
     if scope == "street_city":
-        return k in SIDE_IDS or k in CITY_IDS
+        return k in SIDE_IDS or k in CITY_IDS or spec.get("view") in ("side", "street_close")
     if scope == "netrun":
         return k not in CITY_IDS and not k.startswith("a_") and k != "p_tethys"
     if scope == "city":

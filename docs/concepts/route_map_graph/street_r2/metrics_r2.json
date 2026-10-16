@@ -1,0 +1,707 @@
+{
+ "01_OVERVIEW_closed_s1": {
+  "R-SIL-1": {
+   "value": 0.1808,
+   "ok": true
+  },
+  "R-SIL-2": {
+   "value": 0.1349,
+   "ok": true
+  },
+  "R-DET-1": {
+   "value": 0.0292,
+   "ok": true
+  },
+  "R-DET-2": {
+   "value": 555.5556,
+   "ok": true
+  },
+  "R-HUE-1": {
+   "value": 4.0492,
+   "ok": true
+  },
+  "R-HUE-2": {
+   "value": 0.436,
+   "ok": true
+  },
+  "R-FOCUS-1": {
+   "value": 2.0349,
+   "ok": true
+  },
+  "R-REP-1": {
+   "value": 0.5061,
+   "ok": true
+  },
+  "R-VAL-1": {
+   "value": 0.1361,
+   "ok": true
+  },
+  "R-VAL-2": {
+   "value": 0.2704,
+   "ok": true
+  },
+  "R-VAL-3": {
+   "value": 0.0053,
+   "ok": true
+  },
+  "R-CALM-1": {
+   "value": 0.6176,
+   "ok": true
+  },
+  "R-CALM-2": {
+   "value": 0.2182,
+   "ok": true
+  },
+  "_proxies": {
+   "fg_hue_ratio": 1.0028769877251977,
+   "fg_blob_ratio": 0.6640625,
+   "sky_empty_share": 0.14569010416666667,
+   "planes": {
+    "front": 0.14598509669303894,
+    "mid": 0.11123059689998627,
+    "back": 0.15803764760494232
+   },
+   "hero_lum_ratios": [
+    1.84,
+    1.37,
+    0.78,
+    1.21,
+    0.44,
+    0.55,
+    1.76,
+    1.2
+   ]
+  },
+  "_raw": {
+   "w_src": 1920.0,
+   "median": 0.1361,
+   "p95": 0.6012,
+   "under_010": 0.2704,
+   "over_085": 0.0053,
+   "sobel_mean": 0.0292,
+   "hf_upper": 0.2227,
+   "sobel_upper": 0.02,
+   "hf_lower": 0.1087,
+   "sobel_lower": 0.0343,
+   "detail_cv": 0.6176,
+   "calm_share": 0.2182,
+   "hue_entropy_bits": 4.0492,
+   "chroma_share": 0.5892,
+   "hue_top_share": 0.436,
+   "rep_median": 0.3337,
+   "rep_p90": 0.5061,
+   "rep_tiled_share": 0.2035,
+   "rep_tiles": 113.0,
+   "lm_ratio": 2.0349,
+   "lm_p95_ratio": 5.039,
+   "lm_centre_thirds_dist": 0.2964,
+   "sky_std": 0.114,
+   "sky_min_q_std": 0.0738,
+   "sky_mean_h": 0.6333,
+   "lit_std": 0.1808,
+   "lit_min_q_std": 0.1349,
+   "profile": null,
+   "profile_lit": null,
+   "blobs_per_mp": 555.5556,
+   "focal_conc": 0.2987,
+   "focal_thirds_dist": 0.274
+  },
+  "_plan_checks": {
+   "frontage.silhouette": {
+    "floors": [
+     10,
+     16,
+     14,
+     9,
+     19,
+     9,
+     11,
+     18,
+     15,
+     11,
+     9,
+     16
+    ],
+    "min_step": 2,
+    "max_equal_tops": 0,
+    "crown_share": 0.5,
+    "ok": true
+   },
+   "materials.mix": {
+    "kits_in_radius": 4,
+    "frontage_kits": [
+     "panel_grille",
+     "glass_curtain",
+     "concrete_band",
+     "panel_grille",
+     "glass_curtain",
+     "concrete_band",
+     "glass_curtain",
+     "panel_grille",
+     "concrete_band",
+     "lit_atrium",
+     "panel_grille",
+     "lit_atrium"
+    ],
+    "adjacent_same": 0,
+    "ok": true
+   },
+   "repetition.guard": {
+    "max_same_module_run": 1,
+    "ok": true
+   },
+   "dressing.signs": {
+    "signs": 69,
+    "off_face": [],
+    "heroes": 8,
+    "route_columns": 8,
+    "hero_central": true,
+    "legible_ov": 14,
+    "legible_ids": [
+     "shop_sign_6184_2622_1",
+     "hero_wall_6184_2622_2",
+     "sec_box_6184_2622_3",
+     "shop_sign_6061_2330_5",
+     "hero_blade_6061_2330_6",
+     "shop_sign_5975_2137_8",
+     "hero_wall_5975_2137_9",
+     "sec_box_5833_1943_13",
+     "shop_sign_5785_1845_15",
+     "hero_wall_5785_1845_16",
+     "shop_sign_5738_1748_18",
+     "sec_box_5590_1458_26",
+     "backdrop_blade_4650_1436_39",
+     "roof_board_6062_2619_68"
+    ],
+    "megastructure": "arch",
+    "ok": true
+   },
+   "horizon.break": {
+    "spikes": 4,
+    "ok": true
+   }
+  }
+ },
+ "02_DECISION_closed_s1": {
+  "R-DET-1": {
+   "value": 0.0293,
+   "ok": true
+  },
+  "R-DET-2": {
+   "value": 402.5608,
+   "ok": false
+  },
+  "R-HUE-1": {
+   "value": 3.8098,
+   "ok": true
+  },
+  "R-HUE-2": {
+   "value": 0.393,
+   "ok": true
+  },
+  "R-FOCUS-1": {
+   "value": null,
+   "ok": null
+  },
+  "R-REP-1": {
+   "value": 0.6635,
+   "ok": false
+  },
+  "R-VAL-1": {
+   "value": 0.1415,
+   "ok": true
+  },
+  "R-VAL-2": {
+   "value": 0.3197,
+   "ok": true
+  },
+  "R-VAL-3": {
+   "value": 0.0104,
+   "ok": true
+  },
+  "R-CALM-1": {
+   "value": 0.7419,
+   "ok": true
+  },
+  "R-CALM-2": {
+   "value": 0.2,
+   "ok": true
+  },
+  "_proxies": {
+   "fg_hue_ratio": 0.9101844469782211,
+   "fg_blob_ratio": 0.10781671159029649,
+   "sky_empty_share": 0.03251627604166667,
+   "planes": {
+    "front": 0.14425019919872284,
+    "mid": 0.11539451777935028,
+    "back": 0.1157231405377388
+   },
+   "hero_lum_ratios": [
+    1.67,
+    0.38
+   ]
+  },
+  "_raw": {
+   "w_src": 1920.0,
+   "median": 0.1415,
+   "p95": 0.6176,
+   "under_010": 0.3197,
+   "over_085": 0.0104,
+   "sobel_mean": 0.0293,
+   "hf_upper": 0.1299,
+   "sobel_upper": 0.0237,
+   "hf_lower": 0.0578,
+   "sobel_lower": 0.0252,
+   "detail_cv": 0.7419,
+   "calm_share": 0.2,
+   "hue_entropy_bits": 3.8098,
+   "chroma_share": 0.615,
+   "hue_top_share": 0.393,
+   "rep_median": 0.4524,
+   "rep_p90": 0.6635,
+   "rep_tiled_share": 0.5,
+   "rep_tiles": 114.0,
+   "blobs_per_mp": 402.5608,
+   "focal_conc": 0.1788,
+   "focal_thirds_dist": 0.2347
+  },
+  "_plan_checks": {
+   "frontage.silhouette": {
+    "floors": [
+     10,
+     16,
+     14,
+     9,
+     19,
+     9,
+     11,
+     18,
+     15,
+     11,
+     9,
+     16
+    ],
+    "min_step": 2,
+    "max_equal_tops": 0,
+    "crown_share": 0.5,
+    "ok": true
+   },
+   "materials.mix": {
+    "kits_in_radius": 4,
+    "frontage_kits": [
+     "panel_grille",
+     "glass_curtain",
+     "concrete_band",
+     "panel_grille",
+     "glass_curtain",
+     "concrete_band",
+     "glass_curtain",
+     "panel_grille",
+     "concrete_band",
+     "lit_atrium",
+     "panel_grille",
+     "lit_atrium"
+    ],
+    "adjacent_same": 0,
+    "ok": true
+   },
+   "repetition.guard": {
+    "max_same_module_run": 1,
+    "ok": true
+   },
+   "dressing.signs": {
+    "signs": 69,
+    "off_face": [],
+    "heroes": 8,
+    "route_columns": 8,
+    "hero_central": true,
+    "legible_ov": 14,
+    "legible_ids": [
+     "shop_sign_6184_2622_1",
+     "hero_wall_6184_2622_2",
+     "sec_box_6184_2622_3",
+     "shop_sign_6061_2330_5",
+     "hero_blade_6061_2330_6",
+     "shop_sign_5975_2137_8",
+     "hero_wall_5975_2137_9",
+     "sec_box_5833_1943_13",
+     "shop_sign_5785_1845_15",
+     "hero_wall_5785_1845_16",
+     "shop_sign_5738_1748_18",
+     "sec_box_5590_1458_26",
+     "backdrop_blade_4650_1436_39",
+     "roof_board_6062_2619_68"
+    ],
+    "megastructure": "arch",
+    "ok": true
+   },
+   "horizon.break": {
+    "spikes": 4,
+    "ok": true
+   }
+  }
+ },
+ "03_OVERVIEW_route_overlay_s1": {
+  "R-SIL-1": {
+   "value": 0.1862,
+   "ok": true
+  },
+  "R-SIL-2": {
+   "value": 0.1377,
+   "ok": true
+  },
+  "R-DET-1": {
+   "value": 0.0285,
+   "ok": true
+  },
+  "R-DET-2": {
+   "value": 451.3889,
+   "ok": true
+  },
+  "R-HUE-1": {
+   "value": 4.3202,
+   "ok": true
+  },
+  "R-HUE-2": {
+   "value": 0.361,
+   "ok": true
+  },
+  "R-FOCUS-1": {
+   "value": 2.0703,
+   "ok": true
+  },
+  "R-REP-1": {
+   "value": 0.4914,
+   "ok": true
+  },
+  "R-VAL-1": {
+   "value": 0.1302,
+   "ok": true
+  },
+  "R-VAL-2": {
+   "value": 0.3112,
+   "ok": true
+  },
+  "R-VAL-3": {
+   "value": 0.0086,
+   "ok": true
+  },
+  "R-CALM-1": {
+   "value": 0.5918,
+   "ok": true
+  },
+  "R-CALM-2": {
+   "value": 0.2227,
+   "ok": true
+  },
+  "_proxies": {
+   "fg_hue_ratio": 0.9594300670943007,
+   "fg_blob_ratio": 0.829326923076923,
+   "sky_empty_share": 0.14180121527777778,
+   "planes": {
+    "front": 0.14167216420173645,
+    "mid": 0.10560549795627594,
+    "back": 0.1483733355998993
+   },
+   "hero_lum_ratios": [
+    1.9,
+    1.39,
+    0.78,
+    1.21,
+    0.44,
+    0.56,
+    1.77,
+    1.2
+   ]
+  },
+  "_raw": {
+   "w_src": 1920.0,
+   "median": 0.1302,
+   "p95": 0.6389,
+   "under_010": 0.3112,
+   "over_085": 0.0086,
+   "sobel_mean": 0.0285,
+   "hf_upper": 0.2276,
+   "sobel_upper": 0.0197,
+   "hf_lower": 0.0884,
+   "sobel_lower": 0.0339,
+   "detail_cv": 0.5918,
+   "calm_share": 0.2227,
+   "hue_entropy_bits": 4.3202,
+   "chroma_share": 0.5135,
+   "hue_top_share": 0.361,
+   "rep_median": 0.3294,
+   "rep_p90": 0.4914,
+   "rep_tiled_share": 0.1858,
+   "rep_tiles": 113.0,
+   "lm_ratio": 2.0703,
+   "lm_p95_ratio": 5.3086,
+   "lm_centre_thirds_dist": 0.2964,
+   "sky_std": 0.1149,
+   "sky_min_q_std": 0.0754,
+   "sky_mean_h": 0.6306,
+   "lit_std": 0.1862,
+   "lit_min_q_std": 0.1377,
+   "profile": null,
+   "profile_lit": null,
+   "blobs_per_mp": 451.3889,
+   "focal_conc": 0.5011,
+   "focal_thirds_dist": 0.2892
+  },
+  "_plan_checks": {
+   "frontage.silhouette": {
+    "floors": [
+     10,
+     16,
+     14,
+     9,
+     19,
+     9,
+     11,
+     18,
+     15,
+     11,
+     9,
+     16
+    ],
+    "min_step": 2,
+    "max_equal_tops": 0,
+    "crown_share": 0.5,
+    "ok": true
+   },
+   "materials.mix": {
+    "kits_in_radius": 4,
+    "frontage_kits": [
+     "panel_grille",
+     "glass_curtain",
+     "concrete_band",
+     "panel_grille",
+     "glass_curtain",
+     "concrete_band",
+     "glass_curtain",
+     "panel_grille",
+     "concrete_band",
+     "lit_atrium",
+     "panel_grille",
+     "lit_atrium"
+    ],
+    "adjacent_same": 0,
+    "ok": true
+   },
+   "repetition.guard": {
+    "max_same_module_run": 1,
+    "ok": true
+   },
+   "dressing.signs": {
+    "signs": 69,
+    "off_face": [],
+    "heroes": 8,
+    "route_columns": 8,
+    "hero_central": true,
+    "legible_ov": 14,
+    "legible_ids": [
+     "shop_sign_6184_2622_1",
+     "hero_wall_6184_2622_2",
+     "sec_box_6184_2622_3",
+     "shop_sign_6061_2330_5",
+     "hero_blade_6061_2330_6",
+     "shop_sign_5975_2137_8",
+     "hero_wall_5975_2137_9",
+     "sec_box_5833_1943_13",
+     "shop_sign_5785_1845_15",
+     "hero_wall_5785_1845_16",
+     "shop_sign_5738_1748_18",
+     "sec_box_5590_1458_26",
+     "backdrop_blade_4650_1436_39",
+     "roof_board_6062_2619_68"
+    ],
+    "megastructure": "arch",
+    "ok": true
+   },
+   "horizon.break": {
+    "spikes": 4,
+    "ok": true
+   }
+  }
+ },
+ "04_OVERVIEW_closed_seed2": {
+  "R-SIL-1": {
+   "value": 0.2057,
+   "ok": true
+  },
+  "R-SIL-2": {
+   "value": 0.1058,
+   "ok": true
+  },
+  "R-DET-1": {
+   "value": 0.0326,
+   "ok": true
+  },
+  "R-DET-2": {
+   "value": 582.6823,
+   "ok": true
+  },
+  "R-HUE-1": {
+   "value": 4.4463,
+   "ok": true
+  },
+  "R-HUE-2": {
+   "value": 0.247,
+   "ok": true
+  },
+  "R-FOCUS-1": {
+   "value": 2.2432,
+   "ok": true
+  },
+  "R-REP-1": {
+   "value": 0.5412,
+   "ok": true
+  },
+  "R-VAL-1": {
+   "value": 0.1401,
+   "ok": true
+  },
+  "R-VAL-2": {
+   "value": 0.2639,
+   "ok": true
+  },
+  "R-VAL-3": {
+   "value": 0.0055,
+   "ok": true
+  },
+  "R-CALM-1": {
+   "value": 0.5907,
+   "ok": true
+  },
+  "R-CALM-2": {
+   "value": 0.2273,
+   "ok": true
+  },
+  "_proxies": {
+   "fg_hue_ratio": 0.9218204666893165,
+   "fg_blob_ratio": 0.5307262569832402,
+   "sky_empty_share": 0.1648784722222222,
+   "planes": {
+    "front": 0.15243294835090637,
+    "mid": 0.11460627615451813,
+    "back": 0.16099216043949127
+   },
+   "hero_lum_ratios": [
+    1.59,
+    1.83,
+    1.04,
+    1.22,
+    1.08,
+    0.81,
+    0.99,
+    0.86
+   ]
+  },
+  "_raw": {
+   "w_src": 1920.0,
+   "median": 0.1401,
+   "p95": 0.6682,
+   "under_010": 0.2639,
+   "over_085": 0.0055,
+   "sobel_mean": 0.0326,
+   "hf_upper": 0.245,
+   "sobel_upper": 0.0277,
+   "hf_lower": 0.1071,
+   "sobel_lower": 0.0344,
+   "detail_cv": 0.5907,
+   "calm_share": 0.2273,
+   "hue_entropy_bits": 4.4463,
+   "chroma_share": 0.5703,
+   "hue_top_share": 0.247,
+   "rep_median": 0.4119,
+   "rep_p90": 0.5412,
+   "rep_tiled_share": 0.4071,
+   "rep_tiles": 113.0,
+   "lm_ratio": 2.2432,
+   "lm_p95_ratio": 2.9746,
+   "lm_centre_thirds_dist": 0.3384,
+   "sky_std": 0.1297,
+   "sky_min_q_std": 0.0972,
+   "sky_mean_h": 0.6177,
+   "lit_std": 0.2057,
+   "lit_min_q_std": 0.1058,
+   "profile": null,
+   "profile_lit": null,
+   "blobs_per_mp": 582.6823,
+   "focal_conc": 0.2536,
+   "focal_thirds_dist": 0.199
+  },
+  "_plan_checks": {
+   "frontage.silhouette": {
+    "floors": [
+     18,
+     10,
+     17,
+     15,
+     11,
+     9,
+     19,
+     13,
+     15,
+     8,
+     6,
+     12
+    ],
+    "min_step": 2,
+    "max_equal_tops": 0,
+    "crown_share": 0.42,
+    "ok": true
+   },
+   "materials.mix": {
+    "kits_in_radius": 4,
+    "frontage_kits": [
+     "glass_curtain",
+     "lit_atrium",
+     "panel_grille",
+     "concrete_band",
+     "panel_grille",
+     "glass_curtain",
+     "panel_grille",
+     "glass_curtain",
+     "panel_grille",
+     "glass_curtain",
+     "panel_grille",
+     "glass_curtain"
+    ],
+    "adjacent_same": 0,
+    "ok": true
+   },
+   "repetition.guard": {
+    "max_same_module_run": 1,
+    "ok": true
+   },
+   "dressing.signs": {
+    "signs": 58,
+    "off_face": [],
+    "heroes": 8,
+    "route_columns": 8,
+    "hero_central": true,
+    "legible_ov": 11,
+    "legible_ids": [
+     "hero_blade_6184_2622_1",
+     "shop_sign_6061_2330_3",
+     "hero_wall_6061_2330_4",
+     "hero_blade_5975_2137_6",
+     "sec_box_5833_1943_11",
+     "shop_sign_5738_1748_16",
+     "shop_sign_5590_1458_21",
+     "backdrop_blade_5178_1736_34",
+     "crown_board_6184_2622_36",
+     "roof_board_5694_1844_52",
+     "roof_board_5834_2134_55"
+    ],
+    "megastructure": "holo",
+    "ok": true
+   },
+   "horizon.break": {
+    "spikes": 3,
+    "ok": true
+   }
+  }
+ }
+}
