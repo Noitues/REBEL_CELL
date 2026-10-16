@@ -117,6 +117,80 @@ PRESET["hq"]["room_strip"] = (1.0, 0.72, 0.45)
 PRESET["hq"]["compound"]["fist"]["mask"] = "fist_mask_v2.json"      # the crest fist outline (rc_fist_v2.py)
 
 PRESET["post"].update({"exposure": 2.4})
+
+# ==================================================================================================== v3 (2026-10-16)
+# Designer review of round 1: the red wall toned down to an accent, MAINFRAME on the TARGET, a sewer underground
+# (green light, running water, pipe tunnels), a CONTINUOUS frontage (every building touches) with a ROOFTOP approach on
+# NYC roofs (water towers, dishes, bulkheads, AC, antennas, fire-escape tops, parapets), rooftop paths that snake down a
+# level or two, and varied signage (blades, boxes, wraps, banners, LED tickers, paper lanterns, holograms; on the roofs
+# too). Topology and rules unchanged. v2 numbers stay above; v3 overrides them here.
+PRESET["hq"]["rev"] = 3
+PRESET["hq"]["out_big"] = r"D:\rc_scratch\hq_rev\rebel_cell\v3"
+PRESET["hq"]["suffix"] = "_v3"
+PRESET["hq"]["v3"] = {
+    # 1. red as an accent: the share of the fist's windows that turn red in the NETRUN section (the red sequence from
+    # above keeps the full concept: RS frames use red_mix 1.0)
+    "red_mix": 0.10, "red_k_mix": 0.75, "takeover_p": 0.08,
+    # 2. MAINFRAME on the target: the v4 red sign stands on DISPATCH's building, centred over the CENTRAL SERVER room
+    "mf_w": 8.4, "mf_z0": 25.6, "mf_off": 2.4, "mf_k": 1.4,
+    # 4. the continuous frontage: explicit lots (x0, x1, roof) along the rooftop lane; procedural lots outside it
+    "front_x": (-345.0, 135.0),        # the frontage runs past both frame edges (v2 stopped at -262 / 72)
+    "front_y1": 129.5,               # the frontage reaches the first district row (no back-alley slot)
+    "lots": [(-190.0, -180.0, 44.0), (-180.0, -160.0, 30.0), (-160.0, -153.0, 30.0), (-153.0, -145.0, 26.0),
+             (-145.0, -136.0, 36.0), (-136.0, -116.0, 36.0), (-116.0, -104.0, 36.0), (-104.0, -92.0, 28.0),
+             (-92.0, -72.0, 32.0), (-72.0, -64.0, 32.0), (-64.0, -54.0, 28.0), (-54.0, -46.0, 38.0),
+             (-46.0, -26.0, 38.0), (-26.0, -8.0, 44.0), (-8.0, 16.0, 40.0)],
+    "lot_w": (7.0, 12.0), "lot_h": (30.0, 58.0),
+    "district_touch_d": 120.0,         # district blocks this far behind the cut touch along x (no N-S street slots)
+    "roof_clutter_d": 90.0,            # NYC roof clutter on district blocks this far behind the cut
+    # 6. the rooftop lane: walk line on the roofs (y = cut + roof_y); waypoints (x, floor) per edge between the doors
+    "roof_y": 2.2,
+    "roof_paths": {
+        "L1>L2": [(-163.0, 30.0), (-152.5, 30.0), (-152.5, 26.0), (-150.0, 26.0), (-144.5, 36.0), (-133.0, 36.0)],
+        "L1>L2a": [(-163.0, 30.0), (-160.5, 30.0), (-160.5, 40.0), (-151.0, 40.0), (-146.0, 46.0), (-143.0, 46.0)],
+        "L2a>L2b": [(-129.0, 46.0), (-125.0, 46.0), (-121.5, 48.0), (-119.0, 48.0)],
+        "L2>L3": [(-119.0, 36.0), (-103.5, 36.0), (-103.5, 28.0), (-97.0, 28.0), (-91.5, 32.0), (-89.0, 32.0)],
+        "L2b>L3": [(-105.0, 48.0), (-101.5, 48.0), (-101.5, 41.0), (-98.0, 41.0), (-91.0, 32.0), (-89.0, 32.0)],
+        "L3>LK": [(-75.0, 32.0), (-63.5, 32.0), (-63.5, 28.0), (-59.0, 28.0), (-53.5, 38.0), (-43.0, 38.0)],
+    },
+    # 3. the sewer (replaces the undercroft street): channel, ledges, pipe tunnels, green light
+    "sewer": {"chan": (-36.0, -16.0), "water_dz": -1.6, "chan_dz": -4.0, "ledge_w": 16.0,
+              "green": (0.56, 1.0, 0.68), "green_w": 620.0, "lamp_w": 420.0, "portal_r": 7.5, "water_k": 0.012,
+              "outfall_w": 320.0},
+}
+PRESET["hq"]["light"].update({"room_warm_w": 900.0, "uc_wash_w": 2600.0, "alley_lamp_w": 2600.0,
+                              "fist_spill_w": 2500.0, "mf_spill_w": 1800.0, "roof_w": 2200.0, "sign_spill_w": 700.0})
+PRESET["hq"]["post"] = dict(PRESET["hq"]["post"], exposure_zoom_k=0.25)   # v3: the decision frame read too dark
+# ---- v3 t4 (art director review of t3): roofs that read as roofs, a dark sewer, a layered background, hot pixels down
+PRESET["hq"]["v3"].update({
+    "win_k_net": 0.52,                 # the netrun's lit windows (v2 0.85: the frontage was most of the > 0.85 pixels)
+    "falloff": {"near_d": 40.0, "far_d": 260.0, "far_p": 0.35, "far_dim": 0.45, "warm": 0.7,
+                "patch_scale": 0.22, "patch_thr": 0.40, "patch_from": 28.0},     # PIPELINE_SPEC 13 density.falloff
+    "towers": [(-236.0, 232.0, 78.0, 16.0), (-150.0, 252.0, 88.0, 18.0), (-62.0, 214.0, 70.0, 15.0),
+               (30.0, 246.0, 84.0, 18.0), (98.0, 226.0, 74.0, 16.0), (-306.0, 262.0, 80.0, 16.0)],   # x, y, h, w
+    "prop_s": 1.5,                     # roof props 1.5x (legible at OVERVIEW)
+    "gallery_d": 38.0,                 # the sewer gallery's depth in front of the kerb (v2/t3 84): its front cut shows
+    "vaults": [(-226.0, 6.5), (-62.0, 6.5), (40.0, 6.5)],                         # the brick barrel-vault profiles
+})
+PRESET["hq"]["v3"]["sewer"].update({"chan": (-22.0, -8.0), "water_k": 0.0, "lamp_w": 900.0, "green_w": 0.0})
+if _os.environ.get("HQ_VARIANT", "A") == "A" and not _os.environ.get("HQ_DISTRICT_ONLY"):
+    # the camera looks down onto the roof planes of the top lane (t3: 17 / 17-19)
+    PRESET["hq"]["cam"].update({"pitch_lo": 23.0, "pitch_hi": 25.0, "pitch_o": 25.0})
+    PRESET["hq"]["cam"]["ov_sy_add"] = -0.022           # finals (AD): the vault cut at ~20 % from the bottom, no void
+    PRESET["hq_fog"].update({"haze": 0.0013})                                   # depth between the rows
+    PRESET["hq"]["city"].update({"win_p": 0.15, "win_k": 0.2})                 # the far city: fewer, dimmer windows
+    PRESET["hq"]["light"]["cityglow_k"] = 0.52          # the glow in the haze behind the skyline (towers in silhouette)
+    PRESET["hq"]["v3"]["sign_k"] = 2.0                  # signs a touch lower (the > 0.85 share)
+# designer (t4): MAINFRAME's neon down so the letterforms read crisply (legible tubes, a soft halo, no bloom smear);
+# the TARGET stays the landmark by lighting DISPATCH's building and the room round it (about 2x the local background)
+PRESET["hq"]["v3"].update({"mf_k": 0.62, "gallery_d": 30.0, "vaults": [(-226.0, 5.5), (-62.0, 5.5), (40.0, 5.5)],
+                           "target_wash_w": 3000.0})
+PRESET["hq"]["light"]["mf_spill_w"] = 1100.0
+PRESET["hq"]["v3"].update({"node_prop_k": 1.3, "tower_rim_w": 900.0})       # finals (AD): node props, tower rims
+PRESET["post"]["knee_top"] = 0.88
+if _os.environ.get("HQ_DISTRICT_ONLY"):
+    PRESET["hq"]["v3"]["red_mix"] = 1.0                 # the red sequence keeps the full concept (blackout -> fist)
+    PRESET["hq"]["v3"]["red_k_mix"] = 1.0
 PRESET.setdefault("lod_bands", {
     "fog_octaves_by_zoom": (0.25, 0.60), "wisps_on_at": (0.45, 0.70), "plumes_on_at": (0.50, 0.72),
     "signage_on_at": (0.60, 0.82), "small_lights_on_at": (0.75, 0.92), "puddles_sharp_at": (0.85, 1.00),

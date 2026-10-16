@@ -70,26 +70,57 @@ def build(K, keep_free=None, cut_y=None, low_near=None):
     front = M(nt, "MULTIPLY", M(nt, "SUBTRACT", S, 1.0), LH["spread_r"])
     spread = M(nt, "SUBTRACT", 1.0, K.smooth(nt, M(nt, "SUBTRACT", dist, front), -25.0, 0.0))     # 1 behind the front
     full = K.smooth(nt, S, 2.0, 3.0)
+    V3 = K.HZ.get("v3") or {}
+    redmix = nt.nodes.new("ShaderNodeValue")             # v3: red as an ACCENT in the netrun section (designer note 1)
+    redmix.name = "REDMIX"
+    redmix.outputs[0].default_value = float(V3.get("red_mix", 1.0))
+    RM = redmix.outputs[0]
     red_p = M(nt, "MULTIPLY", isF, M(nt, "ADD", LH["red_before_p"],
                                       M(nt, "MULTIPLY", spread, LH["red_full_p"] - LH["red_before_p"])))
+    red_p = M(nt, "MULTIPLY", red_p, RM)
     is_red = M(nt, "LESS_THAN", wsep.outputs[1], red_p)
     p_lit = M(nt, "ADD", LH["win_p"], M(nt, "MULTIPLY", wash, 0.6))
     p_lit = M(nt, "ADD", p_lit, M(nt, "MULTIPLY", M(nt, "MULTIPLY", isF, spread), 0.5))
+    FO = V3.get("falloff") if (V3 and cut_y is not None) else None
+    depth = None
+    if FO:
+        # v3 netrun (PIPELINE_SPEC 13, density.falloff): fewer, warmer, dimmer windows further behind the section; seeded
+        # PATCHES of fully dark blocks (dark_block_share); the frontage rows stay full
+        depth = K.smooth(nt, ps.outputs["Y"], cut_y + FO["near_d"], cut_y + FO["far_d"])
+        p_lit = M(nt, "MULTIPLY", p_lit, M(nt, "SUBTRACT", 1.0, M(nt, "MULTIPLY", depth, 1.0 - FO["far_p"])))
+        bcell = nt.nodes.new("ShaderNodeCombineXYZ")
+        nt.links.new(M(nt, "FLOOR", M(nt, "DIVIDE", ps.outputs["X"], FI["cell"])), bcell.inputs[0])
+        nt.links.new(M(nt, "FLOOR", M(nt, "DIVIDE", ps.outputs["Y"], FI["cell"])), bcell.inputs[1])
+        pn = K.nn(nt, "ShaderNodeTexNoise", Scale=FO["patch_scale"], Detail=1.0)
+        nt.links.new(bcell.outputs[0], pn.inputs["Vector"])
+        dark_b = M(nt, "MULTIPLY", M(nt, "LESS_THAN", pn.outputs["Fac"], FO["patch_thr"]),
+                   M(nt, "GREATER_THAN", ps.outputs["Y"], cut_y + FO["patch_from"]))
     lit = M(nt, "LESS_THAN", wn.outputs["Value"], p_lit)
     roof = M(nt, "GREATER_THAN", ns.outputs["Z"], 0.7)
     rgrid = M(nt, "MULTIPLY", M(nt, "GREATER_THAN", M(nt, "FRACT", M(nt, "DIVIDE", ps.outputs["X"], 2.4)), 0.55),
               M(nt, "GREATER_THAN", M(nt, "FRACT", M(nt, "DIVIDE", ps.outputs["Y"], 2.4)), 0.55))
     sky = M(nt, "MULTIPLY", M(nt, "MULTIPLY", rgrid, roof), M(nt, "MULTIPLY", isF, M(nt, "MAXIMUM", spread, 0.0)))
+    sky = M(nt, "MULTIPLY", sky, M(nt, "LESS_THAN", wsep.outputs[2], RM))     # v3: the skylights thin out with it too
     is_red = M(nt, "MAXIMUM", is_red, sky)
     on = M(nt, "MULTIPLY", M(nt, "MAXIMUM", M(nt, "MULTIPLY", wm, vert), sky), M(nt, "MAXIMUM", lit, is_red))
     on = M(nt, "MULTIPLY", on, M(nt, "SUBTRACT", 1.0, dark))
+    if FO:
+        on = M(nt, "MULTIPLY", on, M(nt, "SUBTRACT", 1.0, dark_b))
     plain_c = K.mixc(nt, M(nt, "GREATER_THAN", wsep.outputs[0], 0.62), (1.0, 0.66, 0.40), (0.82, 0.90, 1.0))
+    if FO:
+        plain_c = K.mixc(nt, M(nt, "MULTIPLY", depth, FO["warm"]), plain_c, (1.0, 0.58, 0.32))
     RED = pal("cell_red")
     wcol = K.mixc(nt, is_red, plain_c, RED)
     red_k = M(nt, "ADD", LH["red_before_k"], M(nt, "MULTIPLY", M(nt, "ADD", M(nt, "MULTIPLY", spread, 0.6),
                                                                   M(nt, "MULTIPLY", full, 0.4)),
                                                  LH["red_k"] - LH["red_before_k"]))
-    k_win = M(nt, "ADD", M(nt, "MULTIPLY", M(nt, "SUBTRACT", 1.0, is_red), LH["win_k"]), M(nt, "MULTIPLY", is_red, red_k))
+    red_k = M(nt, "MULTIPLY", red_k, float(V3.get("red_k_mix", 1.0)))
+    win_k = float(V3.get("win_k_net", LH["win_k"])) if (V3 and cut_y is not None) else LH["win_k"]
+    k_win = M(nt, "ADD", M(nt, "MULTIPLY", M(nt, "SUBTRACT", 1.0, is_red), win_k), M(nt, "MULTIPLY", is_red, red_k))
+    if FO:
+        # a per-window brightness spread (not every window at one value) and the dimming with depth
+        k_win = M(nt, "MULTIPLY", k_win, M(nt, "ADD", 0.55, M(nt, "MULTIPLY", wsep.outputs[2], 0.7)))
+        k_win = M(nt, "MULTIPLY", k_win, M(nt, "SUBTRACT", 1.0, M(nt, "MULTIPLY", depth, FO["far_dim"])))
     k_win = M(nt, "MULTIPLY", k_win, M(nt, "ADD", 1.0, M(nt, "MULTIPLY", wash, LH["wash_k"])))
     strength = M(nt, "MULTIPLY", M(nt, "MULTIPLY", on, k_win), pw.outputs["Fac"])
     # the kill-switch pulse: the LINE blocks' faces glow red
@@ -131,6 +162,8 @@ def build(K, keep_free=None, cut_y=None, low_near=None):
 
     cell, st_ = FI["cell"], FI["street"]
     roofs = {}
+    BLOCKS = []                                           # v3: (x0, y0, x1, y1, top) for the NYC roof clutter
+    K.HZ["_blocks"] = BLOCKS
     x = FI["x"][0] - 90.0
     n_by = {0: 0, 1: 0, 2: 0, 3: 0}
     while x < FI["x"][1] + 90.0:
@@ -151,7 +184,11 @@ def build(K, keep_free=None, cut_y=None, low_near=None):
                     h = min(h, max(6.0, rz - 6.0))        # never in front of a room
             w = cell - st_
             colr = (0.075, 0.07, 0.08) if rr.random() < 0.7 else (0.09, 0.08, 0.08)
-            K.box(DIST, cx - w / 2, cy - w / 2, 0.0, cx + w / 2, cy + w / 2, h, colr, k=float(c))
+            wx = w
+            if cut_y is not None and V3 and cy < cut_y + V3.get("district_touch_d", 0.0):
+                wx = cell                                 # v3: the buildings touch (no N-S slots seen from the street)
+            K.box(DIST, cx - wx / 2, cy - w / 2, 0.0, cx + wx / 2, cy + w / 2, h, colr, k=float(c))
+            BLOCKS.append((cx - wx / 2, cy - w / 2, cx + wx / 2, cy + w / 2, h))
             n_by[c] += 1
         x += cell
     K.box(K.A["ground"], FI["x"][0] - 100, (cut_y if cut_y is not None else FI["y"][0] - 100), -0.02, FI["x"][1] + 100,

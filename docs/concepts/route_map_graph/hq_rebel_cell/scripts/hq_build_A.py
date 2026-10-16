@@ -12,7 +12,9 @@ import math
 import os
 
 import rc_alley
+import rc_alley3
 import rc_district
+import rc_sewer
 
 
 def build(K):
@@ -34,10 +36,12 @@ def build(K):
         if only:
             return False
         # v2: the whole first row behind the cut is the alley frontage (rc_alley: lane buildings + infill)
-        if CUT < y < CUT + 24.0 and AL["x_a"] - 6.0 < x < AL["x_b"] + 6.0:
+        xa_, xb_ = K.HZ["v3"]["front_x"] if K.HZ.get("v3") else (AL["x_a"], AL["x_b"])
+        if CUT < y < CUT + 24.0 and xa_ - 6.0 < x < xb_ + 6.0:
             return True
         return False
     accs, SEQ, PULSE, cat = rc_district.build(K, keep_free=free, cut_y=None if only else CUT)
+    V3 = K.HZ.get("v3") if not only else None       # v3: the continuous frontage, the rooftop lane, the sewer
     hooks["accs"].update(accs)
     DIST = accs["district"]
     if only:
@@ -59,7 +63,7 @@ def build(K):
             if i == "srv":
                 b["srv"] = True
                 b["roof"] = max(b["roof"], dzt + 26.0)
-        for key, b in builds.items():
+        for key, b in (builds.items() if not V3 else ()):   # v3: the lots (rc_alley3) replace the lane buildings
             x = b["x"]
             roof = b["roof"] or 30.0
             y0, y1 = CUT + 0.6, CUT + 18.0
@@ -96,19 +100,30 @@ def build(K):
         dxa, dxb = G.XS["2a"] - 12.0, G.XS["2b"] + 12.0
         yb = TY + 16.0
         E = A["rough"]
-        box(E, -320.0, yb, ze, 120.0, TY + 160.0, -0.06, EARTH)                # behind the cavities
-        box(E, -320.0, TY, ztt, 120.0, yb, -0.06, EARTH)                       # above the tunnel (the street's bed)
-        box(E, -320.0, TY, ztb, xa, yb, ztt, EARTH)
-        box(E, xb, TY, ztb, 120.0, yb, ztt, EARTH)
-        box(E, -320.0, TY, ze, dxa, yb, ztb, EARTH)
-        box(E, dxb, TY, ze, 120.0, yb, ztb, EARTH)
+        EX0, EX1, YP = -320.0, 120.0, TY
+        if V3:
+            # v3: the earth is sewer brick; the pipe tunnels (rc_sewer) run west and east of the lane's tunnel, so the
+            # earth at the tunnel's band starts behind them
+            E = rc_sewer.brick_acc(K)
+            hooks["accs"]["brick"] = E
+            hooks["brick"] = E
+            EARTH = (0.13, 0.115, 0.09)
+            EX0, EX1 = V3["front_x"][0] - 70.0, V3["front_x"][1] + 70.0
+            YP = TY + V3["sewer"]["portal_r"] + 0.2
+        box(E, EX0, yb, ze, EX1, TY + 160.0, -0.06, EARTH)                     # behind the cavities
+        box(E, EX0, TY, ztt, EX1, yb, -0.06, EARTH)                            # above the tunnel (the street's bed)
+        box(E, EX0, YP, ztb, xa, yb, ztt, EARTH)
+        box(E, xb, YP, ztb, EX1, yb, ztt, EARTH)
+        box(E, EX0, TY, ze, dxa, yb, ztb, EARTH)
+        box(E, dxb, TY, ze, EX1, yb, ztb, EARTH)
         box(E, dxa, TY, ze, dxb, yb, zdb, EARTH)
         for (x0_, x1_, z0_, z1_) in ((xa, xb, ztb, ztt), (dxa, dxb, zdb, zdt)):  # cavity linings, the tunnel floor
             box(A["metal"], x0_, TY, z0_ - 0.3, x1_, yb, z0_, (0.2, 0.2, 0.21))
-            box(A["civic"], x0_, yb - 0.4, z0_, x1_, yb, z1_, (0.16, 0.16, 0.17))
+            box(E if V3 else A["civic"], x0_, yb - 0.4, z0_, x1_, yb, z1_, EARTH if V3 else (0.16, 0.16, 0.17))
             x = x0_ + 6.0
             while x < x1_ - 4.0:                                               # tunnel lights + pipes
-                box(A["trim"], x - 1.5, TY + 2.0, z1_ - 0.5, x + 1.5, TY + 6.0, z1_ - 0.3, (0.75, 0.9, 1.0), 2.0)
+                box(A["trim"], x - 1.5, TY + 2.0, z1_ - 0.5, x + 1.5, TY + 6.0, z1_ - 0.3,
+                    (0.62, 1.0, 0.72) if V3 else (0.75, 0.9, 1.0), 2.0)
                 x += 18.0
             tube(A["metal"], (x0_, yb - 1.2, z1_ - 2.0), (x1_, yb - 1.2, z1_ - 2.0), 0.6, (0.25, 0.2, 0.15), n=6)
             tube(A["metal"], (x0_, yb - 2.6, z1_ - 3.4), (x1_, yb - 2.6, z1_ - 3.4), 0.4, (0.15, 0.25, 0.2), n=6)
@@ -149,6 +164,8 @@ def build(K):
         box(A["trim"], sxy[0] - 3.0, sxy[1] + 0.95, 1.4, sxy[0] - 2.0, sxy[1] + 1.0, 2.8, (0.55, 1.0, 0.0), 6.0)
         K.add_light("hack", "POINT", (sxy[0] - 2.5, sxy[1] - 1.0, 2.0), 160.0, (0.55, 1.0, 0.0), size=0.3, group="start")
         for (a, b_) in G.PATH:                                                  # the walkways on the section plane
+            if V3 and (a + ">" + b_) in V3["roof_paths"]:
+                continue                                    # v3: the rooftop lane's own ladders / stairs / catwalks
             pth = G.edge_path(a, b_)
             for p, q in zip(pth, pth[1:]):
                 p, q = Vector(p), Vector(q)
@@ -160,7 +177,8 @@ def build(K):
                 K.seg_box(A["rough"], p + Vector((0, 0.6, -1.55)), q + Vector((0, 0.6, -1.55)), 1.6, 0.25, (0.16, 0.12, 0.09))
         # light: tunnel work lights (cold), sodium on the street, rooftop work lights, a soft key on the section face
         for x in range(int(xa) + 10, int(xb), 30):
-            K.add_light("tun_%d" % x, "AREA", (x, G.TY + 5.0, ztt - 1.0), 900.0, (0.75, 0.9, 1.0), aim=(x, G.TY + 5.0, ztb),
+            K.add_light("tun_%d" % x, "AREA", (x, G.TY + 5.0, ztt - 1.0), 900.0, (0.62, 1.0, 0.72) if V3 else (0.75, 0.9, 1.0),
+                        aim=(x, G.TY + 5.0, ztb),
                         size=8.0, size_y=4.0, group="corp")
         for x in range(int(xa) + 20, int(xb) + 40, 40):
             K.add_light("sod_%d" % x, "SPOT", (x, CUT - 4.0, 14.0), LH["sod_w"], SOD, aim=(x, CUT + 4.0, 0.0), size=0.6,
@@ -169,7 +187,10 @@ def build(K):
                         aim=(x, CUT + 6.0, 34.0), size=0.6, spot=60, blend=0.9, group="corp")
         K.add_light("section_key", "AREA", (-80.0, CUT - 160.0, 40.0), LH["key_w"] * LH["section_key_k"],
                     (0.8, 0.82, 0.95), aim=(-80.0, CUT, 12.0), size=260.0, size_y=60.0, group="corp", shadow=False)
-    rc_alley.build(K, DIST, cat, hooks, os.path.join(K.HZ["out_big"], "tex"), only=only)
+    if V3:
+        rc_alley3.build(K, DIST, cat, hooks, os.path.join(K.HZ["out_big"], "tex"))
+    else:
+        rc_alley.build(K, DIST, cat, hooks, os.path.join(K.HZ["out_big"], "tex"), only=only)
     RIMRX = bpy.data.collections.new("rim_rx")
     for k, (rx, c_) in enumerate(((-160.0, "neon_a"), (100.0, "neon_b"))):
         K.add_light("rim_%d" % k, "AREA", (rx, CUT + 300.0, 70.0), LH["rim_w"], pal(c_), aim=(rx * 0.5, CUT, 30.0),
@@ -186,7 +207,8 @@ def build(K):
         me = fr.get("mech") or {}
         SEQ.outputs[0].default_value = float(me.get("seq", 2.0))   # the netrun: the fist lit, not at full blaze
         PULSE.outputs[0].default_value = float(me.get("pulse", 0.0))
-        rc_alley.seq_lights(hooks, float(me.get("seq", 2.0)), pal)  # v2: arterials + the red glow follow the sequence
+        # v2: arterials + the red glow follow the sequence; v3 netrun: the arterials stay sodium (red only as an accent)
+        rc_alley.seq_lights(hooks, 0.0 if V3 else float(me.get("seq", 2.0)), pal)
         for ob in hooks.get("tex_objs", []):                    # the textured signs / holograms follow the power cut
             ctx["set_pwo"](ob, ctx["cut"])
     hooks["apply"] = apply

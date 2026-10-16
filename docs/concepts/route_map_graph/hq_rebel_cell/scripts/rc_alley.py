@@ -548,6 +548,13 @@ def _street_strips(K, CP, LH, pal, section=True):
                     if section and loc[1] < cut + 10.0:
                         u = u1
                         continue
+                    v3_ = K.HZ.get("v3")
+                    if section and v3_ and axis == "x" and loc[1] < cut + v3_.get("district_touch_d", 0.0) + 40.0:
+                        u = u1                            # v3: no N-S street slot there (the blocks touch)
+                        continue
+                    if section and v3_ and axis == "y" and loc[1] < v3_["front_y1"] + 2.0:
+                        u = u1                            # v3: inside the continuous frontage (no street there)
+                        continue
                     inside = ((loc[0] - fcx) ** 2 + (loc[1] - fcy) ** 2) ** 0.5 < ring
                     e0 = LH["strip_w"] * (u1 - u) / seg
                     ob = K.add_light("strip_%s_%d" % (axis, n), "AREA", loc, e0,

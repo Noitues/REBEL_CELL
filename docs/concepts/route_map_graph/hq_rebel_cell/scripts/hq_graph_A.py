@@ -35,6 +35,7 @@ PALM = CP["palm"]
 S0 = (0.0, -1.0)
 CUT = STK["cut"]
 TY = CUT + 0.6 - STK["alley_w"]       # v2: the section face = the alley's kerb; the service tunnel sits in it, under the street
+V3 = HP.PRESET["hq"].get("v3")        # v3: the rooftop approach (roof_paths), the continuous frontage (lots)
 
 NODES = ["start", "L1", "C1", "R1", "L2", "L2a", "C2", "R2", "R2a", "L2b", "R2b", "L3", "C3", "R3", "LK", "CK", "RK",
          "srv"]
@@ -126,6 +127,12 @@ def edge_path(a, b, mt=None):
                     (s[0] - RW / 2 - 1.0, CUT - YF, zs)]
         return [da, (SHAFT_X, da[1], da[2]), (SHAFT_X, da[1], zs), (s[0] - RW / 2 - 1.0, da[1], zs)]
     db = door(b, 1)
+    rp = (V3 or {}).get("roof_paths", {}).get(a + ">" + b)
+    if rp:
+        # v3: the ROOFTOP approach: out of the door onto the roofs, along them (y = cut + roof_y), down a level or two
+        # (ladders, stairs, catwalks between roof heights) and into the next room's door
+        yr = CUT + V3["roof_y"]
+        return [da] + [(x, yr, z + DOOR_Z) for (x, z) in rp] + [db]
     xm = (da[0] + db[0]) / 2
     if abs(da[2] - db[2]) < 0.5:
         return [da, db]
@@ -141,6 +148,9 @@ hqk_graph.bind(globals())
 
 OV_POINTS = [(X0 - 60.0, CUT, -50.0), (STK["dispatch_x"] + 30.0, CUT, -50.0), (X0 - 60.0, CUT, 90.0),
              (STK["dispatch_x"] + 30.0, CUT, 90.0)]
+if V3:      # t4: the overview also frames the sewer gallery's front cut (the barrel-vault profiles)
+    _YA = TY - V3.get("gallery_d", 84.0)
+    OV_POINTS += [(X0 - 60.0, _YA, -42.0), (STK["dispatch_x"] + 30.0, _YA, -42.0)]
 
 
 def CAM_RULE(walked, mt, CR):
@@ -175,6 +185,16 @@ def OPTION_SHOTS(CR):
         "OA_1_midrun": (o, dict(walked=WALK_DEC)),
         "OA_2_switch": (sw, dict(walked=WALK_SWITCH, extra=dict(pulse=1.0, switch_moment=1))),
         "OA_3_showdown": (sw, dict(walked=WALK_SHOW, extra=dict(pulse=0.3, showdown=1))),
+    }
+
+
+def V3_CHECK(CR):
+    """v3 layout checks (Eevee only, never finals): the rooftop lane, the sewer, MAINFRAME on the target."""
+    w = WALK_DEC
+    return {
+        "C_roofs": (CR.Pose((-110.0, CUT + 6.0, 36.0), 0.0, 28.0, 120.0, 30.0, 0.0, 0.0), dict(walked=w)),
+        "C_sewer": (CR.Pose((-120.0, TY - 24.0, -24.0), 0.0, 24.0, 130.0, 30.0, 0.0, 0.0), dict(walked=w)),
+        "C_target": (CR.Pose((0.0, CUT, 28.0), 0.0, 12.0, 120.0, 30.0, 0.0, 0.0), dict(walked=w)),
     }
 
 

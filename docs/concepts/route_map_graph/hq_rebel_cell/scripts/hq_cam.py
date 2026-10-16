@@ -228,7 +228,9 @@ def hover(walked, node, k=1.0, mt=None):
 
 
 def overview(walked=None, mt=None):
-    return frame_points(G.OV_POINTS, CAMP["ov_yaw"], PITCH_O, LENS_O, FILL_OW, FILL_OH, centre=tuple(CAMP["ov_centre"]))
+    p = frame_points(G.OV_POINTS, CAMP["ov_yaw"], PITCH_O, LENS_O, FILL_OW, FILL_OH, centre=tuple(CAMP["ov_centre"]))
+    p.sy += CAMP.get("ov_sy_add", 0.0)     # Rebel Cell v3: a lens shift (the sewer's vault cut sits higher in frame)
+    return p
 
 
 def zoom_of(pose, walked=None):

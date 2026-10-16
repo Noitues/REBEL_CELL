@@ -251,6 +251,8 @@ def target_mark(img, A):
     rx = math.hypot(poly[1][0] - poly[0][0], poly[1][1] - poly[0][1]) / 2 + 8
     ry = abs(poly[0][1] - poly[3][1]) / 2 + 20
     word = (min(cx + rx + 10, W - 230), max(140, cy - ry - 40))
+    if HZ.get("rev", 2) >= 3:          # v3: the MAINFRAME sign stands over the target: the word goes beside, not over it
+        word = (min(cx + rx + 78, W - 150), max(140, cy - 30))
     pr = S.target_pencil(cx, cy, rx, ry, word)
     img = S.finish_pencil(img, pr)
     img, _ = KT.chip(img, (cx + rx + 12, cy + 6), "CENTRAL SERVER // %s" % HZ["target_name"], (255, 214, 64), 12,
