@@ -73,7 +73,7 @@ def _pattern(c, kind, x, y, w, h, col):
             c.poly(rect_pts(px, py, rng.uniform(1.5, 3), rng.uniform(1.5, 3), rng.uniform(0, 3)), SLUM, 0.8)
 
 
-def make_panel(title, subtitle, blurb_lines, district_notes=None, skip=(), extras=(), evo=()):
+def make_panel(title, subtitle, blurb_lines, district_notes=None, skip=(), extras=(), evo=(), compact=False):
     c = Canvas(PW, PH, 2, 1.0, BG)
     y = 38
     c.text(28, y, title, 46, TEXT, spacing=3, title=True, anchor='lm', halo=False)
@@ -105,9 +105,11 @@ def make_panel(title, subtitle, blurb_lines, district_notes=None, skip=(), extra
     header('MOVEMENT NETWORK')
     rows = [
         ('ring', 'Ring motorway (R1 inner, R2 outer)'),
-        ('motorway', 'Radial motorway + stack interchange / ramps'),
+        ('motorway', 'Radial motorway'),
+        ('ramp', 'On/off ramps; cloverleaf and stack interchanges'),
         ('truck', 'Freight expressway (heavy trucks only)'),
-        ('arterial', 'Arterial avenue (collectors/locals = thin lines)'),
+        ('arterial', 'Arterial avenue'),
+        ('collector', 'Collector street (locals = thinnest lines)'),
         ('freight', 'Freight rail (to port and yards)'),
         ('commuter', 'Commuter / regional rail'),
         ('metro', 'Metro (underground = dashed)'),
@@ -134,6 +136,16 @@ def make_panel(title, subtitle, blurb_lines, district_notes=None, skip=(), extra
         elif kind == 'arterial':
             c.line([(x0, yy), (x1, yy)], ROAD_CASING, 4.8)
             c.line([(x0, yy), (x1, yy)], (196, 202, 214), 3)
+        elif kind == 'collector':
+            c.line([(x0, yy), (x1, yy)], ROAD_CASING, 2.7)
+            c.line([(x0, yy), (x1, yy)], (156, 162, 178), 1.5)
+        elif kind == 'ramp':
+            c.line([(x0, yy), (x1, yy)], ROAD_CASING, 6.0)
+            c.line([(x0, yy), (x1, yy)], ROAD_FILL, 3.4)
+            for sx in (58, 96):
+                pts = [(sx - 10, yy), (sx - 4, yy - 2), (sx + 1, yy - 7), (sx + 8, yy - 11), (sx + 14, yy - 8), (sx + 12, yy - 3), (sx + 6, yy)]
+                c.line(pts, ROAD_CASING, 4.0)
+                c.line(pts, (255, 232, 168), 2.1)
         elif kind == 'freight':
             c.line([(x0, yy), (x1, yy)], ROAD_CASING, 5.6)
             c.line([(x0, yy), (x1, yy)], (232, 232, 236), 3.4)
@@ -173,6 +185,8 @@ def make_panel(title, subtitle, blurb_lines, district_notes=None, skip=(), extra
         ('drowned', 'Drowned quarter (behind dams)'),
         ('undercity', 'Undercity (hatched, below the old core)'),
         ('airport', 'Airport / spaceport / exclusion zone'),
+        ('lots', 'Dense low-rise suburb lots'),
+        ('sprawl', 'Old-city sprawl (organic, dense)'),
         ('wall', 'Corporate enclave wall and gates'),
         ('seawall', 'Sea wall / storm barrier / dam'),
         ('windfarm', 'Offshore wind farm'),
@@ -213,6 +227,16 @@ def make_panel(title, subtitle, blurb_lines, district_notes=None, skip=(), extra
             c.poly(bx, (24, 28, 40), 1.0, (90, 100, 120), 1.0)
             c.line([(44, yy + 3), (76, yy - 3)], (230, 236, 250), 2)
             c.line([(46, yy - 4), (74, yy + 5)], (230, 236, 250), 2)
+        elif kind == 'lots':
+            c.poly(bx, (22, 26, 36), 1.0)
+            for k in range(7):
+                for q in range(2):
+                    c.poly(rect_pts(44 + k * 5.4, yy - 3.5 + q * 7, 4.2, 2.8), (182, 166, 144), 0.8)
+        elif kind == 'sprawl':
+            c.poly(bx, (74, 52, 36), 1.0)
+            rr = random.Random(5)
+            for _ in range(46):
+                c.poly(rect_pts(rr.uniform(42, 78), yy + rr.uniform(-6, 6), rr.uniform(1.3, 2.6), rr.uniform(1.3, 2.4), rr.uniform(0, 3)), (222, 150, 96), 0.85)
         elif kind == 'wall':
             c.line([(40, yy), (80, yy)], ROAD_CASING, 4.6)
             c.line([(40, yy), (80, yy)], (255, 160, 170), 2.6, dash=(9, 1.6))
