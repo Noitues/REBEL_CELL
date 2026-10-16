@@ -100,7 +100,11 @@ AAA = dict(
     sheet=dict(z=58.0, thick=5.0, scale=(0.003, 0.003, 0.02), remap=(0.48, 0.66), peak=0.02),   # the thin upper fog sheet
     shore_bank=dict(width=14.0, h=7.0, peak=0.035),     # lots of depth b landward of the levee, BU e-fold, density
     bay_clear=0.96,                                       # share of the fog cleared over the bay water (clear air, art review 6)
-    beams_city=6, beam_spacing=150.0, beam_power=2.2e8, beam_hero_power=2.6e8,
+    # revision 2 (art director): one beam per landmark, the storyboard r3 shaft (m44/onecity_cycles.py): emissive
+    # cone (camera only) len BU, half-angle half deg, core / soft gaussians, gone by fade of its length; plus a wide
+    # soft haze spot (fog only)
+    beam=dict(len=420.0, half=1.1, core_s=0.13, soft_s=0.42, core_w=1.0, soft_w=0.3, efold=0.22, fade=0.6, hot=0.5,
+              noise=0.012, emit=1.1, lean=0.35, haze_power=1.2e7, haze_cone=30.0),
     step_rate=3.0, max_steps=256,
     exposure=1.0,
     black_point=0.85,        # post: share of the frame's 5th-percentile (per channel) taken off as the fog veil
@@ -144,7 +148,9 @@ LANDMARK_NO_REFILL = ("tethys",)
 BAY = dict(depth=16.0, width=60.0, head_start=120.0, head_k=0.004, min_water=2.0)
 REBEL_H = 0.7              # REBEL_CELL building heights x this (the low street canyon, art review)
 # outlines (art review: the roof-trim / lane grid read as the rejected wireframe look)
-OUTLINE = dict(trim_off_k=0.25, lamp_p=0.35, lane_off_k=0.25, ring_trim_p=0.025, ring_major_k=0.3, ring_minor_k=0.08)
+OUTLINE = dict(trim_off_k=0.25, lamp_p=0.35, lane_off_k=0.25, ring_trim_p=0.025, ring_major_k=0.09, ring_minor_k=0.024,
+               out_k=0.3, ring_lamp_p=0.3, ring_wl=0.14)   # revision 2: outside the seven districts (sprawl + ring) trims and
+               # lanes at out_k; ring roof lamps at ring_lamp_p and ring window lit share ring_wl carry the outer city
 # the Meridian freight rail (designer, HQ revision): gate offset from the HQ centre (world BU), viaduct numbers
 # (art director ruling, pipeline spec) the line leaves through the NORTH rail-yard gate (gate_u: world x offset of the
 # gate along the north wall; wall_s: the wall line from the HQ centre; gate_out: the first track point outside it);
@@ -152,4 +158,4 @@ OUTLINE = dict(trim_off_k=0.25, lamp_p=0.35, lane_off_k=0.25, ring_trim_p=0.025,
 # capped at side_cap BU (roof top); the deck ramps up over ramp BU from the gate and down over end_ramp BU to the
 # terminal on the seawall. The polyline (world BU) is exported to rail_json for the HQ kit.
 RAIL = dict(gate_u=5.0, wall_s=28.0, gate_out=6.0, coast_reach=3.0, deck_z=17.5, pier_step=7.0, ramp=60.0, end_ramp=45.0,
-            signal_step=36.0, side_cap=15.5, side_d=1.2, rail_json=os.path.join(SCR, "meridian_rail.json"))
+            signal_step=36.0, side_cap=15.5, side_d=1.2, glow_w=0.45, glow_k=0.9, trains=((0.22, 34.0, True), (0.50, 28.0, False), (0.78, 30.0, True)), rail_json=os.path.join(SCR, "meridian_rail.json"))

@@ -664,42 +664,102 @@ if MODE == "aaa":
             c2 = mixc(DIST[k_]["hue"], (0.7, 0.68, 0.9), 0.55)
             light("roofwash_%d_%d" % (gx, gy), "AREA", (x, y, 160.0), A["glow_area"] * A.get("roofwash", 0.35), c2,
                   rot=(0, 0, 0), size=(130, 130), shadow=True)
-    # beams: r3 rule at city scale (the K tallest dry roofs, min spacing) + one hero beam per landmark crown
-    RB = random.Random(CP.SEEDS["beams"])
+    # beams (art director, revision 2): ONE beam per landmark, rising from its crown (max 7; REBEL_CELL has no crown,
+    # so 6). The storyboard round-3 implementation (m44/onecity_cycles.py): the visible shaft is an emissive cone seen
+    # by the camera only (a hot gaussian core over a wide soft skirt, brightest at the source, gone by beam_fade of its
+    # length, a slow noise breakup); a wide fully soft spot linked to the fog only makes the air round it glow.
+    # Each beam is shortened (in steps) until its far end sits inside the frame margin.
     bpy.context.view_layer.update()
+    BM = A["beam"]
 
-    def in_frame(p, m=(0.24, 0.12)):
+    def in_frame(p, m=(0.06, 0.04)):
         v = _ou0.world_to_camera_view(scene, cam, Vector(p))
         return v.z > 0 and m[0] < v.x < 1 - m[0] and m[1] < v.y < 1 - m[1]
-    # (art review) only roofs whose beam base AND a point 150 BU up the beam sit inside the central frame
-    cand = sorted([r_ for r_ in ROOFS if not r_[5] and r_[4] not in ("ring", "aqueduct") and in_frame((r_[0], r_[1], r_[2]))
-                   and in_frame((r_[0], r_[1], r_[2] + 150.0))], key=lambda r_: (-r_[2], r_[3]))
-    pick = []
-    for r_ in cand:
-        if all(math.hypot(r_[0] - p[0], r_[1] - p[1]) > A["beam_spacing"] for p in pick) and \
-                all(math.hypot(r_[0] - W(v)[0], r_[1] - W(v)[1]) > 60 for v in O["hq"].values()):
-            pick.append(r_)
-        if len(pick) >= A["beams_city"]:
-            break
-    PAL = [(1.0, 0.16, 0.6), (0.16, 0.8, 1.0), (1.0, 0.58, 0.18), (0.16, 0.8, 1.0), (1.0, 0.16, 0.6), (0.62, 0.38, 1.0)]
-    BEAMS = []
 
-    def beam(org, col, power, lean, name):
-        rot = Vector(lean).normalized().to_track_quat("-Z", "Y").to_euler()
-        for part, ang, e in (("soft", 3.0, 1.0), ("core", 0.9, 2.75)):
-            ob = light("beam_%s_%s" % (name, part), "SPOT", org, power * e, col, rot=rot, spot=ang, blend=0.5, shadow=False)
-            ob.light_linking.receiver_collection = rx_fog
-            BEAMS.append(ob)
-    for k_, r_ in enumerate(pick):
-        hh = (r_[3] * 2654435761) % 1000 / 1000.0
-        beam((r_[0], r_[1], r_[2] + 0.5), PAL[k_ % len(PAL)], A["beam_power"],
-             ((0.12 + 0.3 * hh) * (1 if hh > 0.5 else -1), 0.15 + 0.2 * RB.random(), 1.0), "c%d" % k_)
+    def beam_mat(name, col, k_emit):
+        m = bpy.data.materials.new(name)
+        g = NB(m)
+        lw = g.n("ShaderNodeLayerWeight")
+        lw.inputs["Blend"].default_value = 0.5
+        x = g.math("SUBTRACT", 1.0, lw.outputs["Facing"])
+        s2 = g.math("MAXIMUM", g.math("SUBTRACT", 1.0, g.math("MULTIPLY", x, x)), 0.0)
+        sc_, ss_ = BM["core_s"], BM["soft_s"]
+        core = g.math("EXPONENT", g.math("MULTIPLY", s2, -1.0 / (2 * sc_ * sc_)))
+        soft = g.math("MULTIPLY", g.math("EXPONENT", g.math("MULTIPLY", s2, -1.0 / (2 * ss_ * ss_))), g.math("SUBTRACT", 1.0, s2))
+        rad = g.math("ADD", g.math("MULTIPLY", core, BM["core_w"]), g.math("MULTIPLY", soft, BM["soft_w"]))
+        tc = g.n("ShaderNodeTexCoord")
+        _, _, t = g.sep(tc.outputs["Object"])                # the mesh has length 1 in object space
+
+        def ss(v, a, b):
+            mr = g.n("ShaderNodeMapRange")
+            mr.interpolation_type = "SMOOTHSTEP"
+            mr.inputs["From Min"].default_value, mr.inputs["From Max"].default_value = a, b
+            g.link(v, mr.inputs["Value"])
+            return mr.outputs[0]
+        ax = g.math("MULTIPLY", g.math("EXPONENT", g.math("MULTIPLY", t, -1.0 / BM["efold"])),
+                    g.math("SUBTRACT", 1.0, ss(t, BM["fade"] * 0.45, BM["fade"])))
+        ax = g.math("MULTIPLY", ax, ss(t, 0.0, 0.025))
+        geo = g.n("ShaderNodeNewGeometry")
+        nz = g.n("ShaderNodeTexNoise")
+        nz.inputs["Scale"].default_value = 1.0
+        nz.inputs["Detail"].default_value = 2.0
+        g.link(g.vmath("SCALE", geo.outputs["Position"], scale=BM["noise"]), nz.inputs["Vector"])
+        brk = g.math("ADD", 0.55, g.math("MULTIPLY", ss(nz.outputs["Fac"], 0.35, 0.65), 0.45))
+        stren = g.math("MULTIPLY", g.math("MULTIPLY", g.math("MULTIPLY", rad, ax), brk), k_emit)
+        em = g.n("ShaderNodeEmission")
+        em.inputs["Color"].default_value = (*col, 1)
+        g.link(stren, em.inputs["Strength"])
+        eh = g.n("ShaderNodeEmission")                       # the core runs hotter (toward white)
+        eh.inputs["Color"].default_value = (min(1, col[0] * 0.4 + 0.6), min(1, col[1] * 0.4 + 0.6), min(1, col[2] * 0.4 + 0.6), 1)
+        g.link(g.math("MULTIPLY", g.math("MULTIPLY", stren, core), BM["hot"]), eh.inputs["Strength"])
+        tr = g.n("ShaderNodeBsdfTransparent")
+        ad = g.n("ShaderNodeAddShader")
+        g.link(tr.outputs[0], ad.inputs[0])
+        g.link(em.outputs[0], ad.inputs[1])
+        ad2 = g.n("ShaderNodeAddShader")
+        g.link(ad.outputs[0], ad2.inputs[0])
+        g.link(eh.outputs[0], ad2.inputs[1])
+        g.link(ad2.outputs[0], g.out.inputs["Surface"])
+        return m
+
+    def beam_shaft(name, org, dirv, length, half_deg, mat, seg=48):
+        me_ = bpy.data.meshes.new(name)
+        b_ = bmesh.new()
+        r0, r1 = 0.4 / length, math.tan(math.radians(half_deg))
+        lo_ = [b_.verts.new((r0 * math.cos(2 * math.pi * i / seg), r0 * math.sin(2 * math.pi * i / seg), 0.0)) for i in range(seg)]
+        hi_ = [b_.verts.new((r1 * math.cos(2 * math.pi * i / seg), r1 * math.sin(2 * math.pi * i / seg), 1.0)) for i in range(seg)]
+        for i in range(seg):
+            j = (i + 1) % seg
+            f_ = b_.faces.new((lo_[i], lo_[j], hi_[j], hi_[i]))
+            f_.smooth = True
+        b_.to_mesh(me_)
+        b_.free()
+        me_.materials.append(mat)
+        ob_ = bpy.data.objects.new(name, me_)
+        ob_.location = org
+        ob_.rotation_euler = Vector(dirv).normalized().to_track_quat("Z", "Y").to_euler()
+        ob_.scale = (length, length, length)
+        for v_ in ("visible_diffuse", "visible_glossy", "visible_transmission", "visible_volume_scatter", "visible_shadow"):
+            setattr(ob_, v_, False)                          # camera only
+        scene.collection.objects.link(ob_)
+        return ob_
+    BEAMS, BEAM_AX = [], []
     for k_, v in sorted(LM.items()):
         if v[1] is None:
             continue
-        hh = (hash(k_) % 997) / 997.0 if False else (sum(map(ord, k_)) % 97) / 97.0
-        beam(v[1], v[2], A["beam_hero_power"], ((hh - 0.5) * 0.5, -0.1 + 0.25 * hh, 1.0), k_)
-    print("BEAMS city", [(round(p[0]), round(p[1]), round(p[2])) for p in pick], flush=True)
+        hh = (sum(map(ord, k_)) % 97) / 97.0
+        lean = Vector(((hh - 0.5) * BM["lean"], (0.5 - hh) * BM["lean"] * 0.6, 1.0)).normalized()
+        org = Vector(v[1]) + Vector((0, 0, 0.5))
+        L_ = BM["len"]
+        while L_ > 40.0 and not in_frame(org + lean * L_ * BM["fade"]):
+            L_ *= 0.9
+        rot = lean.to_track_quat("-Z", "Y").to_euler()
+        ob = light("beam_%s_haze" % k_, "SPOT", tuple(org), BM["haze_power"], v[2], rot=rot, spot=BM["haze_cone"], blend=1.0, shadow=False)
+        ob.light_linking.receiver_collection = rx_fog
+        BEAMS.append(ob)
+        beam_shaft("beam_%s_shaft" % k_, tuple(org), tuple(lean), L_, BM["half"], beam_mat("beam_%s_mat" % k_, v[2], BM["emit"]))
+        BEAM_AX.append((k_, tuple(org), tuple(org + lean * L_ * BM["fade"])))
+    print("BEAMS landmarks", [(k_, round((Vector(b_) - Vector(a_)).length / BM["fade"])) for k_, a_, b_ in BEAM_AX], flush=True)
     # landmark key lights (the landmark lighting rig: one key + one hue fill each)
     for k_, s in enumerate(LIGHT_SPOTS):
         o = light("lmk_%d" % k_, "SPOT", s["loc"], s["power"] * 1.5, s["col"], rot=aim(s["loc"], s["tgt"]), spot=s["cone"], blend=0.6)
@@ -856,6 +916,7 @@ def anchors(path):
     A_["_station"] = P((*STATION["centre"], ZW))
     A_["_mainframe"] = P(STATION["mainframe"]) if "mainframe" in STATION else None
     A_["_sprawl"] = [P((*W(c["centre"]), 20.0)) for c in O["clusters"] if c["to"] == "sprawl"]
+    A_["_beams"] = {k_: [P(a_), P(b_)] for k_, a_, b_ in globals().get("BEAM_AX", [])}
     json.dump(dict(anchors=A_, res=[RX, RY], cam=dict(loc=list(cam.location), lens=cam_d.lens)), open(path, "w"), indent=1)
 
 

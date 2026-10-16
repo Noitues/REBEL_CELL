@@ -31,9 +31,11 @@ for gx in range(-246, 258, 3):        # 3-lot blocks: 2 lots of buildings + a 1-
             d_ = RR.uniform(0.62, 0.9) * U / 2
             pts = [(cx_ - w_, cy_ - d_), (cx_ + w_, cy_ - d_), (cx_ + w_, cy_ + d_), (cx_ - w_, cy_ + d_)]
             col = (0.22, 0.21, 0.26) if RR.random() < 0.7 else (0.27, 0.22, 0.24)
-            prism(SURF, pts, 0, h, col, wc=RR.choice(RING_COLS), wl=0.09 / (1.0 + far / 50.0), wm=0, bid=RR.random())
+            prism(SURF, pts, 0, h, col, wc=RR.choice(RING_COLS), wl=CP.OUTLINE["ring_wl"] / (1.0 + far / 50.0), wm=0, bid=RR.random())
+            if RR.random() < CP.OUTLINE["ring_lamp_p"]:          # a warm roof lamp (revision 2: lamps carry the ring)
+                box(NEON, cx_ - 0.25, cy_ - 0.25, h + 0.05, cx_ + 0.25, cy_ + 0.25, h + 0.45, (1.0, 0.68, 0.32))
             if RR.random() < CP.OUTLINE["ring_trim_p"]:
-                c2 = RR.choice(RING_NEON)
+                c2 = sc(RR.choice(RING_NEON), CP.OUTLINE["out_k"])
                 for i in range(4):
                     bar(NEON, (pts[i][0], pts[i][1], h + 0.08), (pts[(i + 1) % 4][0], pts[(i + 1) % 4][1], h + 0.08), 0.2, c2)
             if h > 22 and RR.random() < 0.4:
@@ -292,7 +294,7 @@ for k in range(len(RP) - 1):
             0.12, (0.55, 0.55, 0.6))
         if s0_ > 6.0:
             bar(NEON, (x0 + side * nx * 1.02, y0 + side * ny * 1.02, z0_ - 0.25), (x1 + side * nx * 1.02, y1 + side * ny * 1.02, z1_ - 0.25),
-                0.12, sc((1.0, 0.5, 0.12), 0.55))
+                RA["glow_w"], sc((1.0, 0.5, 0.12), RA["glow_k"]))      # revision 2: a wider glow band
     while next_pier < s1_:
         t = (next_pier - s0_) / max(1e-6, s1_ - s0_)
         px, py, pz = x0 + dx * t, y0 + dy * t, z0_ + (z1_ - z0_) * t
@@ -317,14 +319,14 @@ def rail_at(s):
 
 
 # two moving trains as light streaks (long exposure): a lit head, a warm trail; one with its container wagons
-for (sc0, ln, wagons) in ((0.30, 34.0, True), (0.72, 26.0, False)):
+for (sc0, ln, wagons) in RA["trains"]:                 # revision 2: three trains
     s_head = RAIL_LEN * sc0
     m = 24
     for kk in range(m):
         sa, sb = s_head - ln * kk / m, s_head - ln * (kk + 1) / m
         pa, pb = rail_at(sa), rail_at(sb)
         k_ = (1.0 - kk / m) ** 1.5
-        bar(STREAK, (pa[0], pa[1], pa[2] + 0.6), (pb[0], pb[1], pb[2] + 0.6), 0.35, sc((1.0, 0.75, 0.42), 0.4 + 0.8 * k_))
+        bar(STREAK, (pa[0], pa[1], pa[2] + 0.6), (pb[0], pb[1], pb[2] + 0.6), 0.6, sc((1.0, 0.75, 0.42), 0.5 + 1.0 * k_))
     ph = rail_at(s_head)
     box(STREAK, ph[0] - 0.4, ph[1] - 0.4, ph[2] + 0.3, ph[0] + 0.4, ph[1] + 0.4, ph[2] + 1.1, (1.0, 0.95, 0.85))
     if wagons:

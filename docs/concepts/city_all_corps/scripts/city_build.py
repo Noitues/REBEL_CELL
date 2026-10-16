@@ -535,6 +535,8 @@ def building(b):
             c2 = hue if r.random() < 0.75 else D["sec"]
             if b.get("crest"):
                 c2 = DIST[d]["sec"]
+            if d == "":
+                c2 = sc(c2, CP.OUTLINE["out_k"])          # outside the seven districts (revision 2)
             for i in range(n):
                 j = (i + 1) % n
                 bar(NEON, (tp[i][0], tp[i][1], z1 + 0.08), (tp[j][0], tp[j][1], z1 + 0.08), 0.2, c2, wet=wet)
@@ -595,6 +597,7 @@ for t in O["tiles"]:
         u = (k + 0.5) / min(nl, 4) * 2 - 1
         lane = u * half * 0.8 + (hr.random() - 0.5) * 0.25
         al = (0.35 + 0.3 * hr.random() + tr * 0.15) * 0.5 * (1.0 if t.get("art") else CP.OUTLINE["lane_off_k"])
+        al *= CP.OUTLINE["out_k"] if t.get("terr", "") == "" else 1.0     # outside the seven districts (revision 2)
         strip(NEON, (a[0] + nx * lane - dx * 0.35, a[1] + ny * lane - dy * 0.35), (b[0] + nx * lane + dx * 0.35, b[1] + ny * lane + dy * 0.35),
               0.14, 0.04, sc(col, al))
     if hr.random() < 0.5:                         # a warm street lamp at the kerb (the street glow off the arterials)
