@@ -1,0 +1,26 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scripts\hq_scene.py:224: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 1.2s] downtown towers 1610 lamps 2800
+[hq 1.2s] city built, roofs 2839
+[hq 1.4s] towers
+[hq 1.4s] bridges
+[hq 1.4s] rooms
+[hq 1.4s] crown
+[hq 1.4s] podium
+[hq 1.4s] rig
+[hq 1.4s] landmark built
+[hq 2.6s] objects 34
+[hq 2.6s] lights 178 beams 10 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scripts\hq_scene.py:971: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:04.609  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 2.7s] occlusion H_overview: flattened 3 ghosted 0 of 3197
+00:09.890  render           | Saved: 'D:\rc_scratch\hq_rev\solace\bl_stills_eevee\H_overview.exr'
+[hq 8.3s] frame H_overview 5.7 s passes ['Combined', 'Depth', 'Emission']
+[hq 8.4s] occlusion H_decision: flattened 0 ghosted 0 of 3197
+00:18.546  render           | Saved: 'D:\rc_scratch\hq_rev\solace\bl_stills_eevee\H_decision.exr'
+[hq 16.7s] frame H_decision 8.3 s passes 
+[hq 16.7s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

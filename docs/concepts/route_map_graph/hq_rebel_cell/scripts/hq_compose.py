@@ -74,10 +74,11 @@ def stills(names=None, bl=None, kind="stills"):
             print("missing", stem)
             continue
         plate = PO.finish(stem, ov["zoom"], t=2.0)
-        plate.save(os.path.join(pdir, name + "_plate.png"))
+        sfx = HP.PRESET["hq"].get("suffix", "")                # HQ_REV_V2: v2 outputs never overwrite v1
+        plate.save(os.path.join(pdir, name + sfx + "_plate.png"))
         ex = ov.get("extra") or {}
         img = compose(plate, ov, ui_k=0.0 if ex.get("ui_off") else 1.0, route_k=0.0 if ex.get("ui_off") else 1.0)
-        img.save(os.path.join(odir, name + ".png"))
+        img.save(os.path.join(odir, name + sfx + ".png"))
         print("saved", name, flush=True)
 
 

@@ -14,7 +14,8 @@ PRESET["hq"] = {
     "corp": "orbital", "corp_name": "ORBITAL COMMONS",
     "dossier": ("ORBITAL", "LAUNCH SECURITY", (205, 240, 255)),
     "target_name": "LAUNCH CONTROL", "target_place": "the service gantry",
-    "out_big": r"D:\rc_scratch\hq_orbital",
+    "out_big": r"D:\rc_scratch\hq_rev\orbital",          # v2 revision; v1 passes stay in D:\rc_scratch\hq_orbital
+    "suffix": "_v2",
     "palette": {
         "ice": (0.61, 0.87, 1.00),            # #CDF0FF linear: the corp light (work lights, dish rims, the crest)
         "steel": (0.30, 0.33, 0.37),          # pale steel (albedo)
@@ -49,7 +50,8 @@ PRESET["hq"] = {
     "mech": {"circuit": 4, "retargets": 3},
     "light": {"room_k": 1.0, "room_w": 3000.0, "lockdown_k": 2.0, "sign_k": 0.5, "trim_k": 2.4, "cityglow_k": 0.15,
               "city_beam_k": 0.8, "bank_glow": 3200.0, "shop_w": 900.0, "flood_w": 3.0e4, "dish_k": 3.0,
-              "shaft_w": 8.0e4, "rim_w": 1.2e5, "key_w": 6.0e4, "halo_r": (180.0, 290.0), "halo_h": 110.0,
+              "shaft_w": 1.2e4, "shaft_beam_w": 6.0e6,                 # v2: no more yellow-orange blob
+              "pad_albedo": (0.06, 0.065, 0.075), "door_albedo": (0.11, 0.12, 0.14), "rim_w": 1.2e5, "key_w": 6.0e4, "halo_r": (180.0, 290.0), "halo_h": 110.0,
               "halo_peak": 0.010, "halo_fill_w": 4.5e4, "marker_k": 14.0,
               "svc_w": 2.5e4, "pad_flood_w": 2.5e4, "room_key_w": 9000.0, "underfog_w": 1.5e4,
               # the launch cutscene (H_launch_board): the Orbital facility struck in the city, the trail, the blast
@@ -67,6 +69,10 @@ PRESET["hq"] = {
              "sky_lanes": [(700.0, 150.0), (780.0, 182.0), (860.0, 226.0)],
              "perimeter": dict(r=(170.0, 292.0), pylon_step=40.0, pylon_h=6.0, wall_r=292.0, wall_h=4.0),
              "win_p": 0.30, "win_k": 0.20},
+    # v2: the dense downtown right up to the launch complex (hq_kit.downtown)
+    "downtown": {"seed": 7340, "keep": ("circle", 126.0), "street0": 8.0, "cell": 30.0, "street": 7.0,
+                 "r_out": 296.0, "h_near": (16.0, 46.0), "h_far": (36.0, 100.0), "tall_p": 0.08, "sign_p": 0.6,
+                 "holo_p": 0.07, "trim_p": 0.4, "lamp_step": 15.0, "lamp_lights": 70, "lamp_w": 1800.0, "zref_k": 0.4},
     "road": {"plaza": 136.0, "road": (136.0, 162.0), "walk": (162.0, 170.0)},
     "cam": {"pitch_lo": 16.0, "pitch_hi": 26.0, "lens": 30.0, "dmin": 110.0, "fill": (0.56, 0.62),
             "pitch_o": 46.0, "lens_o": 36.0, "fill_o": (0.92, 0.90), "ov_yaw": 150.0, "ov_centre": (0.0, 0.0, 20.0)},

@@ -34,6 +34,7 @@ RUNNERS = CP["runners"]
 PALM = CP["palm"]
 S0 = (0.0, -1.0)
 CUT = STK["cut"]
+TY = CUT + 0.6 - STK["alley_w"]       # v2: the section face = the alley's kerb; the service tunnel sits in it, under the street
 
 NODES = ["start", "L1", "C1", "R1", "L2", "L2a", "C2", "R2", "R2a", "L2b", "R2b", "L3", "C3", "R3", "LK", "CK", "RK",
          "srv"]
@@ -55,7 +56,7 @@ for s in LANES:
             z = ZL["R"] - (12.0 if key in ("2a", "2b") else 0.0)
         else:
             z = ZL["C"]
-        ROOM[nid] = dict(o=(XS[key], CUT, z), n=S0, w=RW, h=RH, d=RD)
+        ROOM[nid] = dict(o=(XS[key], TY if s == "R" else CUT, z), n=S0, w=RW, h=RH, d=RD)
 SX = X0 - 46.0
 ROOM["start"] = dict(o=(SX, CUT, 0.4), n=S0, w=8.0, h=4.6, d=6.0)
 ROOM["srv"] = dict(o=(STK["dispatch_x"], CUT, STK["dispatch_z"]), n=S0, w=18.0, h=10.0, d=12.0)
@@ -114,11 +115,15 @@ def edge_path(a, b, mt=None):
     pa, pb = ROOM[a]["o"], ROOM[b]["o"]
     if a == "start":
         db = door(b, 1)
-        return [(SX + 4.0, CUT - YF, 1.2), (db[0] - 6.0, CUT - YF, 1.2), (db[0] - 6.0, CUT - YF, db[2]), db]
+        return [(SX + 4.0, CUT - YF, 1.2), (db[0] - 6.0, CUT - YF, 1.2), (db[0] - 6.0, db[1], 1.2), (db[0] - 6.0, db[1], db[2]),
+                db]
     da = door(a, -1)
     if b == "srv":
         s = ROOM["srv"]["o"]
         zs = s[2] + DOOR_Z
+        if abs(da[1] - (CUT - YF)) > 0.5:          # from the tunnel: up the shaft at the kerb, across to the frontage
+            return [da, (SHAFT_X, da[1], da[2]), (SHAFT_X, da[1], 1.2), (SHAFT_X, CUT - YF, 1.2), (SHAFT_X, CUT - YF, zs),
+                    (s[0] - RW / 2 - 1.0, CUT - YF, zs)]
         return [da, (SHAFT_X, da[1], da[2]), (SHAFT_X, da[1], zs), (s[0] - RW / 2 - 1.0, da[1], zs)]
     db = door(b, 1)
     xm = (da[0] + db[0]) / 2
@@ -175,7 +180,7 @@ def OPTION_SHOTS(CR):
 
 def RED_SHOTS(CR):
     """The red sequence (round 34 blackout + the review), over the whole district (HQ_DISTRICT_ONLY build)."""
-    top = CR.Pose((0.0, 110.0, 0.0), 0.0, 74.0, 700.0, 30.0, -0.04, 0.0)
+    top = CR.Pose((0.0, 110.0, 0.0), 0.0, 60.0, 660.0, 30.0, -0.04, 0.0)
     w = ["start"]
     return {
         "RS_1_before": (top, dict(walked=w, extra=dict(seq=0.0, ui_off=1))),
@@ -186,7 +191,7 @@ def RED_SHOTS(CR):
 
 
 def RED_SEQ_FRAMES(CR, n=36):
-    top = CR.Pose((0.0, 110.0, 0.0), 0.0, 74.0, 700.0, 30.0, -0.04, 0.0)
+    top = CR.Pose((0.0, 110.0, 0.0), 0.0, 60.0, 660.0, 30.0, -0.04, 0.0)
     return {"q%03d" % k: (top, dict(walked=["start"], extra=dict(seq=3.0 * k / (n - 1), ui_off=1))) for k in range(n)}
 
 
@@ -203,7 +208,7 @@ def REVEAL(CR):
     BLACKOUT, 1-2.4 s); the red spreads from the palm through the fist (2.4-5 s); the full fist, the camera settling
     lower toward the south edge (5-6.5 s). No route / UI (the section's netrun follows)."""
     w = ["start"]
-    top = CR.Pose((0.0, 110.0, 0.0), 0.0, 74.0, 700.0, 30.0, -0.04, 0.0)
+    top = CR.Pose((0.0, 110.0, 0.0), 0.0, 60.0, 660.0, 30.0, -0.04, 0.0)
     end = CR.Pose((0.0, 110.0, 0.0), 0.0, 58.0, 640.0, 30.0, -0.04, 0.02)
     n = int(REVEAL_T * CR.FPS)
     out = []

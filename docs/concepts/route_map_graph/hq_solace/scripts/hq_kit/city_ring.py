@@ -36,12 +36,16 @@ def inward_face(cx, cy):
 
 def build(city, road, P, A, geo, pal):
     box, fbox, fp, tube = geo.box, geo.fbox, geo.fp, geo.tube
+    bcf = getattr(geo, "bc", None)            # v2: the section clip's building centre (whole towers are cut)
+    bct = getattr(geo, "bc_top", None)        # v3: the occlusion rule's building top (set once the crown is known)
     NEON = [pal("district_a"), pal("district_b"), pal("accent_cool"), pal("district_a"), pal("district_b"),
             pal("accent_warm")]
     ROOF = []
     rr = random.Random(city["seed"])
 
     def tower(cx, cy, w, d, h, ring):
+        if bcf:
+            bcf(cx, cy, top=h, hx=w / 2, hy=d / 2)
         col = (0.075, 0.07, 0.09) if rr.random() < 0.7 else (0.10, 0.085, 0.09)
         x0, x1, y0, y1 = cx - w / 2, cx + w / 2, cy - d / 2, cy + d / 2
         box(A["city"], x0, y0, 0, x1, y1, h, col, k=1.0 if rr.random() < 0.85 else 0.4)
@@ -91,6 +95,8 @@ def build(city, road, P, A, geo, pal):
                     a = fp(fin, dist, u, z)
                     b = fp(fin, dist + 0.9, u + 1.4, z + 1.0)
                     box(A["city_metal"], a[0] + cx, a[1] + cy, z, b[0] + cx, b[1] + cy, z + 1.0, (0.2, 0.2, 0.21))
+        if bct:
+            bct(h)
         ROOF.append((cx, cy, h, ring["name"]))
 
     for ring in city["rings"]:
@@ -110,6 +116,10 @@ def build(city, road, P, A, geo, pal):
                 h = rr.uniform(*ring["h"])
                 if rr.random() < 0.12:
                     continue
+                ww_, dd_ = min(w, cell - 4) / 2 + 2, min(d, cell - 4) / 2 + 2
+                if in_corridor(city, cx - ww_, cy - dd_, cx + ww_, cy + dd_):
+                    continue
+                h = corridor_low(city, cx, cy, h)[0]                     # rail-side sheds (Meridian v2 freight line)
                 tower(cx + rr.uniform(-2, 2), cy + rr.uniform(-2, 2), min(w, cell - 4), min(d, cell - 4), h, ring)
     mid = next(rg for rg in city["rings"] if rg["name"] == city.get("beam_ring", "mid"))
     for k_ in range(city["billboards"]):
@@ -119,6 +129,8 @@ def build(city, road, P, A, geo, pal):
         fin = inward_face(cx, cy)
         c = NEON[k_ % 2]
         bz = rr.uniform(46, 80)
+        if bcf:
+            bcf(cx, cy, top=bz + 9.0, hx=14.0, hy=14.0)
         pts = [fp(fin, 0.0, -14, bz), fp(fin, 0.0, 14, bz), fp(fin, 0.0, 14, bz + 9), fp(fin, 0.0, -14, bz + 9)]
         A["city_sign"].face([(p[0] + cx, p[1] + cy, p[2]) for p in pts], tuple(v * 0.8 for v in c), 1.6)
         for l_ in range(4):
@@ -127,6 +139,8 @@ def build(city, road, P, A, geo, pal):
                    fp(fin, 0.1, -12 + L_, bz + 1.8 + l_ * 1.8), fp(fin, 0.1, -12, bz + 1.8 + l_ * 1.8)]
             A["city_sign"].face([(p[0] + cx, p[1] + cy, p[2]) for p in pts], (1, 1, 1), 2.0)
         tube(A["city_metal"], (cx, cy, 0), (cx, cy, bz), 0.8, (0.12, 0.12, 0.14), n=6)
+    if bcf:
+        bcf(0.0, 0.0, False)
     # traffic: light streaks on the four sides of the ring road, sky lanes on square loops
     SLp = P["street_lanes"]
     lr = random.Random(9402)
@@ -188,3 +202,48 @@ def glows_by_azimuth(n=8, radii=(430.0, 700.0)):
         rad = radii[k_ % 2]
         out.append((rad * math.sin(az), -rad * math.cos(az), "district_a" if k_ % 2 == 0 else "district_b"))
     return out
+
+
+def in_corridor(cfg, x0, y0, x1, y1):
+    """True if the rectangle x0..x1, y0..y1 meets a corridor segment (cfg["corridor"]: [(ax, ay, bx, by, half)])."""
+    import math as _m
+    for (ax, ay, bx, by, hw) in cfg.get("corridor", ()):
+        # the distance from the segment to the rectangle, sampled along the segment
+        L = _m.hypot(bx - ax, by - ay) or 1.0
+        n = int(L / 2.0) + 1
+        for k in range(n + 1):
+            px, py = ax + (bx - ax) * k / n, ay + (by - ay) * k / n
+            dx = max(x0 - px, 0.0, px - x1)
+            dy = max(y0 - py, 0.0, py - y1)
+            if _m.hypot(dx, dy) < hw:
+                return True
+    return False
+
+
+def corridor_dist(cfg, x, y):
+    """The distance from (x, y) to the nearest corridor axis (inf without corridors)."""
+    import math as _m
+    best = float("inf")
+    for (ax, ay, bx, by, hw) in cfg.get("corridor", ()):
+        vx, vy = bx - ax, by - ay
+        L2 = vx * vx + vy * vy or 1.0
+        t = max(0.0, min(1.0, ((x - ax) * vx + (y - ay) * vy) / L2))
+        best = min(best, _m.hypot(x - ax - vx * t, y - ay - vy * t))
+    return best
+
+
+def corridor_low(cfg, x, y, h):
+    """cfg["corridor_low"] = (dist, hmax): within dist of a corridor axis the city is low rail-side sheds / warehouses
+    (height capped at hmax with a deterministic spread), so an elevated viaduct reads above them. -> (h, capped)"""
+    cl = cfg.get("corridor_low")
+    if not cl or corridor_dist(cfg, x, y) > cl[0]:
+        return h, False
+    cap = cl[1]
+    if len(cl) >= 7:                      # the cap follows a deck on a grade (Meridian: 3 %, 2 storeys of clearance)
+        import math as _m
+        ax, ay, bx, by, _hw = cfg["corridor"][0]
+        L = _m.hypot(bx - ax, by - ay) or 1.0
+        s = ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / L
+        deck = min(cl[4], max(0.0, (s - cl[2]) * cl[3]))
+        cap = max(cl[6], min(cl[1], deck - cl[5]))
+    return min(h, cap * (0.7 + 0.3 * ((h * 7.31) % 1.0))), True

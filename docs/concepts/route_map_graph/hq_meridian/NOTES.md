@@ -141,3 +141,69 @@ From `scripts/` (Blender 5.2 headless; logs in `../scratch/`; nothing launches G
 
 Seeds: city 5311, containers 5320, yard stacks 5321, rails / signals 5322, landmark rig 5330, lanes 9402, beams 9500,
 plumes 9510, Cycles 7.
+
+<!-- hq_rev v2 r2 -->
+## v2 revision, round 2 (hq_rev)
+
+### v2 round 2 (art director 20:55 + designer note on the train)
+- Values: an ORANGE-weighted haze bank round the fort (`hq_fog.bank`, r 128-230 BU, 0-34 BU high, lit from below by
+  the bank glows in work orange and sodium), with a neutral haze further out. The city windows are lit
+  (`win_p` 0.36, `win_k` 0.34), so the city mass reads as lit blocks instead of black window confetti.
+- THE FREIGHT LINE OUT (designer: "Meridian needs a train track leading away ... Make is viable"). This is set dressing
+  only: the route, the nodes and the overlay are unchanged.
+  - A switch off the yard loop's north side.
+  - The line runs north through a PORTAL in the platform wall: two container columns, a lintel container, the
+    MERIDIAN FREIGHT stripe, and green and red signal lamps.
+  - It crosses the moat on a truss bridge, then ramps up onto an elevated VIADUCT on piers at deck z 22.
+  - The viaduct has parapets with the Meridian-orange rail glow, catenary masts, signal lamps, and a train's light
+    streaks running out (white heads ahead, red tails behind).
+  - It threads a cleared CORRIDOR (`downtown.corridor` / `city.corridor`): no lot or ring tower is built on it, so it
+    never passes through a building.
+  - It runs out of frame toward the port at y 1180.
+  - Along the corridor the city steps down to low rail-side sheds and warehouses (`corridor_low`: within 40-46 BU of
+    the axis, heights capped at 16-18 BU, no crowns), so the viaduct reads above the roofs from the overview.
+
+### Occlusion: camera-rig rule (v2, all five HQs; designer note 2026-10-15)
+
+Designer, verbatim: "The foreground blocking buildings should be flattened or made transparent when the camera needs to
+look through them to see the HQ." This replaces the v2 sloped section cut. Code: `hq_kit/downtown.py`
+(`occlusion_params`, `occlusion_state`: pure python, the rule itself) and `hq_kit/section.py` (the same rule as a
+clip in the city materials). Called per frame from `hq_jobs.frame()`; `hq_scene` logs how many buildings it touched.
+
+| Step | Rule | Numbers (`downtown.OCC`, a corp may override in preset `downtown.occ`) |
+|---|---|---|
+| Inputs | The camera position, and the TARGET VOLUME: the front points of the active room plus the visible route nodes (decision / hover: the current room + its options; overview: every route node). | - |
+| Cone | Every ray from the camera to the target volume. Horizontal frame: `u` = the direction to the targets' centroid. Per target: lateral tangent `t = across / along` and vertical tangent `v = (z - cam z) / along`. Only targets **behind** a building can be hidden by it, so the cone is sampled at `NK` depths (knots) from the nearest to the farthest target. At each knot it holds `[t_min, t_max]` and `v_min` (the lowest ray) over the targets behind that depth, widened by `margin` of the whole volume's span (the ~10 % margin). | `margin` 0.10, `NK` 5 |
+| Occluder | A city building is an occluder when its footprint (radius = half-diagonal) overlaps `[t_min, t_max]` at its depth, it stands in front of the farthest target, and its top reaches into the cone (`(top - cam z) / (along + r) > v_min`). Compound geometry is never an occluder. | - |
+| Step 1: FLATTEN | An occluder is section-cut to a lit stub of `stub` BU (1-2 storeys: shop fronts, awnings and the lowest windows stay lit). Its open top shows a near-black POCHE, so it reads as a cut model and not as a hollow shell. | `stub` 6.4 BU |
+| Step 2: GHOST | If the stub still reaches into the cone, it fades to `ghost` opacity. Its window dots stay (dimmed with it) and a faint cool edge line traces its box edges. It is never fully invisible. | `ghost` 0.18, `edge` 0.6 |
+| Outside | Buildings outside the cone keep their full height. Roof clutter (tanks, antennas, holo boards) is cut with its building. | - |
+| Easing | The cone has soft borders (`tsoft` lateral tangent, `vsoft` vertical tangent). As the orbit camera moves, a building's cut height and opacity slide across the band and never snap. In the game the values are per-instance targets eased over 0.4 s (below). | `tsoft` 0.035, `vsoft` 0.025 |
+| Outputs | Per building: cut height (`top` + clutter outside the cone, `stub` inside, interpolated across the soft band) and opacity (1, or `ghost`). `occlusion_state(params, building)` returns exactly these values. | - |
+
+Godot 4.7 mapping (camera rig, not content):
+- The city is MultiMeshes. Each instance carries `INSTANCE_CUSTOM = (cut_height, opacity, centre-relative edge
+  data)`. Each frame the camera rig (a `RefCounted` helper fed by the orbit camera, outside the deterministic core)
+  runs `occlusion_state` per building in the near rings and writes the per-instance target.
+- The view tweens each instance's current value toward its target over 0.3-0.5 s (0.4 s default, ease in-out), so
+  buildings never snap when the cone sweeps across them.
+- City shader (spatial, opaque pipeline): `if (world_vertex.z > cut_height) discard;` gives the per-instance height
+  clip. A back-face branch draws the poche colour, so the cut reads as solid.
+- Ghost: a dithered alpha fade (an alpha-hash / screen-door `discard` against a 4x4 Bayer threshold scaled by
+  `opacity`), which keeps depth sorting stable without a transparent pass. Edge lines come from the box-local
+  distance in the same shader. The window emission stays on and is multiplied by `opacity`.
+- Cost: one uniform block, one per-instance vec4, no extra draw calls.
+
+<!-- hq_rev v2 full -->
+### v2 full render: the pipeline spec + a believable grade (art director)
+- ONE freight line, shared with the city render. Spec deck z 17.5 one-city units (1 floor = 1.9 BU) = 73.7 BU in HQ
+  units (1 storey = 8 BU): it clears the frontage along it by about 2 storeys and never towers over it.
+- It leaves by the NORTH RAIL-YARD GATE (the portal on the north platform). The moat runs on the W, S and E sides only;
+  the north side is the rail yard: a paved apron with three east-west sidings, no moat, no bridge.
+- The incline is a 3 % freight grade (`viaduct.grade`). The climb starts in the rail yard (y 150) with a 40 BU vertical
+  curve and carries on along the viaduct outside the wall. At 3 % the deck reaches 73.7 BU off frame; in frame it rises
+  from grade to about 31 BU at the frame edge.
+- The rail-side frontage follows the deck: its cap is the deck height at that point minus 2 storeys (16 BU), kept
+  within 8-57.7 BU (`corridor_low` = (dist, hmax, s0, grade, zmax, clear, hmin)). So the deck always sits just above
+  the roofs beside it.
+- Values: t2b passes (overview 0.163 / 27 %, ratio 1.73).

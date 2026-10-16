@@ -308,3 +308,44 @@ Previews: `python hq_jobs.py preview <still> mini|test [key=value ...]`.
 | Kit copies | `kit44`, `ui31`, `r31lib`, `r32ui`, `r35ui`, `sidekit`, `wax_r2`, `sticker_lib19/31`, `markers42`, `city_view`, `route_d_city`, `crests15`, `emblems20`, `look_preset` from `side_view/v3_aaa/r3/scripts/` (concepts-root paths shortened by two folders; `sidekit` and `wax_r2` import `hq_graph` / `hq_overlay`). |
 
 Seeds: build 4311 (city), 4312 (pylons), 9402 (lanes), 9500 (beams), 9510 (plumes), 9520 (glows), 41 (rain), 7 (Cycles, grain).
+
+<!-- hq_rev v2 r2 -->
+## v2 revision, round 2 (hq_rev)
+
+### v2 round 2 fixes (2026-10-15)
+- The operative dossier's letterhead came from Meridian ("MERIDIAN / FREIGHT SECURITY"). It now reads from the HQ's own
+  preset (`dossier`: HALCYON / CIVIC SECURITY). The hover node file's cracked seal and tint also defaulted to Meridian
+  (`sidekit.node_file` -> `kit44.holo_file(corp=...)`); it now uses the HQ's own corp. Checked on all five HQs.
+- The full v2 stills were rendered before the occlusion rule landed, so they use the v2 sloped section cut. The kit
+  files now carry the rule and the next render picks it up.
+
+### Occlusion: camera-rig rule (v2, all five HQs; designer note 2026-10-15)
+
+Designer, verbatim: "The foreground blocking buildings should be flattened or made transparent when the camera needs to
+look through them to see the HQ." This replaces the v2 sloped section cut. Code: `hq_kit/downtown.py`
+(`occlusion_params`, `occlusion_state`: pure python, the rule itself) and `hq_kit/section.py` (the same rule as a
+clip in the city materials). Called per frame from `hq_jobs.frame()`; `hq_scene` logs how many buildings it touched.
+
+| Step | Rule | Numbers (`downtown.OCC`, a corp may override in preset `downtown.occ`) |
+|---|---|---|
+| Inputs | The camera position, and the TARGET VOLUME: the front points of the active room plus the visible route nodes (decision / hover: the current room + its options; overview: every route node). | - |
+| Cone | Every ray from the camera to the target volume. Horizontal frame: `u` = the direction to the targets' centroid. Per target: lateral tangent `t = across / along` and vertical tangent `v = (z - cam z) / along`. Only targets **behind** a building can be hidden by it, so the cone is sampled at `NK` depths (knots) from the nearest to the farthest target. At each knot it holds `[t_min, t_max]` and `v_min` (the lowest ray) over the targets behind that depth, widened by `margin` of the whole volume's span (the ~10 % margin). | `margin` 0.10, `NK` 5 |
+| Occluder | A city building is an occluder when its footprint (radius = half-diagonal) overlaps `[t_min, t_max]` at its depth, it stands in front of the farthest target, and its top reaches into the cone (`(top - cam z) / (along + r) > v_min`). Compound geometry is never an occluder. | - |
+| Step 1: FLATTEN | An occluder is section-cut to a lit stub of `stub` BU (1-2 storeys: shop fronts, awnings and the lowest windows stay lit). Its open top shows a near-black POCHE, so it reads as a cut model and not as a hollow shell. | `stub` 6.4 BU |
+| Step 2: GHOST | If the stub still reaches into the cone, it fades to `ghost` opacity. Its window dots stay (dimmed with it) and a faint cool edge line traces its box edges. It is never fully invisible. | `ghost` 0.18, `edge` 0.6 |
+| Outside | Buildings outside the cone keep their full height. Roof clutter (tanks, antennas, holo boards) is cut with its building. | - |
+| Easing | The cone has soft borders (`tsoft` lateral tangent, `vsoft` vertical tangent). As the orbit camera moves, a building's cut height and opacity slide across the band and never snap. In the game the values are per-instance targets eased over 0.4 s (below). | `tsoft` 0.035, `vsoft` 0.025 |
+| Outputs | Per building: cut height (`top` + clutter outside the cone, `stub` inside, interpolated across the soft band) and opacity (1, or `ghost`). `occlusion_state(params, building)` returns exactly these values. | - |
+
+Godot 4.7 mapping (camera rig, not content):
+- The city is MultiMeshes. Each instance carries `INSTANCE_CUSTOM = (cut_height, opacity, centre-relative edge
+  data)`. Each frame the camera rig (a `RefCounted` helper fed by the orbit camera, outside the deterministic core)
+  runs `occlusion_state` per building in the near rings and writes the per-instance target.
+- The view tweens each instance's current value toward its target over 0.3-0.5 s (0.4 s default, ease in-out), so
+  buildings never snap when the cone sweeps across them.
+- City shader (spatial, opaque pipeline): `if (world_vertex.z > cut_height) discard;` gives the per-instance height
+  clip. A back-face branch draws the poche colour, so the cut reads as solid.
+- Ghost: a dithered alpha fade (an alpha-hash / screen-door `discard` against a 4x4 Bayer threshold scaled by
+  `opacity`), which keeps depth sorting stable without a transparent pass. Edge lines come from the box-local
+  distance in the same shader. The window emission stays on and is multiplied by `opacity`.
+- Cost: one uniform block, one per-instance vec4, no extra draw calls.

@@ -58,6 +58,7 @@ class Acc:
     def __init__(self, name, mat, idx, coll=None):
         self.name, self.mat, self.idx, self.coll = name, mat, idx, coll
         self.v, self.f, self.c, self.k = [], [], [], []
+        self.b, self.cur_bc = [], (0.0, 0.0, 0.0, 0.0, 0.0)  # v3: the occlusion rule's building per face (x y top hx hy)
 
     def face(self, pts, col, k=0.0):
         b = len(self.v)
@@ -65,6 +66,7 @@ class Acc:
         self.f.append(tuple(range(b, b + len(pts))))
         self.c.append(tuple(col)[:3] + (1.0,))
         self.k.append(float(k))
+        self.b.append(self.cur_bc)
 
     def build(self):
         if not self.f:
@@ -81,6 +83,11 @@ class Acc:
             for _ in poly.loop_indices:
                 cols.extend(c)
         ca.data.foreach_set("color", cols)
+        if any(b_[2] for b_ in self.b):
+            ba = me.attributes.new("bc", "FLOAT_VECTOR", "FACE")
+            ba.data.foreach_set("vector", [v_ for b_ in self.b for v_ in b_[:3]])
+            bh_ = me.attributes.new("bh", "FLOAT_VECTOR", "FACE")
+            bh_.data.foreach_set("vector", [v_ for b_ in self.b for v_ in (b_[3], b_[4], 0.0)])
         ob = bpy.data.objects.new(self.name, me)
         (self.coll or scene.collection).objects.link(ob)
         ob.data.materials.append(self.mat)
@@ -432,6 +439,14 @@ M_EMIT = mat_emit("emit")
 M_LOCK = mat_lock()
 M_GROUND = mat_ground()
 M_CITY = mat_city("city", HZ["city"]["win_k"], HZ["city"]["win_p"])
+M_CEMIT = mat_emit("city_emit")
+M_CMETAL = mat_plain("city_metal", rough=0.32, spec=0.6, metal=0.7)
+from hq_kit import section as KSEC  # noqa: E402
+from hq_kit import downtown as KDT  # noqa: E402
+for m_ in (M_CITY, M_CEMIT, M_CMETAL):
+    KSEC.insert(m_)
+KSEC.set_frame(scene, None)
+DTC = HZ.get("downtown")
 
 COLL = {k: bpy.data.collections.new(k) for k in ("compound", "rooms", "city", "ground", "streaks", "eye", "media",
                                                   "lights")}
@@ -449,11 +464,11 @@ A = {
     "int": Acc("int", M_INT, 5, COLL["rooms"]),
     "ground": Acc("ground", M_GROUND, 4, COLL["ground"]),
     "city": Acc("city", M_CITY, 2, COLL["city"]),
-    "city_neon": Acc("city_neon", M_EMIT, 2, COLL["city"]),    # big layer: crown trims
-    "city_sign": Acc("city_sign", M_EMIT, 2, COLL["city"]),    # LOD signage: blade signs, shop fronts, billboards
-    "city_small": Acc("city_small", M_EMIT, 2, COLL["city"]),  # LOD small lights: beacons
-    "city_metal": Acc("city_metal", M_METAL, 2, COLL["city"]),
-    "streaks": Acc("streaks", M_EMIT, 7, COLL["streaks"]),
+    "city_neon": Acc("city_neon", M_CEMIT, 2, COLL["city"]),    # big layer: crown trims
+    "city_sign": Acc("city_sign", M_CEMIT, 2, COLL["city"]),    # LOD signage: blade signs, shop fronts, billboards
+    "city_small": Acc("city_small", M_CEMIT, 2, COLL["city"]),  # LOD small lights: beacons
+    "city_metal": Acc("city_metal", M_CMETAL, 2, COLL["city"]),
+    "streaks": Acc("streaks", M_CEMIT, 7, COLL["streaks"]),
     "sky": Acc("sky", M_EMIT, 2, COLL["city"]),
     "eye": Acc("eye", M_METAL, 6, COLL["eye"]),
     "eye_rim": Acc("eye_rim", M_EMIT, 6, COLL["eye"]),
@@ -796,8 +811,10 @@ RDP = HZ["road"]
 PL = RDP["plaza"]
 R0, R1 = RDP["road"]
 W0, W1 = RDP["walk"]
+if DTC:
+    PL = DTC["keep"][1] + 2.0                                 # HQ_REV_V2: the plaza is only the gate apron now
 box(A["ground"], -PL, -PL, -0.02, PL, PL, 0.0, (0.40, 0.42, 0.45), k=1.0)
-for f in range(4):
+for f in (range(4) if not DTC else ()):
     fbox(A["ground"], f, R0, R1, -R1, R1, -0.02, 0.0, (0.055, 0.055, 0.06), k=0.0)
     fbox(A["ground"], f, W0, W1, -W1, W1, 0.0, 0.25, (0.30, 0.30, 0.32), k=1.0)
     md = (R0 + R1) / 2
@@ -814,7 +831,7 @@ for f in range(4):
 box(A["ground"], -1600, -1600, -0.05, 1600, 1600, -0.02, (0.06, 0.06, 0.07), k=0.0)
 # the perimeter belt: wet dark ground, a grid of low teal light pylons, a low wall with red warning lights
 PER = HZ["city"]["perimeter"]
-for f in range(4):
+for f in (range(4) if not DTC else ()):
     fbox(A["ground"], f, W1, PER["r"][1], -PER["r"][1], PER["r"][1], -0.02, 0.0, (0.16, 0.17, 0.19), k=1.0)
     fbox(A["civic"], f, PER["wall_r"], PER["wall_r"] + 2.0, -PER["wall_r"] - 2.0, PER["wall_r"] + 2.0, 0.0, PER["wall_h"], WHITE)
     fquad(A["trim"], f, PER["wall_r"] - 0.02, -PER["wall_r"], PER["wall_h"] - 0.5, PER["wall_r"], PER["wall_h"] - 0.35, TEAL,
@@ -827,7 +844,7 @@ for f in range(4):
 pr_ = random.Random(4312)
 step = PER["pylon_step"]
 n_ = int(PER["r"][1] / step)
-for gx in range(-n_, n_ + 1):
+for gx in (range(-n_, n_ + 1) if not DTC else ()):
     for gy in range(-n_, n_ + 1):
         x, y = gx * step, gy * step
         m = max(abs(x), abs(y))
@@ -841,7 +858,40 @@ for gx in range(-n_, n_ + 1):
 from types import SimpleNamespace  # noqa: E402
 from hq_kit import city_ring as CRING  # noqa: E402
 CITY = HZ["city"]
-ROOF = CRING.build(CITY, HZ["road"], P, A, SimpleNamespace(box=box, fbox=fbox, fp=fp, tube=tube), pal)
+CITY_ACCS = ("city", "city_neon", "city_sign", "city_small", "city_metal")
+
+
+BLD = []          # v3: every cuttable city building (x, y, top, hx, hy): the occlusion rule's python twin counts them
+BC_MARK = {}
+
+
+def set_bc(cx, cy, on=True, top=None, hx=4.0, hy=4.0):
+    t = (float(top) if top is not None else 400.0) if on else 0.0
+    for k_ in CITY_ACCS:
+        A[k_].cur_bc = (float(cx), float(cy), t, float(hx), float(hy))
+        BC_MARK[k_] = len(A[k_].b)
+    if on:
+        BLD.append([float(cx), float(cy), t, float(hx), float(hy)])
+
+
+def bc_top(top):
+    """The building's final top (once its crown is known): rewrites its faces since the last set_bc."""
+    for k_ in CITY_ACCS:
+        acc = A[k_]
+        acc.cur_bc = acc.cur_bc[:2] + (float(top),) + acc.cur_bc[3:]
+        for j in range(BC_MARK.get(k_, len(acc.b)), len(acc.b)):
+            acc.b[j] = acc.cur_bc
+    if BLD:
+        BLD[-1][2] = float(top)
+
+
+ROOF = CRING.build(CITY, HZ["road"], P, A, SimpleNamespace(box=box, fbox=fbox, fp=fp, tube=tube, bc=set_bc, bc_top=bc_top), pal)
+set_bc(0, 0, False)
+DT = None
+if DTC:
+    DT = KDT.build(DTC, A, SimpleNamespace(box=box, tube=tube, bc=set_bc), pal)
+    ROOF += DT["roofs"]
+    log("downtown towers", DT["n_towers"], "lamps", len(DT["lamps"]))
 log("city built, roofs", len(ROOF))
 
 # ------------------------------------------------------------------ build the objects
@@ -924,8 +974,14 @@ ROOM_LIGHTS["srv"] = add_light("room_srv", "POINT", (0, 0, vz0 + 6.0), 6000.0, (
                                group="room:srv")
 add_light("gate", "POINT", (sx_, sy_ - 5, 4.0), 900.0, CWHITE, size=1.0, group="civic")
 add_light("hack", "POINT", (sx_ - 4.6, sy_ - 3.6, 2.0), 120.0, (0.55, 1.0, 0.0), size=0.3, group="start")
+# HQ_REV_V2: the downtown's street lamps nearest the compound light their pools on the wet street (real spots)
+if DT:
+    lamps = sorted(DT["lamps"], key=lambda l_: (KDT._keep_dist(DTC, l_[0], l_[1]), l_[0], l_[1]))
+    for k_, (lx_, ly_, lz_, lc_) in enumerate(lamps[:DTC.get("lamp_lights", 60)]):
+        add_light("lamp_%d" % k_, "SPOT", (lx_, ly_, lz_), DTC.get("lamp_w", 1500.0), lc_, aim=(lx_, ly_, 0.0), size=0.4,
+                  spot=100, blend=0.9, group="city", shadow=False)
 # near-ring shop spill (street level, by azimuth: 12 sectors)
-for k_ in range(12):
+for k_ in range(0 if DT else 12):
     az = 2 * math.pi * (k_ + 0.5) / 12
     rad = HZ["city"]["rings"][0]["r"][0] - 4
     p = (rad * math.sin(az), -rad * math.cos(az), 2.6)
@@ -1284,6 +1340,12 @@ def lock_obj(i):
 
 def apply_frame(fr):
     set_cam(fr["pose"])
+    KSEC.set_frame(scene, fr.get("section") if not JOB.get("no_section") else None)
+    _oc = fr.get("section") if not JOB.get("no_section") else None
+    if _oc and "occ_on" in _oc:                   # v3: the occlusion rule's python twin: how many buildings it touched
+        _st = [KDT.occlusion_state(_oc, b_) for b_ in BLD]
+        log("occlusion %s: flattened %d ghosted %d of %d" % (fr.get("name"), sum(1 for (z_, a_), b_ in zip(_st, BLD)
+            if z_ < b_[2] - 0.5), sum(1 for (z_, a_) in _st if a_ < 0.6), len(BLD)))
     zoom = float(fr.get("zoom", 0.0))
     FOG_ZOOM.outputs[0].default_value = zoom
     FOG.update_tag()
@@ -1300,7 +1362,7 @@ def apply_frame(fr):
     boost = pw.get("boost", 1.45) if pw else 1.0
     base = {"sign": ksig * 0.85 + 0.15, "city_sign": ksig, "small": 0.25 + 0.75 * ksm, "city_small": 0.3 + 0.7 * ksm}
     for name, ob in OBJ.items():
-        if ob is None or not ob.data.materials or ob.data.materials[0] is not M_EMIT and ob.data.materials[0] is not M_CITY:
+        if ob is None or not ob.data.materials or ob.data.materials[0] not in (M_EMIT, M_CITY, M_CEMIT):
             continue
         k = base.get(name, 1.0)
         if name.startswith("room_"):
@@ -1415,6 +1477,21 @@ except (AttributeError, TypeError):
     pass
 s_.file_format = "OPEN_EXR_MULTILAYER"
 s_.color_depth = "32"
+if JOB.get("engine") == "EEVEE":                          # HQ_REV_V2: layout previews (no GPU lock needed)
+    for eng in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE"):
+        try:
+            scene.render.engine = eng
+            break
+        except TypeError:
+            continue
+    for k_, v_ in (("taa_render_samples", int(JOB.get("samples", 16))), ("volumetric_start", 1.0),
+                   ("volumetric_end", 2500.0), ("volumetric_tile_size", "4"), ("volumetric_samples", 48),
+                   ("use_volumetric_shadows", False), ("use_shadows", True), ("use_raytracing", False)):
+        try:
+            setattr(scene.eevee, k_, v_)
+        except (AttributeError, TypeError):
+            pass
+    vl.use_pass_object_index = False
 
 
 def exr_to_npy(path, stem, want):
@@ -1457,3 +1534,4 @@ for fr in JOB["frames"]:
     os.remove(stem + ".exr")
     log("frame", fr["name"], "%.1f s" % (time.time() - t1), "passes", found if fr is JOB["frames"][0] else "")
 log("done")
+# OCC_V3

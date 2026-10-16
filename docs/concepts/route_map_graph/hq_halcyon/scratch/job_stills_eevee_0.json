@@ -1,0 +1,125 @@
+{
+ "res": [
+  960,
+  540
+ ],
+ "samples": 24,
+ "engine": "EEVEE",
+ "layout": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\hq_halcyon\\scratch\\layout.json",
+ "out": "D:\\rc_scratch\\hq_rev\\halcyon\\bl_stills_eevee",
+ "frames": [
+  {
+   "name": "H_overview",
+   "pose": {
+    "loc": [
+     370.64157065742137,
+     -370.64157065742137,
+     304.1530038978219
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     48.5
+    ],
+    "lens": 40.0,
+    "shift_x": -0.08774317299545041,
+    "shift_y": -0.014400307376848668,
+    "yaw": -45.0,
+    "pitch": 26.0,
+    "dist": 583.1884825686977
+   },
+   "zoom": 0.0,
+   "room_state": {
+    "start": "walked",
+    "n1": "walked",
+    "n2": "walked",
+    "n3": "walked",
+    "n4": "walked",
+    "n5": "walked",
+    "n6": "walked",
+    "n7": "walked",
+    "n8": "walked",
+    "n9": "current",
+    "n10": "option",
+    "n11": "reach",
+    "n12": "reach",
+    "n13": "reach",
+    "n14": "reach",
+    "n15": "reach",
+    "n16": "reach",
+    "n17": "reach",
+    "n18": "reach",
+    "n19": "reach",
+    "n20": "reach",
+    "n21": "option",
+    "srv": "target"
+   },
+   "scanned": [
+    "n10",
+    "n11",
+    "n12",
+    "n13"
+   ],
+   "eye": {
+    "az": 45.0,
+    "sweep": 24.0,
+    "sweep_pt": [
+     56.5,
+     23.0,
+     24.0
+    ],
+    "wash": 1.0,
+    "beam": 1.0
+   },
+   "power": null,
+   "section": {
+    "occ_on": 1.0,
+    "occ_cx": 370.64157065742137,
+    "occ_cy": -370.64157065742137,
+    "occ_cz": 304.1530038978219,
+    "occ_ux": -0.7114507552511442,
+    "occ_uy": 0.7027359552866045,
+    "occ_tsoft": 0.035,
+    "occ_a0": 426.96808514694237,
+    "occ_amax": 588.8183877038159,
+    "occ_vsoft": 0.025,
+    "occ_stub": 6.4,
+    "occ_ghost": 0.18,
+    "occ_edge": 0.6,
+    "occ_t0": -0.19695667790609847,
+    "occ_T0": 0.2156528950042557,
+    "occ_v0": -0.726905985638108,
+    "occ_t1": -0.19695667790609847,
+    "occ_T1": 0.2156528950042557,
+    "occ_v1": -0.6636499842453585,
+    "occ_t2": -0.19695667790609847,
+    "occ_T2": 0.2156528950042557,
+    "occ_v2": -0.6149897320069578,
+    "occ_t3": -0.10984816022398056,
+    "occ_T3": 0.06824980958809619,
+    "occ_v3": -0.5185501742140054,
+    "occ_t4": -0.05075431068688747,
+    "occ_T4": 0.01801395146483823,
+    "occ_v4": -0.491448922095111
+   }
+  }
+ ],
+ "ov_pose": {
+  "loc": [
+   370.64157065742137,
+   -370.64157065742137,
+   304.1530038978219
+  ],
+  "tgt": [
+   0.0,
+   0.0,
+   48.5
+  ],
+  "lens": 40.0,
+  "shift_x": -0.08774317299545041,
+  "shift_y": -0.014400307376848668,
+  "yaw": -45.0,
+  "pitch": 26.0,
+  "dist": 583.1884825686977
+ }
+}

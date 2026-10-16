@@ -248,7 +248,7 @@ def node_file(img, i, box):
     rows = [("TIER", tier), ("TYPE", typ), ("REWARDS", rew[0])]
     rows += [("", r) for r in rew[1:]]
     rows += [("sep", ""), ("HP", G.HP_ARRIVE + " on arrival", (140, 255, 170))]
-    return KT.holo_file(img, box, title, rows, seed=12, key_w=78, scale=0.8)
+    return KT.holo_file(img, box, title, rows, corp='rebel_cell', seed=12, key_w=78, scale=0.8)   # v2: the HQ's own seal
 
 
 def legend(img, hot=False, cx=1105):

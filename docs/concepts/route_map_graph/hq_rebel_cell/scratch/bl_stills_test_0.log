@@ -1,0 +1,28 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_rebel_cell\scripts\hq_scene.py:224: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 0.8s] city built, roofs 1144
+[hq 0.9s] district blocks {0: 509, 1: 161, 2: 125, 3: 182}
+[hq 1.0s] alley: textures from D:\rc_scratch\hq_rev\rebel_cell\tex
+[hq 1.0s] alley: infill 18
+[hq 1.1s] alley: facades
+[hq 1.3s] alley: blade signs 65
+[hq 1.3s] alley: slab, poles 8
+[hq 1.4s] undercroft: stalls 14 poles 11 blades 30
+[hq 1.4s] alley: holograms
+[hq 1.4s] street strips 273 inside the ring 165
+[hq 1.4s] option A built 
+[hq 1.4s] landmark built
+[hq 1.7s] objects 34
+[hq 1.7s] lights 418 beams 8 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_rebel_cell\scripts\hq_scene.py:971: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:03.906  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 1.7s] HIP devices 1
+00:16.093  render           | Saved: 'D:\rc_scratch\hq_rev\rebel_cell\bl_stills_test\H_overview.exr'
+[hq 14.5s] frame H_overview 12.7 s passes ['Combined', 'Depth', 'Object Index', 'Volume Direct', 'Emission', 'Noisy Image']
+00:29.156  render           | Saved: 'D:\rc_scratch\hq_rev\rebel_cell\bl_stills_test\H_decision.exr'
+[hq 27.3s] frame H_decision 12.9 s passes 
+[hq 27.3s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

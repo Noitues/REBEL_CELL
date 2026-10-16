@@ -36,8 +36,10 @@ def dossier(w=400, h=520, op=OPERATIVE, heat_stamp=None, seed=7):
     im = L.paper(w, h, seed=seed, tint=(236, 230, 214))
     d = ImageDraw.Draw(im)
     d.rectangle([0, 0, w, 54], fill=(28, 22, 18, 255))
-    d.text((16, 27), "MERIDIAN", font=L.font(L.ANTON, 26), fill=MER + (255,), anchor="lm")
-    d.text((140, 20), "FREIGHT SECURITY", font=L.font(TYPEB, 14), fill=(230, 220, 200, 255), anchor="lm")
+    import halcyon_preset as _HP                            # v2 fix: the letterhead from the HQ's own config
+    _D = _HP.PRESET["halcyon"].get("dossier", ("HALCYON", "CIVIC SECURITY", (120, 230, 255)))
+    d.text((16, 27), _D[0], font=L.font(L.ANTON, 26), fill=tuple(_D[2]) + (255,), anchor="lm")
+    d.text((140, 20), _D[1], font=L.font(TYPEB, 14), fill=(230, 220, 200, 255), anchor="lm")
     d.text((140, 38), "PERSON OF INTEREST // FILE", font=L.font(TYPEF, 13), fill=(200, 190, 170, 255), anchor="lm")
     # photo: the class emblem as a grainy print, clipped corner
     px, py, pw, ph = 18, 72, 118, 138

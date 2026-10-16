@@ -70,7 +70,8 @@ def main():
     SH = MU.SHEET
     ovs = json.load(open(os.path.join(SCR, "ov_stills.json")))
     ov = ovs[SH.get("plate", "H_decision")]
-    plate = Image.open(os.path.join(ROOT, "plates", SH.get("plate", "H_decision") + "_plate.png")).convert("RGB")
+    SFX = __import__("hq_preset").PRESET["hq"].get("suffix", "")       # HQ_REV_V2
+    plate = Image.open(os.path.join(ROOT, "plates", SH.get("plate", "H_decision") + SFX + "_plate.png")).convert("RGB")
     plate = plate.resize((1920, 1080), Image.LANCZOS)
     pose = O.pose_of(ov["pose"])
     walked = ov["walked"]
@@ -96,7 +97,7 @@ def main():
         sheet = img.convert("RGB")
     sw, shh = 790, 444
     for k, (name, cap) in enumerate(SH["shots"][:3]):
-        p = os.path.join(SCR, "sheet", name + ".png")
+        p = os.path.join(SCR, "sheet", name + SFX + ".png")
         x = 60 + k * (sw + 25)
         if os.path.exists(p):
             sheet.paste(Image.open(p).convert("RGB").resize((sw, shh), Image.LANCZOS), (x, 500))
@@ -113,7 +114,7 @@ def main():
     for (title, lines, col, wcard) in SH["cards"][:2]:
         sheet = card(sheet, (x, 1040), (wcard, 370), title, lines, col, fs=18)
         x += wcard + 30
-    out = os.path.join(ROOT, "H_mechanic_states.png")
+    out = os.path.join(ROOT, "H_mechanic_states" + SFX + ".png")
     sheet.save(out)
     print("saved", out)
 

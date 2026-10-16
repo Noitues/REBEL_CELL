@@ -63,6 +63,7 @@ class Acc:
     def __init__(self, name, mat, idx, coll=None):
         self.name, self.mat, self.idx, self.coll = name, mat, idx, coll
         self.v, self.f, self.c, self.k = [], [], [], []
+        self.b, self.cur_bc = [], (0.0, 0.0, 0.0, 0.0, 0.0)  # v3: the occlusion rule's building per face (x y top hx hy)
 
     def face(self, pts, col, k=0.0):
         b = len(self.v)
@@ -70,6 +71,7 @@ class Acc:
         self.f.append(tuple(range(b, b + len(pts))))
         self.c.append(tuple(col)[:3] + (1.0,))
         self.k.append(float(k))
+        self.b.append(self.cur_bc)
 
     def build(self):
         if not self.f:
@@ -86,6 +88,11 @@ class Acc:
             for _ in poly.loop_indices:
                 cols.extend(c)
         ca.data.foreach_set("color", cols)
+        if any(b_[2] for b_ in self.b):
+            ba = me.attributes.new("bc", "FLOAT_VECTOR", "FACE")
+            ba.data.foreach_set("vector", [v_ for b_ in self.b for v_ in b_[:3]])
+            bh_ = me.attributes.new("bh", "FLOAT_VECTOR", "FACE")
+            bh_.data.foreach_set("vector", [v_ for b_ in self.b for v_ in (b_[3], b_[4], 0.0)])
         ob = bpy.data.objects.new(self.name, me)
         (self.coll or scene.collection).objects.link(ob)
         ob.data.materials.append(self.mat)
@@ -441,6 +448,13 @@ M_EMIT = mat_emit("emit")
 M_LOCK = mat_lock()
 M_GROUND = mat_ground()
 M_CITY = mat_city("city", HZ["city"]["win_k"], HZ["city"]["win_p"])
+M_CEMIT = mat_emit("city_emit")
+M_CMETAL = mat_plain("city_metal", rough=0.32, spec=0.6, metal=0.7)
+from hq_kit import section as KSEC  # noqa: E402
+from hq_kit import downtown as KDT  # noqa: E402
+for m_ in (M_CITY, M_CEMIT, M_CMETAL):
+    KSEC.insert(m_)
+KSEC.set_frame(scene, None)
 
 COLL = {k: bpy.data.collections.new(k) for k in ("compound", "rooms", "city", "ground", "streaks", "movers", "media",
                                                   "lights")}
@@ -459,11 +473,11 @@ A = {
     "int": Acc("int", M_INT, 5, COLL["rooms"]),
     "ground": Acc("ground", M_GROUND, 4, COLL["ground"]),
     "city": Acc("city", M_CITY, 2, COLL["city"]),
-    "city_neon": Acc("city_neon", M_EMIT, 2, COLL["city"]),
-    "city_sign": Acc("city_sign", M_EMIT, 2, COLL["city"]),
-    "city_small": Acc("city_small", M_EMIT, 2, COLL["city"]),
-    "city_metal": Acc("city_metal", M_METAL, 2, COLL["city"]),
-    "streaks": Acc("streaks", M_EMIT, 7, COLL["streaks"]),
+    "city_neon": Acc("city_neon", M_CEMIT, 2, COLL["city"]),
+    "city_sign": Acc("city_sign", M_CEMIT, 2, COLL["city"]),
+    "city_small": Acc("city_small", M_CEMIT, 2, COLL["city"]),
+    "city_metal": Acc("city_metal", M_CMETAL, 2, COLL["city"]),
+    "streaks": Acc("streaks", M_CEMIT, 7, COLL["streaks"]),
     "sky": Acc("sky", M_EMIT, 2, COLL["city"]),
 }
 ROOM_EMIT = {}
@@ -544,7 +558,7 @@ def room_shell(i, rec, accs=None, kind=None):
     z1 = z0 + h
     u0, u1 = -w / 2, w / 2
     kind = kind or G.KIND[i]
-    inner = (0.50, 0.53, 0.56)
+    inner = HZ.get("room_inner", (0.50, 0.53, 0.56))       # v2: a corp may tint its room interiors
 
     def rb(a0, a1, din0, din1, zz0, zz1, col, k=0.0, ac=None):
         obox(ac or acc_int, rec, a0, a1, -din1, -din0, zz0, zz1, col, k)
@@ -559,7 +573,7 @@ def room_shell(i, rec, accs=None, kind=None):
         oquad(acc_cut, rec, 0.02, a0, b0, a1, b1, CUTC)
     tc = TYPE_COL.get(kind, (1, 1, 1))
     for frac in (0.3, 0.7):
-        rb(u0 + 0.8, u1 - 0.8, d * frac - 0.18, d * frac + 0.18, z1 - 0.12, z1 - 0.02, (0.80, 0.93, 1.0), 4.0, em)
+        rb(u0 + 0.8, u1 - 0.8, d * frac - 0.18, d * frac + 0.18, z1 - 0.12, z1 - 0.02, HZ.get("room_strip", (0.80, 0.93, 1.0)), 4.0, em)
     bk = d
     if kind == "router":
         rb(u0 + w * 0.2, u0 + w * 0.65, 3.6, 5.0, z0, z0 + 1.1, (0.7, 0.72, 0.75))
@@ -667,7 +681,7 @@ RDP = HZ["road"]
 PL = RDP["plaza"]
 R0, R1 = RDP["road"]
 W0, W1 = RDP["walk"]
-if not HZ.get("no_plaza"):
+if not HZ.get("no_plaza") and not HZ.get("downtown"):
     box(A["ground"], -PL, -PL, -0.02, PL, PL, 0.0, (0.40, 0.42, 0.45), k=1.0)
     for f in range(4):
         fbox(A["ground"], f, R0, R1, -R1, R1, -0.02, 0.0, (0.055, 0.055, 0.06), k=0.0)
@@ -679,7 +693,7 @@ if not HZ.get("no_plaza"):
             u += 9.0
 box(A["ground"], -1600, HZ.get("ground_cut_y") or -1600, -0.05, 1600, 1600, -0.02, (0.06, 0.06, 0.07), k=0.0)
 PER = HZ["city"]["perimeter"]
-if PER:
+if PER and not HZ.get("downtown"):
     for f in range(4):
         fbox(A["ground"], f, W1, PER["r"][1], -PER["r"][1], PER["r"][1], -0.02, 0.0, (0.16, 0.17, 0.19), k=1.0)
         fbox(A["rough"], f, PER["wall_r"], PER["wall_r"] + 2.0, -PER["wall_r"] - 2.0, PER["wall_r"] + 2.0, 0.0,
@@ -692,7 +706,40 @@ if PER:
 
 # ------------------------------------------------------------------ the Cell's city: the 360 degree ring (hq_kit)
 CITY = HZ["city"]
-ROOF = CRING.build(CITY, HZ["road"], P, A, SimpleNamespace(box=box, fbox=fbox, fp=fp, tube=tube), pal)
+CITY_ACCS = ("city", "city_neon", "city_sign", "city_small", "city_metal")
+
+
+BLD = []          # v3: every cuttable city building (x, y, top, hx, hy): the occlusion rule's python twin counts them
+BC_MARK = {}
+
+
+def set_bc(cx, cy, on=True, top=None, hx=4.0, hy=4.0):
+    t = (float(top) if top is not None else 400.0) if on else 0.0
+    for k_ in CITY_ACCS:
+        A[k_].cur_bc = (float(cx), float(cy), t, float(hx), float(hy))
+        BC_MARK[k_] = len(A[k_].b)
+    if on:
+        BLD.append([float(cx), float(cy), t, float(hx), float(hy)])
+
+
+def bc_top(top):
+    """The building's final top (once its crown is known): rewrites its faces since the last set_bc."""
+    for k_ in CITY_ACCS:
+        acc = A[k_]
+        acc.cur_bc = acc.cur_bc[:2] + (float(top),) + acc.cur_bc[3:]
+        for j in range(BC_MARK.get(k_, len(acc.b)), len(acc.b)):
+            acc.b[j] = acc.cur_bc
+    if BLD:
+        BLD[-1][2] = float(top)
+
+
+ROOF = CRING.build(CITY, HZ["road"], P, A, SimpleNamespace(box=box, fbox=fbox, fp=fp, tube=tube, bc=set_bc, bc_top=bc_top), pal)
+set_bc(0, 0, False)
+DT = None
+if HZ.get("downtown"):
+    DT = KDT.build(HZ["downtown"], A, SimpleNamespace(box=box, tube=tube, bc=set_bc), pal)
+    ROOF += DT["roofs"]
+    log("downtown towers", DT["n_towers"], "lamps", len(DT["lamps"]))
 log("city built, roofs", len(ROOF))
 
 # ------------------------------------------------------------------ the corp's landmark, rooms, links, mechanic
@@ -750,8 +797,15 @@ for i in G.NODES:
 for name, mv in MOVERS.items():
     for (lob, loc) in HOOKS.get("mover_lights", {}).get(name, []):
         mv["lights"].append((lob, loc))
+# HQ_REV_V2: the downtown's street lamps nearest the compound light their pools on the wet street (real spots)
+if DT:
+    DTC = HZ["downtown"]
+    lamps = sorted(DT["lamps"], key=lambda l_: (KDT._keep_dist(DTC, l_[0], l_[1]), l_[0], l_[1]))
+    for k_, (lx_, ly_, lz_, lc_) in enumerate(lamps[:DTC.get("lamp_lights", 60)]):
+        add_light("lamp_%d" % k_, "SPOT", (lx_, ly_, lz_), DTC.get("lamp_w", 1500.0), lc_, aim=(lx_, ly_, 0.0), size=0.4,
+                  spot=100, blend=0.9, group="city", shadow=False)
 # near-ring shop spill (street level, by azimuth: 12 sectors)
-for k_ in range(12):
+for k_ in range(0 if DT else 12):
     az = 2 * math.pi * (k_ + 0.5) / 12
     rad = HZ["city"]["rings"][0]["r"][0] - 4
     p = (rad * math.sin(az), -rad * math.cos(az), 2.6)
@@ -961,6 +1015,12 @@ def set_pwo(ob, k):
 
 def apply_frame(fr):
     set_cam(fr["pose"])
+    KSEC.set_frame(scene, fr.get("section") if not JOB.get("no_section") else None)
+    _oc = fr.get("section") if not JOB.get("no_section") else None
+    if _oc and "occ_on" in _oc:                   # v3: the occlusion rule's python twin: how many buildings it touched
+        _st = [KDT.occlusion_state(_oc, b_) for b_ in BLD]
+        log("occlusion %s: flattened %d ghosted %d of %d" % (fr.get("name"), sum(1 for (z_, a_), b_ in zip(_st, BLD)
+            if z_ < b_[2] - 0.5), sum(1 for (z_, a_) in _st if a_ < 0.6), len(BLD)))
     zoom = float(fr.get("zoom", 0.0))
     FOG_ZOOM.outputs[0].default_value = zoom
     FOG.update_tag()
@@ -977,7 +1037,7 @@ def apply_frame(fr):
     base = {"sign": ksig * 0.85 + 0.15, "city_sign": ksig, "small": 0.25 + 0.75 * ksm, "city_small": 0.3 + 0.7 * ksm}
     base.update({k: f(zoom) for k, f in HOOKS.get("lod_weights", {}).items()})
     for name, ob in OBJ.items():
-        if ob is None or not ob.data.materials or ob.data.materials[0] not in (M_EMIT, M_CITY):
+        if ob is None or not ob.data.materials or ob.data.materials[0] not in (M_EMIT, M_CITY, M_CEMIT):
             continue
         k = base.get(name, 1.0)
         if name.startswith("room_"):
@@ -1155,3 +1215,4 @@ for fr in JOB["frames"]:
     os.remove(stem + ".exr")
     log("frame", fr["name"], "%.1f s" % (time.time() - t1), "passes", found if fr is JOB["frames"][0] else "")
 log("done")
+# OCC_V3

@@ -93,3 +93,76 @@ the reveal 156 frames in 696 s; compose 97 + 91 + 100 + 125 s, encode 13 s.
 
 ## 8. Open questions for the designer
 See the GDD questions above; plus: does the netrun show the fist at full blaze (SEQ 3) or lit (SEQ 2, as drawn)?
+
+<!-- hq_rev v2 r2 -->
+## v2 revision, round 2 (hq_rev)
+
+### v2 round 2 (art director 20:55)
+- No fog plane. The fog volume starts at the kerb (`hq_fog.box`). The bottom of the frame is THE UNDERCROFT
+  (`rc_undercroft.py`): the service tunnel (lane R) opens on its camera side onto a sunken service street one level
+  down, a Tokyo two-level street. This keeps the three stacked lanes: L roofs, C the alley, R the tunnel.
+  - The section face at the kerb is a retaining wall. It has a lit fascia band over the tunnel's arcade, multilingual
+    blades in clusters between the rooms, pipes and a kerb railing.
+  - Beyond the tunnel, undercroft shops (lit fronts and boards, or roll shutters) line the wall.
+  - The lower floor is wet asphalt with puddles and sign reflections, 84 BU deep. It has yatai stalls with lanterns
+    (never in front of a room), scooters, crates, and utility poles with sagging cable bundles up to the kerb, plus
+    lantern strings.
+  - In front of the deeper detour rooms (R2a / R2b) a sunken PIT with a stair keeps them open to the camera.
+  - Thin dark LOW FOG STRATA (a 6 BU volume, layered noise, density 0.02) lie over the lower floor.
+  - The camera looks down a little more (pitch 17-19, was 11-14).
+- The MAINFRAME v4 red sign is the large hero landmark (`mf_w` 11 BU wide, about 45 BU tall, standing off the shop
+  between the drop and lane 1 on brackets, with its own spill and floor wash). The red fist hologram is secondary
+  (`fist_s` 20).
+- The rooms are places in the alley look, not grey blanks (`rc_alley._rooms`):
+  - street rooms: half-rolled shutters with tags, lit shop boards, paper lanterns and a counter;
+  - roof rooms: corrugated rooftop shacks with bulb strings and a lit blade;
+  - tunnel rooms: pipe runs, cage lamps and a status board.
+  - The interiors are tinted dark (`room_inner`).
+- Red sequence:
+  - The arterials inside the blackout ring go dark in RS_2 and red in RS_4 (`rc_alley.seq_lights`).
+  - The fist is the crest fist outline (`rc_fist_v2.py` -> `fist_mask_v2.json`), rasterised to the block grid by
+    majority. A line is a block whose centre or 3 of 5 samples are line (was: any sample). The fingers keep the
+    crest's widths, and the gaps are one street-line wide, so the top-left finger no longer reads as a "U".
+  - Slight bloom (`post.bloom` 0.20 / 0.17 / 0.13, threshold 0.9) and a denser low haze (`hq_fog` peak 0.011, height
+    28, haze 0.0009) let the red bleed into the air.
+
+### Occlusion: camera-rig rule (v2, all five HQs; designer note 2026-10-15)
+
+Designer, verbatim: "The foreground blocking buildings should be flattened or made transparent when the camera needs to
+look through them to see the HQ." This replaces the v2 sloped section cut. Code: `hq_kit/downtown.py`
+(`occlusion_params`, `occlusion_state`: pure python, the rule itself) and `hq_kit/section.py` (the same rule as a
+clip in the city materials). Called per frame from `hq_jobs.frame()`; `hq_scene` logs how many buildings it touched.
+
+| Step | Rule | Numbers (`downtown.OCC`, a corp may override in preset `downtown.occ`) |
+|---|---|---|
+| Inputs | The camera position, and the TARGET VOLUME: the front points of the active room plus the visible route nodes (decision / hover: the current room + its options; overview: every route node). | - |
+| Cone | Every ray from the camera to the target volume. Horizontal frame: `u` = the direction to the targets' centroid. Per target: lateral tangent `t = across / along` and vertical tangent `v = (z - cam z) / along`. Only targets **behind** a building can be hidden by it, so the cone is sampled at `NK` depths (knots) from the nearest to the farthest target. At each knot it holds `[t_min, t_max]` and `v_min` (the lowest ray) over the targets behind that depth, widened by `margin` of the whole volume's span (the ~10 % margin). | `margin` 0.10, `NK` 5 |
+| Occluder | A city building is an occluder when its footprint (radius = half-diagonal) overlaps `[t_min, t_max]` at its depth, it stands in front of the farthest target, and its top reaches into the cone (`(top - cam z) / (along + r) > v_min`). Compound geometry is never an occluder. | - |
+| Step 1: FLATTEN | An occluder is section-cut to a lit stub of `stub` BU (1-2 storeys: shop fronts, awnings and the lowest windows stay lit). Its open top shows a near-black POCHE, so it reads as a cut model and not as a hollow shell. | `stub` 6.4 BU |
+| Step 2: GHOST | If the stub still reaches into the cone, it fades to `ghost` opacity. Its window dots stay (dimmed with it) and a faint cool edge line traces its box edges. It is never fully invisible. | `ghost` 0.18, `edge` 0.6 |
+| Outside | Buildings outside the cone keep their full height. Roof clutter (tanks, antennas, holo boards) is cut with its building. | - |
+| Easing | The cone has soft borders (`tsoft` lateral tangent, `vsoft` vertical tangent). As the orbit camera moves, a building's cut height and opacity slide across the band and never snap. In the game the values are per-instance targets eased over 0.4 s (below). | `tsoft` 0.035, `vsoft` 0.025 |
+| Outputs | Per building: cut height (`top` + clutter outside the cone, `stub` inside, interpolated across the soft band) and opacity (1, or `ghost`). `occlusion_state(params, building)` returns exactly these values. | - |
+
+Godot 4.7 mapping (camera rig, not content):
+- The city is MultiMeshes. Each instance carries `INSTANCE_CUSTOM = (cut_height, opacity, centre-relative edge
+  data)`. Each frame the camera rig (a `RefCounted` helper fed by the orbit camera, outside the deterministic core)
+  runs `occlusion_state` per building in the near rings and writes the per-instance target.
+- The view tweens each instance's current value toward its target over 0.3-0.5 s (0.4 s default, ease in-out), so
+  buildings never snap when the cone sweeps across them.
+- City shader (spatial, opaque pipeline): `if (world_vertex.z > cut_height) discard;` gives the per-instance height
+  clip. A back-face branch draws the poche colour, so the cut reads as solid.
+- Ghost: a dithered alpha fade (an alpha-hash / screen-door `discard` against a 4x4 Bayer threshold scaled by
+  `opacity`), which keeps depth sorting stable without a transparent pass. Edge lines come from the box-local
+  distance in the same shader. The window emission stays on and is multiplied by `opacity`.
+- Cost: one uniform block, one per-instance vec4, no extra draw calls.
+
+<!-- hq_rev v2 full -->
+### v2 full render: tweaks after t2 (art director)
+- The two-level street is confirmed. The bottom of the frame no longer smears. The undercroft floor has its own wet
+  asphalt (`uc_floor`): matte dry asphalt (roughness 0.55) with small SHARP puddles (roughness 0.03) that mirror the
+  stalls, lanterns and signs crisply. It replaces the kit's glossy tiled ground (roughness 0.26 everywhere), which
+  blurred the whole floor's reflections. The low strata are thinner (4 BU, density 0.012).
+- MAINFRAME at 9.4x its background is accepted as a neon-on-dark exception (spec Q5).
+- Red sequence: more haze bleed. The fist glow (light-linked to the fog) is up to 4.5e4 and the district fog peak to
+  0.013, haze 0.0011, so the red tints the air above the fist; the RS values stay dark.

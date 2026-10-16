@@ -1,0 +1,34 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian\scripts\hq_scene.py:224: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 1.8s] downtown towers 1418 lamps 2464
+[hq 1.8s] city built, roofs 2611
+[hq 1.8s] walls
+[hq 1.8s] towers
+[hq 1.8s] loop track, train ring, the freight line out
+[hq 1.8s] platforms
+[hq 1.8s] gate, yard
+[hq 1.8s] control tower
+[hq 1.9s] links
+[hq 1.9s] shuttles
+[hq 1.9s] keep crane
+[hq 1.9s] rig
+[hq 1.9s] landmark built
+[hq 2.9s] objects 81
+[hq 2.9s] lights 254 beams 13 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_meridian\scripts\hq_scene.py:971: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:04.953  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 2.9s] HIP devices 1
+[hq 3.0s] occlusion S_link_live: flattened 3 ghosted 0 of 2927
+00:26.375  render           | Saved: 'D:\rc_scratch\hq_rev\meridian\bl_sheet\S_link_live.exr'
+[hq 25.0s] frame S_link_live 22.0 s passes ['Combined', 'Depth', 'Object Index', 'Volume Direct', 'Emission', 'Noisy Image']
+[hq 25.0s] occlusion S_in_transit: flattened 12 ghosted 0 of 2927
+00:47.672  render           | Saved: 'D:\rc_scratch\hq_rev\meridian\bl_sheet\S_in_transit.exr'
+[hq 46.0s] frame S_in_transit 21.0 s passes 
+[hq 46.0s] occlusion S_link_dead: flattened 2 ghosted 0 of 2927
+01:06.719  render           | Saved: 'D:\rc_scratch\hq_rev\meridian\bl_sheet\S_link_dead.exr'
+[hq 65.0s] frame S_link_dead 19.0 s passes 
+[hq 65.0s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

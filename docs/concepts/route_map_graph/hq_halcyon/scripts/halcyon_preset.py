@@ -17,6 +17,7 @@ PALETTES = dict(_LP.PALETTES)
 PALETTES["halcyon_civic"] = {}          # the district pair round the compound = neon_bay (the r3 default)
 
 PRESET["halcyon"] = {
+    "dossier": ("HALCYON", "CIVIC SECURITY", (120, 230, 255)),     # v2: the dossier letterhead (was Meridian's)
     # ------------------------------------------------------------ palette (linear RGB)
     "palette": {
         "civic_white": (0.80, 0.93, 1.00),     # cold fluorescent white: uplights, cornice coves
@@ -83,6 +84,11 @@ PRESET["halcyon"] = {
              "perimeter": dict(r=(160.0, 292.0), pylon_step=36.0, pylon_h=7.0, wall_r=292.0, wall_h=5.0),
              "win_p": 0.30, "win_k": 0.30},
     "road": {"plaza": 128.0, "road": (128.0, 154.0), "walk": (154.0, 160.0)},     # square ring road round the plaza
+    # v2 (designer review 2026-10-15): NO empty perimeter belt; the dense downtown runs right up to the podium's gate
+    # apron (hq_kit.downtown) and the section cut keeps the rooms clear (hq_kit.section). The perimeter above is off.
+    "downtown": {"seed": 4340, "keep": ("rect", 118.0, 118.0), "street0": 8.0, "cell": 30.0, "street": 7.0,
+                 "r_out": 296.0, "h_near": (16.0, 44.0), "h_far": (34.0, 96.0), "tall_p": 0.08, "sign_p": 0.6,
+                 "holo_p": 0.07, "trim_p": 0.4, "lamp_step": 15.0, "lamp_lights": 70, "lamp_w": 1800.0, "zref_k": 0.5},
     # value targets are the r3 ones (PRESET["targets"]); the compound is white, so the grade watches its p95
 }
 

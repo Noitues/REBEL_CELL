@@ -1,0 +1,337 @@
+{
+ "res": [
+  1280,
+  720
+ ],
+ "samples": 32,
+ "threshold": 0.04,
+ "step_rate": 2.0,
+ "out": "D:\\rc_scratch\\hq_rev\\rebel_cell\\bl_RED_SHOTS_test",
+ "frames": [
+  {
+   "name": "RS_1_before",
+   "pose": {
+    "loc": [
+     0.0,
+     -220.00000000000006,
+     571.5767664977295
+    ],
+    "tgt": [
+     0.0,
+     110.0,
+     0.0
+    ],
+    "lens": 30.0,
+    "shift_x": -0.04,
+    "shift_y": 0.0,
+    "yaw": 0.0,
+    "pitch": 60.0,
+    "dist": 660.0
+   },
+   "zoom": 0.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "L1": "option",
+    "C1": "option",
+    "R1": "option",
+    "L2": "reach",
+    "L2a": "reach",
+    "C2": "reach",
+    "R2": "reach",
+    "R2a": "reach",
+    "L2b": "reach",
+    "R2b": "reach",
+    "L3": "reach",
+    "C3": "reach",
+    "R3": "reach",
+    "LK": "reach",
+    "CK": "reach",
+    "RK": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "C2"
+   ],
+   "movers": {},
+   "mech": {
+    "eta": {
+     "L": [
+      4,
+      5
+     ],
+     "C": [
+      5,
+      5
+     ],
+     "R": [
+      4,
+      5
+     ]
+    },
+    "sync": 5,
+    "sync_ok": true,
+    "countered": [
+     "C2"
+    ],
+    "affected": [
+     "C2"
+    ],
+    "thrown": [],
+    "showdown": false,
+    "entered": null,
+    "walked": [
+     "start"
+    ],
+    "step": 0,
+    "seq": 0.0,
+    "ui_off": 1
+   },
+   "power": null
+  },
+  {
+   "name": "RS_2_blackout",
+   "pose": {
+    "loc": [
+     0.0,
+     -220.00000000000006,
+     571.5767664977295
+    ],
+    "tgt": [
+     0.0,
+     110.0,
+     0.0
+    ],
+    "lens": 30.0,
+    "shift_x": -0.04,
+    "shift_y": 0.0,
+    "yaw": 0.0,
+    "pitch": 60.0,
+    "dist": 660.0
+   },
+   "zoom": 0.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "L1": "option",
+    "C1": "option",
+    "R1": "option",
+    "L2": "reach",
+    "L2a": "reach",
+    "C2": "reach",
+    "R2": "reach",
+    "R2a": "reach",
+    "L2b": "reach",
+    "R2b": "reach",
+    "L3": "reach",
+    "C3": "reach",
+    "R3": "reach",
+    "LK": "reach",
+    "CK": "reach",
+    "RK": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "C2"
+   ],
+   "movers": {},
+   "mech": {
+    "eta": {
+     "L": [
+      4,
+      5
+     ],
+     "C": [
+      5,
+      5
+     ],
+     "R": [
+      4,
+      5
+     ]
+    },
+    "sync": 5,
+    "sync_ok": true,
+    "countered": [
+     "C2"
+    ],
+    "affected": [
+     "C2"
+    ],
+    "thrown": [],
+    "showdown": false,
+    "entered": null,
+    "walked": [
+     "start"
+    ],
+    "step": 0,
+    "seq": 1.0,
+    "ui_off": 1
+   },
+   "power": null
+  },
+  {
+   "name": "RS_3_spreading",
+   "pose": {
+    "loc": [
+     0.0,
+     -220.00000000000006,
+     571.5767664977295
+    ],
+    "tgt": [
+     0.0,
+     110.0,
+     0.0
+    ],
+    "lens": 30.0,
+    "shift_x": -0.04,
+    "shift_y": 0.0,
+    "yaw": 0.0,
+    "pitch": 60.0,
+    "dist": 660.0
+   },
+   "zoom": 0.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "L1": "option",
+    "C1": "option",
+    "R1": "option",
+    "L2": "reach",
+    "L2a": "reach",
+    "C2": "reach",
+    "R2": "reach",
+    "R2a": "reach",
+    "L2b": "reach",
+    "R2b": "reach",
+    "L3": "reach",
+    "C3": "reach",
+    "R3": "reach",
+    "LK": "reach",
+    "CK": "reach",
+    "RK": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "C2"
+   ],
+   "movers": {},
+   "mech": {
+    "eta": {
+     "L": [
+      4,
+      5
+     ],
+     "C": [
+      5,
+      5
+     ],
+     "R": [
+      4,
+      5
+     ]
+    },
+    "sync": 5,
+    "sync_ok": true,
+    "countered": [
+     "C2"
+    ],
+    "affected": [
+     "C2"
+    ],
+    "thrown": [],
+    "showdown": false,
+    "entered": null,
+    "walked": [
+     "start"
+    ],
+    "step": 0,
+    "seq": 1.45,
+    "ui_off": 1
+   },
+   "power": null
+  },
+  {
+   "name": "RS_4_full",
+   "pose": {
+    "loc": [
+     0.0,
+     -220.00000000000006,
+     571.5767664977295
+    ],
+    "tgt": [
+     0.0,
+     110.0,
+     0.0
+    ],
+    "lens": 30.0,
+    "shift_x": -0.04,
+    "shift_y": 0.0,
+    "yaw": 0.0,
+    "pitch": 60.0,
+    "dist": 660.0
+   },
+   "zoom": 0.0,
+   "mt": 0,
+   "room_state": {
+    "start": "current",
+    "L1": "option",
+    "C1": "option",
+    "R1": "option",
+    "L2": "reach",
+    "L2a": "reach",
+    "C2": "reach",
+    "R2": "reach",
+    "R2a": "reach",
+    "L2b": "reach",
+    "R2b": "reach",
+    "L3": "reach",
+    "C3": "reach",
+    "R3": "reach",
+    "LK": "reach",
+    "CK": "reach",
+    "RK": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "C2"
+   ],
+   "movers": {},
+   "mech": {
+    "eta": {
+     "L": [
+      4,
+      5
+     ],
+     "C": [
+      5,
+      5
+     ],
+     "R": [
+      4,
+      5
+     ]
+    },
+    "sync": 5,
+    "sync_ok": true,
+    "countered": [
+     "C2"
+    ],
+    "affected": [
+     "C2"
+    ],
+    "thrown": [],
+    "showdown": false,
+    "entered": null,
+    "walked": [
+     "start"
+    ],
+    "step": 0,
+    "seq": 3.0,
+    "ui_off": 1
+   },
+   "power": null
+  }
+ ],
+ "force": true
+}

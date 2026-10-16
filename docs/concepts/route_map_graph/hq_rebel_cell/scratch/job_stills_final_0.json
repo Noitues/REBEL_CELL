@@ -1,0 +1,277 @@
+{
+ "res": [
+  2560,
+  1440
+ ],
+ "samples": 64,
+ "threshold": 0.015,
+ "step_rate": 1.2,
+ "out": "D:\\rc_scratch\\hq_rev\\rebel_cell\\bl_stills",
+ "frames": [
+  {
+   "name": "H_overview",
+   "pose": {
+    "loc": [
+     -80.0,
+     -183.00138883108986,
+     101.74513018691107
+    ],
+    "tgt": [
+     -80.0,
+     104.0,
+     14.0
+    ],
+    "lens": 30.0,
+    "shift_x": -0.1268939393939394,
+    "shift_y": 0.04721671025532803,
+    "yaw": 0.0,
+    "pitch": 17.0,
+    "dist": 300.1149864010333
+   },
+   "zoom": 0.0,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "L1": "walked",
+    "C1": "walked",
+    "R1": "walked",
+    "L2": "grey",
+    "L2a": "current",
+    "C2": "current",
+    "R2": "grey",
+    "R2a": "current",
+    "L2b": "option",
+    "R2b": "option",
+    "L3": "reach",
+    "C3": "grey",
+    "R3": "reach",
+    "LK": "reach",
+    "CK": "grey",
+    "RK": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "C2"
+   ],
+   "movers": {},
+   "mech": {
+    "eta": {
+     "L": [
+      5,
+      5
+     ],
+     "C": [
+      5,
+      5
+     ],
+     "R": [
+      5,
+      5
+     ]
+    },
+    "sync": 5,
+    "sync_ok": true,
+    "countered": [
+     "C2"
+    ],
+    "affected": [
+     "C2"
+    ],
+    "thrown": [],
+    "showdown": false,
+    "entered": null,
+    "walked": [
+     "start",
+     "L1",
+     "C1",
+     "R1",
+     "L2a",
+     "C2",
+     "R2a"
+    ],
+    "step": 2
+   },
+   "power": null
+  },
+  {
+   "name": "H_decision",
+   "pose": {
+    "loc": [
+     -124.0,
+     -125.76073099119988,
+     82.58016045646124
+    ],
+    "tgt": [
+     -124.0,
+     100.3,
+     10.0
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07282289497595601,
+    "shift_y": 0.01895118805240408,
+    "yaw": 0.0,
+    "pitch": 17.8,
+    "dist": 237.42648080650417
+   },
+   "zoom": 1.0,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "L1": "walked",
+    "C1": "walked",
+    "R1": "walked",
+    "L2": "grey",
+    "L2a": "current",
+    "C2": "current",
+    "R2": "grey",
+    "R2a": "current",
+    "L2b": "option",
+    "R2b": "option",
+    "L3": "reach",
+    "C3": "grey",
+    "R3": "reach",
+    "LK": "reach",
+    "CK": "grey",
+    "RK": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "C2"
+   ],
+   "movers": {},
+   "mech": {
+    "eta": {
+     "L": [
+      5,
+      5
+     ],
+     "C": [
+      5,
+      5
+     ],
+     "R": [
+      5,
+      5
+     ]
+    },
+    "sync": 5,
+    "sync_ok": true,
+    "countered": [
+     "C2"
+    ],
+    "affected": [
+     "C2"
+    ],
+    "thrown": [],
+    "showdown": false,
+    "entered": null,
+    "walked": [
+     "start",
+     "L1",
+     "C1",
+     "R1",
+     "L2a",
+     "C2",
+     "R2a"
+    ],
+    "step": 2
+   },
+   "power": null
+  },
+  {
+   "name": "H_hover",
+   "pose": {
+    "loc": [
+     -132.7178603443872,
+     -114.50688571137988,
+     88.91695403820276
+    ],
+    "tgt": [
+     -121.36,
+     102.214,
+     19.240000000000002
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07282289497595601,
+    "shift_y": 0.01895118805240408,
+    "yaw": 3.0,
+    "pitch": 17.8,
+    "dist": 227.92942157424392
+   },
+   "zoom": 1.0,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "L1": "walked",
+    "C1": "walked",
+    "R1": "walked",
+    "L2": "grey",
+    "L2a": "current",
+    "C2": "current",
+    "R2": "grey",
+    "R2a": "current",
+    "L2b": "option",
+    "R2b": "option",
+    "L3": "reach",
+    "C3": "grey",
+    "R3": "reach",
+    "LK": "reach",
+    "CK": "grey",
+    "RK": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "C2"
+   ],
+   "movers": {},
+   "mech": {
+    "eta": {
+     "L": [
+      5,
+      5
+     ],
+     "C": [
+      5,
+      5
+     ],
+     "R": [
+      5,
+      5
+     ]
+    },
+    "sync": 5,
+    "sync_ok": true,
+    "countered": [
+     "C2"
+    ],
+    "affected": [
+     "C2"
+    ],
+    "thrown": [],
+    "showdown": false,
+    "entered": null,
+    "walked": [
+     "start",
+     "L1",
+     "C1",
+     "R1",
+     "L2a",
+     "C2",
+     "R2a"
+    ],
+    "step": 2
+   },
+   "power": {
+    "keep": [
+     "L2b",
+     "L3",
+     "LK",
+     "R2a"
+    ],
+    "k": 0.22,
+    "boost": 1.45
+   }
+  }
+ ],
+ "force": true
+}

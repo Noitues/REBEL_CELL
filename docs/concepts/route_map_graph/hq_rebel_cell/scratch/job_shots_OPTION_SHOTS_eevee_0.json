@@ -1,0 +1,297 @@
+{
+ "res": [
+  960,
+  540
+ ],
+ "samples": 24,
+ "engine": "EEVEE",
+ "out": "D:\\rc_scratch\\hq_rev\\rebel_cell\\bl_OPTION_SHOTS_eevee",
+ "frames": [
+  {
+   "name": "OA_1_midrun",
+   "pose": {
+    "loc": [
+     -80.0,
+     -183.02407837105022,
+     69.79182908373348
+    ],
+    "tgt": [
+     -80.0,
+     104.0,
+     14.0
+    ],
+    "lens": 30.0,
+    "shift_x": -0.12689393939393934,
+    "shift_y": 0.04415179011362254,
+    "yaw": 0.0,
+    "pitch": 11.0,
+    "dist": 292.39622049072267
+   },
+   "zoom": 0.0,
+   "mt": 6,
+   "room_state": {
+    "start": "walked",
+    "L1": "walked",
+    "C1": "walked",
+    "R1": "walked",
+    "L2": "grey",
+    "L2a": "current",
+    "C2": "current",
+    "R2": "grey",
+    "R2a": "current",
+    "L2b": "option",
+    "R2b": "option",
+    "L3": "reach",
+    "C3": "grey",
+    "R3": "reach",
+    "LK": "reach",
+    "CK": "grey",
+    "RK": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "C2"
+   ],
+   "movers": {},
+   "mech": {
+    "eta": {
+     "L": [
+      5,
+      5
+     ],
+     "C": [
+      5,
+      5
+     ],
+     "R": [
+      5,
+      5
+     ]
+    },
+    "sync": 5,
+    "sync_ok": true,
+    "countered": [
+     "C2"
+    ],
+    "affected": [
+     "C2"
+    ],
+    "thrown": [],
+    "showdown": false,
+    "entered": null,
+    "walked": [
+     "start",
+     "L1",
+     "C1",
+     "R1",
+     "L2a",
+     "C2",
+     "R2a"
+    ],
+    "step": 2
+   },
+   "power": null
+  },
+  {
+   "name": "OA_2_switch",
+   "pose": {
+    "loc": [
+     -15.0,
+     -60.23616409099054,
+     52.184462470209866
+    ],
+    "tgt": [
+     -15.0,
+     110.0,
+     11.0
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07517017889157582,
+    "shift_y": 0.02036308738042519,
+    "yaw": 0.0,
+    "pitch": 13.6,
+    "dist": 175.1471139167722
+   },
+   "zoom": 1.0,
+   "mt": 15,
+   "room_state": {
+    "start": "walked",
+    "L1": "walked",
+    "C1": "walked",
+    "R1": "walked",
+    "L2": "grey",
+    "L2a": "walked",
+    "C2": "walked",
+    "R2": "grey",
+    "R2a": "walked",
+    "L2b": "walked",
+    "R2b": "walked",
+    "L3": "walked",
+    "C3": "walked",
+    "R3": "walked",
+    "LK": "current",
+    "CK": "current",
+    "RK": "current",
+    "srv": "option"
+   },
+   "affected": [
+    "C2"
+   ],
+   "movers": {},
+   "mech": {
+    "eta": {
+     "L": [
+      5,
+      5
+     ],
+     "C": [
+      5,
+      5
+     ],
+     "R": [
+      5,
+      5
+     ]
+    },
+    "sync": 5,
+    "sync_ok": true,
+    "countered": [
+     "C2"
+    ],
+    "affected": [
+     "C2"
+    ],
+    "thrown": [
+     "L",
+     "C",
+     "R"
+    ],
+    "showdown": true,
+    "entered": null,
+    "walked": [
+     "start",
+     "L1",
+     "C1",
+     "R1",
+     "L2a",
+     "C2",
+     "R2a",
+     "L2b",
+     "C2",
+     "R2b",
+     "L3",
+     "C3",
+     "R3",
+     "LK",
+     "CK",
+     "RK"
+    ],
+    "step": 5,
+    "pulse": 1.0,
+    "switch_moment": 1
+   },
+   "power": null
+  },
+  {
+   "name": "OA_3_showdown",
+   "pose": {
+    "loc": [
+     -15.0,
+     -60.23616409099054,
+     52.184462470209866
+    ],
+    "tgt": [
+     -15.0,
+     110.0,
+     11.0
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07517017889157582,
+    "shift_y": 0.02036308738042519,
+    "yaw": 0.0,
+    "pitch": 13.6,
+    "dist": 175.1471139167722
+   },
+   "zoom": 0.9882911734655415,
+   "mt": 16,
+   "room_state": {
+    "start": "walked",
+    "L1": "walked",
+    "C1": "walked",
+    "R1": "walked",
+    "L2": "grey",
+    "L2a": "walked",
+    "C2": "walked",
+    "R2": "grey",
+    "R2a": "walked",
+    "L2b": "walked",
+    "R2b": "walked",
+    "L3": "walked",
+    "C3": "walked",
+    "R3": "walked",
+    "LK": "current",
+    "CK": "current",
+    "RK": "current",
+    "srv": "walked"
+   },
+   "affected": [
+    "C2"
+   ],
+   "movers": {},
+   "mech": {
+    "eta": {
+     "L": [
+      5,
+      5
+     ],
+     "C": [
+      5,
+      5
+     ],
+     "R": [
+      5,
+      5
+     ]
+    },
+    "sync": 5,
+    "sync_ok": true,
+    "countered": [
+     "C2"
+    ],
+    "affected": [
+     "C2"
+    ],
+    "thrown": [
+     "L",
+     "C",
+     "R"
+    ],
+    "showdown": 1,
+    "entered": "R",
+    "walked": [
+     "start",
+     "L1",
+     "C1",
+     "R1",
+     "L2a",
+     "C2",
+     "R2a",
+     "L2b",
+     "C2",
+     "R2b",
+     "L3",
+     "C3",
+     "R3",
+     "LK",
+     "CK",
+     "RK",
+     "srv"
+    ],
+    "step": 5,
+    "pulse": 0.3
+   },
+   "power": null
+  }
+ ],
+ "force": true
+}

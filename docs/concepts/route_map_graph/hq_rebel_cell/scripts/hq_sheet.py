@@ -41,7 +41,7 @@ def main():
             ("RS_3_spreading", "SPREADING from the palm"), ("RS_4_full", "THE FULL FIST")]
     tw, th = 590, 332
     for k, (n, lab) in enumerate(reds):
-        p = os.path.join(SCR, "RED_SHOTS", n + "_plate.png")
+        p = os.path.join(SCR, "RED_SHOTS", n + __import__("hq_preset").PRESET["hq"].get("suffix", "") + "_plate.png")
         x = 60 + k * (tw + 20)
         if os.path.exists(p):
             sheet.paste(Image.open(p).convert("RGB").resize((tw, th), Image.LANCZOS), (x, 120))
@@ -53,7 +53,7 @@ def main():
             ("OA_3_showdown", "SHOWDOWN: one enters, two park")]
     ow, oh = 790, 444
     for k, (n, lab) in enumerate(opts):
-        p = os.path.join(SCR, "OPTION_SHOTS", n + ".png")
+        p = os.path.join(SCR, "OPTION_SHOTS", n + __import__("hq_preset").PRESET["hq"].get("suffix", "") + ".png")
         x = 60 + k * (ow + 25)
         if os.path.exists(p):
             sheet.paste(Image.open(p).convert("RGB").resize((ow, oh), Image.LANCZOS), (x, 500))
@@ -77,7 +77,7 @@ def main():
         "5 Mirror combats (round 43, GDD M11): every elite, or one per lane?",
         "6 Decks: one, or one per operative (round 43 open question)?",
         "7 The countered room: from the player's most-used firmware (GDD 8.5)?"], (140, 200, 255))
-    sheet.save(os.path.join(ROOT, "H_mechanic_states.png"))
+    sheet.save(os.path.join(ROOT, "H_mechanic_states" + __import__("hq_preset").PRESET["hq"].get("suffix", "") + ".png"))  # HQ_REV_V2
     print("saved H_mechanic_states.png")
 
 

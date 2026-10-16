@@ -1,0 +1,20 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_halcyon\scripts\hq_scene.py:219: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 0.7s] tiers built
+[hq 0.7s] rooms built
+[hq 0.7s] eye built
+[hq 0.7s] links built
+[hq 1.2s] downtown towers 1554 lamps 2688
+[hq 1.2s] city built, roofs 2767
+[hq 2.3s] objects 42
+[hq 2.3s] lights 254 beams 20 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_halcyon\scripts\hq_scene.py:1161: DeprecationWarning: 'SpotLight.use_nodes' is expected to be removed in Blender 6.0
+  ld.use_nodes = True
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_halcyon\scripts\hq_scene.py:1276: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:04.360  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 2.3s] HIP devices 1
+[hq 2.3s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

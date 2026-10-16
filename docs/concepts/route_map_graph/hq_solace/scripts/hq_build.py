@@ -40,8 +40,20 @@ def build(K):
     b2.inputs["Roughness"].default_value = 0.2
     b2.inputs["Coat Weight"].default_value = 0.6
     b2.inputs["Coat Roughness"].default_value = 0.05
+    # v2 r2: the bioluminescent RIM: leaf-green emission on the grazing faces (fresnel), the strands read as lit forms
+    lw2 = nt2.nodes.new("ShaderNodeLayerWeight")
+    lw2.inputs["Blend"].default_value = 0.5
+    rim2 = K.mth(nt2, "MULTIPLY", K.mth(nt2, "POWER", lw2.outputs["Facing"], LH["rim_pow"]), LH["rim_k"])
+    b2.inputs["Emission Color"].default_value = tuple(LEAF) + (1.0,)
+    nt2.links.new(rim2, b2.inputs["Emission Strength"])
     nt2.links.new(b2.outputs[0], o2.inputs[0])
-    PORC = Acc("porc", m2, 1, K.COLL["compound"])
+    m2p = m2.copy()                          # full render: the bridges / podium / crown porcelain WITHOUT the rim
+    m2p.name = "porcelain_flat"              # (the rim spilled green over the flat bridge slabs)
+    _bp = next(n for n in m2p.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    for l_ in list(_bp.inputs["Emission Strength"].links):
+        m2p.node_tree.links.remove(l_)
+    _bp.inputs["Emission Strength"].default_value = 0.0
+    PORC = Acc("porc", m2p, 1, K.COLL["compound"])
     hooks["accs"]["porc"] = PORC
 
     # ------------------------------------------------------------ the strands: two smooth swept TUBES (designer, v3)
@@ -100,14 +112,14 @@ def build(K):
                 phi = 2 * math.pi * (j + 0.5) / nwin
                 if route and (phi < 1.2 or phi > 2 * math.pi - 1.2):
                     continue
-                ew, eh = 1.7, 2.9                     # half axes of the oval (along the tube, up)
+                ew, eh = 2.1, 3.3                     # half axes of the oval (along the tube, up; v2 r2: larger)
                 ring = []
                 for q in range(16):
                     a = 2 * math.pi * q / 16
                     dphi = ew * math.cos(a) / rt
                     ring.append(tube_pt(t, zr + eh * math.sin(a), phi + dphi, rt + 0.06))
-                col = CLIN if rr.random() < 0.75 else (0.6, 1.0, 0.55)
-                A["trim"].face(ring, col, LH["band_k"] * rr.uniform(0.7, 1.3) if rr.random() < 0.85 else 0.05)
+                col = (0.80, 1.0, 0.62) if rr.random() < 0.75 else (0.55, 1.0, 0.45)       # v2 r2: green interior light
+                A["trim"].face(ring, col, LH["porthole_k"] * rr.uniform(0.7, 1.3) if rr.random() < 0.85 else 0.05)
                 for q in range(16):                   # the frame ring
                     tube(A["metal"], ring[q], ring[(q + 1) % 16], 0.12, (0.55, 0.58, 0.6), n=4)
             # the downlight ring under the row (the stack's lit layering)
@@ -149,6 +161,8 @@ def build(K):
         zb = G.floor_z(f) + 1.2
         route = f in RFS
         NS = 14
+        if not route:              # v2 r2 (art director): only the route floors' bridges = the A <-> B cross-links;
+            continue               # the gap between the towers reads, the ladder matches the A/B panel
 
         def P(s, side, z):
             return (rv[0] * s + n[0] * side * hw(s), rv[1] * s + n[1] * side * hw(s), z)
@@ -214,15 +228,37 @@ def build(K):
 
     # ------------------------------------------------------------ the podium + the clinic gate + the name
     px, py, ph = CP["podium"]
-    box(PORC, -px, -py, 0.0, px, py, ph, (0.45, 0.48, 0.48))
-    box(A["ground"], -px + 1, -py + 1, ph, px - 1, py - 1, ph + 0.02, (0.34, 0.36, 0.36), k=1.0)
+    PL = (0.09, 0.10, 0.10)                  # v2 r2: the plinth dark (was pale 0.45), dressed, a lit entry
+    box(PORC, -px, -py, 0.0, px, py, ph, PL)
+    box(A["ground"], -px + 1, -py + 1, ph, px - 1, py - 1, ph + 0.02, (0.11, 0.12, 0.12), k=1.0)
+    # dressing: planter beds with leaf-green edge light, bollards, a slatted base course
+    prr = random.Random(6331)
+    for (qx, qy) in ((-46.0, -34.0), (46.0, -34.0), (-46.0, 34.0), (46.0, 34.0), (-52.0, 0.0), (52.0, 0.0)):
+        box(A["rough"], qx - 6.0, qy - 3.0, ph, qx + 6.0, qy + 3.0, ph + 1.0, (0.06, 0.07, 0.06))
+        box(A["trim"], qx - 6.05, qy - 3.05, ph + 0.95, qx + 6.05, qy + 3.05, ph + 1.05, LEAF, LH["trim_k"] * 0.5)
+        for _ in range(5):
+            tx_, ty_ = qx + prr.uniform(-5, 5), qy + prr.uniform(-2.4, 2.4)
+            tube(A["rough"], (tx_, ty_, ph + 1.0), (tx_, ty_, ph + prr.uniform(2.0, 3.6)), prr.uniform(0.5, 0.9),
+                 (0.03, 0.08, 0.04), n=6)
+    for k_ in range(int(2 * px / 4)):
+        xx = -px + 2.0 + k_ * 4.0
+        box(A["metal"], xx - 0.2, -py - 0.25, 0.4, xx + 0.2, -py, ph - 0.8, (0.16, 0.17, 0.17))
+    # THE LIT ENTRY: a glazed clinic lobby at the top of the stair (warm-white light inside, a leaf-green lintel)
+    box(A["glass"], -12.0, -py + 0.5, ph, 12.0, -py + 6.0, ph + 7.0, (0.02, 0.05, 0.04))
+    box(A["trim"], -11.0, -py + 0.45, ph + 0.4, 11.0, -py + 0.5, ph + 6.2, (1.0, 0.92, 0.78), 2.6)
+    box(PORC, -13.0, -py - 1.5, ph + 7.0, 13.0, -py + 6.5, ph + 8.0, PL)
+    box(A["trim"], -13.0, -py - 1.55, ph + 7.2, 13.0, -py - 1.5, ph + 7.8, LEAF, LH["trim_k"])
+    K.add_light("entry_glow", "AREA", (0.0, -py - 4.0, ph + 6.5), LH["entry_w"], (1.0, 0.88, 0.7),
+                aim=(0.0, -py - 14.0, 0.0), size=22.0, size_y=6.0, group="corp", shadow=False)
     for (x0, y0, x1, y1) in ((-px, -py - 0.06, px, -py), (-px, py, px, py + 0.06), (-px - 0.06, -py, -px, py),
                              (px, -py, px + 0.06, py)):
         box(A["trim"], x0, y0, ph - 0.6, x1, y1, ph - 0.35, LEAF, LH["trim_k"] * 0.6)
     for s in range(6):
-        box(PORC, -18.0, -py - (6 - s) * 1.4, 0.0, 18.0, -py, ph * (s + 1) / 6, (0.45, 0.48, 0.48))
+        box(PORC, -18.0, -py - (6 - s) * 1.4, 0.0, 18.0, -py, ph * (s + 1) / 6, PL)
+        box(A["trim"], -18.0, -py - (6 - s) * 1.4 - 0.03, ph * (s + 1) / 6 - 0.12, 18.0, -py - (6 - s) * 1.4,
+            ph * (s + 1) / 6 - 0.04, (1.0, 0.9, 0.75), 1.2)                      # lit stair nosings
     sx_, sy_ = CP["start"]
-    box(PORC, sx_ - 5, sy_ - 3, 0, sx_ + 5, sy_ + 3, 4.6, (0.45, 0.48, 0.48))
+    box(PORC, sx_ - 5, sy_ - 3, 0, sx_ + 5, sy_ + 3, 4.6, PL)
     box(A["trim"], sx_ - 0.4, sy_ - 3.1, 6.0, sx_ + 0.4, sy_ - 3.0, 8.4, LEAF, 4.0)
     box(A["trim"], sx_ - 1.2, sy_ - 3.1, 6.8, sx_ + 1.2, sy_ - 3.0, 7.6, LEAF, 4.0)
     box(A["trim"], sx_ - 4.4, sy_ - 3.2, 1.4, sx_ - 3.4, sy_ - 2.8, 2.8, (0.55, 1.0, 0.0), 6.0)
@@ -243,6 +279,10 @@ def build(K):
                     oquad(A["sign"], rec, 0.05, -(uu + (cix + 1) * cell - cell * 0.15), 0.9 + (4 - row) * cell * 0.8,
                           -(uu + cix * cell), 0.9 + (5 - row) * cell * 0.8 - cell * 0.12, LEAF, 6.0 * LH["sign_k"] * 4)
         uu += (len(gph[0]) + 1) * cell
+    # v2 (review: Solace too dark overall): the plaza's own WARM WASH (low area lights over the deck, clinic-warm)
+    for k, (wx, wy) in enumerate(((-34.0, -26.0), (34.0, -26.0), (-34.0, 26.0), (34.0, 26.0))):
+        K.add_light("plaza_wash_%d" % k, "AREA", (wx, wy, ph + 16.0), LH["plaza_wash_w"], (1.0, 0.78, 0.55),
+                    aim=(wx, wy, ph), size=40.0, size_y=30.0, group="corp", shadow=False)
     log("podium")
 
     # ============================================================ THE LANDMARK RIG (designer audit + redesign)
@@ -318,3 +358,4 @@ def build(K):
                 lob.data.color = pal("frost")
     hooks["apply"] = apply
     return hooks
+# SOL_R2

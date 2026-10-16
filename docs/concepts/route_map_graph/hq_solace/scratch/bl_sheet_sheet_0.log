@@ -1,0 +1,30 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scripts\hq_scene.py:224: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 1.1s] downtown towers 1610 lamps 2800
+[hq 1.1s] city built, roofs 2839
+[hq 1.3s] towers
+[hq 1.3s] bridges
+[hq 1.3s] rooms
+[hq 1.3s] crown
+[hq 1.3s] podium
+[hq 1.3s] rig
+[hq 1.3s] landmark built
+[hq 2.5s] objects 34
+[hq 2.5s] lights 178 beams 10 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_solace\scripts\hq_scene.py:971: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:04.422  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 2.5s] HIP devices 1
+[hq 2.6s] occlusion S_ground_floor: flattened 1 ghosted 0 of 3197
+00:29.953  render           | Saved: 'D:\rc_scratch\hq_rev\solace\bl_sheet\S_ground_floor.exr'
+[hq 28.7s] frame S_ground_floor 26.1 s passes ['Combined', 'Depth', 'Object Index', 'Volume Direct', 'Emission', 'Noisy Image']
+[hq 28.7s] occlusion S_mid_climb: flattened 0 ghosted 0 of 3197
+00:53.406  render           | Saved: 'D:\rc_scratch\hq_rev\solace\bl_sheet\S_mid_climb.exr'
+[hq 51.8s] frame S_mid_climb 23.1 s passes 
+[hq 51.8s] occlusion S_top: flattened 0 ghosted 0 of 3197
+01:14.859  render           | Saved: 'D:\rc_scratch\hq_rev\solace\bl_sheet\S_top.exr'
+[hq 73.3s] frame S_top 21.4 s passes 
+[hq 73.3s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

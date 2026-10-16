@@ -107,14 +107,15 @@ def build(K, keep_free=None, cut_y=None, low_near=None):
     DIST = K.Acc("district", m, 1, K.COLL["compound"])
 
     MJ = json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scratch",
-                                     "fist_mask.json")))
+                                     CP["fist"].get("mask", "fist_mask.json"))))
     MW, MG = MJ["n"], MJ["grid"]
     fcx, fcy = (FI["x"][0] + FI["x"][1]) / 2, (FI["y"][0] + FI["y"][1]) / 2
 
     def cat(x, y):
-        """A block's category from 5 samples over its footprint (a LINE anywhere wins, then the fist)."""
+        """A block's category from 5 samples over its footprint (v2 r2: a LINE at the centre or on 3+ samples, then the
+        fist by majority: the fingers stay as wide as the crest's, the gaps one street-line wide; was: a line anywhere)."""
         cs = [cat1(x + dx, y + dy) for dx, dy in ((0, 0), (-3.5, -3.5), (3.5, -3.5), (3.5, 3.5), (-3.5, 3.5))]
-        if 2 in cs:
+        if cs[0] == 2 or cs.count(2) >= 3:
             return 2
         if cs[0] == 1 or cs.count(1) >= 3:
             return 1

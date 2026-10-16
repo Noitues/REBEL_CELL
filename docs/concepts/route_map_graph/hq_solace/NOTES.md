@@ -88,3 +88,61 @@ at 960 x 540 in 949 s (~6 s a frame), compose 122 + 59 + 234 s, encode 19 s.
 2. Read ahead: 2 route floors (here), 1, or "read a floor when you stand on its bridge"?
 3. Should a crossing cost something (e.g. the bridge holds an encounter) so UP vs ACROSS is not free?
 4. Route floors every other floor (8 a tower): fewer, taller climbs?
+
+<!-- hq_rev v2 r2 -->
+## v2 revision, round 2 (hq_rev)
+
+### v2 round 2 (art director 20:55)
+- The helix is lit. The strands are dark wet porcelain (albedo 0.13, was a pale 0.36) with a leaf-green
+  bioluminescent RIM (fresnel emission, `rim_k` 0.9, `rim_pow` 5). The oval portholes are larger (2.1 x 3.3 half
+  axes) and lit from inside in a green-white (`porthole_k` 2.6, was `band_k` 0.22), so they read as windows.
+- The two towers are apart: `radius` 40 (was 30), a 62 BU gap between the tubes. The skybridges stand only on the
+  ROUTE floors: these are the A <-> B cross-links, so the ladder in 3D matches the A/B panel row for row. This departs
+  from the redesign's "a bridge on every floor": the non-route bridges filled the gap, and the two towers read as one
+  form.
+- No flat sky band. A graded night sky (`sky_ramp`, eased; dim violet haze at the horizon to near-black at the zenith),
+  more haze (0.0005) so the far skyline fades, and the overview looks down more (`pitch_o` 27, was 20), so more city
+  and less sky sits behind the tower.
+- The plinth is dark (0.09) and dressed: planter beds with leaf-green edge light, a slatted base course and lit stair
+  nosings. THE LIT ENTRY is a glazed clinic lobby at the top of the stair, with warm-white light inside, a leaf-green
+  lintel and an area light onto the plaza. The plaza wash is down to 2.5e3 (was 9e3).
+
+### Occlusion: camera-rig rule (v2, all five HQs; designer note 2026-10-15)
+
+Designer, verbatim: "The foreground blocking buildings should be flattened or made transparent when the camera needs to
+look through them to see the HQ." This replaces the v2 sloped section cut. Code: `hq_kit/downtown.py`
+(`occlusion_params`, `occlusion_state`: pure python, the rule itself) and `hq_kit/section.py` (the same rule as a
+clip in the city materials). Called per frame from `hq_jobs.frame()`; `hq_scene` logs how many buildings it touched.
+
+| Step | Rule | Numbers (`downtown.OCC`, a corp may override in preset `downtown.occ`) |
+|---|---|---|
+| Inputs | The camera position, and the TARGET VOLUME: the front points of the active room plus the visible route nodes (decision / hover: the current room + its options; overview: every route node). | - |
+| Cone | Every ray from the camera to the target volume. Horizontal frame: `u` = the direction to the targets' centroid. Per target: lateral tangent `t = across / along` and vertical tangent `v = (z - cam z) / along`. Only targets **behind** a building can be hidden by it, so the cone is sampled at `NK` depths (knots) from the nearest to the farthest target. At each knot it holds `[t_min, t_max]` and `v_min` (the lowest ray) over the targets behind that depth, widened by `margin` of the whole volume's span (the ~10 % margin). | `margin` 0.10, `NK` 5 |
+| Occluder | A city building is an occluder when its footprint (radius = half-diagonal) overlaps `[t_min, t_max]` at its depth, it stands in front of the farthest target, and its top reaches into the cone (`(top - cam z) / (along + r) > v_min`). Compound geometry is never an occluder. | - |
+| Step 1: FLATTEN | An occluder is section-cut to a lit stub of `stub` BU (1-2 storeys: shop fronts, awnings and the lowest windows stay lit). Its open top shows a near-black POCHE, so it reads as a cut model and not as a hollow shell. | `stub` 6.4 BU |
+| Step 2: GHOST | If the stub still reaches into the cone, it fades to `ghost` opacity. Its window dots stay (dimmed with it) and a faint cool edge line traces its box edges. It is never fully invisible. | `ghost` 0.18, `edge` 0.6 |
+| Outside | Buildings outside the cone keep their full height. Roof clutter (tanks, antennas, holo boards) is cut with its building. | - |
+| Easing | The cone has soft borders (`tsoft` lateral tangent, `vsoft` vertical tangent). As the orbit camera moves, a building's cut height and opacity slide across the band and never snap. In the game the values are per-instance targets eased over 0.4 s (below). | `tsoft` 0.035, `vsoft` 0.025 |
+| Outputs | Per building: cut height (`top` + clutter outside the cone, `stub` inside, interpolated across the soft band) and opacity (1, or `ghost`). `occlusion_state(params, building)` returns exactly these values. | - |
+
+Godot 4.7 mapping (camera rig, not content):
+- The city is MultiMeshes. Each instance carries `INSTANCE_CUSTOM = (cut_height, opacity, centre-relative edge
+  data)`. Each frame the camera rig (a `RefCounted` helper fed by the orbit camera, outside the deterministic core)
+  runs `occlusion_state` per building in the near rings and writes the per-instance target.
+- The view tweens each instance's current value toward its target over 0.3-0.5 s (0.4 s default, ease in-out), so
+  buildings never snap when the cone sweeps across them.
+- City shader (spatial, opaque pipeline): `if (world_vertex.z > cut_height) discard;` gives the per-instance height
+  clip. A back-face branch draws the poche colour, so the cut reads as solid.
+- Ghost: a dithered alpha fade (an alpha-hash / screen-door `discard` against a 4x4 Bayer threshold scaled by
+  `opacity`), which keeps depth sorting stable without a transparent pass. Edge lines come from the box-local
+  distance in the same shader. The window emission stays on and is multiplied by `opacity`.
+- Cost: one uniform block, one per-instance vec4, no extra draw calls.
+
+<!-- hq_rev v2 full -->
+### v2 full render: tweaks after t2b (art director)
+- Bridges only on the cross-links: confirmed.
+- The landmark is toned toward about 2.5x its background: the rim is down to 0.5 (was 0.9) and the portholes to 1.6
+  (was 2.6).
+- No green spill on the bridge slabs: the bridges, podium and crown use a porcelain WITHOUT the rim
+  (`porcelain_flat`); only the strands keep it.
+- The overview looks down a touch more (`pitch_o` 29.5), which trims the last sky strip at the top.

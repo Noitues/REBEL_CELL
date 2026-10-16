@@ -10,8 +10,8 @@ import time
 
 Q = r"D:\rc_scratch"
 LOCK = os.path.join(Q, "GPU_LOCK")
-ME = "hq_others"
-EARLIER = ("storyboard", "halcyon")
+ME = "hq_rev"
+EARLIER = ("storyboard", "new_corps", "city_all_corps")   # hq_rev queues after these
 
 
 def _earlier_waiting():

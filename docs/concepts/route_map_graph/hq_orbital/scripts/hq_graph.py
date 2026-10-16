@@ -253,7 +253,7 @@ def STILLS(CR):
     w = WALK_DEC
     wr = WALK_ROCKET
     return {
-        "H_overview": (CR.overview(w), dict(walked=w, extra=dict(circuit=4))),
+        "H_overview": (CR.overview(wr), dict(walked=wr, extra=dict(circuit=2))),   # v2: the rocket up, doors OPEN
         "H_decision": (CR.decision(w), dict(walked=w, extra=dict(circuit=4))),
         "H_hover": (CR.hover(w, HOVER_DEC), dict(walked=w, hover=HOVER_DEC, hover_k=1.0, extra=dict(circuit=4))),
         "H_rocket": (ROCKET_POSE(CR), dict(walked=wr, extra=dict(circuit=2, rocket_view=1))),

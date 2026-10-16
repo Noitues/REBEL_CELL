@@ -19,10 +19,11 @@ sys.path.insert(0, HERE)
 sys.dont_write_bytecode = True
 import hq_cam as CR  # noqa: E402
 import hq_graph as G  # noqa: E402
+import halcyon_preset as HP  # noqa: E402
 
 ROOT = os.path.dirname(HERE)
 SCR = os.path.join(ROOT, "scratch")
-BIG = r"D:\rc_scratch\halcyon"          # render passes and frames (C: is short of space); never inside D:\Godot\rebel_cell
+BIG = r"D:\rc_scratch\hq_rev\halcyon"   # HQ_REV_V2 (v1 passes: D:\rc_scratch\halcyon)          # render passes and frames (C: is short of space); never inside D:\Godot\rebel_cell
 os.makedirs(BIG, exist_ok=True)
 BLENDER = r"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
 QUAL = {
@@ -30,6 +31,7 @@ QUAL = {
     "video": dict(res=[1280, 720], samples=24, threshold=0.04, step_rate=2.0),
     "test": dict(res=[1280, 720], samples=32, threshold=0.04, step_rate=2.0),
     "mini": dict(res=[640, 360], samples=16, threshold=0.06, step_rate=3.0),
+    "eevee": dict(res=[960, 540], samples=24, engine="EEVEE"),       # HQ_REV_V2 layout preview
 }
 POWER_K, POWER_BOOST = 0.22, 1.45
 FPS = 24
@@ -58,6 +60,17 @@ def frame(name, pose, walked, zoom, hover=None, hover_k=0.0, eye=None, step=None
     if eye:
         e.update(eye)
     fr = dict(name=name, pose=pose.to_json(), zoom=zoom, room_state=st, scanned=sc, eye=e, power=None)
+    dtc = HP.PRESET["halcyon"].get("downtown")
+    if dtc:                                   # v2: the section cut (overview = the keep, decision = the framed rooms)
+        from hq_kit import downtown as KDT
+        # v3: the OCCLUSION rule (flatten, then ghost): the cone from the camera to the active room + the visible
+        # route nodes (overview: every route node)
+        ids = [i for i in [walked[-1]] + list(opts) if i != "start"]
+        if zoom < 0.5:
+            ids = [i for i in G.NODES if i != "start"]
+        pts = [c for i in ids for c in G.room_front(i)]
+        if pts:
+            fr["section"] = KDT.occlusion_params(pose.loc(), pts, dtc)
     if hover and hover_k > 0.5:
         br = G.branch(hover, walked)[0]
         fr["power"] = dict(keep=sorted(br | {walked[-1]}), k=POWER_K, boost=POWER_BOOST)
@@ -228,7 +241,7 @@ if __name__ == "__main__":
             names = sys.argv[3].split(",") if len(sys.argv) > 3 else None
         S = [s for s in S if names is None or s[0]["name"] in names]
         save_ov("ov_stills", {f["name"]: o for f, o in S})
-        out = os.path.join(BIG if q == "final" else SCR, "bl_stills" + ("" if q == "final" else "_" + q))
+        out = os.path.join(BIG, "bl_stills" + ("" if q == "final" else "_" + q))
         sys.exit(run("stills_" + q, [f for f, _ in S], q, out, extra=dict(extra, force=True) if what == "preview" else None))
     if what in ("orbit", "reveal"):
         if what == "orbit":
@@ -242,5 +255,5 @@ if __name__ == "__main__":
         if q == "dry":
             print(what, len(fr), "frames")
             sys.exit(0)
-        out = os.path.join(BIG if q == "video" else SCR, "bl_" + what + ("" if q == "video" else "_" + q))
+        out = os.path.join(BIG, "bl_" + what + ("" if q == "video" else "_" + q))
         sys.exit(run(what + "_%d_%d" % (a, b), [f for f, _ in fr[a:b]], q, out, chunk=48))

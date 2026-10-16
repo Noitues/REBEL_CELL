@@ -63,14 +63,15 @@ def stills(names=None, bl="bl_stills"):
     for name, ov in ovs.items():
         if names and name not in names:
             continue
-        stem = os.path.join(BIG if bl == "bl_stills" else SCR, bl, name)
+        stem = os.path.join(BIG, bl, name)                    # HQ_REV_V2: every quality lives in BIG
         if not os.path.exists(stem + "_combined.npy"):
             print("missing", stem)
             continue
         plate = PO.finish(stem, ov["zoom"], t=2.0)
-        plate.save(os.path.join(ROOT, "plates", name + "_plate.png"))
+        sfx = "_v2"
+        plate.save(os.path.join(ROOT, "plates", name + sfx + "_plate.png"))
         img = compose(plate, ov)
-        img.save(os.path.join(ROOT, name + ".png"))
+        img.save(os.path.join(ROOT, name + sfx + ".png"))
         print("saved", name, flush=True)
 
 

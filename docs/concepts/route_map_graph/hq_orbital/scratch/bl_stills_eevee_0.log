@@ -1,0 +1,25 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\scripts\hq_scene.py:224: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 1.4s] downtown towers 1708 lamps 3032
+[hq 1.4s] city built, roofs 2919
+[hq 1.4s] podium
+[hq 1.4s] doors, rocket
+[hq 1.4s] gantry
+[hq 1.4s] stations
+[hq 1.4s] antenna
+[hq 1.4s] causeway
+[hq 1.4s] rig
+[hq 1.4s] launch props
+[hq 1.4s] landmark built
+[hq 2.5s] objects 48
+[hq 2.6s] lights 142 beams 11 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\scripts\hq_scene.py:971: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:04.813  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 2.6s] occlusion H_overview: flattened 17 ghosted 9 of 3311
+00:10.891  render           | Saved: 'D:\rc_scratch\hq_rev\orbital\bl_stills_eevee\H_overview.exr'
+[hq 9.1s] frame H_overview 6.5 s passes ['Combined', 'Depth', 'Emission']
+[hq 9.1s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

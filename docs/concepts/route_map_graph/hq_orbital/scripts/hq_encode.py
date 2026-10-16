@@ -15,7 +15,7 @@ import hq_preset as HP  # noqa: E402
 BIG = HP.PRESET["hq"]["out_big"]
 os.makedirs(BIG, exist_ok=True)
 BLENDER = r"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
-NAMES = {"reveal": "H_reveal"}
+NAMES = {"reveal": HP.PRESET["hq"].get("reveal_name", "H_reveal") + HP.PRESET["hq"].get("suffix", "")}  # HQ_REV_V2
 
 VSE = r'''
 import bpy, os, sys

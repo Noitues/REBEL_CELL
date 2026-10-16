@@ -53,6 +53,19 @@ def frame(name, pose, walked, zoom, hover=None, hover_k=0.0, mt=None, extra=None
     if hover and hover_k > 0.5:
         br = G.branch(hover, walked, int(mt))[0]
         fr["power"] = dict(keep=sorted(br | {walked[-1]}), k=POWER_K, boost=POWER_BOOST)
+    # HQ_REV_V2: the section cut (downtown.section_params): overview = the keep, decision / hover = the framed rooms
+    dtc = HP.PRESET["hq"].get("downtown")
+    if dtc and not (extra or {}).get("no_section"):
+        from hq_kit import downtown as KDT
+        # v3: the OCCLUSION rule (flatten, then ghost): the cone from the camera to the target volume = the active
+        # room + the visible route nodes (overview: every route node)
+        if zoom < 0.5 or (extra or {}).get("section_keep"):
+            ids = [i for i in G.NODES if i != "start"]
+        else:
+            ids = [i for i in [walked[-1]] + list(opts) if i != "start"]
+        pts = [c for i in ids for c in G.room_front(i, mt)]
+        if pts:
+            fr["section"] = KDT.occlusion_params(pose.loc(), pts, dtc)
     ov = dict(walked=walked, hover=hover, hover_k=hover_k, zoom=zoom, mt=mt, pose=pose.to_json(), extra=extra or {})
     return fr, ov
 
@@ -83,13 +96,13 @@ def reveal():
 def have_lock():
     if not os.path.exists(LOCK):
         return False
-    return "hq_others" in open(LOCK, errors="replace").read()
+    return "hq_rev" in open(LOCK, errors="replace").read()
 
 
 def run(kind, frames, quality, out_dir, chunk=None, extra=None):
     q = QUAL[quality]
     if q.get("engine", "CYCLES") == "CYCLES" and not have_lock():
-        print("REFUSED: Cycles render without D:/rc_scratch/GPU_LOCK held by hq_others", flush=True)
+        print("REFUSED: Cycles render without D:/rc_scratch/GPU_LOCK held by hq_rev", flush=True)
         return 9
     os.makedirs(out_dir, exist_ok=True)
     chunks = [frames] if not chunk else [frames[i:i + chunk] for i in range(0, len(frames), chunk)]
@@ -174,3 +187,4 @@ if __name__ == "__main__":
             print("reveal", len(fr), "frames")
             sys.exit(0)
         sys.exit(run("reveal_%d_%d" % (a, b), [f for f, _ in fr[a:b:step]], q, out_dir("reveal", q), chunk=48))
+# OCC_V3

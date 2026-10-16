@@ -35,39 +35,101 @@ def build(K):
             if top:
                 acc.face([(i0[0], i0[1], z1), (o0[0], o0[1], z1), (o1[0], o1[1], z1), (i1[0], i1[1], z1)], col, k)
 
-    # ------------------------------------------------------------ the podium + the silo + the prep ring
+    # ------------------------------------------------------------ the podium + the silo (v2: a DARK pad, painted marks)
+    # v1's pale pad deck, the emissive caution ring and the glowing shaft rings read as one yellow blob from above;
+    # v2: dark wet concrete, every marking PAINT (no glow), the shaft glow only while the doors are open
+    PAINT = Acc("pad_paint", K.M["rough"], 1, K.COLL["compound"])
+    hooks["accs"]["pad_paint"] = PAINT
+    WP, YP = (0.62, 0.63, 0.62), (0.55, 0.36, 0.02)      # white / yellow paint albedo
     ring(A["civic"], SR, PR, 0.0, PH, STEEL)
-    ring(A["ground"], SR + 3.0, PR - 1.5, PH, PH + 0.02, (0.34, 0.36, 0.38), k=1.0, inner=False)
+    ring(A["ground"], SR + 3.0, PR - 1.5, PH, PH + 0.02, LH["pad_albedo"], k=1.0, inner=False)
     ring(A["trim"], PR + 0.02, PR + 0.1, PH - 0.7, PH - 0.4, ICE, LH["trim_k"])
     ring(A["trim"], PR + 0.02, PR + 0.1, 0.4, 0.6, ICE, LH["trim_k"] * 0.5)
-    for k in range(36):
-        ring(A["trim"] if k % 2 == 0 else A["rough"], SR, SR + 2.6, PH, PH + 0.05,
-             CAUT if k % 2 == 0 else (0.02, 0.02, 0.02), 1.4 if k % 2 == 0 else 0.0, n=2, a0=k * 10.0, a1=(k + 1) * 10.0,
-             inner=False)
+    for k in range(36):                               # the caution ring: painted yellow / black
+        ring(PAINT, SR, SR + 2.6, PH, PH + 0.05, YP if k % 2 == 0 else (0.015, 0.015, 0.015), 0.0, n=2, a0=k * 10.0,
+             a1=(k + 1) * 10.0, inner=False)
+    ring(PAINT, SR + 6.0, SR + 7.0, PH + 0.02, PH + 0.05, WP, inner=False)      # the blast circle
+    ring(PAINT, PR - 7.0, PR - 6.2, PH + 0.02, PH + 0.05, WP, inner=False)      # the pad edge line
+    for a in (0.0, 90.0, 180.0, 270.0):                                           # the cross-hair (gaps for the rails)
+        v = G.az_vec(a)
+        if abs(v[0]) > 0.5:
+            continue                                  # E / W: the door rails run there
+        r0, r1 = SR + 8.5, PR - 8.5
+        box(PAINT, min(v[0] * r0, v[0] * r1) - 0.6, min(v[1] * r0, v[1] * r1) - 0.0, PH + 0.02,
+            max(v[0] * r0, v[0] * r1) + 0.6, max(v[1] * r0, v[1] * r1), PH + 0.05, WP)
+    for k in range(4):                                # quadrant chevrons (yellow paint) pointing at the silo
+        a = 45.0 + 90.0 * k
+        v = G.az_vec(a)
+        for q in range(3):
+            r_ = PR - 14.0 - q * 5.0
+            c_ = (v[0] * r_, v[1] * r_)
+            tvec = (-v[1], v[0])
+            for sgn in (-1, 1):
+                p0 = (c_[0] + tvec[0] * sgn * 3.0, c_[1] + tvec[1] * sgn * 3.0)
+                p1 = (c_[0] - v[0] * 2.4, c_[1] - v[1] * 2.4)
+                K.seg_box(PAINT, Vector((p0[0], p0[1], PH + 0.05)), Vector((p1[0], p1[1], PH + 0.05)), 0.9, 0.03, YP)
+    # LC-1 stencilled on the deck (south side, facing the gantry)
+    STEN = {"L": ["100", "100", "100", "100", "111"], "C": ["111", "100", "100", "100", "111"], "-": ["000", "000", "111", "000", "000"],
+            "1": ["010", "110", "010", "010", "111"]}
+    cell = 1.6
+    xw = -((3 + 1) * 4 - 1) * cell / 2
+    for ch in "LC-1":
+        for row, bits in enumerate(STEN[ch]):
+            for cix, bit in enumerate(bits):
+                if bit == "1":
+                    x0_ = xw + cix * cell
+                    y0_ = -(SR + 13.0) - row * cell
+                    box(PAINT, x0_, y0_ - cell * 0.9, PH + 0.02, x0_ + cell * 0.9, y0_, PH + 0.05, WP)
+        xw += 4 * cell
+    # the door rails: fixed tracks east and west of the silo the leaves slide onto (the open state reads)
+    for sx_ in (-1, 1):
+        for yy in (-(SR + 1.0), (SR + 1.0)):
+            box(A["metal"], sx_ * (SR + 1.0) if sx_ > 0 else -(2 * SR + 4.0), yy - 0.5, PH, sx_ * (2 * SR + 4.0) if sx_ > 0 else -(SR + 1.0),
+                yy + 0.5, PH + 0.6, (0.2, 0.21, 0.23))
+        box(A["civic"], sx_ * (2 * SR + 4.0) - 1.2, -(SR + 2.5), PH, sx_ * (2 * SR + 4.0) + 1.2, SR + 2.5, PH + 2.4, STEEL)
+    # the shaft: dark walls; the launch glow rings belong to an object whose weight follows the doors (prep_shaft)
+    SHG = Acc("prep_shaft", K.M["emit"], 1, K.COLL["compound"])
+    hooks["accs"]["prep_shaft"] = SHG
     for zz in (1.0, 3.5, 6.0, 8.5):
-        ring(A["trim"], SR - 0.1, SR, zz, zz + 0.4, LAUNCH, 3.0, top=False, inner=True)
+        ring(SHG, SR - 0.1, SR, zz, zz + 0.4, LAUNCH, 3.0, top=False, inner=True)
     ring(A["rough"], 0.0, SR, -0.5, 0.0, (0.05, 0.05, 0.05), inner=False)
+    # the door status: red lock lamps on the rim (SHUT), white-green lamps (OPEN)
+    LKR = Acc("prep_lock_red", K.M["emit"], 1, K.COLL["compound"])
+    LKG = Acc("prep_lock_open", K.M["emit"], 1, K.COLL["compound"])
+    hooks["accs"]["prep_lock_red"] = LKR
+    hooks["accs"]["prep_lock_open"] = LKG
+    for k in range(12):
+        a = 15.0 + 30.0 * k
+        v = G.az_vec(a)
+        r_ = SR + 3.6
+        box(LKR, v[0] * r_ - 0.5, v[1] * r_ - 0.5, PH + 0.05, v[0] * r_ + 0.5, v[1] * r_ + 0.5, PH + 0.9, MARK, LH["marker_k"])
+        box(LKG, v[0] * r_ - 0.5, v[1] * r_ - 0.5, PH + 0.05, v[0] * r_ + 0.5, v[1] * r_ + 0.5, PH + 0.9, (0.6, 1.0, 0.7),
+            LH["marker_k"] * 0.7)
     sh = K.add_light("shaft", "POINT", (0.0, 0.0, 1.5), LH["shaft_w"], LAUNCH, size=6.0, group="mech", shadow=False)
-    K.add_light("shaft_beam", "SPOT", (0.0, 0.0, 0.5), 2.5e7, LAUNCH, aim=(0.0, 0.0, 300.0), size=0.0, spot=9.0,
-                blend=0.4, group="mech", shadow=False, receivers=K.COLL["media"])
+    K.add_light("shaft_beam", "SPOT", (0.0, 0.0, 0.5), LH["shaft_beam_w"], LAUNCH, aim=(0.0, 0.0, 300.0), size=0.0,
+                spot=9.0, blend=0.4, group="mech", shadow=False, receivers=K.COLL["media"])
     log("podium")
 
     # ------------------------------------------------------------ the doors (movers)
     for name, s_ in (("door_e", 1), ("door_w", -1)):
+        # v2: heavy dark blast-door leaves (they slide onto the rails), painted chevrons pointing at the seam (no glow),
+        # a thin ice seam line; the leaf's outer edge carries a raised beam so the leaf reads as a slab
         mv = K.mover(name)
         x0, x1 = (0.0, SR + 1.5) if s_ > 0 else (-(SR + 1.5), 0.0)
-        box(mv["accs"]["struct"], x0, -(SR + 1.5), PH - 0.6, x1, SR + 1.5, PH + 0.35, (0.22, 0.24, 0.27))
+        box(mv["accs"]["struct"], x0, -(SR + 1.5), PH - 0.6, x1, SR + 1.5, PH + 0.6, LH["door_albedo"])
         for q in range(-4, 5):
-            box(mv["accs"]["metal"], x0 + 0.5 if s_ > 0 else x0, q * 3.6 - 0.2, PH + 0.35, x1 if s_ > 0 else x1 - 0.5,
-                q * 3.6 + 0.2, PH + 0.55, (0.3, 0.32, 0.35))
-        for q in range(-3, 4):                        # yellow-black chevrons on the leaves (doors read as doors)
-            box(mv["accs"]["trim"], x0 + 2.0 if s_ > 0 else x0 + 2.0, q * 4.6 - 0.6, PH + 0.36, x1 - 2.0, q * 4.6 + 0.6,
-                PH + 0.45, CAUT, 0.9)
+            box(mv["accs"]["metal"], x0 + 0.5 if s_ > 0 else x0, q * 3.6 - 0.2, PH + 0.6, x1 if s_ > 0 else x1 - 0.5,
+                q * 3.6 + 0.2, PH + 0.8, (0.2, 0.21, 0.23))
+        for q in range(-2, 3):                        # painted chevrons (yellow) pointing to the seam
+            yc = q * 6.4
+            for sgn in (-1, 1):
+                pa = Vector((s_ * (SR - 1.0), yc + sgn * 2.4, PH + 0.82))
+                pb = Vector((s_ * 3.0, yc, PH + 0.82))
+                K.seg_box(mv["accs"]["rough"], pa, pb, 1.1, 0.02, (0.55, 0.36, 0.02))
+        box(mv["accs"]["metal"], s_ * (SR + 0.3) - 0.8, -(SR + 1.5), PH + 0.6, s_ * (SR + 0.3) + 0.8, SR + 1.5, PH + 1.8,
+            (0.18, 0.19, 0.21))
         xs = 0.15 if s_ > 0 else -0.15
-        box(mv["accs"]["trim"], min(0.0, xs), -(SR + 1.0), PH + 0.36, max(0.0, xs), SR + 1.0, PH + 0.5, ICE, 4.0)
-        for yy in (-SR * 0.6, 0.0, SR * 0.6):
-            box(mv["accs"]["small"], xs - 0.5 * s_ - 0.3, yy - 0.3, PH + 0.5, xs - 0.5 * s_ + 0.3, yy + 0.3, PH + 1.1, MARK,
-                LH["marker_k"])
+        box(mv["accs"]["trim"], min(0.0, xs), -(SR + 1.0), PH + 0.81, max(0.0, xs), SR + 1.0, PH + 0.9, ICE, 1.5)
 
     # ------------------------------------------------------------ the rocket (mover): the hero
     ms = K.mover("rocket")
@@ -114,9 +176,14 @@ def build(K):
     for (dx, dy) in ((-4, -4), (4, -4), (4, 4), (-4, 4)):
         tube(A["metal"], (dx, gy + dy, PH), (dx, gy + dy, PH + 70.0), 0.5, (0.5, 0.06, 0.04), n=5)
     z = PH
-    while z < PH + 70:
+    while z < PH + 70:                                # v2: a real lattice (X braces) + lit ice corner edges
         box(A["metal"], -4.3, gy - 4.3, z, 4.3, gy + 4.3, z + 0.5, (0.5, 0.06, 0.04))
+        for (a0, b0, a1, b1) in ((-4, -4, 4, -4), (4, -4, 4, 4), (4, 4, -4, 4), (-4, 4, -4, -4)):
+            tube(A["metal"], (a0, gy + b0, z), (a1, gy + b1, z + 7.0), 0.16, (0.5, 0.06, 0.04), n=4)
+            tube(A["metal"], (a1, gy + b1, z), (a0, gy + b0, z + 7.0), 0.16, (0.5, 0.06, 0.04), n=4)
         z += 7.0
+    for (dx, dy) in ((-4.6, -4.6), (4.6, -4.6)):
+        box(A["trim"], dx - 0.1, gy + dy - 0.1, PH, dx + 0.1, gy + dy + 0.1, PH + 70.0, ICE, LH["trim_k"] * 0.6)
     for zz in (PH + 22.0, PH + 44.0, PH + 64.0):      # service arms to the rocket
         box(A["metal"], -1.0, gy + 4.0, zz, 1.0, -RK["r"] - 1.5, zz + 1.2, (0.5, 0.06, 0.04))
         box(A["small"], -0.4, gy + 4.0, zz + 1.2, 0.4, -RK["r"] - 1.5, zz + 1.4, MARK, 3.0)
@@ -378,6 +445,9 @@ def build(K):
         OBJ, LIGHTS = ctx["OBJ"], ctx["LIGHTS"]
         dk = (mv.get("door_e") or (0.0, 0, 0))[0] / (SR + 1.0)
         open_k = max(0.0, min(1.0, float(me.get("shaft", dk))))
+        ctx["set_pwo"](OBJ.get("prep_shaft"), 0.35 * open_k)        # v2: the shaft glows only while open
+        ctx["set_pwo"](OBJ.get("prep_lock_red"), 1.0 - open_k)      # SHUT: the red lock lamps
+        ctx["set_pwo"](OBJ.get("prep_lock_open"), open_k)           # OPEN: the white-green lamps
         bands = int(me.get("bands", 0))
         for k, nm in enumerate(BANDS):
             ctx["set_pwo"](OBJ.get(nm), 1.0 if k < bands else 0.04)

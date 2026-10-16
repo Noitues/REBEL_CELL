@@ -1,0 +1,157 @@
+{
+ "res": [
+  960,
+  540
+ ],
+ "samples": 24,
+ "engine": "EEVEE",
+ "out": "D:\\rc_scratch\\hq_rev\\meridian\\bl_custom_eevee",
+ "frames": [
+  {
+   "name": "top",
+   "pose": {
+    "loc": [
+     66.0,
+     67.06285940773134,
+     869.3332436601614
+    ],
+    "tgt": [
+     66.0,
+     300.0,
+     0.0
+    ],
+    "lens": 30.0,
+    "shift_x": 0.0,
+    "shift_y": 0.0,
+    "yaw": 0.0,
+    "pitch": 75.0,
+    "dist": 900.0
+   },
+   "zoom": 0.0,
+   "mt": 5,
+   "room_state": {
+    "start": "walked",
+    "w1": "walked",
+    "sw": "grey",
+    "bw": "walked",
+    "qw": "grey",
+    "w2": "walked",
+    "t1": "walked",
+    "n1": "current",
+    "sn": "option",
+    "bn": "option",
+    "qn": "reach",
+    "n2": "reach",
+    "t2": "reach",
+    "e1": "reach",
+    "se": "reach",
+    "be": "reach",
+    "qe": "reach",
+    "e2": "reach",
+    "t3": "reach",
+    "s1": "reach",
+    "ss": "reach",
+    "bs": "reach",
+    "qs": "reach",
+    "s2": "reach",
+    "t4": "reach",
+    "m1": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "sn",
+    "se",
+    "ss"
+   ],
+   "movers": {
+    "sw": [
+     -105.0,
+     12.0,
+     2.6
+    ],
+    "sn": [
+     -10.0,
+     60.0,
+     19.0
+    ],
+    "se": [
+     80.0,
+     -0.0,
+     19.0
+    ],
+    "ss": [
+     10.0,
+     -85.0,
+     2.6
+    ],
+    "hook": [
+     80.0,
+     -0.0,
+     56.0
+    ]
+   },
+   "mech": {
+    "turn": 5,
+    "shuttles": {
+     "W": "train",
+     "N": "wall",
+     "E": "wall",
+     "S": "train"
+    },
+    "shuttles_next": {
+     "W": "wall",
+     "N": "wall",
+     "E": "train",
+     "S": "train"
+    },
+    "lands_in": {
+     "W": 1,
+     "N": 2,
+     "E": 1,
+     "S": 2
+    },
+    "crane_next": [
+     "E",
+     "W"
+    ],
+    "affected": [
+     "sn",
+     "se",
+     "ss"
+    ]
+   },
+   "power": null,
+   "section": {
+    "occ_on": 1.0,
+    "occ_cx": 66.0,
+    "occ_cy": 67.06285940773134,
+    "occ_cz": 869.3332436601614,
+    "occ_ux": -0.7168359948846892,
+    "occ_uy": -0.697241820631607,
+    "occ_tsoft": 0.035,
+    "occ_a0": 1.0,
+    "occ_amax": 203.18932773838938,
+    "occ_vsoft": 0.025,
+    "occ_stub": 6.4,
+    "occ_ghost": 0.18,
+    "occ_edge": 0.6,
+    "occ_t0": -5.527146413917442,
+    "occ_T0": 30.55810168718625,
+    "occ_v0": -925.0564415431897,
+    "occ_t1": -4.007670475497135,
+    "occ_T1": 4.415781841904998,
+    "occ_v1": -100.010822326798,
+    "occ_t2": -4.00505096761915,
+    "occ_T2": 3.654956112434935,
+    "occ_v2": -91.59410076686508,
+    "occ_t3": -3.5744199381234543,
+    "occ_T3": 3.4713601370892873,
+    "occ_v3": -89.27596278830396,
+    "occ_t4": -3.073077310941966,
+    "occ_T4": 2.94113070590865,
+    "occ_v4": -87.8638348595106
+   }
+  }
+ ],
+ "force": true
+}

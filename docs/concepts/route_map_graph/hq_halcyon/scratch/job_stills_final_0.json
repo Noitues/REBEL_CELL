@@ -1,0 +1,273 @@
+{
+ "res": [
+  2560,
+  1440
+ ],
+ "samples": 128,
+ "threshold": 0.01,
+ "step_rate": 1.0,
+ "layout": "C:\\Users\\noitu\\Documents\\Godot\\rebel_cell\\.claude\\worktrees\\art-pass\\docs\\concepts\\route_map_graph\\hq_halcyon\\scratch\\layout.json",
+ "out": "D:\\rc_scratch\\hq_rev\\halcyon\\bl_stills",
+ "frames": [
+  {
+   "name": "H_overview",
+   "pose": {
+    "loc": [
+     370.64157065742137,
+     -370.64157065742137,
+     304.1530038978219
+    ],
+    "tgt": [
+     0.0,
+     0.0,
+     48.5
+    ],
+    "lens": 40.0,
+    "shift_x": -0.08774317299545041,
+    "shift_y": -0.014400307376848668,
+    "yaw": -45.0,
+    "pitch": 26.0,
+    "dist": 583.1884825686977
+   },
+   "zoom": 0.0,
+   "room_state": {
+    "start": "walked",
+    "n1": "walked",
+    "n2": "walked",
+    "n3": "walked",
+    "n4": "walked",
+    "n5": "walked",
+    "n6": "walked",
+    "n7": "walked",
+    "n8": "walked",
+    "n9": "current",
+    "n10": "option",
+    "n11": "reach",
+    "n12": "reach",
+    "n13": "reach",
+    "n14": "reach",
+    "n15": "reach",
+    "n16": "reach",
+    "n17": "reach",
+    "n18": "reach",
+    "n19": "reach",
+    "n20": "reach",
+    "n21": "option",
+    "srv": "target"
+   },
+   "scanned": [
+    "n10",
+    "n11",
+    "n12",
+    "n13"
+   ],
+   "eye": {
+    "az": 45.0,
+    "sweep": 24.0,
+    "sweep_pt": [
+     56.5,
+     23.0,
+     24.0
+    ],
+    "wash": 1.0,
+    "beam": 1.0
+   },
+   "power": null,
+   "section": {
+    "sec_on": 1.0,
+    "sec_ox": 0.0,
+    "sec_oy": 0.0,
+    "sec_ux": 0.7071067811865475,
+    "sec_uy": -0.7071067811865475,
+    "sec_s0": 166.8772003600252,
+    "sec_w0": 196.8772003600252,
+    "sec_slope": 0.8512797439263807,
+    "sec_zref": -1.5,
+    "sec_widen": 0.45,
+    "sec_plinth": 0.6
+   }
+  },
+  {
+   "name": "H_decision_E",
+   "pose": {
+    "loc": [
+     218.52901015506075,
+     11.49999999999999,
+     100.27126942924967
+    ],
+    "tgt": [
+     33.5,
+     11.5,
+     50.0
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07291666666666667,
+    "shift_y": 0.00231256034318843,
+    "yaw": -90.0,
+    "pitch": 15.2,
+    "dist": 191.73662959640703
+   },
+   "zoom": 1.0,
+   "room_state": {
+    "start": "walked",
+    "n1": "walked",
+    "n2": "walked",
+    "n3": "walked",
+    "n4": "walked",
+    "n5": "walked",
+    "n6": "walked",
+    "n7": "walked",
+    "n8": "walked",
+    "n9": "current",
+    "n10": "option",
+    "n11": "reach",
+    "n12": "reach",
+    "n13": "reach",
+    "n14": "reach",
+    "n15": "reach",
+    "n16": "reach",
+    "n17": "reach",
+    "n18": "reach",
+    "n19": "reach",
+    "n20": "reach",
+    "n21": "option",
+    "srv": "target"
+   },
+   "scanned": [
+    "n10",
+    "n11",
+    "n12",
+    "n13"
+   ],
+   "eye": {
+    "az": 45.0,
+    "sweep": 24.0,
+    "sweep_pt": [
+     56.5,
+     23.0,
+     24.0
+    ],
+    "wash": 1.0,
+    "beam": 1.0
+   },
+   "power": null,
+   "section": {
+    "sec_on": 1.0,
+    "sec_ox": 46.166666666666664,
+    "sec_oy": 7.666666666666667,
+    "sec_ux": 0.9997527835733018,
+    "sec_uy": 0.02223447182720838,
+    "sec_s0": 15.82611255226495,
+    "sec_w0": 45.98688359845321,
+    "sec_slope": 0.5126571581200726,
+    "sec_zref": 8.5,
+    "sec_widen": 0.45,
+    "sec_plinth": 0.6
+   }
+  },
+  {
+   "name": "H_hover_E",
+   "pose": {
+    "loc": [
+     205.8244169541577,
+     18.26632337198445,
+     103.98041865207966
+    ],
+    "tgt": [
+     28.44,
+     8.97,
+     55.72
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07291666666666667,
+    "shift_y": 0.00231256034318843,
+    "yaw": -93.0,
+    "pitch": 15.2,
+    "dist": 184.0671644125507
+   },
+   "zoom": 1.0,
+   "room_state": {
+    "start": "walked",
+    "n1": "walked",
+    "n2": "walked",
+    "n3": "walked",
+    "n4": "walked",
+    "n5": "walked",
+    "n6": "walked",
+    "n7": "walked",
+    "n8": "walked",
+    "n9": "current",
+    "n10": "option",
+    "n11": "reach",
+    "n12": "reach",
+    "n13": "reach",
+    "n14": "reach",
+    "n15": "reach",
+    "n16": "reach",
+    "n17": "reach",
+    "n18": "reach",
+    "n19": "reach",
+    "n20": "reach",
+    "n21": "option",
+    "srv": "target"
+   },
+   "scanned": [
+    "n10",
+    "n11",
+    "n12",
+    "n13"
+   ],
+   "eye": {
+    "az": 45.0,
+    "sweep": 24.0,
+    "sweep_pt": [
+     56.5,
+     23.0,
+     24.0
+    ],
+    "wash": 1.0,
+    "beam": 1.0
+   },
+   "power": {
+    "keep": [
+     "n21",
+     "n9",
+     "srv"
+    ],
+    "k": 0.22,
+    "boost": 1.45
+   },
+   "section": {
+    "sec_on": 1.0,
+    "sec_ox": 46.166666666666664,
+    "sec_oy": 7.666666666666667,
+    "sec_ux": 0.9978034513156534,
+    "sec_uy": 0.0662440377888491,
+    "sec_s0": 16.77910309745765,
+    "sec_w0": 45.26853516662057,
+    "sec_slope": 0.5863321307699754,
+    "sec_zref": 8.5,
+    "sec_widen": 0.45,
+    "sec_plinth": 0.6
+   }
+  }
+ ],
+ "ov_pose": {
+  "loc": [
+   370.64157065742137,
+   -370.64157065742137,
+   304.1530038978219
+  ],
+  "tgt": [
+   0.0,
+   0.0,
+   48.5
+  ],
+  "lens": 40.0,
+  "shift_x": -0.08774317299545041,
+  "shift_y": -0.014400307376848668,
+  "yaw": -45.0,
+  "pitch": 26.0,
+  "dist": 583.1884825686977
+ }
+}

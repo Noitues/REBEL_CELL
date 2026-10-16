@@ -1,25 +1,27 @@
-"""HQ Meridian: the container fortress layout and the run graph (pure python).
+"""HQ Meridian v2 (designer review 2026-10-15): the container fortress, the route RINGS the whole compound (360 deg),
+the SHUTTLE CONTAINERS (pure python). v1 (the one-wall rampart + train / hook rides) is in git history.
 
-THE RAMPART RULE (proposal; numbers in hq_preset.PRESET["hq"]["compound"]):
+THE RING RULE (proposal; numbers in hq_preset.PRESET["hq"]["compound"]):
   The fortress is a rectangle of container walls (outer faces |x| = 80, |y| = 60, 3 courses of 9 BU), square corner
-  towers of 5 crossed courses, a moat on three sides and the rail yard on the fourth (north). The gatehouse and its
-  drawbridge sit on the WEST wall; MANIFEST CONTROL (the server tower) stands in the yard.
-  rooms           cutaway containers in the OUTER face of the wall: the route walks the rampart, west wall (north-
-                  bound, climbing one course every room or two), round the NW tower, along the north wall (east-bound,
-                  over the track), round the NE tower, over the SKYWAY into the yard and up MANIFEST CONTROL's face
-  same wall       a steel facade catwalk at sill height, ladders where the course changes
-  corner          an exterior stair round the corner tower
-  the server      THE MASTER MANIFEST: the open vault on MANIFEST CONTROL's roof (round 35 / GDD 11.7)
-THE YARD CYCLE (round 43's crane / train cycle, adapted to the rampart: a PROPOSAL; preset "mech"):
-  a 6-step cycle, idx = (step + phase) mod 6. The movers carry ROOMS (round 43: "nodes ride the crane and the train"):
-  CAR   a container room on the freight train's flatcar. arrive / WEST (beside n1) / EAST (shunted, beside the NE
-        tower) / east / leave / gone. Board from n1 when the car is WEST; step off to t2 when it is EAST. Still aboard
-        when it leaves: ejected at the gate, Heat +1 (round 43 open question; proposal).
-  HOOK  a container room on the gantry crane's hook. yard / swing / WALL (beside n3, over the track) / wall / YARD
-        (beside MANIFEST CONTROL, at m2's level) / yard. Board from n3 when it is at the WALL; step off to m2 when it
-        is in the YARD.
-  At most `max_shortcuts` rides per run (proposal: 1). A ride skips 3 rooms (the train: n2-n4; the hook: n4-m1).
-  Every mover move re-makes the links it touches (bible 4.7 link grammar); the next move is telegraphed (the dial).
+  towers of 5 crossed courses; the LOOP TRACK runs round the whole fortress outside the walls (the freight train
+  stands on it, a ring of flatcars); the FREIGHT PLATFORMS sit outside the track; the moat beyond them; MANIFEST
+  CONTROL and the slewing KEEP CRANE stand in the yard.
+  The run walks the outer faces of all four walls CLOCKWISE (from above: west wall north, north wall east, east wall
+  south, south wall west), up the four corner towers, then over the skyway into MANIFEST CONTROL (THE MASTER
+  MANIFEST on its roof). Every wall has one BREACH: a top-course slot the crane empties and refills.
+THE SHUTTLES (the designer's container rule; a PROPOSAL; preset "mech"):
+  Each breach X has a SHUTTLE container sX. It sits IN THE WALL (the breach is closed) for 2 turns, then the keep crane
+  lifts it ONTO THE TRAIN (the flatcar opposite the breach) for 2 turns, and back: a 2-turn rhythm; the crane moves
+  every turn (the N / S pair on even turns, the E / W pair on odd turns, each pair a swap: one out, one in).
+  Per breach, with P the room before it, N the room after it, Q the freight platform outside it, T the next tower:
+    P  -> sX   live only while sX is IN THE WALL (step into the container)
+    sX -> N    live only while sX is IN THE WALL (step out on the far side of the breach)
+    sX -> Q    the RIDE: live when sX is lifted to the train this turn (you ride it) or already sits on the train
+    Q  -> T    always (the platform's stair up the next tower)
+    P  -> Xb   the SALLY PORT under the breach, always (the slow way: a fight)  Xb -> N always
+  So Q (the platform: a shop or a rack) is INACCESSIBLE unless a container carries you there, and the breach is open
+  (dashed) whenever its shuttle is away. Links that a container position switches off are drawn dashed + a padlock;
+  they turn solid when the container lands (the bible 4.7 de-power / re-make grammar).
 Graph API: hqk_graph (bind). Ties by path order.
 """
 import math
@@ -42,69 +44,95 @@ YF = 0.7
 WX, WY = CP["wall"]["x"], CP["wall"]["y"]
 TC, THALF = CP["tower"]["c"], CP["tower"]["half"]
 CTL = CP["control"]
-CYCLE = MECH["cycle"]
-SHORTCUT_TYPES = ("board_train", "board_crane")
+TRK = CP["track_off"]                # the loop track's centre line, BU outside the wall faces
+PLAT = CP["platform_off"]            # the freight platforms' room opening, BU outside the wall faces
+HOLD = MECH["hold"]                  # turns a shuttle stays in one place (2)
+CYCLE = 2 * HOLD
+SHORTCUT_TYPES = ()
+WALLS = ("W", "N", "E", "S")
+NRM = {"W": (-1.0, 0.0), "N": (0.0, 1.0), "E": (1.0, 0.0), "S": (0.0, -1.0)}
 
-FACES = {"W": ((-1.0, 0.0), lambda u: (-WX, u)), "N": ((0.0, 1.0), lambda u: (u, WY)),
-         "tw": ((0.0, 1.0), lambda u: (-TC[0] + u, TC[1] + THALF)), "te": ((0.0, 1.0), lambda u: (TC[0] + u, TC[1] + THALF)),
-         "ctl": ((0.0, 1.0), lambda u: (CTL["c"][0] + u, CTL["c"][1] + CTL["half"]))}
 
-NODES = ["start"] + [r[0] for r in CP["rooms"]] + ["car", "hook", "srv"]
-ROOM = {}
-WALL_OF = {}
+def wall_pt(wall, u, dn=0.0):
+    """A point on a wall's outer face: u along the wall in the run direction (clockwise from above), dn outward."""
+    n = NRM[wall]
+    if wall == "W":
+        return (-WX - dn, u)
+    if wall == "N":
+        return (u, WY + dn)
+    if wall == "E":
+        return (WX + dn, -u)
+    return (-u, -WY - dn)
+
+
+FACES = {w: NRM[w] for w in WALLS}
+TOWER = {"t1": ("N", (-TC[0], TC[1])), "t2": ("E", (TC[0], TC[1])), "t3": ("S", (TC[0], -TC[1])),
+         "t4": ("W", (-TC[0], -TC[1]))}
+
+NODES = ["start"]
+ROOM, WALL_OF, BREACH = {}, {}, {}
 for (nid, wall, u, c) in CP["rooms"]:
-    n, f = FACES[wall]
-    x, y = f(u)
-    z0 = c if wall == "ctl" else c * CRS + SLAB
-    ROOM[nid] = dict(o=(x, y, z0), n=n, w=RW, h=RH, d=RD)
+    x, y = wall_pt(wall, u)
+    ROOM[nid] = dict(o=(x, y, c * CRS + SLAB), n=NRM[wall], w=RW, h=RH, d=RD)
     WALL_OF[nid] = wall
+for w in WALLS:
+    b = CP["breach"][w]
+    BREACH[w] = b
+# order: the run (path order), with the breach nodes in place
+SEQ = CP["seq"]
+NODES += SEQ + ["srv"]
+for w in WALLS:
+    u = CP["breach"][w]["u"]
+    x, y = wall_pt(w, u)
+    ROOM["b" + w.lower()] = dict(o=(x, y, SLAB), n=NRM[w], w=RW, h=RH, d=RD)              # the sally port (course 0)
+    WALL_OF["b" + w.lower()] = w
+    qx, qy = wall_pt(w, u, PLAT)
+    ROOM["q" + w.lower()] = dict(o=(qx, qy, 0.6), n=NRM[w], w=RW, h=RH, d=RD)             # the freight platform room
+    WALL_OF["q" + w.lower()] = "plat_" + w
+for t, (w, (cx, cy)) in TOWER.items():
+    n = NRM[w]
+    o = (cx + n[0] * THALF, cy + n[1] * THALF, 3 * CRS + SLAB)
+    ROOM[t] = dict(o=o, n=n, w=RW, h=RH, d=RD)
+    WALL_OF[t] = "tower_" + t
 SX, SY = CP["start"]
-ROOM["start"] = dict(o=(SX, SY - 4.0, 0.4), n=(0.0, -1.0), w=8.0, h=4.6, d=6.0)
+ROOM["start"] = dict(o=(SX, SY, 0.4), n=(-1.0, 0.0), w=8.0, h=4.6, d=6.0)
+cfx, cfy = CTL["c"]
+ROOM["m1"] = dict(o=(cfx - 3.0, cfy - CTL["half"], CTL["m1_z"]), n=(0.0, -1.0), w=RW, h=RH, d=RD)
+WALL_OF["m1"] = "ctl"
 VZ0 = CTL["h"] - CP["target_h"]
-ROOM["srv"] = dict(o=(CTL["c"][0], CTL["c"][1] + CTL["half"] - 4.0, VZ0), n=None, w=CP["target_w"], h=CP["target_h"],
+ROOM["srv"] = dict(o=(cfx, cfy - CTL["half"] + 4.0, VZ0), n=None, w=CP["target_w"], h=CP["target_h"],
                    d=CP["target_w"] - 6.0)
-CAR_Y, CAR_Z = CP["track_y"][0] + RD / 2.0, 2.6
-HOOK_WALL = (CP["crane"]["x"], WY + 5.0 + RD, 2 * CRS + SLAB)              # over the track, by n3
-HOOK_YARD = (CP["crane"]["x"], CTL["c"][1] + CTL["half"] + 1.0 + RD, ROOM["m2"]["o"][2])   # beside MANIFEST CONTROL
-HOOK_TOP = 52.0                                                             # the lift height over the wall
 
 KIND = {"start": "start", "srv": "target"}
 KIND.update(CP["kinds"])
-LAYER = {n: i for i, n in enumerate(["start", "w1", "w2", "w3", "w4", "t1", "n1", "n2", "n3", "n4", "t2", "m1", "m2", "srv"])}
-LAYER.update(car=LAYER["n2"], hook=LAYER["n4"])
+LAYER = {n: i for i, n in enumerate(NODES)}
 WORD = {"start": "GATE", "router": "FIGHT", "elite": "ELITE", "terminal": "EVENT", "modem": "SHOP", "rack": "RACK",
         "target": "THE MASTER MANIFEST"}
 FILE = {
     "router": ("T4", "Fight: a yard security post", ["20-30 Cycles, a card", "maybe a Firmware chip"]),
     "elite": ("T4", "Elite fight (a loader rig)", ["40-50 Cycles, a rare card", "a Firmware chip"]),
-    "terminal": ("T4", "Event: a manifest terminal", ["a choice: card, Cycles", "or HP"]),
-    "modem": ("T4", "Shop: spend Cycles", ["cards, Firmware, a heal"]),
-    "rack": ("T4", "Rack: elite, then banks", ["banks your Schematics", "+3 Heat"]),
+    "terminal": ("T4", "Event: a container's cargo", ["a choice: card, Cycles", "or HP"]),
+    "modem": ("T4", "Shop: the freight platform", ["cards, Firmware, a heal", "only by container"]),
+    "rack": ("T4", "Rack: the platform's strongroom", ["banks your Schematics", "+3 Heat; only by container"]),
     "target": ("T4", "Central Server: the boss", ["the campaign", ""]),
 }
 HP_ARRIVE = "41 / 60"
-PATH = [("start", "w1"), ("w1", "w2"), ("w2", "w3"), ("w3", "w4"), ("w4", "t1"), ("t1", "n1"), ("n1", "n2"),
-        ("n2", "n3"), ("n3", "n4"), ("n4", "t2"), ("t2", "m1"), ("m1", "m2"), ("m2", "srv")]
-RIDES = [("n1", "car", "train", "west"), ("car", "t2", "train", "east"), ("n3", "hook", "crane", "wall"),
-         ("hook", "m2", "crane", "yard")]
-
-# the run states shown
-WALK_DEC = ["start", "w1", "w2", "w3", "w4", "t1", "n1"]       # step 6: the train is IN (west), the crane swings
-HOVER_DEC = "car"
-WALK_MID = WALK_DEC
 
 
-# ------------------------------------------------------------------ the cycle
-def idx(mt):
-    return (int(math.floor(mt + 1e-6)) + MECH["phase"]) % CYCLE
+# ------------------------------------------------------------------ the shuttle clock
+def shuttle_at(w, t):
+    """'wall' | 'train' for breach w's shuttle at integer turn t (HOLD turns each, phase per breach)."""
+    return "wall" if ((int(t) + MECH["phase"][w]) // HOLD) % 2 == 0 else "train"
 
 
-def train_at(mt):
-    return MECH["train"][idx(mt)]
+def moving(w, t):
+    """True if breach w's shuttle moves at the change from turn t to t + 1 (the crane takes it)."""
+    return shuttle_at(w, t) != shuttle_at(w, t + 1)
 
 
-def crane_at(mt):
-    return MECH["crane"][idx(mt)]
+def mover_order(t):
+    """The crane's lifts at the change t -> t+1, in order (one at a time, half a step each)."""
+    return [w for w in MECH["crane_order"] if moving(w, t)]
 
 
 def _smooth(t):
@@ -112,73 +140,114 @@ def _smooth(t):
     return t * t * (3 - 2 * t)
 
 
-def car_x(mt):
-    """The car's x (continuous: the train moves during the second half of a step into the next state)."""
-    a = MECH["train_x"][train_at(mt)]
-    b = MECH["train_x"][train_at(mt + 1)]
-    f = mt - math.floor(mt + 1e-6)
-    return a + (b - a) * _smooth((f - 0.35) / 0.65)
+LIFT_Z = CP["crane"]["lift_z"]
 
 
-def hook_xyz(mt):
-    """The hook container's opening centre: wall / yard, and a lift-trolley-lower path between them."""
-    def pos(state):
-        return {"wall": HOOK_WALL, "yard": HOOK_YARD, "swing": (HOOK_WALL[0], (HOOK_WALL[1] + HOOK_YARD[1]) / 2, HOOK_TOP)}[state]
-    a, b = pos(crane_at(mt)), pos(crane_at(mt + 1))
-    f = _smooth(((mt - math.floor(mt + 1e-6)) - 0.3) / 0.7)
-    if a == b:
+def shuttle_pos(w, mt):
+    """The shuttle room's opening centre (x, y, z0) at mechanic time mt (continuous: the clips move it).
+    The change t -> t+1 runs over the step's fraction 0.30-1.0: the pair's first lift in the first half of that,
+    the second in the second; a lift = up out of the slot, swing out over the track, down onto the flatcar."""
+    t = math.floor(mt + 1e-6)
+    f = mt - t
+    u = CP["breach"][w]["u"]
+    wall = wall_pt(w, u) + (2 * CRS + SLAB,)
+    car = wall_pt(w, u, TRK + RD / 2.0) + (CP["car_deck"],)
+    a = wall if shuttle_at(w, t) == "wall" else car
+    if not moving(w, t):
         return a
-    # lift to HOOK_TOP, trolley, lower (three thirds)
-    if f < 1 / 3:
-        k = _smooth(f * 3)
-        return (a[0], a[1], a[2] + (HOOK_TOP - a[2]) * k)
-    if f < 2 / 3:
-        k = _smooth(f * 3 - 1)
-        return (a[0], a[1] + (b[1] - a[1]) * k, HOOK_TOP)
-    k = _smooth(f * 3 - 2)
-    return (b[0], b[1], HOOK_TOP + (b[2] - HOOK_TOP) * k)
+    b = car if a is wall else wall
+    order = mover_order(t)
+    k = order.index(w)
+    n = len(order)
+    f0 = 0.30 + 0.70 * k / n
+    f1 = 0.30 + 0.70 * (k + 1) / n
+    g = (f - f0) / (f1 - f0)
+    if g <= 0:
+        return a
+    if g >= 1:
+        return b
+    if g < 1 / 3:
+        e = _smooth(g * 3)
+        return (a[0], a[1], a[2] + (LIFT_Z - a[2]) * e)
+    if g < 2 / 3:
+        e = _smooth(g * 3 - 1)
+        return (a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e, LIFT_Z)
+    e = _smooth(g * 3 - 2)
+    return (b[0], b[1], LIFT_Z + (b[2] - LIFT_Z) * e)
+
+
+def crane_target(mt):
+    """Where the keep crane's hook is (x, y, z) and which shuttle it carries (or None), for the slewing jib."""
+    t = math.floor(mt + 1e-6)
+    f = mt - t
+    order = mover_order(t)
+    n = len(order)
+    for k, w in enumerate(order):
+        f0 = 0.30 + 0.70 * k / n
+        f1 = 0.30 + 0.70 * (k + 1) / n
+        if f0 <= f < f1:
+            p = shuttle_pos(w, mt)
+            return (p[0], p[1], p[2] + RH + 2.0), w
+    # idle: parked over the next lift's shuttle (or the first of this turn's pair)
+    nxt = mover_order(t + (1 if f >= 0.3 else 0)) or order or [MECH["crane_order"][0]]
+    p = shuttle_pos(nxt[0], t + (1 if f >= 0.3 else 0))
+    return (p[0], p[1], LIFT_Z + RH + 6.0), None
 
 
 def room_rec_corp(i, mt):
     if mt is None:
         mt = len(WALK_MID) - 1
-    if i == "car":
-        return dict(o=(car_x(mt), CAR_Y, CAR_Z), n=(0.0, 1.0), w=RW, h=RH, d=RD)
-    if i == "hook":
-        return dict(o=hook_xyz(mt), n=(0.0, 1.0), w=RW, h=RH, d=RD)
+    if len(i) == 2 and i[0] == "s" and i[1].upper() in WALLS:
+        w = i[1].upper()
+        return dict(o=shuttle_pos(w, mt), n=NRM[w], w=RW, h=RH, d=RD)
     return None
 
 
-def rides_used(walked):
-    return sum(1 for n in walked if n in ("car", "hook"))
+# ------------------------------------------------------------------ the links
+def _always():
+    out = [("start", SEQ[0])]
+    for a, b in CP["walk_links"]:
+        out.append((a, b))
+    return out
+
+
+GATED = set()
+for w in WALLS:
+    b = CP["breach"][w]
+    s_, P_, N_, Q_, T_ = "s" + w.lower(), b["prev"], b["next"], "q" + w.lower(), b["tower"]
+    GATED |= {(P_, s_), (s_, N_), (s_, Q_)}
 
 
 def base_edges(walked, mt):
-    out = list(PATH)
-    for a, b, mover, state in RIDES:
-        now = train_at(mt) if mover == "train" else crane_at(mt)
-        if now != state:
-            continue
-        if a in ("car", "hook") or rides_used(walked) < CP["max_shortcuts"]:
-            out.append((a, b))
-        elif a not in ("car", "hook") and (a, b) in zip(walked[:-1], walked[1:]):
-            out.append((a, b))
+    t = int(math.floor(mt + 1e-6))
+    out = _always()
+    for w in WALLS:
+        b = CP["breach"][w]
+        s_, P_, N_, Q_, T_ = "s" + w.lower(), b["prev"], b["next"], "q" + w.lower(), b["tower"]
+        out += [(P_, "b" + w.lower()), ("b" + w.lower(), N_), (Q_, T_)]
+        if shuttle_at(w, t) == "wall":
+            out += [(P_, s_), (s_, N_)]
+        if shuttle_at(w, t) == "train" or moving(w, t):
+            out.append((s_, Q_))
+    out.append(("m1", "srv"))
     return out
 
 
 def edge_type(a, b):
     if a == "start":
         return "ramp"
-    if b == "car":
-        return "board_train"
-    if b == "hook":
-        return "board_crane"
-    if a in ("car", "hook"):
-        return "step_off"
     if b == "srv":
         return "lift"
-    if (a, b) == ("t2", "m1"):
+    if a == "t4" and b == "m1":
         return "skyway"
+    if (a, b) in GATED:
+        if a[0] == "s" and b[0] == "q":
+            return "ride"
+        return "shuttle"
+    if b[0] == "b" and len(b) == 2 or a[0] == "b" and len(a) == 2:
+        return "sally"
+    if a[0] == "q":
+        return "platform_stair"
     if WALL_OF.get(a) == WALL_OF.get(b):
         return "catwalk"
     return "corner"
@@ -190,179 +259,228 @@ def _t(n):
 
 def door(i, side, mt=None):
     r = room_rec(i, mt)  # noqa: F821  (bound)
-    n = r["n"] or (0.0, 1.0)
+    n = r["n"] or (0.0, -1.0)
     t = _t(n)
     x, y, z0 = r["o"]
     return (x + n[0] * YF + t[0] * side * r["w"] / 2, y + n[1] * YF + t[1] * side * r["w"] / 2, z0 + DOOR_Z)
 
 
-def fpt(i, du, z=None, mt=None, dn=YF):
-    """A point on room i's facade frame: du along the tangent from the opening's centre, dn out, at height z."""
-    r = room_rec(i, mt)  # noqa: F821
-    n = r["n"] or (0.0, 1.0)
-    t = _t(n)
-    x, y, z0 = r["o"]
-    return (x + n[0] * dn + t[0] * du, y + n[1] * dn + t[1] * du, z0 + DOOR_Z if z is None else z)
+def _out(p, n, d):
+    return (p[0] + n[0] * d, p[1] + n[1] * d, p[2])
 
 
 def edge_path(a, b, mt=None):
+    """World polylines. The run goes clockwise, which on every outer face is screen-RIGHT -> LEFT ... so a room's exit
+    door is its side +1 in the kit frame and the entry door side -1 (the facade frame's tangent)."""
     t = edge_type(a, b)
+    ra, rb = room_rec(a, mt), room_rec(b, mt)  # noqa: F821
     if t == "ramp":
-        d = door(b, -1)
+        db = door(b, -1, mt)
         gy = CP["gate_u"]
-        return [(SX + 4.0, SY, 1.2), (-WX - CP["moat"]["w"] - 4.0, gy, 1.2), (-WX - YF, gy, d[2]), d]
-    if t == "catwalk":
-        da, db = door(a, 1), door(b, -1)
-        ra, rb = ROOM[a], ROOM[b]
+        return [(SX + 4.0, SY, 1.2), (-WX - TRK - 14.0, gy, 1.2), (-WX - YF, gy, 1.2), (db[0], db[1], 1.2), db]
+    if t == "lift":
+        da = door(a, 1, mt)
+        s = ROOM["srv"]["o"]
+        return [da, (da[0] + 1.5, da[1] - 1.5, da[2]), (da[0] + 1.5, da[1] - 1.5, s[2] + DOOR_Z),
+                (s[0], s[1] - 6.0, s[2] + DOOR_Z)]
+    if t == "skyway":
+        # up the SW tower's outer face to its roof, over the roof to the inner corner, the glazed skyway across the
+        # yard to MANIFEST CONTROL's south face
+        da, db = door(a, 1, mt), door(b, -1, mt)
+        tz = CP["tower"]["courses"] * CRS + 1.5
+        cx, cy = -TC[0], -TC[1]
+        p1 = (da[0], da[1], tz)
+        p2 = (cx + THALF - 2.0, cy + THALF - 2.0, tz)
+        p3 = (db[0], db[1] - 8.0, db[2])
+        return [da, p1, p2, p3, db]
+    if t == "ride":
+        # out of the container's door, onto the flatcar's deck and across the track to the platform
+        da, db = door(a, 1, mt), door(b, -1, mt)
+        n = ra["n"]
+        return [da, _out(da, n, 2.0), (db[0], db[1], db[2])]
+    if t == "shuttle":
+        da, db = door(a, 1, mt), door(b, -1, mt)
         if abs(da[2] - db[2]) < 0.5:
             return [da, db]
-        m = tuple((da[k] + db[k]) / 2 for k in range(2))
+        n = ra["n"] if ra["n"] else rb["n"]
+        m = ((da[0] + db[0]) / 2, (da[1] + db[1]) / 2)
         return [da, (m[0], m[1], da[2]), (m[0], m[1], db[2]), db]
-    if (a, b) == ("w4", "t1"):
-        da, db = door(a, 1), door(b, -1)
-        tx0 = -TC[0] - THALF - YF
-        ty0 = TC[1] - THALF - 3.0
-        return [da, (da[0], ty0, da[2]), (tx0, ty0, da[2]), (tx0, TC[1] + THALF + YF, db[2]), db]
-    if (a, b) == ("t1", "n1"):
-        da, db = door(a, 1), door(b, -1)
-        x = -TC[0] + THALF + 1.5
-        return [da, (x, da[1], da[2]), (x, db[1], db[2]), db]
-    if (a, b) == ("n4", "t2"):
-        da, db = door(a, 1), door(b, -1)
-        x = TC[0] - THALF - 1.5
-        return [da, (x, da[1], da[2]), (x, db[1], db[2]), db]
-    if t == "skyway":
-        da, db = door(a, -1), door(b, 1)
-        x = TC[0] - THALF - 4.0
-        return [da, (x, da[1], da[2] + 1.0), (x, db[1] + 7.0, db[2]), (db[0] + 1.5, db[1] + 7.0, db[2]), db]
-    if (a, b) == ("m1", "m2"):
-        da, db = door(a, -1), door(b, 1)
-        x = (da[0] + db[0]) / 2
-        return [da, (x, da[1], da[2]), (x, db[1], db[2]), db]
-    if t == "lift":
-        da = door(a, -1)
-        s = ROOM["srv"]["o"]
-        x = da[0] - 1.5
-        return [da, (x, da[1], da[2]), (x, da[1], s[2] + DOOR_Z), (s[0] - 6.0, da[1], s[2] + DOOR_Z)]
-    if b == "car":
-        da, db = door(a, -1), door(b, -1, mt)
-        x = da[0] - 2.5
-        return [da, (x, da[1], da[2]), (x, da[1] + 3.0, 1.4), (x, db[1], 1.4), db]
-    if a == "car":
-        da, db = door(a, 1, mt), door(b, 1)
-        x = TC[0] + THALF - 1.0
-        return [da, (da[0] + 2.0, da[1], 1.4), (x, da[1], 1.4), (x, db[1], 1.4), (x, db[1], db[2]), db]
-    if b == "hook":
-        da, db = door(a, 1), door(b, -1, mt)
-        x = db[0] - 1.0
-        return [da, (x, da[1], da[2]), (x, da[1], db[2]), (x, db[1], db[2]), db]
-    if a == "hook":
-        da, db = door(a, 1, mt), door(b, -1)
-        return [da, (db[0] - 0.5, da[1], da[2]), db]
-    da, db = door(a, 1), door(b, -1)
-    return [da, db]
+    if t == "sally":
+        da, db = door(a, 1, mt), door(b, -1, mt)
+        n = ra["n"]
+        m = ((da[0] + db[0]) / 2, (da[1] + db[1]) / 2)
+        return [da, (m[0], m[1], da[2]), (m[0], m[1], db[2]), db]
+    if t == "platform_stair":
+        # along the platform past the track's corner, up the tower's outer stair
+        da, db = door(a, 1, mt), door(b, -1, mt)
+        n = ra["n"]
+        nb = rb["n"]
+        p0 = _out(da, n, 0.0)
+        c = (db[0] + nb[0] * (PLAT - 1.0), db[1] + nb[1] * (PLAT - 1.0))
+        # the corner of the platform ring
+        corner = (p0[0] + (c[0] - p0[0]) * (abs(nb[0])), p0[1] + (c[1] - p0[1]) * (abs(nb[1])))
+        corner = (c[0] if abs(n[1]) > 0.5 else p0[0], c[1] if abs(n[0]) > 0.5 else p0[1])
+        return [da, (corner[0], corner[1], da[2]), (c[0], c[1], 1.2), (c[0], c[1], db[2]), db]
+    da, db = door(a, 1, mt), door(b, -1, mt)
+    na, nb = ra["n"], rb["n"]
+    if na == nb:
+        # same facing (a catwalk; or a wall room <-> its tower's face a few BU further out): along da's plane to the
+        # midpoint, a ladder / stair to db's plane and height, along to db
+        if abs(da[2] - db[2]) < 0.5 and abs((db[0] - da[0]) * na[0] + (db[1] - da[1]) * na[1]) < 0.3:
+            return [da, db]
+        tg = _t(na)
+        m = ((da[0] + db[0]) / 2, (da[1] + db[1]) / 2)
+        ka = (m[0] - da[0]) * tg[0] + (m[1] - da[1]) * tg[1]
+        kb = (m[0] - db[0]) * tg[0] + (m[1] - db[1]) * tg[1]
+        p1 = (da[0] + tg[0] * ka, da[1] + tg[1] * ka, da[2])
+        p2 = (db[0] + tg[0] * kb, db[1] + tg[1] * kb, db[2])
+        return [da, p1, p2, db]
+    # corner: round the corner tower on the outside (a stair round its outer corner)
+    mx, my = (da[0] + db[0]) / 2, (da[1] + db[1]) / 2
+    tcx = TC[0] if mx > 0 else -TC[0]
+    tcy = TC[1] if my > 0 else -TC[1]
+    cx = tcx + (THALF + 2.0) * (1 if tcx > 0 else -1)
+    cy = tcy + (THALF + 2.0) * (1 if tcy > 0 else -1)
+    p1 = (cx, da[1]) if abs(na[0]) > 0.5 else (da[0], cy)
+    p3 = (cx, db[1]) if abs(nb[0]) > 0.5 else (db[0], cy)
+    zm = (da[2] + db[2]) / 2
+    return [da, (p1[0], p1[1], da[2]), (cx, cy, zm), (p3[0], p3[1], db[2]), db]
 
 
 def seg_normal(p):
-    """The facade side a link point sits on (hidden when that side faces away)."""
-    if p[0] < -WX - 0.2 and p[1] < TC[1] + THALF - 1:
-        return (-1.0, 0.0)
-    return (0.0, 1.0)
+    """The facade side a link point sits on (hidden when that side faces away): the nearest wall's outward normal."""
+    x, y = p[0], p[1]
+    if abs(x) <= WX - 2 and abs(y) <= WY - 2:
+        return None                                           # inside the yard (the skyway, the lift)
+    ex, ey = abs(x) / WX, abs(y) / WY
+    if ex > ey:
+        return (1.0 if x > 0 else -1.0, 0.0)
+    return (0.0, 1.0 if y > 0 else -1.0)
 
 
 def mech(walked, mt=None):
     mt = len(walked) - 1 if mt is None else mt
-    i = idx(mt)
-    nxt = idx(mt + 1)
-    leave_in = None
-    for k in range(1, CYCLE + 1):
-        if MECH["train"][(i + k) % CYCLE] == "leave":
-            leave_in = k
-            break
+    t = int(math.floor(mt + 1e-6))
     st, _ = states(walked, mt)  # noqa: F821
-    affected = [n for n in ("car", "hook") if st.get(n) in ("option", "reach", "current")]
-    return dict(idx=i, idx_next=nxt, train=MECH["train"][i], train_next=MECH["train"][nxt], crane=MECH["crane"][i],
-                crane_next=MECH["crane"][nxt], leave_in=leave_in, affected=affected, rides=rides_used(walked))
+    sh = {w: shuttle_at(w, t) for w in WALLS}
+    nxt = {w: shuttle_at(w, t + 1) for w in WALLS}
+    lands_in = {}
+    for w in WALLS:
+        for k in range(1, CYCLE + 1):
+            if shuttle_at(w, t + k) != sh[w]:
+                lands_in[w] = k
+                break
+    affected = ["s" + w.lower() for w in WALLS if st.get("s" + w.lower()) in ("option", "reach", "current")]
+    return dict(turn=t, shuttles=sh, shuttles_next=nxt, lands_in=lands_in, crane_next=mover_order(t), affected=affected)
 
 
 hqk_graph.bind(globals())
+_edges_all = edges  # noqa: F821  (bound)
 
 
-if __name__ == "__main__":
-    for s in range(14):
-        print("step", s, "idx", idx(s), "train", train_at(s), "x %.0f" % car_x(s), "crane", crane_at(s),
-              "hook", tuple(round(v, 1) for v in hook_xyz(s)))
-    st, opts = states(WALK_DEC)
-    print("DECISION at", WALK_DEC[-1], "options", opts, mech(WALK_DEC))
-    print("states", st)
-    print("branch car", sorted(branch("car", WALK_DEC)[0]), "branch n2", sorted(branch("n2", WALK_DEC)[0]))
-    # play both lines out to the server
-    for first in ("car", "n2"):
-        w = list(WALK_DEC) + [first]
-        while w[-1] != "srv":
-            o = succ(w[-1], w)
-            if not o:
-                print("  stuck at", w[-1], "step", len(w) - 1)
-                break
-            pick = "hook" if "hook" in o else o[0]
-            w.append(pick)
-        print("line", first, "->", w[len(WALK_DEC):], "server at step", len(w) - 1)
+def locked_edges(walked, mt=None):
+    """Gated links NOT live now (a container is away): drawn dashed + a padlock; live ones stay in the wax."""
+    t = int(math.floor((len(walked) - 1 if mt is None else mt) + 1e-6))
+    live = set(base_edges(walked, t))
+    seen = set(zip(walked[:-1], walked[1:]))
+    st, _ = states(walked, t)  # noqa: F821
+    ahead = {i for i, s in st.items() if s in ("current", "option", "reach")}
+    return sorted([e for e in GATED if e not in live and e not in seen and e[1] not in walked and e[0] in ahead],
+                  key=lambda e: (ORDER[e[0]], ORDER[e[1]]))  # noqa: F821
 
 
-# ------------------------------------------------------------------ framing data for the rig
+def edges(walked, mt=None):  # noqa: F811
+    lk = set(locked_edges(walked, mt))
+    return [e for e in _edges_all(walked, mt) if e not in lk]
+
+
+# ------------------------------------------------------------------ the run states shown
+WALK_OV = CP["walk_ov"]
+WALK_DEC = CP["walk_dec"]
+HOVER_DEC = CP["hover_dec"]
+WALK_MID = WALK_DEC
+
 _tz = CP["tower"]["courses"] * CRS
-OV_POINTS = [(sx * (TC[0] + THALF), sy * (TC[1] + THALF), z) for sx in (-1, 1) for sy in (-1, 1) for z in (0.0, _tz)]
-OV_POINTS += [(CTL["c"][0], CTL["c"][1], CTL["h"] + 12.0), (CP["crane"]["x"], CP["crane"]["legs_y"][1], CP["crane"]["z"]),
-              (SX - 6, SY, 0.0), (-60.0, CP["track_y"][1] + 6.0, 0.0), (90.0, CP["track_y"][1] + 6.0, 0.0)]
-
-
-def STILLS(CR):
-    w = WALK_DEC
-    return {
-        "H_overview": (CR.overview(w), dict(walked=w)),
-        "H_decision": (CR.decision(w), dict(walked=w)),
-        "H_hover": (CR.hover(w, HOVER_DEC), dict(walked=w, hover=HOVER_DEC, hover_k=1.0)),
-    }
+OV_POINTS = [(sx * (WX + TRK + 6), sy * (WY + TRK + 6), 0.0) for sx in (-1, 1) for sy in (-1, 1)]
+OV_POINTS += [(sx * (TC[0] + THALF), sy * (TC[1] + THALF), _tz) for sx in (-1, 1) for sy in (-1, 1)]
+OV_POINTS += [(cfx, cfy, CTL["h"] + 12.0), (CP["crane"]["x"], CP["crane"]["y"], CP["crane"]["z"] + 10.0)]
 
 
 def MOVER_POS(mt, walked=None):
-    h = hook_xyz(mt)
-    c = room_rec("car", mt)["o"]
-    return {"train": c, "hook": h, "trolley": (CP["crane"]["x"], h[1] - RD / 2, CP["crane"]["z"])}
+    out = {"s" + w.lower(): shuttle_pos(w, mt) for w in WALLS}
+    hp, _ = crane_target(mt)
+    out["hook"] = hp
+    return out
+
+
+def STILLS(CR):
+    o = CR.overview(WALK_OV)
+    return {
+        "H_overview": (o, dict(walked=WALK_OV, mt=MECH["ov_mt"], extra=dict(lifting=MECH["ov_lifting"]))),
+        "H_decision": (CR.decision(WALK_DEC), dict(walked=WALK_DEC)),
+        "H_hover": (CR.hover(WALK_DEC, HOVER_DEC), dict(walked=WALK_DEC, hover=HOVER_DEC, hover_k=1.0)),
+    }
 
 
 def SHEET_SHOTS(CR):
-    a = WALK_DEC + ["car"]
-    b = WALK_DEC + ["n2", "n3"]
-    c = WALK_DEC + ["n2", "n3", "hook"]
+    a = CP["sheet"]["live"]
+    b = CP["sheet"]["transit"]
+    c = CP["sheet"]["dead"]
     return {
-        "S_on_the_train": (CR.decision(a), dict(walked=a)),
-        "S_hook_at_wall": (CR.decision(b), dict(walked=b)),
-        "S_hook_in_yard": (CR.decision(c), dict(walked=c)),
+        "S_link_live": (CR.decision(a["walk"]), dict(walked=a["walk"])),
+        "S_in_transit": (CR.decision(b["walk"]), dict(walked=b["walk"], mt=b["mt"], extra=dict(lifting="N"))),
+        "S_link_dead": (CR.decision(c["walk"]), dict(walked=c["walk"])),
     }
+
+
+ORBIT_T = 5.0
+
+
+def ORBIT(CR):
+    """H_orbit_v2: two steps round the NE corner (n2 -> t2 -> e1) while the E / W shuttle pair moves; the camera orbits
+    on the kit's rule (the decision yaw follows the faces holding the current room + its options), eased between the
+    decision poses; mt runs continuously so the crane's lift plays out during the steps."""
+    ws = CP["orbit"]["walks"]
+    poses = [CR.decision(w) for w in ws]
+    n = int(ORBIT_T * CR.FPS)
+    out = []
+    seg = (n - 1) / (len(ws) - 1)
+    for k in range(n):
+        x = k / seg
+        i = min(len(ws) - 2, int(x))
+        f = x - i
+        e = CR.ease((f - 0.25) / 0.6)                  # hold a beat on each decision, then move
+        p = poses[i].mix(poses[i + 1], e)
+        t0 = len(ws[i]) - 1
+        mt = t0 + min(0.999, f)
+        walked = ws[i] if e < 0.5 else ws[i + 1]
+        out.append((k / CR.FPS, p, walked, mt, dict(ui=1.0, route=1.0)))
+    return out
 
 
 REVEAL_T = 6.5
 
 
 def REVEAL(CR):
-    """The HQ beat: a rail dolly beside the arriving freight train (low, west of the fortress, tracking the car), then
-    a crane-up past the gantry while the hook lifts out of the yard, into the OVERVIEW; route and UI draw in last."""
-    w = ["start"]
-    o = CR.overview(WALK_DEC)
-    n = int(REVEAL_T * CR.FPS)
-    out = []
-    for k in range(n):
-        t = k / CR.FPS
-        a = CR.ease_out(min(1.0, t / 3.0))
-        mt = 5.35 + 0.65 * a                       # the train runs in and stops at n1; the hook lifts from the yard
-        cx = car_x(mt)
-        track = CR.Pose((max(cx + 22.0, -190.0), CP["track_y"][0] - 6.0, 7.0), 128.0, 6.0, 62.0, 24.0, 0.0, 0.02)   # the camera stays inside the perimeter belt
-        e = CR.ease((t - 2.2) / 3.6)
-        p = track.mix(o, e)
-        p.F = tuple(CR.lerp(a_, b_, CR.ease((t - 2.0) / 3.6)) for a_, b_ in zip(track.F, o.F))
-        # the crane-up: an extra rise mid-way so the camera passes the gantry's girders
-        p.pitch = CR.lerp(track.pitch, o.pitch, e) + 10.0 * (4 * e * (1 - e)) * 0.0
-        ui = CR.ease((t - 5.4) / 0.9)
-        out.append((t, p, w, mt, dict(ui=ui, route=ui)))
-    return out
+    """Kept for the kit (v1 reveal); v2 delivers the orbit clip instead."""
+    return ORBIT(CR)
+
+
+if __name__ == "__main__":
+    for t in range(9):
+        print("turn", t, {w: shuttle_at(w, t)[0] for w in WALLS}, "crane", mover_order(t))
+    for nm, w in (("OV", WALK_OV), ("DEC", WALK_DEC)):
+        st, opts = states(w)
+        print(nm, "at", w[-1], "turn", len(w) - 1, "options", opts, "locked", locked_edges(w))
+    # the planner: play greedy lines to the server (every option tried at each breach)
+    import itertools  # noqa: F401
+
+    def play(w):
+        while w[-1] != "srv":
+            o = succ(w[-1], w)
+            if not o:
+                return w, "STUCK at %s turn %d" % (w[-1], len(w) - 1)
+            w = w + [o[0]]
+        return w, "server at turn %d" % (len(w) - 1)
+    print(play(["start"]))
+    print(play(list(WALK_DEC) + ["qn"]))

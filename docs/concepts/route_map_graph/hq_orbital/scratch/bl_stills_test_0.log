@@ -1,0 +1,27 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\scripts\hq_scene.py:222: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 0.7s] downtown towers 1708 lamps 3032
+[hq 0.7s] city built, roofs 2919
+[hq 0.7s] podium
+[hq 0.7s] doors, rocket
+[hq 0.7s] gantry
+[hq 0.8s] stations
+[hq 0.8s] antenna
+[hq 0.8s] causeway
+[hq 0.8s] rig
+[hq 0.8s] launch props
+[hq 0.8s] landmark built
+[hq 2.0s] objects 48
+[hq 2.1s] lights 142 beams 11 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_orbital\scripts\hq_scene.py:950: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:04.203  cycles           | WARNING CUEW initialization failed: Error opening the library
+[hq 2.1s] HIP devices 1
+00:18.781  render           | Saved: 'D:\rc_scratch\hq_rev\orbital\bl_stills_test\H_overview.exr'
+[hq 17.3s] frame H_overview 15.2 s passes ['Combined', 'Depth', 'Object Index', 'Volume Direct', 'Emission', 'Noisy Image']
+00:38.375  render           | Saved: 'D:\rc_scratch\hq_rev\orbital\bl_stills_test\H_decision.exr'
+[hq 36.6s] frame H_decision 19.2 s passes 
+[hq 36.6s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

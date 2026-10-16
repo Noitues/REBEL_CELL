@@ -1,0 +1,28 @@
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_rebel_cell\scripts\hq_scene.py:222: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  m.use_nodes = True
+[hq 0.3s] city built, roofs 1144
+[hq 0.3s] district blocks {0: 524, 1: 297, 2: 0, 3: 156}
+[hq 0.3s] alley: textures from D:\rc_scratch\hq_rev\rebel_cell\tex
+[hq 0.3s] alley: infill 18
+[hq 0.5s] alley: facades
+[hq 0.5s] alley: blade signs 71
+[hq 0.5s] alley: slab, poles 8
+[hq 0.5s] alley: holograms
+[hq 0.5s] street strips 546
+[hq 0.5s] option A built 
+[hq 0.5s] landmark built
+[hq 0.8s] objects 34
+[hq 0.8s] lights 636 beams 8 plumes 8
+C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass\docs\concepts\route_map_graph\hq_rebel_cell\scripts\hq_scene.py:950: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  world.use_nodes = True
+00:02.984  cycles           | WARNING CUEW initialization failed: Error opening the library
+00:06.937  render           | Saved: 'D:\rc_scratch\hq_rev\rebel_cell\bl_OPTION_SHOTS_eevee\OA_1_midrun.exr'
+[hq 5.1s] frame OA_1_midrun 4.3 s passes ['Combined', 'Depth', 'Emission']
+00:09.922  render           | Saved: 'D:\rc_scratch\hq_rev\rebel_cell\bl_OPTION_SHOTS_eevee\OA_2_switch.exr'
+[hq 7.9s] frame OA_2_switch 2.7 s passes 
+00:13.234  render           | Saved: 'D:\rc_scratch\hq_rev\rebel_cell\bl_OPTION_SHOTS_eevee\OA_3_showdown.exr'
+[hq 11.2s] frame OA_3_showdown 3.3 s passes 
+[hq 11.2s] done
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

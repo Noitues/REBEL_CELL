@@ -1,0 +1,389 @@
+{
+ "res": [
+  960,
+  540
+ ],
+ "samples": 24,
+ "engine": "EEVEE",
+ "out": "D:\\rc_scratch\\hq_rev\\meridian\\bl_sheet_eevee",
+ "frames": [
+  {
+   "name": "S_link_live",
+   "pose": {
+    "loc": [
+     -42.000000000000014,
+     179.6194444402021,
+     65.91333227038486
+    ],
+    "tgt": [
+     -42.0,
+     55.0,
+     14.0
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07291666666666667,
+    "shift_y": 0.018229166666666668,
+    "yaw": 180.0,
+    "pitch": 22.615384615384617,
+    "dist": 135.0
+   },
+   "zoom": 1.0,
+   "mt": 5,
+   "room_state": {
+    "start": "walked",
+    "w1": "walked",
+    "sw": "grey",
+    "bw": "walked",
+    "qw": "grey",
+    "w2": "walked",
+    "t1": "walked",
+    "n1": "current",
+    "sn": "option",
+    "bn": "option",
+    "qn": "reach",
+    "n2": "reach",
+    "t2": "reach",
+    "e1": "reach",
+    "se": "reach",
+    "be": "reach",
+    "qe": "reach",
+    "e2": "reach",
+    "t3": "reach",
+    "s1": "reach",
+    "ss": "reach",
+    "bs": "reach",
+    "qs": "reach",
+    "s2": "reach",
+    "t4": "reach",
+    "m1": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "sn",
+    "se",
+    "ss"
+   ],
+   "movers": {
+    "sw": [
+     -105.0,
+     12.0,
+     2.6
+    ],
+    "sn": [
+     -10.0,
+     60.0,
+     19.0
+    ],
+    "se": [
+     80.0,
+     -0.0,
+     19.0
+    ],
+    "ss": [
+     10.0,
+     -85.0,
+     2.6
+    ],
+    "hook": [
+     80.0,
+     -0.0,
+     56.0
+    ]
+   },
+   "mech": {
+    "turn": 5,
+    "shuttles": {
+     "W": "train",
+     "N": "wall",
+     "E": "wall",
+     "S": "train"
+    },
+    "shuttles_next": {
+     "W": "wall",
+     "N": "wall",
+     "E": "train",
+     "S": "train"
+    },
+    "lands_in": {
+     "W": 1,
+     "N": 2,
+     "E": 1,
+     "S": 2
+    },
+    "crane_next": [
+     "E",
+     "W"
+    ],
+    "affected": [
+     "sn",
+     "se",
+     "ss"
+    ]
+   },
+   "power": null,
+   "section": {
+    "sec_on": 1.0,
+    "sec_ox": -20.666666666666668,
+    "sec_oy": 60.0,
+    "sec_ux": -0.17557304425029788,
+    "sec_uy": 0.9844664068076081,
+    "sec_s0": 4.974569587091773,
+    "sec_w0": 51.89321485954889,
+    "sec_slope": 0.5570414798128441,
+    "sec_zref": -0.5,
+    "sec_widen": 0.45,
+    "sec_plinth": 0.6
+   }
+  },
+  {
+   "name": "S_in_transit",
+   "pose": {
+    "loc": [
+     -10.00000000000002,
+     214.33842774538903,
+     90.13079207715002
+    ],
+    "tgt": [
+     -10.0,
+     55.0,
+     23.0
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07291666666666667,
+    "shift_y": 0.018229166666666727,
+    "yaw": 180.0,
+    "pitch": 22.846153846153847,
+    "dist": 172.9025095285725
+   },
+   "zoom": 1.0,
+   "mt": 6.5,
+   "room_state": {
+    "start": "walked",
+    "w1": "walked",
+    "sw": "grey",
+    "bw": "walked",
+    "qw": "grey",
+    "w2": "walked",
+    "t1": "walked",
+    "n1": "walked",
+    "sn": "current",
+    "bn": "grey",
+    "qn": "option",
+    "n2": "option",
+    "t2": "reach",
+    "e1": "reach",
+    "se": "reach",
+    "be": "reach",
+    "qe": "reach",
+    "e2": "reach",
+    "t3": "reach",
+    "s1": "reach",
+    "ss": "reach",
+    "bs": "reach",
+    "qs": "reach",
+    "s2": "reach",
+    "t4": "reach",
+    "m1": "reach",
+    "srv": "target"
+   },
+   "affected": [
+    "sn",
+    "se",
+    "ss"
+   ],
+   "movers": {
+    "sw": [
+     -80.0,
+     12.0,
+     19.0
+    ],
+    "sn": [
+     -10.0,
+     80.04373177842567,
+     42.0
+    ],
+    "se": [
+     105.0,
+     -0.0,
+     2.6
+    ],
+    "ss": [
+     10.0,
+     -85.0,
+     2.6
+    ],
+    "hook": [
+     -10.0,
+     80.04373177842567,
+     52.0
+    ]
+   },
+   "mech": {
+    "turn": 6,
+    "shuttles": {
+     "W": "wall",
+     "N": "wall",
+     "E": "train",
+     "S": "train"
+    },
+    "shuttles_next": {
+     "W": "wall",
+     "N": "train",
+     "E": "train",
+     "S": "wall"
+    },
+    "lands_in": {
+     "W": 2,
+     "N": 1,
+     "E": 2,
+     "S": 1
+    },
+    "crane_next": [
+     "N",
+     "S"
+    ],
+    "affected": [
+     "sn",
+     "se",
+     "ss"
+    ],
+    "lifting": "N"
+   },
+   "power": null,
+   "section": {
+    "sec_on": 1.0,
+    "sec_ox": 1.3333333333333333,
+    "sec_oy": 79.34791059280856,
+    "sec_ux": -0.08366217778602034,
+    "sec_uy": 0.9964941745981761,
+    "sec_s0": 20.12050503109432,
+    "sec_w0": 51.943972177275654,
+    "sec_slope": 0.7762004958119806,
+    "sec_zref": -0.9,
+    "sec_widen": 0.45,
+    "sec_plinth": 0.6
+   }
+  },
+  {
+   "name": "S_link_dead",
+   "pose": {
+    "loc": [
+     44.0,
+     -176.9658086724016,
+     71.87349578941232
+    ],
+    "tgt": [
+     44.0,
+     -55.0,
+     14.0
+    ],
+    "lens": 30.0,
+    "shift_x": -0.07291666666666667,
+    "shift_y": 0.01822916666666661,
+    "yaw": 0.0,
+    "pitch": 25.384615384615383,
+    "dist": 135.0
+   },
+   "zoom": 1.0,
+   "mt": 13,
+   "room_state": {
+    "start": "walked",
+    "w1": "walked",
+    "sw": "grey",
+    "bw": "walked",
+    "qw": "grey",
+    "w2": "walked",
+    "t1": "walked",
+    "n1": "walked",
+    "sn": "walked",
+    "bn": "grey",
+    "qn": "walked",
+    "n2": "grey",
+    "t2": "walked",
+    "e1": "walked",
+    "se": "walked",
+    "be": "grey",
+    "qe": "walked",
+    "e2": "grey",
+    "t3": "walked",
+    "s1": "current",
+    "ss": "grey",
+    "bs": "option",
+    "qs": "grey",
+    "s2": "reach",
+    "t4": "reach",
+    "m1": "reach",
+    "srv": "target"
+   },
+   "affected": [],
+   "movers": {
+    "sw": [
+     -105.0,
+     12.0,
+     2.6
+    ],
+    "sn": [
+     -10.0,
+     60.0,
+     19.0
+    ],
+    "se": [
+     80.0,
+     -0.0,
+     19.0
+    ],
+    "ss": [
+     10.0,
+     -85.0,
+     2.6
+    ],
+    "hook": [
+     80.0,
+     -0.0,
+     56.0
+    ]
+   },
+   "mech": {
+    "turn": 13,
+    "shuttles": {
+     "W": "train",
+     "N": "wall",
+     "E": "wall",
+     "S": "train"
+    },
+    "shuttles_next": {
+     "W": "wall",
+     "N": "wall",
+     "E": "train",
+     "S": "train"
+    },
+    "lands_in": {
+     "W": 1,
+     "N": 2,
+     "E": 1,
+     "S": 2
+    },
+    "crane_next": [
+     "E",
+     "W"
+    ],
+    "affected": []
+   },
+   "power": null,
+   "section": {
+    "sec_on": 1.0,
+    "sec_ox": 27.0,
+    "sec_oy": -60.0,
+    "sec_ux": 0.14383040790797053,
+    "sec_uy": -0.9896023513315976,
+    "sec_s0": 3.4519297897912926,
+    "sec_w0": 47.75045643195834,
+    "sec_slope": 0.6176725638814273,
+    "sec_zref": -0.5,
+    "sec_widen": 0.45,
+    "sec_plinth": 0.6
+   }
+  }
+ ],
+ "force": true
+}
