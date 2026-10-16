@@ -177,6 +177,8 @@ These change the city both looks are built from (the HQ map and the netrun stree
 extended along its own street line by `max(extend)` = 60 BU each way (`SB/sb_onecity.py:102-110`). Frontage test:
 near edge within `front_band` (0.8, 6.5) BU of the leg centre line and overlapping the extended leg.
 
+See also (AD 2026-10-15): the frontage height rhythm and crowns in 13.1 `frontage.silhouette`; hero signs per route column in `dressing.signs` (9.1).
+
 ### 3.3 Street netrun derivation (`SB/sb_onecity.py`, `RULES` at line 36)
 
 | Key | Default | Meaning |
@@ -274,6 +276,8 @@ hull 0.22, sprawl 0.20 (`CAC/city_build.py:517-518`). Outline dimming off arteri
 
 Side-street views use this same one-city build plus each corp's building language (DR 1399).
 
+See also (AD 2026-10-15): facade kits >= 4 per district in 13.1 `materials.mix`; the repetition guard in `repetition.guard`; the city horizon in `horizon.break`.
+
 ### 3.5 Seeds and named RNG streams
 
 Today every tool seeds `random.Random(<literal>)`. The pipeline replaces literals with **named art streams**:
@@ -341,6 +345,8 @@ the rows to refresh carry `TODO(refresh after sb v3 rev)`.
 
 **Palette** (`SB/look_preset.py:11-18`; alternative palettes `PALETTES` lines 99-103):
 
+See also (AD 2026-10-15): the per-district hue spread and the hue-cluster cap in 13.1 `palette.districts`.
+
 | Key | neon_bay (default) | sodium_teal |
 |---|---|---|
 | `district_a` | (1.0, 0.16, 0.6) magenta | (1.0, 0.42, 0.08) |
@@ -402,6 +408,9 @@ behind, within 180 BU) (`:224-230`; fallbacks 14 BU and 2.2 x H_FRONT).
 coordinate); two octaves; clumps so no layer runs full width; one wisp just above the frontage roofs; thinning above
 0.5 H; never in front of the street face, so the corridor and the rooms stay clear (`SB/NOTES.md:480`). On the r3
 street set the same recipe ran on absolute numbers (`SB/look_preset.py:22-43`; `R3/NOTES.md:48-92`).
+
+See also (AD 2026-10-15): depth planes, the empty-sky cap and beams-in-fog in 13.1 `atmosphere.layers`; the exposure
+solve after the vignette in `values.solve`.
 
 **Beams: soft volumetric cones, never solid rods** (`M44/onecity_cycles.py:232-371`):
 
@@ -859,6 +868,7 @@ log and the room kit; `hooks` may hold `accs`, `beams`, `mover_lights`, `no_cut`
 3. Signage sits in the `signage_on_at` band.
 4. The r2 street-set dressing (text signs, ad planes, holo ads, megastructures, drum column, stalls) is hand-placed
    and is NOT ported; the rules above replace it (section 13).
+5. See also (AD 2026-10-15): sign density, hero-sign placement and megastructures in 13.1 `dressing.signs`; street-level light (streak lanes, lamp chains, shopfronts) in `streets.light`; the road in the OVERVIEW foreground in `foreground.street`.
 
 ### 9.2 Grease-pencil links (`SB/wax_r2.py:1-29`)
 
@@ -1027,9 +1037,9 @@ Every check writes pass / warn / fail with numbers to `checks_<run>.json`. A fai
 | Item | Default |
 |---|---|
 | Measure | Rec.709 luma of the final 8-bit sRGB plate without UI |
-| Median | 0.14 +- 0.03 (pass 0.11-0.17). Tolerance proposed (Q4). |
-| Under 0.10 | 25-40 % |
-| Over 0.85 | <= 2.5 % |
+| Median | 0.14, pass 0.12-0.17 (R-VAL-1; provisional, derived from hand-built passes; AD 2026-10-15). Tolerance still Q4. |
+| Under 0.10 | 25-40 % (R-VAL-2) |
+| Over 0.85 | <= 2.5 % (R-VAL-3); the solve runs after the vignette (rule `values.solve`, 13.1) |
 | Exempt (reported, not failed) | hover power-cut frames; mainline-look frames (held instead to the capture: median 0.214 +- 0.03, `SB/NOTES.md:120`); Rebel Cell red-sequence frames; beam-pass flash frames of an entrance beat; look-blend frames (0 < look_blend < 1) are reported only |
 
 ### 12.2 Landmark ratio
@@ -1089,24 +1099,114 @@ Every check writes pass / warn / fail with numbers to `checks_<run>.json`. A fai
 | Wax clear of stickers and UI | no pencil pixel inside a sticker ring + 5 px or a UI rect | `SB/wax_r2.py:8-9, 28` |
 | 1280 x 720 readability | DECISION at 1280 x 720 renders every sticker >= 24 px and every option number legible (manual review frame produced automatically) | ROUTE_REQUIREMENTS 3, 13 |
 
+### 12.7 Composition checks (AD 2026-10-15)
+
+The procedural-vs-hand-built tests (13.1) run automatically on every OVERVIEW and DECISION plate (no UI, UI masked)
+with the metric code of `proc_vs_custom/scripts/pvc_metrics.py` moved into `netrun_art.checks`. Thresholds live in
+config `checks.composition` and are **provisional; derived from hand-built passes**.
+
+| ID | Views | Threshold | Fail action |
+|---|---|---|---|
+| R-SIL-1 / R-SIL-2 | street | lit skyline std >= 0.15; >= 0.08 in every 1/4 window | fail (rule `frontage.silhouette`) |
+| R-DET-1 / R-DET-2 | street | Sobel >= 0.028; >= 450 blobs / MP | fail (rule `dressing.signs`) |
+| R-CALM-1 / R-CALM-2 | street, HQ | detail CV 0.45-0.85; calm tiles 12-32 % | fail (rules `density.falloff`, `atmosphere.layers`) |
+| R-HUE-1 / R-HUE-2 | street, city | entropy >= 3.8 bits; top cluster <= 45 % | fail; corp HQ views exempt (rule `palette.districts`) |
+| R-FOCUS-1 | any frame with a landmark | landmark / ring mean luma >= 1.5 | fail (rule `landmark.lead`); complements 12.2, which uses medians and pass indices |
+| R-HOR-1 | city views | built-top std >= 0.015 in every 1/4 window | fail (rule `horizon.break`) |
+| R-REP-1 | all | autocorrelation p90 <= 0.60 | fail (rule `repetition.guard`) |
+| R-VAL-1/2/3 | AAA-2 | 12.1 | fail (rule `values.solve`) |
+
+Exempt as in 12.1 (hover power cut, mainline frames, red sequence, flash frames). The landmark and crop boxes come
+from the scene's object-index pass, not hand-placed boxes. The rules without a test yet (`streets.light`,
+`foreground.street`, the depth planes of `atmosphere.layers`, `materials.mix`) report their proxy numbers until their
+passes exist.
+
 ---
 
 ## 13. Procedural vs hand-built
 
-> **PLACEHOLDER: to be merged by the art director.** A parallel agent is writing
-> `docs/concepts/route_map_graph/proc_vs_custom/COMPARISON.md` with the gap rules. Its result replaces this section.
->
-> Items already known to be hand-placed or hand-tuned (for the merge):
-> - Street: the r2 dressing (text signs, ad planes, holo ads, megastructures, drum column, stalls), the near-layer
->   silhouettes (dropped), the y 600 skyline wall, the L4_0 warm key, the HQ page furniture positions, tuned numbers
->   (fill fog strength, city haze, calibration grade) (`SB/NOTES.md:223-228`).
-> - Halcyon: plinth lettering and crest positions, gatehouse position, the shown decision states, the eye blade
->   height, the reveal lighthouse speed and flash, light levels, room interiors in code (`HQ_halcyon/NOTES.md:256-265`).
-> - Meridian: room slots, gatehouse and skyway bend, the shown state, light levels, the reveal path, container IDs
->   (`HQ_meridian/NOTES.md` section 7).
-> - Orbital: station azimuths, antenna decks, gantry position, the struck site, cutscene cameras, light levels.
-> - Solace: route floors list, overview yaw, pane patterns, lettering position, reveal path.
-> - Rebel Cell: lane rooms' x positions and roof heights, the countered room, the fist box and ring radius.
+**AD 2026-10-15.** Merged from `proc_vs_custom/COMPARISON.md` (the measured comparison of hand-built and procedural
+frames: the street, the HQs v1 vs v2 on the same cameras, the city key art, and the mainline anchor).
+
+- **Sheets:** `proc_vs_custom/sheet_p1_street.jpg`, `sheet_p2_hq.jpg`, `sheet_p3_city.jpg`, `sheet_p4_anchor.jpg`.
+- **Numbers:** `proc_vs_custom/metrics/METRICS.md` (every metric, every image), `metrics/rules_check.md` (each test
+  below, pass / fail per image), `metrics/all_metrics.json`.
+- **Metric definitions:** `proc_vs_custom/scripts/pvc_metrics.py` (module docstring). Inputs, masks and landmark boxes:
+  `scripts/pvc_config.json`.
+- **Re-run (CPU, about 30 s), from the worktree root:**
+  `python docs/concepts/route_map_graph/proc_vs_custom/scripts/run_proc_vs_custom.py`
+  (`--only p2_hq,p3_city` for some pairs; `--no-sheets` skips drawing).
+
+All metrics are on Rec.709 luma of the sRGB frame resampled to 1280 px wide. Every threshold below is a config value
+and is **provisional; derived from hand-built passes** (the custom frames that pass, with headroom). Re-tune after the
+round-1 finals.
+
+### 13.1 Ranked gaps and the rules that close them (AD 2026-10-15)
+
+Each rule is a config block in the look / layout preset. Units are one-city units (section 0).
+
+| Rank | Gap (measured, procedural vs custom) | Rule (config block) | Parameters (defaults) | Tests |
+|---|---|---|---|---|
+| 1 | Street front low and flat: lit-skyline std 0.115 vs 0.229; flattest quarter 0.031 vs 0.140 | `frontage.silhouette` | `frontage_min_floors` 6 (approved, 3.2); `height_step_min` 2 floors between neighbours (seeded rhythm); `crown_share` >= 1/3 of columns topped by a crown (setback, spire, roof box or sign frame); `max_equal_tops` 2 adjacent tops within 1 floor | R-SIL-1, R-SIL-2 |
+| 2 | Hero signage and dressing missing: Sobel 0.021 vs 0.032; 328 vs 550 bright blobs / MP; 0 vs about 10 readable signs | `dressing.signs` | per route column one hero sign (blade or wall) in the district pair's hue inside the column's footprint, lit 1.5-2.0x its local background; >= 1 hero sign inside the central 2/3 of the frame width; per frontage building a shopfront strip on the base and `p_secondary` 0.5 of a small secondary sign; `megastructures` >= 1 per street (arch board, globe or holo) on the tallest non-route roof off the decision box; `signs_on_screen_min` 6 legible text signs at OVERVIEW; every sign on a building face | R-DET-1, R-DET-2, sign-placement check |
+| 3 | Even carpet, no rest areas (HQ v2): detail CV 0.29-0.36 vs 0.59-0.74; calm tiles 4-9 % vs 25-32 %. The street fails the other way (40 % calm) | `density.falloff` | `apron_bu` (kit 160-292 BU = 38-69 BU one-city) a quiet apron **of dimmed buildings, not empty ground** (see the note below); lit-window density from `near_k` 0.25 at the apron edge to 1.0 at `ramp_bu`; `dark_block_share` 0.2 of blocks fully dark, in seeded patches. Netrun views only (the mainline map and key art stay even) | R-CALM-1, R-CALM-2 |
+| 4 | No street-level light in the city fabric (HQ v2, city) | `streets.light` | every camera-visible road segment: streak lanes (r3 `street_lanes`, fractions per road class); lamp chains every `lamp_step` BU; lit shopfront bases on `p_shopfront` 0.6 of street-level facades | to add: >= 25 % of the bright pixels on the road mask at HQ OVERVIEW (needs a road-ID pass; until then blobs / MP and streak counts) |
+| 5 | Palette collapses to one hue: entropy 3.53 / 2.62 vs 4.47 / 4.57 bits; top cluster 55-68 % vs 22-27 % | `palette.districts` | `district_hue_min` 4 % of chromatic pixels per district in view, in its own hue (bank glows, trims, ground and roads); `hue_cluster_max` 45 % for the ambient fill. Exempt: HQ interiors and corp HQs (one corp hue allowed) | R-HUE-1, R-HUE-2 |
+| 6 | Fog and depth planes not built on the one-city fill: empty sky, beams in clear air, no plumes or mid haze | `atmosphere.layers` | the r3 fog rules on the one-city heightfield (4.1), plus `sky_max_share` 0.25 empty sky above the lit skyline (else pull backdrop rows forward or raise the tilt); `beam_fog_min` density over >= 60 % of each beam's on-screen length; >= 3 depth planes (backdrop, mid, front) with `plane_step` >= 0.03 median luma between adjacent planes (Z pass) | R-CALM-2 upper bound; to add: depth-banded luma test |
+| 7 | Street foreground is rooftops, not street: the bottom 20-25 % is the cut roof grid | `foreground.street` | `fg_band` 0.20 of the frame height at OVERVIEW shows the road: wet material, >= 2 streak lanes, kerb lamps; cut buildings there only as near-black edge silhouettes at the frame sides. Fix by camera target or lower street fill, never by painting | to add: lower-band hue entropy and blob count >= 80 % of the full-frame values |
+| 8 | Landmarks don't lead: Halcyon in the city 1.41; Meridian HQ 1.09 / 1.25 | `landmark.lead` | each landmark in frame lit >= 1.5x its ring luma; covers >= `lm_area_k` 6x the median block's on-screen area; carries a rim or outline the fabric doesn't use; the hero landmark within 0.12 frame heights of a rule-of-thirds point (`lm_centre_thirds_dist`); the top-1 % light never in a cell without a landmark (beams don't out-shine it) | R-FOCUS-1 |
+| 9 | Ruler-straight horizon (city): flattest-quarter std 0.008 | `horizon.break` | seeded coast inlets and headlands of amplitude `coast_amp`; >= 3 skyline spikes taller than 2x the median roof, >= 1/6 frame apart | R-HOR-1 |
+| 10 | The v2 kit exposes too dark: 41-61 % under 0.10 | `values.solve` | the exposure solve targets median 0.14 and 30 % under 0.10 **after the vignette** (the city NOTES found it applied after the solve) | R-VAL-1/2/3 (12.1) |
+| 11 | Same-material boxes (street, city night) | `materials.mix` | `material_kinds` >= 4 facade kits per district (glass curtain, concrete band, panel and grille, lit atrium); no two adjacent buildings share one; roof clutter from >= 3 kinds | to add: facade texture-class count or a material-ID pass histogram |
+| 12 | Repetition guard (not a gap today: v2 p90 0.31-0.37 vs v1 0.58-0.77) | `repetition.guard` | `max_same_module_adjacent` 2 identical facade modules side by side | R-REP-1 |
+
+**Note on rule 3 (AD ruling C6 applies):** the comparison proposed the v1 perimeter width as an apron "of low or no
+buildings". Section 8.2 rules dense city to the walls, so the apron here is a **lighting** rule: the buildings stay,
+their lit-window density ramps down near the compound and some blocks go dark. Rooms stay visible through the
+occlusion rule (7).
+
+**Test IDs and thresholds** (all provisional; derived from hand-built passes; config `checks.composition`):
+
+| ID | Applies to | Measure | Threshold |
+|---|---|---|---|
+| R-SIL-1 | street | lit-mass skyline std (frame heights) | >= 0.15 |
+| R-SIL-2 | street | same, in every 1/4-frame window | >= 0.08 |
+| R-DET-1 | street | mean Sobel magnitude | >= 0.028 |
+| R-DET-2 | street | bright blobs (luma > 0.6) per megapixel | >= 450 |
+| R-CALM-1 | netrun views (street, HQ) | detail CV over 64 px tiles | 0.45-0.85 |
+| R-CALM-2 | netrun views | calm tiles (Sobel < half the median) | 12-32 % |
+| R-HUE-1 | street, city | hue entropy (36 bins, chromatic pixels) | >= 3.8 bits |
+| R-HUE-2 | street, city | top hue cluster share | <= 45 % |
+| R-FOCUS-1 | every landmark in frame | landmark-box mean luma / ring mean luma | >= 1.5 |
+| R-HOR-1 | city views | built-top std in every 1/4 window | >= 0.015 |
+| R-REP-1 | all | high-passed 128 px tile autocorrelation, p90 | <= 0.60 |
+| R-VAL-1/2/3 | AAA-2 | median / under 0.10 / over 0.85 | 0.12-0.17 / 25-40 % / <= 2.5 % (12.1) |
+
+### 13.2 What procedural already does better (AD 2026-10-15)
+
+- **Continuity:** the street, the HQ and the city are one layout; the street IS the map's border link.
+- **Grounding and scale:** the v2 HQs sit in a real downtown (v1 sat on a void); window dots give the floor height.
+- **Density on demand:** 2-4x v1's bright blobs per MP. The task is to *thin* it by rule (rule 3), not add more.
+- **Less tiling:** repetition p90 0.31-0.37 (v2) against 0.58-0.77 (v1).
+- **Consistent values:** procedural street frames sit in the AAA-2 band without hand grading (f_0340: 0.124 / 36 % /
+  0.6 %); the kit hits it once the solve is fixed (rule 10).
+- **Atmosphere at city scale:** sky, sea, value falloff and beams; the hand-built v6 key art is a flat carpet.
+- **Story props where the rule knows the story:** the Orbital v2 rocket; the Meridian crane as the street's landmark.
+
+### 13.3 Still hand-placed or hand-tuned
+
+Items known to be hand-placed or hand-tuned (each needs a rule above or a new one):
+
+- Street: the r2 dressing (text signs, ad planes, holo ads, megastructures, drum column, stalls), the near-layer
+  silhouettes (dropped), the y 600 skyline wall, the L4_0 warm key, the HQ page furniture positions, tuned numbers
+  (fill fog strength, city haze, calibration grade) (`SB/NOTES.md:223-228`).
+- Halcyon: plinth lettering and crest positions, gatehouse position, the shown decision states, the eye blade
+  height, the reveal lighthouse speed and flash, light levels, room interiors in code (`HQ_halcyon/NOTES.md:256-265`).
+- Meridian: room slots, gatehouse and skyway bend, the shown state, light levels, the reveal path, container IDs
+  (`HQ_meridian/NOTES.md` section 7).
+- Orbital: station azimuths, antenna decks, gantry position, the struck site, cutscene cameras, light levels.
+- Solace: route floors list, overview yaw, pane patterns, lettering position, reveal path.
+- Rebel Cell: lane rooms' x positions and roof heights, the countered room, the fist box and ring radius.
 
 ---
 
