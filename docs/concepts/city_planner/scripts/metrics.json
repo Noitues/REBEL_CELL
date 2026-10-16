@@ -1,0 +1,112 @@
+{
+ "a": {
+  "dist": {
+   "halcyon": 221.0,
+   "solace": 337.0,
+   "orbital": 532.0,
+   "meridian": 351.0,
+   "aurelian": 358.0,
+   "tethys": 407.0
+  },
+  "mean": 368,
+  "spread": 2.41,
+  "land": 0.8,
+  "area": {
+   "centre": 45872,
+   "halcyon": 25749,
+   "solace": 27462,
+   "orbital": 19161,
+   "meridian": 41116,
+   "aurelian": 49131,
+   "tethys": 12158
+  }
+ },
+ "b": {
+  "dist": {
+   "halcyon": 235.0,
+   "solace": 294.0,
+   "orbital": 479.0,
+   "meridian": 298.0,
+   "aurelian": 269.0,
+   "tethys": 186.0
+  },
+  "mean": 294,
+  "spread": 2.58,
+  "land": 0.71,
+  "area": {
+   "centre": 29504,
+   "halcyon": 15709,
+   "solace": 26751,
+   "orbital": 19673,
+   "meridian": 24893,
+   "aurelian": 28770,
+   "tethys": 4869
+  }
+ },
+ "c": {
+  "dist": {
+   "halcyon": 246.0,
+   "solace": 342.0,
+   "orbital": 388.0,
+   "meridian": 301.0,
+   "aurelian": 287.0,
+   "tethys": 330.0
+  },
+  "mean": 316,
+  "spread": 1.58,
+  "land": 0.77,
+  "area": {
+   "centre": 38997,
+   "halcyon": 20727,
+   "solace": 19752,
+   "orbital": 26459,
+   "meridian": 34187,
+   "aurelian": 23224,
+   "tethys": 4739
+  }
+ },
+ "d": {
+  "dist": {
+   "halcyon": 285.0,
+   "solace": 345.0,
+   "orbital": 401.0,
+   "meridian": 351.0,
+   "aurelian": 297.0,
+   "tethys": 308.0
+  },
+  "mean": 331,
+  "spread": 1.41,
+  "land": 0.43,
+  "area": {
+   "centre": 41307,
+   "halcyon": 19536,
+   "solace": 17238,
+   "orbital": 31607,
+   "meridian": 29790,
+   "aurelian": 28295,
+   "tethys": 9322
+  }
+ },
+ "e": {
+  "dist": {
+   "halcyon": 249.0,
+   "solace": 444.0,
+   "orbital": 389.0,
+   "meridian": 245.0,
+   "aurelian": 276.0,
+   "tethys": 218.0
+  },
+  "mean": 304,
+  "spread": 2.04,
+  "land": 0.65,
+  "area": {
+   "centre": 53174,
+   "halcyon": 22502,
+   "solace": 30097,
+   "orbital": 32123,
+   "meridian": 30687,
+   "aurelian": 31023,
+   "tethys": 19210
+  }
+ }
+}
