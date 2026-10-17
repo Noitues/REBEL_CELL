@@ -105,3 +105,10 @@ The designer's rule: the old art-direction session [061bfa] / `local_520d0498â�
   - JSON elements not mapped: undercity, drone corridors, ferries as routes, checkpoints, civic glyphs.
 - **Next:** spec update (Sonnet, low effort), then the ONE hand-off package to build session [9d3b7c], shown to the designer first.
 - **Token economy:** Sonnet/Haiku for mechanical work (memory `token-economy-agents`). Never taskkill by image name (memory `never-taskkill-by-image`).
+
+## Queued after the token reset (agreed with the build session, 2026-10-16)
+1. Tethys decision and hover finals (hq_tethys).
+2. Aurelian Concord HQ design pass (fresh architect agent; full-city circus with columns as canonical).
+3. A golden-plates section in the spec plus a plate set (PNG + values JSON + camera params) for the build session's drift checks.
+4. Landmark .glb exports per corp.
+Ownership: art-pass = Blender and visual quality; build session = tools/netrun_art, GDScript, Godot. See the build replan at D:\Godot\rebel_cell\docs\handoff\gates\REPLAN_2026-10-16.md §D.

@@ -1487,3 +1487,10 @@ Review: `INTEGRATION_REVIEW/REVIEW.md`. Renders: `round44_undesigned/` (A_map, B
   - **City plan (designer, 2026-10-16):** Horseshoe Bay (planner design A) is chosen as the city layout direction. The planner iterates A2 with the game constraints and exports a machine-readable layout (city_A2.json) for the Blender city build.
   - **City A2 approved (designer, 2026-10-16):** rebuild the 3D city from city_planner/city_A2.json, with the new Meridian (Gatehouse Gantry) and Tethys (pier city) landmark modules and the (b) render settings. 1080 night and day tests come first.
   - **City A2 pass 2 (designer, 2026-10-16):** add a terrain heightfield, with foothills and mountains around the inland edges so the city doesn't end on a slab, and natural coastlines. Give the bay more character (marinas, ships, lighthouse, waterfront, barrier lights, islands). Add more city density and suburbs on the flat land. Highways read as decks with lane lights. Day gets brighter with a blue sea. Keep the night beam size.
+  - **Build replan rulings (designer via the build orchestrator, 2026-10-16):**
+    - D1: Aurelian Concord and Tethys Deep become fully playable. Art-pass owes the Tethys decision/hover finals and the Aurelian HQ design pass.
+    - D3: the procedural planner city (city_A2-style) replaces the fixed layout.
+    - D9: the Heat chip and the RAID AT n tick go on the map.
+    - D10: HQ runs may exceed 7 layers, each unique.
+    - D8, ownership (agreed): art-pass owns Blender (reference build, golden plates, look-dev, landmark .glb exports). The build session owns tools/netrun_art, the checks, the GDScript twins and Godot, and runs the §12 checks on Godot captures against the golden plates.
+    - No building until the weekly token reset.
