@@ -533,7 +533,7 @@ def main() -> int:
     only = [x for x in args.only.split(",") if x]
     manifest = {}
     total_in = total_out = 0
-    common_tokens = est_tokens(common_system()[1]["text"])
+    common_tokens = 32007  # measured (cache-read tokens in round 1); chars/3.6 overestimated it
     for name, fn in builders.items():
         if only and name not in only:
             continue
