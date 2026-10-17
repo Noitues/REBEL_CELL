@@ -90,6 +90,13 @@ Steps 1, 2 and 4 are **game design** and belong to the build / design sessions; 
 steps before it, so a later step never moves an earlier one (a sign never moves a building; a building never moves a
 key location).
 
+### 2.0b Layout input: the planner JSON (AD 2026-10-16)
+
+The layout source for the round-2 city is a planner JSON, `docs/concepts/city_planner/city_A2.json` (format in
+`city_planner/design_A2_horseshoe_bay.md`, "city_A2.json": metres, origin at the map centre, +X east, +Y north).
+`city_all_corps/scripts/zoning_a2.py` maps it to lots and cell classes (3.7). **The game's per-seed city generator
+should emit the same schema**, so the art tools read one format for the concept city and for every game seed.
+
 ### 2.1 Overview
 
 ```
@@ -417,6 +424,26 @@ Rules:
 
 ---
 
+### 3.7 City layout from the planner JSON, terrain, bay, density (AD 2026-10-16)
+
+Source: `city_all_corps/NOTES.md` "Layout A2" and "designer pass 2". Do not duplicate it here; the rules in short:
+- **Mapping** (`zoning_a2.py`, `city_world_a2.py`, `city_transit_a2.py`): 1 lot = 100 m = 6 BU (1 BU = 16.67 m);
+  lot x = X/100 + CX, lot y = CY - Y/100, world BU = (X, Y) x 0.06. The JSON gives water, the drowned quarter and its
+  dams, the 7 districts, the 6 HQ lots, motorways, arterials, interchanges, rails, stations, the port, parks, industry,
+  informal housing, the airport and spaceport, corp walls and gates, markets and the civic glyphs. The sea is below the
+  street (`WATER["z"] = -1.2`). `CITY_LAYOUT=legacy` keeps the old diamond map.
+- **Terrain** (`terrain_a2.py`, `CP.TERRAIN`): height field H per lot cell from the JSON hills (x1.5), seeded
+  foothills and ridged mountains (about 300 BU at the far edge), beaches and seeded cliffs, flat rigid zones (HQ discs,
+  port, airport, spaceport). Every city vertex is lifted by H. No building above slope 0.30 or H 42. Roads and rails
+  ride the terrain at constant clearance.
+- **Bay dressing** (`city_bay_a2.py`): sand strip and surf line, promenade lamps, 7 marinas, 10 anchored cargo ships,
+  6 ferries with wakes, 28 buoys, a lighthouse, the Bay Barrier lock (gate towers, signals, swing gates), causeway
+  lamps, a fort island and a park island.
+- **Density and suburbs:** suburbs fill out to the foothills (`outer` field fading over 34 cells past R2); half the
+  suburb cells are 2x2 sub-lots; fewer merged blocks; brighter windows; street period of 5 cells in districts. Road
+  deck edge light x0.38, lane lights x0.72, rail glow x0.5.
+- **Day:** median target 0.25, contrast cap 2.0, shadow lift 0.10, blue transparent sea (clear over the drowned quarter).
+
 ## 4. Look presets
 
 ### 4.1 AAA-2 (the netrun look)
@@ -587,6 +614,12 @@ the tools only mirror them for look-dev.
    of the pipeline.
 
 ---
+
+### 4.4 City render settings, version (b) (AD 2026-10-16)
+
+The A2 city finals use: 80+ spp, albedo + normal OIDN denoise, bloom x0.5, no vignette, district glow tint -40 %.
+This is the default for the city build (`city_all_corps/NOTES.md` "Layout A2"). The value band of 4.1 applies; the
+measured night/day numbers are in the same NOTES.
 
 ## 5. LOD bands by zoom
 
@@ -979,6 +1012,24 @@ netrun view must match the full-map landmark of the same corp (DR 1413-, "Canoni
 3. Check: the landmark's silhouette in the HQ OVERVIEW and in the full-city view, normalised to the same bounding box,
    match at IoU >= 0.85 (provisional), compared at 320 px.
 
+### 8.6c Landmark-module hook (AD 2026-10-16)
+
+`city_preset.LANDMARK_MODULES` maps a corp to a Python file; when set, `landmarks.py` calls its `build(ctx)` instead of
+the built-in. Contract and the `ctx` fields: `city_all_corps/NOTES.md` "Landmark modules". `build(ctx)` returns
+`dict(label, crown, hue)` and only adds faces and lights. **One model serves both the city and the HQ netrun** (8.6b):
+Meridian is `route_map_graph/hq_meridian_v3/scripts/meridian_landmark.py`, Tethys is
+`route_map_graph/hq_tethys/scripts/tethys_landmark.py` (both on in layout A2). Halcyon, Solace (x1.8), Orbital and
+Aurelian still use the built-ins.
+
+### 8.6d Solace hybrid interiors (AD 2026-10-16)
+
+Source: `route_map_graph/hq_solace/NOTES.md` "v4"; `scripts/hq_imap.py`, `hq_atlas.py`. Windows are real cutaways.
+- **Built floors** (`HQ_INTERIOR=built`, office kit in `hq_office.py`) on the **route and decision floors**, where
+  the camera is close.
+- **Interior-mapping parallax shader** (`HQ_INTERIOR=map`) on every other window.
+- **No people** in either (the v4 tiny people and walkers are dropped).
+Godot mapping: 11.2.
+
 ### 8.7 Adding a new corp (Aurelian, Tethys)
 
 1. Add the district to `city_preset.DISTRICTS` (hue, sec, mat, win, lit, `lang`) and a `lang` generator in the city
@@ -1175,6 +1226,11 @@ Rules:
 | `streak_lane` | speed, lane period, head / tail profile |
 
 Godot is Y-up: every z in this spec is world Y in Godot.
+
+**Interior mapping (AD 2026-10-16).** `window_interior` spatial shader, one quad / MultiMesh per window; the atlas of
+6 seeded variants and the per-fragment ray-box algorithm are in `hq_solace/NOTES.md` "v4" (option B). Per instance:
+window frame (centre, level axis, normal), `variant`, `lit`, `blind`, `tint`. Built floors (8.6d) are real meshes on the
+route and decision floors only.
 
 ### 11.3 Lighting
 
@@ -1451,6 +1507,14 @@ The art tools read these; they never decide them (2.0 steps 1, 2 and 4).
 4. **The data contract:** the game exports `city.json`, `net.json`, `run_graph.json`, the key-location list and
    `art_seeds` per run (2.2, 2.3).
 5. Heal / rest nodes (above), only if the GDD adds them.
+
+### 14.4 Known art gaps (AD 2026-10-16)
+
+- **Road cuttings and tunnels:** roads ride the terrain; no cuttings or tunnel portals are built.
+- **A straight sea edge at the far right** of the city hero frame.
+- **JSON elements not mapped:** undercity, drone corridors, ferry routes (ferries are placed on the 3 plan routes
+  without the route lines), checkpoints, civic glyphs (universities, schools, churches, water, sewage, recycling).
+  Full list: `city_all_corps/NOTES.md` "Layout A2", "Not mapped".
 
 ---
 
