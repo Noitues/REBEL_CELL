@@ -55,3 +55,8 @@ Fetch with: git show 7f021c21:<path>. Never checkout or merge art-pass.
 - art-pass@7f021c21:docs/concepts/route_map_graph/hq_tethys/scripts/tethys_landmark.py
 - Not found: any HK/*.py (no such path in 7f021c21). Other cam_rig variants: side_view/v3_aaa/r2, r3, v3_dynamic
 - Other hq_*/scripts/*_landmark.py: only the three above exist
+
+## Path abbreviations and landmark sources (art director, 2026-10-16)
+- `HK/` = `docs/concepts/route_map_graph/hq_meridian/scripts/hq_kit/` (`__init__`, city_ring, downtown, layout, lod, orbit, section, states). Port from hq_meridian; the occlusion rule is in `section.py`. Other abbreviations (SB/, V3D/, HM/, HQ_<corp>/) are defined in PIPELINE_SPEC §0.
+- Landmarks: only Meridian v3 and Tethys are standalone module files. Halcyon / Solace / Orbital / Aurelian / Rebel Cell are functions in `city_all_corps/scripts/landmarks.py` (city scale); the HQ-netrun-scale builders are `route_map_graph/hq_<corp>/scripts/hq_build*.py`.
+- Art-pass queue (after the reset, per D8): extract each landmark into a standalone `<corp>_landmark.py` with the build(ctx) contract, and export glb.
