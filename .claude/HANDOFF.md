@@ -1,4 +1,4 @@
-# Handoff — REBEL_CELL art-pass (art director session)
+﻿# Handoff â€” REBEL_CELL art-pass (art director session)
 
 | | |
 |---|---|
@@ -12,7 +12,7 @@ I am the art director for REBEL_CELL on `art-pass`. Art only: no game design (me
 - The spec then goes as ONE hand-off package to the build session "Resume per HANDOFF.md" on `D:\Godot\rebel_cell`.
 - That build session has the same name as this one, so address it by its ref [9d3b7c].
 
-The designer's rule: the old art-direction session [061bfa] / `local_520d0498…` is retired. Don't send it anything. All agents run from this session.
+The designer's rule: the old art-direction session [061bfa] / `local_520d0498â€¦` is retired. Don't send it anything. All agents run from this session.
 
 ## Round 1: delivered and accepted by the AD (waiting for the designer's morning review)
 **Storyboard v3, round 3** (`c83e3b00`), `route_map_graph/storyboard/`:
@@ -33,26 +33,26 @@ The designer's rule: the old art-direction session [061bfa] / `local_520d0498…
 - Halcyon and Orbital finals predate the occlusion rule.
 
 **Pipeline spec draft** (`418d1e13`), `route_map_graph/PIPELINE_SPEC.md`:
-- 16 sections, with AD rulings on 24 source conflicts (§15).
-- §13 holds the procedural-vs-hand-built gap rules; §12.7 holds the automatic composition checks.
-- `TODO(refresh after sb v3 rev)` markers in §4/§11: refresh them from `sb_ocjobs.LOOK` now that the storyboard round 3 has landed.
+- 16 sections, with AD rulings on 24 source conflicts (Â§15).
+- Â§13 holds the procedural-vs-hand-built gap rules; Â§12.7 holds the automatic composition checks.
+- `TODO(refresh after sb v3 rev)` markers in Â§4/Â§11: refresh them from `sb_ocjobs.LOOK` now that the storyboard round 3 has landed.
 
 **Procedural vs hand-built** (`87ca3762`), `route_map_graph/proc_vs_custom/`:
 - 4 sheets plus metrics; the re-run command is in COMPARISON.md.
 - Key finding: the procedural STREET is well behind the hand-built r3. It has a flat skyline, no signs, cut rooftops in the foreground, and thin fog. That is the main item for round 2.
 
 ## Decisions logged today (`docs/concepts/DIRECTION_REVIEW.md`)
-- **Meridian freight line:** the line leads out of the fort, so the wall↔train shuttles are viable.
-- **HQ occlusion rule:** sight-cone flatten to a 1–2 floor stub, then ghost to 15–20 %, with a 0.35 s ease.
+- **Meridian freight line:** the line leads out of the fort, so the wallâ†”train shuttles are viable.
+- **HQ occlusion rule:** sight-cone flatten to a 1â€“2 floor stub, then ghost to 15â€“20 %, with a 0.35 s ease.
 
 ## Waiting on the designer
 - Reviews of all of round 1.
-- Spec questions Q1–Q10 (`PIPELINE_SPEC.md` §14):
+- Spec questions Q1â€“Q10 (`PIPELINE_SPEC.md` Â§14):
   - HQ scale against its lot;
   - mapping the graph onto slots;
   - distance LOD;
   - median tolerance;
-  - landmark ratio above 2× (MAINFRAME is about 12×, Solace 2.8×, Halcyon 2.9×);
+  - landmark ratio above 2Ã— (MAINFRAME is about 12Ã—, Solace 2.8Ã—, Halcyon 2.9Ã—);
   - one power-cut level;
   - in-game entry durations;
   - the off-screen target marker;
@@ -61,7 +61,7 @@ The designer's rule: the old art-direction session [061bfa] / `local_520d0498…
 
 ## Next steps (after the designer's reviews)
 1. Apply the designer's notes on round 1.
-2. Round 2: implement the §13 gap rules on the procedural street, then re-run proc_vs_custom until the street passes:
+2. Round 2: implement the Â§13 gap rules on the procedural street, then re-run proc_vs_custom until the street passes:
    - `frontage.silhouette`, `dressing.signs`, `streets.light`, `foreground.street`, `atmosphere.layers`, `palette.districts`;
    - and on the HQs and city, `density.falloff`.
 3. Refresh the spec's look values, and close the TODO markers.
@@ -87,3 +87,21 @@ The designer's rule: the old art-direction session [061bfa] / `local_520d0498…
 **Reviewing images:**
 - Some PNGs can't be read directly. Convert them with the scratchpad's `topreview.py`, and build contact sheets with `sheet.py`.
 - Values come from `values.py` (sRGB luma).
+
+## Update 2026-10-16 evening (round 2 delivered)
+- **Committed and pushed through `199a450e`:**
+  - HQ finals: Rebel Cell v3, Solace v4 (hybrid interiors, no people), Meridian v3 (Gatehouse Gantry), Tethys v2 (pier city, whales).
+  - City 4K finals on layout A2 (Horseshoe Bay, `city_planner/city_A2.json`), with terrain, bay and translucent day sea.
+  - Street round 2 (`route_map_graph/street_r2/`), decision sheets (`route_map_graph/decisions/`), city planner designs A–E plus A2.
+  - The spec answers all designer questions (`PIPELINE_SPEC.md`).
+- **Not yet in the spec:**
+  - the A2 layout-from-JSON step (`zoning_a2.py`), terrain (`terrain_a2.py`), bay (`city_bay_a2.py`);
+  - the landmark-module hook (`LANDMARK_MODULES`, Meridian and Tethys);
+  - the Solace hybrid interior-mapping shader (`hq_solace/scripts/hq_imap.py`).
+- **Known gaps for the build session:**
+  - road cuttings and tunnels (roads ride the terrain);
+  - a straight sea edge at the far right of the city;
+  - unique building ids;
+  - JSON elements not mapped: undercity, drone corridors, ferries as routes, checkpoints, civic glyphs.
+- **Next:** spec update (Sonnet, low effort), then the ONE hand-off package to build session [9d3b7c], shown to the designer first.
+- **Token economy:** Sonnet/Haiku for mechanical work (memory `token-economy-agents`). Never taskkill by image name (memory `never-taskkill-by-image`).
