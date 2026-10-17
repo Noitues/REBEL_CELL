@@ -139,14 +139,34 @@ Sheet `docs/art_review/PLAN1/ART_R1.jpg` (before = main fb6ae75d | after; captur
 - **D4:** a REST node is in. The map needs more node variety than shop / event / fight / elite. The orchestrator
   proposes a node list.
 - **D5:** yes. Each access key equals an Exploit, and each Exploit gets its own special building.
-- **D6:** zoom back out to the full grid during a netrun, using the new zoom (video) approach. A screenshot of today's
-  GRID VIEW page was sent to confirm what retires.
+- **D6 (corrected by the designer):** the raid / City Grid view stays. It's where the campaign is monitored and the
+  next netrun is chosen.
+  - The storyboard starts in the full grid view; after JACK IN, the zoom dive takes you into the netrun.
+  - During a netrun, the player can zoom out to the grid view and back in to the netrun at will (the same zoom
+    transition).
+  - Nothing retires except the separate GRID VIEW toggle page, which becomes this zoom.
+- **D4 node rulings:**
+  - **Rest:** heal, or swap Firmware locations.
+  - **Workshop:** yes.
+  - **Cache:** yes. The event mini-puzzle needs vetting first.
+  - **Intel:** no (the reward is known before the run).
+  - **Relay / shortcut:** no in normal runs; a unique case in some netruns, e.g. HQ.
+  - **Ambush:** no as a node; maybe as an event option.
+  - **Safehouse and Heat Sink:** grid-view nodes, not netrun nodes.
+  - **Black Market:** maybe as an unknown event.
+- **W0 kicked off serially** (designer at 4 % usage; one agent at a time until the reset).
 - **D7:** the whole graph is drawn in a less intrusive look. Hover and the map-legend highlight bring it all to a full
   active state with every piece of information. (Same as the 2026-10-14 full-graph ruling; the old "hide nodes beyond
   the next layer" code and the "show all nodes" option go.)
 - **D8:** whichever owner makes the most sense, as long as visual quality persists and grows. The orchestrator
   proposed that the art-pass session keeps Blender (reference build, golden plates, glb exports) and the build
   session owns `tools/netrun_art`, checks and Godot, running the §12 checks on Godot captures.
+  - **Agreed by the art-pass session 2026-10-16.** Hand-offs are glb files plus golden plates (a PNG and a values
+    JSON per plate: median, % under 0.10, landmark ratio, camera params) plus check reports. The build session runs
+    the §12 checks on Godot captures against those plates and reports drift to the art-pass session.
+  - The art-pass session adds a "golden plates" section (plate list and tolerances) to the spec.
+  - After the reset, the art-pass session delivers the Tethys decision / hover finals, the Aurelian HQ design pass,
+    and a golden-plate set based on a city_A2-style procedural planner city as the D3 reference.
 - **D9:** the defaults are approved. **Add the Heat chip and the "RAID AT n" tick to the map**, which reverses the
   PT-003 fix 5 call.
 - **D10:** HQ runs may, and likely will, run longer than 7 layers, each a unique experience. Process is the
