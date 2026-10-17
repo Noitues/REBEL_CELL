@@ -126,6 +126,33 @@ Sheet `docs/art_review/PLAN1/ART_R1.jpg` (before = main fb6ae75d | after; captur
 - **9a:** `RouteCover` (kit): entering the route page from another screen holds the last frame of the page that left over the screen until the city reports its look current and its camera settled for 3 frames (max 2.5 s), then fades out (`reward_page_in`). Headless never waits. Rule test: `test_art_r1`. The capture could not make the empty plane appear in the AFTER run; the BEFORE strip shows it at f20.
 - **9b:** strips for M8, M9, M10 and the route hover-out are on the sheet (Movie Maker, 30 fps). The M8 / M10 / hover-out strips are the motion lab demos (the lab chrome shows around them), M9 is the jack out to the HQ.
 
+### 2026-10-16 — Designer rulings on the replan (REPLAN_2026-10-16 §D)
+**Freeze:** no building until the weekly token reset (2026-10-17 night). Planning and surface work only.
+- **D1:** both new corporations, **Aurelian Concord and Tethys Deep, are added completely and playable**. The game
+  goes from 5 to 7 corporations. Each needs corp content (enemies, boss, mini-boss, story path), an HQ netrun and art
+  (Tethys decision / hover finals and the Aurelian HQ design pass, from the art-pass session).
+- **D2:** names are low effort. The orchestrator picks and keeps them in sync in the background: the GDD 11.7 names
+  (THE GENOME CORE, THE MASTER MANIFEST, THE PANOPTICON, LAUNCH CONTROL, DISPATCH, THE BLACK SMOKER) plus a made-up
+  one where there's a gap (Aurelian). Gameplay and visuals come before names.
+- **D3:** drop old campaign saves. The city moves to the **new procedural generation and new layout** (option b, the
+  full planner city: coast, districts, terrain), not just a seeded version of today's layout.
+- **D4:** a REST node is in. The map needs more node variety than shop / event / fight / elite. The orchestrator
+  proposes a node list.
+- **D5:** yes. Each access key equals an Exploit, and each Exploit gets its own special building.
+- **D6:** zoom back out to the full grid during a netrun, using the new zoom (video) approach. A screenshot of today's
+  GRID VIEW page was sent to confirm what retires.
+- **D7:** the whole graph is drawn in a less intrusive look. Hover and the map-legend highlight bring it all to a full
+  active state with every piece of information. (Same as the 2026-10-14 full-graph ruling; the old "hide nodes beyond
+  the next layer" code and the "show all nodes" option go.)
+- **D8:** whichever owner makes the most sense, as long as visual quality persists and grows. The orchestrator
+  proposed that the art-pass session keeps Blender (reference build, golden plates, glb exports) and the build
+  session owns `tools/netrun_art`, checks and Godot, running the §12 checks on Godot captures.
+- **D9:** the defaults are approved. **Add the Heat chip and the "RAID AT n" tick to the map**, which reverses the
+  PT-003 fix 5 call.
+- **D10:** HQ runs may, and likely will, run longer than 7 layers, each a unique experience. Process is the
+  orchestrator's call, the most token-economical without losing design or visual quality: one Batch API (Sonnet)
+  design draft per corp → the designer's rulings → build against the art in W2.
+
 ### 2026-10-16 — Designer rulings: content design (CONTENT_CONCEPTS §6.2) and G1–G16
 These supersede the matching options in `docs/handoff/plan2/CONTENT_CONCEPTS.md` and `G_REEVAL.md`.
 
