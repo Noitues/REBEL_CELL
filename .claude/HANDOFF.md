@@ -113,3 +113,5 @@ The designer's rule: the old art-direction session [061bfa] / `local_520d0498â�
 4. Landmark .glb exports per corp.
 Ownership: art-pass = Blender and visual quality; build session = tools/netrun_art, GDScript, Godot. See the build replan at D:\Godot\rebel_cell\docs\handoff\gates\REPLAN_2026-10-16.md §D.
 5. Extract standalone <corp>_landmark.py modules (build(ctx) contract) for Halcyon, Solace, Orbital, Aurelian and the Rebel Cell centre. They are built-ins in city_all_corps/scripts/landmarks.py today; the HQ-scale builders are each corp's hq_<corp>/scripts/hq_build*.py. Then export .glb for each corp (promised to the build session).
+
+**Superseded 2026-10-16 late:** the current resume doc is docs/concepts/HANDOFF_PACKAGE/ART_SESSION_HANDOFF.md.
