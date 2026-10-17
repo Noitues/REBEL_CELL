@@ -292,9 +292,28 @@ def mat_water_aaa(day=False):
     mp.inputs["Scale"].default_value = (1.0, 2.4, 1.0)
     g.link(geo.outputs["Position"], mp.inputs[0])
     g.link(mp.outputs[0], nz.inputs["Vector"])
+    if A2M:                           # round 5: a broad swell plus a fine ripple (low amplitude), the same normal day and night
+        mpb = g.n("ShaderNodeMapping")
+        mpb.inputs["Scale"].default_value = (0.22, 0.34, 1.0)
+        g.link(geo.outputs["Position"], mpb.inputs[0])
+        nzb = g.n("ShaderNodeTexNoise")
+        nzb.inputs["Scale"].default_value = 0.07
+        nzb.inputs["Detail"].default_value = 2.0
+        g.link(mpb.outputs[0], nzb.inputs["Vector"])
+        mpr = g.n("ShaderNodeMapping")
+        mpr.inputs["Scale"].default_value = (1.0, 1.7, 1.0)
+        g.link(geo.outputs["Position"], mpr.inputs[0])
+        nzr = g.n("ShaderNodeTexNoise")
+        nzr.inputs["Scale"].default_value = 1.1
+        nzr.inputs["Detail"].default_value = 3.0
+        g.link(mpr.outputs[0], nzr.inputs["Vector"])
+        height = g.math("ADD", g.math("ADD", g.math("MULTIPLY", nz.outputs["Fac"], 0.65), g.math("MULTIPLY", nzb.outputs["Fac"], 0.8)),
+                        g.math("MULTIPLY", nzr.outputs["Fac"], 0.22))
+    else:
+        height = nz.outputs["Fac"]
     bump = g.n("ShaderNodeBump")
-    bump.inputs["Strength"].default_value = S["wave"]
-    g.link(nz.outputs["Fac"], bump.inputs["Height"])
+    bump.inputs["Strength"].default_value = S["wave"] * (1.6 if A2M else 1.0)
+    g.link(height, bump.inputs["Height"])
     fr = g.n("ShaderNodeFresnel")
     fr.inputs["IOR"].default_value = 1.33
     g.link(bump.outputs[0], fr.inputs["Normal"])
@@ -303,24 +322,31 @@ def mat_water_aaa(day=False):
     gl.inputs["Roughness"].default_value = S["rough"]
     g.link(bump.outputs[0], gl.inputs["Normal"])
     mx = g.n("ShaderNodeMixShader")
-    g.link(fr.outputs[0], mx.inputs[0])
+    if A2M:                           # a little more sky reflection at grazing angles
+        g.link(g.math("MINIMUM", g.math("ADD", fr.outputs[0], g.math("MULTIPLY", fr.outputs[0], 0.35)), 1.0), mx.inputs[0])
+    else:
+        g.link(fr.outputs[0], mx.inputs[0])
     body = tr.outputs[0]
     if day and A2M:
+        wmn = wmask_nodes(g, geo.outputs["Position"])
+        shallow = wmn[4]                                        # 1 in the shallows and near the shore, 0 offshore
+        lagoon = wmn[3]                                         # 1 over the drowned quarter (clear water there)
         dif = g.n("ShaderNodeBsdfDiffuse")
         cmix = g.n("ShaderNodeMix")
         cmix.data_type = "RGBA"
-        cmix.inputs[6].default_value = (0.025, 0.17, 0.33, 1)
-        cmix.inputs[7].default_value = (0.05, 0.27, 0.45, 1)
-        g.link(nz.outputs["Fac"], cmix.inputs["Factor"])
+        cmix.inputs[6].default_value = (0.022, 0.15, 0.31, 1)       # deep blue
+        cmix.inputs[7].default_value = (0.09, 0.46, 0.50, 1)        # shallow turquoise
+        g.link(g.math("MINIMUM", g.math("ADD", g.math("MULTIPLY", shallow, 0.9), g.math("MULTIPLY", nzb.outputs["Fac"], 0.12)), 1.0), cmix.inputs["Factor"])
         g.link(cmix.outputs[2], dif.inputs["Color"])
         em_ = g.n("ShaderNodeEmission")
-        em_.inputs["Color"].default_value = (0.012, 0.075, 0.15, 1)
-        em_.inputs["Strength"].default_value = 1.0
+        em_.inputs["Color"].default_value = (0.01, 0.07, 0.14, 1)
         add_ = g.n("ShaderNodeAddShader")
         g.link(dif.outputs[0], add_.inputs[0])
         g.link(em_.outputs[0], add_.inputs[1])
         mk = g.n("ShaderNodeMixShader")
-        g.link(wmask_nodes(g, geo.outputs["Position"])[3], mk.inputs[0])          # 1 over the drowned quarter: clear water there
+        # transparency: the sea lets you see into it, most in the shallows, fading with depth; fully clear over the drowned quarter
+        tw = g.math("MAXIMUM", lagoon, g.math("ADD", 0.40, g.math("MULTIPLY", shallow, 0.52)))
+        g.link(tw, mk.inputs[0])
         g.link(add_.outputs[0], mk.inputs[1])
         g.link(tr.outputs[0], mk.inputs[2])
         body = mk.outputs[0]
@@ -365,6 +391,8 @@ def wmask_image():
     im2 = bpy.data.images.new("lagmask", n, n, float_buffer=True)          # the drowned quarter (the water stays clear there), in R
     a2_ = _np.zeros((n, n, 4), _np.float32)
     a2_[..., 0] = _np.clip(lagoon * 1.5, 0, 1)
+    sh_ = _np.clip(1.0 - (dl - 1.0) / 13.0, 0.0, 1.0) * water
+    a2_[..., 1] = blur(sh_, 1) * (water > 0.5)
     a2_[..., 3] = 1.0
     im2.pixels.foreach_set(a2_[::-1].reshape(-1))
     im2.colorspace_settings.name = "Non-Color"
@@ -392,7 +420,8 @@ def wmask_nodes(g, pos_out):
     t2.interpolation = "Linear"
     t2.extension = "EXTEND"
     g.link(uv_, t2.inputs["Vector"])
-    return tuple(g.sep(tx.outputs["Color"])) + (g.sep(t2.outputs["Color"])[0],)
+    sep2 = g.sep(t2.outputs["Color"])
+    return tuple(g.sep(tx.outputs["Color"])) + (sep2[0], sep2[1])
 
 
 def mat_fog():
@@ -431,7 +460,7 @@ def mat_fog():
     # so the water reads; the sea mist returns farther out. b (lots, away from the map camera) = (y - x) / (U sqrt 2)
     px_, py_, _ = g.sep(geo.outputs["Position"])
     if A2M:
-        wr_, wg_, wb_, _wa = wmask_nodes(g, geo.outputs["Position"])
+        wr_, wg_, wb_, _wa, _ws = wmask_nodes(g, geo.outputs["Position"])
         lag = wr_
         dens = g.math("MULTIPLY", dens, g.math("SUBTRACT", 1.0, g.math("MULTIPLY", lag, A["bay_clear"])))
         SB = A["shore_bank"]
@@ -666,7 +695,7 @@ else:
               seabed=mat_toon_main("seabed_main", False, True), water=mat_transp_main("water_main", (0.05, 0.16, 0.36), 0.42))
     MS["bill"] = MS["neon"]
 OBJ = dict(surf=SURF.obj(MS["surf"]), smooth=SMOOTH.obj(MS["surf"]), neon=NEON.obj(MS["neon"]), streak=STREAK.obj(MS["streak"]),
-           glass=GLASS.obj(MS["glass"]), ground=GROUND.obj(MS["ground"]), seabed=SEABED.obj(MS["seabed"]), water=WATER.obj(MS["water"]),
+           glass=GLASS.obj(MS["glass"]), ground=GROUND.obj(MS["ground"]), terrain=TERR.obj(MS["ground"]), seabed=SEABED.obj(MS["seabed"]), water=WATER.obj(MS["water"]),
            bill=BILL.obj(MS["bill"]))
 OBJ["water"].visible_shadow = False
 if os.environ.get("CITY_DBG_RED"):

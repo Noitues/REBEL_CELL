@@ -79,14 +79,19 @@ def dland_at(ci, cj):
     return float(DLAND[min(max(cj - GJ0, 0), GN - 1), min(max(ci - GI0, 0), GN - 1)])
 
 
+def sea_depth(d):
+    """sea bed depth (BU below the water) at d cells from the land: a shelf of a few BU at the shore, deep offshore."""
+    t = min(1.0, max(0.0, (d - 2.0) / 28.0))
+    return 3.0 + (WAT["sea_bed"][1] - 3.0) * t * t * (3 - 2 * t)
+
+
 def ground_at(x, y):
     """sea / lagoon floor z at a world point, relative to the street (the street stays 0 in the build frame)."""
     c = (int(math.floor(x / U + CX)), int(math.floor(-y / U + CY)))
     if c in WET_CELLS:
         return -WET_CELLS[c]
     if is_water_cell(*c):
-        s0_, s1_ = WAT["sea_bed"]
-        return -(s0_ + (s1_ - s0_) * min(1.0, dland_at(*c) / 25.0)) - 1.2
+        return -sea_depth(dland_at(*c))
     return 0.0
 
 
@@ -120,13 +125,13 @@ def terrain_col(ci, cj):
         c = mixc(c, TCOL["snow"], min(1.0, (h - 215.0) / 40.0 + (n_ - 0.5) * 0.5))
     if dw < 2.2 and h < 3.0:
         c = mixc(c, TCOL["beach"], 0.8)
-    return sc(c, 0.85 + 0.3 * n_)
+    return sc(c, 0.92 + 0.16 * n_)
 
 
-def tile(ci, cj, t, col, zz=-0.03):
+def tile(ci, cj, t, col, zz=-0.03, acc=None):
     xa, ya = W((ci, cj))
     xb, yb = W((ci + t, cj + t))
-    GROUND.face([(xa, ya, zz), (xb, ya, zz), (xb, yb, zz), (xa, yb, zz)], col)
+    (acc or GROUND).face([(xa, ya, zz), (xb, ya, zz), (xb, yb, zz), (xa, yb, zz)], col)
 
 
 GM = TP_["margin"]
@@ -134,7 +139,7 @@ n_gt = 0
 for cj in range(HJ0, HJ0 + HN):
     for ci in range(HI0, HI0 + HN):
         d_edge = max(GI0 - ci, ci - (GI0 + GN - 1), GJ0 - cj, cj - (GJ0 + GN - 1), 0)
-        t = 1 if d_edge < 24 else (2 if d_edge < 100 else 4)
+        t = 1 if d_edge < 40 else (2 if d_edge < 150 else 4)
         if (ci - HI0) % t or (cj - HJ0) % t:
             continue
         if t > 1 and (ci + t > HI0 + HN or cj + t > HJ0 + HN):
@@ -144,12 +149,15 @@ for cj in range(HJ0, HJ0 + HN):
             if c_ in (0, 1):
                 continue
             if c_ in (11, 12, 2):
-                col = GCOL
                 if c_ == 12 and h_cell(ci, cj) > 12.0:
-                    col = terrain_col(ci, cj)
-                tile(ci, cj, 1, col)
+                    tile(ci, cj, 1, terrain_col(ci, cj), acc=TERR)
+                else:
+                    tile(ci, cj, 1, GCOL)
             elif c_ == 13:
-                tile(ci, cj, 1, terrain_col(ci, cj) if h_cell(ci, cj) > 2.0 else GCOL)
+                if h_cell(ci, cj) > 2.0:
+                    tile(ci, cj, 1, terrain_col(ci, cj), acc=TERR)
+                else:
+                    tile(ci, cj, 1, GCOL)
             else:
                 tile(ci, cj, 1, GCOL)
                 tile(ci, cj, 1, CLS_COL.get(c_, GCOL), 0.01)
@@ -159,7 +167,7 @@ for cj in range(HJ0, HJ0 + HN):
                 continue
             if t > 1 and is_water_cell(ci + t // 2, cj + t // 2):
                 continue
-            tile(ci, cj, t, terrain_col(ci, cj))
+            tile(ci, cj, t, terrain_col(ci, cj), acc=TERR)
             n_gt += 1
 print("GROUND tiles", n_gt, "%.1fs" % (time.time() - T0), flush=True)
 
@@ -433,12 +441,13 @@ for cj in range(GJ0 - 40, GJ0 + GN + 40, TS):
         if all(cls_at(ci + di, cj + dj) not in (0, 1) for di in range(TS) for dj in range(TS)):
             continue
         def sbz(cc, jj):
-            return -(s0 + (s1 - s0) * min(1.0, dland_at(cc, jj) / 25.0))
+            return -sea_depth(dland_at(cc, jj))
         xa, ya = W((ci, cj))
         xb, yb = W((ci + TS, cj + TS))
         pts_ = [(xa, ya, isl_bed(xa, ya, sbz(ci, cj))), (xb, ya, isl_bed(xb, ya, sbz(ci + TS, cj))), (xb, yb, isl_bed(xb, yb, sbz(ci + TS, cj + TS))),
                 (xa, yb, isl_bed(xa, yb, sbz(ci, cj + TS)))]
-        SEABED.face(pts_, (0.17, 0.19, 0.20), None, wet=1)
+        dd_ = dland_at(ci + 1, cj + 1)
+        SEABED.face(pts_, mixc((0.34, 0.31, 0.24), (0.17, 0.19, 0.20), min(1.0, max(0.0, (dd_ - 1.0) / 12.0))), None, wet=1)
 # a catch-all floor under everything (no holes between the tiles) and a deep floor out to the horizon
 SEABED.face([(-SEAX, -SEAX, -s1), (SEAX, -SEAX, -s1), (SEAX, SEAX, -s1), (-SEAX, SEAX, -s1)], (0.17, 0.19, 0.20), None, wet=1)
 #

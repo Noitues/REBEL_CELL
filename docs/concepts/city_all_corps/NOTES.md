@@ -405,3 +405,24 @@ Tethys modules were not re-tuned beyond a look; the north horizon is flat ground
 - **Day**: median target 0.25, contrast cap 2.0, shadow lift 0.10 (p10 0.11); a BLUE sea (body colour + sky reflection; clear only over
   the drowned quarter).
 - Values (1920 x 1080, 80 spp): night median 0.155, 27.3 % under 0.10, 0.57 % over 0.85; day median 0.250, 8.6 % under 0.10, 0.02 % over 0.85.
+
+### A2 FINALS (4K, 3840 x 2160, 80 spp, version (b)), 2026-10-16
+
+Files in this folder: `city_all_corps_night.png`, `city_all_corps_labeled.png`, `city_all_corps_day.png`, `zoning_map.png` (the A2 cell-class map);
+the previous round's files are kept as `*_r2b.png`. Raw passes: `D:\rc_scratch\city_all_corps\a2final\`.
+
+| | Median | Under 0.10 | Over 0.85 | Other | Render |
+|---|---|---|---|---|---|
+| Night | 0.155 | 27.6 % | 0.91 % | exposure 3.30, toe 1.55, spread 0.39 | 297 s (+ 17 s build) |
+| Day | 0.250 | 8.3 % | 0.06 % | contrast 2.0, p10 0.116, spread 0.36 | about 190 s |
+
+Final pass: the day sea has a depth gradient (turquoise shelves of a few BU at the shore, deep blue offshore), TRANSPARENCY (the sea bed
+shows through: 0.4 transparent offshore to 0.92 in the shallows, clear over the drowned quarter), a broad swell + fine ripple normal (day and
+night: lights reflect as streaks), sun glints and a slightly stronger grazing sky reflection. The sea bed is shallow near the land
+(`sea_depth`). The far terrain is a welded, smooth-shaded accumulator (`TERR`) with a finer LOD (1 cell to 40 cells out, 2 to 150, then 4)
+and softer colour noise; the night post fades the far mountains into a faint haze with depth.
+
+Rebuild (A2): `python zoning_a2.py` (JSON to zoned_a2.json, a2_fields.npz, heights); `python run_jobs.py aaa hero 1.0 80 a2final` and
+`python run_jobs.py day hero 1.0 80 a2final` (separate GPU-queue batches); `python post_city.py aaa <out>/hero_aaa <png> --soft`,
+`python post_city.py labels <png> <out>/hero_aaa_anchors.json <labeled.png>`, `python post_city.py day <out>/hero_day <png>`.
+CPU preview: `sh cpu_a2.sh <cam> <res_k> <spp> [aaa|day]`.

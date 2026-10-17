@@ -91,6 +91,13 @@ def aaa(stem, out, target=None, soft=False):
     # frame's own 5th-percentile level per channel, so the deep darks come back without crushing the mid-tones
     bp = CP.AAA["black_point"] * np.percentile(rgb.reshape(-1, 3), 5, axis=0).astype(np.float32)
     rgb = np.clip(rgb - bp, 0, None)
+    if CP.LAYOUT_MODE == "a2" and os.path.exists(stem + "_z.npy"):
+        # round 5: aerial perspective on the far mountains: toward a faint blue-grey haze with distance (the ridgelines fade)
+        dz = np.clip(np.load(stem + "_z.npy").astype(np.float32)[..., 0], 0, 60000.0)
+        dz = np.asarray(Image.fromarray(dz, mode="F").filter(ImageFilter.MedianFilter(5)), np.float32)
+        fz = np.clip((dz - 1900.0) / 1500.0, 0.0, 1.0)[..., None] ** 1.3 * 0.62
+        hz = np.array([0.012, 0.017, 0.032], np.float32) + 0.35 * np.percentile(rgb, 30, axis=(0, 1)).astype(np.float32)
+        rgb = rgb * (1 - fz) + hz * fz
     h, w = rgb.shape[:2]
     sc = w / 3840.0
     l = luma(rgb)

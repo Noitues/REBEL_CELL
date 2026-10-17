@@ -164,6 +164,7 @@ SMOOTH = Acc("smooth", smooth=True)   # tubes, domes, drums (same shader, smooth
 NEON = Acc("neon")          # emitters (col = emission colour, relative)
 GLASS = Acc("glass", smooth=True)
 GROUND = Acc("ground")
+TERR = Acc("terrain", smooth=True)     # round 5: the terrain beyond the city (welded, smooth shaded: no facets)
 SEABED = Acc("seabed")
 WATER = Acc("water")
 STREAK = Acc("streak")      # traffic light-streaks (their own emitter strength)
