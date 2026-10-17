@@ -8333,3 +8333,6 @@ D14 rule-5 remainder, batch lane (Sonnet 5.5, `const_edits`, specs `tools/batch/
   a state copy; `CombatResolver.quiet` skips the text of the hottest events (states, hashes, metrics unchanged). Proven by
   byte-equal fight (288 records) and campaign (4, end-state hash) reports before and after.
 - **Balance branch:** commits on `balance` may touch only `content/`, `docs/balance/`, `tools/balance/` (`tools/precommit.sh`).
+
+### 2026-10-16 — NA-01: netrun art spec imported
+Text-only import of the netrun art spec, handoff README, art decisions, direction review and an index of approved assets/scripts pinned to art-pass@7f021c21 into docs/handoff/netrun_art/ (no binaries copied).
