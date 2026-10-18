@@ -89,3 +89,32 @@ func test_replace_is_deterministic_across_runs() -> void:
 		hashes.append(s.state_hash())
 	assert_eq(hashes[0], hashes[1])
 	assert_eq(hashes[1], hashes[2])
+
+
+## Q10 for the operative's drones: a drone installed on an occupied slice destroys the one
+## there (cause replaced, ON_SATELLITE_DESTROYED fires) and takes its place.
+func test_deploying_a_drone_on_an_occupied_slice_replaces_it() -> void:
+	var hub := _hub()
+	hub.max_drones = 2
+	hub.drone = SatelliteFixture.satellite(&"sf_drone", 4)
+	var cards: Array[CardData] = []
+	for id in [&"sf_deploy_a", &"sf_deploy_b"]:
+		var e := CombatFixture.effect(RC.EffectType.DEPLOY_DRONE, RC.EffectTarget.SELF, 1, RC.RingScope.OUTER, 1.0, RC.Status.NONE, RC.SlicePick.CHOSEN)
+		cards.append(CombatFixture.card(id, [e], 0, RC.WheelTarget.OWN))
+	var s := SatelliteFixture.session(cards, [], hub, [hub.drone])
+	assert_true(s.apply(CombatAction.play_card(s.state.hand.find(&"sf_deploy_a"), &"", 3)).ok())
+	var first := s.state.living_drones()[0]
+	var block := s.state.player.block
+	var action := CombatAction.play_card(s.state.hand.find(&"sf_deploy_b"), &"", 3)
+	var preview := s.preview(action)
+	var r := s.apply(action)
+	assert_true(r.ok(), r.error)
+	assert_eq(preview.state.state_hash(), r.state.state_hash(), "preview == result")
+	assert_eq(s.state.living_drones().size(), 1, "max 1 per slice")
+	assert_eq(s.state.living_drones()[0].dock_slot, 3)
+	assert_ne(s.state.living_drones()[0].id, first.id, "the new drone")
+	var died := CombatFixture.events_of(r, "died").filter(func(ev: Dictionary) -> bool: return ev["target"] == first.id)
+	assert_eq(died.size(), 1, "reported once")
+	assert_eq(String(died[0].get("cause", "")), "replaced")
+	assert_eq(_destroyed_triggers(r).size(), 1, "ON_SATELLITE_DESTROYED fired once")
+	assert_eq(s.state.player.block, block + 3, "the Hub hook heard it")

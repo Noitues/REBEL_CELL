@@ -44,14 +44,24 @@ func test_trojan_slice_docks_a_drone_up_to_the_hub_cap() -> void:
 	assert_eq(s.state.drones[0].dock_slot, 0, "docked on the Trojan slice itself")
 	assert_eq(s.state.drones[0].hp, 5)
 	assert_true(s.state.drones[0].is_player and s.state.drones[0].is_satellite)
-	CombatFixture.land(s.state.player, 0)
-	_end(s)
-	assert_eq(s.state.living_drones().size(), 2)
-	assert_eq(s.state.drones[1].dock_slot, 1, "next free slot clockwise")
+	# N13 (Q10): max 1 drone per slice; the next Trojan on slot 0 replaces the drone there.
 	CombatFixture.land(s.state.player, 0)
 	r = _end(s)
-	assert_eq(CombatFixture.events_of(r, "drone_cap").size(), 1, "max_drones 2")
-	assert_eq(s.state.living_drones().size(), 2)
+	assert_eq(s.state.living_drones().size(), 1)
+	assert_eq(s.state.living_drones()[0].dock_slot, 0)
+	assert_false(s.state.drones[0].is_alive(), "the old drone was replaced")
+	assert_eq(CombatFixture.events_of(r, "drone_cap").size(), 0, "a swap never hits the cap")
+
+
+func test_a_trojan_worth_three_docks_on_three_slices_up_to_the_cap() -> void:
+	_trojan.base_output = 3
+	var s := _session()
+	CombatFixture.land(s.state.player, 0)
+	var r := _end(s)
+	assert_eq(s.state.living_drones().size(), 2, "max_drones 2")
+	assert_eq(s.state.drones[0].dock_slot, 0)
+	assert_eq(s.state.drones[1].dock_slot, 1, "the next slice clockwise")
+	assert_eq(CombatFixture.events_of(r, "drone_cap").size(), 1)
 
 
 func test_drone_resolves_only_when_its_slice_resolves() -> void:
@@ -97,10 +107,13 @@ func test_drone_on_the_resolved_slice_takes_the_enemy_hit() -> void:
 	var r := _end(s)
 	assert_eq(CombatFixture.events_of(r, "bodyguard").size(), 1)
 	assert_eq(s.state.player.hp, hp, "the operative was not hit")
-	# The drone dies (10 damage vs 5 HP + at most 3 block) and is reported.
-	assert_eq(CombatFixture.events_of(r, "died").size(), 1)
+	# N13 (Q10): the Trojan on slot 0 replaces the old drone first; the new one takes the hit
+	# and dies (10 damage vs 5 HP + at most 3 block). Each is reported once.
+	var died := CombatFixture.events_of(r, "died")
+	assert_eq(died.size(), 2)
+	assert_eq(died.filter(func(ev: Dictionary) -> bool: return String(ev.get("cause", "")) == "replaced").size(), 1)
 	assert_false(s.state.drones[0].is_alive())
-	assert_eq(s.state.living_drones().size(), 1, "the Trojan slice docked a replacement this turn")
+	assert_eq(s.state.living_drones().size(), 0, "the replacement took the hit")
 
 
 func test_botnet_seed_sprouts_one_hp_drones_on_perfects_max_two() -> void:
@@ -190,7 +203,8 @@ func test_drones_survive_save_load_and_replay() -> void:
 	_end(s)
 	CombatFixture.land(s.state.player, 1)
 	_end(s)
-	assert_eq(s.state.living_drones().size(), 3, "one Trojan drone and two seed drones")
+	# N13 (Q10): the first seed drone replaced the Trojan drone on slot 0; the second docks on slot 1.
+	assert_eq(s.state.living_drones().size(), 2, "two seed drones, one per slice")
 	var reloaded := CombatSession.from_dict(s.resolver, s.to_dict())
 	assert_eq(reloaded.state_hash(), s.state_hash())
 	assert_eq(reloaded.state.drones.size(), s.state.drones.size())

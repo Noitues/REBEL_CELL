@@ -188,10 +188,16 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 				cap = hub2.max_drones if hub2 != null else 0
 			var deployed := 0
 			for i in maxi(1, e.amount):
-				if state.satellites_of(owner.id).size() >= cap:
+				# A swap on an occupied slice (Q10 replace) never hits the cap. A random pick at
+				# the cap stops before drawing (the RNG draws stay as before N13).
+				var at_cap := state.satellites_of(owner.id).size() >= cap
+				if at_cap and e.slice_pick == RC.SlicePick.RANDOM_NON_NULL:
 					events.append({"type": "drone_cap", "text": "%s cannot dock more than %d drone(s)." % [owner.display_name, cap]})
 					break
 				var slot := pick_slot(state, owner, e.slice_pick, ctx, rng)
+				if at_cap and state.satellite_at(owner.id, maxi(0, slot)) == null:
+					events.append({"type": "drone_cap", "text": "%s cannot dock more than %d drone(s)." % [owner.display_name, cap]})
+					break
 				if deploy_drone(state, owner, template, maxi(0, slot), events) != null:
 					deployed += 1
 			return deployed > 0
@@ -580,19 +586,18 @@ static func make_combatant(data: EnemyData, id: StringName, is_satellite: bool) 
 	return c
 
 
-## Docks a drone of `template` on `owner`'s wheel (GDD 5.2): the first free slot from
-## `preferred_slot` clockwise. Returns the drone, or null when every slot is taken.
+## Docks a drone of `template` on slot `preferred_slot` of `owner`'s wheel (GDD 5.2). Max 1
+## drone or satellite per slice (designer 2026-10-18, Q10): one already there is destroyed
+## (a `died` event with cause "replaced"; the "replaced:<id>" flag lets the resolver's death
+## pass fire ON_SATELLITE_DESTROYED with that cause). Returns the new drone.
 func deploy_drone(state: CombatState, owner: CombatantState, template: EnemyData, preferred_slot: int, events: Array[Dictionary]) -> CombatantState:
-	var n := owner.wheel.slice_count
-	var slot := -1
-	for k in n:
-		var candidate := posmod(preferred_slot + k, n)
-		if state.satellite_at(owner.id, candidate) == null:
-			slot = candidate
-			break
-	if slot < 0:
-		events.append({"type": "deploy_failed", "text": "%s has no free slice for a drone." % owner.display_name})
-		return null
+	var slot := posmod(preferred_slot, owner.wheel.slice_count)
+	var old := state.satellite_at(owner.id, slot)
+	if old != null:
+		old.hp = 0
+		state.flags["replaced:%s" % old.id] = 1
+		events.append({"type": "died", "target": old.id, "cause": "replaced",
+			"text": "%s is replaced on slot %d." % [old.display_name, slot]})
 	var drone := make_combatant(template, StringName("%s_drone_%d" % [owner.id, state.spawn_counter]), true)
 	state.spawn_counter += 1
 	drone.is_player = owner.is_player

@@ -52,6 +52,10 @@ func test_scene_controls_drive_the_engine() -> void:
 	assert_eq(engine.state().state_hash(), before, "rewind restored it")
 	_scene.cycle_target()
 	assert_eq(engine.state().target_id, engine.state().living_enemies(true)[1 % engine.state().living_enemies(true).size()].id)
+	# The cycle aimed at the host's docked satellite; satellites are fixed (N13, designer
+	# 2026-10-18), so a moving card there is refused. Aim back at the host to play it.
+	_scene.cycle_target()
+	assert_false(engine.state().get_combatant(engine.state().target_id).is_satellite)
 	var hand := engine.state().hand.size()
 	_scene.play_card(0)
 	assert_eq(engine.state().hand.size(), hand - 1, "card left the hand")

@@ -906,10 +906,13 @@ func _deploy(s: CombatState, owner: CombatantState, count: int, from_slot: int, 
 		events.append({"type": "deploy_failed", "text": "%s has no drone template to deploy." % owner.display_name})
 		return
 	for i in count:
-		if s.satellites_of(owner.id).size() >= hub.max_drones:
+		# One drone per slice (Q10): a Trojan worth N drones docks them on N slices
+		# clockwise from its own, each replacing what is there (a swap never hits the cap).
+		var slot := posmod(from_slot + i, owner.wheel.slice_count)
+		if s.satellites_of(owner.id).size() >= hub.max_drones and s.satellite_at(owner.id, slot) == null:
 			events.append({"type": "drone_cap", "text": "%s cannot dock more than %d drone(s)." % [owner.display_name, hub.max_drones]})
 			return
-		if fx.deploy_drone(s, owner, hub.drone, from_slot, events) == null:
+		if fx.deploy_drone(s, owner, hub.drone, slot, events) == null:
 			return
 
 
@@ -995,6 +998,9 @@ func _apply_deaths(s: CombatState, _alive_before: Array[StringName], rng: Random
 			var key := "dead:%s" % c.id
 			if not c.is_alive() and not s.flags.has(key):
 				s.flags[key] = 1
+				if s.flags.has("replaced:%s" % c.id):
+					destroyed.append([c, &"replaced"])  # deploy_drone already reported it
+					continue
 				events.append({"type": "died", "target": c.id, "text": "%s is destroyed." % c.display_name})
 				if c.is_satellite:
 					destroyed.append([c, &"killed"])

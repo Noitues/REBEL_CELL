@@ -148,9 +148,13 @@ default as a placeholder behind config and says so in its report.
 - **Destroyed trigger (Q7):** `_apply_deaths` fires ON_SATELLITE_DESTROYED (operative's Hub and Daemons) for every
   satellite or drone death, cause killed or cleared (went down with its host); the replace path fires it with cause
   replaced. Context keys `satellite`, `host_id`, `cause`. Deaths those hooks cause settle in the same call.
-- **Not changed:** the operative's drone deploy (`EffectInterpreter.deploy_drone`) still takes the first free slot
-  clockwise and fails when all are taken (outside the slice's files; Q10 "install on occupied" applies to it only if
-  a drone effect ever names an occupied slice). No save format change.
+- **Drones replace too (Q10, orchestrator follow-up):** `EffectInterpreter.deploy_drone` docks on the slot it is given
+  and destroys a drone already there (`died` cause "replaced", flag `replaced:<id>`; the resolver's death pass fires
+  ON_SATELLITE_DESTROYED with cause replaced at the next settle). A Trojan worth N drones docks them on N slices
+  clockwise from its own (it used to fill the next free slots). A swap on an occupied slice never hits `max_drones`;
+  a RANDOM_NON_NULL deploy at the cap still stops before drawing. Botnet play changes: a Trojan landing on its slice
+  again swaps its drone instead of adding one, and a Botnet Seed Perfect on the Trojan slice replaces the Trojan drone.
+- **Not changed:** no save format change.
 
 ### 2026-10-18 — Plan 2 W0 N3: phases on every class, threshold parking, status keep (R1, R3, R6; Q31)
 - **Schema:** `RC.CleanseScope { NONE, OWN, PLAYER, BOTH }` (append-only, NONE = 0), `RC.EnemyClass { NORMAL, ELITE,
@@ -7632,7 +7636,7 @@ Before covers 43 screens; after covers 53. The remaining findings are low-confid
 - Colour-blind support stays a daltonize correction (ART_BIBLE §12 says "remap").
 
 ## Open questions for the designer
-- **2026-10-18 W0 N13, fixed satellites (simplest option built):** (a) FREEZE on a satellite is refused like a move (brief acceptance 1), although it does not turn the wheel; (b) a spawn with no free slot replaces slot 0 rather than drawing a random slot (keeps RNG draws unchanged); (c) the operative's drone deploy still skips occupied slices instead of replacing; (d) ON_SATELLITE_DESTROYED is heard by the operative's Hub and Daemons only, not by enemies. Say if any should differ.
+- **2026-10-18 W0 N13, fixed satellites (simplest option built):** (a) FREEZE on a satellite is refused like a move (brief acceptance 1), although it does not turn the wheel; (b) a spawn with no free slot replaces slot 0 rather than drawing a random slot (keeps RNG draws unchanged); (c) drones replace too, so a Trojan re-landing on its slice swaps its drone rather than adding one (Botnet builds drones more slowly; a Trojan worth N docks on N slices clockwise); (d) ON_SATELLITE_DESTROYED is heard by the operative's Hub and Daemons only, not by enemies. Say if any should differ.
 - **2026-10-18 W0 N2, tier tables (defaults built):** (1) a mini-boss with `hp_by_tier` still takes the ICE / Heat boss-strength multiplier on its table HP (bosses read it as the `hp_bands` zone instead); (2) the boss band zone reads the combined `boss_strength_pct` (ICE + Heat + campaign modifiers), not the ICE term alone; (3) the boss lint warning ceiling is phases x the T4 two-needle budget (126; 504 for 4 phases), no floor, since sustain is per phase (N3); (4) flat x factor rounding is N1's. Say if any should differ.
 - **2026-10-18 N4, enrage edges (defaults built):** (1) Satellites never enrage (they are normal-class); the test plan assumed they take the host's step. Say if they should. (2) The enraged hit rounds half up in integers (10 at x1.25 = 13). (3) A frozen turn (skipped respin) still counts: the step reads the turn counter only. (4) The enrage scales every enemy hit, including a PERCENT-of-max-HP damage amount if one ever ships (none does today).
 - **2026-10-18 N3, boss phase minimum:** R1 says a boss has 4-5 phases; every shipped boss has 3 (2 entries) and N3 adds no content phases, so `phase_count_min_by_class` ships [1, 1, 2, **3**] (placeholder). Raise the boss entry to 4 when the boss design passes land (Genome Core has 4).
