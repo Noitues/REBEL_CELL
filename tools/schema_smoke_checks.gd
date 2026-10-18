@@ -7,8 +7,30 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage()
 
+
+## Plan 2 N4: EnrageData defaults and save round trip; bad fields are refused by name; the
+## config's per-class defaults (normal off); EnemyData.enrage on a normal is refused.
+func _n4_enrage() -> int:
+	var fails := 0
+	var e := EnrageData.new()
+	print("N4 enrage defaults (expect 10 5 25 0): ", e.start_turn, " ", e.every_n_turns, " ", e.damage_pct_step, " ", e.resistance_step)
+	if e.start_turn != 10 or e.every_n_turns != 5 or e.damage_pct_step != 25 or e.resistance_step != 0: fails += 1
+	e.resistance_step = 2
+	var err := ResourceSaver.save(e, "user://smoke_enrage.tres")
+	var back: EnrageData = load("user://smoke_enrage.tres")
+	print("N4 enrage save=", err, " resistance_step ", back.resistance_step if back != null else -1)
+	if err != OK or back == null or back.resistance_step != 2 or not back.validate().is_empty(): fails += 1
+	e.start_turn = 0; e.every_n_turns = 0; e.damage_pct_step = -1; e.resistance_step = -1
+	print("N4 bad enrage errors (expect 4): ", e.validate())
+	if e.validate().size() != 4: fails += 1
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("N4 enrage start by class ", cfg.enrage_start_turn_by_class)
+	if cfg.enrage_default(RC.EnemyClass.NORMAL) != null or cfg.enrage_default(RC.EnemyClass.BOSS) == null: fails += 1
+	var n := EnemyData.new(); n.id = &"smoke_norm"; n.enrage = EnrageData.new()
+	if not ",".join(n.validate(CampaignConfigData.new())).contains("normal_has_enrage"): fails += 1
+	return fails
 
 ## Plan 2 N3: BossPhaseData.cleanse_on_enter defaults NONE and survives a save; an unknown
 ## scope and a threshold outside (0, 1) are refused; the config's per-class phase counts.

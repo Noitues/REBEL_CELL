@@ -289,6 +289,7 @@ func retrigger_multipliers(state: CombatState, trigger: int, ctx: Dictionary, li
 ## the rest is HP damage through lose_hp (never below 0 or the phase floor; the event's
 ## "parked" says what the floor stopped).
 func deal_hit(state: CombatState, attacker: CombatantState, victim: CombatantState, amount: int, pierce: bool, is_attack: bool, events: Array[Dictionary], source_id: StringName = &"") -> int:
+	amount = enraged(attacker, amount)
 	if amount <= 0:
 		return 0
 	if is_attack and victim.evade_charges > 0:
@@ -314,6 +315,15 @@ func deal_hit(state: CombatState, attacker: CombatantState, victim: CombatantSta
 		"text": "" if quiet else "%s hits %s for %d%s%s -> %d HP damage (%d HP left)." % [attacker.display_name, victim.display_name, amount,
 			" (pierce)" if pierce else "", _absorb_text(blocked, shielded), hp_damage, victim.hp]})
 	return hp_damage
+
+
+## N4 (plan 2 R4): `amount` as an enemy `attacker`'s hit lands under its enrage (hits only:
+## heal, block and shield never read it; the operative's hits never scale). Applied before
+## evade, block, shield and the phase clamp.
+static func enraged(attacker: CombatantState, amount: int) -> int:
+	if attacker == null or attacker.is_player or attacker.enrage_step <= 0:
+		return amount
+	return EnrageData.scale_hit(amount, attacker.enrage_percent)
 
 
 ## The one clamp every HP-loss path goes through (plan 2 R3): hits (pierce too), self-damage,

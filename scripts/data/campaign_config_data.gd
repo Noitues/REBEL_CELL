@@ -104,6 +104,13 @@ extends Resource
 ## adds no content phases: DECISIONS 2026-10-18 N3).
 @export var phase_count_min_by_class: PackedInt32Array = PackedInt32Array([1, 1, 2, 3])
 @export var phase_count_max_by_class: PackedInt32Array = PackedInt32Array([1, 2, 3, 5])
+## N4 (plan 2 R4, ruling Q33): class enrage defaults, indexed by RC.EnemyClass (normal,
+## elite, mini-boss, boss). A start turn of 0 means no enrage (normals). An EnemyData's
+## authored `enrage` wins over these (enrage_for). Steps are additive; defaults add no
+## resistance (resistance_step is for authored enrages).
+@export var enrage_start_turn_by_class: PackedInt32Array = PackedInt32Array([0, 8, 10, 10])
+@export var enrage_every_n_turns_by_class: PackedInt32Array = PackedInt32Array([0, 5, 5, 5])
+@export var enrage_damage_pct_step_by_class: PackedInt32Array = PackedInt32Array([0, 25, 25, 25])
 
 @export_group("Netrun")
 @export var map_layers: int = 7
@@ -358,6 +365,7 @@ func validate() -> PackedStringArray:
 	for arr in [rack_heat_by_tier, rack_schematics_by_tier, raid_schematics_by_tier]:
 		if arr.size() != 4:
 			errors.append("Per-tier arrays need 4 entries.")
+	_validate_enrage(errors)
 	if phase_count_min_by_class.size() != RC.EnemyClass.size() or phase_count_max_by_class.size() != RC.EnemyClass.size():
 		errors.append("Phase counts need one entry per enemy class (%d)." % RC.EnemyClass.size())
 	else:
@@ -409,3 +417,39 @@ func validate() -> PackedStringArray:
 	if fx_shard_base < 1 or fx_shard_max < fx_shard_base or fx_glyph_px_max < fx_glyph_px_base:
 		errors.append("FX shard counts / glyph sizes out of order.")
 	return errors
+
+
+## N4: the class default enrage for RC.EnemyClass `cls` (a fresh EnrageData, never a loaded
+## Resource), or null when that class has none (start turn 0 or no entry).
+func enrage_default(cls: int) -> EnrageData:
+	if cls < 0 or cls >= enrage_start_turn_by_class.size() or enrage_start_turn_by_class[cls] <= 0:
+		return null
+	var e := EnrageData.new()
+	e.start_turn = enrage_start_turn_by_class[cls]
+	e.every_n_turns = enrage_every_n_turns_by_class[cls] if cls < enrage_every_n_turns_by_class.size() else 0
+	e.damage_pct_step = enrage_damage_pct_step_by_class[cls] if cls < enrage_damage_pct_step_by_class.size() else 0
+	return e
+
+
+## N4: the enrage `data` fights with: its authored one, else its class default, else null
+## (normals). Satellites never enrage: CombatResolver skips them.
+func enrage_for(data: EnemyData) -> EnrageData:
+	if data == null:
+		return null
+	if data.enrage != null:
+		return data.enrage
+	return enrage_default(data.enemy_class())
+
+
+func _validate_enrage(errors: PackedStringArray) -> void:
+	var n := RC.EnemyClass.size()
+	if enrage_start_turn_by_class.size() != n or enrage_every_n_turns_by_class.size() != n or enrage_damage_pct_step_by_class.size() != n:
+		errors.append("Enrage defaults need one entry per enemy class (%d)." % n)
+		return
+	if enrage_start_turn_by_class[RC.EnemyClass.NORMAL] != 0:
+		errors.append("enrage_start_turn_by_class: normals have no enrage (0).")
+	for k in n:
+		var d := enrage_default(k)
+		if d != null:
+			for problem in d.validate():
+				errors.append("%s (class %d default)" % [problem, k])
