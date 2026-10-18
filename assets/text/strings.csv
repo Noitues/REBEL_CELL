@@ -171,6 +171,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 "+%d Schematics banked, assets banked","+%d Schematics banked, assets banked"
 +%d block and shield gained,+%d block and shield gained
 +%d more routes (the pencil letters them on the map),+%d more routes (the pencil letters them on the map)
++%d resistance each turn from its enrage.,+%d resistance each turn from its enrage.
 +1 = %d,+1 = %d
 ", a run in progress",", a run in progress"
 - its block and shield %d (absorbed),- its block and shield %d (absorbed)
@@ -765,6 +766,7 @@ EMPTY,EMPTY
 EMPTY SLOT,EMPTY SLOT
 ENCRYPTED,ENCRYPTED
 ENCRYPTED STOPPED %d,ENCRYPTED STOPPED %d
+ENRAGE %d,ENRAGE %d
 ENTRY SITES,ENTRY SITES
 EQUIPMENT LOST TO HOSTILES,EQUIPMENT LOST TO HOSTILES
 ESC,ESC
@@ -906,6 +908,7 @@ EnemyData.weather_satellite.description,"Fast orbit (4 ticks a turn), self-repai
 EnemyData.weather_satellite.display_name,Weather Satellite
 EnemyData.zoning_board.description,"Shields, heals and rezones its read head 2 ticks a turn."
 EnemyData.zoning_board.display_name,Zoning Board
+"Enraged, step %d: its hits deal %d%% damage (+%d%% each step).","Enraged, step %d: its hits deal %d%% damage (+%d%% each step)."
 Enter a share code,Enter a share code
 Entering it changes Heat by %s.,Entering it changes Heat by %s.
 Event,Event
@@ -1750,6 +1753,7 @@ NetworkNodeData.vault_terminal.display_name,Vault Terminal
 New campaign,New campaign
 Next,Next
 Next seed,Next seed
+Next step on turn %d (in %d turns).,Next step on turn %d (in %d turns).
 Next threshold at %d.,Next threshold at %d.
 Next threshold at %d: %s,Next threshold at %d: %s
 Next with a clockwise turn: %s,Next with a clockwise turn: %s

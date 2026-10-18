@@ -393,6 +393,7 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 			if c.hub_breached_turns == 0:
 				events.append({"type": "hub_restored", "target": c.id, "text": "%s Hub is back online." % c.display_name})
 		if not c.is_player:
+			refresh_enrage(s, c, events)
 			c.resistance = maxi(0, c.full_resistance() + c.resistance_carry)
 			c.resistance_carry = 0
 	for e in s.enemies:
@@ -473,6 +474,47 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 	s.discard_pile.append_array(s.hand)
 	s.hand.clear()
 	_retarget_if_needed(s)
+
+
+# --- Enrage (plan 2 R4, N4) -------------------------------------------------------
+
+## The enrage `c` fights with (authored, else its class default), or null: normals,
+## satellites and the operative have none.
+func enrage_of(c: CombatantState) -> EnrageData:
+	if c == null or c.is_player or c.is_satellite:
+		return null
+	return config.enrage_for(lookup.get_content(c.source_id) as EnemyData)
+
+
+## Sets `c`'s enrage step, hit factor and resistance for `s.turn` (a pure function of the
+## turn: calling it again on the same turn changes nothing). Logs an "enrage" event when
+## the step rises. Runs at the start of each turn, before the resistance restore.
+func refresh_enrage(s: CombatState, c: CombatantState, events: Array[Dictionary]) -> void:
+	var data := enrage_of(c)
+	var step := data.enrage_step(s.turn) if data != null else 0
+	var before := c.enrage_step
+	c.enrage_step = step
+	c.enrage_percent = data.damage_percent_at_step(step) if data != null else RC.PERCENT_MAX
+	c.enrage_resistance = data.resistance_at_step(step) if data != null else 0
+	if step > before:
+		events.append({"type": "enrage", "target": c.id, "step": step, "percent": c.enrage_percent,
+			"text": "%s enrages (step %d): its hits deal %d%%." % [c.display_name, step, c.enrage_percent]})
+
+
+## What the enemy's enrage buff shows (N4, ruling Q33: no countdown before step 1):
+## {visible, step, percent (hit factor, 100 = unchanged), resistance (added per turn),
+## step_percent, step_resistance (what each step adds), next_turn (the turn of the next
+## step), turns_to_next (from the current turn)}. Hidden (visible false) for normals,
+## satellites, the operative and any enemy at step 0.
+func enrage_buff_state(s: CombatState, c: CombatantState) -> Dictionary:
+	var data := enrage_of(c)
+	if data == null or c.enrage_step < 1:
+		return {"visible": false, "step": 0, "percent": RC.PERCENT_MAX, "resistance": 0,
+			"step_percent": 0, "step_resistance": 0, "next_turn": 0, "turns_to_next": 0}
+	var next_turn := data.next_step_turn(c.enrage_step)
+	return {"visible": true, "step": c.enrage_step, "percent": c.enrage_percent, "resistance": c.enrage_resistance,
+		"step_percent": data.damage_pct_step, "step_resistance": data.resistance_step,
+		"next_turn": next_turn, "turns_to_next": maxi(0, next_turn - s.turn)}
 
 
 # --- Readouts (HUD / preview) ----------------------------------------------------
@@ -788,7 +830,8 @@ func _slice_action(s: CombatState, owner: CombatantState, slice: SliceData, outp
 			var target: CombatantState = ctx["target"]
 			if target == null or not target.is_alive():
 				return
-			events.append({"type": "attack", "attacker": owner.id, "target": target.id, "amount": output, "pierce": pierce,
+			# N4: the attack line reports the hit as it lands (deal_hit applies the enrage).
+			events.append({"type": "attack", "attacker": owner.id, "target": target.id, "amount": EffectInterpreter.enraged(owner, output), "pierce": pierce,
 				"text": "" if quiet else "%s %s for %d at %s." % [owner.display_name, _slice_name(slice), output, target.display_name]})
 			for q in target.wheel.pointer_ticks.size():
 				# Bodyguard applies even to Pierce (designer ruling: Pierce ignores block

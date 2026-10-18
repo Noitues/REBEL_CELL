@@ -30,6 +30,9 @@ const HP_BAND_EPSILON := 0.0001
 @export var phases: Array[BossPhaseData] = []
 @export var heat_effects: Array[HeatGatedEffectData] = []
 @export var art: Texture2D
+## N4 (plan 2 R4): an authored enrage that replaces the class default
+## (CampaignConfigData.enrage_for). Normals may not have one.
+@export var enrage: EnrageData
 
 
 ## N2: true when starting HP comes from hp_by_tier / hp_bands, not the legacy multiplier.
@@ -94,6 +97,11 @@ func validate(config: CampaignConfigData = null) -> PackedStringArray:
 	if band_config == null and (not hp_by_tier.is_empty() or not hp_bands.is_empty()) and ResourceLoader.exists(CONFIG_PATH):
 		band_config = load(CONFIG_PATH) as CampaignConfigData
 	errors.append_array(_validate_hp_table(band_config))
+	if enrage != null:
+		if enemy_class() == RC.EnemyClass.NORMAL:
+			errors.append("normal_has_enrage: Enemy %s is a normal; normals have no enrage." % id)
+		for problem in enrage.validate():
+			errors.append("%s (enemy %s)" % [problem, id])
 	return errors
 
 

@@ -1056,6 +1056,26 @@
 		"res://tests/unit/test_phase_sweep.gd": {
 			"seconds": 0.0,
 			"tier": "full"
+		},
+		"res://tests/unit/test_enrage_data.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_enrage_combat.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_enrage_replay_save.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/integration/test_enrage_hud_flow.gd": {
+			"seconds": 0.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_enrage_sweep.gd": {
+			"seconds": 0.0,
+			"tier": "full"
 		}
 	}
 }
