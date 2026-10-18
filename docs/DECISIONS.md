@@ -106,6 +106,9 @@ default as a placeholder behind config and says so in its report.
 - **New slices:** N21 (class resistance + per-turn refresh + "+N" mark; Q16, Q31) and N22 (EASY / HARD normal pools;
   Q12) join W0 after N2. Enrage (N4) drops the countdown chip (Q33). The preview "?" rule (Q19), the status audit (Q40),
   the two corp drafts (Q45) and the turn lifecycle for locks (Q31, with N7) are queued.
+- **After N1 (build session):** the existing enemy SHIELD cap stays (Q13 "no new caps" keeps what exists). Follow-up
+  slice **N1b** after N2: enemy DEAL_DAMAGE *effects* (listeners, hub, not only slices) also scale by the tier damage
+  factor (R2 "tier scales enemy hits").
 
 ### 2026-10-18 — Plan 2 W0 N1: amount modes (R2, R5; rulings Q13, Q15)
 - **Schema:** `RC.AmountMode { FLAT, PERCENT }` (append-only, FLAT = 0) and `RC.PERCENT_MAX` = 100 (a definition).
