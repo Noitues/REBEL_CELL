@@ -97,7 +97,7 @@ default as a placeholder behind config and says so in its report.
 - **Q40:** no status-slot limit. Status types today: OUTPUT_DOWN, TIER_DOWN and CORRUPTED. **Audit** Slay-the-Spire-
   style statuses (poison, burn, weak, frail, vulnerable, ...) against ours and propose the gaps (Batch draft). Processing
   scope: follow-up.
-- **Q42:** Schematics sink, once per raid, shared defenses, no re-setup. Fence and Ghost are operative classes: their
+- **Q42:** Schematics sink, once per raid, shared defenses, no re-setup. Ghost is an operative class (Fence is the Black Market trade-in, not a class; follow-up asks to confirm): its
   raid roles go to a dedicated **raid operative design pass** (separate from netrun operative design); default for now.
 - **Q45:** one design per new corp, Batch-drafted; both are bought like the other corps; the starting corporation stays
   Solace. Each corp's design is its own pass.
