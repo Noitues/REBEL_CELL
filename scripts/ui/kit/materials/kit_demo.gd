@@ -6,7 +6,7 @@ extends RefCounted
 ## BinaryBits) put on `host`. `tools/design_lab/motion_lab.gd` calls `play` for its "kit"
 ## demos; `test_motion_lab_demos.gd` checks the piece reads the entry. A view (dev tool path).
 
-const AT := Vector2(300, 260)
+const DEMO_ANCHOR := Vector2(300, 260)
 
 
 ## Builds the piece for `id` on `host` and plays its motion. Returns the demo's length (s).
@@ -22,7 +22,7 @@ static func play(id: StringName, host: Control) -> float:
 			return Motion.seconds(CentralServerGate.STAGGER) * all_kinds.size() + Motion.seconds(CentralServerGate.SLAP) 				+ Motion.seconds(CentralServerGate.RING) + Motion.seconds(CentralServerGate.READY)
 		&"crt_type_on", &"crt_caret_blink", &"crt_hex_scroll":
 			var p := CrtTerminalPanel.new()
-			p.position = AT - Vector2(200, 40)
+			p.position = DEMO_ANCHOR - Vector2(200, 40)
 			p.size = Vector2(420, 80)
 			host.add_child(p)
 			return p.type_on("RAM 5/12  // next turn +2")
@@ -32,7 +32,7 @@ static func play(id: StringName, host: Control) -> float:
 			s.text = "SEND IT"
 			s.fill = VinylSticker.Fill.HOLO
 			host.add_child(s)
-			s.place_center(AT)
+			s.place_center(DEMO_ANCHOR)
 			match id:
 				&"sticker_slap":
 					return s.slap()
@@ -41,7 +41,7 @@ static func play(id: StringName, host: Control) -> float:
 				&"sticker_dissolve":
 					var bits := BinaryBits.new()
 					host.add_child(bits)
-					return s.dissolve(bits, host.global_position + AT + Vector2(260, -160))
+					return s.dissolve(bits, host.global_position + DEMO_ANCHOR + Vector2(260, -160))
 				&"sticker_gloss_sweep":
 					return s.sweep()
 				&"sticker_sweep_period":
@@ -66,26 +66,26 @@ static func play(id: StringName, host: Control) -> float:
 			m.ink = GreasePencilMark.Ink.THREAT
 			m.auto_write = false  # the demo plays the write or the wipe itself
 			host.add_child(m)
-			m.add_stroke(PencilShapes.hand_circle(AT, Vector2(60, 48), 3))
+			m.add_stroke(PencilShapes.hand_circle(DEMO_ANCHOR, Vector2(60, 48), 3))
 			if id == &"pencil_wipe":
 				return m.wipe()
 			return m.write_on()
 		&"holo_bands":
 			var h := DecryptedHoloPanel.new()
 			h.scrim = false
-			h.position = AT - Vector2(200, 120)
+			h.position = DEMO_ANCHOR - Vector2(200, 120)
 			h.size = Vector2(400, 240)
 			host.add_child(h)
 			return Motion.seconds(id)
 		&"light_spill_breathe":
 			var l := LightSpill.new()
-			l.position = AT
+			l.position = DEMO_ANCHOR
 			host.add_child(l)
 			return Motion.seconds(id)
 		&"bits_flight":
 			var b := BinaryBits.new()
 			host.add_child(b)
 			var o := host.global_position
-			var arr := b.burst_from_rect(Rect2(o + AT - Vector2(80, 30), Vector2(160, 60)), o + AT + Vector2(260, -160), Palette.CELL_PINK)
+			var arr := b.burst_from_rect(Rect2(o + DEMO_ANCHOR - Vector2(80, 30), Vector2(160, 60)), o + DEMO_ANCHOR + Vector2(260, -160), Palette.CELL_PINK)
 			return arr[arr.size() - 1] if not arr.is_empty() else 0.0
 	return 0.0
