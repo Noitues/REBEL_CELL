@@ -215,7 +215,7 @@ func test_reduce_effects_adds_no_fx_and_nothing_waits() -> void:
 	fx.nudge_resist(c, "RESIST")
 	fx.ram_gain(c, t)
 	fx.trigger_fx(c, c + Vector2(100, 0), Palette.NEON_VIOLET)
-	fx.temp_label(c, "EVADED", Palette.GAIN)
+	fx.temp_label(c, "SANDBOXED", Palette.GAIN)
 	assert_eq(fx.sprites.size(), 0, "reduce effects: no particles, streams, walls, tears or labels (the end state shows at once)")
 	assert_false(fx.busy(), "nothing for the scene to wait on")
 	var done := [false]
@@ -326,7 +326,7 @@ func test_slap_squashes_overshoots_and_settles() -> void:
 func test_a_temporary_label_dissolves_left_to_right_into_bits() -> void:
 	_live()
 	var fx := _layer()
-	fx.temp_label(Vector2(600, 300), "EVADED", Palette.GAIN)
+	fx.temp_label(Vector2(600, 300), "SANDBOXED", Palette.GAIN)
 	var tags := _kinds(fx, "tag")
 	assert_eq(tags.size(), 1, "the word sticker")
 	var tag: Dictionary = tags[0]

@@ -2255,7 +2255,7 @@ trans = 0
 amplitude = 0.45
 tier = 2
 
-; ANIM-R6 A16: the tutorial's Next pulses while it is what moves the tutorial on; duration = each half, amplitude = the alpha it dims to
+; ANIM-R6 A16: the tutorial's Next pulses while it is what moves the tutorial on; duration = each half, amplitude = the alpha it dims to (never under 0.75: Next stays readable at the low point)
 [sub_resource type="Resource" id="m_tutorial_next_pulse"]
 script = ExtResource("1_entry")
 id = &"tutorial_next_pulse"
@@ -2263,7 +2263,7 @@ duration = 0.6
 delay = 0.0
 ease = 2
 trans = 1
-amplitude = 0.45
+amplitude = 0.8
 tier = 1
 kind = 2
 

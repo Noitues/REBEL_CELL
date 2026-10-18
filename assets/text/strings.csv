@@ -94,12 +94,12 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s BITES IT %d,%s BITES IT %d
 %s BITES YOU %d,%s BITES YOU %d
 %s DOWN,%s DOWN
-%s EVADE,%s EVADE
 %s Heat on entry,%s Heat on entry
 %s LANDS ON: %s,%s LANDS ON: %s
 %s MOVES,%s MOVES
 %s R%d,%s R%d
 "%s R%d, %s. HP %d/%d, DECK %d, DAEMONS %d.","%s R%d, %s. HP %d/%d, DECK %d, DAEMONS %d."
+%s SANDBOX,%s SANDBOX
 %s SECURITY,%s SECURITY
 %s Schematics,%s Schematics
 %s Site,%s Site
@@ -162,12 +162,12 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 +%d BLOCK,+%d BLOCK
 +%d DRONE,+%d DRONE
 +%d EARLIER,+%d EARLIER
-+%d EVADE,+%d EVADE
 +%d HP,+%d HP
 +%d HP healed,+%d HP healed
 +%d MORE,+%d MORE
 +%d NEEDLE,+%d NEEDLE
 +%d RAM,+%d RAM
++%d SANDBOX,+%d SANDBOX
 +%d SHIELD,+%d SHIELD
 "+%d Schematics banked, assets banked","+%d Schematics banked, assets banked"
 +%d block and shield gained,+%d block and shield gained
@@ -768,7 +768,6 @@ ENRAGE %d,ENRAGE %d
 ENTRY SITES,ENTRY SITES
 EQUIPMENT LOST TO HOSTILES,EQUIPMENT LOST TO HOSTILES
 ESC,ESC
-EVADED %d,EVADED %d
 EVENT,EVENT
 EVENT LOOT,EVENT LOOT
 "EXHAUST: once played, the card leaves your deck for this fight.","EXHAUST: once played, the card leaves your deck for this fight."
@@ -2174,6 +2173,7 @@ Router: a fight. Win it for Cycles and loot.,Router: a fight. Win it for Cycles 
 Runs,Runs
 Runs completed,Runs completed
 SANDBOX,SANDBOX
+SANDBOXED %d,SANDBOXED %d
 SAVE & QUIT,SAVE & QUIT
 SAVED,SAVED
 SBOX,SBOX

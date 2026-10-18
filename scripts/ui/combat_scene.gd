@@ -173,6 +173,7 @@ var _piles: CardPiles
 var _held_chips: Dictionary = {}
 ## The free part of the right column: subtitles on top, the tutorial under them.
 var _notes_area: Control
+var _queue_foot_seen: float = 0.0
 var _zine_elements: Array[Control] = []
 var _last_events: Array[Dictionary] = []
 var _log_generation: int = 0
@@ -404,7 +405,7 @@ static func last_turn_lines(before: CombatState, after: CombatState, events: Arr
 		if int(soaked.get(c.id, 0)) > 0:
 			parts.append(String(TranslationServer.translate("%d BLOCKED")) % int(soaked[c.id]))
 		if int(evaded.get(c.id, 0)) > 0:
-			parts.append(String(TranslationServer.translate("EVADED %d")) % int(evaded[c.id]))
+			parts.append(String(TranslationServer.translate("SANDBOXED %d")) % int(evaded[c.id]))
 		if int(guarded.get(c.id, 0)) > 0:
 			parts.append(String(TranslationServer.translate("GUARD TOOK %d")) % int(guarded[c.id]))
 		if int(gained.get(c.id, 0)) > 0:
@@ -784,6 +785,7 @@ func start_tutorial() -> void:
 	tutorial = TutorialOverlay.new(TUTORIAL_RECT.size)
 	tutorial.position = TUTORIAL_RECT.position  # the right column: never on a wheel (GDD 9.2)
 	tutorial.z_index = OVER_HAND_Z  # its words and NEXT stay over a hovered card
+	tutorial.add_to_group(CardPreviewOverlay.LABEL_BLOCK_GROUP)  # W0 TEACH: the preview ghost labels keep off the box
 	add_child(tutorial)
 	_relayout.call_deferred()
 	tutorial.step_changed.connect(_relayout.call_deferred)  # ANIM-R6 A16: the box follows its step's text
@@ -2382,6 +2384,11 @@ func _relayout() -> void:
 	var bottom := area.end.y
 	if bottom - top < TUTORIAL_MIN_HEIGHT:
 		top = area.position.y  # no room under the subtitles: the tutorial takes the area
+	# W0 TEACH: the THIS TURN list grows with the plays; the box stands under it, never over it.
+	if _queue_panel != null and _queue_panel.visible:
+		var qr := _queue_panel.get_global_rect()
+		if qr.position.x < area.end.x and qr.end.x > area.position.x:
+			top = maxf(top, qr.end.y + NOTE_GAP)
 	if bottom - top < TUTORIAL_MIN_HEIGHT:
 		return
 	tutorial.position = Vector2(area.position.x, top) - origin
@@ -3601,6 +3608,11 @@ func _refresh_queue_panel() -> void:
 		return
 	_queue_panel.set_rows(queue_rows(), _queue_room())
 	_place_queue_panel()
+	# W0 TEACH: the list's foot moved (a play added a row): the tutorial box stands under it again.
+	var foot := _queue_panel.get_global_rect().end.y if _queue_panel.visible else 0.0
+	if tutorial != null and is_instance_valid(tutorial) and not is_equal_approx(foot, _queue_foot_seen):
+		_queue_foot_seen = foot
+		_relayout.call_deferred()
 
 
 ## The width between the two wheels' discs (px), 0 when there is no enemy view to measure from.
@@ -3695,7 +3707,7 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState, events: Ar
 				"beats": ForecastTicks.filter([key, "damage"], &"", id)})
 	var ev := int(d["evade_after"]) - int(d["evade_before"])
 	if ev != 0:
-		chips.append({"text": tr("%s EVADE") % signed(ev), "color": CHIP_GUARD, "ink": Palette.INK,
+		chips.append({"text": tr("%s SANDBOX") % signed(ev), "color": CHIP_GUARD, "ink": Palette.INK,
 			"beats": ForecastTicks.filter(["evade", "evaded"], &"", id)})
 	if int(d["resistance_after"]) != int(d["resistance_before"]):
 		chips.append({"text": tr("RESIST %d→%d") % [int(d["resistance_before"]), int(d["resistance_after"])], "color": CHIP_RESIST, "ink": Palette.INK})
@@ -5041,12 +5053,12 @@ static func hit_color(id: StringName, s: CombatState, after: CombatState = null)
 
 
 ## What a hit that dealt nothing stamps at its victim: "N BLOCKED" (all soaked) or
-## "EVADED N" ("" when it dealt something, or isn't a hit). ANIM-R3 A6a: the replay shows
+## "SANDBOXED N" ("" when it dealt something, or isn't a hit). ANIM-R3 A6a: the replay shows
 ## these as a glyph and "0" where the hit struck (`zero_mark`); the words stay for the log.
 func hit_stamp_for(b: Dictionary) -> String:
 	match String(b["kind"]):
 		"evaded":
-			return tr("EVADED %d") % int(b["amount"])
+			return tr("SANDBOXED %d") % int(b["amount"])
 		"damage":
 			if int(b["amount"]) <= 0 and int(b["soaked"]) > 0:
 				return tr("%d BLOCKED") % int(b["soaked"])
