@@ -1,0 +1,40 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "net.json v1 (NA02_FIELDS.md section 3, ruling O3: BU plan coordinates)",
+ "version": 1,
+ "type": "object",
+ "required": ["version", "layout_seed", "nodes", "links"],
+ "additionalProperties": false,
+ "properties": {
+  "version": {"const": 1},
+  "layout_seed": {"type": "string", "pattern": "^(0|[1-9][0-9]*)$"},
+  "nodes": {
+   "type": "array",
+   "x-unique-by": "id",
+   "items": {
+    "type": "object",
+    "required": ["id", "lot", "state"],
+    "additionalProperties": false,
+    "properties": {
+     "id": {"type": "string"},
+     "lot": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}},
+     "state": {"enum": ["core", "owned", "corporate", "cleared", "taken"]}
+    }
+   }
+  },
+  "links": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": ["a", "b", "state", "pts"],
+    "additionalProperties": false,
+    "properties": {
+     "a": {"type": "string"},
+     "b": {"type": "string"},
+     "state": {"enum": ["open", "locked", "opened"]},
+     "pts": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}}}
+    }
+   }
+  }
+ }
+}

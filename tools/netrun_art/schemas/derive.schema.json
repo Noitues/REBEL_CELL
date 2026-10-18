@@ -1,0 +1,18 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "derive_<run>.json v1, game keys (NA02_FIELDS.md section 6, ruling O4: NA-03 fills the rest)",
+ "version": 1,
+ "type": "object",
+ "required": ["version", "kind", "layout_seed", "run", "art_seeds"],
+ "properties": {
+  "version": {"const": 1},
+  "kind": {"enum": ["street", "hq"]},
+  "layout_seed": {"type": "string", "pattern": "^(0|[1-9][0-9]*)$"},
+  "run": {"type": "string"},
+  "art_seeds": {
+   "type": "object",
+   "required": ["scene", "variance", "terrain", "fauna.tethys", "city.zoning", "city.post"],
+   "additionalProperties": {"type": "string", "pattern": "^(0|[1-9][0-9]*)$"}
+  }
+ }
+}

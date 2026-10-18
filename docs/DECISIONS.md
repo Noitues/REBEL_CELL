@@ -8521,3 +8521,26 @@ Text-only import of the netrun art spec, handoff README, art decisions, directio
 - **Lint.** `HpBandLint` (scripts/core) lints `content/enemies/*.tres`: band errors fail, non-migrated enemies and a boss
   over its budget ceiling are warnings (Q29). `test_band_lint.gd` holds a drift guard copy of the R2 table.
 - Room left in `campaign_config` for N21 (`resistance_by_class`) and N22 (EASY / HARD pools); neither is added here.
+
+### 2026-10-18 — W0 NA-02: netrun-art data contract v1 (exporter, schemas, art seeds)
+- **Contract** as frozen in `docs/handoff/plan2/NA02_FIELDS.md` with rulings O1-O13. `ArtSeed` (scripts/core) is the
+  FNV-1a 64 art seed (and the splitmix64 draw), matching the 14 frozen vectors bit for bit; it reads no RNG.
+  `NetrunArtExport` (scripts/state) builds the five files as pure functions of plain inputs (the city data of a FULL
+  `CityModel.build`, the corporation, `GridState`, `CityLayout.site_points`, the `MapGraph`); no view dependency.
+- **Canonical text** = tools/netrun_art/io.py `canonical_dumps` (orchestrator 2026-10-18): strings UTF-8 unescaped in the
+  files; the art-seed hash input stays ASCII-escaped (C3).
+- **Run id** (O5, no field existed): `"<site id>-<run seed as u64>"` (`NetrunArtExport.run_id`); `derive_<run>.json`
+  carries it in `run`, as does `run_graph.json`. `kind` = "hq" for a "boss" run, else "street".
+- **net.json** (O3): `nodes[].lot` keeps its field name but holds BU plan coordinates, like `links[].pts`.
+- **derive art_seeds**: the scene-level streams (section 7 with the O6 `city.*` names replacing `zoning` / `post`), the
+  base seeds of `variance`, `terrain`, `fauna.tethys`, and `landmark.<corp>` / `key_landmark.<corp>` for every corp in
+  `city.json` `hqs`.
+- **Site -> bid** (O7): reach in `CityConfig.art_site_bid_reach_lots` (4). Found while testing: an HQ stand-in rect can
+  reach over city cells on its edge column (Meridian's [4,-36,10,10] covers lots of `13:-36` and `13:-32`); bids stay
+  unique, and `lot_index` gives such a lot to the city building, the HQ only the lots left.
+- **Hook**: one call at the end of `NetrunSession.start` (`NetrunArtExport.on_run_start`) to a tooling `sink` Callable,
+  empty in the game (like `combat_observer`). Save format unchanged (SAVE_VERSION 2).
+- **Tools**: `tools/netrun_art/export_contract.gd` (headless CLI, runner in `export_runner.gd` because a `-s` script
+  cannot name an autoload), `schema_check.gd` (JSON Schema subset + `x-unique-by`), `schemas/*.schema.json`.
+- Measured (this machine): run export (net, run_graph, key_locations, derive) 4.7 ms for a 40-Site city; city.json for
+  the full city (13,306 buildings, 9.0 MB) about 1.9 s on top of the 1.1 s city build (once per layout seed).
