@@ -61,3 +61,16 @@ The app paused session-to-session messages after 10 sends. Send these on the des
    - "1 LANDS HERE" sits clear of the box.
    - The box stays clear of both wheels.
    - Non-blocking: row 7's AFTER has a hovered JOLT card that its BEFORE lacks. Keep before and after in the same state in future captures. A still can't show the NEXT pulse, so please state its minimum alpha or luma in the B_TEACH notes. It should stay at least 0.6 of full.
+9. **B_MENU_C_SCREENS (main 7397cd01): FIX LIST.** Every finding in your .md is confirmed. Additions:
+   - **C6 pause menu:** besides centring it, make "set apart" stronger. A blank gap reads as a layout accident. Add a thin divider rule above Quit to Main Menu, and keep at least one row height between Abandon Run and the Quit rows. Abandon keeps its pink and "No Going Back".
+   - **C7 tiles:** the price must not wrap. Use the HUD's Schematics icon with the number, "UNLOCKS · [icon] 60", on one line, and drop the word. Move the currency line from the far right of the Target head to directly under the TARGET heading, left-aligned next to the tiles, with the same icon in the Schematics HUD colour: "[icon] 37 held, earned in a campaign". This replaces the P2 "too faint" fix.
+   - **C8 toast:** use the chip/sticker style with the card's type icon. It isn't plain mono text. The bottom-centre position is fine.
+   - **G14 confirm:**
+     - Show both chips as icons in the dialog: Barbed Wire → Burner (struck). Today the scrim blurs exactly what is being lost.
+     - Use one text style for both lines, not large sans plus small mono.
+     - Text: "Socket Barbed Wire into slot 5?" / "Burner is destroyed. This can't be undone."
+     - KEEP is the default focus and the safe primary. SOCKET IT is a red-outlined destructive button, not a sticker equal to KEEP.
+     - Leave at least 16 px between the buttons and the panel edge.
+   - **C4 Heat tooltip:** fix the widow as you noted. Otherwise approved.
+   - **Cross-ref:** the "LOOT // NETRUN: SITE" header and the "T1 // SITE" card in panel 5 follow item 6, i.e. tier + SiteText type.
+   - Re-send the whole sheet after your fix slice.
