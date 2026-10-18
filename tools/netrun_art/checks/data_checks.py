@@ -252,6 +252,8 @@ def _many(items: Sequence[str], n: int = 4) -> str:
 # ---------------------------------------------------------------- 12.4
 def check_rail_footprints(zoned: Dict[str, Any], city: Dict[str, Any]) -> Record:
     """12.4.1: no building footprint within `rail.half_clear` of the rail polyline."""
+    if "rail" not in zoned:
+        return record("12.4.1", NA, None, "0 footprints near the rail", "zoned has no rail object")
     rail = zoned["rail"]
     r = rail["half_clear"]
     bad = sorted({bid for bid, _, p in _parts(city) if _rail_dist(p["poly"], rail["pts"], r) < r})
@@ -260,6 +262,8 @@ def check_rail_footprints(zoned: Dict[str, Any], city: Dict[str, Any]) -> Record
 
 def check_rail_heights(zoned: Dict[str, Any], city: Dict[str, Any]) -> Record:
     """12.4.2: within `rail.side_d` of the rail, every building top is at most `rail.side_cap`."""
+    if "rail" not in zoned:
+        return record("12.4.2", NA, None, "rail-side tops capped", "zoned has no rail object")
     rail = zoned["rail"]
     d, cap = rail["side_d"], rail["side_cap"]
     bad = sorted({bid for bid, _, p in _parts(city)
@@ -280,6 +284,8 @@ def plan_to_lot(city: Dict[str, Any], x: float, y: float) -> Tuple[int, int]:
 
 def check_piers(zoned: Dict[str, Any], city: Dict[str, Any]) -> Record:
     """12.4.3: every viaduct pier stands on a street tile (n/a when the rail has no `piers`)."""
+    if "rail" not in zoned:
+        return record("12.4.3", NA, None, "all piers on street tiles", "zoned has no rail object")
     piers = zoned["rail"].get("piers")
     if piers is None:
         return record("12.4.3", NA, None, "all piers on street tiles", "zoned rail has no piers list")
@@ -290,6 +296,8 @@ def check_piers(zoned: Dict[str, Any], city: Dict[str, Any]) -> Record:
 
 def check_one_line(zoned: Dict[str, Any], hq_rail: Dict[str, Any]) -> Record:
     """12.4.4: the HQ scene's rail polyline and `deck_z` equal the `zoned.json` ones, byte for byte."""
+    if "rail" not in zoned:
+        return record("12.4.4", NA, None, "byte equal", "zoned has no rail object")
     keys = ("pts", "deck_z")
     a = io.canonical_dumps({k: zoned["rail"][k] for k in keys})
     b = io.canonical_dumps({k: hq_rail[k] for k in keys})
@@ -346,25 +354,37 @@ def check_openings(derive: Dict[str, Any], city: Dict[str, Any]) -> Record:
     return record("12.4.5b", FAIL if bad else PASS, len(bad), "0 openings inside other buildings", _many(bad))
 
 
-def check_foreground(derive: Dict[str, Any], dress: Dict[str, Any], margin: float) -> Record:
-    """12.4.5c: no dress item with a `pos` inside the plan box of a room's front opening (grown by `margin`, the 0.5 BU
-    of the facade link offset; provisional) and its height span. Reads the typed lists of `dress_<run>.json`; an
-    `items` list is an input-shape failure."""
+def check_foreground(derive: Dict[str, Any], dress: Dict[str, Any], margin: float,
+                     solid: Sequence[str] = ("signs", "lamps")) -> Record:
+    """12.4.5c (AD 2026-10-18 Q1): no SOLID dress item (lists in `solid`: signs, kerb lamps; later stalls, poles) stands in
+    front of a room opening as seen from the camera: lateral coordinate within the opening's span grown by `margin`
+    (0.15 BU), height inside the opening's height span, depth from the face outward positive and at most the street
+    half-width (the near kerb: the distance from the face to the leg's centre line). Light-only lists (washes, glows,
+    beams, lanes, fog) never count. Reads the typed lists of `dress_<run>.json`; an `items` list is an input-shape failure."""
     if "items" in dress or not all(n in dress for n in DRESS_LISTS):
         return record("12.4.5c", FAIL, None, "typed dress lists", "dress input must be the typed lists of dress_<run>.json")
+    st = derive.get("street")
     boxes = []
     for rid in sorted(derive["rooms"]):
         r = derive["rooms"][rid]
         gz = r.get("ground_z", 0.0)
         q = r["front"]
-        boxes.append((rid, min(p[0] for p in q) - margin, max(p[0] for p in q) + margin,
-                      min(p[1] for p in q) - margin, max(p[1] for p in q) + margin,
-                      min(p[2] for p in q) + gz, max(p[2] for p in q) + gz))
+        # the face is the axis on which all four front corners agree; the lateral axis is the other one
+        face_ax = 0 if len({round(p[0], 6) for p in q}) == 1 else 1
+        lat = 1 - face_ax
+        out = -1.0 if r["back"][0][face_ax] > q[0][face_ax] else 1.0
+        cline = st["a"][face_ax] if st else None
+        reach = abs(q[0][face_ax] - cline) if st else math.inf     # street half-width along the normal
+        boxes.append((rid, face_ax, q[0][face_ax], out, min(p[lat] for p in q) - margin, max(p[lat] for p in q) + margin,
+                      min(p[2] for p in q) + gz, max(p[2] for p in q) + gz, reach))
     bad = []
-    for name, (x, y, z) in dress_positions(dress):
-        for rid, x0, x1, y0, y1, z0, z1 in boxes:
-            if x0 <= x <= x1 and y0 <= y <= y1 and z0 <= z <= z1:
-                bad.append(f"{name} at ({x:.1f},{y:.1f}) before {rid}")
+    for name, pos in dress_positions(dress):
+        if name not in solid:
+            continue
+        for rid, fax, face, out, l0, l1, z0, z1, reach in boxes:
+            lat = pos[1 - fax]
+            if l0 <= lat <= l1 and z0 <= pos[2] <= z1 and 0.0 < (pos[fax] - face) * out <= reach:
+                bad.append(f"{name} at ({pos[0]:.1f},{pos[1]:.1f}) before {rid}")
                 break
     return record("12.4.5c", FAIL if bad else PASS, len(bad), "0 items before openings", _many(bad))
 
@@ -478,7 +498,8 @@ def run_data_suite(inputs: Dict[str, Any], cfg: Dict[str, Any]) -> Tuple[List[Re
     if d and c:
         recs += [check_links(d, c), check_openings(d, c)]
     if d and inputs.get("dress"):
-        recs.append(check_foreground(d, inputs["dress"], cfg["data"]["dress"]["opening_margin"]))
+        recs.append(check_foreground(d, inputs["dress"], cfg["data"]["dress"]["opening_margin"],
+                                     cfg["data"]["dress"]["solid_lists"]))
         if c and not inputs.get("beams"):
             inputs = dict(inputs, beams=beams_input(inputs["dress"], d, c))
     if inputs.get("beams"):

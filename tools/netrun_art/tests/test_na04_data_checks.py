@@ -113,9 +113,21 @@ def test_links_openings_foreground():
     assert D.check_openings(d, inside)["status"] == "fail"
     def dress(**lists):
         return dict({n: [] for n in D.DRESS_LISTS}, **lists)
-    assert D.check_foreground(d, dress(lamps=[{"u": 0, "side": 1, "pos": [20.0, 20.0, 1.0], "pal": "lamp_warm"}]), 0.5)["status"] == "pass"
-    assert D.check_foreground(d, dress(washes=[{"pos": [2.0, 0.2, 2.0]}]), 0.5)["status"] == "fail"
-    assert D.check_foreground(d, {"items": [{"kind": "stall", "pos": [20.0, 20.0, 1.0]}]}, 0.5)["status"] == "fail"
+    assert D.check_foreground(d, dress(lamps=[{"u": 0, "side": 1, "pos": [20.0, 20.0, 1.0], "pal": "lamp_warm"}]), 0.15)["status"] == "pass"
+    assert D.check_foreground(d, dress(lamps=[{"pos": [2.0, 0.2, 2.0]}]), 0.15)["status"] == "fail"
+    assert D.check_foreground(d, dress(washes=[{"pos": [2.0, 3.5, 2.0]}]), 0.15)["status"] == "pass"
+    assert D.check_foreground(d, {"items": [{"kind": "stall", "pos": [20.0, 20.0, 1.0]}]}, 0.15)["status"] == "fail"
+    # 12.4.5c: a corner hero sign 0.2 BU outside the opening span passes; behind the face or above the opening passes
+    assert D.check_foreground(d, dress(signs=[{"pos": [4.2, 0.25, 2.0]}]), 0.15)["status"] == "pass"
+    assert D.check_foreground(d, dress(signs=[{"pos": [4.1, 0.25, 2.0]}]), 0.15)["status"] == "fail"
+    assert D.check_foreground(d, dress(lamps=[{"pos": [2.0, 0.2, 5.0]}]), 0.15)["status"] == "pass"
+
+
+def test_no_rail_checks_na():
+    z = {"districts": {}}
+    city = F.city_with({"1:1": [(F.square(0, 20, 10, 30), 0.0, 40.0)]})
+    assert [D.check_rail_footprints(z, city)["status"], D.check_rail_heights(z, city)["status"],
+            D.check_piers(z, city)["status"], D.check_one_line(z, RAIL)["status"]] == ["n/a"] * 4
 
 
 def _beam(bid, x, cone=30.0, blend=1.0, shadow=False, mat="beam_shaft", media=True):

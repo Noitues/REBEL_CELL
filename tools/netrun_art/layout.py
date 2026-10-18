@@ -114,25 +114,46 @@ def street_cells(city: Dict[str, Any]) -> set:
 
 
 def _bfs(a: Tuple[int, int], b: Tuple[int, int], cells: set) -> Optional[List[Tuple[int, int]]]:
-    prev = {a: None}
-    q = deque([a])
+    """A shortest 4-connected cell path `a -> b`; ties: fewest turns, then the lowest tile `(i, j)` at each step.
+
+    Link routing over street tiles is intended (AD 2026-10-18 Q3). Distances come from a BFS out of `b`; the walk from
+    `a` then keeps only steps that lower the distance, scored by `(turns to go, next tile)` with a memoised DP.
+    """
+    dist = {b: 0}
+    q = deque([b])
     while q:
         c = q.popleft()
-        if c == b:
-            break
         for di, dj in BFS_STEPS:
             n = (c[0] + di, c[1] + dj)
-            if n in cells and n not in prev:
-                prev[n] = c
+            if n in cells and n not in dist:
+                dist[n] = dist[c] + 1
                 q.append(n)
-    if b not in prev:
+    if a not in dist:
         return None
-    out = []
-    c = b
-    while c is not None:
-        out.append(c)
-        c = prev[c]
-    return out[::-1]
+    memo: Dict[Tuple[Tuple[int, int], Optional[Tuple[int, int]]], Tuple[int, Tuple[int, int]]] = {}
+
+    def best(c: Tuple[int, int], d: Optional[Tuple[int, int]]) -> Tuple[int, Optional[Tuple[int, int]]]:
+        """`(turns still to make, next tile)` from tile `c` having arrived with step `d`."""
+        if c == b:
+            return 0, None
+        key = (c, d)
+        if key not in memo:
+            opts = []
+            for di, dj in BFS_STEPS:
+                n = (c[0] + di, c[1] + dj)
+                if n in dist and dist[n] == dist[c] - 1:
+                    opts.append((best(n, (di, dj))[0] + (1 if d is not None and d != (di, dj) else 0), n))
+            memo[key] = min(opts)
+        return memo[key]
+
+    out = [a]
+    d: Optional[Tuple[int, int]] = None
+    while out[-1] != b:
+        c = out[-1]
+        n = best(c, d)[1]
+        d = (n[0] - c[0], n[1] - c[1])
+        out.append(n)
+    return out
 
 
 def _simplify(path: Sequence[Tuple[int, int]]) -> List[List[float]]:

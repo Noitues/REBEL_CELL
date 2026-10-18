@@ -203,7 +203,11 @@
     "shaft_material": "beam_shaft"
    },
    "dress": {
-    "opening_margin": 0.5
+    "opening_margin": 0.15,
+    "solid_lists": [
+     "signs",
+     "lamps"
+    ]
    },
    "occlusion": {
     "opacity_eps": 0.0001

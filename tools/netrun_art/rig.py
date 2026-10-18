@@ -227,8 +227,12 @@ def street_u(layers: int, current_layer: int) -> float:
 
 
 def street_decision(rooms: Dict[str, Dict[str, Any]], current: Optional[str], options: Sequence[str], u: float,
-                    nrm: Sequence[float], start_left: bool, rig: Optional[Dict[str, Any]] = None) -> Pose:
+                    nrm: Sequence[float], start_left: bool, rig: Optional[Dict[str, Any]] = None,
+                    entry: Optional[Pt3] = None) -> Pose:
     """The street DECISION pose on `current` (or none) plus `options`.
+
+    With no `current` the first decision has no highlighted room (AD 2026-10-18 Q2): the `entry` anchor (the street leg's
+    start end, or the HQ entrance slot) is the virtual current and is framed with the options.
 
     Yaw `yaw0 + sgn * yaw_max * (1 - 2u)`, framed on the 8 corners of each room, bias
     `LOOK_BIAS_SIGN * look_bias * (yaw offset / yaw_max)` (+sgn * 0.10 at u = 0, as the one-city derive).
@@ -237,6 +241,8 @@ def street_decision(rooms: Dict[str, Dict[str, Any]], current: Optional[str], op
     sgn = 1.0 if start_left else -1.0
     ids = ([current] if current else []) + [o for o in options if o != current]
     pts = [p for i in ids for p in room_corners(rooms[i])]
+    if not current and entry is not None:
+        pts.append(list(entry))
     off = sgn * g["yaw_max"] * (1.0 - 2.0 * clamp01(u))
     return frame_points(pts, street_yaw0(nrm) + off, g["pitch_d"], g["lens_d"], g["fill_w"], g["fill_h"],
                         bias=LOOK_BIAS_SIGN * g["look_bias"] * off / g["yaw_max"])

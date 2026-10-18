@@ -201,10 +201,11 @@ def normalise_quad(q: Sequence[Sequence[float]], nrm: Sequence[float]) -> List[L
     return [list(q[1]), list(q[0]), list(q[3]), list(q[2])]
 
 
-def _span_poses(rooms: Dict[str, Dict[str, Any]], layers, nrm, start_left: bool, rig: Optional[Dict[str, Any]]):
+def _span_poses(rooms: Dict[str, Dict[str, Any]], layers, nrm, start_left: bool, rig: Optional[Dict[str, Any]],
+                entry: Optional[Sequence[float]] = None):
     ov = RG.street_overview(rooms, nrm, start_left, rig)
     first = [n["id"] for n in layers[0][1]]
-    dec = RG.street_decision(rooms, None, first, 0.0, nrm, start_left, rig)
+    dec = RG.street_decision(rooms, None, first, 0.0, nrm, start_left, rig, entry)
     return ov, dec
 
 
@@ -235,7 +236,7 @@ def derive_street(city: Dict[str, Any], net: Dict[str, Any], run_graph: Dict[str
     fpx = abs(p0[1] - p3[1]) if p0 and p3 else 0.0
     span = 2 if fpx < r["room_px_target"] else 1
     rooms = room_boxes(asg, layers, span, r)
-    ov, dec = _span_poses(rooms, layers, nrm, start_left, rig)
+    ov, dec = _span_poses(rooms, layers, nrm, start_left, rig, [a[0], a[1], 0.0])
     edges = link_paths(rooms, run_graph["edges"], r)
     ax = LY.leg_axis(a, c)
     sgn = 1.0 if c[ax] > a[ax] else -1.0

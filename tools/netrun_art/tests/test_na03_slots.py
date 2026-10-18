@@ -73,3 +73,18 @@ def test_orbit_faces_and_visibility():
     hov = orbit.hq_hover(dec, r)
     assert hov.dist < dec.dist
     assert orbit.visible_room(r, dec) in (True, False)
+
+
+def test_first_decision_frames_the_entrance_slot():
+    g = GRAPHS["gdd_7x2to4"]
+    rooms = slots.place_slots(g, RECT, "hq:m")
+    comp = slots.plan_compound(RECT, 7)
+    ent = comp["entrance"]
+    assert ent == [comp["centre"][0], comp["centre"][1] - comp["half"][0], 0.0]
+    first = ["L1N0", "L1N1"]
+    plain = orbit.hq_decision(rooms, None, first, 0, 7)
+    framed = orbit.hq_decision(rooms, None, first, 0, 7, None, ent)
+    assert framed.to_json() != plain.to_json()                              # the anchor changes the framing
+    assert framed.proj(ent) is not None                                     # and the anchor is in view
+    cur = orbit.hq_decision(rooms, "L1N0", first, 0, 7, None, ent)
+    assert cur.to_json() == orbit.hq_decision(rooms, "L1N0", first, 0, 7).to_json()   # a real current ignores it

@@ -344,6 +344,6 @@ These override the rows above where they differ.
    - `route_bids` is derive `route_keys`, which now holds bids.
 2. **Dress: `items[{kind, pos}]` rejected.** The checks read the typed lists of `dress_<run>.json` (signs, lamps, washes, glows, beams, streak_lanes, fog_fields). For 12.4.5 (foreground dressing in front of a room opening), the loader flattens every list item that has a `pos` into `(list name, pos)`.
 3. **Piers: accepted** as `zoned.json` `rail.piers` [xy] in BU plan coordinates (piers every 7 BU on street tiles). This adds a field to the O-C rail object.
-4. **12.4.5c: accepted** as the front-opening box grown by 0.5 BU, the same offset as the facade link paths. Provisional.
+4. **12.4.5c: accepted** as the front-opening box grown by 0.5 BU, the same offset as the facade link paths. Provisional. **Superseded by AD 2026-10-18 (NA-03 Q1):** lateral margin 0.15 BU, vertical overlap, depth from the face outward; corner hero signs at 0.25 BU pass; `dress` skips kerb lamps in a route opening's `[u0-0.15, u1+0.15]`.
 
 On `rules_check.md`: pin `p_city_night` to its ded90765 PNG. Don't regenerate it. The 4K city finals become golden plates (queue item 3) with their own values JSON, and the other 8 band-only differences are expected under spec 12.1.
