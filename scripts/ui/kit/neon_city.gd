@@ -3304,13 +3304,25 @@ func _cell_of(i: int, j: int) -> Rect2i:
 			for dj in 2:
 				if _fist_dist(qi + di, qj + dj) < FIST_CLEAR:
 					return Rect2i(i, j, 1, 1)
+	var merged := Rect2i(i, j, 1, 1)
 	if mode == 0 and wide and deep:
-		return Rect2i(qi, qj, 2, 2)
-	if mode == 1 and wide:
-		return Rect2i(qi, j, 2, 1)
-	if mode == 2 and deep:
-		return Rect2i(i, qj, 1, 2)
-	return Rect2i(i, j, 1, 1)
+		merged = Rect2i(qi, qj, 2, 2)
+	elif mode == 1 and wide:
+		merged = Rect2i(qi, j, 2, 1)
+	elif mode == 2 and deep:
+		merged = Rect2i(i, qj, 1, 2)
+	# An HQ rect is exclusive: a merged cell reaching into one falls back to 1x1.
+	if merged.size != Vector2i.ONE and _hits_hq(merged):
+		return Rect2i(i, j, 1, 1)
+	return merged
+
+
+## True when `r` intersects any corporation's HQ rect (the fist territory is not an HQ).
+func _hits_hq(r: Rect2i) -> bool:
+	for cid: Variant in _hq_rects:
+		if cid != FIST_TERRITORY and (_hq_rects[cid] as Rect2i).intersects(r):
+			return true
+	return false
 
 
 func _lot(i: int, j: int) -> void:

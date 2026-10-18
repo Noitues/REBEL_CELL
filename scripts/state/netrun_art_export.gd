@@ -115,7 +115,29 @@ static func city_json(city_seed: int, lot_bu: float, origin: Vector2, prisms: Ar
 	for cid: Variant in hqs:
 		hq_out[String(cid)] = _rect(hqs[cid])
 	return {"version": VERSION, "layout_seed": ArtSeed.u64_str(city_seed), "units": "BU", "lot_bu": lot_bu,
-		"origin_lot": [origin.x, origin.y], "buildings": buildings, "streets": st, "plazas": pl, "hqs": hq_out}
+		"origin_lot": [origin.x, origin.y], "buildings": buildings, "streets": st, "plazas": pl, "hqs": hq_out,
+		"hq_overlaps": hq_overlaps(buildings, hqs)}
+
+
+## Diagnostic: every non-HQ building whose cell intersects an HQ rect, as {bid, corp}, sorted
+## by (bid, corp). Empty for a sound layout (an HQ rect is exclusive); never drops a building.
+static func hq_overlaps(buildings: Array, hqs: Dictionary) -> Array:
+	var out := []
+	var corps: Array = []
+	for cid: Variant in hqs:
+		corps.append(String(cid))
+	corps.sort()
+	for b: Dictionary in buildings:
+		if bool(b["hq"]):
+			continue
+		var c: Array = b["cell"]
+		var cell := Rect2i(int(c[0]), int(c[1]), int(c[2]), int(c[3]))
+		for cid: Variant in hqs:
+			if (hqs[cid] as Rect2i).intersects(cell):
+				out.append({"bid": b["bid"], "corp": String(cid)})
+	out.sort_custom(func(x: Dictionary, y: Dictionary) -> bool:
+		return x["bid"] < y["bid"] if x["bid"] != y["bid"] else x["corp"] < y["corp"])
+	return out
 
 
 ## `net.json` v1: the corporation's Sites (BU plan points of `site_points`, ruling O3) with
