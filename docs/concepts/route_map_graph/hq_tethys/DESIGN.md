@@ -382,3 +382,14 @@ Server patch (28 px) vs the ring around it: close-up 4.4x peak / 1.5x mean; over
   `LANDMARK_MODULES["tethys"]` to `.../hq_tethys/scripts/tethys_landmark.py` (not edited here).
 - **Finals v2 values** (2560 x 1440, 40 spp, 130 s render each): `tethys_closeup_v2.png` median 0.140, 30.9 % < 0.10, HQ 3.91x peak / 1.87x mean;
   `H_overview_v2.png` (+ `_plate`) 0.140, 31.0 %, 3.72x / 1.88x. Server patch vs its surround: 5.3-5.4x peak, 1.85-1.9x mean (target 1.5x mean: met).
+
+### DECISION and HOVER finals v2 (art-pass, 2026-10-18)
+`H_decision_v2.png`, `H_hover_v2.png` (2560 x 1440, 40 spp, ~140 s each) + `_plate.png`, `_plate_values.json`, `_rooms.json`. Same pipeline and look as
+`H_overview_v2` (`run_tethys.py aaa t_dec,t_hov 1.0 40 <dir>`, `post_tethys.py`, then `decision_tethys.py decision|hover <plate> <rooms> <out>`).
+- **Cameras** (`tethys_preset.CAMS`, lens 30, `target_xy` = world look-at, `sx`/`sy` = lens shift): `t_dec` yaw 118, pitch 40, dist 142, look-at (-340, 288),
+  shift (-0.056, -0.017); `t_hov` = the rig's hover pose (yaw -3 deg, look-at pulled 22 % toward the hovered ring pod, dist x0.96).
+  Azimuth is 17 deg off the map's 135 (spec allows 25) so the arrival pier no longer hides THE BLACK SMOKER at the lower pitch.
+- **Fixture:** current = the arrival pod, walked = the DOCK LOCK + a room halfway on the causeway, options = 1 inner pod (elite), 2 ring pod (fight);
+  the branch runs through the station deck and the deep stair to THE BLACK SMOKER. The top-right panel is a neutral placeholder (BALLAST TIDE is a proposal).
+- **Hover** (spec 9.4): one 2D grade in `decision_tethys.py` (outside the branch x0.20, desat 0.70, branch x1.35, type glow 1.0; no 3D cut).
+- **Values (plates, no UI):** decision median 0.140, 29.3 % < 0.10, 0.23 % > 0.85, landmark 3.10x peak / 1.57x mean; hover 0.140, 29.3 %, 0.25 %, 2.95x / 1.44x (exempt).

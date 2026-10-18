@@ -16,7 +16,7 @@ OUT = os.path.join(CONCEPTS, "route_map_graph", "hq_tethys")
 # the city build: a frozen copy of city_all_corps/scripts at commit a032bf6c (revision 2b, the approved close-up's
 # code), so the full-city agent's live edits never change this pass; matches the zoning snapshot below
 CITY_SCRIPTS = os.path.join(OUT, "scripts", "city_base")
-SCR = r"D:\rc_scratch\tethys"
+SCR = os.environ.get("TETHYS_SCR", r"D:\rc_scratch\tethys")   # TETHYS_SCR redirects every scratch write
 ZONED_BASE = os.path.join(SCR, "zoned_base.json")     # a snapshot of city_all_corps' zoned.json (2026-10-15 23:10)
 BLENDER = r"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
 FONTS = os.path.join(WT, "assets", "fonts")
@@ -148,8 +148,13 @@ CAMS = {
     "t_close": dict(res=(2560, 1440), lens=24.0, pitch=40.0, yaw=135.0, dist=190.0, target_ab=(-6.0, 72.5), sy=0.0),
     # the HQ netrun OVERVIEW: high 3/4 orbit (pitch 56), the lot + the causeway + the dam + the dry city
     "t_over": dict(res=(1280, 720), lens=30.0, pitch=50.0, yaw=135.0, dist=210.0, target_ab=(-6.3, 71.2), sy=0.0),
+    # the DECISION / HOVER finals: an orbit on the arrival pod's cluster. target_xy = the look-at point in world BU (the
+    # station centre is (-348, 294)); sx / sy = the lens shift (fraction of the sensor width) that puts the current room
+    # on the usable-area centre (spec 6.4 "front and centre"). The hover pose is the rig's: 3 deg yaw, 22 % pull, x0.96.
+    "t_dec": dict(res=(2560, 1440), lens=30.0, pitch=40, yaw=118, dist=142, target_xy=(-340.0, 288.0), sx=-0.056, sy=-0.017),
+    "t_hov": dict(res=(2560, 1440), lens=30.0, pitch=40, yaw=115, dist=136.3, target_xy=(-336.2, 287.5), sx=-0.056, sy=-0.017),
 }
-OCC_CAMS = ("t_over",)       # cameras that apply the occlusion rule (the netrun view; the close-up is key art)
+OCC_CAMS = ("t_over", "t_dec", "t_hov")      # cameras that apply the occlusion rule (the netrun view; the close-up is key art)
 
 
 # ---------------------------------------------------------------- the wildlife (designer note, 2026-10-16)

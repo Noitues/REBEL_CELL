@@ -49,7 +49,7 @@ if os.environ.get("TETHYS_CPU"):
 
 # ------------------------------------------------------------------ 2. the zoning copy (+ occlusion for the overview)
 def cam_pos(C, F):
-    tgt = (*F.w_ab(*C["target_ab"]), 0.0)
+    tgt = (*C["target_xy"], 0.0) if "target_xy" in C else (*F.w_ab(*C["target_ab"]), 0.0)
     yw, pt = math.radians(C["yaw"]), math.radians(C["pitch"])
     fwd = (math.cos(yw) * math.cos(pt), math.sin(yw) * math.cos(pt), -math.sin(pt))
     return tuple(tgt[i] - fwd[i] * C["dist"] for i in range(3))
@@ -167,6 +167,13 @@ rsrc = rsrc.replace(_ck, '''        ck = g.math("MULTIPLY", ck, kscale)
             g.link(dd, mr_.inputs["Value"])
             ck = g.math("MULTIPLY", ck, mr_.outputs[0])
 ''' + _ck)
+# the orbit cameras (DECISION / HOVER): a world look-at point (target_xy) and a horizontal lens shift (sx)
+_tg = 'tgt = Vector((*w_ab(*C["target_ab"]), 0.0))'
+assert _tg in rsrc
+rsrc = rsrc.replace(_tg, 'tgt = Vector((*C["target_xy"], 0.0)) if "target_xy" in C else Vector((*w_ab(*C["target_ab"]), 0.0))')
+_sh = 'cam_d.shift_y = C.get("sy", 0.0)'
+assert _sh in rsrc
+rsrc = rsrc.replace(_sh, _sh + "\ncam_d.shift_x = C.get('sx', 0.0)")
 exec(compile(rsrc[:rsrc.index(RMARK)], CR, "exec"), ns)       # materials, lights, camera (no render yet)
 
 
@@ -232,6 +239,12 @@ def px(p):
 info = ns.get("TETHYS_INFO", {})
 rooms = dict(info.get("rooms", {}))
 rooms["lock"] = QD["lock"]
+_cx, _cy = info["centre"]
+_sx, _sy = TL.server_xy(_cx, _cy)
+rooms["collar"] = (_sx, _sy, ns["ZW"] + 0.5)             # the moon pool's collar (the finals' overlay: the lit well)
+(_p0x, _p0y), (_p1x, _p1y) = QD["causeway"]
+rooms["cw_mid"] = ((_p0x + _p1x) / 2, (_p0y + _p1y) / 2, 5.0)     # a candidate room halfway along the causeway
+rooms["cw_pier"] = (_p1x, _p1y, 5.0)
 out = dict(res=[RX, RY], cam=CAMK, rooms={k: dict(world=[round(c, 2) for c in v], px=px(v)) for k, v in sorted(rooms.items())},
            gates=[px(g) for g in QD["gates"]], causeway=[px((*QD["causeway"][0], 5.0)), px((*QD["causeway"][1], 5.0))],
            centre=px((*info.get("centre", (0, 0)), ns["ZW"])), crown=px(info.get("crown", (0, 0, 0))),
