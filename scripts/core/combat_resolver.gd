@@ -20,6 +20,12 @@ const STATUS_TYPES := [RC.SliceType.INFECT]
 ## Where an extra boss pointer goes (ICE 18 BOSS_EXTRA_POINTER): offsets from pointer 0
 ## tried in order, the first free one wins (evenly spaced, GDD 2.1).
 const EXTRA_POINTER_OFFSETS := [15, 10, 20, 5, 25]
+## validate_action's refusal (code SATELLITE_FIXED) when a player action would move a
+## satellite or drone without the Undock keyword (designer 2026-10-18, Q7/Q10).
+const SATELLITE_FIXED := "Satellites are fixed to their slice: only Undock moves them."
+## Effect types that move the wheel they hit (refused on satellites without Undock).
+const SATELLITE_MOVING_EFFECTS := [RC.EffectType.NUDGE, RC.EffectType.SPIN, RC.EffectType.FLIP,
+	RC.EffectType.RESPIN, RC.EffectType.FREEZE, RC.EffectType.SNAP_TO_CENTER]
 
 
 func _init(p_config: CampaignConfigData, p_lookup: ContentLookup) -> void:
@@ -49,6 +55,8 @@ func _init(p_config: CampaignConfigData, p_lookup: ContentLookup) -> void:
 ## Call begin_combat() next to run the first START_TURN.
 func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: RandomNumberGenerator, ring: InnerRingData = null, heat_majors_crossed: int = 0, overrides: Dictionary = {}) -> CombatState:
 	var s := CombatState.new()
+	# Combat-start docking reports nothing (no content docks two on one slice at setup).
+	var setup_events: Array[Dictionary] = []
 	s.heat_majors_crossed = heat_majors_crossed
 	s.campaign_heat = int(overrides.get("heat", 0))
 	s.max_ram = int(overrides.get("max_ram", class_data.max_ram))
@@ -126,7 +134,7 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 			if spawn == null or spawn.satellite == null or spawn.trigger != RC.Trigger.ON_COMBAT_START:
 				continue
 			for k in spawn.max_active:
-				_scale_enemy(_spawn_satellite(s, e, spawn, rng), e.hp_scale, e.output_scale)
+				_scale_enemy(_spawn_satellite(s, e, spawn, rng, setup_events), e.hp_scale, e.output_scale)
 	if not s.enemies.is_empty():
 		s.target_id = s.enemies[0].id
 	return s
@@ -244,6 +252,8 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 			var t := state.get_combatant(action.wheel_id)
 			if t == null or not t.is_alive():
 				return "Invalid wheel."
+			if t.is_satellite:
+				return SATELLITE_FIXED
 			if action.ring == RC.RingScope.INNER and not t.wheel.has_inner_ring():
 				return "That wheel has no inner ring."
 			if state.free_nudges <= 0 and state.ram < config.extra_nudge_ram_cost:
@@ -262,6 +272,9 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 			if card.wheel_target == RC.WheelTarget.SATELLITE and not target.is_satellite:
 				return "Card must target a satellite."
 			for e in card.effects:
+				if e != null and effect_moves_satellite(state, e, target):
+					return SATELLITE_FIXED
+			for e in card.effects:
 				if e == null:
 					continue
 				if (e.type == RC.EffectType.FLIP or e.type == RC.EffectType.RESPIN) and target != state.player and target.resistance > 0:
@@ -271,6 +284,29 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 				if e.slice_pick == RC.SlicePick.CHOSEN and e.type in [RC.EffectType.APPLY_STATUS, RC.EffectType.CLEANSE, RC.EffectType.DEPLOY_DRONE] and action.slot_index < 0:
 					return "Choose a slice."
 	return ""
+
+
+## Whether `e`, played by the operative at `target`, would move a satellite or drone (its
+## slice or its mini-wheel) without the Undock keyword: satellites are fixed to their slice
+## (designer 2026-10-18, Q7/Q10). Nudge, spin, flip, respin, freeze and snap count, and so
+## does a custom handler that declares MOVES_SATELLITE (Undock).
+static func effect_moves_satellite(state: CombatState, e: EffectData, target: CombatantState) -> bool:
+	if e.undock:
+		return false
+	var moves: bool = e.type in SATELLITE_MOVING_EFFECTS
+	if e.type == RC.EffectType.CUSTOM and e.custom_handler != null:
+		moves = bool(e.custom_handler.get_script_constant_map().get("MOVES_SATELLITE", false))
+	if not moves:
+		return false
+	match e.target:
+		RC.EffectTarget.SELF, RC.EffectTarget.OWN_WHEEL, RC.EffectTarget.CAMPAIGN:
+			return false
+		RC.EffectTarget.ALL_ENEMIES:
+			for c in state.living_enemies(true):
+				if c.is_satellite:
+					return true
+			return false
+	return target != null and target.is_satellite
 
 
 ## Applies `action` to a copy of `state`. Consumes RNG only when the rules do (respins,
@@ -414,7 +450,7 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 	fx.draw_cards(s, maxi(0, config.hand_size - s.hand.size()), rng, events)
 	var ctx := {"owner": s.player, "target": s.get_combatant(s.target_id), "pointer_index": 0, "source_id": &"turn"}
 	fx.run_triggers(s, RC.Trigger.ON_TURN_START, ctx, _player_listeners(s), rng, events)
-	_settle_deaths(s, events)
+	_settle_deaths(s, rng, events)
 	if not s.is_over():
 		s.phase = CombatState.Phase.PLAYER_PHASE
 
@@ -467,7 +503,7 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 			_corrupted_trigger(s, r, events)
 	var end_ctx := {"owner": s.player, "target": s.get_combatant(s.target_id), "pointer_index": 0, "source_id": &"turn"}
 	fx.run_triggers(s, RC.Trigger.ON_TURN_END, end_ctx, _player_listeners(s), rng, events)
-	_apply_deaths(s, alive_before, events)
+	_apply_deaths(s, alive_before, rng, events)
 	_check_boss_phases(s, rng, events)
 	_check_outcome(s, events)
 	s.discard_pile.append_array(s.hand)
@@ -554,13 +590,13 @@ func _apply_card(s: CombatState, action: CombatAction, rng: RandomNumberGenerato
 		s.exhaust_pile.append(card_id)
 	else:
 		s.discard_pile.append(card_id)
-	_settle_deaths(s, events)
+	_settle_deaths(s, rng, events)
 
 
 ## Deaths outside resolution (cards, start-of-turn Daemons): mark them, end the fight when
 ## a side is gone, else keep the target on a living wheel.
-func _settle_deaths(s: CombatState, events: Array[Dictionary]) -> void:
-	_apply_deaths(s, [], events)
+func _settle_deaths(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
+	_apply_deaths(s, [], rng, events)
 	_check_outcome(s, events)
 	if not s.is_over():
 		_retarget_if_needed(s)
@@ -890,7 +926,7 @@ func _spawn_turn_start(s: CombatState, host: CombatantState, rng: RandomNumberGe
 				active += 1
 		if active >= spawn.max_active:
 			continue
-		var sat := _spawn_satellite(s, host, spawn, rng)
+		var sat := _spawn_satellite(s, host, spawn, rng, events)
 		_scale_enemy(sat, host.hp_scale, host.output_scale)
 		events.append({"type": "satellite_spawn", "target": host.id, "satellite": sat.id, "slot": sat.dock_slot, "hp": sat.hp,
 			"text": "%s launches %s on slot %d." % [host.display_name, sat.display_name, sat.dock_slot]})
@@ -898,19 +934,37 @@ func _spawn_turn_start(s: CombatState, host: CombatantState, rng: RandomNumberGe
 
 ## Reports every enemy, satellite or drone that died this resolve (including ones spawned
 ## during it) exactly once; satellites go down with their host. Dead combatants stay in
-## their lists (filtered by is_alive()).
-func _apply_deaths(s: CombatState, _alive_before: Array[StringName], events: Array[Dictionary]) -> void:
-	for e in s.enemies:
-		if e.hp <= 0 and not e.is_satellite:
-			for sat in s.satellites_of(e.id):
-				sat.hp = 0
-				events.append({"type": "died", "target": sat.id, "text": "%s goes down with its host." % sat.display_name})
-				s.flags["dead:%s" % sat.id] = 1
-	for c in s.enemies + s.drones:
-		var key := "dead:%s" % c.id
-		if not c.is_alive() and not s.flags.has(key):
-			s.flags[key] = 1
-			events.append({"type": "died", "target": c.id, "text": "%s is destroyed." % c.display_name})
+## their lists (filtered by is_alive()). Every satellite or drone among them fires
+## ON_SATELLITE_DESTROYED (cause killed or cleared); deaths those hooks cause are settled
+## in the same call (each combatant is reported once, so the loop ends).
+func _apply_deaths(s: CombatState, _alive_before: Array[StringName], rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
+	var destroyed: Array = [null]
+	while not destroyed.is_empty():
+		destroyed = []
+		for e in s.enemies:
+			if e.hp <= 0 and not e.is_satellite:
+				for sat in s.satellites_of(e.id):
+					sat.hp = 0
+					events.append({"type": "died", "target": sat.id, "text": "%s goes down with its host." % sat.display_name})
+					s.flags["dead:%s" % sat.id] = 1
+					destroyed.append([sat, &"cleared"])
+		for c in s.enemies + s.drones:
+			var key := "dead:%s" % c.id
+			if not c.is_alive() and not s.flags.has(key):
+				s.flags[key] = 1
+				events.append({"type": "died", "target": c.id, "text": "%s is destroyed." % c.display_name})
+				if c.is_satellite:
+					destroyed.append([c, &"killed"])
+		for pair in destroyed:
+			_fire_satellite_destroyed(s, pair[0], pair[1], rng, events)
+
+
+## ON_SATELLITE_DESTROYED (designer 2026-10-18, Q7): the operative's listeners (Hub, Daemons)
+## hear every destroyed satellite or drone. `cause`: &"killed", &"replaced" or &"cleared".
+func _fire_satellite_destroyed(s: CombatState, sat: CombatantState, cause: StringName, rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
+	var ctx := {"owner": s.player, "target": s.get_combatant(s.target_id), "pointer_index": 0,
+		"source_id": &"satellite_destroyed", "satellite": sat, "host_id": sat.host_id, "cause": cause}
+	fx.run_triggers(s, RC.Trigger.ON_SATELLITE_DESTROYED, ctx, _player_listeners(s), rng, events)
 
 
 ## Enemy phases (GDD 2.11, plan 2 R1/R3): checked at the end of the resolve, when HP stands
@@ -959,7 +1013,7 @@ func _check_boss_phases(s: CombatState, rng: RandomNumberGenerator, events: Arra
 		for spawn in phase.spawns:
 			if spawn != null and spawn.satellite != null:
 				for k in spawn.max_active:
-					var sat := _spawn_satellite(s, e, spawn, rng)
+					var sat := _spawn_satellite(s, e, spawn, rng, events)
 					_scale_enemy(sat, e.hp_scale, e.output_scale)
 					spawned.append({"id": sat.id, "hp": sat.hp, "slot": sat.dock_slot})
 		events.append({"type": "boss_phase", "target": e.id, "phase": e.phase_index, "behavior": phase.pointer_behavior,
@@ -1033,7 +1087,10 @@ func _retarget_if_needed(s: CombatState) -> void:
 	s.target_id = living[0].id if not living.is_empty() else &""
 
 
-func _spawn_satellite(s: CombatState, host: CombatantState, spawn: SatelliteSpawnData, rng: RandomNumberGenerator) -> CombatantState:
+## Docks a satellite of `spawn` on `host`: its fixed dock_slot, else a random free slot
+## (slot 0 when none is free). Max 1 satellite per slice (designer 2026-10-18, Q10): one
+## already there is destroyed first (cause replaced, fires ON_SATELLITE_DESTROYED).
+func _spawn_satellite(s: CombatState, host: CombatantState, spawn: SatelliteSpawnData, rng: RandomNumberGenerator, events: Array[Dictionary]) -> CombatantState:
 	var sat := EffectInterpreter.make_combatant(spawn.satellite, StringName("%s_sat_%d" % [host.id, s.spawn_counter]), true)
 	s.spawn_counter += 1
 	sat.host_id = host.id
@@ -1045,6 +1102,13 @@ func _spawn_satellite(s: CombatState, host: CombatantState, spawn: SatelliteSpaw
 			if s.satellite_at(host.id, i) == null:
 				free.append(i)
 		sat.dock_slot = free[rng.randi_range(0, free.size() - 1)] if not free.is_empty() else 0
+	var old := s.satellite_at(host.id, sat.dock_slot)
+	if old != null:
+		old.hp = 0
+		s.flags["dead:%s" % old.id] = 1
+		events.append({"type": "died", "target": old.id, "cause": "replaced",
+			"text": "%s is replaced on slot %d." % [old.display_name, sat.dock_slot]})
+		_fire_satellite_destroyed(s, old, &"replaced", rng, events)
 	s.enemies.append(sat)
 	return sat
 

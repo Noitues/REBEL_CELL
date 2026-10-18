@@ -110,6 +110,27 @@ default as a placeholder behind config and says so in its report.
   slice **N1b** after N2: enemy DEAL_DAMAGE *effects* (listeners, hub, not only slices) also scale by the tier damage
   factor (R2 "tier scales enemy hits").
 
+### 2026-10-18 — Plan 2 W0 N13: fixed satellites, replacement, Undock keyword (rulings Q7, Q10)
+- **Schema:** `EffectData.undock` (bool, default false) is the global **Undock keyword**: only an effect carrying it may
+  move a satellite or drone (its slice or its mini-wheel). The shipped Undock card's effect sets it. `RC.Trigger`
+  gains `ON_SATELLITE_DESTROYED` (append-only, after ON_RESOLVE). No class / Firmware / Daemon flag and no
+  `on_occupied` field (rulings override the brief). Smoke check `_n13_undock`.
+- **Fixed (amends GDD 2.7 "can be nudged individually"):** `CombatResolver.validate_action` refuses with
+  `CombatResolver.SATELLITE_FIXED` a NUDGE action on a satellite or drone, and a card whose NUDGE, SPIN, FLIP, RESPIN,
+  FREEZE or SNAP_TO_CENTER effect (or a custom handler declaring `MOVES_SATELLITE`) would hit one without the keyword
+  (`effect_moves_satellite`; an ALL_ENEMIES moving effect is refused while any satellite lives; no content has one).
+  The refusal is checked before resistance, so state and resistance stay untouched. Host spins, flips and respins
+  carry satellites on their slice (unchanged); a satellite's own start-of-turn respin is unchanged.
+- **Replace (Q10):** `_spawn_satellite` on an occupied slot destroys the satellite there first (`died` event with
+  `cause` "replaced"), then docks the new one. A random dock with no free slot still picks slot 0 (no extra RNG
+  draw), now replacing. No shipped content docks two on one slice (fixed-slot spawns all have max_active 1).
+- **Destroyed trigger (Q7):** `_apply_deaths` fires ON_SATELLITE_DESTROYED (operative's Hub and Daemons) for every
+  satellite or drone death, cause killed or cleared (went down with its host); the replace path fires it with cause
+  replaced. Context keys `satellite`, `host_id`, `cause`. Deaths those hooks cause settle in the same call.
+- **Not changed:** the operative's drone deploy (`EffectInterpreter.deploy_drone`) still takes the first free slot
+  clockwise and fails when all are taken (outside the slice's files; Q10 "install on occupied" applies to it only if
+  a drone effect ever names an occupied slice). No save format change.
+
 ### 2026-10-18 — Plan 2 W0 N3: phases on every class, threshold parking, status keep (R1, R3, R6; Q31)
 - **Schema:** `RC.CleanseScope { NONE, OWN, PLAYER, BOTH }` (append-only, NONE = 0), `RC.EnemyClass { NORMAL, ELITE,
   MINI_BOSS, BOSS }`, `RC.THRESHOLD_SCALE` = 10000 (a definition: thresholds read in basis points so floors are integer
@@ -7590,6 +7611,7 @@ Before covers 43 screens; after covers 53. The remaining findings are low-confid
 - Colour-blind support stays a daltonize correction (ART_BIBLE §12 says "remap").
 
 ## Open questions for the designer
+- **2026-10-18 W0 N13, fixed satellites (simplest option built):** (a) FREEZE on a satellite is refused like a move (brief acceptance 1), although it does not turn the wheel; (b) a spawn with no free slot replaces slot 0 rather than drawing a random slot (keeps RNG draws unchanged); (c) the operative's drone deploy still skips occupied slices instead of replacing; (d) ON_SATELLITE_DESTROYED is heard by the operative's Hub and Daemons only, not by enemies. Say if any should differ.
 - **2026-10-18 W0 N2, tier tables (defaults built):** (1) a mini-boss with `hp_by_tier` still takes the ICE / Heat boss-strength multiplier on its table HP (bosses read it as the `hp_bands` zone instead); (2) the boss band zone reads the combined `boss_strength_pct` (ICE + Heat + campaign modifiers), not the ICE term alone; (3) the boss lint warning ceiling is phases x the T4 two-needle budget (126; 504 for 4 phases), no floor, since sustain is per phase (N3); (4) flat x factor rounding is N1's. Say if any should differ.
 - **2026-10-18 N3, boss phase minimum:** R1 says a boss has 4-5 phases; every shipped boss has 3 (2 entries) and N3 adds no content phases, so `phase_count_min_by_class` ships [1, 1, 2, **3**] (placeholder). Raise the boss entry to 4 when the boss design passes land (Genome Core has 4).
 - **2026-10-18 N3, open points (simplest option built):** (a) two *different* statuses remapped onto one slice keep the first in old slot order (no stacks before N8); (b) `cleanse_on_enter` OWN includes the enemy's docked satellites and PLAYER includes the operative's drones ("side"); (c) a phase whose floor HP is already under at entry (healing, an enrage skip, an HP override) starts at the end of the next resolve, one phase per resolve; (d) parked damage is reported as an event field only, so on-hit listeners (N6) see the pre-clamp hit: say if they should see post-clamp; (e) validate does not reject tiny HP gaps where two floors round to the same value (the sweep checks shipped floors strictly descend).

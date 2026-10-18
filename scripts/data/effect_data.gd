@@ -20,6 +20,10 @@ extends Resource
 @export var duration_turns: int = 0
 ## Only used when type is CUSTOM (rule-breaking behaviour lives in code).
 @export var custom_handler: Script
+## The Undock keyword (designer 2026-10-18, Q7): satellites and drones are fixed to their slice,
+## and only an effect carrying this keyword may move one (its slice or its mini-wheel).
+## Any card, class or Firmware effect may carry it.
+@export var undock: bool = false
 
 
 func validate() -> PackedStringArray:

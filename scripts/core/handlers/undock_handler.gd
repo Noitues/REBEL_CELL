@@ -5,15 +5,21 @@ const USES_DIRECTION := true
 ## Slot + 1 lies anticlockwise on screen (the wheel is drawn so rotation + 1 is
 ## clockwise), so the way the satellite moves on screen is the opposite of `direction`.
 const SCREEN_SIGN := -1
+## This handler moves a satellite: CombatResolver.validate_action refuses it with
+## SATELLITE_FIXED unless the effect carries the Undock keyword (designer 2026-10-18).
+const MOVES_SATELLITE := true
 ## Undock (GDD A.2 #14): move a satellite to an adjacent slice of its host, in the
 ## direction the action gives (default clockwise). Falls back to the other side when
-## that slot is taken.
+## that slot is taken. Only an effect with the Undock keyword (EffectData.undock) moves it.
 
 
 func handle(context: Dictionary, state: CombatState, _rng: RandomNumberGenerator) -> Array[Dictionary]:
 	var sat: CombatantState = context.get("target")
 	if sat == null or not sat.is_satellite:
 		return [{"type": "undock_failed", "text": "Undock needs a satellite target."}]
+	var effect: EffectData = context.get("effect")
+	if effect == null or not effect.undock:
+		return [{"type": "undock_failed", "text": "%s is fixed to its slice." % sat.display_name}]
 	var host := state.get_combatant(sat.host_id)
 	var action: CombatAction = context.get("action")
 	var direction: int = action.direction if action != null else 1

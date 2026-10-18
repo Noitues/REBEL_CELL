@@ -8,6 +8,7 @@ script = ExtResource("2")
 type = 24
 target = 2
 custom_handler = ExtResource("h")
+undock = true
 
 [resource]
 script = ExtResource("1")

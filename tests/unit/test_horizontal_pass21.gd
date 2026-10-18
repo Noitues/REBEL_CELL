@@ -104,7 +104,9 @@ func test_switching_to_the_pad_keeps_focus_on_the_hand() -> void:
 	assert_eq(owner.get_parent(), scene._hand_box, "a card keeps it")
 
 
-func test_a_nudge_card_on_a_satellite_goes_the_way_of_the_side() -> void:
+## N13 (designer 2026-10-18): satellites are fixed; a plain nudge card dropped on one is
+## refused (SATELLITE_FIXED) and leaves it where it was.
+func test_a_nudge_card_dropped_on_a_satellite_leaves_it_fixed() -> void:
 	var scene := await _combat(&"collections_agent")
 	_hand(scene, [&"fine_tune"])
 	var s: CombatState = scene.engine.state()
@@ -119,7 +121,9 @@ func test_a_nudge_card_on_a_satellite_goes_the_way_of_the_side() -> void:
 	var res := sat.resistance
 	host.drag_dropped.emit({"kind": "satellite", "id": sat.id, "direction": -1}, {"hand_index": 0})
 	var after: CombatantState = scene.engine.state().get_combatant(sat.id)
-	assert_true(after.wheel.rotation < rot or after.resistance < res, "the anticlockwise side nudges it back")
+	assert_eq(after.wheel.rotation, rot, "the satellite stays fixed")
+	assert_eq(after.resistance, res, "and its resistance is untouched")
+	assert_eq(scene.engine.state().hand.size(), s.hand.size(), "the card stays in hand")
 
 
 func test_undock_offers_both_sides() -> void:

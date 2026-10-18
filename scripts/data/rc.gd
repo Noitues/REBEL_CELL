@@ -42,6 +42,10 @@ enum Trigger {
 	## ("resolutions": Array[Dictionary]) so rule-breaking Daemons can rewrite them
 	## before the passes run (Stolen Intent).
 	ON_RESOLVE,
+	## A satellite or drone was destroyed: killed, replaced by a new install on its slice, or
+	## cleared with its host (designer 2026-10-18, Q7/Q10). Context: "satellite" (the
+	## destroyed one), "host_id", "cause" (&"killed", &"replaced", &"cleared"). Append-only.
+	ON_SATELLITE_DESTROYED,
 }
 
 enum EffectType {

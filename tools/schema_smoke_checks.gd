@@ -7,7 +7,27 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n13_undock()
+
+
+## Plan 2 N13: EffectData.undock (the Undock keyword) defaults false and survives a save; the
+## shipped Undock card carries it; ON_SATELLITE_DESTROYED is appended after ON_RESOLVE.
+func _n13_undock() -> int:
+	var fails := 0
+	var e := EffectData.new(); e.type = RC.EffectType.NUDGE
+	print("N13 undock default (expect false): ", e.undock)
+	if e.undock: fails += 1
+	e.undock = true
+	var err := ResourceSaver.save(e, "user://smoke_undock.tres")
+	var back: EffectData = load("user://smoke_undock.tres")
+	print("N13 undock save=", err, " back ", back.undock if back != null else null)
+	if err != OK or back == null or not back.undock: fails += 1
+	var card: CardData = load("res://content/cards/undock.tres")
+	print("N13 Undock card keyword (expect true): ", card.effects[0].undock if card != null else null)
+	if card == null or not card.effects[0].undock: fails += 1
+	print("N13 ON_SATELLITE_DESTROYED (expect ON_RESOLVE + 1): ", RC.Trigger.ON_SATELLITE_DESTROYED)
+	if RC.Trigger.ON_SATELLITE_DESTROYED != RC.Trigger.ON_RESOLVE + 1: fails += 1
+	return fails
 
 
 ## Plan 2 N3: BossPhaseData.cleanse_on_enter defaults NONE and survives a save; an unknown

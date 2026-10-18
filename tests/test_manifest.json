@@ -1,6 +1,22 @@
 {
 	"about": "Measured seconds per test script (median of runs) for tools/run_tests.py shard balancing, and each script's tier: fast = the iteration tier, full = only in the full suite, deferred = text scale > 1.0 / high contrast / gamepad / colour-blind scripts, skipped by every default run (run_tests.py --tier deferred runs only them). Every test script is listed exactly once (test_suite_integrity.gd). See docs/TEST_SUITE.md.",
 	"scripts": {
+		"res://tests/unit/test_satellite_fixed.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_satellite_replace.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_satellite_undock_scope.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_satellite_determinism.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_codex_terms.gd": {
 			"seconds": 1.0,
 			"tier": "fast"
