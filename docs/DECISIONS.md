@@ -8705,3 +8705,8 @@ Batch lane (Sonnet 5.5, `const_edits`, `tools/batch/apply_edits.py` value-checke
 - **Cost:** 2 batches, 29 requests, about 1.5M input tokens (mostly whole-file repeats) and 17k output at batch rates: roughly 2 USD, under the 3 USD cap.
 - **Baseline:** colour / font-size lint counts unchanged (no colour or font-size literals added or removed).
 - **Still owed:** `combat_scene`, `wheel_view`, `combat_fx_layer` (combat agent running), `neon_city` (1); remaining literals in `city_map_overlay` and `kit_demo` want a manual pass.
+
+## 2026-10-18 - W0 HQRECT (art-pass ruling, ART_REPLIES item 2)
+- An HQ rect is exclusive. `NeonCity._cell_of` now returns a 1x1 cell for any lot whose merged candidate (2x2, wide or deep slab) intersects an HQ rect of any corporation (the fist territory is not an HQ); lots inside an HQ rect hold no building (unchanged `_hq_at` rule). No new RNG draws: the merge-mode hash is unchanged, only the fallback is added.
+- Seed 7 (fixed city seed) bids that changed near HQs: removed 43:11, 13:-32, 13:-36, 3:39, 3:40; new 1x1 bids 43:12, 44:12, 14:-31, 14:-32, 14:-35, 14:-36, 3:-27, 3:-28, 3:-31, 3:-32, -7:37, -7:38, 4:39, 4:40. Other seeds change the same way (old layout: 1215 overlaps over the fixed seed plus 200 sweep seeds; new: 0).
+- NA-02 `city.json` v1 gains `hq_overlaps[]` ({bid, corp}, sorted), required in the schema, empty after the fix; a diagnostic that never drops a building. Tests: `test_netrun_art_export.gd` (fixed seed) and the full-tier sweep (200 seeds).

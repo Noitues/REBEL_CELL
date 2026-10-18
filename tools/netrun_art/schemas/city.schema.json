@@ -3,7 +3,7 @@
  "title": "city.json v1 (NA02_FIELDS.md section 2)",
  "version": 1,
  "type": "object",
- "required": ["version", "layout_seed", "units", "lot_bu", "origin_lot", "buildings", "streets", "plazas", "hqs"],
+ "required": ["version", "layout_seed", "units", "lot_bu", "origin_lot", "buildings", "streets", "plazas", "hqs", "hq_overlaps"],
  "additionalProperties": false,
  "properties": {
   "version": {"const": 1},
@@ -66,6 +66,15 @@
      "lot": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer"}},
      "terr": {"type": "string"}
     }
+   }
+  },
+  "hq_overlaps": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": ["bid", "corp"],
+    "additionalProperties": false,
+    "properties": {"bid": {"type": "string"}, "corp": {"type": "string"}}
    }
   },
   "hqs": {

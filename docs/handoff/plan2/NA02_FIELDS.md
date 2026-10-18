@@ -51,6 +51,7 @@ is superseded (C1).
 | `streets` | array | none | `CityModel.streets` | sorted by `lot` (i, then j) |
 | `plazas` | array | none | `CityModel.plazas` | sorted by `lot` (i, then j) |
 | `hqs` | object | none | `CityModel.hqs` | keys = corp ids |
+| `hq_overlaps` | array | none | diagnostic (v1 addition, W0 HQRECT) | `[{ "bid", "corp" }]`: every non-HQ building whose cell intersects an HQ rect, sorted by (bid, corp). Empty after the layout fix (an HQ rect is exclusive); a non-empty list is a layout bug, and no building is dropped silently |
 
 ### `buildings[]` (one per cell)
 

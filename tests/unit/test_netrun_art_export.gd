@@ -126,6 +126,24 @@ func test_mutated_files_are_rejected() -> void:
 	assert_false(SchemaCheck.validate(dv, SchemaCheck.schema("derive")).is_empty(), "u64 seed as a number")
 
 
+func test_no_city_cell_intersects_an_hq_rect() -> void:
+	assert_eq(_city["hq_overlaps"], [], "hq_overlaps is empty")
+	for b: Dictionary in _city["buildings"]:
+		if b["hq"]:
+			continue
+		var c: Array = b["cell"]
+		var cell := Rect2i(c[0], c[1], c[2], c[3])
+		for cid: Variant in _city["hqs"]:
+			var r: Array = _city["hqs"][cid]
+			assert_false(Rect2i(r[0], r[1], r[2], r[3]).intersects(cell), "%s clear of %s" % [b["bid"], cid])
+
+
+func test_hq_overlaps_diagnostic_reports_a_planted_overlap() -> void:
+	var b := [{"bid": "13:-36", "hq": false, "cell": [13, -36, 2, 2]}, {"bid": "hq:x", "hq": true, "cell": [4, -36, 10, 10]}]
+	var got := NetrunArtExport.hq_overlaps(b, {&"x": Rect2i(4, -36, 10, 10)})
+	assert_eq(got, [{"bid": "13:-36", "corp": "x"}])
+
+
 func test_building_ids_unique_and_cells_disjoint() -> void:
 	assert_eq(NetrunArtExport.bid_conflicts(_prisms), PackedStringArray(), "no two cells share a bid")
 	# City cells never overlap (an HQ stand-in's rect may reach over an edge lot: lot_index

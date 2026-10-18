@@ -9,6 +9,7 @@ const CITY_CONFIG := "res://content/config/city_config.tres"
 ## is ~1 s, so the 1,000 seeds read this box; the full city is checked at FULL_SEEDS).
 const SWEEP_SEEDS := 1000
 const SWEEP_HALF := 12
+const HQ_SEEDS := 200
 const FULL_SEEDS: Array[int] = [7, -1, 424242]
 
 var _cfg: CityConfig
@@ -40,6 +41,19 @@ func test_building_ids_unique_across_1000_seeds() -> void:
 	gut.p("NA-02 sweep: %d seeds, %d buildings, %d collisions" % [SWEEP_SEEDS, buildings, collisions])
 	assert_eq(collisions, 0)
 	assert_true(buildings > SWEEP_SEEDS, "the box holds buildings")
+
+
+func test_no_city_cell_intersects_an_hq_rect_across_200_seeds() -> void:
+	var bad := 0
+	for s in HQ_SEEDS:
+		var seed_v := s * 7919 - 100000
+		var m := CityModel.build(_cfg, seed_v)
+		var city := NetrunArtExport.city_json(m.city_seed, _cfg.lot_bu, _cfg.district_centre, m.prisms, m.streets,
+			m.plazas, m.hqs)
+		if not (city["hq_overlaps"] as Array).is_empty():
+			bad += 1
+			gut.p("seed %d: %s" % [seed_v, str(city["hq_overlaps"])])
+	assert_eq(bad, 0)
 
 
 func test_full_city_validates_and_ids_are_unique() -> void:
