@@ -314,7 +314,7 @@ python test_sheet.py ../scratch/test ../test_sheet.jpg
 8. **Exposure**: the corp's post exposure is 1.6 with no zoom fall-off (Meridian: 2.85 × (1 − 0.55 zoom)). The
    travertine is the brightest HQ albedo, so the frame median is set by exposure and the landmark ratio by light.
 
-### 13.3 Test values (Cycles, 1280 × 720, 32 spp; `scratch/test/values.json`; 4 frames in one locked batch of 2.5 min)
+### 13.3 Test values (Cycles, 1280 × 720, 32 spp; `scratch/test/values.json`; 4 frames in one locked batch of 3.5 min, 207 s)
 
 | Shot | median (0.14 ± 0.03) | under 0.10 (25-40 %) | over 0.85 (≤ 2.5 %) | landmark / local bg (1.5-2.0; > 2 warns) |
 |---|---|---|---|---|
