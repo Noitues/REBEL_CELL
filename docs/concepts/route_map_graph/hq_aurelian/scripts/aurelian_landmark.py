@@ -157,7 +157,7 @@ def canonical(ctx, hx, hy, open_bays=()):
     cyl(SMOOTH, hx, hy, R["tholos_z"][0], R["core_top"], R["core_r"], 14, (0.92, 0.88, 0.80))
     for zz in R["rings_z"]:
         ring_line(NEON, hx, hy, zz, 1.75, 0.35, sec, n=14)
-    ring_line(NEON, hx, hy, R["laurel_z"], R["laurel_r"], 0.42, sc(sec, 1.2), n=40)
+    ring_line(getattr(ctx, "LAUREL", NEON), hx, hy, R["laurel_z"], R["laurel_r"], 0.42, sc(sec, 1.2), n=40)
     for kk in range(16):
         t = 2 * math.pi * kk / 16
         p0 = (hx + 7.0 * math.cos(t), hy + 7.0 * math.sin(t), 25.0)
@@ -489,7 +489,8 @@ def build_hq(K, rooms=True):
     cut = Cutter([G.ROOM[i] for i in rooms_], pad=0.5) if G else None
     gilt_acc = K.Acc("gilt", K.M["emit"], 1, K.COLL["compound"])
     loggia_acc = K.Acc("loggia", K.M["emit"], 1, K.COLL["compound"])
-    hooks["accs"].update(gilt=gilt_acc, loggia=loggia_acc)
+    laurel_acc = K.Acc("laurel", K.M["emit"], 1, K.COLL["compound"])     # the laurel ring is its own object (OVERVIEW dim)
+    hooks["accs"].update(gilt=gilt_acc, loggia=loggia_acc, laurel=laurel_acc)
     lights = []
 
     def spot_at(target, frm, col, power, cone=30.0):
@@ -498,6 +499,7 @@ def build_hq(K, rooms=True):
     ctx.SURF = _KitAcc(A_["civic"], ks, cut)
     ctx.SMOOTH = _KitAcc(A_["civic"], ks, cut)
     ctx.NEON = _KitAcc(gilt_acc, ks, cut, LH["gilt_k"])
+    ctx.LAUREL = _KitAcc(laurel_acc, ks, cut, LH["gilt_k"])
     ctx.prism, ctx.box, ctx.cyl, ctx.bar = p_prism, p_box, p_cyl, p_bar
     ctx.ring_line, ctx.annulus, ctx.circle, ctx.sc = p_ring_line, p_annulus, p_circle, p_sc
     ctx.spot_at = spot_at
@@ -586,10 +588,77 @@ def build_hq(K, rooms=True):
                 rimrx.objects.link(ob)
     hooks["post_build"] = post_build
 
+    # the city lift (round 2 test fixes): block uplights on the rectangle of the boulevard, aimed up at the first row of
+    # blocks, light-linked to the city and the ground only (the landmark's own light is unchanged)
+    dtc = K.HZ["downtown"]
+    kx, ky = dtc["keep"][1] + dtc["street0"] * 0.5, dtc["keep"][2] + dtc["street0"] * 0.5
+    nfill = int(LH.get("fill_n", 0))
+    if nfill:
+        import bpy
+        fillrx = bpy.data.collections.new("cityfill_rx")
+        per = 2.0 * (2.0 * kx + 2.0 * ky)
+        for q in range(nfill):
+            d = per * (q + 0.5) / nfill
+            # walk the rectangle perimeter: (x, y, outward normal)
+            segs = ((2 * kx, (-kx, -ky), (1, 0), (0, -1)), (2 * ky, (kx, -ky), (0, 1), (1, 0)),
+                    (2 * kx, (kx, ky), (-1, 0), (0, 1)), (2 * ky, (-kx, ky), (0, -1), (-1, 0)))
+            for (ln, o, dr, nr) in segs:
+                if d < ln:
+                    px, py = o[0] + dr[0] * d, o[1] + dr[1] * d
+                    nx_, ny_ = nr
+                    break
+                d -= ln
+            warm = (1.0, 0.62, 0.30) if q % 3 else (0.55, 0.80, 1.0)
+            reach = 70.0
+            K.add_light("cityfill_%d" % q, "SPOT", (px, py, 5.0), LH["fill_w"], warm,
+                        aim=(px + nx_ * reach, py + ny_ * reach, 55.0), size=2.0, spot=LH.get("fill_cone", 95.0), blend=0.8,
+                        group="corp", shadow=False, receivers=fillrx)
+
+        # the camera-side city fill: one soft area light at the camera, aimed at the target, linked to the city and the
+        # ground only (the facades that face the camera are the ones the view sees; per frame, scaled by distance^2)
+        K.add_light("camfill", "AREA", (0.0, 0.0, 100.0), LH.get("camfill_w", 0.0), (0.62, 0.76, 1.0), aim=(0.0, 0.0, 0.0),
+                    size=60.0, size_y=60.0, group="corp", shadow=False, receivers=fillrx)
+
+        def fill_link(OBJ, _prev=post_build):
+            _prev(OBJ)
+            for k_ in ("city", "city_neon", "city_sign", "city_small", "city_metal", "ground", "sky"):
+                if OBJ.get(k_) is not None:
+                    fillrx.objects.link(OBJ[k_])
+        hooks["post_build"] = fill_link
+
     def apply(fr, c):
+        # a view ray crosses a column of cut blocks (2 transparent walls each): the engine's 16 transparent bounces end
+        # it black (a dark "mast" in front of the colonnade). Aurelian only; the preset says how many.
+        import bpy
+        try:
+            bpy.context.scene.cycles.transparent_max_bounces = int(LH.get("transparent_bounces", 16))
+        except (AttributeError, TypeError):
+            pass
+        if K.JOB.get("hide_by_frame"):                         # debug: hide named objects per frame
+            for ob_ in c["OBJ"].values():
+                if ob_ is not None:
+                    ob_.hide_render = ob_.name in K.JOB["hide_by_frame"].get(fr.get("name"), ())
         ob = c["OBJ"].get("gilt")
+        ov = c["zoom"] < 0.5
         if ob is not None:
             c["set_pwo"](ob, (GILT_DIM_DECISION if c["zoom"] > 0.5 else 1.0) * c["cut"])
+        for nm, kk in (("loggia", LH.get("ov_loggia", 1.0)), ("laurel", LH.get("ov_laurel", 1.0))):
+            if c["OBJ"].get(nm) is not None:
+                c["set_pwo"](c["OBJ"][nm], (kk if ov else 1.0) * c["cut"])
+        fk = LH.get("fill_frame", {}).get(fr.get("name"), 1.0)
+        for (lob, e0, grp) in c["LIGHTS"]:
+            if lob.name.startswith("cityfill_"):
+                lob.data.energy = e0 * fk * c["cut"]
+            elif lob.name == "camfill":
+                from mathutils import Vector
+                loc, tgt = Vector(fr["pose"]["loc"]), Vector(fr["pose"]["tgt"])
+                d_ = (loc - tgt).length
+                lob.location = loc + Vector((0.0, 0.0, 0.12 * d_))
+                lob.rotation_euler = (tgt - lob.location).to_track_quat("-Z", "Y").to_euler()
+                lob.data.size = lob.data.size_y = 0.25 * d_
+                lob.data.energy = e0 * (d_ / 265.0) ** 2 * LH.get("camfill_frame", {}).get(fr.get("name"), 1.0) * c["cut"]
+            elif lob.name.startswith("up_"):                   # the colonnade uplights: per-frame trim (landmark / city ratio)
+                lob.data.energy = e0 * LH.get("up_frame", {}).get(fr.get("name"), 1.0) * c["cut"]
     hooks["apply"] = apply
     K.log("aurelian landmark: rooms", len(rooms_), "open bays", len(open_bays), "lights", len(lights) + nup + 6)
     return hooks

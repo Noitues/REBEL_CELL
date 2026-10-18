@@ -54,7 +54,12 @@ PRESET["hq"] = {
     "light": {"room_k": 1.0, "room_w": 2600.0, "shop_w": 900.0, "bank_glow": 1.0e4, "cityglow_k": 0.25,
               "city_beam_k": 0.8,
               "gilt_k": 0.6, "loggia_k": 0.35, "cove_k": 0.35, "server_k": 4.0, "flood_k": 0.006,
-              "up_n": 24, "up_w": 450.0, "cavea_w": 2.5e3, "vault_key_w": 4.0e3, "rim_w": 9.0e3},
+              "up_n": 24, "up_w": 450.0, "cavea_w": 2.5e3, "vault_key_w": 4.0e3, "rim_w": 9.0e3,
+              # round 2 test fixes: the city lift (block uplights, light-linked to city + ground), per-frame multipliers
+              "transparent_bounces": 128, "fill_n": 40, "fill_w": 25000.0, "camfill_w": 28000.0, "fill_cone": 95.0,
+              "up_frame": {"H_decision": 1.0}, "fill_frame": {"H_overview": 0.6, "H_decision_cavea": 0.5},
+              "camfill_frame": {"H_overview": 0.6, "H_decision_cavea": 0.5},
+              "ov_loggia": 0.70, "ov_laurel": 0.60},
     "beams": {"power": 2.4e7, "cone": 1.2},
     "bank_glow_cols": ["work", "sodium"],
     "city": {"seed": 7311,
@@ -73,13 +78,14 @@ PRESET["hq"] = {
     "downtown": {"seed": 7340, "keep": ("rect", 36.0 * KS, 30.0 * KS), "street0": 40.0, "cell": 30.0, "street": 7.0,
                  "r_out": 540.0, "h_near": (30.0, 90.0), "h_far": (90.0, 200.0), "tall_p": 0.10, "sign_p": 0.6,
                  "holo_p": 0.07, "trim_p": 0.4, "lamp_step": 15.0, "lamp_lights": 120, "lamp_w": 1800.0,
-                 "corridor": [], "corridor_low": (34.0, 12.0), "occ": {"margin": 0.10}},
+                 "corridor": [], "corridor_low": (34.0, 12.0), "occ": {"margin": 0.10}, "mast_pad": 8.0},
     "road": {"plaza": 36.0 * KS, "road": (36.0 * KS + 1.0, 36.0 * KS + 4.0), "walk": (36.0 * KS + 4.0, 36.0 * KS + 6.0)},
     "no_plaza": True,
     "cam": {"pitch_lo": 30.0, "pitch_hi": 34.0, "lens": 30.0, "dmin": 135.0, "fill": (0.56, 0.62), "dmin_loggia": 260.0, "lens_loggia": 42.0,
             "pitch_lo_cav": 26.0, "pitch_hi_cav": 36.0,
             "pitch_o": 36.0, "lens_o": 36.0, "fill_o": (0.97, 0.94), "ov_yaw": 20.0, "ov_centre": (0.0, 6.0, 30.0)},
     "post": {"black": 0.04, "exposure": 1.6, "exposure_zoom_k": 0.0},
+    "frame_stops": {"H_overview": -0.08, "H_decision": -0.45, "H_decision_cavea": -0.30},       # per-frame exposure trim in stops (the cavea frame is the brightest)
 }
 
 PRESET["hq_fog"] = {

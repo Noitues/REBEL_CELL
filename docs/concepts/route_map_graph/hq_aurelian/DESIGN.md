@@ -335,9 +335,56 @@ Known look issues: roof masts of the cut blocks still stand in front of the colo
 cut keeps a few antennas); the engine overlay draws the TARGET sticker over the colonnade when the vault is hidden
 behind it (an engine behaviour, the same for every corp).
 
-### 13.4 Open questions (round 2)
+### 13.4 Open questions (round 2): both settled by the AD, 2026-10-18
 
 5. **The boulevard.** Accept a 9.5 BU ring street round the circus (`street0` 40 kit), or keep the 6 BU apron and
    accept a closer, higher loggia camera?
+   **Ruling: accepted.** The 9.5 BU boulevard round the circus stays.
 6. **Loges.** The cavea rooms are 3.5-tall loges standing up to 0.6 BU proud of the seats. Accept, or shrink them and
    accept 30 px rooms on the seating rings at OVERVIEW?
+   **Ruling: accepted.** The 3.5-tall loges in the seating rings stay: readability wins.
+
+### 13.5 Test fixes (AD, 2026-10-18) and the re-test (Cycles, 1280 x 720, 32 spp)
+
+Fixes (the light comes from the city, not from exposure, except the small per-frame trims at the end):
+1. **The black "mast" in the loggia DECISION was not a mast.** A view ray down a column of cut blocks crosses two
+   transparent walls per block; the engine's 16 transparent bounces ended it black (index pass 2, hiding the `city`
+   object removed it). Aurelian now sets `transparent_max_bounces` 128 (`light.transparent_bounces`; the engine file is
+   untouched, the corp hook sets it per frame).
+2. **Antenna masts in the stub set.** `downtown.build` takes an optional `mast_pad` (default off, no change for the other
+   corps; Aurelian 8): a block's roof clutter (antennas, tanks, holo poles) is tagged with the clutter top (top + 25) and a
+   wider footprint, so the occlusion rule cuts it with the block.
+3. **The city lift** (`light`, all light-linked to the city and ground, so the landmark is untouched): `cityfill_*` 40
+   block uplights on the boulevard rectangle aimed up at the first row of blocks (`fill_w` 25 kW), and `camfill`, one
+   soft cool area light at the camera aimed at the target (`camfill_w` 28 kW at 265 kit, scaled by distance squared). The
+   warm landmark against a cool city is the intended colour split.
+4. **Per-frame trims** (`hq.frame_stops`, post only): H_decision -0.45 stop, H_decision_cavea -0.20 stop (the brief said
+   about -0.15; the city lift is off on that frame, `camfill_frame`/`fill_frame` 0), H_overview -0.08 stop. OVERVIEW also
+   dims the arch glow x 0.80 and the laurel ring x 0.60 (`ov_loggia`, `ov_laurel`; the laurel is now its own object).
+
+Re-test (`scratch/test/values.json`, `test_sheet.jpg`; the round-1 sheet is `test_sheet_round1.jpg`):
+
+| Shot | median | under 0.10 | over 0.85 | landmark / local bg | round 1 |
+|---|---|---|---|---|---|
+| H_overview | 0.158 | 34.5 % | 1.3 % | 0.246 / 0.105 = 2.34 | 0.156, 36.7 %, 2.76 |
+| H_decision | 0.154 | 31.4 % | 1.0 % | 0.274 / 0.113 = 2.41 | 0.110, 48.5 %, 5.83 |
+| H_decision_cavea | 0.161 | 30.2 % | 1.2 % | 0.213 / 0.092 = 2.32 | 0.188, 23.7 %, 2.15 |
+| H_hover | 0.029 (exempt) | 79 % | 0.9 % | 5.84 | |
+
+Checks: stickers at 1280 x 720 on DECISION: smallest 25 px (the overlay's floor, 0.75 x 34); cavea 25 px. Silhouette:
+`silhouette_check.jpg` (canonical colosseum from `city_all_corps_night.png` beside an Eevee render of the HQ landmark at
+pitch 53; same elliptical three-tier bowl, tholos, laurel, four campanili; an eyeball check, no IoU computed).
+
+### 13.6 Finals v1 (Cycles, 2560 x 1440, 64 spp)
+
+Final-batch changes after the re-test: H_decision_cavea city lift back at x 0.5 and -0.30 stop (the unlifted frame drifted
+to ratio 2.67 at 64 spp); `ov_loggia` 0.70. Files: `H_*_v1.png` (composite), `plates/H_*_v1_plate.png`,
+`H_*_v1_values.json`, `H_*_v1_rooms.json` (room front corners, world and 2560 px; `scripts/finals_pack.py`),
+`finals_sheet_v1.jpg`.
+
+| Final | median | under 0.10 | over 0.85 | landmark / local bg |
+|---|---|---|---|---|
+| H_overview_v1 | 0.148 | 38.5 % | 0.7 % | 0.239 / 0.095 = 2.52 (0.02 over the 2.5 aim) |
+| H_decision_v1 | 0.145 | 29.7 % | 0.9 % | 0.268 / 0.119 = 2.26 |
+| H_decision_cavea_v1 | 0.148 | 30.8 % | 1.1 % | 0.193 / 0.087 = 2.22 |
+| H_hover_v1 | 0.013 (exempt) | 81 % | 1.1 % | 12.7 (exempt) |

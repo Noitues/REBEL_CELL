@@ -1,0 +1,9 @@
+{
+ "median": 0.145,
+ "under_010": 0.297,
+ "over_085": 0.009,
+ "landmark": 0.268,
+ "local_bg": 0.119,
+ "landmark_share": 0.284,
+ "ratio": 2.255
+}

@@ -27,6 +27,8 @@ J.SCR = aur_env.SCR
 J.BIG = aur_env.BIG
 J.have_lock = lambda: os.path.exists(J.LOCK) and open(J.LOCK, errors="replace").read().startswith("aurelian")
 TARGET_PX = 46.0
+import hq_preset as _HQP  # noqa: E402
+HP_H = _HQP.PRESET["hq"]
 
 
 def px():
@@ -82,11 +84,17 @@ def post(q, names):
     dst = os.path.join(aur_env.SCR, q)
     os.makedirs(dst, exist_ok=True)
     ovs = json.load(open(os.path.join(aur_env.SCR, "ov_stills.json")))
-    res = {}
+    vp = os.path.join(dst, "values.json")
+    res = json.load(open(vp)) if os.path.exists(vp) else {}      # merge: a partial run keeps the other frames' values
     out = J.out_dir("stills", q)
     for n in names:
         stem = os.path.join(out, n)
-        plate = PO.finish(stem, ovs[n]["zoom"], t=2.0)
+        e0 = PO.P["exposure"]
+        PO.P["exposure"] = e0 * 2.0 ** HP_H.get("frame_stops", {}).get(n, 0.0)
+        try:
+            plate = PO.finish(stem, ovs[n]["zoom"], t=2.0)
+        finally:
+            PO.P["exposure"] = e0
         pp = os.path.join(dst, n + "_plate.png")
         plate.save(pp)
         C.compose(plate, ovs[n]).save(os.path.join(dst, n + ".png"))
