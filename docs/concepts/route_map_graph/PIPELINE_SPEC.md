@@ -114,7 +114,7 @@ field list (D8); this is the art side's reading.
 | `derive_<run>.json` | the tools (`derive.street` / `hq.slots`) | Godot (`NetrunArtDeriver`), `rig`, `checks` | schema 2.3, including `art_seeds {stream: "<u64>"}` |
 
 Rules (C1):
-- `city.json` v1 is the only game-exported layout file and carries `layout_seed` as a decimal string.
+- `city.json` v1 is the only game-exported layout file and carries `layout_seed` as a decimal string. A signed `CityModel.city_seed` is written as its two's-complement u64.
 - `city_layout.json`, the `CityLayoutRecorder` output, is **internal to Godot** and not part of the contract. The
   planner JSON reaches the tools only through the art-pass adapter; Godot never reads it. When NA-12's per-seed
   generator lands it fills the same `city.json` (D3).
@@ -379,7 +379,7 @@ Today every tool seeds `random.Random(<literal>)`. The pipeline replaces literal
    - The JSON is compact (separators `,` and `:`, no spaces) and ASCII-escaped (`\uXXXX`). `layout_seed` is a JSON
      string inside the array. Keys are ints or strings only, never floats or bools.
    - FNV-1a 64: `h = 0xCBF29CE484222325`; for each UTF-8 byte `h = ((h ^ byte) * 0x100000001B3) mod 2^64`.
-   - Same algorithm in Python and GDScript (GDScript ints are signed, so u64 values travel as decimal strings).
+   - Same algorithm in Python and GDScript (GDScript ints are signed, so u64 values travel as decimal strings). `layout_seed` is the signed `CityModel.city_seed` taken as its two's-complement u64 (e.g. -1 -> "18446744073709551615"); the export always comes from a full-city build, never a rect subset (build session, 2026-10-18).
 2. **Exported seeds and draws.** Every u64 in JSON is a **decimal string** (`layout_seed`, `art_seeds{}`, the
    vectors): JSON numbers above 2^53 lose precision. The game exports `art_seeds` into `derive_<run>.json` (2.3);
    the tools and Blender read seeds only from there and never invent one. Draws for the parity-relevant modules use
