@@ -242,7 +242,7 @@ These change the city both looks are built from (the HQ map and the netrun stree
 | `street_r2_height_passes` | on | **Designer-approved 2026-10-16.** The `frontage.silhouette` and `horizon.break` passes (§13; `route_map_graph/street_r2/scripts/r2_rules.py`, `r2_config.py`) may change frontage heights across the one city, about 465 buildings at seed 1, plus 3–5 backdrop towers. No frontage building drops below `frontage_min_floors`. |
 | `unique_building_id` | required | **Designer-approved 2026-10-16.** Every building carries a unique id. The current layout `key` has 3,175 duplicates; the unique id is `bid` (string "i:j", "hq:<corp>" for HQs; audit row 4, 2026-10-18; NA-02 C2), which replaces both `key` and the interim `(ci, key)`. Matching route buildings by `key` alone is forbidden, because it pulled same-key buildings from elsewhere in the city into the storyboard's route geometry. |
 
-**Scope of "border-link street":** every straight leg of every link with `state == "border"` in the network,
+**Scope of "border-link street":** every straight leg of every link that is a border link (2.0c: open or opened, one end core or owned, the other corporate or taken; NA03_NA04_ANSWERS O-D, 2026-10-18) in the network,
 extended along its own street line by `max(extend)` = 60 BU each way (`SB/sb_onecity.py:102-110`). Frontage test:
 near edge within `front_band` (0.8, 6.5) BU of the leg centre line and overlapping the extended leg.
 
@@ -344,7 +344,7 @@ Zoning (`CAC/zoning.py`, rules Z1-Z6, L1-L4, T1; numbers `CAC/city_preset.py:58-
      anywhere along the line. It replaces `RAIL.deck_z` 9.0 (`CAC/city_preset.py:162-163`; NA03_NA04_ANSWERS, 2026-10-18) and the HQ kit's 22
      (kit units; `HM/hq_preset.py:51`).
    - Buildings within `corridor_low` of the line stay at least 2 BU under the deck (cap 15.5 BU).
-   - Piers every 7 BU on street tiles, ramp 30, signals every 36 (`CAC/city_preset.py:162-163`; at `6a58733c` `RAIL.ramp` is 60.0 and `end_ramp` 45.0, not 30: designer to confirm which is intended, then correct the line or the value; NA03_NA04_ANSWERS, 2026-10-18).
+   - Piers every 7 BU on street tiles, ramp 60 (end ramp 45), signals every 36 (`CAC/city_preset.py:162-163`; the code value of the approved city renders wins over the old "ramp 30"; AD 2026-10-18).
    - The HQ scene imports this polyline and `deck_z` from `zoned.json`. The straight viaduct at x 66 to y 1180 in the
      Meridian kit (`HM/hq_preset.py:51-52`) is superseded by the v3 module (audit row 1, 2026-10-18).
 7. T1: arterials are street runs of >= 36 tiles with mean traffic >= 0.55.
