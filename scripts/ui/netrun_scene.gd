@@ -3884,7 +3884,7 @@ func _on_page_room_changed() -> void:
 ## an HQ run keeps the HQ building's name.
 static func loot_site_word(site_id: StringName) -> String:
 	var site := CampaignRules.site_data(RunManager.corporation, site_id) if RunManager.corporation != null else null
-	return SiteText.tiered(site).to_upper() if site != null else ""
+	return SiteText.tiered_objective(site).to_upper() if site != null else ""
 
 
 ## Parity LOOT-02: the loot strip ("LOOT // NETRUN: SOLACE CLINIC // FIGHT 3 OF 7"), translated.

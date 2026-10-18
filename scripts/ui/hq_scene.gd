@@ -4146,7 +4146,7 @@ func _site_holo(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	var corp_word := CorpPaperPanel.letterhead_of(RunManager.corporation)
 	if corp_word == "":
 		corp_word = TextDb.t(RunManager.corporation, "display_name").to_upper()
-	var title := "%s  //  %s" % [CityMapOverlay.tier_text(site.tier), SiteText.label(site, c.grid.home_site_id).to_upper()]
+	var title := "%s  //  %s" % [CityMapOverlay.tier_text(site.tier), SiteText.objective_word(site, c.grid.home_site_id).to_upper()]
 	var card := SiteHoloCard.new(c.corporation_id, title, tr(SiteHoloCard.FILE_LINE) % [corp_word, "%03d" % SiteHoloCard.file_number(site.id)])
 	card.set_meta(&"shows", [site.id, int(c.grid.status_of(site.id))])  # ANIM-R3 B6: what refresh_site_card compares
 	var launchable_here := false

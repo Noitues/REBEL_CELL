@@ -22,7 +22,7 @@ func _shot(shot_name: String) -> void:
 
 func _mount(path: String) -> Control:
 	var holder := Control.new()
-	holder.size = SIZE
+	holder.size = get_viewport().get_visible_rect().size
 	add_child(holder)
 	var scene: Control = load(path).instantiate()
 	holder.add_child(scene)

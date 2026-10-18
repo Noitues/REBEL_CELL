@@ -183,6 +183,9 @@ const MARKER_STEP := 16.0
 ## H24 K4: the lit node's ring, beyond the selection ring (screen px), and its ticks.
 const HOVER_RING := 4.0
 const HOVER_TICK := 6.0
+## W0 GRIDCARD: the least room (px x the map's k) between a label and the selection ring or the
+## lit node's ring (and its ticks): a tag is never cut by a ring drawn over it.
+const RING_TAG_CLEAR := 4.0
 ## W3-GRID: the gap between a prerequisite's two rings (px at the reference scale).
 const PREREQ_GAP := 4.0
 ## W3-POLISH F2: the words under a prerequisite's double ring.
@@ -1536,8 +1539,7 @@ func _draw_hi() -> void:
 	var hc := hover_centre()
 	if hc.x != INF:
 		var k := _k()
-		var hn := _node_dict(hover_id)
-		var hr := (icon_radius(hn) if not hn.is_empty() else ICON_RADIUS * k) + (SELECT_RING + pulse_amplitude() + HOVER_RING) * k
+		var hr := hover_ring_radius()
 		_hi.draw_arc(hc, hr, 0, TAU, 32, Color(0, 0, 0, 0.85), 5.0 * k)
 		_hi.draw_arc(hc, hr, 0, TAU, 32, Palette.PAPER, 2.0 * k)
 		for q in 4:
@@ -1634,6 +1636,12 @@ func hover_centre() -> Vector2:
 	if city == null or hover_id == &"" or not _lots.has(hover_id):
 		return Vector2(INF, INF)
 	return _icon_positions().get(hover_id, Vector2(INF, INF))
+
+
+## Radius of the lit node's ring (local px), ticks not included.
+func hover_ring_radius() -> float:
+	var hn := _node_dict(hover_id)
+	return (icon_radius(hn) if not hn.is_empty() else ICON_RADIUS * _k()) + (SELECT_RING + pulse_amplitude() + HOVER_RING) * _k()
 
 
 ## Centre of the selection ring (the selected node's icon), or INF when none shows.
@@ -2980,7 +2988,7 @@ func unplaced_with_room() -> Array[StringName]:
 				marks.append(tier_pips_rect(n))
 			if is_boss(n) and marker_shown(n):
 				marks.append_array(boss_rects(n))
-	var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_centre(), "ring_r": ring_radius(),
+	var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_centre(), "ring_r": ring_radius() + RING_TAG_CLEAR * _k(), "hov_c": hover_centre(), "hov_r": hover_ring_radius() + (HOVER_TICK + RING_TAG_CLEAR) * _k(),
 		"area": label_area(), "blocks": label_blocks(), "clear": LABEL_CLEAR * _k()}
 	for n in nodes:
 		var lines := label_lines(n["id"])
@@ -3181,7 +3189,7 @@ func _place_labels() -> Array[Dictionary]:
 		# label moved in for it would float with nothing to point at.
 		if not _visible_at(t["at"], area, blocks):
 			continue
-		var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_c, "ring_r": ring_r, "area": area, "blocks": blocks, "clear": LABEL_CLEAR * k, "pencil": pencil}
+		var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_c, "ring_r": ring_r + RING_TAG_CLEAR * k, "hov_c": hover_centre(), "hov_r": hover_ring_radius() + (HOVER_TICK + RING_TAG_CLEAR) * k, "area": area, "blocks": blocks, "clear": LABEL_CLEAR * k, "pencil": pencil}
 		# H24 K1: a long name with no room on one line tries two (narrower) lines.
 		var variants: Array[PackedStringArray] = [t["lines"]]
 		var wrapped := wrap_lines(t["lines"])
@@ -3486,6 +3494,7 @@ static func _clamp_into(rect: Rect2, area: Rect2) -> Rect2:
 static func _blocked(rect: Rect2, obstacles: Dictionary) -> bool:
 	if _hits_rects(rect.grow(PENCIL_CLEAR), obstacles.get("pencil", [])):
 		return true
+	var raw := rect
 	rect = rect.grow(float(obstacles.get("clear", 0.0)))  # parity fix GRID-13: never touching
 	for other: Dictionary in obstacles["placed"]:
 		if rect.intersects(other["rect"]):
@@ -3497,7 +3506,10 @@ static func _blocked(rect: Rect2, obstacles: Dictionary) -> bool:
 		if rect.intersects(m):
 			return true
 	var ring_c: Vector2 = obstacles["ring_c"]
-	return ring_c.x != INF and _rect_hits_disc(rect, ring_c, obstacles["ring_r"])
+	if ring_c.x != INF and _rect_hits_disc(raw, ring_c, obstacles["ring_r"]):
+		return true
+	var hov_c: Vector2 = obstacles.get("hov_c", Vector2(INF, INF))
+	return hov_c.x != INF and _rect_hits_disc(raw, hov_c, obstacles["hov_r"])
 
 
 static func _rect_hits_disc(rect: Rect2, c: Vector2, r: float) -> bool:

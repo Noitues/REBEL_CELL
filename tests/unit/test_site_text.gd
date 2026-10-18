@@ -76,10 +76,26 @@ func test_loot_header_names_tier_and_type_and_the_hq_building() -> void:
 			continue  # the home Site is never run
 		var word: String = load("res://scripts/ui/netrun_scene.gd").loot_site_word(sd.id)
 		if SiteText.is_named(sd):
-			assert_eq(word, SiteText.label(sd).to_upper(), "the HQ run keeps the building's name")
+			assert_eq(word, SiteText.objective_word(sd).to_upper(), "the HQ run keeps the building's name")
 		else:
 			plain += 1
 			assert_true(word.begins_with("T%d " % sd.tier), "%s: tier first (%s)" % [sd.id, word])
-			assert_true(word.ends_with(SiteText.label(sd, corp.city_grid.home_site_id).to_upper()), "%s: then the SiteText type (%s)" % [sd.id, word])
+			assert_true(word.ends_with(SiteText.objective_word(sd, corp.city_grid.home_site_id).to_upper()), "%s: then the objective word (%s)" % [sd.id, word])
 			assert_ne(word, "SITE", "never the bare SITE")
 	assert_gt(plain, 0)
+
+
+func test_objective_word_names_the_objective_with_the_tier() -> void:
+	var s := SiteData.new()
+	s.id = &"x"
+	s.tier = 1
+	s.display_name = "Secret Name"
+	assert_eq(SiteText.tiered_objective(s), "T1 %s" % CityMapOverlay.kind_word(CityMapOverlay.KIND_TIER), "no objective: the Site word")
+	s.objective = RC.SiteObjective.EXPLOIT
+	assert_eq(SiteText.objective_word(s), CityMapOverlay.kind_word(CityMapOverlay.KIND_EXPLOIT))
+	s.objective = RC.SiteObjective.HEAT_REDUCTION
+	assert_eq(SiteText.tiered_objective(s).to_upper(), "T1 HEAT SINK", "a Heat Site is a heat sink, never its type word")
+	assert_eq(SiteText.objective_word(s, &"x"), CityMapOverlay.kind_word(CityMapOverlay.KIND_HOME), "the home Site keeps its name")
+	s.objective = RC.SiteObjective.CENTRAL_SERVER
+	assert_eq(SiteText.tiered_objective(s), SiteText.label(s), "the named Site keeps its name")
+	assert_eq(SiteText.objective_word(null), "")
