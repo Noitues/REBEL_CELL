@@ -456,6 +456,12 @@ func _draw_aim(e: Dictionary, b: float) -> void:
 	# drone drawn).
 	var at := (e["tile"] as Vector2).lerp(e["mini"], b)
 	var r := lerpf(float(e["depth"]) * 0.6, float(e["mini_r"]), b) + AIM_RING
+	if sat.id == v.targeted_satellite:
+		# W0 ARTFIX: a refused move shakes the aim ring and flashes the satellite red.
+		at += v.sat_refusal_offset()
+		var flash := v.sat_refusal_flash()
+		if flash > 0.0:
+			draw_circle(at, r, Color(Palette.HARM, flash * REFUSAL_FLASH_ALPHA))
 	for z in v.valid_zones:
 		if String(z.get("kind", "")) == "satellite" and z.get("id") == sat.id:
 			var hot: bool = String(v.hover_zone.get("kind", "")) == "satellite" and v.hover_zone.get("id") == sat.id
@@ -470,22 +476,45 @@ func _draw_aim(e: Dictionary, b: float) -> void:
 			_draw_disabled_arrows(at, r)
 
 
-## N13: the targeted satellite's nudge arrows, drawn disabled (dim, struck through): a satellite is
+## The refusal flash's peak alpha on the satellite.
+const REFUSAL_FLASH_ALPHA := 0.6
+
+
+## W0 ARTFIX: the aim ring of satellite `sat` in view-local px: {"at": centre, "radius": its outer
+## edge with the crosshair ticks}. The toast anchors beside it.
+func aim_ring_of(sat: CombatantState) -> Dictionary:
+	for e in entries():
+		if (e["sat"] as CombatantState).id == sat.id:
+			var b := float(bloom.get(int(e["slot"]), 0.0))
+			var at := (e["tile"] as Vector2).lerp(e["mini"], b)
+			var r := lerpf(float(e["depth"]) * 0.6, float(e["mini_r"]), b) + AIM_RING
+			return {"at": at, "radius": r + AIM_RING * 2.5}
+	return {"at": host.center() if host != null else Vector2.ZERO, "radius": 0.0}
+
+
+## N13 / W0 ARTFIX: the targeted satellite's nudge arrows, drawn disabled at the enabled arrows'
+## size (the same disc and head), 50 % grey, each struck with a red diagonal: a satellite is
 ## fixed to its slice, so a nudge aimed at it is refused with a toast.
 func _draw_disabled_arrows(at: Vector2, r: float) -> void:
 	var v := host.view
+	var ts := v._ts()
 	var cw := (at - (v.global_center() - v.global_position)).normalized().orthogonal() * -1.0
-	var col := Color(Palette.PAPER, DISABLED_ARROW_ALPHA)
+	var col := Color(Palette.PAPER.lerp(Palette.NIGHT_SKY, DISABLED_MIX), DISABLED_ARROW_ALPHA)
+	var hit := WheelView.ARROW_HIT * ts
 	for d: float in [-1.0, 1.0]:
-		var tip := at + cw * d * (r + DISABLED_ARROW_GAP + DISABLED_ARROW_LEN)
-		var back := at + cw * d * (r + DISABLED_ARROW_GAP)
-		var n := cw.orthogonal() * DISABLED_ARROW_HALF
-		draw_colored_polygon(PackedVector2Array([tip, back + n, back - n]), col)
-		draw_line(tip - n * 1.5, tip + n * 1.5, col, AIM_WIDTH * 0.5, true)
+		var c := at + cw * d * (r + DISABLED_ARROW_GAP * ts + hit)
+		draw_circle(c, hit * 0.9, Color(Palette.NIGHT_SKY, 0.75))
+		var dir := cw * d
+		var n := dir.orthogonal()
+		var tip := c + dir * hit * 0.6
+		var back := c - dir * hit * 0.5
+		draw_line(back, tip - dir * 7.0 * ts, col, 2.5 * ts, true)
+		draw_colored_polygon(PackedVector2Array([tip, tip - dir * 10.0 * ts + n * 7.0 * ts, tip - dir * 10.0 * ts - n * 7.0 * ts]), col)
+		var s := hit * 0.7
+		draw_line(c - Vector2(s, s), c + Vector2(s, s), Color(Palette.HARM, 0.95), 3.0 * ts, true)
 
 
-## The disabled arrows: the gap from the aim ring, the length, the half width (px) and the paper alpha.
+## The disabled arrows: the gap from the aim ring (px at text 1.0), how far paper is mixed toward night (50 % grey) and its alpha.
 const DISABLED_ARROW_GAP := 4.0
-const DISABLED_ARROW_LEN := 10.0
-const DISABLED_ARROW_HALF := 5.0
-const DISABLED_ARROW_ALPHA := 0.55
+const DISABLED_MIX := 0.5
+const DISABLED_ARROW_ALPHA := 1.0

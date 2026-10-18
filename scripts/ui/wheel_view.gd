@@ -156,6 +156,9 @@ var caption_shown: float = 0.0
 var enter_slide: float = 0.0
 ## A hit landing in the HP counter: the disc flashes (0..1).
 var hit_flash: float = 0.0
+## W0 ARTFIX: progress 0..1 of the refusal on the targeted satellite (the aim ring's shake and the
+## red flash); 0 when none plays.
+var sat_refusal: float = 0.0
 ## Plan 1 M2: 1 -> 0 while the HP counter's outline pulses after a number landed on it; `hp_pulses` counts them.
 var hp_pulse: float = 0.0
 var hp_pulses: int = 0
@@ -572,6 +575,7 @@ func stop_motion(sync_tag: bool = true) -> void:
 	caption_shown = 0.0
 	enter_slide = 0.0
 	hit_flash = 0.0
+	sat_refusal = 0.0
 	_hp_to = NAN
 	replay_tag = {}
 	tag_ticks = {}
@@ -1189,6 +1193,47 @@ func play_hp_pulse() -> void:
 	var tw := _tw(&"hp_pulse")
 	tw.tween_method(func(v: float) -> void: hp_pulse = v; queue_redraw(), 1.0, 0.0, Motion.seconds(&"hp_chip_pulse")).set_ease(e.ease).set_trans(e.trans)
 	tw.tween_callback(func() -> void: hp_pulse = 0.0; _end(&"hp_pulse"); queue_redraw())
+
+
+## W0 ARTFIX: the move aimed at a satellite was refused: its aim ring shakes (`satellite_refusal`,
+## amplitude px, SAT_REFUSAL_SHAKES swings) and the satellite flashes red. Reduce effects / headless:
+## nothing moves (the end state).
+func play_satellite_refusal() -> void:
+	if not Motion.live(&"satellite_refusal"):
+		sat_refusal = 0.0
+		return
+	var e := Motion.entry(&"satellite_refusal")
+	var tw := _tw(&"sat_refusal")
+	tw.tween_method(func(v: float) -> void: sat_refusal = v; queue_redraw(), 0.0, 1.0, Motion.seconds(&"satellite_refusal")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: sat_refusal = 0.0; _end(&"sat_refusal"); queue_redraw())
+
+
+## Swings of the satellite refusal's shake.
+const SAT_REFUSAL_SHAKES := 3.0
+
+
+## The aim ring's shake offset now (px): `satellite_refusal`'s amplitude, fading out.
+func sat_refusal_offset() -> Vector2:
+	if sat_refusal <= 0.0 or sat_refusal >= 1.0:
+		return Vector2.ZERO
+	return Vector2(sin(sat_refusal * TAU * SAT_REFUSAL_SHAKES) * (1.0 - sat_refusal) * Motion.shake_px(&"satellite_refusal"), 0.0)
+
+
+## The satellite's red flash now (0..1), fading out.
+func sat_refusal_flash() -> float:
+	return 0.0 if sat_refusal <= 0.0 or sat_refusal >= 1.0 else 1.0 - sat_refusal
+
+
+## W0 ARTFIX: the aim ring of satellite `id` on screen: {"at": centre, "radius": outer edge}
+## (empty when it is not docked here).
+func satellite_aim_ring(id: StringName) -> Dictionary:
+	if attachments == null:
+		return {}
+	for s in (shown_satellites if shown_state != null else satellites):
+		if s.id == id:
+			var ring := attachments.dock.aim_ring_of(s)
+			return {"at": attachments.global_position + (ring["at"] as Vector2), "radius": float(ring["radius"])}
+	return {}
 
 
 func play_hit() -> void:

@@ -635,6 +635,25 @@ func _toast_spot() -> Rect2:
 	return Rect2(Vector2(area.get_center().x, area.end.y - TOAST_GAP), Vector2(area.size.x, 0.0))
 
 
+## W0 ARTFIX: the width a refusal shown beside a satellite's aim ring wraps to (px at text 1.0).
+const SATELLITE_TOAST_W := 240.0
+
+
+## W0 ARTFIX: the aim ring of the satellite a move was refused on: {"at", "radius", "view"} (empty
+## when none is aimed at).
+func _refused_satellite_ring() -> Dictionary:
+	var views: Array = [_player_view]
+	views.append_array(_enemy_views.values())
+	for v in views:
+		var view := v as WheelView
+		if view != null and view.targeted_satellite != &"":
+			var ring := view.satellite_aim_ring(view.targeted_satellite)
+			if not ring.is_empty():
+				ring["view"] = view
+				return ring
+	return {}
+
+
 ## Room between a toast and the foot of its column (px).
 const TOAST_GAP := 6.0
 
@@ -1673,7 +1692,13 @@ func _on_action_refused(reason: String) -> void:
 	preview_note.clear()
 	preview_note.append(reason)
 	var at := _toast_spot()
-	toast.show_text(tr(SATELLITE_FIXED_TEXT) if reason == CombatResolver.SATELLITE_FIXED else tr(reason), at.position, at.size.x)
+	var aimed := _refused_satellite_ring() if reason == CombatResolver.SATELLITE_FIXED else {}
+	if aimed.is_empty():
+		toast.show_text(tr(SATELLITE_FIXED_TEXT) if reason == CombatResolver.SATELLITE_FIXED else tr(reason), at.position, at.size.x)
+	else:
+		# W0 ARTFIX: the refusal stands beside the aim ring and the ring shakes (the satellite flashes red).
+		toast.show_beside(tr(SATELLITE_FIXED_TEXT), aimed["at"], float(aimed["radius"]), get_global_rect(), SATELLITE_TOAST_W * Settings.text_scale)
+		(aimed["view"] as WheelView).play_satellite_refusal()
 	# The RAM bar flashes when RAM is what's missing (ANIM-R1 C6: its chips go red and
 	# "COST > RAM" shows beside them; the refused card's cost, or the respin sticker,
 	# pulses too). The toast stays.
@@ -2780,7 +2805,7 @@ func address_line() -> String:
 			parts.append(TextDb.t(corp, "display_name"))
 			var site := CampaignRules.site_data(corp, run.site_id) if run.site_id != &"" else null
 			if site != null:
-				parts.append(SiteText.label(site))
+				parts.append(SiteText.tiered(site))
 	var names := PackedStringArray()
 	for e in engine.state().enemies:
 		if not e.is_satellite:

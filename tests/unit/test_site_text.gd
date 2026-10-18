@@ -65,3 +65,21 @@ func test_grid_view_shows_no_site_name() -> void:
 		assert_false(String(n["tip"]).contains(sd.display_name), "%s: no name in the tip" % sd.id)
 		assert_false(String(n["label"]).contains(sd.display_name), "%s: no name in the label" % sd.id)
 		assert_false(mini.site_label(sd, false).contains(sd.display_name), "%s: no name in the mini-map" % sd.id)
+
+
+func test_loot_header_names_tier_and_type_and_the_hq_building() -> void:
+	RunManager.new_campaign(1)
+	var corp := RunManager.corporation
+	var plain := 0
+	for sd in corp.city_grid.sites:
+		if sd.id == corp.city_grid.home_site_id:
+			continue  # the home Site is never run
+		var word: String = load("res://scripts/ui/netrun_scene.gd").loot_site_word(sd.id)
+		if SiteText.is_named(sd):
+			assert_eq(word, SiteText.label(sd).to_upper(), "the HQ run keeps the building's name")
+		else:
+			plain += 1
+			assert_true(word.begins_with("T%d " % sd.tier), "%s: tier first (%s)" % [sd.id, word])
+			assert_true(word.ends_with(SiteText.label(sd, corp.city_grid.home_site_id).to_upper()), "%s: then the SiteText type (%s)" % [sd.id, word])
+			assert_ne(word, "SITE", "never the bare SITE")
+	assert_gt(plain, 0)

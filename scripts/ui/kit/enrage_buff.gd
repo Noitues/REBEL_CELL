@@ -13,13 +13,13 @@ const INSET := 8.0
 
 ## Adds, updates or removes the buff badge on `view` for `state` (an enrage_buff_state).
 static func sync(view: Control, state: Dictionary) -> void:
-	var badge := view.get_node_or_null(NODE_NAME) as Badge
+	var badge := view.get_node_or_null(NODE_NAME) as EnrageBadge
 	if not bool(state.get("visible", false)):
 		if badge != null:
 			badge.queue_free()
 		return
 	if badge == null:
-		badge = Badge.new()
+		badge = EnrageBadge.new()
 		badge.name = NODE_NAME
 		badge.glyph = "!"
 		badge.color = Palette.CELL_PINK

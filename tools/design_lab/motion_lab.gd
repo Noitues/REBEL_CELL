@@ -120,7 +120,7 @@ const DEMOS := {
 	&"victory_flash": ["scene", "victory"], &"boss_phase_flash": ["scene", "boss_phase"],
 	&"ram_refusal": ["scene", "refuse"], &"ram_refusal_pop": ["scene", "refuse"], &"send_it_ready": ["view", "ready"],
 	&"send_it_drips_share": ["view", "press"], &"drag_ghost_tilt_speed": ["scene", "drag"],
-	&"toast_note_hold": ["screen", "toast_note"], &"stamp_fade_in": ["screen", "stamp"],
+	&"satellite_refusal": ["scene", "refuse_sat"], &"toast_note_hold": ["screen", "toast_note"], &"stamp_fade_in": ["screen", "stamp"],
 	# ANIM-R2 (city, maps and transitions; in context: hq_scene / netrun_scene --demo-anim=<id>):
 	&"city_bake_fade": ["hq", "influence"], &"jack_connect": ["jack_in", "stage"], &"raid_outcome_stagger": ["hq", "raid"], &"raid_result_banner": ["hq", "raid"], &"asset_drop_stamp": ["hq", "drop"], &"influence_tint": ["hq", "influence"], &"route_target_pulse": ["netrun", "route"],
 	# ANIM-R2 (combat, events and screens):
@@ -1761,6 +1761,19 @@ func _play_scene(what: String) -> void:
 			_scene.end_turn()
 		"enter":
 			ev.play_enter()
+		"refuse_sat":
+			# W0 ARTFIX: a docked drone aimed at, its move refused: the ring shakes, the drone flashes red.
+			var st: CombatState = _scene.engine.state()
+			if st.drones.is_empty():
+				var d := EffectInterpreter.make_combatant(_scene.engine.content(LAB_DRONE) as EnemyData, &"lab_drone", true)
+				d.is_player = true
+				d.host_id = st.player.id
+				d.dock_slot = 1
+				st.drones.append(d)
+			_scene._player_view.targeted_satellite = st.drones[0].id
+			_scene._refresh(st)
+			await get_tree().process_frame
+			_scene._player_view.play_satellite_refusal()
 		"refuse":
 			_scene.engine.state().ram = 0
 			_scene._refresh(_scene.engine.state())

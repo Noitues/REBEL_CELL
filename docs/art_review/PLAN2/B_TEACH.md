@@ -33,3 +33,7 @@ Codex panel is the Lexicon tab: before has no Nudge / Free nudge / Tick entries.
 7. Capture artefact, not a bug: the dev fight picker ("Fight: collections_agent / Seed") shows at the top left because the
    tutorial was started by `start_tutorial()` rather than through `pending_tutorial`, which hides it.
 8. The hovered raised card hides the player's HP number partly (the A-HAND issue, seen in panel 6; "HP" is cut at the card edge).
+
+## NEXT pulse minimum (W0 ARTFIX)
+
+`tutorial_next_pulse` (content/config/ui_motion.tres) pulses the NEXT button's `modulate:a` between 1.0 and its amplitude, **0.8** (alpha, 80% of full), each half 0.6 s. That is above the 0.6 floor the art-pass asked for; `tests/unit/test_w0_teach.gd` pins it at >= 0.75 (MIN_PULSE_ALPHA). A still taken at the low point therefore shows NEXT at 80% alpha, never greyed out. Reduce effects: no pulse, NEXT at full alpha.

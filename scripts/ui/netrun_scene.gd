@@ -3860,11 +3860,18 @@ func _on_page_room_changed() -> void:
 		_fit_loot_height(page, stickers, first.text_scale, float(_loot_fit["tilt"]), -1.0, false)
 
 
+## W0 ARTFIX: the loot strip's Site words: the tier and the SiteText type ("T2 SITE", "T3 EXPLOIT");
+## an HQ run keeps the HQ building's name.
+static func loot_site_word(site_id: StringName) -> String:
+	var site := CampaignRules.site_data(RunManager.corporation, site_id) if RunManager.corporation != null else null
+	return SiteText.tiered(site).to_upper() if site != null else ""
+
+
 ## Parity LOOT-02: the loot strip ("LOOT // NETRUN: SOLACE CLINIC // FIGHT 3 OF 7"), translated.
 ## `short` (big words): what paid out (`source`, translated: the title sticker's words) and the
 ## node's place, so the strip and PAYOUT share a row.
 func loot_strip(s: NetrunSession, short: bool = false, source: String = "") -> String:
-	var site := server_label()
+	var site := loot_site_word(s.run.site_id)
 	var node := s.run.current_node() if s.run.current_node_id != &"" else {}
 	if node.is_empty() or s.run.map == null:
 		return tr(LOOT_STRIP_SITE) % site
