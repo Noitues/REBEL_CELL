@@ -59,12 +59,17 @@ func _ready() -> void:
 
 
 func _pause() -> void:
-	RunManager.new_campaign(45)
-	RunManager.start_run()
+	# W0 SCREENSFIX: the real flow (the scene's own Esc handler, `open_settings`), not a bare PauseMenu.
+	RunManager.reset()
+	RunManager.new_campaign(1)
 	var h := await _fresh()
-	var menu := PauseMenu.new()
-	h.add_child(menu)
-	menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var scene: Control = load(NETRUN).instantiate()
+	h.add_child(scene)
+	scene.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scene.start_run(1)
+	await _frames(3)
+	scene.open_settings()
+	await _frames(4)
 	await _shot("1_PAUSE")
 
 
@@ -124,6 +129,9 @@ func _socket() -> void:
 	s.run.operative.slot_firmware_ids[slot] = &"burner"
 	scene.choose_reward(0, slot)
 	await _frames(80)
+	var dlg := scene.get_node_or_null("SocketOverwriteConfirm") as Control
+	if dlg != null:
+		print("dialog rect ", dlg.get_global_rect(), " panel ", dlg.panel.get_global_rect(), " view ", get_viewport().get_visible_rect().size)
 	await _shot("4_SOCKET")
 
 

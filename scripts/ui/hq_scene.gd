@@ -1440,7 +1440,7 @@ func show_start() -> void:
 		corp_tiles.append({"name": tr("CLASSIFIED") if secret else TextDb.t(corp, "display_name"), "corp": corp.id, "redacted": secret,
 			"locked": true, "unlock": unlock_words.call(u), "tip": unlock_tip.call(u)})
 	# C7 (PB-PT-003b): name the currency, show the balance, say how it is earned.
-	var currency_note := Chrome.body_label(unlock_balance_line(RunManager.campaign.schematics if RunManager.campaign != null else 0), UiTheme.CAPTION)
+	var currency_note := Chrome.body_label(unlock_balance_line(RunManager.campaign.schematics if RunManager.campaign != null else 0), UiTheme.BODY, StatIcon.color_of(StatIcon.SCHEMATICS))  # W0 SCREENSFIX: body size, the Schematics color
 	currency_note.name = "UnlockCurrencyNote"
 	UiWrap.whole_words(currency_note)
 	currency_note.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -6972,7 +6972,7 @@ func heat_tip() -> String:
 	lines.append(tr("Heat %d of %d: how hard the corporation hunts the Cell.") % [c.heat, cfg.heat_max])
 	if next >= 0:
 		# C4 (PB-PT-003b): say what the threshold does, not only where it is.
-		lines.append((tr("Next threshold at %d: %s") % [next, next_text]) if next_text != "" else (tr("Next threshold at %d.") % next))
+		lines.append((tr("Next threshold at %d:") % next + "\n" + next_text) if next_text != "" else (tr("Next threshold at %d.") % next))  # the effect on its own line: a 56-column fold left "netrun." alone
 	var mods := PackedStringArray()
 	for m in HeatRules.active_modifiers(c, cfg):
 		mods.append(_modifier_text(m))

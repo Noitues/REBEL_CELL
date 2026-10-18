@@ -1753,7 +1753,7 @@ Next,Next
 Next seed,Next seed
 Next step on turn %d (in %d turns).,Next step on turn %d (in %d turns).
 Next threshold at %d.,Next threshold at %d.
-Next threshold at %d: %s,Next threshold at %d: %s
+Next threshold at %d:,Next threshold at %d:
 Next with a clockwise turn: %s,Next with a clockwise turn: %s
 No Daemons installed (D 0: the badge counts them). Opens the tray.,No Daemons installed (D 0: the badge counts them). Opens the tray.
 No Daemons installed.,No Daemons installed.
@@ -3235,7 +3235,6 @@ The home server fell: the campaign is lost.,The home server fell: the campaign i
 The home server is BREACHED. Campaign lost.,The home server is BREACHED. Campaign lost.
 The installed Daemons. Opens the tray: each sigil shows what its Daemon does.,The installed Daemons. Opens the tray: each sigil shows what its Daemon does.
 "The map key: what the icons, colors and lines mean. Point at it or press it to open it; the pad's key button too.","The map key: what the icons, colors and lines mean. Point at it or press it to open it; the pad's key button too."
-The old chip is destroyed. It cannot be undone.,The old chip is destroyed. It cannot be undone.
 The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for %d step(s).
 The operative on %s patches it: %s.,The operative on %s patches it: %s.
 The operative's deck and spinner (hub core and inner ring included).,The operative's deck and spinner (hub core and inner ring included).

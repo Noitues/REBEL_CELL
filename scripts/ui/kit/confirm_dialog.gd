@@ -41,6 +41,7 @@ func _init(question: String, yes_text: String = "YES", no_text: String = "CANCEL
 	TextDb.shown_as_given(self)
 	panel = HudDialogPanel.new(tr(title), destructive)
 	add_child(panel)
+	panel.custom_minimum_size.x = custom_minimum_size.x  # W0 SCREENSFIX: the panel is as wide as the dialog, so centering the dialog centers the panel
 	panel.resized.connect(func() -> void: size = panel.size)  # the dialog is as big as its panel
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
@@ -76,6 +77,12 @@ func _init(question: String, yes_text: String = "YES", no_text: String = "CANCEL
 	yes_button = _sticker(row, yes_text, yes_note, HudSkin.VINYL_PINK)
 	yes_button.name = "Yes"
 	yes_button.pressed.connect(func() -> void: confirmed.emit(); _close())
+	# W0 SCREENSFIX: the stickers keep room under them (their fold and tilt) from the panel's bottom edge.
+	var pad := Control.new()
+	pad.name = "StickerPad"
+	pad.custom_minimum_size = Vector2(0, roundi(UiTheme.SP_M * s))
+	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(pad)
 
 
 ## A vinyl sticker answer with its caption under it (no system word: the caption is the
@@ -156,7 +163,7 @@ func _ready() -> void:
 	_return_focus = UiFocus.owner_of(self)
 	# ART-0 F: a modal over a SCRIM (the page behind blurred and dimmed; it takes the clicks
 	# meant for the page), opened with the modal motion.
-	var scrim := GlassScrim.backdrop_for(self, get_viewport_rect().size)
+	var scrim := GlassScrim.backdrop_for(self, get_viewport_rect().size, Palette.SCRIM_DIALOG_ALPHA)
 	move_child(scrim, 0)  # ART-2 2D: drawn before the panel, so the blur stays behind the dialog
 	panel.z_index = 1  # (a top-level scrim can still draw late: the panel is drawn over it)
 	PageTransition.open_modal(self)

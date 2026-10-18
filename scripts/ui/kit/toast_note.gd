@@ -17,7 +17,8 @@ const NODE_NAME := "Toast"
 var label: Label
 
 
-func _init(text: String = "", warn: bool = false) -> void:
+## `icon_kind` (a StatIcon kind, or "") draws that icon before the words.
+func _init(text: String = "", warn: bool = false, icon_kind: StringName = &"") -> void:
 	name = NODE_NAME
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	focus_mode = Control.FOCUS_NONE
@@ -30,16 +31,27 @@ func _init(text: String = "", warn: bool = false) -> void:
 	label.text = UiTip.fold(text)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_color_override("font_color", Palette.PAPER)
-	add_child(label)
+	if icon_kind == &"":
+		add_child(label)
+	else:
+		var row := HBoxContainer.new()
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_theme_constant_override("separation", UiTheme.SP_S)
+		add_child(row)
+		var mark := IconMark.new(icon_kind, Palette.CELL_ACID)
+		mark.name = "ToastIcon"
+		mark.custom_minimum_size = Vector2.ONE * label.get_combined_minimum_size().y  # the icon is a line of the words high
+		row.add_child(mark)
+		row.add_child(label)
 
 
 ## Shows `text` on `host` (a full-screen scene), replacing a note already there.
-static func show_on(host: Control, text: String, warn: bool = false) -> ToastNote:
+static func show_on(host: Control, text: String, warn: bool = false, icon_kind: StringName = &"") -> ToastNote:
 	var old := host.get_node_or_null(NODE_NAME)
 	if old != null:
 		host.remove_child(old)
 		old.queue_free()
-	var t := ToastNote.new(text, warn)
+	var t := ToastNote.new(text, warn, icon_kind)
 	host.add_child(t)
 	t._place.call_deferred()
 	if host.is_inside_tree():

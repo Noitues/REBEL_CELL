@@ -142,3 +142,49 @@ func test_taken_line_says_what_and_where() -> void:
 	assert_true(NetrunScript.taken_line("card", "Jolt", 0).contains("deck"))
 	var fw := NetrunScript.taken_line("firmware", "Burner", 3)
 	assert_true(fw.contains("Burner") and fw.contains("3"), fw)
+
+
+## W0 SCREENSFIX: a confirm dialog sits centered on its host (both sizes), its stickers keep room under them,
+## and the real-flow pause menu (the scene's own `open_settings`) is centered across.
+func _host(sz: Vector2) -> Control:
+	var h := Control.new()
+	h.size = sz
+	add_child_autofree(h)
+	return h
+
+
+func test_confirm_dialog_centered_with_sticker_padding() -> void:
+	for sz in [Vector2(1920, 1080), Vector2(1280, 720)]:
+		var h := _host(sz)
+		var d := ConfirmDialog.new("Socket A into slot 5? It destroys B, already there.", "SOCKET IT", "KEEP", "FIRMWARE", "", true, "", "")
+		d.resized.connect(func() -> void: d.position = ((h.size - d.size) * 0.5).floor())
+		h.add_child(d)
+		await wait_frames(3)
+		assert_almost_eq(d.panel.get_global_rect().get_center().x, sz.x * 0.5, 1.5, "panel centered across at %s" % sz)
+		assert_almost_eq(d.panel.size.x, d.size.x, 0.5, "dialog and panel are one width at %s" % sz)
+		var pad := d.find_child("StickerPad", true, false) as Control
+		assert_not_null(pad, "sticker padding row")
+		assert_gt(pad.size.y, 0.0, "padding has height")
+		assert_almost_eq(d.get_node("ModalScrim").material.get_shader_parameter(&"tint_alpha"), Palette.SCRIM_DIALOG_ALPHA, 0.001, "lighter dim")
+
+
+func test_pause_menu_real_flow_centered() -> void:
+	RunManager.new_campaign(1)
+	var h := _host(Vector2(1920, 1080))
+	var scene: Control = load(NETRUN).instantiate()
+	h.add_child(scene)
+	scene.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scene.start_run(1)
+	await wait_frames(3)
+	scene.open_settings()
+	await wait_frames(3)
+	var menu := scene._settings_panel as Control
+	assert_not_null(menu)
+	assert_almost_eq(menu.position.x + PauseMenu.MENU_SIZE.x * 0.5, 960.0, 1.0, "centered across")
+	assert_gt(menu.position.y, 0.0, "below the top")
+
+
+func test_toast_icon_for_taken_kind() -> void:
+	assert_eq(NetrunScript.taken_icon("card"), StatIcon.CARDS)
+	assert_eq(NetrunScript.taken_icon("firmware"), StatIcon.FIRMWARE)
+	assert_eq(NetrunScript.taken_icon("zzz"), &"")
