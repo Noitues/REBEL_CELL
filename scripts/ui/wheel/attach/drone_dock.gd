@@ -466,3 +466,26 @@ func _draw_aim(e: Dictionary, b: float) -> void:
 		for k in 4:
 			var a := TAU * k / 4.0
 			draw_line(at + Vector2(cos(a), sin(a)) * (r + AIM_RING * 0.5), at + Vector2(cos(a), sin(a)) * (r + AIM_RING * 2.5), Palette.FOCUS, AIM_WIDTH * 0.5, true)
+		if v.valid_zones.is_empty():
+			_draw_disabled_arrows(at, r)
+
+
+## N13: the targeted satellite's nudge arrows, drawn disabled (dim, struck through): a satellite is
+## fixed to its slice, so a nudge aimed at it is refused with a toast.
+func _draw_disabled_arrows(at: Vector2, r: float) -> void:
+	var v := host.view
+	var cw := (at - (v.global_center() - v.global_position)).normalized().orthogonal() * -1.0
+	var col := Color(Palette.PAPER, DISABLED_ARROW_ALPHA)
+	for d: float in [-1.0, 1.0]:
+		var tip := at + cw * d * (r + DISABLED_ARROW_GAP + DISABLED_ARROW_LEN)
+		var back := at + cw * d * (r + DISABLED_ARROW_GAP)
+		var n := cw.orthogonal() * DISABLED_ARROW_HALF
+		draw_colored_polygon(PackedVector2Array([tip, back + n, back - n]), col)
+		draw_line(tip - n * 1.5, tip + n * 1.5, col, AIM_WIDTH * 0.5, true)
+
+
+## The disabled arrows: the gap from the aim ring, the length, the half width (px) and the paper alpha.
+const DISABLED_ARROW_GAP := 4.0
+const DISABLED_ARROW_LEN := 10.0
+const DISABLED_ARROW_HALF := 5.0
+const DISABLED_ARROW_ALPHA := 0.55

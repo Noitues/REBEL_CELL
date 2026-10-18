@@ -195,12 +195,6 @@ const RADIUS_FLOOR := 0.8
 ## At the biggest text the wheel keeps at least this share of its 1.0-scale radius: the
 ## title row and the HP block grow with the text and the view's height is fixed (H23).
 const BIG_TEXT_RADIUS_KEEP := 0.75
-## N13: the disabled nudge arrows beside a targeted satellite (px at text scale 1.0 from its
-## centre to the tip, the arrow's length and half width) and their paper alpha.
-const SATELLITE_ARROW_REACH := 30.0
-const SATELLITE_ARROW_LEN := 10.0
-const SATELLITE_ARROW_HALF := 5.0
-const SATELLITE_ARROW_DISABLED_ALPHA := 0.35
 ## A satellite's hex token radius (px at text scale 1.0).
 const SATELLITE_TOKEN := 11.0
 ## Tokens below this sine of their angle (the bottom sector) keep to the side of the HP
@@ -1545,6 +1539,15 @@ func wheel_rect() -> Rect2:
 	var center := _center()
 	var r := _radius() + 22
 	return Rect2(global_position + center - Vector2(r, r), Vector2(r * 2, r * 2))
+
+
+## Where a corner badge (the enrage buff) hangs: a point just off the disc's upper right rim (local px).
+func badge_corner() -> Vector2:
+	return _center() + Vector2.from_angle(-PI * 0.25) * (_radius() + BADGE_RIM_GAP * _ts())
+
+
+## The gap (px at text scale 1.0) between the rim and a corner badge.
+const BADGE_RIM_GAP := 6.0
 
 
 ## Centre of the disc on screen.
@@ -3604,7 +3607,6 @@ func _draw_satellites() -> void:
 		HighContrast.draw_text(self, Palette.mono(), plate.position + Vector2(3, lfs), sat_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, sat_col)
 		if sat.id == targeted_satellite and valid_zones.is_empty():
 			_draw_crosshair(satp, (SATELLITE_TOKEN + 5.0) * _ts())
-			_draw_disabled_satellite_arrows(satp)
 		if _zone_is(valid_zones, {"kind": "satellite", "id": sat.id}):
 			var hot := _zone_is([hover_zone], {"kind": "satellite", "id": sat.id})
 			draw_arc(satp, (SATELLITE_TOKEN + 3.0) * _ts(), 0, TAU, 20, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55 * zone_pulse)), 3.0 if hot else 1.5)
@@ -3619,20 +3621,6 @@ func _draw_satellites() -> void:
 					var back := satp + cw * d * 13.0
 					var n := cw.orthogonal() * 5.0
 					draw_colored_polygon(PackedVector2Array([tip, back + n, back - n]), _col(TARGET_COLOR if side_hot else Color(TARGET_COLOR, 0.55)))
-
-
-## N13: a targeted satellite's nudge arrows, drawn disabled (dim, struck through): the satellite is
-## fixed to its slice, so a nudge aimed at it is refused with a toast.
-func _draw_disabled_satellite_arrows(satp: Vector2) -> void:
-	var cw := (satp - _center()).normalized().orthogonal() * -1.0
-	var col := _col(Color(Palette.PAPER, SATELLITE_ARROW_DISABLED_ALPHA))
-	for d: float in [-1.0, 1.0]:
-		var tip := satp + cw * d * SATELLITE_ARROW_REACH * _ts()
-		var back := satp + cw * d * (SATELLITE_ARROW_REACH - SATELLITE_ARROW_LEN) * _ts()
-		var n := cw.orthogonal() * SATELLITE_ARROW_HALF * _ts()
-		draw_colored_polygon(PackedVector2Array([tip, back + n, back - n]), col)
-		var mid := (tip + back) * 0.5
-		draw_line(mid - n * 1.4, mid + n * 1.4, col, 2.0)
 
 
 ## Where a satellite's HP plate goes (local): outward from the wheel, else to either side,
