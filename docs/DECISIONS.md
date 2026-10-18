@@ -34,6 +34,79 @@ search every ruling with `grep -rn "<topic>" docs/DECISIONS.md docs/decisions/`.
 
 ## Implementation decisions
 
+### 2026-10-18 — Designer rulings: decision sheet (`docs/handoff/plan2/drafts/questions/DECISION_SHEET.md`)
+"default" = the sheet's RECOMMENDED option. Follow-ups the designer asked for are in
+`docs/handoff/plan2/drafts/questions/FOLLOWUP_2026-10-18.md`; until answered, a W0 slice that needs one uses the
+default as a placeholder behind config and says so in its report.
+- **Default (designer):** Q1, Q2, Q3, Q4, Q5, Q6, Q9, Q13, Q15, Q17, Q18, Q25, Q28, Q38, Q41, Q43, Q44, Q47; A1 (THE
+  GENOME CORE, id `renewal_engine` stays), A2 (LAUNCH CONTROL), A3 (THE CONCORDAT VAULT), A4 (THE MASTER MANIFEST), A5
+  (Halcyon cyan-white) and A6 (Tethys: the frames' teal) go to the art-pass session; A7 (the TARGET edge arrow is a Godot
+  overlay) is ours.
+- **Pending, designer asked for more detail:** Q8, Q11, Q14, Q21, Q22, Q23, Q26, Q35 (default as placeholder only).
+- **Q7:** a replaced (or cleared) satellite counts as **destroyed**. "Satellite destroyed" becomes a keyword trigger
+  (`ON_SATELLITE_DESTROYED`) other content may hook. **Undock is a global keyword** (any card / class / Firmware may
+  carry it); at first only one class uses it. One base class gets a Hub passive about satellites (its design is the
+  class pass).
+- **Q10:** max 1 drone or satellite per slice; installing on an occupied slice destroys the old one (fires the Q7
+  trigger) and installs the new. Drones and satellites stay fixed on the slice they were installed on. **Hangar** is a
+  wheel-wide passive (all slices of its wheel), not a per-slice placement. Refresh scope, civic drone, Tend block and
+  hivemind: follow-up.
+- **Q12:** each normal-fight enemy is classified **EASY or HARD** (elites, mini-bosses and bosses are not). The first
+  2 normal fights of a run draw from the EASY list, the rest from HARD. Proposed meaning (designer open to it): EASY =
+  no listeners or locks, at most one status source, resistance at the low end (1), and
+  a sim win rate for the reference deck ≥ 90 % at T1 with ≤ 25 % HP lost; HARD = everything else. New slice **N22**.
+- **Q16:** **every fight has resistance, refreshed each turn**: normal 1-2, elite and mini-boss 3-4, boss 5-6 (ranges
+  in config; each enemy authors its value inside its class range). It is zeroed at end of turn and regained at start of
+  turn, shown as a grease-pen "+N" when it refreshes. Intent: per turn the player chooses to manipulate either their
+  own wheel or the enemy's, not both, so effects that bypass or strip resistance become valuable. **Resistance gain is
+  an enrage option** for long fights. Supersedes R-text "2+ only on elites and bosses". New slice **N21**.
+- **Q19:** the preview shows the result of any nudge or card play; random outcomes show as "?" (a respin shows its
+  direction and a "?" over a ghosted needle); compound plays show every known result exactly and only the unknown parts
+  as "?". Rider chips and the Heat chip: follow-up (the designer's answer may settle them).
+- **Q20:** slice sizes **0-30** (0 = an empty arc, not even NULL: a wheel may have empty areas); snap lands on the
+  nearest tick (best tick, ties to the nearest); fixed neighbour resize. "Calibrated limits / warnings": follow-up.
+  Lands with N12.
+- **Q24:** an ambush / impromptu fight is **defined by its source** (an EASY normal, a HARD normal, a specific enemy,
+  ...) and so is its reward. The fight's result is its stake (no extra loss stake). Operative death and HQ slot:
+  follow-up.
+- **Q27:** minimum needle gap **1** (adjacent needles are allowed and wanted on some enemies; two needles on the same
+  tick are invalid). Every needle resolves and each shows on the preview. Orbit / orbit trail: follow-up.
+- **Q29:** ~50 % boss win rate at ICE 0 and HQ fights at T4 agreed; **do not shorten phases**: boss fights are the
+  longest fights. Tune enrage first, then revisit phase HP.
+- **Q30:** default (rotates with the wheel, latched until Cleanse, blockable, one segment per role) except Package tax
+  and the P5 package, which await the follow-up.
+- **Q31 (turn lifecycle):** at end of turn: all locks are removed (except Freeze), BLOCK is removed, resistance goes to
+  0. At start of turn: RAM persists and gains its income; resistance gains its new value; Freeze is removed after the
+  initial spin it prevented. SHIELD persists for the whole fight until damage or an effect removes it. Phase transitions:
+  default (persist; `cleanse_on_enter` only where authored).
+- **Q32:** default for now; the boss design passes settle rim gates and the Orbital mini-boss in depth.
+- **Q33:** enrage steps are **additive**; the enrage is **never shown as a countdown**, only as a buff on the enemy and
+  in tooltips; Pressure is dropped for authored EnrageData.
+- **Q34 (Sync Strike):** the player moves focus freely between operative wheels during the turn. SEND IT resolves the
+  focused operative's wheel, then the next in order, then the next, and returns focus to the first for the next turn.
+  Killed operatives are skipped and leave the focus set. View: three operative wheels orbit the DISPATCH wheel; the
+  camera is zoomed to one operative + DISPATCH, and a focus swap rotates the orbit to the next wheel.
+- **Q36:** while a needle touches a CORRUPTED slice, **all RAM costs are doubled** (0 stays 0); **no corruption cap**.
+- **Q37:** on an enemy wheel, a CORRUPTED slice under its needle **halves the player's RAM cost to manipulate that
+  enemy wheel**. Virus does not apply OUTPUT_DOWN (that is the Parasite's job; keep them apart).
+- **Q39:** SANDBOX negates **one damage source at WEAK or GOOD, two at PERFECT** (charges; each charge negates one
+  hit). Good against big hits, poor against many small ones. Pierce does nothing to SANDBOX; it only bypasses BLOCK and
+  SHIELD, whatever their source (drones, parasites, ...). While charges remain, counter and listener damage is negated
+  too (zeroed). SANDBOX negates damage only (a status-only resolution is not negated). Charges expire with BLOCK (end of
+  turn) — default, designer may revisit.
+- **Q40:** no status-slot limit. Status types today: OUTPUT_DOWN, TIER_DOWN and CORRUPTED. **Audit** Slay-the-Spire-
+  style statuses (poison, burn, weak, frail, vulnerable, ...) against ours and propose the gaps (Batch draft). Processing
+  scope: follow-up.
+- **Q42:** Schematics sink, once per raid, shared defenses, no re-setup. Fence and Ghost are operative classes: their
+  raid roles go to a dedicated **raid operative design pass** (separate from netrun operative design); default for now.
+- **Q45:** one design per new corp, Batch-drafted; both are bought like the other corps; the starting corporation stays
+  Solace. Each corp's design is its own pass.
+- **Q46:** gamepad stays deprioritized and is **never implemented without designer approval**. Card slot on by default;
+  GDD structure per the recommendation. Enforcer, Flak tag and sibling elites: follow-up.
+- **New slices:** N21 (class resistance + per-turn refresh + "+N" mark; Q16, Q31) and N22 (EASY / HARD normal pools;
+  Q12) join W0 after N2. Enrage (N4) drops the countdown chip (Q33). The preview "?" rule (Q19), the status audit (Q40),
+  the two corp drafts (Q45) and the turn lifecycle for locks (Q31, with N7) are queued.
+
 ### 2026-10-15 — Plan 2 B-TEACH: the tutorial teaches aiming for a PERFECT (PB-PT-002 C2 / C3 / C9; PB-PT-003b C1 / C3 / B8 / D1)
 - The steps are rewritten short (one idea each, at most 45 words) and reordered: THE WHEEL, THE TAGS (NULL / WEAK / GOOD / PERFECT), AIM (ends only when your wheel reads PERFECT after your play), FREE NUDGE (ends on a nudge; extra nudges cost RAM, shown as the pending (-N) next to RAM; there is no RAM debt and the word is not used), SWITCHES (Q/E-W keys, outer/inner), RESISTANCE, CARDS, STAGED (a played card waits in THIS TURN until SEND IT; hover only previews), RAM FORECAST (THIS PLAY vs AT SEND IT), UNDO (or Esc), SEND IT ("aim for PERFECT, then SEND IT"), HEAT & BANKING.
 - The AIM beat uses a view-side event `aim_perfect` that `combat_scene` sends the tutorial after a play when `player_aim_is_perfect` (every needle reads PERFECT), never on a turn or fight start. No rule changes. NEXT wears the lit terminal color (it read as greyed out) and still pulses when it is what moves a step on. Codex links are plain text until B-CODEX lands its term ids.
