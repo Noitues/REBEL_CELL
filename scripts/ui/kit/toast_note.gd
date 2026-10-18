@@ -26,11 +26,17 @@ func _init(text: String = "", warn: bool = false, icon_kind: StringName = &"") -
 	style.border_width_left = 4
 	style.shadow_color = Palette.SHADOW
 	style.shadow_size = 8
+	if icon_kind != &"":
+		# W0 SCREENSFIX (art review C8): a pick's toast is a paper chip with ink words and the kind's glyph.
+		style = UiTheme.box(Palette.PAPER, Palette.INK, 2, 16, 8)
+		style.border_width_left = 2
+		style.shadow_color = Palette.SHADOW
+		style.shadow_size = 8
 	add_theme_stylebox_override("panel", style)
 	label = Label.new()
 	label.text = UiTip.fold(text)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.add_theme_color_override("font_color", Palette.PAPER)
+	label.add_theme_color_override("font_color", Palette.INK if icon_kind != &"" else Palette.PAPER)
 	if icon_kind == &"":
 		add_child(label)
 	else:
@@ -38,7 +44,7 @@ func _init(text: String = "", warn: bool = false, icon_kind: StringName = &"") -
 		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_theme_constant_override("separation", UiTheme.SP_S)
 		add_child(row)
-		var mark := IconMark.new(icon_kind, Palette.CELL_ACID)
+		var mark := IconMark.new(icon_kind, Palette.INK)
 		mark.name = "ToastIcon"
 		mark.custom_minimum_size = Vector2.ONE * label.get_combined_minimum_size().y  # the icon is a line of the words high
 		row.add_child(mark)

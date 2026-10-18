@@ -62,10 +62,12 @@ func test_new_campaign_names_the_unlock_currency_and_the_balance() -> void:
 	await _frames()
 	var note := hq._panel.find_child("UnlockCurrencyNote", true, false) as Label
 	assert_not_null(note, "the page carries the currency line")
-	assert_true(note.text.contains("Schematics"), "it names the currency: %s" % note.text)
+	assert_not_null(hq._panel.find_child("UnlockCurrencyRow", true, false), "the line sits in its own row under the Target heading")
 	assert_true(note.text.contains("37"), "it shows the balance held, the campaign's own")
 	assert_eq(note.text, HqScript.unlock_balance_line(RunManager.campaign.schematics), "the balance shown is the rule's")
-	assert_true(HqScript.unlock_price_words(60).contains("SCHEMATICS"), "the price names the currency")
+	assert_false(HqScript.unlock_price_words(60).contains(" SCHEMATICS"), "the word is dropped: the icon names the currency")
+	assert_false(HqScript.unlock_price_words(60).contains("
+"), "one line")
 	assert_true(HqScript.unlock_price_words(60).contains("60"))
 
 
@@ -119,7 +121,9 @@ func test_firmware_into_an_occupied_socket_asks_first_and_names_the_chip() -> vo
 	assert_eq(s.run.pending_rewards.size(), 1, "nothing was taken yet")
 	assert_eq(s.run.operative.slot_firmware_ids[slot], &"burner", "the old chip still stands")
 	var old_name := TextDb.t(s.lookup.get_content(&"burner"), "display_name")
-	assert_true(NetrunScript.socket_overwrite_question("A", old_name, slot + 1).contains(old_name), "the question names the destroyed chip")
+	assert_true(NetrunScript.socket_overwrite_body(old_name).contains(old_name), "the second line names the destroyed chip")
+	assert_not_null(d.find_child("OldChip", true, false), "both chips show as icons")
+	assert_not_null(d.find_child("NewChip", true, false))
 	d.confirmed.emit()
 	await _frames(2)
 	assert_eq(s.run.operative.slot_firmware_ids[slot], &"barbed_wire", "YES sockets it")

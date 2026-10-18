@@ -19,6 +19,7 @@ var yes_button: Button
 var no_button: Button
 ## The terminal panel (the glass that drops in).
 var panel: HudDialogPanel
+var _box: VBoxContainer
 
 ## The dialog's width and the question's width at text scale 1.0 (px).
 const DIALOG_W := 560.0
@@ -46,6 +47,7 @@ func _init(question: String, yes_text: String = "YES", no_text: String = "CANCEL
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
 	panel.body.add_child(box)
+	_box = box
 	var l := Label.new()
 	l.name = "Question"
 	l.text = question
@@ -61,6 +63,8 @@ func _init(question: String, yes_text: String = "YES", no_text: String = "CANCEL
 		b.text = body
 		UiWrap.whole_words(b)
 		b.custom_minimum_size = l.custom_minimum_size
+		b.add_theme_font_override("font", HudSkin.body())  # W0 SCREENSFIX: one text style for both lines
+		b.add_theme_font_size_override("font_size", roundi(QUESTION_FONT * s))
 		b.add_theme_color_override("font_color", HudSkin.TERMINAL_TEXT)
 		box.add_child(b)
 	var rule := ColorRect.new()
@@ -96,6 +100,67 @@ func _sticker(row: Container, word: String, note: String, paint: Color) -> Butto
 	b.tooltip_text = tr(note) if note != "" else ""
 	b._fit_size()
 	row.add_child(b)
+	return b
+
+
+## W0 SCREENSFIX (art review G14): a row of two chips under the question, `to_name` going in and `from_name` struck
+## (the one destroyed): [icon] NEW -> [icon] OLD. `icon_kind` is a StatIcon kind.
+func add_swap_row(to_name: String, from_name: String, icon_kind: StringName) -> void:
+	var s := Settings.text_scale
+	var row := HBoxContainer.new()
+	row.name = "SwapRow"
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", UiTheme.SP_M)
+	row.add_child(_swap_chip(to_name, icon_kind, false))
+	var arrow := Label.new()
+	arrow.text = "→"
+	arrow.add_theme_font_override("font", HudSkin.body())
+	arrow.add_theme_font_size_override("font_size", roundi(QUESTION_FONT * s))
+	arrow.add_theme_color_override("font_color", HudSkin.TERMINAL_HI)
+	row.add_child(arrow)
+	row.add_child(_swap_chip(from_name, icon_kind, true))
+	_box.add_child(row)
+	_box.move_child(row, 1)
+
+
+func _swap_chip(chip_name: String, icon_kind: StringName, struck: bool) -> Control:
+	var s := Settings.text_scale
+	var chip := HBoxContainer.new()
+	chip.name = "OldChip" if struck else "NewChip"
+	chip.add_theme_constant_override("separation", UiTheme.SP_S)
+	var side := roundi(QUESTION_FONT * s * 1.4)
+	var mark := IconMark.new(icon_kind, Palette.HARM if struck else Palette.CELL_ACID)
+	mark.custom_minimum_size = Vector2(side, side)
+	chip.add_child(mark)
+	var l := Label.new()
+	l.text = chip_name
+	l.add_theme_font_override("font", HudSkin.body())
+	l.add_theme_font_size_override("font_size", roundi(QUESTION_FONT * s))
+	l.add_theme_color_override("font_color", Palette.HARM if struck else HudSkin.TERMINAL_HI)
+	chip.add_child(l)
+	if struck:
+		var line := ColorRect.new()
+		line.name = "Strike"
+		line.color = Palette.HARM
+		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		line.set_anchors_preset(Control.PRESET_HCENTER_WIDE)
+		line.anchor_top = 0.55
+		line.anchor_bottom = 0.55
+		line.offset_top = 0.0
+		line.offset_bottom = 2.0
+		l.add_child(line)
+	return chip
+
+
+## W0 SCREENSFIX (art review G14): the committing answer becomes a red-outlined terminal button (not a sticker as
+## loud as the safe one); `word` is a key. Returns the button.
+func use_destructive_yes(word: String) -> Button:
+	var b := use_terminal_yes(word)
+	for st in [&"normal", &"hover", &"pressed", &"hover_pressed"]:
+		var fill := PaletteSkins.chrome(Palette.TERMINAL_BG_HOT if st == &"hover" else Palette.TERMINAL_BG)
+		b.add_theme_stylebox_override(st, UiTheme.box(fill, Palette.HARM, 2, UiTheme.BUTTON_PAD_H, UiTheme.BUTTON_PAD_V))
+	b.add_theme_color_override("font_color", Palette.HARM)
+	b.add_theme_font_size_override("font_size", roundi(STICKER_FONT * 0.6 * Settings.text_scale))
 	return b
 
 

@@ -44,6 +44,7 @@ keys,en
 "%d damage parked at the phase line: it is lost, and the next phase starts after this turn","%d damage parked at the phase line: it is lost, and the next phase starts after this turn"
 %d fps,%d fps
 %d held,%d held
+"%d held, earned in a campaign.","%d held, earned in a campaign."
 %d netruns,%d netruns
 %d powered,%d powered
 %d still at large.,%d still at large.
@@ -117,6 +118,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s is at HQ already.,%s is at HQ already.
 "%s is back at HQ, healed, keeping the deck, Firmware and Daemons. Unspent Cycles became Schematics.","%s is back at HQ, healed, keeping the deck, Firmware and Daemons. Unspent Cycles became Schematics."
 %s is destroyed.,%s is destroyed.
+%s is destroyed. This can't be undone.,%s is destroyed. This can't be undone.
 %s is gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are kept; Cycles and unbanked loot are lost.,%s is gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are kept; Cycles and unbanked loot are lost.
 %s is held at %s (%d more).,%s is held at %s (%d more).
 %s is locked. %s,%s is locked. %s
@@ -2465,7 +2467,7 @@ Slices,Slices
 Slot %d (%s),Slot %d (%s)
 Slot %d: %s%s,Slot %d: %s%s
 "Slot %s: %s. Heat %d, ICE %d, %d runs completed. Campaign %s%s.","Slot %s: %s. Heat %d, ICE %d, %d runs completed. Campaign %s%s."
-"Socket %s into slot %d? It destroys %s, already there.","Socket %s into slot %d? It destroys %s, already there."
+Socket %s into slot %d?,Socket %s into slot %d?
 Something opens at ICE %d everywhere (%d/%d).,Something opens at ICE %d everywhere (%d/%d).
 Start a netrun at the first open Site,Start a netrun at the first open Site
 Start a new campaign in slot %s.,Start a new campaign in slot %s.
@@ -3304,13 +3306,12 @@ UNDOCK,UNDOCK
 UNFINISHED,UNFINISHED
 UNITS,UNITS
 UNITS DEPLOYED / DESTROYED,UNITS DEPLOYED / DESTROYED
-UNLOCKS · %d SCHEMATICS,UNLOCKS · %d SCHEMATICS
+UNLOCKS ·,UNLOCKS ·
 UPGRADE,UPGRADE
 UPGRADE %s: one level up from level %d (%d Schematics).,UPGRADE %s: one level up from level %d (%d Schematics).
 UPGRADE A SLICE // INSTALL %s,UPGRADE A SLICE // INSTALL %s
 UPGRADES: %s,UPGRADES: %s
 "Undo back to the last random event (free, unlimited this turn).","Undo back to the last random event (free, unlimited this turn)."
-"Unlocks cost Schematics (you hold %d), earned in a campaign.","Unlocks cost Schematics (you hold %d), earned in a campaign."
 Unlocks: %s,Unlocks: %s
 V-sync,V-sync
 VICTORY,VICTORY
@@ -3411,7 +3412,6 @@ decryption is not offered.  your station is no longer yours.,decryption is not o
 delete,delete
 depowered,depowered
 difficulty %d of %d,difficulty %d of %d
-display_name,display_name
 down,down
 elite,elite
 empty,empty

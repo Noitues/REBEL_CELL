@@ -13,10 +13,10 @@ W0 SCREENSFIX: AFTER is the fixed tree (BEFORE unchanged, cropped from the first
 
 Not shown: B-MENU raid-setup keys (Enter = START DEFENSE, Backspace = BACK): input only, covered by the unit test.
 
-## Findings (W0 SCREENSFIX)
-- P1 pause menu top-left: **not a bug**, a capture fixture fault. The real flow (`NetrunScene.open_settings`, as HQ and combat do) centers it across and sets it under the subtitle band. The capture now drives `open_settings` on a started run; panel 1 AFTER shows it. Test: `test_pause_menu_real_flow_centered` (1920x1080).
-- P1 socket confirm: **fixed**. One sentence names both chips (the second line is gone; the destructive panel's CANNOT UNDO tag stays). Stickers get a `StickerPad` row (`UiTheme.SP_M` x text scale) under them. The dialog was 8 px off center because its panel (544) was narrower than the dialog (560): the panel now takes the dialog's width, so centering the dialog centers the panel (measured 360..920 of 1280). The scrim dims the page less for dialogs (`Palette.SCRIM_DIALOG_ALPHA` 0.32 via `GlassScrim.backdrop_for(dim_alpha)`; the page is still blurred). Tests: `test_confirm_dialog_centered_with_sticker_padding` at 1920x1080 and 1280x720.
-- P2 currency line: **fixed**. Body size (`UiTheme.BODY`) in the Schematics color (`StatIcon.color_of`).
-- P2 Heat tooltip: **fixed**. The effect goes on its own line under "Next threshold at 20:" ("Next threshold at %d:" key replaces the one-line key).
-- P3 toast icon: **fixed**. `ToastNote` takes an optional StatIcon kind; a loot pick shows the card / firmware / daemon glyph (`NetrunScene.taken_icon`).
-- P3 site-name note (BEFORE "CONTINUUM BILLING FARM" vs "SITE"): not part of this change, unchanged.
+## Findings (W0 SCREENSFIX, with the art-pass review, ART_REPLIES item 9)
+- C6 pause menu: **not a bug** for the position (fixture fault; the real flow `NetrunScene.open_settings` centers it, test `test_pause_menu_real_flow_centered`). Per the review: the gap under Abandon is now one SP_XXL (48 px) with a thin pink divider rule (`AbandonRule`) in it; Abandon keeps pink and "No Going Back".
+- C7 tiles: **fixed**. "UNLOCKS · [Schematics icon] 60" on one line, word dropped (`TilePicker.ICON_SLOT` + tile `unlock_icon`). Currency line: **fixed**, its own row directly under TARGET, left-aligned, Schematics icon in the HUD color: "[icon] 37 held, earned in a campaign." (body size).
+- C8 toast: **fixed**. Paper chip, ink words, the loot kind's glyph (card / firmware / daemon). The glyph is the kind's StatIcon (there is no per-card-type icon in StatIcon; a card's attack/defense type icon would need the card-type art: NEEDS-DECISION if wanted).
+- G14 socket confirm: **fixed**. "Socket Barbed Wire into slot 5?" / "Burner is destroyed. This can't be undone." in one text style; both chips as icons, Barbed Wire -> Burner struck in HARM red; KEEP stays the default-focus sticker; SOCKET IT is a red-outlined terminal button; panel is as wide as the dialog (centered to the pixel, measured 360..920 of 1280); the scrim dims lighter for dialogs (`Palette.SCRIM_DIALOG_ALPHA`); room under the buttons (`StickerPad`, SP_M x scale = 16 px at 1.0). Tests at 1920x1080 and 1280x720.
+- C4 Heat tooltip: **fixed** (widow). The effect goes on its own line under "Next threshold at 20:".
+- Site headers ("LOOT // NETRUN: SITE", "T1 // SITE"): not touched; a separate slice changes the reward header (item 6).
