@@ -28,28 +28,28 @@ def fx(r, i, type_, target, amount=None, **kw):
 # effect tuple: (type, target, amount, {extra fields})
 CARDS = [
     # Rotation
-    ("whirl", "Whirl", "Spin a wheel 7 ticks.", 2, 55, 2, False, 0, [(6, 2, 7, {"ring_scope": 2})]),
+    ("whirl", "Whirl", "Spin a wheel 7 ticks clockwise.", 2, 55, 2, False, 0, [(6, 2, 7, {"ring_scope": 2})]),
     ("backspin", "Backspin", "Spin a wheel 9 ticks counter-clockwise.", 2, 60, 2, False, 0, [(6, 2, -9, {"ring_scope": 2})]),
-    ("flick", "Flick", "Spin a wheel 1 tick.", 0, 50, 2, False, 0, [(6, 2, 1, {"ring_scope": 2})]),
-    ("spin_cycle", "Spin Cycle", "Spin a wheel 12 ticks.", 3, 65, 2, False, 1, [(6, 2, 12, {"ring_scope": 2})]),
-    ("gear_mesh", "Gear Mesh", "Spin the target and your own wheel 5 ticks.", 2, 65, 1, False, 1,
+    ("flick", "Flick", "Spin a wheel 1 tick clockwise.", 0, 50, 2, False, 0, [(6, 2, 1, {"ring_scope": 2})]),
+    ("spin_cycle", "Spin Cycle", "Spin a wheel 12 ticks clockwise.", 3, 65, 2, False, 1, [(6, 2, 12, {"ring_scope": 2})]),
+    ("gear_mesh", "Gear Mesh", "Spin the target and your own wheel 5 ticks clockwise.", 2, 65, 1, False, 1,
      [(6, 2, 5, {"ring_scope": 2}), (6, 1, 5, {"ring_scope": 2})]),
-    ("inner_drift", "Inner Drift", "Move your inner ring 3 ticks.", 0, 50, 0, False, 0, [(5, 1, 3, {"ring_scope": 1})]),
-    ("ratchet", "Ratchet", "Move your inner ring 8 ticks.", 2, 55, 0, False, 0, [(5, 1, 8, {"ring_scope": 1})]),
-    ("tailspin", "Tailspin", "Spin a wheel 4 ticks and draw 1 card.", 2, 65, 2, False, 1,
+    ("inner_drift", "Inner Drift", "Move your inner ring 3 ticks clockwise.", 0, 50, 0, False, 0, [(5, 1, 3, {"ring_scope": 1})]),
+    ("ratchet", "Ratchet", "Move your inner ring 8 ticks clockwise.", 2, 55, 0, False, 0, [(5, 1, 8, {"ring_scope": 1})]),
+    ("tailspin", "Tailspin", "Spin a wheel 4 ticks clockwise and draw 1 card.", 2, 65, 2, False, 1,
      [(6, 2, 4, {"ring_scope": 2}), (17, 0, 1, {})]),
     # Precision
-    ("tap_tap", "Tap Tap", "Three +-1 nudges on one ring.", 2, 60, 2, False, 0, [(5, 2, 3, {"ring_scope": 0})]),
-    ("feather_touch", "Feather Touch", "One +-1 nudge.", 0, 50, 2, False, 0, [(5, 2, 1, {"ring_scope": 0})]),
-    ("inner_snap", "Inner Snap", "Move your inner ring to the nearest segment centre.", 1, 60, 0, False, 1, [(16, 1, None, {"ring_scope": 1})]),
-    ("lock_on", "Lock On", "Move your outer ring to the nearest slice centre (Perfect). Exhaust.", 0, 60, 0, True, 1, [(16, 1, None, {"ring_scope": 0})]),
+    ("tap_tap", "Tap Tap", "Three ±1 nudges on one ring.", 2, 60, 2, False, 0, [(5, 2, 3, {"ring_scope": 0})]),
+    ("feather_touch", "Feather Touch", "One ±1 nudge.", 0, 50, 2, False, 0, [(5, 2, 1, {"ring_scope": 0})]),
+    ("inner_snap", "Inner Snap", "Snap your inner ring to the nearest center.", 1, 60, 0, False, 1, [(16, 1, None, {"ring_scope": 1})]),
+    ("lock_on", "Lock On", "Move your outer ring to the nearest slice center (Perfect). Exhaust.", 0, 60, 0, True, 1, [(16, 1, None, {"ring_scope": 0})]),
     ("deep_calibrate", "Deep Calibrate", "Your next 3 nudges this turn are free. Exhaust.", 1, 60, 0, True, 1,
      [(24, 0, 3, {"custom_handler": "CAL"})]),
     ("overclock_nudges", "Nudge Driver", "Nudge cards trigger twice next turn.", 1, 65, 0, False, 2, [(20, 0, None, {})]),
     # Enemy control
     ("deep_strip", "Deep Strip", "Remove 4 resistance from the target.", 2, 65, 1, False, 1, [(10, 2, -4, {})]),
     ("short_circuit", "Short Circuit", "Disable the target Hub for 2 turns. Exhaust.", 3, 75, 1, True, 2, [(11, 2, 2, {})]),
-    ("double_jam", "Double Jam", "Nudge an enemy wheel +-1 twice, ignoring resistance.", 3, 70, 1, False, 1,
+    ("double_jam", "Double Jam", "Nudge an enemy wheel ±1 twice, ignoring resistance.", 3, 70, 1, False, 1,
      [(5, 2, 2, {"ring_scope": 0, "multiplier": "0.0"})]),
     ("cold_snap", "Cold Snap", "The target skips its next respin and you gain 3 block.", 3, 70, 1, False, 1,
      [(9, 2, None, {"ring_scope": 2}), (1, 0, 3, {})]),
@@ -57,15 +57,15 @@ CARDS = [
      [(4, 2, None, {"status": 1, "slice_pick": 0})]),
     ("malware_drop", "Malware Drop", "CORRUPT a random non-NULL slice of the target.", 1, 55, 1, False, 0,
      [(4, 2, None, {"status": 1, "slice_pick": 1})]),
-    ("leech_worm", "Leech Worm", "The enemy slice under your pointer gets a PARASITE (half output). Exhaust.", 3, 75, 1, True, 2,
+    ("leech_worm", "Leech Worm", "Pointed enemy slice gets a PARASITE (half output). Exhaust.", 3, 75, 1, True, 2,
      [(4, 2, None, {"status": 4, "slice_pick": 0})]),
     ("flip_switch", "Flip Switch", "Flip your own wheel.", 2, 60, 0, False, 0, [(7, 1, None, {"ring_scope": 2})]),
     ("reroll", "Reroll", "Respin a wheel to a random tick.", 2, 55, 2, False, 0, [(8, 2, None, {"ring_scope": 2})]),
-    # Defence
+    # Defense
     ("firewall", "Firewall", "Gain 6 block.", 1, 50, 0, False, 0, [(1, 0, 6, {})]),
     ("bulwark", "Bulwark", "Gain 12 block.", 2, 60, 0, False, 1, [(1, 0, 12, {})]),
     ("shield_wall", "Shield Wall", "Gain 4 shield.", 1, 55, 0, False, 0, [(2, 0, 4, {})]),
-    ("duck", "Duck", "Evade the next incoming attack this turn.", 2, 60, 0, False, 1, [(3, 0, 1, {})]),
+    ("duck", "Duck", "Gain 1 SANDBOX charge: negate the next incoming hit this turn.", 2, 60, 0, False, 1, [(3, 0, 1, {})]),
     ("patch_up", "Patch Up", "Heal 6. Exhaust.", 2, 60, 0, True, 0, [(14, 0, 6, {})]),
     ("sanitize", "Sanitize", "Remove CORRUPTED from a chosen slice and gain 3 block.", 1, 55, 0, False, 0,
      [(15, 1, None, {"slice_pick": 2}), (1, 0, 3, {})]),
@@ -73,7 +73,7 @@ CARDS = [
      [(4, 1, None, {"status": 3, "slice_pick": 2}), (1, 0, 4, {})]),
     ("stim_patch", "Stim Patch", "Heal 12. Exhaust.", 3, 70, 0, True, 2, [(14, 0, 12, {})]),
     # Utility
-    ("hot_patch", "Hot Patch", "OVERCLOCK a chosen slice of your wheel: 1.5x on its next trigger, then it becomes CORRUPTED.", 2, 65, 0, False, 1,
+    ("hot_patch", "Hot Patch", "OVERCLOCK a chosen slice: 1.5x next trigger, then CORRUPTED.", 2, 65, 0, False, 1,
      [(4, 1, None, {"status": 2, "slice_pick": 2})]),
     ("power_tap", "Power Tap", "Gain 2 RAM and take 3 damage.", 0, 55, 0, False, 0, [(12, 0, 2, {}), (0, 0, 3, {})]),
     ("data_surge", "Data Surge", "Draw 3 cards.", 2, 65, 0, False, 1, [(17, 0, 3, {})]),
@@ -103,16 +103,16 @@ for cid, name, desc, ram, cyc, wt, exhaust, rarity, effects in CARDS:
 # (id, name, desc, rarity, cycles, allowed types, output multiplier, [(trigger, min_tier, limit, [effects])])
 FIRMWARE = [
     ("overvolt", "Overvolt", "SHIM and OVERFLOW slices: output +25%.", 0, 90, [0, 1], 1.25, []),
-    ("bulkhead", "Bulkhead", "DEFRAG and SANDBOX slices: output +50%.", 0, 90, [2, 4], 1.5, []),
+    ("bulkhead", "Bulkhead", "BLOCK and SHIELD slices: output +50%.", 0, 90, [2, 4], 1.5, []),
     ("siphon", "Siphon", "SHIM slice heals you 2 on Good or better.", 0, 100, [0], 1.0, [(5, 1, 0, [(14, 0, 2)])]),
-    ("static_coat", "Static Coat", "DEFRAG slice also grants 2 shield.", 0, 100, [2], 1.0, [(5, 0, 0, [(2, 0, 2)])]),
-    ("barbed_wire", "Barbed Wire", "DEFRAG slice also deals 2 damage to the pointer target.", 0, 100, [2], 1.0, [(5, 0, 0, [(0, 3, 2)])]),
+    ("static_coat", "Static Coat", "BLOCK slice also grants 2 shield.", 0, 100, [2], 1.0, [(5, 0, 0, [(2, 0, 2)])]),
+    ("barbed_wire", "Barbed Wire", "BLOCK slice also deals 2 damage to the pointer target.", 0, 100, [2], 1.0, [(5, 0, 0, [(0, 3, 2)])]),
     ("tracer", "Tracer", "SHIM or OVERFLOW slice strips 1 resistance from the target on a Perfect.", 1, 120, [0, 1], 1.0, [(5, 2, 0, [(10, 3, -1)])]),
     ("coolant_loop", "Coolant Loop", "Once per combat, a Perfect on this slice lowers Heat by 1.", 2, 150, [], 1.0, [(5, 2, 1, [(21, 6, -1)])]),
     ("skimmer", "Skimmer", "SHIM slice: +3 Cycles on a Perfect (twice per combat).", 1, 120, [0], 1.0, [(5, 2, 2, [(22, 6, 3)])]),
     ("counterstrike", "Counterstrike", "SANDBOX slice also deals 4 damage to the pointer target.", 1, 110, [3], 1.0, [(5, 0, 0, [(0, 3, 4)])]),
     ("nanite_mesh", "Nanite Mesh", "HOTFIX slice: output +50%, and it cleanses itself after resolving.", 1, 110, [6], 1.5, [(5, 0, 0, [(15, 1, None, {"slice_pick": 0})])]),
-    ("power_cell", "Power Cell", "SANDBOX slice also restores 1 RAM.", 1, 110, [4], 1.0, [(5, 0, 0, [(12, 0, 1)])]),
+    ("power_cell", "Power Cell", "SHIELD slice also restores 1 RAM.", 1, 110, [4], 1.0, [(5, 0, 0, [(12, 0, 1)])]),
     ("recycler", "Recycler", "The NULL slice restores 2 RAM when it resolves.", 0, 90, [8], 1.0, [(5, 0, 0, [(12, 0, 2)])]),
 ]
 for fid, name, desc, rarity, cyc, types, mult, tes in FIRMWARE:
@@ -188,7 +188,7 @@ for aid, name, desc, atype, integ, dmg, rng_, shots, targ, delay, pull, rarity i
     written["assets"] += 1
 
 # ---- New shop slices ------------------------------------------------------------------------------------
-for sid, name, stype, rule, out in [("sandbox_8", "Sandbox 8", 4, 0, 8), ("detour_2", "Detour 2", 3, 0, 2)]:
+for sid, name, stype, rule, out in [("sandbox_8", "Shield 8", 4, 0, 8), ("detour_2", "Sandbox 2", 3, 0, 2)]:
     path = "content/slices/%s.tres" % sid
     text = ('[gd_resource type="Resource" script_class="SliceData" format=3]\n\n'
             '[ext_resource type="Script" path="res://scripts/data/slice_data.gd" id="1"]\n\n'
@@ -247,7 +247,7 @@ event("ev_side_effects", "Side Effects",
       [("Install the trial build", "It works. You try not to think about cohort A.", 0, 4, [], F % "overvolt"),
        ("Sell the parcel (+25 Cycles)", "Trial code sells well downtown.", 0, 0, [(22, 6, 25)], None), LEAVE])
 event("ev_night_shift_nurse", "Night Shift",
-      "A Solace nurse on a smoke break recognises the Cell's tag and says nothing for a long time.",
+      "A Solace nurse on a smoke break recognizes the Cell's tag and says nothing for a long time.",
       [("Ask for help (+15 HP)", "She patches you up and tells you which cameras are fake.", 0, 0, [(14, 0, 15)], None),
        ("Ask for her badge (Card: Lock On)", "She hands it over. 'Make it count.'", 0, 0, [], C % "lock_on"), LEAVE], speaker=1)
 event("ev_recall_van", "Recall Van",
@@ -300,7 +300,7 @@ event("ev_audit_trail", "Audit Trail",
        ("Let it run (+1 Heat)", "Somebody at Solace gets a very interesting morning.", 0, 0, [(21, 6, 1)], None)], speaker=4)
 event("ev_rival_crew", "Rival Crew",
       "Another crew is looting the same node. Their leader grins. 'Split it?'",
-      [("Split it (+20 Cycles)", "Honour among thieves, for once.", 0, 0, [(22, 6, 20)], None),
+      [("Split it (+20 Cycles)", "Honor among thieves, for once.", 0, 0, [(22, 6, 20)], None),
        ("Take it all (+40 Cycles, 10 damage)", "You win. It hurts.", 0, 10, [(22, 6, 40)], None),
        ("Trade gear (Asset: Flak Array)", "They're keen on your old shoes. You're keen on their flak.", 10, 0, [], A % "flak_array")], speaker=1, corp="")
 event("ev_ghost_market", "Ghost Market",

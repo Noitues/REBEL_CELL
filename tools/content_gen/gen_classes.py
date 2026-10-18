@@ -127,7 +127,7 @@ def hub(hid, name, desc, passive=None, hook=None, extra=(), comment=""):
 hub("ghost_core", "Ghost Core", "First nudge on an enemy wheel each turn ignores resistance. Perfect: the slice resolves twice; on each resolution, strip 2 resistance.",
     hook=lambda r: r.te("hook", 6, [r.effect("fx_strip", 10, 3, -2), r.effect("fx_retrigger", 19, 0, None, multiplier="1.0")], 2),
     extra=["free_resistance_nudges = 1"], comment="Ghost Core (GDD 5.2).")
-hub("ghost_core_mk2", "Ghost Core Mk2", "First two nudges on enemy wheels each turn ignore resistance. Perfect: the slice resolves twice; on each resolution, strip 3 resistance and evade the next attack.",
+hub("ghost_core_mk2", "Ghost Core Mk2", "First two nudges on enemy wheels each turn ignore resistance. Perfect: the slice resolves twice; on each resolution, strip 3 resistance and gain 1 SANDBOX charge.",
     hook=lambda r: r.te("hook", 6, [r.effect("fx_strip", 10, 3, -3), r.effect("fx_evade", 3, 0, 1), r.effect("fx_retrigger", 19, 0, None, multiplier="1.0")], 2),
     extra=["free_resistance_nudges = 2"], comment="Ghost Core Mk2, Rank 2 upgrade (decision 2026-09-24).")
 hub("rig_core", "Rig Core", "+1 max RAM. Perfect: the slice resolves again at half; on each resolution, refund 1 RAM and gain a free nudge.",
@@ -154,11 +154,11 @@ hub("wrecker_core_mk2", "Wrecker Core Mk2", "+1 spin on all cards. Perfect: the 
     passive=lambda r: [r.te("te_spin", 0, [r.effect("fx_spin", 6, 1, 1, ring_scope=2)])],
     hook=lambda r: r.te("hook", 6, [r.effect("fx_retrigger", 19, 0, None, multiplier="1.5")], 2),
     comment="Wrecker Core Mk2, Rank 2 upgrade (decision 2026-09-24).")
-hub("phantom_core", "Phantom Core", "A free nudge at the start of each turn. Perfect: the slice resolves twice; on each resolution, evade the next attack.",
+hub("phantom_core", "Phantom Core", "A free nudge at the start of each turn. Perfect: the slice resolves twice; on each resolution, gain 1 SANDBOX charge.",
     passive=lambda r: [r.te("te_nudge", 2, [r.effect("fx_nudge", 24, 0, 1, custom_handler=r.script(CAL))])],
     hook=lambda r: r.te("hook", 6, [r.effect("fx_evade", 3, 0, 1), r.effect("fx_retrigger", 19, 0, None, multiplier="1.0")], 2),
     comment="Phantom Core: Ghost alternative (decision 2026-09-24). The turn-start nudge reuses the Calibrate handler.")
-hub("phantom_core_mk2", "Phantom Core Mk2", "Two free nudges at the start of each turn. Perfect: the slice resolves twice; on each resolution, evade the next attack.",
+hub("phantom_core_mk2", "Phantom Core Mk2", "Two free nudges at the start of each turn. Perfect: the slice resolves twice; on each resolution, gain 1 SANDBOX charge.",
     passive=lambda r: [r.te("te_nudge", 2, [r.effect("fx_nudge", 24, 0, 2, custom_handler=r.script(CAL))])],
     hook=lambda r: r.te("hook", 6, [r.effect("fx_evade", 3, 0, 1), r.effect("fx_retrigger", 19, 0, None, multiplier="1.0")], 2),
     comment="Phantom Core Mk2, Rank 2 upgrade (decision 2026-09-24).")
@@ -189,17 +189,17 @@ def card(cid, name, desc, ram, cycle, cls, wheel_target, effects, exhaust=False,
     r.main = lines
     r.write("content/cards/%s.tres" % cid)
 
-card("ghost_step", "Ghost Step", "Two nudges on an enemy wheel, ignoring resistance.", 1, 70, "ghost", 1,
+card("ghost_step", "Ghost Step", "Two ±1 nudges on an enemy wheel, ignoring resistance.", 1, 70, "ghost", 1,
      lambda r: [r.effect("fx", 5, 2, 2, ring_scope=0, multiplier="0.0")])
 card("blind_spot", "Blind Spot", "The target skips its next respin and loses 1 resistance.", 2, 75, "ghost", 1,
      lambda r: [r.effect("fx_freeze", 9, 2), r.effect("fx_strip", 10, 2, -1)])
-card("torque_wrench", "Torque Wrench", "Spin a wheel 5 ticks and gain a free nudge.", 1, 70, "rigger", 2,
+card("torque_wrench", "Torque Wrench", "Spin a wheel 5 ticks clockwise and gain a free nudge.", 1, 70, "rigger", 2,
      lambda r: [r.effect("fx_spin", 6, 2, 5, ring_scope=2), r.effect("fx_nudge", 24, 0, 1, custom_handler=r.script("res://scripts/core/handlers/calibrate_handler.gd"))])
-card("hot_swap", "Hot Swap", "Snap your outer ring to the slice centre and gain 1 RAM.", 2, 75, "rigger", 0,
+card("hot_swap", "Hot Swap", "Snap your outer ring to the slice center and gain 1 RAM.", 2, 75, "rigger", 0,
      lambda r: [r.effect("fx_snap", 16, 1, None, ring_scope=0), r.effect("fx_ram", 12, 0, 1)])
 card("spawn_drone", "Spawn Drone", "Dock a drone on a chosen slice of your wheel.", 2, 75, "botnet", 0,
      lambda r: [r.effect("fx", 18, 0, 1, slice_pick=2)])
-card("parasite_pulse", "Parasite Pulse", "The target's slice under the pointer gets a PARASITE (half output). Exhaust.", 2, 80, "botnet", 1,
+card("parasite_pulse", "Parasite Pulse", "Pointed target slice gets a PARASITE (half output). Exhaust.", 2, 80, "botnet", 1,
      lambda r: [r.effect("fx", 4, 2, None, status=4, slice_pick=0)], exhaust=True)
 
 # ---- Classes -------------------------------------------------------------------------------------------------------
@@ -232,7 +232,7 @@ def klass(cid, name, desc, hp, slices, hub_id, hub_mk2, ring_id, options, deck, 
         r.main.append('alternative_of = &"%s"' % alternative_of)
     r.write("content/classes/%s.tres" % cid, comment)
 
-klass("ghost", "Ghost", "Slips past resistance. Perfect landings strip the target's defences.", 50,
+klass("ghost", "Ghost", "Slips past resistance. Perfect landings strip the target's defenses.", 50,
       ["shim_14", "defrag_6", "shim_14", "detour_1", "defrag_6", "null"], "ghost_core", "ghost_core_mk2", "ghost_ring",
       ["seg_blank", "seg_anchor", "seg_corrupt", "seg_accelerator"],
       ["fine_tune", "fine_tune", "fine_tune", "jolt", "jolt", "jam", "micro_adjust", "strip", "snap", "ghost_step"],
@@ -283,7 +283,7 @@ for cid, name, cost in [("ghost", "Ghost", 80), ("rigger", "Rigger", 80), ("botn
 
 # ---- Barks --------------------------------------------------------------------------------------------------------------
 BARKS = {
-    "ghost": [("perfect", "Clean. They never saw the wheel move."), ("perfect", "Perfect. Resistance is a rumour."),
+    "ghost": [("perfect", "Clean. They never saw the wheel move."), ("perfect", "Perfect. Resistance is a rumor."),
               ("null", "Null. Stay quiet, reset, try again."), ("hurt", "Grazed. Nothing they can trace."),
               ("victory", "Gone before the log catches up."), ("defeat", "They saw me. First time for everything."),
               ("deploy", "No drones. I prefer to be alone in here."), ("jack_in", "Ghosting in. Leave no footprints."),

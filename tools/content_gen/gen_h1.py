@@ -42,7 +42,7 @@ for corp, lines in DJ.items():
     vr.write("content/voice/%s.tres" % vid, "Pirate-radio DJ lines (HQ). Horizontal pass 1: split per corporation.")
 
 RESCUE = {
-    "meridian": ("ev_mer_rescue", "Returned to Sender", "An operative sealed in a Meridian returns crate, still breathing, labelled DAMAGED IN TRANSIT."),
+    "meridian": ("ev_mer_rescue", "Returned to Sender", "An operative sealed in a Meridian returns crate, still breathing, labeled DAMAGED IN TRANSIT."),
     "halcyon": ("ev_hal_rescue", "Holding Cell", "A Halcyon holding cell. The operative inside was booked for loitering near a Rack."),
     "orbital": ("ev_orb_rescue", "Grounded", "An operative trapped in a ground-station cage, charged with unlicensed transmission."),
     "rebel_cell": ("ev_rc_rescue", "Deprogramming", "One of your own, held by DISPATCH's Handler, halfway through a loyalty rewrite."),

@@ -21,3 +21,5 @@ the script instead.
 `gen_rebel_cell.py` writes the REBEL_CELL template (M11); `scripts/core/rebel_cell_builder.gd` fills it from the profile at runtime.
 `gen_home.py` writes the M12 home-server variants and their unlocks.
 `gen_h1.py` writes the horizontal pass 1 content (DJ sets, rescue events, Shatter).
+
+`check_regen.py` regenerates every generator above into a temp copy of the repo and diffs it against `content/` (exit 1 on any difference); run it after editing a generator or hand-editing generated content. Solace has no generator (hand-written `.tres`). N21 resistance (`n21_passive`) and N22 pools (`NORMAL_POOLS`) live in `gen_corp_lib.py`; `gen_meridian.py` shares them. Spec key `letterhead` and enemy key `enrage` are written when present.

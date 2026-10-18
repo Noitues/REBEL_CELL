@@ -124,6 +124,7 @@ pull_request triggers are kept as a commented block to restore after ART-12).
 | Hand-back: the same over the whole branch vs main | `bash tools/precommit.sh --base main` | 1–3 min |
 | See which scripts a change selects and why | `python tools/select_tests.py --list [--base main]` | |
 | Several path substrings at once | `python tools/run_tests.py --select wheel --select rng` | |
+| Content generators are a no-op against `content/` (regen into a temp copy, diff, exit 1 on any difference) | `python tools/content_gen/check_regen.py [gen_name ...]` | seconds |
 
 `select_tests.py` maps changed files to test scripts (a changed test selects itself; a changed
 script selects every test naming its `class_name`, basename or `res://` path; `scripts/core` /

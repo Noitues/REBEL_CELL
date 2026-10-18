@@ -38,6 +38,23 @@ def normal_pools():
 NORMAL_POOLS = normal_pools()
 
 
+# N21 (docs/handoff/N21_RESISTANCE.md, rulings Q16, Q31): per-turn resistance ranges by class.
+RESIST_RANGE = {"normal": (1, 2), "elite": (3, 4), "mini": (3, 4), "boss": (5, 6)}
+
+
+def n21_passive(e):
+    """The wheel passive_resistance the .tres carries: in range = kept; below = the low end; an authored
+    2 on an elite or mini-boss (the 'resistant' one) = the top end. Satellites keep 0 (not fights)."""
+    cls = "boss" if e.get("boss") else "mini" if e.get("mini") else "elite" if e.get("elite") else "normal"
+    lo, hi = RESIST_RANGE[cls]
+    a = e.get("passive", 0)
+    if lo <= a <= hi:
+        return a
+    if a > hi:
+        return hi
+    return hi if (cls in ("elite", "mini") and a >= 2) else lo
+
+
 def wheel_sub(r, sid, slices, pointers=(0,), passive=0, orbit=0, hub=None):
     slot_ids = {}
     slots = []
@@ -49,10 +66,10 @@ def wheel_sub(r, sid, slices, pointers=(0,), passive=0, orbit=0, hub=None):
     if hub:
         fields.append(("hub", hub))
     fields.append(("pointer_ticks", "PackedInt32Array(%s)" % ", ".join(str(p) for p in pointers)))
-    if passive:
-        fields.append(("passive_resistance", passive))
     if orbit:
         fields.append(("pointer_orbit_per_turn", orbit))
+    if passive:
+        fields.append(("passive_resistance", passive))
     return r.sub(sid, S_WHEEL, fields)
 
 
@@ -72,7 +89,7 @@ def hub_sub(r, hub):
 def enemy(corp, e):
     r = Res("EnemyData", "res://scripts/data/enemy_data.gd")
     hub_ref = hub_sub(r, e["hub"]) if e.get("hub") else None
-    w = wheel_sub(r, "wheel", e["slices"], e.get("pointers", (0,)), e.get("passive", 0), e.get("orbit", 0), hub_ref)
+    w = wheel_sub(r, "wheel", e["slices"], e.get("pointers", (0,)), n21_passive(e), e.get("orbit", 0), hub_ref)
     main = ['id = &"%s"' % e["id"], 'display_name = "%s"' % e["name"], 'description = "%s"' % e["desc"],
             'corporation_id = &"%s"' % e.get("corporation_id", corp), "hp = %d" % e["hp"], "wheel = " + w]
     for flag in ("elite", "boss", "mini"):
@@ -90,12 +107,16 @@ def enemy(corp, e):
             if "orbit" in ph:
                 fields.append(("orbit_ticks_per_turn", ph["orbit"]))
             if "wheel" in ph:
-                fields.append(("wheel_override", wheel_sub(r, "wheel_phase%d" % i, ph["wheel"], ph.get("ticks", (0,)), hub=hub_ref)))
+                fields.append(("wheel_override", wheel_sub(r, "wheel_phase%d" % i, ph["wheel"], ph.get("ticks", (0,)), passive=n21_passive(e), hub=hub_ref)))
             if "spawns" in ph:
                 fields.append(("spawns", arr(r.script(S_SPAWN), [spawn_sub(r, "pspawn%d_%d" % (i, j), *sp) for j, sp in enumerate(ph["spawns"])])))
             fields.append(("phase_line", '"%s"' % ph["line"]))
             psubs.append(r.sub("phase%d" % i, S_PHASE, fields))
         main.append("phases = " + arr(r.script(S_PHASE), psubs))
+    if e.get("enrage"):
+        en = e["enrage"]
+        main.append("enrage = " + r.sub("enrage", "res://scripts/data/enrage_data.gd",
+                    [("start_turn", en["start"]), ("every_n_turns", en["every"]), ("damage_pct_step", en["pct"])]))
     # N22: a normal's pool (RC.NormalPool EASY = 0, HARD = 1; HARD is the default and is not written).
     if not (e.get("elite") or e.get("boss") or e.get("mini")) and NORMAL_POOLS.get(e["id"]) == "EASY":
         main.append("normal_pool = 0")
@@ -247,7 +268,7 @@ def build(spec):
         er.write("content/events/%s.tres" % eid, "%s Terminal event (decision 2026-09-24)." % corp)
         event_paths.append("res://content/events/%s.tres" % eid)
 
-    r.main = ['id = &"%s"' % corp, 'display_name = "%s"' % spec["name"], 'description = "%s"' % spec["desc"],
+    r.main = ['id = &"%s"' % corp, 'display_name = "%s"' % spec["name"], 'letterhead_name = "%s"' % spec["letterhead"], 'description = "%s"' % spec["desc"],
               "city_grid = " + grid,
               "enemies = " + arr(r.script("res://scripts/data/enemy_data.gd"), [r.res(EN(e["id"])) for e in spec["enemies"]]),
               "elites = " + arr(r.script("res://scripts/data/enemy_data.gd"), [r.res(EN(e["id"])) for e in spec["elites"]]),

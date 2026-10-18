@@ -5,8 +5,8 @@ cargo drones; its boss shields itself each turn unless the Hub is breached.
 Only existing effect types and schema (plus RaidData.corporation_id / replaces)."""
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))
-_src = open(os.path.join(HERE, "gen_classes.py"), encoding="utf-8").read()
-exec(_src[:_src.index("# ---- standalone ring segments")])
+# The shared builder gives wheel_sub, n21_passive (N21 resistance) and NORMAL_POOLS (N22), same as every other corporation.
+exec(open(os.path.join(HERE, "gen_corp_lib.py"), encoding="utf-8").read())
 
 CORP = "meridian"
 SL = lambda s: "res://content/slices/%s.tres" % s
@@ -34,24 +34,6 @@ for sid, name, stype, rule, out, fx in [
 
 
 # ---- Enemies ---------------------------------------------------------------------------------------------
-def wheel_sub(r, sid, slices, pointers=(0,), passive=0, orbit=0, hub=None):
-    slot_ids = {}
-    slots = []
-    for s in slices:
-        if s not in slot_ids:
-            slot_ids[s] = r.sub("%s_slot_%s" % (sid, s), S_SLOT, [("slice", r.res(SL(s)))])
-        slots.append(slot_ids[s])
-    fields = [("slice_count", len(slices)), ("slots", arr(r.script(S_SLOT), slots))]
-    if hub:
-        fields.append(("hub", hub))
-    fields.append(("pointer_ticks", "PackedInt32Array(%s)" % ", ".join(str(p) for p in pointers)))
-    if passive:
-        fields.append(("passive_resistance", passive))
-    if orbit:
-        fields.append(("pointer_orbit_per_turn", orbit))
-    return r.sub(sid, S_WHEEL, fields)
-
-
 def spawn_sub(r, sid, sat, trigger=1, every=1, dock=-1, max_active=1):
     return r.sub(sid, S_SPAWN, [("satellite", r.res(EN(sat))), ("trigger", trigger), ("every_n", every),
                                 ("dock_slot", dock), ("max_active", max_active)])
@@ -61,6 +43,8 @@ def enemy(eid, name, desc, hp, slices, pointers=(0,), passive=0, orbit=0, elite=
           cycle=15, spawns=(), phases=(), hub=None, comment=""):
     r = Res("EnemyData", "res://scripts/data/enemy_data.gd")
     hub_ref = hub(r) if hub else None
+    cls = {"elite": elite, "mini": mini, "boss": boss}
+    passive = n21_passive({"passive": passive, **cls})
     w = wheel_sub(r, "wheel", slices, pointers, passive, orbit, hub_ref)
     main = ['id = &"%s"' % eid, 'display_name = "%s"' % name, 'description = "%s"' % desc, 'corporation_id = &"%s"' % CORP,
             "hp = %d" % hp, "wheel = " + w]
@@ -82,12 +66,15 @@ def enemy(eid, name, desc, hp, slices, pointers=(0,), passive=0, orbit=0, elite=
             if "orbit" in ph:
                 fields.append(("orbit_ticks_per_turn", ph["orbit"]))
             if "wheel" in ph:
-                fields.append(("wheel_override", wheel_sub(r, "wheel_phase%d" % i, ph["wheel"], ph.get("ticks", (0,)), hub=hub_ref)))
+                fields.append(("wheel_override", wheel_sub(r, "wheel_phase%d" % i, ph["wheel"], ph.get("ticks", (0,)), passive=passive, hub=hub_ref)))
             if "spawns" in ph:
                 fields.append(("spawns", arr(r.script(S_SPAWN), [spawn_sub(r, "pspawn%d_%d" % (i, j), *sp) for j, sp in enumerate(ph["spawns"])])))
             fields.append(("phase_line", '"%s"' % ph["line"]))
             psubs.append(r.sub("phase%d" % i, S_PHASE, fields))
         main.append("phases = " + arr(r.script(S_PHASE), psubs))
+    # N22: a normal's pool (EASY = 0; HARD is the default and is not written).
+    if not (elite or boss or mini) and NORMAL_POOLS.get(eid) == "EASY":
+        main.append("normal_pool = 0")
     r.main = main
     r.write("content/enemies/%s.tres" % eid, comment or ("Meridian Freight Systems enemy (M8, decision 2026-09-24)."))
 
@@ -142,7 +129,7 @@ enemy("the_manifest", "The Master Manifest", "Meridian's routing core. Every pac
 # ---- Threats and raids ---------------------------------------------------------------------------------------
 for tid, name, desc, integ, dmg, speed, routing, extra in [
     ("courier", "Courier", "Fast and fragile: two edges a step toward the highest-value node.", 8, 3, 2, 1, []),
-    ("hauler", "Hauler", "A slow armoured truck that goes for the weakest node.", 28, 10, 1, 2, []),
+    ("hauler", "Hauler", "A slow armored truck that goes for the weakest node.", 28, 10, 1, 2, []),
     ("customs_agent", "Customs Agent", "Seals a link behind it for the rest of the raid.", 16, 5, 1, 0, ["freezes_edges = true"]),
 ]:
     r = Res("ThreatData", "res://scripts/data/threat_data.gd")
@@ -182,7 +169,7 @@ for rid, name, src, reward, waves, replaces, warning in RAIDS:
     r.write("content/raids/%s.tres" % rid, "Meridian raid (M8). replaces = the shared Heat-threshold raid it stands in for.")
 
 # ---- City Grid ---------------------------------------------------------------------------------------------------
-T1 = [("m1_a", "Parcel Sorting Hall"), ("m1_b", "Customs Pre-Clearance"), ("m1_c", "Tracking Beacon Array"), ("m1_d", "Returns Processing Centre"),
+T1 = [("m1_a", "Parcel Sorting Hall"), ("m1_b", "Customs Pre-Clearance"), ("m1_c", "Tracking Beacon Array"), ("m1_d", "Returns Processing Center"),
       ("m1_e", "Drone Charging Yard"), ("m1_f", "Warehouse Shift Planner"), ("m1_g", "Address Verification Desk"), ("m1_h", "Cold Chain Monitor"),
       ("m1_i", "Tariff Calculation Office"), ("m1_j", "Fleet Telematics Hub")]
 T2 = [("m2_intel", "Shipping Manifest Vault", 1), ("m2_breach", "Customs Key Authority", 2), ("m2_virus", "Routing Table Mirror", 3),
@@ -260,8 +247,8 @@ PATHS = [
      "The Master Manifest dies and the ghost account closes itself one second later, fully paid. Nobody told it the job was done.", "dispatch", 2),
     ("civic_contract", "Civic Contract", "Meridian is bidding to run the city's water, power and transit. The winner is already decided.",
      [("Civic Contract I", 2, "A tender for municipal services: water, power, transit. The bidders are Meridian and something called Halcyon Civic. The evaluation was finished before the bids were opened."),
-      ("Civic Contract II", 3, "Halcyon Civic and Meridian share a board member, an auditor and a data centre. The tender is theatre."),
-      ("Civic Contract III", 2, "The routing mirror already has the city's water mains in it, labelled PHASE TWO.")],
+      ("Civic Contract II", 3, "Halcyon Civic and Meridian share a board member, an auditor and a data center. The tender is theater."),
+      ("Civic Contract III", 2, "The routing mirror already has the city's water mains in it, labeled PHASE TWO.")],
      [("Civic Contract: Halcyon", 2, "Halcyon Civic's pitch deck: A City That Runs Itself. Page nine: A City That Bills Itself."),
       ("Civic Contract: The Vote", 0, "The council votes on Thursday. The council does not know it is voting.")],
      "The Master Manifest falls and the tender collapses in the scandal. Halcyon Civic issues a statement welcoming the opportunity to serve the city directly.", "halcyon", -1),
@@ -389,10 +376,10 @@ EVENTS = [
     ("ev_mer_port_strike", "Port Strike", 1, "The dockers are on strike. Their picket line needs a network that Meridian cannot read.",
      [("Give them a channel (-2 Heat, 10 Cycles)", "The strike holds another day.", 10, 0, [(21, 6, -2)], None),
       ("Sell them a scanner (Asset: Sentry)", "They pay in hardware. Sturdy hardware.", 0, 0, [], A % "sentry"), LEAVE]),
-    ("ev_mer_algorithm", "The Algorithm", 3, "A routing algorithm wants to renegotiate. It offers you a better route in exchange for a small favour.",
-     [("Accept (Card: Gear Mesh, +2 Heat)", "The route is better. The favour is logged.", 0, 0, [(21, 6, 2)], C % "gear_mesh"),
+    ("ev_mer_algorithm", "The Algorithm", 3, "A routing algorithm wants to renegotiate. It offers you a better route in exchange for a small favor.",
+     [("Accept (Card: Gear Mesh, +2 Heat)", "The route is better. The favor is logged.", 0, 0, [(21, 6, 2)], C % "gear_mesh"),
       ("Decline (heal 5)", "It sulks. You feel better.", 0, 0, [(14, 0, 5)], None), LEAVE], CORP, 2),
-    ("ev_mer_customs_warehouse", "Customs Warehouse", 0, "Seized goods, stacked to the ceiling. Some of it is still labelled with names.",
+    ("ev_mer_customs_warehouse", "Customs Warehouse", 0, "Seized goods, stacked to the ceiling. Some of it is still labeled with names.",
      [("Return what you can (-3 Heat, 6 damage)", "The alarms find you halfway through.", 0, 6, [(21, 6, -3)], None),
       ("Take the good stuff (+25 Cycles)", "Contraband sells.", 0, 0, [(22, 6, 25)], None), LEAVE], CORP, 2),
     ("ev_mer_billing_error", "Billing Error", 2, "Meridian's billing system has charged the whole block for a delivery that never came.",
@@ -429,7 +416,7 @@ for ev in EVENTS:
     er.write("content/events/%s.tres" % eid, "Meridian Terminal event (M8).")
     event_paths.append("res://content/events/%s.tres" % eid)
 
-r.main = ['id = &"meridian"', 'display_name = "Meridian Freight Systems"',
+r.main = ['id = &"meridian"', 'display_name = "Meridian Freight Systems"', 'letterhead_name = "MERIDIAN FREIGHT"',
           'description = "The logistics giant that moves everything, loses what it likes and bills you for the search."',
           "city_grid = " + grid,
           "enemies = " + arr(r.script("res://scripts/data/enemy_data.gd"), [r.res(EN(e)) for e in ENEMIES]),
@@ -449,7 +436,7 @@ BRIEF = {
     "m1_a": "Parcel Sorting Hall. Every package in the district passes its belts. Cut the Rack and the belts stop for a shift.",
     "m1_b": "Customs Pre-Clearance. Meridian decides here what gets held. Take the Rack and nothing gets held today.",
     "m1_c": "Tracking Beacon Array. It knows where every van is, and where you are. Blind it.",
-    "m1_d": "Returns Processing Centre. Where Meridian sends the things it does not want. Including people's claims.",
+    "m1_d": "Returns Processing Center. Where Meridian sends the things it does not want. Including people's claims.",
     "m1_e": "Drone Charging Yard. Four hundred drones on the pad. Take the Rack before they wake.",
     "m1_f": "Warehouse Shift Planner. It schedules the pickers down to the second. Give them a minute back.",
     "m1_g": "Address Verification Desk. Meridian decides who is allowed to exist at an address. Correct its records.",
@@ -475,7 +462,7 @@ BRIEF = {
     "lose_the_tracking": "Lose the Tracking. A quiet job: scrub the beacons that follow the Cell. Heat drops, nothing else changes.",
     "forge_the_manifest": "Forge the Master Manifest. Rewrite the Cell's traffic as routine freight. Heat drops.",
     "reroute_the_audit": "Reroute the Audit. Meridian's auditors are looking at you. Make them look somewhere else.",
-    "sink_the_cargo_logs": "Sink the Cargo Logs. Every log that mentions the Cell, at the bottom of the harbour.",
+    "sink_the_cargo_logs": "Sink the Cargo Logs. Every log that mentions the Cell, at the bottom of the harbor.",
     "the_master_manifest": "The Master Manifest. Every package on the planet passes through it. It shields itself every turn. Breach the Hub or pierce, and cut.",
 }
 DISPATCH_LINES = [
@@ -488,7 +475,7 @@ DISPATCH_LINES = [
     ("rack", "Rack captured. Bank it before Meridian notices the discrepancy."),
     ("threshold:25", "Meridian has flagged a delivery exception. Expect couriers."),
     ("threshold:50", "Route audit in progress. Meridian is counting your links."),
-    ("threshold:75", "Freight seizure authorised. Haulers are rolling."),
+    ("threshold:75", "Freight seizure authorized. Haulers are rolling."),
     ("threshold:100", "Meridian is rerouting the city around the Cell. Everything is coming."),
     ("boss", "The Master Manifest. It shields itself every turn. Breach the Hub, then cut."),
     ("win", "The Master Manifest is down. For one day, the city moves itself."), ("win", "Meridian is offline. Deliveries are... improvising."),
@@ -499,7 +486,7 @@ CORPO_LINES = [
     ("raid:any", "MERIDIAN LOGISTICS: Your address is under review. Please remain available for delivery."),
     ("raid:raid_heat_25", "MERIDIAN LOGISTICS: A delivery exception has been raised at your location. Couriers are en route."),
     ("raid:raid_heat_50", "MERIDIAN LOGISTICS: A route audit is in progress. Please do not obstruct our agents."),
-    ("raid:raid_heat_75", "MERIDIAN LOGISTICS: Freight seizure has been authorised for your district. Thank you for your patience."),
+    ("raid:raid_heat_75", "MERIDIAN LOGISTICS: Freight seizure has been authorized for your district. Thank you for your patience."),
     ("raid:raid_purge", "MERIDIAN LOGISTICS: Your district is being rerouted. Service will resume without you."),
     ("raid:raid_mer_claim", "MERIDIAN LOGISTICS: An unverified address has appeared on our network. Verification is under way."),
     ("raid:raid_mer_node_built", "MERIDIAN LOGISTICS: An unregistered depot has been detected. A Hauler has been scheduled."),
