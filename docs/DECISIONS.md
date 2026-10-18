@@ -132,6 +132,28 @@ default as a placeholder behind config and says so in its report.
   `docs/handoff/N21_RESISTANCE.md`.
 - **View:** `WheelView.standing_chips` adds a static grease-pencil "+N" (Permanent Marker, threat ink over the pencil
   shadow; `pencil: true`) after RESIST while `resistance_gain` > 0; `HudResultChips` draws it without a chip.
+### 2026-10-18 — Plan 2 W0 N14: defense trio BLOCK / SHIELD / SANDBOX (R13; rulings Q39, Q31)
+- **Rule (Q39 overrides brief acceptance 3 and 5):** `EffectInterpreter.deal_hit` order is enrage, then a SANDBOX
+  charge (`CombatantState.evade_charges`, name and save key unchanged), then the bodyguard redirect, then BLOCK, then
+  SHIELD, then `lose_hp`. One charge negates one hit whole and is spent; Pierce never touches it (it only skips BLOCK
+  and SHIELD). Any damage source spends a charge (slice hits, Zero Day, counters, listeners, DEAL_DAMAGE effects)
+  except self-damage (attacker == victim) and the HP-loss paths that never were hits (CORRUPTED bites, parasites).
+  A 0 hit spends nothing. Status-only resolutions (INFECT) are not negated. A negated hit logs an `evaded` event with
+  `"sandboxed": true`, `hp_damage` 0 and `charges_left` (the views keep reading `evaded`; BalanceSim intake ignores
+  it, and a `damage` event with the flag still counts 0). The bodyguard step calls `EffectInterpreter.sandboxed` on
+  the guarded target first (resolver `_slice_action`, `ZeroDayHandler`), so a sandboxed host keeps its drone whole.
+- **Charges:** a DETOUR slice gives `CampaignConfigData.sandbox_charges` (1) at WEAK / GOOD and
+  `sandbox_charges_perfect` (2) at PERFECT, whatever its output (was: max(1, output)); retriggers each give theirs;
+  charges add up. Cards (EVADE effects) keep their authored amount. `validate()` refuses sandbox_charges < 1 or
+  perfect < plain.
+- **Lifecycle (Q31):** BLOCK and charges are still cleared in `start_turn`, which END_TURN runs straight after the
+  resolve: that is the end of the turn (nothing reads them in between; the resolve snapshot keeps them for the
+  view). SHIELD persists (cap `shield_cap`). No `start_turn` change. Save format unchanged.
+- **Display names (R13, acceptance 1):** words DEFRAG -> **BLOCK**, SANDBOX-type -> **SHIELD**, DETOUR -> **SANDBOX**
+  (`Palette.SLICE_WORDS`; tags BLCK / SHLD / SBOX), slice display names (Block N, Shield 5 / 8, Sandbox / Sandbox 2),
+  Codex slice texts, firmware / enemy / card / hub descriptions; strings re-exported. Enum members, ids, files and
+  glyphs stay (the glyph follows the mechanic). This supersedes the 2026-10-05 names-pass ban on "SHIELD slices"
+  (`test_names_pass` PART3 now bans DEFRAG / DETOUR in player text).
 
 ### 2026-10-18 — Plan 2 W0 N4: enrage (R4; rulings Q33, Q16, Q29)
 - **Schema:** new `EnrageData` (`start_turn`, `every_n_turns`, `damage_pct_step` int percent, `resistance_step` int,
@@ -7677,6 +7699,7 @@ Before covers 43 screens; after covers 53. The remaining findings are low-confid
 - Colour-blind support stays a daltonize correction (ART_BIBLE §12 says "remap").
 
 ## Open questions for the designer
+- **2026-10-18 W0 N14, SANDBOX charges:** charges now come from precision only, so `detour_1` and `detour_2` (base output 1 and 2) play the same. Re-author `detour_2` (or let output add charges) in a content pass? Also: a guarded host's SANDBOX is spent before its drone takes the hit (brief order); say if the drone should shield the charge instead.
 - **2026-10-18 W0 N13, fixed satellites (simplest option built):** (a) FREEZE on a satellite is refused like a move (brief acceptance 1), although it does not turn the wheel; (b) a spawn with no free slot replaces slot 0 rather than drawing a random slot (keeps RNG draws unchanged); (c) drones replace too, so a Trojan re-landing on its slice swaps its drone rather than adding one (Botnet builds drones more slowly; a Trojan worth N docks on N slices clockwise); (d) ON_SATELLITE_DESTROYED is heard by the operative's Hub and Daemons only, not by enemies. Say if any should differ.
 - **2026-10-18 N21, resistance edges (defaults built):** (1) satellites (2- and 3-slice wheels) keep 0 resistance and are outside the class table; say if a docked drone should resist too. (2) `resistance_carry` is kept (a RESOLVE-time change lands on the next refresh); the follow-up sheet recommends retiring it: say which. (3) The migration is rank-preserving (authored 2 -> the top of the elite / mini-boss range); the S5 sweeps re-run after this lands.
 - **2026-10-18 W0 N2, tier tables (defaults built):** (1) a mini-boss with `hp_by_tier` still takes the ICE / Heat boss-strength multiplier on its table HP (bosses read it as the `hp_bands` zone instead); (2) the boss band zone reads the combined `boss_strength_pct` (ICE + Heat + campaign modifiers), not the ICE term alone; (3) the boss lint warning ceiling is phases x the T4 two-needle budget (126; 504 for 4 phases), no floor, since sustain is per phase (N3); (4) flat x factor rounding is N1's. Say if any should differ.

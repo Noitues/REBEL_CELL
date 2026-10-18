@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"sandbox_5"
-display_name = "Sandbox 5"
+display_name = "Shield 5"
 slice_type = 4
 target_rule = 0
 base_output = 5

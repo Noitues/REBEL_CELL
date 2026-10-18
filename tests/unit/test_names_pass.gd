@@ -279,8 +279,10 @@ func test_d2_slice_display_names_use_the_program_words() -> void:
 # payment", "the cameras miss", "make a miss count", missing / mission ...).
 
 const PART3: Array = [
-	["SANDBOX slice program",
-		"(?-i)\\bSHD\\b|\\b(Shield|SHIELD) \\d|\\bSHIELD slices?\\b|\\bShield slices?\\b|SliceData\\.shield_",
+	# N14 (plan 2 R13) put SHIELD back on the shield-gain slice and moved SANDBOX to DETOUR:
+	# the old player words are now DEFRAG / DETOUR (the enum keeps SliceType.SANDBOX).
+	["N14 defense trio (BLOCK / SHIELD / SANDBOX)",
+		"(?-i)\\bSHD\\b|\\bDEFRAG\\b|\\bDefrag \\d|\\bDETOUR\\b|\\bDetour\\b|\\bDFRG\\b|\\bDTOR\\b|SliceData\\.shield_",
 		"SliceType\\.SHIELD\\b|(?<![A-Za-z0-9])shield_[58]\\b|slices/shield_",
 		[]],
 	["TROJAN slice program",
@@ -332,7 +334,7 @@ func test_part3_the_kept_meanings_stay() -> void:
 
 ## Ruling 1: the programs' ids, files, display names, words and tags follow the new words.
 func test_b3_the_slice_programs_are_sandbox_trojan_null() -> void:
-	var want := {&"sandbox_5": ["Sandbox 5", RC.SliceType.SANDBOX], &"sandbox_8": ["Sandbox 8", RC.SliceType.SANDBOX],
+	var want := {&"sandbox_5": ["Shield 5", RC.SliceType.SANDBOX], &"sandbox_8": ["Shield 8", RC.SliceType.SANDBOX],
 		&"trojan_1": ["Trojan 1", RC.SliceType.TROJAN], &"null": ["Null", RC.SliceType.NULL]}
 	for id in want:
 		var s := ContentRegistry.get_content(id) as SliceData
@@ -341,10 +343,15 @@ func test_b3_the_slice_programs_are_sandbox_trojan_null() -> void:
 			assert_eq(s.display_name, want[id][0])
 			assert_eq(s.slice_type, want[id][1])
 			assert_true(ResourceLoader.exists("res://content/slices/%s.tres" % id), "%s's file follows its id" % id)
-	assert_eq(Palette.SLICE_WORDS[RC.SliceType.SANDBOX], "SANDBOX")
+	# N14 (R13): display names BLOCK / SHIELD / SANDBOX over DEFRAG / SANDBOX / DETOUR.
+	assert_eq(Palette.SLICE_WORDS[RC.SliceType.SANDBOX], "SHIELD")
+	assert_eq(Palette.SLICE_WORDS[RC.SliceType.DETOUR], "SANDBOX")
+	assert_eq(Palette.SLICE_WORDS[RC.SliceType.DEFRAG], "BLOCK")
 	assert_eq(Palette.SLICE_WORDS[RC.SliceType.TROJAN], "TROJAN")
 	assert_eq(Palette.SLICE_WORDS[RC.SliceType.NULL], "NULL")
-	assert_eq(Palette.SLICE_NAMES[RC.SliceType.SANDBOX], "SBOX")
+	assert_eq(Palette.SLICE_NAMES[RC.SliceType.SANDBOX], "SHLD")
+	assert_eq(Palette.SLICE_NAMES[RC.SliceType.DETOUR], "SBOX")
+	assert_eq(Palette.SLICE_NAMES[RC.SliceType.DEFRAG], "BLCK")
 	assert_eq(Palette.SLICE_NAMES[RC.SliceType.TROJAN], "TRJN")
 	assert_eq(Palette.SLICE_NAMES[RC.SliceType.NULL], "NULL")
 

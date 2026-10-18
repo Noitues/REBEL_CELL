@@ -1165,6 +1165,18 @@
 			"seconds": 0.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_defense_trio.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_sandbox_resolution.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_defense_trio_replay.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
 		"res://tests/integration/test_enrage_hud_flow.gd": {
 			"seconds": 0.0,
 			"tier": "full"

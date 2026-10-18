@@ -27,7 +27,7 @@ SPEC = {
          "slices": ["defrag_8", "hotfix_6", "shim_10", "hotfix_6", "defrag_8", "null"], "passive": 1},
         {"id": "transit_controller", "name": "Transit Controller", "desc": "Two readers on a slow loop: pointers 0 and 15 orbit 1 a turn.", "hp": 50,
          "slices": ["shim_8", "shim_8", "defrag_6", "overflow_14", "shim_8", "null"], "pointers": (0, 15), "orbit": 1},
-        {"id": "surveillance_mast", "name": "Surveillance Mast", "desc": "Hard to pin down: DETOUR slices and an orbiting read head.", "hp": 44,
+        {"id": "surveillance_mast", "name": "Surveillance Mast", "desc": "Hard to pin down: SANDBOX slices and an orbiting read head.", "hp": 44,
          "slices": ["detour_1", "shim_9", "detour_1", "overflow_14", "citation", "null"], "orbit": 2},
         {"id": "patrol_unit", "name": "Patrol Unit", "desc": "Policing-as-a-service. Hits hard, shields up.", "hp": 54,
          "slices": ["shim_10", "shim_10", "defrag_8", "overflow_16", "sandbox_5", "null"]},

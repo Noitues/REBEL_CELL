@@ -891,6 +891,9 @@ func _slice_action(s: CombatState, owner: CombatantState, slice: SliceData, outp
 			events.append({"type": "attack", "attacker": owner.id, "target": target.id, "amount": EffectInterpreter.enraged(owner, output), "pierce": pierce,
 				"text": "" if quiet else "%s %s for %d at %s." % [owner.display_name, _slice_name(slice), output, target.display_name]})
 			for q in target.wheel.pointer_ticks.size():
+				# N14: the target's SANDBOX charge comes before its bodyguard (Pierce too).
+				if fx.sandboxed(owner, target, output, events, slice.id):
+					continue
 				# Bodyguard applies even to Pierce (designer ruling: Pierce ignores block
 				# and shield only). The operative's drones guard the operative the same way.
 				var victim := target
@@ -905,7 +908,9 @@ func _slice_action(s: CombatState, owner: CombatantState, slice: SliceData, outp
 		RC.SliceType.SANDBOX:
 			fx.gain_shield(owner, output, events)
 		RC.SliceType.DETOUR:
-			fx.gain_evade(owner, maxi(1, output), events)
+			# N14 (ruling Q39): charges by precision, not output.
+			var perfect: bool = int(ctx.get("tier", RC.PrecisionTier.GOOD)) == RC.PrecisionTier.PERFECT
+			fx.gain_evade(owner, config.sandbox_charges_perfect if perfect else config.sandbox_charges, events)
 		RC.SliceType.HOTFIX:
 			fx.heal(owner, output, events)
 		RC.SliceType.TROJAN:

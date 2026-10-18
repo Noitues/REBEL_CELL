@@ -64,7 +64,7 @@ func test_a_card_that_needs_the_inner_ring_says_so() -> void:
 
 func test_a_chip_limited_to_slice_types_names_them() -> void:
 	var lookup := RunManager.lookup()
-	assert_true(FaceText.offer_text(lookup.get_content(&"static_coat")).ends_with("Fits DEFRAG slices only."), "Static Coat")
+	assert_true(FaceText.offer_text(lookup.get_content(&"static_coat")).ends_with("Fits BLOCK slices only."), "Static Coat")
 	assert_true(FaceText.offer_text(lookup.get_content(&"siphon")).ends_with("Fits SHIM slices only."), "Siphon")
 	assert_true(FaceText.offer_text(lookup.get_content(&"overvolt")).ends_with("Fits SHIM or OVERFLOW slices only."), "Overvolt")
 	assert_eq(FaceText.fits_text(lookup.get_content(&"patch_plus")), "", "a chip that fits any slice says nothing")
