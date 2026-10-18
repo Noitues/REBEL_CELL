@@ -322,7 +322,7 @@ These close O1-O13 for v1; NA-02 implements them.
 - **O4:** NA-02 writes a **partial** `derive_<run>.json` v1 with the game keys only (`version`, `kind`, `layout_seed`,
   `art_seeds`, `run`); NA-03's `derive.street` fills the rest into the same file.
 - **O5:** node `heat` stays out. Add `run` (string, the run id the file name carries) to `run_graph.json` and derive.
-- **O6:** stream names between `zoning` and `post` come from art-pass; until named they are absent (no placeholder).
+- **O6 (art-pass 0b17be5b):** city streams `city.zoning`, `city.build`, `city.ring`, `city.streaks`, `city.beams`, `city.sea`, `city.landmark`, `city.post` (legacy seeds 7701-7708 in that order, `city_preset.SEEDS`); scene-level, so in `art_seeds`.
 - **O7:** a Site's `bid` = the building whose `cell` contains the Site lot; else the nearest building by Chebyshev
   lot distance, ties by `(i, j)` ascending, within 4 lots; else the export fails naming the Site. Pure function, test it.
 - **O8:** Exploit Site = `SiteData.exploit_type != NONE` (authoritative); `objective` is not read.
