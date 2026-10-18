@@ -117,6 +117,12 @@ extends Resource
 @export var enrage_start_turn_by_class: PackedInt32Array = PackedInt32Array([0, 8, 10, 10])
 @export var enrage_every_n_turns_by_class: PackedInt32Array = PackedInt32Array([0, 5, 5, 5])
 @export var enrage_damage_pct_step_by_class: PackedInt32Array = PackedInt32Array([0, 25, 25, 25])
+## N21 (rulings Q16, Q31): each enemy's per-turn spin resistance (wheel passive + hub at fight
+## start, before ICE / Heat modifiers) lies inside its class range, indexed by RC.EnemyClass
+## (normal 1-2, elite 3-4, mini-boss 3-4, boss 5-6). EnemyData.validate holds it; satellites
+## (2- and 3-slice wheels) are not fights and stay outside the table.
+@export var resistance_min_by_class: PackedInt32Array = PackedInt32Array([1, 3, 3, 5])
+@export var resistance_max_by_class: PackedInt32Array = PackedInt32Array([2, 4, 4, 6])
 
 @export_group("Netrun")
 @export var map_layers: int = 7
@@ -372,6 +378,12 @@ func validate() -> PackedStringArray:
 		if arr.size() != 4:
 			errors.append("Per-tier arrays need 4 entries.")
 	_validate_enrage(errors)
+	if resistance_min_by_class.size() != RC.EnemyClass.size() or resistance_max_by_class.size() != RC.EnemyClass.size():
+		errors.append("Resistance ranges need one entry per enemy class (%d)." % RC.EnemyClass.size())
+	else:
+		for k in RC.EnemyClass.size():
+			if resistance_min_by_class[k] < 0 or resistance_min_by_class[k] > resistance_max_by_class[k]:
+				errors.append("Resistance range for class %d must be 0 <= min <= max." % k)
 	if phase_count_min_by_class.size() != RC.EnemyClass.size() or phase_count_max_by_class.size() != RC.EnemyClass.size():
 		errors.append("Phase counts need one entry per enemy class (%d)." % RC.EnemyClass.size())
 	else:

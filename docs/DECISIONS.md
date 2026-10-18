@@ -110,6 +110,29 @@ default as a placeholder behind config and says so in its report.
   slice **N1b** after N2: enemy DEAL_DAMAGE *effects* (listeners, hub, not only slices) also scale by the tier damage
   factor (R2 "tier scales enemy hits").
 
+### 2026-10-18 — Plan 2 W0 N21: class resistance, zeroed and regained each turn (rulings Q16, Q31)
+- **Schema:** `CampaignConfigData.resistance_min_by_class` / `resistance_max_by_class` (indexed by `RC.EnemyClass`,
+  shipped [1, 3, 3, 5] / [2, 4, 4, 6]), the same two-table shape as N3's phase counts. `EnemyData.turn_resistance()`
+  (wheel passive + hub). `EnemyData.validate` refuses a total outside the class range at fight start and after each
+  phase's wheel / hub override (`resistance_out_of_range`, with the id, the class and the range); ICE / Heat "+1"
+  and enrage `resistance_step` are added at fight time and may exceed it. Satellite wheels (fewer than 6 slices) are
+  not fights and are not held to the table (open question). `CombatantState.resistance_gain` (the "+N"), saved only
+  when non-zero, so old saves load (no save version bump). Smoke check `_n21_resistance`.
+- **Rule:** `CombatResolver.end_turn` (new, after RESOLVE, before START_TURN, only when the fight goes on) sets every
+  enemy's resistance to 0; `start_turn` then regains `full_resistance()` (passive + hub while up + N4's enrage
+  resistance) + `resistance_carry`, from 0, records it as `resistance_gain` and emits `resistance_refresh` when > 0.
+  The End Turn preview (`resolved_state`) is RESOLVE only, as before: the zero is not a preview chip. No RNG.
+- **`resistance_carry` kept:** a change made during RESOLVE (Ghost Core strip on a Perfect, Tracer, an enemy's own
+  +resistance slice) still lands on the next refresh, as H13 promises; the zero at end of turn does not conflict
+  with it (the carry is applied after the zero). The follow-up sheet's "retire it" is not taken until the designer
+  answers.
+- **Content:** every shipped fight enemy moved into its range, rank-preserving: normals 0 -> 1 (1 and 2 kept),
+  elites / mini-bosses authored 0-1 -> 3 and 2 -> 4, bosses 0 -> 5 (phase wheel overrides too); Compliance Officer's
+  hub (the source of its resistance) 3 -> 2; `mirror_resistance` 1 -> 3 (Mirror elites). Table:
+  `docs/handoff/N21_RESISTANCE.md`.
+- **View:** `WheelView.standing_chips` adds a static grease-pencil "+N" (Permanent Marker, threat ink over the pencil
+  shadow; `pencil: true`) after RESIST while `resistance_gain` > 0; `HudResultChips` draws it without a chip.
+
 ### 2026-10-18 — Plan 2 W0 N4: enrage (R4; rulings Q33, Q16, Q29)
 - **Schema:** new `EnrageData` (`start_turn`, `every_n_turns`, `damage_pct_step` int percent, `resistance_step` int,
   `validate()` errors start with the field name). `EnemyData.enrage` (optional, authored; `normal_has_enrage` refuses it
@@ -7655,6 +7678,7 @@ Before covers 43 screens; after covers 53. The remaining findings are low-confid
 
 ## Open questions for the designer
 - **2026-10-18 W0 N13, fixed satellites (simplest option built):** (a) FREEZE on a satellite is refused like a move (brief acceptance 1), although it does not turn the wheel; (b) a spawn with no free slot replaces slot 0 rather than drawing a random slot (keeps RNG draws unchanged); (c) drones replace too, so a Trojan re-landing on its slice swaps its drone rather than adding one (Botnet builds drones more slowly; a Trojan worth N docks on N slices clockwise); (d) ON_SATELLITE_DESTROYED is heard by the operative's Hub and Daemons only, not by enemies. Say if any should differ.
+- **2026-10-18 N21, resistance edges (defaults built):** (1) satellites (2- and 3-slice wheels) keep 0 resistance and are outside the class table; say if a docked drone should resist too. (2) `resistance_carry` is kept (a RESOLVE-time change lands on the next refresh); the follow-up sheet recommends retiring it: say which. (3) The migration is rank-preserving (authored 2 -> the top of the elite / mini-boss range); the S5 sweeps re-run after this lands.
 - **2026-10-18 W0 N2, tier tables (defaults built):** (1) a mini-boss with `hp_by_tier` still takes the ICE / Heat boss-strength multiplier on its table HP (bosses read it as the `hp_bands` zone instead); (2) the boss band zone reads the combined `boss_strength_pct` (ICE + Heat + campaign modifiers), not the ICE term alone; (3) the boss lint warning ceiling is phases x the T4 two-needle budget (126; 504 for 4 phases), no floor, since sustain is per phase (N3); (4) flat x factor rounding is N1's. Say if any should differ.
 - **2026-10-18 N4, enrage edges (defaults built):** (1) Satellites never enrage (they are normal-class); the test plan assumed they take the host's step. Say if they should. (2) The enraged hit rounds half up in integers (10 at x1.25 = 13). (3) A frozen turn (skipped respin) still counts: the step reads the turn counter only. (4) The enrage scales every enemy hit, including a PERCENT-of-max-HP damage amount if one ever ships (none does today).
 - **2026-10-18 N3, boss phase minimum:** R1 says a boss has 4-5 phases; every shipped boss has 3 (2 entries) and N3 adds no content phases, so `phase_count_min_by_class` ships [1, 1, 2, **3**] (placeholder). Raise the boss entry to 4 when the boss design passes land (Genome Core has 4).

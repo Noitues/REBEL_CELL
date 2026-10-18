@@ -7,7 +7,7 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n21_resistance()
 
 
 ## Plan 2 N11: pointers on any tick. WheelData / BossPhaseData refuse a tick outside 0-29 and
@@ -53,6 +53,21 @@ func _n13_undock() -> int:
 
 ## Plan 2 N4: EnrageData defaults and save round trip; bad fields are refused by name; the
 ## config's per-class defaults (normal off); EnemyData.enrage on a normal is refused.
+## Plan 2 N21 (rulings Q16, Q31): the config's per-class resistance ranges; a normal at 3 and
+## a boss at 4 are refused by name; CombatantState.resistance_gain survives a save round trip.
+func _n21_resistance() -> int:
+	var fails := 0
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("N21 resistance ranges (expect [1, 3, 3, 5] [2, 4, 4, 6]): ", cfg.resistance_min_by_class, " ", cfg.resistance_max_by_class)
+	if cfg.resistance_min_by_class != PackedInt32Array([1, 3, 3, 5]) or cfg.resistance_max_by_class != PackedInt32Array([2, 4, 4, 6]): fails += 1
+	var n := EnemyData.new(); n.id = &"smoke_res"; n.wheel = WheelData.new(); n.wheel.passive_resistance = 3
+	if not ",".join(n.validate(cfg)).contains("resistance_out_of_range"): fails += 1
+	var c := CombatantState.new(); c.resistance_gain = 2
+	var back := CombatantState.from_dict(c.to_dict())
+	print("N21 resistance_gain round trip (expect 2): ", back.resistance_gain)
+	if back.resistance_gain != 2 or CombatantState.new().to_dict().has("resistance_gain"): fails += 1
+	return fails
+
 func _n4_enrage() -> int:
 	var fails := 0
 	var e := EnrageData.new()
@@ -279,7 +294,7 @@ func _batch2() -> int:
 	var p1 := BossPhaseData.new(); p1.hp_threshold_pct = 0.66; p1.pointer_behavior = RC.PointerBehavior.MULTIPLY; p1.pointer_ticks = PackedInt32Array([0, 15])
 	var p2 := BossPhaseData.new(); p2.hp_threshold_pct = 0.33; p2.pointer_behavior = RC.PointerBehavior.ORBIT; p2.orbit_ticks_per_turn = 2
 	var boss := EnemyData.new(); boss.id = &"renewal_engine"; boss.is_boss = true
-	boss.wheel = _wheel([atk, atk, def, def, crit, null_slice]); boss.spawns = [sp]; boss.phases = [p1, p2]
+	boss.wheel = _wheel([atk, atk, def, def, crit, null_slice]); boss.wheel.passive_resistance = 5; boss.spawns = [sp]; boss.phases = [p1, p2]
 	var be := boss.validate(); print("Boss (expect 0): ", be)
 	if be.size() != 0: fails += 1
 	boss.phases = [p2, p1]

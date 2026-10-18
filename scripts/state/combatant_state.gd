@@ -28,6 +28,9 @@ var resistance: int = 0
 var hub_resistance: int = 0
 ## Resistance change made while the turn resolved; applied to the next restore, then cleared.
 var resistance_carry: int = 0
+## N21 (rulings Q16, Q31): the resistance regained at this turn's refresh (the HUD's "+N"
+## mark); 0 before the first refresh and from the end of turn on.
+var resistance_gain: int = 0
 ## > 0 while the hub is breached; counts down at the owner's start of turn.
 var hub_breached_turns: int = 0
 ## Tier scaling for enemy slice outputs (GDD 11.6); 1.0 for the operative.
@@ -86,6 +89,7 @@ func duplicate_state() -> CombatantState:
 	c.wheel = wheel.duplicate_state() if wheel != null else null
 	c.resistance = resistance
 	c.resistance_carry = resistance_carry
+	c.resistance_gain = resistance_gain
 	c.hub_resistance = hub_resistance
 	c.hub_breached_turns = hub_breached_turns
 	c.output_scale = output_scale
@@ -109,6 +113,9 @@ func to_dict() -> Dictionary:
 		d["enrage_step"] = enrage_step
 		d["enrage_percent"] = enrage_percent
 		d["enrage_resistance"] = enrage_resistance
+	# N21: only a combatant that regained resistance this turn carries the "+N" amount.
+	if resistance_gain != 0:
+		d["resistance_gain"] = resistance_gain
 	return d
 
 
@@ -154,6 +161,7 @@ static func from_dict(d: Dictionary) -> CombatantState:
 	c.wheel = WheelState.from_dict(wd) if not wd.is_empty() else null
 	c.resistance = int(d.get("resistance", 0))
 	c.resistance_carry = int(d.get("resistance_carry", 0))
+	c.resistance_gain = int(d.get("resistance_gain", 0))
 	c.hub_resistance = int(d.get("hub_resistance", 0))
 	c.hub_breached_turns = int(d.get("hub_breached_turns", 0))
 	c.output_scale = float(d.get("output_scale", 1.0))

@@ -119,9 +119,9 @@ func test_hub_breach_disables_hub_resistance_for_one_turn() -> void:
 	assert_eq(enemy.resistance, 4, "hub resistance is back next turn")
 
 
-func test_compliance_officer_content_starts_with_hub_resistance_3() -> void:
+func test_compliance_officer_content_starts_with_hub_resistance_2() -> void:
 	var resolver := CombatFixture.resolver()
 	var s := CombatSession.start(resolver, &"breaker", [&"compliance_officer"], 1)
 	var officer := s.state.get_combatant(&"enemy_0")
-	assert_eq(officer.hub_resistance, 3)
-	assert_eq(officer.resistance, 3)
+	assert_eq(officer.hub_resistance, 2, "N21: normal range 1-2")
+	assert_eq(officer.resistance, 2)

@@ -157,6 +157,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 (same road as choice %d),(same road as choice %d)
 "(seed %d): %d Schematics, %d rookies.","(seed %d): %d Schematics, %d rookies."
 "(seed %d, ICE %d, %s) against %s. Story path: %s.","(seed %d, ICE %d, %s) against %s. Story path: %s."
++%d,+%d
 +%d >,+%d >
 +%d BLOCK,+%d BLOCK
 +%d DRONE,+%d DRONE

@@ -20,6 +20,8 @@ func _spec_config() -> CampaignConfigData:
 
 func _errors(cls: int, thresholds: Array, config: CampaignConfigData = null) -> PackedStringArray:
 	var e := PhaseFixture.enemy(&"pv_enemy", 100, thresholds, cls)
+	# N21: in its class's resistance range, so only the phase rules speak here.
+	e.wheel.passive_resistance = _config.resistance_min_by_class[cls]
 	return e.validate(config if config != null else _config)
 
 
@@ -87,6 +89,7 @@ func test_duplicate_thresholds_rejected() -> void:
 
 func test_cleanse_on_enter_unknown_value_rejected() -> void:
 	var e := PhaseFixture.enemy(&"pv_enemy", 100, [0.5], RC.EnemyClass.ELITE)
+	e.wheel.passive_resistance = _config.resistance_min_by_class[RC.EnemyClass.ELITE]  # N21
 	e.phases[0].set("cleanse_on_enter", 9)
 	var found := false
 	for err in e.validate(_config):

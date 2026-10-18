@@ -331,6 +331,7 @@ func apply(state: CombatState, action: CombatAction, rng: RandomNumberGenerator)
 			resolve_turn(s, rng, result.events)
 			result.resolved_state = s.duplicate_state()
 			if not s.is_over():
+				end_turn(s, result.events)
 				start_turn(s, rng, result.events)
 	return result
 
@@ -426,8 +427,7 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 				events.append({"type": "hub_restored", "target": c.id, "text": "%s Hub is back online." % c.display_name})
 		if not c.is_player:
 			refresh_enrage(s, c, events)
-			c.resistance = maxi(0, c.full_resistance() + c.resistance_carry)
-			c.resistance_carry = 0
+			_refresh_resistance(c, events)
 	for e in s.enemies:
 		if e.is_alive() and not e.is_satellite:
 			_spawn_turn_start(s, e, rng, events)
@@ -450,6 +450,31 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 	_settle_deaths(s, rng, events)
 	if not s.is_over():
 		s.phase = CombatState.Phase.PLAYER_PHASE
+
+
+## N21 (rulings Q16, Q31): the turn's resistance refresh. `c` regains its full per-turn
+## resistance (passive + hub while up + enrage) plus any change carried from the last
+## RESOLVE, from 0 (end_turn zeroed it). A gain above 0 is the HUD's "+N" mark and a
+## `resistance_refresh` event. No RNG.
+func _refresh_resistance(c: CombatantState, events: Array[Dictionary]) -> void:
+	var gain := maxi(0, c.full_resistance() + c.resistance_carry)
+	c.resistance_carry = 0
+	c.resistance = gain
+	c.resistance_gain = gain
+	if gain > 0:
+		events.append({"type": "resistance_refresh", "target": c.id, "amount": gain,
+			"text": "%s regains %d resistance." % [c.display_name, gain]})
+
+
+## END OF TURN (ruling Q31), after RESOLVE and before the next START_TURN: every enemy's
+## resistance goes to 0 (a change RESOLVE made still waits in `resistance_carry` for the
+## refresh). Not part of the End Turn preview (`resolved_state`), which shows RESOLVE only.
+func end_turn(s: CombatState, _events: Array[Dictionary]) -> void:
+	for c in s.combatants_in_order():
+		if c.is_player:
+			continue
+		c.resistance = 0
+		c.resistance_gain = 0
 
 
 ## RESOLVE: every pointer of every wheel, defensive -> offensive -> statuses, both

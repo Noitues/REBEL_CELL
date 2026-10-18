@@ -9,4 +9,4 @@ script = ExtResource("1")
 id = &"compliance_lock"
 display_name = "Compliance Lock"
 description = "Spin resistance 3 while the Hub is online."
-hub_resistance = 3
+hub_resistance = 2

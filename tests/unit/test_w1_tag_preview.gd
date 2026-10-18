@@ -188,9 +188,13 @@ func test_pointer_tag_equals_resolved_tier_for_every_hovered_play() -> void:
 				var opts := CardTargeting.options(scene.engine.resolver, st, i)
 				if card == null or opts.is_empty() or CardTargeting.is_random(card) or scene.engine.validate(opts[0]) != "" or card.ram_cost > st.ram:
 					continue
+				var action: CombatAction = scene._card_action(i)
+				# N21: every enemy now resists, so a Flip / Respin aimed at it is refused; a refused
+				# play resolves nothing to compare against.
+				if scene.engine.validate(action) != "":
+					continue
 				scene._preview_card(i)
 				await _frames(2)
-				var action: CombatAction = scene._card_action(i)
 				for who in [st.player.id, st.enemies[0].id]:
 					var view: WheelView = scene._player_view if who == st.player.id else scene._enemy_views[who]
 					for n in view.pointer_tag_model().size():

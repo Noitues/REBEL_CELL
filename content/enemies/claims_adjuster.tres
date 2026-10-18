@@ -37,6 +37,7 @@ script = ExtResource("2")
 slice_count = 6
 slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_def"), SubResource("slot_crit"), SubResource("slot_atk"), SubResource("slot_dose"), SubResource("slot_null")])
 pointer_ticks = PackedInt32Array(0, 15)
+passive_resistance = 3
 
 [resource]
 script = ExtResource("1")

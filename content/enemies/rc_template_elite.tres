@@ -31,7 +31,7 @@ script = ExtResource("e6")
 slice_count = 6
 slots = Array[ExtResource("e2")]([SubResource("wheel_slot_overflow_24"), SubResource("wheel_slot_shim_12"), SubResource("wheel_slot_shim_12"), SubResource("wheel_slot_shim_12"), SubResource("wheel_slot_defrag_12"), SubResource("wheel_slot_null")])
 pointer_ticks = PackedInt32Array(0, 15)
-passive_resistance = 1
+passive_resistance = 3
 
 [resource]
 script = ExtResource("main_script")
