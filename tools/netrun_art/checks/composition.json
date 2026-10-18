@@ -203,7 +203,8 @@
     "shaft_material": "beam_shaft"
    },
    "dress": {
-    "opening_margin": 0.5
+    "depth_max": 1.0,
+    "opening_margin": 0.15
    },
    "occlusion": {
     "opacity_eps": 0.0001

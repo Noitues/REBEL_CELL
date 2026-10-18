@@ -5,6 +5,9 @@ districts and the HQ lots are READ from `city.json`: `buildings[].terr`, `hqs{}`
 `CAC/city_preset.py` 16c427cd converted to BU. Rules kept: Z4 the coast, L2 landmark clearances, T1 arterials, L4 the
 rail polyline (a centripetal Catmull-Rom from the Meridian north gate to the port; an optional `city["rails"]` polyline
 from the planner JSON wins) with its corridor clearing and rail-side height cap (`zoned.json` `rail` object, O-C / O-H).
+Scope (AD 2026-10-18 Q5): this module ports only the rail (the Meridian freight line) for now; the rest of the zoning
+waits for NA-12. With no `rails` in the city JSON there is no `rail` object (Q4): the 12.4 rail checks return n/a, and the
+placeholder S-curve exists only behind the test-fixture flag `placeholder_rail`.
 `zoned.json` v1 is in BU plan coordinates, heights above local ground. It uses no RNG. Standard library only.
 """
 import copy
@@ -97,12 +100,15 @@ def arterials(city: Dict[str, Any], z: Dict[str, Any]) -> List[Dict[str, Any]]:
     return out
 
 
-def rail_line(city: Dict[str, Any], hq: Dict[str, List[float]], coast_b: float, z: Dict[str, Any]) -> List[List[float]]:
-    """The freight-rail polyline in BU: the planner `city["rails"][0]["pts"]` when present, else a smooth S from the
-    Meridian north gate to the port entry on the coast (`CAC/zoning.py` L4)."""
+def rail_line(city: Dict[str, Any], hq: Dict[str, List[float]], coast_b: float, z: Dict[str, Any],
+              placeholder: bool = False) -> Optional[List[List[float]]]:
+    """The freight-rail polyline in BU: the planner `city["rails"][0]["pts"]` when present; else None, or with the
+    test-fixture flag `placeholder` a smooth S from the Meridian north gate to the port entry (`CAC/zoning.py` L4)."""
     lb = city["lot_bu"]
     if city.get("rails"):
         return [list(p) for p in city["rails"][0]["pts"]]
+    if not placeholder:
+        return None
     mx, my = hq.get("meridian") or next(iter(hq.values()))
     gate = [mx + z["gate_u"], my + z["wall_s"] + z["gate_out"]]
     ga, gb = ab(*gate)
@@ -118,8 +124,9 @@ def rail_line(city: Dict[str, Any], hq: Dict[str, List[float]], coast_b: float, 
 
 
 def zone(city: Dict[str, Any], key_locations: Optional[Dict[str, Any]] = None, preset: Optional[Dict[str, Any]] = None,
-         layout_seed: Optional[str] = None) -> Dict[str, Any]:
-    """`zoned.json` v1 from city.json (districts and HQ lots are read, not computed).
+         layout_seed: Optional[str] = None, placeholder_rail: bool = False) -> Dict[str, Any]:
+    """`zoned.json` v1 from city.json (districts and HQ lots are read, not computed). `placeholder_rail` (test fixtures
+    only) invents a rail when the city has none; otherwise a city without `rails` gets no `rail` key.
 
     Keys: `version`, `layout_seed`, `districts{bid: terr}`, `hq{corp: {lot, centre}}`, `clearances{corp: {centre, r,
     bids}}`, `coast{b, direction}`, `arterials[]`, `rail{pts, w, half_clear, deck_z, side_cap, side_d, pier_step, ramp,
@@ -138,7 +145,12 @@ def zone(city: Dict[str, Any], key_locations: Optional[Dict[str, Any]] = None, p
         bids = sorted(b["bid"] for b in city["buildings"]
                       if not b["hq"] and b["bid"] not in keep and math.hypot(cen[b["bid"]][0] - c[0], cen[b["bid"]][1] - c[1]) < r)
         clearances[corp] = dict(centre=c, r=r, bids=bids)
-    pts = rail_line(city, hq, coast_b, z)
+    pts = rail_line(city, hq, coast_b, z, placeholder_rail)
+    if pts is None:
+        return dict(version=1, layout_seed=layout_seed or city["layout_seed"],
+                    districts={b["bid"]: b["terr"] for b in city["buildings"]},
+                    hq={k: dict(lot=city["hqs"][k], centre=c) for k, c in hq.items()}, clearances=clearances,
+                    coast=dict(b=coast_b, direction="+b"), arterials=arterials(city, z), rail_cleared=[], rail_capped=[])
     half = z["rail_w"] / 2 + z["clear_margin_bu"]
     rail = dict(pts=pts, w=z["rail_w"], half_clear=half, deck_z=z["deck_z"], side_cap=z["side_cap"],
                 side_d=z["side_d_lots"] * lb, pier_step=z["pier_step"], ramp=z["ramp"], end_ramp=z["end_ramp"],
@@ -175,6 +187,8 @@ def zone(city: Dict[str, Any], key_locations: Optional[Dict[str, Any]] = None, p
 def apply_zoning(city: Dict[str, Any], zoned: Dict[str, Any]) -> Dict[str, Any]:
     """city.json with the rail corridor cleared and the rail-side tops capped (a new dict)."""
     out = copy.deepcopy(city)
+    if "rail" not in zoned:
+        return out
     gone = set(zoned["rail_cleared"])
     cap = zoned["rail"]["side_cap"]
     capped = set(zoned["rail_capped"])

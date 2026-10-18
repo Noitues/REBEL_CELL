@@ -145,9 +145,9 @@ def test_dress_lists():
     d, dr = out["derive_street"], out["dress_street"]
     L = math.hypot(d["street"]["c"][0] - d["street"]["a"][0], d["street"]["c"][1] - d["street"]["a"][1])
     ks = [(l["u"], l["side"]) for l in dr["lamps"]]
-    assert ks == sorted(ks) and len(dr["lamps"]) == 2 * math.ceil(L / 6.0)
-    cool = [i for i, l in enumerate(dr["lamps"]) if l["pal"] == "lamp_cool"]
-    assert cool == list(range(0, len(dr["lamps"]), 3))
+    assert ks == sorted(ks) and 0 < len(dr["lamps"]) < 2 * math.ceil(L / 6.0)   # openings drop some (12.4.5c)
+    # colour follows the running index of ALL kerb slots (a skipped lamp does not shift the others)
+    assert all((l["pal"] == "lamp_cool") == ((2 * round(l["u"] / 6.0) + (l["side"] == 1)) % 3 == 0) for l in dr["lamps"])
     off = {abs(l["pos"][1 - layout.leg_axis(d["street"]["a"], d["street"]["c"])] - d["street"]["a"][1 - layout.leg_axis(d["street"]["a"], d["street"]["c"])]) for l in dr["lamps"]}
     assert all(abs(o - 3.7) < 1e-9 for o in off)
     assert all(0.0 <= g["drift"][k] + 0.12 <= 0.24 for g in dr["glows"] for k in range(3))
@@ -164,12 +164,7 @@ def test_dress_lists():
     assert [s["bid"] for s in sig] == sorted(s["bid"] for s in sig) and all(s["panels"] >= 3 for s in sig)
     bpos = DC.dress_positions(dr)
     assert bpos and all(len(p) == 3 for _, p in bpos)
-    assert DC.check_foreground(d, dr, 0.0)["status"] == "pass"
-    # Q for art-pass: with the provisional 0.5 BU margin only hero signs (0.25 BU from the corner, rooms start 0.45 in) and
-    # ground-floor kerb lamps (0.3 BU off the face, audit row 37) are flagged; no other list is
-    for name in ("washes", "glows", "beams"):
-        only = dict({n: [] for n in DC.DRESS_LISTS}, **{name: dr[name]})
-        assert DC.check_foreground(d, only, 0.5)["status"] == "pass"
+    assert DC.check_foreground(d, dr, 0.15)["status"] == "pass"
     bi = DC.beams_input(dr, d, out["city"])
     assert bi["route_bids"] == d["route_keys"] and all(b["top"] > 0 for b in bi["beams"])
     cfg = IC.load_config()
@@ -196,7 +191,7 @@ def test_zoning_rail_and_apply():
 
 def test_zoning_arterials_and_planner_rail():
     w = synth.make_world(2)
-    z = zoning.zone(w["city"], preset=dict(arterial_len=10, arterial_tr=0.0))
+    z = zoning.zone(w["city"], preset=dict(arterial_len=10, arterial_tr=0.0), placeholder_rail=True)
     assert len(z["arterials"]) >= 2
     c = dict(w["city"], rails=[dict(pts=[[0.0, 0.0], [30.0, 0.0], [60.0, 6.0]])])
     assert zoning.zone(c)["rail"]["pts"] == [[0.0, 0.0], [30.0, 0.0], [60.0, 6.0]]
@@ -222,3 +217,27 @@ def test_half_up_rounding_rule():
     assert io.round_half_up(1.00005) == 1.0001 or io.round_half_up(1.00005) == 1.0
     from netrun_art import units
     assert units.r4(0.12345) == 0.1235 and units.r4(-0.00001) == 0.0
+
+
+def test_zoning_without_rails_has_no_rail_object():
+    w = synth.make_world(2)
+    z = zoning.zone(w["city"])
+    assert "rail" not in z and z["rail_cleared"] == [] and zoning.apply_zoning(w["city"], z) == w["city"]
+
+
+def test_link_route_ties_fewest_turns_then_tile():
+    cells = {(i, j) for i in range(4) for j in range(4)}
+    path = layout._bfs((0, 0), (3, 3), cells)
+    turns = sum(1 for p, q, r in zip(path, path[1:], path[2:]) if (q[0] - p[0], q[1] - p[1]) != (r[0] - q[0], r[1] - q[1]))
+    assert len(path) == 7 and turns == 1 and path == [(0, 0), (0, 1), (0, 2), (0, 3), (1, 3), (2, 3), (3, 3)]
+    assert layout._bfs((0, 0), (3, 3), cells) == path and layout._bfs((0, 0), (9, 9), cells) is None
+
+
+def test_lamps_skip_openings_without_shifting_others():
+    d = producer.produce_world(synth.make_world(11))["derive_street"]
+    p = dict(dress.PRESET)
+    full = dress.lamps(d, dict(p, lamp_skip_margin=-1e9))
+    cut = dress.lamps(d, p)
+    assert len(cut) < len(full)
+    byk = {(l["u"], l["side"]): l["pal"] for l in full}
+    assert all(byk[(l["u"], l["side"])] == l["pal"] for l in cut)

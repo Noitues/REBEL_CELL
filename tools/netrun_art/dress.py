@@ -23,7 +23,8 @@ LANES = ((0.28, 1, "lane_head_a"), (0.62, 1, "lane_head_b"), (-0.3, -1, "lane_ta
 
 PRESET: Dict[str, Any] = dict(
     street_width=8.0,            # border street width (3.2 rule)
-    lamp_step=6.0, lamp_inset=0.3, lamp_z=1.6,           # kerb offset = street_width / 2 - lamp_inset (audit row 37)
+    lamp_step=6.0, lamp_inset=0.3, lamp_z=1.6, lamp_skip_margin=0.15,  # skip a lamp within this lateral margin of a route opening (AD 2026-10-18 Q1)
+              # kerb offset = street_width / 2 - lamp_inset (audit row 37)
     wash_back=3.5, wash_z=0.4, wash_rise=0.55,
     ground_glow_step=9.0, ground_glow_depth=60.0, ground_glow_p=0.55, ground_glow_z=0.9, glow_pad=30.0,
     glow_jitter_u=0.8, glow_jitter_d=0.6, plinth_extra=0.2, glow_drift=0.12, glow_depth_step=0.8, glow_depth_from=2.0,
@@ -73,14 +74,21 @@ def signs(derive: Dict[str, Any], p: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 
 def lamps(derive: Dict[str, Any], p: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Kerb lamps every `lamp_step` BU, both kerbs (no stream); colour cool when the running index `k % 3 == 0`."""
+    """Kerb lamps every `lamp_step` BU, both kerbs (no stream); colour cool when the running index `k % 3 == 0`.
+    A lamp whose `u` is inside a route opening's `[u0 - m, u1 + m]` on the building side is dropped; the others keep their index."""
     f = _frame(derive)
     off = p["street_width"] / 2.0 - p["lamp_inset"]
+    spans = {-1: [], 1: []}
+    for r in derive["rooms"].values():
+        us = sorted((q[f["ax"]] - f["a"][f["ax"]]) * f["sgn"] for q in r["front"])
+        bside = 1 if r["front"][0][1 - f["ax"]] > f["cline"] else -1
+        spans[bside].append((us[0] - p["lamp_skip_margin"], us[-1] + p["lamp_skip_margin"]))
     out, k, u = [], 0, 0.0
     while u < f["length"]:
         for side in (-1, 1):
-            out.append(dict(u=u, side=side, pos=_world(f, u, f["cline"] + side * off, p["lamp_z"]),
-                            pal=LAMP_PAL[0] if k % 3 == 0 else LAMP_PAL[1]))
+            if not any(lo <= u <= hi for lo, hi in spans[side]):   # else in front of a route opening (12.4.5c)
+                out.append(dict(u=u, side=side, pos=_world(f, u, f["cline"] + side * off, p["lamp_z"]),
+                                pal=LAMP_PAL[0] if k % 3 == 0 else LAMP_PAL[1]))
             k += 1
         u += p["lamp_step"]
     return out

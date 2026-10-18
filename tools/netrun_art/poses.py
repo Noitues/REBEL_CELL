@@ -78,7 +78,8 @@ class _Ctx:
         if self.kind == "hq":
             return HO.hq_decision(self.rooms, current, options, max(0, layer - 1) if current else 0, self.layers)
         u = RG.street_u(self.layers, layer)
-        return RG.street_decision(self.rooms, current, options, u, self.d["nrm"], self.d["start_left"])
+        a = self.d["street"]["a"]
+        return RG.street_decision(self.rooms, current, options, u, self.d["nrm"], self.d["start_left"], None, [a[0], a[1], 0.0])
 
     def hover(self, dec: RG.Pose, node: str) -> RG.Pose:
         if self.kind == "hq":

@@ -17,7 +17,7 @@ from netrun_art.tests import synth
 def produce_world(w: Dict[str, Any]) -> Dict[str, Any]:
     """All outputs of one synthetic world."""
     city = layout.apply_layout_rules(w["city"], w["net"])
-    zoned = zoning.zone(city)
+    zoned = zoning.zone(city, placeholder_rail=True)
     city = zoning.apply_zoning(city, zoned)
     run = w["run_graph"]["run"]
     d_s = STREET.derive_street(city, w["net"], w["run_graph"], w["site"], game_partial(w["seed"], run, "street"))
