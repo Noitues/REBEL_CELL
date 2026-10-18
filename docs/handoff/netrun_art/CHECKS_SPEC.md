@@ -236,3 +236,6 @@ The reference scopes by image id and config. A capture has neither, so the same 
 - **O-A:** numpy and Pillow allowed (see NA03_MODULES rulings).
 - **Art-pass to answer (sent 2026-10-18):** O-1 (`capture.json` view / look / exemption fields), O-4, O-5, O-6, O-7,
   O-9, O-10, and the stale `CAC/zoning.py:353-375` rail citation. NA-04 implements everything else first.
+- **Art-pass answers (2026-10-18):** `NA03_NA04_ANSWERS.md` (art-pass 88a76010) answers O-1, O-4 (new status `n/a`,
+  exit 0), O-5, O-6 (id.png v1 additions: class 3 = link structure; on class 5, G = room index, B = layer: the W1
+  Godot ID-capture slice emits them), O-7, O-9 (provisional tolerances), O-10, and the rail citation. They win here.

@@ -109,7 +109,7 @@ This table is aligned to it (2026-10-18). Every file carries `version` 1 (int) a
 | File | Producer | Reader modules | Key fields |
 |---|---|---|---|
 | `city.json` v1 | the game (per seed); the art-pass adapter converts the concept `city_A2.json` (planner metres) | `layout.import_city`, `layout.rules`, `zoning`, `derive.*`, `dress`, `export` | **the ONLY game-exported layout file.** Header: `version` 1, `layout_seed` (**decimal string**, u64), `units: "BU"`, `lot_bu` 6.0, `origin_lot [CX, CY]`. `buildings[]` sorted by `bid`: `bid`, `parts[] {poly [[x, y]], z0, h, taper}`, `terr`, `cell [i, j, w, h]` (lots), `hq` (bool), `key` (int, legacy, look-dev parity only). `streets[]` (lot, along_i, along_j, traffic), `plazas[]`, `hqs {corp: [i, j, w, h]}`. Terrain, water, rails and the other planner layers are optional sections in v1 |
-| `net.json` v1 | the game (City network) | `layout.import_net`, `layout.rules`, `derive.street` | BU plan coordinates (not lots). nodes (id, position, `state` in {core, owned, corporate, cleared, taken}); links (a, b, `state` in {open, locked, opened}, `pts`). v1 `pts` is the straight segment [a, b]; a street-routed polyline is a v2 change |
+| `net.json` v1 | the game (City network) | `layout.import_net`, `layout.rules`, `derive.street` | BU plan coordinates (not lots). nodes (id, position, `state` in {core, owned, corporate, cleared, taken}); links (a, b, `state` in {open, locked, opened}, `pts`). v1 `pts` is the straight segment [a, b]; a street-routed polyline is a v2 change. A **border link** (used by `layout.rules`) is an open or opened link with one endpoint `core` / `owned` and the other `corporate` / `taken` (O-D, NA03_NA04_ANSWERS, 2026-10-18) |
 | `run_graph.json` v1 | the game (per run) | `derive.*`, `hq.slots` | the static graph only: `layers`, `nodes[] {id, layer, index, type, elite}`, `edges[] {a, b}`, `run`. `type` is one of today's 4 types; rest / workshop / cache (D4) and the walked state come with a v2 bump. Until then the tools take walked state from the overlay state, not this file |
 | `key_locations.json` v1 | the game | `zoning` (clearances), `derive.*`, `corps.<corp>.key_landmarks` | `locations[] {site, corp, bid, exploit}`, `exploit` in {intel, breach, virus}. A Site's `bid` is the building whose cell contains the Site lot, else the nearest building within 4 lots (Chebyshev; ties by (i, j)) |
 | `derive_<run>.json` v1 | the game writes `version`, `kind`, `layout_seed`, `art_seeds`, `run`; the tools (`derive.street` / `hq.slots`) fill the rest | Godot (`NetrunArtDeriver`), `rig`, `checks` | schema 2.3. `art_seeds {stream: "<u64>"}` holds the unkeyed streams plus the **base** seeds of `variance`, `terrain`, `fauna.tethys`, `key_landmark.<corp>`; consumers compute per-object seeds (3.5 rule 3) |
@@ -164,8 +164,8 @@ Rule: the derivation, rig and occlusion modules are **pure Python with no Blende
 |---|---|---|---|
 | `layout.import_city` | `city.json` v1 (2.0c; audit row 3, 2026-10-18), exported by the game from its own `city_layout.json` recorder output (`MAIN/scripts/city3d/city_layout_recorder.gd`, internal to Godot): `buildings[]` (`bid`, parts with poly, z0, h, taper; `terr`; `cell`; `hq`), streets, plazas, `hqs` | `city_base.json` in BU | `M44/layout36.py` (`unified.json`) |
 | `layout.import_net` | the network: nodes (id, lot, state owned/core/...), links (a, b, state, pts in lots) | `net.json` | `M44/layout36.py:242` `load_net`, `M44/scope39.py` |
-| `layout.rules` | `city_base.json`, `net.json`, `LAYOUT_RULES` | `city.json` (frontage raised, border streets widened) | `SB/sb_onecity.py:80-140` `apply_layout_rules` |
-| `zoning` | `city.json`, `city_preset.ZONING`, `WATER`, `BAY`, `RAIL`, `LANDMARK_FP` | `zoned.json`: district per building, HQ lots, landmark clearances, coast, drowned quarter, arterials, aqueduct, the freight-rail polyline + `deck_z` (the one source for the line; 3.4 L4) | `CAC/zoning.py` (rules Z1-Z6, L1-L4, T1) |
+| `layout.rules` | `city_base.json`, `net.json`, `LAYOUT_RULES` | `city.json` (frontage raised, border streets widened). A **border link** is a link with `state` open or opened, one endpoint `core` or `owned` and the other `corporate` or `taken`; no other link is a border link, and with none the rule is a no-op and `derive.street` uses the selected Site's own link (O-D, NA03_NA04_ANSWERS, 2026-10-18) | `SB/sb_onecity.py:80-140` `apply_layout_rules` |
+| `zoning` | `city.json`, `city_preset.ZONING`, `WATER`, `BAY`, `RAIL`, `LANDMARK_FP` | `zoned.json`: district per building, HQ lots, landmark clearances, coast, drowned quarter, arterials, aqueduct, the freight-rail polyline + `deck_z` (the one source for the line; 3.4 L4), as a `rail` object (polyline, `deck_z`, `side_d` 7.2 BU, `side_cap`, `half_clear` 4.5 BU; shape O-C, NA03_NA04_ANSWERS, 2026-10-18) | `CAC/zoning.py` (rules Z1-Z6, L1-L4, T1) |
 | `derive.street` | `city.json`, `net.json`, the selected Site, `run_graph.json`, `RULES` | `derive_<run>.json` (schema 2.3) | `SB/sb_onecity.py:143-409` |
 | `hq.slots` + `corps/<corp>/layout.py` | `zoned.json` (HQ lot), `run_graph.json`, the corp preset | `derive_<run>.json` (same schema, `kind: "hq"`) | `HK/layout.py`, `HQ_<corp>/scripts/hq_graph.py` |
 | `look.preset` | none | the AAA-2 preset, the mainline preset, `lod_bands` | `SB/look_preset.py`, `SB/sb_ocjobs.py:36-44`, `CAC/city_preset.py:95-117` |
@@ -242,7 +242,7 @@ These change the city both looks are built from (the HQ map and the netrun stree
 | `street_r2_height_passes` | on | **Designer-approved 2026-10-16.** The `frontage.silhouette` and `horizon.break` passes (§13; `route_map_graph/street_r2/scripts/r2_rules.py`, `r2_config.py`) may change frontage heights across the one city, about 465 buildings at seed 1, plus 3–5 backdrop towers. No frontage building drops below `frontage_min_floors`. |
 | `unique_building_id` | required | **Designer-approved 2026-10-16.** Every building carries a unique id. The current layout `key` has 3,175 duplicates; the unique id is `bid` (string "i:j", "hq:<corp>" for HQs; audit row 4, 2026-10-18; NA-02 C2), which replaces both `key` and the interim `(ci, key)`. Matching route buildings by `key` alone is forbidden, because it pulled same-key buildings from elsewhere in the city into the storyboard's route geometry. |
 
-**Scope of "border-link street":** every straight leg of every link with `state == "border"` in the network,
+**Scope of "border-link street":** every straight leg of every link that is a border link (2.0c: open or opened, one end core or owned, the other corporate or taken; NA03_NA04_ANSWERS O-D, 2026-10-18) in the network,
 extended along its own street line by `max(extend)` = 60 BU each way (`SB/sb_onecity.py:102-110`). Frontage test:
 near edge within `front_band` (0.8, 6.5) BU of the leg centre line and overlapping the extended leg.
 
@@ -336,15 +336,15 @@ Zoning (`CAC/zoning.py`, rules Z1-Z6, L1-L4, T1; numbers `CAC/city_preset.py:58-
      city's westbound leg, climbs the ramp to `deck_z`, then follows the polyline corner for corner to the port
      terminal (`meridian_rail.py`). To the E it continues at grade into the city. The old BFS over free street tiles
      from the fortress gate (`RAIL.gate_dx` -34, `gate_dy` -16.6 BU) to the nearest coast cell
-     (`CAC/zoning.py:353-390`) is **superseded (Designer 2026-10-16)** and kept only as the fallback when the layout
+     (rail polyline `CAC/zoning.py:381-402`; corridor clearing `:616-660`; rail-side cap `:684-697`; NA03_NA04_ANSWERS, 2026-10-18) is **superseded (Designer 2026-10-16)** and kept only as the fallback when the layout
      has no rail polyline (`CITY_LAYOUT=legacy`); the fallback starts at the lot's N edge and ends at the port, never at
      a gate. The N side is the train side, so no truck road or highway exit leaves it.
    - **Deck height: `deck_z` = 17.5 BU.** It clears the tallest street front the layout rules can make (6 floors +
      the 0-2 key floors: `8 * 1.9 + 0.1` = 15.3 BU) plus 2.2 BU, so it clears a 6-floor frontage (11.5 BU) plus 2 BU
-     anywhere along the line. It replaces `RAIL.deck_z` 9.0 (`CAC/city_preset.py:149`) and the HQ kit's 22
+     anywhere along the line. It replaces `RAIL.deck_z` 9.0 (`CAC/city_preset.py:162-163`; NA03_NA04_ANSWERS, 2026-10-18) and the HQ kit's 22
      (kit units; `HM/hq_preset.py:51`).
    - Buildings within `corridor_low` of the line stay at least 2 BU under the deck (cap 15.5 BU).
-   - Piers every 7 BU on street tiles, ramp 30, signals every 36 (`CAC/city_preset.py:149`).
+   - Piers every 7 BU on street tiles, ramp 60 (end ramp 45), signals every 36 (`CAC/city_preset.py:162-163`; the code value of the approved city renders wins over the old "ramp 30"; AD 2026-10-18).
    - The HQ scene imports this polyline and `deck_z` from `zoned.json`. The straight viaduct at x 66 to y 1180 in the
      Meridian kit (`HM/hq_preset.py:51-52`) is superseded by the v3 module (audit row 1, 2026-10-18).
 7. T1: arterials are street runs of >= 36 tiles with mean traffic >= 0.55.
@@ -689,6 +689,10 @@ Two sources use the same band numbers on different domains (conflict C5). The pi
 | `zoom_dive` | 0 = the HQ page camera, 1 = the netrun OVERVIEW | `log(d0 / d) / log(d0 / d1)` with d the camera distance to the OVERVIEW target (`SB/sb_ocjobs.py:94-102`) | look blend, section, fog density, city glow, the dive LOD bands |
 | `zoom_detail` | 0 = the netrun OVERVIEW, 1 = DECISION | `log(d_ov / d) / log(d_ov / d_dec)` (`HK/lod.py:33-34`) | HQ exposure by zoom, the HQ detail bands |
 
+`lod.weights` takes a **distance** in BU, never a zoom number, and the two names above are the only zoom names (never an unqualified `zoom`). With the HQ OVERVIEW camera equal to the
+street OVERVIEW (`d1 == d_ov`): `zoom_dive = 1 + zoom_detail * ln(d_ov/d_dec) / ln(d0/d_ov)` for `zoom_detail >= 0` (`zoom_dive` saturates at 1 below `d_ov`). `d_dec` comes from the HQ DECISION
+pose, not invented; `poses_<run>.json` stores `zoom_dive` and `zoom_detail` as two floats (O-G, NA03_NA04_ANSWERS, 2026-10-18).
+
 **Designer 2026-10-16 (Q3, resolved): detail appears with camera distance. LOD is by camera distance in BU**, in the
 tools and in Godot (`visibility_range`), for the street and the HQ alike. `zoom_dive` stays only as the dive's camera
 path parameter (look blend, section cut); `zoom_detail` stays only for the HQ exposure by zoom. No asset is shown or
@@ -886,19 +890,23 @@ occlusion rule are shared.
 
 ### 7.2 Parameters (`HK/downtown.py:319-320`, `HK/section.py:30-35`)
 
-| Key | Default | Meaning |
-|---|---|---|
-| `margin` | 0.10 | Cone widening, share of the target volume's span (lateral and vertical tangent) |
-| `NK` | 5 | Depth knots, nearest to farthest target |
-| `stub` | 3.8 BU = `2 * floor_bu` (one-city units; the kit's 6.4 was in kit units) | Stub height: 2 floors (the rule's 1-2 floor stub; AD ruling 2026-10-15, C1) |
-| `ghost` | 0.18 | Ghost opacity |
-| `edge` | 0.6 | Edge-line emission; edge band 0.4 BU; edge alpha boost 0.22 |
-| `tsoft`, `vsoft` | 0.035, 0.025 | Soft cone borders (lateral, vertical tangent) |
-| front fade | 6.0 BU | Soft fade past the farthest target |
-| `CLUTTER` | 25 BU kit units (6 BU after `k_units`) | Roof clutter above a building's top (the uncut height is `top + CLUTTER`) |
-| `POCHE` | (0.010, 0.010, 0.013) | Cut-top colour (back faces) |
-| `EDGE_COL` | (0.55, 0.68, 0.85) | Ghost edge colour |
-| ease time | 0.35 s ease-in-out (AD ruling 2026-10-15, C14) | Godot tween on the per-instance values, street and HQ |
+Unit column (NA03_NA04_ANSWERS, 2026-10-18; O-K): "kit" = HQ-kit units, converted with `k_units` 0.2375; "BU" = one-city BU, already converted; "-" = unitless.
+
+| Key | Default | Unit | Meaning |
+|---|---|---|---|
+| `cone_margin` (was `margin`; renamed to avoid the clash with `section_params(margin=1.5)`) | 0.10 | - | Cone widening, share of the target volume's span (lateral and vertical tangent) |
+| `NK` | 5 | count | Depth knots, nearest to farthest target |
+| `stub` | 3.8 BU = `2 * floor_bu` (one-city units; the kit's 6.4 was in kit units) | BU | Stub height: 2 floors (the rule's 1-2 floor stub; AD ruling 2026-10-15, C1). Ruling C1, not `6.4 * k_units` (1.52) |
+| `ghost` | 0.18 | - | Ghost opacity |
+| `edge` | 0.6 | - | Edge-line emission; edge band 0.095 BU (kit 0.4 x 0.2375; ground tolerance 0.038 BU); edge alpha boost 0.22 |
+| `tsoft`, `vsoft` | 0.035, 0.025 | - | Soft cone borders (lateral, vertical tangent) |
+| front fade | 1.425 BU (kit 6.0 x 0.2375) | BU | Soft fade past the farthest target |
+| `CLUTTER` | 5.94 BU (kit 25 x 0.2375; one constant, `downtown.py:392` must not repeat it) | BU | Roof clutter above a building's top (the uncut height is `top + CLUTTER`) |
+| `section_params` pads | 7.125 BU overview / 5.70 BU rooms (kit 30.0 / 24.0 x 0.2375; `k_units` only, `k_fit` caveat: apply `k_fit` too if the whole HQ scene is scaled uniformly by it, 8.6.2; to re-check at the first HQ slot generator run) | BU | Pad added to the lateral support of the keep / the rooms |
+| `zref_margin` | 0.356 BU (kit 1.5 x 0.2375; same `k_fit` caveat) | BU | Absolute height offset in `sec_zref = zr - zref_margin` |
+| `POCHE` | (0.010, 0.010, 0.013) | - | Cut-top colour (back faces) |
+| `EDGE_COL` | (0.55, 0.68, 0.85) | - | Ghost edge colour |
+| ease time | 0.35 s ease-in-out (AD ruling 2026-10-15, C14) | s | Godot tween on the per-instance values, street and HQ |
 
 A corp may override through `downtown.occ` in its preset (`HK/downtown.py:331`).
 
@@ -1348,7 +1356,19 @@ capture below supplies the same data.
 - `beauty.png`: 8-bit sRGB, without UI.
 - `id.png`: unlit, nearest-sampled, no UI, R = class. Classes match the Blender pass indices of `HM/hq_values.py`:
   0 sky, 1 landmark compound, 2 city, 5 rooms, 6 landmark movers; 3 and 4 are reserved as in `hq_scene.py`.
+  **Additions (O-6, v1-compatible, R unchanged; NA03_NA04_ANSWERS, 2026-10-18):** class 3 = link structure (reported only; class 4 stays as the Blender pass uses it for ground).
+  `G` = room index, 1-based (0 = none), and `B` = layer, 1-based (0 = none), on class 5 pixels and on the cut surfaces of room columns (class 2 pixels with `B > 0`); byte values, no separate mask.
 - `capture.json`: camera pose, resolution, `layout_seed` (decimal string), run id.
+  **Optional scope keys (O-1; unknown keys ignored; NA03_NA04_ANSWERS, 2026-10-18):** `kind` (`street` / `hq` / `city`), `view` (`overview` / `decision` / `hover` / `street` / `city`),
+  `look` (`aaa2` / `mainline` / `blend`), `look_blend` (float 0..1, required when `look == "blend"`), `corp` (corp id, `""` for street and city), `exempt {hover_cut, red_seq, flash}` (bools).
+  The 12.1 / 12.7 rules are scoped on these keys.
+- **Statuses (O-4; NA03_NA04_ANSWERS, 2026-10-18):** besides pass / warn / fail a check may report `"n/a"` (`value: null`, a note; exits 0, listed in the report). It applies when no landmark is
+  expected and none is in frame, an empty local-background mask, or an empty ring in R-FOCUS-1 (never a crash). An HQ OVERVIEW or DECISION frame with zero class 1, 5, 6 pixels is a **fail**, note "landmark absent".
+- **Blender-vs-Godot tolerances (O-9; provisional, every number unmeasured and replaced by the first measured delta; NA03_NA04_ANSWERS, 2026-10-18):** Godot capture against the Blender golden of
+  the same scene and pose: median luma +- 0.02; share under 0.10 +- 5 pp; share over 0.85 +- 1 pp; landmark ratio +- 0.15; composition metrics +- 10 % relative; hue entropy +- 0.2 bit, hue top share +- 0.05,
+  calm share +- 4 pp. Config key `checks.tolerance.renderer`. Each capture is still held to its own threshold.
+- **Config contract (O-10; NA03_NA04_ANSWERS, 2026-10-18):** the `checks.composition` schema (version 1; rules table with `metric`, `op`, `value`, `scope`, `rule`; constants of `pvc_metrics.py:38-47`;
+  `skyline` and `facade` defaults) is given in `HANDOFF_PACKAGE/NA03_NA04_ANSWERS.md` "O-10".
 
 **Golden plates** (queue item 3) use the same three files, so one set of check code compares Blender plates, Godot
 captures and goldens. A golden plate is a `beauty.png` + `id.png` + `capture.json` triple; its measured values are
@@ -1360,6 +1380,7 @@ written by the same checks.
 |---|---|
 | Measure | Rec.709 luma of the final 8-bit sRGB plate without UI |
 | Median (R-VAL-1) | **Designer 2026-10-16 (Q4 resolved; `route_map_graph/decisions/DECISIONS.md` "Q4"):** pass 0.14 +- 0.03 (0.11-0.17); **warn** 0.09-0.11 and 0.17-0.19 (reported, never blocks); **fail** below 0.09 or above 0.19 |
+| Superseded band | `proc_vs_custom/metrics/rules_check.md` and `run_proc_vs_custom.py:50` carry the superseded 0.12-0.17 band (pass / fail only); the values in this table win. The band is reproduced only by `--mode reference` (NA03_NA04_ANSWERS, 2026-10-18; R-VAL-1) |
 | Under 0.10 (R-VAL-2) | 25-40 %; a separate check (it moves fastest, so it is the real guard against crushed or washed-out frames) |
 | Over 0.85 (R-VAL-3) | <= 2.5 %; a separate check; the solve runs after the vignette (rule `values.solve`, 13.1) |
 | Exempt (reported, not failed) | hover power-cut frames; mainline-look frames (held instead to the capture: median 0.214 +- 0.03, `SB/NOTES.md:120`); Rebel Cell red-sequence frames; beam-pass flash frames of an entrance beat; look-blend frames (0 < look_blend < 1) are reported only |
@@ -1391,9 +1412,9 @@ written by the same checks.
 ### 12.4 No intersections with rails or viaducts
 
 1. No building footprint (inset 0) meets a corridor segment (`in_corridor`, `HK/downtown.py:397-410`); the zoning
-   rail never crosses a building or the landmark footprint (`CAC/zoning.py:353-375`).
-2. Within `corridor_low` distance the building tops stay at least 2 BU under the viaduct deck (`deck_z` 17.5 BU, so
-   tops <= 15.5 BU; AD ruling 2026-10-15, C8).
+   rail never crosses a building or the landmark footprint (`CAC/zoning.py:381-402`, clearing `:616-660`; NA03_NA04_ANSWERS, 2026-10-18).
+2. Within `rail.side_d` = 7.2 BU (1.2 lots, one-city BU; the kit's `corridor_low` tuple is retired) of the rail polyline the building tops stay at least 2 BU under the viaduct deck
+   (`deck_z` 17.5 BU, so tops <= `rail.side_cap` 15.5 BU; the corridor half-width is `rail.half_clear` = 4.5 BU; AD ruling 2026-10-15, C8; NA03_NA04_ANSWERS, 2026-10-18).
 3. Viaduct piers stand on street tiles only.
 4. ONE line: the HQ scene's rail polyline and `deck_z` are byte-equal to `zoned.json`'s (C8).
 5. Also checked: no link path (2.3 `edges`) passes through a non-route building's volume; no room opening is inside
@@ -1443,6 +1464,10 @@ from the scene's object-index pass, not hand-placed boxes; **on Godot captures t
 audit row 5, 2026-10-18)**. The rules without a test yet (`streets.light`,
 `foreground.street`, the depth planes of `atmosphere.layers`, `materials.mix`) report their proxy numbers until their
 passes exist.
+
+**Defaults (O-7; provisional; NA03_NA04_ANSWERS, 2026-10-18):** skyline range `[0.0, 0.85]` for `kind == "street"` with `view == "overview"`, `[0.05, 0.40]` for `kind == "city"`, none for HQ;
+facade band `[0.0, 0.10, 1.0, 0.80]` for the street OVERVIEW, `[0, 0, 1, 1]` otherwise; overridable by `checks.composition.skyline.<kind>` and `.facade.<kind>.<view>`. The R-FOCUS-1 box is
+the bounding box of `id.png` classes {1, 5, 6} (the hand-placed config boxes are used only in `--mode reference`).
 
 ---
 
@@ -1613,7 +1638,7 @@ The art tools read these; they never decide them (2.0 steps 1, 2 and 4).
 | C5 | Zoom domain: storyboard 0 = HQ aerial .. 1 = street OVERVIEW (`SB/look_preset.py:72`) vs HQ kit 0 = OVERVIEW .. 1 = DECISION (`HK/lod.py:4`), same band numbers | Two named parameters; Godot LOD by distance (Q3); **Designer 2026-10-16:** LOD by camera distance with per-asset reveal tiers (5.1, 5.2b) |
 | C6 | Halcyon's cleared perimeter belt that every camera stands in (`HQ_halcyon/NOTES.md:65, 136, 276`; `perimeter` keys in every preset) vs "no open perimeter, dense city close" (DR 1395, 1406; `HK/downtown.py:1-3`) | **AD ruling 2026-10-15:** dense city to the walls wins; `perimeter` keys legacy, default 0; cameras clear the view with the occlusion rule (7), never a cleared belt (8.2) |
 | C7 | HQ kits build their own synthetic downtown + ring city vs one continuous city from the map lots (DR 1385-1388, 1399); compound size vs `LANDMARK_FP` (Meridian keep half 136 BU vs map square 32 BU) | **AD ruling 2026-10-15:** one unit system, HQ kits rescaled to it (8.6); map lots by default, kit city as fallback (8.2); compound footprint vs map lot stays open (Q1); **Designer 2026-10-16:** an HQ fills its map lot (`k_fit`, 8.6); the full-city landmark is canonical (8.6b) |
-| C8 | The Meridian freight line: HQ kit = a straight viaduct north at x 66 to y 1180, deck z 22 (`HM/hq_preset.py:51-52`) vs city = a BFS over street tiles to the nearest coast cell, deck z 9.0 (`CAC/zoning.py:353-390`, `CAC/city_preset.py:149`). DR 1410 wants the same line in both | **AD ruling 2026-10-15:** ONE line; the city derivation's rail search (3.4 L4) is the source; the HQ scene imports the same polyline and `deck_z` 17.5 BU (clears the tallest frontage 15.3 BU, i.e. a 6-floor front + key floors, plus 2.2 BU); the straight x 66 viaduct is a placeholder to replace; checked by 12.4 |
+| C8 | The Meridian freight line: HQ kit = a straight viaduct north at x 66 to y 1180, deck z 22 (`HM/hq_preset.py:51-52`) vs city = a BFS over street tiles to the nearest coast cell, deck z 9.0 (`CAC/zoning.py:381-402`, `CAC/city_preset.py:162-163`; NA03_NA04_ANSWERS, 2026-10-18). DR 1410 wants the same line in both | **AD ruling 2026-10-15:** ONE line; the city derivation's rail search (3.4 L4) is the source; the HQ scene imports the same polyline and `deck_z` 17.5 BU (clears the tallest frontage 15.3 BU, i.e. a 6-floor front + key floors, plus 2.2 BU); the straight x 66 viaduct is a placeholder to replace; checked by 12.4 |
 | C9 | Occlusion Godot text uses `world_vertex.z` (`HQ_meridian/NOTES.md`, `HQ_halcyon/NOTES.md:346`); Godot is Y-up | World Y |
 | C10 | Power cut: the spec quoted 32 % + 40 % desat (`V3D/../NOTES.md:85`) and the HQ's 3D 22 % / x 1.45 (`HM/hq_jobs.py:39`, `HQ_halcyon/NOTES.md:114`); the approved storyboard actually renders x 0.62, 25 % desaturation, glow 0.5 (`SB/sb_ui.py:674-690`) | **Designer 2026-10-16:** ONE 2D grade for street and HQ: x 0.20, 70 % desat, branch x 1.35, glow 1.0 (presets, tunable toward x 0.35); the HQ 3D cut is dropped; the storyboard values are recorded as "previous" (9.4) |
 | C11 | Zoom time 0.70 s (`V3D/cam_rig.py:37`) vs "the zoom takes 1.0 s" (`SB/NOTES.md:83`, `SB/sb_cams.py:106`) | **AD ruling 2026-10-15:** designer question Q10; proposed 1.0 s for both; **Designer 2026-10-16:** resolved, 1.0 s (Q10) |

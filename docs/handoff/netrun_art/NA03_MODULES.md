@@ -233,3 +233,7 @@ BPY: none. `look_preset` is imported by `sb_ocjobs` (`LP.PRESET["lod_bands"]`); 
 - **Art-pass to answer (sent 2026-10-18):** O-C (zoned / city_base / rail shapes), O-D (which links are border links),
   O-G (zoom convention), O-H (units of `side_d`, `corridor_low`), O-K (kit-unit constants). NA-03 ports what does not
   depend on them first and leaves these behind clearly named TODO constants in one `units.py`.
+- **Art-pass answers (2026-10-18):** `NA03_NA04_ANSWERS.md` (copied from art-pass 88a76010; spec re-imported from
+  6e9beb74) answers O-C, O-D, O-G, O-H, O-K; they win over this file. **Condition:** NA-03 sends its derive v2 schema doc
+  (poses, lod/section, dress lists) to art-pass for review **before** coding against it; the dress lists are not
+  designed yet, so NA-03 ports dress last.
