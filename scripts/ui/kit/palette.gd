@@ -113,6 +113,8 @@ const TEXT_LO := Color("#7A889C")
 const SCRIM := Color(0.00784314, 0.0117647, 0.0392157, 0.55)
 ## The scrim's blur radius in reference pixels.
 const SCRIM_BLUR_PX := 6
+## W0 SCREENSFIX: how much of the dim a confirm dialog lays over its page (the page stays readable behind it; SCRIM's alpha is for glass over the city).
+const SCRIM_DIALOG_ALPHA := 0.32
 ## Heat FLAGGED band (§2.8): between WARN and HARM.
 const HEAT_FLAGGED := Color("#FF7A1A")
 

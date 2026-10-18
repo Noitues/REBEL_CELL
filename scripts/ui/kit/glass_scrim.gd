@@ -13,6 +13,8 @@ const SHADER := preload("res://shaders/glass_blur.gdshader")
 const NODE_NAME := "GlassScrim"
 
 static var _material: ShaderMaterial = null
+## W0 SCREENSFIX: a lighter dim than SCRIM's (a dialog over a page, not glass over the city); negative = SCRIM's.
+var dim_alpha := -1.0
 
 
 func _init() -> void:
@@ -51,6 +53,9 @@ func sync() -> void:
 		color = HighContrast.BG
 	else:
 		material = shared_material()
+		if dim_alpha >= 0.0:
+			material = (material as ShaderMaterial).duplicate() as ShaderMaterial
+			(material as ShaderMaterial).set_shader_parameter(&"tint_alpha", dim_alpha)
 		# The shader keeps this colour's alpha (a fade on the scrim still fades it).
 		color = Color(Palette.SCRIM, 1.0)
 
@@ -58,8 +63,11 @@ func sync() -> void:
 ## A modal's backdrop over the whole viewport, drawn behind its modal (`show_behind_parent`,
 ## top level so no container lays it out), `view_size` (the host's viewport) big: it stops
 ## the clicks meant for the page.
-static func backdrop_for(modal: Control, view_size: Vector2) -> GlassScrim:
+static func backdrop_for(modal: Control, view_size: Vector2, dim_alpha: float = -1.0) -> GlassScrim:
 	var s := GlassScrim.new()
+	if dim_alpha >= 0.0:
+		s.dim_alpha = dim_alpha
+		s.sync()
 	s.name = "ModalScrim"
 	s.top_level = true
 	s.show_behind_parent = true

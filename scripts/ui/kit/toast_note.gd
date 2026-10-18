@@ -17,7 +17,8 @@ const NODE_NAME := "Toast"
 var label: Label
 
 
-func _init(text: String = "", warn: bool = false) -> void:
+## `icon_kind` (a StatIcon kind, or "") draws that icon before the words.
+func _init(text: String = "", warn: bool = false, icon_kind: StringName = &"") -> void:
 	name = NODE_NAME
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	focus_mode = Control.FOCUS_NONE
@@ -25,21 +26,38 @@ func _init(text: String = "", warn: bool = false) -> void:
 	style.border_width_left = 4
 	style.shadow_color = Palette.SHADOW
 	style.shadow_size = 8
+	if icon_kind != &"":
+		# W0 SCREENSFIX (art review C8): a pick's toast is a paper chip with ink words and the kind's glyph.
+		style = UiTheme.box(Palette.PAPER, Palette.INK, 2, 16, 8)
+		style.border_width_left = 2
+		style.shadow_color = Palette.SHADOW
+		style.shadow_size = 8
 	add_theme_stylebox_override("panel", style)
 	label = Label.new()
 	label.text = UiTip.fold(text)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.add_theme_color_override("font_color", Palette.PAPER)
-	add_child(label)
+	label.add_theme_color_override("font_color", Palette.INK if icon_kind != &"" else Palette.PAPER)
+	if icon_kind == &"":
+		add_child(label)
+	else:
+		var row := HBoxContainer.new()
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_theme_constant_override("separation", UiTheme.SP_S)
+		add_child(row)
+		var mark := IconMark.new(icon_kind, Palette.INK)
+		mark.name = "ToastIcon"
+		mark.custom_minimum_size = Vector2.ONE * label.get_combined_minimum_size().y  # the icon is a line of the words high
+		row.add_child(mark)
+		row.add_child(label)
 
 
 ## Shows `text` on `host` (a full-screen scene), replacing a note already there.
-static func show_on(host: Control, text: String, warn: bool = false) -> ToastNote:
+static func show_on(host: Control, text: String, warn: bool = false, icon_kind: StringName = &"") -> ToastNote:
 	var old := host.get_node_or_null(NODE_NAME)
 	if old != null:
 		host.remove_child(old)
 		old.queue_free()
-	var t := ToastNote.new(text, warn)
+	var t := ToastNote.new(text, warn, icon_kind)
 	host.add_child(t)
 	t._place.call_deferred()
 	if host.is_inside_tree():

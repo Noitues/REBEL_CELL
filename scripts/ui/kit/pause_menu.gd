@@ -413,7 +413,18 @@ func _gap_under_abandon() -> void:
 	var gap := Control.new()
 	gap.name = "AbandonGap"
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	gap.custom_minimum_size.y = UiTheme.SP_XL
+	gap.custom_minimum_size.y = UiTheme.SP_XXL  # at least a row high
+	# W0 SCREENSFIX: a thin rule in the middle of the gap, so it reads as a divider and not a layout accident.
+	var rule := ColorRect.new()
+	rule.name = "AbandonRule"
+	rule.color = Color(Palette.CELL_PINK, 0.5)
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rule.set_anchors_preset(Control.PRESET_HCENTER_WIDE)
+	rule.anchor_top = 0.5
+	rule.anchor_bottom = 0.5
+	rule.offset_top = 0.0
+	rule.offset_bottom = 1.0
+	gap.add_child(rule)
 	_right.get_child(_right.get_child_count() - 1).add_child(gap)
 
 

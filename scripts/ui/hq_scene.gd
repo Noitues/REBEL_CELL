@@ -1288,13 +1288,13 @@ static func prompts_for(p_name: String) -> Array:
 
 ## C7 (PB-PT-003b): a locked choice's price tag, with the currency named ("UNLOCKS · 60 SCHEMATICS").
 static func unlock_price_words(cost: int) -> String:
-	return TranslationServer.translate("UNLOCKS · %d SCHEMATICS") % cost
+	return TranslationServer.translate("UNLOCKS ·") + " " + TilePicker.ICON_SLOT + str(cost)  # the Schematics icon is drawn in the slot (W0 SCREENSFIX: one line, no word)
 
 
 ## C7: the New Campaign page's line on the unlock currency: its name, the balance held (the live
 ## campaign's Schematics; unlocks are bought from them at the HQ Black Market) and how it is earned.
 static func unlock_balance_line(held: int) -> String:
-	return TranslationServer.translate("Unlocks cost Schematics (you hold %d), earned in a campaign.") % held
+	return TranslationServer.translate("%d held, earned in a campaign.") % held
 
 
 ## Parity NEWC-01..04 (designer 2026-10-05): the new campaign page is the art pass build's
@@ -1438,19 +1438,27 @@ func show_start() -> void:
 		var u := CampaignRules.unlock_for(lookup, corp)
 		var secret := corp.generated_from_profile
 		corp_tiles.append({"name": tr("CLASSIFIED") if secret else TextDb.t(corp, "display_name"), "corp": corp.id, "redacted": secret,
-			"locked": true, "unlock": unlock_words.call(u), "tip": unlock_tip.call(u)})
+			"locked": true, "unlock": unlock_words.call(u), "unlock_icon": StatIcon.SCHEMATICS if u != null and u.schematic_cost > 0 else &"", "tip": unlock_tip.call(u)})
 	# C7 (PB-PT-003b): name the currency, show the balance, say how it is earned.
-	var currency_note := Chrome.body_label(unlock_balance_line(RunManager.campaign.schematics if RunManager.campaign != null else 0), UiTheme.CAPTION)
+	var currency_note := Chrome.body_label(unlock_balance_line(RunManager.campaign.schematics if RunManager.campaign != null else 0), UiTheme.BODY, StatIcon.color_of(StatIcon.SCHEMATICS))  # W0 SCREENSFIX: body size, the Schematics color
 	currency_note.name = "UnlockCurrencyNote"
 	UiWrap.whole_words(currency_note)
 	currency_note.mouse_filter = Control.MOUSE_FILTER_PASS
 	currency_note.tooltip_text = UiTip.fold(tr("Schematics are the campaign's currency. Earn them from Server Racks, raid wins and spare Cycles; spend them on unlocks at the HQ Black Market."))
 	# (on the Target head's row, at its right end: a row of its own pushed the crew past the screen's foot)
-	currency_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	currency_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	var target_head: HBoxContainer = plan_head.call(tr("Target:"), StatIcon.MAP)
-	target_head.add_child(currency_note)
 	setup.body.add_child(target_head)
+	# W0 SCREENSFIX (art review): the currency line sits directly under the TARGET heading, left-aligned, with the HUD's Schematics icon.
+	var currency_row := HBoxContainer.new()
+	currency_row.name = "UnlockCurrencyRow"
+	currency_row.add_theme_constant_override("separation", UiTheme.SP_S)
+	var currency_icon := IconMark.new(StatIcon.SCHEMATICS, StatIcon.color_of(StatIcon.SCHEMATICS))
+	currency_icon.custom_minimum_size = Vector2.ONE * currency_note.get_combined_minimum_size().y
+	currency_row.add_child(currency_icon)
+	currency_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	currency_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	currency_row.add_child(currency_note)
+	setup.body.add_child(currency_row)
 	var corp_pick := PlanningPicker.new(corp_tiles, 0, CORP_TILE if Settings.text_scale < COMPACT_UP_TO else CORP_TILE_BIG, CORP_SWATCH if Settings.text_scale < COMPACT_UP_TO else PlanningPicker.SWATCH_W)
 	corp_pick.name = "CorporationPicker"
 	corp_pick.value = pick_default.call(corps, RunManager.DEFAULT_CORPORATION)
@@ -1496,7 +1504,7 @@ func show_start() -> void:
 	locked_homes.sort_custom(locked_order)
 	for res in locked_homes:
 		var u := CampaignRules.unlock_for(lookup, res)
-		home_tiles.append({"name": TextDb.t(res, "display_name"), "icon": StatIcon.HOME, "locked": true, "unlock": unlock_words.call(u),
+		home_tiles.append({"name": TextDb.t(res, "display_name"), "icon": StatIcon.HOME, "locked": true, "unlock": unlock_words.call(u), "unlock_icon": StatIcon.SCHEMATICS if u != null and u.schematic_cost > 0 else &"",
 			"tip": "%s %s" % [TextDb.t(res, "description"), unlock_tip.call(u)]})
 	setup.body.add_child(plan_head.call(tr("Home server:"), StatIcon.HOME))
 	var home_pick := PlanningPicker.new(home_tiles, 0, HOME_TILE)
@@ -1517,7 +1525,7 @@ func show_start() -> void:
 	locked_classes.sort_custom(locked_order)
 	for res in locked_classes:
 		var u := CampaignRules.unlock_for(lookup, res)
-		class_tiles.append({"name": TextDb.t(res, "display_name"), "class": res.get("id"), "locked": true, "unlock": unlock_words.call(u),
+		class_tiles.append({"name": TextDb.t(res, "display_name"), "class": res.get("id"), "locked": true, "unlock": unlock_words.call(u), "unlock_icon": StatIcon.SCHEMATICS if u != null and u.schematic_cost > 0 else &"",
 			"tip": "%s %s" % [TextDb.t(res, "description"), unlock_tip.call(u)]})
 	setup.body.add_child(plan_head.call(tr("Crew:"), StatIcon.OPERATIVE))
 	var class_pick := PlanningPicker.new(class_tiles, 0, CREW_TILE, CREW_SWATCH)
@@ -6972,7 +6980,7 @@ func heat_tip() -> String:
 	lines.append(tr("Heat %d of %d: how hard the corporation hunts the Cell.") % [c.heat, cfg.heat_max])
 	if next >= 0:
 		# C4 (PB-PT-003b): say what the threshold does, not only where it is.
-		lines.append((tr("Next threshold at %d: %s") % [next, next_text]) if next_text != "" else (tr("Next threshold at %d.") % next))
+		lines.append((tr("Next threshold at %d:") % next + "\n" + next_text) if next_text != "" else (tr("Next threshold at %d.") % next))  # the effect on its own line: a 56-column fold left "netrun." alone
 	var mods := PackedStringArray()
 	for m in HeatRules.active_modifiers(c, cfg):
 		mods.append(_modifier_text(m))

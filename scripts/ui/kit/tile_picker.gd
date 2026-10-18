@@ -164,6 +164,8 @@ var _tile := Vector2.ZERO
 var _cols := 1
 var _name_px := 0
 var _names: Array[PackedStringArray] = []
+## W0 SCREENSFIX: two no-break spaces in an unlock line mark where the tile's `unlock_icon` (a StatIcon kind) is drawn.
+const ICON_SLOT := "  "
 var _metas: Array[PackedStringArray] = []
 
 
@@ -501,6 +503,12 @@ func _draw() -> void:
 		var my := r.end.y - PAD - ml.size() * mf.get_height(meta_px)
 		for line in ml:
 			HighContrast.draw_text(self, mf, Vector2(x, my + mf.get_ascent(meta_px)), line, HORIZONTAL_ALIGNMENT_LEFT, -1, meta_px, Palette.GLYPH_INK if filled else Palette.TEXT_MID)
+			var slot_at := line.find(ICON_SLOT)
+			var icon_kind := StringName(String(tiles[i].get("unlock_icon", "")))
+			if slot_at >= 0 and icon_kind != &"" and is_locked(i):
+				var lead := mf.get_string_size(line.substr(0, slot_at), HORIZONTAL_ALIGNMENT_LEFT, -1, meta_px).x
+				var slot_w := mf.get_string_size(ICON_SLOT, HORIZONTAL_ALIGNMENT_LEFT, -1, meta_px).x
+				StatIcon.draw(self, Vector2(x + lead + slot_w * 0.5, my + mf.get_height(meta_px) * 0.5), slot_w * 0.42, icon_kind, StatIcon.color_of(icon_kind))
 			my += mf.get_height(meta_px)
 		if is_locked(i):
 			var lr := LOCK_R * s

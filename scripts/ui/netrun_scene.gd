@@ -584,7 +584,7 @@ func _choose_reward(index: int, slot: int, fly: bool) -> void:
 	if s.run.pending_rewards.size() < left and not offer.is_empty():
 		_note_reward_done(String(offer["kind"]), true, picked_name)
 		# C8 (PB-PT-003b): say on screen what was taken (and where it went).
-		ToastNote.show_on(self, taken_line(String(offer["kind"]), picked_name, slot + 1))
+		ToastNote.show_on(self, taken_line(String(offer["kind"]), picked_name, slot + 1), false, taken_icon(String(offer["kind"])))
 	if s.run.pending_rewards.size() >= left and s.run.phase == RunState.Phase.REWARD and String(offer.get("kind", "")) == "firmware" and slot >= 0:
 		# the page stays as it is (the spinner keeps the player's slot) and says why
 		# one message: the terminal note, worded here with the chip and slot names (the rules speak in ids); the
@@ -758,9 +758,12 @@ func _ask_socket_overwrite(id: StringName, slot: int, go: Callable) -> bool:
 	var old := s.firmware_replaced_at(slot)
 	if old == &"":
 		return false
-	var d := ConfirmDialog.new(socket_overwrite_question(TextDb.t(s.lookup.get_content(id), "display_name"),
-			TextDb.t(s.lookup.get_content(old), "display_name"), slot + 1), "SOCKET IT", "KEEP", "FIRMWARE", # TR
-			tr("The old chip is destroyed. It cannot be undone."), true, "", "")
+	var new_name := TextDb.t(s.lookup.get_content(id), "display_name")
+	var old_name := TextDb.t(s.lookup.get_content(old), "display_name")
+	var d := ConfirmDialog.new(socket_overwrite_question(new_name, old_name, slot + 1), "SOCKET IT", "KEEP", "FIRMWARE", # TR
+			socket_overwrite_body(old_name), true, "", "")
+	d.add_swap_row(new_name, old_name, StatIcon.FIRMWARE)  # both chips as icons, the destroyed one struck
+	d.use_destructive_yes("SOCKET IT")  # KEEP stays the default focus
 	d.name = "SocketOverwriteConfirm"
 	d.resized.connect(func() -> void: d.position = ((size - d.size) * 0.5).floor())
 	d.position = ((size - d.custom_minimum_size) * 0.5).floor()
@@ -781,9 +784,26 @@ static func taken_line(kind: String, item_name: String, slot_number: int) -> Str
 	return TranslationServer.translate("Taken: %s.") % item_name
 
 
+## W0 SCREENSFIX: the StatIcon kind for a taken loot kind's toast (the kind glyph; "" for an unknown kind).
+static func taken_icon(kind: String) -> StringName:
+	match kind:
+		"card":
+			return StatIcon.CARDS
+		"firmware":
+			return StatIcon.FIRMWARE
+		"daemon":
+			return StatIcon.DAEMON
+	return &""
+
+
 ## G14: the confirm's question: the new chip, the slot and the chip it destroys.
 static func socket_overwrite_question(new_name: String, old_name: String, slot_number: int) -> String:
-	return TranslationServer.translate("Socket %s into slot %d? It destroys %s, already there.") % [new_name, slot_number, old_name]
+	return TranslationServer.translate("Socket %s into slot %d?") % [new_name, slot_number]
+
+
+## G14: the confirm's second line: the chip it destroys (same text style as the question).
+static func socket_overwrite_body(old_name: String) -> String:
+	return TranslationServer.translate("%s is destroyed. This can't be undone.") % old_name
 
 
 ## Item `index` of the row named `row` on the page on screen (a loot or shop sticker;
