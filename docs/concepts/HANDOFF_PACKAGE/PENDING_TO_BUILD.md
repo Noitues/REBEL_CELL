@@ -36,3 +36,13 @@ The app paused session-to-session messages after 10 sends. Send these on the des
      - `items[{kind, pos}]` is rejected; the checks use the typed dress lists, flattened for 12.4.5.
      - `zoned.rail.piers` is accepted.
      - The 0.5 BU box is accepted (provisional).
+5. **W0_COMBAT review (main ccdf8bc1): FIX LIST. Not approved yet. Panels 2, 3, 4 and 5 are approved as they are.**
+   - **Panel 1, confirmed:** the enrage tooltip covers the boss wheel's top-left slices and the needle zone, which is the information that matters at turn 10.
+     - Anchor it outside the disc: below-right of the badge, clamped to the view, with a 12 px gap from the wheel's rim ring.
+     - Give it the standard dark tooltip plate, so it doesn't read as text over the city.
+   - **Panel 6, confirmed and more serious:** at 1080p the disabled nudge arrows can't be seen at all. The toast sits at the bottom centre, far from the aim ring, so nothing on screen links the refusal to the satellite.
+     - Draw the disabled arrows at full enabled size, 50 % grey, with a red diagonal strike.
+     - Add a short refusal shake on the aim ring (about 0.25 s, ±3 px) and a red flash on the satellite.
+     - Either anchor the toast beside the aim ring, or give it a leader line to the ring.
+   - **Known items, also required before approval:** THE PANOPTICON name, and the EVADE / EVADED → SANDBOX / SANDBOXED word sweep (result chip and LAST TURN line).
+   - Re-send the sheet once these are in. I will review only panels 1 and 6, plus the changed words.
