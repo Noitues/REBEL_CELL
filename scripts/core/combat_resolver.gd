@@ -36,7 +36,9 @@ func _init(p_config: CampaignConfigData, p_lookup: ContentLookup) -> void:
 ##   "slot_slice_ids", "slot_firmware_ids", "ring_segment_ids" (Rank 3 swaps), "deck"
 ##   (Array of ids as Strings or StringNames), "extra_cards" (ids added to the deck),
 ##   "daemon_ids", "hp", "max_hp", "max_ram", "hub_id",
-##   "enemy_scale" (GDD 11.6 tier multiplier for enemy HP and outputs),
+##   "enemy_scale" (N2 legacy HP multiplier for enemies without hp_by_tier / hp_bands),
+##   "enemy_output_scale" (N2 R2 tier damage factor for enemy outputs; defaults to
+##   enemy_scale), "tier" (1..4, clamped; picks hp_by_tier, default 1),
 ##   "heat" (campaign Heat, gates HeatGatedEffectData),
 ##   ICE / Heat rule modifiers (GDD 11.9): "enemy_resistance" (+N passive resistance on
 ##   every non-satellite enemy), "boss_strength_pct" (+N% HP and output on bosses and
@@ -91,6 +93,7 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 	s.daemon_ids = _to_names(overrides.get("daemon_ids", []))
 	var enemy_scale := float(overrides.get("enemy_scale", 1.0))
 	var enemy_output_scale := float(overrides.get("enemy_output_scale", enemy_scale))
+	var tier := int(overrides.get("tier", 1))
 	var boss_scale := 1.0 + maxf(0.0, float(overrides.get("boss_strength_pct", 0.0))) / 100.0
 	var extra_resistance := int(overrides.get("enemy_resistance", 0))
 	s.flags["boss_pointer_removal"] = int(overrides.get("remove_boss_pointers", 0))
@@ -107,6 +110,7 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 		_scale_enemy(e, enemy_scale, enemy_output_scale)
 		if enemy_datas[i].is_boss or enemy_datas[i].is_mini_boss:
 			_scale_enemy(e, boss_scale)
+		_apply_hp_table(e, enemy_datas[i], tier, boss_scale)
 		if extra_resistance > 0:
 			e.wheel.passive_resistance += extra_resistance
 			e.resistance = e.full_resistance()
@@ -167,6 +171,19 @@ static func phase_layout(s: CombatState, data: EnemyData, ticks: PackedInt32Arra
 static func _phase_layout(s: CombatState, data: EnemyData, ticks: PackedInt32Array) -> PackedInt32Array:
 	var extra := int(s.flags.get("boss_extra_pointer", 0)) if data.is_boss else 0
 	return _trimmed(_with_extra(ticks, extra), int(s.flags.get("boss_pointer_removal", 0)))
+
+
+## N2 (R2): an enemy with hp_by_tier / hp_bands starts at the authored HP, not the legacy
+## multiplier: a boss reads hp_bands by the ICE boss-strength multiplier; a mini-boss's
+## hp_by_tier still takes that multiplier. hp_scale is left as is (satellites inherit it).
+static func _apply_hp_table(e: CombatantState, data: EnemyData, tier: int, boss_scale: float) -> void:
+	if not data.uses_hp_table():
+		return
+	var hp := data.hp_for(boss_scale) if data.is_boss else data.hp_at_tier(tier)
+	if data.is_mini_boss and not data.is_boss:
+		hp = roundi(hp * boss_scale)
+	e.max_hp = maxi(1, hp)
+	e.hp = e.max_hp
 
 
 ## Scales an enemy's HP by `hp_scale` and its slice outputs by `out_scale` (defaults to

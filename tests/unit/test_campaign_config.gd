@@ -90,7 +90,7 @@ func test_shop_and_ram_match_gdd_11_2_and_11_3() -> void:
 
 
 func test_scaling_and_breach_match_gdd_11_6_and_11_7() -> void:
-	assert_eq(_cfg.enemy_scale_per_tier, 1.6)
+	assert_eq(_cfg.enemy_hp_scale_by_tier, PackedFloat64Array([1.0, 1.6, 2.56, 4.096]))
 	assert_eq(_cfg.reward_scale_per_tier, 1.7)
 	assert_eq(_cfg.min_exploits_for_breach, 3)
 

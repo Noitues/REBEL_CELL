@@ -145,8 +145,8 @@ func test_enemy_damage_scales_separately_from_hp() -> void:
 	c.campaign_seed = 3
 	c.recruit(ContentRegistry.get_content(&"breaker") as ClassData, "Vex")
 	var s := NetrunSession.start(CombatFixture.resolver(), c, &"op_1", 3, &"t3_core", 5)
-	assert_almost_eq(s.enemy_scale(), pow(cfg.enemy_scale_per_tier, 2), 0.0001)
-	assert_almost_eq(s.enemy_output_scale(), pow(cfg.enemy_damage_scale_per_tier, 2), 0.0001)
+	assert_almost_eq(s.enemy_scale(), cfg.enemy_hp_scale(3), 0.0001)
+	assert_almost_eq(s.enemy_output_scale(), cfg.enemy_damage_factor(3), 0.0001)
 	s.enter_node(s.available_nodes()[0])
 	var e := s.combat.state.get_combatant(&"enemy_0")
 	var data := ContentRegistry.get_content(e.source_id) as EnemyData

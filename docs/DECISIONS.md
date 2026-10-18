@@ -7571,6 +7571,7 @@ Before covers 43 screens; after covers 53. The remaining findings are low-confid
 - Colour-blind support stays a daltonize correction (ART_BIBLE §12 says "remap").
 
 ## Open questions for the designer
+- **2026-10-18 W0 N2, tier tables (defaults built):** (1) a mini-boss with `hp_by_tier` still takes the ICE / Heat boss-strength multiplier on its table HP (bosses read it as the `hp_bands` zone instead); (2) the boss band zone reads the combined `boss_strength_pct` (ICE + Heat + campaign modifiers), not the ICE term alone; (3) the boss lint warning ceiling is phases x the T4 two-needle budget (126; 504 for 4 phases), no floor, since sustain is per phase (N3); (4) flat x factor rounding is N1's. Say if any should differ.
 - **2026-10-13 W4-REWARDS, single-pick payouts**: the rewards list shows from two picks (or once one is settled); a payout with one pick shows that pick's page straight away, and the screen leaves when the last pick is settled (no PROCEED on an empty list). Slay the Spire keeps the list for one pick and waits for PROCEED: say if you want that (`rewards_list_on` plus a session phase hold).
 - **2026-10-11 12Q-RAID, hostile shape cue**: the raid's hazard ticks and reticles show only with the colour-blind setting on (default look unchanged). ART_BIBLE §5.1 says never colour alone: show them always (a deutan player who never opens Options sees red and lime both as yellow), or keep them behind the setting?
 - **2026-10-11 12Q-HQ, the HQ at text 2.0**: the selected Site's file pages one row a page (its header and foot take about 150 of the column's 215 px) and the crew hand shows two polaroids a page. Keep paging, or move JACK IN's system word beside the sticker at big text (bible 1.3 says under it) or the MAP KEY off the column to give the card its room?
@@ -8477,3 +8478,25 @@ D14 rule-5 remainder, batch lane (Sonnet 5.5, `const_edits`, specs `tools/batch/
 
 ### 2026-10-16 — NA-01: netrun art spec imported
 Text-only import of the netrun art spec, handoff README, art decisions, direction review and an index of approved assets/scripts pinned to art-pass@7f021c21 into docs/handoff/netrun_art/ (no binaries copied).
+
+### 2026-10-18 — W0 N2: tier base-value tables (CONTENT_DESIGN_V2 R2)
+- **One damage table.** `CampaignConfigData.enemy_damage_by_tier` = [1.0, 1.3, 1.69, 2.2] replaces GDD 11.6's 1.2^(t-1),
+  the config's `enemy_damage_scale_per_tier` 1.3 and its schema default 1.6 (both fields removed). T4 moves from 2.197 to
+  2.2 (within 0.05). `NetrunSession.enemy_output_scale()` reads it through `enemy_damage_factor(tier)` (tier clamped 1..4).
+  GDD 11.6 text still says 1.2^(t-1): superseded by this entry and R2 (designer content rulings 2026-10-16).
+- **HP by band.** New schema fields: `EnemyData.hp_by_tier` (4 entries; a mini-boss's T4 entry is 0 and T4 reads T3) and
+  boss `EnemyData.hp_bands` (Array[Vector2]: ICE boss-strength zone ceiling, HP; ceilings ascend; the last ceiling must be
+  >= `boss_hp_band_open_ceiling` 99.0, the open-ended zone). `hp_for(multiplier)` picks the first zone at or above it.
+  Config: `reference_dpt_by_tier` [9, 11, 14, 18], `target_turns_per_phase` 3.5, `hp_band_normal / elite / mini_boss_2 /
+  mini_boss_3` (R2 table, [min, max] per tier). `EnemyData.validate(config = null)` rejects a wrong length or an
+  out-of-band value with a named reason; null loads the game config.
+- **Legacy fallback.** `enemy_scale_per_tier` 1.6 became `enemy_hp_scale_by_tier` [1.0, 1.6, 2.56, 4.096]
+  (`NetrunSession.enemy_scale()`), used only by enemies with no table, so no fight changes until the re-author pass. No
+  content is migrated by N2; `docs/handoff/N2_BANDS.md` holds the band table, every enemy's current HP and a proposed
+  rank-preserving migration.
+- **create_combat** takes a `"tier"` override (default 1; `NetrunSession` passes `run.tier`, recorded in the fight setup
+  for replay). A table enemy starts at its authored HP; its `hp_scale` keeps the legacy multiplier so satellites are
+  unchanged. Save format: no new state fields (only the recorded setup gains `tier`).
+- **Lint.** `HpBandLint` (scripts/core) lints `content/enemies/*.tres`: band errors fail, non-migrated enemies and a boss
+  over its budget ceiling are warnings (Q29). `test_band_lint.gd` holds a drift guard copy of the R2 table.
+- Room left in `campaign_config` for N21 (`resistance_by_class`) and N22 (EASY / HARD pools); neither is added here.

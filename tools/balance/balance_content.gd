@@ -5,7 +5,7 @@ extends RefCounted
 ## walks every resource reachable from the registry once, keeps shared references shared (one
 ## copy per original, memoised by instance id) and the overrides then edit those copies.
 ##   --set <id>.<prop>[.<prop|index>...]=<json>   assign       e.g. config.heat_max=120  or  ground_control.hp=40
-##   --set <path>*=<number>                       multiply     e.g. config.enemy_scale_per_tier*=1.1
+##   --set <path>*=<number>                       multiply     e.g. config.target_turns_per_phase*=1.1
 ##   --set <path>+=<number>                       add          (ints stay ints; Vector2i and Packed*Array int lists element-wise)
 ## `config` (or `campaign_config`) is the CampaignConfigData. Lists and Vector2i take JSON arrays.
 ## Pure tooling: no autoloads, no RNG, no files written.
