@@ -43,7 +43,31 @@ func _init() -> void:
 ## Shows `text` centred on `anchor` (global, the toast's bottom centre), wrapped to
 ## `max_width` px when given.
 func show_text(text: String, anchor: Vector2, max_width: float = 0.0) -> void:
+	_beside = {}
 	_show(text, anchor, true, max_width)
+
+
+## W0 ARTFIX: a refusal beside the thing it is about: to the right of the ring at `center` / `radius`
+## (global), to its left when there is no room inside `bounds`, `BESIDE_GAP` px clear of it and
+## centred on it vertically (a refusal that said it at the screen's foot read as unrelated).
+func show_beside(text: String, center: Vector2, radius: float, bounds: Rect2, max_width: float = 0.0) -> void:
+	_beside = {"center": center, "radius": radius, "bounds": bounds}
+	_show(text, center, true, max_width)
+
+
+## Where a toast of size `sz` stands beside a ring (`center`, `radius`, global): right of it with
+## `gap` px clear, else left of it, held inside `bounds` vertically. Never overlaps the ring.
+static func beside_position(sz: Vector2, center: Vector2, radius: float, bounds: Rect2, gap: float) -> Vector2:
+	var x := center.x + radius + gap
+	if x + sz.x > bounds.end.x:
+		x = center.x - radius - gap - sz.x
+	var y := clampf(center.y - sz.y * 0.5, bounds.position.y, maxf(bounds.position.y, bounds.end.y - sz.y))
+	return Vector2(x, y).floor()
+
+
+## The gap between a toast shown beside a ring and that ring (px at text scale 1.0).
+const BESIDE_GAP := 12.0
+var _beside: Dictionary = {}
 
 
 ## Shows what an action just did (no no-entry mark), e.g. where a respin landed (H23: a
@@ -105,6 +129,9 @@ func _draw() -> void:
 func _reanchor() -> void:
 	reset_size()
 	var sz := get_combined_minimum_size()
+	if not _beside.is_empty():
+		global_position = beside_position(sz, _beside["center"], float(_beside["radius"]), _beside["bounds"], BESIDE_GAP * Settings.text_scale)
+		return
 	global_position = (_anchor - Vector2(sz.x * 0.5, sz.y)).floor()
 	if clear_root != null and is_instance_valid(clear_root):
 		_lift_off_controls(sz)
