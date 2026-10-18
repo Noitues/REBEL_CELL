@@ -1,0 +1,437 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "dress_<run>.json v1 (DERIVE_V2_REVIEW Q4, AD resolutions 13-18)",
+ "version": 1,
+ "type": "object",
+ "required": [
+  "version",
+  "run",
+  "layout_seed",
+  "kind",
+  "signs",
+  "lamps",
+  "washes",
+  "glows",
+  "beams",
+  "streak_lanes",
+  "fog_fields"
+ ],
+ "properties": {
+  "version": {
+   "const": 1
+  },
+  "run": {
+   "type": "string"
+  },
+  "layout_seed": {
+   "type": "string",
+   "pattern": "^(0|[1-9][0-9]*)$"
+  },
+  "kind": {
+   "const": "street"
+  },
+  "signs": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "bid",
+     "layer",
+     "pos",
+     "nrm",
+     "w",
+     "h",
+     "panels",
+     "pal",
+     "band_pal"
+    ],
+    "properties": {
+     "bid": {
+      "type": "string"
+     },
+     "layer": {
+      "type": "integer"
+     },
+     "pos": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+       "type": "number"
+      }
+     },
+     "nrm": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+       "type": "number"
+      }
+     },
+     "w": {
+      "type": "number"
+     },
+     "h": {
+      "type": "number"
+     },
+     "panels": {
+      "type": "integer"
+     },
+     "pal": {
+      "enum": [
+       "district_a",
+       "district_b",
+       "accent_warm",
+       "accent_cool",
+       "lamp_warm",
+       "lamp_cool",
+       "lane_head_a",
+       "lane_head_b",
+       "lane_tail_a",
+       "lane_tail_b"
+      ]
+     },
+     "band_pal": {
+      "enum": [
+       "district_a",
+       "district_b",
+       "accent_warm",
+       "accent_cool",
+       "lamp_warm",
+       "lamp_cool",
+       "lane_head_a",
+       "lane_head_b",
+       "lane_tail_a",
+       "lane_tail_b"
+      ]
+     }
+    }
+   }
+  },
+  "lamps": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "u",
+     "side",
+     "pos",
+     "pal"
+    ],
+    "properties": {
+     "u": {
+      "type": "number"
+     },
+     "side": {
+      "enum": [
+       -1,
+       1
+      ]
+     },
+     "pos": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+       "type": "number"
+      }
+     },
+     "pal": {
+      "enum": [
+       "district_a",
+       "district_b",
+       "accent_warm",
+       "accent_cool",
+       "lamp_warm",
+       "lamp_cool",
+       "lane_head_a",
+       "lane_head_b",
+       "lane_tail_a",
+       "lane_tail_b"
+      ]
+     }
+    }
+   }
+  },
+  "washes": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "u",
+     "pos",
+     "dir",
+     "power",
+     "pal"
+    ],
+    "properties": {
+     "u": {
+      "type": "number"
+     },
+     "pos": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+       "type": "number"
+      }
+     },
+     "dir": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+       "type": "number"
+      }
+     },
+     "power": {
+      "type": "number"
+     },
+     "pal": {
+      "enum": [
+       "district_a",
+       "district_b",
+       "accent_warm",
+       "accent_cool",
+       "lamp_warm",
+       "lamp_cool",
+       "lane_head_a",
+       "lane_head_b",
+       "lane_tail_a",
+       "lane_tail_b"
+      ]
+     }
+    }
+   }
+  },
+  "glows": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "cell",
+     "pos",
+     "power",
+     "pal",
+     "drift"
+    ],
+    "properties": {
+     "cell": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+       "type": "integer"
+      }
+     },
+     "pos": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+       "type": "number"
+      }
+     },
+     "power": {
+      "type": "number"
+     },
+     "pal": {
+      "enum": [
+       "district_a",
+       "district_b",
+       "accent_warm",
+       "accent_cool",
+       "lamp_warm",
+       "lamp_cool",
+       "lane_head_a",
+       "lane_head_b",
+       "lane_tail_a",
+       "lane_tail_b"
+      ]
+     },
+     "drift": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+       "type": "number"
+      }
+     }
+    }
+   }
+  },
+  "beams": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "bid",
+     "pos",
+     "lean",
+     "sweep_deg",
+     "phase",
+     "pal"
+    ],
+    "properties": {
+     "bid": {
+      "type": "string"
+     },
+     "pos": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+       "type": "number"
+      }
+     },
+     "lean": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+       "type": "number"
+      }
+     },
+     "sweep_deg": {
+      "type": "number"
+     },
+     "phase": {
+      "type": "number"
+     },
+     "pal": {
+      "enum": [
+       "district_a",
+       "district_b",
+       "accent_warm",
+       "accent_cool",
+       "lamp_warm",
+       "lamp_cool",
+       "lane_head_a",
+       "lane_head_b",
+       "lane_tail_a",
+       "lane_tail_b"
+      ]
+     }
+    }
+   }
+  },
+  "streak_lanes": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "lane_id",
+     "a",
+     "b",
+     "z",
+     "speed",
+     "pal",
+     "streaks"
+    ],
+    "properties": {
+     "lane_id": {
+      "type": "integer"
+     },
+     "a": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+       "type": "number"
+      }
+     },
+     "b": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+       "type": "number"
+      }
+     },
+     "z": {
+      "type": "number"
+     },
+     "speed": {
+      "type": "number"
+     },
+     "pal": {
+      "enum": [
+       "district_a",
+       "district_b",
+       "accent_warm",
+       "accent_cool",
+       "lamp_warm",
+       "lamp_cool",
+       "lane_head_a",
+       "lane_head_b",
+       "lane_tail_a",
+       "lane_tail_b"
+      ]
+     },
+     "streaks": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "required": [
+        "u0",
+        "len",
+        "gap",
+        "bright"
+       ],
+       "properties": {
+        "u0": {
+         "type": "number"
+        },
+        "len": {
+         "type": "number"
+        },
+        "gap": {
+         "type": "number"
+        },
+        "bright": {
+         "type": "number"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "fog_fields": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "id",
+     "min",
+     "max",
+     "density"
+    ],
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "min": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+       "type": "number"
+      }
+     },
+     "max": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+       "type": "number"
+      }
+     },
+     "density": {
+      "type": "number"
+     }
+    }
+   }
+  }
+ }
+}

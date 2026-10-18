@@ -1,0 +1,347 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "derive_<run>.json v2 (DERIVE_V2_REVIEW, NA-03b). Version 1 is the game's partial file (derive.schema.json)",
+ "version": 2,
+ "type": "object",
+ "required": [
+  "version",
+  "kind",
+  "layout_seed",
+  "run",
+  "art_seeds",
+  "span",
+  "rooms",
+  "edges",
+  "overview",
+  "decision",
+  "route_keys"
+ ],
+ "properties": {
+  "version": {
+   "const": 2
+  },
+  "kind": {
+   "enum": [
+    "street",
+    "hq"
+   ]
+  },
+  "layout_seed": {
+   "type": "string",
+   "pattern": "^(0|[1-9][0-9]*)$"
+  },
+  "run": {
+   "type": "string"
+  },
+  "art_seeds": {
+   "type": "object"
+  },
+  "street": {
+   "type": "object",
+   "required": [
+    "a",
+    "c"
+   ],
+   "properties": {
+    "a": {
+     "type": "array",
+     "minItems": 2,
+     "maxItems": 2,
+     "items": {
+      "type": "number"
+     }
+    },
+    "c": {
+     "type": "array",
+     "minItems": 2,
+     "maxItems": 2,
+     "items": {
+      "type": "number"
+     }
+    }
+   }
+  },
+  "nrm": {
+   "type": "array",
+   "minItems": 2,
+   "maxItems": 2,
+   "items": {
+    "type": "number"
+   }
+  },
+  "start_left": {
+   "type": "boolean"
+  },
+  "span": {
+   "type": "integer"
+  },
+  "columns": {
+   "type": "array",
+   "items": {
+    "type": "array",
+    "minItems": 2,
+    "maxItems": 2
+   }
+  },
+  "route_keys": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "col_info": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "layer",
+     "bid",
+     "top",
+     "u0",
+     "u1",
+     "face"
+    ],
+    "properties": {
+     "layer": {
+      "type": "integer"
+     },
+     "bid": {
+      "type": "string"
+     },
+     "top": {
+      "type": "number"
+     },
+     "u0": {
+      "type": "number"
+     },
+     "u1": {
+      "type": "number"
+     },
+     "face": {
+      "type": "number"
+     }
+    }
+   }
+  },
+  "rooms": {
+   "type": "object",
+   "x-values": {
+    "type": "object",
+    "required": [
+     "front",
+     "back",
+     "floor",
+     "span",
+     "ground_z",
+     "bld",
+     "parts",
+     "layer",
+     "kind"
+    ],
+    "properties": {
+     "front": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+       "type": "array",
+       "minItems": 3,
+       "maxItems": 3,
+       "items": {
+        "type": "number"
+       }
+      }
+     },
+     "back": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+       "type": "array",
+       "minItems": 3,
+       "maxItems": 3,
+       "items": {
+        "type": "number"
+       }
+      }
+     },
+     "floor": {
+      "type": "integer"
+     },
+     "span": {
+      "type": "integer"
+     },
+     "ground_z": {
+      "type": "number"
+     },
+     "bld": {
+      "type": "string"
+     },
+     "parts": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     },
+     "layer": {
+      "type": "integer"
+     },
+     "kind": {
+      "enum": [
+       "router",
+       "terminal",
+       "mainframe",
+       "server_rack",
+       "rest",
+       "workshop",
+       "cache"
+      ]
+     }
+    }
+   }
+  },
+  "edges": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "a",
+     "b",
+     "type",
+     "path"
+    ],
+    "properties": {
+     "a": {
+      "type": "string"
+     },
+     "b": {
+      "type": "string"
+     },
+     "type": {
+      "enum": [
+       "facade",
+       "hq"
+      ]
+     },
+     "path": {
+      "type": "array",
+      "items": {
+       "type": "array",
+       "minItems": 3,
+       "maxItems": 3,
+       "items": {
+        "type": "number"
+       }
+      }
+     }
+    }
+   }
+  },
+  "overview": {
+   "type": "object",
+   "required": [
+    "loc",
+    "tgt",
+    "lens",
+    "shift_x",
+    "shift_y",
+    "yaw",
+    "pitch",
+    "dist"
+   ],
+   "properties": {
+    "loc": {
+     "type": "array",
+     "minItems": 3,
+     "maxItems": 3,
+     "items": {
+      "type": "number"
+     }
+    },
+    "tgt": {
+     "type": "array",
+     "minItems": 3,
+     "maxItems": 3,
+     "items": {
+      "type": "number"
+     }
+    },
+    "lens": {
+     "type": "number"
+    },
+    "shift_x": {
+     "type": "number"
+    },
+    "shift_y": {
+     "type": "number"
+    },
+    "yaw": {
+     "type": "number"
+    },
+    "pitch": {
+     "type": "number"
+    },
+    "dist": {
+     "type": "number"
+    }
+   }
+  },
+  "decision": {
+   "type": "object",
+   "required": [
+    "loc",
+    "tgt",
+    "lens",
+    "shift_x",
+    "shift_y",
+    "yaw",
+    "pitch",
+    "dist"
+   ],
+   "properties": {
+    "loc": {
+     "type": "array",
+     "minItems": 3,
+     "maxItems": 3,
+     "items": {
+      "type": "number"
+     }
+    },
+    "tgt": {
+     "type": "array",
+     "minItems": 3,
+     "maxItems": 3,
+     "items": {
+      "type": "number"
+     }
+    },
+    "lens": {
+     "type": "number"
+    },
+    "shift_x": {
+     "type": "number"
+    },
+    "shift_y": {
+     "type": "number"
+    },
+    "yaw": {
+     "type": "number"
+    },
+    "pitch": {
+     "type": "number"
+    },
+    "dist": {
+     "type": "number"
+    }
+   }
+  },
+  "frontage": {
+   "type": "array",
+   "items": {
+    "type": "array",
+    "minItems": 4,
+    "maxItems": 4
+   }
+  }
+ }
+}

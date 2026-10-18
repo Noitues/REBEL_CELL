@@ -111,8 +111,11 @@ def test_links_openings_foreground():
     assert D.check_links(d, other)["status"] == "fail"
     inside = F.city_with({"1:1": [(F.square(20, 20, 30, 30), 0.0, 10.0)], "9:9": [(F.square(-1, -1, 5, 1), 0.0, 10.0)]})
     assert D.check_openings(d, inside)["status"] == "fail"
-    assert D.check_foreground(d, {"items": [{"kind": "stall", "pos": [20.0, 20.0, 1.0]}]}, 0.5)["status"] == "pass"
-    assert D.check_foreground(d, {"items": [{"kind": "stall", "pos": [2.0, 0.2, 2.0]}]}, 0.5)["status"] == "fail"
+    def dress(**lists):
+        return dict({n: [] for n in D.DRESS_LISTS}, **lists)
+    assert D.check_foreground(d, dress(lamps=[{"u": 0, "side": 1, "pos": [20.0, 20.0, 1.0], "pal": "lamp_warm"}]), 0.5)["status"] == "pass"
+    assert D.check_foreground(d, dress(washes=[{"pos": [2.0, 0.2, 2.0]}]), 0.5)["status"] == "fail"
+    assert D.check_foreground(d, {"items": [{"kind": "stall", "pos": [20.0, 20.0, 1.0]}]}, 0.5)["status"] == "fail"
 
 
 def _beam(bid, x, cone=30.0, blend=1.0, shadow=False, mat="beam_shaft", media=True):

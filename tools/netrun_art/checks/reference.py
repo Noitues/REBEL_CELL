@@ -9,6 +9,8 @@ because of the band are listed as expected differences, not as mismatches.
 import glob
 import os
 import re
+import subprocess
+import tempfile
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -17,6 +19,11 @@ from .. import io
 from . import image_checks as IC
 from . import metrics as M
 from .report import FAIL, NA, PASS, WARN, Record
+
+# Golden inputs pinned to the commit their reference row was measured on (art-pass answer, 2026-10-18): the image on
+# disk was regenerated later, so the comparison reads the PNG as it was in that commit.
+PINS: Dict[str, str] = {"p_city_night": "ded90765"}
+CONCEPTS_PREFIX = "docs/concepts/"     # `{C}/` in pvc_config.json is the concepts folder of the art-pass repo
 
 NOT_AAA2 = {"c_dyn_ov", "c_v6", "p_city_main", "a_mainline_w3", "a_sb_hq"}
 SIDE_IDS = {"c_aaa2r3", "c_proof", "c_dyn_ov", "p_sb_closed", "p_sb_reveal", "p_f0340"}
@@ -45,12 +52,39 @@ def reference_scope(scope: str, k: str, spec: Dict[str, Any], has_landmark: bool
     return False
 
 
-def collect(cfg_json: Dict[str, Any], concepts: str) -> Tuple[Dict[str, Dict[str, Any]], List[str]]:
-    """`{id: spec-with-path}` for every golden image that exists, and the list of missing ones."""
+def fetch_pinned(repo: str, commit: str, rel: str, cache_dir: str) -> Optional[str]:
+    """Write `rel` as of `commit` from the git repo `repo` into `cache_dir`; returns the file path, or None."""
+    r = subprocess.run(["git", "-C", repo, "show", f"{commit}:{rel}"], capture_output=True)
+    if r.returncode or not r.stdout:
+        return None
+    os.makedirs(cache_dir, exist_ok=True)
+    out = os.path.join(cache_dir, f"{commit}_{os.path.basename(rel)}")
+    with open(out, "wb") as f:
+        f.write(r.stdout)
+    return out
+
+
+def collect(cfg_json: Dict[str, Any], concepts: str, pins: Optional[Dict[str, str]] = None,
+            repo: Optional[str] = None, cache_dir: Optional[str] = None) -> Tuple[Dict[str, Dict[str, Any]], List[str]]:
+    """`{id: spec-with-path}` for every golden image that exists, and the list of missing ones.
+
+    An id in `pins` (default `PINS`) is read from `repo` (the git repo holding the concepts folder; default: the
+    repo that contains `concepts`) at the pinned commit, and the image on disk is ignored. If the pinned blob cannot
+    be read the image is reported missing, never silently replaced by the current file.
+    """
+    pins = PINS if pins is None else pins
     imgs: Dict[str, Dict[str, Any]] = {}
     missing: List[str] = []
     for pair in cfg_json["pairs"]:
         for k, spec in pair["images"].items():
+            if k in pins:
+                rel = CONCEPTS_PREFIX + spec["path"].replace("{C}/", "")
+                got = fetch_pinned(repo or concepts, pins[k], rel, cache_dir or os.path.join(tempfile.gettempdir(), "na04_pins"))
+                if got:
+                    imgs[k] = dict(spec, path=got, pinned=pins[k])
+                else:
+                    missing.append(f"{k}: pinned {pins[k]}:{rel} not readable in {repo or concepts}")
+                continue
             path = os.path.normpath(spec["path"].replace("{C}", concepts))
             if os.path.exists(path):
                 imgs[k] = dict(spec, path=path)
@@ -144,10 +178,10 @@ def compare(measured: Dict[str, List[Record]], rc: Dict[str, Dict[str, Tuple[str
 
 
 def run_reference(config_json_path: str, rc_path: str, concepts: str, cfg: Optional[Dict[str, Any]] = None,
-                  ids: Optional[List[str]] = None) -> Dict[str, Any]:
+                  ids: Optional[List[str]] = None, repo: Optional[str] = None) -> Dict[str, Any]:
     """Measure every golden image that exists and compare with `rules_check.md`. Returns `compare()` plus `missing`."""
     cfg = cfg or IC.load_config()
-    imgs, missing = collect(io.load(config_json_path), concepts)
+    imgs, missing = collect(io.load(config_json_path), concepts, repo=repo)
     with open(rc_path, "r", encoding="utf-8") as f:
         rc = parse_rules_check(f.read())
     measured = {k: measure_image(k, s, cfg) for k, s in imgs.items() if ids is None or k in ids}

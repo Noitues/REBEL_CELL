@@ -20,11 +20,16 @@ def u64_str(value: int) -> str:
     return str(int(value) & ((1 << 64) - 1))
 
 
+def round_half_up(x: float) -> float:
+    """Round to 1e-4 half up, `floor(x * 1e4 + 0.5) / 1e4` (spec 12.8 rule 1; neither Python nor GDScript `round`)."""
+    return math.floor(x * 1e4 + 0.5) / 1e4
+
+
 def fmt_float(x: float) -> str:
     """Fixed 1e-4 text for a float: trailing zeros trimmed, at least one decimal, `0.0` for -0.0."""
     if not math.isfinite(x):
         raise ValueError("NaN and Inf are not allowed")
-    s = f"{x:.{FLOAT_DECIMALS}f}".rstrip("0")
+    s = f"{round_half_up(x):.{FLOAT_DECIMALS}f}".rstrip("0")
     if s.endswith("."):
         s += "0"
     if s in ("-0.0", "-0."):
