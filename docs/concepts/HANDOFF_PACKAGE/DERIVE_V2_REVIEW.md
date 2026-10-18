@@ -311,3 +311,27 @@ Concept: ONE box for the whole city, `x, y` -700..900, `z` 0..`max(240/S, 2.5 * 
 10. **3.5 stream table:** `hero_sign` row "no draws in the concept"; `beams` row draw order (Q4.4); `ground_glow` draw order and grid origin; `street_lanes` draw order and the `(street_lanes, lane_id)` key; add the `fog_fields` and `lamps` rows as "no stream".
 11. **9.1 / 9.6 (dress):** `signs` carry `band_pal`; `lamps` carry `pal` and the +-3.7 offset (audit row 37); beams have a 2-axis lean and a sweep (new relative to `onecity_cycles.py`); streak lanes list their streaks and state the loop-seam rule; palette ids `lamp_warm`, `lamp_cool`, `lane_head_a/b`, `lane_tail_a/b` added to `look.preset` (Q4.2).
 12. **NA-21 scope:** add the GDScript twin of `dress`, ported last (Q4.0).
+
+## AD resolutions of the findings (AD 2026-10-18)
+
+These override the rows above where they differ.
+
+1. **Q1.1:** the writer normalises both quads to BL, BR, TR, TL as seen from the street (camera side), for every `nrm`.
+2. **Q1.5:** `u0` and `u1` (and every dress `u`) are the signed distance in BU from `street.a`, measured along `street.c - street.a`. The concept's absolute axis coordinate is not kept.
+3. **Q1.6:** `face` stays one float, the world coordinate on the cross axis.
+4. **Q1.7:** v2 stores the rig convention: 0 = +y (north), clockwise positive. `yaw_rig = 90 - yaw_layout36`. The writer converts derive poses.
+5. **Q1.8:** `shift_x` and `shift_y` are both fractions of the frame width. NA-21 adds a pixel-parity test for Godot's `frustum_offset`.
+6. **Q2.3:** add the missing constants: `yaw_max`, `pitch_d`, `lens_d`, `fill_w`, `fill_h`, `look_bias`, `ov_base_frac`, the usable area, `sensor`. Use the street `pitch_o` 2.0 from the code, not 6.
+7. **Q2.4:** `zoom_dive` uses the distance from the camera to the OVERVIEW target. `d0` and `d1` are per run in `zoom`; the band-table anchors (3833, 114.6) are constants in `lod`.
+8. **Q2.1:** the hover side test becomes screen-right. Keep the derive's look-bias sign (+sgn x 0.10). Art-pass checks it against a still before NA-21 freezes.
+9. **Q3.4:** `section.params` and `occlusion.params` are per pose. They are stored in the overview/decision poses and in each fixture, not per run. `sec_*` is HQ only.
+10. **Q3.7:** `sec_plinth` is 0.1425 BU (0.6 kit x 0.2375).
+11. **Q3.10, ruling reversed:** JSON uses the shader's 28 flat `KEYS` (HK/section.py:31-32) unchanged, so the twin copies them 1:1. No arrays.
+12. **Spec 5.2:** use the computed edges in the Q3.1 table (plumes near 306.2, look_blend far 1899.6, fog ramps far 1337.3). Art-pass corrects the spec.
+13. **Beams:** `lean` is `[x, y]`. Add `sweep_deg` (default 0, static as in the concept) and `phase`, so the always-alive sweep (9.6) can be enabled per preset. Lean comes from the (beams, bid) stream.
+14. **Streak lanes:** `streak_lanes[] {lane_id, a, b, z, speed, pal, streaks[] {u0, len, gap, bright}}`. Each streak wraps per streak, modulo the lane length L. `speed` is quantised so that `L = k * speed * T` for an integer k, which loops seamlessly on T = 4 s.
+15. **Signs:** add `band_pal`. The (hero_sign, bid) stream stays reserved for jitter; it has zero draws today.
+16. **Lamps, washes:** store `pal` explicitly (the lamp pattern is cool when k % 3 == 0, the wash order is by bld).
+17. **Glows:** the draw order is keep, jitter_u, jitter_d, power, colour. Colour is a palette id plus `drift` [r, g, b] (max 0.12 per channel) drawn from the stream. The palette-id list in Q4.2 is adopted, with new ids for lamps and lanes.
+18. **Fog:** `fog_fields[]` keeps its list shape. The concept has one global box (-700..900), so v1 has one entry; per-district fields come later.
+19. **Room kinds:** readers accept rest, workshop and cache as well as the four types; run_graph v2 adds them (D4). Unknown kinds are rejected.
