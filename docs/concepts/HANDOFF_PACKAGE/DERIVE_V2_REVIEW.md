@@ -335,3 +335,15 @@ These override the rows above where they differ.
 17. **Glows:** the draw order is keep, jitter_u, jitter_d, power, colour. Colour is a palette id plus `drift` [r, g, b] (max 0.12 per channel) drawn from the stream. The palette-id list in Q4.2 is adopted, with new ids for lamps and lanes.
 18. **Fog:** `fog_fields[]` keeps its list shape. The concept has one global box (-700..900), so v1 has one entry; per-district fields come later.
 19. **Room kinds:** readers accept rest, workshop and cache as well as the four types; run_graph v2 adds them (D4). Unknown kinds are rejected.
+
+## Check input shapes for NA-04 (AD 2026-10-18)
+
+1. **Beam check input: accepted, with three changes.**
+   - `beams[]` comes from `dress_<run>.json` `beams` (`bid`, `pos`, `lean` [x, y], `sweep_deg`, `phase`, `pal`), plus `top` from city.json.
+   - `spot {cone_deg, blend, shadow, media_linked}` and `shaft {material, shadow}` are the look.preset beam rig, merged by the checks loader. They are not stored per beam in dress.
+   - `route_bids` is derive `route_keys`, which now holds bids.
+2. **Dress: `items[{kind, pos}]` rejected.** The checks read the typed lists of `dress_<run>.json` (signs, lamps, washes, glows, beams, streak_lanes, fog_fields). For 12.4.5 (foreground dressing in front of a room opening), the loader flattens every list item that has a `pos` into `(list name, pos)`.
+3. **Piers: accepted** as `zoned.json` `rail.piers` [xy] in BU plan coordinates (piers every 7 BU on street tiles). This adds a field to the O-C rail object.
+4. **12.4.5c: accepted** as the front-opening box grown by 0.5 BU, the same offset as the facade link paths. Provisional.
+
+On `rules_check.md`: pin `p_city_night` to its ded90765 PNG. Don't regenerate it. The 4K city finals become golden plates (queue item 3) with their own values JSON, and the other 8 band-only differences are expected under spec 12.1.
