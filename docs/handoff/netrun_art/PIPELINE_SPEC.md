@@ -94,8 +94,34 @@ key location).
 
 The layout source for the round-2 city is a planner JSON, `docs/concepts/city_planner/city_A2.json` (format in
 `city_planner/design_A2_horseshoe_bay.md`, "city_A2.json": metres, origin at the map centre, +X east, +Y north).
-`city_all_corps/scripts/zoning_a2.py` maps it to lots and cell classes (3.7). **The game's per-seed city generator
-should emit the same schema**, so the art tools read one format for the concept city and for every game seed.
+`city_all_corps/scripts/zoning_a2.py` maps it to lots and cell classes (3.7). ~~The game's per-seed city generator
+should emit the same schema~~ **Amended (audit row 3, 2026-10-18; NA-02 C1):** the planner JSON is a concept-city
+input only. It reaches the tools through an art-pass adapter that writes `city.json` v1 (BU, section 2.0c), and the
+game exports `city.json` v1, never the planner schema. The art tools read one format, `city.json`, for the concept
+city and for every game seed.
+
+### 2.0c Data contract (AD + build session, 2026-10-18)
+
+Source: `HANDOFF_PACKAGE/NA02_CONTRACT_PROPOSAL.md` C1-C4 (audit rows 3, 4, 13, 14). The build session owns the final
+field list (D8); this is the art side's reading.
+
+| File | Producer | Reader modules | Key fields |
+|---|---|---|---|
+| `city.json` v1 | the game (per seed); the art-pass adapter converts the concept `city_A2.json` (planner metres) | `layout.import_city`, `layout.rules`, `zoning`, `derive.*`, `dress`, `export` | **the ONLY game-exported layout file.** Header: `version` 1, `layout_seed` (**decimal string**, u64), `units: "BU"`, `lot_bu` 6.0, `origin_lot [CX, CY]`. `buildings[]` sorted by `bid`: `bid`, `parts[] {poly [[x, y]], z0, h, taper}`, `terr`, `cell [i, j, w, h]` (lots), `hq` (bool), `key` (int, legacy, look-dev parity only). `streets[]` (lot, along_i, along_j, traffic), `plazas[]`, `hqs {corp: [i, j, w, h]}`. Terrain, water, rails and the other planner layers are optional sections in v1 |
+| `net.json` | the game (City network) | `layout.import_net`, `layout.rules`, `derive.street` | nodes (id, lot, state), links (a, b, state, pts in lots) |
+| `run_graph.json` v1 | the game (per run) | `derive.*`, `hq.slots` | nodes, layers, kinds (incl. rest, workshop, cache), edges, walked state |
+| `key_locations.json` | the game (per territory) | `zoning` (clearances), `derive.*`, `corps.<corp>.key_landmarks` | the access-key locations: `bid`, kind, corp |
+| `derive_<run>.json` | the tools (`derive.street` / `hq.slots`) | Godot (`NetrunArtDeriver`), `rig`, `checks` | schema 2.3, including `art_seeds {stream: "<u64>"}` |
+
+Rules (C1):
+- `city.json` v1 is the only game-exported layout file and carries `layout_seed` as a decimal string.
+- `city_layout.json`, the `CityLayoutRecorder` output, is **internal to Godot** and not part of the contract. The
+  planner JSON reaches the tools only through the art-pass adapter; Godot never reads it. When NA-12's per-seed
+  generator lands it fills the same `city.json` (D3).
+- Units are BU. Plan coordinates are `[x, y]` with x = east = Godot world X and y = north = minus Godot world Z.
+  Heights are BU **above local ground** (audit row 9). Floats are rounded to 1e-4 and written in a fixed format
+  (11.5). Every u64 in JSON is a decimal string (3.5).
+- v2 adds data (terrain, rails, water as optional sections) without changing the v1 layout.
 
 ### 2.1 Overview
 
@@ -104,7 +130,7 @@ should emit the same schema**, so the art tools read one format for the concept 
  ---------------------------------          -------------------------------------------------         -------------------------
  game seed (per game) ── seeds every input below (city, HQ lots, key locations, run graph, art_seeds)
  CityLayoutRecorder  ─┐                     netrun_art.layout   import + layout rules  ─► city.json
-   (lots, extrusions, │  city_layout.json ─►  (apply_layout_rules)                         │
+   (lots, extrusions, │  city.json v1     ─►  (apply_layout_rules)                         │
     streets, plazas,  │                                                                    ▼
     HQ lots)          │                     netrun_art.zoning   districts, coast, rail ─► zoned.json
  City network ────────┘  net.json        ─►                                                 │
@@ -135,7 +161,7 @@ Rule: the derivation, rig and occlusion modules are **pure Python with no Blende
 
 | Module | Inputs | Outputs | Reference source |
 |---|---|---|---|
-| `layout.import_city` | `city_layout.json` from `MAIN/scripts/city3d/city_layout_recorder.gd` (extrusions: base polygon in lots, z0, h px, taper, ink, terr, key; street lots: lane colour, traffic; plazas; HQ rects) | `city_base.json` in BU | `M44/layout36.py` (`unified.json`) |
+| `layout.import_city` | `city.json` v1 (2.0c; audit row 3, 2026-10-18), exported by the game from its own `city_layout.json` recorder output (`MAIN/scripts/city3d/city_layout_recorder.gd`, internal to Godot): `buildings[]` (`bid`, parts with poly, z0, h, taper; `terr`; `cell`; `hq`), streets, plazas, `hqs` | `city_base.json` in BU | `M44/layout36.py` (`unified.json`) |
 | `layout.import_net` | the network: nodes (id, lot, state owned/core/...), links (a, b, state, pts in lots) | `net.json` | `M44/layout36.py:242` `load_net`, `M44/scope39.py` |
 | `layout.rules` | `city_base.json`, `net.json`, `LAYOUT_RULES` | `city.json` (frontage raised, border streets widened) | `SB/sb_onecity.py:80-140` `apply_layout_rules` |
 | `zoning` | `city.json`, `city_preset.ZONING`, `WATER`, `BAY`, `RAIL`, `LANDMARK_FP` | `zoned.json`: district per building, HQ lots, landmark clearances, coast, drowned quarter, arterials, aqueduct, the freight-rail polyline + `deck_z` (the one source for the line; 3.4 L4) | `CAC/zoning.py` (rules Z1-Z6, L1-L4, T1) |
@@ -157,7 +183,7 @@ Rule: the derivation, rig and occlusion modules are **pure Python with no Blende
 
 ### 2.3 The derivation output (`derive_<run>.json`)
 
-The contract between the tools and Godot. Fields as written today by `SB/sb_ocjobs.py:47-57`, plus three new fields.
+The contract between the tools and Godot. Fields as written today by `SB/sb_ocjobs.py:47-57`, plus **four new fields** (`kind`, `art_seeds`, `version`, and `bid`, which replaces the building key; the audit's `seed_key` is dropped; audit rows 4 and 33, 2026-10-18). `street`, `nrm` and `start_left` are street only; an HQ derive (`kind: "hq"`) omits them.
 
 | Field | Type | Meaning |
 |---|---|---|
@@ -166,15 +192,14 @@ The contract between the tools and Godot. Fields as written today by `SB/sb_ocjo
 | `nrm` | `[x, y]` | The street face normal (camera looks along it) |
 | `start_left` | bool | The start sits on the screen's left |
 | `span` | 1 or 2 | Floors per room (global choice; a building may fall back to 1) |
-| `columns` | `[[layer, building key]]` | Route column per layer |
-| `route_keys` | `[key]` | Every building part of every route column |
-| `col_info` | `[{layer, key, top, u0, u1, face}]` | Column extents |
-| `rooms` | `{node id: {front[4], back[4], floor, span, bld, parts, layer, kind}}` | Room boxes (world BU) |
+| `columns` | `[[layer, bid]]` | Route column per layer; `bid` is the string building id (3.1) |
+| `route_keys` | `[bid]` | Every building part of every route column |
+| `col_info` | `[{layer, bid, top, u0, u1, face}]` | Column extents |
+| `rooms` | `{node id: {front[4], back[4], floor, span, bld, parts, layer, kind}}` | Room boxes (world BU); `bld` is a `bid`; `kind` also takes `rest`, `workshop`, `cache` (3.3) |
 | `edges` | `[{a, b, type, path[]}]` | Link polylines on the facade plane |
 | `overview`, `decision` | pose dicts | Solved poses (section 6) |
-| `frontage` | `[[key, h, floors, taper]]` | The street's frontage, for checks |
-| `seed_key` | int | New: the art seed key (section 3.5) |
-| `art_seeds` | `{stream name: int}` | New: one seed per art stream, derived on the game side from an `RngService`-derived seed and exported here, so Blender never invents a seed (adopted: Designer 2026-10-16, Q9) |
+| `frontage` | `[[bid, h, floors, taper]]` | The street's frontage, for checks |
+| `art_seeds` | `{stream name: "<u64>"}` | New: one seed per art stream (the 3.5 table, plus `variance`, `terrain`, `fauna.tethys`, `key_landmark.<corp>`), computed from `layout_seed` by the 3.5 rule 1 hash and exported here as **decimal strings**, so Blender never invents a seed (Designer 2026-10-16, Q9; contract C3, audit rows 13 and 14, 2026-10-18; the earlier "derived on the game side from an `RngService`-derived seed" wording is **withdrawn (2026-10-18)**) |
 | `version` | string | New: the rules version (bump on any rule change) |
 
 ---
@@ -197,8 +222,10 @@ describe one seed only.
 
 1. A street-level base (`z0 <= 0.05`) plus every stacked part whose footprint centre lies inside it (`z0 > 0.05`) is
    ONE building. Its height is the top of its highest part (`SB/sb_onecity.py:143-161`).
-2. Building ids are the game's extrusion `key`. Ties anywhere break by key, then node id (CLAUDE.md rule 7). Never by
-   dict order.
+2. Building id = `bid`, string "i:j" (origin lot of the building's cell), "hq:<corp>" for HQs; `key` is legacy
+   (look-dev parity only). Ties break by bid, then node id (CLAUDE.md rule 7). Never by dict order. (Audit row 4,
+   2026-10-18; NA-02 C2. Cells do not overlap, so `bid` is unique; it comes from the content, not from draw or
+   chunk order, and is not `CityModel.building`, whose counter depends on chunk order.)
 
 ### 3.2 Mainline layout rules (designer-approved 2026-10-15; DR 1385-1388; `SB/sb_onecity.py:69-70`)
 
@@ -212,7 +239,7 @@ These change the city both looks are built from (the HQ map and the netrun stree
 | `base_street_width` | 6.0 BU | The base street tile |
 | `hero_sign_rule` | `{blade: true, band: true, palette: (district_a, district_b)}` | Section 9.1 |
 | `street_r2_height_passes` | on | **Designer-approved 2026-10-16.** The `frontage.silhouette` and `horizon.break` passes (§13; `route_map_graph/street_r2/scripts/r2_rules.py`, `r2_config.py`) may change frontage heights across the one city, about 465 buildings at seed 1, plus 3–5 backdrop towers. No frontage building drops below `frontage_min_floors`. |
-| `unique_building_id` | required | **Designer-approved 2026-10-16.** Every building carries a unique id. The current layout `key` has 3,175 duplicates; until the mainline layout emits unique ids, the tools use `(ci, key)`. Matching route buildings by `key` alone is forbidden, because it pulled same-key buildings from elsewhere in the city into the storyboard's route geometry. |
+| `unique_building_id` | required | **Designer-approved 2026-10-16.** Every building carries a unique id. The current layout `key` has 3,175 duplicates; the unique id is `bid` (string "i:j", "hq:<corp>" for HQs; audit row 4, 2026-10-18; NA-02 C2), which replaces both `key` and the interim `(ci, key)`. Matching route buildings by `key` alone is forbidden, because it pulled same-key buildings from elsewhere in the city into the storyboard's route geometry. |
 
 **Scope of "border-link street":** every straight leg of every link with `state == "border"` in the network,
 extended along its own street line by `max(extend)` = 60 BU each way (`SB/sb_onecity.py:102-110`). Frontage test:
@@ -274,6 +301,15 @@ Rules, in order:
 | rack | (1.0, 0.77, 0.24) |
 | target | (1.0, 0.17, 0.24) |
 | start | (0.83, 1.0, 0.0) |
+| rest | (0.96, 0.66, 0.78) **provisional (art-pass)** |
+| workshop | (0.72, 0.50, 1.0) **provisional (art-pass)** |
+| cache | (0.30, 0.95, 0.85) **provisional (art-pass)** |
+
+REST, WORKSHOP and CACHE are netrun node kinds (main DECISIONS D4; audit row 2, 2026-10-18). The three rows are
+**provisional (art-pass)** colours, chosen to stay apart from the seven above; the game owns the kind list. Each also
+gets a sticker shape (9.3: rest = crescent, workshop = hexagon, cache = notched crate square; **provisional
+(art-pass)**) and a `derive` room `kind` of `"rest"`, `"workshop"`, `"cache"` (2.3). Intel, Relay and Ambush are NOT
+node kinds, so they get no entry.
 
 ### 3.4 District building types per corp (`CAC/city_preset.py:29-55`, generators in `CAC/city_build.py:282-541`)
 
@@ -292,9 +328,16 @@ Zoning (`CAC/zoning.py`, rules Z1-Z6, L1-L4, T1; numbers `CAC/city_preset.py:58-
    art rules, re-run per seed on the game's layout.
 5. L3: the Aurelian aqueduct runs the district's best street line, +- `aqueduct_ext` 8 lots.
 6. **L4: the Meridian freight rail. AD ruling 2026-10-15 (C8): ONE line, and this derivation is its source of truth.**
-   - Path: from the fortress gate (`RAIL.gate_dx` -34, `gate_dy` -16.6 BU) a BFS over free street tiles (never a
-     building, never inside the landmark footprint) to the nearest coast cell; collinear points dropped
-     (`CAC/zoning.py:353-390`). The gate is on the fortress's north side (the rail-yard side; AD ruling C24).
+   - Path (re-derived, audit row 1 and row 8, 2026-10-18): the line **runs alongside the HQ and ends at the port, not
+     at the gate** (DR "City r3b"; `hq_meridian_v3/DESIGN.md` 14.1 Q2). It is the rail polyline that passes the
+     Meridian lot (the planner JSON `rails` for layout A2, read through `zoned.json`; 3.7). In the lot it runs at grade
+     along the N edge, through both rail gates of the Gatehouse Gantry (8.5); out of the W rail gate it eases onto the
+     city's westbound leg, climbs the ramp to `deck_z`, then follows the polyline corner for corner to the port
+     terminal (`meridian_rail.py`). To the E it continues at grade into the city. The old BFS over free street tiles
+     from the fortress gate (`RAIL.gate_dx` -34, `gate_dy` -16.6 BU) to the nearest coast cell
+     (`CAC/zoning.py:353-390`) is **superseded (Designer 2026-10-16)** and kept only as the fallback when the layout
+     has no rail polyline (`CITY_LAYOUT=legacy`); the fallback starts at the lot's N edge and ends at the port, never at
+     a gate. The N side is the train side, so no truck road or highway exit leaves it.
    - **Deck height: `deck_z` = 17.5 BU.** It clears the tallest street front the layout rules can make (6 floors +
      the 0-2 key floors: `8 * 1.9 + 0.1` = 15.3 BU) plus 2.2 BU, so it clears a 6-floor frontage (11.5 BU) plus 2 BU
      anywhere along the line. It replaces `RAIL.deck_z` 9.0 (`CAC/city_preset.py:149`) and the HQ kit's 22
@@ -302,7 +345,7 @@ Zoning (`CAC/zoning.py`, rules Z1-Z6, L1-L4, T1; numbers `CAC/city_preset.py:58-
    - Buildings within `corridor_low` of the line stay at least 2 BU under the deck (cap 15.5 BU).
    - Piers every 7 BU on street tiles, ramp 30, signals every 36 (`CAC/city_preset.py:149`).
    - The HQ scene imports this polyline and `deck_z` from `zoned.json`. The straight viaduct at x 66 to y 1180 in the
-     Meridian kit (`HM/hq_preset.py:51-52`) is a placeholder to be replaced.
+     Meridian kit (`HM/hq_preset.py:51-52`) is superseded by the v3 module (audit row 1, 2026-10-18).
 7. T1: arterials are street runs of >= 36 tiles with mean traffic >= 0.55.
 
 | District | `lang` | Hue | Facade albedo family | Lit share | Signature by rule |
@@ -328,16 +371,25 @@ See also (AD 2026-10-15): facade kits >= 4 per district in 13.1 `materials.mix`;
 
 Today every tool seeds `random.Random(<literal>)`. The pipeline replaces literals with **named art streams**:
 
-1. `art_seed(stream, *keys) = hash64([layout_seed, "art/" + stream, *keys])`, using a fixed, documented hash
-   (e.g. FNV-1a 64 over the UTF-8 of the JSON array). Same algorithm in Python and GDScript.
-2. `layout_seed` is the seed the game used to build the city (the CityLayoutRecorder's seed). Art streams never read
-   or advance the game's `RngService` streams (`map`, `combat`, `rewards`, `events`, `raids`; `docs/TECH_SPEC.md:57-62`),
-   so dressing can never change a game outcome. Adding an `art` stream family to `RngService` is a TECH_SPEC change:
-   log it in `docs/DECISIONS.md` (open question Q9).
-   **Adopted (Designer 2026-10-16, Q9; proposed by AD ruling 2026-10-15, C23):** the game derives the art seeds from an `RngService`-derived seed
-   and exports them into `derive_<run>.json` (`art_seeds`, section 2.3). The tools and Blender read seeds only from
-   there; they never invent one. The legacy literals below are for golden-image parity in look-dev only.
-3. Per-object streams are keyed by content ids, never by draw order: a building's stream is `(stream, key)`, a room's
+1. **Root and hash (NA-02 C3; audit rows 13 and 14, 2026-10-18).** The root is `layout_seed` (the city seed, a
+   decimal-string u64 in `city.json`). **No `RngService` stream is read or advanced**, so dressing can never change a
+   game outcome. The earlier wording "derived from an `RngService`-derived seed" (and C23's proposal) is
+   **withdrawn (2026-10-18)**.
+   `art_seed(stream, *keys) = fnv1a64(utf8(json([layout_seed, "art/" + stream, *keys])))` with the exact byte format:
+   - The JSON is compact (separators `,` and `:`, no spaces) and ASCII-escaped (`\uXXXX`). `layout_seed` is a JSON
+     string inside the array. Keys are ints or strings only, never floats or bools.
+   - FNV-1a 64: `h = 0xCBF29CE484222325`; for each UTF-8 byte `h = ((h ^ byte) * 0x100000001B3) mod 2^64`.
+   - Same algorithm in Python and GDScript (GDScript ints are signed, so u64 values travel as decimal strings).
+2. **Exported seeds and draws.** Every u64 in JSON is a **decimal string** (`layout_seed`, `art_seeds{}`, the
+   vectors): JSON numbers above 2^53 lose precision. The game exports `art_seeds` into `derive_<run>.json` (2.3);
+   the tools and Blender read seeds only from there and never invent one. Draws for the parity-relevant modules use
+   splitmix64 seeded by the art seed: `state = (state + 0x9E3779B97F4A7C15) mod 2^64; z = state;
+   z = ((z ^ (z >> 30)) * 0xBF58476D1CE4E5B9) mod 2^64; z = ((z ^ (z >> 27)) * 0x94D049BB133111EB) mod 2^64;
+   out = z ^ (z >> 31)`, and `uniform = (out >> 11) * 2^-53`. Python `random` is allowed in Blender-only dressing
+   only. Vectors (11 cases incl. u64 max, 2^53+1, negative and non-ASCII keys, plus splitmix64 draws):
+   `docs/concepts/HANDOFF_PACKAGE/na02/na02_vectors.json`, from `na02/seeds_ref.py`. The legacy literals below are
+   for golden-image parity in look-dev only.
+3. Per-object streams are keyed by content ids, never by draw order: a building's stream key is `(stream, bid)` (audit row 4, 2026-10-18), a room's
    `(stream, node id)`, a tile's `(stream, i, j)`. Adding or removing one object then never changes another.
 4. Floating point: placement code rounds world positions to 1e-4 BU before hashing or comparing.
 
@@ -365,6 +417,10 @@ Stream table (current literal in brackets; keep the literal as the stream's `leg
 | `downtown` | HQ downtown fallback: towers, dressing, traffic | cfg seed, +1, +2 (`HK/downtown.py:27`); per corp 4340 / 5340 / 6340 / 7340 |
 | `ring` | HQ ring city fallback | per corp (Meridian 5311, `HM/hq_preset.py:107`) |
 | `landmark.<corp>` | landmark detail | Meridian 5320-5330 (`HQ_meridian/scripts/hq_build.py:20`) |
+| `variance` | per-lot art variance draws (3.5b) | none (new; audit row 40, 2026-10-18) |
+| `terrain` | seeded foothills, ridged mountains, cliffs (3.7) | `terrain_a2.py` literals |
+| `fauna.tethys` | Tethys fish schools and the whale pod (DR) | none (new) |
+| `key_landmark.<corp>` | key-landmark detail; `seed` of `build(K, lot, kind, seed)` (8.8) | none (new) |
 | `cycles` | Cycles sampling seed | 0 (one-city), 7 (HQ) (`M44/onecity_cycles.py:573`, `HM/hq_scene.py:1118`) |
 
 ### 3.5b Art variance by HQ proximity (Designer 2026-10-16, Q9 resolved)
@@ -404,7 +460,7 @@ falloff the city uses for district colour (`CAC/city_rules.py:79-86` `district_w
    continuous: there are no seams between territories.
 
 Rules:
-1. Variance only reshapes the numbers each lot draws from its own stream (`art/building:(i, j)`, FNV-1a 64 expanded
+1. Variance only reshapes the numbers each lot draws from its own stream (`art/building:<bid>`, FNV-1a 64 expanded
    with splitmix64), so LOW, MEDIUM and HIGH show the same city, calmer or wilder.
 2. A building that carries route rooms keeps the height the derivation needs: `height_var` applies to non-route lots
    only, and the derivation (3.3) runs before the art pass.
@@ -417,7 +473,7 @@ Rules:
 1. Same `city.json`, `net.json`, `run_graph.json`, preset and `layout_seed` give a byte-identical `derive_<run>.json`
    and identical placement lists.
 2. No placement reads the clock, the file system order, a set's iteration order or a dict's insertion order.
-3. Sorting keys are explicit tuples ending in an id (`SB/sb_onecity.py:203`: `(along, key)`; `HK/layout.py`: path
+3. Sorting keys are explicit tuples ending in an id (`SB/sb_onecity.py:203`: `(along, key)`, now `(along, bid)` (audit row 4, 2026-10-18); `HK/layout.py`: path
    order).
 4. Moving things (lanes, beams, flicker) are functions of time `t` and their stream; they loop on `T` = 4.0 s at 24 fps
    (96 frames; `SB/look_preset.py:69`).
@@ -976,7 +1032,7 @@ log and the room kit; `hooks` may hold `accs`, `beams`, `mover_lights`, `no_cut`
 | Halcyon | Square stepped pyramid: tiers of `tier_h` 13 on a 6 BU podium, rooms 14 x 8 x 10 in the faces; THE PANOPTICON vault open on four faces; the eye turret (drum r 12.5, amber rim, teal iris) | The eye: a gobo'd gaze spot (90 deg sector, linked to the compound only, 7 % fog twin), the blade scan line (constant elevation), the lighthouse beam (2.2 + 6 deg cones, -9 deg), lockdown red x 2.2 + scan-line plane | `HK/layout.py:36`; `halcyon_preset.py` | `HQ_halcyon/NOTES.md` sections 1-6 |
 | Solace | Twin helix towers: two smooth swept tubes (r 9, 40 segments) at 40 BU from centre, theta(z) = 90 + 11 z / 12.5 deg, 19 floors x 12.5; rows of 12 oval portholes (half axes 2.1 x 3.3) with frame rings; leaf-green fresnel rim (`rim_k` 0.9, `rim_pow` 5); glazed bow-tie skybridges (13 BU at the tubes, 4 at the waist) only on route floors; the crown with THE GENOME CORE; a dark dressed plinth with a lit entry | The ladder: UP / ACROSS; UNREAD rooms frosted and dimmed | `HQ_solace/NOTES.md` sections 1, v2 r2 | |
 | Orbital | Round launch podium (r 64, h 10), silo (r 17) with door leaves, the rocket (r 6, h 58, rises 62 BU), dish stations on a ring (r 96), a 4-leg truss antenna tower (104 BU, decks at 26 / 52 / 78) with two elite vaults, the red service gantry with LAUNCH CONTROL | Doors open / shut, rocket height, hacked bands lit lime, the override link | `HQ_orbital/NOTES.md` section 1 | |
-| Meridian | Container fortress: walls at abs(x) 80, abs(y) 60, 3 courses of 9 BU + merlons; corner towers of 5 crossed courses; loop track and platforms; **the moat on the W, S and E sides only; the north side is the rail yard and the gate the freight line leaves by** (AD ruling 2026-10-15, C24); the slewing keep crane (z 86, jib 128); MANIFEST CONTROL; **the freight line** (AD ruling 2026-10-15, C8): a switch off the loop's north side, a portal in the platform wall, then the ONE line from `zoned.json` (the rail search, 3.4 L4) at `deck_z` 17.5 BU (city units) on piers, with signals and catenary masts; rail-side sheds stay 2 BU under the deck. The kit's straight viaduct at x 66 (deck z 22, piers 24, masts 36, corridor half-width 6.5 / 9.0) is a placeholder to be replaced | Shuttle containers wall <-> train every other turn, the crane slew, movers carrying rooms | `HM/hq_preset.py:40-89` | `HQ_meridian/NOTES.md`, v2 r2 |
+| Meridian | **THE GATEHOUSE GANTRY** (`route_map_graph/hq_meridian_v3/DESIGN.md`, `scripts/meridian_landmark.py`; Designer 2026-10-16; audit row 1, 2026-10-18): a goliath gantry crane built as a castle gatehouse, one Pi silhouette over a walled container yard that fills the lot. Two crenellated tower-legs on the E and W wall runways, a battlemented span between them, and the **keep** (the crane's trolley, parked for every shot) on the span: body with corbelled battlement, four spired corner turrets, an open lantern crown holding **THE MASTER MANIFEST**, a beacon and the beam. **The keep is the target.** **Trucks work three sides** (W, S, E gatehouses, bay lanes inside, queues outside, lit cabs, a 6-lane ring road with light streaks only) **and a high-speed train borders the 4th (N) side**: two tracks at grade through two arched rail gates, a lit wedge-nosed set with one carriage cut open as a route slot. **The truck roads lead to the highways:** the ring road's three exits (S, W, E; none on the N side) become on-ramps (deck 9.5 BU, 26 kit-BU wide) running out to elevated highways (`meridian_rail.exits(cp)`, `.highways(cp)`). **The freight line** (C8, re-derived in 3.4 L4): the ONE rail polyline from `zoned.json` runs **alongside** the HQ along the N edge and **ends at the port**, never at the HQ; it climbs to `deck_z` 17.5 BU on piers with signals and catenary. **Superseded (Designer 2026-10-16): the container fortress with walls at abs(x) 80 / abs(y) 60, the moat on the W, S and E, the slewing keep crane (z 86, jib 128), MANIFEST CONTROL, the loop track and the x 66 viaduct (and C24).** | Container shuttle truck <-> wall <-> train by the gantry and keep (flavour; the keep does not move), moving traffic as light streaks, movers carrying rooms | Kit units (1 storey = 8 BU), lot 240 x 240 (`CP["lot"]` 120 half): curtain walls W, S, E 4 courses = 36 + merlons, outer face on the lot edge; legs 16 x 20, runway 36 to 142; span underside 104, top 122, 210 long; keep top 148, lantern crown about 163; ring road 122-158 from the centre; rail y 100 / 112. After `k_units` and `k_fit` (8.6) | `hq_meridian_v3/DESIGN.md` sections 2-3, 14; `HM/hq_preset.py` |
 | Rebel Cell | No tower. A Tokyo-alley district on the real block grid; option A: three stacked lanes in one section cut along a real street line (roofs, alley, service tunnel under the street); THE UNDERCROFT sunken service street; the **MAINFRAME v4 red sign** (`mf_w` 11 BU, about 45 BU tall) **moves to the target location** (Designer 2026-10-16), so it marks DISPATCH and is held to the normal landmark rule (no exception); the red fist hologram secondary (`fist_s` 20); the red background toned down | The window sequence `SEQ` (0 before .. 3 full) and `PULSE` | `HQ_rebel_cell/NOTES.md` sections 1-2, v2 r2 | |
 
 ### 8.6 Scale: the landmark in the one city
@@ -984,7 +1040,7 @@ log and the room kit; `hooks` may hold `accs`, `beams`, `mover_lights`, `no_cut`
 **AD ruling 2026-10-15 (C1 / C7): one unit system; the HQ kits are rescaled to it.**
 1. Unit rescale (fixed): the kits were built at "1 storey = 8 BU"; in the pipeline one storey is one floor of 1.9 BU,
    so every kit length is multiplied by `k_units` = 1.9 / 8 = **0.2375** (rooms 14 x 8 x 10 become 3.3 x 1.9 x 2.4 BU;
-   Halcyon's tier 13 becomes 3.1 BU; the Meridian walls at 80 / 60 become 19 / 14.25 BU). With it: light positions,
+   Halcyon's tier 13 becomes 3.1 BU; the superseded v2 Meridian walls at 80 / 60 became 19 / 14.25 BU; the v3 lot of 120 half-size becomes 28.5 BU). With it: light positions,
    the camera's `dmin` and distances, and the HQ fog field scale by `k_units`; light powers by `k_units^2`; densities
    by `1 / k_units`. Rooms keep readability through a pixel target (as the street's `room_px_target` 46 px).
 2. **Designer 2026-10-16 (Q1, resolved): an HQ fills its map lot.** The landmark's footprint is the HQ lot the game
@@ -993,8 +1049,9 @@ log and the room kit; `hooks` may hold `accs`, `beams`, `mover_lights`, `no_cut`
      podium, platforms included), with the lot inset by `fp_margin` 0.25 lots (`CAC/city_preset.py:60`). The landmark
      is scaled uniformly by `k_fit` and centred in the lot; the slack along the longer axis goes to the compound's own
      ground (yard, plaza, apron), never to empty city ground.
-   - Example on the concept city: the Meridian keep (half-size 136 BU in kit units, `HM/hq_preset.py:120`) is about
-     32 BU after `k_units`, against the map square of 32 BU (`CAC/city_preset.py:134`): `k_fit` about 1.0.
+   - Example on the concept city: the Meridian Gatehouse Gantry fills a lot of half-size 120 kit units
+     (`CP["lot"]`, 8.5), which is 28.5 BU after `k_units`, against the inset map square (`CAC/city_preset.py:134`).
+     (The v2 "keep half-size 136" figure belonged to the superseded fortress; audit row 1, 2026-10-18.)
    - The same `k_fit` scales the camera distances, light positions and fog (powers by `k_fit^2`, densities by
      `1 / k_fit`). Rooms keep the pixel target, so a small lot gives a closer camera, not smaller rooms on screen.
    - Check: the landmark covers at least 90 % of the inset lot along its fitting axis and never crosses the lot edge.
@@ -1094,7 +1151,8 @@ Godot: `Line2D` with a reveal Tween (`SB/NOTES.md:162`).
 ### 9.3 Vinyl-sticker nodes
 
 1. Each node type has its own room dressing plus a vinyl sticker; type reads by shape, not colour only
-   (ROUTE_REQUIREMENTS 3). No corner badges.
+   (ROUTE_REQUIREMENTS 3). No corner badges. The three D4 kinds have **provisional (art-pass)** shapes: REST a
+   crescent, WORKSHOP a hexagon, CACHE a notched crate square (audit row 2, 2026-10-18).
 2. Stickers sit at the room's left cut edge, 38 % down, with the number chip to its left (`V3D/../NOTES.md:272`).
 3. Tags show only on hover; legend hover shows all (ROUTE_REQUIREMENTS 4).
 4. Numbers only on the current options (keys 1-n).
@@ -1257,7 +1315,7 @@ route and decision floors only.
 
 | Data | Format | Notes |
 |---|---|---|
-| City and network import | JSON (`city_layout.json`, `net.json`) | from the mainline recorder |
+| City and network import | JSON (`city.json` v1, `net.json`; audit row 3, 2026-10-18) | `city.json` is the only game-exported layout file (2.0c); the recorder's `city_layout.json` is internal to Godot. u64 values are decimal strings |
 | Derivation, poses, occlusion params | JSON (schema 2.3), UTF-8, sorted keys, floats rounded to 1e-4 | the Python <-> GDScript parity contract |
 | Presets | Python dicts in the tools; exported to `.tres` Resources for Godot (read-only at runtime; CLAUDE.md rule 3) | new schema classes need a DECISIONS entry and the schema smoke test (rule 8) |
 | Meshes | glTF 2.0 binary (`.glb`), Z-up -> Y-up by the exporter, per-vertex colour attribute `col`, building id attribute | |
@@ -1271,6 +1329,29 @@ route and decision floors only.
 ## 12. Acceptance checks the tools run automatically
 
 Every check writes pass / warn / fail with numbers to `checks_<run>.json`. A fail blocks a final render batch.
+
+### 12.0 Where each check runs (D8, 2026-10-18)
+
+Main D8 splits the work: art-pass keeps Blender, the build session runs section 12 on **Godot captures**. Audit row 5,
+2026-10-18; NA-02 C4. A check that needs a Cycles pass (Object Index, beam-only) is Blender-only unless the Godot
+capture below supplies the same data.
+
+| Check | Blender plates | Godot captures |
+|---|---|---|
+| 12.1 value band, 12.7 R-VAL / R-SIL / R-DET / R-CALM / R-HUE / R-HOR / R-REP | yes | yes (`beauty.png`, no UI) |
+| 12.2 landmark ratio, 12.7 R-FOCUS-1, 12.6 room readability / rooms unblocked | yes (Object Index pass) | yes, given `id.png` |
+| 12.3.1 data hash, 12.6 parity, 12.4 (data part), 12.5.1 / 12.5.3 (config) | data only | data only |
+| 12.3.2-3 geometry and image hash, 12.5.2 beam profile | yes | no (Blender only in v1) |
+
+**Godot capture contract** (NA-04; fixed now so the IDs are in v1). Three files per capture:
+- `beauty.png`: 8-bit sRGB, without UI.
+- `id.png`: unlit, nearest-sampled, no UI, R = class. Classes match the Blender pass indices of `HM/hq_values.py`:
+  0 sky, 1 landmark compound, 2 city, 5 rooms, 6 landmark movers; 3 and 4 are reserved as in `hq_scene.py`.
+- `capture.json`: camera pose, resolution, `layout_seed` (decimal string), run id.
+
+**Golden plates** (queue item 3) use the same three files, so one set of check code compares Blender plates, Godot
+captures and goldens. A golden plate is a `beauty.png` + `id.png` + `capture.json` triple; its measured values are
+written by the same checks.
 
 ### 12.1 Value band
 
@@ -1286,7 +1367,7 @@ Every check writes pass / warn / fail with numbers to `checks_<run>.json`. A fai
 
 | Item | Default |
 |---|---|
-| Measure | median luma of pass indices {1, 5, 6} over median of {0, 2} inside the landmark's screen box grown 35 % (`HM/hq_values.py:18-38`) |
+| Measure | median luma of pass indices {1, 5, 6} over median of {0, 2} inside the landmark's screen box grown 35 % (`HM/hq_values.py:18-38`). **On Godot captures the masks come from `id.png` classes {1, 5, 6} and {0, 2} (12.0; audit row 5, 2026-10-18)** |
 | Pass | 1.5 <= ratio <= 2.0 (the 2x rule kept; Designer 2026-10-16, Q5) |
 | Warn | ratio > 2.0, never a fail (Halcyon 2.9 and Solace 2.8 were accepted; Designer 2026-10-16) |
 | Fail | ratio < 1.5; no per-corp exception (the MAINFRAME 10x exception is withdrawn; Designer 2026-10-16) |
@@ -1303,7 +1384,7 @@ Every check writes pass / warn / fail with numbers to `checks_<run>.json`. A fai
    denoiser off) at 640 x 360 must hash-match across two runs. GPU Cycles with OIDN is not guaranteed bit-exact: for
    final GPU renders the check is a tolerance (mean absolute difference <= 1/255 on a 320 x 180 downsample, max
    <= 8/255). Conflict C22.
-4. **Seed sensitivity:** changing `layout_seed` changes the dressing hash; changing only an unrelated building's key
+4. **Seed sensitivity:** changing `layout_seed` changes the dressing hash; changing only an unrelated building's `bid`
    changes no other building's placement (per-key streams, 3.5 rule 3).
 
 ### 12.4 No intersections with rails or viaducts
@@ -1357,7 +1438,8 @@ config `checks.composition` and are **provisional; derived from hand-built passe
 | R-VAL-1 / R-VAL-2 / R-VAL-3 | AAA-2 | 12.1 (median warn band 0.09-0.11 / 0.17-0.19 reports only; Designer 2026-10-16) | fail outside the fail band (rule `values.solve`) |
 
 Exempt as in 12.1 (hover power cut, mainline frames, red sequence, flash frames). The landmark and crop boxes come
-from the scene's object-index pass, not hand-placed boxes. The rules without a test yet (`streets.light`,
+from the scene's object-index pass, not hand-placed boxes; **on Godot captures the masks come from `id.png` (12.0;
+audit row 5, 2026-10-18)**. The rules without a test yet (`streets.light`,
 `foreground.street`, the depth planes of `atmosphere.layers`, `materials.mix`) report their proxy numbers until their
 passes exist.
 
@@ -1470,9 +1552,10 @@ Answers from DR "Designer review of round 1" (2026-10-16). The last three (Q4, Q
 | Q9 | Art RNG streams | **Resolved:** the art-seed export is adopted (the game derives `art_seeds` from an `RngService`-derived seed and exports them in `derive_<run>.json`; Blender never invents a seed; the build session adds the TECH_SPEC / DECISIONS entry). Variance varies with proximity to each HQ: per-corp `variance_pref` blended by the city's HQ-proximity falloff | 2.3, 3.5, 3.5b |
 | Q10 | Z-toggle zoom time | **Resolved: 1.0 s**, as the video | 6.2 |
 
-**For the build session / designer, not art tooling** (AD ruling 2026-10-15, C16):
-- Heal / rest points (ROUTE_REQUIREMENTS 7). GDD 4.2 has no heal or rest node type. No art tooling is built for it
-  until the GDD has such a node; then it is one `ROOM_TL` entry plus a sticker keyed by the node kind.
+**Node kinds added by main D4 (audit row 2, 2026-10-18; replaces the C16 note "no art tooling for heal / rest"):**
+REST, WORKSHOP and CACHE are netrun node kinds. Art adds 3 `ROOM_TL` entries (3.3) and 3 sticker shapes (9.3), all
+**provisional (art-pass)**, plus the `derive` kinds `rest`, `workshop`, `cache`. Intel, Relay and Ambush are not node
+kinds. What a REST, WORKSHOP or CACHE node does stays game design.
 
 **Open numbers** (calibrated by the build session, not designer questions):
 - N1: the LOD reveal-tier distances in Godot (5.2, 5.2b), one calibration pass on the street and one HQ.
@@ -1487,7 +1570,7 @@ The file marks four items "GAP" (7, 8, 9, 12) and two "check in the build" items
 
 | Item | Gap | Proposed resolution |
 |---|---|---|
-| 7 | Heal / rest points need an at-rest marker | **Out of scope for art (AD ruling 2026-10-15, C16).** Moved to the "for the build session / designer" list in 14.1: GDD 4.2 has no such node, so no art tooling until it does. |
+| 7 | Heal / rest points need an at-rest marker | **Resolved (D4; audit row 2, 2026-10-18):** REST, WORKSHOP and CACHE are netrun node kinds. Add 3 `ROOM_TL` entries (3.3) and 3 sticker shapes (9.3), **provisional (art-pass)**, plus `derive` kinds. Intel, Relay and Ambush are not node kinds. |
 | 8 | Heat per node (Rack Heat) and the raid threshold | **Proposed:** a Heat chip on the Rack room's sticker (value from the game); a red pencil tick "RAID AT <n>" on the first link where the game reports cumulative Heat crossing the threshold. The tools draw what the game passes in (`heat_by_node`, `raid_threshold_edge`); they compute nothing. |
 | 9 | Node numbers and layers self-evident | **Open (playtest).** Layers read as buildings left to right (street) or spiral turns (HQ). Option: a step ruler in OVERVIEW only, drawn under the street at the column centres. |
 | 12 | GRID VIEW and ROUTE VIEW share one graph language | **Proposed:** the HQ page draws the run path on the City Grid with the same wax states (lime walked, orange plan / option, white ahead, grey past), the same stickers and the same state rings, in the mainline look; the plan pencil (9.5) is the first instance. Mainline task with these values. |
@@ -1506,7 +1589,7 @@ The art tools read these; they never decide them (2.0 steps 1, 2 and 4).
    visualises the state the game passes in.
 4. **The data contract:** the game exports `city.json`, `net.json`, `run_graph.json`, the key-location list and
    `art_seeds` per run (2.2, 2.3).
-5. Heal / rest nodes (above), only if the GDD adds them.
+5. ~~Heal / rest nodes, only if the GDD adds them.~~ Closed (D4; audit row 2, 2026-10-18): REST, WORKSHOP and CACHE are node kinds; art draws them (3.3, 9.3).
 
 ### 14.4 Known art gaps (AD 2026-10-16)
 
@@ -1537,7 +1620,7 @@ The art tools read these; they never decide them (2.0 steps 1, 2 and 4).
 | C13 | Landmark rule "1.5-2x" vs measured ratios 0.92-13 (Meridian 1.33 / 0.92, Halcyon 2.9-3.3, Orbital 2.5-3.8, Solace 3.2-13, Rebel 1.46-3.8; `hq_rev_STATUS.md:73`, corp NOTES) | 12.2: < 1.5 fails, > 2.0 warns; Q5; **Designer 2026-10-16:** 2x rule kept, above 2x warns only (Solace 2.8 accepted), MAINFRAME 10x exception withdrawn |
 | C14 | Foreground occluder fade 0.15 s on the street (`V3D/../NOTES.md:159`) vs 0.3-0.5 s for the HQ occlusion rule (DR 1411) | **AD ruling 2026-10-15:** one value for street and HQ: 0.35 s ease-in-out (7.1, 7.2, 7.4) |
 | C15 | HQ kit `layout.Compound` generates run topology (`HK/layout.py:36` rows 6-5-4-3-2-1; per-corp `seq` lists) vs scope "routes and nodes come from the game"; GDD 4.2 is 7 layers of 2-4 nodes | **AD ruling 2026-10-15:** the Compound / `seq` lists are MOCK route data for concept renders; topology always comes from the game graph (GDD 4.2) mapped onto slots: a hard rule in 1 and 8.4; slot counts in Q2; **Designer 2026-10-16:** the city and the route are generated per game seed; generation order in 2.0; mechanics are hand-off items (14.3) |
-| C16 | ROUTE_REQUIREMENTS 7 asks for heal / rest markers; GDD 4.2 has no heal / rest node type | **AD ruling 2026-10-15:** out of scope for art; moved to the build session / designer list (14.1); no art tooling until the GDD has such a node |
+| C16 | ROUTE_REQUIREMENTS 7 asks for heal / rest markers; GDD 4.2 had no heal / rest node type | **Closed (audit row 2, 2026-10-18):** main D4 adds REST, WORKSHOP and CACHE as node kinds; the AD ruling of 2026-10-15 ("no art tooling") is withdrawn. 3 `ROOM_TL` entries and 3 sticker shapes, provisional (art-pass) (3.3, 9.3, 14.1) |
 | C17 | The brief counts 5 ROUTE_REQUIREMENTS gaps; the file marks 4 "GAP" items (7, 8, 9, 12) and 2 checks (3, 13) | All six covered in 14.2 |
 | C18 | Street rig: v3 dynamic always starts camera-left looking right (`V3D/../NOTES.md:52-55`) vs the one-city mirror when the start lands on the right (`SB/sb_onecity.py:357-378`, `SB/NOTES.md:393-394`) | The one-city rule (mirror by geometry) |
 | C19 | `SB/NOTES.md:109-114` cites mainline files "on main" (`scripts/city3d/...`); this repo's `main` branch has none of them; they live in `D:\Godot\rebel_cell\` | **AD ruling 2026-10-15:** cite them as `D:\Godot\rebel_cell` main-branch paths (`MAIN/`); the build session owns them (section 0) |
@@ -1545,4 +1628,4 @@ The art tools read these; they never decide them (2.0 steps 1, 2 and 4).
 | C21 | The HQ kit exists as five identical copies (`hq_<corp>/scripts/hq_kit/`), and the generalised scene / jobs / compose as per-corp copies | **AD ruling 2026-10-15:** ONE package, `tools/netrun_art/`, with per-corp landmark plugins; copies forbidden (2.2) |
 | C22 | "Same seed gives the same image hash" vs GPU Cycles + OIDN not being bit-exact | **AD ruling 2026-10-15:** agreed: exact hash on data, geometry and a deterministic preview render; tolerance on GPU finals (12.3) |
 | C23 | CLAUDE.md rule 2 (randomness only via `RngService` streams) vs every art script seeding `random.Random(<literal>)` | **AD ruling 2026-10-15:** kept as Q9, with the proposal that art seeds come from `RngService`-derived seeds exported into `derive_<run>.json` (`art_seeds`), so Blender never invents seeds (2.3, 3.5); **Designer 2026-10-16:** adopted; variance by HQ proximity with per-corp `variance_pref` (3.5b) |
-| C24 | Meridian NOTES section 1 says the moat is on W, S and E with the north side the rail yard; v2 says the moat runs round all four sides (`HM/hq_preset.py:44-46`) | **AD ruling 2026-10-15:** moat on W / S / E only; the north side is the rail yard and the gate the freight line leaves by (matches the designer's rail note; 8.5) |
+| C24 | Meridian NOTES section 1 says the moat is on W, S and E with the north side the rail yard; v2 says the moat runs round all four sides (`HM/hq_preset.py:44-46`) | **AD ruling 2026-10-15:** moat on W / S / E only; the north side is the rail yard and the gate the freight line leaves by. **Superseded (Designer 2026-10-16; audit row 1, 2026-10-18):** no fortress, moat or gate; the Gatehouse Gantry has the train on the N side and the rail runs alongside to the port (8.5, 3.4 L4) |
