@@ -228,9 +228,9 @@ The reference scopes by image id and config. A capture has neither, so the same 
 | O-12 | The ground-truth pier positions and the HQ scene's rail polyline for 12.4.3 and 12.4.4: no NA-02 schema (`zoned.json`, NA-03 Open O-C) | 12.4 |
 
 ## Build-session rulings (2026-10-18)
-- **O-3:** two modes. `--mode reference` reproduces `rules_check.md` exactly (R-VAL-1 0.12-0.17, no warn band) and is
-  what NA-04 acceptance 2 compares (100 % of rows). `--mode spec` (default) uses spec 12.1 (0.11-0.17 with warn bands).
-  The ~8 rows that differ are listed in the report, not "fixed".
+- **O-3 (art-pass 2026-10-18):** one mode. Spec 12.1 is normative (Designer 2026-10-16 Q4): pass 0.11-0.17, warn
+  0.09-0.11 and 0.17-0.19, fail outside; `rules_check.md`'s 0.12-0.17 is superseded. Acceptance 2 compares all rows;
+  the rows whose R-VAL-1 verdict changes only because of the band are listed as expected differences.
 - **O-8:** acceptance 2 compares all 44 `rules_check.md` rows on every column NA-04 implements; the "8-row" table in
   the brief means one summary row per check id (rows compared / matched).
 - **O-A:** numpy and Pillow allowed (see NA03_MODULES rulings).
