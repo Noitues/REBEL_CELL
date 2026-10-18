@@ -1,0 +1,496 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "poses_<run>.json v1 (DERIVE_V2_REVIEW Q2, Q3)",
+ "version": 1,
+ "type": "object",
+ "required": [
+  "version",
+  "run",
+  "layout_seed",
+  "kind",
+  "overview",
+  "decision",
+  "rig",
+  "zoom",
+  "lod",
+  "section",
+  "fixtures"
+ ],
+ "properties": {
+  "version": {
+   "const": 1
+  },
+  "run": {
+   "type": "string"
+  },
+  "layout_seed": {
+   "type": "string",
+   "pattern": "^(0|[1-9][0-9]*)$"
+  },
+  "kind": {
+   "enum": [
+    "street",
+    "hq"
+   ]
+  },
+  "overview": {
+   "type": "object",
+   "required": [
+    "pose",
+    "zoom_detail",
+    "lod_weights",
+    "occlusion"
+   ],
+   "properties": {
+    "pose": {
+     "type": "object",
+     "required": [
+      "loc",
+      "tgt",
+      "lens",
+      "shift_x",
+      "shift_y",
+      "yaw",
+      "pitch",
+      "dist"
+     ],
+     "properties": {
+      "loc": {
+       "type": "array",
+       "minItems": 3,
+       "maxItems": 3,
+       "items": {
+        "type": "number"
+       }
+      },
+      "tgt": {
+       "type": "array",
+       "minItems": 3,
+       "maxItems": 3,
+       "items": {
+        "type": "number"
+       }
+      },
+      "lens": {
+       "type": "number"
+      },
+      "shift_x": {
+       "type": "number"
+      },
+      "shift_y": {
+       "type": "number"
+      },
+      "yaw": {
+       "type": "number"
+      },
+      "pitch": {
+       "type": "number"
+      },
+      "dist": {
+       "type": "number"
+      }
+     }
+    },
+    "zoom_detail": {
+     "type": "number"
+    },
+    "lod_weights": {
+     "type": "object"
+    },
+    "occlusion": {
+     "type": "object",
+     "required": [
+      "params",
+      "buildings",
+      "unaffected"
+     ]
+    }
+   }
+  },
+  "decision": {
+   "type": "object",
+   "required": [
+    "pose",
+    "zoom_detail",
+    "lod_weights",
+    "occlusion"
+   ],
+   "properties": {
+    "pose": {
+     "type": "object",
+     "required": [
+      "loc",
+      "tgt",
+      "lens",
+      "shift_x",
+      "shift_y",
+      "yaw",
+      "pitch",
+      "dist"
+     ],
+     "properties": {
+      "loc": {
+       "type": "array",
+       "minItems": 3,
+       "maxItems": 3,
+       "items": {
+        "type": "number"
+       }
+      },
+      "tgt": {
+       "type": "array",
+       "minItems": 3,
+       "maxItems": 3,
+       "items": {
+        "type": "number"
+       }
+      },
+      "lens": {
+       "type": "number"
+      },
+      "shift_x": {
+       "type": "number"
+      },
+      "shift_y": {
+       "type": "number"
+      },
+      "yaw": {
+       "type": "number"
+      },
+      "pitch": {
+       "type": "number"
+      },
+      "dist": {
+       "type": "number"
+      }
+     }
+    },
+    "zoom_detail": {
+     "type": "number"
+    },
+    "lod_weights": {
+     "type": "object"
+    },
+    "occlusion": {
+     "type": "object",
+     "required": [
+      "params",
+      "buildings",
+      "unaffected"
+     ]
+    }
+   }
+  },
+  "rig": {
+   "type": "object"
+  },
+  "zoom": {
+   "type": "object",
+   "required": [
+    "d_ov",
+    "d_dec"
+   ],
+   "properties": {
+    "d0": {
+     "type": "number"
+    },
+    "d1": {
+     "type": "number"
+    },
+    "d_ov": {
+     "type": "number"
+    },
+    "d_dec": {
+     "type": "number"
+    }
+   }
+  },
+  "lod": {
+   "type": "object",
+   "required": [
+    "d0",
+    "d1",
+    "bands",
+    "floors"
+   ]
+  },
+  "section": {
+   "type": "object",
+   "required": [
+    "consts",
+    "zcut",
+    "look_blend"
+   ]
+  },
+  "dive": {
+   "type": "object",
+   "required": [
+    "hq_pose",
+    "overview_pose",
+    "duration_s",
+    "samples"
+   ],
+   "properties": {
+    "hq_pose": {
+     "type": "object",
+     "required": [
+      "loc",
+      "tgt",
+      "lens",
+      "shift_x",
+      "shift_y",
+      "yaw",
+      "pitch",
+      "dist"
+     ],
+     "properties": {
+      "loc": {
+       "type": "array",
+       "minItems": 3,
+       "maxItems": 3,
+       "items": {
+        "type": "number"
+       }
+      },
+      "tgt": {
+       "type": "array",
+       "minItems": 3,
+       "maxItems": 3,
+       "items": {
+        "type": "number"
+       }
+      },
+      "lens": {
+       "type": "number"
+      },
+      "shift_x": {
+       "type": "number"
+      },
+      "shift_y": {
+       "type": "number"
+      },
+      "yaw": {
+       "type": "number"
+      },
+      "pitch": {
+       "type": "number"
+      },
+      "dist": {
+       "type": "number"
+      }
+     }
+    },
+    "overview_pose": {
+     "type": "object",
+     "required": [
+      "loc",
+      "tgt",
+      "lens",
+      "shift_x",
+      "shift_y",
+      "yaw",
+      "pitch",
+      "dist"
+     ],
+     "properties": {
+      "loc": {
+       "type": "array",
+       "minItems": 3,
+       "maxItems": 3,
+       "items": {
+        "type": "number"
+       }
+      },
+      "tgt": {
+       "type": "array",
+       "minItems": 3,
+       "maxItems": 3,
+       "items": {
+        "type": "number"
+       }
+      },
+      "lens": {
+       "type": "number"
+      },
+      "shift_x": {
+       "type": "number"
+      },
+      "shift_y": {
+       "type": "number"
+      },
+      "yaw": {
+       "type": "number"
+      },
+      "pitch": {
+       "type": "number"
+      },
+      "dist": {
+       "type": "number"
+      }
+     }
+    },
+    "duration_s": {
+     "type": "number"
+    },
+    "samples": {
+     "type": "array"
+    }
+   }
+  },
+  "fixtures": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "name",
+     "walked",
+     "current",
+     "options",
+     "hover",
+     "decision",
+     "hover_pose"
+    ],
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "walked": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "options": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "decision": {
+      "type": "object",
+      "required": [
+       "pose",
+       "zoom_detail",
+       "lod_weights",
+       "occlusion"
+      ],
+      "properties": {
+       "pose": {
+        "type": "object",
+        "required": [
+         "loc",
+         "tgt",
+         "lens",
+         "shift_x",
+         "shift_y",
+         "yaw",
+         "pitch",
+         "dist"
+        ],
+        "properties": {
+         "loc": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+           "type": "number"
+          }
+         },
+         "tgt": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+           "type": "number"
+          }
+         },
+         "lens": {
+          "type": "number"
+         },
+         "shift_x": {
+          "type": "number"
+         },
+         "shift_y": {
+          "type": "number"
+         },
+         "yaw": {
+          "type": "number"
+         },
+         "pitch": {
+          "type": "number"
+         },
+         "dist": {
+          "type": "number"
+         }
+        }
+       },
+       "zoom_detail": {
+        "type": "number"
+       },
+       "lod_weights": {
+        "type": "object"
+       },
+       "occlusion": {
+        "type": "object",
+        "required": [
+         "params",
+         "buildings",
+         "unaffected"
+        ]
+       }
+      }
+     },
+     "hover_pose": {
+      "type": "object",
+      "required": [
+       "loc",
+       "tgt",
+       "lens",
+       "shift_x",
+       "shift_y",
+       "yaw",
+       "pitch",
+       "dist"
+      ],
+      "properties": {
+       "loc": {
+        "type": "array",
+        "minItems": 3,
+        "maxItems": 3,
+        "items": {
+         "type": "number"
+        }
+       },
+       "tgt": {
+        "type": "array",
+        "minItems": 3,
+        "maxItems": 3,
+        "items": {
+         "type": "number"
+        }
+       },
+       "lens": {
+        "type": "number"
+       },
+       "shift_x": {
+        "type": "number"
+       },
+       "shift_y": {
+        "type": "number"
+       },
+       "yaw": {
+        "type": "number"
+       },
+       "pitch": {
+        "type": "number"
+       },
+       "dist": {
+        "type": "number"
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

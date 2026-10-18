@@ -38,6 +38,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--ref-config", help="art-pass pvc_config.json")
     ap.add_argument("--ref-rules", help="art-pass rules_check.md")
     ap.add_argument("--concepts", help="folder holding the golden images ({C}/ in the config)")
+    ap.add_argument("--pin-repo", help="art-pass git repo for pinned golden images (default: the repo of --concepts)")
     return ap
 
 
@@ -79,7 +80,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         recs = run_images(a, cfg)
     else:
         from . import reference as REF
-        res = REF.run_reference(a.ref_config, a.ref_rules, a.concepts, cfg)
+        res = REF.run_reference(a.ref_config, a.ref_rules, a.concepts, cfg, repo=a.pin_repo)
         sys.stdout.write(REF.summary_markdown(res))
         return 1 if any(s["mismatch"] for s in res["summary"].values()) else 0
     sys.stdout.write(R.to_markdown(recs))

@@ -7,10 +7,12 @@ Input shapes (all canonical JSON, BU units; NA02 / NA03_NA04_ANSWERS O-C, O-H, O
   `origin_lot`. Plan BU to lots: `lx = x / lot_bu + origin_x`, `ly = origin_y - y / lot_bu`; a street tile is the lot
   cell `(floor(lx), floor(ly))` (assumption: a lot `[i, j]` covers `[i, i+1) x [j, j+1)`).
 - `derive` (v2): `rooms{id: {front, back, bld}}`, `edges[] = {a, b, path}`; `occlusion = {params, buildings[]}`.
-- `beams` (NA-02 has no beam schema yet, Open O-11; this is the assumed shape):
-  `{route_bids: [bid..], beams: [{bid, pos: [x, y], top, spot: {cone_deg, blend, shadow, media_linked},
-  shaft: {material, shadow}}]}`.
-- `dress` (not designed yet): `{items: [{kind, pos: [x, y, z]}]}`.
+- `dress` (`dress_<run>.json` v1, review Q4): the typed lists `signs, lamps, washes, glows, beams, streak_lanes,
+  fog_fields`. For 12.4.5c every list item with a `pos` is flattened to `(list name, pos)`; an `items[{kind, pos}]` list is
+  rejected. `beams[] = {bid, pos [x, y, z], lean [x, y], sweep_deg, phase, pal}`.
+- `beams` check input (built by `beams_input`): the dress `beams` plus `top` from city.json, the `spot {cone_deg, blend,
+  shadow, media_linked}` / `shaft {material, shadow}` look.preset beam rig (`BEAM_RIG`, not stored per beam in dress) and
+  `route_bids` = derive `route_keys` (bids).
 Thresholds come from `composition.json` (`checks.data`). Every check returns records (see `report`).
 """
 import hashlib
@@ -232,6 +234,11 @@ def _rail_dist(poly: Sequence[Pt], line: Sequence[Pt], r: float) -> float:
     return best
 
 
+def poly_rail_dist(poly: Sequence[Pt], line: Sequence[Pt], r: float) -> float:
+    """Distance polygon to the rail polyline, exact where it can be below `r` (inf when far); shared with `zoning`."""
+    return _rail_dist(poly, line, r)
+
+
 def _parts(city: Dict[str, Any]):
     for b in city["buildings"]:
         for i, p in enumerate(b["parts"]):
@@ -340,22 +347,54 @@ def check_openings(derive: Dict[str, Any], city: Dict[str, Any]) -> Record:
 
 
 def check_foreground(derive: Dict[str, Any], dress: Dict[str, Any], margin: float) -> Record:
-    """12.4.5c: no foreground dressing item inside the plan box of a room's front opening (grown by `margin`)
-    and its height span. The 'in front' volume rule is provisional (the dress lists are not designed)."""
+    """12.4.5c: no dress item with a `pos` inside the plan box of a room's front opening (grown by `margin`, the 0.5 BU
+    of the facade link offset; provisional) and its height span. Reads the typed lists of `dress_<run>.json`; an
+    `items` list is an input-shape failure."""
+    if "items" in dress or not all(n in dress for n in DRESS_LISTS):
+        return record("12.4.5c", FAIL, None, "typed dress lists", "dress input must be the typed lists of dress_<run>.json")
     boxes = []
     for rid in sorted(derive["rooms"]):
-        q = derive["rooms"][rid]["front"]
+        r = derive["rooms"][rid]
+        gz = r.get("ground_z", 0.0)
+        q = r["front"]
         boxes.append((rid, min(p[0] for p in q) - margin, max(p[0] for p in q) + margin,
                       min(p[1] for p in q) - margin, max(p[1] for p in q) + margin,
-                      min(p[2] for p in q), max(p[2] for p in q)))
+                      min(p[2] for p in q) + gz, max(p[2] for p in q) + gz))
     bad = []
-    for it in dress["items"]:
-        x, y, z = it["pos"]
+    for name, (x, y, z) in dress_positions(dress):
         for rid, x0, x1, y0, y1, z0, z1 in boxes:
             if x0 <= x <= x1 and y0 <= y <= y1 and z0 <= z <= z1:
-                bad.append(f"{it['kind']} at ({x:.1f},{y:.1f}) before {rid}")
+                bad.append(f"{name} at ({x:.1f},{y:.1f}) before {rid}")
                 break
     return record("12.4.5c", FAIL if bad else PASS, len(bad), "0 items before openings", _many(bad))
+
+
+# ---------------------------------------------------------------- dress and beam inputs
+DRESS_LISTS = ("signs", "lamps", "washes", "glows", "beams", "streak_lanes", "fog_fields")
+BEAM_RIG: Dict[str, Any] = {   # look.preset beam rig (SB/sb_ocjobs.py LOOK): merged by the loader, not stored per beam
+    "spot": {"cone_deg": 30.0, "blend": 1.0, "shadow": False, "media_linked": True},
+    "shaft": {"material": "beam_shaft", "shadow": False}}
+
+
+def dress_positions(dress: Dict[str, Any]) -> List[Tuple[str, Sequence[float]]]:
+    """`(list name, pos)` of every typed-list item that has a `pos` (washes, lamps, signs, glows, beams)."""
+    out = []
+    for name in DRESS_LISTS:
+        for it in dress.get(name, []):
+            if "pos" in it:
+                out.append((name, it["pos"]))
+    return out
+
+
+def beams_input(dress: Dict[str, Any], derive: Dict[str, Any], city: Dict[str, Any],
+                rig: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """The 12.5 beam check input from `dress_<run>.json`, `derive` and `city.json` (see the module docstring)."""
+    r = rig or BEAM_RIG
+    tops: Dict[str, float] = {}
+    for bid, _, p in _parts(city):
+        tops[bid] = max(tops.get(bid, 0.0), p["z0"] + p["h"])
+    beams = [dict(b, top=tops.get(b["bid"], 0.0), spot=dict(r["spot"]), shaft=dict(r["shaft"])) for b in dress["beams"]]
+    return {"route_bids": list(derive["route_keys"]), "beams": beams}
 
 
 # ---------------------------------------------------------------- 12.5
@@ -387,13 +426,19 @@ def check_beam_layout(beams: Dict[str, Any], cfg: Dict[str, Any]) -> Record:
         if lst[i]["bid"] in set(beams.get("route_bids", [])):
             bad.append(f"{lst[i]['bid']} on route column")
         for j in range(i + 1, len(lst)):
-            d = math.dist(lst[i]["pos"], lst[j]["pos"])
+            d = math.dist(lst[i]["pos"][:2], lst[j]["pos"][:2])
             if d < c["min_spacing"]:
                 bad.append(f"{lst[i]['bid']}-{lst[j]['bid']} {d:.1f} BU")
     return record("12.5.3", FAIL if bad else PASS, len(lst), {"max": c["max"], "min_spacing": c["min_spacing"]}, _many(bad))
 
 
 # ---------------------------------------------------------------- 12.6 occlusion
+def occlusion_blocks(poses: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """The occlusion blocks of a `poses_<run>.json`: overview, decision and every fixture decision."""
+    recs = [poses["overview"], poses["decision"]] + [f["decision"] for f in poses.get("fixtures", [])]
+    return [r["occlusion"] for r in recs]
+
+
 def check_occlusion(derive: Dict[str, Any], city: Optional[Dict[str, Any]], cfg: Dict[str, Any]) -> Record:
     """12.6: every building opacity is at least `occ_ghost`; the stub stays: cut_height >= min(occ_stub, top)."""
     eps = cfg["data"]["occlusion"]["opacity_eps"]
@@ -434,6 +479,8 @@ def run_data_suite(inputs: Dict[str, Any], cfg: Dict[str, Any]) -> Tuple[List[Re
         recs += [check_links(d, c), check_openings(d, c)]
     if d and inputs.get("dress"):
         recs.append(check_foreground(d, inputs["dress"], cfg["data"]["dress"]["opening_margin"]))
+        if c and not inputs.get("beams"):
+            inputs = dict(inputs, beams=beams_input(inputs["dress"], d, c))
     if inputs.get("beams"):
         recs += [check_beam_config(inputs["beams"], cfg), check_beam_layout(inputs["beams"], cfg)]
     if d and "occlusion" in d:
