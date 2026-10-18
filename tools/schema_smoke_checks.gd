@@ -7,7 +7,20 @@ extends RefCounted
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
 	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound() + _m14_letterhead() \
-		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks()
+		+ _t2_heuristic_strategist() + _n1_amount_mode() + _n3_phases() + _n4_enrage() + _n13_undock() + _n11_pointer_ticks() + _n14_sandbox_charges()
+
+
+## Plan 2 N14 (ruling Q39): the SANDBOX charge counts default 1 / 2, ship 1 / 2, and bad
+## values are refused.
+func _n14_sandbox_charges() -> int:
+	var fails := 0
+	var d := CampaignConfigData.new()
+	var cfg: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("N14 sandbox charges default (expect 1 2): ", d.sandbox_charges, " ", d.sandbox_charges_perfect, " shipped ", cfg.sandbox_charges, " ", cfg.sandbox_charges_perfect)
+	if d.sandbox_charges != 1 or d.sandbox_charges_perfect != 2 or cfg.sandbox_charges != 1 or cfg.sandbox_charges_perfect != 2: fails += 1
+	d.sandbox_charges_perfect = 0
+	if not ",".join(d.validate()).contains("sandbox_charges"): fails += 1
+	return fails
 
 
 ## Plan 2 N11: pointers on any tick. WheelData / BossPhaseData refuse a tick outside 0-29 and

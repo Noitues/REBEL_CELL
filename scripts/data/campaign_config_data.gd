@@ -93,6 +93,10 @@ extends Resource
 ## Output of a slice with a PARASITE docked on it (Botnet).
 @export var parasite_multiplier: float = 0.5
 @export var shield_cap: int = 15
+## N14 (ruling Q39): SANDBOX charges a DETOUR slice gives when it resolves at WEAK or GOOD,
+## and at PERFECT. Each charge negates one incoming hit whole; charges add up.
+@export var sandbox_charges: int = 1
+@export var sandbox_charges_perfect: int = 2
 @export var corrupted_self_damage: int = 3
 ## Added to corrupted_self_damage per MAJOR Heat threshold crossed.
 @export var corrupted_damage_per_major: int = 1
@@ -372,6 +376,8 @@ func validate() -> PackedStringArray:
 		if arr.size() != 4:
 			errors.append("Per-tier arrays need 4 entries.")
 	_validate_enrage(errors)
+	if sandbox_charges < 1 or sandbox_charges_perfect < sandbox_charges:
+		errors.append("sandbox_charges must be >= 1 and sandbox_charges_perfect >= sandbox_charges.")
 	if phase_count_min_by_class.size() != RC.EnemyClass.size() or phase_count_max_by_class.size() != RC.EnemyClass.size():
 		errors.append("Phase counts need one entry per enemy class (%d)." % RC.EnemyClass.size())
 	else:

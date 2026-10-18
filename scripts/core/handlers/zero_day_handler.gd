@@ -24,6 +24,9 @@ func handle(context: Dictionary, state, _rng: RandomNumberGenerator) -> Array[Di
 	var amount := mult * (best_crit if best_crit > 0 else best_atk)
 	var events: Array[Dictionary] = [{"type": "zero_day", "amount": amount, "text": "Zero Day: the Perfect NULL becomes a %dx Crit for %d." % [mult, amount]}]
 	for q in target.wheel.pointer_ticks.size():
+		# N14: the target's SANDBOX charge comes before its bodyguard.
+		if fx.sandboxed(owner, target, amount, events, &"zero_day"):
+			continue
 		var victim: CombatantState = target
 		var guard: CombatantState = state.satellite_at(target.id, target.wheel.slice_at(q))
 		if guard != null:

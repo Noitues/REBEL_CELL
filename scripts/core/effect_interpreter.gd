@@ -290,18 +290,18 @@ func retrigger_multipliers(state: CombatState, trigger: int, ctx: Dictionary, li
 
 # --- Primitive mutations ---------------------------------------------------------
 
-## One hit of `amount` on `victim`. Evade cancels attacks; block then shield absorb
-## unless `pierce` (designer ruling: Pierce ignores block and shield, not satellites);
-## the rest is HP damage through lose_hp (never below 0 or the phase floor; the event's
-## "parked" says what the floor stopped).
-func deal_hit(state: CombatState, attacker: CombatantState, victim: CombatantState, amount: int, pierce: bool, is_attack: bool, events: Array[Dictionary], source_id: StringName = &"") -> int:
+## One hit of `amount` on `victim`, in the N14 order: the attacker's enrage, then a SANDBOX
+## charge negates the whole hit (any damage source but self-damage: slices, counters,
+## listeners; Pierce never touches it, ruling Q39), then block, then shield (both skipped
+## by `pierce`), then HP through lose_hp (never below 0 or the phase floor; the event's
+## "parked" says what the floor stopped). A bodyguard redirect sits between SANDBOX and
+## block: callers that redirect check `sandboxed` on the guarded target first. `_is_attack`
+## (a slice hit) no longer changes the rule.
+func deal_hit(state: CombatState, attacker: CombatantState, victim: CombatantState, amount: int, pierce: bool, _is_attack: bool, events: Array[Dictionary], source_id: StringName = &"") -> int:
 	amount = enraged(attacker, amount)
 	if amount <= 0:
 		return 0
-	if is_attack and victim.evade_charges > 0:
-		victim.evade_charges -= 1
-		events.append({"type": "evaded", "attacker": attacker.id, "target": victim.id, "amount": amount,
-			"text": "" if quiet else "%s EVADES %d from %s." % [victim.display_name, amount, attacker.display_name]})
+	if _negate(attacker, victim, amount, events, source_id):
 		return 0
 	var remaining := amount
 	var blocked := 0
@@ -321,6 +321,24 @@ func deal_hit(state: CombatState, attacker: CombatantState, victim: CombatantSta
 		"text": "" if quiet else "%s hits %s for %d%s%s -> %d HP damage (%d HP left)." % [attacker.display_name, victim.display_name, amount,
 			" (pierce)" if pierce else "", _absorb_text(blocked, shielded), hp_damage, victim.hp]})
 	return hp_damage
+
+
+## N14 (ruling Q39): whether `victim` spends a SANDBOX charge on a hit of `amount` from
+## `attacker` (before enrage; the bodyguard step calls this on the guarded target before it
+## redirects). A spent charge logs an "evaded" event with "sandboxed": true and 0 HP damage.
+func sandboxed(attacker: CombatantState, victim: CombatantState, amount: int, events: Array[Dictionary], source_id: StringName = &"") -> bool:
+	var hit := enraged(attacker, amount)
+	return hit > 0 and _negate(attacker, victim, hit, events, source_id)
+
+
+func _negate(attacker: CombatantState, victim: CombatantState, hit: int, events: Array[Dictionary], source_id: StringName) -> bool:
+	if victim.evade_charges <= 0 or attacker == victim:
+		return false
+	victim.evade_charges -= 1
+	events.append({"type": "evaded", "sandboxed": true, "attacker": attacker.id, "target": victim.id, "amount": hit,
+		"hp_damage": 0, "source_id": source_id, "charges_left": victim.evade_charges,
+		"text": "" if quiet else "%s's SANDBOX negates %d from %s (%d charge(s) left)." % [victim.display_name, hit, attacker.display_name, victim.evade_charges]})
+	return true
 
 
 ## N4 (plan 2 R4): `amount` as an enemy `attacker`'s hit lands under its enrage (hits only:
@@ -360,7 +378,7 @@ func gain_shield(c: CombatantState, amount: int, events: Array[Dictionary]) -> v
 
 func gain_evade(c: CombatantState, charges: int, events: Array[Dictionary]) -> void:
 	c.evade_charges += charges
-	events.append({"type": "evade", "target": c.id, "amount": charges, "text": "" if quiet else "%s will EVADE the next %d attack(s)." % [c.display_name, c.evade_charges]})
+	events.append({"type": "evade", "target": c.id, "amount": charges, "text": "" if quiet else "%s gains %d SANDBOX charge(s) (%d)." % [c.display_name, charges, c.evade_charges]})
 
 
 func heal(c: CombatantState, amount: int, events: Array[Dictionary]) -> void:
