@@ -347,3 +347,15 @@ These override the rows above where they differ.
 4. **12.4.5c: accepted** as the front-opening box grown by 0.5 BU, the same offset as the facade link paths. Provisional.
 
 On `rules_check.md`: pin `p_city_night` to its ded90765 PNG. Don't regenerate it. The 4K city finals become golden plates (queue item 3) with their own values JSON, and the other 8 band-only differences are expected under spec 12.1.
+
+## NA-03 follow-ups (AD 2026-10-18)
+
+- **12.4.5c (replaces the 0.5 BU box above).** A dressing item fails when it stands in front of a route opening as seen from the camera:
+  - laterally within 0.15 BU of `[u0, u1]`;
+  - overlapping the opening's z range;
+  - in front of the face along `nrm`.
+- **Lamps.** Dress skips any kerb lamp whose `u` falls inside a route opening's `[u0 - 0.15, u1 + 0.15]` on that side. The other lamps are not shifted.
+- **First DECISION.** There is no current room. The rig frames the layer-1 options with the entry anchor as the virtual current: the street leg start (`start_left`) or the HQ entrance slot.
+- **Net links.** These are routed over street tiles (`layout.route_on_streets`). Ties go to the fewest turns, then tile `(i, j)`.
+- **Rail.** There is no placeholder in production. With no `rails` in the city JSON, there is no rail object, and the 12.4 rail checks report `n/a`. The placeholder exists behind a test-fixture flag only.
+- **Zoning scope for W1.** Only the rail is needed. Highways, ring, metro, port and aqueduct are for the city views only and come with NA-12.
