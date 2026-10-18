@@ -213,3 +213,14 @@ Open for the whole section (Q4.1 to Q4.4):
 Blocking before coding: Q0.1 (version scheme), Q1.1, Q1.3, Q1.6 (corner order, `parts`, `face`), Q2.1 (walked set for
 per-node poses), Q2.4 and Q2.5 (`d_dec` for street), Q3.1 (band table numbers), Q3.9 (`look.preset` values), all of
 section 4. The rest have a stated proposal and can proceed on it unless art-pass objects.
+
+## Art-pass interim rulings (2026-10-18; full review: art-pass `HANDOFF_PACKAGE/DERIVE_V2_REVIEW.md`, commit to follow)
+- **Q0.1:** versions per file: derive v2; `poses_<run>.json` v1; `dress_<run>.json` v1.
+- **Q2.1:** no precomputed per-node DECISION/HOVER poses; `NetrunCameraRig` computes them at runtime from the walked
+  list. `poses_<run>.json` holds overview, dive end poses, rig constants, the zoom block, and `fixtures[]`
+  {walked, current, hover?, decision, hover} for parity (≥ 3 walks per run, 5 dive samples).
+- **Q2.5:** `d_dec = derive.decision.dist` for both kinds, never null.
+- **Section 4:** `dress_<run>.json` v1 is read by Godot and Blender (GDScript twin in NA-21, last). Power = relative
+  0..1 × a per-list base in `look.preset`; colors are palette ids, never RGB; one stream per object keyed by id, fixed
+  draw order. List shapes (signs, lamps, washes, glows, beams, streak_lanes, fog_fields) come in the review doc.
+- Q1.1, Q1.3, Q1.6, Q3.1, Q3.9: wait for the review doc.
