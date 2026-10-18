@@ -312,3 +312,22 @@ This file wins. Art-pass to align §2.0c / §2.3 to it.
 | D10 | `street`/`nrm`/`start_left` street only; HQ derive omits them | accepted: they are present iff `kind == "street"` | |
 | D11 | derive has no `layout_seed` | adds `layout_seed` (decimal string) | art_seeds root must be traceable |
 | D12 | REST / WORKSHOP / CACHE colors, sticker shapes | not contract fields; art values | coordinator ruling |
+
+## Rulings on the Open list (build session, 2026-10-18)
+These close O1-O13 for v1; NA-02 implements them.
+- **O1:** confirmed (bid from `cell.position`; `key` = first part's key; an HQ stand-in is one building with N parts).
+- **O2:** confirmed; vectors 6 and 7 pin unsigned printing in GDScript (print the u64 from its two halves).
+- **O3:** `net.json` uses **BU plan coordinates** like `city.json`. `links[].pts` in v1 = the straight segment
+  `[a, b]` (2 points, Site point to Site point). A street-routed polyline is a v2 bump.
+- **O4:** NA-02 writes a **partial** `derive_<run>.json` v1 with the game keys only (`version`, `kind`, `layout_seed`,
+  `art_seeds`, `run`); NA-03's `derive.street` fills the rest into the same file.
+- **O5:** node `heat` stays out. Add `run` (string, the run id the file name carries) to `run_graph.json` and derive.
+- **O6:** stream names between `zoning` and `post` come from art-pass; until named they are absent (no placeholder).
+- **O7:** a Site's `bid` = the building whose `cell` contains the Site lot; else the nearest building by Chebyshev
+  lot distance, ties by `(i, j)` ascending, within 4 lots; else the export fails naming the Site. Pure function, test it.
+- **O8:** Exploit Site = `SiteData.exploit_type != NONE` (authoritative); `objective` is not read.
+- **O9:** the derived mapping in section 3 stands; the corp comes from the `CorporationData` holding the grid.
+- **O10:** top-level keys only in v1 (as written); NA-03 freezes nested shapes in its schema bump.
+- **O11:** the Godot ID capture is its own W1 slice; the class table is fixed here.
+- **O12:** pretty-printed, indent 1 space, sorted keys, LF, trailing newline.
+- **O13:** `run_graph.json` v1 = the static graph with today's 4 types; new node kinds bump it (N16 / D4 nodes).
