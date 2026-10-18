@@ -1452,7 +1452,7 @@ config `checks.composition` and are **provisional; derived from hand-built passe
 |---|---|---|---|
 | R-SIL-1 / R-SIL-2 | street | lit skyline std >= 0.15; >= 0.08 in every 1/4 window | fail (rule `frontage.silhouette`) |
 | R-DET-1 / R-DET-2 | street | Sobel >= 0.028; >= 450 blobs / MP | fail (rule `dressing.signs`) |
-| R-CALM-1 / R-CALM-2 | street, HQ | detail CV 0.45-0.85; calm tiles 12-32 % | fail (rules `density.falloff`, `atmosphere.layers`) |
+| R-CALM-1 / R-CALM-2 | street, HQ | detail CV 0.45-0.85; calm tiles 12-32 % | fail on street views; **report only on HQ views** until recalibrated from the golden HQ plates (they fail on nearly every approved HQ final, so the thresholds, not the art, are off; AD 2026-10-18) (rules `density.falloff`, `atmosphere.layers`) |
 | R-HUE-1 / R-HUE-2 | street, city | entropy >= 3.8 bits; top cluster <= 45 % | fail; corp HQ views exempt (rule `palette.districts`) |
 | R-FOCUS-1 | any frame with a landmark | landmark / ring mean luma >= 1.5 | fail (rule `landmark.lead`); complements 12.2, which uses medians and pass indices |
 | R-HOR-1 | city views | built-top std >= 0.015 in every 1/4 window | fail (rule `horizon.break`) |
@@ -1506,7 +1506,7 @@ Rules:
 |---|---|
 | `median`, `under_010`, `over_085` | Rec.709 luma median; share of pixels under 0.10; share over 0.85 (fractions 0..1; 12.1) |
 | `ratio_median` | The 12.2 landmark ratio (median of classes {1, 5, 6} over median of {0, 2} inside the landmark box grown 35 %). This is the gated measure |
-| `ratio_mean`, `ratio_peak` | The landmark ratio on mean and on peak luma, as `HM/hq_values.py` writes them today. Reported only |
+| `ratio_mean`, `ratio_peak` | Mean and 99th-percentile luma of the landmark classes over the **median** of the background classes, inside the same box (as `post_tethys.py`; AD 2026-10-18). Reported only |
 | `composition` | Raw 12.7 metrics per rule ID (R-SIL-1/2, R-DET-1/2, R-CALM-1/2, R-HUE-1/2, R-FOCUS-1, R-HOR-1, R-REP-1). `null` where the rule is not scoped to the plate (12.7 defaults) |
 | `checks` | Status of each check (pass, warn, fail, `n/a`) and the exempt flags (12.0) |
 | `inputs` | SHA-256 of the `city.json`, `net.json`, `run_graph.json`, `zoned.json` and `derive_<run>.json` the plate was built from |
@@ -1534,12 +1534,14 @@ The city day plate is not held to the 0.14 band. Its median target is 0.25 (3.7)
 
 A capture that moves beyond these numbers, or another plate that enters a warn band, is reported as new.
 
+**Baseline fails (AD 2026-10-18).** The golden plates are the approved finals as they are. A check that a plate already fails is recorded in its `values.json` `checks` as `baseline`. On the Godot capture of that plate the same check reports `warn (baseline)` and the drift compare still applies; it is not a capture failure. Each baseline fail is an art item on art-pass (`golden_plates/INDEX.md`), cleared by a re-bake. Rebel Cell: pass index 3 (the MAINFRAME sign) maps to class 1, the sign is part of the landmark.
+
 **Camera parameters in `<stem>_capture.json`.** Added to the 12.0 fields (pose, resolution, `layout_seed` as a decimal string, run id) and the optional scope keys (`kind`, `view`, `look`, `look_blend`, `corp`, `exempt`). The values are the solved pose of the plate, not a re-solve (the rig is checked by its own parity test, 12.6).
 
 | Key | Meaning |
 |---|---|
 | `camera` | The pose object of derive v2 (`DERIVE_V2_REVIEW.md` 1.5 and AD resolutions): `loc`, `tgt` `[x, y, z]` BU (x east, y north, z above local ground), `yaw` (rig convention: 0 = north, clockwise), `pitch` deg, `dist` BU, `lens` mm on the 36 mm sensor (horizontal fit), `shift_x`, `shift_y` in frame widths (Godot: `frustum_offset`, pixel-parity tested) |
-| `camera.ortho` | true for the mainline map camera. For `city_a2_night` and `city_a2_day`: yaw 135, pitch 40, lot 6 BU (4.2) |
+| `camera.ortho` | true for the mainline map camera only. The `city_a2_night` and `city_a2_day` plates use the approved perspective hero camera of the finals (lens 28, pitch 33, dist about 1130 BU; AD 2026-10-18), not the orthographic map camera |
 | `camera.zoom_dive`, `camera.zoom_detail` | The two zoom floats of 5.1 |
 | `resolution` | `[w, h]` of the beauty and id images |
 | `anim_t` | s within the 4.0 s loop (3.6 rule 4) |
