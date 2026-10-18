@@ -481,14 +481,14 @@ const REFUSAL_FLASH_ALPHA := 0.6
 
 
 ## W0 ARTFIX: the aim ring of satellite `sat` in view-local px: {"at": centre, "radius": its outer
-## edge with the crosshair ticks}. The toast anchors beside it.
+## edge with the crosshair ticks and the disabled arrows}. The toast anchors beside it.
 func aim_ring_of(sat: CombatantState) -> Dictionary:
 	for e in entries():
 		if (e["sat"] as CombatantState).id == sat.id:
 			var b := float(bloom.get(int(e["slot"]), 0.0))
 			var at := (e["tile"] as Vector2).lerp(e["mini"], b)
 			var r := lerpf(float(e["depth"]) * 0.6, float(e["mini_r"]), b) + AIM_RING
-			return {"at": at, "radius": r + AIM_RING * 2.5}
+			return {"at": at, "radius": r + AIM_RING * 2.5 + (DISABLED_ARROW_GAP + 2.0 * WheelView.ARROW_HIT) * host.view._ts()}
 	return {"at": host.center() if host != null else Vector2.ZERO, "radius": 0.0}
 
 
@@ -516,5 +516,5 @@ func _draw_disabled_arrows(at: Vector2, r: float) -> void:
 
 ## The disabled arrows: the gap from the aim ring (px at text 1.0), how far paper is mixed toward night (50 % grey) and its alpha.
 const DISABLED_ARROW_GAP := 4.0
-const DISABLED_MIX := 0.5
+const DISABLED_MIX := 0.25
 const DISABLED_ARROW_ALPHA := 1.0

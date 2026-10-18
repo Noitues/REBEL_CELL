@@ -14,6 +14,9 @@ const BADGE_GAP := 4.0
 ## Plate padding (px at text scale 1.0) and its step when it is pushed clear of the disc.
 const PLATE_PAD := Vector2(8.0, 6.0)
 const PUSH_STEP := 2.0
+## The most pushes a plate takes, and the width its words wrap to (px at text scale 1.0).
+const PUSH_TRIES := 600
+const WRAP_W := 175.0
 
 var _plate: PanelContainer = null
 
@@ -30,21 +33,22 @@ func _get_tooltip(_at: Vector2) -> String:
 
 
 ## Where the plate of size `sz` stands (global): below-right of `badge`, at least `gap` px from the
-## rim circle (`center`, `radius`), inside `bounds`. Pushed right first (away from the disc), then
-## down; held inside `bounds` last.
+## rim circle (`center`, `radius`), inside `bounds`. Pushed right first (away from the disc); when
+## the view's edge stops that, down until it clears the rim (the wheel at the screen's edge).
 static func plate_rect(badge: Rect2, sz: Vector2, center: Vector2, radius: float, bounds: Rect2, gap: float, gap_badge: float) -> Rect2:
-	var rect := Rect2(Vector2(clampf(badge.position.x, bounds.position.x, maxf(bounds.position.x, bounds.end.x - sz.x)), badge.end.y + gap_badge), sz)
+	var reach := radius + gap
+	var x0 := clampf(badge.position.x, bounds.position.x, maxf(bounds.position.x, bounds.end.x - sz.x))
+	var rect := Rect2(Vector2(x0, badge.end.y + gap_badge), sz)
 	var tries := 0
-	while _clear_of_rim(rect, center, radius + gap) == false and tries < 400:
+	while not _clear_of_rim(rect, center, reach) and tries < PUSH_TRIES:
 		var right := Rect2(rect.position + Vector2(PUSH_STEP, 0.0), sz)
 		if right.end.x <= bounds.end.x:
 			rect = right
 		else:
 			rect = Rect2(rect.position + Vector2(0.0, PUSH_STEP), sz)
 		tries += 1
-	var x := clampf(rect.position.x, bounds.position.x, maxf(bounds.position.x, bounds.end.x - sz.x))
 	var y := clampf(rect.position.y, bounds.position.y, maxf(bounds.position.y, bounds.end.y - sz.y))
-	return Rect2(Vector2(x, y), sz)
+	return Rect2(Vector2(rect.position.x, y), sz)
 
 
 static func _clear_of_rim(rect: Rect2, center: Vector2, reach: float) -> bool:
@@ -77,6 +81,10 @@ func show_plate() -> void:
 	sb.content_margin_bottom = PLATE_PAD.y * ts
 	_plate.add_theme_stylebox_override(&"panel", sb)
 	var tip := UiTip.make(tooltip_text)
+	for c in tip.get_children():
+		if c is Label:
+			UiWrap.whole_words(c as Label)
+			(c as Label).custom_minimum_size.x = WRAP_W * ts
 	_plate.add_child(tip)
 	add_child(_plate)
 	_plate.reset_size()

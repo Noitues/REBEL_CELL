@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tools/design_lab/w0_artfix_sitenames_capture.gd" id="1"]
+
+[node name="W0ArtfixSitenames" type="Node"]
+script = ExtResource("1")

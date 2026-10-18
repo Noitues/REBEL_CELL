@@ -79,7 +79,7 @@ func test_tooltip_plate_stands_outside_the_disc_clear_of_the_rim() -> void:
 	assert_gte(r.position.y, badge.end.y, "below the badge")
 	# no room on the right: the plate is held inside the view and still clear of the rim
 	var edge := EnrageBadge.plate_rect(Rect2(Vector2(1800, 100), Vector2(90, 20)), sz, Vector2(1700, 300), 150.0, bounds, gap, EnrageBadge.BADGE_GAP)
-	assert_true(bounds.encloses(edge), "clamped at the screen's edge")
+	assert_true(bounds.encloses(edge), "clamped at the screen edge")
 	var near := Vector2(clampf(1700.0, edge.position.x, edge.end.x), clampf(300.0, edge.position.y, edge.end.y))
 	assert_gte(near.distance_to(Vector2(1700, 300)), 150.0 + gap - 0.01, "clear of the rim at the edge too")
 

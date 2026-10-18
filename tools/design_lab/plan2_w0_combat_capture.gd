@@ -43,25 +43,17 @@ func _scene(enemy: StringName, session: CombatSession = null) -> Control:
 	return scene
 
 
-func _shot(name: String) -> void:
-	await _frames(14)
+func _shot(name: String, wait: int = 14) -> void:
+	await _frames(wait)
 	get_viewport().get_texture().get_image().save_png("%s/%s.png" % [_out, name])
 	print("shot ", name)
 
 
-## Shows the badge's own tooltip (the object the engine's tooltip popup would show: native tooltips never
-## open in the quiet off-screen window) just under it.
+## Opens the badge's own tooltip plate (W0 ARTFIX: below-right of the badge, outside the disc; native
+## tooltips never open in the quiet off-screen window, so the capture calls what hover calls).
 func _open_tooltip(badge: Control) -> void:
-	var tip := badge._make_custom_tooltip(badge.tooltip_text) as Control
-	var back := ColorRect.new()  # the popup's own glass
-	back.color = Color(Palette.NIGHT_SKY, 0.95)
-	_holder.add_child(back)
-	back.add_child(tip)
-	tip.reset_size()
-	back.size = tip.size + Vector2(12, 8)
-	tip.position = Vector2(6, 4)
-	back.global_position = badge.get_global_rect().position + Vector2(-back.size.x + badge.size.x, badge.size.y + 6.0)
-	print("tooltip ", back.get_global_rect())
+	(badge as EnrageBadge).show_plate()
+	print("plate ", (badge.get_node("EnragePlate") as Control).get_global_rect())
 	await _frames(4)
 
 
@@ -175,6 +167,14 @@ func _satellite() -> void:
 	var scene := await _scene(&"", s)
 	s.state.target_id = SatelliteFixture.sat_of(s).id
 	scene._refresh(s.state)
+	await _frames(30)  # the backdrop bakes in first (the shot matches the earlier capture)
 	scene._nudge_wheel_option.select(1)
 	scene.nudge(1)
-	await _shot("6_SATELLITE")
+	# The quiet window's frames are slow (the 0.25 s refusal is over in two): the shot holds it 0.3 in.
+	for v: WheelView in scene._enemy_views.values():
+		var tw: Tween = v._tweens.get(&"sat_refusal")
+		if tw != null:
+			tw.kill()
+			v.sat_refusal = 0.3
+			v.queue_redraw()
+	await _shot("6_SATELLITE", 2)  # mid refusal: the ring shaken, the red flash on
