@@ -161,6 +161,9 @@ func test_a_spin_chip_is_the_rotation_the_play_really_makes_on_either_wheel() ->
 				var st: CombatState = scene.engine.state()
 				var id: StringName = st.player.id if who == &"player" else st.enemies[0].id
 				var before := st.get_combatant(id).wheel.rotation
+				# N21: every enemy now regains resistance each turn; spend it here so the nudge
+				# moves the wheel (an absorbed nudge has no spin to show; test_resistance covers it).
+				st.get_combatant(id).resistance = 0
 				scene._preview_nudge(id, {"kind": "arrow", "ring": RC.RingScope.OUTER, "direction": d})
 				var chip := _chip(scene.result_chips(id), ResultChipModel.SPIN)
 				assert_false(chip.is_empty(), "seed %d: hovering the %s's nudge shows its spin (F11)" % [combat_seed, who])

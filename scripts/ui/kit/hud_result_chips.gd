@@ -29,6 +29,9 @@ var standing: Array[Dictionary] = []
 ## The standing chips' lettering (px at text scale 1.0) and outline (px).
 const STANDING_FONT := 13
 const STANDING_RIM := 1.0
+## N21: the "+N" pencil mark's text step and its node.
+const PENCIL_STEP := UiTheme.BODY
+const PENCIL_WORD := &"ResistGainPencil"
 ## Alpha of a standing chip's dark backing.
 const STANDING_BACK_ALPHA: float = 0.7
 ## Stroke width of a result chip's rim (px).
@@ -303,8 +306,9 @@ func standing_rects() -> Array[Rect2]:
 	var h := CHIP_H * s
 	var fs := roundi(STANDING_FONT * s)
 	for c in standing:
-		var face: Font = Palette.pencil() if bool(c.get("pencil", false)) else HudSkin.mono()
-		var w := face.get_string_size(String(c["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + PAD * 2.0 * s
+		var w := HudSkin.mono().get_string_size(String(c["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + PAD * 2.0 * s
+		if bool(c.get("pencil", false)):
+			w = pencil_width(String(c["text"])) + PAD * 2.0 * s
 		out.append(Rect2(Vector2(x, 0.0), Vector2(w, h)))
 		x += w + GAP * s
 	return out
@@ -332,6 +336,7 @@ func _fit() -> void:
 	custom_minimum_size = Vector2(w, CHIP_H * _ts())
 	size = custom_minimum_size
 	_layout_glyphs()
+	_sync_pencil_word()
 
 
 ## The colour a chip is drawn in.
@@ -476,22 +481,48 @@ func _draw_standing() -> void:
 		var r := rs[i]
 		var col: Color = standing[i]["color"]
 		if bool(standing[i].get("pencil", false)):
-			_draw_pencil_mark(r, String(standing[i]["text"]), fs, col)
-			continue
+			continue  # written by the pencil material (`pencil_word`), never drawn here
 		draw_rect(r, Color(HudSkin.CHIP_INK, STANDING_BACK_ALPHA))
 		draw_rect(r, col, false, STANDING_RIM)
 		var base := r.position.y + (r.size.y + font.get_ascent(fs) - font.get_descent(fs)) * 0.5
 		HighContrast.draw_text(self, font, Vector2(r.position.x + PAD * s, base), String(standing[i]["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 
-## N21: a standing mark written in grease pencil (the "+N" resistance refresh): no chip, the
-## Permanent Marker word in its ink over the pencil's dark under-shadow. Static (reduce-effects safe).
-func _draw_pencil_mark(r: Rect2, text: String, fs: int, col: Color) -> void:
-	var font := Palette.pencil()
-	var base := r.position.y + (r.size.y + font.get_ascent(fs) - font.get_descent(fs)) * 0.5
-	var at := Vector2(r.position.x + PAD * _ts(), base)
-	draw_string(font, at + Vector2.ONE * TEXT_OUTLINE_PX, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PENCIL_SHADOW)
-	draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+## N21: the width of a standing mark the pencil material writes (the "+N" resistance refresh).
+static func pencil_width(text: String) -> float:
+	return Palette.pencil().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(PENCIL_STEP)).x
+
+
+## N21: the grease-pencil word for the row's pencil standing mark (the "+N" resistance
+## refresh), or null when the row has none. Static: it does not write itself on (reduce-effects safe).
+func pencil_word() -> GreasePencilWord:
+	return get_node_or_null(NodePath(PENCIL_WORD)) as GreasePencilWord
+
+
+func _sync_pencil_word() -> void:
+	var rs := standing_rects()
+	var idx := -1
+	for i in standing.size():
+		if bool(standing[i].get("pencil", false)):
+			idx = i
+	var word := pencil_word()
+	if idx < 0:
+		if word != null:
+			word.queue_free()
+			remove_child(word)
+		return
+	if word == null:
+		word = GreasePencilWord.new()
+		word.name = PENCIL_WORD
+		word.auto_write = false
+		word.ink = GreasePencilMark.Ink.THREAT
+		word.text_step = PENCIL_STEP
+		add_child(word)
+	word.text = String(standing[idx]["text"])
+	var r := rs[idx]
+	var px := UiTheme.font_px(PENCIL_STEP)
+	var baseline := (Palette.pencil().get_ascent(px) - Palette.pencil().get_descent(px)) * 0.5
+	word.position = Vector2(r.position.x + PAD * _ts(), r.position.y + r.size.y * 0.5 + baseline)
 
 
 ## W2-A2: hovering a chip says what that chip is (its own `tip`, else its words); anywhere else in

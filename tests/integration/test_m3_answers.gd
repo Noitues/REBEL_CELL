@@ -86,7 +86,7 @@ func test_final_rack_is_a_mini_boss_scaled_by_tier() -> void:
 	var enemy := s.combat.state.get_combatant(&"enemy_0")
 	assert_eq(enemy.source_id, &"account_manager")
 	assert_eq(enemy.max_hp, 150, "tier 1: unscaled (120 +25% in the M7 balance pass)")
-	assert_eq(enemy.resistance, 1)
+	assert_eq(enemy.resistance, 3, "N21: a mini-boss regains 3-4 per turn")
 	# Tier 2 run: the mini-boss (and everything else) scales x1.6.
 	var c := RunManager.campaign
 	c.living_operatives()[0].rank = 3
