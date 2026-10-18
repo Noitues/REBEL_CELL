@@ -241,3 +241,23 @@ def test_lamps_skip_openings_without_shifting_others():
     assert len(cut) < len(full)
     byk = {(l["u"], l["side"]): l["pal"] for l in full}
     assert all(byk[(l["u"], l["side"])] == l["pal"] for l in cut)
+
+
+def test_foreground_only_solid_dressing_counts():
+    out = producer.produce_world(synth.make_world(12))
+    d, city = out["derive_street"], out["city"]
+    on = dress.dress_street(d, city)
+    off = dress.dress_street(d, city, dict(lamp_skip_margin=-1e9))          # skip off: the kerb lamps stay in front of openings
+    assert DC.check_foreground(d, on, 0.15)["status"] == "pass"
+    assert DC.check_foreground(d, off, 0.15)["status"] == "fail"
+    # washes and ground glows (3.5 BU out and more) are light only: never counted, even straight in front of an opening
+    room = next(iter(d["rooms"].values()))
+    x = (room["front"][0][0] + room["front"][1][0]) / 2
+    fy = room["front"][0][1]
+    out_dir = 1.0 if room["back"][0][1] < fy else -1.0
+    z = room["front"][0][2] + 0.5
+    lights = dict({n: [] for n in DC.DRESS_LISTS}, washes=[{"pos": [x, fy + 3.5 * out_dir, z]}],
+                  glows=[{"pos": [x, fy + 3.5 * out_dir, z]}], fog_fields=[], beams=[])
+    assert DC.check_foreground(d, lights, 0.15)["status"] == "pass"
+    lamp = dict(lights, washes=[], glows=[], lamps=[{"pos": [x, fy + 0.3 * out_dir, z]}])
+    assert DC.check_foreground(d, lamp, 0.15)["status"] == "fail"

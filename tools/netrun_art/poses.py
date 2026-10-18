@@ -76,7 +76,7 @@ class _Ctx:
     def decision(self, current: Optional[str], options: List[str]) -> RG.Pose:
         layer = _layer_of(self.g, current)
         if self.kind == "hq":
-            return HO.hq_decision(self.rooms, current, options, max(0, layer - 1) if current else 0, self.layers)
+            return HO.hq_decision(self.rooms, current, options, max(0, layer - 1) if current else 0, self.layers, None, self.comp["entrance"])
         u = RG.street_u(self.layers, layer)
         a = self.d["street"]["a"]
         return RG.street_decision(self.rooms, current, options, u, self.d["nrm"], self.d["start_left"], None, [a[0], a[1], 0.0])

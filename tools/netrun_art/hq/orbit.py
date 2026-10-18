@@ -45,11 +45,14 @@ def decision_yaw(rooms: Dict[str, Dict[str, Any]], ids: Sequence[str], look_ahea
 
 
 def hq_decision(rooms: Dict[str, Dict[str, Any]], current: Optional[str], options: Sequence[str], layer_idx: int,
-                n_layers: int, rig: Optional[Dict[str, Any]] = None) -> Pose:
-    """DECISION pose on `current` (or none) plus `options`; `layer_idx` is the 0-based climb row."""
+                n_layers: int, rig: Optional[Dict[str, Any]] = None, entry: Optional[Sequence[float]] = None) -> Pose:
+    """DECISION pose on `current` (or none) plus `options`; `layer_idx` is the 0-based climb row. With no `current`
+    the `entry` anchor (the HQ entrance slot) is the virtual current and is framed with the options; no room is highlighted."""
     g = dict(HQ_RIG, **(rig or {}))
     ids = ([current] if current else []) + [o for o in options if o != current]
     pts = [p for i in ids for p in room_corners(rooms[i])]
+    if not current and entry is not None:
+        pts.append(list(entry))
     pitch = lerp(g["pitch_lo"], g["pitch_hi"], clamp01(layer_idx / max(1, n_layers - 1)))
     return frame_points(pts, decision_yaw(rooms, ids, g["look_ahead"]), pitch, g["lens_d"], g["fill_w"], g["fill_h"],
                         dmin=g["dmin"])
