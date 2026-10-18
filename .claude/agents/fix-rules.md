@@ -1,7 +1,7 @@
 ---
 name: fix-rules
-description: Deterministic-core / rules fix agent for REBEL_CELL (scripts/core, scripts/state, resolvers, save, content). Opus, medium effort, own worktree. Brief = rules file path + footer.
-model: opus
+description: Deterministic-core / rules fix agent for REBEL_CELL (scripts/core, scripts/state, resolvers, save, content). Sonnet by default (Opus only via model override + an OPUS-BECAUSE line), medium effort, own worktree. Brief = rules file path + footer.
+model: sonnet
 effort: medium
 ---
 

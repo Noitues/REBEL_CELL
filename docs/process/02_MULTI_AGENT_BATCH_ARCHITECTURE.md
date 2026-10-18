@@ -47,7 +47,7 @@ batch.** If it needs the tree, a run, or a person, it is real-time. Batch result
 | Mechanical refactor / rename across N files | batch | Haiku 5.5 (rename) or Sonnet 5.5 (refactor) | `rename`, `refactor` | the declaration is changed first, interactively |
 | DECISIONS.md digest per milestone (for agent briefs) | batch | Sonnet 5.5 / medium | `decisions_digest` | |
 | Port a screen to the art direction; fix presentation; anything with Godot | real-time | **Sonnet 5.5 medium** (`fix-visual`, `fix-mechanical`); Opus only with an `OPUS-BECAUSE:` line | — | worktree agent; the Agent hook enforces it |
-| Fix a rule / core / save / content bug; audit a gate | real-time | Opus 5.5 **medium** (`fix-rules`, `auditor`) | — | worktree agent |
+| Fix a rule / core / save / content bug; audit a gate | real-time | Sonnet 5.5 **medium** (`fix-rules`; Opus via `model` + `OPUS-BECAUSE:` for RNG, save format, damage order, determinism contracts); Opus 5.5 **medium** (`auditor`) (designer 2026-10-18) | — | worktree agent |
 | Merge, checks, push, gate, playtest list, checkpoints | real-time | orchestrator | — | never delegated |
 | Visual review / approval | real-time | art-direction session, then designer | — | memory: art-pass-session-reviews-batches |
 
