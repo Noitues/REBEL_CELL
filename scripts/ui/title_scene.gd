@@ -66,6 +66,32 @@ const TICKER_WORDS := ["PIRATE RADIO 88.1", "HALCYON RAISES FARES AGAIN"] # TR
 const CONFIRM_WORDS := ["keep going [B]"] # TR
 ## The verbs, their chips' labels and the page titles (keys, translated where they are shown).
 const PAGE_WORDS := ["BREACH", "SIMULATE", "OVERTHROW", "Continue", "Tutorial", "New campaign", "CAMPAIGN SLOTS", "CODEX", "STATS"] # TR
+## Overlay alpha of the loading dim.
+const LOADING_DIM_ALPHA := 0.85
+## Z index of the loading overlay.
+const LOADING_Z := 100
+## Least width of a plain menu button (px).
+const BUTTON_MIN_W := 240
+## Right offset of a MORE line's key hint (px).
+const KEY_HINT_OFFSET := -8
+## Grid horizontal gap of the profile grid (px).
+const PROFILE_H_GAP := 28
+## Grid vertical gap of the profile grid (px).
+const PROFILE_V_GAP := 4
+## Separation of the pad prompts in the foot (px).
+const FOOT_PROMPT_GAP := 22
+## Separation of the sub-page box (px).
+const PAGE_BOX_GAP := 6
+## Row separation inside the plan's HBox (px).
+const PLAN_SEPARATION := 8
+## Subtitle strip's left anchor (fraction of the page width).
+const SUBTITLE_ANCHOR_LEFT := 0.55
+## Z-less pan-free overview zoom used by the --demo-overview capture.
+const DEMO_OVERVIEW_ZOOM := 0.26
+## Reference page width (px) for the overview capture's offsets.
+const DEMO_OVERVIEW_W := 1280.0
+## Reference page height (px) for the overview capture's offsets.
+const DEMO_OVERVIEW_H := 720.0
 
 var background: CyberdeckBackground
 ## B1a: the panels' shadows and the pink verb's light spill on the city (UiScrimPools).
@@ -138,7 +164,7 @@ func _ready() -> void:
 	margin.add_child(_panel_host)
 	# The subtitles' band, top right (H21 #11): no menu under it.
 	subtitle_strip = SubtitleStrip.new(HEADER_LINES)
-	subtitle_strip.anchor_left = 0.55
+	subtitle_strip.anchor_left = SUBTITLE_ANCHOR_LEFT
 	subtitle_strip.anchor_right = 1.0
 	subtitle_strip.offset_right = -PAGE_MARGIN.x
 	subtitle_strip.offset_top = PAGE_MARGIN.y
@@ -178,11 +204,11 @@ func _ready() -> void:
 			# Design review: the whole city zoomed out, menus hidden.
 			var city := background.city
 			city.pan = false
-			var z := 0.26
+			var z := DEMO_OVERVIEW_ZOOM
 			city.territory_labels = true
 			city.scale = Vector2(z, z)
-			city.offset_right = 1280.0 * (1.0 / z - 1.0)
-			city.offset_bottom = 720.0 * (1.0 / z - 1.0)
+			city.offset_right = DEMO_OVERVIEW_W * (1.0 / z - 1.0)
+			city.offset_bottom = DEMO_OVERVIEW_H * (1.0 / z - 1.0)
 			_hide_chrome()
 	if args.has("--demo-options"):
 		show_options()
@@ -336,7 +362,7 @@ func show_main() -> void:
 	# The plan: three numbered verbs, each on its terminal chip.
 	var plan := HBoxContainer.new()
 	plan.name = "Plan"
-	plan.add_theme_constant_override("separation", 8)
+	plan.add_theme_constant_override("separation", PLAN_SEPARATION)
 	plan.custom_minimum_size.y = 0
 	var rows := VBoxContainer.new()
 	rows.name = "Verbs"
@@ -495,8 +521,8 @@ static func profile_grid(columns: int) -> GridContainer:
 	var grid := GridContainer.new()
 	grid.name = "Tags"
 	grid.columns = columns
-	grid.add_theme_constant_override("h_separation", 28)
-	grid.add_theme_constant_override("v_separation", 4)
+	grid.add_theme_constant_override("h_separation", PROFILE_H_GAP)
+	grid.add_theme_constant_override("v_separation", PROFILE_V_GAP)
 	var items := [[TranslationServer.translate("CAMPAIGNS"), str(p.campaigns_started), TranslationServer.translate("Campaigns started on this profile.")],
 		[TranslationServer.translate("WON"), str(p.campaigns_won), TranslationServer.translate("Campaigns won.")],
 		[TranslationServer.translate("BEST ICE"), HudStats.ice_value(p.best_ice), TranslationServer.translate("The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.")],
@@ -531,7 +557,7 @@ func _foot() -> HBoxContainer:
 	foot.add_child(build)
 	var prompts := HBoxContainer.new()
 	prompts.name = "Prompts"
-	prompts.add_theme_constant_override("separation", 22)
+	prompts.add_theme_constant_override("separation", FOOT_PROMPT_GAP)
 	for p in [[JOY_BUTTON_A, tr("select")], [JOY_BUTTON_B, tr("back")], [JOY_BUTTON_Y, tr("codex")]]:
 		prompts.add_child(PadPrompts.make_pair(int(p[0]), String(p[1])))
 	foot.add_child(prompts)
@@ -543,7 +569,7 @@ func _foot() -> HBoxContainer:
 func _page(title_word: String, content: Control, page_name: String) -> VBoxContainer:
 	var box := VBoxContainer.new()
 	box.name = page_name
-	box.add_theme_constant_override("separation", 6)
+	box.add_theme_constant_override("separation", PAGE_BOX_GAP)
 	var head := HBoxContainer.new()
 	# B5c: the title sticker keeps the sticker safe margin from the screen's left edge (Fx.sticker_margin: past
 	# the page's own margin at big text).
@@ -1045,10 +1071,10 @@ func show_loading() -> Control:
 		return old as Control
 	var dim := ColorRect.new()
 	dim.name = "LoadingOverlay"
-	dim.color = Color(Palette.SCRIM, 0.85)
+	dim.color = Color(Palette.SCRIM, LOADING_DIM_ALPHA)
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	dim.z_index = 100
+	dim.z_index = LOADING_Z
 	var l := Label.new()
 	l.text = tr("LOADING...")
 	l.add_theme_font_override("font", HudSkin.mono())
@@ -1245,7 +1271,7 @@ func _item(box: Control, text: String, on_pressed: Callable, kind: StringName, t
 			h.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 			h.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT, Control.PRESET_MODE_MINSIZE)
 			h.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-			h.offset_right = -8
+			h.offset_right = KEY_HINT_OFFSET
 			h.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			b.add_child(h)
 			# The line keeps room for its key hint: the words never run under it.
@@ -1264,6 +1290,6 @@ func _item(box: Control, text: String, on_pressed: Callable, kind: StringName, t
 func _button(text: String, on_pressed: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size = Vector2(240, 0)
+	b.custom_minimum_size = Vector2(BUTTON_MIN_W, 0)
 	b.pressed.connect(on_pressed)
 	return b

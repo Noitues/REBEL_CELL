@@ -8697,3 +8697,11 @@ Text-only import of the netrun art spec, handoff README, art decisions, directio
   the full city (13,306 buildings, 9.0 MB) about 1.9 s on top of the 1.1 s city build (once per layout seed).
 
 - **W0 SITENAMES (2026-10-18):** Site names removed from player text through `SiteText` (scripts/ui/kit/site_text.gd): `label(site)` is the type word (Site / Exploit / Heat reduction / HOME SERVER), `tiered(site)` prefixes the tier (T2 Site) for lists and paths; only the Central Server Site (HQ building and boss) keeps its name. `SiteData.display_name` stays as data (no schema change). The `site:*` dispatch lines in content/voice lost their leading name sentence (boss lines kept). Known cost: lists of several plain Sites (raid feed, network rows) now read T2 Site; same-tier Sites are told apart only by position and status.
+
+### 2026-10-18 — W0 RULE5 (F-RULE5 remainder, round 1)
+Batch lane (Sonnet 5.5, `const_edits`, `tools/batch/apply_edits.py` value-checked), files split into line-range chunks (heat_poster 4, city_map_overlay 7 + 6, title_scene 3 + 4, raid_paper 1) with the full file in each request. Two rounds (the second for city_map_overlay and title_scene after name clashes and skips).
+- **Done:** `title_scene` (13 consts), `raid_paper` (13), `heat_poster` (about 17), `city_map_overlay` (9; the model skipped most chunks as nothing to name), `kit_demo` (shared `AT` renamed `DEMO_ANCHOR` so the value check can see it; the model's edits to its demo geometry all failed the check, left as is: lab demo).
+- **Review:** every applied hunk read; reverted `NOTE_CENTER_FACTOR = 0.5`. No file REPLAN C.4 retires was in scope (CityMapOverlay is kept).
+- **Cost:** 2 batches, 29 requests, about 1.5M input tokens (mostly whole-file repeats) and 17k output at batch rates: roughly 2 USD, under the 3 USD cap.
+- **Baseline:** colour / font-size lint counts unchanged (no colour or font-size literals added or removed).
+- **Still owed:** `combat_scene`, `wheel_view`, `combat_fx_layer` (combat agent running), `neon_city` (1); remaining literals in `city_map_overlay` and `kit_demo` want a manual pass.

@@ -46,6 +46,30 @@ const CLIP_X := 34.0
 ## How far the clip reaches above the paper's top edge (px at 1.0): what sits above the paper
 ## keeps clear of it (parity fix, RAID-02).
 const CLIP_TOP := PaperStaging.CLIP_RISE
+## Division line baseline factor (share of its font size).
+const DIVISION_BASELINE := 0.6
+## Redaction bar base length (px at 1.0).
+const REDACT_LEN_BASE := 34.0
+## Redaction bar extra length range (px at 1.0).
+const REDACT_LEN_VAR := 26.0
+## Gap between redaction bars: base (px at 1.0).
+const REDACT_GAP_BASE := 6.0
+## Gap between redaction bars: variation (px at 1.0).
+const REDACT_GAP_VAR := 6.0
+## Row field separation (px at 1.0).
+const ROW_SEPARATION := 8.0
+## Row label minimum width (px at 1.0).
+const ROW_LABEL_MIN_W := 60.0
+## Body rows separation (px at 1.0).
+const BODY_SEPARATION := 2.0
+## Label ink blend toward paper.
+const ROW_LABEL_FADE := 0.3
+## Rule colour darkening.
+const RULE_DARKEN := 0.12
+## Corp hue lightening on the letterhead.
+const HUE_LIGHTEN := 0.35
+## Seed modulus for the paper grain/seed.
+const PAPER_SEED_MOD := 97
 
 var skin: RaidSkin
 var stamp_word: String = STAMP_INTERCEPTED
@@ -85,9 +109,9 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_stamp
 	# M14 FOLLOW-UP (art director): the letterhead letters the corp's short form, whole; the full
 	# name stays on the footer.
 	paper.letterhead_name = skin.letterhead_name()
-	paper.corp_color = skin.paper_hue.lightened(0.35) if Palette.luminance(skin.hue) > Palette.luminance(Palette.TEXT_MID) else skin.hue
+	paper.corp_color = skin.paper_hue.lightened(HUE_LIGHTEN) if Palette.luminance(skin.hue) > Palette.luminance(Palette.TEXT_MID) else skin.hue
 	paper.stamp = tr(p_stamp)
-	paper.seed = absi(p_title.hash()) % 97 + 1
+	paper.seed = absi(p_title.hash()) % PAPER_SEED_MOD + 1
 	paper.top_pad = top_pad()
 	# M14 BIG-TEXT b (art director, 4a): the letterhead grows with the sheet's text (its rows start
 	# under LETTERHEAD_H x k already) and the corp name keeps left of the seal: it fits that width,
@@ -104,7 +128,7 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_stamp
 	add_child(_deco_node, false, Node.INTERNAL_MODE_BACK)
 	body = VBoxContainer.new()
 	body.name = "PaperBody"
-	body.add_theme_constant_override("separation", roundi(2 * _k))
+	body.add_theme_constant_override("separation", roundi(BODY_SEPARATION * _k))
 	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(body)
 	title_label = Label.new()
@@ -164,17 +188,17 @@ func set_sub(text: String) -> void:
 func add_row(label: String, value: String, value_col: Color = Palette.INK, value_name: String = "") -> Label:
 	var row := HBoxContainer.new()
 	row.name = "Row_%d" % body.get_child_count()
-	row.add_theme_constant_override("separation", roundi(8 * _k))
+	row.add_theme_constant_override("separation", roundi(ROW_SEPARATION * _k))
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var l := Label.new()
 	l.text = label
 	l.add_theme_font_override("font", Palette.paper())
 	l.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
-	l.add_theme_color_override("font_color", Palette.INK.lerp(Palette.PAPER, 0.3))
+	l.add_theme_color_override("font_color", Palette.INK.lerp(Palette.PAPER, ROW_LABEL_FADE))
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	UiWrap.whole_words(l)
-	l.custom_minimum_size.x = 60.0 * _k
+	l.custom_minimum_size.x = ROW_LABEL_MIN_W * _k
 	row.add_child(l)
 	var v := Label.new()
 	if value_name != "":
@@ -197,7 +221,7 @@ func add_row(label: String, value: String, value_col: Color = Palette.INK, value
 
 func _rule_box() -> StyleBoxLine:
 	var s := StyleBoxLine.new()
-	s.color = Palette.PAPER_ALT.darkened(0.12)
+	s.color = Palette.PAPER_ALT.darkened(RULE_DARKEN)
 	s.thickness = 1
 	return s
 
@@ -264,7 +288,7 @@ func _deco(on: Control) -> void:
 	var meta_font := Palette.paper()
 	var meta_px := UiTheme.font_px_at(UiTheme.CAPTION, _k)
 	var div_px := division_px(r.size.x)
-	HighContrast.draw_text(on, meta_font, Vector2(UiTheme.SP_L, top_pad() + paper.head_h + meta_px * 0.6), skin.division(),
+	HighContrast.draw_text(on, meta_font, Vector2(UiTheme.SP_L, top_pad() + paper.head_h + meta_px * DIVISION_BASELINE), skin.division(),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, div_px, Palette.PAPER_INK_SOFT)
 	# The footer: redacted lines and the meta line.
 	var fy := r.size.y - FOOTER_H * k + 8.0 * k
@@ -272,9 +296,9 @@ func _deco(on: Control) -> void:
 		var bx := PAD * k
 		var i := 0
 		while bx < r.size.x * REDACT_SPAN:
-			var ln := (34.0 + 26.0 * absf(RaidPencil.noise(row * 31 + 7, i))) * k
+			var ln := (REDACT_LEN_BASE + REDACT_LEN_VAR * absf(RaidPencil.noise(row * 31 + 7, i))) * k
 			on.draw_rect(Rect2(bx, fy + row * (REDACT_H + 5.0) * k, ln, REDACT_H * k), Palette.INK)
-			bx += ln + (6.0 + 6.0 * absf(RaidPencil.noise(row * 17 + 3, i))) * k
+			bx += ln + (REDACT_GAP_BASE + REDACT_GAP_VAR * absf(RaidPencil.noise(row * 17 + 3, i))) * k
 			i += 1
 	HighContrast.draw_text(on, meta_font, Vector2(PAD * k, r.size.y - 7.0 * k), tr(FOOTER) % skin.corp_name(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x * REDACT_SPAN, meta_px,
 		Palette.PAPER_INK_SOFT)

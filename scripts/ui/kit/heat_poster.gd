@@ -20,6 +20,14 @@ var marks: Array[int] = [25, 50, 75, 100]
 var wanted: Dictionary = PortraitArt.operative_subject(&"operative")
 ## The mugshot's side on the wanted poster (px).
 const MUG_SIZE := 44.0
+## Horizontal padding left of the ransom letters and number layout (px).
+const LAYOUT_LEFT_PAD := 8.0
+## Horizontal padding kept right of the number (px).
+const LAYOUT_RIGHT_PAD := 6.0
+## Gap between the ransom letters and the number (px).
+const LAYOUT_NUM_GAP := 4.0
+## Gap between the letters and the number start (px).
+const NUM_START_GAP := 6.0
 
 
 ## The Heat block's top on a wanted poster (under the header and mugshot), the band
@@ -35,9 +43,9 @@ func letter_layout(count: int) -> Dictionary:
 	var num_w := maxf(Palette.display().get_string_size("%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_FONT).x,
 		Palette.mono().get_string_size("/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x)
 	var width := size.x if size.x > 0.0 else custom_minimum_size.x
-	var room := width - 8.0 - 6.0 - num_w - 4.0
+	var room := width - LAYOUT_LEFT_PAD - LAYOUT_RIGHT_PAD - num_w - LAYOUT_NUM_GAP
 	var step := clampf(room / maxf(1.0, count), LETTER_STEP_MIN, LETTER_STEP)
-	var num_x := minf(8.0 + step * count, width - 6.0 - num_w) + 6.0
+	var num_x := minf(LAYOUT_LEFT_PAD + step * count, width - LAYOUT_RIGHT_PAD - num_w) + NUM_START_GAP
 	return {"step": step, "strip": step - (LETTER_STEP - LETTER_WIDTH), "num_w": num_w, "num_x": num_x}
 
 
@@ -478,7 +486,7 @@ func note_rect() -> Rect2:
 		# ON AIR line, a corp news toast) before the search wanders over the page's headers.
 		for lift in NOTE_FOOT_LIFTS:
 			var foot := _foot_spot(note_size(w), lift * NOTE_FOOT_STEP * Settings.text_scale)
-			if foot.has_area() and _cover_of(foot, avoid) <= 0.0 and not foot.intersects(get_global_rect().grow(-1.0)):
+			if foot.has_area() and _cover_of(foot, avoid) <= 0.0 and not foot.intersects(get_global_rect().grow(-NOTE_POSTER_INSET)):
 				_note_w = w
 				return foot
 		var found := _note_spot(note_size(w), avoid)
@@ -534,7 +542,7 @@ func _note_spot(s: Vector2, avoid: Array[Rect2]) -> Array:
 			r.position += steps[d] * i
 			# Kept on the screen (slid along its edge), never over the poster itself.
 			r.position = r.position.clamp(screen.position, (screen.end - r.size).max(screen.position))
-			if r.intersects(p.grow(-1.0)):
+			if r.intersects(p.grow(-NOTE_POSTER_INSET)):
 				continue
 			var cover := 0.0
 			for o in avoid:
@@ -616,6 +624,24 @@ const NOTE_Z := 50
 ## RAID // title right under the gauge) took the spot the note had found free.
 const NOTE_RECHECK_FRAMES := 10
 const NOTE_FIRST_RECHECK := 2
+## Share of the poster's wiggle room the note's foot-band search requires (inset of the poster rect, px).
+const NOTE_POSTER_INSET := 1.0
+## Width of the border drawn round the banner box (px).
+const BANNER_BORDER := 3.0
+## Padding of the dark backing round the banner box (px).
+const BANNER_BACKING_GROW := 2.0
+## Alpha of the dark backing behind the banner.
+const BANNER_BACKING_ALPHA := 0.8
+## Alpha of the banner's fill.
+const BANNER_FILL_ALPHA := 0.94
+## Share of the banner colour lerped toward paper for its lettering.
+const BANNER_TEXT_LIGHTEN := 0.25
+## Eye glyph outline width (px).
+const EYE_LINE_WIDTH := 2.0
+## Eye pupil radius share of the eye half-height.
+const EYE_PUPIL_SHARE := 0.62
+## Eye inner dot radius share of the eye half-height.
+const EYE_DOT_SHARE := 0.25
 var _note_checked: int = -1
 
 
@@ -1053,16 +1079,16 @@ func _draw_banner(y: float) -> void:
 	var a := banner_alpha
 	draw_set_transform(r.get_center(), deg_to_rad(BANNER_TILT), Vector2.ONE * banner_scale)
 	var box := Rect2(-r.size * 0.5, r.size)
-	draw_rect(box.grow(2.0), Color(0, 0, 0, 0.8 * a))
-	draw_rect(box, Color(Palette.NIGHT_SKY, 0.94 * a))
-	draw_rect(box, Color(col, a), false, 3.0)
+	draw_rect(box.grow(BANNER_BACKING_GROW), Color(0, 0, 0, BANNER_BACKING_ALPHA * a))
+	draw_rect(box, Color(Palette.NIGHT_SKY, BANNER_FILL_ALPHA * a))
+	draw_rect(box, Color(col, a), false, BANNER_BORDER)
 	var x := box.position.x + BANNER_PAD
 	var line_h := fs * BANNER_LINE
 	var top := box.position.y + BANNER_PAD * 0.75
 	_draw_eye(Vector2(x + fs * EYE_W * 0.5, top + line_h * lines.size() * 0.5), fs, Color(col, a))
 	x += fs * (EYE_W + EYE_GAP)
 	for i in lines.size():
-		HighContrast.draw_text(self, f, Vector2(x, top + line_h * i + f.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col.lerp(Palette.PAPER, 0.25), a))
+		HighContrast.draw_text(self, f, Vector2(x, top + line_h * i + f.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col.lerp(Palette.PAPER, BANNER_TEXT_LIGHTEN), a))
 	var sy := top + line_h * lines.size()
 	for i in subs.size():
 		HighContrast.draw_text(self, Palette.mono(), Vector2(box.position.x + BANNER_PAD, sy + sfs * BANNER_LINE * i + Palette.mono().get_ascent(sfs)), subs[i],
@@ -1083,6 +1109,6 @@ func _draw_eye(c: Vector2, fs: int, col: Color) -> void:
 		var t := PI * i / 16.0
 		pts.append(c + Vector2(cos(t) * w, sin(t) * h))
 	pts.append(pts[0])
-	draw_polyline(pts, col, 2.0)
-	draw_circle(c, h * 0.62, col)
-	draw_circle(c, h * 0.25, Palette.NIGHT_SKY)
+	draw_polyline(pts, col, EYE_LINE_WIDTH)
+	draw_circle(c, h * EYE_PUPIL_SHARE, col)
+	draw_circle(c, h * EYE_DOT_SHARE, Palette.NIGHT_SKY)

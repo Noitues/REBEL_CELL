@@ -210,6 +210,22 @@ const TIER_PIPS_MAX := 4
 const TIER_PIP := 2.6
 const TIER_PIP_STEP := 7.0
 const TIER_PIP_GAP := 3.0
+## Alpha of the stalk tying an icon to its roof.
+const STALK_ALPHA := 0.7
+## Roof outline glow stroke width (px) in the trace look.
+const ROOF_GLOW_WIDTH := 11.0
+## Roof outline keyline stroke width (px).
+const ROOF_INK_WIDTH := 7.0
+## Roof outline stroke width (px).
+const ROOF_LINE_WIDTH := 2.6
+## Alpha of the roof glow stroke.
+const ROOF_GLOW_ALPHA := 0.3
+## Roof fill alpha in the ISOLATE / XRAY / BLUEPRINT looks.
+const ROOF_FILL_STRONG := 0.45
+## Roof fill alpha in the other looks.
+const ROOF_FILL_SOFT := 0.28
+## Overlay veil colour alpha for the ISOLATE look.
+const ISOLATE_VEIL_ALPHA := 0.62
 
 var city: NeonCity
 var look: int = Look.TRACE
@@ -1206,7 +1222,7 @@ func _draw() -> void:
 		return
 	match look:
 		Look.ISOLATE:
-			draw_rect(Rect2(-size, size * 3.0), Color(0.02, 0.02, 0.04, 0.62))
+			draw_rect(Rect2(-size, size * 3.0), Color(0.02, 0.02, 0.04, ISOLATE_VEIL_ALPHA))
 		Look.XRAY:
 			draw_rect(Rect2(-size, size * 3.0), Color(0.0, 0.03, 0.05, 0.72))
 		Look.BLUEPRINT:
@@ -1825,15 +1841,15 @@ func _node(n: Dictionary) -> void:
 				_c.draw_polyline(closed, ink, 6.0, true)
 				_c.draw_polyline(closed, col, 2.0, true)
 			_:
-				var fill_a := 0.45 if look == Look.ISOLATE or look == Look.XRAY or look == Look.BLUEPRINT else 0.28
+				var fill_a := ROOF_FILL_STRONG if look == Look.ISOLATE or look == Look.XRAY or look == Look.BLUEPRINT else ROOF_FILL_SOFT
 				_c.draw_colored_polygon(roof, Color(col, col.a * fill_a))
-				_c.draw_polyline(closed, ink, 7.0, true)
-				_c.draw_polyline(closed, Color(col, col.a * 0.3), 11.0, true)
-				_c.draw_polyline(closed, col, 2.6, true)
+				_c.draw_polyline(closed, ink, ROOF_INK_WIDTH, true)
+				_c.draw_polyline(closed, Color(col, col.a * ROOF_GLOW_ALPHA), ROOF_GLOW_WIDTH, true)
+				_c.draw_polyline(closed, col, ROOF_LINE_WIDTH, true)
 				if look == Look.ISOLATE or look == Look.XRAY:
 					_c.draw_line(base, top, Color(col, col.a * 0.6), 1.5)
 				# A short stalk ties the floating icon to its roof.
-				_c.draw_line(top, at + Vector2(0, r), Color(col, col.a * 0.7), 1.5)
+				_c.draw_line(top, at + Vector2(0, r), Color(col, col.a * STALK_ALPHA), 1.5)
 	if not n.has("socket"):
 		_mark(n, top, col)  # ART-6 3A: a socket carries its own status (no spray ring)
 	if _travel.is_empty():
