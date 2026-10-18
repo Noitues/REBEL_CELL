@@ -21,6 +21,30 @@
 			"seconds": 1.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_sim_metrics_phase.gd": {
+			"seconds": 6.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_sim_metrics_damage.gd": {
+			"seconds": 6.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_sim_metrics_listeners.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_sim_metrics_determinism.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_sim_metrics_schema.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
+		"res://tests/integration/test_sim_metrics_cli.gd": {
+			"seconds": 40.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_us_english.gd": {
 			"seconds": 0.2,
 			"tier": "fast"

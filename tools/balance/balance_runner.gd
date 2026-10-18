@@ -28,6 +28,8 @@ var errors: PackedStringArray = PackedStringArray()
 ## The combat of the last fight-mode fight (the determinism test replays it).
 var last_combat: CombatSession = null
 var _skill: BalanceSkill
+## N19: false switches the per-phase metrics off (the purity test compares both).
+var collect_metrics: bool = true
 
 
 ## `registry` is the ContentRegistry (or anything with all_ids / get_content / config); `p_opts` overrides
@@ -138,6 +140,7 @@ func run_fight(enemy_id: StringName, tier: int, fight_seed: int) -> Dictionary:
 	var s := NetrunSession.start_special(resolver, c, op.id, "reclaim", sim.corp.city_grid.home_site_id, tier, fight_seed, enemy_id,
 		{}, sim.corp)
 	var probe := BalanceProbe.new(content.lookup, content.config)
+	probe.metrics_enabled = collect_metrics
 	var rec := _record("fight:%s@t%d" % [enemy_id, tier], fight_seed)
 	if s == null:
 		rec["scalars"]["error"] = 1
@@ -155,6 +158,7 @@ func run_fight(enemy_id: StringName, tier: int, fight_seed: int) -> Dictionary:
 	probe.on_fight_end(s, 0)
 	var f: Dictionary = probe.fights.back() if not probe.fights.is_empty() else {}
 	_fight_scalars(rec["scalars"], f)
+	_add_metrics(rec, f)
 	rec["scalars"]["combat_hash"] = last_combat.state.state_hash()
 	rec["category"] = String(f.get("category", ""))
 	return rec
@@ -234,6 +238,7 @@ func run_boss(campaign_seed: int) -> Dictionary:
 	var f: Dictionary = probe.fights.back() if not probe.fights.is_empty() else {}
 	_fight_scalars(rec["scalars"], f)
 	rec["scalars"]["won"] = 1 if (not f.is_empty() and bool(f["won"])) else 0
+	_add_metrics(rec, f)
 	rec["scalars"]["phases"] = f.get("phase_turns", [1]).size()
 	if not f.is_empty():
 		var starts: Array = f["phase_turns"]
@@ -312,6 +317,29 @@ func _fight_scalars(sc: Dictionary, f: Dictionary) -> void:
 	sc["heal_turns"] = f["heal_turns"]
 	sc["heal_total"] = f["heal_total"]
 	sc["ram_left_per_turn"] = snappedf(float(f["ram_left"]) / turns, 0.01)
+
+
+## N19: the fight's per-phase metrics (SimMetrics) as `rec.metrics` plus flat scalars for the aggregates.
+func _add_metrics(rec: Dictionary, f: Dictionary) -> void:
+	var m = f.get("metrics")
+	if m == null:
+		return
+	rec["metrics"] = m
+	var sc: Dictionary = rec["scalars"]
+	var parked := 0
+	var intake := 0
+	var absorbed := 0
+	for p in m["phases"]:
+		parked += int(p["parked"])
+		intake += int(p["intake"])
+		absorbed += int(p["resistance_absorbed"])
+	var tm: Dictionary = m["turn_manipulation"]
+	var turns := int(tm["own"]) + int(tm["enemy"]) + int(tm["both"]) + int(tm["none"])
+	sc["parked"] = parked
+	sc["intake"] = intake
+	sc["resistance_absorbed"] = absorbed
+	sc["enrage_step"] = m["enrage_step"]
+	sc["turns_both_share"] = snappedf(float(tm["both"]) / maxf(1.0, float(turns)), 0.0001)
 
 
 ## Attrition and heal metrics of the probe's netrun records (pooled by tier and layer).
