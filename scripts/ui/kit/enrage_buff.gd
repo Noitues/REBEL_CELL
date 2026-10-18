@@ -32,6 +32,10 @@ static func sync(view: Control, state: Dictionary) -> void:
 	badge.size = badge.get_combined_minimum_size()
 	var inset := INSET * Settings.text_scale
 	badge.position = Vector2(view.size.x - badge.size.x - inset, inset)
+	if view is WheelView:
+		# On a wheel it sits off the disc's upper right rim: the view's corner is under the key-hint bar.
+		var corner := (view as WheelView).badge_corner()
+		badge.position = Vector2(minf(corner.x, view.size.x - badge.size.x - inset), maxf(inset, corner.y - badge.size.y))
 	badge.queue_redraw()
 
 

@@ -984,6 +984,7 @@ FirmwareData.static_coat.display_name,Static Coat
 FirmwareData.tracer.description,SHIM or OVERFLOW slice strips 1 resistance from the target on a Perfect.
 FirmwareData.tracer.display_name,Tracer
 Fits %s slices only.,Fits %s slices only.
+Fixed to its slice: nudges and spins are refused; only Undock moves it.,Fixed to its slice: nudges and spins are refused; only Undock moves it.
 Flame: a Heat objective Site. Clearing it lowers Heat.,Flame: a Heat objective Site. Clearing it lowers Heat.
 Flash limiter (at most 3 flashes a second. On by default.),Flash limiter (at most 3 flashes a second. On by default.)
 "Forecast, not a result: if you start the defense now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it.","Forecast, not a result: if you start the defense now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it."
@@ -2232,6 +2233,7 @@ SWITCHES,SWITCHES
 SYSTEM,SYSTEM
 "SYSTEM: guards, RAM, draws and the rest.","SYSTEM: guards, RAM, draws and the rest."
 "Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick.","Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick."
+Satellites are fixed to their slice: only Undock moves them.,Satellites are fixed to their slice: only Undock moves them.
 Save & quit,Save & quit
 Save the run and leave it; Continue picks it up here.,Save the run and leave it; Continue picks it up here.
 Saved.,Saved.

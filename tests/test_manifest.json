@@ -21,6 +21,10 @@
 			"seconds": 6.0,
 			"tier": "full"
 		},
+		"res://tests/integration/test_satellite_flow.gd": {
+			"seconds": 6.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_satellite_fixed.gd": {
 			"seconds": 0.5,
 			"tier": "fast"

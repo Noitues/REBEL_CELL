@@ -354,6 +354,7 @@ func _get_tooltip(at_position: Vector2) -> String:
 				return ""
 			var land: Dictionary = satellite_landings.get(sat.id, {})
 			return tr("%s (%d HP): takes hits aimed at the slice it guards.") % [name_of(sat), sat.hp] \
+				+ "\n" + tr("Fixed to its slice: nudges and spins are refused; only Undock moves it.") \
 				+ (("\n" + tr("Its needle lands on %s.") % String(land["text"])) if not land.is_empty() else "")
 		"slot":
 			return _slice_label(int(z["slot"]))
@@ -1538,6 +1539,15 @@ func wheel_rect() -> Rect2:
 	var center := _center()
 	var r := _radius() + 22
 	return Rect2(global_position + center - Vector2(r, r), Vector2(r * 2, r * 2))
+
+
+## Where a corner badge (the enrage buff) hangs: a point just off the disc's upper right rim (local px).
+func badge_corner() -> Vector2:
+	return _center() + Vector2.from_angle(-PI * 0.25) * (_radius() + BADGE_RIM_GAP * _ts())
+
+
+## The gap (px at text scale 1.0) between the rim and a corner badge.
+const BADGE_RIM_GAP := 6.0
 
 
 ## Centre of the disc on screen.
