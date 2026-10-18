@@ -473,7 +473,7 @@ Rules:
 1. Same `city.json`, `net.json`, `run_graph.json`, preset and `layout_seed` give a byte-identical `derive_<run>.json`
    and identical placement lists.
 2. No placement reads the clock, the file system order, a set's iteration order or a dict's insertion order.
-3. Sorting keys are explicit tuples ending in an id (`SB/sb_onecity.py:203`: `(along, key)`; `HK/layout.py`: path
+3. Sorting keys are explicit tuples ending in an id (`SB/sb_onecity.py:203`: `(along, key)`, now `(along, bid)` (audit row 4, 2026-10-18); `HK/layout.py`: path
    order).
 4. Moving things (lanes, beams, flicker) are functions of time `t` and their stream; they loop on `T` = 4.0 s at 24 fps
    (96 frames; `SB/look_preset.py:69`).
