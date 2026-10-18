@@ -110,6 +110,19 @@ default as a placeholder behind config and says so in its report.
   slice **N1b** after N2: enemy DEAL_DAMAGE *effects* (listeners, hub, not only slices) also scale by the tier damage
   factor (R2 "tier scales enemy hits").
 
+### 2026-10-18 — Plan 2 W0 N1b: enemy DEAL_DAMAGE effects scale by the tier damage factor (R2)
+- **Rule:** a DEAL_DAMAGE effect owned by a non-operative (enemy Hub listeners, slice extra effects, Heat-gated
+  effects, satellites, which inherit the host's `output_scale`) hits for round(amount × multiplier × the owner's
+  `output_scale`), one rounding as N1 (10 → 10 / 13 / 17 / 22 at T1-T4). The operative and its drones stay unscaled;
+  a PERCENT amount is never rescaled (the validator refuses PERCENT on DEAL_DAMAGE anyway). `output_scale` already
+  carries the ICE boss-strength multiplier, so a boss's effect hits follow its slice hits there too.
+- **Where:** `EffectInterpreter.damage_amount(e, owner)`, called by `apply_effect` before `deal_hit`. Hit order stays
+  tier factor → enrage (N4) → SANDBOX (N14) → bodyguard → BLOCK → SHIELD → lose_hp (N3). Slice hits never pass through
+  `apply_effect` (`_resolve_pointer` folds the factor into the output), and Zero Day is an operative Daemon handler
+  reading `base_output`, so no hit is scaled twice. Tests: `test_enemy_effect_damage_scale.gd` (fast).
+- **Not changed:** run-level event DEAL_DAMAGE (choice HP costs) has no owner and no tier; save format unchanged; no
+  balance / ICE / sim test numbers moved.
+
 ### 2026-10-18 — Plan 2 W0 N21: class resistance, zeroed and regained each turn (rulings Q16, Q31)
 - **Schema:** `CampaignConfigData.resistance_min_by_class` / `resistance_max_by_class` (indexed by `RC.EnemyClass`,
   shipped [1, 3, 3, 5] / [2, 4, 4, 6]), the same two-table shape as N3's phase counts. `EnemyData.turn_resistance()`

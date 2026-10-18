@@ -84,7 +84,7 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 	match e.type:
 		RC.EffectType.DEAL_DAMAGE:
 			for t in targets:
-				deal_hit(state, owner, t, _scaled(e.amount, e.multiplier), false, false, events, ctx.get("source_id", &""))
+				deal_hit(state, owner, t, damage_amount(e, owner), false, false, events, ctx.get("source_id", &""))
 		RC.EffectType.GAIN_BLOCK:
 			for t in targets:
 				gain_block(t, effect_amount(e, owner), events)
@@ -669,6 +669,19 @@ func effect_amount(e: EffectData, owner: CombatantState) -> int:
 	if e.amount_mode == RC.AmountMode.PERCENT:
 		return _scaled(percent_of(owner.max_hp, e.amount), e.multiplier)
 	var scale := 1.0 if owner.is_player else owner.output_scale
+	return _scaled(e.amount, e.multiplier * scale)
+
+
+## The hit a DEAL_DAMAGE `e` hands to `deal_hit` for `owner` (plan 2 N1b, R2 "tier scales
+## enemy hits"): the amount times `e.multiplier`, times the owner's tier damage factor
+## (`output_scale`) unless the owner is the operative or one of its drones; rounded as N1.
+## This is the tier-factor step of the hit order (tier factor, enrage, SANDBOX, bodyguard,
+## BLOCK, SHIELD, HP). Slice hits never come here: `_resolve_pointer` already folds the
+## factor into their output, so no hit is scaled twice. A PERCENT amount is never rescaled.
+func damage_amount(e: EffectData, owner: CombatantState) -> int:
+	var scale := 1.0
+	if owner != null and not owner.is_player and e.amount_mode != RC.AmountMode.PERCENT:
+		scale = owner.output_scale
 	return _scaled(e.amount, e.multiplier * scale)
 
 
