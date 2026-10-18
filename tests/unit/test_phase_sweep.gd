@@ -24,7 +24,7 @@ func test_every_enemy_every_tier_reaches_final_phase() -> void:
 	var cls := PhaseFixture.operative(&"sweep_op", HIT)
 	for data in list:
 		for tier in 4:
-			var scale := pow(CombatFixture.config().enemy_scale_per_tier, tier)
+			var scale := CombatFixture.config().enemy_hp_scale(tier + 1)  # N2 removed enemy_scale_per_tier
 			var s := CombatSession.start(CombatFixture.resolver([cls]), cls.id, [data.id], 1001 + tier, &"", 0,
 				{"hp": 999999, "max_hp": 999999, "enemy_scale": scale})
 			var resolves := 0

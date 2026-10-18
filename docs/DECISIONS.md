@@ -110,6 +110,27 @@ default as a placeholder behind config and says so in its report.
   slice **N1b** after N2: enemy DEAL_DAMAGE *effects* (listeners, hub, not only slices) also scale by the tier damage
   factor (R2 "tier scales enemy hits").
 
+### 2026-10-18 — Plan 2 W0 N4: enrage (R4; rulings Q33, Q16, Q29)
+- **Schema:** new `EnrageData` (`start_turn`, `every_n_turns`, `damage_pct_step` int percent, `resistance_step` int,
+  `validate()` errors start with the field name). `EnemyData.enrage` (optional, authored; `normal_has_enrage` refuses it
+  on a normal). Class defaults are three per-class tables on `CampaignConfigData` (`enrage_start_turn_by_class`,
+  `enrage_every_n_turns_by_class`, `enrage_damage_pct_step_by_class`, indexed by `RC.EnemyClass`, start 0 = off), the
+  same shape as N3's phase counts instead of the brief's `enrage_defaults` array of sub-resources. Defaults: elite
+  8 / 5 / 25 %, mini-boss and boss 10 / 5 / 25 %, normal off, no resistance (resistance is for authored enrages, Q16).
+  Lookup `CampaignConfigData.enrage_for(data)`: authored, then class default, then null. The Handler authors start 8.
+  Smoke check `_n4_enrage`.
+- **Rule:** step = 0 before `start_turn`, then 1 + (turn - start) / every_n. Additive (Q33): hit percent = 100 + step x
+  pct. `CombatResolver.refresh_enrage` sets `CombatantState.enrage_step / enrage_percent / enrage_resistance` at each
+  start of turn (before the resistance restore; idempotent on one turn; an `enrage` event when the step rises).
+  `EffectInterpreter.deal_hit` scales an enemy attacker's hit by `EnrageData.scale_hit` (integer, round half up: 10 at
+  x1.25 = 13) before evade, block, shield and the phase clamp. Heal, block, shield, the operative's hits and percent
+  amounts that are not hits never read it. `full_resistance()` adds `enrage_resistance` (N21 will own the refresh).
+  Satellites never enrage (normal class). No RNG. Saved only when step > 0 (fights before step 1 hash as before).
+- **View (Q33):** no countdown. From step 1 `EnrageBuff` puts a Badge ("ENRAGE N") on the enemy wheel's top-right corner;
+  its tooltip says the hit percent, any resistance, and the next step's turn. It reads only
+  `CombatResolver.enrage_buff_state`.
+- **Pressure:** no Pressure code path existed on main; nothing removed.
+
 ### 2026-10-18 — Plan 2 W0 N13: fixed satellites, replacement, Undock keyword (rulings Q7, Q10)
 - **Schema:** `EffectData.undock` (bool, default false) is the global **Undock keyword**: only an effect carrying it may
   move a satellite or drone (its slice or its mini-wheel). The shipped Undock card's effect sets it. `RC.Trigger`
@@ -7613,6 +7634,7 @@ Before covers 43 screens; after covers 53. The remaining findings are low-confid
 ## Open questions for the designer
 - **2026-10-18 W0 N13, fixed satellites (simplest option built):** (a) FREEZE on a satellite is refused like a move (brief acceptance 1), although it does not turn the wheel; (b) a spawn with no free slot replaces slot 0 rather than drawing a random slot (keeps RNG draws unchanged); (c) the operative's drone deploy still skips occupied slices instead of replacing; (d) ON_SATELLITE_DESTROYED is heard by the operative's Hub and Daemons only, not by enemies. Say if any should differ.
 - **2026-10-18 W0 N2, tier tables (defaults built):** (1) a mini-boss with `hp_by_tier` still takes the ICE / Heat boss-strength multiplier on its table HP (bosses read it as the `hp_bands` zone instead); (2) the boss band zone reads the combined `boss_strength_pct` (ICE + Heat + campaign modifiers), not the ICE term alone; (3) the boss lint warning ceiling is phases x the T4 two-needle budget (126; 504 for 4 phases), no floor, since sustain is per phase (N3); (4) flat x factor rounding is N1's. Say if any should differ.
+- **2026-10-18 N4, enrage edges (defaults built):** (1) Satellites never enrage (they are normal-class); the test plan assumed they take the host's step. Say if they should. (2) The enraged hit rounds half up in integers (10 at x1.25 = 13). (3) A frozen turn (skipped respin) still counts: the step reads the turn counter only. (4) The enrage scales every enemy hit, including a PERCENT-of-max-HP damage amount if one ever ships (none does today).
 - **2026-10-18 N3, boss phase minimum:** R1 says a boss has 4-5 phases; every shipped boss has 3 (2 entries) and N3 adds no content phases, so `phase_count_min_by_class` ships [1, 1, 2, **3**] (placeholder). Raise the boss entry to 4 when the boss design passes land (Genome Core has 4).
 - **2026-10-18 N3, open points (simplest option built):** (a) two *different* statuses remapped onto one slice keep the first in old slot order (no stacks before N8); (b) `cleanse_on_enter` OWN includes the enemy's docked satellites and PLAYER includes the operative's drones ("side"); (c) a phase whose floor HP is already under at entry (healing, an enrage skip, an HP override) starts at the end of the next resolve, one phase per resolve; (d) parked damage is reported as an event field only, so on-hit listeners (N6) see the pre-clamp hit: say if they should see post-clamp; (e) validate does not reject tiny HP gaps where two floors round to the same value (the sweep checks shipped floors strictly descend).
 - **2026-10-13 W4-REWARDS, single-pick payouts**: the rewards list shows from two picks (or once one is settled); a payout with one pick shows that pick's page straight away, and the screen leaves when the last pick is settled (no PROCEED on an empty list). Slay the Spire keeps the list for one pick and waits for PROCEED: say if you want that (`rewards_list_on` plus a session phase hold).

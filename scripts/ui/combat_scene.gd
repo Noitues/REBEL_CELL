@@ -2493,6 +2493,7 @@ func _refresh(state: CombatState) -> void:
 		if not e.wheel.pending_pointer_ticks.is_empty():
 			any_pending = true
 		view.show_combatant(e, state.satellites_of(e.id), engine.readouts(e), lookup)
+		EnrageBuff.sync(view, engine.resolver.enrage_buff_state(state, e))  # N4: the enrage buff (Q33)
 	if not any_pending:
 		_stop_migrate_flicker()
 	for id in _enemy_views.keys():

@@ -39,6 +39,12 @@ var phase_index: int = 0
 ## Plan 2 R3: the threshold of the next phase in basis points (RC.THRESHOLD_SCALE), 0 when
 ## there is none (normals, satellites, the last phase). Damage parks at hp_floor().
 var next_threshold_bp: int = 0
+## N4 (plan 2 R4): the enemy's enrage step this turn (0 = not enraged), its hit factor in
+## percent (RC.PERCENT_MAX = unchanged) and the resistance it adds. Set by
+## CombatResolver.refresh_enrage at the start of each turn from the turn counter.
+var enrage_step: int = 0
+var enrage_percent: int = RC.PERCENT_MAX
+var enrage_resistance: int = 0
 
 
 func is_alive() -> bool:
@@ -60,7 +66,7 @@ func full_resistance() -> int:
 	var total := wheel.passive_resistance if wheel != null else 0
 	if not is_hub_breached():
 		total += hub_resistance
-	return total
+	return total + enrage_resistance
 
 
 func duplicate_state() -> CombatantState:
@@ -86,6 +92,9 @@ func duplicate_state() -> CombatantState:
 	c.hp_scale = hp_scale
 	c.phase_index = phase_index
 	c.next_threshold_bp = next_threshold_bp
+	c.enrage_step = enrage_step
+	c.enrage_percent = enrage_percent
+	c.enrage_resistance = enrage_resistance
 	return c
 
 
@@ -95,6 +104,11 @@ func to_dict() -> Dictionary:
 	# exactly as before N3.
 	if next_threshold_bp != 0:
 		d["next_threshold_bp"] = next_threshold_bp
+	# N4: likewise only an enraged combatant carries its enrage.
+	if enrage_step != 0:
+		d["enrage_step"] = enrage_step
+		d["enrage_percent"] = enrage_percent
+		d["enrage_resistance"] = enrage_resistance
 	return d
 
 
@@ -146,4 +160,7 @@ static func from_dict(d: Dictionary) -> CombatantState:
 	c.hp_scale = float(d.get("hp_scale", 1.0))
 	c.phase_index = int(d.get("phase_index", 0))
 	c.next_threshold_bp = int(d.get("next_threshold_bp", 0))
+	c.enrage_step = int(d.get("enrage_step", 0))
+	c.enrage_percent = int(d.get("enrage_percent", RC.PERCENT_MAX))
+	c.enrage_resistance = int(d.get("enrage_resistance", 0))
 	return c

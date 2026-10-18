@@ -1,0 +1,278 @@
+{
+ "checks": {
+  "composition": {
+   "constants": {
+    "bright_blob": 0.6,
+    "built_run": 0.35,
+    "built_std": 0.022,
+    "calm_frac": 0.5,
+    "chroma_min_px": 50,
+    "chroma_s": 0.25,
+    "chroma_v": 0.15,
+    "detail_min_tiles": 4,
+    "detail_tile": 64,
+    "hue_bins": 36,
+    "hue_cluster_half": 3,
+    "hue_clusters": 6,
+    "hue_fine_bins": 72,
+    "lit_percentile": 80,
+    "profile_median": 13,
+    "rep_hp_radius": 7,
+    "rep_lag": [
+     4,
+     48
+    ],
+    "rep_min_std": 0.012,
+    "rep_stride": 64,
+    "rep_tile": 128,
+    "rep_tiled": 0.45,
+    "rep_valid": 0.95,
+    "valid_tile_share": 0.9
+   },
+   "facade": {
+    "default": [
+     0.0,
+     0.0,
+     1.0,
+     1.0
+    ],
+    "street_overview": [
+     0.0,
+     0.1,
+     1.0,
+     0.8
+    ]
+   },
+   "rules": {
+    "R-CALM-1": {
+     "metric": "detail_cv",
+     "op": "between",
+     "rule": "density.falloff",
+     "scope": {
+      "kind": [
+       "street",
+       "hq"
+      ]
+     },
+     "value": [
+      0.45,
+      0.85
+     ]
+    },
+    "R-CALM-2": {
+     "metric": "calm_share",
+     "op": "between",
+     "rule": "atmosphere.layers",
+     "scope": {
+      "kind": [
+       "street",
+       "hq"
+      ]
+     },
+     "value": [
+      0.12,
+      0.32
+     ]
+    },
+    "R-DET-1": {
+     "metric": "sobel_mean",
+     "op": ">=",
+     "rule": "dressing.signs",
+     "scope": {
+      "kind": [
+       "street"
+      ],
+      "view": [
+       "overview"
+      ]
+     },
+     "value": 0.028
+    },
+    "R-DET-2": {
+     "metric": "blobs_per_mp",
+     "op": ">=",
+     "rule": "dressing.signs",
+     "scope": {
+      "kind": [
+       "street"
+      ],
+      "view": [
+       "overview"
+      ]
+     },
+     "value": 450
+    },
+    "R-FOCUS-1": {
+     "metric": "lm_ratio",
+     "op": ">=",
+     "rule": "landmark.lead",
+     "scope": {
+      "landmark": true
+     },
+     "value": 1.5
+    },
+    "R-HOR-1": {
+     "metric": "sky_min_q_std",
+     "op": ">=",
+     "rule": "horizon.break",
+     "scope": {
+      "kind": [
+       "city"
+      ]
+     },
+     "value": 0.015
+    },
+    "R-HUE-1": {
+     "metric": "hue_entropy_bits",
+     "op": ">=",
+     "rule": "palette.districts",
+     "scope": {
+      "kind": [
+       "street",
+       "city"
+      ]
+     },
+     "value": 3.8
+    },
+    "R-HUE-2": {
+     "metric": "hue_top_share",
+     "op": "<=",
+     "rule": "palette.districts",
+     "scope": {
+      "kind": [
+       "street",
+       "city"
+      ]
+     },
+     "value": 0.45
+    },
+    "R-REP-1": {
+     "metric": "rep_p90",
+     "op": "<=",
+     "rule": "repetition.guard",
+     "scope": {},
+     "value": 0.6
+    },
+    "R-SIL-1": {
+     "metric": "lit_std",
+     "op": ">=",
+     "rule": "frontage.silhouette",
+     "scope": {
+      "kind": [
+       "street"
+      ],
+      "view": [
+       "overview"
+      ]
+     },
+     "value": 0.15
+    },
+    "R-SIL-2": {
+     "metric": "lit_min_q_std",
+     "op": ">=",
+     "rule": "frontage.silhouette",
+     "scope": {
+      "kind": [
+       "street"
+      ],
+      "view": [
+       "overview"
+      ]
+     },
+     "value": 0.08
+    }
+   },
+   "skyline": {
+    "city": [
+     0.05,
+     0.4
+    ],
+    "street": [
+     0.0,
+     0.85
+    ]
+   },
+   "work_w": 1280
+  },
+  "data": {
+   "beams": {
+    "max": 6,
+    "min_blend": 0.8,
+    "min_cone_deg": 10.0,
+    "min_spacing": 45.0,
+    "shaft_material": "beam_shaft"
+   },
+   "dress": {
+    "opening_margin": 0.5
+   },
+   "occlusion": {
+    "opacity_eps": 0.0001
+   }
+  },
+  "landmark_ratio": {
+   "absent_fail_kind": "hq",
+   "absent_fail_views": [
+    "overview",
+    "decision"
+   ],
+   "classes_background": [
+    0,
+    2
+   ],
+   "classes_landmark": [
+    1,
+    5,
+    6
+   ],
+   "grow": 0.35,
+   "pass": [
+    1.5,
+    2.0
+   ],
+   "thumb_w": 320,
+   "warn_above": 2.0
+  },
+  "tolerance": {
+   "renderer": {
+    "absolute": {
+     "calm_share": 0.04,
+     "hue_entropy_bits": 0.2,
+     "hue_top_share": 0.05
+    },
+    "lm_ratio": 0.15,
+    "median": 0.02,
+    "over_085": 0.01,
+    "relative": 0.1,
+    "under_010": 0.05
+   }
+  },
+  "value": {
+   "bright": 0.85,
+   "dark": 0.1,
+   "mainline_median": [
+    0.184,
+    0.244
+   ],
+   "median_pass": [
+    0.11,
+    0.17
+   ],
+   "median_warn": [
+    [
+     0.09,
+     0.11
+    ],
+    [
+     0.17,
+     0.19
+    ]
+   ],
+   "over_085_max": 0.025,
+   "under_010": [
+    0.25,
+    0.4
+   ]
+  }
+ },
+ "version": 1
+}

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=20 format=3]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="main_script"]
 [ext_resource type="Resource" path="res://content/slices/shim_12.tres" id="e1"]
@@ -10,6 +10,7 @@
 [ext_resource type="Resource" path="res://content/slices/null.tres" id="e7"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e8"]
 [ext_resource type="Script" path="res://scripts/data/boss_phase_data.gd" id="e9"]
+[ext_resource type="Script" path="res://scripts/data/enrage_data.gd" id="e10"]
 
 ; rebel_cell enemy (decision 2026-09-24).
 
@@ -58,6 +59,12 @@ pointer_behavior = 3
 orbit_ticks_per_turn = 3
 phase_line = "The channels drift: DISPATCH is listening."
 
+[sub_resource type="Resource" id="enrage"]
+script = ExtResource("e10")
+start_turn = 8
+every_n_turns = 5
+damage_pct_step = 25
+
 [resource]
 script = ExtResource("main_script")
 id = &"the_handler"
@@ -70,3 +77,4 @@ is_elite = true
 is_mini_boss = true
 cycle_reward = 60
 phases = Array[ExtResource("e9")]([SubResource("phase0"), SubResource("phase1")])
+enrage = SubResource("enrage")
