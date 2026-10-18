@@ -545,6 +545,9 @@ const UNDO_BLOCKED := "Nothing to undo since the last random event (a respin, a 
 const UNDO_BLOCKED_OVER := "Nothing to undo: the fight is over." # TR
 const UNDO_BLOCKED_RESPIN := "Nothing to undo since your RESPIN: a random spin can't be undone." # TR
 const UNDO_BLOCKED_CARD := "Nothing to undo since %s rolled a random result: a roll can't be undone." # TR
+## N13: the toast for a move aimed at a satellite (the resolver's SATELLITE_FIXED refusal, said here
+## through TextDb so the words are exported).
+const SATELLITE_FIXED_TEXT := "Satellites are fixed to their slice: only Undock moves them." # TR
 const UNDO_BLOCKED_END_TURN := "Nothing to undo: no card or nudge played yet this turn." # TR
 const UNDO_BLOCKED_TURN := "Nothing to undo: no card or nudge played yet this turn." # TR
 
@@ -1668,7 +1671,7 @@ func _on_action_refused(reason: String) -> void:
 	preview_note.clear()
 	preview_note.append(reason)
 	var at := _toast_spot()
-	toast.show_text(tr(reason), at.position, at.size.x)
+	toast.show_text(tr(SATELLITE_FIXED_TEXT) if reason == CombatResolver.SATELLITE_FIXED else tr(reason), at.position, at.size.x)
 	# The RAM bar flashes when RAM is what's missing (ANIM-R1 C6: its chips go red and
 	# "COST > RAM" shows beside them; the refused card's cost, or the respin sticker,
 	# pulses too). The toast stays.
