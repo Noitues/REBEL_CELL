@@ -39,6 +39,7 @@ slice_count = 6
 slots = Array[ExtResource("e2")]([SubResource("wheel_slot_sandbox_8"), SubResource("wheel_slot_shim_14"), SubResource("wheel_slot_solar_flare"), SubResource("wheel_slot_overflow_16"), SubResource("wheel_slot_shim_14"), SubResource("wheel_slot_null")])
 pointer_ticks = PackedInt32Array(0)
 pointer_orbit_per_turn = 3
+passive_resistance = 3
 
 [sub_resource type="Resource" id="spawn0"]
 script = ExtResource("e8")

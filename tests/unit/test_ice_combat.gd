@@ -20,15 +20,15 @@ func _session(enemy: StringName, overrides: Dictionary = {}, seed: int = 3) -> C
 func test_enemy_resistance_adds_passive_resistance_that_refreshes_each_turn() -> void:
 	var s := _session(&"collections_agent", {"enemy_resistance": 1})
 	var e := s.state.get_combatant(&"enemy_0")
-	assert_eq(e.wheel.passive_resistance, 1)
-	assert_eq(e.resistance, 1)
+	assert_eq(e.wheel.passive_resistance, 2, "N21: authored 1 + ICE 1 (may exceed the class range)")
+	assert_eq(e.resistance, 2)
 	var sat := s.state.satellites_of(&"enemy_0")[0]
 	assert_eq(sat.resistance, 0, "satellites are not affected")
 	s.apply(CombatAction.nudge(&"enemy_0", 1))
-	assert_eq(s.state.get_combatant(&"enemy_0").resistance, 0, "the nudge was absorbed")
+	assert_eq(s.state.get_combatant(&"enemy_0").resistance, 1, "the nudge was absorbed")
 	CombatFixture.land(s.state.player, 5)
 	s.apply(CombatAction.end_turn())
-	assert_eq(s.state.get_combatant(&"enemy_0").resistance, 1, "restored at the start of the next turn")
+	assert_eq(s.state.get_combatant(&"enemy_0").resistance, 2, "restored at the start of the next turn")
 
 
 func test_boss_strength_scales_bosses_and_mini_bosses_only() -> void:

@@ -50,7 +50,7 @@ func test_compliance_officer_matches_a3() -> void:
 	assert_eq(e.hp, 50)
 	assert_eq(_slice_ids(e.wheel), [&"shim_7", &"shim_7", &"defrag_6", &"overflow_12", &"shim_7", &"null"])
 	assert_eq(e.wheel.hub.id, &"compliance_lock")
-	assert_eq(e.wheel.hub.hub_resistance, 3)
+	assert_eq(e.wheel.hub.hub_resistance, 2, "N21: a normal regains 1-2 per turn (was 3)")
 
 
 func test_dosage_dispenser_matches_a3() -> void:

@@ -1101,6 +1101,26 @@
 			"seconds": 0.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_resistance_class_ranges.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_resistance_lifecycle.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_resistance_preview.gd": {
+			"seconds": 0.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_resistance_content_sweep.gd": {
+			"seconds": 0.0,
+			"tier": "full"
+		},
+		"res://tests/integration/test_resistance_refresh_flow.gd": {
+			"seconds": 0.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_enrage_combat.gd": {
 			"seconds": 0.0,
 			"tier": "fast"

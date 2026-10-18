@@ -93,6 +93,7 @@ func validate(config: CampaignConfigData = null) -> PackedStringArray:
 	else:
 		errors.append_array(wheel.validate())
 	errors.append_array(_validate_phases(config if config != null else CampaignConfigData.new()))
+	errors.append_array(_validate_resistance(config if config != null else CampaignConfigData.new()))
 	var band_config := config
 	if band_config == null and (not hp_by_tier.is_empty() or not hp_bands.is_empty()) and ResourceLoader.exists(CONFIG_PATH):
 		band_config = load(CONFIG_PATH) as CampaignConfigData
@@ -102,6 +103,46 @@ func validate(config: CampaignConfigData = null) -> PackedStringArray:
 			errors.append("normal_has_enrage: Enemy %s is a normal; normals have no enrage." % id)
 		for problem in enrage.validate():
 			errors.append("%s (enemy %s)" % [problem, id])
+	return errors
+
+
+## N21 (rulings Q16, Q31): the resistance this enemy regains each turn (wheel passive + hub,
+## before ICE / Heat modifiers and enrage), at fight start; 0 without a wheel.
+func turn_resistance() -> int:
+	if wheel == null:
+		return 0
+	return wheel.passive_resistance + (wheel.hub.hub_resistance if wheel.hub != null else 0)
+
+
+## N21: the per-turn resistance at fight start and after each phase's overrides lies inside
+## the class range (`resistance_out_of_range`, with the id). Satellite wheels (fewer than
+## RC.SLICES slices) are not fights and are not held to it.
+func _validate_resistance(config: CampaignConfigData) -> PackedStringArray:
+	var errors := PackedStringArray()
+	var cls := enemy_class()
+	if wheel == null or wheel.slice_count != RC.SLICES:
+		return errors
+	if cls >= config.resistance_min_by_class.size() or cls >= config.resistance_max_by_class.size():
+		return errors
+	var lo := config.resistance_min_by_class[cls]
+	var hi := config.resistance_max_by_class[cls]
+	var cls_name: String = ["normal", "elite", "mini-boss", "boss"][cls]
+	var passive := wheel.passive_resistance
+	var hub_res := wheel.hub.hub_resistance if wheel.hub != null else 0
+	if passive + hub_res < lo or passive + hub_res > hi:
+		errors.append("resistance_out_of_range: Enemy %s regains %d resistance per turn; a %s's range is %d-%d." % [id, passive + hub_res, cls_name, lo, hi])
+	for i in phases.size():
+		var p := phases[i]
+		if p == null:
+			continue
+		if p.wheel_override != null:
+			passive = p.wheel_override.passive_resistance
+			if p.wheel_override.hub != null:
+				hub_res = p.wheel_override.hub.hub_resistance
+		if p.hub_override != null:
+			hub_res = p.hub_override.hub_resistance
+		if passive + hub_res < lo or passive + hub_res > hi:
+			errors.append("resistance_out_of_range: Enemy %s phase %d regains %d resistance per turn; a %s's range is %d-%d." % [id, i + 2, passive + hub_res, cls_name, lo, hi])
 	return errors
 
 

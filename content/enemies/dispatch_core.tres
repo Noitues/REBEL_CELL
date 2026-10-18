@@ -75,6 +75,7 @@ slice_count = 6
 slots = Array[ExtResource("e5")]([SubResource("wheel_slot_shim_14"), SubResource("wheel_slot_dose"), SubResource("wheel_slot_defrag_12"), SubResource("wheel_slot_overflow_24"), SubResource("wheel_slot_priority"), SubResource("wheel_slot_null")])
 hub = SubResource("hub_root_access")
 pointer_ticks = PackedInt32Array(0)
+passive_resistance = 5
 
 [sub_resource type="Resource" id="wheel_phase0_slot_shim_14"]
 script = ExtResource("e5")
@@ -106,6 +107,7 @@ slice_count = 6
 slots = Array[ExtResource("e5")]([SubResource("wheel_phase0_slot_shim_14"), SubResource("wheel_phase0_slot_citation"), SubResource("wheel_phase0_slot_defrag_12"), SubResource("wheel_phase0_slot_overflow_24"), SubResource("wheel_phase0_slot_solar_flare"), SubResource("wheel_phase0_slot_null")])
 hub = SubResource("hub_root_access")
 pointer_ticks = PackedInt32Array(0, 15)
+passive_resistance = 5
 
 [sub_resource type="Resource" id="phase0"]
 script = ExtResource("e14")
@@ -137,6 +139,7 @@ slice_count = 6
 slots = Array[ExtResource("e5")]([SubResource("wheel_phase1_slot_overflow_24"), SubResource("wheel_phase1_slot_dose"), SubResource("wheel_phase1_slot_overflow_24"), SubResource("wheel_phase1_slot_overflow_24"), SubResource("wheel_phase1_slot_priority"), SubResource("wheel_phase1_slot_null")])
 hub = SubResource("hub_root_access")
 pointer_ticks = PackedInt32Array(0, 10, 20)
+passive_resistance = 5
 
 [sub_resource type="Resource" id="pspawn1_0"]
 script = ExtResource("e15")

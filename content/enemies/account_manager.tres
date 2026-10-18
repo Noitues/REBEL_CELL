@@ -66,7 +66,7 @@ script = ExtResource("2")
 slice_count = 6
 slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_def"), SubResource("slot_crit"), SubResource("slot_dose"), SubResource("slot_shield"), SubResource("slot_null")])
 pointer_ticks = PackedInt32Array(0)
-passive_resistance = 1
+passive_resistance = 3
 
 [sub_resource type="Resource" id="phase_escalate"]
 script = ExtResource("4")

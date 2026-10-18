@@ -4072,6 +4072,9 @@ func standing_chips() -> Array[Dictionary]:
 		out.append({"text": tr("SHIELD %d") % c.shield, "color": HudSkin.CHIP_ABSORBED})
 	if c.resistance > 0 or c.hub_resistance > 0 or c.wheel.passive_resistance > 0:
 		out.append({"text": tr("RESIST %d") % c.resistance, "color": Palette.RESIST_GOLD})
+	# N21 (rulings Q16, Q31): the turn's refresh, a static grease-pencil "+N" beside RESIST.
+	if c.resistance_gain > 0:
+		out.append({"text": tr("+%d") % c.resistance_gain, "color": Palette.PENCIL_THREAT, "pencil": true})
 	if c.wheel.frozen:
 		out.append({"text": tr("FROZEN"), "color": Palette.NET_CYAN})
 	# The passive itself is the hub's emblem (its core's glyph) and its tooltip line; only its

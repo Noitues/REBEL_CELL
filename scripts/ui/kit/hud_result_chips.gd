@@ -303,7 +303,8 @@ func standing_rects() -> Array[Rect2]:
 	var h := CHIP_H * s
 	var fs := roundi(STANDING_FONT * s)
 	for c in standing:
-		var w := HudSkin.mono().get_string_size(String(c["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + PAD * 2.0 * s
+		var face: Font = Palette.pencil() if bool(c.get("pencil", false)) else HudSkin.mono()
+		var w := face.get_string_size(String(c["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + PAD * 2.0 * s
 		out.append(Rect2(Vector2(x, 0.0), Vector2(w, h)))
 		x += w + GAP * s
 	return out
@@ -474,10 +475,23 @@ func _draw_standing() -> void:
 	for i in standing.size():
 		var r := rs[i]
 		var col: Color = standing[i]["color"]
+		if bool(standing[i].get("pencil", false)):
+			_draw_pencil_mark(r, String(standing[i]["text"]), fs, col)
+			continue
 		draw_rect(r, Color(HudSkin.CHIP_INK, STANDING_BACK_ALPHA))
 		draw_rect(r, col, false, STANDING_RIM)
 		var base := r.position.y + (r.size.y + font.get_ascent(fs) - font.get_descent(fs)) * 0.5
 		HighContrast.draw_text(self, font, Vector2(r.position.x + PAD * s, base), String(standing[i]["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+
+
+## N21: a standing mark written in grease pencil (the "+N" resistance refresh): no chip, the
+## Permanent Marker word in its ink over the pencil's dark under-shadow. Static (reduce-effects safe).
+func _draw_pencil_mark(r: Rect2, text: String, fs: int, col: Color) -> void:
+	var font := Palette.pencil()
+	var base := r.position.y + (r.size.y + font.get_ascent(fs) - font.get_descent(fs)) * 0.5
+	var at := Vector2(r.position.x + PAD * _ts(), base)
+	draw_string(font, at + Vector2.ONE * TEXT_OUTLINE_PX, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PENCIL_SHADOW)
+	draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 
 ## W2-A2: hovering a chip says what that chip is (its own `tip`, else its words); anywhere else in

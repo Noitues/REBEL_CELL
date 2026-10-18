@@ -31,7 +31,7 @@ func test_stats_match_a3() -> void:
 	var recall := _enemy(&"recall_unit")
 	assert_eq(recall.hp, 106, "A.3 lists 85; +25% in the M7 balance pass")
 	assert_true(recall.is_elite)
-	assert_eq(recall.wheel.passive_resistance, 1)
+	assert_eq(recall.wheel.passive_resistance, 3, "N21: elites regain 3-4 per turn (was 1)")
 	assert_eq(recall.wheel.pointer_orbit_per_turn, 2)
 	assert_eq(_slice_ids(recall.wheel), [&"shim_9", &"shim_9", &"defrag_8", &"overflow_15", &"sandbox_5", &"null"])
 
@@ -51,7 +51,7 @@ func test_recall_unit_pointer_orbits_2_per_turn() -> void:
 	var s := CombatSession.start(CombatFixture.resolver(), &"breaker", [&"recall_unit"], 4)
 	var e := s.state.get_combatant(&"enemy_0")
 	assert_eq(e.wheel.pointer_ticks[0], 0)
-	assert_eq(e.resistance, 1)
+	assert_eq(e.resistance, 3, "N21 elite range")
 	CombatFixture.land(s.state.player, 5)
 	s.apply(CombatAction.end_turn())
 	assert_eq(s.state.get_combatant(&"enemy_0").wheel.pointer_ticks[0], 2)
