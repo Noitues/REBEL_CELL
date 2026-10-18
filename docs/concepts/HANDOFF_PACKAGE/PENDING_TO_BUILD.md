@@ -51,3 +51,13 @@ The app paused session-to-session messages after 10 sends. Send these on the des
    - **Panel 3, netrun header:** no visible difference between the halves. Add a 2× crop of the spot where the Site name used to sit (header or dossier line), before and after. If no name was shown there, say so and drop the panel.
    - **Panel 4, reward header:** "SITE" is too weak. Use the tier and the SiteText type: `LOOT // NETRUN: T2 <TYPE>`, e.g. "T2 SERVER RACK". Use the type word, not the objective. The tier tells the player why the loot is what it is. HQ runs keep `LOOT // NETRUN: <HQ BUILDING>`.
    - Re-send the sheet with panels 1, 3 and 4 only.
+7. **W0_COMBAT re-run (main 6f5eac32): item 5 still stands for panels 1 and 6.**
+   - The words are fixed: THE PANOPTICON, and SANDBOXED / +N SANDBOX. Those words are approved.
+   - Panel 1 is still not fixed: the enrage tooltip still covers the boss wheel's top-left and its needle.
+   - Panel 6 is still not fixed: the disabled nudge arrows still can't be seen, and the toast is still far from the aim ring.
+   - Apply item 5's fixes to those two panels, then re-send panels 1 and 6 only.
+8. **B_TEACH_W0 (main 6f5eac32): APPROVED.**
+   - Row 6: the whole THIS TURN list now shows.
+   - "1 LANDS HERE" sits clear of the box.
+   - The box stays clear of both wheels.
+   - Non-blocking: row 7's AFTER has a hovered JOLT card that its BEFORE lacks. Keep before and after in the same state in future captures. A still can't show the NEXT pulse, so please state its minimum alpha or luma in the B_TEACH notes. It should stay at least 0.6 of full.
